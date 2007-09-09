@@ -7,7 +7,7 @@ GHC_FLAGS_PROF	:= -prof -auto-all
 GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp 
 
 # GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
-GCC_FLAGS	:= -std=c99 -Werror -Wundef -fPIC -O3
+GCC_FLAGS	:= -std=c99 -Wundef -fPIC -O3
 
 
 GHC_INCDIRS 	= $(patsubst %,-i../%/src,$(MODULES))
