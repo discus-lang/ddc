@@ -1,0 +1,13 @@
+
+fun f 
+ = do {	id y = do { either f (\z -> do { y; z; }); y; };
+	id id;
+ };
+ 
+either x y 
+ =	if True then x else y;
+ 
+ 
+		
+	
+	

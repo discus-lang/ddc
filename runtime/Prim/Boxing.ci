@@ -1,0 +1,182 @@
+
+#include "../Profile.h"
+#include "../Force.h"
+#include "../Alloc.h"
+#include "../Macro.h"
+#include "../Object.h"
+#include "../State.h"
+
+// ----- Macros	
+//
+// 	 macros + token pasting == polymorphism.
+//
+#define MAKE_BOXFUN(Type,TypeSize) \
+	static inline \
+	Obj* _box##Type (Type v) \
+	{ 	DataRS* data	= (DataRS*)_allocDataRS (_tagBase, TypeSize); \
+		Type* x		= (Type*) data->payload; \
+		*x		= v; \
+		_PROFILE_BOXING ( b##Type.count ++); \
+		_PROFILE_BOXING ( b##Type.bytes += sizeof(DataRS) + TypeSize); \
+		return (Obj*)data; \
+	} 
+	
+#define MAKE_GETFUN(Type) \
+	static inline \
+	Type _unbox##Type (Obj* obj) \
+	{ 	DataRS* data	= (DataRS*) _force (obj); \
+		Type* x		= (Type*) data->payload; \
+		Type v		= *x; \
+		_PROFILE_BOXING ( b##Type.gets ++); \
+		return	(Type)v; \
+	}
+
+// -- Box up a naked value.
+#define _box(Type,data) \
+	_box##Type(data)
+	
+// -- Force and unbox a value.
+#define _unbox(Type,data) \
+	_unbox##Type(data)
+
+// -- Unbox a value without forcing it.
+//	This object MUST be direct (not a suspension) else badness.
+#define _unboxDirect(Type,data) \
+	*((Type*) ((DataRS*)data)->payload)
+
+
+static inline UInt _unboxEnum(Obj* obj)
+{
+	Obj* data	= _force(obj);
+	return		_getObjTag(data);
+}
+
+
+
+// -----
+// -- Boxing Functions
+//
+MAKE_BOXFUN (Char8,	sizeof(Word32));	// pad out char to keep objects aligned
+MAKE_BOXFUN (Word8,	sizeof(Word32));
+
+
+// Int32
+static inline
+Obj*	_boxInt32 (Int32 v)
+{
+	if (_ddcHeapPtr + 16 > _ddcHeapMax)
+		_allocCollect (16);
+		
+	Word32*	x	= (Word32*)_ddcHeapPtr;
+	_ddcHeapPtr 	+= 16;
+		
+	x[0]		= 0x00000013;		// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
+	x[1]		= v;
+
+	_PROFILE_ALLOC  ( dataRawSmall.count++ );
+	_PROFILE_ALLOC  ( dataRawSmall.bytes += 16 );
+	_PROFILE_BOXING ( bInt32.count ++); 
+	_PROFILE_BOXING ( bInt32.bytes += 16); 
+	
+	return (Obj*)x;
+}
+
+
+// Float32
+static inline
+Obj*	_boxFloat32 (Float32 v)
+{	
+	if (_ddcHeapPtr + 16 > _ddcHeapMax)
+		_allocCollect (16);
+		
+	Word32* x	= (Word32*)_ddcHeapPtr;
+	_ddcHeapPtr	+= 16;
+	
+	x[0]			= 0x00000013;		// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
+	*(Float32*)(x + 1)	= v;
+
+	_PROFILE_ALLOC  ( dataRawSmall.count++ );
+	_PROFILE_ALLOC  ( dataRawSmall.bytes += 16 );
+	_PROFILE_BOXING ( bFloat32.count ++); 
+	_PROFILE_BOXING ( bFloat32.bytes += 16); 
+
+	return (Obj*) x;
+}
+
+
+// Enum
+static inline
+Obj*	_boxEnum (Word32 tag)
+{
+	if (_ddcHeapPtr + 16 > _ddcHeapMax)
+		_allocCollect (16);
+		
+	Word32* x	= (Word32*)_ddcHeapPtr;
+	_ddcHeapPtr	+= 16;
+	
+	x[0]		= (tag << 8) | 0x021;		// (tag << 8) | _ObjFixedData
+	x[1]		= 0;
+	
+	return (Obj*)x;
+
+}
+
+
+static inline
+Obj* 	primProjField  (Obj* obj, Int32 ix)
+{	
+	Data* data	= (Data*)obj;
+	return	data ->a[ix];
+}
+
+
+static inline 
+Obj*	primProjFieldR (Obj* obj, Int32 ix)
+{
+	Data* data	= (Data*)obj;
+	return	_boxRef (obj, &(data ->a[ix]));
+}
+
+MAKE_GETFUN (Char8);
+MAKE_GETFUN (Int32);
+MAKE_GETFUN (Float32);
+
+
+
+
+static inline
+void	primFloat32U_write (Obj* obj, Int32 offset, Float32 data)
+{
+	*(Float32*) ((Word8*)obj + offset)	= data;
+}
+
+static inline
+Float32	primFloat32U_read (Obj* obj, Int32 offset)
+{
+	return		* (Float32*) ((Word8*)obj + offset);
+}
+
+/*
+// ----- Vec2F32
+typedef float Vec2F32r __attribute__ ((vector_size (8)));
+
+union Vec2F32
+{
+	Vec2F32r v;
+	
+
+}
+
+
+static inline
+Vec2F32 primVec2F32_new (Float32 a, Float32 b)
+{
+	return	
+}
+
+*/
+
+
+
+
+

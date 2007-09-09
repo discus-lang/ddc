@@ -1,0 +1,40 @@
+-- Imports
+
+-- Pragmas
+
+-- Infix
+
+-- Data
+
+-- Effects
+
+-- Regions
+
+-- Classes
+
+-- Class dictionaries
+
+-- Class instances
+
+-- Foreign imports
+
+-- Binds
+foreign import extern fun
+        :: forall %r0 %r1 %r2 %r3 %r4 !e0
+        .  Data.Tuple.Tuple2 %r1 (Data.List.List %r0 (Data.Maybe.Maybe %r3 (Base.Int %r2))) (Base.Int %r4) -(!e0)> Base.Int %r4
+        :- !e0   = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r3}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern fun2
+        :: forall %r0 %r1 %r2 %r3 %r4 !e0
+        .  Data.Tuple.Tuple2 %r1 (Data.List.List %r0 (Data.Maybe.Maybe %r3 (Base.Int %r2))) (Base.Int %r4) -(!e0)> Base.Int %r4
+        :- !e0   = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r3}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern main
+        :: forall !e0
+        .  Base.Unit -(!e0)> Base.Unit
+        :- !e0   = !{System.Console.!Console}
+        :$ Base.Data -> Base.Data;
+        
+

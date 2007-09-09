@@ -1,0 +1,4 @@
+
+-- Check handling of ambiguous projections.
+
+fun x	= x.wibble;

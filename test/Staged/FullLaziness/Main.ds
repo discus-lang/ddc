@@ -1,0 +1,19 @@
+
+-- Checks that the full laziness transform is working.
+--	The z function sums up list1 and list2 everytime it is called.
+--	As list1 is never updated it can be marked as const. This purifies
+--	the read effects on list1, allowing the summation to be suspended
+--	and lifted out to top-level.
+--
+
+list1 () 	= [1..100];
+list2 ()	= [1..10];
+
+z ()	= map (\x -> sum (list1 ()) + sum (list2 ()) + x) (list2 ());
+
+x1 	= map (\x -> x + 1) (map (\y -> y + 1) (list2 ()));
+
+main ()
+ = do {	head (list2 ()) := 5;
+ 	print (showListInt (z ()) % "\n");
+ };

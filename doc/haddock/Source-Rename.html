@@ -1,0 +1,370 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Source.Rename</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Source.Rename</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameTree"
+></A
+><B
+>renameTree</B
+> :: <A HREF="Source-Exp.html#t%3ATree"
+>Tree</A
+> -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> <A HREF="Source-Exp.html#t%3ATree"
+>Tree</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3Arename_VT"
+></A
+><B
+>rename_VT</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>) -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameClassInh"
+></A
+><B
+>renameClassInh</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>]) -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>])</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameClassSig"
+></A
+><B
+>renameClassSig</B
+> :: ([<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>], <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>) -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> ([<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>], <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameInstInh"
+></A
+><B
+>renameInstInh</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>]) -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>])</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameCtor"
+></A
+><B
+>renameCtor</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Exp.html#t%3ADataField"
+>DataField</A
+> <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>]) -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Exp.html#t%3ADataField"
+>DataField</A
+> <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>])</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameData"
+></A
+><B
+>renameData</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; [<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>] -&gt; [(<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Exp.html#t%3ADataField"
+>DataField</A
+> <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>])] -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>], [<A HREF="Source-Exp.html#t%3ACtor"
+>Ctor</A
+>])</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameA"
+></A
+><B
+>renameA</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>], <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+>) -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, [<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>], <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenameSs"
+></A
+><B
+>renameSs</B
+> :: [<A HREF="Source-Exp.html#t%3AStmt"
+>Stmt</A
+>] -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> [<A HREF="Source-Exp.html#t%3AStmt"
+>Stmt</A
+>]</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArenamePat"
+></A
+><B
+>renamePat</B
+> :: <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+> -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AlookupZ"
+></A
+><B
+>lookupZ</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AlbindZ"
+></A
+><B
+>lbindZ</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AbindZ"
+></A
+><B
+>bindZ</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Source-RenameM.html#t%3ARenameM"
+>RenameM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

@@ -1,0 +1,108 @@
+
+import Prelude;
+
+-----
+-- Vec2
+--
+data Vec2 %r1 a
+	= Vec2 {
+		x	:: a;
+		y	:: a;
+	};
+
+
+project Vec2 Float where
+{
+	update :: Vec2 Float -> Vec2 Float -> ();
+	update (Vec2 x1 y1) (Vec2 x2 y2)
+	 = do {	x1	:= x2;
+	 	y1	:= y2;
+	 };
+
+
+	angle (Vec2 x y)	
+	 = do {
+		pi 		= 3.1415926536;
+	 	if x < 0.0 
+		 	then pi + atan (y / x)
+			else atan (y / x);
+	 };
+
+	magnitude (Vec2 x y)
+	 = sqrt (x * x + y * y);
+
+
+	muls :: Vec2 Float -> Float -> Vec2 Float;
+	muls (Vec2 x1 y1) s
+	 	= Vec2 (s * x1) (s * y1);
+
+
+	add :: Vec2 Float -> Vec2 Float -> Vec2 Float;
+	add (Vec2 x1 y1) (Vec2 x2 y2)  	
+		= Vec2 (x1 + x2) (y1 + y2);
+
+
+	show :: Vec2 Float -> String;
+	show (Vec2 x y)	
+	 = "Vec2 " % showFloat x % " " % showFloat y;
+
+
+	acc :: Vec2 Float -> Vec2 Float -> ();
+	acc (Vec2 x1 y1) (Vec2 x2 y2)
+	 = do {	x1	+= x1 + x2;
+	 	y1	+= y1 + y2;
+	 };
+
+}
+
+
+vec2_angleU :: Float32# -> Float32# -> Float32#;
+vec2_angleU x y
+ = do {
+ 	pi	= 3.1415926536#;
+	match {
+		|# x `primFloat32U_lt` 0.0#
+		= pi + atanU (y / x);
+		
+		\= atanU (y / x);
+	};
+ };
+
+vec2_add :: Vec2 Float -> Vec2 Float -> Vec2 Float;
+vec2_add (Vec2 x1 y1) (Vec2 x2 y2)  	
+		= Vec2 (x1 + x2) (y1 + y2);
+
+vec2_update :: Vec2 Float -> Vec2 Float -> ();
+vec2_update (Vec2 x1 y1) (Vec2 x2 y2)
+ = do {	x1	:= x2;
+	y1	:= y2;
+ };
+
+vec2_acc :: Vec2 Float -> Vec2 Float -> ();
+vec2_acc (Vec2 x1 y1) (Vec2 x2 y2)
+ = do {	x1	+= x2;
+ 	y1	+= y2;
+ };
+
+
+vec2F_sum ::	[Vec2 Float] -> Vec2 Float;
+vec2F_sum xx	
+	= Vec2 	(foldl (+) 0.0 $ map (\v -> v.x) xx) 
+		(foldl (+) 0.0 $ map (\v -> v.y) xx);
+
+
+instance Num (Vec2 Float) where
+{
+	(+) 	= vec2_add;
+}
+
+instance Update (Vec2 Float) where
+{
+	(:=)	= vec2_update;
+
+}
+
+instance Accum (Vec2 Float) where
+{
+	(+=)	= vec2_acc;
+}

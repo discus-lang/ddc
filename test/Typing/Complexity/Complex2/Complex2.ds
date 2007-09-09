@@ -1,0 +1,15 @@
+
+-- This example from:
+--	"Deciding ML typability is complete for deterministic exponential time"
+--	H. Marison, 1990 
+--
+--	The type inferencer uses a large amount of space and time
+--	when run on this program.
+--
+complex2
+ = do {	x1	= \y -> \z -> z y y;
+ 	x2	= \y -> x1 (x1 y);
+	x3	= \y -> x2 (x2 y);
+	x4	= \y -> x3 (x3 y);
+	x4 (\z -> z);
+ };

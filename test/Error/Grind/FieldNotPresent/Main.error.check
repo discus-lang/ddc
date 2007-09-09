@@ -1,0 +1,2 @@
+test/Error/Grind/FieldNotPresent/Main.ds:11:39
+    Type 'Main.Fish' has no field named '.tastiness'

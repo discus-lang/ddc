@@ -1,0 +1,93 @@
+
+-- Checks that laziness is working.
+--	Uses the suspension functions from the Prelude.
+--
+
+ints n		= n : ints@ (n + 1);
+
+main ()
+ = do {	
+ 	-- choose
+	print 	$ (showInt
+			$ choose True 5 (errorL "argh!"))
+		% "\n";
+
+
+	-- mapping
+	print 	$ (showListInt 
+			$ take 20
+			$ mapL ((+) 10)
+			$ ints 0)
+
+		% "\n";
+
+	-- dotProd
+	print 	$ (showListInt 
+			$ (ints 0) `dotProd` [1, 2, 3, 5]) 
+		% "\n";
+
+	-- primes
+	print	$ (showListInt
+			$ take 10 (primes ()))
+		% "\n";
+
+	-- fib
+	print	$ (showListInt
+			$ take 10
+			$ mapL fib 
+			$ ints 0)
+		% "\n";
+
+ };
+
+
+-----
+dotProd :: [Int] -> [Int] -> [Int];
+dotProd xx yy
+ = case xx of {
+ 	Nil		-> Nil;
+	Cons x xs	
+	 -> case yy of {
+	 	Nil		-> Nil;
+		Cons y ys	-> (x * y) : dotProd xs ys;
+	    };
+ };
+
+
+-----
+choose b x y
+ = if b 
+ 	then x
+	else y;
+
+-----
+primes ()	= primes' $ drop 2 (ints 0);
+
+primes' xx
+ = case xx of {
+ 	Cons x xs -> x : primes'@ (sieve x xs);
+ };
+ 
+sieve n xx
+ = case xx of {
+ 	Nil
+	 -> Nil;
+
+	Cons x xs	
+	 -> if x `mod` n == 0
+	 	then     sieve@ n xs
+		else x : sieve@ n xs;
+ };
+
+
+-----
+fib n	
+ = 	if 	n == 0 	then 1
+ 	else if n == 1	then 1
+	else do {
+		n1	= fib (n-1);
+		n2	= fib (n-2);
+		n1 + n2;
+	};
+
+

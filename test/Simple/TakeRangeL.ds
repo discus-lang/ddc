@@ -1,0 +1,19 @@
+
+
+
+main ()
+ = do {
+	printThing ( (:) @ 1 []);
+
+ };
+	
+
+printThing xx
+ = case xx of {
+ 	[]	-> ();
+	(x:xs) 
+	 -> do {
+	 	print (showInt x);
+		printThing xs;
+	};
+ };

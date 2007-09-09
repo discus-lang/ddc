@@ -1,0 +1,22 @@
+
+-- Check defix error reporting.
+--	
+
+-- Cannot have multiple non-associative operators at the same level.
+--	
+xa1	= 1 < 2 > 3;
+xa2	= "perch" == "gourami" == "chichlid";
+
+
+-- Cannot have operators with differing associativities at the same level.
+--	The standard operators in the Prelude don't have this problem, 
+--	so we'll create some offensive ones here.
+--	
+--	We don't need to actually define functions for them, as they shouldn't 
+--	make it though the defixer.
+--
+infixl 5 <#;
+infixr 5 #>;
+
+xb1	= "some" <# "broken" #> "operators";
+xb2	= 3 + 4 #> "broken" * 5 <# "operators";

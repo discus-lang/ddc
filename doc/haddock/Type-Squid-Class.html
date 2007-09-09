@@ -1,0 +1,398 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Type.Squid.Class</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Type.Squid.Class</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A NAME="t%3ASchoolE"
+></A
+><B
+>SchoolE</B
+> = <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> (<A HREF="Type-Exp.html#t%3AEffect"
+>Effect</A
+>, <A HREF="Type-Squid-Base.html#t%3AEffectInfo"
+>EffectInfo</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AexcSchoolE"
+></A
+><B
+>excSchoolE</B
+> :: (SchoolE -&gt; SchoolE) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArunSchoolE"
+></A
+><B
+>runSchoolE</B
+> :: (SchoolE -&gt; (SchoolE, a)) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> a</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetSchoolE"
+></A
+><B
+>getSchoolE</B
+> :: (SchoolE -&gt; a) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> a</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AmakeClassNameE"
+></A
+><B
+>makeClassNameE</B
+> :: <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A NAME="t%3ASchoolR"
+></A
+><B
+>SchoolR</B
+> = <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> (<A HREF="Type-Exp.html#t%3ARegion"
+>Region</A
+>, <A HREF="Type-Squid-Base.html#t%3ARegionInfo"
+>RegionInfo</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AexcSchoolR"
+></A
+><B
+>excSchoolR</B
+> :: (SchoolR -&gt; SchoolR) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArunSchoolR"
+></A
+><B
+>runSchoolR</B
+> :: (SchoolR -&gt; (SchoolR, a)) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> a</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetSchoolR"
+></A
+><B
+>getSchoolR</B
+> :: (SchoolR -&gt; a) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> a</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AmakeClassNameR"
+></A
+><B
+>makeClassNameR</B
+> :: <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A NAME="t%3ASchoolT"
+></A
+><B
+>SchoolT</B
+> = <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> (<A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>, <A HREF="Type-Squid-Base.html#t%3ATypeInfo"
+>TypeInfo</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AexcSchoolT"
+></A
+><B
+>excSchoolT</B
+> :: (SchoolT -&gt; SchoolT) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ArunSchoolT"
+></A
+><B
+>runSchoolT</B
+> :: (SchoolT -&gt; (SchoolT, a)) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> a</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetSchoolT"
+></A
+><B
+>getSchoolT</B
+> :: (SchoolT -&gt; a) -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> a</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AmakeClassNameT"
+></A
+><B
+>makeClassNameT</B
+> :: <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AmakeClassName"
+></A
+><B
+>makeClassName</B
+> :: <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AaddVarSubs"
+></A
+><B
+>addVarSubs</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; [<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>] -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AsinkVar"
+></A
+><B
+>sinkVar</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AsinkClassId"
+></A
+><B
+>sinkClassId</B
+> :: <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-State.html#t%3ASquidM"
+>SquidM</A
+> <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

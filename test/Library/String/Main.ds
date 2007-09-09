@@ -1,0 +1,21 @@
+
+main ()
+ = do {	
+ 
+ 	strApp	= "Some " % "appended " % "string.\n";
+ 	print	strApp;
+	
+	print	$ "length = " % show strApp.length % "\n";
+ 
+ 
+ 	print	$ string_join "Joined " "string.\n";
+	
+	strMerged	
+		= string_merge $ "Some " % "merged " % "string.\n";
+	print	$ strMerged;
+	print	$ "strMerged isFlat  = " % show (string_isFlat strMerged) % "\n";
+
+	print	$ (show $ "Some appended string.\n" == strApp.merge) % "\n";
+	
+
+ };

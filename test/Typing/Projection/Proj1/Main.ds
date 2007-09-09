@@ -1,0 +1,12 @@
+
+import Data.Array;
+
+dude ()
+ = do {	array	= array_new 10 (0, 0);
+	fish	= array.(5).x1;
+	fish;
+ };
+ 
+ 
+main ()
+ = 	print	$ showInt (dude ())	% "\n";

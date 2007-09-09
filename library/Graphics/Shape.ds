@@ -1,0 +1,23 @@
+
+import Graphics.Primitive;
+
+-----
+-- rectangleC
+--
+rectangleC sizeX sizeY
+ = do {	x0	= 0.0 - sizeX / 2.0;
+ 	x1	= 0.0 + sizeX / 2.0;
+	
+	y0	= 0.0 - sizeY / 2.0;
+	y1	= 0.0 + sizeY / 2.0;
+	
+	p0	= Point x0 y0;
+	p1	= Point x0 y1;
+	p2	= Point x1 y1;
+	p3	= Point x1 y0;
+	
+	[ Line p0 p1
+	, Line p1 p2
+	, Line p2 p3
+	, Line p3 p0 ];
+ };

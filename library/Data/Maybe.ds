@@ -1,0 +1,7 @@
+
+import Base;
+
+data Maybe %r a
+	= Just 	{ x :: a; }
+	| Nothing;
+	

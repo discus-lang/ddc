@@ -1,0 +1,13 @@
+
+data Fish %r
+	= Fish { 
+		name		:: String %r;
+		finCount	:: Int %r; 
+	};
+	
+
+main ()
+ = do {	perch	= Fish "clive" 7;
+  	print $ "tastiness = " % perch.tastiness % "\n"; };
+	
+ 	

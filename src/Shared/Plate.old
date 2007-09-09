@@ -1,0 +1,149 @@
+
+module Shared.Plate
+(
+	module Data.Typeable,
+	Data (..),
+	
+	makeT, makeTM,
+	walkDown, walkDownM,
+	walkUp
+
+)
+
+where
+
+-----
+import Data.Typeable
+import Debug.Trace
+
+-----
+import Util.Pretty
+import Control.Monad.State
+
+-----
+import Shared.Literal
+import Shared.Var (Var)
+
+-----
+class Typeable a => Data a where
+
+	--
+	gmapT  	:: (forall b. Data b => b -> b) 
+		-> a -> a
+
+	gmapT  f a 	= evalState (gmapTM (\x -> return $ f x) a) 0
+ 
+	--
+ 	gmapTM 	:: Monad m 
+ 		=> (forall b. Data b => b -> m b) 
+		-> a -> m a
+
+ 	gmapTM f a 	= error "gmapTM: not defined"
+
+
+
+
+-----------------------
+-- Transformation
+--
+makeT 		:: (Typeable a, Typeable b)
+		=> (b -> b) -> a -> a
+makeT f 		
+ = case cast f of
+	Just g	-> g
+	Nothing	-> id	
+
+
+-----
+makeTM 		:: (Typeable a, Typeable b,
+		    Typeable (m a), Typeable (m b),
+		     Monad m)
+		    
+		=> (b -> m b) -> a -> m a
+		
+makeTM f
+ = case cast f of
+ 	Just g	-> g
+	Nothing	-> (\x -> return x)
+
+
+-----
+walkDown :: Data a 
+	 => (forall b. Data b => b -> b)
+	 -> a -> a
+		
+walkDown f x	= gmapT (walkDown f) (f x)
+
+
+-----
+walkDownM :: (Monad m, Data a) 
+	=> (forall b. Data b => b -> m b)
+	-> a -> m a
+	
+walkDownM f x	
+ = do
+	x'	<- f x
+	gmapTM (walkDownM f) x'
+
+
+
+-----
+walkUp	:: Data a
+	=> (forall b. Data b => b -> b)
+	-> a -> a
+	
+walkUp   f x	= f (gmapT (walkUp f) x)
+
+
+-----
+instance Data a => Data [a] where
+ gmapT f []	= []
+ gmapT f (x:xs)	= f x : f xs
+
+ gmapTM f []	= return []
+ gmapTM f (x:xs)
+  = do
+  	x'	<- f x
+	xs'	<- mapM f xs
+	return	$ x' : xs'
+
+ 
+instance Data Var where
+ gmapT f v 	= v
+ gmapTM f v	= return v
+
+instance Data Const where
+ gmapT f c	= c
+ gmapTM f c	= return c
+
+instance (Data a, Data b)		=> Data (a, b) where
+ gmapT f (a, b)		= (f a, f b)
+ gmapTM f (a, b)
+  = do
+  	a'	<- f a
+	b'	<- f b
+	return	$ (a', b')
+ 
+ 
+instance (Data a, Data b, Data c)	=> Data (a, b, c) where
+ gmapT f (a, b, c)	= (f a, f b, f c)
+ 
+instance Data a => Data (Maybe a) where
+ gmapT f Nothing	= Nothing
+ gmapT f (Just a)	= Just (f a)
+
+
+instance Typeable2 State where
+ typeOf2 a = mkTyConApp (mkTyCon "Control.Monad.State") []
+ 
+-----
+
+
+
+
+
+
+
+
+
+

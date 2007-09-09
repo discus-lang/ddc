@@ -1,0 +1,28 @@
+
+
+fun1 () 
+ = do {	x	= 5;
+
+	fun2 () 
+	 = do {
+		funGet ()
+		 = do { x; };
+	
+		funGet1 ()
+		 = do {	x + 1; };
+
+		funInc ()
+		 = do { x := x + 1; }; 
+
+		(funGet, funGet1, funInc);
+	 };
+ };
+
+ 
+fun1_u		= fun1 ();
+fun1_uu		= fun1_u ();
+
+fun1_get	= t3_1 fun1_uu;
+fun1_get1	= t3_2 fun1_uu;
+fun1_inc	= t3_3 fun1_uu;
+

@@ -1,0 +1,32 @@
+
+-- Finding out about mutability constraints too late.
+--
+-- When the type inferencer generalises the type of box, it doesn't
+--	yet know that we're going to update it, and ends up with:
+--
+--	   box	:: forall tTS1
+--              .  Box @25 (List @29 tTS1)
+--
+-- However, after we've added the constraints from the (box#x #= ..)
+--	statements it realises that @25 is actually mutable, and
+--	should have been using a scheme which is less polymorphic:
+--
+--        box   :: Box @25 (List @29 @30)
+--              :- Mutable @25
+--
+-- This problem is picked up in the post-generalisation check, and
+--	is reported back to the user.
+-- 
+
+data Box %r a
+	= Box {x :: a; };
+	
+main ()
+ = do {	box	= Box [];
+
+	box#x	#= [5];
+	box#x	#= ['a'];
+	
+	();
+ };
+		

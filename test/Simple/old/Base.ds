@@ -1,0 +1,188 @@
+
+-----------------------
+-- Abstract operational types.
+--
+data	Obj;
+data	Data;
+data	Thunk;
+
+
+-----------------------
+-- Simple Data types
+--
+data	Void#;
+data	Ptr#	%r1 a;
+
+data	Bool#	%r1;
+
+data	Word8#	%r1;
+data	Word16#	%r1;
+data	Word32#	%r1;
+data	Word64#	%r1;
+
+data	Int8#	%r1;
+data	Int16#	%r1;
+data 	Int32# 	%r1;
+data	Int64#	%r1;
+
+data	Float32# %r1;
+data	Float64# %r1;
+
+data	String# %r1;
+
+data	Unit	= Unit;
+data	Char 	%r;
+data	Int 	%r;
+data 	Float 	%r;
+
+data 	Ref %r1 a
+	= Ref { x :: a; };
+
+
+
+
+
+-----------------------
+-- Region / Effect Classes
+--
+class	Const		:: % -> +;
+class	Mutable		:: % -> +;
+class	Lazy		:: % -> +;
+class	Direct		:: % -> +;
+
+class	ConstT		:: * -> +;
+class	MutableT	:: * -> +;
+class	DirectT		:: * -> +;
+
+class	LazyT		:: * -> +;
+class	LazyH		:: * -> +;
+
+class	Pure		:: ! -> +;
+
+class	Shape2		:: * -> * -> +;
+class	Shape3		:: * -> * -> * -> +;
+class	Shape4		:: * -> * -> * -> * -> +;
+class	Shape5		:: * -> * -> * -> * -> * -> +;
+class	Shape6		:: * -> * -> * -> * -> * -> * -> +;
+
+-----------------------
+-- Global Effects.
+--
+effect	!Sync		:: !;		-- Total synchronisation.
+effect	!Alloc		:: !;
+
+effect	!Read		:: % -> !;	-- Read of some region.
+effect	!ReadT		:: * -> !;	-- Deep read of an object.
+effect	!ReadH		:: * -> !;	-- Read of top level constructor of an object.
+
+effect	!Write		:: % -> !;	-- Write to some region.
+effect	!WriteT		:: * -> !;	-- Write to whole object.
+
+-----------------------
+-- Global regions.
+--
+region	%const;
+region	%mutable;
+
+-----------------------
+-- Fixity defs.
+--
+{-
+infixl 8 *, / ;
+infixl 7 +, - ;
+infixr 6 : ;
+infix  5 ==, /=, <, <=, >=, > ;
+infixr 4 && ;
+infixr 3 || ;
+infixl 2 >>, >>= ;
+infixr 1 $ ;
+infixl 0 :=, #=;
+-}
+-----------------------
+-- Simple Functions
+--	We won't get very far without these.
+--
+id :: forall a. a -> a;
+id    x = x;
+
+infixr 1 $ ;
+($) f x	 = f x;
+
+
+
+-----
+-- primProj*
+--	These functions are used by the desugarer to make default data projections.
+--
+--	As they stand they are certainly not typesafe, and they must be passed a
+--	forced object (ie, not a suspension).
+--
+--	The desugarer adds the required type sig and forcing constructs to ensure
+--	that the resulting projection functions are sound.
+--
+--
+foreign import extern "primProjField"
+ primProjField	
+ 	:: forall a b %r1 !e1
+	.  a -> Int32# %r1 -(!e1)> b
+	:- !e1 = !{ !ReadH a }
+	:$ Data -> Int32# -> Obj;
+ 
+foreign import extern "primProjFieldR"
+ primProjFieldR 
+ 	:: forall a b %r1 !e1
+	.  a -> Int32# %r1 -(!e1)> b
+	:- !e1 = !{ !ReadH a }
+	:$ Data -> Int32# -> Obj;
+
+-----
+-- BUGS: dodgy conversion of Int32# to Word32#
+
+foreign import extern "_allocDataM"
+ primAlloc_dataM
+ 	:: forall a %r1 %r2 %r3
+	.  Int32# %r1 -> Int32# %r2 -> Int32# %r3 -> a		-- tag, ptrCount, dataSize (in bytes).
+	:$ Word32# -> Word32# -> Word32# -> Data;
+
+
+-----
+-- primAlloc_unsafe_dataR
+--	Allocate an object on the heap to contain raw (unboxed) data.
+--	Data size /must/ be a multiple of 4 bytes.
+
+foreign import extern "_allocDataR"
+ primAlloc_dataR
+ 	:: forall a %r1 %r2 
+	.  Int32# %r1 -> Int32# %r2 -> a			-- tag, dataSize (in bytes).
+	:$ Word32# -> Word32# -> Data;
+
+-----
+foreign import extern "primInt32U_read"
+ primInt32U_read
+ 	:: forall a %r1 %r2
+	.  a -> Int32# %r1 -> Int32# %r2			-- obj, offset (in bytes), result.
+	:$ Data -> Int32# -> Int32#;
+	
+foreign import extern "primInt32U_write"
+ primInt32U_write
+ 	:: forall a %r1 %r2
+	.  a -> Int32# %r1 -> Int32# %r2 -> Void#		-- obj, offset (in bytes), data.
+	:$ Data -> Int32# -> Int32# -> Void#;
+
+-----
+foreign import extern "primFloat32U_read"
+ primFloat32U_read
+ 	:: forall a %r1 %r2 
+	.  a -> Int32# %r1 -> Float32# %r2			-- obj, offset (in bytes), result.
+	:$ Data -> Int32# -> Float32#;
+	
+foreign import extern "primFloat32U_write"
+ primFloat32U_write
+ 	:: forall a %r1 %r2
+	.  a -> Int32# %r1 -> Float32# %r2 -> Void#		-- obj, offset (in bytes), data.
+	:$ Data -> Int32# -> Float32# -> Void#;
+
+
+
+
+

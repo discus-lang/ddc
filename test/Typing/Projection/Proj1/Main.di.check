@@ -1,0 +1,34 @@
+-- Imports
+import Data.Array;
+
+-- Pragmas
+
+-- Infix
+
+-- Data
+
+-- Effects
+
+-- Regions
+
+-- Classes
+
+-- Class dictionaries
+
+-- Class instances
+
+-- Foreign imports
+
+-- Binds
+foreign import extern dude
+        :: forall %r0 !e0
+        .  Base.Unit -(!e0)> Base.Int %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern main
+        :: forall !e0
+        .  Base.Unit -(!e0)> Base.Unit
+        :- !e0   = !{System.Console.!Console}
+        :$ Base.Data -> Base.Data;
+        
+

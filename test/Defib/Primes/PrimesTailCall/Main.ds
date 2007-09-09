@@ -1,0 +1,63 @@
+
+main ()
+ = do {	
+ 	max	= 1500;
+
+	primes	= arrayUI_new 1 (max + 1);
+	arrayUI_set primes 0 2;
+	 
+	fillPrimes primes max 1 2;
+
+	result	= arrayUI_get primes max;
+	print	$ (showInt result) % "\n";
+ };
+
+fillPrimes primes max high i
+ = match {
+	| high > max				
+	= ();
+
+	| checkPrime primes high i 0		
+	= do {	arrayUI_set primes high i;
+		fillPrimes primes max (high + 1) (i + 1);
+	};
+
+	\= fillPrimes primes max high (i + 1);
+ };
+
+checkPrime array high x n
+ = match {
+    	| n >= high				
+	= True;
+
+	| x `mod` arrayUI_get array n == 0	
+	= False;
+
+	\= checkPrime array high x (n + 1);
+ };
+
+
+{-
+checkPrime array high x n
+ = if n >= high 	
+ 	then True
+
+   else if x `mod` arrayUI_get array n == 0 	
+   	then False
+
+   else checkPrime array high x (n + 1);
+
+fillPrimes primes max high i
+ = if high > max
+ 	then ()
+	
+   else if checkPrime primes high i 0
+   then do {
+   	arrayUI_set primes high i;
+	fillPrimes primes max (high + 1) (i + 1);
+   }
+   
+   else	fillPrimes primes max high (i + 1);
+
+
+-}

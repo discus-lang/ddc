@@ -1,0 +1,56 @@
+test/Error/CheckConst/PureReadWrite/Main.ds:8:16
+    Cannot write to Const region.
+      This region is being forced Const because there is a
+      purity constraint on a Read effect which accesses it.
+
+                effect: Base.!Write %40
+             caused by: (:=)
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:8:16
+
+          conflicts with,
+                effect: Base.!Read %40
+             caused by: (+)
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:7:19
+
+          which is being purified by,
+            constraint: Base.Pure !51
+       from the use of: suspend2
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:7:21
+
+test/Error/CheckConst/PureReadWrite/Main.ds:15:21
+    Cannot write to Const region.
+      This region is being forced Const because there is a
+      purity constraint on a Read effect which accesses it.
+
+                effect: Base.!Write %192
+             caused by: (:=)
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:15:21
+
+          conflicts with,
+                effect: Base.!Read %192
+             caused by: (*)
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:14:25
+
+          which is being purified by,
+            constraint: Base.Pure !257
+       from the use of: mapL
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:14:18
+
+test/Error/CheckConst/PureReadWrite/Main.ds:21:18
+    Cannot write to Const region.
+      This region is being forced Const because there is a
+      purity constraint on a Read effect which accesses it.
+
+                effect: Base.!Write %422
+             caused by: (:=)
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:21:18
+
+          conflicts with,
+                effect: Base.!Read %422
+             caused by: (+)
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:20:21
+
+          which is being purified by,
+            constraint: Base.Pure !377
+       from the use of: suspend2
+                    at: test/Error/CheckConst/PureReadWrite/Main.ds:20:23

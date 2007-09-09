@@ -1,0 +1,25 @@
+
+
+
+intMutable 	= 5;
+intConst	= 5;
+
+main ()
+ = do {
+ 	intMutable	:= 27;
+	
+	x		= (+) @ intConst 6;
+	
+	result		= intMutable == intConst;
+ 
+ 	result2		= select True intMutable intConst;
+ };
+
+
+
+select b x y
+ = case b of {
+ 	True	-> x;
+	False	-> y;
+ };
+ 

@@ -1,0 +1,26 @@
+
+-- Checks basic closure typing.
+--	addX1 has a free variable, which it's reading.
+--
+-- 	If closure typing isn't working then the scheme 
+--	for add1X' will have lost its effect info,
+--	along with the info about the free variable x.
+
+-- add1X reads a region from a free variable.
+--
+x 		= 5;
+add1X ()	= x + 1;
+
+
+-- identity, but force f to be a function.
+--
+idF f	= case True of {
+		True	-> f;
+		False	
+		 -> \x -> error "argh";
+	};
+	
+
+--
+add1X'	= idF add1X;
+

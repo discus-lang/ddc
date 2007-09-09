@@ -1,0 +1,74 @@
+-- Regen
+--	Make sure the solver isn't regeneralising static regions. 
+--	Test out summing of function environments.
+--
+import Prelude;
+import Tuple;
+
+
+-----------------------
+--
+{-
+static1		= 5;
+retStatic1 ()	= static1;
+refRetStatic1 	= Ref retStatic1;
+
+--
+makeInt ()	= 5;
+refMakeInt	= Ref makeInt;
+
+
+evil0 () x
+ = case x of {
+ 	Unit	-> (refRetStatic1, refMakeInt);
+ };
+-}
+
+-----------------------
+-- evil1
+--	New data is created after each of the first two arguments
+--	have been applied.
+--
+evil1 () 
+ = {
+ 	i1	= 5;
+	fun2 ()	= {
+
+		i2	= 6;
+		fun3 ()	= (i1, i2, 7);
+	};
+ };
+
+
+--
+evil1X1 = evil1 ();
+evil1X2	= evil1 () ();
+evil1X3 = evil1 () () ();
+
+evil1X2b = evil1X2 ();
+
+evil1X2c () = evil1X2 ();
+
+
+{-
+-----------------------
+-- evil2
+--	
+evil2 ()
+ = {
+ 	j1	= 5;
+	j2	= 6;
+	
+	efun1 () ()	= (j1, j2, 7);
+	
+	refNew efun1;
+ };
+
+evil2X1 = evil2 ();
+evil2X2 = refGet $ evil2 ();
+
+
+
+-}
+
+

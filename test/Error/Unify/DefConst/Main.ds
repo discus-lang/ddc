@@ -1,0 +1,6 @@
+
+-- Checks type error reporting.
+--	Conflict between definition and const.
+
+fish x	= x + 5;
+y	= fish "perch";

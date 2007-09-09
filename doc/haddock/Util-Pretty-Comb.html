@@ -1,0 +1,962 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Util.Pretty.Comb</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Util.Pretty.Comb</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>class</SPAN
+> <A NAME="t%3APretty"
+></A
+><B
+>Pretty</B
+> a  <SPAN CLASS="keyword"
+>where</SPAN
+></TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+>Methods</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><A NAME="v%3Apretty"
+></A
+><B
+>pretty</B
+> :: a -&gt; String</TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3Aprettyp"
+></A
+><B
+>prettyp</B
+> :: a -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Pretty')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Pretty" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Source-Exp.html#t%3AAnnot"
+>Annot</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Constraint-State.html#t%3ABindMode"
+>BindMode</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> Bool</TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Constraint-Tree.html#t%3ACInfo"
+>CInfo</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Constraint-Tree.html#t%3ACTree"
+>CTree</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> Char</TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Shared-Literal.html#t%3AConst"
+>Const</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Squid-Base.html#t%3AEffectInfo"
+>EffectInfo</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3AEnv"
+>Env</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Source-Error.html#t%3AError"
+>Error</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Error.html#t%3AError"
+>Error</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Source-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3AFetter"
+>Fetter</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> Float</TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Source-Exp.html#t%3AInfixMode"
+>InfixMode</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> Int</TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3AKind"
+>Kind</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Shared-Base.html#t%3ALiteral"
+>Literal</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Shared-Var.html#t%3ANameSpace"
+>NameSpace</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Source-Exp.html#t%3AProj"
+>Proj</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3ARegion"
+>Region</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Squid-Base.html#t%3ARegionInfo"
+>RegionInfo</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Shared-Base.html#t%3ASourcePos"
+>SourcePos</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Source-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3ATProj"
+>TProj</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Source-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Squid-Base.html#t%3ATypeInfo"
+>TypeInfo</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Shared-Var.html#t%3AVarId"
+>VarId</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Shared-Var.html#t%3AVarInfo"
+>VarInfo</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>(<A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> a, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> b) =&gt; <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> (a, b)</TD
+></TR
+><TR
+><TD CLASS="decl"
+>(<A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> a, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> b, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> c) =&gt; <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> (a, b, c)</TD
+></TR
+><TR
+><TD CLASS="decl"
+>(<A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> a, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> b, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> c, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> d) =&gt; <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> (a, b, c, d)</TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> a =&gt; <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> (Maybe a)</TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> a =&gt; <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> [a]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>(<A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> x, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> t) =&gt; <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> (<A HREF="Shared-Exp.html#t%3ADataField"
+>DataField</A
+> x t)</TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3APrettyP"
+></A
+><B
+>PrettyP</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APString"
+></A
+><B
+>PString</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APChar"
+></A
+><B
+>PChar</B
+> Char</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APList"
+></A
+><B
+>PList</B
+> [<A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APAppend"
+></A
+><B
+>PAppend</B
+> [<A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APIndent"
+></A
+><B
+>PIndent</B
+> <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APTabAdd"
+></A
+><B
+>PTabAdd</B
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APTabInc"
+></A
+><B
+>PTabInc</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APTabDec"
+></A
+><B
+>PTabDec</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APTabNext"
+></A
+><B
+>PTabNext</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APAnnot"
+></A
+><B
+>PAnnot</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:PrettyP')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:PrettyP" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3ARenderS"
+></A
+><B
+>RenderS</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="5" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ARenderS"
+></A
+><B
+>RenderS</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateTabWidth"
+></A
+><B
+>stateTabWidth</B
+> :: Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateIndent"
+></A
+><B
+>stateIndent</B
+> :: Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateCol"
+></A
+><B
+>stateCol</B
+> :: Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3Arender"
+></A
+><B
+>render</B
+> :: <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+> -&gt; String</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AspaceTab"
+></A
+><B
+>spaceTab</B
+> :: RenderS -&gt; [<A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+>] -&gt; [<A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+>]</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3Areduce"
+></A
+><B
+>reduce</B
+> :: (?state :: RenderS) -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+> -&gt; [<A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+>]</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A NAME="t%3APComb2"
+></A
+><B
+>PComb2</B
+> = (<A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> a, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> b) =&gt; a -&gt; b -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3A%25"
+></A
+><B
+>(%)</B
+> :: PComb2</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3A%25%21%25"
+></A
+><B
+>(%!%)</B
+> :: (<A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> a, <A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> b) =&gt; a -&gt; [b] -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

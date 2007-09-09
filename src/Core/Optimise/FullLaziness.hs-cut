@@ -1,0 +1,95 @@
+
+-----
+type Level	= Int
+type LevelS	= (Level, Map Var Level)
+
+
+
+annotLevelTree 
+	:: Tree 	-- header tree
+	-> Tree		-- core tree
+	-> Tree
+
+annotLevelTree cHeader pp	
+ = let	topVs	= topLevelVs (cHeader ++ pp)
+
+	vMap	= foldr (\v -> Map.insert v 0) Map.empty 
+		$ Set.toList topVs
+
+	st	= (0, vMap)
+		
+   in	map (annotLevelP st) pp
+
+
+annotLevelP st pp
+ = case pp of
+ 	PBind v x	-> PBind v 	(annotLevelX st x)
+	_		-> pp
+	
+annotLevelX st@(level, vMap) xx
+ = case xx of
+	XAnnot 	n x	-> XAnnot n	$ annotLevelX st x
+
+	XLAM 	v k x	-> XLAM v k 	$ annotLevelX st x
+
+ 	XLam 	v t x eff clo
+	 -> let	level'	= level + 1
+	 	vMap'	= Map.insert v level' vMap
+	 	st'	= (level', vMap')
+	    in	XLam v t (annotLevelX st' x) eff clo
+
+	XTet 	v t x	-> XTet v t 	$ annotLevelX  st x
+	XFetter v ts x	-> XFetter v ts $ annotLevelX  st x
+	XTau 	t x	-> XTau	 t	$ annotLevelX  st x
+
+	XDo     ss	-> XDo 		$ annotLevelSS st ss
+	XMatchE eff aa	-> XMatchE eff 	$ map (annotLevelA st) aa
+	XLocal  v vs x	-> XLocal v vs	$ annotLevelX st x
+	
+	_		-> xx	
+	
+	
+annotLevelSS st ss 
+	= snd $ mapAccumL annotLevelS st ss
+	
+annotLevelS st@(level, vMap) ss
+	| SBind mV@(Just v) x	<- ss
+	, canLiftX x
+	, EPure			<- slurpEffsX x
+	, freeVs		<- [v 	| v <- Set.toList $ freeVarsX x
+	 			   , Var.nameSpace v == NameValue ]
+	, sLevel		<- liftLevel st freeVs x
+	, Just ll		<- sLevel
+	= let
+		vMap'	= Map.insert v ll vMap
+		st'	= (level, vMap')
+
+	  in	( (level, vMap')
+	  	, SBind mV
+	  		$ XAnnot [NLevel ll]
+			$ annotLevelX st x)
+			
+	| SBind mV x		<- ss
+	= 	( st
+		, SBind mV
+			$ annotLevelX st x)
+
+
+	 	
+liftLevel st 			[] xx	
+	= Just 0
+
+liftLevel st@(level, vMap) 	freeVs xx
+	= join
+	$ liftM (deadMaybe [] maximum)
+	$ sequence
+	$ map ((flip Map.lookup) vMap)
+	$ freeVs
+		
+		
+	
+	
+annotLevelA st aa
+ = case aa of
+ 	AAlt gs x	-> AAlt gs	$ annotLevelX st x
+	ADefault x	-> ADefault	$ annotLevelX st x

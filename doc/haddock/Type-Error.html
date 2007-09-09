@@ -1,0 +1,875 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Type.Error</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Type.Error</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AError"
+></A
+><B
+>Error</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="5" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorSanityCoreMissing"
+></A
+><B
+>ErrorSanityCoreMissing</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeVarsMissing"
+></A
+><B
+>eVarsMissing</B
+> :: [String]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorUnifyCtorMismatch"
+></A
+><B
+>ErrorUnifyCtorMismatch</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeCtor1"
+></A
+><B
+>eCtor1</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeTypeSource1"
+></A
+><B
+>eTypeSource1</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeCtor2"
+></A
+><B
+>eCtor2</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeTypeSource2"
+></A
+><B
+>eTypeSource2</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorInfiniteTypeClassId"
+></A
+><B
+>ErrorInfiniteTypeClassId</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeClassId"
+></A
+><B
+>eClassId</B
+> :: <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorInfiniteTypeGen"
+></A
+><B
+>ErrorInfiniteTypeGen</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeVar"
+></A
+><B
+>eVar</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeClassIds"
+></A
+><B
+>eClassIds</B
+> :: [<A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeType"
+></A
+><B
+>eType</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeLoops"
+></A
+><B
+>eLoops</B
+> :: [(<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>)]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorSigScheme"
+></A
+><B
+>ErrorSigScheme</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeSig"
+></A
+><B
+>eSig</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>)</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeScheme"
+></A
+><B
+>eScheme</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>)</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeClashSig"
+></A
+><B
+>eClashSig</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeClashScheme"
+></A
+><B
+>eClashScheme</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorSigEffects"
+></A
+><B
+>ErrorSigEffects</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeSig"
+></A
+><B
+>eSig</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>)</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeScheme"
+></A
+><B
+>eScheme</B
+> :: (<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+>)</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeEffSig"
+></A
+><B
+>eEffSig</B
+> :: [<A HREF="Type-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeEffScheme"
+></A
+><B
+>eEffScheme</B
+> :: [<A HREF="Type-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorFieldNotPresent"
+></A
+><B
+>ErrorFieldNotPresent</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeField"
+></A
+><B
+>eField</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeConstructor"
+></A
+><B
+>eConstructor</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorAmbiguousProjection"
+></A
+><B
+>ErrorAmbiguousProjection</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeField"
+></A
+><B
+>eField</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorImpureTopLevelEffect"
+></A
+><B
+>ErrorImpureTopLevelEffect</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeEff"
+></A
+><B
+>eEff</B
+> :: <A HREF="Type-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeEffFunV"
+></A
+><B
+>eEffFunV</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeEffType"
+></A
+><B
+>eEffType</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AePureFunV"
+></A
+><B
+>ePureFunV</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AePureType"
+></A
+><B
+>ePureType</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorMutabilityConflict"
+></A
+><B
+>ErrorMutabilityConflict</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeRegion"
+></A
+><B
+>eRegion</B
+> :: <A HREF="Type-Exp.html#t%3ARegion"
+>Region</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeMutableFetter"
+></A
+><B
+>eMutableFetter</B
+> :: <A HREF="Type-Exp.html#t%3AFetter"
+>Fetter</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeMutableSource"
+></A
+><B
+>eMutableSource</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeConstFetter"
+></A
+><B
+>eConstFetter</B
+> :: <A HREF="Type-Exp.html#t%3AFetter"
+>Fetter</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeConstSource"
+></A
+><B
+>eConstSource</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AErrorMutabilityPureReadWrite"
+></A
+><B
+>ErrorMutabilityPureReadWrite</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeRegion"
+></A
+><B
+>eRegion</B
+> :: <A HREF="Type-Exp.html#t%3ARegion"
+>Region</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeReadEff"
+></A
+><B
+>eReadEff</B
+> :: <A HREF="Type-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeReadSource"
+></A
+><B
+>eReadSource</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AePureFetter"
+></A
+><B
+>ePureFetter</B
+> :: <A HREF="Type-Exp.html#t%3AFetter"
+>Fetter</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AePureSource"
+></A
+><B
+>ePureSource</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeWriteEff"
+></A
+><B
+>eWriteEff</B
+> :: <A HREF="Type-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AeWriteSource"
+></A
+><B
+>eWriteSource</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Error')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Error" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Type-Error.html#t%3AError"
+>Error</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AselectSourceTS"
+></A
+><B
+>selectSourceTS</B
+> :: [<A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+>] -&gt; <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AprettyTypeConflict"
+></A
+><B
+>prettyTypeConflict</B
+> :: <A HREF="Type-Exp.html#t%3AType"
+>Type</A
+> -&gt; <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+> -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AprettyMConflictTS"
+></A
+><B
+>prettyMConflictTS</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+> -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AprettyTSE"
+></A
+><B
+>prettyTSE</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+> -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AprettyTSP"
+></A
+><B
+>prettyTSP</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+> -&gt; <A HREF="Util-Pretty-Comb.html#t%3APrettyP"
+>PrettyP</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetTSP"
+></A
+><B
+>getTSP</B
+> :: <A HREF="Type-Exp.html#t%3ATypeSource"
+>TypeSource</A
+> -&gt; <A HREF="Shared-Base.html#t%3ASourcePos"
+>SourcePos</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

@@ -1,0 +1,344 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Type.Squid.School</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Type.Squid.School</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AallocClass"
+></A
+><B
+>allocClass</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; (<A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x, <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AaddToClass"
+></A
+><B
+>addToClass</B
+> :: Eq x =&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; x -&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AlookupClass"
+></A
+><B
+>lookupClass</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; Maybe (<A HREF="Type-Squid-Base.html#t%3AClass"
+>Class</A
+> x)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AupdateClass"
+></A
+><B
+>updateClass</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-Base.html#t%3AClass"
+>Class</A
+> x -&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AmergeClasses"
+></A
+><B
+>mergeClasses</B
+> :: Eq x =&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; [<A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+>] -&gt; (<A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x, <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AaddClassIdSubs"
+></A
+><B
+>addClassIdSubs</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; [<A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+>] -&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AsinkClassId"
+></A
+><B
+>sinkClassId</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AtouchClass"
+></A
+><B
+>touchClass</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetTouched"
+></A
+><B
+>getTouched</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; Set <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AdelTouched"
+></A
+><B
+>delTouched</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3ApackTouched"
+></A
+><B
+>packTouched</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AlookupVarToClassId"
+></A
+><B
+>lookupVarToClassId</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; Maybe <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AmakeClassV"
+></A
+><B
+>makeClassV</B
+> :: Eq x =&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; x -&gt; (<A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x, <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AaddBackRef"
+></A
+><B
+>addBackRef</B
+> :: <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Exp.html#t%3AClassId"
+>ClassId</A
+> -&gt; <A HREF="Type-Squid-Base.html#t%3ASchool"
+>School</A
+> x</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

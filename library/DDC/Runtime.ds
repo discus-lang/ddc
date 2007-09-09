@@ -1,0 +1,24 @@
+
+import
+{	Base;
+	Data.Int32U;
+	System.Console;
+}
+
+
+
+effect !Runtime	:: !;
+
+foreign import extern "primRuntime_slotUsage"
+ runtime_slotUsage
+ 	:: forall %r1 !e1 
+ 	. Unit -(!e1)> Int32# %r1
+	:- !e1 = !{ !Runtime };
+	
+ 
+foreign import extern "primRuntime_printObj"
+ runtime_printObj
+ 	:: forall a !e1
+	. a -(!e1)> ()
+	:- !e1 = !{ !Console };
+ 

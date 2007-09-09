@@ -1,0 +1,119 @@
+
+import Prelude;
+
+data Token %r1
+	= Token {
+		tok		:: Tok %r1;
+		sourcePos	:: SourcePos %r1;
+	};
+
+data SourcePos %r1
+	= SourcePos {
+		line		:: Int %r1;
+		column		:: Int %r1;
+	};
+
+data Tok %r1
+	= Space		(Int	%r1)	-- whitespace
+	| Word		(String %r1)	-- used internally in lexer, a var, type or keyword.
+	
+	| TInt		(Int 	%r1)
+	| TChar		(Char 	%r1)
+	| TFloat 	(Float 	%r1)
+	| TString	(String %r1)
+	
+	| CBra
+	| CKet
+	
+	| RBra
+	| RKet
+	
+	| SBra
+	| SKet
+	
+	| Module
+	| Extern
+	| Import
+	| Export
+	
+	| InfixR
+	| InfixL
+	| Infix
+	
+	| Data
+	| Effect
+	
+	| Let
+	| In
+	
+	| Case
+	| Of
+	
+	| If
+	| Then
+	| Else
+	
+	| Do
+	| Forall;
+
+
+prettyTok t
+ = case t of {
+ 	TInt    i	-> showInt i;
+	TChar   c	-> "<CHAR>";
+	TFloat  f	-> "<FLOAT>";
+	TString	s	-> "<STRING>"; -- "\"" % s % "\"";
+	
+	CBra		-> "{";
+	CKet		-> "}";
+ };
+
+
+showTok t
+ = case t of {
+	Space i		-> "Space "	% show i;
+	Word  s		-> "Word "	% show s;
+
+ 	TInt 	i	-> "TInt " 	% show i;
+	TString s	-> "TString '"	% s	% "'";
+	
+	CBra		-> "CBra";
+	CKet		-> "CKet";
+	
+	RBra		-> "RBra";
+	RKet		-> "RKet";
+
+	SBra		-> "SBra";
+	SKet		-> "SKet";
+
+	Module		-> "Module";
+	Extern		-> "Extern";
+	Import		-> "Import";
+	Export		-> "Export";
+
+	InfixR		-> "InfixR";
+	InfixL		-> "InfixL";
+	Infix		-> "Infix";
+
+	Data		-> "Data";
+	Effect		-> "Effect";
+
+	Let		-> "Let";
+	In		-> "In";
+
+	Case		-> "Case";
+	Of		-> "Of";
+
+	If		-> "If";
+	Then		-> "Then";
+	Else		-> "Else";
+
+	Do		-> "Do";
+	Forall		-> "Forall";
+ };
+
+sumSpace ss
+ = case ss of {
+ 	[]		-> 0;
+	Space i	 : sx 	-> i + sumSpace sx;
+ };	

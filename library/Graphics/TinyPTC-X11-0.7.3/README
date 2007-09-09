@@ -1,0 +1,303 @@
+                 TinyPTC/x11 0.7.3 Readme file
+
+-------------------------------------------------------------------------------
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+
+-------------------------------------------------------------------------------				 
+
+This is the only documentation you can find in this package because the
+library is pretty straightforward to use. So, here it goes:
+
+   Index:
+
+  * What is TinyPTC
+  * What TinyPTC has to offer
+  * How tiny is TinyPTC
+  * TinyPTC's usage
+  * How to compile TinyPTC
+  * DGA considerations
+  * XVideo considerations
+  * Python extension
+  * How to contact the authors
+  * Where the latest version can be found
+
+* What is TinyPTC
+
+TinyPTC is a reduced subset of OpenPTC, made exclusively with size
+optimizations in mind. TinyPTC is a somehow "low-level" graphics library
+that runs on top of XLib, providing only a few functionalities you may
+need when working with framebuffer devices.
+
+* What TinyPTC has to offer
+
+TinyPTC will simplify your programs that are using X11 to output
+graphics. It does all the grunt work for you, so your life will be easier :)
+
+Actually TinyPTC features:
+
+- Automatic display management
+  * XLib, DBE, XVideo, and Mit-Shm window management
+  * DGA 1.x support, including videomode switch and fullscreen emulation
+  * DGA 2.x support, including videomode/videodepth switch and fullscreen
+    emulation.
+
+- Automatic color conversion
+  * Detects and converts the internal 32bpp ARGB buffer to 15, 16 and
+    24 bpp modes, both RGB and BGR. Two versions are supplied, one featuring
+    MMX conversions and one that doesn't.
+
+- Automatic event management
+  * It automatically quits when the ESC key is pressed or the window
+    is closed by the user.
+
+* How tiny is TinyPTC
+
+TinyPTC is rather small by itself, actually I can give you some
+information about the test program supplied with the library.
+
+(I'm talking about UNPACKED executables, once they've been stripped)
+
+Raw XLib                                      7388 bytes
+Raw XLib+Color conversion                     7580 bytes (*)
+Mit-Shm                                       8252 bytes
+Mit-Shm+Color conversion                      8421 bytes (*)
+DBE                                           8380 bytes
+DBE+Color conversion                          8604 bytes (*)
+DGA 1.x                                      20860 bytes (**)
+DGA 1.x+Best Videomode                       21084 bytes (**)
+DGA 1.x+Color conversion                     20924 bytes (*) (**)
+DGA 1.x+Color conversion+Best Videomode      21404 bytes (*) (**)
+DGA 2.x                                       8028 bytes
+DGA 2.x+Best Videomode                        8220 bytes
+DGA 2.x+Color conversion                      8252 bytes (*)
+DGA 2.x+Color conversion+Best Videomode       9244 bytes (*)
+XVideo+Mit-Shm                               22352 bytes
+XVideo+Mit-Shm+MMX conversion                19152 bytes
+
+The executables were stripped with:
+
+strip --strip-all ./executable
+strip --remove-section=".comment" ./executable
+strip --remove-section=".note" ./executable
+
+[By the way, a better "strip" does exist, it's called "sstrip". It was
+programmed by Brian Raiter, and on his site you can find further information
+about tricks you can use in order to reduce your programs' size and so on.
+Brian Raiter's page is http://www.muppetlabs.com/~breadbox/software/tiny/]
+
+(*) The color conversion modules were included all at once, you will
+    get a smaller executable if you include only the ones you need.
+
+(**) The DGA 1.x executables are so big because the library that manages
+     DGA+Videomode switch extensions is linked statically. If you look
+     at the object file you get from x11.c you'll notice the absence
+     of all those control strings like "Video memory protecting" and
+     such. I tried to link the library dynamically but the
+     executables were bigger due to the library loading code being
+     added. Hopefully with DGA 2.x those two libraries are dynamically linked.
+
+If you pack them with UPX 1.2 (or better) you'll get a 10%-50% size reduction,
+at least on my box... (I'm talking about the supplied example, of course).
+
+UPX can be found at: http://upx.sf.net
+SStrip can be found at: 
+                  http://www.muppetlabs.com/~breadbox/software/elfkickers.html
+
+* TinyPTC's usage
+
+TinyPTC exports just three functions you can use:
+
+  *   int ptc_open(char *title, int width, int height);
+  *   int ptc_update(void *buffer);
+  *   void ptc_close(void);
+
+ (It can't get any simpler, can it?)
+
+ - ptc_open(char *title, int width, int height)
+
+   ptc_open() either opens the window that your application needs for blitting
+   data on the screen or it will go fullscreen. It accepts a title for the
+   window that will be created (that title will be discarded for fullscreen
+   mode) and the window size. For fullscreen mode, TinyPTC will try to find a
+   suitable videomode first, and it will emulate a fullscreen mode if it didn't
+   find any (you'll see your application's output in the middle of the screen).
+   If you enabled best-videomode-choice at compile time, the library will set
+   the best videmode that fits the supplied window size. It will return
+   PTC_FAILURE if it fails, otherwise it will return PTC_SUCCESS.
+
+ - ptc_update(void *buffer)
+
+   ptc_update() does a mere blitting of your buffer onto the screen. If
+   automatic color conversion was enabled it will do the conversion for you. It
+   will return PTC_SUCCESS if the buffer was blitted and nothing else happened,
+   else it will return PTC_FAILURE.
+
+ - ptc_close(void)
+
+   ptc_close() closes the window the library created. If it is in fullscreen
+   mode, it will switch back to normal videomode. ptc_close() is called
+   automatically when the user presses ESC or closes manually the window.
+
+Plus, there is an optional callback function that gets called when TinyPTC is
+about to shut itself down, called ptc_cleanup_callback, that you must supply if
+you are going to use that callback option. Its prototype is:
+
+  *   void ptc_cleanup_callback(void);
+
+* How to compile TinyPTC
+
+First of all, Laurent Mascherpa (laurent.mascherpa@epita.fr) managed to compile
+TinyPTC with the mmx converters under NetBSD. As he told me, NetBSD uses a
+slightly different a.out object format, so the files generated by nasm are
+useless. Anyway, the workaround consists in modifying the AFLAGS variable in
+the makefile:
+
+  From:
+
+         AFLAGS = -f elf
+
+  to:
+
+         AFLAGS = -f aoutb --PREFIX _
+
+(Next time I'm going to add some sort of "autoconf"-like scripts ;))
+Please note that you'll also get a static library called libtinyptc.a, ready to
+be included in your own programs...
+
+TinyPTC's behaviour can be set with a few #define lines in the include files.
+Here's a list:
+
+ - Callback usage
+
+    __PTC_CLEANUP_CALLBACK__
+
+   Enables the use of an user-supplied callback function that is called on
+   application's exit.
+
+ - MMX usage
+
+    __PTC_MMX__
+
+   Enables the use of MMX code.
+
+ - 32 bpp blit type
+
+    __PTC_MEMCPY__
+
+   If this is defined, a single memcpy() call will be used to blit the buffer
+   (Only for 32bpp RGB modes only).
+
+ - Color conversion modules
+
+    __PTC_CONVERTER_32_TO_32_RGB888
+    __PTC_CONVERTER_32_TO_32_BGR888
+    __PTC_CONVERTER_32_TO_24_RGB888
+    __PTC_CONVERTER_32_TO_24_BGR888
+    __PTC_CONVERTER_32_TO_16_RGB565
+    __PTC_CONVERTER_32_TO_16_BGR565
+    __PTC_CONVERTER_32_TO_16_RGB555
+    __PTC_CONVERTER_32_TO_16_BGR555
+
+    __PTC_MMX_CONVERT_32_TO_32_BGR888
+    __PTC_MMX_CONVERT_32_TO_32_RGB888
+    __PTC_MMX_CONVERT_32_TO_24_BGR888
+    __PTC_MMX_CONVERT_32_TO_24_RGB888
+    __PTC_MMX_CONVERT_32_TO_16_BGR565
+    __PTC_MMX_CONVERT_32_TO_16_RGB565
+    __PTC_MMX_CONVERT_32_TO_16_BGR555
+    __PTC_MMX_CONVERT_32_TO_16_RGB555
+
+   Those #define lines, if added, enable the described color conversion module.
+   Please note that you can't just enable an MMX converter without enabling the
+   standard converter as well. It doesn't hurt performance or size because the 
+   standard code isn't added if there is an MMX version avaliable.
+
+ - Output targets
+
+   The output target can be chosen by defining one of these #defines in
+   tinyptc.h:
+   
+   __PTC_XLIB__       * This is the raw XLib target.
+   __PTC_XSHM__       * This is the Mit-Shm target.
+   __PTC_XDBE__       * This is the X DBE target.
+   __PTC_XDGA1__      * This is the X DGA 1.x target.
+   __PTC_XDGA2__      * This is the X DGA 2.x target.
+   __PTC_XVSHM__      * This is the XVideo+Mit-Shm target.
+
+ - Extra behaviour definitions
+
+   __PTC_ENABLE_CONVERSIONS__
+
+   If it's enabled, it activates the automatic color conversion. If you will
+   run an executable that doesn't have the conversions in on a non-32bpp
+   display, it will silently quit. Ignored for the XVideo+Mit-Shm target.
+
+   __PTC_BEST_VIDEOMODE__
+
+   Enables the best-fit videomode switching for the requested window size. This
+   works only for fullscreen executables.
+
+ - Endianness considerations
+
+   __PTC_LITTLE_ENDIAN__
+
+   Selects the right converter for 24bpp and 32bpp conversion code. Pretty
+   useless if you don't plan to support those videomodes or little endian
+   architectures. It has not been tested extensively, so don't assume it's
+   100% working. Ignored for the XVideo+Mit-Shm target.
+
+* DGA considerations
+
+Although TinyPTC is fairly portable, the DGA mode is a XFree86-only extension
+to the X Windowing system. So if you try to compile the fullscreen support on
+a non-i386 machine it will complain. Anyway, Mit-Shm and DBE are portable as
+far as I know, so is "raw" XLib mode. Please note that you will need either be
+root in order to run fullscreen-enabled applications or set the executable as
+suid root.
+
+* XVideo considerations
+
+The XVideo support has been tested on NVidia (with binary-only drivers), ATI,
+and Matrox cards under XFree 4.x. It's totally untested on S3 Savage-based
+cards. If you happen to have such a card and want to test it out, tell us! =)
+
+* Python extension
+
+Since version 0.7.2, a python extension can be built out of TinyPTC. In order
+to get that you've got to use the python target in the makefile and copy the
+_TinyPTC.so file whereever is appropriate for your program. The python API
+replicates almost entirely the C/C++ one except for pointer management. You
+have to use the provided TinyPTC.pixel_array method to allocate the buffers
+you'll pass to TinyPTC.ptc_update. The objects returned by TinyPTC.pixel_array
+act almost like normal python arrays. In case of doubt, take a look at the
+supplied python_test.py file.
+
+Note that you need SWIG 1.3 or newer to generate the wrapper code.
+
+* How to contact the authors
+
+Alessandro Gatti (Rigel) can be reached at a.gatti@tiscali.it
+Fred Howell (Fred) can be reached at foohoo@shaw.ca
+Glenn Fiedler (Gaffer) can be reached at gaffer@gaffer.org
+
+Please send all bug-reports, ideas, fixes, additions, and so on. Don't be
+shy =).
+
+* Where the latest version can be found
+
+The latest version of the x11 and SDL versions is now hosted on sourceforge at
+the following URL: http://www.sourceforge.net/projects/tinyptc/. The main page
+still remains http://www.gaffer.org/tinyptc.

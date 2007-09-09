@@ -1,0 +1,8 @@
+-----
+loop 5
+loop 4
+loop 3
+loop 2
+loop 1
+x   = 0
+acc = [4, 3, 2, 1, 0]

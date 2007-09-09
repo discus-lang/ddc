@@ -1,0 +1,17 @@
+
+import Math.Matrix.Matrix33;
+
+main ()
+ = do {	print	$ showMatrix33 (matrix33_id ())	% "\n";
+
+	trans	= matrix33_rotate 0.5;
+	vec	= Vector3 1.0 0.0 1.0;
+	
+ 	print	$ showMatrix33 trans	% "\n";
+	print	$ showVector3  vec	% "\n";
+	
+	print	$ showVector3 (matrix33_mulVec trans vec);
+
+ };  
+ 
+ 

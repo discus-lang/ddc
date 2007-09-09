@@ -1,0 +1,18 @@
+----
+-- Test out closure trimming.
+--
+
+thing	= 2;
+
+f ()	= g 3;
+g x	= h x   + 4;
+h x	= (fst (i x))   + 5;
+
+i x	
+ = do {	dude	= 23;
+	j x	= thing + 7 + dude;
+ 	(j x 	+ 6, j);
+ };
+
+
+

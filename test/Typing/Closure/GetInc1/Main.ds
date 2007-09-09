@@ -1,0 +1,34 @@
+
+
+fun1 () 
+ = do {	x	= 5;
+
+	funGet1 ()
+	 = do {	x + 1; };
+
+	funInc ()
+	 = do { x := x + 1; }; 
+
+	(funGet1, funInc);
+ };
+
+fun1_u		= fun1 ();
+fun1_u'		= fun1_u;
+
+fun1_get1	= t2_1 fun1_u;
+fun1_inc	= t2_2 fun1_u;
+
+main ()
+ = do {	
+ 	fun1_inc ();
+ 	fun1_inc ();
+	fun1_inc ();
+	
+	x	= fun1_get1 ();
+	
+	print	$ "x = " % showInt x % "\n";
+ };
+ 	
+
+
+

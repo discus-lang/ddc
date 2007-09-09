@@ -1,0 +1,12 @@
+
+
+add x y	= x + y;
+
+main () 
+ = do {	z	= (add 2, add 4);
+ 
+ 	five	= fst z 3;
+--	six	= snd z 2;
+
+--	print	$ showInt five % "\n";
+ };

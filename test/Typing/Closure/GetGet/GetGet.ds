@@ -1,0 +1,26 @@
+
+-----
+-- makeGetGet
+--	This example is similar to the GetSet soundness example, with [] being
+--	shared by two functions and being instantiated at different types.
+--	
+--	However, as the box is not updated (and hence, not Mutable)
+--	there are no dangerous type vars and this does not result in a type error.
+--
+makeGetGet x
+ = do {	box 	= Just x;
+ 	get ()	= case box of { Just z -> z; };
+	(get, get); };
+
+checkGetGet ()
+ = do {	box2	= makeGetGet [];
+
+	get1	= snd box2;
+	get2	= snd box2;
+
+	a	= "a" : get1 ();
+	b	=  1  : get2 (); 
+
+	(a, b);
+ };
+	 	

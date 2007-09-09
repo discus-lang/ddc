@@ -1,0 +1,426 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Core.Lift.Base</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Core.Lift.Base</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3ALiftS"
+></A
+><B
+>LiftS</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="5" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ALiftS"
+></A
+><B
+>LiftS</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="body" COLSPAN="2"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateTypes"
+></A
+><B
+>stateTypes</B
+> :: (Map <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateTopVars"
+></A
+><B
+>stateTopVars</B
+> :: (Set <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>)</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateVarGen"
+></A
+><B
+>stateVarGen</B
+> :: <A HREF="Shared-Var.html#t%3AVarId"
+>VarId</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateCoreVars"
+></A
+><B
+>stateCoreVars</B
+> :: (Map String <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>)</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateHeaderCore"
+></A
+><B
+>stateHeaderCore</B
+> :: (Map <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+>])</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateChopped"
+></A
+><B
+>stateChopped</B
+> :: [(<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+>)]</TD
+><TD CLASS="rdoc"
+>A list of bindings chopped out on this pass
+	old name, new (top level) name, expression
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateBindVars"
+></A
+><B
+>stateBindVars</B
+> :: (Map <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> [(<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)])</TD
+><TD CLASS="rdoc"
+>What the free vars were in a lifted binding
+	top level name, (var, type) for each free var.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AstateBinds"
+></A
+><B
+>stateBinds</B
+> :: [<A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+>]</TD
+><TD CLASS="rdoc"
+>A list of binds
+	used in Lift.Patch
+</TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A NAME="t%3ALiftM"
+></A
+><B
+>LiftM</B
+> = State <A HREF="Core-Lift-Base.html#t%3ALiftS"
+>LiftS</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AbindType"
+></A
+><B
+>bindType</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> -&gt; <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetType"
+></A
+><B
+>getType</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AaddTopVar"
+></A
+><B
+>addTopVar</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetTopVars"
+></A
+><B
+>getTopVars</B
+> :: <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> (Set <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>)</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AnewVar"
+></A
+><B
+>newVar</B
+> :: <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AaddChopped"
+></A
+><B
+>addChopped</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+> -&gt; <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AgetChopped"
+></A
+><B
+>getChopped</B
+> :: <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> [(<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+>)]</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AaddBindVars"
+></A
+><B
+>addBindVars</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; [(<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)] -&gt; <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> ()</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A NAME="v%3AlookupBindVars"
+></A
+><B
+>lookupBindVars</B
+> :: <A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+> -&gt; <A HREF="Core-Lift-Base.html#t%3ALiftM"
+>LiftM</A
+> (Maybe [(<A HREF="Shared-Var.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)])</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

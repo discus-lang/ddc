@@ -1,0 +1,104 @@
+-- Imports
+
+-- Pragmas
+
+-- Infix
+
+-- Data
+data FunBox %r1 a !e1 $c1
+        = FunBox {
+                fun :: a -(!e1 $c1)> a ;
+        };
+
+
+-- Effects
+
+-- Regions
+
+-- Classes
+
+-- Class dictionaries
+
+-- Class instances
+
+-- Foreign imports
+
+-- Binds
+foreign import extern thing
+        :: Base.Int %rTC23
+        :$ Base.Data;
+        
+foreign import extern box
+        :: FunBox %rTS13 (Base.Int %rTS9) !eTS11 $cTS5
+        :- !eTS11 = !{Base.!Read %rTS9; Base.!Read %rTC23; System.Console.!Console}
+        ,  $cTS5 = ${thing :: Base.Int %rTC23}
+        ,  Base.Mutable %rTS13
+        :$ Base.Data;
+        
+foreign import extern gotBox
+        :: forall !e0 !e1 $c0 $c1
+        .  Data.Tuple.Tuple3 %rTS26 (FunBox %rTS25 (Base.Int %rTS24) !eTS27 $cTS19) (Base.Unit -(!e1 $c1)> Base.Unit) (Base.Unit -(!e0 $c0)> Base.Int %rTS24)
+        :- !e0   = !{Base.!Read %rTS25; System.Console.!Console; Base.!Read %rTS24}
+        ,  !e1   = !{Base.!Read %rTS25; Base.!Write %rTS25}
+        ,  !eTS27 = !{Base.!Read %rTS24; Base.!Read %rTC23; System.Console.!Console}
+        ,  $c0   = ${box2 :: FunBox %rTS25 (Base.Int %rTS24) !eTS27 $cTS19}
+        ,  $c1   = ${box2 :: FunBox %rTS25 (Base.Int %rTS24) !eTS27 $cTS19; thing :: Base.Int %rTC23}
+        ,  $cTS19 = ${thing :: Base.Int %rTC23}
+        ,  Base.Mutable %rTS25
+        :$ Base.Data;
+        
+foreign import extern project_FunBox_fun
+        :: forall t0 %r0 !e0 !e1 $c0
+        .  FunBox %r0 t0 !e1 $c0 -(!e0)> t0 -(!e1 $c0)> t0
+        :- !e0   = !{Base.!Read %r0}
+        :$ Base.Data -> Base.Thunk;
+        
+foreign import extern project_FunBox_ref_fun
+        :: forall t0 %r0 !e0 !e1 $c0
+        .  FunBox %r0 t0 !e1 $c0 -(!e0)> Data.Ref.Ref %r0 (t0 -(!e1 $c0)> t0)
+        :- !e0   = !{Base.!Read %r0}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern oldFun
+        :: forall %r0 %r1 !e0
+        .  Base.Int %r0 -(!e0)> Base.Int %r1
+        :- !e0   = !{Base.!Read %r0}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern newFun
+        :: forall %r0 !e0 $c0
+        .  Base.Int %r0 -(!e0 $c0)> Base.Int %r0
+        :- !e0   = !{System.Console.!Console; Base.!Read %rTC23; Base.!Read %r0}
+        ,  $c0   = ${thing :: Base.Int %rTC23}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern main
+        :: forall !e0 $c0
+        .  Base.Unit -(!e0 $c0)> Base.Unit
+        :- !e0   = !{Base.!Write %rTS13; Base.!Read %rTS13}
+        ,  $c0   = ${box :: FunBox %rTS13 (Base.Int %rTS9) !eTS11 $cTS5; thing :: Base.Int %rTC23}
+        ,  Base.Mutable %rTS13
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern makeBox2
+        :: forall %r0 %r1 %r2 !e0 !e1 !e2 $c0 $c1 $c2 $c3 $c4 $c5
+        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Data.Tuple.Tuple3 %r2 (FunBox %r1 (Base.Int %r0) !e2 $c3) (Base.Unit -(!e1 $c5)> Base.Unit) (Base.Unit -(!e0 $c4)> Base.Int %r0)
+        :- !e0   = !{Base.!Read %r0; System.Console.!Console; Base.!Read %r1}
+        ,  !e1   = !{Base.!Write %r1; Base.!Read %r1}
+        ,  !e2   = !{System.Console.!Console; Base.!Read %rTC23; Base.!Read %r0}
+        ,  $c0   = ${thing :: Base.Int %rTC23}
+        ,  $c1   = ${thing :: Base.Int %rTC23}
+        ,  $c2   = ${box2 :: FunBox %r1 (Base.Int %r0) !e2 $c3; thing :: Base.Int %rTC23}
+        ,  $c4   = ${box2 :: FunBox %r1 (Base.Int %r0) !e2 $c3}
+        ,  $c5   = ${box2 :: FunBox %r1 (Base.Int %r0) !e2 $c3; thing :: Base.Int %rTC23}
+        ,  $c3   = ${thing :: Base.Int %rTC23}
+        ,  Base.Mutable %r1
+        :$ Base.Data -> Base.Data -> Base.Thunk;
+        
+project Main.FunBox (%) (*) (!) ($) where
+{
+        fun      = project_FunBox_fun;
+        ref_fun  = project_FunBox_ref_fun;
+}
+
+

@@ -1,0 +1,15 @@
+
+-- Make sure we're not loosing type information
+--	when passing thunks to data constructors.
+--
+
+f ()	= print "erk";
+
+main ()
+ = do {	y	= Just f;
+ 	case y of {
+		Just g	-> g ();
+	};
+ };
+	
+ 	

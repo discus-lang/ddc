@@ -1,0 +1,7 @@
+
+import Prelude;
+
+{-
+radToDeg r	= (180.0 / pi) 		* r;
+degToRad d	= (pi    / 180.0)	* d;
+-}

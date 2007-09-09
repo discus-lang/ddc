@@ -1,0 +1,45 @@
+import Prelude;
+
+pragma Shell
+	[ "make -C TinyPTC-X11-0.7.3 > /dev/null"
+	, "gcc  -c TinyPTC-stub.c -I ../.. -std=c99 -D_XOPEN_SOURCE" ];
+
+pragma LinkObjs
+	[ "TinyPTC-X11-0.7.3/convert.o"
+	, "TinyPTC-X11-0.7.3/mmx.o"
+	, "TinyPTC-X11-0.7.3/xlib.o" 
+	, "TinyPTC-X11-0.7.3/xshm.o"
+	, "TinyPTC-stub.o" ];
+
+pragma Include
+	[ "library/Graphics/TinyPTC-stub.h" ];
+
+effect !Graphics	:: !;
+
+	
+foreign import extern "ptcOpen"
+ ptcOpen	
+	:: forall %r1 %r2 %r3 !e1
+	.  String %r1 -> Int %r2 -> Int %r3 -(!e1)> ()
+	:- !e1	= !{ !Graphics; !Read %r1; !Read %r2; !Read %r3 }
+	:$ Data -> Data -> Data -> Data;
+		
+foreign import extern "ptcClose"
+ ptcClose
+	:: forall !e1
+	.  () -(!e1)> ()
+	:- !e1	= !{ !Graphics }
+	:$ Data -> Data;
+				
+foreign import extern "ptcUpdate"
+ ptcUpdate 
+	:: forall %r1 %r2 !e1
+	.  (ArrayU %r1 (Int %r2)) -(!e1)> ()
+	:- !e1	= !{ !Graphics; !Read %r1; !Read %r2 }
+	:$ Data -> Data;
+
+
+
+	
+	
+		

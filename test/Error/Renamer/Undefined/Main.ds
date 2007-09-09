@@ -1,0 +1,9 @@
+
+-- Checks renamer error reporting.
+--	These expressions include undefined vars.
+--
+
+fun1	= \x -> y;
+fun2	= case z of { Tuple2 x y -> x; };
+
+

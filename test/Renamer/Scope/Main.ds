@@ -1,0 +1,35 @@
+
+-- Various things that have been broken in the past.
+--
+
+
+-- Do blocks and let blocks have their own scopes.
+fun1 b
+ = 	if b
+ 	then do {
+		whoop	= 3;
+	 	print	$ showInt whoop % "\n";
+	}
+	else do {
+		whoop	= 4;
+		print	$ showInt whoop % "\n";
+	};	
+
+
+fun2 b
+ =	if b
+ 	then let {
+		whoop	= 5;
+	} in	print	$ showInt whoop % "\n"
+
+	else let {
+		whoop	= 6;
+	} in	print	$ showInt whoop % "\n";
+	
+		
+
+
+main ()
+ = do {	fun1 True;	fun1 False;
+  	fun2 True;	fun2 False;
+ };

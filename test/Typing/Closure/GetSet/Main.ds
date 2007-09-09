@@ -1,0 +1,46 @@
+
+-- makeGetSet
+--	This example is like the GetSet error case, but in this 
+--	one we're legitmatelly getting and setting two different
+--	objects created by makeGetSet.
+--
+data Box %r a
+	= Box { x :: a; };
+
+makeGetSet x
+ = do {	box	= Box x;
+	set z	= box#x #= z;
+	get ()	= case box of { Box z -> z; };
+	(get, set);
+ };
+
+main () 
+ = do {	
+	-----
+ 	box2	= makeGetSet [];
+	
+	setA2	= snd box2;
+	setB2	= snd box2;
+
+	setA2	[1];
+	setB2	[2];
+
+	print	$ "a1 = " % showInt (head ((fst box2) ()))	% "\n";
+
+	x	= head ((fst box2) ());
+	print (showInt x);
+
+	-----
+	box3	= makeGetSet [];
+	
+	setA3	= snd box3;
+	setB3	= snd box3;
+	
+	setA3	["a"];
+	setB3	["b"];
+	
+	print	$ "b1 = " %  head ((fst box3) ())		% "\n";
+	
+	();
+ };
+

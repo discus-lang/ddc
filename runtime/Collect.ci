@@ -1,0 +1,62 @@
+
+#ifndef _Trauma_Collect_I
+#define _Trauma_Collect_I
+
+#include <stdlib.h>
+
+#include "Macro.h"
+#include "Profile.h"
+#include "State.h"
+#include "Error.h"
+#include "Lint.h"
+
+#define _S(index)	*(_ddcSlotS - index)
+#define _CAF(name)	*_ddcCAF_##name
+
+// -- ENTER
+#if _DDC_PROFILE_SLOT
+#  define _ENTER(countS) \
+		_ddcSlotPtr	+= countS; \
+		if (_ddcSlotPtr >= _ddcSlotMax)\
+			_panicOutOfSlots();\
+		Obj**	_ddcSlotS	= _ddcSlotPtr - 1;\
+		for (UInt _i = 0; _i < countS; _i++)\
+			*(_ddcSlotS - _i)	= 0; \
+		if (_ddcSlotPtr > _ddcProfile ->slot.highWater) \
+			_ddcProfile ->slot.highWater = _ddcSlotPtr;
+#else
+#  define _ENTER(countS) \
+		_ddcSlotPtr	+= countS;\
+		if (_ddcSlotPtr >= _ddcSlotMax)\
+			_panicOutOfSlots();\
+		Obj**	_ddcSlotS	= _ddcSlotPtr - 1;\
+		for (UInt _i = 0; _i < countS; _i++)\
+			*(_ddcSlotS - _i)	= 0; 
+#endif
+
+
+// -- LEAVE	
+#define _LEAVE(countS) \
+		_ddcSlotPtr	-= countS; \
+		if (_ddcSlotPtr < _ddcSlotBase) \
+			_panicSlotUnderflow(); 
+
+
+// -----
+static inline void
+	_slotInit (UInt maxGCSlots)
+{
+	_ddcSlotBase	= malloc (sizeof (Obj*) * maxGCSlots);
+	_ddcSlotPtr	= _ddcSlotBase;
+	_ddcSlotMax	= _ddcSlotBase + maxGCSlots - 1;
+
+	_ddcProfile ->slot.base
+			= _ddcSlotBase;
+
+}
+
+
+#endif
+
+
+

@@ -1,0 +1,13 @@
+test/Error/Unify/FunMore/Main.ds:6:10
+    Type mismatch during unification.
+          cannot match: Base.Int %54
+                  with: @62 -(!45 $66)> @40
+
+                use of: f1
+             with type: Base.Int %54
+                    at: test/Error/Unify/FunMore/Main.ds:6:10
+
+        conflicts with, 
+        function application
+         which expects: @62 -(!45 $66)> @40
+

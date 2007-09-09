@@ -1,0 +1,32 @@
+-----
+-- Check propagation of effects and closure information
+--	via data types containing functions.
+--
+data BoxFun2 %r1 !e0 $c0 !e1 $c1
+	= BoxFun2 (() -(!e0 $c0)> () -(!e1 $c1)> Int %r1);
+	
+	
+runBoxFun2 t
+ = case t of {
+ 	BoxFun2 f	-> f () ();
+ };
+ 
+x	= 5;
+y	= 23;
+
+fun ()
+ = do {	print	$ "Wibble! " % showInt x % "\n";
+ 	fun3 ()	= y + 1;
+	fun3;
+ };
+ 
+box	= BoxFun2 fun;
+
+runBox ()
+	= runBoxFun2 box;
+
+
+main ()	= runBox ();
+
+
+

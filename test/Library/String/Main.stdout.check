@@ -1,0 +1,6 @@
+Some appended string.
+length = 22
+Joined string.
+Some merged string.
+strMerged isFlat  = True
+True

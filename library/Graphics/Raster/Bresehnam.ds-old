@@ -1,0 +1,126 @@
+
+import Prelude;
+
+
+drawBresenhamLineU frame width height c x0 y0 x1 y1
+ = do {	
+ 	dy	= y1 #- y0;
+	dx	= x1 #- x0;
+	
+	-- setup dy / stepy
+	dy'	= case dy #< 0 of {
+			1#	-> 0# #- dy;
+			0#	-> dy;
+		};
+		
+	stepy'	= case dy #< 0 of {
+			1#	-> 0# - width;
+			0#	-> width;
+		};
+		
+	-- setup dx / stepx
+	dx'	= case dx #< 0 of {
+			1#	-> 0# #- dx;
+			0#	-> dx;
+		};
+		
+	stepx'	= case dx #< 0 of {
+			1#	-> 0# - 1#;
+			0#	-> 1#;
+		};
+		
+	-- 	
+	dy2	= dy #* dy;
+	dx2	= dx #* dx;
+	
+	y0	= y0 #* width;
+	y1	= y1 #* width;
+	
+	-- draw first pixel
+	arrayUI_poke frame (x0 +# y0) c;
+	
+	
+	-- 
+	case dx #> dy of {
+		1# -> do {
+			fraction	= dy - (dx / 2)
+	
+  	
+
+
+
+
+
+drawBresenhamLine 
+	frame width height c 
+	x0i y0i x1i y1i 
+ = do {
+	x0	= x0i + 0;
+	y0	= y0i + 0;
+	x1	= x1i + 0;
+	y1	= y1i + 0;
+
+	dy	= y1  - y0;
+	dx	= x1  - x0;
+        stepx	= 0;
+	stepy	= 0;
+
+        if dy < 0 
+	then do { 
+		dy	:= 0 - dy; 
+		stepy	:= 0 - width; 
+	} 
+	else 	stepy	:= width;
+
+        if dx < 0 
+	then do { 	
+		dx 	:= 0 - dx; 
+		stepx 	:= 0 - 1; 
+	} 
+	else 	stepx	:= 1;
+
+	dy	:= dy * 2;
+ 	dx	:= dx * 2;
+
+	y0	:= y0 * width;
+	y1	:= y1 * width;
+
+	arrayUI_set frame (x0 + y0) c;
+
+        if dx > dy
+	then do {
+		fraction	= dy - (dx / 2);
+
+    		while (x0 /= x1) 
+		do {
+	                when (fraction >= 0) 
+			do {
+	                	y0		:= y0 		+ stepy;
+	                	fraction	:= fraction 	- dx;
+	                };
+			
+			x0		:= x0 + stepx;
+			fraction	:= fraction + dy;
+			
+			arrayUI_set frame (x0 + y0) c;
+            	};
+	}
+
+	else do {
+		fraction 	= dx - (dy / 2);
+
+            	while (y0 /= y1) 
+		do {     
+			when (fraction >= 0) 
+			do {
+				x0		:= x0		+ stepx;
+				fraction	:= fraction	- dy;
+			};
+			
+			y0 		:= y0 +  stepy;
+			fraction	:= fraction + dx;
+
+			arrayUI_set frame (x0 + y0) c;
+		};
+	};
+};

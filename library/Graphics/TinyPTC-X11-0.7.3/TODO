@@ -1,0 +1,4 @@
+* Add 8 Bit conversion modules.
+* Try to implement fullscreen emulation if DGA is not avaliable.
+* Add Fullscreen XVideo target.
+* Clean up the XDga2 target.

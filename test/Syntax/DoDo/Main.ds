@@ -1,0 +1,9 @@
+
+-- Check that Core.Crush is dealing with nested Do's properly.
+--
+main ()
+ = do {
+ 	do { print "werk\n"; print "it\n"; };
+	do { do { do { do { do { print $ "rabbit" % showInt 5 % "\n"; }; }; }; }; };
+	do { print $ "in\n"; do { print $ "the\n" % do { "moon"; }; }; };
+ };

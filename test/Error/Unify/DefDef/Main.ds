@@ -1,0 +1,8 @@
+
+-- Checks type error reporting.
+--	Conflict between definitions.
+
+f1 x	= x + 1;
+f2 ()	= "wibble";
+
+y	= f1 (f2 ());

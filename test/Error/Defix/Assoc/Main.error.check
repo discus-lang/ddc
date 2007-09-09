@@ -1,0 +1,27 @@
+test/Error/Defix/Assoc/Main.ds:7:12
+    Precedence parsing error.
+      Cannot have multiple non-associative operators of the same precedence
+      in an infix expression.
+
+      Offending operators: <, >
+
+test/Error/Defix/Assoc/Main.ds:8:18
+    Precedence parsing error.
+      Cannot have multiple non-associative operators of the same precedence
+      in an infix expression.
+
+      Offending operators: ==, ==
+
+test/Error/Defix/Assoc/Main.ds:21:17
+    Precedence parsing error.
+      Cannot have operators of same precedence but with differing
+      associativities in an infix expression.
+
+      Offending operators: <#, #>
+
+test/Error/Defix/Assoc/Main.ds:22:16
+    Precedence parsing error.
+      Cannot have operators of same precedence but with differing
+      associativities in an infix expression.
+
+      Offending operators: #>, <#

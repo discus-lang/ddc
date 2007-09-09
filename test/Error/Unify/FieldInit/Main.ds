@@ -1,0 +1,22 @@
+
+-- Check type error reporting.
+--	Field initializer has wrong type.
+
+data Fish %r1
+	= Perch { 
+		name	:: String %r1;
+		.speed	:: Int %r1	= "fast";
+	};
+
+
+-- optional ctor args conflict with projections..
+--	erk.
+
+{-
+project Fish where
+{
+	name x	= x;
+	speed x = x;
+
+}
+-}

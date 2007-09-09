@@ -1,0 +1,131 @@
+
+import 
+{	Base.Thunk;
+	Data.List;
+	System.Console;
+}
+
+
+class Show a where 
+{
+	show 	:: forall %r !e1
+		.  a -(!e1)> String %r
+		:- !e1	= !{ !ReadT a };
+}
+
+
+instance Show (String (%)) where
+{
+	show	= showString;
+}
+
+
+instance Show (Int (%)) where
+{
+	show	= stringOfInt;
+}
+
+
+instance Show (Float (%)) where
+{
+	show	= stringOfFloat32;
+}
+
+instance Show (Bool (%)) where
+{
+	show	= showBool;
+}
+
+-----------------------
+infixr 7 %;
+(%) a b	= SAppend a b;
+
+
+-----
+showChar  c	= stringOfChar c;
+showInt   i	= stringOfInt i;
+showFloat f	= stringOfFloat32 f;
+
+showBool b
+ = case b of {
+ 	True	-> "True";
+	False	-> "False";
+ };
+
+showString ss 	= "'" % ss % "'";
+
+-----------------------
+-- showListL
+--
+showListL showX xx
+ = case xx of {
+	Nil -> "[]";
+	Cons x xs
+	 -> (%)@ "[" ((%)@ (showX@ x) (showListL2@ showX xs));
+ };	 
+
+showListL2 showX xx
+ = case xx of {
+ 	Nil -> "]";
+	Cons x xs 
+	 -> (%)@ ", " ((%)@ (showX@ x) (showListL2@ showX xs));
+ };
+
+
+showListIntL 
+	= showListL showInt;
+
+-----------------------
+-- showList
+--
+showList  showX xx
+ = "[" % showList2 showX xx;
+ 
+showList2 showX xx
+ = case xx of {
+ 	Nil	-> "]";
+	
+	Cons x xs
+	 -> showX x 		% showList3 showX xs;
+	 
+	Append xs ys
+	 -> showList2 showX xs 	% showList3 showX ys;
+ };
+ 
+showList3 showX xx
+ = case xx of {
+ 	Nil 	-> "]";
+
+	Cons x xs
+	 -> ", " 	% showX x	% showList3 showX xs;
+	 
+	Append xs ys
+	 -> showList3 showX xs 		% showList3 showX ys;
+ };
+
+
+showListInt 
+	= showList showInt;
+
+
+print xx
+ = case xx of {
+ 	SChunk x	
+	-> printString xx;
+
+	SAppend s1 s2	
+	-> do {	print s1;
+		print s2; };
+ };	
+
+printN s	= print (s % "\n");
+
+concats xx
+ = case xx of {
+	Nil		-> "";
+ 	Cons x xs	-> SAppend x (concats xs);
+ };
+
+
+
+

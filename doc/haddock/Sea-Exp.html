@@ -1,0 +1,1221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Sea.Exp</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Sea.Exp</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A NAME="t%3ATree"
+></A
+><B
+>Tree</B
+> = [<A HREF="Sea-Exp.html#t%3ATop"
+>Top</A
+>]</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3ATop"
+></A
+><B
+>Top</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APNil"
+></A
+><B
+>PNil</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APSuper"
+></A
+><B
+>PSuper</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> [(<A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+>, <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+>)] <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+> [<A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APCtor"
+></A
+><B
+>PCtor</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+>] <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APData"
+></A
+><B
+>PData</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> [(<A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+>, [<A HREF="Sea-Exp.html#t%3ADataField"
+>DataField</A
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+>])]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APStruct"
+></A
+><B
+>PStruct</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> [(<A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+>, <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+>)]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APInclude"
+></A
+><B
+>PInclude</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APHackery"
+></A
+><B
+>PHackery</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APComment"
+></A
+><B
+>PComment</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APBlank"
+></A
+><B
+>PBlank</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APHashDef"
+></A
+><B
+>PHashDef</B
+> String String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APProto"
+></A
+><B
+>PProto</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+>] <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Top')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Top" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Sea-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Sea-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Sea-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Sea-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AStmt"
+></A
+><B
+>Stmt</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASBlank"
+></A
+><B
+>SBlank</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASComment"
+></A
+><B
+>SComment</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASHackery"
+></A
+><B
+>SHackery</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASAssign"
+></A
+><B
+>SAssign</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASAuto"
+></A
+><B
+>SAuto</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASAutoBind"
+></A
+><B
+>SAutoBind</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASStmt"
+></A
+><B
+>SStmt</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASReturn"
+></A
+><B
+>SReturn</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASLabel"
+></A
+><B
+>SLabel</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASGoto"
+></A
+><B
+>SGoto</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASMatch"
+></A
+><B
+>SMatch</B
+> [<A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASSwitch"
+></A
+><B
+>SSwitch</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> [<A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASSlotPush"
+></A
+><B
+>SSlotPush</B
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASSlotPop"
+></A
+><B
+>SSlotPop</B
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Stmt')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Stmt" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AAlt"
+></A
+><B
+>Alt</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AAMatch"
+></A
+><B
+>AMatch</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> [<A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AASwitch"
+></A
+><B
+>ASwitch</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> [<A HREF="Sea-Exp.html#t%3AStmt"
+>Stmt</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AACaseSusp"
+></A
+><B
+>ACaseSusp</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AACaseDeath"
+></A
+><B
+>ACaseDeath</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Alt')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Alt" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AExp"
+></A
+><B
+>Exp</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXNil"
+></A
+><B
+>XNil</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXVar"
+></A
+><B
+>XVar</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXSlot"
+></A
+><B
+>XSlot</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXCall"
+></A
+><B
+>XCall</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXCallApp"
+></A
+><B
+>XCallApp</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> Int [<A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXApply"
+></A
+><B
+>XApply</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> [<A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXCurry"
+></A
+><B
+>XCurry</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> Int [<A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXSuspend"
+></A
+><B
+>XSuspend</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXArg"
+></A
+><B
+>XArg</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXTag"
+></A
+><B
+>XTag</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXField"
+></A
+><B
+>XField</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXFieldR"
+></A
+><B
+>XFieldR</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXCon"
+></A
+><B
+>XCon</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXInt"
+></A
+><B
+>XInt</B
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXUnit"
+></A
+><B
+>XUnit</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXLabel"
+></A
+><B
+>XLabel</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXLiteral"
+></A
+><B
+>XLiteral</B
+> <A HREF="Shared-Base.html#t%3ALiteral"
+>Literal</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXSuper"
+></A
+><B
+>XSuper</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXTagThunk"
+></A
+><B
+>XTagThunk</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXNull"
+></A
+><B
+>XNull</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXEq"
+></A
+><B
+>XEq</B
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAlloc"
+></A
+><B
+>XAlloc</B
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAllocThunk"
+></A
+><B
+>XAllocThunk</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> Int Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAllocData"
+></A
+><B
+>XAllocData</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAllocSusp"
+></A
+><B
+>XAllocSusp</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXMatch"
+></A
+><B
+>XMatch</B
+> [<A HREF="Sea-Exp.html#t%3AAlt"
+>Alt</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Exp')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Exp" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Sea-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AType"
+></A
+><B
+>Type</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATVar"
+></A
+><B
+>TVar</B
+> <A HREF="Sea-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATObj"
+></A
+><B
+>TObj</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATThunk"
+></A
+><B
+>TThunk</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATData"
+></A
+><B
+>TData</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATSusp"
+></A
+><B
+>TSusp</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Type')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Type" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Sea-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

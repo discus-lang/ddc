@@ -1,0 +1,43 @@
+
+fun xx
+ = match {
+ 	| Tuple2 a1 a2	<- xx
+	, Cons   b1 b2	<- a1
+	, Just   c1	<- b1
+	, c1 == 5
+	= a2;
+	
+	| Tuple2 a1 a2	<- xx
+	, Nil		<- a1
+	= a2;
+
+	\= 12;
+
+ };
+
+
+fun2 xx
+ = match {
+ 	| (Just c1 : b2, a2)	<- xx
+	, c1 == 5
+	= a2;
+	
+	| ([], a2)		<- xx
+	= a2;
+	
+	\= 12;
+ };
+
+
+main ()
+ = do {	
+ 	print	$ showInt (fun ([Just 5], 	1001))	% "\n";
+ 	print	$ showInt (fun (Nil, 		1002))	% "\n";
+ 	print	$ showInt (fun ([Just 27], 	1003))	% "\n";
+
+ 	print	$ showInt (fun2 ([Just 5], 	1001))	% "\n";
+ 	print	$ showInt (fun2 (Nil, 		1002))	% "\n";
+ 	print	$ showInt (fun2 ([Just 27], 	1003))	% "\n";
+
+ };
+

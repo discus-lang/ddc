@@ -1,0 +1,37 @@
+
+import Data.Int32U;
+
+ack m n
+ = case m `primInt32U_eq` 0# of {
+ 	1#	-> n + 1#;
+	0#	-> case n `primInt32U_eq` 0# of {
+			1#	-> ack (m - 1#) 1#;
+			0#	-> ack (m - 1#) (ack m (n - 1#));
+		};
+ };
+ 
+
+main ()
+ = do {
+	n	= 9#;
+	print $ "Ack(3," 
+		% showInt (boxInt32 n) % "): " 
+		% showInt (boxInt32 (ack 3# n)) % "\n";
+ };
+
+
+
+{-
+ack m n
+ = match {
+ 	| 1#	<- m #== 0#
+	= n #+ 1;
+	
+	| 1#	<- n #== 0#
+	= ack (m #- 1#) 1#;
+	
+	| otherwise
+	= ack (m #- 1#) (ack m (n #- 1#));
+ };
+ 
+-}

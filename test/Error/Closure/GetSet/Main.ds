@@ -1,0 +1,35 @@
+
+-- makeGetSet
+--	This example exhibits unsoundness due to polymorphic update.
+--
+--	The scheme for box2 contains a dangerous type variable which
+--	is being held monomorphic because it appears underneath
+--	a type constructor with mutable regions.
+--
+--	This prevents the bindings for setA and setB getting different
+--	views about what the type for the box is.
+--
+makeGetSet x
+ = do {	box	= Just x;
+	get ()	= case box of { Just z -> z; };
+	set z	= box#x #= z;
+	(get, set);
+ };
+
+
+checkGetSet ()
+ = do {	
+ 	box2	= makeGetSet [];
+	
+	setA	= snd box2;
+	setB	= snd box2;
+ 
+ 	setA [1];
+	setB ['a'];
+	
+	x	= head ((fst box2) ());
+	print	$ "x = " % showInt x % "\n";
+
+	();
+ };
+

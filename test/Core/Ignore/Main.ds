@@ -1,0 +1,17 @@
+
+-- The return value of f is ignored.
+--	The regions present in the type of these return
+--	value are not present the type of a bound variable in Core.
+
+f () 
+ = do {
+ 	print "erk";
+	5;
+ };
+ 
+ 
+main ()
+ = do {	f (); 
+ 	23; 
+ };
+ 

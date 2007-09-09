@@ -1,0 +1,373 @@
+
+module Core.Plate.Walk
+	( WalkTable (..)
+	, walkZM
+	, walkTableId
+	, lookupT
+	, lookupFs )
+
+where
+
+import qualified Debug.Trace	as Debug
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+import Util
+import Shared.Error
+import Shared.Exp
+import Core.Exp
+import Core.Util		(boundRsT)
+import Core.Util.Slurp		(maybeSlurpTypeX)
+import Core.Pretty
+
+-----
+stage	= "Core.Plate.Walk"
+
+-----
+data WalkTable m
+	= WalkTable 
+	{ 
+	-- bottom-up transforms
+	  transX	:: (WalkTable m) -> Exp		-> m Exp
+	, transS	:: (WalkTable m) -> Stmt 	-> m Stmt
+
+	, transT	:: (WalkTable m) -> Type	-> m Type
+	, transR	:: (WalkTable m) -> Region	-> m Region
+	, transE	:: (WalkTable m) -> Effect	-> m Effect
+	, transC	:: (WalkTable m) -> Closure	-> m Closure
+
+	, transSS	:: (WalkTable m) -> [Stmt]	-> m [Stmt]
+
+	-- top-down transforms
+	, transX_down	:: Maybe ((WalkTable m) -> Exp	-> m Exp)
+
+	, transX_enter	:: (WalkTable m) -> Exp 	-> m Exp
+	
+
+	-- transSS_split
+	-- |	Transform stmts on entry to an XDo. (top-down)
+	--		Function is passed table of vars bound ABOVE, 
+	--		and table of vars bound BY this block.
+	--
+	, transSS_split	:: Maybe ((WalkTable m) -> (WalkTable m) -> [Stmt] -> m [Stmt])
+	
+	, boundT	:: Map Var Type
+	, boundK	:: Map Var Kind
+	, boundFs	:: Map Var [Class]
+	}
+	
+	
+walkTableId :: WalkTable (State s)
+walkTableId
+	= WalkTable
+	{ transX	= \t x -> return x
+	, transS	= \t x -> return x
+
+	, transT	= \t x -> return x
+	, transR	= \t x -> return x
+	, transE	= \t x -> return x
+	, transC	= \t x -> return x
+
+	, transSS	= \t x -> return x
+
+	, transX_down	= Nothing
+	, transX_enter	= \t x -> return x
+
+	, transSS_split	= Nothing
+	
+	, boundT	= Map.empty
+	, boundK	= Map.empty
+	, boundFs	= Map.empty
+	}
+
+-----
+bindT  v t z		= z { boundT 	= Map.insert v t  $ boundT  z }
+bindK  v k z		= z { boundK 	= Map.insert v k  $ boundK  z }
+
+bindFs v fs z 		= z { boundFs 	= Map.insertWith (++) v fs $ boundFs z }
+
+lookupT 	table v	= Map.lookup v $ boundT  table
+lookupFs	table v	= Map.lookup v $ boundFs table
+
+
+-----
+class Monad m => WalkM m a
+ where	walkZM :: WalkTable m -> a -> m a
+ 
+instance (Monad m, WalkM m a) => WalkM m [a]
+ where	walkZM z xx	= mapM (walkZM z) xx
+
+instance (Monad m, WalkM m a, WalkM m b) => WalkM m (a, b)
+ where	walkZM z (a, b)
+ 	 = do	a'	<- walkZM z a
+	 	b'	<- walkZM z b
+		return	(a', b')
+
+-----
+instance Monad m => WalkM m Top where
+ walkZM z p 
+  = case p of
+  	PBind	v x		
+	 -> do	let Just t	= maybeSlurpTypeX x
+	 	let z'		= bindT v t z
+	 	x'		<- walkZM z' x
+	 	return		$ PBind v x'
+		
+	PExtern v tv to		-> return p
+
+	PData	v vs cs		 
+	 -> do	cs'		<- mapM (walkZM z) cs
+	 	return		$ PData v vs cs'
+
+	PRegion{}	 	-> return p
+	PEffect v k		-> return p
+	PClass{}		-> return p
+
+	PCtor	v tv to		-> return p
+	PClassDict{}		-> return p
+
+	PClassInst v ts context defs
+	 -> do	let (vs, xs)	= unzip defs
+	 	xs'		<- mapM (walkZM z) xs
+		let defs'	= zip vs xs'
+	 	return		$ PClassInst v ts context defs'
+
+-----
+instance Monad m => WalkM m CtorDef where
+ walkZM z xx
+  = case xx of	
+  	CtorDef v df
+	 -> do	df'		<- mapM (walkZM z) df
+	 	return		$ CtorDef v df'
+		
+-----
+instance Monad m => WalkM m (DataField Exp Type) where
+ walkZM z xx
+  = case xx of
+  	DataField { dInit = mX }
+	 -> do 	mX'		<- liftMaybe (walkZM z) mX
+	 	return	xx { dInit = mX' }
+
+
+-----
+instance Monad m => WalkM m Exp where
+ walkZM z xx_
+  = do	xx	<- (transX_enter z) z xx_
+  	walkZM2 z xx
+	
+walkZM2 z xx
+  = case xx of
+	XNothing		-> return xx
+	XNil			-> return xx
+
+	XAnnot a x
+	 -> do	x'		<- walkZM z x
+	 	return		$ XAnnot a x'
+		
+	-- core constructs
+	XVar v			-> return xx
+	
+	XLAM v t x	
+	 -> do	x'		<- walkZM (bindT v t z) x
+	 	return		$ XLAM v t x'
+
+	XLam v t x eff clo
+	 -> do	x'		<- walkZM (bindT v t z) x
+	 	return		$ XLam v t x' eff clo
+		
+	XAPP x t
+	 -> do	x'		<- walkZM z x
+	 	t'		<- walkZM z t
+		return		$ XAPP x' t'
+		
+	XApp x1 x2 eff
+	 -> do	x1'		<- walkZM z x1
+	 	x2'		<- walkZM z x2
+		eff'		<- walkZM z eff
+		(transX z) z	$ XApp x1' x2' eff'
+
+	XTau t x
+	 -> do	x'		<- walkZM z x
+		t'		<- walkZM z t
+		(transX z) z	$ XTau t' x'
+
+	XTet vts x
+	 -> do	x'		<- walkZM z x
+		
+		let (vs, ts)	= unzip vts
+		ts'		<- mapM (walkZM z) ts
+		let vts'	= zip vs ts'
+
+	 	(transX z) z	$ XTet vts' x'
+
+	XDo ss
+	 -> case (transX_down z) of 
+	     Nothing
+	      -> do	-- bind types from this block
+	      		let z2		= foldl bindTKF_Stmt z ss
+			ss2		<- walkZM z2 ss
+			ss3		<- (transSS z2) z2 ss2
+			
+			(transX z2) z2	$ XDo ss3
+			
+			
+	     Just transDown 
+	       -> 	transDown z xx
+	       
+		
+	XMatch aa eff
+	 -> do	--mX'		<- liftMaybe (walkZM z) mX
+	 	aa'		<- walkZM z aa
+	 	return		$ XMatch aa' eff
+		
+	XConst c t		
+	 -> do	t'		<- walkZM z t
+	 	(transX z) z	$ XConst c t'
+
+	XLocal r vFs x
+	 -> do	
+		let fs		= map (\v -> TClass v [TVar KRegion r]) vFs
+
+	 	let z'		= z 
+				{ boundK	= Map.insert r KRegion 	(boundK z)
+				, boundFs	= Map.insert r fs 	(boundFs z) }
+
+		x'		<- walkZM z' x
+	 	return		$ XLocal r vFs x'
+		
+	XType t
+	 -> do
+	 	t'		<- walkZM z t
+		(transX z) z 	$ XType t'
+
+	XPrim m xx eff
+	 -> do	xx'		<- mapM (walkZM z) xx
+		(transX z) z	$ XPrim m xx' eff
+		
+	-- atoms
+	XAtom{}			-> (transX z) z xx
+	
+	
+	--
+	_ 	-> panic stage
+		$  "walkZM[Exp]: no match for " % show xx
+	
+	
+-----
+instance Monad m => WalkM m Alt where
+ walkZM z ss
+  = case ss of
+  	AAlt gs x 
+	 -> do	let z'		= foldl bindTK_Guard z gs
+		gs'		<- walkZM z' gs
+	 	x'		<- walkZM z' x
+	 	return		$ AAlt gs' x'
+		
+
+-----
+instance Monad m => WalkM m Guard where
+ walkZM z ss
+  = case ss of
+{-  	GCase w
+	 -> do	w'		<- walkZM z w
+	 	return		$ GCase w'
+-}		
+	GExp w x
+	 -> do	w'		<- walkZM z w
+	 	x'		<- walkZM z x
+		return		$ GExp w' x'
+
+
+-----
+instance Monad m => WalkM m Pat where
+ walkZM z ss
+  = case ss of
+  	WConst c
+	 -> 	return		$ WConst c
+	 
+	WCon v lvts
+	 -> 	return		$ WCon v lvts
+
+
+-----
+instance Monad m => WalkM m Stmt where
+ walkZM z ss
+  = case ss of
+	SComment{}		-> return ss
+
+	SBind (Just v) x
+	 -> do	x'		<- walkZM z x
+	 	(transS z) z	$ SBind (Just v) x'
+
+	SBind Nothing x
+	 -> do	x'		<- walkZM z x
+	 	(transS z) z	$ SBind Nothing x'	
+
+
+
+
+
+-----
+instance Monad m => WalkM m Type where
+ walkZM z tt 
+  = case tt of
+	TEffect  v ts
+	 -> do	ts'		<- mapM (walkZM z) ts
+	 	(transT z) z	$ TEffect v ts'
+
+	TSum k ts
+	 -> do	ts'		<- walkZM z ts
+	 	(transT z) z	$ TSum k ts'
+
+	_ -> 	(transT z) z tt
+	
+
+
+
+-----------------------
+-- Helpers for binding Types/Regions
+--
+bindTFs_VT v t z
+ 	= bindT v t $ bindFs_Type t z
+
+
+bindFs_Type t z
+ = case t of
+ 	TForall v k t2	-> bindFs_Type t2 z
+
+	_ -> z
+			
+			
+-- bindTKF_Stmt 
+--	Bind the vars and regions present in the type of this statement.
+--
+bindTKF_Stmt z ss
+ = case ss of
+ 	SBind (Just v) x		
+	 -> case maybeSlurpTypeX x of
+	    Nothing 	-> z
+            Just t	-> bindT v t z
+
+	_			-> z
+
+
+bindTK_Alt z a
+ = case a of
+ 	AAlt gs x 	-> foldl bindTK_Guard z gs
+	 
+bindTK_Guard zz g
+ = case g of
+--	GCase w		-> bindTK_Pat zz w
+	GExp  w x	-> bindTK_Pat zz w
+	
+bindTK_Pat zz ww
+ = case ww of
+	WConst c	-> zz
+
+ 	WCon v lvt
+	  -> foldl (\z (l, v, t) -> bindT v t z) zz lvt
+ 	

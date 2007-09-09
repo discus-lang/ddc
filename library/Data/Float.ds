@@ -1,0 +1,159 @@
+
+import Base;
+import Data.Bool;
+import Data.Int;
+import Data.Int32U;
+import Data.Float32U;
+
+import Class.Eq;
+import Class.Num;
+import Class.Ord;
+
+pragma	Include ["math.h"];
+
+-- boxing
+foreign import extern "_boxFloat32"
+ boxFloat32 	:: forall %r1 %r2
+  		.  Float32# %r1 -> Float %r2
+		:$ Float32# -> Obj;
+
+foreign import extern "_unboxFloat32"
+ unboxFloat32	:: forall %r3 %r4
+ 		.  Float    %r3 -> Float32# %r4
+		:$ Obj -> Float32#;
+
+
+foreign import extern "primFloat32_toFloat"
+ toFloat	:: elaborate Int -> Float;
+
+-- math
+foreign import extern "primFloat32_add"
+ primFloat32_add	:: elaborate Float -> Float -> Float;
+
+foreign import extern "primFloat32_sub"
+ primFloat32_sub	:: elaborate Float -> Float -> Float;
+
+foreign import extern "primFloat32_mul"
+ primFloat32_mul	:: elaborate Float -> Float -> Float;
+
+foreign import extern "primFloat32_div"
+ primFloat32_div	:: elaborate Float -> Float -> Float;
+
+-- comparisons
+foreign import extern "primFloat32_eq"
+ primFloat32_eq		:: elaborate Float -> Float -> Bool;
+
+foreign import extern "primFloat32_neq"
+ primFloat32_neq	:: elaborate Float -> Float -> Bool;
+
+foreign import extern "primFloat32_gt"
+ primFloat32_gt		:: elaborate Float -> Float -> Bool;
+
+foreign import extern "primFloat32_ge"
+ primFloat32_ge		:: elaborate Float -> Float -> Bool;
+
+foreign import extern "primFloat32_lt"
+ primFloat32_lt		:: elaborate Float -> Float -> Bool;
+
+foreign import extern "primFloat32_le"
+ primFloat32_le		:: elaborate Float -> Float -> Bool;
+
+-- update
+foreign import extern "primFloat32_update"
+ primFloat32_update	:: elaborate (mutable Float) -> Float -> ();
+
+
+instance Eq (Float (%)) where
+{
+	(==)	= primFloat32_eq;
+	(/=)	= primFloat32_neq;
+}
+
+
+instance Ord (Float (%)) where
+{
+	(>)	= primFloat32_gt;
+	(>=)	= primFloat32_ge;
+
+	(<)	= primFloat32_lt;
+	(<=)	= primFloat32_le;
+}
+
+
+instance Num (Float (%)) where
+{
+	(+)	= primFloat32_add;
+	(-)	= primFloat32_sub;
+	(*)	= primFloat32_mul;
+	(/)	= primFloat32_div;
+}
+
+instance Update (Float (%)) where
+{
+	(:=)	= primFloat32_update;
+
+}
+
+instance Accum (Float (%)) where
+{
+	(+=)	= primFloat32_accAdd;
+}
+
+primFloat32_accAdd a b	= primFloat32_update a (primFloat32_add a b);
+
+
+-- trig
+foreign import extern "sinf"
+ sinU	:: elaborate Float32# -> Float32#;
+ sin x	= boxFloat32 (sinU (unboxFloat32 x));
+
+foreign import extern "asinf"
+ asinU	:: elaborate Float32# -> Float32#;
+ asin x	= boxFloat32 (asinU (unboxFloat32 x));
+
+foreign import extern "cosf"
+ cosU	:: elaborate Float32# -> Float32#;
+ cos x	= boxFloat32 (cosU (unboxFloat32 x));
+
+foreign import extern "acosf"
+ acosU	:: elaborate Float32# -> Float32#;
+ acos x	= boxFloat32 (acosU (unboxFloat32 x));
+
+foreign import extern "tanf"
+ tanU	:: elaborate Float32# -> Float32#;
+ tan x	= boxFloat32 (tanU (unboxFloat32 x));
+
+foreign import extern "atanf"
+ atanU	:: elaborate Float32# -> Float32#;
+ atan x	= boxFloat32 (atanU (unboxFloat32 x));
+
+foreign import extern "sqrtf"
+ sqrtU	:: elaborate Float32# -> Float32#;
+ sqrt x	= boxFloat32 (sqrtU (unboxFloat32 x));
+
+foreign import extern "truncf"
+ truncU	:: elaborate Float32# -> Float32#;
+ trunc x = boxFloat32 (truncU (unboxFloat32 x));
+
+
+-- 
+foreign import extern "logf"
+ logU   :: elaborate Float32# -> Float32#;
+ log   x = boxFloat32 (logU (unboxFloat32 x));
+
+foreign import extern "floorf"
+ floorU :: elaborate Float32# -> Float32#;
+ floor x = boxFloat32 (floorU (unboxFloat32 x));
+
+foreign import extern "fabsf"
+ fabsU  :: elaborate Float32# -> Float32#;
+ fabs x	 = boxFloat32 (fabsU (unboxFloat32 x));
+
+-- conversion
+foreign import extern "primFloat32_truncate"
+ truncate :: elaborate Float -> Int;
+
+
+
+-- constants
+-- pi = 3.1415926535;

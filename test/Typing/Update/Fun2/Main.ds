@@ -1,0 +1,48 @@
+
+-----
+-- Effect and closure variables under mutable regions should be held monomorpic.
+--	The effect and closure of data which contains functions should be
+--	the sum of all the functions which it is updated with.
+
+data FunBox %r1 a !e1 $c1
+	= FunBox { 
+		fun :: a -(!e1 $c1)> a;
+	};
+
+thing	= 5;
+oldFun  = \x -> x + 1;
+newFun	= \x -> do { print (showInt (x + thing)); x; };
+
+
+box	:: FunBox %r1 Int !e1 $c1
+	:- Mutable %r1;
+
+box	= FunBox oldFun;
+
+
+makeBox2 () ()
+ = do {
+	box2	:: FunBox %r1 Int !e1 $c1
+		:- Mutable %r1;
+		
+ 	box2		= FunBox oldFun;
+	
+	hackBox	()	= box2#fun #= newFun;
+	runBox ()	= box2.fun 5;
+
+	fun2 ()		= (box2, hackBox, runBox);
+	 	
+	fun2; 
+ };	
+
+runBox2 = (makeBox2 () () ()) .x3;
+
+
+main () 
+ = do {	
+	box#fun	#= newFun;
+
+
+ };
+
+

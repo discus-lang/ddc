@@ -1,0 +1,136 @@
+TinyPTC x11 ChangeLog + Bug(Fixes) list.
+
+*** Note ***
+
+English isn't my native language. So, some grammar/spelling errors might have
+made their way into this document. You've been warned.
+
+Alessandro Gatti <a.gatti@tiscali.it>
+
+*** **** ***
+
+20021208 0.7.3
+
+Fixed a typo in the python source and updated the documentation.
+
+20021207 0.7.2
+
+The perl script for the assembler include generation was replaced with a
+plain shell script in order to overcome the remote possibility of perl
+not being installed on the system TinyPTC gets built on. Now TinyPTC can
+be built as a python extension by using the excellent SWIG package, just
+use the 'python' target of the makefile and look at python_test.py.
+
+20020706 0.7.1
+
+Kevin Nickels (knickels@users.sourceforge.net) sent a patch for the BGR888
+converter that fixes the colour order on little endian platforms in the xlib
+target. A minor error in the documentation has been corrected, and the MMX
+assembly include file builder perl script has been slightly cleaned up.
+
+20020517 0.7
+
+Fred Howell wrote the XVideo target handling code and was kind enough to send
+it in order to have that included in the major next release of TinyPTC/x11. It
+has been tested both on NVidia-based cards with their binary-only drivers, on
+ATI-based cards, and with Matrox-based ones, all of them under XFree 4.x. The
+XVideo target features realtime scaling on the windowed output (fullscreen
+support will be added on a later stage...), with a lightning fast MMX converter
+from RGB to YV12. Make sure to check it out!
+
+20011103 0.6.1
+
+Version 0.6.0 was entirely done during one long coding night, so a few bugs
+were present. Anyway, I made the C functions callable by C++ as well (tested
+with g++), the example configuration file now has some enabled #defines that
+let the example work flawlessly (otherwise it won't run if you haven't got
+low-res modes defined in your X configuration. I've got them in, that's why I
+didn't notice that...). Then, g++ complained on a few targets for some
+duplicated variable definition. That's funny, gcc didn't complain. By the way,
+I also tested the whole package with GCC 3.0.1, and it works fine. So, this is
+mostly a "cleaned up" version.
+
+20011102 0.6.0
+
+After nine months, I found the time to work again on TinyPTC/X11. Big changes
+this time... First of all, now TinyPTC/X11 is released under the LGPL license,
+then I (finally) added DGA 2.0 support, although its heuristic stuff for best
+videodepth choice isn't tested at all, since my hardware supports 32bpp
+natively (if it doesn't work, please tell me, so I can attempt to fix the
+problem). Then, I splitted all the various targets in a source/header pair of
+their own, in order to improve manteniability and easy new targets addition.
+Currently you compile and link all the various targets even if you use only
+one of them but don't worry, because with some kind of #define magic and a fair
+job done by strip, the executable size won't grow at all. The makefile has been
+reworked in order to use automated dependencies and for generate automatically
+the NASM includefile for mmx.s from mmx.h. Then, I had to change a variable
+name in the supplied example due to clashes with a function with the same name.
+Oh, I also added DBE support, if you need it. Of course the documentation has
+been updated and the makefile now creates a static library called libtinyptc.a
+that can be included in your own programs without having to recompile tinyptc
+all the time. Have fun!.
+
+20010206 0.5.1
+
+The makefile now contains a different optimization flag, now the executable is
+a bit smaller (at least on my box). I updated the documentation, too (I forgot
+to add the __PTC_MEMCPY__ #define). Added a cleanup callback function, in order
+to let it be a bit more programmer-friendly. Now you can use PTC_SUCCESS and
+PTC_FAILURE in order to check the results of the TinyPTC functions you call.
+Documentation now contains NetBSD compilation workaround.
+
+20001027 0.5
+
+The mmx converters were added and the makefile was cleaned up in order to be
+a bit more flexible and to support the external assembler code. I left out a
+debug fprintf somewhere in the DGA code, now it's just history. The
+documentation was updated, too. Nothing more to say, over and out.
+
+20001306 0.4
+
+Bugs are calling... And we're supposed to fix them. There was a glitch in the
+32bpp->15bpp conversion code, thanks to tolemaC/Elerium Core for the bug
+report. Now the 24bpp conversion modules should work for big-endian machines as
+well. Try them if you've got such a system and then tell us.
+
+20000531 0.3.1
+
+Sometimes, fixing a bug, brings another one in. Well, now the only thing that
+worked was the 32bpp code. Strange, isn't it ? ;) Anyway, this is fixed now.
+
+20000527 0.3
+
+TinyPTC was developed again after a little pause. Great news this time... I
+added color conversion and it seems to work quite well, too. It's rather slow
+but I think that some compiler optimizations can speed it up a bit as well. If
+it's still too slow for you, feel free to write your own converters and submit
+them to Gaffer =) As an added bonus, the 24-32 bpp dilemma seems to be
+disappeared... Maybe it's fixed, try and see. Tell me if there's something that
+doesn't work.
+
+20000508 0.2
+
+TinyPTC was rewritten from scratch (literally), now the sources are easier to
+read and I threw some comment in, too. The XShm support is finished and seems
+to work. Tell me if I'm wrong about that. The DGA part wasn't working properly,
+it blarfed on the fullscreen-emulation blit code, now it works again. I also
+added a 'best-fit' videomode switch logic for fullscreen-emulation code.
+
+20000505 0.1.1
+
+Some kind of preliminary XShm support is now included. There wasn't an UID
+check for DGA mode (it needs Root access in order to access video memory
+directly). I forgot to include it when I joined the two x11 sourcetrees
+together (windowed and DGA). The bitdepth is incorrectly reported as 24 even on
+32bpp servers. Strangely enough, my server correctly reports 32bpp.
+The pitch value calculation method is wrong. On some cards the assumption 
+pitch=width*bpp isn't true (TNT cards for example but not Banshees). Damn, I'm 
+so lame... =) I was calculating it with the logical screenwidth of the 
+resulting viewport instead of calculating it with the physical screenwidth 
+returned in the videomode info.	The makefile was modified in order to include a
+check to "tinyptc.h" during the 'make' operation. 
+
+20000503 0.1
+
+Initial release. Supports X11 Windowed and X11 DGA access. No color 
+conversions, just a bare bones emulation of the windows version.

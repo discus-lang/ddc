@@ -1,0 +1,10 @@
+test/Error/CheckConst/ConstWrite/Main.ds:13:16
+    Cannot write to Const region.
+                effect: Base.!Write %102
+             caused by: (:=)
+                    at: test/Error/CheckConst/ConstWrite/Main.ds:13:16
+
+     conflicts with,
+            constraint: Base.Const %102
+       from the use of: addS2
+                    at: test/Error/CheckConst/ConstWrite/Main.ds:12:18

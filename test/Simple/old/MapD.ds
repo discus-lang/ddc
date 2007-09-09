@@ -1,0 +1,116 @@
+
+
+mapFB 	:: (a -> b) -> [a] -> [b];
+mapFB f xx
+ = match {
+	| x : xs	<- xx
+	= do { 	first	= f x : [];
+		mapFB_rest f xs first;
+		first;
+	};
+
+	| []		<- xx
+	= [];
+ };
+ 
+mapFB_rest f xx prev
+ = match {
+	| x : xs	<- xx
+	= do { 	link	= f x : tail prev;
+		prev#xs	#= link;
+		
+		mapFB_rest f xs link;
+	 };
+ 
+	| []		<- xx
+	= ();
+ };
+
+
+listInts min max = iterateWhile min (\x -> x <= max) (\x -> x + 1);
+
+
+iterateWhile :: a -> (a -> Bool) -> (a -> a) -> [a];
+iterateWhile a whileF genF 
+ = match {
+ 	| whileF a
+	= do {	first	= a : [];
+		iterateWhile_addRest whileF genF first;
+		first; 
+	   };
+
+	\= [];
+
+ };
+ 
+iterateWhile_addRest whileF genF prev
+ = match {
+	| x : xs	<- prev
+--	, x'		<- genF x
+	, whileF (genF x)
+	= do { 	next	= genF x : xs;
+		prev#xs	#= next;
+		iterateWhile_addRest whileF genF next; 
+	};
+
+	\= ();
+ };
+		
+		
+
+main ()
+ = do {
+	list	:: [Int];
+ 	list	= listInts 0 100000;
+	list2	= mapFB (\a -> a + 1) list;
+	
+	str	= showListFB showInt list2 % "\n";
+	print str;
+ };
+	
+
+showListFB 
+ ::	(a -> String) -> [a] -> String;
+
+showListFB  showX xx
+ = do {
+ 	str	= "[" % "]";
+	showListFB_addElems2 showX xx str;
+	str;
+ };
+
+ 
+showListFB_addElems2 
+ :: 	(a -> String) -> [a] -> String -> ();
+
+showListFB_addElems2 showX xx prev
+ = match {
+ 	| x : xs	<- xx
+	= do {	str		= showX x % prev.right;
+		prev#right	#= str;
+		showListFB_addElems3 showX xs str;
+	};
+
+	\= ();
+ };
+		
+
+showListFB_addElems3 
+ :: 	(a -> String) -> [a] -> String -> ();
+
+showListFB_addElems3 showX xx prev
+ = match {
+ 	| x : xs	<- xx
+	= do {	str		= (", " % showX x) % prev.right;
+		prev#right	#= str;
+		showListFB_addElems3 showX xs str;
+	};
+
+	\= ();
+ };
+ 
+ 
+
+
+
+

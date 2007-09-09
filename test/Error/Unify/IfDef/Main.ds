@@ -1,0 +1,9 @@
+
+-- Checks type error reporting.
+--	Wrong type for descriminant in if-then-else statement (expects Bool).
+
+x	= 5;
+y	= if x
+		then "perch"
+		else "gourami";
+		

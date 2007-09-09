@@ -1,0 +1,46 @@
+
+#include <stdlib.h>
+
+#include "Types.h"
+#include "Context.h"
+#include "Macro.h"
+#include "Error.h"
+
+// _contextInit
+//	Setup the context stack.
+//	This has to be a static inline / macro.
+//	
+//	* If a function which calls setjmp (inside _contextPush) returns then
+//	  the context is invalidated. We prevent this from happening by inlining
+//	  it directly into the caller.
+//
+static inline void _contextInit
+		(int contextStackDepth)
+{
+	// Allocate the context stack.
+	_ddcContextStack	
+		= malloc (sizeof (struct Context) * contextStackDepth);
+		
+	_ddcContextIndex	= 0;
+	_ddcContextMax	= contextStackDepth - 1;
+
+	// Push the top-level context
+	int ret	= _contextPush();
+
+	// If we've stored the context, then carry on.
+	if (ret == CONTEXT_RET_PUSH ) 
+		return;
+	
+	// Uh oh, something tried to restore the top level context.
+	else if (ret == CONTEXT_RET_THROW) {
+		_PANIC ("Unhandled exception.");
+	}
+
+	else if (ret == CONTEXT_RET_BREAK) {
+		_PANIC ("Tried to break out of top-level context.");
+	}
+		
+	else {
+		_PANIC ("Tried to pop top-level context.");
+	}
+}

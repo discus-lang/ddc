@@ -1,0 +1,30 @@
+
+-- Checks renamer error reporting.
+--	These expressions include variables that are being 
+--	redefined within the same scope.
+--
+
+-- Redefined vars in lambda abstractions.
+--	Not strictly an error, but less-than-useful.
+--	If you _really_ want this then write (\x -> \x z -> x);
+--
+fun1	= \x x z -> x;
+fun1b	= \x -> \x z -> x;
+
+-- Redefined vars in patterns.
+fun2 x	= case x of { Cons xx xx -> xx; };
+
+
+-- Redefined vars in type expressions
+--	as well as no function body for type sigs.
+--
+funTT	:* forall a a
+	.  a -> a;
+
+funTR 	:* forall a %r1 b %r1 %r2
+	.  a -> b -> List %r1 (Int %r2);
+
+funTE 	:* forall a %r1 !e1 !e1
+	.  Tuple2 %r1 (a -(!e1)> a);
+	
+

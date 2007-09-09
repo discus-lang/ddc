@@ -1,0 +1,50 @@
+
+import Graphics.Frame;
+import Math.Vec2;
+
+frameCount		= 0;
+frameCount_max		= 20;
+time_compression	= 1.0;
+attract_range		= 20.0;
+draw_force_step		= 4;
+pi 			= 3.1415926536;
+worldSize		= Vec2 600 600;
+
+
+forceColor fS
+ = match {
+	| fS < 0.0	= frame_color 0 0 0;
+
+	| fS < 1.0	
+	= do {	x	= fS;
+		c	= truncate (x * 255.0);
+		frame_color 0 0 c;
+	};
+		
+	| fS < 2.0
+	= do {	x	= fS - 1.0;
+		c	= truncate (x * 255.0);
+		frame_color 0 c (255 - c);
+	};
+
+	| fS < 3.0
+	= do {	x	= fS - 2.0;
+		c	= truncate (x * 255.0);
+		frame_color c (255 - c) 0;
+	};
+
+	| fS < 4.0
+	= do {	x	= fS - 3.0;
+		c	= truncate (x * 255.0);
+		frame_color (255 - c) c c;
+	};
+
+	| fS < 5.0
+	= do {	x	= fS - 4.0;
+		c	= truncate (x * 255.0);
+		frame_color c (255 - c) c;
+	};
+		
+				
+	\= 	frame_color 255 255 255;
+ };

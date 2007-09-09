@@ -1,0 +1,54 @@
+
+data Vec2U a;
+
+newVec2 :: Float32# -> Float32# -> Vec2U Float32#;
+newVec2 x y
+ = do {	obj	:: Vec2U Float32#;
+ 	obj	= primAlloc_dataR 0# 8#;
+ 
+ 	primFloat32U_write obj 8#  x;
+	primFloat32U_write obj 12# y;
+	
+	obj;
+ };
+ 	
+
+project Vec2U Float32# where
+{
+	x 	:: Vec2U (Float32# %r1) -(!e1)> Float32#
+		:- !e1 = !{ !Read %r1 };
+
+	y 	:: Vec2U (Float32# %r1) -(!e1)> Float32#
+		:- !e1 = !{ !Read %r1 };
+		
+	updateX :: Vec2U (Float32# %r1) -> Float32# %r2 -(!e1)> Int32#
+		:- !e1 = !{ !Write %r1; !Read %r2 }
+		,  Mutable %r1;
+
+	updateY	:: Vec2U (Float32# %r1) -> Float32# %r2 -(!e1)> Int32#
+		:- !e1 = !{ !Write %r1; !Read %r2 }
+		,  Mutable %r1;
+	
+	
+	show :: 	Vec2U Float32# -> String;
+
+	x obj		= primFloat32U_read obj 8#;
+	y obj		= primFloat32U_read obj 12#;
+	updateX obj x	= do { primFloat32U_write obj 8# x;	0#; };
+	updateY obj y	= do { primFloat32U_write obj 12# y;	0#; };
+
+	show ^obj	= "Vec2 " % showFloat (boxFloat32 _x) % " " % showFloat (boxFloat32 _y);
+
+}
+
+
+
+main ()
+ = do {
+ 	thing	= newVec2 27.0# 42.0#;
+	print	$ thing.show	% "\n";
+
+	thing.updateX 666.0#;
+	thing.updateY 777.0#;
+	print	$ thing.show	% "\n";
+ };

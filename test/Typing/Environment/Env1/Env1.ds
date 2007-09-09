@@ -1,0 +1,10 @@
+
+-- Can't generalise type variables which are free in the environment of a function.
+-- 	If this test is broken then (f :: a -> b), otherwise (f :: a -> a)
+
+f :: a -> a;
+f x 
+ = do {	g y	= x;
+ 	g x; };
+	
+ 	

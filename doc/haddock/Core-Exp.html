@@ -1,0 +1,2761 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!--Rendered using the Haskell Html Library v0.2-->
+<HTML
+><HEAD
+><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"
+><TITLE
+>Core.Exp</TITLE
+><LINK HREF="haddock.css" REL="stylesheet" TYPE="text/css"
+><SCRIPT SRC="haddock.js" TYPE="text/javascript"
+></SCRIPT
+></HEAD
+><BODY
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="topbar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><IMG SRC="haskell_icon.gif" WIDTH="16" HEIGHT="16" ALT=" "
+></TD
+><TD CLASS="title"
+></TD
+><TD CLASS="topbut"
+><A HREF="index.html"
+>Contents</A
+></TD
+><TD CLASS="topbut"
+><A HREF="doc-index.html"
+>Index</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="modulebar"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD
+><FONT SIZE="6"
+>Core.Exp</FONT
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Synopsis</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A HREF="#t%3ATree"
+>Tree</A
+> = [<A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+>]</TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3ATop"
+>Top</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3APNil"
+>PNil</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3APBind"
+>PBind</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3APSuper"
+>PSuper</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3APExtern"
+>PExtern</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3APData"
+>PData</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>] [(<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, [<A HREF="Core-Exp.html#t%3ADataField"
+>DataField</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>])]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3APCtor"
+>PCtor</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3APEffect"
+>PEffect</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AExp"
+>Exp</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3AXNothing"
+>XNothing</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXNil"
+>XNil</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXAnnot"
+>XAnnot</A
+> <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXVar"
+>XVar</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXLambda"
+>XLambda</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXApp"
+>XApp</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXAppE"
+>XAppE</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXDo"
+>XDo</A
+> [<A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXMatchE"
+>XMatchE</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>] [<A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXConst"
+>XConst</A
+> <A HREF="Shared-Literal.html#t%3AConst"
+>Const</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXUnit"
+>XUnit</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXProj"
+>XProj</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AProj"
+>Proj</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXCall"
+>XCall</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>] [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXCallApp"
+>XCallApp</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> Int [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>] [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXApply"
+>XApply</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>] [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXCurry"
+>XCurry</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> Int [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXSuspend"
+>XSuspend</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXAppF"
+>XAppF</A
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXAppFP"
+>XAppFP</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> (Maybe [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>])</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXType"
+>XType</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXAt"
+>XAt</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AXLifted"
+>XLifted</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>]</TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AProj"
+>Proj</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3AJField"
+>JField</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AJFieldR"
+>JFieldR</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AStmt"
+>Stmt</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3ASComment"
+>SComment</A
+> String</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ASStmt"
+>SStmt</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ASBind"
+>SBind</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AAttr"
+>Attr</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3ARBoxed"
+>RBoxed</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ARStrict"
+>RStrict</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AAlt"
+>Alt</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3AAAlt"
+>AAlt</A
+> [<A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+>] <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AADefault"
+>ADefault</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AGuard"
+>Guard</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3AGDefault"
+>GDefault</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AGUnit"
+>GUnit</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AGConst"
+>GConst</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Shared-Literal.html#t%3AConst"
+>Const</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AGCon"
+>GCon</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [(<A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+>, <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)]</TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3ALabel"
+>Label</A
+>  = <A HREF="#v%3ALIndex"
+>LIndex</A
+> Int</TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AType"
+>Type</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3ATNil"
+>TNil</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATNothing"
+>TNothing</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATVar"
+>TVar</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATVarC"
+>TVarC</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATForall"
+>TForall</A
+> [(<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)] <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATFun"
+>TFun</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATFunEE"
+>TFunEE</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>] [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATCon"
+>TCon</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [Attr] [<A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATColored"
+>TColored</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATMerge"
+>TMerge</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATKType"
+>TKType</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATKRegion"
+>TKRegion</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATKEffect"
+>TKEffect</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATTypeL"
+>TTypeL</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> [(<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, ([<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>], [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]))]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ATFunV"
+>TFunV</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> (Maybe <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>)</TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AEffect"
+>Effect</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3AENil"
+>ENil</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AEVar"
+>EVar</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AEPort"
+>EPort</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AEPipe"
+>EPipe</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AEEnd"
+>EEnd</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AECon"
+>ECon</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>]</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3AESum"
+>ESum</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s8"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A HREF="#t%3AAnnot"
+>Annot</A
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>= <A HREF="#v%3ANString"
+>NString</A
+> String</TD
+></TR
+><TR
+><TD CLASS="decl"
+>| <A HREF="#v%3ANType"
+>NType</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="section1"
+>Documentation</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>type</SPAN
+> <A NAME="t%3ATree"
+></A
+><B
+>Tree</B
+> = [<A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+>]</TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3ATop"
+></A
+><B
+>Top</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="ndoc"
+>Top level expression.
+</TD
+></TR
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APNil"
+></A
+><B
+>PNil</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APBind"
+></A
+><B
+>PBind</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+>A Top level binding.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APSuper"
+></A
+><B
+>PSuper</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+>A supercombinator. var, value type, operational type, exp.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APExtern"
+></A
+><B
+>PExtern</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+>A function or effect imported from somewhere else.
+ 	name, value type, operational type
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APData"
+></A
+><B
+>PData</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>] [(<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, [<A HREF="Core-Exp.html#t%3ADataField"
+>DataField</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>])]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APCtor"
+></A
+><B
+>PCtor</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+>Constructor: ctor name, value type, operational type
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3APEffect"
+></A
+><B
+>PEffect</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+>A global effect.
+</TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Top')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Top" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3ATop"
+>Top</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AExp"
+></A
+><B
+>Exp</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXNothing"
+></A
+><B
+>XNothing</B
+></TD
+><TD CLASS="rdoc"
+>Empty expression
+ 	In contrast to XNil, an XNothing represents some part of the
+	tree with is _supposed_ to be empty between stages
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXNil"
+></A
+><B
+>XNil</B
+></TD
+><TD CLASS="rdoc"
+>Nil expression.
+	XNil is used internally by compiler stages as a place holder for
+	information that isn't present at the moment. If Core.Lint finds any
+	XNil's _after_ a stage has completed then it will complain.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAnnot"
+></A
+><B
+>XAnnot</B
+> <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+>Annotation.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXVar"
+></A
+><B
+>XVar</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+>A variable.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXLambda"
+></A
+><B
+>XLambda</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+>Lambda abstraction. 
+	Invariant: exp must be an XLambda or an XDo.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXApp"
+></A
+><B
+>XApp</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+>Type application.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAppE"
+></A
+><B
+>XAppE</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+>Function application with effects.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXDo"
+></A
+><B
+>XDo</B
+> [<A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+>]</TD
+><TD CLASS="rdoc"
+>Do expression.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXMatchE"
+></A
+><B
+>XMatchE</B
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>] [<A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+>]</TD
+><TD CLASS="rdoc"
+>Matching of constructors and constants with effects.
+	Matching causes read effects on the match targets.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXConst"
+></A
+><B
+>XConst</B
+> <A HREF="Shared-Literal.html#t%3AConst"
+>Const</A
+></TD
+><TD CLASS="rdoc"
+>Literals.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXUnit"
+></A
+><B
+>XUnit</B
+></TD
+><TD CLASS="rdoc"
+>The unit value.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXProj"
+></A
+><B
+>XProj</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AProj"
+>Proj</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXCall"
+></A
+><B
+>XCall</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>] [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+>Call a super,		args, effects
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXCallApp"
+></A
+><B
+>XCallApp</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> Int [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>] [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+>Call then apply super. 	name, super airity, args, effs
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXApply"
+></A
+><B
+>XApply</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>] [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+>Apply a thunk. 		thunk name, args, effects
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXCurry"
+></A
+><B
+>XCurry</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> Int [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+>Build a thunk. 		combinator name, super airity, args
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXSuspend"
+></A
+><B
+>XSuspend</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAppF"
+></A
+><B
+>XAppF</B
+> [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAppFP"
+></A
+><B
+>XAppFP</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> (Maybe [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>])</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXType"
+></A
+><B
+>XType</B
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXAt"
+></A
+><B
+>XAt</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AXLifted"
+></A
+><B
+>XLifted</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>]</TD
+><TD CLASS="rdoc"
+>Place holder for a lambda abstraction that was lifted out
+ 	name of lifted function. 
+	Name of supercombinator, vars which were free in lifted expression.
+</TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Exp')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Exp" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AProj"
+></A
+><B
+>Proj</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AJField"
+></A
+><B
+>JField</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AJFieldR"
+></A
+><B
+>JFieldR</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Proj')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Proj" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AProj"
+>Proj</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AProj"
+>Proj</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AProj"
+>Proj</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AProj"
+>Proj</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AStmt"
+></A
+><B
+>Stmt</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="ndoc"
+>Statments,  sequencing.
+</TD
+></TR
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASComment"
+></A
+><B
+>SComment</B
+> String</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASStmt"
+></A
+><B
+>SStmt</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+>Statement.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ASBind"
+></A
+><B
+>SBind</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+>Let binding.
+</TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Stmt')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Stmt" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AStmt"
+>Stmt</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AAttr"
+></A
+><B
+>Attr</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ARBoxed"
+></A
+><B
+>RBoxed</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ARStrict"
+></A
+><B
+>RStrict</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Attr')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Attr" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data Attr</TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq Attr</TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show Attr</TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable Attr</TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AAlt"
+></A
+><B
+>Alt</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="ndoc"
+>A match alternative.
+</TD
+></TR
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AAAlt"
+></A
+><B
+>AAlt</B
+> [<A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+>] <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AADefault"
+></A
+><B
+>ADefault</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Alt')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Alt" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AAlt"
+>Alt</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AGuard"
+></A
+><B
+>Guard</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AGDefault"
+></A
+><B
+>GDefault</B
+></TD
+><TD CLASS="rdoc"
+>Matches any value.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AGUnit"
+></A
+><B
+>GUnit</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+></TD
+><TD CLASS="rdoc"
+>Exp must match with unit value.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AGConst"
+></A
+><B
+>GConst</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Shared-Literal.html#t%3AConst"
+>Const</A
+></TD
+><TD CLASS="rdoc"
+>Exp must evaluate to const.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AGCon"
+></A
+><B
+>GCon</B
+> <A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [(<A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+>, <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)]</TD
+><TD CLASS="rdoc"
+>Exp must match constructor, then bind args.
+</TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Guard')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Guard" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AGuard"
+>Guard</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3ALabel"
+></A
+><B
+>Label</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ALIndex"
+></A
+><B
+>LIndex</B
+> Int</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Label')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Label" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3ALabel"
+>Label</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AType"
+></A
+><B
+>Type</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATNil"
+></A
+><B
+>TNil</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATNothing"
+></A
+><B
+>TNothing</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATVar"
+></A
+><B
+>TVar</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATVarC"
+></A
+><B
+>TVarC</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATForall"
+></A
+><B
+>TForall</B
+> [(<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>)] <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+>forall quantification.
+	Each var appears along with its kind.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATFun"
+></A
+><B
+>TFun</B
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+>Functions without effect or environment annotations
+	Used for operational types.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATFunEE"
+></A
+><B
+>TFunEE</B
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>] [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]</TD
+><TD CLASS="rdoc"
+>Functions with an effect and an environment.
+	Used for types of value expressions.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATCon"
+></A
+><B
+>TCon</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [Attr] [<A HREF="Core-Exp.html#t%3AType"
+>Type</A
+>]</TD
+><TD CLASS="rdoc"
+>Type constructor.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATColored"
+></A
+><B
+>TColored</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+>Colored modes.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATMerge"
+></A
+><B
+>TMerge</B
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+>Some collection of effects
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATKType"
+></A
+><B
+>TKType</B
+></TD
+><TD CLASS="rdoc"
+>The type kind.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATKRegion"
+></A
+><B
+>TKRegion</B
+></TD
+><TD CLASS="rdoc"
+>The region kind.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATKEffect"
+></A
+><B
+>TKEffect</B
+></TD
+><TD CLASS="rdoc"
+>The effect kind.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATTypeL"
+></A
+><B
+>TTypeL</B
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> [(<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>, ([<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>], [<A HREF="Core-Exp.html#t%3AExp"
+>Exp</A
+>]))]</TD
+><TD CLASS="rdoc"
+>A labeled type with closure info.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ATFunV"
+></A
+><B
+>TFunV</B
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+> (Maybe <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>)</TD
+><TD CLASS="rdoc"
+>A labeled function.
+</TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Type')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Type" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AEffect"
+></A
+><B
+>Effect</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AENil"
+></A
+><B
+>ENil</B
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AEVar"
+></A
+><B
+>EVar</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AEPort"
+></A
+><B
+>EPort</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AEPipe"
+></A
+><B
+>EPipe</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AEEnd"
+></A
+><B
+>EEnd</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+></TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AECon"
+></A
+><B
+>ECon</B
+> <A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+> [<A HREF="Core-Exp.html#t%3AVar"
+>Var</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3AESum"
+></A
+><B
+>ESum</B
+> [<A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+>]</TD
+><TD CLASS="rdoc"
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Effect')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Effect" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AEffect"
+>Effect</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><SPAN CLASS="keyword"
+>data</SPAN
+> <A NAME="t%3AAnnot"
+></A
+><B
+>Annot</B
+> </TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="0" CELLPADDING="0"
+><TR
+><TD CLASS="ndoc"
+>Expression annotations.
+	Used internally, and for debugging.
+</TD
+></TR
+><TR
+><TD CLASS="section4"
+>Constructors</TD
+></TR
+><TR
+><TD CLASS="body"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ANString"
+></A
+><B
+>NString</B
+> String</TD
+><TD CLASS="rdoc"
+>Some string: for debugging.
+</TD
+></TR
+><TR
+><TD CLASS="arg"
+><A NAME="v%3ANType"
+></A
+><B
+>NType</B
+> <A HREF="Core-Exp.html#t%3AType"
+>Type</A
+></TD
+><TD CLASS="rdoc"
+>Gives the type for an expression.
+</TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="section4"
+><IMG SRC="minus.gif" CLASS="coll" ONCLICK="toggle(this,'i:Annot')" ALT="show/hide"
+> Instances</TD
+></TR
+><TR
+><TD CLASS="body"
+><DIV ID="i:Annot" STYLE="display:block;"
+><TABLE CLASS="vanilla" CELLSPACING="1" CELLPADDING="0"
+><TR
+><TD CLASS="decl"
+>Data <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Eq <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+><A HREF="Util-Pretty-Comb.html#t%3APretty"
+>Pretty</A
+> <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Show <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+></TD
+></TR
+><TR
+><TD CLASS="decl"
+>Typeable <A HREF="Core-Exp.html#t%3AAnnot"
+>Annot</A
+></TD
+></TR
+></TABLE
+></DIV
+></TD
+></TR
+></TABLE
+></TD
+></TR
+><TR
+><TD CLASS="s15"
+></TD
+></TR
+><TR
+><TD CLASS="botbar"
+>Produced by <A HREF="http://www.haskell.org/haddock/"
+>Haddock</A
+> version 0.7</TD
+></TR
+></TABLE
+></BODY
+></HTML
+>

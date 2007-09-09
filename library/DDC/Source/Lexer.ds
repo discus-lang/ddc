@@ -1,0 +1,239 @@
+
+-- not ness parse a string;
+--	also parse a list of tokens;
+
+-- Match contains
+--	string still to accept, yielded value, parser state
+--	allow destructive update of parser state
+--		use this to keep line numbers
+
+import DDC.Source.Token;
+
+data Match %r1 t a
+	= Accept (List %r1 t) a
+	| Fail;
+
+chopString :: String -> [String];
+chopString ss
+ = match {
+ 	| ss.isNul
+	= [];
+	
+	\= ss.char : chopString (ss.rest);
+ };
+
+inRange :: Int -> Int -> Int -> Bool;
+inRange small big x
+ = (x >= small) && (x <= big);
+
+range 	:: String -> String 
+	-> [String] -> Match String String;
+range c1 c2
+ =	pred (\x -> inRange c1.ord c2.ord x.ord);
+
+
+-- lit
+--	Accept a literal string.
+--
+lit 	:: String 
+	-> [String] -> Match String String;
+
+lit word xx	
+ = 	lit' word word xx;
+
+
+lit' word toMatch xx
+ = match {
+ 	| string_isNul toMatch
+	= Accept xx word;
+	
+	| x : xs	<- xx
+	, toMatch.char == x
+	= lit' word toMatch.rest xs;
+	
+	\= Fail;
+ };
+
+-- pred
+--	Accept a string matching a predicate.
+--
+pred 	:: (String -> Bool)
+	-> [String] -> Match String String;
+	
+pred fun xx
+ = match {
+ 	| x : xs	<- xx
+	, fun x
+	= Accept xs x;
+	
+	\= Fail;
+ };
+
+
+-- seq2
+--
+seq2 	:: ([t] -> Match t a) -> ([t] -> Match t b) 
+	-> (a -> b -> c)
+	-> ([t] -> Match t c);
+	
+seq2 p1 p2 yield ss
+ = match {
+ 	| Accept s1 a1	<- p1 ss
+	, Accept s2 a2 	<- p2 s1
+	= Accept s2 (yield a1 a2);
+	
+	\= Fail;
+ };
+
+
+seqs 	:: [[t] -> Match t a] 
+	-> ([a] -> b)
+	-> ([t] -> Match t b);
+
+seqs 	pp yield ss 
+ =	seqs' pp yield [] ss;
+	
+seqs'	pp yield aa ss
+ = match {
+ 	| []			<- pp
+	= Accept ss (yield aa);
+ 
+ 	| p : ps		<- pp
+	, Accept sRest a1	<- p ss
+	= seqs' ps yield (aa ++ [a1]) sRest;
+	
+	\= Fail;
+ };
+
+
+-- yield
+
+infixr 7 *>;
+
+(*>) 	:: ([t] -> Match t a) -> b 
+	->  [t] -> Match t b;
+	
+(*>) parse aa ss
+ = match {
+ 	| Accept str a1		<- parse ss
+	= Accept str aa;
+	
+	\= Fail;
+ };
+
+
+-- yield with fun
+
+infixr 7 **>;
+
+(**>)	:: ([t] -> Match t a)
+	-> (a -> b)
+	-> [t] -> Match t b;
+	
+(**>) p yield ss
+ = match {
+ 	| Accept str a1		<- p ss
+	= Accept str (yield a1);
+	
+	\= Fail;
+ };
+
+
+
+-- either
+
+infixl 5 <|>; 
+
+(<|>)	:: ([t] -> Match t a)
+	-> ([t] -> Match t a)
+	-> ([t] -> Match t a);
+
+(<|>) p1 p2 ss 
+ = do {	m1	= p1 ss;
+ 
+ 	match {
+	 | Accept xx aa	<- m1
+	 = m1;
+	
+	 \= p2 ss;
+	};
+ };
+
+
+
+-- any 
+--	zero or more
+
+any	:: ([t] -> Match t a)
+	-> ([t] -> Match t [a]);
+	
+any p1 ss
+ = match {
+ 	| Accept x1 a1	<- p1 ss
+	, Accept x2 a2	<- any p1 x1
+	= Accept x2 (a1 : a2);
+	
+	\= Accept ss [];
+ };
+
+
+sany p1 ss
+ = match {
+ 	| Accept x1 a1	<- p1 ss
+	, Accept x2 a2	<- sany p1 x1
+	= Accept x2 (a1 % a2);
+	
+	\= Accept ss "";
+ };
+
+
+-- some
+--	one or more
+
+some p1 ss
+ = match {
+ 	| Accept x1 a1	<- p1 ss
+	, Accept x2 a2	<- any p1 x1
+	= Accept x2 (a1 : a2);
+	
+	\= Fail;
+ };
+
+ssome p1 ss
+ = match {
+ 	| Accept x1 a1	<- p1 ss
+	, Accept x2 a2	<- sany p1 x1
+	= Accept x2 (a1 % a2);
+	
+	\= Fail;
+ };
+
+
+-- then
+
+infixl 6 <+>; 
+
+(<+>)	:: ([t] -> Match t a)
+	-> ([t] -> Match t a)
+	-> ([t] -> Match t [a]);
+
+(<+>) p1 p2 ss
+ = match {
+ 	| Accept x1 a1	<- p1 ss
+	, Accept x2 a2  <- p2 x1
+	= Accept x2 [a1, a2];
+	
+	\= Fail;
+ };	
+
+
+-- append
+
+infixl 8 <%>;
+
+(<%>)	:: ([String] -> Match String String)
+	-> ([String] -> Match String String)
+	-> ([String] -> Match String String);
+	
+(<%>) p1 p2 
+	= seq2 p1 p2 (\x y -> x % y);

@@ -1,0 +1,144 @@
+
+import Base;
+import Data.String;
+import Control.Exception;
+
+data FILE# %r1	foreign "FILE";
+effect !File	:: !;
+
+-- fopen
+foreign import extern "fopen"
+ fopenU :: forall %r1 %r2 %r3 %r4 !e1
+ 	.  	String# %r1 			-- fileName
+	-> 	String# %r2 			-- mode
+	-(!e1)> Ptr# %r3 (FILE# %r4)		-- file
+ 	:- !e1 = !{!Read %r1; !Read %r2; !File};
+
+
+
+-- fread
+foreign import extern "fread"
+ freadU 
+ 	:: forall %r1 %r2 %r3 %r4 %r5 %r6 !e1
+ 	. 	String# %r1			-- destination string
+	-> 	Int32# %r2			-- size of member
+	-> 	Int32# %r3			-- number of members to read
+	-> 	Ptr# %r4 (FILE# %r5) 		-- file to read from
+	-(!e1)> Int32# %r6 			-- number of members read
+
+  :- !e1 = !{	!Write %r1; 
+		!Read  %r2; !Read %r3;
+		!Read %r4;  !Read %r5; 
+		!File };
+
+
+-- fseek
+foreign import extern "fseek"
+ fseekU	
+ 	:: forall %r1 %r2 %r3 %r4 %r5 !e1
+ 	.	Ptr# %r1 (FILE# %r2)		-- file
+	-> 	Int32# %r3			-- offset
+	-> 	Int32# %r4			-- whence SEEK_SET, SEEK_END or SEEK_CUR
+	-(!e1)> Int32# %r5			-- 0 on success, -1 on fail and set errno
+
+  :- !e1 = !{ 	!Read %r1; !Read %r2;
+  		!Read %r3; !Read %r4;
+		!File };
+
+
+foreign import extern "SEEK_SET"	 file_SEEK_SET :: elaborate Int32#;
+foreign import extern "SEEK_CUR"	 file_SEEK_CUR :: elaborate Int32#;
+foreign import extern "SEEK_END"	 file_SEEK_END :: elaborate Int32#;
+
+
+foreign import extern "(Int32)"
+ unsafe_castToInt32U :: forall a %r1. a -> Int32# %r1;
+ 
+
+-- ftell
+foreign import extern "ftell"
+ ftellU	
+ 	:: forall %r1 %r2 %r3 !e1
+	.	Ptr# %r1 (FILE# %r2)
+	-(!e1)>	Int32# %r3
+
+ :- !e1 = !{	!Read %r1; !Read %r2;
+ 		!File };
+ 
+ 
+-- 2007/2/16.8 workarounds, can't return unboxed values from functions
+
+{-
+file_open :: String -> String -> Ptr# FILE#;
+file_open name mode
+ = do {	file	= fopenU (unboxString name) (unboxString mode);
+
+	case unsafe_castToInt32U file #== 0# of {
+	 1# -> throw ExceptionIO;
+	 0# -> ();
+	};
+
+	file;
+ };
+ 	
+ 
+file_length :: String -> Int;
+file_length name
+ = do {	file	= file_open name "r+";
+
+ 	fseekU file 0# file_SEEK_END;
+	
+	len	= ftellU file;
+	
+	boxInt32 len;
+ };
+ 
+ 
+file_read :: String -> String;
+file_read name
+ = do {	len	= file_length name;
+ 	str	= newString len;
+	
+	file	= file_open name "r+";
+
+	freadU	(unboxString str) (unboxInt32 len) 1# file;
+	
+	str;
+ };
+-}
+
+
+file_length :: String -> Int;
+file_length name
+ = do {	
+ 	file	= fopenU (unboxString name) "r+"#;
+
+	case unsafe_castToInt32U file #== 0# of {
+	 1# -> throw ExceptionIO;
+	 0# -> ();
+	};
+
+ 	fseekU file 0# file_SEEK_END;
+	
+	len	= ftellU file;
+	
+	boxInt32 len;
+ };
+ 
+ 
+file_read :: String -> String;
+file_read name
+ = do {	len	= file_length name;
+ 	str	= newString len;
+	
+	file	= fopenU (unboxString name) "r+"#;
+
+	case unsafe_castToInt32U file #== 0# of {
+	 1# -> throw ExceptionIO;
+	 0# -> ();
+	};
+
+	freadU	(unboxString str) (unboxInt32 len) 1# file;
+	
+	str;
+ };

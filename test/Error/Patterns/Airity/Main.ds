@@ -1,0 +1,24 @@
+
+-- Check airity error reporting for patterns.
+--	Some patterns have too many args, others don't have enough.
+
+fun1 x
+ = case x of {
+ 	Cons a b c 	-> c;
+	Nil  x		-> x;
+ };
+
+
+data Thingo %r1 a b !e1
+	= ThingC1 a b
+	| ThingC2 (Int %r1) b (Int %r1)
+	| ThingC3 (a -(!e1)> b);
+	
+
+fun2 x
+ = case x of {
+ 	ThingC1 a 	-> 5;
+	ThingC2 i b z s	-> b;
+	ThingC3 f	-> f x;
+ };
+

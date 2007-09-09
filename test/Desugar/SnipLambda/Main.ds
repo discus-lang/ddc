@@ -1,0 +1,14 @@
+
+
+-- check the snipped drops lambdas before leaving match alts
+fun f xx
+ = do {
+	case xx of {
+	 (a, b, c)	-> f (\x y -> x + y + c + 1) a b;
+	};
+ };
+
+
+-- fun2 
+
+

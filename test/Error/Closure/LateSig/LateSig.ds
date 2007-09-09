@@ -1,0 +1,19 @@
+
+-- This one is like the program in Late.ds, except that we've
+--	provided guidance to the inferencer by adding a signature for box.
+--	All is not good however, as this only exposes the conflict between
+--	the two instances of it.
+--
+data Box %r a
+	= Box {x :: a; };
+	
+main ()
+ = do {	box	:: Box %r a :- Mutable %r;
+	box	= Box [];
+
+	box#x	#= [5];
+	box#x	#= ['a'];
+	
+	();
+ };
+		

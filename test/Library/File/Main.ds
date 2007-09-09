@@ -1,0 +1,15 @@
+
+import Base;
+import System.File;
+
+
+main () = topHandle prog;
+
+name	= "test/Library/File/Main.data";
+
+prog ()
+ = do {	print	$ "length = " % show (file_length name) % "\n";
+
+	ss	= file_read name;
+	print	$ "data = " % ss % "\n";
+ };

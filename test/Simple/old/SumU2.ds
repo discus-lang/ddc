@@ -1,0 +1,9 @@
+
+sumU xx
+ = do {	count	= 0;
+	f x	= count := count + x;
+	map_ 	f xx;
+	count;
+ };
+
+

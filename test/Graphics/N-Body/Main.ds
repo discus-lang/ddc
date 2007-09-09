@@ -1,0 +1,147 @@
+
+-- Testing out
+--	Fix GC for anchored arrays.
+--	Use/update of data with multiple alternatives.
+--	case of case optimisation.
+--	work pi into this somehow, fix up top level regions.
+--	have tasty mutable data that the full laziness transform will lift if not careful.
+--	Later: unboxed vectors?
+--	BUGS: can't use name 'force' locally. Conflicts with thunk forcing function.
+--
+--	in forceBetween , we're not forcing possible thunks read from body structs.
+--	add pass to suspend all possible non-effectful applications.
+--
+--	When id.field returns 'ambiguous projection'.. should return type conflict.
+--	Unbox truncate/toFloat
+--
+
+import Graphics.Render;
+import Data.Array;
+import DDC.Runtime;
+import Math.Vec2;
+import System.Console;
+
+
+-----
+main ()
+ = topHandle nbody;
+
+
+nbody ()
+ = do {	frame	= frame_new "N-Body" 600 600;
+	case initBodies () of {
+		Tuple2 body0 body1 -> run frame body0 body1;
+	};
+ };
+
+
+initBodies ()
+ = do {	
+	-- bodies
+	bodies 
+	 = 	[ newBody (Vec2 200.0 300.0) (Vec2 (0.0 - 0.5)	0.0)
+		, newBody (Vec2 280.0 350.0) (Vec2  0.5		0.0)
+		, newBody (Vec2 520.0 200.0) (Vec2  0.0         1.0)
+	 	, newBody (Vec2 100.0 300.0) (Vec2  0.0        (0.0 - 1.0))
+		, newBody (Vec2 280.0 450.0) (Vec2  1.0         1.0)
+		, newBody (Vec2 020.0 200.0) (Vec2  0.0         0.0) ];
+
+		
+	body0	= array_new (length bodies) (errorNoEff @ "elem not initialised");
+	zipWith_ (\b i -> body0 #(i) #= b)
+		bodies [0 .. array_size body0 -1];
+
+
+	-- next positions
+	body1	= array_new (length bodies) (errorNoEff @ "elem not initialised");
+
+	map_	(\i -> body1 #(i) #= newBody (Vec2 0.0 0.0) (Vec2 0.0 0.0))
+		[0.. array_size body1 - 1];
+		
+
+	(body0, body1);
+ };
+
+ 
+-----
+run :: 	Frame -> Array Body -> Array Body -> ();
+run 	frame body0 body1
+ = match {
+ 	| frameCount > frameCount_max
+	= ();
+	
+	\= do {	
+		frame.clear (frame_color 0 0 0);
+		mapArrayIx_ (\.update body0) body1;
+
+	
+		draw_force frame body1 0 0;
+
+		mapArray_   (\.clampPos)	body1;
+		mapArray_   (\.draw frame)	body1;
+
+		frameCount += 1;
+
+	 	frame.update;
+--		usleep 1#;
+
+		run frame body1 body0;
+	};
+ };
+	
+
+
+draw_force :: Frame -> Array Body -> Int -> Int -> ();
+draw_force frame body x y
+ = match {
+ 	| x >= 600	= draw_force frame body 0 	(y + draw_force_step);
+	| y >= 600	= ();
+	
+	\= do {
+		forceV	= Vec2 0.0 0.0;
+
+		sumAllForces 
+			(unboxFloat32 (toFloat x)) (unboxFloat32 (toFloat y))
+			body 0 forceV;
+
+		forceS	= forceV.magnitude;
+		fS	= log forceS + 6.0;
+		color	= forceColor fS;
+						
+		frame.point  
+			x (frame.sizeY - y)
+			color;
+			
+		draw_force frame body (x + draw_force_step) y;
+	};
+ };
+
+
+sumAllForces 
+	:: Float32# -> Float32# 
+	-> Array Body 
+	-> Int
+	-> Vec2 Float -> Vec2 Float;
+
+sumAllForces pX pY array ix vForce
+ = match {
+ 	| ix >= array_size array
+	= vForce;
+	
+	\= do {
+		body	= array .(ix);
+		vForce	+= body_forceVec_work 
+				1.0# (unboxFloat32 body.mass)
+				pX pY
+				(unboxFloat32 body.pos.x) (unboxFloat32 body.pos.y);
+		
+		sumAllForces pX pY array (ix + 1) vForce;
+	};
+ };
+					
+		
+
+
+
+ 
+ 				

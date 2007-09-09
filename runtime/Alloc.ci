@@ -1,0 +1,218 @@
+
+#ifndef _DDC_Alloc_I
+#define _DDC_Alloc_I
+
+#include "Alloc.h"
+#include "Profile.h"
+#include "State.h"
+#include "Macro.h"
+#include "Collect.h"
+#include "Object.h"
+#include "Lint.h"
+
+#include <stdlib.h>
+#include <stdio.h>
+
+static inline 
+void*	_alloc		(UInt byteCount)
+{
+	_DEBUG(assert(byteCount >= 8));
+	_DEBUG(assert((byteCount % 4) == 0));
+
+	// Not enough free space in heap
+	//	Time for a collection.
+	if (_ddcHeapPtr + byteCount > _ddcHeapMax) 
+		_allocCollect (byteCount);
+
+	Obj* obj	= (Obj*)_ddcHeapPtr;
+	_ddcHeapPtr	+= byteCount;
+
+	_PROFILE_ALLOC (total.count++);
+	_PROFILE_ALLOC (total.bytes += byteCount);
+
+	return obj;
+}
+
+
+static inline
+Obj*	_allocThunk	(FunPtr func, UInt arity, UInt args)
+{
+	UInt	size	= sizeof(Thunk) + sizeof(Obj*) * arity;
+	Thunk*	thunk	= (Thunk*)_alloc (size);
+
+	thunk->tagFlags	= (_tagThunk << 8) | _ObjFixedThunk;
+	thunk->func	= func;
+	thunk->arity	= arity;
+	thunk->args	= args;
+
+	_PROFILE_ALLOC (thunk.count++);
+	_PROFILE_ALLOC (thunk.bytes += size);
+
+	return (Obj*)thunk;	
+}
+
+
+static inline
+Thunk*	_copyThunk	(Thunk* thunk)
+{
+	_ENTER(1);
+	_S(0)		= (Obj*)thunk;
+
+	UInt	size	= sizeof(Thunk) + sizeof(Obj*) * thunk ->arity;
+	Thunk*	thunkC	= (Thunk*)_alloc (size);
+
+	Thunk*	thunk1	= (Thunk*)_S(0);
+	thunkC ->tagFlags	= thunk1 ->tagFlags;
+	thunkC ->func		= thunk1 ->func;
+	thunkC ->arity		= thunk1 ->arity;
+	thunkC ->args		= thunk1 ->args;
+
+	for (UInt i = 0; i < thunk->args; i++)
+		thunkC ->a[i]	= thunk1 ->a[i];
+
+	_PROFILE_ALLOC (thunkCopy.count++);
+	_PROFILE_ALLOC (thunkCopy.bytes += size);
+	
+	_LEAVE(1);
+	return thunkC;
+}
+
+
+static inline
+Obj*	_allocData	
+		( Tag tag
+		, UInt arity)
+{
+	UInt	size	= sizeof(Data) + sizeof(Obj*) * arity;
+	Data*	data	= (Data*)_alloc (size);
+
+	data ->tagFlags	= (tag << 8) | _ObjFixedData;
+	data ->arity	= arity;
+
+	_PROFILE_ALLOC (data.count++);
+	_PROFILE_ALLOC (data.bytes += size);
+
+	return (Obj*)data;
+}
+
+
+static inline
+Obj*	_allocDataAnchored
+		( Tag 	tag
+		, UInt	arity)
+{
+	// GC doesn't handler ptrs in anchored objects yet.
+	assert (arity == 0);
+
+	UInt	size	= sizeof(Data) + sizeof(Obj*) * arity;
+	Data*	data	= (Data*)malloc(size);
+	
+	data ->tagFlags	= (tag << 8) | _ObjFixedData | _ObjFlagAnchored;
+	data ->arity	= arity;
+	
+	_PROFILE_ALLOC (data.count++);
+	_PROFILE_ALLOC (data.bytes += size);
+	
+	return (Obj*)data;
+}
+
+
+static inline
+Obj*	_allocDataR	(Tag tag, UInt dataSize)
+{
+	UInt	size	= sizeof(DataR)
+			+ dataSize;
+			
+	DataR*	data	= (DataR*)_alloc (size);
+	
+	data ->tagFlags	= (tag << 8) | _ObjFixedDataR;
+	data ->size	= size;
+	
+	_PROFILE_ALLOC (dataRaw.count++);
+	_PROFILE_ALLOC (dataRaw.bytes += size);
+	
+	return (Obj*)data;
+}
+
+
+static inline
+Obj*	_allocDataR_anchored
+		(Tag tag, UInt dataSize)
+{
+	UInt	size	= sizeof(DataR)
+			+ dataSize;
+			
+	DataR*	data	= (DataR*)malloc (size);
+	
+	data ->tagFlags	= (tag << 8) | _ObjFixedDataR | _ObjFlagAnchored;
+	data ->size	= size;
+	
+	_PROFILE_ALLOC (dataRaw.count++);
+	_PROFILE_ALLOC (dataRaw.bytes += size);
+	
+	return (Obj*)data;
+}
+
+
+static inline
+Obj*	_allocDataRS	(Tag tag, UInt dataSize)
+{
+	UInt dataSizeWords
+			= dataSize / 4;
+
+	UInt	size	= sizeof(DataRS)
+			+ dataSize;
+
+	DataRS*	data	= (DataRS*)_alloc (size);
+	
+	data ->tagFlags	= (tag << 8) | _ObjModeDataRS | (dataSizeWords << 4);
+
+	_PROFILE_ALLOC (dataRawSmall.count++);
+	_PROFILE_ALLOC (dataRawSmall.bytes += size);
+	
+	return (Obj*)data;
+}
+
+
+static inline
+Obj*	_allocDataM	(Tag tag, UInt ptrCount, UInt dataSize)
+{
+	UInt	size	= sizeof(DataM) 
+			+ ptrCount * sizeof (Obj*)
+			+ dataSize;
+			
+	DataM*	data	= (DataM*)_alloc (size);
+	
+	data ->tagFlags	= (tag << 8) | _ObjFixedDataM;
+	data ->size	= size;
+	data ->ptrCount	= 0;
+	
+	_PROFILE_ALLOC (dataMixed.count++);
+	_PROFILE_ALLOC (dataMixed.bytes += size);
+	
+	return (Obj*)data;
+}
+
+
+static inline
+Obj*	_allocSusp	(Obj* thunk, UInt args)
+{
+	_ENTER(1);
+	_S(0)	= thunk;
+
+	UInt	size	= sizeof (Susp) + sizeof(Obj*) * args;
+	Susp*	susp	= (Susp*)_alloc (size);
+
+	susp ->tagFlags	= (_tagSusp << 8) | _ObjFixedSusp;
+	susp ->obj	= _S(0);
+	susp ->arity	= args;
+
+	_PROFILE_ALLOC (susp.count++);
+	_PROFILE_ALLOC (susp.bytes += size);
+	
+	_LEAVE(1);
+	return (Obj*)susp;
+}
+
+
+#endif

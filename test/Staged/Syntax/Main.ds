@@ -1,0 +1,24 @@
+
+-- Syntax tests
+
+
+main ()
+ = do {
+	-- Defixer.
+	print $ "-- Defixer.\n";
+	print $ (showInt $ 1 + 2 + 3)			% "\n";
+	print $ (showInt $ 1 + 2 * 3)			% "\n";
+	print $ (showInt $ 1 * 2 + 3 * 4)		% "\n";
+
+	-- List ranges.
+	print $ "-- List Ranges.\n";
+	print $ showListInt [5..23]			% "\n";
+	print $ showListInt [@ 5..23]			% "\n";
+
+	print $ (showListInt $ take 10 [2..])		% "\n";
+	print $ (showListInt $ take 10 [@ 2..])		% "\n";
+
+	-- List comprehensions.
+--	print $ (showListInt [x + y | x <@- [1..5], y <- [5..9]])	% "\n";
+	
+ };

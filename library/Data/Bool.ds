@@ -1,0 +1,39 @@
+
+import	Base;
+
+-- The Boolean type
+-- 	* The runtime system assumes that the constructors are 
+--	  in this order (False first). Don't swap them around.
+--
+data Bool %r1
+	= False
+	| True;
+	
+not b
+ = case b of {
+ 	True	-> False;
+	False   -> True;
+ };
+
+
+infixr 4 && ;
+(&&) a b
+ = case a of {
+	False	-> False;
+	_	-> case b of {
+			True	-> True;
+			_	-> False;
+		};
+ };
+
+infixr 3 || ;
+(||) a b
+ = case a of {
+ 	True	-> True;
+	_	-> case b of {
+			True	-> True;
+			_	-> False;
+		};
+ };
+ 
+ 

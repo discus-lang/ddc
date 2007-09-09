@@ -1,0 +1,44 @@
+
+main ()
+ = do {	max	= 1500;
+	high	= 1;
+
+	primes		= arrayUI_new 0 (max + 1);
+	arrayUI_set primes 0 2;
+	 
+	i	= 2;
+	while (high <= max)
+	do {	
+	 	when (checkPrime primes high i)
+		do { 	
+		 	arrayUI_set primes high i;
+			high 	:= high + 1;
+		};
+		
+		i	:= i + 1;
+	};
+
+	result	= arrayUI_get primes max;
+	print	$ (showInt result ) % "\n";
+ };
+
+
+checkPrime array high x
+ = do {	n	= 0;
+	isPrime	= 1;
+
+	while (n < high)
+	do { 	
+		when (x `mod` arrayUI_get array n == 0)
+		do { 	isPrime	:= 0;
+			break;
+		};
+
+		n := n + 1;
+	};
+
+	isPrime /= 0;
+ };
+
+
+   

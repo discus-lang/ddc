@@ -1,0 +1,105 @@
+
+-- TODO
+-- express grammar as data structure
+--	use grammar to generate parser /w combinators or tables.
+--
+--	result has different types
+--	shouldn't nessesarally be a list
+--	building trees as we parse
+
+-- do keyword detection in second stage
+--	just lex to words at first
+
+-- BUGS
+--	doesn't handle newlines
+--	doesn't handle vars of only 1 char
+--
+
+import DDC.Source.Lexer;
+import DDC.Runtime;
+
+spaces	= some space		**> (\s -> Space (sumSpace s));
+space	= lit " "		*>  Space 1;
+
+parens	=   (lit "{"		*> CBra)
+	<|> (lit "}"		*> CKet)
+	<|> (lit "("		*> RBra)
+	<|> (lit ")"		*> RKet)
+	<|> (lit "["		*> SBra)
+	<|> (lit "]"		*> SKet);
+
+digit	= range "0" "9";
+lower	= range "a" "z";
+upper	= range "A" "Z";
+alpha	= lower <|> upper;
+
+num	= ssome digit		**> (\s -> Word s);
+
+word	= (alpha <%> ssome (alpha <|> digit <|> lit "_" <|> lit "'"))
+			**> (\t -> checkKeyword (Word t));
+
+
+fromJust (Just x)	= x;
+fromMaybe s m
+ = case m of {
+ 	Nothing		-> s;
+	Just x		-> x;
+ };
+
+liftMaybe f xx
+ = case xx of {
+ 	Nothing		-> Nothing;
+	Just x		-> Just (f x);
+ };
+ 
+
+-- toplevel
+--
+token	= parens <|> word <|> num;
+thing	= seq2 token spaces (\x y -> x);
+
+lexer	= any thing;
+
+
+showResult rr
+ = case rr of {
+ 	Accept str aa -> "Accept " % showList id str % "  " % showList showTok aa;
+	Fail          -> "Fail ";
+ };
+
+
+-- keywords
+-- 
+checkKeyword (Word ss)
+ = case find (\s -> fst s == ss) keywords of {
+ 	Just (z, tok)	-> tok;
+	Nothing		-> Word ss;
+ };
+
+keywords
+ =	[ ("module",	Module)
+ 	, ("import",	Import)
+	, ("export",	Export)
+	, ("infixl",	InfixL)
+	, ("infixr",	InfixR)
+	, ("infix",	Infix)
+	, ("data",	Data)
+	, ("effect",	Effect)
+	, ("let",	Let)
+	, ("in",	In)
+	, ("case",	Case)
+	, ("of",	Of)
+	, ("if",	If)
+	, ("then",	Then)
+	, ("else",	Else)
+	, ("do",	Do)
+	, ("forall",	Forall)];
+	
+main ()
+ = do {	input	= file_read "test/Library/DDC/Source/Lexer/Main.data";
+  	print	$ showResult (lexer $ chopString input)	% "\n";
+
+--	 ss	= checkKeyword (Word "in");
+
+--	print	$ showTok ss % "\n";
+ };

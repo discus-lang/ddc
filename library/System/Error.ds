@@ -1,0 +1,34 @@
+
+import 
+{	Base;
+	Base.Thunk;
+	Data.Int;
+	Data.String;
+	
+	
+}
+
+effect !Error	:: !;
+
+foreign import extern "primError"
+ error
+	:: forall a %r1 !e1
+	.  String %r1	-(!e1)> a
+	:- !e1	= !{ !Error }
+	:$ Obj -> Obj;
+
+foreign import extern "primError"
+ errorNoEff
+ 	:: forall a %r1
+	.  String %r1 -> a
+	:$ Obj -> Obj;
+
+foreign import extern "primExit"
+ exit
+	:: forall a %r1 !e1
+	.  Int %r1	-(!e1)> a
+	:- !e1 = !{ !Error }
+	:$ Obj -> Obj;
+
+
+errorL str	= errorNoEff @ str;

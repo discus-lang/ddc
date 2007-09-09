@@ -1,0 +1,74 @@
+
+data Tree %r
+	= Leaf
+	| Node (Int %r) (Tree %r) (Tree %r);
+	
+min'		= 4;
+	
+main ()
+ = do {
+ 	max'	= 14;
+
+	stretchTree
+		= make 0# (unboxInt32 (max' + 1));
+	
+	print	$ "stretch tree of depth " 	% showInt (max' + 1) 
+		% "\t check: " 			% showInt (boxInt32 (itemCheck stretchTree))
+		% "\n";
+
+	longLivedTree
+		= make 0# (unboxInt32 max');
+
+	depthLoop min' max';
+
+	print	$ "long lived tree of depth " 	% showInt max'
+		% "\t check: "			% showInt (boxInt32 (itemCheck longLivedTree))
+		% "\n";
+	
+ };
+ 		
+depthLoop d m
+ = match {
+ 	| d <= m
+	= do {	n	= 2 `pow` (m - d + min');
+		print 	$ (showInt (2*n)) % "\t trees of depth " % showInt d 
+			% "\t check: " % showInt (sumLoop (unboxInt32 n) (unboxInt32 d) 0#) 
+			% "\n";
+			
+		depthLoop (d + 2) m;
+	};
+
+	\= ();
+ };
+
+sumLoop k d acc
+ = match {
+ 	|# k `primInt32U_eq` 0#	= boxInt32 acc;
+
+	\= do {
+		c	= itemCheck (make k d);
+		c'	= itemCheck (make (0# - 1# * k) d);
+		sumLoop (k - 1#) d (acc + c + c');
+	};
+ };
+
+make i d
+ = match {
+ 	|# d `primInt32U_eq` 0#
+	= Leaf;
+	
+	\= Node (boxInt32 i) 
+		(make ((2# * i) - 1#)	(d - 1#)) 
+		(make  (2# * i)	(d - 1#));
+ };
+
+itemCheck xx
+ = case xx of {
+ 	Leaf		-> 0#;
+	Node x l r	-> (unboxInt32 x) + itemCheck l - itemCheck r;
+ };
+ 
+ 
+	
+
+

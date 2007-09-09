@@ -1,0 +1,43 @@
+
+-- Evaluate 3^8 using church encoding of numbers.
+-- 	Adapted from the nofib benchmark.
+--
+
+data Nat %r
+	= Z 
+	| S (Nat %r);
+
+cAdd z y
+ = case z of {
+ 	Z	-> y;
+	S x	-> S (x `cAdd` y);
+ };
+ 
+cMul x z
+ = case z of {
+ 	Z	-> Z;
+	S y	-> (x `cMul` y) `cAdd` x;
+ };
+
+cExp x z
+ = case z of {
+ 	Z	-> S Z;
+	S y	-> x `cMul` (x `cExp` y);
+ };
+ 
+ 
+natToInt n
+ = case n of {
+ 	Z	-> 0;
+	S x 	-> 1 + natToInt x;
+ };
+
+intToNat x
+ = if x < 1
+ 	then Z
+	else S (intToNat (x - 1));
+	
+main ()
+ = do {
+	print 	$ showInt (natToInt (intToNat 3 `cExp` intToNat 8))	% "\n";
+ };

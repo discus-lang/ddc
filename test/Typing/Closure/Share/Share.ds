@@ -1,0 +1,13 @@
+
+fun ()
+ = do {	x	= [];
+ 	fun2 ()	= x;
+ };
+ 
+
+fun_u	= fun ();
+
+xx	= fun_u ();
+ 
+a	=  1  : fun_u ();
+b	= 'a' : fun_u ();  	

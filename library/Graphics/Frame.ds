@@ -1,0 +1,114 @@
+
+import	Graphics.TinyPTC;
+import	Graphics.Raster.Bresenham;
+
+-----
+-- Frame
+--
+data Frame %r1 %r2
+	= Frame {
+		sizeX	:: Int %r1;
+		sizeY	:: Int %r1;
+		array	:: ArrayU %r1 (Int %r2);
+	};
+
+project Frame where
+{
+	update :: Frame -> ();
+	update frame
+	 	= ptcUpdate frame.array;
+
+
+	clear ::  Frame -> Int -> ();
+	clear frame color
+		= arrayUI_fill frame.array color;
+
+
+
+	point :: Frame -> Int -> Int -> Int -> ();
+	point frame x y c
+	 = match {
+	 	| x > 0, x < frame.sizeX
+		, y > 0, y < frame.sizeY
+		= arrayUI_set 
+	 		frame.array
+			(x + y * frame.sizeX)
+			c;
+		
+		\= ();
+	 };
+
+	line ::	 Frame -> Int -> Int -> Int -> Int -> Int -> ();
+	line frame x0 y0 x1 y1 c
+	 = 	drawBresenhamLine 
+		frame.array 
+		frame.sizeX 
+		frame.sizeY
+		c
+		x0 y0
+		x1 y1;
+
+	poly :: Frame -> [(Int, Int)] -> Int -> ();
+	poly frame xx c
+		= frame_poly frame xx c;
+
+
+	circle :: Frame -> Int -> Int -> Int -> Int -> Int -> ();
+	circle frame ps pX pY r color
+	 = do {	
+		pi 	= 3.1415926536;
+
+		rF	= toFloat r;
+
+	 	points	
+		 = 	maps 	[0..ps]
+			(\x -> do {
+				theta	= (toFloat x) / (toFloat ps) * 2.0 * pi;
+				(rF * cos theta, rF * sin theta); 
+			});
+		
+		points'
+		 = 	maps	points
+		 	(\case { (x, y) -> (pX + truncate x, frame.sizeY - (pY + truncate y)); });
+
+		frame.poly points' color;			
+		
+{-		
+		maps_ 	points
+			(\case {
+				Tuple2 x y 
+				 ->  frame.point
+					(pX + truncate x) (frame.sizeY - (pY + truncate y))
+					color; });
+-}
+	 };
+
+
+}
+
+frame_poly :: Frame -> [(Int, Int)] -> Int -> ();
+frame_poly frame xx c
+ = match {
+	| ((x1, y1) : (x2, y2) : xs)	<- xx
+	= do {	frame.line x1 y1 x2 y2 c;
+		frame_poly frame ((x2, y2) : xs) c;
+	};
+		
+	\= ();
+ };
+
+
+
+frame_new name sizeX sizeY
+ = do {	ptcOpen name sizeX sizeY;
+ 	array	= arrayUI_new 1 (400 * 400 * 4);
+	Frame sizeX sizeY array;
+ };
+ 
+		
+
+
+frame_color r g b
+ = b
+ + (256 * g)
+ + (256 * 256 * r);

@@ -1,0 +1,21 @@
+
+-- Primes
+--	Find the 1500'th prime number.
+--	Makes judiciious use of laziness and infinite lists.
+--
+
+ints n		= n : ints@ (n + 1);
+
+primes 		= primes' $ drop 2 (ints 0);
+primes' xx	= head xx : primes'@ (sieve (head xx) (tail xx));
+
+sieve n xx	= filterL (\x -> x `mod` n /= 0) xx;
+	
+main ()
+ = do {
+	print	$ showInt $ primes !! 1500;
+	print	"\n";
+ };
+
+
+

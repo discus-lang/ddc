@@ -1,0 +1,64 @@
+
+import Class.Num;
+
+
+-- math
+foreign import extern "primFloat32U_add"
+ primFloat32U_add	:: elaborate Float32# -> Float32# -> Float32#;
+
+foreign import extern "primFloat32U_sub"
+ primFloat32U_sub	:: elaborate Float32# -> Float32# -> Float32#;
+
+foreign import extern "primFloat32U_mul"
+ primFloat32U_mul	:: elaborate Float32# -> Float32# -> Float32#;
+
+foreign import extern "primFloat32U_div"
+ primFloat32U_div	:: elaborate Float32# -> Float32# -> Float32#;
+
+foreign import extern "primFloat32U_mod"
+ primFloat32U_mod	:: elaborate Float32# -> Float32# -> Float32#;
+
+
+
+-- comparisons
+foreign import extern "primFloat32U_eq"
+ primFloat32U_eq	:: elaborate Float32# -> Float32# -> Bool#;
+
+foreign import extern "primFloat32U_neq"
+ primFloat32U_neq	:: elaborate Float32# -> Float32# -> Bool#;
+
+foreign import extern "primFloat32U_gt"
+ primFloat32U_gt	:: elaborate Float32# -> Float32# -> Bool#;
+
+foreign import extern "primFloat32U_ge"
+ primFloat32U_ge	:: elaborate Float32# -> Float32# -> Bool#;
+
+foreign import extern "primFloat32U_lt"
+ primFloat32U_lt	:: elaborate Float32# -> Float32# -> Bool#;
+
+foreign import extern "primFloat32U_le"
+ primFloat32U_le	:: elaborate Float32# -> Float32# -> Bool#;
+
+
+instance Eq (Float32# (%)) where
+{
+	(#==)	= primFloat32U_eq;
+	(#/=)	= primFloat32U_neq;
+}
+
+instance Ord (Float32# (%)) where
+{
+	(>)	= primFloat32U_gt;
+	(<)	= primFloat32U_lt;
+	(>=)	= primFloat32U_ge;
+	(<=)	= primFloat32U_le;
+}
+
+instance Num (Float32# (%)) where 
+{
+ 	(+) 	= primFloat32U_add;
+	(-) 	= primFloat32U_sub;
+	(*) 	= primFloat32U_mul;
+	(/) 	= primFloat32U_div;
+	mod	= primFloat32U_mod;
+}

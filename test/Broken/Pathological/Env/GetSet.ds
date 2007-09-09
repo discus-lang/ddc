@@ -1,0 +1,26 @@
+
+makeBox ()
+ = {
+ 	r	= refNew_ ();
+
+	get ()	= refGet r;
+	set x	= refSet r x;
+
+	Tuple2 get set;
+ };
+
+
+
+main ()
+ = {
+ 	box	= makeBox ();
+	
+	get	= fst box;
+	set	= snd box;
+	
+	set 5;
+	set 'a';
+	
+ };
+
+

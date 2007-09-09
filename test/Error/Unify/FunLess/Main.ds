@@ -1,0 +1,6 @@
+
+-- Check type error reporting.
+--	Insufficient args to f1.
+
+f1 x y	= x + 1;
+y1	= f1 2 + 3;

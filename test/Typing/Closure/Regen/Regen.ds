@@ -1,0 +1,25 @@
+
+-- Check that we're not regeneralising regions that
+--	are present in function closures.
+--
+
+fun1 ()
+ = do {
+ 	i1	= 5;
+	fun2 ()
+	 = do {	i2	= 6;
+		fun3 () = (i1, i2); };
+ };
+
+		
+regen1		= fun1 ();
+regen2 		= fun1 () ();
+regen3		= fun1 () () ();
+
+regen1_app1	= regen1 () ();
+regen1_app2	= regen1 () ();
+
+regen2_app1	= regen2 ();
+regen2_app2	= regen2 ();
+
+

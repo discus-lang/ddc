@@ -1,0 +1,60 @@
+@CBranch [@BLet Main.app2]
+   (env    = [Data.Tuple.Tuple2])
+{
+        @CEq   app2            tTC37lam;
+        @CBranch [@BLambda b, @BLambda f, @BLambda g, @BLambda x]
+           (env    = [Data.Tuple.Tuple2])
+        {
+                @CEq   tTC37lam        b -($cTC13lam)> tTC39lam;
+                @CEq   $cTC13lam       $cTC14lam \ b;
+                @CEq   tTC39lam        f -($cTC14lam)> tTC41lam;
+                @CEq   $cTC14lam       $cTC15lam \ f;
+                @CEq   tTC41lam        g -($cTC15lam)> tTC43lam;
+                @CEq   $cTC15lam       $cTC16lam \ g;
+                @CEq   tTC43lam        x -(!eTC13match $cTC16lam)> tTC46matchRHS;
+                @CEq   $cTC16lam       $cTC17match \ x;
+                @CEqs  [tTC45matchLHS, b, tTC47guards, tTC52guards]
+                @CEqs  [tTC46matchRHS, tTC48app, tTC53app]
+                @CEq   !eTC14matchI    Base.!ReadH b;
+                @CEq   !eTC13match     !{!eTC14matchI; !eTC15alt; !eTC22alt};
+                @CEq   $cTC17match     ${b :: b; $cTC18alt; $cTC22alt};
+                @CBranch []
+                   (env    = [Data.Tuple.Tuple2, f, x])
+                {
+                        @CEqs  [tTC47guards, Main.Bool %rTC5]
+                        @CEq   !eTC15alt       !{!eTC16app; !Pure};
+                        @CEq   $cTC18alt       ${$cTC19app; $Empty} \ ${};
+                        @CInst tTC50_Tuple2    Tuple2;
+                        @CEq   tTC50_Tuple2    f -(!eTC19app)> tTC49app;
+                        @CEq   !eTC18app       !eTC19app;
+                        @CEq   $cTC20app       ${Data.Tuple.Tuple2 :: Tuple2; f :: f};
+                        @CEq   f               x -(!eTC21app)> tTC51app;
+                        @CEq   !eTC20app       !eTC21app;
+                        @CEq   $cTC21app       ${f :: f; x :: x};
+                        @CEq   tTC49app        tTC51app -(!eTC17app)> tTC48app;
+                        @CEq   !eTC16app       !{!eTC18app; !eTC20app; !eTC17app};
+                        @CEq   $cTC19app       ${$cTC20app; $cTC21app};
+                }
+                
+                @CBranch []
+                   (env    = [Data.Tuple.Tuple2, g, x])
+                {
+                        @CEqs  [tTC52guards, Main.Bool %rTC6]
+                        @CEq   !eTC22alt       !{!eTC23app; !Pure};
+                        @CEq   $cTC22alt       ${$cTC23app; $Empty} \ ${};
+                        @CInst tTC55_Tuple2    Tuple2;
+                        @CEq   tTC55_Tuple2    g -(!eTC26app)> tTC54app;
+                        @CEq   !eTC25app       !eTC26app;
+                        @CEq   $cTC24app       ${Data.Tuple.Tuple2 :: Tuple2; g :: g};
+                        @CEq   g               x -(!eTC28app)> tTC56app;
+                        @CEq   !eTC27app       !eTC28app;
+                        @CEq   $cTC25app       ${g :: g; x :: x};
+                        @CEq   tTC54app        tTC56app -(!eTC24app)> tTC53app;
+                        @CEq   !eTC23app       !{!eTC25app; !eTC27app; !eTC24app};
+                        @CEq   $cTC23app       ${$cTC24app; $cTC25app};
+                }
+                
+        }
+        
+        @CGen  app2 [Data.Tuple.Tuple2];
+}

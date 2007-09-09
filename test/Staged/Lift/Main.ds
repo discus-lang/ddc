@@ -1,0 +1,94 @@
+-- Lift
+--	Check that the lambda lifter is working ok.
+--
+--	The lambda lifter looks for (nested) functions with free variables
+--	and converts them to top-level supercombinators (functions). Any 
+--	free variables are passed to the supers as new arguments.
+--
+
+import Prelude;
+
+main ()
+ = do {	lift1 ();
+	lift2 ();
+	lift3 ();
+
+	liftCtor ();
+ };
+
+
+-----
+-- lift1
+--	Local function bindings with free variables.
+--	we can pass these functions to other functions.
+--
+lift1 ()
+ = do {	a1	= 23;
+	f1 x	= a1 + x;
+	list	= [1, 2, 3, 4, 5];
+	print	$ (showListInt $ map f1 list) % "\n";
+ };
+
+
+-----
+-- lift2
+--	Nested functions with free variables.
+--
+lift2 () 
+ = do {
+	a1	= 10;
+	a2	= 11;
+
+	f2 ()  
+	 = do {	b1	= 21;
+		b2	= 32;
+		g2 () 
+		 = do { c1	= 31;
+			c2	= c1 + b2;
+			h2 () 
+			 = print $ showInt (a1 + a2 + b1 + c1 + b2 + c2); 
+		 };
+	};
+
+	f2 () () ();
+	print "\n";
+ };
+
+
+-----
+-- lift3
+--	try-catch blocks are compiled by introducing
+--	local function bindings.
+--
+lift3 ()
+ = do {	a1	= 20;
+	a2	= 42;
+
+	z = 	try do { throw Exception "whoop"; a1 + a2 + 1; }
+		catch { Exception msg	-> print $ "message: " % msg % "\n"; }
+		with  5;
+
+	print	$ "z = " % showInt z;
+	print "\n";
+ };
+
+
+-----
+-- liftCtor
+--	Nested functions containing data constructors.
+--	Data constructors are not free vars, they're defined at top level.
+--
+data Fish %r1
+	= Fish (Int %r1);
+
+liftCtor ()
+ = do {	f ()		= Fish 5;
+	doIt (Fish x)	= print $ "Fish " % showInt x % "\n";
+
+	doIt $ f ();	
+ };
+
+
+
+
+

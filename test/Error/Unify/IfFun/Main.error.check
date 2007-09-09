@@ -1,0 +1,12 @@
+test/Error/Unify/IfFun/Main.ds:5:15
+    Type mismatch during unification.
+          cannot match: Data.Bool.Bool %8
+                  with: @17 -(!18 $15)> @17
+
+        if-then-else expression
+         which expects: Data.Bool.Bool %8
+
+        conflicts with, 
+        lambda abstraction
+               of type: @17 -(!18 $15)> @17
+

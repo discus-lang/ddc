@@ -1,0 +1,65 @@
+
+-- These examples come from chapter 5 of Xavier Leroy's thesis on closure typing:
+--	"Polymorphic typing of an algorithmic language", Oct 1992.
+--
+-- 	They've been converted to DDC syntax, but are otherwise identical.
+--
+{-
+-- makeRef must have a polymorphic type.
+makeRef x = ref x;
+
+
+-- An imperative version of map. 
+--	Should have the same type as the applicative version of map below.
+impMap f l
+ = do {	
+ 	arg	<: Ref %r1 a :- Mutable %r1;
+ 	arg	= ref l;
+
+	res	<: Ref %r1 a :- Mutable %r1;
+ 	res	= ref [];
+	
+	while (not $ isNil arg.x)
+	 do {	res#x	#= f (head arg.x) : res.x;
+	 	arg#x	#= tail (arg.x);
+	 };
+	 
+	reverse res.x;
+ };
+ 
+	 	
+appMap f arg
+ = if isNil arg
+ 	then []
+	else f (head arg) : appMap f (tail arg);
+	
+
+-- Testing compatability of functions over mutable structures and
+--	and higher order functions.
+--
+id_makeRef	= id makeRef;
+
+appMap_makeRef	= appMap makeRef;
+
+impMap_id	= impMap id;
+-}
+
+-- Infinite types / graphical types.
+--
+eta f		
+ = if True
+ 	 then f 
+	 else (\x -> f x);
+
+
+-- either a b	= if True then a else b;
+
+
+{-
+-- Variable capture.
+captId f 
+ = do {	cId y	= do { either f (\z -> do { y; z; }); y; };
+ 	cId cId;
+ };
+ 	
+-}

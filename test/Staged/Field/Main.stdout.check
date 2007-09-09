@@ -1,0 +1,19 @@
+Tank
+  id   = 1
+  name = Dude
+  posX = 10
+  posY = 20
+  velX = 3
+  velY = 4
+
+* moved tank: Dude
+Tank
+  id   = 1
+  name = Dude
+  posX = 13
+  posY = 24
+  velX = 3
+  velY = 4
+
+oldVelX = 3
+oldVelY = 27

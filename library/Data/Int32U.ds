@@ -1,0 +1,82 @@
+
+-- Primitive functions for unboxed Int32 operations.
+--	There are no actual C functions associated with these.
+--	We define them so the type inferencer has a schemes for them.
+--
+
+import Data.Int;
+import Class.Num;
+import Class.Eq;
+import Class.Ord;
+
+infix  0 #:= ;
+
+foreign import extern "_boxInt32"
+ boxInt32 	:: forall %r1 %r2
+  		.  Int32# %r1 -> Int %r2
+		:$ Int32# -> Obj;
+
+foreign import extern "_unboxInt32"
+ unboxInt32	:: forall %r3 %r4
+ 		.  Int    %r3 -> Int32# %r4
+		:$ Obj -> Int32#;
+
+
+-- math
+foreign import extern "primInt32U_add"
+ primInt32U_add	:: elaborate Int32# -> Int32# -> Int32#;
+
+foreign import extern "primInt32U_sub"
+ primInt32U_sub	:: elaborate Int32# -> Int32# -> Int32#;
+
+foreign import extern "primInt32U_mul"
+ primInt32U_mul	:: elaborate Int32# -> Int32# -> Int32#;
+
+foreign import extern "primInt32U_div"
+ primInt32U_div	:: elaborate Int32# -> Int32# -> Int32#;
+ 
+foreign import extern "primInt32U_mod"
+ primInt32U_mod	:: elaborate Int32# -> Int32# -> Int32#;
+ 
+foreign import extern "primInt32U_eq"	
+ primInt32U_eq	:: elaborate Int32# -> Int32# -> Bool#;
+
+foreign import extern "primInt32U_neq"	
+ primInt32U_neq	:: elaborate Int32# -> Int32# -> Bool#;
+
+foreign import extern "primInt32U_gt"	
+ primInt32U_gt	:: elaborate Int32# -> Int32# -> Bool#;
+
+foreign import extern "primInt32U_ge"	
+ primInt32U_ge	:: elaborate Int32# -> Int32# -> Bool#;
+
+foreign import extern "primInt32U_lt"	
+ primInt32U_lt	:: elaborate Int32# -> Int32# -> Bool#;
+
+foreign import extern "primInt32U_le"	
+ primInt32U_le	:: elaborate Int32# -> Int32# -> Bool#;
+
+
+-----
+instance Eq (Int32# (%)) where
+{
+	(#==)	= primInt32U_eq;
+	(#/=)	= primInt32U_neq;
+}
+
+instance Ord (Int32# (%)) where
+{
+	(>)	= primInt32U_gt;
+	(<)	= primInt32U_lt;
+	(>=)	= primInt32U_ge;
+	(<=)	= primInt32U_le;
+}
+
+instance Num (Int32# (%)) where 
+{
+ 	(+) 	= primInt32U_add;
+	(-) 	= primInt32U_sub;
+	(*) 	= primInt32U_mul;
+	(/) 	= primInt32U_div;
+	mod	= primInt32U_mod;
+}

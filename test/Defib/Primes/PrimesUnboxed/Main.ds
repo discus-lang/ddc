@@ -1,0 +1,42 @@
+
+import Data.Int32U;
+
+main ()
+ = do {	
+ 	max	= 1500;
+
+	primes	= arrayUI_new 1 (max + 1);
+	arrayUI_set primes 0 2;
+	 
+	fillPrimes primes (unboxInt32 max) 1# 2#;
+
+	result	= arrayUI_get primes max;
+	print	$ (showInt result) % "\n";
+ };
+
+
+fillPrimes primes max high i
+ = match {
+	|# high `primInt32U_gt` max		= ();
+
+	|# checkPrime primes high i 0#
+	= do {	arrayUI_poke primes high i;
+		fillPrimes primes max (high + 1#) (i + 1#);
+	};
+	
+	\= 	fillPrimes primes max high (i + 1#);
+ };
+
+
+checkPrime array high x n
+ = match {
+ 	|# n `primInt32U_ge` high		
+	= 1#;
+
+	|# (x `mod` arrayUI_peek array n) `primInt32U_eq` 0#
+	= 0#;
+	
+	\= checkPrime array high x (n + 1#);
+ };
+
+

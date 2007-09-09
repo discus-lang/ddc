@@ -1,0 +1,14 @@
+# DO NOT DELETE
+
+test.o: tinyptc.h xlib.h /usr/X11R6/include/X11/Xlib.h
+test.o: /usr/include/sys/types.h /usr/include/features.h
+test.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+test.o: /usr/include/bits/types.h /usr/include/bits/wordsize.h
+test.o: /usr/include/bits/typesizes.h /usr/include/time.h
+test.o: /usr/X11R6/include/X11/X.h /usr/X11R6/include/X11/Xfuncproto.h
+test.o: /usr/X11R6/include/X11/Xosdefs.h /usr/X11R6/include/X11/Xutil.h
+test.o: /usr/include/stdio.h /usr/include/libio.h /usr/include/_G_config.h
+test.o: /usr/include/wchar.h /usr/include/bits/wchar.h /usr/include/gconv.h
+test.o: /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h
+test.o: /usr/include/stdlib.h /usr/include/limits.h /usr/include/limits.h
+test.o: convert.h

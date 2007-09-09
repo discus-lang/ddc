@@ -1,0 +1,87 @@
+Hi Matt,
+Here is a tarball of a reasonably stable iteration of my compiler. Later versions have mostly been refactoring the source and fixing up of the existing functionality. I think this is the optimal version in terms of feature set vs broken-ness :) .
+
+
+--- Getting it working
+
+unpack and then
+
+    cd disciple
+    make
+    make runtime
+    bin/war
+
+This should build the libraries and run the tests, It'll be obvious from the screen log whether it's worked or not.
+
+This'll need a machine with a 32 bit word size. It *might* work for 64bits if you change the #define in runtime/Config.h from ArchPtr32 to ArchPtr64 - It once worked on my AMD64 at home but I don't even remember the last time I tested it.
+
+
+--- Getting the Core IR
+
+If you want to see the CoreIR code, change to the toplevel dir and do something like:
+
+ bin/ddc -i library -m test/Defib/Ackermann/Regular/Main.ds \
+    -dump-core-reconstruct -l m
+
+  -l m  is for the math library, which everything needs
+
+you can dump other things, do
+
+    bin/ddc
+
+for a list of options.
+
+
+--- Graphics programs
+
+There are two programs that do graphics, compile with
+
+  bin/ddc -i library -opt-tail-call -opt-boxing \
+    -m test/Graphics/N-Body/Main.ds -l m X11 Xext \
+    -L /usr/X11R6/lib -o bin/n-body
+
+or
+
+  bin/ddc -i library -opt-tail-call -opt-boxing \
+    -m test/Graphics/Simple/Main.ds -l m X11 Xext \
+    -L /usr/X11R6/lib -o bin/simple
+
+You must have the -opt-tail-call or it'll run out of heap space. Some of the optimizations are a bit broken, so turning them all on with -O probably won't work. You might need to change the libraries or library paths to suit your particular system - haven't tried it on mac.
+
+
+--- Profiling
+
+The runtime system can tell you some stuff, but the program has to exit normally - ie fall of the end of the main function, not by calling exit() at runtime.
+
+You can edit test/Graphics/N-Body/Main.ds and comment back in lines 270-271 to limit this program to a fixed number of frames. Recompile and then run with:
+
+    bin/n-body +RTS -P
+
+When the program completes you should have a ddc-rts.prof file in the current directory listing some stuff.
+
+
+--- More Profiling
+
+You can get more profiling information by editing
+
+runtime/Config.h
+
+change all #defines for _DDC_PROFILE_GC and friends to 1's.
+
+You have to then recompile the runtime system and the DDC libraries:
+
+    make cleanWar
+    make cleanRuntime
+    
+    make runtime
+    bin/war
+
+If you now recompile and run the n-body code you should get a ddc-rts.prof file with a lot more stuff in it - I'll append the result to save you the hassle if you just want to see.
+
+The total allocation count in the "Alloc" section is broken because it's not tracking all different kinds of allocations, but the individual counts and the total under the "Garbage Collection" section should be ok.
+
+Anyway, hope it works for you - let me know if it doesn't.
+
+Ben.
+
+

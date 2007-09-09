@@ -1,0 +1,61 @@
+
+import Prelude;
+
+data Vec2 %r1
+	= Vec2 { 
+		x	:: Int %r1;
+		y	:: Int %r1; 
+	};
+	
+data Tank %i %pv
+	= Tank {
+	 	id	:: Int %i;	
+		name	:: String %i;
+		.pos	:: Vec2 %pv 	= Vec2 10 20;
+		.vel	:: Vec2 %pv	= Vec2 3 4;
+		.charge	:: Int %i	= 0;
+	};
+
+
+main ()
+ = do {	tank		= Tank 1 "Dude";
+
+	oldVelX		= tank.vel.x;
+	oldVelY		= tank.vel.y;
+
+	printTank tank;	
+	moveTank  tank;
+	printTank tank;
+
+	tank.vel#x	#= 32;
+	tank.vel.y	:= 27;
+
+	print	$ "oldVelX = " % showInt oldVelX	% "\n"
+		% "oldVelY = " % showInt oldVelY	% "\n";
+ };
+
+
+moveTank ^tank
+ = case tank of {
+ 	Tank id name
+	-> do {	_pos.x	:= _pos.x + _vel.x;
+		_pos.y	:= _pos.y + _vel.y;
+
+		print $ "* moved tank: " % name % "\n";
+	};
+ };
+
+
+printTank :: Tank -> ();
+printTank ^tank
+ = do {
+	print 	$ "Tank"				% "\n"
+	 	% "  id   = " % showInt _id		% "\n"
+		% "  name = " % _name			% "\n"
+		% "  posX = " % showInt _pos.x		% "\n"
+		% "  posY = " % showInt _pos.y		% "\n"
+		% "  velX = " % showInt _vel.x		% "\n"
+		% "  velY = " % showInt _vel.y		% "\n\n";
+
+ };
+

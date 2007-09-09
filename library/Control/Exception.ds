@@ -1,0 +1,98 @@
+
+import 
+{	Base;
+	Data.Int;
+	Data.String;
+	System.Console;
+	Class.Show;
+	Control.Imperative;
+}
+
+effect !Throw	:: !;
+
+foreign import extern "primException_init"
+ primExceptionInit
+	:: forall %r1
+	.  Int %r1 -> ()
+	:$ Obj -> Obj;
+
+foreign import extern "primException_try"	
+ primTry
+	:: forall a %r !e1 !e2 !e3
+	.  (() -(!e1)> a) -> (Exception %r -(!e2)> a) -(!e3)> a
+	:- !e3 = !{ !e1; !e2 }
+	:$ Obj -> Obj -> Obj;
+		
+foreign import extern "primException_throw"
+ primThrow
+	:: forall a %r !e1
+	.  Exception %r -(!e1)> a
+	:- !e1 = !{ !Throw }
+	:$ Obj -> Obj;
+
+foreign import extern "primException_handleUncaught"
+ primHandleUncaught
+	:: forall a %r
+	.  Exception %r -> a
+	:$ Obj -> Obj;
+		
+
+-----------------------
+-- Exception
+--
+data Exception %r
+	= Exception (String %r)
+	| ExceptionBreak
+	| ExceptionIO
+	| ExceptionOther
+	| ExceptionCaseNoMatch
+		(String %r) 		-- the module name
+		(Int %r) 		-- line number
+		(Int %r)		-- column number
+
+
+	-- runtime/Prim/Array.c makes assumptions
+	--	about this constructor's type.
+	--
+	| ExceptionArrayBounds
+		(Int %r)		-- size of array
+		(Int %r);		-- requested index
+
+-----------------------
+-- topHandle
+--	A top-level exception handler.
+--	Prints out the exception then exits to system.
+--
+topHandle f
+ =	try f ()
+	catch {
+		Exception msg	
+		 -> 	print	$ "* runMain: Exception - " % msg % "\n";
+
+		ExceptionIO	
+		 -> 	print	$ "* runMain: IO exception.\n"
+		 		% "\n";
+
+		ExceptionCaseNoMatch name line column
+		 -> 	print	$ "* runMain: pattern match failure at "
+		 		% name	% ":" % showInt line % ":" % showInt column % "\n"
+				% "\n";
+
+		ExceptionArrayBounds size ix
+		 ->	print	$ "* runMain: Array bounds exception.\n"
+				% "      Tried to access array at index: " % showInt ix	% "\n"
+				% "           which is outside of range: [0 .. " % showInt (size - 1) % "]\n"
+				% "\n";
+
+	}
+	with exit 1;		 
+
+
+gate f
+ = 	try f ()
+ 	catch {	ExceptionBreak	-> (); };
+	
+
+gateLoop f
+ = 	try loop f
+ 	catch { ExceptionBreak	-> (); };

@@ -1,0 +1,67 @@
+ 
+import Base;
+
+
+foreign import extern "primPrintThunk"
+ printThunk 
+	:: forall a
+ 	.  a -> ()
+	:$ Obj -> Obj;
+
+
+foreign import extern "primPrintData"
+ printData
+	:: forall a
+	.  a -> ()
+	:$ Obj -> Obj;
+
+
+foreign import extern "primSuspend1"
+ suspend1 
+	:: forall a b !e1
+	.  (a -(!e1)> b) -> a -> b
+	:- Pure  !e1
+	,  LazyH b
+	:$ Obj -> Obj -> Obj;
+
+
+foreign import extern "primSuspend2"
+ suspend2
+	:: forall a b c !e1 !e2
+	.  (a -(!e1)> b -(!e2)> c) -> a -> b -> c
+	:- Pure  !e1
+	,  Pure  !e2
+	,  LazyH c
+	:$ Obj -> Obj -> Obj -> Obj;
+
+
+foreign import extern "primSuspend3"
+ suspend3
+	:: forall a b c d !e1 !e2 !e3
+	.  (a -(!e1)> b -(!e2)> c -(!e3)> d) -> a -> b -> c -> d
+	:- Pure  !e1
+	,  Pure  !e2
+	,  Pure  !e3
+	,  LazyH d
+	:$ Obj -> Obj -> Obj -> Obj -> Obj;
+
+
+foreign import extern "primSuspend4"
+ suspend4
+	:: forall a b c d e !e1 !e2 !e3 !e4
+	.  (a -(!e1)> b -(!e2)> c -(!e3)> d -(!e4)> e) -> a -> b -> c -> d -> e
+	:- Pure  !e1
+	,  Pure  !e2
+	,  Pure  !e3
+	,  Pure  !e4
+	,  LazyH e
+	:$ Obj -> Obj -> Obj -> Obj -> Obj -> Obj;
+
+
+foreign import extern "primForce"
+ force 
+ 	:: forall a.  a -> a
+	:$ Obj -> Obj;
+
+
+

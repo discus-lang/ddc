@@ -1,0 +1,24 @@
+
+
+-- Unoptimised version.
+--	Uses boxed math.
+{-
+body_forceVec m1 m2 x1 y1 x2 y2
+ = do {
+ 	dx	= x2 - x1;
+	dy	= y2 - y1;
+	
+ 	d2	= dx * dx  +  dy * dy;
+	d	= sqrt d2;
+
+	attract_force	= m1 * (m2 / d2);
+	forceS		= if d < attract_range
+				then 	attract_force * (d / attract_range) 
+				   - 	(attract_force * (attract_range / d))
+				else attract_force;
+
+	theta	= (Vec2 dx dy).angle;
+	forceV	= Vec2 (forceS * cos theta) (forceS * sin theta);
+	forceV;
+ };
+-}

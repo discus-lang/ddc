@@ -1,0 +1,140 @@
+-- Imports
+import Base;
+import Data.Bool;
+import Class.Num;
+import Class.Eq;
+import Class.Ord;
+import Class.Update;
+
+-- Pragmas
+
+-- Infix
+infix  5 <, <=, >=, > ;
+
+-- Data
+
+-- Effects
+
+-- Regions
+
+-- Classes
+
+-- Class dictionaries
+
+-- Class instances
+instance Eq (Base.Int (%)) where
+{
+        Class.Eq.(==)    = primInt32_eq;
+        
+        Class.Eq.(/=)    = primInt32_neq;
+}
+
+instance Ord (Base.Int (%)) where
+{
+        Class.Ord.(>)    = primInt32_gt;
+        
+        Class.Ord.(<)    = primInt32_lt;
+        
+        Class.Ord.(>=)   = primInt32_ge;
+        
+        Class.Ord.(<=)   = primInt32_le;
+}
+
+instance Num (Base.Int (%)) where
+{
+        Class.Num.(+)    = primInt32_add;
+        
+        Class.Num.(-)    = primInt32_sub;
+        
+        Class.Num.(*)    = primInt32_mul;
+        
+        Class.Num.(/)    = primInt32_div;
+        
+        Class.Num.mod    = primInt32_mod;
+}
+
+instance Update (Base.Int (%)) where
+{
+        Class.Update.(:=)        = primInt32_update;
+}
+
+instance Accum (Base.Int (%)) where
+{
+        Class.Update.(+=)        = primInt32_accAdd;
+}
+
+
+-- Foreign imports
+foreign import extern "primInt32_add"
+ primInt32_add
+        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+
+foreign import extern "primInt32_sub"
+ primInt32_sub
+        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+
+foreign import extern "primInt32_mul"
+ primInt32_mul
+        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+
+foreign import extern "primInt32_div"
+ primInt32_div
+        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+
+foreign import extern "primInt32_mod"
+ primInt32_mod
+        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+
+foreign import extern "primInt32_eq"
+ primInt32_eq
+        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+
+foreign import extern "primInt32_neq"
+ primInt32_neq
+        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+
+foreign import extern "primInt32_gt"
+ primInt32_gt
+        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+
+foreign import extern "primInt32_lt"
+ primInt32_lt
+        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+
+foreign import extern "primInt32_ge"
+ primInt32_ge
+        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+
+foreign import extern "primInt32_le"
+ primInt32_le
+        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+
+foreign import extern "primInt32_update"
+ primInt32_update
+        :: elaborate (mutable Base.Int) -> Base.Int -> Base.Unit ;
+
+
+-- Binds
+foreign import extern primInt32_accAdd
+        :: forall %r0 %r1 !e0 $c0
+        .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Unit
+        :- !e0   = !{Base.!Write %r0; Base.!Read %r1; Base.!Read %r0}
+        ,  $c0   = ${a :: Base.Int %r0}
+        ,  Base.Mutable %r0
+        :$ Base.Data -> Base.Data -> Base.Data;
+        
+foreign import extern (<>)
+        :: forall %r0 %r1 !e0 !e1 $c0
+        .  Base.Int %r0 -> (Base.Int %r0 -(!e1)> Base.Int %r1) -(!e0 $c0)> Base.Unit
+        :- !e0   = !{Base.!Write %r0; Base.!Read %r1; !e1}
+        ,  $c0   = ${x :: Base.Int %r0}
+        ,  Base.Mutable %r0
+        :$ Base.Data -> Base.Thunk -> Base.Data;
+        
+foreign import extern inc
+        :: forall %r0 %r1 !e0
+        .  Base.Int %r0 -(!e0)> Base.Int %r1
+        :- !e0   = !{Base.!Read %r0}
+        :$ Base.Data -> Base.Data;
+        
+

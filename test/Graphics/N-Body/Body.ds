@@ -1,0 +1,183 @@
+
+import Math.Vec2;
+import Data.Array;
+
+import Config;
+
+-----
+-- Body
+--
+data Body %r1
+	-- Bodies move around the world.
+	= Body {
+		mass	:: Float %r1;
+		pos	:: Vec2 %r1 (Float %r1);
+		vel	:: Vec2 %r1 (Float %r1);
+		acc	:: Vec2 %r1 (Float %r1);
+	};
+
+
+data Thing %r1
+	= Thing (Int %r1) (Int %r1);
+
+pragma Inline 
+	[ project_Body_mass
+	, project_Body_pos
+	, project_Body_vel
+	, project_Body_acc
+	, project_pulse
+	, project_update
+	, project_clampPos];
+
+
+project Body where
+{
+	force2 :: Body -> Body -> Vec2 Float;
+	force2 body0 body1
+	 = body_forceVec 
+	 	body0.mass body1.mass 
+		body0.pos.x body0.pos.y
+		body1.pos.x body1.pos.y;
+
+	show b
+	 = case b of {
+ 		Body mass pos vel acc
+			-> "Body " 
+				% showFloat mass 
+				% " (" % pos.show % ")"
+				% " (" % vel.show % ")";
+ 	 };
+
+
+	pulse :: Body -> ();
+	pulse ^body
+	 = do {	_vel += _acc;
+		_pos += _vel;
+	 };
+
+
+	update :: Body -> Array Body -> Int -> ();
+	update	^b1 body0 i
+	 = do {
+
+	 	-- copy the old body info
+		b0	= body0.(i);
+		_mass	:= b0.mass;
+	
+		-- calculate force on this body.
+		fV	= body_sumForces body0 i;
+	
+		-- acc = force / mass
+		_acc 	:= (Vec2 (0.0 - fV.x / b0.mass) (0.0 - fV.y / b0.mass));
+		_vel 	:= (b0.vel + (_acc.muls time_compression));
+		_pos 	:= (b0.pos + (_vel.muls time_compression));
+	 };
+
+
+	clampPos :: Body -> ();
+	clampPos ^b
+	 = do {	
+	 	when (_pos.x < 0.0) 
+			_pos.x += 600.0;
+	
+	 	when (_pos.x > 600.0)
+			_pos.x += 0.0 - 600.0;
+
+	 	when (_pos.y < 0.0)
+			_pos.y += 600.0;
+
+	 	when (_pos.y > 600.0)
+			_pos.y += 0.0 - 600.0;
+	 };
+
+
+	draw :: Body -> Frame -> ();
+	draw body frame
+	 = match {
+		| Body { .pos = p }	<- body
+		, Vec2 pX pY		<- p
+		= if   (truncate pX < 0) || (truncate pX > worldSize.x) 
+		    || (truncate pY < 0) || (truncate pY > worldSize.y)
+		    then ()
+		    else do {
+			frame.circle 20
+				(truncate pX) (truncate pY)
+				20
+				(frame_color 255 255 255);
+		
+		    };
+	 };	
+
+
+}
+
+
+body_sumForces 
+ ::	Array Body -> Int -> Vec2 Float;
+
+body_sumForces body i 
+ 	= vec2F_sum
+	$ map (body.(i).force2)
+	$ map (index body) 
+	$ deleteF (==) [0.. array_size body - 1] i;
+	
+
+body_forceVec 
+ 	:: Float -> Float 
+ 	-> Float -> Float 
+	-> Float -> Float 
+	-> Vec2 Float;
+
+body_forceVec m1 m2 x1 y1 x2 y2
+ = do {
+ 	m1'	= unboxFloat32 m1;
+	m2'	= unboxFloat32 m2;
+	x1'	= unboxFloat32 x1;
+	y1'	= unboxFloat32 y1;
+	x2'	= unboxFloat32 x2;
+	y2'	= unboxFloat32 y2;
+
+	body_forceVec_work m1' m2' x1' y1' x2' y2';
+ };
+	
+
+body_forceVec_work 
+	:: Float32# -> Float32# 
+	-> Float32# -> Float32#
+	-> Float32# -> Float32#
+	-> Vec2 Float;
+
+body_forceVec_work m1 m2 x1 y1 x2 y2
+ = do {
+ 	dx	= x2 - x1;
+	dy	= y2 - y1;
+	
+ 	d2	= dx * dx  +  dy * dy;
+	d	= sqrtU d2;
+
+	attract_rangeU	
+		= unboxFloat32 attract_range;
+
+	attract_force	= m1 * (m2 / d2);
+
+	forceS		= match {
+				|# d `primFloat32U_lt` attract_rangeU
+				= 	attract_force * (d / attract_rangeU) 
+				   - 	(attract_force * (attract_rangeU / d));
+				
+				\= attract_force;
+			};
+
+	theta	= vec2_angleU dx dy;
+
+	forceX	= forceS * cosU theta;
+	forceY	= forceS * sinU theta;
+	
+	forceV	= Vec2 (boxFloat32 forceX) (boxFloat32 forceY);
+	forceV;
+ };
+
+newBody pos vel	= Body 100.0 pos vel (Vec2 0.0 0.0);
+
+
+

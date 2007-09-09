@@ -1,0 +1,168 @@
+=== Generalise app2
+    vsEnv    = [Data.Tuple.Tuple2]
+
+*** Scheme.extractType app2
+
+    envCids          = []
+
+    tTrace           =
+        @150
+        :- @1         = forall %r1 a b. a -> b -> Main.Tuple2 %r1 a b
+        ,  @150       = @153 -(@155 @156)> @154
+        ,  @153       = Main.Bool @195
+        ,  @154       = @161 -(@163 @158)> @162
+        ,  @156       = @158 \ @159
+        ,  @158       = @165 \ @166
+        ,  @159       = b
+        ,  @161       = @175 -(@222 @223)> @206
+        ,  @162       = @161 -(@170 @165)> @169
+        ,  @165       = @172 \ @173
+        ,  @166       = f
+        ,  @168       = @175 -(@222 @223)> @206
+        ,  @169       = @175 -(@177 @172)> @176
+        ,  @172       = @179 \ @180
+        ,  @173       = g
+        ,  @176       = Main.Tuple2 @208 @161 @206
+        ,  @177       = !{@186; @189; @190}
+        ,  @179       = ${b :: @153; @192; @193}
+        ,  @180       = x
+        ,  @186       = Base.!Read @195
+        ,  @189       = !{@197; !Pure}
+        ,  @190       = !{@235; !Pure}
+        ,  @192       = @199 \ @201
+        ,  @193       = @237 \ @239
+        ,  @197       = !{@211; @222; @209}
+        ,  @199       = ${@200; $Empty}
+        ,  @200       = ${@218; @225}
+        ,  @201       = ${}
+        ,  @218       = ${Data.Tuple.Tuple2 :: @1; f :: @161}
+        ,  @225       = ${f :: @161; x :: @175}
+        ,  @235       = !{@249; @222; @247}
+        ,  @237       = ${@238; $Empty}
+        ,  @238       = ${@256; @263}
+        ,  @239       = ${}
+        ,  @256       = ${Data.Tuple.Tuple2 :: @1; g :: @161}
+        ,  @263       = ${g :: @161; x :: @175}
+
+    tPack            =
+        Main.Bool @195 
+		-(@155 @156)> (@175 -(@222 @223)> @206) 
+		-(@163 @158)> (@175 -(@222 @223)> @206) 
+		-(@170 @165)> @175 
+		-(@177 @172)> Main.Tuple2 @208 
+				(@175 -(@222 @223)> @206) @206
+
+        :- @177       = !{Base.!Read @195; @211; @222; @209; @249; @247}
+        ,  @156       = @158 \ b
+        ,  @158       = @165 \ f
+        ,  @165       = @172 \ g
+        ,  @172       = ${	b :: Main.Bool @195; 
+				Data.Tuple.Tuple2 :: forall %r1 a b. a -> b -> Main.Tuple2 %r1 a b; 
+				f :: @175 -(@222 @223)> @206; 
+				g :: @175 -(@222 @223)> @206}
+
+    tTrim            =
+        Main.Bool @195 
+		-(@155 @156)> (@175 -(@222 @223)> @206) 
+		-(@163 @158)> (@175 -(@222 @223)> @206) 
+		-(@170 @165)> @175 
+		-(@177 @172)> Main.Tuple2 @208 (@175 -(@222 @223)> @206) @206
+
+        :- @177       = !{Base.!Read @195; @211; @222; @209; @249; @247}
+        ,  @156       = @158 \ b
+        ,  @158       = @165 \ f
+        ,  @165       = @172 \ g
+        ,  @172       = ${b :: Main.Bool @195; @223}
+
+*** Scheme.generaliseType app2
+
+    tCore
+        Main.Bool @195 
+		-(@155 @156)> (@175 -(@222 @223)> @206) 
+		-(@163 @158)> (@175 -(@222 @223)> @206) 
+		-(@170 @165)> @175 
+			-(@177 @172)> Main.Tuple2 @208 (@175 -(@222 @223)> @206) @206
+
+        :- @177       = !{Base.!Read @195; @211; @222; @209; @249; @247}
+        ,  @156       = @158 \ b
+        ,  @158       = @165 \ f
+        ,  @165       = @172 \ g
+        ,  @172       = ${b :: Main.Bool @195; @223}
+
+    envCids          = []
+
+    staticRsData     = []
+    staticCids       = []
+
+    tPlug
+        Main.Bool %rTC5 
+		-(!eTS7 $cTC13lam)> (x -(!eTC27app $cTS5)> tTS5) 
+		-(!eTS6 $cTC14lam)> (x -(!eTC27app $cTS5)> tTS5) 
+		-(!eTS5 $cTC15lam)> x 
+		-(!eTC13match $cTC16lam)> Main.Tuple2 %rTS4 (x -(!eTC27app $cTS5)> tTS5) tTS5
+
+        :- !eTC13match = !{Base.!Read %rTC5; !eTC18app; !eTC27app; !eTC17app; !eTC25app; !eTC24app}
+        ,  $cTC13lam  = $cTC14lam \ b
+        ,  $cTC14lam  = $cTC15lam \ f
+        ,  $cTC15lam  = $cTC16lam \ g
+        ,  $cTC16lam  = ${b :: Main.Bool %rTC5; $cTS5}
+
+    tPort
+        Main.Bool %rTC5 
+		-(!eTS7 $cTC13lam)> (x -(!eTS8 $cTS6)> tTS5) 
+		-(!eTS6 $cTC14lam)> (x -(!eTS9 $cTS7)> tTS5) 
+		-(!eTS5 $cTC15lam)> x 
+		-(!eTC13match $cTC16lam)> Main.Tuple2 %rTS4 (x -(!eTC27app $cTS5)> tTS5) tTS5
+
+        :- !eTC13match = !{Base.!Read %rTC5; !eTC18app; !eTC27app; !eTC17app; !eTC25app; !eTC24app}
+        ,  $cTC13lam  = $cTC14lam \ b
+        ,  $cTC14lam  = $cTC15lam \ f
+        ,  $cTC15lam  = $cTC16lam \ g
+        ,  $cTC16lam  = ${b :: Main.Bool %rTC5; $cTS5}
+        ,  $cTS5      = !{$cTS7; $cTS6}
+        ,  !eTC27app  = !{!eTS9; !eTS8}
+
+    tsPortSub        = [(!eTC27app, !eTS8), ($cTS5, $cTS6), (!eTC27app, !eTS9), ($cTS5, $cTS7)]
+    vsPorts          = [!eTS8, $cTS6, !eTS9, $cTS7]
+
+    vsFree           = [%rTC5, x, tTS5, !eTS8, $cTS6, !eTS9, $cTS7, %rTS4, !eTS5, !eTS6, !eTS7, Base.!Read, !eTC18app, !eTC17app, !eTC25app, !eTC24app]
+    vsClean          = [!eTS5, !eTS6, !eTS7, !eTC18app, !eTC17app, !eTC25app, !eTC24app]
+
+    tClean
+        = Main.Bool %rTC5 
+		-($cTC13lam)> (x -(!eTS8 $cTS6)> tTS5) 
+		-($cTC14lam)> (x -(!eTS9 $cTS7)> tTS5) 
+		-($cTC15lam)> x 
+		-(!eTC13match $cTC16lam)> Main.Tuple2 %rTS4 (x -(!eTC27app $cTS5)> tTS5) tTS5
+
+        :- !eTC13match = !{Base.!Read %rTC5; !eTC27app}
+        ,  $cTS5      = !{$cTS7; $cTS6}
+        ,  !eTC27app  = !{!eTS9; !eTS8}
+        ,  $cTC13lam  = $cTC14lam \ b
+        ,  $cTC14lam  = $cTC15lam \ f
+        ,  $cTC15lam  = $cTC16lam \ g
+        ,  $cTC16lam  = ${b :: Main.Bool %rTC5; $cTS5}
+
+
+    tNormal
+        forall t0 t1 %r0 %r1 !e0 !e1 $c0 $c1
+        .  Main.Bool %r0 
+		-($c3)>    (t0 -(!e0 $c0)> t1) 
+		-($c4)>    (t0 -(!e1 $c1)> t1) 
+		-($c5)>     t0 
+		-(!e2 $c6)> Main.Tuple2 %r1 
+				(t0 -(!e3 $c2)> t1) 
+				t1
+
+        :- !e2        = !{Base.!Read %r0; !e3}
+        ,  !e3        = !{!e1; !e0}
+
+        ,  $c3        = $c4 \ b
+        ,  $c4        = $c5 \ f
+        ,  $c5        = $c6 \ g
+        ,  $c6        = ${b :: Main.Bool %r0; $c2}
+        ,  $c2        = !{$c1; $c0}
+
+
+=== Generalise app2 done
+=============================================================

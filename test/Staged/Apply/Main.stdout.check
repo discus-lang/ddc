@@ -1,0 +1,41 @@
+add2
+ test1-1   2
+add3
+ test1-1-1 6
+ test2-1   6
+ test1-2   6
+add4
+ test1-2-1 10
+ test3-1   10
+ test2-2   10
+add5
+ test1-3-1 15
+ test1-4   15
+ test2-3   15
+ test3-2   15
+ test4-1   15
+add6
+ test1-4-1 21
+ test1-5   21
+ test2-4   21
+ test3-3   21
+ test4-221
+ test5-1   21
+-- add7
+ test1-5-1 28
+ test1-6   28
+ test2-5   28
+ test3-4   28
+ test4-3   28
+ test5-2   28
+ test6-1   28
+-- add8
+ test1-6-1 36
+ test1-7   36
+ test2-6   36
+ test3-5   36
+ test4-4   36
+ test5-3   36
+ test6-2   36
+ test7-1   36
+

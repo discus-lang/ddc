@@ -1,0 +1,12 @@
+
+data Box %r a
+	= Box { x :: a; };
+
+makeGetSet2 x
+ = do {	box		= Box x;
+	get () ()	= case box of { Box z -> z; };
+	set () z	= box#x #= z;
+	(get, set);
+ };
+
+box2	= makeGetSet2 [];

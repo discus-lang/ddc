@@ -1,0 +1,45 @@
+
+import Prelude;
+
+-----
+data Point %r1
+	= Point 	(Float %r1) (Float %r1);
+
+showPoint (Point x y)
+	= "Point " % showFloat x % " " % showFloat y;
+
+-----
+data Vector2 %r1
+	= Vector2 	(Float %r1) (Float %r1);
+
+
+-----
+data Primitive %r1
+	= Prims (List %r1 (Primitive %r1))
+
+	-- Shapes
+	| Line {
+		p1	:: Point %r1;
+		p2	:: Point %r1;
+	}
+
+	-- Transforms
+	| Translate	(Float %r1) (Float %r1)
+	| Rotate	(Float %r1) 
+	| Scale		(Float %r1) (Float %r1)
+	
+	-- Colors
+	| Color		(Int %r1) (Int %r1) (Int %r1)
+	
+	-- Stack
+	| Local 	(List %r1 (Primitive %r1))
+	| Push
+	| Pop;
+
+
+
+showLine (Line p1 p2)
+	= "Line (" % showPoint p1 % ") (" % showPoint p2 % ")";
+
+
+	

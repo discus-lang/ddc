@@ -1,0 +1,285 @@
+
+module Type.Scheme
+	( extractType
+	, generaliseType
+	, collectCidsEnv )
+where
+
+import qualified Debug.Trace	as Debug
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+import Util
+
+import Shared.Error
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import Shared.Var		(NameSpace(..))
+
+import qualified Main.Arg	as Arg
+
+import Type.Exp
+import Type.Pretty
+import Type.Plate
+import Type.Util
+import Type.Merge
+import Type.Trace
+
+import Type.Check.CheckSig
+import Type.Check.GraphicalData	(checkGraphicalDataT)
+-- import Type.Check.Soundness	(dangerousCidsT)
+import Type.Closure.Trim 	(trimClosureT)
+
+-- import Type.Effect.MaskLocal	(maskEsLocalT)
+-- import Type.Effect.MaskFresh	(maskEsFreshT)
+-- import Type.Effect.MaskPure	(maskEsPureT)
+import Type.Effect.Narrow
+
+import Type.State
+import Type.Class
+import Type.Plug		(plugClassIds, staticRsDataT) -- , staticRsClosureT)
+import Type.Port
+import Type.Induced
+import Type.Context
+
+
+-----
+stage	= "Type.Squid.Scheme"
+debug	= True
+trace s	= when debug $ traceM s
+
+
+-- | Extract a type from the graph and pack it into standard form.
+--	BUGS: we need to add fetters from higher up which are acting on this type.
+
+extractType :: Var -> SquidM Type
+extractType varT
+ = do	Just cid	<- lookupVarToClassId varT
+ 	tTrace		<- liftM sortFsT 	$ traceType cid
+	cidsDown	<- liftM Set.toList 	$ traceCidsDown cid
+
+	trace	$ "*** Scheme.extractType " % varT % "\n"
+		% "\n"
+		% "    cidsDown         = " % cidsDown	% "\n"
+		% "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
+
+	-- Check that the data portion of the type isn't graphical.
+	--	If it is then it'll hang packType when it tries to construct an infinite type.
+	let cidsDataLoop	= checkGraphicalDataT tTrace
+	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
+
+	when (not $ isNil cidsDataLoop)
+	 $ panic stage	$ "extractType: Cannot construct infinite type for " % varT % ".\n"
+	 		% "    this type is graphical through classes " % cidsDataLoop % "\n\n"
+	 		% "    " % varT % " :: \n" %> prettyTS tTrace % "\n"
+
+	
+	 		
+	-- Pack type into standard form
+	let tPack	= packType tTrace
+	trace	$ "    tPack            =\n" %> prettyTS tPack % "\n\n"
+
+	-- Trim closures
+	let tTrim	= packType $ trimClosureT tPack
+	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
+
+	return	$ tTrim
+	
+
+
+-- | Generalise a type
+--
+generaliseType
+	:: Var 
+	-> Type
+	-> [ClassId]
+	-> SquidM Type
+
+generaliseType varT tCore envCids
+ = do
+	args			<- gets stateArgs
+
+	trace	$ "*** Scheme.generaliseType " % varT % "\n"
+		% "\n"
+		% "    tCore\n"
+		%> prettyTS tCore	% "\n\n"
+
+		% "    envCids          = " % envCids		% "\n"
+		% "\n"
+
+	-- Forcing effect and closure vars in contra-variant positions to be ports.
+	tPort		<- liftM packType $ forcePortsT tCore
+	trace	$ "    tPort\n"
+		%> prettyTS tPort	% "\n\n"
+
+
+	-- Work out which cids can't be generalised in this type.
+
+	-- 	Can't generalise regions in non-functions.
+	--	... some data object is in the same region every time you use it.
+	--
+	staticRsData	<- staticRsDataT     tPort
+	trace	$ "    staticRsData     = " % staticRsData	% "\n"
+
+	-- 	Can't generalise regions free in the closure of the outermost function.
+	--	... the objects in the closure are in the same region every time you use the function.
+	--
+{-	staticRsClosure		<- staticRsClosureT tCore
+
+	--	Can't generalise cids which are under mutable constructors.
+	--	... if we generalise these classes then we could update an object at one 
+	--		type and read it at another, violating soundness.
+	--	
+	staticDanger		<- if Set.member Arg.GenDangerousVars args
+					then return []
+					else dangerousCidsT tCore
+
+	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
+-}	
+
+	let staticCids		= envCids ++ staticRsData
+
+	-- Rewrite non-static cids to the var for their equivalence class.
+	tPlug			<- plugClassIds staticCids tPort
+
+	trace	$ "    staticCids       = " % staticCids	% "\n\n"
+		% "    tPlug\n"
+		%> prettyTS tPlug 	% "\n\n"
+
+
+	-- Clean non-port effect and closure vars
+	--	Do this after tPlug so we don't end up zapping any monomorphic classes.
+	let vsFree	= freeVarsT tPlug
+
+	let vsPorts	
+		= catMaybes
+		$ map (\t -> case t of 
+			TVar k v	-> Just v
+			_		-> Nothing)
+		$ portTypesT tPlug
+
+	let vsClean	= [ v 	| v <- vsFree
+					, elem (Var.nameSpace v) [Var.NameEffect, Var.NameClosure]
+					, not $ Var.isCtorName v 
+					, not $ elem v vsPorts ]
+
+	let sub		= Map.fromList
+			$ map (\v -> (v, TBot (kindOfSpace $ Var.nameSpace v)))
+			$ vsClean 
+
+	let tClean	= packType 
+			$ substituteVT sub tPlug
+	
+	trace	$ "    vsFree           = " % vsFree		% "\n"
+		% "    vsPorts          = " % vsPorts		% "\n"
+		% "    vsClean          = " % vsClean		% "\n\n"
+		% "    tClean\n" 
+			%> ("= " % prettyTS tClean)		% "\n\n"
+
+
+	-- Reduce class contexts.
+	-- 	This should be done by sink.
+--	classInst		<- gets stateClassInst
+--	let tReduced		= reduceContextT classInst tPlug
+
+	-- Quantify free variables.
+	let vksFree	= map 	 (\v -> (v, kindOfSpace $ Var.nameSpace v)) 
+			$ filter (\v -> not $ Var.nameSpace v == NameValue)
+			$ filter (\v -> not $ Var.isCtorName v)
+			$ Var.sortForallVars
+			$ freeVarsT tClean
+
+	let tScheme	= addTForallVKs vksFree tClean
+
+	trace	$ "    tScheme\n"
+		%> prettyTS tScheme 	% "\n\n"
+
+
+	let tNormal	= normaliseT tScheme
+	
+	trace	$ "    tNormal\n"
+		%> prettyTS tNormal	% "\n\n"
+
+	return	tScheme
+
+
+{-
+	-- Mask effects on local and fresh regions
+	tMskLocal		<- maskEsLocalT tScheme
+	let tMskFresh		= maskEsFreshT tMskLocal
+	let tMskPure		= maskEsPureT  tMskFresh
+
+	let tPack		= packType tMskPure
+
+
+	-- Check the scheme against any available type signature.
+	schemeSig	<- gets stateSchemeSig
+	let mSig	= (Map.lookup varT schemeSig) :: Maybe Type
+	let errsSig	= case mSig of
+				Nothing		-> []
+				Just sig	-> checkSig varT sig varT tPack
+	addErrors errsSig
+-}
+	-- debug
+
+--		% "    staticRsData     = " % staticRsData 	% "\n"
+--		% "    staticRsClosure  = " % staticRsClosure	% "\n"
+--		% "    staticDanger     = " % staticDanger	% "\n"
+
+{-
+		% "    tReduced\n"
+		%> prettyTS tReduced	% "\n\n"
+
+
+		% "    tMskLocal\n"
+		%> prettyTS tMskLocal 	% "\n\n"
+		
+		% "    tMskFresh\n"
+		%> prettyTS tMskFresh 	% "\n\n"
+
+		% "    tMskPure\n"
+		%> prettyTS tMskPure	% "\n\n"
+
+		% "    tPack\n"
+		%> prettyTS tPack 	% "\n\n"
+
+		% "\n"
+
+	return tPack
+-}
+
+-----
+-- Collect up the list of cids which cannot be generalise because 
+--	they are free in this environment.
+collectCidsEnv
+	:: Var			-- (type)  var of the scheme being generalised.
+	-> [Var] 		-- (value) vars of environment.
+	-> SquidM [ClassId]
+
+collectCidsEnv vGenT vsEnv
+ = do
+	-- Convert environment value vars to type vars.
+	vsEnvT_	<- mapM	(\v -> do
+			Just t	<- lookupSigmaVar v
+			return t)
+		$ vsEnv
+
+	-- The binding variable for a let-bound recursive function is present
+	--	in the environment of its own generalisation. Don't try and
+	--	call findType on ourselves or we'll loop forever.
+	--
+	let vsEnvT	= vsEnvT_ \\ [vGenT]
+
+	-- Lookup the types of the environment vars.
+--	tsEnv		<- mapM findType vsEnvT
+--	let tsEnv	= []
+
+	-- All cids in these types are monomorphic.
+--	let cidsEnv	= nub $ catMap collectClassIds tsEnv
+
+	return []
+

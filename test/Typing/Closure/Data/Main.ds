@@ -1,0 +1,26 @@
+
+
+x	= 1;
+f ()	= x := x + 1;
+
+data Thing !e1 $c0
+	= Thing (() -(!e1 $c0)> ());
+
+thing	= Thing f;
+
+fun ()	= runThing thing;
+
+runThing t
+ = case t of {
+ 	Thing f	-> f ();
+ };
+
+
+main ()
+ = do {	
+ 	runThing thing;
+	runThing thing;
+	
+	print 	$ "x = " % showInt x	% ";\n";
+ };
+ 	

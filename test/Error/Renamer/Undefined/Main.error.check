@@ -1,0 +1,5 @@
+test/Error/Renamer/Undefined/Main.ds:6:16
+     Undefined variable 'y' in namespace Value.
+
+test/Error/Renamer/Undefined/Main.ds:7:15
+     Undefined variable 'z' in namespace Value.

@@ -1,0 +1,15 @@
+
+
+fun1 ()
+ = do {
+ 	i1 = 5;
+	fun2 () () () = i1;
+ };
+ 
+ 
+fun1_u		= fun1     ();
+fun1_uu		= fun1_u   ();
+fun1_uuu	= fun1_uu  ();
+fun1_uuuu	= fun1_uuu ();
+
+

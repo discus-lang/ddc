@@ -1,0 +1,29 @@
+
+import	Base;
+
+infixl 0 #= ;
+foreign import extern "primRefUpdate"
+ (#=)
+	:: forall a %r1 !e1
+	.  Ref %r1 a -> a -(!e1)> ()
+	:- Mutable %r1
+	,  !e1 = !{ !Write %r1 }
+	:$ Obj -> Obj -> Obj;
+ 	
+
+
+
+ref	:: a -> Ref %r1 a
+	:- Mutable %r1;
+	
+ref x 
+ = do {	r	:: Ref %r1 a :- Mutable %r1;
+ 	r	= Ref x;
+	
+	r;
+ };
+
+
+
+ 
+

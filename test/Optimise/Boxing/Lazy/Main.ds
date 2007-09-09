@@ -1,0 +1,11 @@
+
+main ()
+ = do {	x	= id @ 5;
+ 	y	= id @ 6;
+	z	= x + y;
+	
+	print	$ showInt z	% "\n";
+ };
+ 	
+ 
+ 
