@@ -194,8 +194,7 @@ data Type
 
 	| TForall	Var	Type	Type		-- ^ Type abstraction.
 	| TContext		Type	Type		-- ^ Class context.
---	| TLet		Var	Type 	Type		-- ^ Type level let expression.
-	| TWhere	Type	[(Var, Type)]	-- ^ Type level where expression.
+	| TWhere	Type	[(Var, Type)]		-- ^ Type level where expression.
 	| TApp		Type 	Type			-- ^ Type application.
 
 	| TSum		Kind 	[Type]			-- ^ A summation / lub.

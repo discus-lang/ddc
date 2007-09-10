@@ -43,10 +43,10 @@ maybeSlurpTypeX	xx
 	, Just x'		<- maybeSlurpTypeX x
 	= Just $ TFunEC t x' eff clo
 	
-{-	| XTet v t x		<- xx
+	| XTet vts x		<- xx
 	, Just x'		<- maybeSlurpTypeX x
-	= Just $ TLet v t x'
--}
+	= Just $ TWhere x' vts
+
 	| XTau t x		<- xx
 	= Just t
 
