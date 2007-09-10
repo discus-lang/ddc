@@ -797,14 +797,8 @@ fetters	:: { [Fetter] }
 	| fetter ',' fetters				{ $1 : $3				}
 
 fetter	:: { Fetter }
-	: '!' VAR '=' effectSum				{ FLet (TVar KEffect  $ toVarE $2) $4	}
-	| '$' VAR '=' closureSum			{ FLet (TVar KClosure $ toVarO $2) $4	}
-
-	| CON '=' effectSum '|' closureSum		{ FFunInfo (toVar $1) $3   $5 		}
-	| CON '=' effectSum				{ FFunInfo (toVar $1) $3   empty	}
-
-	| CON '=' closureSum				{ FFunInfo (toVar $1) pure $3		}
-
+	: '!' VAR '=' effect				{ FLet (TVar KEffect  $ toVarE $2) $4	}
+	| '$' VAR '=' closure				{ FLet (TVar KClosure $ toVarO $2) $4	}
 	| mCon typeArg_Ss				{ FConstraint (vNameC $1) $2		}
 
 
@@ -866,12 +860,17 @@ closure :: { Closure }
 
 closureSum
 	:: { Closure }
-	: '$' '{' closurePart_Cs '}'			{ TSum KEffect $3			}
+	: '$' '{' closurePart_Cs '}'			{ TSum KClosure $3			}
 		
 closurePart
 	:: { Closure }
-	: '$' cVar					{ TVar KEffect   ($2 { Var.nameSpace = NameValue})  }	
-	| cVar '::' type				{ TFree ($1 { Var.nameSpace = NameValue}) $3 }
+	: '$' cVar					{ TVar KClosure   ($2 { Var.nameSpace = NameValue})  }	
+	| cVar ':' closureThing				{ TFree ($1 { Var.nameSpace = NameValue}) $3 }
+
+closureThing
+	:: { Closure }
+	: closurePart					{ $1 }
+--	| typeN						{ $1 }
 		
 closurePart_Cs
 	:: { [Closure] }
