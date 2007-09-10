@@ -19,6 +19,7 @@ import Util
 import Shared.Error
 import Core.Exp
 import Core.Bits
+import Core.Pretty
 
 -----
 stage	= "Core.Util.Slurp"
@@ -83,18 +84,22 @@ maybeSlurpTypeS (SBind mV x)	= maybeSlurpTypeX x
 
 
 
------
+-- | Slurp off the types of the bindings defined by this top level thing
 slurpTypesP :: Top -> [(Var, Type)]
 slurpTypesP pp
  = case pp of
-	PExtern 	v tv to			-> [(v, tv)]
-	PCtor   	v tv to			-> [(v, tv)]
-	PBind   	v x
-	 -> let	Just t	= maybeSlurpTypeX x
-	    in	[(v, t)]
---	PSuper 		v x			-> [(v, slurpTypeX x)]
-	PClassDict 	v ts context sigs	-> sigs
-	_					-> []
+	PExtern v tv to	-> [(v, tv)]
+	PCtor   v tv to	-> [(v, tv)]
+	PBind   v x
+	 -> case maybeSlurpTypeX x of
+	 	Just t	-> [(v, t)]
+		Nothing	-> panic stage
+			$ "Core.Util.Slurp: slurpTypesP\n"
+			% "  can't get type from this top-level thing\n"
+			% pp % "\n\n"
+
+	PClassDict v ts context sigs -> sigs
+	_ -> []
 
 
 -----

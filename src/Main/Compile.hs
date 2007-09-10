@@ -339,12 +339,8 @@ compileFile	args     fileName
 --	runStage "lint-reconstruct" 
 --		$ SC.coreLint cReconstruct cHeader
 
-
 	-- Identify primitive operations
 	cPrim		<- SC.corePrim	cReconstruct
-
-
-
 
 	-----------------------
 	-- Optimisations

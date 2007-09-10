@@ -40,8 +40,6 @@ stage	= "Core.Reconstruct"
 debug		= True
 trace ss x	= if debug then Debug.trace (pretty ss) x else x
 
-
-
 reconstructTree
 	:: Tree		-- header tree 
 	-> Tree 	-- core tree
@@ -61,10 +59,10 @@ reconstructTree tHeader tCore
 
 addVT :: Map Var Type -> (Var, Type) -> Map Var Type
 addVT tt (v, t)	 
-{- = trace 
+ = trace 
  	( "addVT: " % v 	% "\n"
- 	% "   t = " %> t 	% "\n")-}
-	= case Map.lookup v tt of
+ 	% "   t = " %> t 	% "\n")
+	$ case Map.lookup v tt of
 	 	Nothing	-> Map.insert v t tt
 		Just _	-> Map.insert v t (Map.delete v tt)
 	
@@ -174,7 +172,6 @@ reconX tt (XVar v)
 	 	( "reconX: (XVar " % v % ")\n"
 	 	% "    t =\n" %> t	% "\n") -}
 		(XVar v, t)
-	
 	
 	Nothing		-> panic stage $ "reconX: Variable " % v % " is not bound"
 	
