@@ -248,14 +248,29 @@ solveCInst_simple cs c vUse vInst bindInst path sGenDone
 	= do	trace	$ prettyp "=== Scheme is in graph.\n"
 		solveGrind
 		tScheme	<- extractType vInst
-		solveCInst_inst cs c tScheme
+		
+		(tInst, tInstVs)
+			<- instantiateT_table instVar tScheme
+
+		solveCInst_inst cs c tInst
+			(InstanceLet vInst vInst tInstVs tScheme)
 	
 	-- If	The var we're trying to instantiate is on our path
 	-- THEN	we're inside this branch.
-	| elem vInst $ concat $ map takeCBindVs $ filter (\b -> not $ b =@= BLetGroup{}) path
+	| (bind : _)	<- filter (\b -> (not $ b =@= BLetGroup{})
+				      && (elem vInst $ takeCBindVs b)) path
 	= do	trace	$ prettyp "=== Inside this branch\n"
-		let t	= TVar KData vInst
-		solveCInst_inst cs c t
+		let tInst = TVar KData vInst
+
+		-- check how this var was bound and build the appropriate InstanceInfo
+		--	the toCore pass will use this to add the required type params
+		--	to this call.
+		let info = case bind of
+				BLet{}		-> InstanceLetRec vUse vInst Nothing
+				BLambda{}	-> InstanceLambda vUse vInst Nothing
+				BDecon{}	-> InstanceLambda vUse vInst Nothing
+
+		solveCInst_inst cs c tInst info
 
 	| otherwise
 	= solveCInst_let cs c vUse vInst bindInst path
@@ -274,9 +289,9 @@ solveCInst_let cs c vUse vInst bindInst path
 	-- Restrict the instantiatesmap to just instantiations of let bindings.
 	let gInstLet	= Map.map (Set.filter (\b -> b =@= BLet{})) gInstantiates
 
-	-- The branch dependency graph graph is the union of the contains and instantiates graph
-	let gDeps		=  Map.unionWith (Set.union) gContains gInstLet
-	genSusp			<- gets stateGenSusp
+	-- The branch dependency graph is the union of the contains and instantiates graph
+	let gDeps	=  Map.unionWith (Set.union) gContains gInstLet
+	genSusp		<- gets stateGenSusp
 
 	trace	$ "    gContains:\n" 	%> prettyBranchGraph gContains	% "\n\n"
 		% "    gInstLet:\n" 	%> prettyBranchGraph gInstLet	% "\n\n"
@@ -295,12 +310,12 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	, sDeps		<- graphReachableS gDeps (Set.singleton bindInst)
 	, (p : _)	<- path
 	, Set.member p sDeps
-	= do 	trace	$ prettyp "=== Recursive use\n"
+	= do 	trace	$ prettyp "=== Recursive path\n"
 
-		let t	= TVar KData vInst
-		solveCInst_inst cs c t
-	
-	
+		let tInst	= TVar KData vInst
+		solveCInst_inst cs c tInst
+			(InstanceLetRec vUse vInst Nothing)
+		
 	-- IF	There is a suspended generalisation
 	-- AND	it's not recursive
 	-- THEN	generalise it and use that scheme for the instantiation
@@ -308,7 +323,12 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	= do	trace	$ prettyp "=== Generalisation\n"
 		solveGrind
 		tScheme	<- solveGeneralise vInst
-		solveCInst_inst cs c tScheme
+		
+		(tInst, tInstVs)
+			<- instantiateT_table instVar tScheme
+			
+		solveCInst_inst cs c tInst
+			(InstanceLet vUse vInst tInstVs tScheme) 
 		
 		
 	-- The type we're trying to generalise is nowhere to be found. The branch for it
@@ -340,21 +360,19 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 		solveCs csReordered
 
 	 
-solveCInst_inst cs c@(CInst src vT vDef) tScheme
+solveCInst_inst 
+	cs 			
+	c@(CInst src vT vDef) 
+	tInst			-- the instantiated type
+	info 			-- information about what was instantiated
  = do
  	trace	$ "\n"
-		% "=== solveCInst_scheme " % vT % " <- " % vDef 	% "\n"
-		% "    scheme = " % tScheme				% "\n"
-
-	-- Instantiate the scheme and record how it was instantiated.
-	(tInst, tInstVs)	
-		<- instantiateT_table instVar tScheme
-
-	sInst <##> Map.insert vT tInstVs
-
-	trace	$ "    instT  = " % tInst		% "\n"
-		% "    instVs = " % tInstVs		% "\n"
+		% "=== solveCInst_inst " % vT % " <- " % vDef 	% "\n"
+		% "    tInst = " % tInst			% "\n"
+		% "    info  = " % info				% "\n"
 		% "\n"
+
+	sInst <##> Map.insert vT info
 
 	-- Add type to the graph as a new constraint
 	solveCs [CEq src (TVar KData vT) tInst]

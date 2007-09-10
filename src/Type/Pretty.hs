@@ -224,6 +224,18 @@ instance Pretty Kind where
 	KFetter		-> "+"
 	KClosure	-> "$"
 
+instance  (Pretty param, Pretty t) 
+	=> Pretty (InstanceInfo param t) where
+ prettyp ii
+  = case ii of
+  	InstanceLambda v1 v2 mt
+	 -> "InstanceLambda " 	% v1 % " " % v2 % " " % mt
+
+	InstanceLet    v1 v2 ts	t 
+	 -> "InstanceLet " 	% v1 % " " % v2 % " " % ts % " (" % t % ")"
+
+	InstanceLetRec v1 v2 mt
+	 -> "InstanceLetRec "	% v1 % " " % v2 % " " % mt
 
 -----------------------
 -- 

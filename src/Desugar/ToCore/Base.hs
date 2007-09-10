@@ -47,7 +47,7 @@ data CoreS
 	= CoreS 
 	{ coreSigmaTable	:: Map Var Var		-- valueVar -> typeVar
 	, coreMapTypes		:: Map Var T.Type
-	, coreMapInst		:: Map Var [T.Type]
+	, coreMapInst		:: Map Var (T.InstanceInfo T.Type T.Type)
 	, coreProject		:: ProjTable
 	, coreGenValue		:: VarBind }
 	
@@ -107,13 +107,26 @@ getKind		v
 
 
 -----
-lookupInst ::	Var	-> CoreM (Maybe [C.Type])
+lookupInst ::	Var	-> CoreM (Maybe (T.InstanceInfo C.Type C.Type))
 lookupInst	v
- = do 	mapInst		<- gets coreMapInst
-	return		$ liftM (map T.toCoreT)
-			$ Map.lookup v mapInst
+ = do 	mapInst	<- gets coreMapInst
+	return	$ liftM toCoreInfo 
+		$ Map.lookup v mapInst
 
+toCoreInfo 
+	:: T.InstanceInfo T.Type T.Type
+	-> T.InstanceInfo C.Type C.Type
 
+toCoreInfo ii
+ = case ii of
+ 	T.InstanceLambda v1 v2 mt	
+	 -> T.InstanceLambda v1 v2 (liftM T.toCoreT mt)
+	
+	T.InstanceLet    v1 v2 ts t
+	 -> T.InstanceLet v1 v2 (map T.toCoreT ts) (T.toCoreT t)
+	
+	T.InstanceLetRec v1 v2 mt
+	 -> T.InstanceLetRec v1 v2 (liftM T.toCoreT mt)
 	
 	
 

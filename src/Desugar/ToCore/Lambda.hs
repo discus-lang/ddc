@@ -27,6 +27,7 @@ import Core.Util.Strip
 import Desugar.ToCore.Base
 
 import qualified Type.ToCore	as T
+import qualified Type.Exp	as T
 
 -----
 stage 		= "Desugar.ToCore.Lambda"
@@ -127,7 +128,7 @@ addTypeApps v vT exp
  	tScheme		<- getType v
 
 	-- See how the scheme was instantiated.
-	mInstVs		<- lookupInst vT
+	Just instInfo	<- lookupInst vT
 
 {-	trace
 	 (pretty	$ "--- addTypeApps\n"
@@ -137,14 +138,14 @@ addTypeApps v vT exp
 			% " tScheme          = \n"	 %> tScheme	% "\n\n"
 			% " mInstVs          = "	 % mInstVs	% "\n")
 	 $ -}
-	addTypeApps2 v vT exp tScheme mInstVs
+	addTypeApps2 v vT exp tScheme instInfo
 	 
 
 -- No scheme was instantiated when this var was used
 --	This will happen at the point when a recursive function calls itself.
 --	Pass the quantified variables back into ourselves.
 
-addTypeApps2 v vT exp tScheme Nothing
+addTypeApps2 v vT exp tScheme (T.InstanceLetRec v1 v2 _)
  = do 	let (forallVTs, _, classes, tRest)	
  				= stripSchemeT tScheme
 	let forallVs		= map fst forallVTs
@@ -168,7 +169,7 @@ addTypeApps2 v vT exp tScheme Nothing
 -- 	First, puncture the inst to throw out application of local 
 --	effect and closure information. We'll pass this information via a TLet instead.
 --	
-addTypeApps2 v vT exp tScheme (Just tsInst)
+addTypeApps2 v vT exp tScheme (T.InstanceLet vUse vBind tsInst tScheme_)
  = do
 	-- get the original scheme in Type representation
 	sigmaTable		<- gets coreSigmaTable

@@ -1,3 +1,5 @@
+-- Type instantiation.
+--
 
 module Type.Util.Instantiate
 (
@@ -15,7 +17,6 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 -----
-import Shared.Error 
 import qualified Shared.Var as Var
 import Shared.Var (Var)
 
@@ -28,6 +29,8 @@ import Type.Util.Bits
 -----
 stage	= "Type.Instantiate"
 
+-- | Instantiate a type scheme using the provided gn to create
+--	the new variables.
 instantiateT 
 	:: Monad m
 	=> (Var -> m Var)
@@ -39,22 +42,26 @@ instantiateT instF t
 	return t'
 
 
+-- | Instantiate a type scheme, using the provided function to create
+--	the new variables, and also return the new instance vars created.
 instantiateT_table
 	:: Monad m
-	=> (Var -> m Var)
-	-> Type -> m (Type, [Var])
+	=> (Var -> m Var)	-- ^ fn to instantiate a variable.
+	-> Type 		-- ^ type to instantiate
+	-> m ( Type		-- instantiated type
+	     , [Var])		-- list of instance variables, one for 
+	     			--	each of the foralls at the front of the scheme
 
-
-	
 instantiateT_table instF t
  = case t of
  	TForall vks x
-	 -> do	let vs		= map fst vks
+	 -> do	-- build a table mapping each of the forall bound variables
+		--	to a new instance variable.
+	 	let vs		= map fst vks
 	 	vsI		<- mapM instF vs
-		
-		let table	= Map.fromList
-				$ zip vs vsI
+		let table	= Map.fromList $ zip vs vsI
 				
+		-- substitute instance variables into the body of the type.
 		let x'		= transformV (\v -> case Map.lookup v table of
 							Nothing	-> v
 							Just v'	-> v')
@@ -72,14 +79,3 @@ instantiateT_table instF t
 		
 	_ ->	return (t, [])
 	
-	
- 
- 
- 
- 
- 
- 
-
-
-
-

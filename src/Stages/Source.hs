@@ -391,8 +391,8 @@ solveSquid :: (?args :: [Arg])
 	-> Set Var				-- the TEC vars to infer TECs for	
 	-> Map Var Var				-- sigma table
 	
-	-> IO 	( Map Var T.Type		-- inferred types
-		, Map Var [T.Type])		-- how each var was instantiated
+	-> IO 	( Map Var T.Type			-- inferred types
+		, Map Var (InstanceInfo T.Type T.Type))	-- how each var was instantiated
 	
 solveSquid 
 	constraints
@@ -472,11 +472,11 @@ solveSquid
 -- toCore
 --
 toCore 	:: (?args :: [Arg])
-	-> D.Tree (Maybe (Type, Effect))	-- sourceTree
-	-> D.Tree (Maybe (Type, Effect))	-- headerTree
-	-> (Map Var Var)			-- sigmaTable
-	-> (Map Var T.Type)			-- typeTable
-	-> (Map Var [T.Type])			-- typeInst
+	-> D.Tree (Maybe (Type, Effect))		-- sourceTree
+	-> D.Tree (Maybe (Type, Effect))		-- headerTree
+	-> (Map Var Var)				-- sigmaTable
+	-> (Map Var T.Type)				-- typeTable
+	-> (Map Var (T.InstanceInfo T.Type T.Type))		-- typeInst
 	-> ProjTable
 	-> IO	( C.Tree
 		, C.Tree )

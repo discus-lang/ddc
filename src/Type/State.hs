@@ -105,7 +105,8 @@ data SquidS
 	-- | Records how each scheme was instantiated.
 	--	We need this to reconstruct the type applications during conversion to
 	--	the Core IR.
-	, stateInst		:: Map Var	[Var]			
+	--	
+	, stateInst		:: Map Var	(InstanceInfo Var Type)			
 
 	-- | A register of which classes contain various, interesting effect / class constructors.
 	--	When we want to crush out some of the class constraints, we can use this register

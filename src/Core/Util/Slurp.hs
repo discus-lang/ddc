@@ -24,52 +24,6 @@ import Core.Bits
 stage	= "Core.Util.Slurp"
 
 -----
-{-
-slurpTypeX :: Exp -> Type
-slurpTypeX xx
- = case xx of
-	XAnnot	n x			-> slurpTypeX x
-
-
-	XLAM	v t@(TClass{}) x	-> TContext t (slurpTypeX x)
- 	XLAM	v k x			-> TForall v k (slurpTypeX x)
-
---	XTet	v  t x			-> TLet v t 	(slurpTypeX x)
-	XTau	t  x			-> t
-
-	XLam	v t x eff clo		-> TFunEC  t (slurpTypeX x) eff clo
-
-	XConst	c t			-> t
-	
-	XPrim	(MFun   v  tR) aa eff	-> tR
-	XPrim   (MBox   tB tU) x eff	-> tB
-	XPrim	(MUnbox tU tB) x eff	-> tU
-
-	XMatch	aa eff		
-	 -> let	Just a	= takeLast aa
-	    in	slurpTypeA a
-
-	XDo	ss
-	 -> let	Just s	= takeLast ss
-	    in	slurpTypeS s
-
-	_			-> panic stage
-				$ "slurpTypeX: no match for (" % show xx % ")"
-
-slurpTypeS ::	Stmt	-> Type
-slurpTypeS	ss
- = case ss of
- 	SBind mV x		-> slurpTypeX x
-	
-
-slurpTypeA ::	Alt	-> Type
-slurpTypeA	aa
- = case aa of
- 	AAlt gs x		-> slurpTypeX x
--}
-
-
------
 maybeSlurpTypeX :: Exp -> Maybe Type
 maybeSlurpTypeX	xx
 	| XAnnot n x		<- xx

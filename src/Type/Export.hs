@@ -26,8 +26,8 @@ stage	= "Type.Squid.Export"
 squidExport 
 	:: Set Var
 	-> SquidM 
-		( Map Var Type
-		, Map Var [Type])
+		( Map Var Type				-- type schemes
+		, Map Var (InstanceInfo Type Type))	-- type instantiations
 
 squidExport vsTypesPlease
  = do
@@ -38,12 +38,24 @@ squidExport vsTypesPlease
 		, inst )
 
 
-exportType :: Var -> SquidM Type
-exportType v
- = do 	tEx		<- extractType v
-	tPlug		<- plugClassIds [] tEx
+exportVarType :: Var -> SquidM Type
+exportVarType v
+ = do 	tEx	<- extractType v
+	tPlug	<- plugClassIds [] tEx
 	return tPlug
  	
+exportType :: Type -> SquidM Type
+exportType t
+ = do	t'	<- plugClassIds [] t
+ 	return	t'
+	
+exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
+exportMaybeType mt
+ = case mt of
+ 	Nothing	-> return Nothing
+	Just t 
+	 -> do	t'	<- exportType t
+	 	return	$ Just t'
 
 --
 exportTypes :: Set Var -> SquidM (Map Var Type)
@@ -51,23 +63,36 @@ exportTypes vsTypesPlease
  = do	
  	-- these are the type that were asked for by the slurper.
  	let vsPlease	= Set.toList vsTypesPlease
-	ts		<- mapM exportType vsPlease
+	ts		<- mapM exportVarType vsPlease
 	return	$ Map.fromList 
 		$ zip vsPlease ts
 		
 -----
-exportInst :: SquidM (Map Var [Type])
+-- | Build a map of all the instantiations
+--
+exportInst :: SquidM (Map Var (InstanceInfo Type Type))
 exportInst 
  = do	inst	<- gets stateInst
- 	let vvs	=  Map.toList inst
-	
-	vts	<- mapM exportInst' vvs
-	
+	vts	<- mapM exportInstInfo
+		$  Map.toList inst
+			
 	return	$ Map.fromList vts
 
-exportInst' (v, vs)
- = do	ts'	<- mapM exportType vs
- 	return	(v, ts')
+exportInstInfo 	:: (Var, InstanceInfo Var Type)
+		-> SquidM (Var, InstanceInfo Type Type)
 
+exportInstInfo (v, ii)
+ = case ii of	
+ 	InstanceLambda v1 v2 mt
+	 -> do	mt'	<- exportMaybeType mt
+	 	return	$ (v, InstanceLambda v1 v2 mt)
 
-
+	InstanceLet    v1 v2 vs t
+	 -> do	ts 	<- mapM exportVarType vs
+	 	t'	<- exportType t
+	 	return	$ (v, InstanceLet v1 v2 ts t')
+		
+	InstanceLetRec 	vUse vDef Nothing
+	 -> do 	tDef	<- exportVarType vDef
+	 	return	$ (v, InstanceLetRec vUse vDef (Just tDef))
+	 

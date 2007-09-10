@@ -46,6 +46,7 @@ import qualified Core.Pack		as C
 import qualified Core.Optimise.Boxing	as C	(unboxedType)
 import qualified Core.Plate.FreeVars	as C
 import qualified Core.Util.Mask		as C
+import qualified Core.Util.Strip	as C
 
 import Desugar.ToCore.Base
 import Desugar.ToCore.Util
@@ -56,16 +57,16 @@ import qualified Debug.Trace	as Debug
 -----
 stage	= "Desugar.ToCore"
 
-debug		= False
+debug		= True
 trace ss x	= if debug 
 			then Debug.trace (pretty ss) x
 			else x
 
 -----------------------
 toCoreTree
-	:: (Map Var Var)
-	-> (Map Var T.Type)		-- typeSchemes
-	-> (Map Var [T.Type])		-- typeInst
+	:: (Map Var Var)				-- ^ value -> type vars
+	-> (Map Var T.Type)				-- ^ inferred type schemes
+	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- ^ instantiation info
 	-> ProjTable
 	-> D.Tree Annot
 	-> C.Tree
@@ -415,21 +416,34 @@ toCoreX xx
 		v
 	 -> do	
 		t		<- getType v
-	
 		mapInst		<- gets coreMapInst
-		let Just tsInst	= (Map.lookup vT mapInst) :: Maybe [T.Type]
 
-		let tsInstC	=  map toCoreT tsInst
+		-- lookup how this var was instantiated
+		let Just instInfo = Map.lookup vT mapInst
 
-		trace	( "XVarInst " % v % "\n"
-			% "    vT      = " % vT		% "\n"
-			% "    tsInstC = " % tsInstC 	% "\n")
-			
-			
-		 $ return	
-		 	$ C.unflattenApps (C.XVar v : map C.XType tsInstC)
-			
+		-- check how this var was instantiated to work out if we
+		--	need to pass type args.
+		case instInfo of
 
+		 -- use of a lambda bound variable.
+		 -- 	only rank1 polymorphism => lambda bound vars have monotypes
+		 T.InstanceLambda vUse vBind _
+		  ->	return $ C.XVar v
+
+		 -- non-recursive use of a let bound variable 
+		 -- 	pass in the type args corresponding to the instantiated foralls.
+		 T.InstanceLet vUse vBind tsInst _
+		  -> do	let tsInstC	= map toCoreT tsInst
+		  	return	$ C.unflattenApps (C.XVar v : map C.XType tsInstC)
+
+		 -- recursive use of a let-bound variable
+		 -- 	pass the args on the type scheme back to ourselves.
+		 T.InstanceLetRec vUse vBind (Just tScheme)
+		  -> do
+			let tScheme'	= toCoreT tScheme
+			let tsQuant	= C.slurpForallsT tScheme'
+		  	return $ C.unflattenApps
+			 	(C.XVar v : [C.XType (C.TVar k v) | (v, C.TKind k) <- tsQuant])
 
 	_ 
 	 -> panic stage
