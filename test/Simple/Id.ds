@@ -46,6 +46,7 @@ fstLet (a, b)
  	ak;
  };
 
+{-
 z	= 5;
 leak b x y	
  = case b of {
@@ -53,7 +54,7 @@ leak b x y
 	False	-> y;
 	False	-> do { update z ; z; };
  };
-
+-}
 
 dude	= Cons 1 (Cons 2 Nil);
 

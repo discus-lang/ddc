@@ -35,11 +35,10 @@ data	Char 	%r;
 data	Int 	%r;
 data 	Float 	%r;
 
+{-
 data 	Ref %r1 a
 	= Ref { x :: a; };
-
-
-
+-}
 
 
 -----------------------

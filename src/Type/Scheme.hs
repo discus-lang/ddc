@@ -58,7 +58,14 @@ trace s	= when debug $ traceM s
 
 extractType :: Var -> SquidM Type
 extractType varT
- = do	Just cid	<- lookupVarToClassId varT
+ = do	mCid	<- lookupVarToClassId varT
+
+ 	when (not $ isJust mCid)
+	 $ panic stage
+	 $ "extractType: no class for type variable " % varT % "\n"
+
+	let Just cid	= mCid
+
  	tTrace		<- liftM sortFsT 	$ traceType cid
 	cidsDown	<- liftM Set.toList 	$ traceCidsDown cid
 
