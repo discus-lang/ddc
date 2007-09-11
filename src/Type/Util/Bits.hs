@@ -17,7 +17,10 @@ module Type.Util.Bits
 	, flattenKind 
 	, addTForallVKs
 	, bindFreeVarsT
+
 	, addFetters 
+	, takeBindingVarF
+
 	, makeOpTypeT 
 	, makeTVar
 	, takeCidOfTClass
@@ -312,10 +315,7 @@ addTForallVKs vks tt
 	= TForall vks tt
 	
 
------------------------
--- addFetters
---	| Add some fetters to a type.
---
+-- | Add some fetters to a type.
 addFetters :: 	[Fetter] -> Type -> Type
 addFetters	fsMore	t
  = case t of
@@ -329,12 +329,16 @@ addFetters	fsMore	t
 		ff	-> TFetters (nub ff) t
 
 
+-- | Take the binding var from FLet's 
+takeBindingVarF :: Fetter -> Maybe Var
+takeBindingVarF ff
+ = case ff of
+ 	FLet (TVar k v) t2	-> Just v
+	_			-> Nothing
+
 
 -- | Make an operational type.
-
-makeOpTypeT
-	:: Type -> Type
-	
+makeOpTypeT :: Type -> Type
 makeOpTypeT tt
  = case tt of
  	TForall vks t		-> makeOpTypeT t

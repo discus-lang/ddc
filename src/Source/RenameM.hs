@@ -12,20 +12,13 @@ module Source.RenameM
 	, Rename (..)
 
 	, addN
-	, bindN, lbindN,  pushN, popN, lookupN
+	, bindN,	bindZ,		bindV
+	, lookupN,	lookupZ,	lookupV
+	, lbindN,	lbindZ,		lbindV
 
-	, bindV, lbindV, pushV, popV, lookupV
-	, bindT, lbindT, pushT, popT, lookupT
-	, bindR, lbindR, pushR, popR, lookupR
-	, bindE, lbindE, pushE, popE, lookupE
-	, bindC, lbindC, pushC, popC, lookupC
-
-	, lbindF
-
+	, pushN
+	, popN
 	, local
-
-	, pushTREC, popTREC
-	, pushVTREC, popVTREC
 )
 
 where
@@ -49,10 +42,12 @@ import Source.Error
 -----
 stage = "Source.RenameM"
 
------
+-- | things that can be renamed
 class Rename a where
  rename  :: a -> RenameM a
 
+
+-- | simple instances
 instance Rename a => Rename [a] where
  rename xx	= mapM rename xx
 
@@ -74,6 +69,8 @@ data	RenameS
 	= RenameS 
 	{ stateTrace		:: [String]
 	, stateDebug		:: Bool
+
+	  -- Source level renamer errors found so far.
 	, stateErrors		:: [Error]
 
 	  -- Fresh variable generators
@@ -131,18 +128,18 @@ initRenameS
 	, stateObjectVar 	= []
 	}
 
------
-traceM	:: 	String -> RenameM ()
-traceM		ss
+
+-- | tracing of renamers
+traceM	::  String -> RenameM ()
+traceM ss
  	= modify (\s -> s { stateTrace = (stateTrace s) ++ [ss] })
 		
-trace		ss
+trace ss
 	= whenM (gets stateDebug) $ traceM $ unlines ss
 				
------
-runRename :: 	RenameM a	-> a
-runRename	comp	
-	= evalState comp initRenameS 
+-- | run a renamer computation.
+runRename :: RenameM a	-> a
+runRename comp		= evalState comp initRenameS 
 	
 	
 -----
@@ -166,13 +163,20 @@ peekObjectVar
 	 []	-> panic stage "peekObjectVar: stack underflow\n"
 	 (x:xs)
 	  -> 	return x
+
+
+
+-- | Bind name
+--	Take the namespace annotation on a var and bind it into that space.
+--	Creates an error if it's already bound.
+bindZ :: Var -> RenameM Var
+bindZ	 v 	= bindN (Var.nameSpace v) v
+
+bindV		= bindN NameValue
 	
-	
------
-bindN ::	NameSpace -> Var -> RenameM Var
-bindN		space 	     var
- = do
-	-- Grab the current var stack.
+bindN :: NameSpace -> Var -> RenameM Var
+bindN	 space var
+ = do	-- Grab the current var stack.
 	(Just (spaceMap:ms))
 		<- liftM (Map.lookup space)
 		$  gets stateStack
@@ -183,7 +187,7 @@ bindN		space 	     var
 		 -> do	modify (\s -> s { 
 		 		stateErrors = stateErrors s ++ [ErrorRedefinedVar boundVar var]})
 
-	 	Nothing	
+	 	Nothing
 		 -> return ())
 		
 	-- Var isn't bound yet, proceed.
@@ -195,45 +199,51 @@ bindN		space 	     var
 		{ stateStack	= Map.insert space 
 					(spaceMap':ms) 
 					(stateStack s)})
-
 	return var'
 
------
-renameVarN ::	NameSpace -> 	Var -> RenameM Var
-renameVarN	space var
- = case bindPrimVar space var of
- 	Just var'	-> return var' { Var.nameSpace = space }
-	Nothing 	-> renameVarN' space var
 
-renameVarN'	space var
- = do
-	(Just spaceGen)	<- liftM (Map.lookup space)
+-- | If this is the name of a prim var then give it the appropriate VarId
+--	otherwise give it a fresh one. Also set the namespace.
+renameVarN ::	NameSpace -> Var -> RenameM Var
+renameVarN	space var
+
+	-- If we're trying to rename the var into a different namespace
+	--	to the one it already has then something has gone wrong.
+	| Var.nameSpace var /= NameNothing
+	, Var.nameSpace var /= space
+	= panic stage 
+	$ "renameVarN: not renaming var " % var % " from space " % Var.nameSpace var
+	% " to space " % space
+
+	| otherwise
+	= case bindPrimVar space var of
+	 	Just var'	-> return var' { Var.nameSpace = space }
+		Nothing 	-> renameVarN' space var	
+
+renameVarN' space var
+ = do	-- grab the VarId generator for this space
+ 	(Just spaceGen)	<- liftM (Map.lookup space)
 			$  gets stateGen
 
+	-- rename the var and set its namespace
 	let var'	= var 
 			{ Var.bind 		= spaceGen 
 			, Var.nameSpace		= space }
 
+	-- increment the generator
 	let spaceGen'	= Var.incVarBind spaceGen
-
-	modify (\s -> s
-		{ stateGen	= Map.insert space spaceGen' (stateGen s) }) 	
+	modify $ \s -> s
+		{ stateGen	= Map.insert space spaceGen' (stateGen s) }
 	
 	return var'
 
 
-
------
--- addN
---	| Add some (already renamed) variables to the current scope.
+-- | Add some (already renamed) variables to the current scope.
 --	
-addN ::		NameSpace -> [Var] -> RenameM ()
-addN		space vs
- = do
-
-	-- Sanuty check.
+addN ::	NameSpace -> [Var] -> RenameM ()
+addN	space vs
+ = do	-- Sanity check.
 	--	Vars added directly to the namespace should have already been renamed.
-	--
 	let vs'	= map (\v -> case Var.nameSpace v of
 				NameNothing	-> panic stage $ "addN: var " % v % " is in NameNothing.\n"
 				_		-> v)
@@ -247,19 +257,23 @@ addN		space vs
 			$ Map.fromList 
 			$ zip (map Var.name vs') vs'
 	
-	modify (\s -> s {
-		stateStack	= Map.insert space
+	modify $ \s -> s 
+		{ stateStack	= Map.insert space
 					(spaceMap':ms)
-					(stateStack s) })
+					(stateStack s) }
 					
 	return ()
 
 
+----- 	
+-- | Lookup name
+--	Lookup a variable name from the current scope. If it's there then
+--	rename this var after it, if not then generate an error.
+lookupZ :: Var -> RenameM Var
+lookupZ	v	= lookupN (Var.nameSpace v) v
 
+lookupV		= lookupN NameValue
 
-
-
------
 lookupNM ::	NameSpace ->	Var -> RenameM (Maybe Var)
 lookupNM	space		var
  = do
@@ -288,8 +302,8 @@ lookupNM' s (m:ms)
 	Nothing	-> lookupNM' s ms
 
 
-lookupN ::	NameSpace ->	Var -> RenameM Var
-lookupN		space		var
+lookupN :: NameSpace ->	Var -> RenameM Var
+lookupN	 space var
  = do
  	mVar	<- lookupNM space var
 
@@ -304,96 +318,55 @@ lookupN		space		var
 	  -> 	return var'
 
 
------ 	
-lbindN ::	NameSpace ->	Var -> RenameM Var
-lbindN		space		var
- = do
- 	mVar	<- lookupNM space var
+-- | Lazy bind
+--	See if this variable name is already bound in the current scope.
+--	If it isn't then bind it with this namespace, otherwise
+--	rename it after the one that's already there.
+lbindZ :: Var -> RenameM Var
+lbindZ v	= lbindN (Var.nameSpace v) v
+
+lbindV 		= lbindN NameValue
+
+lbindN :: NameSpace -> Var -> RenameM Var
+lbindN space var
+ = do 	mVar	<- lookupNM space var
 	
 	case mVar of
 	 Just  	var	-> return var
 	 Nothing	-> bindN space var
 
 
------
-pushN ::	NameSpace ->	RenameM ()
-pushN 		space
- 	= modify (\s -> s 
-		{ stateStack	= Map.adjust (\ss -> Map.empty : ss) space
-				$ stateStack s })
+-- | Push this space of names down to create a local scope.
+pushN :: NameSpace -> RenameM ()
+pushN space
+ 	= modify 
+ 	$ \s -> s 
+	{ stateStack	= Map.adjust (\ss -> Map.empty : ss) space
+			$ stateStack s }
 				
------
-popN ::		NameSpace ->	RenameM ()
-popN		space
-	= modify (\s -> s 
+-- | Pop this space of names to return to the enclosing scope
+popN ::	NameSpace -> RenameM ()
+popN	space
+	= modify 
+	$ \s -> s 
 	{ stateStack	
 		= Map.adjust 
 			(\ss -> case ss of 
-				[] 	-> panic stage $ pretty $ "popN: namespace " % space % " is empty, cannot pop."
+				[] 	-> panic stage $ pretty 
+					$ "popN: namespace " % space % " is empty, cannot pop."
 				(m:ms)	-> ms)
 			space
-			$ stateStack s })
+			$ stateStack s }
 
 
-
------------------------
--- Short forms
---	Using these saves us from some hash in Rename.hs
---
-
--- value
-bindV  		= bindN		NameValue
-lbindV 		= lbindN	NameValue
-pushV		= pushN		NameValue
-popV		= popN		NameValue
-lookupV		= lookupN	NameValue
-
--- type
-bindT  		= bindN		NameType
-lbindT 		= lbindN	NameType
-pushT		= pushN		NameType
-popT		= popN		NameType
-lookupT		= lookupN	NameType
-
--- region
-bindR  		= bindN 	NameRegion
-lbindR 		= lbindN	NameRegion
-pushR		= pushN		NameRegion
-popR		= popN		NameRegion
-lookupR		= lookupN	NameRegion
-
--- effect
-bindE  		= bindN 	NameEffect
-lbindE 		= lbindN	NameEffect
-pushE		= pushN		NameEffect
-popE		= popN		NameEffect
-lookupE		= lookupN	NameEffect
-
--- closure
-bindC  		= bindN 	NameClosure
-lbindC 		= lbindN	NameClosure
-pushC		= pushN		NameClosure
-popC		= popN		NameClosure
-lookupC		= lookupN	NameClosure
-
--- field
-lbindF		= lbindN	NameField
-
-
-
+-- | Do some renaming in a local scope
+local :: RenameM a -> RenameM a
 local f
- = do	pushVTREC
+ = do	let spaces	
+ 		= [NameValue, NameType, NameRegion, NameEffect, NameClosure, NameField]
+ 
+ 	mapM_ pushN spaces
  	x	<- f
-	popVTREC
+	mapM_ popN  spaces
 	return x
-
-
-pushTREC 	= do { pushT; pushR; pushE; pushC; }
-popTREC		= do { popT;  popR;  popE;  pushC; }
-
-pushVTREC	= do { pushV; pushT; pushR; pushE; pushC; }
-popVTREC	= do { popV;  popT;  popR;  popE;  pushC; }
-
-
-
 

@@ -1,10 +1,8 @@
 
 module Source.Rename
 	( Rename
-	, rename_VT
 	, renameData
 	, renameTrees )
-
 where
 
 -----
@@ -62,10 +60,9 @@ renameTrees' mTrees
 		topNamesHs
 		
 	-- Now rename trees
-	--	
-	mTrees'		<- mapM (\(m, tree) 
-				-> do	tree' <- renameTree m tree
-					return (m, tree'))
+	mTrees'	<- mapM (\(m, tree) 
+			-> do	tree' <- renameTree m tree
+				return (m, tree'))
 				mTrees
 				
 	return mTrees'
@@ -79,8 +76,6 @@ renameTree m tree
 	return tree'
 	
 -----
--- Rename Top
---
 instance Rename Top where
  rename	top
   = case top of
@@ -120,11 +115,11 @@ instance Rename Top where
 		return	$ PData v' vs' cs' 
 	
 	PRegion v
-	 -> do	v'	<- lookupR v
+	 -> do	v'	<- lookupN NameRegion v
 	 	return	$ PRegion v'
 	
 	PEffect	v k
-	 -> do 	v'	<- lookupE v
+	 -> do 	v'	<- lookupN NameEffect v
 		return	$ PEffect v' k
 
 	PStmt	s
@@ -142,7 +137,7 @@ instance Rename Top where
 
 		(vs', inh', sigs')
 		 <- local
-		 $ do	vs'	<- mapM lbindT vs
+		 $ do	vs'	<- mapM (lbindN NameType) vs
 			inh'	<- mapM renameClassInh inh
 			sigs'	<- mapM renameClassSig sigs
 			return	(vs', inh', sigs')
@@ -185,53 +180,14 @@ instance Rename Top where
 	
 		ss'	<- rename ssF
 		return	$ PProjDict t' ss'
-		
 
+	
+-----
 instance Rename Module where
  rename m	= return m
-	
-rename_VT ::	(Var, Type)	-> RenameM (Var, Type)
-rename_VT	(v, t)
- = do
- 	v'	<- bindV v
-
-	pushTREC
-	t'	<- rename t
-	popTREC
-	
-	return	(v', t')
-
-
-renameClassInh :: (Var, [Var])  -> RenameM (Var, [Var])
-renameClassInh	  (v, vs)
- = do
- 	v'	<- lbindN NameClass v
-	vs'	<- mapM lbindT vs
-	return	(v, vs)
-
-
-renameClassSig :: ([Var], Type) -> RenameM ([Var], Type)
-renameClassSig    (vs, t)
- = do
- 	vs'	<- mapM lbindV vs
-
-	pushTREC
-	t'	<- rename t
-	popTREC
-	
-	return	(vs', t')
-
-
-renameInstInh :: (Var, [Type])	-> RenameM (Var, [Type])
-renameInstInh    (v, ts)
- = do
- 	v'	<- lookupN NameClass v
-	ts'	<- rename ts
-	return	(v', ts')
-
+ 
+ 
 -----
--- Foreign
---
 instance Rename Foreign where
  rename ff
   = case ff of
@@ -253,47 +209,61 @@ instance Rename Foreign where
 	 	tv'	<- rename tv
 		to'	<- rename to
 		return	$ OExtern mS v' tv' to' 
-		
 
-	
+
+-- all this stuff should really have it's own constructor
+--
+renameClassInh :: (Var, [Var])  -> RenameM (Var, [Var])
+renameClassInh	  (v, vs)
+ = do	v'	<- lbindN NameClass v
+	vs'	<- mapM (lbindN NameType) vs
+	return	(v, vs)
+
+
+renameClassSig :: ([Var], Type) -> RenameM ([Var], Type)
+renameClassSig    (vs, t)
+ = local
+ $ do 	vs'	<- mapM lbindV vs
+	t'	<- rename t
+	return	(vs', t')
+
+
+renameInstInh :: (Var, [Type])	-> RenameM (Var, [Type])
+renameInstInh    (v, ts)
+ = do
+ 	v'	<- lookupN NameClass v
+	ts'	<- rename ts
+	return	(v', ts')
+		
 renameData 	
 	:: Var -> [Var] -> [(Var, [DataField Exp Type])]	
 	-> RenameM (Var, [Var], [Ctor])
 
 renameData v vs cs
- = do
- 	v'	<- lookupT v
-
-	(vs', cs')	
-	 	<- local	
-		  $ do 	vs'	<- mapM bindZ vs
-			cs'	<- mapM renameCtor cs
-			return	(vs', cs')
-	
+ = local
+ $ do 	v'	<- lookupN NameType v
+	vs'	<- mapM bindZ vs
+	cs'	<- mapM renameCtor cs
 	return	(v', vs', cs')
 
 renameCtor 
-	::	(Var, [DataField Exp Type])	
+	:: (Var, [DataField Exp Type])	
 	-> RenameM (Var, [DataField Exp Type])
 
 renameCtor	(v, fs)
- = do
- 	v'	<- lookupV v
+ = do	v'	<- lookupV v
 	fs'	<- mapM rename fs
 	return	(v', fs')
 
 
------
--- DataField Exp Type
---
+------
 instance Rename (DataField Exp Type) where
  rename df
-  = do
-	mLabel'	<- case dLabel df of
+  = do	mLabel'	<- case dLabel df of
 			Nothing		-> return Nothing
 			Just label
 			 -> do
-			 	label'	<- lbindF label
+			 	label'	<- lbindN NameField label
 				return	$ Just label'
 
 	t'	<- rename $ dType df
@@ -305,9 +275,7 @@ instance Rename (DataField Exp Type) where
 		, dInit		= mExp' }
 		
 	
------------------------
--- Exp
---
+-----
 instance Rename Exp where 
  rename exp
   = case exp of
@@ -320,18 +288,15 @@ instance Rename Exp where
 	 -> do 	v'	<- lookupV v
 		return	$ XVar sp v'
 
-
 	XProj sp x proj
 	 -> do 	x'	<- rename x
 		proj'	<- rename proj
 		return	$ XProj sp x' proj'
 
 	XLambda sp v e	
-	 -> do	pushVTREC
-	 	v'	<- bindV v
+	 -> local
+	 $  do	v'	<- bindV v
 		e'	<- rename e
-		popVTREC
-
 		return	$ XLambda sp v' e'
 
 	XApp sp e1 e2	
@@ -345,17 +310,14 @@ instance Rename Exp where
 		return	$ XCase sp e1' cs'
 
  	XLet sp ss e	
-	 -> do 	pushVTREC
-	 	ss'	<- renameSs ss
+	 -> local
+	 $ do 	ss'	<- renameSs ss
 		e'	<- rename e
-		popVTREC
 		return	$ XLet sp ss' e'
 		
 	XDo sp ss 
-	 -> do 	pushVTREC
-	 	ss'	<- renameSs ss
-		popVTREC
-
+	 -> local
+	 $ do 	ss'	<- renameSs ss
 		return	$  XDo sp ss'
 
 	XIfThenElse sp e1 e2 e3 
@@ -367,15 +329,14 @@ instance Rename Exp where
 	-- oop
 	XObjField sp v
 	 -> do	objV	<- peekObjectVar
-		v'	<- lbindF v
+		v'	<- lbindN NameField v
 		return	$ XProj sp (XVar sp objV) (JField v')
 		
 	-- sugar
 	XLambdaPats sp ps x
-	 -> do	pushV
-	 	ps'	<- mapM bindPatX ps
+	 -> local
+	 $ do 	ps'	<- mapM bindPatX ps
 		x'	<- rename x
-		popV
 		return	$ XLambdaPats sp ps' x'
 
 	XLambdaCase sp cs
@@ -451,15 +412,12 @@ instance Rename Exp where
 		return	$ XListRange sp b x1' x2'
 
 	XListComp sp x qs
-	 -> do	qs'	<- renameLCQuals qs
+	 -> local
+	 $ do	qs'	<- renameLCQuals qs
 
-		let vs	= concat $ map boundByLCQual qs'
-
-		pushV
-		addN NameValue vs
+		addN NameValue
+			$ concat $ map boundByLCQual qs'
 		x'	<- rename x
-		popV
-
 		return	$ XListComp sp x' qs'
 
 	-- patterns
@@ -481,20 +439,20 @@ instance Rename Exp where
 	 -> do	xx'	<- rename xx
 	 	return	$ XList sp xx'
 		
-
 	_ -> panic stage
 		$ "rename: cannot rename " % show exp
-
 		
+			
+-----
 instance Rename Proj where
  rename jj 
   = case jj of
 	JField v
-	 -> do	v'	<- lbindF v
+	 -> do	v'	<- lbindN NameField v
 		return	$ JField v'
 		
 	JFieldR v
-	 -> do	v'	<- lbindF v
+	 -> do	v'	<- lbindN NameField v
 	 	return	$ JFieldR v'
 
 	JIndex x
@@ -504,8 +462,9 @@ instance Rename Proj where
 	JIndexR x
 	 -> do	x'	<- rename x
 	 	return	$ JIndexR x'
-		
 
+	
+-----
 instance Rename Alt where
  rename a
   = case a of
@@ -531,13 +490,15 @@ instance Rename Alt where
 	 -> do	x'	<- rename x
 	 	return	$  ADefault x'
 
+
+-----
 instance Rename Label where
  rename ll
   = case ll of
   	LIndex i	-> return ll
 
 	LVar v 
-	 -> do	v'	<- lbindF v
+	 -> do	v'	<- lbindN NameField v
 	 	return	$  LVar v'
 	 
 
@@ -646,13 +607,10 @@ renameLCQuals qq
 
 	(LCGen b (XVar sp v) x2 : qs)
 	 -> do	x2'	<- rename x2
-	 	
-		pushV
-		v'	<- bindV v
-		qs'	<- renameLCQuals qs
-		popV
-		
-		return	$ (LCGen b (XVar sp v') x2' : qs')
+		local
+		 $ do	v'	<- bindV v
+			qs'	<- renameLCQuals qs		
+			return	$ (LCGen b (XVar sp v') x2' : qs')
 		
 	(LCExp x : qs)
 	 -> do	x'	<- rename x
@@ -689,25 +647,23 @@ instance Rename Stmt where
 	SBindPats sp v ps x
 	 -> do	v'	<- lbindZ v
 
-	 	pushV
-		(ps', objVss)	<- liftM unzip
-				$  mapM renamePat ps
+	 	local
+		 $ do	(ps', objVss)	<- liftM unzip
+					$  mapM renamePat ps
 
-		let objVs	= concat objVss
+			let objVs	= concat objVss
 
-		(case objVs of
-		  []	-> return ()
-		  [v]	-> pushObjectVar v)
+			(case objVs of
+			  []	-> return ()
+			  [v]	-> pushObjectVar v)
 
-		x'		<- rename x
+			x'		<- rename x
 
-		(case objVs of
-		  []	-> return ()
-		  [v]	-> do { popObjectVar; return () })
+			(case objVs of
+			  []	-> return ()
+			  [v]	-> do { popObjectVar; return () })
 
-		popV
-
-		return	$ SBindPats sp v' ps' x'
+			return	$ SBindPats sp v' ps' x'
 	 	
 	SBind sp mV x
 	 -> do	mV'	<- liftMaybe lbindZ mV
@@ -791,12 +747,9 @@ renamePats bound done []
 renamePats bound done (x:xs)
  = do	(x', boundHere)	<- renamePat x
  	renamePats (bound ++ boundHere) (done ++ [x']) xs
-	
 
 
------------------------
--- renameT
---
+-----
 instance Rename Type where
  rename tt
   = case tt of
@@ -809,10 +762,15 @@ instance Rename Type where
 		return	$ TForall vs' t'
 
 	TFetters fs t
-	 -> do 	fs'	<- rename fs
+	 -> local
+	  $ do	-- bind the vars on the RHS of let binds
+	  	mapM_ bindZ 
+			$ catMaybes $ map takeBindingVarF fs
+		
+		fs'	<- rename fs
 		t'	<- rename t
 		return	$ TFetters fs' t'
-
+			 	
 	TVar k v 	
 	 -> do 	v'	<- lookupN (spaceOfKind k) v
 		return	$ TVar k v'
@@ -827,7 +785,6 @@ instance Rename Type where
 	TBot k
 	 ->	return tt
 
-
 	-- data
  	TFun t1 t2 eff clo
 	 -> do 	t1'	<- rename t1
@@ -837,32 +794,25 @@ instance Rename Type where
 		return	$ TFun t1' t2' eff' clo'
 
 	TData v ts		
-	 -> do 	v'	<- lookupT v
+	 -> do 	v'	<- lookupN NameType v
 		ts'	<- mapM rename ts
 		return	$ TData v' ts'
 	
-	
 	-- effect
 	TEffect v rs
-	 -> do 	v'	<- lookupE v
+	 -> do 	v'	<- lookupN NameEffect v
 		rs'	<- rename rs
 		return	$ TEffect v' rs'
 		
-	
 	-- closure
 	TFree v t
-	 -> do	pushTREC
-	 	t'	<- rename t
-		popTREC
-
+	 -> local
+	 $  do	t'	<- rename t
 	 	return	$ TFree v t'
 	
-
 	-- wildcards
 	TWild k
 	 -> 	return	$ TWild k
-
-
 
 	-- 
 	TElaborate t
@@ -913,9 +863,8 @@ instance Rename Type where
 		
 		t'	<- rename tQ
 		return	t'
-		
-		
 
+		
 -----
 instance Rename Fetter where
  rename f
@@ -926,7 +875,7 @@ instance Rename Fetter where
 		return	$ FConstraint v' ts'
 
   	FLet t1 t2
-	 -> do 	t1'	<- rename t1
+	 -> do	t1'	<- rename t1
 		t2'	<- rename t2
 		return	$ FLet t1' t2'
 
@@ -935,32 +884,6 @@ instance Rename Fetter where
 	 	n'	<- rename n
 		return	$  FFunInfo l e' n'
 
-	
-
------		
-lookupZ :: 	Var -> RenameM Var
-lookupZ	v
- = case Var.nameSpace v of
-	NameValue	-> lookupV v
-	NameType	-> lookupT v
- 	NameRegion	-> lookupR v
-	NameEffect	-> lookupE v		
-	NameClosure	-> lookupC v
-
-lbindZ ::	Var -> RenameM Var
-lbindZ v
- = case Var.nameSpace v of
- 	NameValue	-> lbindV v
-	NameType	-> lbindT v
-	NameRegion	-> lbindR v
-	NameEffect	-> lbindE v
-	NameClosure	-> lbindC v
-	NameField	-> lbindN NameField v
-	_		-> panic stage
-			$  "lbindZ: no match for " % Var.nameSpace v % "\n"
-
-bindZ :: 	Var -> RenameM Var
-bindZ	 	v 	= bindN (Var.nameSpace v) v
 
 -----
 slurpVarsT :: 	Type -> [Var]
