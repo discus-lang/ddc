@@ -247,7 +247,7 @@ solveCInst_simple cs c vUse vInst bindInst path sGenDone
 	| Set.member vInst sGenDone
 	= do	trace	$ prettyp "=== Scheme is in graph.\n"
 		solveGrind
-		tScheme	<- extractType vInst
+		Just tScheme	<- extractType vInst
 		
 		(tInst, tInstVs)
 			<- instantiateT_table instVar tScheme
@@ -416,7 +416,8 @@ solveGeneralise	vGen
 	-- Extract the types present in the environment.
 	--	No need to worry about generalisation here, if a var was in the environment
 	--	then it was instantiated, so generalisation was already forced.
-	tsEnv		<- mapM extractType vsEnv
+	Just tsEnv	<- liftM sequence
+			$  mapM extractType vsEnv
 
 	-- Collect up the cids free in the types in the environment.
 	let cidsEnv	= nub $ catMap collectClassIds tsEnv
@@ -424,7 +425,7 @@ solveGeneralise	vGen
 	trace	$ "    cidsEnv    = " % cidsEnv		% "\n"
 
 	-- Extract the type from the graph.
-	tGraph		<- extractType vGen
+	Just tGraph	<- extractType vGen
 
 	-- Generalise the type into a scheme.
 	tScheme		<- generaliseType vGen tGraph cidsEnv

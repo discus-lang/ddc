@@ -40,8 +40,8 @@ squidExport vsTypesPlease
 
 exportVarType :: Var -> SquidM Type
 exportVarType v
- = do 	tEx	<- extractType v
-	tPlug	<- plugClassIds [] tEx
+ = do 	Just tEx	<- extractType v
+	tPlug		<- plugClassIds [] tEx
 	return tPlug
  	
 exportType :: Type -> SquidM Type

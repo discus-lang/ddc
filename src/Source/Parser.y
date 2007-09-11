@@ -7,10 +7,6 @@
 --	Source parse tree should preserve structure of program as entered by user.
 --	This way we'll get better error messages during type checking.
 --
--- Errors:
---	deathParseEnd
---	deathParseBefore
---
 {
 module Source.Parser 
 	(parse) 
@@ -952,10 +948,8 @@ symbol	:: { Var }
 {
 -----
 happyError ::	[TokenP] -> a
-
-happyError	[]	= death [ErrorParseEnd]
-happyError	(x:xs)	= death [ErrorParseBefore x]
-
+happyError	[]	= dieWithUserError [ErrorParseEnd]
+happyError	(x:xs)	= dieWithUserError [ErrorParseBefore x]
 
 -----
 toVar :: TokenP -> Var
@@ -1037,7 +1031,7 @@ makeModuleVar vs
 checkVar ::	TokenP -> Exp -> Var
 checkVar	tok	  (XVar sp v)	= v
 checkVar	tok	  e
- 	= death [ErrorParse tok "parse error"]
+ 	= dieWithUserError [ErrorParse tok "parse error"]
 
 -----
 makeConst ::	Bool -> TokenP -> Exp

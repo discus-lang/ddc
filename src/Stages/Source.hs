@@ -524,13 +524,12 @@ handleErrors []
 handleErrors errs
  = case filter (=@= StopErrors{}) ?args of
   	(StopErrors [file] : _)
-	 -> do
-	 	writeFile file 
+	 -> do 	writeFile file 
 			(catInt "\n" $ map pretty errs)
 			
 		exitWith ExitSuccess
 		
-	_ -> 	death errs
+	_ -> 	dieWithUserError errs
 			
 
 	 	

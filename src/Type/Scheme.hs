@@ -56,17 +56,20 @@ trace s	= when debug $ traceM s
 -- | Extract a type from the graph and pack it into standard form.
 --	BUGS: we need to add fetters from higher up which are acting on this type.
 
-extractType :: Var -> SquidM Type
+extractType :: Var -> SquidM (Maybe Type)
 extractType varT
  = do	mCid	<- lookupVarToClassId varT
 
- 	when (not $ isJust mCid)
-	 $ panic stage
-	 $ "extractType: no class for type variable " % varT % "\n"
+	case mCid of
+	 Nothing	
+	  -> freakout stage
+	 	("extractType: no classId defined for variable " % varT)
+		$ return Nothing
 
-	let Just cid	= mCid
-
- 	tTrace		<- liftM sortFsT 	$ traceType cid
+	 Just cid	-> extractTypeC varT cid
+	 
+extractTypeC varT cid
+ = do 	tTrace		<- liftM sortFsT 	$ traceType cid
 	cidsDown	<- liftM Set.toList 	$ traceCidsDown cid
 
 	trace	$ "*** Scheme.extractType " % varT % "\n"
@@ -84,8 +87,6 @@ extractType varT
 	 		% "    this type is graphical through classes " % cidsDataLoop % "\n\n"
 	 		% "    " % varT % " :: \n" %> prettyTS tTrace % "\n"
 
-	
-	 		
 	-- Pack type into standard form
 	let tPack	= packType tTrace
 	trace	$ "    tPack            =\n" %> prettyTS tPack % "\n\n"
@@ -94,7 +95,7 @@ extractType varT
 	let tTrim	= packType $ trimClosureT tPack
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
-	return	$ tTrim
+	return	$ Just tTrim
 	
 
 
