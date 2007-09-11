@@ -227,7 +227,6 @@ feedType	mParent t
 	TSigExact t'	
 	 -> 	feedType mParent t'
 	 	
-
 	_  ->	freakout stage
 			( "feedType: cannot feed this type into the graph.\n"
 			% "   type    = " % t 		% "\n"

@@ -1,4 +1,5 @@
-
+-- | Constraint slurper for statements.
+--
 module Desugar.Slurp.SlurpS 
 	(slurpS)
 where
@@ -16,9 +17,7 @@ import Desugar.Slurp.SlurpA
 -----
 stage	= "Desugar.Slurp.SlurpS"
 
------------------------
--- slurpS
---
+-- | Slurp the type constraints for this statement.
 slurpS 	:: Stmt Annot1
 	-> CSlurpM 
 		( Type		-- type var
@@ -27,6 +26,7 @@ slurpS 	:: Stmt Annot1
 		, Stmt Annot2	-- annotated statement
 		, [CTree])	-- constraints
 
+-- statements (bindings with out a bound var)
 slurpS 	(SBind sp Nothing e1)
  = do
  	let src		= TSStmt sp
@@ -46,8 +46,7 @@ slurpS 	(SBind sp Nothing e1)
 			{ branchBind	= BNil
 			, branchSub	= qs ++ qsX }])
 
-
-
+-- regular bindings
 slurpS	(SBind sp (Just v) e1)
  = do
 	let src			= TSStmt sp 
@@ -60,7 +59,6 @@ slurpS	(SBind sp (Just v) e1)
 	-- we'll be wanting the type of this binding when we convert to core
 	modify (\s -> s { stateTypesPlease = Set.insert vBindT (stateTypesPlease s)  })
 
-
 	return	( tX
 		, eX
 		, cX 
@@ -72,21 +70,17 @@ slurpS	(SBind sp (Just v) e1)
 				++ qsX  
 				++ [ CGen src tBind ] } ] )
 
-
-
+-- type signatures
 slurpS	stmt@(SSig sp varV t)
  = do
 	let src		= TSSig sp varV
  	tX		<- lbindVtoT varV
 	
 	let qs	= 
-		[ CEq src tX 	$ t ]
+		[ CSig src tX 	$ t ]
 		
 	return	( tX
 		, pure
 		, empty
 		, SSig Nothing varV t
 		, qs)
-
-
-

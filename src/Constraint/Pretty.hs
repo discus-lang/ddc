@@ -1,9 +1,7 @@
-
+-- | Pretty printer for type constraints.
+--
 module Constraint.Pretty
-(
-
-)
-
+	( )
 where
 
 -----
@@ -25,6 +23,11 @@ instance Pretty CTree where
 		%> ("\n" %!% branchSub c % "\n")
 	  % "}\n"
 
+	CDef 	src v t	
+	 -> "@CDef       " % padR 15 (pretty v) % " " % prettyTB t % ";"
+
+	CSig	src v t
+	 -> "@CSig  " % padR 15 (pretty v) % " " % prettyTB t % ";"
 
 	CEq 	src v t	
 	 -> "@CEq   " % padR 15 (pretty v) % " " % prettyTB t % ";"
@@ -32,8 +35,6 @@ instance Pretty CTree where
 	CEqs 	src ts
 	 -> "@CEqs  " % ts
 
-	CDef 	src v t	
-	 -> "@CDef        " % padR 15 (pretty v) % " " % prettyTB t % ";"
 
 	CDataFields src v ts []	
 	 -> "@CDataFields " % v % " " % ts % " {};"

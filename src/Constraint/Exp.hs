@@ -37,12 +37,14 @@ data	CTree
 	--	interfaces of imported modules.
 	| CDef		TypeSource Type Type	
 
+	-- A type signature from the source program.
+	--	These give us (partial) information about what this type should be.
+	| CSig		TypeSource Type Type	
 
 	-- Type equality constraint.
 	--	The LHS should be a TClass or a TVar.
 	| CEq		TypeSource Type Type
 
-	
 	-- Type equality constraints, all these types are equal.
 	--	These should all be TClass or TVars
 	--	Saves having to write a large collection of CEq constraints.
@@ -61,11 +63,9 @@ data	CTree
 	-- 	type name, type vars, (field name, field type)
 	| CDataFields	TypeSource Var [Var] [(Var, Type)]	
 
-								
 	-- Carries a projection dictionary.
 	--	Projection type. field var, implementation var.
 	| CProject	TypeSource Type [(Var, Var)]		
-
 
 	-- Leave a branch.
 	--	The solver uses this to remind itself when all the constraints in a
