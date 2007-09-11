@@ -26,8 +26,7 @@ import Constraint.Exp
 import Constraint.Pretty
 
 -----
-stage	= "Type.Squid.Feed"
-
+stage	= "Type.Feed"
 
 -----------------------
 -- feedConstraint
@@ -45,7 +44,8 @@ feedConstraint cc
 
 		-- feed the RHS into the graph.
 		let ?src	= src
-		TClass _ cid2	<- feedType Nothing t2
+		Just (TClass _ cid2)
+			<- feedType Nothing t2
 
 		-- merge left and right hand sides.
 		mergeClasses TUnify [cid1, cid2]
@@ -53,7 +53,8 @@ feedConstraint cc
 
 	CEqs src ts
 	 -> do	let ?src	= src
-	 	ts'		<- mapM (feedType Nothing) ts
+	 	Just ts'	<- liftM sequence
+				$  mapM (feedType Nothing) ts
 		let cids	= map (\(TClass k cid) -> cid) ts'
 		mergeClasses TUnify cids
 		return ()
@@ -79,7 +80,7 @@ feedConstraint cc
 feedType 	
 	:: (?src :: TypeSource)
 	-> Maybe ClassId 
-	-> Type -> SquidM Type
+	-> Type -> SquidM (Maybe Type)
 
 feedType	mParent t
  = case t of
@@ -105,57 +106,50 @@ feedType	mParent t
 
 
 	TUnify k ts
-	 -> do	
-	 
-{-	 	cidE		<- allocClass k
-	 	patchBackRef cidE mParent
-		
-		ts'		<- mapM (feedType1 (Just cidE)) ts
--}
-	 	ts'		<- mapM (feedType mParent) ts
+	 -> do	Just ts'	<- liftM sequence 
+	 			$  mapM (feedType mParent) ts
 		let cids	= map (\(TClass k cid) -> cid) ts'
 		mergeClasses TUnify cids
 
 		let Just cid	=  takeHead cids
-
-		return 		$ TClass k cid
+		returnJ 	$ TClass k cid
 
 	TSum k ts
 	 -> do 	cidE		<- allocClass k
 		patchBackRef cidE mParent
 
-		es'		<- mapM (feedType1 (Just cidE)) ts
+		Just es'	<- liftM sequence
+				$  mapM (feedType1 (Just cidE)) ts
 		addNode cidE 	$ TSum k es'
 
-		return		$ TClass k cidE
+		returnJ		$ TClass k cidE
 
 	TMask k t1 t2
 	 -> do	cidE		<- allocClass k
 	 	patchBackRef cidE mParent
 		
-		t1'		<- feedType1 (Just cidE) t1
-		t2'		<- feedType1 (Just cidE) t2
+		Just t1'	<- feedType1 (Just cidE) t1
+		Just t2'	<- feedType1 (Just cidE) t2
 		addNode cidE	$ TMask k t1' t2'
 		
-		return		$ TClass k cidE
-
+		returnJ		$ TClass k cidE
 
  	TVar k v 
 	 -> do 	cidT		<- makeClassV ?src k v 
 		patchBackRef cidT mParent
-		return		$ TClass k cidT
+		returnJ		$ TClass k cidT
 
 	TBot kind
 	 -> do	cid		<- allocClass kind
 	 	patchBackRef cid mParent
 		addNode cid	$ TBot kind
-		return		$ TClass kind cid
+		returnJ		$ TClass kind cid
 
 	TTop kind
 	 -> do	cid		<- allocClass kind
 	 	patchBackRef cid mParent
 		addNode cid	$ TTop kind
-		return		$ TClass kind cid
+		returnJ		$ TClass kind cid
 
 
 	-- data
@@ -163,31 +157,33 @@ feedType	mParent t
 	 -> do	cidT		<- allocClass KData
 		patchBackRef cidT mParent 
 
-		t1'		<- feedType (Just cidT) t1
-		t2'		<- feedType (Just cidT) t2
-		eff'		<- feedType (Just cidT) eff
-		clo'		<- feedType (Just cidT) clo
+		Just t1'	<- feedType (Just cidT) t1
+		Just t2'	<- feedType (Just cidT) t2
+		Just eff'	<- feedType (Just cidT) eff
+		Just clo'	<- feedType (Just cidT) clo
 		addNode cidT	$ TFun t1' t2' eff' clo'
-		return		$ TClass KData cidT
+		returnJ		$ TClass KData cidT
 
 		
 	TData v ts
 	 -> do 	cidT		<- allocClass KData
 		patchBackRef cidT mParent
 
-		ts'		<- mapM (feedType (Just cidT)) ts
+		Just ts'	<- liftM sequence
+				$  mapM (feedType (Just cidT)) ts
 
 		addNode cidT 	$ TData v ts'
-		return		$ TClass KData cidT
+		returnJ		$ TClass KData cidT
 
 	-- effect
 	TEffect v ts
 	 -> do 	cidE		<- allocClass KEffect
 		patchBackRef cidE mParent
 	
-		ts'		<- mapM (feedType (Just cidE)) ts
+		Just ts'	<- liftM sequence
+				$  mapM (feedType (Just cidE)) ts
 		addNode cidE 	$ TEffect v ts'
-		return		$ TClass KEffect cidE
+		returnJ		$ TClass KEffect cidE
 
 	-- closure
 	TFree v t
@@ -196,34 +192,34 @@ feedType	mParent t
 		
 		t'		<- linkType mParent [] t
 		addNode	cid	$ TFree v t'
-		return		$ TClass KClosure cid
+		returnJ		$ TClass KClosure cid
 
 	TTag v
 	 -> do	cid		<- allocClass KClosure
 	 	patchBackRef cid mParent
 		
 		addNode cid	$ TTag v
-		return		$ TClass KClosure cid
+		returnJ		$ TClass KClosure cid
 
 	TWild kind
 	 -> do	cid		<- allocClass kind
 	 	patchBackRef cid mParent
 		addNode cid	$ TWild kind
-		return		$ TClass kind cid
+		returnJ		$ TClass kind cid
 
 	TClass k cid
 	 -> do 	cidT'		<- sinkClassId cid
-		return		$ TClass k cidT'
+		returnJ		$ TClass k cidT'
 		
 	TAccept t
 	 -> do	let k		= kindOfType t
 	 	cid		<- allocClass k
 		patchBackRef cid mParent
 
-	 	t'		<- feedType mParent t
+	 	Just t'		<- feedType mParent t
 		
 		addNode cid 	$ TAccept t'
-	 	return		$ TClass k cid
+	 	returnJ		$ TClass k cid
 
 	TSig t'	
 	 ->	feedType mParent t'
@@ -232,8 +228,12 @@ feedType	mParent t
 	 -> 	feedType mParent t'
 	 	
 
-	_ 	-> panic stage
-		$  "feedType: cannot feed " % t
+	_  ->	freakout stage
+			( "feedType: cannot feed this type into the graph.\n"
+			% "   type    = " % t 		% "\n"
+			% "   source  = " % ?src 	% "\n"
+			% "   mParent = " % mParent	% "\n")
+			$ return Nothing
 
 -----
 -- feedType1
@@ -255,31 +255,34 @@ feedType	mParent t
 feedType1 
 	:: (?src :: TypeSource)
 	-> Maybe ClassId
-	-> Type -> SquidM Type
+	-> Type -> SquidM (Maybe Type)
 		
 feedType1 mParent tt
  = case tt of
 	TTop k
-	 | elem k [KEffect, KClosure]	-> return tt
+	 | elem k [KEffect, KClosure]	
+	 -> returnJ tt
 	 
 	TBot k
-	 | elem k [KEffect, KClosure]	-> return tt
+	 | elem k [KEffect, KClosure]
+	 -> returnJ tt
 
 	TSum k []
-	 ->	return tt
+	 ->	returnJ tt
  
  	-- effects
  	TEffect v ts
-	 -> do	ts'	<- mapM (feedType mParent) ts
-	 	return	$ TEffect v ts'
+	 -> do	Just ts' <- liftM sequence
+	 		 $  mapM (feedType mParent) ts
+	 	returnJ	$ TEffect v ts'
 		
 	-- closures
 	TFree v t
-	 -> do	t'	<- feedType mParent t
-	 	return	$ TFree v t'
+	 -> do	Just t'	<- feedType mParent t
+	 	returnJ	$ TFree v t'
 
 	TTag{}
-	 ->	return	$ tt
+	 ->	returnJ	$ tt
 
 	_ 	-> feedType mParent tt
 
@@ -296,21 +299,23 @@ feedFetter
 feedFetter	mParent f
  = case f of
 	FLet t1 t2
-	 -> do	TClass k1 cid1	<- feedType mParent t1
-	 	TClass k2 cid2	<- feedType mParent t2
+	 -> do	Just (TClass k1 cid1)	<- feedType mParent t1
+	 	Just (TClass k2 cid2)	<- feedType mParent t2
 		mergeClasses TUnify [cid1, cid2]
 		return ()
 
 	FConstraint v ts
 	 -> do	cidC		<- allocClass KFetter
-	 	ts'		<- mapM (feedType (Just cidC)) ts
+	 	Just ts'	<- liftM sequence
+				$  mapM (feedType (Just cidC)) ts
 		addNode cidC	$ TFetter (FConstraint v ts')
 
 	FProj pj t1 t2 t3 eff clo
 	 -> do	cidC		<- allocClass KFetter
-	 	[t2', t3']	<- mapM (feedType (Just cidC)) [t2, t3]
-		eff'		<- feedType (Just cidC) eff
-		clo'		<- feedType (Just cidC) clo
+	 	Just [t2', t3']	<- liftM sequence
+				$  mapM (feedType (Just cidC)) [t2, t3]
+		Just eff'	<- feedType (Just cidC) eff
+		Just clo'	<- feedType (Just cidC) clo
 
 		addNode cidC	$ TFetter (FProj pj t1 t2' t3' eff' clo')
 		

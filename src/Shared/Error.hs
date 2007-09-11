@@ -20,8 +20,8 @@ import Debug.Trace
 panic :: Pretty msg => String -> msg -> a
 panic  stage msg
 	=  error
-		( pretty $ "PANIC in " % stage % "\n" 
-		%> (msg % "\n\nPlease report this as a bug to the maintainers.\n"))
+		( pretty $ "\nPANIC in " % stage % "\n" 
+		%> (msg % "\nPlease report this as a bug to the maintainers.\n"))
 
 
 -- | Something bad has happened, and it's likely to be terminal.
@@ -31,8 +31,8 @@ panic  stage msg
 freakout :: Pretty msg => String -> msg -> a -> a
 freakout stage msg a
 	= trace 
-		(pretty $ "FREAKOUT in " % stage % "\n"
-		%> (msg	% "\n\nPlease report this as a bug to the maintainers.\n"))
+		(pretty $ "\nFREAKOUT in " % stage % "\n"
+		%> (msg	% "\nPlease report this as a bug to the maintainers.\n"))
 		a
 
 	
@@ -41,7 +41,7 @@ freakout stage msg a
 --
 warning :: Pretty msg => String -> msg -> a -> a
 warning stage msg a
-	= trace (pretty $ "WARNING in " % stage % "\n" %> msg) 
+	= trace (pretty $ "\nWARNING in " % stage % "\n" %> msg) 
 		a
 
 
@@ -50,6 +50,6 @@ warning stage msg a
 --
 dieWithUserError :: Pretty err => [err] -> a
 dieWithUserError  errs
-	= error	(pretty $ "ERROR\n\n" ++ (catInt "\n" $ map pretty errs))
+	= error	(pretty $ "\nERROR\n" ++ (catInt "\n" $ map pretty errs))
 
 	
