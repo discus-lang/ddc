@@ -21,6 +21,7 @@ $alpha	= [$lower $upper]
 
 $varsym	= [\' \_]
 $var    = [$alpha $digit $varsym]
+$vardot	= [$alpha $digit $varsym \.]
 
 -- $ssym	= [\\ \= \: \|]
 $sym	= [\! \# \$ \% \& \* \+ \/ \< \> \? \@ \^ \- \~ \\ \= \: \|]
@@ -147,9 +148,9 @@ tokens :-
  \|			{ ptag Bar			}
  \.			{ ptag Dot			}
 
- $upper $var*		{ ptags (\s -> Tycon s)		}
- $lower $var*		{ ptags (\s -> Var   s) 	}
- $sym+  $sym*		{ ptags (\s -> Symbol s)	}
+ $upper ($vardot* $var)?	{ ptags (\s -> Tycon s)		}
+ $lower $var* 			{ ptags (\s -> Var   s) 	}
+ $sym+  $sym*			{ ptags (\s -> Symbol s)	}
 
  \" ($printable # \")* \" 
  			{ ptags (\s -> CString (read s))		}

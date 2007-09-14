@@ -80,11 +80,11 @@ effect	!WriteT		:: * -> !;	-- Write to whole object.
 --
 region	%const;
 region	%mutable;
-{-
------------------------
+
+------------------------
 -- Fixity defs.
 --
-
+{-
 infixl 8 *, / ;
 infixl 7 +, - ;
 infixr 6 : ;
@@ -94,7 +94,7 @@ infixr 3 || ;
 infixl 2 >>, >>= ;
 infixr 1 $ ;
 infixl 0 :=, #=;
-
+-}
 -----------------------
 -- Simple Functions
 --	We won't get very far without these.
@@ -105,8 +105,6 @@ id    x = x;
 infixr 1 $ ;
 ($) f x	 = f x;
 
-
--}
 -----
 -- primProj*
 --	These functions are used by the desugarer to make default data projections.
@@ -122,14 +120,14 @@ foreign import extern "primProjField"
  primProjField	
  	:: forall a b %r1 !e1
 	.  a -> Int32# %r1 -(!e1)> b
-	:- !e1 = !{ !ReadH a }
+	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj;
  
 foreign import extern "primProjFieldR"
  primProjFieldR 
  	:: forall a b %r1 !e1
 	.  a -> Int32# %r1 -(!e1)> b
-	:- !e1 = !{ !ReadH a }
+	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj;
 
 -----

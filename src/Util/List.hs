@@ -228,8 +228,9 @@ sequenceFF	a		(f:fs)		= sequenceF fs (f a)
 -- Split Functions
 --
 
-makeSplits ::	Eq a 
-	   => 	([a] -> ([a], [a])) -> ([a] -> [[a]])
+makeSplits 
+	:: ([a] -> ([a], [a])) 
+	-> ([a] -> [[a]])
 
 makeSplits	splitFunc xx
  = case splitFunc xx of
@@ -261,25 +262,39 @@ splitWhen'	p	(x:xs)	acc
 	| p x				= (acc ++ [x], xs)
 	| otherwise			= splitWhen' p xs (acc ++ [x])
 
-splitWhens ::	Eq a => (a -> Bool) -> [a] -> [[a]]
+splitWhens :: (a -> Bool) -> [a] -> [[a]]
 splitWhens f	= makeSplits (splitWhen f)
 
------
--- Break functions
---
 
-makeBreaks	:: Eq a
-		=> ([a] -> ([a], [a])) -> ([a] -> [[a]])
+-- | Make a breaks function from this split function
+makeBreaks
+	:: ([a] -> ([a], [a])) -> ([a] -> [[a]])
 
 makeBreaks	splitFunc xx
- = let
- 	parts 		= makeSplits splitFunc xx
+ = let 	parts 		= makeSplits splitFunc xx
 	firstParts'	= map init $ init parts
- in
- 	firstParts' ++ [last parts]
+   in 	firstParts' ++ [last parts]
 	
+
+-- | Break a list into components, using this element as the separator.
+--	The element is not returned as part of the components.
+--
+--	eg:  breakOns '.' "rabbit.marmot.lemur"   
+--	  -> ["rabbit", "marmot", "lemur"]
+--
+breakOns :: Eq a => a -> [a] -> [[a]]
 breakOns  c	= makeBreaks (splitOn c)
+
+
+-- | Break a list into comonents, using this function to choose the separator.
+--	The separator element is not returned as part of the components.
+--
+--	eg: breakWhens (isEven) [1, 5, 2, 5, 9, 5, 7]
+--	 -> [[1, 5], [5, 9], [5, 7]]
+--
+breakWhens :: (a -> Bool) -> [a] -> [[a]]
 breakWhens p	= makeBreaks (splitWhen p)
+
 
 -----
 -- Update Functions
@@ -309,7 +324,6 @@ isNil    []	= True
 isNil	 xx	= False
 
 
-
 -----
 -- gather
 --	gather [(0, 1), (0, 2), (3, 2), (4, 5), (3, 1)] = [(0, [1, 2]), (3, [2, 1]), (4, [5])]
@@ -325,7 +339,6 @@ gather	xx	= Map.toList m
 			Map.empty 
 			xx
 	
-
 
 -----
 mapT2_1 = mapUpdateTl tl2_1
