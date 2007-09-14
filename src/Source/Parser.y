@@ -830,7 +830,8 @@ effect1	:: { Effect }
 closure :: { Closure }
 	: '$' pVar					{ TVar KClosure $2 			}
 	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
-	| pVar ':' closure				{ TFree (vNameV $1) $3 			}
+	| pVar ':' closure				{ TFree (vNameV $1) $3			}
+	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
 		
 closure_semi
 	:: { [Closure] }
