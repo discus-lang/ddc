@@ -244,7 +244,7 @@ mString
 --
 module		
 	:: { Module }
-	: qCon					{ ModuleAbsolute [Var.name $1]		}
+	: CON					{ toModule $1				}
 
 module_semi
 	:: { [Module] }
@@ -975,8 +975,15 @@ makeVar    name@(n:_) tok
  	= liftQualifier
 	$ (Var.new name)
 	 	{ Var.info	=	
-		[  Var.ISourcePos (SourcePos (file tok, line tok, column tok)) ] }
-	
+		[ Var.ISourcePos (SourcePos (file tok, line tok, column tok)) ] }
+
+
+-- | Make a module name from this token
+toModule :: TokenP -> Module
+toModule tok
+ = case token tok of
+ 	K.Tycon name	-> ModuleAbsolute (breakOns '.' name)
+	_		-> dieWithUserError [ ErrorParse tok "parse error" ]
 
 -- | Force an expresion to be a variable
 --	Throw a user error if it's not.
