@@ -8,18 +8,13 @@
 --
 --
 module Source.TokenShow
-(
-	showSource
-)
+	( showSource )
 
 where
 
 import Shared.Error
 import Source.Token
-
--- mutual dependency.. sigh.
--- import qualified Shared.Error as Error
-
+import Util
 
 stage	= "Source.TokenShow"
 
@@ -30,8 +25,9 @@ stage	= "Source.TokenShow"
 --
 showSource tok =
  case tok of
- 	Tycon	str	-> str
+	ModuleName strs	-> concat $ intersperse "." strs
 	Var	str	-> str
+	Con	str	-> str
 	Symbol	str	-> str
 	CInt	i	-> show i
 	CFloat  f	-> show f

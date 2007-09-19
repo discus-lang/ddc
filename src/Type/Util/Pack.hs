@@ -128,6 +128,15 @@ packTypeLs ls tt
 	 -> let	t'	= packTypeLs ls $ loadType ls t
 	    in	TAccept t'
 
+	-- sugar
+	TMutable t
+	 -> let t'	= packTypeLs ls $ loadType ls t
+	    in	TMutable t'
+	    
+	TElaborate t
+	 -> let t'	= packTypeLs ls $ loadType ls t
+	    in	TElaborate t'
+
 	_ -> panic stage
 		$ "packTypeLs: no match for " % show tt
 		    

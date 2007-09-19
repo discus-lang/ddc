@@ -76,7 +76,10 @@ instance Pretty Top where
 	PClassDict c vs inh sigs
 	 -> "class " % c % " " % (" " %!% vs) % " where\n"
 		% "{\n"
-	 	%> ("\n\n" %!% (map (\(vs, t) -> ", " %!% vs % " :: " % t % ";") sigs)) % "\n"
+	 	%> ("\n\n" %!% 
+			(map (\(vs, t) -> ", " %!% 
+				(map (\v -> v { Var.nameModule = Var.ModuleNil }) vs)
+				% " :: " %> prettyTypeSplit t % ";") sigs)) % "\n"
 		% "}\n\n"
 
 	PClassInst v ts inh ss

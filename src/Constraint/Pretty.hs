@@ -24,7 +24,7 @@ instance Pretty CTree where
 	  % "}\n"
 
 	CDef 	src v t	
-	 -> "@CDef       " % padR 15 (pretty v) % " " % prettyTB t % ";"
+	 -> "@CDef " % padR 15 (pretty v) % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
 
 	CSig	src v t
 	 -> "@CSig  " % padR 15 (pretty v) % " " % prettyTB t % ";"

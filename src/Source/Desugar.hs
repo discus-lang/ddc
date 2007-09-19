@@ -93,7 +93,7 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 				Nothing		-> v
 				Just seaName	-> v { Var.info = Var.info v ++ [Var.ISeaName seaName ]}
 		
-		let to'	= maybeJust to (makeOpTypeT tv')
+		let to'	= maybeJust to (let Just to2 = makeOpTypeT tv' in to2)
 	 	returnJ $ D.PExtern none v' tv' to'
 
 

@@ -51,13 +51,13 @@ foreign import extern "primInt32_update"
  		:: elaborate (mutable Int) -> Int -> ();
 
 
-instance Eq (Int (%)) where
+instance Eq (Int %_) where
 {
 	(==)	= primInt32_eq;
 	(/=)	= primInt32_neq;
 }
 
-instance Ord (Int (%)) where
+instance Ord (Int %_) where
 {
 	(>)	= primInt32_gt;
 	(<)	= primInt32_lt;
@@ -65,7 +65,7 @@ instance Ord (Int (%)) where
 	(<=)	= primInt32_le;
 }
 
-instance Num (Int (%)) where 
+instance Num (Int %_) where 
 {
  	(+) 	= primInt32_add;
 	(-) 	= primInt32_sub;
@@ -74,13 +74,13 @@ instance Num (Int (%)) where
 	mod	= primInt32_mod;
 }
 
-instance Update (Int (%)) where
+instance Update (Int %_) where
 {
 	(:=)	= primInt32_update;
 
 }
 
-instance Accum (Int (%)) where
+instance Accum (Int %_) where
 {
 	(+=)	= primInt32_accAdd;
 }

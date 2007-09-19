@@ -33,7 +33,9 @@ import qualified Source.Token 	as K
 import Source.Token 		(TokenP(..), Token, token)
 import Source.Exp
 import Source.Util
-import Type.Util		(pure, empty)
+import Type.Util		(pure, empty, takeKindOfType)
+
+import Debug.Trace
 
 stage 	= "Source.Parser"
 
@@ -153,9 +155,10 @@ stage 	= "Source.Parser"
 	'<-'		{ TokenP { token = K.LeftArrow	} }
 	'<@-'		{ TokenP { token = K.LeftArrowLazy } }
 		
-	CON		{ TokenP { token = K.Tycon  _	} }
 	VAR		{ TokenP { token = K.Var    _	} }
+	CON		{ TokenP { token = K.Con    _   } }
 	SYM		{ TokenP { token = K.Symbol _	} }
+	MODULENAME	{ TokenP { token = K.ModuleName _ } }
 	
 	INT		{ TokenP { token = K.CInt    _	} }
 	CHAR		{ TokenP { token = K.CChar   _  } }
@@ -195,8 +198,8 @@ top
 	| infixMode INT symbolList ';'			{ [PInfix    $1 (getCIntValue $2) $3]		}
 	| dataDef ';'					{ [$1]						}
 
-	| 'effect' '!' pCon '::' kind ';'		{ [PEffect  (vNameE $3) $5]			}
-	| 'region' '%' pVar ';'				{ [PRegion  (vNameR $3)]					}
+	| 'effect' pCon '::' kind ';'			{ [PEffect  (vNameE $2) $4]			}
+	| 'region' pVar ';'				{ [PRegion  (vNameR $2)]			}
 
 	-- class defs
 	| 'class' pCon '::' kind ';' 
@@ -205,7 +208,7 @@ top
 	| 'class' pCon pVar 'where' '{' typeSig_Ss '}' 	
 	{ [PClassDict (vNameS $2) [vNameT $3] [] $6 ] }
 
-	| 'instance' pCon typeZ_Ssp 'where' '{' binds '}'
+	| 'instance' pCon typeZ_space 'where' '{' binds '}'
 	{ [PClassInst (vNameS $2) $3 [] $6 ] }
 
 	-- projection defs
@@ -244,7 +247,21 @@ mString
 --
 module		
 	:: { Module }
-	: CON					{ toModule $1				}
+
+	-- module names look remarkably like qualified constructors...
+	: qCon					
+	{ ModuleAbsolute
+	   $	(case Var.nameModule $1 of 
+			ModuleAbsolute strs	-> strs
+			_			-> [])
+						
+		++ [Var.name $1]
+	}
+
+module_parts
+	:: { [String] }
+	: CON 					{ let K.Con str = token $1 in [str]	}
+	| CON '.' module_parts			{ let K.Con str = token $1 in str : $3	}
 
 module_semi
 	:: { [Module] }
@@ -600,17 +617,20 @@ lcQual	:: { LCQual }
 ---------------------
 
 dataDef	:: { Top }
-	: 'data' pCon varTREC_SsE			{ PData $2 $3 []			}
-	| 'data' pCon varTREC_SsE '=' dataConss		{ PData $2 $3 $5 			}
+	: 'data' pCon pVars_space_empty				
+	{ PData $2 (map (vNameDefaultN NameType) $3) []	}
 
-	| 'data' CON  '#' varTREC_SsE			{ PData (toVarHash NameType $2) $4 []	}
+	| 'data' pCon pVars_space_empty '=' dataConss		
+	{ PData $2 (map (vNameDefaultN NameType) $3) $5	}
+
+	| 'data' CON  '#' pVars_space_empty
+	{ PData (toVarHash NameType $2) (map (vNameDefaultN NameType) $4) []	}
 		
-	| 'data' CON  '#' varTREC_SsE 'foreign' STRING 	
+	| 'data' CON  '#' pVars_space_empty 'foreign' STRING 	
 	{ 
-		let	
-			K.CString name	= token $6
+		let	K.CString name	= token $6
 			var		= (toVarHash NameType $2) { Var.info = [Var.ISeaName name] }
-	  	in	PData var $4 [] 
+	  	in	PData var (map (vNameDefaultN NameType) $4) [] 
 	}
 		
 dataConss
@@ -668,18 +688,6 @@ dataType_Ss
 	: dataType					{ [$1]					}
 	| dataType dataType_Ss				{ $1 : $2				}
 								
-varTREC
-	:: { Var }
-	: VAR						{ vNameT $ toVar $1			}
-	| '%' VAR					{ vNameR $ toVar $2			}
-	| '!' VAR					{ vNameE $ toVar $2			}
-	| '$' VAR					{ vNameC $ toVar $2			}
-
-varTREC_SsE	
-	:: { [Var] }
-	: {- empty -}					{ []					}
-	| varTREC varTREC_SsE				{ $1 : $2				}
-
 
 -----------------------
 -- Type Expressions
@@ -702,38 +710,41 @@ typeN	:: { Type }
 	: typeA						{ $1					}
 	| typeA '->' typeN				{ TFun   $1 $3 pure empty		}
 
-	| typeA '-' '(' effect ')' '>' typeN		
-	{ TFun   $1 $7 $4 empty 	}
-
-	| typeA '-' '(' closure ')' '>' typeN		
-	{ TFun   $1 $7 pure $4 	}
-
-	| typeA '-' '(' effect1 closure ')' '>' typeN
+	| typeA '-' '(' effect_closure ')' '>' typeN		
+	{ let Just k	= takeKindOfType $4
+	  in  case k of
+	  	KEffect	 -> TFun $1 $7 $4 empty 
+		KClosure -> TFun $1 $7 pure $4 }
+		
+	| typeA '-' '(' effect1 closure1 ')' '>' typeN
 	{ TFun   $1 $8 $4 $5 }
 
 
 typeA	:: { Type }
 	: typeZ						{ $1					}
-	| pCon typeArg_Ss				{ TData (vNameT  $1) $2			}	
-	| pCon '#' typeArg_Ss				{ TData (vNameTU $1) $3			}
+	| qCon typeZ_space				{ TData (vNameT  $1) $2			}	
+	| qCon '#' typeZ_space				{ TData (vNameTU $1) $3			}
 
 
 typeZ	:: { Type }
-	: VAR 						{ TVar KData (vNameT $ toVar $1)	}
-	| pCon						{ TData (vNameT  $1) []			}
-	| pCon '#'					{ TData (vNameTU $1) []			}
+	: varBase
+	{ TVar 	(kindOfVarSpace (Var.nameSpace $1)) 
+		(vNameDefaultN NameType $1) }
+
+	| qCon						{ TData (vNameT  $1) []			}
+	| qCon '#'					{ TData (vNameTU $1) []			}
 	| '()'						{ TData (vNameT $ makeVar "Unit" $1) [] }
 	| '(' typeN ')'					{ $2					}
 	| '(' 'mutable' typeN ')'			{ TMutable $3				}
---	| '(' kind ')'					{ TWild	$2				}
+	| kindA '_'					{ TWild	$1				}
 
 	| '[' typeN ']'					{ TData primTList [$2]			}
 	| '(' typeN ',' typeN_Scp ')'			{ TData (primTTuple (length $4 + 1)) ($2:$4)	}
 
-typeZ_Ssp
+typeZ_space
 	:: { [Type] }
 	: typeZ						{ [$1]					}
-	| typeZ typeZ_Ssp				{ $1 : $2				}
+	| typeZ typeZ_space				{ $1 : $2				}
 
 -----
 typeN_Scp
@@ -742,6 +753,7 @@ typeN_Scp
 	| typeN ',' typeN_Scp				{ $1 : $3				}
 
 -----
+{-
 typeArg_Ss	
 	:: { [Type] }
 	: typeArg					{ [$1]					}
@@ -750,10 +762,7 @@ typeArg_Ss
 typeArg	
 	:: { Type }
 	: typeZ						{ $1					}
-	| '%' pVar					{ TVar KRegion $2 { Var.nameSpace = NameRegion }	}
-	| '!' pVar					{ TVar KEffect $2 { Var.nameSpace = NameEffect }	}
-	| '$' pVar					{ TVar KClosure $2 { Var.nameSpace = NameClosure }	}
-		
+-}		
 
 -- quantified Vars
 quantVars
@@ -763,11 +772,9 @@ quantVars
 		
 quantVar
 	:: { (Var, Kind) }
-	:  pVar						{ ($1 { Var.nameSpace = NameType },	KData)		}
-	| '(' pVar '::' kind ')'			{ ($2 { Var.nameSpace = NameType },	$4)		} 
-	| '%' pVar					{ ($2 { Var.nameSpace = NameRegion },	KRegion)	}
-	| '!' pVar					{ ($2 { Var.nameSpace = NameEffect },	KEffect)	}
-	| '$' pVar					{ ($2 { Var.nameSpace = NameClosure },	KClosure)	} 
+	:  pVar						{ ( vNameDefaultN NameType $1
+							  , kindOfVarSpace (Var.nameSpace $1))		}
+	| '(' pVar '::' kind ')'			{ ($2,	$4)					} 
 
 --------------------------
 -- Kind Expressions
@@ -792,9 +799,11 @@ fetters	:: { [Fetter] }
 	| fetter ',' fetters				{ $1 : $3				}
 
 fetter	:: { Fetter }
-	: '!' pVar '=' effect				{ FLet (TVar KEffect   $ vNameE $2) $4	}
-	| '$' pVar '=' closure				{ FLet (TVar KClosure  $ vNameC $2) $4	}
-	| pCon typeArg_Ss				{ FConstraint (vNameC $1) $2		}
+	: pVar '=' effect_closure
+	{ FLet	(TVar (kindOfVarSpace (Var.nameSpace $1)) $1)
+		$3 }
+
+	| qCon typeZ_space				{ FConstraint (vNameC $1) $2		}
 
 	
 -----------------------
@@ -802,8 +811,8 @@ fetter	:: { Fetter }
 -----------------------
 
 effect	:: {Effect}
-	: '!' pVar					{ TVar KEffect $2			}
-	| '!' effectCtor				{ $2					}
+	: pVar						{ TVar KEffect $1			}
+	| effectCtor					{ $1					}
 	| '!' '{' effect_semi '}'			{ TSum KEffect $3 			}	
 
 effect_semi
@@ -813,13 +822,13 @@ effect_semi
 
 effectCtor
 	:: { Effect }					
-	: pCon						{ TEffect $1 []				}
-	| pCon typeArg_Ss				{ TEffect $1 $2 			}
+	: qCon						{ TEffect $1 []				}
+	| qCon typeZ_space				{ TEffect $1 $2 			}
 
 
 -- Effects which can appear on function arrows
 effect1	:: { Effect }
-	: '!' pVar					{ TVar KEffect (vNameE $2) }
+	: pVar						{ TVar KEffect (vNameE $1) }
 	| '(' effect ')'				{ $2 }
 
 
@@ -828,17 +837,34 @@ effect1	:: { Effect }
 ---------------------
 
 closure :: { Closure }
-	: '$' pVar					{ TVar KClosure $2 			}
+	: pVar						{ TVar KClosure (vNameC $1)		}
 	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
-	| pVar ':' closure				{ TFree (vNameV $1) $3			}
+	| pVar ':' closureK				{ TFree (vNameV $1) $3			}
 	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
+
+closureK 
+	:: { Closure }
+	: '$' '{' closure_semi '}'			{ TSum KClosure $3			}
 		
 closure_semi
 	:: { [Closure] }
 	: closure					{ [$1]					}
 	| closure ';' closure_semi			{ $1 : $3				}
 
+closure1 :: { Closure }
+	: pVar						{ TVar KClosure (vNameC $1) }
+	| '(' closure ')'				{ $2 }
 
+-- Either an effect or closure, for function arrow annotations-- 
+effect_closure 
+	:: { Type }
+	: pVar						{ TVar (kindOfVarSpace (Var.nameSpace $1)) $1 }
+	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
+	| pVar ':' closureK				{ TFree (vNameV $1) $3			}
+	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
+	| effectCtor					{ $1					}
+	| '!' '{' effect_semi '}'			{ TSum KEffect $3 			}	
+	
 ---------------------
 -- Variables
 -- 	q versions are possibly qualified
@@ -848,6 +874,7 @@ closure_semi
 -- A regular variable (not a construct name)
 qVar	:: { Var }
 	: pVar						{ $1					}
+	| MODULENAME '.' pVar				{ $3 { Var.nameModule = makeModule $1 }	}
 
 qVars	:: { [Var] }
 qVars	: {- empty -} 					{ []					}
@@ -861,6 +888,18 @@ qVars_comma
 pVar	:: { Var }
 	: varBase					{ $1 					}
 	| '(' symbol ')'				{ $2					}
+
+
+pVars_space
+	:: { [Var] }
+	: pVar						{ [$1]					}
+	| pVar pVars_space				{ $1 : $2				}
+
+
+pVars_space_empty
+	:: { [Var] }
+	: {- empty -}					{ []					}
+	| pVar pVars_space_empty			{ $1 : $2				}
 	
 pVars_comma
 	:: { [Var] }
@@ -869,7 +908,8 @@ pVars_comma
 
 -- A constructor name
 qCon	:: { Var }
-	: pCon						{ $1	 				}
+	: pCon						{ $1					}
+	| MODULENAME '.' pCon				{ $3 { Var.nameModule = makeModule $1 }	}
 
 pCon	:: { Var }
 	: CON						{ toVar $1 				}
@@ -912,8 +952,8 @@ happyError	(x:xs)	= dieWithUserError [ErrorParseBefore x]
 toVar :: TokenP -> Var
 toVar	 tok
  = case token tok of
-	K.Var    name	-> makeVar name tok
-	K.Tycon  name	-> makeVar name tok
+	K.Var    name	-> Var.loadSpaceQualifier $ makeVar name tok
+	K.Con	 name	-> Var.loadSpaceQualifier $ makeVar name tok
 	K.Symbol name	-> makeVar name tok
 	_ -> case lookup (token tok) toVar_table of
 		Just name	-> makeVar name tok
@@ -943,47 +983,22 @@ toVarHash space tok
    		, Var.nameSpace	= space }
 
 
--- | Check to see if a var name has an embedded module qualifier. 
---	If it does then move it to the nameModule field of the var.
-liftQualifier :: Var -> Var
-liftQualifier var
- 	| bits		<- breakOns '.' (Var.name var)
-
-	-- should be at least one bit	
- 	, length bits > 1
-	
-	-- forget about lifting things with multiple consecutive dots.
-	, minimum (map length bits) > 0
-
-	-- peel of the front bits that look like module qualifiers
-	, Just front	<- takeInit bits
-	, Just back	<- takeLast bits
-	, moduleBits	<- takeWhile (\b -> let Just h = takeHead b in isUpper h) front
-	
-	= var 	{ Var.nameModule = Var.ModuleAbsolute moduleBits 
-		, Var.name	 = back }
-	
-	-- doesn't look like it has a qualifier
-	| otherwise
-	= var
-
-
 -- | Make a variable with this name,
 --	using the token as the source location for the var.
 makeVar :: String -> TokenP -> Var
 makeVar    name@(n:_) tok
- 	= liftQualifier
-	$ (Var.new name)
+	= (Var.new name)
 	 	{ Var.info	=	
 		[ Var.ISourcePos (SourcePos (file tok, line tok, column tok)) ] }
 
 
 -- | Make a module name from this token
-toModule :: TokenP -> Module
-toModule tok
+makeModule :: TokenP -> Module
+makeModule tok
  = case token tok of
- 	K.Tycon name	-> ModuleAbsolute (breakOns '.' name)
-	_		-> dieWithUserError [ ErrorParse tok "parse error" ]
+ 	K.ModuleName names	-> ModuleAbsolute names
+	K.Con        name	-> ModuleAbsolute [name]
+	_			-> dieWithUserError [ ErrorParse tok "parse error" ]
 
 -- | Force an expresion to be a variable
 --	Throw a user error if it's not.
@@ -1051,6 +1066,24 @@ vNameS v	= v { Var.nameSpace = NameClass }
 vNameTU v	= v 
 		{ Var.name 	= (Var.name v ++ "#")
    		, Var.nameSpace = NameType }
+
+-- | If the var has no namespace set, then give it this one.
+vNameDefaultN	:: NameSpace -> Var -> Var
+vNameDefaultN space var
+ = case Var.nameSpace var of
+ 	NameNothing	-> var { Var.nameSpace = space }
+	_		-> var
+
+
+
+-- | Decide on the kind of a type var from it's namespace
+kindOfVarSpace :: NameSpace -> Kind
+kindOfVarSpace space
+ = case space of
+ 	NameNothing	-> KData
+	NameRegion	-> KRegion
+	NameEffect	-> KEffect
+	NameClosure	-> KClosure
 	
 } -- end of Happy Haskell code
 

@@ -8,6 +8,8 @@ module Source.Lexer
 where
 
 import Source.Token
+import Util
+import Data.Char
 
 }
 
@@ -19,9 +21,9 @@ $upper	= [A-Z]
 $lower  = [a-z]
 $alpha	= [$lower $upper]
 
+-- The symbols that can appear in a var
 $varsym	= [\' \_]
-$var    = [$alpha $digit $varsym]
-$vardot	= [$alpha $digit $varsym \.]
+
 
 -- $ssym	= [\\ \= \: \|]
 $sym	= [\! \# \$ \% \& \* \+ \/ \< \> \? \@ \^ \- \~ \\ \= \: \|]
@@ -148,9 +150,14 @@ tokens :-
  \|			{ ptag Bar			}
  \.			{ ptag Dot			}
 
- $upper ($vardot* $var)?	{ ptags (\s -> Tycon s)		}
- $lower $var* 			{ ptags (\s -> Var   s) 	}
- $sym+  $sym*			{ ptags (\s -> Symbol s)	}
+ ($upper [$alpha $digit]* \.)* [\% \! \$]? $lower [$alpha $digit $varsym]*	 
+ 			{ ptags (\s -> Var   s) 	}
+
+ ($upper [$alpha $digit]* \.)* [\% \! \$]? $upper [$alpha $digit $varsym]*	 
+ 			{ ptags (\s -> Con   s) 	}
+
+
+ $sym+  $sym*		{ ptags (\s -> Symbol s)	}
 
  \" ($printable # \")* \" 
  			{ ptags (\s -> CString (read s))		}
@@ -163,18 +170,19 @@ tokens :-
 
  .			{ ptags (\s -> Junk s)				}
 
+
 { 
 
-ptags :: (String -> Token) ->	AlexPosn -> 	String -> TokenP
-ptags 	  tokf			(AlexPn _ l c)	s
+ptags :: (String -> Token) -> AlexPosn -> String -> TokenP
+ptags 	  tokf (AlexPn _ l c)	s
  = TokenP 
  	{ token		= (tokf s)
 	, file		= "unknown"
 	, line 		= l
 	, column 	= c - 1 }
 
-ptag ::  Token ->		AlexPosn -> 	String -> TokenP
-ptag	 tok			(AlexPn _ l c)	s
+ptag ::  Token -> AlexPosn -> String -> TokenP
+ptag	 tok (AlexPn _ l c) s
  = TokenP
  	{ token		= tok
 	, file		= "unknown"
@@ -182,6 +190,65 @@ ptag	 tok			(AlexPn _ l c)	s
 	, column	= c - 1 }
 
 
+-- | Break module qualifiers off var and con tokens
+breakModules :: [TokenP] -> [TokenP]
+breakModules toks
+	= catMap breakModules' toks
+
+breakModules' tok
+	| Var str	<- token tok
+	, (mods, name)	<- breakModuleStr str
+	= case mods of
+	   [] 	-> [tok]
+	   _	-> [ tok { token = ModuleName mods}
+		   , tok { token = Dot }
+		   , tok { token = Var name } ]
+	
+	| Con str	<- token tok
+	, (mods, name)	<- breakModuleStr str
+	= case mods of 
+	   [] 	-> [tok]
+	   _	-> [ tok { token = ModuleName mods}
+		   , tok { token = Dot }
+		   , tok { token = Con name} ]
+
+	| otherwise
+	= [tok]
+
+
+-- Break module qualifiers off this variable name
+breakModuleStr
+	:: String		-- ^ variable name 
+	-> ( [String]		-- ^ qualifiers
+	   ,  String)		-- ^ base name
+
+breakModuleStr str	
+	| bits		<- breakOns '.' str
+
+	-- at least one qualifier
+ 	, length bits > 1			
+
+	-- lexer sanity 
+	--	not more than one consecutive dot.
+	, minimum (map length bits) > 0	
+
+	-- peel of the front bits that look like module qualifiers
+	, Just front	<- takeInit bits
+	, Just back	<- takeLast bits
+	, moduleBits	<- takeWhile (\b -> let Just h = takeHead b in isUpper h) front
+
+	-- lexer sanity
+	--	only one variable name
+	--	ie not   Module.var1.var2
+	, length bits == length moduleBits + 1
+	= (moduleBits, back)
+	
+	| otherwise
+	= ([], str)
+	
+	
+-- | Erase all the comments in this token stream
+--	Also handles block comments.
 eatComments ::	[TokenP] -> [TokenP]
 eatComments 	[]	= []
 eatComments	(tokenp:xs)
@@ -197,10 +264,8 @@ eatComments	(tokenp:xs)
 --	Add one here to fix this, shouldn't hurt anything.
 --
 scan 		:: String -> [TokenP]
-scan ss		=  eatComments $ alexScanTokens (ss ++ "\n")
+scan ss		=  breakModules $ eatComments $ alexScanTokens (ss ++ "\n")
 
--- \=\=			{ ptag (Symbol "==")		}
--- \|\|			{ ptag (Symbol "||")		}
 
 }
 

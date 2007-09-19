@@ -338,7 +338,7 @@ instance Monad m => TransM m Kind
 	KRegion	 -> transK table kk
 	KEffect	 -> transK table kk
 	KClosure -> transK table kk
-	
+	KFetter  -> transK table kk	
 		
 		
 

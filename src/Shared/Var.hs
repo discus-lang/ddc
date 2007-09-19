@@ -1,17 +1,16 @@
 
 module Shared.Var
-( 	
-	module Shared.VarBind,
-	module Shared.VarSpace,
+	( module Shared.VarBind
+	, module Shared.VarSpace
 
-	Var (..), 
-	new,
-	(=~=),
-	(=^=),
+	, Var (..)
+	, new
+	, (=~=)
+	, (=^=)
+	, loadSpaceQualifier
 
-	VarInfo(..),
-	Module(..)
-)
+	, VarInfo(..)
+	, Module(..) )
 
 where
 
@@ -21,21 +20,25 @@ import Data.Char
 import Shared.Base
 import Shared.VarBind
 import Shared.VarSpace
+import Shared.Error
+
+-----
+stage	= "Shared.Var"
 
 -----
 data Var =
-     Var 
-     	{ name		:: !String		-- ^ Name of this var.
+	Var 
+	{ name		:: !String		-- ^ Name of this var.
 	, nameModule	:: !Module		-- ^ The module path that this var was defined in.
 	, nameSpace	:: !NameSpace
 	, bind		:: !VarBind		-- ^ A unique identifier for this binding occurance.
-	, info		:: ![VarInfo]		-- ^ some (optional) info about this var.
-	}
+	, info		:: ![VarInfo] }		-- ^ some (optional) info about this var.
+	deriving Show
 
 -----
 new ::	String -> Var
 new	n	
- = Var 
+	= Var 
 	{ name 		= n
 	, nameModule	= ModuleNil
 	, nameSpace	= NameNothing	
@@ -65,13 +68,20 @@ infix 4 =~=
 (=^=) :: Var -> Var	-> Bool
 (=^=) a b	= bind a == bind b
 
-	
+
+-- | Slurp namespace qualifiers from the var name into 
+--	the space field.
+loadSpaceQualifier :: Var -> Var
+loadSpaceQualifier var
+ = case takeHead (name var) of
+	Just '%'	-> var { nameSpace = NameRegion,  name = tail (name var) }
+	Just '!'	-> var { nameSpace = NameEffect,  name = tail (name var) }
+	Just '$'	-> var { nameSpace = NameClosure, name = tail (name var) }
+	_		-> var
+
 -----
 -- Pretty printing.
 --
-instance Show Var where
- show = pretty
-
 instance Pretty Var where
  prettyp v
  	= case nameModule v of
@@ -90,11 +100,15 @@ prettyVarN v
  	 	 | not $ isAlpha v1	-> "(" ++ name v ++ ")" 
 		 | otherwise		->  name v	
 
+		[] -> panic stage $ "prettyVarN: null var " % show v
+
 	NameType
 	 -> case name v of
 	  	(v1:_)
  	 	 | not $ isAlpha v1	-> "(" ++ name v ++ ")" 
 		 | otherwise		->  name v	
+
+		[] -> panic stage $ "prettyVarN: null var " % show v
 
 	NameRegion	-> "%" ++ name v
 	NameEffect	-> "!" ++ name v

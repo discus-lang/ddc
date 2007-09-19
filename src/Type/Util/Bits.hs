@@ -39,7 +39,7 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 -----
-import Shared.Error (panic)
+import Shared.Error
 import qualified Shared.Var as Var
 import Shared.Var (Var, NameSpace(..))
 import Shared.VarPrim
@@ -231,6 +231,9 @@ kindOfSpace space
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
+	NameClass	-> KFetter
+	_		-> panic stage
+			$  "kindOfSpace: no match for " % show space
 
 
 -- | Get the kind of a type
@@ -338,28 +341,38 @@ takeBindingVarF ff
 
 
 -- | Make an operational type.
-makeOpTypeT :: Type -> Type
+makeOpTypeT :: Type -> Maybe Type
 makeOpTypeT tt
  = case tt of
  	TForall vks t		-> makeOpTypeT t
 	TFetters fs t		-> makeOpTypeT t
-	TFun t1 t2 eff clo	-> TFun (makeOpTypeT2 t1) (makeOpTypeT t2) (TTop KEffect) (TTop KClosure)
+	TFun t1 t2 eff clo	
+	 -> case (makeOpTypeT2 t1, makeOpTypeT t2) of
+	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TTop KEffect) (TTop KClosure)
+		_			-> Nothing
+		
 	TData{}			-> makeOpTypeData tt
+	_			-> Nothing
 
 makeOpTypeT2 tt
  = case tt of
  	TForall vks t		-> makeOpTypeT2 t
 	TFetters fs t		-> makeOpTypeT2 t
-	TVar{}			-> TData primTObj   []
-	TFun{}			-> TData primTThunk []
+	TVar{}			-> Just $ TData primTObj   []
+	TFun{}			-> Just $ TData primTThunk []
 	TData{}			-> makeOpTypeData tt
+	_			-> freakout stage
+					("makeOpType: can't make operational type from " % show tt)
+					Nothing
 
 makeOpTypeData (TData v ts)
 	| last (Var.name v) == '#'
-	= TData v (map makeOpTypeT [t | t <- ts, kindOfType t == KData])
+	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType t == KData])) of
+		Just ts'	-> Just $ TData v ts'
+		_		-> Nothing
 	
 	| otherwise
-	= TData primTObj []
+	= Just $ TData primTObj []
 
 
 -- | Make a TVar, using the namespace of the var to determine it's kind

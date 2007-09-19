@@ -130,9 +130,11 @@ data Token
 	| SColon		-- ^ ;
 	| Bar			-- ^ |
 	| Dot			-- ^ .
-
-	| Tycon		String
+	
+	| ModuleName	[String]	-- module qualifier / name
+					--	broken into parts
 	| Var		String
+	| Con		String
 	| Symbol	String
 	
 	-- Constants.

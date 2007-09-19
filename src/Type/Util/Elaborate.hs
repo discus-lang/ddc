@@ -27,14 +27,17 @@ elaborateT
 	-> (?getKind	:: Var		-> m Kind)
 	-> Type -> m Type
 
-elaborateT t = return t
+elaborateT t
+ = do	tClo		<- elaborateCloT t
+ 	return	tClo
+
 
 {-
 elaborateT t
  = do	(t', newEffs)	<- elaborateT2 t	
 
 	let newRs	= map (\(TEffect _ [TVar r]) -> r) newEffs
-	(tEffect,  newEs)	<- pushActiveEffsT t'
+	(tEffect,  newEs)	<- elaborateEffsT t'
 	(tClosure, newCs)	<- pushActiveCloT  [] tEffect
 
 	let moreVks	=  nub
@@ -173,77 +176,104 @@ elaborateRs tt kk
 	= panic stage 
 	$ "elaborateRs: no match for " % show (tt, kk) % "\n"
 
-
+-}
 -----------------------
--- pushActiveCloT
---	
+-- elaborateCloT
+--	Add closure annotations on function constructors, assuming 
+--	that the body of the function references all it's arguments.
 --
-pushActiveCloT 
-	:: Monad m
-	=> (?newVarN :: NameSpace -> m Var)
-	-> [Closure]
-	-> Type -> m (Type, [(Var, Closure)])
+-- eg	   (a -> b -> c -> d)
+--
+--	=> (t1 -> t2 -($c1)> t3 -($c2)> t4)
+--	    :- $c1 = $c2 \ x2
+--	    ,  $c2 = { x1 : t1; x2 : t2 }
 
-pushActiveCloT env tt
+elaborateCloT 
+	:: Monad m
+	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to use to create new vars
+	-> Type					-- ^ the type to elaborate 
+	-> m Type				-- elaborated type
+
+elaborateCloT tt
+ = do	(tt', fs, _)	<- elaborateCloT' [] tt
+  	return	$ addFetters fs tt'
+	
+elaborateCloT' env tt
 	| TForall vks x		<- tt
-	= do	(x', cs)	<- pushActiveCloT env x
+	= do	(x', fs, clo)	<- elaborateCloT' env x
 		return	( TForall vks x'
-			, cs)
+			, fs
+			, Nothing)
 			
+	-- if we see an existing set of fetters,
+	--	then drop the new ones in the same place.
 	| TFetters fs x		<- tt
-	= do	(x', cs)	<- pushActiveCloT env x
-		return	( TFetters fs x'
-			, cs)
+	= do	(x', fs', mClo)	<- elaborateCloT' env x
+		return	( TFetters (fs ++ fs') x'
+			, []
+			, mClo)
 			
 	| TVar{}		<- tt
-	= 	return (tt, [])
+	= 	return	( tt
+			, []
+			, Nothing )
 	
-	| TCon{}		<- tt
-	=	return (tt, [])
+	-- TODO: decend into type ctors
+	| TData{}		<- tt
+	=	return	( tt
+			, []
+			, Nothing)
 
-
+	-- if this fn ctor has no closure then assume it references
+	--	everything passed into the outer function.
 	| TFun t1 t2 eff clo	<- tt
-	, CNil			<- clo
-	, []			<- env
 	= do	
-		x		<- ?newVarN NameValue
-		let n		= CFreeT x t1
-		(t2', cs)	<- pushActiveCloT (env ++ [n]) t2
-		return	( TFun t1 t2' eff CNil
-			, cs)	
-	
-	| TFun t1 t2 eff clo	<- tt
-	, CNil			<- clo
-	, not $ isNil env
-	= do	v		<- ?newVarN NameClosure
-		x		<- ?newVarN NameValue
-		let n		= CFreeT x t1
-		(t2', cs)	<- pushActiveCloT (env ++ [n]) t2
+		-- create a new var to label the arg
+		varVal		<- ?newVarN NameValue
+		
+		-- elaborate the right hand carrying the new argument down into it
+		let argClo	= TFree varVal t1
+		(t2', fs, mClo)	<- elaborateCloT' (env ++ [argClo]) t2
 
-		return	( TFun t1 t2' eff (CVar v)
-			, (v, CSum env) : cs)
-	
+		-- the closure for this function is the body minus the var for the arg
+		varC		<- ?newVarN NameClosure
+		let cloVarC		= TVar KClosure varC
+
+		let thisClo	= TMask KClosure
+					(makeTSum KClosure [clo, fromMaybe (TBot KClosure) mClo])
+					(TVar KClosure varVal) 
+
+		let f1		= case t2 of
+					TFun{}	-> FLet cloVarC thisClo
+					_	-> FLet cloVarC (makeTSum KClosure env)
+
+		return	( TFun t1 t2' eff cloVarC
+			, f1 : fs
+			, Just cloVarC)
+
 	
 
-
+{-
 -----------------------
--- pushActiveEffT
+-- elaborateEffsT
 --	Make sure there are effect vars on active function ctors, 
 --	creating them if need be.
 --
-pushActiveEffsT 
+elaborateEffsT 
 	:: Monad m
-	=> (?newVarN :: NameSpace -> m Var)
-	-> Type -> m (Type, [Var])
+	=> (?newVarN :: NameSpace -> m Var)	-- ^ the fn to create a new var
+	-> Type 				-- ^ type to elaborate
+	-> m ( Type				-- elaborated type
+	     , [Var])				-- created effect vars
 	
-pushActiveEffsT tt
+elaborateEffsT tt
  	| TForall vks x		<- tt
-	= do	(x', vs)	<- pushActiveEffsT x
+	= do	(x', vs)	<- elaborateEffsT x
 	 	return	( TForall vks x'
 			, vs)
 		
 	| TFetters fs x		<- tt
-	= do	(x', vs)	<- pushActiveEffsT x
+	= do	(x', vs)	<- elaborateEffsT x
 	 	return	( TFetters fs x'
 			, vs)
 
@@ -255,7 +285,7 @@ pushActiveEffsT tt
 			
 	| TFun t1 t2 eff clo	<- tt
 	, TFun{}		<- t2
-	= do	(t2', vs)	<- pushActiveEffsT t2
+	= do	(t2', vs)	<- elaborateEffsT t2
 		return	( TFun t1 t2' eff clo
 			, vs)
 		
@@ -269,4 +299,5 @@ pushActiveEffsT tt
 	= do	v	<- ?newVarN NameEffect
 		return	( TFun t1 t2 (EVar v) clo
 			, [v])
+
 -}

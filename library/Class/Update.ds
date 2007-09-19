@@ -12,7 +12,7 @@ class Update a where
 		:- Shape2 a b
 		,  MutableT a
 		,  !e1	= !{ !ReadT b; !WriteT a }
-		,  $c1  = ${ x :: a };
+		,  $c1  = x : a;
 }
 
 
@@ -23,5 +23,5 @@ class Accum a where
 		:- Shape2 a b
 		,  MutableT a
 		,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
-		,  $c1  = ${ x :: a };
+		,  $c1  = x : a;
 }
