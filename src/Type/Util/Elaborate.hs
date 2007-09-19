@@ -32,6 +32,82 @@ elaborateT t
  	return	tClo
 
 
+
+-----------------------
+-- elaborateCloT
+--	Add closure annotations on function constructors, assuming 
+--	that the body of the function references all it's arguments.
+--
+-- eg	   (a -> b -> c -> d)
+--
+--	=> (t1 -> t2 -($c1)> t3 -($c2)> t4)
+--	    :- $c1 = $c2 \ x2
+--	    ,  $c2 = { x1 : t1; x2 : t2 }
+
+elaborateCloT 
+	:: Monad m
+	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to use to create new vars
+	-> Type					-- ^ the type to elaborate 
+	-> m Type				-- elaborated type
+
+elaborateCloT tt
+ = do	(tt', fs, _)	<- elaborateCloT' [] tt
+  	return	$ addFetters fs tt'
+	
+elaborateCloT' env tt
+	| TForall vks x		<- tt
+	= do	(x', fs, clo)	<- elaborateCloT' env x
+		return	( TForall vks x'
+			, fs
+			, Nothing)
+			
+	-- if we see an existing set of fetters,
+	--	then drop the new ones in the same place.
+	| TFetters fs x		<- tt
+	= do	(x', fs', mClo)	<- elaborateCloT' env x
+		return	( TFetters (fs ++ fs') x'
+			, []
+			, mClo)
+			
+	| TVar{}		<- tt
+	= 	return	( tt
+			, []
+			, Nothing )
+	
+	-- TODO: decend into type ctors
+	| TData{}		<- tt
+	=	return	( tt
+			, []
+			, Nothing)
+
+	-- if this fn ctor has no closure then assume it references
+	--	everything passed into the outer function.
+	| TFun t1 t2 eff clo	<- tt
+	= do	
+		-- create a new var to label the arg
+		varVal		<- ?newVarN NameValue
+		
+		-- elaborate the right hand carrying the new argument down into it
+		let argClo	= TFree varVal t1
+		(t2', fs, mClo)	<- elaborateCloT' (env ++ [argClo]) t2
+
+		-- the closure for this function is the body minus the var for the arg
+		varC		<- ?newVarN NameClosure
+		let cloVarC		= TVar KClosure varC
+
+		let thisClo	= TMask KClosure
+					(makeTSum KClosure [clo, fromMaybe (TBot KClosure) mClo])
+					(TVar KClosure varVal) 
+
+		let f1		= case t2 of
+					TFun{}	-> FLet cloVarC thisClo
+					_	-> FLet cloVarC (makeTSum KClosure env)
+
+		return	( TFun t1 t2' eff cloVarC
+			, f1 : fs
+			, Just cloVarC)
+
+
 {-
 elaborateT t
  = do	(t', newEffs)	<- elaborateT2 t	
@@ -130,126 +206,9 @@ elaborateT2 tt
 	 	return	( t'
 			, effs')
 
-
-elaborateRs tt kk
-
-	| []			<- tt
-	, []			<- kk
-	= return ([], [])
-
-	| []			<- tt
-	, [KType]		<- kk
-	= return ([], [])
- 
-	| t@(TRegion _) : ts	<- tt
-	, KRegion   	: ks	<- kk
-	= do	(rest, newRs)	<- elaborateRs ts ks
-		return	( t : rest
-			, newRs)
-
-	| t@(TEffect _) : ts	<- tt
-	, KEffect 	: ks	<- kk
-	= do	(rest, newRs)	<- elaborateRs ts ks
-		return	( t : rest
-			, newRs)
-		
-	| t@(TClosure _) : ts	<- tt
-	, KClosure	: ks	<- kk
-	= do	(rest, newRs)	<- elaborateRs ts ks
-		return	( t : rest
-			, newRs)
-
-	| _			<- tt
-	, KRegion : ks		<- kk
-	= do	r		<- ?newVarN NameRegion 
-	 	(rest, newRs)	<- elaborateRs tt ks
-		return	( TRegion (RVar r) : rest
-			, r : newRs)
-		
-	| t : ts		<- tt
-	, KType		: ks	<- kk
-	= do	(rest, newRs)	<- elaborateRs ts ks
-		return	( t : rest
-			, newRs)
-	
-	| otherwise
-	= panic stage 
-	$ "elaborateRs: no match for " % show (tt, kk) % "\n"
-
 -}
------------------------
--- elaborateCloT
---	Add closure annotations on function constructors, assuming 
---	that the body of the function references all it's arguments.
---
--- eg	   (a -> b -> c -> d)
---
---	=> (t1 -> t2 -($c1)> t3 -($c2)> t4)
---	    :- $c1 = $c2 \ x2
---	    ,  $c2 = { x1 : t1; x2 : t2 }
 
-elaborateCloT 
-	:: Monad m
-	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to use to create new vars
-	-> Type					-- ^ the type to elaborate 
-	-> m Type				-- elaborated type
 
-elaborateCloT tt
- = do	(tt', fs, _)	<- elaborateCloT' [] tt
-  	return	$ addFetters fs tt'
-	
-elaborateCloT' env tt
-	| TForall vks x		<- tt
-	= do	(x', fs, clo)	<- elaborateCloT' env x
-		return	( TForall vks x'
-			, fs
-			, Nothing)
-			
-	-- if we see an existing set of fetters,
-	--	then drop the new ones in the same place.
-	| TFetters fs x		<- tt
-	= do	(x', fs', mClo)	<- elaborateCloT' env x
-		return	( TFetters (fs ++ fs') x'
-			, []
-			, mClo)
-			
-	| TVar{}		<- tt
-	= 	return	( tt
-			, []
-			, Nothing )
-	
-	-- TODO: decend into type ctors
-	| TData{}		<- tt
-	=	return	( tt
-			, []
-			, Nothing)
-
-	-- if this fn ctor has no closure then assume it references
-	--	everything passed into the outer function.
-	| TFun t1 t2 eff clo	<- tt
-	= do	
-		-- create a new var to label the arg
-		varVal		<- ?newVarN NameValue
-		
-		-- elaborate the right hand carrying the new argument down into it
-		let argClo	= TFree varVal t1
-		(t2', fs, mClo)	<- elaborateCloT' (env ++ [argClo]) t2
-
-		-- the closure for this function is the body minus the var for the arg
-		varC		<- ?newVarN NameClosure
-		let cloVarC		= TVar KClosure varC
-
-		let thisClo	= TMask KClosure
-					(makeTSum KClosure [clo, fromMaybe (TBot KClosure) mClo])
-					(TVar KClosure varVal) 
-
-		let f1		= case t2 of
-					TFun{}	-> FLet cloVarC thisClo
-					_	-> FLet cloVarC (makeTSum KClosure env)
-
-		return	( TFun t1 t2' eff cloVarC
-			, f1 : fs
-			, Just cloVarC)
 
 	
 
