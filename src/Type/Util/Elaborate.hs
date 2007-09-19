@@ -14,8 +14,9 @@ import Shared.VarPrim
 import Shared.Error 
 
 import Type.Exp
+import Type.Pretty
 import Type.Util.Bits		
--- import Type.Effect.MaskFresh	(maskEsFreshT)
+import Type.Plate.Collect
 
 -----
 stage	= "Type.Elaborate"
@@ -28,9 +29,114 @@ elaborateT
 	-> Type -> m Type
 
 elaborateT t
- = do	tClo		<- elaborateCloT t
- 	return	tClo
+ = do	tRegions	<- elaborateRegionsT t
+ 	tClosure	<- elaborateCloT tRegions
+ 	return	tClosure
 
+
+-----------------------
+-- elaborateRegionsT
+--	Check the kinds of data type constructors, and if they don't have enough region 
+--	args then add new ones to make them the right kind.
+--
+elaborateRegionsT
+	:: Monad m
+	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to create new vars
+	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
+	-> Type 				-- ^ the type to elaborate
+	-> m Type				-- ^ elaborated type
+
+elaborateRegionsT tt
+ = do	(tt', vs, fs)	<- elaborateRegionsT' tt
+	return	$ addFetters fs tt'
+
+elaborateRegionsT' tt
+
+	-- if we see a forall then drop new regions on that quantifier
+ 	| TForall vks x		<- tt
+	= do	(x', vks', fs)	<- elaborateRegionsT' tt
+		return	( TForall (vks ++ vks') x'
+			, []
+			, fs)
+
+	| TFetters fs x		<- tt
+	= do	(x', vks, fs')	<- elaborateRegionsT' tt
+		return	( TFetters (fs ++ fs') x'
+			, vks
+			, [])
+
+	| TVar{}		<- tt
+	=	return 	( tt, [], [])
+
+	| TFun t1 t2 eff clo	<- tt
+	= do
+		(t1', vks1, fs1)	<- elaborateRegionsT' t1
+		(t2', vks2, fs2)	<- elaborateRegionsT' t2
+		return	( TFun t1' t2' eff clo
+			, vks1 ++ vks2 
+			, fs1 ++ fs2)
+
+	-- assume every region under a mutable operator is mutable
+	| TMutable x		<- tt
+	= do	(x', vks, fs1)	<- elaborateRegionsT' x
+
+		-- collect up all the vars in the rewritten type and choose all the regions
+		let vsRegions	= filter (\v -> Var.nameSpace v == NameRegion)
+				$ collectVarsT x'
+
+		-- build a Mutable constraint for these regions
+		let fNew	= FConstraint primMutable
+					[ makeTSum KRegion $ map (TVar KRegion) vsRegions ]
+
+		return	( x'
+			, vks
+			, fNew : fs1)
+
+	-- add new regions to data type constructors to bring them up
+	--	to the right kind.
+	| TData v ts		<- tt
+	= do	kind	<- ?getKind v
+		ts'	<- elabRs ts kind
+
+		return	( TData v ts'
+			, []
+			, [])
+
+
+-- | Take some arguments from a type ctor and if needed insert fresh region vars
+--	so the reconstructed ctor with these args will have this kind.
+--
+elabRs 	:: Monad m
+	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to create new vars
+	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
+	-> [Type]
+	-> Kind
+	-> m [Type]
+
+elabRs [] KData
+	= return []
+
+elabRs [] (KFun k1 k2)
+	| KRegion	<- k1
+	= do	ts'	<- elabRs [] k2
+		vR	<- ?newVarN NameRegion
+		return	$ TVar KRegion vR : ts'
+
+elabRs (t:ts) (KFun k1 k2)
+
+	| KRegion	<- k1
+	, Just KRegion	<- takeKindOfType t
+	= do	ts'	<- elabRs ts k2
+		return	$ t : ts'
+
+	| KRegion	<- k1
+	= do	ts'	<- elabRs ts k2
+		vR	<- ?newVarN NameRegion
+		return	$ TVar KRegion vR : ts'
+
+	| otherwise
+	= do	ts'	<- elabRs ts k2
+		return	$ t : ts'
 
 
 -----------------------
@@ -80,31 +186,34 @@ elaborateCloT' env tt
 			, []
 			, Nothing)
 
-	-- if this fn ctor has no closure then assume it references
-	--	everything passed into the outer function.
 	| TFun t1 t2 eff clo	<- tt
 	= do	
 		-- create a new var to label the arg
 		varVal		<- ?newVarN NameValue
 		
-		-- elaborate the right hand carrying the new argument down into it
+		-- elaborate the right hand arg,  carrying the new argument down into it
 		let argClo	= TFree varVal t1
 		(t2', fs, mClo)	<- elaborateCloT' (env ++ [argClo]) t2
 
 		-- the closure for this function is the body minus the var for the arg
 		varC		<- ?newVarN NameClosure
-		let cloVarC		= TVar KClosure varC
+		let cloVarC	= TVar KClosure varC
 
-		let thisClo	= TMask KClosure
+		let fNew	=
+		     case t2 of
+			-- rhs of this function is another function
+			--	set this closure to be closure of rhs without the arg bound here
+			TFun{}	-> FLet cloVarC
+				$ TMask KClosure
 					(makeTSum KClosure [clo, fromMaybe (TBot KClosure) mClo])
 					(TVar KClosure varVal) 
 
-		let f1		= case t2 of
-					TFun{}	-> FLet cloVarC thisClo
-					_	-> FLet cloVarC (makeTSum KClosure env)
+			-- rhs of function isn't another function
+			--	pretend that all the args are referenced here.
+			_	-> FLet cloVarC (makeTSum KClosure env)
 
 		return	( TFun t1 t2' eff cloVarC
-			, f1 : fs
+			, fNew : fs
 			, Just cloVarC)
 
 
