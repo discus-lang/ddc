@@ -1,3 +1,4 @@
+-- | Type inferencer state.
 
 module Type.State
 	( SquidM
@@ -28,6 +29,7 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import Shared.Error
 import Shared.Var		(Var, VarBind, NameSpace(..))
 import qualified Shared.Var	as Var
 
@@ -42,6 +44,9 @@ import Type.Error
 import Constraint.Exp
 
 import System.IO
+
+-----
+stage	= "Type.State"
 
 -----
 type SquidM	= StateT SquidS IO
@@ -99,9 +104,6 @@ data SquidS
 	--	we can just extract it from the graph, nothing more to do.
 	, stateGenDone		:: Set Var
 
-	-- | Records how each scheme was generalised.
---	, stateGen		:: Map Var      (Type, [ClassId])	
-
 	-- | Records how each scheme was instantiated.
 	--	We need this to reconstruct the type applications during conversion to
 	--	the Core IR.
@@ -124,10 +126,10 @@ data SquidS
 	, stateClassInst	:: Map Var 	Fetter }
 
 
-
+-- | build an initial solver state
+squidSInit :: IO SquidS
 squidSInit
- = do
- 	let Just tT	= lookup NameType 	U.typeSolve
+ = do	let Just tT	= lookup NameType 	U.typeSolve
 	let Just rT	= lookup NameRegion 	U.typeSolve
 	let Just eT	= lookup NameEffect	U.typeSolve
 	let Just cT 	= lookup NameClosure	U.typeSolve
@@ -159,9 +161,7 @@ squidSInit
 		, stateGenSusp		= Set.empty
 		, stateGenDone		= Set.empty
 
---		, stateGen		= Map.empty
 		, stateInst		= Map.empty
-
 
 		, stateRegister		
 			-- effects
@@ -185,12 +185,9 @@ squidSInit
 		, stateErrors		= []
 		, stateStop		= False }
 
-	
 
-
-
------
-traceM ::	PrettyP -> SquidM ()
+-- | Add some stuff to the inferencer trace.
+traceM :: PrettyP -> SquidM ()
 traceM p
  = do	mHandle		<- gets stateTrace
 	i		<- gets stateTraceIndent
@@ -199,8 +196,9 @@ traceM p
 	 Just handle
 	  -> do liftIO (hPutStr handle $ indent i $ pretty p)
 	  	liftIO (hFlush  handle)
-	
 
+	
+-- | Do some solver thing, while indenting anything it adds to the trace.
 traceI :: SquidM a -> SquidM a
 traceI fun
  = do	traceIE
@@ -215,19 +213,26 @@ traceIE
 traceIL :: SquidM ()
 traceIL
  = modify (\s -> s { stateTraceIndent = stateTraceIndent s - 4 })
-				
-
------
-instVar :: 	Var -> SquidM Var
-instVar		var
+ 
+ 
+-- | Instantiate a variable.
+instVar :: Var -> SquidM Var
+instVar var
  = do
 	let space	= Var.nameSpace var
- 	Just varId	<- liftM (Map.lookup space)
-			$  gets stateVarGen
-		
+
+	-- lookup the generator for this namespace
+	mVarId		<- liftM (Map.lookup space) $ gets stateVarGen
+	let varId	= case mVarId of
+				Just v	-> v
+				Nothing	-> panic stage
+					$  "instVar: can't instantiate var in space " % space
+
+	-- increment the generator and write it back into the table.
 	let varId'	= Var.incVarBind varId
 	sVarGen		<##> Map.insert space varId'
-	
+
+	-- the new variable remembers what it's an instance of..
 	let name	= pretty varId
 	let var'	= (Var.new name)
 			{ Var.nameSpace		= Var.nameSpace var
@@ -237,9 +242,9 @@ instVar		var
 	return var'
 
 
------
-newVarN ::	NameSpace ->	SquidM Var
-newVarN		space	
+-- | Make a new variable in this namespace
+newVarN :: NameSpace ->	SquidM Var
+newVarN	space	
  = do
  	Just varId	<- liftM (Map.lookup space)
 			$  gets stateVarGen
@@ -255,18 +260,18 @@ newVarN		space
 	return var'
 
 
------
-lookupSigmaVar ::	Var	-> SquidM (Maybe Var)
+-- | Lookup the type variable corresponding to this value variable.
+lookupSigmaVar :: Var -> SquidM (Maybe Var)
 lookupSigmaVar	v
  	= liftM (Map.lookup v)
 	$ gets stateSigmaTable
 	
 	
------
+-- | Add some errors to the monad.
+--	These'll be regular user-level type errors from the compiled program.
 addErrors ::	[Error]	-> SquidM ()
 addErrors	errs
 	= modify (\s -> s { stateErrors = stateErrors s ++ errs })
-
 
 
 
