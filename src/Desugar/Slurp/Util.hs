@@ -157,8 +157,10 @@ newVarNS		space		str
 newVarZ ::	Var	-> CSlurpM Var
 newVarZ		var	= newVarN (Var.nameSpace var) 
 
-newVarInst ::	Var	-> CSlurpM Var
-newVarInst	var	= newVarZ var
+newVarInst ::	Var	-> CSlurpM (Maybe Var)
+newVarInst	var	
+ = do	var'	<- newVarZ var
+ 	return	$ Just var'
 
 -----------------------
 -- bindVtoT ... 

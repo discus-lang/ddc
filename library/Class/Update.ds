@@ -7,7 +7,7 @@ infix  0 += ;
 
 class Update a where
 {
-	(:=)	:: forall b !e1 $c1
+	(:=)	:: forall b 
 		.  a -> b -(!e1 $c1)> ()
 		:- Shape2 a b
 		,  MutableT a
@@ -18,7 +18,7 @@ class Update a where
 
 class Accum a where
 {
-	(+=)	:: forall b !e1 $c1 
+	(+=)	:: forall b  
 		. a -> b -(!e1 $c1)> ()
 		:- Shape2 a b
 		,  MutableT a

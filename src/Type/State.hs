@@ -216,30 +216,35 @@ traceIL
  
  
 -- | Instantiate a variable.
-instVar :: Var -> SquidM Var
+instVar :: Var -> SquidM (Maybe Var)
 instVar var
- = do
-	let space	= Var.nameSpace var
+ = do	let space	= Var.nameSpace var
 
 	-- lookup the generator for this namespace
 	mVarId		<- liftM (Map.lookup space) $ gets stateVarGen
-	let varId	= case mVarId of
-				Just v	-> v
-				Nothing	-> panic stage
-					$  "instVar: can't instantiate var in space " % space
+	instVar' var space mVarId
 
-	-- increment the generator and write it back into the table.
-	let varId'	= Var.incVarBind varId
-	sVarGen		<##> Map.insert space varId'
+instVar' var space mVarId
+  	| Nothing	<- mVarId
+	= freakout stage
+	  	("instVar: can't instantiate var in space " % space
+	  	% " var = " % show var)
+		$ return Nothing
+		
+	| Just varId	<- mVarId
+	= do
+		-- increment the generator and write it back into the table.
+		let varId'	= Var.incVarBind varId
+		sVarGen		<##> Map.insert space varId'
 
-	-- the new variable remembers what it's an instance of..
-	let name	= pretty varId
-	let var'	= (Var.new name)
-			{ Var.nameSpace		= Var.nameSpace var
-			, Var.bind		= varId
-			, Var.info		= [Var.IParent var] }
+		-- the new variable remembers what it's an instance of..
+		let name	= pretty varId
+		let var'	= (Var.new name)
+			 { Var.nameSpace		= Var.nameSpace var
+			 , Var.bind		= varId
+			 , Var.info		= [Var.IParent var] }
 
-	return var'
+		return $ Just var'
 
 
 -- | Make a new variable in this namespace

@@ -33,7 +33,7 @@ stage	= "Type.Instantiate"
 --	the new variables.
 instantiateT 
 	:: Monad m
-	=> (Var -> m Var)
+	=> (Var -> m (Maybe Var))
 	-> Type -> m Type
 
 instantiateT instF t
@@ -46,11 +46,11 @@ instantiateT instF t
 --	the new variables, and also return the new instance vars created.
 instantiateT_table
 	:: Monad m
-	=> (Var -> m Var)	-- ^ fn to instantiate a variable.
-	-> Type 		-- ^ type to instantiate
-	-> m ( Type		-- instantiated type
-	     , [Var])		-- list of instance variables, one for 
-	     			--	each of the foralls at the front of the scheme
+	=> (Var -> m (Maybe Var))	-- ^ fn to instantiate a variable.
+	-> Type 			-- ^ type to instantiate
+	-> m ( Type			-- instantiated type
+	     , [Var])			-- list of instance variables, one for 
+	     				--	each of the foralls at the front of the scheme
 
 instantiateT_table instF t
  = case t of
@@ -58,7 +58,7 @@ instantiateT_table instF t
 	 -> do	-- build a table mapping each of the forall bound variables
 		--	to a new instance variable.
 	 	let vs		= map fst vks
-	 	vsI		<- mapM instF vs
+	 	Just vsI	<- liftM sequence $ mapM instF vs
 		let table	= Map.fromList $ zip vs vsI
 				
 		-- substitute instance variables into the body of the type.

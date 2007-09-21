@@ -125,7 +125,7 @@ solveCs	(c:cs)
 
 	-- def
 	CDef src t1@(TVar k vDef) t
- 	 -> do	trace	$ "### Def  " % padR 20 (pretty vDef) % " = " % t % "\n"
+ 	 -> do	trace	$ "### Def  " % vDef %> ("\n:: " % prettyTypeSplit t) % "\n\n"
 		feedConstraint c
 
 		-- Record that this type is good to go.

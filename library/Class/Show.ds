@@ -8,7 +8,7 @@ import
 
 class Show a where 
 {
-	show 	:: forall %r !e1
+	show 	:: forall %r
 		.  a -(!e1)> String %r
 		:- !e1	= !{ !ReadT a };
 }

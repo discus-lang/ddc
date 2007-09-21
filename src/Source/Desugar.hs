@@ -112,17 +112,11 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 	 ->	returnJ	$ D.PClass  none v k
 
  	S.PClassDict vC vs inh sigs
-	 -> do	let fetter	= FConstraint vC $ map makeTVar vs
-		let sigs'	= catMap (\(vs, t) -> 
-					let t'	= bindFreeVarsT (addFetters [fetter] t)
-					in  zip vs (repeat t'))
+	 -> do	let sigs'	= catMap (\(vs, t) ->
+					zip vs (repeat t))
 				$ sigs
 
-		let context'	= map (\(v, vs) ->
-					D.ClassContext v (map makeTVar vs))
-				$ inh
-
-		returnJ		$ D.PClassDict none vC (map makeTVar vs) context' sigs'
+		returnJ		$ D.PClassDict none vC (map makeTVar vs) [] sigs'
 
 	S.PClassInst vC ts context stmts
 	 -> do	
