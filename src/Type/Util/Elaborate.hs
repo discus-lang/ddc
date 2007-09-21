@@ -1,7 +1,8 @@
 
 module Type.Util.Elaborate
-	( elaborateT )
-
+	( elaborateT 
+	, elaborateRegionsT
+	, elaborateCloT )
 where
 
 -----
@@ -18,6 +19,8 @@ import Type.Pretty
 import Type.Util.Bits		
 import Type.Plate.Collect
 
+import Debug.Trace
+
 -----
 stage	= "Type.Elaborate"
 
@@ -29,9 +32,11 @@ elaborateT
 	-> Type -> m Type
 
 elaborateT t
- = do	tRegions	<- elaborateRegionsT t
+ = do	(tRegions, vks)	<- elaborateRegionsT t
  	tClosure	<- elaborateCloT tRegions
- 	return	tClosure
+
+ 	return	$ addTForallVKs vks
+		$ tClosure
 
 
 -----------------------
@@ -44,23 +49,25 @@ elaborateRegionsT
 	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to create new vars
 	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
 	-> Type 				-- ^ the type to elaborate
-	-> m Type				-- ^ elaborated type
+	-> m ( Type		-- new type
+	     , [(Var, Kind)])	-- extra regions
 
 elaborateRegionsT tt
- = do	(tt', vs, fs)	<- elaborateRegionsT' tt
-	return	$ addFetters fs tt'
+ = do	(tt', vks, fs)	<- elaborateRegionsT' tt
+	return	( addFetters fs tt'
+		, vks)
 
 elaborateRegionsT' tt
 
 	-- if we see a forall then drop new regions on that quantifier
  	| TForall vks x		<- tt
-	= do	(x', vks', fs)	<- elaborateRegionsT' tt
-		return	( TForall (vks ++ vks') x'
+	= do	(x', vks', fs)	<- elaborateRegionsT' x
+		return	( addTForallVKs vks' (TForall vks x')
 			, []
 			, fs)
 
 	| TFetters fs x		<- tt
-	= do	(x', vks, fs')	<- elaborateRegionsT' tt
+	= do	(x', vks, fs')	<- elaborateRegionsT' x
 		return	( TFetters (fs ++ fs') x'
 			, vks
 			, [])
@@ -95,11 +102,11 @@ elaborateRegionsT' tt
 	-- add new regions to data type constructors to bring them up
 	--	to the right kind.
 	| TData v ts		<- tt
-	= do	kind	<- ?getKind v
-		ts'	<- elabRs ts kind
-
+	= do	kind		<- ?getKind v
+		(ts', vks')	<- elabRs ts kind
+		
 		return	( TData v ts'
-			, []
+			, vks'
 			, [])
 
 
@@ -109,34 +116,44 @@ elaborateRegionsT' tt
 elabRs 	:: Monad m
 	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to create new vars
 	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
-	-> [Type]
-	-> Kind
-	-> m [Type]
+	-> [Type]				-- ^ ctor args
+	-> Kind					-- ^ kind to turn the ctor into
+	-> m ( [Type]		-- new ctor args
+	     , [(Var, Kind)])	-- added vars
 
-elabRs [] KData
-	= return []
+elabRs args kind
+ = do	(args', vks)	<- elabRs' args kind
+ 	return	( args', nub vks)
 
-elabRs [] (KFun k1 k2)
-	| KRegion	<- k1
-	= do	ts'	<- elabRs [] k2
-		vR	<- ?newVarN NameRegion
-		return	$ TVar KRegion vR : ts'
 
-elabRs (t:ts) (KFun k1 k2)
+elabRs' [] KData
+	= return ([], [])
 
-	| KRegion	<- k1
-	, Just KRegion	<- takeKindOfType t
-	= do	ts'	<- elabRs ts k2
-		return	$ t : ts'
+elabRs' [] (KFun k1 k2)
+	| KRegion		<- k1
+	= do	(ts', vks')	<- elabRs' [] k2
+		vR		<- ?newVarN NameRegion
+		return		( TVar KRegion vR : ts'
+				, (vR, KRegion) : vks')
 
-	| KRegion	<- k1
-	= do	ts'	<- elabRs ts k2
-		vR	<- ?newVarN NameRegion
-		return	$ TVar KRegion vR : ts'
+elabRs' (t:ts) (KFun k1 k2)
+
+	| KRegion		<- k1
+	, Just KRegion		<- takeKindOfType t
+	= do	(ts', vks')	<- elabRs' ts k2
+		return		( t : ts'
+				, vks')
+
+	| KRegion		<- k1
+	= do	(ts', vks')	<- elabRs' ts k2
+		vR		<- ?newVarN NameRegion
+		return		( TVar KRegion vR : ts'
+				, (vR, KRegion) : vks')
 
 	| otherwise
-	= do	ts'	<- elabRs ts k2
-		return	$ t : ts'
+	= do	(ts', vks')	<- elabRs' ts k2
+		return		( t : ts'
+				, vks')
 
 
 -----------------------

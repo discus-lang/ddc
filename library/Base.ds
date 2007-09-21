@@ -116,16 +116,17 @@ infixr 1 $ ;
 --	that the resulting projection functions are sound.
 --
 --
+
 foreign import extern "primProjField"
  primProjField	
- 	:: forall a b %r1 !e1
+ 	:: forall a b %r1
 	.  a -> Int32# %r1 -(!e1)> b
 	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj;
  
 foreign import extern "primProjFieldR"
  primProjFieldR 
- 	:: forall a b %r1 !e1
+ 	:: forall a b %r1
 	.  a -> Int32# %r1 -(!e1)> b
 	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj;
@@ -176,5 +177,3 @@ foreign import extern "primFloat32U_write"
  	:: forall a %r1 %r2
 	.  a -> Int32# %r1 -> Float32# %r2 -> Void#		-- obj, offset (in bytes), data.
 	:$ Data -> Int32# -> Float32# -> Void#;
-
-

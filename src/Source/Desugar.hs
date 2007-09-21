@@ -51,6 +51,8 @@ import Source.Desugar.Type
 
 import {-# SOURCE #-} Source.Desugar.ListComp
 
+import Debug.Trace
+
 -----
 stage	= "Source.Desugar"
 
@@ -148,7 +150,15 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 
 	S.PType sp v t
 	 -> do	t'	<- rewrite t
-	 	returnJ	$ D.PSig sp v t'
+
+		let ?newVarN	= newVarN
+	 	let ?getKind	= getKind
+	 	(tElab, vks)	<- elaborateRegionsT t'
+
+		let tQuant	= addTForallVKs vks tElab
+
+	 	returnJ	$ D.PSig sp v tElab
+--		return Nothing
 
   	S.PStmt s
 	 -> do	(D.SBind sp mV x)	<- rewrite s

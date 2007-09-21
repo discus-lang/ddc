@@ -13,7 +13,7 @@ foreign import extern "primRefUpdate"
 
 ref	:: forall a %r1
         .  a -> Ref %r1 a
-	:- Mutable %r1;
+	:- Mutable %r1; 
 ref x 
  = do {	r	:: forall %r1 a
                 .  Ref %r1 a 
