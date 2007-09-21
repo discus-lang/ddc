@@ -15,7 +15,7 @@ module Type.Util.Bits
 	, kindOfSpace 
 	, kindOfType,	takeKindOfType
 	, flattenKind 
-	, addTForallVKs
+	, addTForallVKs, addTForallVKs_front
 	, bindFreeVarsT
 
 	, addFetters 
@@ -304,8 +304,8 @@ bindFreeVarsT' vks t
 			_		-> TForall vks t
 
 
--- | Add some forall bindings to the front of this type.
-
+-- | Add some forall bindings to the front of this type,
+--	new quantified vars go at back of list.
 addTForallVKs :: [(Var, Kind)] -> Type -> Type
 addTForallVKs vks tt
 	| []	<- vks
@@ -314,6 +314,20 @@ addTForallVKs vks tt
 	| TForall vks' t	<- tt
 	= TForall (vks' ++ vks) t
 	
+	| otherwise
+	= TForall vks tt
+
+
+-- | Add some forall bindings to the front of this type, 
+--	new quantified vars go at front of list.
+addTForallVKs_front :: [(Var, Kind)] -> Type -> Type
+addTForallVKs_front vks tt
+	| []	<- vks
+	= tt
+
+	| TForall vks' t	<- tt
+	= TForall (vks ++ vks') t
+
 	| otherwise
 	= TForall vks tt
 	

@@ -113,13 +113,25 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 	S.PClass v k
 	 ->	returnJ	$ D.PClass  none v k
 
- 	S.PClassDict vC vs inh sigs
-	 -> do	let sigs'	= catMap (\(vs, t) ->
-					zip vs (repeat t))
-				$ sigs
+	-- class dictionaries
+ 	S.PClassDict vC vsParam context sigs
+	 -> do
+	 	-- convert type param vars into actual types
+		let tsParam	= map makeTVar vsParam
 
-		returnJ		$ D.PClassDict none vC (map makeTVar vs) [] sigs'
+	 	-- For each member function in this class, quantify the class
+		--	params and add the constraints.
+	 	let makeSigs (vsT, t) =
+	  	     let TForall vks x	= addTForallVKs_front (zip vsParam (repeat KData)) t
+		     	 x'		= addFetters [FConstraint vC tsParam] x
+			 t'		= TForall vks x'
+		     in	 zip vsT (repeat t')
 
+	 	let sigs'	= catMap makeSigs sigs
+
+		returnJ		$ D.PClassDict none vC tsParam [] sigs'
+
+	-- class instances
 	S.PClassInst vC ts context stmts
 	 -> do	
 		stmts'		<- mapM rewrite stmts
