@@ -22,8 +22,13 @@ import Core.Util
 import qualified Type.Pretty
 
 -----------------------
-sv v	= padR 8 (pretty v)
+sv v	= padR 8 (pretty $ pv v)
 
+-- force display of type namespace qualifier
+pv v
+ = case Var.nameSpace v of
+ 	Var.NameType	-> "*" % v
+	_		-> prettyp v
 
 -----------------------
 -- prettyP
@@ -114,7 +119,7 @@ instance Pretty Exp where
 	 -> "[" % a % ";\n " % e % "]"
 
 	XVar v
-	 -> prettyp v
+	 -> pv v
 		
 	XLAM v k e
 	 -> "/\\ (" % padR 16 (sv v) 	% " :: " % k % ") ->\n" % e
@@ -421,7 +426,10 @@ instance Pretty Type where
 
 	TMask	k t1 t2	-> t1 % " \\ " % t2
 
-	TVar	k v	-> prettyp v
+	TVar	k v	
+	 -> case k of
+	 	KData	-> "*" % v
+		_	-> prettyp v
 
 	-- data
 	TFun x1 x2

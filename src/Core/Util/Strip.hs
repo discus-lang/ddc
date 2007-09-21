@@ -32,13 +32,13 @@ stripSchemeT' forallVTs tetVTs classes tt
 			classes 
 			tRest
 
-{-	TLet    v t tRest
+	TWhere tRest vts
 	 -> stripSchemeT' 
 	 		forallVTs
-			(tetVTs ++ [(v, t)]) 
+			(tetVTs ++ vts) 
 			classes 
 			tRest
--}
+
 	TContext  c tRest		
 	 -> stripSchemeT' 
 	 		forallVTs 

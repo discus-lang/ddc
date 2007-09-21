@@ -24,9 +24,10 @@ import Core.Util.Unify
 import Core.Util.Strip
 import Core.Util.Substitute
 import Core.Util.Slurp
+import Core.Pretty
 
 stage		= "Core.Dictionary"
-debug		= False
+debug		= True
 trace ss x	= if debug 
 			then Debug.trace ss x
 			else x
@@ -114,8 +115,16 @@ rewriteOverApp
 				= stripSchemeT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
-		Just ttSub	= unifyT2 tInstShape tOverShapeI
-		vtSub		= map 	(\(t1, t2) -> 
+		ttSub		= trace (pretty $ "  tInstShape = " % tInstShape % "\n")
+				$ fromMaybe
+					(panic stage $ "rewriteOverApp: cannot unify types.\n\n"
+					  % " tInstShape  = " %> tInstShape  % "\n\n"
+					  % " tOverShapeI = " %> tOverShapeI % "\n")
+					$ unifyT2 tInstShape tOverShapeI
+		
+
+		vtSub		= trace (pretty $ "  ttSub      = " % ttSub)
+				$ map 	(\(t1, t2) -> 
 						let Just v1	= typeToVar t1
 						in  (v1, t2))
 					ttSub
