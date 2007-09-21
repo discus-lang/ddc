@@ -239,7 +239,7 @@ makeProjFun    tData ctors fieldV
 					, dLabel field == Just fieldV ]
 
     	return	[ SSig  none fieldV 	
-			(TSig $ (TFun tData resultT pure empty))
+			(TFun tData resultT pure empty) 
 
 		, SBind none (Just fieldV) 
  			(XLambda none objV 
@@ -293,9 +293,9 @@ makeProjR_fun tData ctors fieldV
 					% "  tData = " % show tData			% "\n"
 
 	return	$ 	[ SSig  none funV 	
-				(TSig 	$ (TFun tData (TData primTRef [TVar KRegion rData, resultT]) 
+				(TFun tData (TData primTRef [TVar KRegion rData, resultT]) 
 						pure
-						empty))
+						empty)
 
 
 			, SBind none (Just funV) 

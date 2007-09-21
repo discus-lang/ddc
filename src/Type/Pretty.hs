@@ -84,11 +84,6 @@ instance Pretty Type where
 	TMutable   t	-> "mutable " 	% t 
 
 	-----
-	TSigExact t	-> "@TSigExact " % t
-	TSig t		-> "@TSig " % t
-	TQuant t	-> "@TQuant " % t
-
-	-----
 
 {-
 	TInst vDef vInst t
@@ -242,15 +237,6 @@ instance  (Pretty param, Pretty t)
 prettyTypeSplit :: Type	-> PrettyP
 prettyTypeSplit	   x
  = case x of
- 	TSigExact t
-	 -> "@TSigExact " % prettyTypeSplit t
-
-	TSig t
-	 -> "@TSig " % prettyTypeSplit t
-	 
-	TQuant t
-	 -> "@TQuant " % prettyTypeSplit t
- 
  	TForall vs t
 	 -> "forall " % (" " %!% (map prettyVK vs)) % "\n"
 	 %  ".  " % prettyTypeSplit2 t

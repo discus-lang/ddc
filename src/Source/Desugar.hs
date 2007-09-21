@@ -620,15 +620,6 @@ instance Rewrite S.Type S.Type where
 	 	t'	<- elaborateT t
 	 	return	$ t'
 		
-	TSig t
-	 -> do	t'		<- rewrite t
-		let ?getKind	= getKind
---		tE		<- expandT t'
-	 	return	$ TSig t'
-		
-	TSigExact t
-	 -> do	t'	<- rewrite t
-	 	return	$ TSigExact t'
 
 
 	

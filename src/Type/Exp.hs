@@ -119,18 +119,6 @@ data Type
 	| TMutable	Type				-- ^ This object is modified by the function.
 
 
-	
-	-- **** Should push this into Source.Exp/Desugar.Exp
-	-- Used to carry type constraints and signatures from the 
-	--	the source language to the type inferencer.
-	--	
-	--
-	| TSig		Type				-- ^ Type signature.		(::  or ::* constraint)
-	| TSigExact	Type				-- ^ Exact type signature, including effect region and closure info.
-							--			.	(::: or :::* constraint)
-	| TQuant	Type				-- ^ Auto-quantification of free variables.
-
-
 	-- **** Where is this stuff actually used? better to ditch it.
 	--	Intermediate constructors.
 	--	Different representations for things, used in lots of places.

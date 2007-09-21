@@ -11,10 +11,13 @@ foreign import extern "primRefUpdate"
 	:$ Obj -> Obj -> Obj;
  	
 
-ref	:: a -> Ref %r1 a
+ref	:: forall a %r1
+        .  a -> Ref %r1 a
 	:- Mutable %r1;
 ref x 
- = do {	r	:: Ref %r1 a :- Mutable %r1;
+ = do {	r	:: forall %r1 a
+                .  Ref %r1 a 
+		:- Mutable %r1;
  	r	= Ref x;
 	
 	r;

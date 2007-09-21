@@ -827,43 +827,6 @@ instance Rename Type where
 	 -> do 	t1'	<- rename t1
 		t2'	<- rename t2
 		return	$ TFunV t1' t2' mLabel
-
-	TSigExact t
-	 -> do	t'	<- rename t
-	 	return	$ TSigExact t'
-
-	TSig t
-	 -> do	t'	<- rename t	
-	 	return	$ TSig t'
-
-
-	-- Auto-quantify any vars which are free in the type.
-	--
-	TQuant t
-	 -> do	let sameNameV v1 v2
-	 		= Var.name v1 == Var.name v2
-			
-		let sameNameVK (v1, _) (v2, _)
-			= Var.name v1 == Var.name v2
-			
-	 	let vs	= nubF sameNameV
-	 		$ filter (not . isCtorName)
-			$ slurpVarsT t
-
-		let ks	= map kindOfSpace
-			$ map Var.nameSpace vs
-		
-		let vks' = zip vs ks
-		
-		let tQ	= case t of
-				TForall vks x 	-> TForall (nubF sameNameVK $ vks ++ vks') x
-				_		-> case vks' of
-							[]	-> t
-							_	-> TForall vks' t
-		
-		t'	<- rename tQ
-		return	t'
-
 		
 -----
 instance Rename Fetter where

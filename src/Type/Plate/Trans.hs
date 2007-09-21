@@ -254,15 +254,6 @@ followT table tt
 --	 	return	$ TUnify ts'
 
 	-- type constraints
-	TSigExact t
-	 -> do	t'	<- transZM table t
-	 	return	$ TSigExact t'
-		
-	TSig t
-	 -> do 	t'	<- transZM table t
-	 	return	$ TSig t'
-		
-
 	TFunV t1 t2 ml
 	 -> do	t1'	<- transZM table t1
 	 	t2'	<- transZM table t2

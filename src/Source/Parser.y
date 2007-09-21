@@ -97,10 +97,6 @@ stage 	= "Source.Parser"
 	'forall'	{ TokenP { token = K.Forall	} }
 		
 	'::'		{ TokenP { token = K.HasType	   } }
-	':*'		{ TokenP { token = K.HasTypeQuant  } }
-	
-	':::'		{ TokenP { token = K.HasTypeExact } }
-	'::*'		{ TokenP { token = K.HasTypeExactQuant } }
 	
 --	'<:'		{ TokenP { token = K.IsSubtypeOf   } }
 --	'<*'		{ TokenP { token = K.IsSubtypeOfQuant } }
@@ -216,8 +212,8 @@ top
 	{ [PProjDict $2 $5]		}
 
 	-- type sigs
-	| stmtTypeSig					
-	{ [PType (t3_1 $1) (t3_2 $1) (t3_3 $1)]		}
+	| pVar '::' type ';'	
+	{ [PType (spTP $2) (vNameV $1) $3]						}
 		
 	-- statements
 	| expApps '=' exp ';'				
@@ -466,7 +462,7 @@ stmt
 	:: {  Stmt }
 	:  exp          ';'			{ SBind (spX $1) Nothing $1		}
 	|  bind					{ $1					}
-	|  stmtTypeSig				{ SSig (t3_1 $1) (t3_2 $1) (t3_3 $1)	}
+	|  pVar '::' type ';'			{ SSig (spTP $2) (vNameV $1) $3		}
 
 stmts
 	:: { [Stmt] }
@@ -490,16 +486,7 @@ stmtSigBinds
 stmtSigBind
  	:: { Stmt }
 	:  bind					{ $1					}
-	|  stmtTypeSig				{ SSig (t3_1 $1) (t3_2 $1) (t3_3 $1)	}
-
-stmtTypeSig
-	:: { (SourcePos, Var, Type) }
-	: pVar '::' type ';'			{ (spTP $2, vNameV $1, TSig (TQuant $3)) 	}
-	| pVar ':*' type ';'			{ (spTP $2, vNameV $1, TSig $3) 		}
-
-	| pVar ':::' type ';'			{ (spTP $2, vNameV $1, TSigExact (TQuant $3)) 	}
-	| pVar '::*' type ';'			{ (spTP $2, vNameV $1, TSigExact $3) 		}
-		
+	|  pVar '::' type ';'			{ SSig (spTP $2) (vNameV $1) ($3)	}
 
 
 -----

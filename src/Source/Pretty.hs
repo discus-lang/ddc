@@ -98,16 +98,7 @@ instance Pretty Top where
 
 	-- type sigs	 
 	PType sp v t
-	 -> let (op, x)
-	 	 = case t of
-			TSig (TQuant x)		-> ("::", x)
-			TSig x			-> (":*", x)
-			
-			TSigExact (TQuant x)	-> (":::", x)
-			TSigExact x		-> ("::*", x)
-			_		-> panic stage $ "pretty[Top]: no match for " % show xx
-
-	    in	 v %>> op % prettyTS x % ";\n"
+         -> v %>> " :: " % prettyTS t % ";\n"
 	 
 
 	PStmt s		 -> prettyp s % "\n\n"

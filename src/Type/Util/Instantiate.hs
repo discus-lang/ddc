@@ -69,13 +69,5 @@ instantiateT_table instF t
 				
 		return 		(x', vsI)
 	
-	TSig x
-	 -> do	(x', table)	<- instantiateT_table instF x
-	 	return 	(TSig x', table)
-
-	TSigExact x
-	 -> do	(x', table)	<- instantiateT_table instF x
-	 	return	(TSigExact x', table)
-		
 	_ ->	return (t, [])
 	
