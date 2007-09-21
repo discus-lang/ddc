@@ -104,11 +104,13 @@ toCoreT	   t
 	-- effect
 	T.TEffect v ts		-> C.TEffect v (map toCoreT ts)
 	T.TBot T.KEffect	-> C.TPure
+	T.TTop T.KEffect	-> C.TSync
 	
 	-- closure
 	T.TFree v t		-> C.TFree v (toCoreT t)
 	T.TTag v		-> C.TTag  v
 	T.TBot T.KClosure	-> C.TEmpty
+	T.TTop T.KClosure	-> C.TOpen
 	
 	-- wildcards	
 	T.TWild k		-> C.TWild (toCoreK k)
