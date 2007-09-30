@@ -31,27 +31,29 @@ cleanWar :
 	@find test \
 			-name "*.dump-*.*"  \
 		-o	-name "*.graph-*.dot" \
-		-o	-name "*.di"  \
-		-o	-name "*.gdl" \
-		-o	-name "*.o"   \
+		-o	-name "*.di"    \
+		-o	-name "*.gdl"   \
+		-o	-name "*.o"     \
 		-o	-name "*.ddc.c" \
 		-o	-name "*.ddc.h" \
-		-o	-name "*.bin" \
-		-o	-name "*.out" \
-		-o 	-name "*.diff" \
+		-o	-name "*.bin"   \
+		-o	-name "*.out"   \
+		-o 	-name "*.diff"  \
+		-o	-name "*.tix"   \
 		-follow | xargs -n 1 rm -f
 
 	@find library \
 			-name "*.dump-*.*"  \
 			-name "*.graph-*.dot" \
-		-o	-name "*.di"  \
-		-o	-name "*.gdl" \
-		-o	-name "*.o"   \
+		-o	-name "*.di" 	\
+		-o	-name "*.gdl"	\
+		-o	-name "*.o"	\
 		-o	-name "*.ddc.c" \
 		-o	-name "*.ddc.h" \
-		-o	-name "*.bin" \
-		-o	-name "*.out" \
-		-o 	-name "*.diff" \
+		-o	-name "*.bin" 	\
+		-o	-name "*.out"	\
+		-o 	-name "*.diff"  \
+		-o	-name "*.tix"	\
 		-follow | xargs -n 1 rm -f
 	
 	@echo
