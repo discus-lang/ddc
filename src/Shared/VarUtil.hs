@@ -18,7 +18,7 @@ module Shared.VarUtil
 where
 
 import Util
-import Data.Char
+import Data.Char	hiding (isSymbol)
 
 import qualified Shared.Var as Var
 import Shared.Var 

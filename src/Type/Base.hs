@@ -1,7 +1,7 @@
 
 module Type.Base
-	( Class (..),	classInit,
-	, Graph (..),	graphInit,
+	( Class (..),	classInit
+	, Graph (..),	graphInit
 	
 	, graphSize_init
 	, graphSize_inc)

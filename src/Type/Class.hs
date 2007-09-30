@@ -62,7 +62,7 @@ expandGraph
 
 expandGraph minFree
  = do	graph			<- gets stateGraph
- 	let ClassId curMax	= snd $ bounds (graphClass graph)
+ 	ClassId curMax		<- liftM snd $ liftIO $ getBounds (graphClass graph)
 	let curIx		= graphClassIdGen graph
 	
 	if curIx + minFree <= curMax

@@ -1,15 +1,5 @@
 
 #---- global defs
-stumpy		= ../stumpy/bin/stumpy
-GHC_FLAGS_PROF	:= -prof -auto-all
-
-# GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 -prof -auto-all
-GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp 
-
-# GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
-GCC_FLAGS	:= -std=c99 -Wundef -fPIC -O3
-
-
 GHC_INCDIRS 	= $(patsubst %,-i../%/src,$(MODULES))
 GHC_INCOBJS	= $(foreach module,$(MODULES),$(shell cat ../$(module)/lib/libH$(module).so.objs))
 GHC_INCLIBS	= $(foreach module,$(MODULES),../$(module)/lib/libH$(module).so)
@@ -70,8 +60,8 @@ src_hs		+= $(src_happy_hs)
 	@echo "* Compiling $<"
 
 	$(if $(stubH),								\
-		ghc $(GHC_FLAGS) -isrc  $(GHC_INCDIRS) -c $< -#include $(stubH),	\
-		ghc $(GHC_FLAGS) -isrc  $(GHC_INCDIRS) -c $<		\
+		$(GHC) $(GHC_FLAGS) -isrc  $(GHC_INCDIRS) -c $< -#include $(stubH),	\
+		$(GHC) $(GHC_FLAGS) -isrc  $(GHC_INCDIRS) -c $<		\
 	 )	
 
 	@echo
@@ -79,7 +69,7 @@ src_hs		+= $(src_happy_hs)
 # %.o-boot
 %.hi-boot : %.hs-boot %.o-boot
 	@echo "* Compiling $<"
-	@ghc $(GHC_FLAGS) -c $< -isrc $(GHC_INCDIRS)
+	@$(GHC) $(GHC_FLAGS) -c $< -isrc $(GHC_INCDIRS)
 	@echo
 
 

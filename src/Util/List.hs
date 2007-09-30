@@ -6,7 +6,7 @@
 --
 --
 module Util.List
-	( module Data.List,
+	( module Data.List
 
 	-- concat / map
 	, catMap
@@ -43,8 +43,8 @@ module Util.List
 	, isNil
 	, gather
 
-	, mapT2_1, mapT2_2,
-	, mapT3_1, mapT3_2, mapT3_3,
+	, mapT2_1, mapT2_2
+	, mapT3_1, mapT3_2, mapT3_3
 
 	, partitionFs
 

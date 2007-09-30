@@ -1,7 +1,7 @@
 
 module Type.Plug
-	( plugClassIds,
-	, staticRsDataT,
+	( plugClassIds
+	, staticRsDataT
 --	staticRsClosureT
 	)
 

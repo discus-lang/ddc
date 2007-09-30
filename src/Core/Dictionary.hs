@@ -157,7 +157,7 @@ rewriteOverApp
 
    	in trace
 		(pretty	$ "rewriteOverApp/leave\n"
-			% "  tInstScheme	= \n" %> tInstScheme	% "\n\n"
+			% "  tInstScheme        = \n" %> tInstScheme	% "\n\n"
 			% "  vtSub              = " % vtSub		% "\n\n"
 			% "  tsInstArgs         = " % tsInstArgs	% "\n\n")
 		$ xx'

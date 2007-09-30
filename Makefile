@@ -9,6 +9,7 @@
 
 all	: bin/ddc bin/war
 
+include make/build.mk
 include make/plate.mk
 -include make/Makefile.deps
 -include runtime/*.dep
@@ -16,13 +17,13 @@ include make/plate.mk
 # ----- trauma
 bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
-	ghc  -o bin/ddc $^ $(LIBS) -package posix 
+	$(GHC) -o bin/ddc $^ $(LIBS) -package containers -package mtl
 # -prof
 	
 
 # ----- war
 bin/war : test/War.hs
-	ghc -fglasgow-exts -isrc --make test/War.hs -o bin/war
+	$(GHC) -fglasgow-exts -isrc --make test/War.hs -o bin/war
 
 .PHONY  : cleanWar
 cleanWar :
@@ -118,7 +119,7 @@ deps : make/Makefile.deps $(runtime_dep)
 
 make/Makefile.deps : $(src_hs)
 	@echo "* Building dependencies"
-	@ghc -isrc -M $^ -optdep-f -optdepmake/Makefile.deps $(GHC_INCDIRS)
+	@$(GHC) -isrc -M $^ -optdep-f -optdepmake/Makefile.deps $(GHC_INCDIRS)
 	@rm -f make/Makefile.deps.bak
 	@echo
 
