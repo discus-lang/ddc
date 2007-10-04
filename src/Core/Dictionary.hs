@@ -1,8 +1,6 @@
 
 module Core.Dictionary
-(
-	dictTree
-)
+	( dictTree )
 
 where
 
@@ -18,20 +16,20 @@ import Core.Exp
 import Core.Pretty
 import Core.Util
 import Core.Plate.Trans
-import Core.Util.InlineTLet
 import Core.Util.Unify
 
+import Core.Class.Discharge
 import Core.Util.Strip
 import Core.Util.Substitute
 import Core.Util.Slurp
 import Core.Pretty
 
+-----
 stage		= "Core.Dictionary"
 debug		= True
 trace ss x	= if debug 
 			then Debug.trace ss x
 			else x
-
 
 -----
 --	The RHS of every instance function must be the var of a top level function.
@@ -51,12 +49,18 @@ dictTree hTree sTree
    in	tree'
    	
 	
-		
------
--- 
+-- | Rewrite overloaded fn applications in this statement
 rewriteS
  ::	(?typeMap 	:: Map Var Type)
- ->	(?classMap 	:: Map Var (Class, Type, [(Class, Var)]))
+ ->	(?classMap 	
+ 	 :: Map Var 			-- overloaded variable, eg (+)
+		( Class			-- class that the var belongs to, eg (Num a)
+		, Type			-- type of this overloaded function
+					--	eg Num a => a -> a -> a
+		, [(Class, Var)]))	-- the possible instances for this function
+					--	eg Int   -> Int -> Int
+					--	   Float -> Float -> Float
+
  ->	Stmt -> Stmt
  
 rewriteS ss
@@ -115,19 +119,22 @@ rewriteOverApp
 				= stripSchemeT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
-		ttSub		= trace (pretty $ "  tInstShape = " % tInstShape % "\n")
-				$ fromMaybe
-					(panic stage $ "rewriteOverApp: cannot unify types.\n\n"
-					  % " tInstShape  = " %> tInstShape  % "\n\n"
-					  % " tOverShapeI = " %> tOverShapeI % "\n")
-					$ unifyT2 tInstShape tOverShapeI
+		ttSub	= trace (pretty $ "  tInstShape = " % tInstShape % "\n")
+			$ fromMaybe
+				(panic stage $ "rewriteOverApp: cannot unify types.\n\n"
+				  % " tInstShape  = " %> tInstShape  % "\n\n"
+				  % " tOverShapeI = " %> tOverShapeI % "\n")
+				$ unifyT2 tInstShape tOverShapeI
 		
 
-		vtSub		= trace (pretty $ "  ttSub      = " % ttSub)
-				$ map 	(\(t1, t2) -> 
-						let Just v1	= typeToVar t1
-						in  (v1, t2))
-					ttSub
+		vtSub	= trace (pretty $ "  ttSub      = " % ttSub)
+			$ map 	(\(t1, t2) -> 
+					-- if this fails then the type params passed to the overloaded
+					--	fn weren't specific enough to determine the type 
+					--	we need to call the instance fn at.
+					let Just v1	= typeToVar t1
+					in  (v1, t2))
+				ttSub
 		
 		-- Work out the type args to pass to the instance function.
 		vsForall	= map fst vtsForall
@@ -174,32 +181,37 @@ rewriteOverApp_trace
 	xx overV cClass tOverScheme cxInstances mapTypes
  =  trace
 	(pretty	$ "* rewriteOverApp_trace/enter\n"
-		% "    xx          = \n"	%> xx				% "\n\n"
-		% "    overV       = "		% overV				% "\n"
-		% "    cClass      = "		% cClass			% "\n\n"
-		% "    tOverScheme = \n"	%> tOverScheme			% "\n\n"
-		% "    cxInstances = \n"	%> cxInstances			% "\n\n")
+
+		% "    function application to rewrite (xx)\n"
+			%> (" = " % xx		% "\n\n")
+
+		% "    overloaded var (overV)\n"		
+			%> (" = " % overV	% "\n\n")
+
+		% "    type class of overloaded var (cClass)\n"
+			%> (" = " % cClass	% "\n\n")
+
+		% "    scheme of overloaded var (tOverScheme)\n"
+			%> (" = " % tOverScheme	% "\n\n")
+
+		% "    possible instance for this var (cxInstance)\n"
+			%> (" = " % cxInstances	% "\n\n"))
 		
 	$ rewriteOverApp xx overV cClass tOverScheme cxInstances mapTypes
 
 
-
-
-----
--- determineInstance
---
+-- | Determine which instance to use for this application of an
+--	overloaded function.
 determineInstance
-	:: Exp			-- an application of an overloaded function
-	-> Var			-- overloaded fn name.
-	-> Class		-- the class which this function is in.
-	-> Type			-- overloaded fn scheme.
-	-> [(Class, Var)]	-- instances for this class.
+	:: Exp			-- ^ fn application being rewritten
+	-> Var			-- ^ var of overloaded
+	-> Class		-- ^ type class of the overloaded
+	-> Type			-- ^ scheme of overloaded
+	-> [(Class, Var)]	-- ^ possible instances for this fn
 
 	-> ( Maybe Var		-- var of the instance function.
 	   , Type)		-- shape of overloaded scheme, once the type args have been applied to it.
 				
-				
-
 determineInstance 
 	xx 		
 	overV 		
@@ -221,27 +233,33 @@ determineInstance
 
 	tsArgsQuant	= map (\(XAppFP (XType t) _) -> t) xsArgsQuant
 	
-	-- Use these type applications to work out what class instance
-	--	we're supposed to be using.
-	subType		= Map.fromList $ zip vsForall tsArgsQuant
-	tsClassParams'	= map (substituteT subType) tsClassParams
+	-- Substitute the bound types into the context
+	tsSubst		= Map.fromList $ zip vsForall tsArgsQuant
+	tsClassParams'	= map (substituteT tsSubst) tsClassParams
 	cClassInst	= TClass vClass tsClassParams'
 
-	-- Try and find an instance for the overloaded function in the instance table.
+	-- Lookup the instance fn
 	mInstV		= lookupF matchC2 cClassInst cvInstances
 
-	-- Apply the substitution to the overloaded scheme
-	--	We'll use this later to work out how to call the instance.
-	tOverShapeI	= substituteT subType tOverShape
-
+	-- Also apply types to the shape of the overloaded fn to get the 
+	--	shape of the instance.
+	tInstShape	= substituteT tsSubst tOverShape
 
  in	trace
  		(pretty	$ "* determineInstance\n"
-			% "    subType     = " % subType	% "\n"
-			% "    cClassInst  = " % cClassInst	% "\n"
-			% "    mInstV      = " % mInstV		% "\n"
-			% "    tOverShapeI = " % tOverShapeI	% "\n")
-		$ (mInstV, tOverShapeI)
+			% "    subst these type args into the class context (tsSubst)\n"
+				%> ("  = " % tsSubst % "\n\n")
+
+			% "    the context after substitution (cClassInst)\n"
+				%> (" = "  % cClassInst	% "\n\n")
+
+			% "    var of the instance fn to use (mInstV)\n"
+				%> (" = "  % mInstV	% "\n\n")
+
+			% "    shape of the instance fn (tInstShape)\n"
+				%> (" = "  % tInstShape % "\n\n"))
+
+		$ (mInstV, tInstShape)
 
 
 

@@ -1,3 +1,4 @@
+{-# OPTIONS -fallow-undecidable-instances #-}
 
 module Source.Desugar.Base
 	( Rewrite(..)

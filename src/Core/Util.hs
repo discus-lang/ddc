@@ -524,8 +524,4 @@ makeXTet	vts x	= XTet vts x
 makeTWhere ::	Type	-> [(Var, Type)] -> Type
 makeTWhere	t []	= t
 makeTWhere	t vts	= TWhere t vts
-	
-	
-	
-	
-	
+		
