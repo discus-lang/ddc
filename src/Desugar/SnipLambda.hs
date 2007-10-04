@@ -6,13 +6,11 @@ module Desugar.SnipLambda
 	( snipLambdaTree )
 where
 
-
 import Util
-import Shared.VarGen
+import Shared.VarGen		hiding (newVarN)
 
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, VarBind, NameSpace(..), incVarBind)
-import Shared.Base
 
 import Desugar.Exp
 import Desugar.Bits

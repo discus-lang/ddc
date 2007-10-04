@@ -1,26 +1,17 @@
 
 module Core.Optimise.Atomise
-(
-	atomiseTree
-)
-
+	( atomiseTree )
 where
-
-import	qualified Data.Map		as Map
-import	Data.Map			(Map)
-
-import	qualified Shared.Var		as Var
-import	qualified Shared.VarBind	as Var
-import	Shared.VarPrim
-
-import	qualified Debug.Trace		as Debug
-
-import	Util
 
 import	Core.Exp
 import	Core.Plate.Walk
 
+import	qualified Shared.Var		as Var
+import	qualified Shared.VarBind	as Var
 
+import	Util
+
+-----
 type	AtomiseM	= State ()
 
 atomiseTree 
@@ -64,7 +55,7 @@ isConst table v
 	= isConst' table v
 
 isConst' table v
-	| Just fs	<- Map.lookup v $ boundFs table
+	| Just fs	<- Nothing -- Map.lookup v $ boundFs table
 	, or $ map (\(TClass v _) -> Var.bind v == Var.FConst) fs
 	= True
 	

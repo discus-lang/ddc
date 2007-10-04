@@ -1,68 +1,65 @@
 
+-- | A state monad to generate fresh variable names.
 module Shared.VarGen
-(
-	VarGen,
-	newVar,
-	newVarId,
-	newVars,
-	evalVarGen,
-
-	uniquifyV
-)
+	( VarGen, VarGenM
+	, newVarN
+	, newVarId
+	, newVarsN
+	, evalVarGen
+	, uniquifyV)
 
 where
 
 -----
-import Control.Monad
 import Control.Monad.State
-
------
 import Util.Pretty
-
------
 import qualified Shared.Var as Var
 import Shared.Var (Var, VarBind)
 
 -----
+type VarGenM 	= State VarGen
 type VarGen	= Var.VarBind
 
 
-newVarId ::	State VarGen VarBind
+-- | Create a fresh variable id
+newVarId :: State VarGen VarBind
 newVarId
  = do
  	Var.XBind prefix num	<- get
-	put 	$ Var.XBind prefix (num+1)
+	put 	$ Var.XBind prefix (num + 1)
 	return 	$ Var.XBind prefix num	
 
 
-newVar :: 	State VarGen Var
-newVar 
- = do
-	varId@ (Var.XBind prefix num)	
+-- | Create a fresh variable
+newVarN :: Var.NameSpace -> State VarGen Var
+newVarN space
+ = do	varId@ (Var.XBind prefix num)	
 		<- newVarId
 
-	let name	= prefix ++ padLc '0' 4 (show num)
-	let var		= 
-		(Var.new name) 
-			{ Var.bind = varId }
-
+	let name	= prefix ++ (show num)
+	let var		= (Var.new name) 
+			{ Var.bind = varId 
+			, Var.nameSpace = space }
 	return var
 
+
+-- | Create some new variables.
+newVarsN :: Var.NameSpace -> Int -> State VarGen [Var]
+newVarsN space count 
+ 	= replicateM count (newVarN space)
+
+
+-- | Rewrite the bind on this variable to a fresh one,
+--	keeping the rest of the info associated with the var.
 uniquifyV ::	Var	-> State VarGen Var
 uniquifyV	v
- = do
- 	varId	<- newVarId
+ = do	varId	<- newVarId
 	return	$ v { Var.bind = varId }
-	
 
 
-newVars :: 	Int -> State VarGen [Var]
-newVars 	count 
- 	= replicateM count newVar
-	
-
-evalVarGen ::	State VarGen a	->	String 	-> a
-evalVarGen	comp			prefix	
+-- | Evaluate the monad, using this unique string to name vars after.
+evalVarGen ::	State VarGen a	-> String 	-> a
+evalVarGen	comp prefix	
 	= evalState comp (Var.XBind prefix 0)
 	
 

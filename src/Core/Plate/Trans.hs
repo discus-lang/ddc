@@ -30,7 +30,6 @@ where
 
 import Util
 import Core.Exp
-import Core.Pretty
 import Shared.Error
 
 -----
@@ -387,11 +386,14 @@ transXM2 table xx
 	 ->  do	t'		<- followT  table t
 	 	transX table	$ XConst c t'
 	 
-	XLocal v vs x
+	XLocal v vts x
 	 -> do	v'		<- followV_bind  table v
+		let (vs, ts)	= unzip vts
 		vs'		<- mapM (followV_free table) vs
+		ts'		<- mapM (followT table) ts
+		let vts'	= zip vs' ts'
 	 	x'		<- followX  table x
-		transX table	$ XLocal v' vs' x'
+		transX table	$ XLocal v' vts' x'
 
 	XPrim m aa eff
 	 -> do	m'		<- transZM table m

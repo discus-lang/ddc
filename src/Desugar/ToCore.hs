@@ -1,9 +1,7 @@
 module Desugar.ToCore
-(
-	toCoreTree,
-	toCoreP,
-	toCoreX
-)
+	( toCoreTree
+	, toCoreP
+	, toCoreX )
 
 where
 
@@ -11,45 +9,31 @@ where
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import qualified Debug.Trace	as Debug
 import Util
 
 -----
-
-import Shared.Var		(Var, VarBind, NameSpace(..))
+import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var 	as Var
 
 import Shared.VarPrim
-import Shared.Pretty
 import Shared.Error
 import qualified Shared.Exp	as S
-import qualified Shared.Base	as S
 import qualified Shared.Literal	as S
 
 import qualified Desugar.Exp 	as D
-import qualified Desugar.Pretty	as D
-import qualified Desugar.Util	as D
 import Desugar.Project		(ProjTable)
 
 import qualified Type.Exp	as T
-import qualified Type.Pretty	as T
-import qualified Type.Util	as T
 import Type.ToCore		(toCoreT, toCoreK)
 
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Pretty		as C
-import qualified Core.Pack		as C
 import qualified Core.Optimise.Boxing	as C	(unboxedType)
-import qualified Core.Plate.FreeVars	as C
-import qualified Core.Util.Mask		as C
 import qualified Core.Util.Strip	as C
 
 import Desugar.ToCore.Base
-import Desugar.ToCore.Util
 import Desugar.ToCore.Lambda
 
 import qualified Debug.Trace	as Debug
@@ -105,8 +89,7 @@ flattenEs e
 	e			-> [e]
 	
 
-
------------------------
+-- | Convert a top level thing to core.
 toCoreP	:: D.Top Annot	
 	-> CoreM [C.Top]
 
@@ -417,6 +400,15 @@ toCoreX xx
 	 -> do	
 		t		<- getType v
 		mapInst		<- gets coreMapInst
+
+{-		trace ("varInst: "
+			% vT % " :: " % t % "\n")
+			$ return ()
+-}
+		-- tag var with its type
+		-- apply type args to scheme, add witness params
+		
+
 
 		-- lookup how this var was instantiated
 		let Just instInfo = Map.lookup vT mapInst

@@ -5,21 +5,18 @@ module Core.Pretty
 
 where
 
------
-import Util
-import Util.Pretty
-import qualified Util.PrettyPrint as PP
-
------
-import qualified Shared.Var	as Var
-import Shared.Var (Var, Module(..))
-
------
 import Core.Exp
 import Core.Bits
-import Core.Util
 
-import qualified Type.Pretty
+import qualified Shared.Var	as Var
+import Shared.Var (Var)
+import Shared.Error
+
+import Util
+import Util.Pretty
+
+-----
+stage	= "Core.Pretty"
 
 -----------------------
 sv v	= padR 8 (pretty $ pv v)
@@ -122,38 +119,28 @@ instance Pretty Exp where
 	 -> pv v
 		
 	XLAM v k e
-	 -> "/\\ (" % padR 16 (sv v) 	% " :: " % k % ") ->\n" % e
-
-{-	XLam v t1 (XTau t2 x) eff clo
-	 -> "\\  (" % (padR 8  $ pretty v) 
-	 	    % (padR 20 $ pretty $ "(" % eff % " " % clo % ")")
-		    % " :: " % t1 % ") ->\n"
---	  % "                                 " % prettyTB t2 % " ::>\n" 
-	  % prettyTB t2 % " ::>\n"	
-	  % x
--}
+	 -> let -- split of vars with simple kinds
+	 	takeLAMs acc exp@(XLAM v k x)
+	 	  | elem k [TKind KRegion, TKind KEffect, TKind KClosure, TKind KData]	
+		  		= takeLAMs (v : acc) x
+		  | otherwise	= panic stage "pretty: higher kinds not handled"
+	 
+	 	takeLAMs acc exp
+		 = (exp, acc)
+	 
+	        (xRest, vsSimple)	= takeLAMs [] xx
+	    
+	    in  "/\\  " % ", " %!% map pv vsSimple % " ->\n" % xRest
 
 	XLam v t x eff clo
-{-	 -> "\\  (" 
-	 	% sv v  % "\n" 
-		% replicate 16 ' ' % " :: " % t % "\n"
-	 	% replicate 16 ' '  % " !$ " % eff % " " % clo %  ") ->\n"
-	 % x
--}
-
-	 -> "\\  (" % padR 10 (sv v) % pClo % " :: " % t % ")"
-		 % pEff % " ->\n"
+	 -> "\\  (" % padR 16 (sv v) % " :: " % t % ")"
+		 % pEffClo % " ->\n"
 		 % x
 	 
-	 where	pEff	= case eff of 
-	 			TPure 	-> pNil
-				_	-> "\n" % replicate 20 ' ' % " !> " % eff
-
-		pClo	= case clo of
-				TEmpty	-> prettyp $ replicate 6 ' '
-				_	-> prettyp $ padR 6 (pretty $ " (" % clo % ")")
-	 		 
-	 
+	 where	pEffClo	= case (eff, clo) of 
+	 			(TPure, TEmpty) 	-> pNil
+				_ -> "\n" % replicate 20 ' ' % " of " % eff % " " % clo
+					 
 	 
 	XAPP x t
 	 | spaceApp t
@@ -177,11 +164,12 @@ instance Pretty Exp where
 		%> (prettyExpB e2 % " " % prettyE_caused eff)
 
 	XTau t x
-	 -> prettyTB t % " ::>\n" % x
+	 -> "<:: " % prettyTB t % " ::>\n" % x
 
 	XTet vts x
-	 -> "let\n" % ("\n" %!% [ "    " % padR 16 (sv v) % " =  " % t | (v, t) <- vts ]) % "\nin\n" % x
-	 
+	 -> "\n" %!%
+	    (map (\(v, t) -> "let " % padR 16 (sv v) % " =  " % t % " in") vts)
+	    % "\n" % x	 
 	
 	XDo bs
 	 -> "do {\n"
@@ -197,8 +185,10 @@ instance Pretty Exp where
 	XConst c t
 	 -> "(" % c % " :: " % t % ")"
 
-	XLocal v vs x
-	 -> "local " % v %>> "{" % ", " %!% vs % "}.\n" % x
+	XLocal v vts x
+	 -> "local " % v %>> "  where {" % "; " 
+	 	%!% (map (\(v, t) -> pv v % " = " % t) vts)
+		% "} in\n" % x
 	 
 
 	-- prim

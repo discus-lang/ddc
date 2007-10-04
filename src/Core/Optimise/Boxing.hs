@@ -193,7 +193,7 @@ followArgType t
 
 
 eReadR	table r@(TVar KRegion rV)
-	| Just fs	<- Walk.lookupFs table rV
+	| Just fs	<- Nothing -- Walk.lookupFs table rV
 	, elem (TClass primConst [r]) fs
 	= TPure
 	
@@ -203,7 +203,7 @@ eReadR	table r@(TVar KRegion rV)
 
 
 forceUnbox table x tU tB r@(TVar KRegion rV)
-	| Just fs	<- Walk.lookupFs table rV
+	| Just fs	<- Nothing -- Walk.lookupFs table rV
 	, elem (TClass primLazy [r]) fs
 	= XPrim (MUnbox tU tB)
 		[XPrim MForce [x] TPure]

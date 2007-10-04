@@ -7,43 +7,27 @@ module Main.Compile
 where
 
 -----
-import qualified System			as System
 import qualified System.IO		as System
 import qualified System.Posix		as System
-import qualified System.Directory	as System
 import qualified System.Cmd		as System
 import qualified System.Exit		as System
+import System.Time
 
 import qualified Control.Exception	as Exception
 
-import System.Time
-import Numeric
-
 import qualified Data.Map		as Map
-import Data.Map				(Map)
-
 import qualified Data.Set		as Set
-import Data.Set				(Set)
-
 
 import GHC.IOBase
-
------
-import Util
 
 -----
 import qualified Shared.Var		as Var
 import Shared.Var			(Module(..))
 
-import Shared.Pretty
-
 import qualified Main.Arg		as Arg
 import Main.Arg 			(Arg)
 
-import qualified Module.Pretty		as M
-import qualified Module.Main		as M
 import qualified Module.Graph		as M
-import qualified Module.Interface	as MI
 import qualified Module.Export		as ME
 import Module.IO			(munchFileName, chopOffExt)
 
@@ -53,21 +37,19 @@ import Stages.Core			as SC
 import Stages.Sea			as SE
 import Stages.Dump			as SD
 
-import qualified Shared.Base		as S
-import qualified Shared.Exp		as S
-import qualified Source.Exp		as S
 import Source.Slurp			as S
 
 import qualified Source.Pragma		as Pragma
 
 import Main.Path
 
-import qualified Core.Util		as C
 import qualified Core.Util.Slurp	as C
 
 import qualified Desugar.Plate.Trans	as D
-import qualified Desugar.Util		as D
 import qualified Sea.Util		as E
+
+import Util
+import Numeric
 
 -----
 -----
@@ -310,37 +292,41 @@ compileFile	args     fileName
 	-- Core stages
 	------------------------------------------------------------------------	
 
-	cBlock		<- SC.coreBlock cSource
+	-- Convert to normal form
+	cNormalise	<- SC.coreNormalise "core-normalise" "CN" topVars cSource
 				
-	-- Snip out each application into its own binding.
-	cSnip		<- SC.coreSnip	"core-snip" "CS" topVars cBlock
+	-- Create local regions.
+	cBind		<- SC.coreBind "core-bind" "CB"
+				(\x -> Just [])
+				cNormalise
+
+	-- From this point on all the vars should be bound and all the required
+	--	type information should be present. 
+	--
+	-- The tree should be lint free from this point on.
 	
-	-- Crush Do-Do expressions
-	cCrush		<- SC.coreCrush	cSnip
+	SC.coreLint cBind cHeader
+
+
+	-- Reconstruct type annotations on bindings.
+--	cReconstruct	<- runStage "reconstruct"
+--			$ SC.coreReconstruct "core-reconstruct" cHeader cCrush
 	
 	-- Call class instance functions and add dictionaries.
 	cDict		<- SC.coreDict 
 				cHeader
-				cCrush
+				cBind
 
-	-- Bind local regions.
-	cBind		<- SC.coreBind
-				undefined -- getCoreFetters
-				cDict
-	
 	-- Mask out effects on const regions
 --	cMaskConst	<- SC.coreMaskEffs cBind
 
 
-	-- Reconstruct type annotations on bindings.
-	cReconstruct	<- runStage "reconstruct"
-			$ SC.coreReconstruct "core-reconstruct" cHeader cBind
 
 --	runStage "lint-reconstruct" 
 --		$ SC.coreLint cReconstruct cHeader
 
 	-- Identify primitive operations
-	cPrim		<- SC.corePrim	cReconstruct
+	cPrim		<- SC.corePrim	cDict
 
 	-----------------------
 	-- Optimisations
@@ -369,11 +355,11 @@ compileFile	args     fileName
 
 	-- Snip the tree again to make sure
 	--	all the appropriate function calls are exposed as their own bindings.
-	cSnip2		<- SC.coreSnip "core-snip2" "CSb" topVars cFullLaziness
+--	cSnip2		<- SC.coreSnip "core-snip2" "CSb" topVars cFullLaziness
 
 	-- Reconstruct type annotations on bindings.
 	cReconstruct2	<- runStage "reconstruct2"
-			$  SC.coreReconstruct  "core-reconstruct2" cHeader cSnip2
+			$  SC.coreReconstruct  "core-reconstruct2" cHeader cFullLaziness
 
 	-- Perform lambda lifting.
 	(  cLambdaLift

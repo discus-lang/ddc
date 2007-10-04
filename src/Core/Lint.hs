@@ -1,9 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Core.Lint
-(
-	lintTree
-)
+	( lintTree )
 
 where
 
@@ -20,7 +18,7 @@ import Core.Plate.Walk
 import Core.Util
 import Core.Util.Slurp
 
-
+-----
 stage	= "Core.Lint"
 
 -----
@@ -85,15 +83,16 @@ lintX tt (XLAM v t x)
  = do	tt'	<- addVT tt (v, t)
  	lintX tt' x
 	lintT tt' t
+	return ()
 	
 lintX tt (XAPP x t)
  = do	lintX tt x
  	lintT tt t
- 
+	
 lintX tt (XTet vts x)
- = do	-- tt'	<- foldlM mapM (addVT tt) vts
- 	lintX tt x
---	lintT tt t
+ = do	tt'	<- foldM addVT tt vts
+ 	mapM_ (lintT tt') $ map snd vts
+ 	lintX tt' x
 	
 lintX tt (XTau t x)
  = do	lintX tt x

@@ -98,7 +98,7 @@ data Exp
 	| XMatch	[Alt]	Effect			-- ^ Matching of constructors and constants with effects.
 	| XConst	Const	Type			-- ^ Literals.
 	| XVar		Var	  			-- ^ A variable.
-	| XLocal	Var	[Var]	Exp		-- ^ Introduce a local region.
+	| XLocal	Var	[(Var, Type)] Exp	-- ^ Introduce a local region.
 	| XPrim		Prim 	[Exp]	Effect
 
 

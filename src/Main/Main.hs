@@ -1,42 +1,21 @@
 
 module Main
-(	
-	module Util.List,
-)
-
-
+	( module Util.List )
 where
-
------
-import qualified System.Posix.Temp	as System
-import qualified System.Environment	as System
-import qualified System.IO		as System
-import qualified System.Directory	as System
-import qualified System
-
------
-import Util.List
-import Util.Monad hiding (lift)
-import Util.Maybe
-import Util.Pretty
-import Util.Misc
-
------
-import qualified Shared.Var 		as Var
-import Shared.Pretty
 
 import Main.Version
 import qualified Main.Arg 		as Arg
 import Main.Arg (Arg)
 import Main.Compile
 
-
-import Module.Pretty
-import qualified Module.Interface	as MI
-
------
 import qualified Stages.IO		as IO
 import qualified Stages.Source		as Source
+
+import Util.List
+import Util.Monad hiding (lift)
+import Util.Misc
+import qualified System.IO		as System
+import qualified System
 
 ------
 -- Main program

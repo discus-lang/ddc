@@ -1,28 +1,22 @@
 
+-- Transform a tree while walking down it collecting up types
+--	TODO: if vars have types we can calculate the type of an expr directly, like 
+--		in GHC. once this is done we can ditch this module.
 module Core.Plate.Walk
 	( WalkTable (..)
 	, walkZM
 	, walkTableId
-	, lookupT
-	, lookupFs )
+	, lookupT)
 
 where
-
-import qualified Debug.Trace	as Debug
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import Util
 import Shared.Error
-import Shared.Exp
 import Core.Exp
-import Core.Util		(boundRsT)
 import Core.Util.Slurp		(maybeSlurpTypeX)
-import Core.Pretty
 
 -----
 stage	= "Core.Plate.Walk"
@@ -57,7 +51,6 @@ data WalkTable m
 	
 	, boundT	:: Map Var Type
 	, boundK	:: Map Var Kind
-	, boundFs	:: Map Var [Class]
 	}
 	
 	
@@ -81,18 +74,13 @@ walkTableId
 	
 	, boundT	= Map.empty
 	, boundK	= Map.empty
-	, boundFs	= Map.empty
 	}
 
 -----
 bindT  v t z		= z { boundT 	= Map.insert v t  $ boundT  z }
 bindK  v k z		= z { boundK 	= Map.insert v k  $ boundK  z }
 
-bindFs v fs z 		= z { boundFs 	= Map.insertWith (++) v fs $ boundFs z }
-
 lookupT 	table v	= Map.lookup v $ boundT  table
-lookupFs	table v	= Map.lookup v $ boundFs table
-
 
 -----
 class Monad m => WalkM m a
@@ -228,20 +216,16 @@ walkZM2 z xx
 	 -> do	t'		<- walkZM z t
 	 	(transX z) z	$ XConst c t'
 
-	XLocal r vFs x
-	 -> do	
-		let fs		= map (\v -> TClass v [TVar KRegion r]) vFs
-
-	 	let z'		= z 
+	XLocal r vts x
+	 -> do	let z'		= z 
 				{ boundK	= Map.insert r KRegion 	(boundK z)
-				, boundFs	= Map.insert r fs 	(boundFs z) }
+				, boundT	= Map.union  (Map.fromList vts) (boundT z) }
 
 		x'		<- walkZM z' x
-	 	return		$ XLocal r vFs x'
+	 	return		$ XLocal r vts x'
 		
 	XType t
-	 -> do
-	 	t'		<- walkZM z t
+	 -> do 	t'		<- walkZM z t
 		(transX z) z 	$ XType t'
 
 	XPrim m xx eff

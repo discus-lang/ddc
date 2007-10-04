@@ -1,8 +1,6 @@
 
 module Stages.Core
-	( coreBlock
-	, coreSnip
-	, coreCrush
+	( coreNormalise
 	, coreDict
 	, coreReconstruct
 	, coreBind
@@ -34,22 +32,21 @@ import Util
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, Module)
 import Shared.Error
-import qualified Shared.Unique	as Unique
 
 -----
 import Core.Exp 	
-import Core.Util
 import Core.Util.Slurp
 
+-- for coreNormalise
 import Core.Block			(blockTree)
 import Core.Snip			(snipTree)
 import Core.Crush			(crushTree)
+
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconstructTree)
 import Core.Bind			(bindTree)
 import Core.Prim			(primTree)
 import Core.Lint			(lintTree)
-import Core.FreezeStatic		(gatherStaticRegions)
 import Core.Lift			(lambdaLiftTree)
 import Core.LabelIndex			(labelIndexTree)
 import Core.Curry			(curryTree, slurpSupersTree, isCafP_opType)
@@ -68,47 +65,32 @@ import Core.Sequence			(slurpSuperDepsTree, dotSuperDeps, sequenceCafsTree)
 
 import qualified Sea.Exp	as E
 import qualified Sea.Util	as E
-import Sea.Pretty
-
-import Dot.Pretty
-import Dot.Graph
 
 import Main.Arg
-import Main.Path
 
 import Stages.Dump
 
 -----
-coreBlock
+coreNormalise
 	:: (?args	:: [Arg])
-	-> Tree	-> IO Tree
+	-> String -> String -> Set Var -> Tree	-> IO Tree
 	
-coreBlock tree
- = do	let tree'	= blockTree tree
- 	dumpCT DumpCoreBlock "core-block" tree'
-	return tree'
+coreNormalise stage unique topVars tree
+ = do	
+ 	-- ensure all exprs are wrapped in do blocks.
+ 	let treeBlock	= blockTree tree
+ 	dumpCT DumpCoreBlock (stage ++ "-block") treeBlock
 
+	-- snip exprs out of fn arguments
+	let treeSnip	= snipTree topVars ("x" ++ unique) treeBlock
+	dumpCT DumpCoreSnip (stage ++ "-snip")  treeSnip
+	
+	-- crush nested do exprs
+	let treeCrush	= crushTree treeSnip
+ 	dumpCT DumpCoreCrush (stage ++ "-crush") treeCrush
 
------
-coreSnip 
-	:: (?args	:: [Arg])
-	-> String -> String -> Set Var -> Tree -> IO Tree
+	return treeCrush
 
-coreSnip stage unique topVars cSource
- = do	let tree'	= snipTree topVars ("x" ++ unique) cSource
-	dumpCT DumpCoreSnip stage tree'
-	return	tree'
-
-
------
-coreCrush
-	:: (?args	:: [Arg])
-	-> Tree -> IO Tree
-
-coreCrush tree
- = do	let tree'	= crushTree tree
- 	dumpCT DumpCoreCrush "core-crush" tree'
-	return	tree'
 
 -----
 coreDict
@@ -139,19 +121,22 @@ coreReconstruct name cHeader cTree
 ----
 coreBind
 	:: (?args ::	[Arg])
+	-> String
+	-> String
 	-> (Var -> Maybe [Class])	-- getFetters
 	-> Tree	-> IO Tree
 	
-coreBind
+coreBind stage unique	
 	getFetters
 	cSource
  = do
  	let tree'	
 		= bindTree
+			unique
 			getFetters
 			cSource
 	
-	dumpCT DumpCoreBind "core-bind" tree'
+	dumpCT DumpCoreBind stage tree'
 
 	return tree'
 
@@ -264,7 +249,6 @@ coreLint cTree cHeader
 	 errs	
 	  ->	panic "core-lint"
 	  		$ catInt "\n" errs
-			
 	
  | otherwise
  = 	return ()
