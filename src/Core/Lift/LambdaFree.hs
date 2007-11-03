@@ -128,7 +128,7 @@ stripArgType t
  = let	(forallVTs, _, classes, tt)
  		= stripSchemeT t
 		
-   in	(([], classes), buildScheme forallVTs [] tt)
+   in	(([], classes), buildScheme forallVTs [] [] tt)
 
 
 -----------------------

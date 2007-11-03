@@ -1,15 +1,20 @@
 -- Core.Reconstruct
---	Reconstruct type annotations on intermediate bindings.
+--	Reconstruct witness passing
+--	and effect annotations on apps, match and do's
 --
 module Core.Reconstruct
-(
-	reconstructTree
-)
+	( reconstructTree )
 
 where
 
+import Core.Exp
+import Core.Util.Substitute
+import Core.Util.Slurp
+import Core.Plate.FreeVars
+import Core.Util.Strip
+import Util.Graph.Deps
+
 import Util
-import qualified Debug.Trace	as Debug
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -19,19 +24,7 @@ import Data.Set			(Set)
 
 import Shared.Error
 
-import Core.Exp
-import Core.Pretty
-import Core.Util
-import Core.Pack
-import Core.Plate.Walk
-import Core.Util.Unify	(matchC2)
-import Core.Util.Substitute
-import Core.Util.Slurp
-import Core.Plate.FreeVars
-import Core.Util.Strip
-import Util.Graph.Deps
-import qualified  Core.Plate.Trans	as Trans
-import qualified Debug.Trace		as Debug
+import qualified Debug.Trace	as Debug
 
 
 -----
@@ -77,10 +70,11 @@ reconP tt (PBind v x)
 reconP tt p		= p
 
 
------------------------
--- reconX
---
-reconX :: Map Var Type -> Exp -> (Exp, Type)
+-- | Reconstruct effect and witness info on this expression
+reconX 	:: Map Var Type 	-- ^ var -> type 
+	-> Exp 			-- ^ expression to reconstruct info on
+	-> ( Exp		-- expression with reconstructed info
+	   , Type)		-- type of expression
 
 reconX tt (XLAM v t x)
  = let	tt'		= addVT tt (v, t)
@@ -187,14 +181,14 @@ reconS :: Map Var Type -> Stmt -> (Map Var Type, (Stmt, Type))
 reconS tt (SBind Nothing x)	
  = let	(x', tx)	= reconX tt x
    in	( tt
-   	, ( SBind Nothing $ addTauX (narrowT tx) x'
+   	, ( SBind Nothing x'
 	  , tx))
 
 reconS tt (SBind (Just v) x)
  = let	(x', tx)	= reconX tt x
 	tt'		= addVT tt (v, tx)
    in	( tt'
-   	, (SBind (Just v) $ addTauX (narrowT tx) x'
+   	, (SBind (Just v) x'
 	  , tx))
 	  
 
@@ -224,6 +218,111 @@ slurpVarTypesW (WConst{})	= []
 slurpVarTypesW (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 
 
+-- | Work out the result type and latent effect that will result when 
+--	an arg is applied to a function with this type.
+--
+--	BUGS: check that the types match out as we apply
+--
+applyValueT 
+	:: Type 		-- ^ type of function
+	-> Type 		-- ^ type of arg
+	-> Maybe 		
+		( Type		-- result type
+		, Effect)	-- effect caused
+
+applyValueT (TContext t1 t2) t3
+
+	| Just (t', eff)	<- applyValueT t2 t3
+	= Just  ( TContext t1 t'
+		, eff)		-- don't create contexts for effects.
+
+applyValueT (TWhere t2 vts) t		
+	| Just (t2', eff)	<- applyValueT t2 t
+	= Just  ( TWhere t2' vts
+		, TWhere eff vts)
+
+applyValueT (TFunEC t1 t2 eff clo) t	
+	= Just (t2, eff)
+	
+applyValueT _ t
+	= Nothing
+	
+	
+-----
+-- applyTypeT
+--	Apply a value argument to a forall/context type, yielding the result type.
+--	BUGS: check that the types/contexts match as we apply.
+--
+applyTypeT :: Type -> Type -> Maybe Type
+
+applyTypeT (TForall v k t1) t
+	= Just (substituteT (Map.insert v t Map.empty) t1)
+	
+applyTypeT (TContext t1 t2) t
+	= Just t2
+	
+applyTypeT (TWhere t1 vts) t
+	| Just t1'	<- applyTypeT t1 t
+	= Just $ TWhere t1' vts
+	
+applyTypeT t1 t2
+	= panic stage $ "applyType: can't apply (" % t2 % ") to (" % t1 % ")"
+
+-- | Throw out context and type bindings that aren't visible from the shape
+--	of this type. All context and bindings need to be at top level.
+--
+narrowT :: Type -> Type
+narrowT t
+ = let	-- strip the scheme into its parts
+ 	(forallVTs, bindVTs, contexts, tShape)
+ 			= stripSchemeT t
+
+	-- the type vars free in the shape
+	shapeVs		= freeVarsT tShape
+		
+	-- construct a map of what vars are free in each of the type bindings.
+	depMap		= Map.fromList 
+			$ map (\(v, t) -> (v, freeVarsT t))
+			$ bindVTs
+	
+	-- work out which of the bindings can be reached from the shape
+	reachVs		= graphReachableS depMap
+			$ shapeVs
+
+	-- throw out unreachable bindings
+	bindVTs'	= [ (v, t)	| (v, t)	<- bindVTs
+	 				, Set.member v reachVs]
+	
+	-- rebuild the scheme 
+	t'		= subTLet1
+			$ buildScheme forallVTs bindVTs' contexts tShape
+	
+  in	{- trace 	( "narrowT\n"
+		% "    t       = \n"	%> t			% "\n"
+  		% "    shape   = "	% shape			% "\n"
+		% "    shapeVs = "	% Set.toList shapeVs	% "\n"
+		% "    reachVs = "	% Set.toList reachVs	% "\n\n"
+		% "    t'      = \n"	%> t'			% "\n")  -}
+		
+		t'
+		
+
+-----
+-- subTLet1
+--	If this type is just a (let v = t in v)  then convert it to t.
+
+subTLet1 ::	Type -> Type
+
+subTLet1 (TForall v t x)
+	= TForall v t (subTLet1 x)
+
+subTLet1 (TContext c t)
+	= TContext c (subTLet1 t)
+
+subTLet1 (TWhere (TVar k v1) [(v2, t)])
+	| v1 == v2	= t
+
+subTLet1	t	= t
 
 
 -----
@@ -238,102 +337,3 @@ addTauX t x
  = case maybeSlurpTypeX x of
  	Nothing	-> XTau t x
 	Just _	-> x
-	
-
-	
------
--- applyValueT
---	Apply a value argument to a function type, yielding the result type.
---	BUGS: check that the types match out as we apply
---
-applyValueT :: Type -> Type -> Maybe (Type, Effect)
-
-applyValueT (TContext t1 t2) t3
-	| Just (t', eff)	<- applyValueT t2 t3
-	= Just (TContext t1 t', TContext t1 eff)
-
-applyValueT (TWhere t2 vts) t		
-	| Just (t2', eff)	<- applyValueT t2 t
-	= Just (TWhere t2' vts, TWhere eff vts)
-
-applyValueT (TFunEC t1 t2 eff clo) t	
-	= Just (t2, eff)
-	
-applyValueT _ t
-	= Nothing
-
-
------
--- applyTypeT
---	Apply a value argument to a forall/context type, yielding the result type.
---	BUGS: check that the types/contexts match as we apply.
---
-applyTypeT :: Type -> Type -> Maybe Type
-{-
-applyTypeT (TLet v t1 t2) t
-	| Just t2'		<- applyTypeT t2 t
-	= Just (TLet v t1 t2')
--}
-applyTypeT (TForall v k t1) t
-	= Just (substituteT (Map.insert v t Map.empty) t1)
-	
-applyTypeT (TContext t1 t2) t
-	= Just t2
-	
-applyTypeT t1 t2
-	= panic stage $ "applyType: can't apply (" % t2 % ") to (" % t1 % ")"
-
------
--- narrowT
---	Throw out any TLets from this type which aren't actually reachable.
---
-narrowT :: Type -> Type
-narrowT t
- = let	(forallVTs, letVTs, contexts, shape)
- 			= stripSchemeT t
-		
-	depMap		= Map.fromList 
-			$ map (\(v, t) -> (v, Set.toList $ freeVarsT t))
-			$ letVTs
-		
-	shapeVs		= freeVarsT shape
-	reachVs		= graphReachable depMap
-			$ Set.toList 
-			$ shapeVs
-
-	t'		= subTLet1 $ narrowTLetsT shapeVs t
-
-
-  in	{- trace 	( "narrowT\n"
-		% "    t       = \n"	%> t			% "\n"
-  		% "    shape   = "	% shape			% "\n"
-		% "    shapeVs = "	% Set.toList shapeVs	% "\n"
-		% "    reachVs = "	% Set.toList reachVs	% "\n\n"
-		% "    t'      = \n"	%> t'			% "\n")  -}
-		
-		t'
-		
-narrowTLetsT :: Set Var -> Type -> Type
-narrowTLetsT    keepVs tt
- = case tt of
- 	TForall v t1 t2	-> TForall v t1 (narrowTLetsT keepVs t2)
-{-
-	TLet    v t1 t2
-	 | Set.member v keepVs	-> TLet v t1 (narrowTLetsT keepVs t2)
-	 | otherwise		-> narrowTLetsT keepVs t2
--} 
-	t		-> t	
-
-
------
--- subTLet1
---	If this type is just a (let v = t in v)  then convert it to t.
-
-subTLet1 ::	Type -> Type
-{-
-subTLet1	(TLet v1 t1 (TVar k v2))
-	| v1 == v2	= t1
--}
-
-subTLet1	t	= t
-

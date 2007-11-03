@@ -300,17 +300,17 @@ compileFile	args     fileName
 				(\x -> Just [])
 				cNormalise
 
+	-- Reconstruct witness passing and effect information
+	cReconstruct	<- runStage "reconstruct"
+			$ SC.coreReconstruct "core-reconstruct" cHeader cBind
+
+
 	-- From this point on all the vars should be bound and all the required
 	--	type information should be present. 
 	--
 	-- The tree should be lint free from this point on.
+	SC.coreLint cReconstruct cHeader
 	
-	SC.coreLint cBind cHeader
-
-
-	-- Reconstruct type annotations on bindings.
---	cReconstruct	<- runStage "reconstruct"
---			$ SC.coreReconstruct "core-reconstruct" cHeader cCrush
 	
 	-- Call class instance functions and add dictionaries.
 	cDict		<- SC.coreDict 
@@ -319,7 +319,6 @@ compileFile	args     fileName
 
 	-- Mask out effects on const regions
 --	cMaskConst	<- SC.coreMaskEffs cBind
-
 
 
 --	runStage "lint-reconstruct" 

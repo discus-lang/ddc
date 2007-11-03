@@ -32,6 +32,7 @@ import qualified Core.Util		as C
 import qualified Core.Pretty		as C
 import qualified Core.Optimise.Boxing	as C	(unboxedType)
 import qualified Core.Util.Strip	as C
+import qualified Core.Util.Substitute	as C
 
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
@@ -398,13 +399,18 @@ toCoreX xx
 		(Just (T.TVar T.KData vT, _))
 		v
 	 -> do	
-		t		<- getType v
+		tScheme		<- getType v
 		mapInst		<- gets coreMapInst
 
-{-		trace ("varInst: "
-			% vT % " :: " % t % "\n")
+		let (vtsForall, vtsWhere, tsContextC, tShape)
+				= C.stripSchemeT tScheme
+
+
+		trace ("varInst: "
+			% vT % " :: " % tScheme % "\n"
+			% "context = " % tsContextC % "\n")
 			$ return ()
--}
+
 		-- tag var with its type
 		-- apply type args to scheme, add witness params
 		
@@ -426,7 +432,15 @@ toCoreX xx
 		 -- 	pass in the type args corresponding to the instantiated foralls.
 		 T.InstanceLet vUse vBind tsInst _
 		  -> do	let tsInstC	= map toCoreT tsInst
-		  	return	$ C.unflattenApps (C.XVar v : map C.XType tsInstC)
+
+			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC
+			let tsContextC'	= map (C.substituteT tsSub) tsContextC
+			
+			trace 	( "  tsSub       = " % tsSub % "\n"
+				% "  tsContestC' = " % tsContextC' % "\n")
+				$ return ()
+			
+		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC ++ tsContextC'))
 
 		 -- recursive use of a let-bound variable
 		 -- 	pass the args on the type scheme back to ourselves.

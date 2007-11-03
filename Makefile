@@ -17,7 +17,7 @@ include make/plate.mk
 # ----- trauma
 bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
-	$(GHC) -o bin/ddc $^ $(LIBS) -package containers -package mtl
+	$(GHC) -o bin/ddc $^ $(LIBS) -package unix -package mtl
 # -prof
 	
 

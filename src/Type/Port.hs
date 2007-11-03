@@ -53,7 +53,7 @@ portTypesC t
 
 -----
 forcePortsT 
-	:: Type	-> SquidM Type
+	:: Type	-> SquidM (Type, Table)
 	
 forcePortsT t
  = do
@@ -70,13 +70,13 @@ forcePortsT t
 	let fs		= [FLet t (makeTSum (kindOfType t) ts)
 				| (t, ts)		<- output]
 
-	return		$ addFetters fs tPortR
+	return		$ (addFetters fs tPortR, useTable)
 
 
 
 type	Table		
- = 	( [(Type, Type)]
- 	, [(Type, Type)])
+ = 	( [(Type, Type)]	-- covariant substitutions
+ 	, [(Type, Type)])	-- contravatiant substitutions
 
 type	RenameM a 	
  = 	StateT Table SquidM a
@@ -182,162 +182,3 @@ renamePortCon t
 	return	t'
 
 
-{-		
-renamePortsT :: Type 
-	-> SquidM 
-		( Type
-		, [Use])
-
-renamePortsT t
- = case t of
- 	TFetters fs x	
-	 -> do	(x', sub)	<- renamePortsT x
-		
---		let fsAdd	= foldr (\(e, p) x -> addSumFs e p x) fs sub
---	 	return		( TFetters fsAdd t', sub)
-		
-		return		( TFetters fs x', sub)
-
-
-	TFun t1 t2 eff clo
-	 -> do	(t1', sub1)	<- renamePortsC t1
-
-	 	([t2', eff', clo'], subs2)	
-			<- liftM unzip $ mapM renamePortsT [t2, eff, clo]
-
-		return		( TFun t1' t2' eff' clo'
-				, sub1 ++ concat subs2)
-		
-	TData v ts
-	 -> do	(ts', subs)	
-	 		<- liftM unzip $ mapM renamePortsT ts
-
-	 	return		( TData v ts'
-				, concat subs)
-
-	TVar k v
-	 | elem k [KEffect, KClosure, KRegion]
-	 -> do	t'	<- renamePort t
-	 	return	(t', [Co (t, t')])
-
-	TClass k cid
-	 | elem k [KEffect, KClosure, KRegion]
-	 -> do	t'	<- renamePort t
-	 	return	(t', [Co (t, t')])
-		
-	_ -> 	return 		(t, [])
-	
-	
-renamePortsC :: Type -> SquidM (Type, [Use])
-renamePortsC t
- = case t of
- 	TFun t1 t2 eff clo
-	 -> do	([t1', t2', eff', clo'], subss)
-	 		<- liftM unzip $ mapM renamePortsC [t1, t2, eff, clo]
-		
-		return	( TFun t1' t2' eff' clo'
-			, concat subss)
-
-	TData v ts
-	 -> do	(ts', subs)	
-	 		<- liftM unzip $ mapM renamePortsC ts
-
-	 	return	( TData v ts', concat subs)
-		
-	TVar k v
-	 | elem k [KEffect, KClosure, KRegion]
-	 -> do	t'	<- renamePort t
-	 	return	(t', [Con (t, t')])
-
-	TClass k cid
-	 | elem k [KEffect, KClosure, KRegion]
-	 -> do	t'	<- renamePort t
-	 	return	(t', [Con (t, t')])
-		
-	_ ->	return	(t, [])
-
-
-renamePort :: Type -> SquidM Type
-renamePort t@(TVar k v)
- = do	v'	<- newVarN $ Var.nameSpace v
- 	return	$ TVar k v'
-	
-renamePort t@(TClass k v)
- = do	v'	<- newVarN $ spaceOfKind k
- 	return	$ TVar k v'
-
-	 
-
-
-
-addSumFs :: Type -> Type -> [Fetter] -> [Fetter]
-addSumFs t1 tAdd []	
-	= [FLet t1 tAdd]
-
-addSumFs t1 tAdd (f@(FLet t2 tRHS) : fs)
-	| t1 == t2	
-	= FLet t1 (makeSumT (kindOfType t1) [tRHS, tAdd]) 
-	: fs
-
-addSumFs t1 tAdd (f:fs)
-	= f		: addSumFs t1 tAdd fs
-
-
-
--- not used
-
-traceContraNodesT :: [(Type, Type)] -> Type -> Set Type
-traceContraNodesT binds tt
- = case tt of
-	TFetters fs tt
-	 -> let	binds'	= binds ++ [(t1, t2) | FLet t1 t2 <- fs]
-	    in	traceContraNodesT binds' tt
-
- 	TFun t1 t2 eff clo
-	 -> let	ts1	= traceContraNodesC binds t1
-	 	ts2	= traceContraNodesT binds t2
-	    in	ts1 `Set.union` ts2
-	    
-	TData v ts
-	 -> 	Set.unions $ map (traceContraNodesT binds) ts
-	    
-	TVar{}		-> fromMaybe Set.empty $ liftM (traceContraNodesT binds) $ lookup tt binds
-	TClass{}	-> fromMaybe Set.empty $ liftM (traceContraNodesT binds) $ lookup tt binds
-		
-
-traceContraNodesC :: [(Type, Type)] -> Type -> Set Type
-traceContraNodesC binds tt
- = case tt of
- 	TFetters fs tt
-	 -> let	binds'	= binds ++ [(t1, t2) | FLet t1 t2 <- fs]
-	    in	traceContraNodesC binds' tt
-	 
-	TFun t1 t2 eff clo
-	 -> 	Set.unions $ map (traceContraNodesC binds) [t1, t2, eff, clo]
-	    
-	TData v ts
-	 -> 	Set.unions $ map (traceContraNodesC binds) ts
-	 
-	TVar k _
-	 -> case k of
-	 	KData 	
-		 -> Set.insert tt 
-			$ fromMaybe Set.empty 
-			$ liftM (traceContraNodesC binds) 
-			$ lookup tt binds
-
-		_	-> Set.singleton tt
-		
-		
-	TClass k _
-	 -> case k of
-	 	KData	
-		 -> Set.insert tt
-		 	$ fromMaybe Set.empty 
-			$ liftM (traceContraNodesC binds) 
-			$ lookup tt binds
-
-		_	-> Set.singleton tt
-
-
--}

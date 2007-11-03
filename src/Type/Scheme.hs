@@ -120,9 +120,17 @@ generaliseType varT tCore envCids
 		% "\n"
 
 	-- Forcing effect and closure vars in contra-variant positions to be ports.
-	tPort		<- liftM packType $ forcePortsT tCore
-	trace	$ "    tPort\n"
+	(tForce, forceTable)
+			<- forcePortsT tCore
+
+	let tPort	= packType tForce
+
+	trace	$ "    tForce\n"
+		%> prettyTS tForce	% "\n\n"
+		% "    tPort\n"
 		%> prettyTS tPort	% "\n\n"
+		% "    table\n"
+		%> forceTable		% "\n\n"
 
 
 	-- Work out which cids can't be generalised in this type.

@@ -10,8 +10,6 @@ import Data.Map			(Map)
 import qualified Data.Map	as Map
 
 import Core.Exp
-import Core.Util.Substitute
-
 
 -----
 stripSchemeT	:: Type 
@@ -55,11 +53,15 @@ stripSchemeT' forallVTs tetVTs classes tt
 
 
 -----
-buildScheme ::	[(Var, Type)] -> [Class] -> Type -> Type
-buildScheme	forallVTs classes shape
+buildScheme ::	[(Var, Type)] -> [(Var, Type)] -> [Class] -> Type -> Type
+buildScheme	forallVTs bindVTs classes shape
  = let	tC	= foldl (\s c	   -> TContext c s)  shape	$ reverse classes
---	tL	= foldl (\s (v, t) -> TLet    v t s) tC		$ reverse tetVTs
- 	tF	= foldl (\s (v, t) -> TForall v t s) tC 	$ reverse forallVTs
+
+	tL	= case bindVTs of
+			[]	-> tC
+			_	-> TWhere tC bindVTs
+
+ 	tF	= foldl (\s (v, t) -> TForall v t s) tL 	$ reverse forallVTs
 
    in	tF
 
