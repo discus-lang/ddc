@@ -165,7 +165,7 @@ instance Pretty Exp where
 		%> (prettyExpB e2 % " " % prettyE_caused eff)
 
 	XTau t x
-	 -> "<:: " % prettyTB t % " ::>\n" % x
+	 -> "[** " % prettyTB t % " ]\n" % x
 
 	XTet vts x
 	 -> "\n" %!%

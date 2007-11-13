@@ -1,8 +1,6 @@
 
 module Type.Effect.MaskLocal
-	(
---	maskEsLocalT
-	)
+	( maskEsLocalT )
 
 where
 
@@ -16,72 +14,52 @@ import Type.Exp
 import Type.Plate
 import Type.Util
 
------------------------
--- maskLocal
---	Mask effects on local regions.
+-- | Mask effects on local regions.
 --	
---	At generalisation time, if a region is not present in the type
---	or environment of a function then is local to that function
---	and all effects involving that region are masked.
+-- At generalisation time, if a region is not present in the type or closure of a
+-- function then is local to that function and all effects involving that region 
+-- can be erased from the type.
 --
-{-
-maskEsLocalT ::	Monad m
-	   =>	Type -> m Type
-
+maskEsLocalT :: Type -> Type
 maskEsLocalT	t
- = let	visT		= visRegions t
-	visE		= visEffects t
-   in	maskEsLocalT' (visT ++ visE) t
+ = let	visT		= visibleRs t
+   in	maskEsLocalT' visT t
    
 			
-maskEsLocalT'	visR	 t
- = case t of
-	TForall vks t
-	 -> do
-	 	t'		<- maskEsLocalT' visR t
-
-		return		$ TForall vks t'
-
-	TFetters fs t
-	 -> do
-	 	let fs'		= map (maskF visR) fs
-		return		$ TFetters fs' t
-
-	_ ->	return t
+maskEsLocalT'	visR tt
+ = case tt of
+	TForall  vks t1		-> TForall vks (maskEsLocalT' visR t1)
+	TFetters fs  t1		-> TFetters (map (maskF visR) fs) t1
+	_ 			-> tt
 
 
-maskF ::	[Var] -> Fetter -> Fetter
-maskF		env	f
- = case f of
- 	FEffect e eff
-	 -> let	eff'	= maskE env eff
-	    in	FEffect e eff'
-	 	
-	_ -> f
+-- | Erase read effects to regions not in thie list.
+maskF :: [Var] -> Fetter -> Fetter
+maskF	visR	(FLet t1 t2)
+	| kindOfType t1 == KEffect
+	= FLet t1 (maskE visR t2)
+	
+maskF	visR	f	= f
 
 
-maskE :: 	[Var] -> Effect -> Effect
-maskE		env	e
-	| ESum es		<- e
-	= let	es'	= catMaybes $ map (maskE' env) es
-	  in	ESum $ flattenEs (ESum es')
+-- | Erase read effects to regions not in this list.
+maskE :: [Var] -> Effect -> Effect
+maskE	 env	eff
+	| TSum KEffect es <- eff
+	= makeTSum KEffect $ catMaybes $ map (maskE' env) es
 
 	| otherwise
-	= e
+	= eff
 	
-maskE'	env e
+maskE'	env eff
 
-	| ECon v [TRegion (RVar r)]	<- e
-	, elem (Var.name v) ["Read", "Write"]
+	| TEffect v [TVar KRegion r]	<- eff
+	, elem (Var.name v ) ["Read", "Write"]
 	, not $ elem r env
 	= Nothing
 	
-	| EVar v		<- e
-	, not $ elem v env
-	= Nothing
-	
 	| otherwise
-	= Just e
+	= Just eff
 
 
 
@@ -92,21 +70,21 @@ maskE'	env e
 --	We can't just call freeVarsT, because we don't want to get
 --		region vars present in the effect portion of the type.
 --
-visRegions :: 	Type -> [Var]
-visRegions	t
+visibleRs :: Type -> [Var]
+visibleRs tt
 	= catMaybes
 	$ concat
-	$ map (\(TCon v ts) -> map visRsTCon ts)
-	$ collectTConsT t
+	$ map (\(TData v ts) -> map visibleRsTCon ts)
+	$ collectTConsT tt
 	
-visRsTCon t 
+visibleRsTCon t 
  = case t of
- 	TRegion (RVar v)	-> Just v
-	_			-> Nothing 
+ 	TVar KRegion v	-> Just v
+	_		-> Nothing 
 
 
 
-
+{-
 -----------------------
 -- visEffects
 --	Collect the list of effect variables present in higher order terms.

@@ -34,7 +34,7 @@ import Type.Check.GraphicalData	(checkGraphicalDataT)
 -- import Type.Check.Soundness	(dangerousCidsT)
 import Type.Closure.Trim 	(trimClosureT)
 
--- import Type.Effect.MaskLocal	(maskEsLocalT)
+import Type.Effect.MaskLocal	(maskEsLocalT)
 -- import Type.Effect.MaskFresh	(maskEsFreshT)
 -- import Type.Effect.MaskPure	(maskEsPureT)
 import Type.Effect.Narrow
@@ -207,15 +207,25 @@ generaliseType varT tCore envCids
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
+	-- Mask effects on local regions
+	-- 	Do this before adding foralls so we don't end up with quantified regions which
+	--	aren't present in the type scheme.
+	--
+	let tMskLocal	= maskEsLocalT tClean
+
+
+	trace	$ "    tMskLocal\n"
+		%> prettyTS tMskLocal 	% "\n\n"
+
 
 	-- Quantify free variables.
 	let vksFree	= map 	 (\v -> (v, kindOfSpace $ Var.nameSpace v)) 
 			$ filter (\v -> not $ Var.nameSpace v == NameValue)
 			$ filter (\v -> not $ Var.isCtorName v)
 			$ Var.sortForallVars
-			$ freeVarsT tClean
+			$ freeVarsT tMskLocal
 
-	let tScheme	= addTForallVKs vksFree tClean
+	let tScheme	= addTForallVKs vksFree tMskLocal
 
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"
@@ -225,7 +235,6 @@ generaliseType varT tCore envCids
 
 {-
 	-- Mask effects on local and fresh regions
-	tMskLocal		<- maskEsLocalT tScheme
 	let tMskFresh		= maskEsFreshT tMskLocal
 	let tMskPure		= maskEsPureT  tMskFresh
 
@@ -246,27 +255,9 @@ generaliseType varT tCore envCids
 --		% "    staticRsClosure  = " % staticRsClosure	% "\n"
 --		% "    staticDanger     = " % staticDanger	% "\n"
 
-{-
-		% "    tReduced\n"
-		%> prettyTS tReduced	% "\n\n"
 
 
-		% "    tMskLocal\n"
-		%> prettyTS tMskLocal 	% "\n\n"
-		
-		% "    tMskFresh\n"
-		%> prettyTS tMskFresh 	% "\n\n"
 
-		% "    tMskPure\n"
-		%> prettyTS tMskPure	% "\n\n"
-
-		% "    tPack\n"
-		%> prettyTS tPack 	% "\n\n"
-
-		% "\n"
-
-	return tPack
--}
 
 -- | Empty effect and closure eq-classes which do not appear in the environment or 
 --	a contra-variant position in the type can never be anything but _|_,
