@@ -72,8 +72,8 @@ toCoreTree
 		{ coreSigmaTable	= sigmaTable
 		, coreMapTypes		= typeTable
 		, coreMapInst		= typeInst
-		, coreProject		= projTable 
-		, corePortTable		= portTable }
+		, corePortTable		= Map.map (Map.map toCoreT) portTable
+		, coreProject		= projTable }
 		
 	mTree	= evalState 
 			(toCoreTreeM sTree) 
@@ -124,8 +124,16 @@ toCoreP	p
 	 	return	[p]
 
 	D.PBind nn (Just v) x
-	 -> do	Just (C.SBind (Just v) x') 
-			<- toCoreS (D.SBind nn (Just v) x)
+	 -> do	sigmaTable	<- gets coreSigmaTable
+	 	let Just vT	= Map.lookup v sigmaTable
+	 
+	 	Just (C.SBind (Just v) x') 
+			
+			-- Rewrite the RHS of the binding while using the type substitution
+			--	we got when we did the contra-variant port rewrite on the 
+			--	generalised type of v.
+			<- withPortSub vT 
+			$ toCoreS (D.SBind nn (Just v) x)
 
 		return	[C.PBind v x']
 
@@ -408,12 +416,6 @@ toCoreX xx
 		let (vtsForall, vtsWhere, tsContextC, tShape)
 				= C.stripSchemeT tScheme
 
-
-		trace ("varInst: "
-			% vT % " :: " % tScheme % "\n"
-			% "context = " % tsContextC % "\n")
-			$ return ()
-
 		-- tag var with its type
 		-- apply type args to scheme, add witness params
 		
@@ -434,16 +436,37 @@ toCoreX xx
 		 -- non-recursive use of a let bound variable 
 		 -- 	pass in the type args corresponding to the instantiated foralls.
 		 T.InstanceLet vUse vBind tsInst _
-		  -> do	let tsInstC	= map toCoreT tsInst
+		  -> do	
+		  	-- Convert the type arguments to core.
+			let tsInstC	= map toCoreT tsInst
+			
+			-- If we're in a substitution context from a contra-variant port rewrite
+			--	then apply it to the arguments.
+			mPortSub 	<- gets corePortSub
+			let tsInstC_portSub	= 
+				case mPortSub of
+				 Nothing	-> tsInstC
+				 Just portSub	-> map (C.substituteT portSub) tsInstC
+			
+			-- Work out what types belong to each quantified var in the type
+			--	being instantiated.			
+			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_portSub
 
-			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC
+			-- If this function needs a witnesses we'll just make them up.
+			--	Real witnesses will be threaded through in a later stage.
 			let tsContextC'	= map (C.substituteT tsSub) tsContextC
 			
-			trace 	( "  tsSub       = " % tsSub % "\n"
-				% "  tsContestC' = " % tsContextC' % "\n")
+			trace ("varInst: "
+				% vT 				% "\n"
+				% "    T[vT]           =\n" %> tScheme 		% "\n"
+				% "    context         = " % tsContextC		% "\n"
+				% "    tsInstC         = " % tsInstC		% "\n"
+				% "    tsInstC_portSub = " % tsInstC_portSub	% "\n"
+				% "    tsSub           = " % tsSub 		% "\n"
+				% "    tsContestC'     = " % tsContextC' 	% "\n")
 				$ return ()
 			
-		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC ++ tsContextC'))
+		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_portSub ++ tsContextC'))
 
 		 -- recursive use of a let-bound variable
 		 -- 	pass the args on the type scheme back to ourselves.

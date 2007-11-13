@@ -11,6 +11,7 @@ module Core.Reconstruct
 where
 
 import Core.Exp
+import Core.Util
 import Core.Util.Substitute
 import Core.Util.Slurp
 import Core.Plate.FreeVars
@@ -245,24 +246,20 @@ applyValueT (TWhere t2 vts) t
 		, TWhere eff vts)
 
 applyValueT t0@(TFunEC t1 t2 eff clo) t3	
-	| t1 == t3
-	= Just (t2, eff)
-	
-	| otherwise
-	= Nothing
-	
-	-- uh oh...
-{--	| otherwise
-	= panic stage
-	$ "applyType: Type error in value application.\n"
-	% "    can't apply (" % t0 % ")\n"
-	% "             to (" % t3 % ")\n"
-	% "\n"
-	% "    t1 = " % t1 % "\n"
-	% "\n"
-	% "  does not match\n"
-	% "    t2 = " % t3 % "\n"
---}	
+	| t1_flat	<- inlineTWheresT Map.empty t1
+	, t3_flat	<- inlineTWheresT Map.empty t3
+	= if t1_flat == t3_flat
+		then Just (t2, eff)
+		else freakout stage
+			( "applyType: Type error in value application.\n"
+			% "    can't apply (" % t3 % ")\n"
+			% "             to (" % t0 % ")\n"
+			% "\n"
+			% "    t1_flat = " % t1_flat % "\n"
+			% "\n"
+			% "  does not match\n"
+			% "    t3_flat = " % t3_flat % "\n")
+			$ Nothing
 	
 applyValueT _ t
 	= Nothing
