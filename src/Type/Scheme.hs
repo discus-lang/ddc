@@ -202,35 +202,9 @@ generaliseType varT tCore envCids
 		%> prettyTS tPlug 	% "\n\n"
 
 
-	-- Empty effect and closure eq-classes which do not appear in the environment or 
-	--	a contra-variant position in the type can never be anything but _|_,
-	--	so we can safely erase them now.
-
-	let vsFree	= freeVarsT tPlug
-
-	let vsPorts	
-		= catMaybes
-		$ map (\t -> case t of 
-			TVar k v	-> Just v
-			_		-> Nothing)
-		$ portTypesT tPlug
-
-	let vsClean	= [ v 	| v <- vsFree
-					, elem (Var.nameSpace v) [Var.NameEffect, Var.NameClosure]
-					, not $ Var.isCtorName v 
-					, not $ elem v vsPorts ]
-
-	let sub		= Map.fromList
-			$ map (\v -> (v, TBot (kindOfSpace $ Var.nameSpace v)))
-			$ vsClean 
-
-	let tClean	= packType 
-			$ substituteVT sub tPlug
-	
-	trace	$ "    vsFree           = " % vsFree		% "\n"
-		% "    vsPorts          = " % vsPorts		% "\n"
-		% "    vsClean          = " % vsClean		% "\n\n"
-		% "    tClean\n" 
+	-- Clean empty effect classes that aren't ports.
+	let tClean	= cleanType tPlug
+	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
 
@@ -293,6 +267,47 @@ generaliseType varT tCore envCids
 
 	return tPack
 -}
+
+-- | Empty effect and closure eq-classes which do not appear in the environment or 
+--	a contra-variant position in the type can never be anything but _|_,
+--	so we can safely erase them now.
+--
+--   CHECK:
+--	We need to run the cleaner twice to handle types like this:
+--		a -(!e1)> b
+--		:- !e1 = !{ !e2 .. !en }
+--
+--	where all of !e1 .. !en are cleanable.
+--	Are two passes enough?
+--	
+cleanType :: Type -> Type
+cleanType tt
+	= cleanType' $ cleanType' tt
+
+cleanType' tt
+ = let	vsFree	= freeVarsT tt
+
+	vsPorts	
+		= catMaybes
+		$ map (\t -> case t of 
+			TVar k v	-> Just v
+			_		-> Nothing)
+		$ portTypesT tt
+
+	vsClean	= [ v 	| v <- vsFree
+			, elem (Var.nameSpace v) [Var.NameEffect, Var.NameClosure]
+			, not $ Var.isCtorName v 
+			, not $ elem v vsPorts ]
+
+	sub	= Map.fromList
+		$ map (\v -> (v, TBot (kindOfSpace $ Var.nameSpace v)))
+		$ vsClean 
+
+	tClean	= packType 
+		$ substituteVT sub tt
+	
+   in	tClean
+
 
 -----
 -- Collect up the list of cids which cannot be generalise because 

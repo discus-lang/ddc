@@ -7,6 +7,7 @@ where
 
 import Core.Exp
 import Core.Bits
+import Core.Util.Strip
 
 import qualified Shared.Var	as Var
 import Shared.Var (Var)
@@ -403,12 +404,14 @@ instance Pretty Type where
 	 -> prettyp "@TNothing"
 
 	TForall v k t
-	 -> "\\/ " % (padR 8 $ pretty v) %>> " :: " % k % ".\n" % t
+	 -> let	(forallVTs, whereVTs, context, tx)	= stripSchemeT xx
+	    in	"forall " % " " %!% (map fst forallVTs) % "\n.  " 
+	    	% buildScheme [] whereVTs context tx
 
 	TContext c t	-> c % " => " % t
 
 	TWhere	t1 vts	
-	 -> t1 % " :- " % ", " %!% [ v % " = " % t | (v, t) <- vts]
+	 -> t1 % "\n:- " % "\n,  " %!% [ v % " = " % t | (v, t) <- vts]
 
 	TApp	t1 t2	-> prettyTB t1 % " " % prettyTB t2
 
