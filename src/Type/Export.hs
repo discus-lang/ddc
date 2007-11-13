@@ -1,4 +1,6 @@
 
+-- | Export information from the final state of the type constraint solver.
+--
 module Type.Export
 	( squidExport )
 
@@ -22,20 +24,28 @@ import Type.Plug
 
 stage	= "Type.Squid.Export"
 
-
+-- | Export some stuff from the constraint solver state.
 squidExport 
-	:: Set Var
+	:: Set Var					-- ^ The vars for the bindings we want types for.
 	-> SquidM 
-		( Map Var Type				-- type schemes
-		, Map Var (InstanceInfo Type Type))	-- type instantiations
-
+		( Map Var Type				-- ^ Type schemes.
+		, Map Var (InstanceInfo Type Type)	-- ^ How each instantiation was done.
+		, Map Var (Map Var Type) )		-- ^ The substition from the "contra-variant vars are ports"
+							--	rewriting process.
 squidExport vsTypesPlease
  = do
+	-- Export types for the requested vars.
 	schemes		<- exportTypes vsTypesPlease
+
+	-- Export the instantiation table.
 	inst		<- exportInst
 
+	-- The port table was already plugged by Scheme.generaliseType
+	portTable	<- gets statePortTable
+
 	return 	( schemes
-		, inst )
+		, inst 
+		, portTable)
 
 
 exportVarType :: Var -> SquidM Type

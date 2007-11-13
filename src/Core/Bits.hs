@@ -1,10 +1,24 @@
 
 module Core.Bits
+	( isXApp
+	, isXLambda
+	, isXLAMBDA
+	, isXTau
+	, isTForall
+	
+	, crushSumT
+	, makeSumT
+	
+	, kindOfSpace )
 where
 
 import Util
 import Core.Exp
+import Shared.Var
+import Shared.Error
 
+-----
+stage	= "Core.Bits"
 
 isXApp x
 	= or
@@ -39,5 +53,15 @@ makeSumT k ts
 	
  
 
-
 		
+-- | Get the kind associated with a namespace.
+kindOfSpace :: NameSpace -> Kind
+kindOfSpace space
+ = case space of
+ 	NameType	-> KData
+	NameRegion	-> KRegion
+	NameEffect	-> KEffect
+	NameClosure	-> KClosure
+	NameClass	-> KClass
+	_		-> panic stage
+			$  "kindOfSpace: no match for " % show space

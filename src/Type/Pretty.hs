@@ -256,7 +256,7 @@ prettyTypeFS fs
 		
 
 prettyTS t
-	= prettyTypeSplit t -- $ sortFettersT t
+	= prettyTypeSplit t 
 
 
 

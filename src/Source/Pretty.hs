@@ -59,7 +59,7 @@ instance Pretty Top where
 	PForeign f 
 	 -> "foreign " % f % ";\n\n";
 	
-	PData typeName vars []
+	PData typeName vars [] 
 	 -> "data " % " " %!% (typeName : vars) % ";\n\n"
 
 	PData typeName vars ctors

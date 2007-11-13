@@ -85,7 +85,7 @@ data SquidS
 	--	through the path we can work out how a particular variable was bound.
 	, statePath		:: [ CBind ]
 
-	-- | Which branches contain / instantiate other branches.
+	-- | Which branches contain \/ instantiate other branches.
 	--	This is used to work out what bindings are part of recursive groups, 
 	--	and to determine the type environment for a particular branch when it's 
 	--	time to generalise it.
@@ -110,7 +110,12 @@ data SquidS
 	--	
 	, stateInst		:: Map Var	(InstanceInfo Var Type)			
 
-	-- | A register of which classes contain various, interesting effect / class constructors.
+	-- | Records the port-forcing table for each generalised type.
+	--	We'll need this to rewrite the Core IR to use the new names for type varibles
+	--	introduced by the port-forcing process.
+	, statePortTable	:: Map Var	(Map Var Type)
+
+	-- | A register of which classes contain various, interesting effect \/ class constructors.
 	--	When we want to crush out some of the class constraints, we can use this register
 	--	to find them, instead of searching through the whole group.
 	, stateRegister		:: Map VarBind  (Set ClassId)		
@@ -162,6 +167,7 @@ squidSInit
 		, stateGenDone		= Set.empty
 
 		, stateInst		= Map.empty
+		, statePortTable	= Map.empty
 
 		, stateRegister		
 			-- effects

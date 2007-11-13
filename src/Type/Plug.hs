@@ -21,7 +21,6 @@ import Type.Class
 stage	= "Type.Squid.Plug"
 
 
-plugClassIds :: [ClassId] -> Type -> SquidM Type
 plugClassIds env xx
 	= transZM (plugTable env) xx
 

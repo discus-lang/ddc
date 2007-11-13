@@ -260,7 +260,8 @@ compileFile	args     fileName
 
 	-- Solve type constraints
 	(  typeTable
-	 , typeInst)
+	 , typeInst
+	 , typePortTable )
 	 		<- runStage "solve"
 			$  SS.solveSquid
 				sConstrs
@@ -281,6 +282,7 @@ compileFile	args     fileName
 				sigmaTable
 				typeTable
 				typeInst
+				typePortTable
 				projTable
 
 	-- Slurp out the list of all the vars defined at top level.

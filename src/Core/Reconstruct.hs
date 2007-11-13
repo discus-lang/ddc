@@ -2,6 +2,9 @@
 --	Reconstruct witness passing
 --	and effect annotations on apps, match and do's
 --
+--	Change this to type checking of core.
+--	Work out type and effect for any core term.
+
 module Core.Reconstruct
 	( reconstructTree )
 
@@ -88,7 +91,7 @@ reconX tt exp@(XAPP x t)
    	 Just t'	-> (XAPP x' t, t')
 	  
 	 _ -> panic stage
-	 	$ "reconX: Type error in type application (x t).\n"
+	 	$ "reconX: Kind error in type application (x t).\n"
 		% "     x     =\n" %> x		% "\n\n"
 		% "     t     =\n" %> t		% "\n\n"
 		% "   T[x]    =\n" %> tx	% "\n\n"
@@ -128,10 +131,10 @@ reconX tt exp@(XApp x1 x2 eff)
 
 	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
-		% "   exp     = " % exp 	% "\n\n"
-		% "     x1    = " % x1		% "\n\n"
+		% " in expression:\n"
+		% "     (" % x1 % ") " % x2	% "\n\n"
+
 		% "   T[x1]   = " % x1t		% "\n\n"
-		% "     x2    = " % x2		% "\n\n"
 		% "   T[x2]   = " % x2t		% "\n\n"
    
 reconX tt (XDo ss)
@@ -241,8 +244,25 @@ applyValueT (TWhere t2 vts) t
 	= Just  ( TWhere t2' vts
 		, TWhere eff vts)
 
-applyValueT (TFunEC t1 t2 eff clo) t	
+applyValueT t0@(TFunEC t1 t2 eff clo) t3	
+	| t1 == t3
 	= Just (t2, eff)
+	
+	| otherwise
+	= Nothing
+	
+	-- uh oh...
+{--	| otherwise
+	= panic stage
+	$ "applyType: Type error in value application.\n"
+	% "    can't apply (" % t0 % ")\n"
+	% "             to (" % t3 % ")\n"
+	% "\n"
+	% "    t1 = " % t1 % "\n"
+	% "\n"
+	% "  does not match\n"
+	% "    t2 = " % t3 % "\n"
+--}	
 	
 applyValueT _ t
 	= Nothing

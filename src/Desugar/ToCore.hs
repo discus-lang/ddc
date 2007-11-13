@@ -42,7 +42,7 @@ import qualified Debug.Trace	as Debug
 -----
 stage	= "Desugar.ToCore"
 
-debug		= True
+debug		= False
 trace ss x	= if debug 
 			then Debug.trace (pretty ss) x
 			else x
@@ -52,6 +52,7 @@ toCoreTree
 	:: (Map Var Var)				-- ^ value -> type vars
 	-> (Map Var T.Type)				-- ^ inferred type schemes
 	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- ^ instantiation info
+	-> (Map Var (Map Var T.Type))			-- ^ port substitution
 	-> ProjTable
 	-> D.Tree Annot
 	-> C.Tree
@@ -60,6 +61,7 @@ toCoreTree
 	sigmaTable
 	typeTable
 	typeInst
+	portTable
 	projTable
 	sTree
 
@@ -70,7 +72,8 @@ toCoreTree
 		{ coreSigmaTable	= sigmaTable
 		, coreMapTypes		= typeTable
 		, coreMapInst		= typeInst
-		, coreProject		= projTable }
+		, coreProject		= projTable 
+		, corePortTable		= portTable }
 		
 	mTree	= evalState 
 			(toCoreTreeM sTree) 

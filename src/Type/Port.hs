@@ -75,8 +75,8 @@ forcePortsT t
 
 
 type	Table		
- = 	( [(Type, Type)]	-- covariant substitutions
- 	, [(Type, Type)])	-- contravatiant substitutions
+ = 	( [(Type, Type)]	-- contravatiant substitutions
+ 	, [(Type, Type)])	-- covariant substitutions
 
 type	RenameM a 	
  = 	StateT Table SquidM a
@@ -86,7 +86,10 @@ renamePortsT t
  = do	(t', table')	<- runStateT (renamePortsCoT t) ([], [])
    	return (t', table')
 
------
+
+-- Renaming variables in this type, where this type is taken to be 
+--	in a co-variant position.
+-- 
 renamePortsCoT
 	:: Type -> RenameM Type
 	
@@ -145,7 +148,11 @@ renamePortCo t
 		put	(subCon, (t, t') : subCo)
 		return	t'
 		
------
+
+-- Renaming variables in this type, where this type is taken to be
+--	in a contra-variant position.
+--
+renamePortsConT :: Type -> RenameM Type
 renamePortsConT t
  = case t of
  	TFun t1 t2 eff clo

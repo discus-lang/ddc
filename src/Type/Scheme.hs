@@ -110,7 +110,6 @@ generaliseType
 generaliseType varT tCore envCids
  = do
 	args			<- gets stateArgs
-
 	trace	$ "*** Scheme.generaliseType " % varT % "\n"
 		% "\n"
 		% "    tCore\n"
@@ -119,18 +118,52 @@ generaliseType varT tCore envCids
 		% "    envCids          = " % envCids		% "\n"
 		% "\n"
 
-	-- Forcing effect and closure vars in contra-variant positions to be ports.
-	(tForce, forceTable)
+	-- Force effect and closure vars in contra-variant positions to ports.
+	--
+	-- Eg: In a type like this:
+	--	(a -(!e1)> b) -> (a -(!e1)> b) -> (a -(!e1)> b)
+	--
+	--	The first two occurances of !e1 are in contra-variant branches and do not represent
+	--	represent restrictions placed on what effects can be passed in for the parameters.
+	--	We can introduce new variables and rewrite this type to:
+	--
+	--	(a -(!e2)> b) -> (a -(!e3)> b) -> (a-(!e4)> b)
+	--	:- !e4 = !{ !e2; !e3 }
+	--
+	(tPort, portTable0)
 			<- forcePortsT tCore
 
-	let tPort	= packType tForce
+	let tPortPacked = packType tPort
 
-	trace	$ "    tForce\n"
-		%> prettyTS tForce	% "\n\n"
-		% "    tPort\n"
+	-- The force table contains a lists of substitutions for vars from both co-variant
+	-- and contra-variant positions.
+	--
+	-- We'll need this to rewrite the code code for the binding to use the new names
+	--	from force-ports above.
+	--
+	--	BUGS: Also include the original variable (!e1) in the sum if its present in
+	--	      the type environment of this binding.
+	--	CHECK this against nested lambdas.. scoping.
+	--
+	portTablePlugged
+			<- plugClassIds [] portTable0
+
+	let portTable	= map (\(t1@(TVar k v1), ts)
+				-> (v1, makeTSum k ts))
+			$ gather 
+			$ fst portTablePlugged		-- just the contra-variant substitutions
+	
+	-- stash the table in the solver state
+	modify 	$ \s -> s { statePortTable	= Map.insert varT (Map.fromList portTable)
+						$ statePortTable s }
+	--
+	trace	$ "    tPort\n"
 		%> prettyTS tPort	% "\n\n"
-		% "    table\n"
-		%> forceTable		% "\n\n"
+		% "    tPortPacked\n"
+		%> prettyTS tPortPacked % "\n\n"
+
+		% "    portTable\n"
+		%> pretty portTable		% "\n\n"
 
 
 	-- Work out which cids can't be generalised in this type.
@@ -138,7 +171,7 @@ generaliseType varT tCore envCids
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	staticRsData	<- staticRsDataT     tPort
+	staticRsData	<- staticRsDataT     tPortPacked
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
 
 	-- 	Can't generalise regions free in the closure of the outermost function.
@@ -157,18 +190,22 @@ generaliseType varT tCore envCids
 	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
 -}	
 
+	-- These are all the cids we can't generalise
 	let staticCids		= envCids ++ staticRsData
 
+
 	-- Rewrite non-static cids to the var for their equivalence class.
-	tPlug			<- plugClassIds staticCids tPort
+	tPlug			<- plugClassIds staticCids tPortPacked
 
 	trace	$ "    staticCids       = " % staticCids	% "\n\n"
 		% "    tPlug\n"
 		%> prettyTS tPlug 	% "\n\n"
 
 
-	-- Clean non-port effect and closure vars
-	--	Do this after tPlug so we don't end up zapping any monomorphic classes.
+	-- Empty effect and closure eq-classes which do not appear in the environment or 
+	--	a contra-variant position in the type can never be anything but _|_,
+	--	so we can safely erase them now.
+
 	let vsFree	= freeVarsT tPlug
 
 	let vsPorts	
@@ -197,11 +234,6 @@ generaliseType varT tCore envCids
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
 
-	-- Reduce class contexts.
-	-- 	This should be done by sink.
---	classInst		<- gets stateClassInst
---	let tReduced		= reduceContextT classInst tPlug
-
 	-- Quantify free variables.
 	let vksFree	= map 	 (\v -> (v, kindOfSpace $ Var.nameSpace v)) 
 			$ filter (\v -> not $ Var.nameSpace v == NameValue)
@@ -213,12 +245,6 @@ generaliseType varT tCore envCids
 
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"
-
-
-	let tNormal	= normaliseT tScheme
-	
-	trace	$ "    tNormal\n"
-		%> prettyTS tNormal	% "\n\n"
 
 	return	tScheme
 

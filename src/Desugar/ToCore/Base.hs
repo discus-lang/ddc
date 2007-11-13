@@ -1,3 +1,4 @@
+-- | State Monad for the Desugared to Core IR transform.
 
 module Desugar.ToCore.Base
 	( Annot
@@ -8,7 +9,6 @@ module Desugar.ToCore.Base
 	, getType
 	, getKind
 	, lookupInst)
-	
 
 where
 
@@ -18,24 +18,16 @@ import Shared.Var			(Var, VarBind, NameSpace(..))
 import Shared.Error
 import qualified Shared.Var		as Var
 
-import qualified Data.Set		as Set
-import Data.Set				(Set)
-
 import qualified Data.Map		as Map
 import Data.Map				(Map)
 
 import qualified Type.Exp		as T
 import qualified Type.ToCore		as T
 
+import qualified Core.Bits		as C
 import qualified Core.Exp		as C
-import qualified Core.Util		as C
-import qualified Core.Plate.Trans	as C
-import qualified Core.Pack		as C
 
 import Desugar.Project			(ProjTable)
-
-import qualified Debug.Trace		as Debug
-
 
 -----
 stage	= "Desugar.ToCore.Base"
@@ -43,27 +35,41 @@ stage	= "Desugar.ToCore.Base"
 -----
 type	Annot	= Maybe (T.Type, T.Effect)
 
+-- | The state for the Desugared to Core IR transform.
 data CoreS 
 	= CoreS 
-	{ coreSigmaTable	:: Map Var Var		-- valueVar -> typeVar
+	{ -- | Value var to type var mapping
+	  coreSigmaTable	:: Map Var Var
+
+	  -- | type var to type mapping
 	, coreMapTypes		:: Map Var T.Type
+
+	  -- | how each variable was instantiated
 	, coreMapInst		:: Map Var (T.InstanceInfo T.Type T.Type)
+
+	  -- | the substitution from the contra-variant port rewrite.
+	, corePortTable		:: Map Var (Map Var T.Type)
+
+	  -- | table of type based projections.
 	, coreProject		:: ProjTable
+
+	  -- | variable generator for value vars.
 	, coreGenValue		:: VarBind }
 	
 type CoreM 
 	= State CoreS
 	
-
 initCoreS 
 	= CoreS 
 	{ coreSigmaTable	= Map.empty
 	, coreMapTypes		= Map.empty
 	, coreMapInst		= Map.empty
+	, corePortTable		= Map.empty
 	, coreProject		= Map.empty
 	, coreGenValue		= Var.XBind "xC" 0 }
 
------
+
+-- | Create a fresh new variable in this namespace.
 newVarN	:: NameSpace -> CoreM Var
 newVarN	space
  = do
@@ -73,7 +79,7 @@ newVarN	space
 	
 	return		(Var.new (pretty gen)) { Var.bind = gen, Var.nameSpace = space }
 
-
+-- | Get the type of this variable.
 getType :: Var -> CoreM C.Type
 getType	v
 	| Var.nameSpace v == NameValue
@@ -96,23 +102,21 @@ getType' vT
 
 	 Just t		-> return $ T.toCoreT t
 
------
-getKind ::	Var 	-> CoreM C.Kind
-getKind		v
- = case Var.nameSpace v of
-	NameType	-> return C.KData
- 	NameRegion	-> return C.KRegion
-	NameEffect	-> return C.KEffect
-	NameClosure	-> return C.KClosure
+
+-- | Get the kind of this variable.
+getKind :: Var 	-> CoreM C.Kind
+getKind	v	= return $ C.kindOfSpace (Var.nameSpace v)
 
 
------
+-- | Lookup how the type scheme for this variable was instantiate.
 lookupInst ::	Var	-> CoreM (Maybe (T.InstanceInfo C.Type C.Type))
 lookupInst	v
  = do 	mapInst	<- gets coreMapInst
 	return	$ liftM toCoreInfo 
 		$ Map.lookup v mapInst
 
+
+-- | Convert the types in an InstanceInfo from source to core representation.
 toCoreInfo 
 	:: T.InstanceInfo T.Type T.Type
 	-> T.InstanceInfo C.Type C.Type
@@ -129,8 +133,3 @@ toCoreInfo ii
 	 -> T.InstanceLetRec v1 v2 (liftM T.toCoreT mt)
 	
 	
-
-
-
-
-

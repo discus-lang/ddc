@@ -33,8 +33,10 @@ data Class
 
 	-- | An equivalence class.
 	| Class
+		{ 	
 		-- | An Id for this class
-		{ classId		:: ClassId	
+
+		  classId		:: ClassId	
 
 		-- | Kind of this class.
 		, classKind		:: Kind				
@@ -69,9 +71,9 @@ classInit cid kind
 
 -- | The Type Graph.
 data Graph
-	= Graph
+	= Graph { 
 		-- | The classes
-		{ graphClass		:: IOArray ClassId Class		
+		graphClass		:: IOArray ClassId Class		
 
 		-- | Generator for new ClassIds.
 		, graphClassIdGen	:: !Int					

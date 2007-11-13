@@ -90,7 +90,7 @@ crushT1 t
 -- Sums
 
 -- | Make a new sum from a list of type, crushing the list and substituting
---	TPure/TEmpty if there is nothing to sum. If there only one thing
+--	TPure\/TEmpty if there is nothing to sum. If there only one thing
 --	after crushing then return that thing instead of a sum.
 makeTSum :: Kind -> [Type] -> Type
 makeTSum k ts

@@ -392,7 +392,8 @@ solveSquid :: (?args :: [Arg])
 	-> Map Var Var				-- sigma table
 	
 	-> IO 	( Map Var T.Type			-- inferred types
-		, Map Var (InstanceInfo T.Type T.Type))	-- how each var was instantiated
+		, Map Var (InstanceInfo T.Type T.Type)	-- how each var was instantiated
+		, Map Var (Map Var T.Type) )		-- the port table.
 	
 solveSquid 
 	constraints
@@ -417,7 +418,7 @@ solveSquid
 	 Nothing	-> return ())
 
 	-- extract out the stuff we'll need for conversion to core.
-	(typeTable, typeInst)
+	(typeTable, typeInst, portTable)
 		<- evalStateT (Squid.squidExport vsTypesPlease) state
 
 	-- dump final solver state
@@ -438,33 +439,21 @@ solveSquid
 		$ Map.toList
 		$ typeInst
 
+	dumpS	DumpTypeSolve	"type-solve--portTable"
+		$ catInt "\n\n"
+		$ map pretty
+		$ Map.toList
+		$ portTable
 
 	-- stop the compiler and print out errors
 	--	if there were any during type inference.
 	handleErrors 
 		$ Squid.stateErrors state
 
-
-
-{-
-	-----
-	let dSchemes	
-		= catMap (\(v, t) -> pretty $ v % "\n" %> (":: " % T.prettyTS t) % "\n\n") 
-		$ Map.toList schemeTable
-
-	dumpS DumpTypeSchemes "type-schemes" dSchemes
--}
-
-	-----
-{-	let dCoreSchemes
-		= catMap (\(v, t) -> pretty $ v % "\n" % " ::     " %> t % "\n\n")
-		$ Map.toList coreSchemes
-		
-	dumpS DumpCoreSchemes "core-schemes" dCoreSchemes
--}		
 	-----
 	return 	( typeTable
-		, typeInst)
+		, typeInst
+		, portTable )
 
 
 
@@ -476,7 +465,8 @@ toCore 	:: (?args :: [Arg])
 	-> D.Tree (Maybe (Type, Effect))		-- headerTree
 	-> (Map Var Var)				-- sigmaTable
 	-> (Map Var T.Type)				-- typeTable
-	-> (Map Var (T.InstanceInfo T.Type T.Type))		-- typeInst
+	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- typeInst
+	-> (Map Var (Map Var T.Type))			-- port table
 	-> ProjTable
 	-> IO	( C.Tree
 		, C.Tree )
@@ -486,6 +476,7 @@ toCore	sourceTree
 	sigmaTable
 	typeTable
 	typeInst
+	portTable
 	projTable
  = do
 
@@ -496,6 +487,7 @@ toCore	sourceTree
 			sigmaTable
 			typeTable
 			typeInst
+			portTable
 			projTable
 
 			

@@ -96,6 +96,7 @@ solve	args ctree
 	let treeContains	= Map.unions $ map slurpContains ctree
 	modify (\s -> s { stateContains = treeContains })
 
+	-- Feed all the constraints into the graph, generalising types when needed.
 	solveCs ctree
 
 	-- Do a final grind to make sure the graph is up to date.
@@ -105,6 +106,7 @@ solve	args ctree
 	sGenSusp		<- gets stateGenSusp
 	let sGeneraliseMe 	= Set.toList sGenSusp
 
+	-- Generalise all the left over types.
 	trace	$ "\n=== solve: Generalising left over types.\n"
 		% "    sGeneraliseMe   = " % sGeneraliseMe % "\n"
 	

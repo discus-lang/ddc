@@ -330,17 +330,16 @@ sortFsT tt
 
 -- | Erase TMasks where the LHS can only ever contain the values present in the RHS
 -- eg
---	  @1 -(@4)> @2 -(@5)> @3
---        :- @4        = @5 \ f
---        ,  @5        = f :: ...
+--	  1 -(4)> 2 -(5)> 3
+--        :- 4        = 5 \\ f
+--        ,  5        = f :: ...
 --
---	@5 is not substituted by inlineFs1 because it is referenced twice.
---	However, the binding for @4 is redundant because @5 can only ever contain f.
+--	5 is not substituted by inlineFs1 because it is referenced twice.
+--	However, the binding for 4 is redundant because 5 can only ever contain f.
 --	
--- rewrite to
---
---	  @1 -> @2 -(@5)> @3
---        :-  @5        = f :: ...
+-- rewrite to:
+--	  1 -> 2 -(5)> 3
+--        :-  5        = f :: ...
 --
 zapCoveredTMaskF :: [(Type, Type)] -> Fetter -> Fetter
 zapCoveredTMaskF ls ff

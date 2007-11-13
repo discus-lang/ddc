@@ -94,7 +94,7 @@ unflattenApps'		xx
 flattenFun ::	Type -> [Type]
 flattenFun	xx
  = case xx of
-	TFunEC e1 e2 eff env	-> e1 : flattenFun e2
+	TFunEC e1 e2 _ _	-> e1 : flattenFun e2
 	TFun   e1 e2		-> e1 : flattenFun e2
 	_			-> [xx]
 

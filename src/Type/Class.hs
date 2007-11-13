@@ -374,7 +374,7 @@ clearActive
 
 
 
--- | Activate a class, tagging it for inspection by the unifier / crusher.
+-- | Activate a class, tagging it for inspection by the unifier \/ crusher.
 activateClass :: ClassId -> SquidM ()
 activateClass cid
  = do	graph		<- gets stateGraph

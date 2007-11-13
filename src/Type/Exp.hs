@@ -119,7 +119,7 @@ data Type
 	| TMutable	Type				-- ^ This object is modified by the function.
 
 
-	-- **** Where is this stuff actually used? better to ditch it.
+	-- ???? Where is this stuff actually used? better to ditch it.
 	--	Intermediate constructors.
 	--	Different representations for things, used in lots of places.
 	--
