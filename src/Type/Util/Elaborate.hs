@@ -1,4 +1,8 @@
-
+-- Handles elaboration of types from the ffi.
+--	Adding all the regions, effects and closures to a type by hand is boring and error prone.
+--	Luckilly, for most functions this information is fairly unsurprising. Guided by some user
+--	keywords, we can add this information automatically.
+--
 module Type.Util.Elaborate
 	( elaborateT 
 	, elaborateRegionsT
@@ -25,6 +29,18 @@ import Debug.Trace
 stage	= "Type.Elaborate"
 
 
+-- | Elaborate this type
+--
+--	* Fresh, forall bound region variables are applied to type constructors
+--	  of higher kind so that the result is something of kind data.
+--
+--	* For all regions marked Mutable, an appropriate context is added to the
+--	  front of the type.
+--
+--	* For all regions added this way, an effect which Reads them is added
+--	  to the right most function arrow in the type. In addition, if they were 
+--	  marked as mutable an effect which Writes to them is also added.
+--
 elaborateT 
 	:: Monad m
 	=> (?newVarN 	:: NameSpace 	-> m Var)
@@ -32,11 +48,13 @@ elaborateT
 	-> Type -> m Type
 
 elaborateT t
- = do	(tRegions, vks)	<- elaborateRegionsT t
- 	tClosure	<- elaborateCloT tRegions
+ = do	(tRegions, vksRegions)	<- elaborateRegionsT t
+ 	tClosure		<- elaborateCloT tRegions
 
- 	return	$ addTForallVKs vks
-		$ tClosure
+	tEffect			<- elaborateEffT (map fst vksRegions) tClosure
+	
+ 	return	$ addTForallVKs vksRegions
+		$ tEffect
 
 
 -----------------------
@@ -234,155 +252,117 @@ elaborateCloT' env tt
 			, Just cloVarC)
 
 
-{-
-elaborateT t
- = do	(t', newEffs)	<- elaborateT2 t	
-
-	let newRs	= map (\(TEffect _ [TVar r]) -> r) newEffs
-	(tEffect,  newEs)	<- elaborateEffsT t'
-	(tClosure, newCs)	<- pushActiveCloT  [] tEffect
-
-	let moreVks	=  nub
-			$  map (\v 	 -> (v, KRegion))  newRs
-			++ map (\v  	 -> (v, KEffect))  newEs
-			++ map (\(v, cs) -> (v, KClosure)) newCs
-
-	let moreFs	
-		=  [ FEffect  (EVar v) (ESum newEffs)	
-			|  v 	<- newEs ]
-
-		++ [ FClosure (CVar v) clo		
-			| (v, clo) <- newCs ]
-
-		++ [ FClass   primMutable r
-			| ECon name r <- newEffs
-			, name == primWrite ]
-
-	let tFF		= addForall  moreVks
-			$ addFetters moreFs
-			$ tClosure
-			
-	let tMasked	= maskEsFreshT tFF
-	
-
-	return		tMasked
-			
-			
-				 
-
-addForall vksMore t
- = case t of
- 	TForall vks x	-> TForall (vks ++ vksMore) 	x
-	_		-> TForall vksMore		t
-
-addFetters fsMore t
- = case t of
- 	TForall  vks x	-> TForall vks (addFetters fsMore x)
-	TFetters fs  x	-> TFetters (fs ++ fsMore) x
-	_		-> TFetters fsMore t
-
-
-	
-
-elaborateT2 tt
- = case tt of
-	TVar v
-	 ->	return (tt, [])
-	 
-	TFun t1 t2 eff clo
-	 -> do	(t1', eff1)	<- elaborateT2 t1
-	 	(t2', eff2)	<- elaborateT2 t2
-		return	( TFun t1' t2' eff clo
-			, eff1 ++ eff2)
-		
- 	TCon v ts	
-	 -> do	k			<- ?getKind v
-	 	let kParts		= flattenKind k
-		(tsR, newRsHere)	<- elaborateRs ts kParts
-		let newEffsHere		= map (\r -> ECon primRead [TRegion (RVar r)]) newRsHere
-
-		(ts', newEffss)		<- liftM unzip
-					$  mapM elaborateT2 tsR
-		return 	( TCon v ts'
-			, newEffsHere ++ concat newEffss)
-	 
-	TForall vks t
-	 -> do	(t', effs)	<- elaborateT2 t
-	 	return	( TForall vks t'
-			, effs)
-	
-	TFetters fs t
-	 -> do	(t', effs)	<- elaborateT2 t
-	 	return	( TFetters fs t'
-			, effs)
-	
-	TRegion{}	-> return (tt, [])
-	TEffect{}	-> return (tt, [])
-	TClosure{}	-> return (tt, [])
-	 	 
-	TMutable t
-	 -> do	(t', effs)	<- elaborateT2 t
-		let effs'
-			= map (\e -> case e of
-				ECon name r
-				 | name == primRead	-> ECon primWrite r
-				 | otherwise		-> e)
-			$ effs
-		
-	 	return	( t'
-			, effs')
-
--}
-
-
-
-	
-
-{-
------------------------
--- elaborateEffsT
---	Make sure there are effect vars on active function ctors, 
---	creating them if need be.
---
-elaborateEffsT 
+-- | Elaborate effects in this type.
+elaborateEffT 
 	:: Monad m
-	=> (?newVarN :: NameSpace -> m Var)	-- ^ the fn to create a new var
-	-> Type 				-- ^ type to elaborate
-	-> m ( Type				-- elaborated type
-	     , [Var])				-- created effect vars
+	=> (?newVarN :: NameSpace -> m Var)
+	-> [Var]		-- ^ region variables which were added during elaboration.
+	-> Type			-- ^ the type to elaborate
+	-> m Type
 	
-elaborateEffsT tt
- 	| TForall vks x		<- tt
-	= do	(x', vs)	<- elaborateEffsT x
-	 	return	( TForall vks x'
-			, vs)
-		
-	| TFetters fs x		<- tt
-	= do	(x', vs)	<- elaborateEffsT x
-	 	return	( TFetters fs x'
-			, vs)
+elaborateEffT vsRegion tt
+ = do	
+ 	-- make a fresh hook var.
+ 	freshHookVar	<- ?newVarN NameEffect
 
-	| TVar{}		<- tt
-	= 	return	( tt, [])
+	-- see if there is already a var on the rightmost function arrow, if there isn't one
+	--	then add the freshHookVar.
+ 	let Just (tHooked, hookVar) =
+		hookEffT freshHookVar tt
+  
+    	-- assume that regions added into a contra-variant branch during elaboration 
+	--	will be read by the function.
+	let rsContra	= slurpConRegions tHooked
+	let effsRead	= [ TEffect primRead [TVar KRegion v] 
+				| v <- vsRegion 
+				, elem v rsContra ]
+	
+	let tFinal	= addEffectsToFsT effsRead hookVar tHooked
+  
+ 	return tFinal
 
-	| TCon{}		<- tt
-	=	return	( tt, [])
-			
-	| TFun t1 t2 eff clo	<- tt
+
+-- | Find the right most function arrow in this function type and return the effect variable
+--	on it, or add this hookVar if there isn't one.
+--
+hookEffT  :: Var -> Type -> Maybe (Type, Var)
+hookEffT hookVar tt
+	| TForall vks t		<- tt
+	, Just (t', var)	<- hookEffT hookVar t
+	= Just	( TForall vks t'
+		, var)
+	
+	| TFetters fs t		<- tt
+	, Just (t', var)	<- hookEffT hookVar t
+	= Just	( TFetters fs t'
+		, var)
+
+ 	| TFun t1 t2 eff clo	<- tt
 	, TFun{}		<- t2
-	= do	(t2', vs)	<- elaborateEffsT t2
-		return	( TFun t1 t2' eff clo
-			, vs)
-		
-	| TFun t1 t2 eff clo	<- tt
-	, EVar v		<- eff
-	= 	return	( TFun t1 t2 eff clo
-			, [v])
+	, Just (t2', var)	<- hookEffT hookVar t2
+	= Just 	( TFun t1 t2' eff clo
+	  	, var)
 	
-	| TFun t1 t2 eff clo	<- tt
-	, ENil			<- eff
-	= do	v	<- ?newVarN NameEffect
-		return	( TFun t1 t2 (EVar v) clo
-			, [v])
+	| TFun t1 t2 (TVar KEffect var) clo	<- tt
+	= Just	( tt
+		, var)
+	
+	| TFun t1 t2 (TBot KEffect) clo		<- tt
+	= Just	( TFun t1 t2 (TVar KEffect hookVar) clo
+	  	, hookVar)
+	
+	| otherwise
+	= Nothing
 
--}
+
+-- | Add some effects to the fetter with this var.
+--
+addEffectsToFsT
+	:: [Effect] -> Var -> Type -> Type
+	
+addEffectsToFsT effs var tt
+ = case tt of
+ 	TForall vks t1 
+	 -> TForall vks (addEffectsToFsT effs var t1)
+
+	TFetters fs t1
+	 -> TFetters (FLet (TVar KEffect var) (TSum KEffect effs) : fs) t1
+	 
+	tx
+	 -> TFetters [FLet (TVar KEffect var) (TSum KEffect effs)] tx
+	 
+
+
+-- | Slurp out region variables which appear in contra-variant branches
+--	of this type.
+slurpConRegions
+	:: Type -> [Var]
+
+slurpConRegions 
+ = slurpConRegionsCo
+
+slurpConRegionsCo tt
+ = case tt of
+ 	TForall vks t		-> slurpConRegionsCo t
+	TFetters fs t		-> slurpConRegionsCo t
+
+	TFun t1 t2 eff clo
+	 -> slurpConRegionsCon t1
+	 ++ slurpConRegionsCo  t2
+
+	TData v ts		-> catMap slurpConRegionsCo ts
+
+	TVar _ _			-> []
+	 
+slurpConRegionsCon tt
+ = case tt of
+ 	TFun t1 t2 eff clo
+	 -> slurpConRegionsCon t1
+	 ++ slurpConRegionsCon t2
+	 
+	TData v ts		-> catMap slurpConRegionsCon ts
+
+	TVar KRegion v		-> [v]
+	TVar _ _		-> []	
+	
+
