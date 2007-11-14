@@ -83,12 +83,11 @@ data VarBind
 	
 	| FPure		-- :: ! -> &
 	
---	| FFieldHas	-- :: * -> * -> . -> &
---	| FFieldIs	-- :: * -> * -> . -> &
-
 	| FProj		-- :: * -> * -> . -> +
 	
-	| FShape Int	--		Shape class. Enforces args to have same structure, while leaving regions free.
+	| FShape  Int	--		Shape class. Enforces args to have same structure, while leaving regions free.
+	| FUnify  Int
+	| FInject Int
 
 	-- Value variables.
 	| VTuple Int	-- ^ Tuple data constructor of given airity.

@@ -50,6 +50,10 @@ data	CTree
 	--	Saves having to write a large collection of CEq constraints.
 	| CEqs		TypeSource [Type]
 
+	-- A class contraint between types,
+	--	eg, Unify, Shape, Inject
+	| CClass	TypeSource Var [Type]
+
 	-- Instantiate a type scheme
 	--	var of instance, var of scheme to instantiate.
 	| CInst		TypeSource Var Var

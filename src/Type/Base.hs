@@ -21,7 +21,7 @@ import Data.Array.IO
 
 
 
--- | An Equivalence Class.
+-- | A Node in the type graph
 data Class 
 	
 	-- | An unallocated class
@@ -30,6 +30,11 @@ data Class
 	-- | Reference to another class.
 	--	A Forward is to the resulting class when classes are merged.
 	| ClassForward ClassId					
+
+	-- | Some auxilliary constraint between classes.
+	| ClassFetter
+		{ classId		:: ClassId
+		, classFetter		:: Fetter }
 
 	-- | An equivalence class.
 	| Class

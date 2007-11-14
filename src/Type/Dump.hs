@@ -98,18 +98,26 @@ prettyClass (ix :: Int) c
 	 -> pretty
 	 	$ ". ClassForward @" % ix % " ==> " % c % "\n\n"
 -}
+	ClassFetter{}
+	 -> pretty
+	 	$ "Class +" % classId c % "\n"
+		% "        " % classFetter c % "\n"
+		% "\n\n"
+
  	Class{}
 	 -> pretty
-	 	$ classKind c 
-		% " Class " 		% (padR 5 $ pretty $ classId c) % "\n"
-		% "  backRef = "	% (Set.toList $ classBackRef c) 	% "\n"
-		% "  type    = " 	% classType c				% "\n"
+		$ "Class " % classKind c % classId c 
+		%> ("\n" % ":: " % prettyTS (classType c))		% "\n\n"
+
+		% "        -- back refs\n"
+		% "        " % (Set.toList $ classBackRef c) 	% "\n"
 		% "\n"
+		% "        -- nodes\n"
 		% (concat
 			$ map pretty
-			$ map (\(t, i) -> "    " % padR 70 (pretty t) % " " % i % "\n")
+			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t) % "\n\n")
 			$ (classNodes c))
-		% "\n\n"
+		% "\n"
 	
 
 prettyVMap 	m
@@ -130,6 +138,12 @@ prettyVMapT 	m
 updateC :: Class -> SquidM Class
 updateC c@ClassForward{}	= return c
 updateC c@ClassNil{}		= return c
+updateC c@ClassFetter{}
+ = do	cid'		<- updateVC $ classId 	c
+ 	fetter'		<- updateVC $ classFetter c
+	return	$ c 
+		{ classId	= cid'
+		, classFetter	= fetter' }
 
 updateC c@Class{}
  = do	cid'		<- updateVC $ classId	   c

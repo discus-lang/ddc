@@ -29,12 +29,25 @@ data List %r1 a
 	= Nil
 	| Cons a (List %r1 a);
 
+x	= 5;
+
+argh b f
+ = case b of {
+ 	True	-> print;
+	False	-> update;
+	False	-> f;
+ };
+
+
+{-
 app2 b f g x
  = case b of {
  	True	-> (f, f x);
 	False	-> (g, g x);
 	True	-> (print, print x);
  };
+-}
+
 
 {-
 map f xx

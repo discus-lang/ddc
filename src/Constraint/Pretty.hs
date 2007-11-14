@@ -35,6 +35,8 @@ instance Pretty CTree where
 	CEqs 	src ts
 	 -> "@CEqs  " % ts
 
+	CClass	src v ts
+	 -> "@CClass " % v % " " % ts
 
 	CDataFields src v ts []	
 	 -> "@CDataFields " % v % " " % ts % " {};"

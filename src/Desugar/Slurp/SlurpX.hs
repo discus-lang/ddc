@@ -149,7 +149,10 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 
 	let qsMatch	= 
 		[ CEq srcObj   tObj 	$ makeTUnify KData tsAltsLHS
+
 		, CEq srcAlts  tRHS 	$ makeTUnify KData tsAltsRHS
+--		, CClass srcAlts  (primFInject (length tsAltsRHS)) (tRHS : tsAltsRHS)
+
 		, CEq srcMatch eMatch	$ TEffect primReadH [tObj]
 		, CEq srcMatch eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) 
 		, CEq srcMatch cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]

@@ -1,4 +1,5 @@
 
+
 module Type.Crush.Sum
 	( crushSumClass )
 where
@@ -24,7 +25,7 @@ import Type.Dump
 
 
 -----
-debug	= False
+debug	= True
 stage	= "Type.Crush.Sum"
 trace s	= when debug $ traceM s
 
@@ -32,8 +33,7 @@ trace s	= when debug $ traceM s
 
 crushSumClass :: ClassId -> SquidM ()
 crushSumClass cid
- = do	
- 	Just c	<- lookupClass cid
+ = do 	Just c	<- lookupClass cid
 	let t	= classType c
 	
 	case t of
@@ -79,7 +79,7 @@ mergeSum cid c t ts
 		$  map snocTFun ts
 	= do
 		t1	<- sumContraTS t1s
-		t2	<- sumCovarTS t2s
+		t2	<- sumContraTS t2s
 		eff	<- sumCovarTS effs
 		clo	<- sumCovarTS clos
 		

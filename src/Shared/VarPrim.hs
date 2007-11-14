@@ -49,8 +49,9 @@ primTObj	= primVar NameType	"Base.Obj"				TObj
 primTData	= primVar NameType	"Base.Data"				TData
 primTThunk	= primVar NameType	"Base.Thunk"				TThunk
 
-primFShape i	= primVar NameClass	("Base.Shape" ++ show i)		(FShape i)
-
+primFShape i	= primVar NameClass	("Base.Shape" ++ show i)		(FShape  i)
+primFUnify i	= primVar NameClass	("Base.Unify" ++ show i)		(FUnify  i)
+primFInject i	= primVar NameClass	("Base.Inject" ++ show i)		(FInject i)
 
 primProjField	= primVarI NameValue	"Base.primProjField"			VProjField
 					[ Var.ISeaName "primProjField"]
@@ -267,6 +268,12 @@ bindPrimVar n v
 
 	'S':'h':'a':'p':'e':xs
 			-> Just $ v { Var.bind = FShape (read xs) }
+
+	'U':'n':'i':'f':'y':xs
+			-> Just $ v { Var.bind = FUnify (read xs) }
+
+	'I':'n':'j':'e':'c':'t':xs
+			-> Just $ v { Var.bind = FInject (read xs) }
 
 	_		-> Nothing
 	

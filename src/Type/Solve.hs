@@ -172,7 +172,7 @@ solveCs	(c:cs)
 
 	-- Equality Constraint
 	CEq src t1 t2
- 	 -> do	trace	$ "### CEq  " % padR 20 (pretty t1) % " = " % t2 % "\n"
+ 	 -> do	trace	$ "### CEq  " % padR 20 (pretty t1) % " = " %> prettyTS t2 % "\n"
 		feedConstraint c
 		solveNext cs
 	
@@ -181,9 +181,14 @@ solveCs	(c:cs)
 	 	feedConstraint c
 		solveNext cs
 
+	CClass src v ts
+	 -> do	trace	$ "### CClass " % v % " " % ts % "\n"
+	 	feedConstraint c
+		solveNext cs
+
 	-- Generalisation
 	CGen src t1@(TVar k v1)
-	 -> do	trace	$ "### CGen  " % t1 %  "\n"
+	 -> do	trace	$ "### CGen  " % prettyTS t1 %  "\n"
 	 	modify (\s -> s { stateGenSusp
 					= Set.insert v1 (stateGenSusp s) })
 		solveNext cs

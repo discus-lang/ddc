@@ -23,7 +23,7 @@ import Type.Dump
 
 
 -----
-debug	= False
+debug	= True
 stage	= "Type.Squid.Unify"
 trace s	= when debug $ traceM s
 
@@ -137,6 +137,18 @@ unifyClassMerge cidT c queue@(t:_)
 			$  queue
 
 		return	$ TData v ts'
+
+	-- Effect constructors.
+	--	From the effect weakening rule it's always return a larger effect than needed.
+	--	Therefore, if we want to "Unify" two effects E1 and E1 it's safe to return
+	--	their l.u.b and use that inplace of both.
+	| and $ map (=@= TEffect{}) queue
+	= do	return	$ makeTSum KEffect queue
+
+	-- .. likewise for closures
+	| and $ map (=@= TFree{}) queue
+	= do	return	$ makeTSum KClosure queue
+
 
 	-- Oh oh..
 	-- A conflict at this stage means that something has

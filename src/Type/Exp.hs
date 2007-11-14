@@ -22,7 +22,6 @@ import Shared.Literal
 import Data.Ix
 import qualified Shared.Var	as Var
 
-
 -----------------------
 -- ClassId
 --	A unique name for a particular type/region/effect equivalence class.

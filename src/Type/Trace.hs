@@ -81,3 +81,11 @@ traceCidsDowns toVisit visited
 		traceCidsDowns toVisit' visited'
 
 
+-----
+-- traceFetterCidsUp
+--	Find all the fetter classes which are reachable by tracing up from this
+--	set of cids.
+--
+-- traceFetterCidsUp :: Set ClassId -> SquidM (Set ClassId)
+
+

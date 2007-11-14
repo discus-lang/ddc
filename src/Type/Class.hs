@@ -104,7 +104,7 @@ allocClass kind
 	return cid
 
 
--- |	If there is already a class for this variable then return that
+-- | If there is already a class for this variable then return that
 --		otherwise make a new one containing this var.
 makeClassV	
 	:: TypeSource		-- ^ Source of the constraint containing the variable.
@@ -130,7 +130,7 @@ makeClassV tSource kind v
 
 	     	return	cid
 
-	
+
 -- | Add a new type constraint to a class
 --	Doing this makes the class active.
 addToClass 
@@ -222,9 +222,11 @@ sinkClassId  cid
 sinkClassId' classes cid
  = do	mClass	<- liftIO (readArray classes cid)
  	case mClass of
-		ClassNil{}		-> return cid
 		ClassForward cid'	-> sinkClassId' classes cid'
+		ClassNil{}		-> return cid
+		ClassFetter{}		-> return cid
 		Class{}			-> return cid
+		
 
 		
 -----

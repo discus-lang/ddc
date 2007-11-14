@@ -25,6 +25,8 @@ import Type.Plate.FreeVars
 import Constraint.Exp
 import Constraint.Pretty
 
+import qualified Data.Array.IO	as Array
+
 -----
 stage	= "Type.Feed"
 
@@ -58,6 +60,27 @@ feedConstraint cc
 		let cids	= map (\(TClass k cid) -> cid) ts'
 		mergeClasses TUnify cids
 		return ()
+
+	CClass src v ts
+	 -> do	let ?src	= src
+
+	 	-- a new class to hold this node
+	 	cid		<- allocClass KFetter
+	 	
+		-- add the type args to the graph
+	 	Just ts'	<- liftM sequence
+				$  mapM (feedType (Just cid)) ts
+		
+		-- add the constraint
+		graph	<- gets stateGraph
+		let c	= ClassFetter
+			{ classId	= cid
+			, classFetter	= FConstraint v ts' }
+		
+		liftIO (Array.writeArray (graphClass graph) cid c)
+		registerClass (Var.bind v) cid
+		return ()		
+				
 
 	CDef src (TVar k v1) t2
 	 -> do	
