@@ -23,7 +23,7 @@ import Type.Dump
 
 
 -----
-debug	= True
+debug	= False
 stage	= "Type.Squid.Unify"
 trace s	= when debug $ traceM s
 

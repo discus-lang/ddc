@@ -120,18 +120,20 @@ instance Pretty Exp where
 	 -> pv v
 		
 	XLAM v k e
-	 -> let -- split of vars with simple kinds
+	 -> let -- split off vars with simple kinds
 	 	takeLAMs acc exp@(XLAM v k x)
 	 	  | elem k [TKind KRegion, TKind KEffect, TKind KClosure, TKind KData]	
 		  		= takeLAMs (v : acc) x
-		  | otherwise	= panic stage "pretty: higher kinds not handled"
 	 
 	 	takeLAMs acc exp
 		 = (exp, acc)
 	 
 	        (xRest, vsSimple)	= takeLAMs [] xx
 	    
-	    in  "/\\  " % ", " %!% map pv vsSimple % " ->\n" % xRest
+	    in	case vsSimple of
+	    	 []	-> "/\\ (" % padR 16 (sv v) % " :: " % k % ") ->\n" % e
+		 _	-> "/\\  " % ", " %!% map pv vsSimple % " ->\n" % xRest
+
 
 	XLam v t x eff clo
 	 -> "\\  (" % padR 16 (sv v) % " :: " % t % ")"

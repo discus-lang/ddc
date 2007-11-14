@@ -5,7 +5,7 @@ import Base;
 infix  0 := ;
 infix  0 += ;
 
-class Update a where
+class Updatable a where
 {
 	(:=)	:: forall b 
 		.  a -> b -(!e1 $c1)> ()

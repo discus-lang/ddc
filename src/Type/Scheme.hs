@@ -70,11 +70,9 @@ extractType varT
 	 
 extractTypeC varT cid
  = do 	tTrace		<- liftM sortFsT 	$ traceType cid
-	cidsDown	<- liftM Set.toList 	$ traceCidsDown cid
 
 	trace	$ "*** Scheme.extractType " % varT % "\n"
 		% "\n"
-		% "    cidsDown         = " % cidsDown	% "\n"
 		% "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
 
 	-- Check that the data portion of the type isn't graphical.

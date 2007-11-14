@@ -321,10 +321,8 @@ feedFetter	mParent f
 		return ()
 
 	FConstraint v ts
-	 -> do	cidC		<- allocClass KFetter
-	 	Just ts'	<- liftM sequence
-				$  mapM (feedType (Just cidC)) ts
-		addNode cidC	$ TFetter (FConstraint v ts')
+	 -> do 	addFetterNode f
+		return ()
 
 	FProj pj t1 t2 t3 eff clo
 	 -> do	cidC		<- allocClass KFetter
@@ -350,6 +348,32 @@ addNode :: (?src :: TypeSource)
 addNode    cidT	t
  = do	registerNode cidT t
  	addToClass cidT	?src t
+
+
+-- | Add a new fetter constraint to the graph
+addFetterNode 
+	:: (?src :: TypeSource)
+	-> Fetter 
+	-> SquidM ClassId
+
+addFetterNode f@(FConstraint v ts)
+ = do 	-- a new class to hold this node
+	cid		<- allocClass KFetter
+	 	
+	-- add the type args to the graph
+	Just ts'	<- liftM sequence
+			$  mapM (feedType (Just cid)) ts
+		
+	-- add the constraint
+	graph	<- gets stateGraph
+	let c	= ClassFetter
+		{ classId	= cid
+		, classFetter	= FConstraint v ts' }
+	
+	liftIO (Array.writeArray (graphClass graph) cid c)
+	registerClass (Var.bind v) cid
+
+	return cid
 
 
 -----	

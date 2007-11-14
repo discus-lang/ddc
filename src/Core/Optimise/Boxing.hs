@@ -257,6 +257,9 @@ eatAnnotsX xx
 unboxedType :: Type -> Maybe Type
 unboxedType t
  = case t of
+	TContext t1 t2
+	 -> unboxedType t2
+
  	TData v [r]
 	 | Var.bind v == Var.TBool	-> Just $ TData primTBoolU  	[r]
 	 | Var.bind v == Var.TInt	-> Just $ TData primTInt32U 	[r]

@@ -74,7 +74,7 @@ instance Num (Int %_) where
 	mod	= primInt32_mod;
 }
 
-instance Update (Int %_) where
+instance Updatable (Int %_) where
 {
 	(:=)	= primInt32_update;
 

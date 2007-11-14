@@ -297,6 +297,7 @@ toCoreX xx
 		
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts' C.TNil) ]
 		
+	-- primitive constants
 	D.XConst (Just (T.TVar T.KData vT, _)) 
 		(S.CConst lit)
 
@@ -304,7 +305,7 @@ toCoreX xx
 	 	t		<- getType vT
 	 	case C.unboxedType t of
 		 Just tU@(C.TData _ [tR])
-		  -> return 	$ C.XPrim (C.MBox t tU) [C.XConst (S.CConstU lit) tU] (C.TEffect primRead [tR])
+		  -> return 	$ C.XPrim (C.MBox (C.stripToShapeT t) tU) [C.XConst (S.CConstU lit) tU] (C.TEffect primRead [tR])
 			
 		 Nothing
 		  -> panic stage
@@ -440,13 +441,18 @@ toCoreX xx
 		  	-- Convert the type arguments to core.
 			let tsInstC	= map toCoreT tsInst
 			
-			-- If we're in a substitution context from a contra-variant port rewrite
+			-- If the function being instantiated needs some context then there'll be a 
+			--	separate witness for it... therefore we can safely erase contexts on
+			--	type arguements for the instantiation.
+			let tsInstCE	= map C.stripToShapeT tsInstC
+			
+			-- If we're in a substitution context do to a contra-variant port rewrite,
 			--	then apply it to the arguments.
 			mPortSub 	<- gets corePortSub
 			let tsInstC_portSub	= 
 				case mPortSub of
-				 Nothing	-> tsInstC
-				 Just portSub	-> map (C.substituteT portSub) tsInstC
+				 Nothing	-> tsInstCE
+				 Just portSub	-> map (C.substituteT portSub) tsInstCE
 			
 			-- Work out what types belong to each quantified var in the type
 			--	being instantiated.			
@@ -460,7 +466,7 @@ toCoreX xx
 				% vT 				% "\n"
 				% "    T[vT]           =\n" %> tScheme 		% "\n"
 				% "    context         = " % tsContextC		% "\n"
-				% "    tsInstC         = " % tsInstC		% "\n"
+				% "    tsInstCE        = " % tsInstCE		% "\n"
 				% "    tsInstC_portSub = " % tsInstC_portSub	% "\n"
 				% "    tsSub           = " % tsSub 		% "\n"
 				% "    tsContestC'     = " % tsContextC' 	% "\n")

@@ -134,6 +134,11 @@ renamePortsCoF f
 	 	let t2'		= substituteTT (Map.fromList sub) t2
 	 	return	$ FLet t1 t2'
 	
+	FConstraint v ts
+	 -> do	(subCon, subCo) <- get
+	 	let sub		= subCon ++ subCo
+		let ts'		= map (substituteTT (Map.fromList sub)) ts
+		return	$ FConstraint v ts'
 
 renamePortCo :: Type -> RenameM Type
 renamePortCo t
