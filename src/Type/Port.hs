@@ -171,11 +171,11 @@ renamePortsConT t
 	 	return	$ TData v ts'
 
 	TVar k v
-	 | elem k [KEffect, KClosure, KRegion]
+	 | elem k [KEffect, KClosure]
 	 -> renamePortCon t
 
 	TClass k cid
-	 | elem k [KEffect, KClosure, KRegion]
+	 | elem k [KEffect, KClosure]
 	 -> renamePortCon t
 	 
 	_	-> return t

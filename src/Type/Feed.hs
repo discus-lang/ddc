@@ -40,6 +40,7 @@ feedConstraint
 	
 feedConstraint cc
  = case cc of
+	-- Equality constraints. The LHS must be a variable.
  	CEq src (TVar k v1) t2
 	 -> do
 		-- create a new class for the LHS, with just that var in it.
@@ -62,6 +63,15 @@ feedConstraint cc
 		mergeClasses TUnify cids
 		return ()
 
+
+	-- Signatures behave the same way as plain equality constraints.
+	CSig src t1@(TVar k v1) t2
+	 -> do
+	 	feedConstraint (CEq src t1 t2)
+		return ()
+
+
+	-- Class constraints.
 	CClass src v ts
 	 -> do	let ?src	= src
 
@@ -83,6 +93,7 @@ feedConstraint cc
 		return ()		
 				
 
+	-- Type definitions, eg data constructors, external functions.
 	CDef src (TVar k v1) t2
 	 -> do	
 	 	-- make a new class to hold the type.
@@ -92,6 +103,7 @@ feedConstraint cc
 	 	addToClass cid src t2
 		
 		return ()
+
 
 	_ -> 	panic stage
 		 $ "feedConstraint: can't feed " % cc % "\n"

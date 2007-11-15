@@ -4,6 +4,7 @@ module Constraint.Bits
 	, isCDef
 	, isCProject
 	, isCDataFields
+	, isCSig
 	, takeCVar
 	, takeCType
 	, takeCBindVs
@@ -47,6 +48,11 @@ isCProject b
 isCDataFields b
  = case b of
  	CDataFields{}	-> True
+	_		-> False
+
+isCSig b
+ = case b of
+ 	CSig{}		-> True
 	_		-> False
 
 

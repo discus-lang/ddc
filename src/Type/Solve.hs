@@ -136,6 +136,12 @@ solveCs	(c:cs)
 
 		solveNext cs
 
+	-- type signature
+	CSig src t1 t2
+	 -> do	trace	$ "### CSig  " % padR 20 (pretty t1) % " = " %> prettyTS t2 % "\n"
+		feedConstraint c
+		solveNext cs
+
 	-- data fields
 	CDataFields src v vs fs
 	 -> do	trace	$ "### DataFields " % v % " " % vs % "\n"

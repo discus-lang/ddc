@@ -150,10 +150,10 @@ withPortSub var f
 
 	-- set the substitition associated with the var
  	portTable	<- gets corePortTable
-	let Just thisSub = 
-		Map.lookup var portTable
+--	let Just thisSub = 
+--		Map.lookup var portTable
 
-	modify $ \s -> s { corePortSub = Just thisSub }
+	modify $ \s -> s { corePortSub = Map.lookup var portTable }
 	
 	-- run the action
 	x	<- f

@@ -1,3 +1,4 @@
+-- | Slurp out type constraints from the desugared IR.
 
 module Desugar.Slurp.Slurp
 	( slurpTreeM )
@@ -38,22 +39,19 @@ import Desugar.Slurp.SlurpS
 -----
 stage	= "Desugar.Slurp.Slurp"
 
------------------------
--- slurpTreeM
---	Assumes that the tops are in the order as output by the renamer
---		Data, ImportsExterns, TypeSigs, Binds
---
+-- | Slurp out type constraints from this tree.
 slurpTreeM ::	Tree Annot1	-> CSlurpM (Tree Annot2, [CTree])
 slurpTreeM	tree
  = do
-	-- Slurp it.
+	-- Slurp out type constraints from the tree.
 	(tree', qss)	<- liftM unzip $ mapM slurpP tree
 	let qs		= concat qss
 	
-		
-	-- All the top level let branches get put in the same group.
-	let [qsLet, qsDef, qsProject, qsDataFields]
-			= partitionFs [isCBranchLet, isCDef, isCProject, isCDataFields]
+	-- We need to sort the constraints into an order that'll be acceptable to the solver. 
+	--	Put all 'known' stuff like external types, sigs, and class definitions at the front
+	--	and the constraints for the top level bindings after in one mutually recursive group.
+	let [qsLet, qsDef, qsProject, qsDataFields, qsSig]
+			= partitionFs [isCBranchLet, isCDef, isCProject, isCDataFields, isCSig]
 			$ qs
 
 	let vsLet	= concat
@@ -65,22 +63,18 @@ slurpTreeM	tree
 				{ branchBind 	= BLetGroup vsLet
 				, branchSub	= qsLet }]
 				
-	-- 
-	let qsFinal	= qsDataFields ++ qsProject ++ qsDef ++ qsFinal_let
+	let qsFinal	= qsDataFields ++ qsProject ++ qsDef ++ qsSig ++ qsFinal_let
+
 	
 	return 	 (tree', qsFinal)
 	
 
-
------------------------
--- slurpP
---
+-- | Slurp out type constraints from a top level thing.
 slurpP 	:: Top Annot1	
 	-> CSlurpM (Top Annot2, [CTree])
 
------
--- Extern
---
+
+-- external types
 slurpP	(PExtern sp v tv to) 
  = do
 	let src		= TSSig sp v
@@ -92,9 +86,7 @@ slurpP	(PExtern sp v tv to)
 	return	( PExtern Nothing v tv to
 		, qs)
 
------
--- Region/Effect/Class
--- 
+-- region/effect/class definitions
 slurpP	(PRegion sp v)
  =	return 	(PRegion Nothing v, [])
  
@@ -105,9 +97,7 @@ slurpP	(PClass	sp v k)
  =	return	(PClass Nothing v k, [])
 
 
------
--- Class dictionaries
---
+-- class dictionaries
 slurpP top@(PClassDict sp v ts context sigs)
  = do 	
  	qs	<- mapM (\(v, t) 
@@ -135,25 +125,20 @@ slurpP top@(PClassInst sp v ts context exps)
 		, [ CClassInst src v ts ] )
 
 	
-
------
--- Sig
---
+-- type Signatures
 slurpP	(PSig sp v tSig) 
  = do
 	let src		= TSSig sp v
 	tVar		<- lbindVtoT v
 
 	let qs	= 
-		[CEq src tVar tSig]
+		[CSig src tVar tSig]
 
  	return	( PSig Nothing v tSig
 		, qs)
 
 
------
--- Data
---
+-- data definitions
 slurpP	(PData sp v vs ctors)
  = do
 	let src		= TSData sp
@@ -180,9 +165,8 @@ slurpP	(PData sp v vs ctors)
 	return	( top'
 		, concat constrss ++ [dataFields])
 			
------
--- Project
---
+
+-- projection dictionaries
 slurpP	(PProjDict sp t ss)
  = do
 	let src		= TSProjDict sp
@@ -198,9 +182,7 @@ slurpP	(PProjDict sp t ss)
 		, [CProject src t projVars] )
 	
 	
------
--- PBind
---
+-- bindings
 slurpP (PBind sp mV x)
 
  = do
@@ -219,11 +201,8 @@ slurpP top
 		
 
 
------------------------
--- slurpCtorDef
---	Make type schemes for constructors.
---	Slurp out constraints for data field initialisation code.	
---
+-- | Make type schemes for constructors.
+--   Slurp out constraints for data field initialisation code.	
 slurpCtorDef
 	:: Var 					-- Datatype name.
 	-> [Var] 				-- Datatype args.

@@ -128,6 +128,7 @@ generaliseType varT tCore envCids
 	--	(a -(!e2)> b) -> (a -(!e3)> b) -> (a-(!e4)> b)
 	--	:- !e4 = !{ !e2; !e3 }
 	--
+
 	(tPort, portTable0)
 			<- forcePortsT tCore
 
@@ -162,6 +163,7 @@ generaliseType varT tCore envCids
 
 		% "    portTable\n"
 		%> pretty portTable		% "\n\n"
+
 
 
 	-- Work out which cids can't be generalised in this type.
