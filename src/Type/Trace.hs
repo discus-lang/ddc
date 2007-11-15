@@ -107,16 +107,11 @@ traceCidsDowns toVisit visited
 	 -> do	Just c		<- lookupClass cid
 		let visited'	=  Set.insert cid visited
 
-		moreR		<- refreshCids $ classLeaves c
+		moreR		<- refreshCids $ classChildren c
 		let more	=  Set.fromList moreR
 
 		let toVisit'	= (toVisit `Set.union` more) `Set.difference` visited'
 		traceCidsDowns toVisit' visited'
-
-classLeaves c
- = case c of
- 	ClassFetter{}	-> collectClassIds $ classFetter c
-	Class{}		-> collectClassIds $ classType c
 
 
 -----
@@ -141,7 +136,7 @@ traceFetterCidsUp1 visited acc work
 traceFetterCidsUp2 visited acc work cid c workTail
 
 	-- found one
-	| c =@= ClassFetter{}
+	| ClassFetter{}	<- c
 	= do	traceFetterCidsUp1
 			(Set.insert cid visited)
 			(Set.insert cid acc)

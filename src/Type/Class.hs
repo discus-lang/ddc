@@ -1,7 +1,9 @@
 
 module Type.Class
-	( expandGraph
+	( classChildren
+	, expandGraph
 	, allocClass
+	, delClass
 	, makeClassV
 	, addToClass
 	, lookupClass
@@ -48,11 +50,19 @@ import Type.Exp
 import Type.Util
 import Type.Plate.Trans
 import Type.State
+import Type.Plate.Collect
 
 import qualified Type.School as School
 
 -----
 stage	= "Type.Squid.Class"
+
+-- | Return the cids of all the children of this class.
+classChildren :: Class -> [ClassId]
+classChildren c
+ = case c of
+ 	ClassFetter{}	-> collectClassIds $ classFetter c
+	Class{}		-> collectClassIds $ classType c
 
 
 -- | Increase the size of the type graph.
@@ -103,6 +113,35 @@ allocClass kind
 	
 	return cid
 
+
+-- | Delete a class by setting it to Nil and removing the backrefs from its children
+delClass
+	:: ClassId
+	-> SquidM ()
+
+delClass cid
+ = do	Just c		<- lookupClass cid
+	updateClass cid ClassNil
+
+ 	let cidChildren	= classChildren c
+	mapM_ (delBackRef cid) cidChildren
+
+	return ()	
+	
+	
+-- | Delete a backref from the graph.
+delBackRef
+	:: ClassId 	-- parent node
+	-> ClassId 	-- child node
+	-> SquidM ()
+
+delBackRef cidParent cidChild
+ = do	
+ 	Just c	<- lookupClass cidChild
+	let c'	= c { classBackRef = Set.delete cidParent (classBackRef c) }
+	updateClass cidChild c'
+
+	
 
 -- | If there is already a class for this variable then return that
 --		otherwise make a new one containing this var.
@@ -457,5 +496,3 @@ unregisterClass bind cid
 				register })
 
 	
-
-

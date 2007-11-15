@@ -18,7 +18,6 @@ import Type.Plate.Update
 import Type.Base
 import Type.State
 import Type.Class
-import Type.Mash
 
 import Type.Grind
 import Type.Scheme

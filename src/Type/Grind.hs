@@ -1,8 +1,7 @@
+-- | 
 
 module Type.Grind
-(
-	solveGrind
-)
+	( solveGrind )
 
 where
 
@@ -24,7 +23,6 @@ import Type.Util
 
 import Type.Class
 import Type.State
-import Type.Mash
 
 import Type.Crush.Unify
 import Type.Crush.Fetter
@@ -38,12 +36,13 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Squid.Grind"
 
------
-solveGrind ::	SquidM ()
+
+-- | Perform unification, resolve projections and grind out any available effects
+--	or fetters in the graph.
+solveGrind :: SquidM ()
 solveGrind
  = do
 	-- Grab lists of interesting equivalence classes from the register.
-	--
 	register		<- gets stateRegister
 
 	let getReg bind		
@@ -57,6 +56,7 @@ solveGrind
 	regFMutableT	<- getReg Var.FMutableT
 	regFConstT	<- getReg Var.FConstT
 
+
 	-- debug
 	trace	$ "\n"
 		% "=============================================================\n"
@@ -68,15 +68,14 @@ solveGrind
 		% "    regFConstT   = " % regFConstT	% "\n"
 		% "\n\n"
 
-	-- Unify queued classes.
+	-- Run the unifier.
 	trace	$ prettyp "*   Grind.solveGrind, unifying.\n"
 	solveUnify
 
-	-- Now that the graph is unified, we can try and crush out some of the compound
-	--	effects and constraints. Crushing these constructors will not add anything
-	--	to type the equivalence classes, so there's no need for an iterative process
-	--	as in solveUnify.
-	--
+
+	-- Now that the graph is unified, we can try and crush out some of the simpler compound
+	--	effects and fetters. Crushing these constructors will not add any more constraints
+	--	to nodes in the graph, so there is no need to interleave it with unification.
 
 	-- Crush out EReadTs
 	trace	$ prettyp "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
@@ -95,10 +94,13 @@ solveGrind
 	return ()
 
 
+-- Unify some classes in the graph.
+--	The crushing of Shape and projection fetters is interleaved with batches unification
+--	because the crushing can add more constraints to the graph.
+--
 solveUnify ::	SquidM ()
 solveUnify 	
- = do	
-	-- get classes waiting to be unified
+ = do	-- get the list of nodes which have constraints waiting to be unified.
  	queued		<- liftM Set.toList $ clearActive 		
 
 	-- get classes waiting to be projected
@@ -109,34 +111,33 @@ solveUnify
 
 solveUnifySpin queued regProj errors
 
-	-- got errors, bail out
+	-- If there are errors in the solver state then bail out.
 	| not $ isNil errors
 	= return ()
 	
-	-- all done
+	-- If no nodes need to be unified and there are no projections left
+	--	in the graph then we're done.
 	| []	<- queued
 	, []	<- regProj
 	= return ()
 	
-	-- do some work
+	-- Otherwise, try to unify or crush something.
 	| otherwise
 	= solveUnifyWork queued regProj errors
 
-
 solveUnifyWork queued regProj errors
- = do
-	trace	$ "*   Grid.solveUnifyWork\n"
-		% "    queued      = " % queued		% "\n\n"
+ = do	trace	$ "*   Grid.solveUnifyWork\n"
+		% "    queued      = " % queued		% "\n"
 
   	-- Try to unify some of the queued classes.
   	mapM_ crushUnifyClass queued
 
-	mapM_ crushSumClass queued
-{-
 	-- Try to crush out some of the Shape fetters.
 	regShapes	<- getRegShapes
+	trace	$ "    regShapes   = " % regShapes	% "\n"
 	mapM crushShape regShapes
 
+{-
 	-- Try to crush out some of the FieldIs fetters.
 	crushedSomeProjs
 		<- liftM or 
@@ -158,21 +159,21 @@ solveUnifyWork queued regProj errors
 	-- debug
 {-	trace	$ "*   Grind.solveUnify\n"
 		% "    queued      = " % queued		% "\n"
---		% "    regShapes   = " % regShapes	% "\n"
 --		% "    regProj     = " % regProj	% "\n"
 --		% "    regProj'    = " % regProj'	% "\n"
 		% "    progress    = " % progress	% "\n"
 		% "\n"
 -}
+	trace	$ prettyp "\n"
 	solveUnify
 
 {-	if progress
 		then	solveUnify
 		else	errorProjection regProj'
 -}
- 	return ()
 
-	
+
+-- | Get the list of classe which contain projection fetters.
 getRegProj :: SquidM [ClassId]			  	
 getRegProj
  = do	register	<- gets stateRegister
@@ -183,6 +184,8 @@ getRegProj
 
 	return regProj
 
+
+-- | Get the list of classes which contain shape fetters.
 getRegShapes :: SquidM [ClassId]
 getRegShapes
  = do	register	<- gets stateRegister
@@ -194,6 +197,8 @@ getRegShapes
 	return regShapes
 
 
+-- | Add an ambiguous projection error to the solver state.
+errorProjection :: [ClassId] -> SquidM ()
 errorProjection (cid:_)
  = do
 	-- Lookup one of the classes and extract the offending FielsIs fetters.
@@ -208,8 +213,4 @@ errorProjection (cid:_)
 		{ eProj		= f }]
 
 	return ()
-
-
-
-
-
+	

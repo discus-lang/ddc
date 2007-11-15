@@ -1,8 +1,7 @@
+-- | Handles crushing of shape constraints.
 
 module Type.Crush.Shape
---	( crushShape )
-	()
-
+	( crushShape )
 where
 
 import Util
@@ -22,50 +21,48 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Shape"
 
-{-
+
 -----
 -- crushShape
---	Crush the shape fetter in this class.
+--	Try and crush the Shape constraint in this class.
+--	If any of the nodes in the constraint contains a type constructor then add a similar constructor
+--	to the other nodes and remove the constraint from the graph.
 --
 --	TODO: Add more shape fetters recursively.
 --
-crushShape
-	:: ClassId -> SquidM ()
-
+crushShape :: ClassId -> SquidM ()
 crushShape shapeCid
- = do 	-- Grab the Shape fetter from the class and extract the list
-	--	of cids to be merged.
-	--
+ = do 	
+ 	-- Grab the Shape fetter from the class and extract the list of cids to be merged.
 	Just shapeC	<- lookupClass shapeCid
-	let fs@[TFetter (FClass v shapeTs)]
-			= classQueue shapeC
 
-	let mergeCids	= map (\(TClass cid) -> cid) shapeTs
+	let f@(FConstraint v shapeTs) = classFetter shapeC
+	let mergeCids	= map (\(TClass k cid) -> cid) shapeTs
 
 	trace	$ "*   Crush.crushShape " 	% shapeCid 	% "\n"
-		% "    fs        = "	 	% fs		% "\n"
-		% "    mergeCids = "		% mergeCids 	% "\n"
+		% "    fetter      = "	 	% f		% "\n"
+		% "    mergeCids   = "		% mergeCids 	% "\n"
+
 
  	-- Make sure that all the classes to be merged are unified.
 	--	We're expecting a maximum of one constructor per class queue.
 	--
- 	mapM unifyClass mergeCids
+ 	mapM crushUnifyClass mergeCids
  
-	-- Lookup all the classes.
+	-- Lookup all the nodes.
  	mergeCs		<- liftM (map (\(Just c) -> c)) 
  			$  mapM lookupClass mergeCids
 
-	-- Try and extract a type template from one of the queues.
-	--
-	let mts		= map (\c -> case classQueue c of
-				[]	-> Nothing
-				[t]	-> Just t)
+	-- Try and extract a type template from one of the nodes.
+	let mts		= map (\c -> case classType c of
+				TBot _	-> Nothing
+				t	-> Just t)
 			$ mergeCs
 	
 	let template	= takeFirstJust mts
 
-	trace	$ "    mTs        = "	% mts		% "\n"
-		% "    template   = "	% template	% "\n"
+	trace	$ "    mTs         = "	% mts		% "\n"
+		% "    template    = "	% template	% "\n"
 		% "\n"
 		
 	case template of
@@ -76,26 +73,24 @@ crushShape shapeCid
 	 --	We can merge the sub classes and remove the shape constaint.
 	 Just tt	
 	  -> do	crushShapeMerge mergeCids mergeCs mts tt
-	 	let shapeC'	= shapeC { classQueue = [] }
-		updateClass shapeCid shapeC'
-
+		delClass shapeCid
+		
 		unregisterClass (Var.FShape 0) shapeCid
 		return ()
-
 
 
 crushShapeMerge 
 	:: [ClassId] 		-- classIds to merge
 	-> [Class] 		-- classes corresponding to each classId above.
-	-> [Maybe Type] 	-- Just a type from the queue, or Nothing if the queue was empty.
-	-> Type			-- a representative type.
+	-> [Maybe Type] 	-- the types of the nodes, or Nothing if they're bottom.
+	-> Type			-- the template type.
 	-> SquidM ()
 
-crushShapeMerge cids cs mts template@(TCon v templateTs)
- = do 	let kinds	= map typeToKind templateTs
+crushShapeMerge cids cs mts template@(TData v templateTs)
+ = do 	let kinds	= map kindOfType templateTs
 
 	-- Grab the type args from each of the available constructors.
- 	let mArgss	= map (\mt -> liftM (\(TCon v ts) -> ts) mt) mts
+ 	let mArgss	= map (\mt -> liftM (\(TData v ts) -> ts) mt) mts
 
 	-- Merge together type/effect/closure args but leave region args independent.
 	--	If there is no region arg in a type then make a fresh one.
@@ -104,7 +99,7 @@ crushShapeMerge cids cs mts template@(TCon v templateTs)
 
 	-- Update the classes with the freshly merged types
 	let cs'		= zipWith 
-				(\c args -> c { classQueue = [TCon v args] }) 
+				(\c args -> c { classType = TData v args }) 
 				cs 
 				argsMerged
 	
@@ -119,12 +114,12 @@ crushShapeMerge cids cs mts template@(TCon v templateTs)
 	return () 
 	
 
--- The template isn't a TCon as we were expecting.
---	This'll be a type error.
---	Just merge all the classes so that Unify finds the error.
+-- The template isn't a TData as we were expecting.
+--	This'll end up being a type error, but just merge all the classes for now
+--	so unify finds the error.
 --	
 crushShapeMerge cids cs mts template
- = do	mergeClasses cids
+ = do	mergeClasses TUnify cids
  	return ()
 	
 	
@@ -136,13 +131,13 @@ synthArgs []
 	= return []
 	
 synthArgs (a:as) 
-	| TRegion (RClass cidA)	<- a
+	| TClass KRegion cidA	<- a
 	= do	var	<- newVarN    NameRegion
 		cidB	<- allocClass KRegion
-		addToClass cidB (TRegion (RVar var), TSSynth var)
+		addToClass cidB (TSSynth var) (TVar KRegion var)
 		
 		rest	<- synthArgs as
-		return	(TRegion (RClass cidB) : rest)
+		return	(TClass KRegion cidB : rest)
 		
 	| otherwise
 	= do	rest	<- synthArgs as
@@ -154,14 +149,14 @@ mergeArgs []	 []
 	= return []
 	
 mergeArgs (a:as) (b:bs)
-	| TClass cidA	<- a
-	, TClass cidB	<- b
+	| TClass kA cidA	<- a
+	, TClass kB cidB	<- b
 	= do
-		cid	<- mergeClasses [cidA, cidB]
+		cid	<- mergeClasses TUnify [cidA, cidB]
 		rest	<- mergeArgs as bs
-		return	(TClass cid : rest)
+		return	(TClass kA cid : rest)
 		
 	| otherwise
 	= do	rest	<- mergeArgs as bs
 		return	(b : rest)
--}
+

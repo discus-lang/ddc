@@ -2,7 +2,8 @@
 module Type.Feed
 	( feedConstraint
 	, feedType 
-	, registerNode )
+	, registerNodeT
+	, registerNodeF )
 
 where
 
@@ -346,7 +347,7 @@ addNode :: (?src :: TypeSource)
 	-> SquidM ()
 	
 addNode    cidT	t
- = do	registerNode cidT t
+ = do	registerNodeT cidT t
  	addToClass cidT	?src t
 
 
@@ -371,20 +372,40 @@ addFetterNode f@(FConstraint v ts)
 		, classFetter	= FConstraint v ts' }
 	
 	liftIO (Array.writeArray (graphClass graph) cid c)
-	registerClass (Var.bind v) cid
-
+	registerNodeF cid f
+	
 	return cid
 
 
------	
--- registerNode
---
-registerNode ::	ClassId -> Type -> SquidM ()
-registerNode	cid tt
+-- | Register a type node.
+registerNodeT :: ClassId -> Type -> SquidM ()
+registerNodeT	cid tt
 	| elem Var.EReadH
 		$ map Var.bind 
 		$ freeVarsT tt
 	= registerClass Var.EReadH cid
+
+	| otherwise
+	= return ()				
+
+-- | Register a fetter node.
+registerNodeF :: ClassId -> Fetter -> SquidM ()
+registerNodeF cid ff
+ = case ff of
+ 	FConstraint v ts
+ 	 -- Register shape constraints with arity to zero so that they're all recorded
+	 --	in the same register slot.
+	 | isFShape (Var.bind v)
+	 -> registerClass (Var.FShape 0) cid
+
+	_ 
+	 -> return ()
+
+
+isFShape (Var.FShape _)	= True
+isFShape _		= False
+	
+
 {-
  = case t of
 	-- effects
@@ -410,17 +431,6 @@ registerNode	cid tt
 	 -> registerClass Var.FConstT cid
 
 
-	-- change arity to zero, so that all the cids that hold shape
-	--	constructors are in the same register slot.
-	 | isFShape (Var.bind v)			-- Shape
-	 -> registerClass (Var.FShape 0) cid
-	 
 	TFetter (FProj{})				-- Proj
 	 -> registerClass Var.FProj cid
 -}
-	| otherwise
-	= return ()				
-
-isFShape (Var.FShape _)	= True
-isFShape _		= False
-	

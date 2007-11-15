@@ -63,7 +63,7 @@ crushEffectC cid
 
 		-- update the register
 		unregisterClass Var.EReadH cid
-		registerNode cid tCrushed
+		registerNodeT cid tCrushed
 
 		return ()
 

@@ -33,7 +33,7 @@ trace s	= when debug $ traceM s
 --	Unify the elements in an equivalences classes queue.
 --	If there are any errors then these are added to the SquidM monad.
 --
-crushUnifyClass ::	ClassId	-> SquidM ()
+crushUnifyClass :: ClassId	-> SquidM ()
 crushUnifyClass	cidT
  = do
 	Just c	<- lookupClass cidT
