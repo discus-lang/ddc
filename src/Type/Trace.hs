@@ -27,11 +27,16 @@ traceType cid
  	-- See which classes are reachable by tracing down from this one.
  	cidsDown	<- traceCidsDown cid
 
-	-- See what fetter classes are reachable by tracing back up from these.
+	-- Find fetters acting on this subgraph by tracing back up from the nodes.
 	cidsFetterUp	<- traceFetterCidsUp cidsDown
 
-	let cidsReachable	= Set.union cidsDown cidsFetterUp
+	-- Trace out the subgraph reachable by these fetters.
+	cidsFetterDown	<- traceCidsDowns cidsFetterUp Set.empty
 
+	-- These are all the interesting cids.
+	let cidsReachable	= Set.union cidsDown cidsFetterDown
+
+	-- Load in the nodes for this subgraph.
 	t	<- loadType cid cidsReachable
 	return t
 
@@ -102,11 +107,16 @@ traceCidsDowns toVisit visited
 	 -> do	Just c		<- lookupClass cid
 		let visited'	=  Set.insert cid visited
 
-		moreR		<- refreshCids $ collectClassIds $ classType c
+		moreR		<- refreshCids $ classLeaves c
 		let more	=  Set.fromList moreR
 
 		let toVisit'	= (toVisit `Set.union` more) `Set.difference` visited'
 		traceCidsDowns toVisit' visited'
+
+classLeaves c
+ = case c of
+ 	ClassFetter{}	-> collectClassIds $ classFetter c
+	Class{}		-> collectClassIds $ classType c
 
 
 -----
@@ -153,3 +163,5 @@ traceFetterCidsUp2 visited acc work cid c workTail
 			(Set.insert cid visited)
 			acc
 			(Set.union (Set.delete cid work) back)
+
+
