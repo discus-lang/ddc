@@ -63,7 +63,7 @@ instance Pretty Type where
 	TTag v			-> prettyp v
 	
 	-- wild cards
-	TWild k			-> "(" % k % ")"
+	TWild k			-> k % "_"
 
 
 	---- used in the type solver

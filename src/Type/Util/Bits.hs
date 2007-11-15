@@ -142,10 +142,14 @@ makeTMask k t1 t2
 -- | Crush a TMask by discarding TFree and TEffects 
 --	in the first term which are present in the second.
 applyTMask :: Type -> Type
-applyTMask (TMask k t1 t2)
+applyTMask tt@(TMask k t1 t2)
  = let	vsKill	= map (\t -> case t of
  				TFree v t	-> v
-				TTag  v		-> v)
+				TTag  v		-> v
+				_		
+				 -> panic stage 
+				 	$ "applyTMask: no match for " % show t % "\n"
+				  	% "  tt = " % show tt % "\n")
 		$ flattenTSum t2
 		
 	tsMasked

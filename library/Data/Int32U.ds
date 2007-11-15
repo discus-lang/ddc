@@ -39,22 +39,22 @@ foreign import extern "primInt32U_mod"
  primInt32U_mod	:: elaborate Int32# -> Int32# -> Int32#;
  
 foreign import extern "primInt32U_eq"	
- primInt32U_eq	:: elaborate Int32# -> Int32# -> Bool#;
+ primInt32U_eq	:: elaborate Int32# -> Int32# -> Int32#;
 
 foreign import extern "primInt32U_neq"	
- primInt32U_neq	:: elaborate Int32# -> Int32# -> Bool#;
+ primInt32U_neq	:: elaborate Int32# -> Int32# -> Int32#;
 
 foreign import extern "primInt32U_gt"	
- primInt32U_gt	:: elaborate Int32# -> Int32# -> Bool#;
+ primInt32U_gt	:: elaborate Int32# -> Int32# -> Int32#;
 
 foreign import extern "primInt32U_ge"	
- primInt32U_ge	:: elaborate Int32# -> Int32# -> Bool#;
+ primInt32U_ge	:: elaborate Int32# -> Int32# -> Int32#;
 
 foreign import extern "primInt32U_lt"	
- primInt32U_lt	:: elaborate Int32# -> Int32# -> Bool#;
+ primInt32U_lt	:: elaborate Int32# -> Int32# -> Int32#;
 
 foreign import extern "primInt32U_le"	
- primInt32U_le	:: elaborate Int32# -> Int32# -> Bool#;
+ primInt32U_le	:: elaborate Int32# -> Int32# -> Int32#;
 
 
 -----

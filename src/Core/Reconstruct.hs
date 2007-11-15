@@ -247,7 +247,7 @@ applyValueT (TWhere t2 vts) t
 
 applyValueT t0@(TFunEC t1 t2 eff clo) t3	
 	| t1_flat	<- inlineTWheresT Map.empty t1
-	, t3_flat	<- inlineTWheresT Map.empty t3
+	, t3_flat	<- stripToShapeT $ inlineTWheresT Map.empty t3
 	= if t1_flat == t3_flat
 		then Just (t2, eff)
 		else freakout stage

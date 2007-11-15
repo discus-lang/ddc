@@ -83,7 +83,7 @@ packTypeLs ls tt
 	    
 	TMask k t1 t2
 	 -> let	t1'	= packTypeLs ls t1
-	 	t2'	= packTypeLs ls $ loadFunData ls t2
+	 	t2'	= packTypeLs ls $ loadType ls t2
 	    
 	    in  makeTMask k t1' t2'
 	    
@@ -214,6 +214,8 @@ loadCV ls tt
    		TClass{}	-> tt'
 		TVar{}		-> tt'
 		_		-> tt		
+
+
 
 
 

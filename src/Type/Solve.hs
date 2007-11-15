@@ -171,7 +171,7 @@ solveCs	(c:cs)
 	CLeave vs
 	 -> do	trace	$ "\n### CLeave " % vs % "\n"
 	 	path	<- gets statePath
-		trace	$ "    path = " % path 	% "\n"
+--		trace	$ "    path = " % path 	% "\n"
 			 	
 		-- We're leaving the branch, so pop ourselves off the path.
 	 	pathLeave vs
@@ -224,7 +224,7 @@ solveCInst 	cs	c@(CInst src vUse vInst)
 	path@(p:_)		<- gets statePath
 	trace	$ "\n"
 		% "### CInst " % vUse % " <- " % vInst					% "\n"
-		% "    path          = " % path 					% "\n"
+--		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	sGenDone		<- gets stateGenDone
@@ -261,7 +261,8 @@ solveCInst_simple cs c vUse vInst bindInst path sGenDone
 	-- IF   the var has already been generalised/defined 
 	-- THEN then we can extract it straight from the graph.
 	| Set.member vInst sGenDone
-	= do	trace	$ prettyp "=== Scheme is in graph.\n"
+	= do	
+		trace	$ prettyp "=== Scheme is in graph.\n"
 		solveGrind
 		Just tScheme	<- extractType vInst
 		
@@ -275,7 +276,8 @@ solveCInst_simple cs c vUse vInst bindInst path sGenDone
 	-- THEN	we're inside this branch.
 	| (bind : _)	<- filter (\b -> (not $ b =@= BLetGroup{})
 				      && (elem vInst $ takeCBindVs b)) path
-	= do	trace	$ prettyp "=== Inside this branch\n"
+	= do	
+		trace	$ prettyp "=== Inside this branch\n"
 		let tInst = TVar KData vInst
 
 		-- check how this var was bound and build the appropriate InstanceInfo
@@ -309,11 +311,11 @@ solveCInst_let cs c vUse vInst bindInst path
 	let gDeps	=  Map.unionWith (Set.union) gContains gInstLet
 	genSusp		<- gets stateGenSusp
 
-	trace	$ "    gContains:\n" 	%> prettyBranchGraph gContains	% "\n\n"
+{-	trace	$ "    gContains:\n" 	%> prettyBranchGraph gContains	% "\n\n"
 		% "    gInstLet:\n" 	%> prettyBranchGraph gInstLet	% "\n\n"
 		% "    gDeps:\n" 	%> prettyBranchGraph gDeps 	% "\n\n"
 		% "    genSusp       = " % genSusp			% "\n\n"
-
+-}
 	solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	
 
@@ -326,7 +328,8 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	, sDeps		<- graphReachableS gDeps (Set.singleton bindInst)
 	, (p : _)	<- path
 	, Set.member p sDeps
-	= do 	trace	$ prettyp "=== Recursive path\n"
+	= do 	
+		trace	$ prettyp "=== Recursive path\n"
 
 		let tInst	= TVar KData vInst
 		solveCInst_inst cs c tInst
@@ -336,7 +339,8 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	-- AND	it's not recursive
 	-- THEN	generalise it and use that scheme for the instantiation
 	| Set.member vInst genSusp
-	= do	trace	$ prettyp "=== Generalisation\n"
+	= do	
+		trace	$ prettyp "=== Generalisation\n"
 		solveGrind
 		tScheme	<- solveGeneralise vInst
 		
@@ -352,8 +356,9 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	-- 	Reorder the constraints to process that branch first before
 	--	we try the instantiation again.
 	| otherwise
-	= do	trace	$ "=== Reorder.\n"
-			% "    queue =\n" %> (", " %!% map prettyCTreeS (c:cs)) % "\n\n"
+	= do	
+--		trace	$ "=== Reorder.\n"
+--			% "    queue =\n" %> (", " %!% map prettyCTreeS (c:cs)) % "\n\n"
 	
 		let floatBranch prev cc
 			= case cc of
@@ -370,7 +375,7 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 		-- Reorder the constraints so the required branch is at the front
 		let csReordered	= floatBranch [] (c:cs)
 	
-		trace	$ "    queue' =\n" %> (", " %!% map prettyCTreeS csReordered) % "\n\n"
+--		trace	$ "    queue' =\n" %> (", " %!% map prettyCTreeS csReordered) % "\n\n"
 	
 		-- Carry on solving
 		solveCs csReordered

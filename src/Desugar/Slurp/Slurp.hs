@@ -188,6 +188,15 @@ slurpP (PBind sp mV x)
  = do
 	(vT, eff, clo, stmt', qs)
 			<- slurpS (SBind sp mV x)
+
+	-- If the stmt binds a var then we want the type for it from the solver.
+	(case bindingVarOfStmt stmt' of
+		Just v	
+		 -> do	vT_bound	<- getVtoT v
+		 	wantTypeV vT_bound
+			return ()
+		
+		Nothing	-> return ())
 			
 	let (SBind nn mV' x')
 			= stmt'

@@ -57,7 +57,7 @@ slurpS	(SBind sp (Just v) e1)
 			<- slurpX e1
 
 	-- we'll be wanting the type of this binding when we convert to core
-	modify (\s -> s { stateTypesPlease = Set.insert vBindT (stateTypesPlease s)  })
+--	wantTypeV vBindT
 
 	return	( tX
 		, eX
@@ -84,3 +84,6 @@ slurpS	stmt@(SSig sp varV t)
 		, empty
 		, SSig Nothing varV t
 		, qs)
+
+
+

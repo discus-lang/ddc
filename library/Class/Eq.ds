@@ -20,13 +20,13 @@ class Eq a where
 
 
 	(#==)	:: forall b %r1
-		.  a -> b -(!e1 $c1)> Bool# %r1
+		.  a -> b -(!e1 $c1)> Int32# %r1
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
 		,  Shape2 a b;
 
 	(#/=)	:: forall b %r1
-		.  a -> b -(!e1 $c1)> Bool# %r1
+		.  a -> b -(!e1 $c1)> Int32# %r1
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
 		,  Shape2 a b;

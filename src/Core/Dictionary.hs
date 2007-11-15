@@ -27,7 +27,7 @@ import Core.Pretty
 
 -----
 stage		= "Core.Dictionary"
-debug		= True
+debug		= False
 trace ss x	= if debug 
 			then Debug.trace ss x
 			else x

@@ -244,6 +244,11 @@ slurpX	exp@(XDo sp stmts)
 	(tsStmts, esStmts, csStmts, stmts', qssStmts)
 			<- liftM unzip5 $ mapM slurpS stmts
 
+	boundTVs	<- mapM getVtoT boundVs
+	wantTypeVs boundTVs
+	
+	
+
 	let Just tLast	= takeLast tsStmts
 	let qsStmts	= concat qssStmts
 

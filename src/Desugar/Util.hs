@@ -3,7 +3,8 @@ module Desugar.Util
 	( unflattenApps
 	, takeStmtBoundV
 	, takeAnnotX 
-	, collectVars )
+	, collectVars 
+	, bindingVarOfStmt )
 where
 
 import Util
@@ -67,7 +68,11 @@ collectVars xx
    in	execState (transZM transTable xx) Set.empty
 	
 	
-
+bindingVarOfStmt :: Stmt a -> Maybe Var
+bindingVarOfStmt ss
+ = case ss of
+	SBind sp mv x	-> mv
+	_		-> Nothing
 	
 
 

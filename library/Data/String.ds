@@ -28,8 +28,7 @@ foreign import extern "_unboxString"
 		:$ Obj -> String#;
 		
 
-
-
+{-
 foreign import extern "strcmp"
  strcmpU	:: elaborate String# -> String# -> Int32#;
  primString_eq	s1 s2	
@@ -37,12 +36,12 @@ foreign import extern "strcmp"
  	s1M	= string_merge s1;
 	s2M	= string_merge s2;
 	
-	case strcmpU (unboxString s1M) (unboxString s2M) `primInt32U_eq` 0# of {
+	case primInt32U_eq (strcmpU (unboxString s1M) (unboxString s2M))  0# of {
   		1#	-> True;
 		0#	-> False;
 	};
   };
-
+-}
 
 foreign import extern "strlen"
  strlenU	:: elaborate String# -> Int32#;
@@ -52,7 +51,7 @@ foreign import extern "strlen"
 	_		-> boxInt32 (strlenU (unboxString ss));
  };
   
-
+{-
 foreign import extern "strcat"
  unsafe_strcatU	:: elaborate (mutable String#) -> String# -> String#;
  string_unsafe_concat s1 s2
@@ -77,7 +76,7 @@ foreign import extern "primString_ord"
  string_ord	:: elaborate String -> Int;
 
 
-instance Eq (String (%)) where
+instance Eq (String %_) where
 {
 	(==) 	= primString_eq;
 
@@ -91,14 +90,13 @@ newString length
  	len	= unboxInt32 length + 1#;
 
 	-- round length up to 4 byte word boundary for the DataR object.
-	spill	= len `mod` 4#;
+	spill	= mod len 4#;
 	lenS	= case spill #== 0# of {
 				1#	-> len;
 				0#	-> len + (4# - spill);
 			};		
-	
+
 	-- alloc the object.
-	str	:: String;				-- compiler bug workaround 14/2/2007
 	str	= primAlloc_dataR 0# lenS;
  
  	-- grab a ptr to the raw string from the new object.
@@ -109,6 +107,8 @@ newString length
 	
 	str;
  }; 
+
+
 
 string_isFlat :: String -> Bool;
 string_isFlat ss
@@ -168,3 +168,6 @@ project String where
 	isNul x		= string_isNul x;	
 	ord x		= string_ord x;
 }
+
+
+-}

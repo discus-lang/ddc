@@ -98,7 +98,7 @@ data	CSlurpS =
 
 	-- The set of TEC vars we need to infer TECs for so that we can 
 	--	convert the desugared code to core.
-	, stateTypesPlease	:: Set Var
+	, stateTypesRequest	:: Set Var
 
 	, stateSlurpDefs	:: Map Var Type
 
@@ -125,7 +125,7 @@ initCSlurpS
 	, stateCtorType		= Map.empty
 	, stateCtorFields	= Map.empty
 
-	, stateTypesPlease	= Set.empty
+	, stateTypesRequest	= Set.empty
 
 	, stateSlurpDefs 	= Map.empty
 

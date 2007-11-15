@@ -22,45 +22,45 @@ infix  5 <, <=, >=, > ;
 -- Class dictionaries
 
 -- Class instances
-instance Eq (Base.Int (%)) where
+instance Eq (Base.Int %_) where
 {
-        Class.Eq.(==)    = primInt32_eq;
+        (==)     = primInt32_eq;
         
-        Class.Eq.(/=)    = primInt32_neq;
+        (/=)     = primInt32_neq;
 }
 
-instance Ord (Base.Int (%)) where
+instance Ord (Base.Int %_) where
 {
-        Class.Ord.(>)    = primInt32_gt;
+        (>)      = primInt32_gt;
         
-        Class.Ord.(<)    = primInt32_lt;
+        (<)      = primInt32_lt;
         
-        Class.Ord.(>=)   = primInt32_ge;
+        (>=)     = primInt32_ge;
         
-        Class.Ord.(<=)   = primInt32_le;
+        (<=)     = primInt32_le;
 }
 
-instance Num (Base.Int (%)) where
+instance Num (Base.Int %_) where
 {
-        Class.Num.(+)    = primInt32_add;
+        (+)      = primInt32_add;
         
-        Class.Num.(-)    = primInt32_sub;
+        (-)      = primInt32_sub;
         
-        Class.Num.(*)    = primInt32_mul;
+        (*)      = primInt32_mul;
         
-        Class.Num.(/)    = primInt32_div;
+        (/)      = primInt32_div;
         
-        Class.Num.mod    = primInt32_mod;
+        mod      = primInt32_mod;
 }
 
-instance Updatable (Base.Int (%)) where
+instance Updatable (Base.Int %_) where
 {
-        Class.Update.(:=)        = primInt32_update;
+        (:=)     = primInt32_update;
 }
 
-instance Accum (Base.Int (%)) where
+instance Accum (Base.Int %_) where
 {
-        Class.Update.(+=)        = primInt32_accAdd;
+        (+=)     = primInt32_accAdd;
 }
 
 

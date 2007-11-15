@@ -362,7 +362,7 @@ slurpC	sTree
 	let constraints	= hctrs ++ sctrs
 	let sigmaTable	= D.stateVarType   state3
 
-	let vsTypesPlease 	= D.stateTypesPlease state3
+	let vsTypesPlease 	= D.stateTypesRequest state3
 
 	-- dump
 	dumpST	DumpDesugaredSlurped "desugared-slurped" source'
@@ -374,7 +374,7 @@ slurpC	sTree
 		$ (catInt "\n" $ map pretty hctrs)
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
-		$ (catInt "\n" $ map show $ Set.toList vsTypesPlease)
+		$ (catInt "\n" $ map pretty $ Set.toList vsTypesPlease)
 		
 	dumpS	DumpTypeSlurp  "type-slurp-trace"
 		$ concat $ D.stateTrace state3

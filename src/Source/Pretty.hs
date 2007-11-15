@@ -85,7 +85,16 @@ instance Pretty Top where
 	PClassInst v ts inh ss
 	 -> "instance " % v % " " % " " %!% (map prettyTB ts) % " where\n"
 		% "{\n"
-		%> ("\n\n" %!% ss) % "\n"
+		%> ("\n\n" %!% 
+			(map 	(\s -> case s of 
+					SBind sp (Just v) x 
+					 -> pretty $ SBind sp (Just v { Var.nameModule = Var.ModuleNil }) x
+
+					SBindPats sp v xs x
+					 -> pretty $ SBindPats sp (v { Var.nameModule = Var.ModuleNil }) xs x)
+
+				ss)
+			% "\n")
 		% "}\n\n"
 
 	-- Projections

@@ -62,9 +62,12 @@ extractType varT
 
 	case mCid of
 	 Nothing	
-	  -> freakout stage
-	 	("extractType: no classId defined for variable " % varT)
-		$ return Nothing
+	  -> do	graph			<- gets stateGraph
+	  	let varToClassId	=  graphVarToClassId graph
+	  	freakout stage
+		 	("extractType: no classId defined for variable " % (varT, Var.bind varT)		% "\n"
+			% " visible vars = " % (map (\v -> (v, Var.bind v)) $ Map.keys varToClassId)		% "\n")
+			$ return Nothing
 
 	 Just cid	-> extractTypeC varT cid
 	 
