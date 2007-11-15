@@ -1,3 +1,4 @@
+-- | Resolves calls to overloaded functions.
 
 module Core.Dictionary
 	( dictTree )
@@ -239,7 +240,7 @@ determineInstance
 	cClassInst	= TClass vClass tsClassParams'
 
 	-- Lookup the instance fn
-	mInstV		= lookupF matchC2 cClassInst cvInstances
+	mInstV		= lookupF matchInstance cClassInst cvInstances
 
 	-- Also apply types to the shape of the overloaded fn to get the 
 	--	shape of the instance.
@@ -253,6 +254,9 @@ determineInstance
 			% "    the context after substitution (cClassInst)\n"
 				%> (" = "  % cClassInst	% "\n\n")
 
+			% "    the available instances (cvInstances)\n"
+				%> (" = "  % cvInstances % "\n\n")
+
 			% "    var of the instance fn to use (mInstV)\n"
 				%> (" = "  % mInstV	% "\n\n")
 
@@ -262,15 +266,49 @@ determineInstance
 		$ (mInstV, tInstShape)
 
 
+-- Checks if an class instance supports a certain type.
+--	The class instance has to be more polymorphic than the type we want to support.
+matchInstance 
+	:: Type 	-- the class we want to support
+	-> Type		-- the class of the instance
+	-> Bool
+
+matchInstance cType cInst
+	| TClass v1 ts1		<- cType
+	, TClass v2 ts2		<- cInst
+
+	-- check the class is the same
+	, v1 == v2
+	, length ts1 == length ts2
+
+	-- all the type arguments of the class must unify
+	, Just constrs		<- sequence $ zipWith unifyT2 ts1 ts2
+
+	-- any extra constraint from the unification must have 
+	--	a var or wildcard for the RHS
+	, and 	$ map (\(ta, tb) -> case tb of
+				TVar  k v
+				 | kindOfType ta == k
+			 	 -> True
+
+				TWild k
+				 | kindOfType ta == k
+				 -> True
+
+				_	-> False)
+
+		$ concat $ constrs
+	= True
+
+	| otherwise
+	= False
 
 
------
--- slurpClassFuns
---
+-- Slurp out a map of all overloaded functions defined in this tree.
 slurpClassFuns 
  ::	Map Var [Top]
  -> 	[Top]	
- 
+
  -> Map Var 			-- name of overloaded function
  	( Class			-- the class that this function is in
 	, Type			-- type of the overloaded function
@@ -288,17 +326,12 @@ slurpClassFuns instMap pp
 							, (v, (XVar instV))		<- defs
 							, v == vF		] ]
 
-
------
--- slurpClassInstMap
---
+-- | Slurp out all the class instances from ths tree
 slurpClassInstMap
  ::	Tree	-> Map Var [Top]
- 
+
 slurpClassInstMap tree
  = 	Map.gather
  	[ (v, p)	| p@(PClassInst v ts context defs) <- tree]
 
 
-
-		
