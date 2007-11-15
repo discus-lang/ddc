@@ -139,7 +139,10 @@ solveCs	(c:cs)
 	-- type signature
 	CSig src t1 t2
 	 -> do	trace	$ "### CSig  " % padR 20 (pretty t1) % " = " %> prettyTS t2 % "\n"
-		feedConstraint c
+
+		t2_inst	<- instantiateT instVar t2
+		feedConstraint (CSig src t1 t2_inst)
+
 		solveNext cs
 
 	-- data fields

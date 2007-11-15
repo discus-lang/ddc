@@ -1,12 +1,8 @@
 -- Type instantiation.
 --
-
 module Type.Util.Instantiate
-(
-	instantiateT,
-	instantiateT_table
-)
-
+	( instantiateT
+	, instantiateT_table )
 where
 
 -----
