@@ -161,10 +161,10 @@ lintT tt (TContext t1 t2)
  = do	lintT tt t1
  	lintT tt t2
 	
-{-lintT tt (TLet v t1 t2)
- = do	tt'	<- addVT tt (v, t1)
- 	lintT tt' t2
--}
+lintT tt (TWhere t1 vts)
+ = do	tt'	<- foldM addVT tt vts
+ 	lintT tt' t1
+
 lintT tt (TApp t1 t2)
  = do	lintT tt t1
  	lintT tt t2

@@ -128,7 +128,7 @@ rewriteOverApp
 				$ unifyT2 tInstShape tOverShapeI
 		
 
-		vtSub	= trace (pretty $ "  ttSub      = " % ttSub)
+		vtSub	= trace (pretty $ "  vtSub      = " % ttSub)
 			$ map 	(\(t1, t2) -> 
 					-- if this fails then the type params passed to the overloaded
 					--	fn weren't specific enough to determine the type 
@@ -139,8 +139,8 @@ rewriteOverApp
 		
 		-- Work out the type args to pass to the instance function.
 		vsForall	= map fst vtsForall
-		tsInstArgs	= map (\v -> let Just t = lookup v vtSub in t) 	vsForall
-		tsClassArgs	= map (\c -> c)					csClass
+		tsInstArgs	= map (\v -> let Just t = lookup v vtSub in t) 		vsForall
+		tsClassArgs	= map (\c -> substituteT (Map.fromList vtSub) c)	csClass
 
 		-- Have a look at the original application 
 		--	split off the type/class args and keep the value args.

@@ -58,13 +58,13 @@ foreign import extern "primInt32U_le"
 
 
 -----
-instance Eq (Int32# (%)) where
+instance Eq (Int32# %_) where
 {
 	(#==)	= primInt32U_eq;
 	(#/=)	= primInt32U_neq;
 }
 
-instance Ord (Int32# (%)) where
+instance Ord (Int32# %_) where
 {
 	(>)	= primInt32U_gt;
 	(<)	= primInt32U_lt;
@@ -72,7 +72,7 @@ instance Ord (Int32# (%)) where
 	(<=)	= primInt32U_le;
 }
 
-instance Num (Int32# (%)) where 
+instance Num (Int32# %_) where 
 {
  	(+) 	= primInt32U_add;
 	(-) 	= primInt32U_sub;
