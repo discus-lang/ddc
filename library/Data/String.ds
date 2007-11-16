@@ -27,8 +27,6 @@ foreign import extern "_unboxString"
  		.  String %r1 -> String# %r1
 		:$ Obj -> String#;
 		
-
-{-
 foreign import extern "strcmp"
  strcmpU	:: elaborate String# -> String# -> Int32#;
  primString_eq	s1 s2	
@@ -41,7 +39,6 @@ foreign import extern "strcmp"
 		0#	-> False;
 	};
   };
--}
 
 foreign import extern "strlen"
  strlenU	:: elaborate String# -> Int32#;
@@ -51,7 +48,7 @@ foreign import extern "strlen"
 	_		-> boxInt32 (strlenU (unboxString ss));
  };
   
-{-
+
 foreign import extern "strcat"
  unsafe_strcatU	:: elaborate (mutable String#) -> String# -> String#;
  string_unsafe_concat s1 s2
@@ -170,4 +167,4 @@ project String where
 }
 
 
--}
+

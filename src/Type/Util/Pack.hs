@@ -175,8 +175,9 @@ packTFettersLs ls tt
 packFetterLs :: [(Type, Type)] -> Fetter -> Fetter
 packFetterLs ls ff
  = case ff of
- 	FLet t1 t2	-> FLet t1 (crushT (packTypeLs ls t2))
-	_		-> ff
+ 	FLet t1 t2		-> FLet t1 (crushT (packTypeLs ls t2))
+	FConstraint v ts	-> FConstraint v (map (loadFunData ls) ts)
+	_			-> ff
 
 
 -- | Substitute for TClasses in this type.
@@ -238,7 +239,11 @@ restrictFs tt ls
 		$ [(t, Set.fromList $ collectTClassVars tLet)	
  			| FLet t tLet	<- ls]
  
- 	tsSeed		= Set.fromList $ collectTClassVars tt
+ 	tsSeed		= Set.fromList 
+			$ collectTClassVars tt
+			++ concat [catMap collectTClassVars ts 
+					| FConstraint v ts	<- ls]
+
 	tsReachable	= tsSeed `Set.union` graphReachableS reachFLetsMap tsSeed
 	 
    in	filter (\f -> case f of

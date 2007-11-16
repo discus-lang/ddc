@@ -5,6 +5,8 @@ module Constraint.Bits
 	, isCProject
 	, isCDataFields
 	, isCSig
+	, isCClassInst
+
 	, takeCVar
 	, takeCType
 	, takeCBindVs
@@ -27,6 +29,9 @@ import Type.Exp
 import Constraint.Exp
 
 
+-- Constructor predicates.
+--	not very interesting.
+--
 isCBranchLet b
 	| CBranch{}	<- b
 	, BLet{}	<- branchBind b
@@ -55,6 +60,11 @@ isCSig b
  	CSig{}		-> True
 	_		-> False
 
+isCClassInst b
+ = case b of
+ 	CClassInst{}	-> True
+	_		-> False
+	
 
 -----
 takeCVar x	

@@ -1,5 +1,11 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
+-- | Lint checks for possible problems with the tree structure which aren't caught
+--	by the type checker.
+--
+--	TODO: 	is type checker is supposed to check everything, merge these together.
+--		check syntactic soundness of witnesses.
+--
 module Core.Lint
 	( lintTree )
 

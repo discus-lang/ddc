@@ -128,7 +128,10 @@ data SquidS
 	--	-> (type, [(field var, impl var)])
 	, stateProject		:: Map Var	(Type, [(Var, Var)])	
 									
-	, stateClassInst	:: Map Var 	Fetter }
+	-- | Instances for type classses
+	--	class name -> instances for this class.
+	--   eg Num	   -> [Num (Int %_), Num (Int32# %_)]
+	, stateClassInst	:: Map Var 	[Fetter] }
 
 
 -- | build an initial solver state

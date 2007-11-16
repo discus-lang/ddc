@@ -57,7 +57,7 @@ instance Pretty CTree where
 		% "};\n\n"
 	
 	CClassInst src v ts
-	 -> "@ClassInst " % v % " " % ts % ";\n"
+	 -> "@ClassInst " % v % " " % ts % ";"
 
 	CLeave v
 	 -> "@CLeave " % v % ";"

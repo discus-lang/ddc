@@ -45,6 +45,7 @@ import Type.Grind		(solveGrind)
 import Type.Finalise
 import Type.Feed
 import Type.Trace
+import Type.Context
 
 import Type.Check.CheckPure
 import Type.Check.CheckConst
@@ -205,6 +206,23 @@ solveCs	(c:cs)
 	-- Instantiation
 	CInst{}		-> solveCInst cs c
 
+	-- Type class instance
+	CClassInst src v ts
+	 -> do	trace	$ "### CClassInst " % v % " " % ts % "\n"
+	 
+	 	-- stash this in the map of instances
+	 	--	We'll use this later to discharge class constraints in type schemes during 
+		--	the generalisation process.
+	 	modify $ \s -> s { 
+			stateClassInst = Map.alter
+				(\mis -> case mis of
+					Nothing	-> Just [FConstraint v ts]
+					Just is	-> Just (FConstraint v ts : is)) 
+				v (stateClassInst s) }
+
+		solveNext cs
+	
+	
 	_ -> do
 	 	trace $ "--- Ignoring constraint " % c % "\n"
 		solveNext cs

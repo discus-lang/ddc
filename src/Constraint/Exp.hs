@@ -62,6 +62,9 @@ data	CTree
 	--	var to generalise
 	| CGen		TypeSource Type
 
+
+	-- dictionaries
+
 	-- Carries data field definitions.
 	--	One of these is generated for each data def in the source.
 	-- 	type name, type vars, (field name, field type)
@@ -70,6 +73,9 @@ data	CTree
 	-- Carries a projection dictionary.
 	--	Projection type. field var, implementation var.
 	| CProject	TypeSource Type [(Var, Var)]		
+
+	-- An instance for a class dictionary. eg, Num (Int (%_))
+	| CClassInst	TypeSource Var [Type]
 
 	-- Leave a branch.
 	--	The solver uses this to remind itself when all the constraints in a
@@ -86,9 +92,6 @@ data	CTree
 	| CTopClosure	Type
 
 
-	-- class instance
-	-- ?????????????? what is this for?
-	| CClassInst	TypeSource Var [Type]			
 
 	deriving (Show)
 

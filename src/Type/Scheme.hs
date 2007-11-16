@@ -96,7 +96,13 @@ extractTypeC varT cid
 	let tTrim	= packType $ trimClosureT tPack
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
-	return	$ Just tTrim
+	-- Reduce context
+	classInst	<- gets stateClassInst
+	let tReduced	= reduceContextT classInst tTrim
+	trace	$ "    tReduced         =\n" %> prettyTS tReduced % "\n\n"
+	
+
+	return	$ Just tReduced
 	
 
 
