@@ -41,7 +41,9 @@ stage	= "Type.Squid.Crush"
 crushEffectC :: ClassId -> SquidM ()
 crushEffectC cid
  = do	
-	eLoad		<- loadEffect cid
+	eTrace		<- liftM (sortFsT . eraseFConstraints) $ traceType cid
+	let ePacked	= packEffect eTrace
+	let eLoad	= ePacked
 
  	trace	$ "\n"
 		% "*   crushEffectC " 	% cid		% "\n"
@@ -65,15 +67,29 @@ crushEffectC cid
 
 		-- update the register
 		mapM_ (\e -> unregisterClass e cid)
+			$ catMaybes
 			$ map (\t -> case t of 
-					TEffect ve _ 	-> Var.bind ve
-					_		-> panic stage $ "crushEffectC: eLoad = " % eLoad)
+					TEffect ve _ 	-> Just $ Var.bind ve
+					TVar{}		-> Nothing 
+					TClass{}	-> Nothing
+					_ -> panic stage 
+						$ "crushEffectC: can't crush weird looking effect\n"
+						% "   t       = " % t			% "\n\n"
+						% "   eTrace  = " % prettyTS eTrace	% "\n\n"
+						% "   ePacked = " % ePacked		% "\n\n")
+						
+							
 			$ flattenTSum eLoad
 
 		registerNodeT cid eCrushed
 		return ()
 
 	 else	return ()
+
+eraseFConstraints tt
+ = case tt of
+ 	TFetters fs t	-> addFetters (filter (not . isFConstraint) fs) t
+	_		-> tt
 
 
 -- Try and crush this effect into parts.
@@ -151,7 +167,7 @@ loadType tt	= transformTM loadType' tt
 
 loadType' tt
  = case tt of
- 	TClass k cid	-> traceType cid
+ 	TClass k cid	-> liftM packType $ traceType cid
 	_ 		-> return tt
 	
 	 

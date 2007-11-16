@@ -1,6 +1,7 @@
 
 module Type.Util.Pack
 	( packType
+	, packEffect
 	, sortFsT)
 
 where
@@ -14,6 +15,7 @@ import Type.Plate.Trans
 import Type.Plate.Collect
 import Type.Util.Bits
 import Type.Util.StripFetters
+import Type.Pretty
 
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
@@ -48,6 +50,23 @@ packType tt
    in	if tt == tt'
    	 then tt'
 	 else packType tt'
+
+
+
+-- | Pack an effect into the standard form
+--	Regular packType won't flatten out recursive effects like this example:
+--
+--	!{!3386; Base.!ReadH (Data.Bool.Bool %3368)} 
+--		:- !3386      = !{!3369; Base.!ReadT (Base.Int %481)}
+--
+
+packEffect :: Effect -> Effect
+packEffect tt
+ = let 	tt'	= inlineFsT $ packTypeLs [] tt
+   in	if tt	== tt'
+      	 then tt'
+	 else packEffect tt'
+
 	 
 
 packTypeLs :: [(Type, Type)] -> Type -> Type
@@ -292,6 +311,31 @@ inlineFs1 tt fs
 		$ fs
 		
  in 	fs'
+
+
+-- | Inline Effect and Closure fetters, regardless of the number of times they are used
+--
+inlineFsT :: Type -> Type
+inlineFsT tt
+ = case tt of
+ 	TFetters fs t
+	 -> let	sub	= Map.fromList
+			$ catMaybes
+			$ map (\f -> case f of
+					FLet t1 t2	-> Just (t1, t2)
+					_ 		-> Nothing)
+			$ fs
+
+		fs'	= map (\f -> case f of
+					FLet t1 t2 	-> FLet t1 (substituteTT sub t2)
+					_		-> f)
+			$ fs
+
+		t'	= substituteTT sub t
+
+	    in	addFetters fs' t'
+
+	_	-> tt	     	
 
 
 -- | Short circuit loops in individual fetters,

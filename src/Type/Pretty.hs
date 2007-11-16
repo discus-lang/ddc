@@ -16,7 +16,6 @@ import qualified Shared.Var 	as Var
 import Shared.Error
 import Type.Exp
 import Type.Util.Bits
-import Type.Util.Pack
 
 -----
 stage	= "Type.Pretty"

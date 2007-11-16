@@ -3,6 +3,8 @@ module Type.Util.Bits
 	( pure
 	, empty
 
+	, isFConstraint
+	
 	, crushT
 	, makeTSum,	flattenTSum
 	, makeTUnify,	flattenTUnify
@@ -52,6 +54,12 @@ stage	= "Type.Util.Bits"
 
 pure	= TBot KEffect
 empty	= TBot KClosure
+
+-- 
+isFConstraint ff
+ = case ff of
+ 	FConstraint v ts	-> True
+	_			-> False
 
 
 -- |
@@ -416,3 +424,5 @@ snocTData	tt
  = case tt of
  	TData v ts		-> Just (v, ts)
 	_			-> Nothing
+
+

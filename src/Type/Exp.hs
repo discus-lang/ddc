@@ -19,6 +19,7 @@ import Util
 import Shared.Base		(SourcePos)
 import Shared.Var		(Var)
 import Shared.Literal
+import Shared.Error
 import Data.Ix
 import qualified Shared.Var	as Var
 
@@ -44,7 +45,11 @@ instance Ord Type where
  compare   (TVar _ a)   (TVar k b)		= compare a b
  compare   (TClass{})   (TVar{})		= LT
  compare   (TVar{})     (TClass{})		= GT
-
+ compare   t1           t2
+ 	= panic "Type.Exp" 
+	$ "compare: can't compare types\n"
+	% "    t1 = " % show t1	% "\n"
+	% "    t2 = " % show t2 % "\n"
 
 -----------------------
 -- Kind
