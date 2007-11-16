@@ -14,6 +14,9 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import qualified Shared.Var	as Var
+import Shared.Var		(Var, NameSpace(..))
+
 import Shared.Error
 import Type.Exp
 
@@ -48,11 +51,14 @@ squidExport vsTypesPlease
 		, portTable)
 
 
-exportVarType :: Var -> SquidM Type
+exportVarType :: Var -> SquidM (Maybe Type)
 exportVarType v
- = do 	Just tEx	<- extractType v
-	tPlug		<- plugClassIds [] tEx
-	return tPlug
+ = do 	mEx	<- extractType v
+ 	case mEx of
+	 Nothing	-> return Nothing
+	 Just tEx
+	  -> do	tPlug		<- plugClassIds [] tEx
+		return $ Just tPlug
  	
 exportType :: Type -> SquidM Type
 exportType t
@@ -72,8 +78,8 @@ exportTypes :: Set Var -> SquidM (Map Var Type)
 exportTypes vsTypesPlease
  = do	
  	-- these are the type that were asked for by the slurper.
- 	let vsPlease	= Set.toList vsTypesPlease
-	ts		<- mapM exportVarType vsPlease
+ 	let vsPlease	=  Set.toList vsTypesPlease
+	Just ts		<- liftM sequence $ mapM exportVarType vsPlease
 	return	$ Map.fromList 
 		$ zip vsPlease ts
 		
@@ -94,15 +100,15 @@ exportInstInfo 	:: (Var, InstanceInfo Var Type)
 exportInstInfo (v, ii)
  = case ii of	
  	InstanceLambda v1 v2 mt
-	 -> do	mt'	<- exportMaybeType mt
-	 	return	$ (v, InstanceLambda v1 v2 mt)
+	 -> do	mt'		<- exportMaybeType mt
+	 	return		$ (v, InstanceLambda v1 v2 mt)
 
 	InstanceLet    v1 v2 vs t
-	 -> do	ts 	<- mapM exportVarType vs
-	 	t'	<- exportType t
-	 	return	$ (v, InstanceLet v1 v2 ts t')
+	 -> do	Just ts 	<- liftM sequence $ mapM exportVarType vs
+	 	t'		<- exportType t
+	 	return		$ (v, InstanceLet v1 v2 ts t')
 		
 	InstanceLetRec 	vUse vDef Nothing
-	 -> do 	tDef	<- exportVarType vDef
-	 	return	$ (v, InstanceLetRec vUse vDef (Just tDef))
+	 -> do 	Just tDef	<- exportVarType vDef
+	 	return		$ (v, InstanceLetRec vUse vDef (Just tDef))
 	 

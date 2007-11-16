@@ -24,6 +24,7 @@ import Source.Horror
 import Source.RenameM
 import Source.Separate
 import Source.Slurp
+import Source.Error
 
 import Type.Util
 import Type.Plate.Collect
@@ -762,14 +763,27 @@ instance Rename Type where
 		return	$ TForall vs' t'
 
 	TFetters fs t
-	 -> local
-	  $ do	-- bind the vars on the RHS of let binds
-	  	mapM_ bindZ 
-			$ catMaybes $ map takeBindingVarF fs
-		
-		fs'	<- rename fs
-		t'	<- rename t
-		return	$ TFetters fs' t'
+	 -> do
+	 	let bindingVars	=  catMaybes $ map takeBindingVarF fs
+
+	  	-- if any of the LHS vars are already bound (perhaps by a forall) at this level
+	  	--	then this is an error. Type vars aren't permitted to shadow each other.
+		isShadowed	<- mapM isBound bindingVars
+		let shadowVars	= [ v 	| (v, True) <- zip bindingVars isShadowed]
+		let shadow	=  not $ null shadowVars
+
+		when shadow
+		 $ modify (\s -> s { 
+	  		stateErrors 	= (stateErrors s) ++ map ErrorShadowVar shadowVars })
+
+		local
+		  $ do	
+		  	-- bind the vars on the LHS of let binds
+		  	mapM_ bindZ bindingVars
+
+			fs'	<- rename fs
+			t'	<- rename t
+			return	$ TFetters fs' t'
 			 	
 	TVar k v 	
 	 -> do 	v'	<- lbindN (spaceOfKind k) v

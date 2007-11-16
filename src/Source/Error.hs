@@ -31,11 +31,14 @@ data Error
 	| ErrorParseBefore	TokenP
 	| ErrorParseEnd		
 	| ErrorUndefinedVar	
-		{ eUndefined		:: Var }
+	{ eUndefined		:: Var }
+
+	| ErrorShadowVar
+	{ eShadowVar		:: Var }
 
 	| ErrorRedefinedVar	
-		{ eFirstDefined		:: Var
-		, eRedefined		:: Var }
+	{ eFirstDefined		:: Var
+	, eRedefined		:: Var }
 
 
 	| ErrorDefixNonAssoc	[Var]
@@ -66,6 +69,12 @@ instance Pretty Error where
 	$ prettyPos (eUndefined err)								% "\n"
 	% "     Undefined variable '" 	% eUndefined err  
 	% "' in namespace " 		% (spaceName $ Var.nameSpace (eUndefined err))		% ".\n"
+
+ pretty err@(ErrorShadowVar{})
+ 	= pretty 	
+	$ prettyPos (eShadowVar err)								% "\n"
+	% "     Shadowed REC variable '" % eShadowVar err  
+	% "' in namespace " 		% (spaceName $ Var.nameSpace (eShadowVar err))		% ".\n"
 	
  pretty err@(ErrorRedefinedVar{})
  	= pretty

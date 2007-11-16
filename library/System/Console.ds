@@ -15,35 +15,35 @@ effect !Console	:: !;
 
 foreign import extern "primPrintString"
  printString 
-	:: forall %r1 !e1
+	:: forall %r1
 	.  String %r1 -(!e1)> Unit
 	:- !e1	= !{ !Console; !Read %r1 }
 	:$ Obj -> Obj;
 
 foreign import extern "primStringChar"
  stringOfChar
-	:: forall %r1 %r2 !e1
+	:: forall %r1 %r2
 	.  Char %r1 -(!e1)> String %r2
 	:- !e1	= !{ !Read %r1 }
 	:$ Obj -> Obj;
 
 foreign import extern "primStringInt"
  stringOfInt
-	:: forall %r1 %r2 !e1
+	:: forall %r1 %r2
 	.  Int %r1 -(!e1)> String %r2
 	:- !e1	= !{ !Read %r1 }
 	:$ Obj -> Obj;
 
 foreign import extern "primStringFloat32"
  stringOfFloat32	
-	:: forall %r1 %r2 !e1
+	:: forall %r1 %r2
 	.  Float %r1 -(!e1)> String %r2
 	:- !e1 = !{ !Read %r1 }
 	:$ Obj -> Obj;
 
 
 foreign import extern "usleep"
- usleep	:: forall %r1 !e1
+ usleep	:: forall %r1
  	.  Int32# %r1 -(!e1)> ()
 	:- !e1 = !{ !Console }
 	:$ Int32# -> Obj;

@@ -11,6 +11,7 @@ module Source.RenameM
 
 	, Rename (..)
 
+	, isBound
 	, addN
 	, bindN,	bindZ,		bindV
 	, lookupN,	lookupZ,	lookupV
@@ -177,7 +178,7 @@ bindV		= bindN NameValue
 bindN :: NameSpace -> Var -> RenameM Var
 bindN	 space var
  = do	-- Grab the current var stack.
-	(Just (spaceMap:ms))
+	Just (spaceMap:ms)
 		<- liftM (Map.lookup space)
 		$  gets stateStack
 
@@ -200,6 +201,18 @@ bindN	 space var
 					(spaceMap':ms) 
 					(stateStack s)})
 	return var'
+
+
+-- | Checks whether this name is already bound at this level
+isBound :: Var -> RenameM Bool
+isBound var
+ = do	Just (spaceMap:ms)
+		<- liftM (Map.lookup $ Var.nameSpace var)
+		$  gets stateStack
+
+	case Map.lookup (Var.name var) spaceMap of
+ 		Just boundVar	-> return True
+		_		-> return False
 
 
 -- | If this is the name of a prim var then give it the appropriate VarId

@@ -12,7 +12,7 @@ effect !Error	:: !;
 
 foreign import extern "primError"
  error
-	:: forall a %r1 !e1
+	:: forall a %r1
 	.  String %r1	-(!e1)> a
 	:- !e1	= !{ !Error }
 	:$ Obj -> Obj;
@@ -25,7 +25,7 @@ foreign import extern "primError"
 
 foreign import extern "primExit"
  exit
-	:: forall a %r1 !e1
+	:: forall a %r1
 	.  Int %r1	-(!e1)> a
 	:- !e1 = !{ !Error }
 	:$ Obj -> Obj;
