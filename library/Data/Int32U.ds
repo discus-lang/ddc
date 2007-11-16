@@ -13,12 +13,12 @@ infix  0 #:= ;
 
 foreign import extern "_boxInt32"
  boxInt32 	:: forall %r1 %r2
-  		.  Int32# %r1 -> Int %r2
+  		.  Int32# %r1 -(!Read %r1)> Int %r2
 		:$ Int32# -> Obj;
 
 foreign import extern "_unboxInt32"
  unboxInt32	:: forall %r3 %r4
- 		.  Int    %r3 -> Int32# %r4
+ 		.  Int    %r3 -(!Read %r3)> Int32# %r4
 		:$ Obj -> Int32#;
 
 

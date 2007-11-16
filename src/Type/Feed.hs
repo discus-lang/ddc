@@ -397,6 +397,11 @@ registerNodeT	cid tt
 		$ freeVarsT tt
 	= registerClass Var.EReadH cid
 
+	| elem Var.EReadT
+		$ map Var.bind 
+		$ freeVarsT tt
+	= registerClass Var.EReadT cid
+
 	| otherwise
 	= return ()				
 

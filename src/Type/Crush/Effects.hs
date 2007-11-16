@@ -1,3 +1,4 @@
+-- | Crush effects into their parts.
 
 module Type.Crush.Effects
 	( crushEffectC )
@@ -15,6 +16,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import Shared.VarPrim
 import Shared.Var		(VarBind, NameSpace(..))
+import Shared.Error
 
 import Type.Exp
 import Type.Util
@@ -35,181 +37,142 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Squid.Crush"
 
-
+-- Try and crush the effect in this node.
 crushEffectC :: ClassId -> SquidM ()
 crushEffectC cid
  = do	
- 	Just c		<- lookupClass cid
-	let tNode	=  classType c
+	eLoad		<- loadEffect cid
 
  	trace	$ "\n"
-		% "*   crushEffectC " 	% cid	% "\n"
-		% "    tNode    = " 	% tNode	% "\n"
+		% "*   crushEffectC " 	% cid		% "\n"
+		% "    eLoad       = " 	% eLoad		% "\n"
 
-	tCrushed	<- transformTM crushEffectT tNode
+	eCrushed	<- transformTM crushEffectT eLoad
 
-	trace	$ "    tCrushed = "	% tCrushed % "\n"
+	trace	$ "    eCrushed    = "	% eCrushed 	% "\n"
 	
-	if tCrushed /= tNode
+	if eCrushed /= eLoad
 	 then do	
 		-- update the class queue with the new effect
+		Just c	<- lookupClass cid
 	 	updateClass cid
-			c { classType = tCrushed }
+			c { classType = eCrushed }
 			
 		-- For the classIds in the new effect, update the backrefs to point
 		--	to this class.
-		let classIds	= collectClassIds tCrushed
+		let classIds	= collectClassIds eCrushed
 		mapM_ (\cid' -> addBackRef cid' cid) classIds
 
 		-- update the register
-		unregisterClass Var.EReadH cid
-		registerNodeT cid tCrushed
+		mapM_ (\e -> unregisterClass e cid)
+			$ map (\t -> case t of 
+					TEffect ve _ 	-> Var.bind ve
+					_		-> panic stage $ "crushEffectC: eLoad = " % eLoad)
+			$ flattenTSum eLoad
 
+		registerNodeT cid eCrushed
 		return ()
 
 	 else	return ()
 
 
+-- Try and crush this effect into parts.
 crushEffectT :: Effect -> SquidM Effect
 crushEffectT tt
+
+	-- Read of outer constructor of object.
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadH
-	= do
-		t2	<- liftM packType $ loadType t1
-
-		trace	$ "    tArg     = " % t2	% "\n"
-		case t2 of
+	= do	case t1 of
 		 TData v (tR : ts)	-> return $ TEffect primRead [tR]
 		 _			-> return $ tt
 	
+
+	-- Read of whole object. (deep read).
+	| TEffect ve [t1]	<- tt
+	, Var.bind ve == Var.EReadT
+	= do	
+		let bits	= slurpDataRT t1
+		let esRegion	= map (TEffect primRead)
+				$ (  [[r] | r@(TVar KRegion _)		<- bits]
+				  ++ [[r] | r@(TClass KRegion _)	<- bits])
+
+
+		let esType	= map (TEffect primReadT)
+				$ (  [[t] | t@(TVar KData _)	<- bits]
+				  ++ [[t] | t@(TClass KData _)	<- bits])
+
+	  	return	$ makeTSum KEffect 
+			$ (esRegion ++ esType)
+
+
+	-- Write of whole object. (deep write)
+	| TEffect ve [t1]	<- tt
+	, Var.bind ve == Var.EWriteT
+	= do	
+		let bits	= slurpDataRT t1
+		let esRegion	= map (TEffect primWrite)
+				$ (  [[r] | r@(TVar KRegion _)		<- bits]
+				  ++ [[r] | r@(TClass KRegion _)	<- bits])
+
+
+		let esType	= map (TEffect primWriteT)
+				$ (  [[t] | t@(TVar KData _)	<- bits]
+				  ++ [[t] | t@(TClass KData _)	<- bits])
+				
+	  	return	$ makeTSum KEffect 
+			$ (esRegion ++ esType)
+
+
+	-- can't crush this one
 	| otherwise
 	= return $ tt
-	
 
+
+-- | Load in the effect for this cid.
+loadEffect :: ClassId -> SquidM Type
+loadEffect cid
+ = do	Just c		<- lookupClass cid
+ 	let tNode	= classType c
+
+	tPacked		<- liftM packType $ loadType tNode
+
+	let es		= map (\e -> case e of
+				TEffect v ts	-> TEffect v (map (fst . stripFettersT) ts)
+				_		-> e)
+			$ flattenTSum tPacked
+
+	return		$ makeTSum KEffect es
+
+
+-- | Load in nodes for every cid in this type.
 loadType :: Type -> SquidM Type
 loadType tt	= transformTM loadType' tt
 
 loadType' tt
  = case tt of
  	TClass k cid	-> traceType cid
-	_		-> return tt
+	_ 		-> return tt
 	
 	 
+-- | Slurp out components of this type which are interesting to !ReadT / !WriteT
+slurpDataRT :: Type -> [Type]
+slurpDataRT tt
+ = case tt of
+	TFun{}			-> []
+ 	TData v ts		-> catMap slurpDataRT ts
 
-
-
-{-
-crushEffectC :: ClassId -> SquidM ()
-crushEffectC	cidE
- = do	
- 	Just c	<- lookupClass cidE
+	TVar KRegion _		-> [tt]
+	TVar KData   _		-> [tt]
+	TVar _  _		-> []
 	
-	effs'	<- liftM concat
-		$  mapM crushEffect
-		$  flattenEssT 
-		$  classQueue c 
-	
-	-- updating doesn't fix the backrefs
-	updateClass cidE 
-		c { classQueue = [TEffect (ESum effs')] }
+	TClass KRegion _	-> [tt]	
+	TClass KData   _	-> [tt]
+	TClass _ _		-> []
 
-	-- For the classIds in the new effect, update the backrefs to point
-	--	to this class.
-	let classIds	= collectClassIds effs'
+	TFetters fs t		-> slurpDataRT t
 
-	mapM_ (\cid -> addBackRef cid cidE) classIds
-
---	updateClass cidE
---		c { classQueue = [] }
-		
---	let ?typeSource = TSNil
---	mapM_ (feedEffect Nothing) effs'
+	_ 	-> panic stage
+		$  "slurpDataRT: no match for " % tt % "\n"
 
 
-	updateRegisterE cidE primReadH 
-	updateRegisterE cidE primReadT
-	updateRegisterE cidE primWriteT
-		
-	return ()
-
-
-
-
-crushEffect :: Effect -> SquidM [Effect]
-crushEffect e
- = do	eRefresh	<- refresh e
- 	let mesNew	= reduceEffect eRefresh
-	
-	trace	$ "*   Crush.CrushEffects.crushEffect\n"
-		% "    e        = " % e 	% "\n"
-		% "    eRefresh = " % eRefresh 	% "\n"
-		% "    eRefresh = " % show eRefresh 	% "\n"
-		% "    mesNew   = " % mesNew    % "\n"
-		% "\n"
-
-	case mesNew of
-		Nothing		-> return [e]
-		Just esNew	-> return esNew
-		
-
-reduceEffect :: Effect -> Maybe [Effect]
-reduceEffect e@(ECon v [t@(TCon vCon ts)])
-
-	-- Read data head.
-	--	Some types, like Unit, don't have any region annots so we can just discard the effect.
-
- 	| Var.EReadH			<- Var.bind v
-	= case ts of
-		tR@(TRegion r) : tsRest	-> Just [ECon primRead [tR]]
-		_			-> Just []
-		
-	-- Read of whole object. (deep read).
-	| Var.EReadT			<- Var.bind v
-	= let	bits	= catMap reduceDataRT ts
-		esRegion	= [ECon primRead    [r] | r@(TRegion{})	<- bits]
-		esType		= [ECon primReadT   [t] | t@(TClass{})	<- bits]
-	  in	Just (esRegion ++ esType)
-
-	-- Write to whole object. (deep write).
-	| Var.EWriteT			<- Var.bind v
-	= let	bits	= catMap reduceDataRT ts
-		esRegion	= [ECon primWrite    [r] | r@(TRegion{})	<- bits]
-		esType		= [ECon primWriteT   [t] | t@(TClass{})	<- bits]
-	  in	Just (esRegion ++ esType)
-	
-	
-	| otherwise
-	= Nothing
-	
-reduceEffect e
-	= Nothing
-
-	
------
--- updateRegister 
---
-updateRegisterE
-	:: ClassId 
-	-> Var
-	-> SquidM ()
-
-updateRegisterE cidE var
- = do
- 	gotCon	<- classHasECon cidE var
-	when (gotCon == False)
-	 $ unregisterClass (Var.bind var) cidE
- 	
-
-classHasECon ::	ClassId -> Var -> SquidM Bool
-classHasECon	cidE var
- = do 	
- 	Just c	<- lookupClass cidE
-	return	$ or 
-		$ map	(\eff -> case eff of
-					ECon v _ -> v == var
-					_	 -> False)
-		$ flattenEssT
-		$ classQueue c
-		
-	
--}
