@@ -35,11 +35,11 @@ data Top a
 
 	= PNil
 
-	| PData						-- ^ Data type definition
+	| PData						--  Data type definition
 		Var					-- 	Type name
 		[(Var, [DataField [Stmt a] Type])]	-- 	[(ctor name, datafield)]
 
-	| PCtor						-- ^ A Constructor.
+	| PCtor						--  A Constructor.
 		Var 					--	name
 		[Type] 					--	arg types
 		Type					-- 	result type
@@ -53,7 +53,7 @@ data Top a
 	-- supers
 	| PProto	Var [Type] Type			-- super prototype. name, argTypes, resultType
 
-	| PSuper					-- ^ A Supercombinator
+	| PSuper					--  A Supercombinator
 		Var					--	name
 		[(Var, Type)] 				--	[(argName, argType)]
 		Type 					--	result type
@@ -68,7 +68,7 @@ data Top a
 	| PAtomProto 	Var Type			-- ^ Atom prototype.
 	| PAtom	 	Var Type			-- ^ Atom definition.
 
-	| PStruct					-- ^ Structure definition
+	| PStruct					--  Structure definition
 		Var					-- 	type name
 		[(Var, Type)]				-- 	(label, type)
 
@@ -189,7 +189,7 @@ data Exp a
 	deriving (Show, Eq)
 	
 data Type
-	= TVoid						-- ^ The void / non-existant object.
+	= TVoid						-- ^ The void \/ non-existant object.
 
 	| TObj						-- ^ A boxed object.
 							

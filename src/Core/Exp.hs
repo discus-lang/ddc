@@ -87,8 +87,8 @@ data Exp
 	------
 	-- Core Constructs
 	--
-	| XLAM		Var 	Type	Exp		-- ^ Type/region/effect/closure abstraction.
-	| XAPP		Exp	Type			-- ^ Type/region/effect/closure application.
+	| XLAM		Var 	Type	Exp		-- ^ Type\/region\/effect\/closure abstraction.
+	| XAPP		Exp	Type			-- ^ Type\/region\/effect\/closure application.
 	| XTet		[(Var, Type)]	Exp		-- ^ A type-level let binding.
 	| XTau		Type	Exp			-- ^ A type annotation.
 
@@ -197,7 +197,7 @@ data Type
 	| TWhere	Type	[(Var, Type)]		-- ^ Type level where expression.
 	| TApp		Type 	Type			-- ^ Type application.
 
-	| TSum		Kind 	[Type]			-- ^ A summation / lub.
+	| TSum		Kind 	[Type]			-- ^ A summation \/ lub.
 	| TMask		Kind	Type Type
 
 	| TVar		Kind 	Var
@@ -263,7 +263,7 @@ data Annot
 	= NString 	String				-- ^ Some string: for debugging.
 	| NType   	Type 				-- ^ Gives the type for an expression.
 	| NTypeOp	Type				-- ^ Gives the operational type for a supercombinator.
-	| NUseCount	Int				-- ^ Count of how many times this exp/binding is used in the code.
+	| NUseCount	Int				-- ^ Count of how many times this exp\/binding is used in the code.
 	| NPure						-- ^ Exp has no effects, and is pure.
 	| NBindVar	Var				-- ^ Some var which is safe to use as a binding var for this exp.
 

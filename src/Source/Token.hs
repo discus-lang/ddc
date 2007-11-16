@@ -83,7 +83,7 @@ data Token
 
 	| RightArrow		-- ^ ->
 	| LeftArrow		-- ^ <-
-	| LeftArrowLazy		-- ^ <@-
+	| LeftArrowLazy		-- ^ <\@-
 
 	| GuardCase		-- ^ |-
 	| GuardCaseC		-- ^ ,-
@@ -101,11 +101,11 @@ data Token
 	| Dash			-- ^ -
 	| Plus			-- ^ +
 	| Percent		-- ^ %
-	| At			-- ^ @
-	| Bang			-- ^ !
-	| FSlash		-- ^ /
-	| Dollar		-- ^ $
-	| Tilde			-- ^ ~
+	| At			-- ^ \@
+	| Bang			-- 
+	| FSlash		-- 
+	| Dollar		-- 
+	| Tilde			-- 
 	| Underscore		-- ^ _
 	| Hat			-- ^ ^
 
@@ -119,7 +119,7 @@ data Token
 	| RBra			-- ^ ( (round)
 	| RKet			-- ^ )
 
-	| SBra			-- ^ [ (square)
+	| SBra			-- ^ \[ (square)
 	| SKet			-- ^ ]
 
 	| BSlash		-- ^ \

@@ -280,7 +280,7 @@ data Pat
 	| WConst	Const				-- ^ Constant pattern			5
 	| WCon		Var [Pat]			-- ^ A constructor pattern		(C p1 p2 ...)
 	| WConLabel	Var [(Label, Pat)]		-- ^ A constructor with field labels.	Con { .f1 = p1, ... }
-	| WAt		Var Pat				-- ^ At expression			v@pat
+	| WAt		Var Pat				-- ^ At expression			v\@pat
 	| WWildcard		 			-- ^ Wildcard, always matches		_
 
 	| WUnit						-- ^ The unit value			()
@@ -301,7 +301,7 @@ data Label
 -- |  List comprehension qualifiers
 --	Used by XListComp.
 data LCQual
-	= LCGen		Bool Exp Exp			-- ^ Generator.			p <@- e, p <- e
+	= LCGen		Bool Exp Exp			-- ^ Generator.			p <\@- e, p <- e
 	| LCLet		[Stmt]				-- ^ Local declaration.		Stmt can only be SBind.
 	| LCExp		Exp				-- ^ Guard.
 	deriving (Show, Eq)

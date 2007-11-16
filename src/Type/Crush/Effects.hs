@@ -155,7 +155,7 @@ loadType' tt
 	_ 		-> return tt
 	
 	 
--- | Slurp out components of this type which are interesting to !ReadT / !WriteT
+-- | Slurp out components of this type which are interesting to !ReadT \/ !WriteT
 slurpDataRT :: Type -> [Type]
 slurpDataRT tt
  = case tt of

@@ -45,8 +45,8 @@ lambdaLiftTree
 	:: [Top]		-- ^ some bindings to lambda lift.
 	-> Map Var Type		-- ^ type map.
 	-> Set Var		-- ^ all the vars in scope at top level.
-	-> ( [Top]		-- ^ original bindings as supers.
-	   , [Top])		-- ^ new super
+	-> ( [Top]		--  original bindings as supers.
+	   , [Top])		--  new super
 	
 lambdaLiftTree
 	cBinds

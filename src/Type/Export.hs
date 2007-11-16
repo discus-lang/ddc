@@ -28,9 +28,9 @@ stage	= "Type.Squid.Export"
 squidExport 
 	:: Set Var					-- ^ The vars for the bindings we want types for.
 	-> SquidM 
-		( Map Var Type				-- ^ Type schemes.
-		, Map Var (InstanceInfo Type Type)	-- ^ How each instantiation was done.
-		, Map Var (Map Var Type) )		-- ^ The substition from the "contra-variant vars are ports"
+		( Map Var Type				-- Type schemes.
+		, Map Var (InstanceInfo Type Type)	-- How each instantiation was done.
+		, Map Var (Map Var Type) )		-- The substition from the "contra-variant vars are ports"
 							--	rewriting process.
 squidExport vsTypesPlease
  = do

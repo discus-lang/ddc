@@ -134,7 +134,7 @@ data VarInfo
 	| IBoundBy	Var			-- ^ The binding occurance of this var.
 	| ISchemeVar	Var			-- ^ If this var was instantiated, the type scheme var it came from.
 
-						-- ^ Only relavent if the var is a type var.
+						--  Only relavent if the var is a type var.
 	| IValueVar	Var			-- ^	The value var this type var corresponds to.
 	| IValueLiteral	Literal			-- ^	The literal value this type var represents.
 	| IParent	Var			-- ^	??

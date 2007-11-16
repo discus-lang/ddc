@@ -8,10 +8,15 @@ module Core.Crush
 
 where
 
-import Util
-
 import Core.Exp
 import Core.Plate.Trans
+import Core.Pretty
+
+import Util
+import Shared.Error
+
+-----
+stage	= "Core.Crush"
 
 -----
 crushTree :: Tree -> Tree
@@ -31,32 +36,6 @@ crushS	s
     
 	_			-> [s]
 
-{-
-crushX :: Exp -> (Bool, [Stmt], Exp)
-crushX xx
- = case xx of
-	XDo ss	
-	 -> let is			= init ss 
-	    	Just (SBind Nothing x)	= takeLast ss
-  	    in	(True, is, x)
-
-	XTau t1 x@(XTau t2 _)
-	 |  t1 == t2
-	 -> let (_,    ss, x')	= crushX x
-	    in	(True, ss, x')
-	    
-	XTau t x
-	 -> let (ss, x')	= crushX x
-	    in  (ss, XTau t x')
-	    
-	XTet v t x
-	 -> let (ss, x')	= crushX x
-	    in	(ss, XTet v t x')
-	    
-	_	-> ([], xx)
--}	
-
-	
 
 crushX xx
  = case xx of
@@ -68,6 +47,13 @@ crushX xx
 	XTau t1 (XTau t2 x)
 	 | t1 == t2
 	 -> Just ([], XTau t1 x)
+
+	 | otherwise
+	 -> panic stage
+		$ "crushX: nested XTaus have different types.\n"
+		% "   t1  = " %> t1		% "\n\n"
+		% "   t2  = " %> t2		% "\n\n"
+		% "   exp = " %> xx		% "\n\n"
 	 
 	XTau t x
 	 -> liftM (\(ss, x') -> (ss, XTau t x'))

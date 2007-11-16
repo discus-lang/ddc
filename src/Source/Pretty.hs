@@ -57,7 +57,7 @@ instance Pretty Top where
 		% "\n}\n\n"
 		
 	PForeign f 
-	 -> "foreign " % f % ";\n\n";
+	 -> "foreign " % f % ";\n\n"
 	
 	PData typeName vars [] 
 	 -> "data " % " " %!% (typeName : vars) % ";\n\n"
