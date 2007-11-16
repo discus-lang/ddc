@@ -185,14 +185,14 @@ reconS :: Map Var Type -> Stmt -> (Map Var Type, (Stmt, Type))
 reconS tt (SBind Nothing x)	
  = let	(x', tx)	= reconX tt x
    in	( tt
-   	, ( SBind Nothing (addTauX tx x')
+   	, ( SBind Nothing (addTauX (narrowT tx) x')
 	  , tx))
 
 reconS tt (SBind (Just v) x)
  = let	(x', tx)	= reconX tt x
 	tt'		= addVT tt (v, tx)
    in	( tt'
-   	, (SBind (Just v) (addTauX tx x')
+   	, (SBind (Just v) (addTauX (narrowT tx) x')
 	  , tx))
 	  
 
