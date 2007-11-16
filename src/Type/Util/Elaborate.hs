@@ -119,13 +119,14 @@ elaborateRegionsT' tt
 
 	-- add new regions to data type constructors to bring them up
 	--	to the right kind.
-	| TData v ts		<- tt
-	= do	kind		<- ?getKind v
-		(ts', vks')	<- elabRs ts kind
+	| TData v ts			<- tt
+	= do	kind			<- ?getKind v
+		(ts2, vks2)		<- elabRs ts kind
+		(ts3, vks3, fs3)	<- liftM unzip3 $ mapM elaborateRegionsT' ts2
 		
-		return	( TData v ts'
-			, vks'
-			, [])
+		return	( TData v ts3
+			, vks2 ++ concat vks3
+			, concat fs3)
 
 
 -- | Take some arguments from a type ctor and if needed insert fresh region vars
@@ -140,38 +141,43 @@ elabRs 	:: Monad m
 	     , [(Var, Kind)])	-- added vars
 
 elabRs args kind
- = do	(args', vks)	<- elabRs' args kind
+ = do	(args', vks)	<- elabRs2 args kind
  	return	( args', nub vks)
 
-
-elabRs' [] KData
+elabRs2 [] KData
 	= return ([], [])
 
-elabRs' [] (KFun k1 k2)
+elabRs2 [] (KFun k1 k2)
 	| KRegion		<- k1
-	= do	(ts', vks')	<- elabRs' [] k2
+	= do	(ts', vks')	<- elabRs2 [] k2
 		vR		<- ?newVarN NameRegion
 		return		( TVar KRegion vR : ts'
 				, (vR, KRegion) : vks')
 
-elabRs' (t:ts) (KFun k1 k2)
+elabRs2 (t:ts) kk@(KFun k1 k2)
 
+	-- (% : _)   % -> _
 	| KRegion		<- k1
 	, Just KRegion		<- takeKindOfType t
-	= do	(ts', vks')	<- elabRs' ts k2
+	= do	(ts', vks')	<- elabRs2 ts k2
 		return		( t : ts'
 				, vks')
 
+	-- (_ : _)   % -> _
 	| KRegion		<- k1
-	= do	(ts', vks')	<- elabRs' ts k2
-		vR		<- ?newVarN NameRegion
-		return		( TVar KRegion vR : ts'
-				, (vR, KRegion) : vks')
+	, Just k		<- takeKindOfType t
+	, k /= KRegion
+	= do	vR		<- ?newVarN NameRegion
+		elabRs2	(TVar KRegion vR : t : ts) kk
 
 	| otherwise
-	= do	(ts', vks')	<- elabRs' ts k2
+	= do	(ts', vks')	<- elabRs2 ts k2
 		return		( t : ts'
 				, vks')
+
+elabRs2 args kind
+	= panic stage
+	$ "elabRs': no match for " % (args, kind) % "\n"
 
 
 -----------------------
