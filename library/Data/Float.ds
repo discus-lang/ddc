@@ -63,14 +63,14 @@ foreign import extern "primFloat32_update"
  primFloat32_update	:: elaborate (mutable Float) -> Float -> ();
 
 
-instance Eq (Float (%)) where
+instance Eq (Float %_) where
 {
 	(==)	= primFloat32_eq;
 	(/=)	= primFloat32_neq;
 }
 
 
-instance Ord (Float (%)) where
+instance Ord (Float %_) where
 {
 	(>)	= primFloat32_gt;
 	(>=)	= primFloat32_ge;
@@ -80,7 +80,7 @@ instance Ord (Float (%)) where
 }
 
 
-instance Num (Float (%)) where
+instance Num (Float %_) where
 {
 	(+)	= primFloat32_add;
 	(-)	= primFloat32_sub;
@@ -88,13 +88,13 @@ instance Num (Float (%)) where
 	(/)	= primFloat32_div;
 }
 
-instance Update (Float (%)) where
+instance Update (Float %_) where
 {
 	(:=)	= primFloat32_update;
 
 }
 
-instance Accum (Float (%)) where
+instance Accum (Float %_) where
 {
 	(+=)	= primFloat32_accAdd;
 }

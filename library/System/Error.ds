@@ -31,4 +31,4 @@ foreign import extern "primExit"
 	:$ Obj -> Obj;
 
 
-errorL str	= errorNoEff @ str;
+-- errorL str	= errorNoEff @ str;

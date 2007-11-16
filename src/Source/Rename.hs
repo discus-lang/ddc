@@ -772,7 +772,7 @@ instance Rename Type where
 		return	$ TFetters fs' t'
 			 	
 	TVar k v 	
-	 -> do 	v'	<- lookupN (spaceOfKind k) v
+	 -> do 	v'	<- lbindN (spaceOfKind k) v
 		return	$ TVar k v'
 
 	TSum k ts

@@ -30,13 +30,13 @@ infixr 6 : ;
 -----
 -- Projections
 --
-head ::		[a] -> a;
+head :: [a] -> a;
 head =
  \case { x : xs		-> x; };
 -- 	 xs ++ ys	-> head xs; };
 
 
-tail ::		[a] -> [a];
+tail ::	[a] -> [a];
 tail =	
  \case { x  :  xs	-> xs; };
 --	 xs ++ ys	-> tail xs ++ ys; };
@@ -51,7 +51,7 @@ last =
 -----
 -- Predicates
 --
-isNil :: 	[a] -> Bool;
+isNil :: [a] -> Bool;
 isNil =
  \case { Nil		-> True;
 	_		-> False; };
@@ -59,7 +59,7 @@ isNil =
 -----
 -- Length
 --
-length ::	[a] -> Int;
+length :: [a] -> Int;
 length xx
  = do {	count	= 0;
 	f	= (\x -> count <> inc);
@@ -68,7 +68,7 @@ length xx
  };	 
 
 
-lengthR :: 	[a] -> Int;
+lengthR :: [a] -> Int;
 lengthR xx
  = case xx of {
  	[]	-> 0;
@@ -79,7 +79,7 @@ lengthR xx
 -----
 -- Indexing
 --
-(!!) ::		[a] -> Int -> a;
+(!!) ::	[a] -> Int -> a;
 (!!) xx n
  = case xx of {
 	[]	-> error "(!!): not found";
@@ -88,7 +88,7 @@ lengthR xx
 			else xs !! (n - 1);
  };
 
-
+{-
 indexL ::	[a] -> Int -> a;
 indexL xx n
  = case xx of {
@@ -97,7 +97,7 @@ indexL xx n
 		 	then x
 			else indexL@ xs (n - 1);
  };
-
+-}
 
 -----
 -- Append
@@ -131,10 +131,11 @@ replicate i x
  	then	[]
 	else	x : replicate (i-1) x;
 
+{-
 iterateL ::	(a -> a) -> a -> [a];
 iterateL f a	
 	= a : iterateL@ f (f a);
-
+-}
 
 -----
 -- Mapping / Folding
@@ -148,6 +149,7 @@ map f xx
  };
 
 
+{-
 mapL 	:: (a -> b) -> [a] -> [b];
 mapL f xx
  = case xx of {
@@ -155,7 +157,7 @@ mapL f xx
 	x  :  xs	-> (:)  (f x) (mapL@ f xs);
 --	xx ++ yy	-> (++) (mapL@ f xx) (mapL@ f yy);
  };
-
+-}
 
 
 
@@ -338,6 +340,7 @@ find f xx
 -----
 -- Filtering
 --
+{-
 filterL	::	(a -> Bool) -> [a] -> [a];
 filterL f xx
  = case xx of {
@@ -346,7 +349,7 @@ filterL f xx
 		 	then x : filterL@ f xs
 			else filterL@ f xs;
  };
-
+-}
 
 -----
 rangeInt :: Int -> Int -> [Int];
@@ -355,6 +358,7 @@ rangeInt x y
  	then [x]
 	else x  : rangeInt (x+1) y;
 
+{-
 rangeIntL :: Int -> Int -> [Int];
 rangeIntL x y
  = if x >= y
@@ -364,7 +368,7 @@ rangeIntL x y
 rangeInfIntL :: Int -> [Int];
 rangeInfIntL x
 	= x : rangeInfIntL@ (x+1);
-
+-}
 
 -----
 -- Concat / ConcatMap
@@ -376,31 +380,32 @@ concat xx
  	x : xs 	-> x ++ concat xs;
  };
 
+{-
 concatL :: [[a]] -> [a];
 concatL xx
  = case xx of {
  	[]		-> [];
 	x  : xs		-> (++)@ x (concatL@ xs);
-	xs ++ ys	-> (++)  (concatL@ xs) (concatL@ ys);
+--	xs ++ ys	-> (++)  (concatL@ xs) (concatL@ ys);
  };
-
+-}
 
 concatMap :: (a -> [b]) -> [a] -> [b];
 concatMap f xx
  = case xx of {
  	[]		-> [];
 	x  : xs		-> f x ++ concatMap f xs;
-	xs ++ ys	-> concatMap f xs `append` concatMap f ys;
+--	xs ++ ys	-> concatMap f xs `append` concatMap f ys;
  };
  
-
+{-
 concatMapL :: (a -> [b]) -> [a] -> [b];
 concatMapL f xx
  = case xx of {
  	[] 		-> [];
 	x : xs		-> (++)@ (f x) (concatMapL@ f xs);
  };
-	
+-}
 
 
 

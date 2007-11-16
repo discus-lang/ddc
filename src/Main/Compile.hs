@@ -317,7 +317,7 @@ compileFile	args     fileName
 	-- Call class instance functions and add dictionaries.
 	cDict		<- SC.coreDict 
 				cHeader
-				cBind
+				cReconstruct
 
 	-- Mask out effects on const regions
 --	cMaskConst	<- SC.coreMaskEffs cBind
