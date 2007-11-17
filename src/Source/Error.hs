@@ -73,7 +73,7 @@ instance Pretty Error where
  pretty err@(ErrorShadowVar{})
  	= pretty 	
 	$ prettyPos (eShadowVar err)								% "\n"
-	% "     Shadowed REC variable '" % eShadowVar err  
+	% "     Shadowed TREC variable '" % eShadowVar err  
 	% "' in namespace " 		% (spaceName $ Var.nameSpace (eShadowVar err))		% ".\n"
 	
  pretty err@(ErrorRedefinedVar{})

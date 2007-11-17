@@ -3,10 +3,10 @@ import {
         Base;
         Base.Thunk;
         Data.Bool;
-        Data.Int;
         Data.Ref;
         Data.Tuple;
         Data.Maybe;
+        Data.Int;
         System.Error;
 }
 
@@ -45,336 +45,234 @@ data List %r1 a
 
 -- Binds
 foreign import extern project_List_x
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> t0
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Obj;
         
 foreign import extern project_List_xs
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern project_List_xx
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern project_List_ref_x
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> Data.Ref.Ref %r0 t0
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern project_List_ref_xs
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> Data.Ref.Ref %r0 (List %r0 t0)
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern project_List_ref_xx
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> Data.Ref.Ref %r0 (List %r0 t0)
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern (:)
-        :: forall t0 %r0 $c0
+        :: forall t0 %r0
         .  t0 -> List %r0 t0 -($c0)> List %r0 t0
-        :- $c0   = ${x :: t0}
+        :- $c0        = x : t0
         :$ Base.Obj -> Base.Data -> Base.Data;
         
 foreign import extern head
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> t0
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Obj;
         
 foreign import extern tail
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern last
-        :: forall t0 %r0 !e0
+        :: forall t0 %r0
         .  List %r0 t0 -(!e0)> t0
-        :- !e0   = !{Base.!Read %r0; System.Error.!Error}
+        :- !e0        = !{Base.!Read %r0; System.Error.!Error}
         :$ Base.Data -> Base.Obj;
         
 foreign import extern isNil
-        :: forall t0 %r0 %r1 !e0
+        :: forall t0 %r0 %r1
         .  List %r0 t0 -(!e0)> Data.Bool.Bool %r1
-        :- !e0   = !{Base.!Read %r0}
-        :$ Base.Data -> Base.Data;
-        
-foreign import extern length
-        :: forall t0 %r0 %r1 !e0
-        .  List %r0 t0 -(!e0)> Base.Int %r1
-        :- !e0   = !{Base.!Read %r0}
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern lengthR
-        :: forall t0 %r0 %r1 !e0
-        .  List %r1 t0 -(!e0)> Base.Int %r0
-        :- !e0   = !{Base.!Read %r1}
+        :: forall t0 %r0 %r1
+        .  List %r0 t0 -(!e0)> Base.Int %r1
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 foreign import extern (!!)
-        :: forall t0 %r0 %r1 !e0 $c0
-        .  List %r1 t0 -> Base.Int %r0 -(!e0 $c0)> t0
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1; System.Error.!Error}
-        ,  $c0   = ${xx :: List %r1 t0}
-        :$ Base.Data -> Base.Data -> Base.Obj;
-        
-foreign import extern indexL
-        :: forall t0 %r0 %r1 $c0
-        .  List %r1 t0 -> Base.Int %r0 -($c0)> t0
-        :- $c0   = ${xx :: List %r1 t0}
-        ,  Base.LazyH t0
-        ,  Base.Const %r0
-        ,  Base.Const %r1
+        :: forall t0 %r0 %r1
+        .  List %r0 t0 -> Base.Int %r1 -(!e0 $c0)> t0
+        :- !e0        = !{Base.!Read %r0; System.Error.!Error; Base.!Read %r1}
+        ,  $c0        = xx : List %r0 t0
         :$ Base.Data -> Base.Data -> Base.Obj;
         
 foreign import extern append
-        :: forall t0 %r0 !e0 $c0
+        :: forall t0 %r0
         .  List %r0 t0 -> List %r0 t0 -(!e0 $c0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r0}
-        ,  $c0   = ${xs :: List %r0 t0}
+        :- !e0        = Base.!Read %r0
+        ,  $c0        = xs : List %r0 t0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern (++)
-        :: forall t0 %r0 !e0 $c0
+        :: forall t0 %r0
         .  List %r0 t0 -> List %r0 t0 -(!e0 $c0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r0}
-        ,  $c0   = ${xx :: List %r0 t0}
+        :- !e0        = Base.!Read %r0
+        ,  $c0        = xx : List %r0 t0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern replicate
-        :: forall t0 %r0 %r1 !e0 $c0
+        :: forall t0 %r0 %r1
         .  Base.Int %r0 -> t0 -(!e0 $c0)> List %r1 t0
-        :- !e0   = !{Base.!Read %r0}
-        ,  $c0   = ${i :: Base.Int %r0}
+        :- !e0        = Base.!Read %r0
+        ,  $c0        = i : Base.Int %r0
         :$ Base.Data -> Base.Obj -> Base.Data;
         
-foreign import extern iterateL
-        :: forall t0 %r0 !e0 $c0 $c1
-        .  (t0 -(!e0 $c1)> t0) -> t0 -($c0)> List %r0 t0
-        :- $c0   = ${$c1}
-        ,  Base.Lazy %r0
-        ,  Base.Pure !e0
-        :$ Base.Thunk -> Base.Obj -> Base.Data;
-        
 foreign import extern map
-        :: forall t0 t1 %r0 %r1 !e0 !e1 $c0 $c1
-        .  (t0 -(!e1 $c1)> t1) -> List %r0 t0 -(!e0 $c0)> List %r1 t1
-        :- !e0   = !{!e1; Base.!Read %r0}
-        ,  $c0   = ${$c1}
-        :$ Base.Thunk -> Base.Data -> Base.Data;
-        
-foreign import extern mapL
-        :: forall t0 t1 %r0 %r1 !e0 $c0 $c1
-        .  (t0 -(!e0 $c1)> t1) -> List %r0 t0 -($c0)> List %r1 t1
-        :- $c0   = ${$c1}
-        ,  Base.Lazy %r1
-        ,  Base.Const %r0
-        ,  Base.Pure !e0
+        :: forall t0 t1 %r0 %r1 !e0 $c0
+        .  (t0 -(!e0 $c0)> t1) -> List %r0 t0 -(!e1 $c1)> List %r1 t1
+        :- !e1        = !{Base.!Read %r0; !e0}
+        ,  $c1        = f : $c0
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
 foreign import extern map_
-        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
-        .  (t0 -(!e1 $c1)> t1) -> List %r0 t0 -(!e0 $c0)> Base.Unit
-        :- !e0   = !{Base.!Read %r0; !e1}
-        ,  $c0   = ${$c1}
+        :: forall t0 t1 %r0 !e0 $c0
+        .  (t0 -(!e0 $c0)> t1) -> List %r0 t0 -(!e1 $c1)> Base.Unit
+        :- !e1        = !{Base.!Read %r0; !e0}
+        ,  $c1        = f : $c0
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
 foreign import extern maps
-        :: forall t0 t1 %r0 %r1 !e0 !e1 $c0
-        .  List %r0 t0 -> (t0 -(!e1)> t1) -(!e0 $c0)> List %r1 t1
-        :- !e0   = !{Base.!Read %r0; !e1}
-        ,  $c0   = ${xx :: List %r0 t0}
+        :: forall t0 t1 %r0 %r1 !e0 $c0
+        .  List %r0 t0 -> (t0 -(!e0 $c0)> t1) -(!e1 $c1)> List %r1 t1
+        :- !e1        = !{Base.!Read %r0; !e0}
+        ,  $c1        = xx : List %r0 t0
         :$ Base.Data -> Base.Thunk -> Base.Data;
         
 foreign import extern maps_
-        :: forall t0 t1 %r0 !e0 !e1 $c0
-        .  List %r0 t0 -> (t0 -(!e1)> t1) -(!e0 $c0)> Base.Unit
-        :- !e0   = !{!e1; Base.!Read %r0}
-        ,  $c0   = ${xx :: List %r0 t0}
+        :: forall t0 t1 %r0 !e0 $c0
+        .  List %r0 t0 -> (t0 -(!e0 $c0)> t1) -(!e1 $c1)> Base.Unit
+        :- !e1        = !{Base.!Read %r0; !e0}
+        ,  $c1        = xx : List %r0 t0
         :$ Base.Data -> Base.Thunk -> Base.Data;
         
 foreign import extern foldl
-        :: forall t0 t1 %r0 !e0 !e1 !e2 $c0 $c1 $c2
-        .  (t0 -(!e2 $c1)> t1 -(!e1)> t0) -> t0 -($c0)> List %r0 t1 -(!e0 $c2)> t0
-        :- !e0   = !{!e1; !e2; Base.!Read %r0}
-        ,  $c0   = ${$c1}
-        ,  $c2   = ${state :: t0; $c1}
+        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
+        .  (t0 -(!e1 $c1)> t1 -(!e0 $c0)> t0) -($c4)> t0 -($c3)> List %r0 t1 -(!e2 $c2)> t0
+        :- !e2        = !{Base.!Read %r0; !e1; !e0}
+        ,  $c2        = ${state : t0; f : $c1; foldl : $c3 \ f}
+        ,  $c3        = $c2 \ state
+        ,  $c4        = $c3 \ f
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
         
-foreign import extern mapAccumL
-        :: forall t0 t1 t2 %r0 %r1 %r2 %r3 !e0 !e1 !e2 $c0 $c1 $c2
-        .  (t0 -(!e1 $c1)> t1 -(!e2)> Data.Tuple.Tuple2 %r1 t0 t2) -> t0 -($c0)> List %r0 t1 -(!e0 $c2)> Data.Tuple.Tuple2 %r2 t0 (List %r3 t2)
-        :- !e0   = !{Base.!Read %r0; !e1; !e2; Base.!Read %r1}
-        ,  $c0   = ${$c1}
-        ,  $c2   = ${$c1; acc :: t0}
-        :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data;
-        
-foreign import extern mapAccumL'
-        :: forall t0 t1 t2 %r0 %r1 %r2 %r3 %r4 !e0 !e1 !e2 $c0 $c1 $c2 $c3
-        .  (t0 -(!e2 $c1)> t1 -(!e1)> Data.Tuple.Tuple2 %r0 t0 t2) -> t0 -($c0)> List %r1 t1 -($c2)> List %r2 t2 -(!e0 $c3)> Data.Tuple.Tuple2 %r3 t0 (List %r4 t2)
-        :- !e0   = !{Base.!Read %r0; !e1; !e2; Base.!Read %r1; Base.!Read %r2}
-        ,  $c0   = ${$c1}
-        ,  $c2   = ${acc :: t0; $c1}
-        ,  $c3   = ${xx :: List %r1 t1; acc :: t0; $c1}
-        :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data -> Base.Data;
-        
-foreign import extern sum
-        :: forall %r0 %r1 %r2 !e0
-        .  List %r0 (Base.Int %r2) -(!e0)> Base.Int %r1
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r2}
-        :$ Base.Data -> Base.Data;
-        
-foreign import extern sumU
-        :: forall %r0 %r1 %r2 !e0
-        .  List %r2 (Base.Int %r1) -(!e0)> Base.Int %r0
-        :- !e0   = !{Base.!Read %r1; Base.!Read %r2}
-        :$ Base.Data -> Base.Data;
-        
 foreign import extern sumR
-        :: forall %r0 %r1 %r2 !e0
-        .  List %r2 (Base.Int %r1) -(!e0)> Base.Int %r0
-        :- !e0   = !{Base.!Read %r1; Base.!Read %r2}
+        :: forall %r0 %r1
+        .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r1
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 foreign import extern prod
-        :: forall %r0 %r1 %r2 !e0
+        :: forall %r0 %r1 %r2
         .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1}
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 foreign import extern pow
-        :: forall %r0 %r1 %r2 !e0 $c0
+        :: forall %r0 %r1 %r2
         .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Int %r2
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0   = ${x :: Base.Int %r0}
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r2; Base.!Read %r0}
+        ,  $c0        = x : Base.Int %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern zipWith_
-        :: forall t0 t1 %r0 %r1 !e0 !e1 !e2 $c0 $c1 $c2
-        .  (t0 -(!e2 $c1)> t1 -(!e1)> Base.Unit) -> List %r1 t0 -($c0)> List %r0 t1 -(!e0 $c2)> Base.Unit
-        :- !e0   = !{!e1; !e2; Base.!Read %r0; Base.!Read %r1}
-        ,  $c0   = ${$c1}
-        ,  $c2   = ${xx :: List %r1 t0; $c1}
+        :: forall t0 t1 %r0 %r1 !e0 !e1 $c0 $c1
+        .  (t0 -(!e1 $c1)> t1 -(!e0 $c0)> Base.Unit) -($c4)> List %r0 t0 -($c3)> List %r1 t1 -(!e2 $c2)> Base.Unit
+        :- !e2        = !{Base.!Read %r0; Base.!Read %r1; !e1; !e0}
+        ,  $c2        = ${xx : List %r0 t0; f : $c1; zipWith_ : $c3 \ f}
+        ,  $c3        = $c2 \ xx
+        ,  $c4        = $c3 \ f
         :$ Base.Thunk -> Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern reverse
-        :: forall t0 %r0 %r1 !e0
-        .  List %r1 t0 -(!e0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r1}
+        :: forall t0 %r0 %r1
+        .  List %r0 t0 -(!e0)> List %r1 t0
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 foreign import extern intersperse
-        :: forall t0 %r0 %r1 !e0 $c0
+        :: forall t0 %r0 %r1
         .  t0 -> List %r0 t0 -(!e0 $c0)> List %r1 t0
-        :- !e0   = !{Base.!Read %r0}
-        ,  $c0   = ${s :: t0}
+        :- !e0        = Base.!Read %r0
+        ,  $c0        = s : t0
         :$ Base.Obj -> Base.Data -> Base.Data;
         
 foreign import extern take
-        :: forall t0 %r0 %r1 %r2 !e0 $c0
+        :: forall t0 %r0 %r1 %r2
         .  Base.Int %r0 -> List %r1 t0 -(!e0 $c0)> List %r2 t0
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0   = ${n :: Base.Int %r0}
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        ,  $c0        = n : Base.Int %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern drop
-        :: forall t0 %r0 %r1 !e0 $c0
-        .  Base.Int %r1 -> List %r0 t0 -(!e0 $c0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0   = ${n :: Base.Int %r1}
+        :: forall t0 %r0 %r1
+        .  Base.Int %r0 -> List %r1 t0 -(!e0 $c0)> List %r1 t0
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        ,  $c0        = n : Base.Int %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern deleteF
-        :: forall t0 %r0 %r1 !e0 !e1 !e2 $c0 $c1 $c2
-        .  (t0 -(!e2 $c1)> t0 -(!e1)> Data.Bool.Bool %r0) -> List %r1 t0 -($c0)> t0 -(!e0 $c2)> List %r1 t0
-        :- !e0   = !{Base.!Read %r0; !e1; !e2; Base.!Read %r1}
-        ,  $c0   = ${$c1}
-        ,  $c2   = ${xx :: List %r1 t0; $c1}
+        :: forall t0 %r0 %r1 !e0 !e1 $c0 $c1
+        .  (t0 -(!e1 $c1)> t0 -(!e0 $c0)> Data.Bool.Bool %r0) -($c4)> List %r1 t0 -($c3)> t0 -(!e2 $c2)> List %r1 t0
+        :- !e2        = !{Base.!Read %r1; !e1; !e0; Base.!Read %r0}
+        ,  $c2        = ${xx : List %r1 t0; eqF : $c1; deleteF : $c3 \ eqF}
+        ,  $c3        = $c2 \ xx
+        ,  $c4        = $c3 \ eqF
         :$ Base.Thunk -> Base.Data -> Base.Obj -> Base.Data;
         
 foreign import extern find
-        :: forall t0 %r0 %r1 %r2 !e0 !e1 $c0 $c1
-        .  (t0 -(!e1 $c1)> Data.Bool.Bool %r1) -> List %r0 t0 -(!e0 $c0)> Data.Maybe.Maybe %r2 t0
-        :- !e0   = !{Base.!Read %r0; !e1; Base.!Read %r1}
-        ,  $c0   = ${$c1}
-        :$ Base.Thunk -> Base.Data -> Base.Data;
-        
-foreign import extern filterL
-        :: forall t0 %r0 %r1 %r2 !e0 $c0 $c1
-        .  (t0 -(!e0 $c1)> Data.Bool.Bool %r0) -> List %r1 t0 -($c0)> List %r2 t0
-        :- $c0   = ${$c1}
-        ,  Base.Lazy %r2
-        ,  Base.Const %r1
-        ,  Base.Pure !e0
-        ,  Base.Const %r0
+        :: forall t0 %r0 %r1 %r2 !e0 $c0
+        .  (t0 -(!e0 $c0)> Data.Bool.Bool %r0) -> List %r1 t0 -(!e1 $c1)> Data.Maybe.Maybe %r2 t0
+        :- !e1        = !{Base.!Read %r1; !e0; Base.!Read %r0}
+        ,  $c1        = f : $c0
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
 foreign import extern rangeInt
-        :: forall %r0 %r1 %r2 !e0 $c0
-        .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> List %r2 (Base.Int %r0)
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0   = ${x :: Base.Int %r0}
-        :$ Base.Data -> Base.Data -> Base.Data;
-        
-foreign import extern rangeIntL
-        :: forall %r0 %r1 %r2 $c0
-        .  Base.Int %r0 -> Base.Int %r1 -($c0)> List %r2 (Base.Int %r0)
-        :- $c0   = ${x :: Base.Int %r0}
-        ,  Base.Lazy %r2
-        ,  Base.Const %r0
-        ,  Base.Const %r1
-        :$ Base.Data -> Base.Data -> Base.Data;
-        
-foreign import extern rangeInfIntL
         :: forall %r0 %r1
-        .  Base.Int %r0 -> List %r1 (Base.Int %r0)
-        :- Base.Lazy %r1
-        ,  Base.Const %r0
-        :$ Base.Data -> Base.Data;
+        .  Base.Int %r0 -> Base.Int %r0 -(!e0 $c0)> List %r1 (Base.Int %r0)
+        :- !e0        = Base.!Read %r0
+        ,  $c0        = x : Base.Int %r0
+        :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern concat
-        :: forall t0 %r0 %r1 !e0
-        .  List %r1 (List %r0 t0) -(!e0)> List %r0 t0
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1}
-        :$ Base.Data -> Base.Data;
-        
-foreign import extern concatL
         :: forall t0 %r0 %r1
-        .  List %r1 (List %r0 t0) -> List %r0 t0
-        :- Base.Lazy %r0
-        ,  Base.Const %r0
-        ,  Base.Const %r1
+        .  List %r0 (List %r1 t0) -(!e0)> List %r1 t0
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 foreign import extern concatMap
-        :: forall t0 t1 %r0 %r1 !e0 !e1 $c0 $c1
-        .  (t0 -(!e1 $c1)> List %r0 t1) -> List %r1 t0 -(!e0 $c0)> List %r0 t1
-        :- !e0   = !{Base.!Read %r0; Base.!Read %r1; !e1}
-        ,  $c0   = ${$c1}
+        :: forall t0 t1 %r0 %r1 !e0 $c0
+        .  (t0 -(!e0 $c0)> List %r0 t1) -> List %r1 t0 -(!e1 $c1)> List %r0 t1
+        :- !e1        = !{Base.!Read %r1; !e0; Base.!Read %r0}
+        ,  $c1        = f : $c0
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
-foreign import extern concatMapL
-        :: forall t0 t1 %r0 %r1 !e0 $c0 $c1
-        .  (t0 -(!e0 $c1)> List %r1 t1) -> List %r0 t0 -($c0)> List %r1 t1
-        :- $c0   = ${$c1}
-        ,  Base.Lazy %r1
-        ,  Base.Const %r1
-        ,  Base.Const %r0
-        ,  Base.Pure !e0
-        :$ Base.Thunk -> Base.Data -> Base.Data;
-        
-project Data.List.List (%) (*) where
+project Data.List.List %_ *_ where
 {
         x        = project_List_x;
         xs       = project_List_xs;

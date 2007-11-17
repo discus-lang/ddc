@@ -210,8 +210,9 @@ generaliseType varT tCore envCids
 		% "    tPlug\n"
 		%> prettyTS tPlug 	% "\n\n"
 
-
 	-- Clean empty effect classes that aren't ports.
+	-- 	BUGS: don't clean variables in the type environment.
+
 	let tClean	= cleanType tPlug
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"

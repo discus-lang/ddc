@@ -58,14 +58,16 @@ stage	= "Source.Desugar"
 
 -----
 rewriteTree 
-	:: Map Var Kind
+	:: String
+	-> Map Var Kind
 	-> S.Tree 
 	-> D.Tree Annot
 
-rewriteTree kindMap tree
+rewriteTree unique kindMap tree
  	= evalState (rewriteTreeM tree)
-	$ initRewriteS
-	{ stateKind	= kindMap }
+	$ RewriteS
+	{ stateKind	= kindMap 
+	, stateVarGen	= Var.XBind unique 0 }
 
 rewriteTreeM :: S.Tree -> RewriteM (D.Tree Annot)
 rewriteTreeM tree

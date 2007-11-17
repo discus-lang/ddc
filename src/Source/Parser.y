@@ -828,10 +828,12 @@ closure :: { Closure }
 	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
 	| pVar ':' closureK				{ TFree (vNameV $1) $3			}
 	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
+	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TVar KClosure $3)	}
 
 closureK 
 	:: { Closure }
-	: '$' '{' closure_semi '}'			{ TSum KClosure $3			}
+	: '$' '{' closure_semi '}'			{ TSum  KClosure $3					}
+	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3)		}
 		
 closure_semi
 	:: { [Closure] }
@@ -849,6 +851,7 @@ effect_closure
 	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
 	| pVar ':' closureK				{ TFree (vNameV $1) $3			}
 	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
+	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) }
 	| effectCtor					{ $1					}
 	| '!' '{' effect_semi '}'			{ TSum KEffect $3 			}	
 	

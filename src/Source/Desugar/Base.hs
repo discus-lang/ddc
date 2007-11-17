@@ -6,7 +6,6 @@ module Source.Desugar.Base
 	, RewriteS(..)
 	, Annot
 	, none
-	, initRewriteS
 	, newVarN
 	, newVarNS
 	, newVarNI
@@ -18,10 +17,11 @@ import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
-import qualified Shared.VarBind	as Var
-import qualified Shared.Unique	as Unique
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
+import qualified Shared.VarBind		as Var
+import qualified Shared.VarSpace	as Var
+import qualified Shared.Unique		as Unique
+import qualified Shared.Var		as Var
+import Shared.Var			(Var, NameSpace(..))
 import Shared.Base
 import Shared.Error
 import Type.Exp
@@ -34,38 +34,18 @@ type RewriteM	= State RewriteS
 
 data RewriteS
 	= RewriteS
-	{ stateVarGen	:: Map NameSpace Var.VarBind
+	{ stateVarGen	:: Var.VarBind
 	, stateKind	:: Map Var Kind }
 	
-initRewriteS
-	= RewriteS
-	{ stateVarGen	
-		= Map.insert NameValue 	 (Var.XBind ("v" ++ Unique.sourceDesugar) 0)
-		$ Map.insert NameType	 (Var.XBind ("t" ++ Unique.sourceDesugar) 0)
-		$ Map.insert NameRegion	 (Var.XBind ("r" ++ Unique.sourceDesugar) 0)
-		$ Map.insert NameEffect	 (Var.XBind ("e" ++ Unique.sourceDesugar) 0)
-		$ Map.insert NameClosure (Var.XBind ("c" ++ Unique.sourceDesugar) 0)
-		$ Map.empty 
-		
-	, stateKind
-		= Map.empty 
-	}
-		
-
 -----
 newVarNS :: NameSpace -> String -> RewriteM Var
 newVarNS space str
- = do	varGen		<- gets stateVarGen
- 	let Just gen	= Map.lookup space varGen
-	let gen'	= Var.incVarBind gen
-	
-	let var		= (Var.new (pretty gen ++ str))
-			{  Var.bind		= gen
+ = do	bind@(Var.XBind unique n) <- gets stateVarGen
+	modify $ \s -> s { stateVarGen	= Var.XBind unique (n+1) }
+
+	let var		= (Var.new (Var.namePrefix space ++ pretty bind ++ str))
+			{  Var.bind		= bind
 			,  Var.nameSpace	= space }
-			
-	modify (\s -> s
-		{ stateVarGen	= Map.insert space gen' varGen })
-		
 	return var
 
 

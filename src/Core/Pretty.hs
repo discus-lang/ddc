@@ -132,7 +132,7 @@ instance Pretty Exp where
 	    
 	    in	case vsSimple of
 	    	 []	-> "/\\ (" % padR 16 (sv v) % " :: " % k % ") ->\n" % e
-		 _	-> "/\\  " % ", " %!% map pv vsSimple % " ->\n" % xRest
+		 _	-> "/\\  " % ", " %!% map pv (reverse vsSimple) % " ->\n" % xRest
 
 
 	XLam v t x eff clo

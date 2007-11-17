@@ -17,6 +17,7 @@ import Core.Util.Slurp
 import Core.Plate.FreeVars
 import Core.Util.Strip
 import Util.Graph.Deps
+import Core.Util.Effect		(crushEffsT)
 
 import Util
 
@@ -246,8 +247,8 @@ applyValueT (TWhere t2 vts) t
 		, TWhere eff vts)
 
 applyValueT t0@(TFunEC t1 t2 eff clo) t3	
-	| t1_flat	<- inlineTWheresT Map.empty t1
-	, t3_flat	<- stripToShapeT $ inlineTWheresT Map.empty t3
+	| t1_flat	<- crushEffsT $ inlineTWheresT Map.empty t1
+	, t3_flat	<- crushEffsT $ stripToShapeT $ inlineTWheresT Map.empty t3
 	= if t1_flat == t3_flat
 		then Just (t2, eff)
 		else freakout stage

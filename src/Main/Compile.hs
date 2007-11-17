@@ -302,15 +302,14 @@ compileFile	args     fileName
 				(\x -> Just [])
 				cNormalise
 
+	-- lint: All variables should be in scope now.
+	SC.coreLint cBind cHeader
+
 	-- Reconstruct witness passing and effect information
 	cReconstruct	<- runStage "reconstruct"
 			$ SC.coreReconstruct "core-reconstruct" cHeader cBind
 
-
-	-- From this point on all the vars should be bound and all the required
-	--	type information should be present. 
-	--
-	-- The tree should be lint free from this point on.
+	-- lint: 
 	SC.coreLint cReconstruct cHeader
 	
 	

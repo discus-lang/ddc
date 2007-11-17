@@ -18,9 +18,13 @@ import Util
 import Shared.Var			(Var, VarBind, NameSpace(..))
 import Shared.Error
 import qualified Shared.Var		as Var
+import qualified Shared.VarUtil		as Var
 
 import qualified Data.Map		as Map
 import Data.Map				(Map)
+
+import qualified Data.Set		as Set
+import Data.Set				(Set)
 
 import qualified Type.Exp		as T
 import qualified Type.ToCore		as T
@@ -51,9 +55,15 @@ data CoreS
 	  -- | the substitution from the contra-variant port rewrite.
 	, corePortTable		:: Map Var (Map Var C.Type)
 
-	  -- | what port substitution we're currently using
+	  -- | what port substitution we're currently using.
+	  --	This changes when we enter a let-binding.
 	, corePortSub		:: Maybe (Map Var C.Type)
 
+	  -- | the effect/closure vars which have been bound by a LAMBDA or let
+	  --	On the way down the tree, all bound effect and closure vars are added to this map.
+	  --	We can use this to erase vars from type applications which can only ever be Bot.
+	, corePortVars		:: Set Var
+	 
 	  -- | table of type based projections.
 	, coreProject		:: ProjTable
 
@@ -70,6 +80,7 @@ initCoreS
 	, coreMapInst		= Map.empty
 	, corePortTable		= Map.empty
 	, corePortSub		= Nothing
+	, corePortVars		= Set.empty
 	, coreProject		= Map.empty
 	, coreGenValue		= Var.XBind "xC" 0 }
 
@@ -102,7 +113,7 @@ getType' vT
 	case Map.lookup vT mapTypes of
 	 Nothing		
 	  -> panic stage 
-	  $ "getScheme: no scheme for " % vT % "\n"
+	  $ "getType: no scheme for " % vT % " " % Var.prettyPos vT % " - " % show vT % "\n"
 	  % "  visible vars = " % Map.keys mapTypes % "\n"
 
 	 Just t		-> return $ T.toCoreT t

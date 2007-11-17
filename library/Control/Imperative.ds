@@ -8,7 +8,7 @@ import
 import extern
 {
 	primControl_while 
-		:: forall a %r1 !e1 !e2 !e3
+		:: forall a %r1 !e1 !e2
 		.  (() -(!e1)> Bool %r1) -> (() -(!e2)> a) -(!e3)> ()
 		:- !e3 	= !{ !Read %r1; !e1; !e2 }
 		:$ Obj -> Obj -> Obj;
@@ -20,13 +20,13 @@ import extern
 
 
 	primControl_when
-		:: forall a %r1 !e1 !e2 !e3
+		:: forall a %r1 !e1 !e2 
 		.  (() -(!e1)> Bool %r1) -> (() -(!e2)> a) -(!e3)> ()
 		:- !e3 	= !{ !Read %r1; !e1; !e2 }
 		:$ Obj -> Obj -> Obj;
 
 	primControl_unless
-		:: forall a %r1 !e1 !e2 !e3
+		:: forall a %r1 !e1 !e2
 		.  (() -(!e1)> Bool %r1) -> (() -(!e2)> a) -(!e3)> ()
 		:- !e3 	= !{ !Read %r1; !e1; !e2 }
 		:$ Obj -> Obj -> Obj;

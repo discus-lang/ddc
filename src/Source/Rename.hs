@@ -201,12 +201,14 @@ instance Rename Foreign where
 	 	return	$ OExport f'
 		
 	OCCall mS v t
-	 -> do	v'	<- lookupV v
+	 -> local
+	 $ do	v'	<- lookupV v
 	 	t'	<- rename t
 		return	$ OCCall mS v' t'
 		
 	OExtern mS v tv to 
-	 -> do	v'	<- lookupV v
+	 -> local
+	 $  do 	v'	<- lookupV v
 	 	tv'	<- rename tv
 		to'	<- rename to
 		return	$ OExtern mS v' tv' to' 
@@ -820,9 +822,19 @@ instance Rename Type where
 		
 	-- closure
 	TFree v t
-	 -> local
-	 $  do	t'	<- rename t
-	 	return	$ TFree v t'
+	 -> do	v'	<- lbindV v
+	 	local
+		 $  do	t'	<- rename t
+		 	return	$ TFree v' t'
+	
+	TMask k t1 t2
+	 -> do	t1'	<- rename t1
+	 	t2'	<- rename t2
+		return	$ TMask k t1' t2'
+	
+	TTag v
+	 -> do	v'	<- lbindV v
+	 	return	$ TTag v'
 	
 	-- wildcards
 	TWild k

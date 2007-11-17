@@ -120,11 +120,14 @@ rewriteOverApp
 				= stripSchemeT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
-		ttSub	= trace (pretty $ "  tInstShape = " % tInstShape % "\n")
+		ttSub	= trace (pretty 
+				$ "    tInstScheme = " %> tInstScheme 	% "\n\n"
+				% "    tInstShape  = " %> tInstShape 	% "\n\n"
+				% "    tOverShapeI = " %> tOverShapeI	% "\n\n")
 			$ fromMaybe
 				(panic stage $ "rewriteOverApp: cannot unify types.\n\n"
-				  % " tInstShape  = " %> tInstShape  % "\n\n"
-				  % " tOverShapeI = " %> tOverShapeI % "\n")
+				% "    tInstShape  = " %> tInstShape  % "\n\n"
+				% "    tOverShapeI = " %> tOverShapeI % "\n")
 				$ unifyT2 tInstShape tOverShapeI
 		
 

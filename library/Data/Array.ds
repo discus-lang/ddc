@@ -10,31 +10,31 @@ data Array %r1 a;
 
 foreign import extern "primArray_new"
  array_new 
- 	:: forall a %r1 %r2 !e1 $c1
+ 	:: forall a %r1 %r2
  	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
 	:- !e1 = !{ !Read %r1 }
-	,  $c1 = ${ size :: Int %r1 }
+	,  $c1 = size : Int %r1
 	,  Mutable %r2
 	:$ Obj -> Obj -> Obj;
 
 foreign import extern "primArray_size"
  array_size
- 	:: forall a %r1 %r2 !e1
+ 	:: forall a %r1 %r2
 	.  Array %r1 a -(!e1)> Int %r2
 	:- !e1 = !{ !Read %r1 }
 	:$ Obj -> Obj;
  
 foreign import extern "primArray_index"
- index	:: forall a %r1 %r2 !e1
+ index	:: forall a %r1 %r2 
  	.  Array %r1 a -> Int %r2 -(!e1)> a
 	:- !e1 = !{ !Read %r1; !Read %r2 }
 	:$ Obj -> Obj -> Obj;
  
 foreign import extern "primArray_indexR"
- indexR	:: forall a %r1 %r2 !e1 $c1
+ indexR	:: forall a %r1 %r2 
  	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
 	:- !e1 = !{ !Read %r1; !Read %r2 }
-	,  $c1 = ${ a :: Array %r1 a }
+	,  $c1 = a : Array %r1 a
 	:$ Obj -> Obj -> Obj;
  
 

@@ -271,8 +271,8 @@ desugar
 desugar	kinds sTree hTree
  = do
 	let kindMap	= Map.fromList kinds
-	let sTree'	= rewriteTree kindMap sTree
-	let hTree'	= rewriteTree kindMap hTree
+	let sTree'	= rewriteTree "SDt" kindMap sTree
+	let hTree'	= rewriteTree "SDh" kindMap hTree
 			
 	-- dump
 	dumpST DumpDesugared "desugared-source" 

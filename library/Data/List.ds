@@ -3,10 +3,10 @@ import
 {	Base;
 	Base.Thunk;
 	Data.Bool;
-	Data.Int;
 	Data.Ref;
 	Data.Tuple;
 	Data.Maybe;
+	Data.Int;
 	System.Error;
 }
 
@@ -33,13 +33,12 @@ infixr 6 : ;
 head :: [a] -> a;
 head =
  \case { x : xs		-> x; };
--- 	 xs ++ ys	-> head xs; };
 
 
 tail ::	[a] -> [a];
 tail =	
  \case { x  :  xs	-> xs; };
---	 xs ++ ys	-> tail xs ++ ys; };
+
 
 last :: 	[a] -> a;
 last = 
@@ -59,14 +58,15 @@ isNil =
 -----
 -- Length
 --
+{-
 length :: [a] -> Int;
 length xx
  = do {	count	= 0;
-	f	= (\x -> count <> inc);
+	f x	= count <> inc;
 	maps_ xx f; -- (\x ->	count <> inc);
 	count;
  };	 
-
+-}
 
 lengthR :: [a] -> Int;
 lengthR xx
@@ -102,6 +102,7 @@ indexL xx n
 -----
 -- Append
 --
+
 append :: [a] -> [a] -> [a];
 append xs ys
  = case xs of {
@@ -125,6 +126,7 @@ append xs ys
 -----
 -- Replicate / Iterate
 --
+
 replicate :: 	Int -> a -> [a];
 replicate i x	
  = if i == 0 
@@ -145,7 +147,6 @@ map f xx
  = case xx of { 
  	[]		-> [];
 	x  :  xs	-> f x      :  map f xs;
---	xx ++ yy	-> map f xx ++ map f yy;
  };
 
 
@@ -169,10 +170,6 @@ map_ f xx
 	x : xs		
 	 -> do { f x;
 		 map_ f xs; };
-
-	xx ++ yy	
-	 -> do { map_ f xx;
-		 map_ f yy; };
  };
 
 
@@ -195,6 +192,7 @@ foldl    f state xx
  };
 
 
+{-
 mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y]);
 mapAccumL  f acc xx	
  = mapAccumL' f acc xx [];
@@ -211,10 +209,11 @@ mapAccumL' f acc xx yy
 	};
  };
 
-
+-}
 -----
 -- Sum / Prod
 --
+{-
 sum ::	[Int] -> Int;
 sum xx
  = do {	count	= 0; 
@@ -222,7 +221,8 @@ sum xx
 	 (\x ->	count := count + x);
 	count; 
  };
-
+-}
+{-
 sumU :: [Int] -> Int;
 sumU xx
  = do {	count	= 0;
@@ -230,7 +230,7 @@ sumU xx
 	 (\x -> count := count + x);
 	count;
  };
-
+-}
 sumR :: [Int] -> Int;
 sumR xx
  = case xx of {

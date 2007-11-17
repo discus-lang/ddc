@@ -5,10 +5,10 @@ import Control.Exception;
 
 data FILE# %r1	foreign "FILE";
 effect !File	:: !;
-
+{-
 -- fopen
 foreign import extern "fopen"
- fopenU :: forall %r1 %r2 %r3 %r4 !e1
+ fopenU :: forall %r1 %r2 %r3 %r4
  	.  	String# %r1 			-- fileName
 	-> 	String# %r2 			-- mode
 	-(!e1)> Ptr# %r3 (FILE# %r4)		-- file
@@ -19,7 +19,7 @@ foreign import extern "fopen"
 -- fread
 foreign import extern "fread"
  freadU 
- 	:: forall %r1 %r2 %r3 %r4 %r5 %r6 !e1
+ 	:: forall %r1 %r2 %r3 %r4 %r5 %r6
  	. 	String# %r1			-- destination string
 	-> 	Int32# %r2			-- size of member
 	-> 	Int32# %r3			-- number of members to read
@@ -35,7 +35,7 @@ foreign import extern "fread"
 -- fseek
 foreign import extern "fseek"
  fseekU	
- 	:: forall %r1 %r2 %r3 %r4 %r5 !e1
+ 	:: forall %r1 %r2 %r3 %r4 %r5
  	.	Ptr# %r1 (FILE# %r2)		-- file
 	-> 	Int32# %r3			-- offset
 	-> 	Int32# %r4			-- whence SEEK_SET, SEEK_END or SEEK_CUR
@@ -58,7 +58,7 @@ foreign import extern "(Int32)"
 -- ftell
 foreign import extern "ftell"
  ftellU	
- 	:: forall %r1 %r2 %r3 !e1
+ 	:: forall %r1 %r2 %r3
 	.	Ptr# %r1 (FILE# %r2)
 	-(!e1)>	Int32# %r3
 
@@ -68,7 +68,7 @@ foreign import extern "ftell"
  
 -- 2007/2/16.8 workarounds, can't return unboxed values from functions
 
-{-
+
 file_open :: String -> String -> Ptr# FILE#;
 file_open name mode
  = do {	file	= fopenU (unboxString name) (unboxString mode);
@@ -105,7 +105,7 @@ file_read name
 	
 	str;
  };
--}
+
 
 
 file_length :: String -> Int;
@@ -142,3 +142,4 @@ file_read name
 	
 	str;
  };
+-}

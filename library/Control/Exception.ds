@@ -18,14 +18,14 @@ foreign import extern "primException_init"
 
 foreign import extern "primException_try"	
  primTry
-	:: forall a %r !e1 !e2 !e3
+	:: forall a %r !e1 !e2
 	.  (() -(!e1)> a) -> (Exception %r -(!e2)> a) -(!e3)> a
 	:- !e3 = !{ !e1; !e2 }
 	:$ Obj -> Obj -> Obj;
 		
 foreign import extern "primException_throw"
  primThrow
-	:: forall a %r !e1
+	:: forall a %r
 	.  Exception %r -(!e1)> a
 	:- !e1 = !{ !Throw }
 	:$ Obj -> Obj;
@@ -64,7 +64,9 @@ data Exception %r
 --	Prints out the exception then exits to system.
 --
 topHandle f
- =	try f ()
+ =	f ();
+ {-
+ try f ()
 	catch {
 		Exception msg	
 		 -> 	print	$ "* runMain: Exception - " % msg % "\n";
@@ -86,13 +88,16 @@ topHandle f
 
 	}
 	with exit 1;		 
+-}
 
-
-gate f
+gate f	= f ();
+{-
  = 	try f ()
  	catch {	ExceptionBreak	-> (); };
-	
+-}
 
-gateLoop f
+gateLoop f = loop f;
+{-
  = 	try loop f
  	catch { ExceptionBreak	-> (); };
+-}

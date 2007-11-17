@@ -1,7 +1,6 @@
 
 module Desugar.ToCore.Lambda
-	( addTypeApps
-	, fillLambdas
+	( fillLambdas
 	, addTau )
 where
 
@@ -81,19 +80,6 @@ fillLambdas' v tsWhere tScheme x
 	= return	$ addTau tScheme x
 
 
--- If this type is a var and there's a where binding for it in the map, 
---	add a where with the binding around the var
---
-close1Type :: Map Var Type -> Type -> Type
-
-close1Type tsWhere t@(TVar k v)
- = case Map.lookup v tsWhere of
- 	Nothing	-> t
-	Just t'	-> TWhere t [(v, t')]
-
-close1Type tsWhere t
- = t
-
 
 addTau xT x
 	| gotAnnot x	= x
@@ -115,6 +101,7 @@ gotAnnot x
 --	| See how this let-bound var was instantiated and add
 --	  type/region/effect applications.
 --
+{-
 addTypeApps 
 	:: Var 		-- ^ The value var.
 	-> Var 		-- ^ The type var for this value var.
@@ -130,14 +117,14 @@ addTypeApps v vT exp
 	-- See how the scheme was instantiated.
 	Just instInfo	<- lookupInst vT
 
-{-	trace
+	trace
 	 (pretty	$ "--- addTypeApps\n"
 	 		% " v                = "	 % v		% "\n"
 			% " vT               = "	 % vT		% "\n"
 			% " exp              = "	 % exp		% "\n\n"
 			% " tScheme          = \n"	 %> tScheme	% "\n\n"
 			% " mInstVs          = "	 % mInstVs	% "\n")
-	 $ -}
+	 $ 
 	addTypeApps2 v vT exp tScheme instInfo
 	 
 
@@ -202,21 +189,22 @@ addTypeApps2 v vT exp tScheme (T.InstanceLet vUse vBind tsInst tScheme_)
 					:  map (\t -> XType t) tsInst_noContext
 					++ map (\c -> XType c) classes')
 	
-{-	trace
+	trace
 	 (pretty	$ " tsInst_punctured = "	% tsInst_punctured	% "\n"
 			% " tsInst_noContext = "	% tsInst_noContext	% "\n"
 			% " forallVTs        = " 	% forallVTs		% "\n"
 			% " sub              = "	% show sub		% "\n\n")
-	 $ -}
+	 $ 
 	addTypeApps3 expFinal tRest'
 
 
 addTypeApps3 :: Exp -> Type  -> CoreM Exp
 addTypeApps3 expFinal tRest
  = do
-{-	trace
+	trace
 	 (pretty	$ " expFinal         = \n"	%> expFinal		% "\n\n"
 	 		% " tRest            = \n"	%> show tRest		% "\n\n")
-	 $ -}
+	 $ 
 	return expFinal
 
+-}

@@ -14,24 +14,24 @@ class Show a where
 }
 
 
-instance Show (String (%)) where
+instance Show (String %_) where
 {
 	show	= showString;
 }
 
 
-instance Show (Int (%)) where
+instance Show (Int %_) where
 {
 	show	= stringOfInt;
 }
 
 
-instance Show (Float (%)) where
+instance Show (Float %_) where
 {
 	show	= stringOfFloat32;
 }
 
-instance Show (Bool (%)) where
+instance Show (Bool %_) where
 {
 	show	= showBool;
 }
@@ -57,6 +57,7 @@ showString ss 	= "'" % ss % "'";
 -----------------------
 -- showListL
 --
+{-
 showListL showX xx
  = case xx of {
 	Nil -> "[]";
@@ -74,10 +75,11 @@ showListL2 showX xx
 
 showListIntL 
 	= showListL showInt;
-
+-}
 -----------------------
 -- showList
 --
+{-
 showList  showX xx
  = "[" % showList2 showX xx;
  
@@ -107,7 +109,7 @@ showList3 showX xx
 showListInt 
 	= showList showInt;
 
-
+-}
 print xx
  = case xx of {
  	SChunk x	

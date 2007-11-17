@@ -9,6 +9,9 @@ where
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import qualified Debug.Trace	as Debug
 import Util
 
@@ -239,10 +242,32 @@ toCoreS (D.SBind _ Nothing x)
 
 
 toCoreS (D.SBind _ (Just v) x) 
- = do	xCore		<- toCoreX x
-
+ = do	
+	-- lookup the generalised type of this binding.
 	tScheme		<- getType v
+
+	-- Remember that forall and type-let bindings will be added by fillLambdas below
+	--	and will be bound in the inner expression. We need this so we can erase
+	--	empty effect/closure vars when adding type applications.
+	let (forallVTs, tetVTs, contexts, tShape)
+			= C.stripSchemeT tScheme
+	
+	modify 
+	 $ \s -> s { corePortVars 
+			= Set.union 
+				(Set.fromList 
+					(  map fst forallVTs
+					++ map fst tetVTs))
+				(corePortVars s) }
+	
+
+ 	-- convert the RHS to core.
+	xCore		<- toCoreX x
+
+	-- Add type lambdas, contexts and type lets
 	xLam		<- fillLambdas v tScheme xCore
+
+
 	returnJ 	$ C.SBind (Just v) xLam
 
 
@@ -416,11 +441,16 @@ toCoreX xx
 
 		let (vtsForall, vtsWhere, tsContextC, tShape)
 				= C.stripSchemeT tScheme
+		
+		portVars	<- gets corePortVars
+		
+		trace ("portVars = " % Set.toList portVars % "\n")
+			$ return ()
 
+
+		-- TODO: break this out into a separate fn
 		-- tag var with its type
 		-- apply type args to scheme, add witness params
-		
-
 
 		-- lookup how this var was instantiated
 		let Just instInfo = Map.lookup vT mapInst
@@ -453,10 +483,25 @@ toCoreX xx
 				case mPortSub of
 				 Nothing	-> tsInstCE
 				 Just portSub	-> map (C.substituteT portSub) tsInstCE
+
+			-- Clean out effect/closure arguments where the argument is just a variable
+			--	that has not been bound. These are guaranteed to be Bottom, and are 
+			--	not bound by a LAMBDA or type-let higher up in the tree so are out
+			--	of scope anyway.
+			let tsInstC_clean 
+				= map (\t -> case t of
+						C.TVar C.KEffect v
+						 | not $ Set.member v portVars	-> C.TPure
+							 
+						C.TVar C.KClosure v
+						 | not $ Set.member v portVars	-> C.TEmpty
+
+						_ -> t)
+					tsInstC_portSub
 			
 			-- Work out what types belong to each quantified var in the type
 			--	being instantiated.			
-			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_portSub
+			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_clean
 
 			-- If this function needs a witnesses we'll just make them up.
 			--	Real witnesses will be threaded through in a later stage.
@@ -468,11 +513,12 @@ toCoreX xx
 				% "    context         = " % tsContextC		% "\n"
 				% "    tsInstCE        = " % tsInstCE		% "\n"
 				% "    tsInstC_portSub = " % tsInstC_portSub	% "\n"
+				% "    tsInstC_clean   = " % tsInstC_clean	% "\n"
 				% "    tsSub           = " % tsSub 		% "\n"
 				% "    tsContestC'     = " % tsContextC' 	% "\n")
 				$ return ()
 			
-		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_portSub ++ tsContextC'))
+		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_clean ++ tsContextC'))
 
 		 -- recursive use of a let-bound variable
 		 -- 	pass the args on the type scheme back to ourselves.

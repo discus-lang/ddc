@@ -1,7 +1,8 @@
 
 module Shared.VarSpace
 	( NameSpace(..)
-	, spaceName )
+	, spaceName 
+	, namePrefix )
 where
 
 import Util
@@ -49,3 +50,19 @@ spaceName space
 	NameAttr	-> "Attr"
 	NameLabel	-> "Label"
 
+
+-- | A common prefix to use for variable names of a certain NameSpace
+namePrefix :: NameSpace -> String
+namePrefix space
+ = case space of
+ 	NameNothing	-> "z"
+	NameValue	-> "x"
+	NameType	-> "t"
+	NameRegion	-> "r"
+	NameEffect	-> "e"
+	NameClosure	-> "c"
+	NameClass	-> "w"
+	NameModule	-> "m"
+	NameField	-> "f"
+	NameAttr	-> "a"
+	NameLabel	-> "l"

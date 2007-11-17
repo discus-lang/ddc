@@ -460,9 +460,9 @@ kindOfType t
 --	TLet 	v t1 t2		-> kindOfType t2
 	TWhere  t1 _		-> kindOfType t1
 
-	-- TApp missing
-	TSum k _		-> k
-	TVar k _		-> k
+	TSum  k _		-> k
+	TMask k _ _		-> k
+	TVar  k _		-> k
 
  	TData{}			-> KData
 	TFunEC{}		-> KData
