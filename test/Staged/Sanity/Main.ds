@@ -11,11 +11,11 @@
 main ()
  = do {	
  	checkArithmetic ();
---	checkCurrying ();
---	checkLists ();
---	checkUpdate ();
+	checkCurrying ();
+	checkLists ();
+	checkUpdate ();
 --	checkLambdaLifting ();
---	checkShow ();
+	checkShow ();
  };
 
 add :: Int -> Int -> Int;
@@ -71,7 +71,7 @@ checkLists ()
 	print "\n";
  };
 
-{-
+
 -----------------------
 -- Update
 --
@@ -93,7 +93,7 @@ checkUpdate ()
 	print	"\n";
  };
 
-
+{-
 -----------------------
 -- Lambda Lifting
 -- 
@@ -122,7 +122,7 @@ checkLambdaLifting ()
 
 	print "\n";
  };
-
+-}
 
 
 -----------------------
@@ -141,7 +141,7 @@ checkShow ()
 	print	"\n";
  };
 
--}
+
 -----------------------
 -- checkI
 --	Check an integer result against an expected value.
