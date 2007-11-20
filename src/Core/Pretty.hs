@@ -178,9 +178,8 @@ instance Pretty Exp where
 	 -> "do {\n"
 	 	%> ";\n\n" %!% bs % ";\n}"
 
-	XMatch alts eff
-	 -> "match " % prettyE_caused eff % "\n"
-	 	% "{\n"
+	XMatch alts _
+	 -> "match {\n"
 		%> ("\n\n" %!% alts)
 		% "\n"
 		% "}"
