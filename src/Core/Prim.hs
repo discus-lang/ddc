@@ -47,7 +47,7 @@ stripArgsEffs xx
 				XAppFP x mEff	-> (x, mEff))
 		$ parts
 
-	eff	= makeSumT KEffect
+	eff	= makeTSum KEffect
 		$ catMaybes effss
 	
     in	(args, eff)

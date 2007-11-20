@@ -148,12 +148,12 @@ boxWrapS table stmt
 		        ++ [ SBind (Just vPrim)	
 				$ XPrim (MFun funV xTU)
 					[ XVar v | v <- vsUnbox]
-					(makeSumT KEffect [eReadR table r | r <- rsUnbox]) 
+					(makeTSum KEffect [eReadR table r | r <- rsUnbox]) 
 
 			   , SBind xV	
 			  	$ XPrim (MBox xT xTU)
 					[XVar vPrim]
-					(makeSumT KEffect [ eReadR table xuR ]) ]
+					(makeTSum KEffect [ eReadR table xuR ]) ]
 							
 	| otherwise
 	= return [stmt]

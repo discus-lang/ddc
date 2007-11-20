@@ -72,14 +72,13 @@ showListL2 showX xx
 	 -> (%)@ ", " ((%)@ (showX@ x) (showListL2@ showX xs));
  };
 
-
 showListIntL 
 	= showListL showInt;
 -}
 -----------------------
 -- showList
 --
-{-
+
 showList  showX xx
  = "[" % showList2 showX xx;
  
@@ -109,7 +108,7 @@ showList3 showX xx
 showListInt 
 	= showList showInt;
 
--}
+
 print xx
  = case xx of {
  	SChunk x	

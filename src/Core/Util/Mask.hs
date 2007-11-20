@@ -73,5 +73,5 @@ flattenSumT :: Type -> Type
 flattenSumT 
  = transformT 
 	(\tt -> case tt of
-		TSum k ts	-> makeSumT k ts
+		TSum k ts	-> makeTSum k ts
 		_		-> tt)

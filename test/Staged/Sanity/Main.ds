@@ -10,12 +10,12 @@
 
 main ()
  = do {	
--- 	checkArithmetic ();
---	checkCurrying ();
---	checkLists ();
---	checkUpdate ();
+ 	checkArithmetic ();
+	checkCurrying ();
+	checkLists ();
+	checkUpdate ();
 	checkLambdaLifting ();
---	checkShow ();
+	checkShow ();
  };
 
 add :: Int -> Int -> Int;
@@ -23,7 +23,7 @@ add x y		= x + y;
 
 addFive x	= x + 5;
 
-{-
+
 -----------------------
 -- Arithmetic
 --
@@ -92,7 +92,7 @@ checkUpdate ()
 
 	print	"\n";
  };
--}
+
 
 -----------------------
 -- Lambda Lifting
@@ -112,12 +112,6 @@ checkLambdaLifting ()
 
 	checkI 55	x;
 
- };
- 
-{-
-
-	-- 
-
 	-- 
 	y	= 0;
 	f i	= y := y + i;
@@ -128,18 +122,18 @@ checkLambdaLifting ()
 
 	print "\n";
  };
--}
+
 
 
 -----------------------
 -- Show
 --
-{-
+
 checkShow ()
  = do {	print	"-- Show.\n";
 	print	$ showInt 5; print "\n";
 	print	$ "fresh " % "fried " % "fish" % "\n";
---	print	$ showListInt [0..9] % "\n";
+	print	$ showListInt [0..9] % "\n";
 
 	print	$ concats 
 		$ (intersperse " " ["all", "your", "base", "belongs", "to", "us"]) ++ (["\n"]);
@@ -147,7 +141,7 @@ checkShow ()
 
 	print	"\n";
  };
--}
+
 
 -----------------------
 -- checkI

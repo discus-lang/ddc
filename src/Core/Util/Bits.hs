@@ -6,9 +6,13 @@ module Core.Util.Bits
 	, isXTau
 	, isTForall
 	
-	, crushSumT
-	, makeSumT
-	
+	, makeTSum,	flattenTSum
+
+	, makeXTet	
+	, makeTWhere
+
+
+
 	, kindOfSpace 
 	, pure
 	, empty
@@ -42,10 +46,8 @@ module Core.Util.Bits
 	, varToType 
 
 	, addLambdas
-	, addLAMBDAs
+	, addLAMBDAs)
 
-	, makeXTet	
-	, makeTWhere)
 
 where
 
@@ -88,19 +90,24 @@ isTForall x	= x =@= TForall{}
 
 
 
-crushSumT :: Type -> [Type]
-crushSumT tt
+	
+-- | make a sum from these things
+--	return bottom if there aren't any
+makeTSum :: Kind -> [Type] -> Type
+makeTSum k ts
+ = case catMap flattenTSum ts of
+ 	[]	-> TBot k
+	[t]	-> t
+	ts'	-> TSum k ts'
+
+
+-- | flatten this sum into a list of things
+flattenTSum :: Type -> [Type]
+flattenTSum tt
  = case tt of
  	TBot k 		-> []
-	TSum k ts	-> catMap crushSumT ts
+	TSum k ts	-> catMap flattenTSum ts
 	_		-> [tt]
-	
-
-makeSumT :: Kind -> [Type] -> Type
-makeSumT k ts
- = case catMap crushSumT ts of
- 	[]	-> TBot k
-	ts'	-> TSum k ts'
 	
  
 
@@ -297,8 +304,8 @@ superOpTypePartT	t
 
 	TForall v  k t			-> superOpTypePartT t
 	
---	TLet v t1 t2			-> superOpTypePartT t2
 	TContext c t			-> superOpTypePartT t
+	TWhere t vts			-> superOpTypePartT t
 
 	TFunEC{}			-> TData primTThunk []
 

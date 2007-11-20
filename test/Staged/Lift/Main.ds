@@ -11,7 +11,7 @@ import Prelude;
 main ()
  = do {	lift1 ();
 	lift2 ();
-	lift3 ();
+--	lift3 ();
 
 	liftCtor ();
  };
@@ -60,6 +60,7 @@ lift2 ()
 --	try-catch blocks are compiled by introducing
 --	local function bindings.
 --
+{-
 lift3 ()
  = do {	a1	= 20;
 	a2	= 42;
@@ -71,7 +72,7 @@ lift3 ()
 	print	$ "z = " % showInt z;
 	print "\n";
  };
-
+-}
 
 -----
 -- liftCtor

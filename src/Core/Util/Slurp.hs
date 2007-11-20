@@ -131,7 +131,7 @@ slurpExpX xx
 -----
 slurpEffsX ::	Exp -> Effect
 slurpEffsX xx	
-	= makeSumT KEffect 
+	= makeTSum KEffect 
 	$ slurpEffsX' xx
 	
 slurpEffsX'	xx

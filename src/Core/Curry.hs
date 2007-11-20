@@ -140,7 +140,7 @@ curryX	tc xx
 					_	-> panic stage
 						$ "curryX: malformed exp " % xx
 	  in	fromMaybe xx
-			$ makeCall vF tc args (makeSumT KEffect effs)
+			$ makeCall vF tc args (makeTSum KEffect effs)
 
 	-- uh oh..			
 	| otherwise	

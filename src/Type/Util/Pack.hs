@@ -162,9 +162,8 @@ packTypeLs ls tt
 	    in	TEffect v ts'
 	    
 	-- closure
-	TFree v1 (TFree v2 t)	
-	 -> TFree v1 t
-
+	TFree v1 (TFree v2 t)		-> TFree v1 t
+	TFree v1 (TBot KClosure)	-> TBot KClosure
 
 	TFree v t -> TFree v (loadFunData ls t)
 	 

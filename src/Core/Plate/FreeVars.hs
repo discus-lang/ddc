@@ -207,6 +207,11 @@ freeVarsT	tt
 	TSum k ts
 	 -> unions $ map freeVarsT ts
 
+	TMask k t1 t2
+	 -> unions
+	 	[ freeVarsT t1
+		, freeVarsT t2 ]
+
 	TVar k v	-> Set.singleton v
 	
 	TBot k		-> Set.empty
@@ -238,6 +243,7 @@ freeVarsT	tt
 
 	-- closure
 	TFree v t	-> freeVarsT t
+	TTag v		-> Set.empty
 	
 	-- class
  	TClass v ts	

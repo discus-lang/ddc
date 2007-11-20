@@ -8,6 +8,7 @@ where
 
 import Shared.Var (Var)
 import qualified Core.Exp 	as C
+import qualified Core.Util	as C
 
 import Desugar.ToCore.Base
 
@@ -70,28 +71,29 @@ stripAnnot xx
 -- | Decend into this expression and annotate the first value found with its type
 --	doing this makes it possible to slurpType this expression
 --
-dropXTau :: C.Exp -> C.Type -> C.Exp
-dropXTau xx tt
+dropXTau :: C.Exp -> [(Var, C.Type)] -> C.Type -> C.Exp
+dropXTau xx env tt
 	-- decend into XLAMs
 	| C.XLAM v t x		<- xx
 	, C.TForall v t1 t2	<- tt
-	= C.XLAM v t $ dropXTau x t2
+	= C.XLAM v t $ dropXTau x env t2
 	
 	| C.XLAM v t x		<- xx
 	, C.TContext t1 t2	<- tt
-	= C.XLAM v t $ dropXTau x t2
+	= C.XLAM v t $ dropXTau x env t2
 	
 	-- decend into XLams
 	| C.XLam v t x eff clo	<- xx
 	, C.TFunEC _ t2 _ _	<- tt
-	= C.XLam v t (dropXTau x t2) eff clo
+	= C.XLam v t (dropXTau x env t2) eff clo
 	
-	-- skip over XTets and TWheres
+	-- skip over XTets
 	| C.XTet vts x		<- xx
-	= C.XTet vts $ dropXTau x tt
+	= C.XTet vts $ dropXTau x env tt
 	
+	-- load up bindings into the environment
 	| C.TWhere t vts	<- tt
-	= dropXTau xx t
+	= dropXTau xx (vts ++ env) t
 
 	-- there's already an XTau here,
 	--	no point adding another one, 
@@ -101,7 +103,7 @@ dropXTau xx tt
 	
 	-- we've hit a value, drop the annot
 	| otherwise
-	= C.XTau tt xx
+	= C.XTau (C.packT $ C.makeTWhere tt env) xx
 	
 
 

@@ -121,13 +121,19 @@ reconX tt (XLocal v vs x)
 reconX tt exp@(XApp x1 x2 eff)
  = let	(x1', x1t)	= reconX tt x1
 	(x2', x2t)	= reconX tt x2
+	mResultTE	= applyValueT x1t x2t
 
-   in	case applyValueT x1t x2t of
- 	 Just (t, eff')
-	  -> let x'		= XApp x1' x2' (narrowT eff')
-     	     in	 (x', t)
+   in {- trace 	( "apply\n"
+   		% "  t1     =\n" %> x1t 	% "\n\n"
+		% "  t2     =\n" %> x2t 	% "\n\n"
+		% "  result =\n" %> mResultTE	% "\n\n") -}
+	
+	case mResultTE of
+   	   Just (t, eff')
+  	    -> let x'		= XApp x1' x2' (packT eff')
+     	       in	 (x', t)
 
-	 _ -> panic stage	
+	   _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
 		% " in expression:\n"
 		% "     (" % x1 % ") " % x2	% "\n\n"
@@ -182,14 +188,14 @@ reconS :: Map Var Type -> Stmt -> (Map Var Type, (Stmt, Type))
 reconS tt (SBind Nothing x)	
  = let	(x', tx)	= reconX tt x
    in	( tt
-   	, ( SBind Nothing (addTauX (narrowT tx) x')
+   	, ( SBind Nothing (addTauX (packT tx) x')
 	  , tx))
 
 reconS tt (SBind (Just v) x)
  = let	(x', tx)	= reconX tt x
 	tt'		= addVT tt (v, tx)
    in	( tt'
-   	, (SBind (Just v) (addTauX (narrowT tx) x')
+   	, (SBind (Just v) (addTauX (packT tx) x')
 	  , tx))
 	  
 
@@ -282,43 +288,6 @@ applyTypeT (TWhere t1 vts) t
 applyTypeT t1 t2
 	= panic stage $ "applyType: can't apply (" % t2 % ") to (" % t1 % ")"
 
--- | Throw out context and type bindings that aren't visible from the shape
---	of this type. All context and bindings need to be at top level.
---
-narrowT :: Type -> Type
-narrowT t
- = let	-- strip the scheme into its parts
- 	(forallVTs, bindVTs, contexts, tShape)
- 			= stripSchemeT t
-
-	-- the type vars free in the shape
-	shapeVs		= freeVarsT tShape
-		
-	-- construct a map of what vars are free in each of the type bindings.
-	depMap		= Map.fromList 
-			$ map (\(v, t) -> (v, freeVarsT t))
-			$ bindVTs
-	
-	-- work out which of the bindings can be reached from the shape
-	reachVs		= graphReachableS depMap
-			$ shapeVs
-
-	-- throw out unreachable bindings
-	bindVTs'	= [ (v, t)	| (v, t)	<- bindVTs
-	 				, Set.member v reachVs]
-	
-	-- rebuild the scheme 
-	t'		= subTLet1
-			$ buildScheme forallVTs bindVTs' contexts tShape
-	
-  in	{- trace 	( "narrowT\n"
-		% "    t       = \n"	%> t			% "\n"
-  		% "    shape   = "	% shape			% "\n"
-		% "    shapeVs = "	% Set.toList shapeVs	% "\n"
-		% "    reachVs = "	% Set.toList reachVs	% "\n\n"
-		% "    t'      = \n"	%> t'			% "\n")  -}
-		
-		t'
 		
 
 -----
