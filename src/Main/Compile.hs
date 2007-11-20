@@ -48,6 +48,8 @@ import qualified Core.Util.Slurp	as C
 import qualified Desugar.Plate.Trans	as D
 import qualified Sea.Util		as E
 
+import Debug.Trace
+
 import Util
 import Numeric
 
@@ -239,7 +241,7 @@ compileFile	args     fileName
 
 	-- Slurp out type constraints.
 	when ?verbose
-	 $ do	putStr	$ "  * Slurping type constraints.\n"
+	 $ do	putStr	$ "  * Desugar: Slurp\n"
 
 	(  sTagged
 	 , sConstrs
@@ -256,11 +258,12 @@ compileFile	args     fileName
 		compileExit
 
 	when ?verbose
-	 $ do	putStr $ "  * Solving type constraints.\n"
+	 $ do	putStr $ "  * Type: Solve\n"
 
 	-- Solve type constraints
 	(  typeTable
 	 , typeInst
+	 , typeQuantVars
 	 , typePortTable )
 	 		<- runStage "solve"
 			$  SS.solveSquid
@@ -272,6 +275,8 @@ compileFile	args     fileName
 	when (elem Arg.StopType ?args)
 		compileExit
 
+	when ?verbose
+	 $ do	putStr $ "  * Desugar: ToCore\n"
 		
 	-- Convert source tree to core tree
 	(  cSource
@@ -282,6 +287,7 @@ compileFile	args     fileName
 				sigmaTable
 				typeTable
 				typeInst
+				typeQuantVars
 				typePortTable
 				projTable
 
@@ -295,19 +301,34 @@ compileFile	args     fileName
 	------------------------------------------------------------------------	
 
 	-- Convert to normal form
+	when ?verbose
+	 $ do	putStr $ "  * Core: Normalise\n"
+
 	cNormalise	<- SC.coreNormalise "core-normalise" "CN" topVars cSource
 				
 	-- Create local regions.
+	when ?verbose
+	 $ do	putStr $ "  * Core: Bind\n"
+
 	cBind		<- SC.coreBind "core-bind" "CB"
 				(\x -> Just [])
 				cNormalise
 
+	-- Clean out empty effect and closure variables
+	cClean		<- SC.coreClean    "core-clean" cBind
+
 	-- lint: All variables should be in scope now.
-	SC.coreLint cBind cHeader
+	when ?verbose
+	 $ do	putStr $ "  * Core: Lint\n"
+
+	SC.coreLint cClean cHeader
 
 	-- Reconstruct witness passing and effect information
+	when ?verbose
+	 $ do	putStr $ "  * Core: Reconstruct\n"
+
 	cReconstruct	<- runStage "reconstruct"
-			$ SC.coreReconstruct "core-reconstruct" cHeader cBind
+			$ SC.coreReconstruct "core-reconstruct" cHeader cClean
 
 	-- lint: 
 	SC.coreLint cReconstruct cHeader

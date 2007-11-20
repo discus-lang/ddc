@@ -393,6 +393,7 @@ solveSquid :: (?args :: [Arg])
 	
 	-> IO 	( Map Var T.Type			-- inferred types
 		, Map Var (InstanceInfo T.Type T.Type)	-- how each var was instantiated
+		, Set Var				-- the vars which are ports
 		, Map Var (Map Var T.Type) )		-- the port table.
 	
 solveSquid 
@@ -418,7 +419,7 @@ solveSquid
 	 Nothing	-> return ())
 
 	-- extract out the stuff we'll need for conversion to core.
-	(typeTable, typeInst, portTable)
+	(typeTable, typeInst, quantVars, portTable)
 		<- evalStateT (Squid.squidExport vsTypesPlease) state
 
 	-- dump final solver state
@@ -453,6 +454,7 @@ solveSquid
 	-----
 	return 	( typeTable
 		, typeInst
+		, quantVars
 		, portTable )
 
 
@@ -466,6 +468,7 @@ toCore 	:: (?args :: [Arg])
 	-> (Map Var Var)				-- sigmaTable
 	-> (Map Var T.Type)				-- typeTable
 	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- typeInst
+	-> (Set Var)					-- typeQuantVars	-- the vars which are ports
 	-> (Map Var (Map Var T.Type))			-- port table
 	-> ProjTable
 	-> IO	( C.Tree
@@ -476,6 +479,7 @@ toCore	sourceTree
 	sigmaTable
 	typeTable
 	typeInst
+	quantVars
 	portTable
 	projTable
  = do
@@ -487,6 +491,7 @@ toCore	sourceTree
 			sigmaTable
 			typeTable
 			typeInst
+			quantVars
 			portTable
 			projTable
 

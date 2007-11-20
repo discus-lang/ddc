@@ -1,7 +1,10 @@
 
 module Type.Util.Pack
 	( packType
+	, packData
+	, packRegion
 	, packEffect
+	, packClosure
 	, sortFsT)
 
 where
@@ -44,14 +47,30 @@ stage	= "Type.Util.Pack"
 --	* Substitute TPure/TEmpty and crush TSums
 --	* Erase TFrees if they contain no classids.
 --
-packType  :: Type -> Type
-packType tt	
+packType :: Type -> Type
+packType tt
+ = case kindOfType tt of
+ 	KData		-> packData    tt
+	KEffect		-> packEffect  tt
+	KClosure	-> packClosure tt
+	KRegion		-> packRegion  tt
+
+
+packData  :: Data -> Data
+packData tt	
+ | KData	<- kindOfType tt
  = let	tt'	= packTypeLs [] tt
    in	if tt == tt'
    	 then tt'
-	 else packType tt'
+	 else packData tt'
 
-
+packRegion :: Region -> Region
+packRegion tt
+ | KRegion	<- kindOfType tt
+ = let 	tt'	= packTypeLs [] tt
+   in	if tt == tt'
+   	 then tt'
+	 else packRegion tt'
 
 -- | Pack an effect into the standard form
 --	Regular packType won't flatten out recursive effects like this example:
@@ -62,20 +81,35 @@ packType tt
 
 packEffect :: Effect -> Effect
 packEffect tt
+ | KEffect	<- kindOfType tt
  = let 	tt'	= inlineFsT $ packTypeLs [] tt
    in	if tt	== tt'
       	 then tt'
 	 else packEffect tt'
 
-	 
+packClosure :: Closure -> Closure
+packClosure tt
+ | KClosure	<- kindOfType tt
+ = let 	tt'	= crushT $ inlineFsT $ packTypeLs [] tt
+   in	if tt	== tt'
+      	 then tt'
+	 else packClosure tt'
 
+ | otherwise
+ = panic stage 
+ 	$ "packClosure: not a closure\n"
+	% "  c = " % tt % "\n\n"
+
+	 
+	 
+-----
 packTypeLs :: [(Type, Type)] -> Type -> Type
 packTypeLs ls tt
  = case tt of
  	TForall vks t	
 	 -> let	t'	= packTypeLs ls t
 	    in	TForall vks t'
-	    
+
 	TFetters fs t
 	 -> packTFettersLs ls tt
 
@@ -98,7 +132,6 @@ packTypeLs ls tt
 			$ map (loadPureEmpty ls) ts
 	    in	makeTSum k ts'
 
-	
 	    
 	TMask k t1 t2
 	 -> let	t1'	= packTypeLs ls t1
@@ -129,6 +162,10 @@ packTypeLs ls tt
 	    in	TEffect v ts'
 	    
 	-- closure
+	TFree v1 (TFree v2 t)	
+	 -> TFree v1 t
+
+
 	TFree v t -> TFree v (loadFunData ls t)
 	 
 	TTag v	-> tt

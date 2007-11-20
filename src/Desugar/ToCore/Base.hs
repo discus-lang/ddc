@@ -31,6 +31,7 @@ import qualified Type.ToCore		as T
 
 import qualified Core.Bits		as C
 import qualified Core.Exp		as C
+import qualified Core.Util.Substitute	as C
 
 import Desugar.Project			(ProjTable)
 
@@ -52,6 +53,9 @@ data CoreS
 	  -- | how each variable was instantiated
 	, coreMapInst		:: Map Var (T.InstanceInfo T.Type T.Type)
 
+	  -- | a set of all the vars which are ports
+	, corePortVars		:: Set Var
+
 	  -- | the substitution from the contra-variant port rewrite.
 	, corePortTable		:: Map Var (Map Var C.Type)
 
@@ -59,11 +63,6 @@ data CoreS
 	  --	This changes when we enter a let-binding.
 	, corePortSub		:: Maybe (Map Var C.Type)
 
-	  -- | the effect/closure vars which have been bound by a LAMBDA or let
-	  --	On the way down the tree, all bound effect and closure vars are added to this map.
-	  --	We can use this to erase vars from type applications which can only ever be Bot.
-	, corePortVars		:: Set Var
-	 
 	  -- | table of type based projections.
 	, coreProject		:: ProjTable
 
@@ -78,9 +77,9 @@ initCoreS
 	{ coreSigmaTable	= Map.empty
 	, coreMapTypes		= Map.empty
 	, coreMapInst		= Map.empty
+	, corePortVars		= Set.empty
 	, corePortTable		= Map.empty
 	, corePortSub		= Nothing
-	, corePortVars		= Set.empty
 	, coreProject		= Map.empty
 	, coreGenValue		= Var.XBind "xC" 0 }
 
@@ -101,7 +100,6 @@ getType	v
 	| Var.nameSpace v == NameValue
 	= do	sigmaTable	<- gets coreSigmaTable
 	 	let Just vT	=  Map.lookup v sigmaTable
-		
 		getType' vT
 		
 	| otherwise
@@ -116,7 +114,19 @@ getType' vT
 	  $ "getType: no scheme for " % vT % " " % Var.prettyPos vT % " - " % show vT % "\n"
 	  % "  visible vars = " % Map.keys mapTypes % "\n"
 
-	 Just t		-> return $ T.toCoreT t
+	 Just t	
+	  -> applyPortSub $ T.toCoreT t
+
+
+-- | apply the current port substitution to this type
+applyPortSub :: C.Type -> CoreM C.Type
+applyPortSub tt
+ = do	mPortSub	<- gets corePortSub
+ 	case mPortSub of
+	 Nothing	-> return tt
+	 Just portSub	-> return $ C.substituteT portSub tt
+
+
 
 
 -- | Get the kind of this variable.

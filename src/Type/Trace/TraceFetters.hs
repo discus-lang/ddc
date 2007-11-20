@@ -1,7 +1,7 @@
 
 module Type.Trace.TraceFetters
 (
-	traceFettersZ
+--	traceFettersZ
 )
 
 where
@@ -25,6 +25,7 @@ import Type.Class
 -- traceFettersZ
 --	Find all fetters reachable by tracing back from this class.
 --
+{-
 traceFettersZ 
 	:: Set ClassId			-- ^ Classes visited so far.
 	-> Bag ClassId			-- ^ Classes still to visit.
@@ -59,3 +60,4 @@ traceFettersZ visited more acc
 							acc
 	
 
+-}

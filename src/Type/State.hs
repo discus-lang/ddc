@@ -115,6 +115,12 @@ data SquidS
 	--	introduced by the port-forcing process.
 	, statePortTable	:: Map Var	(Map Var Type)
 
+	-- | Records what vars have been quantified.
+	--	After the solver is finished and all generalisations have been performed,
+	--	all effect and closure ports will be in this set. We can then clean out
+	--	non-ports while we extract them from the graph.
+	, stateQuantifiedVars	:: Set Var
+	
 	-- | A register of which classes contain various, interesting effect \/ class constructors.
 	--	When we want to crush out some of the class constraints, we can use this register
 	--	to find them, instead of searching through the whole group.
@@ -171,6 +177,7 @@ squidSInit
 
 		, stateInst		= Map.empty
 		, statePortTable	= Map.empty
+		, stateQuantifiedVars	= Set.empty
 
 		, stateRegister		
 			-- effects

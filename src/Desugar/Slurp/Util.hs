@@ -361,21 +361,21 @@ addError err
 -----
 wantTypeV :: Var -> CSlurpM ()
 wantTypeV v
-	| Var.nameSpace v /= NameType
+{-	| Var.nameSpace v /= NameType
 	= panic stage 
 	$ "wantTypeV: variable " % v % " has namespace " % Var.nameSpace v
-	
+-}	
 	| otherwise
 	= modify (\s -> s { stateTypesRequest = Set.insert v (stateTypesRequest s) })
  
 wantTypeVs :: [Var] -> CSlurpM ()
 wantTypeVs vs
-	| badVars@(_:_)	<- [ (v, Var.nameSpace v)
+{-	| badVars@(_:_)	<- [ (v, Var.nameSpace v)
 				| v <- vs
 				, Var.nameSpace v /= NameType ]
 	= panic stage
 	$ "wantTypeVs: variables have wrong namespace: " % badVars
-	
+-}
 	| otherwise
 	= modify (\s -> s { stateTypesRequest = Set.union (Set.fromList vs) (stateTypesRequest s) })
  

@@ -435,7 +435,7 @@ instance Pretty Type where
 	 	(TPure, TEmpty)	-> prettyTBF t1 % " -> " % t2
 		(eff,   TEmpty)	-> prettyTBF t1 % " -(" % eff % ")> " % t2
 		(TPure, clo)	-> prettyTBF t1 % " -(" % clo % ")> " % t2
-		(eff,   clo)	-> prettyTBF t1 % " -(" % eff % " " % clo % ")> " % t2
+		(eff,   clo)	-> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % t2
 
 	TData v ts
 	 ->       " " %!% (prettyp v : map prettyTB ts)

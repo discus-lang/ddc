@@ -1,12 +1,23 @@
 
 module Core.Pack
-	(eraseContextsT)
+	( eraseContextsT
+	, inlineTWheresT
+	, flattenT )
 
 where
 
 import Util
 import Core.Exp
 import Core.Plate.Trans
+
+import Shared.Error
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+-----
+stage	= "Core.Pack"
+
 
 
 eraseContextsT :: Type -> Type
@@ -18,6 +29,81 @@ eraseContextsT' tt
  	TContext c t	-> t
 	_		-> tt
 	
+flattenT :: Type -> Type
+flattenT tt
+	= inlineTWheresT Map.empty tt
+
+-----
+-- inlineTWheresT
+--	Inline all TLet expressions in this type.
+--	
+inlineTWheresT :: Map Var Type -> Type 	-> Type
+inlineTWheresT sub tt
+ = case tt of
+ 	TNil			-> tt
+	
+	TForall v k t
+	 -> let	t'	= inlineTWheresT sub t
+	    in	TForall v k t'
+	    
+	TWhere t1 vts		
+	 -> inlineTWheresT (Map.union (Map.fromList vts) sub) t1
+
+	TContext l t
+	 -> let t'	= inlineTWheresT sub t
+	    in	TContext l t'
+
+	TSum k ts
+	 -> let	ts'	= map (inlineTWheresT sub) ts
+	    in	TSum k ts'
+
+	TMask k t1 t2
+	 -> let	t1'	= inlineTWheresT sub t1
+	   	t2'	= inlineTWheresT sub t2
+	    in	TMask k t1 t2
+	    
+	TVar k v	
+	 -> case Map.lookup v sub of
+	 	Just t	-> t
+		_	-> tt
+		
+    
+	-- data
+	TFunEC t1 t2 eff clo
+	 -> let	t1'	= inlineTWheresT sub t1
+	 	t2'	= inlineTWheresT sub t2
+		eff'	= inlineTWheresT sub eff
+		clo'	= inlineTWheresT sub clo
+	    in	TFunEC t1' t2' eff' clo'
+
+	TData v ts
+	 -> let	ts'	= map (inlineTWheresT sub) ts
+	    in	TData v ts'
+
+
+	-- region
+	
+	
+	-- effect
+	TEffect  v ts
+	 -> let	ts'	= map (inlineTWheresT sub) ts
+	    in	TEffect v ts'
+
+ 	TPure		-> tt
+	 	
+	-- closure
+	TFree v t
+	 -> let t'	= inlineTWheresT sub t
+	    in	TFree v t'
+
+	TTag v		-> tt
+
+	TEmpty		-> tt
+
+	TKind k		-> tt
+	    
+	_ -> panic stage
+		$ "inlineTWheresT: no match for " % show tt
 
 
 

@@ -1,8 +1,6 @@
 
 module Core.Util
-	( inlineTWheresT
-	
-	, flattenApps
+	( flattenApps
 	, unflattenApps
 	, flattenFun
 	, unflattenFun
@@ -55,7 +53,6 @@ import Shared.VarPrim
 import Shared.Prim
 
 import Core.Exp
-import Core.Util.InlineTWheres	(inlineTWheresT)
 
 import Debug.Trace
 

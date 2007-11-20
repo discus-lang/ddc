@@ -1,7 +1,6 @@
 
 -- Transform a tree while walking down it collecting up types
---	TODO: if vars have types we can calculate the type of an expr directly, like 
---		in GHC. once this is done we can ditch this module.
+--
 module Core.Plate.Walk
 	( WalkTable (..)
 	, walkZM
@@ -30,15 +29,11 @@ data WalkTable m
 	, transS	:: (WalkTable m) -> Stmt 	-> m Stmt
 
 	, transT	:: (WalkTable m) -> Type	-> m Type
-	, transR	:: (WalkTable m) -> Region	-> m Region
-	, transE	:: (WalkTable m) -> Effect	-> m Effect
-	, transC	:: (WalkTable m) -> Closure	-> m Closure
 
 	, transSS	:: (WalkTable m) -> [Stmt]	-> m [Stmt]
 
 	-- top-down transforms
 	, transX_down	:: Maybe ((WalkTable m) -> Exp	-> m Exp)
-
 	, transX_enter	:: (WalkTable m) -> Exp 	-> m Exp
 	
 
@@ -61,9 +56,6 @@ walkTableId
 	, transS	= \t x -> return x
 
 	, transT	= \t x -> return x
-	, transR	= \t x -> return x
-	, transE	= \t x -> return x
-	, transC	= \t x -> return x
 
 	, transSS	= \t x -> return x
 
@@ -165,7 +157,10 @@ walkZM2 z xx
 
 	XLam v t x eff clo
 	 -> do	x'		<- walkZM (bindT v t z) x
-	 	return		$ XLam v t x' eff clo
+		t'		<- walkZM z t
+		eff'		<- walkZM z eff
+		clo'		<- walkZM z clo
+	 	return		$ XLam v t' x' eff' clo'
 		
 	XAPP x t
 	 -> do	x'		<- walkZM z x
@@ -184,13 +179,14 @@ walkZM2 z xx
 		(transX z) z	$ XTau t' x'
 
 	XTet vts x
-	 -> do	x'		<- walkZM z x
+	 -> do	let z2		= foldr (\(v, t) -> bindT v t) z vts
+	 	x'		<- walkZM z2 x
 		
 		let (vs, ts)	= unzip vts
-		ts'		<- mapM (walkZM z) ts
+		ts'		<- mapM (walkZM z2) ts
 		let vts'	= zip vs ts'
 
-	 	(transX z) z	$ XTet vts' x'
+	 	(transX z2) z2	$ XTet vts' x'
 
 	XDo ss
 	 -> case (transX_down z) of 
@@ -218,8 +214,8 @@ walkZM2 z xx
 
 	XLocal r vts x
 	 -> do	let z'		= z 
-				{ boundK	= Map.insert r KRegion 	(boundK z)
-				, boundT	= Map.union  (Map.fromList vts) (boundT z) }
+				{ boundT	= Map.union  (Map.fromList vts) 
+						$ Map.insert r (TKind KRegion) (boundT z) }
 
 		x'		<- walkZM z' x
 	 	return		$ XLocal r vts x'
@@ -306,6 +302,11 @@ instance Monad m => WalkM m Type where
 	TSum k ts
 	 -> do	ts'		<- walkZM z ts
 	 	(transT z) z	$ TSum k ts'
+
+	TMask k t1 t2
+	 -> do	t1'		<- walkZM z t1
+	 	t2'		<- walkZM z t2
+		return $ TMask k t1' t2'
 
 	_ -> 	(transT z) z tt
 	

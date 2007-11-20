@@ -10,12 +10,12 @@
 
 main ()
  = do {	
- 	checkArithmetic ();
-	checkCurrying ();
-	checkLists ();
-	checkUpdate ();
---	checkLambdaLifting ();
-	checkShow ();
+-- 	checkArithmetic ();
+--	checkCurrying ();
+--	checkLists ();
+--	checkUpdate ();
+	checkLambdaLifting ();
+--	checkShow ();
  };
 
 add :: Int -> Int -> Int;
@@ -23,7 +23,7 @@ add x y		= x + y;
 
 addFive x	= x + 5;
 
-
+{-
 -----------------------
 -- Arithmetic
 --
@@ -92,8 +92,8 @@ checkUpdate ()
 
 	print	"\n";
  };
+-}
 
-{-
 -----------------------
 -- Lambda Lifting
 -- 
@@ -105,12 +105,18 @@ checkLambdaLifting ()
 		$ map (\x -> x + 1) 
 		$ [0..10];
 
-	-- 
+	--
 	x	= 0;
 	maps_ [1..10]
 		(\i -> x := x + i);
 
 	checkI 55	x;
+
+ };
+ 
+{-
+
+	-- 
 
 	-- 
 	y	= 0;
@@ -128,6 +134,7 @@ checkLambdaLifting ()
 -----------------------
 -- Show
 --
+{-
 checkShow ()
  = do {	print	"-- Show.\n";
 	print	$ showInt 5; print "\n";
@@ -140,7 +147,7 @@ checkShow ()
 
 	print	"\n";
  };
-
+-}
 
 -----------------------
 -- checkI

@@ -7,6 +7,8 @@ module Type.Exp
 	, Fetter  	(..)
 	, TypeSource 	(..)
 	, Kind		(..)
+
+	, Data
 	, Region
 	, Effect
 	, Closure
@@ -65,6 +67,7 @@ data Kind
 	| KFetter					-- ^ The kind of fetters.		(+)
 	deriving (Show, Eq)	
 
+type Data	= Type
 type Region	= Type
 type Effect	= Type
 type Closure	= Type

@@ -86,6 +86,7 @@ data Arg
 
 	| DumpCoreSchemes
 	| DumpCore
+	| DumpCoreClean
 	| DumpCoreBlock
 	| DumpCoreSnip
 	| DumpCoreCrush
@@ -376,6 +377,7 @@ options	=
 
 	, OFlag		DumpCoreSchemes		["-dump-core-schemes"]		"Inferred type schemes converted to Core IR."
 	, OFlag		DumpCore		["-dump-core"]			"Core IR version of Desugared IR code."
+	, OFlag		DumpCoreClean		["-dump-core-clean"]		"Clean out empty effect/closure variables."
 	, OFlag		DumpCoreBlock		["-dump-core-block"]		"Applications placed in Do blocks."
 	, OFlag		DumpCoreSnip		["-dump-core-snip"]		"Fresh bindings for all function applications."
 	, OFlag		DumpCoreCrush		["-dump-core-crush"]		"Do-Do expressions crushed to single Dos."

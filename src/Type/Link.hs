@@ -14,6 +14,9 @@ import Type.Exp
 import Type.State
 import Type.Class
 
+-----
+stage	= "Type.Link"
+
 -- Link the free vars in this type into the graph, 
 --	but don't break it up into nodes. 
 --
@@ -60,6 +63,10 @@ linkType mParent bound tt
 		  -> do	patchBackRef cid mParent
 		  	return	$ TClass k cid
 
+	-- top/bot
+	TTop k	-> return tt
+	TBot k	-> return tt
+
 	-- data
 	TFun t1 t2 eff clo
 	 -> do	t1'	<- linkType mParent bound t1
@@ -88,6 +95,8 @@ linkType mParent bound tt
 	TError		-> return tt
 	TClass k cid	-> return tt
 
+	_ 	-> panic stage
+		$ "linkType: cannot link " % tt
 
 
 -----

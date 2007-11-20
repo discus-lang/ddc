@@ -17,7 +17,7 @@ include make/plate.mk
 # ----- trauma
 bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
-	$(GHC) -o bin/ddc $^ $(LIBS) -package unix -package mtl
+	$(GHC) -o bin/ddc $^ $(LIBS) -package unix -package mtl -package containers
 # -prof
 	
 
@@ -44,7 +44,7 @@ cleanWar :
 
 	@find library \
 			-name "*.dump-*.*"  \
-			-name "*.graph-*.dot" \
+		-o	-name "*.graph-*.dot" \
 		-o	-name "*.di" 	\
 		-o	-name "*.gdl"	\
 		-o	-name "*.o"	\

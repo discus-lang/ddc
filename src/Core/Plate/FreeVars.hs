@@ -184,8 +184,8 @@ freeVarsG 	g
 
 -----
 freeVarsT ::	Type -> Set Var
-freeVarsT	t
- = case t of
+freeVarsT	tt
+ = case tt of
 	TNil		-> empty
 	TNothing	-> empty
 
@@ -201,7 +201,7 @@ freeVarsT	t
 
 	TWhere t1 vts
 	 -> unions 
-	 	[ freeVarsT t
+	 	[ freeVarsT t1
 		, Set.unions $ map (freeVarsT . snd) vts ]
 		
 		\\ (Set.fromList $ map fst vts)
@@ -255,7 +255,7 @@ freeVarsT	t
 	TKind k		-> Set.empty
 
 	_ 	-> panic stage
-		$ "freeVarsT: no match for " % show t
+		$ "freeVarsT: no match for " % show tt
 
 	 
 boundByS ::	Stmt	-> Set Var

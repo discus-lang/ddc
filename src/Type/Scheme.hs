@@ -235,8 +235,17 @@ generaliseType varT tCore envCids
 			$ Var.sortForallVars
 			$ freeVarsT tMskLocal
 
+	-- Remember which vars are quantified
+	--	we can use this information later to clean out non-port effect and closure vars
+	--	once the solver is done.
+	modify $ \s -> s { stateQuantifiedVars	
+				= Set.unions
+					[ Set.fromList $ map fst vksFree
+					, stateQuantifiedVars s ] }
+	
 	let tScheme	= addTForallVKs vksFree tMskLocal
-
+	
+	
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"
 

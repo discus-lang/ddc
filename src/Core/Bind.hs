@@ -22,7 +22,9 @@ import Core.Plate.Walk
 import Core.Plate.FreeVars
 import Core.Exp
 import Core.Util
+import Core.Pretty
 
+import Debug.Trace
 
 type   BindM	= VarGenM
 

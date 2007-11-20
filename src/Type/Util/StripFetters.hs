@@ -40,8 +40,9 @@ stripFettersT	t
 	   in	( TMask k t1' t2'
 	   	, fs1 ++ fs2 )
 
- 	TVar{}	
-	 -> (t, [])
+ 	TVar{}	-> (t, [])
+	TBot{}	-> (t, [])
+	TTop{}	-> (t, [])
 
 	-- data
 	TFun t1 t2 eff clo

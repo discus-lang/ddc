@@ -77,14 +77,14 @@ slurpX	exp@(XLambda sp vBound xBody)
 	
 
 	-- we'll be wanting to annotate these vars with TECs when we convert to core.
-{-	wantTypeVs
+	wantTypeVs
 		$  [v | TVar KEffect v  <- [eBody]]
-		++ [v | TVar KClosure v <- [cBody]]
--}	
+		++ [v | TVar KClosure v <- [cX]]
+	
 	return	( tX
 		, pure
 		, cX
-		, XLambdaTEC (Just (tX, pure)) vBound xBody' tBound eBody cBody
+		, XLambdaTEC (Just (tX, pure)) vBound xBody' tBound eBody cX
 		, [qs'])
 
 

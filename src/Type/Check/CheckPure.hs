@@ -28,7 +28,7 @@ import Type.Util
 import Type.State
 import Type.Class
 import Type.Scheme
-import Type.Trace.TraceFetters	(traceFettersZ)
+import Type.Trace.TraceFetters
 
 -----
 stage	= "Type.Squid.CheckPure"

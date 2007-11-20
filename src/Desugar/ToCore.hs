@@ -24,8 +24,8 @@ import Shared.Error
 import qualified Shared.Exp	as S
 import qualified Shared.Literal	as S
 
-import qualified Desugar.Exp 	as D
-import Desugar.Project		(ProjTable)
+import qualified Desugar.Exp 		as D
+import qualified Desugar.Plate.Trans	as D
 
 import qualified Type.Exp	as T
 import Type.ToCore		(toCoreT, toCoreK)
@@ -36,9 +36,14 @@ import qualified Core.Pretty		as C
 import qualified Core.Optimise.Boxing	as C	(unboxedType)
 import qualified Core.Util.Strip	as C
 import qualified Core.Util.Substitute	as C
+import qualified Core.Pack		as C
 
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
+import Desugar.ToCore.Util
+import Desugar.Pretty
+import Desugar.Project		(ProjTable)
+
 
 import qualified Debug.Trace	as Debug
 
@@ -55,6 +60,7 @@ toCoreTree
 	:: (Map Var Var)				-- ^ value -> type vars
 	-> (Map Var T.Type)				-- ^ inferred type schemes
 	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- ^ instantiation info
+	-> (Set Var)					-- ^ the vars which are ports
 	-> (Map Var (Map Var T.Type))			-- ^ port substitution
 	-> ProjTable
 	-> D.Tree Annot
@@ -64,6 +70,7 @@ toCoreTree
 	sigmaTable
 	typeTable
 	typeInst
+	quantVars
 	portTable
 	projTable
 	sTree
@@ -75,6 +82,7 @@ toCoreTree
 		{ coreSigmaTable	= sigmaTable
 		, coreMapTypes		= typeTable
 		, coreMapInst		= typeInst
+		, corePortVars		= quantVars
 		, corePortTable		= Map.map (Map.map toCoreT) portTable
 		, coreProject		= projTable }
 		
@@ -246,29 +254,14 @@ toCoreS (D.SBind _ (Just v) x)
 	-- lookup the generalised type of this binding.
 	tScheme		<- getType v
 
-	-- Remember that forall and type-let bindings will be added by fillLambdas below
-	--	and will be bound in the inner expression. We need this so we can erase
-	--	empty effect/closure vars when adding type applications.
-	let (forallVTs, tetVTs, contexts, tShape)
-			= C.stripSchemeT tScheme
-	
-	modify 
-	 $ \s -> s { corePortVars 
-			= Set.union 
-				(Set.fromList 
-					(  map fst forallVTs
-					++ map fst tetVTs))
-				(corePortVars s) }
-	
-
  	-- convert the RHS to core.
 	xCore		<- toCoreX x
 
-	-- Add type lambdas, contexts and type lets
+	-- Add type lambdas and contexts
 	xLam		<- fillLambdas v tScheme xCore
 
-
-	returnJ 	$ C.SBind (Just v) xLam
+	returnJ 	$ C.SBind (Just v) 
+			$ dropXTau xLam tScheme
 
 
 toCoreS	D.SSig{}
@@ -283,12 +276,47 @@ toCoreX xx
  = case xx of
 
 	D.XLambdaTEC 
-		_ v x (T.TVar T.KData vTV) eff clo
+		_ v x (T.TVar T.KData vTV) effVar cloVar
 	 -> do	
-		vT	<- getType vTV
+		vT		<- liftM C.stripToShapeT $ getType vTV
+
+		-- If the effect/closures were vars then look them up from the graph
+		effLet	<- case effVar of
+				T.TVar T.KEffect vE	
+				 -> do	e	<- liftM C.stripToShapeT $ getType vE
+				 	return	$ Just (vE, e)
+
+				T.TBot T.KEffect	
+				 -> 	return	$ Nothing
+				
+		cloLet	<- case cloVar of
+				T.TVar T.KClosure vC	
+				 -> do	c	<- liftM C.stripToShapeT $ getType vC
+				 	return	$ Just (vC, c)
+				 
+				T.TBot T.KClosure 	
+				 -> 	return	Nothing
+
+		-- short out bottoms
+		let botEC ec ml = 
+			case (ec, ml) of
+				(T.TVar T.KClosure v1, Just (v2, C.TEmpty))
+				  | v1 == v2	-> (C.TEmpty, Nothing)
+
+				(T.TVar T.KEffect v1, Just (v2, C.TPure))
+				  | v1 == v2	-> (C.TPure, Nothing)
+
+				_		-> (toCoreT $ ec, ml)
+		
+		let (eff, mEffLet)	= botEC effVar effLet
+		let (clo, mCloLet)	= botEC cloVar cloLet
+
 		x'	<- toCoreX x
 		
-		return	$ C.XLam v C.TNil x' C.TNil C.TNil
+		return	$ C.makeXTet (catMaybes [mEffLet, mCloLet])
+			$ C.XLam v vT 
+				x'
+				eff clo
 
 
 	D.XApp	_ x1 x2
@@ -442,12 +470,6 @@ toCoreX xx
 		let (vtsForall, vtsWhere, tsContextC, tShape)
 				= C.stripSchemeT tScheme
 		
-		portVars	<- gets corePortVars
-		
-		trace ("portVars = " % Set.toList portVars % "\n")
-			$ return ()
-
-
 		-- TODO: break this out into a separate fn
 		-- tag var with its type
 		-- apply type args to scheme, add witness params
@@ -484,24 +506,10 @@ toCoreX xx
 				 Nothing	-> tsInstCE
 				 Just portSub	-> map (C.substituteT portSub) tsInstCE
 
-			-- Clean out effect/closure arguments where the argument is just a variable
-			--	that has not been bound. These are guaranteed to be Bottom, and are 
-			--	not bound by a LAMBDA or type-let higher up in the tree so are out
-			--	of scope anyway.
-			let tsInstC_clean 
-				= map (\t -> case t of
-						C.TVar C.KEffect v
-						 | not $ Set.member v portVars	-> C.TPure
-							 
-						C.TVar C.KClosure v
-						 | not $ Set.member v portVars	-> C.TEmpty
-
-						_ -> t)
-					tsInstC_portSub
 			
 			-- Work out what types belong to each quantified var in the type
 			--	being instantiated.			
-			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_clean
+			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_portSub
 
 			-- If this function needs a witnesses we'll just make them up.
 			--	Real witnesses will be threaded through in a later stage.
@@ -513,12 +521,11 @@ toCoreX xx
 				% "    context         = " % tsContextC		% "\n"
 				% "    tsInstCE        = " % tsInstCE		% "\n"
 				% "    tsInstC_portSub = " % tsInstC_portSub	% "\n"
-				% "    tsInstC_clean   = " % tsInstC_clean	% "\n"
 				% "    tsSub           = " % tsSub 		% "\n"
 				% "    tsContestC'     = " % tsContextC' 	% "\n")
 				$ return ()
 			
-		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_clean ++ tsContextC'))
+		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_portSub ++ tsContextC'))
 
 		 -- recursive use of a let-bound variable
 		 -- 	pass the args on the type scheme back to ourselves.
@@ -533,7 +540,7 @@ toCoreX xx
 	 -> panic stage
 	 	$ pretty
 		$ "toCoreX: cannot convert expression to core.\n" 
-		% "    exp = " % show xx	% "\n"
+		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
 
 
 

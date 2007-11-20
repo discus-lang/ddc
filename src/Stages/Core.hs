@@ -1,6 +1,7 @@
 
 module Stages.Core
-	( coreNormalise
+	( coreClean
+	, coreNormalise
 	, coreDict
 	, coreReconstruct
 	, coreBind
@@ -37,7 +38,7 @@ import Shared.Error
 import Core.Exp 	
 import Core.Util.Slurp
 
--- for coreNormalise
+import Core.Clean			(cleanTree)
 import Core.Block			(blockTree)
 import Core.Snip			(snipTree)
 import Core.Crush			(crushTree)
@@ -69,6 +70,23 @@ import qualified Sea.Util	as E
 import Main.Arg
 
 import Stages.Dump
+import Debug.Trace
+
+-----
+coreClean
+	:: (?args	:: [Arg])
+	-> String -> Tree -> IO Tree
+
+coreClean stage tree
+ = do	when (elem Verbose ?args)
+	 $ do	putStr $ "  * Core: Clean\n"
+	 
+	let treeClean	= cleanTree tree
+ 	dumpCT DumpCoreClean stage treeClean
+	
+	return treeClean
+ 	
+
 
 -----
 coreNormalise
@@ -130,6 +148,8 @@ coreBind stage unique
 	getFetters
 	cSource
  = do
+	trace "doing bind" `seq` return ()
+	
  	let tree'	
 		= bindTree
 			unique
@@ -137,6 +157,8 @@ coreBind stage unique
 			cSource
 	
 	dumpCT DumpCoreBind stage tree'
+
+	trace "bind done" `seq` return ()
 
 	return tree'
 

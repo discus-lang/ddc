@@ -21,9 +21,13 @@ import Shared.Error
 import Type.Exp
 
 import Type.Base
+import Type.Class
 import Type.State
 import Type.Scheme
 import Type.Plug
+import Type.Closure.Trim
+import Type.Util
+import Type.Plate.Trans
 
 stage	= "Type.Squid.Export"
 
@@ -33,6 +37,7 @@ squidExport
 	-> SquidM 
 		( Map Var Type				-- Type schemes.
 		, Map Var (InstanceInfo Type Type)	-- How each instantiation was done.
+		, Set Var				-- Which vars were quantified, ie which vars are ports.
 		, Map Var (Map Var Type) )		-- The substition from the "contra-variant vars are ports"
 							--	rewriting process.
 squidExport vsTypesPlease
@@ -45,25 +50,78 @@ squidExport vsTypesPlease
 
 	-- The port table was already plugged by Scheme.generaliseType
 	portTable	<- gets statePortTable
+	quantVars	<- gets stateQuantifiedVars
 
 	return 	( schemes
 		, inst 
+		, quantVars
 		, portTable)
 
 
+-- | Process this type to make it an exportable format.
+--	plug classids.
+--	trim closures.
+--	bottom-out non-port effect/closure variables.
+--
+exportType :: Type -> SquidM Type
+exportType t
+ = do	tPlug	<- plugClassIds [] t
+	tBot	<- return tPlug -- transformTM bottomOutT tPlug
+
+	case kindOfType tBot of
+	 -- trim exported closures.
+	 --	There's no point exporting this junk and making the Core stages
+	 --	have to trim it themselves.
+	 KClosure	
+	  -> return  $ trimClosureC tBot
+
+	 _ -> return $ packType tBot
+
+-- | bottom-out non-port effect/closure variables
+--	Once the solver has finished, 
+--		if an effect or closure node in the graph contains a variable only (and not a constructor)
+--			and that variable was never quantified 
+--		then it can never be anything but Bottom.
+--
+--	CANT DO THIS HERE.. must sub port table before cleaning effects.
+
+{-
+bottomOutT :: Type -> SquidM Type
+bottomOutT tt
+ = case tt of
+	TVar k v
+	 |  elem k [KEffect, KClosure]
+	 -> do	mCid	<- lookupVarToClassId v
+		quant	<- gets stateQuantifiedVars
+
+	 	case mCid of
+		 Just cid
+		  | not $ Set.member v quant
+		  -> do	Just c		<- lookupClass cid
+			case classType c of
+				TBot k1	
+				 | k == k1	-> return $ TBot k
+				_		-> return tt
+	
+		 _	-> return tt
+			
+	_ -> return tt
+	 
+-}			
+
+
+
+
+-- | Export the type for this variable.
+--	If no type is in the graph for this var then return Nothing.
+--
 exportVarType :: Var -> SquidM (Maybe Type)
 exportVarType v
  = do 	mEx	<- extractType v
  	case mEx of
 	 Nothing	-> return Nothing
-	 Just tEx
-	  -> do	tPlug		<- plugClassIds [] tEx
-		return $ Just tPlug
- 	
-exportType :: Type -> SquidM Type
-exportType t
- = do	t'	<- plugClassIds [] t
- 	return	t'
+	 Just tEx	-> liftM Just $ exportType tEx
+	  
 	
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
 exportMaybeType mt

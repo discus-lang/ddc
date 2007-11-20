@@ -1,6 +1,8 @@
 
 module Main
-	( module Util.List )
+	( main
+	, ddc
+	, module Util.List )
 where
 
 import Main.Version
@@ -22,10 +24,14 @@ import qualified System
 --
 --
 main :: IO ()
-main 
+main	
+ = do	argStrings	<- System.getArgs
+ 	ddc argStrings
+
+ddc :: [String] -> IO ()
+ddc argStrings
  = do
 	-- check args
- 	argStrings	<- System.getArgs
 	let args	= Arg.parse $ catInt " " argStrings
 
 	let verbose	= or $ map (== Arg.Verbose) args

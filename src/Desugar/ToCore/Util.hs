@@ -1,10 +1,8 @@
 
 module Desugar.ToCore.Util
-(
---	addFunLambdas,
-	pushLambdaXDo,
-	doMe
-)
+	( pushLambdaXDo
+	, doMe 
+	, dropXTau )
 
 where
 
@@ -15,32 +13,6 @@ import Desugar.ToCore.Base
 
 -----
 stage	= "Desugar.ToCore.Util"
-
-
-
-
-
------------------------
--- addFunLambdas
---	Takes an exp and a list of variables.
---	Binds all the variables with fresh lambdas around the exp.
---
---	Also looks up the types for the vars as it goes, so the lambdas
---	will contain the types for the bound variables.
---
---	Makes sure that the body of the inner most lambda is an XDo
---
-{-
-addFunLambdas :: C.Exp	-> [Var]	-> CoreM C.Exp
-addFunLambdas    e vs
- = case vs of
- 	[]	-> return e
-	(v:vs)	
-	 -> do
-		t	<- getNode v
-		eR	<- addFunLambdas e vs
-		return	$  C.XLam v t eR
--}
 
 
 -----------------------
@@ -93,3 +65,48 @@ stripAnnot xx
  = case xx of
  	C.XAnnot _ x	-> x
 	_		-> xx
+
+
+-- | Decend into this expression and annotate the first value found with its type
+--	doing this makes it possible to slurpType this expression
+--
+dropXTau :: C.Exp -> C.Type -> C.Exp
+dropXTau xx tt
+	-- decend into XLAMs
+	| C.XLAM v t x		<- xx
+	, C.TForall v t1 t2	<- tt
+	= C.XLAM v t $ dropXTau x t2
+	
+	| C.XLAM v t x		<- xx
+	, C.TContext t1 t2	<- tt
+	= C.XLAM v t $ dropXTau x t2
+	
+	-- decend into XLams
+	| C.XLam v t x eff clo	<- xx
+	, C.TFunEC _ t2 _ _	<- tt
+	= C.XLam v t (dropXTau x t2) eff clo
+	
+	-- skip over XTets and TWheres
+	| C.XTet vts x		<- xx
+	= C.XTet vts $ dropXTau x tt
+	
+	| C.TWhere t vts	<- tt
+	= dropXTau xx t
+
+	-- there's already an XTau here,
+	--	no point adding another one, 
+	--	bail out
+	| C.XTau t x		<- xx
+	= xx
+	
+	-- we've hit a value, drop the annot
+	| otherwise
+	= C.XTau tt xx
+	
+
+
+
+
+
+
+
