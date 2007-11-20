@@ -97,20 +97,20 @@ toCoreT	   t
 
 	T.TVar k v		-> C.TVar (toCoreK k) v 
 
+	T.TBot k		-> C.TBot (toCoreK k)
+
+	T.TTop k		-> C.TTop (toCoreK k)
+
 	-- data
 	T.TData v ts		-> C.TData v (map toCoreT ts)
 	T.TFun t1 t2 eff clo	-> C.TFunEC (toCoreT t1) (toCoreT t2) (toCoreT eff) (toCoreT clo)
 	
 	-- effect
 	T.TEffect v ts		-> C.TEffect v (map toCoreT ts)
-	T.TBot T.KEffect	-> C.TPure
-	T.TTop T.KEffect	-> C.TSync
 	
 	-- closure
 	T.TFree v t		-> C.TFree v (toCoreT t)
 	T.TTag v		-> C.TTag  v
-	T.TBot T.KClosure	-> C.TEmpty
-	T.TTop T.KClosure	-> C.TOpen
 	
 	-- wildcards	
 	T.TWild k		-> C.TWild (toCoreK k)

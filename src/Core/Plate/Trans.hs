@@ -489,9 +489,6 @@ instance Monad m => TransM m Type where
  	TNil
 	 ->	transT table tt
 	 
-	TNothing
-	 ->	transT table tt
-	 
 	TForall v t1 t2
 	 -> do	t1'		<- followT table t1
 	 	t2'		<- followT table t2
@@ -519,6 +516,10 @@ instance Monad m => TransM m Type where
 	 -> do	t1'		<- followT table t1
 	 	t2'		<- followT table t2
 		transT table	$ TMask k t1' t2'
+
+	TTop{}			-> transT table tt
+
+	TBot{}			-> transT table tt
 	
 	TVar k v
 	 -> do	v'		<- followV_free table v
@@ -548,8 +549,6 @@ instance Monad m => TransM m Type where
 	 	ts'		<- followTs table ts
 		transT table	$ TEffect v' ts'
 
-	TPure{}			-> transT table tt
-	TSync{}			-> transT table tt
 
 	-- closure
 	TFree v t
@@ -561,9 +560,7 @@ instance Monad m => TransM m Type where
 	 -> do	v'		<- followV_free table v
 	 	transT table	$ TTag v'
 
-	TEmpty{}		-> transT table tt
-	TOpen{}			-> transT table tt
-		
+	
 	-- class		
   	TClass v ts	
 	 -> do	ts'		<- followTs table ts

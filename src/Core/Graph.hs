@@ -105,8 +105,8 @@ appModeX_app xx
  = let	effs	= [eff | (x, eff) <- splitApps xx]
   	effs'	= flattenSumT  $ TSum KEffect effs
    in	case effs' of
-   		TPure	-> AppPure
-		_	-> AppEffect effs'
+   		TBot KEffect	-> AppPure
+		_		-> AppEffect effs'
 
 
 dotAppGraph ::	Map Var (App, [Var])	-> String

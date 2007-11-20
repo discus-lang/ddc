@@ -219,6 +219,12 @@ lintT tt (TVar k v)
 
 	where	vt	= Map.lookup v tt
 
+
+lintT tt (TTop k)
+ =	return ()
+ 
+lintT tt (TBot k)
+ = 	return ()
 		
 lintT tt (TData v ts)
  = do	mapM_ (lintT tt) ts
@@ -236,11 +242,6 @@ lintT tt (TFun t1 t2)
 lintT tt (TEffect v ts)
  = do	mapM_ (lintT tt) ts
  
-lintT tt TPure
- =	return ()
- 
-lintT tt TSync
- = 	return ()
  
 lintT tt (TFree	v t)
  = 	lintT tt t
@@ -248,11 +249,6 @@ lintT tt (TFree	v t)
 lintT tt (TTag v)
  = 	return () 
 
-lintT tt TEmpty
- =	return ()
- 
-lintT tt TOpen
- =	return ()
  
 lintT tt (TClass v ts)
  =	mapM_ (lintT tt) ts

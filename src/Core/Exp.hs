@@ -190,7 +190,6 @@ data Type
 	-- Type/kind/effect constructs.
 	--
 	= TNil
-	| TNothing
 
 	| TForall	Var	Type	Type		-- ^ Type abstraction.
 	| TContext		Type	Type		-- ^ Class context.
@@ -199,8 +198,10 @@ data Type
 
 	| TSum		Kind 	[Type]			-- ^ A summation \/ lub.
 	| TMask		Kind	Type Type
-
 	| TVar		Kind 	Var
+
+	| TTop		Kind
+	| TBot		Kind
 
 	-- data
 	| TData		Var [Type]			-- ^ A data constructor
@@ -209,14 +210,16 @@ data Type
 							--	Used for operational types.
 	-- effect
 	| TEffect 	Var [Type]			-- ^ a manifest effect
-	| TPure						-- ^ an alias of (TSum KEffect [])
-	| TSync						-- ^ any possible effect (Top for effects)
+
+
+--	| TPure						-- ^ an alias of (TSum KEffect [])
+--	| TSync						-- ^ any possible effect (Top for effects)
 	
 	-- closure
 	| TFree		Var Type			-- ^ some object free in the closure of a function.
 	| TTag		Var
-	| TEmpty					-- ^ an alias of (TSum KClosure [])
-	| TOpen						-- ^ any possible free variable (Top for closures)
+--	| TEmpty					-- ^ an alias of (TSum KClosure [])
+--	| TOpen						-- ^ any possible free variable (Top for closures)
 	
 	-- class
 	| TClass	Var [Type]

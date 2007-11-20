@@ -1,6 +1,9 @@
 
 module Core.Util
-	( flattenApps
+	( pure
+	, empty
+	
+	, flattenApps
 	, unflattenApps
 	, flattenFun
 	, unflattenFun
@@ -59,6 +62,8 @@ import Debug.Trace
 -----
 stage	= "Core.Util"
 
+pure	= TBot KEffect
+empty	= TBot KClosure
 
 flattenApps ::		Exp -> [Exp]
 flattenApps		xx
@@ -86,7 +91,7 @@ unflattenApps'		xx
 		NameEffect	-> XAPP  (unflattenApps' xs) (TVar KEffect	v)
 		NameClosure	-> XAPP  (unflattenApps' xs) (TVar KClosure	v)
 		NameClass	-> XAPP  (unflattenApps' xs) (TVar KClass       v)
-	 	NameValue	-> XApp  (unflattenApps' xs) (XVar v)   TPure
+	 	NameValue	-> XApp  (unflattenApps' xs) (XVar v)   (TBot KEffect)
 
 	_		-> panic stage $ "unflattenApps: cannot unflatten " ++ show xx
 
@@ -110,7 +115,7 @@ unflattenFunE :: [Type] -> Type
 unflattenFunE xx
  = case xx of
  	x : []		-> x
-	x : xs		-> TFunEC x (unflattenFunE xs) TPure TEmpty
+	x : xs		-> TFunEC x (unflattenFunE xs) pure empty
 
 
 -----
@@ -368,7 +373,7 @@ addXAnnot a xx
 crushClo :: Closure -> [Closure]
 crushClo cc
  = case cc of
- 	TEmpty			-> []
+ 	TBot KClosure		-> []
 	TSum KClosure cs	-> catMap crushClo cs
 	_			-> [cc]
 	
@@ -416,12 +421,12 @@ splitApps ::	Exp -> [(Exp, Effect)]
 splitApps	x
  = case x of
  	XAPP e1 e2
-	 -> splitApps e1 ++ [(XType e2, TPure)]
+	 -> splitApps e1 ++ [(XType e2, pure)]
 	
 	XApp e1 e2 eff
 	 -> splitApps e1 ++ [(e2, eff)]
 		
-	_ -> [(x, TPure)]
+	_ -> [(x, pure)]
 
 
 	
@@ -461,16 +466,17 @@ kindOfType t
 	TMask k _ _		-> k
 	TVar  k _		-> k
 
+	TBot k			-> k
+	TTop k			-> k
+
  	TData{}			-> KData
 	TFunEC{}		-> KData
 	TFun{}			-> KData
 	
 	TEffect{}		-> KEffect
-	TPure			-> KEffect
 	
 	TFree{}			-> KClosure
-	TEmpty			-> KClosure
-	
+
 	TClass{}		-> KClass
 	
 	TKind{}			-> KBox
@@ -506,7 +512,7 @@ addLambdas ::	[(Var, Type)] -> Exp -> Exp
 addLambdas	vts x
  = case vts of
  	[]			-> x
-	((v, t) : vts)		-> XLam v t (addLambdas vts x) TSync TOpen
+	((v, t) : vts)		-> XLam v t (addLambdas vts x) (TTop KEffect) (TTop KClosure)
 	
 	
 addLAMBDAs ::	[(Var, Type)] -> Exp -> Exp

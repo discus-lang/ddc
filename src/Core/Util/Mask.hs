@@ -9,6 +9,7 @@ import Util
 import Core.Exp
 import Core.Bits
 import Core.Plate.Trans
+import Core.Util
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)
@@ -33,9 +34,7 @@ cleanLinkVsT' boundVs t@(TVar k v)
 	| elem k [KEffect, KClosure]
 	= if Set.member v boundVs 
 	   then	t
-	   else case k of
-	   	KEffect		-> TPure
-		KClosure	-> TEmpty
+	   else TBot k
 
 cleanLinkVsT' _ t	= t
 
@@ -56,7 +55,7 @@ maskLocalE1 boundVs eff
  	| TEffect vE [TVar KRegion vR]	<- eff
 	, elem (Var.bind vE) [Var.ERead, Var.EWrite]
 	, not $ Set.member vR boundVs
-	= TPure
+	= pure
 	
 	| otherwise
 	= eff

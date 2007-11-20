@@ -116,7 +116,7 @@ curryX	tc xx
 	-- A zero airity super.
 	| XVar v		<- xx
 	= if Set.member v ?superVars
-	   then	fromMaybe xx $ makeCall v tc [] TPure
+	   then	fromMaybe xx $ makeCall v tc [] pure
 	   else xx
 	
 	| XDo ss		<- xx
@@ -244,7 +244,7 @@ makeSuperCall vF tailCallMe args eff callAirity superAirity
 	--	a thunk and wait for more.
 	--
 	| callAirity <  superAirity
-	= Just $ XPrim (MCurry vF superAirity) args TPure
+	= Just $ XPrim (MCurry vF superAirity) args pure
 
 	-- We've got more args than the super will accept.
 	--	For this case to be well typed, the super must be returning a thunk.

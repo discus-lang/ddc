@@ -107,7 +107,7 @@ slurpZeroS ss
  = case ss of
  	SBind (Just v) x@(XAnnot [NLevel 0] z)
 	 |  canLiftX z 
-	 && slurpEffsX z == TPure
+	 && slurpEffsX z == pure
 	 -> do 	modify (\s -> s ++ [ss])
 	 	return Nothing
 		
@@ -157,7 +157,7 @@ slurpLevelX ::	Int -> Exp -> SlurpM Exp
 slurpLevelX n xx
  = case xx of
  	XAnnot [NFreeLevel []] x
-	 |  slurpEffsX x == TPure
+	 |  slurpEffsX x == pure
 	 ,  canLiftX x
 	 -> do
 	 	(ss, gen)	<- get

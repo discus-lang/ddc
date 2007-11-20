@@ -27,14 +27,14 @@ ditchX	xx
  	XAPP	x t		-> ditchX x
 	XTet	vts x		-> ditchX x
 	XTau	t x		-> XTau t (ditchX x)
-	XLam	v t x eff clo	-> XLam v t (ditchX x) TSync TOpen
-	XApp	x1 x2 eff	-> XApp (ditchX x1) (ditchX x2) TSync
+	XLam	v t x eff clo	-> XLam v t (ditchX x) (TTop KEffect) (TTop KClosure)
+	XApp	x1 x2 eff	-> XApp (ditchX x1) (ditchX x2) (TTop KEffect)
 	XDo	ss		-> XDo  (map ditchS ss)
-	XMatch	aa eff		-> XMatch (map ditchA aa) TSync
+	XMatch	aa eff		-> XMatch (map ditchA aa) (TTop KEffect)
 	XConst{}		-> xx
 	XVar{}			-> xx
  	XLocal v vs x		-> ditchX x
-	XPrim  v xx eff		-> XPrim v xx TSync
+	XPrim  v xx eff		-> XPrim v xx (TTop KEffect)
 	
 	_			-> xx
 	

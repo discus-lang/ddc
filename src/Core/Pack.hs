@@ -67,6 +67,9 @@ inlineTWheresT sub tt
 	 	Just t	-> t
 		_	-> tt
 		
+    	TTop k	-> tt
+	TBot k	-> tt
+    
     
 	-- data
 	TFunEC t1 t2 eff clo
@@ -88,17 +91,13 @@ inlineTWheresT sub tt
 	TEffect  v ts
 	 -> let	ts'	= map (inlineTWheresT sub) ts
 	    in	TEffect v ts'
-
- 	TPure		-> tt
-	 	
+ 	
 	-- closure
 	TFree v t
 	 -> let t'	= inlineTWheresT sub t
 	    in	TFree v t'
 
 	TTag v		-> tt
-
-	TEmpty		-> tt
 
 	TKind k		-> tt
 	    

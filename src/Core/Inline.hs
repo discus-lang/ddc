@@ -112,7 +112,7 @@ collectPureSingleSS table ss
 	
 collectPureSingleS table s
 	| SBind mV (XAnnot [NUseCount 1] x)	<- s
-	, slurpEffsX x == TPure
+	, slurpEffsX x == TBot KEffect
 	, canMoveX x
 	= do	modify $ \s -> SBind mV x : s
 		return []

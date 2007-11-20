@@ -300,11 +300,11 @@ toCoreX xx
 		-- short out bottoms
 		let botEC ec ml = 
 			case (ec, ml) of
-				(T.TVar T.KClosure v1, Just (v2, C.TEmpty))
-				  | v1 == v2	-> (C.TEmpty, Nothing)
+				(T.TVar T.KClosure v1, Just (v2, C.TBot C.KClosure))
+				  | v1 == v2	-> (C.TBot C.KClosure, Nothing)
 
-				(T.TVar T.KEffect v1, Just (v2, C.TPure))
-				  | v1 == v2	-> (C.TPure, Nothing)
+				(T.TVar T.KEffect v1, Just (v2, C.TBot C.KEffect))
+				  | v1 == v2	-> (C.TBot C.KEffect, Nothing)
 
 				_		-> (toCoreT $ ec, ml)
 		
@@ -323,7 +323,7 @@ toCoreX xx
 	 -> do
 	 	x1'	<- toCoreX x1
 		x2'	<- toCoreX x2
-		return	$ C.XApp x1' x2' C.TPure
+		return	$ C.XApp x1' x2' C.pure
 
 
 	-- case match on a var

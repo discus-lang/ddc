@@ -187,8 +187,6 @@ freeVarsT ::	Type -> Set Var
 freeVarsT	tt
  = case tt of
 	TNil		-> empty
-	TNothing	-> empty
-
 
  	TForall v k t	
 	 -> freeVarsT t
@@ -209,8 +207,10 @@ freeVarsT	tt
 	TSum k ts
 	 -> unions $ map freeVarsT ts
 
-	TVar k v
-	 -> Set.singleton v
+	TVar k v	-> Set.singleton v
+	
+	TBot k		-> Set.empty
+	TTop k		-> Set.empty
 
 	-- data
 	TData v xs
@@ -236,13 +236,8 @@ freeVarsT	tt
 	 	[ fromList [v]
 		, unions $ map freeVarsT ts ]
 
-	TPure		-> Set.empty
-
 	-- closure
 	TFree v t	-> freeVarsT t
-
-	TEmpty		-> Set.empty
-	
 	
 	-- class
  	TClass v ts	

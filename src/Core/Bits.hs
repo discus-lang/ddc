@@ -37,8 +37,7 @@ isTForall x	= x =@= TForall{}
 crushSumT :: Type -> [Type]
 crushSumT tt
  = case tt of
- 	TPure		-> []
-	TEmpty		-> []
+ 	TBot k 		-> []
 	TSum k ts	-> catMap crushSumT ts
 	_		-> [tt]
 	
@@ -46,9 +45,7 @@ crushSumT tt
 makeSumT :: Kind -> [Type] -> Type
 makeSumT k ts
  = case catMap crushSumT ts of
- 	[]	-> case k of
-			KEffect		-> TPure
-			KClosure	-> TEmpty
+ 	[]	-> TBot k
 	ts'	-> TSum k ts'
 	
  

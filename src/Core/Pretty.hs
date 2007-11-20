@@ -41,7 +41,7 @@ instance Pretty Top where
 	 -> v % "\n"
 		% " =      " %> e  % ";\n"
 
-	PExtern v TNothing tv
+	PExtern v (TBot KData) tv
 	 -> "extern " % v % ";\n"
 	
 	PExtern v tv to
@@ -141,7 +141,7 @@ instance Pretty Exp where
 		 % x
 	 
 	 where	pEffClo	= case (eff, clo) of 
-	 			(TPure, TEmpty) 	-> pNil
+	 			(TBot KEffect, TBot KClosure) 	-> pNil
 				_ -> "\n" % replicate 20 ' ' % " of " % eff % " " % clo
 					 
 	 
@@ -154,7 +154,7 @@ instance Pretty Exp where
 	 ->  x % " " % prettyTB t
 
 
-	XApp x1 x2 TPure
+	XApp x1 x2 (TBot KEffect)
 	 ->  x1 % " " % prettyExpB x2
 
 
@@ -195,7 +195,7 @@ instance Pretty Exp where
 	 
 
 	-- prim
-	XPrim m args TPure
+	XPrim m args (TBot KEffect)
 	 -> m % " " % " " %!% map prettyExpB args
 
 	XPrim m args eff
@@ -232,8 +232,8 @@ spaceApp xx
 
 prettyE_caused	eff
  = case eff of
-	TPure	-> prettyp "<>"
-	_	-> "<" % prettyp eff % ">"
+	TBot KEffect	-> prettyp "<>"
+	_		-> "<" % prettyp eff % ">"
 
 prettyClosureV (v, (eff, env))
 	=  v %  " = " 
@@ -402,9 +402,6 @@ instance Pretty Type where
 	TNil 
 	 -> prettyp "@TNil"
 	 
-	TNothing
-	 -> prettyp "@TNothing"
-
 	TForall v k t
 	 -> let	(forallVTs, whereVTs, context, tx)	= stripSchemeT xx
 	    in	"forall " % " " %!% (map fst forallVTs) % "\n.  " 
@@ -432,24 +429,24 @@ instance Pretty Type where
 
 	TFunEC t1 t2 eff clo
 	 -> case (eff, clo) of
-	 	(TPure, TEmpty)	-> prettyTBF t1 % " -> " % t2
-		(eff,   TEmpty)	-> prettyTBF t1 % " -(" % eff % ")> " % t2
-		(TPure, clo)	-> prettyTBF t1 % " -(" % clo % ")> " % t2
-		(eff,   clo)	-> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % t2
+	 	(TBot KEffect, 	TBot KClosure)	-> prettyTBF t1 % " -> " % t2
+		(eff,   	TBot KClosure)	-> prettyTBF t1 % " -(" % eff % ")> " % t2
+		(TBot KEffect,	clo)		-> prettyTBF t1 % " -(" % clo % ")> " % t2
+		(eff,   	clo)		-> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % t2
 
 	TData v ts
 	 ->       " " %!% (prettyp v : map prettyTB ts)
 
 	-- effect
 	TEffect v xs	-> " " %!% (prettyp v : map prettyTB xs)
-	TPure		-> prettyp "!PURE"
-	TSync		-> prettyp "!SYNC"
+	TBot KEffect	-> prettyp "!PURE"
+	TTop KEffect	-> prettyp "!SYNC"
 
 	-- closure
 	TFree v t	-> v % " : " % t
 	TTag v		-> prettyp v
-	TEmpty		-> prettyp "$EMPTY"
-	TOpen		-> prettyp "$OPEN"
+	TBot KClosure	-> prettyp "$EMPTY"
+	TTop KClosure	-> prettyp "$OPEN"
 
 	-- class	
   	TClass v ts	-> v % " " % " " %!% map prettyTB ts
