@@ -466,6 +466,8 @@ prettyTB t
 	TData v []	-> prettyp t
 	TEffect{}	-> prettyp t
 	TWild{}		-> prettyp t
+	TBot{}		-> prettyp t
+	TTop{}		-> prettyp t
 	_		-> "(" % t % ")" 	
 
 prettyTBF e
