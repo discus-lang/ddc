@@ -22,7 +22,6 @@ import qualified Type.Pretty	as T
 
 import qualified Core.Exp 	as C
 import qualified Core.Util	as C
-import qualified Core.Pack	as C
 
 -----
 stage	= "Type.ToCore"

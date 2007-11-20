@@ -12,13 +12,8 @@ where
 
 import Core.Exp
 import Core.Util
-import Core.Util.Substitute
-import Core.Util.Slurp
-import Core.Pack
 import Core.Plate.FreeVars
-import Core.Util.Strip
 import Util.Graph.Deps
-import Core.Util.Effect		(crushEffsT)
 
 import Util
 
@@ -248,14 +243,14 @@ applyValueT (TWhere t2 vts) t
 		, TWhere eff vts)
 
 applyValueT t0@(TFunEC t1 t2 eff clo) t3	
-	| t1_flat	<- crushEffsT $ inlineTWheresT Map.empty t1
-	, t3_flat	<- crushEffsT $ inlineTWheresT Map.empty t3
+	| t1_flat	<- flattenT t1
+	, t3_flat	<- flattenT t3
 	= if t1_flat == t3_flat
 		then Just (t2, eff)
 		else freakout stage
 			( "applyType: Type error in value application.\n"
-			% "    can't apply (" % t3 % ")\n"
-			% "             to (" % t0 % ")\n"
+			% "    can't apply\n" %> t3 % "\n\n"
+			% "             to\n" %> t0 % "\n"
 			% "\n"
 			% "    t1_flat = " % t1_flat % "\n"
 			% "\n"

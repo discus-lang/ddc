@@ -20,9 +20,6 @@ import qualified Shared.VarUtil	as Var
 import Core.Exp
 import Core.Util
 import Core.Pretty
-import Core.Pack
-import Core.Util.Strip
-import Core.Util.Slurp
 
 import Core.Plate.FreeVars
 import Core.Lift.Base

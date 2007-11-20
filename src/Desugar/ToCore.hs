@@ -34,9 +34,6 @@ import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Pretty		as C
 import qualified Core.Optimise.Boxing	as C	(unboxedType)
-import qualified Core.Util.Strip	as C
-import qualified Core.Util.Substitute	as C
-import qualified Core.Pack		as C
 
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda

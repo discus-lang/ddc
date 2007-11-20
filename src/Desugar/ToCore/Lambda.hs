@@ -19,9 +19,6 @@ import Shared.Error
 
 import Core.Exp
 import Core.Util
-import Core.Pack
-import Core.Util.Substitute
-import Core.Util.Strip
 
 import Desugar.ToCore.Base
 

@@ -8,7 +8,8 @@ module Core.Util
 	, module Core.Util.Slurp
 	, module Core.Util.Strip
 	, module Core.Util.Substitute
-	, module Core.Util.Unify )
+	, module Core.Util.Unify 
+	, module Core.Util.Pack )
 
 where
 
@@ -21,3 +22,4 @@ import Core.Util.Slurp
 import Core.Util.Strip
 import Core.Util.Substitute
 import Core.Util.Unify
+import Core.Util.Pack
