@@ -31,7 +31,6 @@ import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
 
 import Core.Exp
-import Core.Bits
 import Core.Util
 import Core.Pretty
 import Core.Plate.Trans

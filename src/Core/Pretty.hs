@@ -6,7 +6,7 @@ module Core.Pretty
 where
 
 import Core.Exp
-import Core.Bits
+import Core.Util.Bits
 import Core.Util.Strip
 
 import qualified Shared.Var	as Var

@@ -18,7 +18,7 @@ import Data.Map			(Map)
 import Util
 import Shared.Error
 import Core.Exp
-import Core.Bits
+import Core.Util.Bits
 import Core.Pretty
 
 -----

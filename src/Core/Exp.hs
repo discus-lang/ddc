@@ -211,15 +211,9 @@ data Type
 	-- effect
 	| TEffect 	Var [Type]			-- ^ a manifest effect
 
-
---	| TPure						-- ^ an alias of (TSum KEffect [])
---	| TSync						-- ^ any possible effect (Top for effects)
-	
 	-- closure
 	| TFree		Var Type			-- ^ some object free in the closure of a function.
 	| TTag		Var
---	| TEmpty					-- ^ an alias of (TSum KClosure [])
---	| TOpen						-- ^ any possible free variable (Top for closures)
 	
 	-- class
 	| TClass	Var [Type]

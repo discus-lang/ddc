@@ -12,10 +12,8 @@ where
 
 import Util
 import Core.Exp
-import Core.Bits
-import Core.Plate.Trans
 import Core.Util
-import Core.Util.Slurp
+import Core.Plate.Trans
 
 import qualified Shared.Var	as Var
 

@@ -29,9 +29,8 @@ import Data.Set				(Set)
 import qualified Type.Exp		as T
 import qualified Type.ToCore		as T
 
-import qualified Core.Bits		as C
 import qualified Core.Exp		as C
-import qualified Core.Util.Substitute	as C
+import qualified Core.Util		as C
 
 import Desugar.Project			(ProjTable)
 

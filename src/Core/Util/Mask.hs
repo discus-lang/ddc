@@ -7,9 +7,8 @@ where
 
 import Util
 import Core.Exp
-import Core.Bits
 import Core.Plate.Trans
-import Core.Util
+import Core.Util.Bits
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)

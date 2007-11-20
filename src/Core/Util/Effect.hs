@@ -7,7 +7,7 @@ where
 import Util
 import Core.Exp
 import Core.Plate.Trans
-import Core.Bits
+import Core.Util.Bits
 import Core.Pretty
 import Shared.Error
 

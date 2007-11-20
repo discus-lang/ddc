@@ -12,7 +12,7 @@ import Data.Set			(Set)
 import qualified Data.Set	as Set
 
 import Core.Exp
-import Core.Bits
+import Core.Util.Bits
 import Core.Crush
 import Core.Plate.Trans
 

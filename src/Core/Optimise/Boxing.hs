@@ -26,9 +26,7 @@ import qualified Data.Set	as Set
 import Data.Set			(Set)
 
 import Core.Exp
-import Core.Bits
 import Core.Util
-import Core.Util.Slurp
 
 import qualified Core.Plate.Walk	as Walk
 import Core.Plate.Walk			(WalkTable)
