@@ -1,24 +1,17 @@
+-- | Constraint slurping for Expressions.
 
 module Desugar.Slurp.SlurpX
-(
-	slurpX
-)
-
+	( slurpX )
 where
 
 -----
-import Util
-
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
-
-import Desugar.Slurp.Base
-import Type.Util
-
 import {-# SOURCE #-} Desugar.Slurp.SlurpS
 import {-# SOURCE #-} Desugar.Slurp.SlurpA
+import Desugar.Slurp.Base
+
+import Type.Util
+import qualified Shared.Var	as Var
+import Util
 
 -----
 stage	= "Desugar.Slurp.SlurpX"
@@ -35,6 +28,7 @@ slurpX	:: Exp Annot1
 		, Closure	-- closure of expression.
 		, Exp Annot2	-- annotated exp.
 		, [CTree])	-- constraints.
+
 
 -----------------------
 -- Lambda	
@@ -78,7 +72,8 @@ slurpX	exp@(XLambda sp vBound xBody)
 
 	-- we'll be wanting to annotate these vars with TECs when we convert to core.
 	wantTypeVs
-		$  [v | TVar KEffect v  <- [eBody]]
+		$  vBoundT
+		:  [v | TVar KEffect v  <- [eBody]]
 		++ [v | TVar KClosure v <- [cX]]
 	
 	return	( tX
