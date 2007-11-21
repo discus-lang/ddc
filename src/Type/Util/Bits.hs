@@ -45,11 +45,12 @@ import Shared.Error
 import qualified Shared.Var as Var
 import Shared.Var (Var, NameSpace(..))
 import Shared.VarPrim
-import Shared.Prim
 
 import Type.Exp
 import Type.Plate
+import Type.Pretty		()
 
+-----
 stage	= "Type.Util.Bits"
 
 pure	= TBot KEffect
@@ -157,7 +158,7 @@ applyTMask tt@(TMask k t1 t2)
 				_		
 				 -> panic stage 
 				 	$ "applyTMask: no match for " % show t % "\n"
-				  	% "  tt = " % show tt % "\n")
+				  	% "  tt = " % tt % "\n")
 		$ flattenTSum t2
 		
 	tsMasked
@@ -173,7 +174,8 @@ applyTMask tt@(TMask k t1 t2)
 		
    in	makeTSum k tsMasked
    
-	
+applyTMask tt	= tt
+
 
 -----------------------
 -- makeTFun / chopTFun
@@ -283,6 +285,9 @@ takeKindOfType tt
 	TWild k		-> Just k
 	TClass k cid	-> Just k
 	TAccept t	-> takeKindOfType t
+
+	TElaborate t	-> takeKindOfType t
+	TMutable t	-> takeKindOfType t
 	
 	_		-> Nothing
 	

@@ -19,16 +19,20 @@ import Shared.VarPrim
 import Shared.Error 
 
 import Type.Exp
-import Type.Pretty
+import Type.Pretty		()
 import Type.Util.Bits		
 import Type.Plate.Collect
 
-import Debug.Trace
+import qualified Debug.Trace	as Debug
 
 -----
 stage	= "Type.Elaborate"
-
-
+debug	= False
+trace ss xx
+ = if debug 
+ 	then Debug.trace (pretty ss) xx
+	else xx
+	
 -- | Elaborate this type
 --
 --	* Fresh, forall bound region variables are applied to type constructors
@@ -141,8 +145,9 @@ elabRs 	:: Monad m
 	     , [(Var, Kind)])	-- added vars
 
 elabRs args kind
- = do	(args', vks)	<- elabRs2 args kind
- 	return	( args', nub vks)
+ = trace ("elabRs: " % args % " " % kind % "\n")
+ $ do	(args', vks)	<- elabRs2 args kind
+ 	return	(args', nub vks)
 
 elabRs2 [] KData
 	= return ([], [])
@@ -158,14 +163,14 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 
 	-- (% : _)   % -> _
 	| KRegion		<- k1
-	, Just KRegion		<- takeKindOfType t
+	, KRegion		<- let Just k = takeKindOfType t in k
 	= do	(ts', vks')	<- elabRs2 ts k2
 		return		( t : ts'
 				, vks')
 
 	-- (_ : _)   % -> _
 	| KRegion		<- k1
-	, Just k		<- takeKindOfType t
+	, k			<- let Just k = takeKindOfType t in k
 	, k /= KRegion
 	= do	vR		<- ?newVarN NameRegion
 		elabRs2	(TVar KRegion vR : t : ts) kk
@@ -177,7 +182,7 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 
 elabRs2 args kind
 	= panic stage
-	$ "elabRs': no match for " % (args, kind) % "\n"
+	$ "elabRs2': no match for " % (args, kind) % "\n"
 
 
 -----------------------
@@ -247,7 +252,7 @@ elaborateCloT' env tt
 			TFun{}	-> FLet cloVarC
 				$ TMask KClosure
 					(makeTSum KClosure [clo, fromMaybe (TBot KClosure) mClo])
-					(TVar KClosure varVal) 
+					(TTag varVal) 
 
 			-- rhs of function isn't another function
 			--	pretend that all the args are referenced here.

@@ -9,13 +9,13 @@ import
 
 data ArrayU %r a;
 
-{-
+
 foreign import extern "primArrayU_Int_new"
  arrayUI_new :: elaborate Int -> Int -> ArrayU Int;
  
 foreign import extern "primArrayU_Int_get"
  arrayUI_get :: elaborate ArrayU Int -> Int -> Int;
- 
+
 foreign import extern "primArrayU_Int_set"
  arrayUI_set :: elaborate ArrayU (mutable Int) -> Int -> Int -> ();
  
@@ -27,7 +27,6 @@ foreign import extern "primArrayU_Int_size"
 
 foreign import extern "primArrayU_Int_fill"
  arrayUI_fill :: elaborate ArrayU (mutable Int) -> Int -> ();
-
 
 foreign import extern "primArrayInt32_peek"
  arrayUI_peek  
@@ -46,9 +45,7 @@ foreign import extern "primArrayInt32_poke"
 	,  !e2 = !{ !Read %r1; !Write %r2; !Read %r3; !Read %r4 }
 	,  Mutable %r2
 	:$ Obj -> Int32# -> Int32# -> Obj;
-	
 
-	
 
 -- This is very slow
 --
@@ -62,7 +59,7 @@ arrayUI_fill2 array x
 		i	:= i + 1;
 	};
  };
--} 
+
 
 {-
 -- This freaks because of stack overflow.

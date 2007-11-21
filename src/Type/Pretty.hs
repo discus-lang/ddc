@@ -12,10 +12,8 @@ where
 import Util
 
 -----
-import qualified Shared.Var 	as Var
 import Shared.Error
 import Type.Exp
-import Type.Util.Bits
 
 -----
 stage	= "Type.Pretty"
@@ -203,9 +201,9 @@ instance Pretty TypeSource where
 	TSProjCrushed  	cidT cidP pf	-> "@TSProjCrushed " % cidT % " " % cidP % " " % pf
 	TSClassName			-> prettyp "@TSClassName "
 	
-	_ -> panic stage
+{-	_ -> panic stage
 		$ "pretty[TypeSource]: no match for " % show ts
-
+-}
 -----
 instance Pretty Kind where
  pretty	k
