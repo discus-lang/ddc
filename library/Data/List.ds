@@ -62,8 +62,8 @@ isNil =
 length :: [a] -> Int;
 length xx
  = do {	count	= 0;
-	f x	= count <> inc;
-	maps_ xx f; -- (\x ->	count <> inc);
+	
+	maps_ xx (\x ->	count <> inc);
 	count;
  };	 
 -}
@@ -213,7 +213,7 @@ mapAccumL' f acc xx yy
 -----
 -- Sum / Prod
 --
-{-
+
 sum ::	[Int] -> Int;
 sum xx
  = do {	count	= 0; 
@@ -221,8 +221,8 @@ sum xx
 	 (\x ->	count := count + x);
 	count; 
  };
--}
-{-
+
+
 sumU :: [Int] -> Int;
 sumU xx
  = do {	count	= 0;
@@ -230,7 +230,7 @@ sumU xx
 	 (\x -> count := count + x);
 	count;
  };
--}
+
 sumR :: [Int] -> Int;
 sumR xx
  = case xx of {

@@ -30,7 +30,7 @@ checkPrime array high x n
     	| n >= high				
 	= True;
 
-	| x `mod` arrayUI_get array n == 0	
+	| mod x (arrayUI_get array n) == 0	
 	= False;
 
 	\= checkPrime array high x (n + 1);

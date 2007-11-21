@@ -181,6 +181,18 @@ foreign import extern foldl
         ,  $c4        = $c3 \ f
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
         
+foreign import extern sum
+        :: forall %r0 %r1 %r2
+        .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Write %r2}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern sumU
+        :: forall %r0 %r1 %r2
+        .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Write %r2}
+        :$ Base.Data -> Base.Data;
+        
 foreign import extern sumR
         :: forall %r0 %r1
         .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r1

@@ -2,9 +2,9 @@
 import Data.Int32U;
 
 ack m n
- = case m `primInt32U_eq` 0# of {
+ = case primInt32U_eq m 0# of {
  	1#	-> n + 1#;
-	0#	-> case n `primInt32U_eq` 0# of {
+	0#	-> case primInt32U_eq n 0# of {
 			1#	-> ack (m - 1#) 1#;
 			0#	-> ack (m - 1#) (ack m (n - 1#));
 		};

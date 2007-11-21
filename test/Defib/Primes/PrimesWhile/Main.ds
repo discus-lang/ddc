@@ -29,7 +29,7 @@ checkPrime array high x
 
 	while (n < high)
 	do { 	
-		when (x `mod` arrayUI_get array n == 0)
+		when (mod x (arrayUI_get array n) == 0)
 		do { 	isPrime	:= 0;
 			break;
 		};

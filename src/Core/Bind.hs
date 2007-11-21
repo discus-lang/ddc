@@ -19,11 +19,13 @@ import Shared.VarGen
 import Shared.Error
 
 import Util
+import Core.Plate.Trans
 import Core.Plate.Walk
 import Core.Plate.FreeVars
 import Core.Exp
 import Core.Util
 import Core.Pretty
+
 
 import qualified Debug.Trace	as Debug
 
@@ -34,7 +36,7 @@ stage	= "Core.Bind"
 debug	= False
 trace ss xx
  = if debug 
- 	then Debug.trace ss xx
+ 	then Debug.trace (pretty ss) xx
 	else xx
 
 
@@ -64,8 +66,8 @@ bindP	shared pp
  = case pp of
  	PBind v x	
 	 | canBindX x
-	 -> do	(x', vsFree)	<- bindX shared x
-	 	return	$ 	(PBind v x', vsFree)
+	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
+	 	return	(PBind v x', vsFree)
 	_
 	 -> return (pp, Set.empty)
 
@@ -80,7 +82,8 @@ bindX 	:: (?lookupFs :: Var -> Maybe [Class])
 	-> Exp
 	-> BindM 
 		( Exp		-- the new expression
-		, Set Var)	-- variables free in this expression
+		, Set Var	-- regions free in this expression
+		, Set Var)	-- regions that were bound locally in this expression
 
 bindX 	shared xx
  = case xx of
@@ -88,66 +91,96 @@ bindX 	shared xx
 	 -> do	-- check for regions bound by lambdas
 	 	let shared'	= addSharedV v shared
 
-	 	(x', vsFree)	<- bindX shared' x
+	 	(x', vsFree, vsLocal)	<- bindX shared' x
 	 	return	( XLAM v t x'
-			, Set.delete v vsFree)
+			, Set.delete v vsFree
+			, vsLocal )
 
+	-- When we hit an XTet on the way back up, mask out
+	--	any effects which are known to be local to some sub-expression.
 	XTet vts x	
-	 -> do	(x', vsFree)	<- bindX shared x
-	 	return	( XTet vts x'
+	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
+		let vts'	= 
+			transformT
+				(\tt -> case tt of
+					  TEffect v [TVar KRegion r] 
+						|   elem v [primRead, primWrite]
+						 && Set.member r vsLocal
+						-> TBot KEffect
+
+					  _	-> tt)
+				vts
+
+		trace	( "masking XTet\n"
+			% "  vts     = " % vts 			% "\n"
+			% "  vts'    = " % vts'			% "\n"
+			% "  vsLocal = " % Set.toList vsLocal	% "\n")
+		 $ return
+			( XTet vts' x'
 			, addSharedVs 
 				(Set.unions $ map (freeVarsT . snd) vts)
-				vsFree)
+				vsFree
+			, vsLocal)
 
 	XTau t x
-	 -> do	(x', vsFree)	<- bindX shared x
+	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
 	 	return	( XTau t x'
 			, addSharedVs 
 				(freeVarsT t)
-				vsFree)
+				vsFree
+			, vsLocal)
 
 	XLam v t x eff clo
-	 -> do	(x', vsFree)	<- bindX shared x
+	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
 	 	return	( XLam v t x' eff clo
 			, addSharedVs 
 				(freeVarsT t)
-				vsFree)	
+				vsFree
+			, vsLocal)
 
 	-- BUGS: handle regions bound in different alternatives
 	XMatch aa eff
-	 -> do	(aa', vssFree)	<- liftM unzip $ mapM (bindA shared) aa
-	 	return	( XMatch aa' eff
-			, Set.unions vssFree)
+	 -> do	(aa', vssFree, vssLocal)	
+	 		<- liftM unzip3 $ mapM (bindA shared) aa
 
+	 	return	( XMatch aa' eff
+			, Set.unions vssFree
+			, Set.unions vssLocal)
 
 	XDo ss	-> bindXDo shared xx
 
-	_	-> return (xx, freeRegionsX xx)
+	_	
+	 -> 	return	( xx
+	 		, freeRegionsX xx
+	 		, Set.empty )
 
 
 -- BUGS: shared regions in local funs in case expr
 bindA shared (AAlt gs x)
- = do	(gs', vssFreeGs)	<- liftM unzip $ mapM (bindG shared) gs
- 	(x',  vsFreeX)		<- bindX shared x
+ = do	(gs', vssFreeGs, vssLocalGs)	<- liftM unzip3 $ mapM (bindG shared) gs
+ 	(x',  vsFreeX, vsLocalX)	<- bindX shared x
 	
 	return	( AAlt gs' x'
-		, Set.unions (vsFreeX : vssFreeGs) )
+		, Set.unions (vsFreeX  : vssFreeGs) 
+		, Set.unions (vsLocalX : vssLocalGs))
 	
 bindG shared (GExp w x)
- = do	(x', vsFree)	<- bindX shared x
+ = do	(x', vsFree, vsLocal)	<- bindX shared x
  	return	( GExp w x'
-		, vsFree)
+		, vsFree
+		, vsLocal)
 
 
 
 -- | Bind local regions in this XDo expression
 bindXDo 
 	:: (?lookupFs :: Var -> Maybe [Class])
-	=> Set Var
+	=> Set Var			-- the regions which are not-local to this expression
 	-> Exp
 	-> BindM
-		( Exp
-		, Set Var)
+		( Exp			-- new expression
+		, Set Var		-- the regions free in this expresion
+		, Set Var)		-- regions bound locally in this expression
 
 bindXDo shared xx@(XDo ss)
  = trace 
@@ -164,7 +197,7 @@ bindXDo shared xx@(XDo ss)
 			ss
 	
   	-- Decend into each statement, passing down the set of regions which a local to it.
-	let decendS :: Int -> Stmt -> BindM (Stmt, Set Var)
+	let decendS :: Int -> Stmt -> BindM (Stmt, Set Var, Set Var)
 	    decendS ix (SBind mV x) = do
 		-- work out the regions which are shared with other bindings in this group
 		let sharedGroup	= Set.unions
@@ -174,14 +207,15 @@ bindXDo shared xx@(XDo ss)
 		-- the new non-local vars
 		let sharedHere	= Set.union shared sharedGroup
 	
-		(x', vsFree)	<- bindX sharedHere x
+		(x', vsFree, vsLocal)	<- bindX sharedHere x
 		return		( SBind mV x'
 				, case mV of
 					Nothing	-> vsFree
-					Just v 	-> Set.delete v vsFree)
+					Just v 	-> Set.delete v vsFree
+				, vsLocal)
 
-	(ss', vssFree_stmts)
-			<- liftM unzip
+	(ss', vssFree_stmts, vssLocal_stmts)
+			<- liftM unzip3
 			$  zipWithM
 				decendS
 				[0..]
@@ -249,7 +283,8 @@ bindXDo shared xx@(XDo ss)
 			% "\n")
 	 $ return
 	 	( x'
-		, vsFree)
+		, vsFree
+		, Set.unions (vsBindHere : vssLocal_stmts))
  
 
 
@@ -318,25 +353,6 @@ makeWitnesses r fs
 		else return []
 
   	return $ defaultFsC ++ defaultFsD
-
-
-
-
-isFunctionX :: Exp -> Bool
-isFunctionX xx
- = case xx of
- 	XLAM v t x	-> isFunctionX x
-	XAPP{}		-> False
-	XTet vts x	-> isFunctionX x
-	XTau t x	-> isFunctionX x
-	XLam{}		-> True
-	XApp{}		-> False
-	XDo{}		-> False
-	XMatch{}	-> False
-	XConst{}	-> False
-	XVar{}		-> False
-	XLocal v ls x	-> isFunctionX x
-	XPrim{}		-> False
 
 
 -- 

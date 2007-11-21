@@ -62,9 +62,9 @@ arrayUI_fill2 array x
 		i	:= i + 1;
 	};
  };
- 
+-} 
 
-
+{-
 -- This freaks because of stack overflow.
 -- 	
 arrayUI_fill3 array x

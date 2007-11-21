@@ -30,7 +30,7 @@ main ()
 depthLoop d m
  = match {
  	| d <= m
-	= do {	n	= 2 `pow` (m - d + min');
+	= do {	n	= pow 2  (m - d + min');
 		print 	$ (showInt (2*n)) % "\t trees of depth " % showInt d 
 			% "\t check: " % showInt (sumLoop (unboxInt32 n) (unboxInt32 d) 0#) 
 			% "\n";
@@ -43,7 +43,7 @@ depthLoop d m
 
 sumLoop k d acc
  = match {
- 	|# k `primInt32U_eq` 0#	= boxInt32 acc;
+ 	|# primInt32U_eq k 0#	= boxInt32 acc;
 
 	\= do {
 		c	= itemCheck (make k d);
@@ -54,7 +54,7 @@ sumLoop k d acc
 
 make i d
  = match {
- 	|# d `primInt32U_eq` 0#
+ 	|# primInt32U_eq d 0#
 	= Leaf;
 	
 	\= Node (boxInt32 i) 

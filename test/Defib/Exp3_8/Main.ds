@@ -10,19 +10,19 @@ data Nat %r
 cAdd z y
  = case z of {
  	Z	-> y;
-	S x	-> S (x `cAdd` y);
+	S x	-> S (cAdd x y);
  };
  
 cMul x z
  = case z of {
  	Z	-> Z;
-	S y	-> (x `cMul` y) `cAdd` x;
+	S y	-> cAdd (cMul x y) x;
  };
 
 cExp x z
  = case z of {
  	Z	-> S Z;
-	S y	-> x `cMul` (x `cExp` y);
+	S y	-> cMul x (cExp x y);
  };
  
  
@@ -39,5 +39,5 @@ intToNat x
 	
 main ()
  = do {
-	print 	$ showInt (natToInt (intToNat 3 `cExp` intToNat 8))	% "\n";
+	print 	$ showInt (natToInt (cExp (intToNat 3) (intToNat 8)))	% "\n";
  };
