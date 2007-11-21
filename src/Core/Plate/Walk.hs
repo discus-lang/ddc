@@ -25,7 +25,8 @@ data WalkTable m
 	= WalkTable 
 	{ 
 	-- bottom-up transforms
-	  transX	:: (WalkTable m) -> Exp		-> m Exp
+	  transP	:: (WalkTable m) -> Top		-> m Top
+	, transX	:: (WalkTable m) -> Exp		-> m Exp
 	, transS	:: (WalkTable m) -> Stmt 	-> m Stmt
 
 	, transT	:: (WalkTable m) -> Type	-> m Type
@@ -36,14 +37,6 @@ data WalkTable m
 	, transX_down	:: Maybe ((WalkTable m) -> Exp	-> m Exp)
 	, transX_enter	:: (WalkTable m) -> Exp 	-> m Exp
 	
-
-	-- transSS_split
-	-- |	Transform stmts on entry to an XDo. (top-down)
-	--		Function is passed table of vars bound ABOVE, 
-	--		and table of vars bound BY this block.
-	--
-	, transSS_split	:: Maybe ((WalkTable m) -> (WalkTable m) -> [Stmt] -> m [Stmt])
-	
 	, boundT	:: Map Var Type
 	, boundK	:: Map Var Kind
 	}
@@ -52,7 +45,8 @@ data WalkTable m
 walkTableId :: WalkTable (State s)
 walkTableId
 	= WalkTable
-	{ transX	= \t x -> return x
+	{ transP	= \t x -> return x
+	, transX	= \t x -> return x
 	, transS	= \t x -> return x
 
 	, transT	= \t x -> return x
@@ -62,8 +56,6 @@ walkTableId
 	, transX_down	= Nothing
 	, transX_enter	= \t x -> return x
 
-	, transSS_split	= Nothing
-	
 	, boundT	= Map.empty
 	, boundK	= Map.empty
 	}
@@ -95,13 +87,14 @@ instance Monad m => WalkM m Top where
 	 -> do	let Just t	= maybeSlurpTypeX x
 	 	let z'		= bindT v t z
 	 	x'		<- walkZM z' x
-	 	return		$ PBind v x'
+	 	transP z z	$ PBind v x'
 		
-	PExtern v tv to		-> return p
+	PExtern v tv to
+	 -> 	transP z z p
 
 	PData	v vs cs		 
 	 -> do	cs'		<- mapM (walkZM z) cs
-	 	return		$ PData v vs cs'
+	 	transP z z	$ PData v vs cs'
 
 	PRegion{}	 	-> return p
 	PEffect v k		-> return p

@@ -13,6 +13,8 @@ import qualified Shared.Var	as Var
 import Shared.Var (Var)
 import Shared.Error
 
+import qualified Data.Set	as Set
+
 import Util
 import Util.Pretty
 
@@ -390,7 +392,7 @@ instance Pretty Annot where
 	NBindVar v	-> "&NBindVar "	 % v
 	NLevel i	-> "&NLevel "	% i
 	NFreeLevel vs	-> "&NFreeLevel " % vs
-
+	NVarSet vs	-> "@NVarSet " % Set.toList vs
 
 -----------------------
 -- Type

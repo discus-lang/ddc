@@ -33,6 +33,8 @@ import Shared.Var (Var)
 import Shared.Literal (Const)
 import Shared.Exp
 
+import Data.Set		(Set)
+
 -----
 type Tree	= [Top]
 
@@ -265,6 +267,7 @@ data Annot
 	| NBindVar	Var				-- ^ Some var which is safe to use as a binding var for this exp.
 
 	| NFreeLevel	[(Var, Int)]			-- ^ Some free vars with binding levels.
+	| NVarSet	(Set Var)
 
 	-- Used in Core.Optimise.FullLaziness
 	| NLevel	Int				
