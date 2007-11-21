@@ -7,7 +7,6 @@ where
 	
 -----
 import Core.Exp
-import Core.Pretty
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Util.Effect
@@ -21,7 +20,6 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 -----
 stage	= "Core.Util.Pack"
@@ -179,10 +177,6 @@ inlineTWheresT sub tt
 	TData v ts
 	 -> let	ts'	= map (inlineTWheresT sub) ts
 	    in	TData v ts'
-
-
-	-- region
-	
 	
 	-- effect
 	TEffect  v ts
@@ -196,10 +190,17 @@ inlineTWheresT sub tt
 
 	TTag v		-> tt
 
+	-- class
+	TClass v ts
+	 -> let ts'	= map (inlineTWheresT sub) ts
+	    in	TClass v ts'
+
 	TKind k		-> tt
+	
+	TWild k		-> tt
 	    
-	_ -> panic stage
-		$ "inlineTWheresT: no match for " % show tt
+--	_ -> panic stage
+--		$ "inlineTWheresT: no match for " % show tt
 
 
 

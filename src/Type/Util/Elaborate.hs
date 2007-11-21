@@ -173,7 +173,12 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 	, k			<- let Just k = takeKindOfType t in k
 	, k /= KRegion
 	= do	vR		<- ?newVarN NameRegion
-		elabRs2	(TVar KRegion vR : t : ts) kk
+
+		(tt', vksMore)	<- elabRs2 
+					(TVar KRegion vR : t : ts) 
+					kk
+		return		( tt'
+				, (vR, KRegion) : vksMore)
 
 	| otherwise
 	= do	(ts', vks')	<- elabRs2 ts k2
