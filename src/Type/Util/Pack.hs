@@ -9,34 +9,18 @@ module Type.Util.Pack
 
 where
 
+import Type.Exp
+import Type.Plate.Collect
+import Type.Util.Bits
+import Shared.Error
+
+import qualified Util.Map	as Map
+import qualified Data.Set	as Set
 import Util
 import Util.Graph.Deps
 
-import Type.Exp
-import Type.Plate.FreeVars
-import Type.Plate.Trans
-import Type.Plate.Collect
-import Type.Util.Bits
-import Type.Util.StripFetters
-import Type.Pretty
-
-import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace(..))
-import Shared.VarUtil		(sortForallVars)
-import Shared.Error
-
-import qualified Data.Map	as Map
-import qualified Util.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Debug.Trace	as Debug
-
 -----
 stage	= "Type.Util.Pack"
-
 
 ------------------------
 -- packType
@@ -109,6 +93,10 @@ packTypeLs ls tt
  	TForall vks t	
 	 -> let	t'	= packTypeLs ls t
 	    in	TForall vks t'
+
+	-- keep fetters under foralls.
+	TFetters fs (TForall vks t)
+	 -> TForall vks (TFetters fs t)
 
 	TFetters fs t
 	 -> packTFettersLs ls tt
