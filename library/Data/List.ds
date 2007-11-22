@@ -58,7 +58,6 @@ isNil =
 -----
 -- Length
 --
-{-
 length :: [a] -> Int;
 length xx
  = do {	count	= 0;
@@ -66,7 +65,6 @@ length xx
 	maps_ xx (\x ->	count <> inc);
 	count;
  };	 
--}
 
 lengthR :: [a] -> Int;
 lengthR xx
@@ -99,10 +97,10 @@ indexL xx n
  };
 -}
 
+
 -----
 -- Append
 --
-
 append :: [a] -> [a] -> [a];
 append xs ys
  = case xs of {
@@ -192,7 +190,6 @@ foldl    f state xx
  };
 
 
-{-
 mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y]);
 mapAccumL  f acc xx	
  = mapAccumL' f acc xx [];
@@ -209,7 +206,7 @@ mapAccumL' f acc xx yy
 	};
  };
 
--}
+
 -----
 -- Sum / Prod
 --

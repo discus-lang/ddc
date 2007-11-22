@@ -330,8 +330,9 @@ inlineFs1 tt fs
 
 	-- substitute in the the RHSs
 	fs'	= map (\f -> case f of
-				FLet t1 t2 	-> FLet t1 (substituteTT sub t2)
-				_		-> f)
+				FLet t1 t2 	 -> FLet t1 (substituteTT sub t2)
+				FConstraint v ts -> FConstraint v (map (substituteTT sub) ts)
+				_		 -> f)
 		$ fs
 		
  in 	fs'
