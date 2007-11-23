@@ -41,7 +41,7 @@ import Type.Effect.Narrow
 
 import Type.State
 import Type.Class
-import Type.Plug		(plugClassIds, staticRsDataT) -- , staticRsClosureT)
+import Type.Plug		(plugClassIds, staticRsDataT, staticRsClosureT)
 import Type.Port
 import Type.Induced
 import Type.Context
@@ -180,14 +180,14 @@ generaliseType varT tCore envCids
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	staticRsData	<- staticRsDataT     tPortPacked
+	let staticRsData = staticRsDataT     tPortPacked
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
 
 	-- 	Can't generalise regions free in the closure of the outermost function.
 	--	... the objects in the closure are in the same region every time you use the function.
 	--
-{-	staticRsClosure		<- staticRsClosureT tCore
-
+	let staticRsClosure = staticRsClosureT tCore
+{-
 	--	Can't generalise cids which are under mutable constructors.
 	--	... if we generalise these classes then we could update an object at one 
 	--		type and read it at another, violating soundness.
@@ -200,7 +200,7 @@ generaliseType varT tCore envCids
 -}	
 
 	-- These are all the cids we can't generalise
-	let staticCids		= envCids ++ staticRsData
+	let staticCids		= envCids ++ staticRsData ++ staticRsClosure
 
 
 	-- Rewrite non-static cids to the var for their equivalence class.

@@ -2,7 +2,7 @@
 module Type.Plug
 	( plugClassIds
 	, staticRsDataT
---	staticRsClosureT
+	, staticRsClosureT
 	)
 
 where
@@ -51,22 +51,21 @@ plugT env t
 --	return the list of region classes which are non-generalisable because
 --	they appear in non-function types.
 --
-staticRsDataT :: Type -> SquidM [ClassId]
+staticRsDataT :: Type -> [ClassId]
 staticRsDataT	  t
  = case t of
-	TVar{}			-> return []
+	TVar{}			-> []
 	TClass k cid		
-	 -> do	if k == KRegion 
-		 then	return [cid]
-		 else	return []
-	 
- 	TData v ts		-> liftM concat $ mapM staticRsDataT ts
-	TFun{}			-> return []
+	 | k == KRegion		-> [cid]
+	 | otherwise		-> []
+
+ 	TData v ts		-> catMap staticRsDataT ts
+	TFun{}			-> []
 	TFetters fs t		-> staticRsDataT t
 	TForall vks t		-> staticRsDataT t
 	TNode t1 t2		-> staticRsDataT t2
 	TAccept	t		-> staticRsDataT t
-	TUnify k ts		-> liftM concat $ mapM staticRsDataT ts
+	TUnify k ts		-> catMap staticRsDataT ts
 	
 	_ -> panic stage
 		$ "staticRsDataT: " ++ show t
@@ -78,47 +77,40 @@ staticRsDataT	  t
 --	did not allocate those regions, so they be can't generalised here.
 --
 staticRsClosureT
-	:: Type -> SquidM [ClassId]
-
+	:: Type -> [ClassId]
 
 staticRsClosureT t
  = case t of
-{-
  	TFetters fs x	
-	 -> do	let outerCids	= outerFunClosureCids x
-		let outerClo	= concat 
-				$ [cs 	| FClosure (CClass cid) (CSum cs) <- fs
-					, elem cid outerCids ]
+	 -> let -- work out which cids appear on the outer-most function arrow
+	 	outerCids	= outerFunClosureCids x
 
-		let staticRs	= concat
+		-- collect up the closure bound to all these cids
+		outerClo	= concat
+				$ [flattenTSum clo 	| FLet (TClass KClosure cid) clo <- fs
+							, elem cid outerCids ]
+
+		-- see what regions are free in the closure
+		staticRs	= concat
 				$ [staticRsDataT t	
-					| CFreeT v t	
+					| TFree v t	
 					<- outerClo]
 
-		traceM	$ "*   staticCidsClosureT " % t 	% "\n"
-			% "    outerCids  = " % outerCids	% "\n"
-			% "    outerClo   = " % outerClo	% "\n"
-			% "    staticRs   = " % staticRs	% "\n"
-			% "\n"
+	   in	nub staticRs
 
-		return	$ nub staticRs
--}
-
-	_ -> 	return	[]
+	_ -> []
 	
 -----
 -- outerFunClosureCids
 --	Return the cids marking the closures of the outermost functions
 --	in this type.
 --
-{-
-outerFunClosureCids t
- = case t of
- 	TFun t1 t2 eff (CClass c)	-> [c]
-	TCon v  ts			-> catMap outerFunClosureCids ts
-	TClosure (CClass c)		-> [c]
-	_				-> []
--}	
+outerFunClosureCids tt
+ = case tt of
+ 	TFun  t1 t2 eff (TClass KClosure c)	-> [c]
+	TData v  ts				-> catMap outerFunClosureCids ts
+	_					-> []
+
 
 
 
