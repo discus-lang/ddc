@@ -391,7 +391,8 @@ expApp
 	:: { Exp }
 	: expZ					{ $1					}
 
-	| '`' pCon '`'				{ XOp  	(spTP $1) (vNameV $2)		}
+	| '`' qVar '`'				{ XOp  	(spV $2) (vNameV $2)		}
+	| '`' qCon '`'				{ XOp	(spV $2) (vNameV $2)		}			
 		
 	| const					{ $1					}
 	| tuple					{ $1					}
