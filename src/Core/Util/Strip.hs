@@ -3,13 +3,17 @@ module Core.Util.Strip
 	( stripSchemeT
 	, buildScheme
 	, slurpForallsT 
-	, stripToShapeT )
+	, stripToShapeT 
+	, stripContextT 
+	, slurpForallContextT )
 where
 
-import Data.Map			(Map)
 import qualified Data.Map	as Map
 
 import Core.Exp
+import Core.Util.Bits
+
+import qualified Shared.Var	as Var
 
 -----
 stripSchemeT	:: Type 
@@ -74,6 +78,15 @@ slurpForallsT tt
    in	forallVTs
 
 
+-- | slurp of forall bound vars and contexts from the front of this type
+slurpForallContextT :: Type -> [Type]
+slurpForallContextT tt
+ = case tt of
+ 	TForall v t1 t2	-> (TVar (kindOfSpace $ Var.nameSpace v) v) : slurpForallContextT t2
+	TContext t1 t2	-> t1 : slurpForallContextT t2
+	TWhere t1 vts	-> slurpForallContextT t1
+	_		-> []
+
 
 -----
 -- stripToShapeT
@@ -87,3 +100,16 @@ stripToShapeT tt
 --	TLet     v t1 t2	-> stripToShapeT t2
 	TContext c t		-> stripToShapeT t
 	_			-> tt
+
+
+-- | strip context off the front of this type
+stripContextT :: Type -> Type
+stripContextT tt
+ = case tt of
+ 	TContext c t		-> stripToShapeT t
+	TWhere t vts		-> stripToShapeT t
+	_			-> tt
+
+
+
+

@@ -674,6 +674,22 @@ dataType_Ss
 	:: { [DataField Exp Type] }
 	: dataType					{ [$1]					}
 	| dataType dataType_Ss				{ $1 : $2				}
+
+
+--------------------------
+-- Kind Expressions
+-------------------------
+
+kind	:: { Kind }
+	: kindA						{ $1					}
+	| kindA '->' kind				{ KFun $1 $3				}
+
+kindA	:: { Kind }
+	: '*'						{ KData					}
+	| '%'						{ KRegion				}
+	| '!'						{ KEffect				}
+	| '+'						{ KFetter				}
+
 								
 
 -----------------------
@@ -763,20 +779,6 @@ quantVar
 							  , kindOfVarSpace (Var.nameSpace $1))		}
 	| '(' pVar '::' kind ')'			{ ($2,	$4)					} 
 
---------------------------
--- Kind Expressions
--------------------------
-
-kind	:: { Kind }
-	: kindA						{ $1					}
-	| kindA '->' kind				{ KFun $1 $3				}
-
-kindA	:: { Kind }
-	: '*'						{ KData					}
-	| '%'						{ KRegion				}
-	| '!'						{ KEffect				}
-	| '+'						{ KFetter				}
-
 -----------------------
 -- Fetter Expressions
 -----------------------
@@ -790,7 +792,7 @@ fetter	:: { Fetter }
 	{ FLet	(TVar (kindOfVarSpace (Var.nameSpace $1)) $1)
 		$3 }
 
-	| qCon typeZ_space				{ FConstraint (vNameC $1) $2		}
+	| qCon trec1_space				{ FConstraint (vNameC $1) $2		}
 
 	
 -----------------------
@@ -854,6 +856,27 @@ effect_closure
 	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) }
 	| effectCtor					{ $1					}
 	| '!' '{' effect_semi '}'			{ TSum KEffect $3 			}	
+
+
+-- A type/region/effect/closure which can be used as a type argument.
+trec1 :: { Type }
+	: pVar						{ TVar (kindOfVarSpace (Var.nameSpace $1)) $1 	}
+	| '$' '{' closure_semi '}'			{ TSum KClosure $3				}
+	| '!' '{' effect_semi '}'			{ TSum KEffect $3 				}	
+	| '(' trec ')'					{ $2						}
+	
+trec	:: { Type }
+	: trec1						{ $1						}
+	| pVar ':' closureK				{ TFree (vNameV $1) $3				}
+	| pVar ':' typeN				{ TFree (vNameV $1) $3 				}
+	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) 	}
+	| qCon typeZ_space				{ TData (vNameT  $1) $2			}	
+	| qCon '#' typeZ_space				{ TData (vNameTU $1) $3			}
+
+trec1_space :: { [Type] }
+	: trec1						{ [ $1 ] 					}
+	| trec1 trec1_space				{ $1 : $2					}
+
 	
 ---------------------
 -- Variables

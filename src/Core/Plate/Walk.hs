@@ -288,20 +288,58 @@ instance Monad m => WalkM m Stmt where
 instance Monad m => WalkM m Type where
  walkZM z tt 
   = case tt of
-	TEffect  v ts
-	 -> do	ts'		<- mapM (walkZM z) ts
-	 	(transT z) z	$ TEffect v ts'
+	TContext t1 t2
+	 -> do	t1'		<- walkZM z t1
+	 	t2'		<- walkZM z t2
+		transT z z	$ TContext t1' t2'		
+
+	TWhere t1 vts
+	 -> do	let z2		= foldr (\(v, t) -> bindT v t) z vts
+	 	t1'		<- walkZM z2 t1
+		
+		let (vs, ts)	= unzip vts
+		ts'		<- mapM (walkZM z2) ts
+		let vts'	= zip vs ts'
+
+	 	transT z2 z2	$ TWhere t1' vts'
 
 	TSum k ts
 	 -> do	ts'		<- walkZM z ts
-	 	(transT z) z	$ TSum k ts'
+	 	transT z z	$ TSum k ts'
 
 	TMask k t1 t2
 	 -> do	t1'		<- walkZM z t1
 	 	t2'		<- walkZM z t2
-		return $ TMask k t1' t2'
+		transT z z	$ TMask k t1' t2'
+		
+	-- data
+	TData 	v ts
+	 -> do	ts'		<- mapM (walkZM z) ts
+	 	transT z z	$ TData v ts'
+		
+	TFunEC t1 t2 eff clo
+	 -> do	t1'		<- walkZM z t1
+		t2'		<- walkZM z t2
+		eff'		<- walkZM z eff
+		clo'		<- walkZM z clo
+	 	transT z z 	$ TFunEC t1' t2' eff' clo'
 
-	_ -> 	(transT z) z tt
+	-- effect
+	TEffect v ts
+	 -> do	ts'		<- mapM (walkZM z) ts
+	 	transT z z	$ TEffect v ts'
+		
+	-- closure
+	TFree 	v t
+	 -> do	t'		<- walkZM z t
+	 	transT z z	$ TFree v t'
+		
+	-- class		
+	TClass v ts
+	 -> do	ts'		<- mapM (walkZM z) ts
+	 	transT z z	$ TClass v ts'
+
+	_ -> 	transT z z tt
 	
 
 

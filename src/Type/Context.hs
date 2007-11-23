@@ -6,15 +6,20 @@ module Type.Context
 
 where
 
+------
+import Type.Exp
+import Type.Plate
+import Type.Util
+import Shared.VarPrim
+
+
 import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
-import Type.Exp
-import Type.Plate
-import Type.Util
-
 import Debug.Trace
+-----
+
 
 -- | Reduce the context of this type using the provided map of instance definitions.
 
@@ -47,6 +52,11 @@ reduceContextF classInstances ff
  	| FConstraint v ts	<- ff
 	, Just instances	<- Map.lookup v classInstances
 	, Just inst'		<- find (matchInstance ff) instances
+	= Nothing
+
+	-- Purity constraints on bottom effects can be removed.
+	| FConstraint v [TBot KEffect]	<- ff
+	, v == primPure 
 	= Nothing
 	
 	| otherwise

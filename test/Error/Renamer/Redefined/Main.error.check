@@ -19,15 +19,15 @@ test/Error/Renamer/Redefined/Main.ds:21:20
 test/Error/Renamer/Redefined/Main.ds:24:0
      Undefined variable 'funTR' in namespace Value.
 
-test/Error/Renamer/Redefined/Main.ds:24:27
+test/Error/Renamer/Redefined/Main.ds:24:26
      Redefined variable '%r1'
           in namespace: Region
-      first defined at: test/Error/Renamer/Redefined/Main.ds:24:21
+      first defined at: test/Error/Renamer/Redefined/Main.ds:24:20
 
 test/Error/Renamer/Redefined/Main.ds:27:0
      Undefined variable 'funTE' in namespace Value.
 
-test/Error/Renamer/Redefined/Main.ds:27:29
+test/Error/Renamer/Redefined/Main.ds:27:28
      Redefined variable '!e1'
           in namespace: Effect
-      first defined at: test/Error/Renamer/Redefined/Main.ds:27:25
+      first defined at: test/Error/Renamer/Redefined/Main.ds:27:24

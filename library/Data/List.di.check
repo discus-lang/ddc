@@ -130,6 +130,15 @@ foreign import extern (!!)
         ,  $c0        = xx : List %r0 t0
         :$ Base.Data -> Base.Data -> Base.Obj;
         
+foreign import extern indexL
+        :: forall t0 %r0 %r1 %r2
+        .  List %r0 t0 -> Base.Int %r1 -(!e0 $c0)> t0
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        ,  $c0        = xx : List %r0 t0
+        ,  Base.LazyH t0
+        ,  Base.Pure !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2}
+        :$ Base.Data -> Base.Data -> Base.Obj;
+        
 foreign import extern append
         :: forall t0 %r0
         .  List %r0 t0 -> List %r0 t0 -(!e0 $c0)> List %r0 t0

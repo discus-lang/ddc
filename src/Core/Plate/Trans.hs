@@ -335,7 +335,7 @@ transXM2 table xx
 
 	XLAM v k x
 	 -> do	v'		<- followV_bind table v
-	 	k'		<- followK table k
+	 	k'		<- followT table k
 		x'		<- followX table x
 		transX table	$ XLAM v' k' x'
 		

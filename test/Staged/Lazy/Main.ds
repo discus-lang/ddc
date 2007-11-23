@@ -23,7 +23,7 @@ main ()
 
 	-- dotProd
 	print 	$ (showListInt 
-			$ (ints 0) `dotProd` [1, 2, 3, 5]) 
+			$ dotProd (ints 0) [1, 2, 3, 5]) 
 		% "\n";
 
 	-- primes
@@ -74,7 +74,7 @@ sieve n xx
 	 -> Nil;
 
 	Cons x xs	
-	 -> if x `mod` n == 0
+	 -> if mod x n == 0
 	 	then     sieve@ n xs
 		else x : sieve@ n xs;
  };

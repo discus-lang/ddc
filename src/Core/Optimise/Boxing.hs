@@ -258,6 +258,9 @@ unboxedType t
 	TContext t1 t2
 	 -> unboxedType t2
 
+	TWhere t1 vts
+	 -> unboxedType t1
+
  	TData v [r]
 	 | Var.bind v == Var.TBool	-> Just $ TData primTBoolU  	[r]
 	 | Var.bind v == Var.TInt	-> Just $ TData primTInt32U 	[r]

@@ -1,8 +1,7 @@
 
 module Core.Util.Pack
 	( packT 
-	, flattenT
-	, eraseContextsT )
+	, flattenT )
 where
 	
 -----
@@ -221,7 +220,7 @@ restrictBinds tt ls
    in	filter	(\(v, _) -> Set.member v vsReachable)
    		ls
 
-
+{-
 eraseContextsT :: Type -> Type
 eraseContextsT tt
  = transformT eraseContextsT' tt
@@ -229,4 +228,6 @@ eraseContextsT tt
 eraseContextsT' tt
  = case tt of
  	TContext c t	-> t
+	TWhere t vts	-> TWhere (eraseContextsT' t) vts
 	_		-> tt
+-}

@@ -21,14 +21,12 @@ import qualified Shared.Var 	as Var
 
 import Shared.VarPrim
 import Shared.Error
-import qualified Shared.Exp	as S
-import qualified Shared.Literal	as S
+import qualified Shared.Exp		as S
+import qualified Shared.Literal		as S
 
-import qualified Desugar.Exp 		as D
-import qualified Desugar.Plate.Trans	as D
 
-import qualified Type.Exp	as T
-import Type.ToCore		(toCoreT, toCoreK)
+import qualified Type.Exp		as T
+import Type.ToCore			(toCoreT, toCoreK)
 
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
@@ -38,11 +36,10 @@ import qualified Core.Optimise.Boxing	as C	(unboxedType)
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
 import Desugar.ToCore.Util
-import Desugar.Pretty
-import Desugar.Project		(ProjTable)
-
-
-import qualified Debug.Trace	as Debug
+import Desugar.Pretty			()
+import Desugar.Project			(ProjTable)
+import qualified Desugar.Exp 		as D
+import qualified Desugar.Plate.Trans	as D
 
 -----
 stage	= "Desugar.ToCore"
@@ -275,12 +272,14 @@ toCoreX xx
 	D.XLambdaTEC 
 		_ v x (T.TVar T.KData vTV) effVar cloVar
 	 -> do	
-		vT		<- liftM C.stripToShapeT $ getType vTV
+		vT	<- liftM (C.stripContextT . C.flattenT)
+			$ getType vTV
 
 		-- If the effect/closures were vars then look them up from the graph
 		effLet	<- case effVar of
 				T.TVar T.KEffect vE	
-				 -> do	e	<- liftM C.stripToShapeT $ getType vE
+				 -> do	e	<- liftM (C.stripContextT . C.flattenT) 
+				 		$ getType vE
 				 	return	$ Just (vE, e)
 
 				T.TBot T.KEffect	
@@ -288,7 +287,8 @@ toCoreX xx
 				
 		cloLet	<- case cloVar of
 				T.TVar T.KClosure vC	
-				 -> do	c	<- liftM C.stripToShapeT $ getType vC
+				 -> do	c	<- liftM (C.stripContextT . C.flattenT)
+				 		$ getType vC
 				 	return	$ Just (vC, c)
 				 
 				T.TBot T.KClosure 	
@@ -350,12 +350,13 @@ toCoreX xx
 	-- primitive constants
 	D.XConst (Just (T.TVar T.KData vT, _)) 
 		(S.CConst lit)
-
 	 -> do
-	 	t		<- getType vT
+	 	t	<- liftM (C.stripContextT . C.flattenT)
+			$  getType vT
+
 	 	case C.unboxedType t of
 		 Just tU@(C.TData _ [tR])
-		  -> return 	$ C.XPrim (C.MBox (C.stripToShapeT t) tU) [C.XConst (S.CConstU lit) tU] (C.TEffect primRead [tR])
+		  -> return 	$ C.XPrim (C.MBox t tU) [C.XConst (S.CConstU lit) tU] (C.TEffect primRead [tR])
 			
 		 Nothing
 		  -> panic stage
@@ -365,7 +366,9 @@ toCoreX xx
 		(Just (T.TVar T.KData vT, _))
 		(S.CConstU lit)
 	 -> do	
-	 	t	<- getType vT
+	 	t	<- liftM (C.stripContextT . C.flattenT)
+			$  getType vT
+
 		return	$  C.XConst (S.CConstU lit) t
 
  
@@ -493,7 +496,7 @@ toCoreX xx
 			-- If the function being instantiated needs some context then there'll be a 
 			--	separate witness for it... therefore we can safely erase contexts on
 			--	type arguements for the instantiation.
-			let tsInstCE	= map C.stripToShapeT tsInstC
+			let tsInstCE	= map C.stripContextT tsInstC
 			
 			-- If we're in a substitution context do to a contra-variant port rewrite,
 			--	then apply it to the arguments.
@@ -529,9 +532,9 @@ toCoreX xx
 		 T.InstanceLetRec vUse vBind (Just tScheme)
 		  -> do
 			let tScheme'	= toCoreT tScheme
-			let tsQuant	= C.slurpForallsT tScheme'
+			let tsReplay	= C.slurpForallContextT tScheme'
 		  	return $ C.unflattenApps
-			 	(C.XVar v : [C.XType (C.TVar k v) | (v, C.TKind k) <- tsQuant])
+			 	(C.XVar v : map C.XType tsReplay)
 
 	_ 
 	 -> panic stage
@@ -596,10 +599,10 @@ toCoreW ww
 	 
 
 toCoreA_LV (D.LIndex nn i, v)
- = do	t	<- getType v
+ = do	t	<- liftM (C.stripContextT . C.flattenT) $ getType v
 	return	(C.LIndex i, v, t)
 
 toCoreA_LV (D.LVar nn vField, v)
- = do	t	<- getType v
+ = do	t	<- liftM (C.stripContextT . C.flattenT) $ getType v
  	return	(C.LVar vField, v, t)
 

@@ -30,7 +30,6 @@ table
 type CleanM	= State ()
 
 
-
 cleanT :: WalkTable CleanM -> Type -> CleanM Type
 cleanT table tt
 	-- If a closure or effect var has not been bound then we can erase it

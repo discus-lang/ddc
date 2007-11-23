@@ -212,10 +212,17 @@ generaliseType varT tCore envCids
 
 	-- Clean empty effect classes that aren't ports.
 	-- 	BUGS: don't clean variables in the type environment.
+	--	TODO we have to do a reduceContext again to pick up (Pure TBot) 
+	--	.. the TBot won't show up until we do the cleaning. Won't need this 
+	--	once we can discharge these during the grind. It's duplicated in extractType above
 
-	let tClean	= cleanType tPlug
+	classInst	<- gets stateClassInst
+
+	let tClean	= reduceContextT classInst $ cleanType tPlug
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
+
+
 
 	-- Mask effects on local regions
 	-- 	Do this before adding foralls so we don't end up with quantified regions which

@@ -86,7 +86,7 @@ lengthR xx
 			else xs !! (n - 1);
  };
 
-{-
+
 indexL ::	[a] -> Int -> a;
 indexL xx n
  = case xx of {
@@ -95,7 +95,6 @@ indexL xx n
 		 	then x
 			else indexL@ xs (n - 1);
  };
--}
 
 
 -----
@@ -148,16 +147,12 @@ map f xx
  };
 
 
-{-
 mapL 	:: (a -> b) -> [a] -> [b];
 mapL f xx
  = case xx of {
  	[]		-> [];
 	x  :  xs	-> (:)  (f x) (mapL@ f xs);
---	xx ++ yy	-> (++) (mapL@ f xx) (mapL@ f yy);
  };
--}
-
 
 
 map_ :: (a -> b) -> [a] -> ();

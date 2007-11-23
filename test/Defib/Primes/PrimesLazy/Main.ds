@@ -9,7 +9,7 @@ ints n		= n : ints@ (n + 1);
 primes 		= primes' $ drop 2 (ints 0);
 primes' xx	= head xx : primes'@ (sieve (head xx) (tail xx));
 
-sieve n xx	= filterL (\x -> x `mod` n /= 0) xx;
+sieve n xx	= filterL (\x -> mod x n /= 0) xx;
 	
 main ()
  = do {
