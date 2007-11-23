@@ -106,6 +106,9 @@ packT1 tt
 	TFree v (TBot KClosure)
 	 -> TBot KClosure
 
+	TFree v1 (TFree v2 t2)
+	 -> TFree v1 t2
+
 	TFree v t1
 	 -> let t1'	= packT1 t1
 	    in	TFree v t1'

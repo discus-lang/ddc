@@ -145,8 +145,9 @@ walkZM2 z xx
 	XVar v			-> return xx
 	
 	XLAM v t x	
-	 -> do	x'		<- walkZM (bindT v t z) x
-	 	return		$ XLAM v t x'
+	 -> do	t'		<- walkZM z t
+		x'		<- walkZM (bindT v t' z) x
+	 	return		$ XLAM v t' x'
 
 	XLam v t x eff clo
 	 -> do	x'		<- walkZM (bindT v t z) x
