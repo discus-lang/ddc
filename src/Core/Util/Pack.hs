@@ -12,6 +12,7 @@ import Core.Util.Effect
 import Core.Util.Bits
 
 import Shared.Error
+import Shared.VarUtil
 import Util
 import Util.Graph.Deps
 
@@ -37,7 +38,7 @@ packT tt
 -- | Flatten a type so that all where bindings are inlined
 flattenT :: Type -> Type
 flattenT tt
-	= packT $ crushEffsT $ inlineTWheresT Map.empty tt
+	= packT $ crushEffsT $ inlineTWheresT tt
 
 	
  
@@ -74,7 +75,7 @@ packT1 tt
 	TMask k t1 t2
 	 -> let t1'	= packT1 t1
 	 	t2'	= packT1 t2
-	    in	TMask k t1' t2'
+	    in	applyTMask $ TMask k t1' t2'
 	    
 	TVar k v	-> tt
 	TBot k		-> tt
@@ -134,72 +135,65 @@ packT1 tt
 -- inlineTWheresT
 --	Inline all TLet expressions in this type.
 --	
-inlineTWheresT :: Map Var Type -> Type 	-> Type
-inlineTWheresT sub tt
- = case tt of
+inlineTWheresT :: Type -> Type
+inlineTWheresT tt
+ = inlineTWheresT' Map.empty Set.empty tt
+
+inlineTWheresT' sub block tt
+ = let down	= inlineTWheresT' sub block
+   in  case tt of
  	TNil			-> tt
 	
-	TForall v k t
-	 -> let	t'	= inlineTWheresT sub t
-	    in	TForall v k t'
+	TForall v k t		-> TForall v k (down t)
 	    
-	TWhere t1 vts		
-	 -> inlineTWheresT (Map.union (Map.fromList vts) sub) t1
+	TWhere t1 vts
+	 -> inlineTWheresT' 
+	 	(Map.union (Map.fromList vts) sub) 
+		block
+		t1
 
-	TContext l t
-	 -> let t'	= inlineTWheresT sub t
-	    in	TContext l t'
-
-	TSum k ts
-	 -> let	ts'	= map (inlineTWheresT sub) ts
-	    in	TSum k ts'
-
-	TMask k t1 t2
-	 -> let	t1'	= inlineTWheresT sub t1
-	   	t2'	= inlineTWheresT sub t2
-	    in	TMask k t1 t2
+	TContext l t		-> TContext l 	(down t)
+	TSum     k ts		-> TSum  k 	(map down ts)
+	TMask k t1 t2		-> TMask k 	(down t1) (down t2)
 	    
 	TVar k v	
+	 -- If this var is in our block set then we're trying to recursively
+	 --	substitute for it.. bail out now or we'll loop forever.
+	 |  Set.member v block
+	 -> panic stage
+	 	$ "inlineTWheresT': avoiding attempted construction of infinite type.\n" 
+		% "  though variable " % v		% "\n"
+		% "             from " % prettyPos v	% "\n"
+		% "\n"
+		% show v
+		% "\n\n"
+		
+	 -- Lookup the var and add it to the block list so we can detect loops
+	 --	in the type.
+	 | otherwise
 	 -> case Map.lookup v sub of
-	 	Just t	-> t
+	 	Just t	-> inlineTWheresT' sub (Set.insert v block) t
 		_	-> tt
 		
-    	TTop k	-> tt
-	TBot k	-> tt
-    
+    	TTop k			-> tt
+	TBot k			-> tt
     
 	-- data
-	TFunEC t1 t2 eff clo
-	 -> let	t1'	= inlineTWheresT sub t1
-	 	t2'	= inlineTWheresT sub t2
-		eff'	= inlineTWheresT sub eff
-		clo'	= inlineTWheresT sub clo
-	    in	TFunEC t1' t2' eff' clo'
-
-	TData v ts
-	 -> let	ts'	= map (inlineTWheresT sub) ts
-	    in	TData v ts'
+	TFunEC t1 t2 eff clo	-> TFunEC	(down t1) (down t2) (down eff) (down clo)
+	TData v ts		-> TData v 	(map down ts)
 	
 	-- effect
-	TEffect  v ts
-	 -> let	ts'	= map (inlineTWheresT sub) ts
-	    in	TEffect v ts'
+	TEffect  v ts		-> TEffect v 	(map down ts)
  	
 	-- closure
-	TFree v t
-	 -> let t'	= inlineTWheresT sub t
-	    in	TFree v t'
-
-	TTag v		-> tt
+	TFree v t		-> TFree v 	(down t)
+	TTag v			-> tt
 
 	-- class
-	TClass v ts
-	 -> let ts'	= map (inlineTWheresT sub) ts
-	    in	TClass v ts'
+	TClass v ts		-> TClass v 	(map down ts)
 
-	TKind k		-> tt
-	
-	TWild k		-> tt
+	TKind k			-> tt
+	TWild k			-> tt
 	    
 --	_ -> panic stage
 --		$ "inlineTWheresT: no match for " % show tt

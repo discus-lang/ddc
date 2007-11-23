@@ -138,7 +138,10 @@ reconX tt exp@(XApp x1 x2 eff)
 		% " in expression:\n"
 		% "     (" % x1 % ") " % x2	% "\n\n"
 
-		% "   T[x1]   = " % x1t		% "\n\n"
+		% "   T[x1]   = " %> x1t		% "\n\n"
+		% "   (flat)  = " %> flattenT x1t	% "\n\n"
+		
+
 		% "   T[x2]   = " % x2t		% "\n\n"
    
 reconX tt (XDo ss)
@@ -237,34 +240,33 @@ applyValueT
 		( Type		-- result type
 		, Effect)	-- effect caused
 
-applyValueT (TContext t1 t2) t3
+applyValueT t1 t2
+ = {- trace
+ 	( "applyValueT\n"
+	% "  t1 = " %> t1 % "\n"
+	% "  t2 = " %> t2 % "\n")
+	$ -} applyValueT' (flattenT t1) (flattenT t2)
+ 
+applyValueT' (TContext t1 t2) t3
 
-	| Just (t', eff)	<- applyValueT t2 t3
+	| Just (t', eff)	<- applyValueT' t2 t3
 	= Just  ( TContext t1 t'
 		, eff)		-- don't create contexts for effects.
 
-applyValueT (TWhere t2 vts) t		
-	| Just (t2', eff)	<- applyValueT t2 t
-	= Just  ( TWhere t2' vts
-		, TWhere eff vts)
-
-applyValueT t0@(TFunEC t1 t2 eff clo) t3	
-	| t1_flat	<- flattenT t1
-	, t3_flat	<- flattenT t3
-	= if t1_flat == t3_flat
+applyValueT' t0@(TFunEC t1 t2 eff clo) t3	
+	= if t1 == t3
 		then Just (t2, eff)
 		else freakout stage
 			( "applyType: Type error in value application.\n"
-			% "    can't apply\n" %> t3 % "\n\n"
-			% "             to\n" %> t0 % "\n"
+			% "    can't apply\n"		%> t3 % "\n\n"
+			% "    to\n"        		%> t0 % "\n"
 			% "\n"
-			% "    t1_flat = " % t1_flat % "\n"
+			% "    argument\n"		%> t3 % "\n"
 			% "\n"
-			% "  does not match\n"
-			% "    t3_flat = " % t3_flat % "\n")
+			% "    does not have type\n"	%> t1 % "\n")
 			$ Nothing
 	
-applyValueT _ t
+applyValueT' _ t
 	= Nothing
 	
 	

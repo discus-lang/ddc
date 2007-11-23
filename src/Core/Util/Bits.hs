@@ -7,11 +7,10 @@ module Core.Util.Bits
 	, isTForall
 	
 	, makeTSum,	flattenTSum
-
+	, makeTMask,	applyTMask
+	
 	, makeXTet	
 	, makeTWhere
-
-
 
 	, kindOfSpace 
 	, pure
@@ -109,6 +108,40 @@ flattenTSum tt
 	TSum k ts	-> catMap flattenTSum ts
 	_		-> [tt]
 	
+
+-----------------------
+-- Masks
+--
+makeTMask :: Kind -> Type -> Type -> Type
+makeTMask k t1 t2
+ = case t2 of
+ 	TBot KClosure	-> t1
+	_		-> TMask k t1 t2
+
+
+-- | Crush a TMask by discarding TFree and TEffects 
+--	in the first term which are present in the second.
+applyTMask :: Type -> Type
+applyTMask tt@(TMask k t1 t2)
+ = let	vsKill	= map (\t -> case t of
+ 				TFree v t	-> v
+				TTag  v		-> v
+				_		
+				 -> panic stage 
+				 	$ "applyTMask: no match for " % show t % "\n"
+				  	% "  tt = " % show tt % "\n")
+		$ flattenTSum t2
+
+	tsMasked
+		= map (\t -> case t of
+				TFree v tr	
+				 | v `elem` vsKill	-> TBot k
+				 | otherwise		-> TFree v tr
+
+				_			-> TMask k t t2)
+		$ flattenTSum t1
+
+   in	makeTSum k tsMasked
  
 
 		

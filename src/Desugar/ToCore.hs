@@ -506,10 +506,11 @@ toCoreX xx
 				 Nothing	-> tsInstCE
 				 Just portSub	-> map (C.substituteT portSub) tsInstCE
 
+			let tsInstC_packed	= map C.packT tsInstC_portSub
 			
 			-- Work out what types belong to each quantified var in the type
 			--	being instantiated.			
-			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_portSub
+			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_packed
 
 			-- If this function needs a witnesses we'll just make them up.
 			--	Real witnesses will be threaded through in a later stage.
@@ -519,13 +520,15 @@ toCoreX xx
 				% vT 				% "\n"
 				% "    T[vT]           =\n" %> tScheme 		% "\n"
 				% "    context         = " % tsContextC		% "\n"
+				% "    tsInstC         = " % tsInstC            % "\n"
 				% "    tsInstCE        = " % tsInstCE		% "\n"
 				% "    tsInstC_portSub = " % tsInstC_portSub	% "\n"
+				% "    tsInstC_packed  = " % tsInstC_packed	% "\n"
 				% "    tsSub           = " % tsSub 		% "\n"
 				% "    tsContestC'     = " % tsContextC' 	% "\n")
 				$ return ()
 			
-		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_portSub ++ tsContextC'))
+		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_packed ++ tsContextC'))
 
 		 -- recursive use of a let-bound variable
 		 -- 	pass the args on the type scheme back to ourselves.

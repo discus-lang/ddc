@@ -7,7 +7,8 @@ module Type.Util
 	, module Type.Util.Normalise
 	, module Type.Util.Pack
 	, module Type.Util.StripFetters
-	, module Type.Util.Unify )
+	, module Type.Util.Unify 
+	, module Type.Util.Cut)
 	
 where
 
@@ -19,4 +20,5 @@ import Type.Util.Kind
 import Type.Util.Normalise
 import Type.Util.Pack
 import Type.Util.StripFetters
-import Type.Util.Unify	
+import Type.Util.Unify
+import Type.Util.Cut

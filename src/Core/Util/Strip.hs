@@ -97,7 +97,6 @@ stripToShapeT :: Type -> Type
 stripToShapeT tt
  = case tt of
  	TForall  v k t		-> stripToShapeT t
---	TLet     v t1 t2	-> stripToShapeT t2
 	TContext c t		-> stripToShapeT t
 	_			-> tt
 
@@ -106,8 +105,8 @@ stripToShapeT tt
 stripContextT :: Type -> Type
 stripContextT tt
  = case tt of
- 	TContext c t		-> stripToShapeT t
-	TWhere t vts		-> stripToShapeT t
+ 	TContext c t		-> stripContextT t
+	TWhere t vts		-> TWhere (stripContextT t) vts
 	_			-> tt
 
 

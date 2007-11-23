@@ -77,19 +77,25 @@ extractTypeC varT cid
 	trace	$ "*** Scheme.extractType " % varT % "\n"
 		% "\n"
 		% "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
+	
+	-- Cut loops through the effect and closure portions of this type
+	let tCutLoops	= cutLoopsT tTrace
+
+	trace	$ "    tCutLoops        =\n" %> prettyTS tCutLoops % "\n\n"
+
 
 	-- Check that the data portion of the type isn't graphical.
 	--	If it is then it'll hang packType when it tries to construct an infinite type.
-	let cidsDataLoop	= checkGraphicalDataT tTrace
+	let cidsDataLoop	= checkGraphicalDataT tCutLoops
 	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
 
 	when (not $ isNil cidsDataLoop)
 	 $ panic stage	$ "extractType: Cannot construct infinite type for " % varT % ".\n"
 	 		% "    this type is graphical through classes " % cidsDataLoop % "\n\n"
-	 		% "    " % varT % " :: \n" %> prettyTS tTrace % "\n"
+	 		% "    " % varT % " :: \n" %> prettyTS tCutLoops % "\n"
 
 	-- Pack type into standard form
-	let tPack	= packType tTrace
+	let tPack	= packType tCutLoops
 	trace	$ "    tPack            =\n" %> prettyTS tPack % "\n\n"
 
 	-- Trim closures

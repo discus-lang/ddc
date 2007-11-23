@@ -411,7 +411,7 @@ instance Pretty Type where
 	TContext c t	-> c % " => " % t
 
 	TWhere	t1 vts	
-	 -> t1 % "\n:- " % "\n,  " %!% [ v % " = " % t | (v, t) <- vts]
+	 -> prettyTB t1 % "\n:- " % "\n,  " %!% [ v % " = " %> prettyTB t | (v, t) <- vts]
 
 	TApp	t1 t2	-> prettyTB t1 % " " % prettyTB t2
 

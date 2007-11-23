@@ -140,7 +140,7 @@ makeTUnify k ts
 
 -----------------------
 -- Masks
-
+--
 makeTMask :: Kind -> Type -> Type -> Type
 makeTMask k t1 t2
  = case crushT t2 of
