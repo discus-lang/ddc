@@ -175,6 +175,9 @@ instance Pretty Exp where
 	 -> "\n" %!%
 	    (map (\(v, t) -> "let " % padR 16 (sv v) % " =  " % t % " in") vts)
 	    % "\n" % x	 
+
+	XDo [s@(SBind Nothing XVar{})]
+	 -> "do { " % s % "; }";
 	
 	XDo bs
 	 -> "do {\n"
