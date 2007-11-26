@@ -35,7 +35,7 @@ import Type.Plate.Trans
 -----
 debug	= True
 trace s	= when debug $ traceM s
-stage	= "Type.Squid.Crush"
+stage	= "Type.Crush.Effect"
 
 -- Try and crush the effect in this node.
 crushEffectC :: ClassId -> SquidM ()
@@ -187,6 +187,8 @@ slurpDataRT tt
 	TClass _ _		-> []
 
 	TFetters fs t		-> slurpDataRT t
+
+	TError k		-> []
 
 	_ 	-> panic stage
 		$  "slurpDataRT: no match for " % tt % "\n"

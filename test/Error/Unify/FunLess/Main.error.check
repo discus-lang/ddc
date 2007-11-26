@@ -1,14 +1,14 @@
 test/Error/Unify/FunLess/Main.ds:6:17
     Type mismatch during unification.
-          cannot match: Base.Int %97
-                  with: @81 -(!72 $76)> @82
+          cannot match: Base.Int %365
+                  with: *340 -(!332 $335)> *341
 
          literal value: 3
-               of type: Base.Int %97
+               of type: Base.Int %365
                     at: test/Error/Unify/FunLess/Main.ds:6:17
 
         conflicts with, 
                 use of: f1
-             with type: @81 -(!72 $76)> @82
+             with type: *340 -(!332 $335)> *341
                     at: test/Error/Unify/FunLess/Main.ds:6:10
 

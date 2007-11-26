@@ -77,16 +77,23 @@ unifyClassMerge cidT c queue@(t:_)
 
 	-- functions
  	| TFun{}	<- t
+	, Just (t1s, t2s, effs, clos)
+			<- liftM unzip4
+			$ sequence 
+			$ map (\x -> case x of
+					TFun t1s t2s effs clos  -> Just (t1s, t2s, effs, clos)
+					_			-> Nothing)
+			$ queue
  	= do
 		-- Merge args.
-	 	[cid1', cid2']
-			<- mapM (mergeClasses makeTUnify)
+	 	[t1', t2']
+			<- mapM (mergeClassesT makeTUnify)
 			$  transpose
-			$  map (\(TFun (TClass k1 t1) (TClass k2 t2) _ _) -> [t1, t2])
-			$  queue
+			$  zipWith (\t1 t2 -> [t1, t2])
+				t1s 
+				t2s
 
 		-- Merge effects.
-		let effs	= [eff | TFun _ _ eff _ <- queue]
 		let Just cidsE	= liftM catMaybes
 				$ sequence 
 				$ map (\e -> case e of
@@ -101,7 +108,6 @@ unifyClassMerge cidT c queue@(t:_)
 				
 
 		-- Merge closures.
-		let clos	= [clo | TFun _ _ _ clo <- queue]
 		let Just cidsC	= liftM catMaybes
 				$ sequence
 				$ map (\c -> case c of
@@ -114,7 +120,7 @@ unifyClassMerge cidT c queue@(t:_)
 					[]	-> return (TBot KClosure)
 					_	-> return (TClass KClosure) `ap` mergeClasses makeTUnify cidsC
 					
-		return		$ TFun (TClass KData cid1') (TClass KData cid2') eff' clo'
+		return		$ TFun t1' t2' eff' clo'
 
 	
 
