@@ -3,6 +3,6 @@ Renamer
 Patterns
 Unify
 Grind
-Closure
-CheckPure
-CheckConst
+Closure-skip
+CheckPure-skip
+CheckConst-skip

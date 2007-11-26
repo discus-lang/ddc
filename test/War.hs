@@ -51,6 +51,12 @@ main
 --	path
 --
 checkDir path_
+ | isInfixOf "-skip" path_
+ = do
+	out	$ "    " % padR 50 path_ % "(skipped)\n"
+	return ()
+
+ | otherwise
  = do
 	let path
 		= case last path_ of 
@@ -429,8 +435,7 @@ libraryModules =
 	, "Data/ArrayU"
 	, "DDC/Runtime"
 	, "System/File"
-	, "Prelude"]
-
+	, "Prelude"
 {-	, "Math/Util"
 	, "Math/Vec2"
 	, "Math/Matrix/Matrix33"
