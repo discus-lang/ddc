@@ -254,7 +254,7 @@ applyValueT' (TContext t1 t2) t3
 		, eff)		-- don't create contexts for effects.
 
 applyValueT' t0@(TFunEC t1 t2 eff clo) t3	
-	= if t1 == t3
+	= if t1 `subsumes` t3
 		then Just (t2, eff)
 		else freakout stage
 			( "applyType: Type error in value application.\n"
@@ -263,7 +263,7 @@ applyValueT' t0@(TFunEC t1 t2 eff clo) t3
 			% "\n"
 			% "    argument\n"		%> t3 % "\n"
 			% "\n"
-			% "    does not have type\n"	%> t1 % "\n")
+			% "    is not <: than\n"	%> t1 % "\n")
 			$ Nothing
 	
 applyValueT' _ t
