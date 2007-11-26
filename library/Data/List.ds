@@ -130,11 +130,10 @@ replicate i x
  	then	[]
 	else	x : replicate (i-1) x;
 
-{-
+
 iterateL ::	(a -> a) -> a -> [a];
 iterateL f a	
 	= a : iterateL@ f (f a);
--}
 
 -----
 -- Mapping / Folding
@@ -332,7 +331,6 @@ find f xx
 -----
 -- Filtering
 --
-{-
 filterL	::	(a -> Bool) -> [a] -> [a];
 filterL f xx
  = case xx of {
@@ -341,26 +339,24 @@ filterL f xx
 		 	then x : filterL@ f xs
 			else filterL@ f xs;
  };
--}
 
 -----
 rangeInt :: Int -> Int -> [Int];
 rangeInt x y
  = if x >= y 
  	then [x]
-	else x  : rangeInt (x+1) y;
+	else x  : rangeInt (x + 1) y;
 
-{-
 rangeIntL :: Int -> Int -> [Int];
 rangeIntL x y
  = if x >= y
  	then [x]
-	else x : rangeIntL@ (x+1) y;
+	else x : rangeIntL@ (x + 1) y;
 
 rangeInfIntL :: Int -> [Int];
 rangeInfIntL x
-	= x : rangeInfIntL@ (x+1);
--}
+	= x : rangeInfIntL@ (x + 1);
+
 
 -----
 -- Concat / ConcatMap
@@ -372,7 +368,7 @@ concat xx
  	x : xs 	-> x ++ concat xs;
  };
 
-{-
+
 concatL :: [[a]] -> [a];
 concatL xx
  = case xx of {
@@ -380,7 +376,7 @@ concatL xx
 	x  : xs		-> (++)@ x (concatL@ xs);
 --	xs ++ ys	-> (++)  (concatL@ xs) (concatL@ ys);
  };
--}
+
 
 concatMap :: (a -> [b]) -> [a] -> [b];
 concatMap f xx
@@ -390,14 +386,14 @@ concatMap f xx
 --	xs ++ ys	-> concatMap f xs `append` concatMap f ys;
  };
  
-{-
+
 concatMapL :: (a -> [b]) -> [a] -> [b];
 concatMapL f xx
  = case xx of {
  	[] 		-> [];
 	x : xs		-> (++)@ (f x) (concatMapL@ f xs);
  };
--}
+
 
 
 

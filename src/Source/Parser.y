@@ -199,13 +199,13 @@ top
 
 	-- class defs
 	| 'class' pCon '::' kind ';' 
-	{ [PClass   (vNameS $2) $4] }
+	{ [PClass   (vNameW $2) $4] }
 
 	| 'class' pCon pVar 'where' '{' typeSig_Ss '}' 	
-	{ [PClassDict (vNameS $2) [vNameT $3] [] $6 ] }
+	{ [PClassDict (vNameW $2) [vNameT $3] [] $6 ] }
 
 	| 'instance' pCon typeZ_space 'where' '{' binds '}'
-	{ [PClassInst (vNameS $2) $3 [] $6 ] }
+	{ [PClassInst (vNameW $2) $3 [] $6 ] }
 
 	-- projection defs
 	| 'project' typeA 'where' '{' stmtSigBinds '}'
@@ -793,7 +793,7 @@ fetter	:: { Fetter }
 	{ FLet	(TVar (kindOfVarSpace (Var.nameSpace $1)) $1)
 		$3 }
 
-	| qCon trec1_space				{ FConstraint (vNameC $1) $2		}
+	| qCon trec1_space				{ FConstraint (vNameW $1) $2		}
 
 	
 -----------------------
@@ -871,8 +871,8 @@ trec	:: { Type }
 	| pVar ':' closureK				{ TFree (vNameV $1) $3				}
 	| pVar ':' typeN				{ TFree (vNameV $1) $3 				}
 	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) 	}
-	| qCon typeZ_space				{ TData (vNameT  $1) $2			}	
-	| qCon '#' typeZ_space				{ TData (vNameTU $1) $3			}
+	| qCon typeZ_space				{ makeTECon (dNameN NameType $1) $2		}	
+	| qCon '#' typeZ_space				{ TData (vNameTU $1) $3				}
 
 trec1_space :: { [Type] }
 	: trec1						{ [ $1 ] 					}
@@ -1005,6 +1005,13 @@ makeVar    name@(n:_) tok
 	 	{ Var.info	=	
 		[ Var.ISourcePos (SourcePos (file tok, line tok, column tok)) ] }
 
+-- | Make either a TData or TEffect constructor, depending on the namespace of the variable
+makeTECon :: Var -> [Type] -> Type
+makeTECon v ts
+ = case Var.nameSpace v of
+ 	NameType	-> TData v ts
+	NameEffect	-> TEffect v ts
+
 
 -- | Make a module name from this token
 makeModule :: TokenP -> Module
@@ -1069,17 +1076,42 @@ spV var
  = let	[sp]	= [sp | Var.ISourcePos sp <- Var.info var]
    in	sp
 
--- | Set the namespce of this var.
-vNameV v	= v { Var.nameSpace = NameValue }
-vNameT v	= v { Var.nameSpace = NameType }
-vNameR v	= v { Var.nameSpace = NameRegion }
-vNameE v	= v { Var.nameSpace = NameEffect }
-vNameC v	= v { Var.nameSpace = NameClosure }
-vNameS v	= v { Var.nameSpace = NameClass }
+-- | Force the namespace of this variable
+--	If it has already been set differently then panic
+vNameN :: NameSpace -> Var -> Var
+vNameN space v
+	| Var.nameSpace v == NameNothing
+	= v { Var.nameSpace = space }
+
+	| Var.nameSpace v /= space
+	= panic stage
+	$ "vNameN: conflicting namespace for variable " % v	% "\n"
+	% "   name space was     " % Var.nameSpace v		% "\n"
+	% "   tried to set it to " % space			% "\n"
+	
+	| otherwise
+	= v { Var.nameSpace = NameValue }
+
+vNameV		= vNameN NameValue
+vNameT		= vNameN NameType
+vNameR		= vNameN NameRegion
+vNameE		= vNameN NameEffect
+vNameC		= vNameN NameClosure
+vNameW		= vNameN NameClass
 
 vNameTU v	= v 
 		{ Var.name 	= (Var.name v ++ "#")
    		, Var.nameSpace = NameType }
+
+-- | If the namespace of this var is NameNothing, set it to this one
+dNameN :: NameSpace -> Var -> Var
+dNameN space v
+ 	| Var.nameSpace v == NameNothing
+	= v { Var.nameSpace = space }
+	
+	| otherwise
+	= v
+
 
 -- | If the var has no namespace set, then give it this one.
 vNameDefaultN	:: NameSpace -> Var -> Var
