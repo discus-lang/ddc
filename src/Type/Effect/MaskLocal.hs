@@ -1,6 +1,6 @@
 
 module Type.Effect.MaskLocal
-	( maskEsLocalT )
+	( maskLocalT )
 
 where
 
@@ -10,36 +10,50 @@ import Util
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace (..))
 
+import Shared.VarPrim
+
 import Type.Exp
 import Type.Plate
 import Type.Util
 
 -- | Mask effects on local regions.
 --	
--- At generalisation time, if a region is not present in the type or closure of a
--- function then is local to that function and all effects involving that region 
--- can be erased from the type.
+-- 	At generalisation time, if a region is not present in the type or closure of a
+-- 	function then is local to that function and all effects involving that region 
+-- 	can be erased from the type.
 --
-maskEsLocalT :: Type -> Type
-maskEsLocalT	t
+--	We can also erase Const/Mutable Lazy/Direct constraints because these will be
+--	fulfilled by the letregion construct used to locally create the region.
+--
+maskLocalT :: Type -> Type
+maskLocalT	t
  = let	visT		= visibleRs t
-   in	maskEsLocalT' visT t
+   in	maskLocalT' visT t
    
 			
-maskEsLocalT'	visR tt
+maskLocalT'	visR tt
  = case tt of
-	TForall  vks t1		-> TForall vks (maskEsLocalT' visR t1)
-	TFetters fs  t1		-> TFetters (map (maskF visR) fs) t1
+	TForall  vks t1		-> TForall vks (maskLocalT' visR t1)
+	TFetters fs  t1		-> addFetters (catMaybes $ map (maskF visR) fs) t1
 	_ 			-> tt
 
 
--- | Erase read effects to regions not in thie list.
-maskF :: [Var] -> Fetter -> Fetter
+-- | Erase read effects to regions not in this list.
+--	also erase Const, Mutable, Lazy, Direct constraints on regions not in the list
+
+maskF :: [Var] -> Fetter -> Maybe Fetter
+
 maskF	visR	(FLet t1 t2)
 	| kindOfType t1 == KEffect
-	= FLet t1 (maskE visR t2)
+	= Just $ FLet t1 (maskE visR t2)
+
+maskF	visR	(FConstraint v [TVar KRegion r])
+	| elem v [primConst, primMutable, primLazy, primDirect]
+	, not $ elem r visR
+	= Nothing
 	
-maskF	visR	f	= f
+maskF	visR	f	
+	= Just f
 
 
 -- | Erase read effects to regions not in this list.

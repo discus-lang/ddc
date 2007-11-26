@@ -34,7 +34,7 @@ import Type.Check.GraphicalData	(checkGraphicalDataT)
 -- import Type.Check.Soundness	(dangerousCidsT)
 import Type.Closure.Trim 	(trimClosureT)
 
-import Type.Effect.MaskLocal	(maskEsLocalT)
+import Type.Effect.MaskLocal	(maskLocalT)
 -- import Type.Effect.MaskFresh	(maskEsFreshT)
 -- import Type.Effect.MaskPure	(maskEsPureT)
 import Type.Effect.Narrow
@@ -230,11 +230,11 @@ generaliseType varT tCore envCids
 
 
 
-	-- Mask effects on local regions
+	-- Mask effects and CMDL constraints on local regions
 	-- 	Do this before adding foralls so we don't end up with quantified regions which
 	--	aren't present in the type scheme.
 	--
-	let tMskLocal	= maskEsLocalT tClean
+	let tMskLocal	= maskLocalT tClean
 
 
 	trace	$ "    tMskLocal\n"

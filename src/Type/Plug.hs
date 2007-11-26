@@ -18,7 +18,7 @@ import Type.State
 import Type.Class
 
 -----
-stage	= "Type.Squid.Plug"
+stage	= "Type.Plug"
 
 
 plugClassIds env xx

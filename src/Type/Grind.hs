@@ -80,11 +80,11 @@ solveGrind
 	-- Crush out EReadTs
 	trace	$ prettyp "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
 	mapM_ crushEffectC (regEReadH ++ regEReadT ++ regEWriteT)
-{-
+
 	-- Crush out FLazyHs, FMutableTs
-	trace	$ prettyp "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
-	mapM_ crushFetterC (regFLazyH ++ regFMutableT)
--}	
+--	trace	$ prettyp "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
+--	mapM_ crushFetterC (regFLazyH ++ regFMutableT)
+	
 	-- all done
 	trace	$ "\n"
 		% "=== Grind.solveGrind done\n"

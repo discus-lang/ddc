@@ -85,6 +85,12 @@ subsumes t s
 	, TEffect tVar ss	<- s
 	, elem s ts
 	= True
+
+	-- this can happen if there are duplicated effects in the sum
+	| TEffect tVar ts	<- t
+	, TSum KEffect ss	<- s
+	, and $ map (\s -> s == t) ss
+	= True
 	
 	-- closure / single constructor
 	| TSum KClosure ts	<- t

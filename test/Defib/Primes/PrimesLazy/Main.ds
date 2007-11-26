@@ -6,14 +6,14 @@
 
 ints n		= n : ints@ (n + 1);
 
-primes 		= primes' $ drop 2 (ints 0);
+primes ()	= primes' $ drop 2 (ints 0);
 primes' xx	= head xx : primes'@ (sieve (head xx) (tail xx));
 
 sieve n xx	= filterL (\x -> mod x n /= 0) xx;
 	
 main ()
  = do {
-	print	$ showInt $ primes !! 1500;
+	print	$ showInt $ (primes ()) !! 1500;
 	print	"\n";
  };
 
