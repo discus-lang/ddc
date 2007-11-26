@@ -84,7 +84,7 @@ instance Free Type where
 	TClass{}	-> []
 	TAccept t	-> free t
 	TNode x t	-> free t
-	TError		-> []
+	TError{}	-> []
 	TFetter f	-> free f
 	 
 	_ -> panic stage $ "freeT: no match for " ++ show t ++ "\n"	 

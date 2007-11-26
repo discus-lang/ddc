@@ -65,6 +65,7 @@ data Kind
 	| KEffect					-- ^ The kind of effects.		(!)
 	| KClosure					-- ^ The kind of closures.		($)
 	| KFetter					-- ^ The kind of fetters.		(+)
+	| KError					-- ^ An Error in the kind expression.
 	deriving (Show, Eq)	
 
 type Data	= Type
@@ -112,7 +113,7 @@ data Type
 	| TClass	Kind	ClassId			-- ^ A reference to some equivalence class.
 	| TAccept	Type				-- ^ The eq class can only be this type.
 	| TFetter	Fetter				-- ^ Holds a fetter, so we can put it in an equivalence class.
-	| TError					-- ^ Classes with unification errors get their queues set to [TError].
+	| TError        Kind				-- ^ Classes with unification errors get their queues set to [TError].
 
 	| TNode		Type	Type			-- ^ A type along with its node name
 							--	t1 should be TClass or TVar

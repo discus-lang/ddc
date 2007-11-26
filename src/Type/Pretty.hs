@@ -67,7 +67,7 @@ instance Pretty Type where
 	TAccept t		-> "@Accept " % prettyTB t
 	TNode  c t		-> c % ": " % t
 	TFetter f		-> "@TFetter " % f
-	TError			-> prettyp "@TError"
+	TError k		-> "@TErrori " % k
 
 
 	-- used in constraint generator

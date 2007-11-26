@@ -228,7 +228,7 @@ followT table tt
 	 -> do	f'	<- transZM table f
 		return	$ TFetter f'
 
-	TError 
+	TError k 
 	 -> 	return tt	
 
 

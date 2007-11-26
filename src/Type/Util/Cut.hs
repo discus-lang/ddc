@@ -133,8 +133,7 @@ cutT' cid cidsEntered tt
 
 
 	TTag{}			-> tt
-
-		
+	TError{}		-> tt
  	
 	_ -> panic stage
 		$ "cutT: no match for " % show tt

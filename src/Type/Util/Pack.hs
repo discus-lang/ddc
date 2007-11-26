@@ -1,8 +1,6 @@
-
 module Type.Util.Pack
 	( packType
 	, packData
-	, packRegion
 	, packEffect
 	, packClosure
 	, sortFsT)
@@ -179,6 +177,9 @@ packTypeLs ls tt
 	TElaborate t
 	 -> let t'	= packTypeLs ls $ loadType ls t
 	    in	TElaborate t'
+	
+	TError{}
+ 	 -> tt
 
 	_ -> panic stage
 		$ "packTypeLs: no match for " % show tt

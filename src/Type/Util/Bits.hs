@@ -288,7 +288,8 @@ takeKindOfType tt
 
 	TElaborate t	-> takeKindOfType t
 	TMutable t	-> takeKindOfType t
-	
+
+	TError k	-> Just k 
 	_		-> Nothing
 	
 	

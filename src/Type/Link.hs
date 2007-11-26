@@ -92,7 +92,7 @@ linkType mParent bound tt
 	TTag v		-> return tt
 		
 		
-	TError		-> return tt
+	TError k	-> return tt
 	TClass k cid	-> return tt
 
 	_ 	-> panic stage
