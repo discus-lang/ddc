@@ -8,7 +8,9 @@ module Core.Util.Slurp
 	, slurpExpX
 	, slurpEffsX
 	, slurpBoundVarsP
-	, slurpBoundVarsS )
+	, slurpBoundVarsS 
+	
+	, dropXTau)
 
 where
 
@@ -18,6 +20,7 @@ import Data.Map			(Map)
 import Util
 import Shared.Error
 import Core.Exp
+import Core.Util.Pack
 import Core.Util.Bits
 import Core.Pretty
 
@@ -194,3 +197,43 @@ slurpBoundVarsS ss
  = case ss of
 	SBind (Just v) x	-> [v]
 	_			-> []
+
+
+
+
+-- | Decend into this expression and annotate the first value found with its type
+--	doing this makes it possible to slurpType this expression
+--
+dropXTau :: Exp -> [(Var, Type)] -> Type -> Exp
+dropXTau xx env tt
+	-- decend into XLAMs
+	| XLAM v t x		<- xx
+	, TForall v t1 t2	<- tt
+	= XLAM v t $ dropXTau x env t2
+	
+	| XLAM v t x		<- xx
+	, TContext t1 t2	<- tt
+	= XLAM v t $ dropXTau x env t2
+	
+	-- decend into XLams
+	| XLam v t x eff clo	<- xx
+	, TFunEC _ t2 _ _	<- tt
+	= XLam v t (dropXTau x env t2) eff clo
+	
+	-- skip over XTets
+	| XTet vts x		<- xx
+	= XTet vts $ dropXTau x env tt
+	
+	-- load up bindings into the environment
+	| TWhere t vts	<- tt
+	= dropXTau xx (vts ++ env) t
+
+	-- there's already an XTau here,
+	--	no point adding another one, 
+	--	bail out
+	| XTau t x		<- xx
+	= xx
+	
+	-- we've hit a value, drop the annot
+	| otherwise
+	= XTau (packT $ makeTWhere tt env) xx

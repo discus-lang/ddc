@@ -255,7 +255,7 @@ toCoreS (D.SBind _ (Just v) x)
 	xLam		<- fillLambdas v tScheme xCore
 
 	returnJ 	$ C.SBind (Just v) 
-			$ dropXTau xLam [] tScheme
+			$ C.dropXTau xLam [] tScheme
 
 
 toCoreS	D.SSig{}

@@ -13,9 +13,12 @@ import Shared.Error
 import Type.Exp
 import Type.Util
 import Type.Plate
+import Type.Pretty
 
 import Type.State
 import Type.Class
+
+import Debug.Trace
 
 -----
 stage	= "Type.Plug"
@@ -52,8 +55,8 @@ plugT env t
 --	they appear in non-function types.
 --
 staticRsDataT :: Type -> [ClassId]
-staticRsDataT	  t
- = case t of
+staticRsDataT tt
+ = case tt of
 	TVar{}			-> []
 	TClass k cid		
 	 | k == KRegion		-> [cid]
@@ -63,12 +66,11 @@ staticRsDataT	  t
 	TFun{}			-> []
 	TFetters fs t		-> staticRsDataT t
 	TForall vks t		-> staticRsDataT t
-	TNode t1 t2		-> staticRsDataT t2
-	TAccept	t		-> staticRsDataT t
-	TUnify k ts		-> catMap staticRsDataT ts
 	
-	_ -> panic stage
-		$ "staticRsDataT: " ++ show t
+	TFree v t		-> staticRsDataT t
+	
+	_ 	-> panic stage
+		$ "staticRsDataT: " ++ show tt
 		
 -----
 -- staticRsClosureT

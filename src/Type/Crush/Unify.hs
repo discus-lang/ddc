@@ -24,7 +24,7 @@ import Type.Dump
 
 -----
 debug	= False
-stage	= "Type.Squid.Unify"
+stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
 
@@ -142,11 +142,11 @@ unifyClassMerge cidT c queue@(t:_)
 	--	From the effect weakening rule it's always return a larger effect than needed.
 	--	Therefore, if we want to "Unify" two effects E1 and E1 it's safe to return
 	--	their l.u.b and use that inplace of both.
-	| and $ map (=@= TEffect{}) queue
+	| and $ map (\t -> kindOfType t == KEffect) queue
 	= do	return	$ makeTSum KEffect queue
 
 	-- .. likewise for closures
-	| and $ map (=@= TFree{}) queue
+	| and $ map (\t -> kindOfType t == KClosure) queue
 	= do	return	$ makeTSum KClosure queue
 
 

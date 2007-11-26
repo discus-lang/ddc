@@ -3,7 +3,7 @@ data Tree %r
 	= Leaf
 	| Node (Int %r) (Tree %r) (Tree %r);
 	
-min'		= 4;
+min' ()		= 4;
 	
 main ()
  = do {
@@ -19,7 +19,7 @@ main ()
 	longLivedTree
 		= make 0# (unboxInt32 max');
 
-	depthLoop min' max';
+	depthLoop (min' ()) max';
 
 	print	$ "long lived tree of depth " 	% showInt max'
 		% "\t check: "			% showInt (boxInt32 (itemCheck longLivedTree))
@@ -30,7 +30,7 @@ main ()
 depthLoop d m
  = match {
  	| d <= m
-	= do {	n	= pow 2  (m - d + min');
+	= do {	n	= pow 2  (m - d + (min' ()));
 		print 	$ (showInt (2*n)) % "\t trees of depth " % showInt d 
 			% "\t check: " % showInt (sumLoop (unboxInt32 n) (unboxInt32 d) 0#) 
 			% "\n";

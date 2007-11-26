@@ -218,14 +218,14 @@ inlinePureSingleTree tree
 			= collectPureSingleTree treeUsage
 
 	xMap		= Map.fromList
-			$ map (\(SBind (Just v) x) -> (v, dropXTau x))
+			$ map (\(SBind (Just v) x) -> (v, dropXTau2 x))
 			$ sMap
 
 	treeInlined	= inlineBindsTree xMap treeCollect
    in	treeInlined
 
 
-dropXTau xx
+dropXTau2 xx
  = case xx of
  	XTau t x	-> x
 	_		-> xx

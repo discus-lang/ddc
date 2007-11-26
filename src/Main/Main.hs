@@ -32,7 +32,8 @@ ddc :: [String] -> IO ()
 ddc argStrings
  = do
 	-- check args
-	let args	= Arg.parse $ catInt " " argStrings
+	let args	= (Arg.parse $ catInt " " argStrings)
+			++ [Arg.LintCore]
 
 	let verbose	= or $ map (== Arg.Verbose) args
 

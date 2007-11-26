@@ -5,24 +5,44 @@ module Core.Util.Subsumes
 where
 
 import Core.Exp
+import Core.Pretty
+import Shared.Error
+import Util
+
+--
+stage	= "Core.Util.Subsumes"
 
 -- | Check if one type subsumes another
 --	BUGS: assumes that effect and closures in data types are all covariant
 --
-subsumes :: Type -> Type -> Bool
-subsumes t s
+subsumes :: Bool -> Type -> Type -> Bool
+subsumes topECVars t s
+ = let ?topECVars	= topECVars
+   in	subsumes' t s
+	
+subsumes' t s
 
 	-- sums
 	| TSum tKind ts		<- t
 	, TSum sKind ss		<- s
 	, tKind == sKind
-	, and $ map (\s -> elem s ts) ss
-	= True
+	= or $ map (\si -> subsumes' t si) ss
+	
+	-- sum / single
+	| TSum k ts		<- t
+	, elem k [KEffect, KClosure]
+	= or $ map (\ti -> subsumes' ti s) ts
+
+	-- single / sum
+	| TSum k ss		<- s
+	, elem k [KEffect, KClosure]
+	= and $ map (\si -> subsumes' t si) ss
+
 	
 	-- masks
 	| TMask k t1 t2		<- t
 	, TMask k s1 s2		<- s
-	, subsumes t1 s1
+	, subsumes' t1 s1
 	, t2 == s2
 	= True 
 
@@ -33,22 +53,21 @@ subsumes t s
 	, tVar == sVar
 	= True
 
-	-- bottoms match
-	| TBot tKind		<- t
-	, TBot sKind		<- s
-	= tKind == sKind
+	-- anything subsumes bottom
+	| TBot _		<- s
+	= True
 	
 	-- top subsumes everything
-	| TTop tKind		<- t
+	| TTop _		<- t
 	= True
 
 	-- fun
  	| TFunEC t1 t2 tEff tClo	<- t
 	, TFunEC s1 s2 sEff sClo	<- s
-	, subsumes s1 t1
-	, subsumes t2 s2
-	, subsumes tEff sEff
-	, subsumes tClo sClo
+	, subsumes' s1 t1
+	, subsumes' t2 s2
+	, subsumes' tEff sEff
+	, subsumes' tClo sClo
 	= True
 	
 	-- data 
@@ -56,7 +75,7 @@ subsumes t s
 	, TData sVar ss		<- s
 	, tVar == sVar
 	, length ts == length ss
-	, and $ zipWith subsumes ts ss
+	, and $ zipWith subsumes' ts ss
 	= True
 	
 	-- effect constructor
@@ -80,28 +99,27 @@ subsumes t s
 	, ts == ss
 	= True
 	
-	-- effect sum / single constructor
-	| TSum KEffect ts	<- t
-	, TEffect tVar ss	<- s
-	, elem s ts
-	= True
 
-	-- this can happen if there are duplicated effects in the sum
-	| TEffect tVar ts	<- t
-	, TSum KEffect ss	<- s
-	, and $ map (\s -> s == t) ss
-	= True
-	
-	-- closure / single constructor
-	| TSum KClosure ts	<- t
-	, TFree v s		<- s
-	, elem s ts
-	= True
-	
+	-- If we were told that we're in a contra-variant branch then allow
+	--	effect and closure variables to subsume everything
+	--	BUGS: 	this is nasty, and wrong
+	--		before this is valid we need to prove that there are no Pure constraints
+	--		on effects, or if there are - that the effects subsumed don't contain 
+	| TVar k v		<- t
+	, elem k [KEffect, KClosure]
+	, ?topECVars
+	= warning stage
+		("subsumes: did a nasty, unchecked subsumpton. s <: t\n"
+		% "   s = " % s	% "\n"
+		% "   t = " % t % "\n")
+		True
+		
 	-----
 	| otherwise
-	= False
+	= freakout stage
+		 ("subsumes:  S is not <: T\n"
+		% "    S = " % s % "\n"
+		% "    T = " % t % "\n\n")
+		$ False
 	
-{-	= panic stage
-	$ "subsumes " % t % " " % s % "\n\n"
--}
+

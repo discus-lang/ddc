@@ -126,6 +126,7 @@ isFunctionX xx
 	XLAM	v t x	-> isFunctionX x
 	XAPP	x t	-> isFunctionX x
 	XTet	vts x	-> isFunctionX x
+	XTau	t x	-> isFunctionX x
 	XLam{}		-> True
 	_		-> False
 

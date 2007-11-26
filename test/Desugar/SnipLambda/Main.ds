@@ -9,6 +9,6 @@ fun f xx
  };
 
 
--- fun2 
-
+main ()
+ = ();
 

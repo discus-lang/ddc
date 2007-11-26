@@ -191,14 +191,14 @@ reconS :: Map Var Type -> Stmt -> (Map Var Type, (Stmt, Type))
 reconS tt (SBind Nothing x)	
  = let	(x', tx)	= reconX tt x
    in	( tt
-   	, ( SBind Nothing (addTauX (packT tx) x')
+   	, ( SBind Nothing (dropXTau x' [] (packT tx) )
 	  , tx))
 
 reconS tt (SBind (Just v) x)
  = let	(x', tx)	= reconX tt x
 	tt'		= addVT tt (v, tx)
    in	( tt'
-   	, (SBind (Just v) (addTauX (packT tx) x')
+   	, (SBind (Just v) (dropXTau x' [] (packT tx))
 	  , tx))
 	  
 
@@ -254,7 +254,7 @@ applyValueT' (TContext t1 t2) t3
 		, eff)		-- don't create contexts for effects.
 
 applyValueT' t0@(TFunEC t1 t2 eff clo) t3	
-	= if t1 `subsumes` t3
+	= if subsumes True t1 t3
 		then Just (t2, eff)
 		else freakout stage
 			( "applyType: Type error in value application.\n"
