@@ -98,30 +98,40 @@ solve	args ctree
 	modify (\s -> s { stateContains = treeContains })
 
 	-- Feed all the constraints into the graph, generalising types when needed.
-	solveCs ctree
+	gotErrors	<- solveCs ctree
 
-	-- Do a final grind to make sure the graph is up to date.
-	solveGrind
-	
-	-- Check which branches have been fed but not yet generalised
-	sGenSusp		<- gets stateGenSusp
-	let sGeneraliseMe 	= Set.toList sGenSusp
+	if gotErrors
+	 	-- if we've hit any errors then bail out now.
+	 then do
+	 	errors	<- gets stateErrors
+	 	trace	$ "\n=== solve: terminating with errors.\n"
+	 		% "    errors = " % errors	% "\n"
+			% "\n\n"
 
-	-- Generalise all the left over types.
-	trace	$ "\n=== solve: Generalising left over types.\n"
-		% "    sGeneraliseMe   = " % sGeneraliseMe % "\n"
+		return ()
+
+	 else do
+		-- Do a final grind to make sure the graph is up to date.
+		solveGrind
 	
-	mapM_ solveGeneralise $ sGeneraliseMe
+		-- Check which branches have been fed but not yet generalised
+		sGenSusp		<- gets stateGenSusp
+		let sGeneraliseMe 	= Set.toList sGenSusp
+
+		-- Generalise all the left over types.
+		trace	$ "\n=== solve: Generalising left over types.\n"
+			% "    sGeneraliseMe   = " % sGeneraliseMe % "\n"
 	
-	
-	return ()
+		mapM_ solveGeneralise $ sGeneraliseMe
+		
+		return ()
  			
 -----
 solveCs :: [CTree] 
 	-> SquidM Bool
 
 solveCs []	
- = 	return True
+ = 	return False
 
 solveCs	(c:cs)
  = case c of
@@ -231,7 +241,12 @@ solveNext cs
  = do 	err	<- gets stateErrors
 	if isNil err
 	 then 	solveCs cs
-	 else	return False
+	 else do
+	 	trace	$ "\n"
+	 		% "####################################\n"
+	 		% "### Errors detected, bailing out\n\n"
+			
+		return True
 
 
 
@@ -359,6 +374,7 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	| Set.member vInst genSusp
 	= do	
 		trace	$ prettyp "=== Generalisation\n"
+
 		solveGrind
 		tScheme	<- solveGeneralise vInst
 		
@@ -415,6 +431,7 @@ solveCInst_inst
 
 	-- Add type to the graph as a new constraint
 	solveCs [CEq src (TVar KData vT) tInst]
+
 	solveNext cs
 
 

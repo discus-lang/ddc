@@ -163,7 +163,7 @@ unifyClassMerge cidT c queue@(t:_)
 --	= return (TUnify (kindOfType t) queue)
 	
  	= do	errorConflict cidT c 
-		return (TError (kindOfType t))
+		return (TError (kindOfType t) (classType c))
 
 {-	panic stage
 	$ "unifyClass: Found unexpected conflict in type graph.\n"
@@ -193,7 +193,7 @@ errorConflict	 cid c
 	errorConflictCC tC1 tCs
 	
 	updateClass cid
-		c { classType	= TError (classKind c)}
+		c { classType	= TError (classKind c) (classType c)}
 
 	
 errorConflictCF tCons tFuns

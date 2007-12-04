@@ -67,7 +67,7 @@ instance Pretty Type where
 	TAccept t		-> "@Accept " % prettyTB t
 	TNode  c t		-> c % ": " % t
 	TFetter f		-> "@TFetter " % f
-	TError k		-> "@TErrori " % k
+	TError k t		-> "@TError" % k % " " % t
 
 
 	-- used in constraint generator
@@ -155,8 +155,9 @@ prettyVK	(var, kind)
 instance Pretty Fetter where
  prettyp f
   = case f of
-  	FConstraint c ts		-> c % " " % " " %!% map prettyTB ts
-	FLet        v eff		-> padR 10 (pretty v) % " = " % eff
+  	FConstraint	c ts	-> c % " " % " " %!% map prettyTB ts
+	FLet		t1 t2	-> padR 10 (pretty t1) % " = "	% t2
+	FMore		t1 t2	-> padR 10 (pretty t1) % " :> " % t2
 	
 	FProj     pj t1 t2 t3 eff clo	
 	 -> "Proj "	% pj	% " " % t1 % " " % t2 % " " % t3 % " " % eff % " " % clo

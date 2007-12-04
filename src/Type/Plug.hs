@@ -69,6 +69,8 @@ staticRsDataT tt
 	
 	TFree v t		-> staticRsDataT t
 	
+	TError k t		-> []
+	
 	_ 	-> panic stage
 		$ "staticRsDataT: " ++ show tt
 		

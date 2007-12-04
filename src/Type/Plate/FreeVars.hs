@@ -112,6 +112,9 @@ instance Free Fetter where
 	 -> let ?bound = v : ?bound
 	    in	free t2
 
+	FMore t1 t2
+	 -> free t1 ++ free t2
+
 	FLet t1 t2		
 	 -> free t1 ++ free t2
 

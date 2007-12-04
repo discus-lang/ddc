@@ -1,7 +1,9 @@
 
 module Core.Util.Pack
 	( packT 
-	, flattenT )
+	, flattenT 
+	, inlineTWheresT
+	, inlineTWheresMapT )
 where
 	
 -----
@@ -137,17 +139,17 @@ packT1 tt
 --	
 inlineTWheresT :: Type -> Type
 inlineTWheresT tt
- = inlineTWheresT' Map.empty Set.empty tt
+ = inlineTWheresMapT Map.empty Set.empty tt
 
-inlineTWheresT' sub block tt
- = let down	= inlineTWheresT' sub block
+inlineTWheresMapT sub block tt
+ = let down	= inlineTWheresMapT sub block
    in  case tt of
  	TNil			-> tt
 	
 	TForall v k t		-> TForall v k (down t)
 	    
 	TWhere t1 vts
-	 -> inlineTWheresT' 
+	 -> inlineTWheresMapT 
 	 	(Map.union (Map.fromList vts) sub) 
 		block
 		t1
@@ -160,19 +162,20 @@ inlineTWheresT' sub block tt
 	 -- If this var is in our block set then we're trying to recursively
 	 --	substitute for it.. bail out now or we'll loop forever.
 	 |  Set.member v block
-	 -> panic stage
+	 -> tt
+{-	 -> panic stage
 	 	$ "inlineTWheresT': avoiding attempted construction of infinite type.\n" 
 		% "  though variable " % v		% "\n"
 		% "             from " % prettyPos v	% "\n"
 		% "\n"
 		% show v
 		% "\n\n"
-		
+-}		
 	 -- Lookup the var and add it to the block list so we can detect loops
 	 --	in the type.
 	 | otherwise
 	 -> case Map.lookup v sub of
-	 	Just t	-> inlineTWheresT' sub (Set.insert v block) t
+	 	Just t	-> inlineTWheresMapT sub (Set.insert v block) t
 		_	-> tt
 		
     	TTop k			-> tt

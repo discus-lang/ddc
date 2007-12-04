@@ -1,8 +1,12 @@
 
 module Type.Port
-	( portTypesT
-	, forcePortsT
-	, renamePortsT)
+	( moreifyFettersT 
+	, slurpContraClassVarsT  
+	, portTypesT )
+--	, forcePortsT
+--	, renamePortsT
+--	, 
+--	, addToFetterTs )
 where
 
 import qualified Data.Map	as Map
@@ -17,6 +21,33 @@ import Util
 import Type.Exp
 import Type.Util
 import Type.State
+import Type.Plate.Collect
+
+moreifyFettersT :: Set Type -> Type -> Type
+moreifyFettersT tsMore tt
+ = case tt of
+ 	TFetters fs t	-> TFetters (map (moreifyFs tsMore) fs) t
+	t		-> t
+	
+moreifyFs tsMore ff
+ = case ff of
+ 	FLet t1 t2	
+	 | Set.member t1 tsMore	-> FMore t1 t2
+	
+	_ 			-> ff
+
+
+----
+slurpContraClassVarsT :: Type -> [Type]
+slurpContraClassVarsT tt
+ = case tt of
+	TFetters fs t		-> slurpContraClassVarsT t
+ 	TFun t1 t2 eff clo	-> collectTClassVars t1 ++ slurpContraClassVarsT t2
+	TData{}			-> []
+	TVar{}			-> []
+	TClass{}		-> []
+	TError{}		-> []	
+
 
 -----
 -- portTypesT
@@ -50,7 +81,7 @@ portTypesC t
 
 
 
-
+{-
 -----
 forcePortsT 
 	:: Type	-> SquidM (Type, Table)
@@ -194,3 +225,21 @@ renamePortCon t
 	return	t'
 
 
+
+
+-----
+addToFetterTs :: [(Type, Type)] -> Type -> Type
+addToFetterTs sub tt
+ = case tt of
+ 	TFetters fs t	-> TFetters (map (addFetterTsF sub) fs) t
+	_		-> tt
+	
+addFetterTsF sub ff
+ 	| FLet t1 t2	<- ff
+	, Just t'	<- lookup t1 sub
+	= FLet t1 (makeTSum (kindOfType t1) [t', t2])
+	
+	| otherwise
+	= ff
+	 
+-}

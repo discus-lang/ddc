@@ -106,6 +106,7 @@ cutT' cid cidsEntered tt
 	TFetters fs  tt		-> TFetters 	(map (cutF cidsEntered) fs) (down tt)
 
 	TSum  k ts		-> TSum 	k (map down ts)
+	TUnify k ts		-> TUnify	k (map down ts)
 	TMask k t1 t2		-> TMask 	k (down t1) (down t2)
 	TVar{}			-> tt
 	TTop{}			-> tt
@@ -136,7 +137,7 @@ cutT' cid cidsEntered tt
 	TError{}		-> tt
  	
 	_ -> panic stage
-		$ "cutT: no match for " % show tt
+		$ "cutT: no match for " % tt
 
 
 -- | Replace TClasses in the fetter which are members of the set with Bottoms
@@ -145,8 +146,8 @@ cutF cidsEntered ff
  = let down	= cutT Nothing cidsEntered
    in case ff of
  	FConstraint 	v ts	-> FConstraint v (map down ts)
-	FLet 		t1 t2	-> FLet t1 (down t2)
-
+	FLet 		t1 t2	-> FLet  t1 (down t2)
+	FMore		t1 t2	-> FMore t1 (down t2)
 
 
 -- | Split a list of fetters into FLet and others

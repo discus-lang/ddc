@@ -418,14 +418,22 @@ solveSquid
 	 Just handle	-> hFlush handle
 	 Nothing	-> return ())
 
+	-- dump out the type graph
+	--	do this before bailing on errors so we can see what's gone wrong.
+	dGraph	<- evalStateT Squid.dumpGraph state
+	dumpS	DumpTypeSolve  "type-solve--graph" dGraph
+
+	-- stop the compiler and print out errors
+	--	if there were any during type inference.
+	handleErrors 
+		$ Squid.stateErrors state
+
 	-- extract out the stuff we'll need for conversion to core.
 	(typeTable, typeInst, quantVars, portTable)
 		<- evalStateT (Squid.squidExport vsTypesPlease) state
 
+
 	-- dump final solver state
-	dGraph	<- evalStateT Squid.dumpGraph state
-	dumpS	DumpTypeSolve  "type-solve--graph" dGraph
-	
 	dumpS	DumpTypeSolve  "type-solve--types"
 		$ catInt "\n\n"
 		$ map pretty
@@ -446,10 +454,7 @@ solveSquid
 		$ Map.toList
 		$ portTable
 
-	-- stop the compiler and print out errors
-	--	if there were any during type inference.
-	handleErrors 
-		$ Squid.stateErrors state
+
 
 	-----
 	return 	( typeTable

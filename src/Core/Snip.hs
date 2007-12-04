@@ -12,6 +12,9 @@ import Util
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, VarBind, NameSpace(..))
 
@@ -73,7 +76,7 @@ snipStmt ::	Set Var -> Stmt	-> SnipM ([Stmt], Stmt)
 snipStmt	topVars xx
  = case xx of
 	SBind mV x
-	 -> do 	(ss, x')	<- snipX1 topVars x
+	 -> do 	(ss, x')	<- snipX1 topVars Map.empty x
 		return	(ss, SBind mV x')
 
 	_ ->	panic stage
@@ -82,21 +85,29 @@ snipStmt	topVars xx
 
 -- | Enter into an expression on the RHS of a stmt.
 
-snipX1 :: Set Var -> Exp -> SnipM ([Stmt], Exp)
-snipX1	topVars xx
+snipX1 :: Set Var -> Map Var Type -> Exp -> SnipM ([Stmt], Exp)
+snipX1	topVars env xx
  = case xx of
 	XAnnot n x
-	 -> do	(ss, x')	<- snipX1 topVars x
+	 -> do	(ss, x')	<- snipX1 topVars env x
 	 	return	(ss, XAnnot n x')
 
 	XTau t	x
-	 -> do	(ss, x')	<- snipX1 topVars x
+	 -> do	(ss, x')	<- snipX1 topVars env x
 	 	return	(ss, XTau t x')
+
+
+	-- Decend into an XTet, remembering the bindings.
+	--	ALSO: might not need these bindings if we snip out the only bound occurance of it.
+	XTet vts x		
+	 -> do	let env'	= (Map.union (Map.fromList vts) env)
+	 	(ss, x')	<- snipX1 topVars env' x
+	 	return	(ss, XTet vts x')
+		
 
 	-- Can't lift exprs out of the scope of binders,
 	--	there might be free variables in them that would become out of scope
 	XLAM{}			-> leaveIt xx
-	XTet{}			-> leaveIt xx
 	XLam{}			-> leaveIt xx
 	XLocal{}		-> leaveIt xx
 
@@ -109,16 +120,16 @@ snipX1	topVars xx
 
 
 	-- Snip compound exprs from the arguments of applications.
-	XApp x1 x2 eff		-> snipXLeft topVars xx
+	XApp x1 x2 eff		-> snipXLeft topVars (substituteT env xx)
 
 	XAPP x t	
-	 -> do	(ss, x')	<- snipX topVars x
+	 -> do	(ss, x')	<- snipX topVars (substituteT env x)
 	 	return		(ss, XAPP x' t)
 		
 			
 	XPrim p xs eff	
 	 -> do	(ss, xs') 	<- liftM unzip 
-	 			$  mapM (snipXRight topVars) xs
+	 			$  mapM (snipXRight topVars) (substituteT env xs)
 
 	 	return (concat ss, XPrim p xs' eff)
 

@@ -8,6 +8,7 @@ module Type.Util.Pack
 where
 
 import Type.Exp
+import Type.Pretty
 import Type.Plate.Collect
 import Type.Util.Bits
 import Shared.Error
@@ -16,6 +17,8 @@ import qualified Util.Map	as Map
 import qualified Data.Set	as Set
 import Util
 import Util.Graph.Deps
+
+import Debug.Trace
 
 -----
 stage	= "Type.Util.Pack"
@@ -88,6 +91,9 @@ packClosure tt
 packTypeLs :: [(Type, Type)] -> Type -> Type
 packTypeLs ls tt
  = case tt of
+	TError{}
+ 	 -> tt
+
  	TForall vks t	
 	 -> let	t'	= packTypeLs ls t
 	    in	TForall vks t'
@@ -177,9 +183,6 @@ packTypeLs ls tt
 	TElaborate t
 	 -> let t'	= packTypeLs ls $ loadType ls t
 	    in	TElaborate t'
-	
-	TError{}
- 	 -> tt
 
 	_ -> panic stage
 		$ "packTypeLs: no match for " % show tt
@@ -191,6 +194,9 @@ packTypeLs ls tt
 packTFettersLs :: [(Type, Type)] -> Type -> Type
 packTFettersLs ls tt
  = case tt of
+	TFetters fs (TError{})
+	 -> tt
+
  	TFetters fs t
 	 -> let	ls'	= [(t1, t2) | FLet t1 t2 <- fs] ++ ls
 
@@ -396,6 +402,7 @@ sortFs fs
  = let 	isLetK k f
   	 = case f of
 	 	FLet _ t2	-> kindOfType t2 == k
+		FMore _ t2	-> kindOfType t2 == k
 		_		-> False
 		
 	(fsData, fs2)		= partition (isLetK KData) 	fs

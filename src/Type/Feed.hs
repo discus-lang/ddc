@@ -333,6 +333,9 @@ feedFetter	mParent f
 		mergeClasses TUnify [cid1, cid2]
 		return ()
 
+	FMore t1 t2	
+	 -> feedFetter mParent (FLet t1 t2)
+
 	FConstraint v ts
 	 -> do 	addFetterNode f
 		return ()

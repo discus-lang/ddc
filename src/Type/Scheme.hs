@@ -48,7 +48,7 @@ import Type.Context
 
 
 -----
-stage	= "Type.Squid.Scheme"
+stage	= "Type.Scheme"
 debug	= True
 trace s	= when debug $ traceM s
 
@@ -130,7 +130,7 @@ generaliseType varT tCore envCids
 
 		% "    envCids          = " % envCids		% "\n"
 		% "\n"
-
+{-
 	-- Force effect and closure vars in contra-variant positions to ports.
 	--
 	-- Eg: In a type like this:
@@ -178,7 +178,22 @@ generaliseType varT tCore envCids
 
 		% "    portTable\n"
 		%> pretty portTable		% "\n\n"
+-}
 
+	-- work out what effect and closure vars are in contra-variant branches
+	let contraTs	= catMaybes
+			$ map (\t -> case t of
+					TClass KEffect cid	-> Just t
+					TClass KClosure cid	-> Just t
+					_			-> Nothing)
+			$ slurpContraClassVarsT tCore
+	
+	let tPort	= moreifyFettersT (Set.fromList contraTs) tCore
+	
+	trace	$ "    contraTs = " % contraTs	% "\n"
+
+	trace	$ "    tPort\n"
+		%> prettyTS tPort	% "\n\n"
 
 
 	-- Work out which cids can't be generalised in this type.
@@ -186,13 +201,13 @@ generaliseType varT tCore envCids
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	let staticRsData = staticRsDataT     tPortPacked
+	let staticRsData = staticRsDataT     tPort
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
 
 	-- 	Can't generalise regions free in the closure of the outermost function.
 	--	... the objects in the closure are in the same region every time you use the function.
 	--
-	let staticRsClosure = staticRsClosureT tCore
+	let staticRsClosure = staticRsClosureT tPort
 {-
 	--	Can't generalise cids which are under mutable constructors.
 	--	... if we generalise these classes then we could update an object at one 
@@ -210,7 +225,7 @@ generaliseType varT tCore envCids
 
 
 	-- Rewrite non-static cids to the var for their equivalence class.
-	tPlug			<- plugClassIds staticCids tPortPacked
+	tPlug			<- plugClassIds staticCids tPort
 
 	trace	$ "    staticCids       = " % staticCids	% "\n\n"
 		% "    tPlug\n"
@@ -224,7 +239,7 @@ generaliseType varT tCore envCids
 
 	classInst	<- gets stateClassInst
 
-	let tClean	= reduceContextT classInst $ cleanType tPlug
+	let tClean	= reduceContextT classInst $ cleanType Set.empty tPlug
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
@@ -303,11 +318,11 @@ generaliseType varT tCore envCids
 --	where all of !e1 .. !en are cleanable.
 --	Are two passes enough?
 --	
-cleanType :: Type -> Type
-cleanType tt
-	= cleanType' $ cleanType' tt
+cleanType :: Set Var -> Type -> Type
+cleanType save tt
+	= cleanType' save $ cleanType' save  tt
 
-cleanType' tt
+cleanType' save tt
  = let	vsFree	= freeVarsT tt
 
 	vsPorts	
@@ -320,7 +335,8 @@ cleanType' tt
 	vsClean	= [ v 	| v <- vsFree
 			, elem (Var.nameSpace v) [Var.NameEffect, Var.NameClosure]
 			, not $ Var.isCtorName v 
-			, not $ elem v vsPorts ]
+			, not $ elem v vsPorts 
+			, not $ Set.member v save]
 
 	sub	= Map.fromList
 		$ map (\v -> (v, TBot (kindOfSpace $ Var.nameSpace v)))

@@ -287,7 +287,7 @@ isValueArg xx
 	XType{}			-> False
 	
 	_	-> panic stage 
-			$ "isValueArg: unexpected arg in functio application " % show xx 
+			$ "isValueArg: unexpected arg in function application " % xx 
 	
 	
 -----

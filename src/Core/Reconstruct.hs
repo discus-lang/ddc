@@ -78,8 +78,8 @@ reconX 	:: Map Var Type 	-- ^ var -> type
 	   , Type)		-- type of expression
 
 reconX tt (XLAM v t x)
- = let	tt'		= addVT tt (v, t)
- 	(x', tx)	= reconX tt' x
+ = let	-- tt'		= addVT tt (v, t)
+ 	(x', tx)	= reconX tt x
    in	( XLAM 	  v t x'
     	, TForall v t tx )
    
@@ -123,11 +123,10 @@ reconX tt exp@(XApp x1 x2 eff)
 	(x2', x2t)	= reconX tt x2
 	mResultTE	= applyValueT x1t x2t
 
-   in {- trace 	( "apply\n"
+   in   {-	trace 	( "apply\n"
    		% "  t1     =\n" %> x1t 	% "\n\n"
 		% "  t2     =\n" %> x2t 	% "\n\n"
-		% "  result =\n" %> mResultTE	% "\n\n") -}
-	
+		% "  result =\n" %> mResultTE	% "\n\n")  -}
 	case mResultTE of
    	   Just (t, eff')
   	    -> let x'		= XApp x1' x2' (packT eff')
@@ -168,10 +167,11 @@ reconX tt (XConst c t)
 reconX tt (XVar v)
  = case Map.lookup v tt of
  	Just t		
-	 -> {- trace 
+	 -> let	t'	= inlineTWheresMapT tt Set.empty t
+	    in  {- trace 
 	 	( "reconX: (XVar " % v % ")\n"
-	 	% "    t =\n" %> t	% "\n") -}
-		(XVar v, t)
+	 	% "    t =\n" %> t'	% "\n") -}
+		(XVar v, t')
 	
 	Nothing		-> panic stage $ "reconX: Variable " % v % " is not bound"
 
@@ -191,14 +191,14 @@ reconS :: Map Var Type -> Stmt -> (Map Var Type, (Stmt, Type))
 reconS tt (SBind Nothing x)	
  = let	(x', tx)	= reconX tt x
    in	( tt
-   	, ( SBind Nothing (dropXTau x' [] (packT tx) )
+   	, ( SBind Nothing (dropXTau x' Map.empty (packT tx) )
 	  , tx))
 
 reconS tt (SBind (Just v) x)
  = let	(x', tx)	= reconX tt x
 	tt'		= addVT tt (v, tx)
    in	( tt'
-   	, (SBind (Just v) (dropXTau x' [] (packT tx))
+   	, (SBind (Just v) (dropXTau x' Map.empty (packT tx))
 	  , tx))
 	  
 
@@ -241,7 +241,7 @@ applyValueT
 		, Effect)	-- effect caused
 
 applyValueT t1 t2
- = {- trace
+ =  {- trace
  	( "applyValueT\n"
 	% "  t1 = " %> t1 % "\n"
 	% "  t2 = " %> t2 % "\n")

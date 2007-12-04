@@ -17,7 +17,9 @@ stage	= "Core.Util.Subsumes"
 --
 subsumes :: Bool -> Type -> Type -> Bool
 subsumes topECVars t s
- = let ?topECVars	= topECVars
+ = let 	?topECVars	= topECVars
+	?t		= t
+	?s		= s
    in	subsumes' t s
 	
 subsumes' t s
@@ -99,27 +101,34 @@ subsumes' t s
 	, ts == ss
 	= True
 	
+	--
+	| otherwise
+	= False
 
 	-- If we were told that we're in a contra-variant branch then allow
 	--	effect and closure variables to subsume everything
 	--	BUGS: 	this is nasty, and wrong
 	--		before this is valid we need to prove that there are no Pure constraints
 	--		on effects, or if there are - that the effects subsumed don't contain 
-	| TVar k v		<- t
+{-	| TVar k v		<- t
 	, elem k [KEffect, KClosure]
 	, ?topECVars
 	= warning stage
 		("subsumes: did a nasty, unchecked subsumpton. s <: t\n"
 		% "   s = " % s	% "\n"
 		% "   t = " % t % "\n")
-		True
-		
+		False
+-}	
 	-----
-	| otherwise
+{-	| otherwise
 	= freakout stage
 		 ("subsumes:  S is not <: T\n"
 		% "    S = " % s % "\n"
-		% "    T = " % t % "\n\n")
+		% "    T = " % t % "\n\n"
+		% "    when checking\n"
+		% "    s = " % ?s % "\n"
+		% "    t = " % ?t % "\n")
+		
 		$ False
-	
+-}
 

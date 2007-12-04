@@ -188,7 +188,7 @@ slurpDataRT tt
 
 	TFetters fs t		-> slurpDataRT t
 
-	TError k		-> []
+	TError k t		-> []
 
 	_ 	-> panic stage
 		$  "slurpDataRT: no match for " % tt % "\n"

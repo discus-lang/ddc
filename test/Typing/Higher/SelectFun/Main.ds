@@ -1,0 +1,38 @@
+
+
+
+succ :: Int %r1 -> Int %r1;
+succ x 	= x + 1;
+
+increment x	
+ = do {	x := x + 1; x; };
+
+-- f and g are forced to be functions
+{-
+selectFun1 x f g 
+ = case x of {
+ 	True	-> f;
+	False	-> g;
+	False	-> (\x -> x);
+ };
+-}
+
+-- f and g are forced to be functions, the effect of which includes !Console
+selectFun2 x f g 
+ = case x of {
+ 	True	-> f;
+	False	-> g;
+	False	
+	 -> do {
+	 	h y	=  do { print (showInt y); y; };
+		h; 
+	  };
+		
+ };
+
+
+main ()
+ = do {
+ --	print (showInt (selectFun1 True succ increment 5));
+	print (showInt (selectFun2 True succ increment 5));
+ };

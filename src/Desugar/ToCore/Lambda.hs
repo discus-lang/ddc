@@ -61,6 +61,7 @@ fillLambdas' v tsWhere tScheme x
 	| TWhere tRest vts		<- tScheme
 	= do	let tsWhere'	= Map.union tsWhere (Map.fromList vts)
 		x'	<- fillLambdas' v tsWhere' tRest x
+--		return	$ XTet vts x'
 		return	$ x'
 
 	| TFunEC t1 t2 eff clo		<- tScheme

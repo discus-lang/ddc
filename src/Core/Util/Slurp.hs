@@ -204,8 +204,12 @@ slurpBoundVarsS ss
 -- | Decend into this expression and annotate the first value found with its type
 --	doing this makes it possible to slurpType this expression
 --
-dropXTau :: Exp -> [(Var, Type)] -> Type -> Exp
+dropXTau :: Exp -> Map Var Type -> Type -> Exp
 dropXTau xx env tt
+	-- load up bindings into the environment
+	| TWhere t vts		<- tt
+	= dropXTau xx (Map.union (Map.fromList vts) env) t
+
 	-- decend into XLAMs
 	| XLAM v t x		<- xx
 	, TForall v t1 t2	<- tt
@@ -220,13 +224,10 @@ dropXTau xx env tt
 	, TFunEC _ t2 _ _	<- tt
 	= XLam v t (dropXTau x env t2) eff clo
 	
-	-- skip over XTets
+	-- If we see an XTet on the way down then we won't need to give a TWhere
+	--	for that binding, it'll already be in scope.
 	| XTet vts x		<- xx
-	= XTet vts $ dropXTau x env tt
-	
-	-- load up bindings into the environment
-	| TWhere t vts	<- tt
-	= dropXTau xx (vts ++ env) t
+	= XTet vts $ dropXTau x (foldr Map.delete env $ map fst vts) tt
 
 	-- there's already an XTau here,
 	--	no point adding another one, 
@@ -236,4 +237,4 @@ dropXTau xx env tt
 	
 	-- we've hit a value, drop the annot
 	| otherwise
-	= XTau (packT $ makeTWhere tt env) xx
+	= XTau (packT $ makeTWhere tt (Map.toList env)) xx

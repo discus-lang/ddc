@@ -435,7 +435,7 @@ libraryModules =
 	, "Data/ArrayU"
 	, "DDC/Runtime"
 	, "System/File"
-	, "Prelude"
+	, "Prelude" ]
 {-	, "Math/Util"
 	, "Math/Vec2"
 	, "Math/Matrix/Matrix33"

@@ -1,0 +1,11 @@
+
+
+succ :: Int %r1 -> Int %r1;
+succ x = x + 1;
+
+danio g	= g 5;
+
+perch f = succ (f succ);
+
+main ()
+ = 	print (showInt (perch danio));

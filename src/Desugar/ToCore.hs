@@ -255,7 +255,7 @@ toCoreS (D.SBind _ (Just v) x)
 	xLam		<- fillLambdas v tScheme xCore
 
 	returnJ 	$ C.SBind (Just v) 
-			$ C.dropXTau xLam [] tScheme
+			$ C.dropXTau xLam Map.empty tScheme
 
 
 toCoreS	D.SSig{}
@@ -272,13 +272,13 @@ toCoreX xx
 	D.XLambdaTEC 
 		_ v x (T.TVar T.KData vTV) effVar cloVar
 	 -> do	
-		vT	<- liftM (C.stripContextT . C.flattenT)
+		vT	<- liftM (C.stripContextT) --  . C.flattenT)
 			$ getType vTV
 
 		-- If the effect/closures were vars then look them up from the graph
 		effLet	<- case effVar of
 				T.TVar T.KEffect vE	
-				 -> do	e	<- liftM (C.stripContextT . C.flattenT) 
+				 -> do	e	<- liftM (C.stripContextT ) -- . C.flattenT) 
 				 		$ getType vE
 				 	return	$ Just (vE, e)
 
@@ -287,7 +287,7 @@ toCoreX xx
 				
 		cloLet	<- case cloVar of
 				T.TVar T.KClosure vC	
-				 -> do	c	<- liftM (C.stripContextT . C.flattenT)
+				 -> do	c	<- liftM (C.stripContextT ) -- . C.flattenT)
 				 		$ getType vC
 				 	return	$ Just (vC, c)
 				 
@@ -310,6 +310,8 @@ toCoreX xx
 
 		x'	<- toCoreX x
 		
+		-- need to add these let expressions in.
+		--	not all bindings have schemes, so we can't get them anywhere else.
 		return	$ C.makeXTet (catMaybes [mEffLet, mCloLet])
 			$ C.XLam v vT 
 				x'

@@ -228,8 +228,9 @@ followT table tt
 	 -> do	f'	<- transZM table f
 		return	$ TFetter f'
 
-	TError k 
-	 -> 	return tt	
+	TError k t
+	 -> do	t'	<- transZM table t
+	  	return 	$ TError k t'
 
 
 	TNode cid t
@@ -299,6 +300,11 @@ instance Monad m => TransM m Fetter
 	 -> do	t1'		<- transZM table t1
 	 	t2'		<- transZM table t2
 		transF table	$ FLet t1' t2'
+
+	FMore t1 t2
+	 -> do	t1'		<- transZM table t1
+	 	t2'		<- transZM table t2
+		transF table	$ FMore t1' t2'
 	
 	FProj pj t1 t2 t3 eff clo
 	 -> do	t1'		<- transZM table t1

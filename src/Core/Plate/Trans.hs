@@ -2,6 +2,7 @@
 
 module Core.Plate.Trans
 	( TransTable(..)
+	, TransM
 	, transTableId
 	, dropStateM
 

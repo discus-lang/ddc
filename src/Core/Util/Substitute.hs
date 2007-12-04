@@ -15,9 +15,9 @@ import qualified Debug.Trace	as Debug
 
 -----
 substituteT 
-	:: Map Var Type 
-	-> Type
-	-> Type
+	:: (TransM (State ()) a)
+	=> Map Var Type
+	-> a -> a
 	
 substituteT sub tt
  = transZ 

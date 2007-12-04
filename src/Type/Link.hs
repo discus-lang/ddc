@@ -92,7 +92,11 @@ linkType mParent bound tt
 	TTag v		-> return tt
 		
 		
-	TError k	-> return tt
+	-- Don't link error types to the graph.
+	--	It's probably not going to be useful.
+	TError k t	-> return tt
+
+
 	TClass k cid	-> return tt
 
 	_ 	-> panic stage

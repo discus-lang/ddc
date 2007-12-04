@@ -113,7 +113,7 @@ data Type
 	| TClass	Kind	ClassId			-- ^ A reference to some equivalence class.
 	| TAccept	Type				-- ^ The eq class can only be this type.
 	| TFetter	Fetter				-- ^ Holds a fetter, so we can put it in an equivalence class.
-	| TError        Kind				-- ^ Classes with unification errors get their queues set to [TError].
+	| TError        Kind	Type			-- ^ Classes with unification errors get their queues set to [TError].
 
 	| TNode		Type	Type			-- ^ A type along with its node name
 							--	t1 should be TClass or TVar
@@ -148,6 +148,7 @@ data Type
 data Fetter
 	= FConstraint	Var	[Type]			-- ^ Constraint between types.
 	| FLet		Type	Type			-- ^ Equality of types, t1 must be TVar or TClass
+	| FMore		Type	Type			-- ^ t1 :> t2
 
 	-- | projection function is t1 = t2 -(eff clo)> t3
 	| FProj		TProj	Type Type Type Effect Closure

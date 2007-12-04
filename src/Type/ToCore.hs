@@ -84,11 +84,18 @@ toCoreT	   t
 			(reverse vsKinds)
 	   
 	T.TFetters fs t
-	 -> let	(fsLet, fsRest)	= partition ((=@=) T.FLet{}) fs
-		
+	 -> let	
+	 	-- separate out all the FLet bindings, we'll add these as a TWhere to the core type
+	 	(fsLet, fsRest1)	
+	 		= partition ((=@=) T.FLet{}) fs
+				
+		-- separate out all the :> constraints, these get added to the type as bounds on the foralls
+		(fsMore, fsRest2)
+			= partition ((=@=) T.FMore{}) fsRest1
+				
 		vts		= [ (v, toCoreT t) | T.FLet (T.TVar k v) t	<- fsLet]
 
-	    in	C.makeTWhere (addContexts (map toCoreF fsRest) (toCoreT t)) vts
+	    in	C.makeTWhere (addContexts (map toCoreF fsRest2) (toCoreT t)) vts
 	
 	T.TSum k ts		-> C.TSum (toCoreK k) (map toCoreT ts)
 
