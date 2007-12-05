@@ -86,7 +86,7 @@ lintBoundV tt v
 lintX :: Map Var Type -> Exp -> LintM ()
 
 lintX tt (XLAM v t x)	
- = do	tt'	<- addVT tt (v, t)
+ = do	tt'	<- addVT tt (varOfBind v, t)
  	lintX tt' x
 	lintT tt' t
 	return ()
@@ -160,7 +160,7 @@ lintT tt TNil
  =	addError $ prettyp "Found a TNil\n"
 
 lintT tt (TForall v t1 t2)
- = do	tt'	<- addVT tt (v, t1)
+ = do	tt'	<- addVT tt (varOfBind v, t1)
  	lintT tt' t2
 	
 lintT tt (TContext t1 t2)

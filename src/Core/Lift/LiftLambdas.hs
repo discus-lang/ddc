@@ -100,7 +100,7 @@ chopInnerS2	topName	(SBind (Just v) x)
 	let Just t	= maybeSlurpTypeX x
 	let x'		= XTau t 
 			$ unflattenApps
-			$ (XVar vSuper : map makeSuperArg (freeVKs ++ freeVTs))
+			$ (XVar vSuper : map makeSuperArg ([(varOfBind b, t) | (b, t) <- freeVKs] ++ freeVTs))
 
 	return	$ SBind (Just v) x'
 	

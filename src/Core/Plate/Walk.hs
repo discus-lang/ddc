@@ -144,10 +144,10 @@ walkZM2 z xx
 	-- core constructs
 	XVar v			-> return xx
 	
-	XLAM v t x	
+	XLAM b t x
 	 -> do	t'		<- walkZM z t
-		x'		<- walkZM (bindT v t' z) x
-	 	return		$ XLAM v t' x'
+		x'		<- walkZM (bindT (varOfBind b) t' z) x
+	 	return		$ XLAM b t' x'
 
 	XLam v t x eff clo
 	 -> do	x'		<- walkZM (bindT v t z) x

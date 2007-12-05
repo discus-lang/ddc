@@ -8,8 +8,8 @@ module Desugar.ToCore.Base
 	, newVarN
 	, getType
 	, getKind
-	, lookupInst
-	, withPortSub )
+	, lookupInst)
+--	, withPortSub )
 
 where
 
@@ -55,13 +55,6 @@ data CoreS
 	  -- | a set of all the vars which are ports
 	, corePortVars		:: Set Var
 
-	  -- | the substitution from the contra-variant port rewrite.
-	, corePortTable		:: Map Var (Map Var C.Type)
-
-	  -- | what port substitution we're currently using.
-	  --	This changes when we enter a let-binding.
-	, corePortSub		:: Maybe (Map Var C.Type)
-
 	  -- | table of type based projections.
 	, coreProject		:: ProjTable
 
@@ -77,8 +70,6 @@ initCoreS
 	, coreMapTypes		= Map.empty
 	, coreMapInst		= Map.empty
 	, corePortVars		= Set.empty
-	, corePortTable		= Map.empty
-	, corePortSub		= Nothing
 	, coreProject		= Map.empty
 	, coreGenValue		= Var.XBind "xC" 0 }
 
@@ -114,18 +105,7 @@ getType' vT
 	  % "  visible vars = " % Map.keys mapTypes % "\n"
 
 	 Just t	
-	  -> applyPortSub $ T.toCoreT t
-
-
--- | apply the current port substitution to this type
-applyPortSub :: C.Type -> CoreM C.Type
-applyPortSub tt
- = do	mPortSub	<- gets corePortSub
- 	case mPortSub of
-	 Nothing	-> return tt
-	 Just portSub	-> return $ C.substituteT portSub tt
-
-
+	  -> 	return $ T.toCoreT t
 
 
 -- | Get the kind of this variable.
@@ -158,31 +138,3 @@ toCoreInfo ii
 	 -> T.InstanceLetRec v1 v2 (liftM T.toCoreT mt)
 	
 
--- | Do this action while using the port substitution that we got
---	when this var was generalised.
-withPortSub
-	:: Var -> CoreM a -> CoreM a
-
-withPortSub var f
- = do	
-	-- remember the current substitution
- 	oldSub		<- gets corePortSub
-
-	-- set the substitition associated with the var
- 	portTable	<- gets corePortTable
---	let Just thisSub = 
---		Map.lookup var portTable
-
-	modify $ \s -> s { corePortSub = Map.lookup var portTable }
-	
-	-- run the action
-	x	<- f
-	
-	-- restore the old substitution
-	modify $ \s -> s { corePortSub = oldSub }
-	
-	return x
-	
-	
-	
-	

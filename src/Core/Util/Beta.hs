@@ -72,8 +72,8 @@ betaXM x
 
 betaX :: Exp -> BetaM Exp
 
-betaX (XAPP (XLAM v t1 x) t)
- = do	bindType v t t1
+betaX (XAPP (XLAM b t1 x) t)
+ = do	bindType (varOfBind b) t t1
  	return	$ x
 	
 betaX (XApp (XTet vts x1) x2 eff)

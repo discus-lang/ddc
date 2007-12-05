@@ -65,7 +65,7 @@ toCoreTree
 	typeTable
 	typeInst
 	quantVars
-	portTable
+	_
 	projTable
 	sTree
 
@@ -77,7 +77,6 @@ toCoreTree
 		, coreMapTypes		= typeTable
 		, coreMapInst		= typeInst
 		, corePortVars		= quantVars
-		, corePortTable		= Map.map (Map.map toCoreT) portTable
 		, coreProject		= projTable }
 		
 	mTree	= evalState 
@@ -133,12 +132,7 @@ toCoreP	p
 	 	let Just vT	= Map.lookup v sigmaTable
 	 
 	 	Just (C.SBind (Just v) x') 
-			
-			-- Rewrite the RHS of the binding while using the type substitution
-			--	we got when we did the contra-variant port rewrite on the 
-			--	generalised type of v.
-			<- withPortSub vT 
-			$ toCoreS (D.SBind nn (Just v) x)
+			<- toCoreS (D.SBind nn (Just v) x)
 
 		return	[C.PBind v x']
 
@@ -272,13 +266,28 @@ toCoreX xx
 	D.XLambdaTEC 
 		_ v x (T.TVar T.KData vTV) effVar cloVar
 	 -> do	
-		vT	<- liftM (C.stripContextT) --  . C.flattenT)
-			$ getType vTV
+		-- Only keep effect and closure bindings which are not quantified so they don't
+		--	conflict with constraints on /\ bound vars.
+		--
+		-- Strip contexts off argument types, if we need the associated witnesses then these
+		--	will be passed into the outer function.
+		--
+		tArg1		<- getType vTV
+		let (argQuant, argTet, argContext, argShape)
+				= C.stripSchemeT tArg1
+
+		portVars	<- gets corePortVars
+		let tArg	= C.buildScheme
+					argQuant
+					[(v, t)	| (v, t)	<- argTet
+						, not $ Set.member v portVars]
+					[]
+					argShape
 
 		-- If the effect/closures were vars then look them up from the graph
 		effLet	<- case effVar of
 				T.TVar T.KEffect vE	
-				 -> do	e	<- liftM (C.stripContextT ) -- . C.flattenT) 
+				 -> do	e	<- liftM (C.stripContextT)
 				 		$ getType vE
 				 	return	$ Just (vE, e)
 
@@ -287,7 +296,7 @@ toCoreX xx
 				
 		cloLet	<- case cloVar of
 				T.TVar T.KClosure vC	
-				 -> do	c	<- liftM (C.stripContextT ) -- . C.flattenT)
+				 -> do	c	<- liftM (C.stripContextT)
 				 		$ getType vC
 				 	return	$ Just (vC, c)
 				 
@@ -313,7 +322,7 @@ toCoreX xx
 		-- need to add these let expressions in.
 		--	not all bindings have schemes, so we can't get them anywhere else.
 		return	$ C.makeXTet (catMaybes [mEffLet, mCloLet])
-			$ C.XLam v vT 
+			$ C.XLam v tArg
 				x'
 				eff clo
 
@@ -469,7 +478,7 @@ toCoreX xx
 		tScheme		<- getType v
 		mapInst		<- gets coreMapInst
 
-		let (vtsForall, vtsWhere, tsContextC, tShape)
+		let (btsForall, vtsWhere, tsContextC, tShape)
 				= C.stripSchemeT tScheme
 		
 		-- TODO: break this out into a separate fn
@@ -500,19 +509,11 @@ toCoreX xx
 			--	type arguements for the instantiation.
 			let tsInstCE	= map C.stripContextT tsInstC
 			
-			-- If we're in a substitution context do to a contra-variant port rewrite,
-			--	then apply it to the arguments.
-			mPortSub 	<- gets corePortSub
-			let tsInstC_portSub	= 
-				case mPortSub of
-				 Nothing	-> tsInstCE
-				 Just portSub	-> map (C.substituteT portSub) tsInstCE
-
-			let tsInstC_packed	= map C.packT tsInstC_portSub
+			let tsInstC_packed	= map C.packT tsInstCE
 			
 			-- Work out what types belong to each quantified var in the type
 			--	being instantiated.			
-			let tsSub	= Map.fromList $ zip (map fst vtsForall) tsInstC_packed
+			let tsSub	= Map.fromList $ zip (map (C.varOfBind . fst) btsForall) tsInstC_packed
 
 			-- If this function needs a witnesses we'll just make them up.
 			--	Real witnesses will be threaded through in a later stage.
@@ -524,7 +525,6 @@ toCoreX xx
 				% "    context         = " % tsContextC		% "\n"
 				% "    tsInstC         = " % tsInstC            % "\n"
 				% "    tsInstCE        = " % tsInstCE		% "\n"
-				% "    tsInstC_portSub = " % tsInstC_portSub	% "\n"
 				% "    tsInstC_packed  = " % tsInstC_packed	% "\n"
 				% "    tsSub           = " % tsSub 		% "\n"
 				% "    tsContestC'     = " % tsContextC' 	% "\n")

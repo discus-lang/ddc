@@ -69,8 +69,33 @@ hasFetter v fs
 
 -----
 toCoreT:: T.Type -> C.Type
-toCoreT	   t
- = case t of
+toCoreT	   tt
+ = case tt of
+	-- Check for constraints on quantifiers
+	--	If any are present they'll be in the list of fetters
+	T.TForall vsk (T.TFetters fs t)
+	 -> let	(fsMore, fsRest)	
+			= partition ((=@=) T.FMore{}) fs
+
+		vsMore	= [(v, t)	| T.FMore (T.TVar _ v) t	<- fsMore]
+
+		vs'	= Var.sortForallVars 
+			$ map fst vsk
+
+		bsKinds	= map	(\v -> ( case lookup v vsMore of
+						Nothing	-> C.BVar v
+						Just t	-> C.BMore v (toCoreT t)
+
+				       , C.TKind $ toCoreK $ fromJust $ lookup v vsk))
+				vs'
+
+		t'	= toCoreT (T.TFetters fsRest t)
+
+	   in	foldl (\t (b, k) -> C.TForall b k t)
+	   		t'
+			(reverse bsKinds)
+
+	-- Forall with no fetters underneath
 	T.TForall vs t
 	 -> let vs'	= Var.sortForallVars 
 			$ map fst vs
@@ -79,8 +104,10 @@ toCoreT	   t
 				       , C.TKind $ toCoreK $ fromJust $ lookup v vs))
 				vs'
 
-	   in	foldl (\t (v, k) -> C.TForall v k t)
-	   		(toCoreT t)
+		t'	= toCoreT t
+
+	   in	foldl (\t (v, k) -> C.TForall (C.BVar v) k t)
+	   		t'
 			(reverse vsKinds)
 	   
 	T.TFetters fs t
@@ -89,13 +116,9 @@ toCoreT	   t
 	 	(fsLet, fsRest1)	
 	 		= partition ((=@=) T.FLet{}) fs
 				
-		-- separate out all the :> constraints, these get added to the type as bounds on the foralls
-		(fsMore, fsRest2)
-			= partition ((=@=) T.FMore{}) fsRest1
-				
 		vts		= [ (v, toCoreT t) | T.FLet (T.TVar k v) t	<- fsLet]
 
-	    in	C.makeTWhere (addContexts (map toCoreF fsRest2) (toCoreT t)) vts
+	    in	C.makeTWhere (addContexts (map toCoreF fsRest1) (toCoreT t)) vts
 	
 	T.TSum k ts		-> C.TSum (toCoreK k) (map toCoreT ts)
 
@@ -123,7 +146,7 @@ toCoreT	   t
 
 	T.TNode _ t		-> toCoreT t
 
-	_ -> panic stage $ "toCoreT: failed to convert " ++ show t
+	_ -> panic stage $ "toCoreT: failed to convert " ++ show tt
 
 
 -----

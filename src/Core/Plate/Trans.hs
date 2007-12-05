@@ -250,6 +250,19 @@ followV_bind table v
  = do	v1	<- transV_bind  table v
  	v2	<- transV	table v1
 	return v2
+
+
+followB_bind table (BVar v)
+ = do	v1	<- transV_bind  table v
+ 	v2	<- transV	table v1
+	return (BVar v2)
+
+followB_bind table (BMore v t)
+ = do	v1	<- transV_bind  table v
+ 	v2	<- transV	table v1
+	t'	<- followT table t
+	return (BMore v2 t')
+
 	
 -----
 instance Monad m => TransM m Top where
@@ -335,7 +348,7 @@ transXM2 table xx
 	 	transX table	$ XVar v'
 
 	XLAM v k x
-	 -> do	v'		<- followV_bind table v
+	 -> do	v'		<- followB_bind table v
 	 	k'		<- followT table k
 		x'		<- followX table x
 		transX table	$ XLAM v' k' x'
@@ -490,10 +503,11 @@ instance Monad m => TransM m Type where
  	TNil
 	 ->	transT table tt
 	 
-	TForall v t1 t2
-	 -> do	t1'		<- followT table t1
+	TForall b t1 t2
+	 -> do	b'		<- followB_bind table b
+	 	t1'		<- followT table t1
 	 	t2'		<- followT table t2
-	 	transT table	$ TForall v t1' t2'
+	 	transT table	$ TForall b' t1' t2'
 
 	TContext l t
 	 -> do	t'		<- followT table t

@@ -37,7 +37,7 @@ lambdaFreeVarsP
 	:: Top
 	-> LiftM 
 		( Top
-		, [(Var, Type)]		-- type/region/effect/class vars bound
+		, [(Bind, Type)]	-- type/region/effect/class vars bound
 		, [(Var, Type)])	-- value vars bound
 		
 
@@ -48,20 +48,6 @@ lambdaFreeVarsP
 	vsBoundTop	<- gets stateTopVars
 
  	let vsFree	= Set.difference (freeVarsX x) vsBoundTop
-{-	let vsFreeV	= filter (\v -> Var.nameSpace v == NameValue) 
-			$ Set.toList vsFree
-
-	-- We'll be binding the types of free vars, which might contain TREC vars.
-	-- These need to be passed to, so check the types for free vars also.
-	tsFreeV		<- mapM getType vsFreeV
-
-	let vsFreeV_types 	
-			= Set.difference (Set.unions $ map freeVarsT tsFreeV)
-			vsBoundTop
-	
-	let freeX	= Set.toList $ Set.union vsFree vsFreeV_types
--}
---	let freeX	= vsFree	
 
 	-- The vars defined at top-level are always in scope.
 	let freeVars	= Set.toList vsFree
@@ -72,24 +58,17 @@ lambdaFreeVarsP
 			$ freeVars
 
 	freeKs		<- mapM getKind freeTREs
-	let freeVKs	= zip freeTREs $ map TKind freeKs
+
+	-- BUGS: bound quantification isn't being preserved here
+	let freeVKs	= zip (map BVar freeTREs) $ map TKind freeKs
 
 	freeTs		<- mapM getType freeVs
 
-	-- strip any context and tets from the arg types, 
-	--	we'll add these on the front of the actual super
---	let (tetcs, freeTs2)	= unzip $ map stripArgType freeTs
---	let (tets, classess)	= unzip tetcs
---	let tsClasses		= concat classess
-
 	let freeVTs	= zip freeVs freeTs
 
---	classVs 		<- replicateM (length tsClasses) (newVar NameClass) 
---	let classVTs	= zip classVs tsClasses
 	
 	-- Add new lambdas to bind all the free vars
 	let xLambdas	= addLAMBDAs freeVKs
---			$ addLAMBDAs classVTs
 			$ addLambdas freeVTs x
 
 	-- all done
@@ -105,12 +84,7 @@ lambdaFreeVarsP
 	 (pretty	$ "* bindFreeVarsP\n"
 			% "    v             (var of binding being lifted) = " % v % "\n"
 			% "    vsFree        (vars free in binding)        = " % Set.toList vsFree	% "\n"
---			% "    vsFreeV       (value vars free in binding)  = " % vsFreeV	% "\n"
---                        % "    tsFreeV       (types of vsFreeV)            = " % tsFreeV	% "\n"
---			% "    vsFreeV_types (free vars of type of vsFree) = " % Set.toList vsFreeV_types	% "\n"
---	 		% "    freeX         (vars free in binding)        = " % (map Var.bind $ freeX) % "\n\n"
 			% "    freeVKs       (type vars free)              = " % freeVKs  	% "\n"
---			% "    classVTs      (class vars free)             = " % classVTs	% "\n"
 			% "    freeVTs       (value vars free)             = " % freeVTs	% "\n\n"
 			% "    tBound        (new type for binding)         =\n"
 			%> tBound % "\n")
@@ -132,7 +106,7 @@ stripArgType t
 -- stripLambdas
 -- |	strip the lambdas off an expression
 --
-stripLambdas ::	Exp -> ([(Var, Type)], [(Var, Type)], Exp)
+stripLambdas ::	Exp -> ([(Bind, Type)], [(Var, Type)], Exp)
 stripLambdas	x
  = case x of
  	XLam v t x eff clo	

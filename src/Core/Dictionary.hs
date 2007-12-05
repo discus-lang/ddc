@@ -141,7 +141,7 @@ rewriteOverApp
 				ttSub
 		
 		-- Work out the type args to pass to the instance function.
-		vsForall	= map fst vtsForall
+		vsForall	= map (varOfBind . fst) vtsForall
 		tsInstArgs	= map (\v -> let Just t = lookup v vtSub in t) 		vsForall
 		tsClassArgs	= map (\c -> substituteT (Map.fromList vtSub) c)	csClass
 
@@ -238,7 +238,7 @@ determineInstance
 	tsArgsQuant	= map (\(XAppFP (XType t) _) -> t) xsArgsQuant
 	
 	-- Substitute the bound types into the context
-	tsSubst		= Map.fromList $ zip vsForall tsArgsQuant
+	tsSubst		= Map.fromList $ zip (map varOfBind vsForall) tsArgsQuant
 	tsClassParams'	= map (substituteT tsSubst) tsClassParams
 	cClassInst	= TClass vClass tsClassParams'
 

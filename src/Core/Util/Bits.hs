@@ -1,4 +1,8 @@
 
+-- | Bits and pieces for working on Core.Exp.
+--	These are the simplest utils at the bottom of the dependency tree.
+--	They shouldn't depend on any other Core modules besides Exp.
+--
 module Core.Util.Bits
 	( isXApp
 	, isXLambda
@@ -392,10 +396,10 @@ crushToXDo ss
 	_		-> XDo ss
 	
 
-
+-- | Build the type of a constructor
 makeCtorTypeAVT :: [Type] -> Var -> [Var] -> Type
 makeCtorTypeAVT    argTypes dataVar ts
- 	= foldl (\t v -> TForall v (TKind $ defaultKindV v) t)
+ 	= foldl (\t v -> TForall (BVar v) (TKind $ defaultKindV v) t)
 		(unflattenFunE (argTypes ++ [TData dataVar (map (TVar KData) ts)]))
 		(reverse ts)
 
@@ -469,15 +473,14 @@ crushClo cc
  	TBot KClosure		-> []
 	TSum KClosure cs	-> catMap crushClo cs
 	_			-> [cc]
-	
 
 
------
+-- slurp out all the regions free in this type
 boundRsT ::	Type -> Set Var
 boundRsT	t
  = case t of
-	TForall v k t
-	 -> boundRsT t `Set.difference` (Set.fromList $ [v])
+	TForall b k t
+	 -> boundRsT t `Set.difference` (Set.singleton $ varOfBind b)
 	 
 	TFunEC t1 t2 eff env
 	 -> boundRsT t1 `Set.union` boundRsT t2
@@ -501,7 +504,7 @@ boundRsT	t
 boundVsT :: Type -> [Var]
 boundVsT tt
  = case tt of
-	TForall	 v k   t	-> v : boundVsT t
+	TForall	 b k   t	-> varOfBind b : boundVsT t
 --	TLet     v t1  t2	-> v : boundVsT t2
 	_			-> []
 
@@ -608,7 +611,7 @@ addLambdas	vts x
 	((v, t) : vts)		-> XLam v t (addLambdas vts x) (TTop KEffect) (TTop KClosure)
 	
 	
-addLAMBDAs ::	[(Var, Type)] -> Exp -> Exp
+addLAMBDAs ::	[(Bind, Type)] -> Exp -> Exp
 addLAMBDAs	vks x
  = case vks of
  	[]			-> x

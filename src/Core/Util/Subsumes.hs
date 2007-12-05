@@ -9,15 +9,18 @@ import Core.Pretty
 import Shared.Error
 import Util
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 --
 stage	= "Core.Util.Subsumes"
 
--- | Check if one type subsumes another
+-- | Check if t subsumes s another. t :> s
 --	BUGS: assumes that effect and closures in data types are all covariant
 --
-subsumes :: Bool -> Type -> Type -> Bool
-subsumes topECVars t s
- = let 	?topECVars	= topECVars
+subsumes :: Map Var Type -> Type -> Type -> Bool
+subsumes tableMore t s
+ = let 	?tableMore	= tableMore
 	?t		= t
 	?s		= s
    in	subsumes' t s
@@ -53,6 +56,14 @@ subsumes' t s
 	, TVar sKind sVar	<- s
 	, tKind == sKind
 	, tVar == sVar
+	= True
+
+	-- 
+	-- If we know 
+	--	(s <: T2) and (T2 <: t) then s <: t
+	| TVar tKind tVar	<- t
+	, Just t2		<- Map.lookup tVar ?tableMore
+	, subsumes' t2 s
 	= True
 
 	-- anything subsumes bottom

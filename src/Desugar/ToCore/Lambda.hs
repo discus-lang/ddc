@@ -44,29 +44,29 @@ fillLambdas v tScheme x
  	("* Desugar.ToCore.fillLambdas\n"
  	% "    v       = " % v % 	"\n"
 	% "    tScheme =\n" %> tScheme %	"\n")  -}
-	(fillLambdas' v Map.empty tScheme x)	
+	(fillLambdas' Map.empty tScheme x)	
 	
 	
-fillLambdas' v tsWhere tScheme x
+fillLambdas' tsWhere tScheme x
  	| TForall v k tRest		<- tScheme
-	= do	x'	<- fillLambdas' v tsWhere tRest x
+	= do	x'	<- fillLambdas' tsWhere tRest x
 		return	$ XLAM v k x'
 	
 	-- Give this witness a new name so we can refer to it later on.
 	| TContext c tRest		<- tScheme
-	= do	x'	<- fillLambdas' v tsWhere tRest x
+	= do	x'	<- fillLambdas' tsWhere tRest x
 		v'	<- newVarN NameClass
-		return	$ XLAM v' c x'
+		return	$ XLAM (BVar v') c x'
 
 	| TWhere tRest vts		<- tScheme
 	= do	let tsWhere'	= Map.union tsWhere (Map.fromList vts)
-		x'	<- fillLambdas' v tsWhere' tRest x
+		x'	<- fillLambdas' tsWhere' tRest x
 --		return	$ XTet vts x'
 		return	$ x'
 
 	| TFunEC t1 t2 eff clo		<- tScheme
 	, XLam v _ x' _ _		<- x
- 	= do	x2		<- fillLambdas' v tsWhere t2 x'
+ 	= do	x2		<- fillLambdas' tsWhere t2 x'
 		return	$ XLam v t1 x2 eff clo
 
 	| otherwise

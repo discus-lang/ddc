@@ -17,7 +17,7 @@ import qualified Shared.Var	as Var
 
 -----
 stripSchemeT	:: Type 
-		-> 	( [(Var, Type)]
+		-> 	( [(Bind, Type)]
 			, [(Var, Type)]
 			, [Class] 
 			, Type)
@@ -57,7 +57,7 @@ stripSchemeT' forallVTs tetVTs classes tt
 
 
 -----
-buildScheme ::	[(Var, Type)] -> [(Var, Type)] -> [Class] -> Type -> Type
+buildScheme ::	[(Bind, Type)] -> [(Var, Type)] -> [Class] -> Type -> Type
 buildScheme	forallVTs bindVTs classes shape
  = let	tC	= foldl (\s c	   -> TContext c s)  shape	$ reverse classes
 
@@ -71,7 +71,7 @@ buildScheme	forallVTs bindVTs classes shape
 
 
 slurpForallsT 
-	:: Type -> [(Var, Type)]
+	:: Type -> [(Bind, Type)]
 
 slurpForallsT tt
  = let 	(forallVTs, _, _, _)	= stripSchemeT tt
@@ -82,7 +82,11 @@ slurpForallsT tt
 slurpForallContextT :: Type -> [Type]
 slurpForallContextT tt
  = case tt of
- 	TForall v t1 t2	-> (TVar (kindOfSpace $ Var.nameSpace v) v) : slurpForallContextT t2
+ 	TForall b t1 t2	
+	 -> let	v	= varOfBind b
+	    	k	= kindOfSpace $ Var.nameSpace v
+	    in	TVar k v : slurpForallContextT t2
+
 	TContext t1 t2	-> t1 : slurpForallContextT t2
 	TWhere t1 vts	-> slurpForallContextT t1
 	_		-> []
@@ -97,6 +101,7 @@ stripToShapeT :: Type -> Type
 stripToShapeT tt
  = case tt of
  	TForall  v k t		-> stripToShapeT t
+	TWhere   t vts		-> stripToShapeT t
 	TContext c t		-> stripToShapeT t
 	_			-> tt
 

@@ -43,7 +43,7 @@ reconstructTree tHeader tCore
  = let	
  	-- slurp out all the stuff defined at top level
 	topTypes	= catMap slurpTypesP (tHeader ++ tCore)
- 	tt		= foldl addVT Map.empty topTypes
+ 	tt		= foldr addEqVT' initTable topTypes
 	
 	-- reconstruct type info on each top level thing
 	tCore'		= map (reconP tt) tCore
@@ -51,18 +51,48 @@ reconstructTree tHeader tCore
    in	tCore'
 	
 
-addVT :: Map Var Type -> (Var, Type) -> Map Var Type
-addVT tt (v, t)	 
+
+
+addEqVT :: Var -> Type -> Table -> Table
+addEqVT v t tt
  = {- trace 
  	( "addVT: " % v 	% "\n"
  	% "   t = " %> t 	% "\n") -}
-	 case Map.lookup v tt of
-	 	Nothing	-> Map.insert v t tt
-		Just _	-> Map.insert v t (Map.delete v tt)
+	 case Map.lookup v (tableEq tt) of
+	 	Nothing	-> tt { tableEq = Map.insert v t (tableEq tt) }
+		Just _	-> tt { tableEq = Map.insert v t (Map.delete v (tableEq tt)) }
+
+addEqVT' (v, t) tt
+	= addEqVT v t tt
+
+
+addMoreVT :: Var -> Type -> Table -> Table
+addMoreVT v t tt
+ = {- trace 
+ 	( "addVT: " % v 	% "\n"
+ 	% "   t = " %> t 	% "\n") -}
+	 case Map.lookup v (tableMore tt) of
+	 	Nothing	-> tt { tableMore = Map.insert v t (tableMore tt) }
+		Just _	-> tt { tableMore = Map.insert v t (Map.delete v (tableMore tt)) }
+
 	
+-----
+-- | A table to carry additional information we collect when decending into the tree
+--	Eq 		constraints come from type level lets, and value lambda bindings.
+--	More (:>) 	come from constraints on type lambdas bindings.
+--
+data Table
+	= Table
+	{ tableEq	:: Map Var Type		-- T[v1] == t2
+	, tableMore	:: Map Var Type }	-- T[v1] :> t2
+
+initTable
+	= Table
+	{ tableEq	= Map.empty
+	, tableMore	= Map.empty }
 
 -----
-reconP :: Map Var Type -> Top -> Top
+reconP :: Table -> Top -> Top
 
 reconP tt (PBind v x)
  = let	(x', xt)	= reconX tt x
@@ -72,20 +102,25 @@ reconP tt p		= p
 
 
 -- | Reconstruct effect and witness info on this expression
-reconX 	:: Map Var Type 	-- ^ var -> type 
+reconX 	:: Table		-- ^ var -> type 
 	-> Exp 			-- ^ expression to reconstruct info on
 	-> ( Exp		-- expression with reconstructed info
 	   , Type)		-- type of expression
 
+reconX tt (XLAM b@(BMore v t1) t2 x)
+ = let	tt'		= addMoreVT v t1 tt
+ 	(x', tx)	= reconX tt' x
+   in	( XLAM b t2 x'
+   	, TForall b t2 tx)
+
 reconX tt (XLAM v t x)
- = let	-- tt'		= addVT tt (v, t)
- 	(x', tx)	= reconX tt x
+ = let	(x', tx)	= reconX tt x
    in	( XLAM 	  v t x'
     	, TForall v t tx )
    
 reconX tt exp@(XAPP x t)
  = let	(x', tx)	= reconX tt x
-   in	case applyTypeT tx t of
+   in	case applyTypeT tt tx t of
    	 Just t'	-> (XAPP x' t, t')
 	  
 	 _ -> panic stage
@@ -95,7 +130,7 @@ reconX tt exp@(XAPP x t)
 		% "   T[x]    =\n" %> tx	% "\n\n"
 
 reconX tt (XTet vts x)
- = let	tt'		= foldl' addVT tt vts
+ = let	tt'		= foldr addEqVT' tt vts
  	(x', tx)	= reconX tt' x
    in	( XTet   vts x'
    	, TWhere tx vts)
@@ -107,21 +142,20 @@ reconX tt (XTau t x)
    	, t)
 
 reconX tt (XLam v t x eff clo)
- = let	tt'		= addVT tt (v, t)
+ = let	tt'		= addEqVT v t tt
  	(x', tx)	= reconX tt' x
    in	( XLam v t x' eff clo
    	, TFunEC t tx eff clo)
 
 reconX tt (XLocal v vs x)
- = let	tt'		= addVT tt (v, TKind KRegion)
- 	(x', tx)	= reconX tt x
+ = let	(x', tx)	= reconX tt x
    in	( XLocal v vs x'
    	, tx)
 
 reconX tt exp@(XApp x1 x2 eff)
  = let	(x1', x1t)	= reconX tt x1
 	(x2', x2t)	= reconX tt x2
-	mResultTE	= applyValueT x1t x2t
+	mResultTE	= applyValueT tt x1t x2t
 
    in   {-	trace 	( "apply\n"
    		% "  t1     =\n" %> x1t 	% "\n\n"
@@ -165,9 +199,9 @@ reconX tt (XConst c t)
 
 -- BUGS: substitute vars into type
 reconX tt (XVar v)
- = case Map.lookup v tt of
+ = case Map.lookup v (tableEq tt) of
  	Just t		
-	 -> let	t'	= inlineTWheresMapT tt Set.empty t
+	 -> let	t'	= inlineTWheresMapT (tableEq tt) Set.empty t
 	    in  {- trace 
 	 	( "reconX: (XVar " % v % ")\n"
 	 	% "    t =\n" %> t'	% "\n") -}
@@ -184,9 +218,8 @@ reconX tt xx
  	$ "reconX: no match for " ++ show xx
 
 
------------------------
---
-reconS :: Map Var Type -> Stmt -> (Map Var Type, (Stmt, Type))
+-----
+reconS :: Table -> Stmt -> (Table, (Stmt, Type))
 
 reconS tt (SBind Nothing x)	
  = let	(x', tx)	= reconX tt x
@@ -196,15 +229,14 @@ reconS tt (SBind Nothing x)
 
 reconS tt (SBind (Just v) x)
  = let	(x', tx)	= reconX tt x
-	tt'		= addVT tt (v, tx)
+	tt'		= addEqVT v tx tt
    in	( tt'
    	, (SBind (Just v) (dropXTau x' Map.empty (packT tx))
 	  , tx))
 	  
 
------------------------
---
-reconA :: Map Var Type -> Alt -> (Alt, Type)
+-----
+reconA :: Table -> Alt -> (Alt, Type)
 
 reconA tt (AAlt gs x)
  = let	(tt', gs')	= mapAccumL reconG tt gs
@@ -213,13 +245,12 @@ reconA tt (AAlt gs x)
    	, tx)
   
  
------------------------
---
-reconG :: Map Var Type -> Guard -> (Map Var Type, Guard)
+-----
+reconG :: Table -> Guard -> (Table, Guard)
 
 reconG tt (GExp p x)
  = let	binds		= slurpVarTypesW p
- 	tt'		= foldl addVT tt binds
+ 	tt'		= foldr addEqVT' tt binds
 	(x', xt)	= reconX tt' x
    in	(tt', GExp p x')
  
@@ -234,27 +265,28 @@ slurpVarTypesW (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 --	BUGS: check that the types match out as we apply
 --
 applyValueT 
-	:: Type 		-- ^ type of function
+	:: Table		-- ^ table of constraints
+	-> Type 		-- ^ type of function
 	-> Type 		-- ^ type of arg
 	-> Maybe 		
 		( Type		-- result type
 		, Effect)	-- effect caused
 
-applyValueT t1 t2
+applyValueT table t1 t2
  =  {- trace
  	( "applyValueT\n"
 	% "  t1 = " %> t1 % "\n"
 	% "  t2 = " %> t2 % "\n")
-	$ -} applyValueT' (flattenT t1) (flattenT t2)
+	$ -} applyValueT' table (flattenT t1) (flattenT t2)
  
-applyValueT' (TContext t1 t2) t3
+applyValueT' table (TContext t1 t2) t3
 
-	| Just (t', eff)	<- applyValueT' t2 t3
+	| Just (t', eff)	<- applyValueT' table t2 t3
 	= Just  ( TContext t1 t'
 		, eff)		-- don't create contexts for effects.
 
-applyValueT' t0@(TFunEC t1 t2 eff clo) t3	
-	= if subsumes True t1 t3
+applyValueT' table t0@(TFunEC t1 t2 eff clo) t3	
+	= if subsumes (tableMore table) t1 t3
 		then Just (t2, eff)
 		else freakout stage
 			( "applyType: Type error in value application.\n"
@@ -266,7 +298,7 @@ applyValueT' t0@(TFunEC t1 t2 eff clo) t3
 			% "    is not <: than\n"	%> t1 % "\n")
 			$ Nothing
 	
-applyValueT' _ t
+applyValueT' _ _ _
 	= Nothing
 	
 	
@@ -275,19 +307,24 @@ applyValueT' _ t
 --	Apply a value argument to a forall/context type, yielding the result type.
 --	BUGS: check that the types/contexts match as we apply.
 --
-applyTypeT :: Type -> Type -> Maybe Type
+applyTypeT :: Table -> Type -> Type -> Maybe Type
 
-applyTypeT (TForall v k t1) t
-	= Just (substituteT (Map.insert v t Map.empty) t1)
+applyTypeT table (TForall (BVar v) k t1) t2
+	= Just (substituteT (Map.insert v t2 Map.empty) t1)
+
+applyTypeT table (TForall (BMore v tB) k t1) t2
+	-- check that the constraint checks out
+	| subsumes (tableMore table) tB t2
+	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 	
-applyTypeT (TContext t1 t2) t
+applyTypeT table (TContext t1 t2) t
 	= Just t2
 	
-applyTypeT (TWhere t1 vts) t
-	| Just t1'	<- applyTypeT t1 t
+applyTypeT table (TWhere t1 vts) t
+	| Just t1'	<- applyTypeT table t1 t
 	= Just $ TWhere t1' vts
 	
-applyTypeT t1 t2
+applyTypeT table t1 t2
 	= panic stage $ "applyType: can't apply (" % t2 % ") to (" % t1 % ")"
 
 		

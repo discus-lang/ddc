@@ -53,6 +53,9 @@ instance Ord Type where
 	% "    t1 = " % show t1	% "\n"
 	% "    t2 = " % show t2 % "\n"
 
+
+
+
 -----------------------
 -- Kind
 --

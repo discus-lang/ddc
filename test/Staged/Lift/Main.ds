@@ -1,27 +1,27 @@
 -- Lift
 --	Check that the lambda lifter is working ok.
 --
---	The lambda lifter looks for (nested) functions with free variables
---	and converts them to top-level supercombinators (functions). Any 
---	free variables are passed to the supers as new arguments.
+--	The lambda lifter looks for nested functions with free variables and converts them to top-level
+--	supercombinators. Any variables that were free in the super which aren't also bound at top level
+--	are passed as new arguments.
 --
-
+--	At core level, any type vars or witnesses required which are needed in the lifter super also need
+--	to be passed as new parameters.
+--
 import Prelude;
 
 main ()
  = do {	lift1 ();
 	lift2 ();
 --	lift3 ();
+	lift4 ();
 
 	liftCtor ();
  };
 
 
------
--- lift1
---	Local function bindings with free variables.
---	we can pass these functions to other functions.
---
+-- | Check basic lambda lifting.
+--	f1 is a local function with a free variable x, which passed to function map
 lift1 ()
  = do {	a1	= 23;
 	f1 x	= a1 + x;
@@ -29,11 +29,7 @@ lift1 ()
 	print	$ (showListInt $ map f1 list) % "\n";
  };
 
-
------
--- lift2
---	Nested functions with free variables.
---
+-- | A function with lambda abstractions nested 3 levels deep.
 lift2 () 
  = do {
 	a1	= 10;
@@ -55,11 +51,8 @@ lift2 ()
  };
 
 
------
--- lift3
---	try-catch blocks are compiled by introducing
---	local function bindings.
---
+-- | Check lifting of try-catch blocks.
+--	Try-catch blocks are compiled by introducing local function bindings
 {-
 lift3 ()
  = do {	a1	= 20;
@@ -74,11 +67,16 @@ lift3 ()
  };
 -}
 
------
--- liftCtor
---	Nested functions containing data constructors.
+
+-- | Check effect constraints on lambda bound functions are making it through to core.
+--	If they go missing then the application of (\y -> .. ) to (\f x -> ..) won't type check.
+lift4 ()	
+ = print ((showInt $ (\f x -> 1 + f x) (\y -> y + 2) 5) % "\n");
+
+
+-- | Check nested functions containing data constructors. 
 --	Data constructors are not free vars, they're defined at top level.
---
+--	Lambda lifter shouldn't try and bind them in the lifted function.
 data Fish %r1
 	= Fish (Int %r1);
 
@@ -88,8 +86,3 @@ liftCtor ()
 
 	doIt $ f ();	
  };
-
-
-
-
-

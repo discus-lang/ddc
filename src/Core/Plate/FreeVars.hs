@@ -42,7 +42,7 @@ freeVarsX xx
 	XLAM v k e
 	 -> unions 
 	 	[ freeVarsX e ]
-		\\ fromList [v]
+		\\ Set.singleton (varOfBind v)
 
 	XAPP x t
 	 -> unions
@@ -190,7 +190,7 @@ freeVarsT	tt
 
  	TForall v k t	
 	 -> freeVarsT t
-	 	\\ (Set.fromList [v])
+	 	\\ (Set.singleton $ varOfBind v)
 
 	TContext l t
 	 -> unions

@@ -87,12 +87,13 @@ bindX 	:: (?lookupFs :: Var -> Maybe [Class])
 
 bindX 	shared xx
  = case xx of
-	XLAM v t x	
+	XLAM b t x	
 	 -> do	-- check for regions bound by lambdas
+		let v		= varOfBind b
 	 	let shared'	= addSharedV v shared
 
 	 	(x', vsFree, vsLocal)	<- bindX shared' x
-	 	return	( XLAM v t x'
+	 	return	( XLAM b t x'
 			, Set.delete v vsFree
 			, vsLocal )
 

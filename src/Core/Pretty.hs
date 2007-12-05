@@ -22,7 +22,10 @@ import Util.Pretty
 stage	= "Core.Pretty"
 
 -----------------------
-sv v	= padR 8 (pretty $ pv v)
+sv v	= pretty $ pv v
+
+sb (BVar v)	= pretty $ pv v
+sb (BMore v t)	= pretty $ "(" % (pretty $ pv v) % " :> " % t % ")"
 
 -- force display of type namespace qualifier
 pv v
@@ -133,8 +136,8 @@ instance Pretty Exp where
 	        (xRest, vsSimple)	= takeLAMs [] xx
 	    
 	    in	case vsSimple of
-	    	 []	-> "/\\ (" % padR 16 (sv v) % " :: " % k % ") ->\n" % e
-		 _	-> "/\\  " % ", " %!% map pv (reverse vsSimple) % " ->\n" % xRest
+	    	 []	-> "/\\ (" % padR 16 (sb v) % " :: " % k % ") ->\n" % e
+		 _	-> "/\\  " % ", " %!% map sb (reverse vsSimple) % " ->\n" % xRest
 
 
 	XLam v t x eff clo
@@ -452,6 +455,10 @@ instance Pretty Type where
 	TBot KClosure	-> prettyp "$EMPTY"
 	TTop KClosure	-> prettyp "$OPEN"
 
+	-- other top/bottoms
+	TBot k		-> "@Bot " % k
+	TTop k		-> "@Top " % k
+
 	-- class	
   	TClass v ts	-> v % " " % " " %!% map prettyTB ts
 	
@@ -462,13 +469,12 @@ instance Pretty Type where
 	TWild	 k	-> "(" % k % ")"
 	
 
-
 prettyTB t
  = case t of
 	TSum{}		-> prettyp t
  	TVar{}		-> prettyp t
 	TData v []	-> prettyp t
-	TEffect{}	-> prettyp t
+	TEffect v []	-> prettyp t
 	TWild{}		-> prettyp t
 	TBot{}		-> prettyp t
 	TTop{}		-> prettyp t
@@ -483,6 +489,15 @@ prettyTBF e
 
 	| otherwise
 	= prettyp e
+
+-----------------------
+-- TBind
+--
+instance Pretty Bind where
+ prettyp xx
+  = case xx of
+  	BVar v		-> prettyp v
+	BMore v t	-> "(" % v % " :> " % t % ")"
 
 
 -----------------------

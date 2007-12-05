@@ -1,27 +1,32 @@
 
+-- | Type definitions for DDC core language.
 module Core.Exp
 	( Var
-	, Tree
-	, Top 		(..)
-	, DataField 	(..)
-	, CtorDef	(..)
-	, Exp 		(..)
-	, Prim		(..)
-	, Stmt	 	(..)
-	, Annot 	(..)
-	, Alt 		(..)
-	, Guard		(..)
-	, Pat		(..)
-	, Label		(..)
+	, Bind		(..)	-- binders
+	, varOfBind
 
-	, Type 		(..)
-	, Data
+	, Tree
+	, Top 		(..)	-- top level things
+	, DataField 	(..)	-- data fields
+	, CtorDef	(..)	-- constructor definitions
+	, Exp 		(..)	-- expressions
+	, Prim		(..)	-- primitive operators
+	, Stmt	 	(..)	-- statements
+	, Annot 	(..)	-- expression annotations
+	, Alt 		(..)	-- case/match alternatives
+	, Guard		(..)	-- alternative guards
+	, Pat		(..)	-- guard patterns
+	, Label		(..)	-- labels in guards
+
+	, Type 		(..)	-- core types
+
+	, Data			-- alias of Type
 	, Region
 	, Effect
 	, Closure
 	, Class	
 
-	, Kind		(..))
+	, Kind		(..))	-- kind expressions
 
 where
 
@@ -89,7 +94,7 @@ data Exp
 	------
 	-- Core Constructs
 	--
-	| XLAM		Var 	Type	Exp		-- ^ Type\/region\/effect\/closure abstraction.
+	| XLAM		Bind 	Type	Exp		-- ^ Type\/region\/effect\/closure abstraction.
 	| XAPP		Exp	Type			-- ^ Type\/region\/effect\/closure application.
 	| XTet		[(Var, Type)]	Exp		-- ^ A type-level let binding.
 	| XTau		Type	Exp			-- ^ A type annotation.
@@ -193,7 +198,7 @@ data Type
 	--
 	= TNil
 
-	| TForall	Var	Type	Type		-- ^ Type abstraction.
+	| TForall	Bind	Type	Type		-- ^ Type abstraction.
 	| TContext		Type	Type		-- ^ Class context.
 	| TWhere	Type	[(Var, Type)]		-- ^ Type level where expression.
 	| TApp		Type 	Type			-- ^ Type application.
@@ -226,9 +231,27 @@ data Type
 	-- wildcards
 	| TWild		Kind				-- ^ Type wildcard. 
 							--	Will unify with anything of the given kind.
-
 	deriving (Show, Eq)
 
+
+-----------------------
+-- TBind
+--
+data Bind
+	= BVar	Var					-- ^ unbounded quantification.
+	| BMore	Var Type				-- ^ bounded quantification. Type of v1 must be :> t2
+	deriving (Show, Eq)
+
+-- | slurp out the variable from a TBind
+varOfBind :: Bind	-> Var
+varOfBind (BVar v)	= v
+varOfBind (BMore v t)	= v
+
+-- | order TBinds by their var so we can use them as Set and Map keys.
+instance Ord Bind where
+ compare b1 b2		= compare (varOfBind b1) (varOfBind b2)
+
+------------------------
 type Data	= Type
 type Effect	= Type
 type Closure	= Type
