@@ -17,13 +17,13 @@ include make/plate.mk
 # ----- trauma
 bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
-	$(GHC) -o bin/ddc $^ $(LIBS) -package unix -package mtl -package containers
+	$(GHC) $(GHC_FLAGS) -o bin/ddc $^ $(LIBS) -package unix -package mtl -package containers
 # -prof
 	
 
 # ----- war
 bin/war : test/War.hs
-	$(GHC) -fglasgow-exts -isrc --make test/War.hs -o bin/war
+	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc --make test/War.hs -o bin/war
 
 .PHONY  : cleanWar
 cleanWar :
