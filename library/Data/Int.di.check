@@ -118,7 +118,7 @@ foreign import extern "primInt32_update"
 foreign import extern primInt32_accAdd
         :: forall %r0 %r1
         .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}
         ,  $c0        = a : Base.Int %r0
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data -> Base.Data;
@@ -126,7 +126,7 @@ foreign import extern primInt32_accAdd
 foreign import extern (<>)
         :: forall %r0 %r1 !e0 $c0
         .  Base.Int %r0 -> (Base.Int %r0 -(!e0 $c0)> Base.Int %r1) -(!e1 $c1)> Base.Unit
-        :- !e1        = !{!e0; Base.!Read %r1; Base.!Write %r0}
+        :- !e1        = !{!e0; Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}
         ,  $c1        = x : Base.Int %r0
         ,  Base.MutableT (Base.Int %r0)
         :$ Base.Data -> Base.Thunk -> Base.Data;

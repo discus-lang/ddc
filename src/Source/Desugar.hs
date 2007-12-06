@@ -167,9 +167,9 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 
 		let ?newVarN	= newVarN
 	 	let ?getKind	= getKind
-	 	(tElab, vks)	<- elaborateRegionsT t'
+	 	(tElab, vksConst, vksMutable)	<- elaborateRegionsT t'
 
-		let tQuant	= addTForallVKs vks tElab
+		let tQuant	= addTForallVKs (vksConst ++ vksMutable) tElab
 
 	 	returnJ	$ D.PSig sp v tElab
 --		return Nothing

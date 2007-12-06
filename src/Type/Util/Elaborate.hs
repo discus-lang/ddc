@@ -52,12 +52,13 @@ elaborateT
 	-> Type -> m Type
 
 elaborateT t
- = do	(tRegions, vksRegions)	<- elaborateRegionsT t
- 	tClosure		<- elaborateCloT tRegions
+ = do	(tRegions, vksRsConst, vksRsMutable)	
+ 			<- elaborateRegionsT t
+ 	tClosure	<- elaborateCloT tRegions
 
-	tEffect			<- elaborateEffT (map fst vksRegions) tClosure
+	tEffect		<- elaborateEffT (map fst vksRsConst) (map fst vksRsMutable) tClosure
 	
- 	return	$ addTForallVKs vksRegions
+ 	return	$ addTForallVKs (vksRsConst ++ vksRsMutable)
 		$ tEffect
 
 
@@ -72,42 +73,47 @@ elaborateRegionsT
 	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
 	-> Type 				-- ^ the type to elaborate
 	-> m ( Type		-- new type
-	     , [(Var, Kind)])	-- extra regions
+	     , [(Var, Kind)]	-- extra constant regions
+	     , [(Var, Kind)])	-- extra mutable regions
 
 elaborateRegionsT tt
- = do	(tt', vks, fs)	<- elaborateRegionsT' tt
+ = do	(tt', vksConst, vksMutable, fs)	<- elaborateRegionsT' tt
 	return	( addFetters fs tt'
-		, vks)
+		, vksConst
+		, vksMutable)
 
 elaborateRegionsT' tt
 
 	-- if we see a forall then drop new regions on that quantifier
  	| TForall vks x		<- tt
-	= do	(x', vks', fs)	<- elaborateRegionsT' x
-		return	( addTForallVKs vks' (TForall vks x')
+	= do	(x', vksC', vksM', fs)	<- elaborateRegionsT' x
+		return	( addTForallVKs (vksC' ++ vksM') (TForall vks x')
+			, []
 			, []
 			, fs)
 
 	| TFetters fs x		<- tt
-	= do	(x', vks, fs')	<- elaborateRegionsT' x
+	= do	(x', vksC, vksM, fs')	<- elaborateRegionsT' x
 		return	( TFetters (fs ++ fs') x'
-			, vks
+			, vksC
+			, vksM
 			, [])
 
 	| TVar{}		<- tt
-	=	return 	( tt, [], [])
+	=	return 	( tt, [], [], [])
 
 	| TFun t1 t2 eff clo	<- tt
 	= do
-		(t1', vks1, fs1)	<- elaborateRegionsT' t1
-		(t2', vks2, fs2)	<- elaborateRegionsT' t2
+		(t1', vksC1, vksM1, fs1)	<- elaborateRegionsT' t1
+		(t2', vksC2, vksM2, fs2)	<- elaborateRegionsT' t2
 		return	( TFun t1' t2' eff clo
-			, vks1 ++ vks2 
+			, vksC1 ++ vksC2 
+			, vksM1 ++ vksM2
 			, fs1 ++ fs2)
 
 	-- assume every region under a mutable operator is mutable
 	| TMutable x		<- tt
-	= do	(x', vks, fs1)	<- elaborateRegionsT' x
+	= do	(x', vksC, vksM, fs1)	<- elaborateRegionsT' x
 
 		-- collect up all the vars in the rewritten type and choose all the regions
 		let vsRegions	= filter (\v -> Var.nameSpace v == NameRegion)
@@ -118,18 +124,21 @@ elaborateRegionsT' tt
 					[ makeTSum KRegion $ map (TVar KRegion) vsRegions ]
 
 		return	( x'
-			, vks
+			, []
+			, vksC ++ vksM
 			, fNew : fs1)
 
 	-- add new regions to data type constructors to bring them up
 	--	to the right kind.
-	| TData v ts			<- tt
-	= do	kind			<- ?getKind v
-		(ts2, vks2)		<- elabRs ts kind
-		(ts3, vks3, fs3)	<- liftM unzip3 $ mapM elaborateRegionsT' ts2
+	| TData v ts		<- tt
+	= do	kind		<- ?getKind v
+		(ts2, vks2)	<- elabRs ts kind
+		(ts3, vksC3, vksM3, fs3)	
+				<- liftM unzip4 $ mapM elaborateRegionsT' ts2
 		
 		return	( TData v ts3
-			, vks2 ++ concat vks3
+			, vks2 ++ concat vksC3
+			, concat vksM3
 			, concat fs3)
 
 
@@ -273,10 +282,11 @@ elaborateEffT
 	:: Monad m
 	=> (?newVarN :: NameSpace -> m Var)
 	-> [Var]		-- ^ region variables which were added during elaboration.
+	-> [Var]
 	-> Type			-- ^ the type to elaborate
 	-> m Type
 	
-elaborateEffT vsRegion tt
+elaborateEffT vsRsConst vsRsMutable tt
  = do	
  	-- make a fresh hook var.
  	freshHookVar	<- ?newVarN NameEffect
@@ -290,10 +300,16 @@ elaborateEffT vsRegion tt
 	--	will be read by the function.
 	let rsContra	= slurpConRegions tHooked
 	let effsRead	= [ TEffect primRead [TVar KRegion v] 
-				| v <- vsRegion 
+				| v <- (vsRsConst ++ vsRsMutable)
+				, elem v rsContra ]
+
+	let effsWrite	= [ TEffect primWrite [TVar KRegion v] 
+				| v <- vsRsMutable
 				, elem v rsContra ]
 	
-	let tFinal	= addEffectsToFsT effsRead hookVar tHooked
+	let effs	= effsRead ++ effsWrite
+	
+	let tFinal	= addEffectsToFsT effs hookVar tHooked
   
  	return tFinal
 
@@ -380,5 +396,3 @@ slurpConRegionsCon tt
 
 	TVar KRegion v		-> [v]
 	TVar _ _		-> []	
-	
-

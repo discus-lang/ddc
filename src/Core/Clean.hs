@@ -13,17 +13,23 @@ import qualified Data.Map 	as Map
 import Data.Map			(Map)
 import Control.Monad.State
 
+import Util
 
 -- | Clean out empty effect and closure variables from this tree
 --	Also substitute simple v1 = v2 bindings
 --
+--	Run the main cleaner twice to clean out vars where the only thing
+--	holding them live is trivial (v = v) bindings.
+--
 cleanTree :: Tree -> Tree
-cleanTree tt	
-	= evalState (walkZM table tt) ()
+cleanTree tt	= cleanTree' $ cleanTree' tt
+
+cleanTree' tt	= evalState (walkZM table tt) ()
 
 table	
  = walkTableId
- 	{ transT	= cleanT }
+ 	{ transT	= cleanT 
+	, transX	= cleanX }
 
 
 -- | Clean this expression
@@ -51,3 +57,19 @@ cleanT table tt
 	| otherwise
 	= return tt
 
+
+cleanX :: WalkTable CleanM -> Exp -> CleanM Exp
+cleanX table xx
+ = case xx of
+ 	XTet vts x	
+	  -> return $ XTet (catMaybes $ map eatIdBind vts) x
+	_ -> return xx
+
+
+eatIdBind :: (Var, Type) -> Maybe (Var, Type)
+eatIdBind (v1, t)
+ = case t of
+	TVar k v2 	
+	 | v1 == v2	-> Nothing
+	 
+	_ 		-> Just (v1, t)

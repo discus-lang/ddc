@@ -365,9 +365,12 @@ toCoreX xx
 	 	t	<- liftM (C.stripContextT . C.flattenT)
 			$  getType vT
 
+		-- BUGS: should have read effect here.
+		--	 Do read effect but force constants to be in Const regions.
 	 	case C.unboxedType t of
 		 Just tU@(C.TData _ [tR])
-		  -> return 	$ C.XPrim (C.MBox t tU) [C.XConst (S.CConstU lit) tU] (C.TEffect primRead [tR])
+		  -> return 	$ C.XPrim (C.MBox t tU) [C.XConst (S.CConstU lit) tU] (C.TBot C.KEffect)
+		  	-- (C.TEffect primRead [tR])
 			
 		 Nothing
 		  -> panic stage

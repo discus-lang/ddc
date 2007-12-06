@@ -10,7 +10,8 @@ module Core.Util
 	, module Core.Util.Substitute
 	, module Core.Util.Unify 
 	, module Core.Util.Subsumes
-	, module Core.Util.Pack )
+	, module Core.Util.Pack 
+	, module Core.Util.Trim )
 
 where
 
@@ -25,3 +26,4 @@ import Core.Util.Substitute
 import Core.Util.Unify
 import Core.Util.Subsumes
 import Core.Util.Pack
+import Core.Util.Trim

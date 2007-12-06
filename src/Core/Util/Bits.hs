@@ -10,6 +10,9 @@ module Core.Util.Bits
 	, isXTau
 	, isTForall
 	
+	-- projections
+	, takeVarOfStmt
+	
 	, makeTSum,	flattenTSum
 	, makeTMask,	applyTMask
 	
@@ -91,8 +94,17 @@ isXTau x	= (x =@= XTau{})
 
 isTForall x	= x =@= TForall{}
 
+--------------------------------------------------------------------------------
+-- Simple Projections
+--
+takeVarOfStmt :: Stmt -> Maybe Var
+takeVarOfStmt ss
+ = case ss of
+ 	SBind mv x	-> mv
 
 
+--------------------------------------------------------------------------------
+-- Make / Flatten / Apply functions
 	
 -- | make a sum from these things
 --	return bottom if there aren't any
@@ -112,15 +124,12 @@ flattenTSum tt
 	TSum k ts	-> catMap flattenTSum ts
 	_		-> [tt]
 	
-
------------------------
--- Masks
 --
 makeTMask :: Kind -> Type -> Type -> Type
 makeTMask k t1 t2
  = case t2 of
  	TBot KClosure	-> t1
-	_		-> TMask k t1 t2
+	_		-> applyTMask $ TMask k t1 t2
 
 
 -- | Crush a TMask by discarding TFree and TEffects 

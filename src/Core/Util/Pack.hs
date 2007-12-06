@@ -15,6 +15,7 @@ import Core.Util.Bits
 
 import Shared.Error
 import Shared.VarUtil
+import Shared.VarPrim
 import Util
 import Util.Graph.Deps
 
@@ -72,7 +73,7 @@ packT1 tt
 	    in	TApp t1' t2'
 	    
 	TSum k ts
-	 -> makeTSum k $ map packT1 ts
+	 -> makeTSum k $ nub $ map packT1 ts
 	 
 	TMask k t1 t2
 	 -> let t1'	= packT1 t1
@@ -101,6 +102,11 @@ packT1 tt
 	    in	TFun t1' t2'
 	    
 	-- effect
+	-- crush EReadH on the way
+	TEffect v [TData vD (TVar KRegion r : ts)]
+	 | v == primReadH
+	 -> TEffect primRead [TVar KRegion r]
+
 	TEffect v ts
 	 -> let	ts'	= map packT1 ts
 	    in	TEffect v ts'

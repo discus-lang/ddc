@@ -13,8 +13,10 @@ where
 import Core.Exp
 import Core.Util
 import Core.Plate.FreeVars
-import Util.Graph.Deps
 
+import Shared.Error
+import Shared.VarPrim
+import Util.Graph.Deps
 import Util
 
 import qualified Data.Map	as Map
@@ -22,8 +24,6 @@ import Data.Map			(Map)
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)
-
-import Shared.Error
 
 import qualified Debug.Trace	as Debug
 
@@ -95,78 +95,144 @@ initTable
 reconP :: Table -> Top -> Top
 
 reconP tt (PBind v x)
- = let	(x', xt)	= reconX tt x
+ = let	(x', xt, xe, xc)	
+ 		= reconX tt x
    in	PBind v x'
 
 reconP tt p		= p
 
-
--- | Reconstruct effect and witness info on this expression
+------------------------------------------------------------------------------------------
+-- | Reconstruct the type, effect and closure of this expression.
+--
 reconX 	:: Table		-- ^ var -> type 
 	-> Exp 			-- ^ expression to reconstruct info on
 	-> ( Exp		-- expression with reconstructed info
-	   , Type)		-- type of expression
+	   , Type		-- type of expression
+	   , Type		-- effect of expression
+	   , Type)		-- closure of expression
 
+-- LAM
 reconX tt (XLAM b@(BMore v t1) t2 x)
- = let	tt'		= addMoreVT v t1 tt
- 	(x', tx)	= reconX tt' x
+ = let	tt'			= addMoreVT v t1 tt
+ 	(x', xT, xE, xC)	= reconX tt' x
    in	( XLAM b t2 x'
-   	, TForall b t2 tx)
+   	, TForall b t2 xT
+	, xE
+	, xC)
 
 reconX tt (XLAM v t x)
- = let	(x', tx)	= reconX tt x
+ | kindOfType t == KClass
+ = let	(x', tx, xe, xc)	= reconX tt x
    in	( XLAM 	  v t x'
-    	, TForall v t tx )
-   
+    	, TContext t tx 
+	, xe
+	, xc)
+
+ | otherwise
+ = let	(x', tx, xe, xc)	= reconX tt x
+   in	( XLAM 	  v t x'
+    	, TForall v t tx 
+	, xe
+	, xc)
+ 
+-- APP
 reconX tt exp@(XAPP x t)
- = let	(x', tx)	= reconX tt x
+ = let	(x', tx, xe, xc)	= reconX tt x
    in	case applyTypeT tt tx t of
-   	 Just t'	-> (XAPP x' t, t')
+   	 Just t'	
+	  -> 	( XAPP x' t
+	  	, t'
+		, xe
+		, xc)
 	  
 	 _ -> panic stage
 	 	$ "reconX: Kind error in type application (x t).\n"
 		% "     x     =\n" %> x		% "\n\n"
 		% "     t     =\n" %> t		% "\n\n"
 		% "   T[x]    =\n" %> tx	% "\n\n"
-
+-- tet
 reconX tt (XTet vts x)
- = let	tt'		= foldr addEqVT' tt vts
- 	(x', tx)	= reconX tt' x
+ = let	tt'			= foldr addEqVT' tt vts
+ 	(x', tx, xe, xc)	= reconX tt' x
    in	( XTet   vts x'
-   	, TWhere tx vts)
+   	, TWhere tx vts
+	, xe
+	, xc)
    
+-- xtau
 -- BUGS: we should check the XTau type here   
 reconX tt (XTau t x)
- = let	(x', tx)	= reconX tt x
+ = let	(x', tx, xe, xc)	= reconX tt x
    in	( XTau t x'
-   	, t)
+   	, t
+	, xe
+	, xc)
 
-reconX tt (XLam v t x eff clo)
- = let	tt'		= addEqVT v t tt
- 	(x', tx)	= reconX tt' x
-   in	( XLam v t x' eff clo
-   	, TFunEC t tx eff clo)
+-- lam
+reconX tt exp@(XLam v t x eff clo)
+ 	| tt'			<- addEqVT v t tt
+	, (x', xT, xE, xC)	<- reconX tt' x
 
+	, eff'			<- packT $ substituteT (tableEq tt) eff
+	, clo'			<- packT $ substituteT (tableEq tt) clo
+	, xC'			<- trimClosureC $ makeTMask KClosure xC (TTag v)
+	, xE'			<- packT xE
+	
+	-- check effects match
+	, () <- if subsumes (tableMore tt) eff' xE'
+		 then ()
+		 else panic stage
+			$ "reconX: Effect error in core.\n"
+			% " in lambda abstraction:\n" 			%> exp	% "\n\n"
+			% " reconstructed effect of body:\n" 		%> xE'	% "\n\n"
+			% " does not match effect annot on lambda:\n"	%> eff'	% "\n\n"
+
+	-- check closures match
+	, () <- if subsumes (tableMore tt) clo' xC'
+		 then ()
+		 else panic stage
+			$ "reconX: Closure error in core.\n"
+			% " in lambda abstraction:\n" 			%> exp	% "\n\n"
+			% " reconstructed closure of body:\n" 		%> xC'	% "\n\n"
+			% " does not match closure annot on lambda:\n"	%> clo'	% "\n\n"
+	
+
+	= ( XLam v t x' eff clo
+	  , TFunEC t xT eff clo
+	  , TBot KEffect
+	  , xC')
+
+-- local
 reconX tt (XLocal v vs x)
- = let	(x', tx)	= reconX tt x
+ = let	(x', xT, xE, xC)	= reconX tt x
    in	( XLocal v vs x'
-   	, tx)
-
+   	, xT
+	, makeTSum
+		KEffect
+		(map 	(\e -> case e of
+				TEffect vE [TVar KRegion r]
+				 |   elem vE [primRead, primWrite]
+				  && r == v
+				 -> TBot KEffect
+				 
+				_	-> e)
+			$ flattenTSum xE)
+	, xC)
+	
+-- app
 reconX tt exp@(XApp x1 x2 eff)
- = let	(x1', x1t)	= reconX tt x1
-	(x2', x2t)	= reconX tt x2
-	mResultTE	= applyValueT tt x1t x2t
-
-   in   {-	trace 	( "apply\n"
-   		% "  t1     =\n" %> x1t 	% "\n\n"
-		% "  t2     =\n" %> x2t 	% "\n\n"
-		% "  result =\n" %> mResultTE	% "\n\n")  -}
-	case mResultTE of
-   	   Just (t, eff')
-  	    -> let x'		= XApp x1' x2' (packT eff')
-     	       in	 (x', t)
-
-	   _ -> panic stage	
+ = let	(x1', x1t, x1e, x1c)	= reconX tt x1
+	(x2', x2t, x2e, x2c)	= reconX tt x2
+	mResultTE		= applyValueT tt x1t x2t
+   in	case mResultTE of
+   	 Just (appT, appE)
+  	  -> let x'		= XApp x1' x2' (packT appE)
+     	     in ( x'
+	        , appT
+		, makeTSum KEffect  [x1e, x2e, appE]
+		, makeTSum KClosure [x1c, x2c])
+	       	
+	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
 		% " in expression:\n"
 		% "     (" % x1 % ") " % x2	% "\n\n"
@@ -177,82 +243,134 @@ reconX tt exp@(XApp x1 x2 eff)
 
 		% "   T[x2]   = " % x2t		% "\n\n"
    
+-- do
 reconX tt (XDo ss)
- = let	(tt', sts)	= mapAccumL reconS tt ss
-	(ss', ts)	= unzip sts
-	Just t		= takeLast ts
+ = let	(tt', sts)		= mapAccumL reconS tt ss
+	(ss', sTs, sEs, sCs)	= unzip4 sts
+	Just t			= takeLast sTs
+	vsBind			= catMaybes $ map takeVarOfStmt ss'
 	
-   in	(XDo ss', t)
+   in	( XDo ss'
+        , t
+	, makeTSum KEffect sEs
+	, makeTMask 
+		KClosure
+		(makeTSum KClosure sCs)
+		(makeTSum KClosure (map TTag vsBind)) )
    
-   
+-- match
 -- BUGS: also fill in effect information here
+-- also give match effect
+--
 reconX tt (XMatch aa eff)
- = let	(aa', ats)	= unzip $ map (reconA tt) aa
- 	Just atLast	= takeLast ats
+ = let	(aa', altTs, altEs, altCs)	= unzip4 $ map (reconA tt) aa
+ 	Just atLast			= takeLast altTs
    in	( XMatch aa' eff
-   	, atLast)
-	
+   	, atLast
+	, makeTSum KEffect altEs
+	, makeTSum KClosure altCs )
+
+
+-- const	
 reconX tt (XConst c t)
  =	( XConst c t
- 	, t)
+ 	, t
+	, TBot KEffect
+	, TBot KClosure )
 	
 
--- BUGS: substitute vars into type
+-- var
 reconX tt (XVar v)
  = case Map.lookup v (tableEq tt) of
  	Just t		
 	 -> let	t'	= inlineTWheresMapT (tableEq tt) Set.empty t
-	    in  {- trace 
-	 	( "reconX: (XVar " % v % ")\n"
-	 	% "    t =\n" %> t'	% "\n") -}
-		(XVar v, t')
+	    in  ( XVar v
+	        , t'
+		, TBot KEffect
+		, TFree v t)
 	
-	Nothing		-> panic stage $ "reconX: Variable " % v % " is not bound"
+	Nothing		
+	 -> panic stage $ "reconX: Variable " % v % " is not bound"
 
+-- prim
+-- BUGS: closure is wrong here
 reconX tt xx@(XPrim prim xs eff)
  = let	Just t	= maybeSlurpTypeX xx
-   in	( xx, t)
-	
+   in	( xx
+   	, t
+   	, eff
+	, TBot KClosure)
+
+-- no match
 reconX tt xx
  	= panic stage 
  	$ "reconX: no match for " ++ show xx
 
 
+
 -----
-reconS :: Table -> Stmt -> (Table, (Stmt, Type))
+reconS :: Table -> Stmt -> (Table, (Stmt, Type, Effect, Closure))
 
 reconS tt (SBind Nothing x)	
- = let	(x', tx)	= reconX tt x
+ = let	(x', xt, xe, xc)	= reconX tt x
    in	( tt
-   	, ( SBind Nothing (dropXTau x' Map.empty (packT tx) )
-	  , tx))
+   	, ( SBind Nothing (dropXTau x' Map.empty (packT xt) )
+	  , xt
+	  , xe
+	  , xc))
 
 reconS tt (SBind (Just v) x)
- = let	(x', tx)	= reconX tt x
-	tt'		= addEqVT v tx tt
+ = let	(x', xT, xE, xC)	= reconX tt x
+	tt'			= addEqVT v xT tt
    in	( tt'
-   	, (SBind (Just v) (dropXTau x' Map.empty (packT tx))
-	  , tx))
+   	, ( SBind (Just v) (dropXTau x' Map.empty (packT xT))
+	  , xT
+	  , xE
+	  , TMask KClosure xC (TTag v)))
 	  
 
 -----
-reconA :: Table -> Alt -> (Alt, Type)
+reconA :: Table -> Alt -> (Alt, Type, Effect, Closure)
 
 reconA tt (AAlt gs x)
- = let	(tt', gs')	= mapAccumL reconG tt gs
-	(x', tx)	= reconX tt' x
+ = let	(tt', gecs)		= mapAccumL reconG tt gs
+	(gs', vssBind, gEs, gCs)= unzip4 gecs
+	(x', xT, xE, xC)	= reconX tt' x
    in	( AAlt gs' x'
-   	, tx)
+   	, xT
+	, makeTSum KEffect  (gEs ++ [xE])
+	, makeTMask 
+		KClosure
+		(makeTSum 
+			KClosure 
+			(gCs ++ [xC]))
+		(makeTSum
+			KClosure
+			(map TTag $ concat vssBind)))
   
  
 -----
-reconG :: Table -> Guard -> (Table, Guard)
+-- BUGS: check type of pattern agains type of expression
+--
+reconG :: Table -> Guard -> (Table, (Guard, [Var], Effect, Closure))
 
 reconG tt (GExp p x)
  = let	binds		= slurpVarTypesW p
  	tt'		= foldr addEqVT' tt binds
-	(x', xt)	= reconX tt' x
-   in	(tt', GExp p x')
+	(x', xT, xE, xC)= reconX tt' x
+	
+	-- Work out the effect of testing the case object.
+	eff		= case xT of
+			   TData vD []	
+			     -> TBot KEffect
+
+			   TData vD (TVar KRegion rH : _)
+			     -> TEffect primRead [TVar KRegion rH]
+   in	( tt'
+   	, ( GExp p x'
+	  , map fst binds
+   	  , makeTSum KRegion ([xE, eff])
+	  , xC))
  
 
 slurpVarTypesW (WConst{})	= []
