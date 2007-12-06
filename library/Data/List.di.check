@@ -167,7 +167,7 @@ foreign import extern iterateL
         :: forall t0 %r0 !e0 $c0
         .  (t0 -(!e0 $c0)> t0) -> t0 -(!e0 $c1)> List %r0 t0
         :- $c1        = f : $c0
-        ,  Base.LazyH (List %r0 t0)
+        ,  Base.Lazy %r0
         ,  Base.Pure !e0
         :$ Base.Thunk -> Base.Obj -> Base.Data;
         
@@ -183,7 +183,7 @@ foreign import extern mapL
         .  (t0 -(!e0 $c0)> t1) -> List %r0 t0 -(!e1 $c1)> List %r1 t1
         :- !e1        = !{Base.!Read %r0; !e0}
         ,  $c1        = f : $c0
-        ,  Base.LazyH (List %r1 t1)
+        ,  Base.Lazy %r1
         ,  Base.Pure !{Base.!Read %r0; !e0}
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
@@ -240,12 +240,14 @@ foreign import extern sum
         :: forall %r0 %r1 %r2
         .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
         :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Write %r2}
+        ,  Base.MutableT (Base.Int %r2)
         :$ Base.Data -> Base.Data;
         
 foreign import extern sumU
         :: forall %r0 %r1 %r2
         .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
         :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Write %r2}
+        ,  Base.MutableT (Base.Int %r2)
         :$ Base.Data -> Base.Data;
         
 foreign import extern sumR
@@ -325,7 +327,7 @@ foreign import extern filterL
         :- !e1        = !{Base.!Read %r1; !e0; Base.!Read %r0}
         ,  !e2        = Base.!Read %r0
         ,  $c1        = f : $c0
-        ,  Base.LazyH (List %r2 t0)
+        ,  Base.Lazy %r2
         ,  Base.Pure !{Base.!Read %r1; !e0; !e2}
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
@@ -343,7 +345,7 @@ foreign import extern rangeIntL
         ,  !e1        = Base.!Read %r0
         ,  !e2        = Base.!Read %r0
         ,  $c0        = x : Base.Int %r0
-        ,  Base.LazyH (List %r1 (Base.Int %r0))
+        ,  Base.Lazy %r1
         ,  Base.Pure !{!e1; !e2; Base.!Read %r2}
         :$ Base.Data -> Base.Data -> Base.Data;
         
@@ -351,7 +353,7 @@ foreign import extern rangeInfIntL
         :: forall %r0 %r1
         .  Base.Int %r0 -(!e0)> List %r1 (Base.Int %r0)
         :- !e0        = Base.!Read %r0
-        ,  Base.LazyH (List %r1 (Base.Int %r0))
+        ,  Base.Lazy %r1
         ,  Base.Pure (Base.!Read %r0)
         :$ Base.Data -> Base.Data;
         
@@ -365,7 +367,7 @@ foreign import extern concatL
         :: forall t0 %r0 %r1
         .  List %r0 (List %r1 t0) -(!e0)> List %r1 t0
         :- !e0        = Base.!Read %r0
-        ,  Base.LazyH (List %r1 t0)
+        ,  Base.Lazy %r1
         ,  Base.Pure (Base.!Read %r0)
         ,  Base.Pure (Base.!Read %r1)
         :$ Base.Data -> Base.Data;
@@ -382,7 +384,7 @@ foreign import extern concatMapL
         .  (t0 -(!e0 $c0)> List %r0 t1) -> List %r1 t0 -(!e1 $c1)> List %r0 t1
         :- !e1        = !{Base.!Read %r1; !e0}
         ,  $c1        = f : $c0
-        ,  Base.LazyH (List %r0 t1)
+        ,  Base.Lazy %r0
         ,  Base.Pure !{Base.!Read %r1; !e0}
         ,  Base.Pure (Base.!Read %r0)
         :$ Base.Thunk -> Base.Data -> Base.Data;

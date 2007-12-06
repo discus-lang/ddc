@@ -224,6 +224,7 @@ data TypeSource
 
 	-----
 	| TSSynth	Var			-- ^ Constraint synthesised by the solver in order to generate fresh names.
+	| TSCrushed	Fetter			-- ^ Constraint from a crushed fetter
 	| TSProjCrushed	ClassId ClassId TProj	-- ^ Constraint from a (crushed) field projection.
 	| TSClassName				-- ^ Added by Class.makeClassName
 

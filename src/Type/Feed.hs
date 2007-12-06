@@ -2,6 +2,7 @@
 module Type.Feed
 	( feedConstraint
 	, feedType 
+	, feedFetter
 	, registerNodeT
 	, registerNodeF )
 
@@ -245,6 +246,7 @@ feedType	mParent t
 
 	TClass k cid
 	 -> do 	cidT'		<- sinkClassId cid
+		patchBackRef cid mParent
 		returnJ		$ TClass k cidT'
 		
 	TAccept t
@@ -417,6 +419,9 @@ registerNodeF cid ff
 	 --	in the same register slot.
 	 | isFShape (Var.bind v)
 	 -> registerClass (Var.FShape 0) cid
+
+	 | Var.bind v == Var.FLazyH
+	 -> registerClass (Var.FLazyH) cid
 
 	_ 
 	 -> return ()
