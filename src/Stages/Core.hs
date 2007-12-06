@@ -132,7 +132,7 @@ coreReconstruct
 	-> IO Tree
 	
 coreReconstruct name cHeader cTree
- = do	let cTree'	= reconstructTree cHeader cTree
+ = do	let cTree'	= reconstructTree name cHeader cTree
  	dumpCT DumpCoreReconstruct name cTree'
 	return	cTree'
 	

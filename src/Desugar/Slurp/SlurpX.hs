@@ -241,8 +241,6 @@ slurpX	exp@(XDo sp stmts)
 
 	boundTVs	<- mapM getVtoT boundVs
 	wantTypeVs boundTVs
-	
-	
 
 	let Just tLast	= takeLast tsStmts
 	let qsStmts	= concat qssStmts
@@ -263,7 +261,6 @@ slurpX	exp@(XDo sp stmts)
 				_	-> BLetGroup vsBind
 			
 	-- The type for this expression is the type of the last statement.
-
 	let q	= CBranch 
 		{ branchBind	= bindLeave
 		, branchSub	

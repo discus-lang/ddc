@@ -89,7 +89,7 @@ coreBoxingTree topVars cSource cHeader
 	cZapped		= zapUnboxBox 		cInlined
 	cResnip		= snipTree Set.empty uniqueSnip  cZapped
 	cEat		= eatAnnotsTree 	cResnip
-	cRecon		= reconstructTree cHeader cEat
+	cRecon		= reconstructTree "Core.Boxing" cHeader cEat
 
    in	cRecon
 

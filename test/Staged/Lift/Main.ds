@@ -42,8 +42,10 @@ lift2 ()
 		 = do { c1	= 31;
 			c2	= c1 + b2;
 			h2 () 
-			 = print $ showInt (a1 + a2 + b1 + c1 + b2 + c2); 
+			 = print $ showInt (a1 + a2 + b1 + c1 + b2 + c2);
+			h2;
 		 };
+		g2;
 	};
 
 	f2 () () ();

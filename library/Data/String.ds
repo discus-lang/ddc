@@ -94,6 +94,7 @@ newString length
 			};		
 
 	-- alloc the object.
+	str 	:: String %r;
 	str	= primAlloc_dataR 0# lenS;
  
  	-- grab a ptr to the raw string from the new object.

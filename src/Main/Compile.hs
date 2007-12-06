@@ -335,6 +335,9 @@ compileFile	args     fileName
 	
 	
 	-- Call class instance functions and add dictionaries.
+	when ?verbose
+	 $ do	putStr $ "  * Core: Dict\n"
+
 	cDict		<- SC.coreDict 
 				cHeader
 				cReconstruct
@@ -351,6 +354,10 @@ compileFile	args     fileName
 
 	-----------------------
 	-- Optimisations
+	-- 
+	when ?verbose
+	 $ do	putStr $ "  * Core: Optimise\n"
+
 
 	-- Inline forced inline functions
 	cInline		<- SC.coreInline
@@ -383,6 +390,9 @@ compileFile	args     fileName
 			$  SC.coreReconstruct  "core-reconstruct2" cHeader cFullLaziness
 
 	-- Perform lambda lifting.
+	when ?verbose
+	 $ do	putStr $ "  * Core: Lift\n"
+
 	(  cLambdaLift
 	 , vsLambda_new) <- SC.coreLambdaLift
 				cReconstruct2
@@ -442,6 +452,10 @@ compileFile	args     fileName
 		compileExit
 
 	-- Convert to Sea code.
+	-- Perform lambda lifting.
+	when ?verbose
+	 $ do	putStr $ "  * Core: ToSea\n"
+
 	(eSea, eHeader)	<- SC.toSea
 				cDitch
 				cHeader

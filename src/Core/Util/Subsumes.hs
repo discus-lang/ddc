@@ -26,6 +26,12 @@ subsumes tableMore t s
    in	subsumes' t s
 	
 subsumes' t s
+	-- 
+	| TForall v1 k1 t1	<- t
+	, TForall v2 k2 t2	<- s
+	, v1 == v2
+	, k1 == k2
+	= subsumes' t1 t2
 
 	-- sums
 	| TSum tKind ts		<- t
@@ -99,9 +105,11 @@ subsumes' t s
 	= True
 	
 	-- closure constructor
+	-- 	It doesn't matter what the variable is
+	--	So long as the type is the same
+	
 	| TFree tVar ts		<- t
 	, TFree sVar ss		<- s
-	, tVar == sVar
 	, ts == ss
 	= True
 	

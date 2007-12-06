@@ -386,11 +386,40 @@ toCoreX xx
 		return	$  C.XConst (S.CConstU lit) t
 
  
+	-- We need the last statement in a do block to be a non-binding because of an
+	--	interaction between the way we annotate generalised schemes with their types.
+	--
+	-- 	In this example:
+	--		f () = do { a1 = 2; g () = a1 + 3; };
+	--
+	-- 	We infer:
+	--          f :: forall %r1 %r2. () -> () -($c1)> Int %r1
+	--   	      :- $c1 = a1 :: Int %r2
+	--
+	-- 	But in the core we reconstruct:
+	--          g :: forall %r1. () -($c1)> Int %r1
+	--            :- $c1 = a :: Int %r2
+	--      and
+	--          f :: forall %r2. () -> forall %r1. -($c1)> Int %r1
+	--
+	--	Forcing the last element of the XDo to be a value, ie
+	--		f () = do { a1 = 2; g () = a1 + 3; g; }
+	--	provides an instantiation of g, so its no longer directly quantified.
+	--
+	--	We could perhaps make the ToCore transform cleverer, but forcing the last statement
+	--	to be a value seems a reasonable request, so we'll just run with that.
+	--
 	D.XDo 	_ stmts
 	 -> do	stmts'	<- liftM catMaybes
 	 		$  mapM toCoreS stmts
-
-		return	$ C.XDo stmts'
+	
+		case takeLast stmts' of
+		 Just stmt@(C.SBind (Just _) _)
+		  -> panic stage
+		  	$ "toCoreX: last statement of a do block cannot be a binding.\n"
+			% "    offending statement:\n"	%> stmt	% "\n"
+		 
+		 _ -> return	$ C.XDo stmts'
 			
 			
 	D.XIfThenElse _ e1 e2 e3

@@ -35,12 +35,14 @@ debug		= True
 trace ss x	= if debug then Debug.trace (pretty ss) x else x
 
 reconstructTree
-	:: Tree		-- header tree 
+	:: String	-- stage name
+	-> Tree		-- header tree 
 	-> Tree 	-- core tree
 	-> Tree		-- core tree with reconstructed type information
 	
-reconstructTree tHeader tCore
- = let	
+reconstructTree stage tHeader tCore
+ = let 	?stage	= stage
+   in let
  	-- slurp out all the stuff defined at top level
 	topTypes	= catMap slurpTypesP (tHeader ++ tCore)
  	tt		= foldr addEqVT' initTable topTypes
@@ -48,7 +50,7 @@ reconstructTree tHeader tCore
 	-- reconstruct type info on each top level thing
 	tCore'		= map (reconP tt) tCore
 	
-   in	tCore'
+      in tCore'
 	
 
 
@@ -92,7 +94,8 @@ initTable
 	, tableMore	= Map.empty }
 
 -----
-reconP :: Table -> Top -> Top
+reconP	:: (?stage :: String)
+	-> Table -> Top -> Top
 
 reconP tt (PBind v x)
  = let	(x', xt, xe, xc)	
@@ -104,7 +107,8 @@ reconP tt p		= p
 ------------------------------------------------------------------------------------------
 -- | Reconstruct the type, effect and closure of this expression.
 --
-reconX 	:: Table		-- ^ var -> type 
+reconX 	:: (?stage :: String)	-- name of stage that called this reconstruct
+  	=> Table		-- ^ var -> type 
 	-> Exp 			-- ^ expression to reconstruct info on
 	-> ( Exp		-- expression with reconstructed info
 	   , Type		-- type of expression
@@ -146,7 +150,8 @@ reconX tt exp@(XAPP x t)
 		, xc)
 	  
 	 _ -> panic stage
-	 	$ "reconX: Kind error in type application (x t).\n"
+	 	$ " reconX: Kind error in type application (x t).\n"
+		% "  in stage " % ?stage	% "\n\n"
 		% "     x     =\n" %> x		% "\n\n"
 		% "     t     =\n" %> t		% "\n\n"
 		% "   T[x]    =\n" %> tx	% "\n\n"
@@ -160,13 +165,37 @@ reconX tt (XTet vts x)
 	, xc)
    
 -- xtau
--- BUGS: we should check the XTau type here   
-reconX tt (XTau t x)
- = let	(x', tx, xe, xc)	= reconX tt x
-   in	( XTau t x'
-   	, t
-	, xe
-	, xc)
+-- We can't actually check the reconstructed type against the annotation here
+--	because we can't see /\ bound TREC variables that might be bound above us.
+--
+--	eg, with /\ t -> [** t] x
+--	    the type of x is (forall t. t), not just t.
+--
+-- 	The XTau types are checked by reconS instead.
+--
+reconX tt exp@(XTau tauT x)
+ = let	(x', xT, xE, xC)	= reconX tt x
+   in	( XTau tauT x'
+	, xT
+	, xE
+	, xC)
+
+{-
+
+ 	tauT'			= flattenT tauT
+	xT'			= packT $ substituteT (tableEq tt) xT
+   in	if subsumes (tableMore tt) tauT' xT'
+    	 then	( XTau tauT x'
+	   	, xT
+		, xE
+		, xC)
+
+	 else	panic stage
+	 		$ "reconX: Type error in core.\n"
+			% " in annotated expression:\n"			%> exp		% "\n\n"
+			% " reconstructed type:\n"			%> xT'		% "\n\n"
+			% " is not less than type of annotation:\n"	%> tauT'	% "\n\n"
+-}
 
 -- lam
 reconX tt exp@(XLam v t x eff clo)
@@ -234,8 +263,9 @@ reconX tt exp@(XApp x1 x2 eff)
 	       	
 	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
+		% " in stage: " % ?stage			% "\n"
 		% " in expression:\n"
-		% "     (" % x1 % ") " % x2	% "\n\n"
+		% "     (" % x1 % ") " % "(" % x2	% ")" % "\n\n"
 
 		% "   T[x1]   = " %> x1t		% "\n\n"
 		% "   (flat)  = " %> flattenT x1t	% "\n\n"
@@ -259,9 +289,6 @@ reconX tt (XDo ss)
 		(makeTSum KClosure (map TTag vsBind)) )
    
 -- match
--- BUGS: also fill in effect information here
--- also give match effect
---
 reconX tt (XMatch aa eff)
  = let	(aa', altTs, altEs, altCs)	= unzip4 $ map (reconA tt) aa
  	Just atLast			= takeLast altTs
@@ -293,13 +320,15 @@ reconX tt (XVar v)
 	 -> panic stage $ "reconX: Variable " % v % " is not bound"
 
 -- prim
--- BUGS: closure is wrong here
 reconX tt xx@(XPrim prim xs eff)
- = let	Just t	= maybeSlurpTypeX xx
+ = let	(xs', xsTs, xsEs, xsCs)		
+ 		= unzip4 $ map (reconX tt) xs
+		
+	Just t	= maybeSlurpTypeX xx
    in	( xx
    	, t
-   	, eff
-	, TBot KClosure)
+   	, makeTSum KEffect  (eff : xsEs)
+	, makeTSum KClosure xsEs)
 
 -- no match
 reconX tt xx
@@ -309,7 +338,8 @@ reconX tt xx
 
 
 -----
-reconS :: Table -> Stmt -> (Table, (Stmt, Type, Effect, Closure))
+reconS 	:: (?stage :: String) 
+	=>  Table -> Stmt -> (Table, (Stmt, Type, Effect, Closure))
 
 reconS tt (SBind Nothing x)	
  = let	(x', xt, xe, xc)	= reconX tt x
@@ -330,7 +360,8 @@ reconS tt (SBind (Just v) x)
 	  
 
 -----
-reconA :: Table -> Alt -> (Alt, Type, Effect, Closure)
+reconA 	:: (?stage :: String)
+	=> Table -> Alt -> (Alt, Type, Effect, Closure)
 
 reconA tt (AAlt gs x)
  = let	(tt', gecs)		= mapAccumL reconG tt gs
@@ -352,7 +383,8 @@ reconA tt (AAlt gs x)
 -----
 -- BUGS: check type of pattern agains type of expression
 --
-reconG :: Table -> Guard -> (Table, (Guard, [Var], Effect, Closure))
+reconG	:: (?stage :: String)
+	=> Table -> Guard -> (Table, (Guard, [Var], Effect, Closure))
 
 reconG tt (GExp p x)
  = let	binds		= slurpVarTypesW p

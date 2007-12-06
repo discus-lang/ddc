@@ -67,7 +67,7 @@ fullLazinessTree
 
 	treeErase		= eraseAnnotsTree treeMod
 	treeSnip		= snipTree Set.empty unqiueSnip treeErase
-	treeRecon		= reconstructTree cHeader treeSnip
+	treeRecon		= reconstructTree "Core.FullLaziness" cHeader treeSnip
 
      in	treeRecon
 

@@ -130,55 +130,6 @@ generaliseType varT tCore envCids
 
 		% "    envCids          = " % envCids		% "\n"
 		% "\n"
-{-
-	-- Force effect and closure vars in contra-variant positions to ports.
-	--
-	-- Eg: In a type like this:
-	--	(a -(!e1)> b) -> (a -(!e1)> b) -> (a -(!e1)> b)
-	--
-	--	The first two occurances of !e1 are in contra-variant branches and do not represent
-	--	represent restrictions placed on what effects can be passed in for the parameters.
-	--	We can introduce new variables and rewrite this type to:
-	--
-	--	(a -(!e2)> b) -> (a -(!e3)> b) -> (a-(!e4)> b)
-	--	:- !e4 = !{ !e2; !e3 }
-	--
-
-	(tPort, portTable0)
-			<- forcePortsT tCore
-
-	let tPortPacked = packType tPort
-
-	-- The force table contains a lists of substitutions for vars from both co-variant
-	-- and contra-variant positions.
-	--
-	-- We'll need this to rewrite the code code for the binding to use the new names
-	--	from force-ports above.
-	--
-	--	BUGS: Also include the original variable (!e1) in the sum if its present in
-	--	      the type environment of this binding.
-	--	CHECK this against nested lambdas.. scoping.
-	--
-	portTablePlugged
-			<- plugClassIds [] portTable0
-
-	let portTable	= map (\(t1@(TVar k v1), ts)
-				-> (v1, makeTSum k ts))
-			$ gather 
-			$ fst portTablePlugged		-- just the contra-variant substitutions
-	
-	-- stash the table in the solver state
-	modify 	$ \s -> s { statePortTable	= Map.insert varT (Map.fromList portTable)
-						$ statePortTable s }
-	--
-	trace	$ "    tPort\n"
-		%> prettyTS tPort	% "\n\n"
-		% "    tPortPacked\n"
-		%> prettyTS tPortPacked % "\n\n"
-
-		% "    portTable\n"
-		%> pretty portTable		% "\n\n"
--}
 
 	-- work out what effect and closure vars are in contra-variant branches
 	let contraTs	= catMaybes
@@ -201,13 +152,15 @@ generaliseType varT tCore envCids
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	let staticRsData = staticRsDataT     tPort
+	let staticRsData 	= staticRsDataT		tPort
+	let staticRsClosure 	= staticRsClosureT	tPort
+
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
+		% "    staticRsClosure  = " % staticRsClosure	% "\n"
 
 	-- 	Can't generalise regions free in the closure of the outermost function.
 	--	... the objects in the closure are in the same region every time you use the function.
 	--
-	let staticRsClosure = staticRsClosureT tPort
 {-
 	--	Can't generalise cids which are under mutable constructors.
 	--	... if we generalise these classes then we could update an object at one 
