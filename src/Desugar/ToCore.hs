@@ -277,7 +277,8 @@ toCoreX xx
 				= C.stripSchemeT tArg1
 
 		portVars	<- gets corePortVars
-		let tArg	= C.buildScheme
+		let tArg	= C.packT
+				$ C.buildScheme
 					argQuant
 					[(v, t)	| (v, t)	<- argTet
 						, not $ Set.member v portVars]
@@ -287,7 +288,7 @@ toCoreX xx
 		-- If the effect/closures were vars then look them up from the graph
 		effLet	<- case effVar of
 				T.TVar T.KEffect vE	
-				 -> do	e	<- liftM (C.stripContextT)
+				 -> do	e	<- liftM (C.packT . C.stripContextT)
 				 		$ getType vE
 				 	return	$ Just (vE, e)
 
@@ -296,7 +297,7 @@ toCoreX xx
 				
 		cloLet	<- case cloVar of
 				T.TVar T.KClosure vC	
-				 -> do	c	<- liftM (C.stripContextT)
+				 -> do	c	<- liftM (C.packT . C.stripContextT)
 				 		$ getType vC
 				 	return	$ Just (vC, c)
 				 

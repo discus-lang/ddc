@@ -196,8 +196,6 @@ generaliseType varT tCore envCids
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
-
-
 	-- Mask effects and CMDL constraints on local regions
 	-- 	Do this before adding foralls so we don't end up with quantified regions which
 	--	aren't present in the type scheme.
