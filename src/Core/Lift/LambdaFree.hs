@@ -25,8 +25,8 @@ import Core.Plate.FreeVars
 import Core.Lift.Base
 import qualified Debug.Trace	as Debug
 
+-----
 debug		= False
-
 trace ss x	
  = if debug
  	then	Debug.trace ss x

@@ -230,7 +230,7 @@ packFetterLs ls ff
 
 	FConstraint v ts
 	 -> FConstraint v 
-	 	(map (\t -> packTypeLs ls $ loadFunData ls t) ts)
+	 	(map (\t -> packTypeLs ls $ loadType ls t) ts)
 
 	_	
 	 -> ff

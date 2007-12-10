@@ -11,7 +11,7 @@ import Type.Exp
 import Type.Plate
 import Type.Util
 import Shared.VarPrim
-
+import Shared.Error
 
 import Util
 import qualified Data.Map	as Map
@@ -19,6 +19,8 @@ import Data.Map			(Map)
 
 import Debug.Trace
 -----
+
+stage	= "Type.Context"
 
 
 -- | Reduce the context of this type using the provided map of instance definitions.
@@ -31,7 +33,7 @@ reduceContextT
 reduceContextT classInst tt
  = case tt of
  	TFetters fs t	
-	 -> let	fs'	= catMaybes
+	 -> let	fs'	= concat
 	 		$ map (reduceContextF classInst) fs
 
 	    in	case fs' of
@@ -44,7 +46,7 @@ reduceContextT classInst tt
 reduceContextF 
 	:: Map Var [Fetter]	-- (class var -> instances) for each class
 	-> Fetter		-- the constraint being used
-	-> Maybe Fetter		-- maybe a new constraint
+	-> [Fetter]		-- maybe some new constraints
 
 reduceContextF classInstances ff
 
@@ -52,16 +54,39 @@ reduceContextF classInstances ff
  	| FConstraint v ts	<- ff
 	, Just instances	<- Map.lookup v classInstances
 	, Just inst'		<- find (matchInstance ff) instances
-	= Nothing
+	= []
 
 	-- Purity constraints on bottom effects can be removed.
 	| FConstraint v [TBot KEffect]	<- ff
 	, v == primPure 
-	= Nothing
+	= []
+
+	-- Purity constraints on read effects can be dischared by 
+	--	making the region constant
+	| FConstraint v effs	<- ff
+	, v == primPure
+	, effsFlat		<- catMap flattenTSum effs
+	, (effs', fsMore)	<- unzip $ map purifyEff effsFlat
+
+	-- build the effs we couldn't purify back into a sum
+	, remainingEff		<- makeTSum KEffect $ catMaybes effs'
+
+	= case remainingEff of
+	    TBot KEffect	-> catMaybes fsMore
+	    _ 			-> FConstraint primPure [remainingEff] : catMaybes fsMore
+	    
+
+	| otherwise
+	= [ff]
+
+
+purifyEff eff
+ 	| TEffect v [tR@(TVar KRegion r)]	<- eff
+	, v == primRead
+	= (Nothing, Just (FConstraint primConst [tR]))
 	
 	| otherwise
-	= Just ff 	
-
+	= (Just eff, Nothing)
 
 
 
