@@ -1,14 +1,12 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Core.Plate.FreeVars
-(
-	freeVarsX,
-	freeVarsS,
-	freeVarsT,
+	( freeVarsX
+	, freeVarsS
+	, freeVarsT
 	
-	varsBoundByG,
-	varsBoundByW
-)
+	, varsBoundByG
+	, varsBoundByW )
 
 where
 
@@ -41,7 +39,8 @@ freeVarsX xx
 
 	XLAM v k e
 	 -> unions 
-	 	[ freeVarsX e ]
+	 	[ freeVarsK k
+		, freeVarsX e ]
 		\\ Set.singleton (varOfBind v)
 
 	XAPP x t
@@ -151,8 +150,6 @@ freeVarsM m
 freeVarsS ::	Stmt -> Set Var
 freeVarsS   	xx
  = case xx of
-	SComment{}	-> Set.empty
-
  	SBind v x
 	 -> unions 
 	 	[ freeVarsX x ]
@@ -189,12 +186,14 @@ freeVarsT	tt
 	TNil		-> empty
 
  	TForall v k t	
-	 -> freeVarsT t
-	 	\\ (Set.singleton $ varOfBind v)
-
-	TContext l t
 	 -> unions
-	 	[ freeVarsT l
+	 	[ freeVarsK k
+		, freeVarsT t]
+		 \\ (Set.singleton $ varOfBind v)
+
+	TContext k t
+	 -> unions
+	 	[ freeVarsK k
 		, freeVarsT t ]
 
 	TWhere t1 vts
@@ -248,15 +247,31 @@ freeVarsT	tt
 	-- class
  	TClass v ts	
 	 -> unions
-	 	[ fromList [v] 
+	 	[ Set.singleton v
 		, unions $ map freeVarsT ts ]
 	
-	
-
-	TKind k		-> Set.empty
 
 	_ 	-> panic stage
 		$ "freeVarsT: no match for " % show tt
+
+freeVarsK ::	Kind	-> Set Var
+freeVarsK kk
+ = case kk of
+ 	KNil		-> Set.empty
+	KData		-> Set.empty
+	KRegion		-> Set.empty
+	KEffect		-> Set.empty
+	KClosure	-> Set.empty
+
+	KClass v ts
+	 -> unions
+	 	[ Set.singleton v
+		, unions $ map freeVarsT ts ]
+		
+	KFun k1 k2
+	 -> unions
+	 	[ freeVarsK k1 
+		, freeVarsK k2 ]
 
 	 
 boundByS ::	Stmt	-> Set Var

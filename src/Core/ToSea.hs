@@ -315,8 +315,8 @@ toSeaPrim (C.MFun v tR)
 toSeaS	:: C.Stmt -> SeaM (Maybe (E.Stmt ()))
 toSeaS xx
  = case xx of
-	C.SComment{}
-	 -> 	return Nothing
+--	C.SComment{}
+--	 -> 	return Nothing
 
 	-- match
 	C.SBind (Just v) x@(C.XMatch aa eff)

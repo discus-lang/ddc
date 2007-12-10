@@ -98,7 +98,7 @@ getKind		v
  	NameRegion	-> return KRegion
 	NameEffect	-> return KEffect
 	NameClosure	-> return KClosure
-	NameClass	-> return KClass
+	NameClass	-> return KWitness
 	
 
 -----	

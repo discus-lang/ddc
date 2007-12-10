@@ -20,6 +20,7 @@ module Core.Util.Bits
 	, makeTWhere
 
 	, kindOfSpace 
+	, takeWitnessOfClass
 	, pure
 	, empty
 	
@@ -166,9 +167,18 @@ kindOfSpace space
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
-	NameClass	-> KClass
+	NameClass	-> KWitness
 	_		-> panic stage
 			$  "kindOfSpace: no match for " % show space
+
+
+-- | Build the witness needed to satify this constraint.
+takeWitnessOfClass :: Kind -> Maybe Type
+takeWitnessOfClass kk
+ = case kk of
+ 	KClass v ts	-> Just (TClass v ts)
+	_		-> Nothing
+	
 
 
 flattenApps ::		Exp -> [Exp]
@@ -192,12 +202,8 @@ unflattenApps'		xx
 	(XType   t):xs	-> XAPP (unflattenApps' xs) t
 	(XVar    v):xs
 	 -> case Var.nameSpace v of
-		NameType	-> XAPP  (unflattenApps' xs) (TVar KData 	v)
-		NameRegion	-> XAPP  (unflattenApps' xs) (TVar KRegion  	v)
-		NameEffect	-> XAPP  (unflattenApps' xs) (TVar KEffect	v)
-		NameClosure	-> XAPP  (unflattenApps' xs) (TVar KClosure	v)
-		NameClass	-> XAPP  (unflattenApps' xs) (TVar KClass       v)
 	 	NameValue	-> XApp  (unflattenApps' xs) (XVar v)   (TBot KEffect)
+		space		-> XAPP  (unflattenApps' xs) (TVar (kindOfSpace space) v)
 
 	_		-> panic stage $ "unflattenApps: cannot unflatten " ++ show xx
 
@@ -408,7 +414,7 @@ crushToXDo ss
 -- | Build the type of a constructor
 makeCtorTypeAVT :: [Type] -> Var -> [Var] -> Type
 makeCtorTypeAVT    argTypes dataVar ts
- 	= foldl (\t v -> TForall (BVar v) (TKind $ defaultKindV v) t)
+ 	= foldl (\t v -> TForall (BVar v) (defaultKindV v) t)
 		(unflattenFunE (argTypes ++ [TData dataVar (map (TVar KData) ts)]))
 		(reverse ts)
 
@@ -564,7 +570,6 @@ kindOfType t
  = case t of
 	TForall v t1 t2		-> kindOfType t2
 	TContext t1 t2		-> kindOfType t2
---	TLet 	v t1 t2		-> kindOfType t2
 	TWhere  t1 _		-> kindOfType t1
 
 	TSum  k _		-> k
@@ -582,9 +587,7 @@ kindOfType t
 	
 	TFree{}			-> KClosure
 
-	TClass{}		-> KClass
-	
-	TKind{}			-> KBox
+	TClass v ts		-> KClass v ts
 	
 	TWild k			-> k
 		
@@ -620,7 +623,7 @@ addLambdas	vts x
 	((v, t) : vts)		-> XLam v t (addLambdas vts x) (TTop KEffect) (TTop KClosure)
 	
 	
-addLAMBDAs ::	[(Bind, Type)] -> Exp -> Exp
+addLAMBDAs ::	[(Bind, Kind)] -> Exp -> Exp
 addLAMBDAs	vks x
  = case vks of
  	[]			-> x

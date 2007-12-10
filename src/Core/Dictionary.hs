@@ -67,7 +67,6 @@ rewriteS
 rewriteS ss
  = case ss of
  	SBind mV x	-> SBind mV $ rewriteX x
-	_		-> ss
 	
 rewriteX xx
  = case xx of
@@ -116,7 +115,7 @@ rewriteOverApp
 		Just tInstScheme= Map.lookup vInst mapTypes
 
 		-- Strip this scheme down to its shape
-		(vtsForall, vtsTet, csClass, tInstShape)
+		(vtsForall, vtsTet, ksClass, tInstShape)
 				= stripSchemeT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
@@ -143,7 +142,10 @@ rewriteOverApp
 		-- Work out the type args to pass to the instance function.
 		vsForall	= map (varOfBind . fst) vtsForall
 		tsInstArgs	= map (\v -> let Just t = lookup v vtSub in t) 		vsForall
-		tsClassArgs	= map (\c -> substituteT (Map.fromList vtSub) c)	csClass
+
+		-- Work out the witnesses we need to pass to the instance function
+		ksClassArgs		= map (\c -> substituteT (Map.fromList vtSub) c)	ksClass
+		Just tsWitnesses	= sequence $ map takeWitnessOfClass ksClassArgs
 
 		-- Have a look at the original application 
 		--	split off the type/class args and keep the value args.
@@ -161,7 +163,7 @@ rewriteOverApp
 		xxParts' :: [Exp]
 	  	xxParts'	= ((XAppFP (XVar vInst) Nothing)				-- the function var
 					:  (map (\t -> XAppFP (XType t) Nothing) tsInstArgs)	-- type args to instance fn
-					++ (map (\t -> XAppFP (XType t) Nothing) tsClassArgs)	-- class args to instance fn
+					++ (map (\t -> XAppFP (XType t) Nothing) tsWitnesses)	-- class args to instance fn
 					++ xsArgsVal)						-- value args
 
 	  	xx'		= unflattenAppsE xxParts'
@@ -170,7 +172,8 @@ rewriteOverApp
 		(pretty	$ "rewriteOverApp/leave\n"
 			% "  tInstScheme        = \n" %> tInstScheme	% "\n\n"
 			% "  vtSub              = " % vtSub		% "\n\n"
-			% "  tsInstArgs         = " % tsInstArgs	% "\n\n")
+			% "  tsInstArgs         = " % tsInstArgs	% "\n\n"
+			% "  xx'                =\n" %> xx'		% "\n\n")
 		$ xx'
 			
 

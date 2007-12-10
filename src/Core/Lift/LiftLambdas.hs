@@ -100,8 +100,11 @@ chopInnerS2	topName	(SBind (Just v) x)
 	let Just t	= maybeSlurpTypeX x
 	let x'		= XTau t 
 			$ unflattenApps
-			$ (XVar vSuper : map makeSuperArg ([(varOfBind b, t) | (b, t) <- freeVKs] ++ freeVTs))
-
+			$ (XVar vSuper 
+				: (  map makeSuperArgK freeVKs
+				  ++ [XVar v | (v, t) <- freeVTs]))
+			
+			
 	return	$ SBind (Just v) x'
 	
 -----
@@ -110,10 +113,12 @@ chopInnerS2	topName	(SBind (Just v) x)
 --	just pass new witness instead of their args.. we'll thread the actual
 --	witness though later on
 --
-makeSuperArg :: (Var, Type) -> Exp
-makeSuperArg (v, t)
-	| Var.nameSpace v == NameClass	= XType t
-	| otherwise			= XVar v
+makeSuperArgK :: (Bind, Kind) -> Exp
+makeSuperArgK (b, k)
+ = case k of
+ 	KClass v ts	-> XType (TClass v ts)
+	_		-> XVar (varOfBind b)
+	
 
 
 

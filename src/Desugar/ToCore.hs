@@ -511,7 +511,7 @@ toCoreX xx
 		tScheme		<- getType v
 		mapInst		<- gets coreMapInst
 
-		let (btsForall, vtsWhere, tsContextC, tShape)
+		let (btsForall, vtsWhere, ksContextC, tShape)
 				= C.stripSchemeT tScheme
 		
 		-- TODO: break this out into a separate fn
@@ -550,12 +550,16 @@ toCoreX xx
 
 			-- If this function needs a witnesses we'll just make them up.
 			--	Real witnesses will be threaded through in a later stage.
-			let tsContextC'	= map (C.substituteT tsSub) tsContextC
+			let ksContextC'	= map (C.substituteT tsSub) ksContextC
+			
+			let tsContextC' = map (\k -> case k of
+							C.KClass v ts	-> C.TClass v ts) 
+					$ ksContextC'
 			
 			trace ("varInst: "
 				% vT 				% "\n"
 				% "    T[vT]           =\n" %> tScheme 		% "\n"
-				% "    context         = " % tsContextC		% "\n"
+				% "    ksContext       = " % ksContextC		% "\n"
 				% "    tsInstC         = " % tsInstC            % "\n"
 				% "    tsInstCE        = " % tsInstCE		% "\n"
 				% "    tsInstC_packed  = " % tsInstC_packed	% "\n"
@@ -569,10 +573,15 @@ toCoreX xx
 		 -- 	pass the args on the type scheme back to ourselves.
 		 T.InstanceLetRec vUse vBind (Just tScheme)
 		  -> do
-			let tScheme'	= toCoreT tScheme
-			let tsReplay	= C.slurpForallContextT tScheme'
+			let tScheme'			= toCoreT tScheme
+			let (tsReplay, ksContext)	= C.slurpForallContextT tScheme'
+
+			let tsContext	= map (\k -> case k of
+							C.KClass v ts	-> C.TClass v ts)
+					$ ksContext
+
 		  	return $ C.unflattenApps
-			 	(C.XVar v : map C.XType tsReplay)
+			 	(C.XVar v : map C.XType (tsReplay ++ tsContext))
 
 	_ 
 	 -> panic stage

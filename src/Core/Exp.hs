@@ -94,7 +94,7 @@ data Exp
 	------
 	-- Core Constructs
 	--
-	| XLAM		Bind 	Type	Exp		-- ^ Type\/region\/effect\/closure abstraction.
+	| XLAM		Bind 	Kind	Exp		-- ^ Type\/region\/effect\/closure abstraction.
 	| XAPP		Exp	Type			-- ^ Type\/region\/effect\/closure application.
 	| XTet		[(Var, Type)]	Exp		-- ^ A type-level let binding.
 	| XTau		Type	Exp			-- ^ A type annotation.
@@ -160,8 +160,8 @@ data Prim
 -- |	Statments,  sequencing.
 --
 data Stmt
-	= SComment 	String
-	| SBind  	(Maybe Var) Exp			-- ^ Let binding.
+--	= SComment 	String
+	= SBind  	(Maybe Var) Exp			-- ^ Let binding.
 	deriving (Show, Eq)
 
 
@@ -198,8 +198,8 @@ data Type
 	--
 	= TNil
 
-	| TForall	Bind	Type	Type		-- ^ Type abstraction.
-	| TContext		Type	Type		-- ^ Class context.
+	| TForall	Bind	Kind	Type		-- ^ Type abstraction.
+	| TContext		Kind	Type		-- ^ Class context.
 	| TWhere	Type	[(Var, Type)]		-- ^ Type level where expression.
 	| TApp		Type 	Type			-- ^ Type application.
 
@@ -222,11 +222,8 @@ data Type
 	| TFree		Var Type			-- ^ some object free in the closure of a function.
 	| TTag		Var
 	
-	-- class
+	-- class witness
 	| TClass	Var [Type]
-	
-	-- kinds
-	| TKind		Kind
 	
 	-- wildcards
 	| TWild		Kind				-- ^ Type wildcard. 
@@ -264,15 +261,18 @@ type Class	= Type
 data Kind	
 	= KNil
 
-	| KBox
-
 	| KData
 	| KRegion
 	| KEffect
 	| KClosure
-	| KClass
-
 	| KFun 		Kind	Kind
+	| KClass	Var	[Type]
+
+
+	-- this is really a superkind, but we'll keep it here
+	--	to discriminate witness variables from DREC vars
+	| KWitness
+
 	deriving (Show, Eq)
 
 

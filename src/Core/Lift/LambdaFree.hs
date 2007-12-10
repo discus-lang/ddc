@@ -37,8 +37,8 @@ lambdaFreeVarsP
 	:: Top
 	-> LiftM 
 		( Top
-		, [(Bind, Type)]	-- type/region/effect/class vars bound
-		, [(Var, Type)])	-- value vars bound
+		, [(Bind, Kind)]	-- type/region/effect/class vars bound
+		, [(Var,  Type)])	-- value vars bound
 		
 
 lambdaFreeVarsP
@@ -60,7 +60,7 @@ lambdaFreeVarsP
 	freeKs		<- mapM getKind freeTREs
 
 	-- BUGS: bound quantification isn't being preserved here
-	let freeVKs	= zip (map BVar freeTREs) $ map TKind freeKs
+	let freeVKs	= zip (map BVar freeTREs) $ freeKs
 
 	freeTs		<- mapM getType freeVs
 
@@ -78,7 +78,6 @@ lambdaFreeVarsP
 	-- add the new type to the liftM state straight away, so if we had nested lambda bindings,
 	--	the next time we add lambdas we'll know what the type of this one was.
 	bindType v tBound
-	
 
 	trace
 	 (pretty	$ "* bindFreeVarsP\n"
@@ -91,10 +90,10 @@ lambdaFreeVarsP
 
 	 $ return 
 	 	( pBound
-	 	, freeVKs -- ++ classVTs
+	 	, freeVKs
 		, freeVTs)
 
-stripArgType	:: Type -> ( ([(Var, Type)], [Class]), Type)
+stripArgType	:: Type -> ( ([(Var, Type)], [Kind]), Type)
 stripArgType t
  = let	(forallVTs, _, classes, tt)
  		= stripSchemeT t
@@ -106,7 +105,7 @@ stripArgType t
 -- stripLambdas
 -- |	strip the lambdas off an expression
 --
-stripLambdas ::	Exp -> ([(Bind, Type)], [(Var, Type)], Exp)
+stripLambdas ::	Exp -> ([(Bind, Kind)], [(Var, Type)], Exp)
 stripLambdas	x
  = case x of
  	XLam v t x eff clo	

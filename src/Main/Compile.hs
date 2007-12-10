@@ -384,13 +384,12 @@ compileFile	args     fileName
 	----------------------
 	-- 
 
-	-- Snip the tree again to make sure
-	--	all the appropriate function calls are exposed as their own bindings.
---	cSnip2		<- SC.coreSnip "core-snip2" "CSb" topVars cFullLaziness
-
-	-- Reconstruct type annotations on bindings.
+	-- Check the program one last time
+	--	Lambda lifting doesn't currently preserve the typing.
+	--
 	cReconstruct2	<- runStage "reconstruct2"
 			$  SC.coreReconstruct  "core-reconstruct2" cHeader cFullLaziness
+
 
 	-- Perform lambda lifting.
 	when ?verbose
@@ -398,7 +397,7 @@ compileFile	args     fileName
 
 	(  cLambdaLift
 	 , vsLambda_new) <- SC.coreLambdaLift
-				cReconstruct2
+				cFullLaziness
 				cHeader
 
 	runStage "lint-lifted" 

@@ -42,12 +42,13 @@ cleanT table tt
 	| TVar k v	<- tt
 	, elem k [KEffect, KClosure]
 	, Nothing	<- Map.lookup v (boundT table)
+	, Nothing	<- Map.lookup v (boundK table)
 	= return $ TBot k
 
 	-- Effects on unbound regions can be masked.
 	| TEffect vE [TVar KRegion vR]	<- tt
 	, elem vE [primRead, primWrite]
-	, Nothing	<- Map.lookup vR (boundT table)
+	, Nothing	<- Map.lookup vR (boundK table)
 	= return $ TBot KEffect
 
 	-- Repack effect and closure sums on the way up to crush out TPure/Empty added above

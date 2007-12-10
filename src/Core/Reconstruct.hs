@@ -123,18 +123,17 @@ reconX tt (XLAM b@(BMore v t1) t2 x)
 	, xE
 	, xC)
 
-reconX tt (XLAM v t x)
- | kindOfType t == KClass
+reconX tt (XLAM v k@KClass{} x)
  = let	(x', tx, xe, xc)	= reconX tt x
-   in	( XLAM 	  v t x'
-    	, TContext t tx 
+   in	( XLAM 	   v k x'
+    	, TContext k tx 
 	, xe
 	, xc)
 
- | otherwise
+reconX tt (XLAM v k x)
  = let	(x', tx, xe, xc)	= reconX tt x
-   in	( XLAM 	  v t x'
-    	, TForall v t tx 
+   in	( XLAM 	  v k x'
+    	, TForall v k tx 
 	, xe
 	, xc)
  

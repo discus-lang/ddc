@@ -95,7 +95,7 @@ curryS 	:: (?supers 	:: Map Var Top)
 
 curryS	tc s
  = case s of
-	SComment{}	-> s
+--	SComment{}	-> s
 	SBind v x	-> SBind v (curryX tc x)
    
 -----

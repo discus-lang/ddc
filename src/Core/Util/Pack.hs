@@ -54,10 +54,10 @@ packT1 tt
 	    in	TForall vks t1 t2'
 
 	 
-	TContext t1 t2
-	 -> let	t1'	= packT1 t1
+	TContext k1 t2
+	 -> let	k1'	= packK1 k1
 	 	t2'	= packT1 t2
-	    in 	TContext t1' t2'
+	    in 	TContext k1' t2'
 
 	TWhere (TVar k v1) [(v2, t2)]
 	 | v1 == v2
@@ -135,14 +135,23 @@ packT1 tt
 	 -> let	ts'	= map packT1 ts
 	    in	TClass v ts'
 	
-	-- kind embedding
-	TKind{}	-> tt
-	
 	-- wildcards
 	TWild{}	-> tt
 
 	_ -> panic stage
 		$ "packT: no match for " % tt
+
+
+-- | Do one round of packing on this kind
+packK1 :: Kind -> Kind
+packK1 kk
+ = case kk of
+ 	KClass v ts
+	 -> let	ts'	= map packT1 ts
+	    in	KClass v ts'
+	    
+	_ -> kk
+
 
 
 -----
@@ -207,7 +216,6 @@ inlineTWheresMapT sub block tt
 	-- class
 	TClass v ts		-> TClass v 	(map down ts)
 
-	TKind k			-> tt
 	TWild k			-> tt
 	    
 --	_ -> panic stage

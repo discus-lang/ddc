@@ -349,7 +349,7 @@ transXM2 table xx
 
 	XLAM v k x
 	 -> do	v'		<- followB_bind table v
-	 	k'		<- followT table k
+	 	k'		<- followK table k
 		x'		<- followX table x
 		transX table	$ XLAM v' k' x'
 		
@@ -503,16 +503,16 @@ instance Monad m => TransM m Type where
  	TNil
 	 ->	transT table tt
 	 
-	TForall b t1 t2
+	TForall b k1 t2
 	 -> do	b'		<- followB_bind table b
-	 	t1'		<- followT table t1
+	 	k1'		<- followT table k1
 	 	t2'		<- followT table t2
-	 	transT table	$ TForall b' t1' t2'
+	 	transT table	$ TForall b' k1' t2'
 
-	TContext l t
+	TContext k t
 	 -> do	t'		<- followT table t
-		l'		<- transZM table l
-	 	transT table	$ TContext l' t'
+		k'		<- transZM table k
+	 	transT table	$ TContext k' t'
  	
 	TWhere	t1 vts
 	 -> do	t1'		<- followT table t1
@@ -582,19 +582,37 @@ instance Monad m => TransM m Type where
 	 	v'		<- followV_free  table v
 		return		$  TClass v' ts'
 
-	TKind k			-> transT table	tt
-
 	_ 	-> panic stage
 		$  "transZM[Type]: no match for " % show tt
 	 
+
+instance Monad m => TransM m Kind where
+ transZM table kk
+  = case kk of
+	KNil		-> return KNil
+  	KData 		-> return KData
+  	KRegion 	-> return KRegion
+  	KEffect		-> return KEffect
+  	KClosure	-> return KClosure
+	
+	KFun k1 k2
+	 -> do	k1'	<- followK table k1
+	 	k2'	<- followK table k2
+		return	$ KFun k1' k2'
+		
+	KClass v ts
+	 -> do	v'	<- followV_free table v
+	 	ts'	<- followTs table ts
+		return	$ KClass v' ts'
 	 
+	KWitness	-> return KWitness
 
 -----
 instance Monad m => TransM m Stmt where
  transZM table s
   = case s of
- 	SComment str
-	 -> 	transS table s
+-- 	SComment str
+--	 -> 	transS table s
 	 
 	SBind mV x
 	 -> do	mV'		<- liftMaybe (followV_bind table) mV

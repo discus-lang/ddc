@@ -149,11 +149,11 @@ walkZM2 z xx
 	-- core constructs
 	XVar v			-> return xx
 	
-	XLAM b t x
-	 -> do	t'		<- walkZM z t
-	 	z'		<- bindT z z (varOfBind b) t'
+	XLAM b k x
+	 -> do	-- k'		<- walkZM z k
+	 	z'		<- bindK z z (varOfBind b) k
 		x'		<- walkZM z' x
-	 	transX z' z'	$ XLAM b t' x'
+	 	transX z' z'	$ XLAM b k x'
 
 	XLam v t x eff clo
 	 -> do	t'		<- walkZM z  t
@@ -210,7 +210,10 @@ walkZM2 z xx
 	XLocal r vts x
 	 -> do	let z'		= z 
 				{ boundT	= Map.union  (Map.fromList vts) 
-						$ Map.insert r (TKind KRegion) (boundT z) }
+						$ boundT z
+				
+				, boundK	= Map.insert r KRegion
+						$ boundK z }
 
 		x'		<- walkZM z' x
 	 	return		$ XLocal r vts x'
@@ -268,7 +271,7 @@ instance Monad m => WalkM m Pat where
 instance Monad m => WalkM m Stmt where
  walkZM z ss
   = case ss of
-	SComment{}		-> return ss
+--	SComment{}		-> return ss
 
 	SBind (Just v) x
 	 -> do	x'		<- walkZM z x
@@ -286,10 +289,10 @@ instance Monad m => WalkM m Stmt where
 instance Monad m => WalkM m Type where
  walkZM z tt 
   = case tt of
-	TContext t1 t2
-	 -> do	t1'		<- walkZM z t1
+	TContext k1 t2
+	 -> do	-- t1'		<- walkZM z t1
 	 	t2'		<- walkZM z t2
-		transT z z	$ TContext t1' t2'		
+		transT z z	$ TContext k1 t2'		
 
 	TWhere t1 vts
 	 -> do	z'		<- foldM (\z (v, t) -> bindT z z v t) z vts

@@ -48,7 +48,11 @@ unifyT2 t1 t2
 	, kindOfType t1 == k2		= Just [(t1, t2)]
 
 	-- regions, effects, closures and classes always unify
-	| elem (kindOfType t1) [KRegion, KEffect, KClosure, KClass]
+	| KClass{}			<- kindOfType t1
+	, KClass{}			<- kindOfType t2
+	= Just [(t1, t2)]
+	
+	| elem (kindOfType t1) [KRegion, KEffect, KClosure]
 	, kindOfType t1 == kindOfType t2
 	= Just [(t1, t2)]
 

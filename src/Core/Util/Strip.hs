@@ -17,9 +17,9 @@ import qualified Shared.Var	as Var
 
 -----
 stripSchemeT	:: Type 
-		-> 	( [(Bind, Type)]
-			, [(Var, Type)]
-			, [Class] 
+		-> 	( [(Bind, Kind)]
+			, [(Var,  Type)]
+			, [Kind] 
 			, Type)
 			
 stripSchemeT tt 
@@ -57,7 +57,7 @@ stripSchemeT' forallVTs tetVTs classes tt
 
 
 -----
-buildScheme ::	[(Bind, Type)] -> [(Var, Type)] -> [Class] -> Type -> Type
+buildScheme ::	[(Bind, Kind)] -> [(Var, Type)] -> [Kind] -> Type -> Type
 buildScheme	forallVTs bindVTs classes shape
  = let	tC	= foldl (\s c	   -> TContext c s)  shape	$ reverse classes
 
@@ -71,7 +71,7 @@ buildScheme	forallVTs bindVTs classes shape
 
 
 slurpForallsT 
-	:: Type -> [(Bind, Type)]
+	:: Type -> [(Bind, Kind)]
 
 slurpForallsT tt
  = let 	(forallVTs, _, _, _)	= stripSchemeT tt
@@ -79,17 +79,28 @@ slurpForallsT tt
 
 
 -- | slurp of forall bound vars and contexts from the front of this type
-slurpForallContextT :: Type -> [Type]
+slurpForallContextT :: Type -> ([Type], [Kind])
 slurpForallContextT tt
  = case tt of
  	TForall b t1 t2	
 	 -> let	v	= varOfBind b
 	    	k	= kindOfSpace $ Var.nameSpace v
-	    in	TVar k v : slurpForallContextT t2
+		
+		(vs, ks) = slurpForallContextT t2
+		
+	    in	( TVar k v : vs
+	    	, ks)
 
-	TContext t1 t2	-> t1 : slurpForallContextT t2
-	TWhere t1 vts	-> slurpForallContextT t1
-	_		-> []
+	TContext k1 t2	
+	 -> let (vs, ks) = slurpForallContextT t2
+	    in	( vs
+	        , k1 : ks)
+
+	TWhere t1 vts	
+	 -> slurpForallContextT t1
+
+	_		
+	 -> ([], [])
 
 
 -----

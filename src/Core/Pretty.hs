@@ -22,6 +22,12 @@ import Util.Pretty
 stage	= "Core.Pretty"
 
 -----------------------
+-- Some useful options for debugging
+--
+prettyFoldXLAM		= False
+
+
+-----------------------
 sv v	= pretty $ pv v
 
 sb (BVar v)	= pretty $ pv v
@@ -125,9 +131,10 @@ instance Pretty Exp where
 	 -> pv v
 		
 	XLAM v k e
+	 | prettyFoldXLAM
 	 -> let -- split off vars with simple kinds
 	 	takeLAMs acc exp@(XLAM v k x)
-	 	  | elem k [TKind KRegion, TKind KEffect, TKind KClosure, TKind KData]	
+	 	  | elem k [KRegion, KEffect, KClosure, KData]	
 		  		= takeLAMs (v : acc) x
 	 
 	 	takeLAMs acc exp
@@ -135,9 +142,13 @@ instance Pretty Exp where
 	 
 	        (xRest, vsSimple)	= takeLAMs [] xx
 	    
-	    in	case vsSimple of
+	     in	case vsSimple of
 	    	 []	-> "/\\ (" % padR 16 (sb v) % " :: " % k % ") ->\n" % e
 		 _	-> "/\\  " % ", " %!% map sb (reverse vsSimple) % " ->\n" % xRest
+
+	 | otherwise
+	 -> "/\\ (" % padR 16 (sb v) % " :: " % k % ") ->\n" % e
+
 
 
 	XLam v t x eff clo
@@ -301,8 +312,8 @@ instance Pretty Prim where
 instance Pretty Stmt where
  prettyp xx
   = case xx of
-	SComment s
-	 -> "-- " % prettyp s
+--	SComment s
+--	 -> "-- " % prettyp s
 
 	SBind Nothing x
 	 -> prettyp x
@@ -462,9 +473,6 @@ instance Pretty Type where
 	-- class	
   	TClass v ts	-> v % " " % " " %!% map prettyTB ts
 	
-	-- kinds
-	TKind    k	-> prettyp k
-	
 	-- wildcards
 	TWild	 k	-> "(" % k % ")"
 	
@@ -507,14 +515,15 @@ instance Pretty Kind where
  prettyp xx
   = case xx of
 	KNil		-> prettyp "KNil"
-	KBox		-> prettyp "[]"
 	KData		-> prettyp "*"
 	KRegion		-> prettyp "%"
 	KEffect		-> prettyp "!"
 	KClosure	-> prettyp "$"
-	KClass		-> prettyp "+"
 	KFun k1 k2	-> k1 % " -> " % k2
 
+  	KClass v ts	-> v % " " % " " %!% map prettyTB ts
+
+	KWitness	-> prettyp "+"
 
 
 

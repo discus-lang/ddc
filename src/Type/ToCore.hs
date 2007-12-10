@@ -1,8 +1,7 @@
 
+-- | Convertion of types to Core IR representation.
 module Type.ToCore
-	( punctureInstMapT
-	, punctureInst
-	, toCoreT
+	( toCoreT
 	, toCoreK
 	, toCoreF )
 where
@@ -26,48 +25,8 @@ import qualified Core.Util	as C
 -----
 stage	= "Type.ToCore"
 
------
-punctureInstMapT 
-	:: T.Type -> [Int]
-	
-punctureInstMapT t
- = let	(vks, fs, x)	= stripQuantFsT t
-   in	[n	| (n, (v, k)) <- zip [0..] vks
-   		, not $ hasFetter v fs]
-		
 
-
-punctureInst
-	:: [Int] -> [a] -> [a]
-	
-punctureInst pMap inst
-	= [i 	| (n, i) <- zip [0..] inst
-		, elem n pMap]
-		
-
------
-
-stripQuantFsT 
-	:: T.Type 
-	-> ([(Var, T.Kind)], [T.Fetter], T.Type)
-
-stripQuantFsT	t
- = case t of
- 	T.TForall vks x	-> stripQuantFsT2 vks 	x
-	_		-> stripQuantFsT2 []	t
-
-stripQuantFsT2   vks t
- = case t of
- 	T.TFetters fs x	-> (vks, fs, x)
-	_		-> (vks, [], t)
-
-hasFetter v fs
- 	=  (not $ isNil [v | T.FLet  (T.TVar k v') eff <- fs, v == v'])
-
-
-
-
------
+-- | Convert this type to core representation.
 toCoreT:: T.Type -> C.Type
 toCoreT	   tt
  = case tt of
@@ -86,7 +45,7 @@ toCoreT	   tt
 						Nothing	-> C.BVar v
 						Just t	-> C.BMore v (toCoreT t)
 
-				       , C.TKind $ toCoreK $ fromJust $ lookup v vsk))
+				       , toCoreK $ fromJust $ lookup v vsk))
 				vs'
 
 		t'	= toCoreT (T.TFetters fsRest t)
@@ -101,7 +60,7 @@ toCoreT	   tt
 			$ map fst vs
 
 		vsKinds	= map	(\v -> ( v
-				       , C.TKind $ toCoreK $ fromJust $ lookup v vs))
+				       , toCoreK $ fromJust $ lookup v vs))
 				vs'
 
 		t'	= toCoreT t
@@ -158,7 +117,7 @@ toCoreK k
 	T.KRegion		-> C.KRegion
 	T.KEffect		-> C.KEffect
 	T.KClosure		-> C.KClosure
-	T.KFetter		-> C.KClass
+	T.KFetter		-> C.KWitness
 	T.KFun k1 k2		-> C.KFun (toCoreK k1) (toCoreK k2)
 	
 
@@ -179,9 +138,9 @@ addContexts :: [C.Class] -> C.Type -> C.Type
 addContexts []	  t	= t
 addContexts (f:fs) t
  = case f of
- 	C.TClass v ts	-> C.TContext f (addContexts fs t)
-	_		-> C.TContext C.TNil (addContexts fs t)
---	_ -> panic stage $ "addContexts: no match for " ++ show f	    
+ 	C.TClass v ts	-> C.TContext (C.KClass v ts) (addContexts fs t)
+--	_		-> C.TContext C.KNil          (addContexts fs t)
+	_ -> panic stage $ "addContexts: no match for " ++ show f	    
 	   
 
 

@@ -34,9 +34,9 @@ maybeSlurpTypeX	xx
 	, Just t		<- maybeSlurpTypeX x
 	= Just t
 
-	| XLAM v c@(TClass{}) x	<- xx
+	| XLAM v k@(KClass{}) x	<- xx
 	, Just x'		<- maybeSlurpTypeX x
-	= Just $ TContext c x'
+	= Just $ TContext k x'
 
  	| XLAM v k x		<- xx
 	, Just x'		<- maybeSlurpTypeX x
