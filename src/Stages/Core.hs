@@ -5,7 +5,7 @@ module Stages.Core
 	, coreDict
 	, coreReconstruct
 	, coreBind
---	, coreMaskEffs
+	, coreThread
 	, corePrim
 	, coreBoxing
 	, coreFullLaziness
@@ -46,6 +46,7 @@ import Core.Crush			(crushTree)
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconstructTree)
 import Core.Bind			(bindTree)
+import Core.Thread			(threadTree)
 import Core.Prim			(primTree)
 import Core.Lint			(lintTree)
 import Core.Lift			(lambdaLiftTree)
@@ -54,7 +55,6 @@ import Core.Curry			(curryTree, slurpSupersTree, isCafP_opType)
 import Core.Ditch			(ditchTree)
 import Core.ToSea			(toSeaTree)
 
--- import Core.Optimise.MaskEffs		(maskEffsTree)
 import Core.Optimise.Boxing		(coreBoxingTree)
 import Core.Optimise.Atomise		(atomiseTree)
 import Core.Optimise.FullLaziness	(fullLazinessTree)
@@ -75,14 +75,14 @@ import Debug.Trace
 -----
 coreClean
 	:: (?args	:: [Arg])
-	-> String -> Tree -> IO Tree
+	=> Tree -> IO Tree
 
-coreClean stage tree
+coreClean tree
  = do	when (elem Verbose ?args)
 	 $ do	putStr $ "  * Core: Clean\n"
 	 
 	let treeClean	= cleanTree tree
- 	dumpCT DumpCoreClean stage treeClean
+ 	dumpCT DumpCoreClean "core-clean" treeClean
 	
 	return treeClean
  	
@@ -148,8 +148,6 @@ coreBind stage unique
 	getFetters
 	cSource
  = do
-	trace "doing bind" `seq` return ()
-	
  	let tree'	
 		= bindTree
 			unique
@@ -158,26 +156,22 @@ coreBind stage unique
 	
 	dumpCT DumpCoreBind stage tree'
 
-	trace "bind done" `seq` return ()
-
 	return tree'
 
------
-{-
-coreMaskEffs
-	:: (?args ::	[Arg])
-	-> Tree
-	-> IO Tree
-	
-coreMaskEffs
-	cTree
- = do
-	let cTree'	= maskEffsTree cTree
-	
-	dumpCT DumpCoreMaskEffs "core-mask-effs" cTree'
 
- 	return	cTree'
--}
+-----
+coreThread
+	:: (?args :: [Arg])
+	=> Tree -> IO Tree
+	
+coreThread tree
+ = do	let tree'	= threadTree tree
+ 
+ 	dumpCT DumpCoreThread "core-thread" tree'
+	return tree'
+	
+
+-----
 
 -----
 corePrim

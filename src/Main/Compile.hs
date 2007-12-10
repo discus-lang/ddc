@@ -315,7 +315,10 @@ compileFile	args     fileName
 				cNormalise
 
 	-- Clean out empty effect and closure variables
-	cClean		<- SC.coreClean    "core-clean" cBind
+	cClean		<- SC.coreClean  cBind
+
+	-- Thread through witnesses
+	cThread		<- SC.coreThread cClean
 
 	-- lint: All variables should be in scope now.
 	when ?verbose

@@ -1,9 +1,8 @@
 -- Core.Reconstruct
---	Reconstruct witness passing
---	and effect annotations on apps, match and do's
---
---	Change this to type checking of core.
---	Work out type and effect for any core term.
+--	Check type information in core
+-- 
+-- TODO: also check witnesses and proofs of purity.
+
 
 module Core.Reconstruct
 	( reconstructTree )

@@ -34,8 +34,15 @@ data WalkTable m
 	, transSS	:: (WalkTable m) -> [Stmt]	-> m [Stmt]
 
 	-- top-down transforms
-	, transX_down	:: Maybe ((WalkTable m) -> Exp	-> m Exp)
 	, transX_enter	:: (WalkTable m) -> Exp 	-> m Exp
+	
+	-- Functions to bind types and kinds, top down.
+	--	These usually just add the bound types and kinds to the boundT\/boundK maps,
+	--	but could be hooked by client code, perhaps for keeping track of what witnesses
+	--	are defined on each region.
+	--
+	, bindT		:: (WalkTable m) -> Var -> Type -> m (WalkTable m)
+	, bindK		:: (WalkTable m) -> Var -> Kind -> m (WalkTable m)
 	
 	, boundT	:: Map Var Type
 	, boundK	:: Map Var Kind
@@ -53,16 +60,14 @@ walkTableId
 
 	, transSS	= \t x -> return x
 
-	, transX_down	= Nothing
 	, transX_enter	= \t x -> return x
+
+	, bindT		= \z v t -> return $ z { boundT = Map.insert v t $ boundT z }
+	, bindK		= \z v k -> return $ z { boundK = Map.insert v k $ boundK z }
 
 	, boundT	= Map.empty
 	, boundK	= Map.empty
 	}
-
------
-bindT  v t z		= z { boundT 	= Map.insert v t  $ boundT  z }
-bindK  v k z		= z { boundK 	= Map.insert v k  $ boundK  z }
 
 lookupT 	table v	= Map.lookup v $ boundT  table
 
@@ -85,9 +90,9 @@ instance Monad m => WalkM m Top where
   = case p of
   	PBind	v x		
 	 -> do	let Just t	= maybeSlurpTypeX x
-	 	let z'		= bindT v t z
+	 	z'		<- bindT z z v t
 	 	x'		<- walkZM z' x
-	 	transP z z	$ PBind v x'
+	 	transP z' z'	$ PBind v x'
 		
 	PExtern v tv to
 	 -> 	transP z z p
@@ -146,20 +151,23 @@ walkZM2 z xx
 	
 	XLAM b t x
 	 -> do	t'		<- walkZM z t
-		x'		<- walkZM (bindT (varOfBind b) t' z) x
-	 	return		$ XLAM b t' x'
+	 	z'		<- bindT z z (varOfBind b) t'
+		x'		<- walkZM z' x
+	 	transX z' z'	$ XLAM b t' x'
 
 	XLam v t x eff clo
-	 -> do	x'		<- walkZM (bindT v t z) x
-		t'		<- walkZM z t
-		eff'		<- walkZM z eff
-		clo'		<- walkZM z clo
-	 	return		$ XLam v t' x' eff' clo'
+	 -> do	t'		<- walkZM z  t
+		z'		<- bindT  z  z v t' 
+	 	x'		<- walkZM z' x
+		
+		eff'		<- walkZM z' eff
+		clo'		<- walkZM z' clo
+	 	transX z' z'	$ XLam v t' x' eff' clo'
 		
 	XAPP x t
 	 -> do	x'		<- walkZM z x
 	 	t'		<- walkZM z t
-		return		$ XAPP x' t'
+		transX z z	$ XAPP x' t'
 		
 	XApp x1 x2 eff
 	 -> do	x1'		<- walkZM z x1
@@ -173,29 +181,22 @@ walkZM2 z xx
 		(transX z) z	$ XTau t' x'
 
 	XTet vts x
-	 -> do	let z2		= foldr (\(v, t) -> bindT v t) z vts
-	 	x'		<- walkZM z2 x
+	 -> do	z'		<- foldM (\z (v, t) -> bindT z z v t) z vts
+	 	x'		<- walkZM z' x
 		
 		let (vs, ts)	= unzip vts
-		ts'		<- mapM (walkZM z2) ts
+		ts'		<- mapM (walkZM z') ts
 		let vts'	= zip vs ts'
 
-	 	(transX z2) z2	$ XTet vts' x'
+	 	transX z' z'	$ XTet vts' x'
 
 	XDo ss
-	 -> case (transX_down z) of 
-	     Nothing
-	      -> do	-- bind types from this block
-	      		let z2		= foldl bindTKF_Stmt z ss
-			ss2		<- walkZM z2 ss
-			ss3		<- (transSS z2) z2 ss2
+	 -> do	-- bind types from this block
+	   	z'		<- foldM bindTKF_Stmt z ss
+		ss2		<- walkZM z' ss
+		ss3		<- transSS z' z' ss2
 			
-			(transX z2) z2	$ XDo ss3
-			
-			
-	     Just transDown 
-	       -> 	transDown z xx
-	       
+		transX z' z'	$ XDo ss3
 		
 	XMatch aa eff
 	 -> do	--mX'		<- liftMaybe (walkZM z) mX
@@ -236,7 +237,7 @@ instance Monad m => WalkM m Alt where
  walkZM z ss
   = case ss of
   	AAlt gs x 
-	 -> do	let z'		= foldl bindTK_Guard z gs
+	 -> do	z'		<- foldM bindTK_Guard z gs
 		gs'		<- walkZM z' gs
 	 	x'		<- walkZM z' x
 	 	return		$ AAlt gs' x'
@@ -246,10 +247,6 @@ instance Monad m => WalkM m Alt where
 instance Monad m => WalkM m Guard where
  walkZM z ss
   = case ss of
-{-  	GCase w
-	 -> do	w'		<- walkZM z w
-	 	return		$ GCase w'
--}		
 	GExp w x
 	 -> do	w'		<- walkZM z w
 	 	x'		<- walkZM z x
@@ -295,14 +292,14 @@ instance Monad m => WalkM m Type where
 		transT z z	$ TContext t1' t2'		
 
 	TWhere t1 vts
-	 -> do	let z2		= foldr (\(v, t) -> bindT v t) z vts
-	 	t1'		<- walkZM z2 t1
+	 -> do	z'		<- foldM (\z (v, t) -> bindT z z v t) z vts
+	 	t1'		<- walkZM z' t1
 		
 		let (vs, ts)	= unzip vts
-		ts'		<- mapM (walkZM z2) ts
+		ts'		<- mapM (walkZM z') ts
 		let vts'	= zip vs ts'
 
-	 	transT z2 z2	$ TWhere t1' vts'
+	 	transT z' z'	$ TWhere t1' vts'
 
 	TSum k ts
 	 -> do	ts'		<- walkZM z ts
@@ -349,7 +346,8 @@ instance Monad m => WalkM m Type where
 -- Helpers for binding Types/Regions
 --
 bindTFs_VT v t z
- 	= bindT v t $ bindFs_Type t z
+ = let z'	= bindFs_Type t z
+   in  bindT z' z' v t
 
 
 bindFs_Type t z
@@ -366,25 +364,25 @@ bindTKF_Stmt z ss
  = case ss of
  	SBind (Just v) x		
 	 -> case maybeSlurpTypeX x of
-	    Nothing 	-> z
-            Just t	-> bindT v t z
+	    Nothing 	-> return z
+            Just t	-> bindT z z v t
 
-	_			-> z
+	_	-> return z
 
 
 bindTK_Alt z a
  = case a of
- 	AAlt gs x 	-> foldl bindTK_Guard z gs
+ 	AAlt gs x 	-> foldM bindTK_Guard z gs
 	 
 bindTK_Guard zz g
  = case g of
---	GCase w		-> bindTK_Pat zz w
 	GExp  w x	-> bindTK_Pat zz w
 	
 bindTK_Pat zz ww
  = case ww of
-	WConst c	-> zz
+	WConst c	
+	 -> return zz
 
  	WCon v lvt
-	  -> foldl (\z (l, v, t) -> bindT v t z) zz lvt
+	 -> foldM (\z (l, v, t) -> bindT z z v t) zz lvt
  	

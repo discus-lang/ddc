@@ -43,7 +43,7 @@ trace ss xx
 -- | Introduce local region definitions.
 bindTree 
 	:: String			-- ^ unique prefix to use for fresh vars
-	-> (Var -> Maybe [Class])
+	-> (Var -> Maybe [Class])	-- ^ function to look up all the fetters acting on a region
 	-> Tree				-- ^ core tree
 	-> Tree			
 

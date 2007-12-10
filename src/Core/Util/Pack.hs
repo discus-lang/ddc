@@ -52,6 +52,7 @@ packT1 tt
  	TForall vks t1 t2
 	 -> let	t2'	= packT1 t2
 	    in	TForall vks t1 t2'
+
 	 
 	TContext t1 t2
 	 -> let	t1'	= packT1 t1
@@ -125,6 +126,11 @@ packT1 tt
 	TTag v	-> tt
 	
 	-- class
+	-- crush LazyH on the way
+	TClass v [TData vD (TVar KRegion r : ts)]
+	 | v == primLazyH
+	 -> TClass primLazy [TVar KRegion r]
+
 	TClass v ts
 	 -> let	ts'	= map packT1 ts
 	    in	TClass v ts'

@@ -86,12 +86,13 @@ data Arg
 
 	| DumpCoreSchemes
 	| DumpCore
-	| DumpCoreClean
 	| DumpCoreBlock
-	| DumpCoreSnip
 	| DumpCoreCrush
-	| DumpCoreDict
+	| DumpCoreSnip
+	| DumpCoreClean
+	| DumpCoreThread
 	| DumpCoreReconstruct
+	| DumpCoreDict
 	| DumpCoreBind
 	| DumpCoreMaskEffs
 	| DumpCorePrim
@@ -377,10 +378,11 @@ options	=
 
 	, OFlag		DumpCoreSchemes		["-dump-core-schemes"]		"Inferred type schemes converted to Core IR."
 	, OFlag		DumpCore		["-dump-core"]			"Core IR version of Desugared IR code."
-	, OFlag		DumpCoreClean		["-dump-core-clean"]		"Clean out empty effect/closure variables."
 	, OFlag		DumpCoreBlock		["-dump-core-block"]		"Applications placed in Do blocks."
 	, OFlag		DumpCoreSnip		["-dump-core-snip"]		"Fresh bindings for all function applications."
 	, OFlag		DumpCoreCrush		["-dump-core-crush"]		"Do-Do expressions crushed to single Dos."
+	, OFlag		DumpCoreClean		["-dump-core-clean"]		"Clean out empty effect/closure variables."
+	, OFlag		DumpCoreThread		["-dump-core-thread"]		"Thread through witnesses"
 	, OFlag		DumpCoreDict		["-dump-core-dict"]		"Call class instance functions and add dictionaries."
 	, OFlag		DumpCoreReconstruct	["-dump-core-reconstruct"]	"Type information reconstructed for all bindings."
 	, OFlag		DumpCoreBind		["-dump-core-bind"]		"All regions bound and annotated with fetters."
