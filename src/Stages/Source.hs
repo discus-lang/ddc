@@ -3,7 +3,6 @@
 --
 --	BUGS: sourceSlurpInline vars should check that vars to inline are in scope at top level
 --
-
 module Stages.Source
 	( Stages.Source.parse
 	, sourcePragma
@@ -23,9 +22,51 @@ module Stages.Source
 where
 
 
------
-import qualified Util.Map		as Map
 
+-----
+import qualified Shared.Var		as Var
+import Shared.Var			(Var, Module)
+import Shared.Base
+import Shared.Error
+
+-----
+import qualified Type.Exp			as T
+import qualified Type.Pretty			as T
+import qualified Type.Solve			as Squid
+import qualified Type.State			as Squid
+import qualified Type.Export			as Squid
+import qualified Type.Dump			as Squid
+
+import qualified Constraint.Exp			as N
+
+import qualified Source.Token			as Token
+import qualified Source.Rename			as S
+import qualified Source.RenameM			as S
+import qualified Source.RenameM			as Rename
+import Source.Lexer				(scan)
+import Source.Parser				(parse)
+import Source.Slurp				(slurpFixTable, slurpKinds)
+import Source.Defix				(defixP)
+import Source.Desugar				(rewriteTree)
+import Source.Alias				(aliasTree)
+import Source.Exp
+
+import qualified Desugar.Exp			as D
+import qualified Desugar.Slurp.State		as D
+import qualified Desugar.Plate.Trans		as D
+import Desugar.Slurp.Slurp			(slurpTreeM)
+import Desugar.Project				(projectTree, ProjTable, slurpProjTable)
+import Desugar.SnipLambda			(snipLambdaTree)
+import Desugar.ToCore				(toCoreTree)
+
+import qualified Core.Exp			as C
+import qualified Core.Pretty			as C
+
+import Main.Arg
+
+import Stages.Dump
+
+-----
 import qualified Data.Map		as Map
 import Data.Map (Map)
 
@@ -37,69 +78,11 @@ import System.IO
 
 import Util
 
------
-import Shared.Error			(panic)
-
-import qualified Shared.Var		as Var
-import Shared.Var			(Var, Module)
-import Shared.Base
-import Shared.Pretty
-import Shared.Error
-
------
-import qualified Type.Exp 			as T
-import qualified Type.Pretty			as T
-import qualified Type.ToCore			as T
-import qualified Type.Error			as T
-import qualified Type.Util			as T
-import qualified Type.Solve			as Squid
-import qualified Type.State			as Squid
-import qualified Type.Export			as Squid
-import qualified Type.Dump			as Squid
-
-import qualified Constraint.Exp			as N
-
-import qualified Source.Token			as Token
-import qualified Source.Rename			as S
-import qualified Source.RenameM			as S
-import qualified Source.Lint			as S
-import qualified Source.RenameM			as Rename
-import Source.Lexer				(scan)
-import Source.Parser				(parse)
-import Source.Slurp				(slurpFixTable, slurpKinds)
-import Source.Defix				(defixP)
-import Source.Desugar				(rewriteTree)
-import Source.Alias				(aliasTree)
-import Source.RenameM				(runRename, RenameM)
-import Source.Pretty
-import Source.Exp
-import Source.Horror
-
-import qualified Desugar.Exp			as D
-import qualified Desugar.Util			as D
-import qualified Desugar.Slurp.State		as D
-import qualified Desugar.Pretty			as D
-import qualified Desugar.Plate.Trans		as D
-import Desugar.Slurp.Slurp			(slurpTreeM)
-import Desugar.Project				(projectTree, ProjTable, slurpProjTable)
-import Desugar.SnipLambda			(snipLambdaTree)
-import Desugar.ToCore				(toCoreTree)
-
-import qualified Core.Exp			as C
-import qualified Core.Util			as C
-import qualified Core.Pretty			as C
-
-import Main.Arg
-import Main.Path
-
-import Stages.Dump
 
 -----
 stage = "Stages.Source"
 
------------------------
--- parse
---
+-- | Parse source code.
 parse 	:: (?args :: [Arg])
 	-> FilePath			-- path of source file
 	-> String			-- source of root module
@@ -118,9 +101,8 @@ parse	fileName
 
 	return	sParsed
 
------------------------
--- sourcePragma
---
+
+-- | Extract some pragmas from the parsed source.
 sourcePragma
 	:: (?args :: [Arg])
 	-> Tree
@@ -137,9 +119,7 @@ sourcePragma tree
 	return	(shellCommands, [])
 
 
------------------------
--- slurpH
---
+-- | Slurp out fixity table
 sourceSlurpFixTable
 	:: Tree				-- source and header parse tree
 	-> IO [FixDef]			-- fixity table
@@ -151,9 +131,7 @@ sourceSlurpFixTable
 	return	fixTable
 
 
------------------------
--- sourceSlurpInlineVars
--- 
+-- | Slurp out table of bindings to inline
 sourceSlurpInlineVars
 	:: Tree
 	-> IO [Var]
@@ -171,9 +149,8 @@ sourceSlurpInlineVars
 				_ -> [])
 			sTree
 
------------------------
--- defix
---
+
+-- | Write uses of infix operatiors to preix form.
 defix	:: (?args :: [Arg])
 	-> Tree				-- source parse tree
 	-> [FixDef]			-- fixity table
@@ -195,9 +172,7 @@ defix	sParsed
 	return	 sDefixed
 	
 
------------------------
--- rename
---
+-- | Check scoping of variables and 
 -- NOTES:
 -- 	We need to rename infix defs _after_ foreign imports
 --	We do this so that the Sea name for functions like (+ / primInt32Add)
@@ -225,9 +200,7 @@ rename	mTrees
 	return mTrees'
 
 
------------------------
--- sourceKinds
---
+-- Slurp out the kinds for user defined classes.
 sourceKinds
 	:: (?args :: [Arg])
 	-> Tree
@@ -251,15 +224,12 @@ alias 	:: (?args :: [Arg])
 alias sTree
  = do
  	let sTree'	= aliasTree sTree
-
 	dumpST	DumpSourceAliased "source-aliased" sTree'
 
 	return	sTree'
 	
 	
------------------------
--- desugar
---
+-- | Convert from Source to Desugared IR.
 desugar
 	:: (?args :: [Arg])
 	-> [(Var, Kind)]		-- kind table
@@ -395,7 +365,8 @@ solveSquid :: (?args :: [Arg])
 	-> IO 	( Map Var T.Type			-- inferred types
 		, Map Var (InstanceInfo T.Type T.Type)	-- how each var was instantiated
 		, Set Var				-- the vars which are ports
-		, Map Var (Map Var T.Type) )		-- the port table.
+		, Map Var (Map Var T.Type) 		-- the port table.
+		, Map Var [Var])			-- map of constraints on each region
 	
 solveSquid 
 	constraints
@@ -431,7 +402,7 @@ solveSquid
 		$ Squid.stateErrors state
 
 	-- extract out the stuff we'll need for conversion to core.
-	(typeTable, typeInst, quantVars, portTable)
+	(typeTable, typeInst, quantVars, portTable, vsRegionClasses)
 		<- {-# SCC "Source.Squid.Export" #-} evalStateT 
 			(Squid.squidExport vsTypesPlease) state
 
@@ -463,7 +434,8 @@ solveSquid
 	return 	( typeTable
 		, typeInst
 		, quantVars
-		, portTable )
+		, portTable
+		, vsRegionClasses)
 
 
 

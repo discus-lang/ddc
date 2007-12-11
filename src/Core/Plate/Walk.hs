@@ -201,26 +201,22 @@ walkZM2 z xx
 	XMatch aa eff
 	 -> do	--mX'		<- liftMaybe (walkZM z) mX
 	 	aa'		<- walkZM z aa
-	 	return		$ XMatch aa' eff
+	 	transX z z	$ XMatch aa' eff
 		
 	XConst c t		
 	 -> do	t'		<- walkZM z t
-	 	(transX z) z	$ XConst c t'
+	 	transX z z	$ XConst c t'
 
-	XLocal r vts x
-	 -> do	let z'		= z 
-				{ boundT	= Map.union  (Map.fromList vts) 
-						$ boundT z
-				
-				, boundK	= Map.insert r KRegion
-						$ boundK z }
-
-		x'		<- walkZM z' x
-	 	return		$ XLocal r vts x'
+	XLocal vR vts x
+	 -> do	z2		<- bindK z z vR KRegion
+		z3		<- foldM (\z (v, t) -> bindT z z v t) z2 vts
+	 			
+		x'		<- walkZM z3 x
+	 	transX z3 z3 	$ XLocal vR vts x'
 		
 	XType t
 	 -> do 	t'		<- walkZM z t
-		(transX z) z 	$ XType t'
+		transX z z 	$ XType t'
 
 	XPrim m xx eff
 	 -> do	xx'		<- mapM (walkZM z) xx

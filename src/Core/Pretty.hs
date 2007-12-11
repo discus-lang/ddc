@@ -24,7 +24,9 @@ stage	= "Core.Pretty"
 -----------------------
 -- Some useful options for debugging
 --
-prettyFoldXLAM		= False
+
+-- | Fold multiple binders into a single line.
+prettyFoldXLAM		= True
 
 
 -----------------------

@@ -1,4 +1,8 @@
 
+-- | Introduce XLocal constructors to bind free regions.
+--	The XLocal's for a particular region are placed just before the deepest
+--	XDo block that contains all the references to that region.
+--
 module Core.Bind
 	( bindTree )
 
@@ -42,25 +46,25 @@ trace ss xx
 
 -- | Introduce local region definitions.
 bindTree 
-	:: String			-- ^ unique prefix to use for fresh vars
-	-> (Var -> Maybe [Class])	-- ^ function to look up all the fetters acting on a region
-	-> Tree				-- ^ core tree
+	:: String			-- ^ unique prefix to use for fresh vars.
+	-> (Map Var [Var])		-- ^ a map of all the class constraints acting on a particular region.
+	-> Tree				-- ^ the core tree.
 	-> Tree			
 
-bindTree unique lookupFs tree
- = let	?lookupFs	= lookupFs
+bindTree unique classMap tree
+ = let	?classMap	= classMap
    in	evalVarGen 
 		(mapM (\p -> liftM fst $ bindP Set.empty p) tree)
 		("w" ++ unique)
 
------
-bindP 	:: (?lookupFs :: Var -> Maybe [Class]) 
-	=> Set Var 		-- unbound vars which are not local to this top
-				-- and cannot be bound here
+-- | Bind local regions in this top level thing
+bindP 	:: (?classMap :: Map Var [Var])
+	=> Set Var 			-- unbound vars which are not local to this top
+					-- and cannot be bound here
 	-> Top 
 	-> BindM 
 		( Top
-		, Set Var)	-- vars which are still free in this top
+		, Set Var)		-- vars which are still free in this top
 
 bindP	shared pp
  = case pp of
@@ -77,7 +81,7 @@ bindP	shared pp
 --	We used this to add letregions to bind local regions to the inner most function
 --	they are free in.
 --
-bindX 	:: (?lookupFs :: Var -> Maybe [Class])
+bindX 	:: (?classMap :: Map Var [Var])
 	-> Set Var		-- unbound variables which are non-local to this expression
 	-> Exp
 	-> BindM 
@@ -175,7 +179,7 @@ bindG shared (GExp w x)
 
 -- | Bind local regions in this XDo expression
 bindXDo 
-	:: (?lookupFs :: Var -> Maybe [Class])
+	:: (?classMap :: Map Var [Var])
 	=> Set Var			-- the regions which are not-local to this expression
 	-> Exp
 	-> BindM
@@ -290,7 +294,7 @@ bindXDo shared xx@(XDo ss)
 
 
 bindRegionsX
-	:: (?lookupFs :: Var -> Maybe [Class]) 
+	:: (?classMap :: Map Var [Var])
 	-> Set Var					-- ^ regions to bind
 	-> Exp 						-- ^ expression to wrap in letregion
 	-> BindM Exp	
@@ -301,9 +305,8 @@ bindRegionsX rsLocal xx
 	rsLocalFs	
 		<- mapM 
 			(\r 
-			 -> do  let fs	= getFetters r ?lookupFs
-				let r'	= TVar KRegion r
-				fs'	<- makeWitnesses r' fs
+			 -> do  let r'	= TVar KRegion r
+				fs'	<- makeWitnesses r' ?classMap
 				return 	(r', fs'))
 		$ Set.toList rsLocal
 
@@ -327,33 +330,47 @@ getFetters r lookupFetters
 -- Construct appropriate witnesses for this regions constraints
 makeWitnesses
 	:: Region
-	-> [Class]
-	-> BindM [(Var, Class)]
+	-> Map Var [Var]
+	-> BindM [(Var, Type)]
 
-makeWitnesses r fs
+makeWitnesses r@(TVar KRegion vR) classMap
  = do
-	-- default regions to const.
-	let gotMutable	= or $ map (\(TClass v _) -> Var.bind v == Var.FMutable) fs
-	let gotConst	= or $ map (\(TClass v _) -> Var.bind v == Var.FConst)	 fs
-
-	defaultFsC <-
-	   if not gotMutable && not gotConst
-		then do	v	<- newVarN NameClass
-			return	[(v, TClass primConst [r])]
-		else return []
-
-	-- default regions to direct
-	let gotLazy	= or $ map (\(TClass v _) -> Var.bind v == Var.FLazy)	fs
-	let gotDirect	= or $ map (\(TClass v _) -> Var.bind v == Var.FDirect)	fs
+	-- lookup the constraints on this region
+	let Just vsConstraints	= Map.lookup vR classMap
 	
-	defaultFsD <-
-	   if not gotLazy && not gotDirect
-		then do	v	<- newVarN NameClass
-			return	[(v, TClass primDirect [r])]
-		
-		else return []
 
-  	return $ defaultFsC ++ defaultFsD
+	-- Mutable vs Const -----------------------------------------------------
+	-- default regions to const.
+	let gotMutable		= elem primMutable vsConstraints
+	let gotConst		= elem primConst   vsConstraints
+
+	-- sanity check
+	when (gotMutable && gotConst)
+	 $ panic stage $ "makeWitnesses: Region " % r % " is both Mutable and Const\n"
+
+	vWitnessMC		<- newVarN NameClass
+
+	let witnessMC		=
+	  	if gotMutable	then (vWitnessMC, TClass primMutable [r])
+				else (vWitnessMC, TClass primConst   [r])
+				
+
+	-- Lazy vs Direct -------------------------------------------------------
+	-- default regions to direct.
+	let gotLazy		= elem primLazy   vsConstraints
+	let gotDirect		= elem primDirect vsConstraints
+	
+	-- sanity check
+	when (gotLazy && gotDirect)
+	 $ panic stage $ "makeWitnesses: Region " % r % " is both Lazy and Direct\n"
+	 
+	vWitnessLD		<- newVarN NameClass
+	
+	let witnessLD		=
+		if gotLazy	then (vWitnessLD, TClass primLazy   [r])
+				else (vWitnessLD, TClass primDirect [r])
+	
+  	return	[witnessMC, witnessLD]
 
 
 -- 

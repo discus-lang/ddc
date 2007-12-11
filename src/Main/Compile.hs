@@ -222,12 +222,6 @@ compileFile	args     fileName
 				sAliased
 				hRenamed
 
-	-- Snip down lambda expressions used as args to functions
-{-	sSnipLambda	<- SS.desugarSnipLambda
-				"desugared-snipLambda"
-				"DSL"
-				sDesugared
--}
 	-- Snip down dictionaries and add default projections.
 	(sProject, projTable)	
 			<- SS.desugarProject
@@ -264,7 +258,8 @@ compileFile	args     fileName
 	(  typeTable
 	 , typeInst
 	 , typeQuantVars
-	 , typePortTable )
+	 , typePortTable
+	 , vsRegionClasses )
 	 		<- runStage "solve"
 			$  SS.solveSquid
 				sConstrs
@@ -310,15 +305,15 @@ compileFile	args     fileName
 	when ?verbose
 	 $ do	putStr $ "  * Core: Bind\n"
 
-	cBind		<- SC.coreBind "core-bind" "CB"
-				(\x -> Just [])
+	cBind		<- SC.coreBind "CB"
+				vsRegionClasses
 				cNormalise
 
 	-- Clean out empty effect and closure variables
 	cClean		<- SC.coreClean  cBind
 
 	-- Thread through witnesses
-	cThread		<- SC.coreThread cClean
+	cThread		<- SC.coreThread cHeader cClean
 
 	-- lint: All variables should be in scope now.
 	when ?verbose
@@ -347,10 +342,6 @@ compileFile	args     fileName
 
 	-- Mask out effects on const regions
 --	cMaskConst	<- SC.coreMaskEffs cBind
-
-
---	runStage "lint-reconstruct" 
---		$ SC.coreLint cReconstruct cHeader
 
 	-- Identify primitive operations
 	cPrim		<- SC.corePrim	cDict

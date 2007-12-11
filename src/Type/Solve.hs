@@ -55,11 +55,6 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Solve"
 
-instance Pretty a => Pretty (Set a) where
- prettyp ss	= "{" % ", " %!% Set.toList ss % "}"
-
-
-
 -----
 squidSolve 	
 	:: [Arg]

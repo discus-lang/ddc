@@ -30,6 +30,9 @@ import Util.Generics
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 -----------------------
 class Pretty a where
  pretty 	:: a -> String
@@ -131,6 +134,10 @@ instance Pretty a => Pretty (Maybe a) where
 instance (Pretty a, Pretty b) => Pretty (Map a b) where
  prettyp m		= prettyp $ Map.toList m
  
+
+instance (Pretty a) => Pretty (Set a) where
+ prettyp ss	= "{" % ", " %!% Set.toList ss % "}"
+
 
 -----------------------
 -- render

@@ -356,9 +356,10 @@ mergeClassesT	 merge ts@(t:_)
 	return		$ TClass (kindOfType t) cid'
 
 
------
--- makeClassName
---
+-- | Return a variable to identify this class.
+--	If the class already contains variables then choose the one with the smallest display name
+--	otherwise make a new variable and use that.
+--	
 makeClassName :: ClassId -> SquidM Var
 makeClassName cid_
  = do	cid		<- sinkClassId cid_

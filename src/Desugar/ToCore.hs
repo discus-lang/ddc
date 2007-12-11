@@ -552,7 +552,8 @@ toCoreX xx
 			--	Real witnesses will be threaded through in a later stage.
 			let ksContextC'	= map (C.substituteT tsSub) ksContextC
 			
-			let tsContextC' = map (\k -> case k of
+			let tsContextC' = map C.packT
+					$ map (\k -> case k of
 							C.KClass v ts	-> C.TClass v ts) 
 					$ ksContextC'
 			
