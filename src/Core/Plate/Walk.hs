@@ -36,13 +36,16 @@ data WalkTable m
 	-- top-down transforms
 	, transX_enter	:: (WalkTable m) -> Exp 	-> m Exp
 	
-	-- Functions to bind types and kinds, top down.
+	-- Functions to bind types and kinds, top down, and unbind them on the way up.
 	--	These usually just add the bound types and kinds to the boundT\/boundK maps,
 	--	but could be hooked by client code, perhaps for keeping track of what witnesses
 	--	are defined on each region.
 	--
 	, bindT		:: (WalkTable m) -> Var -> Type -> m (WalkTable m)
 	, bindK		:: (WalkTable m) -> Var -> Kind -> m (WalkTable m)
+	
+	, unbindT	:: (WalkTable m) -> Var -> Type -> m (WalkTable m)
+	, unbindK	:: (WalkTable m) -> Var -> Type -> m (WalkTable m)
 	
 	, boundT	:: Map Var Type
 	, boundK	:: Map Var Kind
@@ -64,6 +67,9 @@ walkTableId
 
 	, bindT		= \z v t -> return $ z { boundT = Map.insert v t $ boundT z }
 	, bindK		= \z v k -> return $ z { boundK = Map.insert v k $ boundK z }
+
+	, unbindT	= \z v t -> return $ z { boundT = Map.delete v $ boundT z }
+	, unbindK	= \z v t -> return $ z { boundK = Map.delete v $ boundK z }
 
 	, boundT	= Map.empty
 	, boundK	= Map.empty

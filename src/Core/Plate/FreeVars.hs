@@ -250,6 +250,17 @@ freeVarsT	tt
 	 	[ Set.singleton v
 		, unions $ map freeVarsT ts ]
 	
+	TPurify eff cls
+	 -> unions
+	 	[ freeVarsT eff
+		, freeVarsT cls ]
+	
+	TPurifyJoin ts
+	 -> unions
+	 	$ map freeVarsT ts
+	
+	TWitJoin ts
+	 -> unions $ map freeVarsT ts
 
 	_ 	-> panic stage
 		$ "freeVarsT: no match for " % show tt

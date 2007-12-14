@@ -28,7 +28,9 @@ module Type.Util.Bits
 	, takeCidOfTClass
 	
 	, snocTFun
-	, snocTData)
+	, snocTData
+	
+	, slurpVarsRD)
 
 
 
@@ -432,3 +434,46 @@ snocTData	tt
 	_			-> Nothing
 
 
+
+
+
+-- | Slurp out the region and data vars present in this type
+--	Used for crushing ReadT, ConstT and friends
+slurpVarsRD
+	:: Type 
+	-> ( [Region]	-- region vars and cids
+	   , [Data])	-- data vars and cids
+
+slurpVarsRD tt
+ = 	slurpVarsRD_split [] [] $ slurpVarsRD' tt
+
+slurpVarsRD_split rs ds []	= (rs, ds)
+slurpVarsRD_split rs ds (t:ts)
+ = case t of
+ 	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
+	TClass KRegion _	-> slurpVarsRD_split (t : rs) ds ts
+
+ 	TVar   KData _		-> slurpVarsRD_split rs (t : ds) ts
+	TClass KData _		-> slurpVarsRD_split rs (t : ds) ts
+	
+	_			-> slurpVarsRD_split rs ds ts
+	
+slurpVarsRD' tt
+ = case tt of
+	TFun{}			-> []
+ 	TData v ts		-> catMap slurpVarsRD' ts
+
+	TVar KRegion _		-> [tt]
+	TVar KData   _		-> [tt]
+	TVar _  _		-> []
+	
+	TClass KRegion _	-> [tt]	
+	TClass KData   _	-> [tt]
+	TClass _ _		-> []
+
+	TFetters fs t		-> slurpVarsRD' t
+
+	TError k t		-> []
+
+	_ 	-> panic stage
+		$  "slurpVarsRD: no match for " % tt % "\n"

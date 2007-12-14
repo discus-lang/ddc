@@ -1,6 +1,7 @@
 
 module Core.Util.Pack
 	( packT 
+	, packK
 	, flattenT 
 	, inlineTWheresT
 	, inlineTWheresMapT )
@@ -36,6 +37,14 @@ packT tt
    in  if tt == tt'
    	then tt'
 	else packT1 tt'
+
+-- | Pack a kind into standard form.
+packK :: Kind -> Kind
+packK kk
+ = let kk'	= packK1 kk
+   in  if kk == kk'
+   	then kk'
+	else packK1 kk'
 
 
 -- | Flatten a type so that all where bindings are inlined
@@ -131,9 +140,20 @@ packT1 tt
 	 | v == primLazyH
 	 -> TClass primLazy [TVar KRegion r]
 
+	-- crush MutableT on the way
+	TClass v [t@(TData{})]
+	 | v == primMutableT
+	 -> let	(rs, ds)	= slurpVarsRD t
+	    in TWitJoin 
+	    	$ (   map (\r -> TClass primMutable  [r]) rs
+		   ++ map (\d -> TClass primMutableT [d]) ds)
+
 	TClass v ts
 	 -> let	ts'	= map packT1 ts
 	    in	TClass v ts'
+	
+	TWitJoin ts
+	 -> makeTWitJoin (map packT1 ts)
 	
 	-- wildcards
 	TWild{}	-> tt
@@ -146,9 +166,25 @@ packT1 tt
 packK1 :: Kind -> Kind
 packK1 kk
  = case kk of
+	-- crush LazyH on the way
+	KClass v [TData vD (TVar KRegion r : ts)]
+	 | v == primLazyH
+	 -> KClass primLazy [TVar KRegion r]
+	
+	-- crush MutableT on the way
+	KClass v [t@(TData{})]
+	 | v == primMutableT
+	 -> let	(rs, ds)	= slurpVarsRD t
+	    in makeKWitJoin 
+	    	$ (   map (\r -> KClass primMutable  [r]) rs
+		   ++ map (\d -> KClass primMutableT [d]) ds)
+		
+
  	KClass v ts
 	 -> let	ts'	= map packT1 ts
 	    in	KClass v ts'
+
+
 	    
 	_ -> kk
 

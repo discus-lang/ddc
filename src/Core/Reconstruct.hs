@@ -2,7 +2,8 @@
 --	Check type information in core
 -- 
 -- TODO: also check witnesses and proofs of purity.
-
+--	Check typess of bindings.
+--
 
 module Core.Reconstruct
 	( reconstructTree )
@@ -410,8 +411,6 @@ slurpVarTypesW (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 -- | Work out the result type and latent effect that will result when 
 --	an arg is applied to a function with this type.
 --
---	BUGS: check that the types match out as we apply
---
 applyValueT 
 	:: Table		-- ^ table of constraints
 	-> Type 		-- ^ type of function
@@ -421,23 +420,13 @@ applyValueT
 		, Effect)	-- effect caused
 
 applyValueT table t1 t2
- =  {- trace
- 	( "applyValueT\n"
-	% "  t1 = " %> t1 % "\n"
-	% "  t2 = " %> t2 % "\n")
-	$ -} applyValueT' table (flattenT t1) (flattenT t2)
+ =	applyValueT' table (flattenT t1) (flattenT t2)
  
-applyValueT' table (TContext t1 t2) t3
-
-	| Just (t', eff)	<- applyValueT' table t2 t3
-	= Just  ( TContext t1 t'
-		, eff)		-- don't create contexts for effects.
-
 applyValueT' table t0@(TFunEC t1 t2 eff clo) t3	
 	= if subsumes (tableMore table) t1 t3
 		then Just (t2, eff)
 		else freakout stage
-			( "applyType: Type error in value application.\n"
+			( "applyValueT: Type error in value application.\n"
 			% "    can't apply\n"		%> t3 % "\n\n"
 			% "    to\n"        		%> t0 % "\n"
 			% "\n"
@@ -453,7 +442,7 @@ applyValueT' _ _ _
 -----
 -- applyTypeT
 --	Apply a value argument to a forall/context type, yielding the result type.
---	BUGS: check that the types/contexts match as we apply.
+--	BUGS: check that the kinds/contexts match as we apply.
 --
 applyTypeT :: Table -> Type -> Type -> Maybe Type
 
@@ -461,49 +450,32 @@ applyTypeT table (TForall (BVar v) k t1) t2
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 applyTypeT table (TForall (BMore v tB) k t1) t2
-	-- check that the constraint checks out
+	-- check that the constraint is satisfied
 	| subsumes (tableMore table) tB t2
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 	
-applyTypeT table (TContext t1 t2) t
-	= Just t2
-	
+
+applyTypeT table t1@(TContext k11 t12) t2
+	-- witnesses must match
+	| packK k11 == packK (kindOfType t2)
+	= Just t12
+
+	| otherwise
+	= freakout stage
+		( "applyTypeT: Kind error in type application.\n"
+		% "    can't apply\n"		%> t2	% "\n\n"
+		% "    to\n"			%> t1	% "\n\n"
+		% "    k11\n"		%> (packK k11)	% "\n\n"
+		% "    K[t2]\n"		%> (packK (kindOfType t2))	% "\n\n")
+		$ Nothing
+
 applyTypeT table (TWhere t1 vts) t
 	| Just t1'	<- applyTypeT table t1 t
 	= Just $ TWhere t1' vts
 	
 applyTypeT table t1 t2
-	= panic stage $ "applyType: can't apply (" % t2 % ") to (" % t1 % ")"
-
-		
-
------
--- subTLet1
---	If this type is just a (let v = t in v)  then convert it to t.
-
-subTLet1 ::	Type -> Type
-
-subTLet1 (TForall v t x)
-	= TForall v t (subTLet1 x)
-
-subTLet1 (TContext c t)
-	= TContext c (subTLet1 t)
-
-subTLet1 (TWhere (TVar k v1) [(v2, t)])
-	| v1 == v2	= t
-
-subTLet1	t	= t
-
-
------
--- addTauX
---	Have a look at this expression and see if we're going to be able to
---	slurp out a type for it with maybeSlurpTypeX. If so, leave it as it is, if not
---	attach an XTau to the front so that maybeSlurpTypeX will work next time around.
-
-addTauX :: Type -> Exp -> Exp
-
-addTauX t x
- = case maybeSlurpTypeX x of
- 	Nothing	-> XTau t x
-	Just _	-> x
+	= freakout stage
+		( "applyTypeT: Kind error in type application.\n"
+		% "    can't apply\n"		%> t2	% "\n\n"
+		% "    to\n"			%> t1	% "\n\n")
+		$ Nothing

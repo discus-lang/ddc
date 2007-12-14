@@ -25,6 +25,7 @@ module Core.Exp
 	, Effect
 	, Closure
 	, Class	
+	, Witness
 
 	, Kind		(..))	-- kind expressions
 
@@ -222,8 +223,12 @@ data Type
 	| TFree		Var Type			-- ^ some object free in the closure of a function.
 	| TTag		Var
 	
-	-- class witness
-	| TClass	Var [Type]
+	-- witnesses
+	| TClass	Var [Type]			-- ^ A witness to some class
+	| TPurify	Effect Class			-- ^ A witness to purification of an effect
+	| TPurifyJoin	[Class]				-- ^ Joining of purification witnesses
+
+	| TWitJoin	[Class]				-- ^ Join all these witnesses
 	
 	-- wildcards
 	| TWild		Kind				-- ^ Type wildcard. 
@@ -254,6 +259,7 @@ type Effect	= Type
 type Closure	= Type
 type Region	= Type
 type Class	= Type
+type Witness	= Type
 
 -----------------------
 -- Kind
@@ -268,11 +274,7 @@ data Kind
 	| KFun 		Kind	Kind
 	| KClass	Var	[Type]
 
-
-	-- this is really a superkind, but we'll keep it here
-	--	to discriminate witness variables from DREC vars
-	| KWitness
-
+	| KWitJoin	[Kind]				-- ^ joining of witness kinds
 	deriving (Show, Eq)
 
 

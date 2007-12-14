@@ -114,7 +114,7 @@ foreign import extern length
         :: forall t0 %r0 %r1
         .  List %r0 t0 -(!e0)> Base.Int %r1
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Write %r1}
-        ,  Base.MutableT (Base.Int %r1)
+        ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         
 foreign import extern lengthR
@@ -239,14 +239,14 @@ foreign import extern sum
         :: forall %r0 %r1 %r2
         .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
         :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Write %r2}
-        ,  Base.MutableT (Base.Int %r2)
+        ,  Base.Mutable %r2
         :$ Base.Data -> Base.Data;
         
 foreign import extern sumU
         :: forall %r0 %r1 %r2
         .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
         :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Write %r2}
-        ,  Base.MutableT (Base.Int %r2)
+        ,  Base.Mutable %r2
         :$ Base.Data -> Base.Data;
         
 foreign import extern sumR

@@ -108,15 +108,9 @@ crushEffectT tt
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadT
 	= do	
-		let bits	= slurpDataRT t1
-		let esRegion	= map (TEffect primRead)
-				$ (  [[r] | r@(TVar KRegion _)		<- bits]
-				  ++ [[r] | r@(TClass KRegion _)	<- bits])
-
-
-		let esType	= map (TEffect primReadT)
-				$ (  [[t] | t@(TVar KData _)	<- bits]
-				  ++ [[t] | t@(TClass KData _)	<- bits])
+		let (rs, ds)	= slurpVarsRD t1
+		let esRegion	= map (\r -> TEffect primRead  [r])  rs
+		let esType	= map (\d -> TEffect primReadT [d]) ds
 
 	  	return	$ makeTSum KEffect 
 			$ (esRegion ++ esType)
@@ -126,15 +120,9 @@ crushEffectT tt
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EWriteT
 	= do	
-		let bits	= slurpDataRT t1
-		let esRegion	= map (TEffect primWrite)
-				$ (  [[r] | r@(TVar KRegion _)		<- bits]
-				  ++ [[r] | r@(TClass KRegion _)	<- bits])
-
-
-		let esType	= map (TEffect primWriteT)
-				$ (  [[t] | t@(TVar KData _)	<- bits]
-				  ++ [[t] | t@(TClass KData _)	<- bits])
+		let (rs, ds)	= slurpVarsRD t1
+		let esRegion	= map (\r -> TEffect primWrite  [r])   rs
+		let esType	= map (\d -> TEffect primWriteT [d]) ds
 				
 	  	return	$ makeTSum KEffect 
 			$ (esRegion ++ esType)
@@ -171,26 +159,5 @@ loadType' tt
 	_ 		-> return tt
 	
 	 
--- | Slurp out components of this type which are interesting to !ReadT \/ !WriteT
-slurpDataRT :: Type -> [Type]
-slurpDataRT tt
- = case tt of
-	TFun{}			-> []
- 	TData v ts		-> catMap slurpDataRT ts
-
-	TVar KRegion _		-> [tt]
-	TVar KData   _		-> [tt]
-	TVar _  _		-> []
-	
-	TClass KRegion _	-> [tt]	
-	TClass KData   _	-> [tt]
-	TClass _ _		-> []
-
-	TFetters fs t		-> slurpDataRT t
-
-	TError k t		-> []
-
-	_ 	-> panic stage
-		$  "slurpDataRT: no match for " % tt % "\n"
 
 

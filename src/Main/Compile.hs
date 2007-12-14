@@ -319,17 +319,17 @@ compileFile	args     fileName
 	when ?verbose
 	 $ do	putStr $ "  * Core: Lint\n"
 
-	SC.coreLint cClean cHeader
+	SC.coreLint "core-lint-thread" cThread cHeader
 
 	-- Reconstruct witness passing and effect information
 	when ?verbose
 	 $ do	putStr $ "  * Core: Reconstruct\n"
 
 	cReconstruct	<- runStage "reconstruct"
-			$ SC.coreReconstruct "core-reconstruct" cHeader cClean
+			$ SC.coreReconstruct "core-reconstruct" cHeader cThread
 
 	-- lint: 
-	SC.coreLint cReconstruct cHeader
+	SC.coreLint "core-lint-reconstruct" cReconstruct cHeader
 	
 	
 	-- Call class instance functions and add dictionaries.
@@ -391,8 +391,10 @@ compileFile	args     fileName
 				cFullLaziness
 				cHeader
 
-	runStage "lint-lifted" 
-		$ SC.coreLint cLambdaLift cHeader
+--	Can't lint the code after lifting, lifter doesn't preserve
+--	kinds of witness variables.
+--  	runStage "lint-lifted" 
+--		$ SC.coreLint "core-lint-lifted" cLambdaLift cHeader
 
 	
 	-- Slurp out ctor defs

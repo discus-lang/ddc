@@ -420,9 +420,9 @@ registerNodeF cid ff
 	 | isFShape (Var.bind v)
 	 -> registerClass (Var.FShape 0) cid
 
-	 | Var.bind v == Var.FLazyH
-	 -> registerClass (Var.FLazyH) cid
-
+	 | elem (Var.bind v) [Var.FLazyH, Var.FMutableT, Var.FConstT]
+	 -> registerClass (Var.bind v) cid
+	 
 	_ 
 	 -> return ()
 

@@ -106,7 +106,7 @@ lintP	tt (PClassDict v ts context vts)
  	-- v doesn't have this kind, but it'll do for now.
 	--	We're not checking kinds of class applications yet.
 	
- 	tt'	<- addVK v KWitness tt
+ 	tt'	<- addVK v (KClass v ts) tt
 	return	tt'
 
 
@@ -165,9 +165,10 @@ lintX tt (XConst c t)
 lintX tt (XVar v)
  = do	lintBoundV tt v
  
-lintX tt (XLocal v vs x)
- = do	tt'	<- addVK v KRegion tt
- 	lintX tt' x
+lintX tt (XLocal v vts x)
+ = do	tt2	<- addVK v KRegion tt
+ 	tt3	<- addVTs vts tt2
+ 	lintX tt3 x
  
 lintX tt (XPrim p xs eff)
  = do	mapM_ (lintX tt) xs
@@ -295,10 +296,20 @@ lintT tt (TFree	v t)
 lintT tt (TTag v)
  = 	return () 
 
- 
+-- witnesses
 lintT tt (TClass v ts)
  =	mapM_ (lintT tt) ts
  
+lintT tt (TPurify eff wit)
+ = do	lintT tt eff
+ 	lintT tt wit
+
+lintT tt (TPurifyJoin wits)
+ = do	mapM_ (lintT tt) wits	 
+
+lintT tt (TWitJoin wits)
+ = do	mapM_ (lintT tt) wits
+
 lintT tt (TWild k)
  =	return ()
  
@@ -324,7 +335,7 @@ lintK tt kk
 	KClass v ts
 	 -> do	mapM_ (lintT tt) ts
 	 	
-	KWitness	-> return ()
-
-
+	KWitJoin ks
+	 -> do	mapM_ (lintK tt) ks
+	
 

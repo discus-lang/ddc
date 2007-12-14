@@ -80,6 +80,23 @@ reduceFetter f@(FConstraint v [t])
 	, Just tR	<- slurpHeadR t
 	= Just [FConstraint primLazy [tR]]
 	
+	-- deep mutability
+	| Var.FMutableT	<- Var.bind v
+	= let
+		(rs, ds)	= slurpVarsRD t
+		fsRegion	= map (\r -> FConstraint primMutable  [r]) rs
+		fsData		= map (\d -> FConstraint primMutableT [d]) ds
+	  in Just $ fsRegion ++ fsData
+	  
+	-- deep const
+	| Var.FConstT	<- Var.bind v
+	= let
+		(rs, ds)	= slurpVarsRD t
+		fsRegion	= map (\r -> FConstraint primConst  [r]) rs
+		fsData		= map (\d -> FConstraint primConstT [d]) ds
+	  in	Just $ fsRegion ++ fsData
+	
+	
 	| otherwise 
 	= Nothing
 

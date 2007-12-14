@@ -57,13 +57,6 @@ subsumes' t s
 	, t2 == s2
 	= True 
 
-	-- var
-	| TVar tKind tVar	<- t
-	, TVar sKind sVar	<- s
-	, tKind == sKind
-	, tVar == sVar
-	= True
-
 	-- 
 	-- If we know 
 	--	(s <: T2) and (T2 <: t) then s <: t
@@ -97,22 +90,34 @@ subsumes' t s
 	, and $ zipWith subsumes' ts ss
 	= True
 	
+
+	-- This is really Eq
+	--	T <: T
+	
+	-- closure constructor
+	-- 	It doesn't matter what the variable is
+	--	So long as the type is the same
+
+	| TFree tVar ts		<- t
+	, TFree sVar ss		<- s
+	, ts == ss
+	= True
+	
+	-- var
+	| TVar tKind tVar	<- t
+	, TVar sKind sVar	<- s
+	, tKind == sKind
+	, tVar == sVar
+	= True
+
+	
 	-- effect constructor
 	| TEffect tVar ts	<- t
 	, TEffect sVar ss	<- s
 	, tVar == sVar
 	, ts == ss
 	= True
-	
-	-- closure constructor
-	-- 	It doesn't matter what the variable is
-	--	So long as the type is the same
-	
-	| TFree tVar ts		<- t
-	, TFree sVar ss		<- s
-	, ts == ss
-	= True
-	
+
 	-- classs
 	| TClass tVar ts	<- t
 	, TClass sVar ss	<- s

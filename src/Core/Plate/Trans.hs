@@ -582,6 +582,20 @@ instance Monad m => TransM m Type where
 	 	v'		<- followV_free  table v
 		return		$  TClass v' ts'
 
+	TPurify eff wit
+	 -> do	eff'	<- followT table eff
+	 	wit'	<- followT table wit
+		return	$ TPurify eff' wit'
+		
+	TPurifyJoin ts
+	 -> do	ts'	<- followTs table ts
+	 	return	$ TPurifyJoin ts'
+
+	TWitJoin ts
+	 -> do	ts'	<- followTs table ts
+	 	return	$ TWitJoin ts'
+
+
 	_ 	-> panic stage
 		$  "transZM[Type]: no match for " % show tt
 	 
@@ -605,8 +619,6 @@ instance Monad m => TransM m Kind where
 	 	ts'	<- followTs table ts
 		return	$ KClass v' ts'
 	 
-	KWitness	-> return KWitness
-
 -----
 instance Monad m => TransM m Stmt where
  transZM table s

@@ -117,9 +117,10 @@ toCoreK k
 	T.KRegion		-> C.KRegion
 	T.KEffect		-> C.KEffect
 	T.KClosure		-> C.KClosure
-	T.KFetter		-> C.KWitness
 	T.KFun k1 k2		-> C.KFun (toCoreK k1) (toCoreK k2)
 	
+	_ -> panic stage
+		$ "toCoreK: cannot convert " % k % "\n"
 
 
 -----

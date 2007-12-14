@@ -18,6 +18,8 @@ module Core.Util.Bits
 	
 	, makeXTet	
 	, makeTWhere
+	, makeTWitJoin
+	, makeKWitJoin
 
 	, kindOfSpace 
 	, takeWitnessOfClass
@@ -53,7 +55,9 @@ module Core.Util.Bits
 	, varToType 
 
 	, addLambdas
-	, addLAMBDAs)
+	, addLAMBDAs
+	
+	, slurpVarsRD)
 
 
 where
@@ -158,6 +162,20 @@ applyTMask tt@(TMask k t1 t2)
    in	makeTSum k tsMasked
  
 
+-- 
+makeTWitJoin :: [Type] -> Type
+makeTWitJoin ts
+ = case ts of
+ 	[t]	-> t
+	ts	-> TWitJoin ts
+
+-- 
+makeKWitJoin :: [Kind] -> Kind
+makeKWitJoin ts
+ = case ts of
+ 	[t]	-> t
+	ts	-> KWitJoin ts
+
 		
 -- | Get the kind associated with a namespace.
 kindOfSpace :: NameSpace -> Kind
@@ -167,7 +185,6 @@ kindOfSpace space
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
-	NameClass	-> KWitness
 	_		-> panic stage
 			$  "kindOfSpace: no match for " % show space
 
@@ -587,8 +604,33 @@ kindOfType t
 	
 	TFree{}			-> KClosure
 
+	-- witnesses
+	-- BUGS: check the class is valid,
+	--	eg one of Const, Mutable .. 
 	TClass v ts		-> KClass v ts
+
+	-- all the types being joined need to be purify witnesses
+	TPurifyJoin ts
+	 -> let	ks	= map kindOfType ts
+
+		takePureEff (KClass v [eff])
+			| v == primPure
+			= eff
+		
+		effs	= map takePureEff ks
+		
+	    in	KClass primPure [makeTSum KEffect effs]
+
+	TPurify eff@(TEffect vE [TVar KRegion vR1]) wit
+		|  KClass vC [TVar KRegion vR2]	<- kindOfType wit
+		,  vR1 == vR2
+		,  vE  == primRead
+		,  vC  == primConst
+		-> KClass primPure [eff]
 	
+	TWitJoin ts
+		-> makeKWitJoin (map kindOfType ts)
+
 	TWild k			-> k
 		
 	_			-> panic stage $ "kindOfType: cannot get kind for " % show t % "\n"
@@ -639,3 +681,37 @@ makeTWhere ::	Type	-> [(Var, Type)] -> Type
 makeTWhere	t []	= t
 makeTWhere	t vts	= TWhere t vts
 		
+
+
+
+-- | Slurp out the region and data vars present in this type
+--	Used for crushing ReadT, ConstT and friends
+slurpVarsRD
+	:: Type 
+	-> ( [Region]	-- region vars and cids
+	   , [Data])	-- data vars and cids
+
+slurpVarsRD tt
+ = 	slurpVarsRD_split [] [] $ slurpVarsRD' tt
+
+slurpVarsRD_split rs ds []	= (rs, ds)
+slurpVarsRD_split rs ds (t:ts)
+ = case t of
+ 	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
+ 	TVar   KData _		-> slurpVarsRD_split rs (t : ds) ts
+	
+	_			-> slurpVarsRD_split rs ds ts
+	
+slurpVarsRD' tt
+ = case tt of
+	TFun{}			-> []
+ 	TData v ts		-> catMap slurpVarsRD' ts
+
+	TVar KRegion _		-> [tt]
+	TVar KData   _		-> [tt]
+	TVar _  _		-> []
+
+	_ 	-> panic stage
+		$  "slurpVarsRD: no match for " % show tt % "\n"
+
+

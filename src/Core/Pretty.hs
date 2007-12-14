@@ -473,7 +473,11 @@ instance Pretty Type where
 	TTop k		-> "@Top " % k
 
 	-- class	
-  	TClass v ts	-> v % " " % " " %!% map prettyTB ts
+  	TClass v ts		-> v % " " % " " %!% map prettyTB ts
+	TPurify eff wit		-> "purify " % prettyTB eff % " " % prettyTB wit
+	TPurifyJoin wits	-> "pjoin {" % "; " %!% wits % "}"
+	
+	TWitJoin wits		-> "wjoin {" % "; " %!% wits % "}"
 	
 	-- wildcards
 	TWild	 k	-> "(" % k % ")"
@@ -525,9 +529,7 @@ instance Pretty Kind where
 
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts
 
-	KWitness	-> prettyp "+"
-
-
+	KWitJoin ks	-> "kjoin {" % "; " %!% ks % "}"
 
 
 

@@ -1,18 +1,14 @@
 
 module Core.Lift.Base
-(
-	LiftS(..),
-	LiftM,
-	initLiftS,
-	
-	bindType,
-	getType,
-	getKind,
-
-	newVar,
-	
-	addChopped,
-	getChopped)
+	( LiftS(..)
+	, LiftM
+	, initLiftS
+	, bindType
+	, getType
+	, getKind
+	, newVar
+	, addChopped
+	, getChopped)
 
 where
 
@@ -98,7 +94,9 @@ getKind		v
  	NameRegion	-> return KRegion
 	NameEffect	-> return KEffect
 	NameClosure	-> return KClosure
-	NameClass	-> return KWitness
+
+	-- doh
+	NameClass	-> return KNil
 	
 
 -----	

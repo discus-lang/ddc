@@ -83,7 +83,7 @@ solveGrind
 
 	-- Crush out FLazyHs, FMutableTs
 	trace	$ prettyp "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
-	mapM_ crushFetterC (regFLazyH ++ regFMutableT)
+	mapM_ crushFetterC (regFLazyH ++ regFMutableT ++ regFConstT)
 	
 	-- all done
 	trace	$ "\n"

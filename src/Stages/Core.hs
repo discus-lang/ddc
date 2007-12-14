@@ -271,18 +271,19 @@ coreInline
 -- | Check the tree for syntactic problems that won't be caught by type checking.
 coreLint
 	:: (?args :: 	[Arg])
+	-> String		-- ^ stage name
 	-> Tree 		-- ^ core tree
 	-> Tree 		-- ^ header tree
 	-> IO ()
 	
-coreLint cTree cHeader
+coreLint stage cTree cHeader
  | elem LintCore ?args
  = do	let errs	= lintTree (cHeader ++ cTree)
 
 	case errs of 
 	 []	-> return ()
 	 errs	
-	  ->	panic "core-lint"
+	  ->	panic stage
 	  		$ catInt "\n" errs
 	
  | otherwise
