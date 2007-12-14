@@ -220,14 +220,7 @@ inlineTWheresMapT sub block tt
 	 --	substitute for it.. bail out now or we'll loop forever.
 	 |  Set.member v block
 	 -> tt
-{-	 -> panic stage
-	 	$ "inlineTWheresT': avoiding attempted construction of infinite type.\n" 
-		% "  though variable " % v		% "\n"
-		% "             from " % prettyPos v	% "\n"
-		% "\n"
-		% show v
-		% "\n\n"
--}		
+
 	 -- Lookup the var and add it to the block list so we can detect loops
 	 --	in the type.
 	 | otherwise
@@ -254,9 +247,6 @@ inlineTWheresMapT sub block tt
 
 	TWild k			-> tt
 	    
---	_ -> panic stage
---		$ "inlineTWheresT: no match for " % show tt
-
 
 
 -- | Restrict the list of TLet fetters to ones which are 
@@ -266,24 +256,13 @@ restrictBinds :: Type -> [(Var, Type)] -> [(Var, Type)]
 restrictBinds tt ls
  = let	reachFLetsMap
  		= Map.fromList
-		$ [(t, freeVarsT tLet)	
+		$ [(t, freeVars tLet)	
  			| (t, tLet)	<- ls]
  
- 	vsSeed		= freeVarsT tt
+ 	vsSeed		= freeVars tt
 
 	vsReachable	= vsSeed `Set.union` graphReachableS reachFLetsMap vsSeed
 	 
    in	filter	(\(v, _) -> Set.member v vsReachable)
    		ls
 
-{-
-eraseContextsT :: Type -> Type
-eraseContextsT tt
- = transformT eraseContextsT' tt
-
-eraseContextsT' tt
- = case tt of
- 	TContext c t	-> t
-	TWhere t vts	-> TWhere (eraseContextsT' t) vts
-	_		-> tt
--}

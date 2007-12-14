@@ -107,7 +107,7 @@ slurpSuperDepsP pp
 	_ 		-> Nothing
 
 slurpDepsX xx
- 	= [ v	| v <- Set.toList $ freeVarsX xx
+ 	= [ v	| v <- Set.toList $ freeVars xx
 		, not $ Var.isCtorName v
 		, Var.nameSpace v == NameValue ]
 				

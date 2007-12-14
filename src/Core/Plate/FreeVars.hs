@@ -1,10 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Core.Plate.FreeVars
-	( freeVarsX
-	, freeVarsS
-	, freeVarsT
-	
+	( freeVars
 	, varsBoundByG
 	, varsBoundByW )
 
@@ -24,56 +21,59 @@ import Core.Exp
 -----
 stage	= "Core.Plate.FreeVars"
 
+class FreeVars a where
+ freeVars :: a -> Set Var
+ 
 -----
-freeVarsX :: Exp -> Set Var
-freeVarsX xx
- = case xx of
+instance FreeVars Exp where
+ freeVars xx
+  = case xx of
 	XNothing	-> empty
 	XNil		-> empty
 	
 	XAnnot	n x	
-	 -> freeVarsX x
+	 -> freeVars x
 
  	XVar	v	
 	 -> fromList [v]
 
 	XLAM v k e
 	 -> unions 
-	 	[ freeVarsK k
-		, freeVarsX e ]
+	 	[ freeVars k
+		, freeVars e ]
 		\\ Set.singleton (varOfBind v)
 
 	XAPP x t
 	 -> unions
-	 	[ freeVarsX x
-		, freeVarsT t ]
+	 	[ freeVars x
+		, freeVars t ]
 
 	XLam v t e eff clo	
 	 -> unions
-	 	[ freeVarsT t
-		, freeVarsX e ]
+	 	[ freeVars t
+		, freeVars e ]
 		\\ fromList [v]
 
 	XApp x1 x2 eff
 	 -> unions
-	 	[ freeVarsX x1
-		, freeVarsX x2 
-		, freeVarsT eff ]
+	 	[ freeVars x1
+		, freeVars x2 
+		, freeVars eff ]
 
 	XTau t x
 	 -> unions
-	 	[ freeVarsT t
-		, freeVarsX x ]
+	 	[ freeVars t
+		, freeVars x ]
 
 	XTet vts x
 	 -> unions
-	 	[ freeVarsX x
-		, Set.unions $ map (freeVarsT . snd) vts]
+	 	[ freeVars x
+		, Set.unions $ map (freeVars . snd) vts]
 		
 		\\ (Set.fromList $ map fst vts)
 
 	XLocal v vs x
-	 -> freeVarsX x \\ fromList [v]
+	 -> freeVars x \\ fromList [v]
 
 	XDo xs
 	 -> let
@@ -81,58 +81,68 @@ freeVarsX xx
 			$ map boundByS xs
 			
 		free	= unions
-			 $ map freeVarsS xs
+			 $ map freeVars xs
 
 	    in free \\ bound
 		
 	XMatch aa eff
 	 -> unions
-	 	[ freeVarsT eff
-		, unions $ map freeVarsA aa ]
+	 	[ freeVars eff
+		, unions $ map freeVars aa ]
 		
 	XConst c t	
-	 -> freeVarsT t
+	 -> freeVars t
 
 	XLifted v vsFree
 	 -> fromList vsFree
 	
 	XPrim m xs eff
 	 -> unions
-	 	[ freeVarsM m
-		, unions $ map freeVarsX xs
-		, freeVarsT eff ]
+	 	[ freeVars m
+		, unions $ map freeVars xs
+		, freeVars eff ]
 
 	-- atoms
 	XAtom v xs
 	 -> unions
 	 	[ fromList [v]
-		, unions $ map freeVarsX xs ]
+		, unions $ map freeVars xs ]
 
 	-- intermediate
 	XType t
-	 -> freeVarsT t
+	 -> freeVars t
 
 	_ 	-> panic stage
 		$ "freeVarsX: no match for " % show xx
 
 
+boundByS ::	Stmt	-> Set Var
+boundByS	x
+ = case x of
+ 	SBind v e
+	 -> let
+	    in	unions	[ fromList (maybeToList v) ]
 
-freeVarsM :: Prim -> Set Var
-freeVarsM m
- = case m of
+	_ -> empty
+
+
+-----
+instance FreeVars Prim where
+ freeVars m
+  = case m of
 
 	MSuspend v	-> singleton v
 	MForce 		-> empty
 
 	MBox t1 t2
 	 -> unions
-	 	[ freeVarsT t1
-		, freeVarsT t2 ]
+	 	[ freeVars t1
+		, freeVars t2 ]
 
 	MUnbox t1 t2 
 	 -> unions
-	 	[ freeVarsT t1
-		, freeVarsT t2 ]
+	 	[ freeVars t1
+		, freeVars t2 ]
 
 	MTailCall v	-> singleton v
 	MCall 	v 	-> singleton v
@@ -143,73 +153,84 @@ freeVarsM m
 	MFun v t	
 	 -> unions
 	 	[ singleton v
-		, freeVarsT t ]
+		, freeVars t ]
 
-
-
-freeVarsS ::	Stmt -> Set Var
-freeVarsS   	xx
- = case xx of
+-----
+instance FreeVars Stmt where
+ freeVars xx
+  = case xx of
  	SBind v x
 	 -> unions 
-	 	[ freeVarsX x ]
+	 	[ freeVars x ]
 		\\ fromList (maybeToList v)
 
-
-freeVarsA :: 	Alt -> Set Var
-freeVarsA    	a	
- = case a of
+----
+instance FreeVars Alt where
+ freeVars aa	
+  = case aa of
  	AAlt gs x
 	 -> let
 	 	bound	= unions 
 			$ map varsBoundByG gs
 			
 		free	= unions 
-		 	[ unions $ map freeVarsG gs
-			, freeVarsX x ]
+		 	[ unions $ map freeVars gs
+			, freeVars x ]
 	    in	free \\ bound
 				
 
-freeVarsG :: 	Guard -> Set Var
-freeVarsG 	g
+varsBoundByG ::	Guard -> Set Var
+varsBoundByG	g
  = case g of
--- 	GCase w 	-> empty
-	GExp  w x
-	 -> freeVarsX x
-	 	\\ varsBoundByW w
-		
+	GExp  w x	-> varsBoundByW w
+
 
 -----
-freeVarsT ::	Type -> Set Var
-freeVarsT	tt
- = case tt of
+instance FreeVars Guard where
+ freeVars gg
+  = case gg of
+	GExp  w x
+	 -> freeVars x
+	 	\\ varsBoundByW w
+
+varsBoundByW ::	Pat	-> Set Var
+varsBoundByW	ww
+ = case ww of
+ 	WConst c	-> empty
+	WCon   v fs	-> fromList $ map t3_2 fs
+	
+
+-----
+instance FreeVars Type where
+ freeVars tt
+  = case tt of
 	TNil		-> empty
 
  	TForall v k t	
 	 -> unions
-	 	[ freeVarsK k
-		, freeVarsT t]
+	 	[ freeVars k
+		, freeVars t]
 		 \\ (Set.singleton $ varOfBind v)
 
 	TContext k t
 	 -> unions
-	 	[ freeVarsK k
-		, freeVarsT t ]
+	 	[ freeVars k
+		, freeVars t ]
 
 	TWhere t1 vts
 	 -> unions 
-	 	[ freeVarsT t1
-		, Set.unions $ map (freeVarsT . snd) vts ]
+	 	[ freeVars t1
+		, Set.unions $ map (freeVars . snd) vts ]
 		
 		\\ (Set.fromList $ map fst vts)
 		
 	TSum k ts
-	 -> unions $ map freeVarsT ts
+	 -> unions $ map freeVars ts
 
 	TMask k t1 t2
 	 -> unions
-	 	[ freeVarsT t1
-		, freeVarsT t2 ]
+	 	[ freeVars t1
+		, freeVars t2 ]
 
 	TVar k v	-> Set.singleton v
 	
@@ -220,54 +241,56 @@ freeVarsT	tt
 	TData v xs
 	 -> unions
 	 	[ fromList [v] 
-		, unions $ map freeVarsT xs ]
+		, unions $ map freeVars xs ]
 
 	TFun t1 t2
 	 -> unions
-	 	[ freeVarsT t1 
-		, freeVarsT t2 ]
+	 	[ freeVars t1 
+		, freeVars t2 ]
 	
 	TFunEC	t1 t2 eff clo
 	 -> unions 
-	 	[ freeVarsT t1
-		, freeVarsT t2 
-		, freeVarsT eff
-		, freeVarsT clo ]
+	 	[ freeVars t1
+		, freeVars t2 
+		, freeVars eff
+		, freeVars clo ]
 
 	-- effect
 	TEffect v ts
 	 -> unions
 	 	[ fromList [v]
-		, unions $ map freeVarsT ts ]
+		, unions $ map freeVars ts ]
 
 	-- closure
-	TFree v t	-> freeVarsT t
+	TFree v t	-> freeVars t
 	TTag v		-> Set.empty
 	
 	-- class
  	TClass v ts	
 	 -> unions
 	 	[ Set.singleton v
-		, unions $ map freeVarsT ts ]
+		, unions $ map freeVars ts ]
 	
 	TPurify eff cls
 	 -> unions
-	 	[ freeVarsT eff
-		, freeVarsT cls ]
+	 	[ freeVars eff
+		, freeVars cls ]
 	
 	TPurifyJoin ts
 	 -> unions
-	 	$ map freeVarsT ts
+	 	$ map freeVars ts
 	
 	TWitJoin ts
-	 -> unions $ map freeVarsT ts
+	 -> unions $ map freeVars ts
 
 	_ 	-> panic stage
 		$ "freeVarsT: no match for " % show tt
 
-freeVarsK ::	Kind	-> Set Var
-freeVarsK kk
- = case kk of
+
+-----
+instance FreeVars Kind where
+ freeVars kk
+  = case kk of
  	KNil		-> Set.empty
 	KData		-> Set.empty
 	KRegion		-> Set.empty
@@ -277,42 +300,10 @@ freeVarsK kk
 	KClass v ts
 	 -> unions
 	 	[ Set.singleton v
-		, unions $ map freeVarsT ts ]
+		, unions $ map freeVars ts ]
 		
 	KFun k1 k2
 	 -> unions
-	 	[ freeVarsK k1 
-		, freeVarsK k2 ]
-
-	 
-boundByS ::	Stmt	-> Set Var
-boundByS	x
- = case x of
- 	SBind v e
-	 -> let
-	    in	unions	[ fromList (maybeToList v) ]
-
-	_ -> empty
-			
-		
-
-varsBoundByG ::	Guard -> Set Var
-varsBoundByG	g
- = case g of
---	GCase w		-> varsBoundByW w
-	GExp  w x	-> varsBoundByW w
-	
-
-varsBoundByW ::	Pat	-> Set Var
-varsBoundByW	ww
- = case ww of
- 	WConst c	-> empty
-	WCon   v fs	-> fromList $ map t3_2 fs
-	
-	
-
-
-
-
-
+	 	[ freeVars k1 
+		, freeVars k2 ]
 

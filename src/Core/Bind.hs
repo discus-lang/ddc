@@ -123,7 +123,7 @@ bindX 	shared xx
 		 $ return
 			( XTet vts' x'
 			, addSharedVs 
-				(Set.unions $ map (freeVarsT . snd) vts)
+				(Set.unions $ map (freeVars . snd) vts)
 				vsFree
 			, vsLocal)
 
@@ -131,7 +131,7 @@ bindX 	shared xx
 	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
 	 	return	( XTau t x'
 			, addSharedVs 
-				(freeVarsT t)
+				(freeVars t)
 				vsFree
 			, vsLocal)
 
@@ -139,7 +139,7 @@ bindX 	shared xx
 	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
 	 	return	( XLam v t x' eff clo
 			, addSharedVs 
-				(freeVarsT t)
+				(freeVars t)
 				vsFree
 			, vsLocal)
 
@@ -411,10 +411,10 @@ takeStmtBoundV ss
 
 freeRegionsX xx	
 	= Set.filter vIsRegion 
-	$ freeVarsX xx
+	$ freeVars xx
 
 freeRegionsS xx	
 	= Set.filter vIsRegion 
-	$ freeVarsS xx
+	$ freeVars xx
 
 vIsRegion v = Var.nameSpace v == NameRegion

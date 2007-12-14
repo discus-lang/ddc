@@ -72,7 +72,7 @@ slurpS	table ss
 	SBind (Just v) x	
 	 -> do	topVs	<- gets stateTopVs
 
-	 	let fv	= [v 	| v 	<- Set.toList $ freeVarsX x
+	 	let fv	= [v 	| v 	<- Set.toList $ freeVars x
 	 			, Var.nameSpace v == NameValue 
 				, not $ Set.member v topVs 
 				, not $ Var.isCtorName v ]

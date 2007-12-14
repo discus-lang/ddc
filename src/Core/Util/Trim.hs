@@ -93,7 +93,7 @@ trimClosureC' cc
 	TFree v t
 	 |  null $ filter (\v 	-> Var.nameSpace v /= Var.NameValue
 	 			&& (not $ Var.isCtorName v)) 
-	 	 $ Set.toList $ freeVarsT t		
+	 	 $ Set.toList $ freeVars t		
 	 -> TBot KClosure
 
 	 | otherwise

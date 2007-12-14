@@ -47,7 +47,7 @@ lambdaFreeVarsP
 	-- Work out the free variables in this binding
 	vsBoundTop	<- gets stateTopVars
 
- 	let vsFree	= Set.difference (freeVarsX x) vsBoundTop
+ 	let vsFree	= Set.difference (freeVars x) vsBoundTop
 
 	-- The vars defined at top-level are always in scope.
 	let freeVars	= Set.toList vsFree
