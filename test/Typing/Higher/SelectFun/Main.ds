@@ -1,7 +1,5 @@
 
-
-
-succ :: Int %r1 -> Int %r1;
+succ :: Int -> Int;
 succ x 	= x + 1;
 
 increment x	

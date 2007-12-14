@@ -34,5 +34,5 @@ tetra b p h
 
 
 
-main
+main ()
  = 	print (showInt (tetra True perchP appDanio));
