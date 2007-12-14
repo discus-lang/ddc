@@ -321,7 +321,7 @@ compileFile	args     fileName
 
 	SC.coreLint "core-lint-thread" cThread cHeader
 
-	-- Reconstruct witness passing and effect information
+	-- Check type information and add annotations to each stmt.
 	when ?verbose
 	 $ do	putStr $ "  * Core: Reconstruct\n"
 

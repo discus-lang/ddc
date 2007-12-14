@@ -45,10 +45,11 @@ instance Pretty Type where
 
 	TFun t1 t2 eff clo
 	 -> case (eff, clo) of
-	 	(TBot _ ,	TBot _)		-> prettyTBF t1 % " -> " % t2
-		(eff,		TBot _)		-> prettyTBF t1 % " -(" % eff % ")> " % t2
-		(TBot _,	clo)		-> prettyTBF t1 % " -(" % clo % ")> " % t2
-		(eff,		clo)		-> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % t2
+	 	(TBot _ ,	TBot _)		-> prettyTBF t1 % " -> " % prettyTRight t2
+		(eff,		TBot _)		-> prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
+		(TBot _,	clo)		-> prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
+		(eff,		clo)		-> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " 
+								% prettyTRight t2
 		
 	-- effect
 	TEffect    v []		-> prettyp v
@@ -119,6 +120,11 @@ prettyTBF t
 	TMutable{}	-> "(" % t % ")"
 	
 	_ 		-> prettyp t
+
+prettyTRight tt
+ = case tt of
+ 	TFetters{}	-> "(" % tt % ")"
+	_		-> prettyp tt
 
 prettyTB t
  = case t of

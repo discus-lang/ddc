@@ -1,7 +1,7 @@
 
 -- Test out a fourth and fifth order functions.
 --	At fourth order we can get :> constraints, where the effect variables in the
---	constraint are also constrained.
+--	constraint are also constrained. We need the SubReplay rule for type checking the core.
 --
 
 succ :: Int -> Int;
@@ -28,7 +28,7 @@ tetra b p h
  	p'	= if b then perch else p;
 	p' danio;
 
-	-- 'h' is fifth order because we apply it to p'.
+	-- 'h' is fourth order because we apply it to p'.
         h p';	
  };	
 

@@ -96,15 +96,23 @@ packT1 tt
 	 
 	-- data
 	TData v ts
-	 -> let	ts'	= map packT1 ts
-	    in	TData v ts'
+	 -> let	ts2	= map packT1 ts
+
+		-- lift fetters above args
+		(ts3, vtss)	
+			= unzip
+			$ map slurpTWhere ts2
+
+	    in	makeTWhere (TData v ts3) (concat vtss)
 	    
 	TFunEC t1 t2 eff clo
-	 -> let t1'	= packT1 t1
-	  	t2'	= packT1 t2
-		eff'	= packT1 eff
-		clo'	= packT1 clo
-	    in	TFunEC t1' t2' eff' clo'
+	 -> let (t1', vts1)	= slurpTWhere $ packT1 t1
+	  	(t2', vts2)	= slurpTWhere $ packT1 t2
+		(eff', vtsE)	= slurpTWhere $ packT1 eff
+		(clo', vtsC)	= slurpTWhere $ packT1 clo
+
+	    in	makeTWhere (TFunEC t1' t2' eff' clo')
+	    		(vts1 ++ vts2 ++ vtsE ++ vtsC)
 	    
 	TFun t1 t2
 	 -> let	t1'	= packT1 t1
@@ -160,6 +168,10 @@ packT1 tt
 
 	_ -> panic stage
 		$ "packT: no match for " % tt
+
+
+slurpTWhere (TWhere t vts)	= (t, vts)
+slurpTWhere tt			= (tt, [])
 
 
 -- | Do one round of packing on this kind

@@ -1,0 +1,25 @@
+
+-- For this example we end up with wjoins in the core, to construct a witness that
+--	the entire tuple is mutable. If the core is checked before dictionary rewrite
+--	the type checker needs to handle this.
+
+instance Updatable (Tuple2 %_ (Int %_) (Int %_)) where
+{
+	(:=)	= updateTupleInt2;
+}
+
+
+updateTupleInt2 :: (Int, Int) -> (Int, Int) -> ();
+updateTupleInt2 (a1, a2) (b1, b2)
+ = do {	a1	:= b1;
+ 	a2	:= b2;
+ };
+ 	
+	
+main ()
+ = do {	x	= (1, 2);
+ 	x	:= (3, 4);
+	
+	print $ (showInt (fst x)) % " " % (showInt (snd x)) % "\n";
+ };
+ 	

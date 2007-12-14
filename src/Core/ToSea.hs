@@ -1,8 +1,7 @@
 
+-- | Convert CoreIR to Abstract-C
 module Core.ToSea
-(
-	toSeaTree
-)
+	( toSeaTree )
 
 where
 
@@ -23,6 +22,7 @@ import qualified Core.Util		as C
 import qualified Core.Pretty		as C
 import qualified Core.Util		as C
 import qualified Core.Util.Slurp	as C
+import qualified Core.ReconKind		as C
 
 import qualified Sea.Exp  	as E
 import qualified Sea.Util	as E

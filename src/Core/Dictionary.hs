@@ -18,6 +18,7 @@ import Core.Pretty
 import Core.Util
 import Core.Plate.Trans
 import Core.Util.Unify
+import Core.ReconKind
 
 import Core.Class.Discharge
 import Core.Util.Strip
@@ -116,7 +117,7 @@ rewriteOverApp
 
 		-- Strip this scheme down to its shape
 		(vtsForall, vtsTet, ksClass, tInstShape)
-				= stripSchemeT tInstScheme					
+				= stripSchemeT $ packT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
 		ttSub	= trace (pretty 

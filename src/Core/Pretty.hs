@@ -449,10 +449,17 @@ instance Pretty Type where
 
 	TFunEC t1 t2 eff clo
 	 -> case (eff, clo) of
-	 	(TBot KEffect, 	TBot KClosure)	-> prettyTBF t1 % " -> " % t2
-		(eff,   	TBot KClosure)	-> prettyTBF t1 % " -(" % eff % ")> " % t2
-		(TBot KEffect,	clo)		-> prettyTBF t1 % " -(" % clo % ")> " % t2
-		(eff,   	clo)		-> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % t2
+	 	(TBot KEffect, 	TBot KClosure)	
+		 -> prettyTBF t1 % " -> " % prettyTRight t2
+
+		(eff,   	TBot KClosure)	
+		 -> prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
+
+		(TBot KEffect,	clo)		
+		 -> prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
+
+		(eff,   	clo)		
+		 -> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
 
 	TData v ts
 	 ->       " " %!% (prettyp v : map prettyTB ts)
@@ -482,6 +489,11 @@ instance Pretty Type where
 	-- wildcards
 	TWild	 k	-> "(" % k % ")"
 	
+prettyTRight tt
+ = case tt of
+ 	TWhere{}	-> "(" % tt % ")"
+	_		-> prettyp tt
+
 
 prettyTB t
  = case t of

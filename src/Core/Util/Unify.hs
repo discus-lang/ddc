@@ -10,6 +10,7 @@ import Shared.Error
 
 import Core.Exp
 import Core.Pretty
+import Core.ReconKind
 import Core.Util.Bits
 
 stage	= "Core.Util.Unify"

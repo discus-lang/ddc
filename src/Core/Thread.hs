@@ -16,6 +16,7 @@ where
 
 import Core.Plate.Walk
 import Core.Util
+import Core.ReconKind
 import Core.Exp
 
 import qualified Shared.Var	as Var

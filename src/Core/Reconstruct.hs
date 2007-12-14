@@ -12,6 +12,7 @@ where
 
 import Core.Exp
 import Core.Util
+import Core.ReconKind
 import Core.Plate.FreeVars
 
 import Shared.Error
@@ -481,3 +482,6 @@ applyTypeT table t1 t2
 		% "    can't apply\n"		%> t2	% "\n\n"
 		% "    to\n"			%> t1	% "\n\n")
 		$ Nothing
+
+
+

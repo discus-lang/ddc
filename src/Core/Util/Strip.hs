@@ -48,8 +48,7 @@ stripSchemeT' forallVTs tetVTs classes tt
 			(classes ++ [c])
 			tRest
 
-	_ -> let sub	= Map.fromList forallVTs
-	     in ( forallVTs
+	_ ->    ( forallVTs
 	     	, tetVTs
 		, classes
 		, tt)

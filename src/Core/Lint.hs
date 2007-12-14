@@ -26,6 +26,7 @@ import Core.Pretty
 import Core.Plate.Walk
 import Core.Util
 import Core.Util.Slurp
+import Core.ReconKind
 
 -----
 stage	= "Core.Lint"
