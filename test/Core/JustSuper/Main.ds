@@ -3,7 +3,7 @@
 --	when passing thunks to data constructors.
 --
 
-f ()	= print "erk";
+f ()	= print "erk\n";
 
 main ()
  = do {	y	= Just f;
