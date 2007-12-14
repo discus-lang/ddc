@@ -26,7 +26,22 @@ subsumes tableMore t s
    in	subsumes' t s
 	
 subsumes' t s
-	-- 
+
+	-- SubRefl
+	| t == s
+	= True
+
+	-- SubTop
+	-- top subsumes everything
+	| TTop _		<- t
+	= True
+
+	-- SubBot
+	-- anything subsumes bottom
+	| TBot _		<- s
+	= True
+
+	-- SubAll
 	| TForall v1 k1 t1	<- t
 	, TForall v2 k2 t2	<- s
 	, v1 == v2
@@ -57,22 +72,14 @@ subsumes' t s
 	, t2 == s2
 	= True 
 
-	-- 
-	-- If we know 
-	--	(s <: T2) and (T2 <: t) then s <: t
+	-- SubVar
+	-- G[t :> S] |- S <: t
 	| TVar tKind tVar	<- t
-	, Just t2		<- Map.lookup tVar ?tableMore
-	, subsumes' t2 s
+	, Just s2		<- Map.lookup tVar ?tableMore
+	, s2 == s
 	= True
 
-	-- anything subsumes bottom
-	| TBot _		<- s
-	= True
-	
-	-- top subsumes everything
-	| TTop _		<- t
-	= True
-
+	-- SubFun
 	-- fun
  	| TFunEC t1 t2 tEff tClo	<- t
 	, TFunEC s1 s2 sEff sClo	<- s
@@ -81,7 +88,23 @@ subsumes' t s
 	, subsumes' tEff sEff
 	, subsumes' tClo sClo
 	= True
+
+
+	-- SubReplay
+	-- hmm, perhaps should be using separate constraints, 
+	--	and not substituting effects into types.
+	--
+	-- G[e :> E] |- (a -(e)> b)  <: (a -(E)> b)
+	--
+	| TFunEC t1 t2 tEff@(TVar KEffect vE) tClo	<- s
+	, Just tE		<- Map.lookup vE ?tableMore
+	, subsumes' t (TFunEC t1 t2 tE tClo)
+--	= warning stage
+--		("subsumes: Used SubReplay for (" % s % ")\n")
+	=	True
 	
+	-- SubCtor
+	--	BUGS: doesn't handle contra variant vars
 	-- data 
 	| TData tVar ts		<- t
 	, TData sVar ss		<- s
@@ -103,56 +126,7 @@ subsumes' t s
 	, ts == ss
 	= True
 	
-	-- var
-	| TVar tKind tVar	<- t
-	, TVar sKind sVar	<- s
-	, tKind == sKind
-	, tVar == sVar
-	= True
-
-	
-	-- effect constructor
-	| TEffect tVar ts	<- t
-	, TEffect sVar ss	<- s
-	, tVar == sVar
-	, ts == ss
-	= True
-
-	-- classs
-	| TClass tVar ts	<- t
-	, TClass sVar ss	<- s
-	, tVar == sVar
-	, ts == ss
-	= True
-	
 	--
 	| otherwise
 	= False
-
-	-- If we were told that we're in a contra-variant branch then allow
-	--	effect and closure variables to subsume everything
-	--	BUGS: 	this is nasty, and wrong
-	--		before this is valid we need to prove that there are no Pure constraints
-	--		on effects, or if there are - that the effects subsumed don't contain 
-{-	| TVar k v		<- t
-	, elem k [KEffect, KClosure]
-	, ?topECVars
-	= warning stage
-		("subsumes: did a nasty, unchecked subsumpton. s <: t\n"
-		% "   s = " % s	% "\n"
-		% "   t = " % t % "\n")
-		False
--}	
-	-----
-{-	| otherwise
-	= freakout stage
-		 ("subsumes:  S is not <: T\n"
-		% "    S = " % s % "\n"
-		% "    T = " % t % "\n\n"
-		% "    when checking\n"
-		% "    s = " % ?s % "\n"
-		% "    t = " % ?t % "\n")
-		
-		$ False
--}
 

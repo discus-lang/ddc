@@ -1,0 +1,38 @@
+
+-- Test out a fourth and fifth order functions.
+--	At fourth order we can get :> constraints, where the effect variables in the
+--	constraint are also constrained.
+--
+
+succ :: Int -> Int;
+succ x = x + 1;
+
+danio g	= g 5;
+
+-- perch is a third order function
+perch f = succ (f succ);
+
+-- perchP is a third order function with an additional effect
+perchP f 
+ = do {	n	= perch f;
+	print (showInt n);
+	n;
+ };
+
+appDanio f = f danio;
+
+-- tetra is a fifth order function
+tetra b p h 
+ = do { 
+ 	-- force the argument 'p' to be third order by comparing it with perch.
+ 	p'	= if b then perch else p;
+	p' danio;
+
+	-- 'h' is fifth order because we apply it to p'.
+        h p';	
+ };	
+
+
+
+main
+ = 	print (showInt (tetra True perchP appDanio));

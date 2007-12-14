@@ -1,43 +1,21 @@
 
+-- Test out handling of a third order function.
+--	At third order we can start to get ':>' constraints on effects.
 
-succ :: Int %r1 -> Int %r1;
+succ :: Int -> Int;
 succ x = x + 1;
-
-succP :: Int -> Int;
-succP x 
- = do {	n	= x + 1;
-	print (showInt n);
-	n;
- };
-
 
 danio g	= g 5;
 
+-- perch is a third order function
 perch f = succ (f succ);
 
-perchP f 
- = do {	n	= perch f;
-	print (showInt n);
-	n;
- };
-
 appDanio f = f danio;
-
-{-
-tetra b p h 
- = do { p'	= if b then perch else p;
-	p' danio;
-
-        h p';	
- };	
--}
 
 main ()
  = do {
 	print (showInt (perch danio) % "\n");
 	print (showInt (appDanio perch) % "\n");
-
---	print (showInt (tetra True perchP appDanio));
  };
 
 

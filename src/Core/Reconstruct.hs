@@ -427,12 +427,14 @@ applyValueT' table t0@(TFunEC t1 t2 eff clo) t3
 		then Just (t2, eff)
 		else freakout stage
 			( "applyValueT: Type error in value application.\n"
-			% "    can't apply\n"		%> t3 % "\n\n"
-			% "    to\n"        		%> t0 % "\n"
+			% "    can't apply argument:\n"	%> t3 % "\n\n"
+			% "    to:\n"        		%> t0 % "\n"
 			% "\n"
-			% "    argument\n"		%> t3 % "\n"
+			% "    as it is not <: than:\n"	%> t1 % "\n"
 			% "\n"
-			% "    is not <: than\n"	%> t1 % "\n")
+			% "    with bounds: \n"
+			% ("\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) 
+				$ Map.toList (tableMore table)) % "\n\n"))
 			$ Nothing
 	
 applyValueT' _ _ _

@@ -73,13 +73,31 @@ loadTypeNode2 cid c
 	= do	t'	<- refreshCids $ classFetter c
 		return	$ Just t'
 
+	-- don't bother showing bottoms
 	| TBot k	<- classType c
 	=	return	$ Nothing
 
+	-- a regular type node
 	| otherwise
-	= do	t'	<- refreshCids $ classType c
+	= do	
+		-- make sure all the cids are canconical
+		t'	<- refreshCids $ classType c
+
+		-- If this node has additional fetters where the LHS are all cids then we can strip them here
+		-- 	because they're cids they'll already be returned as their separate nodes
+		--
+		let tX	= case t' of
+				TFetters fs t2	
+				 | and	$ map (\f -> case f of
+				 		FLet  (TClass _ _) _	-> True
+						FMore (TClass _ _) _	-> True
+						_			-> False)
+					$ fs
+				 -> t2
+				_	-> t'
+				
 		k	<- kindOfCid cid
-		return $ Just (FLet (TClass k cid) t')
+		return $ Just (FLet (TClass k cid) tX)
 
 refreshCids xx
  	= transZM 

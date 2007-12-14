@@ -26,12 +26,9 @@ module Core.Util.Bits
 	, pure
 	, empty
 	
-	, flattenApps
-	, unflattenApps
-	, flattenFun
-	, unflattenFun
-	, flattenAppsE
-	, unflattenAppsE
+	, flattenApps,	flattenAppsE,	unflattenApps, unflattenAppsE
+	, flattenFun,	unflattenFun,	unflattenFunE
+		
 	, chopLambdas
 	, sortLambdaVars
 	, superAirity
@@ -42,7 +39,6 @@ module Core.Util.Bits
 	, isUnboxedT
 	, collectAirity
 	, crushToXDo
-	, makeCtorTypeAVT
 	, tossRegionEffects
 	, addXAnnot
 	, crushClo
@@ -427,24 +423,6 @@ crushToXDo ss
  	[SBind v e]	-> e
 	_		-> XDo ss
 	
-
--- | Build the type of a constructor
-makeCtorTypeAVT :: [Type] -> Var -> [Var] -> Type
-makeCtorTypeAVT    argTypes dataVar ts
- 	= foldl (\t v -> TForall (BVar v) (defaultKindV v) t)
-		(unflattenFunE (argTypes ++ [TData dataVar (map (TVar KData) ts)]))
-		(reverse ts)
-
-
-defaultKindV :: Var -> Kind
-defaultKindV	v
- = case Var.nameSpace v of
- 	NameType	-> KData
-	NameRegion	-> KRegion	
-	NameEffect	-> KEffect
-	NameClosure	-> KClosure
-	
-
 
 -----------------------
 -- tossRegionEffects

@@ -217,12 +217,22 @@ makeCtor    objVar dataVar ts (D.CtorDef _ ctorVar dataFields)
 		$ filter (\df -> S.dPrimary df) 
 		$ dataFields
 
-	tv	= C.makeCtorTypeAVT argTs dataVar ts 
+	tv	= makeCtorTypeAVT argTs dataVar ts 
 
 	to	= C.unflattenFun (replicate (length argTs + 1) 
 		$ (C.TData objVar []))
 
    in   C.PCtor ctorVar tv to
+
+-- | Build the type of a constructor
+makeCtorTypeAVT :: [C.Type] -> Var -> [Var] -> C.Type
+makeCtorTypeAVT    argTypes dataVar ts
+ 	= foldl (\t v -> C.TForall (C.BVar v) (C.kindOfSpace (Var.nameSpace v)) t)
+		(C.unflattenFunE 
+			(argTypes ++ 
+				[C.TData dataVar 
+					(map (\v -> C.TVar (C.kindOfSpace $ Var.nameSpace v) v) ts)]))
+		(reverse ts)
 
 
 -----------------------
