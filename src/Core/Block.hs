@@ -45,12 +45,11 @@ blockTreeX xx
 
 blockTreeA aa
  = case aa of
- 	AAlt gs x		-> AAlt gs  (blockX x)
+ 	AAlt gs x		-> AAlt gs  (blockXF x)
 
 blockTreeG gg
  = case gg of
  	GExp w x		-> GExp w (blockX x)
-	_			-> gg
 
 blockTreeP pp
  = case pp of
@@ -58,13 +57,24 @@ blockTreeP pp
 	_			-> pp
 
 
-----
+-- | force this expression to be an XDo
+--	but allow XTau and XTet wrappers.
+blockXF xx
+ = case xx of
+ 	XDo{}			-> xx
+	XTau t x		-> XTau t	$ blockXF x
+	XTet vts x		-> XTet vts	$ blockXF x
+	_			-> XDo [ SBind Nothing xx]
+
+-- | force this expression to be an XDo
+--	but allow XTau, XTet, XLam XLAM wrappers
 blockX xx
  = case xx of
 	XDo{}			-> xx
 	XTau t x		-> blockXL xx
 	XTet vts x		-> blockXL xx
 	_			-> XDo [ SBind Nothing xx ]
+
 
 
 blockXL xx

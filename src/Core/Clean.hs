@@ -24,7 +24,7 @@ import Util
 cleanTree :: Tree -> Tree
 cleanTree tt	= cleanTree' $ cleanTree' tt
 
-cleanTree' tt	= evalState (walkZM table tt) ()
+cleanTree' tt	= evalState (walkTreeM table tt) ()
 
 table	
  = walkTableId

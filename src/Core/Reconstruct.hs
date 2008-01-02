@@ -454,7 +454,7 @@ applyTypeT table (TForall (BVar v) k t1) t2
 
 applyTypeT table (TForall (BMore v tB) k t1) t2
 	-- check that the constraint is satisfied
-	| subsumes (tableMore table) tB t2
+	| subsumes (tableMore table) t2 tB
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 	
 

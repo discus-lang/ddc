@@ -4,6 +4,7 @@
 module Core.Plate.Walk
 	( WalkTable (..)
 	, walkZM
+	, walkTreeM
 	, walkTableId
 	, lookupT)
 
@@ -77,6 +78,34 @@ walkTableId
 
 lookupT 	table v	= Map.lookup v $ boundT  table
 
+
+-- | When walking over a whole tree we must bind all the regions and dictionaries
+--	from PRegions first.
+walkTreeM 
+	:: Monad m
+	=> WalkTable m
+	-> Tree -> m Tree
+walkTreeM zz pp
+ = do	z2	<- foldM bindTKF_Top zz pp
+	mapM (walkZM z2) pp
+
+
+
+-- | Bind types present in this top level thing
+bindTKF_Top
+	:: Monad m
+	=> WalkTable m -> Top -> m (WalkTable m)
+
+bindTKF_Top z pp
+ = case pp of
+ 	PRegion vR vts
+	 -> do	z2		<- bindK z z vR KRegion
+		z3		<- foldM (\z (v, t) -> bindT z z v t) z2 vts
+		return z3
+
+	_ -> return z
+
+
 -----
 class Monad m => WalkM m a
  where	walkZM :: WalkTable m -> a -> m a
@@ -107,7 +136,11 @@ instance Monad m => WalkM m Top where
 	 -> do	cs'		<- mapM (walkZM z) cs
 	 	transP z z	$ PData v vs cs'
 
-	PRegion{}	 	-> return p
+	PRegion vR vts
+	 -> do	z2		<- bindK z z vR KRegion
+		z3		<- foldM (\z (v, t) -> bindT z z v t) z2 vts
+		transP z3 z3	$ PRegion vR vts
+
 	PEffect v k		-> return p
 	PClass{}		-> return p
 
@@ -365,6 +398,10 @@ bindFs_Type t z
 -- bindTKF_Stmt 
 --	Bind the vars and regions present in the type of this statement.
 --
+bindTKF_Stmt 
+	:: Monad m
+	=> WalkTable m -> Stmt -> m (WalkTable m)
+	
 bindTKF_Stmt z ss
  = case ss of
  	SBind (Just v) x		
@@ -373,6 +410,7 @@ bindTKF_Stmt z ss
             Just t	-> bindT z z v t
 
 	_	-> return z
+
 
 
 bindTK_Alt z a
