@@ -76,9 +76,11 @@ instance Pretty Top where
 	 	%> (tv % "\n")
 		%> (":$ " % to % ";\n")
 
-	PRegion v 
-	 -> "region " % v % ";\n"
-	
+	PRegion v vts
+	 -> "region " % v %>> "  with {" % "; " 
+	 	%!% (map (\(v, t) -> pv v % " = " % t) vts)
+		% "};"
+
 	PEffect v k
 	 -> "effect " % v % " :: " % k % ";\n"
 
@@ -209,7 +211,7 @@ instance Pretty Exp where
 	 -> "(" % c % " :: " % t % ")"
 
 	XLocal v vts x
-	 -> "local " % v %>> "  where {" % "; " 
+	 -> "local " % v %>> "  with {" % "; " 
 	 	%!% (map (\(v, t) -> pv v % " = " % t) vts)
 		% "} in\n" % x
 	 

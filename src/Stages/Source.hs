@@ -311,7 +311,8 @@ slurpC 	:: (?args :: [Arg])
 	-> IO	( (D.Tree (Maybe (Type, Effect)))	-- source tree with type and effect annotations
 		, [N.CTree]				-- type constraints
 		, Map Var Var 				-- sigma table (map of value -> type vars)
-		, Set Var)				-- all the value vars used in the program that we'll want types for
+		, Set Var				-- all the value vars used in the program that we'll want types for
+		, Set Var)				-- type vars for all top level bindings in the source module
 		
 slurpC	sTree
 	hTree
@@ -320,11 +321,11 @@ slurpC	sTree
    do
 	let state	= D.initCSlurpS 
 	
-	let ((header', hctrs), state2)
+	let ((header', hctrs, vsBound_header), state2)
 			= runState (slurpTreeM hTree)
 			$ state
 		
-	let ((source', sctrs), state3)
+	let ((source', sctrs, vsBound_source), state3)
 			= runState (slurpTreeM sTree)
 			$ state2
 
@@ -353,7 +354,8 @@ slurpC	sTree
 	return	( source'
 		, constraints
 		, sigmaTable 
-		, vsTypesPlease)
+		, vsTypesPlease
+		, vsBound_source)
 	
 	
 -----
@@ -365,7 +367,7 @@ solveSquid :: (?args :: [Arg])
 	-> IO 	( Map Var T.Type			-- inferred types
 		, Map Var (InstanceInfo T.Type T.Type)	-- how each var was instantiated
 		, Set Var				-- the vars which are ports
-		, Map Var (Map Var T.Type) 		-- the port table.
+		, Set Var				-- the TREC vars which are free in the returned types
 		, Map Var [Var])			-- map of constraints on each region
 	
 solveSquid 
@@ -412,29 +414,35 @@ solveSquid
 		$ catInt "\n\n"
 		$ map pretty
 		$ map (\(v, t) -> v % " ::\n" %> T.prettyTS t)
-		$ Map.toList
-		$ typeTable
-
+		$ Map.toList typeTable
 
 	dumpS 	DumpTypeSolve   "type-solve--inst" 
 		$ catInt "\n\n"
 		$ map pretty
-		$ Map.toList
-		$ typeInst
+		$ Map.toList typeInst
+
+	dumpS	DumpTypeSolve	"type-solve--quantVars"
+		$ catInt "\n"
+		$ map pretty
+		$ Set.toList quantVars
 
 	dumpS	DumpTypeSolve	"type-solve--portTable"
 		$ catInt "\n\n"
 		$ map pretty
-		$ Map.toList
-		$ portTable
+		$ Map.toList  portTable
 
+	dumpS	DumpTypeSolve	"type-solve--regionClasses"
+		$ catInt "\n"
+		$ map pretty
+		$ Map.toList vsRegionClasses
 
+	let vsFree	= Set.empty
 
 	-----
 	return 	( typeTable
 		, typeInst
 		, quantVars
-		, portTable
+		, vsFree
 		, vsRegionClasses)
 
 
@@ -445,11 +453,10 @@ solveSquid
 toCore 	:: (?args :: [Arg])
 	-> D.Tree (Maybe (Type, Effect))		-- sourceTree
 	-> D.Tree (Maybe (Type, Effect))		-- headerTree
-	-> (Map Var Var)				-- sigmaTable
-	-> (Map Var T.Type)				-- typeTable
-	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- typeInst
-	-> (Set Var)					-- typeQuantVars	-- the vars which are ports
-	-> (Map Var (Map Var T.Type))			-- port table
+	-> Map Var Var					-- sigmaTable
+	-> Map Var T.Type				-- typeTable
+	-> Map Var (T.InstanceInfo T.Type T.Type)	-- typeInst
+	-> Set Var					-- typeQuantVars	-- the vars which are ports
 	-> ProjTable
 	-> IO	( C.Tree
 		, C.Tree )
@@ -460,7 +467,6 @@ toCore	sourceTree
 	typeTable
 	typeInst
 	quantVars
-	portTable
 	projTable
  = {-# SCC "Source.ToCore" #-} 
    do
@@ -471,7 +477,6 @@ toCore	sourceTree
 			typeTable
 			typeInst
 			quantVars
-			portTable
 			projTable
 
 			

@@ -19,6 +19,9 @@ import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import Shared.Exp
 
 import Type.Exp
@@ -40,7 +43,7 @@ import Desugar.Slurp.SlurpS
 stage	= "Desugar.Slurp.Slurp"
 
 -- | Slurp out type constraints from this tree.
-slurpTreeM ::	Tree Annot1	-> CSlurpM (Tree Annot2, [CTree])
+slurpTreeM ::	Tree Annot1	-> CSlurpM (Tree Annot2, [CTree], Set Var)
 slurpTreeM	tree
  = do
 	-- Slurp out type constraints from the tree.
@@ -65,8 +68,7 @@ slurpTreeM	tree
 				
 	let qsFinal	= qsDataFields ++ qsProject ++ qsClassInst ++ qsDef ++ qsSig ++ qsFinal_let
 
-	
-	return 	 (tree', qsFinal)
+	return 	 (tree', qsFinal, Set.fromList vsLet)
 	
 
 -- | Slurp out type constraints from a top level thing.

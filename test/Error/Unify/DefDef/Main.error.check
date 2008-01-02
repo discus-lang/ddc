@@ -1,10 +1,10 @@
 test/Error/Unify/DefDef/Main.ds:8:14
     Type mismatch during unification.
-          cannot match: Data.String.String %350
+          cannot match: Data.String.String %347
                   with: Base.Int %337
 
                 use of: f2
-             with type: Data.String.String %350
+             with type: Data.String.String %347
                     at: test/Error/Unify/DefDef/Main.ds:8:14
 
         conflicts with, 

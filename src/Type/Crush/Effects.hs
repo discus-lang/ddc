@@ -101,8 +101,10 @@ crushEffectT tt
 	, Var.bind ve == Var.EReadH
 	= do	case t1 of
 		 TData v (tR : ts)	-> return $ TEffect primRead [tR]
+		 TData v []		-> return $ TBot KEffect
 		 _			-> return $ tt
 	
+
 
 	-- Read of whole object. (deep read).
 	| TEffect ve [t1]	<- tt

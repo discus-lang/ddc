@@ -124,6 +124,10 @@ packT1 tt
 	TEffect v [TData vD (TVar KRegion r : ts)]
 	 | v == primReadH
 	 -> TEffect primRead [TVar KRegion r]
+	
+	TEffect v [TData vD []]
+	 | v == primReadH
+	 -> TBot KEffect
 
 	TEffect v ts
 	 -> let	ts'	= map packT1 ts

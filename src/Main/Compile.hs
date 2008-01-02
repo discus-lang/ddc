@@ -22,7 +22,7 @@ import GHC.IOBase
 
 -----
 import qualified Shared.Var		as Var
-import Shared.Var			(Module(..))
+import Shared.Var			(Module(..), NameSpace(..))
 
 import qualified Main.Arg		as Arg
 import Main.Arg 			(Arg)
@@ -44,6 +44,9 @@ import qualified Source.Pragma		as Pragma
 import Main.Path
 
 import qualified Core.Util.Slurp	as C
+import qualified Core.Plate.FreeVars	as C
+
+import qualified Type.Plate.FreeVars	as T
 
 import qualified Desugar.Plate.Trans	as D
 import qualified Sea.Util		as E
@@ -240,7 +243,8 @@ compileFile	args     fileName
 	(  sTagged
 	 , sConstrs
 	 , sigmaTable
-	 , vsTypesPlease)
+	 , vsTypesPlease
+	 , vsBound_source)
 			<- SS.slurpC 
 				sProject
 				hDesugared
@@ -258,7 +262,7 @@ compileFile	args     fileName
 	(  typeTable
 	 , typeInst
 	 , typeQuantVars
-	 , typePortTable
+	 , vsFree
 	 , vsRegionClasses )
 	 		<- runStage "solve"
 			$  SS.solveSquid
@@ -283,13 +287,18 @@ compileFile	args     fileName
 				typeTable
 				typeInst
 				typeQuantVars
-				typePortTable
 				projTable
 
 	-- Slurp out the list of all the vars defined at top level.
 	let topVars	= Set.union 
 				(Set.fromList $ concat $ map C.slurpBoundVarsP cSource)
 				(Set.fromList $ concat $ map C.slurpBoundVarsP cHeader)	
+
+	-- These are the TREC vars which are free in the type of a top level binding
+	let vsFreeTREC	= Set.unions
+			$ map (Set.fromList . T.freeVarsT)
+			$ [t	| (v, t)	<- Map.toList typeTable
+				, Set.member v vsBound_source]
 
 	------------------------------------------------------------------------
 	-- Core stages
@@ -305,8 +314,13 @@ compileFile	args     fileName
 	when ?verbose
 	 $ do	putStr $ "  * Core: Bind\n"
 
+	-- these regions have global scope
+	let rsGlobal	= Set.filter (\v -> Var.nameSpace v == NameRegion) 
+			$ vsFreeTREC
+	
 	cBind		<- SC.coreBind "CB"
 				vsRegionClasses
+				rsGlobal
 				cNormalise
 
 	-- Clean out empty effect and closure variables

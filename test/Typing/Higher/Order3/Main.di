@@ -44,7 +44,7 @@ foreign import extern appDanio
         
 foreign import extern main
         :: Base.Unit -(!e0)> Base.Unit
-        :- !e0        = !{Base.!ReadH Base.Unit; System.Console.!Console}
+        :- !e0        = System.Console.!Console
         :$ Base.Data -> Base.Data;
         
 

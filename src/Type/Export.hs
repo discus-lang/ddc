@@ -16,6 +16,7 @@ import Type.Plug
 import Type.Closure.Trim
 import Type.Util
 import Type.Plate.Trans
+import Type.Plate.FreeVars
 
 import Data.Array.MArray
 import qualified Data.Map	as Map

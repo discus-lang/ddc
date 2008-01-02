@@ -185,7 +185,7 @@ slurpBoundVarsP pp
 	PClassDict v ts contest vts	-> map fst vts
 	PClassInst{}			-> []
 
-	PRegion v			-> [v]
+	PRegion v vts			-> v : map fst vts
 	PEffect	v k			-> [v]
 	PClass 	v k			-> [v]
 	

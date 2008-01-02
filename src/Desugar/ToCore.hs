@@ -55,7 +55,6 @@ toCoreTree
 	-> (Map Var T.Type)				-- ^ inferred type schemes
 	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- ^ instantiation info
 	-> (Set Var)					-- ^ the vars which are ports
-	-> (Map Var (Map Var T.Type))			-- ^ port substitution
 	-> ProjTable
 	-> D.Tree Annot
 	-> C.Tree
@@ -65,7 +64,6 @@ toCoreTree
 	typeTable
 	typeInst
 	quantVars
-	_
 	projTable
 	sTree
 
@@ -141,8 +139,8 @@ toCoreP	p
 
 
 	-- classes
-	D.PRegion _ v	
-	 -> 	return	[ C.PRegion v ]
+	D.PRegion _ v 
+	 -> 	return	[ C.PRegion v [] ]
 
 
 	D.PClass _ v k

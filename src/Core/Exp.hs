@@ -60,7 +60,7 @@ data Top
 
 	| PCtor		Var Type Type			-- ^ Constructor: ctor name, value type, operational type
 
-	| PRegion	Var
+	| PRegion	Var [(Var, Type)]		-- ^ A global region.
 	| PEffect	Var Kind			-- ^ A global effect.
 	| PClass	Var Kind
 

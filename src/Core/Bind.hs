@@ -47,15 +47,33 @@ trace ss xx
 -- | Introduce local region definitions.
 bindTree 
 	:: String			-- ^ unique prefix to use for fresh vars.
-	-> (Map Var [Var])		-- ^ a map of all the class constraints acting on a particular region.
+	-> Map Var [Var]		-- ^ a map of all the class constraints acting on a particular region.
+	-> Set Var			-- ^ the regions with global lifetime
 	-> Tree				-- ^ the core tree.
 	-> Tree			
 
-bindTree unique classMap tree
- = let	?classMap	= classMap
-   in	evalVarGen 
-		(mapM (\p -> liftM fst $ bindP Set.empty p) tree)
-		("w" ++ unique)
+bindTree unique classMap rsGlobal tree
+ = 	evalVarGen (bindM classMap rsGlobal tree) ("w" ++ unique)
+
+-- | bindM 
+bindM	:: Map Var [Var]
+	-> Set Var
+	-> Tree
+	-> BindM Tree
+	
+bindM classMap rsGlobal tree
+ = do	let ?classMap	= classMap
+
+	-- bind regions with local scope
+ 	tree_local	 <- mapM (\p -> liftM fst $ bindP rsGlobal p) tree
+
+	-- add bindings for global regions
+	-- TODO: don't rebind regions already bound in the header.
+	let tree_global	= map (\r -> PRegion r []) (Set.toList rsGlobal)
+			++ tree_local
+	
+	return	tree_global
+
 
 -- | Bind local regions in this top level thing
 bindP 	:: (?classMap :: Map Var [Var])

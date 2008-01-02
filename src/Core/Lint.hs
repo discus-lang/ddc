@@ -101,6 +101,12 @@ lintP 	tt (PBind v x)
  	lintX tt' x
  	return tt'
 	
+-- TODO: check that witnesses are only of the created region
+lintP	tt (PRegion r vts)
+ = do	tt2		<- addVK r KRegion tt
+ 	tt3		<- addVTs vts tt2
+	return tt3
+
 
 lintP	tt (PClassDict v ts context vts)
  = do	
