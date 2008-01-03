@@ -20,17 +20,17 @@
 
 -- Binds
 foreign import extern makeGetGet
-        :: forall t0 t1 t2 %r0 %r1 !e0 !e1 $c0 $c1
-        .  t2 -> Data.Tuple.Tuple2 %r1 (Base.Unit -(!e1 $c1)> t1) (Base.Unit -(!e0 $c0)> t0)
-        :- !e0   = !{Base.!Read %r0}
-        ,  !e1   = !{Base.!Read %r0}
-        ,  $c0   = ${box :: Data.Maybe.Maybe %r0 t0}
-        ,  $c1   = ${box :: Data.Maybe.Maybe %r0 t1}
+        :: forall t0 %r0 %r1
+        .  t0 -> Data.Tuple.Tuple2 %r0 (Base.Unit -(!e0 $c0)> t0) (Base.Unit -(!e1 $c1)> t0)
+        :- !e0        = Base.!Read %r1
+        ,  !e1        = Base.!Read %r1
+        ,  $c0        = box : Data.Maybe.Maybe %r1 t0
+        ,  $c1        = box : Data.Maybe.Maybe %r1 t0
         :$ Base.Obj -> Base.Data;
         
 foreign import extern checkGetGet
-        :: forall %r0 %r1 %r2 %r3 %r4 !e0
-        .  Base.Unit -(!e0)> Data.Tuple.Tuple2 %r0 (Data.List.List %r1 (Data.String.String %r2)) (Data.List.List %r3 (Base.Int %r4))
+        :: forall %r0 %r1 %r2 %r3 %r4
+        .  Base.Unit -(!eTC13mat)> Data.Tuple.Tuple2 %r0 (Data.List.List %r1 (Data.String.String %r2)) (Data.List.List %r3 (Base.Int %r4))
         :$ Base.Data -> Base.Data;
         
 

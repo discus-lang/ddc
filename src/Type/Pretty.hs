@@ -222,15 +222,22 @@ instance Pretty Kind where
 	KFetter		-> "+"
 	KClosure	-> "$"
 
-instance  (Pretty param, Pretty t) 
-	=> Pretty (InstanceInfo param t) where
+instance  (Pretty param)
+	=> Pretty (InstanceInfo param Type) where
  prettyp ii
   = case ii of
   	InstanceLambda v1 v2 mt
 	 -> "InstanceLambda " 	% v1 % " " % v2 % " " % mt
 
 	InstanceLet    v1 v2 ts	t 
-	 -> "InstanceLet " 	% v1 % " " % v2 % " " % ts % " (" % t % ")"
+	 -> "InstanceLet\n" 	
+	 	% "    use var     = " % v1 % "\n"
+		% "    binding var = " % v2 % "\n\n"
+		% "    type parameters:\n"
+			%> ("\n" %!% ts) % "\n\n"
+		% "    scheme:\n"
+			%>  (prettyTS t)
+		% "\n\n"
 
 	InstanceLetRec v1 v2 mt
 	 -> "InstanceLetRec "	% v1 % " " % v2 % " " % mt

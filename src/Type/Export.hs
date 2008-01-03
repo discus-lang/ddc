@@ -173,8 +173,22 @@ exportInstInfo (v, ii)
 
 	InstanceLet    v1 v2 vs t
 	 -> do	Just ts 	<- liftM sequence $ mapM exportVarType vs
+
+		-- HACKS: When we take the type to use for an insantiation we want the ungeneralised
+		--        one, but the eq class will already have been updated with the generalied 
+		--        scheme. We should really have separate classes for this, but assuming we're
+		--	  only dealing with rank-1 types we can just take the scheme and chop off the foralls.
+		--
+		--	  See test/Typing/Closure/GetInc1 for an example that runs into this problem.
+
+		let chopForalls tt = case tt of
+					TForall vks t	-> chopForalls t
+					_		-> tt
+
+		let ts_hacked	= map chopForalls ts
+
 	 	t'		<- exportType t
-	 	return		$ (v, InstanceLet v1 v2 ts t')
+	 	return		$ (v, InstanceLet v1 v2 ts_hacked t')
 		
 	InstanceLetRec 	vUse vDef Nothing
 	 -> do 	Just tDef	<- exportVarType vDef

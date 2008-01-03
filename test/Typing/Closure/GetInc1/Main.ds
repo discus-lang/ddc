@@ -1,5 +1,7 @@
 
-
+-- create a shared integer bound to 'x' and return two functions which
+--	access this. The shared integer should show up in the closure
+--	for both the get and inc functions.
 fun1 () 
  = do {	x	= 5;
 
@@ -12,9 +14,12 @@ fun1 ()
 	(funGet1, funInc);
  };
 
+-- create a shared integer and return the tuple of functions.
+--	The shared integer's region now exists globally.
 fun1_u		= fun1 ();
-fun1_u'		= fun1_u;
 
+-- project out the get and inc functions.
+--	The shared integer should appear in these functions' closures.
 fun1_get1	= t2_1 fun1_u;
 fun1_inc	= t2_2 fun1_u;
 

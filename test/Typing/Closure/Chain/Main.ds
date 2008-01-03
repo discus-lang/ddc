@@ -1,6 +1,7 @@
 
--- Closure of outermost function in scheme of fun2 contains
---	another type scheme and another closure.
+-- Closure of outermost function in scheme of fun2 contains another
+--	type scheme and closure. Check the shared integer bound to
+--	'x' appears in the scheme for fun2.
 -- 
 x	= 5;
 fun ()	= x + 1;

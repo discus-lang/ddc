@@ -1,5 +1,5 @@
 
-
+-- Much like GetInc1, but with an extra get function.
 fun1 () 
  = do {	x	= 5;
 
@@ -16,6 +16,8 @@ fun1 ()
 
 		(funGet, funGet1, funInc);
 	 };
+
+	fun2;
  };
 
  
@@ -26,3 +28,16 @@ fun1_get	= t3_1 fun1_uu;
 fun1_get1	= t3_2 fun1_uu;
 fun1_inc	= t3_3 fun1_uu;
 
+
+
+main ()
+ = do {
+ 	fun1_inc ();
+	fun1_inc ();
+	
+	a	= fun1_get1 ();
+	b	= fun1_get  ();
+	
+	print 	$ "a = " % showInt a % "\n"
+		% "b = " % showInt b % "\n";
+ };

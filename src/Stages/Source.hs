@@ -419,6 +419,7 @@ solveSquid
 	dumpS 	DumpTypeSolve   "type-solve--inst" 
 		$ catInt "\n\n"
 		$ map pretty
+		$ map (\(v, inst) -> v % "\n" % inst % "\n")
 		$ Map.toList typeInst
 
 	dumpS	DumpTypeSolve	"type-solve--quantVars"

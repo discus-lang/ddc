@@ -20,57 +20,45 @@
 
 -- Binds
 foreign import extern fun1_u
-        :: forall %r0 !e0 !e1 $c0 $c1
-        .  Data.Tuple.Tuple2 %rTS13 (Base.Unit -(!e1 $c1)> Base.Int %r0) (Base.Unit -(!e0 $c0)> Base.Unit)
-        :- !e0   = !{Base.!Write %rTS7; Base.!Read %rTS7}
-        ,  !e1   = !{Base.!Read %rTS7}
-        ,  $c0   = ${x :: Base.Int %rTS7}
-        ,  $c1   = ${x :: Base.Int %rTS7}
-        ,  Base.Mutable %rTS7
-        :$ Base.Data;
-        
-foreign import extern fun1_u'
-        :: forall %r0 !e0 !e1 $c0 $c1
-        .  Data.Tuple.Tuple2 %rTS13 (Base.Unit -(!e1 $c1)> Base.Int %r0) (Base.Unit -(!e0 $c0)> Base.Unit)
-        :- !e0   = !{Base.!Read %rTS7; Base.!Write %rTS7}
-        ,  !e1   = !{Base.!Read %rTS7}
-        ,  $c0   = ${x :: Base.Int %rTS7}
-        ,  $c1   = ${x :: Base.Int %rTS7}
-        ,  Base.Mutable %rTS7
+        :: forall %r0
+        .  Data.Tuple.Tuple2 %rTS9 (Base.Unit -(!e0 $c0)> Base.Int %r0) (Base.Unit -(!e1 $c1)> Base.Unit)
+        :- !e0        = Base.!Read %rTS6
+        ,  !e1        = !{Base.!Read %rTS6; Base.!Write %rTS6}
+        ,  $c0        = x : Base.Int %rTS6
+        ,  $c1        = x : Base.Int %rTS6
+        ,  Base.Mutable %rTS6
         :$ Base.Data;
         
 foreign import extern fun1_get1
-        :: forall %r0 !e0 $c0
+        :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Int %r0
-        :- !e0   = !{Base.!Read %rTS7}
-        ,  $c0   = ${x :: Base.Int %rTS7}
-        ,  Base.Mutable %rTS7
+        :- !e0        = Base.!Read %rTS6
+        ,  $c0        = x : Base.Int %rTS6
+        ,  Base.Mutable %rTS6
         :$ Base.Thunk;
         
 foreign import extern fun1_inc
-        :: forall !e0 $c0
-        .  Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0   = !{Base.!Read %rTS7; Base.!Write %rTS7}
-        ,  $c0   = ${x :: Base.Int %rTS7}
-        ,  Base.Mutable %rTS7
+        :: Base.Unit -(!e0 $c0)> Base.Unit
+        :- !e0        = !{Base.!Read %rTS6; Base.!Write %rTS6}
+        ,  $c0        = x : Base.Int %rTS6
+        ,  Base.Mutable %rTS6
         :$ Base.Thunk;
         
 foreign import extern fun1
-        :: forall %r0 %r1 %r2 !e0 !e1 $c0 $c1
-        .  Base.Unit -> Data.Tuple.Tuple2 %r1 (Base.Unit -(!e1 $c1)> Base.Int %r2) (Base.Unit -(!e0 $c0)> Base.Unit)
-        :- !e0   = !{Base.!Read %r0; Base.!Write %r0}
-        ,  !e1   = !{Base.!Read %r0}
-        ,  $c0   = ${x :: Base.Int %r0}
-        ,  $c1   = ${x :: Base.Int %r0}
-        ,  Base.Mutable %r0
+        :: forall %r0 %r1 %r2
+        .  Base.Unit -> Data.Tuple.Tuple2 %r0 (Base.Unit -(!e0 $c0)> Base.Int %r1) (Base.Unit -(!e1 $c1)> Base.Unit)
+        :- !e0        = Base.!Read %r2
+        ,  !e1        = !{Base.!Read %r2; Base.!Write %r2}
+        ,  $c0        = x : Base.Int %r2
+        ,  $c1        = x : Base.Int %r2
+        ,  Base.Mutable %r2
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: forall !e0 $c0
-        .  Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0   = !{System.Console.!Console; Base.!Read %rTS7; Base.!Write %rTS7}
-        ,  $c0   = ${x :: Base.Int %rTS7}
-        ,  Base.Mutable %rTS7
+        :: Base.Unit -(!e0 $c0)> Base.Unit
+        :- !e0        = !{Base.!Read %rTS6; Base.!Write %rTS6; System.Console.!Console}
+        ,  $c0        = ${fun1_inc : Base.Int %rTS6; fun1_get1 : Base.Int %rTS6}
+        ,  Base.Mutable %rTS6
         :$ Base.Data -> Base.Data;
         
 
