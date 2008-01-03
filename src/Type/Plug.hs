@@ -71,6 +71,9 @@ staticRsDataT tt
 	
 	TError k t		-> []
 	
+	-- for data containing function objects
+	TEffect{}		-> []
+	
 	_ 	-> panic stage
 		$ "staticRsDataT: " ++ show tt
 		

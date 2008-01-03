@@ -134,6 +134,7 @@ unifyClassMerge cidT c queue@(t:_)
 				
 	, (vs, tss)		<- unzip vsTss
 
+	-- all ctors must have the same name and the same number of args.
 	, length (nub vs) == 1
 	, length (nub $ map length tss) == 1
 	= do
@@ -180,21 +181,44 @@ unifyClassMerge cidT c queue@(t:_)
 --	in the graph. We diagnose the problem, add an error message to 
 --	the SquidM monad and poison the class.
 --
+--	BUGS: 	only handles 2 conflicting ctors in the node.
+--
 errorConflict :: ClassId -> Class -> SquidM ()
 errorConflict	 cid c
- = do
- 	let [tCons@(tC1: tCs), tFuns]
-		= partitionFs
-			[ (\(t, ti) -> t =@= TData{})
-			, (\(t, ti) -> t =@= TFun{}) ]
-		$ classNodes c
+ = do	let (tsData, tsFun)	= splitDataFun (classNodes c) [] []
  	
-	errorConflictCF tFuns tCons
-	errorConflictCC tC1 tCs
-	
+	-- check for errors between data and function ctors
+	when (not $ isNil tsFun)
+	 $ do	errorConflictCF tsData tsFun
+	 	let (tF1: tFs)	= tsFun
+		errorConflictCC tF1 tFs
+	 
+	 
+	-- check for errors between data ctors
+	when (not $ isNil tsData)
+	 $ do	let (tC1: tCs)	= tsData
+	 	errorConflictCC tC1 tCs
+		
 	updateClass cid
 		c { classType	= TError (classKind c) (classType c)}
 
+	-- sanity, check that we've actually identified the problem and added
+	--	an error to the state.
+	errors	<- gets stateErrors
+	when (isNil errors)
+	 $ (panic stage
+		 $ "errorConflict: Couldn't identify the error in class " % cid % "\n"
+		 % "   type: \n" %> (classType c) % "\n\n"
+		 % "   nodes:\n" %> ("\n" %!% classNodes c) % "\n\n")
+	 
+	return ()
+
+
+splitDataFun [] ds fs 				= (ds, fs)
+splitDataFun (x@(TData{}, _) : xs) ds fs	= splitDataFun xs (x : ds) fs
+splitDataFun (x@(TFun{}, _)  : xs) ds fs	= splitDataFun xs ds (x : fs)
+splitDataFun (_ : xs)		   ds fs	= splitDataFun xs ds fs
+	
 	
 errorConflictCF tCons tFuns
  = case (tCons, tFuns) of
@@ -218,7 +242,7 @@ errorConflictCC x@(c@(TData v ts), cInfo) tCs
 	(TData v' ts', _) : cs
 	 | v         == v'
 	 , length ts == length ts'	-> errorConflictCC x cs
-	 
+ 
 	(c', cInfo') : cs
 	 -> addErrors [
 		ErrorUnifyCtorMismatch 
@@ -227,6 +251,20 @@ errorConflictCC x@(c@(TData v ts), cInfo) tCs
 		, eCtor2	= c'
 		, eTypeSource2	= cInfo'}]
 		
+errorConflictCC x@(c@(TFun a1 b1 eff1 clo1), cInfo) tCs
+ = case tCs of
+ 	[]				-> return ()
+
+	(TFun a2 b2 eff2 clo2, _) : cs
+	 -> errorConflictCC x cs
+	 
+	(c', cInfo') : cs
+	 -> addErrors [
+		ErrorUnifyCtorMismatch 
+		{ eCtor1	= c
+		, eTypeSource1	= cInfo
+		, eCtor2	= c'
+		, eTypeSource2	= cInfo'}]
 
 
 -----

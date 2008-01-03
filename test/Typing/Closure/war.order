@@ -3,10 +3,15 @@ Regen2
 Strip
 Data
 Chain
+Chain2
 GetInc1
 GetInc2
 GetGet
 GetSet-skip
+GetSet2-skip
 Trim
 BoxFun
-BoxFun2
+BoxFun2-skip
+Leroy
+Share-skip
+Capture

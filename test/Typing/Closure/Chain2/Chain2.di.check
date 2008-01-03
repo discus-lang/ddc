@@ -1,49 +1,64 @@
--- Infix
-
 -- Imports
 
+-- Pragmas
+
+-- Infix
+
 -- Data
+
 -- Effects
+
+-- Regions
 
 -- Classes
 
--- Externs
+-- Class dictionaries
+
+-- Class instances
+
+-- Foreign imports
+
 -- Binds
-import extern x
-        :: Int %rTS1
-        :$ Obj;
+foreign import extern x
+        :: Base.Int %rTC0
+        :$ Base.Data;
         
-import extern fun
-        :: forall %r0 !e0 $c0
-        .  Unit -(!e0 $c0)> Int %r0
-        :- !e0   = !{!Read %rTS1}
-        ,  $c0   = ${x :: Int %rTS1}
-        :$ Data -> Obj;
+foreign import extern fun
+        :: forall %r0
+        .  Base.Unit -(!e0 $c0)> Base.Int %r0
+        :- !e0        = Base.!Read %rTC0
+        ,  $c0        = x : Base.Int %rTC0
+        ,  Num (Base.Int %rTC0)
+        :$ Base.Data -> Base.Data;
         
-import extern fun2
-        :: forall %r1 !e1 $c1 $c2
-        .  Unit -($c2)> Unit -(!e1 $c1)> Int %r1
-        :- !e1   = !{!Read %rTS1}
-        ,  $c1   = ${x :: Int %rTS1}
-        ,  $c2   = ${fun :: forall %r0 !e0 $c0. Unit -(!e0 $c0)> Int %r0 :- !e0   = !{!Read %rTS1}, $c0   = ${x :: Int %rTS1}}
-        :$ Data -> Obj;
+foreign import extern fun2
+        :: forall %r0
+        .  Base.Unit -($c0)> Base.Unit -(!e0 $c1)> Base.Int %r0
+        :- !e0        = Base.!Read %rTC0
+        ,  $c0        = fun : Base.Int %rTC0
+        ,  $c1        = x : Base.Int %rTC0
+        ,  Num (Base.Int %rTC0)
+        :$ Base.Data -> Base.Thunk;
         
-import extern fun3
-        :: forall %r3 !e3 $c4 $c5 $c6
-        .  Unit -($c6)> Unit -($c5)> Unit -(!e3 $c4)> Int %r3
-        :- !e3   = !{!Read %rTS1}
-        ,  $c4   = ${x :: Int %rTS1}
-        ,  $c5   = ${fun :: forall %r1 !e1 $c1. Unit -(!e1 $c1)> Int %r1 :- !e1   = !{!Read %rTS1}, $c1   = ${x :: Int %rTS1}}
-        ,  $c6   = ${fun2 :: forall %r2 !e2 $c2 $c3. Unit -($c3)> Unit -(!e2 $c2)> Int %r2 :- !e2   = !{!Read %rTS1}, $c2   = ${x :: Int %rTS1}, $c3   = ${fun :: forall %r1 !e1 $c1. Unit -(!e1 $c1)> Int %r1 :- !e1   = !{!Read %rTS1}, $c1   = ${x :: Int %rTS1}}}
-        :$ Data -> Obj;
+foreign import extern fun3
+        :: forall %r0
+        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -(!e0 $c2)> Base.Int %r0
+        :- !e0        = Base.!Read %rTC0
+        ,  $c0        = fun2 : Base.Int %rTC0
+        ,  $c1        = fun : Base.Int %rTC0
+        ,  $c2        = x : Base.Int %rTC0
+        ,  Num (Base.Int %rTC0)
+        :$ Base.Data -> Base.Thunk;
         
-import extern fun4
-        :: forall %r7 !e7 $c11 $c12 $c13 $c14
-        .  Unit -($c14)> Unit -($c13)> Unit -($c12)> Unit -(!e7 $c11)> Int %r7
-        :- !e7   = !{!Read %rTS1}
-        ,  $c11  = ${x :: Int %rTS1}
-        ,  $c12  = ${fun :: forall %r4 !e4 $c5. Unit -(!e4 $c5)> Int %r4 :- !e4   = !{!Read %rTS1}, $c5   = ${x :: Int %rTS1}}
-        ,  $c13  = ${fun2 :: forall %r5 !e5 $c6 $c7. Unit -($c7)> Unit -(!e5 $c6)> Int %r5 :- !e5   = !{!Read %rTS1}, $c6   = ${x :: Int %rTS1}, $c7   = ${fun :: forall %r4 !e4 $c5. Unit -(!e4 $c5)> Int %r4 :- !e4   = !{!Read %rTS1}, $c5   = ${x :: Int %rTS1}}}
-        ,  $c14  = ${fun3 :: forall %r6 !e6 $c8 $c9 $c10. Unit -($c10)> Unit -($c9)> Unit -(!e6 $c8)> Int %r6 :- !e6   = !{!Read %rTS1}, $c8   = ${x :: Int %rTS1}, $c9   = ${fun :: forall %r4 !e4 $c5. Unit -(!e4 $c5)> Int %r4 :- !e4   = !{!Read %rTS1}, $c5   = ${x :: Int %rTS1}}, $c10  = ${fun2 :: forall %r5 !e5 $c6 $c7. Unit -($c7)> Unit -(!e5 $c6)> Int %r5 :- !e5   = !{!Read %rTS1}, $c6   = ${x :: Int %rTS1}, $c7   = ${fun :: forall %r4 !e4 $c5. Unit -(!e4 $c5)> Int %r4 :- !e4   = !{!Read %rTS1}, $c5   = ${x :: Int %rTS1}}}}
-        :$ Data -> Obj;
+foreign import extern fun4
+        :: forall %r0
+        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Unit -(!e0 $c3)> Base.Int %r0
+        :- !e0        = Base.!Read %rTC0
+        ,  $c0        = fun3 : Base.Int %rTC0
+        ,  $c1        = fun2 : Base.Int %rTC0
+        ,  $c2        = fun : Base.Int %rTC0
+        ,  $c3        = x : Base.Int %rTC0
+        ,  Num (Base.Int %rTC0)
+        :$ Base.Data -> Base.Thunk;
         
+

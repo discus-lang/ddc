@@ -1,16 +1,20 @@
------
--- Check propagation of effects and closure information
---	via data types containing functions.
+-- Check propagation of effects and closure information via data types
+--	containing functions.
 --
+
+-- BoxFun2 is box that contain a function which accepts two unit parameters.
 data BoxFun2 %r1 !e0 $c0 !e1 $c1
 	= BoxFun2 (() -(!e0 $c0)> () -(!e1 $c1)> Int %r1);
 	
-	
+-- | Run a boxed function by applying the units.	
 runBoxFun2 t
  = case t of {
  	BoxFun2 f	-> f () ();
  };
  
+ 
+-- | Build a function to be boxed, that has a console effect, as well as 
+--	accessing some global data.
 x	= 5;
 y	= 23;
 
@@ -20,12 +24,20 @@ fun ()
 	fun3;
  };
  
+
+-- | Box up the function.
 box	= BoxFun2 fun;
 
+
+-- | Create a function that just runs our box.
+--	All the information about what the function is actually doing is now
+--	packed away in the effect and closure portion of the type.
+runBox :: () -> Int;
 runBox ()
 	= runBoxFun2 box;
 
 
+-- | Run the box.
 main ()	= runBox ();
 
 

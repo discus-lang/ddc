@@ -1,10 +1,11 @@
-
 -- More chaining of closures.
 --
 --	The scheme of fun4 is a scheme which contains a closure
 --   	       which contains a scheme which contains a closure
 --	       which contains a scheme which contains a closure
 --	       which contains a scheme which contains a closure.
+--
+--	Without closure trimming we end up with a big mess in the interface file...
 --
 x	= 5;
 fun  ()	= x + 1;

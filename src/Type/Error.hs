@@ -168,8 +168,9 @@ instance Pretty Error where
  pretty err@(ErrorInfiniteTypeClassId
  		{ eClassId	= cid })
 	= pretty
-	$ "    Cannot construct infinite type through " % cid 		% "\n"
- 
+	$ "    Cannot construct infinite type.\n"			
+	% "    (through node " % cid % " in the type graph)" 		% "\n"
+	 
  -- Signature mismatch.
  pretty err@(ErrorSigScheme{})
  	= pretty

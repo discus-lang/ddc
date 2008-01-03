@@ -12,6 +12,7 @@ where
 import Type.Exp
 import Type.Plate.Collect
 import Type.Pretty
+import Type.Error
 
 import Shared.Error
 import Util
@@ -128,6 +129,10 @@ cutT' cid cidsEntered tt
 	 -> case k of
 	 	KEffect		-> TBot KEffect
 		KClosure	-> TBot KClosure
+		KData		
+		 -> dieWithUserError 
+		 	[ErrorInfiniteTypeClassId
+				{ eClassId = cid }]
 
 	 | otherwise
 	 -> tt
