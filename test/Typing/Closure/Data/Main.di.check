@@ -5,7 +5,7 @@
 -- Infix
 
 -- Data
-data Thing !e1 $c0
+data Thing %r1 !e1 $c0
         = Thing {
                 Base.Unit -(!e1 $c0)> Base.Unit;
         };
@@ -25,46 +25,41 @@ data Thing !e1 $c0
 
 -- Binds
 foreign import extern x
-        :: Base.Int %rTS6
-        :- Base.Mutable %rTS6
+        :: Base.Int %rTS8
+        :- Base.Mutable %rTS8
         :$ Base.Data;
         
 foreign import extern thing
-        :: forall !e0 $c0
-        .  Thing !e0 $c0
-        :- !e0   = !{Base.!Read %rTS6; Base.!Write %rTS6}
-        ,  $c0   = ${x :: Base.Int %rTS6}
-        ,  Base.Mutable %rTS6
+        :: Thing %rTS4 !e0 (x : Base.Int %rTS8)
+        :- !e0        = !{Base.!Read %rTS8; Base.!Write %rTS8}
+        ,  Base.Mutable %rTS8
         :$ Base.Data;
         
 foreign import extern f
-        :: forall !e0 $c0
-        .  Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0   = !{Base.!Write %rTS6; Base.!Read %rTS6}
-        ,  $c0   = ${x :: Base.Int %rTS6}
-        ,  Base.Mutable %rTS6
+        :: Base.Unit -(!e0 $c0)> Base.Unit
+        :- !e0        = !{Base.!Read %rTS8; Base.!Write %rTS8}
+        ,  $c0        = x : Base.Int %rTS8
+        ,  Base.Mutable %rTS8
         :$ Base.Data -> Base.Data;
         
 foreign import extern fun
-        :: forall !e0 $c0
-        .  Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0   = !{Base.!Write %rTS6; Base.!Read %rTS6}
-        ,  $c0   = ${x :: Base.Int %rTS6}
-        ,  Base.Mutable %rTS6
+        :: Base.Unit -(!e0 $c0)> Base.Unit
+        :- !e0        = !{Base.!Read %rTS4; Base.!Read %rTS8; Base.!Write %rTS8}
+        ,  $c0        = thing : Thing %rTS4 !e1 (x : Base.Int %rTS8) :- !e1        = !{Base.!Read %rTS8; Base.!Write %rTS8}
+        ,  Base.Mutable %rTS8
         :$ Base.Data -> Base.Data;
         
 foreign import extern runThing
-        :: forall !e0 !e1 $c0
-        .  Thing !e1 $c0 -(!e0)> Base.Unit
-        :- !e0   = !{!e1}
+        :: forall %r0 !e0 $c0
+        .  Thing %r0 !e0 $c0 -(!e1)> Base.Unit
+        :- !e1        = !{Base.!Read %r0; !e0}
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: forall !e0 $c0
-        .  Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0   = !{System.Console.!Console; Base.!Read %rTS6; Base.!Write %rTS6}
-        ,  $c0   = ${x :: Base.Int %rTS6}
-        ,  Base.Mutable %rTS6
+        :: Base.Unit -(!e0 $c0)> Base.Unit
+        :- !e0        = !{Base.!Read %rTS4; Base.!Read %rTS8; Base.!Write %rTS8; System.Console.!Console}
+        ,  $c0        = ${thing : Thing %rTS4 !e1 (x : Base.Int %rTS8) :- !e1        = !{Base.!Read %rTS8; Base.!Write %rTS8}; x : Base.Int %rTS8}
+        ,  Base.Mutable %rTS8
         :$ Base.Data -> Base.Data;
         
 

@@ -296,7 +296,7 @@ toCoreX xx
 		-- If the effect/closures were vars then look them up from the graph
 		effLet	<- case effVar of
 				T.TVar T.KEffect vE	
-				 -> do	e	<- liftM (C.packT . C.stripContextT)
+				 -> do	e	<- liftM (C.flattenT . C.packT . C.stripContextT)
 				 		$ getType vE
 				 	return	$ Just (vE, e)
 
@@ -305,7 +305,7 @@ toCoreX xx
 				
 		cloLet	<- case cloVar of
 				T.TVar T.KClosure vC	
-				 -> do	c	<- liftM (C.packT . C.stripContextT)
+				 -> do	c	<- liftM (C.flattenT . C.packT . C.stripContextT)
 				 		$ getType vC
 				 	return	$ Just (vC, c)
 				 

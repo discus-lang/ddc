@@ -3,7 +3,7 @@
 x	= 1;
 f ()	= x := x + 1;
 
-data Thing !e1 $c0
+data Thing %r1 !e1 $c0
 	= Thing (() -(!e1 $c0)> ());
 
 thing	= Thing f;

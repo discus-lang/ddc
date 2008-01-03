@@ -167,9 +167,14 @@ trimClosureC_t tt
 trimClosureC_fs :: Fetter -> Maybe Fetter
 trimClosureC_fs ff
  = case ff of
-	-- Only more closure information is interesting
  	FLet c1 c2	
+
+	 -- more closure information
 	 |  kindOfType c2 == KClosure
 	 -> Just $ FLet c1 $ trimClosureC c2
+
+	 -- effect information might be referenced in a type constructor
+	 | kindOfType c1 == KEffect
+	 -> Just $ FLet c1 c2
 
 	_ -> Nothing

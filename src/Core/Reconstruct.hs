@@ -204,7 +204,7 @@ reconX tt exp@(XLam v t x eff clo)
 
 	, eff'			<- packT $ substituteT (tableEq tt) eff
 	, clo'			<- packT $ substituteT (tableEq tt) clo
-	, xC'			<- trimClosureC $ makeTMask KClosure xC (TTag v)
+	, xC'			<- trimClosureC $ flattenT $ makeTMask KClosure xC (TTag v)
 	, xE'			<- packT xE
 	
 	-- check effects match
