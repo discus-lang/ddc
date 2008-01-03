@@ -152,7 +152,10 @@ trimClosureC_t tt
 
 	-- Trim under foralls
 	TForall vks t		
-	 -> TForall vks (trimClosureC_t t)
+	 -> let vsFree	= freeVarsT t
+		vks'	= [ (v, k)	| (v, k)	<- vks
+					, elem v vsFree]
+	    in	makeTForall vks' (trimClosureC_t t)
 
 	-- Only the closure portion of a function actually holds data
 	TFun t1 t2 eff clo	

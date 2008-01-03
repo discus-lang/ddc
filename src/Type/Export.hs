@@ -84,7 +84,10 @@ exportType t
 	 --	There's no point exporting this junk and making the Core stages
 	 --	have to trim it themselves.
 	 KClosure	
-	  -> return  $ trimClosureC tBot
+	  -> return	$ trimClosureC tBot
+
+	 KData
+	  -> return	$ trimClosureT tBot
 
 	 _ -> return $ packType tBot
 

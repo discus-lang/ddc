@@ -305,7 +305,7 @@ toCoreX xx
 				
 		cloLet	<- case cloVar of
 				T.TVar T.KClosure vC	
-				 -> do	c	<- liftM (C.flattenT . C.packT . C.stripContextT)
+				 -> do	c	<- liftM (C.trimClosureC . C.flattenT . C.packT . C.stripContextT)
 				 		$ getType vC
 				 	return	$ Just (vC, c)
 				 

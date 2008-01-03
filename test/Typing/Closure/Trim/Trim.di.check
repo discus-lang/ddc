@@ -20,37 +20,41 @@
 
 -- Binds
 foreign import extern thing
-        :: Base.Int %rTC19
+        :: Base.Int %rTC0
         :$ Base.Data;
         
 foreign import extern f
-        :: forall %r0 !e0 $c0
+        :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Int %r0
-        :- !e0   = !{Base.!Read %rTC19}
-        ,  $c0   = ${thing :: Base.Int %rTC19}
+        :- !e0        = Base.!Read %rTC0
+        ,  $c0        = g : Base.Int %rTC0
+        ,  Num (Base.Int %rTC0)
         :$ Base.Data -> Base.Data;
         
 foreign import extern g
-        :: forall t0 %r0 !e0 $c0
+        :: forall t0 %r0
         .  t0 -(!e0 $c0)> Base.Int %r0
-        :- !e0   = !{Base.!Read %rTC19}
-        ,  $c0   = ${thing :: Base.Int %rTC19}
+        :- !e0        = Base.!Read %rTC0
+        ,  $c0        = h : Base.Int %rTC0
+        ,  Num (Base.Int %rTC0)
         :$ Base.Obj -> Base.Data;
         
 foreign import extern h
-        :: forall t0 %r0 !e0 $c0
+        :: forall t0 %r0
         .  t0 -(!e0 $c0)> Base.Int %r0
-        :- !e0   = !{Base.!Read %rTC19}
-        ,  $c0   = ${thing :: Base.Int %rTC19}
+        :- !e0        = Base.!Read %rTC0
+        ,  $c0        = i : Base.Int %rTC0
+        ,  Num (Base.Int %rTC0)
         :$ Base.Obj -> Base.Data;
         
 foreign import extern i
-        :: forall t0 t1 %r0 %r1 %r2 %r3 !e0 !e1 $c0 $c1
-        .  t0 -(!e0 $c0)> Data.Tuple.Tuple2 %r1 (Base.Int %r2) (t1 -(!e1 $c1)> Base.Int %r3)
-        :- !e0   = !{Base.!Read %rTC19; Base.!Read %r0}
-        ,  !e1   = !{Base.!Read %rTC19; Base.!Read %r0}
-        ,  $c0   = ${thing :: Base.Int %rTC19}
-        ,  $c1   = ${thing :: Base.Int %rTC19; dude :: Base.Int %r0}
+        :: forall t0 t1 %r0 %r1 %r2 %r3
+        .  t0 -(!e0 $c0)> Data.Tuple.Tuple2 %r0 (Base.Int %r1) (t1 -(!e1 $c1)> Base.Int %r2)
+        :- !e0        = !{Base.!Read %rTC0; Base.!Read %r3}
+        ,  !e1        = !{Base.!Read %rTC0; Base.!Read %r3}
+        ,  $c0        = thing : Base.Int %rTC0
+        ,  $c1        = ${thing : Base.Int %rTC0; dude : Base.Int %r3}
+        ,  Num (Base.Int %rTC0)
         :$ Base.Obj -> Base.Data;
         
 

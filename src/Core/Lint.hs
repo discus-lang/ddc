@@ -164,7 +164,7 @@ lintX tt (XDo ss)
  = do	foldM_ lintS tt ss
  
 lintX tt (XMatch aa eff)
- = do	return ()
+ = do	foldM_ lintA tt aa
  
 lintX tt (XConst c t)
  = do	lintT tt t
@@ -195,9 +195,8 @@ lintBoundV tt v
 	Just _
 	 ->	return ()
 
---------------------------------------------------------------------------------
--- Lint for Statements
---
+
+-- Lint for Stmts
 lintS tt (SBind Nothing x)
  = do	lintX tt x
  	return tt
@@ -209,9 +208,35 @@ lintS tt (SBind (Just v) x)
 	return tt'
 	
 
+-- | Lint for Alts
+lintA :: Table -> Alt -> LintM Table
+lintA tt (AAlt gs x)
+ = do	tt2		<- foldM lintG tt gs
+ 	lintX tt2 x
+	return tt2
+	
+
+-- | Lint for Guards
+lintG :: Table -> Guard -> LintM Table
+lintG tt (GExp w x)
+ = do	tt2		<- lintW tt w
+ 	lintX tt2 x
+	return tt2
+	
+-- | Lint for Patterns
+lintW :: Table -> Pat -> LintM Table
+lintW tt (WConst c)
+ =	return tt
+ 
+lintW tt (WCon v lvt)
+ = do	tt'		<- addVTs (map (\(l, v, t) -> (v, t)) lvt) tt
+ 	return tt'
+
+
 --------------------------------------------------------------------------------
 -- Lint for Types
 --
+
 lintT :: Table -> Type -> LintM ()
 
 lintT tt TNil
@@ -324,6 +349,7 @@ lintT tt (TWild k)
 --------------------------------------------------------------------------------
 -- Lint for Kinds
 --
+
 lintK :: Table -> Kind -> LintM ()
 lintK tt kk
  = case kk of
