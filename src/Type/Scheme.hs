@@ -222,7 +222,7 @@ generaliseType varT tCore envCids
 					[ Set.fromList $ map fst vksFree
 					, stateQuantifiedVars s ] }
 	
-	let tScheme	= addTForallVKs vksFree tMskLocal
+	let tScheme	= makeTForall vksFree tMskLocal
 	
 	
 	trace	$ "    tScheme\n"

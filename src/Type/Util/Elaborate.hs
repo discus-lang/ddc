@@ -58,7 +58,7 @@ elaborateT t
 
 	tEffect		<- elaborateEffT (map fst vksRsConst) (map fst vksRsMutable) tClosure
 	
- 	return	$ addTForallVKs (vksRsConst ++ vksRsMutable)
+ 	return	$ makeTForall_back (vksRsConst ++ vksRsMutable)
 		$ tEffect
 
 
@@ -87,7 +87,7 @@ elaborateRegionsT' tt
 	-- if we see a forall then drop new regions on that quantifier
  	| TForall vks x		<- tt
 	= do	(x', vksC', vksM', fs)	<- elaborateRegionsT' x
-		return	( addTForallVKs (vksC' ++ vksM') (TForall vks x')
+		return	( makeTForall_back (vksC' ++ vksM') (TForall vks x')
 			, []
 			, []
 			, fs)

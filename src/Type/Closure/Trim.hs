@@ -106,8 +106,12 @@ trimClosureC' cc
 	 	(catMaybes $ map trimClosureC_fs fs) 
 	 	(trimClosureC c)
 
+	-- update quantifiers to not quantify over vars which have been trimmed out
 	TForall vks t		
-	 -> TForall vks (trimClosureC t)
+	 -> let vsFree	= freeVarsT t
+		vks'	= [ (v, k)	| (v, k)	<- vks
+					, elem v vsFree]
+	    in	makeTForall vks' (trimClosureC t)
 
 	-- If this closure element has no classids or free variables
 	--	then it is closed and can safely be erased.

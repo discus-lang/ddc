@@ -94,6 +94,10 @@ packTypeLs ls tt
 	TError{}
  	 -> tt
 
+	-- push foralls under closure tags
+	TForall vks (TFree v1 t)	
+	 -> TFree v1 (TForall vks t)
+
  	TForall vks t	
 	 -> let	t'	= packTypeLs ls t
 	    in	TForall vks t'

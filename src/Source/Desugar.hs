@@ -124,7 +124,7 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 	 	-- For each member function in this class, quantify the class
 		--	params and add the constraints.
 	 	let makeSigs (vsT, t) =
-	  	     let TForall vks x	= addTForallVKs_front (zip vsParam (repeat KData)) t
+	  	     let TForall vks x	= makeTForall (zip vsParam (repeat KData)) t
 		     	 x'		= addFetters [FConstraint vC tsParam] x
 			 t'		= TForall vks x'
 		     in	 zip vsT (repeat t')
@@ -169,7 +169,7 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 	 	let ?getKind	= getKind
 	 	(tElab, vksConst, vksMutable)	<- elaborateRegionsT t'
 
-		let tQuant	= addTForallVKs (vksConst ++ vksMutable) tElab
+		let tQuant	= makeTForall (vksConst ++ vksMutable) tElab
 
 	 	returnJ	$ D.PSig sp v tElab
 --		return Nothing

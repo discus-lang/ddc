@@ -58,9 +58,14 @@ flattenT tt
 packT1 :: Type -> Type
 packT1 tt 
  = case tt of
- 	TForall vks t1 t2
+	-- push foralls under closure tags
+	TForall v1 k1 (TFree v2 t2)
+	 -> let t2'	= packT1 t2
+	    in	TFree v2 (TForall v1 k1 t2')
+
+ 	TForall v k1 t2
 	 -> let	t2'	= packT1 t2
-	    in	TForall vks t1 t2'
+	    in	TForall v k1 t2'
 
 	 
 	TContext k1 t2

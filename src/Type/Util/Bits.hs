@@ -10,6 +10,9 @@ module Type.Util.Bits
 	, makeTUnify,	flattenTUnify
 	, makeTMask,	applyTMask
 
+	, makeTForall
+	, makeTForall_back
+
 	, makeTFunEC 
 	, substituteTT
 	, substituteVT
@@ -17,7 +20,6 @@ module Type.Util.Bits
 	, kindOfSpace 
 	, kindOfType,	takeKindOfType
 	, flattenKind 
-	, addTForallVKs, addTForallVKs_front
 	, bindFreeVarsT
 
 	, addFetters 
@@ -179,6 +181,34 @@ applyTMask tt@(TMask k t1 t2)
 applyTMask tt	= tt
 
 
+-- | Add some forall bindings to the front of this type, 
+--	new quantified vars go at front of list.
+makeTForall :: [(Var, Kind)] -> Type -> Type
+makeTForall vks tt
+	| []	<- vks
+	= tt
+
+	| TForall vks' t	<- tt
+	= TForall (vks ++ vks') t
+
+	| otherwise
+	= TForall vks tt
+
+
+-- | Add some forall bindings to the front of this type,
+--	new quantified vars go at back of list.
+makeTForall_back :: [(Var, Kind)] -> Type -> Type
+makeTForall_back vks tt
+	| []	<- vks
+	= tt
+	
+	| TForall vks' t	<- tt
+	= TForall (vks' ++ vks) t
+	
+	| otherwise
+	= TForall vks tt
+
+
 -----------------------
 -- makeTFun / chopTFun
 --	Converts a list of types:	[t1, t2, t3, t4]
@@ -324,32 +354,6 @@ bindFreeVarsT' vks t
 			_		-> TForall vks t
 
 
--- | Add some forall bindings to the front of this type,
---	new quantified vars go at back of list.
-addTForallVKs :: [(Var, Kind)] -> Type -> Type
-addTForallVKs vks tt
-	| []	<- vks
-	= tt
-	
-	| TForall vks' t	<- tt
-	= TForall (vks' ++ vks) t
-	
-	| otherwise
-	= TForall vks tt
-
-
--- | Add some forall bindings to the front of this type, 
---	new quantified vars go at front of list.
-addTForallVKs_front :: [(Var, Kind)] -> Type -> Type
-addTForallVKs_front vks tt
-	| []	<- vks
-	= tt
-
-	| TForall vks' t	<- tt
-	= TForall (vks ++ vks') t
-
-	| otherwise
-	= TForall vks tt
 	
 
 -- | Add some fetters to a type.

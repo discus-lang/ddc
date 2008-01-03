@@ -86,8 +86,11 @@ trimClosureC' cc
 	 	(trimClosureC c)
 		(catMaybes $ map trimClosureC_vt vts) 
 
-	TForall v k t		
-	 -> TForall v k (trimClosureC t)
+	-- Erase the quantifier if the var is no longer free in the type
+	TForall b k t		
+	 -> if Set.member (varOfBind b) (freeVars t)
+	 	then TForall b k (trimClosureC t)
+		else (trimClosureC t)
 
 	-- If this closure has no free variables
 	--	then it is closed and can safely be erased.
@@ -126,8 +129,10 @@ trimClosureC_t tt
 	 -> makeTWhere (trimClosureC_t c) (catMaybes $ map trimClosureC_vt vts) 
 
 	-- Trim under foralls
-	TForall v k t		
-	 -> TForall v k (trimClosureC_t t)
+	TForall b k t		
+	 -> if Set.member (varOfBind b) (freeVars t)
+	 	then TForall b k (trimClosureC_t t)
+		else (trimClosureC_t t)
 
 	-- Don't care about contexts
 	TContext t1 t2
