@@ -129,10 +129,7 @@ cutT' cid cidsEntered tt
 	 -> case k of
 	 	KEffect		-> TBot KEffect
 		KClosure	-> TBot KClosure
-		KData		
-		 -> dieWithUserError 
-		 	[ErrorInfiniteTypeClassId
-				{ eClassId = cid }]
+		KData		-> panic stage $ "cutT: uncaught loop through class " % cid % "\n"
 
 	 | otherwise
 	 -> tt

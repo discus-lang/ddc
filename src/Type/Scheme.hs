@@ -28,6 +28,7 @@ import Type.Plate
 import Type.Util
 import Type.Merge
 import Type.Trace
+import Type.Error
 
 import Type.Check.CheckSig
 import Type.Check.GraphicalData	(checkGraphicalDataT)
@@ -77,22 +78,29 @@ extractTypeC varT cid
 	trace	$ "*** Scheme.extractType " % varT % "\n"
 		% "\n"
 		% "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
-	
-	-- Cut loops through the effect and closure portions of this type
-	let tCutLoops	= cutLoopsT tTrace
 
-	trace	$ "    tCutLoops        =\n" %> prettyTS tCutLoops % "\n\n"
-
-
-	-- Check that the data portion of the type isn't graphical.
+	-- Check if the data portion of the type is graphical.
 	--	If it is then it'll hang packType when it tries to construct an infinite type.
-	let cidsDataLoop	= checkGraphicalDataT tCutLoops
+	let cidsDataLoop	= checkGraphicalDataT tTrace
 	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
 
-	when (not $ isNil cidsDataLoop)
-	 $ panic stage	$ "extractType: Cannot construct infinite type for " % varT % ".\n"
-	 		% "    this type is graphical through classes " % cidsDataLoop % "\n\n"
-	 		% "    " % varT % " :: \n" %> prettyTS tCutLoops % "\n"
+	
+	if (isNil cidsDataLoop)
+	 -- no graphical data, ok to continue.
+	 then extractTypeC2 varT cid tTrace
+
+	 -- we've got graphical data, add an error to the solver state and bail out.
+	 else do
+	 	addErrors [ErrorInfiniteTypeClassId {
+	 			eClassId	= head cidsDataLoop }]
+
+		return $ Just $ TError KData tTrace
+
+extractTypeC2 varT cid tTrace
+ = do
+	-- Cut loops through the effect and closure portions of this type
+	let tCutLoops	= cutLoopsT tTrace
+	trace	$ "    tCutLoops        =\n" %> prettyTS tCutLoops % "\n\n"
 
 	-- Pack type into standard form
 	let tPack	= packType tCutLoops

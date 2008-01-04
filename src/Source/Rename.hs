@@ -633,11 +633,12 @@ boundByLCQual    q
 --
 renameSs ::	[Stmt]	-> RenameM [Stmt]
 renameSs	ss
- = do
-	-- SBinds are recursive, so grab their names
-	--	and add them to the env.
- 	let mBound	= map takeStmtBoundV ss
-	mapM lbindV $ catMaybes mBound
+ = do	-- work out all the vars that are bound by this list of stmts
+ 	let vsBound	= catMaybes $ map takeStmtBoundV ss
+
+	-- create fresh binding occurances to shadow anything with the same
+	--	name bound above.
+	mapM_ bindV $ nub vsBound
 	
 	-- Rename each statement.
 	ss'	<- mapM rename ss
@@ -770,7 +771,7 @@ instance Rename Type where
 
 	  	-- if any of the LHS vars are already bound (perhaps by a forall) at this level
 	  	--	then this is an error. Type vars aren't permitted to shadow each other.
-		isShadowed	<- mapM isBound bindingVars
+		isShadowed	<- mapM isBound_local bindingVars
 		let shadowVars	= [ v 	| (v, True) <- zip bindingVars isShadowed]
 		let shadow	=  not $ null shadowVars
 

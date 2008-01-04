@@ -6,3 +6,4 @@ Grind
 Closure-skip
 CheckPure-skip
 CheckConst-skip
+Capture

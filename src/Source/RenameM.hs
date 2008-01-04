@@ -11,7 +11,7 @@ module Source.RenameM
 
 	, Rename (..)
 
-	, isBound
+	, isBound_local
 	, addN
 	, bindN,	bindZ,		bindV
 	, lookupN,	lookupZ,	lookupV
@@ -169,7 +169,7 @@ peekObjectVar
 
 -- | Bind name
 --	Take the namespace annotation on a var and bind it into that space.
---	Creates an error if it's already bound.
+--	Creates an error if it's already bound at this level.
 bindZ :: Var -> RenameM Var
 bindZ	 v 	= bindN (Var.nameSpace v) v
 
@@ -204,8 +204,8 @@ bindN	 space var
 
 
 -- | Checks whether this name is already bound at this level
-isBound :: Var -> RenameM Bool
-isBound var
+isBound_local :: Var -> RenameM Bool
+isBound_local var
  = do	Just (spaceMap:ms)
 		<- liftM (Map.lookup $ Var.nameSpace var)
 		$  gets stateStack
@@ -287,13 +287,15 @@ lookupZ	v	= lookupN (Var.nameSpace v) v
 
 lookupV		= lookupN NameValue
 
-lookupNM ::	NameSpace ->	Var -> RenameM (Maybe Var)
-lookupNM	space		var
+
+-- | Link this var to the binding occurance with the same name.
+linkBoundVar :: NameSpace -> Var -> RenameM (Maybe Var)
+linkBoundVar    space	 var
  = do
  	(Just spaceStack)	<- liftM (Map.lookup space)
 				$ gets stateStack
 
-	let mBindingVar		= lookupNM' (Var.name var) spaceStack
+	let mBindingVar		= lookupBindingVar (Var.name var) spaceStack
 	
 	case mBindingVar of
 	 Just bindingVar	
@@ -307,18 +309,18 @@ lookupNM	space		var
 	 	-> return $ Nothing
 
 
-lookupNM' :: String -> [Map String Var] -> Maybe Var
-lookupNM' s []		= Nothing
-lookupNM' s (m:ms)	
+lookupBindingVar :: String -> [Map String Var] -> Maybe Var
+lookupBindingVar s []		= Nothing
+lookupBindingVar s (m:ms)	
  = case Map.lookup s m of
  	Just v	-> Just v
-	Nothing	-> lookupNM' s ms
+	Nothing	-> lookupBindingVar s ms
 
 
 lookupN :: NameSpace ->	Var -> RenameM Var
 lookupN	 space var
  = do
- 	mVar	<- lookupNM space var
+ 	mVar	<- linkBoundVar space var
 
 	case mVar of
 	 Nothing	
@@ -342,7 +344,7 @@ lbindV 		= lbindN NameValue
 
 lbindN :: NameSpace -> Var -> RenameM Var
 lbindN space var
- = do 	mVar	<- lookupNM space var
+ = do 	mVar	<- linkBoundVar space var
 	
 	case mVar of
 	 Just  	var	-> return var
