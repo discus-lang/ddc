@@ -133,7 +133,7 @@ newVarN :: NameSpace -> CSlurpM Var
 newVarN space	= newVarNS space ""
 
 newVarNS ::	NameSpace ->	String -> CSlurpM Var
-newVarNS		space		str	
+newVarNS	space		str	
  = do
  	(Just spaceGen)	<- liftM (Map.lookup space)
 			$  gets stateGen

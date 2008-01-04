@@ -9,6 +9,6 @@ add x y		= x + y;
 
 main ()
  = do {	
-	add5	= suspend1 add 5;
+	add5	= suspend2 add 5;
  	print	$ (showInt (add5 27)) % "\n";
  }; 
