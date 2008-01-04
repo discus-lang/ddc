@@ -146,7 +146,8 @@ coreReconstruct
 	-> IO Tree
 	
 coreReconstruct name cHeader cTree
- = do	let cTree'	= reconstructTree name cHeader cTree
+ = do	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
+ 			   reconstructTree name cHeader cTree
  	dumpCT DumpCoreReconstruct name cTree'
 	return	cTree'
 
@@ -168,7 +169,8 @@ coreBind
 	rsGlobal
 	cSource
  = do
- 	let tree' = bindTree unique classMap rsGlobal cSource
+ 	let tree' = {-# SCC "Core.Bind" #-}
+	            bindTree unique classMap rsGlobal cSource
 	
 	dumpCT DumpCoreBind "core-bind" tree'
 
@@ -188,7 +190,8 @@ coreThread
 	-> IO Tree
 	
 coreThread hTree cTree
- = do	let tree'	= threadTree hTree cTree
+ = do	let tree'	= {-# SCC "Core.Thread " #-} 
+ 			  threadTree hTree cTree
  
  	dumpCT DumpCoreThread "core-thread" tree'
 	return tree'

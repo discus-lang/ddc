@@ -33,7 +33,8 @@ stage	= "Core.Util.Pack"
 -- | Pack a type into standard form.
 packT :: Type -> Type
 packT tt
- = let tt'	= packT1 tt
+ = {-# SCC "packT" #-}
+   let tt'	= packT1 tt
    in  if tt == tt'
    	then tt'
 	else packT1 tt'
@@ -50,7 +51,8 @@ packK kk
 -- | Flatten a type so that all where bindings are inlined
 flattenT :: Type -> Type
 flattenT tt
-	= packT $ crushEffsT $ inlineTWheresT tt
+ = {-# SCC "flattenT" #-}
+    packT $ crushEffsT $ inlineTWheresT tt
 
 	
  

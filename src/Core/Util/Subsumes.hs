@@ -34,7 +34,7 @@ subsumes tableMore t s
  = let 	?tableMore	= tableMore
 	?t		= t
 	?s		= s
-   in	subsumes1 t s
+   in	{-# SCC "subsumes" #-} subsumes1 t s
 	
 subsumes1 t s
  = let ans	= subsumes2 t s

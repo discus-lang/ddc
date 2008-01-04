@@ -42,11 +42,12 @@ reconstructTree
 	-> Tree		-- core tree with reconstructed type information
 	
 reconstructTree stage tHeader tCore
- = let 	?stage	= stage
+ = {-# SCC "reconstructTree" #-}
+   let 	?stage	= stage
    in let
  	-- slurp out all the stuff defined at top level
-	topTypes	= catMap slurpTypesP (tHeader ++ tCore)
- 	tt		= foldr addEqVT' initTable topTypes
+	topTypes	= {-# SCC "reconstructTree/topTypes" #-} catMap slurpTypesP (tHeader ++ tCore)
+ 	tt		= {-# SCC "reconstructTree/table"    #-} foldr addEqVT' initTable topTypes
 	
 	-- reconstruct type info on each top level thing
 	tCore'		= map (reconP tt) tCore
@@ -100,7 +101,7 @@ reconP	:: (?stage :: String)
 
 reconP tt (PBind v x)
  = let	(x', xt, xe, xc)	
- 		= reconX tt x
+ 		= {-# SCC "reconP/reconX" #-} reconX tt x
    in	PBind v x'
 
 reconP tt p		= p
@@ -141,7 +142,8 @@ reconX tt (XLAM v k x)
  
 -- APP
 reconX tt exp@(XAPP x t)
- = let	(x', tx, xe, xc)	= reconX tt x
+ = {-# SCC "reconX/XApp" #-}
+   let	(x', tx, xe, xc)	= reconX tt x
    in	case applyTypeT tt tx t of
    	 Just t'	
 	  -> 	( XAPP x' t
@@ -199,37 +201,49 @@ reconX tt exp@(XTau tauT x)
 
 -- lam
 reconX tt exp@(XLam v t x eff clo)
- 	| tt'			<- addEqVT v t tt
-	, (x', xT, xE, xC)	<- reconX tt' x
+ = {-# SCC "reconX/XLam" #-}
+   let	reconX_lam
+ 
+	 	| tt'			<- addEqVT v t tt
+		, (x', xT, xE, xC)	<- reconX tt' x
 
-	, eff'			<- packT $ substituteT (tableEq tt) eff
-	, clo'			<- packT $ substituteT (tableEq tt) clo
-	, xC'			<- trimClosureC $ flattenT $ makeTMask KClosure xC (TTag v)
-	, xE'			<- packT xE
+		, eff'		<- packT $ substituteT (tableEq tt) eff
+		, clo_sub	<- packT $ substituteT (tableEq tt) clo
+
+		-- TODO: We need to flatten the closure before trimming to make sure effect annots
+		--	on type constructors are not lost. It would be better to modify trimClosureC
+		--	so it doesn't loose them, or the closure equivalence rule so it doesn't care.
+		, xC_masked	<- makeTMask KClosure xC (TTag v)
+		, xC_flat	<- flattenT xC_masked
+		, xC'		<- trimClosureC $ xC_flat
+
+		, xE'		<- packT xE
 	
-	-- check effects match
-	, () <- if subsumes (tableMore tt) eff' xE'
-		 then ()
-		 else panic stage
-			$ "reconX: Effect error in core.\n"
-			% " in lambda abstraction:\n" 			%> exp	% "\n\n"
-			% " reconstructed effect of body:\n" 		%> xE'	% "\n\n"
-			% " does not match effect annot on lambda:\n"	%> eff'	% "\n\n"
+		-- check effects match
+		, () <- if subsumes (tableMore tt) eff' xE'
+			 then ()
+			 else panic stage
+				$ "reconX: Effect error in core.\n"
+				% " in lambda abstraction:\n" 			%> exp	% "\n\n"
+				% " reconstructed effect of body:\n" 		%> xE'	% "\n\n"
+				% " does not match effect annot on lambda:\n"	%> eff'	% "\n\n"
 
-	-- check closures match
-	, () <- if subsumes (tableMore tt) clo' xC'
-		 then ()
-		 else panic stage
-			$ "reconX: Closure error in core.\n"
-			% " in lambda abstraction:\n" 			%> exp	% "\n\n"
-			% " reconstructed closure of body:\n" 		%> xC'	% "\n\n"
-			% " does not match closure annot on lambda:\n"	%> clo'	% "\n\n"
+		-- check closures match
+		, () <- if subsumes (tableMore tt) clo_sub xC'
+			 then ()
+			 else panic stage
+				$ "reconX: Closure error in core.\n"
+				% " in lambda abstraction:\n" 			%> exp		% "\n\n"
+				% " reconstructed closure of body:\n" 		%> xC'		% "\n\n"
+				% " does not match closure annot on lambda:\n"	%> clo_sub	% "\n\n"
 	
 
-	= ( XLam v t x' eff clo
-	  , TFunEC t xT eff clo
-	  , TBot KEffect
-	  , xC')
+		= ( XLam v t x' eff clo
+		  , TFunEC t xT eff clo
+		  , TBot KEffect
+		  , xC')
+
+   in	reconX_lam
 
 -- local
 reconX tt (XLocal v vs x)
@@ -252,7 +266,8 @@ reconX tt (XLocal v vs x)
 reconX tt exp@(XApp x1 x2 eff)
  = let	(x1', x1t, x1e, x1c)	= reconX tt x1
 	(x2', x2t, x2e, x2c)	= reconX tt x2
-	mResultTE		= applyValueT tt x1t x2t
+	mResultTE		= {-# SCC "reconX/applyValue" #-}
+	                          applyValueT tt x1t x2t
    in	case mResultTE of
    	 Just (appT, appE)
   	  -> let x'		= XApp x1' x2' (packT appE)
@@ -283,10 +298,11 @@ reconX tt (XDo ss)
    in	( XDo ss'
         , t
 	, makeTSum KEffect sEs
-	, makeTMask 
-		KClosure
-		(makeTSum KClosure sCs)
-		(makeTSum KClosure (map TTag vsBind)) )
+	, trimClosureC 
+		$ makeTMask 
+			KClosure
+			(makeTSum KClosure (map (trimClosureC . flattenT) sCs))
+			(makeTSum KClosure (map TTag vsBind)) )
    
 -- match
 reconX tt (XMatch aa eff)

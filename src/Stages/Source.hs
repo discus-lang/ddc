@@ -317,7 +317,7 @@ slurpC 	:: (?args :: [Arg])
 slurpC	sTree
 	hTree
 
- = {-# SCC "Source.Slurp" #-}
+ = {-# SCC "slurpC" #-}
    do
 	let state	= D.initCSlurpS 
 	
@@ -375,14 +375,14 @@ solveSquid
 	vsTypesPlease
 	sigmaTable
 
- = {-# SCC "Source.Squid" #-}
+ = {-# SCC "solveSquid" #-}
    do
 	-- The solver state gets dumped in real-time so we can see
 	--	what's gone wrong if it crashes mid-stream.
 
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
 		
- 	state	<- {-# SCC "Source.Squid.Solve" #-} Squid.squidSolve 
+ 	state	<- {-# SCC "solveSquid/solve" #-} Squid.squidSolve 
 			?args
 			constraints
 			sigmaTable
@@ -405,7 +405,7 @@ solveSquid
 
 	-- extract out the stuff we'll need for conversion to core.
 	(typeTable, typeInst, quantVars, portTable, vsRegionClasses)
-		<- {-# SCC "Source.Squid.Export" #-} evalStateT 
+		<- {-# SCC "solveSquid/export" #-} evalStateT 
 			(Squid.squidExport vsTypesPlease) state
 
 
@@ -469,7 +469,7 @@ toCore	sourceTree
 	typeInst
 	quantVars
 	projTable
- = {-# SCC "Source.ToCore" #-} 
+ = {-# SCC "toCore" #-} 
    do
 	-----
 	let toCoreTree'	

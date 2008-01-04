@@ -25,11 +25,13 @@ stage	= "Core.Util.Trim"
 	
 -- | Trim the closure portion of this type
 trimClosureT :: Type -> Type
-trimClosureT tt
+trimClosureT tt = {-# SCC "trimClosureT" #-} trimClosureT2 tt
+
+trimClosureT2 tt
   = let	tt'	= packT $ trimClosureT' tt
     in	if tt' == tt
     		then tt'
-		else trimClosureT tt'
+		else trimClosureT2 tt'
 
 trimClosureT' tt		
  = case tt of
@@ -51,12 +53,14 @@ trimClosureT_vt vt
 
 -- | Trim a closure down to its interesting parts
 trimClosureC :: Closure -> Closure
-trimClosureC cc
+trimClosureC cc = {-# SCC "trimClosureC" #-} trimClosureC2 cc
+
+trimClosureC2 cc
  | KClosure	<- kindOfType cc
   = let cc'	= packT $ trimClosureC' cc
     in  if cc' == cc
    	 then cc'
-	 else trimClosureC cc'
+	 else trimClosureC2 cc'
 
  | otherwise
  = panic stage

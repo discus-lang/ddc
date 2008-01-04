@@ -20,7 +20,8 @@ substituteT
 	-> a -> a
 	
 substituteT sub tt
- = transZ 
+ = {-# SCC "substituteT" #-} 
+   transZ 
  	transTableId 
 	 	{ transT	= \x -> return $ subTT sub x }
 	tt

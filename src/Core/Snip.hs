@@ -79,9 +79,6 @@ snipStmt	topVars xx
 	 -> do 	(ss, x')	<- snipX1 topVars Map.empty x
 		return	(ss, SBind mV x')
 
-	_ ->	panic stage
-		$ "snipStmt: no match for " % show xx
-
 
 -- | Enter into an expression on the RHS of a stmt.
 
