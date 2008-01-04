@@ -10,8 +10,6 @@
 -- TODO: when generalising a function type (t1 -(_ : a)> t2) ignore a if it is not 
 --	free in either t1 or t2.
 
--- CRASH when switch back to 'id'
-
 fun f
  = do {	id y = do { either f (\z -> do { y; z; }); y; };
 	id id;

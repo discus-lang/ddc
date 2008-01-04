@@ -12,6 +12,14 @@ import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Debug.Trace
+
+debug	= False
+trace ss x	
+ 	= if debug 
+		then Debug.Trace.trace (pretty ss) x
+		else x
+
 --
 stage	= "Core.Util.Subsumes"
 
@@ -26,6 +34,13 @@ subsumes tableMore t s
    in	subsumes' t s
 	
 subsumes' t s
+ = let ans	= subsumes3 t s
+   in  trace ("subsumes " 
+ 		% ans 	% "\n"
+	 	% t 	% "\n"
+		% s 	% "\n") ans
+
+subsumes3 t s
 
 	-- SubRefl
 	| t == s
@@ -39,6 +54,13 @@ subsumes' t s
 	-- SubBot
 	-- anything subsumes bottom
 	| TBot _		<- s
+	= True
+
+	-- SubVar
+	-- G[t :> S] |- S <: t
+	| TVar tKind tVar	<- t
+	, Just s2		<- Map.lookup tVar ?tableMore
+	, s2 == s
 	= True
 
 	-- SubAll
@@ -64,7 +86,6 @@ subsumes' t s
 	, elem k [KEffect, KClosure]
 	= and $ map (\si -> subsumes' t si) ss
 
-	
 	-- masks
 	| TMask k t1 t2		<- t
 	, TMask k s1 s2		<- s
@@ -72,12 +93,6 @@ subsumes' t s
 	, t2 == s2
 	= True 
 
-	-- SubVar
-	-- G[t :> S] |- S <: t
-	| TVar tKind tVar	<- t
-	, Just s2		<- Map.lookup tVar ?tableMore
-	, s2 == s
-	= True
 
 	-- SubFun
 	-- fun
