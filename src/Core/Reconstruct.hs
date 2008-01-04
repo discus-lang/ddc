@@ -453,9 +453,27 @@ applyTypeT table (TForall (BVar v) k t1) t2
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 applyTypeT table (TForall (BMore v tB) k t1) t2
+	-- if the constraint is a closure then trim it first
+	| k == KClosure
+	, subsumes (tableMore table) (trimClosureC t2) (trimClosureC tB)
+	= Just (substituteT (Map.insert v t2 Map.empty) t1)
+
+
 	-- check that the constraint is satisfied
 	| subsumes (tableMore table) t2 tB
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
+	
+	| otherwise
+	= freakout stage
+		( "applyTypeT: Kind error in type application.\n"
+		% "   (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")"
+		% "\n"
+		%> t2 % "\n"
+		% "is not :>\n"
+		%> tB % "\n"
+		% "\n")
+
+		$ Nothing
 	
 
 applyTypeT table t1@(TContext k11 t12) t2
