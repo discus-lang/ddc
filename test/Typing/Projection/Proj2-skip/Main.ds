@@ -1,0 +1,40 @@
+
+-- Check interplay between constraint pre-ordering and projections.
+--	The constraints from the body#(0) line must be added to the graph
+--	before trying to take the projection body.(0).vel, otherwise
+--	that projection is ambiguous.
+
+import Data.Array;
+
+
+data Vec2 %r1 a
+	= Vec2 {
+		x	:: a;
+		y	:: a;
+	};
+
+data Body %r1 
+	= BodyNil
+	
+	| Body {
+		mass	:: Float %r1;
+		pos	:: Vec2 %r1 (Float %r1);
+		vel	:: Vec2 %r1 (Float %r1);
+	}
+
+	| Pillar {
+		mass	:: Float %r1;
+		pos	:: Vec2 %r1 (Float %r1);
+	};
+
+dude ()
+ = do {	
+ 	body		= array_new 100 (errorNoEff @ "elem not initialized");
+	body #(0)	#= Body 1.0 (Vec2 100.0 100.00) (Vec2 0.0 0.0);
+	
+	body .(0) .vel;
+ };
+
+
+main ()
+ = print "foo";

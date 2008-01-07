@@ -145,7 +145,7 @@ instance Pretty TProj where
   = case p of
   	TJField  v	-> "." % v
 	TJFieldR v	-> "#" % v
-
+	_		-> panic stage "prettyp[TProj]: no match"
 
 ----
 prettyVK ::	(Var, Kind)	-> PrettyP
@@ -204,13 +204,14 @@ instance Pretty TypeSource where
 	TSData		sp 		-> "@TSData "	% sp
 	TSProjDict	sp 		-> "@TSData " 	% sp
 		
+	TSCrushed	f		-> "@TSCrushed " % f
 	TSSynth	 	v		-> "@TSSynth  " % " " % v
 	TSProjCrushed  	cidT cidP pf	-> "@TSProjCrushed " % cidT % " " % cidP % " " % pf
 	TSClassName			-> prettyp "@TSClassName "
 	
-{-	_ -> panic stage
+	_ -> panic stage
 		$ "pretty[TypeSource]: no match for " % show ts
--}
+
 -----
 instance Pretty Kind where
  pretty	k
@@ -221,6 +222,7 @@ instance Pretty Kind where
 	KEffect		-> "!"
 	KFetter		-> "+"
 	KClosure	-> "$"
+	_		-> panic stage "pretty[Kind]: no match"
 
 instance  (Pretty param)
 	=> Pretty (InstanceInfo param Type) where

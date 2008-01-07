@@ -3,7 +3,7 @@
 module Type.ToCore
 	( toCoreT
 	, toCoreK
-	, toCoreF )
+	, toCoreF)
 where
 
 -----
@@ -106,7 +106,6 @@ toCoreT	   tt
 	T.TNode _ t		-> toCoreT t
 
 	_ -> panic stage $ "toCoreT: failed to convert " ++ show tt
-
 
 -----
 toCoreK :: T.Kind -> C.Kind

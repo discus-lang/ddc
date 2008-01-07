@@ -183,6 +183,8 @@ lintX tt (XPrim p xs eff)
 lintX tt (XType t)
  = do	lintT tt t
 
+lintX tt xx
+ = panic stage $ "lintX: no match for " % xx
 
 -- | Lint a bound variable.
 lintBoundV :: Table -> Var -> LintM ()

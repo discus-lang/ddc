@@ -131,8 +131,13 @@ data SquidS
 	, stateDataFields	:: Map Var	([Var], [(Var, Type)]) 
 								
 	-- | The projection dictionaries
-	--	-> (type, [(field var, impl var)])
-	, stateProject		:: Map Var	(Type, [(Var, Var)])	
+	--	ctor name -> (type, field var -> implemenation var)
+	, stateProject		:: Map Var	(Type, Map Var Var)	
+	
+	-- | When projections are resolved, Crush.Proj adds an entry to this table mapping the tag
+	--	var in the constraint to the instantiation var. We need this in Desugar.ToCore to rewrite
+	--	projections to the appropriate function call.
+	, stateProjectResolve	:: Map Var Var
 									
 	-- | Instances for type classses
 	--	class name -> instances for this class.
@@ -197,6 +202,7 @@ squidSInit
 
 		, stateDataFields	= Map.empty 
 		, stateProject		= Map.empty
+		, stateProjectResolve	= Map.empty
 		, stateClassInst	= Map.empty
 		, stateErrors		= []
 		, stateStop		= False }

@@ -35,15 +35,13 @@ sv v	= pretty $ pv v
 sb (BVar v)	= pretty $ pv v
 sb (BMore v t)	= pretty $ "(" % (pretty $ pv v) % " :> " % t % ")"
 
--- force display of type namespace qualifier
+-- | force display of type namespace qualifier
 pv v
  = case Var.nameSpace v of
  	Var.NameType	-> "*" % v
 	_		-> prettyp v
 
------------------------
--- prettyP
---
+-- Top --------------------
 instance Pretty Top where
  prettyp xx
   = case xx of
@@ -105,9 +103,7 @@ instance Pretty Top where
 
 
 
------------------------
--- CtorDef
---
+-- CtorDef ------------------
 instance Pretty CtorDef where
  prettyp xx
   = case xx of
@@ -116,9 +112,7 @@ instance Pretty CtorDef where
 	 	%> ("\n" %!% fs) % "\n}"
 	 
 	 
------------------------
--- prettyX
---
+-- Exp --------------------
 instance Pretty Exp where
  prettyp xx
   = case xx of
@@ -223,6 +217,9 @@ instance Pretty Exp where
 	XPrim m args eff
 	 -> m % " " % " " %!% map prettyExpB args % "\n" %> prettyE_caused eff
 	 
+	 
+	XProject x j
+	 -> x % j
 
 	XAtom v args
 	 -> "@XAtom "	% v % " " % args 
@@ -291,10 +288,15 @@ prettyExpB x
 	XType t		-> prettyTB t
 	_		-> "(" % x % ")"
 
+-- Proj ------------------
+instance Pretty Proj where
+ prettyp xx
+  = case xx of
+  	JField v	-> "." % v
+	JFieldR v	-> "#" % v
 
------------------------
--- Prim
---
+
+-- Prim ------------------
 instance Pretty Prim where
  prettyp xx 
   = case xx of
@@ -310,9 +312,7 @@ instance Pretty Prim where
 	MFun v t	-> "prim{" % v % "} "	% prettyTB t
 
 
------------------------
--- Stmt
---
+-- Stmt ------------------
 instance Pretty Stmt where
  prettyp xx
   = case xx of
@@ -338,9 +338,7 @@ instance Pretty Stmt where
 prettyRFs (r, [])	= r % ";"
 prettyRFs (r, fs)	= r %> " :- " % ", " %!% fs	% ";"
 
------------------------
--- Alt
---
+-- Alt ------------------
 instance Pretty Alt where
  prettyp xx
   = case xx of
@@ -353,26 +351,16 @@ instance Pretty Alt where
 	  % "\n"
 	  % "= " % x % ";"
 
- 
- 
-----------------------
--- Guard
---
+  
+-- Guard ------------------
 instance Pretty Guard where
  prettyp xx
   = case xx of
---	GCase pat
---	 -> "|| " % pat
-	
 	GExp pat exp
---	 -> exp % "\n# " % pat
-	 
 	 -> pat	%>> " <- " % exp
 	 
 
------------------------
--- Pat
---
+-- Pat -------------------
 instance Pretty Pat where
  prettyp xx 
   = case xx of
@@ -389,9 +377,7 @@ prettyLVT (label, var, t)
 	% " = " % padR 5 (pretty var) 
 		%> (" :: " % t)
 	
-----------------------
--- Label
---
+-- Label ------------------
 instance Pretty Label where
  prettyp xx
   = case xx of
@@ -399,9 +385,7 @@ instance Pretty Label where
 	LVar	v	-> prettyp v
 
 
------------------------
--- Annot
---
+-- Annot ------------------
 instance Pretty Annot where
  prettyp xx
   = case xx of
@@ -415,9 +399,8 @@ instance Pretty Annot where
 	NFreeLevel vs	-> "&NFreeLevel " % vs
 	NVarSet vs	-> "@NVarSet " % Set.toList vs
 
------------------------
--- Type
--- 
+
+-- Type ------------------
 instance Pretty Type where
  prettyp xx
   = case xx of
@@ -518,9 +501,8 @@ prettyTBF e
 	| otherwise
 	= prettyp e
 
------------------------
--- TBind
---
+
+-- TBind -----------------
 instance Pretty Bind where
  prettyp xx
   = case xx of
@@ -528,9 +510,7 @@ instance Pretty Bind where
 	BMore v t	-> "(" % v % " :> " % t % ")"
 
 
------------------------
--- Kind
---
+-- Kind ------------------
 instance Pretty Kind where
  prettyp xx
   = case xx of

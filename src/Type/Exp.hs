@@ -154,7 +154,7 @@ data Fetter
 	| FMore		Type	Type			-- ^ t1 :> t2
 
 	-- | projection function is t1 = t2 -(eff clo)> t3
-	| FProj		TProj	Type Type Type Effect Closure
+	| FProj		TProj	Var Type Type Effect Closure
 
 
 	-- junk?

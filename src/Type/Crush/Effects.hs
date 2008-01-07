@@ -69,7 +69,12 @@ crushEffectC cid
 		mapM_ (\e -> unregisterClass e cid)
 			$ catMaybes
 			$ map (\t -> case t of 
-					TEffect ve _ 	-> Just $ Var.bind ve
+					TEffect ve _ 	
+					 -> Just $ Var.bind ve
+
+					TFetters fs (TEffect ve _)
+					 -> Just $ Var.bind ve
+
 					TVar{}		-> Nothing 
 					TClass{}	-> Nothing
 					_ -> panic stage 

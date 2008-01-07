@@ -226,7 +226,8 @@ renameVarN	space var
 	, Var.nameSpace var /= space
 	= panic stage 
 	$ "renameVarN: not renaming var " % var % " from space " % Var.nameSpace var
-	% " to space " % space
+	% " to space " % space % "\n"
+	% " var = " % show var % "\n"
 
 	| otherwise
 	= case bindPrimVar space var of

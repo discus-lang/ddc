@@ -119,8 +119,13 @@ initCSlurpS
 		, (NameType,	Var.XBind ("t" ++ Unique.typeConstraint) 0)
 		, (NameRegion,	Var.XBind ("r" ++ Unique.typeConstraint) 0)
 		, (NameEffect,	Var.XBind ("e" ++ Unique.typeConstraint) 0) 
-		, (NameClosure,	Var.XBind ("c" ++ Unique.typeConstraint) 0)]
+		, (NameClosure,	Var.XBind ("c" ++ Unique.typeConstraint) 0)
+		, (NameField,	Var.XBind ("f" ++ Unique.typeConstraint) 0) 
+		, (NameClass,	Var.XBind ("w" ++ Unique.typeConstraint) 0) ]
 
+
+		
+		
 	, stateDataDefs		= Map.empty
 	, stateCtorType		= Map.empty
 	, stateCtorFields	= Map.empty

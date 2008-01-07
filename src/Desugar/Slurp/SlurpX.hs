@@ -344,7 +344,9 @@ slurpX 	exp@(XProj sp xBody proj)
 	fX	<- newTVarFS	"proj"
 
 	-- instance var for projection function.
-	vInst	<- newVarV 
+	--	When we work out what the projection function is it'll be instantiated and bound to this var.
+	tInst@(TVar KData vInst) 
+		<- newTVarD
 
 	-- effect and closure of projection function
 	--	This will turn into the effect/closure of the function that is being applied
@@ -360,9 +362,9 @@ slurpX 	exp@(XProj sp xBody proj)
 	let proj'	= transformN (\n -> Nothing) proj
 			
 	let qs	 = 
-		[ CEq	src fX		$ TFetter $ FProj projT (TVar KData vInst) tBody tX eProj cProj
-		, CEq	src eX		$ makeTSum KEffect  [eBody, eProj]
-		, CEq	src cX		$ makeTSum KClosure [cBody, cProj] ]
+		[ CProject src projT vInst tBody tX eProj cProj
+		, CEq	   src eX	$ makeTSum KEffect  [eBody, eProj]
+		, CEq	   src cX	$ makeTSum KClosure [cBody, cProj] ]
 
 	return	( tX
 		, eX

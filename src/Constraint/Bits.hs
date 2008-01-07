@@ -2,7 +2,7 @@
 module Constraint.Bits
 	( isCBranchLet
 	, isCDef
-	, isCProject
+	, isCDictProject
 	, isCDataFields
 	, isCSig
 	, isCClassInst
@@ -45,9 +45,9 @@ isCDef b
  	CDef{}		-> True
 	_		-> False
 	
-isCProject b
+isCDictProject b
  = case b of
- 	CProject{}	-> True
+ 	CDictProject{}	-> True
 	_		-> False
 
 isCDataFields b

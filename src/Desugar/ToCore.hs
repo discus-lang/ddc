@@ -51,11 +51,12 @@ trace ss x	= if debug
 
 -----------------------
 toCoreTree
-	:: (Map Var Var)				-- ^ value -> type vars
-	-> (Map Var T.Type)				-- ^ inferred type schemes
-	-> (Map Var (T.InstanceInfo T.Type T.Type))	-- ^ instantiation info
-	-> (Set Var)					-- ^ the vars which are ports
+	:: Map Var Var					-- ^ value -> type vars
+	-> Map Var T.Type				-- ^ inferred type schemes
+	-> Map Var (T.InstanceInfo T.Type T.Type)	-- ^ instantiation info
+	-> Set Var					-- ^ the vars which are ports
 	-> ProjTable
+	-> Map Var Var					-- ^ how to resolve projections
 	-> D.Tree Annot
 	-> C.Tree
 
@@ -65,6 +66,7 @@ toCoreTree
 	typeInst
 	quantVars
 	projTable
+	projResolve
 	sTree
 
  = 	cTree			
@@ -75,7 +77,8 @@ toCoreTree
 		, coreMapTypes		= typeTable
 		, coreMapInst		= typeInst
 		, corePortVars		= quantVars
-		, coreProject		= projTable }
+		, coreProjTable		= projTable  
+		, coreProjResolve	= projResolve }
 		
 	mTree	= evalState 
 			(toCoreTreeM sTree) 
@@ -233,9 +236,7 @@ makeCtorTypeAVT    argTypes dataVar ts
 		(reverse ts)
 
 
------------------------
--- Stmt
---
+-- | Statements
 toCoreS	:: D.Stmt Annot	
 	-> CoreM (Maybe C.Stmt)
 		
@@ -264,9 +265,7 @@ toCoreS	D.SSig{}
  	= return Nothing
 
 
------------------------
--- Exp
---
+-- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
  = case xx of
@@ -441,81 +440,48 @@ toCoreX xx
 		return	$ C.XDo	[ C.SBind (Just v) e1'
 				, C.SBind Nothing (C.XMatch [ e2', e3' ] C.TNil) ]
 	
-{-	
-	D.XProj	(Just (T.TVar T.KData vT, T.TVar T.KEffect vE))
-		x j
-	 -> do
-	 	(x', xT) 	<- toCoreX x
-		jT		<- getType vT
-
-		let (C.TData xV _)	= xT
-
-		case j of
-		 D.JField _ v	-> return 
-		 			C.XPrim (C.MFun primProjField  jT) [C.XVar xV, C.XVar v, x'] C.TNil
-					, jT)
-		
-		 D.JFieldR _ v	-> return
-		 			( C.XPrim (C.MFun primProjFieldR jT) [C.XVar xV, C.XVar v, x'] C.TNil
-					, jT)
-
-
+	-- projections
 	D.XProjTagged 
 		(Just 	( T.TVar T.KData vT
 			, T.TVar T.KEffect vE))
-		vTag x j
+		vTag x2 j
 	 -> do
-		(x', xT@(C.TData vCon _))	
-			<- toCoreX x
+		x2'		<- toCoreX x2
+		j'		<- toCoreJ j
 
-		resultT			<- getType vT
-		mapProj			<- gets coreProject
-	
-		let (Just [(t', implList)])	
-			= Map.lookup vCon mapProj
+		-- lookup the var for the projection function to use
+		projResolve	<- gets coreProjResolve
+		
+		let Just vProj	= Map.lookup vTag projResolve
+		
+		trace 	( "XProjTagged\n"
+			% "    vTag  = " % vTag		% "\n"
+			% "    vProj = " % vProj	% "\n")
+			$ return ()
 
-		let projName		= case j of
-						D.JField  _ v	-> Var.name v
-						D.JFieldR _ v	-> "ref_" ++ Var.name v
+		x1'	<- toCoreVarInst vProj vTag
+			
+		return	$ C.XApp x1' x2' C.pure
 
 
-		let mVarImpl		= liftM snd
-					$ find (\(v, _) -> Var.name v == projName)
-					$ Map.toList implList
 
-		let vImpl	
-			= case mVarImpl of
-				Just varImpl	-> varImpl
-				Nothing		-> panic stage 
-						$ "toCoreX: can't find projection implementation for " % j % "\n"
-						% "   node         = " % xx 		% "\n"
-						% "   object       = " % x		% "\n"
-						% "   object type  = " % xT		% "\n"
-						% "   projName     = " % projName	% "\n"
-						% "   implList     = " % implList	% "\n"
-
-		funX		<- addTypeApps vImpl vTag (C.XVar vImpl)
-
-		return	( C.XApp funX x' C.TNil
-			, resultT )
--}
-
-{-
-	D.XVar	(Just (T.TVar T.KData vT, _))
-		v
-	 -> do	
-	 	t	<- getType vT
-		return	( C.XVar v
-	 		, t)
-
-	D.XVar	Nothing v
-	 -> do	return	( C.XVar v
-	 		, C.TNil)
--}	
+	-- variables
 	D.XVarInst 
 		(Just (T.TVar T.KData vT, _))
 		v
-	 -> do	
+	 -> 	toCoreVarInst v vT
+
+	_ 
+	 -> panic stage
+	 	$ pretty
+		$ "toCoreX: cannot convert expression to core.\n" 
+		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
+
+
+
+toCoreVarInst :: Var -> Var -> CoreM C.Exp
+toCoreVarInst v vT
+ = do
 		tScheme		<- getType v
 		mapInst		<- gets coreMapInst
 
@@ -592,17 +558,17 @@ toCoreX xx
 		  	return $ C.unflattenApps
 			 	(C.XVar v : map C.XType (tsReplay ++ tsContext))
 
-	_ 
-	 -> panic stage
-	 	$ pretty
-		$ "toCoreX: cannot convert expression to core.\n" 
-		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
 
 
 
------------------------
--- Alt
---
+-- | Field porjections
+toCoreJ :: D.Proj Annot -> CoreM C.Proj
+toCoreJ jj
+ = case jj of
+	D.JField _ v	-> return $ C.JField v 	
+	D.JFieldR _ v	-> return $ C.JFieldR v
+
+-- | Case Alternatives
 toCoreA	:: Maybe Var
 	-> D.Alt Annot -> CoreM C.Alt
 		
@@ -618,9 +584,7 @@ toCoreA mObj alt
 
 	
 
------------------------
--- Guard
---
+-- | Guards
 toCoreG :: Maybe Var
 	-> D.Guard Annot
 	-> CoreM C.Guard
@@ -637,9 +601,7 @@ toCoreG mObj gg
 		return		$ C.GExp w' x'
 		
 
------------------------
--- Pat
---
+-- | Patterns
 toCoreW :: D.Pat Annot
 	-> CoreM C.Pat
 	

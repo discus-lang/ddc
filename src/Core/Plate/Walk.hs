@@ -260,6 +260,10 @@ walkZM2 z xx
 	XPrim m xx eff
 	 -> do	xx'		<- mapM (walkZM z) xx
 		(transX z) z	$ XPrim m xx' eff
+	
+	XProject x j
+	 -> do	x'		<- walkZM z x
+	 	return		$ XProject x' j
 		
 	-- atoms
 	XAtom{}			-> (transX z) z xx

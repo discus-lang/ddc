@@ -19,7 +19,6 @@ import Type.Base
 import Type.State
 import Type.Class
 
-import Type.Grind
 import Type.Scheme
 
 import Type.Error

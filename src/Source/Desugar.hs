@@ -429,7 +429,12 @@ instance Rewrite S.Stmt (D.Stmt Annot) where
 				
 	S.SSig sp v t
 	 -> do 	t'	<- rewrite t
-	 	return	$ D.SSig sp v t'
+
+		let ?newVarN	= newVarN
+	 	let ?getKind	= getKind
+	 	(tElab, vksConst, vksMutable)	<- elaborateRegionsT t'
+
+	 	return	$ D.SSig sp v tElab
 
 
 -----

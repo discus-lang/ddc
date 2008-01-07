@@ -7,6 +7,7 @@ where
 -----
 import Util
 
+import qualified Data.Map	as Map
 import Type.Pretty
 import Constraint.Exp
 
@@ -38,6 +39,9 @@ instance Pretty CTree where
 	CClass	src v ts
 	 -> "@CClass " % v % " " % ts
 
+	CProject src tp t1 t2 t3 eff clo
+	 -> "@CProject " % tp % " " % t1 % " " % t2 % " " % t3 % " " % eff % " " % clo % ";"
+
 	CDataFields src v ts []	
 	 -> "@CDataFields " % v % " " % ts % " {};"
 	 
@@ -47,13 +51,10 @@ instance Pretty CTree where
 		%> ("\n " %!% map (\(v, f) -> v %>> " :: " % f) fs % "\n") 
 		% "};\n\n"
 
-	CProject src t []
-	 -> "@CProject    " % t % " {};"
-
-	CProject src t vs
-	 -> "@CProject    " % t % "\n"
+	CDictProject src t vs
+	 -> "@CDictProject    " % t % "\n"
 	 	% "{\n"
-		%> ("\n" %!% map (\(v1, v2) -> v1 %>> " = " % v2 % ";") vs % "\n")
+		%> ("\n" %!% map (\(v1, v2) -> v1 %>> " = " % v2 % ";") (Map.toList vs) % "\n")
 		% "};\n\n"
 	
 	CClassInst src v ts

@@ -368,7 +368,8 @@ solveSquid :: (?args :: [Arg])
 		, Map Var (InstanceInfo T.Type T.Type)	-- how each var was instantiated
 		, Set Var				-- the vars which are ports
 		, Set Var				-- the TREC vars which are free in the returned types
-		, Map Var [Var])			-- map of constraints on each region
+		, Map Var [Var]				-- map of constraints on each region
+		, Map Var Var)				-- how projections were resolved
 	
 solveSquid 
 	constraints
@@ -444,7 +445,8 @@ solveSquid
 		, typeInst
 		, quantVars
 		, vsFree
-		, vsRegionClasses)
+		, vsRegionClasses
+		, Squid.stateProjectResolve state)
 
 
 
@@ -458,7 +460,8 @@ toCore 	:: (?args :: [Arg])
 	-> Map Var T.Type				-- typeTable
 	-> Map Var (T.InstanceInfo T.Type T.Type)	-- typeInst
 	-> Set Var					-- typeQuantVars	-- the vars which are ports
-	-> ProjTable
+	-> ProjTable					-- projection dictinary
+	-> Map Var Var					-- how to resolve projections
 	-> IO	( C.Tree
 		, C.Tree )
 
@@ -469,6 +472,7 @@ toCore	sourceTree
 	typeInst
 	quantVars
 	projTable
+	projResolve
  = {-# SCC "toCore" #-} 
    do
 	-----
@@ -479,7 +483,7 @@ toCore	sourceTree
 			typeInst
 			quantVars
 			projTable
-
+			projResolve
 			
  	let cSource	= toCoreTree' sourceTree
 	let cHeader	= toCoreTree' headerTree

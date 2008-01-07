@@ -92,6 +92,29 @@ feedConstraint cc
 		liftIO (Array.writeArray (graphClass graph) cid c)
 		registerClass (Var.bind v) cid
 		return ()		
+
+
+	-- Projection constraints.
+	CProject src j v1 t2 t3 eff clo
+	 -> do	let ?src	= src
+
+	 	-- a new class to hold this node
+	 	cid		<- allocClass KFetter
+	 	
+		-- add the type args to the graph
+	 	Just [t2', t3', eff', clo'] 
+				<- liftM sequence
+				$  mapM (feedType (Just cid)) [t2, t3, eff, clo]
+		
+		-- add the constraint
+		graph	<- gets stateGraph
+		let c	= ClassFetter
+			{ classId	= cid
+			, classFetter	= FProj j v1 t2' t3' eff' clo' }
+		
+		liftIO (Array.writeArray (graphClass graph) cid c)
+		registerClass Var.FProj cid
+		return ()		
 				
 
 	-- Type definitions, eg data constructors, external functions.

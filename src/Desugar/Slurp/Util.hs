@@ -134,10 +134,10 @@ newVarN space	= newVarNS space ""
 
 newVarNS ::	NameSpace ->	String -> CSlurpM Var
 newVarNS	space		str	
- = do
- 	(Just spaceGen)	<- liftM (Map.lookup space)
-			$  gets stateGen
-			
+ = do	gen		<- gets stateGen
+ 	let spaceGen	= fromMaybe 	(panic stage $ "newVarNS: no space gen for " % space % "\n")
+					(Map.lookup space gen)
+
 	let postfix	= if str == []
 				then []
 				else "" ++ str
@@ -291,38 +291,6 @@ lookupDataDef	 v
  	let (Just def)	=  Map.lookup v dataDefs
 	return def
  	
-
------
--- lookupCtor
---	Use the table of DataDefs from the monad state (set up by calls to addDataDef)
---	to lookup the types associated with a particular constructor variable.
---
---	For some data def
---		data List a = Nil | Cons a (List a)
---
---	lookupCtor ('Cons') will return	  Just ('Cons', ['a', 'List a'], 'List', ['a'])
---
-{-
-lookupCtor 	:: Var	
-		-> CSlurpM 
-			(Maybe 	( Var					-- constructor name
-				, [DataField (Exp Annot2) Type]		-- constructor fields
-				, Var					-- constructed type name
-				, [Var]))				-- constructed type args
-lookupCtor	cName
- = do
-	dataDefs	<- gets stateDataDefs
-	let rs		= catMap (lookupCtor' cName) dataDefs
-
-	case rs of
-	 []		-> return  Nothing
-	 [r]		-> returnJ r
-	 
-lookupCtor'	cName	(PData _ vData vsData ctors)
- = 	[ (cName, cFields, vData, vsData)
- 		| CtorDef _ cName' cFields	<- ctors
- 		, cName == cName']
--}
 
 -----
 -- instantiate

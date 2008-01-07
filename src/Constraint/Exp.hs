@@ -10,6 +10,8 @@ where
 
 -----
 import Util
+import Data.Map			(Map)
+
 import Type.Exp
 import Shared.Base
 
@@ -54,6 +56,10 @@ data	CTree
 	--	eg, Unify, Shape, Inject
 	| CClass	TypeSource Var [Type]
 
+	-- A projection constraint
+	--	t1 = t2 -(eff clo)> t3
+	| CProject	TypeSource TProj Var Type Type Effect Closure
+
 	-- Instantiate a type scheme
 	--	var of instance, var of scheme to instantiate.
 	| CInst		TypeSource Var Var
@@ -72,7 +78,7 @@ data	CTree
 
 	-- Carries a projection dictionary.
 	--	Projection type. field var, implementation var.
-	| CProject	TypeSource Type [(Var, Var)]		
+	| CDictProject	TypeSource Type (Map Var Var)
 
 	-- An instance for a class dictionary. eg, Num (Int (%_))
 	| CClassInst	TypeSource Var [Type]

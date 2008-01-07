@@ -84,7 +84,8 @@ data Error
 
 	| ErrorFieldNotPresent				-- Some field is not a member of this type.
 		{ eProj		:: TProj		-- 	Requested projection.
-		, eConstructor	:: Type }		-- 	Offending type.
+		, eConstructor	:: Type 		-- 	Offending type.
+		, eFields	:: [Var] }		--	Possible fields
 
 	| ErrorAmbiguousProjection			-- Tried to project a field from a type variable.
 		{ eProj		:: TProj }		-- 	
@@ -228,10 +229,12 @@ instance Pretty Error where
 
  pretty err@(ErrorFieldNotPresent 
  		{ eProj		= p
-		, eConstructor	= TData v _ })
+		, eConstructor	= TData v _
+		, eFields	= fields })
  	= pretty
 	$ (getProjSP p)							% "\n"
 	% "    Type '" % v 	% "' has no field named '" % p		% "'\n"
+	% "      possible fields: " % "\n" %!% fields			% "\n"
 
 	
  pretty err@(ErrorAmbiguousProjection

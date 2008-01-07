@@ -422,6 +422,10 @@ transXM2 table xx
 	 	xs'		<- followXs table xs
 		transX table	$ XAtom v' xs'
 
+	XProject x j
+	 -> do	x'		<- followX table x
+	 	transX table	$ XProject x' j
+
 	XAppF xs
 	 -> do	xs'		<- followXs table xs
 	 	transX table	$ XAppF xs'

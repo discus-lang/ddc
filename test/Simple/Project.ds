@@ -20,6 +20,7 @@ data Animal %r1
 	
 topX	= 27;	
 
+
 project Animal where
 {	
 	move ::	Animal -> (Int, Int) -> (Int, Int);
@@ -53,9 +54,6 @@ project Animal where
 	pretty :: Animal -> String;			
 	pretty ^obj
 	 = "Animal: " % _name % " " % _prettyColor % "\n";
-
-	
-
 }
 
 	 	

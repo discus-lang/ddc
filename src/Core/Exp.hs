@@ -10,6 +10,7 @@ module Core.Exp
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
 	, Exp 		(..)	-- expressions
+	, Proj		(..)	-- projections
 	, Prim		(..)	-- primitive operators
 	, Stmt	 	(..)	-- statements
 	, Annot 	(..)	-- expression annotations
@@ -111,8 +112,12 @@ data Exp
 
 
 	-- ditch these
-	| XAtom	    Var	      [Exp]			-- ^ Reference an Atom. 	name, type args.
+	| XAtom	    	Var	[Exp]			-- ^ Reference an Atom. 	name, type args.
 							--	Atoms are constructors of zero arity, eg Nil, Nothing.
+
+	-- An unresolved projection. 
+	--	These are written to real function calls by Core.Dictionary
+	| XProject	Exp	Proj		
 
 	------
 	-- Intermediate construcors
@@ -233,6 +238,13 @@ data Type
 	-- wildcards
 	| TWild		Kind				-- ^ Type wildcard. 
 							--	Will unify with anything of the given kind.
+	deriving (Show, Eq)
+
+
+-- | Field projections
+data Proj
+	= JField  Var				-- ^ A field projection.   		(.fieldLabel)
+	| JFieldR Var				-- ^ A field reference projection.	(#fieldLabel)
 	deriving (Show, Eq)
 
 

@@ -265,8 +265,7 @@ instance Rename (DataField Exp Type) where
   = do	mLabel'	<- case dLabel df of
 			Nothing		-> return Nothing
 			Just label
-			 -> do
-			 	label'	<- lbindN NameField label
+			 -> do 	label'	<- lbindN NameField label
 				return	$ Just label'
 
 	t'	<- rename $ dType df

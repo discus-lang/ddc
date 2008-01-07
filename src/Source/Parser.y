@@ -434,7 +434,7 @@ expA
 
 	-- object syntax
 	| '^' pVar				{ XObjVar   (spTP $1) (vNameV $2)	}
-	| '_' pVar				{ XObjField (spTP $1) (vNameV $2)	}
+	| '_' pVar				{ XObjField (spTP $1) (vNameF $2)	}
 
 	| 'break'				{ XBreak  (spTP $1)			}
 	| '()'					{ XVar	  (spTP $1) (makeVar "Unit" $1)	}
@@ -643,13 +643,13 @@ dataField
 
 	| pVar '::' type ';'				{ DataField 
 								{ dPrimary	= True	
-								, dLabel 	= Just $1
+								, dLabel 	= Just (vNameF $1)
 								, dType		= $3
 								, dInit		= Nothing } }
 								
 	| '.' pVar '::' type dataInit ';'		{ DataField 
 								{ dPrimary	= False
-								, dLabel	= Just $2
+								, dLabel	= Just (vNameF $2)
 								, dType		= $4
 								, dInit		= $5 } 		}
 dataInit	
@@ -1098,6 +1098,7 @@ vNameR		= vNameN NameRegion
 vNameE		= vNameN NameEffect
 vNameC		= vNameN NameClosure
 vNameW		= vNameN NameClass
+vNameF		= vNameN NameField
 
 vNameTU v	= v 
 		{ Var.name 	= (Var.name v ++ "#")

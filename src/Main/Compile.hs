@@ -263,7 +263,8 @@ compileFile	args     fileName
 	 , typeInst
 	 , typeQuantVars
 	 , vsFree
-	 , vsRegionClasses )
+	 , vsRegionClasses 
+	 , vsProjectResolve)
 	 		<- runStage "solve"
 			$  SS.solveSquid
 				sConstrs
@@ -288,6 +289,7 @@ compileFile	args     fileName
 				typeInst
 				typeQuantVars
 				projTable
+				vsProjectResolve
 
 	-- Slurp out the list of all the vars defined at top level.
 	let topVars	= Set.union 

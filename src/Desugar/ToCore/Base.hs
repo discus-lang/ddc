@@ -56,7 +56,11 @@ data CoreS
 	, corePortVars		:: Set Var
 
 	  -- | table of type based projections.
-	, coreProject		:: ProjTable
+	, coreProjTable		:: ProjTable
+
+	  -- | table to resolve projections 
+	  --	instantiation type var -> value var for projection function
+	, coreProjResolve	:: Map Var Var
 
 	  -- | variable generator for value vars.
 	, coreGenValue		:: VarBind }
@@ -70,7 +74,8 @@ initCoreS
 	, coreMapTypes		= Map.empty
 	, coreMapInst		= Map.empty
 	, corePortVars		= Set.empty
-	, coreProject		= Map.empty
+	, coreProjTable		= Map.empty
+	, coreProjResolve	= Map.empty
 	, coreGenValue		= Var.XBind "xC" 0 }
 
 

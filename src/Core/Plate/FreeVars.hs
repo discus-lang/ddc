@@ -101,6 +101,10 @@ instance FreeVars Exp where
 	 	[ freeVars m
 		, unions $ map freeVars xs
 		, freeVars eff ]
+	
+	XProject x j
+	 ->	freeVars x
+
 
 	-- atoms
 	XAtom v xs
@@ -122,8 +126,6 @@ boundByS	x
  	SBind v e
 	 -> let
 	    in	unions	[ fromList (maybeToList v) ]
-
-	_ -> empty
 
 
 -----

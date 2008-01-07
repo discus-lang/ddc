@@ -54,7 +54,7 @@ slurpTreeM	tree
 	--	Put all 'known' stuff like external types, sigs, and class definitions at the front
 	--	and the constraints for the top level bindings after in one mutually recursive group.
 	let [qsLet, qsDef, qsProject, qsDataFields, qsSig, qsClassInst]
-			= partitionFs [isCBranchLet, isCDef, isCProject, isCDataFields, isCSig, isCClassInst]
+			= partitionFs [isCBranchLet, isCDef, isCDictProject, isCDataFields, isCSig, isCClassInst]
 			$ qs
 
 	let vsLet	= concat
@@ -181,7 +181,7 @@ slurpP	(PProjDict sp t ss)
 			$  mapM slurpS ss
 
 	return	( PProjDict Nothing t ss'
-		, [CProject src t projVars] )
+		, [CDictProject src t (Map.fromList projVars)] )
 	
 	
 -- bindings
