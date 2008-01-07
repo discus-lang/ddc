@@ -31,11 +31,11 @@ import qualified Module.Graph		as M
 import qualified Module.Export		as ME
 import Module.IO			(munchFileName, chopOffExt)
 
-import Stages.IO			as SI
-import Stages.Source			as SS
-import Stages.Core			as SC
-import Stages.Sea			as SE
-import Stages.Dump			as SD
+import Main.IO				as SI
+import Main.Source			as SS
+import Main.Core			as SC
+import Main.Sea				as SE
+import Main.Dump			as SD
 
 import Source.Slurp			as S
 

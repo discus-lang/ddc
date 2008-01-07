@@ -10,8 +10,8 @@ import qualified Main.Arg 		as Arg
 import Main.Arg (Arg)
 import Main.Compile
 
-import qualified Stages.IO		as IO
-import qualified Stages.Source		as Source
+import qualified Main.IO		as IO
+import qualified Main.Source		as Source
 
 import Util.List
 import Util.Monad hiding (lift)

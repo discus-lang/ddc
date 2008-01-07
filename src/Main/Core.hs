@@ -3,7 +3,7 @@
 --	These wrappers are responsible for calling the functions that actually
 --	implement the various transforms, and for dumping debugging info.
 --
-module Stages.Core
+module Main.Core
 	( coreClean
 	, coreNormalise
 	, coreDict
@@ -61,7 +61,9 @@ import qualified Sea.Exp	as E
 import qualified Sea.Util	as E
 
 import Main.Arg
-import Stages.Dump
+import Main.Dump
+
+
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, Module)
 import Shared.Error

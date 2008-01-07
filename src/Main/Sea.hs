@@ -1,22 +1,19 @@
 
-module Stages.Sea
-(
-	seaSub,
-	seaCtor,
-	seaThunking,
-	seaForce,
-	seaSlot,
-	seaFlatten,
-	seaInit,
-	seaMain,
+module Main.Sea
+	( seaSub
+	, seaCtor
+	, seaThunking
+	, seaForce
+	, seaSlot
+	, seaFlatten
+	, seaInit
+	, seaMain
 
-	gotMain,
-	outSea,
+	, gotMain
+	, outSea
 
-	invokeSeaCompiler,
-	invokeLinker
-)
-
+	, invokeSeaCompiler
+	, invokeLinker )
 where
 
 -----
@@ -53,8 +50,7 @@ import Sea.Plate.Trans
 import qualified Main.Version	as Version
 import Main.Path
 import Main.Arg
-
-import Stages.Dump
+import Main.Dump
 
 -----
 stage	= "Stages.Sea"

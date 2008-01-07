@@ -3,8 +3,8 @@
 --
 --	BUGS: sourceSlurpInline vars should check that vars to inline are in scope at top level
 --
-module Stages.Source
-	( Stages.Source.parse
+module Main.Source
+	( Main.Source.parse
 	, sourcePragma
 	, sourceSlurpFixTable
 	, sourceSlurpInlineVars
@@ -64,7 +64,7 @@ import qualified Core.Pretty			as C
 
 import Main.Arg
 
-import Stages.Dump
+import Main.Dump
 
 -----
 import qualified Data.Map		as Map

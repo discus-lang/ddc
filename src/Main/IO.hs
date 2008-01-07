@@ -1,5 +1,5 @@
 
-module Stages.IO
+module Main.IO
 (
 	ImportDef(..),
 	chaseLinkObjs,

@@ -1,8 +1,6 @@
 
 module Module.Graph
-(
-	dotModuleHierarchy
-)
+	( dotModuleHierarchy )
 
 where
 
@@ -18,7 +16,7 @@ import Data.Set				(Set)
 import qualified Shared.Var		as Var
 import Shared.Var			(Var, Module(..))
 
-import Stages.IO
+import Main.IO
 
 -----
 -- dotModuleHierarchy

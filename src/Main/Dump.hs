@@ -1,14 +1,11 @@
 
-module Stages.Dump
-(
-	dumpST,
-	dumpS,
-	dumpDot,
-	dumpCT,
-	dumpET,
-	dumpOpen
-
-)
+module Main.Dump
+	( dumpST
+	, dumpS
+	, dumpDot
+	, dumpCT
+	, dumpET
+	, dumpOpen)
 
 where
 
