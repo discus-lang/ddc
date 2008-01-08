@@ -53,7 +53,7 @@ feedConstraint cc
 			<- feedType Nothing t2
 
 		-- merge left and right hand sides.
-		mergeClasses TUnify [cid1, cid2]
+		mergeClasses [cid1, cid2]
 		return ()
 
 	CEqs src ts
@@ -61,7 +61,7 @@ feedConstraint cc
 	 	Just ts'	<- liftM sequence
 				$  mapM (feedType Nothing) ts
 		let cids	= map (\(TClass k cid) -> cid) ts'
-		mergeClasses TUnify cids
+		mergeClasses cids
 		return ()
 
 
@@ -164,15 +164,6 @@ feedType	mParent t
 	 	t3		<- feedType mParent t2
 		return	t3
 
-
-	TUnify k ts
-	 -> do	Just ts'	<- liftM sequence 
-	 			$  mapM (feedType mParent) ts
-		let cids	= map (\(TClass k cid) -> cid) ts'
-		mergeClasses TUnify cids
-
-		let Just cid	=  takeHead cids
-		returnJ 	$ TClass k cid
 
 	TSum k ts
 	 -> do 	cidE		<- allocClass k
@@ -355,7 +346,7 @@ feedFetter	mParent f
 	FLet t1 t2
 	 -> do	Just (TClass k1 cid1)	<- feedType mParent t1
 	 	Just (TClass k2 cid2)	<- feedType mParent t2
-		mergeClasses TUnify [cid1, cid2]
+		mergeClasses [cid1, cid2]
 		return ()
 
 	FMore t1 t2	

@@ -50,7 +50,7 @@ crushProjClassT cidT
 	let FProj proj _ (TClass KData cidObj) (TClass KData cidResult) eff clo	= fProj
 	
 	-- lookup the node for the object
- 	Just cObj@(Class { classType = tObj })
+ 	Just cObj@(Class { classType = Just tObj })
 			<- lookupClass cidObj
 
 	trace	$ "*   Proj.crushProjClassT\n"
@@ -78,8 +78,8 @@ crushProjClassT cidT
 			return Nothing
 	
 		-- yay, we've got a projection dictionary
-		| TData vCon _	<- classType cObj
-		, Just vsDict	<- Map.lookup vCon projectDicts
+		| TData vCon _		<- tObj
+		, Just vsDict		<- Map.lookup vCon projectDicts
 		= crushProj2 cidT fProj cObj tObj (snd vsDict)
 
 		| otherwise

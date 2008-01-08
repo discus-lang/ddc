@@ -26,7 +26,7 @@ foreign import extern x
 foreign import extern add1X'
         :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Int %r0
-        :- !e0        = !{System.Error.!Error; Base.!Read %rTC0}
+        :- !e0        = !{Base.!Read %rTC0; System.Error.!Error}
         ,  $c0        = x : Base.Int %rTC0
         ,  Num (Base.Int %rTC0)
         :$ Base.Thunk;
@@ -41,10 +41,10 @@ foreign import extern add1X
         
 foreign import extern idF
         :: forall t0 t1 %r0 !e0 $c0
-        .  (t0 -(!e0 $c0)> t1) -(!e1 $c1)> t0 -(!e0 $c0)> t1
+        .  (t0 -(!e0 $c0)> t1) -(!e1)> t0 -(!e0 $c0)> t1
         :- !e1        = Base.!Read %r0
         ,  !e0        :> System.Error.!Error
-        ,  $c1        = $c0 \ f
+        ,  $c0        :> $Bot \ x
         :$ Base.Thunk -> Base.Thunk;
         
 

@@ -98,19 +98,20 @@ prettyClass (ix :: Int) c
 	 -> pretty
 	 	$ ". ClassForward @" % ix % " ==> " % c % "\n\n"
 -}
-	ClassFetter{}
+	ClassFetter { classFetter = f }
 	 -> pretty
 	 	$ "Class +" % classId c % "\n"
-		% "        " % classFetter c % "\n"
+		% "        " % f % "\n"
 		% "\n\n"
 
  	Class{}
 	 -> pretty
 		$ "Class " % classKind c % classId c 
-		%> ("\n" % ":: " % prettyTS (classType c))		% "\n\n"
-
+		%> ("\n" % ":: " % liftM prettyTS (classType c))	% "\n\n"
+		% "        -- queue\n"
+		% "        " % classQueue c				% "\n"
 		% "        -- back refs\n"
-		% "        " % (Set.toList $ classBackRef c) 	% "\n"
+		% "        " % (Set.toList $ classBackRef c) 		% "\n"
 		% "\n"
 		% "        -- nodes\n"
 		% (concat
@@ -138,9 +139,9 @@ prettyVMapT 	m
 updateC :: Class -> SquidM Class
 updateC c@ClassForward{}	= return c
 updateC c@ClassNil{}		= return c
-updateC c@ClassFetter{}
+updateC c@ClassFetter { classFetter = f }
  = do	cid'		<- updateVC $ classId 	c
- 	fetter'		<- updateVC $ classFetter c
+ 	fetter'		<- updateVC f
 	return	$ c 
 		{ classId	= cid'
 		, classFetter	= fetter' }
@@ -148,12 +149,17 @@ updateC c@ClassFetter{}
 updateC c@Class{}
  = do	cid'		<- updateVC $ classId	   c
  	backRef'	<- updateVC $ classBackRef c
-	type'		<- updateVC $ classType    c
+	
+	typ'		<- case classType c of
+				Nothing	-> return Nothing
+				Just t	-> do
+					typ2	<- updateVC t
+					return	$ Just typ2
 	
 	return	$ c
 		{ classId	= cid'
 		, classBackRef	= backRef'
-		, classType	= type' }
+		, classType	= typ' }
 
 		
 		

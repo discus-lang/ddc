@@ -3,7 +3,7 @@ Renamer
 Patterns
 Unify
 Grind
-Closure-skip
+Closure
 CheckPure-skip
 CheckConst-skip
-Capture
+Capture-skip

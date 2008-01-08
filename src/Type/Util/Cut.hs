@@ -107,7 +107,7 @@ cutT' cid cidsEntered tt
 	TFetters fs  tt		-> TFetters 	(map (cutF cidsEntered) fs) (down tt)
 
 	TSum  k ts		-> TSum 	k (map down ts)
-	TUnify k ts		-> TUnify	k (map down ts)
+--	TUnify k ts		-> TUnify	k (map down ts)
 	TMask k t1 t2		-> TMask 	k (down t1) (down t2)
 	TVar{}			-> tt
 	TTop{}			-> tt

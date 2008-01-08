@@ -7,7 +7,7 @@ module Type.Util.Bits
 	
 	, crushT
 	, makeTSum,	flattenTSum
-	, makeTUnify,	flattenTUnify
+--	, makeTUnify,	flattenTUnify
 	, makeTMask,	applyTMask
 
 	, makeTForall
@@ -81,8 +81,8 @@ crushT1 t
  	TSum k ts			
 	 -> makeTSum k 		$ flattenTSum t
 
-	TUnify k ts			
-	 -> makeTUnify k	$ flattenTUnify t
+--	TUnify k ts			
+--	 -> makeTUnify k	$ flattenTUnify t
 
 	TFree v (TFree v' t)	
 	 -> TFree v t
@@ -126,7 +126,7 @@ flattenTSum tt
 -- Unify
 
 -- | Crush nested TUnifys into their components.
-flattenTUnify :: Type -> [Type]
+{-flattenTUnify :: Type -> [Type]
 flattenTUnify tt
  = case tt of
  	TBot k		-> []
@@ -140,7 +140,7 @@ makeTUnify k ts
  	[]	-> TBot k
 	[t]	-> t
 	ts'	-> TUnify k ts'
-
+-}
 
 -----------------------
 -- Masks
@@ -299,7 +299,7 @@ takeKindOfType tt
  	TForall vks t	-> takeKindOfType t
 	TFetters fs t	-> takeKindOfType t
 	
-	TUnify k ts	-> Just k
+--	TUnify k ts	-> Just k
 	TSum k ts	-> Just k
 	TMask k _ _	-> Just k
 	TVar k v	-> Just k

@@ -33,8 +33,8 @@ trace s	= when debug $ traceM s
 
 crushSumClass :: ClassId -> SquidM ()
 crushSumClass cid
- = do 	Just c	<- lookupClass cid
-	let t	= classType c
+ = do 	Just c		<- lookupClass cid
+	let Just t	= classType c
 	
 	case t of
 		TSum KData ts	-> crushSum cid c t
@@ -56,15 +56,16 @@ crushSum cid c t@(TSum k ts)
 	trace	$ "    t'       = " % t'	% "\n"
 		% "\n"
 	
-	updateClass cid c { classType = t' }
+	updateClass cid c { classType = Just t' }
 	
 
 loadType :: Type -> SquidM Type
 loadType tt
  = case tt of
  	TClass k cid
-	 -> do	Just c	<- lookupClass cid
-	 	return	$ classType c
+	 -> do	Just c		<- lookupClass cid
+		let Just t	= classType c
+	 	return		$ t
 		
 	_ ->	return tt
 
@@ -121,7 +122,7 @@ sumCovarTS ts@(t1 : tRest)
 
 sumContraTS :: [Type] -> SquidM Type
 sumContraTS ts@(t1 : tRest)
-	= mergeClassesT TUnify ts 	
+	= mergeClassesT ts 	
 
 
 	

@@ -58,9 +58,9 @@ slurpA	alt@(AAlt sp gs x)
 	let tsBoundT	= map (TVar KData) $ map snd $ concat cbindssGuards
 
 	let qs	=
-		[ CEq src tGuards $ makeTUnify KData    (catMaybes mtsGuards)
-		, CEq src eAlt	  $ makeTSum   KEffect  (eX : esGuards)
-		, CEq src cAlt    $ makeTMask  KClosure 
+		[ CEqs src (tGuards : catMaybes mtsGuards)
+		, CEq  src eAlt	  $ makeTSum   KEffect  (eX : esGuards)
+		, CEq  src cAlt   $ makeTMask  KClosure 
 						(makeTSum KClosure (cX : csGuards))
 						(makeTSum KClosure 
 							$ zipWith TFree vsBoundV tsBoundT ) ]
@@ -265,8 +265,16 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 	let Just fields	= Map.lookup vCon ctorFields
 	
 	-- Get the type for this field.
-	let [tField_]	= [ dType f	| f	<- fields
-					, dLabel f == Just vField ]
+	let tFieldCands	= [ dType f	| f	<- fields
+					, liftM Var.name (dLabel f) == Just (Var.name vField) ]
+
+	let tField_	= case tFieldCands of
+				[f]	-> f
+				[]	-> panic stage	$ "slurpLV: no field named " % vField % "\n"
+							% "    " % Var.prettyPos vField % "\n"
+							% "    vCon      = " % vCon	% "\n"
+							% "    tData     = " % tData	% "\n"
+							% "    fields are " % (map dLabel fields) % "\n"
 					
 	let tField	= substituteVT subInst 
 			$ tField_

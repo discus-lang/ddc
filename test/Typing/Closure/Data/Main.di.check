@@ -25,28 +25,29 @@ data Thing %r1 !e1 $c0
 
 -- Binds
 foreign import extern x
-        :: Base.Int %rTS8
-        :- Base.Mutable %rTS8
+        :: Base.Int %rTC0
+        :- Base.Mutable %rTC0
         :$ Base.Data;
         
 foreign import extern thing
-        :: Thing %rTS4 !e0 (x : Base.Int %rTS8)
-        :- !e0        = !{Base.!Read %rTS8; Base.!Write %rTS8}
-        ,  Base.Mutable %rTS8
+        :: Thing %rTS1 !e0 $c0
+        :- !e0        = !{Base.!Read %rTC0; Base.!Write %rTC0}
+        ,  $c0        = x : Base.Int %rTC0
+        ,  Base.Mutable %rTC0
         :$ Base.Data;
         
 foreign import extern f
         :: Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %rTS8; Base.!Write %rTS8}
-        ,  $c0        = x : Base.Int %rTS8
-        ,  Base.Mutable %rTS8
+        :- !e0        = !{Base.!Read %rTC0; Base.!Write %rTC0}
+        ,  $c0        = x : Base.Int %rTC0
+        ,  Base.Mutable %rTC0
         :$ Base.Data -> Base.Data;
         
 foreign import extern fun
-        :: Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %rTS4; Base.!Read %rTS8; Base.!Write %rTS8}
-        ,  $c0        = thing : Thing %rTS4 !e1 (x : Base.Int %rTS8) :- !e1        = !{Base.!Read %rTS8; Base.!Write %rTS8}
-        ,  Base.Mutable %rTS8
+        :: Base.Unit -(!e0 $c1)> Base.Unit
+        :- !e0        = !{Base.!Read %rTS1; Base.!Read %rTC0; Base.!Write %rTC0}
+        ,  $c1        = thing : Thing %rTS1 !e1 $c0 :- !e1        = !{Base.!Read %rTC0; Base.!Write %rTC0}, $c0        = x : Base.Int %rTC0
+        ,  Base.Mutable %rTC0
         :$ Base.Data -> Base.Data;
         
 foreign import extern runThing
@@ -56,10 +57,10 @@ foreign import extern runThing
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %rTS4; Base.!Read %rTS8; Base.!Write %rTS8; System.Console.!Console}
-        ,  $c0        = ${thing : Thing %rTS4 !e1 (x : Base.Int %rTS8) :- !e1        = !{Base.!Read %rTS8; Base.!Write %rTS8}; x : Base.Int %rTS8}
-        ,  Base.Mutable %rTS8
+        :: Base.Unit -(!e0 $c1)> Base.Unit
+        :- !e0        = !{Base.!Read %rTS1; Base.!Read %rTC0; Base.!Write %rTC0; System.Console.!Console}
+        ,  $c1        = ${thing : Thing %rTS1 !e1 $c0 :- !e1        = !{Base.!Read %rTC0; Base.!Write %rTC0}, $c0        = x : Base.Int %rTC0; x : Base.Int %rTC0}
+        ,  Base.Mutable %rTC0
         :$ Base.Data -> Base.Data;
         
 

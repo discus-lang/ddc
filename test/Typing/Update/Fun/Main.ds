@@ -5,10 +5,10 @@
 --	The main function should have the !Console effect.
 --
 
-data Box %r1 a b !e1
-	= Box { x :: a -(!e1)> b; };
+data Box %r1 a b !e1 $c1
+	= Box { x :: a -(!e1 $c1)> b; };
 	
-box 	:: Box %r1 a b !e1 :- Mutable %r1;
+box 	:: Box %r1 a b !e1 $c1 :- Mutable %r1;
 box	= Box (\x -> 5);
 
 fun2 ()	= do { print "erk"; 5; };

@@ -34,7 +34,9 @@ import Util
 import qualified Debug.Trace
 
 -----
-stage	= "Type.Squid.Export"
+debug	= True
+trace s	= when debug $ traceM s
+stage	= "Type.Export"
 
 -- | Export some stuff from the constraint solver state.
 squidExport 
@@ -48,8 +50,10 @@ squidExport
 		, Map Var [Var])			-- The constraints acting on each region.
 
 squidExport vsTypesPlease
- = do
-	-- Export types for the requested vars.
+ = do	trace	$ "== Export ====================================\n"
+ 		% "    vsTypesPlease = " % vsTypesPlease	% "\n"
+ 
+ 	-- Export types for the requested vars.
 	schemes		<- exportTypes vsTypesPlease
 
 	-- Export the instantiation table.
@@ -69,27 +73,6 @@ squidExport vsTypesPlease
 		, vsRegionClasses)
 
 
--- | Process this type to make it an exportable format.
---	plug classids.
---	trim closures.
---	bottom-out non-port effect/closure variables.
---
-exportType :: Type -> SquidM Type
-exportType t
- = do	tPlug	<- plugClassIds [] t
-	tBot	<- return tPlug -- transformTM bottomOutT tPlug
-
-	case kindOfType tBot of
-	 -- trim exported closures.
-	 --	There's no point exporting this junk and making the Core stages
-	 --	have to trim it themselves.
-	 KClosure	
-	  -> return	$ trimClosureC tBot
-
-	 KData
-	  -> return	$ trimClosureT tBot
-
-	 _ -> return $ packType tBot
 
 -- | bottom-out non-port effect/closure variables
 --	Once the solver has finished, 
@@ -134,7 +117,31 @@ exportVarType v
  	case mEx of
 	 Nothing	-> return Nothing
 	 Just tEx	-> liftM Just $ exportType tEx
-	  
+	
+
+-- | Process this type to make it an exportable format.
+--	plug classids.
+--	trim closures.
+--	bottom-out non-port effect/closure variables.
+--
+exportType :: Type -> SquidM Type
+exportType t
+ = do	tPlug	<- plugClassIds [] t
+	tBot	<- return tPlug -- transformTM bottomOutT tPlug
+
+	case kindOfType tBot of
+	 -- trim exported closures.
+	 --	There's no point exporting this junk and making the Core stages
+	 --	have to trim it themselves.
+	 KClosure	
+	  -> return	$ trimClosureC tBot
+
+	 KData
+	  -> return	$ trimClosureT tBot
+
+	 _ -> return $ packType tBot
+  
+
 	
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
 exportMaybeType mt
@@ -247,8 +254,8 @@ slurpFetterVar :: ClassId -> SquidM (Maybe Var)
 slurpFetterVar cid
  = do	Just c	<- lookupClass cid
 
-	let xx 	| ClassFetter{}		<- c
-		, FConstraint v ts	<- classFetter c
+	let xx 	| ClassFetter { classFetter = f }	<- c
+		, FConstraint v ts			<- f
 		= Just v
 		
 		| otherwise

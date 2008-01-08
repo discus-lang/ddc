@@ -1,9 +1,7 @@
 
 module Type.Check.Soundness
-(
---	checkUpdateSoundness,
---	dangerousCidsT
-)
+	( --checkUpdateSoundness
+	  dangerousCidsT)
 
 where
 
@@ -19,6 +17,14 @@ import Type.Util
 import Type.Plate.Collect
 import Type.State
 import Type.Class
+
+import Shared.Error
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 
 -----
 stage	= "Type.Soundness"
@@ -68,114 +74,101 @@ checkUpdateSoundness varT t
 	return	()
  
 -----
-dangerousCidsT :: Type -> SquidM [ClassId]
+-}
+
+
+dangerousCidsT :: Type -> [ClassId]
 dangerousCidsT tt
- = do
- 	let ?fsMutable
-		= nub
-		$ [f 	| f@(FClass v _) <- collectFetters tt
-			, Var.bind v == Var.FMutable]
- 	
-	let dangerTs
-		= nub	$ dangerT [] tt
-
-	let dangerCidsT
-		= [cid	| TClass cid <- dangerTs]
-
-	let dangerCidsE
-		= [ cid | TEffect (EClass cid) <- dangerTs]
-		
-	let dangerCidsC
-		= [ cid | TClosure (CClass cid) <- dangerTs]
-
-	return (dangerCidsT ++ dangerCidsE ++ dangerCidsC)
-
-
-
------
--- BUGS! Not the same as Leroy, check handling of labels on functions.
---
-dangerT :: (?fsMutable	:: [Fetter])
-	-> [Fetter] -> Type -> [Type]
-
-dangerT fs tt
- = case tt of
- 	TVar{}			-> []
-	TClass{}		-> []
-
-	TFun t1 t2 eff clo	
-	 -> (catMap (dangerC fs)
-	 	$ concat
-		[cs	| FClosure c (CSum cs) <- fs
-			, c == clo])
-
-	TCon v ts
-	 -> let	rsMutable = [r 	| TRegion r <- ts
-	 			, elem (FClass primMutable [TRegion r]) ?fsMutable]
-
-	    in	if isNil rsMutable
-	    	  then catMap (dangerT  fs) ts
-		  else catMap (collectT fs) ts
-		  
-	TForall vks t		-> collectT fs t
-	TFetters fs' t		-> dangerT (fs' ++ fs) t
-	TRegion{}		-> []
-	TEffect{}		-> []
-	TClosure{}		-> []
-	TError{}		-> []
-
-dangerF fs ff
- = case ff of
- 	FClosure _ c		-> dangerC fs c
-	_			-> []
-	
-dangerC fs cc
- = case cc of
- 	CSum cs			-> catMap (dangerC fs) cs
-	CFreeT _ t		-> dangerT fs t
-	_			-> []
-	
+ = let	tsDanger	= dangerT Set.empty Map.empty tt
+   in	[ cid	| TClass k cid	<- Set.toList tsDanger
+	    		, elem k [KData, KEffect, KClosure] ]
 	    
-----	
-collectT fs tt
+
+dangerT 
+	:: Set Type
+	-> Map Type Type
+	-> Type -> Set Type
+
+dangerT rsMutable fsClosure tt
  = case tt of
- 	TVar{}			-> [tt]
-	TClass{}		-> [tt]
+ 	TVar{}			-> Set.empty
+	TClass{}		-> Set.empty
 
-	TFun t1 t2 eff clo 
-	 -> collectT fs t1 
-	 ++ collectT fs t2 
-	 ++ [TEffect eff]
-	 ++ (catMap (collectC fs) 
-	 	$ concat
-	 	[cs 	| FClosure c (CSum cs) <- fs
-	 		, c == clo])
+	TForall vks t		
+	 -> dangerT rsMutable fsClosure t
+
+	-- fetters
+	TFetters fs t1
+	 ->     -- remember any regions flagged as mutable
+	    let	rsMoreMutable	= Set.fromList
+	 			$ [r	| FConstraint v [r]	<- fs
+					, Var.bind v 	== Var.FMutable ]
+
+		rsMutable'	= Set.union rsMutable rsMoreMutable
+
+		-- collect up more closure bindings
+		fsClosure'	= Map.union 
+					fsClosure 
+					(Map.fromList [(u1, u2) | FLet u1 u2	<- fs
+								, kindOfType u1 == KClosure])
+
+		-- decend into type and fetters
+		t1Danger	= dangerT rsMutable' fsClosure' t1
+
+		fsDanger	= Set.unions 
+				$ map (dangerT rsMutable' fsClosure') 
+					[ u2	| FLet u1 u2	<- fs
+						, kindOfType u1 == KClosure]	
+
+	    in	Set.union t1Danger fsDanger
+	    
+	    
+	-- functions
+	TFun t1 t2 eff clo	
+	 -> let cloDanger	
+	 		| TBot KClosure	<- clo
+			= Set.empty
+
+			| otherwise
+			= case Map.lookup clo fsClosure of
+				Just c	-> dangerT rsMutable fsClosure c
+				Nothing	-> Set.empty
 			
-	TCon v ts		-> catMap (collectT fs) ts
-	TForall vks t		-> collectT fs t
-	TFetters fs' t		-> collectT (fs ++ fs') t
-	TRegion{}		-> []
-	TEffect{}		-> [tt]
-	TClosure{}		-> [tt]
-	TError{}		-> []
-	
-collectF fs ff
- = case ff of
- 	FClosure _ c		-> collectC fs c
-	_			-> []
-	
+	    in	Set.unions
+			[ dangerT rsMutable fsClosure t1
+			, dangerT rsMutable fsClosure t2 
+			, cloDanger ]
 
-collectC 
-	:: (?fsMutable :: [Fetter])
-	-> [Fetter] -> Closure -> [Type]
-collectC fs cc
- = case cc of
- 	CSum cs			-> catMap (collectC fs) cs
-	CFreeT _ t		-> dangerT fs t
-	_			-> []
+	-- data constructors
+	TData v ts
+		-- if this ctor has any mutable regions then all vars from this point down are dangerous
+	 	| or $ map 	(\t -> case t of 
+	 				TVar{}		-> Set.member t rsMutable
+					TClass{}	-> Set.member t rsMutable
+					_		-> False)
+				ts
+
+		-> Set.unions $ map (Set.fromList . collectTClassVars) ts
+
+		 -- check for dangerous vars in subterms
+		| otherwise
+	 	-> Set.unions $ map (dangerT rsMutable fsClosure) ts
+
+	-- closures
+	TFree v t
+	 -> dangerT rsMutable fsClosure t
+
+	TSum KClosure ts
+	 -> Set.unions $ map (dangerT rsMutable fsClosure) ts
+
+	TMask KClosure t v
+	 -> dangerT rsMutable fsClosure t
+
+	-- skip over errors
+	TError{}		-> Set.empty
 	 
-	 
--}	 
+	_ -> panic stage
+		$ "dangerT: no match for " % tt
 	 
 	 
 	 

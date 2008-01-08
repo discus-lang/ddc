@@ -16,6 +16,9 @@ import Type.Class
 import Type.Plate.Collect
 import Type.Plate.Trans
 
+import Shared.Error
+
+stage	= "Type.Trace"
 
 -----
 -- traceType
@@ -69,19 +72,27 @@ loadTypeNode cid
 	loadTypeNode2 cid c
 
 loadTypeNode2 cid c
-	| ClassFetter{}	<- c
-	= do	t'	<- refreshCids $ classFetter c
+	| ClassFetter { classFetter = f } <- c
+	= do	t'	<- refreshCids f
 		return	$ Just t'
 
+	-- If the class type is Nothing then it hasn't been unified yet..
+	| Nothing	<- classType c
+	= panic stage
+		$ "loadTypeNode2: can't trace which hasn't been unified yet\n"
+		% "    cid   = " % cid		% "\n"
+		% "    queue = " % classQueue c	% "\n"
+
 	-- don't bother showing bottoms
-	| TBot k	<- classType c
+	| Just (TBot k)	<- classType c
 	=	return	$ Nothing
 
 	-- a regular type node
-	| otherwise
+	| Just t	<- classType c
 	= do	
+
 		-- make sure all the cids are canconical
-		t'	<- refreshCids $ classType c
+		t'	<- refreshCids t
 
 		-- If this node has additional fetters where the LHS are all cids then we can strip them here
 		-- 	because they're cids they'll already be returned as their separate nodes

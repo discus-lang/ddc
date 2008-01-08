@@ -58,7 +58,7 @@ crushEffectC cid
 		-- update the class queue with the new effect
 		Just c	<- lookupClass cid
 	 	updateClass cid
-			c { classType = eCrushed }
+			c { classType = Just eCrushed }
 			
 		-- For the classIds in the new effect, update the backrefs to point
 		--	to this class.
@@ -144,7 +144,7 @@ crushEffectT tt
 loadEffect :: ClassId -> SquidM Type
 loadEffect cid
  = do	Just c		<- lookupClass cid
- 	let tNode	= classType c
+ 	let Just tNode	= classType c
 
 	tPacked		<- liftM packType $ loadType tNode
 

@@ -61,8 +61,9 @@ stage	= "Type.Squid.Class"
 classChildren :: Class -> [ClassId]
 classChildren c
  = case c of
- 	ClassFetter{}	-> collectClassIds $ classFetter c
-	Class{}		-> collectClassIds $ classType c
+ 	ClassFetter { classFetter = f }	-> collectClassIds f
+	Class	    { classType   = mt } 
+	 -> fromMaybe [] $ liftM collectClassIds mt
 
 
 -- | Increase the size of the type graph.
@@ -197,9 +198,8 @@ addToClass2 cid src t c
 	
 addToClass3 src t c
  = c   	{ classNodes	= (t, src) : classNodes c
-  	, classType	= makeTUnify (classKind c) [classType c, t] }
-
-
+	, classType	= Nothing
+  	, classQueue	= (maybeToList $ classType c) ++ classQueue c ++ [t] }
 
 -- | Lookup a class from the graph.
 lookupClass 
@@ -309,15 +309,14 @@ patchBackRef	cidT mParent
 -- unifyClasses
 --	Doing this makes the class active.
 mergeClasses
-	:: (Kind -> [Type] -> Type)
-	-> [ClassId] 
+	:: [ClassId] 
 	-> SquidM ClassId
 
-mergeClasses merge [cid_]
+mergeClasses [cid_]
  = do	cid'		<- sinkClassId cid_
    	return	cid'
 	
-mergeClasses merge cids_
+mergeClasses cids_
  = do	
 	-- Sink the cids and lookup their classes.
  	cids		<- liftM nub $ mapM (\cid -> sinkClassId cid) cids_
@@ -332,7 +331,11 @@ mergeClasses merge cids_
 
 	let cL'		= cL 	
 			{ classNodes	= concat $ map classNodes cs
-			, classType	= merge (classKind cL) (map classType cs)
+			, classType	= Nothing
+
+			, classQueue	=  concat (map classQueue cs)
+					++ concat (map (maybeToList . classType) cs)
+
 			, classBackRef	= Set.unions $ map classBackRef cs }
 
 	updateClass cidL cL'
@@ -345,13 +348,13 @@ mergeClasses merge cids_
   	return	$ cidL
 		
 
-mergeClassesT :: (Kind -> [Type] -> Type) -> [Type] -> SquidM Type
-mergeClassesT	 merge ts@(t:_)
+mergeClassesT :: [Type] -> SquidM Type
+mergeClassesT	 ts@(t:_)
  = do
  	let Just cids	= sequence 
 			$ map takeCidOfTClass ts
 			
-	cid'		<- mergeClasses merge cids
+	cid'		<- mergeClasses cids
 		
 	return		$ TClass (kindOfType t) cid'
 

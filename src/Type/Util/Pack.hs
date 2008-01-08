@@ -109,12 +109,6 @@ packTypeLs ls tt
 	TFetters fs t
 	 -> packTFettersLs ls tt
 
-	TUnify k ts
-	 -> let ts'	= nub
-	 		$ map (packTypeLs ls) 
-			$ map (loadPureEmpty ls) ts
-	    in	TUnify k ts'
-	
 	
 	TSum KData ts
 	 -> let ts'	= nub
@@ -125,7 +119,7 @@ packTypeLs ls tt
 	TSum k ts
 	 -> let	ts'	= nub
 	 		$ map (packTypeLs ls) 
-			$ map (loadPureEmpty ls) ts
+			$ map (loadType ls) ts
 	    in	makeTSum k ts'
 
 	    
@@ -161,7 +155,7 @@ packTypeLs ls tt
 	TFree v1 (TFree v2 t)		-> TFree v1 t
 	TFree v1 (TBot KClosure)	-> TBot KClosure
 
-	TFree v t -> TFree v (loadFunData ls t)
+	TFree v t -> TFree v (loadType ls t)
 	 
 	TTag v	-> tt
 	    
@@ -261,12 +255,11 @@ loadFunData :: [(Type, Type)] -> Type -> Type
 loadFunData ls tt
  = let	tt'	= loadType ls tt 
    in	case tt' of
-		TSum KData _	-> tt'
+		TFun{}		-> tt'
+		TData{}		-> tt'
+		TVar{}		-> tt'
 
-   		TSum{}		-> tt
-		TUnify{}	-> tt
-
-		_		-> tt'
+		_		-> tt
 
 loadCV :: [(Type, Type)] -> Type -> Type
 loadCV ls tt
@@ -275,18 +268,6 @@ loadCV ls tt
    		TClass{}	-> tt'
 		TVar{}		-> tt'
 		_		-> tt		
-
-
-
-
-
--- | Substitute TClasses for TPure or TEmpty in this type.
---
-loadPureEmpty :: [(Type, Type)] -> Type -> Type
-loadPureEmpty ls tt
- = case loadType ls tt of
-	t@(TBot k)	-> t
-	_		-> tt
 
 
 -- | Restrict the list of TLet fetters to ones which are 

@@ -55,8 +55,8 @@ crushShape shapeCid
 
 	-- Try and extract a type template from one of the nodes.
 	let mts		= map (\c -> case classType c of
-				TBot _	-> Nothing
-				t	-> Just t)
+				Just (TBot _)	-> Nothing
+				Just t		-> Just t)
 			$ mergeCs
 	
 	let template	= takeFirstJust mts
@@ -99,7 +99,7 @@ crushShapeMerge cids cs mts template@(TData v templateTs)
 
 	-- Update the classes with the freshly merged types
 	let cs'		= zipWith 
-				(\c args -> c { classType = TData v args }) 
+				(\c args -> c { classType = Just (TData v args) }) 
 				cs 
 				argsMerged
 	
@@ -119,7 +119,7 @@ crushShapeMerge cids cs mts template@(TData v templateTs)
 --	so unify finds the error.
 --	
 crushShapeMerge cids cs mts template
- = do	mergeClasses TUnify cids
+ = do	mergeClasses cids
  	return ()
 	
 	
@@ -152,7 +152,7 @@ mergeArgs (a:as) (b:bs)
 	| TClass kA cidA	<- a
 	, TClass kB cidB	<- b
 	= do
-		cid	<- mergeClasses TUnify [cidA, cidB]
+		cid	<- mergeClasses [cidA, cidB]
 		rest	<- mergeArgs as bs
 		return	(TClass kA cid : rest)
 		

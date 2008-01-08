@@ -471,9 +471,8 @@ applyTypeT table (TForall (BVar v) k t1) t2
 applyTypeT table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == KClosure
-	, subsumes (tableMore table) (trimClosureC t2) (trimClosureC tB)
+	, subsumes (tableMore table) (flattenT $ trimClosureC t2) (flattenT $ trimClosureC tB)
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
-
 
 	-- check that the constraint is satisfied
 	| subsumes (tableMore table) t2 tB

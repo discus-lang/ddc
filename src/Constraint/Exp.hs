@@ -48,7 +48,7 @@ data	CTree
 	| CEq		TypeSource Type Type
 
 	-- Type equality constraints, all these types are equal.
-	--	These should all be TClass or TVars
+	--	The first one should be a TVar
 	--	Saves having to write a large collection of CEq constraints.
 	| CEqs		TypeSource [Type]
 

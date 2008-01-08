@@ -92,6 +92,11 @@ packT1 tt
 	TSum k ts
 	 -> makeTSum k $ nub $ map packT1 ts
 	 
+	-- mask
+	TMask k (TBot k1) t2
+	 	| k == k1
+		-> TBot k1
+	 
 	TMask k t1 t2
 	 -> let t1'	= packT1 t1
 	 	t2'	= packT1 t2

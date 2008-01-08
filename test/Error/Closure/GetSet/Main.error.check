@@ -1,0 +1,14 @@
+test/Error/Closure/GetSet/Main.ds:28:14
+    Type mismatch during unification.
+          cannot match: Data.String.String %643
+                  with: Base.Int %593
+
+         literal value: "a"
+               of type: Data.String.String %643
+                    at: test/Error/Closure/GetSet/Main.ds:28:14
+
+        conflicts with, 
+                use of: setB
+             with type: Base.Int %593
+                    at: test/Error/Closure/GetSet/Main.ds:28:8
+

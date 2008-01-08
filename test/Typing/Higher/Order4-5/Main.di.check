@@ -52,8 +52,8 @@ foreign import extern appDanio
 foreign import extern tetra
         :: forall t0 %r0 %r1 !e0 !e1 !e2 $c0 $c1 $c2 $c3
         .  Data.Bool.Bool %r0 -($c4)> (((Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -(!e0 $c1)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1) -($c5)> ((((Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -(!e0 $c1)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1) -(!e2 $c3)> t0) -(!e3 $c6)> t0
-        :- !e3        = !{Base.!Read %r0; !e1; !e2}
-        ,  !e1        :> !{!e0; Base.!Read %r1}
+        :- !e3        = !{Base.!Read %r0; Base.!Read %r1; !e2}
+        ,  !e1        :> Base.!Read %r1
         ,  !e0        :> Base.!Read %r1
         ,  $c4        = $c5 \ b
         ,  $c5        = $c6 \ p

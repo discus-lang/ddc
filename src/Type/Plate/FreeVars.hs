@@ -46,8 +46,8 @@ instance Free Type where
 	TSum k ts		
 	 -> catMap free ts
 
-	TUnify k ts
-	 -> catMap free ts
+--	TUnify k ts
+--	 -> catMap free ts
 	
 	TMask k t1 t2
 	 -> free t1 ++ free t2

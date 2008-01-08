@@ -49,7 +49,7 @@ instance Ord Type where
  compare   (TVar{})     (TClass{})		= GT
  compare   t1           t2
  	= panic "Type.Exp" 
-	$ "compare: can't compare types\n"
+	$ "compare: can't compare type for ordering\n"
 	% "    t1 = " % show t1	% "\n"
 	% "    t2 = " % show t2 % "\n"
 
@@ -89,7 +89,7 @@ data Type
 	| TFetters	[Fetter]      Type		-- ^ Holds extra constraint information.
 
 	| TSum		Kind 	[Type]
-	| TUnify	Kind	[Type]
+--	| TUnify	Kind	[Type]
 	| TMask		Kind	Type	Type		-- ^ Mask out some effects/vars from this effect/closure
 	| TVar     	Kind 	Var			-- ^ A type variable.
 
@@ -116,7 +116,7 @@ data Type
 	| TClass	Kind	ClassId			-- ^ A reference to some equivalence class.
 	| TAccept	Type				-- ^ The eq class can only be this type.
 	| TFetter	Fetter				-- ^ Holds a fetter, so we can put it in an equivalence class.
-	| TError        Kind	Type			-- ^ Classes with unification errors get their queues set to [TError].
+	| TError        Kind	[Type]			-- ^ Classes with unification errors get their queues set to [TError].
 
 	| TNode		Type	Type			-- ^ A type along with its node name
 							--	t1 should be TClass or TVar

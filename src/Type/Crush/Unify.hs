@@ -23,7 +23,7 @@ import Type.Dump
 
 
 -----
-debug	= False
+debug	= True
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
@@ -37,27 +37,36 @@ crushUnifyClass :: ClassId	-> SquidM ()
 crushUnifyClass	cidT
  = do
 	Just c	<- lookupClass cidT
-	let t	= classType c
-
 	trace	$ "*   Unify.unifyClass " % cidT % "\n"
-		% "    t       = " % t % "\n"
+		% "    type         = " % classType c	% "\n"
+		% "    name         = " % className c	% "\n"
+		% "    queue        = " % classQueue c	% "\n"
 
-	-- crush out nested unifiers and filter out vars.
-	let ts	= flattenTUnify t
-	let ts2	= filter (\x -> not $ x =@= TVar{}) ts
+	-- crush out nested unifiers and filter out vars and bottoms as they don't 
+	--	contribute to the constructor
+	let queue_clean	
+		= filter 
+			(\x -> case x of
+				TVar{}	-> False
+				TBot{}	-> False
+				_	-> True)
+			((maybeToList $ classType c) ++ classQueue c)
 
-	trace	$ "    ts2     = " % ts2 % "\n"
+	trace	$ "    queue_clean  = " % queue_clean % "\n"
 
-	t'	<- case ts2 of
-			[] 	-> return	$ TBot (classKind c)
-			[t] 	-> return	$ t
-			_  	-> unifyClassMerge cidT c ts2
+	-- If there is nothing left in the queue, or there's only one element
+	--	then we're done. Otherwise call the reall unifier.
+	t_final	<- case queue_clean of
+			[] 	-> return		$ TBot (classKind c)
+			[t] 	-> return		$ t
+			_  	-> unifyClassMerge cidT c queue_clean
 			
-  	trace	$ "    t'      = " % t'	% "\n\n"
-  	updateClass cidT c { classType = t' }
-	
+  	trace	$ "    t_final      = " % t_final	% "\n\n"
 
-
+	-- Update the class with the new type
+  	updateClass cidT c 
+		{ classType 	= Just t_final
+		, classQueue	= [] }
 
 
 -----
@@ -69,7 +78,7 @@ unifyClassMerge cidT c queue@(t:_)
 	| TClass k _	<- t
 	= do
 		let cids	=  map (\(TClass k cid) -> cid) queue
-		cid		<- mergeClasses makeTUnify cids
+		cid		<- mergeClasses cids
 		
 		return	$ TClass k cid
 		
@@ -87,7 +96,7 @@ unifyClassMerge cidT c queue@(t:_)
  	= do
 		-- Merge args.
 	 	[t1', t2']
-			<- mapM (mergeClassesT makeTUnify)
+			<- mapM mergeClassesT
 			$  transpose
 			$  zipWith (\t1 t2 -> [t1, t2])
 				t1s 
@@ -104,7 +113,7 @@ unifyClassMerge cidT c queue@(t:_)
 
 		eff'		<- case cidsE of
 					[]	-> return (TBot KEffect)
-					_	-> return (TClass KEffect) `ap` mergeClasses makeTUnify cidsE
+					_	-> return (TClass KEffect) `ap` mergeClasses cidsE
 				
 
 		-- Merge closures.
@@ -118,7 +127,7 @@ unifyClassMerge cidT c queue@(t:_)
 		
 		clo'		<- case cidsC of
 					[]	-> return (TBot KClosure)
-					_	-> return (TClass KClosure) `ap` mergeClasses makeTUnify cidsC
+					_	-> return (TClass KClosure) `ap` mergeClasses cidsC
 					
 		return		$ TFun t1' t2' eff' clo'
 
@@ -138,7 +147,7 @@ unifyClassMerge cidT c queue@(t:_)
 	, length (nub vs) == 1
 	, length (nub $ map length tss) == 1
 	= do
-		ts'	<- mapM (mergeClassesT makeTUnify)
+		ts'	<- mapM mergeClassesT
 			$  transpose 
 			$  map (\(TData v ts) -> ts)
 			$  queue
@@ -164,7 +173,7 @@ unifyClassMerge cidT c queue@(t:_)
 --	= return (TUnify (kindOfType t) queue)
 	
  	= do	errorConflict cidT c 
-		return (TError (kindOfType t) (classType c))
+		return (TError (kindOfType t) (classQueue c))
 
 {-	panic stage
 	$ "unifyClass: Found unexpected conflict in type graph.\n"
@@ -200,7 +209,7 @@ errorConflict	 cid c
 	 	errorConflictCC tC1 tCs
 		
 	updateClass cid
-		c { classType	= TError (classKind c) (classType c)}
+		c { classType	= Just $ TError (classKind c) (classQueue c)}
 
 	-- sanity, check that we've actually identified the problem and added
 	--	an error to the state.
@@ -209,6 +218,7 @@ errorConflict	 cid c
 	 $ (panic stage
 		 $ "errorConflict: Couldn't identify the error in class " % cid % "\n"
 		 % "   type: \n" %> (classType c) % "\n\n"
+		 % "   queue: \n" %> (classQueue c) % "\n\n"
 		 % "   nodes:\n" %> ("\n" %!% classNodes c) % "\n\n")
 	 
 	return ()

@@ -154,9 +154,9 @@ followT table tt
 	 	fs'	<- transZM table fs
 		return	$ TFetters fs' t'
 
-	TUnify k ts
-	 -> do	ts'	<- transZM table ts
-	 	return	$ TUnify k ts'
+--	TUnify k ts
+--	 -> do	ts'	<- transZM table ts
+--	 	return	$ TUnify k ts'
 
 	TSum k ts
 	 -> do	ts'	<- transZM table ts

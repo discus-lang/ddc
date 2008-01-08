@@ -24,11 +24,11 @@ stripFettersT	t
 	    in	( t'
 	    	, fs ++ fs')
 	
-	TUnify k ts
+{-	TUnify k ts
 	 -> let	(ts', fss)	= unzip $ map stripFettersT ts
 	    in	( TUnify k ts'
 	    	, concat fss)
-
+-}
 	TSum k ts
 	 -> let	(ts', fss)	= unzip $ map stripFettersT ts
 	    in	( TSum k ts'

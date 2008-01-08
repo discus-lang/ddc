@@ -2,6 +2,6 @@
 import Base;
 
 data Maybe %r a
-	= Just 	{ z :: a; }
+	= Just 	{ x :: a; }
 	| Nothing;
 	

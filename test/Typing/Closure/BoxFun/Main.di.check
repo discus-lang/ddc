@@ -25,7 +25,7 @@ data BoxFun2 %r1 !e0 $c0 !e1 $c1
 
 -- Binds
 foreign import extern x
-        :: Base.Int %rTS3
+        :: Base.Int %rTC1
         :$ Base.Data;
         
 foreign import extern y
@@ -33,9 +33,11 @@ foreign import extern y
         :$ Base.Data;
         
 foreign import extern box
-        :: BoxFun2 %rTS9 !e0 $c0 (Base.!Read %rTC2) (y : Base.Int %rTC2)
-        :- !e0        = !{Base.!Read %rTS3; System.Console.!Console}
-        ,  $c0        = ${x : Base.Int %rTS3; y : Base.Int %rTC2}
+        :: BoxFun2 %rTS8 !e1 $c1 !e0 $c0
+        :- !e0        = Base.!Read %rTC2
+        ,  !e1        = !{Base.!Read %rTC1; System.Console.!Console}
+        ,  $c0        = y : Base.Int %rTC2
+        ,  $c1        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         :$ Base.Data;
         
 foreign import extern runBoxFun2
@@ -47,23 +49,23 @@ foreign import extern runBoxFun2
 foreign import extern fun
         :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Unit -(!e1 $c1)> Base.Int %r0
-        :- !e0        = !{Base.!Read %rTS3; System.Console.!Console}
+        :- !e0        = !{Base.!Read %rTC1; System.Console.!Console}
         ,  !e1        = Base.!Read %rTC2
-        ,  $c0        = ${x : Base.Int %rTS3; y : Base.Int %rTC2}
+        ,  $c0        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         ,  $c1        = y : Base.Int %rTC2
         ,  Num (Base.Int %rTC2)
         :$ Base.Data -> Base.Thunk;
         
 foreign import extern runBox
-        :: Base.Unit -(!e0 $c1)> Base.Int %rTS9
-        :- !e0        = !{Base.!Read %rTS9; Base.!Read %rTS3; System.Console.!Console; Base.!Read %rTC2}
-        ,  $c1        = box : BoxFun2 %rTS9 !e1 $c0 (Base.!Read %rTC2) (y : Base.Int %rTC2) :- !e1        = !{Base.!Read %rTS3; System.Console.!Console}, $c0        = ${x : Base.Int %rTS3; y : Base.Int %rTC2}
+        :: Base.Unit -(!e0 $c2)> Base.Int %rTS8
+        :- !e0        = !{Base.!Read %rTS8; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
+        ,  $c2        = box : BoxFun2 %rTS8 !e2 $c1 !e1 $c0 :- !e1        = Base.!Read %rTC2, !e2        = !{Base.!Read %rTC1; System.Console.!Console}, $c0        = y : Base.Int %rTC2, $c1        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: Base.Unit -(!e0 $c1)> Base.Int %rTS9
-        :- !e0        = !{Base.!Read %rTS9; Base.!Read %rTS3; System.Console.!Console; Base.!Read %rTC2}
-        ,  $c1        = runBox : BoxFun2 %rTS9 !e1 $c0 (Base.!Read %rTC2) (y : Base.Int %rTC2) :- !e1        = !{Base.!Read %rTS3; System.Console.!Console}, $c0        = ${x : Base.Int %rTS3; y : Base.Int %rTC2}
+        :: Base.Unit -(!e0 $c2)> Base.Int %rTS8
+        :- !e0        = !{Base.!Read %rTS8; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
+        ,  $c2        = runBox : BoxFun2 %rTS8 !e2 $c1 !e1 $c0 :- !e1        = Base.!Read %rTC2, !e2        = !{Base.!Read %rTC1; System.Console.!Console}, $c0        = y : Base.Int %rTC2, $c1        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         :$ Base.Data -> Base.Data;
         
 

@@ -11,6 +11,7 @@ import Type.Util
 import Type.Class
 import Type.Exp
 
+import Shared.Error
 import Shared.VarPrim
 import Shared.Var		(VarBind, NameSpace(..))
 import qualified Shared.Var	as Var
@@ -32,11 +33,25 @@ stage	= "Type.Crush.Fetter"
 
 crushFetterC :: ClassId -> SquidM ()
 crushFetterC cid
- = do
-	-- Lookup the class for the fetter
-	Just fetterC		<- lookupClass cid
-	let (FConstraint v ts)	= classFetter fetterC
+ = do	mFetter	<- lookupClass cid
+ 	crushFetterC2 cid mFetter
+	
+crushFetterC2 cid mFetter
+	| Nothing	<- mFetter
+	= panic stage $ "crushFetter: no fetter in graph for classId " % cid
 
+	-- class has already been handled and deleted
+	| Just ClassNil	<- mFetter
+	= return ()
+
+	| Just ClassFetter { classFetter = FConstraint v ts }	
+			<- mFetter
+	= crushFetterC3 cid v ts
+	
+	
+	
+crushFetterC3 cid v ts
+ = do
 	-- Load up the arguments for this fetter
 	let argCids		= map (\(TClass k cid) -> cid) ts
 

@@ -70,7 +70,7 @@ staticRsDataT tt
 	TFree v t		-> staticRsDataT t
 	
 	TError k t		-> []
-	
+
 	-- for data containing function objects
 	TEffect{}		-> []
 	
@@ -100,8 +100,7 @@ staticRsClosureT t
 		-- see what regions are free in the closure
 		staticRs	= concat
 				$ [staticRsDataT t	
-					| TFree v t	
-					<- outerClo]
+					| TFree v t	<- outerClo]
 
 	   in	nub staticRs
 

@@ -24,9 +24,9 @@ data Box %r a
 main ()
  = do {	box	= Box [];
 
-	box#x	#= [5];
-	box#x	#= ['a'];
+	box#x	#= ["hello"];
+	box#x	#= [27];
 	
-	();
+	print $ head box.x % "\n";
  };
 		

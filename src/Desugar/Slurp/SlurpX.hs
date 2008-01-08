@@ -143,14 +143,11 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 			<- liftM unzip6 $ mapM slurpA alts
 
 	let qsMatch	= 
-		[ CEq srcObj   tObj 	$ makeTUnify KData tsAltsLHS
-
-		, CEq srcAlts  tRHS 	$ makeTUnify KData tsAltsRHS
---		, CClass srcAlts  (primFInject (length tsAltsRHS)) (tRHS : tsAltsRHS)
-
-		, CEq srcMatch eMatch	$ TEffect primReadH [tObj]
-		, CEq srcMatch eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) 
-		, CEq srcMatch cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]
+		[ CEqs srcObj  (tObj : tsAltsLHS)
+		, CEqs srcAlts (tRHS : tsAltsRHS)
+		, CEq  srcMatch eMatch	$ TEffect primReadH [tObj]
+		, CEq  srcMatch eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) 
+		, CEq  srcMatch cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]
 
 	return	( tRHS
 		, eX
@@ -176,10 +173,10 @@ slurpX	exp@(XMatch sp Nothing alts)
 			<- liftM unzip6 $ mapM slurpA alts
 	
 	let matchQs	=  
-		[ CEq srcObj   tLHS 	$ makeTUnify KData altsTP
-		, CEq srcAlts  tRHS 	$ makeTUnify KData altsTX
-		, CEq srcMatch eMatch	$ makeTSum KEffect altsEs
-		, CEq srcMatch cMatch	$ makeTSum KClosure altsClos ]
+		[ CEqs srcObj   (tLHS 	: altsTP)
+		, CEqs srcAlts  (tRHS	: altsTX)
+		, CEq  srcMatch eMatch	$ makeTSum KEffect altsEs
+		, CEq  srcMatch cMatch	$ makeTSum KClosure altsClos ]
 		
 				  
 	return	( tRHS
@@ -310,12 +307,12 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 			<- slurpX xElse
 	
 	let qs	= 
-		[ CEq srcObj 	tObj	$ tBool
-		, CEq srcAlt	tAlts	$ makeTUnify   KData [tThen, tElse]
+		[ CEq  srcObj 	tObj	$ tBool
+		, CEqs srcAlt	(tAlts	: [tThen, tElse])
 		
-		, CEq srcObj	eTest 	$ TEffect primReadH [tObj]
-		, CEq src	eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest]
-		, CEq src	cX	$ makeTSum KClosure [cObj, cThen, cElse] ]
+		, CEq  srcObj	eTest 	$ TEffect primReadH [tObj]
+		, CEq  src	eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest]
+		, CEq  src	cX	$ makeTSum KClosure [cObj, cThen, cElse] ]
 		
 	return	( tAlts
 		, eX

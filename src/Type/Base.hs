@@ -48,12 +48,16 @@ data Class
 
 		-- | The name for this class.
 		--	This is taken as one of the vars from the Nodes list, or generated fresh if none exists.
-		, className		:: (Maybe Var)			
+		, className		:: Maybe Var
 	
-		-- | The type of this class.
-		, classType		:: Type				
+		-- | The type of this class (if available)
+		--	If there are constraints waiting to be unified this will be Nothing.
+		, classType		:: Maybe Type
 
-		-- | Constraints on this class, including source information.
+		-- | Type constraints waiting to be unified.
+		, classQueue		:: [Type]
+
+		-- | Constraints that have been added to this class, including source information.
 		, classNodes		:: [(Type, TypeSource)]		
 
 		-- | Other classes which reference this one.
@@ -68,7 +72,8 @@ classInit cid kind
 	, classKind		= kind
 
 	, className		= Nothing
-	, classType		= TBot kind
+	, classType		= Nothing
+	, classQueue		= []
 	, classNodes		= []
 	
 	, classBackRef		= Set.empty }

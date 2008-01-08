@@ -32,7 +32,7 @@ import Type.Error
 
 import Type.Check.CheckSig
 import Type.Check.GraphicalData	(checkGraphicalDataT)
--- import Type.Check.Soundness	(dangerousCidsT)
+import Type.Check.Soundness	(dangerousCidsT)
 import Type.Closure.Trim 	(trimClosureT)
 
 import Type.Effect.MaskLocal	(maskLocalT)
@@ -94,7 +94,7 @@ extractTypeC varT cid
 	 	addErrors [ErrorInfiniteTypeClassId {
 	 			eClassId	= head cidsDataLoop }]
 
-		return $ Just $ TError KData tTrace
+		return $ Just $ TError KData [tTrace]
 
 extractTypeC2 varT cid tTrace
  = do
@@ -166,23 +166,19 @@ generaliseType varT tCore envCids
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
 		% "    staticRsClosure  = " % staticRsClosure	% "\n"
 
-	-- 	Can't generalise regions free in the closure of the outermost function.
-	--	... the objects in the closure are in the same region every time you use the function.
-	--
-{-
+
 	--	Can't generalise cids which are under mutable constructors.
 	--	... if we generalise these classes then we could update an object at one 
 	--		type and read it at another, violating soundness.
 	--	
-	staticDanger		<- if Set.member Arg.GenDangerousVars args
-					then return []
-					else dangerousCidsT tCore
+	let staticDanger	= if Set.member Arg.GenDangerousVars args
+					then []
+					else dangerousCidsT tPort
 
-	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
--}	
+	trace	$ "    staticDanger    = " % staticDanger	% "\n"
 
 	-- These are all the cids we can't generalise
-	let staticCids		= envCids ++ staticRsData ++ staticRsClosure
+	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
 
 
 	-- Rewrite non-static cids to the var for their equivalence class.

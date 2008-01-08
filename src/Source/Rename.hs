@@ -262,11 +262,17 @@ renameCtor	(v, fs)
 ------
 instance Rename (DataField Exp Type) where
  rename df
-  = do	mLabel'	<- case dLabel df of
+  = do	
+ 	m	<- gets stateCurrentModule
+	let fixupV v	= v 	{ Var.nameSpace 	= NameField
+				, Var.nameModule 	= ModuleNil }
+
+  
+  	mLabel'	<- case dLabel df of
 			Nothing		-> return Nothing
 			Just label
 			 -> do 	label'	<- lbindN NameField label
-				return	$ Just label'
+				return	$ Just $ fixupV label'
 
 	t'	<- rename $ dType df
 	mExp'	<- rename $ dInit df

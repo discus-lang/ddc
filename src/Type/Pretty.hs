@@ -29,7 +29,7 @@ instance Pretty Type where
 	TForall vs t		-> "forall " % " " %!% (map prettyVK vs) % ". " % t
 	TFetters fs t		-> t % " :- " % ", " %!% fs
 
-	TUnify k  ts		-> k  % "<" % "; " %!% ts % ">"
+--	TUnify k  ts		-> k  % "<" % "; " %!% ts % ">"
 	TSum   k  es		-> k  % "{" % "; " %!% es % "}"
 	TMask  k  t1 t2		-> prettyTB t1 % " \\ " % prettyTB t2
 

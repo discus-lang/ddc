@@ -99,33 +99,49 @@ solve	args ctree
 	modify (\s -> s { stateContains = treeContains })
 
 	-- Feed all the constraints into the graph, generalising types when needed.
-	gotErrors	<- solveCs ctree
+	solveCs ctree
 
-	if gotErrors
-	 	-- if we've hit any errors then bail out now.
-	 then do
-	 	errors	<- gets stateErrors
+	-- Do a final grind to make sure the graph is up to date
+	solveGrind
+	
+	-- Check if there were any errors
+	errors	<- gets stateErrors
+	
+	if not $ isNil errors 
+	 then do	
 	 	trace	$ "\n=== solve: terminating with errors.\n"
 	 		% "    errors = " % errors	% "\n"
 			% "\n\n"
 
 		return ()
 
-	 else do
-		-- Do a final grind to make sure the graph is up to date.
-		solveGrind
-	
-		-- Check which branches have been fed but not yet generalised
-		sGenSusp		<- gets stateGenSusp
-		let sGeneraliseMe 	= Set.toList sGenSusp
+	 else	solveFinalise
+	 	
+solveFinalise
+ = do
+	-- Generalise left over types.
+	--	Types are only generalised before instantiations. If a function has been defined
+	--	but not instantiated here (common for libraries) then we'll need to perform the 
+	--	generalisation now so we can export its type scheme.
+	--
+	sGenSusp		<- gets stateGenSusp
+	let sGeneraliseMe 	= Set.toList sGenSusp
 
-		-- Generalise all the left over types.
-		trace	$ "\n=== solve: Generalising left over types.\n"
-			% "    sGeneraliseMe   = " % sGeneraliseMe % "\n"
+	trace	$ "\n=== solve: Generalising left over types.\n"
+		% "    sGeneraliseMe   = " % sGeneraliseMe % "\n"
 	
-		mapM_ solveGeneralise $ sGeneraliseMe
+	mapM_ solveGeneralise $ sGeneraliseMe
+	
+
+	-- When generalised schemes are added back to the graph we can end up with (var = ctor)
+	--	constraints in class queues which need to be pushed into the graph by another
+	--	solveGrind.
+	--
+	-- TODO: It would be better to add these new constraints in a way which doesn't require
+	--	a whole 'nother grind.
+	solveGrind
 		
-		return ()
+	return ()
  			
 -----
 solveCs :: [CTree] 
@@ -268,7 +284,7 @@ solveNext cs
 --
 solveCInst 	cs	c@(CInst src vUse vInst)
  = do
-	path@(p:_)		<- gets statePath
+	path		<- gets statePath
 	trace	$ "\n"
 		% "### CInst " % vUse % " <- " % vInst					% "\n"
 --		% "    path          = " % path 					% "\n"
@@ -276,6 +292,10 @@ solveCInst 	cs	c@(CInst src vUse vInst)
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	sGenDone		<- gets stateGenDone
 	let bindInst 
+		-- hmm, we're outside all branches
+		| isNil path
+		= BLet [vInst]
+
 		-- var was imported, or already generalised.
 		| Set.member vInst sGenDone
 		= BLet [vInst]
@@ -294,7 +314,12 @@ solveCInst 	cs	c@(CInst src vUse vInst)
 	-- 	Only record instances of Let bound vars, cause these are the ones we care
 	--	about when doing the mutual-recusion check.
 	--	For a Projection we'll add this after we work out what vInst should be
-	graphInstantiatesAdd p bindInst
+	case path of
+
+	 -- We might instantiate some projection functions during solveGrind, after leaving 
+	 -- 	all constraint branches, and with the path empty.
+	 []	-> return ()
+	 (p:_)	-> graphInstantiatesAdd p bindInst
 
 	sGenDone	<- gets stateGenDone
 
@@ -506,7 +531,7 @@ solveGeneralise	vGen
 	case tScheme of 
 	 TClass{}	-> return ()
 	 _		-> updateClass cidGen	
-				cls { classType = tScheme }
+				cls { classType = Just tScheme }
 
 	-- Record that this type has been generalised, and delete the suspended generalisation
 	modify (\s -> s 
@@ -691,7 +716,14 @@ solveUnify
 	-- get classes waiting to be projected
 	regProj		<- getRegProj		
 
+	-- check if there are any errors in the state
 	errors		<- gets stateErrors
+
+	trace	$ "*   Grid.solveUnify\n"
+		% "    queued      = " % queued			% "\n"
+		% "    regProj     = " % regProj		% "\n"
+		% "    errors:\n     " %> "\n" %!% errors	% "\n"
+
 	solveUnifySpin queued regProj errors
 
 solveUnifySpin queued regProj errors
@@ -711,10 +743,7 @@ solveUnifySpin queued regProj errors
 	= solveUnifyWork queued regProj errors
 
 solveUnifyWork queued regProj errors
- = do	trace	$ "*   Grid.solveUnifyWork\n"
-		% "    queued      = " % queued		% "\n"
-		% "    regProj     = " % regProj	% "\n"
-
+ = do	
   	-- Try to unify some of the queued classes.
   	mapM_ crushUnifyClass queued
 
@@ -757,7 +786,10 @@ solveUnifyWork queued regProj errors
 		solveUnify
 			
 	 else do
-	 	errorProjection regProj'
+	 	trace	$ "*   Grind.solveUnify: no progress\n"
+			% "    queued = " % queued	% "\n"
+		
+		errorProjection regProj'
 		return ()
 
 

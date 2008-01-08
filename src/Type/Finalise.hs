@@ -1,6 +1,6 @@
 
 module Type.Finalise
-	( solveFinalise )
+	() -- solveFinalise )
 
 where
 
@@ -30,10 +30,11 @@ trace s	= when debug $ traceM s
 stage	= "Type.Finalise"
 
 -----
+{-
 solveFinalise :: SquidM ()
 solveFinalise 
  = return ()
- 
+ -}
 {-
  do	
  	trace	$ "\n\n"
