@@ -46,8 +46,9 @@ crushEffectC cid
 	let eLoad	= ePacked
 
  	trace	$ "\n"
-		% "*   crushEffectC " 	% cid		% "\n"
-		% "    eLoad       = " 	% eLoad		% "\n"
+		% "*   crushEffectC " 	% cid			% "\n"
+		% "    eTrace      = "  %> prettyTS eTrace	% "\n"
+		% "    eLoad       = " 	% eLoad			% "\n"
 
 	eCrushed	<- transformTM crushEffectT eLoad
 
@@ -93,7 +94,12 @@ crushEffectC cid
 
 eraseFConstraints tt
  = case tt of
- 	TFetters fs t	-> addFetters (filter (not . isFConstraint) fs) t
+ 	TFetters fs t	
+	 -> let eraseF (FConstraint{})	= True
+	 	eraseF (FProj{})	= True
+		eraseF _		= False
+	    in  addFetters (filter (not . eraseF) fs) t
+
 	_		-> tt
 
 

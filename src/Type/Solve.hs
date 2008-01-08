@@ -819,7 +819,7 @@ solveUnifyWork queued regProj errors
 	 	trace	$ "*   Grind.solveUnify: no progress\n"
 			% "    queued = " % queued	% "\n"
 		
-		errorProjection regProj'
+--		errorProjection regProj'
 		return ()
 
 

@@ -53,18 +53,19 @@ slurpTreeM	tree
 	-- We need to sort the constraints into an order that'll be acceptable to the solver. 
 	--	Put all 'known' stuff like external types, sigs, and class definitions at the front
 	--	and the constraints for the top level bindings after in one mutually recursive group.
-	let [qsLet, qsDef, qsProject, qsDataFields, qsSig, qsClassInst]
-			= partitionFs [isCBranchLet, isCDef, isCDictProject, isCDataFields, isCSig, isCClassInst]
+	let [qsBranch, qsDef, qsProject, qsDataFields, qsSig, qsClassInst]
+			= partitionFs [isCBranch, isCDef, isCDictProject, isCDataFields, isCSig, isCClassInst]
 			$ qs
 
 	let vsLet	= concat
 			$ map (\b -> case branchBind b of
-				BLet vs	-> vs)
-			$ qsLet
+				BLet vs	-> vs
+				_	-> [])
+			$ qsBranch
 
 	let qsFinal_let	= [CBranch 
 				{ branchBind 	= BLetGroup vsLet
-				, branchSub	= qsLet }]
+				, branchSub	= qsBranch }]
 				
 	let qsFinal	= qsDataFields ++ qsProject ++ qsClassInst ++ qsDef ++ qsSig ++ qsFinal_let
 

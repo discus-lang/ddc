@@ -1,6 +1,7 @@
 
 module Constraint.Bits
 	( isCBranchLet
+	, isCBranch
 	, isCDef
 	, isCDictProject
 	, isCDataFields
@@ -39,6 +40,12 @@ isCBranchLet b
 	
 	| otherwise
 	= False
+
+isCBranch b
+ = case b of
+ 	CBranch{}	-> True
+	_		-> False
+	
 
 isCDef b
  = case b of
