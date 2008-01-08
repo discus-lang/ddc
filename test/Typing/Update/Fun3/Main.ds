@@ -3,6 +3,8 @@
 --
 --	The effect and closure of data which contains functions should be
 --	the sum of all the functions which it is updated with.
+--
+--	This time, textBox2 creates a tuple of functions to update and run the box.
 
 -- BUGS:
 --	Fails on textBox2. Box does not contain a value of type 'a' need to fix static region determinator
@@ -27,22 +29,6 @@ newFun x
  };
 
 
--- | Create a new box then update it to contain a new function.
---	The return type should show the sum of the effect and closure from both
---	oldFun and newFun.
---
-testBox ()
- = do {	
-	box	:: FunBox %r1 Int !e1 $c1
-		:- Mutable %r1;
-
- 	box	=  FunBox oldFun;
- 	box#fun	#= newFun;
-
-	box;
- };
-
-{-
 -- | Create a tuple of functions to update and run the box.
 --	
 testBox2 ()
@@ -59,14 +45,11 @@ testBox2 ()
 
 	(box2, hackBox, runBox);
  };	
--}
 
 -- | Call the tests
 main () 
  = do {	
-	dude2	= testBox ();
---	dude3	= testBox2 ();
-	
+	dude3	= testBox2 ();
 	();
  };
 

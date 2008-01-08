@@ -62,6 +62,10 @@ staticRsDataT tt
 	 | k == KRegion		-> [cid]
 	 | otherwise		-> []
 
+	TSum k ts
+	 | k == KEffect		-> []
+	 | k == KClosure	-> catMap staticRsDataT ts
+
  	TData v ts		-> catMap staticRsDataT ts
 	TFun{}			-> []
 	TFetters fs t		-> staticRsDataT t

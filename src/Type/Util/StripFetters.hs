@@ -1,6 +1,7 @@
 
 module Type.Util.StripFetters
-	( stripFettersT )
+	( stripFettersT 
+	, stripMonoFLetsT )
 where
 
 import Util
@@ -85,4 +86,65 @@ stripFettersT	t
 
 	_	-> panic stage ("stripFettersT: no match for " % show t)
 
+
+-- | Strip all the monomorphic FLets from this type.
+--	TODO: merge this code into stripFettersT
+--
+stripMonoFLetsT
+	:: Type -> (Type, [Fetter])
+	
+stripMonoFLetsT tt
+ = case tt of
+ 	TForall vks t	
+	 -> let (t', fsMono)	= stripMonoFLetsT t
+	    in	(TForall vks t', fsMono)
 	 
+	TFetters fs t
+	 -> let	(fsMono, fsOther)	= partition isMonoFLet fs
+		(t', fsMono2)		= stripMonoFLetsT t
+
+	    in	(TFetters fsOther t', fsMono ++ fsMono2)
+	    
+	TSum k ts
+	 -> let	(ts', fssMono)		= unzip $ map stripMonoFLetsT ts
+	    in	(TSum k ts', concat fssMono)
+	    
+	TMask k t1 t2
+	 -> let	(t1', fsMono1)		= stripMonoFLetsT t1
+	 	(t2', fsMono2)		= stripMonoFLetsT t2
+	    in	(TMask k t1' t2', fsMono1 ++ fsMono2)
+	    
+	TVar{}	-> (tt, [])
+	TTop{}	-> (tt, [])
+	TBot{}	-> (tt, [])
+	
+	TData v ts
+	 -> let (ts', fssMono)		= unzip $ map stripMonoFLetsT ts
+	    in	(TData v ts', concat fssMono)
+	
+	TFun t1 t2 eff clo
+	 -> let	(t1',  fsMono1)		= stripMonoFLetsT t1
+	 	(t2',  fsMono2)		= stripMonoFLetsT t2
+		(eff', fsMonoE)		= stripMonoFLetsT eff
+		(clo', fsMonoC)		= stripMonoFLetsT clo
+
+	    in	( TFun t1' t2' eff' clo'
+	    	, fsMono1 ++ fsMono2 ++ fsMonoE ++ fsMonoC)
+
+	TEffect v ts 
+	 -> let	(ts', fssMono)		= unzip $ map stripMonoFLetsT ts
+	    in	(TEffect v ts', concat fssMono)
+	    
+	TFree v t
+	 -> let	(t',  fsMono)		= stripMonoFLetsT t
+	    in	(TFree v t', fsMono)
+	    
+	TTag{}	-> (tt, [])
+	
+	TClass{} -> (tt, [])
+
+isMonoFLet ff
+ = case ff of
+	FLet TClass{} _	-> True
+	_		-> False
+

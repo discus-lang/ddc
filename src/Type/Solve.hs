@@ -526,12 +526,7 @@ solveGeneralise	vGen
 	tScheme		<- generaliseType vGen tGraph cidsEnv
 	
 	-- Add the scheme back to the graph.
-	cidGen		<- makeClassV TSNil KData vGen 
-	Just cls	<- lookupClass cidGen
-	case tScheme of 
-	 TClass{}	-> return ()
-	 _		-> updateClass cidGen	
-				cls { classType = Just tScheme }
+	addSchemeToGraph vGen tScheme
 
 	-- Record that this type has been generalised, and delete the suspended generalisation
 	modify (\s -> s 
@@ -542,6 +537,41 @@ solveGeneralise	vGen
 		% "=============================================================\n"
 	
 	return tScheme
+
+
+-- | Add a generalised type scheme to the graph
+--	This is different from a Type.Feed.feedType because most of the type can be stored in a single
+--	node in the graph instead of being distributed throughout.
+--
+addSchemeToGraph
+	:: Var -> Type -> SquidM ()
+	
+addSchemeToGraph vGen tScheme
+ = do
+	-- call makeClass to get the classId of this var
+	cidGen		<- makeClassV TSNil KData vGen 
+
+	-- grab the class from the graph
+	Just cls	<- lookupClass cidGen
+
+	-- If this type has any FLets on it where the LHS is a (monomorphic) TClass 
+	--	then this information is shared with the graph, and shouldn't be duplicated
+	--	locally.
+	let (tScheme_stripped, fsMono) = stripMonoFLetsT tScheme
+
+	case tScheme_stripped of 
+
+	 -- If the scheme is just a classId we don't need to do anything
+	 TClass{}	-> return ()
+
+	 -- Update the class
+	 _		-> updateClass cidGen	
+				cls { classType = Just tScheme_stripped }
+ 	
+
+	
+
+
 
 -- | Work out which types are in the environmen of this branch
 --	This makes use of the contains and instantiates maps from the state

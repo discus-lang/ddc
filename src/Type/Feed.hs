@@ -146,6 +146,16 @@ feedType	mParent t
  = case t of
 	TFetters fs t
 	 -> do	
+{-	 	let isMonoLet f = 
+			case f of
+				FLet TClass{} _	-> True
+				_		-> False
+				
+		let (fsMono, fsOther)
+				= pariti
+-}			
+	 
+	 
 	 	-- Rename the vars on the LHS of FLet bindings to make sure
 	 	--	they don't conflict with any vars already in the graph.
 		vtSub		<- liftM (Map.fromList . catMaybes)
