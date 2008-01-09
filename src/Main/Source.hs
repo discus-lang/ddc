@@ -278,15 +278,16 @@ desugarSnipLambda name unique tree
 -- 
 desugarProject 
 	:: (?args :: [Arg])
+	-> Module
 	-> D.Tree SourcePos
 	-> D.Tree SourcePos
 	-> IO	( D.Tree SourcePos
 		, ProjTable )
 
-desugarProject headerTree sourceTree
+desugarProject moduleName headerTree sourceTree
  = do
 	-- Snip down projection dictionaries and add default projections.
- 	let sourceTree'	= projectTree headerTree sourceTree 
+ 	let sourceTree'	= projectTree moduleName headerTree sourceTree 
 	
 	dumpST DumpDesugaredProject "desugared-project"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sourceTree')

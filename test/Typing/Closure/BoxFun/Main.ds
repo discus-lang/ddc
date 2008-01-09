@@ -19,7 +19,7 @@ x	= 5;
 y	= 23;
 
 fun ()
- = do {	print	$ "Wibble! " % showInt x % "\n";
+ = do {	print	$ "Wibble! " % show x % "\n";
  	fun3 ()	= y + 1;
 	fun3;
  };

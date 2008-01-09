@@ -15,8 +15,8 @@ main ()
  = do {
 	n	= 9#;
 	print $ "Ack(3," 
-		% showInt (boxInt32 n) % "): " 
-		% showInt (boxInt32 (ack 3# n)) % "\n";
+		% show (boxInt32 n) % "): " 
+		% show (boxInt32 (ack 3# n)) % "\n";
  };
 
 

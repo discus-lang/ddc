@@ -1,6 +1,7 @@
 
 module Desugar.Bits
-	(getAnnotX)
+	( getAnnotX
+	, isXVar)
 	
 where
 
@@ -8,6 +9,11 @@ import Shared.Error
 import Desugar.Exp
 
 stage	= "Desugar.Exp"
+
+isXVar xx
+ = case xx of
+ 	XVar{}	-> True
+	_	-> False
 
 getAnnotX :: Exp a -> a
 getAnnotX xx

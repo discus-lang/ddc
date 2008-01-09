@@ -31,13 +31,13 @@ fun2 xx
 
 main ()
  = do {	
- 	print	$ showInt (fun ([Just 5], 	1001))	% "\n";
- 	print	$ showInt (fun (Nil, 		1002))	% "\n";
- 	print	$ showInt (fun ([Just 27], 	1003))	% "\n";
+ 	print	$ show (fun ([Just 5], 	1001))	% "\n";
+ 	print	$ show (fun (Nil, 		1002))	% "\n";
+ 	print	$ show (fun ([Just 27], 	1003))	% "\n";
 
- 	print	$ showInt (fun2 ([Just 5], 	1001))	% "\n";
- 	print	$ showInt (fun2 (Nil, 		1002))	% "\n";
- 	print	$ showInt (fun2 ([Just 27], 	1003))	% "\n";
+ 	print	$ show (fun2 ([Just 5], 	1001))	% "\n";
+ 	print	$ show (fun2 (Nil, 		1002))	% "\n";
+ 	print	$ show (fun2 ([Just 27], 	1003))	% "\n";
 
  };
 

@@ -17,6 +17,6 @@ primes ()	= mapL head (iterateL theFilter (iterateL suCC 2));
 
 main ()
  = do {
-	print	$ showInt $ (primes ()) !! 1500;
+	print	$ show $ (primes ()) !! 1500;
 	print "\n";
  };

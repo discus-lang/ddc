@@ -13,7 +13,7 @@ sieve n xx	= filterL (\x -> mod x n /= 0) xx;
 	
 main ()
  = do {
-	print	$ showInt $ (primes ()) !! 1500;
+	print	$ show $ (primes ()) !! 1500;
 	print	"\n";
  };
 

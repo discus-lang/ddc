@@ -33,7 +33,7 @@ foreign import extern y
         :$ Base.Data;
         
 foreign import extern box
-        :: BoxFun2 %rTS8 !e1 $c1 !e0 $c0
+        :: BoxFun2 %rTS7 !e1 $c1 !e0 $c0
         :- !e0        = Base.!Read %rTC2
         ,  !e1        = !{Base.!Read %rTC1; System.Console.!Console}
         ,  $c0        = y : Base.Int %rTC2
@@ -54,18 +54,19 @@ foreign import extern fun
         ,  $c0        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         ,  $c1        = y : Base.Int %rTC2
         ,  Num (Base.Int %rTC2)
+        ,  Show (Base.Int %rTC1)
         :$ Base.Data -> Base.Thunk;
         
 foreign import extern runBox
-        :: Base.Unit -(!e0 $c2)> Base.Int %rTS8
-        :- !e0        = !{Base.!Read %rTS8; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
-        ,  $c2        = box : BoxFun2 %rTS8 !e2 $c1 !e1 $c0 :- !e1        = Base.!Read %rTC2, !e2        = !{Base.!Read %rTC1; System.Console.!Console}, $c0        = y : Base.Int %rTC2, $c1        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
+        :: Base.Unit -(!e0 $c2)> Base.Int %rTS7
+        :- !e0        = !{Base.!Read %rTS7; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
+        ,  $c2        = box : BoxFun2 %rTS7 !e2 $c1 !e1 $c0 :- !e1        = Base.!Read %rTC2, !e2        = !{Base.!Read %rTC1; System.Console.!Console}, $c0        = y : Base.Int %rTC2, $c1        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: Base.Unit -(!e0 $c2)> Base.Int %rTS8
-        :- !e0        = !{Base.!Read %rTS8; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
-        ,  $c2        = runBox : BoxFun2 %rTS8 !e2 $c1 !e1 $c0 :- !e1        = Base.!Read %rTC2, !e2        = !{Base.!Read %rTC1; System.Console.!Console}, $c0        = y : Base.Int %rTC2, $c1        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
+        :: Base.Unit -(!e0 $c2)> Base.Int %rTS7
+        :- !e0        = !{Base.!Read %rTS7; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
+        ,  $c2        = runBox : BoxFun2 %rTS7 !e2 $c1 !e1 $c0 :- !e1        = Base.!Read %rTC2, !e2        = !{Base.!Read %rTC1; System.Console.!Console}, $c0        = y : Base.Int %rTC2, $c1        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         :$ Base.Data -> Base.Data;
         
 

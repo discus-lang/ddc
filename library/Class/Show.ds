@@ -16,7 +16,7 @@ class Show a where
 
 instance Show (String %_) where
 {
-	show	= showString;
+	show ss	= "'" % ss % "'";
 }
 
 
@@ -33,26 +33,17 @@ instance Show (Float %_) where
 
 instance Show (Bool %_) where
 {
-	show	= showBool;
+	show b 
+	 = case b of {
+	 	True	-> "True";
+		False	-> "False";
+	 };
 }
 
 -----------------------
 infixr 7 %;
 (%) a b	= SAppend a b;
 
-
------
-showChar  c	= stringOfChar c;
-showInt   i	= stringOfInt i;
-showFloat f	= stringOfFloat32 f;
-
-showBool b
- = case b of {
- 	True	-> "True";
-	False	-> "False";
- };
-
-showString ss 	= "'" % ss % "'";
 
 -----------------------
 -- showListL
@@ -105,10 +96,11 @@ showList3 showX xx
  };
 
 
+showListInt :: [Int] -> String;
 showListInt 
-	= showList showInt;
+	= showList show;
 
-
+print :: String -> ();
 print xx
  = case xx of {
  	SChunk x	
@@ -119,6 +111,7 @@ print xx
 		print s2; };
  };	
 
+println :: String -> ();
 println s	= print (s % "\n");
 
 concats xx

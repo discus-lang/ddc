@@ -131,7 +131,7 @@ checkLambdaLifting ()
 
 checkShow ()
  = do {	print	"-- Show.\n";
-	print	$ showInt 5; print "\n";
+	print	$ show 5; print "\n";
 	print	$ "fresh " % "fried " % "fish" % "\n";
 	print	$ showListInt [0..9] % "\n";
 
@@ -149,20 +149,21 @@ checkShow ()
 --	Don't do anything too fancy here, we want this function
 --	to survive stupid bugs in the compiler if at all possible.
 --
+checkI :: Int -> Int -> ();
 checkI a b
  = case a == b of {
  	True	
 	-> do { print "OK ";
-		print (showInt b);
+		print $ show b;
 		print "\n";
 	   };
 	
 	False	
 	-> do {	print "FAILED! ";
 		print "expected: ";
-		print (showInt a);
+		print $ show a;
 		print " got:";
-		print (showInt b);
+		print $ show b;
 		print ("\n");
 	  };
  };

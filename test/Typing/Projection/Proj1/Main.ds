@@ -9,4 +9,4 @@ dude ()
  
  
 main ()
- = 	print	$ showInt (dude ())	% "\n";
+ = 	print	$ show (dude ())	% "\n";

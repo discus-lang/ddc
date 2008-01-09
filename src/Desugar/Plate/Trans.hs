@@ -145,12 +145,10 @@ instance Monad m => TransM m a1 a2 Top where
 	 -> do	nn'		<- transN	table nn
 		return		$ PClassDict nn' v ts cs sigs
 	 	
-	PClassInst nn v ts cs defs
+	PClassInst nn v ts cs ss
 	 -> do	nn'		<- transN	table nn
-	 	let (vs, xs)	= unzip defs
-		xs'		<- mapM (transZM table) xs
-		let defs'	= zip vs xs'
-		return		$ PClassInst nn' v ts cs defs'
+		ss'		<- mapM (transZM table) ss
+		return		$ PClassInst nn' v ts cs ss'
 
 	-- projections
 	PProjDict nn t ss

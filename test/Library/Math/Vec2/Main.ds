@@ -1,0 +1,25 @@
+
+import Math.Vec2;
+import System.Error;
+
+main ()
+ = do {
+	-- make a vector and show it
+ 	vec1	= Vec2 1.0 2.0;
+	vec2	= Vec2 5.0 6.0;
+
+	println	$ "vec1 = " % vec1.show;
+	println	$ "vec2 = " % vec2.show;
+
+	-- add the two vectors
+	vec1p2	= vec1.add vec2;
+	vec1p2'	= add&{Vec2 Float} vec1 vec2;
+
+	println	$ "vec1 + vec2 = " % show vec1p2;
+	println	$ "vec1 + vec2 = " % show vec1p2';
+
+	-- update vec1
+	vec1.acc vec2;
+	println $ "vec1' = " % show vec1;
+	
+ };

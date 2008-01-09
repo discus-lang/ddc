@@ -22,7 +22,8 @@ selectFun2 x f g
 	False	-> g;
 	False	
 	 -> do {
-	 	h y	=  do { print (showInt y); y; };
+	 	h :: Int -> Int;
+		h y	=  do { print $ show y; y; };
 		h; 
 	  };
 		
@@ -32,5 +33,5 @@ selectFun2 x f g
 main ()
  = do {
  --	print (showInt (selectFun1 True succ increment 5));
-	print (showInt (selectFun2 True succ increment 5));
+	print $ show (selectFun2 True succ increment 5);
  };

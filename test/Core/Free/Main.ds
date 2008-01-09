@@ -7,6 +7,6 @@ main ()
 		g;	
 	 };
 		
-	print (showInt (f1 () ()) % "\n");
+	print (show (f1 () ()) % "\n");
  };
  	

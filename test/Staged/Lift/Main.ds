@@ -42,7 +42,7 @@ lift2 ()
 		 = do { c1	= 31;
 			c2	= c1 + b2;
 			h2 () 
-			 = print $ showInt (a1 + a2 + b1 + c1 + b2 + c2);
+			 = print $ show (a1 + a2 + b1 + c1 + b2 + c2);
 			h2;
 		 };
 		g2;
@@ -73,7 +73,7 @@ lift3 ()
 -- | Check effect constraints on lambda bound functions are making it through to core.
 --	If they go missing then the application of (\y -> .. ) to (\f x -> ..) won't type check.
 lift4 ()	
- = print ((showInt $ (\f x -> 1 + f x) (\y -> y + 2) 5) % "\n");
+ = print ((show $ (\f x -> 1 + f x) (\y -> y + 2) 5) % "\n");
 
 
 -- | Check nested functions containing data constructors. 
@@ -84,7 +84,7 @@ data Fish %r1
 
 liftCtor ()
  = do {	f ()		= Fish 5;
-	doIt (Fish x)	= print $ "Fish " % showInt x % "\n";
+	doIt (Fish x)	= print $ "Fish " % show x % "\n";
 
 	doIt $ f ();	
  };

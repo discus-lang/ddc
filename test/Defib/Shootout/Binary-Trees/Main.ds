@@ -12,8 +12,8 @@ main ()
 	stretchTree
 		= make 0# (unboxInt32 (max' + 1));
 	
-	print	$ "stretch tree of depth " 	% showInt (max' + 1) 
-		% "\t check: " 			% showInt (boxInt32 (itemCheck stretchTree))
+	print	$ "stretch tree of depth " 	% show (max' + 1) 
+		% "\t check: " 			% show (boxInt32 (itemCheck stretchTree))
 		% "\n";
 
 	longLivedTree
@@ -21,8 +21,8 @@ main ()
 
 	depthLoop (min' ()) max';
 
-	print	$ "long lived tree of depth " 	% showInt max'
-		% "\t check: "			% showInt (boxInt32 (itemCheck longLivedTree))
+	print	$ "long lived tree of depth " 	% show max'
+		% "\t check: "			% show (boxInt32 (itemCheck longLivedTree))
 		% "\n";
 	
  };
@@ -31,8 +31,8 @@ depthLoop d m
  = match {
  	| d <= m
 	= do {	n	= pow 2  (m - d + (min' ()));
-		print 	$ (showInt (2*n)) % "\t trees of depth " % showInt d 
-			% "\t check: " % showInt (sumLoop (unboxInt32 n) (unboxInt32 d) 0#) 
+		print 	$ (show (2*n)) % "\t trees of depth " % show d 
+			% "\t check: " % show (sumLoop (unboxInt32 n) (unboxInt32 d) 0#) 
 			% "\n";
 			
 		depthLoop (d + 2) m;

@@ -28,7 +28,7 @@ checkGetSet ()
 	setB ["a"];
 	
 	x	= head ((fst box2) ());
-	print	$ "x = " % showInt x % "\n";
+	print	$ "x = " % show x % "\n";
 
 	();
  };

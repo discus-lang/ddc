@@ -4,6 +4,6 @@ main ()
  	
 	y	= x + 5;
 	
-	print	$ showInt y % "\n";
+	print	$ show y % "\n";
  };
  	

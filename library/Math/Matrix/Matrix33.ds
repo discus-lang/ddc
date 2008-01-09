@@ -18,9 +18,8 @@ data Vector3 %r1
 -----
 showVector3
  (Vector3	x1 x2 x3)
- = showFloat x1	% "\n"
- % showFloat x2 % "\n"
- % showFloat x3	% "\n";
+	 = show x1 % " " % show x2 % " " % show x3 % " ";
+
 
 project Matrix33 where 
 {
@@ -56,9 +55,9 @@ project Matrix33 where
 	-- | Show a matrix.
 	show :: Matrix33 -> String;
 	show (Matrix33 a1 a2 a3 a4 a5 a6 a7 a8 a9)
-	 = (showFloat a1) % " " % (showFloat a2) % " " % (showFloat a3) % "\n"
-	 % (showFloat a4) % " " % (showFloat a5) % " " % (showFloat a6) % "\n"
-	 % (showFloat a7) % " " % (showFloat a8) % " " % (showFloat a9) % "\n";
+	 = show a1 % " " % show a2 % " " % show a3 % "\n"
+	 % show a4 % " " % show a5 % " " % show a6 % "\n"
+	 % show a7 % " " % show a8 % " " % show a9 % "\n";
 
 	
 	-- | Add two matricies component-wise
@@ -98,7 +97,11 @@ project Matrix33 where
 		(a7 * b1  +  a8 * b4  +  a9 * b7)
 		(a7 * b2  +  a8 * b5  +  a9 * b8)
 		(a7 * b3  +  a8 * b6  +  a9 * b9);
-
 }
-		
+
+
+instance Show Matrix33 where
+{
+	show	= show&{Matrix33};
+}		
 		

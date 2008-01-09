@@ -20,6 +20,6 @@ main ()
  = do {	x	= (1, 2);
  	x	:= (3, 4);
 	
-	print $ (showInt (fst x)) % " " % (showInt (snd x)) % "\n";
+	print $ (show (fst x)) % " " % (show (snd x)) % "\n";
  };
  	

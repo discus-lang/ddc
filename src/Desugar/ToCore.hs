@@ -109,6 +109,8 @@ toCoreP	p
 
 	D.PExtern _ v tv (Just to)
 	 -> do
+		-- External types may contain monomorphic variables who's names have changed during 
+		--	constraint solving. 
 		let tv'	= toCoreT tv
 		let to'	= toCoreT to
 		
@@ -158,16 +160,31 @@ toCoreP	p
 
 		return		$ [C.PClassDict v cts' [] sigs']
 
-	D.PClassInst _ v cts context defs
+	-- type class instance
+	D.PClassInst _ vClass cts context ss
 	 -> do
-		defs'		<- mapM (\(v, x)
-					-> case x of
-						D.XVarInst _ v2	-> return (v, C.XVar v2)
-						D.XVar     _ v2 -> return (v, C.XVar v2))
-					$ defs
+		-- rewrite all the bindings in this instance
+		-- The right hand side of the bindings must be a var.
+		--	This should be enforced by Desugar.Project.
+		let rewriteInstS s
+			| D.SBind _ (Just v1) (D.XVarInst _ v2)	<- s
+			= return (v1, C.XVar v2)
+			
+			| D.SBind _ (Just v1) (D.XVar     _ v2) <- s
+			= return (v1, C.XVar v2)
+			
+			| otherwise
+			= panic stage
+				$  "toCoreP: RHS of projection dict must be a var\n"
+				%  "    stmt:\n" %> s	% "\n"
+	
+		ss'	<- mapM rewriteInstS ss
 
+		-- rewrite the context types
 		let cts'	= map toCoreT cts
-		return	$ [C.PClassInst v cts' [] defs']
+
+		return	$ [C.PClassInst vClass cts' [] ss']
+
 
 	-- projections
 	D.PProjDict{}	-> return []

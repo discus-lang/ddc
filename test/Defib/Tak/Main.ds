@@ -8,6 +8,6 @@ tak x y z
 	 	 (tak (y-1) z x)
 		 (tak (z-1) x y);
 		 
-main ()	= print $ (showInt $ tak 24 16 8) % "\n";
+main ()	= print $ (show $ tak 24 16 8) % "\n";
 
 

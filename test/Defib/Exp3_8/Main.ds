@@ -39,5 +39,5 @@ intToNat x
 	
 main ()
  = do {
-	print 	$ showInt (natToInt (cExp (intToNat 3) (intToNat 8)))	% "\n";
+	print 	$ show (natToInt (cExp (intToNat 3) (intToNat 8)))	% "\n";
  };

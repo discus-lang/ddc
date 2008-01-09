@@ -9,4 +9,4 @@ fun2 ()	= fun;
 
 
 main ()
- = 	print $ (showInt $ fun2 () ()) % "\n";
+ = 	println $ show $ fun2 () ();

@@ -38,6 +38,6 @@ main ()
 	a	= fun1_get1 ();
 	b	= fun1_get  ();
 	
-	print 	$ "a = " % showInt a % "\n"
-		% "b = " % showInt b % "\n";
+	print 	$ "a = " % show a % "\n"
+		% "b = " % show b % "\n";
  };

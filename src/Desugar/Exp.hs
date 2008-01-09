@@ -45,9 +45,16 @@ data Top a
 	-- classes
 	| PClass	a Var Kind
 	| PClassDict	a Var [Type] [ClassContext] [(Var, Type)]
-	| PClassInst	a Var [Type] [ClassContext] [(Var, Exp a)]
 
-	-- projections
+	-- An instance for a type class.
+	| PClassInst	
+		a 			
+		Var 			-- class name
+		[Type] 			-- class arguments
+		[ClassContext] 		-- class context
+		[Stmt a]		-- bindings for this instance
+
+	-- projection dictionaries
 	| PProjDict	a Type [Stmt a]
 
 	-- sigs

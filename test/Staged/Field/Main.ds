@@ -30,8 +30,8 @@ main ()
 	tank.vel#x	#= 32;
 	tank.vel.y	:= 27;
 
-	print	$ "oldVelX = " % showInt oldVelX	% "\n"
-		% "oldVelY = " % showInt oldVelY	% "\n";
+	print	$ "oldVelX = " % show oldVelX	% "\n"
+		% "oldVelY = " % show oldVelY	% "\n";
  };
 
 
@@ -50,12 +50,12 @@ printTank :: Tank -> ();
 printTank ^tank
  = do {
 	print 	$ "Tank"				% "\n"
-	 	% "  id   = " % showInt _id		% "\n"
+	 	% "  id   = " % show _id		% "\n"
 		% "  name = " % _name			% "\n"
-		% "  posX = " % showInt _pos.x		% "\n"
-		% "  posY = " % showInt _pos.y		% "\n"
-		% "  velX = " % showInt _vel.x		% "\n"
-		% "  velY = " % showInt _vel.y		% "\n\n";
+		% "  posX = " % show _pos.x		% "\n"
+		% "  posY = " % show _pos.y		% "\n"
+		% "  velX = " % show _vel.x		% "\n"
+		% "  velY = " % show _vel.y		% "\n\n";
 
  };
 

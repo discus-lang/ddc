@@ -15,7 +15,7 @@ perch f = succ (f succ);
 -- perchP is a third order function with an additional effect
 perchP f 
  = do {	n	= perch f;
-	print (showInt n);
+	print 	$ show n;
 	n;
  };
 
@@ -35,4 +35,4 @@ tetra b p h
 
 
 main ()
- = 	print (showInt (tetra True perchP appDanio));
+ = 	print $ show (tetra True perchP appDanio);

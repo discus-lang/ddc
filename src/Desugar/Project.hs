@@ -19,7 +19,8 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
+import qualified Shared.VarUtil	as Var
+import Shared.Var		(Var, NameSpace(..), Module)
 
 
 import Type.Exp
@@ -33,6 +34,7 @@ import Shared.Error
 
 import qualified Shared.VarBind	as Var
 
+import Desugar.Bits
 import Desugar.Exp
 import Desugar.Util
 
@@ -44,13 +46,18 @@ type	ProjectM	= VarGenM
 type	Annot		= SourcePos
 none			= NoSourcePos
 
-projectTree :: Tree Annot -> Tree Annot -> Tree Annot
-projectTree headerTree tree
-	= evalState (projectTreeM headerTree tree) (Var.XBind "xDict" 0)
+projectTree 
+	:: Module		-- the name of the current module
+	-> Tree Annot 		-- header tree
+	-> Tree Annot 		-- source tree
+	-> Tree Annot
+
+projectTree moduleName headerTree tree
+	= evalState (projectTreeM moduleName headerTree tree) (Var.XBind "xDict" 0)
 		
 	
-projectTreeM :: Tree Annot -> Tree Annot -> ProjectM (Tree Annot)
-projectTreeM headerTree tree
+projectTreeM :: Module -> Tree Annot -> Tree Annot -> ProjectM (Tree Annot)
+projectTreeM moduleName headerTree tree
  = do
 	-- Slurp out all the data defs
 	let dataMap	= Map.fromList
@@ -64,71 +71,138 @@ projectTreeM headerTree tree
 	treeProjFuns	<- addProjDictFunsTree dataMap treeProjNewDict
 	
 	-- Snip user functions out of projection dictionaries.
- 	treeProjDict	<- snipProjDictTree treeProjFuns
+ 	treeProjDict	<- snipProjDictTree moduleName treeProjFuns
 
 	return treeProjDict
 
 
------
--- snipProjDictTree
---	Snip out functions and sigs from projection dictionaries to
---	top level.
---
-snipProjDictTree :: Tree a -> ProjectM (Tree a)
-snipProjDictTree   tree
+-- | Snip out functions and sigs from projection dictionaries to top level.
+--	Also snip class instances while we're here.
+
+snipProjDictTree 
+	:: Module 		-- the name of the current module
+	-> Tree a 
+	-> ProjectM (Tree a)
+
+snipProjDictTree moduleName  tree
  	= liftM concat
- 	$ mapM snipProjDictP tree
+ 	$ mapM (snipProjDictP moduleName) tree
 	
-	
-snipProjDictP (PProjDict nn t ss)
+-- Snip RHS of bindings in projection dictionaries.
+snipProjDictP moduleName (PProjDict nn t ss)
  = do
 	let (TData vCon ts)	= t
 
-	-- See what vars are in the dict
-	--	and make a map of new vars.
-	--	
+	-- See what vars are in the dict and make a map of new vars.
  	let dictVs	= nub
 			$ catMaybes 
 			$ map takeStmtBoundV ss
 			
-	dictVsNew 	<- mapM (newProjFunVar vCon) dictVs
+	dictVsNew 	<- mapM (newProjFunVar moduleName vCon) dictVs
 	let varMap	= Map.fromList $ zip dictVs dictVsNew
 	
 	-- 
-	let (pp, mss')	= unzip $ map (snipProjDictS varMap) ss
+	let (mpp, mss')	= unzip $ map (snipProjDictS varMap) ss
 	
 	return	$ PProjDict nn t (catMaybes mss')
-		: pp
+		: catMaybes mpp
 
-snipProjDictP pp
+
+-- Snip RHS of bindings in type class instances.
+snipProjDictP moduleName (PClassInst nn vClass ts context ss)
+ = do	
+	-- build a map of new names for the RHS
+	--	only rewrite vars where the rhs isn't already a var
+ 	let dictVs	= [ v	| SBind _ (Just v) x	<- ss
+ 				, not $ isXVar x ]
+ 
+	dictVsNew 	<- mapM (newInstFunVar moduleName vClass ts) dictVs
+	let varMap	= Map.fromList $ zip dictVs dictVsNew
+ 
+ 	let (mpp, mss')	= unzip $ map (snipProjDictS varMap) ss
+
+	return	$ PClassInst nn vClass ts context (catMaybes mss')
+		: catMaybes mpp
+
+snipProjDictP _ pp
  =	return [pp]
 
 
---- newProjFunVar
---	Make 
-
-newProjFunVar :: Var -> Var -> ProjectM Var
-newProjFunVar vCon vField
+-- | Create a name for a top level projection function.
+--	Add the type and projection names to the var to make the CoreIR readable.
+newProjFunVar :: Module -> Var -> Var -> ProjectM Var
+newProjFunVar 
+	moduleName@(Var.ModuleAbsolute ms)
+	vCon vField
  = do
  	var	<- newVarN NameValue
 	return	
-		$ var 	{ Var.name = "project_" ++ Var.name vCon ++ "_" ++ Var.name vField 
-			, Var.info = [Var.ISourcePos NoSourcePos ]
-			, Var.nameModule = Var.nameModule vCon }
+	 $ var 	{ Var.name 
+	 		= Var.deSymString
+			$ "project_" 
+	 		++ Var.name vCon 	++ "_" 
+			++ Var.name vField 
+			
+		, Var.info = [Var.ISourcePos NoSourcePos ]
+		, Var.nameModule = moduleName }
 
 
-snipProjDictS :: Map Var Var -> Stmt a -> (Top a, Maybe (Stmt a))
+-- | Create a name for a top level type class instance function
+--	Add the type class and function names to the var to make the CoreIR readable.
+newInstFunVar :: Module -> Var -> [Type] -> Var -> ProjectM Var
+newInstFunVar 
+	moduleName@(Var.ModuleAbsolute ms)
+	vClass 
+	tsArgs
+	vInst
+ = do
+ 	var	<- newVarN NameValue
+	
+
+	return	
+	 $ var 	{ Var.name 
+	 		= Var.deSymString
+			$ "instance_" 
+			++ Var.name vClass	 	++ "_" 
+			++ catMap makeTypeName tsArgs	++ "_"
+			++ Var.name vInst
+
+		, Var.info = [Var.ISourcePos NoSourcePos ]
+
+		, Var.nameModule = moduleName }
+
+-- | Make a printable name from a type
+--	TODO: do this more intelligently, in a way guaranteed not to clash with other types
+makeTypeName :: Type -> String
+makeTypeName tt
+ = case tt of
+ 	TFun t1 t2 eff clo	-> "Fun" ++ makeTypeName t1 ++ makeTypeName t2
+	TData v ts		-> (Var.name v) ++ (catMap makeTypeName ts)
+	TVar k v		-> ""
+	TWild k			-> ""
+
+
+-- | Snip the RHS of this statement down to a var
+snipProjDictS 
+	:: Map Var Var 
+	-> Stmt a 
+	-> ( Maybe (Top a)
+	   , Maybe (Stmt a))
+
 snipProjDictS varMap xx
 	| SBind nn (Just v) x	<- xx
 	, Just v'		<- Map.lookup v varMap
-	= ( PBind nn (Just v') x
+	= ( Just $ PBind nn (Just v') x
 	  , Just $ SBind nn (Just v)  (XVar nn v'))
 	  	
 	| SSig  nn v  t		<- xx
 	, Just v'		<- Map.lookup v varMap
-	= ( PSig  nn v'  t
+	= ( Just $ PSig  nn v'  t
 	  , Nothing )
-	
+
+	| otherwise
+	= ( Nothing
+	  , Just xx)
 
 -----
 -- addProjDictDataTree

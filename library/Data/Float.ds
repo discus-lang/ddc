@@ -96,10 +96,9 @@ instance Updatable (Float %_) where
 
 instance Accum (Float %_) where
 {
-	(+=)	= primFloat32_accAdd;
+	(+=) a b = primFloat32_update a (primFloat32_add a b);
 }
 
-primFloat32_accAdd a b	= primFloat32_update a (primFloat32_add a b);
 
 
 -- trig

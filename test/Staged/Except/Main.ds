@@ -34,7 +34,7 @@ main ()
 	hungryAte	= map (feedHungry ralph) snacks;
 	print  "\n";
 
-	println $ "  * count = " % (showInt $ length hungryAte) % "\n";
+	println $ "  * count = " % (show $ length hungryAte) % "\n";
 
  };
 

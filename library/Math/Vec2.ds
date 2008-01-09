@@ -47,7 +47,7 @@ project Vec2 Float where
 	-- | Show a vector as a string.
 	show :: Vec2 Float -> String;
 	show (Vec2 x y)	
-	 	= "Vec2 " % showFloat x % " " % showFloat y;
+	 	= "Vec2 " % show x % " " % show y;
 
 	-- | Accumulate a vector component-wise.
 	acc :: Vec2 Float -> Vec2 Float -> ();

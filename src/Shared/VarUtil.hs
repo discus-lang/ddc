@@ -1,19 +1,19 @@
 
 module Shared.VarUtil
-(
-	VarGenM,
-	newVarN,
-	newVarNS,
-	newVarNI,
+	( VarGenM
+	, newVarN
+	, newVarNS
+	, newVarNI
 
-	isSymbol,
-	isCtorName,
-	isDummy,
+	, isSymbol
+	, isCtorName
+	, isDummy
 
-	prettyPos,
-	prettyPosBound,
-	sortForallVars,
-)
+	, prettyPos
+	, prettyPosBound
+	, sortForallVars
+	
+	, deSymString)
 
 where
 
@@ -24,6 +24,7 @@ import qualified Shared.Var as Var
 import Shared.Var 
 	(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
 
+import qualified Data.Map	as Map
 
 -----
 type VarGenM = State VarBind
@@ -104,3 +105,38 @@ isCtorName var
 isDummy	   var	
 	= not $ any (=@= ISourcePos{}) 		-- Dummy vars introduced by the compiler won't have SourcePos's 
 	$ Var.info var	
+
+
+
+-- | Rewrite symbolic chars in a string 
+deSymString :: String -> String
+deSymString s
+ = catMap (\c -> fromMaybe [c] (Map.lookup c deSymSub)) s
+
+deSymSub
+	= Map.fromList
+	[ ('!', "Bg")
+	, ('@', "At")
+	, ('#', "Hs")
+	, ('$', "Dl")
+	, ('%', "Pc")
+	, ('^', "Ht")
+	, ('&', "An")
+	, ('*', "St")
+	, ('~', "Tl")
+	, ('-', "Ms")
+	, ('+', "Ps")
+	, ('=', "Eq")
+	, ('|', "Pp")
+	, ('\\', "Bs")
+	, ('/', "Fs")
+	, (':', "Cl")
+	, ('.', "Dt")
+	, ('?', "Qm")
+	, ('<', "Lt")
+	, ('>', "Gt")
+	, ('[', "Br")
+	, (']', "Kt")
+	, ('\'', "Pm")
+	, ('`', "Bt") ]
+

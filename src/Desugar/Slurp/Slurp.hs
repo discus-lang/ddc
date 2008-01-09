@@ -114,17 +114,17 @@ slurpP top@(PClassDict sp v ts context sigs)
 			
 
 
-slurpP top@(PClassInst sp v ts context exps)
+slurpP top@(PClassInst sp v ts context ss)
  = do	
 	let src	= TSClassInst sp v
- 	(exps', css, xsClos)	
- 			<- liftM unzip3
-	 		$  mapM (\(v, x)
-	 			-> do	(xVarT, xEff, xFreeVs, x', cs)	<- slurpX x
-					return	$ ((v, x'), cs, xFreeVs))
-			$ exps
 
-	return	( PClassInst Nothing v ts context exps'
+	-- All the RHS of the statements are vars, so we don't get any useful constraints back
+	(_, _, _, ss', _)
+			<- liftM unzip5
+			$  mapM slurpS ss
+
+
+	return	( PClassInst Nothing v ts context ss'
 		, [ CClassInst src v ts ] )
 
 	
@@ -176,7 +176,8 @@ slurpP	(PProjDict sp t ss)
 
  	let projVars	= [ (vField, vImpl)
 				| SBind _ (Just vField) (XVar _ vImpl) <-  ss]
-	
+
+	-- All the RHS of the statements are vars, so we don't get any useful constraints back
 	(_, _, _, ss', _)
 			<- liftM unzip5
 			$  mapM slurpS ss

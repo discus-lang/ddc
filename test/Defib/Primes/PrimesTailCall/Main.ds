@@ -9,7 +9,7 @@ main ()
 	fillPrimes primes max 1 2;
 
 	result	= arrayUI_get primes max;
-	print	$ (showInt result) % "\n";
+	print	$ (show result) % "\n";
  };
 
 fillPrimes primes max high i

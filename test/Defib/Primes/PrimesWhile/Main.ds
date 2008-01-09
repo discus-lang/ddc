@@ -19,7 +19,7 @@ main ()
 	};
 
 	result	= arrayUI_get primes max;
-	print	$ (showInt result ) % "\n";
+	print	$ (show result ) % "\n";
  };
 
 

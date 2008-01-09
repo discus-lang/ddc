@@ -11,5 +11,5 @@ ack m n
 main ()
  = do {
 	n	= 9;
-	print $ "Ack(3," % showInt n % "): " % showInt (ack 3 n) % "\n";
+	print $ "Ack(3," % show n % "): " % show (ack 3 n) % "\n";
  };

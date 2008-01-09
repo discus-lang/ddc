@@ -82,10 +82,10 @@ instance Updatable (Int %_) where
 
 instance Accum (Int %_) where
 {
-	(+=)	= primInt32_accAdd;
+	(+=) a b	
+		= primInt32_update a (primInt32_add a b);
 }
 
-primInt32_accAdd a b	= primInt32_update a (primInt32_add a b);
 
 -----
 (<>) :: Int -> (Int -> Int) -> ();

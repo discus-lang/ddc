@@ -134,12 +134,9 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 		returnJ		$ D.PClassDict none vC tsParam [] sigs'
 
 	-- class instances
-	S.PClassInst vC ts context stmts
+	S.PClassInst vC ts context ss
 	 -> do	
-		stmts'		<- mapM rewrite stmts
-		defs		<- mapM (\(D.SBind _ (Just v) x) 
-					-> do	return	$ (v, x))
-				$ stmts'
+		ss'		<- mapM rewrite ss
 
 		let context'	= map (\(v, vs) ->
 					D.ClassContext v ts)
@@ -151,7 +148,7 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 		ts_elab		<- liftM (map t3_1)
 				$  mapM (elaborateRegionsT newVarN getKind) ts_rewrite
 
-	 	returnJ		$ D.PClassInst none vC ts_elab context' defs
+	 	returnJ		$ D.PClassInst none vC ts_elab context' ss'
 
 	-- projections
 	S.PProjDict t ss

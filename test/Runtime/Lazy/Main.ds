@@ -10,5 +10,5 @@ add x y		= x + y;
 main ()
  = do {	
 	add5	= suspend2 add 5;
- 	print	$ (showInt (add5 27)) % "\n";
+ 	print	$ (show (add5 27)) % "\n";
  }; 

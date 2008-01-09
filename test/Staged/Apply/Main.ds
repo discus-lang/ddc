@@ -30,51 +30,51 @@ add8  x1 x2 x3 x4 x5 x6 x7 x8		= x1 `add` x2 `add` x3 `add` x4 `add` x5 `add` x6
 main ()
  = do {
 	print	$ "add2\n";
-	print	$ " test1-1   " % (showInt $ app1 (app1 add2 1) 1)			% "\n";
+	print	$ " test1-1   " % (show $ app1 (app1 add2 1) 1)				% "\n";
 
 	print	$ "add3\n";
-	print	$ " test1-1-1 "	% (showInt $ app1 (app1 (app1 add3 1) 2) 3)		% "\n";
-	print	$ " test2-1   "	% (showInt $ app2 (app1 add3 1) 2 3)			% "\n";
-	print	$ " test1-2   "	% (showInt $ app1 (app2 add3 1 2) 3)			% "\n";
+	print	$ " test1-1-1 "	% (show $ app1 (app1 (app1 add3 1) 2) 3)		% "\n";
+	print	$ " test2-1   "	% (show $ app2 (app1 add3 1) 2 3)			% "\n";
+	print	$ " test1-2   "	% (show $ app1 (app2 add3 1 2) 3)			% "\n";
 
 	print	$ "add4\n";
-	print	$ " test1-2-1 "	% (showInt $ app1 (app2 (app1 add4 1) 2 3) 4)		% "\n";
-	print	$ " test3-1   " % (showInt $ app3 (app1 add4 1) 2 3 4)			% "\n";
-	print	$ " test2-2   "	% (showInt $ app2 (app2 add4 1 2) 3 4)			% "\n";
+	print	$ " test1-2-1 "	% (show $ app1 (app2 (app1 add4 1) 2 3) 4)		% "\n";
+	print	$ " test3-1   " % (show $ app3 (app1 add4 1) 2 3 4)			% "\n";
+	print	$ " test2-2   "	% (show $ app2 (app2 add4 1 2) 3 4)			% "\n";
 
 	print	$ "add5\n";
-	print	$ " test1-3-1 "	% (showInt $ app1 (app3 (app1 add5 1) 2 3 4) 5) 	% "\n";
-	print	$ " test1-4   "	% (showInt $ app1 (app4 add5 1 2 3 4) 5)		% "\n";
-	print	$ " test2-3   " % (showInt $ app2 (app3 add5 1 2 3) 4 5)		% "\n";
-	print	$ " test3-2   "	% (showInt $ app3 (app2 add5 1 2) 3 4 5)		% "\n";
-	print	$ " test4-1   "	% (showInt $ app4 (app1 add5 1) 2 3 4 5)		% "\n";
+	print	$ " test1-3-1 "	% (show $ app1 (app3 (app1 add5 1) 2 3 4) 5) 		% "\n";
+	print	$ " test1-4   "	% (show $ app1 (app4 add5 1 2 3 4) 5)			% "\n";
+	print	$ " test2-3   " % (show $ app2 (app3 add5 1 2 3) 4 5)			% "\n";
+	print	$ " test3-2   "	% (show $ app3 (app2 add5 1 2) 3 4 5)			% "\n";
+	print	$ " test4-1   "	% (show $ app4 (app1 add5 1) 2 3 4 5)			% "\n";
 	
 	print	$ "add6\n";
-	print	$ " test1-4-1 "	% (showInt $ app1 (app4 (app1 add6 1) 2 3 4 5) 6) 	% "\n";
-	print	$ " test1-5   "	% (showInt $ app1 (app5 add6 1 2 3 4 5) 6)		% "\n";
-	print	$ " test2-4   "	% (showInt $ app2 (app4 add6 1 2 3 4) 5 6)		% "\n";
-	print	$ " test3-3   "	% (showInt $ app3 (app3 add6 1 2 3) 4 5 6)		% "\n";
-	print	$ " test4-2"	% (showInt $ app4 (app2 add6 1 2) 3 4 5 6)		% "\n";
-	print	$ " test5-1   "	% (showInt $ app5 (app1 add6 1) 2 3 4 5 6)		% "\n";
+	print	$ " test1-4-1 "	% (show $ app1 (app4 (app1 add6 1) 2 3 4 5) 6) 		% "\n";
+	print	$ " test1-5   "	% (show $ app1 (app5 add6 1 2 3 4 5) 6)			% "\n";
+	print	$ " test2-4   "	% (show $ app2 (app4 add6 1 2 3 4) 5 6)			% "\n";
+	print	$ " test3-3   "	% (show $ app3 (app3 add6 1 2 3) 4 5 6)			% "\n";
+	print	$ " test4-2"	% (show $ app4 (app2 add6 1 2) 3 4 5 6)			% "\n";
+	print	$ " test5-1   "	% (show $ app5 (app1 add6 1) 2 3 4 5 6)			% "\n";
 
 	print	$ "-- add7\n";
-	print	$ " test1-5-1 "	% (showInt $ app1 (app5 (app1 add7 1) 2 3 4 5 6) 7) 	% "\n";
-	print	$ " test1-6   "	% (showInt $ app1 (app6 add7 1 2 3 4 5 6) 7)		% "\n";
-	print	$ " test2-5   "	% (showInt $ app2 (app5 add7 1 2 3 4 5) 6 7)		% "\n";
-	print	$ " test3-4   "	% (showInt $ app3 (app4 add7 1 2 3 4) 5 6 7)		% "\n";
-	print	$ " test4-3   "	% (showInt $ app4 (app3 add7 1 2 3) 4 5 6 7)		% "\n";
-	print	$ " test5-2   "	% (showInt $ app5 (app2 add7 1 2) 3 4 5 6 7)		% "\n";
-	print	$ " test6-1   "	% (showInt $ app6 (app1 add7 1) 2 3 4 5 6 7)		% "\n";
+	print	$ " test1-5-1 "	% (show $ app1 (app5 (app1 add7 1) 2 3 4 5 6) 7) 	% "\n";
+	print	$ " test1-6   "	% (show $ app1 (app6 add7 1 2 3 4 5 6) 7)		% "\n";
+	print	$ " test2-5   "	% (show $ app2 (app5 add7 1 2 3 4 5) 6 7)		% "\n";
+	print	$ " test3-4   "	% (show $ app3 (app4 add7 1 2 3 4) 5 6 7)		% "\n";
+	print	$ " test4-3   "	% (show $ app4 (app3 add7 1 2 3) 4 5 6 7)		% "\n";
+	print	$ " test5-2   "	% (show $ app5 (app2 add7 1 2) 3 4 5 6 7)		% "\n";
+	print	$ " test6-1   "	% (show $ app6 (app1 add7 1) 2 3 4 5 6 7)		% "\n";
 
 	print	$ "-- add8\n";
-	print	$ " test1-6-1 "	% (showInt $ app1 (app6 (app1 add8 1) 2 3 4 5 6 7) 8) 	% "\n";
-	print	$ " test1-7   "	% (showInt $ app1 (app7 add8 1 2 3 4 5 6 7) 8)		% "\n";
-	print	$ " test2-6   "	% (showInt $ app2 (app6 add8 1 2 3 4 5 6) 7 8)		% "\n";
-	print	$ " test3-5   "	% (showInt $ app3 (app5 add8 1 2 3 4 5) 6 7 8)		% "\n";
-	print	$ " test4-4   "	% (showInt $ app4 (app4 add8 1 2 3 4) 5 6 7 8)		% "\n";
-	print	$ " test5-3   "	% (showInt $ app5 (app3 add8 1 2 3) 4 5 6 7 8)		% "\n";
-	print	$ " test6-2   "	% (showInt $ app6 (app2 add8 1 2) 3 4 5 6 7 8)		% "\n";
-	print	$ " test7-1   "	% (showInt $ app7 (app1 add8 1) 2 3 4 5 6 7 8)		% "\n";
+	print	$ " test1-6-1 "	% (show $ app1 (app6 (app1 add8 1) 2 3 4 5 6 7) 8) 	% "\n";
+	print	$ " test1-7   "	% (show $ app1 (app7 add8 1 2 3 4 5 6 7) 8)		% "\n";
+	print	$ " test2-6   "	% (show $ app2 (app6 add8 1 2 3 4 5 6) 7 8)		% "\n";
+	print	$ " test3-5   "	% (show $ app3 (app5 add8 1 2 3 4 5) 6 7 8)		% "\n";
+	print	$ " test4-4   "	% (show $ app4 (app4 add8 1 2 3 4) 5 6 7 8)		% "\n";
+	print	$ " test5-3   "	% (show $ app5 (app3 add8 1 2 3) 4 5 6 7 8)		% "\n";
+	print	$ " test6-2   "	% (show $ app6 (app2 add8 1 2) 3 4 5 6 7 8)		% "\n";
+	print	$ " test7-1   "	% (show $ app7 (app1 add8 1) 2 3 4 5 6 7 8)		% "\n";
 
 	print	"\n";
 

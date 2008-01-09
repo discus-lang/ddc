@@ -24,43 +24,43 @@ infix  5 <, <=, >=, > ;
 -- Class instances
 instance Eq (Base.Int %_) where
 {
-        (==)     = primInt32_eq;
+        (==)     = Data.Int.primInt32_eq;
         
-        (/=)     = primInt32_neq;
+        (/=)     = Data.Int.primInt32_neq;
 }
 
 instance Ord (Base.Int %_) where
 {
-        (>)      = primInt32_gt;
+        (>)      = Data.Int.primInt32_gt;
         
-        (<)      = primInt32_lt;
+        (<)      = Data.Int.primInt32_lt;
         
-        (>=)     = primInt32_ge;
+        (>=)     = Data.Int.primInt32_ge;
         
-        (<=)     = primInt32_le;
+        (<=)     = Data.Int.primInt32_le;
 }
 
 instance Num (Base.Int %_) where
 {
-        (+)      = primInt32_add;
+        (+)      = Data.Int.primInt32_add;
         
-        (-)      = primInt32_sub;
+        (-)      = Data.Int.primInt32_sub;
         
-        (*)      = primInt32_mul;
+        (*)      = Data.Int.primInt32_mul;
         
-        (/)      = primInt32_div;
+        (/)      = Data.Int.primInt32_div;
         
-        mod      = primInt32_mod;
+        mod      = Data.Int.primInt32_mod;
 }
 
 instance Updatable (Base.Int %_) where
 {
-        (:=)     = primInt32_update;
+        (:=)     = Data.Int.primInt32_update;
 }
 
 instance Accum (Base.Int %_) where
 {
-        (+=)     = primInt32_accAdd;
+        (+=)     = Data.Int.instance_Accum_Int_PsEq;
 }
 
 
@@ -115,7 +115,7 @@ foreign import extern "primInt32_update"
 
 
 -- Binds
-foreign import extern primInt32_accAdd
+foreign import extern instance_Accum_Int_PsEq
         :: forall %r0 %r1
         .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}

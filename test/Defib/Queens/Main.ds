@@ -2,7 +2,7 @@
 -- count the number of solutions to the nqueens problem.
 --	Adapted from the nofib benchmark.
 
-main ()	= print	$ (showInt $ nsoln 10) % "\n";
+main ()	= print	$ (show $ nsoln 10) % "\n";
 
 safe 	:: forall %r1 %r2 %r3 %r4 %r5
 	.  Int %r1 -> Int %r2 -> List %r3 (Int %r4) -> Bool %r5

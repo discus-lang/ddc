@@ -335,9 +335,7 @@ seaVar local v
 	  || (elem '\'' $ Var.name v)
 	= seaModule (Var.nameModule v)
 	++ (if local then "_" ++ (pretty $ Var.bind v) ++ "_" else "")
-	++ "_sym" ++ (concat
-			$ map seaSubSym
-			$ Var.name v)	
+	++ "_sym" ++ (Var.deSymString $ Var.name v)	
 
 	| Var.isDummy v
 	, Var.XBind{}	<- Var.bind v
@@ -359,36 +357,4 @@ seaModule	m
 
 --	= show (Var.nameModule v) ++ Var.name v
 --	= Var.name v ++ (show $ Var.info v)
-
-seaSubSym x
- = case Map.lookup x seaSymbolSub of
- 	Just s	-> s
-	Nothing	-> [x]
-	
-seaSymbolSub
-	= Map.fromList
-	[ ('!', "Bg")
-	, ('@', "At")
-	, ('#', "Hs")
-	, ('$', "Dl")
-	, ('%', "Pc")
-	, ('^', "Ht")
-	, ('&', "An")
-	, ('*', "St")
-	, ('~', "Tl")
-	, ('-', "Ms")
-	, ('+', "Ps")
-	, ('=', "Eq")
-	, ('|', "Pp")
-	, ('\\', "Bs")
-	, ('/', "Fs")
-	, (':', "Cl")
-	, ('.', "Dt")
-	, ('?', "Qm")
-	, ('<', "Lt")
-	, ('>', "Gt")
-	, ('[', "Br")
-	, (']', "Kt")
-	, ('\'', "Pm")
-	, ('`', "Bt") ]
 

@@ -22,7 +22,7 @@ oldFun x  = x + 1;
 thing		= 5;
 newFun x	
  = do { 
- 	print (showInt (x + thing)); 
+ 	print (show (x + thing)); 
 	x; 
  };
 

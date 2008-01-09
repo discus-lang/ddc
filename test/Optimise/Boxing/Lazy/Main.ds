@@ -4,7 +4,7 @@ main ()
  	y	= id @ 6;
 	z	= x + y;
 	
-	print	$ showInt z	% "\n";
+	print	$ show z	% "\n";
  };
  	
  

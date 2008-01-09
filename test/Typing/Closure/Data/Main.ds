@@ -21,6 +21,6 @@ main ()
  	runThing thing;
 	runThing thing;
 	
-	print 	$ "x = " % showInt x	% ";\n";
+	print 	$ "x = " % show x	% ";\n";
  };
  	

@@ -14,8 +14,8 @@ appDanio f = f danio;
 
 main ()
  = do {
-	print (showInt (perch danio) % "\n");
-	print (showInt (appDanio perch) % "\n");
+	println $ show (perch danio);
+	println $ show (appDanio perch);
  };
 
 

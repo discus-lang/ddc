@@ -37,6 +37,8 @@ import qualified Type.Util		as T
 import qualified Type.Plate		as T
 
 import qualified Desugar.Exp		as D
+import qualified Desugar.Plate.Trans	as D
+import qualified Desugar.Pretty		as D
 
 import qualified Core.Exp		as C
 import qualified Core.Pretty		as C
@@ -158,7 +160,8 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 	++ "\n"
 
 	++ "-- Class instances\n"
-	++ (concat [pretty p | p@S.PClassInst{}		<- ps])
+	++ (concat [pretty p | 	p@D.PClassInst{}			
+			     <- map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared])
 	++ "\n"
 	
 	++ "-- Foreign imports\n"

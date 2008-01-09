@@ -180,6 +180,8 @@ instance Pretty Exp where
 	XVar 	sp v	 -> prettyp v
 
 	XProj 	sp x p	 -> prettyXB x % p
+	XProjT 	sp t p	 -> "@XProjT " % prettyTB t % " " % p
+
 
 	XLambda sp v e	 -> "\\" % v % " -> " % e
 

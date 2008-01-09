@@ -1,8 +1,5 @@
-
 module Main.Compile
-(
-	compileFile,
-)
+	( compileFile )
 
 where
 
@@ -226,8 +223,9 @@ compileFile	args     fileName
 				hRenamed
 
 	-- Snip down dictionaries and add default projections.
-	(sProject, projTable)	
+	(dProject, projTable)	
 			<- SS.desugarProject
+				moduleName
 				hDesugared
 				sDesugared
 				
@@ -246,7 +244,7 @@ compileFile	args     fileName
 	 , vsTypesPlease
 	 , vsBound_source)
 			<- SS.slurpC 
-				sProject
+				dProject
 				hDesugared
 
 	let hTagged	= map (D.transformN (\n -> Nothing)) hDesugared
@@ -445,7 +443,7 @@ compileFile	args     fileName
 	diInterface	<- ME.makeInterface
 				moduleName
 				sRenamed
-				sProject
+				dProject
 				cAtomise
 				sigmaTable
 				typeTable

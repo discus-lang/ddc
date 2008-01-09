@@ -7,6 +7,7 @@ module Desugar.Pretty
 where
 
 import Util
+import qualified Shared.Var	as Var
 import Desugar.Exp
 import Type.Pretty
 
@@ -66,11 +67,11 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 			%> ("\n\n" %!% map (\(v, sig) -> v % ("\n        :: " %> prettyTS sig 	% ";")) sigs)
 			% "\n}\n")
 
-	PClassInst nn v ts context defs
+	PClassInst nn v ts context ss
 	 -> annot nn 
 	 	("instance " % v % " " % " " %!% map prettyTB ts % " where\n"
 			% "{\n"
-			%> ("\n\n" %!% map (\(v, exp) -> v % ("\n =      " %> exp 		% ";")) defs) % "\n"
+			%> ("\n\n" %!% ss) % "\n"
 			% "}\n\n")
 
 	-- projections
@@ -183,16 +184,19 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 	 	(prettyp x) % ";"
 
   	SBind nn (Just v) x@XLambda{}		
-	 -> annot nn 
-	 	(v % "\n =      " %> x) % ";\n"
-	
+	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
+	    in  annot nn 
+	  	 	(v' % "\n =      " %> x) % ";\n"
+	 
 	SBind nn (Just v) x
-	 -> annot nn
-	 	(v %>> " = " % x)	% ";"
+	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
+	    in  annot nn
+	 	 	(v' %>> " = " % x)	% ";"
 
 	
-
-	SSig  nn v  t		-> annot nn (v  % " :: " % t) % ";"
+	SSig  nn v  t	
+	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
+	    in	annot nn (v'  % " :: " % t) % ";"
 
 
 -- Alt -------------------------------------------------------------------------
