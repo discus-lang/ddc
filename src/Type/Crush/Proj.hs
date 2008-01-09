@@ -47,7 +47,7 @@ crushProjClassT cidT
  	Just cProj@(ClassFetter { classFetter = fProj })
 			<- lookupClass cidT
 
-	let FProj proj _ (TClass KData cidObj) (TClass KData cidResult) eff clo	= fProj
+	let FProj proj _ (TClass KData cidObj) _	= fProj
 	
 	-- lookup the node for the object
  	Just cObj@(Class { classType = Just tObj })
@@ -97,7 +97,7 @@ crushProj2
 
 crushProj2 
 	cid 
-	fProj@(FProj proj vInst tObj tResult eff clo)
+	fProj@(FProj proj vInst tObj tBind)
 	cObj tObjCon vsDict
  = do
 	-- Extract the name of the projection we're looking for
@@ -133,7 +133,7 @@ crushProj2
 
 			-- Build the new constraints
 			let qs	= 	[ CInst (TSCrushed fProj) vInst vImplT
-					, CEq   (TSCrushed fProj) (TVar KData vInst) (TFun tObj tResult eff clo) ]
+					, CEq   (TSCrushed fProj) (TVar KData vInst) tBind ]
 					 
 			trace $ 	"    qs : " %> "\n" %!% qs % "\n"
 

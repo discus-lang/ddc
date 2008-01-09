@@ -147,9 +147,10 @@ cutF 	:: Set Type -> Fetter -> Fetter
 cutF cidsEntered ff
  = let down	= cutT Nothing cidsEntered
    in case ff of
- 	FConstraint 	v ts	-> FConstraint v (map down ts)
-	FLet 		t1 t2	-> FLet  t1 (down t2)
-	FMore		t1 t2	-> FMore t1 (down t2)
+ 	FConstraint 	v ts		-> FConstraint v (map down ts)
+	FLet 		t1 t2		-> FLet  t1  (down t2)
+	FMore		t1 t2		-> FMore t1  (down t2)
+	FProj		j v tDict tBind	-> FProj j v (down tDict) (down tBind)
 
 
 -- | Split a list of fetters into FLet and others

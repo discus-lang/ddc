@@ -39,8 +39,8 @@ instance Pretty CTree where
 	CClass	src v ts
 	 -> "@CClass " % v % " " % ts
 
-	CProject src tp t1 t2 t3 eff clo
-	 -> "@CProject " % tp % " " % t1 % " " % t2 % " " % t3 % " " % eff % " " % clo % ";"
+	CProject src tp vInst tDict tBind
+	 -> "@CProject " % tp % " " % vInst % " " % tDict % " " % tBind % ";\n"
 
 	CDataFields src v ts []	
 	 -> "@CDataFields " % v % " " % ts % " {};"

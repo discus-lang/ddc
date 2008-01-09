@@ -155,7 +155,8 @@ solveCs	(c:cs)
 
 	-- def
 	CDef src t1@(TVar k vDef) t
- 	 -> do	trace	$ "### Def  " % vDef %> ("\n:: " % prettyTypeSplit t) % "\n\n"
+ 	 -> do	
+--	 	trace	$ "### Def  " % vDef %> ("\n:: " % prettyTypeSplit t) % "\n\n"
 		feedConstraint c
 
 		-- Record that this type is good to go.
@@ -224,8 +225,8 @@ solveCs	(c:cs)
 		solveNext cs
 
 	-- Projection constraints
-	CProject src j t1 t2 t3 eff clo
-	 -> do	trace	$ "### CProject " % j % " " % t1 % " " % t2 % " " % t3 % " " % eff % " " % clo
+	CProject src j vInst tDict tBind
+	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind
 		feedConstraint c
 		solveNext cs
 
@@ -848,18 +849,4 @@ getRegShapes
 	return regShapes
 
 
--- | Add an ambiguous projection error to the solver state.
-errorProjection :: [ClassId] -> SquidM ()
-errorProjection (cid:_)
- = do
-	-- Lookup one of the classes and extract the offending FielsIs fetters.
-	--
- 	Just ClassFetter { classFetter = FProj j _ _ _ _ _ }	
-		<- lookupClass cid
-	
-	addErrors 
-		[ErrorAmbiguousProjection
-		{ eProj		= j }]
-
-	return ()
 	

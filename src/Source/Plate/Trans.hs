@@ -248,6 +248,10 @@ instance Monad m => TransM m Exp where
 	 -> do 	x1'		<- transZM table x1
 	 	transX table	$ XProj sp x1' p
 
+	XProjT sp t p
+	 -> do	t'		<- transZM table t
+	 	transX table	$ XProjT sp t' p
+
 	XLambda sp vs x1
 	 -> do	x1'		<- transZM table x1
 	    	transX table	$ XLambda sp vs x1'

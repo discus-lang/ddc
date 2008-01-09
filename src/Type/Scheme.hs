@@ -1,19 +1,30 @@
+{-# OPTIONS -fwarn-unused-imports #-}
 
 module Type.Scheme
 	( extractType
-	, generaliseType
-	, collectCidsEnv )
+	, generaliseType )
 where
 
-import qualified Debug.Trace	as Debug
+import Type.Exp
+import Type.Pretty
+import Type.Plate
+import Type.Util
+import Type.Trace
+import Type.Error
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
+import Type.Check.GraphicalData
+import Type.Check.Soundness
+import Type.Closure.Trim
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
+import Type.Effect.MaskLocal
+-- import Type.Effect.MaskFresh	(maskEsFreshT)
+-- import Type.Effect.MaskPure	(maskEsPureT)
 
-import Util
+import Type.State
+import Type.Class
+import Type.Plug		
+import Type.Port
+import Type.Context
 
 import Shared.Error
 import qualified Shared.Var	as Var
@@ -22,30 +33,12 @@ import Shared.Var		(NameSpace(..))
 
 import qualified Main.Arg	as Arg
 
-import Type.Exp
-import Type.Pretty
-import Type.Plate
-import Type.Util
-import Type.Merge
-import Type.Trace
-import Type.Error
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 
-import Type.Check.CheckSig
-import Type.Check.GraphicalData	(checkGraphicalDataT)
-import Type.Check.Soundness	(dangerousCidsT)
-import Type.Closure.Trim 	(trimClosureT)
+import Util
 
-import Type.Effect.MaskLocal	(maskLocalT)
--- import Type.Effect.MaskFresh	(maskEsFreshT)
--- import Type.Effect.MaskPure	(maskEsPureT)
-import Type.Effect.Narrow
-
-import Type.State
-import Type.Class
-import Type.Plug		(plugClassIds, staticRsDataT, staticRsClosureT)
-import Type.Port
-import Type.Induced
-import Type.Context
 
 
 -----
@@ -180,7 +173,6 @@ generaliseType varT tCore envCids
 	-- These are all the cids we can't generalise
 	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
 
-
 	-- Rewrite non-static cids to the var for their equivalence class.
 	tPlug			<- plugClassIds staticCids tPort
 
@@ -193,12 +185,16 @@ generaliseType varT tCore envCids
 	--	TODO we have to do a reduceContext again to pick up (Pure TBot) 
 	--	.. the TBot won't show up until we do the cleaning. Won't need this 
 	--	once we can discharge these during the grind. It's duplicated in extractType above
-
 	classInst	<- gets stateClassInst
 
-	let tClean	= reduceContextT classInst $ cleanType Set.empty tPlug
+	let tClean	= reduceContextT classInst 
+			$ cleanType Set.empty tPlug
+
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
+
+	-- Check context for problems.
+	checkContext tClean
 
 	-- Mask effects and CMDL constraints on local regions
 	-- 	Do this before adding foralls so we don't end up with quantified regions which
@@ -251,21 +247,13 @@ generaliseType varT tCore envCids
 				Just sig	-> checkSig varT sig varT tPack
 	addErrors errsSig
 -}
-	-- debug
-
---		% "    staticRsData     = " % staticRsData 	% "\n"
---		% "    staticRsClosure  = " % staticRsClosure	% "\n"
---		% "    staticDanger     = " % staticDanger	% "\n"
-
-
-
 
 
 -- | Empty effect and closure eq-classes which do not appear in the environment or 
 --	a contra-variant position in the type can never be anything but _|_,
 --	so we can safely erase them now.
 --
---   CHECK:
+--   TODO:
 --	We need to run the cleaner twice to handle types like this:
 --		a -(!e1)> b
 --		:- !e1 = !{ !e2 .. !en }
@@ -303,34 +291,26 @@ cleanType' save tt
    in	tClean
 
 
------
--- Collect up the list of cids which cannot be generalise because 
---	they are free in this environment.
-collectCidsEnv
-	:: Var			-- (type)  var of the scheme being generalised.
-	-> [Var] 		-- (value) vars of environment.
-	-> SquidM [ClassId]
 
-collectCidsEnv vGenT vsEnv
- = do
-	-- Convert environment value vars to type vars.
-	vsEnvT_	<- mapM	(\v -> do
-			Just t	<- lookupSigmaVar v
-			return t)
-		$ vsEnv
-
-	-- The binding variable for a let-bound recursive function is present
-	--	in the environment of its own generalisation. Don't try and
-	--	call findType on ourselves or we'll loop forever.
-	--
-	let vsEnvT	= vsEnvT_ \\ [vGenT]
-
-	-- Lookup the types of the environment vars.
---	tsEnv		<- mapM findType vsEnvT
---	let tsEnv	= []
-
-	-- All cids in these types are monomorphic.
---	let cidsEnv	= nub $ catMap collectClassIds tsEnv
-
-	return []
-
+-- | After reducing the context of a type to be generalised, if certain constraints
+--	remain then this is symptomatic of problems in the source program.
+-- 
+--	Projection constraints remaining indicate an ambiguous projection.
+--
+--	Type class constraints reamining indicate that no instance for this type is available.
+--
+checkContext :: Type -> SquidM ()
+checkContext tt
+ = case tt of
+ 	TFetters fs t	-> mapM_ checkContextF fs
+	_		-> return ()
+ 
+checkContextF ff
+ = case ff of
+ 	FProj j vInst tDict tBind
+	 -> addErrors
+	 	[ ErrorAmbiguousProjection
+			{ eProj		= j } ]
+		
+	_ -> return ()
+	

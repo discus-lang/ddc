@@ -20,21 +20,21 @@ main ()
 	
 	snacks		= [Nachos, Flowers, Grass];
 
-	printN "-----";
+	println "-----";
 	feed		ralph  Nachos;
 	feedAnimal	ralph  Flowers;
 	feedHungry	mary   Nachos;
 	print  "\n";
 
-	printN "-----";
+	println "-----";
 	map (feedAnimal mary) snacks;
 	print  "\n";
 
-	printN "-----";
+	println "-----";
 	hungryAte	= map (feedHungry ralph) snacks;
 	print  "\n";
 
-	printN $ "  * count = " % (showInt $ length hungryAte) % "\n";
+	println $ "  * count = " % (showInt $ length hungryAte) % "\n";
 
  };
 
@@ -54,8 +54,8 @@ feedHungry animal food
    	catch {
 	 Exception msg 
 	   -> do {
-	   	printN msg;
-		printN "     but they'll eat it when they're hungry.";
+	   	println msg;
+		println "     but they'll eat it when they're hungry.";
 	     };
 	}
 	with	Nothing;
@@ -66,8 +66,8 @@ feed animal food
  = case animal of {
  	Unicorn	name
 	 -> case food of {
-	 	Grass	-> printN $ name % " ate the grass.";
-		Flowers	-> printN $ name % " ate the flowers.";
+	 	Grass	-> println $ name % " ate the grass.";
+		Flowers	-> println $ name % " ate the flowers.";
 		Nachos	-> throw Exception "Unicorns don't like nachos!";
 	 };
 	 
@@ -75,7 +75,7 @@ feed animal food
 	 -> case food of {
 		Grass	-> throw Exception "Gibbons don't like grass!";
 		Flowers	-> throw Exception "Gibbons don't like flowers!";
-	 	Nachos	-> printN $ name % " ate the nachos.";
+	 	Nachos	-> println $ name % " ate the nachos.";
 	 };
  };
 

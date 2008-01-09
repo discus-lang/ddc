@@ -63,6 +63,7 @@ sourcePosX xx
 	XConst		sp c		-> sp
 	XVar 		sp v		-> sp
 	XProj 		sp x j		-> sp
+	XProjT		sp t j		-> sp
 	XLambda	 	sp v x		-> sp
 	XApp		sp x1 x2	-> sp
 	XCase		sp x aa		-> sp
@@ -95,4 +96,6 @@ sourcePosX xx
 	XTuple		sp xx		-> sp
 	XCons		sp x1 x2	-> sp
 	XList 		sp xx		-> sp
-	
+
+--	_ -> panic stage
+--		$ "sourcePosX: no match for " % show xx % "\n"	

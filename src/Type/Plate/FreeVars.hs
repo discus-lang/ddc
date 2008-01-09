@@ -1,9 +1,8 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Type.Plate.FreeVars
-(
-	freeVarsT,
-	freeVarsF
-)
+	( freeVarsT
+	, freeVarsF )
 
 where
 
@@ -118,6 +117,8 @@ instance Free Fetter where
 	FLet t1 t2		
 	 -> free t1 ++ free t2
 
-	FProj pj t1 t2 t3 eff clo	
-	 -> free t1 ++ free t2 ++ free t3 ++ free eff ++ free clo
+	FProj pj v tDict tBind
+	 -> free v ++ free tDict ++ free tBind
 
+
+	_ -> panic stage $ "free[Fetter]: no match for " ++ show f ++ "\n"

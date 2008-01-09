@@ -13,18 +13,8 @@ data Vector3 %r1
 		y	:: Float %r1;
 		z	:: Float %r1;
 	 };
-		
------
-showMatrix33 
- (Matrix33 	a1 a2 a3
-		a4 a5 a6
-		a7 a8 a9)
 
- = (showFloat a1) % " " % (showFloat a2) % " " % (showFloat a3) % "\n"
- % (showFloat a4) % " " % (showFloat a5) % " " % (showFloat a6) % "\n"
- % (showFloat a7) % " " % (showFloat a8) % " " % (showFloat a9) % "\n";
- 
-
+	
 -----
 showVector3
  (Vector3	x1 x2 x3)
@@ -32,67 +22,72 @@ showVector3
  % showFloat x2 % "\n"
  % showFloat x3	% "\n";
 
------
-matrix33_id ()
- = Matrix33	1.0 0.0 0.0
+project Matrix33 where 
+{
+	-- | The identity matrix.
+	id	
+	 = Matrix33
+	 	1.0 0.0 0.0
  		0.0 1.0 0.0
 		0.0 0.0 1.0;
-	
------
-matrix33_add
- (Matrix33	a1 a2 a3
- 		a4 a5 a6
-		a7 a8 a9)
-		
- (Matrix33	b1 b2 b3
- 		b4 b5 b6
-		b7 b8 b9)
-		
- = Matrix33	(a1 + b1) (a2 + b2) (a3 + b3)
- 		(a4 + b4) (a4 + b4) (a5 + b5)
-		(a6 + b6) (a7 + b7) (a8 + b8);
-		
------
-matrix33_translate x y
- = Matrix33	1.0	0.0	x
+
+
+	-- | The translation matrix.
+	translate x y
+	 = Matrix33	
+	 	1.0	0.0	x
  		0.0	1.0	y
 		0.0	0.0	1.0;
 
------
-matrix33_rotate x
- = Matrix33	(cos x) (0.0 - sin x) 	0.0
- 		(sin x) (cos x)		0.0
+	-- | The rotation matrix.
+	rotate x
+	 = Matrix33	
+	 	(cos x) (0.0 - sin x) 	0.0
+	 	(sin x) (cos x)		0.0
 		0.0	0.0		1.0;
 
------
-matrix33_scale x y
-= Matrix33	x	0.0	0.0
+	-- | The scale matrix.
+	scale x y
+	 = Matrix33	
+	 	x	0.0	0.0
 		0.0	y	0.0
 		0.0	0.0	1.0;
- 		
------
-matrix33_mulVec
- (Matrix33 	a1 a2 a3
- 		a4 a5 a6
-		a7 a8 a9)
+	
+	-- | Show a matrix.
+	show :: Matrix33 -> String;
+	show (Matrix33 a1 a2 a3 a4 a5 a6 a7 a8 a9)
+	 = (showFloat a1) % " " % (showFloat a2) % " " % (showFloat a3) % "\n"
+	 % (showFloat a4) % " " % (showFloat a5) % " " % (showFloat a6) % "\n"
+	 % (showFloat a7) % " " % (showFloat a8) % " " % (showFloat a9) % "\n";
 
- (Vector3	x1 x2 x3)
+	
+	-- | Add two matricies component-wise
+	add :: Matrix33 -> Matrix33 -> Matrix33;
+	add	(Matrix33 a1 a2 a3 a4 a5 a6 a7 a8 a9)
+		(Matrix33 b1 b2 b3 b4 b5 b6 b7 b8 b9)
+
+	 = Matrix33
+	 	(a1 + b1) (a2 + b2) (a3 + b3)
+	 	(a4 + b4) (a4 + b4) (a5 + b5)
+		(a6 + b6) (a7 + b7) (a8 + b8);
+	
+	-- | Multiply a matrix by a vector
+	mulVec :: Matrix33 -> Vector3 -> Vector3;
+	mulVec	(Matrix33 a1 a2 a3 a4 a5 a6 a7 a8 a9)
+		(Vector3  x1 x2 x3)
  
- = Vector3	(a1 * x1  +  a2 * x2  +  a3 * x3)
+ 	 = Vector3	
+	 	(a1 * x1  +  a2 * x2  +  a3 * x3)
  		(a4 * x1  +  a5 * x2  +  a6 * x3)
 		(a7 * x1  +  a8 * x2  +  a9 * x3);
 		
------
-matrix33_mul
- (Matrix33	a1 a2 a3
- 		a4 a5 a6
-		a7 a8 a9)
-		
- (Matrix33	b1 b2 b3
- 		b4 b5 b6
-		b7 b8 b9)
-		
- = Matrix33 	(a1 * b1  +  a2 * b4  +  a3 * b7)	
+	-- | Multiply a matrix by a matrix
+	mul :: Matrix33 -> Matrix33 -> Matrix33;
+	mul	(Matrix33 a1 a2 a3 a4 a5 a6 a7 a8 a9)
+		(Matrix33 b1 b2 b3 b4 b5 b6 b7 b8 b9)
+
+	 = Matrix33 	
+	 	(a1 * b1  +  a2 * b4  +  a3 * b7)	
  		(a1 * b2  +  a2 * b5  +  a3 * b8)
 		(a1 * b3  +  a2 * b6  +  a3 * b9)
 		
@@ -103,6 +98,7 @@ matrix33_mul
 		(a7 * b1  +  a8 * b4  +  a9 * b7)
 		(a7 * b2  +  a8 * b5  +  a9 * b8)
 		(a7 * b3  +  a8 * b6  +  a9 * b9);
-		
+
+}
 		
 		

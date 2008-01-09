@@ -156,6 +156,7 @@ data Exp
 
 	| XVar 		SP Var				-- VAR
 	| XProj		SP Exp Proj			-- EXP . PROJ
+	| XProjT	SP Type Proj
 	
 	| XLambda 	SP Var Exp			-- \VAR -> EXP
 	| XApp 		SP Exp Exp			-- EXP1 EXP2

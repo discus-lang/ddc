@@ -153,9 +153,12 @@ data Fetter
 	| FLet		Type	Type			-- ^ Equality of types, t1 must be TVar or TClass
 	| FMore		Type	Type			-- ^ t1 :> t2
 
-	-- | projection function is t1 = t2 -(eff clo)> t3
-	| FProj		TProj	Var Type Type Effect Closure
-
+	-- | projections
+	| FProj		TProj	
+			Var 	-- var to tie the instantiated projection function to.
+			Type 	-- type of the dictionary to choose the projection from.
+			Type 	-- type to unify the projection function with, once it's resolved.
+				
 
 	-- junk?
 	-- Intermediate constructors.

@@ -88,6 +88,7 @@ tokString =
 
 	, (Forall,		"forall")
 	, (Dot,			".")
+	, (And,			"&")
 
 	, (HasType,		"::")
 	, (HasOpType,		":$")

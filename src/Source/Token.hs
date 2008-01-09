@@ -130,6 +130,7 @@ data Token
 	| SColon		-- ^ ;
 	| Bar			-- ^ |
 	| Dot			-- ^ .
+	| And			-- ^ &
 	
 	| ModuleName	[String]	-- module qualifier / name
 					--	broken into parts

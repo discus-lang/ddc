@@ -217,7 +217,7 @@ instance Pretty Exp where
 
 	 	then e1 % " " % prettyXB e2
 
-		else "(" % e1 % ") " %> prettyXB e2
+		else "(" % e1 % ")\n" %> prettyXB e2
 		
  
 	XIfThenElse sp e1 e2 e3
@@ -403,7 +403,9 @@ instance Pretty Stmt where
 	SBind sp (Just v) x	-> v 			%>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
 
 	SBindPats sp v [] x	-> v % " " 		%>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
-	SBindPats sp v ps x	-> v % " " % " " %!% ps %>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
+	SBindPats sp v ps x	
+		-> v % " " % " " %!% map prettyXB ps 
+		%>> (spaceDown x) % "\n = " % prettyX_naked x 	% ";"
 
 
 	SSig sp v t		-> v %> " :: " % t % ";"

@@ -72,7 +72,8 @@ data Exp a
 	| XVoid	 	a
 	| XConst 	a Const
 	| XVar	 	a Var
-	| XProj		a (Exp a) (Proj a)		-- Tag var, expression, projection.
+	| XProj		a (Exp a)  (Proj a)		
+	| XProjT	a Type (Proj a)		
 	| XLambda	a Var (Exp a) 
 	| XApp		a (Exp a) (Exp a)
 	| XMatch     	a (Maybe (Exp a)) [Alt a]
@@ -82,6 +83,7 @@ data Exp a
 	-- Produced by the constraint slurper
 	| XLambdaTEC 	a Var (Exp a) Type Effect Closure
 	| XProjTagged	a Var (Exp a) (Proj a)
+	| XProjTaggedT  a Var (Proj a)
 	| XVarInst	a Var				-- An instance of a let bound variable
 							--	We'll need to add TREC applications to this variable
 							--	during Desugar->Core translation.

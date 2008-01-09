@@ -337,7 +337,7 @@ slurpX 	exp@(XProj sp xBody proj)
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
-	cX	<- newTVarES	"proj"
+	cX	<- newTVarCS	"proj"
 	fX	<- newTVarFS	"proj"
 
 	-- instance var for projection function.
@@ -359,7 +359,7 @@ slurpX 	exp@(XProj sp xBody proj)
 	let proj'	= transformN (\n -> Nothing) proj
 			
 	let qs	 = 
-		[ CProject src projT vInst tBody tX eProj cProj
+		[ CProject src projT vInst tBody (TFun tBody tX eProj cProj)
 		, CEq	   src eX	$ makeTSum KEffect  [eBody, eProj]
 		, CEq	   src cX	$ makeTSum KClosure [cBody, cProj] ]
 
@@ -368,6 +368,41 @@ slurpX 	exp@(XProj sp xBody proj)
 		, cX
 		, XProjTagged (Just (tX, eX)) vInst xBody' proj'
 		, qsBody ++ qs )
+
+
+slurpX	exp@(XProjT sp tDict proj)
+ = do	
+ 	let projT	= case proj of
+				JField  nn l	-> TJField  l
+				JFieldR nn l	-> TJFieldR l
+
+	let src	= TSProj sp projT
+
+	-- the result of the projection
+	tX	<- newTVarDS	"proj"
+	eX	<- newTVarES	"proj"
+	cX	<- newTVarCS	"proj"
+	fX	<- newTVarFS	"proj"
+
+	-- a var to tie the dictionary type to
+	tDictVar <- newTVarDS	"proj"
+
+	-- instance var for projection function.
+	--	When we work out what the projection function is it'll be instantiated and bound to this var.
+	tInst@(TVar KData vInst) 
+		<- newTVarD
+
+	let proj'	= transformN (\n -> Nothing) proj
+
+	let qs	 = 
+		[ CEq	   src tDictVar	$ tDict
+		, CProject src projT vInst tDictVar tX ]
+
+	return	( tX
+		, eX
+		, cX
+		, XProjTaggedT (Just (tX, eX)) vInst proj'
+		, qs )
 
 slurpX x
  = panic stage $ "slurpX: cannot slurp " ++ show x

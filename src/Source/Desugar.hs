@@ -146,10 +146,12 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 				$ context
 
 		let ?getKind	= getKind
---		tsExp		<- mapM expandT ts
-		ts'		<- mapM rewrite ts
+		ts_rewrite	<- mapM rewrite ts
 
-	 	returnJ		$ D.PClassInst none vC ts' context' defs
+		ts_elab		<- liftM (map t3_1)
+				$  mapM (elaborateRegionsT newVarN getKind) ts_rewrite
+
+	 	returnJ		$ D.PClassInst none vC ts_elab context' defs
 
 	-- projections
 	S.PProjDict t ss
@@ -165,14 +167,10 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 	S.PType sp v t
 	 -> do	t'	<- rewrite t
 
-		let ?newVarN	= newVarN
-	 	let ?getKind	= getKind
-	 	(tElab, vksConst, vksMutable)	<- elaborateRegionsT t'
-
-		let tQuant	= makeTForall (vksConst ++ vksMutable) tElab
+	 	(tElab, vksConst, vksMutable)	
+			<- elaborateRegionsT newVarN getKind t'
 
 	 	returnJ	$ D.PSig sp v tElab
---		return Nothing
 
   	S.PStmt s
 	 -> do	(D.SBind sp mV x)	<- rewrite s
@@ -210,6 +208,7 @@ instance Rewrite S.Exp (D.Exp Annot) where
 	S.XVar sp v	
 	 -> 	return	$ D.XVar 	sp v
 
+	-- projections
 	S.XProj sp x1 (S.JIndex x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
@@ -224,6 +223,17 @@ instance Rewrite S.Exp (D.Exp Annot) where
 	 -> do	x'	<- rewrite x
 	 	pj'	<- rewrite pj
 	 	return	$ D.XProj 	sp x' pj'
+
+	S.XProjT sp t pj
+	 -> do	t'	<- rewrite t
+	 	pj'	<- rewrite pj
+
+	 	(tElab, vksConst, vksMutable)	
+			<- elaborateRegionsT newVarN getKind t'
+
+		return	$ D.XProjT sp tElab pj'
+
+
 		
 	S.XLambda sp v x
 	 -> do	x'	<- rewrite x
@@ -430,9 +440,8 @@ instance Rewrite S.Stmt (D.Stmt Annot) where
 	S.SSig sp v t
 	 -> do 	t'	<- rewrite t
 
-		let ?newVarN	= newVarN
-	 	let ?getKind	= getKind
-	 	(tElab, vksConst, vksMutable)	<- elaborateRegionsT t'
+	 	(tElab, vksConst, vksMutable)	
+			<- elaborateRegionsT newVarN getKind t'
 
 	 	return	$ D.SSig sp v tElab
 

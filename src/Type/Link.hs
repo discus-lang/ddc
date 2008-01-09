@@ -122,12 +122,10 @@ linkFetter mParent bound ff
 	 	t2'	<- linkType mParent bound t2
 	 	return	$ FLet t1' t2'
 			 
-	FProj pj t1 t2 t3 eff clo
-	 -> do	t2'	<- linkType mParent bound t2
-		t3'	<- linkType mParent	bound t3
-		eff'	<- linkType mParent bound eff
-		clo'	<- linkType mParent bound clo
-		return	$ FProj pj t1 t2' t3' eff' clo'
+	FProj pj v tDict tBind
+	 -> do	tDict'	<- linkType mParent bound tDict
+		tBind'	<- linkType mParent bound tBind
+		return	$ FProj pj v tDict' tBind'
 
 
 

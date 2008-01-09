@@ -119,7 +119,7 @@ print xx
 		print s2; };
  };	
 
-printN s	= print (s % "\n");
+println s	= print (s % "\n");
 
 concats xx
  = case xx of {

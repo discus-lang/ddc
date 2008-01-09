@@ -1,9 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
+-- | Pretty printing for desugared source.
 module Desugar.Pretty
-(
-
-)
+	()
 
 where
 
@@ -11,14 +10,13 @@ import Util
 import Desugar.Exp
 import Type.Pretty
 
-
 -----
 annot nn x
  = case nn of
  	Nothing	-> x
 	Just n	-> "[" % n % ": " % x % "]"
 
--- Top
+-- Top -------------------------------------------------------------------------
 instance Pretty a => Pretty (Top (Maybe a)) where
  prettyp xx
   = case xx of
@@ -98,7 +96,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 	 	(prettyp x) % ";\n\n"
 
 
--- CtorDef
+-- CtorDef ---------------------------------------------------------------------
 instance Pretty a => Pretty (CtorDef (Maybe a)) where
  prettyp xx
   = case xx of
@@ -110,7 +108,7 @@ instance Pretty a => Pretty (CtorDef (Maybe a)) where
 			%> ("\n" %!% fs) % "\n" % "}")
 
 
--- Exp
+-- Exp -------------------------------------------------------------------------
 instance Pretty a => Pretty (Exp (Maybe a)) where
  prettyp xx	
   = case xx of
@@ -119,7 +117,8 @@ instance Pretty a => Pretty (Exp (Maybe a)) where
 	XConst		nn c		-> annot nn (prettyp c)
 	XVar		nn v		-> annot nn (prettyp v)
 	XVarInst 	nn v		-> annot nn ("@XVarInst " % v)
-	XProj 		nn x j		-> annot nn ("@XProj " % prettyXB x % " " % j)
+	XProj 		nn x j		-> annot nn ("@XProj "  % prettyXB x % " " % j)
+	XProjT		nn t j		-> annot nn ("@XProjT " % prettyTB t % " " % j)
 	XLambda    	nn v x 		-> annot nn ("\\" % v  % " ->\n" % x)
 	XLambdaTEC 	nn v x t eff clo -> annot nn ("\\" % v  % " (" % eff % " " % clo % ") :: " % t % " ->\n" % x)
 
@@ -154,6 +153,10 @@ instance Pretty a => Pretty (Exp (Maybe a)) where
 	 	("if " % x1 % "\n" %> (" then " % x2) % "\n" %> (" else " % x3))
 
 	XProjTagged 	nn v x j	-> annot nn ("@XProjTagged " % v % " " % prettyXB x % " " % j)
+
+	XProjTaggedT 	nn v j		-> annot nn ("@XProjTaggedT " % v % " " % j)
+
+
 	 
 
 prettyXB xx
@@ -163,7 +166,7 @@ prettyXB xx
 	_		-> "(" % xx % ")"
 
 
--- Proj
+-- Proj ------------------------------------------------------------------------
 instance Pretty a => Pretty (Proj (Maybe a)) where
  prettyp xx
   = case xx of
@@ -171,7 +174,7 @@ instance Pretty a => Pretty (Proj (Maybe a)) where
 	JFieldR nn v		-> annot nn ("#" % v)
 	
 
--- Stmt
+-- Stmt ------------------------------------------------------------------------
 instance Pretty a => Pretty (Stmt (Maybe a)) where
  prettyp xx
   = case xx of
@@ -192,14 +195,15 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 	SSig  nn v  t		-> annot nn (v  % " :: " % t) % ";"
 
 
--- Alt
+-- Alt -------------------------------------------------------------------------
 instance Pretty a => Pretty (Alt (Maybe a)) where
  prettyp xx
   = case xx of
 	AAlt	 nn [] x	-> annot nn ("\\= " % x) 				% ";"
 	AAlt	 nn gs x	-> annot nn ("|"  % "\n," %!% gs % "\n= " % x) 		% ";"
 
--- Guard
+
+-- Guard -----------------------------------------------------------------------
 instance Pretty a => Pretty (Guard (Maybe a)) where
  prettyp gg
   = case gg of
@@ -207,7 +211,7 @@ instance Pretty a => Pretty (Guard (Maybe a)) where
 	GExp  nn pat exp	-> annot nn (" "  % pat %>> " <- " % exp)
 	
 
--- Pat
+-- Pat ------------------------------------------------------------------------
 instance Pretty a => Pretty (Pat (Maybe a)) where
  prettyp ww
   = case ww of
@@ -236,12 +240,10 @@ instance Pretty a => Pretty (Pat (Maybe a)) where
 	WWildcard nn
 		-> annot nn (prettyp "_")
 
--- Label
+-- Label -----------------------------------------------------------------------
 instance Pretty a => Pretty (Label (Maybe a)) where
  prettyp ll
   = case ll of
   	LIndex	nn i		-> annot nn ("." % i)
 	LVar	nn v		-> annot nn ("." % v)
 	
-
-

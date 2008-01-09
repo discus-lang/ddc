@@ -1,4 +1,7 @@
 
 -- Check handling of ambiguous projections.
+--
+--	The function parameter 'x' is not constrained to be a particular type
+--	constructor so there's no way to choose an appropriate projection dictionary.
 
 fun x	= x.wibble;

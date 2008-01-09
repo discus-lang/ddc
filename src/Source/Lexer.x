@@ -149,6 +149,7 @@ tokens :-
  \;			{ ptag SColon			}
  \|			{ ptag Bar			}
  \.			{ ptag Dot			}
+ \&			{ ptag And			}
 
  ($upper [$alpha $digit]* \.)* [\% \! \$]? $lower [$alpha $digit $varsym]*	 
  			{ ptags (\s -> Var   s) 	}

@@ -238,6 +238,11 @@ followX table xx
 	 	x'	<- transZM table x
 		j'	<- transZM table j
 		return	$ XProj nn' x' j'
+
+	XProjT nn t j
+	 -> do	nn'	<- transN  table nn
+		j'	<- transZM table j
+		return	$ XProjT nn' t j'
 		
 	XLambda nn v x
 	 -> do	nn'	<- transN  table nn
@@ -283,6 +288,12 @@ followX table xx
 		x'	<- transZM table x
 		j'	<- transZM table j
 		return	$ XProjTagged nn' v' x' j'
+
+	XProjTaggedT nn v j
+	 -> do	nn'	<- transN table nn
+	 	v'	<- transV table v
+		j'	<- transZM table j
+		return	$ XProjTaggedT nn' v' j'
 
 	XVarInst nn v
 	 -> do	nn'	<- transN table nn

@@ -95,22 +95,22 @@ feedConstraint cc
 
 
 	-- Projection constraints.
-	CProject src j v1 t2 t3 eff clo
+	CProject src j v1 tDict tBind
 	 -> do	let ?src	= src
 
 	 	-- a new class to hold this node
 	 	cid		<- allocClass KFetter
 	 	
 		-- add the type args to the graph
-	 	Just [t2', t3', eff', clo'] 
+	 	Just [tDict', tBind']
 				<- liftM sequence
-				$  mapM (feedType (Just cid)) [t2, t3, eff, clo]
+				$  mapM (feedType (Just cid)) [tDict, tBind]
 		
 		-- add the constraint
 		graph	<- gets stateGraph
 		let c	= ClassFetter
 			{ classId	= cid
-			, classFetter	= FProj j v1 t2' t3' eff' clo' }
+			, classFetter	= FProj j v1 tDict' tBind' }
 		
 		liftIO (Array.writeArray (graphClass graph) cid c)
 		registerClass Var.FProj cid
@@ -366,14 +366,13 @@ feedFetter	mParent f
 	 -> do 	addFetterNode f
 		return ()
 
-	FProj pj t1 t2 t3 eff clo
+	FProj pj v tDict tBind
 	 -> do	cidC		<- allocClass KFetter
-	 	Just [t2', t3']	<- liftM sequence
-				$  mapM (feedType (Just cidC)) [t2, t3]
-		Just eff'	<- feedType (Just cidC) eff
-		Just clo'	<- feedType (Just cidC) clo
+	 	Just [tDict', tBind']	
+				<- liftM sequence
+				$  mapM (feedType (Just cidC)) [tDict, tBind]
 
-		addNode cidC	$ TFetter (FProj pj t1 t2' t3' eff' clo')
+		addNode cidC	$ TFetter (FProj pj v tDict' tBind')
 		
 	_ -> panic stage 
 		$ pretty

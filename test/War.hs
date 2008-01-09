@@ -435,11 +435,11 @@ libraryModules =
 	, "Data/ArrayU"
 	, "DDC/Runtime"
 	, "System/File"
-	, "Prelude" ]
-{-	, "Math/Util"
+	, "Prelude" 
+--	, "Math/Util"
 	, "Math/Vec2"
-	, "Math/Matrix/Matrix33"
-	, "Graphics/Primitive"
+	, "Math/Matrix/Matrix33" ]
+{-	, "Graphics/Primitive"
 	, "Graphics/Shape"
 	, "Graphics/TinyPTC" 
 	, "Graphics/Raster/Bresenham"

@@ -165,8 +165,8 @@ instance Pretty Fetter where
 	FLet		t1 t2	-> padR 10 (pretty t1) % " = "	% t2
 	FMore		t1 t2	-> padR 10 (pretty t1) % " :> " % t2
 	
-	FProj     pj t1 t2 t3 eff clo	
-	 -> "Proj "	% pj	% " " % t1 % " " % t2 % " " % t3 % " " % eff % " " % clo
+	FProj     pj v1 tDict tBind
+	 -> "Proj "	% pj	% " " % v1 % " " % tDict % " " % tBind
 
 	FFunInfo v eff   	(TBot _)	-> padR 5 (pretty v) % " = " % eff
 	FFunInfo v (TBot _) 	clo		-> padR 5 (pretty v) % " = " % clo
@@ -209,8 +209,6 @@ instance Pretty TypeSource where
 	TSProjCrushed  	cidT cidP pf	-> "@TSProjCrushed " % cidT % " " % cidP % " " % pf
 	TSClassName			-> prettyp "@TSClassName "
 	
-	_ -> panic stage
-		$ "pretty[TypeSource]: no match for " % show ts
 
 -----
 instance Pretty Kind where

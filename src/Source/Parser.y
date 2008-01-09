@@ -135,6 +135,7 @@ stage 	= "Source.Parser"
 	';'		{ TokenP { token = K.SColon	} }
 	'|'		{ TokenP { token = K.Bar	} }
 	'.'		{ TokenP { token = K.Dot	} }
+	'&'		{ TokenP { token = K.And	} }
 
 	'#'		{ TokenP { token = K.Hash	} }
 	'*'		{ TokenP { token = K.Star	} }
@@ -422,15 +423,15 @@ expA
 
 	: '(' exp ')'				{ $2					}
 
-	-- projections
-	| expA '.' pVar				{ XProj (spTP $2) $1 (JField  $3)	}
-	| expA '#' pVar				{ XProj (spTP $2) $1 (JFieldR $3)	}
+	-- field projections
+	| expA '.' pVar				{ XProj  (spTP $2) $1 (JField  $3)	}
+	| expA '#' pVar				{ XProj  (spTP $2) $1 (JFieldR $3)	}
 
-	| expA '.' '{' pVar     '}'		{ XProj (spTP $2) $1 (JAttr   $4)	}
-	| expA '.' '{' VAR '#' '}'		{ XProj (spTP $2) $1 (JAttr   (toVarHash NameAttr $4)) }
+	| pVar '&' '{' typeN '}'		{ XProjT (spTP $2) $4 (JField  $1)	}
 
-	| expA '.' '(' exp ')'			{ XProj (spTP $2) $1 (JIndex  $4) 	}
-	| expA '#' '(' exp ')'			{ XProj (spTP $2) $1 (JIndexR $4)	}
+	-- index projection
+	| expA '.' '(' exp ')'			{ XProj  (spTP $2) $1 (JIndex  $4) 	}
+	| expA '#' '(' exp ')'			{ XProj  (spTP $2) $1 (JIndexR $4)	}
 
 	-- object syntax
 	| '^' pVar				{ XObjVar   (spTP $1) (vNameV $2)	}

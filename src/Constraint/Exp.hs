@@ -57,8 +57,11 @@ data	CTree
 	| CClass	TypeSource Var [Type]
 
 	-- A projection constraint
-	--	t1 = t2 -(eff clo)> t3
-	| CProject	TypeSource TProj Var Type Type Effect Closure
+	| CProject	TypeSource 
+			TProj 
+			Var 	-- var to tie the instantiated projection function to.
+			Type 	-- type to choose the projection dictionary
+			Type	-- type to unify the projection function with once it's resolved.
 
 	-- Instantiate a type scheme
 	--	var of instance, var of scheme to instantiate.

@@ -281,7 +281,12 @@ instance Monad m => TransM m TProj
 	TJFieldR v
 	 -> do	v'		<- transZM table v
 	 	transJ table	$ TJFieldR v'
-		
+
+	TJIndex _
+	 ->	transJ table	jj
+	 
+	TJIndexR _
+	 ->	transJ table 	jj		
 
 
 -----------------------
@@ -306,13 +311,11 @@ instance Monad m => TransM m Fetter
 	 	t2'		<- transZM table t2
 		transF table	$ FMore t1' t2'
 	
-	FProj pj t1 t2 t3 eff clo
-	 -> do	t1'		<- transZM table t1
-	 	t2'		<- transZM table t2
-		t3'		<- transZM table t3
-		eff'		<- transZM table eff
-		clo'		<- transZM table clo
-		transF table	$ FProj pj t1' t2' t3' eff' clo'
+	FProj pj v tDict tBind
+	 -> do	v'		<- transZM table v
+	 	tDict'		<- transZM table tDict
+		tBind'		<- transZM table tBind
+		transF table	$ FProj pj v' tDict' tBind'
 	
 	FFunInfo v eff env
 	 -> do	eff'		<- transZM table eff
@@ -336,7 +339,9 @@ instance Monad m => TransM m Kind
 	KEffect	 -> transK table kk
 	KClosure -> transK table kk
 	KFetter  -> transK table kk	
-		
-		
 
+	KNil	-> transK table kk
+	KBox	-> transK table kk
+	KError	-> transK table kk
+	
 

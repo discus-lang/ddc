@@ -283,7 +283,7 @@ instance Rename (DataField Exp Type) where
 		, dInit		= mExp' }
 		
 	
------
+-- Expressions -----------------------------------------------------------------
 instance Rename Exp where 
  rename exp
   = case exp of
@@ -300,6 +300,11 @@ instance Rename Exp where
 	 -> do 	x'	<- rename x
 		proj'	<- rename proj
 		return	$ XProj sp x' proj'
+
+	XProjT sp t proj
+	 -> do	t'	<- rename t
+	 	proj'	<- rename proj
+		return	$ XProjT sp t' proj'
 
 	XLambda sp v e	
 	 -> local
