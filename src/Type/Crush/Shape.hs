@@ -55,8 +55,8 @@ crushShape shapeCid
 
 	-- Try and extract a type template from one of the nodes.
 	let mts		= map (\c -> case classType c of
-				Just (TBot _)	-> Nothing
-				Just t		-> Just t)
+				Just t@(TData{})	-> Just t
+				Just _			-> Nothing)
 			$ mergeCs
 	
 	let template	= takeFirstJust mts

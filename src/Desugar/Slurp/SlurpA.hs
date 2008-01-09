@@ -63,7 +63,7 @@ slurpA	alt@(AAlt sp gs x)
 		, CEq  src cAlt   $ makeTMask  KClosure 
 						(makeTSum KClosure (cX : csGuards))
 						(makeTSum KClosure 
-							$ zipWith TFree vsBoundV tsBoundT ) ]
+							$ map TTag vsBoundV) ]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind 
@@ -129,8 +129,10 @@ slurpG	(GExp sp w x)
 	let qs = 
 		[ CEq	src	tX	$ tW 
 		, CEq	src	eGuard	$ makeTSum KEffect [eX, TEffect primReadH [tX]]
-		, CEq	src	cGuard	$ makeTMask KClosure cX
-						(makeTSum KClosure (zipWith TFree vsBoundV tsBoundT)) ]
+		, CEq	src	cGuard	$ makeTMask 
+						KClosure 
+						cX
+						(makeTSum KClosure (map TTag vsBoundV)) ]
 
 	-----	
 	return	( cbindsW		

@@ -1,6 +1,7 @@
 
 import Prelude;
 
+
 drawBresenhamLine 
 	frame widthB height cB
 	x0B y0B x1B y1B 
@@ -80,7 +81,10 @@ drawLoopH
 	
 	|# fraction `primInt32U_ge` 0#
 	= do {
+		x0' :: Int32#;
 		x0'		= x0		+ stepx;
+
+		y0w' :: Int32#;
 		y0w'		= y0w 		+ stepy;
 		fraction'	= fraction 	- dx2 + dy2;
 			
@@ -96,7 +100,7 @@ drawLoopH
 		drawLoopH frame c stepx stepy dx2 dy2 x0' x1 y0w fraction';
 	};
  };		
-	
+
 		
  	
 drawLoopV 
@@ -112,7 +116,10 @@ drawLoopV
 	
 	|# fraction `primInt32U_ge` 0# 
 	= do {
+		x0' :: Int32#;
 		x0'		= x0		+ stepx;
+
+		y0w' :: Int32#;
 		y0w'		= y0w		+ stepy;
 		fraction'	= fraction	+ dx2 - dy2;
 				
@@ -128,7 +135,7 @@ drawLoopV
 		drawLoopV frame c stepx stepy dx2 dy2 x0 y0w' y1w fraction';
 	};
  };
- 
+
 				
 				
 	

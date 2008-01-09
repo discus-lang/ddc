@@ -6,7 +6,7 @@ data Point %r1
 	= Point 	(Float %r1) (Float %r1);
 
 showPoint (Point x y)
-	= "Point " % showFloat x % " " % showFloat y;
+	= "Point " % show x % " " % show y;
 
 -----
 data Vector2 %r1

@@ -1,9 +1,5 @@
 import Prelude;
 
-pragma Shell
-	[ "make -C TinyPTC-X11-0.7.3 > /dev/null"
-	, "gcc  -c TinyPTC-stub.c -I ../.. -std=c99 -D_XOPEN_SOURCE" ];
-
 pragma LinkObjs
 	[ "TinyPTC-X11-0.7.3/convert.o"
 	, "TinyPTC-X11-0.7.3/mmx.o"
@@ -19,23 +15,17 @@ effect !Graphics	:: !;
 	
 foreign import extern "ptcOpen"
  ptcOpen	
-	:: forall %r1 %r2 %r3 !e1
-	.  String %r1 -> Int %r2 -> Int %r3 -(!e1)> ()
-	:- !e1	= !{ !Graphics; !Read %r1; !Read %r2; !Read %r3 }
+	:: elaborate String -> Int -> Int -(!Graphics)> ()
 	:$ Data -> Data -> Data -> Data;
 		
 foreign import extern "ptcClose"
  ptcClose
-	:: forall !e1
-	.  () -(!e1)> ()
-	:- !e1	= !{ !Graphics }
+	:: elaborate () -(!Graphics)> ()
 	:$ Data -> Data;
 				
 foreign import extern "ptcUpdate"
  ptcUpdate 
-	:: forall %r1 %r2 !e1
-	.  (ArrayU %r1 (Int %r2)) -(!e1)> ()
-	:- !e1	= !{ !Graphics; !Read %r1; !Read %r2 }
+	:: elaborate (ArrayU Int -(!Graphics)> ())
 	:$ Data -> Data;
 
 

@@ -27,6 +27,7 @@ import Type.Trace
 import Type.Pretty
 import Type.Util.Pack
 
+import Type.Check.GraphicalData
 import Type.Crush.Unify
 
 import Type.Plate.Collect	(collectClassIds)
@@ -41,20 +42,31 @@ stage	= "Type.Crush.Effect"
 crushEffectC :: ClassId -> SquidM ()
 crushEffectC cid
  = do	
+	-- trace out the effect
 	eTrace		<- liftM (sortFsT . eraseFConstraints) $ traceType cid
-	let ePacked	= packEffect eTrace
-	let eLoad	= ePacked
-
  	trace	$ "\n"
 		% "*   crushEffectC " 	% cid			% "\n"
 		% "    eTrace      = "  %> prettyTS eTrace	% "\n"
-		% "    eLoad       = " 	% eLoad			% "\n"
 
-	eCrushed	<- transformTM crushEffectT eLoad
+	-- check for loops in the data.
+	--	this should never happen, but check anyway so that we don't end up in an infinite loop
+	--	during packEffect.
+	let cidsDataLoop	= checkGraphicalDataT eTrace
+	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
 
+	when (not $ isNil cidsDataLoop)
+	 $ panic stage 	$ "crushEffectC: found loops through data portion of type\n"
+		 	% "    eTrace = " %> prettyTS eTrace	% "\n"
+
+	-- pack the effect into normal form
+	let ePacked	= packEffect eTrace
+	trace	$ "    ePacked     = " 	% ePacked		% "\n"
+
+	-- crush out some ctors.
+	eCrushed	<- transformTM crushEffectT ePacked
 	trace	$ "    eCrushed    = "	% eCrushed 	% "\n"
 	
-	if eCrushed /= eLoad
+	if eCrushed /= ePacked
 	 then do	
 		-- update the class queue with the new effect
 		Just c	<- lookupClass cid
@@ -85,7 +97,7 @@ crushEffectC cid
 						% "   ePacked = " % ePacked		% "\n\n")
 						
 							
-			$ flattenTSum eLoad
+			$ flattenTSum ePacked
 
 		registerNodeT cid eCrushed
 		return ()

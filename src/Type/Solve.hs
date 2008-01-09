@@ -680,6 +680,15 @@ solveGrind
 	:: SquidM ()
 
 solveGrind
+ = do	errs		<- gets stateErrors
+ 	if isNil errs 
+	 then solveGrind2
+	 else trace	$ "\n"
+	 		% "=== Grind.solveGrind: not grinding with errors in the state\n"
+			
+	 		
+
+solveGrind2
  = do
 	-- Grab lists of interesting equivalence classes from the register.
 	register		<- gets stateRegister

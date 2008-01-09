@@ -30,6 +30,7 @@ import Shared.Error
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..))
+import Shared.VarPrim
 
 import qualified Main.Arg	as Arg
 
@@ -168,7 +169,7 @@ generaliseType varT tCore envCids
 					then []
 					else dangerousCidsT tPort
 
-	trace	$ "    staticDanger    = " % staticDanger	% "\n"
+	trace	$ "    staticDanger     = " % staticDanger	% "\n"
 
 	-- These are all the cids we can't generalise
 	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
@@ -295,9 +296,9 @@ cleanType' save tt
 -- | After reducing the context of a type to be generalised, if certain constraints
 --	remain then this is symptomatic of problems in the source program.
 -- 
---	Projection constraints remaining indicate an ambiguous projection.
---
---	Type class constraints reamining indicate that no instance for this type is available.
+--	Projection constraints indicate an ambiguous projection.
+--	Shape constraints indicate 
+--	Type class constraints indicate that no instance for this type is available.
 --
 checkContext :: Type -> SquidM ()
 checkContext tt
@@ -311,6 +312,17 @@ checkContextF ff
 	 -> addErrors
 	 	[ ErrorAmbiguousProjection
 			{ eProj		= j } ]
+
+	FConstraint vClass ts
+	 | not 	$ elem vClass
+	 	[ primMutable,	primMutableT
+		, primConst,	primConstT
+		, primLazy, 	primDirect
+		, primPure,	primLazyH ]
+	 -> addErrors
+	 	[ ErrorNoInstance
+			{ eClassVar		= vClass
+			, eTypeArgs		= ts } ]
 		
 	_ -> return ()
 	

@@ -76,6 +76,11 @@ data Error
 		{ eSig		:: (Var, Type)		--	
 		, eScheme	:: (Var, Type) 		--
 		, eErrVar	:: Var }		--	Offending variable.
+
+	-- Type class problems
+	| ErrorNoInstance				-- There is no instance for the class at these arguments.
+		{ eClassVar	:: Var
+		, eTypeArgs	:: [Type] }		
 		
 	-- Field projection problems.
 	| ErrorNoProjections				-- This type has no projections defined for it.
@@ -216,7 +221,12 @@ instance Pretty Error where
 	% "\n"
 	% "      type signature: " % prettyVTS (eSig err)		% "\n"
 	
-
+ -- Type class problems.
+ pretty err@(ErrorNoInstance
+ 		{ eClassVar	= v
+		, eTypeArgs	= ts })
+	= pretty
+	$ "    No instance for " % v % " " % " " %!% map prettyTS ts % "\n"
 	
  -- Field projection problems.
  pretty err@(ErrorNoProjections
