@@ -750,11 +750,11 @@ solveUnify
 	-- check if there are any errors in the state
 	errors		<- gets stateErrors
 
-	trace	$ "*   Grid.solveUnify\n"
+{-	trace	$ "*   Grid.solveUnify\n"
 		% "    queued      = " % queued			% "\n"
 		% "    regProj     = " % regProj		% "\n"
 		% "    errors:\n     " %> "\n" %!% errors	% "\n"
-
+-}
 	solveUnifySpin queued regProj errors
 
 solveUnifySpin queued regProj errors
@@ -780,7 +780,7 @@ solveUnifyWork queued regProj errors
 
 	-- Try to crush out some of the Shape fetters.
 	regShapes	<- getRegShapes
-	trace	$ "    regShapes   = " % regShapes	% "\n"
+--	trace	$ "    regShapes   = " % regShapes	% "\n"
 	mapM crushShape regShapes
 
 	-- Try to crush out some of the FieldIs fetters.
@@ -802,14 +802,14 @@ solveUnifyWork queued regProj errors
 
 	-- debug
 	regProj'	<- getRegProj
-
+{-
 	trace	$ "*   Grind.solveUnify\n"
 		% "    queued      = " % queued		% "\n"
 		% "    regProj     = " % regProj	% "\n"
 		% "    regProj'    = " % regProj'	% "\n"
 		% "    progress    = " % progress	% "\n"
 		% "\n"
-
+-}
 	if progress
 	 then 
 	  do	-- process any constraints from projection crushing
@@ -817,8 +817,8 @@ solveUnifyWork queued regProj errors
 		solveUnify
 			
 	 else do
-	 	trace	$ "*   Grind.solveUnify: no progress\n"
-			% "    queued = " % queued	% "\n"
+--	 	trace	$ "*   Grind.solveUnify: no progress\n"
+--			% "    queued = " % queued	% "\n"
 		
 --		errorProjection regProj'
 		return ()

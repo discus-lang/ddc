@@ -1,12 +1,12 @@
 test/Error/Unify/IfFun/Main.ds:5:14
     Type mismatch during unification.
-          cannot match: *282 -(!284 $279)> *283
-                  with: Data.Bool.Bool %273
+          cannot match: *290 -(!292 $287)> *291
+                  with: Data.Bool.Bool %281
 
         lambda abstraction
-               of type: *282 -(!284 $279)> *283
+               of type: *290 -(!292 $287)> *291
 
         conflicts with, 
         if-then-else expression
-         which expects: Data.Bool.Bool %273
+         which expects: Data.Bool.Bool %281
 

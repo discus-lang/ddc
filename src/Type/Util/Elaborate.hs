@@ -1,4 +1,5 @@
--- Handles elaboration of types from the ffi.
+
+-- Handles elaboration of types for the ffi.
 --	Adding all the regions, effects and closures to a type by hand is boring and error prone.
 --	Luckilly, for most functions this information is fairly unsurprising. Guided by some user
 --	keywords, we can add this information automatically.
@@ -52,14 +53,21 @@ elaborateT
 	-> Type -> m Type
 
 elaborateT t
- = do	(tRegions, vksRsConst, vksRsMutable)	
+ = do	
+ 	-- elaborate regions
+ 	(tRegions, vksRsConst, vksRsMutable)	
  			<- elaborateRegionsT' t
- 	tClosure	<- elaborateCloT tRegions
 
-	tEffect		<- elaborateEffT (map fst vksRsConst) (map fst vksRsMutable) tClosure
-	
- 	return	$ makeTForall_back (vksRsConst ++ vksRsMutable)
-		$ tEffect
+	-- if the type is a function then elaborate its closure and effect as well.
+	case tRegions of
+	 TData{}	
+	  -> return tRegions
+
+	 _		
+	  -> do	tClosure	<- elaborateCloT tRegions
+		tEffect		<- elaborateEffT (map fst vksRsConst) (map fst vksRsMutable) tClosure
+	 	return	$ makeTForall_back (vksRsConst ++ vksRsMutable)
+			$ tEffect
 
 
 -----------------------
@@ -301,7 +309,7 @@ elaborateEffT vsRsConst vsRsMutable tt
 
 	-- see if there is already a var on the rightmost function arrow, if there isn't one
 	--	then add the freshHookVar.
- 	let Just (tHooked, hookVar) =
+ 	let Just (tHooked, hookVar, hookEffs) =
 		hookEffT freshHookVar tt
   
     	-- assume that regions added into a contra-variant branch during elaboration 
@@ -315,7 +323,7 @@ elaborateEffT vsRsConst vsRsMutable tt
 				| v <- vsRsMutable
 				, elem v rsContra ]
 	
-	let effs	= effsRead ++ effsWrite
+	let effs	= effsRead ++ effsWrite ++ maybeToList hookEffs
 	
 	let tFinal	= addEffectsToFsT effs hookVar tHooked
   
@@ -325,34 +333,66 @@ elaborateEffT vsRsConst vsRsMutable tt
 -- | Find the right most function arrow in this function type and return the effect variable
 --	on it, or add this hookVar if there isn't one.
 --
-hookEffT  :: Var -> Type -> Maybe (Type, Var)
-hookEffT hookVar tt
-	| TForall vks t		<- tt
-	, Just (t', var)	<- hookEffT hookVar t
-	= Just	( TForall vks t'
-		, var)
-	
-	| TFetters fs t		<- tt
-	, Just (t', var)	<- hookEffT hookVar t
-	= Just	( TFetters fs t'
-		, var)
+--	If the right most function arrow has a manifest effect on it, then change it to
+--		a var and return the original effect.
+--
+hookEffT  
+	:: Var 			-- The hook var to use if there isn't one already in the type.
+	-> Type 		-- The type to change.
+	-> Maybe 
+		( Type		-- Hooked type
+		, Var		-- Hook var to use.
+		, Maybe Effect)	-- Any effects that were already on the right most function arrow.
 
+
+hookEffT hookVar tt
+	-- decend into foralls
+	| TForall vks t		<- tt
+	, Just (t', var, mEff)	<- hookEffT hookVar t
+	= Just	( TForall vks t'
+		, var
+		, mEff)
+	
+	-- decend into fettered types
+	| TFetters fs t		<- tt
+	, Just (t', var, mEff)	<- hookEffT hookVar t
+	= Just	( TFetters fs t'
+		, var
+		, mEff)
+
+	-- keep decending so long as the result type is also a function.
  	| TFun t1 t2 eff clo	<- tt
 	, TFun{}		<- t2
-	, Just (t2', var)	<- hookEffT hookVar t2
+	, Just (t2', var, mEff)	<- hookEffT hookVar t2
 	= Just 	( TFun t1 t2' eff clo
-	  	, var)
+	  	, var
+		, mEff)
 	
+	-- There is already a var on the right most function
+	--	so we can use that as a hook var.
 	| TFun t1 t2 (TVar KEffect var) clo	<- tt
 	= Just	( tt
-		, var)
+		, var
+		, Nothing )
 	
+	-- The right-most function has no effects on it.
+	--	Add the hook var that we were given.
 	| TFun t1 t2 (TBot KEffect) clo		<- tt
 	= Just	( TFun t1 t2 (TVar KEffect hookVar) clo
-	  	, hookVar)
+	  	, hookVar
+		, Nothing )
+	
+	-- The right-most function has some other effect on it. 
+	--	Replace this with our hook var and return the effect.
+	| TFun t1 t2 eff clo			<- tt
+	= Just	( TFun t1 t2 (TVar KEffect hookVar) clo
+		, hookVar
+		, Just eff)
 	
 	| otherwise
-	= Nothing
+	= freakout stage
+		("hookEffT: can't hook type (" % tt % ")")
+		Nothing
 
 
 -- | Add some effects to the fetter with this var.
@@ -366,11 +406,22 @@ addEffectsToFsT effs var tt
 	 -> TForall vks (addEffectsToFsT effs var t1)
 
 	TFetters fs t1
-	 -> TFetters (FLet (TVar KEffect var) (TSum KEffect effs) : fs) t1
+	 -> TFetters (addEffectsToFs var effs fs) t1
 	 
 	tx
-	 -> TFetters [FLet (TVar KEffect var) (TSum KEffect effs)] tx
+	 -> TFetters [FLet (TVar KEffect var) (makeTSum KEffect effs)] tx
 	 
+
+-- didn't find a fetter with this var, so add a new one
+addEffectsToFs v1 effs1 []
+	= [FLet (TVar KEffect v1) (makeTSum KEffect effs1)]
+	
+addEffectsToFs v1 effs1 (f:fs)
+ = case f of
+ 	FLet (TVar KEffect v2) eff2
+	 | v1 == v2	-> FLet (TVar KEffect v2) (makeTSum KEffect (eff2 : effs1)) : fs
+	
+	_		-> f : addEffectsToFs v1 effs1 fs
 
 
 -- | Slurp out region variables which appear in contra-variant branches

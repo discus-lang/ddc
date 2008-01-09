@@ -108,8 +108,11 @@ prettyClass (ix :: Int) c
 	 -> pretty
 		$ "Class " % classKind c % classId c 
 		%> ("\n" % ":: " % liftM prettyTS (classType c))	% "\n\n"
+		% "        -- name\n"
+		% "        " % className c				% "\n\n"
+
 		% "        -- queue\n"
-		% "        " % classQueue c				% "\n"
+		% "        " % classQueue c				% "\n\n"
 		% "        -- back refs\n"
 		% "        " % (Set.toList $ classBackRef c) 		% "\n"
 		% "\n"
