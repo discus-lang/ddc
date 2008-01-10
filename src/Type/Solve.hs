@@ -35,7 +35,6 @@ import Type.Exp
 import Type.Pretty
 import Type.Util
 import Type.Error
-import Type.Plate.Update
 import Type.Plate.Collect
 
 import Type.State

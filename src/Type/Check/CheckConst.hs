@@ -27,7 +27,6 @@ import Shared.Error
 import Type.Exp
 import Type.Util
 import Type.Error
-import Type.Plate.Update
 
 import Type.State
 import Type.Class

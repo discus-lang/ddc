@@ -13,7 +13,6 @@ import Data.Map			(Map)
 import Type.Exp
 import Type.Pretty
 import Type.Util
-import Type.Plate.Update
 
 import Type.Base
 import Type.State
