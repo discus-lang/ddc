@@ -101,7 +101,7 @@ solve	args ctree
 	solveCs ctree
 
 	-- Do a final grind to make sure the graph is up to date
-	solveGrind
+	solveCs [CGrind]
 	
 	-- Check if there were any errors
 	errors	<- gets stateErrors
@@ -133,12 +133,9 @@ solveFinalise
 	
 
 	-- When generalised schemes are added back to the graph we can end up with (var = ctor)
-	--	constraints in class queues which need to be pushed into the graph by another
-	--	solveGrind.
+	--	constraints in class queues which need to be pushed into the graph by another grind.
 	--
-	-- TODO: It would be better to add these new constraints in a way which doesn't require
-	--	a whole 'nother grind.
-	solveGrind
+	solveCs [CGrind]
 		
 	return ()
  			
@@ -187,19 +184,6 @@ solveCs	(c:cs)
 		solveNext (branchSub c ++ [CLeave bind] ++ cs)
 
 
-	-- A Leave token.
-	--	This tells us that we've processed all the constraints from this branch.
-
-	CLeave vs
-	 -> do	trace	$ "\n### CLeave " % vs % "\n"
-	 	path	<- gets statePath
---		trace	$ "    path = " % path 	% "\n"
-			 	
-		-- We're leaving the branch, so pop ourselves off the path.
-	 	pathLeave vs
-		traceIL
-	
-		solveNext cs	 
 
 	-- Equality Constraint
 	CEq src t1 t2
@@ -244,7 +228,9 @@ solveCs	(c:cs)
 		solveNext cs
 
 	-- Instantiation
-	CInst{}		-> solveCInst cs c
+	CInst{}	
+	 -> do	cs'	<- solveCInst cs c
+	 	solveNext cs'
 
 	-- Type class instance
 	CClassInst src v ts
@@ -262,7 +248,79 @@ solveCs	(c:cs)
 
 		solveNext cs
 	
-	
+	-- Internal constraints ----------------------------------------------------------------------	
+	--	These are ones we've left for ourselves.
+
+	-- This tells us that we've processed all the constraints from this branch.
+	--	Pop the bound vars from this branch off the path.
+	CLeave vs
+	 -> do	trace	$ "\n### CLeave " % vs % "\n"
+	 	path	<- gets statePath
+		trace	$ "    path = " % path 	% "\n"
+
+		-- We're leaving the branch, so pop ourselves off the path.
+	 	pathLeave vs
+		traceIL
+
+		solveNext cs	 
+
+	-- Do a graph grind
+	CGrind	
+	 -> do	csMore	<- solveGrind
+	 	solveNext (csMore ++ cs)
+
+	-- Instantiate a type from a lambda binding
+	--	There's nothing to really instantiate, just set the use type to the def type.
+	CInstLambda src vUse vInst
+	 -> do	trace	$ "### CInstLambda " % vUse % " " % vInst % "\n"
+
+	 	sInst <##> Map.insert vUse
+			(InstanceLambda vUse vInst Nothing)
+
+		solveNext
+			$ [CEq src (TVar KData vUse) (TVar KData vInst)]
+			++ cs 
+
+	-- Instantiate a type from a let binding.
+	--	It may or may not be generalised yet.
+	CInstLet src vUse vInst
+	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
+
+	 	-- If the scheme is already generalised we can just extract it from the graph,
+		--	otherwise we have to do the generalisation first.
+		genDone		<- gets stateGenDone
+		tScheme		<- if Set.member vInst genDone
+					then do	Just tScheme_	<- extractType vInst
+						return tScheme_
+
+					else solveGeneralise vInst
+
+	 	-- extract the scheme from the graph and instantiate it
+		(tInst, tInstVs)<- instantiateT_table instVar tScheme
+
+		-- Add information about how the scheme was instantiated
+		sInst <##> Map.insert vUse
+			(InstanceLet vInst vInst tInstVs tScheme)
+
+		-- The type will be added via a new constraint
+		solveNext
+			$  [CEq src (TVar KData vUse) tInst]
+			++ cs
+
+	-- Instantiate a recursive let binding
+	--	Once again, there's nothing to actually instantiate, but we record the 
+	--	instance info so Desugar.ToCore knows how to translate the call.
+	CInstLetRec src vUse vInst
+	 -> do	trace	$ "### CInstLetRec " % vUse % " " % vInst % "\n"
+
+	 	sInst <##> Map.insert vUse
+	 		(InstanceLetRec vUse vInst Nothing)
+
+		solveNext
+			$ [CEq src (TVar KData vUse) (TVar KData vInst)]
+			++ cs
+
+	-- Some other constraint	
 	_ -> do
 	 	trace $ "--- Ignoring constraint " % c % "\n"
 		solveNext cs
@@ -280,14 +338,23 @@ solveNext cs
 
 
 
--- Instantiate a type
+-- Handle a CInst constraint
+--	We may or may not be able to actually instantiate the desired type right now.
 --
-solveCInst 	cs	c@(CInst src vUse vInst)
+--	There may be projections waiting to be resolved which require us to reorder
+--	constraints, generalise and instantiate other types first.
+--
+--	This function diagnoses where we're at, 
+--		and creates CInstGeneralise and CInstExtract which trigger the 
+--		real instantiation.
+
+solveCInst :: [CTree] -> CTree -> SquidM [CTree]
+solveCInst 	cs c@(CInst src vUse vInst)
  = do
-	path		<- gets statePath
+	path			<- gets statePath
 	trace	$ "\n"
 		% "### CInst " % vUse % " <- " % vInst					% "\n"
---		% "    path          = " % path 					% "\n"
+		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	sGenDone		<- gets stateGenDone
@@ -323,53 +390,49 @@ solveCInst 	cs	c@(CInst src vUse vInst)
 
 	sGenDone	<- gets stateGenDone
 
-	solveCInst_simple cs c vUse vInst bindInst path sGenDone
+	solveCInst_simple cs c bindInst path sGenDone
 	
 
 -- These are the easy cases..
 
-solveCInst_simple cs c vUse vInst bindInst path sGenDone
+solveCInst_simple 
+	cs 
+	c@(CInst src vUse vInst)
+	bindInst path sGenDone
 
 	-- IF   the var has already been generalised/defined 
 	-- THEN then we can extract it straight from the graph.
 	| Set.member vInst sGenDone
 	= do	
-		trace	$ prettyp "=== Scheme is in graph.\n"
-		solveGrind
-		Just tScheme	<- extractType vInst
-		
-		(tInst, tInstVs)
-			<- instantiateT_table instVar tScheme
+		trace	$ prettyp "*   solveCInst_simple: Scheme is in graph.\n"
+		return	$ CGrind : (CInstLet src vUse vInst) : cs
 
-		solveCInst_inst cs c tInst
-			(InstanceLet vInst vInst tInstVs tScheme)
-	
 	-- If	The var we're trying to instantiate is on our path
 	-- THEN	we're inside this branch.
 	| (bind : _)	<- filter (\b -> (not $ b =@= BLetGroup{})
 				      && (elem vInst $ takeCBindVs b)) path
 	= do	
-		trace	$ prettyp "=== Inside this branch\n"
-		let tInst = TVar KData vInst
+		trace	$ prettyp "*   solceCInst_simple: Inside this branch\n"
 
 		-- check how this var was bound and build the appropriate InstanceInfo
 		--	the toCore pass will use this to add the required type params
 		--	to this call.
-		let info = case bind of
-				BLet{}		-> InstanceLetRec vUse vInst Nothing
-				BLambda{}	-> InstanceLambda vUse vInst Nothing
-				BDecon{}	-> InstanceLambda vUse vInst Nothing
-
-		solveCInst_inst cs c tInst info
+		case bind of
+			BLet{}		-> return $ (CInstLetRec src vUse vInst) : cs
+			BLambda{}	-> return $ (CInstLambda src vUse vInst) : cs
+			BDecon{}	-> return $ (CInstLambda src vUse vInst) : cs
 
 	| otherwise
-	= solveCInst_let cs c vUse vInst bindInst path
+	= solveCInst_let cs c bindInst path
 	
 
 -- If we're not inside the branch defining it, it must have been defined 
 --	somewhere at this level. Build dependency graph so we can work out if we're on a recursive loop.
 
-solveCInst_let cs c vUse vInst bindInst path
+solveCInst_let 
+	cs 
+	c@(CInst src vUse vInst)
+	bindInst path
  = do
 	-- Load the info from the state that will help us work out
 	--	what type to use for this binding.
@@ -388,10 +451,13 @@ solveCInst_let cs c vUse vInst bindInst path
 		% "    gDeps:\n" 	%> prettyBranchGraph gDeps 	% "\n\n"
 		% "    genSusp       = " % genSusp			% "\n\n"
 -}
-	solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
+	solveCInst_find cs c bindInst path gDeps genSusp
 	
 
-solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
+solveCInst_find 
+	cs 
+	c@(CInst src vUse vInst)
+	bindInst path gDeps genSusp
 	
 	-- If 	There is a suspended generalisation
 	-- AND	we can reach the branch that we're in from the one we're trying to generalise
@@ -401,29 +467,18 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 	, (p : _)	<- path
 	, Set.member p sDeps
 	= do 	
-		trace	$ prettyp "=== Recursive path\n"
+		trace	$ prettyp "*   solveCInst_find: Recursive path\n"
+		return	$ (CInstLetRec src vUse vInst) : cs
 
-		let tInst	= TVar KData vInst
-		solveCInst_inst cs c tInst
-			(InstanceLetRec vUse vInst Nothing)
 		
 	-- IF	There is a suspended generalisation
 	-- AND	it's not recursive
 	-- THEN	generalise it and use that scheme for the instantiation
 	| Set.member vInst genSusp
 	= do	
-		trace	$ prettyp "=== Generalisation\n"
-
-		solveGrind
-		tScheme	<- solveGeneralise vInst
-		
-		(tInst, tInstVs)
-			<- instantiateT_table instVar tScheme
+		trace	$ prettyp "*   solveCInst_find: Generalisation\n"
+		return	$ CGrind : (CInstLet src vUse vInst) : cs
 			
-		solveCInst_inst cs c tInst
-			(InstanceLet vUse vInst tInstVs tScheme) 
-		
-		
 	-- The type we're trying to generalise is nowhere to be found. The branch for it
 	--	might be later on in the constraint list, but we need it now.
 	-- 	Reorder the constraints to process that branch first before
@@ -451,28 +506,7 @@ solveCInst_find cs c vUse vInst bindInst path gDeps genSusp
 --		trace	$ "    queue' =\n" %> (", " %!% map prettyCTreeS csReordered) % "\n\n"
 	
 		-- Carry on solving
-		solveCs csReordered
-
-	 
-solveCInst_inst 
-	cs 			
-	c@(CInst src vT vDef) 
-	tInst			-- the instantiated type
-	info 			-- information about what was instantiated
- = do
- 	trace	$ "\n"
-		% "=== solveCInst_inst " % vT % " <- " % vDef 	% "\n"
-		% "    tInst = " % tInst			% "\n"
-		% "    info  = " % info				% "\n"
-		% "\n"
-
-	sInst <##> Map.insert vT info
-
-	-- Add type to the graph as a new constraint
-	solveCs [CEq src (TVar KData vT) tInst]
-
-	solveNext cs
-
+		return	csReordered
 
 
 
@@ -666,30 +700,48 @@ prettyBranchGraph graph
 			$ Map.toList graph
 
 
-
-
-
-
--- | Perform unification, resolve projections and grind out any available effects
+-- | Perform unification, resolve projections and grind out any available effects 
 --	or fetters in the graph.
 --
---	Crushing of projection fetters can generate more constraints
+--	solveGrind may not be able to completely grind out all constraints because
+--	the crushing of projections may require the projection function to be instantiated, 
+--	triggering generalisation and requiring another grind.
+--
+--	If solveGrind returns no constraints, the grind succeeded and no crushable constructors
+--	remain in the graph.
+--
+--	If solveGrind returns constraints, then they need to be processed before continuing the grind.
+--	In this case the last constraint in the list will be another CGrind.
 --
 solveGrind 
-	:: SquidM ()
+	:: SquidM [CTree]
 
 solveGrind
- = do	-- Don't unify if there are errors
+ = do	
+ 	-- Don't unify if there are errors
  	errs		<- gets stateErrors
- 	when (isNil errs)
-	 $ do	-- Run the unifier.
+	if not $ isNil errs
+	 then	return []
+	 else do
+	 	-- Run the unifier/projection resolver.
+	 	-- Doing this can generate more constraints.
 		trace	$ prettyp "*   Grind.solveGrind, unifying.\n"
-		solveUnify
+		csMore	<- solveUnify
+		
+		case csMore of
+		 []	-> solveGrind_crush
+		 _	-> return $ csMore ++ [CGrind]
 
-	-- Don't crush if there are errors
-	errs2		<- gets stateErrors
-	when (isNil errs2)
-	 $ do 	-- Grab lists of interesting equivalence classes from the register.
+solveGrind_crush
+ = do	errs		<- gets stateErrors
+ 	if not $ isNil errs
+	 then return []
+	 else do
+	  	-- Crush other things
+	 	-- These don't generate more constraints, so once we've finished processing them the
+		--	grind is complete.
+	 
+	 	-- Grab lists of interesting equivalence classes from the register.
 		register		<- gets stateRegister
 
 		let getReg bind		
@@ -730,6 +782,7 @@ solveGrind
 			% "=============================================================\n"
 			% "\n\n"
 
+		return 	[]
 
 
 -- Unify some classes in the graph.
@@ -737,14 +790,18 @@ solveGrind
 --	because the crushing can add more constraints to the graph.
 --
 solveUnify 
-	:: SquidM ()
+	:: SquidM [CTree]
 
 solveUnify 	
  = do	-- get the list of nodes which have constraints waiting to be unified.
+	-- This clears the active list in the graph, so we must make sure
+	--	to handle all of these before returning.
+	
  	queued		<- liftM Set.toList $ clearActive 		
 
 	-- get classes waiting to be projected
 	regProj		<- getRegProj		
+	regShape	<- getRegShapes
 
 	-- check if there are any errors in the state
 	errors		<- gets stateErrors
@@ -752,76 +809,67 @@ solveUnify
 	trace	$ "*   Grid.solveUnify\n"
 		% "    queued      = " % queued			% "\n"
 		% "    regProj     = " % regProj		% "\n"
+		% "    regShape    = " % regShape		% "\n"
 		% "    errors:\n     " %> "\n" %!% errors	% "\n"
 
-	solveUnifySpin queued regProj errors
+	solveUnifySpin queued regProj regShape errors
 
-solveUnifySpin queued regProj errors
+solveUnifySpin queued regProj regShape errors
 
 	-- If there are errors in the solver state then bail out.
 	| not $ isNil errors
-	= return ()
+	= return []
 	
-	-- If no nodes need to be unified and there are no projections left
-	--	in the graph then we're done.
+	-- If no nodes need to be unified and there are no projections or
+	--	shape constraints left in the graph then we're done.
 	| []	<- queued
 	, []	<- regProj
-	= return ()
+	, []	<- regShape
+	= return []
 	
 	-- Otherwise, try to unify or crush something.
 	| otherwise
-	= solveUnifyWork queued regProj errors
+	= solveUnifyWork queued regProj regShape errors
 
-solveUnifyWork queued regProj errors
+solveUnifyWork queued regProj regShape errors
  = do	
-  	-- Try to unify some of the queued classes.
+  	-- Unify the queued classes.
   	mapM_ crushUnifyClass queued
 
 	-- Try to crush out some of the Shape fetters.
-	regShapes	<- getRegShapes
---	trace	$ "    regShapes   = " % regShapes	% "\n"
-	mapM crushShape regShapes
+	progressShape	<- liftM or 
+			$  mapM crushShape regShape
 
-	-- Try to crush out some of the FieldIs fetters.
-	newQs	<- mapM crushProjClassT regProj
+	-- Try to crush out some of the Projection fetters.
+	newQs		<- liftM (concat . catMaybes)
+			$  mapM crushProjClassT regProj
 	
-	let crushedSomeProjs
-		= or (map isJust newQs) 
+	let progressProj = not $ isNil newQs
 
+	-- decide what to do now..
+	let res
+	  
+		-- If we've crushed some projections then bail out and return the new constraints
+		| progressProj
+		= return newQs
 
-	-- Check to see if we've made progress with the graph.
-	--	If we haven't unified anything, and haven't crushed out any of the
-	--	FFieldIs fetters then we're stalled and have an ambiguous projection
-	--	somewhere.
-	-- 
-	let progress
-		=  (not $ isNil queued)
-		|| (not $ isNil $ concat $ catMaybes newQs)
-		|| crushedSomeProjs
+		-- If the queue is empty and we couldn't make progress on either projections
+		--	or shape constraints then we're stuck and its time to bail out.
+		--
+		| isNil queued  
+		,   (isNil regProj   && not progressShape)
+		 || (isNil regShape  && not progressProj)
+		 || (not progressShape  && not progressProj)
 
-	-- debug
-	regProj'	<- getRegProj
+		= do
+			trace	$ prettyp "*   Grind.solveUnify: no progress\n"
+			return newQs
 
-	trace	$ "*   Grind.solveUnify\n"
-		% "    queued      = " % queued		% "\n"
-		% "    regProj     = " % regProj	% "\n"
-		% "    regProj'    = " % regProj'	% "\n"
-		% "    progress    = " % progress	% "\n"
-		% "\n"
+		-- Keep going..
+		| otherwise
+		= solveUnify
 
-	if progress
-	 then 
-	  do	-- process any constraints from projection crushing
-	  	solveCs (concat $ catMaybes newQs)
-		solveUnify
-			
-	 else do
-	 	trace	$ "*   Grind.solveUnify: no progress\n"
-			% "    queued = " % queued	% "\n"
-		
---		errorProjection regProj'
-		return ()
-
+	res
 
 
 -- | Get the list of classe which contain projection fetters.

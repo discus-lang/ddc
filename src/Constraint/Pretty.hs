@@ -1,3 +1,5 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
+
 -- | Pretty printer for type constraints.
 --
 module Constraint.Pretty
@@ -11,7 +13,7 @@ import qualified Data.Map	as Map
 import Type.Pretty
 import Constraint.Exp
 
------
+-- CTree -----------------------------------------------------------------------
 instance Pretty CTree where
  prettyp c  
   = case c of
@@ -60,9 +62,6 @@ instance Pretty CTree where
 	CClassInst src v ts
 	 -> "@ClassInst " % v % " " % ts % ";"
 
-	CLeave v
-	 -> "@CLeave " % v % ";"
-
 	CInst src v1 v2
 	 -> "@CInst " % padR 15 (pretty v1) % " " % v2 % ";"
 	 
@@ -74,9 +73,27 @@ instance Pretty CTree where
 	 
 	CTopClosure t
 	 -> "@CTopClosure " % t	 	% ";"
- 
 
------
+	-- internal
+	CLeave v
+	 -> "@CLeave " % v % ";"
+ 
+ 	CGrind
+	 -> prettyp "@CGrind"
+
+	CInstLambda ts v1 v2
+	 -> "@InstLambda " % v1 % " " % v2
+
+	CInstLet ts v1 v2
+	 -> "@InstLet " % v1 % " " % v2
+
+	CInstLetRec ts v1 v2
+	 -> "@InstLetRec " % v1 % " " % v2
+	 
+	 
+
+
+-- CBind -----------------------------------------------------------------------
 instance Pretty CBind where
  prettyp bb	
   = case bb of
@@ -85,3 +102,5 @@ instance Pretty CBind where
 	BLetGroup vs	-> "@BLetGroup "	% vs
 	BLambda	v 	-> "@BLambda "		% v
   	BDecon	v  	-> "@BDecon "		% v
+
+

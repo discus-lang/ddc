@@ -30,7 +30,9 @@ stage	= "Type.Crush.Shape"
 --
 --	TODO: Add more shape fetters recursively.
 --
-crushShape :: ClassId -> SquidM ()
+--	returns whether we managed to crush this fetter.
+--
+crushShape :: ClassId -> SquidM Bool
 crushShape shapeCid
  = do 	
  	-- Grab the Shape fetter from the class and extract the list of cids to be merged.
@@ -67,7 +69,7 @@ crushShape shapeCid
 		
 	case template of
 	 -- There's no template to work from, and nothing else we can do.
-	 Nothing	-> return ()
+	 Nothing	-> return False
 
 	 -- We've got a template. 
 	 --	We can merge the sub classes and remove the shape constaint.
@@ -76,7 +78,7 @@ crushShape shapeCid
 		delClass shapeCid
 		
 		unregisterClass (Var.FShape 0) shapeCid
-		return ()
+		return True
 
 
 crushShapeMerge 

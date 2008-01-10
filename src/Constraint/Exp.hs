@@ -86,11 +86,6 @@ data	CTree
 	-- An instance for a class dictionary. eg, Num (Int (%_))
 	| CClassInst	TypeSource Var [Type]
 
-	-- Leave a branch.
-	--	The solver uses this to remind itself when all the constraints in a
-	--	branch have been added to the graph.
-	| CLeave	CBind
-
 
 
 	-- Gathers up effect and closure visible at top level.
@@ -101,6 +96,24 @@ data	CTree
 	| CTopClosure	Type
 
 
+	--------------
+	-- These constraints are used internally by the solver.
+	--	Support for type based projections means we can't determine a call graph before we start
+	--	the solver. These ctors are used to help with reordering constraints on the fly.
+
+	-- Leave a branch.
+	--	The solver uses this to remind itself when all the constraints in a
+	--	branch have been added to the graph.
+	| CLeave	CBind
+
+	-- Trigger a graph grind
+	| CGrind
+
+	-- Extract a type and instantiate it
+	--	var of instance, var of scheme to instantiate
+	| CInstLambda		TypeSource Var Var
+	| CInstLet		TypeSource Var Var
+	| CInstLetRec		TypeSource Var Var
 
 	deriving (Show)
 
