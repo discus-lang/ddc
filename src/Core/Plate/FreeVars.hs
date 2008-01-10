@@ -85,10 +85,8 @@ instance FreeVars Exp where
 
 	    in free \\ bound
 		
-	XMatch aa eff
-	 -> unions
-	 	[ freeVars eff
-		, unions $ map freeVars aa ]
+	XMatch aa
+	 -> unions $ map freeVars aa
 		
 	XConst c t	
 	 -> freeVars t

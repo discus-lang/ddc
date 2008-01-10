@@ -391,10 +391,9 @@ transXM2 table xx
 	 -> do	ss'		<- followSs table ss
 	 	transX table	$ XDo ss'
 		
-	XMatch  aa eff
-	 -> do	eff'		<- followT table eff
-	 	aa'		<- followAs table aa
-		transX table	$ XMatch aa' eff'
+	XMatch  aa
+	 -> do	aa'		<- followAs table aa
+		transX table	$ XMatch aa'
 		
 	XConst c t
 	 ->  do	t'		<- followT  table t

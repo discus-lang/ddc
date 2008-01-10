@@ -305,14 +305,14 @@ reconX tt (XDo ss)
 			(makeTSum KClosure (map TTag vsBind)) )
    
 -- match
-reconX tt (XMatch [] eff)
+reconX tt (XMatch [])
  = panic stage
  	$ pretty "reconX: XMatch has no alternatives\n"
 
-reconX tt (XMatch aa eff)
+reconX tt (XMatch aa)
  = let	(aa', altTs, altEs, altCs)	= unzip4 $ map (reconA tt) aa
  	Just atLast			= takeLast altTs
-   in	( XMatch aa' eff
+   in	( XMatch aa'
    	, atLast
 	, makeTSum KEffect altEs
 	, makeTSum KClosure altCs )

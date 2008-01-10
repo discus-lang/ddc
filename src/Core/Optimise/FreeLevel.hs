@@ -120,13 +120,13 @@ annotLevelX st@(level, vMap) xx
 	    in	( tagVL free	$ XDo ss'
 	    	, free)
 		
-	XMatch aa eff
+	XMatch aa
 	 -> let	(aa', frees)	= unzip
 	 			$ map (annotLevelA st) aa
 		
 		free		= Set.unions frees
 
-	    in	( tagVL free	$ XMatch aa' eff
+	    in	( tagVL free	$ XMatch aa'
 	    	, free)
 
 	XConst{}

@@ -195,7 +195,7 @@ instance Pretty Exp where
 	 -> "do {\n"
 	 	%> ";\n\n" %!% bs % ";\n}"
 
-	XMatch alts _
+	XMatch alts
 	 -> "match {\n"
 		%> ("\n\n" %!% alts)
 		% "\n"

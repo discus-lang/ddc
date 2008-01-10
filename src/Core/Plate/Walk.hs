@@ -237,10 +237,9 @@ walkZM2 z xx
 			
 		transX z' z'	$ XDo ss3
 		
-	XMatch aa eff
-	 -> do	--mX'		<- liftMaybe (walkZM z) mX
-	 	aa'		<- walkZM z aa
-	 	transX z z	$ XMatch aa' eff
+	XMatch aa
+	 -> do 	aa'		<- walkZM z aa
+	 	transX z z	$ XMatch aa'
 		
 	XConst c t		
 	 -> do	t'		<- walkZM z t

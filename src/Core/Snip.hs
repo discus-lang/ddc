@@ -152,7 +152,7 @@ snipX topVars xx
 	XApp{}			-> snipXLeft topVars xx		
 
 	XDo ss			-> snipIt xx
-	XMatch aa eff		-> snipIt xx
+	XMatch aa		-> snipIt xx
 
 	XConst{}		-> snipIt xx
 	

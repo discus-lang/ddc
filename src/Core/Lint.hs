@@ -9,6 +9,8 @@
 --	TODO:	* check syntactic soundness of witnesses.
 --		* check other top level things besides PBind
 --
+--		* do proper scoping, not just addVT, addVK. 
+--			want withVT, withVK
 module Core.Lint
 	( lintTree )
 
@@ -56,14 +58,25 @@ addError    err
 
 -- | Add a type binding to the table.
 addVT :: Var -> Type -> Table -> LintM Table
-addVT v t table		= return $ table { tableTypes = Map.insert v t (tableTypes table) }
+addVT v t table		
+ = return $ table { tableTypes = Map.insert v t (tableTypes table) }
 
+{- = case Map.lookup v (tableTypes table) of
+ 	Nothing	-> 
+	Just k	-> panic stage $ "addVT: var " % v % " is already bound to " % t % "\n"
+-}
+	
 addVTs vts table	= foldM (\tt (v, t) -> addVT v t tt) table vts 
 
 -- | Add a kind binding to the table.
+--	Check for duplicate bindings before we add the new one.
+--	This catches problems with regions being declared locally in their own scope.
+--
 addVK :: Var -> Kind -> Table -> LintM Table
-addVK v k table		= return $ table { tableKinds = Map.insert v k (tableKinds table) }
-
+addVK v k table		
+ = case Map.lookup v (tableKinds table) of
+ 	Nothing	-> return $ table { tableKinds = Map.insert v k (tableKinds table) }
+	Just k	-> panic stage $ "addVK: var " % v % " is already bound to " % k % "\n"
 
 
 -------------------------------------------------------------------------------
@@ -163,7 +176,7 @@ lintX tt (XApp x1 x2  eff)
 lintX tt (XDo ss)
  = do	foldM_ lintS tt ss
  
-lintX tt (XMatch aa eff)
+lintX tt (XMatch aa)
  = do	foldM_ lintA tt aa
  
 lintX tt (XConst c t)

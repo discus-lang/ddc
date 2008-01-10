@@ -364,7 +364,7 @@ toCoreX xx
 	 -> do
 		alts'	<- mapM (toCoreA (Just varX)) alts
 		
-		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts' C.TNil) ]
+		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 
 	-- case match on an exp
 	D.XMatch _ (Just x) alts
@@ -375,13 +375,13 @@ toCoreX xx
 		alts'	<- mapM (toCoreA (Just varX)) alts
 		
 		return	$ C.XDo	[ C.SBind (Just varX) x'
-				, C.SBind Nothing (C.XMatch alts' C.TNil) ]
+				, C.SBind Nothing (C.XMatch alts') ]
 			
 	-- regular  match
 	D.XMatch _ Nothing alts
 	 -> do	alts'	<- mapM (toCoreA Nothing) alts
 		
-		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts' C.TNil) ]
+		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 		
 	-- primitive constants
 	D.XConst (Just (T.TVar T.KData vT, _)) 
@@ -455,7 +455,7 @@ toCoreX xx
 		e3'	<- toCoreA (Just v) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primFalse [])] e3)
 		
 		return	$ C.XDo	[ C.SBind (Just v) e1'
-				, C.SBind Nothing (C.XMatch [ e2', e3' ] C.TNil) ]
+				, C.SBind Nothing (C.XMatch [ e2', e3' ]) ]
 	
 	-- projections
 	D.XProjTagged 

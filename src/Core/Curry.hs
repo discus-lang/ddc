@@ -108,7 +108,7 @@ curryX	tc xx
 	| XTau t x		<- xx	= XTau t	$ curryX tc x
 	| XTet vts x		<- xx	= XTet 	 vts	$ curryX tc x
 	| XLocal v vs x		<- xx	= XLocal v vs	$ curryX tc x
-	| XMatch aa	eff	<- xx	= XMatch (map (curryA tc) aa) eff
+	| XMatch aa		<- xx	= XMatch (map (curryA tc) aa)
 	| XPrim{}		<- xx	= xx
 	| XConst{} 		<- xx	= xx
 

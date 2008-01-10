@@ -109,13 +109,20 @@ bindX 	:: (?classMap :: Map Var [Var])
 
 bindX 	shared xx
  = case xx of
-	XLAM b t x	
+	XLAM b k x	
 	 -> do	-- check for regions bound by lambdas
 		let v		= varOfBind b
-	 	let shared'	= addSharedV v shared
+
+		-- mark regions in kinds as shared because they are not local
+		--	to the body of the lambda expression 
+	 	let sharedKs	= freeRegions k
+
+		let shared'	= addSharedVs sharedKs
+				$ addSharedV  v 
+				$ shared
 
 	 	(x', vsFree, vsLocal)	<- bindX shared' x
-	 	return	( XLAM b t x'
+	 	return	( XLAM b k x'
 			, Set.delete v vsFree
 			, vsLocal )
 
@@ -141,7 +148,7 @@ bindX 	shared xx
 		 $ return
 			( XTet vts' x'
 			, addSharedVs 
-				(Set.unions $ map (freeVars . snd) vts)
+				(Set.unions $ map (freeVars . snd) vts')
 				vsFree
 			, vsLocal)
 
@@ -162,11 +169,11 @@ bindX 	shared xx
 			, vsLocal)
 
 	-- BUGS: handle regions bound in different alternatives
-	XMatch aa eff
+	XMatch aa
 	 -> do	(aa', vssFree, vssLocal)	
 	 		<- liftM unzip3 $ mapM (bindA shared) aa
 
-	 	return	( XMatch aa' eff
+	 	return	( XMatch aa'
 			, Set.unions vssFree
 			, Set.unions vssLocal)
 
@@ -188,8 +195,14 @@ bindA shared (AAlt gs x)
 		, Set.unions (vsLocalX : vssLocalGs))
 	
 bindG shared (GExp w x)
- = do	(x', vsFree,  vsLocal)	<- bindX shared x
-	(w', vsFreeW, vsLocalW)	<- bindW shared w
+ = do	(w', vsFreeW, vsLocalW)	<- bindW shared w
+
+	-- For the types on constant patterns, the match expression will have a read
+	--	effects on regions in those types. These are not local to the RHS 
+	--	expression.
+	let sharedX		= Set.union shared vsFreeW
+	(x', vsFree,  vsLocal)	<- bindX sharedX x
+	
 
  	return	( GExp w' x'
 		, Set.union vsFree vsFreeW
@@ -315,7 +328,8 @@ bindXDo shared xx@(XDo ss)
 			%>  Set.toList vsBindForce							% "\n\n"
 			%  "  regions to bind here\n"
 			%>  Set.toList vsBindHere							% "\n\n"
-
+			%  "  statements\n\n"
+			%>  ("\n\n" %!% ss)								% "\n\n"
 			% "\n")
 	 $ return
 	 	( x'

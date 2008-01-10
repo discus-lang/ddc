@@ -319,7 +319,7 @@ toSeaS xx
 --	 -> 	return Nothing
 
 	-- match
-	C.SBind (Just v) x@(C.XMatch aa eff)
+	C.SBind (Just v) x@(C.XMatch aa)
 	 -> do	aa'		<- mapM (toSeaA Nothing) aa
 	 	let Just xT	= C.maybeSlurpTypeX x
 		let t		= toSeaT xT
@@ -328,7 +328,7 @@ toSeaS xx
 		return		$ Just $ E.SMatch aaL
 
 
-	C.SBind Nothing	x@(C.XMatch aa eff)
+	C.SBind Nothing	x@(C.XMatch aa)
 	 -> do	aa'	<- mapM (toSeaA Nothing) aa
 	    	return	$ Just $ E.SMatch aa'
 

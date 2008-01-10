@@ -57,7 +57,7 @@ maybeSlurpTypeX	xx
 	, Just sLast		<- takeLast ss
 	= maybeSlurpTypeS sLast
 
-	| XMatch aa eff		<- xx
+	| XMatch aa 		<- xx
 	, Just aLast		<- takeLast aa
 	= maybeSlurpTypeA aLast
 	
@@ -151,7 +151,7 @@ slurpEffsX'	xx
 	XTau  t x		-> slurpEffsX' x
 	
 	XDo _			-> [TNil]
-	XMatch aa eff		-> [eff]
+	XMatch aa		-> [TNil]
 	XConst{}		-> []
 	XVar{}			-> []
 

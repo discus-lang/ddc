@@ -11,9 +11,10 @@
 import Prelude;
 
 main ()
- = do {	lift1 ();
+ = do {	
+ 	lift1 ();
 	lift2 ();
---	lift3 ();
+	lift3 ();
 	lift4 ();
 
 	liftCtor ();
@@ -55,7 +56,7 @@ lift2 ()
 
 -- | Check lifting of try-catch blocks.
 --	Try-catch blocks are compiled by introducing local function bindings
-{-
+
 lift3 ()
  = do {	a1	= 20;
 	a2	= 42;
@@ -64,10 +65,9 @@ lift3 ()
 		catch { Exception msg	-> print $ "message: " % msg % "\n"; }
 		with  5;
 
-	print	$ "z = " % showInt z;
-	print "\n";
+	println	$ "z = " % show z;
  };
--}
+
 
 
 -- | Check effect constraints on lambda bound functions are making it through to core.

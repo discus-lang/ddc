@@ -173,7 +173,7 @@ hasLambdasX	x
 	XLam{}			-> True
 	XApp x1 x2 eff		-> hasLambdasX x1 || hasLambdasX x2
 	XDo ss			-> or $ map hasLambdasS ss
-	XMatch aa eff		-> or $ map hasLambdasA aa
+	XMatch aa		-> or $ map hasLambdasA aa
 	
 	XLocal v vs x		-> hasLambdasX x
 

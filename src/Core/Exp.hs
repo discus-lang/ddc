@@ -104,7 +104,7 @@ data Exp
 	| XLam		Var	Type	Exp  Effect Closure	-- ^ Value abstraction.	
 	| XApp		Exp	Exp	Effect		-- ^ Value application.
 	| XDo		[Stmt]				-- ^ Do expression.		TODO add Effect
-	| XMatch	[Alt]	Effect			-- ^ Matching of constructors and constants with effects.
+	| XMatch	[Alt]				-- ^ Matching of constructors and constants with effects.
 	| XConst	Const	Type			-- ^ Literals.
 	| XVar		Var	  			-- ^ A variable.
 	| XLocal	Var	[(Var, Type)] Exp	-- ^ Introduce a local region.

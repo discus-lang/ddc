@@ -30,7 +30,7 @@ ditchX	xx
 	XLam	v t x eff clo	-> XLam v t (ditchX x) (TTop KEffect) (TTop KClosure)
 	XApp	x1 x2 eff	-> XApp (ditchX x1) (ditchX x2) (TTop KEffect)
 	XDo	ss		-> XDo  (map ditchS ss)
-	XMatch	aa eff		-> XMatch (map ditchA aa) (TTop KEffect)
+	XMatch	aa		-> XMatch (map ditchA aa)
 	XConst{}		-> xx
 	XVar{}			-> xx
  	XLocal v vs x		-> ditchX x
