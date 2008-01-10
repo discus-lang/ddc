@@ -14,7 +14,6 @@ import Type.Error
 
 import Type.Check.GraphicalData
 import Type.Check.Soundness
-import Type.Closure.Trim
 
 import Type.Effect.MaskLocal
 -- import Type.Effect.MaskFresh	(maskEsFreshT)
@@ -25,6 +24,7 @@ import Type.Class
 import Type.Plug		
 import Type.Port
 import Type.Context
+import Type.Util
 
 import Shared.Error
 import qualified Shared.Var	as Var

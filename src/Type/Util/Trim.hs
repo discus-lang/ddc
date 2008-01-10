@@ -17,7 +17,7 @@
 --	reduce to
 --		forall a %r1. Thing a %r1 %r2	
 
-module Type.Closure.Trim
+module Type.Util.Trim
 	( trimClosureT 
 	, trimClosureC )
 	
@@ -27,10 +27,10 @@ import Util
 import Shared.Error
 import Type.Exp
 import Type.Plate
-import Type.Util
 import Type.Pretty
 import Type.Plate.FreeVars
 import Type.Util.Pack
+import Type.Util.Bits
 
 import qualified Shared.Var		as Var
 import qualified Shared.VarSpace	as Var

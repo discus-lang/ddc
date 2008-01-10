@@ -13,7 +13,6 @@ import Type.Class
 import Type.State
 import Type.Scheme
 import Type.Plug
-import Type.Closure.Trim
 import Type.Util
 import Type.Plate.Trans
 import Type.Plate.FreeVars
