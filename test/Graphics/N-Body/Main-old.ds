@@ -56,7 +56,7 @@ project Body where
 	 = case b of {
  		Body mass pos vel acc
 			-> "Body " 
-				% showFloat mass 
+				% show mass 
 				% " (" % pos.show % ")"
 				% " (" % vel.show % ")";
  	 };
@@ -129,7 +129,7 @@ body_sumForces
  ::	Array Body -> Int -> Vec2 Float;
 
 body_sumForces body i 
- 	= vec2F_sum
+ 	= sum&{Vec2 Float}
 	$ map (body.(i).force2)
 	$ map (index body) 
 	$ deleteF (==) [0.. array_size body - 1] i;
@@ -140,7 +140,7 @@ body_forceVec
  	-> Float -> Float 
 	-> Float -> Float 
 	-> Vec2 Float;
-
+{-
 body_forceVec m1 m2 x1 y1 x2 y2
  = do {
  	m1'	= unboxFloat32 m1;
@@ -189,12 +189,12 @@ body_forceVec_work m1 m2 x1 y1 x2 y2
 	forceV	= Vec2 (boxFloat32 forceX) (boxFloat32 forceY);
 	forceV;
  };
-
+-}
 
 
 -- Unoptimised version.
 --	Uses boxed math.
-{-
+
 body_forceVec m1 m2 x1 y1 x2 y2
  = do {
  	dx	= x2 - x1;
@@ -213,7 +213,7 @@ body_forceVec m1 m2 x1 y1 x2 y2
 	forceV	= Vec2 (forceS * cos theta) (forceS * sin theta);
 	forceV;
  };
--}
+
 
 
 -----
@@ -277,13 +277,13 @@ run 	frame body0 body1
 	
 	\= do {	
 		frame.clear (frame_color 0 0 0);
-		mapArrayIx_ (\.update body0) body1;
+		mapArrayIx_ (\x -> x.update body0) body1;
 
 	
 		draw_force frame body1 0 0;
 
-		mapArray_   (\.clampPos)	body1;
-		mapArray_   (\.draw frame)	body1;
+		mapArray_   (\x -> x.clampPos)	body1;
+		mapArray_   (\x -> x.draw frame)	body1;
 
 		frameCount += 1;
 
@@ -300,7 +300,7 @@ run 	frame body0 body1
 
 draw_force_step	= 4;
 
-
+{-
 draw_force :: Frame -> Array Body -> Int -> Int -> ();
 draw_force frame body x y
  = match {
@@ -348,13 +348,13 @@ sumAllForces pX pY array ix vForce
 		sumAllForces pX pY array (ix + 1) vForce;
 	};
  };
-					
+-}				
 		
 
 
 -- Unoptimised version.
 --	Creates an intermediate list of Vec2s and then sums them.
-{-
+
 draw_force :: Frame -> Array Body -> Int -> Int -> ();
 draw_force frame body x y
  = match {
@@ -362,7 +362,7 @@ draw_force frame body x y
 	| y >= 600	= ();
 	
 	\= do {
-		forceV	= vec2F_sum
+		forceV	= sum&{Vec2 Float}
 			$ mapArrayToList
 				(\b -> body_forceVec 
 						1.0 (b.mass)
@@ -381,7 +381,7 @@ draw_force frame body x y
 		draw_force frame body (x + draw_force_step) y;
 	};
  };
--}
+
 				
 forceColor fS
  = match {

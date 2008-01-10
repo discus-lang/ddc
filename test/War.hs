@@ -442,9 +442,9 @@ libraryModules =
 	, "Graphics/Shape"
 	, "Graphics/TinyPTC" 
 	, "Graphics/Raster/Bresenham"
-	, "Graphics/Frame" ]
-{-
-	, "Graphics/Render" 
-	, "DDC/Source/Token"
+	, "Graphics/Frame"
+	, "Graphics/Render" ]
+
+{-	, "DDC/Source/Token"
 	, "DDC/Source/Lexer" ]
 -}	

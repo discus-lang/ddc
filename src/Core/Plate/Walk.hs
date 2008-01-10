@@ -299,8 +299,8 @@ instance Monad m => WalkM m Guard where
 instance Monad m => WalkM m Pat where
  walkZM z ss
   = case ss of
-  	WConst c
-	 -> 	return		$ WConst c
+  	WConst c t
+	 -> 	return		$ WConst c t
 	 
 	WCon v lvts
 	 -> 	return		$ WCon v lvts
@@ -427,7 +427,7 @@ bindTK_Guard zz g
 	
 bindTK_Pat zz ww
  = case ww of
-	WConst c	
+	WConst c t
 	 -> return zz
 
  	WCon v lvt

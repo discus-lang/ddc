@@ -72,13 +72,13 @@ run 	frame body0 body1
 	
 	\= do {	
 		frame.clear (frame_color 0 0 0);
-		mapArrayIx_ (\.update body0) body1;
+		mapArrayIx_ (\x -> x.update body0) body1;
 
 	
 		draw_force frame body1 0 0;
 
-		mapArray_   (\.clampPos)	body1;
-		mapArray_   (\.draw frame)	body1;
+		mapArray_   (\x -> x.clampPos)	body1;
+		mapArray_   (\x -> x.draw frame)	body1;
 
 		frameCount += 1;
 

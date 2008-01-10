@@ -82,6 +82,7 @@ loadTypeNode2 cid c
 		$ "loadTypeNode2: can't trace which hasn't been unified yet\n"
 		% "    cid   = " % cid		% "\n"
 		% "    queue = " % classQueue c	% "\n"
+		% "    nodes:\n" % "\n" %!% classNodes c % "\n"
 
 	-- don't bother showing bottoms
 	| Just (TBot k)	<- classType c

@@ -184,7 +184,7 @@ data Guard
 	deriving (Show, Eq)
 
 data Pat
-	= WConst	Const				-- ^ Match against a constant.
+	= WConst	Const	Type			-- ^ Match against a constant.
 	| WCon		Var	[(Label, Var, Type)]	-- ^ Match against a constructor and bind arguments.
 	deriving (Show, Eq)
 	

@@ -42,11 +42,11 @@ stage	= "Type.Crush.Effect"
 crushEffectC :: ClassId -> SquidM ()
 crushEffectC cid
  = do	
+	trace	$ "*   crushEffectC " 	% cid			% "\n"
+
 	-- trace out the effect
 	eTrace		<- liftM (sortFsT . eraseFConstraints) $ traceType cid
- 	trace	$ "\n"
-		% "*   crushEffectC " 	% cid			% "\n"
-		% "    eTrace      = "  %> prettyTS eTrace	% "\n"
+ 	trace	$ "    eTrace      = "  %> prettyTS eTrace	% "\n"
 
 	-- check for loops in the data.
 	--	this should never happen, but check anyway so that we don't end up in an infinite loop

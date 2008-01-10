@@ -64,7 +64,7 @@ project Vec2 Float where
 
 }
 
-{-
+
 vec2_angleU :: Float32# -> Float32# -> Float32#;
 vec2_angleU x y
  = do {
@@ -76,31 +76,28 @@ vec2_angleU x y
 		\= atanU (y / x);
 	};
  };
--}
 
 
-vec2_update 	= update&{Vec2 Float};
-vec2_acc 	= acc	&{Vec2 Float};
-vec2_add 	= add	&{Vec2 Float};
-vec2_show	= show	&{Vec2 Float};
 
 instance Num (Vec2 Float) where
 {
-	(+) 	= vec2_add;
+	(+) 	= add	&{Vec2 Float};
 }
 
-instance Update (Vec2 Float) where
+instance Updatable (Vec2 Float) where
 {
-	(:=)	= vec2_update;
+	(:=)	= update&{Vec2 Float};
 
 }
 
 instance Accum (Vec2 Float) where
 {
-	(+=)	= vec2_acc;
+	(+=)	= acc	&{Vec2 Float};
 }
 
 instance Show (Vec2 Float) where
 {	
-	show	= vec2_show;
+	show	= show	&{Vec2 Float};
 }
+
+

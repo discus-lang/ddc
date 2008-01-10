@@ -192,15 +192,22 @@ instance FreeVars Guard where
  freeVars gg
   = case gg of
 	GExp  w x
-	 -> freeVars x
+	 -> (Set.union (freeVars x) (freeVars w))
 	 	\\ varsBoundByW w
 
 varsBoundByW ::	Pat	-> Set Var
 varsBoundByW	ww
  = case ww of
- 	WConst c	-> empty
+ 	WConst c t	-> empty
 	WCon   v fs	-> fromList $ map t3_2 fs
 	
+
+-----
+instance FreeVars Pat where
+ freeVars pp
+  = case pp of
+  	WConst	c t	-> freeVars t
+	WCon 	v lts	-> Set.unions $ map (freeVars . t3_3) lts
 
 -----
 instance FreeVars Type where

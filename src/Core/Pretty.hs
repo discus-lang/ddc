@@ -364,7 +364,7 @@ instance Pretty Guard where
 instance Pretty Pat where
  prettyp xx 
   = case xx of
-  	WConst c	-> prettyp c
+  	WConst c t	-> prettyp c % " :: " % t
 	
 
 	WCon v []	-> prettyp v 

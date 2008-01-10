@@ -186,12 +186,18 @@ slurpW	(WConLabel a vCon lvs)
 
 slurpW	(WConst sp c)
  = do
-	tConst		<- getConstType c
+	tD@(TVar KData tV)	<- newTVarDS "const"
+	tE			<- newTVarES "const"
+	tConst			<- getConstType c
+
+	let src	= TSLiteral sp c
+
+	wantTypeV tV
 
  	return	( []
-		, tConst
-		, WConst Nothing c
-		, [])
+		, tD
+		, WConst (Just (tD, tE)) c
+		, [CEq src tD tConst])
 
 
 slurpW w

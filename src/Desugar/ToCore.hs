@@ -647,8 +647,13 @@ toCoreW ww
 	 	lvts	<- mapM toCoreA_LV lvs
 	 	return	$ C.WCon v lvts
 	 
-	D.WConst _ c
-	 -> return	$ C.WConst c
+	D.WConst 
+		(Just 	( T.TVar T.KData vT
+			, _ )) 
+		c
+
+	 -> do	t	<- getType vT
+	 	return	$ C.WConst c t
 	 
 
 toCoreA_LV (D.LIndex nn i, v)

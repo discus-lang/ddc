@@ -23,7 +23,7 @@ import Type.Dump
 
 
 -----
-debug	= False
+debug	= True
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 

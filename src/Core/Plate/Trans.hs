@@ -660,8 +660,9 @@ instance Monad m => TransM m Guard where
 instance Monad m => TransM m Pat where
  transZM table xx
   = case xx of
-	WConst c
-	 ->	transW table	$ WConst c
+	WConst c t
+	 -> do	t'		<- followT table t
+	 	transW table	$ WConst c t'
 	 
 	WCon v lvt
 	 -> do	v'		<- followV_free table v

@@ -680,66 +680,57 @@ solveGrind
 	:: SquidM ()
 
 solveGrind
- = do	errs		<- gets stateErrors
- 	if isNil errs 
-	 then solveGrind2
-	 else trace	$ "\n"
-	 		% "=== Grind.solveGrind: not grinding with errors in the state\n"
-			
-	 		
+ = do	-- Don't unify if there are errors
+ 	errs		<- gets stateErrors
+ 	when (isNil errs)
+	 $ do	-- Run the unifier.
+		trace	$ prettyp "*   Grind.solveGrind, unifying.\n"
+		solveUnify
 
-solveGrind2
- = do
-	-- Grab lists of interesting equivalence classes from the register.
-	register		<- gets stateRegister
+	-- Don't crush if there are errors
+	errs2		<- gets stateErrors
+	when (isNil errs2)
+	 $ do 	-- Grab lists of interesting equivalence classes from the register.
+		register		<- gets stateRegister
 
-	let getReg bind		
-		= return $ Set.toList $ (\(Just x) -> x) $ Map.lookup bind register
+		let getReg bind		
+			= return $ Set.toList $ (\(Just x) -> x) $ Map.lookup bind register
 
-	regEReadH	<- getReg Var.EReadH
-	regEReadT	<- getReg Var.EReadT
-	regEWriteT	<- getReg Var.EWriteT
+		regEReadH	<- getReg Var.EReadH
+		regEReadT	<- getReg Var.EReadT
+		regEWriteT	<- getReg Var.EWriteT
 
-	regFLazyH	<- getReg Var.FLazyH
-	regFMutableT	<- getReg Var.FMutableT
-	regFConstT	<- getReg Var.FConstT
-
-
-	-- debug
-	trace	$ "\n"
-		% "=============================================================\n"
-		% "=== Grind.solveGrind\n"
-		% "    regEReadT    = " % regEReadT	% "\n"
-		% "    regEReadH    = " % regEReadH	% "\n"
-		% "    regFLazyH    = " % regFLazyH	% "\n"
-		% "    regFMutableT = " % regFMutableT	% "\n"
-		% "    regFConstT   = " % regFConstT	% "\n"
-		% "\n\n"
-
-	-- Run the unifier.
-	trace	$ prettyp "*   Grind.solveGrind, unifying.\n"
-	solveUnify
+		regFLazyH	<- getReg Var.FLazyH
+		regFMutableT	<- getReg Var.FMutableT
+		regFConstT	<- getReg Var.FConstT
+ 
+	 	trace	$ "*   Grind.solveGrind: crushing.\n"
+			% "    regEReadT    = " % regEReadT	% "\n"
+			% "    regEReadH    = " % regEReadH	% "\n"
+			% "    regFLazyH    = " % regFLazyH	% "\n"
+			% "    regFMutableT = " % regFMutableT	% "\n"
+			% "    regFConstT   = " % regFConstT	% "\n"
+			% "\n\n"
 
 
-	-- Now that the graph is unified, we can try and crush out some of the simpler compound
-	--	effects and fetters. Crushing these constructors will not add any more constraints
-	--	to nodes in the graph, so there is no need to interleave it with unification.
+		-- Now that the graph is unified, we can try and crush out some of the simpler compound
+		--	effects and fetters. Crushing these constructors will not add any more constraints
+		--	to nodes in the graph, so there is no need to interleave it with unification.
 
-	-- Crush out EReadTs
-	trace	$ prettyp "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
-	mapM_ crushEffectC (regEReadH ++ regEReadT ++ regEWriteT)
+		-- Crush out EReadTs
+		trace	$ prettyp "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
+		mapM_ crushEffectC (regEReadH ++ regEReadT ++ regEWriteT)
 
-	-- Crush out FLazyHs, FMutableTs
-	trace	$ prettyp "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
-	mapM_ crushFetterC (regFLazyH ++ regFMutableT ++ regFConstT)
+		-- Crush out FLazyHs, FMutableTs
+		trace	$ prettyp "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
+		mapM_ crushFetterC (regFLazyH ++ regFMutableT ++ regFConstT)
 	
-	-- all done
-	trace	$ "\n"
-		% "=== Grind.solveGrind done\n"
-		% "=============================================================\n"
-		% "\n\n"
+		-- all done
+		trace	$ "\n"
+			% "=== Grind.solveGrind done\n"
+			% "=============================================================\n"
+			% "\n\n"
 
-	return ()
 
 
 -- Unify some classes in the graph.
@@ -759,11 +750,11 @@ solveUnify
 	-- check if there are any errors in the state
 	errors		<- gets stateErrors
 
-{-	trace	$ "*   Grid.solveUnify\n"
+	trace	$ "*   Grid.solveUnify\n"
 		% "    queued      = " % queued			% "\n"
 		% "    regProj     = " % regProj		% "\n"
 		% "    errors:\n     " %> "\n" %!% errors	% "\n"
--}
+
 	solveUnifySpin queued regProj errors
 
 solveUnifySpin queued regProj errors
@@ -811,14 +802,14 @@ solveUnifyWork queued regProj errors
 
 	-- debug
 	regProj'	<- getRegProj
-{-
+
 	trace	$ "*   Grind.solveUnify\n"
 		% "    queued      = " % queued		% "\n"
 		% "    regProj     = " % regProj	% "\n"
 		% "    regProj'    = " % regProj'	% "\n"
 		% "    progress    = " % progress	% "\n"
 		% "\n"
--}
+
 	if progress
 	 then 
 	  do	-- process any constraints from projection crushing
@@ -826,8 +817,8 @@ solveUnifyWork queued regProj errors
 		solveUnify
 			
 	 else do
---	 	trace	$ "*   Grind.solveUnify: no progress\n"
---			% "    queued = " % queued	% "\n"
+	 	trace	$ "*   Grind.solveUnify: no progress\n"
+			% "    queued = " % queued	% "\n"
 		
 --		errorProjection regProj'
 		return ()

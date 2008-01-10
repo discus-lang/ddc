@@ -270,7 +270,7 @@ reconX tt exp@(XApp x1 x2 eff)
 	                          applyValueT tt x1t x2t
    in	case mResultTE of
    	 Just (appT, appE)
-  	  -> let x'		= XApp x1' x2' (packT appE)
+  	  -> let x'		= XApp x1' x2' pure -- (packT appE)
      	     in ( x'
 	        , appT
 		, makeTSum KEffect  [x1e, x2e, appE]

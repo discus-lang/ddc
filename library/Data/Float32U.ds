@@ -22,22 +22,22 @@ foreign import extern "primFloat32U_mod"
 
 -- comparisons
 foreign import extern "primFloat32U_eq"
- primFloat32U_eq	:: elaborate Float32# -> Float32# -> Bool#;
+ primFloat32U_eq	:: elaborate Float32# -> Float32# -> Int32#;
 
 foreign import extern "primFloat32U_neq"
- primFloat32U_neq	:: elaborate Float32# -> Float32# -> Bool#;
+ primFloat32U_neq	:: elaborate Float32# -> Float32# -> Int32#;
 
 foreign import extern "primFloat32U_gt"
- primFloat32U_gt	:: elaborate Float32# -> Float32# -> Bool#;
+ primFloat32U_gt	:: elaborate Float32# -> Float32# -> Int32#;
 
 foreign import extern "primFloat32U_ge"
- primFloat32U_ge	:: elaborate Float32# -> Float32# -> Bool#;
+ primFloat32U_ge	:: elaborate Float32# -> Float32# -> Int32#;
 
 foreign import extern "primFloat32U_lt"
- primFloat32U_lt	:: elaborate Float32# -> Float32# -> Bool#;
+ primFloat32U_lt	:: elaborate Float32# -> Float32# -> Int32#;
 
 foreign import extern "primFloat32U_le"
- primFloat32U_le	:: elaborate Float32# -> Float32# -> Bool#;
+ primFloat32U_le	:: elaborate Float32# -> Float32# -> Int32#;
 
 
 instance Eq (Float32# %_) where

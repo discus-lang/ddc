@@ -227,8 +227,9 @@ lintG tt (GExp w x)
 	
 -- | Lint for Patterns
 lintW :: Table -> Pat -> LintM Table
-lintW tt (WConst c)
- =	return tt
+lintW tt (WConst c t)
+ = do	lintT tt t
+ 	return tt
  
 lintW tt (WCon v lvt)
  = do	tt'		<- addVTs (map (\(l, v, t) -> (v, t)) lvt) tt

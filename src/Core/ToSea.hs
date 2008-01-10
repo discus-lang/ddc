@@ -401,7 +401,7 @@ toSeaG	mObjV ssFront gg
 
 
 toSeaW	_ 
-	(C.WConst c)	
+	(C.WConst c t)	
  = 	( toSeaConst c
  	, [])
 
@@ -419,7 +419,7 @@ isAltConst  aa
 
 isPatConst gg
  = case gg of
- 	C.WConst c	-> True
+ 	C.WConst c t	-> True
 	_		-> False
 
 

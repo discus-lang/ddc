@@ -188,11 +188,24 @@ bindA shared (AAlt gs x)
 		, Set.unions (vsLocalX : vssLocalGs))
 	
 bindG shared (GExp w x)
- = do	(x', vsFree, vsLocal)	<- bindX shared x
- 	return	( GExp w x'
-		, vsFree
-		, vsLocal)
+ = do	(x', vsFree,  vsLocal)	<- bindX shared x
+	(w', vsFreeW, vsLocalW)	<- bindW shared w
 
+ 	return	( GExp w' x'
+		, Set.union vsFree vsFreeW
+		, Set.union vsLocal vsLocalW)
+
+
+bindW shared ww
+ = case ww of
+ 	WConst c t
+	 -> return 	( WConst c t
+	 		, freeRegions t
+			, Set.empty )
+	WCon v lts
+	 -> return	( WCon v lts
+	 		, Set.unions $ map (freeRegions . t3_3) lts
+			, Set.empty)
 
 
 -- | Bind local regions in this XDo expression
@@ -426,6 +439,9 @@ takeStmtBoundV ss
  = case ss of
  	SBind mv ss -> mv
 
+freeRegions zz
+	= Set.filter vIsRegion
+	$ freeVars zz
 
 freeRegionsX xx	
 	= Set.filter vIsRegion 
@@ -434,5 +450,6 @@ freeRegionsX xx
 freeRegionsS xx	
 	= Set.filter vIsRegion 
 	$ freeVars xx
+
 
 vIsRegion v = Var.nameSpace v == NameRegion

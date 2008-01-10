@@ -24,7 +24,7 @@ showVector3
 project Matrix33 where 
 {
 	-- | The identity matrix.
-	id	
+	id ()
 	 = Matrix33
 	 	1.0 0.0 0.0
  		0.0 1.0 0.0

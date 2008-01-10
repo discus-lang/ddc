@@ -20,7 +20,7 @@ squareSpin frame rot
 
 	arrayUI_fill frame.array 0;
 
-	renderPrims frame [(matrix33_id (), Color 255 255 255)] 
+	renderPrims frame [(id&{Matrix33} (), Color 255 255 255)] 
 		$  [ Translate 300.0 300.0 ]
 		++ frac 3 rot;
 
