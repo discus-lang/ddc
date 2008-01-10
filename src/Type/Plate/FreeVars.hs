@@ -1,124 +1,120 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Type.Plate.FreeVars
-	( freeVarsT
-	, freeVarsF )
+	(FreeVars(..))
 
 where
 
 -----
-import Util.List
-import Util.Tuple
-import Util.Maybe
+import Shared.Error
 import Type.Exp
 
-import Shared.Error
+import qualified Data.Set	as Set
+import Data.Set			(Set, (\\), empty, union, unions, fromList, singleton)
 
 -----
 stage	= "Type.Plate.FreeVars"
 
------
-freeVarsT :: Type -> [Var]
-freeVarsT t
- = let ?bound = [] 
-   in  nub $ free t
- 
+class FreeVars a where
+ freeVars :: a -> Set Var
 
-class Free a where
- free :: (?bound :: [Var]) -> a -> [Var]
+-----
+instance FreeVars a => FreeVars [a] where
+ freeVars xx	= unions $ map freeVars xx
+
+-----
+instance FreeVars Var where
+ freeVars v	= singleton v
  
 -----
-instance Free Type where
- free t
+instance FreeVars Type where
+ freeVars t
   = case t of
 	TNil
-	 -> []
+	 -> empty
 
-	TForall vs t
-	 -> let ?bound 	= map fst vs ++ ?bound
-	    in free t
+	TForall vks t
+	 -> (union (freeVars t) (freeVars $ map snd vks))
+	 	\\ (fromList $ map fst vks)
 
 	TFetters fs t
-	 -> let ?bound	= [ v | FLet (TVar k v) _ <- fs] ++ ?bound
-	    in  free t ++ free fs
-
+	 -> union (freeVars fs) (freeVars t)
+	 	\\ (fromList [ v | FLet (TVar k v) _ <- fs])
+		
 	TSum k ts		
-	 -> catMap free ts
-
---	TUnify k ts
---	 -> catMap free ts
-	
+	 -> freeVars ts
+	 
 	TMask k t1 t2
-	 -> free t1 ++ free t2
+	 -> union (freeVars t1) (freeVars t2)
 
- 	TVar k v	-> free v
+ 	TVar k v	
+	 -> singleton v
 
-	TTop k		-> []
-	TBot k		-> []
+	TTop k	-> empty
+	TBot k	-> empty
 
 	-- data
 	TFun t1 t2 eff clo
-	 -> free t1
-	 ++ free t2
-	 ++ free eff
-	 ++ free clo
+	 -> unions
+	 	[ freeVars t1
+		, freeVars t2
+		, freeVars eff
+		, freeVars clo ]
 
 	TFunF tsEffClo
 	 -> let	(ts, eff, clo)	= unzip3 tsEffClo
-	    in	 catMap free ts
-	      ++ catMap free eff
-	      ++ catMap free clo
+	    in unions
+	    	[ freeVars ts
+		, freeVars eff
+		, freeVars clo ]
 
-	TData v ts	-> catMap free ts
+	TData v ts	
+	 -> union (singleton v) (freeVars ts)
 	
 	-- effect
 	TEffect v ts
-	 -> free v ++ free ts
+	 -> union (singleton v) (freeVars ts)
 	 
 	-- closure
-	TFree v t	-> free t
-	TTag v		-> []
+	TFree v t	-> freeVars t
+	TTag v		-> empty
 
 	-- used in solver
-	TClass{}	-> []
-	TAccept t	-> free t
-	TNode x t	-> free t
-	TError{}	-> []
-	TFetter f	-> free f
+	TClass{}	-> empty
+	TAccept t	-> freeVars t
+	TNode x t	-> freeVars t
+	TError{}	-> empty
+	TFetter f	-> freeVars f
 	 
 	_ -> panic stage $ "freeT: no match for " ++ show t ++ "\n"	 
 	    
 -----
-instance Free Var where
- free v
-	= if elem v ?bound then [] else [v]
-
-instance Free a => Free [a] where
- free ts	= catMap free ts
-
+instance FreeVars Kind where
+ freeVars kk	= empty
 	
 -----
-freeVarsF f
- = let ?bound = []
-   in free f
-
-instance Free Fetter where
- free f
+instance FreeVars Fetter where
+ freeVars f
   = case f of
-	FConstraint v ts	-> free v ++ free ts
+	FConstraint v ts	
+	 -> union (singleton v) (freeVars ts)
 
 	FLet (TVar k v) t2
-	 -> let ?bound = v : ?bound
-	    in	free t2
+	 -> freeVars t2
+	 	\\ singleton v
 
+	FLet t1 t2
+	 -> union (freeVars t1) (freeVars t2)
+		
 	FMore t1 t2
-	 -> free t1 ++ free t2
-
-	FLet t1 t2		
-	 -> free t1 ++ free t2
+	 -> union (freeVars t1) (freeVars t2)
 
 	FProj pj v tDict tBind
-	 -> free v ++ free tDict ++ free tBind
-
+	 -> unions
+	 	[ singleton v
+		, freeVars tDict
+		, freeVars tBind]
 
 	_ -> panic stage $ "free[Fetter]: no match for " ++ show f ++ "\n"
+
+

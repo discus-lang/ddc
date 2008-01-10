@@ -37,6 +37,9 @@ import qualified Shared.VarSpace	as Var
 import qualified Shared.VarUtil		as Var
 import Shared.Var			(Var)
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import Debug.Trace
 
 -----
@@ -108,7 +111,7 @@ trimClosureC' cc
 
 	-- update quantifiers to not quantify over vars which have been trimmed out
 	TForall vks t		
-	 -> let vsFree	= freeVarsT t
+	 -> let vsFree	= Set.toList $ freeVars t
 		vks'	= [ (v, k)	| (v, k)	<- vks
 					, elem v vsFree]
 	    in	makeTForall vks' (trimClosureC t)
@@ -119,7 +122,7 @@ trimClosureC' cc
 	 |  collectClassIds t 	== []
 	 ,  null $ filter (\v 	-> Var.nameSpace v /= Var.NameValue
 	 			&& (not $ Var.isCtorName v)) 
-	 	 $ freeVarsT t		
+	 	 $ Set.toList $ freeVars t		
 	 -> TBot KClosure
 
 	 | otherwise
@@ -152,7 +155,7 @@ trimClosureC_t tt
 
 	-- Trim under foralls
 	TForall vks t		
-	 -> let vsFree	= freeVarsT t
+	 -> let vsFree	= Set.toList $ freeVars t
 		vks'	= [ (v, k)	| (v, k)	<- vks
 					, elem v vsFree]
 	    in	makeTForall vks' (trimClosureC_t t)

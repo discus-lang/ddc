@@ -213,7 +213,7 @@ generaliseType varT tCore envCids
 			$ filter (\v -> not $ Var.nameSpace v == NameValue)
 			$ filter (\v -> not $ Var.isCtorName v)
 			$ Var.sortForallVars
-			$ freeVarsT tMskLocal
+			$ Set.toList $ freeVars tMskLocal
 
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
@@ -267,7 +267,7 @@ cleanType save tt
 	= cleanType' save $ cleanType' save  tt
 
 cleanType' save tt
- = let	vsFree	= freeVarsT tt
+ = let	vsFree	= Set.toList $ freeVars tt
 
 	vsPorts	
 		= catMaybes

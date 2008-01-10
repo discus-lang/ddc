@@ -49,11 +49,11 @@ foreign import extern h
         
 foreign import extern i
         :: forall t0 t1 %r0 %r1 %r2 %r3
-        .  t0 -(!e0 $c0)> Data.Tuple.Tuple2 %r0 (Base.Int %r1) (t1 -(!e1 $c1)> Base.Int %r2)
-        :- !e0        = !{Base.!Read %rTC0; Base.!Read %r3}
-        ,  !e1        = !{Base.!Read %rTC0; Base.!Read %r3}
+        .  t0 -(!e0 $c0)> Data.Tuple.Tuple2 %r1 (Base.Int %r2) (t1 -(!e1 $c1)> Base.Int %r3)
+        :- !e0        = !{Base.!Read %rTC0; Base.!Read %r0}
+        ,  !e1        = !{Base.!Read %rTC0; Base.!Read %r0}
         ,  $c0        = thing : Base.Int %rTC0
-        ,  $c1        = ${thing : Base.Int %rTC0; dude : Base.Int %r3}
+        ,  $c1        = ${thing : Base.Int %rTC0; dude : Base.Int %r0}
         ,  Num (Base.Int %rTC0)
         :$ Base.Obj -> Base.Data;
         

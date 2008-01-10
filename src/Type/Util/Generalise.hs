@@ -14,6 +14,8 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..))
 
+import qualified Data.Set	as Set
+
 import Shared.Error
 
 import Type.Exp
@@ -40,7 +42,7 @@ generaliseT	:: [Var]
 		
 generaliseT	env t 
  = let	 
- 	vsFree		= freeVarsT t
+ 	vsFree		= freeVars t
 
 	-- Don't generalise regions in data types
 	envCon		= getConEnv t
@@ -52,7 +54,8 @@ generaliseT	env t
 
 	env'		= funEnvVs ++ envCon ++ env
 
-	vs'		= filter (\v -> not $ elem v env') vsFree
+	vs'		= filter (\v -> not $ elem v env') 
+			$ Set.toList vsFree
    in
    	case t of
 	 TForall vs t	-> 
@@ -80,11 +83,11 @@ genFreeVarsT	t
  	TData{}	-> vsFree'
 	 where
 		filt v	= (Var.nameSpace v /= Var.NameRegion)
-		vsFree'	= filter filt $ freeVarsT t
+		vsFree'	= filter filt $ Set.toList $ freeVars t
 	
 	-- A variable.
-	TVar k v 	-> freeVarsT t
-	_		-> freeVarsT t
+	TVar k v 	-> Set.toList $ freeVars t
+	_		-> Set.toList $ freeVars t
 
 
 -----

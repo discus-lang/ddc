@@ -21,14 +21,14 @@
 -- Binds
 foreign import extern fun
         :: forall %r0 %r1 %r2 %r3 %r4
-        .  Data.Tuple.Tuple2 %r0 (Data.List.List %r1 (Data.Maybe.Maybe %r2 (Base.Int %r3))) (Base.Int %r4) -(!e0)> Base.Int %r4
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r3}
+        .  Data.Tuple.Tuple2 %r0 (Data.List.List %r2 (Data.Maybe.Maybe %r1 (Base.Int %r4))) (Base.Int %r3) -(!e0)> Base.Int %r3
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Read %r4}
         :$ Base.Data -> Base.Data;
         
 foreign import extern fun2
         :: forall %r0 %r1 %r2 %r3 %r4
-        .  Data.Tuple.Tuple2 %r0 (Data.List.List %r1 (Data.Maybe.Maybe %r2 (Base.Int %r3))) (Base.Int %r4) -(!e0)> Base.Int %r4
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r3}
+        .  Data.Tuple.Tuple2 %r0 (Data.List.List %r1 (Data.Maybe.Maybe %r2 (Base.Int %r4))) (Base.Int %r3) -(!e0)> Base.Int %r3
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r4}
         :$ Base.Data -> Base.Data;
         
 foreign import extern main

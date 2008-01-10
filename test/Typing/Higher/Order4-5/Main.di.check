@@ -32,29 +32,29 @@ foreign import extern danio
         
 foreign import extern perch
         :: forall %r0 %r1 !e0 !e1 $c0 $c1
-        .  ((Base.Int %r0 -(!e0 $c0)> Base.Int %r0) -(!e1 $c1)> Base.Int %r1) -(!e2)> Base.Int %r1
-        :- !e2        = !{!e1; Base.!Read %r1}
-        ,  !e0        :> Base.!Read %r0
+        .  ((Base.Int %r1 -(!e1 $c0)> Base.Int %r1) -(!e0 $c1)> Base.Int %r0) -(!e2)> Base.Int %r0
+        :- !e2        = !{!e0; Base.!Read %r0}
+        ,  !e1        :> Base.!Read %r1
         :$ Base.Thunk -> Base.Data;
         
 foreign import extern perchP
         :: forall %r0 %r1 !e0 !e1 $c0 $c1
-        .  ((Base.Int %r0 -(!e0 $c0)> Base.Int %r0) -(!e1 $c1)> Base.Int %r1) -(!e2)> Base.Int %r1
-        :- !e2        = !{!e1; Base.!Read %r1; System.Console.!Console}
-        ,  !e0        :> Base.!Read %r0
+        .  ((Base.Int %r1 -(!e1 $c0)> Base.Int %r1) -(!e0 $c1)> Base.Int %r0) -(!e2)> Base.Int %r0
+        :- !e2        = !{!e0; Base.!Read %r0; System.Console.!Console}
+        ,  !e1        :> Base.!Read %r1
         :$ Base.Thunk -> Base.Data;
         
 foreign import extern appDanio
         :: forall t0 t1 %r0 !e0 !e1 $c0 $c1 $c2
-        .  (((Base.Int %r0 -(!e0 $c0)> t0) -(!e0 $c1)> t0) -(!e1 $c2)> t1) -(!e1)> t1
+        .  (((Base.Int %r0 -(!e1 $c0)> t1) -(!e1 $c1)> t1) -(!e0 $c2)> t0) -(!e0)> t0
         :$ Base.Thunk -> Base.Obj;
         
 foreign import extern tetra
         :: forall t0 %r0 %r1 !e0 !e1 !e2 $c0 $c1 $c2 $c3
-        .  Data.Bool.Bool %r0 -($c4)> (((Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -(!e0 $c1)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1) -($c5)> ((((Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -(!e0 $c1)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1) -(!e2 $c3)> t0) -(!e3 $c6)> t0
-        :- !e3        = !{Base.!Read %r0; Base.!Read %r1; !e2}
+        .  Data.Bool.Bool %r0 -($c4)> (((Base.Int %r1 -(!e2 $c0)> Base.Int %r1) -(!e2 $c1)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1) -($c5)> ((((Base.Int %r1 -(!e2 $c0)> Base.Int %r1) -(!e2 $c1)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1) -(!e0 $c3)> t0) -(!e3 $c6)> t0
+        :- !e3        = !{Base.!Read %r0; Base.!Read %r1; !e0}
         ,  !e1        :> Base.!Read %r1
-        ,  !e0        :> Base.!Read %r1
+        ,  !e2        :> Base.!Read %r1
         ,  $c4        = $c5 \ b
         ,  $c5        = $c6 \ p
         ,  $c6        = ${b : Data.Bool.Bool %r0; p : $c2}

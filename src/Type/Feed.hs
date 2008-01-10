@@ -14,8 +14,6 @@ import Shared.Error
 import qualified Shared.Var as Var
 import Shared.Var		(NameSpace (..))
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
 
 import Type.Exp
 import Type.State
@@ -26,6 +24,11 @@ import Type.Plate.FreeVars
 
 import Constraint.Exp
 import Constraint.Pretty
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
 
 import qualified Data.Array.IO	as Array
 
@@ -422,12 +425,14 @@ registerNodeT :: ClassId -> Type -> SquidM ()
 registerNodeT	cid tt
 	| elem Var.EReadH
 		$ map Var.bind 
-		$ freeVarsT tt
+		$ Set.toList $ freeVars tt
+
 	= registerClass Var.EReadH cid
 
 	| elem Var.EReadT
 		$ map Var.bind 
-		$ freeVarsT tt
+		$ Set.toList $ freeVars tt
+
 	= registerClass Var.EReadT cid
 
 	| otherwise

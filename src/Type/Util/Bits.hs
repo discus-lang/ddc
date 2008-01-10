@@ -44,6 +44,8 @@ import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Data.Set	as Set
+
 -----
 import Shared.Error
 import qualified Shared.Var as Var
@@ -341,7 +343,7 @@ flattenKind kk
 --	
 bindFreeVarsT :: 	Type -> Type
 bindFreeVarsT	t
- = let	vsFree	= nub $ freeVarsT t
+ = let	vsFree	= Set.toList $ freeVars t
    in	bindFreeVarsT' 
    		[ (v, kindOfSpace $ Var.nameSpace v) | v <- vsFree ]
 		t

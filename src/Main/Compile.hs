@@ -296,7 +296,7 @@ compileFile	args     fileName
 
 	-- These are the TREC vars which are free in the type of a top level binding
 	let vsFreeTREC	= Set.unions
-			$ map (Set.fromList . T.freeVarsT)
+			$ map (T.freeVars)
 			$ [t	| (v, t)	<- Map.toList typeTable
 				, Set.member v vsBound_source]
 
