@@ -1,20 +1,26 @@
 
+-- | Resolve projection constraints
 module Type.Crush.Proj
 	( crushProjClassT )
 where
-
 
 import Type.Exp
 import Type.Util
 import Type.Error
 import Type.Plate.Trans
-
 import Type.Class
 import Type.State
 import Type.Scheme
-import Type.Feed
+import Type.Dump
+import Type.Crush.Unify
 
 import Constraint.Exp
+import Constraint.Pretty
+
+import Shared.Error
+import qualified Shared.Var	as Var
+import Shared.Var		(Var, NameSpace(..))
+import Shared.VarPrim
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)
@@ -22,19 +28,12 @@ import Data.Set			(Set)
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
-import Shared.Error
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
-import Shared.VarPrim
-
 import Util
-
 
 -----
 stage	= "Type.Squid.CrushProj"
 debug	= True
 trace s	= when debug $ traceM s
-
 
 -----
 -- |	Crush out field projections from a type equivalence class.
@@ -42,21 +41,38 @@ trace s	= when debug $ traceM s
 --	
 crushProjClassT ::	ClassId	-> SquidM (Maybe [CTree])
 crushProjClassT cidT
- = do
+ = do	 
+ 	-- check for errors
+ 	errs	<- gets stateErrors
+	when (not $ isNil errs)
+	 $ panic stage	$ "crushProjClassT: state has errors\n"
+	 		% errs
+  
 	-- lookup the fetter from the node and unpack it.
  	Just cProj@(ClassFetter { classFetter = fProj })
 			<- lookupClass cidT
 
-	let FProj proj _ (TClass KData cidObj) _	= fProj
-	
-	-- lookup the node for the object
- 	Just cObj@(Class { classType = Just tObj })
-			<- lookupClass cidObj
-
 	trace	$ "*   Proj.crushProjClassT\n"
 		% "    cidT        = " % cidT		% "\n"
 		% "    fetter      = " % fProj		% "\n"
-		% "    cObj type   = " % classType cObj	% "\n"
+
+	let FProj proj _ (TClass KData cidObj) _	= fProj
+	
+	-- lookup the node for the object
+	
+	-- HACK: on rare occasions the class hasn't been unified yet
+	--	 why is this? Is the graph active queue getting munged for some reason???
+	crushUnifyClass cidObj
+
+	Just cObj	<- lookupClass cidObj
+	let tObj	=  case cObj of
+				Class { classType = Just tObj_ }	
+				  -> tObj_
+				_ -> panic stage
+					$ "crushProjClassT: can't get object type from class\n"
+					% prettyClass 0 cObj
+
+	trace	$ "    cObj type   = " % classType cObj	% "\n"
 
 	-- load the map of projection dictionaries from the state
 	projectDicts	<- gets stateProject

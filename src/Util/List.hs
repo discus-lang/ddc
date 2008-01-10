@@ -46,8 +46,8 @@ module Util.List
 	, mapT2_1, mapT2_2
 	, mapT3_1, mapT3_2, mapT3_3
 
-	, partitionFs
-
+	-- Maybified list operators
+	--	Use these to avoid nasty, impossible to find exceptions like (head [])
 	, takeInit
 	, takeLast
 	, takeHead
@@ -64,12 +64,17 @@ module Util.List
 	, mapZipped, 	mapZippedM
 	
 	-- milking
-	, milk)
-
+	, milk
+	
+	-- sorting
+	, partitionFs
+	, partitionFsSort)
 where
 
 -----
 import Data.List
+import Data.Maybe
+
 import qualified Data.Map	as Map
 import Util.Tunnel
 
@@ -355,30 +360,8 @@ mapT3_2 = mapUpdateTl tl3_2
 mapT3_3 = mapUpdateTl tl3_3
 
 
------
-partitionFs :: 	[(a -> Bool)] -> [a] -> [[a]]
-partitionFs 	fs xx 
- = let
- 	bins	= replicate (length fs) []
-	bins'	= foldl (partitionFs2 fs) bins xx
-
-   in	map reverse bins'
-
-partitionFs2  fs bins x
- 	= partitionFs3 fs [] bins x
-
-partitionFs3  []      bp []      x
-	= bp
-
-partitionFs3  (f:fs)  bp (b:bs)  x
-
-	| f x
-	= partitionFs3 fs (bp ++ [x:b]) bs x
 	
-	| otherwise
-	= partitionFs3 fs (bp ++ [b])   bs x
-	
------
+-- List Operators --------------------------------------------------------------
 takeInit ::	[a] -> Maybe [a]
 takeInit	xx
  = case xx of
@@ -415,7 +398,6 @@ takeMinimum	xx
  = case xx of
  	[]	-> Nothing
 	_	-> Just (minimum xx)
-
 
 	
 listMaybe :: ([a] -> b) -> [a] -> Maybe b
@@ -489,6 +471,63 @@ milk' acc f x
  	Nothing		-> (acc, x)
 	Just (ss, x')	-> milk' (acc ++ ss) f x'
 	
+
+
+
+-- Sorting ---------------------------------------------------------------------
+
+-- | Separate out this list into bins. 
+--   An element goes in the bin if it matches the corresponding predicate.
+
+partitionFs :: 	[(a -> Bool)] -> [a] -> ([[a]], [a])
+partitionFs 	fs xx 
+ = let	(bins, floor)	= mapAccumL (partitionFs1 fs) (replicate (length fs) []) xx
+   in	( map reverse bins
+        , catMaybes floor)
+	
+-- | Place an element on the head of the bin which matches the corresponding predicate
+--	If no bins match the element goes on the floor.
+
+partitionFs1 :: [(a -> Bool)] -> [[a]] -> a -> ([[a]], Maybe a)
+
+partitionFs1 fs bins x 
+	= partitionFs1' fs [] bins x
+
+-- no predicates matched, drop the element on the floor
+partitionFs1'  []      binPrev []	x
+	= (binPrev, Just x)
+
+-- ran out of functions before we ran out of bins
+--	just say we couldn't match anything
+partitionFs1'	[]	binPrev binsRest 	x
+	= ( binPrev ++ binsRest
+	  , Just x)	
+
+-- ran out of bins before we ran out of functions
+--	just make a new bin and carry on
+partitionFs1'  ff  	binPrev []  	x
+	= partitionFs1' ff binPrev [[]] x
+
+partitionFs1'  (f:fs)  binPrev (bin:binRest)  x
+
+	-- predicate matched, place the element in the current bin
+	| f x
+	= ( binPrev ++ [x:bin] ++ binRest
+	  , Nothing)
+	
+	-- predicate failed, move on to the next bin.
+	| otherwise
+	= partitionFs1' fs (binPrev ++ [bin]) binRest x
+
+
+-- | Do a partitionFs then concat the results together into a single list.
+partitionFsSort :: [(a -> Bool)] -> [a] -> [a]
+partitionFsSort fs xx
+ = let	(bins, floor)	= partitionFs fs xx
+   in	(concat bins ++ floor)
+	
+
+
 
 
 

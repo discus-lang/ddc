@@ -41,7 +41,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 	cX		<- newTVarCS "lam"
 
 	-- Create type vars for all the lambda bound vars.
-	tBound@(TVar _ vBoundT)	
+	Just tBound@(TVar _ vBoundT)	
 			<- bindVtoT vBound
 	
 	-- Slurp the body.

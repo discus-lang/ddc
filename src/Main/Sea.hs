@@ -202,11 +202,11 @@ outSea
 	
  = do
 	-- Break up the sea into Header/Code parts.
-	let 	[ 	seaProtos, 		seaSupers
+	let 	([ 	seaProtos, 		seaSupers
 		 , 	seaCafProtos,		seaCafSlots,		seaCafInits
 		 , 	seaAtomProtos,		seaAtoms
 		 , 	seaStructs
-		 , 	seaHashDefs ]
+		 , 	seaHashDefs ], [])
 
 		 = partitionFs
 			[ (=@=) PProto{}, 	(=@=) PSuper{}

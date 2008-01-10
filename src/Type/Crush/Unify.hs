@@ -79,9 +79,7 @@ unifyClassMerge cidT c queue@(t:_)
 	= do
 		let cids	=  map (\(TClass k cid) -> cid) queue
 		cid		<- mergeClasses cids
-		
 		return	$ TClass k cid
-		
 
 
 	-- functions

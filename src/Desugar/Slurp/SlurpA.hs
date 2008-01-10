@@ -219,7 +219,7 @@ slurpLV	:: Var						-- Constructor name.
 slurpLV vCon tData subInst (LIndex sp ix, v)
  = do	
 	-- create a new type var for this arg.
- 	TVar KData vT	<- bindVtoT v
+ 	Just (TVar KData vT)	<- bindVtoT v
 
 	-- Lookup the fields for this constructor.
 	ctorFields	<- gets stateCtorFields
@@ -266,7 +266,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 slurpLV vCon tData subInst (LVar sp vField, v)
  = do
  	-- Create a new type var for this arg.
- 	TVar KData vT	<- bindVtoT v
+ 	Just (TVar KData vT)	<- bindVtoT v
  
  	-- Lookup the fields for this constructor.
  	ctorFields	<- gets stateCtorFields

@@ -46,16 +46,25 @@ stage	= "Desugar.Slurp.Slurp"
 slurpTreeM ::	Tree Annot1	-> CSlurpM (Tree Annot2, [CTree], Set Var)
 slurpTreeM	tree
  = do
+	-- sort the top level things so that data definitions go through before their uses.
+	let psSorted	
+		= partitionFsSort
+			[ (=@=) PRegion{}, 	(=@=) PEffect{}, 	(=@=) PData{}
+			, (=@=) PClass{},	(=@=) PClassDict{}
+			, (=@=) PImport{},	(=@=) PExtern{}
+			, (=@=) PProjDict{},	(=@=) PClassInst{}
+			, (=@=) PSig{}
+			, (=@=) PBind{} ]
+			tree
+
 	-- Slurp out type constraints from the tree.
-	(tree', qss)	<- liftM unzip $ mapM slurpP tree
+	(tree', qss)	<- liftM unzip $ mapM slurpP psSorted
 	let qs		= concat qss
 	
-	-- We need to sort the constraints into an order that'll be acceptable to the solver. 
-	--	Put all 'known' stuff like external types, sigs, and class definitions at the front
-	--	and the constraints for the top level bindings after in one mutually recursive group.
-	let [qsBranch, qsDef, qsProject, qsDataFields, qsSig, qsClassInst]
-			= partitionFs [isCBranch, isCDef, isCDictProject, isCDataFields, isCSig, isCClassInst]
-			$ qs
+
+	-- pack all the bindings together.
+	let (qsBranch, qsRest)
+		= partition isCBranch qs
 
 	let vsLet	= concat
 			$ map (\b -> case branchBind b of
@@ -67,10 +76,20 @@ slurpTreeM	tree
 				{ branchBind 	= BLetGroup vsLet
 				, branchSub	= qsBranch }]
 				
-	let qsFinal	= qsDataFields ++ qsProject ++ qsClassInst ++ qsDef ++ qsSig ++ qsFinal_let
-
-	return 	 (tree', qsFinal, Set.fromList vsLet)
+	-- Sort tthe constraints into an order acceptable by the solver.
+	let qsFinal_rest
+		= partitionFsSort
+			[ (=@=) CDataFields{}, (=@=) CProject{}, (=@=) CClassInst{}
+			, (=@=) CDef{}
+			, (=@=) CSig{} ]
+			qsRest
+			
+	let qsFinal = qsFinal_rest ++ qsFinal_let
 	
+	return	( tree'
+	 	, qsFinal
+		, Set.fromList vsLet)
+
 
 -- | Slurp out type constraints from a top level thing.
 slurpP 	:: Top Annot1	
@@ -228,7 +247,8 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
  = do
 	let src		= TSData sp
 
-	TVar _ cNameT	<- bindVtoT cName
+	Just (TVar _ cNameT)	
+			<- bindVtoT cName
 
 	-- Slurp the initialization code from the data fields.
 	(fieldDefs', initConstrss)

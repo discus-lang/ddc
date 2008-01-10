@@ -333,7 +333,12 @@ mergeClasses cids_
 			{ classNodes	= concat $ map classNodes cs
 			, classType	= Nothing
 
-			, classQueue	=  concat (map classQueue cs)
+			, classQueue	=  nub
+					$  catMaybes
+					$  map (\t -> case t of
+							TBot _	-> Nothing
+							_	-> Just t)
+					$  concat (map classQueue cs)
 					++ concat (map (maybeToList . classType) cs)
 
 			, classBackRef	= Set.unions $ map classBackRef cs }

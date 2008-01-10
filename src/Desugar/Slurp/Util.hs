@@ -17,9 +17,6 @@ module Desugar.Slurp.Util
 	, lbindVtoT
 	, getVtoT
 
---	, setBindModeV
---	, getBindModeV
-
 	, addDataDef
 	, lookupDataDef
 
@@ -47,6 +44,7 @@ import Data.Set			(Set)
 import Util
 
 import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..), (=^=))
 import Shared.Error
 import Shared.Literal
@@ -166,27 +164,35 @@ newVarInst	var
 -- bindVtoT ... 
 --	Value Var -> Type
 --
-bindVtoT ::	Var -> CSlurpM Type
+bindVtoT ::	Var -> CSlurpM (Maybe Type)
 bindVtoT	varV
  = do
 	varType		<- gets stateVarType
 	
 	-- Check that this var isn't already bound.
 	let mVarT	= Map.lookup varV varType
-	when (isJust mVarT)
-	 (panic stage ("bindVtoT: var '" ++ pretty varV ++ "' is already bound\n"))
-	 	
 
-	-- Make the new type var
-	varT		<- newVarN NameType 
-	let varT'	= varT 	{ Var.name	= Var.name varV
-				, Var.info	= [Var.IValueVar varV] }
+	case mVarT of
+	 Just vBound
+	  -> freakout stage 
+	  	( "bindVtoT: var '" % varV % "' is already bound\n"
+		% "    trying to bind " % show varV 	% "\n\n"
+		% "    conflicts with " % show vBound	% "\n\n")
+	
+		$ return Nothing
 		
-	-- 
-	modify (\s -> s { 
-		stateVarType	= Map.insert varV varT' (stateVarType s) })
+	 Nothing 
+	  -> do
+		-- Make the new type var
+		varT		<- newVarN NameType 
+		let varT'	= varT 	{ Var.name	= Var.name varV
+					, Var.info	= [Var.IValueVar varV] }
 		
-	return $ TVar KData varT'
+		-- 
+		modify (\s -> s { 
+			stateVarType	= Map.insert varV varT' (stateVarType s) })
+		
+		return $ Just (TVar KData varT')
 
 
 lookupVtoT ::	Var	-> CSlurpM (Maybe Var)
@@ -211,10 +217,11 @@ lbindVtoT ::	Var	-> CSlurpM Type
 lbindVtoT	varV
  = do
  	mVar		<- lookupVtoT varV
-	
 	case mVar of
 	 Just varT	-> return $ TVar KData varT
-	 Nothing	-> bindVtoT varV
+	 Nothing	
+	  -> do	Just v	<- bindVtoT varV
+	  	return	v
 	 
 	
 ------

@@ -72,11 +72,17 @@ addVTs vts table	= foldM (\tt (v, t) -> addVT v t tt) table vts
 --	Check for duplicate bindings before we add the new one.
 --	This catches problems with regions being declared locally in their own scope.
 --
-addVK :: Var -> Kind -> Table -> LintM Table
+addVK :: Var -> Kind -> Table -> LintM (Maybe Table)
 addVK v k table		
  = case Map.lookup v (tableKinds table) of
- 	Nothing	-> return $ table { tableKinds = Map.insert v k (tableKinds table) }
-	Just k	-> panic stage $ "addVK: var " % v % " is already bound to " % k % "\n"
+ 	Nothing	
+	 -> do	let table'	= table { tableKinds = Map.insert v k (tableKinds table) }
+		return	$ Just table'
+	
+	Just k	
+	 -> 	freakout stage 
+	 		("addVK: var " % v % " is already bound to " % k % "\n")
+			(return Nothing)
 
 
 -------------------------------------------------------------------------------
@@ -116,7 +122,7 @@ lintP 	tt (PBind v x)
 	
 -- TODO: check that witnesses are only of the created region
 lintP	tt (PRegion r vts)
- = do	tt2		<- addVK r KRegion tt
+ = do	Just tt2	<- addVK r KRegion tt
  	tt3		<- addVTs vts tt2
 	return tt3
 
@@ -126,7 +132,7 @@ lintP	tt (PClassDict v ts context vts)
  	-- v doesn't have this kind, but it'll do for now.
 	--	We're not checking kinds of class applications yet.
 	
- 	tt'	<- addVK v (KClass v ts) tt
+ 	Just tt'	<- addVK v (KClass v ts) tt
 	return	tt'
 
 
@@ -143,7 +149,7 @@ lintX :: Table -> Exp -> LintM ()
 lintX tt (XLAM v k x)	
  = do	lintK tt k
 
- 	tt'	<- addVK (varOfBind v) k tt
+ 	Just tt'	<- addVK (varOfBind v) k tt
  	lintX tt' x
 	return ()
 	
@@ -186,8 +192,8 @@ lintX tt (XVar v)
  = do	lintBoundV tt v
  
 lintX tt (XLocal v vts x)
- = do	tt2	<- addVK v KRegion tt
- 	tt3	<- addVTs vts tt2
+ = do	Just tt2	<- addVK v KRegion tt
+ 	tt3		<- addVTs vts tt2
  	lintX tt3 x
  
 lintX tt (XPrim p xs eff)
@@ -260,7 +266,7 @@ lintT tt TNil
 
 lintT tt (TForall v k1 t2)
  = do	lintK tt k1
- 	tt'	<- addVK (varOfBind v) k1 tt
+ 	Just tt'	<- addVK (varOfBind v) k1 tt
  	lintT tt' t2
 	
 lintT tt (TContext k1 t2)
