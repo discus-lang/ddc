@@ -129,7 +129,13 @@ bindX 	shared xx
 	-- When we hit an XTet on the way back up, mask out
 	--	any effects which are known to be local to some sub-expression.
 	XTet vts x	
-	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
+	 -> do	
+--	 	let sharedTs	= Set.unions
+--				$ map (freeRegions . t2_2) vts
+
+--		    shared'	= Set.union shared sharedTs
+
+	 	(x', vsFree, vsLocal)	<- bindX shared x
 		let vts'	= 
 			transformT
 				(\tt -> case tt of
@@ -153,7 +159,10 @@ bindX 	shared xx
 			, vsLocal)
 
 	XTau t x
-	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
+	 -> do	let sharedT	= freeVars t
+	 	    shared'	= Set.union sharedT shared
+
+	 	(x', vsFree, vsLocal)	<- bindX shared' x
 	 	return	( XTau t x'
 			, addSharedVs 
 				(freeVars t)

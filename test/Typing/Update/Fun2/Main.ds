@@ -42,7 +42,8 @@ testBox ()
 	box;
  };
 
-{-
+{- need to fix global regions for this one
+
 -- | Create a tuple of functions to update and run the box.
 --	
 testBox2 ()
