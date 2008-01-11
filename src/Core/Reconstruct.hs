@@ -246,9 +246,20 @@ reconX tt exp@(XLam v t x eff clo)
    in	reconX_lam
 
 -- local
+-- TODO: check well foundedness of witnesses
+
 reconX tt (XLocal v vs x)
  = let	(x', xT, xE, xC)	= reconX tt x
-   in	( XLocal v vs x'
+
+   in	(if False -- Set.member v (freeVars xT) 
+   		then panic stage 
+			( "reconX: region " % v % " is not local\n"
+			% "    t = " % xT	% "\n"
+			% "    x = " % x'	% "\n\n")
+			id
+		else	id)
+	 
+   	( XLocal v vs x'
    	, xT
 	, makeTSum
 		KEffect

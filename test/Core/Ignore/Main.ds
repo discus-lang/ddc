@@ -1,7 +1,7 @@
 
 -- The return value of f is ignored.
---	The regions present in the type of this return
---	value are not present the type of any bound variable in Core.
+--	The regions present in the type of the result of f are not 
+--	present in the type of any bound variable in the CoreIR.
 
 f () 
  = do {

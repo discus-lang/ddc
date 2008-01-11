@@ -1,8 +1,11 @@
 
--- For this example we end up with wjoins in the core, to construct a witness that
---	the entire tuple is mutable. If the core is checked before dictionary rewrite
---	the type checker needs to handle this.
+-- Test use of wjoin's in CoreIR.
 
+-- When this program is compiled we end up with wjoins in the core which construct a
+--	witness that the entire tuple of 'x' is mutable.
+--
+-- If the core is checked before dictionary rewrite the type checker needs to handle this.
+--
 instance Updatable (Tuple2 %_ (Int %_) (Int %_)) where
 {
 	(:=)	= updateTupleInt2;

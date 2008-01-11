@@ -1,4 +1,7 @@
-		
+
+-- Triggered a bug in Core.FreeVars.
+--	a1 is not free in f1
+--		
 main ()
  = do {
 	f1 ()

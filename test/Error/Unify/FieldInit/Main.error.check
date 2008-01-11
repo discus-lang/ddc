@@ -1,0 +1,17 @@
+test/Error/Unify/FieldInit/Main.ds:8:42
+    Type mismatch during unification.
+          cannot match: Data.String.String %306
+                  with: Base.Int %278
+
+         literal value: "fast"
+               of type: Data.String.String %306
+                    at: test/Error/Unify/FieldInit/Main.ds:8:42
+
+        conflicts with, 
+        declaration of,
+                 field: speed
+             with type: Base.Int %278
+        in constructor: Main.Perch
+          of data type: Main.Fish
+                    at: test/Error/Unify/FieldInit/Main.ds:8:17
+
