@@ -53,7 +53,7 @@ countUsageX xx
 
 countUsageX'	xx
  = case xx of
-	XVar v	
+	XVar v t	
 	 -> do	useMap		<- get
 	 	let oldUse	= fromMaybe 0 (Map.lookup v useMap)
 		let newUse	= oldUse + 1
@@ -147,7 +147,7 @@ inlineBindsTree xMap cTree
  	= Trans.transformX (inlineBindsX xMap) cTree
  
 inlineBindsX xMap x
- 	| XVar v	<- x
+ 	| XVar v t	<- x
 	, Just x'	<- Map.lookup v xMap
 	= Trans.transformX (inlineBindsX xMap) x'
 	
@@ -169,7 +169,7 @@ inlineBindsTree_rename xMap cTree
 	= Trans.transformXM (inlineBindsX_rename xMap) cTree
 	
 inlineBindsX_rename xMap x
-	| XVar v	<- x
+	| XVar v t	<- x
 	, Just x'	<- Map.lookup v xMap
 	= do	
 		-- rename the vars in the expression being inlined
@@ -255,7 +255,7 @@ resnipTreeX xx
  = case xx of
  	XAnnot [NBindVar v] x
 	 -> do	modify $ \s -> s ++ [SBind (Just v) x]
-	 	return	$ XVar v
+	 	return	$ XVar v TNil
 		
 	_	-> return xx
 

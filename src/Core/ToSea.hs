@@ -167,7 +167,7 @@ toSeaX	:: C.Exp -> (E.Exp ())
 
 toSeaX		xx
  = case xx of
-	C.XVar v
+	C.XVar v t
 	 -> E.XVar v
 
 	-- discard left over annots
@@ -203,7 +203,7 @@ toSeaX		xx
 	C.XPrim (C.MSuspend fn)	 args eff
 	 -> let	args'	= map E.XVar 
 	 		$ filter (\v -> Var.nameSpace v == NameValue) 
-			$ map (\(C.XVar v) -> v)
+			$ map (\(C.XVar v t) -> v)
 	 		$ args
 
 	    in  E.XSuspend fn args'
@@ -231,7 +231,7 @@ toSeaX		xx
 	C.XAPP{}
 	 -> let
 	 	parts		= C.flattenApps xx
-		(C.XVar vF : _)	= parts
+		(C.XVar vF t : _)	= parts
 		
 	    in 	E.XVar vF
 	 	
@@ -390,7 +390,7 @@ toSeaG	mObjV ssFront gg
 		let ssL		= assignLastSS (E.XVar var, t') ss'
 
 		let (w', ssDecon)	
-	 			= toSeaW (Just (C.XVar var)) w
+	 			= toSeaW (Just (C.XVar var t)) w
 
 		let compX	= if isPatConst w
 					then E.XVar var
@@ -405,7 +405,7 @@ toSeaW	_
  = 	( toSeaConst c
  	, [])
 
-toSeaW  (Just (C.XVar objV))
+toSeaW  (Just (C.XVar objV t))
 	(C.WCon   v lvts)	
 
  = 	( E.XCon v
@@ -482,7 +482,7 @@ stripValues args
 
 stripValues' a
  = case a of
-	C.XVar v
+	C.XVar v t
 	 |  Var.nameSpace v == NameValue
 	 -> Just $ E.XVar v
 

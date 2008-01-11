@@ -212,9 +212,9 @@ unflattenApps'		xx
  = case xx of
 	x:[]		-> x
 	(XType   t):xs	-> XAPP (unflattenApps' xs) t
-	(XVar    v):xs
+	(XVar    v t):xs
 	 -> case Var.nameSpace v of
-	 	NameValue	-> XApp  (unflattenApps' xs) (XVar v)   (TBot KEffect)
+	 	NameValue	-> XApp  (unflattenApps' xs) (XVar v t)   (TBot KEffect)
 		space		-> XAPP  (unflattenApps' xs) (TVar (kindOfSpace space) v)
 
 	_		-> panic stage $ "unflattenApps: cannot unflatten " ++ show xx

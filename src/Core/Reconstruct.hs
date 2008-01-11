@@ -338,11 +338,13 @@ reconX tt (XConst c t)
 	
 
 -- var
-reconX tt (XVar v)
+-- TODO: check against existing annotation.
+
+reconX tt (XVar v t)
  = case Map.lookup v (tableEq tt) of
  	Just t		
 	 -> let	t'	= inlineTWheresMapT (tableEq tt) Set.empty t
-	    in  ( XVar v
+	    in  ( XVar v t
 	        , t'
 		, TBot KEffect
 		, TFree v t)
@@ -356,7 +358,7 @@ reconX tt xx@(XPrim prim xs eff)
  		= unzip4 $ map (reconX tt) xs
 		
 	Just t	= maybeSlurpTypeX xx
-   in	( xx
+   in	( XPrim prim xs' eff
    	, t
    	, makeTSum KEffect  (eff : xsEs)
 	, makeTSum KClosure xsEs)

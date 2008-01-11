@@ -24,7 +24,7 @@ primTree tree
 primS ss
 	| SBind mV (XTau t x)	<- ss
  	, (args, eff)		<- stripArgsEffs x
-	, (XVar v : args)	<- args
+	, (XVar v _ : args)	<- args
 
 	, argsV			<- catMaybes 
 				$ map (\a -> case a of 

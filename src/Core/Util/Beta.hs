@@ -83,7 +83,7 @@ betaX (XApp (XLam v t x1 eff1 clo) x2 eff2)
  = do	bindValue v t x2
  	return	$ x1
 
-betaX x@(XVar v)
+betaX x@(XVar v t)
  = do	boundX	<- gets sBoundX
  	case Map.lookup v boundX of
 	 Nothing	-> return x

@@ -188,7 +188,12 @@ lintX tt (XMatch aa)
 lintX tt (XConst c t)
  = do	lintT tt t
  
-lintX tt (XVar v)
+lintX tt (XVar v TNil)
+ = do	addError $ "Variable " % v % " has no type annotation.\n"
+ 	lintBoundV tt v
+	
+ 
+lintX tt (XVar v t)
  = do	lintBoundV tt v
  
 lintX tt (XLocal v vts x)

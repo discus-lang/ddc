@@ -125,7 +125,10 @@ instance Pretty Exp where
 	XAnnot a e
 	 -> "[" % a % ";\n " % e % "]"
 
-	XVar v
+	XVar v TNil
+	 -> "(" % pv v % " :: _)"
+
+	XVar v t
 	 -> pv v
 		
 	XLAM v k e

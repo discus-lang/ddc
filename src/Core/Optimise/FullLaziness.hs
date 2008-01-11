@@ -171,7 +171,7 @@ slurpLevelX n xx
 		
 		put	(ss ++ [s], gen')
 
-		return	$ XVar var
+		return	$ XVar var TNil
 	 
 	_ -> return xx
 	

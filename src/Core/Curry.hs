@@ -113,7 +113,7 @@ curryX	tc xx
 	| XConst{} 		<- xx	= xx
 
 	-- A zero airity super.
-	| XVar v		<- xx
+	| XVar v t		<- xx
 	= if Set.member v ?superVars
 	   then	fromMaybe xx $ makeCall v tc [] pure
 	   else xx
@@ -136,9 +136,9 @@ curryX	tc xx
 	= let	(parts, effs)	= unzip $ splitApps xx
 		(xF:args)	= parts
 		vF		= case xF of
-					XVar v	 -> v
-					_	-> panic stage
-						$ "curryX: malformed exp " % xx
+					XVar v t	 -> v
+					_		-> panic stage
+							$ "curryX: malformed exp " % xx
 	  in	fromMaybe xx
 			$ makeCall vF tc args (makeTSum KEffect effs)
 
@@ -219,7 +219,7 @@ makeSuperCall vF tailCallMe args eff callAirity superAirity
  	| superAirity	== 0
 	, callAirity 	== 0
 	, not $ Var.isCtorName vF
-	= Just 	$ XVar vF
+	= Just 	$ XVar vF TNil
 
 	-- Arguments applied to a CAF
 --	| superAirity 	== 0
@@ -278,7 +278,7 @@ makeThunkCall		vF 	args    eff	 callAirity
 isValueArg :: Exp -> Bool
 isValueArg xx
  = case xx of
- 	XVar v
+ 	XVar v t
 	 | Var.nameSpace v	== NameValue
 	 -> True
 

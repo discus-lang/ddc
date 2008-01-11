@@ -329,12 +329,6 @@ compileFile	args     fileName
 	-- Thread through witnesses
 	cThread		<- SC.coreThread cHeader cClean
 
-	-- lint: All variables should be in scope now.
-	when ?verbose
-	 $ do	putStr $ "  * Core: Lint\n"
-
-	SC.coreLint "core-lint-thread" cThread cHeader
-
 	-- Check type information and add annotations to each stmt.
 	when ?verbose
 	 $ do	putStr $ "  * Core: Reconstruct\n"
@@ -343,6 +337,9 @@ compileFile	args     fileName
 			$ SC.coreReconstruct "core-reconstruct" cHeader cThread
 
 	-- lint: 
+	when ?verbose
+	 $ do	putStr $ "  * Core: Lint\n"
+
 	SC.coreLint "core-lint-reconstruct" cReconstruct cHeader
 	
 	
@@ -363,10 +360,10 @@ compileFile	args     fileName
 	-----------------------
 	-- Optimisations
 	-- 
-	when ?verbose
-	 $ do	putStr $ "  * Core: Optimise\n"
+--	when ?verbose
+--	 $ do	putStr $ "  * Core: Optimise\n"
 
-
+{-
 	-- Inline forced inline functions
 	cInline		<- SC.coreInline
 				cPrim
@@ -383,7 +380,7 @@ compileFile	args     fileName
 				moduleName
 				cBoxing 
 				cHeader
-
+-}
 
 
 	----------------------
@@ -393,7 +390,7 @@ compileFile	args     fileName
 	--	Lambda lifting doesn't currently preserve the typing.
 	--
 	cReconstruct2	<- runStage "reconstruct2"
-			$  SC.coreReconstruct  "core-reconstruct2" cHeader cFullLaziness
+			$  SC.coreReconstruct  "core-reconstruct2" cHeader cPrim
 
 
 	-- Perform lambda lifting.
@@ -402,7 +399,7 @@ compileFile	args     fileName
 
 	(  cLambdaLift
 	 , vsLambda_new) <- SC.coreLambdaLift
-				cFullLaziness
+				cReconstruct2
 				cHeader
 
 --	Can't lint the code after lifting, lifter doesn't preserve

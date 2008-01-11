@@ -154,7 +154,7 @@ slurpW	:: Pat Annot1
 		, Pat Annot2				-- annotatted pattern.
 		, [CTree])				-- constraints for each arg in the pattern.
 
-slurpW	(WConLabel a vCon lvs)
+slurpW	(WConLabel sp vCon lvs)
  = do	
 	-- Lookup what data type this constructor belongs to.
 	ctorType	<- gets stateCtorType
@@ -179,10 +179,15 @@ slurpW	(WConLabel a vCon lvs)
 			<- liftM unzip3
 			$  mapM (slurpLV vCon tData subInst) lvs
 			
+--	tD@(TVar KData tV)	<- newTVarDS "con"
+--	let src			= TSGuard sp
+--	wantTypeV tV
+	
  	return	( catMaybes cBinds
 		, tPat
 		, WConLabel Nothing vCon lvs'
-		, concat cTrees)
+		, (concat cTrees) )
+		
 
 slurpW	(WConst sp c)
  = do

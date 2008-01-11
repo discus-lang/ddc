@@ -78,7 +78,7 @@ rewriteX xx
 	
 rewriteApp xx
  = let	xParts				=  flattenAppsE xx
-	(XAppFP (XVar overV) _ : _)	= xParts
+	(XAppFP (XVar overV t) _ : _)	= xParts
 	
    in	case Map.lookup overV ?classMap of
    	 Nothing		-> xx
@@ -150,7 +150,7 @@ rewriteOverApp
 
 		-- Have a look at the original application 
 		--	split off the type/class args and keep the value args.
-		(XAppFP (XVar overV) _ : xsArgs)	
+		(XAppFP (XVar overV t) _ : xsArgs)	
 				= flattenAppsE xx
 	
 		(vtsForallO, _, csClassO, _)
@@ -162,7 +162,7 @@ rewriteOverApp
 	
 		-- Construct the new call.
 		xxParts' :: [Exp]
-	  	xxParts'	= ((XAppFP (XVar vInst) Nothing)				-- the function var
+	  	xxParts'	= ((XAppFP (XVar vInst TNil) Nothing)				-- the function var
 					:  (map (\t -> XAppFP (XType t) Nothing) tsInstArgs)	-- type args to instance fn
 					++ (map (\t -> XAppFP (XType t) Nothing) tsWitnesses)	-- class args to instance fn
 					++ xsArgsVal)						-- value args
@@ -330,7 +330,7 @@ slurpClassFuns instMap pp
 	, let (Just insts)		= Map.lookup v instMap
 	, let exps			= [ (TClass v' ts', instV)	
 							| PClassInst v' ts' _ defs	<- insts
-							, (v, (XVar instV))		<- defs
+							, (v, (XVar instV t))		<- defs
 							, v == vF		] ]
 
 -- | Slurp out all the class instances from ths tree

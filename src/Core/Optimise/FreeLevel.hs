@@ -132,11 +132,11 @@ annotLevelX st@(level, vMap) xx
 	XConst{}
 	 ->	( xx, Set.empty)
 	 
-	XVar v
+	XVar v t
 	 -> case Map.lookup v vMap of 
 	 	Nothing		-> panic stage $ "annotLevelX: var " % v % " is not bound in level map.\n"
 		Just ll		
-		 -> 	( XVar v
+		 -> 	( XVar v t
 		 	, Set.singleton (v, ll))
 
 	XLocal  v vs x	

@@ -157,7 +157,7 @@ snipX topVars xx
 	XConst{}		-> snipIt xx
 	
 	-- snip XVars if they're defined at top level
-	XVar v
+	XVar v t
 	 | Set.member v topVars -> snipIt xx
 	 | otherwise		-> leaveIt xx
 	 
@@ -177,13 +177,13 @@ snipX topVars xx
 snipXLeft :: Set Var -> Exp -> SnipM ([Stmt], Exp)
 snipXLeft topVars xx
  = case xx of
-	XAPP x1@(XVar v) t	-> leaveIt xx
+	XAPP x1@(XVar v t1) t2	-> leaveIt xx
 
 	XAPP x t
 	 -> do	(ss, x')	<- snipX topVars x
 	 	return	(ss, XAPP x' t)
 
-	XApp x1@(XVar v) x2 eff
+	XApp x1@(XVar v t1) x2 eff
 	 -> do	(ss2, x2')	<- snipXRight  topVars x2
 	 	return	(ss2, XApp x1 x2' eff)
 
@@ -219,7 +219,7 @@ snipIt :: Exp -> SnipM ([Stmt], Exp)
 snipIt xx
  = do	b	<- newVarN NameValue
  	return	( [SBind (Just b) xx] 
-		, XVar b )
+		, XVar b TNil )
 
 -- Leave some thing alone.
 leaveIt :: Exp -> SnipM ([Stmt], Exp)
@@ -231,7 +231,7 @@ leaveIt xx	= return ([], xx)
 --
 takeVar :: Exp -> Maybe Var
 takeVar	(XAPP x t)	= takeVar x
-takeVar (XVar v)	= Just v
+takeVar (XVar v t)	= Just v
 takeVar _		= Nothing
 
 

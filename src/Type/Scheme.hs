@@ -67,11 +67,11 @@ extractType varT
 	 Just cid	-> extractTypeC varT cid
 	 
 extractTypeC varT cid
- = do 	tTrace		<- liftM sortFsT 	$ traceType cid
-
-	trace	$ "*** Scheme.extractType " % varT % "\n"
+ = do 	trace	$ "*** Scheme.extractType " % varT % "\n"
 		% "\n"
-		% "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
+
+ 	tTrace		<- liftM sortFsT 	$ traceType cid
+	trace	$ "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
 
 	-- Check if the data portion of the type is graphical.
 	--	If it is then it'll hang packType when it tries to construct an infinite type.

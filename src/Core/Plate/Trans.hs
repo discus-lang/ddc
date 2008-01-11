@@ -343,9 +343,10 @@ transXM2 table xx
 		
 
 	-- core constructs
-	XVar v
+	XVar v t
 	 -> do	v'		<- followV_free  table v
-	 	transX table	$ XVar v'
+		t'		<- followT table t
+	 	transX table	$ XVar v' t'
 
 	XLAM v k x
 	 -> do	v'		<- followB_bind table v

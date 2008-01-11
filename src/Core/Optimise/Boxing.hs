@@ -123,7 +123,7 @@ boxWrapS
 
 boxWrapS table stmt
 	| SBind xV x				<- stmt
-	, (XAppFP (XVar funV) _ : args)		<- flattenAppsE $ slurpExpX x
+	, (XAppFP (XVar funV t) _ : args)	<- flattenAppsE $ slurpExpX x
 	, Just arity				<- lookup (Var.name funV) unboxFuns2
 	, length args == arity
 	= do
@@ -147,12 +147,12 @@ boxWrapS table stmt
 		return	$  ssUnbox
 		        ++ [ SBind (Just vPrim)	
 				$ XPrim (MFun funV xTU)
-					[ XVar v | v <- vsUnbox]
+					[ XVar v TNil | v <- vsUnbox]
 					(makeTSum KEffect [eReadR table r | r <- rsUnbox]) 
 
 			   , SBind xV	
 			  	$ XPrim (MBox xT xTU)
-					[XVar vPrim]
+					[XVar vPrim TNil]
 					(makeTSum KEffect [ eReadR table xuR ]) ]
 							
 	| otherwise
@@ -160,7 +160,7 @@ boxWrapS table stmt
 
 
 unboxArg table x
-	|  XVar v			<- x
+	| XVar v _			<- x
 	, Just t				<- Walk.lookupT table v
 	, tF@(TData vC [r@(TVar KRegion rV)])	<- followArgType t
 	= do
@@ -172,7 +172,7 @@ unboxArg table x
 		return	$ Just
 			$ (vU, Just r, Just $ SBind (Just vU) $ forceUnbox table x tU tF r)
 
-	| XVar v			<- x
+	| XVar v t			<- x
 	= do
 		return	$ Just 
 			$ (v, Nothing, Nothing)

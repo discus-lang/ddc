@@ -34,8 +34,10 @@ instance FreeVars Exp where
 	XAnnot	n x	
 	 -> freeVars x
 
- 	XVar	v	
-	 -> fromList [v]
+ 	XVar	v t	
+	 -> unions
+	 	[ singleton v
+		, freeVars t ]
 
 	XLAM v k e
 	 -> unions 

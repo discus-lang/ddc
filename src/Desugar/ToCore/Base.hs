@@ -6,7 +6,7 @@ module Desugar.ToCore.Base
 	, CoreM
 	, initCoreS
 	, newVarN
-	, getType
+	, lookupType
 	, getKind
 	, lookupInst)
 --	, withPortSub )
@@ -90,12 +90,18 @@ newVarN	space
 	return		(Var.new (pretty gen)) { Var.bind = gen, Var.nameSpace = space }
 
 -- | Get the type of this variable.
-getType :: Var -> CoreM C.Type
-getType	v
+lookupType :: Var -> CoreM (Maybe C.Type)
+lookupType	v
 	| Var.nameSpace v == NameValue
 	= do	sigmaTable	<- gets coreSigmaTable
-	 	let Just vT	=  Map.lookup v sigmaTable
-		getType' vT
+
+	 	case Map.lookup v sigmaTable of
+		 Nothing	-> freakout stage
+		 			("getType: no type var for value var " % v % "\n")
+					$ return Nothing
+
+	 	 Just vT	-> getType' vT
+		
 		
 	| otherwise
 	=	getType' v
@@ -110,7 +116,7 @@ getType' vT
 	  % "  visible vars = " % Map.keys mapTypes % "\n"
 
 	 Just t	
-	  -> 	return $ T.toCoreT t
+	  -> 	return $ Just $ T.toCoreT t
 
 
 -- | Get the kind of this variable.

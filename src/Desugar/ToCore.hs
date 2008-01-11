@@ -168,10 +168,12 @@ toCoreP	p
 		--	This should be enforced by Desugar.Project.
 		let rewriteInstS s
 			| D.SBind _ (Just v1) (D.XVarInst _ v2)	<- s
-			= return (v1, C.XVar v2)
+			= do	Just t2	<- lookupType v2
+				return (v1, C.XVar v2 t2)
 			
 			| D.SBind _ (Just v1) (D.XVar     _ v2) <- s
-			= return (v1, C.XVar v2)
+			= do	Just t2	<- lookupType v2
+				return (v1, C.XVar v2 t2)
 			
 			| otherwise
 			= panic stage
@@ -266,7 +268,7 @@ toCoreS (D.SBind _ Nothing x)
 toCoreS (D.SBind _ (Just v) x) 
  = do	
 	-- lookup the generalised type of this binding.
-	tScheme		<- getType v
+	Just tScheme	<- lookupType v
 
  	-- convert the RHS to core.
 	xCore		<- toCoreX x
@@ -296,7 +298,7 @@ toCoreX xx
 		-- Strip contexts off argument types, if we need the associated witnesses then these
 		--	will be passed into the outer function.
 		--
-		tArg1		<- getType vTV
+		Just tArg1	<- lookupType vTV
 		let (argQuant, argTet, argContext, argShape)
 				= C.stripSchemeT tArg1
 
@@ -312,8 +314,9 @@ toCoreX xx
 		-- If the effect/closures were vars then look them up from the graph
 		effLet	<- case effVar of
 				T.TVar T.KEffect vE	
-				 -> do	e	<- liftM (C.packT . C.flattenT . C.stripContextT)
-				 		$ getType vE
+				 -> do	Just vT	<- lookupType vE
+				 	let e	=  (C.packT . C.flattenT . C.stripContextT) vT
+
 				 	return	$ Just (vE, e)
 
 				T.TBot T.KEffect	
@@ -321,8 +324,9 @@ toCoreX xx
 				
 		cloLet	<- case cloVar of
 				T.TVar T.KClosure vC	
-				 -> do	c	<- liftM (C.packT . C.trimClosureC . C.flattenT . C.stripContextT)
-				 		$ getType vC
+				 -> do	Just vT	<- lookupType vC
+				 	let c	= (C.packT . C.trimClosureC . C.flattenT . C.stripContextT) vT
+
 				 	return	$ Just (vC, c)
 				 
 				T.TBot T.KClosure 	
@@ -386,29 +390,29 @@ toCoreX xx
 	-- primitive constants
 	D.XConst (Just (T.TVar T.KData vT, _)) 
 		(S.CConst lit)
-	 -> do
-	 	t	<- liftM (C.stripContextT . C.flattenT)
-			$  getType vT
+	 -> do	
+	 	Just t		<- lookupType vT
+	 	let t_flat	= C.stripContextT $ C.flattenT t
 
 		-- BUGS: should have read effect here.
 		--	 Do read effect but force constants to be in Const regions.
-	 	case C.unboxedType t of
+	 	case C.unboxedType t_flat of
 		 Just tU@(C.TData _ [tR])
-		  -> return 	$ C.XPrim (C.MBox t tU) [C.XConst (S.CConstU lit) tU] (C.TBot C.KEffect)
+		  -> return 	$ C.XPrim (C.MBox t_flat tU) [C.XConst (S.CConstU lit) tU] (C.TBot C.KEffect)
 		  	-- (C.TEffect primRead [tR])
 			
 		 Nothing
 		  -> panic stage
-		  	$ "toCoreX: no unboxed version for type " % t
+		  	$ "toCoreX: no unboxed version for type " % t_flat
 
 	D.XConst
 		(Just (T.TVar T.KData vT, _))
 		(S.CConstU lit)
 	 -> do	
-	 	t	<- liftM (C.stripContextT . C.flattenT)
-			$  getType vT
+	 	Just t		<- lookupType vT
+		let t_flat	= (C.stripContextT . C.flattenT) t
 
-		return	$  C.XConst (S.CConstU lit) t
+		return	$  C.XConst (S.CConstU lit) t_flat
 
  
 	-- We need the last statement in a do block to be a non-binding because of an
@@ -517,7 +521,7 @@ toCoreX xx
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
 toCoreVarInst v vT
  = do
-		tScheme		<- getType v
+		Just tScheme	<- lookupType v
 		mapInst		<- gets coreMapInst
 
 		let (btsForall, vtsWhere, ksContextC, tShape)
@@ -537,7 +541,7 @@ toCoreVarInst v vT
 		 -- use of a lambda bound variable.
 		 -- 	only rank1 polymorphism => lambda bound vars have monotypes
 		 T.InstanceLambda vUse vBind _
-		  ->	return $ C.XVar v
+		  ->	return $ C.XVar v tScheme
 
 		 -- non-recursive use of a let bound variable 
 		 -- 	pass in the type args corresponding to the instantiated foralls.
@@ -577,21 +581,21 @@ toCoreVarInst v vT
 				% "    tsContestC'     = " % tsContextC' 	% "\n")
 				$ return ()
 			
-		  	return	$ C.unflattenApps (C.XVar v : map C.XType (tsInstC_packed ++ tsContextC'))
+		  	return	$ C.unflattenApps (C.XVar v tScheme : map C.XType (tsInstC_packed ++ tsContextC'))
 
 		 -- recursive use of a let-bound variable
 		 -- 	pass the args on the type scheme back to ourselves.
-		 T.InstanceLetRec vUse vBind (Just tScheme)
+		 T.InstanceLetRec vUse vBind (Just tSchemeT)
 		  -> do
-			let tScheme'			= toCoreT tScheme
-			let (tsReplay, ksContext)	= C.slurpForallContextT tScheme'
+			let tSchemeC			= toCoreT tSchemeT
+			let (tsReplay, ksContext)	= C.slurpForallContextT tSchemeC
 
 			let tsContext	= map (\k -> case k of
 							C.KClass v ts	-> C.TClass v ts)
 					$ ksContext
 
 		  	return $ C.unflattenApps
-			 	(C.XVar v : map C.XType (tsReplay ++ tsContext))
+			 	(C.XVar v tSchemeC : map C.XType (tsReplay ++ tsContext))
 
 
 
@@ -628,7 +632,7 @@ toCoreG mObj gg
 	| D.GCase _ w		<- gg
 	, Just objV		<- mObj
 	= do	w'		<- toCoreW w
-	 	return		$ C.GExp w' (C.XVar objV)
+	 	return		$ C.GExp w' (C.XVar objV C.TNil)
 		
 	| D.GExp _ w x		<- gg
 	= do	w'		<- toCoreW w
@@ -642,9 +646,11 @@ toCoreW :: D.Pat Annot
 	
 toCoreW ww
  = case ww of
- 	D.WConLabel _ v lvs
+ 	D.WConLabel 
+		_ -- (Just	(T.TVar T.KData vT, _))
+		v lvs
 	 -> do 
-	 	lvts	<- mapM toCoreA_LV lvs
+	 	lvts		<- mapM toCoreA_LV lvs
 	 	return	$ C.WCon v lvts
 	 
 	D.WConst 
@@ -652,15 +658,20 @@ toCoreW ww
 			, _ )) 
 		c
 
-	 -> do	t	<- getType vT
+	 -> do	Just t	<- lookupType vT
 	 	return	$ C.WConst c t
+	 
+	_ -> panic stage
+		$ "tCoreW: no match for " % show ww % "\n"
 	 
 
 toCoreA_LV (D.LIndex nn i, v)
- = do	t	<- liftM (C.stripContextT . C.flattenT) $ getType v
-	return	(C.LIndex i, v, t)
+ = do	Just t		<- lookupType v
+ 	let t_flat	=  (C.stripContextT . C.flattenT) t
+	return	(C.LIndex i, v, t_flat)
 
 toCoreA_LV (D.LVar nn vField, v)
- = do	t	<- liftM (C.stripContextT . C.flattenT) $ getType v
- 	return	(C.LVar vField, v, t)
+ = do	Just t		<- lookupType v
+ 	let t_flat	= (C.stripContextT . C.flattenT) t
+ 	return	(C.LVar vField, v, t_flat)
 

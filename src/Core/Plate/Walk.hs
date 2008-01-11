@@ -186,7 +186,7 @@ walkZM2 z xx
 	 	return		$ XAnnot a x'
 		
 	-- core constructs
-	XVar v			-> return xx
+	XVar v t		-> return xx
 	
 	XLAM b k x
 	 -> do	-- k'		<- walkZM z k
