@@ -43,8 +43,7 @@ reconstructTree
 	
 reconstructTree stage tHeader tCore
  = {-# SCC "reconstructTree" #-}
-   let 	?stage	= stage
-   in let
+   let
  	-- slurp out all the stuff defined at top level
 	topTypes	= {-# SCC "reconstructTree/topTypes" #-} catMap slurpTypesP (tHeader ++ tCore)
  	tt		= {-# SCC "reconstructTree/table"    #-} foldr addEqVT' initTable topTypes
@@ -96,8 +95,7 @@ initTable
 	, tableMore	= Map.empty }
 
 -----
-reconP	:: (?stage :: String)
-	-> Table -> Top -> Top
+reconP	:: Table -> Top -> Top
 
 reconP tt (PBind v x)
  = let	(x', xt, xe, xc)	
@@ -109,8 +107,7 @@ reconP tt p		= p
 ------------------------------------------------------------------------------------------
 -- | Reconstruct the type, effect and closure of this expression.
 --
-reconX 	:: (?stage :: String)	-- name of stage that called this reconstruct
-  	=> Table		-- ^ var -> type 
+reconX 	:: Table		-- ^ var -> type 
 	-> Exp 			-- ^ expression to reconstruct info on
 	-> ( Exp		-- expression with reconstructed info
 	   , Type		-- type of expression
@@ -153,7 +150,6 @@ reconX tt exp@(XAPP x t)
 	  
 	 _ -> panic stage
 	 	$ " reconX: Kind error in type application (x t).\n"
-		% "  in stage " % ?stage	% "\n\n"
 		% "     x     =\n" %> x		% "\n\n"
 		% "     t     =\n" %> t		% "\n\n"
 		% "   T[x]    =\n" %> tx	% "\n\n"
@@ -289,7 +285,6 @@ reconX tt exp@(XApp x1 x2 eff)
 	       	
 	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
-		% " in stage: " % ?stage			% "\n"
 		% " in expression:\n"
 		% "     (" % x1 % ") " % "(" % x2	% ")" % "\n\n"
 
@@ -371,8 +366,7 @@ reconX tt xx
 
 
 -----
-reconS 	:: (?stage :: String) 
-	=>  Table -> Stmt -> (Table, (Stmt, Type, Effect, Closure))
+reconS 	:: Table -> Stmt -> (Table, (Stmt, Type, Effect, Closure))
 
 reconS tt (SBind Nothing x)	
  = let	(x', xt, xe, xc)	= reconX tt x
@@ -393,8 +387,7 @@ reconS tt (SBind (Just v) x)
 	  
 
 -----
-reconA 	:: (?stage :: String)
-	=> Table -> Alt -> (Alt, Type, Effect, Closure)
+reconA 	:: Table -> Alt -> (Alt, Type, Effect, Closure)
 
 reconA tt (AAlt gs x)
  = let	(tt', gecs)		= mapAccumL reconG tt gs
@@ -416,8 +409,7 @@ reconA tt (AAlt gs x)
 -----
 -- BUGS: check type of pattern agains type of expression
 --
-reconG	:: (?stage :: String)
-	=> Table -> Guard -> (Table, (Guard, [Var], Effect, Closure))
+reconG	:: Table -> Guard -> (Table, (Guard, [Var], Effect, Closure))
 
 reconG tt (GExp p x)
  = let	binds		= slurpVarTypesW p
