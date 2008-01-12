@@ -119,7 +119,7 @@ instance (Monad m, WalkM m a, WalkM m b) => WalkM m (a, b)
 	 	b'	<- walkZM z b
 		return	(a', b')
 
------
+-- Top ---------------------------------------------------------------------------------------------
 instance Monad m => WalkM m Top where
  walkZM z p 
   = case p of
@@ -153,15 +153,17 @@ instance Monad m => WalkM m Top where
 		let defs'	= zip vs xs'
 	 	return		$ PClassInst v ts context defs'
 
------
+
+-- CtorDef ----------------------------------------------------------------------------------------
 instance Monad m => WalkM m CtorDef where
  walkZM z xx
   = case xx of	
   	CtorDef v df
 	 -> do	df'		<- mapM (walkZM z) df
 	 	return		$ CtorDef v df'
+
 		
------
+-- DataField --------------------------------------------------------------------------------------
 instance Monad m => WalkM m (DataField Exp Type) where
  walkZM z xx
   = case xx of
@@ -170,7 +172,7 @@ instance Monad m => WalkM m (DataField Exp Type) where
 	 	return	xx { dInit = mX' }
 
 
------
+-- Exp --------------------------------------------------------------------------------------------
 instance Monad m => WalkM m Exp where
  walkZM z xx_
   = do	xx	<- (transX_enter z) z xx_
@@ -256,9 +258,9 @@ walkZM2 z xx
 	 -> do 	t'		<- walkZM z t
 		transX z z 	$ XType t'
 
-	XPrim m xx eff
+	XPrim m xx
 	 -> do	xx'		<- mapM (walkZM z) xx
-		(transX z) z	$ XPrim m xx' eff
+		(transX z) z	$ XPrim m xx'
 	
 	XProject x j
 	 -> do	x'		<- walkZM z x
@@ -273,7 +275,7 @@ walkZM2 z xx
 		$  "walkZM[Exp]: no match for " % show xx
 	
 	
------
+-- Alt --------------------------------------------------------------------------------------------
 instance Monad m => WalkM m Alt where
  walkZM z ss
   = case ss of
@@ -284,7 +286,7 @@ instance Monad m => WalkM m Alt where
 	 	return		$ AAlt gs' x'
 		
 
------
+-- Guard ------------------------------------------------------------------------------------------
 instance Monad m => WalkM m Guard where
  walkZM z ss
   = case ss of
@@ -294,7 +296,7 @@ instance Monad m => WalkM m Guard where
 		return		$ GExp w' x'
 
 
------
+-- Pat  --------------------------------------------------------------------------------------------
 instance Monad m => WalkM m Pat where
  walkZM z ss
   = case ss of
@@ -305,7 +307,7 @@ instance Monad m => WalkM m Pat where
 	 -> 	return		$ WCon v lvts
 
 
------
+-- Stmt --------------------------------------------------------------------------------------------
 instance Monad m => WalkM m Stmt where
  walkZM z ss
   = case ss of
@@ -323,7 +325,7 @@ instance Monad m => WalkM m Stmt where
 
 
 
------
+-- Type --------------------------------------------------------------------------------------------
 instance Monad m => WalkM m Type where
  walkZM z tt 
   = case tt of
@@ -332,15 +334,12 @@ instance Monad m => WalkM m Type where
 	 	t2'		<- walkZM z t2
 		transT z z	$ TContext k1 t2'		
 
-	TWhere t1 vts
-	 -> do	z'		<- foldM (\z (v, t) -> bindT z z v t) z vts
+	TFetters t1 fs
+	 -> do	z'		<- foldM (\z (v, t) -> bindT z z v t) z [(v, t) | FWhere v t <- fs]
 	 	t1'		<- walkZM z' t1
 		
-		let (vs, ts)	= unzip vts
-		ts'		<- mapM (walkZM z') ts
-		let vts'	= zip vs ts'
-
-	 	transT z' z'	$ TWhere t1' vts'
+		fs'		<- mapM (walkZM z') fs
+	 	transT z' z'	$ TFetters t1' fs'
 
 	TSum k ts
 	 -> do	ts'		<- walkZM z ts
@@ -380,6 +379,21 @@ instance Monad m => WalkM m Type where
 
 	_ -> 	transT z z tt
 	
+
+-- Fetter --------------------------------------------------------------------------------------------
+instance Monad m => WalkM m Fetter where
+ walkZM z ff
+  = case ff of
+  	FWhere v t	
+	 -> do	t'	<- walkZM z t
+	 	return	$ FWhere v t'
+		
+	FMore v t
+	 -> do	t'	<- walkZM z t
+	 	return	$ FMore v t'
+
+
+
 
 
 

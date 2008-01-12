@@ -115,7 +115,7 @@ curryX	tc xx
 	-- A zero airity super.
 	| XVar v t		<- xx
 	= if Set.member v ?superVars
-	   then	fromMaybe xx $ makeCall v tc [] pure
+	   then	fromMaybe xx $ makeCall xx tc [] pure
 	   else xx
 	
 	| XDo ss		<- xx
@@ -135,12 +135,13 @@ curryX	tc xx
 	  
 	= let	(parts, effs)	= unzip $ splitApps xx
 		(xF:args)	= parts
-		vF		= case xF of
+{-		vF		= case xF of
 					XVar v t	 -> v
 					_		-> panic stage
 							$ "curryX: malformed exp " % xx
+-}
 	  in	fromMaybe xx
-			$ makeCall vF tc args (makeTSum KEffect effs)
+			$ makeCall xF tc args (makeTSum KEffect effs)
 
 	-- uh oh..			
 	| otherwise	
@@ -159,13 +160,13 @@ curryG tc gg
 -----
 makeCall 
 	:: (?supers :: Map Var Top)	
-	-> Var 					-- call this function
+	-> Exp					-- call this function (must be an XVar)
 	-> [Var]				-- supers that can be tailcalled from here
 	-> [Exp] 				-- args to function
 	-> Effect 				-- effect caused by calling this function
 	-> Maybe Exp
 
-makeCall vF tc args eff
+makeCall xF@(XVar vF tF) tc args eff
  
  	-- Function is a top-level super.
 	-- 
@@ -185,7 +186,7 @@ makeCall vF tc args eff
 			% " callAirity  = " 	% callAirity	% "\n"
 			% " superAirity = "	% superAirity	% "\n")
 	  
-			$ makeSuperCall vF tc args eff callAirity superAirity
+			$ makeSuperCall xF tc args eff callAirity superAirity
 	
 
 	-- Function isn't a super.. It'll be a lambda bound function, 
@@ -198,14 +199,14 @@ makeCall vF tc args eff
 				$ map isValueArg 
 				$ args
 	
-	  in	makeThunkCall vF args eff callAirity
+	  in	makeThunkCall xF args eff callAirity
 	
 
 -----------------------
 -- makeSuperCall
 --
 makeSuperCall 
-	:: Var 		-- var of super being called.
+	:: Exp 		-- var of super being called.	(must be an XVar)
 	-> [Var]	-- supers that can be tail called.
 	-> [Exp] 	-- arguments to super.
 	-> Effect 	-- effect caused when evaluating super.
@@ -213,13 +214,15 @@ makeSuperCall
 	-> Int 		-- number of args needed by the super.
 	-> Maybe Exp
 
-makeSuperCall vF tailCallMe args eff callAirity superAirity
+makeSuperCall 
+	xF@(XVar vF tF)
+	tailCallMe args eff callAirity superAirity
  
 	-- A reference to a CAF, with no applied arguments.
  	| superAirity	== 0
 	, callAirity 	== 0
 	, not $ Var.isCtorName vF
-	= Just 	$ XVar vF TNil
+	= Just 	$ xF
 
 	-- Arguments applied to a CAF
 --	| superAirity 	== 0
@@ -231,19 +234,19 @@ makeSuperCall vF tailCallMe args eff callAirity superAirity
 	--
  	| callAirity == superAirity
 	, elem vF tailCallMe
-	= Just $ XPrim (MTailCall vF) args eff
+	= Just $ XPrim MTailCall (xF : args)
 
 	-- We're not able to do a tail call, but we've still got the right number
 	--	of arguments, so we can call the super directly.
 	--
 	| callAirity == superAirity
-	= Just $ XPrim (MCall vF) args eff
+	= Just $ XPrim MCall (xF : args)
 
 	-- We haven't got enough args to call the super yet, we'll have to build
 	--	a thunk and wait for more.
 	--
 	| callAirity <  superAirity
-	= Just $ XPrim (MCurry vF superAirity) args pure
+	= Just $ XPrim (MCurry superAirity) (xF : args)
 
 	-- We've got more args than the super will accept.
 	--	For this case to be well typed, the super must be returning a thunk.
@@ -251,15 +254,15 @@ makeSuperCall vF tailCallMe args eff callAirity superAirity
 	--	and then apply the rest of the arguments to it.
 	--
 	| callAirity > superAirity
-	= Just $ XPrim (MCallApp vF superAirity) args eff
+	= Just $ XPrim (MCallApp superAirity) (xF : args)
    	
 	
 	
 -----------------------
 -- makeThunkCall
 --
-makeThunkCall ::	Var -> [Exp] -> Effect -> Int -> Maybe Exp
-makeThunkCall		vF 	args    eff	 callAirity
+makeThunkCall ::	Exp -> [Exp] -> Effect -> Int -> Maybe Exp
+makeThunkCall		xF 	args    eff	 callAirity
 
 	-- If there were only type applications, but no values being applied, 
 	--	then the callAirity is zero and there is no associated call at Sea level.
@@ -270,7 +273,7 @@ makeThunkCall		vF 	args    eff	 callAirity
 	-- Otherwise we have actual arguments being applied to a thunk.
 	--
 	| otherwise
-	= Just $ XPrim (MApply vF) args eff
+	= Just $ XPrim MApply (xF : args)
 
 
 -----

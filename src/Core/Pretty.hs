@@ -21,7 +21,7 @@ import Util.Pretty
 -----
 stage	= "Core.Pretty"
 
------------------------
+-------------------------------------------------------------------------------------------------
 -- Some useful options for debugging
 --
 
@@ -29,7 +29,7 @@ stage	= "Core.Pretty"
 prettyFoldXLAM		= True
 
 
------------------------
+-------------------------------------------------------------------------------------------------
 sv v	= pretty $ pv v
 
 sb (BVar v)	= pretty $ pv v
@@ -41,7 +41,7 @@ pv v
  	Var.NameType	-> "*" % v
 	_		-> prettyp v
 
--- Top --------------------
+-- Top ----------------------------------------------------------------------------------------------
 instance Pretty Top where
  prettyp xx
   = case xx of
@@ -103,7 +103,7 @@ instance Pretty Top where
 
 
 
--- CtorDef ------------------
+-- CtorDef --------------------------------------------------------------------------------------------
 instance Pretty CtorDef where
  prettyp xx
   = case xx of
@@ -112,7 +112,7 @@ instance Pretty CtorDef where
 	 	%> ("\n" %!% fs) % "\n}"
 	 
 	 
--- Exp --------------------
+-- Exp ----------------------------------------------------------------------------------------------
 instance Pretty Exp where
  prettyp xx
   = case xx of
@@ -181,7 +181,7 @@ instance Pretty Exp where
 			%> (prettyExpB e2 % " " % prettyE_caused eff)
 	 | otherwise
 	 -> "(" % e1 % ")\n" 
-		%> (prettyExpB e2 % " " % prettyE_caused eff)
+		%> (prettyExpB e2 % "\n" % prettyE_caused eff)
 
 	XTau t x
 	 -> "[** " % prettyTB t % " ]\n" % x
@@ -214,13 +214,9 @@ instance Pretty Exp where
 	 
 
 	-- prim
-	XPrim m args (TBot KEffect)
-	 -> m % " " % " " %!% map prettyExpB args
+	XPrim m args
+	 -> m % " " %> ("\n" %!% map prettyExpB args)
 
-	XPrim m args eff
-	 -> m % " " % " " %!% map prettyExpB args % "\n" %> prettyE_caused eff
-	 
-	 
 	XProject x j
 	 -> x % j
 
@@ -291,7 +287,7 @@ prettyExpB x
 	XType t		-> prettyTB t
 	_		-> "(" % x % ")"
 
--- Proj ------------------
+-- Proj --------------------------------------------------------------------------------------------
 instance Pretty Proj where
  prettyp xx
   = case xx of
@@ -299,23 +295,23 @@ instance Pretty Proj where
 	JFieldR v	-> "#" % v
 
 
--- Prim ------------------
+-- Prim --------------------------------------------------------------------------------------------
 instance Pretty Prim where
  prettyp xx 
   = case xx of
   	MSuspend v	-> "prim{Suspend} " 	% v
-	MForce 		-> prettyp "prim{Force} "
+	MForce 		-> prettyp "prim{Force}"
 	MBox	t1 t2	-> "prim{Box} "		% prettyTB t1 % " " % prettyTB t2
 	MUnbox	t1 t2	-> "prim{Unbox} "	% prettyTB t1 % " " % prettyTB t2
-	MTailCall  v	-> "prim{TailCall} "	% v
-	MCall	v	-> "prim{Call} "	% v
-	MCallApp v i	-> "prim{CallApp} "	% v % " " % i
-	MApply	v	-> "prim{Apply} "	% v
-	MCurry	v i	-> "prim{Curry} "	% v % " " % i
-	MFun v t	-> "prim{" % v % "} "	% prettyTB t
+	MTailCall  	-> prettyp "prim{TailCall}"	
+	MCall		-> prettyp "prim{Call}"
+	MCallApp i	-> "prim{CallApp " % i % "}"
+	MApply		-> prettyp "prim{Apply} "
+	MCurry	 i	-> "prim{Curry " % i % "}"
+	MFun 		-> prettyp "prim{Fun}"
 
 
--- Stmt ------------------
+-- Stmt --------------------------------------------------------------------------------------------
 instance Pretty Stmt where
  prettyp xx
   = case xx of
@@ -341,7 +337,7 @@ instance Pretty Stmt where
 prettyRFs (r, [])	= r % ";"
 prettyRFs (r, fs)	= r %> " :- " % ", " %!% fs	% ";"
 
--- Alt ------------------
+-- Alt --------------------------------------------------------------------------------------------
 instance Pretty Alt where
  prettyp xx
   = case xx of
@@ -355,7 +351,7 @@ instance Pretty Alt where
 	  % "= " % x % ";"
 
   
--- Guard ------------------
+-- Guard --------------------------------------------------------------------------------------------
 instance Pretty Guard where
  prettyp xx
   = case xx of
@@ -363,7 +359,7 @@ instance Pretty Guard where
 	 -> pat	%>> " <- " % exp
 	 
 
--- Pat -------------------
+-- Pat ---------------------------------------------------------------------------------------------
 instance Pretty Pat where
  prettyp xx 
   = case xx of
@@ -380,7 +376,7 @@ prettyLVT (label, var, t)
 	% " = " % padR 5 (pretty var) 
 		%> (" :: " % t)
 	
--- Label ------------------
+-- Label --------------------------------------------------------------------------------------------
 instance Pretty Label where
  prettyp xx
   = case xx of
@@ -388,7 +384,7 @@ instance Pretty Label where
 	LVar	v	-> prettyp v
 
 
--- Annot ------------------
+-- Annot --------------------------------------------------------------------------------------------
 instance Pretty Annot where
  prettyp xx
   = case xx of
@@ -403,7 +399,7 @@ instance Pretty Annot where
 	NVarSet vs	-> "@NVarSet " % Set.toList vs
 
 
--- Type ------------------
+-- Type --------------------------------------------------------------------------------------------
 instance Pretty Type where
  prettyp xx
   = case xx of
@@ -411,14 +407,14 @@ instance Pretty Type where
 	 -> prettyp "@TNil"
 	 
 	TForall v k t
-	 -> let	(forallVTs, whereVTs, context, tx)	= stripSchemeT xx
-	    in	"forall " % " " %!% (map fst forallVTs) % "\n.  " 
-	    	% buildScheme [] whereVTs context tx
+	 -> "forall (" % v % " :: " % k % "). " % t
+--	 	let	(forallVTs, whereVTs, context, tx)	= stripSchemeT xx
+--	 	   in	"forall " % " " %!% (map fst forallVTs) % ". " % buildScheme [] whereVTs context tx
 
 	TContext c t	-> c % " => " % t
 
-	TWhere	t1 vts	
-	 -> prettyTB t1 % "\n:- " % "\n,  " %!% [ v % " = " %> prettyTB t | (v, t) <- vts]
+	TFetters t1 fs
+	 -> prettyTB t1 % "\n:- " % "\n,  " %!% fs
 
 	TApp	t1 t2	-> prettyTB t1 % " " % prettyTB t2
 
@@ -479,7 +475,7 @@ instance Pretty Type where
 	
 prettyTRight tt
  = case tt of
- 	TWhere{}	-> "(" % tt % ")"
+ 	TFetters{}	-> "(" % tt % ")"
 	_		-> prettyp tt
 
 
@@ -504,8 +500,15 @@ prettyTBF e
 	| otherwise
 	= prettyp e
 
+-- TFetter -----------------------------------------------------------------------------------------
+instance Pretty Fetter where
+ prettyp xx
+  = case xx of
+  	FWhere v t	-> sv v % " =  " % t
+	FMore  v t	-> sv v % " :> " % t
 
--- TBind -----------------
+
+-- TBind -------------------------------------------------------------------------------------------
 instance Pretty Bind where
  prettyp xx
   = case xx of
@@ -513,7 +516,7 @@ instance Pretty Bind where
 	BMore v t	-> "(" % v % " :> " % t % ")"
 
 
--- Kind ------------------
+-- Kind --------------------------------------------------------------------------------------------
 instance Pretty Kind where
  prettyp xx
   = case xx of

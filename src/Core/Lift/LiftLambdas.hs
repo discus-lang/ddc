@@ -6,6 +6,7 @@ where
 
 import Util
 
+import qualified Shared.VarUtil	as Var
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, NameSpace(..))
 
@@ -16,8 +17,21 @@ import Core.Exp
 import Core.Util
 import Core.Util.Slurp
 import Core.Plate.Trans
+import Core.Plate.FreeVars
 import Core.Lift.Base
-import Core.Lift.LambdaFree
+import Core.Reconstruct
+
+import qualified Debug.Trace	as Debug
+
+debug	= False
+trace ss x	
+	= if debug
+		then Debug.trace (pretty ss) x
+		else x
+		
+
+-----
+stage	= "Core.Lift.LiftLambdas"
 
 -----------------------
 -- liftLambdasP
@@ -32,10 +46,11 @@ liftLambdasP ::	Top	-> LiftM (Top, [Top])
 liftLambdasP	p@(PBind superName x)
  = do
 	-- Chop out the inner most lambda abstractions from this binding
-	--
+	--	The new supers get added to the lift state
  	xChopped	<- lambdaLiftX superName x
 	let pLifted	= PBind superName xChopped
 
+	-- Load the new supers from the stage
 	cs		<- getChopped
 	let psChopped	= map t3_3 cs
 
@@ -44,8 +59,7 @@ liftLambdasP	p@(PBind superName x)
 
 lambdaLiftX	superName x
 	
-	-- decend the first set of lambdas
-	--	in top level bindings
+	-- decend the first set of lambdas in top level bindings
 	| XLAM v k e		<- x
 	= do	e'	<- lambdaLiftX superName e
 		return	$ XLAM v k e'	
@@ -54,7 +68,7 @@ lambdaLiftX	superName x
 	= do	e'	<- lambdaLiftX superName e
 		return	$ XLam v t e' eff clo
 	
-	-- chop out lambda bindings
+	-- walk over the expression and chop out the inner most functions
 	| otherwise
 	= do
 		let table	
@@ -65,9 +79,15 @@ lambdaLiftX	superName x
 		transZM table x
 		
 
------
-chopInnerS ::	Var	-> Stmt	-> LiftM Stmt
-chopInnerS	topName	   s
+-- | Chop the inner most function from this statement
+--	
+chopInnerS 
+	:: Var		-- the name of the top-level binding that this statement is a part of
+			-- used to give chopped functions nicer names
+	-> Stmt	
+	-> LiftM Stmt
+
+chopInnerS topName s
  = case s of
  	SBind v x
 	 | isFunctionX x
@@ -76,7 +96,7 @@ chopInnerS	topName	   s
 	 
 	_ -> 	return	s
 
-
+-- | Chop out this function
 chopInnerS2	topName	(SBind Nothing x)
  = do	v		<- newVar Var.NameValue
 	chopInnerS2 topName (SBind (Just v) x)
@@ -87,25 +107,29 @@ chopInnerS2	topName	(SBind (Just v) x)
 	vN		<- newVar Var.NameValue
 	let vSuper	=  vN { Var.name = (Var.name topName) ++ "_" ++ (Var.name vN) }
 	
-	-- add the new super to the Lift state
-	let pSuper			= PBind vSuper x
+	-- remember that a new binding with this name is to be created at top level
+	modify $ \s -> s { stateTopVars	= Set.insert vSuper $ stateTopVars s }
 
-	modify (\s -> s { stateTopVars	= Set.insert vSuper $ stateTopVars s })
+	-- turn this binding into a super-combinator by binding its free variables as new parameters.
+	let pSuper	= PBind vSuper x
+	(pSuper_lifted, freeVKs, freeVTs)	
+			<- bindFreeVarsP pSuper
 
-	(pSuperL, freeVKs, freeVTs)	<- lambdaFreeVarsP pSuper
+	-- add the new super to the lift state
+	addChopped v vSuper pSuper_lifted
 
-	addChopped v vSuper pSuperL
+	-- Work out the type of the new super.
+	let tSuper	= reconP_type (stage ++ ".chopInnerS2") pSuper_lifted
+	
+	-- build the call to the new super
+	let typeArgs	= map makeSuperArgK freeVKs
+	let valueArgs	= [XVar v t | (v, t) <- freeVTs]
+	let callArgs	= typeArgs ++ valueArgs
 
-	-- replace this binding with the name of the super
-	let Just t	= maybeSlurpTypeX x
-	let x'		= XTau t 
-			$ unflattenApps
-			$ (XVar vSuper TNil
-				: (  map makeSuperArgK freeVKs
-				  ++ [XVar v t | (v, t) <- freeVTs]))
-			
-			
-	return	$ SBind (Just v) x'
+	let Just xCall	= buildApp (XVar vSuper tSuper : typeArgs ++ valueArgs)
+
+	return	$ SBind (Just v) xCall
+
 	
 -----
 -- makeSuperArg
@@ -117,7 +141,7 @@ makeSuperArgK :: (Bind, Kind) -> Exp
 makeSuperArgK (b, k)
  = case k of
  	KClass v ts	-> XType (TClass v ts)
-	_		-> XVar (varOfBind b) TNil
+	_		-> XType (TVar k (varOfBind b))
 	
 
 
@@ -182,7 +206,6 @@ hasLambdasX	x
 hasLambdasS	s
  = case s of
 	SBind v x	-> hasLambdasX x
-	_		-> False
 	
 hasLambdasA	a
  = case a of
@@ -197,6 +220,96 @@ hasLambdasG	gg
 
 
 
+-- | Turn this PBind into a combinator by binding its free variables as new parameters.
+--   Returns the freshly bound vars and there type/kinds to help construct calls to it
+--
+bindFreeVarsP 
+	:: Top
+	-> LiftM 
+		( Top
+		, [(Bind, Kind)]	--  type vars that were bound
+		, [(Var,  Type)])	-- value vars that were bound
+		
+
+bindFreeVarsP
+	(PBind vTop x)
+ = do
+
+	-- Work out the vars which are free in the expression
+	vsBoundTop	<- gets stateTopVars
+ 	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v)
+			$ Set.difference (freeVars x) vsBoundTop
+
+	let (vsFreeVal, vsFreeType)
+			= partition (\v	-> Var.nameSpace v == NameValue)
+			$ Set.toList vsFree
+
+ 	-- Work out the type of the expression
+	--	The effect should always be TBot because we only ever lift (value) lambda abstractions.
+	--	The closure returned from reconX will be flat, ie a TSum of all the free vars
+	let (xRecon, tRecon, TBot KEffect, cRecon) 
+			= reconX' (stage ++ ".bindFreeVarsP") x
+
+	-- Take the closure annotation from the inner most lambda. 
+	--	We'll use this instead of cRecon when adding more closure annotations because it's more
+	--	likely to be a variable (ie not a TSum) so the output will be more readable.
+	-- 
+	-- TODO: nice idea, but the XTet binding it is in the wrong place.
+--	let Just cTake	= takeXLamClosure xRecon
+
+	-- Bind free value vars with new value lambdas.
+	-- TODO: better to get the type directly from the XVar
+	tsFreeVal	<- mapM getType vsFreeVal
+	let vtsFreeVal	= zip vsFreeVal tsFreeVal
+	let (xBindVal, cBindVal)
+			= foldr addLambda (xRecon, cRecon) vtsFreeVal
+
+	-- Bind free type vars with new type lambdas
+	-- TODO: better to get the type directly from the TVar
+	-- BUGS: bound quantification isn't being preserved here
+
+	ksFreeType	<- mapM getKind vsFreeType
+	let bksFreeType	= zip (map BVar vsFreeType) $ ksFreeType
+	let xBindType	= addLAMBDAs bksFreeType xBindVal
+
+	-- make the top level binding
+	let pBound	= PBind vTop xBindType
+
+	-- add the new type to the liftM state straight away, so if we had nested lambda bindings,
+	--	the next time we add lambdas we'll know what the type of this one was.
+	bindType vTop (reconP_type (stage ++ ".bindFreeVarsP") pBound)
+
+	trace
+	 (pretty	$ "\n\n\n"
+	 		% "* bindFreeVarsP\n"
+			% "    vTop      = "	% vTop		% "\n"
+			% "    x:\n"		%> x		% "\n\n"
+	 		% "    tRecon:\n"	%> tRecon	% "\n\n"
+			% "    cRecon:\n"	%> cRecon	% "\n\n"
+			% "    xBindVal:\n"	%> xBindVal	% "\n\n")
+
+	 $ return 
+	 	( pBound
+	 	, bksFreeType
+		, vtsFreeVal)
 
 
+-- | Add a value lambda to the outside of this expression.
+--	the effect  is set to TBot
 
+addLambda :: (Var, Type) -> (Exp, Closure) -> (Exp, Closure)
+addLambda (v, t) (x, clo)
+ = let	clo'	= makeTMask KClosure clo (TTag v)
+   in	(XLam v t x (TBot KEffect) clo', clo')
+
+
+-- | Take the closure annotation from the outermost XLam in this expression
+takeXLamClosure :: Exp -> Maybe Closure
+takeXLamClosure xx
+ = case xx of
+	XAnnot 	nn x		-> takeXLamClosure x
+	XLAM	v t x		-> takeXLamClosure x
+	XTet	vts x		-> takeXLamClosure x
+	XTau	t x		-> takeXLamClosure x
+	XLam	v k x eff clo	-> Just clo
+	_			-> Nothing

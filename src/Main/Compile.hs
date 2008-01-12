@@ -363,7 +363,7 @@ compileFile	args     fileName
 --	when ?verbose
 --	 $ do	putStr $ "  * Core: Optimise\n"
 
-{-
+
 	-- Inline forced inline functions
 	cInline		<- SC.coreInline
 				cPrim
@@ -380,7 +380,7 @@ compileFile	args     fileName
 				moduleName
 				cBoxing 
 				cHeader
--}
+
 
 
 	----------------------
@@ -390,7 +390,7 @@ compileFile	args     fileName
 	--	Lambda lifting doesn't currently preserve the typing.
 	--
 	cReconstruct2	<- runStage "reconstruct2"
-			$  SC.coreReconstruct  "core-reconstruct2" cHeader cPrim
+			$  SC.coreReconstruct  "core-reconstruct2" cHeader cFullLaziness
 
 
 	-- Perform lambda lifting.
@@ -449,8 +449,8 @@ compileFile	args     fileName
 	writeFile (pathDI filePaths)	diInterface	
 
 	-- Ditch type information in preparation for conversion to Sea
-	cDitch		<- SC.coreDitch 
-				cAtomise
+--	cDitch		<- SC.coreDitch 
+--				cAtomise
 
 
 	-- !! Early exit on StopCore
@@ -463,7 +463,7 @@ compileFile	args     fileName
 	 $ do	putStr $ "  * Core: ToSea\n"
 
 	(eSea, eHeader)	<- SC.toSea
-				cDitch
+				cAtomise
 				cHeader
 				
 	------------------------------------------------------------------------

@@ -28,6 +28,7 @@ import Core.Pretty
 stage	= "Core.Util.Slurp"
 
 -----
+
 maybeSlurpTypeX :: Exp -> Maybe Type
 maybeSlurpTypeX	xx
 	| XAnnot n x		<- xx
@@ -48,7 +49,7 @@ maybeSlurpTypeX	xx
 	
 	| XTet vts x		<- xx
 	, Just x'		<- maybeSlurpTypeX x
-	= Just $ TWhere x' vts
+	= Just $ TFetters x' [FWhere v t | (v, t) <- vts]
 
 	| XTau t x		<- xx
 	= Just t
@@ -64,13 +65,13 @@ maybeSlurpTypeX	xx
 	| XConst c t		<- xx
 	= Just t
 	
-	| XPrim (MFun v tR) aa	 eff	<- xx
-	= Just tR
+--	| XPrim (MFun v tR) aa		<- xx
+--	= Just tR
 	
-	| XPrim (MBox tB tU) x	 eff	<- xx
+	| XPrim (MBox tB tU) x		<- xx
 	= Just tB
 	
-	| XPrim (MUnbox tU tB) x eff	<- xx
+	| XPrim (MUnbox tU tB) x	<- xx
 	= Just tU
 	
 	
@@ -155,7 +156,7 @@ slurpEffsX'	xx
 	XConst{}		-> []
 	XVar{}			-> []
 
-	XPrim m xx eff		-> [eff]
+	XPrim m xx		-> []
 	XLocal v vs x		-> slurpEffsX' x
 	
 	-- atoms
@@ -207,8 +208,8 @@ slurpBoundVarsS ss
 dropXTau :: Exp -> Map Var Type -> Type -> Exp
 dropXTau xx env tt
 	-- load up bindings into the environment
-	| TWhere t vts		<- tt
-	= dropXTau xx (Map.union (Map.fromList vts) env) t
+	| TFetters t fs		<- tt
+	= dropXTau xx (Map.union (Map.fromList [(v, t) | FWhere v t <- fs]) env) t
 
 	-- decend into XLAMs
 	| XLAM v t x		<- xx

@@ -18,38 +18,38 @@ import qualified Shared.Var	as Var
 -----
 stripSchemeT	:: Type 
 		-> 	( [(Bind, Kind)]
-			, [(Var,  Type)]
+			, [Fetter]
 			, [Kind] 
 			, Type)
 			
 stripSchemeT tt 
  = stripSchemeT' [] [] [] tt
  
-stripSchemeT' forallVTs tetVTs classes tt
+stripSchemeT' forallVTs fsAcc classes tt
  = case tt of
  	TForall v t tRest 
 	 -> stripSchemeT' 
 	 		(forallVTs ++ [(v, t)]) 
-	 		tetVTs 
+	 		fsAcc
 			classes 
 			tRest
 
-	TWhere tRest vts
+	TFetters tRest fs
 	 -> stripSchemeT' 
 	 		forallVTs
-			(tetVTs ++ vts) 
+			(fsAcc ++ fs) 
 			classes 
 			tRest
 
 	TContext  c tRest		
 	 -> stripSchemeT' 
 	 		forallVTs 
-			tetVTs 
+			fsAcc 
 			(classes ++ [c])
 			tRest
 
 	_ ->    ( forallVTs
-	     	, tetVTs
+	     	, fsAcc
 		, classes
 		, tt)
 
@@ -62,7 +62,7 @@ buildScheme	forallVTs bindVTs classes shape
 
 	tL	= case bindVTs of
 			[]	-> tC
-			_	-> TWhere tC bindVTs
+			_	-> TFetters tC (map (uncurry FWhere) bindVTs)
 
  	tF	= foldl (\s (v, t) -> TForall v t s) tL 	$ reverse forallVTs
 
@@ -83,7 +83,7 @@ slurpForallContextT tt
  = case tt of
  	TForall b t1 t2	
 	 -> let	v	= varOfBind b
-	    	k	= kindOfSpace $ Var.nameSpace v
+	    	Just k	= kindOfSpace $ Var.nameSpace v
 		
 		(vs, ks) = slurpForallContextT t2
 		
@@ -95,7 +95,7 @@ slurpForallContextT tt
 	    in	( vs
 	        , k1 : ks)
 
-	TWhere t1 vts	
+	TFetters t1 fs
 	 -> slurpForallContextT t1
 
 	_		
@@ -111,7 +111,7 @@ stripToShapeT :: Type -> Type
 stripToShapeT tt
  = case tt of
  	TForall  v k t		-> stripToShapeT t
-	TWhere   t vts		-> stripToShapeT t
+	TFetters t fs		-> stripToShapeT t
 	TContext c t		-> stripToShapeT t
 	_			-> tt
 
@@ -121,7 +121,7 @@ stripContextT :: Type -> Type
 stripContextT tt
  = case tt of
  	TContext c t		-> stripContextT t
-	TWhere t vts		-> TWhere (stripContextT t) vts
+	TFetters t fs		-> TFetters (stripContextT t) fs
 	_			-> tt
 
 

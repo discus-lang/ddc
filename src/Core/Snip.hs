@@ -123,11 +123,11 @@ snipX1	topVars env xx
 	 -> do	(ss, x')	<- snipX topVars (substituteT env x)
 	 	return		(ss, XAPP x' t)
 	
-	XPrim p xs eff	
+	XPrim p xs
 	 -> do	(ss, xs') 	<- liftM unzip 
 	 			$  mapM (snipXRight topVars) (substituteT env xs)
 
-	 	return (concat ss, XPrim p xs' eff)
+	 	return (concat ss, XPrim p xs')
 
 	XProject x j
 	 -> do	(ss', x')	<- snipXRight topVars (substituteT env x)
@@ -138,9 +138,9 @@ snipX1	topVars env xx
 
 snipX topVars xx
  = case xx of
-	XLAM v t x		-> snipIt xx
+	XLAM{}			-> snipIt xx
 
-	XAPP x t		-> snipXLeft topVars xx
+	XAPP{}			-> snipXLeft topVars xx
 		
 	XTet{}			-> snipIt xx
 
@@ -151,8 +151,8 @@ snipX topVars xx
 	XLam{}			-> snipIt xx
 	XApp{}			-> snipXLeft topVars xx		
 
-	XDo ss			-> snipIt xx
-	XMatch aa		-> snipIt xx
+	XDo{}			-> snipIt xx
+	XMatch{}		-> snipIt xx
 
 	XConst{}		-> snipIt xx
 	
@@ -165,8 +165,8 @@ snipX topVars xx
 	XLocal{}
 	 -> panic stage	$ "snipDownX: unexpected XLocal\n"
 	 
-	XPrim p xs eff		-> snipIt xx
-	XProject x j		-> snipIt xx
+	XPrim{}			-> snipIt xx
+	XProject{}		-> snipIt xx
 	
 	XType{}			-> leaveIt xx
 	

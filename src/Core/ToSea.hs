@@ -22,6 +22,7 @@ import qualified Core.Util		as C
 import qualified Core.Pretty		as C
 import qualified Core.Util		as C
 import qualified Core.Util.Slurp	as C
+import qualified Core.Reconstruct	as C
 import qualified Core.ReconKind		as C
 
 import qualified Sea.Exp  	as E
@@ -91,7 +92,7 @@ toSeaP	xx
 				= splitSuper [] x
 		
 		sss'		<- mapM toSeaS $ slurpStmtsX exp
-		let ss'		= catMaybes sss'
+		let ss'		= concat sss'
 		let argNTs	= zip argNames argTypes
 
 		retV		<- newVarN NameValue
@@ -154,7 +155,7 @@ toSeaDataField field
  			Nothing		-> return $ Nothing
 			Just x		
 			 -> do	ss'	<- mapM toSeaS $ slurpStmtsX x
-			 	return	$ Just $ catMaybes ss'
+			 	return	$ Just $ concat ss'
 				
 	return	E.DataField
 		{ E.dPrimary	= C.dPrimary 	field
@@ -176,31 +177,41 @@ toSeaX		xx
 	C.XTet    vts x		-> toSeaX x
 	C.XLocal  v vs x	-> toSeaX x
 
-	-- discard type info
+	-- discard type applications
 	C.XLAM v k x
 	 -> toSeaX x
 
-	-- core constructs
+	-- core constants
 	C.XConst c t
 	 -> toSeaConst c
 	
-	-- application
-	C.XPrim (C.MTailCall v)	args eff
-	 -> E.XTailCall v 	$ stripValues args
+	-- function calls
+	C.XPrim C.MTailCall xs
+	 -> let (C.XVar v t) : args	= stripValues xs
+	    in  E.XTailCall v 		$ map toSeaX args
 
-	C.XPrim (C.MCall v)	args eff
-	 -> E.XCall v 		$ stripValues args
+	C.XPrim C.MCall xs
+	 -> let (C.XVar v t) : args	= stripValues xs
+	    in  E.XCall v 		$ map toSeaX args
 
-	C.XPrim (C.MCallApp v superA) args eff
-	 -> E.XCallApp v superA $ stripValues args
+	C.XPrim (C.MCallApp superA) xs
+	 -> let (C.XVar v t) : args	= stripValues xs
+	    in  E.XCallApp v superA 	$ map toSeaX args
 
-	C.XPrim (C.MApply v)	args eff
-	 -> E.XApply (E.XVar v) $ stripValues args
+	C.XPrim C.MApply xs
+	 -> let (C.XVar v t) : args	= stripValues xs
+	    in  E.XApply (E.XVar v) 	$ map toSeaX args
 	   
-	C.XPrim (C.MCurry v superA) args eff
-	 -> E.XCurry v superA $ stripValues args
+	C.XPrim (C.MCurry superA) xs
+	 -> let (C.XVar v t) : args	= stripValues xs
+	    in	E.XCurry v superA 	$ map toSeaX args
 
-	C.XPrim (C.MSuspend fn)	 args eff
+	C.XPrim (C.MFun) xs
+	 -> let (C.XVar v t) : args	= stripValues xs
+	    in  E.XPrim (toSeaPrimV v)	$ map toSeaX args
+
+	-- suspend
+	C.XPrim (C.MSuspend fn)	args 
 	 -> let	args'	= map E.XVar 
 	 		$ filter (\v -> Var.nameSpace v == NameValue) 
 			$ map (\(C.XVar v t) -> v)
@@ -208,19 +219,16 @@ toSeaX		xx
 
 	    in  E.XSuspend fn args'
 
-	C.XPrim (C.MForce) [x] eff
+	-- forcing
+	C.XPrim (C.MForce) [x]
 	 -> E.XForce (toSeaX x)	 
 
 	-- boxing
-	C.XPrim (C.MBox tB tU) [x] eff
+	C.XPrim (C.MBox tB tU) [x]
 	 -> E.XBox	(toSeaT tU) (toSeaX x)
 	 
-	C.XPrim (C.MUnbox tU tB) [x] eff
+	C.XPrim (C.MUnbox tU tB) [x]
 	 -> E.XUnbox	(toSeaT tU) (toSeaX x)
-
-	-- other primitive operations
-	C.XPrim m xx eff
-	 -> E.XPrim (toSeaPrim m) (map toSeaX xx)
 
 
 	C.XAtom v ts
@@ -237,131 +245,100 @@ toSeaX		xx
 	 	
 	_ -> panic stage
 		$ "toSeaX: cannot convert expression to Sea IR.\n" 
-		% "    exp = " % show xx	    	% "\n"
-		% "\n"
 		% "-----\n"
 		% xx					% "\n"
 	   
-toSeaPrim :: C.Prim -> E.Prim
-toSeaPrim (C.MFun v tR)
- = case Var.name v of
-	"primProjField"		-> E.FProjField
-	"primProjFieldR"	-> E.FProjFieldR
-
-	-- int
- 	"primInt32_add"		-> E.FAdd
-	"primInt32_sub"		-> E.FSub
-	"primInt32_mul"		-> E.FMul
-	"primInt32_div"		-> E.FDiv
-	"primInt32_mod"		-> E.FMod
-	"primInt32_eq"		-> E.FEq
-	"primInt32_neq" 	-> E.FNEq
-	"primInt32_gt"		-> E.FGt
-	"primInt32_ge"		-> E.FGe
-	"primInt32_lt"		-> E.FLt
-	"primInt32_le"		-> E.FLe
-
-	-- unboxed int
-	"primInt32U_add"	-> E.FAdd
-	"primInt32U_sub"	-> E.FSub
-	"primInt32U_mul"	-> E.FMul
-	"primInt32U_div"	-> E.FDiv
-	"primInt32U_mod"	-> E.FMod
-	"primInt32U_eq"		-> E.FEq
-	"primInt32U_neq"	-> E.FNEq
-	"primInt32U_gt"		-> E.FGt
-	"primInt32U_lt"		-> E.FLt
-	"primInt32U_ge"		-> E.FGe
-	"primInt32U_le"		-> E.FLe
-	
-	"mod"			-> E.FMod
-	"&&"			-> E.FAnd
-	"||"			-> E.FOr
-
-	-- float
-	"primFloat32_add"	-> E.FAdd
-	"primFloat32_sub"	-> E.FSub
-	"primFloat32_mul"	-> E.FMul
-	"primFloat32_div"	-> E.FDiv
-	"primFloat32_eq"	-> E.FEq
-	"primFloat32_neq"	-> E.FNEq
-	"primFloat32_gt"	-> E.FGt
-	"primFloat32_ge"	-> E.FGe
-	"primFloat32_lt"	-> E.FLt
-	"primFloat32_le"	-> E.FLe
-	
-	-- unboxed float
-	"primFloat32U_add"	-> E.FAdd
-	"primFloat32U_sub"	-> E.FSub
-	"primFloat32U_mul"	-> E.FMul
-	"primFloat32U_div"	-> E.FDiv
-	"primFloat32U_mod"	-> E.FMod
-	"primFloat32U_eq"	-> E.FEq
-	"primFloat32U_neq"	-> E.FNEq
-	"primFloat32U_gt"	-> E.FGt
-	"primFloat32U_ge"	-> E.FGe
-	"primFloat32U_lt"	-> E.FLt
-	"primFloat32U_le"	-> E.FLe
-
-	-- array	
-	"arrayUI_get"		-> E.FArrayPeek (E.TCon Var.primTInt32U [])
-	"arrayUI_set"		-> E.FArrayPoke (E.TCon Var.primTInt32U [])
-	
-	_			-> panic stage
-				$ "toSeaPrim: no match for " % v
 
 
------
-toSeaS	:: C.Stmt -> SeaM (Maybe (E.Stmt ()))
+-- Stmt --------------------------------------------------------------------------------------------
+-- | Convert a statement into Sea
+--
+--   In the core, the RHS of a stmt might be another do, but there won't be any value
+--   lambdas in front of it due to lambda lifting.
+--
+--   eg:  s = /\ +w13 :: Mutable %r1
+--            [** type] 
+--            do { ... }
+--
+--   The Sea code doesn't handle nested groups of statements, but we can flatten them
+--   all out into a single list here.
+--	
+--
+toSeaS	:: C.Stmt -> SeaM [E.Stmt ()]
 toSeaS xx
  = case xx of
---	C.SComment{}
---	 -> 	return Nothing
+	-- decend past type info
+	C.SBind b (C.XTau t x)
+	 -> toSeaS $ C.SBind b x
+	 
+	C.SBind b (C.XLAM v k x)
+	 -> toSeaS $ C.SBind b x
 
-	-- match
+	C.SBind b (C.XLocal v vts x)
+	 -> toSeaS $ C.SBind b x
+
+
+	-- do
+	-- flatten out the initial statements and recursively bind the lhs 
+	--	to the last expression in the list.
+	C.SBind b (C.XDo ss)
+	 -> do  let Just ssInit			= takeInit ss
+	 	let Just (C.SBind Nothing x) 	= takeLast ss
+		
+		ssInit'	<- liftM concat $ mapM toSeaS ssInit
+		ssMore	<- toSeaS (C.SBind b x)
+		
+	    	return	$ ssInit' ++ ssMore
+
+	-- matches
 	C.SBind (Just v) x@(C.XMatch aa)
 	 -> do	aa'		<- mapM (toSeaA Nothing) aa
-	 	let Just xT	= C.maybeSlurpTypeX x
+
+--	 	let Just xT	= C.maybeSlurpTypeX x
+
+		let xT		= C.reconX_type (stage ++ ".toSeaS") x
 		let t		= toSeaT xT
 		let aaL		= map (assignLastA (E.XVar v, t)) aa'
 		
-		return		$ Just $ E.SMatch aaL
+		return		[E.SMatch aaL]
 
 
 	C.SBind Nothing	x@(C.XMatch aa)
-	 -> do	aa'	<- mapM (toSeaA Nothing) aa
-	    	return	$ Just $ E.SMatch aa'
+	 -> do	aa'		<- mapM (toSeaA Nothing) aa
+	    	return		[E.SMatch aa']
 
 	    
-	-- bind
-	C.SBind mV (C.XTau t x@C.XMatch{})
-	 -> toSeaS (C.SBind mV x)
-
+	-- expressions
 	C.SBind (Just v) x
 	 -> do	let x'		= toSeaX $ C.slurpExpX x
-		let Just t	= C.maybeSlurpTypeX x
-	    	return		$ Just $ E.SAssign (E.XVar v) (toSeaT t) x'
+		let t		= C.reconX_type (stage ++ ".toSeaS") x
+	    	return		[E.SAssign (E.XVar v) (toSeaT t) x']
 
 	C.SBind Nothing x
 	 -> do	let x'	= toSeaX x
-	    	return	$ Just $ E.SStmt x'
+	    	return		[E.SStmt x']
 
 
------
+-- Alt ---------------------------------------------------------------------------------------------
 toSeaA :: (Maybe C.Exp) -> C.Alt -> SeaM (E.Alt ())
 toSeaA	   mObjV xx
  = case xx of
 	C.AAlt [] x
-	 -> do	ss'	<- case x of
-				C.XDo ss	-> liftM catMaybes $ mapM toSeaS ss
-				_ 		-> return	$ [E.SStmt (toSeaX x)] 
+	 -> do	
+	 	ss'		<- liftM concat
+				$  mapM toSeaS
+				$  slurpStmtsX x
+	 
+{-	 	ss'	<- case x of
+				C.XDo ss	-> liftM concat $ mapM toSeaS ss
+				_ 		-> return	$ [E.SStmt (toSeaX x)] -}
 
 	    	return	$ E.ADefault ss'
 
 	C.AAlt gs x
 	 -> do	(ssFront, gs')	<- mapAccumLM (toSeaG mObjV) [] gs
 
-	    	ss'		<- liftM catMaybes
+	    	ss'		<- liftM concat
 				$  mapM toSeaS
 				$  slurpStmtsX x
 				
@@ -379,13 +356,13 @@ toSeaG	mObjV ssFront gg
  = case gg of
 
 	C.GExp w x
-	 -> do	ss'		<- liftM catMaybes
+	 -> do	ss'		<- liftM concat
 				$  mapM toSeaS
 				$  slurpStmtsX x
 		
 		var		<- newVarN NameValue
 
-		let Just t	= C.maybeSlurpTypeX x
+		let t		= C.reconX_type (stage ++ ".toSeaG") x
 		let t'		= toSeaT t
 		let ssL		= assignLastSS (E.XVar var, t') ss'
 
@@ -475,7 +452,8 @@ splitOpType to
    in 	(argTypes, resultType)
 
 
------
+-- | Throw away the type terms in this list of expressions.
+stripValues :: [C.Exp] -> [C.Exp]
 stripValues args
 	= catMaybes 
 	$ map stripValues' args
@@ -483,17 +461,13 @@ stripValues args
 stripValues' a
  = case a of
 	C.XVar v t
-	 |  Var.nameSpace v == NameValue
-	 -> Just $ E.XVar v
+	 |  Var.nameSpace v /= NameValue
+	 -> Nothing
 
---	C.XConst c t
---	 -> Just $ toSeaConst c
-	 
 	C.XType _
 	 -> Nothing
 	 
-	_ 	-> panic stage
-		$  "stripValues: no match for " % show a % "\n"
+	_ -> Just a
 	 
 	
 -----
@@ -566,4 +540,70 @@ assignLastA xT aa
 
 
 
+toSeaPrimV :: C.Var -> E.Prim
+toSeaPrimV var
+ = case Var.name var of
+	"primProjField"		-> E.FProjField
+	"primProjFieldR"	-> E.FProjFieldR
 
+	-- int
+ 	"primInt32_add"		-> E.FAdd
+	"primInt32_sub"		-> E.FSub
+	"primInt32_mul"		-> E.FMul
+	"primInt32_div"		-> E.FDiv
+	"primInt32_mod"		-> E.FMod
+	"primInt32_eq"		-> E.FEq
+	"primInt32_neq" 	-> E.FNEq
+	"primInt32_gt"		-> E.FGt
+	"primInt32_ge"		-> E.FGe
+	"primInt32_lt"		-> E.FLt
+	"primInt32_le"		-> E.FLe
+
+	-- unboxed int
+	"primInt32U_add"	-> E.FAdd
+	"primInt32U_sub"	-> E.FSub
+	"primInt32U_mul"	-> E.FMul
+	"primInt32U_div"	-> E.FDiv
+	"primInt32U_mod"	-> E.FMod
+	"primInt32U_eq"		-> E.FEq
+	"primInt32U_neq"	-> E.FNEq
+	"primInt32U_gt"		-> E.FGt
+	"primInt32U_lt"		-> E.FLt
+	"primInt32U_ge"		-> E.FGe
+	"primInt32U_le"		-> E.FLe
+	
+	"mod"			-> E.FMod
+	"&&"			-> E.FAnd
+	"||"			-> E.FOr
+
+	-- float
+	"primFloat32_add"	-> E.FAdd
+	"primFloat32_sub"	-> E.FSub
+	"primFloat32_mul"	-> E.FMul
+	"primFloat32_div"	-> E.FDiv
+	"primFloat32_eq"	-> E.FEq
+	"primFloat32_neq"	-> E.FNEq
+	"primFloat32_gt"	-> E.FGt
+	"primFloat32_ge"	-> E.FGe
+	"primFloat32_lt"	-> E.FLt
+	"primFloat32_le"	-> E.FLe
+	
+	-- unboxed float
+	"primFloat32U_add"	-> E.FAdd
+	"primFloat32U_sub"	-> E.FSub
+	"primFloat32U_mul"	-> E.FMul
+	"primFloat32U_div"	-> E.FDiv
+	"primFloat32U_mod"	-> E.FMod
+	"primFloat32U_eq"	-> E.FEq
+	"primFloat32U_neq"	-> E.FNEq
+	"primFloat32U_gt"	-> E.FGt
+	"primFloat32U_ge"	-> E.FGe
+	"primFloat32U_lt"	-> E.FLt
+	"primFloat32U_le"	-> E.FLe
+
+	-- array	
+	"arrayUI_get"		-> E.FArrayPeek (E.TCon Var.primTInt32U [])
+	"arrayUI_set"		-> E.FArrayPoke (E.TCon Var.primTInt32U [])
+	
+	_			-> panic stage
+				$ "toSeaPrim: no match for " % var

@@ -131,10 +131,7 @@ toCoreP	p
 	 	return	[p]
 
 	D.PBind nn (Just v) x
-	 -> do	sigmaTable	<- gets coreSigmaTable
-	 	let Just vT	= Map.lookup v sigmaTable
-	 
-	 	Just (C.SBind (Just v) x') 
+	 -> do	Just (C.SBind (Just v) x') 
 			<- toCoreS (D.SBind nn (Just v) x)
 
 		return	[C.PBind v x']
@@ -247,11 +244,13 @@ makeCtor    objVar dataVar ts (D.CtorDef _ ctorVar dataFields)
 -- | Build the type of a constructor
 makeCtorTypeAVT :: [C.Type] -> Var -> [Var] -> C.Type
 makeCtorTypeAVT    argTypes dataVar ts
- 	= foldl (\t v -> C.TForall (C.BVar v) (C.kindOfSpace (Var.nameSpace v)) t)
+  	= foldl (\t v -> let Just k	= C.kindOfSpace (Var.nameSpace v)
+	                 in  C.TForall (C.BVar v) k t)
 		(C.unflattenFunE 
 			(argTypes ++ 
 				[C.TData dataVar 
-					(map (\v -> C.TVar (C.kindOfSpace $ Var.nameSpace v) v) ts)]))
+					(map (\v -> let Just k	= (C.kindOfSpace $ Var.nameSpace v)
+					 	    in  C.TVar k v) ts)]))
 		(reverse ts)
 
 
@@ -290,7 +289,7 @@ toCoreX xx
  = case xx of
 
 	D.XLambdaTEC 
-		_ v x (T.TVar T.KData vTV) effVar cloVar
+		_ v x (T.TVar T.KData vTV) eff clo
 	 -> do	
 		-- Only keep effect and closure bindings which are not quantified so they don't
 		--	conflict with constraints on /\ bound vars.
@@ -299,61 +298,29 @@ toCoreX xx
 		--	will be passed into the outer function.
 		--
 		Just tArg1	<- lookupType vTV
-		let (argQuant, argTet, argContext, argShape)
+		let (argQuant, argFetters, argContext, argShape)
 				= C.stripSchemeT tArg1
 
 		portVars	<- gets corePortVars
 		let tArg	= C.packT
 				$ C.buildScheme
 					argQuant
-					[(v, t)	| (v, t)	<- argTet
+					[(v, t)	| C.FWhere v t	<- argFetters
 						, not $ Set.member v portVars]
 					[]
 					argShape
 
 		-- If the effect/closures were vars then look them up from the graph
-		effLet	<- case effVar of
-				T.TVar T.KEffect vE	
-				 -> do	Just vT	<- lookupType vE
-				 	let e	=  (C.packT . C.flattenT . C.stripContextT) vT
-
-				 	return	$ Just (vE, e)
-
-				T.TBot T.KEffect	
-				 -> 	return	$ Nothing
+		effAnnot	<- loadEffAnnot $ toCoreT eff
+		cloAnnot	<- loadCloAnnot $ toCoreT clo
 				
-		cloLet	<- case cloVar of
-				T.TVar T.KClosure vC	
-				 -> do	Just vT	<- lookupType vC
-				 	let c	= (C.packT . C.trimClosureC . C.flattenT . C.stripContextT) vT
-
-				 	return	$ Just (vC, c)
-				 
-				T.TBot T.KClosure 	
-				 -> 	return	Nothing
-
-		-- short out bottoms
-		let botEC ec ml = 
-			case (ec, ml) of
-				(T.TVar T.KClosure v1, Just (v2, C.TBot C.KClosure))
-				  | v1 == v2	-> (C.TBot C.KClosure, Nothing)
-
-				(T.TVar T.KEffect v1, Just (v2, C.TBot C.KEffect))
-				  | v1 == v2	-> (C.TBot C.KEffect, Nothing)
-
-				_		-> (toCoreT $ ec, ml)
-		
-		let (eff, mEffLet)	= botEC effVar effLet
-		let (clo, mCloLet)	= botEC cloVar cloLet
-
 		x'	<- toCoreX x
 		
-		-- need to add these let expressions in.
-		--	not all bindings have schemes, so we can't get them anywhere else.
-		return	$ C.makeXTet (catMaybes [mEffLet, mCloLet])
-			$ C.XLam v tArg
+		return		
+		 $ C.XLam 	v tArg
 				x'
-				eff clo
+				(effAnnot)
+				(cloAnnot)
 
 
 	D.XApp	_ x1 x2
@@ -398,7 +365,7 @@ toCoreX xx
 		--	 Do read effect but force constants to be in Const regions.
 	 	case C.unboxedType t_flat of
 		 Just tU@(C.TData _ [tR])
-		  -> return 	$ C.XPrim (C.MBox t_flat tU) [C.XConst (S.CConstU lit) tU] (C.TBot C.KEffect)
+		  -> return 	$ C.XPrim (C.MBox t_flat tU) [C.XConst (S.CConstU lit) tU]
 		  	-- (C.TEffect primRead [tR])
 			
 		 Nothing
@@ -541,7 +508,7 @@ toCoreVarInst v vT
 		 -- use of a lambda bound variable.
 		 -- 	only rank1 polymorphism => lambda bound vars have monotypes
 		 T.InstanceLambda vUse vBind _
-		  ->	return $ C.XVar v tScheme
+		  ->	return $ C.XVar v C.TNil
 
 		 -- non-recursive use of a let bound variable 
 		 -- 	pass in the type args corresponding to the instantiated foralls.
@@ -570,7 +537,7 @@ toCoreVarInst v vT
 							C.KClass v ts	-> C.TClass v ts) 
 					$ ksContextC'
 			
-			trace ("varInst: "
+{-			trace ("varInst: "
 				% vT 				% "\n"
 				% "    T[vT]           =\n" %> tScheme 		% "\n"
 				% "    ksContext       = " % ksContextC		% "\n"
@@ -580,8 +547,11 @@ toCoreVarInst v vT
 				% "    tsSub           = " % tsSub 		% "\n"
 				% "    tsContestC'     = " % tsContextC' 	% "\n")
 				$ return ()
+-}			
+			let Just xResult = 
+				C.buildApp (C.XVar v C.TNil : map C.XType (tsInstC_packed ++ tsContextC'))
 			
-		  	return	$ C.unflattenApps (C.XVar v tScheme : map C.XType (tsInstC_packed ++ tsContextC'))
+			return	$ xResult
 
 		 -- recursive use of a let-bound variable
 		 -- 	pass the args on the type scheme back to ourselves.
@@ -594,8 +564,11 @@ toCoreVarInst v vT
 							C.KClass v ts	-> C.TClass v ts)
 					$ ksContext
 
-		  	return $ C.unflattenApps
-			 	(C.XVar v tSchemeC : map C.XType (tsReplay ++ tsContext))
+			let Just xResult =
+				C.buildApp (C.XVar v C.TNil : map C.XType (tsReplay ++ tsContext))
+
+		  	return $ xResult
+			 
 
 
 

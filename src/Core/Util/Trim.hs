@@ -35,20 +35,24 @@ trimClosureT2 tt
 
 trimClosureT' tt		
  = case tt of
- 	TWhere t vts	-> makeTWhere t (catMaybes $ map trimClosureT_vt vts)
+ 	TFetters t fs	-> makeTFetters t (catMaybes $ map trimClosureT_f fs)
 	_		-> tt
 
 	
 -- | Trim the closure in this binding
 --	where the binding was on a type
-trimClosureT_vt ::	(Var, Type)	-> Maybe (Var, Type)
-trimClosureT_vt vt
- = case vt of
- 	(v, t2)
+trimClosureT_f :: Fetter -> Maybe Fetter
+trimClosureT_f ff
+ = case ff of
+ 	FWhere v t2
 	 |  kindOfType t2 == KClosure
-	 -> Just $  (v, trimClosureC t2)
+	 -> Just $ FWhere v (trimClosureC t2)
 
-	_ -> Just vt
+ 	FMore v t2
+	 |  kindOfType t2 == KClosure
+	 -> Just $ FMore v (trimClosureC t2)
+
+	_ -> Just ff
 
 
 -- | Trim a closure down to its interesting parts
@@ -85,10 +89,10 @@ trimClosureC' cc
 	 -> let	t1'	= trimClosureC t1
 	    in	TMask KClosure t1' t2
 
-	TWhere c vts
-	 -> makeTWhere
+	TFetters c fs
+	 -> makeTFetters
 	 	(trimClosureC c)
-		(catMaybes $ map trimClosureC_vt vts) 
+		(catMaybes $ map trimClosureC_f fs) 
 
 	-- Erase the quantifier if the var is no longer free in the type
 	TForall b k t		
@@ -129,8 +133,8 @@ trimClosureC_t :: Type -> Type
 trimClosureC_t tt
  = case tt of
 	-- Trim the fetters of this data
- 	TWhere c vts
-	 -> makeTWhere (trimClosureC_t c) (catMaybes $ map trimClosureC_vt vts) 
+ 	TFetters c fs
+	 -> makeTFetters (trimClosureC_t c) (catMaybes $ map trimClosureC_f fs)
 
 	-- Trim under foralls
 	TForall b k t		
@@ -155,13 +159,17 @@ trimClosureC_t tt
 
 
 -- | Trim a fetter of a closure
-trimClosureC_vt :: (Var, Type) -> Maybe (Var, Type)
-trimClosureC_vt vt
- = case vt of
+trimClosureC_f :: Fetter -> Maybe Fetter
+trimClosureC_f ff
+ = case ff of
 	-- Only more closure information is interesting
- 	(v1, c2)
+ 	FWhere v1 c2
 	 |  kindOfType c2 == KClosure
-	 -> Just $ (v1, trimClosureC c2)
+	 -> Just $ FWhere v1 (trimClosureC c2)
+
+ 	FMore v1 c2
+	 |  kindOfType c2 == KClosure
+	 -> Just $ FMore v1 (trimClosureC c2)
 
 	_ -> Nothing
 

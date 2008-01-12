@@ -75,14 +75,14 @@ packT1 tt
 	 	t2'	= packT1 t2
 	    in 	TContext k1' t2'
 
-	TWhere (TVar k v1) [(v2, t2)]
+	TFetters (TVar k v1) [FWhere v2 t2]
 	 | v1 == v2
 	 -> t2
 	 
-	TWhere t1 vts
+	TFetters t1 fs
 	 -> let t1'	= packT1 t1
-	 	vts'	= restrictBinds t1' vts
-	    in	makeTWhere t1' vts'
+	 	fs'	= restrictBinds t1' fs
+	    in	makeTFetters t1' fs'
 
 	TApp t1 t2
 	 -> let	t1'	= packT1 t1
@@ -111,20 +111,20 @@ packT1 tt
 	 -> let	ts2	= map packT1 ts
 
 		-- lift fetters above args
-		(ts3, vtss)	
+		(ts3, fss)	
 			= unzip
-			$ map slurpTWhere ts2
+			$ map slurpTFetters ts2
 
-	    in	makeTWhere (TData v ts3) (concat vtss)
+	    in	makeTFetters (TData v ts3) (concat fss)
 	    
 	TFunEC t1 t2 eff clo
-	 -> let (t1', vts1)	= slurpTWhere $ packT1 t1
-	  	(t2', vts2)	= slurpTWhere $ packT1 t2
-		(eff', vtsE)	= slurpTWhere $ packT1 eff
-		(clo', vtsC)	= slurpTWhere $ packT1 clo
+	 -> let (t1',  fs1)	= slurpTFetters $ packT1 t1
+	  	(t2',  fs2)	= slurpTFetters $ packT1 t2
+		(eff', fsE)	= slurpTFetters $ packT1 eff
+		(clo', fsC)	= slurpTFetters $ packT1 clo
 
-	    in	makeTWhere (TFunEC t1' t2' eff' clo')
-	    		(vts1 ++ vts2 ++ vtsE ++ vtsC)
+	    in	makeTFetters (TFunEC t1' t2' eff' clo')
+	    		(fs1 ++ fs2 ++ fsE ++ fsC)
 	    
 	TFun t1 t2
 	 -> let	t1'	= packT1 t1
@@ -189,8 +189,8 @@ packT1 tt
 		$ "packT: no match for " % tt
 
 
-slurpTWhere (TWhere t vts)	= (t, vts)
-slurpTWhere tt			= (tt, [])
+slurpTFetters (TFetters t fs)	= (t, fs)
+slurpTFetters tt		= (tt, [])
 
 
 -- | Do one round of packing on this kind
@@ -236,11 +236,22 @@ inlineTWheresMapT sub block tt
 	
 	TForall v k t		-> TForall v k (down t)
 	    
-	TWhere t1 vts
-	 -> inlineTWheresMapT 
-	 	(Map.union (Map.fromList vts) sub) 
-		block
-		t1
+	TFetters t1 fs
+	 -> let	([fsWhere, fsMore], [])
+	 		= partitionFs [(=@=) FWhere{}, (=@=) FMore{}] fs
+		
+		sub'	= Map.union 
+				(Map.fromList [(v, t) | FWhere v t <- fsWhere])
+				sub
+				
+				
+	    	tFlat	= inlineTWheresMapT 
+				sub'
+				block
+				t1
+
+	    in	makeTFetters tFlat fsMore
+
 
 	TContext l t		-> TContext l 	(down t)
 	TSum     k ts		-> TSum  k 	(map down ts)
@@ -280,20 +291,25 @@ inlineTWheresMapT sub block tt
 	    
 
 
--- | Restrict the list of TLet fetters to ones which are 
+-- | Restrict the list of FWhere fetters to ones which are 
 --	reachable from this type. Also erase x = Bot fetters.
 --
-restrictBinds :: Type -> [(Var, Type)] -> [(Var, Type)]
+restrictBinds :: Type -> [Fetter] -> [Fetter]
 restrictBinds tt ls
- = let	reachFLetsMap
+ = let	splitFetter ff
+  	 = case ff of
+	 	FWhere v t	-> (v, t)
+		FMore  v t	-> (v, t)
+
+ 	reachFLetsMap
  		= Map.fromList
 		$ [(t, freeVars tLet)	
- 			| (t, tLet)	<- ls]
+ 			| (t, tLet)	<- map splitFetter ls]
  
  	vsSeed		= freeVars tt
 
 	vsReachable	= vsSeed `Set.union` graphReachableS reachFLetsMap vsSeed
 	 
-   in	filter	(\(v, _) -> Set.member v vsReachable)
+   in	filter	(\f -> Set.member (varOfFetter f) vsReachable)
    		ls
 

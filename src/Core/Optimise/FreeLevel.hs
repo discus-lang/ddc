@@ -144,10 +144,10 @@ annotLevelX st@(level, vMap) xx
 	    in	( XLocal v vs x'
 	    	, free)
 
-	XPrim m xs eff
+	XPrim m xs
 	 -> let	(xs', frees)	= unzip $ map (annotLevelX st) xs
 		free		= Set.unions frees
-	    in	( tagVL free	$ XPrim m xs' eff
+	    in	( tagVL free	$ XPrim m xs'
 	    	, free)
 
 		

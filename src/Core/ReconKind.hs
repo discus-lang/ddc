@@ -17,7 +17,7 @@ kindOfType t
  = case t of
 	TForall v t1 t2		-> kindOfType t2
 	TContext t1 t2		-> kindOfType t2
-	TWhere  t1 _		-> kindOfType t1
+	TFetters  t1 _		-> kindOfType t1
 
 	TSum  k _		-> k
 	TMask k _ _		-> k

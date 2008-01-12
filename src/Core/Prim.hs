@@ -22,21 +22,19 @@ primTree tree
 	= transformS primS tree
 	
 primS ss
-	| SBind mV (XTau t x)	<- ss
+	| SBind mV x_		<- ss
+	, x			<- enterX x_
  	, (args, eff)		<- stripArgsEffs x
 	, (XVar v _ : args)	<- args
-
-	, argsV			<- catMaybes 
-				$ map (\a -> case a of 
-						XType{} -> Nothing
-						_	-> Just a)
-				$ args
-
 	, elem (Var.name v) primFuns
-	= SBind mV (XPrim (MFun v t) argsV eff)
+
+	= SBind mV (XPrim MFun (XVar v TNil : args))
 	
 	| otherwise		= ss
 	
+enterX (XTau t x)	= enterX x
+enterX xx		= xx
+
 
 stripArgsEffs xx
  = let	parts	= flattenAppsE xx

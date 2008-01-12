@@ -36,12 +36,14 @@ atomiseX
 	-> AtomiseM Exp
 
 atomiseX table xx
- 	| XPrim (MCall v) ts@[_, XType (TVar KRegion r)] (TBot KEffect)	<- xx
+ 	| XPrim MCall ts@[XVar v tV, _, XType (TVar KRegion r)]	
+					<- xx
+
 	, elem (Var.bind v) atomBinds
 	, isConst table r
 	= return $ XAtom v ts
 
-	| XPrim (MCall v) [] (TBot KEffect)				<- xx
+	| XPrim MCall [XVar v tV]	<- xx
 	, Var.bind v == Var.VUnit
 	= return $ XAtom v []
 	 

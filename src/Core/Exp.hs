@@ -20,6 +20,8 @@ module Core.Exp
 	, Label		(..)	-- labels in guards
 
 	, Type 		(..)	-- core types
+	, Fetter	(..)
+	, varOfFetter
 
 	, Data			-- alias of Type
 	, Region
@@ -112,8 +114,10 @@ data Exp
 	| XConst	Const	Type			-- ^ Literals.
 	| XVar		Var	Type 			-- ^ A variable.
 
-	| XPrim		Prim 	[Exp]	Effect
+	| XPrim		Prim 	[Exp]
 
+
+	| XType	  Type
 
 
 	-- ditch these
@@ -130,7 +134,6 @@ data Exp
 	--
 	
 	-- Used in Core.CrushApps
-	| XType	  Type
 	| XAppF   [Exp]
 	| XAppFP  Exp  (Maybe Effect)
 
@@ -155,14 +158,14 @@ data Prim
 	| MUnbox	Type Type			-- ^ Unboxing.	unboxed type, 	boxed type
 	
 	-- function calls
-	| MTailCall	Var 				-- ^ Tailcall a super
-	| MCall		Var				-- ^ Call a super
-	| MCallApp	Var Int				-- ^ Call then apply super. 	name, airity
-	| MApply	Var				-- ^ Apply a thunk. 		thunk name, args
-	| MCurry	Var Int				-- ^ Build a thunk. 		name, airity
+	| MTailCall	 				-- ^ Tailcall a super
+	| MCall						-- ^ Call a super
+	| MCallApp	Int				-- ^ Call then apply super with this airity.
+	| MApply					-- ^ Apply a thunk.
+	| MCurry	Int				-- ^ Build a thunk with this airity.
 
 	-- some other named primitive function.
-	| MFun		Var  Type 			-- ^ Primitive operation.	opName, resultType
+	| MFun		-- Var  Type 			-- ^ Primitive operation.	opName, resultType
 	deriving (Show, Eq)
 
 
@@ -211,7 +214,7 @@ data Type
 
 	| TForall	Bind	Kind	Type		-- ^ Type abstraction.
 	| TContext		Kind	Type		-- ^ Class context.
-	| TWhere	Type	[(Var, Type)]		-- ^ Type level where expression.
+	| TFetters	Type	[Fetter]		-- ^ Type level where expression.
 	| TApp		Type 	Type			-- ^ Type application.
 
 	| TSum		Kind 	[Type]			-- ^ A summation \/ lub.
@@ -244,6 +247,16 @@ data Type
 	| TWild		Kind				-- ^ Type wildcard. 
 							--	Will unify with anything of the given kind.
 	deriving (Show, Eq)
+
+data Fetter
+	= FWhere	Var Type
+	| FMore		Var Type
+	deriving (Show, Eq)
+
+varOfFetter ff
+ = case ff of
+ 	FWhere v t	-> v
+	FMore  v t	-> v
 
 
 -- | Field projections

@@ -32,40 +32,34 @@ toCoreT	   tt
  = case tt of
 	-- Check for constraints on quantifiers
 	--	If any are present they'll be in the list of fetters
-	T.TForall vsk (T.TFetters fs t)
+	T.TForall vks (T.TFetters fs t)
 	 -> let	(fsMore, fsRest)	
 			= partition ((=@=) T.FMore{}) fs
 
 		vsMore	= [(v, t)	| T.FMore (T.TVar _ v) t	<- fsMore]
 
-		vs'	= Var.sortForallVars 
-			$ map fst vsk
-
 		bsKinds	= map	(\v -> ( case lookup v vsMore of
 						Nothing	-> C.BVar v
 						Just t	-> C.BMore v (toCoreT t)
 
-				       , toCoreK $ fromJust $ lookup v vsk))
-				vs'
+				       , toCoreK $ fromJust $ lookup v vks))
+			$ map fst vks
 
 		t'	= toCoreT (T.TFetters fsRest t)
 
-	   in	foldl (\t (b, k) -> C.TForall b k t)
+	   in	foldl	(\t (b, k) -> C.TForall b k t)
 	   		t'
 			(reverse bsKinds)
 
 	-- Forall with no fetters underneath
-	T.TForall vs t
-	 -> let vs'	= Var.sortForallVars 
-			$ map fst vs
-
-		vsKinds	= map	(\v -> ( v
-				       , toCoreK $ fromJust $ lookup v vs))
-				vs'
+	T.TForall vks t
+	 -> let vsKinds	= map	(\v -> ( v
+				       , toCoreK $ fromJust $ lookup v vks))
+			$ map fst vks
 
 		t'	= toCoreT t
 
-	   in	foldl (\t (v, k) -> C.TForall (C.BVar v) k t)
+	   in	foldl	(\t (v, k) -> C.TForall (C.BVar v) k t)
 	   		t'
 			(reverse vsKinds)
 	   

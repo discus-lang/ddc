@@ -233,6 +233,9 @@ followTs table tt	= mapM (followT table) tt
 followT table t
  | decendT table	= transZM table t
  | otherwise		= return t
+
+followF table f		= transZM table f
+ 
  
 followK table k
  | decendK table	= transZM table k
@@ -409,11 +412,10 @@ transXM2 table xx
 	 	x'		<- followX  table x
 		transX table	$ XLocal v' vts' x'
 
-	XPrim m aa eff
+	XPrim m aa
 	 -> do	m'		<- transZM table m
 	 	aa'		<- followXs table aa
-		eff'		<- followT table eff
-		transX table	$ XPrim m' aa' eff'
+		transX table	$ XPrim m' aa'
 		
 
 	-- intermediate constructors
@@ -473,30 +475,23 @@ instance Monad m => TransM m Prim where
 	 	t2'		<- followT table t2
 		transM table	$ MUnbox t1' t2'
 		
-	MTailCall v
-	 -> do	v'		<- followV_free table v
-	 	transM table	$ MTailCall v'
+	MTailCall 
+	 -> do	transM table	$ MTailCall
 
-	MCall v
-	 -> do	v'		<- followV_free table v
-	 	transM table	$ MCall v'
+	MCall
+	 -> do	transM table	$ MCall
 
-	MCallApp v i
-	 -> do	v'		<- followV_free table v
-	 	transM table	$ MCallApp v' i
+	MCallApp i
+	 -> do	transM table	$ MCallApp i
 
-	MApply v
-	 -> do	v'		<- followV_free table v
-	 	transM table	$ MApply v'
+	MApply
+	 -> do	transM table	$ MApply
 
-	MCurry v i
-	 -> do	v'		<- followV_free table v
-	 	transM table	$ MCurry v' i
+	MCurry i
+	 -> do	transM table	$ MCurry i
 
-	MFun v t
-	 -> do	v'		<- followV_free table v
-	 	t'		<- followT table t
-		transM table	$ MFun v t'
+	MFun
+	 -> do	transM table	$ MFun
 		
 		
 		
@@ -518,14 +513,11 @@ instance Monad m => TransM m Type where
 		k'		<- transZM table k
 	 	transT table	$ TContext k' t'
  	
-	TWhere	t1 vts
+	TFetters t1 fs
 	 -> do	t1'		<- followT table t1
-		let (vs, ts)	= unzip vts
-		vs'		<- mapM (followV_bind table) vs
-		ts'		<- mapM (followT table) ts
-		let vts'	= zip vs' ts'
+		fs'		<- mapM (followF table) fs
 		
-		transT table	$ TWhere t1' vts'
+		transT table	$ TFetters t1' fs'
 	
 	TSum k ts
 	 -> do	ts'		<- followTs table ts
@@ -602,8 +594,23 @@ instance Monad m => TransM m Type where
 
 	_ 	-> panic stage
 		$  "transZM[Type]: no match for " % show tt
-	 
 
+
+-- Fetter ------------------------------------------------------------------------------------------
+instance Monad m => TransM m Fetter where
+ transZM table ff
+  = case ff of
+  	FWhere v t
+	 -> do	v'	<- followV_bind table v
+	 	t'	<- followT table t
+		return	$ FWhere v' t'
+		
+	FMore v t
+	 -> do	v'	<- followV_bind table v
+	 	t'	<- followT table t
+		return	$ FMore v' t'
+
+-- Kind --------------------------------------------------------------------------------------------
 instance Monad m => TransM m Kind where
  transZM table kk
   = case kk of

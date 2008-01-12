@@ -201,7 +201,7 @@ lintX tt (XLocal v vts x)
  	tt3		<- addVTs vts tt2
  	lintX tt3 x
  
-lintX tt (XPrim p xs eff)
+lintX tt (XPrim p xs)
  = do	mapM_ (lintX tt) xs
  
 lintX tt (XType t)
@@ -278,8 +278,8 @@ lintT tt (TContext k1 t2)
  = do	lintK tt k1
  	lintT tt t2
 	
-lintT tt (TWhere t1 vts)
- = do	tt'	<- addVTs vts tt
+lintT tt (TFetters t1 fs)
+ = do	tt'	<- addVTs [(v, t) | FWhere v t <- fs] tt
  	lintT tt' t1
 
 lintT tt (TApp t1 t2)

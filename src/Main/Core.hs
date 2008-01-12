@@ -20,7 +20,6 @@ module Main.Core
 	, coreSequence
 	, curryCall
 	, coreAtomise
-	, coreDitch
 	, toSea)
 
 where
@@ -33,7 +32,7 @@ import Core.Snip			(snipTree)
 import Core.Crush			(crushTree)
 
 import Core.Dictionary			(dictTree)
-import Core.Reconstruct			(reconstructTree)
+import Core.Reconstruct			(reconTree)
 import Core.Bind			(bindTree)
 import Core.Thread			(threadTree)
 import Core.Prim			(primTree)
@@ -41,7 +40,6 @@ import Core.Lint			(lintTree)
 import Core.Lift			(lambdaLiftTree)
 import Core.LabelIndex			(labelIndexTree)
 import Core.Curry			(curryTree, slurpSupersTree, isCafP_opType)
-import Core.Ditch			(ditchTree)
 import Core.ToSea			(toSeaTree)
 
 import Core.Optimise.Boxing		(coreBoxingTree)
@@ -149,7 +147,7 @@ coreReconstruct
 	
 coreReconstruct name cHeader cTree
  = do	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
- 			   reconstructTree name cHeader cTree
+ 			   reconTree name cHeader cTree
  	dumpCT DumpCoreReconstruct name cTree'
 	return	cTree'
 
@@ -420,21 +418,6 @@ coreAtomise cSource cHeader
 	
 	return	cAtomise
 
-
-
--- | Erase type information in preparation for conversion to Abstract-C.
-coreDitch
-	:: (?args :: [Arg])
-	-> Tree			-- ^ core tree
-	-> IO Tree		
-
-coreDitch cSource
- = do	let cDitch	= crushTree $ ditchTree cSource
- 	dumpCT DumpCoreDitch "core-ditch" cDitch
-	
-	return cDitch
-	
-	
 
 -- | Convert Core-IR to Abstract-C
 toSea

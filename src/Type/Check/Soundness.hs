@@ -135,9 +135,9 @@ dangerT rsMutable fsClosure tt
 				Nothing	-> Set.empty
 			
 	    in	Set.unions
-			[ dangerT rsMutable fsClosure t1
-			, dangerT rsMutable fsClosure t2 
-			, cloDanger ]
+--			[ dangerT rsMutable fsClosure t1
+--			, dangerT rsMutable fsClosure t2 
+			[ cloDanger ]
 
 	-- data constructors
 	TData v ts

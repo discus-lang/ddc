@@ -24,7 +24,10 @@ stage	= "Core.Plate.FreeVars"
 class FreeVars a where
  freeVars :: a -> Set Var
  
------
+instance FreeVars a => FreeVars [a] where
+ freeVars xx	= Set.unions $ map freeVars xx
+  
+-- Exp ---------------------------------------------------------------------------------------------
 instance FreeVars Exp where
  freeVars xx
   = case xx of
@@ -96,11 +99,10 @@ instance FreeVars Exp where
 	XLifted v vsFree
 	 -> fromList vsFree
 	
-	XPrim m xs eff
+	XPrim m xs
 	 -> unions
 	 	[ freeVars m
-		, unions $ map freeVars xs
-		, freeVars eff ]
+		, unions $ map freeVars xs ]
 	
 	XProject x j
 	 ->	freeVars x
@@ -128,7 +130,7 @@ boundByS	x
 	    in	unions	[ fromList (maybeToList v) ]
 
 
------
+-- Prim --------------------------------------------------------------------------------------------
 instance FreeVars Prim where
  freeVars m
   = case m of
@@ -146,18 +148,15 @@ instance FreeVars Prim where
 	 	[ freeVars t1
 		, freeVars t2 ]
 
-	MTailCall v	-> singleton v
-	MCall 	v 	-> singleton v
-	MCallApp v i	-> singleton v
-	MApply 	v	-> singleton v
-	MCurry 	v i	-> singleton v
+	MTailCall 	-> empty
+	MCall 	 	-> empty
+	MCallApp  i	-> empty
+	MApply 		-> empty
+	MCurry 	 i	-> empty
+	MFun 		-> empty	
 
-	MFun v t	
-	 -> unions
-	 	[ singleton v
-		, freeVars t ]
 
------
+-- Stmt --------------------------------------------------------------------------------------------
 instance FreeVars Stmt where
  freeVars xx
   = case xx of
@@ -166,7 +165,8 @@ instance FreeVars Stmt where
 	 	[ freeVars x ]
 		\\ fromList (maybeToList v)
 
-----
+
+-- Alt  --------------------------------------------------------------------------------------------
 instance FreeVars Alt where
  freeVars aa	
   = case aa of
@@ -187,7 +187,7 @@ varsBoundByG	g
 	GExp  w x	-> varsBoundByW w
 
 
------
+-- Guard -------------------------------------------------------------------------------------------
 instance FreeVars Guard where
  freeVars gg
   = case gg of
@@ -202,14 +202,15 @@ varsBoundByW	ww
 	WCon   v fs	-> fromList $ map t3_2 fs
 	
 
------
+-- Pat ---------------------------------------------------------------------------------------------
 instance FreeVars Pat where
  freeVars pp
   = case pp of
   	WConst	c t	-> freeVars t
 	WCon 	v lts	-> Set.unions $ map (freeVars . t3_3) lts
 
------
+
+-- Type --------------------------------------------------------------------------------------------
 instance FreeVars Type where
  freeVars tt
   = case tt of
@@ -226,12 +227,11 @@ instance FreeVars Type where
 	 	[ freeVars k
 		, freeVars t ]
 
-	TWhere t1 vts
+	TFetters t1 fs
 	 -> unions 
 	 	[ freeVars t1
-		, Set.unions $ map (freeVars . snd) vts ]
-		
-		\\ (Set.fromList $ map fst vts)
+		, freeVars fs ]
+		\\ (Set.fromList $ map varOfFetter fs)
 		
 	TSum k ts
 	 -> unions $ map freeVars ts
@@ -295,8 +295,15 @@ instance FreeVars Type where
 	_ 	-> panic stage
 		$ "freeVarsT: no match for " % show tt
 
+-- Fetter ------------------------------------------------------------------------------------------
+instance FreeVars Fetter where
+ freeVars ff
+  = case ff of
+  	FWhere v t	-> freeVars t \\ singleton v
+	FMore  v t	-> freeVars t
 
------
+
+-- Kind --------------------------------------------------------------------------------------------
 instance FreeVars Kind where
  freeVars kk
   = case kk of

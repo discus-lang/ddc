@@ -89,7 +89,7 @@ coreBoxingTree topVars cSource cHeader
 	cZapped		= zapUnboxBox 		cInlined
 	cResnip		= snipTree Set.empty uniqueSnip  cZapped
 	cEat		= eatAnnotsTree 	cResnip
-	cRecon		= reconstructTree "Core.Boxing" cHeader cEat
+	cRecon		= reconTree stage cHeader cEat
 
    in	cRecon
 
@@ -146,15 +146,13 @@ boxWrapS table stmt
 		vPrim	<- newVarN NameValue
 		return	$  ssUnbox
 		        ++ [ SBind (Just vPrim)	
-				$ XPrim (MFun funV xTU)
-					[ XVar v TNil | v <- vsUnbox]
-					(makeTSum KEffect [eReadR table r | r <- rsUnbox]) 
-
+				$ XPrim (MFun)
+					(XVar funV TNil : [ XVar v TNil | v <- vsUnbox])
+					
 			   , SBind xV	
 			  	$ XPrim (MBox xT xTU)
-					[XVar vPrim TNil]
-					(makeTSum KEffect [ eReadR table xuR ]) ]
-							
+					[XVar vPrim TNil]]
+												
 	| otherwise
 	= return [stmt]
 
@@ -204,13 +202,11 @@ forceUnbox table x tU tB r@(TVar KRegion rV)
 	| Just fs	<- Nothing -- Walk.lookupFs table rV
 	, elem (TClass primLazy [r]) fs
 	= XPrim (MUnbox tU tB)
-		[XPrim MForce [x] pure]
-		(eReadR table r)
+		[XPrim MForce [x]]
 
 	| otherwise
 	= XPrim (MUnbox tU tB)
 		[x]
-		(eReadR table r)
 	
 
 	 
@@ -226,12 +222,12 @@ zapUnboxBox cTree
 zapUnboxBoxX xx
  = case xx of
  	XPrim 	(MUnbox _ _) 
-		[XPrim    (MBox _ _) [x] bEff] 
-		uEff					-> x
+		[XPrim    (MBox _ _) [x]] 
+							-> x
 
 	XPrim	(MUnbox _ _) 
-		[XAnnot n (XPrim (MBox _ _) [x] bEff)] 
-		uEff					-> x
+		[XAnnot n (XPrim (MBox _ _) [x])] 
+							-> x
 
 	_						-> xx
 	
@@ -258,7 +254,7 @@ unboxedType t
 	TContext t1 t2
 	 -> unboxedType t2
 
-	TWhere t1 vts
+	TFetters t1 fs
 	 -> unboxedType t1
 
  	TData v [r]

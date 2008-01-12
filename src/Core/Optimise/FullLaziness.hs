@@ -67,7 +67,7 @@ fullLazinessTree
 
 	treeErase		= eraseAnnotsTree treeMod
 	treeSnip		= snipTree Set.empty unqiueSnip treeErase
-	treeRecon		= reconstructTree "Core.FullLaziness" cHeader treeSnip
+	treeRecon		= reconTree stage cHeader treeSnip
 
      in	treeRecon
 
@@ -120,7 +120,7 @@ canLiftX xx
 	XTau t x			-> canLiftX x
 	XAnnot n x			-> canLiftX x
 
- 	XPrim (MBox tB tU) x eff	-> True
+ 	XPrim (MBox tB tU) x		-> True
 	
 	XApp{}				-> True	
 	XAPP{}				-> True	

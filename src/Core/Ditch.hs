@@ -3,7 +3,7 @@
 -- Ditch extraneous type information in preparation for conversion to Sea.
 --
 module Core.Ditch 
-	(ditchTree)
+	-- (ditchTree)
 where
 
 import Util
@@ -13,8 +13,8 @@ import Core.Pretty
 import Shared.Error
 
 -----
-stage	= "Core.Ditch"
-
+-- stage	= "Core.Ditch"
+{-
 ditchTree ::	Tree -> Tree
 ditchTree	= transformX ditchX
 
@@ -48,3 +48,4 @@ ditchG :: Guard -> Guard
 ditchG	(GExp p x)		= GExp p (ditchX x)
 
 
+-}

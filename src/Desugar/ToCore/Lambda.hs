@@ -1,7 +1,10 @@
 
 module Desugar.ToCore.Lambda
 	( fillLambdas
-	, addTau )
+	, addTau 
+	, loadEffAnnot 
+	, loadCloAnnot)
+
 where
 
 import Util
@@ -40,10 +43,10 @@ fillLambdas
 	-> CoreM Exp
 	
 fillLambdas v tScheme x
- =  {- trace 
+ = {-trace 
  	("* Desugar.ToCore.fillLambdas\n"
  	% "    v       = " % v % 	"\n"
-	% "    tScheme =\n" %> tScheme %	"\n")  -}
+	% "    tScheme =\n" %> tScheme %	"\n") -}
 	(fillLambdas' Map.empty tScheme x)	
 	
 	
@@ -58,20 +61,42 @@ fillLambdas' tsWhere tScheme x
 		v'	<- newVarN NameClass
 		return	$ XLAM (BVar v') c x'
 
-	| TWhere tRest vts		<- tScheme
-	= do	let tsWhere'	= Map.union tsWhere (Map.fromList vts)
+	| TFetters tRest fs		<- tScheme
+	= do	let tsWhere'	= Map.union tsWhere (Map.fromList [(v, t) | FWhere v t <- fs])
 		x'	<- fillLambdas' tsWhere' tRest x
---		return	$ XTet vts x'
 		return	$ x'
 
-	| TFunEC t1 t2 eff clo		<- tScheme
-	, XLam v _ x' _ _		<- x
+{-	| TFunEC t1 t2 eff clo		<- tScheme
+	, XLam v _ x' eff clo		<- x
  	= do	x2		<- fillLambdas' tsWhere t2 x'
-		return	$ XLam v t1 x2 eff clo
-
+--		effAnnot	<- loadEffAnnot eff
+--		cloAnnot	<- loadCloAnnot clo
+		return	$ XLam v t1 x2 eff clo -- effAnnot cloAnnot
+-}
 	| otherwise
 	= return x
 
+
+loadEffAnnot :: Effect -> CoreM Effect
+loadEffAnnot ee
+ = case ee of
+	TVar KEffect vE	
+	 -> do	Just vT	<- lookupType vE
+	 	return	$ packT $ flattenT $ stripContextT vT
+
+ 	TBot KEffect	
+	  -> 	return	$ TBot KEffect
+
+
+loadCloAnnot :: Closure -> CoreM Closure
+loadCloAnnot cc
+ = case cc of
+	TVar KClosure vC	
+	 -> do	Just vT	<- lookupType vC
+	 	return	$ packT $ trimClosureC $ flattenT $ stripContextT vT
+			 
+	TBot KClosure 	
+	 -> 	return	$ TBot KClosure
 
 
 addTau xT x

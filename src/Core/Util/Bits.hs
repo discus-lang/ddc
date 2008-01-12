@@ -18,6 +18,7 @@ module Core.Util.Bits
 	
 	, makeXTet	
 	, makeTWhere
+	, makeTFetters
 	, makeTWitJoin
 	, makeKWitJoin
 
@@ -26,7 +27,8 @@ module Core.Util.Bits
 	, pure
 	, empty
 	
-	, flattenApps,	flattenAppsE,	unflattenApps, unflattenAppsE
+	, buildApp
+	, flattenApps,	flattenAppsE,	unflattenAppsE
 	, flattenFun,	unflattenFun,	unflattenFunE
 		
 	, chopLambdas
@@ -172,16 +174,29 @@ makeKWitJoin ts
 	ts	-> KWitJoin ts
 
 		
+makeTWhere ::	Type	-> [(Var, Type)] -> Type
+makeTWhere	t []	= t
+makeTWhere	t vts	= TFetters t $ map (uncurry FWhere) vts
+
+
+makeTFetters :: Type -> [Fetter] -> Type
+makeTFetters t []	= t
+makeTFetters t fs	= TFetters t fs
+		
+		
+		
 -- | Get the kind associated with a namespace.
-kindOfSpace :: NameSpace -> Kind
+kindOfSpace :: NameSpace -> Maybe Kind
 kindOfSpace space
  = case space of
- 	NameType	-> KData
-	NameRegion	-> KRegion
-	NameEffect	-> KEffect
-	NameClosure	-> KClosure
-	_		-> panic stage
-			$  "kindOfSpace: no match for " % show space
+ 	NameType	-> Just KData
+	NameRegion	-> Just KRegion
+	NameEffect	-> Just KEffect
+	NameClosure	-> Just KClosure
+	_		-> Nothing
+
+--	_		-> panic stage
+--			$  "kindOfSpace: no match for " % show space
 
 
 -- | Build the witness needed to satify this constraint.
@@ -203,22 +218,31 @@ flattenApps		xx
 	= [xx]
 
 
-unflattenApps ::	[Exp] -> Exp
-unflattenApps		xx
-	= unflattenApps' 
+-- | Create an application from a list of expressions
+--	buildApp [x1, x2, x3] => (x1 x2) x3
+--
+buildApp :: [Exp] -> Maybe Exp
+buildApp xx
+	= buildApp'
 	$ reverse xx
 
-unflattenApps'		xx
- = case xx of
-	x:[]		-> x
-	(XType   t):xs	-> XAPP (unflattenApps' xs) t
-	(XVar    v t):xs
-	 -> case Var.nameSpace v of
-	 	NameValue	-> XApp  (unflattenApps' xs) (XVar v t)   (TBot KEffect)
-		space		-> XAPP  (unflattenApps' xs) (TVar (kindOfSpace space) v)
+buildApp' xx
+	| x : []		<- xx
+	= Just x
+	
+	| XType t : xs		<- xx
+	, Just leftX		<- buildApp' xs
+	= Just $ XAPP leftX t
+	
+	| XVar v t : xs		<- xx
+	, Var.nameSpace v == NameValue
+	, Just leftX		<- buildApp' xs
+	= Just $ XApp leftX (XVar v t) (TBot KEffect)
 
-	_		-> panic stage $ "unflattenApps: cannot unflatten " ++ show xx
-
+	| otherwise
+	= Nothing
+	
+	
 -----
 flattenFun ::	Type -> [Type]
 flattenFun	xx
@@ -369,7 +393,7 @@ superOpTypePartT	t
 	TForall v  k t			-> superOpTypePartT t
 	
 	TContext c t			-> superOpTypePartT t
-	TWhere t vts			-> superOpTypePartT t
+	TFetters t fs			-> superOpTypePartT t
 
 	TFunEC{}			-> TData primTThunk []
 
@@ -587,7 +611,7 @@ addLambdas ::	[(Var, Type)] -> Exp -> Exp
 addLambdas	vts x
  = case vts of
  	[]			-> x
-	((v, t) : vts)		-> XLam v t (addLambdas vts x) (TTop KEffect) (TTop KClosure)
+	((v, t) : vts)		-> XLam v t (addLambdas vts x) (TBot KEffect) (TBot KClosure)
 	
 	
 addLAMBDAs ::	[(Bind, Kind)] -> Exp -> Exp
@@ -602,9 +626,6 @@ makeXTet ::	[(Var, Type)] -> Exp -> Exp
 makeXTet	[] x	= x
 makeXTet	vts x	= XTet vts x
 
-makeTWhere ::	Type	-> [(Var, Type)] -> Type
-makeTWhere	t []	= t
-makeTWhere	t vts	= TWhere t vts
 		
 
 

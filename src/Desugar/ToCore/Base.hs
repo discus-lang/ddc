@@ -33,6 +33,7 @@ import qualified Core.Exp		as C
 import qualified Core.Util		as C
 
 import Desugar.Project			(ProjTable)
+import Debug.Trace
 
 -----
 stage	= "Desugar.ToCore.Base"
@@ -100,28 +101,32 @@ lookupType	v
 		 			("getType: no type var for value var " % v % "\n")
 					$ return Nothing
 
-	 	 Just vT	-> getType' vT
+	 	 Just vT	-> lookupType' vT
 		
 		
 	| otherwise
-	=	getType' v
+	=	lookupType' v
 	
-getType' vT
+lookupType' vT
  = do	mapTypes	<- gets coreMapTypes
 
 	case Map.lookup vT mapTypes of
 	 Nothing		
-	  -> panic stage 
-	  $ "getType: no scheme for " % vT % " " % Var.prettyPos vT % " - " % show vT % "\n"
-	  % "  visible vars = " % Map.keys mapTypes % "\n"
+	  -> freakout stage 
+		  ( "lookupType: no scheme for " % vT % " " % Var.prettyPos vT % " - " % show vT % "\n"
+		  % "  visible vars = " % Map.keys mapTypes % "\n")
+		  $ return Nothing
 
-	 Just t	
-	  -> 	return $ Just $ T.toCoreT t
+	 Just tType
+	  -> let cType	= T.toCoreT tType
+	     in  return $ Just $ cType
 
 
 -- | Get the kind of this variable.
 getKind :: Var 	-> CoreM C.Kind
-getKind	v	= return $ C.kindOfSpace (Var.nameSpace v)
+getKind	v	
+ = let	Just k	= C.kindOfSpace $ Var.nameSpace v
+   in	return k
 
 
 -- | Lookup how the type scheme for this variable was instantiate.
