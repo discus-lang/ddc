@@ -159,7 +159,14 @@ instance Pretty Exp where
 	 
 	 where	pEffClo	= case (eff, clo) of 
 	 			(TBot KEffect, TBot KClosure) 	-> pNil
-				_ -> "\n" % replicate 20 ' ' % " of " % eff % " " % clo
+				(TBot KEffect, _)		
+				  -> "\n" % replicate 20 ' ' % " of " % prettyTB clo
+
+				(_, TBot KClosure)		
+				  -> "\n" % replicate 20 ' ' % " of " % prettyTB eff
+
+				_ -> "\n" % replicate 20 ' ' % " of " % prettyTB eff 
+				   % "\n" % replicate 20 ' ' % "    " % prettyTB clo
 					 
 	 
 	XAPP x t
