@@ -101,14 +101,17 @@ extractTypeC2 varT cid tTrace
 	trace	$ "    tPack            =\n" %> prettyTS tPack % "\n\n"
 
 	-- Trim closures
-	let tTrim	= packType $ trimClosureT tPack
+	let tTrim	= 
+		case kindOfType tPack of
+			KClosure	-> packType $ trimClosureC tPack
+			_		-> packType $ trimClosureT tPack
+
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
 	-- Reduce context
 	classInst	<- gets stateClassInst
-	let tReduced	= reduceContextT classInst tTrim
+	let tReduced	= packType $ reduceContextT classInst tTrim
 	trace	$ "    tReduced         =\n" %> prettyTS tReduced % "\n\n"
-	
 
 	return	$ Just tReduced
 	

@@ -198,22 +198,32 @@ packTFettersLs ls tt
  	TFetters fs t
 	 -> let	ls'	= [(t1, t2) | FLet t1 t2 <- fs] ++ ls
 
-		t'	= packTypeLs ls' 	
-			$ loadType ls' t
+		tPacked		= packTypeLs ls' 	
+				$ loadType ls' t
 
-		fs'	= sortFs		
-			$ restrictFs t'
-			$ inlineFs1 t'
-			$ map (zapCoveredTMaskF ls') 
-			$ map (packFetterLs ls') 
-			$ map shortLoopsF
-			$ fs
+		fsPacked	= map (packFetterLs ls') 
+				$ map shortLoopsF
+				$ fs
 
-		tt'	= addFetters fs' t'
+		-- erase trivial closures
+		(tZapped, fsZapped)
+				= mapAccumL (zapCoveredTMaskF ls') tPacked fsPacked
+		
+		-- inline TBots, and fetters that are only referenced once
+		(tInlined, fsInlined)
+				= inlineFs1 tZapped fsZapped
 
-	    in	if length fs' < length fs
-	    	 then packTFettersLs ls tt'
-		 else tt'
+--		(tBot, fsBot)	= inlineTBots tInlined fsInlined
+
+		fsSorted	= sortFs		
+				$ restrictFs tZapped
+				$ fsInlined
+				
+		tFinal		= addFetters fsSorted tInlined
+
+	    in	if length fsSorted < length fs
+	    	 then packTFettersLs ls tFinal
+		 else tFinal
 
 	_ -> tt
 
@@ -295,8 +305,9 @@ restrictFs tt ls
 
 
 -- | Inline Effect and Closure fetters which are only referenced once.
+--	Also inline (t = TBot) fetters
 --
-inlineFs1 :: Type -> [Fetter] -> [Fetter]
+inlineFs1 :: Type -> [Fetter] -> (Type, [Fetter])
 inlineFs1 tt fs
  = let	
  	-- count how many times each var is used in the RHSs of the fs.
@@ -319,7 +330,6 @@ inlineFs1 tt fs
 		$ map (\f -> case f of
 				FLet t1 t2@TVar{}	-> Just (t1, t2)
 				FLet t1 t2@TClass{}	-> Just (t1, t2)
-				
 				FLet t1 t2	
 				 |  Map.lookup t1 useCount == Just 1 	 -> Just (t1, t2)
 
@@ -333,7 +343,8 @@ inlineFs1 tt fs
 				_		 -> f)
 		$ fs
 		
- in 	fs'
+ in 	( tt
+ 	, fs')
 
 
 -- | Inline Effect and Closure fetters, regardless of the number of times they are used
@@ -416,15 +427,16 @@ sortFsT tt
 --	  1 -> 2 -(5)> 3
 --        :-  5        = f :: ...
 --
-zapCoveredTMaskF :: [(Type, Type)] -> Fetter -> Fetter
-zapCoveredTMaskF ls ff
+zapCoveredTMaskF :: [(Type, Type)] -> Type -> Fetter -> (Type, Fetter)
+zapCoveredTMaskF ls tt ff
 	| FLet t1 (TMask k t2 t3)	<- ff
 	, Just t2l			<- lookup t2 ls
 	, coversCC t2l t3
-	= FLet t1 (TBot k)
+	= ( substituteTT (Map.singleton t1 (TBot k)) tt
+	  , FLet t1 (TBot k))
 
 	| otherwise
-	= ff
+	= (tt, ff)
 		 
 coversCC (TFree v1 _) 	(TTag v2)	= v1 == v2
 coversCC _		_		= False

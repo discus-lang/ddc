@@ -69,7 +69,6 @@ lift3 ()
  };
 
 
-
 -- | Check effect constraints on lambda bound functions are making it through to core.
 --	If they go missing then the application of (\y -> .. ) to (\f x -> ..) won't type check.
 lift4 ()	
@@ -88,3 +87,4 @@ liftCtor ()
 
 	doIt $ f ();	
  };
+

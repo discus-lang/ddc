@@ -323,11 +323,8 @@ compileFile	args     fileName
 				rsGlobal
 				cNormalise
 
-	-- Clean out empty effect and closure variables
-	cClean		<- SC.coreClean  cBind
-
 	-- Thread through witnesses
-	cThread		<- SC.coreThread cHeader cClean
+	cThread		<- SC.coreThread cHeader cBind
 
 	-- Check type information and add annotations to each stmt.
 	when ?verbose

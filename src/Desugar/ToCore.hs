@@ -54,7 +54,7 @@ toCoreTree
 	:: Map Var Var					-- ^ value -> type vars
 	-> Map Var T.Type				-- ^ inferred type schemes
 	-> Map Var (T.InstanceInfo T.Type T.Type)	-- ^ instantiation info
-	-> Set Var					-- ^ the vars which are ports
+	-> Set Var					-- ^ the vars that were quantified during type inference
 	-> ProjTable
 	-> Map Var Var					-- ^ how to resolve projections
 	-> D.Tree Annot
@@ -76,7 +76,7 @@ toCoreTree
 		{ coreSigmaTable	= sigmaTable
 		, coreMapTypes		= typeTable
 		, coreMapInst		= typeInst
-		, corePortVars		= quantVars
+		, coreQuantVars		= quantVars
 		, coreProjTable		= projTable  
 		, coreProjResolve	= projResolve }
 		
@@ -301,7 +301,7 @@ toCoreX xx
 		let (argQuant, argFetters, argContext, argShape)
 				= C.stripSchemeT tArg1
 
-		portVars	<- gets corePortVars
+		portVars	<- gets coreQuantVars
 		let tArg	= C.packT
 				$ C.buildScheme
 					argQuant
@@ -488,86 +488,92 @@ toCoreX xx
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
 toCoreVarInst v vT
  = do
-		Just tScheme	<- lookupType v
-		mapInst		<- gets coreMapInst
+	Just tScheme	<- lookupType v
+	mapInst		<- gets coreMapInst
 
-		let (btsForall, vtsWhere, ksContextC, tShape)
-				= C.stripSchemeT tScheme
+	let (btsForall, vtsWhere, ksContextC, tShape)
+			= C.stripSchemeT tScheme
 		
-		-- TODO: break this out into a separate fn
-		-- tag var with its type
-		-- apply type args to scheme, add witness params
+	-- TODO: break this out into a separate fn
+	-- tag var with its type
+	-- apply type args to scheme, add witness params
 
-		-- lookup how this var was instantiated
-		let Just instInfo = Map.lookup vT mapInst
+	-- lookup how this var was instantiated
+	let Just instInfo = Map.lookup vT mapInst
 
-		-- check how this var was instantiated to work out if we
-		--	need to pass type args.
-		case instInfo of
+	-- check how this var was instantiated to work out if we
+	--	need to pass type args.
+	case instInfo of
 
-		 -- use of a lambda bound variable.
-		 -- 	only rank1 polymorphism => lambda bound vars have monotypes
-		 T.InstanceLambda vUse vBind _
-		  ->	return $ C.XVar v C.TNil
+	 -- use of a lambda bound variable.
+	 -- 	only rank1 polymorphism => lambda bound vars have monotypes
+	 T.InstanceLambda vUse vBind _
+	  -> do	trace 	( "varInst: TInstanceLambda\n"
+	  		% "    vUse    = " % vUse	% "\n"
+			% "    tScheme = " % tScheme	% "\n"
+			% "    tShape  = " % tShape	% "\n")
+			$ return ();
+		  
+	  	return $ C.XVar v tShape
 
-		 -- non-recursive use of a let bound variable 
-		 -- 	pass in the type args corresponding to the instantiated foralls.
-		 T.InstanceLet vUse vBind tsInst _
-		  -> do	
-		  	-- Convert the type arguments to core.
-			let tsInstC	= map toCoreT tsInst
+	 -- non-recursive use of a let bound variable 
+	 -- 	pass in the type args corresponding to the instantiated foralls.
+	 T.InstanceLet vUse vBind tsInst _
+	  -> do	
+		-- Convert the type arguments to core.
+		let tsInstC	= map toCoreT tsInst
 			
-			-- If the function being instantiated needs some context then there'll be a 
-			--	separate witness for it... therefore we can safely erase contexts on
-			--	type arguements for the instantiation.
-			let tsInstCE	= map C.stripContextT tsInstC
+		-- If the function being instantiated needs some context then there'll be a 
+		--	separate witness for it... therefore we can safely erase contexts on
+		--	type arguements for the instantiation.
+		let tsInstCE	= map C.stripContextT tsInstC
 			
-			let tsInstC_packed	= map C.packT tsInstCE
+		let tsInstC_packed	= map C.packT tsInstCE
 			
-			-- Work out what types belong to each quantified var in the type
-			--	being instantiated.			
-			let tsSub	= Map.fromList $ zip (map (C.varOfBind . fst) btsForall) tsInstC_packed
+		-- Work out what types belong to each quantified var in the type
+		--	being instantiated.			
+		let tsSub	= Map.fromList $ zip (map (C.varOfBind . fst) btsForall) tsInstC_packed
 
-			-- If this function needs a witnesses we'll just make them up.
-			--	Real witnesses will be threaded through in a later stage.
-			let ksContextC'	= map (C.substituteT tsSub) ksContextC
-			
-			let tsContextC' = map C.packT
-					$ map (\k -> case k of
-							C.KClass v ts	-> C.TClass v ts) 
-					$ ksContextC'
-			
-{-			trace ("varInst: "
-				% vT 				% "\n"
-				% "    T[vT]           =\n" %> tScheme 		% "\n"
-				% "    ksContext       = " % ksContextC		% "\n"
-				% "    tsInstC         = " % tsInstC            % "\n"
-				% "    tsInstCE        = " % tsInstCE		% "\n"
-				% "    tsInstC_packed  = " % tsInstC_packed	% "\n"
-				% "    tsSub           = " % tsSub 		% "\n"
-				% "    tsContestC'     = " % tsContextC' 	% "\n")
-				$ return ()
--}			
-			let Just xResult = 
-				C.buildApp (C.XVar v C.TNil : map C.XType (tsInstC_packed ++ tsContextC'))
-			
-			return	$ xResult
+		-- If this function needs a witnesses we'll just make them up.
+		--	Real witnesses will be threaded through in a later stage.
+		let ksContextC'	= map (C.substituteT tsSub) ksContextC
 
-		 -- recursive use of a let-bound variable
-		 -- 	pass the args on the type scheme back to ourselves.
-		 T.InstanceLetRec vUse vBind (Just tSchemeT)
-		  -> do
-			let tSchemeC			= toCoreT tSchemeT
-			let (tsReplay, ksContext)	= C.slurpForallContextT tSchemeC
+		let tsContextC' = map C.packT
+				$ map (\k -> case k of
+						C.KClass v ts	-> C.TClass v ts) 
+				$ ksContextC'
 
-			let tsContext	= map (\k -> case k of
-							C.KClass v ts	-> C.TClass v ts)
-					$ ksContext
+		trace ("varInst: "
+			% vT 				% "\n"
+			% "    tScheme         =\n" %> tScheme 		% "\n\n"
+			% "    ksContext       = " % ksContextC		% "\n"
+			% "    tsInstC         = " % tsInstC            % "\n"
+			% "    tsInstCE        = " % tsInstCE		% "\n"
+			% "    tsInstC_packed  = " % tsInstC_packed	% "\n"
+			% "    tsSub           = " % tsSub 		% "\n"
+			% "    tsContestC'     = " % tsContextC' 	% "\n")
+			$ return ()
 
-			let Just xResult =
-				C.buildApp (C.XVar v C.TNil : map C.XType (tsReplay ++ tsContext))
+		let Just xResult = 
+			C.buildApp (C.XVar v tScheme : map C.XType (tsInstC_packed ++ tsContextC'))
 
-		  	return $ xResult
+		return	$ xResult
+
+	 -- recursive use of a let-bound variable
+	 -- 	pass the args on the type scheme back to ourselves.
+	 T.InstanceLetRec vUse vBind (Just tSchemeT)
+	  -> do
+		let tSchemeC			= toCoreT tSchemeT
+		let (tsReplay, ksContext)	= C.slurpForallContextT tSchemeC
+
+		let tsContext	= map (\k -> case k of
+						C.KClass v ts	-> C.TClass v ts)
+				$ ksContext
+
+		let Just xResult =
+			C.buildApp (C.XVar v tSchemeC : map C.XType (tsReplay ++ tsContext))
+
+		return $ xResult
 			 
 
 

@@ -53,8 +53,8 @@ data CoreS
 	  -- | how each variable was instantiated
 	, coreMapInst		:: Map Var (T.InstanceInfo T.Type T.Type)
 
-	  -- | a set of all the vars which are ports
-	, corePortVars		:: Set Var
+	  -- | the vars that were quantified during type inference
+	, coreQuantVars		:: Set Var
 
 	  -- | table of type based projections.
 	, coreProjTable		:: ProjTable
@@ -74,7 +74,7 @@ initCoreS
 	{ coreSigmaTable	= Map.empty
 	, coreMapTypes		= Map.empty
 	, coreMapInst		= Map.empty
-	, corePortVars		= Set.empty
+	, coreQuantVars		= Set.empty
 	, coreProjTable		= Map.empty
 	, coreProjResolve	= Map.empty
 	, coreGenValue		= Var.XBind "xC" 0 }
@@ -92,20 +92,22 @@ newVarN	space
 
 -- | Get the type of this variable.
 lookupType :: Var -> CoreM (Maybe C.Type)
-lookupType	v
-	| Var.nameSpace v == NameValue
-	= do	sigmaTable	<- gets coreSigmaTable
-
-	 	case Map.lookup v sigmaTable of
-		 Nothing	-> freakout stage
-		 			("getType: no type var for value var " % v % "\n")
-					$ return Nothing
-
-	 	 Just vT	-> lookupType' vT
+lookupType v
+ = do	sigmaTable	<- gets coreSigmaTable
+ 
+ 	let res
+		| Var.nameSpace v /= NameValue
+		= lookupType' v
 		
+		| Just vT 	<- Map.lookup v sigmaTable
+		= lookupType' vT
 		
-	| otherwise
-	=	lookupType' v
+		| otherwise
+		= freakout stage
+ 			("getType: no type var for value var " % v % "\n")
+			$ return Nothing
+			
+	res
 	
 lookupType' vT
  = do	mapTypes	<- gets coreMapTypes
@@ -118,8 +120,15 @@ lookupType' vT
 		  $ return Nothing
 
 	 Just tType
-	  -> let cType	= T.toCoreT tType
-	     in  return $ Just $ cType
+	  -> do	let cType	= T.toCoreT tType
+		
+{-		trace	( pretty 
+			$ "lookupType: " % vT % "\n"
+			% "    tType = "  % tType	% "\n"
+			% "    cType = " % cType	% "\n")
+			$ return ()
+-}
+		return $ Just $ C.flattenT cType
 
 
 -- | Get the kind of this variable.

@@ -367,7 +367,7 @@ solveSquid :: (?args :: [Arg])
 	
 	-> IO 	( Map Var T.Type			-- inferred types
 		, Map Var (InstanceInfo T.Type T.Type)	-- how each var was instantiated
-		, Set Var				-- the vars which are ports
+		, Set Var				-- the vars that were quantified during type inference
 		, Set Var				-- the TREC vars which are free in the returned types
 		, Map Var [Var]				-- map of constraints on each region
 		, Map Var Var)				-- how projections were resolved
@@ -460,7 +460,7 @@ toCore 	:: (?args :: [Arg])
 	-> Map Var Var					-- sigmaTable
 	-> Map Var T.Type				-- typeTable
 	-> Map Var (T.InstanceInfo T.Type T.Type)	-- typeInst
-	-> Set Var					-- typeQuantVars	-- the vars which are ports
+	-> Set Var					-- typeQuantVars
 	-> ProjTable					-- projection dictinary
 	-> Map Var Var					-- how to resolve projections
 	-> IO	( C.Tree

@@ -22,7 +22,7 @@ import Data.Array;
 -- Binds
 foreign import extern dude
         :: forall %r0
-        .  Base.Unit -(!eTC0mat)> Base.Int %r0
+        .  Base.Unit -> Base.Int %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern main

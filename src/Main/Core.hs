@@ -4,8 +4,7 @@
 --	implement the various transforms, and for dumping debugging info.
 --
 module Main.Core
-	( coreClean
-	, coreNormalise
+	( coreNormalise
 	, coreDict
 	, coreReconstruct
 	, coreBind
@@ -26,7 +25,6 @@ where
 
 -- These are all the transforms, in rough order that they are applied to the core program.
 --
-import Core.Clean			(cleanTree)
 import Core.Block			(blockTree)
 import Core.Snip			(snipTree)
 import Core.Crush			(crushTree)
@@ -76,25 +74,6 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
-
-
--- | Clean out effect and closure variables which can never be 
---	anything but bottom.
-coreClean
-	:: (?args	:: [Arg])
-	=> Tree 		-- ^ core tree
-	-> IO Tree
-
-coreClean tree
- = do	when (elem Verbose ?args)
-	 $ do	putStr $ "  * Core: Clean\n"
-	 
-	let treeClean	= cleanTree tree
- 	dumpCT DumpCoreClean "core-clean" treeClean
-	
-	return treeClean
- 	
-	
 
 -- | Convert to A-Normal form.
 coreNormalise

@@ -82,7 +82,7 @@ loadEffAnnot ee
  = case ee of
 	TVar KEffect vE	
 	 -> do	Just vT	<- lookupType vE
-	 	return	$ packT $ flattenT $ stripContextT vT
+		botVarT $ packT $ flattenT $ stripContextT vT
 
  	TBot KEffect	
 	  -> 	return	$ TBot KEffect
@@ -93,10 +93,23 @@ loadCloAnnot cc
  = case cc of
 	TVar KClosure vC	
 	 -> do	Just vT	<- lookupType vC
-	 	return	$ packT $ trimClosureC $ flattenT $ stripContextT vT
+	 	botVarT	$ packT $ trimClosureC $ flattenT $ stripContextT vT
 			 
 	TBot KClosure 	
 	 -> 	return	$ TBot KClosure
+
+-- | If this type is a TVar that was never quantified during type inference
+--	then convert it to TBot
+--
+botVarT :: Type -> CoreM Type
+botVarT tt@(TVar k v)
+ = do	quantVars	<- gets coreQuantVars
+ 	if Set.member v quantVars
+	 then return $ tt
+	 else return $ TBot k
+
+botVarT tt	= return tt
+
 
 
 addTau xT x

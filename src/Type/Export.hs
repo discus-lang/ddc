@@ -17,6 +17,7 @@ import Type.Util
 import Type.Plate.Trans
 import Type.Plate.FreeVars
 
+
 import Data.Array.MArray
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -53,7 +54,7 @@ squidExport vsTypesPlease
  		% "    vsTypesPlease = " % vsTypesPlease	% "\n"
  
  	-- Export types for the requested vars.
-	schemes		<- exportTypes vsTypesPlease
+	types		<- exportTypes vsTypesPlease
 
 	-- Export the instantiation table.
 	inst		<- exportInst
@@ -65,48 +66,14 @@ squidExport vsTypesPlease
 	-- Build a map of the constraints acting on each region
 	vsRegionClasses	<- exportRegionConstraints 
 
-	return 	( schemes
+	return 	( types
 		, inst 
 		, quantVars
 		, portTable
 		, vsRegionClasses)
 
 
-
--- | bottom-out non-port effect/closure variables
---	Once the solver has finished, 
---		if an effect or closure node in the graph contains a variable only (and not a constructor)
---			and that variable was never quantified 
---		then it can never be anything but Bottom.
---
---	CANT DO THIS HERE.. must sub port table before cleaning effects.
-
-{-
-bottomOutT :: Type -> SquidM Type
-bottomOutT tt
- = case tt of
-	TVar k v
-	 |  elem k [KEffect, KClosure]
-	 -> do	mCid	<- lookupVarToClassId v
-		quant	<- gets stateQuantifiedVars
-
-	 	case mCid of
-		 Just cid
-		  | not $ Set.member v quant
-		  -> do	Just c		<- lookupClass cid
-			case classType c of
-				TBot k1	
-				 | k == k1	-> return $ TBot k
-				_		-> return tt
-	
-		 _	-> return tt
-			
-	_ -> return tt
-	 
--}			
-
-
-
+   
 -- | Export the type for this variable.
 --	If no type is in the graph for this var then return Nothing.
 --
@@ -118,6 +85,17 @@ exportVarType v
 	 Just tEx	-> liftM Just $ exportType tEx
 	
 
+--
+exportTypes :: Set Var -> SquidM (Map Var Type)
+exportTypes vsTypesPlease
+ = do	
+ 	-- these are the type that were asked for by the slurper.
+ 	let vsPlease	=  Set.toList vsTypesPlease
+	Just ts		<- liftM sequence $ mapM exportVarType vsPlease
+	return	$ Map.fromList 
+		$ zip vsPlease ts
+
+
 -- | Process this type to make it an exportable format.
 --	plug classids.
 --	trim closures.
@@ -125,21 +103,23 @@ exportVarType v
 --
 exportType :: Type -> SquidM Type
 exportType t
- = do	tPlug	<- plugClassIds [] t
-	tBot	<- return tPlug -- transformTM bottomOutT tPlug
+ = do	tPlug		<- plugClassIds [] t
+	quantVars	<- gets stateQuantifiedVars
+	let tFinal	= finaliseT quantVars tPlug
 
-	case kindOfType tBot of
+	case kindOfType tFinal of
 	 -- trim exported closures.
 	 --	There's no point exporting this junk and making the Core stages
 	 --	have to trim it themselves.
 	 KClosure	
-	  -> return	$ trimClosureC tBot
+	  -> return	$ trimClosureC tFinal
 
 	 KData
-	  -> return	$ trimClosureT tBot
+	  -> return	$ trimClosureT tFinal
 
-	 _ -> return $ packType tBot
-  
+	 _ ->  return	$ packType tFinal
+		
+ 
 
 	
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
@@ -150,15 +130,6 @@ exportMaybeType mt
 	 -> do	t'	<- exportType t
 	 	return	$ Just t'
 
---
-exportTypes :: Set Var -> SquidM (Map Var Type)
-exportTypes vsTypesPlease
- = do	
- 	-- these are the type that were asked for by the slurper.
- 	let vsPlease	=  Set.toList vsTypesPlease
-	Just ts		<- liftM sequence $ mapM exportVarType vsPlease
-	return	$ Map.fromList 
-		$ zip vsPlease ts
 		
 -----
 -- | Build a map of all the instantiations

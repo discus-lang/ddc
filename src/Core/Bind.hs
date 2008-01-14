@@ -128,13 +128,8 @@ bindX 	shared xx
 
 	-- When we hit an XTet on the way back up, mask out
 	--	any effects which are known to be local to some sub-expression.
-	XTet vts x	
+{-	XTet vts x	
 	 -> do	
---	 	let sharedTs	= Set.unions
---				$ map (freeRegions . t2_2) vts
-
---		    shared'	= Set.union shared sharedTs
-
 	 	(x', vsFree, vsLocal)	<- bindX shared x
 		let vts'	= 
 			transformT
@@ -157,7 +152,7 @@ bindX 	shared xx
 				(Set.unions $ map (freeVars . snd) vts')
 				vsFree
 			, vsLocal)
-
+-}
 	XTau t x
 	 -> do	let sharedT	= freeVars t
 	 	    shared'	= Set.union sharedT shared
@@ -171,7 +166,20 @@ bindX 	shared xx
 
 	XLam v t x eff clo
 	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
-	 	return	( XLam v t x' eff clo
+
+		-- mask out effects which are known to be local to the body of this expression
+		let effMasked	= 
+			packT
+			$ transformT
+				(\tt -> case tt of
+					  TEffect v [TVar KRegion r] 
+						|   elem v [primRead, primWrite]
+						 && Set.member r vsLocal
+						-> TBot KEffect
+				 	  _	-> tt)
+				eff
+
+	 	return	( XLam v t x' effMasked clo
 			, addSharedVs 
 				(freeVars t)
 				vsFree
