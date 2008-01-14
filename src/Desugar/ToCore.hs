@@ -33,6 +33,7 @@ import qualified Core.Util		as C
 import qualified Core.Pretty		as C
 import qualified Core.Optimise.Boxing	as C	(unboxedType)
 
+
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
 import Desugar.ToCore.Util
@@ -40,6 +41,7 @@ import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified Desugar.Exp 		as D
 import qualified Desugar.Plate.Trans	as D
+import qualified Desugar.Bits		as D
 
 -----
 stage	= "Desugar.ToCore"
@@ -331,19 +333,23 @@ toCoreX xx
 
 
 	-- case match on a var
-	D.XMatch _ (Just x@(D.XVar _ varX)) alts
+	D.XMatch _ (Just x@(D.XVar aObj varX)) alts
 	 -> do
-		alts'	<- mapM (toCoreA (Just varX)) alts
+		Just tVar	<- lookupAnnotT aObj
+		alts'		<- mapM (toCoreA (Just (varX, tVar))) alts
 		
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 
 	-- case match on an exp
 	D.XMatch _ (Just x) alts
 	 -> do
+		let aX		=  D.getAnnotX x
+		Just tX		<- lookupAnnotT aX
+
 		x'	<- toCoreX x
 		varX	<- newVarN NameValue
 		
-		alts'	<- mapM (toCoreA (Just varX)) alts
+		alts'	<- mapM (toCoreA (Just (varX, tX))) alts
 		
 		return	$ C.XDo	[ C.SBind (Just varX) x'
 				, C.SBind Nothing (C.XMatch alts') ]
@@ -421,9 +427,12 @@ toCoreX xx
 	D.XIfThenElse _ e1 e2 e3
 	 -> do
 		v	<- newVarN NameValue
+		let aX	=  D.getAnnotX e1
+		Just tX	<- lookupAnnotT aX
+
 		e1'	<- toCoreX e1
-		e2'	<- toCoreA (Just v) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primTrue  [])] e2)
-		e3'	<- toCoreA (Just v) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primFalse [])] e3)
+		e2'	<- toCoreA (Just (v, tX)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primTrue  [])] e2)
+		e3'	<- toCoreA (Just (v, tX)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primFalse [])] e3)
 		
 		return	$ C.XDo	[ C.SBind (Just v) e1'
 				, C.SBind Nothing (C.XMatch [ e2', e3' ]) ]
@@ -587,7 +596,7 @@ toCoreJ jj
 	D.JFieldR _ v	-> return $ C.JFieldR v
 
 -- | Case Alternatives
-toCoreA	:: Maybe Var
+toCoreA	:: Maybe (Var, C.Type)
 	-> D.Alt Annot -> CoreM C.Alt
 		
 toCoreA mObj alt
@@ -603,15 +612,15 @@ toCoreA mObj alt
 	
 
 -- | Guards
-toCoreG :: Maybe Var
+toCoreG :: Maybe (Var, C.Type)
 	-> D.Guard Annot
 	-> CoreM C.Guard
 
 toCoreG mObj gg
 	| D.GCase _ w		<- gg
-	, Just objV		<- mObj
+	, Just (objV, objT)	<- mObj
 	= do	w'		<- toCoreW w
-	 	return		$ C.GExp w' (C.XVar objV C.TNil)
+	 	return		$ C.GExp w' (C.XVar objV objT)
 		
 	| D.GExp _ w x		<- gg
 	= do	w'		<- toCoreW w

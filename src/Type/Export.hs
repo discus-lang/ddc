@@ -79,7 +79,9 @@ squidExport vsTypesPlease
 --
 exportVarType :: Var -> SquidM (Maybe Type)
 exportVarType v
- = do 	mEx	<- extractType v
+ = do 	trace	$ "*   Export.exportVarType: " % v	% "\n"
+ 
+ 	mEx	<- extractType v
  	case mEx of
 	 Nothing	-> return Nothing
 	 Just tEx	-> liftM Just $ exportType tEx
@@ -92,6 +94,7 @@ exportTypes vsTypesPlease
  	-- these are the type that were asked for by the slurper.
  	let vsPlease	=  Set.toList vsTypesPlease
 	Just ts		<- liftM sequence $ mapM exportVarType vsPlease
+
 	return	$ Map.fromList 
 		$ zip vsPlease ts
 

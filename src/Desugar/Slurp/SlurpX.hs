@@ -138,6 +138,9 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 	(tObj, eObj, cObj, obj', qsObj)	
 			<- slurpX obj
 
+	let TVar KData vObj = tObj
+	wantTypeV vObj
+
 	-- alternatives
 	(tsAltsLHS, tsAltsRHS, esAlts, csAlts, alts', qsAlts)	
 			<- liftM unzip6 $ mapM slurpA alts
@@ -292,6 +295,9 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 	-- Slurp the case object.
  	(tObj, eObj, cObj, xObj', qsObj)	
 			<- slurpX xObj
+
+	let TVar KData vObj = tObj
+	wantTypeV vObj
 
 	-- The case object must be a Bool
 	boolType	<- getGroundType "Bool"

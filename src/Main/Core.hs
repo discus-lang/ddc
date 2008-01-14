@@ -4,7 +4,8 @@
 --	implement the various transforms, and for dumping debugging info.
 --
 module Main.Core
-	( coreNormalise
+	( coreNormalDo
+	, coreSnip
 	, coreDict
 	, coreReconstruct
 	, coreBind
@@ -76,7 +77,7 @@ import Data.Set			(Set)
 
 
 -- | Convert to A-Normal form.
-coreNormalise
+coreSnip
 	:: (?args	:: [Arg])
 	-> String 		-- ^ stage name
 	-> String 		-- ^ unique
@@ -84,22 +85,27 @@ coreNormalise
 	-> Tree			-- ^ core tree
 	-> IO Tree
 	
-coreNormalise stage unique topVars tree
+coreSnip stage unique topVars tree
+ = do	
+	-- snip exprs out of fn arguments
+	let treeSnip	= snipTree topVars ("x" ++ unique) tree
+	dumpCT DumpCoreSnip (stage ++ "-snip")  treeSnip
+	
+	return treeSnip
+
+
+-- | Normalise use of do blocks in the code
+coreNormalDo stage unique tree
  = do	
  	-- ensure all exprs are wrapped in do blocks.
  	let treeBlock	= blockTree tree
  	dumpCT DumpCoreBlock (stage ++ "-block") treeBlock
 
-	-- snip exprs out of fn arguments
-	let treeSnip	= snipTree topVars ("x" ++ unique) treeBlock
-	dumpCT DumpCoreSnip (stage ++ "-snip")  treeSnip
-	
 	-- crush nested do exprs
-	let treeCrush	= crushTree treeSnip
+	let treeCrush	= crushTree treeBlock
  	dumpCT DumpCoreCrush (stage ++ "-crush") treeCrush
 
-	return treeCrush
-
+	return	treeCrush
 
 
 -- | Resolve calls to overloaded functions.

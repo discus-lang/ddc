@@ -184,22 +184,23 @@ addToClass cid_ src t
  	cid		<- sinkClassId cid_
 
  	c		<- liftIO (readArray (graphClass graph) cid)
-
-	let c'		= addToClass2 cid src t c
+	c'		<- addToClass2 cid src t c
 	liftIO (writeArray (graphClass graph) cid c')
-		
-	activateClass cid
+
 	return ()
 
 addToClass2 cid src t c
  = case c of
- 	ClassNil	-> addToClass3 src t (classInit cid (kindOfType t))
-	Class{}		-> addToClass3 src t c
+ 	ClassNil	-> addToClass3 cid src t (classInit cid (kindOfType t))
+	Class{}		-> addToClass3 cid src t c
 	
-addToClass3 src t c
- = c   	{ classNodes	= (t, src) : classNodes c
-	, classType	= Nothing
-  	, classQueue	= (maybeToList $ classType c) ++ classQueue c ++ [t] }
+addToClass3 cid src t c
+ = do 	activateClass cid
+ 	return	$ c	{ classNodes	= (t, src) : classNodes c
+			, classType	= Nothing
+		  	, classQueue	= (maybeToList $ classType c) ++ classQueue c ++ [t] }
+
+
 
 -- | Lookup a class from the graph.
 lookupClass 
@@ -385,7 +386,10 @@ makeClassName cid_
 	case vars of
 	 [] 
 	  -> do	v	<- newVarN (spaceOfKind kind)
-		addToClass cid TSClassName (TVar kind v)
+		let t	= TVar kind v
+		updateClass cid 
+			c { classNodes	= (t, TSClassName) : classNodes c}
+
 		return	v
 		
 	 (_:_)

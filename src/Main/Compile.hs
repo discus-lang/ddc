@@ -306,9 +306,9 @@ compileFile	args     fileName
 
 	-- Convert to normal form
 	when ?verbose
-	 $ do	putStr $ "  * Core: Normalise\n"
+	 $ do	putStr $ "  * Core: Normalise Do Exprs\n"
 
-	cNormalise	<- SC.coreNormalise "core-normalise" "CN" topVars cSource
+	cNormalise	<- SC.coreNormalDo "core-normaldo" "CN" cSource
 				
 	-- Create local regions.
 	when ?verbose
@@ -323,8 +323,11 @@ compileFile	args     fileName
 				rsGlobal
 				cNormalise
 
+	-- Convert to A-normal form
+	cSnip		<- SC.coreSnip "core-snip" "CS" topVars cBind
+
 	-- Thread through witnesses
-	cThread		<- SC.coreThread cHeader cBind
+	cThread		<- SC.coreThread cHeader cSnip
 
 	-- Check type information and add annotations to each stmt.
 	when ?verbose

@@ -2,7 +2,8 @@
 
 module Type.Scheme
 	( extractType
-	, generaliseType )
+	, generaliseType 
+	, watchClass)
 where
 
 import Type.Exp
@@ -47,6 +48,19 @@ stage	= "Type.Scheme"
 debug	= True
 trace s	= when debug $ traceM s
 
+watchClass src code
+ = do	mC	<- lookupClass (ClassId code)
+ 
+ 	let res
+		| Just Class { classQueue = queue }	<- mC
+		= trace ( "--- class " % code % "----------------------\n"
+			% "-- src   = " % src		% "\n"
+			% "-- queue = " % queue		% "\n")
+
+		| otherwise
+		= return ()
+	res
+
 
 -- | Extract a type from the graph and pack it into standard form.
 --	BUGS: we need to add fetters from higher up which are acting on this type.
@@ -69,7 +83,7 @@ extractType varT
 extractTypeC varT cid
  = do 	trace	$ "*** Scheme.extractType " % varT % "\n"
 		% "\n"
-
+	
  	tTrace		<- liftM sortFsT 	$ traceType cid
 	trace	$ "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
 
