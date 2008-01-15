@@ -1,6 +1,9 @@
 
 module Util.Generics
-(
+	()
+
+where
+{-
 	module Data.Generics,
 
 	walkDown, walkDownM,
@@ -57,3 +60,4 @@ collect	:: (forall b. Data b => b -> State [c] b)
 collect	f xx	= s'
  where
  	(_, s') = runState (walkDownM f xx) []
+-}

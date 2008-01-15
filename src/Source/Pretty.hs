@@ -17,7 +17,6 @@ import Util
 
 -----
 import Util.Pretty
-import qualified Util.PrettyPrint as PP
 
 -----
 import qualified Shared.Var 	as Var

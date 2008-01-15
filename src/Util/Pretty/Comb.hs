@@ -35,10 +35,14 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import GHC.Exts
+
 -----------------------
 class Pretty a where
  ppr		:: a -> PrettyP
 
+instance IsString PrettyP where
+ fromString x	= PString x
 
 pprStr x	= render $ ppr x
 
@@ -61,7 +65,7 @@ data PrettyP
 
 	| PAnnot String		-- for debugging
 
-	deriving (Eq, Data, Typeable, Show)
+	deriving (Eq, Show)
 
 pNil	= PNil
 
@@ -271,13 +275,9 @@ infixr 7 %, %#>, %#<
 infixr 8 %>
 infixl 9 %!%
 
-type PComb2
-	= (Pretty a, Pretty b)
-	=> a -> b -> PrettyP
-
 
 -----
-(%) 		:: PComb2
+(%) 		:: (Pretty a, Pretty b) => a -> b -> PrettyP
 (%)   a b	= PAppend [ppr a, ppr b]
 (%>)  a b	= PAppend [ppr a, PIndent $ ppr b]
 (%#>) a b	= PAppend [ppr a, PTabInc, ppr b]

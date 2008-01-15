@@ -1,6 +1,5 @@
 module Type.Util
 	( module Type.Util.Bits
-	, module Type.Util.Generalise
 	, module Type.Util.Instantiate
 	, module Type.Util.Elaborate
 	, module Type.Util.Kind
@@ -15,7 +14,6 @@ module Type.Util
 where
 
 import Type.Util.Bits
-import Type.Util.Generalise
 import Type.Util.Instantiate
 import Type.Util.Elaborate
 import Type.Util.Kind

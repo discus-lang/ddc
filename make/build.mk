@@ -9,7 +9,9 @@ GHC=ghc
 # GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
 
 # -- Development compile
-GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -Onot
+GHC_FLAGS	:= -XPatternGuards -XImplicitParams -XUnboxedTuples -XParallelListComp -XPatternSignatures \
+		   -XMultiParamTypeClasses -XFlexibleInstances -XFlexibleContexts -XFunctionalDependencies \
+		   -tmpdir /tmp -Onot
 GCC_FLAGS	:= -std=c99 -Wundef -fPIC
 
 # -- For Haskell Program Coverage
