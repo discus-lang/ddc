@@ -128,11 +128,11 @@ instance Pretty Exp where
 	XVar v TNil
 	 -> "(" % pv v % " :: _)"
 
---	XVar v t
---	 -> pv v
-
 	XVar v t
-	 -> "(" % pv v % " :: " % t % ")"
+	 -> pv v
+
+--	XVar v t
+--	 -> "(" % pv v % " :: " % t % ")"
 		
 	XLAM v k e
 	 | prettyFoldXLAM

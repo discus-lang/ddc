@@ -382,6 +382,10 @@ slurpX	exp@(XProjT sp tDict proj)
 				JField  nn l	-> TJField  l
 				JFieldR nn l	-> TJFieldR l
 
+	let vField	= case proj of
+				JField  nn l	-> l
+				JFieldR nn l	-> l
+
 	let src	= TSProj sp projT
 
 	-- the result of the projection
@@ -406,7 +410,7 @@ slurpX	exp@(XProjT sp tDict proj)
 
 	return	( tX
 		, eX
-		, cX
+		, TFree vField tX
 		, XProjTaggedT (Just (tX, eX)) vInst proj'
 		, qs )
 

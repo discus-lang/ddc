@@ -197,13 +197,6 @@ data Body %r1
 
 project Body where
 {
-	force2 :: Body -> Body -> Vec2 Float;
-	force2 body0 body1
-	 = body_forceVec 
-	 	body0.mass body1.mass 
-		body0.pos.x body0.pos.y
-		body1.pos.x body1.pos.y;
-
 	show b
 	 = case b of {
  		Body mass pos vel acc
@@ -212,6 +205,14 @@ project Body where
 				% " (" % pos.show % ")"
 				% " (" % vel.show % ")";
  	 };
+
+
+	force2 :: Body -> Body -> Vec2 Float;
+	force2 body0 body1
+	 = body_forceVec 
+	 	body0.mass body1.mass 
+		body0.pos.x body0.pos.y
+		body1.pos.x body1.pos.y;
 
 
 	pulse :: Body -> ();
@@ -230,7 +231,7 @@ project Body where
 		_mass	:= b0.mass;
 	
 		-- calculate force on this body.
-		fV	= body_sumForces body0 i;
+		fV	= sumForces&{Body} body0 i;
 	
 		time_compression = 1.0;
 		-- acc = force / mass
@@ -275,17 +276,16 @@ project Body where
 	 };	
 
 
+	sumForces :: Array Body -> Int -> Vec2 Float;
+	sumForces body i
+		= sum&{Vec2 Float}
+		$ map (body.(i).force2)
+		$ map (index body) 
+		$ deleteF (==) [0.. array_size body - 1] i;
+
 }
 
 
-body_sumForces 
- ::	Array Body -> Int -> Vec2 Float;
-
-body_sumForces body i 
- 	= sum&{Vec2 Float}
-	$ map (body.(i).force2)
-	$ map (index body) 
-	$ deleteF (==) [0.. array_size body - 1] i;
 	
 
 body_forceVec 
