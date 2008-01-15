@@ -32,6 +32,8 @@ import Core.Crush			(crushTree)
 
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconTree)
+import qualified Core.Reconstruct	as Recon
+
 import Core.Bind			(bindTree)
 import Core.Thread			(threadTree)
 import Core.Prim			(primTree)
@@ -131,8 +133,12 @@ coreReconstruct
 	-> IO Tree
 	
 coreReconstruct name cHeader cTree
- = do	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
- 			   reconTree name cHeader cTree
+ = do	let table	= 
+ 		Recon.emptyTable
+ 		{ Recon.tableDropStmtEff	= False }
+ 
+ 	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
+ 			   reconTree table cHeader cTree
  	dumpCT DumpCoreReconstruct name cTree'
 	return	cTree'
 

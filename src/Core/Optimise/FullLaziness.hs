@@ -64,7 +64,7 @@ fullLazinessTree
 
 	treeErase		= eraseAnnotsTree treeMod
 	treeSnip		= snipTree Set.empty unqiueSnip treeErase
-	treeRecon		= reconTree stage cHeader treeSnip
+	treeRecon		= reconTree' stage cHeader treeSnip
 
      in	treeRecon
 

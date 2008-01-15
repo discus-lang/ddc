@@ -29,8 +29,8 @@ foreign import extern makeGetGet
         :$ Base.Obj -> Base.Data;
         
 foreign import extern checkGetGet
-        :: forall %r0 %r1 %r2 %r3 %r4
-        .  Base.Unit -> Data.Tuple.Tuple2 %r4 (Data.List.List %r3 (Data.String.String %r0)) (Data.List.List %r2 (Base.Int %r1))
+        :: forall %r0 %r1 %r2 %r3
+        .  Base.Unit -> Data.Tuple.Tuple2 %r3 (Data.List.List %r2 (Data.String.String %r0)) (Data.List.List %r2 (Base.Int %r1))
         :$ Base.Data -> Base.Data;
         
 

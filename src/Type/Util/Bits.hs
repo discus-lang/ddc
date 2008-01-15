@@ -149,7 +149,7 @@ makeTUnify k ts
 --
 makeTMask :: Kind -> Type -> Type -> Type
 makeTMask k t1 t2
- = case crushT t2 of
+ = applyTMask $ case crushT t2 of
  	TBot KClosure	-> t1
 	_		-> TMask k t1 t2
 

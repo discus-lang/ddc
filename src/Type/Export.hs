@@ -16,7 +16,7 @@ import Type.Plug
 import Type.Util
 import Type.Plate.Trans
 import Type.Plate.FreeVars
-
+import Type.Context
 
 import Data.Array.MArray
 import qualified Data.Map	as Map
@@ -81,11 +81,8 @@ exportVarType :: Var -> SquidM (Maybe Type)
 exportVarType v
  = do 	trace	$ "*   Export.exportVarType: " % v	% "\n"
  
- 	mEx	<- extractType v
- 	case mEx of
-	 Nothing	-> return Nothing
-	 Just tEx	-> liftM Just $ exportType tEx
-	
+ 	mEx	<- extractType True v
+	return mEx	
 
 --
 exportTypes :: Set Var -> SquidM (Map Var Type)
@@ -104,9 +101,11 @@ exportTypes vsTypesPlease
 --	trim closures.
 --	bottom-out non-port effect/closure variables.
 --
+
 exportType :: Type -> SquidM Type
 exportType t
  = do	tPlug		<- plugClassIds [] t
+
 	quantVars	<- gets stateQuantifiedVars
 	let tFinal	= finaliseT quantVars tPlug
 
@@ -124,7 +123,6 @@ exportType t
 		
  
 
-	
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
 exportMaybeType mt
  = case mt of

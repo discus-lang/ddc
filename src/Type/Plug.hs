@@ -20,6 +20,9 @@ import Type.Class
 
 import Debug.Trace
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 -----
 stage	= "Type.Plug"
 
@@ -54,29 +57,35 @@ plugT env t
 --	return the list of region classes which are non-generalisable because
 --	they appear in non-function types.
 --
-staticRsDataT :: Type -> [ClassId]
+staticRsDataT :: Type -> Set ClassId
 staticRsDataT tt
  = case tt of
-	TVar{}			-> []
+	TVar{}			-> Set.empty
 	TClass k cid		
-	 | k == KRegion		-> [cid]
-	 | otherwise		-> []
+	 | k == KRegion		-> Set.singleton cid
+	 | otherwise		-> Set.empty
 
 	TSum k ts
-	 | k == KEffect		-> []
-	 | k == KClosure	-> catMap staticRsDataT ts
+	 | k == KEffect		-> Set.empty
+	 | k == KClosure	-> Set.unions $ map staticRsDataT ts
 
- 	TData v ts		-> catMap staticRsDataT ts
-	TFun{}			-> []
+	TMask KClosure t1 t2	-> staticRsDataT t1
+	TMask{}			-> Set.empty
+
+
+ 	TData v ts		-> Set.unions $ map staticRsDataT ts
+	TFun{}			-> Set.empty
 	TFetters fs t		-> staticRsDataT t
 	TForall vks t		-> staticRsDataT t
 	
 	TFree v t		-> staticRsDataT t
 	
-	TError k t		-> []
+	TError k t		-> Set.empty
+
+	TBot{}			-> Set.empty
 
 	-- for data containing function objects
-	TEffect{}		-> []
+	TEffect{}		-> Set.empty
 	
 	_ 	-> panic stage
 		$ "staticRsDataT: " ++ show tt
@@ -88,42 +97,13 @@ staticRsDataT tt
 --	did not allocate those regions, so they be can't generalised here.
 --
 staticRsClosureT
-	:: Type -> [ClassId]
+	:: Type -> Set ClassId
 
 staticRsClosureT t
  = case t of
- 	TFetters fs x	
-	 -> let -- work out which cids appear on the outer-most function arrow
-	 	outerCids	= outerFunClosureCids x
+	TFetters fs t		-> staticRsClosureT t
+ 	TFun t1 t2 eff clo	-> staticRsDataT clo
+	TData v ts		-> Set.unions $ map staticRsClosureT ts
+	_ 			-> Set.empty
 
-		-- collect up the closure bound to all these cids
-		outerClo	= concat
-				$ [flattenTSum clo 	| FLet (TClass KClosure cid) clo <- fs
-							, elem cid outerCids ]
-
-		-- see what regions are free in the closure
-		staticRs	= concat
-				$ [staticRsDataT t	
-					| TFree v t	<- outerClo]
-
-	   in	nub staticRs
-
-	_ -> []
 	
------
--- outerFunClosureCids
---	Return the cids marking the closures of the outermost functions
---	in this type.
---
-outerFunClosureCids tt
- = case tt of
- 	TFun  t1 t2 eff (TClass KClosure c)	-> [c]
-	TData v  ts				-> catMap outerFunClosureCids ts
-	_					-> []
-
-
-
-
-
-
-

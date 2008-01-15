@@ -65,8 +65,12 @@ watchClass src code
 -- | Extract a type from the graph and pack it into standard form.
 --	BUGS: we need to add fetters from higher up which are acting on this type.
 
-extractType :: Var -> SquidM (Maybe Type)
-extractType varT
+extractType 
+	:: Bool 		-- whether to treat effect and closure vars that were never quantified as TBot
+	-> Var 			-- var of type to extract
+	-> SquidM (Maybe Type)
+
+extractType final varT
  = do	mCid	<- lookupVarToClassId varT
 
 	case mCid of
@@ -78,9 +82,9 @@ extractType varT
 			% " visible vars = " % (map (\v -> (v, Var.bind v)) $ Map.keys varToClassId)		% "\n")
 			$ return Nothing
 
-	 Just cid	-> extractTypeC varT cid
+	 Just cid	-> extractTypeC final varT cid
 	 
-extractTypeC varT cid
+extractTypeC final varT cid
  = do 	trace	$ "*** Scheme.extractType " % varT % "\n"
 		% "\n"
 	
@@ -95,7 +99,7 @@ extractTypeC varT cid
 	
 	if (isNil cidsDataLoop)
 	 -- no graphical data, ok to continue.
-	 then extractTypeC2 varT cid tTrace
+	 then extractTypeC1 final varT cid tTrace
 
 	 -- we've got graphical data, add an error to the solver state and bail out.
 	 else do
@@ -104,8 +108,8 @@ extractTypeC varT cid
 
 		return $ Just $ TError KData [tTrace]
 
-extractTypeC2 varT cid tTrace
- = do
+extractTypeC1 final varT cid tTrace
+ = do	
 	-- Cut loops through the effect and closure portions of this type
 	let tCutLoops	= cutLoopsT tTrace
 	trace	$ "    tCutLoops        =\n" %> prettyTS tCutLoops % "\n\n"
@@ -122,9 +126,29 @@ extractTypeC2 varT cid tTrace
 
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
+	extractType_final final varT cid tTrim
+	
+
+extractType_final True varT cid tTrim
+ = do	
+ 	-- plug classIds with vars
+ 	tPlug		<- plugClassIds [] tTrim
+ 
+	-- close off never-quantified effect and closure vars
+ 	quantVars	<- gets stateQuantifiedVars
+ 	let tFinal	=  finaliseT quantVars tPlug
+	
+	trace	$ "    tFinal          =\n" %> prettyTS tFinal	% "\n\n"
+	extractTypeC2 varT cid tFinal
+	
+extractType_final False varT cid tTrim
+	= extractTypeC2 varT cid tTrim
+
+extractTypeC2 varT cid tFinal
+ = do	
 	-- Reduce context
 	classInst	<- gets stateClassInst
-	let tReduced	= packType $ reduceContextT classInst tTrim
+	let tReduced	= reduceContextT classInst tFinal
 	trace	$ "    tReduced         =\n" %> prettyTS tReduced % "\n\n"
 
 	return	$ Just tReduced
@@ -158,21 +182,26 @@ generaliseType varT tCore envCids
 					_			-> Nothing)
 			$ slurpContraClassVarsT tCore
 	
-	let tPort	= moreifyFettersT (Set.fromList contraTs) tCore
+	let tMore	= moreifyFettersT (Set.fromList contraTs) tCore
 	
 	trace	$ "    contraTs = " % contraTs	% "\n"
 
-	trace	$ "    tPort\n"
-		%> prettyTS tPort	% "\n\n"
+	trace	$ "    tMore\n"
+		%> prettyTS tMore	% "\n\n"
 
+
+	-- flatten out the scheme so its easier for staticRs.. to deal with
+	let tFlat	= flattenT tMore
+	trace	$ "    tFlat\n"
+		%> prettyTS tFlat	% "\n\n"
 
 	-- Work out which cids can't be generalised in this type.
 
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	let staticRsData 	= staticRsDataT		tPort
-	let staticRsClosure 	= staticRsClosureT	tPort
+	let staticRsData 	= Set.toList $ staticRsDataT	tFlat
+	let staticRsClosure 	= Set.toList $ staticRsClosureT	tFlat
 
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
 		% "    staticRsClosure  = " % staticRsClosure	% "\n"
@@ -184,7 +213,7 @@ generaliseType varT tCore envCids
 	--	
 	let staticDanger	= if Set.member Arg.GenDangerousVars args
 					then []
-					else dangerousCidsT tPort
+					else dangerousCidsT tMore
 
 	trace	$ "    staticDanger     = " % staticDanger	% "\n"
 
@@ -192,7 +221,7 @@ generaliseType varT tCore envCids
 	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
 
 	-- Rewrite non-static cids to the var for their equivalence class.
-	tPlug			<- plugClassIds staticCids tPort
+	tPlug			<- plugClassIds staticCids tMore
 
 	trace	$ "    staticCids       = " % staticCids	% "\n\n"
 		% "    tPlug\n"

@@ -89,7 +89,6 @@ data Type
 	| TFetters	[Fetter]      Type		-- ^ Holds extra constraint information.
 
 	| TSum		Kind 	[Type]
---	| TUnify	Kind	[Type]
 	| TMask		Kind	Type	Type		-- ^ Mask out some effects/vars from this effect/closure
 	| TVar     	Kind 	Var			-- ^ A type variable.
 

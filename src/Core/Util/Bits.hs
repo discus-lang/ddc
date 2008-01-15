@@ -112,7 +112,7 @@ takeVarOfStmt ss
 --	return bottom if there aren't any
 makeTSum :: Kind -> [Type] -> Type
 makeTSum k ts
- = case catMap flattenTSum ts of
+ = case nub $ catMap flattenTSum ts of
  	[]	-> TBot k
 	[t]	-> t
 	ts'	-> TSum k ts'

@@ -68,7 +68,7 @@ run 	frame body0 body1
 --		frameCount += 1;
 
 	 	frame.update;
-		usleep 1#;
+--		usleep 1#;
 
 		run frame body1 body0;
 	};

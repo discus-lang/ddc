@@ -290,7 +290,7 @@ solveCs	(c:cs)
 		--	otherwise we have to do the generalisation first.
 		genDone		<- gets stateGenDone
 		tScheme		<- if Set.member vInst genDone
-					then do	Just tScheme_	<- extractType vInst
+					then do	Just tScheme_	<- extractType False vInst
 						return tScheme_
 
 					else solveGeneralise vInst
@@ -546,7 +546,7 @@ solveGeneralise	vGen
 	--	No need to worry about generalisation here, if a var was in the environment
 	--	then it was instantiated, so generalisation was already forced.
 	Just tsEnv	<- liftM sequence
-			$  mapM extractType vsEnv
+			$  mapM (extractType False) vsEnv
 
 	-- Collect up the cids free in the types in the environment.
 	let cidsEnv	= nub $ catMap collectClassIds tsEnv
@@ -554,7 +554,7 @@ solveGeneralise	vGen
 	trace	$ "    cidsEnv    = " % cidsEnv		% "\n"
 
 	-- Extract the type from the graph.
-	Just tGraph	<- extractType vGen
+	Just tGraph	<- extractType False vGen
 
 	-- Generalise the type into a scheme.
 	tScheme		<- generaliseType vGen tGraph cidsEnv

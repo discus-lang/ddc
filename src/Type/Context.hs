@@ -14,6 +14,10 @@ import Shared.VarPrim
 import Shared.Error
 
 import Util
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
@@ -33,8 +37,9 @@ reduceContextT
 reduceContextT classInst tt
  = case tt of
  	TFetters fs t	
-	 -> let	fs'	= concat
-	 		$ map (reduceContextF classInst) fs
+	 -> let	vsFreeT	= freeVars t
+	 	fs'	= concat
+	 		$ map (reduceContextF vsFreeT classInst) fs
 
 	    in	case fs' of
 	    		[]	-> t
@@ -44,11 +49,24 @@ reduceContextT classInst tt
 	
 
 reduceContextF 
-	:: Map Var [Fetter]	-- (class var -> instances) for each class
+	:: Set Var		-- vars that are free in the shape of the type
+	-> Map Var [Fetter]	-- (class var -> instances) for each class
 	-> Fetter		-- the constraint being used
 	-> [Fetter]		-- maybe some new constraints
 
-reduceContextF classInstances ff
+reduceContextF vsShape classInstances ff
+--  = trace (pprStr $ "reduceContextF: " % ff % "\n")
+ = reduceContextF' vsShape classInstances ff
+
+reduceContextF' vsShape classInstances ff
+
+	-- If there is a Const, Lazy, Mutable, Direct fetter on a region that isn't in the shape of the
+	--	type then we can safely ditch it
+	| FConstraint v [TVar KRegion r]	<- ff
+	, v == primConst -- elem v [primConst, primMutable, primMutable, primDirect]
+	, not $ Set.member r vsShape
+	= []
+
 
 	-- If there is a matching instance for this class then we can remove the constraint.
  	| FConstraint v ts	<- ff
@@ -71,11 +89,19 @@ reduceContextF classInstances ff
 	-- build the effs we couldn't purify back into a sum
 	, remainingEff		<- makeTSum KEffect $ catMaybes effs'
 
+	-- this produces constraints (like Const) that might be able to be further reduced,
+	--	so make sure to call ourselves recursively..
 	= case remainingEff of
-	    TBot KEffect	-> catMaybes fsMore
-	    _ 			-> FConstraint primPure [remainingEff] : catMaybes fsMore
+	    TBot KEffect	
+	      -> catMap (reduceContextF vsShape classInstances) 
+	      $ catMaybes fsMore
+
+	    _ -> FConstraint primPure [remainingEff] 
+	      :  (   catMap (reduceContextF vsShape classInstances)
+	          $  catMaybes fsMore)
 	    
 
+	
 	| otherwise
 	= [ff]
 

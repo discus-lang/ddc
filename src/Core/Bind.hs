@@ -29,6 +29,7 @@ import Core.Plate.FreeVars
 import Core.Exp
 import Core.Util
 import Core.Pretty
+import Core.Reconstruct
 
 
 import qualified Debug.Trace	as Debug
@@ -169,6 +170,12 @@ bindX 	shared xx
 
 	XDo ss	-> bindXDo shared xx
 
+	XLocal r vts x
+	 -> do	(x', vsFree, vsLocal)	<- bindX shared x
+	  	return	( XLocal r vts x
+	 		, Set.delete r vsFree
+			, Set.insert r vsLocal)
+
 	_	
 	 -> 	return	( xx
 	 		, freeRegionsX xx
@@ -176,11 +183,15 @@ bindX 	shared xx
 
 
 -- BUGS: shared regions in local funs in case expr
-bindA shared (AAlt gs x)
+--	usage in different guards, guard and body
+--
+bindA shared aa@(AAlt gs x)
  = do	(gs', vssFreeGs, vssLocalGs)	<- liftM unzip3 $ mapM (bindG shared) gs
  	(x',  vsFreeX, vsLocalX)	<- bindX shared x
-	
-	return	( AAlt gs' x'
+
+	let aa'	= AAlt gs' x'
+
+	return	( aa'
 		, Set.unions (vsFreeX  : vssFreeGs) 
 		, Set.unions (vsLocalX : vssLocalGs))
 	
@@ -193,7 +204,6 @@ bindG shared (GExp w x)
 	let sharedX		= Set.union shared vsFreeW
 	(x', vsFree,  vsLocal)	<- bindX sharedX x
 	
-
  	return	( GExp w' x'
 		, Set.union vsFree vsFreeW
 		, Set.union vsLocal vsLocalW)
@@ -246,12 +256,10 @@ bindXDo shared xx@(XDo ss)
 		-- the new non-local vars
 		let sharedHere	= Set.union shared sharedGroup
 	
-		(x', vsFree, vsLocal)	<- bindX sharedHere x
-		return		( SBind mV x'
-				, case mV of
-					Nothing	-> vsFree
-					Just v 	-> Set.delete v vsFree
-				, vsLocal)
+		(x', vsFreeX, vsLocalX)	<- bindX sharedHere x
+		return	$ ( SBind mV x'
+				, vsFreeX
+				, vsLocalX)
 
 	(ss', vssFree_stmts, vssLocal_stmts)
 			<- liftM unzip3
@@ -290,10 +298,13 @@ bindXDo shared xx@(XDo ss)
 				$ [ vsFree	| (SBind _ x, vsFree)	<- zip ss' vssFree_stmts
 						, not (canBindX x) ]
 	
+	-- Regions visible in the type of the expression can't be bound here
+	let vsVisible		= freeVars $ reconX_type "Core.Bind.bindXDo" xx
+		
 	-- the regions to bind on this XDo
 	let vsBindHere	= 
 		(Set.fromList vsSplit `Set.union` vsBindForce)
-			 `Set.difference` shared
+			 `Set.difference` (Set.union shared vsVisible)
 
 	-- the new expression
 	x'	<- bindRegionsX vsBindHere $ XDo ss'
@@ -307,7 +318,8 @@ bindXDo shared xx@(XDo ss)
 			%  "  stmts        = " % (catMaybes $ map takeStmtBoundV ss) 			% "\n"
 			%  "  shared above = " % (Set.toList shared)					% "\n"
 			%  "  vars free in each stmt (down)\n"
-			%>	("\n" %!% (map (\(v, s) -> v % " " % Set.toList s) ivsFree_down))	% "\n\n"
+			%>	ivsFree_down			% "\n\n"
+
 			%  "  vars free in each stmt (up)\n"
 			%>	("\n" %!% (map (\(v, s) -> v % " " % Set.toList s) ivsFree_up))		% "\n\n"
 			%  "  region usage for each statement\n"
@@ -318,11 +330,14 @@ bindXDo shared xx@(XDo ss)
 			%>  Set.toList vsBindForce							% "\n\n"
 			%  "  regions to bind here\n"
 			%>  Set.toList vsBindHere							% "\n\n"
+			% "   regions still free\n"
+			%>  Set.toList vsFree								% "\n\n"
 			%  "  statements\n\n"
-			%>  ("\n\n" %!% ss)								% "\n\n"
+			%>  ("\n\n" %!% ss')								% "\n\n"
 			% "\n")
-	 $ return
-	 	( x'
+		$ return ()
+	
+	return 	( x'
 		, vsFree
 		, Set.unions (vsBindHere : vssLocal_stmts))
  

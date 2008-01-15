@@ -20,7 +20,7 @@
 --
 
 module Core.Reconstruct
-	( reconTree
+	( reconTree, reconTree'
 	, reconP, reconP', reconP_type
 	, reconX, reconX', reconX_type
 	, reconS
@@ -63,18 +63,25 @@ trace ss x	= if debug then Debug.trace (pprStr ss) x else x
 
 
 -- Tree --------------------------------------------------------------------------------------------
-reconTree
+reconTree'
 	:: String	-- caller name
 	-> Tree		-- header tree 
 	-> Tree 	-- core tree
 	-> Tree		-- core tree with reconstructed type information
-	
-reconTree caller tHeader tCore
- = {-# SCC "reconstructTree" #-}
-   let
-	table		= emptyTable { tableCaller = Just caller }
+reconTree' caller tHeader tCore
+ = reconTree
+ 	emptyTable { tableCaller = Just caller }
+	tHeader tCore
 
- 	-- slurp out all the stuff defined at top level
+reconTree
+	:: Table	
+	-> Tree		-- header tree 
+	-> Tree 	-- core tree
+	-> Tree		-- core tree with reconstructed type information
+	
+reconTree table tHeader tCore
+ = {-# SCC "reconstructTree" #-}
+   let	-- slurp out all the stuff defined at top level
 	topTypes	= {-# SCC "reconTree/topTypes" #-} catMap slurpTypesP (tHeader ++ tCore)
  	tt		= {-# SCC "reconTree/table"    #-} foldr addEqVT' table topTypes
 	
@@ -193,22 +200,6 @@ reconX tt exp@(XTau tauT x)
 	, xE
 	, xC)
 
-{-
-
- 	tauT'			= flattenT tauT
-	xT'			= packT $ substituteT (tableEq tt) xT
-   in	if subsumes (tableMore tt) tauT' xT'
-    	 then	( XTau tauT x'
-	   	, xT
-		, xE
-		, xC)
-
-	 else	panic stage
-	 		$ "reconX: Type error in core.\n"
-			% " in annotated expression:\n"			%> exp		% "\n\n"
-			% " reconstructed type:\n"			%> xT'		% "\n\n"
-			% " is not less than type of annotation:\n"	%> tauT'	% "\n\n"
--}
 
 -- lam
 reconX tt exp@(XLam v t x eff clo)
@@ -251,10 +242,14 @@ reconX tt exp@(XLam v t x eff clo)
 				% "    does not match closure annot on lambda:\n"	%> clo_sub	% "\n\n"
 	
 
-		= ( XLam v t x' eff clo
-		  , TFunEC t xT eff clo
-		  , TBot KEffect
-		  , xC')
+		= trace ( "reconX: XLam\n"
+			% "    xE  = " % xE	% "\n"
+			% "    eff = " % eff'	% "\n") $
+
+		   ( XLam v t x' eff clo
+		   , TFunEC t xT eff clo
+		   , TBot KEffect
+		   , xC')
 
    in	reconX_lam
 
@@ -371,12 +366,12 @@ reconX tt (XVar v TNil)
 
 	, tDrop		<- makeTFetters t' (map (uncurry FMore) vtsMore)
 
-	= trace ( "reconX[XVar]: dropping type\n"
+{-	= trace ( "reconX[XVar]: dropping type\n"
 		% "    var    = " %> v		% "\n"
 		% "    tDrop  = " %> tDrop	% "\n")
 	   $	
-	
-	    ( XVar v tDrop
+-}
+	=   ( XVar v tDrop
 	    , tDrop
 	    , TBot KEffect
 	    , TFree v t)
@@ -398,8 +393,8 @@ reconX tt (XVar v t)
 
 -- prim
 reconX tt xx@(XPrim prim xs)
- = trace ("reconX[XPrim]: " % xx % "\n")
- $ let	
+-- = trace ("reconX[XPrim]: " % xx % "\n")
+ = let	
  	-- some of the xs are type terms which we can't call recon on
 	--	so we have to do some contortions to get the closure from the others.
 	reconMaybeX tt x
@@ -486,18 +481,26 @@ reconS 	:: Table
 	-> (Table, (Stmt, Type, Effect, Closure))
 
 reconS tt (SBind Nothing x)	
- = let	(x', xt, xe, xc)	= reconX tt x
+ = let	(x', xT, xE, xC)	= reconX tt x
+
+	xAnnot 	| tableDropStmtEff tt	= XTau xE x'
+		| otherwise		= x'
+	
    in	( tt
-   	, ( SBind Nothing x'
-	  , xt
-	  , xe
-	  , xc))
+   	, ( SBind Nothing xAnnot
+	  , xT
+	  , xE
+	  , xC))
 
 reconS tt (SBind (Just v) x)
  = let	(x', xT, xE, xC)	= reconX tt x
 	tt'			= addEqVT v xT tt
+
+	xAnnot	| tableDropStmtEff tt	= XTau xE x'
+		| otherwise		= x'
+
    in	( tt'
-   	, ( SBind (Just v) x'
+   	, ( SBind (Just v) xAnnot
 	  , xT
 	  , xE
 	  , TMask KClosure xC (TTag v)))
@@ -536,7 +539,7 @@ reconG	:: Table
 	-> ( Table
 	   , (Guard, [Var], Effect, Closure))
 
-reconG tt (GExp p x)
+reconG tt gg@(GExp p x)
  = let	binds		= slurpVarTypesW p
  	tt'		= foldr addEqVT' tt binds
 	(x', xT, xE, xC)= reconX tt' x
@@ -548,10 +551,13 @@ reconG tt (GExp p x)
 
 			   TData vD (TVar KRegion rH : _)
 			     -> TEffect primRead [TVar KRegion rH]
-   in	( tt'
+   in trace 	( "regonG\n"
+		% "    gg  = " % gg	% "\n"
+		% "    eff = " % eff	% "\n") $
+   	( tt'
    	, ( GExp p x'
 	  , map fst binds
-   	  , makeTSum KRegion ([xE, eff])
+   	  , makeTSum KEffect ([xE, eff])
 	  , xC))
  
 
@@ -682,17 +688,22 @@ data Table
 	= Table
 	{ -- the name of the function that called this reconstruct.
 	  -- this is printed in panic messages.
-	  tableCaller	:: Maybe String
+	  tableCaller		:: Maybe String
 
-	, tableEq	:: Map Var Type		-- T[v1] == t2
+	, tableEq		:: Map Var Type		-- T[v1] == t2
 
-	, tableMore	:: Map Var Type }	-- T[v1] :> t2
+	, tableMore		:: Map Var Type 	-- T[v1] :> t2
+
+	  -- drop annotations as to what effects each statement has.
+	, tableDropStmtEff	:: Bool }
+	
 
 emptyTable
 	= Table
-	{ tableCaller	= Nothing
-	, tableEq	= Map.empty
-	, tableMore	= Map.empty }
+	{ tableCaller		= Nothing
+	, tableEq		= Map.empty
+	, tableMore		= Map.empty 
+	, tableDropStmtEff	= False }
 
 
 

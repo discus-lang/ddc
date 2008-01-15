@@ -20,27 +20,25 @@
 
 -- Binds
 foreign import extern fun1_u
-        :: forall %r0
-        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Int %r0
+        :: Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Int %rTS0
         :- $c0        = $c1 \ xSDt0
         ,  $c1        = $c2 \ xSDt1
-        ,  $c2        = i1 : Base.Int %r0
+        ,  $c2        = i1 : Base.Int %rTS0
         :$ Base.Thunk;
         
 foreign import extern fun1_uu
-        :: forall %r0
-        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Int %r0
+        :: Base.Unit -($c0)> Base.Unit -($c1)> Base.Int %rTS0
         :- $c0        = $c1 \ xSDt1
-        ,  $c1        = i1 : Base.Int %r0
+        ,  $c1        = i1 : Base.Int %rTS0
         :$ Base.Thunk;
         
 foreign import extern fun1_uuu
-        :: Base.Unit -($c0)> Base.Int %rTS2
-        :- $c0        = i1 : Base.Int %rTS2
+        :: Base.Unit -($c0)> Base.Int %rTS0
+        :- $c0        = i1 : Base.Int %rTS0
         :$ Base.Thunk;
         
 foreign import extern fun1_uuuu
-        :: Base.Int %rTS2
+        :: Base.Int %rTS0
         :$ Base.Data;
         
 foreign import extern fun1

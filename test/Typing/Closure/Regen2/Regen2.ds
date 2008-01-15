@@ -1,5 +1,8 @@
 
+-- Check that closure's are preventing generalisation of shared regions.
+--
 
+-- | When fun1 is called it allocates the '5' and the binding i1 is shared among all calls to fun2
 fun1 ()
  = do {
  	i1 = 5;
@@ -7,7 +10,8 @@ fun1 ()
 	fun2;
  };
  
- 
+-- | The region associated with the constant '5' should not be generalised in the types
+--	of any of these functions.
 fun1_u		= fun1     ();
 fun1_uu		= fun1_u   ();
 fun1_uuu	= fun1_uu  ();

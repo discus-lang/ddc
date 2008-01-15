@@ -99,7 +99,7 @@ subsumes3 table t s
 	| TSum tKind ts		<- t
 	, TSum sKind ss		<- s
 	, tKind == sKind
-	= or $ map (\si -> subsumes1 table t si) ss
+	= and $ map (\si -> subsumes1 table t si) ss
 	
 	-- sum / single
 	| TSum k ts		<- t
