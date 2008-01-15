@@ -177,18 +177,16 @@ instance Pretty Exp where
 	 | otherwise
 	 ->  x % " " % prettyTB t
 
-
-	XApp x1 x2 (TBot KEffect)
-	 ->  x1 % " " % prettyExpB x2
-
-
 	XApp e1 e2 eff
-	 |  e1 =@= XVar{} || isXApp e1
-	 ->        e1 % "\n" 
-			%> (prettyExpB e2 % " " % prettyE_caused eff)
-	 | otherwise
-	 -> "(" % e1 % ")\n" 
-		%> (prettyExpB e2 % "\n" % prettyE_caused eff)
+	 -> let	pprAppLeft x 
+	 	  | x =@= XVar{} || isXApp x	= ppr x
+		  | otherwise			= "(" % x % ")"
+
+		pprAppRight x
+		  | x =@= XVar{} 		= " "  % x
+		  | otherwise			= "\n" %> prettyExpB x
+
+	    in	pprAppLeft e1 % pprAppRight e2
 
 	XTau t x
 	 -> "[** " % prettyTB t % " ]\n" % x
