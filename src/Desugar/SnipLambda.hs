@@ -141,7 +141,7 @@ makeNewVarN getF modifyF space
 	let varBind'	= incVarBind varBind
 	modify (modifyF varBind')
 	
-	return	$ (Var.new $ pretty varBind)
+	return	$ (Var.new $ pprStr varBind)
 		{ Var.bind	= varBind
 		, Var.nameSpace	= space }
 	

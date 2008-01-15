@@ -140,7 +140,7 @@ newVarNS	space		str
 				then []
 				else "" ++ str
 			
-	let var'	= (Var.new (pretty spaceGen ++ postfix))
+	let var'	= (Var.new (pprStr spaceGen ++ postfix))
 			{ Var.bind		= spaceGen 
 			, Var.nameSpace		= space }
 		
@@ -323,7 +323,7 @@ getDef		v
  	slurpDefs	<- gets stateSlurpDefs
 
 	case Map.lookup v slurpDefs of
-	 Nothing	-> panic stage $ "getDef: no def for " ++ pretty v
+	 Nothing	-> panic stage $ "getDef: no def for " ++ pprStr v
 	 Just t		-> return t
 
 

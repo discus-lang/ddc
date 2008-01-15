@@ -136,16 +136,14 @@ data Error
 instance Pretty Error where
 
  -- Random badness.
- pretty err@(ErrorBadness
+ ppr err@(ErrorBadness
  		{ eMessage	= s })
 		
-	= pretty
-	$ "    Badness: " % s % "\n"
+	= "    Badness: " % s % "\n"
 
  -- Constructor Airity.
- pretty err@(ErrorCtorAirity{})
- 	= pretty
-	$ Var.prettyPos (eCtorVar err) % "\n"
+ ppr err@(ErrorCtorAirity{})
+ 	= Var.prettyPos (eCtorVar err) % "\n"
 	% "    Wrong number of arguments for constructor match.\n"
 	% "         constructor: " % eCtorVar err 				% "\n"
 	% "          defined at: " % Var.prettyPosBound (eCtorVar err)		% "\n"
@@ -153,13 +151,12 @@ instance Pretty Error where
 
 
  -- Constructor mismatch.
- pretty err@(ErrorUnifyCtorMismatch 
+ ppr err@(ErrorUnifyCtorMismatch 
  		{ eCtor1 	= t1
 		, eTypeSource1	= ts1
 		, eCtor2 	= t2 
 		, eTypeSource2	= ts2})
- 	= pretty
-	$ pretty (getTSP $ selectSourceTS [ts1, ts2])			% "\n"
+ 	= (getTSP $ selectSourceTS [ts1, ts2])				% "\n"
 	% "    Type mismatch during unification.\n"
 	% "          cannot match: " % t1				% "\n"
 	% "                  with: " % t2				% "\n"
@@ -171,18 +168,16 @@ instance Pretty Error where
 	% "\n"	
 
  -- Infinite types.
- pretty err@(ErrorInfiniteTypeClassId
+ ppr err@(ErrorInfiniteTypeClassId
  		{ eClassId	= cid })
-	= pretty
-	$ "    Cannot construct infinite type.\n"			
+	= "    Cannot construct infinite type.\n"			
 	% "    (through node " % cid % " in the type graph)" 		% "\n"
 	 
  -- Signature mismatch.
- pretty err@(ErrorSigScheme{})
- 	= pretty
-	$ prettyValuePos (fst $ eScheme err)				% "\n"
+ ppr err@(ErrorSigScheme{})
+	= prettyValuePos (fst $ eScheme err)				% "\n"
 	% "    Inferred type for '" 
-				% (pretty $ fst $ eScheme err) 
+				% (ppr $ fst $ eScheme err) 
 				% "' does not match signature." 	% "\n"
 	% "\n"
 	% "        in the type of: " % (fst $ eScheme err)		% "\n"
@@ -193,11 +188,10 @@ instance Pretty Error where
 	% "\n"
 	% "        type signature: " % prettyVTS (eSig    err) 		% "\n"
 
- pretty err@(ErrorSigEffects{})
-  	= pretty
-	$ prettyValuePos (fst $ eScheme err)				% "\n"
+ ppr err@(ErrorSigEffects{})
+	= prettyValuePos (fst $ eScheme err)				% "\n"
 	% "    Inferred type for '" 
-				% (pretty $ fst $ eScheme err) 
+				% (ppr $ fst $ eScheme err) 
 				% "' has different effects than signature.\n"
 	% "\n"
 	% "        in the type of: " % (fst $ eScheme err)		% "\n"
@@ -208,11 +202,10 @@ instance Pretty Error where
 	% "\n"
 	% "        type signature: " % prettyVTS (eSig err)		% "\n"
 					
- pretty err@(ErrorSigForall{})
-  	= pretty
-	$ prettyValuePos (fst $ eScheme err)				% "\n"
+ ppr err@(ErrorSigForall{})
+	= prettyValuePos (fst $ eScheme err)				% "\n"
 	% "    Inferred type for '" 
-				% (pretty $ fst $ eScheme err)
+				% (ppr $ fst $ eScheme err)
 				% "' is not quantified the same as signature.\n"
 	% "\n"
 	% "       offending var: " % eErrVar err			% "\n"
@@ -222,47 +215,42 @@ instance Pretty Error where
 	% "      type signature: " % prettyVTS (eSig err)		% "\n"
 	
  -- Type class problems.
- pretty err@(ErrorNoInstance
+ ppr err@(ErrorNoInstance
  		{ eClassVar	= v
 		, eTypeArgs	= ts })
-	= pretty
-	$ "    No instance for " % v % " " % " " %!% map prettyTS ts % "\n"
+	= "    No instance for " % v % " " % " " %!% map prettyTS ts % "\n"
 	
  -- Field projection problems.
- pretty err@(ErrorNoProjections
+ ppr err@(ErrorNoProjections
  		{ eProj		= p
 		, eConstructor	= t })
-	= pretty
-	$ (getProjSP p)		% "\n"
+	= (getProjSP p)		% "\n"
 	% "    Type '" % t	% "' has no projections defined for it.\n"
 
 
- pretty err@(ErrorFieldNotPresent 
+ ppr err@(ErrorFieldNotPresent 
  		{ eProj		= p
 		, eConstructor	= TData v _
 		, eFields	= fields })
- 	= pretty
-	$ (getProjSP p)							% "\n"
+	= (getProjSP p)							% "\n"
 	% "    Type '" % v 	% "' has no field named '" % p		% "'\n"
 	% "      possible fields: " % "\n" %!% fields			% "\n"
 
 	
- pretty err@(ErrorAmbiguousProjection
+ ppr err@(ErrorAmbiguousProjection
  		{ eProj		= p })
-	= pretty
-	$ (getProjSP p)							% "\n"
+	= (getProjSP p)							% "\n"
 	% "    Ambiguous projection: " % p 				% "\n"
 	
 
  -- Purity problems.
- pretty err@(ErrorCannotPurify
+ ppr err@(ErrorCannotPurify
  		{ eEffect	= e
 		, eEffectSource	= eSource
 		, eFetter	= f
 		, eFetterSource	= fSource })
 		
-	= pretty
-	$ (getTSP eSource)						% "\n" 
+	= (getTSP eSource)						% "\n" 
 	% "    Cannot purify effect `" % e % "'.\n"
 	% prettyETS e eSource
 	% "\n"
@@ -271,14 +259,13 @@ instance Pretty Error where
 
 
  -- Mutability problems.
- pretty err@(ErrorConstWrite 
+ ppr err@(ErrorConstWrite 
  		{ eEffect	= e
 		, eEffectSource	= eSource
 		, eFetter	= f
 		, eFetterSource	= fSource })
 	
-	= pretty 
-	$ (getTSP eSource)						% "\n"
+	= (getTSP eSource)						% "\n"
 	% "    Cannot write to Const region.\n"
 	% prettyETS e eSource
 	% "\n"
@@ -286,7 +273,7 @@ instance Pretty Error where
 	% prettyFTS f fSource
 	
 
- pretty err@(ErrorPureReadWrite
+ ppr err@(ErrorPureReadWrite
 		{ eReadEff	= r
 		, eReadSource	= rTS
 		, ePureFetter	= p
@@ -294,8 +281,7 @@ instance Pretty Error where
 		, eWriteEff	= w
 		, eWriteSource	= wTS })
 
-	= pretty
-	$ getTSP wTS							% "\n"
+	= getTSP wTS							% "\n"
 	% "    Cannot write to Const region.\n"
 	% "      This region is being forced Const because there is a\n"
 	% "      purity constraint on a Read effect which accesses it.\n"
@@ -310,13 +296,12 @@ instance Pretty Error where
 
 
  -- Update soundness problems.
- pretty err@(ErrorUpdateSoundness
+ ppr err@(ErrorUpdateSoundness
  		{ eErrVar	= v
 		, eType 	= t
 		, eTypeDanger	= tDanger })
 		
-	= pretty
-	$ prettyValuePos v				% "\n"
+	= prettyValuePos v				% "\n"
 	% "    Update soundess problem in scheme for `" % v % "'.\n"
 	% prettyVTS (v, t)
 	% "\n\n"
@@ -324,12 +309,11 @@ instance Pretty Error where
 
 
  -- Inference screw-ups.
- pretty err@(ErrorLateConstraint
+ ppr err@(ErrorLateConstraint
  		{ eScheme	= (v, scheme)
 		, eRegen	= regen })
 		
-	= pretty
-	$ prettyValuePos v				% "\n"
+	= prettyValuePos v				% "\n"
 	% "    The type inference algorithm made an incorrect assumption\n"
 	% "        about the mutability of `" % v % "'.\n"
 	% "                   (and backtracking isn't implemented yet).\n"
@@ -350,7 +334,7 @@ instance Pretty Error where
 prettyVTS (v, t)
  	= indent 12 (
 		"\n" ++ (Var.name v) ++ "\n  :: "
-		++ (indent 2 $ pretty $ prettyTypeSplit $ t))
+		++ (indent 2 $ pprStr $ prettyTypeSplit $ t))
 
 prettyValuePos var
 	= fromMaybe "?"
@@ -423,7 +407,7 @@ prettyTypeConflict t ts
 	 %  "          of data type: " % vData			% "\n"
 	 %  "                    at: " % getVSP vField		% "\n"
 
-	_ -> prettyp "ERROR: prettyTypeConflict: cannot show source of error\n" % "\n"
+	_ -> ppr "ERROR: prettyTypeConflict: cannot show source of error\n" % "\n"
 
 --	_ -> panic stage
 --		$ "prettyTypeConflict: no match for " % show ts % "\n"
@@ -463,10 +447,10 @@ prettyTSP ::	TypeSource -> PrettyP
 prettyTSP	ts
  = case ts of
  	TSInst vDef vInst
-	 -> prettyp vDef
+	 -> ppr vDef
 
 	TSMatch sp
-	 -> prettyp "case"
+	 -> ppr "case"
 
 	_ -> panic stage
 		$ "prettyTSP: no match for " % show ts	% "\n"

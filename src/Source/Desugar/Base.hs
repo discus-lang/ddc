@@ -43,7 +43,7 @@ newVarNS space str
  = do	bind@(Var.XBind unique n) <- gets stateVarGen
 	modify $ \s -> s { stateVarGen	= Var.XBind unique (n+1) }
 
-	let var		= (Var.new (Var.namePrefix space ++ pretty bind ++ str))
+	let var		= (Var.new (Var.namePrefix space ++ pprStr bind ++ str))
 			{  Var.bind		= bind
 			,  Var.nameSpace	= space }
 	return var

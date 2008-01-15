@@ -75,11 +75,11 @@ makeInterface
 	let sTree'	= eraseVarModuleTree moduleName sTree
 
 
-	let getTVar 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pretty v)
+	let getTVar 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStr v)
 			$ Map.lookup v 
 			$ sigmaTable
 
-	let getType 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pretty v)
+	let getType 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStr v)
 			$ liftM (eraseVarModuleT moduleName)
 			$ Map.lookup (getTVar v) schemeTable
 
@@ -123,49 +123,49 @@ exportAll
 	-> String
 
 exportAll getType topNames ps psDesugared psCore vsNoExport
- 	=  pretty
+ 	=  pprStr
 	$  "-- Imports\n"
-	++ (concat [pretty p | p@S.PImportModule{} 	<- ps])
+	++ (concat [pprStr p | p@S.PImportModule{} 	<- ps])
 	++ "\n"
 
 	++ "-- Pragmas\n"
-	++ (concat [pretty p 
+	++ (concat [pprStr p 
 			| p@(S.PPragma (S.XVar sp v : _))	<- ps
 			, Var.name v == "LinkObjs" ])
 
 	++ "\n"
 
 	++ "-- Infix\n"
-	++ (concat [pretty p | p@S.PInfix{}		<- ps])
+	++ (concat [pprStr p | p@S.PInfix{}		<- ps])
 	++ "\n"
 
 	++ "-- Data\n"
-	++ (concat [pretty p | p@S.PData{}		<- ps])
+	++ (concat [pprStr p | p@S.PData{}		<- ps])
 	++ "\n"
 
 	++ "-- Effects\n"
-	++ (concat [pretty p | p@S.PEffect{}		<- ps])
+	++ (concat [pprStr p | p@S.PEffect{}		<- ps])
 	++ "\n"
 
 	++ "-- Regions\n"
-	++ (concat [pretty p | p@S.PRegion{}		<- ps])
+	++ (concat [pprStr p | p@S.PRegion{}		<- ps])
 	++ "\n"
 	
 	++ "-- Classes\n"
-	++ (concat [pretty p | p@S.PClass{}		<- ps])
+	++ (concat [pprStr p | p@S.PClass{}		<- ps])
 	++ "\n"
 	
 	++ "-- Class dictionaries\n"
-	++ (concat [pretty p | p@S.PClassDict{}		<- ps])
+	++ (concat [pprStr p | p@S.PClassDict{}		<- ps])
 	++ "\n"
 
 	++ "-- Class instances\n"
-	++ (concat [pretty p | 	p@D.PClassInst{}			
+	++ (concat [pprStr p | 	p@D.PClassInst{}			
 			     <- map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared])
 	++ "\n"
 	
 	++ "-- Foreign imports\n"
-	++ (concat [pretty p 
+	++ (concat [pprStr p 
 			| p@(S.PForeign (S.OImport (S.OExtern{})))	<- ps])
 	++ "\n"
 
@@ -190,11 +190,11 @@ exportVTT
 	-> String
 
 exportVTT	v      tv to
-	= pretty
+	= pprStr
 	$ "foreign import extern "
-	% pretty v { Var.nameModule = Var.ModuleNil }
-	%>	(  "\n:: " ++ (pretty $ T.prettyTS $ T.normaliseT tv)
-		++ "\n:$ " ++ pretty to
+	% pprStr v { Var.nameModule = Var.ModuleNil }
+	%>	(  "\n:: " ++ (pprStr $ T.prettyTS $ T.normaliseT tv)
+		++ "\n:$ " ++ pprStr to
 
 		++ ";\n\n")
 
@@ -206,7 +206,7 @@ exportProjDict (D.PProjDict _ t [])
 	= []
 
 exportProjDict (D.PProjDict _ t ss)
- 	= pretty
+ 	= pprStr
 	$ "project " % t % " where\n"
 	% "{\n"
 	%> "\n" %!% (map (\(D.SBind _ (Just v1) (D.XVar _ v2)) 

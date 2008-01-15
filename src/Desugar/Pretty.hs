@@ -19,9 +19,9 @@ annot nn x
 
 -- Top -------------------------------------------------------------------------
 instance Pretty a => Pretty (Top (Maybe a)) where
- prettyp xx
+ ppr xx
   = case xx of
-  	PNil		-> prettyp "@PNil\n"
+  	PNil		-> ppr "@PNil\n"
 
 	PImport nn ms
 	 -> annot nn
@@ -94,14 +94,14 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 
 	PBind nn Nothing x
 	 -> annot nn
-	 	(prettyp x) % ";\n\n"
+	 	(ppr x) % ";\n\n"
 
 
 -- CtorDef ---------------------------------------------------------------------
 instance Pretty a => Pretty (CtorDef (Maybe a)) where
- prettyp xx
+ ppr xx
   = case xx of
-  	CtorDef nn v []	-> prettyp v
+  	CtorDef nn v []	-> ppr v
 	
 	CtorDef nn v fs
 	 -> annot nn
@@ -111,12 +111,12 @@ instance Pretty a => Pretty (CtorDef (Maybe a)) where
 
 -- Exp -------------------------------------------------------------------------
 instance Pretty a => Pretty (Exp (Maybe a)) where
- prettyp xx	
+ ppr xx	
   = case xx of
-  	XNil				-> prettyp "@XNil"
-	XVoid		nn		-> annot nn (prettyp "@XVoid")
-	XConst		nn c		-> annot nn (prettyp c)
-	XVar		nn v		-> annot nn (prettyp v)
+  	XNil				-> ppr "@XNil"
+	XVoid		nn		-> annot nn (ppr "@XVoid")
+	XConst		nn c		-> annot nn (ppr c)
+	XVar		nn v		-> annot nn (ppr v)
 	XVarInst 	nn v		-> annot nn ("@XVarInst " % v)
 	XProj 		nn x j		-> annot nn ("@XProj "  % prettyXB x % " " % j)
 	XProjT		nn t j		-> annot nn ("@XProjT " % prettyTB t % " " % j)
@@ -163,13 +163,13 @@ instance Pretty a => Pretty (Exp (Maybe a)) where
 prettyXB xx
  = case xx of
 	XLambda{}	-> "\n" %> ("(" % xx % ")")
-	XVar{}		-> prettyp xx
+	XVar{}		-> ppr xx
 	_		-> "(" % xx % ")"
 
 
 -- Proj ------------------------------------------------------------------------
 instance Pretty a => Pretty (Proj (Maybe a)) where
- prettyp xx
+ ppr xx
   = case xx of
   	JField  nn v		-> annot nn ("." % v)
 	JFieldR nn v		-> annot nn ("#" % v)
@@ -177,11 +177,11 @@ instance Pretty a => Pretty (Proj (Maybe a)) where
 
 -- Stmt ------------------------------------------------------------------------
 instance Pretty a => Pretty (Stmt (Maybe a)) where
- prettyp xx
+ ppr xx
   = case xx of
 	SBind nn Nothing x
 	 -> annot nn
-	 	(prettyp x) % ";"
+	 	(ppr x) % ";"
 
   	SBind nn (Just v) x@XLambda{}		
 	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
@@ -201,7 +201,7 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 
 -- Alt -------------------------------------------------------------------------
 instance Pretty a => Pretty (Alt (Maybe a)) where
- prettyp xx
+ ppr xx
   = case xx of
 	AAlt	 nn [] x	-> annot nn ("\\= " % x) 				% ";"
 	AAlt	 nn gs x	-> annot nn ("|"  % "\n," %!% gs % "\n= " % x) 		% ";"
@@ -209,7 +209,7 @@ instance Pretty a => Pretty (Alt (Maybe a)) where
 
 -- Guard -----------------------------------------------------------------------
 instance Pretty a => Pretty (Guard (Maybe a)) where
- prettyp gg
+ ppr gg
   = case gg of
   	GCase nn pat		-> annot nn ("| " % pat)
 	GExp  nn pat exp	-> annot nn (" "  % pat %>> " <- " % exp)
@@ -217,7 +217,7 @@ instance Pretty a => Pretty (Guard (Maybe a)) where
 
 -- Pat ------------------------------------------------------------------------
 instance Pretty a => Pretty (Pat (Maybe a)) where
- prettyp ww
+ ppr ww
   = case ww of
 	WConLabel nn v lvs	
 		-> annot nn (
@@ -226,11 +226,11 @@ instance Pretty a => Pretty (Pat (Maybe a)) where
 			"}")
 
 	WConst	nn c		
-		-> annot nn (prettyp c)
+		-> annot nn (ppr c)
 
 
 	WVar nn v
-		-> annot nn (prettyp v)
+		-> annot nn (ppr v)
 
 	WAt nn v w
 		-> annot nn (v % "@(" % w % ")")
@@ -242,11 +242,11 @@ instance Pretty a => Pretty (Pat (Maybe a)) where
 			"}")
 
 	WWildcard nn
-		-> annot nn (prettyp "_")
+		-> annot nn (ppr "_")
 
 -- Label -----------------------------------------------------------------------
 instance Pretty a => Pretty (Label (Maybe a)) where
- prettyp ll
+ ppr ll
   = case ll of
   	LIndex	nn i		-> annot nn ("." % i)
 	LVar	nn v		-> annot nn ("." % v)

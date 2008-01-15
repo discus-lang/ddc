@@ -57,7 +57,7 @@ renameV_bind v
 	modify (\s -> s { sVarGen = incVarBind varGen})
 
 	-- make the new var and add it to the map
-	let v'	= v { Var.name = pretty varGen, Var.bind = varGen }
+	let v'	= v { Var.name = pprStr varGen, Var.bind = varGen }
 	modify (\s -> s { sVarMap = Map.insert v v' (sVarMap s)})
 	
 	return v'

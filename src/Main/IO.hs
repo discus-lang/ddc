@@ -136,11 +136,11 @@ loadInterface
 	mod
  = do
  	let ModuleAbsolute vs	= mod
-	let fileDir		= pretty $ "/" %!% vs
+	let fileDir		= pprStr $ "/" %!% vs
 	let fileNameDI		= fileDir ++ ".di"
 	let fileNameO		= fileDir ++ ".o"
 
-	let fileBase		= pretty $ "/" %!% init vs
+	let fileBase		= pprStr $ "/" %!% init vs
 		
 	mPathDI			<- findFile importDirs fileNameDI
 	mPathO			<- findFile importDirs fileNameO

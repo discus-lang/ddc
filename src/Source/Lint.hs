@@ -48,7 +48,6 @@ instance (Lint a, Lint b) => Lint (a, b)
 -----
 death x s
  	= panic stage 
-	$ pretty 
 	$ "lint: " 	% s 		% "\n"
 	% "  snip = " 	% show x	% "\n"
 

@@ -48,7 +48,7 @@ stage	= "Desugar.ToCore"
 
 debug		= False
 trace ss x	= if debug 
-			then Debug.trace (pretty ss) x
+			then Debug.trace (pprStr ss) x
 			else x
 
 -----------------------
@@ -488,7 +488,6 @@ toCoreX xx
 
 	_ 
 	 -> panic stage
-	 	$ pretty
 		$ "toCoreX: cannot convert expression to core.\n" 
 		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
 

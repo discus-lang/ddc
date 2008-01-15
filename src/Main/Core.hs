@@ -161,7 +161,7 @@ coreBind
 
 	dumpS  DumpCoreBind "core-bind--rsGlobal" 
 		$ catInt "\n"
-		$ map pretty $ Set.toList rsGlobal
+		$ map pprStr $ Set.toList rsGlobal
 	
 	return tree'
 
@@ -356,7 +356,7 @@ coreSequence cSource cHeader
 	-- emit super deps
 	let superDeps	= slurpSuperDepsTree cSource
 	let superDepsG	= dotSuperDeps superDeps
-	dumpDot GraphSuperDeps "super-deps" $ pretty superDepsG
+	dumpDot GraphSuperDeps "super-deps" $ pprStr superDepsG
 
 	return tree'
 

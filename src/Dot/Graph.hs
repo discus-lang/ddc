@@ -51,7 +51,7 @@ expandVarNodes graph
 	-- add definitions for nodes which don't already have them.
 	varsAdd	= varsRef \\ varsDef
 	
- 	ss	= map (\v -> SNode (NVar v) [ALabel (pretty v)]) varsAdd
+ 	ss	= map (\v -> SNode (NVar v) [ALabel (pprStr v)]) varsAdd
    in	graphAddStmts ss graph
    
 

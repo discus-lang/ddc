@@ -93,7 +93,7 @@ lintTree
 	-> [String]	-- errors found
 
 lintTree tree
- =	map pretty $ execState (lintTreeM tree) []
+ =	map pprStr $ execState (lintTreeM tree) []
 
 
 lintTreeM :: Tree -> LintM ()
@@ -267,7 +267,7 @@ lintW tt (WCon v lvt)
 lintT :: Table -> Type -> LintM ()
 
 lintT tt TNil
- =	addError $ prettyp "Found a TNil\n"
+ =	addError $ ppr "Found a TNil\n"
 
 lintT tt (TForall v k1 t2)
  = do	lintK tt k1
@@ -381,7 +381,7 @@ lintK :: Table -> Kind -> LintM ()
 lintK tt kk
  = case kk of
  	KNil	
-	 -> addError $ prettyp "lintK: found a KNil"
+	 -> addError $ ppr "lintK: found a KNil"
 	
 	KData		-> return ()
 	KRegion		-> return ()

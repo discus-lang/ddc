@@ -30,17 +30,17 @@ maxSpecialApply	= 4
 maxSpecialCurry	= 4
 
 -----
-sV  v		= prettyp $ seaVar False v
-sVn n v		= prettyp $ padR n $ seaVar False v
+sV  v		= ppr $ seaVar False v
+sVn n v		= ppr $ padR n $ seaVar False v
 
-sVL  v		= prettyp $ seaVar True v
-sVLn n v 	= prettyp $ padR n $ seaVar True v
+sVL  v		= ppr $ seaVar True v
+sVLn n v 	= ppr $ padR n $ seaVar True v
 
 -----
 instance Pretty a => Pretty (Top (Maybe a)) where
- prettyp xx
+ ppr xx
   = case xx of
-	PNil	 		-> prettyp $ "$PNil\n"
+	PNil	 		-> ppr $ "$PNil\n"
 	PData v vds		-> "@Data" % sV v % vds
 
 	-- supers
@@ -87,19 +87,19 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 
 	-- Sea hackery.
 	PInclude s		-> "#include <" % s % ">\n"
-	PHackery s		-> prettyp s
+	PHackery s		-> ppr s
 	PComment s		-> "// " % s
-	PBlank			-> prettyp "\n"
+	PBlank			-> ppr "\n"
 	PHashDef s1 s2		-> "#define " %  padR 8 s1 %>> " " % s2 % "\n"
 
 
 
 -----
 instance Pretty a => Pretty (Stmt (Maybe a)) where
- prettyp xx
+ ppr xx
   = case xx of
 	-- misc
-	SBlank 			-> prettyp " "
+	SBlank 			-> ppr " "
 	SComment s		-> "// " % s
 
 	-- append a "/* hackery */" comment here so that we know 
@@ -107,15 +107,15 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 	SHackery str		-> "/**/ " % str
 
 	-- stacks
-	SAuto	v t		-> (padR 12 $ pretty t) % " " % sVL v % ";"
+	SAuto	v t		-> (padR 12 $ pprStr t) % " " % sVL v % ";"
 	SEnter countS		-> "_ENTER (" % countS % ");"
 	SLeave countS		-> "_LEAVE (" % countS % ");"
 
 	-- assignment
 	SAssign (XVar v) t x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
-	SAssign x1 t x2		-> (padR 23 $ pretty x1) 	% " = " % x2 % ";"
+	SAssign x1 t x2		-> (padR 23 $ pprStr x1) 	% " = " % x2 % ";"
 
-	SStmt s			-> prettyp s % ";"
+	SStmt s			-> ppr s % ";"
 
 	-- control flow
 	SReturn x		-> "return " % x % ";"
@@ -135,7 +135,7 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 
 -----
 instance Pretty a => Pretty (Alt (Maybe a))where
- prettyp xx
+ ppr xx
   = case xx of
 	AAlt gs ss
 	 -> "  alt:  "
@@ -155,7 +155,7 @@ instance Pretty a => Pretty (Alt (Maybe a))where
 	  % "  }\n"
 
 	ACaseSusp x l		-> "  _CASESUSP (" % x % ", " % "_" % l % ");\n"
-	ACaseDeath		-> prettyp "  _CASEDEATH;\n"
+	ACaseDeath		-> ppr "  _CASEDEATH;\n"
 
 
 	ADefault [SGoto v]
@@ -169,7 +169,7 @@ instance Pretty a => Pretty (Alt (Maybe a))where
 
 -----
 instance Pretty a => Pretty (Guard (Maybe a)) where
- prettyp gg
+ ppr gg
   = case gg of
   	GCase ss x1 x2
 	 -> "guard {\n"
@@ -180,9 +180,9 @@ instance Pretty a => Pretty (Guard (Maybe a)) where
 
 -----
 instance Pretty a => Pretty (Exp (Maybe a))where
- prettyp xx
+ ppr xx
   = case xx of
-  	XNil			-> prettyp "$XNil"
+  	XNil			-> ppr "$XNil"
 	XVar v			-> sVL v
 	XSlot    v i		-> "_S(" % i % ")"
 	XSlotCAF v 		-> "_CAF(" % sV v % ")"
@@ -196,7 +196,7 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 
 	XCallApp v superAirity args
 	 -> let i 	= length args
-	    in  "_callApp"	% i % " (" % ", " %!% (sV v : prettyp superAirity : map prettyp args) % ")"
+	    in  "_callApp"	% i % " (" % ", " %!% (sV v : ppr superAirity : map ppr args) % ")"
 
 	XApply x args
 	 -> let i	= length args
@@ -205,11 +205,11 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 	
 	XCurry v superAirity args
 	 -> let i	= length args
-	    in "_curry"		% i % " (" % ", " %!% (sV v : prettyp superAirity : map prettyp args) % ")"
+	    in "_curry"		% i % " (" % ", " %!% (sV v : ppr superAirity : map ppr args) % ")"
 	
 	XSuspend v args
 	 -> let i	= length args
-	    in "_suspend"	% i % " (" % ", " %!% (sV v : map prettyp args) % ")"
+	    in "_suspend"	% i % " (" % ", " %!% (sV v : map ppr args) % ")"
 
 	XPrim f [(XVar ctorV), (XVar fieldV), x]
 	 -> case f of
@@ -252,12 +252,12 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 
 	-- constants	 
 	XCon v			-> "_tag" % sV v
-	XInt i			-> prettyp i
-	XUnit 			-> prettyp "_primUnit"
+	XInt i			-> ppr i
+	XUnit 			-> ppr "_primUnit"
 	XLiteral lit		-> makeLiteral lit
-	XTagThunk		-> prettyp "_tagThunk"
+	XTagThunk		-> ppr "_tagThunk"
 	XSuper v		-> "(void*)" % sV v
-	XNull			-> prettyp "_null"
+	XNull			-> ppr "_null"
 	XAtom v			-> "_atom" % sV v
 
 	-- boxing
@@ -294,14 +294,14 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 	XAllocSusp  thunk arity
 	 -> "_allocSusp (" % sV thunk % ", " % arity % ")"
 
-	_ -> panic stage $ "pretty[Exp]: no match for " % show xx
+	_ -> panic stage $ "pprStr[Exp]: no match for " % show xx
 
 -----
 instance Pretty Type where
- prettyp xx
+ ppr xx
   = case xx of
-	TVoid		-> prettyp "void"
-	TObj		-> prettyp "Obj*"
+	TVoid		-> ppr "void"
+	TObj		-> ppr "Obj*"
 
 	TCon v [t]
 	 | v == Var.primTPtrU
@@ -309,16 +309,16 @@ instance Pretty Type where
 	 
 	TCon v ts
 	 -> let ps	= splitOns '.' $ Var.name v
-	    in	prettyp $ init (last ps) % " " % " " %!% ts
+	    in	ppr $ init (last ps) % " " % " " %!% ts
 	 		
-	_ -> panic stage $ "pretty[Type]: no match for " % show xx
+	_ -> panic stage $ "pprStr[Type]: no match for " % show xx
 
 makeLiteral lit
  = case lit of
-	LChar	c	-> prettyp $ show c
-	LString s	-> prettyp $ show s
- 	LInt	i	-> prettyp i 
-	LFloat	f	-> prettyp f
+	LChar	c	-> ppr $ show c
+	LString s	-> ppr $ show s
+ 	LInt	i	-> ppr i 
+	LFloat	f	-> ppr f
 
 
 -----
@@ -334,7 +334,7 @@ seaVar local v
 	|    Var.isSymbol v
 	  || (elem '\'' $ Var.name v)
 	= seaModule (Var.nameModule v)
-	++ (if local then "_" ++ (pretty $ Var.bind v) ++ "_" else "")
+	++ (if local then "_" ++ (pprStr $ Var.bind v) ++ "_" else "")
 	++ "_sym" ++ (Var.deSymString $ Var.name v)	
 
 	| Var.isDummy v
@@ -344,7 +344,7 @@ seaVar local v
 			
 	| otherwise
 	= seaModule (Var.nameModule v)
---	++ (if local then "_" ++ (pretty $ Var.bind v) ++ "_" else "")
+--	++ (if local then "_" ++ (pprStr $ Var.bind v) ++ "_" else "")
 	++ Var.name v
 
 

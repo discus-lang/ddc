@@ -17,36 +17,36 @@ import Shared.Bits
 instance (Pretty x, Pretty t) 
  => 	 Pretty (DataField x t) where
 
- prettyp DataField
+ ppr DataField
  	{ dPrimary	= True
 	, dLabel	= Nothing
 	, dType		= t
 	, dInit		= Nothing }
 	= t % ";"
 
- prettyp DataField
+ ppr DataField
  	{ dPrimary	= True
 	, dLabel	= mLabel
 	, dType		= t
 	, dInit		= mInit }
 	
-	= fromMaybe " " (liftM pretty mLabel)
+	= fromMaybe (ppr " ") (liftM ppr mLabel)
 	%> (" :: "
 		% t
 		% case mInit of 
-		   Nothing	-> prettyp " "
+		   Nothing	-> ppr " "
 		   Just i	-> "\n = " % i) % ";"
 
- prettyp DataField
+ ppr DataField
  	{ dPrimary	= False
 	, dLabel	= mLabel
 	, dType		= t
 	, dInit		= mInit }
 	
-	= "." % fromMaybe " " (liftM pretty mLabel)
+	= "." % fromMaybe (ppr " ") (liftM ppr mLabel)
 	%> (" :: "
 		% t
 		% case mInit of 
-		   Nothing	-> prettyp " "
+		   Nothing	-> ppr " "
 		   Just i	-> "\n = " % i) % ";"
 

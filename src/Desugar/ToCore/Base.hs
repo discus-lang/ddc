@@ -88,7 +88,7 @@ newVarN	space
 	let gen'	= Var.incVarBind gen
 	modify (\s -> s { coreGenValue = gen' })
 	
-	return		(Var.new (pretty gen)) { Var.bind = gen, Var.nameSpace = space }
+	return		(Var.new (pprStr gen)) { Var.bind = gen, Var.nameSpace = space }
 
 -- | Get the type corresponding to the type of this annotation
 lookupAnnotT :: Annot -> CoreM (Maybe C.Type)

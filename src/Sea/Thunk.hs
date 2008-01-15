@@ -7,9 +7,7 @@
 --
 
 module Sea.Thunk
-(
-	thunkTree
-)
+	(thunkTree)
 
 where
 
@@ -38,7 +36,7 @@ newVar mName
 	let gen'	= Var.incVarBind gen
 	put gen'
 	
-	let name	= fromMaybe (pretty gen) mName
+	let name	= fromMaybe (pprStr gen) mName
 	let var		= (Var.new name) { Var.bind = gen }
 	
 	return var

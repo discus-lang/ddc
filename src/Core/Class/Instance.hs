@@ -19,7 +19,7 @@ callInstances :: Tree -> Tree
 callInstances	 ps
  = let	aliases	= catMaybes $ map slurpAliasP ps
 	
-   in	Debug.trace (pretty $ "aliases = " % aliases) $ ps
+   in	Debug.trace (pprStr $ "aliases = " % aliases) $ ps
 
 
 

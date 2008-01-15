@@ -20,7 +20,7 @@ import qualified Debug.Trace
 debug	= False
 trace ss x	
  	= if debug 
-		then Debug.Trace.trace (pretty ss) x
+		then Debug.Trace.trace (pprStr ss) x
 		else x
 
 stage	= "Core.Util.Subsumes"

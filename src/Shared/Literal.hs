@@ -22,7 +22,7 @@ data Const
 
 -----
 instance Pretty Const where
- prettyp c 
+ ppr c 
   = case c of
-  	CConst  literal	-> prettyp literal
+  	CConst  literal	-> ppr literal
 	CConstU literal	-> literal % "#"

@@ -84,7 +84,7 @@ getType		v
 			
 		return t
 	
-	_ -> panic stage $ "getType: no type for " ++ pretty v ++ " space = " ++ (pretty $ Var.nameSpace v )
+	_ -> panic stage $ "getType: no type for " % v % " space = " % Var.nameSpace v
 	
 
 getKind ::	Var -> LiftM Kind
@@ -105,7 +105,7 @@ newVar	space
  = do
  	gen		<- gets stateVarGen
 	let gen'	= Var.incVarBind gen
-	let var		= (Var.new $ pretty gen) 
+	let var		= (Var.new $ pprStr gen) 
 				{ Var.bind 		= gen 
 				, Var.nameSpace		= space }
 	

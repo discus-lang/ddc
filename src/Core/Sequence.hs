@@ -127,7 +127,7 @@ dotSuperDeps deps
 			-> let 	cafMark	= if isCaf then "\nCAF" else ""
 				color	= if isCaf then "blue" else "black"
 			   in	[ G.SNode (G.NVar v) 
-					[ G.ALabel (pretty v ++ cafMark)
+					[ G.ALabel (pprStr v ++ cafMark)
 					, G.AColor color ]
 				]
 

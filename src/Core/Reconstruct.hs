@@ -59,7 +59,7 @@ import qualified Debug.Trace	as Debug
 stage	= "Core.Reconstruct"
 
 debug		= False
-trace ss x	= if debug then Debug.trace (pretty ss) x else x
+trace ss x	= if debug then Debug.trace (pprStr ss) x else x
 
 
 -- Tree --------------------------------------------------------------------------------------------
@@ -331,7 +331,7 @@ reconX tt (XDo ss)
 -- match
 reconX tt (XMatch [])
  = panic stage
- 	$ pretty "reconX: XMatch has no alternatives\n"
+ 	$ "reconX: XMatch has no alternatives\n"
 
 reconX tt (XMatch aa)
  = let	(aa', altTs, altEs, altCs)	= unzip4 $ map (reconA tt) aa

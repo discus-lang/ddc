@@ -96,7 +96,7 @@ compileFile	args     fileName
 	 $  	putStr	$  "  - fileName      = " ++ fileName		++ "\n"
 			++ "  - fileDir       = " ++ fileDir		++ "\n"
 			++ "  - fileBase      = " ++ fileBase		++ "\n"
-	 		++ "  - moduleName    = " ++ pretty moduleName	++ "\n"
+	 		++ "  - moduleName    = " ++ pprStr moduleName	++ "\n"
 			++ "\n"
 		
 	let filePaths	= makePaths (fileDir ++ "/" ++ fileBase)
@@ -129,7 +129,7 @@ compileFile	args     fileName
 				then [ModuleAbsolute ["Prelude"]]
 				else []
 	when ?verbose
-	 $ 	putStr $ "  - importsRoot    = " ++ pretty importsRoot ++ "\n"
+	 $ 	putStr $ "  - importsRoot    = " ++ pprStr importsRoot ++ "\n"
 
 
 	-- Chase down imported modules
@@ -168,14 +168,14 @@ compileFile	args     fileName
 			linkObjsHere
 				
 	when ?verbose
-	 $ do	mapM_ (\path -> putStr $ pretty $ "  - imported object " % path % "\n")
+	 $ do	mapM_ (\path -> putStr $ pprStr $ "  - imported object " % path % "\n")
 	 		$ linkObjHerePaths
 
 	-- Chase down extra header files to include into source
 	let includeFilesHere	= Pragma.slurpInclude sParsed
 	
 	when ?verbose
-	 $ do	mapM_ (\path -> putStr $ pretty $ "  - included file   " % path % "\n")
+	 $ do	mapM_ (\path -> putStr $ pprStr $ "  - included file   " % path % "\n")
 	 		$ includeFilesHere
 			
 	 	
@@ -515,7 +515,7 @@ compileFile	args     fileName
 	--
 	seaSourceInit	<- if SE.gotMain eInit 
 				then do mainCode <- SE.seaMain $ map fst $ Map.toList importsExp
-				     	return 	$ seaSource ++ (catInt "\n" $ map pretty $ E.eraseAnnotsTree mainCode)
+				     	return 	$ seaSource ++ (catInt "\n" $ map pprStr $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
 				
 	writeFile (pathC filePaths)	seaSourceInit
@@ -604,7 +604,7 @@ showF	f	= (showFFloat (Just 6) f "") ++ "s"
 runPragmaShell fileName fileDir c
  = do
 	when ?verbose
-	 $ 	putStr $ pretty $ "  - pragma Shell \"" % c % "\"\n"
+	 $ 	putStr $ pprStr $ "  - pragma Shell \"" % c % "\"\n"
 
 	-- Change to the same dir as the source file.
 	oldDir	<- System.getWorkingDirectory
@@ -620,7 +620,7 @@ runPragmaShell fileName fileDir c
 	 System.ExitSuccess	-> return ()
 	 System.ExitFailure _
 	  -> do	System.hPutStr System.stderr 
-		  	$  pretty
+		  	$  pprStr
 			$ "* DDC ERROR - embedded pragma shell command failed.\n"
 			% "    source file = '" % fileName % "'\n"
 			% "    command     = '" % c % "'\n"
@@ -632,13 +632,13 @@ runPragmaShell fileName fileDir c
 dumpImportDef def
  	| isNil (idLinkObjs def)
 	= putStr	
-	$ pretty
- 	$ "        " % (padR 40 $ pretty $ idModule def) % " " % idFilePathDI def % "\n"
+	$ pprStr
+ 	$ "        " % (padR 40 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
  
  | otherwise
  = putStr
- 	$ pretty
- 	$ "        " % (padR 40 $ pretty $ idModule def) % " " % idFilePathDI def % "\n"
+ 	$ pprStr
+ 	$ "        " % (padR 40 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
 	% "          linkObjs:\n" 
 	% "\n" %!% (map (\p -> "             " % p) $ idLinkObjs def)
 	% "\n"

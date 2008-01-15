@@ -16,8 +16,8 @@ data SourcePos
 	deriving (Show, Eq)
 	
 instance Pretty SourcePos where
- pretty (SourcePos (f, l, c))	= f ++ ":" ++ show l ++ ":" ++ show c
- pretty NoSourcePos		= "@NoSourcePos"
+ ppr (SourcePos (f, l, c))	= ppr $ f ++ ":" ++ show l ++ ":" ++ show c
+ ppr NoSourcePos		= ppr "@NoSourcePos"
 
 
 data Literal
@@ -28,9 +28,9 @@ data Literal
 	deriving (Show, Eq)
 
 instance Pretty Literal where
- pretty lit 
+ ppr lit 
   = case lit of
-  	LInt    i	-> show i
-	LChar   c	-> show c
-	LFloat  f	-> show f
-	LString s	-> show s
+  	LInt    i	-> ppr $ show i
+	LChar   c	-> ppr $ show c
+	LFloat  f	-> ppr $ show f
+	LString s	-> ppr $ show s

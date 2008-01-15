@@ -25,7 +25,7 @@ main
 		[ ArgFlagsDDC ["-link-lib m -lint -opt-tail-call"] ]
 
 	let ?trace	= \s -> return ()
---	let ?trace	= \s -> do { putStr $ pretty s; return (); }
+--	let ?trace	= \s -> do { putStr $ pprStr s; return (); }
 
 	out	$ "\n"
 	
@@ -200,7 +200,7 @@ checkProgCompOk pathB isMain
 	timeCompileEnd		<- getClockTime
 
 	out	$ "comp("
-		% (padL 6 $ pretty $ timeCompileEnd - timeCompileStart)
+		% (padL 6 $ pprStr $ timeCompileEnd - timeCompileStart)
 		% "s)"
 
 
@@ -228,7 +228,7 @@ checkProgCompError pathB isMain
 	timeCompileEnd		<- getClockTime
 
 	out	$ "comp("
-		% (padL 6 $ pretty $ timeCompileEnd - timeCompileStart)
+		% (padL 6 $ pprStr $ timeCompileEnd - timeCompileStart)
 		% "s)"
 	
 	checkDiff
@@ -279,7 +279,7 @@ checkProgExec_custom pathB
 	timeExecuteEnd		<- getClockTime
 
 	out	$ "  exec(" 
-		% (padL 6 $ pretty $ timeExecuteEnd - timeExecuteStart)
+		% (padL 6 $ pprStr $ timeExecuteEnd - timeExecuteStart)
 		% "s)"
 	
 
@@ -295,7 +295,7 @@ checkProgExec_default pathB
 	timeExecuteEnd		<- getClockTime
 
 	out	$ "  exec(" 
-		% (padL 6 $ pretty $ timeExecuteEnd - timeExecuteStart)
+		% (padL 6 $ pprStr $ timeExecuteEnd - timeExecuteStart)
 		% "s)"
 
 -----
@@ -374,7 +374,7 @@ checkDiff2	fileOut fileCheck fileDiff
 
 -----
 out s	
- = do	putStr $ pretty s
+ = do	putStr $ pprStr s
  	hFlush stdout
 
 
@@ -390,7 +390,7 @@ systemE command
 
 -----
 instance Pretty ClockTime where
- prettyp (TOD sec_ psec_)
+ ppr (TOD sec_ psec_)
   = let	psecs	= sec_ * 10^12 + psec_
     in	(psecs `div` 10^12) % "." % (take 3 $ padLc '0' 12 $ show $ psecs `mod` 10^12)
 
@@ -398,10 +398,6 @@ instance Num ClockTime where
  (TOD s1 p1) - (TOD s2 p2)	= TOD (s1 - s2) (p1 - p2)
  (TOD s1 p1) + (TOD s2 p2)	= TOD (s1 + s2) (p1 + p2)	 
 	
-instance Pretty Integer where
- pretty = show
-
-
 
 -----
 libraryOrder

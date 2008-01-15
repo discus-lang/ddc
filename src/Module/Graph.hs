@@ -67,11 +67,11 @@ dotImport modulesCut m ms
 	
 
 dotImportS m ms
- = pretty 
+ = pprStr 
 	$ "\t" 
-	% (show $ pretty m)
+	% (show $ pprStr m)
 	% " -> " 
-	% "{" % " " %!% (map (show . pretty) ms) % "};\n"
+	% "{" % " " %!% (map (show . pprStr) ms) % "};\n"
  
 
 -----
@@ -81,7 +81,7 @@ lookupNamedModule
 	-> Maybe Module
 	
 lookupNamedModule ms name
-	= find (\m -> name == pretty m) ms
+	= find (\m -> name == pprStr m) ms
 		
 
 -----

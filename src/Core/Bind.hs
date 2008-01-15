@@ -40,7 +40,7 @@ stage	= "Core.Bind"
 debug	= False
 trace ss xx
  = if debug 
- 	then Debug.trace (pretty ss) xx
+ 	then Debug.trace (pprStr ss) xx
 	else xx
 
 
@@ -223,7 +223,7 @@ bindXDo
 
 bindXDo shared xx@(XDo ss)
  = trace 
- 	( pretty 
+ 	( pprStr 
  	$ "bindXDo_enter\n" 
 	% "  stmts        = " % (catMaybes $ map takeStmtBoundV ss) 	% "\n"
 	% "  shared above = " % (Set.toList shared)			% "\n"
@@ -302,7 +302,7 @@ bindXDo shared xx@(XDo ss)
 	--	the set of regions free in this expression
 	let vsFree	= Set.difference vsFree_stmts vsBindHere
 
-	trace	( pretty 
+	trace	( pprStr 
 			$ "bindXDo_leave\n"
 			%  "  stmts        = " % (catMaybes $ map takeStmtBoundV ss) 			% "\n"
 			%  "  shared above = " % (Set.toList shared)					% "\n"

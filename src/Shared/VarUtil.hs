@@ -36,7 +36,7 @@ newVarN		space
 	let varBind'	= Var.incVarBind varBind
 	put varBind'
 	
-	let var		= (Var.new $ pretty varBind)
+	let var		= (Var.new $ pprStr varBind)
 			{ Var.bind	= varBind
 			, Var.nameSpace	= space }
 	
@@ -47,7 +47,7 @@ newVarNS ::	NameSpace -> String	-> VarGenM Var
 newVarNS	space	     str
  = do
 	var	<- newVarN space
-	return	var { Var.name = (pretty $ Var.bind var) ++ str }
+	return	var { Var.name = (pprStr $ Var.bind var) ++ str }
 
 
 newVarNI ::	NameSpace -> [Var.VarInfo]	-> VarGenM Var
@@ -70,7 +70,7 @@ cookName	var
 prettyPos :: Var	-> String
 prettyPos var
  	= fromMaybe "?"
-	$ liftM (\(ISourcePos sp) -> pretty sp)
+	$ liftM (\(ISourcePos sp) -> pprStr sp)
 	$ find (=@= ISourcePos{}) 
 	$ Var.info var 
 

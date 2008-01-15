@@ -120,7 +120,7 @@ rewriteOverApp
 				= stripSchemeT $ packT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
-		ttSub	= trace (pretty 
+		ttSub	= trace (pprStr 
 				$ "    tInstScheme = " %> tInstScheme 	% "\n\n"
 				% "    tInstShape  = " %> tInstShape 	% "\n\n"
 				% "    tOverShapeI = " %> tOverShapeI	% "\n\n")
@@ -131,7 +131,7 @@ rewriteOverApp
 				$ unifyT2 tInstShape tOverShapeI
 		
 
-		vtSub	= trace (pretty $ "  vtSub      = " % ttSub)
+		vtSub	= trace (pprStr $ "  vtSub      = " % ttSub)
 			$ map 	(\(t1, t2) -> 
 					-- if this fails then the type params passed to the overloaded
 					--	fn weren't specific enough to determine the type 
@@ -170,7 +170,7 @@ rewriteOverApp
 	  	xx'		= unflattenAppsE xxParts'
 
    	in trace
-		(pretty	$ "rewriteOverApp/leave\n"
+		(pprStr	$ "rewriteOverApp/leave\n"
 			% "  tInstScheme        = \n" %> tInstScheme	% "\n\n"
 			% "  vtSub              = " % vtSub		% "\n\n"
 			% "  tsInstArgs         = " % tsInstArgs	% "\n\n"
@@ -188,7 +188,7 @@ rewriteOverApp
 rewriteOverApp_trace
 	xx overV cClass tOverScheme cxInstances mapTypes
  =  trace
-	(pretty	$ "* rewriteOverApp_trace/enter\n"
+	(pprStr	$ "* rewriteOverApp_trace/enter\n"
 
 		% "    function application to rewrite (xx)\n"
 			%> (" = " % xx		% "\n\n")
@@ -254,7 +254,7 @@ determineInstance
 	tInstShape	= substituteT tsSubst tOverShape
 
  in	trace
- 		(pretty	$ "* determineInstance\n"
+ 		(pprStr	$ "* determineInstance\n"
 			% "    subst these type args into the class context (tsSubst)\n"
 				%> ("  = " % tsSubst % "\n\n")
 

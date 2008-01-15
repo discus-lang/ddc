@@ -83,9 +83,9 @@ loadSpaceQualifier var
 -- Pretty printing.
 --
 instance Pretty Var where
- prettyp v
+ ppr v
  	= case nameModule v of
-		ModuleNil		-> prettyp $ prettyVarN v
+		ModuleNil		-> ppr $ prettyVarN v
 		ModuleAbsolute ns	-> 	 "." %!% ns % "." % prettyVarN v
 		ModuleRelative ns	-> "." % "." %!% ns % "." % prettyVarN v
  
@@ -150,7 +150,7 @@ data VarInfo
 
 
 instance Pretty VarInfo where
- pretty = show
+ ppr x 	= ppr $ show x
 
 
 -----------------------
@@ -161,9 +161,9 @@ data Module
 	deriving (Show, Eq, Ord)
 
 instance Pretty Module where
- prettyp m
+ ppr m
   = case m of
-	ModuleNil		-> prettyp "@ModuleNil"
+	ModuleNil		-> ppr "@ModuleNil"
   	ModuleAbsolute vs	-> "." %!% vs
 	ModuleRelative vs	-> "." % "." %!% vs
 

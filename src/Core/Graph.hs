@@ -116,7 +116,7 @@ dotAppGraph appMap
  	--allVars	= Map.keys appMap
  	--	++ concat (map snd $ Map.elems appMap)
  	
-   in	pretty
+   in	pprStr
 	$ "digraph G {\n"
 --	% (catMap dotVarNode allVars)
 	% (catMap dotBindVar $ Map.toList appMap)
@@ -136,10 +136,10 @@ dotBindVar (v, (app, freeVs))
 	_			-> dotBindVar_SC ""    "black" v
 
 dotBindVar_SC str colorStr v
- = pretty
+ = pprStr
 	$ "\t"
-	% quote (pretty $ Var.bind v)
-	% " [ label = " % quote (pretty v ++ str) 
+	% quote (pprStr $ Var.bind v)
+	% " [ label = " % quote (pprStr v ++ str) 
 	% " , color = " % colorStr 
 	% "];\n"
 
@@ -149,15 +149,15 @@ dotVarNode
 	:: Var -> String
 
 dotVarNode v
-	= pretty
+	= pprStr
 	$ "\t"
-	% quote (pretty $ Var.bind v)
-	% " [ label = " % quote (pretty v) % "];\n"
+	% quote (pprStr $ Var.bind v)
+	% " [ label = " % quote (pprStr v) % "];\n"
 	
 
 dotApp :: Var -> [Var] -> String
 dotApp	v vs
-	=  pretty
+	=  pprStr
 	$ "\t"
 	% (dotVarBind v)
 	% " -> {" 
@@ -166,6 +166,6 @@ dotApp	v vs
 
 dotVarBind :: Var -> String
 dotVarBind    v	
-	= "\"" ++ (pretty $ Var.bind v) ++ "\""
+	= "\"" ++ (pprStr $ Var.bind v) ++ "\""
 
 quote s	= "\"" ++ s ++ "\""

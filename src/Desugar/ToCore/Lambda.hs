@@ -32,7 +32,7 @@ import qualified Type.Exp	as T
 stage 		= "Desugar.ToCore.Lambda"
 debug		= True
 trace ss x	= if debug 
-			then Debug.trace (pretty ss) x
+			then Debug.trace (pprStr ss) x
 			else x
 
 -- | Add a LAMBDAs around this expression for each forall / context in the provided type.

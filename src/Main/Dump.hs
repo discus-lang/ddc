@@ -35,7 +35,7 @@ dumpST flag name sourceTree
  	when (elem flag ?args)
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".ds")
-		(concat $ map pretty
+		(concat $ map pprStr
 			$ sourceTree))
 	
 	return ()
@@ -83,7 +83,7 @@ dumpCT flag name tree
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".dc")
 		(catInt "\n"
-			$ map pretty
+			$ map pprStr
 --			$ map Core.Util.labelTypeP
 			$ tree))
 	
@@ -103,7 +103,7 @@ dumpET flag name tree
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".c")
 		(catInt "\n"
-			$ map pretty
+			$ map pprStr
 			$ tree))
 	
 	return ()

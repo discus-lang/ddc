@@ -31,7 +31,7 @@ stage	= "Type.Elaborate"
 debug	= False
 trace ss xx
  = if debug 
- 	then Debug.trace (pretty ss) xx
+ 	then Debug.trace (pprStr ss) xx
 	else xx
 	
 -- | Elaborate this type

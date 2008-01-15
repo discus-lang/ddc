@@ -50,7 +50,7 @@ newVarN		space
 	let varBind'	= Var.incVarBind varBind
 	modify (\s -> s { stateVarGen = varBind' })
 
-	let var		= (Var.new $ pretty varBind)
+	let var		= (Var.new $ pprStr varBind)
 			{ Var.bind	= varBind
 			, Var.nameSpace	= space }
 	

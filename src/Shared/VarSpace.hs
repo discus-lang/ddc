@@ -32,7 +32,7 @@ data NameSpace
 
 -----
 instance Pretty NameSpace where
- pretty = show
+ ppr x		= ppr $ show x
  
 spaceName space
   = case space of

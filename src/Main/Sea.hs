@@ -236,7 +236,7 @@ outSea
 		++ [ PHackery "\n#endif\n\n" ]
 
 	let seaHeaderS	
-		= catMap pretty 
+		= catMap pprStr 
 			$ eraseAnnotsTree seaHeader
 
 	-- Build the C code
@@ -251,7 +251,7 @@ outSea
 		++ [PHackery "\n"]	++ seaSupers
 
 	let seaCodeS	
-		= catMap pretty 
+		= catMap pprStr 
 			$ eraseAnnotsTree seaCode
 	
 	--
@@ -386,7 +386,7 @@ invokeLinker
 	  -> panic stage
 	  	$ "invokeLinker: link failed\n"
 		% "     objects:\n"
-		% (catMap (\s -> pretty $ "        " % s % "\n") objects) % "\n"
+		% (catMap (\s -> pprStr $ "        " % s % "\n") objects) % "\n"
 
 	return ()
 

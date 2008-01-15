@@ -1,9 +1,6 @@
 
 module Dot.Pretty
-(
-	
-
-)
+	()
 
 where
 
@@ -15,7 +12,7 @@ import Dot.Exp
 
 
 instance Pretty Graph where
- prettyp gg
+ ppr gg
   = case gg of
   	Graph ss	
 	 -> "graph foo {\n"
@@ -29,21 +26,21 @@ instance Pretty Graph where
 	 
 	 
 instance Pretty Stmt where
- prettyp ss
+ ppr ss
   = case ss of
   	SEdge n1 n2	-> n1 % " -> " % n2
 	SNode n1 aa	-> n1 % aa
 
 	
 instance Pretty NodeId where
- prettyp ss
+ ppr ss
   = case ss of
-  	NVar v		-> prettyp $ show $ pretty (Var.bind v)
-	NString s	-> prettyp $ show s
+  	NVar v		-> ppr $ show $ pprStr (Var.bind v)
+	NString s	-> ppr $ show s
 
 
 instance Pretty Attr where
- prettyp aa
+ ppr aa
   = case aa of
   	ALabel s	-> "label = " % show s
 	AColor s	-> "color = " % show s

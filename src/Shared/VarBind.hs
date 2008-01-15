@@ -141,10 +141,10 @@ incVarBind	b
 
 ----
 instance Pretty VarBind where
- pretty b
+ ppr b
   = case b of
-  	XBind	s i	-> s ++ show i
-	_		-> show b
+  	XBind	s i	-> ppr $ s ++ show i
+	_		-> ppr $ show b
 	
 
 

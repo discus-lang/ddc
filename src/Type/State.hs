@@ -216,7 +216,7 @@ traceM p
  	case mHandle of
 	 Nothing	-> return ()
 	 Just handle
-	  -> do liftIO (hPutStr handle $ indent i $ pretty p)
+	  -> do liftIO (hPutStr handle $ indent i $ pprStr p)
 	  	liftIO (hFlush  handle)
 
 	
@@ -260,7 +260,7 @@ instVar' var space mVarId
 		sVarGen		<##> Map.insert space varId'
 
 		-- the new variable remembers what it's an instance of..
-		let name	= pretty varId
+		let name	= pprStr varId
 		let var'	= (Var.new name)
 			 { Var.nameSpace		= Var.nameSpace var
 			 , Var.bind		= varId
@@ -279,7 +279,7 @@ newVarN	space
 	let varId'	= Var.incVarBind varId
 	sVarGen		<##> Map.insert space varId'
 	
-	let name	= pretty varId
+	let name	= pprStr varId
 	let var'	= (Var.new name)
 			{ Var.nameSpace		= space 
 			, Var.bind		= varId }

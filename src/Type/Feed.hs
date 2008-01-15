@@ -378,7 +378,6 @@ feedFetter	mParent f
 		addNode cidC	$ TFetter (FProj pj v tDict' tBind')
 		
 	_ -> panic stage 
-		$ pretty
 		$ "feedFetter: cannot feed " % f % "\n"
 		% "      " % show f % "\n"
 

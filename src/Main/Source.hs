@@ -209,7 +209,7 @@ sourceKinds
 sourceKinds sTree
  = do	let kinds	= slurpKinds sTree
 	dumpS DumpSourceKinds "source-kinds" 
-		(catMap (\(v, k) -> pretty $ v %>> " :: " % k % ";\n") kinds)
+		(catMap (\(v, k) -> pprStr $ v %>> " :: " % k % ";\n") kinds)
 		
 	return	kinds
 
@@ -296,7 +296,7 @@ desugarProject moduleName headerTree sourceTree
 	let projTable	= slurpProjTable (headerTree ++ sourceTree')
 
 	dumpS  DumpDesugaredProject "desugared-project-dicts"
-		(pretty $ "\n" %!% (map prettyp $ Map.toList projTable))
+		(pprStr $ "\n" %!% (map ppr $ Map.toList projTable))
 
 		
 	return (sourceTree', projTable)
@@ -341,13 +341,13 @@ slurpC	sTree
 	dumpST	DumpDesugaredSlurped "desugared-slurped" source'
 	
 	dumpS	DumpTypeConstraints "type-constraints--source"
-		$ (catInt "\n" $ map pretty sctrs)
+		$ (catInt "\n" $ map pprStr sctrs)
 		
 	dumpS	DumpTypeConstraints "type-constraints--header"
-		$ (catInt "\n" $ map pretty hctrs)
+		$ (catInt "\n" $ map pprStr hctrs)
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
-		$ (catInt "\n" $ map pretty $ Set.toList vsTypesPlease)
+		$ (catInt "\n" $ map pprStr $ Set.toList vsTypesPlease)
 		
 	dumpS	DumpTypeSlurp  "type-slurp-trace"
 		$ concat $ D.stateTrace state3
@@ -414,29 +414,29 @@ solveSquid
 	-- dump final solver state
 	dumpS	DumpTypeSolve  "type-solve--types"
 		$ catInt "\n\n"
-		$ map pretty
+		$ map pprStr
 		$ map (\(v, t) -> v % " ::\n" %> T.prettyTS t)
 		$ Map.toList typeTable
 
 	dumpS 	DumpTypeSolve   "type-solve--inst" 
 		$ catInt "\n\n"
-		$ map pretty
+		$ map pprStr
 		$ map (\(v, inst) -> v % "\n" % inst % "\n")
 		$ Map.toList typeInst
 
 	dumpS	DumpTypeSolve	"type-solve--quantVars"
 		$ catInt "\n"
-		$ map pretty
+		$ map pprStr
 		$ Set.toList quantVars
 
 	dumpS	DumpTypeSolve	"type-solve--portTable"
 		$ catInt "\n\n"
-		$ map pretty
+		$ map pprStr
 		$ Map.toList  portTable
 
 	dumpS	DumpTypeSolve	"type-solve--regionClasses"
 		$ catInt "\n"
-		$ map pretty
+		$ map pprStr
 		$ Map.toList vsRegionClasses
 
 	let vsFree	= Set.empty
@@ -512,7 +512,7 @@ handleErrors errs
  = case filter (=@= StopErrors{}) ?args of
   	(StopErrors [file] : _)
 	 -> do 	writeFile file 
-			(catInt "\n" $ map pretty errs)
+			(catInt "\n" $ map pprStr errs)
 			
 		exitWith ExitSuccess
 		

@@ -26,7 +26,7 @@ import qualified Debug.Trace	as Debug
 debug	= False
 trace ss x	
 	= if debug
-		then Debug.trace (pretty ss) x
+		then Debug.trace (pprStr ss) x
 		else x
 		
 
@@ -280,7 +280,7 @@ bindFreeVarsP
 	bindType vTop (reconP_type (stage ++ ".bindFreeVarsP") pBound)
 
 	trace
-	 (pretty	$ "\n\n\n"
+	 (pprStr	$ "\n\n\n"
 	 		% "* bindFreeVarsP\n"
 			% "    vTop      = "	% vTop		% "\n"
 			% "    x:\n"		%> x		% "\n\n"

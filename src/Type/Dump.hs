@@ -34,7 +34,7 @@ dumpGraph
 	classes		<- liftIO (getElems $ graphClass school)
 	classesU	<- mapM updateC classes
 	
-	return	$ pretty
+	return	$ pprStr
 		$ "===== Equiv Clases =====================================\n"
 		% concat (zipWith prettyClass [0..] classesU)
 		% "\n\n"
@@ -49,16 +49,16 @@ dumpGens
  	-- Generalisations
 {-	gens		<- gets stateGen
 	
-	return	$ pretty
+	return	$ pprStr
 		$ "===== Generalisations =========================================\n"
-		% (concat $ map pretty $ map prettyVTE $ Map.toList gens)
+		% (concat $ map pprStr $ map prettyVTE $ Map.toList gens)
 		% "\n\n"
 -}
 	return ""
 		
 prettyVTE (v, (t, env))
- =   padR 20 (pretty v) % "\n" 
- %> ( ":: " % (pretty $ prettyTS t) % "\n"
+ =   padR 20 (pprStr v) % "\n" 
+ %> ( ":: " % (pprStr $ prettyTS t) % "\n"
     % ":- ENV = " % env) % "\n\n"
 		
 	
@@ -68,7 +68,7 @@ dumpInst
  	-- Instantiations
 	mInst		<- gets stateInst
 
-	return	$ pretty
+	return	$ pprStr
 		$ "===== Instantiations ========================================\n"
 		% prettyVMap mInst
 		% "\n\n"
@@ -80,7 +80,7 @@ dumpSub
 	mVarSub		<- gets stateVarSub
 		
 	-----
-	return 	$ pretty 
+	return 	$ pprStr 
 		$ "===== Var Sub ===============================================\n"
 		% prettyVMap mVarSub
 		% "\n\n"
@@ -95,17 +95,17 @@ prettyClass (ix :: Int) c
 
 	ClassForward c	-> []		
 {-	ClassForward c
-	 -> pretty
+	 -> pprStr
 	 	$ ". ClassForward @" % ix % " ==> " % c % "\n\n"
 -}
 	ClassFetter { classFetter = f }
-	 -> pretty
+	 -> pprStr
 	 	$ "Class +" % classId c % "\n"
 		% "        " % f % "\n"
 		% "\n\n"
 
  	Class{}
-	 -> pretty
+	 -> pprStr
 		$ "Class " % classKind c % classId c 
 		%> ("\n" % ":: " % liftM prettyTS (classType c))	% "\n\n"
 		% "        -- name\n"
@@ -118,7 +118,7 @@ prettyClass (ix :: Int) c
 		% "\n"
 		% "        -- nodes\n"
 		% (concat
-			$ map pretty
+			$ map pprStr
 			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t) % "\n\n")
 			$ (classNodes c))
 		% "\n"
@@ -126,15 +126,15 @@ prettyClass (ix :: Int) c
 
 prettyVMap 	m
 	= concat
-	$ map (\(v, t) -> (padR 20 $ pretty v) ++ " = " ++ (pretty t) ++ "\n")
+	$ map (\(v, t) -> (padR 20 $ pprStr v) ++ " = " ++ (pprStr t) ++ "\n")
 	$ Map.toList m
 	
 prettyVMapT 	m
 	= concat
-	$ map pretty
+	$ map pprStr
 	$ map (\(v, t) 
-		-> (padR 20 $ pretty v) 	% "\n"
-		%> (":: " % (pretty $ prettyTS t)) % "\n\n")
+		-> (padR 20 $ pprStr v) 	% "\n"
+		%> (":: " % (pprStr $ prettyTS t)) % "\n\n")
 	$ Map.toList m
  	 
  

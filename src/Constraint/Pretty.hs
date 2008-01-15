@@ -15,10 +15,10 @@ import Constraint.Exp
 
 -- CTree -----------------------------------------------------------------------
 instance Pretty CTree where
- prettyp c  
+ ppr c  
   = case c of
  	CTreeNil
-	 -> prettyp "@CTreeNil"
+	 -> ppr "@CTreeNil"
 
 	CBranch{}
 	 -> "@CBranch ("  % branchBind c % ")\n"
@@ -27,13 +27,13 @@ instance Pretty CTree where
 	  % "}\n"
 
 	CDef 	src v t	
-	 -> "@CDef " % padR 15 (pretty v) % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
+	 -> "@CDef " % padR 15 (pprStr v) % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
 
 	CSig	src v t
-	 -> "@CSig  " % padR 15 (pretty v) % " " % prettyTB t % ";"
+	 -> "@CSig  " % padR 15 (pprStr v) % " " % prettyTB t % ";"
 
 	CEq 	src v t	
-	 -> "@CEq   " % padR 15 (pretty v) % " " % prettyTB t % ";"
+	 -> "@CEq   " % padR 15 (pprStr v) % " " % prettyTB t % ";"
 
 	CEqs 	src ts
 	 -> "@CEqs  " % ts
@@ -63,7 +63,7 @@ instance Pretty CTree where
 	 -> "@ClassInst " % v % " " % ts % ";"
 
 	CInst src v1 v2
-	 -> "@CInst " % padR 15 (pretty v1) % " " % v2 % ";"
+	 -> "@CInst " % padR 15 (pprStr v1) % " " % v2 % ";"
 	 
 	CGen src v1
 	 -> "@CGen  " % v1 % ";"
@@ -79,7 +79,7 @@ instance Pretty CTree where
 	 -> "@CLeave " % v % ";"
  
  	CGrind
-	 -> prettyp "@CGrind"
+	 -> ppr "@CGrind"
 
 	CInstLambda ts v1 v2
 	 -> "@InstLambda " % v1 % " " % v2
@@ -95,9 +95,9 @@ instance Pretty CTree where
 
 -- CBind -----------------------------------------------------------------------
 instance Pretty CBind where
- prettyp bb	
+ ppr bb	
   = case bb of
-	BNil		-> prettyp "@BNil"
+	BNil		-> ppr "@BNil"
   	BLet 	v	-> "@BLet "		% v
 	BLetGroup vs	-> "@BLetGroup "	% vs
 	BLambda	v 	-> "@BLambda "		% v

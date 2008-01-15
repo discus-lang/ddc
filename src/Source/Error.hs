@@ -50,60 +50,57 @@ data Error
 
 instance Pretty Error where
 
- pretty (ErrorParse tok str)
- 	= unlines $
+ ppr (ErrorParse tok str)
+ 	= ppr
+	$ unlines $
 	[ prettyPosT tok
 	, "    Parse error: " ++ str ]
 
- pretty (ErrorParseBefore tok)
- 	= unlines $ 
+ ppr (ErrorParseBefore tok)
+ 	= ppr
+	$ unlines $ 
 	[ prettyPosT tok
 	, "    Parse error before: " ++ prettyTok tok ++ "."]
 
- pretty (ErrorParseEnd)
- 	= unlines $ 
+ ppr (ErrorParseEnd)
+ 	= ppr $ unlines $ 
 	[ "    Parse error at end of input.\n" ]
 
- pretty err@(ErrorUndefinedVar{})
- 	= pretty 	
-	$ prettyPos (eUndefined err)								% "\n"
+ ppr err@(ErrorUndefinedVar{})
+	= prettyPos (eUndefined err)								% "\n"
 	% "     Undefined variable '" 	% eUndefined err  
 	% "' in namespace " 		% (spaceName $ Var.nameSpace (eUndefined err))		% ".\n"
 
- pretty err@(ErrorShadowVar{})
- 	= pretty 	
-	$ prettyPos (eShadowVar err)								% "\n"
+ ppr err@(ErrorShadowVar{})
+	= prettyPos (eShadowVar err)								% "\n"
 	% "     Shadowed TREC variable '" % eShadowVar err  
 	% "' in namespace " 		% (spaceName $ Var.nameSpace (eShadowVar err))		% ".\n"
 	
- pretty err@(ErrorRedefinedVar{})
- 	= pretty
-	$ prettyPos (eRedefined err)								% "\n"
+ ppr err@(ErrorRedefinedVar{})
+	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined variable '" 	% eRedefined err 					% "'\n"
 	% "          in namespace: " 	% (spaceName $ Var.nameSpace (eFirstDefined err))	% "\n"
 	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
 
- pretty (ErrorDefixNonAssoc (v:vs))
-	= pretty
-	$ prettyPos v % "\n"
+ ppr (ErrorDefixNonAssoc (v:vs))
+	= prettyPos v % "\n"
 	% "    Precedence parsing error.\n"
 	% "      Cannot have multiple non-associative operators of the same precedence\n"
 	% "      in an infix expression.\n"
 	% "\n"
 	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
 
- pretty (ErrorDefixMixedAssoc (v:vs))
- 	= pretty
-	$ prettyPos v % "\n"
+ ppr (ErrorDefixMixedAssoc (v:vs))
+	= prettyPos v % "\n"
 	% "    Precedence parsing error.\n"
 	% "      Cannot have operators of same precedence but with differing\n"
 	% "      associativities in an infix expression.\n"
 	% "\n"
 	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
  
- pretty x
+ ppr x
   	= panic stage
-	$ "pretty: no match for " % show x
+	$ "ppr: no match for " % show x
 	
 
 prettyPosT :: TokenP	-> String

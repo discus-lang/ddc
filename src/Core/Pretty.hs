@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Core.Pretty
-	( pretty )
+	( pprStr )
 
 where
 
@@ -30,23 +30,23 @@ prettyFoldXLAM		= True
 
 
 -------------------------------------------------------------------------------------------------
-sv v	= pretty $ pv v
+sv v	= pprStr $ pv v
 
-sb (BVar v)	= pretty $ pv v
-sb (BMore v t)	= pretty $ "(" % (pretty $ pv v) % " :> " % t % ")"
+sb (BVar v)	= pprStr $ pv v
+sb (BMore v t)	= pprStr $ "(" % (pprStr $ pv v) % " :> " % t % ")"
 
 -- | force display of type namespace qualifier
 pv v
  = case Var.nameSpace v of
  	Var.NameType	-> "*" % v
-	_		-> prettyp v
+	_		-> ppr v
 
 -- Top ----------------------------------------------------------------------------------------------
 instance Pretty Top where
- prettyp xx
+ ppr xx
   = case xx of
 	PNil
-	 -> prettyp "@PNil"
+	 -> ppr "@PNil"
 
 	PBind v e
 	 -> v % "\n"
@@ -58,7 +58,7 @@ instance Pretty Top where
 	PExtern v tv to
 	 -> "extern " % v % "\n"
 	 %  " =      "
-	 	%> (pretty tv % "\n"
+	 	%> (pprStr tv % "\n"
 		%  ":$ " % to % ";\n")
 
 	PData v vs []
@@ -105,7 +105,7 @@ instance Pretty Top where
 
 -- CtorDef --------------------------------------------------------------------------------------------
 instance Pretty CtorDef where
- prettyp xx
+ ppr xx
   = case xx of
   	CtorDef v fs
  	 -> v 	% "\n{\n"
@@ -114,13 +114,13 @@ instance Pretty CtorDef where
 	 
 -- Exp ----------------------------------------------------------------------------------------------
 instance Pretty Exp where
- prettyp xx
+ ppr xx
   = case xx of
 	XNil	
-	 -> prettyp "@XNil"
+	 -> ppr "@XNil"
 
 	XNothing
-	 -> prettyp "@XNothing"
+	 -> ppr "@XNothing"
 
 	XAnnot a e
 	 -> "[" % a % ";\n " % e % "]"
@@ -242,7 +242,7 @@ instance Pretty Exp where
 	 -> "@XAt " % v % " " % x
 
 	XType t
-	 -> prettyp t
+	 -> ppr t
 
 	XLifted vLifted vsFree
 	 -> "@XLifted " % vLifted % " " % vsFree
@@ -257,8 +257,8 @@ spaceApp xx
 
 prettyE_caused	eff
  = case eff of
-	TBot KEffect	-> prettyp "<>"
-	_		-> "<" % prettyp eff % ">"
+	TBot KEffect	-> ppr "<>"
+	_		-> "<" % ppr eff % ">"
 
 prettyClosureV (v, (eff, env))
 	=  v %  " = " 
@@ -268,35 +268,35 @@ prettyClosureV (v, (eff, env))
 
 prettyClosureEff es
  = case es of
- 	[]	-> prettyp " "
+ 	[]	-> ppr " "
 	_	-> " {" % ", " %!% es % "}"
 	
 prettyClosureEnv es
  = case es of
- 	[]	-> prettyp " "
+ 	[]	-> ppr " "
 	_	-> " [" % ", " %!% es % "]"
 
 
 prettyVK	(var, kind)
  = case kind of
- 	KData		-> prettyp var
-	KRegion		-> prettyp var
-	KEffect		-> prettyp var
-	KClosure	-> prettyp var
+ 	KData		-> ppr var
+	KRegion		-> ppr var
+	KEffect		-> ppr var
+	KClosure	-> ppr var
 	_		-> "(" % var % " :: " % kind % ")"
 	
 
 prettyExpB x
  = case x of
-	XVar{}		-> prettyp x
-	XConst{}	-> prettyp x
-	XAnnot{}	-> prettyp x
+	XVar{}		-> ppr x
+	XConst{}	-> ppr x
+	XAnnot{}	-> ppr x
 	XType t		-> prettyTB t
 	_		-> "(" % x % ")"
 
 -- Proj --------------------------------------------------------------------------------------------
 instance Pretty Proj where
- prettyp xx
+ ppr xx
   = case xx of
   	JField v	-> "." % v
 	JFieldR v	-> "#" % v
@@ -304,37 +304,37 @@ instance Pretty Proj where
 
 -- Prim --------------------------------------------------------------------------------------------
 instance Pretty Prim where
- prettyp xx 
+ ppr xx 
   = case xx of
   	MSuspend v	-> "prim{Suspend} " 	% v
-	MForce 		-> prettyp "prim{Force}"
+	MForce 		-> ppr "prim{Force}"
 	MBox	t1 t2	-> "prim{Box} "		% prettyTB t1 % " " % prettyTB t2
 	MUnbox	t1 t2	-> "prim{Unbox} "	% prettyTB t1 % " " % prettyTB t2
-	MTailCall  	-> prettyp "prim{TailCall}"	
-	MCall		-> prettyp "prim{Call}"
+	MTailCall  	-> ppr "prim{TailCall}"	
+	MCall		-> ppr "prim{Call}"
 	MCallApp i	-> "prim{CallApp " % i % "}"
-	MApply		-> prettyp "prim{Apply} "
+	MApply		-> ppr "prim{Apply} "
 	MCurry	 i	-> "prim{Curry " % i % "}"
-	MFun 		-> prettyp "prim{Fun}"
+	MFun 		-> ppr "prim{Fun}"
 
 
 -- Stmt --------------------------------------------------------------------------------------------
 instance Pretty Stmt where
- prettyp xx
+ ppr xx
   = case xx of
 --	SComment s
---	 -> "-- " % prettyp s
+--	 -> "-- " % ppr s
 
 	SBind Nothing x
-	 -> prettyp x
+	 -> ppr x
 
 
 	SBind (Just v) x
-	 |  length (pretty v) < 7  
+	 |  length (pprStr v) < 7  
 	    && (not $ isXLambda x)
 	    && (not $ isXLAMBDA x)
 	    && (not $ isXTau x)
-	 -> (padR 7 (pretty v)) 
+	 -> (padR 7 (pprStr v)) 
 	 	% " = " 	%> x
 	 
 	 | otherwise
@@ -346,7 +346,7 @@ prettyRFs (r, fs)	= r %> " :- " % ", " %!% fs	% ";"
 
 -- Alt --------------------------------------------------------------------------------------------
 instance Pretty Alt where
- prettyp xx
+ ppr xx
   = case xx of
 	AAlt [] x
 	 -> "| otherwise \n"
@@ -360,7 +360,7 @@ instance Pretty Alt where
   
 -- Guard --------------------------------------------------------------------------------------------
 instance Pretty Guard where
- prettyp xx
+ ppr xx
   = case xx of
 	GExp pat exp
 	 -> pat	%>> " <- " % exp
@@ -368,38 +368,38 @@ instance Pretty Guard where
 
 -- Pat ---------------------------------------------------------------------------------------------
 instance Pretty Pat where
- prettyp xx 
+ ppr xx 
   = case xx of
-  	WConst c t	-> prettyp c % " :: " % t
+  	WConst c t	-> ppr c % " :: " % t
 	
 
-	WCon v []	-> prettyp v 
+	WCon v []	-> ppr v 
 	WCon v binds
 	 -> v % "\n"
 	  %> ("{ " % "\n, " %!% (map prettyLVT binds))  % " }"
  
 prettyLVT (label, var, t)
 	= "." % label 
-	% " = " % padR 5 (pretty var) 
+	% " = " % padR 5 (pprStr var) 
 		%> (" :: " % t)
 	
 -- Label --------------------------------------------------------------------------------------------
 instance Pretty Label where
- prettyp xx
+ ppr xx
   = case xx of
-  	LIndex	i	-> prettyp i
-	LVar	v	-> prettyp v
+  	LIndex	i	-> ppr i
+	LVar	v	-> ppr v
 
 
 -- Annot --------------------------------------------------------------------------------------------
 instance Pretty Annot where
- prettyp xx
+ ppr xx
   = case xx of
   	NString s	-> "&NString " 	 % s
 	NType x		-> "&NType "  	 % x
 	NTypeOp t	-> "&NTypeOp "	 % t
 	NUseCount i	-> "&NUseCount " % i
-	NPure		-> prettyp "&Pure"
+	NPure		-> ppr "&Pure"
 	NBindVar v	-> "&NBindVar "	 % v
 	NLevel i	-> "&NLevel "	% i
 	NFreeLevel vs	-> "&NFreeLevel " % vs
@@ -408,10 +408,10 @@ instance Pretty Annot where
 
 -- Type --------------------------------------------------------------------------------------------
 instance Pretty Type where
- prettyp xx
+ ppr xx
   = case xx of
 	TNil 
-	 -> prettyp "@TNil"
+	 -> ppr "@TNil"
 	 
 	TForall v k t
 	 -> "forall (" % v % " :: " % k % "). " % t
@@ -432,7 +432,7 @@ instance Pretty Type where
 	TVar	k v	
 	 -> case k of
 	 	KData	-> "*" % v
-		_	-> prettyp v
+		_	-> ppr v
 
 	-- data
 	TFun x1 x2
@@ -453,18 +453,18 @@ instance Pretty Type where
 		 -> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
 
 	TData v ts
-	 ->       " " %!% (prettyp v : map prettyTB ts)
+	 ->       " " %!% (ppr v : map prettyTB ts)
 
 	-- effect
-	TEffect v xs	-> " " %!% (prettyp v : map prettyTB xs)
-	TBot KEffect	-> prettyp "!PURE"
-	TTop KEffect	-> prettyp "!SYNC"
+	TEffect v xs	-> " " %!% (ppr v : map prettyTB xs)
+	TBot KEffect	-> ppr "!PURE"
+	TTop KEffect	-> ppr "!SYNC"
 
 	-- closure
 	TFree v t	-> v % " : " % t
-	TTag v		-> prettyp v
-	TBot KClosure	-> prettyp "$EMPTY"
-	TTop KClosure	-> prettyp "$OPEN"
+	TTag v		-> ppr v
+	TBot KClosure	-> ppr "$EMPTY"
+	TTop KClosure	-> ppr "$OPEN"
 
 	-- other top/bottoms
 	TBot k		-> "@Bot " % k
@@ -483,18 +483,18 @@ instance Pretty Type where
 prettyTRight tt
  = case tt of
  	TFetters{}	-> "(" % tt % ")"
-	_		-> prettyp tt
+	_		-> ppr tt
 
 
 prettyTB t
  = case t of
-	TSum{}		-> prettyp t
- 	TVar{}		-> prettyp t
-	TData v []	-> prettyp t
-	TEffect v []	-> prettyp t
-	TWild{}		-> prettyp t
-	TBot{}		-> prettyp t
-	TTop{}		-> prettyp t
+	TSum{}		-> ppr t
+ 	TVar{}		-> ppr t
+	TData v []	-> ppr t
+	TEffect v []	-> ppr t
+	TWild{}		-> ppr t
+	TBot{}		-> ppr t
+	TTop{}		-> ppr t
 	_		-> "(" % t % ")" 	
 
 prettyTBF e
@@ -505,11 +505,11 @@ prettyTBF e
 	= "(" % e % ")"
 
 	| otherwise
-	= prettyp e
+	= ppr e
 
 -- TFetter -----------------------------------------------------------------------------------------
 instance Pretty Fetter where
- prettyp xx
+ ppr xx
   = case xx of
   	FWhere v t	-> sv v % " =  " % t
 	FMore  v t	-> sv v % " :> " % t
@@ -517,21 +517,21 @@ instance Pretty Fetter where
 
 -- TBind -------------------------------------------------------------------------------------------
 instance Pretty Bind where
- prettyp xx
+ ppr xx
   = case xx of
-  	BVar v		-> prettyp v
+  	BVar v		-> ppr v
 	BMore v t	-> "(" % v % " :> " % t % ")"
 
 
 -- Kind --------------------------------------------------------------------------------------------
 instance Pretty Kind where
- prettyp xx
+ ppr xx
   = case xx of
-	KNil		-> prettyp "KNil"
-	KData		-> prettyp "*"
-	KRegion		-> prettyp "%"
-	KEffect		-> prettyp "!"
-	KClosure	-> prettyp "$"
+	KNil		-> ppr "KNil"
+	KData		-> ppr "*"
+	KRegion		-> ppr "%"
+	KEffect		-> ppr "!"
+	KClosure	-> ppr "$"
 	KFun k1 k2	-> k1 % " -> " % k2
 
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts

@@ -368,7 +368,7 @@ popN	space
 	{ stateStack	
 		= Map.adjust 
 			(\ss -> case ss of 
-				[] 	-> panic stage $ pretty 
+				[] 	-> panic stage  
 					$ "popN: namespace " % space % " is empty, cannot pop."
 				(m:ms)	-> ms)
 			space

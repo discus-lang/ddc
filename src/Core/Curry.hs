@@ -38,7 +38,7 @@ import Core.Plate.Trans
 -----
 stage		= "Core.Curry"
 debug		= False
-trace s	x 	= if debug then Debug.trace (pretty s) x else x
+trace s	x 	= if debug then Debug.trace (pprStr s) x else x
 
 ----- 
 

@@ -22,9 +22,9 @@ stage	= "Type.Pretty"
 -- pretty Type
 --
 instance Pretty Type where
- prettyp xx
+ ppr xx
   = case xx of
- 	TNil			-> prettyp "@TNil"
+ 	TNil			-> ppr "@TNil"
 
 	TForall vs t		-> "forall " % " " %!% (map prettyVK vs) % ". " % t
 	TFetters fs t		-> t % " :- " % ", " %!% fs
@@ -33,14 +33,14 @@ instance Pretty Type where
 	TSum   k  es		-> k  % "{" % "; " %!% es % "}"
 	TMask  k  t1 t2		-> prettyTB t1 % " \\ " % prettyTB t2
 
-	TVar k v		-> prettyp v
+	TVar k v		-> ppr v
 
 	TTop k			-> k % "Top"
 	TBot k			-> k % "Bot"
 
 
 	-- data
-	TData v []		-> prettyp v 
+	TData v []		-> ppr v 
 	TData v ts		-> v % " " % " " %!% (map prettyTB ts)
 
 	TFun t1 t2 eff clo
@@ -52,12 +52,12 @@ instance Pretty Type where
 								% prettyTRight t2
 		
 	-- effect
-	TEffect    v []		-> prettyp v
+	TEffect    v []		-> ppr v
 	TEffect    v ts		-> v % " " % " " %!% map prettyTB ts
 
 	-- closure
 	TFree  v t		-> v % " : " % t
-	TTag v			-> prettyp v
+	TTag v			-> ppr v
 	
 	-- wild cards
 	TWild k			-> k % "_"
@@ -96,7 +96,7 @@ instance Pretty Type where
 
 
 	-----
-	TFunF tEs	-> prettyp tEs
+	TFunF tEs	-> ppr tEs
 
 	TFunV t1 t2 mV
 	 -> case mV of
@@ -109,9 +109,9 @@ instance Pretty Type where
 	
 
 instance Pretty ClassId where
- prettyp c
+ ppr c
   = case c of
-  	ClassId i	-> prettyp i
+  	ClassId i	-> ppr i
 
 -----
 prettyTBF t
@@ -119,66 +119,66 @@ prettyTBF t
  	TFun{}		-> "(" % t % ")"
 	TMutable{}	-> "(" % t % ")"
 	
-	_ 		-> prettyp t
+	_ 		-> ppr t
 
 prettyTRight tt
  = case tt of
  	TFetters{}	-> "(" % tt % ")"
-	_		-> prettyp tt
+	_		-> ppr tt
 
 prettyTB t
  = case t of
- 	TData v []	-> prettyp t
-	TVar k v 	-> prettyp t
-	TSum{}		-> prettyp t
-	TEffect v []	-> prettyp t
-	TTag v		-> prettyp t
-	TWild{}		-> prettyp t
-	TClass{}	-> prettyp t
-	TBot{}		-> prettyp t
-	TTop{}		-> prettyp t
+ 	TData v []	-> ppr t
+	TVar k v 	-> ppr t
+	TSum{}		-> ppr t
+	TEffect v []	-> ppr t
+	TTag v		-> ppr t
+	TWild{}		-> ppr t
+	TClass{}	-> ppr t
+	TBot{}		-> ppr t
+	TTop{}		-> ppr t
 	_		-> "(" % t % ")"
 
 ----
 instance Pretty TProj where
- prettyp p
+ ppr p
   = case p of
   	TJField  v	-> "." % v
 	TJFieldR v	-> "#" % v
-	_		-> panic stage "prettyp[TProj]: no match"
+	_		-> panic stage "ppr[TProj]: no match"
 
 ----
 prettyVK ::	(Var, Kind)	-> PrettyP
 prettyVK	(var, kind)
  = case kind of
-	KData		-> prettyp var
-	KRegion		-> prettyp var
-	KEffect		-> prettyp var
-	KClosure	-> prettyp var
+	KData		-> ppr var
+	KRegion		-> ppr var
+	KEffect		-> ppr var
+	KClosure	-> ppr var
 	_		-> "(" % var % " :: " % kind % ")"
 
 -----
 instance Pretty Fetter where
- prettyp f
+ ppr f
   = case f of
   	FConstraint	c ts	-> c % " " % " " %!% map prettyTB ts
-	FLet		t1 t2	-> padR 10 (pretty t1) % " = "	% t2
-	FMore		t1 t2	-> padR 10 (pretty t1) % " :> " % t2
+	FLet		t1 t2	-> padR 10 (pprStr t1) % " = "	% t2
+	FMore		t1 t2	-> padR 10 (pprStr t1) % " :> " % t2
 	
 	FProj     pj v1 tDict tBind
 	 -> "Proj "	% pj	% " " % v1 % " " % tDict % " " % tBind
 
-	FFunInfo v eff   	(TBot _)	-> padR 5 (pretty v) % " = " % eff
-	FFunInfo v (TBot _) 	clo		-> padR 5 (pretty v) % " = " % clo
-	FFunInfo v eff   	clo		-> padR 5 (pretty v) 	% " = " % eff % "\n"
+	FFunInfo v eff   	(TBot _)	-> padR 5 (pprStr v) % " = " % eff
+	FFunInfo v (TBot _) 	clo		-> padR 5 (pprStr v) % " = " % clo
+	FFunInfo v eff   	clo		-> padR 5 (pprStr v) 	% " = " % eff % "\n"
 						%  "        "		% " | " % clo
 
 
 -----
 instance Pretty TypeSource where
- prettyp ts = 
+ ppr ts = 
   case ts of
-  	TSNil				-> prettyp "@TSNil"
+  	TSNil				-> ppr "@TSNil"
 	TSLiteral 	sp c		-> "@TSLiteral " % sp % " " % c
 	TSInst   	vDef vInst	-> "@TSInst   "	% vDef % " " % vInst
 	TSProj		sp pf		-> "@TSProj "	% sp % pf
@@ -207,24 +207,24 @@ instance Pretty TypeSource where
 	TSCrushed	f		-> "@TSCrushed " % f
 	TSSynth	 	v		-> "@TSSynth  " % " " % v
 	TSProjCrushed  	cidT cidP pf	-> "@TSProjCrushed " % cidT % " " % cidP % " " % pf
-	TSClassName			-> prettyp "@TSClassName "
+	TSClassName			-> ppr "@TSClassName "
 	
 
 -----
 instance Pretty Kind where
- pretty	k
+ ppr k
   = case k of
-	KFun k1 k2	-> pretty k1 ++ " -> " ++ pretty k2
-	KData		-> "*"
-	KRegion		-> "%"
-	KEffect		-> "!"
-	KFetter		-> "+"
-	KClosure	-> "$"
+	KFun k1 k2	-> k1 % " -> " % k2
+	KData		-> ppr "*"
+	KRegion		-> ppr "%"
+	KEffect		-> ppr "!"
+	KFetter		-> ppr"+"
+	KClosure	-> ppr "$"
 	_		-> panic stage "pretty[Kind]: no match"
 
 instance  (Pretty param)
 	=> Pretty (InstanceInfo param Type) where
- prettyp ii
+ ppr ii
   = case ii of
   	InstanceLambda v1 v2 mt
 	 -> "InstanceLambda " 	% v1 % " " % v2 % " " % mt
@@ -259,7 +259,7 @@ prettyTypeSplit2 x
 	 -> t 	% "\n"
 	 % ":- " % prettyTypeFS fs
 	
-	_ -> prettyp x
+	_ -> ppr x
 	 
 prettyTypeFS fs
  	= "\n,  " %!% fs

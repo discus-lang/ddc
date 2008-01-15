@@ -1,9 +1,6 @@
 
 module Core.Optimise.FullLaziness
-(
-	fullLazinessTree
-)
-
+	( fullLazinessTree)
 
 where
 
@@ -162,7 +159,7 @@ slurpLevelX n xx
 	 -> do
 	 	(ss, gen)	<- get
 		
-		let var		= (Var.new (pretty gen))
+		let var		= (Var.new (pprStr gen))
 				{ Var.bind 	= gen 
 				, Var.nameSpace	= NameValue}
 			

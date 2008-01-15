@@ -163,7 +163,7 @@ solveCs	(c:cs)
 
 	-- type signature
 	CSig src t1 t2
-	 -> do	trace	$ "### CSig  " % padR 20 (pretty t1) % " = " %> prettyTS t2 % "\n"
+	 -> do	trace	$ "### CSig  " % padR 20 (pprStr t1) % " = " %> prettyTS t2 % "\n"
 
 		t2_inst	<- instantiateT instVar t2
 		feedConstraint (CSig src t1 t2_inst)
@@ -187,7 +187,7 @@ solveCs	(c:cs)
 
 	-- Equality Constraint
 	CEq src t1 t2
- 	 -> do	trace	$ "### CEq  " % padR 20 (pretty t1) % " = " %> prettyTS t2 % "\n"
+ 	 -> do	trace	$ "### CEq  " % padR 20 (pprStr t1) % " = " %> prettyTS t2 % "\n"
 		feedConstraint c
 		solveNext cs
 	
@@ -404,7 +404,7 @@ solveCInst_simple
 	-- THEN then we can extract it straight from the graph.
 	| Set.member vInst sGenDone
 	= do	
-		trace	$ prettyp "*   solveCInst_simple: Scheme is in graph.\n"
+		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
 		return	$ CGrind : (CInstLet src vUse vInst) : cs
 
 	-- If	The var we're trying to instantiate is on our path
@@ -412,7 +412,7 @@ solveCInst_simple
 	| (bind : _)	<- filter (\b -> (not $ b =@= BLetGroup{})
 				      && (elem vInst $ takeCBindVs b)) path
 	= do	
-		trace	$ prettyp "*   solceCInst_simple: Inside this branch\n"
+		trace	$ ppr "*   solceCInst_simple: Inside this branch\n"
 
 		-- check how this var was bound and build the appropriate InstanceInfo
 		--	the toCore pass will use this to add the required type params
@@ -467,7 +467,7 @@ solveCInst_find
 	, (p : _)	<- path
 	, Set.member p sDeps
 	= do 	
-		trace	$ prettyp "*   solveCInst_find: Recursive path\n"
+		trace	$ ppr "*   solveCInst_find: Recursive path\n"
 		return	$ (CInstLetRec src vUse vInst) : cs
 
 		
@@ -476,7 +476,7 @@ solveCInst_find
 	-- THEN	generalise it and use that scheme for the instantiation
 	| Set.member vInst genSusp
 	= do	
-		trace	$ prettyp "*   solveCInst_find: Generalisation\n"
+		trace	$ ppr "*   solveCInst_find: Generalisation\n"
 		return	$ CGrind : (CInstLet src vUse vInst) : cs
 			
 	-- The type we're trying to generalise is nowhere to be found. The branch for it
@@ -645,7 +645,7 @@ prettyCTreeS xx
 	CInst ts vI vD
 	 -> "(Inst " % vI % " " % vD % ")"
 
-	_	  -> prettyp "X"
+	_	  -> ppr "X"
 	
 
 
@@ -696,7 +696,7 @@ graphInstantiatesAdd    vBranch vInst
 prettyBranchGraph graph
 	= "\n" %!% ls
 	where 	ls	= map (\(v, set)	
-				-> (padR 16 $ pretty v) % " -> " % set)
+				-> (padR 16 $ pprStr v) % " -> " % set)
 			$ Map.toList graph
 
 
@@ -725,7 +725,7 @@ solveGrind
 	 else do
 	 	-- Run the unifier/projection resolver.
 	 	-- Doing this can generate more constraints.
-		trace	$ prettyp "*   Grind.solveGrind, unifying.\n"
+		trace	$ ppr "*   Grind.solveGrind, unifying.\n"
 		csMore	<- solveUnify
 		
 		case csMore of
@@ -769,11 +769,11 @@ solveGrind_crush
 		--	to nodes in the graph, so there is no need to interleave it with unification.
 
 		-- Crush out EReadTs
-		trace	$ prettyp "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
+		trace	$ ppr "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
 		mapM_ crushEffectC (regEReadH ++ regEReadT ++ regEWriteT)
 
 		-- Crush out FLazyHs, FMutableTs
-		trace	$ prettyp "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
+		trace	$ ppr "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
 		mapM_ crushFetterC (regFLazyH ++ regFMutableT ++ regFConstT)
 	
 		-- all done
@@ -862,7 +862,7 @@ solveUnifyWork queued regProj regShape errors
 		 || (not progressShape  && not progressProj)
 
 		= do
-			trace	$ prettyp "*   Grind.solveUnify: no progress\n"
+			trace	$ ppr "*   Grind.solveUnify: no progress\n"
 			return newQs
 
 		-- Keep going..

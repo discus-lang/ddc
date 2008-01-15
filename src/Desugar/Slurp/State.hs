@@ -70,7 +70,7 @@ data	BindMode
 
 instance Pretty BindMode
  where
- 	pretty	= show
+ 	ppr xx	= ppr $ show xx
 
 
 -----------------------

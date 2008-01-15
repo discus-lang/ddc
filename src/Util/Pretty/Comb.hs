@@ -14,7 +14,9 @@ module Util.Pretty.Comb
 
 	reduce,
 	initRenderS,
-	pNil
+	pNil,
+	
+	pprStr
 )
 
 where
@@ -35,12 +37,10 @@ import Data.Set			(Set)
 
 -----------------------
 class Pretty a where
- pretty 	:: a -> String
- pretty  x	= render $ prettyp x
+ ppr		:: a -> PrettyP
 
- prettyp	:: a -> PrettyP
- prettyp x	= PString $ pretty x
 
+pprStr x	= render $ ppr x
 
 -----
 data PrettyP
@@ -69,32 +69,35 @@ pNil	= PNil
 -- Base types
 --
 instance Pretty PrettyP where
- prettyp x	= x
+ ppr x		= x
 
 instance Pretty Bool where
- prettyp x	= PString $ show x
+ ppr x		= PString $ show x
  
 instance Pretty Int where
- prettyp x 	= PString $ show x
+ ppr x 		= PString $ show x
+
+instance Pretty Integer where
+ ppr x		= PString $ show x
 
 instance Pretty Float where
- prettyp x	= PString $ show x
+ ppr x		= PString $ show x
  
 instance Pretty Char where
- prettyp x	= PChar x
+ ppr x		= PChar x
 
 
 -----
 -- Unit
 --
 instance Pretty () where
- prettyp xx	= prettyp "()"
+ ppr ()		= ppr "()"
 
 -----
 -- Lists
 --
 instance Pretty a => Pretty [a] where
- prettyp xx	= PList $ map prettyp xx
+ ppr xx		= PList $ map ppr xx
 
 
 -----
@@ -103,40 +106,40 @@ instance Pretty a => Pretty [a] where
 instance (Pretty a, Pretty b) 
 	=> Pretty (a, b) where
 
- prettyp (a, b)	
+ ppr (a, b)	
  	= "(" % a % ", " % b % ")"
 
 
 instance (Pretty a, Pretty b, Pretty c) 
 	=> Pretty (a, b, c) where
 
- prettyp (a, b, c)
+ ppr (a, b, c)
  	= "(" % a % ", " % b % ", " % c % ")"
 
 
 instance (Pretty a, Pretty b, Pretty c, Pretty d) 
 	=> Pretty (a, b, c, d) where
 
- prettyp (a, b, c, d)
+ ppr (a, b, c, d)
  	= "(" % a % ", " % b % ", " % c % ", " % d % ")"
 	
 -----
 -- Maybe
 --
 instance Pretty a => Pretty (Maybe a) where
- prettyp (Just x)	= "Just " % x
- prettyp Nothing	= prettyp "Nothing"
+ ppr (Just x)	= "Just " % x
+ ppr Nothing	= ppr "Nothing"
 
 
 -----
 -- Maps
 --
 instance (Pretty a, Pretty b) => Pretty (Map a b) where
- prettyp m		= prettyp $ Map.toList m
+ ppr m		= ppr $ Map.toList m
  
 
 instance (Pretty a) => Pretty (Set a) where
- prettyp ss	= "{" % ", " %!% Set.toList ss % "}"
+ ppr ss	= "{" % ", " %!% Set.toList ss % "}"
 
 
 -----------------------
@@ -275,20 +278,20 @@ type PComb2
 
 -----
 (%) 		:: PComb2
-(%)   a b	= PAppend [prettyp a, prettyp b]
-(%>)  a b	= PAppend [prettyp a, PIndent $ prettyp b]
-(%#>) a b	= PAppend [prettyp a, PTabInc, prettyp b]
-(%#<) a b 	= PAppend [prettyp a, PTabDec, prettyp b]
-(%>>) a b	= PAppend [prettyp a, PTabNext, prettyp b]
+(%)   a b	= PAppend [ppr a, ppr b]
+(%>)  a b	= PAppend [ppr a, PIndent $ ppr b]
+(%#>) a b	= PAppend [ppr a, PTabInc, ppr b]
+(%#<) a b 	= PAppend [ppr a, PTabDec, ppr b]
+(%>>) a b	= PAppend [ppr a, PTabNext, ppr b]
 	
 appendMapPretty	xx
-	= PAppend $ map prettyp xx
+	= PAppend $ map ppr xx
 	
 -----
 (%!%)		:: (Pretty a, Pretty b)
 		=> a -> [b] -> PrettyP
 	
-(%!%) i xx	= PAppend $ intersperse (prettyp i) $ map prettyp xx
+(%!%) i xx	= PAppend $ intersperse (ppr i) $ map ppr xx
 
 
 ------
