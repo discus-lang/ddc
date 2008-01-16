@@ -1,7 +1,7 @@
 import Prelude;
 
 pragma cc_includes
-	[ "library/Graphics/TinyPTC-X11-0.7.3/tinyptc.h" ];
+	[ "external/TinyPTC-X11-0.7.3/tinyptc.h" ];
 
 effect !Graphics	:: !;
 	

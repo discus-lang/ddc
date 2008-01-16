@@ -100,8 +100,8 @@ checkDir path_
 		let sources
 			= [ path ++ p
 				| p	<- paths
-				, let dirParts 	= splitOns '/' p
-				, let fileParts	= splitOns '.' $ last dirParts
+				, let dirParts 	= chopOnRight '/' p
+				, let fileParts	= chopOnRight '.' $ last dirParts
 				, last fileParts == "ds"
 				, length fileParts == 2 ]
 		
@@ -139,10 +139,10 @@ isSourcePath path
 --
 checkProg path
  = do
-	let dirParts	= splitOns '/' path
+	let dirParts	= chopOnRight '/' path
 	let dir		= concat $ init dirParts
 	
-	let fileParts	= splitOns '.' $ last dirParts
+	let fileParts	= chopOnRight '.' $ last dirParts
 	let file	= concat $ init fileParts
 	
 	let pathB	= dir ++ file
