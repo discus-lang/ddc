@@ -39,6 +39,7 @@ import Source.Slurp			as S
 import qualified Source.Pragma		as Pragma
 
 import Main.Path
+import qualified Main.Build		as Build
 
 import qualified Core.Util.Slurp	as C
 import qualified Core.Plate.FreeVars	as C
@@ -62,16 +63,18 @@ import Numeric
 --	Returns a list of module names and the paths to their compiled object files.
 --	
 --
-compileFile ::	[Arg] -> String -> IO ()
-compileFile	args     fileName
- = do 
-	let  ?verbose	= or $ map (== Arg.Verbose) args
+compileFile 
+	:: [Arg] 	-- DDC args from the command line
+	-> FilePath	-- path to source file
+	-> IO ()
 
+compileFile	argsCmd     fileName
+ = do 
+	let  ?verbose	= or $ map (== Arg.Verbose) argsCmd
 	when ?verbose 
 	 (do
-	 	putStr $ "\n* Compiling " ++ fileName ++ "\n")
+	 	putStr $ "    * Compiling " ++ fileName ++ "\n")
 	
-
 	------------------------------------------------------------------------
 	-- IO Stages
 	------------------------------------------------------------------------
@@ -81,6 +84,36 @@ compileFile	args     fileName
 			= munchFileName fileName
 
 	let Just pathBase	= chopOffExt fileName
+
+	-- See if there is a build file
+	let buildFilePath	= fileDir ++ "/" ++ fileBase ++ ".build"
+	when ?verbose
+	 (do	putStr $ "  * Checking for build file " ++ buildFilePath ++ "\n")
+
+	mBuild		<- Build.loadBuildFile buildFilePath
+
+	when ?verbose
+	 (case mBuild of
+	 	Nothing		-> putStr $ "  - none\n\n"
+		Just build	-> putStr $ " " ++ show build ++ "\n\n")
+
+
+	-- Parse extra args from the build file
+	let argsBuild	= case mBuild of
+				Just build	-> Arg.parse $ catInt " " $ Build.buildExtraDDCArgs build
+				Nothing		-> []
+
+	let args	= argsCmd ++ argsBuild
+
+	when ?verbose
+	 $ do	putStr	$ "  * Options are:\n"
+
+		putStr  $ concat 
+			$ map (\s -> "    " ++ s ++ "\n") 
+			$ map show args
+
+		putStr 	$ "\n"
+
 
 	-- Gather up all the import dirs.
 	let importDirs	= concat
@@ -93,10 +126,11 @@ compileFile	args     fileName
 				importDirs
 				fileName
 	when ?verbose
-	 $  	putStr	$  "  - fileName      = " ++ fileName		++ "\n"
-			++ "  - fileDir       = " ++ fileDir		++ "\n"
-			++ "  - fileBase      = " ++ fileBase		++ "\n"
-	 		++ "  - moduleName    = " ++ pprStr moduleName	++ "\n"
+	 $ do  	putStr	$  "  * Chasing module name\n"
+	 	putStr	$  "    - fileName      = " ++ fileName			++ "\n"
+			++ "    - fileDir       = " ++ fileDir			++ "\n"
+			++ "    - fileBase      = " ++ fileBase			++ "\n"
+	 		++ "    - moduleName    = " ++ pprStr moduleName	++ "\n"
 			++ "\n"
 		
 	let filePaths	= makePaths (fileDir ++ "/" ++ fileBase)
@@ -111,25 +145,23 @@ compileFile	args     fileName
 				sSource
 
 	-- Slurp out pragmas
-	(  pragmaShell
-	 , pragmaLinkObj)
-	 		<- SS.sourcePragma sParsed
-
-	-- Run any shell commands
-	mapM_ (runPragmaShell fileName fileDir) pragmaShell
+	let pragmas	= Pragma.slurpPragmaTree sParsed
 
 	-- Check if we're supposed to import the prelude
 	let importPrelude	
 			= not $ elem Arg.NoImplicitPrelude ?args
 
 	-- Slurp out the list of modules imported by the source file
+	when ?verbose
+	 $ 	putStr $ "  * Chasing imported modules.\n"
+
 	let importsRoot	= S.slurpImportModules
 				sParsed
 			++ if importPrelude
 				then [ModuleAbsolute ["Prelude"]]
 				else []
 	when ?verbose
-	 $ 	putStr $ "  - importsRoot    = " ++ pprStr importsRoot ++ "\n"
+	 $ 	putStr $ "    - root imports   = " ++ pprStr importsRoot ++ "\n"
 
 
 	-- Chase down imported modules
@@ -143,7 +175,7 @@ compileFile	args     fileName
 	
 	-- Dump module hierarchy graph
 	when ?verbose
-	 $ do	putStr	$ "  * Imported modules\n"
+	 $ do	putStr	$ "    - all imports:\n"
 	 	mapM_ dumpImportDef $ Map.elems importsExp
 		putStr	$ "\n"
 
@@ -160,24 +192,12 @@ compileFile	args     fileName
 			importsExp)
 
 
-	-- Chase down extra objects to link
-	let linkObjsHere	= Pragma.slurpLinkObjs sParsed
-	linkObjHerePaths
-		<- SI.chaseLinkObjs
-			[fileDir]
-			linkObjsHere
-				
-	when ?verbose
-	 $ do	mapM_ (\path -> putStr $ pprStr $ "  - imported object " % path % "\n")
-	 		$ linkObjHerePaths
-
 	-- Chase down extra header files to include into source
-	let includeFilesHere	= Pragma.slurpInclude sParsed
+	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
 	
 	when ?verbose
 	 $ do	mapM_ (\path -> putStr $ pprStr $ "  - included file   " % path % "\n")
 	 		$ includeFilesHere
-			
 	 	
 	------------------------------------------------------------------------
 	-- Source Stages
@@ -351,17 +371,14 @@ compileFile	args     fileName
 				cHeader
 				cReconstruct
 
-	-- Mask out effects on const regions
---	cMaskConst	<- SC.coreMaskEffs cBind
-
 	-- Identify primitive operations
 	cPrim		<- SC.corePrim	cDict
 
 	-----------------------
 	-- Optimisations
 	-- 
---	when ?verbose
---	 $ do	putStr $ "  * Core: Optimise\n"
+	when ?verbose
+	 $ do	putStr $ "  * Core: Optimise\n"
 
 
 	-- Inline forced inline functions
@@ -448,10 +465,6 @@ compileFile	args     fileName
 
 	writeFile (pathDI filePaths)	diInterface	
 
-	-- Ditch type information in preparation for conversion to Sea
---	cDitch		<- SC.coreDitch 
---				cAtomise
-
 
 	-- !! Early exit on StopCore
 	when (elem Arg.StopCore ?args)
@@ -533,15 +546,22 @@ compileFile	args     fileName
 
 	-- Invoke GCC to compile C source.
 	SE.invokeSeaCompiler
+		(fromMaybe [] $ liftM Build.buildExtraCCFlags mBuild)
 
 
 	-- !! Early exit on StopCompile
 	when (elem Arg.StopCompile ?args)
 		compileExit
 			
-	
+
+
 	-- Invoke GCC to link main binary.
+
+	-- Chase down any objects from the build file.
+	let linkObjsBuild	= fromMaybe [] $ liftM Build.buildExtraLinkObjs mBuild
 	SE.invokeLinker
+		(fromMaybe [] $ liftM Build.buildExtraLinkLibs mBuild)
+		linkObjsBuild
 		([pathBase ++ ".o"]
 			++ (map    idFilePathO $ Map.elems importsExp)
 			++ (catMap idLinkObjs  $ Map.elems importsExp))	

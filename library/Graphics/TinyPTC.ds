@@ -1,32 +1,18 @@
 import Prelude;
 
-pragma LinkObjs
-	[ "TinyPTC-X11-0.7.3/convert.o"
-	, "TinyPTC-X11-0.7.3/mmx.o"
-	, "TinyPTC-X11-0.7.3/xlib.o" 
-	, "TinyPTC-X11-0.7.3/xshm.o"
-	, "TinyPTC-stub.o" ];
-
-pragma Include
-	[ "library/Graphics/TinyPTC-stub.h" ];
+pragma cc_includes
+	[ "library/Graphics/TinyPTC-X11-0.7.3/tinyptc.h" ];
 
 effect !Graphics	:: !;
-
 	
-foreign import extern "ptcOpen"
- ptcOpen	
-	:: elaborate String -> Int -> Int -(!Graphics)> ()
-	:$ Data -> Data -> Data -> Data;
+foreign import extern "ptc_open"
+ ptcOpen	:: elaborate String# -> Int32# -> Int32# -(!Graphics)> Int32#;
 		
-foreign import extern "ptcClose"
- ptcClose
-	:: elaborate () -(!Graphics)> ()
-	:$ Data -> Data;
+foreign import extern "ptc_close"
+ ptcClose	:: elaborate Void# -(!Graphics)> Void#;
 				
-foreign import extern "ptcUpdate"
- ptcUpdate 
-	:: elaborate (ArrayU Int -(!Graphics)> ())
-	:$ Data -> Data;
+foreign import extern "ptc_update"
+ ptcUpdate 	:: elaborate Ptr# Int32# -(!Graphics)> Void#;
 
 
 

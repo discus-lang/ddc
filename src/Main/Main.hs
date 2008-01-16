@@ -39,16 +39,9 @@ ddc argStrings
 
 	-- print banner if requested
 	when verbose
-	 (do
-	 	putStr	$ "* Disciplined Disciple Compiler " ++ version ++ " starting up...\n"
-		putStr	$ "  options:\n"
-
-		putStr  $ concat 
-			$ map (\s -> "    " ++ s ++ "\n") 
-			$ map show args)
+	 (do 	putStr	$ "* Disciplined Disciple Compiler " ++ version ++ " starting up...\n")
 
 	
-
 	-- no args, print help
 	when (args == []
 	   || elem Arg.Help args)

@@ -16,7 +16,9 @@ project Frame where
 {
 	update :: Frame -> ();
 	update frame
-	 	= ptcUpdate frame.array;
+	 = do {	ptcUpdate (arrayUI_getBufPtr frame.array);
+	 	();
+	 };
 
 
 	clear ::  Frame -> Int -> ();
@@ -100,7 +102,7 @@ frame_poly frame xx c
 
 
 frame_new name sizeX sizeY
- = do {	ptcOpen name sizeX sizeY;
+ = do {	ptcOpen (unboxString name) (unboxInt32 sizeX) (unboxInt32 sizeY);
  	array	= arrayUI_new 1 (400 * 400 * 4);
 	Frame sizeX sizeY array;
  };

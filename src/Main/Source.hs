@@ -5,7 +5,6 @@
 --
 module Main.Source
 	( Main.Source.parse
-	, sourcePragma
 	, sourceSlurpFixTable
 	, sourceSlurpInlineVars
 	, defix
@@ -100,23 +99,6 @@ parse	fileName
 	dumpST 	DumpSourceParsed "source-parsed" sParsed
 
 	return	sParsed
-
-
--- | Extract some pragmas from the parsed source.
-sourcePragma
-	:: (?args :: [Arg])
-	-> Tree
-	-> IO 	( [String]		-- Shell commands to run
-		, [String])		-- Extra objects to link with
-	
-sourcePragma tree
- = do
- 	let shellCommands	
-		= [str	| XConst sp (CConst (LString str)) <- concat
-				[strings | PPragma [XVar sp v, XList _ strings] <- tree
-					 , Var.name v == "Shell" ] ]
-
-	return	(shellCommands, [])
 
 
 -- | Slurp out fixity table

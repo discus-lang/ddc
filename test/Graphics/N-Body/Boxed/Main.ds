@@ -29,7 +29,7 @@ worldSize		= Vec2 500 500;
 newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0);
 
 frameCount		= 0;
-frameCount_max		= 10;
+frameCount_max		= 5;
 
 -- Main -----------------------------------------------------------------------------
 

@@ -4,7 +4,7 @@ import	Base;
 import	Data.Int32U;
 import 	Class.Eq;
 
-pragma	Include ["string.h"];
+pragma	cc_includes ["string.h"];
 
 data	String  %r1 
 	= SChunk  (String# %r1)

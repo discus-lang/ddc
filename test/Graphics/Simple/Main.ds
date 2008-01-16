@@ -11,9 +11,7 @@ simple ()
 	gate (\z -> squareSpin frame 1.0);
  };
  
-squareSpin 
- ::  	Frame -> Float -> ();
-
+squareSpin :: Frame -> Float -> ();
 squareSpin frame rot
  = do {
 	x	= 127;
@@ -26,15 +24,14 @@ squareSpin frame rot
 
 	frame.update;
 	
---	when (rot > 4.0) break;
+	when (rot > 4.0) break;
 
 	y	= x + x;
 	squareSpin frame (rot + 0.01);
  };
  
-frac	
- :: 	Int -> Float -> [Primitive];
 
+frac ::	Int -> Float -> [Primitive];
 frac n r
  = if n == 0 
  	then rectangleC 50.0 50.0

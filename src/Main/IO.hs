@@ -1,11 +1,9 @@
 
 module Main.IO
-(
-	ImportDef(..),
-	chaseLinkObjs,
-	chaseModules,
-	chooseModuleName,
-)
+	( ImportDef(..)
+	, chaseLinkObjs
+	, chaseModules
+	, chooseModuleName)
 
 where
 
@@ -157,11 +155,11 @@ loadInterface' importDirs fileDir mod mPathDI mPathO
 			$ map (\t -> t { Token.file = pathDI })
 			$ S.scan source
 		
-		linkObjs
+{-		linkObjs
 			<- chaseLinkObjs 
 				[i ++ "/" ++ fileDir | i <- importDirs]
-				(Pragma.slurpLinkObjs tree)
-
+				[]
+-}
 		returnJ	
 			$ ImportDef
 			{ idModule		= mod
@@ -169,7 +167,7 @@ loadInterface' importDirs fileDir mod mPathDI mPathO
 			, idFilePathO		= pathO
 			, idInterface		= tree
 			, idImportedModules	= S.slurpImportModules tree
-			, idLinkObjs		= linkObjs }
+			, idLinkObjs		= [] }
 
 	| otherwise
 	= return Nothing

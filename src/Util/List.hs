@@ -31,9 +31,13 @@ module Util.List
 	, remove
 	, sequenceF
 	, sequenceFF
+	
 
-	, splitOn, 	splitOns
-	, splitWhen,	splitWhens
+	-- splitting
+	, splitWhenLeft, chopWhenLeft
+	, splitOnLeft, chopOnLeft
+	, splitWhenRight, chopWhenRight
+	, splitOnRight, chopOnRight
 
 	, breakOns
 	, breakWhens
@@ -229,10 +233,68 @@ sequenceFF	a		[]		= a
 sequenceFF	a		(f:fs)		= sequenceF fs (f a)
 
 
+-- Splitting  --------------------------------------------------------------------------------------
+
+
+-- Split Left --------
+
+-- | Split a list on the left of the first element where this predicate matches.
+splitWhenLeft ::	(a -> Bool) -> [a]	-> ([a], [a])
+splitWhenLeft	p	xx		= splitWhenLeft' p xx []
+
+splitWhenLeft'	p	[]	acc	= (acc, [])
+splitWhenLeft'	p	(x:xs)	acc
+	| p x				= (acc, x : xs)
+	| otherwise			= splitWhenLeft' p xs (acc ++ [x])
+
+chopWhenLeft :: (a -> Bool) -> [a] -> [[a]]
+chopWhenLeft f xx	= makeSplits (splitWhenLeft f) xx
+
+-- | Split a list on the left of the first occurance of this element.
+--	eg splitLeft '.' "abc.def"  => ("abc", ".def")
+
+splitOnLeft :: Eq a => a -> [a] -> ([a], [a])
+splitOnLeft c xx	= splitWhenLeft (== c) xx
+
+-- | Split a list on the left of all occurances of this element.
+--	eg chopBefore '." "abc.def.ghi.jkl"	=> ["abc", ".def", ".ghi", ".jkl"]
+
+chopOnLeft :: Eq a => a -> [a] -> [[a]]
+chopOnLeft c xx		= makeSplits (splitOnLeft c) xx
+
+
+-- Split Right ---------
+
+-- | Split a list on the right of the first element where this predicate matches
+--
+splitWhenRight ::	(a -> Bool) -> [a]	-> ([a], [a])
+splitWhenRight	p	xx		= splitWhenRight' p xx []
+
+splitWhenRight'	p	[]	acc	= (acc, [])
+splitWhenRight'	p	(x:xs)	acc
+	| p x				= (acc ++ [x], xs)
+	| otherwise			= splitWhenRight' p xs (acc ++ [x])
+
+chopWhenRight :: (a -> Bool) -> [a] -> [[a]]
+chopWhenRight f	xx	= makeSplits (splitWhenRight f) xx
+
+
+-- | Split a list on the right of the first occurance of this element.
+--	eg splitRight '.' "abc.def" => ("abc.", "def")
+
+splitOnRight :: Eq a => a -> [a] -> ([a], [a])
+splitOnRight c xx	= splitWhenRight (== c) xx
+
+-- | Split a list on the right of all occurances of this element.
+--	eg chopRight '.' "abc.def.ghi.jkl" 	=> ["abc.", "def.", "ghi.", "jkl"]
+
+chopOnRight :: Eq a => a -> [a] -> [[a]]
+chopOnRight c xx	= makeSplits (splitOnRight c) xx
+
+
 -----
 -- Split Functions
 --
-
 makeSplits 
 	:: ([a] -> ([a], [a])) 
 	-> ([a] -> [[a]])
@@ -241,34 +303,8 @@ makeSplits	splitFunc xx
  = case splitFunc xx of
  	(chunk, [])			-> [chunk]
 	(chunk, more)			-> chunk : makeSplits splitFunc more
-
-
------
-splitOn :: 	Eq a 
-	=>	a ->	[a] 		-> ([a], [a])
-splitOn		c	xx		= splitOn' c xx []
-
-splitOn'	c       []	acc	= (acc, [])
-splitOn'	c       (x:xs)	acc
-	| c == x			= (acc ++ [x], xs)
-	| otherwise			= splitOn' c xs (acc ++ [x]) 
-
-
-splitOns ::	Eq a => a -> [a] -> [[a]]
-splitOns c	= makeSplits (splitOn c)
 	
 
------
-splitWhen ::	(a -> Bool) -> [a]	-> ([a], [a])
-splitWhen	p	xx		= splitWhen' p xx []
-
-splitWhen'	p	[]	acc	= (acc, [])
-splitWhen'	p	(x:xs)	acc
-	| p x				= (acc ++ [x], xs)
-	| otherwise			= splitWhen' p xs (acc ++ [x])
-
-splitWhens :: (a -> Bool) -> [a] -> [[a]]
-splitWhens f	= makeSplits (splitWhen f)
 
 
 -- | Make a breaks function from this split function
@@ -288,7 +324,7 @@ makeBreaks	splitFunc xx
 --	  -> ["rabbit", "marmot", "lemur"]
 --
 breakOns :: Eq a => a -> [a] -> [[a]]
-breakOns  c	= makeBreaks (splitOn c)
+breakOns  c	= makeBreaks (splitOnRight c)
 
 
 -- | Break a list into comonents, using this function to choose the separator.
@@ -298,7 +334,7 @@ breakOns  c	= makeBreaks (splitOn c)
 --	 -> [[1, 5], [5, 9], [5, 7]]
 --
 breakWhens :: (a -> Bool) -> [a] -> [[a]]
-breakWhens p	= makeBreaks (splitWhen p)
+breakWhens p	= makeBreaks (splitWhenRight p)
 
 
 -----

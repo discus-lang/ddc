@@ -1,13 +1,13 @@
 test/Error/Unify/IfDef/Main.ds:6:13
     Type mismatch during unification.
-          cannot match: Base.Int %277
-                  with: Data.Bool.Bool %282
+          cannot match: Base.Int %278
+                  with: Data.Bool.Bool %283
 
                 use of: x
-             with type: Base.Int %277
+             with type: Base.Int %278
                     at: test/Error/Unify/IfDef/Main.ds:6:13
 
         conflicts with, 
         if-then-else expression
-         which expects: Data.Bool.Bool %282
+         which expects: Data.Bool.Bool %283
 

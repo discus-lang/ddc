@@ -46,6 +46,9 @@ foreign import extern "primArrayInt32_poke"
 	,  Mutable %r2
 	:$ Obj -> Int32# -> Int32# -> Obj;
 
+foreign import extern "primArrayU_Int_getBufPtr"
+ arrayUI_getBufPtr :: elaborate (ArrayU Int) -> Ptr# Int32#;
+
 
 -- This is very slow
 --

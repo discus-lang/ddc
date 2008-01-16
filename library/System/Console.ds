@@ -8,7 +8,7 @@ import
 	Data.Char;
 }
 
-pragma Include [ "unistd.h" ];
+pragma cc_includes [ "unistd.h" ];
 
 -- an effect on stdin/stderr/stdout
 effect !Console	:: !;	

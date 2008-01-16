@@ -308,7 +308,7 @@ instance Pretty Type where
 	 ->  t % "*"
 	 
 	TCon v ts
-	 -> let ps	= splitOns '.' $ Var.name v
+	 -> let ps	= chopOnRight '.' $ Var.name v
 	    in	ppr $ init (last ps) % " " % " " %!% ts
 	 		
 	_ -> panic stage $ "pprStr[Type]: no match for " % show xx

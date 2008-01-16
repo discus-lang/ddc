@@ -22,8 +22,11 @@
  * 
  */
 
+#define __USE_XOPEN
+
 #ifndef __TINYPTC_X11
 #define __TINYPTC_X11
+
 
 #define PTC_FAILURE 0
 #define PTC_SUCCESS 1

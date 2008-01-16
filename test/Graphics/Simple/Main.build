@@ -1,0 +1,12 @@
+extra-ddc-args: 
+	-opt-tail-call
+
+extra-link-libs:
+	m X11 Xext
+
+extra-link-objs: 
+	external/TinyPTC-X11-0.7.3/convert.o
+	external/TinyPTC-X11-0.7.3/mmx.o
+	external/TinyPTC-X11-0.7.3/xlib.o
+	external/TinyPTC-X11-0.7.3/xshm.o
+	

@@ -9,7 +9,7 @@ import Class.Eq;
 import Class.Num;
 import Class.Ord;
 
-pragma	Include ["math.h"];
+pragma	cc_includes ["math.h"];
 
 -- boxing
 foreign import extern "_boxFloat32"

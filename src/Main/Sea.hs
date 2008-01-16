@@ -265,7 +265,7 @@ modIncludes pathImports
   = 	map (\p -> PInclude $ nameTItoH p) pathImports
 
 nameTItoH nameTI
- = let	parts	= splitOns '.' nameTI
+ = let	parts	= chopOnRight '.' nameTI
    in   concat (init parts ++ ["ddc.h"])
    
 makeComments pathThis
@@ -285,9 +285,10 @@ makeIncludeDefTag pathThis
 --
 invokeSeaCompiler 
 	:: (?args :: [Arg])
+	-> [String]		-- extra flags to compile with
 	-> IO ()
 
-invokeSeaCompiler
+invokeSeaCompiler extraFlags
  = do
 	let Just (ArgPath paths)
 		= find (=@= ArgPath{}) ?args
@@ -295,7 +296,7 @@ invokeSeaCompiler
 	let dsDir
 		= concat
 		$ init
-		$ splitOns '/' (pathBase paths)
+		$ chopOnRight '/' (pathBase paths)
 	
 
 	let cmd	= "gcc"
@@ -315,6 +316,7 @@ invokeSeaCompiler
 		++ " -I"  ++ dsDir
 		++ " -c " ++ (pathC paths)
 		++ " -o " ++ (pathO paths)
+		++ " " ++ catInt " " extraFlags
 
  	when (elem Verbose ?args)
 	 (do
@@ -337,10 +339,14 @@ invokeSeaCompiler
 --
 invokeLinker 
 	:: (?args :: [Arg])
+	-> [String]			-- more libs to link with
+	-> [String]			-- more objs to link with
 	-> [FilePath]			-- paths of interfaces of all modules to link
 	-> IO ()
 
 invokeLinker 
+	moreLinkLibs
+	moreLinkObjs
 	objects
  = do
 	let Just (ArgPath paths)
@@ -363,14 +369,14 @@ invokeLinker
 			then " -pg" 
 			else "")
 
-		++ " " ++ (catInt " " $ objects ++ moreObjs)
+		++ " " ++ (catInt " " $ objects ++ moreObjs ++ moreLinkObjs)
 					
 		++ (if elem StaticRuntime ?args 
 			then " runtime/ddc-runtime.a"
 			else " runtime/ddc-runtime.so")
 
 		++ " " ++ (catInt " " ["-L" ++ dir | dir <- linkLibDirs])
-		++ " " ++ (catInt " " ["-l" ++ lib | lib <- linkLibs])
+		++ " " ++ (catInt " " ["-l" ++ lib | lib <- linkLibs ++ moreLinkLibs])
 
 	when (elem Verbose ?args)
 	 (do
@@ -393,7 +399,7 @@ invokeLinker
 
 nameTItoO s
  = let
- 	parts@(_:_)	= splitOns '.' s
+ 	parts@(_:_)	= chopOnRight '.' s
 	name		= (concat $ init parts) ++ "o"
    in	name
 

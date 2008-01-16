@@ -65,9 +65,7 @@ data Exception %r
 --	Prints out the exception then exits to system.
 --
 topHandle f
- =	f ();
- {-
- try f ()
+ = try f ()
 	catch {
 		Exception msg	
 		 -> 	print	$ "* runMain: Exception - " % msg % "\n";
@@ -78,24 +76,21 @@ topHandle f
 
 		ExceptionCaseNoMatch name line column
 		 -> 	print	$ "* runMain: pattern match failure at "
-		 		% name	% ":" % showInt line % ":" % showInt column % "\n"
+		 		% name	% ":" % show line % ":" % show column % "\n"
 				% "\n";
 
 		ExceptionArrayBounds size ix
 		 ->	print	$ "* runMain: Array bounds exception.\n"
-				% "      Tried to access array at index: " % showInt ix	% "\n"
-				% "           which is outside of range: [0 .. " % showInt (size - 1) % "]\n"
+				% "      Tried to access array at index: " % show ix	% "\n"
+				% "           which is outside of range: [0 .. " % show (size - 1) % "]\n"
 				% "\n";
 
 	}
 	with exit 1;		 
--}
 
-gate f	= f ();
-{-
+gate f	
  = 	try f ()
  	catch {	ExceptionBreak	-> (); };
--}
 
 gateLoop f 
  = 	try loop f
