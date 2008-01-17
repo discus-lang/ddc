@@ -160,29 +160,17 @@ reconX tt (XLAM v k x)
  
 -- APP
 
--- handle applications to literals directly
+-- handle applications to string literals directly
 --	this way we don't need to invent a variable for the \/ bound region 
---	in the literal's type scheme. Literals never appear without their region
+--	in the literal's type scheme. String literals never appear without their region
 --	parameters in the core so this is ok.
 
-reconX xx exp@(XAPP (XLit l) (TVar KRegion r))
+reconX tt exp@(XAPP (XLit l) (TVar KRegion r))
  = let	t	= case l of
- 			LInt8{}		-> TData primTInt8U	[TVar KRegion r]
- 			LInt16{}	-> TData primTInt16U	[TVar KRegion r]
- 			LInt32{}	-> TData primTInt32U	[TVar KRegion r]
- 			LInt64{}	-> TData primTInt64U	[TVar KRegion r]
-
- 			LWord8{}	-> TData primTWord8U 	[TVar KRegion r]
- 			LWord16{}	-> TData primTWord16U	[TVar KRegion r]
- 			LWord32{}	-> TData primTWord32U	[TVar KRegion r]
- 			LWord64{}	-> TData primTWord64U	[TVar KRegion r]
-
- 			LFloat32{}	-> TData primTFloat32U	[TVar KRegion r]
- 			LFloat64{}	-> TData primTFloat64U	[TVar KRegion r]
-
- 			LChar{}		-> TData primTCharU 	[TVar KRegion r]
  			LString{}	-> TData primTStringU 	[TVar KRegion r]
-			
+			_		-> panic stage
+					$  "reconX/XApp: non string constant applied to region\n"
+					%  "    exp = " % exp	% "\n"
    in	( exp
    	, t
 	, pure
@@ -413,6 +401,10 @@ reconX tt (XVar v t)
 
 
 -- prim
+--	BUGS: 	effects from primitive applications are not generated
+--		this isn't a problem at the momement because we don't check effect information
+--		after Core.Curry
+--
 reconX tt xx@(XPrim prim xs)
 -- = trace ("reconX[XPrim]: " % xx % "\n")
  = let	
@@ -429,33 +421,79 @@ reconX tt xx@(XPrim prim xs)
   	(xs', _, xsmEs, xsmCs)		
  		= unzip4 $ map (reconMaybeX tt) xs
 
-	t	= case prim of
-			MBox
-			 -> case xs of
-			 	[x]	-> reconBoxType 
-					$  t4_2 $ reconX tt x
+	-- work out the result type an effect of applying the primitive operator
+	(tPrim, ePrim)	
 
-			MUnbox
-			 -> case xs of
-			 	[x]	-> reconUnboxType 
-					$  t4_2  $ reconX tt x
+		-- boxing		
+		| MBox 		<- prim
+		, [XType r, x]	<- xs
+		= ( reconBoxType r $ t4_2 $ reconX tt x
+		  , pure)
+		
+		-- unboxing
+		| MUnbox	<- prim
+		, [XType r, x]	<- xs
+		= ( reconUnboxType r $ t4_2 $ reconX tt x
+		  , TEffect primRead [r])
+		  
+		
+		| MTailCall{}	<- prim
+		= ( reconApps tt xs'
+		  , pure)
 
-			MTailCall	-> reconApps tt xs'
-			MCall		-> reconApps tt xs'
-			MCallApp _	-> reconApps tt xs'
-			MApply		-> reconApps tt xs'
-			MCurry _	-> reconApps tt xs'
-			MFun		-> reconApps tt xs'
+		| MCall{}	<- prim
+		= ( reconApps tt xs'
+		  , pure)
 
-			_		-> panic stage
-					$ "reconX[Prim]: no match for " % prim % "\n"
+		| MCallApp{}	<- prim
+		= ( reconApps tt xs'
+		  , pure)
+
+		| MApply{}	<- prim
+		= ( reconApps tt xs'
+		  , pure)
+
+		| MCurry{}	<- prim
+		= ( reconApps tt xs'
+		  , pure)
+
+		| MFun{}	<- prim
+		= ( reconApps tt xs'
+		  , pure)
+
+		| otherwise
+		= panic stage
+		$ "reconX[Prim]: no match for " % prim % "\n"
 		
    in	( XPrim prim xs'
-   	, t
-   	, makeTSum KEffect  $ catMaybes xsmEs
+   	, tPrim
+   	, makeTSum KEffect  $ ePrim : catMaybes xsmEs
 	, makeTSum KClosure $ catMaybes xsmCs)
 
 
+reconX tt xx@(XLit l)
+ = let	tLit = case l of
+ 			LInt8{}		-> TData primTInt8U	[]
+ 			LInt16{}	-> TData primTInt16U	[]
+ 			LInt32{}	-> TData primTInt32U	[]
+ 			LInt64{}	-> TData primTInt64U	[]
+
+ 			LWord8{}	-> TData primTWord8U 	[]
+ 			LWord16{}	-> TData primTWord16U	[]
+ 			LWord32{}	-> TData primTWord32U	[]
+ 			LWord64{}	-> TData primTWord64U	[]
+
+ 			LFloat32{}	-> TData primTFloat32U	[]
+ 			LFloat64{}	-> TData primTFloat64U	[]
+
+ 			LChar{}		-> TData primTCharU 	[]
+			_		-> panic stage
+					$  "reconX/XLit: no match for " % xx % "\n"
+
+   in	( xx
+	, tLit
+	, pure
+	, empty)
 
 
 -- no match
@@ -466,9 +504,9 @@ reconX tt xx
 
 
 -- | Convert this type to the unboxed version
-reconBoxType :: Type -> Type
-reconBoxType (TData v ts@[TVar KRegion _])
-	= TData (reconBoxType_bind (Var.bind v)) ts
+reconBoxType :: Region -> Type -> Type
+reconBoxType r (TData v _)
+	= TData (reconBoxType_bind (Var.bind v)) [r]
 
 reconBoxType_bind bind
  = case bind of
@@ -490,9 +528,10 @@ reconBoxType_bind bind
 
 
 -- | Convert this type to the boxed version
-reconUnboxType :: Type -> Type
-reconUnboxType (TData v ts@[TVar KRegion _])
-	= TData (reconUnboxType_bind (Var.bind v)) ts
+reconUnboxType :: Region -> Type -> Type
+reconUnboxType r1 (TData v [r2@(TVar KRegion _)])
+	| r1 == r2
+	= TData (reconUnboxType_bind (Var.bind v)) []
 	
 reconUnboxType_bind bind
  = case bind of

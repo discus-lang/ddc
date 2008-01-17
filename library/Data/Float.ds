@@ -13,13 +13,13 @@ pragma	cc_includes ["math.h"];
 
 -- boxing
 foreign import extern "_boxFloat32"
- boxFloat32 	:: forall %r1 %r2
-  		.  Float32# %r1 -> Float %r2
+ boxFloat32 	:: forall %r1
+  		.  Float32# -> Float %r1
 		:$ Float32# -> Obj;
 
 foreign import extern "_unboxFloat32"
- unboxFloat32	:: forall %r3 %r4
- 		.  Float    %r3 -> Float32# %r4
+ unboxFloat32	:: forall %r1
+ 		.  Float %r1 -(!Read %r1)> Float32#
 		:$ Obj -> Float32#;
 
 

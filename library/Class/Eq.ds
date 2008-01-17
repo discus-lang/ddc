@@ -19,14 +19,14 @@ class Eq a where
 		,  Shape2 a b;
 
 
-	(#==)	:: forall b %r1
-		.  a -> b -(!e1 $c1)> Int32# %r1
+	(#==)	:: forall b
+		.  a -> b -(!e1 $c1)> Int32#
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
 		,  Shape2 a b;
 
-	(#/=)	:: forall b %r1
-		.  a -> b -(!e1 $c1)> Int32# %r1
+	(#/=)	:: forall b 
+		.  a -> b -(!e1 $c1)> Int32#
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
 		,  Shape2 a b;

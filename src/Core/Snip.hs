@@ -204,6 +204,10 @@ snipXRight topVars xx
  = case xx of
  	XApp{}			-> snipIt xx
 
+	-- leave literal values
+	XAPP XLit{} (TVar KRegion _)
+				-> leaveIt xx
+
 	XAPP x t
 	 -> case takeVar x of
 	 	Nothing			-> snipIt  xx

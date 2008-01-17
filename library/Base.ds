@@ -10,27 +10,34 @@ data	Thunk;
 -----------------------
 -- Simple Data types
 --
+
+-- These simple types are always passed by value, and cannot be 
+--	updated, so they don't need region annotations.
 data	Void#;
-data	Ptr#	%r1 a;
+data	Ptr# a;
 
-data	Bool#	%r1;
+data	Bool#;
 
-data	Word8#	%r1;
-data	Word16#	%r1;
-data	Word32#	%r1;
-data	Word64#	%r1;
+data	Word8#;
+data	Word16#;
+data	Word32#;
+data	Word64#;
 
-data	Int8#	%r1;
-data	Int16#	%r1;
-data 	Int32# 	%r1;
-data	Int64#	%r1;
+data	Int8#;
+data	Int16#;
+data 	Int32#;
+data	Int64#;
 
-data	Float32# %r1;
-data	Float64# %r1;
+data	Float32#;
+data	Float64#;
 
-data	String# %r1;
+-- Strings are represented as pointers to blocks of memory that 
+--	can be updated, so they need a region.
+data	String# %r;
 
-data	Unit	= Unit;
+data	Unit	
+	= Unit;
+
 data	Char 	%r;
 data	Int 	%r;
 data 	Float 	%r;
@@ -119,15 +126,15 @@ infixr 1 $ ;
 
 foreign import extern "primProjField"
  primProjField	
- 	:: forall a b %r1
-	.  a -> Int32# %r1 -(!e1)> b
+ 	:: forall a b
+	.  a -> Int32# -(!e1)> b
 	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj;
  
 foreign import extern "primProjFieldR"
  primProjFieldR 
- 	:: forall a b %r1
-	.  a -> Int32# %r1 -(!e1)> b
+ 	:: forall a b
+	.  a -> Int32# -(!e1)> b
 	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj;
 
@@ -136,8 +143,8 @@ foreign import extern "primProjFieldR"
 
 foreign import extern "_allocDataM"
  primAlloc_dataM
- 	:: forall a %r1 %r2 %r3
-	.  Int32# %r1 -> Int32# %r2 -> Int32# %r3 -> a		-- tag, ptrCount, dataSize (in bytes).
+ 	:: forall a 
+	.  Int32# -> Int32# -> Int32# -> a			-- tag, ptrCount, dataSize (in bytes).
 	:$ Word32# -> Word32# -> Word32# -> Data;
 
 
@@ -148,32 +155,32 @@ foreign import extern "_allocDataM"
 
 foreign import extern "_allocDataR"
  primAlloc_dataR
- 	:: forall a %r1 %r2 
-	.  Int32# %r1 -> Int32# %r2 -> a			-- tag, dataSize (in bytes).
+ 	:: forall a
+	.  Int32# -> Int32# -> a				-- tag, dataSize (in bytes).
 	:$ Word32# -> Word32# -> Data;
 
 -----
 foreign import extern "primInt32U_read"
  primInt32U_read
- 	:: forall a %r1 %r2
-	.  a -> Int32# %r1 -> Int32# %r2			-- obj, offset (in bytes), result.
+ 	:: forall a 
+	.  a -> Int32# -> Int32#				-- obj, offset (in bytes), result.
 	:$ Data -> Int32# -> Int32#;
 	
 foreign import extern "primInt32U_write"
  primInt32U_write
- 	:: forall a %r1 %r2
-	.  a -> Int32# %r1 -> Int32# %r2 -> Void#		-- obj, offset (in bytes), data.
+ 	:: forall a
+	.  a -> Int32# -> Int32# -> Void#			-- obj, offset (in bytes), data.
 	:$ Data -> Int32# -> Int32# -> Void#;
 
 -----
 foreign import extern "primFloat32U_read"
  primFloat32U_read
- 	:: forall a %r1 %r2 
-	.  a -> Int32# %r1 -> Float32# %r2			-- obj, offset (in bytes), result.
+ 	:: forall a
+	.  a -> Int32# -> Float32#				-- obj, offset (in bytes), result.
 	:$ Data -> Int32# -> Float32#;
 	
 foreign import extern "primFloat32U_write"
  primFloat32U_write
- 	:: forall a %r1 %r2
-	.  a -> Int32# %r1 -> Float32# %r2 -> Void#		-- obj, offset (in bytes), data.
+ 	:: forall a
+	.  a -> Int32# -> Float32# -> Void#			-- obj, offset (in bytes), data.
 	:$ Data -> Int32# -> Float32# -> Void#;

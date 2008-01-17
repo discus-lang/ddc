@@ -150,11 +150,18 @@ expandAppX x
 	XApply{}	-> expandApply x
 
 
------
+-- | Expand out XTailCall primitives
+--	Intra-function tail calls are implemented by jumping back to the start of the function.
 expandTailCall
-	:: (?tailCallTargets :: [(Var, (Var, [(Var, Type)]))])
-	-> Exp ()
-	-> ExM [Stmt ()]
+		-- possible call targets
+	:: (?tailCallTargets 
+		:: [ (Var			-- function name
+		     , (Var			-- label to jump to
+		       , [(Var, Type)]))])	-- function parameters and their types
+				
+
+	-> Exp ()				-- the tail call primitive
+	-> ExM [Stmt ()]			-- statements to do the call
 	
 expandTailCall
 	x@(XTailCall v args)
@@ -163,12 +170,17 @@ expandTailCall
 	let Just (label, params)	
 		= lookup v ?tailCallTargets
 
+	let assignParam param@(vP, tP) arg@(XVar vA)
+		-- don't emit (v = v) assignments
+		| vP == vA
+		= Nothing
+		
+	    assignParam param@(vP, tP) arg
+	    	= Just $ SAssign (XVar vP) tP arg
+				
  	return	$ 
 		-- Overwrite the parameter vars with the new args.
-		[ SAssign (XVar vP) t a
-		  	| (a@(XVar vA), (vP, t))
-				<- zip args params 
-			, vP /= vA ]
+		(catMaybes $ zipWith assignParam params args)
 
 		-- Jump back to the start of the function.
 		++ [SGoto label]

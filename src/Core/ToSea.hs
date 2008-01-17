@@ -214,11 +214,11 @@ toSeaX		xx
 	    in  E.XSuspend fn args'
 
 	-- boxing
-	C.XPrim C.MBox [x]
+	C.XPrim C.MBox [_, x]
 	 -> let	t	= C.reconX_type (stage ++ "toSeaX") x
 	    in	E.XBox (toSeaT t) (toSeaX x)
 
-	C.XPrim C.MUnbox [x]
+	C.XPrim C.MUnbox [_, x]
 	 -> let	t	= C.reconX_type (stage ++ "toSeaX") x
 	    in	E.XUnbox (toSeaT t) (toSeaX x)
 
@@ -229,8 +229,12 @@ toSeaX		xx
 	C.XAtom v ts
 	 -> E.XAtom v
 
-	-- core constants are always applied when in expressions
-	C.XAPP (C.XLit l) (C.TVar C.KRegion r)
+	-- non string constants
+	C.XLit l
+	 -> toSeaConst l
+
+	-- string constants are always applied to regions 
+	C.XAPP (C.XLit l@C.LString{}) (C.TVar C.KRegion r)
 	 -> toSeaConst l
 
 	-- An application to type/region/effects only

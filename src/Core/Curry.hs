@@ -271,11 +271,13 @@ makeThunkCall		xF 	args    eff	 callAirity
 	= Just $ XPrim MApply (xF : args)
 
 
------
---
+-- | Checks if this expression represents a value
+--	(instead of a type)
 isValueArg :: Exp -> Bool
 isValueArg xx
  = case xx of
+	XLit{}			-> True
+
  	XVar v t
 	 | Var.nameSpace v	== NameValue
 	 -> True

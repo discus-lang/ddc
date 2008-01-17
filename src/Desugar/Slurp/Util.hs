@@ -258,13 +258,25 @@ getConstType	c
 	
 		return		$ TData var' [TVar KRegion r]
 
- 	CConstU lit
-	 -> do 	var		<- getConstTypeU' lit
+	-- unboxed string literals have regions annotations
+	CConstU lit@(LString{})
+	 -> do	var		<- getConstTypeU' lit
 		r		<- newVarN NameRegion
 		let var'	= var { Var.info = 
 					[ Var.IValueLiteral lit ] }
 	
 		return		$ TData var' [TVar KRegion r]
+
+
+	-- other literals ie: Ints, Floats, Chars don't have regions
+ 	CConstU lit
+	 -> do 	var		<- getConstTypeU' lit
+		r		<- newVarN NameRegion
+		let var'	= var { Var.info = 
+					[ Var.IValueLiteral lit ] }
+
+		return		$ TData var' []
+
 
 getConstType' lit
  = case lit of

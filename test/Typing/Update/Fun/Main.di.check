@@ -25,7 +25,7 @@ data Box %r1 a b !e1 $c1
 
 -- Binds
 foreign import extern box
-        :: Box %r1 Base.Unit (Base.Int %rTS5) !e0 $Bot
+        :: Box %r1 Base.Unit (Base.Int %rTS4) !e0 $Bot
         :- !e0        = System.Console.!Console
         ,  Base.Mutable %r1
         :$ Base.Data;
@@ -49,9 +49,9 @@ foreign import extern fun2
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: Base.Unit -(!e0 $c0)> Base.Int %rTS5
+        :: Base.Unit -(!e0 $c0)> Base.Int %rTS4
         :- !e0        = !{Base.!Read %r1; Base.!Write %r1; System.Console.!Console}
-        ,  $c0        = box : Box %r1 Base.Unit (Base.Int %rTS5) System.Console.!Console $Bot
+        ,  $c0        = box : Box %r1 Base.Unit (Base.Int %rTS4) System.Console.!Console $Bot
         ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         

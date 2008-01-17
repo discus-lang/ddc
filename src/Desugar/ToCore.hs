@@ -482,14 +482,14 @@ toCoreLit :: C.Type -> S.Const	-> C.Exp
 toCoreLit tt const
 
 	-- unboxed integers
-	| S.CConstU lit				<- const
-	, S.LInt i				<- lit
-	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	| S.CConstU lit			<- const
+	, S.LInt i			<- lit
+	, C.TData v []			<- tt
 	= case Var.bind v of
-		Var.TInt8U	-> C.XAPP (C.XLit $ C.LInt8  $ fromIntegral i) r
-		Var.TInt16U	-> C.XAPP (C.XLit $ C.LInt16 $ fromIntegral i) r
-		Var.TInt32U	-> C.XAPP (C.XLit $ C.LInt32 $ fromIntegral i) r
-		Var.TInt64U	-> C.XAPP (C.XLit $ C.LInt64 $ fromIntegral i) r
+		Var.TInt8U	-> C.XLit $ C.LInt8  $ fromIntegral i
+		Var.TInt16U	-> C.XLit $ C.LInt16 $ fromIntegral i
+		Var.TInt32U	-> C.XLit $ C.LInt32 $ fromIntegral i
+		Var.TInt64U	-> C.XLit $ C.LInt64 $ fromIntegral i
 	
 
 	-- boxed integers
@@ -497,33 +497,33 @@ toCoreLit tt const
 	, S.LInt i				<- lit
 	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
 	= case Var.bind v of
-		Var.TInt8	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt8  $ fromIntegral i) r]
-		Var.TInt16	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt16 $ fromIntegral i) r]
-		Var.TInt32	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt32 $ fromIntegral i) r]
-		Var.TInt64	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt64 $ fromIntegral i) r]
+		Var.TInt8	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt8  $ fromIntegral i]
+		Var.TInt16	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt16 $ fromIntegral i]
+		Var.TInt32	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt32 $ fromIntegral i]
+		Var.TInt64	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt64 $ fromIntegral i]
 
 	-- unboxed floats
-	| S.CConstU lit				<- const
-	, S.LFloat f				<- lit
-	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	| S.CConstU lit			<- const
+	, S.LFloat f			<- lit
+	, C.TData v []			<- tt
 	= case Var.bind v of
-		Var.TFloat32U	-> C.XAPP (C.XLit $ C.LFloat32 $ (fromRational . toRational) f) r
-		Var.TFloat64U	-> C.XAPP (C.XLit $ C.LFloat64 $ (fromRational . toRational) f) r
+		Var.TFloat32U	-> C.XLit $ C.LFloat32 $ (fromRational . toRational) f
+		Var.TFloat64U	-> C.XLit $ C.LFloat64 $ (fromRational . toRational) f
 
 	-- boxed floats
 	| S.CConst lit				<- const
 	, S.LFloat f				<- lit
 	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
 	= case Var.bind v of
-		Var.TFloat32	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LFloat32 $ (fromRational . toRational) f) r]
-		Var.TFloat64	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LFloat64 $ (fromRational . toRational) f) r]
+		Var.TFloat32	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LFloat32 $ (fromRational . toRational) f]
+		Var.TFloat64	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LFloat64 $ (fromRational . toRational) f]
 
 	-- boxed chars
 	| S.CConst lit	<- const
 	, S.LChar s	<- lit
 	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
 	, Var.bind v == Var.TChar
-	= C.XPrim C.MBox [C.XAPP (C.XLit $ C.LChar s) r]
+	= C.XPrim C.MBox [C.XType r, C.XLit $ C.LChar s]
 
 	
 	-- boxed strings
@@ -531,7 +531,7 @@ toCoreLit tt const
 	, S.LString s	<- lit
 	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
 	, Var.bind v == Var.TString
-	= C.XPrim C.MBox [C.XAPP (C.XLit $ C.LString s) r]
+	= C.XPrim C.MBox [C.XType r, C.XAPP (C.XLit $ C.LString s) r]
 	
 
 
