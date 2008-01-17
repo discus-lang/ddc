@@ -43,15 +43,13 @@ uniqueSnip	= "x" ++ Unique.coreBoxing
 -----
 
 coreBoxingTree
-	:: Set Var
-	-> Tree		-- source tree
-	-> Tree		-- header tree
-	-> Tree
+	:: Tree		-- source tree
+	-> Tree		-- new after rewriting
 
-coreBoxingTree topVars cSource cHeader
- = cSource
+coreBoxingTree cTree
+ = cTree
  
- {-
+{-
 
 
  = let	cSnip		= snipBoxing cSource
@@ -128,6 +126,9 @@ boxWrapS table stmt
 	| otherwise
 	= return [stmt]
 
+-}
+
+{-
 
 unboxArg table x
 	| XVar v _			<- x
@@ -217,8 +218,8 @@ eatAnnotsX xx
  	XAnnot [NUseCount _] x	-> x
 	_			-> xx
 	
-
-
+-}
+{-
 -----
 unboxedType :: Type -> Maybe Type
 unboxedType t
@@ -236,37 +237,6 @@ unboxedType t
 	 | Var.bind v == Var.TString	-> Just $ TData primTStringU	[r]
 --	 | Var.bind v == Var.TChar	-> Just $ TCon primTCharU	[r]
 
-	_ -> Nothing
-				
-
-
-unboxFuns2 = 
-	[ ("primInt32_add",	5)
-	, ("primInt32_sub",	5)
-	, ("primInt32_div",	5)
-	, ("primInt32_mul",	5)
-	, ("primInt32_eq",	5)
-	, ("primInt32_neq",	5)
-	, ("primInt32_gt",	5)
-	, ("primInt32_ge",	5)
-	, ("primInt32_lt",	5)
-	, ("primInt32_le",	5)
-
-	, ("&&",		5)
-	, ("||",		5)
-	, ("primInt32_mod",	5)
-
-	-- float
-	, ("primFloat32_add",	5)
-	, ("primFloat32_sub",	5)
-	, ("primFloat32_div",	5)
-	, ("primFloat32_mul",	5)
-	, ("primFloat32_eq",	5)
-	, ("primFloat32_neq",	5)
-	, ("primFloat32_gt",	5)
-	, ("primFloat32_ge",	5)
-	, ("primFloat32_lt",	5)
-	, ("primFloat32_le",	5)
+	_ -> Nothing  -}
 	
-	, ("arrayUI_get", 	6) ]
--}
+	

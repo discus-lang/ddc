@@ -167,7 +167,7 @@ rewriteOverApp
 	
 		-- Construct the new call.
 		xxParts' :: [Exp]
-	  	xxParts'	= ((XAppFP (XVar vInst TNil) Nothing)				-- the function var
+	  	xxParts'	= ((XAppFP (XVar vInst tInstScheme) Nothing)			-- the function var
 					:  (map (\t -> XAppFP (XType t) Nothing) tsInstArgs)	-- type args to instance fn
 					++ (map (\t -> XAppFP (XType t) Nothing) tsWitnesses)	-- class args to instance fn
 					++ xsArgsVal)						-- value args

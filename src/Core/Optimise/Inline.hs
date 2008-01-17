@@ -18,6 +18,10 @@ import Core.Util.Beta
 
 inlineTree :: Tree -> Tree -> [Var] -> Tree
 inlineTree sTree hTree inlineVars
+	= sTree
+{-
+inlineTree :: Tree -> Tree -> [Var] -> Tree
+inlineTree sTree hTree inlineVars
  = let	binds		= gatherBinds
  				(map Var.name inlineVars)
 				sTree
@@ -46,3 +50,4 @@ gatherBind _ _ binds
 
 
 
+-}

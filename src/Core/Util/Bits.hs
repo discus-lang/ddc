@@ -208,8 +208,8 @@ takeWitnessOfClass kk
 	
 
 
-flattenApps ::		Exp -> [Exp]
-flattenApps		xx
+flattenApps :: Exp -> [Exp]
+flattenApps xx
 	
 	| XAPP e1 e2	<- xx
 	= flattenApps e1 ++ [XType e2]

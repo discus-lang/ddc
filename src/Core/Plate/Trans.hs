@@ -472,6 +472,7 @@ instance Monad m => TransM m Prim where
 	MApply		-> transM table tt
 	MCurry i	-> transM table tt
 	MFun		-> transM table tt
+	MOp op 		-> transM table tt
 		
 		
 -----

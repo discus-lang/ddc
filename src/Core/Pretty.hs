@@ -224,7 +224,7 @@ instance Pretty Exp where
 
 	-- prim
 	XPrim m args
-	 -> m % " " %> ("\n" %!% map prettyExpB args)
+	 -> m % " " %> (" " %!% map prettyExpB args)
 
 	XProject x j
 	 -> x % j
@@ -340,6 +340,12 @@ instance Pretty Prim where
 	MApply		-> ppr "prim{Apply} "
 	MCurry	 i	-> "prim{Curry " % i % "}"
 	MFun 		-> ppr "prim{Fun}"
+	MOp op		-> ppr "prim{" % op % "}"
+
+
+-- Op ---------------------------------------------------------------------------------------------
+instance Pretty Op where
+ ppr xx	= ppr $ show xx
 
 
 -- Stmt --------------------------------------------------------------------------------------------

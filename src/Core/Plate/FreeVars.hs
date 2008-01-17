@@ -145,6 +145,7 @@ instance FreeVars Prim where
 	MApply 		-> empty
 	MCurry 	 i	-> empty
 	MFun 		-> empty	
+	MOp{}		-> empty
 
 
 -- Stmt --------------------------------------------------------------------------------------------

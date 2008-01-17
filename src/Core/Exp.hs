@@ -12,7 +12,8 @@ module Core.Exp
 	, Exp 		(..)	-- expressions
 	, Lit		(..)	-- literal values
 	, Proj		(..)	-- projections
-	, Prim		(..)	-- primitive operators
+	, Prim		(..)	-- primitive functions
+	, Op		(..)	-- primitive operators
 	, Stmt	 	(..)	-- statements
 	, Annot 	(..)	-- expression annotations
 	, Alt 		(..)	-- case/match alternatives
@@ -48,10 +49,9 @@ import Data.Set		(Set)
 type Tree	= [Top]
 
 
------------------------
--- Top
--- | 	Top level expression.
---
+-- Top ---------------------------------------------------------------------------------------------
+-- Top level expressions
+
 data Top
 	= PNil
 	| PBind		Var Exp				-- ^ A Top level binding.
@@ -80,9 +80,10 @@ data ClassContext
 	= ClassContext Var [Var]
 	deriving (Show, Eq)
 
------------------------
--- Exp
---
+
+-- Exp ---------------------------------------------------------------------------------------------
+-- Expressions
+
 data Exp
 	= XNothing					-- ^ Empty expression
 							-- 	In contrast to XNil, an XNothing represents some part of the
@@ -147,8 +148,18 @@ data Exp
 
 	deriving (Show, Eq)
 
+-- Proj --------------------------------------------------------------------------------------------
+-- Field projections
 
+data Proj
+	= JField  Var				-- ^ A field projection.   		(.fieldLabel)
+	| JFieldR Var				-- ^ A field reference projection.	(#fieldLabel)
+	deriving (Show, Eq)
+
+
+-- Lit ---------------------------------------------------------------------------------------------
 -- (unboxed) literal values
+
 data Lit
 	= LInt8		Integer
 	| LInt16	Integer
@@ -168,16 +179,23 @@ data Lit
 	deriving (Show, Eq)
 
 
+-- Prim --------------------------------------------------------------------------------------------
+-- | Primitive Functions
+
 data Prim
 	-- laziness
 	= MSuspend	Var				-- ^ Suspend some function	function name
 	| MForce					-- ^ Force an expression	(expr list should have a single elem)
+
+	-- a primitive operator
+	| MOp		Op
 
 	-- boxing and unboxing
 	| MBox
 	| MUnbox
 	
 	-- function calls
+	-- 	move this to MCall
 	| MTailCall	 				-- ^ Tailcall a super
 	| MCall						-- ^ Call a super
 	| MCallApp	Int				-- ^ Call then apply super with this airity.
@@ -189,20 +207,45 @@ data Prim
 	deriving (Show, Eq)
 
 
------------------------
--- Stmt
--- |	Statments,  sequencing.
---
+-- Op ----------------------------------------------------------------------------------------------
+-- | Primitive operators
+--	We might do without this if we had a general expression rewrite system in place.
+--	Then again, the fact that these operators are polymorphic makes it easy to write
+--	compiler code that works with every primitive type..
+
+data Op
+	-- arithmetic
+	= OpAdd		-- addition
+	| OpSub		-- subtraction
+	| OpMul		-- multiplication
+	| OpDiv		-- division
+	| OpMod		-- modulus
+
+	-- comparison
+	| OpEq		-- equality
+	| OpNeq		-- negative equality
+	| OpGt		-- greater than
+	| OpGe		-- greater than or equal
+	| OpLt		-- less than
+	| OpLe		-- less than or equal
+	
+	-- boolean
+	| OpAnd		-- and
+	| OpOr		-- or
+	deriving (Show, Eq)
+
+
+-- Stmt --------------------------------------------------------------------------------------------
+-- Statements
+
 data Stmt
---	= SComment 	String
 	= SBind  	(Maybe Var) Exp			-- ^ Let binding.
 	deriving (Show, Eq)
 
 
------------------------
--- Alt
--- |	A match alternative.
---		A default alternative has no guards.
+-- Alt ---------------------------------------------------------------------------------------------
+-- Match alternatives
+
 data Alt
 	= AAlt		[Guard] Exp
 	deriving (Show, Eq)
@@ -223,9 +266,17 @@ data Label
 
 
 
------------------------
--- Type
---
+
+-- Type --------------------------------------------------------------------------------------------
+-- Type expressions
+
+type Data	= Type
+type Effect	= Type
+type Closure	= Type
+type Region	= Type
+type Class	= Type
+type Witness	= Type
+
 data Type
 	-------
 	-- Type/kind/effect constructs.
@@ -278,14 +329,6 @@ varOfFetter ff
  	FWhere v t	-> v
 	FMore  v t	-> v
 
-
--- | Field projections
-data Proj
-	= JField  Var				-- ^ A field projection.   		(.fieldLabel)
-	| JFieldR Var				-- ^ A field reference projection.	(#fieldLabel)
-	deriving (Show, Eq)
-
-
 -----------------------
 -- TBind
 --
@@ -303,21 +346,14 @@ varOfBind (BMore v t)	= v
 instance Ord Bind where
  compare b1 b2		= compare (varOfBind b1) (varOfBind b2)
 
-------------------------
-type Data	= Type
-type Effect	= Type
-type Closure	= Type
-type Region	= Type
-type Class	= Type
-type Witness	= Type
 
------------------------
--- Kind
---
+-- Kind --------------------------------------------------------------------------------------------
+-- Kind expressions
+
 data Kind	
 	= KNil
 
-	| KData
+	| KData						-- ^ the kind of value types  (change to KValue)
 	| KRegion
 	| KEffect
 	| KClosure
@@ -328,11 +364,10 @@ data Kind
 	deriving (Show, Eq)
 
 
------------------------
--- Annot
--- |	Expression annotations.
---	Used internally, and for debugging.
---
+-- Annot -------------------------------------------------------------------------------------------
+-- Expression annotations
+--	TODO: A Lot of this is junk that isn't being used
+
 data Annot
 	= NString 	String				-- ^ Some string: for debugging.
 	| NType   	Type 				-- ^ Gives the type for an expression.
@@ -347,8 +382,3 @@ data Annot
 	-- Used in Core.Optimise.FullLaziness
 	| NLevel	Int				
 	deriving (Show, Eq)
-	
-	
-
-
-	

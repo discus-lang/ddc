@@ -204,6 +204,10 @@ toSeaX		xx
 	 -> let (C.XVar v t) : args	= stripValues xs
 	    in  E.XPrim (toSeaPrimV v)	$ map toSeaX args
 
+	C.XPrim (C.MOp op) xs
+	 -> let args			= stripValues xs
+	    in E.XPrim (toSeaOp op) 	$ map toSeaX args
+
 	-- suspend
 	C.XPrim (C.MSuspend fn)	args 
 	 -> let	args'	= map E.XVar 
@@ -218,13 +222,17 @@ toSeaX		xx
 	 -> let	t	= C.reconX_type (stage ++ "toSeaX") x
 	    in	E.XBox (toSeaT t) (toSeaX x)
 
-	C.XPrim C.MUnbox [_, x]
-	 -> let	t	= C.reconX_type (stage ++ "toSeaX") x
-	    in	E.XUnbox (toSeaT t) (toSeaX x)
+	-- the unboxing function is named after the result type
+	C.XPrim C.MUnbox [C.XType r, x]
+	 -> let	tResult	= C.reconUnboxType r 
+	 		$ C.reconX_type (stage ++ "toSeaX") x
+
+	    in	E.XUnbox (toSeaT tResult) (toSeaX x)
 
 	-- forcing
 	C.XPrim (C.MForce) [x]
 	 -> E.XForce (toSeaX x)	 
+
 
 	C.XAtom v ts
 	 -> E.XAtom v
@@ -515,10 +523,6 @@ toSeaConst l
 	C.LString s	-> E.XLiteral (LString	$ s)
 	
 
- 	
-
-
-
 -----
 -- assignLastSS
 --	Assign the value of the stmt(s) in this list
@@ -550,66 +554,37 @@ assignLastA xT aa
 
 
 
+-- | Convert a Core operator to a Sea primitive
+--	We should perhaps change Sea land to use the core representation
+toSeaOp :: C.Op -> E.Prim
+toSeaOp op
+ = case op of
+	-- arithmetic
+ 	C.OpAdd	-> E.FAdd
+	C.OpSub	-> E.FSub
+	C.OpMul	-> E.FMul
+	C.OpDiv	-> E.FDiv
+	C.OpMod	-> E.FMod
+
+	-- comparison
+	C.OpEq	-> E.FEq
+	C.OpNeq	-> E.FNEq
+	C.OpGt	-> E.FGt
+	C.OpGe	-> E.FGe
+	C.OpLt	-> E.FLt
+	C.OpLe	-> E.FLe
+	
+	-- boolean
+	C.OpAnd	-> E.FAnd
+	C.OpOr	-> E.FOr
+	 
+	
+
 toSeaPrimV :: C.Var -> E.Prim
 toSeaPrimV var
  = case Var.name var of
 	"primProjField"		-> E.FProjField
 	"primProjFieldR"	-> E.FProjFieldR
-
-	-- int
- 	"primInt32_add"		-> E.FAdd
-	"primInt32_sub"		-> E.FSub
-	"primInt32_mul"		-> E.FMul
-	"primInt32_div"		-> E.FDiv
-	"primInt32_mod"		-> E.FMod
-	"primInt32_eq"		-> E.FEq
-	"primInt32_neq" 	-> E.FNEq
-	"primInt32_gt"		-> E.FGt
-	"primInt32_ge"		-> E.FGe
-	"primInt32_lt"		-> E.FLt
-	"primInt32_le"		-> E.FLe
-
-	-- unboxed int
-	"primInt32U_add"	-> E.FAdd
-	"primInt32U_sub"	-> E.FSub
-	"primInt32U_mul"	-> E.FMul
-	"primInt32U_div"	-> E.FDiv
-	"primInt32U_mod"	-> E.FMod
-	"primInt32U_eq"		-> E.FEq
-	"primInt32U_neq"	-> E.FNEq
-	"primInt32U_gt"		-> E.FGt
-	"primInt32U_lt"		-> E.FLt
-	"primInt32U_ge"		-> E.FGe
-	"primInt32U_le"		-> E.FLe
-	
-	"mod"			-> E.FMod
-	"&&"			-> E.FAnd
-	"||"			-> E.FOr
-
-	-- float
-	"primFloat32_add"	-> E.FAdd
-	"primFloat32_sub"	-> E.FSub
-	"primFloat32_mul"	-> E.FMul
-	"primFloat32_div"	-> E.FDiv
-	"primFloat32_eq"	-> E.FEq
-	"primFloat32_neq"	-> E.FNEq
-	"primFloat32_gt"	-> E.FGt
-	"primFloat32_ge"	-> E.FGe
-	"primFloat32_lt"	-> E.FLt
-	"primFloat32_le"	-> E.FLe
-	
-	-- unboxed float
-	"primFloat32U_add"	-> E.FAdd
-	"primFloat32U_sub"	-> E.FSub
-	"primFloat32U_mul"	-> E.FMul
-	"primFloat32U_div"	-> E.FDiv
-	"primFloat32U_mod"	-> E.FMod
-	"primFloat32U_eq"	-> E.FEq
-	"primFloat32U_neq"	-> E.FNEq
-	"primFloat32U_gt"	-> E.FGt
-	"primFloat32U_ge"	-> E.FGe
-	"primFloat32U_lt"	-> E.FLt
-	"primFloat32U_le"	-> E.FLe
 
 	-- array	
 	"arrayUI_get"		-> E.FArrayPeek (E.TCon Var.primTInt32U [])

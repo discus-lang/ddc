@@ -1,19 +1,18 @@
 
 module Core.Inline
-(
-	countUsageTree,
-	countUsageX,
+	( )
+--	  countUsageTree
+--	, countUsageX
 	
-	spreadUsageTree,
-	collectPureSingleTree,
-	inlineBindsTree,
-	inlineBindsTree_rename,
+--	, spreadUsageTree
+--	, collectPureSingleTree
+--	, inlineBindsTree
+--	, inlineBindsTree_rename
 	
-	inlinePureSingleTree,
+--	, inlinePureSingleTree
 	
-	resnipTree,
-	eraseAnnotsTree
-)
+--	, resnipTree
+--	, eraseAnnotsTree)
 
 
 where
@@ -33,6 +32,7 @@ import qualified Core.Plate.Trans	as Trans
 import qualified Core.Plate.Walk	as Walk
 
 
+{-
 -----
 -- countUsage
 --	Counts the number of times each variable occurs in 
@@ -269,3 +269,4 @@ eraseAnnotsX xx
 	= case xx of
 		XAnnot n x	-> x
 		_		-> xx
+-}

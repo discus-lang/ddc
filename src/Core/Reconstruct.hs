@@ -30,7 +30,10 @@ module Core.Reconstruct
 	, Table (..)
 	, emptyTable
 	, addEqVT
-	, addMoreVT)
+	, addMoreVT
+	
+	, reconBoxType
+	, reconUnboxType)
 where
 
 import Core.Exp
@@ -461,9 +464,12 @@ reconX tt xx@(XPrim prim xs)
 		= ( reconApps tt xs'
 		  , pure)
 
+		| MOp op	<- prim
+		= reconOpApp tt op xs'
+
 		| otherwise
 		= panic stage
-		$ "reconX[Prim]: no match for " % prim % "\n"
+		$ "reconX/Prim: no match for " % prim % "\n"
 		
    in	( XPrim prim xs'
    	, tPrim
@@ -503,13 +509,15 @@ reconX tt xx
 	% "    caller = " % tableCaller tt	% "\n"
 
 
--- | Convert this type to the unboxed version
+-- | Convert this type to the boxed version
 reconBoxType :: Region -> Type -> Type
 reconBoxType r (TData v _)
 	= TData (reconBoxType_bind (Var.bind v)) [r]
 
 reconBoxType_bind bind
  = case bind of
+	Var.TBoolU	-> primTBool
+
  	Var.TInt8U	-> primTInt8
  	Var.TInt16U	-> primTInt16
  	Var.TInt32U	-> primTInt32
@@ -535,6 +543,8 @@ reconUnboxType r1 (TData v [r2@(TVar KRegion _)])
 	
 reconUnboxType_bind bind
  = case bind of
+	Var.TBool	-> primTBoolU
+
  	Var.TInt8	-> primTInt8U
  	Var.TInt16	-> primTInt16U
  	Var.TInt32	-> primTInt32U
@@ -550,6 +560,51 @@ reconUnboxType_bind bind
 
 	Var.TChar	-> primTCharU
 	Var.TString	-> primTStringU
+	
+
+-- | Reconstruct the type and effect of an operator application
+--	Not sure if doing this manually is really a good way to do it.
+--	It'd be nice to have a more general mechanism like GHC rewrite rules..
+reconOpApp :: Table -> Op -> [Exp] -> (Type, Effect)
+reconOpApp tt op xs
+
+	-- arithmetic operators
+	| elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
+	, [t1, t2]	<- map (t4_2 . reconX tt) xs
+	, isUnboxedNumericType t1
+	, t1 == t2
+	= (t1, pure)
+	
+	-- comparison operators
+	| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
+	, [t1, t2]	<- map (t4_2 . reconX tt) xs
+	, isUnboxedNumericType t1
+	, t1 == t2
+	= (TData primTBoolU [], pure)
+
+	-- boolean operators
+	| elem op [OpAnd, OpOr]
+	, [t1, t2]	<- map (t4_2 . reconX tt) xs
+	, TData v []	<- t1
+	, v == primTBoolU
+	, t1 == t2
+	= (TData primTBoolU [], pure)
+	
+	| otherwise
+	= panic stage
+	$ "reconOpApp: no match for " % op % " " % xs % "\n"
+
+
+-- | Checks whether a type is an unboxed numeric type
+isUnboxedNumericType :: Type -> Bool
+isUnboxedNumericType tt
+ 	| TData v []	<- tt
+	, elem v 	[ primTInt8U, primTInt16U, primTInt32U, primTInt64U
+			, primTFloat32U, primTFloat32U]
+	= True
+	
+	| otherwise
+	= False
 
 
 -- | Reconstruct the result type when this list of expressions

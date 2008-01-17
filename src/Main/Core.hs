@@ -210,7 +210,7 @@ coreBoxing
 	-> IO Tree
 	
 coreBoxing topVars cSource cHeader
- = do	let cBoxing	= coreBoxingTree topVars cSource cHeader
+ = do	let cBoxing	= coreBoxingTree cSource
  	dumpCT DumpCoreBoxing "core-boxing" cBoxing
 	return	cBoxing 	
 
