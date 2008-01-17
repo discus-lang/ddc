@@ -62,18 +62,6 @@ maybeSlurpTypeX	xx
 	, Just aLast		<- takeLast aa
 	= maybeSlurpTypeA aLast
 	
-	| XConst c t		<- xx
-	= Just t
-	
---	| XPrim (MFun v tR) aa		<- xx
---	= Just tR
-	
-	| XPrim (MBox tB tU) x		<- xx
-	= Just tB
-	
-	| XPrim (MUnbox tU tB) x	<- xx
-	= Just tU
-	
 	
 	| otherwise
 	= Nothing
@@ -153,7 +141,7 @@ slurpEffsX'	xx
 	
 	XDo _			-> [TNil]
 	XMatch aa		-> [TNil]
-	XConst{}		-> []
+	XLit{}			-> []
 	XVar{}			-> []
 
 	XPrim m xx		-> []

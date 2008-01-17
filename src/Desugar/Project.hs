@@ -124,8 +124,81 @@ snipProjDictP moduleName (PClassInst nn vClass ts context ss)
 	return	$ PClassInst nn vClass ts context (catMaybes mss')
 		: catMaybes mpp
 
+-- Snip field initializers
+snipProjDictP moduleName (PData nn vData vsArg ctorDefs)
+ = do	(ctorDefs', psNew)	
+ 		<- liftM unzip
+		$ mapM (snipCtorDef moduleName nn vData) ctorDefs
+		
+	return	$ PData nn vData vsArg ctorDefs'
+		: concat psNew
+
 snipProjDictP _ pp
  =	return [pp]
+
+
+-- snip expressions out of data field intialisers in this ctor def
+snipCtorDef 
+	:: Module		-- the current module
+	-> a			-- annot to use on new code
+	-> Var 			-- var of data type
+	-> CtorDef a		-- ctor def to transform
+	-> ProjectM
+		( CtorDef a	-- new ctor def
+		, [Top a])	-- new top level bindings
+
+snipCtorDef moduleName sp vData (CtorDef nn vCtor dataFields)
+ = do	(dataFields', psNew)	
+ 		<- liftM unzip 
+		$ mapM (snipDataField moduleName sp vData vCtor) dataFields
+		
+	return	( CtorDef nn vCtor dataFields'
+		, concat psNew)
+ 
+ 
+-- snip expresisons out of data field initialisers
+snipDataField 
+	:: Module		-- the current module
+	-> a			-- annot to use on new code
+	-> Var			-- var of data type
+	-> Var			-- var of contructor
+	-> DataField (Exp a) Type 
+	-> ProjectM 
+		( DataField (Exp a) Type	-- snipped data field
+		, [Top a])			-- new top level bindings
+
+snipDataField moduleName sp vData vCtor field
+	-- no initialiser
+	| Nothing	<- dInit field
+	= return 
+		( field
+		, [])
+
+	-- leave vars there
+ 	| Just XVar{}	<- dInit field
+	= return 
+		( field
+		, [])
+	
+	-- snip other expressions
+	| Just xInit	<- dInit  field
+	, Just vField	<- dLabel field
+	= do	var_	<- newVarN NameValue
+		let var	= var_
+			{ Var.name = "init_" 
+				++ Var.name vData  ++ "_" 
+				++ Var.name vCtor  ++ "_" 
+				++ Var.name vField
+			, Var.nameModule	= moduleName }
+
+		varL	<- newVarN NameValue
+		varR	<- newVarN NameRegion
+				
+		return	( field { dInit = Just $ XVar sp var }
+			, [ PSig  sp var (TFun 	(TData primUnit [TVar KRegion varR]) 
+						(dType field) 
+						(TBot KEffect) (TBot KClosure))
+			  , PBind sp (Just var) (XLambda sp varL xInit)])
 
 
 -- | Create a name for a top level projection function.
@@ -157,8 +230,6 @@ newInstFunVar
 	vInst
  = do
  	var	<- newVarN NameValue
-	
-
 	return	
 	 $ var 	{ Var.name 
 	 		= Var.deSymString

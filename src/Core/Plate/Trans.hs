@@ -399,9 +399,8 @@ transXM2 table xx
 	 -> do	aa'		<- followAs table aa
 		transX table	$ XMatch aa'
 		
-	XConst c t
-	 ->  do	t'		<- followT  table t
-	 	transX table	$ XConst c t'
+	XLit l
+	 ->  do	transX table	$ XLit l
 	 
 	XLocal v vts x
 	 -> do	v'		<- followV_bind  table v
@@ -462,37 +461,17 @@ instance Monad m => TransM m Prim where
 	 -> do	v'		<- followV_free table v
 	 	transM table	$ MSuspend v'
 		
-	MForce
-	 ->	transM table	$ MForce 
-	 
-	MBox t1 t2
-	 -> do	t1'		<- followT table t1
-	 	t2'		<- followT table t2
-		transM table	$ MBox t1' t2'
+	MForce		-> transM table tt
+	MBox 		-> transM table	tt
+	MUnbox		-> transM table tt
+	
+	MTailCall 	-> transM table tt
 
-	MUnbox t1 t2
-	 -> do	t1'		<- followT table t1
-	 	t2'		<- followT table t2
-		transM table	$ MUnbox t1' t2'
-		
-	MTailCall 
-	 -> do	transM table	$ MTailCall
-
-	MCall
-	 -> do	transM table	$ MCall
-
-	MCallApp i
-	 -> do	transM table	$ MCallApp i
-
-	MApply
-	 -> do	transM table	$ MApply
-
-	MCurry i
-	 -> do	transM table	$ MCurry i
-
-	MFun
-	 -> do	transM table	$ MFun
-		
+	MCall		-> transM table tt
+	MCallApp i	-> transM table tt
+	MApply		-> transM table tt
+	MCurry i	-> transM table tt
+	MFun		-> transM table tt
 		
 		
 -----
@@ -629,6 +608,10 @@ instance Monad m => TransM m Kind where
 	 -> do	v'	<- followV_free table v
 	 	ts'	<- followTs table ts
 		return	$ KClass v' ts'
+
+	KWitJoin ks
+	 -> do	ks'	<- mapM (followK table) ks
+	 	return	$ KWitJoin ks'
 	 
 -----
 instance Monad m => TransM m Stmt where
@@ -667,9 +650,8 @@ instance Monad m => TransM m Guard where
 instance Monad m => TransM m Pat where
  transZM table xx
   = case xx of
-	WConst c t
-	 -> do	t'		<- followT table t
-	 	transW table	$ WConst c t'
+	WLit c
+	 ->  	transW table	$ WLit c
 	 
 	WCon v lvt
 	 -> do	v'		<- followV_free table v
@@ -683,7 +665,7 @@ instance Monad m => TransM m Pat where
 
 
 -----
-instance Monad m => TransM m (DataField Exp Type) where 
+instance Monad m => TransM m (DataField Var Type) where 
  transZM table field
   = do	label'		<- transZM table $ dLabel field
  	t'		<- transZM table $ dType  field

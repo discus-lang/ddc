@@ -79,26 +79,30 @@ expandCtor v fields
 	return 		$ atom ++ super
  	
 
------
+-- | Create initialization code for this field
 expandField
 	:: Var				-- ^ var of object being constructed.
 	-> Int				-- ^ index of field.
-	-> DataField [Stmt ()] Type	-- ^ field to build.
-	-> ExM ([Stmt ()], Maybe (Var, Type))	
-	
+	-> DataField Var Type		-- ^ field to build.
+	-> ExM 	( [Stmt ()]		-- initialization code
+
+		, Maybe (Var, Type))	-- the arguments to the constructor
+					--	(will be Nothing if the field is secondary)
 expandField objV ix field
+
+	-- Primary fields get their values from constructor arguments.
 	| dPrimary field
 	= do	argV	<- newVarN NameValue
 		return	( [SAssign (XArg (XVar objV) TData ix) (dType field) (XVar argV)]
 			, Just (argV, TObj) )
 
+	-- Secondary fields get their values by calling the init function
 	| not $ dPrimary field
-	, Just ss		<- dInit field
-	, Just (SStmt lastS)	<- takeLast ss
-	= 	return	( init ss ++
-			  [SAssign (XArg (XVar objV) TData ix) (dType field) lastS ]
+	, Just vInit		<- dInit field
+	= 	return	( [SAssign (XArg (XVar objV) TData ix) (dType field) (XCall vInit [XUnit]) ]
 	 		, Nothing )
 
+	-- A secondary field without an initializer
 	| not $ dPrimary field
 	, Nothing	<- dInit field
 	, Just name	<- dLabel field

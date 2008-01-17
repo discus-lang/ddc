@@ -37,7 +37,7 @@ data Top a
 
 	| PData						--  Data type definition
 		Var					-- 	Type name
-		[(Var, [DataField [Stmt a] Type])]	-- 	[(ctor name, datafield)]
+		[(Var, [DataField Var Type])]		-- 	[(ctor name, datafield)]
 
 	| PCtor						--  A Constructor.
 		Var 					--	name

@@ -9,7 +9,6 @@ import Class.Update;
 
 infix  5 <, <=, >=, > ;
 
-
 -- math
 foreign import extern "primInt32_add"
  primInt32_add	:: elaborate Int -> Int -> Int;

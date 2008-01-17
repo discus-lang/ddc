@@ -30,6 +30,11 @@ annotLevelTree
 	-> Tree
 	-> Tree
 
+annotLevelTree cHeader cSource
+	= cSource
+	
+{-
+
 annotLevelTree cHeader pp	
  = let	topVs	= topLevelVs (cHeader ++ pp)
 
@@ -182,7 +187,7 @@ annotLevelA st@(level, vMap) aa
 
 		 	
 
-{-
+
 annotLevelG st@(level, vMap) gg
  = case gg of
  	GCon x c fs
@@ -194,7 +199,7 @@ annotLevelG st@(level, vMap) gg
 	 	free'		= Set.delete [(v, level) | v <- boundVs]
 	    in	( GCon x' c fs
 	    	, free')
--}
+
 
 tagVL free x
  = let	free'	= filter (\(v, n) -> n /= 0) 
@@ -234,3 +239,4 @@ eraseSpineAppX	xx
 	 -> x
 	 
 	_ -> xx
+-}

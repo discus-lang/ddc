@@ -13,7 +13,6 @@ import Shared.VarBind
 -- from Base
 
 -- primitive unboxed types.
-
 primTVoidU	= primVarI NameType	"Base.Void#"	TVoidU		[Var.ISeaName "void"]
 primTPtrU	= primVarI NameType	"Base.Ptr#"	TPtrU		[Var.ISeaName "Ptr"]
 
@@ -32,18 +31,41 @@ primTInt64U	= primVarI NameType	"Base.Int64#"	TInt64U		[Var.ISeaName "Int64"]
 primTFloat32U	= primVarI NameType	"Base.Float32#"	TFloat32U	[Var.ISeaName "Int32"]
 primTFloat64U	= primVarI NameType	"Base.Float64#"	TFloat64U	[Var.ISeaName "Int64"]
 
+primTCharU	= primVarI NameType	"Base.Char#"	TCharU		[Var.ISeaName "Char"]
 primTStringU	= primVarI NameType	"Base.String#"	TStringU	[Var.ISeaName "String"]
+
+
+-- primitive boxed types
+primTBool	= primVar NameType 	"Base.Bool"				TBool
+
+primTWord	= primVar NameType	"Base.Word32"				TWord32
+primTWord8	= primVar NameType	"Base.Word8"				TWord8
+primTWord16	= primVar NameType	"Base.Word16"				TWord16
+primTWord32	= primVar NameType	"Base.Word32"				TWord32
+primTWord64	= primVar NameType	"Base.Word64"				TWord64
+
+-- hack Int -> Int32
+--	would be better to have real type aliases
+primTInt	= primVar NameType	"Base.Int32"				TInt32
+
+primTInt8	= primVar NameType	"Base.Int8"				TInt8
+primTInt16	= primVar NameType	"Base.Int16"				TInt16
+primTInt32	= primVar NameType	"Base.Int32"				TInt32
+primTInt64	= primVar NameType	"Base.Int64"				TInt64
+
+primTFloat	= primVar NameType	"Base.Float32"				TFloat32
+primTFloat32	= primVar NameType	"Base.Float32"				TFloat32
+primTFloat64	= primVar NameType	"Base.Float64"				TFloat64
+
+primTChar	= primVar NameType	"Base.Char"				TChar
+primTString	= primVar NameType	"Base.String"				TString
 
 
 -- simple types
 primTUnit	= primVar NameType	"Base.Unit"				TUnit
 primUnit	= primVar NameValue	"Base.Unit"				VUnit
 
-primTBool	= primVar NameType 	"Base.Bool"				TBool
 
-primTInt	= primVar NameType	"Base.Int"				TInt
-primTFloat	= primVar NameType	"Base.Float"				TFloat
-primTString	= primVar NameType	"Base.String"				TString
 
 primTObj	= primVar NameType	"Base.Obj"				TObj
 primTData	= primVar NameType	"Base.Data"				TData
@@ -199,8 +221,12 @@ bindPrimVar n v
  = case Var.name v of
  	"Unit"		-> Just $ v { Var.bind = TUnit }
 	"Bool"		-> Just $ v { Var.bind = TBool 		}
-	"Int"		-> Just $ v { Var.bind = TInt 		}
-	"Float"		-> Just $ v { Var.bind = TFloat 	}
+
+	-- hack these to 32 bit for now
+	"Int"		-> Just $ v { Var.bind = TInt32 	}
+	"Float"		-> Just $ v { Var.bind = TFloat32 	}
+
+
 	"String"	-> Just $ v { Var.bind = TString	}
 	"Ref"		-> Just $ v { Var.bind = TRef 		}
 
@@ -233,6 +259,7 @@ bindPrimVar n v
 	"Float64#"	-> Just $ v { Var.bind = TFloat64U	}
 
 	"String#"	-> Just $ v { Var.bind = TStringU	}
+	"Char#"		-> Just $ v { Var.bind = TCharU		}
 
 	---
 

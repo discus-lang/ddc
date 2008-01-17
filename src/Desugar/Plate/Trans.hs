@@ -191,12 +191,17 @@ transDataField
 	-> m (DataField (Exp a2) Type)
 
 transDataField table xx
- = do	init'	<- liftMaybe (transZM table) $ dInit xx
-	return	$ DataField
+ = do	dInit'	<- case dInit xx of
+ 			Nothing	-> return Nothing
+			Just x	-> do
+				x'	<- transZM table x
+				return	$ Just x'
+ 
+ 	return	$ DataField
 		{ dPrimary	= dPrimary xx
 		, dLabel	= dLabel   xx
 		, dType		= dType    xx
-		, dInit		= init' }
+		, dInit		= dInit' }
 
 
 

@@ -138,7 +138,7 @@ toSeaStruct (C.CtorDef name fs)
 -----
 toSeaCtor 
 	:: C.CtorDef
-	-> SeaM (Var, [E.DataField [E.Stmt ()] E.Type])
+	-> SeaM (Var, [E.DataField E.Var E.Type])
 	
 toSeaCtor (C.CtorDef name fs)
  = do
@@ -147,15 +147,13 @@ toSeaCtor (C.CtorDef name fs)
 	
 -----
 toSeaDataField
-	:: C.DataField C.Exp C.Type
-	-> SeaM (E.DataField [E.Stmt() ] E.Type)
+	:: C.DataField C.Var C.Type
+	-> SeaM (E.DataField E.Var E.Type)
 	
 toSeaDataField field
  = do	mInit	<- case C.dInit field of
  			Nothing		-> return $ Nothing
-			Just x		
-			 -> do	ss'	<- mapM toSeaS $ slurpStmtsX x
-			 	return	$ Just $ concat ss'
+			Just x		-> return $ Just x		
 				
 	return	E.DataField
 		{ E.dPrimary	= C.dPrimary 	field
@@ -181,10 +179,6 @@ toSeaX		xx
 	C.XLAM v k x
 	 -> toSeaX x
 
-	-- core constants
-	C.XConst c t
-	 -> toSeaConst c
-	
 	-- function calls
 	C.XPrim C.MTailCall xs
 	 -> let (C.XVar v t) : args	= stripValues xs
@@ -219,20 +213,25 @@ toSeaX		xx
 
 	    in  E.XSuspend fn args'
 
+	-- boxing
+	C.XPrim C.MBox [x]
+	 -> let	t	= C.reconX_type (stage ++ "toSeaX") x
+	    in	E.XBox (toSeaT t) (toSeaX x)
+
+	C.XPrim C.MUnbox [x]
+	 -> let	t	= C.reconX_type (stage ++ "toSeaX") x
+	    in	E.XUnbox (toSeaT t) (toSeaX x)
+
 	-- forcing
 	C.XPrim (C.MForce) [x]
 	 -> E.XForce (toSeaX x)	 
 
-	-- boxing
-	C.XPrim (C.MBox tB tU) [x]
-	 -> E.XBox	(toSeaT tU) (toSeaX x)
-	 
-	C.XPrim (C.MUnbox tU tB) [x]
-	 -> E.XUnbox	(toSeaT tU) (toSeaX x)
-
-
 	C.XAtom v ts
 	 -> E.XAtom v
+
+	-- core constants are always applied when in expressions
+	C.XAPP (C.XLit l) (C.TVar C.KRegion r)
+	 -> toSeaConst l
 
 	-- An application to type/region/effects only
 	--	we can just discard the TRE applications and keep the value.
@@ -378,8 +377,8 @@ toSeaG	mObjV ssFront gg
 
 
 toSeaW	_ 
-	(C.WConst c t)	
- = 	( toSeaConst c
+	(C.WLit l)
+ = 	( toSeaConst l
  	, [])
 
 toSeaW  (Just (C.XVar objV t))
@@ -396,7 +395,7 @@ isAltConst  aa
 
 isPatConst gg
  = case gg of
- 	C.WConst c t	-> True
+ 	C.WLit{}	-> True
 	_		-> False
 
 
@@ -493,17 +492,24 @@ splitSuper args xx
 
 
 -----
-toSeaConst c 
- = case c of
- 	CConstU l@(LInt    _)	-> E.XLiteral l
- 	CConstU l@(LFloat  _)	-> E.XLiteral l
- 	CConstU l@(LChar   _)	-> E.XLiteral l
- 	CConstU l@(LString _)	-> E.XLiteral l
+toSeaConst l
+ = case l of
+	C.LInt8 i	-> E.XLiteral (LInt	$ fromIntegral i)
+	C.LInt16 i	-> E.XLiteral (LInt	$ fromIntegral i)
+	C.LInt32 i	-> E.XLiteral (LInt	$ fromIntegral i)
+	C.LInt64 i	-> E.XLiteral (LInt	$ fromIntegral i)
 
- 	CConst l@(LInt    _)	-> E.XBox (E.TCon Var.primTInt32U [])   (E.XLiteral l)
- 	CConst l@(LFloat  _)	-> E.XBox (E.TCon Var.primTFloat32U []) (E.XLiteral l)
--- 	CConst l@(LChar   _)	-> E.XBox (E.TCon Var.primTCharU [])    (E.XLiteral l)
- 	CConst l@(LString _)	-> E.XBox (E.TCon Var.primTStringU [])  (E.XLiteral l)
+	C.LWord8 i	-> E.XLiteral (LInt	$ fromIntegral i)
+	C.LWord16 i	-> E.XLiteral (LInt	$ fromIntegral i)
+	C.LWord32 i	-> E.XLiteral (LInt	$ fromIntegral i)
+	C.LWord64 i	-> E.XLiteral (LInt	$ fromIntegral i)
+
+	C.LFloat32 f	-> E.XLiteral (LFloat	$ (fromRational . toRational) f)
+	C.LFloat64 f	-> E.XLiteral (LFloat	$ (fromRational . toRational) f)
+
+	C.LChar c	-> E.XLiteral (LChar	$ c)
+	C.LString s	-> E.XLiteral (LString	$ s)
+	
 
  	
 

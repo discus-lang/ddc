@@ -211,9 +211,9 @@ bindG shared (GExp w x)
 
 bindW shared ww
  = case ww of
- 	WConst c t
-	 -> return 	( WConst c t
-	 		, freeRegions t
+ 	WLit l
+	 -> return 	( WLit l
+	 		, Set.empty
 			, Set.empty )
 	WCon v lts
 	 -> return	( WCon v lts
@@ -435,7 +435,7 @@ canBindX xx
 	XApp{}			-> False
 	XDo{}			-> True
 	XMatch{}		-> False
-	XConst{}		-> False
+	XLit{}			-> False
 	XVar{}			-> False
 	XLocal v ls x		-> canBindX x
 	XPrim{}			-> False

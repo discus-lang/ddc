@@ -87,6 +87,9 @@ instance Pretty Integer where
 instance Pretty Float where
  ppr x		= PString $ show x
  
+instance Pretty Double where
+ ppr x		= PString $ show x
+ 
 instance Pretty Char where
  ppr x		= PChar x
 

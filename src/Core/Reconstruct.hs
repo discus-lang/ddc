@@ -159,6 +159,36 @@ reconX tt (XLAM v k x)
 	, xc)
  
 -- APP
+
+-- handle applications to literals directly
+--	this way we don't need to invent a variable for the \/ bound region 
+--	in the literal's type scheme. Literals never appear without their region
+--	parameters in the core so this is ok.
+
+reconX xx exp@(XAPP (XLit l) (TVar KRegion r))
+ = let	t	= case l of
+ 			LInt8{}		-> TData primTInt8U	[TVar KRegion r]
+ 			LInt16{}	-> TData primTInt16U	[TVar KRegion r]
+ 			LInt32{}	-> TData primTInt32U	[TVar KRegion r]
+ 			LInt64{}	-> TData primTInt64U	[TVar KRegion r]
+
+ 			LWord8{}	-> TData primTWord8U 	[TVar KRegion r]
+ 			LWord16{}	-> TData primTWord16U	[TVar KRegion r]
+ 			LWord32{}	-> TData primTWord32U	[TVar KRegion r]
+ 			LWord64{}	-> TData primTWord64U	[TVar KRegion r]
+
+ 			LFloat32{}	-> TData primTFloat32U	[TVar KRegion r]
+ 			LFloat64{}	-> TData primTFloat64U	[TVar KRegion r]
+
+ 			LChar{}		-> TData primTCharU 	[TVar KRegion r]
+ 			LString{}	-> TData primTStringU 	[TVar KRegion r]
+			
+   in	( exp
+   	, t
+	, pure
+	, empty)
+
+
 reconX tt exp@(XAPP x t)
  = let	(x', tx, xe, xc)	= reconX tt x
    in	case applyTypeT tt tx t of
@@ -336,15 +366,6 @@ reconX tt (XMatch aa)
 	, makeTSum KEffect altEs
 	, makeTSum KClosure altCs )
 
-
--- const	
-reconX tt (XConst c t)
- =	( XConst c t
- 	, t
-	, TBot KEffect
-	, TBot KClosure )
-	
-
 -- var
 -- TODO: check against existing annotation.
 
@@ -409,8 +430,16 @@ reconX tt xx@(XPrim prim xs)
  		= unzip4 $ map (reconMaybeX tt) xs
 
 	t	= case prim of
-			MBox   tRes _	-> tRes
-			MUnbox tRes _	-> tRes
+			MBox
+			 -> case xs of
+			 	[x]	-> reconBoxType 
+					$  t4_2 $ reconX tt x
+
+			MUnbox
+			 -> case xs of
+			 	[x]	-> reconUnboxType 
+					$  t4_2  $ reconX tt x
+
 			MTailCall	-> reconApps tt xs'
 			MCall		-> reconApps tt xs'
 			MCallApp _	-> reconApps tt xs'
@@ -434,6 +463,54 @@ reconX tt xx
  	= panic stage 
  	$ "reconX: no match for " % show xx	% "\n"
 	% "    caller = " % tableCaller tt	% "\n"
+
+
+-- | Convert this type to the unboxed version
+reconBoxType :: Type -> Type
+reconBoxType (TData v ts@[TVar KRegion _])
+	= TData (reconBoxType_bind (Var.bind v)) ts
+
+reconBoxType_bind bind
+ = case bind of
+ 	Var.TInt8U	-> primTInt8
+ 	Var.TInt16U	-> primTInt16
+ 	Var.TInt32U	-> primTInt32
+ 	Var.TInt64U	-> primTInt64
+
+	Var.TWord8U	-> primTWord8
+	Var.TWord16U	-> primTWord16
+	Var.TWord32U	-> primTWord32
+	Var.TWord64U	-> primTWord64
+
+	Var.TFloat32U	-> primTFloat32
+	Var.TFloat64U	-> primTFloat64
+
+	Var.TCharU	-> primTChar
+	Var.TStringU	-> primTString
+
+
+-- | Convert this type to the boxed version
+reconUnboxType :: Type -> Type
+reconUnboxType (TData v ts@[TVar KRegion _])
+	= TData (reconUnboxType_bind (Var.bind v)) ts
+	
+reconUnboxType_bind bind
+ = case bind of
+ 	Var.TInt8	-> primTInt8U
+ 	Var.TInt16	-> primTInt16U
+ 	Var.TInt32	-> primTInt32U
+ 	Var.TInt64	-> primTInt64U
+
+	Var.TWord8	-> primTWord8U
+	Var.TWord16	-> primTWord16U
+	Var.TWord32	-> primTWord32U
+	Var.TWord64	-> primTWord64U
+
+	Var.TFloat32	-> primTFloat32U
+	Var.TFloat64	-> primTFloat64U
+
+	Var.TChar	-> primTCharU
+	Var.TString	-> primTStringU
 
 
 -- | Reconstruct the result type when this list of expressions
@@ -561,7 +638,7 @@ reconG tt gg@(GExp p x)
 	  , xC))
  
 
-slurpVarTypesW (WConst{})	= []
+slurpVarTypesW (WLit{})		= []
 slurpVarTypesW (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 
 

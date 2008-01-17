@@ -185,8 +185,8 @@ lintX tt (XDo ss)
 lintX tt (XMatch aa)
  = do	foldM_ lintA tt aa
  
-lintX tt (XConst c t)
- = do	lintT tt t
+lintX tt (XLit{})
+ = do	return ()
  
 lintX tt (XVar v TNil)
  = do	addError $ "Variable " % v % " has no type annotation.\n"
@@ -251,9 +251,8 @@ lintG tt (GExp w x)
 	
 -- | Lint for Patterns
 lintW :: Table -> Pat -> LintM Table
-lintW tt (WConst c t)
- = do	lintT tt t
- 	return tt
+lintW tt (WLit c)
+ = do 	return tt
  
 lintW tt (WCon v lvt)
  = do	tt'		<- addVTs (map (\(l, v, t) -> (v, t)) lvt) tt

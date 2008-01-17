@@ -20,23 +20,37 @@ data VarBind
 	-- A regular user-defined var.
 	| XBind String Int
 
-	-- Type constructors.
-	| TUnit	
-	| TBool
-	| TChar
-	| TInt
-	| TFloat
-	| TString
-
-	| TTuple Int	-- ^ Tuple type constructor of given airity.
-	| TList
-
+	-- Primitive low level types
 	| TObj
 	| TData
 	| TThunk
+	
+	-- Primitive data constructors
+	| TTuple Int	-- ^ Tuple type constructor of given airity.
+	| TList
 	| TRef
 	
-	-- Primitive types.
+	-- Primitive boxed types
+	| TUnit	
+	| TBool
+
+	| TWord8
+	| TWord16
+	| TWord32
+	| TWord64
+	
+	| TInt8
+	| TInt16
+	| TInt32
+	| TInt64
+
+	| TFloat32
+	| TFloat64
+
+	| TChar
+	| TString
+	
+	-- Primitive unboxed types
 	| TVoidU
 	| TPtrU
 
@@ -55,6 +69,7 @@ data VarBind
 	| TFloat32U
 	| TFloat64U
 
+	| TCharU
 	| TStringU
 	
 	-- Effect constructors.

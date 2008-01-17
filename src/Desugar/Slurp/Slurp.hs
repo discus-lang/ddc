@@ -15,6 +15,7 @@ import Shared.Error
 import qualified Shared.Error	as Error
 
 import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -27,6 +28,7 @@ import Shared.Exp
 import Type.Exp
 import Type.Pretty
 import Type.Util
+import Type.Plate
 
 import Constraint.Exp
 import Constraint.Bits
@@ -276,7 +278,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 
 	let constr = 
 		   [ CDef src (TVar KData cNameT) ctorType ]
-		++ case initConstrss of
+		++ case concat initConstrss of
 			[]	-> []
 			_	-> [newCBranch 
 					{ branchSub = concat initConstrss }]
@@ -290,7 +292,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 slurpDataField 
 	:: Var 					-- Datatype name.
 	-> Var					-- Constructor name
-	-> DataField (Exp Annot1) Type 		-- DataField def.
+	-> DataField (Exp Annot1) Type	 	-- DataField def.
 	-> CSlurpM 
 		( DataField (Exp Annot2) Type	-- Annotated DataField def.
 		, [CTree])			-- Constraints for field initialisation code.
@@ -301,13 +303,18 @@ slurpDataField vData vCtor field
  = do
 	let src		= TSField vData vCtor label
 	tInit		<- newTVarD
+
+	-- vars for the initialisation function
+	tInitFun	<- newTVarD
+	rInit		<- newTVarR
 	
 	(tX, eX, cX, initX', qsX)	
 		<- slurpX initX
+
+	tField_fresh	<- freshenType $ dType field
 	
 	let qs	=
-		[ CEq src tInit tX
-		, CEq src tInit (dType field) ] 
+		[ CEq src tX (TFun tInitFun tField_fresh pure empty) ]
 
 	let field'	= 
 		DataField 
@@ -331,6 +338,26 @@ slurpDataField vData vCtor field
 			
 	return	( field'
 		, [])
- 
- 
+
+
+-- | Replace non-ctor variables in this type by fresh ones.
+freshenType 
+	:: Type
+	-> CSlurpM Type
+	
+freshenType tt
+ = do	let vsFree	= freeVars tt
+ 	let vsFree'	= filter (\v -> (not $ Var.isCtorName v)) 
+			$ Set.toList vsFree
+	
+	vsFresh		<- mapM newVarZ vsFree'
+	let tsFresh	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsFresh
+	
+	let sub		= Map.fromList $ zip vsFree' tsFresh
+
+	let tt'		= substituteVT sub tt
+	return	tt'
+						
+
+
 

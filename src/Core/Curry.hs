@@ -75,17 +75,8 @@ curryP 	p
 	 | otherwise
 	 -> PBind v (curryX [] x)
 	 
-	PData v vs ctors
-	 -> PData v vs (map curryCtorDef ctors)
-	 
 	_ -> p
 	
------
-curryCtorDef (CtorDef v dataFields)
- = CtorDef v (map curryDataField dataFields)
-	
-curryDataField field
- = field { dInit = liftM (curryX []) (dInit field) }
 
 -----
 curryS 	:: (?supers 	:: Map Var Top)
@@ -110,7 +101,7 @@ curryX	tc xx
 	| XLocal v vs x		<- xx	= XLocal v vs	$ curryX tc x
 	| XMatch aa		<- xx	= XMatch (map (curryA tc) aa)
 	| XPrim{}		<- xx	= xx
-	| XConst{} 		<- xx	= xx
+	| XLit{} 		<- xx	= xx
 
 	-- A zero airity super.
 	| XVar v t		<- xx
@@ -127,6 +118,10 @@ curryX	tc xx
 
 	  in	XDo (initSS' ++ [lastS'])
 			
+
+	-- Application to a litera
+	| XAPP XLit{} (TVar KRegion _)	<- xx
+	= xx
 	
 	-- Found a function application
 	--	split out its arguments and make the call.	

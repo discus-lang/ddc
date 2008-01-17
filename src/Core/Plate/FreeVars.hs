@@ -93,8 +93,8 @@ instance FreeVars Exp where
 	XMatch aa
 	 -> unions $ map freeVars aa
 		
-	XConst c t	
-	 -> freeVars t
+	XLit{}
+	 -> empty
 
 	XLifted v vsFree
 	 -> fromList vsFree
@@ -137,17 +137,8 @@ instance FreeVars Prim where
 
 	MSuspend v	-> singleton v
 	MForce 		-> empty
-
-	MBox t1 t2
-	 -> unions
-	 	[ freeVars t1
-		, freeVars t2 ]
-
-	MUnbox t1 t2 
-	 -> unions
-	 	[ freeVars t1
-		, freeVars t2 ]
-
+	MBox		-> empty
+	MUnbox	 	-> empty
 	MTailCall 	-> empty
 	MCall 	 	-> empty
 	MCallApp  i	-> empty
@@ -198,15 +189,15 @@ instance FreeVars Guard where
 varsBoundByW ::	Pat	-> Set Var
 varsBoundByW	ww
  = case ww of
- 	WConst c t	-> empty
-	WCon   v fs	-> fromList $ map t3_2 fs
+ 	WLit{}	 	-> empty
+	WCon	v fs	-> fromList $ map t3_2 fs
 	
 
 -- Pat ---------------------------------------------------------------------------------------------
 instance FreeVars Pat where
  freeVars pp
   = case pp of
-  	WConst	c t	-> freeVars t
+  	WLit  c		-> empty
 	WCon 	v lts	-> Set.unions $ map (freeVars . t3_3) lts
 
 
@@ -322,4 +313,6 @@ instance FreeVars Kind where
 	 -> unions
 	 	[ freeVars k1 
 		, freeVars k2 ]
-
+	
+	KWitJoin ks
+	 -> freeVars ks

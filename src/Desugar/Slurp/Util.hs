@@ -80,7 +80,7 @@ makeCtorType	(vData, vs)	  (name, fs)
 	--
  	let objType	= TData vData  
 			$ map (\v -> case Var.nameSpace v of
-					NameEffect	-> TVar KEffect    v
+					NameEffect	-> TVar KEffect  v
 					NameRegion	-> TVar KRegion  v
 					NameClosure	-> TVar KClosure v
 					NameType	-> TVar KData    v)

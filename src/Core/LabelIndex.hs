@@ -37,7 +37,7 @@ labelIndexW mapCtorDefs xx
 		lvts'		= zip3 ls' vs ts
 	    in	WCon ctorName lvts'
 	 
-	WConst{}
+	WLit{}
 	 ->	xx
  
  

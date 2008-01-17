@@ -10,6 +10,7 @@ module Core.Exp
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
 	, Exp 		(..)	-- expressions
+	, Lit		(..)	-- literal values
 	, Proj		(..)	-- projections
 	, Prim		(..)	-- primitive operators
 	, Stmt	 	(..)	-- statements
@@ -39,7 +40,6 @@ import Util
 
 -----
 import Shared.Var (Var)
-import Shared.Literal (Const)
 import Shared.Exp
 
 import Data.Set		(Set)
@@ -73,7 +73,7 @@ data Top
 	deriving (Show, Eq)
 
 data CtorDef 
-	= CtorDef Var [DataField Exp Type]
+	= CtorDef Var [DataField Var Type]
 	deriving (Show, Eq)
 
 data ClassContext
@@ -111,8 +111,8 @@ data Exp
 	| XMatch	[Alt]				-- ^ Matching of constructors and constants with effects.
 	| XLocal	Var	[(Var, Type)] Exp	-- ^ Introduce a local region.
 
-	| XConst	Const	Type			-- ^ Literals.
 	| XVar		Var	Type 			-- ^ A variable.
+	| XLit		Lit				-- ^ A literal value
 
 	| XPrim		Prim 	[Exp]
 
@@ -148,14 +148,34 @@ data Exp
 	deriving (Show, Eq)
 
 
+-- (unboxed) literal values
+data Lit
+	= LInt8		Integer
+	| LInt16	Integer
+	| LInt32	Integer
+	| LInt64	Integer
+	
+	| LWord8	Integer
+	| LWord16	Integer
+	| LWord32	Integer
+	| LWord64	Integer
+	
+	| LFloat32	Double
+	| LFloat64	Double
+
+	| LChar		Char
+	| LString	String
+	deriving (Show, Eq)
+
+
 data Prim
 	-- laziness
 	= MSuspend	Var				-- ^ Suspend some function	function name
 	| MForce					-- ^ Force an expression	(expr list should have a single elem)
 
-	-- boxing
-	| MBox		Type Type			-- ^ Boxing.	boxed type, 	unboxed type
-	| MUnbox	Type Type			-- ^ Unboxing.	unboxed type, 	boxed type
+	-- boxing and unboxing
+	| MBox
+	| MUnbox
 	
 	-- function calls
 	| MTailCall	 				-- ^ Tailcall a super
@@ -192,7 +212,7 @@ data Guard
 	deriving (Show, Eq)
 
 data Pat
-	= WConst	Const	Type			-- ^ Match against a constant.
+	= WLit		Lit				-- ^ Match against a literal value
 	| WCon		Var	[(Label, Var, Type)]	-- ^ Match against a constructor and bind arguments.
 	deriving (Show, Eq)
 	

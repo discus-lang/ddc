@@ -72,7 +72,12 @@ rewriteS ss
 rewriteX xx
  = case xx of
  	XTau t x	-> XTau t (rewriteX x)
+
 	XApp{}		-> rewriteApp xx
+	
+	XAPP XLit{} (TVar KRegion r)
+			-> xx
+	
 	XAPP{}		-> rewriteApp xx
 	_		-> xx
 	

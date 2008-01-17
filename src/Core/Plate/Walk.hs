@@ -164,12 +164,12 @@ instance Monad m => WalkM m CtorDef where
 
 		
 -- DataField --------------------------------------------------------------------------------------
-instance Monad m => WalkM m (DataField Exp Type) where
+instance Monad m => WalkM m (DataField Var Type) where
  walkZM z xx
   = case xx of
   	DataField { dInit = mX }
-	 -> do 	mX'		<- liftMaybe (walkZM z) mX
-	 	return	xx { dInit = mX' }
+	 -> do --	mX'	<- liftMaybe (walkZM z) mX
+	 	return	xx { dInit = mX }
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -243,9 +243,8 @@ walkZM2 z xx
 	 -> do 	aa'		<- walkZM z aa
 	 	transX z z	$ XMatch aa'
 		
-	XConst c t		
-	 -> do	t'		<- walkZM z t
-	 	transX z z	$ XConst c t'
+	XLit l 		
+	 -> do	transX z z	$ XLit l
 
 	XLocal vR vts x
 	 -> do	z2		<- bindK z z vR KRegion
@@ -300,11 +299,8 @@ instance Monad m => WalkM m Guard where
 instance Monad m => WalkM m Pat where
  walkZM z ss
   = case ss of
-  	WConst c t
-	 -> 	return		$ WConst c t
-	 
-	WCon v lvts
-	 -> 	return		$ WCon v lvts
+  	WLit v 		-> return ss
+	WCon v lvts	-> return ss
 
 
 -- Stmt --------------------------------------------------------------------------------------------
@@ -440,9 +436,7 @@ bindTK_Guard zz g
 	
 bindTK_Pat zz ww
  = case ww of
-	WConst c t
-	 -> return zz
-
+	WLit{}		-> return zz
  	WCon v lvt
 	 -> foldM (\z (l, v, t) -> bindT z z v t) zz lvt
  	

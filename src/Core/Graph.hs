@@ -90,7 +90,7 @@ slurpS	table ss
 appModeX ::	Exp	-> App
 appModeX	xx
  = case xx of
- 	XPrim (MBox t1 t2) [XConst{}]
+ 	XPrim (MBox)	 [XLit{}]
 			-> AppConst
 	
 	XTau t x	-> appModeX x

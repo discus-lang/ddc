@@ -31,8 +31,6 @@ import Type.ToCore			(toCoreT, toCoreK)
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Pretty		as C
-import qualified Core.Optimise.Boxing	as C	(unboxedType)
-
 
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
@@ -206,20 +204,14 @@ toCoreCtorDef	(D.CtorDef _ v fieldDefs)
 	return	$ C.CtorDef v fieldDefs'
 
 toCoreFieldDef	df
- = do
-	cInit	<- case S.dInit df of
-		    Just x 
-		     -> do
-		    	x'	<- toCoreX x
-			return	$ Just (C.XDo [C.SBind Nothing x'])
-
-		    Nothing -> return Nothing
-
-	return	$ S.DataField 
+ = do	return	$ S.DataField 
 		{ S.dPrimary	= S.dPrimary df
 		, S.dLabel	= S.dLabel   df
 		, S.dType	= toCoreT $ S.dType df
-		, S.dInit	= cInit }
+
+		, S.dInit	= case S.dInit df of
+					Nothing			-> Nothing
+					Just (D.XVarInst _ v)	-> Just v }
 		
 
 makeCtor 
@@ -362,30 +354,21 @@ toCoreX xx
 		
 	-- primitive constants
 	D.XConst (Just (T.TVar T.KData vT, _)) 
-		(S.CConst lit)
+		cc@(S.CConst lit)
 	 -> do	
 	 	Just t		<- lookupType vT
 	 	let t_flat	= C.stripContextT $ C.flattenT t
-
-		-- BUGS: should have read effect here.
-		--	 Do read effect but force constants to be in Const regions.
-	 	case C.unboxedType t_flat of
-		 Just tU@(C.TData _ [tR])
-		  -> return 	$ C.XPrim (C.MBox t_flat tU) [C.XConst (S.CConstU lit) tU]
-		  	-- (C.TEffect primRead [tR])
-			
-		 Nothing
-		  -> panic stage
-		  	$ "toCoreX: no unboxed version for type " % t_flat
+		
+		return		$ toCoreLit t_flat cc
 
 	D.XConst
 		(Just (T.TVar T.KData vT, _))
-		(S.CConstU lit)
+		cc@(S.CConstU lit)
 	 -> do	
 	 	Just t		<- lookupType vT
 		let t_flat	= (C.stripContextT . C.flattenT) t
 
-		return	$  C.XConst (S.CConstU lit) t_flat
+		return		$ toCoreLit t_flat cc
 
  
 	-- We need the last statement in a do block to be a non-binding because of an
@@ -491,6 +474,65 @@ toCoreX xx
 		$ "toCoreX: cannot convert expression to core.\n" 
 		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
 
+
+-- | Convert a constant to core 
+--	All literals in the core are unboxed.
+--	Perhaps literals in the desugared source should be unboxed as well.
+toCoreLit :: C.Type -> S.Const	-> C.Exp
+toCoreLit tt const
+
+	-- unboxed integers
+	| S.CConstU lit				<- const
+	, S.LInt i				<- lit
+	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	= case Var.bind v of
+		Var.TInt8U	-> C.XAPP (C.XLit $ C.LInt8  $ fromIntegral i) r
+		Var.TInt16U	-> C.XAPP (C.XLit $ C.LInt16 $ fromIntegral i) r
+		Var.TInt32U	-> C.XAPP (C.XLit $ C.LInt32 $ fromIntegral i) r
+		Var.TInt64U	-> C.XAPP (C.XLit $ C.LInt64 $ fromIntegral i) r
+	
+
+	-- boxed integers
+	| S.CConst lit				<- const
+	, S.LInt i				<- lit
+	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	= case Var.bind v of
+		Var.TInt8	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt8  $ fromIntegral i) r]
+		Var.TInt16	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt16 $ fromIntegral i) r]
+		Var.TInt32	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt32 $ fromIntegral i) r]
+		Var.TInt64	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LInt64 $ fromIntegral i) r]
+
+	-- unboxed floats
+	| S.CConstU lit				<- const
+	, S.LFloat f				<- lit
+	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	= case Var.bind v of
+		Var.TFloat32U	-> C.XAPP (C.XLit $ C.LFloat32 $ (fromRational . toRational) f) r
+		Var.TFloat64U	-> C.XAPP (C.XLit $ C.LFloat64 $ (fromRational . toRational) f) r
+
+	-- boxed floats
+	| S.CConst lit				<- const
+	, S.LFloat f				<- lit
+	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	= case Var.bind v of
+		Var.TFloat32	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LFloat32 $ (fromRational . toRational) f) r]
+		Var.TFloat64	-> C.XPrim C.MBox [C.XAPP (C.XLit $ C.LFloat64 $ (fromRational . toRational) f) r]
+
+	-- boxed chars
+	| S.CConst lit	<- const
+	, S.LChar s	<- lit
+	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	, Var.bind v == Var.TChar
+	= C.XPrim C.MBox [C.XAPP (C.XLit $ C.LChar s) r]
+
+	
+	-- boxed strings
+	| S.CConst lit	<- const
+	, S.LString s	<- lit
+	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
+	, Var.bind v == Var.TString
+	= C.XPrim C.MBox [C.XAPP (C.XLit $ C.LString s) r]
+	
 
 
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
@@ -643,10 +685,10 @@ toCoreW ww
 	D.WConst 
 		(Just 	( T.TVar T.KData vT
 			, _ )) 
-		c
+		(S.CConstU (S.LInt i))
 
 	 -> do	Just t	<- lookupType vT
-	 	return	$ C.WConst c t
+	 	return	$ C.WLit (C.LInt32 $ fromIntegral i)
 	 
 	_ -> panic stage
 		$ "tCoreW: no match for " % show ww % "\n"

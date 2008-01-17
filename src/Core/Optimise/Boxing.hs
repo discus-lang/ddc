@@ -1,9 +1,6 @@
 
 module Core.Optimise.Boxing
-(
-	coreBoxingTree,
-	unboxedType
-)
+	( coreBoxingTree )
 
 where
 
@@ -45,36 +42,6 @@ uniqueSnip	= "x" ++ Unique.coreBoxing
 
 -----
 
-unboxFuns2 = 
-	[ ("primInt32_add",	5)
-	, ("primInt32_sub",	5)
-	, ("primInt32_div",	5)
-	, ("primInt32_mul",	5)
-	, ("primInt32_eq",	5)
-	, ("primInt32_neq",	5)
-	, ("primInt32_gt",	5)
-	, ("primInt32_ge",	5)
-	, ("primInt32_lt",	5)
-	, ("primInt32_le",	5)
-
-	, ("&&",		5)
-	, ("||",		5)
-	, ("primInt32_mod",	5)
-
-	-- float
-	, ("primFloat32_add",	5)
-	, ("primFloat32_sub",	5)
-	, ("primFloat32_div",	5)
-	, ("primFloat32_mul",	5)
-	, ("primFloat32_eq",	5)
-	, ("primFloat32_neq",	5)
-	, ("primFloat32_gt",	5)
-	, ("primFloat32_ge",	5)
-	, ("primFloat32_lt",	5)
-	, ("primFloat32_le",	5)
-	
-	, ("arrayUI_get", 	6) ]
-
 coreBoxingTree
 	:: Set Var
 	-> Tree		-- source tree
@@ -82,6 +49,11 @@ coreBoxingTree
 	-> Tree
 
 coreBoxingTree topVars cSource cHeader
+ = cSource
+ 
+ {-
+
+
  = let	cSnip		= snipBoxing cSource
 
 	cInlined	= inlinePureSingleTree cSnip
@@ -268,3 +240,33 @@ unboxedType t
 				
 
 
+unboxFuns2 = 
+	[ ("primInt32_add",	5)
+	, ("primInt32_sub",	5)
+	, ("primInt32_div",	5)
+	, ("primInt32_mul",	5)
+	, ("primInt32_eq",	5)
+	, ("primInt32_neq",	5)
+	, ("primInt32_gt",	5)
+	, ("primInt32_ge",	5)
+	, ("primInt32_lt",	5)
+	, ("primInt32_le",	5)
+
+	, ("&&",		5)
+	, ("||",		5)
+	, ("primInt32_mod",	5)
+
+	-- float
+	, ("primFloat32_add",	5)
+	, ("primFloat32_sub",	5)
+	, ("primFloat32_div",	5)
+	, ("primFloat32_mul",	5)
+	, ("primFloat32_eq",	5)
+	, ("primFloat32_neq",	5)
+	, ("primFloat32_gt",	5)
+	, ("primFloat32_ge",	5)
+	, ("primFloat32_lt",	5)
+	, ("primFloat32_le",	5)
+	
+	, ("arrayUI_get", 	6) ]
+-}

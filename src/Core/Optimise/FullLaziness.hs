@@ -50,6 +50,10 @@ fullLazinessTree
 	moduleName
 	cHeader
 	cTree 
+	= cTree
+	
+{-
+
  = let
 	treeInlined		= inlinePureSingleTree cTree
 
@@ -173,13 +177,5 @@ slurpLevelX n xx
 	_ -> return xx
 	
 	
-	
+-}	
  
-
-
-
-
-
-
-
-

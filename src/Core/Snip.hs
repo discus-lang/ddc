@@ -111,7 +111,7 @@ snipX1	topVars env xx
 	-- These are fine.	
 	XDo{}			-> leaveIt xx
 	XMatch{}		-> leaveIt xx
-	XConst{}		-> leaveIt xx
+	XLit{}			-> leaveIt xx
 	XVar{}			-> leaveIt xx
 	XType t			-> leaveIt xx
 
@@ -154,7 +154,7 @@ snipX topVars xx
 	XDo{}			-> snipIt xx
 	XMatch{}		-> snipIt xx
 
-	XConst{}		-> snipIt xx
+	XLit{}			-> leaveIt xx
 	
 	-- snip XVars if they're defined at top level
 	XVar v t

@@ -12,6 +12,7 @@ import Core.Util.Strip
 import qualified Shared.Var	as Var
 import Shared.Var (Var)
 import Shared.Error
+import Shared.Pretty		()
 
 import qualified Data.Set	as Set
 
@@ -212,8 +213,8 @@ instance Pretty Exp where
 		% "\n"
 		% "}"
 
-	XConst c t
-	 -> "(" % c % " :: " % t % ")"
+	XLit lit
+	 -> ppr lit
 
 	XLocal v vts x
 	 -> "local " % v %>> "  with {" % "; " 
@@ -290,10 +291,32 @@ prettyVK	(var, kind)
 prettyExpB x
  = case x of
 	XVar{}		-> ppr x
-	XConst{}	-> ppr x
+	XLit{}		-> ppr x
 	XAnnot{}	-> ppr x
 	XType t		-> prettyTB t
 	_		-> "(" % x % ")"
+
+
+-- Lit ---------------------------------------------------------------------------------------------
+instance Pretty Lit where
+ ppr xx
+  = case xx of
+	LInt8	i	-> i	% "#8i"
+	LInt16	i	-> i	% "#16i"
+	LInt32	i	-> i	% "#32i"
+  	LInt64	i	-> i	% "#64i"
+
+	LWord8	i	-> i	% "#8w"
+	LWord16	i	-> i	% "#16w"
+	LWord32	i	-> i	% "#32w"
+	LWord64	i	-> i	% "#64w"
+	
+	LFloat32 f	-> f	% "#32f"
+	LFloat64 f	-> f	% "#64f"
+	
+	LChar   c	-> show c % "#"
+	LString s	-> show s % "#"
+
 
 -- Proj --------------------------------------------------------------------------------------------
 instance Pretty Proj where
@@ -309,8 +332,8 @@ instance Pretty Prim where
   = case xx of
   	MSuspend v	-> "prim{Suspend} " 	% v
 	MForce 		-> ppr "prim{Force}"
-	MBox	t1 t2	-> "prim{Box} "		% prettyTB t1 % " " % prettyTB t2
-	MUnbox	t1 t2	-> "prim{Unbox} "	% prettyTB t1 % " " % prettyTB t2
+	MBox		-> ppr "prim{Box}"
+	MUnbox		-> ppr "prim{Unbox}"
 	MTailCall  	-> ppr "prim{TailCall}"	
 	MCall		-> ppr "prim{Call}"
 	MCallApp i	-> "prim{CallApp " % i % "}"
@@ -371,7 +394,7 @@ instance Pretty Guard where
 instance Pretty Pat where
  ppr xx 
   = case xx of
-  	WConst c t	-> ppr c % " :: " % t
+  	WLit c		-> ppr c 
 	
 
 	WCon v []	-> ppr v 
