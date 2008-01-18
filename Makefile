@@ -29,8 +29,8 @@ bin/ddc	: $(obj) $(GHC_INCOBJS)
 	
 
 # -- build the test driver
-bin/war : test/War.hs
-	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc --make test/War.hs -o bin/war
+bin/war : war/War.hs war/Diff.hs war/Interface.hs war/Order.hs war/Bits.hs war/TestSource.hs
+	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc -iwar --make war/War.hs -o bin/war
 	
 # -- build the runtime system
 runtime_c = \

@@ -1,0 +1,54 @@
+
+-- | Order to compile lib modules in
+--	TODO: should replace this by a static file
+
+module Order 
+	(libraryOrder)
+	
+where
+
+-----
+libraryOrder
+	= map (\s -> "library/" ++ s ++ ".ds")
+	$ libraryModules
+	
+libraryModules = 
+	[ "Base"
+	, "Data/Ref"
+	, "Base/Thunk"
+	, "Data/Bool"
+	, "Class/Eq"
+	, "Class/Ord"
+	, "Class/Num"
+	, "Class/Update"
+	, "Data/Int"
+	, "Data/Int32U"
+	, "Data/String"
+	, "Data/Float32U"
+	, "Data/Float"
+	, "Data/Tuple"
+	, "Data/Char"
+	, "Data/Maybe"
+	, "System/Error"
+	, "System/Console"
+	, "Data/List"
+	, "Class/Show"
+	, "Control/Imperative"
+	, "Control/Exception"
+	, "Data/Array"
+	, "Data/ArrayU"
+	, "DDC/Runtime"
+	, "System/File"
+	, "Prelude" 
+	, "Math/Vec2"
+	, "Math/Matrix/Matrix33" 
+	, "Graphics/Primitive"
+	, "Graphics/Shape"
+	, "Graphics/TinyPTC" 
+	, "Graphics/Raster/Bresenham"
+	, "Graphics/Frame"
+	, "Graphics/Render" ]
+
+{-	, "DDC/Source/Token"
+	, "DDC/Source/Lexer" ]
+-}	
