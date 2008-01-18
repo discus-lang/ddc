@@ -387,15 +387,15 @@ compileFile	argsCmd     fileName
 				cHeader
 				inlineVars
 
-	-- Perform local unboxing.
-	cBoxing		<- if elem Arg.OptBoxing ?args
-				then SC.coreBoxing topVars cInline cHeader
+	-- Perform simplification
+	cSimplify	<- if elem Arg.OptSimplify ?args
+				then SC.coreSimplify "CI" topVars cInline cHeader
 				else return cInline
 	
 	-- Do the full laziness optimisation.
 	cFullLaziness	<- SC.coreFullLaziness 
 				moduleName
-				cBoxing 
+				cSimplify
 				cHeader
 
 

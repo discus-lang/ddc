@@ -11,7 +11,7 @@ module Main.Core
 	, coreBind
 	, coreThread
 	, corePrim
-	, coreBoxing
+	, coreSimplify
 	, coreFullLaziness
 	, coreInline
 	, coreLint
@@ -27,7 +27,7 @@ where
 -- These are all the transforms, in rough order that they are applied to the core program.
 --
 import Core.Block			(blockTree)
-import Core.Snip			(snipTree)
+import qualified Core.Snip		as Snip
 import Core.Crush			(crushTree)
 
 import Core.Dictionary			(dictTree)
@@ -43,7 +43,7 @@ import Core.LabelIndex			(labelIndexTree)
 import Core.Curry			(curryTree, slurpSupersTree, isCafP_opType)
 import Core.ToSea			(toSeaTree)
 
-import Core.Optimise.Boxing		(coreBoxingTree)
+import Core.Optimise.Simplify		(coreSimplifyTree)
 import Core.Optimise.Atomise		(atomiseTree)
 import Core.Optimise.FullLaziness	(fullLazinessTree)
 import Core.Optimise.Inline		(inlineTree)
@@ -90,7 +90,11 @@ coreSnip
 coreSnip stage unique topVars tree
  = do	
 	-- snip exprs out of fn arguments
-	let treeSnip	= snipTree topVars ("x" ++ unique) tree
+	let snipTable	= Snip.Table
+			{ Snip.tableTopVars		= topVars
+			, Snip.tablePreserveTypes	= False }
+			
+	let treeSnip	= Snip.snipTree snipTable ("x" ++ unique) tree
 	dumpCT DumpCoreSnip (stage ++ "-snip")  treeSnip
 	
 	return treeSnip
@@ -201,27 +205,32 @@ corePrim cTree
 	return cTree'
 
 
--- | Local unboxing optimisation.
-coreBoxing
+-- | Do core simplification
+coreSimplify
 	:: (?args :: [Arg])
+	-> String		-- ^ unique
 	-> Set Var		-- ^ vars defined at top level
 	-> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 	-> IO Tree
 	
-coreBoxing topVars cSource cHeader
+coreSimplify unique topVars cSource cHeader
  = do	when (elem Verbose ?args)
-	 $ do	putStr $ "  * Optimise.Boxing\n"
+	 $ do	putStr $ "  * Optimise.Simplify\n"
  
- 	let (cBoxing, countZapped)	
- 		= coreBoxingTree "OB" topVars cSource
+ 	let (cSimplify, statss)
+ 		= coreSimplifyTree unique topVars cSource
 
 	when (elem Verbose ?args)
-	 $ do	putStr $ "    - unbox/boxings eliminated: " ++ show countZapped ++ "\n"
+	 $ do	putStr	$ pprStr	$ "\n" %!% statss % "\n\n"
 
- 	dumpCT DumpCoreBoxing "core-boxing" cBoxing
+ 	dumpCT DumpCoreSimplify "core-simplify" 
+			cSimplify
 
-	return	cBoxing 	
+	dumpS DumpCoreSimplify "core-simplify--stats"
+			(pprStr	$ "\n" %!% statss % "\n\n")
+
+	return	cSimplify
 
 
 -- Full laziness optimisation.

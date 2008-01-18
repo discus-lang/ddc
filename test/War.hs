@@ -22,7 +22,7 @@ data Arg
 main
  = do	
 	let ?args	= 
-		[ ArgFlagsDDC ["-link-lib m -lint -opt-tail-call -opt-boxing"] ]
+		[ ArgFlagsDDC ["-link-lib m -lint -opt-tail-call -opt-simplify"] ]
 
 	let ?trace	= \s -> return ()
 --	let ?trace	= \s -> do { putStr $ pprStr s; return (); }

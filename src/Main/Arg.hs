@@ -52,6 +52,14 @@ data Arg
 	| NoInducedFetters
 	| NoPurityCheck
 	| GenDangerousVars
+
+	-- opt
+	| OptAll
+	| OptAtomise
+	| OptSimplify
+	| OptFullLaziness
+	| OptInline
+	| OptTailCall
 	
 	-- code generation
 	| Debug
@@ -94,9 +102,8 @@ data Arg
 	| DumpCoreReconstruct
 	| DumpCoreDict
 	| DumpCoreBind
-	| DumpCoreMaskEffs
 	| DumpCorePrim
-	| DumpCoreBoxing
+	| DumpCoreSimplify
 	| DumpCoreFullLaziness
 	| DumpCoreInline
 	| DumpCoreLifted
@@ -115,14 +122,6 @@ data Arg
 	| DumpSeaFlatten
 	| DumpSeaInit
 
-	-- opt
-	| OptAll
-	| OptAtomise
-	| OptBoxing
-	| OptFullLaziness
-	| OptInline
-	| OptTailCall
-	
 	-- graph
 
 	| GraphModules
@@ -170,7 +169,7 @@ expand		(x:xs)
 
 	OptAll
 	 -> 	[ -- OptAtomise
-	 	  OptBoxing 
+	 	  OptSimplify
 		, OptTailCall ] 
 		-- OptFullLaziness ]
 	 ++ expand xs
@@ -329,7 +328,7 @@ options	=
 			
 	, OFlag		OptAll			["-O"]				"Perform all optimizations."
 	, OFlag		OptAtomise		["-opt-atomise"]		"Share constructors of zero arity."
-	, OFlag		OptBoxing		["-opt-boxing"]			"Locally unbox data with basic types."
+	, OFlag		OptSimplify		["-opt-simplify"]		"Do core csimplification.\n"
 	, OFlag		OptFullLaziness		["-opt-full-laziness"]		"Perform full laziness optimization."
 	, OFlag		OptTailCall		["-opt-tail-call"]		"Perform tail call optimisation."
 	, OFlag		OptInline		["-opt-inline"]			"Perform inlining."
@@ -386,9 +385,8 @@ options	=
 	, OFlag		DumpCoreDict		["-dump-core-dict"]		"Call class instance functions and add dictionaries."
 	, OFlag		DumpCoreReconstruct	["-dump-core-reconstruct"]	"Type information reconstructed for all bindings."
 	, OFlag		DumpCoreBind		["-dump-core-bind"]		"All regions bound and annotated with fetters."
-	, OFlag		DumpCoreMaskEffs	["-dump-core-mask-effs"]	"Mask out effects on Const regions."
 	, OFlag		DumpCorePrim		["-dump-core-prim"]		"Identify primitive operations."
-	, OFlag		DumpCoreBoxing		["-dump-core-boxing"]		"Local unboxing optimisations."
+	, OFlag		DumpCoreSimplify	["-dump-core-simplify"]		"Core simplification."
 	, OFlag		DumpCoreFullLaziness	["-dump-core-full-laziness"]	"Full laziness optimisation."
 	, OFlag		DumpCoreInline		["-dump-core-inline"]		"Inlining."
 	, OFlag		DumpCoreLifted		["-dump-core-lifted"]		"Lambda lifting."

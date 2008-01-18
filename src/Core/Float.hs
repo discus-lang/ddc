@@ -2,6 +2,7 @@
 module Core.Float
 	( Table(..)
 	, tableZero
+	, Stats(..)
 	, floatBindsTree)
 
 where
@@ -34,7 +35,7 @@ stage	= "Core.Float"
 debug	= False
 trace ss x
  = if debug 
- 	then Debug.trace (pprStr ss) x
+ 	then Debug.trace (pprStr (stage % ":" % ss)) x
 	else x
 
 
@@ -64,8 +65,9 @@ data Table
 
  	  -- bindings currently in motion along with the effect of that binding.
 	, tableBinds		:: Map Var (Exp, Effect)
-	}							
 
+	  -- stats about what got moved / not moved
+	, tableStats		:: Stats }
 
 -- empty inliner table
 tableZero
@@ -75,8 +77,82 @@ tableZero
 	, tableConstRegions	= Set.empty
 	, tableConstTypes	= Set.empty
 	, tablePureEffects	= Set.empty
-	, tableBinds		= Map.empty }
+	, tableBinds		= Map.empty 
 	
+	, tableStats		= statsZero }
+
+-- horror
+tableStats_  = ( tableStats, \x s -> s { tableStats = x })
+
+
+-- Stats -------------------------------------------------------------------------------------------
+-- | status about how many bindings were moved / notmoved
+--	these are lists instead of sets, to reduce the overhead of collecting up the stats.
+data Stats
+	= Stats
+	{ -- total number of bindings inspected
+	  statsTotalBindings	:: Int
+	
+	  -- bindings that were not moved because they were in the no-float table
+	, statsNotMovedNoFloat	:: [Var]
+
+	  -- bindings that were not moved because they had multiple uses
+	, statsNotMovedMultiUse	:: [Var]
+
+	  -- bindings that were not moved because their use was at a deeper lambda level
+	, statsNotMovedDeepLambda :: [Var]
+	
+	  -- bindings that were not moved because they had top-level effects.
+	, statsNotMovedTopLevel	:: [Var]
+	
+	  -- bindings that were not moved because they had no uses.
+	, statsNotMovedNoUses	:: [Var]
+	
+	  -- bindings that were not moved, and all their uses were directly under unboxings
+	  -- .. not all of these are total failures, because the stmt might not have boxed the value itself.
+	, statsMissedUnboxing	:: [Var]
+	
+	  -- bindings that were successfully moved
+	, statsMoved		:: [Var] }
+
+	 
+-- empty stats table
+statsZero
+	= Stats
+	{ statsTotalBindings		= 0
+	, statsNotMovedNoFloat		= []
+	, statsNotMovedMultiUse		= []
+	, statsNotMovedDeepLambda	= []
+	, statsNotMovedTopLevel		= []
+	, statsNotMovedNoUses		= []
+	, statsMissedUnboxing		= []
+	, statsMoved			= [] }
+
+-- horror
+statsTotalBindings_		= (statsTotalBindings, 		\x s -> s { statsTotalBindings 		= x})
+statsNotMovedNoFloat_		= (statsNotMovedNoFloat, 	\x s -> s { statsNotMovedNoFloat	= x})
+statsNotMovedMultiUse_		= (statsNotMovedMultiUse, 	\x s -> s { statsNotMovedMultiUse 	= x})
+statsNotMovedDeepLambda_	= (statsNotMovedDeepLambda, 	\x s -> s { statsNotMovedDeepLambda 	= x})
+statsNotMovedTopLevel_		= (statsNotMovedTopLevel, 	\x s -> s { statsNotMovedTopLevel 	= x})
+statsNotMovedNoUses_		= (statsNotMovedNoUses, 	\x s -> s { statsNotMovedNoUses 	= x})
+statsMissedUnboxing_		= (statsMissedUnboxing, 	\x s -> s { statsMissedUnboxing 	= x})
+statsMoved_			= (statsMoved, 			\x s -> s { statsMoved		 	= x})
+
+	
+instance Pretty Stats where
+ ppr ss
+ 	= "Float.Stats:\n"
+	% "  * total bindings inspected                : " % statsTotalBindings ss			% "\n"
+	% "  * number of bindings moved                : " % (length $ statsMoved ss)			% "\n" 
+	% "  * number of bindings not moved because they..\n"
+	% "      . were in the no-float set            : " % (length $ statsNotMovedNoFloat ss)		% "\n"
+	% "      . had multiple uses                   : " % (length $ statsNotMovedMultiUse ss)	% "\n"
+	% "      . were used at a deeper lambda level  : " % (length $ statsNotMovedDeepLambda ss)	% "\n"
+	% "      . had top level effects               : " % (length $ statsNotMovedTopLevel ss)	% "\n"
+	% "      . had no uses                         : " % (length $ statsNotMovedNoUses ss)		% "\n"
+	% "  * number of bindings not moved, \n"
+	% "       and all their uses were unboxings    : " % (length $ statsMissedUnboxing ss)		% "\n"
+	  
 
 -- floatBinds -------------------------------------------------------------------------------------
 
@@ -221,54 +297,54 @@ floatBindsS level tt ss@(SBind (Just vBind) xBind)
 				effBind
 
 	mUse		= Map.lookup vBind (tableBoundUse tt)
+	(canMove, tt2)	= shouldMove level tt mUse vBind effReduced
 
    	xx	-- if we're ok to move this binding
-		| shouldMove level tt mUse vBind effReduced
+		| canMove
 		= let	xStripped = stripXTau xBind
 
 			-- add the statement to the table
-			tt'	= tt { tableBinds = Map.insert vBind (xStripped, effReduced) (tableBinds tt) }
+			tt3	= tt2 { tableBinds = Map.insert vBind (xStripped, effReduced) (tableBinds tt2) }
 		
 		  in {- trace	( "floatBindsS: picking up binding\n"
 	  			% "    ss      = " % ss 	% "\n"
 				% "    effBind = " % effBind	% "\n")-}
-				(tt', [])
+				(tt3, [])
 
 		-- not ok to move this binding
 		| otherwise
-		= let (tt', x')	= floatBindsX level tt xBind
-		  in  (tt', [SBind (Just vBind) x'])
+		= let (tt3, x')	= floatBindsX level tt2 xBind
+		  in  (tt3, [SBind (Just vBind) x'])
    in	xx
+
+-- | Strip any XTaus of the front of an expression
+stripXTau :: Exp -> Exp
+stripXTau (XTau t x)	= stripXTau x
+stripXTau xx		= xx
 
 
 -- | Decide whether we should move a binding.
 --	If no,  returns (False, Nothing)
 --	If yes, returns (True,  Just <expr effect>)
 --
-shouldMove :: Level -> Table -> Maybe [Use] -> Var -> Effect -> Bool
+shouldMove :: Level -> Table -> Maybe [Use] -> Var -> Effect -> (Bool, Table)
 shouldMove level tt mUses vBind effBind
+ = let tt'	= (tableStats_ ## statsTotalBindings_ <#> \x -> x + 1) tt
+   in  shouldMove' level tt' mUses vBind effBind
+
+shouldMove' level tt mUses vBind effBind
 
 	-- don't move bindings which are set as no-float in the table
 	| Set.member vBind (tableNoFloat tt)
-	= False
-
-	-- don't move bindings who's effects are not pure
-	--	TODO: relax this
-	| effBind /= TBot KEffect 
-	= trace ( "shouldMove: leaving binding " % vBind % "\n"
-		% "    eff = " % effBind % "\n")
-		$ False
-
-	-- don't move bindings with no uses, but emit a warning
-	| Nothing	<- mUses
-	= warning stage
-		("shouldMove: binding " % vBind % " has no uses\n")
-		$ False
+	= shouldMove_fail tt mUses vBind
+		(tableStats_ ## statsNotMovedNoFloat_ <#> \x -> vBind : x)
 
 	-- don't move bindings where there are more than one use
 	| Just uses	<- mUses
 	, (_:_:_)	<- uses
-	= False
+	= shouldMove_fail tt mUses vBind
+		(tableStats_ ## statsNotMovedMultiUse_ <#> \x -> vBind : x)
+
 
 	-- don't move a binding if its use is at a deeper lambda level than here.
 	--	* we don't want to risk duplicating work, and it changes the closure term on the lambda.
@@ -276,22 +352,49 @@ shouldMove level tt mUses vBind effBind
 	| Just uses	<- mUses
 	, maxUseLevel	<- maximum $ map useLevel uses
 	, maxUseLevel > level
-	= False
+	= shouldMove_fail tt mUses vBind
+		(tableStats_ ## statsNotMovedDeepLambda_ <#> \x -> vBind : x)
+
+
+	-- don't move bindings that have top level effects.
+	--	If we do this we risk moving it /after/ a binding that takes a long time (or doesn't terminate)
+	--	This will change the behavior of the program that is visible to the outside world.
+
+	-- TODO: reduce this to just top-level effects
+	| effBind /= TBot KEffect 
+	= shouldMove_fail tt mUses vBind
+		(tableStats_ ## statsNotMovedTopLevel_ <#> \x -> vBind : x)
+
 
 	-- don't move a binding if it has a write or top-level effect, and its use is at a deeper match level than here.
 	--	* we can't reduce the number of times these effects are caused.
 	--	* reducing the number of read effects is ok (and good!) though.
 
-
+	-- don't move bindings with no uses, but emit a warning
+	| Nothing	<- mUses
+	= warning stage
+		("shouldMove: binding " % vBind % " has no uses\n")
+		(shouldMove_fail tt mUses vBind
+			(tableStats_ ## statsNotMovedNoUses_ <#> \x -> vBind : x))
+		
 	-- all good	
 	| otherwise
-	= True
+	= ( True
+	  , (tableStats_ ## statsMoved_ <#> \x -> vBind : x) tt)
 
--- | Strip any XTaus of the front of an expression
-stripXTau :: Exp -> Exp
-stripXTau (XTau t x)	= stripXTau x
-stripXTau xx		= xx
+shouldMove_fail tt mUses vBind statFun
+	| Nothing	<- mUses
+	= (False, statFun tt)
+	
+	-- check for missed unboxing opportunities
+	| Just uses	<- mUses
+	, length [l | UseUnbox l <- uses] == length uses
+	= trace ("shouldMove_fail: missed unboxing on " % vBind % "\n")
+		$  ( False
+		   , (tableStats_ ## statsMissedUnboxing_ <#> \x -> vBind : x) $ statFun tt)
 
+	| otherwise
+	= ( False, statFun tt)
 
 -- | Use information about what regions are const and what effects are pure to reduce this effect.
 reduceEffect 
