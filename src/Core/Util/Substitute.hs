@@ -1,6 +1,7 @@
 
 module Core.Util.Substitute 
-	(substituteT)
+	( substituteT
+	, substituteVV)
 where
 	
 import qualified Data.Map	as Map
@@ -32,3 +33,29 @@ subTT sub tt
 	, Just t		<- Map.lookup v sub	= t
 	| otherwise					= tt
 
+
+
+-- substitute variables for variables
+substituteVV
+	:: (TransM (State()) a)
+	=> Map Var Var
+	-> a -> a
+
+substituteVV sub xx
+	= transZ
+ 		transTableId
+			{ transT	= \x -> return $ subVVinT sub x }
+		xx
+
+subVVinT :: Map Var Var -> Type -> Type
+subVVinT sub tt
+	| TVar k v1		<- tt
+	, Just v2		<- Map.lookup v1 sub 
+	= TVar k v2
+	
+	| TFree v1 t		<- tt
+	, Just v2		<- Map.lookup v1 sub
+	= TFree v2 t
+
+	| otherwise
+	= tt

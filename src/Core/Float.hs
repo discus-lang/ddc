@@ -101,15 +101,35 @@ tableStats_  = ( tableStats, \x s -> s { tableStats = x })
 -- shared results
 data Share
 	= Share
-	{ -- Elimination of forcing is important, because most function args are in unknown regions
-	  --	and must be forced before use, and tend to have multiple bound occurances inside the function.
-	  shareForcings		:: Map Var Var		-- v2 = force v1
+	{ -- variable substition
+	  shareVarSub		:: Map Var Var
+
+	  -- Elimination of forcing is important, because most function args are in
+	  --	unknown regions and must be forced before use, and tend to have
+	  --	multiple bound occurances inside the function.
+	, shareForcings		:: Map Var Var		-- v2 = force v1
+
+	  -- Elimination of unboxings follows from elimination of forcings
+	  -- 	v2 = unbox v1
+	  --	v3 is the region that the unboxed data was in
+	  --	We can move unboxings from mutable regions, so long as we don't carry the result over
+	  --	a statement that writes to that region.
+	, shareUnboxings	:: Map Var (Var, Var)
 	}
 
 -- empty share table
 shareZero
 	= Share
-	{ shareForcings		= Map.empty }
+	{ shareVarSub		= Map.empty
+	, shareForcings		= Map.empty 
+	, shareUnboxings	= Map.empty }
+
+-- sink a variable using the share table
+sinkVar :: Share -> Var -> Var
+sinkVar share v1
+ = case Map.lookup v1 (shareVarSub share) of
+ 	Just v2	-> sinkVar share v2
+	_	-> v1
 
 
 -- Stats -------------------------------------------------------------------------------------------
@@ -140,7 +160,14 @@ data Stats
 	, statsMissedUnboxing	:: [Var]
 	
 	  -- bindings that were successfully moved
-	, statsMoved		:: [Var] }
+	, statsMoved		:: [Var] 
+
+	  -- calls to force successfully shared
+	, statsSharedForcings	:: [Var]
+
+	  -- unboxings successfully shared
+	, statsSharedUnboxings	:: [Var] }
+
 	
 -- empty stats table
 statsZero
@@ -152,7 +179,10 @@ statsZero
 	, statsNotMovedTopLevel		= []
 	, statsNotMovedNoUses		= []
 	, statsMissedUnboxing		= []
-	, statsMoved			= [] }
+	, statsMoved			= [] 
+	
+	, statsSharedForcings		= []
+	, statsSharedUnboxings		= [] }
 
 -- horror
 statsTotalBindings_		= (statsTotalBindings, 		\x s -> s { statsTotalBindings 		= x})
@@ -163,6 +193,8 @@ statsNotMovedTopLevel_		= (statsNotMovedTopLevel, 	\x s -> s { statsNotMovedTopL
 statsNotMovedNoUses_		= (statsNotMovedNoUses, 	\x s -> s { statsNotMovedNoUses 	= x})
 statsMissedUnboxing_		= (statsMissedUnboxing, 	\x s -> s { statsMissedUnboxing 	= x})
 statsMoved_			= (statsMoved, 			\x s -> s { statsMoved		 	= x})
+statsSharedForcings_		= (statsSharedForcings,		\x s -> s { statsSharedForcings	 	= x})
+statsSharedUnboxings_		= (statsSharedUnboxings, 	\x s -> s { statsSharedUnboxings	= x})
 
 	
 instance Pretty Stats where
@@ -178,7 +210,9 @@ instance Pretty Stats where
 	% "      . had no uses                         : " % (length $ statsNotMovedNoUses ss)		% "\n"
 	% "  * number of bindings not moved, \n"
 	% "       and all their uses were unboxings    : " % (length $ statsMissedUnboxing ss)		% "\n"
-	  
+	% "  * number of shared forcings               : " % (length $ statsSharedForcings ss)		% "\n"
+	% "  * number of shared unboxings              : " % (length $ statsSharedUnboxings ss)		% "\n"
+	
 
 -- floatBinds -------------------------------------------------------------------------------------
 
@@ -206,7 +240,7 @@ floatBindsTree tt tree
 	= mapAccumL (floatBindsP 0 shareZero) tt tree
    
 
--- top
+-- Top ---------------------------------------------------------------------------------------------
 floatBindsP :: Level -> Share -> Table -> Top -> (Table, Top)
 floatBindsP level share tt pp
  = case pp of
@@ -216,7 +250,7 @@ floatBindsP level share tt pp
 
 	_		-> (tt, pp)
 	
--- exp
+-- Exp ---------------------------------------------------------------------------------------------
 floatBindsX :: Level -> Share -> Table -> Exp -> (Table, Exp)
 floatBindsX level share tt xx
  = case xx of
@@ -236,13 +270,15 @@ floatBindsX level share tt xx
 	    in	(tt3, XLocal v vts x')
 	
 	-- When we hit a variable, check to see if there is a binding for it in the table
-	XVar v t
-	 -> case Map.lookup v (tableBinds tt) of
-	 	Just (x, _)	
-		 -> let tt2	= tt { tableBinds = Map.delete v (tableBinds tt) }
-		    in	floatBindsX level share tt2 x
+	XVar v_ t
+	 -> let v	= sinkVar share v_
+	    in  case Map.lookup v (tableBinds tt) of
+		 	Just (x, _)	
+			 -> let tt2	= tt { tableBinds = Map.delete v (tableBinds tt) }
+			    in	floatBindsX level share tt2 x
+	
+			Nothing		-> (tt, XVar v t)
 
-		Nothing		-> (tt, xx)
 
 	XLam v t x eff clo	
 	 -> let -- increase the level number when we pass through a value lambda
@@ -250,9 +286,13 @@ floatBindsX level share tt xx
 		
 		-- don't carry shared expressions into lambdas.. don't want to change the closure properties
 		share'	= shareZero
-		
+
+		-- we're carrying a value-var substitution into a lambda expression, so we need
+		--	to update the vars in XFree's in the closure annotation
+		clo'	= substituteVV (shareVarSub share) clo
+
 		(tt', x')	= floatBindsX level' share' tt x
-	    in  (tt', XLam v t x' eff clo)
+	    in  (tt', XLam v t x' eff clo')
 
 	XDo{}			-> floatBindsXDo level share tt xx
 
@@ -286,7 +326,7 @@ floatBindsX level share tt xx
 	XType{}			-> (tt, xx)
 
 
--- alts
+-- Alt ---------------------------------------------------------------------------------------------
 floatBindsA :: Level -> Share -> Table -> Alt -> (Table, Alt)
 floatBindsA level share tt (AAlt gs x)
  = let	(tt2, gs')	= mapAccumL (floatBindsG level share) tt gs
@@ -294,7 +334,7 @@ floatBindsA level share tt (AAlt gs x)
    in	(tt3, AAlt gs' x')
    
 
--- guards
+-- Guard -------------------------------------------------------------------------------------------
 floatBindsG :: Level -> Share -> Table -> Guard -> (Table, Guard)
 floatBindsG level share tt (GExp ws x)
  = let	(tt', x')	= floatBindsX level share tt x
@@ -328,6 +368,7 @@ floatBindsSS level share table ssAcc (s : ssRest)
    in	floatBindsSS level share1 table1 (ssAcc ++ ssMore) ssRest
 
 
+-- Stmt --------------------------------------------------------------------------------------------
 floatBindsS :: Level -> Share -> Table -> Stmt -> (Share, Table, [Stmt])
 
 -- when we get to the end of the block of statements
@@ -345,19 +386,39 @@ floatBindsS level share table ss@(SBind Nothing x)
 
 floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 
-	-- remember forcings that we haven't seen yet
+	----- force 
+	-- remember forcings that we haven't seen before
 	-- hrm.. this leaves them where they are and never carries them down into match stmts..
 	| XPrim MForce [XVar v2 _]	<- xBind
 	, Nothing		<- Map.lookup v2 (shareForcings share)
-	= let share'		= share { shareForcings = Map.insert v2 vBind (shareForcings share) }
-	  in  (share', table, [SBind (Just vBind) xBind])
+	= let	share'		= share { shareForcings = Map.insert v2 vBind (shareForcings share) }
+	  in	(share', table, [SBind (Just vBind) xBind])
 	  
 	-- replace calls to force with ones that we've seen before
 	| XPrim MForce [XVar v2 t]	<- xBind
 	, Just v3	<- Map.lookup v2 (shareForcings share)
-	= let 	xNew	= XVar v3 t
-		(table3, x3) = floatBindsX level share table xNew
-	  in	(share, table3, [SBind (Just vBind) x3])
+	= let 	share'	= share { shareVarSub   = Map.insert vBind v3 (shareVarSub share) }
+		table'	= (tableStats_ ## statsSharedForcings_ <#> \s -> vBind : s) table	
+	  in	(share', table', [])
+	  
+	----- unbox
+	-- remember unboxings we haven't seen before
+	| XPrim MUnbox [XType (TVar KRegion vR), XVar v2 _]	<- xBind
+	, Nothing	 <- Map.lookup v2 (shareUnboxings share)
+	, Set.member vR (tableConstRegions table) -- only move pure unboxings for now
+	= let	share'		= share { shareUnboxings = Map.insert v2 (vBind, vR) (shareUnboxings share) }
+	  in	(share', table, [SBind (Just vBind) xBind])
+	  
+
+	-- replace calls to unbox with ones we've seen before
+	| XPrim MUnbox [XType (TVar KRegion vR1), XVar v2 t]	<- xBind
+	, Just (v3, vR2) <- Map.lookup v2 (shareUnboxings share)
+	, vR1 == vR2
+	= let	share'		= share { shareVarSub	= Map.insert vBind v3 (shareVarSub share) }
+		table'	= (tableStats_ ## statsSharedUnboxings_ <#> \s -> vBind : s) table	
+	  in	(share', table', [])
+
+
 	  
 	-- some other expression
 	| otherwise
@@ -404,6 +465,7 @@ stripXTau (XTau t x)	= stripXTau x
 stripXTau xx		= xx
 
 
+-- shouldMove --------------------------------------------------------------------------------------
 -- | Decide whether we should move a binding.
 --	If no,  returns (False, Nothing)
 --	If yes, returns (True,  Just <expr effect>)

@@ -49,9 +49,10 @@ data	Stats
 -- | check the stats of a simplifier pass to see if we made any progress
 statsProgress :: Stats -> Bool
 statsProgress stats
-	| statsReducedUnboxBox stats > 0			= True
---	| length (Float.statsMoved (statsFloat stats)) > 0	= True
-	| otherwise						= False
+	| statsReducedUnboxBox stats > 0				= True
+	| not $ isNil $ Float.statsSharedForcings  $ statsFloat stats	= True
+	| not $ isNil $ Float.statsSharedUnboxings $ statsFloat stats	= True
+	| otherwise							= False
 
 instance Pretty Stats where
  ppr stats
