@@ -421,7 +421,7 @@ reconX tt xx@(XPrim prim xs)
 		 in  (x', Just typ, Just eff, Just clo)
 		 
  
-  	(xs', _, xsmEs, xsmCs)		
+  	(xs', txs, xsmEs, xsmCs)		
  		= unzip4 $ map (reconMaybeX tt) xs
 
 	-- work out the result type an effect of applying the primitive operator
@@ -439,6 +439,11 @@ reconX tt xx@(XPrim prim xs)
 		= ( reconUnboxType r $ t4_2 $ reconX tt x
 		  , TEffect primRead [r])
 		  
+		-- forcing
+		| MForce	<- prim
+		, [Just t1]	<- txs
+		= ( t1
+		  , pure)	
 		
 		| MTailCall{}	<- prim
 		= ( reconApps tt xs'

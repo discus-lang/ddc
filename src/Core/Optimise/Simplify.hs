@@ -128,10 +128,18 @@ simplifyPass unique topVars tree
 zapUnboxBoxX :: Exp -> State Int Exp
 zapUnboxBoxX xx
  = case xx of 
+
+	-- unbox/box
  	XPrim MUnbox [r1, XPrim MBox [r2, x]]
 		| r1 == r2	
 		-> do	modify $ \s -> s + 1
 			return	x
+		
+	-- unbox/force/box
+	XPrim MUnbox [r1, XPrim MForce [XPrim MBox [r2, x]]]
+		| r1 == r2
+		-> do	modify $ \s -> s + 1
+			return x
 		
 	_	-> return xx
  

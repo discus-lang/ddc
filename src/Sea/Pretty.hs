@@ -273,7 +273,7 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 	 -> "_unboxEnum(" % x % ")"
 	 
 	 | otherwise
-	 -> "_unbox(" % t % ", " % x % ")"
+	 -> "_unboxDirect(" % t % ", " % x % ")"
 	  
 	XForce x 
 	 -> "_force(" % x % ")"

@@ -1,7 +1,8 @@
 
 -- Core.Prim
 --	Find direct uses of primitive functions and replace them by XPrim nodes.
---	TODO: do fast unboxing if the data is direct
+--	When we walk down the tree we remember what regions are marked as Direct.
+--	Direct regions don't need to be forced before being unboxed.
 --
 module Core.Prim
 	( primTree )
@@ -12,12 +13,16 @@ where
 import Util
 import Core.Exp
 import Core.Util
-import Core.Reconstruct
+import qualified Core.Reconstruct	as Recon
+import Core.ReconKind
 import Core.Plate.Trans
 
 
 import Data.Map			(Map)
 import qualified Data.Map	as Map
+
+import Data.Set			(Set)
+import qualified Data.Set	as Set
 
 import qualified Shared.Var	as Var
 import Shared.VarPrim
@@ -33,24 +38,142 @@ trace ss x
 -----
 stage	= "Core.Prim"
 
+-- Table -------------------------------------------------------------------------------------------
+data Table
+	= Table
+	{ tableDirectRegions	:: Set Var }
+	
+tableZero 
+	= Table
+	{ tableDirectRegions	= Set.empty }
+
+
+-- | If this is a witness to constness of a region or type, or purity of an effect
+--	then slurp it into the table.
+slurpWitnessKind 
+	:: Table -> Kind -> Table
+	
+slurpWitnessKind tt kk
+ = case kk of
+	-- const regions
+ 	KClass v [TVar KRegion r]
+	 |  v == primDirect
+	 -> tt { tableDirectRegions 
+	 		= Set.insert r (tableDirectRegions tt)}
+
+	_ -> tt
+
+-- Prim --------------------------------------------------------------------------------------------
+
 -- Identify primitive operations
 --	Tree should be in snipped form
 primTree :: Tree -> Tree
 primTree tree
-	= transformS primS tree
+	= snd $ mapAccumL primP tableZero tree
+
+-- top
+primP :: Table -> Top -> (Table, Top)
+primP tt pp
+ = case pp of
+ 	PBind mV x	
+	 -> let	(tt2, x')	= primX tt x
+	    in	(tt2, PBind mV x')
+
+	_ -> 	(tt, pp)
+	    
+-- exp..
+--	this boilerplate is mostly pasted from Core.Float .. abstract this somehow?
+primX :: Table -> Exp -> (Table, Exp)
+primX tt xx
+ = case xx of
+	-- check for direct regions on the way down
+ 	XLAM b k x	
+	 -> let tt2		= slurpWitnessKind tt k
+		(tt3, x')	= primX tt2 x
+	    in	(tt3, XLAM b k x')
+
+	-- check for direct regions on the way down
+	XLocal v vts x
+	 -> let tt2	= foldl' slurpWitnessKind tt 
+	 		$ map (kindOfType . snd) vts
+		
+		(tt3, x')	= primX tt2 x
+	    in	(tt3, XLocal v vts x')
+
+	XLam v t x eff clo	
+	 -> let (tt', x')	= primX tt x
+	    in  (tt', XLam v t x' eff clo)
+
+	XVar{}			-> (tt, xx)
+	
+	XDo ss
+	 -> let	(tt', ss')	= mapAccumL primS tt ss
+	    in  (tt', XDo ss')
+
+	XMatch alts		
+	 -> let	(tt', alts')	= mapAccumL primA tt alts
+	    in  (tt', XMatch alts')
+	    
+	XAPP x t
+	 -> let (tt', x')	= primX tt x
+	    in	(tt', XAPP x' t)
+
+	XTet vts x
+	 -> let (tt', x')	= primX tt x
+	    in  (tt', XTet vts x')
+ 
+	XTau t x
+	 -> let (tt', x')	= primX tt x
+	    in	(tt', XTau t x')
+
+	XApp x1 x2 eff
+	 -> let (tt2, x1')	= primX tt  x1
+	        (tt3, x2')	= primX tt2 x2
+	    in	(tt3, XApp x1' x2' eff)
+
+	XPrim p xs
+	 -> let (tt', xs')	= mapAccumL primX tt xs
+	    in	(tt', XPrim p xs')
+
+	XLit{}			-> (tt, xx)
+	XType{}			-> (tt, xx)
+
+
+primA :: Table -> Alt -> (Table, Alt)
+primA tt (AAlt gs x)
+ = let	(tt2, gs')	= mapAccumL primG tt gs
+ 	(tt3, x')	= primX tt2 x
+   in	(tt3, AAlt gs' x')
+
+primG :: Table -> Guard -> (Table, Guard)
+primG tt (GExp ws x)
+ = let 	(tt', x')	= primX tt x
+   in	(tt', GExp ws x')
+
 
 -- Identify a primitive operation in this statement
---	We go via statements, in snipped form so its easy to identify the entire application expression
+--	We go via statements in snipped form so its easy to identify the entire application expression
 
 --	TODO: 	fix this for over-application
 --		need to split off some of the args
 
-primS ss
+primS :: Table -> Stmt -> (Table, Stmt)
+primS tt ss
  = case ss of
-	SBind mV (XTau t x)	-> SBind mV (XTau t $ primX x)
- 	SBind mV x		-> SBind mV (primX x)
-	
-primX xx
+	-- enter into XTau
+	SBind mV (XTau t x)	
+	 -> let x2		= primX1 tt x
+		(tt3, x3)	= primX tt x2
+	    in	(tt3, SBind mV (XTau t x3))
+	 
+ 	SBind mV x		
+	 -> let x2		= primX1 tt x
+		(tt3, x3)	= primX tt x2
+
+	    in  (tt3, SBind mV x3)
+
+-- do the flat rewrite
+primX1 tt xx
 	-- direct use of boxing function
 	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
@@ -59,9 +182,17 @@ primX xx
 
 	-- direct use of unboxing function
 	| Just parts				<- flattenAppsEff xx
-	, (XVar v t : psArgs)			<- parts
+	, XVar v t : psArgs@[XType tR@(TVar KRegion vR), x]
+			<- parts
+						
 	, isUnboxFunctionV v
-	= XPrim MUnbox psArgs
+
+	= if Set.member vR (tableDirectRegions tt) 
+		then XPrim MUnbox psArgs
+
+		-- have to force non-direct objects before unboxing them
+		else XPrim MUnbox [XType tR, XPrim MForce [x]]
+
 
 	-- look for functions in the prim table
  	| Just parts				<- flattenAppsEff xx
@@ -73,7 +204,7 @@ primX xx
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
 	, Just (operator, actions)		<- Map.lookup (Var.name v) unboxableFuns
-	, tResult@(TData vResult tsResult)	<- reconX_type (stage ++ ".primX") xx
+	, tResult@(TData vResult tsResult)	<- Recon.reconX_type (stage ++ ".primX") xx
 	, length psArgs == length actions
 	= trace ( "primX:\n"
 		% "    xx      = " % xx 	% "\n"
@@ -81,7 +212,7 @@ primX xx
 		% "    tResult = " % tResult	% "\n") 
 	   $ let	
 		-- apply the actions to the arguments
-		psArgs'	= doActions actions psArgs
+		psArgs'	= doActions tt actions psArgs
 		
 		-- generate the primitive 
 	   in	XPrim MBox (map XType tsResult ++ [XPrim (MOp operator) psArgs'])
@@ -90,26 +221,32 @@ primX xx
 	= xx
 
 -- | Perform these actions on this list of expressions
-doActions :: [Action] -> [Exp] -> [Exp]
-doActions (Discard:as) (x:xs)
-	= doActions as xs
+doActions :: Table -> [Action] -> [Exp] -> [Exp]
+doActions tt (Discard:as) (x:xs)
+	= doActions tt as xs
 
-doActions (Ignore:as) (x:xs)
-	= x : doActions as xs
+doActions tt (Ignore:as) (x:xs)
+	= x : doActions tt as xs
 	
-doActions (Unbox:as) (x:xs)
- = let	tX@(TData v [r])	
- 		= reconX_type (stage ++ "doActions") x
-	x'	= XPrim MUnbox [XType r, x] : doActions as xs
+doActions tt (Unbox:as) (x:xs)
+
+ = let	tX@(TData v [tR@(TVar KRegion vR)])	
+ 		= Recon.reconX_type (stage ++ "doActions") x
+
+	x'	| Set.member vR (tableDirectRegions tt) 
+		= XPrim MUnbox [XType tR, x] 
+			: doActions tt as xs
+		
+		| otherwise
+		= XPrim MUnbox [XType tR, XPrim MForce [x]] 
+			: doActions tt as xs
 
    in	trace	( "doActions: Unbox\n"
 		% "    x    = " % x 	% "\n"
 		% "    tX   = " % tX	% "\n")
 		$ x'
-   
-	
-		
-doActions _ xs
+
+doActions _ _ xs
 	= xs
 
 -- | Flatten an application into its component parts, left to right
