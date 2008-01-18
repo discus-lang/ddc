@@ -93,20 +93,7 @@ transformSS	f z	= transZ  (transTableId return) { transSS = \x -> return $ f x }
 
 
 
------
-{-
-instance (Monad m, TransM m a) 
-		=> TransM m [a]
- where	transZM table xx	
- 	 = 	mapM (transZM table) xx
-
------
-instance Monad m => TransM m a1 a2 Var where
- transZM table v
- 	= transV table v
--}
------
-
+-- Top ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Top where
  transZM table p
   = case p of
@@ -170,7 +157,7 @@ instance Monad m => TransM m a1 a2 Top where
 	 
 
 
------
+-- Stmt ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Stmt where
  transZM table s
   = case s of
@@ -230,7 +217,7 @@ instance Monad m => TransM m a1 a2 Stmt where
 				
 
 		
------
+-- Exp ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Exp where
  transZM table x
   = case x of
@@ -376,7 +363,8 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	v'		<- transV table v
 	 	transX table	$ XAllocDataAnchored v i 
 	 	
------
+
+-- Alt ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Alt where
  transZM table a
   = case a of
@@ -408,17 +396,17 @@ instance Monad m => TransM m a1 a2 Alt where
 	 	ss3		<- transSS table ss2
 	 	transA table	$ ADefault ss3
 	
------
+-- Guard ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Guard where
  transZM table a
   = case a of
-  	GCase ss x1 x2
+  	GCase b ss x1 x2
 	 -> do	ss2		<- mapM (transZM table) ss
 		ss3		<- transSS table ss2
 
 	 	x1'		<- transZM table x1
 		x2'		<- transZM table x2
-		return		$ GCase ss3 x1' x2'
+		return		$ GCase b ss3 x1' x2'
 		
 	 
 		

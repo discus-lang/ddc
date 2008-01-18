@@ -476,6 +476,7 @@ compileFile	argsCmd     fileName
 	 $ do	putStr $ "  * Core: ToSea\n"
 
 	(eSea, eHeader)	<- SC.toSea
+				"TE"
 				cAtomise
 				cHeader
 				
@@ -507,6 +508,7 @@ compileFile	argsCmd     fileName
 
 	-- Flatten out match stmts.
 	eFlatten	<- SE.seaFlatten
+				"EF"
 				eSlot
 
 	-- Generate module initialisation functions.

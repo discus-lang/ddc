@@ -7,8 +7,6 @@ where
 
 import Util
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
 
 import qualified Shared.Var	as Var
 import qualified Shared.VarPrim	as Var
@@ -29,20 +27,35 @@ import qualified Sea.Exp  	as E
 import qualified Sea.Util	as E
 import qualified Sea.Pretty	as E
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import Shared.Literal
+
+import Debug.Trace
+
 
 -----
 stage	= "Core.ToSea"
 
-type SeaM	= State SeaS
-type Table	= Map String Var
 
-uniqueSea	= "x" ++ Unique.coreToSea
-
+-- State -------------------------------------------------------------------------------------------
 data SeaS
 	= SeaS
-	{ stateVarGen	:: Var.VarBind
-	, stateCtorDefs	:: Map Var C.CtorDef }
+	{ -- variable name generator
+	  stateVarGen		:: Var.VarBind
+
+	  -- constructor definitions
+	, stateCtorDefs		:: Map Var C.CtorDef 
+
+	  -- regions known to be direct
+	, stateDirectRegions	:: Set Var }
+
+type SeaM	= State SeaS
+type Table	= Map String Var
 	
 newVarN ::	NameSpace -> SeaM Var
 newVarN		space
@@ -53,31 +66,52 @@ newVarN		space
 	let var		= (Var.new $ pprStr varBind)
 			{ Var.bind	= varBind
 			, Var.nameSpace	= space }
-	
 	return var
 
 
------
+-- | If this is a witness to constness of a region or type, or purity of an effect
+--	then slurp it into the table.
+slurpWitnessKind 
+	:: C.Kind -> SeaM ()
+
+slurpWitnessKind kk
+ = case kk of
+	-- const regions
+ 	C.KClass v [C.TVar C.KRegion r]
+	 |  v == Var.primDirect
+	 -> modify $ \s -> s { stateDirectRegions 
+		 		= Set.insert r (stateDirectRegions s) }
+
+	_ -> return ()
+
+
+-- Tree --------------------------------------------------------------------------------------------
 toSeaTree 
-	:: Map Var C.CtorDef	-- Map of Constructor Definitions.
+	:: String		-- unique
+	-> Map Var C.CtorDef	-- Map of Constructor Definitions.
 				--	Used for converting field label projections
 				--	to projections field index projections.
 	-> C.Tree
 	-> E.Tree ()
 	
-toSeaTree mapCtorDefs cTree
+toSeaTree unique mapCtorDefs cTree
   = evalState
   	(liftM concat $ mapM toSeaP cTree)
-	SeaS 	{ stateVarGen	= Var.XBind uniqueSea 0
-		, stateCtorDefs	= mapCtorDefs }
+	SeaS 	{ stateVarGen		= Var.XBind ("x" ++ unique) 0
+		, stateCtorDefs		= mapCtorDefs 
+		, stateDirectRegions	= Set.empty }
     
     
+-- Top ---------------------------------------------------------------------------------------------
 toSeaP :: C.Top -> SeaM [E.Top ()]
 toSeaP	xx
  = case xx of
---	C.PExtern v tv to
---	 -> do	let (argTs, resultT)= splitOpType to
---		return [E.PProto v argTs resultT]
+	
+	-- region
+	--	slurp witnesses on the way down
+	C.PRegion v vts
+	 -> do	mapM_ slurpWitnessKind $ map (C.kindOfType . snd) vts
+	 	return	[]
 
 	C.PExtern{}
 	 ->	return []
@@ -88,8 +122,9 @@ toSeaP	xx
 		let (argTypes, resultType)	
 				= splitOpType to
 
-	 	let (argNames, exp)	
-				= splitSuper [] x
+		-- split the RHS into its value args and expression
+	 	(argNames, exp)	
+				<- splitSuper [] x
 		
 		sss'		<- mapM toSeaS $ slurpStmtsX exp
 		let ss'		= concat sss'
@@ -105,8 +140,6 @@ toSeaP	xx
 					, E.PSuper	v [] 	resultType  ssRet]
 
 				 _ ->	[ E.PSuper 	v argNTs resultType ssRet]
-	
-		
 	    
 	C.PData v ts cs
 	 -> do	cs'		<- mapM toSeaCtor cs
@@ -123,7 +156,33 @@ toSeaP	xx
 	_ ->	return []
 
 
------    
+-- | split the RHS of a supercombinator into its args and expression
+splitSuper :: [C.Var] -> C.Exp -> SeaM ([C.Var], C.Exp)
+splitSuper accArgs xx
+
+	| C.XLam v t x eff clo	<- xx
+	= splitSuper (accArgs ++ [v]) x
+	
+	| C.XLAM v k x		<- xx
+	= do	slurpWitnessKind k
+		splitSuper accArgs x
+
+	| C.XTau t x		<- xx
+	= splitSuper accArgs x
+	
+	| C.XTet vts x		<- xx
+	= 	splitSuper accArgs x
+	
+	| C.XLocal v vts x	<- xx
+	= do	mapM_ (\t -> slurpWitnessKind $ (C.kindOfType . snd) t) vts
+		splitSuper accArgs x
+	
+	| otherwise
+	= return (accArgs, xx)	 
+
+
+
+-- CtorDef -----------------------------------------------------------------------------------------
 toSeaStruct 
 	:: C.CtorDef
 	-> E.Top ()
@@ -135,7 +194,8 @@ toSeaStruct (C.CtorDef name fs)
 		, E.TObj )) -- toSeaT $ C.dType df ))
 	$ zip [0..] fs
 
------
+
+-- Ctor --------------------------------------------------------------------------------------------
 toSeaCtor 
 	:: C.CtorDef
 	-> SeaM (Var, [E.DataField E.Var E.Type])
@@ -145,7 +205,8 @@ toSeaCtor (C.CtorDef name fs)
  	fs'	<- mapM toSeaDataField fs
 	return	$ (name, fs')
 	
------
+
+-- DataField ---------------------------------------------------------------------------------------
 toSeaDataField
 	:: C.DataField C.Var C.Type
 	-> SeaM (E.DataField E.Var E.Type)
@@ -161,89 +222,106 @@ toSeaDataField field
 		, E.dType	= E.TObj
 		, E.dInit	= mInit }
 
------
-toSeaX	:: C.Exp -> (E.Exp ())
 
+-- Exp ---------------------------------------------------------------------------------------------
+toSeaX	:: C.Exp -> SeaM (E.Exp ())
 toSeaX		xx
  = case xx of
 	C.XVar v t
-	 -> E.XVar v
+	 -> return $ E.XVar v
 
 	-- discard left over annots
 	C.XAnnot  n x		-> toSeaX x
 	C.XTau    t x		-> toSeaX x
 	C.XTet    vts x		-> toSeaX x
-	C.XLocal  v vs x	-> toSeaX x
 
-	-- discard type applications
+	-- slurp region witnesses on the way down
+	C.XLocal  v vts x	
+	 -> do	mapM_ (\t -> slurpWitnessKind ((C.kindOfType . snd) t)) vts
+	 	toSeaX x
+
+	-- slurp region witnesses on the way down
 	C.XLAM v k x
-	 -> toSeaX x
+	 -> do 	slurpWitnessKind k
+	 	toSeaX x
 
 	-- function calls
 	C.XPrim C.MTailCall xs
-	 -> let (C.XVar v t) : args	= stripValues xs
-	    in  E.XTailCall v 		$ map toSeaX args
+	 -> do	let (C.XVar v t) : args	= stripValues xs
+		args'	<- mapM toSeaX args
+		return	$ E.XTailCall v args'
 
 	C.XPrim C.MCall xs
-	 -> let (C.XVar v t) : args	= stripValues xs
-	    in  E.XCall v 		$ map toSeaX args
+	 -> do	let (C.XVar v t) : args	= stripValues xs
+		args'	<- mapM toSeaX args
+	    	return	$ E.XCall v args'
 
 	C.XPrim (C.MCallApp superA) xs
-	 -> let (C.XVar v t) : args	= stripValues xs
-	    in  E.XCallApp v superA 	$ map toSeaX args
+	 -> do	let (C.XVar v t) : args	= stripValues xs
+		args'	<- mapM toSeaX args
+		return	$ E.XCallApp v superA args'
 
 	C.XPrim C.MApply xs
-	 -> let (C.XVar v t) : args	= stripValues xs
-	    in  E.XApply (E.XVar v) 	$ map toSeaX args
+	 -> do	let (C.XVar v t) : args	= stripValues xs
+		args'	<- mapM toSeaX args
+	    	return	$ E.XApply (E.XVar v) args'
 	   
 	C.XPrim (C.MCurry superA) xs
-	 -> let (C.XVar v t) : args	= stripValues xs
-	    in	E.XCurry v superA 	$ map toSeaX args
+	 -> do	let (C.XVar v t) : args	= stripValues xs
+		args'	<- mapM toSeaX args
+		return	$ E.XCurry v superA args'
 
 	C.XPrim (C.MFun) xs
-	 -> let (C.XVar v t) : args	= stripValues xs
-	    in  E.XPrim (toSeaPrimV v)	$ map toSeaX args
+	 -> do	let (C.XVar v t) : args	= stripValues xs
+		args'	<- mapM toSeaX args
+		return	$ E.XPrim (toSeaPrimV v) args'
 
 	C.XPrim (C.MOp op) xs
-	 -> let args			= stripValues xs
-	    in E.XPrim (toSeaOp op) 	$ map toSeaX args
+	 -> do	let args		= stripValues xs
+		args'	<- mapM toSeaX args
+		return	$ E.XPrim (toSeaOp op) args'
 
 	-- suspend
 	C.XPrim (C.MSuspend fn)	args 
-	 -> let	args'	= map E.XVar 
-	 		$ filter (\v -> Var.nameSpace v == NameValue) 
-			$ map (\(C.XVar v t) -> v)
-	 		$ args
+	 -> do	let args'	= map E.XVar 
+		 		$ filter (\v -> Var.nameSpace v == NameValue) 
+				$ map (\(C.XVar v t) -> v)
+		 		$ args
 
-	    in  E.XSuspend fn args'
+		return	$ E.XSuspend fn args'
 
 	-- boxing
 	C.XPrim C.MBox [_, x]
-	 -> let	t	= C.reconX_type (stage ++ "toSeaX") x
-	    in	E.XBox (toSeaT t) (toSeaX x)
+	 -> do	let t	= C.reconX_type (stage ++ "toSeaX") x
+		x'	<- toSeaX x
+
+		return	$ E.XBox (toSeaT t) x'
 
 	-- the unboxing function is named after the result type
 	C.XPrim C.MUnbox [C.XType r, x]
-	 -> let	tResult	= C.reconUnboxType r 
-	 		$ C.reconX_type (stage ++ "toSeaX") x
+	 -> do	let tResult	= C.reconUnboxType r 
+	 			$ C.reconX_type (stage ++ "toSeaX") x
 
-	    in	E.XUnbox (toSeaT tResult) (toSeaX x)
+		x'	<- toSeaX x
+
+		return	$ E.XUnbox (toSeaT tResult) x'
 
 	-- forcing
 	C.XPrim (C.MForce) [x]
-	 -> E.XForce (toSeaX x)	 
+	 -> do	x'	<- toSeaX x
+	 	return	$ E.XForce x'
 
 
 	C.XAtom v ts
-	 -> E.XAtom v
+	 -> return	$ E.XAtom v
 
 	-- non string constants
 	C.XLit l
-	 -> toSeaConst l
+	 -> return	$ toSeaConst l
 
 	-- string constants are always applied to regions 
 	C.XAPP (C.XLit l@C.LString{}) (C.TVar C.KRegion r)
-	 -> toSeaConst l
+	 -> return	$ toSeaConst l
 
 	-- An application to type/region/effects only
 	--	we can just discard the TRE applications and keep the value.
@@ -252,7 +330,7 @@ toSeaX		xx
 	 	parts		= C.flattenApps xx
 		(C.XVar vF t : _)	= parts
 		
-	    in 	E.XVar vF
+	    in 	return	$ E.XVar vF
 	 	
 	_ -> panic stage
 		$ "toSeaX: cannot convert expression to Sea IR.\n" 
@@ -305,8 +383,6 @@ toSeaS xx
 	C.SBind (Just v) x@(C.XMatch aa)
 	 -> do	aa'		<- mapM (toSeaA Nothing) aa
 
---	 	let Just xT	= C.maybeSlurpTypeX x
-
 		let xT		= C.reconX_type (stage ++ ".toSeaS") x
 		let t		= toSeaT xT
 		let aaL		= map (assignLastA (E.XVar v, t)) aa'
@@ -321,12 +397,12 @@ toSeaS xx
 	    
 	-- expressions
 	C.SBind (Just v) x
-	 -> do	let x'		= toSeaX $ C.slurpExpX x
+	 -> do	x'		<- toSeaX $ C.slurpExpX x
 		let t		= C.reconX_type (stage ++ ".toSeaS") x
 	    	return		[E.SAssign (E.XVar v) (toSeaT t) x']
 
 	C.SBind Nothing x
-	 -> do	let x'	= toSeaX x
+	 -> do	x'		<- toSeaX x
 	    	return		[E.SStmt x']
 
 
@@ -356,6 +432,7 @@ toSeaA	   mObjV xx
 	   	return	$ E.AAlt gs' (ssFront ++ ss')
 
 
+-- Guard -------------------------------------------------------------------------------------------
 toSeaG	:: Maybe C.Exp 		-- match object
 	-> [E.Stmt ()] 		-- stmts to add to the front of this guard.
 	-> C.Guard 
@@ -367,14 +444,21 @@ toSeaG	mObjV ssFront gg
  = case gg of
 
 	C.GExp w x
-	 -> do	ss'		<- liftM concat
+	 -> do	-- work out the type of the RHS
+	 	let t		= C.reconX_type (stage ++ ".toSeaG") x
+		let t'		= toSeaT t
+	
+		-- if the guard expression is in a direct region then we don't need to check
+		--	for suspensions during the match
+		rhsIsDirect	<- isDirectType t
+
+	  	-- convert the RHS expression
+	 	ss'		<- liftM concat
 				$  mapM toSeaS
 				$  slurpStmtsX x
 		
 		var		<- newVarN NameValue
 
-		let t		= C.reconX_type (stage ++ ".toSeaG") x
-		let t'		= toSeaT t
 		let ssL		= assignLastSS (E.XVar var, t') ss'
 
 		let (w', ssDecon)	
@@ -384,10 +468,23 @@ toSeaG	mObjV ssFront gg
 					then E.XVar var
 					else E.XTag $ E.XVar var
 
+		directRegions	<- gets stateDirectRegions
+
 	    	return	( ssDecon 
-			, E.GCase (ssFront ++ ssL) compX w')
+			, E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX w')
 
 
+-- check if this type is in a direct region
+isDirectType :: C.Type -> SeaM Bool
+isDirectType (C.TData v (C.TVar C.KRegion vR : _))
+ = do	directRegions	<- gets stateDirectRegions
+ 	return	$ Set.member vR directRegions
+
+isDirectType _
+ = 	return False
+
+
+-- Pat ---------------------------------------------------------------------------------------------
 toSeaW	_ 
 	(C.WLit l)
  = 	( toSeaConst l
@@ -425,10 +522,7 @@ slurpStmtsX xx
 	_		-> []
 
 
------
--- toSeaT
---	Conversion from Core to Sea types.
---
+-- Type --------------------------------------------------------------------------------------------
 toSeaT :: C.Type	-> E.Type
 toSeaT	xx
 
@@ -480,28 +574,6 @@ stripValues' a
 	 
 	_ -> Just a
 	 
-	
------
-splitSuper args xx
-
-	| C.XLam v t x eff clo	<- xx
-	= splitSuper (args ++ [v]) x
-	
-	| C.XLAM v k x		<- xx
-	= splitSuper args x
-
-	| C.XTau t x		<- xx
-	= splitSuper args x
-	
-	| C.XTet vts x		<- xx
-	= splitSuper args x
-	
-	| C.XLocal v vs x	<- xx
-	= splitSuper args x
-	
-	| otherwise
-	= (args, xx)	 
-
 
 -----
 toSeaConst l
@@ -542,7 +614,7 @@ assignLastS xT@(aX, t) ss
  	E.SStmt 	x	-> [E.SAssign aX t x]
 	E.SAssign 	x _ _ 	-> [ss] ++ [E.SAssign aX t x]
 	E.SSwitch       x aa	-> [E.SSwitch x (map (assignLastA xT) aa)]
-	E.SMatch	aa	-> [E.SMatch (map (assignLastA xT) aa)]
+	E.SMatch 	aa	-> [E.SMatch (map (assignLastA xT) aa)]
 
     
 assignLastA :: (E.Exp (), E.Type) -> E.Alt () -> E.Alt ()

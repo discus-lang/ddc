@@ -28,7 +28,8 @@ squareSpin frame rot
  };
  
 
-frac ::	Int -> Float -> [Primitive];
+frac ::	Int -> Float -> [Primitive %r1]
+	:- Direct %r1;
 frac n r
  = if n == 0 
  	then rectangleC 50.0 50.0

@@ -1,8 +1,7 @@
 
+-- | Flatten out match expressions.
 module Sea.Flatten
-(
-	flattenTree
-)
+	( flattenTree )
 
 where
 
@@ -15,16 +14,18 @@ import Sea.Exp
 import Sea.Pretty
 import Sea.Plate.Trans
 
-seaFlatten	= "xEF"
-
 -----
 type FlatM	= State Var.VarBind
 
+-- Tree --------------------------------------------------------------------------------------------
+flattenTree 
+	:: String		-- unique
+	-> Tree () 
+	-> Tree ()
 
-flattenTree :: Tree () -> Tree ()
-flattenTree tree	
+flattenTree unique tree	
  = 	evalState (flattenTreeM tree) 
- 		$ Var.XBind seaFlatten 0
+ 		$ Var.XBind ("x" ++ unique) 0
 
 
 flattenTreeM :: Tree ()	-> FlatM (Tree ())
@@ -38,7 +39,8 @@ flattenSS ss
 	return	$ concat sss'
 	
 
------
+-- Stmt --------------------------------------------------------------------------------------------
+flattenS :: Stmt () -> FlatM [Stmt ()]
 flattenS s
  = case s of
  	SMatch aa
@@ -67,13 +69,13 @@ flattenS s
 	
 
 	
------
+-- Alt ---------------------------------------------------------------------------------------------
 flattenA vMatchEnd (ixAlt, a, vStart, vExp, (mvStartNextAlt :: Maybe Var))
  = case a of
  	AAlt gs ss
 	 -> do	gss	<- mapM (flattenG ixAlt mvStartNextAlt) $ zip [0..] gs
 	 
-	 	return	$  [ SComment ("a" ++ show ixAlt) ]
+	 	return	$  [ SComment ("alt" ++ show ixAlt) ]
 			++ [ SLabel vStart]
 			++ concat gss
 			++ [ SLabel vExp ] 
@@ -88,35 +90,53 @@ flattenA vMatchEnd (ixAlt, a, vStart, vExp, (mvStartNextAlt :: Maybe Var))
 			++ [ SBlank ]
 
 
-flattenG ixAlt mvStartNextAlt (ixGuard, g)
+-- Guard -------------------------------------------------------------------------------------------
+flattenG 
+	ixAlt 		-- the index of the alternative that this guard is in
+	mvStartNextAlt 	-- maybe a label to jump to to get the next alternative
+	( ixGuard	-- index of this guard
+	 , g)		-- the guard
+
  = case g of
- 	GCase ss x1 x2
+ 	GCase isLazy ss x1 x2
 	 -> do	let lName	= "_a" ++ show ixAlt ++ "g" ++ show ixGuard
 	 
 	 	vGuardStart	<- newVarNS NameLabel (lName)
 	 	vGuardAgain	<- newVarNS NameLabel (lName ++ "_again")
 		
-		let aNext	= case mvStartNextAlt of
-					Just label	-> [ADefault [SGoto label]]
-					_		-> [ACaseDeath]
+		-- decide where to go if this guard fails
+		let aNext
+			-- if we've got another alternative after this one then go there.
+			| Just label	<- mvStartNextAlt
+			= [ADefault [SGoto label]]
 
-		let aFollow	= case (x1, x2) of
-					(XTag x, XCon{})-> [ACaseSusp x vGuardAgain]
-					_		-> []
-
+			-- otherwise die and emit a non-exhaustive case match error
+			| otherwise
+			= [ACaseDeath]
 		
+		-- decide whether we need to generate code to follow suspensions.
+		let (ssAgain, ssFollow)
+			-- if we're matching against a constructor tag 
+			--	and the constructor is in a lazy region, then yes
+			| XTag x	<- x1
+			, XCon{}	<- x2
+			, isLazy
+			= ([SLabel vGuardAgain], [ACaseSusp x vGuardAgain])
+
+			-- otherwise no
+			| otherwise
+			= ([], [])
+
+
+		-- build the expression		
 		return	$  [ SLabel vGuardStart]
 			++ ss
 			++ [ SBlank ]
-			++ [ SLabel vGuardAgain]
+			++ ssAgain
 			++ [ SSwitch x1 
 				(  [ ASwitch x2 [] ]
-				++ aFollow
+				++ ssFollow
 				++ aNext) ]
 			++ [ SBlank ]
 		
-		
-
-
-
 

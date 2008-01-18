@@ -25,7 +25,7 @@ main
   	argStrings		<- getArgs
 	let (errs, args)	= parseArgs argStrings
 
-	putStr	$ pprStr $ "args = " % args % "\n"
+--	putStr	$ pprStr $ "args = " % args % "\n"
 	
 	-- die on bad args
 	when (not $ isNil errs)

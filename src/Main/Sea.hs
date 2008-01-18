@@ -155,11 +155,12 @@ seaSlot	eTree eHeader cafVars
 --
 seaFlatten
 	:: (?args :: [Arg])
+	-> String
 	-> Tree ()
 	-> IO (Tree ())
 	
-seaFlatten eTree
- = do	let tree'	= flattenTree eTree
+seaFlatten unique eTree
+ = do	let tree'	= flattenTree unique eTree
 	dumpET DumpSeaFlatten "sea-flatten" 
 		$ eraseAnnotsTree tree'
 	

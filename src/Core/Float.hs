@@ -67,8 +67,11 @@ data Table
  	  -- bindings currently in motion along with the effect of that binding.
 	, tableBinds		:: Map Var (Exp, Effect)
 
+
 	  -- stats about what got moved / not moved
 	, tableStats		:: Stats }
+	
+
 
 -- empty inliner table
 tableZero
@@ -84,6 +87,29 @@ tableZero
 
 -- horror
 tableStats_  = ( tableStats, \x s -> s { tableStats = x })
+
+
+-- Share -------------------------------------------------------------------------------------------
+
+-- This is some very simple CSE ---------
+-- We could do this with a more general mechanism, but these are important enough, and fast enough
+--	to embed directly in the let-floater.
+
+-- We don't merge this with the Table above, because that contains reconstructed
+--	bottom-up information as well. This sharing is only top-down.
+
+-- shared results
+data Share
+	= Share
+	{ -- Elimination of forcing is important, because most function args are in unknown regions
+	  --	and must be forced before use, and tend to have multiple bound occurances inside the function.
+	  shareForcings		:: Map Var Var		-- v2 = force v1
+	}
+
+-- empty share table
+shareZero
+	= Share
+	{ shareForcings		= Map.empty }
 
 
 -- Stats -------------------------------------------------------------------------------------------
@@ -115,8 +141,7 @@ data Stats
 	
 	  -- bindings that were successfully moved
 	, statsMoved		:: [Var] }
-
-	 
+	
 -- empty stats table
 statsZero
 	= Stats
@@ -178,28 +203,28 @@ floatBindsTree
 	:: Table -> Tree -> (Table, Tree)
 
 floatBindsTree tt tree
-	= mapAccumL (floatBindsP 0) tt tree
+	= mapAccumL (floatBindsP 0 shareZero) tt tree
    
 
 -- top
-floatBindsP :: Level -> Table -> Top -> (Table, Top)
-floatBindsP level tt pp
+floatBindsP :: Level -> Share -> Table -> Top -> (Table, Top)
+floatBindsP level share tt pp
  = case pp of
  	PBind v x	
-	 -> let	(tt', x')	= floatBindsX level tt x
+	 -> let	(tt', x')	= floatBindsX level share tt x
 	    in	(tt', PBind v x')
 
 	_		-> (tt, pp)
 	
 -- exp
-floatBindsX :: Level -> Table -> Exp -> (Table, Exp)
-floatBindsX level tt xx
+floatBindsX :: Level -> Share -> Table -> Exp -> (Table, Exp)
+floatBindsX level share tt xx
  = case xx of
 
 	-- check for constant regions on the way down
  	XLAM b k x	
 	 -> let tt2		= slurpWitnessKind tt k
-		(tt3, x')	= floatBindsX level tt2 x
+		(tt3, x')	= floatBindsX level share tt2 x
 	    in	(tt3, XLAM b k x')
 
 	-- check for constant regions on the way down
@@ -207,7 +232,7 @@ floatBindsX level tt xx
 	 -> let tt2	= foldl' slurpWitnessKind tt 
 	 		$ map (kindOfType . snd) vts
 		
-		(tt3, x')	= floatBindsX level tt2 x
+		(tt3, x')	= floatBindsX level share tt2 x
 	    in	(tt3, XLocal v vts x')
 	
 	-- When we hit a variable, check to see if there is a binding for it in the table
@@ -215,42 +240,46 @@ floatBindsX level tt xx
 	 -> case Map.lookup v (tableBinds tt) of
 	 	Just (x, _)	
 		 -> let tt2	= tt { tableBinds = Map.delete v (tableBinds tt) }
-		    in	floatBindsX level tt2 x
+		    in	floatBindsX level share tt2 x
 
 		Nothing		-> (tt, xx)
 
-	-- increase the level number when we pass through a value lambda
 	XLam v t x eff clo	
-	 -> let (tt', x')	= floatBindsX (level + 1) tt x
+	 -> let -- increase the level number when we pass through a value lambda
+		level'	= level + 1
+		
+		-- don't carry shared expressions into lambdas.. don't want to change the closure properties
+		share'	= shareZero
+		
+		(tt', x')	= floatBindsX level' share' tt x
 	    in  (tt', XLam v t x' eff clo)
 
-
-	XDo{}			-> floatBindsXDo level tt xx
+	XDo{}			-> floatBindsXDo level share tt xx
 
 	XMatch alts		
-	 -> let	(tt', alts')	= mapAccumL (floatBindsA level) tt alts
+	 -> let	(tt', alts')	= mapAccumL (floatBindsA level share) tt alts
 	    in  (tt', XMatch alts')
 	    
 	XAPP x t
-	 -> let (tt', x')	= floatBindsX level tt x
+	 -> let (tt', x')	= floatBindsX level share tt x
 	    in	(tt', XAPP x' t)
 
 	XTet vts x
-	 -> let (tt', x')	= floatBindsX level tt x
+	 -> let (tt', x')	= floatBindsX level share tt x
 	    in  (tt', XTet vts x')
  
 	XTau t x
-	 -> let (tt', x')	= floatBindsX level tt x
+	 -> let (tt', x')	= floatBindsX level share tt x
 	    in	(tt', XTau t x')
 
 
 	XApp x1 x2 eff
-	 -> let (tt2, x1')	= floatBindsX level tt  x1
-	        (tt3, x2')	= floatBindsX level tt2 x2
+	 -> let (tt2, x1')	= floatBindsX level share tt  x1
+	        (tt3, x2')	= floatBindsX level share tt2 x2
 	    in	(tt3, XApp x1' x2' eff)
 
 	XPrim p xs
-	 -> let (tt', xs')	= mapAccumL (floatBindsX level) tt xs
+	 -> let (tt', xs')	= mapAccumL (floatBindsX level share) tt xs
 	    in	(tt', XPrim p xs')
 
 	XLit{}			-> (tt, xx)
@@ -258,17 +287,17 @@ floatBindsX level tt xx
 
 
 -- alts
-floatBindsA :: Level -> Table -> Alt -> (Table, Alt)
-floatBindsA level tt (AAlt gs x)
- = let	(tt2, gs')	= mapAccumL (floatBindsG level) tt gs
- 	(tt3, x')	= floatBindsX level tt2 x
+floatBindsA :: Level -> Share -> Table -> Alt -> (Table, Alt)
+floatBindsA level share tt (AAlt gs x)
+ = let	(tt2, gs')	= mapAccumL (floatBindsG level share) tt gs
+ 	(tt3, x')	= floatBindsX level share tt2 x
    in	(tt3, AAlt gs' x')
    
 
 -- guards
-floatBindsG :: Level -> Table -> Guard -> (Table, Guard)
-floatBindsG level tt (GExp ws x)
- = let	(tt', x')	= floatBindsX level tt x
+floatBindsG :: Level -> Share -> Table -> Guard -> (Table, Guard)
+floatBindsG level share tt (GExp ws x)
+ = let	(tt', x')	= floatBindsX level share tt x
    in	(tt', GExp ws x')
 
 
@@ -281,13 +310,25 @@ floatBindsG level tt (GExp ws x)
 --	 If we have a deeply nested program, then the time it takes to recalculate these effects
 --	 might start to hurt. Rejig Core.Recon to drop XTau to remember these.
 
-floatBindsXDo :: Level -> Table -> Exp -> (Table, Exp)
-floatBindsXDo level tt xx@(XDo ss)
- = let	(tt', sssNew)	= mapAccumL (floatBindsS level) tt ss
-   in	( tt', XDo (concat sssNew) )
-	
+floatBindsXDo :: Level -> Share -> Table -> Exp -> (Table, Exp)
+floatBindsXDo level share tt xx@(XDo ss)
+ = let	(table', ss')	= floatBindsSS level share tt [] ss
+   in	(table', XDo ss')
 
-floatBindsS :: Level -> Table -> Stmt -> (Table, [Stmt])
+
+-- float bindings in a list of statements
+--	carrying shared expressions forward and down
+
+floatBindsSS :: Level -> Share -> Table -> [Stmt] -> [Stmt] -> (Table, [Stmt])
+
+floatBindsSS level share table ssAcc [] = (table, ssAcc)
+
+floatBindsSS level share table ssAcc (s : ssRest)
+ = let	(share1, table1, ssMore) = floatBindsS level share table s
+   in	floatBindsSS level share1 table1 (ssAcc ++ ssMore) ssRest
+
+
+floatBindsS :: Level -> Share -> Table -> Stmt -> (Share, Table, [Stmt])
 
 -- when we get to the end of the block of statements
 --	the table should contain no more bindings.
@@ -297,42 +338,65 @@ floatBindsS :: Level -> Table -> Stmt -> (Table, [Stmt])
 
 -- not a binding
 --	!! drop bindings that conflict
-floatBindsS level tt ss@(SBind Nothing x)
- = let	(tt', x')	= floatBindsX level tt x
-   in	(tt', [SBind Nothing x'])
+floatBindsS level share table ss@(SBind Nothing x)
+ = let	(table', x')	= floatBindsX level share table x
+   in	(share, table', [SBind Nothing x'])
    
 
-floatBindsS level tt ss@(SBind (Just vBind) xBind)
-	-- work out the effects of the expression
- = let	effBind		= t4_3 $ Recon.reconX' (stage ++ ".floatBindsS") xBind
+floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 
-	-- reduce the effect using information about what things are const / pure
-	effReduced	= reduceEffect 
-				(tableConstRegions tt)
-				(tableConstTypes tt)
-				(tablePureEffects tt)
-				effBind
+	-- remember forcings that we haven't seen yet
+	-- hrm.. this leaves them where they are and never carries them down into match stmts..
+	| XPrim MForce [XVar v2 _]	<- xBind
+	, Nothing		<- Map.lookup v2 (shareForcings share)
+	= let share'		= share { shareForcings = Map.insert v2 vBind (shareForcings share) }
+	  in  (share', table, [SBind (Just vBind) xBind])
+	  
+	-- replace calls to force with ones that we've seen before
+	| XPrim MForce [XVar v2 t]	<- xBind
+	, Just v3	<- Map.lookup v2 (shareForcings share)
+	= let 	xNew	= XVar v3 t
+		(table3, x3) = floatBindsX level share table xNew
+	  in	(share, table3, [SBind (Just vBind) x3])
+	  
+	-- some other expression
+	| otherwise
+	= let	-- work out the effects of the expression
+		effBind		= t4_3 $ Recon.reconX' (stage ++ ".floatBindsS") xBind
 
-	mUse		= Map.lookup vBind (tableBoundUse tt)
-	(canMove, tt2)	= shouldMove level tt mUse vBind effReduced
+		-- reduce the effect using information about what things are const / pure
+		effReduced	= reduceEffect 
+					(tableConstRegions table)
+					(tableConstTypes table)
+					(tablePureEffects table)
+					effBind
 
-   	xx	-- if we're ok to move this binding
-		| canMove
-		= let	xStripped = stripXTau xBind
+		-- lookup how this binding is used
+		mUse		= Map.lookup vBind (tableBoundUse table)
 
-			-- add the statement to the table
-			tt3	= tt2 { tableBinds = Map.insert vBind (xStripped, effReduced) (tableBinds tt2) }
+		-- decide whether its ok to move it
+		(canMove, tt2)	= shouldMove level table mUse vBind effReduced
+
+	   	xx	-- if we're ok to move this binding
+			| canMove
+			= let	xStripped = stripXTau xBind
+
+				-- add the statement to the table
+				tt3	= tt2 { tableBinds = Map.insert vBind (xStripped, effReduced) (tableBinds tt2) }
 		
-		  in {- trace	( "floatBindsS: picking up binding\n"
-	  			% "    ss      = " % ss 	% "\n"
-				% "    effBind = " % effBind	% "\n")-}
-				(tt3, [])
+			  in {- trace	( "floatBindsS: picking up binding\n"
+		  			% "    ss      = " % ss 	% "\n"
+					% "    effBind = " % effBind	% "\n")-}
+					(share, tt3, [])
 
-		-- not ok to move this binding
-		| otherwise
-		= let (tt3, x')	= floatBindsX level tt2 xBind
-		  in  (tt3, [SBind (Just vBind) x'])
-   in	xx
+			-- not ok to move this binding
+			| otherwise
+			= (share, table, [SBind (Just vBind) xBind])
+	   in	xx
+
+	-- do the initial decent into the rhs
+	where	(table, xBind)	= floatBindsX level share table_ xBind_
+	
 
 -- | Strip any XTaus of the front of an expression
 stripXTau :: Exp -> Exp

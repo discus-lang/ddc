@@ -108,6 +108,7 @@ data Stmt a
 	| SReturn	(Exp a)				-- Return from super.			return exp;
 
 	| SMatch	[Alt a]
+
 	| SSwitch	(Exp a) 	[Alt a]		-- Switch on an expression.
 	deriving (Show, Eq)	
 
@@ -124,10 +125,16 @@ data Alt a
 	| ADefault	[Stmt a]
 	deriving (Show, Eq)
 
+
 data Guard a
-	= GCase		[Stmt a] 	(Exp a)	(Exp a)
+	= GCase						-- a guard in a case expression
+			Bool				-- true if the case object is in a lazy region
+			[Stmt a] 			-- run these statements
+			(Exp a)				-- check if this value (the case object)
+			(Exp a)				-- matches this one (always a var)
 	deriving (Show, Eq)
 	
+
 data Exp a
 	= XNil
 

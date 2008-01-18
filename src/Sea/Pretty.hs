@@ -1,13 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Sea.Pretty
-(
-	seaVar
-)
-
+	( seaVar )
 where
-
-
 import Util
 
 import qualified Data.Map	as Map
@@ -36,7 +31,8 @@ sVn n v		= ppr $ padR n $ seaVar False v
 sVL  v		= ppr $ seaVar True v
 sVLn n v 	= ppr $ padR n $ seaVar True v
 
------
+
+-- Top ---------------------------------------------------------------------------------------------
 instance Pretty a => Pretty (Top (Maybe a)) where
  ppr xx
   = case xx of
@@ -94,7 +90,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 
 
 
------
+-- Stmt --------------------------------------------------------------------------------------------
 instance Pretty a => Pretty (Stmt (Maybe a)) where
  ppr xx
   = case xx of
@@ -131,9 +127,9 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 	 -> "match {\n"
 	    % (appendMapPretty aa)
 	    % "}"
-	
 
------
+
+-- Alt ---------------------------------------------------------------------------------------------
 instance Pretty a => Pretty (Alt (Maybe a))where
  ppr xx
   = case xx of
@@ -167,18 +163,23 @@ instance Pretty a => Pretty (Alt (Maybe a))where
 		%   "break;\n")
 	  % "  }\n"
 
------
+
+-- Guard -------------------------------------------------------------------------------------------
 instance Pretty a => Pretty (Guard (Maybe a)) where
  ppr gg
   = case gg of
-  	GCase ss x1 x2
+  	GCase True ss x1 x2
 	 -> "guard {\n"
 	 %> ("\n" %!% ss % "\n") % "}\n"
-	 %  "compare " % x1 % " with " % x2 % ";\n";
+	 %  "compareLazy " % x1 % " with " % x2 % ";\n";
+
+  	GCase False ss x1 x2
+	 -> "guard {\n"
+	 %> ("\n" %!% ss % "\n") % "}\n"
+	 %  "compareDirect " % x1 % " with " % x2 % ";\n";
 	 
 
-
------
+-- Exp ---------------------------------------------------------------------------------------------
 instance Pretty a => Pretty (Exp (Maybe a))where
  ppr xx
   = case xx of
@@ -296,7 +297,8 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 
 	_ -> panic stage $ "pprStr[Exp]: no match for " % show xx
 
------
+
+-- Type --------------------------------------------------------------------------------------------
 instance Pretty Type where
  ppr xx
   = case xx of

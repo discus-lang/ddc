@@ -442,13 +442,14 @@ coreAtomise cSource cHeader
 -- | Convert Core-IR to Abstract-C
 toSea
 	:: (?args :: [Arg])
+	-> String		-- unique
 	-> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 
 	-> IO 	( E.Tree ()	-- sea source tree
 		, E.Tree ())	-- sea header tree
 
-toSea	cTree cHeader
+toSea	unique cTree cHeader
 
  = do
 	let appMap	= slurpAppGraph    cTree cHeader
@@ -459,11 +460,11 @@ toSea	cTree cHeader
 				(slurpCtorDefs cTree)
 				(slurpCtorDefs cHeader)
 
-	let eTree	= toSeaTree mapCtorDefs cTree
+	let eTree	= toSeaTree (unique ++ "S") mapCtorDefs cTree
 	dumpET DumpSea "sea-source"
 		$ E.eraseAnnotsTree eTree
 
-	let eHeader	= toSeaTree mapCtorDefs cHeader
+	let eHeader	= toSeaTree (unique ++ "H") mapCtorDefs cHeader
 	dumpET DumpSea "sea-header"
 		$ E.eraseAnnotsTree eHeader
 

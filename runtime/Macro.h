@@ -34,6 +34,10 @@ static inline UInt
 	case _tagIndir: \
 	  var = _FOLLOW(var); \
 	  goto label; 
+
+// ----- Force loop hackery
+#define _FORCELOOP(dest,src) \
+
 	  
 #define _CASEDEATH \
 	default: _deathCase (__func__, 0, 0);
