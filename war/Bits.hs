@@ -5,17 +5,46 @@
 module Bits 
 	(Arg(..)
 	, timeIO
-	, timeIO_)
+	, timeIO_
+	, parseArgs
+	, psecsOfClockTime)
 where
 
 import System.Time
+
+import Util.Options	as Options
 import Util
 
 -- Arguments to DDC --------------------------------------------------------------------------------
 data Arg
-	= ArgFlagsDDC [String]
-	| ArgFlagsGHC [String]
-	| ArgDebug
+	= ArgDebug			-- print debugging messages about the test driver
+	| ArgFlagsDDC  [String]		-- flags to pass to DDC when compiling test files
+	| ArgTestDirs  [String]		-- only run on these test dirs
+	| ArgTestWith  [String]		-- a set of DDC flags to test with
+	| ArgHelp
+	deriving (Show, Eq)
+
+instance Pretty Arg where
+ ppr	= ppr . show
+
+options
+ = 	[ ODefault	ArgTestDirs
+ 	, OFlag		ArgHelp
+ 			[ "-h", "-help", "--help"]
+			"Display this help"
+
+	, OOpts		(\ss -> ArgFlagsDDC $ map ('-' :) ss)
+			[ "-ddc"]
+			"-ddc <options>"
+			"Turn on these DDC compile options."
+			
+	, OOpts		(\ss -> ArgTestWith $ map ('-' :) ss)
+			[ "-with" ]
+			"-with <options>"
+			"Test with these DDC compile options." ]
+			
+parseArgs :: [String] -> ([String], [Arg])
+parseArgs args	= Options.munch options $ Options.tokenise $ catInt " " args
 
 
 -- Timing ------------------------------------------------------------------------------------------
@@ -28,6 +57,11 @@ instance Num ClockTime where
  (TOD s1 p1) - (TOD s2 p2)	= TOD (s1 - s2) (p1 - p2)
  (TOD s1 p1) + (TOD s2 p2)	= TOD (s1 + s2) (p1 + p2)	 
 	
+-- find the absolute number of pico secs in a clocktime
+psecsOfClockTime :: ClockTime -> Integer
+psecsOfClockTime (TOD sec psec)
+	= sec * 10^12 + psec
+
 
 -- | Time an action, returning the result along with the time it took to run.
 timeIO :: IO a -> IO (a, ClockTime)

@@ -44,61 +44,184 @@ testSource path
 				then True
 				else False
 
-	-- do the tests
- 	out	$ "    " % (padR 50 path) 
-	
-
 	-- If there is a error.check file we're expecting the compile to fail
 	expectFail	<- fileExist (pathB ++ "error.check")
 		
 	(if expectFail 
-		then testSourceFail pathB isMain 
-		else testSourceOK pathB isMain)
+		then testSourceFail path pathB isMain 
+		else testSourceOK path pathB isMain)
 
 	out	$ "\n"
 
+
+-- testSourceOK ------------------------------------------------------------------------------------
 
 -- | Test a source file, expecting the compile to succeed
 testSourceOK 
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyP -> IO ())
 	=> FilePath 
+	-> FilePath
 	-> Bool
 	-> IO ()
 
-testSourceOK pathB isMain 
- = do	
- 	-- compile the program
- 	compileTime	<- compileSourceOk pathB isMain
+testSourceOK path pathB isMain
+ = do	-- slurp out any compile setups specificied via -with options
+ 	let setups	= [setup | ArgTestWith setup <- ?args]
+	
+	case setups of
+	 -- no setups, just use default options
+	 [] -> do
+		out	$ "    " % (padR 50 path) 	
+		testSourceOK_single pathB isMain []
+		return ()
+	 
+	 -- got some setups, do comparison testing
+	 _	-> testSourceOK_comparison path pathB isMain setups
+
+
+-- | Test the file with just the default compile options
+testSourceOK_single pathB isMain moreDDCArgs
+ = do 	-- compile the program
  	out	$ "comp("
-		% (padL 6 $ pprStr $ compileTime)
+
+ 	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
+
+	out	$ (padL 6 $ pprStr $ compileTime)
 		% "s)"
 
 	-- check any .di file
 	checkProgDI pathB
 	
 	-- if it was a Main.ds file then we're expecing an executable binary to be produced..
-	when isMain
-	 $ do	-- run the produced binary
-		execTime	<- executeProg pathB
+	mExecTime
+	 <- if isMain 
+	     then do
 		out	$ "  exec(" 
-			% (padL 6 $ pprStr $ execTime)
+
+	 	-- run the produced binary
+		execTime	<- executeProg pathB
+		
+		out	$ (padL 6 $ pprStr $ execTime)
 			% "s)"
 
 		-- check any stdout file
 		checkProgStdout pathB
 	
+		return $ Just execTime
+
+	     else
+	     	return $ Nothing
+
+	return (compileTime, mExecTime)
+
+
+-- | Test the file with these different compile options, and compare the performance 
+testSourceOK_comparison path pathB isMain setups@(setupBase: setupOther)
+ = do 	
+  	-- do the tests
+ 	out	$ "  - Comparison: " % (padR 50 path) 
+
+ 	out	$ "\n"
+	
+	let argsForced	= concat $ [as | ArgFlagsDDC as <- ?args]
+
+	-- do the baseline test
+	out	$ "        baseline options: " % pprOpts (argsForced ++ setupBase) % "\n"
+	out	$ "            running test: "
+	
+	(baseCompileTime, mBaseExecTime)
+		<- testSourceOK_single pathB isMain setupBase
+	out	$ "\n"
+
+	-- do the comparison tests with the baseline
+	mapM_ (testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime) 
+		setupOther
+
+	return ()
+
+pprOpts []	= pNil
+pprOpts ss	= ppr $ catInt " " $ ss
+ 
+
+-- test this source file and print comparisons with the baseline
+testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs 
+ = do	let argsForced	= concat $ [as | ArgFlagsDDC as <- ?args]
+
+ 	out	$ "         comparison with: " % pprOpts (argsForced ++ moreDDCArgs) % "\n"
+ 	out	$ "            running test: " 
+ 
+  	-- compile the program
+ 	out	$ "comp("
+
+ 	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
+
+	out	$ (padL 6 $ pprStr $ compileTime)
+		% "s)"
+
+	-- check any .di file
+	checkProgDI pathB
+	
+	-- if it was a Main.ds file then we're expecing an executable binary to be produced..
+	mExecTime 
+	 <- if isMain 
+	     then do
+		out	$ "  exec(" 
+
+	 	-- run the produced binary
+		execTime	<- executeProg pathB
+		
+		out	$ (padL 6 $ pprStr $ execTime)
+			% "s)"
+
+		-- check any stdout file
+		checkProgStdout pathB
+
+		return $ Just execTime
+
+	     else do
+	     	return $ Nothing
+
+	out	$ "\n" % replicate 70 ' '
+	
+
+	-- work out percent change in compile time
+	let rCompile :: Double	= fromIntegral (psecsOfClockTime compileTime) 
+				/ fromIntegral (psecsOfClockTime baseCompileTime)
+
+	out	$ " " % (padL 6 $ take 4 $ pprStr $ rCompile)
+
+	-- work out percentage change in exec time
+	when isMain 
+	 $ do	let Just execTime		= mExecTime
+	 	let Just baseExecTime	= mBaseExecTime
+
+		let rExec :: Double	= fromIntegral (psecsOfClockTime execTime) 
+					/ fromIntegral (psecsOfClockTime baseExecTime)
+	
+		out	$ " " % (padL 6 $ take 4 $ pprStr $ rExec)
+
+	
+	out "\n"
+	return ()
+
+
+-- testSourceFail ----------------------------------------------------------------------------------
 
 -- | Test a source file, expecting the compile to fail
 testSourceFail
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyP -> IO ())
-	=> FilePath 
+	=> FilePath
+	-> FilePath 
 	-> Bool
 	-> IO ()
 
-testSourceFail pathB isMain
- = do	compileTime	<- compileSourceFail pathB isMain
+testSourceFail path pathB isMain
+ = do 	-- do the tests
+ 	out	$ "    " % (padR 50 path) 
+
+ 	compileTime	<- compileSourceFail pathB isMain
 
 	-- print the compile time
 	out	$ "comp("
@@ -124,9 +247,10 @@ compileSourceOk
 	-> (?trace :: PrettyP -> IO ())
 	=> FilePath 		-- base path
 	-> Bool 		-- whether this is a main file
+	-> [String]		-- more args to pass to ddc
 	-> IO ClockTime		-- compile time
 	
-compileSourceOk pathB isMain
+compileSourceOk pathB isMain moreDDCArgs
  = do
 	?trace	$ "* compileSourceOk " % pathB % " " % isMain % "\n"
 
@@ -144,6 +268,7 @@ compileSourceOk pathB isMain
 				then " -m " ++ (pathB ++ "ds") ++ " -o " ++ (pathB ++ "bin")
 				else " -c " ++ (pathB ++ "ds"))
 			++ flags
+			++ " " ++ catInt " " moreDDCArgs
 
 	return compileTime
 	

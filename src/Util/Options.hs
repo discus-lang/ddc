@@ -18,9 +18,9 @@ import Util.Either
 import Util.List
 import Util.Pretty
 
------------------------
--- Option
---
+
+-- Data to hold an option parser
+--	parametered by the data type that will represent them
 data Option a
 	= ODefault	([String] -> a)
 	| OGroup	String String

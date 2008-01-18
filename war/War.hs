@@ -19,33 +19,67 @@ import Data.Char
 import Util
 
 
----------------------------
+-- main --------------------------------------------------------------------------------------------
 main
- = do	
-	let ?args	= 
-		[ ArgFlagsDDC ["-link-lib m -lint -opt-tail-call -opt-simplify"] ]
+ = do	-- get the command line args
+  	argStrings		<- getArgs
+	let (errs, args)	= parseArgs argStrings
 
+	putStr	$ pprStr $ "args = " % args % "\n"
+	
+	-- die on bad args
+	when (not $ isNil errs)
+	 $ do	putStr $ "unknown options: " ++ show errs ++ "\n\n"
+	 	exitFailure
+	
+	-- dodgy trace function
 	let ?trace	= \s -> return ()
 --	let ?trace	= \s -> do { putStr $ pprStr s; return (); }
 
-	out	$ "\n"
+	let testDirs	= concat $ [dirs | ArgTestDirs dirs <- args]
+
+	if isNil testDirs
+		then testDefault args 
+		else testSome args testDirs
+		
+-- do the default tests
+testDefault args 
+ = do	out	$ "\n"
+	out	$ "* Running default tests.\n"
 	
-	args_	<- getArgs
-	case args_ of
-	 [] -> do	
-		out	$ "* Building library.\n"
-		(let 	?args = ?args ++ [ArgFlagsDDC ["-no-implicit-prelude"]]
-		 in	mapM_ testSource libraryOrder)
-	 
-		out	$ "\n"
-		out	$ "* Running tests.\n"
+	-- switch on these args when doing the default tests
+	let argsForce	= [ ArgFlagsDDC ["-l m -opt-tail-call"] ]
+	let args'	= args ++ argsForce
 
-		enterDir "test/"
+	buildLibrary args' 
 
-	 xx ->	do
-	 	mapM_ enterDir xx
-	 
+	let ?args	= args'
+	enterDir "test/"
+
+-- do some tests
+testSome args testDirs
+ = do	out	$ "\n"
+ 	out	$ "* Running tests.\n"
+	
+	let argsForce	= [ ArgFlagsDDC ["-l m -opt-tail-call"] ]
+	let ?args	= args ++ argsForce
+	
+	-- enter the test dirs
+	mapM_ enterDir testDirs
 	return ()
+
+
+-- Build the base library
+buildLibrary args
+ = do	out	$ "* Building library.\n"
+
+	-- force on implicit prelude when compiling the base libs
+	let ?args	= args ++ [ArgFlagsDDC ["-no-implicit-prelude"]]
+
+	-- build the sources
+	mapM_ testSource libraryOrder
+	return ()	
+
 
 -- enterDir ----------------------------------------------------------------------------------------
 -- | Enter a directory, grab tests and run them.
