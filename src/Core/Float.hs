@@ -211,19 +211,27 @@ floatBindsS level tt ss@(SBind Nothing x)
 
 floatBindsS level tt ss@(SBind (Just vBind) xBind)
 	-- work out the effects of the expression
- = let	effBind	= t4_3 $ Recon.reconX' (stage ++ ".floatBindsS") xBind
-	mUse	= Map.lookup vBind (tableBoundUse tt)
+ = let	effBind		= t4_3 $ Recon.reconX' (stage ++ ".floatBindsS") xBind
+
+	-- reduce the effect using information about what things are const / pure
+	effReduced	= reduceEffect 
+				(tableConstRegions tt)
+				(tableConstTypes tt)
+				(tablePureEffects tt)
+				effBind
+
+	mUse		= Map.lookup vBind (tableBoundUse tt)
 
    	xx	-- if we're ok to move this binding
-		| shouldMove level tt mUse vBind effBind
+		| shouldMove level tt mUse vBind effReduced
 		= let	xStripped = stripXTau xBind
 
 			-- add the statement to the table
-			tt'	= tt { tableBinds = Map.insert vBind (xStripped, effBind) (tableBinds tt) }
+			tt'	= tt { tableBinds = Map.insert vBind (xStripped, effReduced) (tableBinds tt) }
 		
-		  in	trace	( "floatBindsS: picking up binding\n"
+		  in {- trace	( "floatBindsS: picking up binding\n"
 	  			% "    ss      = " % ss 	% "\n"
-				% "    effBind = " % effBind	% "\n")
+				% "    effBind = " % effBind	% "\n")-}
 				(tt', [])
 
 		-- not ok to move this binding
@@ -243,11 +251,13 @@ shouldMove level tt mUses vBind effBind
 	-- don't move bindings which are set as no-float in the table
 	| Set.member vBind (tableNoFloat tt)
 	= False
-	
+
 	-- don't move bindings who's effects are not pure
 	--	TODO: relax this
 	| effBind /= TBot KEffect 
-	= False
+	= trace ( "shouldMove: leaving binding " % vBind % "\n"
+		% "    eff = " % effBind % "\n")
+		$ False
 
 	-- don't move bindings with no uses, but emit a warning
 	| Nothing	<- mUses
@@ -283,6 +293,47 @@ stripXTau (XTau t x)	= stripXTau x
 stripXTau xx		= xx
 
 
+-- | Use information about what regions are const and what effects are pure to reduce this effect.
+reduceEffect 
+	:: Set Var	-- regions known to be constant.
+	-> Set Var	-- types known to be deep constant.
+	-> Set Var	-- effect vars known to be pure
+	-> Effect -> Effect
+	
+reduceEffect rsConst tsConst esPure eff
+ = let	eff'	= makeTSum KEffect 
+		$ map (reduceEffect1 rsConst tsConst esPure)
+		$ flattenTSum eff
+
+   in {- trace 	( "reduceEffect\n"
+  		% "    eff     = " % eff 	% "\n"
+  		% "    eff'    = " % eff'	% "\n") $ -}
+		eff'
+
+reduceEffect1 rsConst tsConst esPure eff
+
+	-- reduce reads from known constant regions
+	| TEffect v [TVar KRegion r]	<- eff
+	, v == primRead
+	, Set.member r rsConst
+	= TBot KEffect
+	
+	-- reduce reads from known constant types
+	| TEffect v [TVar KData t]	<- eff
+	, v == primReadT
+	, Set.member t rsConst
+	= TBot KEffect
+
+	-- reduce known pure effect variables
+ 	| TVar KEffect v		<- eff
+	, Set.member v esPure
+	= TBot KEffect
+
+	-- leave it 
+	| otherwise
+	= eff
+
+
 -- | If this is a witness to constness of a region or type, or purity of an effect
 --	then slurp it into the table.
 slurpWitnessKind 
@@ -294,19 +345,19 @@ slurpWitnessKind tt kk
  	KClass v [TVar KRegion r]
 	 |  v == primConst	
 	 -> tt { tableConstRegions 
-	 		= Set.insert v (tableConstRegions tt)}
+	 		= Set.insert r (tableConstRegions tt)}
 	
 	-- const types
 	KClass v [TVar KData t]
 	 | v == primConstT 
 	 -> tt { tableConstTypes
-	 		= Set.insert v (tableConstTypes tt)}
+	 		= Set.insert t (tableConstTypes tt)}
 
 	-- pure effects
 	KClass v [TVar KEffect e]
 	 |  v == primPure
 	 -> tt { tablePureEffects
-	 		= Set.insert v (tablePureEffects tt) }
+	 		= Set.insert e (tablePureEffects tt) }
 
 	-- not an interesting kind
 	_	-> tt

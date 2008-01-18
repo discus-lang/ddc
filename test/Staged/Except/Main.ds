@@ -16,7 +16,7 @@ main ()
  	ralph		= Gibbon  "Ralph";
 	mary		= Unicorn "Mary";
 	gertrude	= Unicorn "Gertrude";
-	animals		= [ralph, mary, gertrude];	
+--	animals		= [ralph, mary, gertrude];	
 	
 	snacks		= [Nachos, Flowers, Grass];
 

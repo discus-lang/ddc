@@ -14,8 +14,6 @@ simple ()
 squareSpin :: Frame -> Float -> ();
 squareSpin frame rot
  = do {
-	x	= 127;
-
 	arrayUI_fill frame.array 0;
 
 	renderPrims frame [(id&{Matrix33} (), Color 255 255 255)] 
@@ -26,7 +24,6 @@ squareSpin frame rot
 	
 	when (rot > 4.0) break;
 
-	y	= x + x;
 	squareSpin frame (rot + 0.01);
  };
  
