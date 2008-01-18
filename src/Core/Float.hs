@@ -3,7 +3,8 @@ module Core.Float
 	( Table(..)
 	, tableZero
 	, Stats(..)
-	, floatBindsTree)
+	, floatBindsTree
+	, floatBindsTreeUse)
 
 where
 
@@ -156,7 +157,23 @@ instance Pretty Stats where
 
 -- floatBinds -------------------------------------------------------------------------------------
 
--- tree
+-- | Calculate usage information and float the binds in this tree
+floatBindsTreeUse
+	:: Tree -> (Table, Tree)
+
+floatBindsTreeUse tree
+ = let	-- count the number of bound occurances of each variable
+ 	boundUse	= execState (boundUseTree tree) Map.empty
+
+	-- float bindings into their use sites
+	table		= tableZero { tableBoundUse = boundUse }
+
+   in	floatBindsTree table tree
+   
+	
+
+
+-- | Float the binds in this tree
 floatBindsTree 
 	:: Table -> Tree -> (Table, Tree)
 

@@ -103,15 +103,8 @@ simplifyPass
            , Stats)		-- simplifier stats
 
 simplifyPass unique topVars tree
- = let	-- count the number of bound occurances of each variable
- 	boundUse	= execState (boundUseTree tree) Map.empty
-
-	-- float bindings into their use sites
-	table		= Float.tableZero { Float.tableBoundUse = boundUse }
-
-   	(table', cFloat)
-			= Float.floatBindsTree table tree
-   
+ = let	(table', cFloat)	= Float.floatBindsTreeUse tree
+ 
 	-- Zap pairs of Unbox/Box expressions
    	(cZapped, countZapped)	= runState (transformXM zapUnboxBoxX cFloat) 0
 	

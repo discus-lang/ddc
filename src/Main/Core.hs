@@ -33,6 +33,7 @@ import Core.Crush			(crushTree)
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconTree)
 import qualified Core.Reconstruct	as Recon
+import qualified Core.Float		as Float
 
 import Core.Bind			(bindTree)
 import Core.Thread			(threadTree)
@@ -43,7 +44,7 @@ import Core.LabelIndex			(labelIndexTree)
 import Core.Curry			(curryTree, slurpSupersTree, isCafP_opType)
 import Core.ToSea			(toSeaTree)
 
-import Core.Optimise.Simplify		(coreSimplifyTree)
+import qualified Core.Optimise.Simplify	as Simplify
 import Core.Optimise.Atomise		(atomiseTree)
 import Core.Optimise.FullLaziness	(fullLazinessTree)
 import Core.Optimise.Inline		(inlineTree)
@@ -219,15 +220,25 @@ coreSimplify unique topVars cSource cHeader
 	 $ do	putStr $ "  * Optimise.Simplify\n"
  
  	let (cSimplify, statss)
- 		= coreSimplifyTree unique topVars cSource
+ 		= Simplify.coreSimplifyTree unique topVars cSource
 
 	when (elem Verbose ?args)
 	 $ do	putStr	$ pprStr	$ "\n" %!% statss % "\n\n"
 
- 	dumpCT DumpCoreSimplify "core-simplify" 
-			cSimplify
+	-- when dumping our state, refloat let bindings so we can see 
+	--	where the simplifier gave up.
+	when (elem DumpCoreSimplify ?args)
+	 $ do	let (_, cFloat)	= Float.floatBindsTreeUse cSimplify
+	 	dumpCT DumpCoreSimplify "core-simplify"  cSimplify
+		dumpCT DumpCoreSimplify "core-simplify--refloat" cFloat
 
-	dumpS DumpCoreSimplify "core-simplify--stats"
+		(case takeLast statss of
+		   Just stats	-> dumpS DumpCoreSimplify "core-simplify--missedUnboxing" 
+		   			(pprStr $ "\n" %!% map ppr (reverse $ Float.statsMissedUnboxing 
+									(Simplify.statsFloat stats)))
+		   Nothing	-> return ())
+
+		dumpS DumpCoreSimplify "core-simplify--stats"
 			(pprStr	$ "\n" %!% statss % "\n\n")
 
 	return	cSimplify
