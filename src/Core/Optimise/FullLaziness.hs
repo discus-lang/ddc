@@ -21,7 +21,7 @@ import Core.Exp
 import Core.Util
 import Core.Util.Slurp
 
-import Core.Inline
+import Core.Float
 import Core.Snip
 import Core.Reconstruct
 import Core.Plate.FreeVars

@@ -534,7 +534,6 @@ reconBoxType_bind bind
 	Var.TCharU	-> primTChar
 	Var.TStringU	-> primTString
 
-
 -- | Convert this type to the boxed version
 reconUnboxType :: Region -> Type -> Type
 reconUnboxType r1 (TData v [r2@(TVar KRegion _)])
@@ -559,7 +558,6 @@ reconUnboxType_bind bind
 	Var.TFloat64	-> primTFloat64U
 
 	Var.TChar	-> primTCharU
-	Var.TString	-> primTStringU
 	
 
 -- | Reconstruct the type and effect of an operator application

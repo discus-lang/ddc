@@ -229,14 +229,11 @@ isUnboxFunctionV :: Var -> Bool
 isUnboxFunctionV v
  =  elem (Var.name v)
  	[ "unboxInt32"
-	, "unboxFloat32"
-	, "unboxString" ]
-
+	, "unboxFloat32" ]
 
 isBoxFunctionV :: Var -> Bool
 isBoxFunctionV v
  = elem	(Var.name v)
  	[ "boxInt32"
-	, "boxFloat32"
-	, "boxString" ]
+	, "boxFloat32" ]
 	

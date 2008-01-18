@@ -210,8 +210,17 @@ coreBoxing
 	-> IO Tree
 	
 coreBoxing topVars cSource cHeader
- = do	let cBoxing	= coreBoxingTree cSource
+ = do	when (elem Verbose ?args)
+	 $ do	putStr $ "  * Optimise.Boxing\n"
+ 
+ 	let (cBoxing, countZapped)	
+ 		= coreBoxingTree "OB" topVars cSource
+
+	when (elem Verbose ?args)
+	 $ do	putStr $ "    - unbox/boxings eliminated: " ++ show countZapped ++ "\n"
+
  	dumpCT DumpCoreBoxing "core-boxing" cBoxing
+
 	return	cBoxing 	
 
 

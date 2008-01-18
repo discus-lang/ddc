@@ -196,6 +196,10 @@ makeCall xF@(XVar vF tF) tc args eff
 	
 	  in	makeThunkCall xF args eff callAirity
 	
+makeCall xF tc args eff
+	= panic stage
+	$ "makeCall: no match for " % xF	% "\n"
+
 
 -----------------------
 -- makeSuperCall

@@ -13,7 +13,7 @@ import qualified Shared.Var	as Var
 import Shared.VarBind
 
 import Core.Exp
-import Core.Inline
+import Core.Float
 import Core.Util.Beta
 
 inlineTree :: Tree -> Tree -> [Var] -> Tree

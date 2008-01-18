@@ -4,16 +4,15 @@ module Core.Optimise.Boxing
 
 where
 
-import Util
+import Core.Float
+import Core.Snip
+import Core.Exp
+import Core.BoundUse
+import Core.Plate.Trans
+
 import qualified Debug.Trace	as Debug
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
-import qualified Shared.Unique	as Unique
-import Shared.Var	(NameSpace(..))
-import Shared.Error
-import Shared.Exp
-import Shared.Literal
-import Shared.VarPrim
 import Shared.VarUtil
 
 import qualified Data.Map	as Map
@@ -22,221 +21,57 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
-import Core.Exp
-import Core.Util
+import Util
 
-import qualified Core.Plate.Walk	as Walk
-import Core.Plate.Walk			(WalkTable)
-
-import qualified Core.Plate.Trans	as Trans
-
-import Core.Inline
-import Core.Snip
-import Core.Reconstruct
-
-type	BoxingM	= VarGenM
 
 -----
 stage		= "Core.Boxing"
-uniqueSnip	= "x" ++ Unique.coreBoxing
+debug		= False
+trace ss x
+ = if debug 
+ 	then Debug.trace (pprStr ss) x
+	else x
+
+type BoxingM	= VarGenM
+
 
 -----
 
 coreBoxingTree
-	:: Tree		-- source tree
-	-> Tree		-- new after rewriting
+	:: String	-- unique
+	-> Set Var	-- vars defined at top level
+	-> Tree		-- source tree
+	-> ( Tree	-- new after rewriting
+	   , Int)	-- count of how many unbox/box pairs were eliminated
+	   
+coreBoxingTree unique topVars cTree
+ = let	-- count the number of bound occurances of each variable
+ 	boundUse		= execState (boundUseTree cTree) Map.empty
 
-coreBoxingTree cTree
- = cTree
- 
-{-
+	-- float bindings into their use sites
+	table			= tableZero { tableBoundUse = boundUse }
+   	(table', cFloat)	= floatBindsTree table cTree
+   
+	-- Zap pairs of Unbox/Box expressions
+   	(cZapped, countZapped)	= runState (transformXM zapUnboxBoxX cFloat) 0
 
-
- = let	cSnip		= snipBoxing cSource
-
-	cInlined	= inlinePureSingleTree cSnip
-
-	cZapped		= zapUnboxBox 		cInlined
-	cResnip		= snipTree Set.empty uniqueSnip  cZapped
-	cEat		= eatAnnotsTree 	cResnip
-	cRecon		= reconTree' stage cHeader cEat
-
-   in	cRecon
-
-
------
-snipBoxing :: Tree -> Tree
-snipBoxing cSource
- = evalState 
-	(Walk.walkZM	
-		Walk.walkTableId 
-			{ Walk.transSS	= boxWrapSS 
-			, Walk.boundT	= slurpTypeMapPs cSource }
-		cSource)
-	(Var.XBind "xBS" 0)
-
-
-boxWrapSS
-	:: WalkTable BoxingM
-	-> [Stmt]
-	-> BoxingM [Stmt]
-
-boxWrapSS table ss
- 	= liftM concat
-	$ mapM (boxWrapS table) ss
-		
-boxWrapS 
-	:: WalkTable BoxingM 
-	-> Stmt
-	-> BoxingM [Stmt]
-
-
-boxWrapS table stmt
-	| SBind xV x				<- stmt
-	, (XAppFP (XVar funV t) _ : args)	<- flattenAppsE $ slurpExpX x
-	, Just arity				<- lookup (Var.name funV) unboxFuns2
-	, length args == arity
-	= do
-		-- unbox the args
-		(vsUnbox, mrsUnbox, mssUnbox)
-			<- liftM (unzip3. catMaybes)
-			$  mapM (unboxArg table) 
-			$  map (\(XAppFP x eff) -> x)
-			$  args
-
-		let rsUnbox	= catMaybes mrsUnbox
-		let ssUnbox	= catMaybes mssUnbox
-
-		-- work out the resultant unboxed type
-		let Just xT	= maybeSlurpTypeX x
-
-		let Just xTU@(TData _ [xuR@(TVar KRegion _)])
-				= unboxedType xT
-		
-		vPrim	<- newVarN NameValue
-		return	$  ssUnbox
-		        ++ [ SBind (Just vPrim)	
-				$ XPrim (MFun)
-					(XVar funV TNil : [ XVar v TNil | v <- vsUnbox])
-					
-			   , SBind xV	
-			  	$ XPrim (MBox xT xTU)
-					[XVar vPrim TNil]]
-												
-	| otherwise
-	= return [stmt]
-
--}
-
-{-
-
-unboxArg table x
-	| XVar v _			<- x
-	, Just t				<- Walk.lookupT table v
-	, tF@(TData vC [r@(TVar KRegion rV)])	<- followArgType t
-	= do
-		vU	<- newVarN NameValue
-		let tU	= fromMaybe
-				(panic stage $ "unboxArg: no unboxed version of " % tF)
-				(unboxedType tF)
-
-		return	$ Just
-			$ (vU, Just r, Just $ SBind (Just vU) $ forceUnbox table x tU tF r)
-
-	| XVar v t			<- x
-	= do
-		return	$ Just 
-			$ (v, Nothing, Nothing)
-		
-	| XAPP x1 t			<- x
-	=	unboxArg table x1
-		
-	| otherwise
-	= 	return	$ Nothing
-
-followArgType t
- = case t of
-	TContext c t	-> followArgType t
-	_		-> t
-
-
-
-eReadR	table r@(TVar KRegion rV)
-	| Just fs	<- Nothing -- Walk.lookupFs table rV
-	, elem (TClass primConst [r]) fs
-	= pure
-	
-	| otherwise
-	= TEffect primRead [r]
-	
-
-
-forceUnbox table x tU tB r@(TVar KRegion rV)
-	| Just fs	<- Nothing -- Walk.lookupFs table rV
-	, elem (TClass primLazy [r]) fs
-	= XPrim (MUnbox tU tB)
-		[XPrim MForce [x]]
-
-	| otherwise
-	= XPrim (MUnbox tU tB)
-		[x]
-	
-
-	 
-	
------
-zapUnboxBox
-	:: Tree
-	-> Tree
-	
-zapUnboxBox cTree
-	= Trans.transformX zapUnboxBoxX cTree
-	
+	-- Resnip the tree to get back into a-normal form.
+   	cSnipped	= snipTree topVars ("x" ++ unique ++ "S") cZapped
+      
+   in 	trace 	( "coreBoxing:\n"
+  		% "\n" %!% Map.toList boundUse % "\n") 
+		(cSnipped, countZapped)
+		 
+zapUnboxBoxX :: Exp -> State Int Exp
 zapUnboxBoxX xx
- = case xx of
- 	XPrim 	(MUnbox _ _) 
-		[XPrim    (MBox _ _) [x]] 
-							-> x
-
-	XPrim	(MUnbox _ _) 
-		[XAnnot n (XPrim (MBox _ _) [x])] 
-							-> x
-
-	_						-> xx
-	
-
------
-eatAnnotsTree
-	:: Tree 
-	-> Tree
-	
-eatAnnotsTree cTree
-	= Trans.transformX eatAnnotsX cTree
-	
-eatAnnotsX xx
- = case xx of
- 	XAnnot [NUseCount _] x	-> x
-	_			-> xx
-	
--}
-{-
------
-unboxedType :: Type -> Maybe Type
-unboxedType t
- = case t of
-	TContext t1 t2
-	 -> unboxedType t2
-
-	TFetters t1 fs
-	 -> unboxedType t1
-
- 	TData v [r]
-	 | Var.bind v == Var.TBool	-> Just $ TData primTBoolU  	[r]
-	 | Var.bind v == Var.TInt	-> Just $ TData primTInt32U 	[r]
-	 | Var.bind v == Var.TFloat	-> Just $ TData primTFloat32U	[r]
-	 | Var.bind v == Var.TString	-> Just $ TData primTStringU	[r]
---	 | Var.bind v == Var.TChar	-> Just $ TCon primTCharU	[r]
-
-	_ -> Nothing  -}
-	
-	
+ = case xx of 
+ 	XPrim MUnbox [r1, XPrim MBox [r2, x]]
+		| r1 == r2	
+		-> do	modify $ \s -> s + 1
+			return	x
+		
+	_	-> return xx
+ 
+ 
+ 
+ 
