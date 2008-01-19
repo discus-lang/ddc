@@ -127,12 +127,12 @@ stage 	= "Source.Parser"
 	'<'		{ TokenP { token = K.ABra	} }
 	'>'		{ TokenP { token = K.AKet	} }
 	
-	'\\'		{ TokenP { token = K.BSlash	} }
-	'`'		{ TokenP { token = K.BTick	} }
+	'\\'		{ TokenP { token = K.BackSlash	} }
+	'`'		{ TokenP { token = K.BackTick	} }
 	'='		{ TokenP { token = K.Equals	} }
 	','		{ TokenP { token = K.Comma	} }	
 	':'		{ TokenP { token = K.Colon	} }
-	';'		{ TokenP { token = K.SColon	} }
+	';'		{ TokenP { token = K.SemiColon	} }
 	'|'		{ TokenP { token = K.Bar	} }
 	'.'		{ TokenP { token = K.Dot	} }
 	'&'		{ TokenP { token = K.And	} }
@@ -144,7 +144,7 @@ stage 	= "Source.Parser"
 	'%'		{ TokenP { token = K.Percent	} }
 	'@'		{ TokenP { token = K.At		} }
 	'!'		{ TokenP { token = K.Bang	} }	
-	'/'		{ TokenP { token = K.FSlash	} }
+	'/'		{ TokenP { token = K.ForwardSlash } }
 	'$'		{ TokenP { token = K.Dollar	} }
 	'_'		{ TokenP { token = K.Underscore	} }
 	'^'		{ TokenP { token = K.Hat	} }
@@ -978,19 +978,19 @@ toVar	 tok
 -- | String representations for these tokens.
 toVar_table :: [(Token, String)]
 toVar_table = 
-	[ (K.Colon,  ":")
-	, (K.Star,   "*")
-	, (K.Dash,   "-")
-	, (K.At,     "@")
-	, (K.Hash,   "#") 
-	, (K.ABra,   "<")
-	, (K.AKet,   ">") 
-	, (K.FSlash, "/")
-	, (K.Plus,   "+")
-	, (K.Dot,    ".")
-	, (K.Dollar, "$")
-	, (K.Tilde,  "~")
-	, (K.Percent, "%") ]
+	[ (K.Colon,		":")
+	, (K.Star,		"*")
+	, (K.Dash,		"-")
+	, (K.At,		"@")
+	, (K.Hash,		"#") 
+	, (K.ABra,		"<")
+	, (K.AKet,		">") 
+	, (K.ForwardSlash,	"/")
+	, (K.Plus,		"+")
+	, (K.Dot,		".")
+	, (K.Dollar,		"$")
+	, (K.Tilde,		"~")
+	, (K.Percent,		"%") ]
 
 toVarHash space tok
  = let	v	= toVar tok

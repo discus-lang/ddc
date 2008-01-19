@@ -112,7 +112,7 @@ tokString =
 	, (Dash,		"-")
 	, (At,			"@")
 	, (Bang,		"!")
-	, (FSlash,		"/")
+	, (ForwardSlash,	"/")
 	, (Plus,		"+")
 	, (Percent,		"%")
 
@@ -123,12 +123,12 @@ tokString =
 	, (RKet,		")")
 	, (SBra,		"[")
 	, (SKet,		"]")
-	, (BSlash,		"\\")
-	, (BTick,		"'")
+	, (BackSlash,		"\\")
+	, (BackTick,		"'")
 	, (Equals,		"=")
 	, (Comma,		",")
 	, (Colon,		":")
-	, (SColon,		";")
+	, (SemiColon,		";")
 	, (Bar,			"|") 
 	, (Dollar,		"$")]
 

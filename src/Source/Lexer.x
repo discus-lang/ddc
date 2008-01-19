@@ -119,7 +119,7 @@ tokens :-
  \-			{ ptag Dash			}
  \@			{ ptag At			}
  \!			{ ptag Bang			}
- \/			{ ptag FSlash			}
+ \/			{ ptag ForwardSlash		}
  \$			{ ptag Dollar			}
  \_			{ ptag Underscore		}
  \^			{ ptag Hat			}
@@ -137,12 +137,12 @@ tokens :-
  \[			{ ptag SBra			}
  \]			{ ptag SKet			}
  
- \\			{ ptag BSlash			}
- \`			{ ptag BTick			}
+ \\			{ ptag BackSlash		}
+ \`			{ ptag BackTick			}
  \=			{ ptag Equals			}
  \,			{ ptag Comma			}
  \:			{ ptag Colon			}
- \;			{ ptag SColon			}
+ \;			{ ptag SemiColon		}
  \|			{ ptag Bar			}
  \.			{ ptag Dot			}
  \&			{ ptag And			}
@@ -264,17 +264,29 @@ scan 	:: String -> [TokenP]
 scan ss	=  breakModules $ eatComments $ alexScanTokens (ss ++ "\n")
 
 {-
+
 -- apply the offside rule to these tokens
-offside	:: [TokenP] -> [TokenP]
-offside 
+type Context	= Int
+
+offside	:: [TokenP] -> [Context] -> [TokenP]
+offside	(t1: ts@(t2:_)) (m:ms)
+	| isBlockStart t1
+	, column t1 == m
+	= SemiColon : offside ts (m : ms)
+	
+
 
 -- check if a token is one that starts a block of statements.
-isBlockStart :: TokenP
+isBlockStart :: TokenP -> Bool
+isBlockStart tok
+ = case token tok of
+ 	Do		-> True
+	Of		-> True
+	With		-> True
+	_		-> False
 -}
 
 }
-
-
 
 
 

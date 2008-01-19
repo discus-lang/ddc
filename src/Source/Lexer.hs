@@ -141,12 +141,26 @@ scan 	:: String -> [TokenP]
 scan ss	=  breakModules $ eatComments $ alexScanTokens (ss ++ "\n")
 
 {-
+
 -- apply the offside rule to these tokens
-offside	:: [TokenP] -> [TokenP]
-offside 
+type Context	= Int
+
+offside	:: [TokenP] -> [Context] -> [TokenP]
+offside	(t1: ts@(t2:_)) (m:ms)
+	| isBlockStart t1
+	, column t1 == m
+	= SemiColon : offside ts (m : ms)
+	
+
 
 -- check if a token is one that starts a block of statements.
-isBlockStart :: TokenP
+isBlockStart :: TokenP -> Bool
+isBlockStart tok
+ = case token tok of
+ 	Do		-> True
+	Of		-> True
+	With		-> True
+	_		-> False
 -}
 
 
@@ -215,7 +229,7 @@ alex_action_62 = ptag Percent
 alex_action_63 = ptag Dash			
 alex_action_64 = ptag At			
 alex_action_65 = ptag Bang			
-alex_action_66 = ptag FSlash			
+alex_action_66 = ptag ForwardSlash		
 alex_action_67 = ptag Dollar			
 alex_action_68 = ptag Underscore		
 alex_action_69 = ptag Hat			
@@ -228,12 +242,12 @@ alex_action_75 = ptag RBra
 alex_action_76 = ptag RKet			
 alex_action_77 = ptag SBra			
 alex_action_78 = ptag SKet			
-alex_action_79 = ptag BSlash			
-alex_action_80 = ptag BTick			
+alex_action_79 = ptag BackSlash		
+alex_action_80 = ptag BackTick			
 alex_action_81 = ptag Equals			
 alex_action_82 = ptag Comma			
 alex_action_83 = ptag Colon			
-alex_action_84 = ptag SColon			
+alex_action_84 = ptag SemiColon		
 alex_action_85 = ptag Bar			
 alex_action_86 = ptag Dot			
 alex_action_87 = ptag And			

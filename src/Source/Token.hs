@@ -130,17 +130,17 @@ data Token
 	| Percent		-- ^ %
 	| At			-- ^ \@
 	| Bang			-- 
-	| FSlash		-- 
 	| Dollar		-- 
 	| Tilde			-- 
 	| Underscore		-- ^ _
 	| Hat			-- ^ ^
-	| BSlash		-- ^ \
-	| BTick			-- ^ `
+	| ForwardSlash		-- 
+	| BackSlash		-- ^ \
+	| BackTick		-- ^ `
 	| Equals		-- ^ =
 	| Comma			-- ^ ,
 	| Colon			-- ^ :
-	| SColon		-- ^ ;
+	| SemiColon		-- ^ ;
 	| Bar			-- ^ |
 	| Dot			-- ^ .
 	| And			-- ^ &
