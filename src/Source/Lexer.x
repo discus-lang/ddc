@@ -88,13 +88,9 @@ tokens :-
  forall			{ ptag Forall			}
 
  \:\:			{ ptag HasType			} 
- \:\*			{ ptag HasTypeQuant		}
 
  \<\:			{ ptag IsSubtypeOf		}
- \<\*			{ ptag IsSubtypeOfQuant		}
-
- \:\:\:			{ ptag HasTypeExact		}
- \:\:\*			{ ptag HasTypeExactQuant	}
+ \:\>			{ ptag IsSuptypeOf		}
 
  \:\$			{ ptag HasOpType		}
  \:\-			{ ptag HasConstraint		}
@@ -264,9 +260,22 @@ eatComments	(tokenp:xs)
 -- the file does not finish with a newline. (Might be the token printer?)
 --	Add one here to fix this, shouldn't hurt anything.
 --
-scan 		:: String -> [TokenP]
-scan ss		=  breakModules $ eatComments $ alexScanTokens (ss ++ "\n")
+scan 	:: String -> [TokenP]
+scan ss	=  breakModules $ eatComments $ alexScanTokens (ss ++ "\n")
 
+{-
+-- apply the offside rule to these tokens
+offside	:: [TokenP] -> [TokenP]
+offside 
+
+-- check if a token is one that starts a block of statements.
+isBlockStart :: TokenP
+-}
 
 }
+
+
+
+
+
 

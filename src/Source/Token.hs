@@ -1,48 +1,76 @@
------
--- Source.Token
---
--- Summary:
---	Token definitions.
---
---
 
+-- | Source tokens
 module Source.Token
-(
-	Token (..),	-- The tokens.
-	TokenP (..)	-- Tokens with file position info attached.
-)
+	( Token  (..)	-- The tokens.
+	, TokenP (..))	-- Tokens with file position info attached.
 
 where
 
+-- | Wraps up a token with its position in the source file
+data TokenP = 
+     TokenP 
+     	{ token 	:: Token	-- the token
+	, file		:: String	-- the file this token was from
+	, line		:: Int		-- line number in the file
+	, column	:: Int }	-- column number in the file
+	deriving Eq
+
+
+-- | just show the token instead of the whole thing
+instance Show TokenP where
+ show tok	= show $ token tok
+
+
+-- | Source tokens
 data Token 
-	
-	-- Keywords, these have a special meaning in all contexts
-	-- and cannot be used as regular variables.
-	= Pragma		-- ^ pragma
-	
-	| Foreign		-- ^ foreign
-	| Import		-- ^ import
-	| Export		-- ^ export	
 
-	| Module		-- ^ module		(weak)
-	| Elaborate		-- ^ elaborate		(weak)
-	| Const			-- ^ const		(weak)
-	| Mutable		-- ^ mutable		(weak)
-	| Extern		-- ^ extern		(weak)
-	| CCall			-- ^ ccall		(weak)
+	-- Variables -----------------------------------------------------------
+	= ModuleName	[String]	-- a qualified module name, broken into parts
+	| Var		String		-- a non-constructor variable
+	| Con		String		-- a constructor variable
+	| Symbol	String		-- a symbol
+
+	-- Literal values ------------------------------------------------------
+	| CInt		Int
+	| CChar		Char
+	| CFloat	Float
+	| CString	String
 	
-	| Data			-- ^ data
-	| Region		-- ^ region
-	| Effect		-- ^ effect
 
-	| Class			-- ^ class
-	| Instance		-- ^ instance
-	| Project		-- ^ project
+	-- Weak keywords -------------------------------------------------------
+	-- They only have special meaning in particular contexts, in others contexts
+	-- they should be converted back to regular variables.
+	| Module		-- ^ module
+	| Elaborate		-- ^ elaborate
+	| Const			-- ^ const
+	| Mutable		-- ^ mutable
+	| Extern		-- ^ extern
+	| CCall			-- ^ ccall
+	
 
+	-- Regular keywords ----------------------------------------------------
+	| Pragma		-- ^ pragma
+
+	-- infix definitions
 	| InfixR		-- ^ infixr
 	| InfixL		-- ^ infixl
 	| Infix			-- ^ infix
 
+	-- module definitions
+	| Foreign		-- ^ foreign
+	| Import		-- ^ import
+	| Export		-- ^ export	
+	
+	-- type definitions
+	| Data			-- ^ data
+	| Region		-- ^ region
+	| Effect		-- ^ effect
+	| Class			-- ^ class
+	| Instance		-- ^ instance
+	| Project		-- ^ project
+	| Forall		-- ^ forall
+
+	-- expresions
 	| Let			-- ^ let
 	| In			-- ^ in
 	| Where			-- ^ where
@@ -66,25 +94,25 @@ data Token
 	| Unless		-- ^ unless
 	| Break			-- ^ break
 	
-	| Forall		-- ^ forall
 
-	-- 
+	-- Symbols ---------------------------------------------------------------------------------
+
+	-- type sumbols
 	| HasType		-- ^ ::
-	| HasTypeQuant		-- ^ :*
-
-	| HasTypeExact		-- ^ :::
-	| HasTypeExactQuant	-- ^ ::*
-
 	| IsSubtypeOf		-- ^ <:
-	| IsSubtypeOfQuant	-- ^ <*
+	| IsSuptypeOf		-- ^ :>
 
 	| HasOpType		-- ^ :$
 	| HasConstraint		-- ^ :-
 
 	| RightArrow		-- ^ ->
-	| LeftArrow		-- ^ <-
-	| LeftArrowLazy		-- ^ <\@-
 
+	-- shared between types and expressions
+	| LeftArrow		-- ^ <-
+	| Unit			-- ^ ()
+
+	-- expression symbols
+	| LeftArrowLazy		-- ^ <\@-
 	| GuardCase		-- ^ |-
 	| GuardCaseC		-- ^ ,-
 
@@ -93,7 +121,6 @@ data Token
 
 	| GuardDefault		-- ^ \=
 
-	| Unit			-- ^ ()
 	| DotDot		-- ^ ..
 
 	| Hash			-- ^ #
@@ -108,8 +135,17 @@ data Token
 	| Tilde			-- 
 	| Underscore		-- ^ _
 	| Hat			-- ^ ^
+	| BSlash		-- ^ \
+	| BTick			-- ^ `
+	| Equals		-- ^ =
+	| Comma			-- ^ ,
+	| Colon			-- ^ :
+	| SColon		-- ^ ;
+	| Bar			-- ^ |
+	| Dot			-- ^ .
+	| And			-- ^ &
 
-	-- Parenthesis.
+	-- parenthesis ---------------------------------------------------------
 	| ABra			-- ^ < (angled)
 	| AKet			-- ^ >
 
@@ -121,30 +157,9 @@ data Token
 
 	| SBra			-- ^ \[ (square)
 	| SKet			-- ^ ]
-
-	| BSlash		-- ^ \
-	| BTick			-- ^ `
-	| Equals		-- ^ =
-	| Comma			-- ^ ,
-	| Colon			-- ^ :
-	| SColon		-- ^ ;
-	| Bar			-- ^ |
-	| Dot			-- ^ .
-	| And			-- ^ &
 	
-	| ModuleName	[String]	-- module qualifier / name
-					--	broken into parts
-	| Var		String
-	| Con		String
-	| Symbol	String
-	
-	-- Constants.
-	| CInt		Int
-	| CChar		Char
-	| CFloat	Float
-	| CString	String
-
-	-- These tokens get eaten up by Source.Lexer.scan.
+	-- Comments ------------------------------------------------------------
+	-- These get eaten up before parsing
 	| NewLine			
 	| CommentLineStart
 	| CommentBlockStart
@@ -156,17 +171,7 @@ data Token
 
 	deriving (Show, Eq)
 
-data TokenP = 
-     TokenP 
-     	{ token 	:: Token
-	, file		:: String
-	, line		:: Int
-	, column	:: Int }
-	
-	deriving Eq
 
-instance Show TokenP where
- show tok	= show $ token tok
 
 
 	
