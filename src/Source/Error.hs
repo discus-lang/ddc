@@ -1,9 +1,7 @@
 
+-- Pretty printing of parse and renamer errors in the source program.
 module Source.Error
-(
-	Error(..)
-)
-
+	( Error(..))
 where
 
 -----
@@ -18,7 +16,7 @@ import Shared.Error
 
 import qualified Source.Token	as Token
 import qualified Source.TokenShow as Token
-import Source.Token	(Token(..), TokenP(..))
+import Source.Token
 
 import Source.Exp
 import Source.Pretty
@@ -26,41 +24,59 @@ import Source.Pretty
 stage	= "Source.Error"
 
 
+-- | All the errors that the parser and renamer can generate
 data Error
-	= ErrorParse		TokenP String
-	| ErrorParseBefore	TokenP
+	= ErrorLayoutLeft		TokenP
+	| ErrorLayoutNoBraceMatch 	TokenP
+	| ErrorParse			TokenP String
+	| ErrorParseBefore		[TokenP]
 	| ErrorParseEnd		
 	| ErrorUndefinedVar	
-	{ eUndefined		:: Var }
+		{ eUndefined		:: Var }
 
 	| ErrorShadowVar
-	{ eShadowVar		:: Var }
+		{ eShadowVar		:: Var }
 
 	| ErrorRedefinedVar	
-	{ eFirstDefined		:: Var
-	, eRedefined		:: Var }
+		{ eFirstDefined		:: Var
+		, eRedefined		:: Var }
 
+	| ErrorDefixNonAssoc		[Var]
+	| ErrorDefixMixedAssoc		[Var]
 
-	| ErrorDefixNonAssoc	[Var]
-	| ErrorDefixMixedAssoc	[Var]
 
 	deriving Show		
 
 
-
+-- | Pretty printer for error messages
 instance Pretty Error where
+
+ ppr (ErrorLayoutLeft tok)
+ 	= ppr $ unlines
+	[ prettyTokenPos tok
+	, "    Layout error: Nested block starts to the left of the enclosing one."]
+		
+ ppr (ErrorLayoutNoBraceMatch tok)
+ 	= ppr $ unlines
+	[ prettyTokenPos tok
+	, "    Layout error: Explicit close brace must match an explicit open brace."]
 
  ppr (ErrorParse tok str)
  	= ppr
 	$ unlines $
-	[ prettyPosT tok
+	[ prettyTokenPos tok
 	, "    Parse error: " ++ str ]
 
- ppr (ErrorParseBefore tok)
- 	= ppr
-	$ unlines $ 
-	[ prettyPosT tok
-	, "    Parse error before: " ++ prettyTok tok ++ "."]
+ ppr (ErrorParseBefore tt@(t1 : _))
+	| Just toks	<- sequence 
+			$ map takeToken 
+			$ take 10 tt
+
+ 	= ppr $ unlines $ 
+	[ prettyTokenPos t1
+	, "    Parse error before: " ++ (catInt " " $ map Token.showSource toks) ++ " ..."]
+
+
 
  ppr (ErrorParseEnd)
  	= ppr $ unlines $ 
@@ -103,13 +119,5 @@ instance Pretty Error where
 	$ "ppr: no match for " % show x
 	
 
-prettyPosT :: TokenP	-> String
-prettyPosT tok
-	=         (Token.file tok)
-	++ ":" ++ (show $ Token.line tok) 
-	++ ":" ++ (show $ Token.column tok)
-
-prettyTok tok
-	= "'" ++ (Token.showSource $ Token.token tok) ++ "'"
 
 

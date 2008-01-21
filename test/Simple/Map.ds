@@ -1,16 +1,16 @@
 
 import Base;
 
+
 data	List %r1 a
 	= Nil
 	| Cons { 
 		x 	:: a;
-		xs	:: List %r1 a; };
+		xs	:: List %r1 a; }
 
 map f xx
- = case xx of { 
- 	Nil		-> Nil;
-	Cons x  xs	-> Cons (f x) (map f xs);
- };
+ = case xx of
+ 	Nil		-> Nil
+	Cons x  xs	-> Cons (f x) (map f xs)
 
 

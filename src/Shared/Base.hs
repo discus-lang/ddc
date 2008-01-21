@@ -16,7 +16,7 @@ data SourcePos
 	deriving (Show, Eq)
 	
 instance Pretty SourcePos where
- ppr (SourcePos (f, l, c))	= ppr $ f ++ ":" ++ show l ++ ":" ++ show c
+ ppr (SourcePos (f, l, c))	= ppr $ f ++ ":" ++ show l ++ ":" ++ show (c - 1)
  ppr NoSourcePos		= ppr "@NoSourcePos"
 
 

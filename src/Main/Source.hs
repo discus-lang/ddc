@@ -90,7 +90,7 @@ parse 	:: (?args :: [Arg])
 parse	fileName
 	source
  = do
-	let tokens	= map (\t -> t { Token.file = fileName }) 
+	let tokens	= map (\t -> t { Token.tokenFile = fileName }) 
 			$ scan source
 			
 	let sParsed	= Source.Parser.parse tokens

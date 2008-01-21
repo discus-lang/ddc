@@ -1,42 +1,40 @@
 
-import Graphics.Render;
-import Graphics.Shape;
+import Graphics.Render
+import Graphics.Shape
 
 main ()
- = topHandle simple;
+ = topHandle simple
 
 simple ()
- = do {	
- 	frame	= frame_new "Square" 600 600;
-	gate (\z -> squareSpin frame 1.0);
- };
- 
-squareSpin :: Frame -> Float -> ();
-squareSpin frame rot
- = do {
-	arrayUI_fill frame.array 0;
-
-	renderPrims frame [(id&{Matrix33} (), Color 255 255 255)] 
-		$  [ Translate 300.0 300.0 ]
-		++ frac 3 rot;
-
-	frame.update;
+ = do 	frame	= frame_new "Square" 600 600
+	gate (\z -> squareSpin frame 1.0)
 	
-	when (rot > 4.0) break;
-
-	squareSpin frame (rot + 0.01);
- };
  
+squareSpin :: Frame -> Float -> ()
+squareSpin frame rot
+ = do 	arrayUI_fill frame.array 0
+
+	renderPrims frame [(id&{Matrix33} (), Color 255 255 255)]
+		$  [ Translate 300.0 300.0 ]
+		++ frac 3 rot
+
+	frame.update
+	
+	when (rot > 4.0) break
+
+	squareSpin frame (rot + 0.01)
+
 
 frac ::	Int %r2 -> Float -> [Primitive %r1]
 	:- Direct %r1
-	,  Const %r2;
+	,  Const %r2
+
 frac n r
  = if n == 0 
  	then rectangleC 50.0 50.0
 
-	else do {
-		c	= Color (n * 40 + 50) (n * 40 + 50) (n * 60 + 50);
+	else do
+		c	= Color (n * 40 + 50) (n * 40 + 50) (n * 60 + 50)
 		
 		rectangleC 50.0 50.0
 		  ++ 	[ Local	[ Translate (0.0 + 50.0) (0.0 + 50.0)
@@ -58,9 +56,7 @@ frac n r
 				, Rotate    r
 				, c
 				, Prims (frac (n - 1) (r * 1.1)) ]
-
-			];
-	};
+			]
 
 
 

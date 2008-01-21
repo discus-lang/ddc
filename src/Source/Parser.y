@@ -30,7 +30,7 @@ import Source.Error
 
 
 import qualified Source.Token 	as K
-import Source.Token 		(TokenP(..), Token, token)
+import Source.Token
 import Source.Exp
 import Source.Util
 import Type.Util		(pure, empty, takeKindOfType)
@@ -165,59 +165,60 @@ stage 	= "Source.Parser"
 %%
 
 
------------------------------------------------------------------------------------------------------------------------------------- 
+----------------------------------------------------------------------------------------------------
+-- Top level ---------------------------------------------------------------------------------------
 
---------------------
--- Top level
---------------------
+file 	:: { [Top] }
+	: '{' tops '}'					{ $2				}
 
------
+
 tops		
-	:: { [Top] }
-	:  {- empty -}				{ []					}
-	|  top tops				{ $1 ++ $2				}
+	:: { [Top] }	
+	:  top mSemis					{ $1				}
+	|  top semis tops				{ $1 ++ $3			}
 
+	
 -----
 top		
 	:: { [Top] }
-	: 'pragma' expApps ';'				{ [PPragma $2]					}
-	| 'module' module ';'				{ [PModule $2]					}
+	: 'pragma' expApps 				{ [PPragma $2]					}
+	| 'module' module 				{ [PModule $2]					}
 		 
 	| 'import' 'extern'  externSig			{ [$3]						}
 	| 'import' 'extern' '{' externSigs '}' 		{ $4						}
 		
-	| 'import' module        ';'			{ [PImportModule   [$2]]			}
+	| 'import' module        			{ [PImportModule   [$2]]			}
 	| 'import' '{' module_semi '}' 			{ [PImportModule   $3]				}
 
 	| 'foreign' foreign				{ [PForeign $2]					}
 
 
-	| infixMode INT symbolList ';'			{ [PInfix    $1 (getCIntValue $2) $3]		}
-	| dataDef ';'					{ [$1]						}
+	| infixMode INT symbolList 			{ [PInfix    $1 (getCIntValue $2) $3]		}
+	| dataDef 					{ [$1]						}
 
-	| 'effect' pCon '::' kind ';'			{ [PEffect  (vNameE $2) $4]			}
-	| 'region' pVar ';'				{ [PRegion  (vNameR $2)]			}
+	| 'effect' pCon '::' kind 			{ [PEffect  (vNameE $2) $4]			}
+	| 'region' pVar 				{ [PRegion  (vNameR $2)]			}
 
 	-- class defs
-	| 'class' pCon '::' kind ';' 
+	| 'class' pCon '::' kind  
 	{ [PClass   (vNameW $2) $4] }
 
-	| 'class' pCon pVar 'where' '{' typeSig_Ss '}' 	
+	| 'class' pCon pVar 'where' '{' typeSig_Ss '}'
 	{ [PClassDict (vNameW $2) [vNameT $3] [] $6 ] }
 
 	| 'instance' pCon typeZ_space 'where' '{' binds '}'
 	{ [PClassInst (vNameW $2) $3 [] $6 ] }
 
 	-- projection defs
-	| 'project' typeA 'where' '{' stmtSigBinds '}'
+	| 'project' typeA 'where' '{' bindSigs '}'
 	{ [PProjDict $2 $5]		}
 
 	-- type sigs
-	| pVar '::' type ';'	
+	| pVar '::' type 	
 	{ [PType (spTP $2) (vNameV $1) $3]						}
 		
 	-- statements
-	| expApps '=' exp ';'				
+	| expApps '=' exp 				
 	{ [PStmt (SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3)]		}
 
 
@@ -230,8 +231,8 @@ foreign
 		
 foreignExtern	
 	:: { Foreign }
-	: 'extern' mString pVar '::' type ';'		 { OExtern $2 $3 $5 Nothing	}
-	| 'extern' mString pVar '::' type ':$' typeN ';' { OExtern $2 $3 $5 (Just $7) 	}
+	: 'extern' mString pVar '::' type 		 { OExtern $2 $3 $5 Nothing	}
+	| 'extern' mString pVar '::' type ':$' typeN     { OExtern $2 $3 $5 (Just $7) 	}
 
 
 mString		
@@ -254,12 +255,12 @@ module
 						
 		++ [Var.name $1]
 	}
-
+{-
 module_parts
 	:: { [String] }
 	: CON 					{ let K.Con str = token $1 in [str]	}
 	| CON '.' module_parts			{ let K.Con str = token $1 in str : $3	}
-
+-}
 module_semi
 	:: { [Module] }
 	: {- empty -}				{ [] 					}
@@ -288,12 +289,12 @@ externSigs
 
 typeSig
 	:: { ([Var], Type) }
-	: pVars_comma '::' type ';'		{ ($1, $3)				}
+	: pVars_comma '::' type 		{ ($1, $3)				}
 			
 typeSig_Ss
 	:: { [([Var], Type)] }
-	: typeSig				{ [$1]					}
-	| typeSig typeSig_Ss			{ $1 : $2				}
+	: typeSig mSemis			{ [$1]					}
+	| typeSig semis typeSig_Ss		{ $1 : $3				}
 			
 
 -----
@@ -336,9 +337,9 @@ instCstr
 	: CON typeZ_Ssp				{ (toVarS $1, $2)			}
 -}
 
---------------------
--- Expressions
---------------------
+----------------------------------------------------------------------------------------------------
+-- Expressions -------------------------------------------------------------------------------------
+
 
 -----
 exp	:: { Exp }
@@ -368,7 +369,7 @@ expE	:: { Exp }
 
 expE2	:: { Exp }
 	: expInfix				{ $1					}
-	| 'let' '{' stmts '}' 'in' expInfix	{ XLet		(spTP $1) $3 $6		}
+	| 'let' '{' bindSigs '}' 'in' expInfix	{ XLet		(spTP $1) $3 $6		}
 	| 'throw'  expInfix			{ XThrow	(spTP $1) $2		}
 
 expInfix
@@ -405,7 +406,7 @@ expZ
 	: expA					{ $1					}
 
 	-- do
-	| 'do'  '{' stmts '}'			{ XDo           (spTP $1) $3		}
+	| 'do'  '{' bindSigStmts '}'		{ XDo           (spTP $1) $3		}
 
 	-- case / match
 	| 'case' exp 'of' '{' caseAlts '}'	{ XCase 	(spTP $1) $2 $5		} 
@@ -459,61 +460,70 @@ constU
 	| '#'					{ True }
 
 
------
-stmt
-	:: {  Stmt }
-	:  exp          ';'			{ SBind (spX $1) Nothing $1		}
-	|  bind					{ $1					}
-	|  pVar '::' type ';'			{ SSig (spTP $2) (vNameV $1) $3		}
+----------------------------------------------------------------------------------------------------
+-- Bindings ----------------------------------------------------------------------------------------
 
-stmts
-	:: { [Stmt] }
-	:  stmt					{ [$1] 					}
-	|  stmt stmts				{ $1 : $2 				}
-
+-- a binding
 bind
 	:: { Stmt }
-	:  expApps '=' exp ';'			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3	}
+	:  expApps '=' exp 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3	}
 
 binds
 	:: { [Stmt] }
-	:  bind					{ [$1] }
-	|  bind binds				{ $1 : $2 }
+	:  bind	mSemis				{ [$1] }
+	|  bind semis binds			{ $1 : $3 }
 
-stmtSigBinds
-	:: { [Stmt] }
-	: stmtSigBind				{ [$1] }
-	| stmtSigBind stmtSigBinds		{ $1 : $2 }
-		
-stmtSigBind
+
+-- | A binding or signature
+bindSig
  	:: { Stmt }
 	:  bind					{ $1					}
-	|  pVar '::' type ';'			{ SSig (spTP $2) (vNameV $1) ($3)	}
+	|  pVar '::' type 			{ SSig (spTP $2) (vNameV $1) ($3)	}
+
+bindSigs
+	:: { [Stmt] }
+	: bindSig mSemis			{ [$1] }
+	| bindSig semis bindSigs		{ $1 : $3 }
 
 
------
+-- a binding, signature or statement
+bindSigStmt
+	:: {  Stmt }
+	:  expApps '=' exp 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3	} 
+	|  pVar '::' type 			{ SSig (spTP $2) (vNameV $1) ($3)	}
+	|  exp          			{ SBind (spX $1) Nothing $1		}
+
+bindSigStmts
+	:: { [Stmt] }
+	:  bindSigStmt mSemis			{ [$1] 					}
+	|  bindSigStmt semis bindSigStmts	{ $1 : $3				}
+
+
+		
+
+----------------------------------------------------------------------------------------------------
+-- Case Alternatives -------------------------------------------------------------------------------
+
 caseAlts
 	:: { [Alt] }
-	:  caseAlt				{ [$1]					}
-	|  caseAlt caseAlts			{ $1 : $2				}
+	:  caseAlt mSemis			{ [$1]					}
+	|  caseAlt semis caseAlts		{ $1 : $3				}
 
 caseAlt
 	:: { Alt }				
-	:  pat      '->' exp ';'		{ APat $1 $3				}
-	|  '_'      '->' exp ';'		{ ADefault $3				}
+	:  pat      '->' exp 			{ APat $1 $3				}
+	|  '_'      '->' exp 			{ ADefault $3				}
 
 -----
 matchAlts
 	:: { [Alt] }
-	:  matchAlt				{ [$1]					}
-	|  matchAlt matchAlts			{ $1 : $2				}
+	:  matchAlt mSemis			{ [$1]					}
+	|  matchAlt semis matchAlts		{ $1 : $3				}
 		
 matchAlt
 	:: { Alt }
---	:  '|' exp '=' exp ';'			{ AGuard (spTP $1) $2 $4		}
-
-	:  guards '=' exp ';'			{ AAlt $1 $3				}
-	|  '\\=' exp	';'			{ AAlt [] $2				}
+	:  guards '=' exp 			{ AAlt $1 $3				}
+	|  '\\=' exp				{ AAlt [] $2				}
 		
 guards	:: { [Guard] }
 	: guard1				{ [$1]					}
@@ -558,9 +568,8 @@ labelPat
 	| '.' INT  '=' pVar			{ (LIndex (getCIntValue $2), WVar $4)	}
 		
 
------------------------
--- Constructor Sugar
------------------------
+----------------------------------------------------------------------------------------------------
+-- Constructor Sugar -------------------------------------------------------------------------------
 
 -----
 tuple	:: { Exp }			
@@ -600,10 +609,8 @@ lcQual	:: { LCQual }
 	| exp					{ LCExp $1				}
 		
 
-
----------------------
--- Data Definitions
----------------------
+----------------------------------------------------------------------------------------------------
+-- Data Definitions --------------------------------------------------------------------------------
 
 dataDef	:: { Top }
 	: 'data' pCon pVars_space_empty				
@@ -678,9 +685,8 @@ dataType_Ss
 	| dataType dataType_Ss				{ $1 : $2				}
 
 
---------------------------
--- Kind Expressions
--------------------------
+----------------------------------------------------------------------------------------------------
+-- Kind Expressions --------------------------------------------------------------------------------
 
 kind	:: { Kind }
 	: kindA						{ $1					}
@@ -693,10 +699,10 @@ kindA	:: { Kind }
 	| '+'						{ KFetter				}
 
 								
+----------------------------------------------------------------------------------------------------
+-- Type Expressions --------------------------------------------------------------------------------
 
------------------------
--- Type Expressions
------------------------
+
 type	:: { Type }
 	: typeQuant					{ $1					}
 	| 'elaborate' type				{ TElaborate $2				}
@@ -758,16 +764,15 @@ typeN_Scp
 	| typeN ',' typeN_Scp				{ $1 : $3				}
 
 -----
-{-
-typeArg_Ss	
-	:: { [Type] }
-	: typeArg					{ [$1]					}
-	| typeArg typeArg_Ss				{ $1 : $2				}
+-- typeArg_Ss	
+--	:: { [Type] }
+--	: typeArg					{ [$1]					}
+--	| typeArg typeArg_Ss				{ $1 : $2				}
 
-typeArg	
-	:: { Type }
-	: typeZ						{ $1					}
--}		
+-- typeArg	
+--	:: { Type }
+--	: typeZ						{ $1					}
+
 
 -- quantified Vars
 quantVars
@@ -781,8 +786,8 @@ quantVar
 							  , kindOfVarSpace (Var.nameSpace $1))		}
 	| '(' pVar '::' kind ')'			{ ($2,	$4)					} 
 
------------------------
--- Fetter Expressions
+----------------------------------------------------------------------------------------------------
+-- Fetter Expressions ------------------------------------------------------------------------------
 -----------------------
 
 fetters	:: { [Fetter] }
@@ -797,8 +802,8 @@ fetter	:: { Fetter }
 	| qCon trec1_space				{ FConstraint (vNameW $1) $2		}
 
 	
------------------------
--- Effect Expressions
+----------------------------------------------------------------------------------------------------
+-- Effect Expressions ------------------------------------------------------------------------------
 -----------------------
 
 effect	:: {Effect}
@@ -823,8 +828,8 @@ effect1	:: { Effect }
 	| '(' effect ')'				{ $2 }
 
 
----------------------
--- Closure
+----------------------------------------------------------------------------------------------------
+-- Closure -----------------------------------------------------------------------------------------
 ---------------------
 
 closure :: { Closure }
@@ -891,25 +896,26 @@ qVar	:: { Var }
 	: pVar						{ $1					}
 	| MODULENAME '.' pVar				{ $3 { Var.nameModule = makeModule $1 }	}
 
-qVars	:: { [Var] }
-qVars	: {- empty -} 					{ []					}
-	| qVar qVars					{ $1 : $2				}
 
-qVars_comma
-	:: { [Var] }
-	: qVar						{ [$1]					}
-	| qVar ',' qVars_comma				{ $1 : $3				}
+-- qVars :: { [Var] }
+-- qVars : {- empty -} 					{ []					}
+--	 | qVar qVars					{ $1 : $2				}
+
+
+-- qVars_comma
+--	:: { [Var] }
+--	: qVar						{ [$1]					}
+--	| qVar ',' qVars_comma				{ $1 : $3				}
 
 pVar	:: { Var }
 	: varBase					{ $1 					}
 	| '(' symbol ')'				{ $2					}
 
 
-pVars_space
-	:: { [Var] }
-	: pVar						{ [$1]					}
-	| pVar pVars_space				{ $1 : $2				}
-
+-- pVars_space
+--	:: { [Var] }
+--	: pVar						{ [$1]					}
+--	| pVar pVars_space				{ $1 : $2				}
 
 pVars_space_empty
 	:: { [Var] }
@@ -951,13 +957,25 @@ symbol	:: { Var }
 	| '%'						{ toVar $1				}
 
 
+-- symbols
+
+-- we usually want to allow extra semicolons
+semis :: { () }
+	: ';'						{ () }
+	| ';' semis					{ () }
+
+-- maybe some semi colons
+mSemis :: { () }
+	: {-- empty --}					{ () }
+	| semis						{ () }
+
 { -- Start of Happy Haskell code
 
 
 -- | Callback for happy to use when it's not happy.
 happyError ::	[TokenP] -> a
 happyError	[]	= dieWithUserError [ErrorParseEnd]
-happyError	(x:xs)	= dieWithUserError [ErrorParseBefore x]
+happyError	(x:xs)	= dieWithUserError [ErrorParseBefore (x:xs)]
 
 
 -- | Convert a token to a variable
@@ -1004,7 +1022,7 @@ makeVar :: String -> TokenP -> Var
 makeVar    name@(n:_) tok
 	= (Var.new name)
 	 	{ Var.info	=	
-		[ Var.ISourcePos (SourcePos (file tok, line tok, column tok)) ] }
+		[ Var.ISourcePos (SourcePos (tokenFile tok, tokenLine tok, tokenColumn tok)) ] }
 
 -- | Make either a TData or TEffect constructor, depending on the namespace of the variable
 makeTECon :: Var -> [Type] -> Type
@@ -1033,7 +1051,7 @@ checkVar	tok	  e
 -- | Make a constant expression from this token
 makeConst ::	Bool -> TokenP -> Exp
 makeConst	isUnboxed tok
- = let	sp	= SourcePos (file tok, line tok, column tok)
+ = let	sp	= SourcePos (tokenFile tok, tokenLine tok, tokenColumn tok)
    in   if isUnboxed 
    		then XConst sp $ CConstU $ makeLit tok
 		else XConst sp $ CConst  $ makeLit tok
@@ -1063,7 +1081,7 @@ getCIntValue	tok
 -- | Slurp the source position from this token.
 spTP :: TokenP -> SourcePos
 spTP    tok
- = SourcePos (file tok, line tok, column tok)
+ = SourcePos (tokenFile tok, tokenLine tok, tokenColumn tok)
 
 
 -- | Slurp the source position from this expression.

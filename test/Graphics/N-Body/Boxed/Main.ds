@@ -15,106 +15,100 @@
 --	Unbox truncate/toFloat
 --
 
-import Graphics.Render;
-import Data.Array;
-import DDC.Runtime;
-import Math.Vec2;
+import Graphics.Render
+import Data.Array
+import DDC.Runtime
+import Math.Vec2
 
 
-time_compression	= 1.0;
-attract_range		= 20.0;
-draw_force_step		= 2;
+time_compression	= 1.0
+attract_range		= 20.0
+draw_force_step		= 2
 
-worldSize		= Vec2 500 500;
-newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0);
+worldSize		= Vec2 500 500
+newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
 
-frameCount		= 0;
-frameCount_max		= 5;
+frameCount		= 0
+frameCount_max		= 5
 
 -- Main -----------------------------------------------------------------------------
 
 -----
 main ()
- = topHandle nbody;
+ = topHandle nbody
 
 nbody ()
- = do {	frame	= frame_new "N-Body" worldSize.x worldSize.y;
-	case initBodies () of {
-		Tuple2 body0 body1 -> run frame body0 body1;
-	};
- };
+ = do 	frame	= frame_new "N-Body" worldSize.x worldSize.y
+
+	case initBodies () of
+		Tuple2 body0 body1 -> run frame body0 body1
 
 
 -- | Main loop.
-run :: 	Frame -> Array Body -> Array Body -> ();
+run :: 	Frame -> Array Body -> Array Body -> ()
 run 	frame body0 body1
- = match {
-
+ = match 
 	-- bail out if we've reached the maximum frame count.
  	| frameCount_max /= 0
-	  && (frameCount > frameCount_max)
-	= ();
+	, frameCount > frameCount_max
+	= ()
 	
-	\= do {	
-		-- update all the positions
-		mapArrayIx_ (\x -> x.update body0) body1;
-		mapArray_   (\x -> x.clampPos)	body1;
+	\= do	-- update all the positions
+		mapArrayIx_ (\x -> x.update body0) body1
+		mapArray_   (\x -> x.clampPos)	body1
 
 		-- clear the buffer and draw the new forces
-		frame.clear (frame_color 0 0 0);
-		draw_force frame body1 0 0;
+		frame.clear (frame_color 0 0 0)
+		draw_force frame body1 0 0
 
-		mapArray_   (\x -> x.draw frame) body1;
+		mapArray_   (\x -> x.draw frame) body1
 
 		-- flip the buffer
-	 	frame.update;
+	 	frame.update
 
-		frameCount += 1;
-		run frame body1 body0;
-	};
- };
+		frameCount += 1
+		run frame body1 body0
+
 
 
 -- | Initialise the world world.
 initBodies ()
- = do {	
-	-- all the bodies have static starting positions.
+ = do
+ 	-- all the bodies have static starting positions.
 	bodies 
 	 = 	[ newBody (Vec2 200.0 300.0) (Vec2 (0.0 - 0.5)	0.0)
 		, newBody (Vec2 280.0 350.0) (Vec2  0.5		0.0)
 		, newBody (Vec2 520.0 200.0) (Vec2  0.0         1.0)
 	 	, newBody (Vec2 100.0 300.0) (Vec2  0.0        (0.0 - 1.0))
 		, newBody (Vec2 280.0 450.0) (Vec2  1.0         1.0)
-		, newBody (Vec2 020.0 200.0) (Vec2  0.0         0.0) ];
+		, newBody (Vec2 020.0 200.0) (Vec2  0.0         0.0) ]
 
 
 	-- make a new array of bodies.
-	body0	= array_new (length bodies) (errorNoEff @ "elem not initialised");
+	body0	= array_new (length bodies) (errorNoEff @ "elem not initialised")
 	zipWith_ (\b i -> body0 #(i) #= b)
-		bodies [0 .. array_size body0 -1];
+		bodies [0 .. array_size body0 -1]
 
 
 	-- an array to hold the body positions for the next frame.
-	body1	= array_new (length bodies) (errorNoEff @ "elem not initialised");
+	body1	= array_new (length bodies) (errorNoEff @ "elem not initialised")
 
 	map_	(\i -> body1 #(i) #= newBody (Vec2 0.0 0.0) (Vec2 0.0 0.0))
-		[0.. array_size body1 - 1];
+		[0.. array_size body1 - 1]
 		
-
-	(body0, body1);
- };
+	(body0, body1)
 
 
 -- | Draw the forces (unoptimised version)
 --   Creates an intermediate list of Vec2s and then sums them.
 --
-draw_force :: Frame -> Array Body -> Int -> Int -> ();
+draw_force :: Frame -> Array Body -> Int -> Int -> ()
 draw_force frame body x y
- = match {
- 	| x >= worldSize.x 	= draw_force frame body 0 	(y + draw_force_step);
-	| y >= worldSize.y	= ();
+ = match 
+ 	| x >= worldSize.x 	= draw_force frame body 0 	(y + draw_force_step)
+	| y >= worldSize.y	= ()
 	
-	\= do {
+	\= do
 		-- calculate the force vector at this point.
 		forceV	= sum&{Vec2 Float}
 			$ mapArrayToList
@@ -122,63 +116,53 @@ draw_force frame body x y
 						1.0 (b.mass)
 						(toFloat x) (toFloat y)
 						b.pos.x     b.pos.y)
-			$ body;
+			$ body
 
 		-- determine the color of the point based on the magnitude of the force.
-		forceS	= forceV.magnitude;
-		fS	= log forceS + 6.0;
-		color	= forceColor fS;
+		forceS	= forceV.magnitude
+		fS	= log forceS + 6.0
+		color	= forceColor fS
 
 		-- draw the point				
 		frame.point  
 			x (frame.sizeY - y)
-			color;
+			color
 			
-		draw_force frame body (x + draw_force_step) y;
-	};
- };
+		draw_force frame body (x + draw_force_step) y
 
 
 -- | Choose a color to render this force
 forceColor fS
- = match {
-	| fS < 0.0	= frame_color 0 0 0;
+ = match
+	| fS < 0.0	= frame_color 0 0 0
 
 	| fS < 1.0	
-	= do {	x	= fS;
-		c	= truncate (x * 255.0);
-		frame_color 0 0 c;
-	};
+	= do 	x	= fS
+		c	= truncate (x * 255.0)
+		frame_color 0 0 c
 		
 	| fS < 2.0
-	= do {	x	= fS - 1.0;
-		c	= truncate (x * 255.0);
-		frame_color 0 c (255 - c);
-	};
+	= do 	x	= fS - 1.0
+		c	= truncate (x * 255.0)
+		frame_color 0 c (255 - c)
 
 	| fS < 3.0
-	= do {	x	= fS - 2.0;
-		c	= truncate (x * 255.0);
-		frame_color c (255 - c) 0;
-	};
+	= do 	x	= fS - 2.0
+		c	= truncate (x * 255.0)
+		frame_color c (255 - c) 0
 
 	| fS < 4.0
-	= do {	x	= fS - 3.0;
-		c	= truncate (x * 255.0);
-		frame_color (255 - c) c c;
-	};
+	= do 	x	= fS - 3.0
+		c	= truncate (x * 255.0)
+		frame_color (255 - c) c c
 
 	| fS < 5.0
-	= do {	x	= fS - 4.0;
-		c	= truncate (x * 255.0);
-		frame_color c (255 - c) c;
-	};
-		
+	= do 	x	= fS - 4.0
+		c	= truncate (x * 255.0)
+		frame_color c (255 - c) c
 				
-	\= 	frame_color 255 255 255;
- };
+	\= 	frame_color 255 255 255
 					
-
 
 -- Body -----------------------------------------------------------------------------
 data Body %r1 
@@ -189,102 +173,92 @@ data Body %r1
 		pos	:: Vec2 %r1 (Float %r1);
 		vel	:: Vec2 %r1 (Float %r1);
 		acc	:: Vec2 %r1 (Float %r1);
-	};
+	}
 
 
 project Body where
-{
+
 	-- | Convert a body to a string.
-	show b
-	 = case b of {
- 		Body mass pos vel acc
-			-> "Body " 
-				% show mass 
-				% " (" % pos.show % ")"
-				% " (" % vel.show % ")";
- 	 };
+	show (Body mass pos vel acc)
+	 = "Body " 
+		% show mass 
+		% " (" % pos.show % ")"
+		% " (" % vel.show % ")"
 
 	
 	-- | Calculate the force vector acting on the first body from the second.
-	force2 :: Body -> Body -> Vec2 Float;
+	force2 :: Body -> Body -> Vec2 Float
 	force2 body0 body1
 	 = forceVec&{Body}
 	 	body0.mass body1.mass 
 		body0.pos.x body0.pos.y
-		body1.pos.x body1.pos.y;
+		body1.pos.x body1.pos.y
 
 
 	-- | Increment position based on current velocity.
-	pulse :: Body -> ();
+	pulse :: Body -> ()
 	pulse ^body
-	 = do {	_vel += _acc;
-		_pos += _vel;
-	 };
+	 = do 	_vel += _acc
+		_pos += _vel
 
 
-	update :: Body -> Array Body -> Int -> ();
+	update :: Body -> Array Body -> Int -> ()
 	update	^b1 body0 i
-	 = do {
-
+	 = do 
 	 	-- copy the old body info
-		b0	= body0.(i);
-		_mass	:= b0.mass;
+		b0	= body0.(i)
+		_mass	:= b0.mass
 	
 		-- calculate force on this body.
-		fV	= sumForces&{Body} body0 i;
+		fV	= sumForces&{Body} body0 i
 	
 		-- acc = force / mass
-		_acc 	:= (Vec2 (0.0 - fV.x / b0.mass) (0.0 - fV.y / b0.mass));
-		_vel 	:= (b0.vel + (_acc.muls time_compression));
-		_pos 	:= (b0.pos + (_vel.muls time_compression));
-	 };
+		_acc 	:= (Vec2 (0.0 - fV.x / b0.mass) (0.0 - fV.y / b0.mass))
+		_vel 	:= (b0.vel + (_acc.muls time_compression))
+		_pos 	:= (b0.pos + (_vel.muls time_compression))
 
 
 	-- | Clamp a body's position so it remains in the world.
-	clampPos :: Body -> ();
-	clampPos	^b
-	 = do {	
-	 	when (_pos.x < 0.0) 
-			_pos.x += toFloat worldSize.x;
+	clampPos :: Body -> ()
+	clampPos ^b
+	 = do  	when (_pos.x < 0.0) 
+			_pos.x += toFloat worldSize.x
 	
 	 	when (_pos.x > toFloat worldSize.x)
-			_pos.x += 0.0 - toFloat worldSize.x;
+			_pos.x += 0.0 - toFloat worldSize.x
 
 	 	when (_pos.y < 0.0)
-			_pos.y += toFloat worldSize.y;
+			_pos.y += toFloat worldSize.y
 
 	 	when (_pos.y > toFloat worldSize.y)
-			_pos.y += 0.0 - toFloat worldSize.y;
-	 };
+			_pos.y += 0.0 - toFloat worldSize.y
 
 
 	-- | Draw this body in the frame.
-	draw :: Body -> Frame -> ();
+	draw :: Body -> Frame -> ()
 	draw body frame
-	 = match {
+	 = match 
 	 	| Body mass pos vel acc	<- body
 		, Vec2 pX pY		<- pos
-		= if   (truncate pX < 0) || (truncate pX > worldSize.x) 
-		    || (truncate pY < 0) || (truncate pY > worldSize.y)
-		    then ()
-		    else do {
---			frame.circle 10
---				(truncate pX) (truncate pY)
---				20
---				(frame_color 255 255 255);
-			();
+		= match 
+			| (truncate pX < 0) || (truncate pX > worldSize.x) 
+			= ()
+			
+			\= ()
+--					frame.circle 10
+--					(truncate pX) (truncate pY)
+--					20
+--					(frame_color 255 255 255);
 		
-		    };
-	 };	
 
 
 	-- | Work out the force acting on the body with this index in the array.
-	sumForces :: Array Body -> Int -> Vec2 Float;
+	sumForces :: Array Body -> Int -> Vec2 Float
 	sumForces body i
 		= sum&{Vec2 Float}
 		$ map (body.(i).force2)
 		$ map (index body) 
-		$ deleteF (==) [0.. array_size body - 1] i;
+		$ deleteF (==) [0.. array_size body - 1] i
 
 
 	-- | Work out the force between two bodies.
@@ -292,25 +266,22 @@ project Body where
 	 	:: Float -> Float 	-- mass1, mass2
 	 	-> Float -> Float 	-- position x1, y1
 		-> Float -> Float 	-- position x2, y2
-		-> Vec2 Float;		-- resulting force
+		-> Vec2 Float		-- resulting force
 
 	forceVec m1 m2 x1 y1 x2 y2
-	 = do {
-	 	dx	= x2 - x1;
-		dy	= y2 - y1;
+	 = do  	dx	= x2 - x1
+		dy	= y2 - y1
 		
-	 	d2	= dx * dx  +  dy * dy;
-		d	= sqrt d2;
+	 	d2	= dx * dx  +  dy * dy
+		d	= sqrt d2
 
-		attract_force	= m1 * (m2 / d2);
+		attract_force	= m1 * (m2 / d2)
 		forceS		= if d < attract_range
 					then 	attract_force * (d / attract_range) 
 					   - 	(attract_force * (attract_range / d))
-					else attract_force;
+					else attract_force
 
-		theta	= (Vec2 dx dy).angle;
-		forceV	= Vec2 (forceS * cos theta) (forceS * sin theta);
-		forceV;
-	 };
-}
-
+		theta	= (Vec2 dx dy).angle
+		
+		Vec2 (forceS * cos theta) (forceS * sin theta)
+		

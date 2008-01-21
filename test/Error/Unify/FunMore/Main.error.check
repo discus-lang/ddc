@@ -1,4 +1,4 @@
-<unknown>:0:0
+<unknown>:0:-1
     Type mismatch during unification.
           cannot match: *336 -(!340 $341)> *313
                   with: Base.Int %324

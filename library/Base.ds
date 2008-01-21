@@ -2,9 +2,9 @@
 -----------------------
 -- Abstract operational types.
 --
-data	Obj;
-data	Data;
-data	Thunk;
+data	Obj
+data	Data
+data	Thunk
 
 
 -----------------------
@@ -13,74 +13,74 @@ data	Thunk;
 
 -- These simple types are always passed by value, and cannot be 
 --	updated, so they don't need region annotations.
-data	Void#;
-data	Ptr# a;
+data	Void#
+data	Ptr# a
 
-data	Bool#;
+data	Bool#
 
-data	Word8#;
-data	Word16#;
-data	Word32#;
-data	Word64#;
+data	Word8#
+data	Word16#
+data	Word32#
+data	Word64#
 
-data	Int8#;
-data	Int16#;
-data 	Int32#;
-data	Int64#;
+data	Int8#
+data	Int16#
+data 	Int32#
+data	Int64#
 
-data	Float32#;
-data	Float64#;
+data	Float32#
+data	Float64#
 
 -- Strings are represented as pointers to blocks of memory that 
 --	can be updated, so they need a region.
-data	String# %r;
+data	String# %r
 
 data	Unit	
-	= Unit;
+	= Unit
 
-data	Char 	%r;
-data	Int 	%r;
-data 	Float 	%r;
+data	Char 	%r
+data	Int 	%r
+data 	Float 	%r
 
 data 	Ref %r1 a
-	= Ref a;
+	= Ref a
 
 
 -----------------------
 -- Region / Effect Classes
 --
-class	Const		:: % -> +;
-class	Mutable		:: % -> +;
-class	Lazy		:: % -> +;
-class	Direct		:: % -> +;
+class	Const		:: % -> +
+class	Mutable		:: % -> +
+class	Lazy		:: % -> +
+class	Direct		:: % -> +
 
-class	ConstT		:: * -> +;
-class	MutableT	:: * -> +;
-class	DirectT		:: * -> +;
+class	ConstT		:: * -> +
+class	MutableT	:: * -> +
+class	DirectT		:: * -> +
 
-class	LazyT		:: * -> +;
-class	LazyH		:: * -> +;
+class	LazyT		:: * -> +
+class	LazyH		:: * -> +
 
-class	Pure		:: ! -> +;
+class	Pure		:: ! -> +
 
-class	Shape2		:: * -> * -> +;
-class	Shape3		:: * -> * -> * -> +;
-class	Shape4		:: * -> * -> * -> * -> +;
-class	Shape5		:: * -> * -> * -> * -> * -> +;
-class	Shape6		:: * -> * -> * -> * -> * -> * -> +;
+class	Shape2		:: * -> * -> +
+class	Shape3		:: * -> * -> * -> +
+class	Shape4		:: * -> * -> * -> * -> +
+class	Shape5		:: * -> * -> * -> * -> * -> +
+class	Shape6		:: * -> * -> * -> * -> * -> * -> +
 
 -----------------------
 -- Global Effects.
 --
-effect	!Sync		:: !;		-- Total synchronisation.
-effect	!Alloc		:: !;
+effect	!Sync		:: !		-- Total synchronisation.
+effect	!Alloc		:: !
 
-effect	!Read		:: % -> !;	-- Read of some region.
-effect	!ReadT		:: * -> !;	-- Deep read of an object.
-effect	!ReadH		:: * -> !;	-- Read of top level constructor of an object.
+effect	!Read		:: % -> !	-- Read of some region.
+effect	!ReadT		:: * -> !	-- Deep read of an object.
+effect	!ReadH		:: * -> !	-- Read of top level constructor of an object.
 
-effect	!Write		:: % -> !;	-- Write to some region.
-effect	!WriteT		:: * -> !;	-- Write to whole object.
+effect	!Write		:: % -> !	-- Write to some region.
+effect	!WriteT		:: * -> !	-- Write to whole object.
 
 -----------------------
 -- Global regions.
@@ -106,11 +106,11 @@ infixl 0 :=, #=;
 -- Simple Functions
 --	We won't get very far without these.
 --
-id :: forall a. a -> a;
-id    x = x;
+id :: forall a. a -> a
+id    x = x
 
 infixr 1 $ ;
-($) f x	 = f x;
+($) f x	 = f x
 
 -----
 -- primProj*
@@ -129,14 +129,14 @@ foreign import extern "primProjField"
  	:: forall a b
 	.  a -> Int32# -(!e1)> b
 	:- !e1 = !ReadH a
-	:$ Data -> Int32# -> Obj;
+	:$ Data -> Int32# -> Obj
  
 foreign import extern "primProjFieldR"
  primProjFieldR 
  	:: forall a b
 	.  a -> Int32# -(!e1)> b
 	:- !e1 = !ReadH a
-	:$ Data -> Int32# -> Obj;
+	:$ Data -> Int32# -> Obj
 
 -----
 -- BUGS: dodgy conversion of Int32# to Word32#
@@ -145,7 +145,7 @@ foreign import extern "_allocDataM"
  primAlloc_dataM
  	:: forall a 
 	.  Int32# -> Int32# -> Int32# -> a			-- tag, ptrCount, dataSize (in bytes).
-	:$ Word32# -> Word32# -> Word32# -> Data;
+	:$ Word32# -> Word32# -> Word32# -> Data
 
 
 -----
@@ -157,30 +157,31 @@ foreign import extern "_allocDataR"
  primAlloc_dataR
  	:: forall a
 	.  Int32# -> Int32# -> a				-- tag, dataSize (in bytes).
-	:$ Word32# -> Word32# -> Data;
+	:$ Word32# -> Word32# -> Data
 
 -----
 foreign import extern "primInt32U_read"
  primInt32U_read
  	:: forall a 
 	.  a -> Int32# -> Int32#				-- obj, offset (in bytes), result.
-	:$ Data -> Int32# -> Int32#;
+	:$ Data -> Int32# -> Int32#
 	
 foreign import extern "primInt32U_write"
  primInt32U_write
  	:: forall a
 	.  a -> Int32# -> Int32# -> Void#			-- obj, offset (in bytes), data.
-	:$ Data -> Int32# -> Int32# -> Void#;
+	:$ Data -> Int32# -> Int32# -> Void#
 
 -----
 foreign import extern "primFloat32U_read"
  primFloat32U_read
  	:: forall a
 	.  a -> Int32# -> Float32#				-- obj, offset (in bytes), result.
-	:$ Data -> Int32# -> Float32#;
+	:$ Data -> Int32# -> Float32#
 	
 foreign import extern "primFloat32U_write"
  primFloat32U_write
  	:: forall a
 	.  a -> Int32# -> Float32# -> Void#			-- obj, offset (in bytes), data.
-	:$ Data -> Int32# -> Float32# -> Void#;
+	:$ Data -> Int32# -> Float32# -> Void#
+

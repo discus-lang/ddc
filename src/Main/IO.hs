@@ -152,7 +152,7 @@ loadInterface' importDirs fileDir mod mPathDI mPathO
 		source		<- readFile pathDI
 		let tree
 			= S.parse 
-			$ map (\t -> t { Token.file = pathDI })
+			$ map (\t -> t { Token.tokenFile = pathDI })
 			$ S.scan source
 		
 {-		linkObjs

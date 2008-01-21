@@ -4,33 +4,30 @@ import Data.Bool;
 
 infix  5 ==, /=;
 
-class Eq a where
-{
+class Eq a where 
+
 	(==)	:: forall b %r1
 		.  a -> b -(!e1 $c1)> Bool %r1
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
-		,  Shape2 a b;
+		,  Shape2 a b
 
 	(/=)	:: forall b %r1
 		.  a -> b -(!e1 $c1)> Bool %r1
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
-		,  Shape2 a b;
+		,  Shape2 a b
 
 
 	(#==)	:: forall b
 		.  a -> b -(!e1 $c1)> Int32#
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
-		,  Shape2 a b;
+		,  Shape2 a b
 
 	(#/=)	:: forall b 
 		.  a -> b -(!e1 $c1)> Int32#
 		:- !e1 = !{ !ReadT a; !ReadT b }
 		,  $c1 = x : a
-		,  Shape2 a b;
-
-}
-
+		,  Shape2 a b
 

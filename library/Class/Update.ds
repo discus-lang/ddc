@@ -1,27 +1,22 @@
 
-import Base;
+import Base
 
-
-infix  0 := ;
-infix  0 += ;
+infix  0 :=
+infix  0 +=
 
 class Updatable a where
-{
-	(:=)	:: forall b 
-		.  a -> b -(!e1 $c1)> ()
-		:- Shape2 a b
-		,  MutableT a
-		,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
-		,  $c1  = x : a;
-}
+ (:=)	:: forall b 
+	.  a -> b -(!e1 $c1)> ()
+	:- Shape2 a b
+	,  MutableT a
+	,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
+	,  $c1  = x : a
 
 
 class Accum a where
-{
-	(+=)	:: forall b  
-		. a -> b -(!e1 $c1)> ()
-		:- Shape2 a b
-		,  MutableT a
-		,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
-		,  $c1  = x : a;
-}
+ (+=)	:: forall b  
+	. a -> b -(!e1 $c1)> ()
+	:- Shape2 a b
+	,  MutableT a
+	,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
+	,  $c1  = x : a

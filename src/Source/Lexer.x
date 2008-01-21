@@ -1,15 +1,19 @@
 
 { 
 module Source.Lexer
-(
-	scan
-)
+	( scan 
+	, showSource
+	, sourceTokens )
 
 where
 
 import Source.Token
+import Source.TokenShow
+import Source.Error
+import Shared.Error
 import Util
 import Data.Char
+import Debug.Trace
 
 }
 
@@ -170,30 +174,74 @@ tokens :-
 
 { 
 
+----------------------------------------------------------------------------------------------------
+
+stage	= "Source.Lexer"
+
+
+-- | Rag a generated token with its position
 ptags :: (String -> Token) -> AlexPosn -> String -> TokenP
 ptags 	  tokf (AlexPn _ l c)	s
  = TokenP 
  	{ token		= (tokf s)
-	, file		= "unknown"
-	, line 		= l
-	, column 	= c - 1 }
+	, tokenFile	= "unknown"
+	, tokenLine 	= l
+	, tokenColumn 	= c }
 
+-- | Tag a token with its position
 ptag ::  Token -> AlexPosn -> String -> TokenP
 ptag	 tok (AlexPn _ l c) s
  = TokenP
  	{ token		= tok
-	, file		= "unknown"
-	, line		= l
-	, column	= c - 1 }
+	, tokenFile	= "unknown"
+	, tokenLine	= l
+	, tokenColumn	= c }
 
 
+-- scan --------------------------------------------------------------------------------------------
+-- This is the top level of the scanner
+-- Add a newline to help ourselves out
+scan 	:: String -> [TokenP]
+scan ss	
+	= (flip offside) []	-- apply the offside rule
+	$ addStarts		-- add BlockStart / LineStart tokens in preparation for offside rule
+	$ breakModules 		-- detect module names, and break into projections if required
+	$ eatComments 		-- remove comments
+	$ alexScanTokens ss
+
+sourceTokens ts
+	= catInt " " $ map showSourceP ts
+
+
+lexOffside :: String -> String
+lexOffside ss = sourceTokens $ scan ss
+
+-- eatComments -------------------------------------------------------------------------------------
+-- | Erase all the comments in this token stream
+--	Also handles block comments.
+eatComments ::	[TokenP] -> [TokenP]
+eatComments 	[]	= []
+eatComments	(t@TokenP { token = tok } : xs)
+	| CommentLineStart	<- tok
+	= eatComments $ dropWhile (\t -> not $ isToken t NewLine) xs
+
+	| CommentBlockStart	<- tok
+	= eatComments $ toTail $ dropWhile (\t -> not $ isToken t CommentBlockEnd) xs
+	
+	| otherwise
+	= t : eatComments xs
+
+toTail []	= []
+toTail (x:xs)	= xs
+
+-- breakModules ------------------------------------------------------------------------------------
 -- | Break module qualifiers off var and con tokens
 breakModules :: [TokenP] -> [TokenP]
 breakModules toks
 	= catMap breakModules' toks
 
-breakModules' tok
-	| Var str	<- token tok
+breakModules' tok@(TokenP { token = tt })
+	| Var str	<- tt
 	, (mods, name)	<- breakModuleStr str
 	= case mods of
 	   [] 	-> [tok]
@@ -201,16 +249,15 @@ breakModules' tok
 		   , tok { token = Dot }
 		   , tok { token = Var name } ]
 	
-	| Con str	<- token tok
+	| Con str	<- tt
 	, (mods, name)	<- breakModuleStr str
 	= case mods of 
 	   [] 	-> [tok]
 	   _	-> [ tok { token = ModuleName mods}
 		   , tok { token = Dot }
 		   , tok { token = Con name} ]
-
-	| otherwise
-	= [tok]
+breakModules' t
+	= [t]
 
 
 -- Break module qualifiers off this variable name
@@ -243,48 +290,204 @@ breakModuleStr str
 	| otherwise
 	= ([], str)
 	
+
+
+-- addStarts ---------------------------------------------------------------------------------------
+-- | Add block and line start tokens to this stream.
+--	This is lifted straight from the Haskell98 report.
+addStarts :: [TokenP] -> [TokenP]
+addStarts ts
+ = case forward ts of
+
+	-- if the first lexeme of a module is not '{' or 'module' then start a new block
+ 	(t1 : tsRest)
+	  |  not $ or $ map (isToken t1) [Module, CBra]
+	  -> StartBlock (tokenColumn t1) : addStarts' (t1 : tsRest)
 	
--- | Erase all the comments in this token stream
---	Also handles block comments.
-eatComments ::	[TokenP] -> [TokenP]
-eatComments 	[]	= []
-eatComments	(tokenp:xs)
- = case token tokenp of
- 	CommentLineStart	-> eatComments $ tail $ dropWhile (\t -> token t /= NewLine) xs
-	CommentBlockStart	-> eatComments $ tail $ dropWhile (\t -> token t /= CommentBlockEnd) xs
-	NewLine			-> eatComments xs	
-	_			-> tokenp : eatComments xs
+	  | otherwise
+	  -> addStarts' (t1 : tsRest)
+	  	
+	-- empty file
+	[]	-> []
 
 
--- The scanner seems to generate a "tail: empty list" error if
--- the file does not finish with a newline. (Might be the token printer?)
---	Add one here to fix this, shouldn't hurt anything.
---
-scan 	:: String -> [TokenP]
-scan ss	=  breakModules $ eatComments $ alexScanTokens (ss ++ "\n")
+addStarts'  :: [TokenP] -> [TokenP]
+addStarts' []	= []
+addStarts' (t1 : ts)
 
-{-
-
--- apply the offside rule to these tokens
-type Context	= Int
-
-offside	:: [TokenP] -> [Context] -> [TokenP]
-offside	(t1: ts@(t2:_)) (m:ms)
+	-- We're starting a block
 	| isBlockStart t1
-	, column t1 == m
-	= SemiColon : offside ts (m : ms)
+	, []		<- forward ts
+	= t1 : [StartBlock 0]
 	
+	| isBlockStart t1
+	, t2 : tsRest	<- forward ts
+	, not $ isToken t2 CBra
+	= t1	: StartBlock (tokenColumn t2) 
+		: addStarts' (t2 : tsRest)
 
+	-- check for start of new line
+	| isToken t1 NewLine
+	, t2 : tsRest	<- forward ts
+	, not $ isToken t2 CBra
+	= StartLine (tokenColumn t2) : addStarts' (t2 : tsRest)
+
+	-- eat up trailine newlines
+	| isToken t1 NewLine
+	= addStarts' ts
+
+	-- a regular token
+	| otherwise
+	= t1 : addStarts' ts
+
+isToken :: TokenP -> Token -> Bool
+isToken TokenP { token = tok } t2	= tok == t2
+isToken _ _				= False
 
 -- check if a token is one that starts a block of statements.
 isBlockStart :: TokenP -> Bool
-isBlockStart tok
- = case token tok of
+isBlockStart TokenP { token = tok }
+ = case tok of
  	Do		-> True
 	Of		-> True
-	With		-> True
+	Where		-> True
+	Catch		-> True
+	Match		-> True
 	_		-> False
--}
+
+isBlockStart _
+	= False
+
+-- scan forward through the stream to get to the next non-newline token
+forward :: [TokenP] 	-> [TokenP]
+forward []		= []
+forward (t1:ts)
+	| TokenP { token = tok }	<- t1
+	, NewLine			<- tok
+	= forward ts
+	
+	| otherwise
+	= t1 : ts
+
+
+
+-- offside -----------------------------------------------------------------------------------------
+-- | Apply the offside rule to this token stream.
+--	They should have been processed with addStarts first to add the StartBlock/StartLine tokens.
+--	This is lifted straight from the Haskell98 report.
+--
+type Context	= Int
+
+offside	:: [TokenP] -> [Context] -> [TokenP]
+
+offside ts ms
+ = {- trace ( pprStr 
+  	 $ "offside: \n"
+ 	 % "   ts = " % take 10 ts % "\n"
+	 % "   ms = " % take 10 ms % "\n") $ -}
+	offside' ts ms
+
+-- avoid starting a new statement if the first token on the line is an '=', ',' or '->'
+-- 	This allows the syntax of match and case expressions to line up nicely
+-- eg
+--	match 	| guard1
+--		, guard2
+--		= exp1
+--
+--		| guard2
+--		= exp2
+offside' (t1@(StartLine n) : t2 : ts) (m : ms)
+	| isToken t2 Equals || isToken t2 Comma || isToken t2 RightArrow 
+	= offside (t2 : ts) (m : ms)
+
+-- line start
+offside' (t@(StartLine n) : ts) (m : ms)
+
+	-- add semicolon to get to the next statement in this block
+	| m == n	= newSemiColon ts : offside ts (m : ms)
+
+	-- end a block
+	-- we keep the StartLine token in the recursion in case we're ending multiple blocks
+	| n < m		= newCKet ts : offside (t : ts) ms
+
+	-- indented continuation of this statement
+	| otherwise
+	= offside ts (m : ms)
+
+-- block start
+offside' (t@(StartBlock n) : ts) mm 
+	
+	-- enter into a nested context
+	| m : ms	<- mm
+	, n > m
+	= newCBra ts : offside ts (n : m : ms)
+	
+	-- enter into an initial context (at top level)
+	| []		<- mm
+	, n > 0	
+	= newCBra ts : offside ts (n : [])
+	
+
+	-- new context cannot be less indented than outer one
+	-- This case should never happen. 
+	--	There is no lexeme to start a new context at the end of the file
+	| []		<- forward ts
+	= panic stage
+	$ "offside: Tried to open a new context at the end of the file."
+	
+	-- new context starts less than the current one
+	| tNext : _	<- forward ts
+	= dieWithUserError [ErrorLayoutLeft tNext]
+			
+	-- an empty block
+	| otherwise
+	= newCBra ts : newCKet ts : offside (StartLine n : ts) mm
+	
+
+-- pop contexts from explicit close braces
+offside' (t@TokenP { token = CKet } : ts) mm
+
+	-- make sure that explict open braces match explicit close braces
+	| 0 : ms	<- mm
+	= t : offside ts ms
+	
+	-- nup
+	| tNext : _	<- forward ts
+	= dieWithUserError [ErrorLayoutNoBraceMatch tNext]
+
+-- push contexts for explicit open braces
+offside' (t@TokenP { token = CBra } : ts) ms
+	
+	= t : offside ts (0 : ms)
+
+-- i'm totally ignoring the rule that inserts
+--	close braces on parse errors -- that's crazy talk.
+
+offside' (t : ts) ms	= t : offside ts ms
+
+offside' [] []		= []
+
+-- close off remaining contexts once we've reached the end of the stream.
+offside' [] (m : ms)	= newCKet [] : offside [] ms
+
+	
+-- When generating new source tokens, take the position from the first non-newline token in this list
+newCBra :: [TokenP] -> TokenP
+newCBra ts	= (takeTok ts) { token = CBra }
+
+newCKet :: [TokenP] -> TokenP
+newCKet	ts	= (takeTok ts) { token = CKet } 
+
+newSemiColon :: [TokenP] -> TokenP
+newSemiColon ts = (takeTok ts) 	{ token = SemiColon }
+
+takeTok :: [TokenP] -> TokenP
+takeTok tt 
+ = case forward tt of
+ 	[]	-> TokenP { token = Junk "", tokenFile = [], tokenLine = 0, tokenColumn = 0}
+	(t:_)	-> t
+
+
 
 }
 

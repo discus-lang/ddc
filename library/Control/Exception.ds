@@ -86,7 +86,7 @@ topHandle f
 				% "\n";
 
 	}
-	with exit 1;		 
+	with exit 1;
 
 gate f	
  = 	try f ()
@@ -95,3 +95,5 @@ gate f
 gateLoop f 
  = 	try loop f
  	catch { ExceptionBreak	-> (); };
+
+

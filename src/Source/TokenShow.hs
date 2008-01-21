@@ -8,7 +8,8 @@
 --
 --
 module Source.TokenShow
-	( showSource )
+	( showSource 
+	, showSourceP)
 
 where
 
@@ -39,30 +40,46 @@ showSource tok =
 	 	Just str	-> str
 		Nothing		-> panic stage $ "showSource: unknown token: " ++ show tok
 
------
-tokString =
-	[ (Foreign,		"foreign")
-	, (Import, 		"import")
-	, (Export,		"export")
+showSourceP tok = 
+ case tok of
+ 	TokenP{}	-> showSource (token tok)
+	_		-> show tok
 
-	, (Module,		"module")
+
+-- | Source versions of each token
+--	Keep these in the same order as in Token.hs.
+tokString =
+	-- Weak keywords ---------------------------------------
+	[ (Module,		"module")
 	, (Elaborate,		"elaborate")
 	, (Const,		"const")
 	, (Mutable,		"mutable")
 	, (Extern,		"extern")
 	, (CCall,		"ccall")
 
-	, (Data, 		"data")
-	, (Effect,		"effect")
-
-	, (Class,		"class")
-	, (Instance,		"instance")
-	, (Project,		"project")
+	-- Regular keywords ------------------------------------
+	, (Pragma,		"pragma")
 	
+	-- infix definitions -----------------------------------
 	, (InfixR, 		"infixr")
 	, (InfixL,		"infixl")
 	, (Infix,		"infix")
 
+	-- module definitions ----------------------------------
+	, (Foreign,		"foreign")
+	, (Import, 		"import")
+	, (Export,		"export")
+
+	-- type definitions ------------------------------------
+	, (Data, 		"data")
+	, (Region,		"region")
+	, (Effect,		"effect")
+	, (Class,		"class")
+	, (Instance,		"instance")
+	, (Project,		"project")
+	, (Forall,		"forall")
+
+	-- expressions -----------------------------------------
 	, (Let,			"let")
 	, (In,			"in")
 	, (Where,		"where")
@@ -86,43 +103,47 @@ tokString =
 	, (Unless,		"unless")
 	, (Break,		"break")
 
-	, (Forall,		"forall")
-	, (Dot,			".")
-	, (And,			"&")
-
+	-- Symbols -----------------------------------------
+	
+	-- type symbols 
 	, (HasType,		"::")
+	, (IsSubtypeOf,		"<:")
+	, (IsSuptypeOf,		":>")
+
 	, (HasOpType,		":$")
 	, (HasConstraint,	":-")
 
 	, (RightArrow,		"->")
+
+	-- shared between types and expressions 
 	, (LeftArrow,		"<-")
-	, (LeftArrowLazy,	"<@-")
 	, (Unit,		"()")
+	
+
+	-- expression symbols 
+	, (LeftArrowLazy,	"<@-")
 
 	, (GuardCase,		"|-")
 	, (GuardCaseC,		",-")
-	
 	, (GuardUnboxed,	"|#")
 	, (GuardUnboxedC,	",#")
-	
 	, (GuardDefault,	"\\=")
+
+	, (Dot,			".")
+	, (DotDot,		"..")
 
 	, (Hash,		"#")
 	, (Star, 		"*")
 	, (Dash,		"-")
-	, (At,			"@")
-	, (Bang,		"!")
-	, (ForwardSlash,	"/")
 	, (Plus,		"+")
 	, (Percent,		"%")
-
-	, (AKet,		">")
-	, (CBra,		"{")
-	, (CKet,		"}")
-	, (RBra,		"(")
-	, (RKet,		")")
-	, (SBra,		"[")
-	, (SKet,		"]")
+	, (At,			"@")
+	, (Bang,		"!")
+	, (Dollar,		"$")
+	, (Tilde,		"~")
+	, (Underscore,		"_")
+	, (Hat,			"^")
+	, (ForwardSlash,	"/")
 	, (BackSlash,		"\\")
 	, (BackTick,		"'")
 	, (Equals,		"=")
@@ -130,8 +151,26 @@ tokString =
 	, (Colon,		":")
 	, (SemiColon,		";")
 	, (Bar,			"|") 
-	, (Dollar,		"$")]
+	, (And,			"&")
 
+	-- parenthesis
+	, (AKet,		">")
+	, (ABra,		"<")
+
+	, (CBra,		"{")
+	, (CKet,		"}")
+
+	, (RBra,		"(")
+	, (RKet,		")")
+
+	, (SBra,		"[")
+	, (SKet,		"]") 
+	
+	, (NewLine,		"\n")
+	, (CommentLineStart,	"@CommentLineStart")
+	, (CommentBlockStart,	"@CommentBlockStart")
+	, (CommentBlockEnd,	"@CommentBlockEnd") ]
+	
 
 
 

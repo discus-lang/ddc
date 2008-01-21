@@ -2,24 +2,60 @@
 -- | Source tokens
 module Source.Token
 	( Token  (..)	-- The tokens.
-	, TokenP (..))	-- Tokens with file position info attached.
+	, TokenP (..)	-- Tokens with file position info attached.
+	, prettyTokenPos
+	, takeToken)
 
 where
 
+import Util
+
 -- | Wraps up a token with its position in the source file
-data TokenP = 
-     TokenP 
-     	{ token 	:: Token	-- the token
-	, file		:: String	-- the file this token was from
-	, line		:: Int		-- line number in the file
-	, column	:: Int }	-- column number in the file
+data TokenP 
+	= TokenP 
+	     	{ token		:: Token	-- the token
+		, tokenFile	:: String	-- the file this token was from
+		, tokenLine	:: Int		-- line number in the file
+		, tokenColumn	:: Int }	-- column number in the file
+
+	-- Offside -------------------------------------------------------------
+	-- extra tokens to help perform the offside rule
+	| StartBlock	Int	-- signals the start of a block at this column
+	| StartLine	Int	-- signals the start of a line at this column
+
 	deriving Eq
+
+takeToken tt
+	| TokenP { token = t }	<- tt
+	= Just t
+	
+	| otherwise
+	= Nothing
 
 
 -- | just show the token instead of the whole thing
 instance Show TokenP where
- show tok	= show $ token tok
+ show tok	
+   = case tok of
+   	TokenP { token = t }	-> show t
+	StartBlock i		-> "StartBlock " ++ show i
+	StartLine  i		-> "StartLine " ++ show i
 
+instance Pretty TokenP where
+ ppr	= ppr . show 
+
+-- | pretty print the position of this token
+prettyTokenPos :: TokenP	-> String
+prettyTokenPos tt
+ = case tt of
+ 	TokenP	{ tokenFile	= file
+		, tokenLine	= line
+		, tokenColumn	= column }
+
+	 -> file ++ ":" ++ (show $ line )
+		 ++ ":" ++ (show $ (column - 1))	-- make columns start at 0
+
+	_ -> "unknown"
 
 -- | Source tokens
 data Token 
@@ -97,7 +133,7 @@ data Token
 
 	-- Symbols ---------------------------------------------------------------------------------
 
-	-- type sumbols
+	-- type symbols
 	| HasType		-- ^ ::
 	| IsSubtypeOf		-- ^ <:
 	| IsSuptypeOf		-- ^ :>
@@ -113,14 +149,14 @@ data Token
 
 	-- expression symbols
 	| LeftArrowLazy		-- ^ <\@-
+
 	| GuardCase		-- ^ |-
 	| GuardCaseC		-- ^ ,-
-
 	| GuardUnboxed		-- ^ |#
 	| GuardUnboxedC		-- ^ ,#
-
 	| GuardDefault		-- ^ \=
 
+	| Dot			-- ^ .
 	| DotDot		-- ^ ..
 
 	| Hash			-- ^ #
@@ -142,7 +178,6 @@ data Token
 	| Colon			-- ^ :
 	| SemiColon		-- ^ ;
 	| Bar			-- ^ |
-	| Dot			-- ^ .
 	| And			-- ^ &
 
 	-- parenthesis ---------------------------------------------------------
@@ -168,7 +203,6 @@ data Token
 	-- Some other junk not recognised by the lexer.
 	-- 	The junk token will cause a parse error.
 	| Junk 		String
-
 	deriving (Show, Eq)
 
 
