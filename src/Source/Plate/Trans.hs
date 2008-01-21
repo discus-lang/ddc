@@ -187,11 +187,10 @@ instance Monad m => TransM m Foreign where
 instance Monad m => TransM m Stmt where
  transZM table s
   = case s of
-    	SBind sp v x
+    	SStmt sp x
 	 | decendX table
-	 -> do	v'		<- transZM table v
-	 	x'		<- transZM table x
-		transS table	$ SBind sp v' x'
+	 -> do 	x'		<- transZM table x
+		transS table	$ SStmt sp x'
 		
 	 | otherwise
 	 -> return s

@@ -499,7 +499,7 @@ bindSigs
 bindSigStmt
 	:: {  Stmt }
 	:  bindSig				{ $1 }
-	|  exp          			{ SBind (spX $1) Nothing $1		}
+	|  exp          			{ SStmt (spX $1) $1			}
 
 bindSigStmts
 	:: { [Stmt] }

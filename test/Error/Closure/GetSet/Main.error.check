@@ -1,14 +1,14 @@
 test/Error/Closure/GetSet/Main.ds:28:14
     Type mismatch during unification.
-          cannot match: Data.String.String %667
-                  with: Base.Int %617
+          cannot match: Data.String.String %673
+                  with: Base.Int %623
 
          literal value: "a"
-               of type: Data.String.String %667
+               of type: Data.String.String %673
                     at: test/Error/Closure/GetSet/Main.ds:28:14
 
         conflicts with, 
                 use of: setB
-             with type: Base.Int %617
+             with type: Base.Int %623
                     at: test/Error/Closure/GetSet/Main.ds:28:8
 

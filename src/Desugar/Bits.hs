@@ -1,6 +1,7 @@
 
 module Desugar.Bits
 	( getAnnotX
+	, getAnnotW
 	, isXVar)
 	
 where
@@ -15,6 +16,8 @@ isXVar xx
  	XVar{}	-> True
 	_	-> False
 
+
+-- | get the annotation from this expression
 getAnnotX :: Exp a -> a
 getAnnotX xx
  = case xx of
@@ -33,5 +36,15 @@ getAnnotX xx
 	XVarInst	n v		-> n
 	
 	
-	
+-- | get the annotation from this pattern
+getAnnotW :: Pat a -> a
+getAnnotW ww
+ = case ww of
+	WConLabel	n _ _		-> n
+	WConst		n _		-> n
+	WVar		n _		-> n
+	WAt		n _ _		-> n
+	WConLabelP	n _ _		-> n
+	WWildcard	n 		-> n
+
 	

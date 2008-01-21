@@ -1,14 +1,14 @@
 test/Error/Unify/DefDef/Main.ds:8:14
     Type mismatch during unification.
-          cannot match: Data.String.String %353
-                  with: Base.Int %343
+          cannot match: Data.String.String %352
+                  with: Base.Int %342
 
                 use of: f2
-             with type: Data.String.String %353
+             with type: Data.String.String %352
                     at: test/Error/Unify/DefDef/Main.ds:8:14
 
         conflicts with, 
                 use of: f1
-             with type: Base.Int %343
+             with type: Base.Int %342
                     at: test/Error/Unify/DefDef/Main.ds:8:10
 

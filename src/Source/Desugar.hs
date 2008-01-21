@@ -5,10 +5,8 @@
 --	but the constraint slurper a lot smaller.
 --   
 module Source.Desugar
-(
-	rewriteTree,
-	rewrite
-)
+	( rewriteTree
+	, rewrite)
 
 where
 
@@ -264,7 +262,9 @@ instance Rewrite S.Exp (D.Exp Annot) where
 	-- lambda sugar.
 	S.XLambdaPats sp ps x
 	 -> do	x'	<- rewrite x
-	 	matchPats sp ps x'
+		ps'	<- mapM rewrite $ map expToPat ps
+	 	x2	<- makeMatchFunction sp ps' x'
+		return x2
 
 	S.XLambdaCase sp alts
 	 -> do
@@ -427,12 +427,13 @@ instance Rewrite S.Stmt (D.Stmt Annot) where
   = case ss of
 	S.SBindPats sp v ps x
 	 -> do	x'	<- rewrite x
-	 	x2	<- matchPats sp ps x'
+		ps'	<- mapM rewrite $ map expToPat ps
+	 	x2	<- makeMatchFunction sp ps' x'
 		return	$ D.SBind sp (Just v) x2
 
-	S.SBind sp mV x
+	S.SStmt sp x
 	 -> do	x'	<- rewrite x
-	 	return	$ D.SBind sp mV x'
+	 	return	$ D.SBind sp Nothing x'
 				
 	S.SSig sp v t
 	 -> do 	t'	<- rewrite t
@@ -456,11 +457,6 @@ instance Rewrite S.Alt (D.Alt Annot) where
 	 -> do	gs'	<- rewrite gs
 	 	x'	<- rewrite x
 		return	$ D.AAlt none gs' x'
-
-{-	 	gsAts	<- mapM (sprinkleAtsG none) gsD
-	 
-	 	let gsLift	= catMap liftAtsG gsAts
--}	 
 
 	S.ADefault x
 	 -> do	x'	<- rewrite x
@@ -553,29 +549,7 @@ instance Rewrite S.Pat (D.Pat Annot) where
 	_	-> panic stage	
 		$ "rewrite[S.Pat]: can't rewrite " % show ww % "\n"
 		
-		
-expToPat :: S.Exp -> S.Pat
-expToPat xx
- = case xx of
-	S.XVar sp v
-	 | Var.isCtorName v
-	 -> S.WCon v []
-
-	 | otherwise
-	 -> S.WVar v
-
- 	S.XTuple sp xs	-> S.WTuple (map expToPat xs)
-
-	S.XApp sp x1 x2
-	 -> let	(S.XVar sp v : xs)	= S.flattenApps xx
-	    in	S.WCon v (map expToPat xs)
-		
-	S.XList sp xx	-> S.WList (map expToPat xx)	
-
-	S.XConst sp c	-> S.WConst c
 	
-	_	-> panic stage
-		$ "expToPat: no match for " % show xx % "\n"
 		
 -----
 instance Rewrite S.Label (D.Label Annot) where

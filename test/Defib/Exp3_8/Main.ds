@@ -12,7 +12,12 @@ cAdd z y
  	Z	-> y;
 	S x	-> S (cAdd x y);
  };
- 
+
+{-
+cAdd Z	   y	= y
+cAdd (S x) y	= S (cAdd x y)
+-}
+
 cMul x z
  = case z of {
  	Z	-> Z;

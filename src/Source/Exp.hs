@@ -247,11 +247,10 @@ data Annot
 -- | Statements and bindings
 --	Used by XLet and XDo.
 data Stmt	
-	= SBind		SP (Maybe Var) Exp		-- ^ A binding or stmt.
-	| SSig		SP Var Type
+	= SSig		SP Var Type
 
-	-- pattern sugar, desugared by Source.Hacks
-	| SBindPats	SP Var [Exp] Exp
+	| SStmt		SP Exp				-- ^ a statement (with no arguments)
+	| SBindPats	SP Var [Exp] Exp		-- ^ a binding, with patterns for the arguments
 
 	deriving (Show, Eq)
 	
@@ -309,9 +308,11 @@ data LCQual
 
 takeVar e	= case e of { XVar sp v	-> Just v; _ -> Nothing; }
 
+-- | take the binding variable of this statement
+takeStmtBoundV :: Stmt -> Maybe Var
 takeStmtBoundV s
  = case s of 
-	SBind 	  sp v e	-> v
+	SStmt 	  sp e		-> Nothing
 	SBindPats sp v  es x	-> Just v
 	SSig      sp v  t	-> Just v	
 

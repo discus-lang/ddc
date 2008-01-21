@@ -142,11 +142,8 @@ slurpTopNames p
 	 -> [v { Var.nameSpace = NameRegion }]
 
 	PStmt (SSig sp v t) 
-	 -> [] -- [v { Var.nameSpace = NameValue }]
+	 -> []
 	
-	PStmt (SBind sp (Just v) x) 
-	 -> [v { Var.nameSpace = NameValue }]
-	 	
 	PStmt (SBindPats sp v xx x)
 	 -> [v { Var.nameSpace = NameValue }]
 

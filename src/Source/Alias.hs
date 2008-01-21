@@ -48,7 +48,7 @@ aliasP p
 
 aliasS s
  = case s of
- 	SBind sp (Just v) x
+{- 	SBind sp (Just v) x
 	 -> do
 	 	v_	<- newVarN NameValue
 		let v'	= v_ 
@@ -63,7 +63,7 @@ aliasS s
 				x
 
 		return	$ SBind sp (Just v') x'
-	 	
+-} 	
 	_ -> return s
 
 

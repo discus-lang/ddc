@@ -88,7 +88,7 @@ instance Lint Top where
 instance Lint Stmt where
  lint s
   = case s of
-	SBind sp v x			-> SBind sp (lint v) (lint x)
+	SStmt sp x			-> SStmt sp (lint x)
 	SSig  sp v t			-> SSig  sp (lint v) (lint t)
 
 -----------------------

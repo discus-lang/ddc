@@ -83,9 +83,6 @@ instance Pretty Top where
 		% "{\n"
 		%> ("\n\n" %!% 
 			(map 	(\s -> case s of 
-					SBind sp (Just v) x 
-					 -> pprStr $ SBind sp (Just v { Var.nameModule = Var.ModuleNil }) x
-
 					SBindPats sp v xs x
 					 -> pprStr $ SBindPats sp (v { Var.nameModule = Var.ModuleNil }) xs x)
 
@@ -397,9 +394,7 @@ instance Pretty LCQual where
 instance Pretty Stmt where
  ppr xx
   = case xx of
-	SBind sp Nothing x	-> prettyX_naked x 					% ";"
-	SBind sp (Just v) x	-> v 			%>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
-
+	SStmt sp  x		-> prettyX_naked x 					% ";"
 	SBindPats sp v [] x	-> v % " " 		%>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
 	SBindPats sp v ps x	
 		-> v % " " % " " %!% map prettyXB ps 

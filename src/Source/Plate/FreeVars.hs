@@ -82,9 +82,8 @@ freeVS	stmt
 	 -> let ?bound	= [v] ++ (catMap freeVE ps) ++ ?bound
 	    in	freeVE x
 
-	SBind sp v e
-	 -> let ?bound = (maybeToList v) ++ ?bound
-	    in  freeVE e
+	SStmt sp e
+	 -> freeVE e
 	
 -----
 freeVA	:: (?bound :: [Var])

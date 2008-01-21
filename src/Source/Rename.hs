@@ -1,4 +1,5 @@
 
+-- | Apply scoping rules and add VarBinds to every variable in the program.
 module Source.Rename
 	( Rename
 	, renameData
@@ -32,7 +33,7 @@ import Type.Plate.Collect
 -----
 stage	= "Source.Rename"
 
------
+-- Tree --------------------------------------------------------------------------------------------
 renameTrees
 	:: [(Module, Tree)]
 	-> RenameM [(Module, Tree)]
@@ -56,7 +57,7 @@ renameTrees' mTrees
 		
 	-- Add them to the rename state.
 	mapM_	(\(v, m) 
-		  -> bindZ 
+		  -> lbindZ 
 			v { Var.nameModule	= m })
 		topNamesHs
 		
@@ -76,7 +77,7 @@ renameTree m tree
 	tree'	<- rename tree
 	return tree'
 	
------
+-- Top ---------------------------------------------------------------------------------------------
 instance Rename Top where
  rename	top
   = case top of
@@ -170,7 +171,6 @@ instance Rename Top where
 					, Var.nameModule 	= m }
 		
 		let ssF		= map (\s -> case s of 
-	 				SBind sp (Just v) x	-> SBind  sp	(Just $ fixupV v) x
 					SSig  sp v t		-> SSig   sp 	(fixupV v) t
 					SBindPats sp v xs x	-> SBindPats sp	(fixupV v) xs x)
 			$ ss
@@ -183,12 +183,12 @@ instance Rename Top where
 		return	$ PProjDict t' ss'
 
 	
------
+-- Module ------------------------------------------------------------------------------------------
 instance Rename Module where
  rename m	= return m
  
  
------
+-- Foreign -----------------------------------------------------------------------------------------
 instance Rename Foreign where
  rename ff
   = case ff of
@@ -214,6 +214,7 @@ instance Rename Foreign where
 		return	$ OExtern mS v' tv' to' 
 
 
+-- Classes -----------------------------------------------------------------------------------------
 -- all this stuff should really have it's own constructor
 --
 renameClassInh :: (Var, [Var])  -> RenameM (Var, [Var])
@@ -259,7 +260,7 @@ renameCtor	(v, fs)
 	return	(v', fs')
 
 
-------
+-- DataField ---------------------------------------------------------------------------------------
 instance Rename (DataField Exp Type) where
  rename df
   = do	
@@ -348,7 +349,7 @@ instance Rename Exp where
 	-- sugar
 	XLambdaPats sp ps x
 	 -> local
-	 $ do 	ps'	<- mapM bindPatX ps
+	 $ do 	ps'	<- mapM bindPatternExp ps
 		x'	<- rename x
 		return	$ XLambdaPats sp ps' x'
 
@@ -456,7 +457,7 @@ instance Rename Exp where
 		$ "rename: cannot rename " % show exp
 		
 			
------
+-- Projections -------------------------------------------------------------------------------------
 instance Rename Proj where
  rename jj 
   = case jj of
@@ -477,7 +478,7 @@ instance Rename Proj where
 	 	return	$ JIndexR x'
 
 	
------
+-- Alternatives ------------------------------------------------------------------------------------
 instance Rename Alt where
  rename a
   = case a of
@@ -504,7 +505,7 @@ instance Rename Alt where
 	 	return	$  ADefault x'
 
 
------
+-- Labels ------------------------------------------------------------------------------------------
 instance Rename Label where
  rename ll
   = case ll of
@@ -515,11 +516,15 @@ instance Rename Label where
 	 	return	$  LVar v'
 	 
 
--- bindPatX
---	Bind all the variables in this pattern.
+
+-- Patterns ----------------------------------------------------------------------------------------
+
+-- | Bind the variables in a pattern.
+--	The data type for patterns in function bindings is shared with that for expressions.
+--	However, only  some constructors should appear in a pattern context. ie XList but not XMatch
 --
-bindPatX :: Exp -> RenameM Exp
-bindPatX xx
+bindPatternExp :: Exp -> RenameM Exp
+bindPatternExp xx
  = case xx of
  	XVar sp v		
 	 | Var.isCtorName v
@@ -531,26 +536,26 @@ bindPatX xx
 	 	return	$ XVar sp v'
 		
 	XList sp xx
-	 -> do	xx'	<- mapM bindPatX xx
+	 -> do	xx'	<- mapM bindPatternExp xx
 	 	return	$ XList sp xx'	
 
 	XCons sp x1 x2
-	 -> do	x1'	<- bindPatX x1
-	 	x2'	<- bindPatX x2
+	 -> do	x1'	<- bindPatternExp x1
+	 	x2'	<- bindPatternExp x2
 		return	$ XCons sp x1' x2'
 		
 	XTuple sp xs
-	 -> do	xs'	<- mapM bindPatX xs
+	 -> do	xs'	<- mapM bindPatternExp xs
 	 	return	$ XTuple sp xs'
 
 	XApp{} 
 	 -> do	let (x:xs)	=  flattenApps xx
 	 	x'		<- rename x
-		xs'		<- mapM bindPatX xs
+		xs'		<- mapM bindPatternExp xs
 		return		$ unflattenApps (x':xs')
 
 	XDefix sp xs
-	 -> do	xs'	<- mapM bindPatX xs
+	 -> do	xs'	<- mapM bindPatternExp xs
 	 	return	$ XDefix sp xs'
 	 
 	XOp sp v
@@ -561,8 +566,11 @@ bindPatX xx
 	 ->	return	$ xx
 
 	_ 	-> panic stage
-		$ "bindPatX: no match for " % show xx	% "\n"
-	
+		$ "bindPatternExp: no match for " % show xx	% "\n"
+
+
+-- | Bind the variables in a guard
+bindGuard :: Guard -> RenameM Guard
 bindGuard gg
  = case gg of
  	GCase pat
@@ -581,7 +589,10 @@ bindGuard gg
 	GBoolU x
 	 -> do	x'	<- rename x
 	 	return	$ GBoolU x'
-		
+
+
+-- | Bind the variables in a pattern
+bindPat :: Pat -> RenameM Pat
 bindPat ww
  = case ww of
  	WVar v
@@ -589,7 +600,7 @@ bindPat ww
 	 	return	$ WVar v'
  
  	WExp x	
-	 -> do	x'	<- bindPatX x
+	 -> do	x'	<- bindPatternExp x
 	 	return	$ WExp x'
 
 	WConLabel v lvs 
@@ -638,17 +649,22 @@ boundByLCQual    q
 	LCExp{}			-> []
 
 
------------------------
--- renameS
+-- Stmt --------------------------------------------------------------------------------------------
+
+-- | Rename the variables in a list of statements
+--	When using pattern bindings, the bound variable can appear in multiple statements
+--	ie 	not True	= False
+--		not False	= True
 --
+--	It is an error for non-consecutive bindings to bind the same variable.
+---
 renameSs ::	[Stmt]	-> RenameM [Stmt]
 renameSs	ss
  = do	-- work out all the vars that are bound by this list of stmts
  	let vsBound	= catMaybes $ map takeStmtBoundV ss
 
-	-- create fresh binding occurances to shadow anything with the same
-	--	name bound above.
-	mapM_ bindV $ nub vsBound
+	-- create fresh binding occurances to shadow anything with the same name bound above.
+	mapM_ (lbindN_shadow NameValue) $ nub vsBound
 	
 	-- Rename each statement.
 	ss'	<- mapM rename ss
@@ -679,10 +695,9 @@ instance Rename Stmt where
 
 			return	$ SBindPats sp v' ps' x'
 	 	
-	SBind sp mV x
-	 -> do	mV'	<- liftMaybe lbindZ mV
-		x'	<- local $ rename x
-		return	$ SBind sp mV x'		
+	SStmt sp x
+	 -> do	x'	<- local $ rename x
+		return	$ SStmt sp x'		
 				
 
 	SSig sp v t

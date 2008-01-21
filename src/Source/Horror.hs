@@ -26,4 +26,4 @@ isXDo xx	= case xx of { XDo{}	-> True;	_ -> False; }
 isXCaseE xx	= case xx of { XCaseE{}	-> True; 	_ -> False; }
 
 -- Stmt
-isSBind xx	= case xx of { SBind{}	-> True;	_ -> False; }
+-- isSBind xx	= case xx of { SBind{}	-> True;	_ -> False; }
