@@ -47,7 +47,6 @@ nbody ()
 -- | Main loop.
 run :: 	Frame -> Array Body -> Array Body -> ()
 run 	frame body0 body1
- = match 
 	-- bail out if we've reached the maximum frame count.
  	| frameCount_max /= 0
 	, frameCount > frameCount_max
@@ -67,7 +66,7 @@ run 	frame body0 body1
 	 	frame.update
 
 		frameCount += 1
-		run frame body1 body0
+		run frame body1 body0;
 
 
 
@@ -104,7 +103,6 @@ initBodies ()
 --
 draw_force :: Frame -> Array Body -> Int -> Int -> ()
 draw_force frame body x y
- = match 
  	| x >= worldSize.x 	= draw_force frame body 0 	(y + draw_force_step)
 	| y >= worldSize.y	= ()
 	
@@ -133,7 +131,6 @@ draw_force frame body x y
 
 -- | Choose a color to render this force
 forceColor fS
- = match
 	| fS < 0.0	= frame_color 0 0 0
 
 	| fS < 1.0	
@@ -237,7 +234,6 @@ project Body where
 	-- | Draw this body in the frame.
 	draw :: Body -> Frame -> ()
 	draw body frame
-	 = match 
 	 	| Body mass pos vel acc	<- body
 		, Vec2 pX pY		<- pos
 		= match 

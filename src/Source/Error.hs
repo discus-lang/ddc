@@ -13,6 +13,7 @@ import Shared.Var		(NameSpace(..))
 import Shared.VarUtil		(prettyPos, prettyPosBound)
 import Shared.VarSpace		(spaceName)
 import Shared.Error
+import Shared.Base
 
 import qualified Source.Token	as Token
 import qualified Source.TokenShow as Token
@@ -29,6 +30,7 @@ data Error
 	= ErrorLayoutLeft		TokenP
 	| ErrorLayoutNoBraceMatch 	TokenP
 	| ErrorParse			TokenP String
+	| ErrorParsePos			SourcePos String
 	| ErrorParseBefore		[TokenP]
 	| ErrorParseEnd		
 	| ErrorUndefinedVar	
@@ -65,6 +67,12 @@ instance Pretty Error where
  	= ppr
 	$ unlines $
 	[ prettyTokenPos tok
+	, "    Parse error: " ++ str ]
+
+ ppr (ErrorParsePos sp str)
+ 	= ppr
+	$ unlines $
+	[ pprStr sp
 	, "    Parse error: " ++ str ]
 
  ppr (ErrorParseBefore tt@(t1 : _))

@@ -214,13 +214,20 @@ top
 	{ [PProjDict $2 $5]		}
 
 	-- type sigs
-	| pVar '::' type 	
-	{ [PType (spTP $2) (vNameV $1) $3]						}
+--	| pVar '::' type 	
+--	{ [PType (spTP $2) (vNameV $1) $3]						}
 		
 	-- statements
-	| expApps '=' exp 				
+	| bindSig
+	{ [PStmt $1] }
+
+{-	| expApps '=' exp 				
 	{ [PStmt (SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3)]		}
 
+	|  expApps matchAlts
+	{ let sp	= spX (head $1)
+	  in  PStmt (SBindPats sp (checkVarSP sp $ head $1) (tail $1) (XMatch sp $2)	}
+-}
 
 -----
 -- Foreign
@@ -411,7 +418,7 @@ expZ
 	-- case / match
 	| 'case' exp 'of' '{' caseAlts '}'	{ XCase 	(spTP $1) $2 $5		} 
 		
-	| 'match' '{' matchAlts '}'		{ XMatch	(spTP $1) $3		}
+	| 'match' '{' matchAltsS '}'		{ XMatch	(spTP $1) $3		}
 
 	-- lambda sugar
 	| '\\' 'case' '{' caseAlts '}'		{ XLambdaCase	(spTP $1) $4		}
@@ -466,8 +473,10 @@ constU
 -- a binding
 bind
 	:: { Stmt }
-	:  expApps '=' exp 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3	}
+	:  expApps '=' exp 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3		}
 
+	|  expApps matchAlts 			{ let sp	= spX (head $1)
+						  in  SBindPats sp (checkVarSP sp $ head $1) (tail $1) (XMatch sp $2)	}
 binds
 	:: { [Stmt] }
 	:  bind	mSemis				{ [$1] }
@@ -489,8 +498,7 @@ bindSigs
 -- a binding, signature or statement
 bindSigStmt
 	:: {  Stmt }
-	:  expApps '=' exp 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3	} 
-	|  pVar '::' type 			{ SSig (spTP $2) (vNameV $1) ($3)	}
+	:  bindSig				{ $1 }
 	|  exp          			{ SBind (spX $1) Nothing $1		}
 
 bindSigStmts
@@ -517,8 +525,13 @@ caseAlt
 -----
 matchAlts
 	:: { [Alt] }
-	:  matchAlt mSemis			{ [$1]					}
-	|  matchAlt semis matchAlts		{ $1 : $3				}
+	:  matchAlt 				{ [$1]					}
+	|  matchAlt matchAlts			{ $1 : $2				}
+
+matchAltsS
+	:: { [Alt] }
+	: matchAlt mSemis			{ [$1]					}
+	| matchAlt semis matchAltsS 		{ $1 : $3				}
 		
 matchAlt
 	:: { Alt }
@@ -1046,6 +1059,11 @@ checkVar ::	TokenP -> Exp -> Var
 checkVar	tok	  (XVar sp v)	= v
 checkVar	tok	  e
  	= dieWithUserError [ErrorParse tok "parse error"]
+
+checkVarSP ::	SourcePos -> Exp -> Var
+checkVarSP	sp'	  (XVar sp v)	= v
+checkVarSP	sp'	  e
+ 	= dieWithUserError [ErrorParsePos sp' "parse error"]
 
 
 -- | Make a constant expression from this token

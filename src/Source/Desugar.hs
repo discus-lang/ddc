@@ -161,7 +161,7 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 		returnJ		$ D.PProjDict none t' ss'
 		
 
-	S.PType sp v t
+	S.PStmt (S.SSig sp v t)
 	 -> do	t'	<- rewrite t
 
 	 	(tElab, vksConst, vksMutable)	

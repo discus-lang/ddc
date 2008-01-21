@@ -285,7 +285,9 @@ offside' (t@(StartLine n) : ts) (m : ms)
 
 	-- end a block
 	-- we keep the StartLine token in the recursion in case we're ending multiple blocks
-	| n < m		= newCKet ts : offside (t : ts) ms
+	-- difference from Haskell98: add a semicolon as well
+	
+	| n < m		= newSemiColon ts : newCKet ts : offside (t : ts) ms
 
 	-- indented continuation of this statement
 	| otherwise
