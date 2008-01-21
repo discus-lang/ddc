@@ -2,14 +2,17 @@
 
 -- | Pretty printing for desugared source.
 module Desugar.Pretty
-	()
+	(stripAnnot)
 
 where
 
 import Util
 import qualified Shared.Var	as Var
 import Desugar.Exp
+import Desugar.Plate.Trans
 import Type.Pretty
+
+stripAnnot xx	= transformN (\n -> Nothing :: Maybe ()) xx
 
 -----
 annot nn x

@@ -46,27 +46,28 @@ nbody ()
 
 -- | Main loop.
 run :: 	Frame -> Array Body -> Array Body -> ()
-run 	frame body0 body1
+run 	a b c
 	-- bail out if we've reached the maximum frame count.
  	| frameCount_max /= 0
 	, frameCount > frameCount_max
 	= ()
-	
-	\= do	-- update all the positions
-		mapArrayIx_ (\x -> x.update body0) body1
-		mapArray_   (\x -> x.clampPos)	body1
 
-		-- clear the buffer and draw the new forces
-		frame.clear (frame_color 0 0 0)
-		draw_force frame body1 0 0
+run	frame body0 body1	
+ = do	-- update all the positions
+	mapArrayIx_ (\x -> x.update body0) body1
+	mapArray_   (\x -> x.clampPos)	body1
 
-		mapArray_   (\x -> x.draw frame) body1
+	-- clear the buffer and draw the new forces
+	frame.clear (frame_color 0 0 0)
+	draw_force frame body1 0 0
 
-		-- flip the buffer
-	 	frame.update
+	mapArray_   (\x -> x.draw frame) body1
 
-		frameCount += 1
-		run frame body1 body0;
+	-- flip the buffer
+ 	frame.update
+
+	frameCount += 1
+	run frame body1 body0;
 
 
 
@@ -106,27 +107,28 @@ draw_force frame body x y
  	| x >= worldSize.x 	= draw_force frame body 0 	(y + draw_force_step)
 	| y >= worldSize.y	= ()
 	
-	\= do
-		-- calculate the force vector at this point.
-		forceV	= sum&{Vec2 Float}
-			$ mapArrayToList
-				(\b -> forceVec&{Body}
-						1.0 (b.mass)
-						(toFloat x) (toFloat y)
-						b.pos.x     b.pos.y)
-			$ body
+draw_force frame body x y
+ = do
+	-- calculate the force vector at this point.
+	forceV	= sum&{Vec2 Float}
+		$ mapArrayToList
+			(\b -> forceVec&{Body}
+					1.0 (b.mass)
+					(toFloat x) (toFloat y)
+					b.pos.x     b.pos.y)
+		$ body
 
-		-- determine the color of the point based on the magnitude of the force.
-		forceS	= forceV.magnitude
-		fS	= log forceS + 6.0
-		color	= forceColor fS
+	-- determine the color of the point based on the magnitude of the force.
+	forceS	= forceV.magnitude
+	fS	= log forceS + 6.0
+	color	= forceColor fS
 
-		-- draw the point				
-		frame.point  
-			x (frame.sizeY - y)
-			color
+	-- draw the point				
+	frame.point  
+		x (frame.sizeY - y)
+		color
 			
-		draw_force frame body (x + draw_force_step) y
+	draw_force frame body (x + draw_force_step) y
 
 
 -- | Choose a color to render this force

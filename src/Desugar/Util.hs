@@ -4,7 +4,8 @@ module Desugar.Util
 	, takeStmtBoundV
 	, takeAnnotX 
 	, collectVars 
-	, bindingVarOfStmt )
+	, bindingVarOfStmt 
+	, substituteVV)
 where
 
 import Util
@@ -14,6 +15,9 @@ import Type.Exp
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 
 import Desugar.Plate.Trans
 
@@ -75,6 +79,18 @@ bindingVarOfStmt ss
 	_		-> Nothing
 	
 
+-----
+substituteVV :: Map Var Var -> Exp a -> Exp a
+substituteVV sub xx
+ = let	transTable
+	 =	(transTableId (\x -> return x))
+		{ transV
+		    = \v -> case Map.lookup v sub of
+				Just v'	-> return v'
+				_	-> return v }
+   in	evalState (transZM transTable xx) ()
+	
+				 
 
 
 

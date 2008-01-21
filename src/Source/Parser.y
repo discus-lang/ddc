@@ -406,7 +406,6 @@ expApp
 	| const					{ $1					}
 	| tuple					{ $1					}
 	| list					{ $1					}
-	
 
 expZ
 	:: { Exp }

@@ -219,6 +219,7 @@ data Exp
 	| XTuple	SP [Exp]
 	| XCons		SP Exp Exp
 	| XList		SP [Exp]
+	| XWildCard	SP 
 	
 	deriving (Show, Eq)
 

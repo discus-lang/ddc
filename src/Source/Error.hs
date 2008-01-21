@@ -46,6 +46,11 @@ data Error
 	| ErrorDefixNonAssoc		[Var]
 	| ErrorDefixMixedAssoc		[Var]
 
+	| ErrorBindingAirity
+		{ eVar1			:: Var
+		, eAirity1		:: Int
+		, eVar2			:: Var
+		, eAirity2		:: Int }
 
 	deriving Show		
 
@@ -121,6 +126,15 @@ instance Pretty Error where
 	% "      associativities in an infix expression.\n"
 	% "\n"
 	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
+ 
+ ppr (ErrorBindingAirity var1 airity1 var2 airity2)
+ 	= prettyPos var1 % "\n"
+	% "    Bindings for '" % var1 % "' have a differing number of arguments.\n"
+	% "\n"
+	% "    binding at " % prettyPos var1 % " has " % airity1 % " arguments\n"
+	% "           but " % prettyPos var2 % " has " % airity2 % "\n"
+	
+	
  
  ppr x
   	= panic stage

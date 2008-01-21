@@ -72,7 +72,7 @@ rewriteTreeM tree
  = do	treeR		<- liftM catMaybes 
  			$ mapM rewrite tree
 
-	treeP		<- rewritePatTreeM treeR
+	treeP		<- rewritePatternsTreeM treeR
 
 	return		$ treeP
  	

@@ -7,42 +7,23 @@ data Nat %r
 	= Z 
 	| S (Nat %r);
 
-cAdd z y
- = case z of {
- 	Z	-> y;
-	S x	-> S (cAdd x y);
- };
-
-{-
 cAdd Z	   y	= y
 cAdd (S x) y	= S (cAdd x y)
--}
 
-cMul x z
- = case z of {
- 	Z	-> Z;
-	S y	-> cAdd (cMul x y) x;
- };
+cMul x Z	= Z
+cMul x (S y)	= cAdd (cMul x y) x
 
-cExp x z
- = case z of {
- 	Z	-> S Z;
-	S y	-> cMul x (cExp x y);
- };
- 
- 
-natToInt n
- = case n of {
- 	Z	-> 0;
-	S x 	-> 1 + natToInt x;
- };
+cExp x Z	= S Z
+cExp x (S y)	= cMul x (cExp x y)
+
+natToInt Z	= 0
+natToInt (S x)	= 1 + natToInt x
 
 intToNat x
- = if x < 1
- 	then Z
-	else S (intToNat (x - 1));
+	| x < 1		
+	= Z
+
+	\= S (intToNat (x - 1));
 	
 main ()
- = do {
-	print 	$ show (natToInt (cExp (intToNat 3) (intToNat 8)))	% "\n";
- };
+ = 	print 	$ show (natToInt (cExp (intToNat 3) (intToNat 8)))	% "\n";

@@ -1,7 +1,7 @@
 
 module Source.Desugar.Patterns
 	( rewritePatVar
-	, rewritePatTreeM
+	, rewritePatternsTreeM
 	, makeMatchFunction 
 	, expToPat )
 
@@ -19,12 +19,20 @@ import Shared.Error
 
 import qualified Source.Exp		as S
 import qualified Source.Util		as S
+import qualified Source.Error		as S
 
-import qualified Desugar.Exp		as D
-import qualified Desugar.Bits		as D
-import qualified Desugar.Plate.Trans	as D
+import Desugar.Util			as D
+import Desugar.Exp			as D
+import Desugar.Bits			as D
+import Desugar.Plate.Trans		as D
+import Desugar.Pretty			as D
 
 import Source.Desugar.Base
+
+import qualified Data.Map		as Map
+import Data.Map				(Map)
+
+import Debug.Trace		
 
 -----
 stage	= "Source.Desugar.Patterns"
@@ -32,11 +40,26 @@ stage	= "Source.Desugar.Patterns"
 
 -- rewritePatTree ----------------------------------------------------------------------------------
 
-rewritePatTreeM
+rewritePatternsTreeM
 	:: D.Tree Annot -> RewriteM (D.Tree Annot)
 
-rewritePatTreeM tree
-	= mapM (D.transformXM rewritePatX) tree
+rewritePatternsTreeM tree
+ = do	
+ 	-- expand out patterns in match expressions
+	tree'	<- mapM (D.transformXM rewritePatX) tree
+
+	-- merge bindings at top level
+	let (psBind, psRest)	= partition (=@= PBind{}) tree'
+	let (ssMerged, errs)	= mergeBindings $ map topBindToStmt psBind
+	let psMerged		= map stmtToTopBind ssMerged
+		
+	when (not $ isNil errs)
+	 $ dieWithUserError errs
+	 
+	return	$ psRest ++ psMerged
+
+topBindToStmt (PBind n mV x)	= SBind n mV x
+stmtToTopBind (SBind n mV x)	= PBind n mV x
 
 rewritePatX 
 	:: D.Exp Annot -> RewriteM (D.Exp Annot)
@@ -46,6 +69,14 @@ rewritePatX xx
  	D.XMatch nn co aa
 	 -> do	aa'	<- mapM (rewritePatA co) aa
 	 	return	$ D.XMatch nn co aa'
+
+	D.XDo nn ss
+	 -> do	let (ss', errs)	= mergeBindings ss
+		
+		when (not $ null errs)
+		 $ dieWithUserError errs
+		
+	   	return	$ D.XDo nn ss'
 
 	_ -> return xx
 		
@@ -308,66 +339,104 @@ expToPat xx
 		$ "expToPat: no match for " % show xx % "\n"
 
  
-{-
-crushPats sp []	    x
- = 	return ([], x)
- 
-crushPats sp (p:ps) x
- = do 	(vs, x2)	<- crushPats sp ps x
-	(x3, v)		<- crushPat  sp x2 p
-	return	(v : vs, x3)
+
+-- Merge -------------------------------------------------------------------------------------------
+
+-- | Merge consecutive pattern bindings into a single binding.
+--	TODO: throw an error if merged bindings aren't consecutive
+--	TODO: check for overlapping patterns		
+
+--
+mergeBindings
+	:: [Stmt a] -> ([Stmt a], [S.Error])
+	
+mergeBindings ss	
+ = let	( ss', errs)	= mergeBindings' [] [] ss
+   in	( reverse ss'
+   	, reverse errs)
+
+mergeBindings' errAcc ssAcc []		= ([],	 		errAcc)
+mergeBindings' errAcc ssAcc (s1:[])	= (s1 : ssAcc, 		errAcc)
+mergeBindings' errAcc ssAcc
+	(  s1@(SBind n1 (Just v1) x1)
+	 : s2@(SBind n2 (Just v2) x2)
+	 : ss)
+	
+	-- should be able to merge these
+	| v1 == v2
+	= let	-- break binding into lambda bound vars and body expression
+		(vs1, xResult1)	= slurpLambdaVars x1
+		(vs2, xResult2) = slurpLambdaVars x2
+		
+		-- do the merge
+		(ssMerged, errs)= mergeBindings2
+					n1
+					s1 s2
+					v1 vs1 xResult1 
+			  		v2 vs2 xResult2
+	   in	mergeBindings' (errs ++ errAcc) ssAcc (ssMerged ++ ss)
+				
+-- can't merge these
+mergeBindings' errAcc ssAcc (s1 : s2 : ss)
+	= mergeBindings' errAcc (s1 : ssAcc) (s2 : ss)
 	
 
-crushPat 
-	:: SourcePos 
-	-> D.Exp Annot
-	-> S.Exp
-	-> RewriteM (D.Exp Annot, Var)
+mergeBindings2 
+	sp
+	s1 s2
+	v1 vs1 xResult1 
+	v2 vs2 xResult2
+	
+	-- all bindings must have the same airity
+--	| length vs1 /= length vs2
+--	= ( [s1, s2]
+--	  , [S.ErrorBindingAirity v1 (length vs1) v2 (length vs2)] )
+	  
+	-- looks ok
+	| otherwise
+	= let	
+		-- the two bindings have different names for their lambda bound variables.
+		--	rewrite the second expression to have the same names as the first
+		sub		= Map.fromList $ zip vs2 vs1
+		xResult2_sub	= substituteVV sub xResult2
 
-crushPat sp x p
- = case p of
- 	S.XAt sp1 v (S.XTuple sp ps)
-	 -> do	(x', vs)	<- mapAccumLM (crushPat sp) x (reverse ps)
+		-- merge the two expressions
+		xMerged		= mergeMatchX xResult1 xResult2_sub
+		xMerged_lam	= addLambdas sp vs1 xMerged
 
-		let lvs		= [ (D.LIndex sp i, v)	
-					| i	<- [0..]
-					| v	<- reverse vs]
-
-		return	( D.XMatch sp 
-				(Just (D.XVar sp v))
-				[D.AAlt sp 	[D.GCase sp (D.WConLabel sp (primTuple  $ length ps)	lvs)]
-						x']
-			, v )
-
-	S.XAt sp1 v (S.XCons sp p1 p2)
-	 -> do	(x2, v2)	<- crushPat sp x  p2
-	 	(x1, v1)	<- crushPat sp x2 p1
-
-		let lvs		= [ (D.LIndex sp i, v)	
-					| i	<- [0..]
-					| v	<- [v1, v2]]
-
-		return	( D.XMatch sp 
-				(Just (D.XVar sp v))
-				[D.AAlt sp 	[D.GCase sp (D.WConLabel sp primCons lvs)]
-						x1] 
-			, v)
+		sMerged		= SBind sp (Just v1) xMerged_lam
 		
-	S.XAt sp1 v (S.XCon sp var ps)
-	 -> do	(x', vs)	<- mapAccumLM (crushPat sp) x (reverse ps)
+	  in ( [sMerged]
+	     , [])
+	
 
-		let lvs		= [ (D.LIndex sp i, v)	
-					| i	<- [0..]
-					| v	<- reverse vs]
+-- | Merge these two expressions into a single match
+mergeMatchX :: Exp a -> Exp a -> Exp a
 
-	 	return	( D.XMatch sp 
-				(Just (D.XVar sp v))
-				[D.AAlt sp 	[D.GCase sp (D.WConLabel sp var lvs)]
-						x']
-			, v)
-			
-	S.XVar sp v
-	 -> 	return	( x, v )
--}
+-- two match expressions
+mergeMatchX (XMatch n1 Nothing as1) (XMatch _ Nothing as2)
+	= XMatch n1 Nothing (as1 ++ as2)
+
+-- match and a default
+mergeMatchX (XMatch n1 Nothing as1) x2
+	= XMatch n1 Nothing
+		(as1 ++ [AAlt n1 [] x2])
+
+
+
+-- | Slurp the lambda bound variables from the front of this expression
+slurpLambdaVars :: Exp a -> ([Var], Exp a)
+slurpLambdaVars xx
+ = case xx of
+ 	XLambda nn v x	
+	 -> let	(moreVars, xFinal)	= slurpLambdaVars x
+	    in	( v : moreVars
+	    	, xFinal)
+	
+	_ 	-> ([], xx)
+
+
+
+
 
 
