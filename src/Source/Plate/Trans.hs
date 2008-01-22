@@ -403,7 +403,8 @@ instance Monad m => TransM m Exp where
 	 -> do	xx'		<- transZM table xx
 	 	return		$ XList sp xx'
 
-
+	XWildCard{}
+	 ->	return		$ x
 -----
 instance Monad m => TransM m Alt where
  transZM table a
@@ -440,10 +441,6 @@ instance Monad m => TransM m Guard where
 	 -> do	x'		<- transZM table x
 	 	return		$ GBool x'
 		
-	GBoolU x
-	 -> do	x'		<- transZM table x
-	 	return		$ GBoolU x'
-	 
 	 
 -----
 instance Monad m => TransM m Pat where

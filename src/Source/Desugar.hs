@@ -480,10 +480,7 @@ instance Rewrite S.Guard (D.Guard Annot) where
 	 -> do	x'	<- rewrite x
 	 	return	$ D.GExp none (D.WConLabel none primTrue []) x'
 		
-	S.GBoolU x
-	 -> do	x'	<- rewrite x
-	 	return	$ D.GExp none (D.WConst none (CConstU (LInt 1))) x'
-		
+	
 
 ----
 -- This is basic rewriting of the AST from S.Pat to D.Pat

@@ -110,9 +110,6 @@ stage 	= "Source.Parser"
 	'|-'		{ TokenP { token = K.GuardCase } }
 	',-'		{ TokenP { token = K.GuardCaseC } }
 
-	'|#'		{ TokenP { token = K.GuardUnboxed } }
-	',#'		{ TokenP { token = K.GuardUnboxedC } }
-
 	'\\='		{ TokenP { token = K.GuardDefault } }
 	
 	'{'		{ TokenP { token = K.CBra	} }
@@ -546,7 +543,6 @@ guard1	:: { Guard }
 	| '|'  exp				{ GBool  $2				}
 		
 	| '|-' pat				{ GCase  $2				}
-	| '|#' exp				{ GBoolU $2				}
 
 
 

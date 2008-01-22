@@ -76,10 +76,10 @@ drawLoopH
 	fraction
 
  = match {
- 	|# x0 `primInt32U_eq` x1
+ 	| 1#	<- x0 `primInt32U_eq` x1
 	= ();
 	
-	|# fraction `primInt32U_ge` 0#
+	| 1#	<- fraction `primInt32U_ge` 0#
 	= do {
 		x0' :: Int32#;
 		x0'		= x0		+ stepx;
@@ -111,10 +111,10 @@ drawLoopV
 	fraction
 
  = match {
-	|# y0w `primInt32U_eq` y1w 
+	| 1#	<- y0w `primInt32U_eq` y1w 
 	= ();
 	
-	|# fraction `primInt32U_ge` 0# 
+	| 1#	<- fraction `primInt32U_ge` 0# 
 	= do {
 		x0' :: Int32#;
 		x0'		= x0		+ stepx;

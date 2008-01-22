@@ -362,7 +362,6 @@ instance Pretty Guard where
   	GCase pat		-> "- " % pat
 	GExp  pat exp		-> " "  % pat %>> " <- " % exp
 	GBool exp		-> " "  % ppr exp
-	GBoolU exp		-> "# " % exp
 	
 instance Pretty Pat where
  ppr ww

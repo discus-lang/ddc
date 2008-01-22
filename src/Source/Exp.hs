@@ -272,8 +272,6 @@ data Guard
 	| GExp		Pat Exp				-- ^ Match against this expression.
 
 	| GBool		Exp				-- ^ Test for boolean.
-	| GBoolU	Exp				-- ^ Test for unboxed boolean.
-
 	deriving (Show, Eq)
 	
 data Pat
