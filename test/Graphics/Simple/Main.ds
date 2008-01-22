@@ -8,8 +8,9 @@ main ()
 simple ()
  = do 	frame	= frame_new "Square" 600 600
 	gate (\z -> squareSpin frame 1.0)
+
 	
- 
+-- main loop 
 squareSpin :: Frame -> Float -> ()
 squareSpin frame rot
  = do 	arrayUI_fill frame.array 0
@@ -25,38 +26,40 @@ squareSpin frame rot
 	squareSpin frame (rot + 0.01)
 
 
+-- generate the fractal
 frac ::	Int %r2 -> Float -> [Primitive %r1]
 	:- Direct %r1
 	,  Const %r2
 
 frac n r
- = if n == 0 
- 	then rectangleC 50.0 50.0
-
-	else do
-		c	= Color (n * 40 + 50) (n * 40 + 50) (n * 60 + 50)
+	| n == 0
+	= rectangleC 50.0 50.0
+	
+frac n r
+ = do
+	c	= Color (n * 40 + 50) (n * 40 + 50) (n * 60 + 50)
 		
-		rectangleC 50.0 50.0
-		  ++ 	[ Local	[ Translate (0.0 + 50.0) (0.0 + 50.0)
-				, Rotate    r
-				, c
-		  		, Prims (frac (n - 1) (r * 1.1)) ]
-	
-			, Local [ Translate (0.0 + 50.0) (0.0 - 50.0)
-				, Rotate    r
-				, c
-				, Prims (frac (n - 1) (r * 1.1)) ]
-	
-			, Local [ Translate (0.0 - 50.0) (0.0 + 50.0)
-				, Rotate    r
-				, c
-				, Prims (frac (n - 1) (r * 1.1)) ]
+	rectangleC 50.0 50.0
+	  ++ 	[ Local	[ Translate (0.0 + 50.0) (0.0 + 50.0)
+			, Rotate    r
+			, c
+	  		, Prims (frac (n - 1) (r * 1.1)) ]
 
-			, Local [ Translate (0.0 - 50.0) (0.0 - 50.0)
-				, Rotate    r
-				, c
-				, Prims (frac (n - 1) (r * 1.1)) ]
-			]
+		, Local [ Translate (0.0 + 50.0) (0.0 - 50.0)
+			, Rotate    r
+			, c
+			, Prims (frac (n - 1) (r * 1.1)) ]
+	
+		, Local [ Translate (0.0 - 50.0) (0.0 + 50.0)
+			, Rotate    r
+			, c
+			, Prims (frac (n - 1) (r * 1.1)) ]
+
+		, Local [ Translate (0.0 - 50.0) (0.0 - 50.0)
+			, Rotate    r
+			, c
+			, Prims (frac (n - 1) (r * 1.1)) ]
+		]
 
 
 

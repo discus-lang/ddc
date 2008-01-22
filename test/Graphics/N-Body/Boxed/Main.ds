@@ -104,8 +104,11 @@ initBodies ()
 --
 draw_force :: Frame -> Array Body -> Int -> Int -> ()
 draw_force frame body x y
- 	| x >= worldSize.x 	= draw_force frame body 0 	(y + draw_force_step)
-	| y >= worldSize.y	= ()
+ 	| x >= worldSize.x 	
+	= draw_force frame body 0 	(y + draw_force_step)
+
+	| y >= worldSize.y	
+	= ()
 	
 draw_force frame body x y
  = do
