@@ -31,7 +31,7 @@ primTInt64U	= primVarI NameType	"Base.Int64#"	TInt64U		[Var.ISeaName "Int64"]
 primTFloat32U	= primVarI NameType	"Base.Float32#"	TFloat32U	[Var.ISeaName "Int32"]
 primTFloat64U	= primVarI NameType	"Base.Float64#"	TFloat64U	[Var.ISeaName "Int64"]
 
-primTCharU	= primVarI NameType	"Base.Char#"	TCharU		[Var.ISeaName "Char"]
+primTChar32U	= primVarI NameType	"Base.Char32#"	TChar32U	[Var.ISeaName "Char32"]
 primTStringU	= primVarI NameType	"Base.String#"	TStringU	[Var.ISeaName "String"]
 
 
@@ -53,11 +53,15 @@ primTInt16	= primVar NameType	"Base.Int16"				TInt16
 primTInt32	= primVar NameType	"Base.Int32"				TInt32
 primTInt64	= primVar NameType	"Base.Int64"				TInt64
 
+-- hack Float -> Float32
 primTFloat	= primVar NameType	"Base.Float32"				TFloat32
 primTFloat32	= primVar NameType	"Base.Float32"				TFloat32
 primTFloat64	= primVar NameType	"Base.Float64"				TFloat64
 
-primTChar	= primVar NameType	"Base.Char"				TChar
+-- hack Char -> Char32
+primTChar	= primVar NameType	"Base.Char32"				TChar32
+primTChar32	= primVar NameType	"Base.Char32"				TChar32
+
 primTString	= primVar NameType	"Base.String"				TString
 
 
@@ -225,7 +229,7 @@ bindPrimVar n v
 	-- hack these to 32 bit for now
 	"Int"		-> Just $ v { Var.bind = TInt32 	}
 	"Float"		-> Just $ v { Var.bind = TFloat32 	}
-
+	"Char"		-> Just $ v { Var.bind = TChar32	}
 
 	"String"	-> Just $ v { Var.bind = TString	}
 	"Ref"		-> Just $ v { Var.bind = TRef 		}
@@ -258,8 +262,8 @@ bindPrimVar n v
 	"Float32#"	-> Just $ v { Var.bind = TFloat32U	}
 	"Float64#"	-> Just $ v { Var.bind = TFloat64U	}
 
+	"Char32#"	-> Just $ v { Var.bind = TChar32U	}
 	"String#"	-> Just $ v { Var.bind = TStringU	}
-	"Char#"		-> Just $ v { Var.bind = TCharU		}
 
 	---
 

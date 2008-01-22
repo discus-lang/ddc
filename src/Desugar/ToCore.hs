@@ -35,7 +35,7 @@ import qualified Core.Pretty		as C
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
 import Desugar.ToCore.Util
-import Desugar.Pretty			()
+import qualified Desugar.Pretty		as D
 import Desugar.Project			(ProjTable)
 import qualified Desugar.Exp 		as D
 import qualified Desugar.Plate.Trans	as D
@@ -359,7 +359,7 @@ toCoreX xx
 	 	Just t		<- lookupType vT
 	 	let t_flat	= C.stripContextT $ C.flattenT t
 		
-		return		$ toCoreLit t_flat cc
+		return		$ toCoreConst t_flat cc
 
 	D.XConst
 		(Just (T.TVar T.KData vT, _))
@@ -368,7 +368,7 @@ toCoreX xx
 	 	Just t		<- lookupType vT
 		let t_flat	= (C.stripContextT . C.flattenT) t
 
-		return		$ toCoreLit t_flat cc
+		return		$ toCoreConst t_flat cc
 
  
 	-- We need the last statement in a do block to be a non-binding because of an
@@ -474,12 +474,74 @@ toCoreX xx
 		$ "toCoreX: cannot convert expression to core.\n" 
 		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
 
+-- | Convert a source constant to core
+--	We don't know what implementation type a source literal is supposed to be until 
+--	we do the type checking, so we need its type to guide the conversion. 
+--	eg literal 5.0 could be either Float32 or Float64
+--
+--	In addition, the desugared language supports boxed and unboxed literals, but the core
+--	only supports unboxed. The caller needs to handle this when using this function.
 
--- | Convert a constant to core 
+toCoreLit 
+	:: C.Type 
+	-> S.Literal 
+	-> ( C.Lit	-- the converted literal
+	   , Bool)	-- whether is was boxed
+
+toCoreLit tLit lit
+	= toCoreLit' (C.stripToShapeT tLit) lit
+	
+toCoreLit' tLit lit
+
+	-- integers
+	| S.LInt i		<- lit
+	, C.TData v _		<- tLit
+	= case Var.bind v of
+		Var.TInt8U	-> (C.LInt8  $ fromIntegral i, False)
+		Var.TInt16U	-> (C.LInt16 $ fromIntegral i, False)
+		Var.TInt32U	-> (C.LInt32 $ fromIntegral i, False)
+		Var.TInt64U	-> (C.LInt64 $ fromIntegral i, False)
+
+		Var.TInt8	-> (C.LInt8  $ fromIntegral i, True)
+		Var.TInt16	-> (C.LInt16 $ fromIntegral i, True)
+		Var.TInt32	-> (C.LInt32 $ fromIntegral i, True)
+		Var.TInt64	-> (C.LInt64 $ fromIntegral i, True)
+		
+
+	-- floats
+	| S.LFloat f		<- lit
+	, C.TData v _		<- tLit
+	= case Var.bind v of
+		Var.TFloat32U	-> (C.LFloat32 $ (fromRational . toRational) f, False)
+		Var.TFloat64U	-> (C.LFloat64 $ (fromRational . toRational) f, False)
+
+		Var.TFloat32	-> (C.LFloat32 $ (fromRational . toRational) f, True)
+		Var.TFloat64	-> (C.LFloat64 $ (fromRational . toRational) f, True)
+
+	-- chars
+	| S.LChar c		<- lit
+	, C.TData v _		<- tLit
+	= case Var.bind v of
+		Var.TChar32U	-> (C.LChar32 c, False)
+		Var.TChar32	-> (C.LChar32 c, True)
+	
+	-- strings
+	| S.LString s		<- lit
+	, C.TData v _		<- tLit
+	= case Var.bind v of
+		Var.TStringU	-> (C.LString s, False)
+		Var.TString	-> (C.LString s, True)
+
+
+-- | Convert a constant to core expression
 --	All literals in the core are unboxed.
 --	Perhaps literals in the desugared source should be unboxed as well.
-toCoreLit :: C.Type -> S.Const	-> C.Exp
-toCoreLit tt const
+--	TODO: merge this into toCoreLit
+toCoreConst :: C.Type -> S.Const	-> C.Exp
+toCoreConst tt const
+ 	= toCoreConst' (C.stripToShapeT tt) const
+
+toCoreConst' tt const
 
 	-- unboxed integers
 	| S.CConstU lit			<- const
@@ -522,8 +584,8 @@ toCoreLit tt const
 	| S.CConst lit	<- const
 	, S.LChar s	<- lit
 	, C.TData v [r@(C.TVar C.KRegion _)]	<- tt
-	, Var.bind v == Var.TChar
-	= C.XPrim C.MBox [C.XType r, C.XLit $ C.LChar s]
+	, Var.bind v == Var.TChar32
+	= C.XPrim C.MBox [C.XType r, C.XLit $ C.LChar32 s]
 
 	
 	-- boxed strings
@@ -534,6 +596,11 @@ toCoreLit tt const
 	= C.XPrim C.MBox [C.XType r, C.XAPP (C.XLit $ C.LString s) r]
 	
 
+	| otherwise
+	= panic stage
+		$ "toCoreConst: no match\n"
+		% "   tConst = " % show tt	% "\n"
+		% "   const  = " % show const	% "\n"
 
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
 toCoreVarInst v vT
@@ -660,35 +727,67 @@ toCoreG :: Maybe (Var, C.Type)
 toCoreG mObj gg
 	| D.GCase _ w		<- gg
 	, Just (objV, objT)	<- mObj
-	= do	w'		<- toCoreW w
+	= do	(w', _)		<- toCoreW w
 	 	return		$ C.GExp w' (C.XVar objV objT)
 		
 	| D.GExp _ w x		<- gg
-	= do	w'		<- toCoreW w
+	= do	(w', mustUnbox)	<- toCoreW w
 	 	x'		<- toCoreX x
-		return		$ C.GExp w' x'
 		
+		-- All literal matching in core is unboxed, so we must unbox the match object if need be.
+		case mustUnbox of
+		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XType r, C.XPrim C.MForce [x']])
+		 Nothing	-> return $ C.GExp w' x'
+
+	
 
 -- | Patterns
 toCoreW :: D.Pat Annot
-	-> CoreM C.Pat
+	-> CoreM 
+		( C.Pat
+		, Maybe C.Type)	-- whether to unbox the RHS, and from what region
 	
 toCoreW ww
  = case ww of
  	D.WConLabel 
-		_ -- (Just	(T.TVar T.KData vT, _))
+		_ 
 		v lvs
 	 -> do 
 	 	lvts		<- mapM toCoreA_LV lvs
-	 	return	$ C.WCon v lvts
+	 	return	( C.WCon v lvts
+			, Nothing)
 	 
+	-- match against boxed literal
+	D.WConst 
+		(Just	( T.TVar T.KData vT
+			, _))
+		(S.CConst lit)
+		
+	 -> do	mT		<- liftM (liftM C.stripToShapeT)
+	 			$  lookupType vT
+	 
+	 	let Just tLit@(C.TData _ (r:_))	
+			= mT
+	 
+		let (lit', True)	= toCoreLit tLit lit
+	 	return	( C.WLit lit'
+			, Just r)
+	
+	-- match against unboxed literal
 	D.WConst 
 		(Just 	( T.TVar T.KData vT
 			, _ )) 
-		(S.CConstU (S.LInt i))
+		(S.CConstU lit)
 
-	 -> do	Just t	<- lookupType vT
-	 	return	$ C.WLit (C.LInt32 $ fromIntegral i)
+	 -> do	mT		<- liftM (liftM C.stripToShapeT)
+	 			$  lookupType vT
+
+	 	let Just tLit@(C.TData _ (r:_))	
+			= mT
+
+		let (lit', False)	= toCoreLit tLit lit
+	 	return	( C.WLit lit'
+			, Nothing)
 	 
 	_ -> panic stage
 		$ "tCoreW: no match for " % show ww % "\n"

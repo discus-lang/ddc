@@ -9,7 +9,7 @@
 //
 Obj*	Control_Exception_ExceptionCaseNoMatch (Obj* moduleName, Obj* line, Obj* column);
 
-void	_deathCase (const Char8* moduleName, Int32 line, Int32 column)
+void	_deathCase (const Word8* moduleName, Int32 line, Int32 column)
 {
 	fprintf ( stderr
 		, "*** DDC RTS ERROR: %s:%d:%d: Exception: Non-exhaustive patterns in case.\n"
@@ -19,7 +19,7 @@ void	_deathCase (const Char8* moduleName, Int32 line, Int32 column)
 
 	primException_throw 
 		(Control_Exception_ExceptionCaseNoMatch 
-			( _boxString 	((Char8*)moduleName)
+			( _boxString 	((Word8*)moduleName)
 			, _boxInt32	(line)
 			, _boxInt32	(column)));
 

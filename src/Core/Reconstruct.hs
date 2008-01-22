@@ -497,7 +497,7 @@ reconX tt xx@(XLit l)
  			LFloat32{}	-> TData primTFloat32U	[]
  			LFloat64{}	-> TData primTFloat64U	[]
 
- 			LChar{}		-> TData primTCharU 	[]
+ 			LChar32{}	-> TData primTChar32U 	[]
 			_		-> panic stage
 					$  "reconX/XLit: no match for " % xx % "\n"
 
@@ -536,7 +536,7 @@ reconBoxType_bind bind
 	Var.TFloat32U	-> primTFloat32
 	Var.TFloat64U	-> primTFloat64
 
-	Var.TCharU	-> primTChar
+	Var.TChar32U	-> primTChar32
 	Var.TStringU	-> primTString
 
 -- | Convert this type to the boxed version
@@ -562,7 +562,7 @@ reconUnboxType_bind bind
 	Var.TFloat32	-> primTFloat32U
 	Var.TFloat64	-> primTFloat64U
 
-	Var.TChar	-> primTCharU
+	Var.TChar32	-> primTChar32U
 	
 
 -- | Reconstruct the type and effect of an operator application

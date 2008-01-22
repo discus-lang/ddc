@@ -314,7 +314,7 @@ instance Pretty Lit where
 	LFloat32 f	-> f	% "#32f"
 	LFloat64 f	-> f	% "#64f"
 	
-	LChar   c	-> show c % "#"
+	LChar32 c	-> show c % "#"
 	LString s	-> show s % "#"
 
 

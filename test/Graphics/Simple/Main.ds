@@ -31,8 +31,7 @@ frac ::	Int %r2 -> Float -> [Primitive %r1]
 	:- Direct %r1
 	,  Const %r2
 
-frac n r
-	| n == 0
+frac 0 r
 	= rectangleC 50.0 50.0
 	
 frac n r

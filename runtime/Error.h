@@ -6,7 +6,7 @@
 
 // -- Death
 void	_deathCase 
-		(const Char8* moduleName, Int32 line, Int32 column) 
+		(const Word8* moduleName, Int32 line, Int32 column) 
 		__attribute__((noreturn));
 
 void	_deathEval (void)

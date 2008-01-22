@@ -174,7 +174,7 @@ data Lit
 	| LFloat32	Double
 	| LFloat64	Double
 
-	| LChar		Char
+	| LChar32	Char
 	| LString	String
 	deriving (Show, Eq)
 

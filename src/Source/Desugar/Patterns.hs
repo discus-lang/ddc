@@ -161,10 +161,11 @@ sprinkleAtsW sp ww
  = case ww of
 	D.WConLabel nn var lvs
 	 -> do	v	<- newVarN NameValue
-	 	return	$ D.WAt nn v (D.WConLabel nn var lvs)
+	 	return	$ D.WAt nn v ww
 		
 	D.WConst nn c
-	 ->	return	ww
+	 -> do	v	<- newVarN NameValue
+	 	return	$ D.WAt nn v ww
 
 	D.WVar nn var	
 	 -> 	return $ D.WVar nn var
@@ -240,7 +241,8 @@ collectAtNodesW ww
 		return	$ D.WVar nn v
 
 	D.WConLabelP nn v lws
-	 -> do	let lvs	= mapZipped id (\(D.WVar _ v) -> v) lws
+	 -> trace (pprStr $ stripAnnot ww % "\n")
+	 $  do	let lvs	= mapZipped id (\(D.WVar _ v) -> v) lws
 	 	return	$ D.WConLabel nn v lvs
 		
 	_ -> return ww

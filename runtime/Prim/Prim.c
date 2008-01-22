@@ -36,7 +36,7 @@ Obj*	primUpdateCtor	(Obj* ctor_, Int32 i, Obj* obj)
 Obj*	primPrintString	(Obj* obj)
 {
 	_DEBUG (assert (_TAG(obj) == _tagBase));
-	Char8* cStr	= _unbox (String, obj);
+	Word8* cStr	= _unbox (String, obj);
 
 	printf ("%s", cStr);
 	fflush (stdout);
@@ -48,7 +48,7 @@ Obj*	primPrintString	(Obj* obj)
 Obj*	primError 	(Obj* obj)
 {
 	_DEBUG (assert (_TAG(obj) == _tagBase));
-	Char8* str	= _unbox (String, obj);
+	Word8* str	= _unbox (String, obj);
 	
 	fprintf (stderr, "*** Exception: %s\n", str);
 	abort();
@@ -65,9 +65,10 @@ Obj*	primExit	(Obj* code)
 
 
 // -----
+/*
 Obj*	primStringChar (Obj* dChar)
 {
-	Char8 c	= _unbox(Char8, dChar);
+	Word8 c	= _unbox(Char32, dChar);
 
 	Char8 s[2];
 	s[0]	= c;
@@ -75,13 +76,13 @@ Obj*	primStringChar (Obj* dChar)
 	
 	return	_boxString (s);
 }
-
+*/
 
 Obj*	primStringInt (Obj* dInt)
 {
 	Int32 i	= _unbox(Int32, dInt);
 	
-	Char8 s[20];			// how much do we actually need?
+	Word8 s[20];			// how much do we actually need?
 	snprintf (s, 20, "%d", i);
 	
 	return	_boxString (s);
@@ -91,7 +92,7 @@ Obj*	primStringInt (Obj* dInt)
 Obj*	primStringFloat32 (Obj* x)
 {
 	Float32 f	= _unbox(Float32, x);
-	Char8 s[32];
+	Word8 s[32];
 	snprintf (s, 32, "% f", f);
 	return	_boxString (s);
 }

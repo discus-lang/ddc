@@ -56,7 +56,7 @@ static inline UInt _unboxEnum(Obj* obj)
 // -----
 // -- Boxing Functions
 //
-MAKE_BOXFUN (Char8,	sizeof(Word32));	// pad out char to keep objects aligned
+MAKE_BOXFUN (Char32,	sizeof(Word32));
 MAKE_BOXFUN (Word8,	sizeof(Word32));
 
 
@@ -137,7 +137,7 @@ Obj*	primProjFieldR (Obj* obj, Int32 ix)
 	return	_boxRef (obj, &(data ->a[ix]));
 }
 
-MAKE_GETFUN (Char8);
+MAKE_GETFUN (Char32);
 MAKE_GETFUN (Int32);
 MAKE_GETFUN (Float32);
 

@@ -47,7 +47,7 @@ data VarBind
 	| TFloat32
 	| TFloat64
 
-	| TChar
+	| TChar32
 	| TString
 	
 	-- Primitive unboxed types
@@ -69,7 +69,8 @@ data VarBind
 	| TFloat32U
 	| TFloat64U
 
-	| TCharU
+	| TChar32U
+
 	| TStringU
 	
 	-- Effect constructors.

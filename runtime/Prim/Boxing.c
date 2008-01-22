@@ -14,7 +14,7 @@
 
 
 // -----
-Obj*	_boxString (String str)
+Obj*	_boxString (Word8* str)
 {
 	UInt	len	= strlen (str) + 1;
 

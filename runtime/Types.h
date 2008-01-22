@@ -25,7 +25,7 @@ typedef u_int64_t		UInt64;
 typedef float			Float32;
 typedef double			Float64;
 
-typedef char			Char8;		// An 8 bit byte in UTF-8 encoding.
+typedef u_int32_t		Char32;		
 
 typedef char*			String;
 

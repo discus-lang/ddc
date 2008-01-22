@@ -8,29 +8,30 @@ map2 f xx
 	x : xs	-> f x : map2 f xs;
  };
 
-
+-- check expression patterns 
 addMe :: Tuple2 Int [Tuple2 Int Int] -> Tuple3 (Tuple2 Int Int) Int (Tuple2 Int Int) -> Int;
 addMe (x, ((a, b) : z))	((c, d), e, (f, g)) 
  	= x + a + b + c + d + e + f + g;
 
-
+-- check a few pattern alternatives
 sumTuples xx
- = match {
- 	| []			<- xx	= 0;
-	| ((x1, y1) : xs) 	<- xx	= x1 + y1 + sumTuples xs;
- };
+ 	| []			<- xx	
+	= 0
+
+	| ((x1, y1) : xs) 	<- xx	
+	= x1 + y1 + sumTuples xs
 	
 
 listPairs xx
- = match { 
- 	| a : b : xs	<- xx 	=  (a, b) : listPairs (b : xs);
-				\= [];
- };
+ 	| a : 5 : xs	<- xx 	
+	=  (a, 5) : listPairs (23 : xs)
+	
+	\= []
 
 listPairTuples xx
- = match {
- 	| (x1, x2) : (y1, y2) : xs	<- xx
-	= (x1, y1) : (x2, y2) : listPairTuples ((x2, y2) : xs);	
+ 	| (x1, x2) : ('a', y2) : xs	<- xx
+	= (x1, 'b') : ('a', y2) : listPairTuples ((x2, y2) : xs)
 	
-	\= [];
- };
+	\= []
+
+

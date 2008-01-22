@@ -591,7 +591,7 @@ toSeaConst l
 	C.LFloat32 f	-> E.XLiteral (LFloat	$ (fromRational . toRational) f)
 	C.LFloat64 f	-> E.XLiteral (LFloat	$ (fromRational . toRational) f)
 
-	C.LChar c	-> E.XLiteral (LChar	$ c)
+	C.LChar32 c	-> E.XLiteral (LChar	$ c)
 	C.LString s	-> E.XLiteral (LString	$ s)
 	
 
