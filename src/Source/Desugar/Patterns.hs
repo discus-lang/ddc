@@ -241,8 +241,7 @@ collectAtNodesW ww
 		return	$ D.WVar nn v
 
 	D.WConLabelP nn v lws
-	 -> trace (pprStr $ stripAnnot ww % "\n")
-	 $  do	let lvs	= mapZipped id (\(D.WVar _ v) -> v) lws
+	 ->  do	let lvs	= mapZipped id (\(D.WVar _ v) -> v) lws
 	 	return	$ D.WConLabel nn v lvs
 		
 	_ -> return ww

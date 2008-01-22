@@ -21,12 +21,20 @@ sumTuples xx
 	| ((x1, y1) : xs) 	<- xx	
 	= x1 + y1 + sumTuples xs
 	
-
+-- check pattern matching of lists and unboxde data
 listPairs xx
  	| a : 5 : xs	<- xx 	
 	=  (a, 5) : listPairs (23 : xs)
 	
 	\= []
+
+-- check pattern matching against boxed data
+unboxed xx
+	| 1#		<- xx
+	= 0#
+	
+	
+
 
 listPairTuples xx
  	| (x1, x2) : ('a', y2) : xs	<- xx

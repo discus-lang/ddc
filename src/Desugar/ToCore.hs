@@ -782,7 +782,7 @@ toCoreW ww
 	 -> do	mT		<- liftM (liftM C.stripToShapeT)
 	 			$  lookupType vT
 
-	 	let Just tLit@(C.TData _ (r:_))	
+	 	let Just tLit@(C.TData _ [])	
 			= mT
 
 		let (lit', False)	= toCoreLit tLit lit
