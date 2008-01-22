@@ -17,9 +17,9 @@ main ()
 
 fillPrimes primes max high i
  = match {
-	|# primInt32U_gt high max		= ();
+	| 1# <- primInt32U_gt high max		= ();
 
-	|# checkPrime primes high i 0#
+	| 1# <- checkPrime primes high i 0#
 	= do {	arrayUI_poke primes high i;
 		fillPrimes primes max (high + 1#) (i + 1#);
 	};
@@ -30,10 +30,10 @@ fillPrimes primes max high i
 
 checkPrime array high x n
  = match {
- 	|# primInt32U_ge n high
+ 	| 1# <- primInt32U_ge n high
 	= 1#;
 
-	|# (primInt32U_eq (mod x (arrayUI_peek array n))) 0#
+	| 1# <- (primInt32U_eq (mod x (arrayUI_peek array n))) 0#
 	= 0#;
 	
 	\= checkPrime array high x (n + 1#);

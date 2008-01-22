@@ -153,6 +153,11 @@ bindX 	shared xx
 				 	  _	-> tt)
 				eff
 
+{-		trace	("bindX/XLam\n"
+			% "  eff       = " % eff	% "\n"
+			% "  effMasked = " % effMasked	% "\n")
+			$ return ()
+-}
 	 	return	( XLam v t x' effMasked clo
 			, addSharedVs 
 				(freeVars t)

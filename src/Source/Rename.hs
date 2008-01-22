@@ -586,10 +586,6 @@ bindGuard gg
 	 -> do	x'	<- rename x
 	 	return	$ GBool x'
 		
-	GBoolU x
-	 -> do	x'	<- rename x
-	 	return	$ GBoolU x'
-
 
 -- | Bind the variables in a pattern
 bindPat :: Pat -> RenameM Pat

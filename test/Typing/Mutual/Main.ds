@@ -1,0 +1,41 @@
+
+-- Check handling of mutually recursive functions.
+--	Core.Bind and Core.Reconstruct have to manage the introduction of local regions
+--	where the effects taken from the type graph refer to regions which are mentioned
+--	in one member of the group but not others.
+--
+--	Also, the region holding 'thing' should be in the closure of all three functions.
+
+
+thing	= 5
+
+main ()
+ = do	print	$ show $ fun1 20
+ 
+fun1 x	
+ = if x < 0
+ 	then 0
+	else 1 + fun2 (x-1) (x-2)
+
+fun2 x y	= 1 + fun3 (x-1) (y-1) (y-2)
+
+fun3 x y z	= 1 + fun1 (x-1) + y + z + thing
+
+
+{- -- We're not currently supporting mutually recurisve let or do's
+   -- The types should be ok, but they're not supported in either the renamer or core language.
+
+berko ()
+ = do	bun1 x 
+ 	 = if x < 0 
+	 	then 0
+	 	else 1 + bun2 (x-1) (x-2)
+
+	bun2 x y
+	 = 1 + bun3 (x-1) (y-1) (y-2)
+
+	bun3 x y z
+	 = 1 + bun1 (x-1) + y + z + thing
+
+	bun1 20
+-}

@@ -125,7 +125,7 @@ flattenTSum tt
  	TBot k 		-> []
 	TSum k ts	-> catMap flattenTSum ts
 	_		-> [tt]
-	
+
 --
 makeTMask :: Kind -> Type -> Type -> Type
 makeTMask k t1 t2

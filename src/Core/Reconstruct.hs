@@ -233,6 +233,7 @@ reconX tt exp@(XLam v t x eff clo)
 		, eff'		<- packT $ substituteT (tableEq tt) eff
 		, clo_sub	<- packT $ substituteT (tableEq tt) clo
 
+
 		-- TODO: We need to flatten the closure before trimming to make sure effect annots
 		--	on type constructors are not lost. It would be better to modify trimClosureC
 		--	so it doesn't loose them, or the closure equivalence rule so it doesn't care.
@@ -263,12 +264,35 @@ reconX tt exp@(XLam v t x eff clo)
 				% "    does not match closure annot on lambda:\n"	%> clo_sub	% "\n\n"
 	
 
-		= trace ( "reconX: XLam\n"
-			% "    xE  = " % xE	% "\n"
-			% "    eff = " % eff'	% "\n") $
+		-- Now that we know that the reconstructed effect closures of the body is less
+		--	than the annotations on the lambda we can reduce the annotation so it only 
+		--	contains members of the effect/closure that was reconstructed.
+		--
+		--	This is sound because we're only ever making the annotation smaller.
+		--	If we reduced the annotation too far, ie so it wasn't >= than the reconstructed
+		--	effect\/closure then we would get an error next type we called reconstruct.
+		--
+		--	We actually /have/ to do this clamping because when Core.Bind introduces local
+		--	regions for mutually recursive functions, the left over effect annotations contain
+		--	regions which are out of scope which makes Core.Lint complain.
+		--	
+		--	Another way of looking at this is that we're doing the effect masking that Core.Bind
+		--	should have done originally.
+		--
+		, eff_clamped	<- clampSum xE' eff'
 
-		   ( XLam v t x' eff clo
-		   , TFunEC t xT eff clo
+		-- don't clamp closures. There is no need to, and clampSum gives the wrong answer
+		--	because two closures   (x : Int %r1) and (y : Int %r1) are taken to be non-equal
+		--	due to their differing tags.
+--		, clo_clamped	<- clampSum xC' clo_sub
+
+		= trace ( "reconX: XLam\n"
+			% "    xE'  (recon) = " % xE'	% "\n"
+			% "    eff' (annot) = " % eff'	% "\n"
+			% "    eff_clamped  = " % eff_clamped	% "\n") $
+
+		   ( XLam v t x' eff_clamped clo_sub
+		   , TFunEC t xT eff_clamped clo_sub
 		   , TBot KEffect
 		   , xC')
 
@@ -851,7 +875,6 @@ applyTypeT table t1 t2
 		$ Nothing
 
 
-
 -- Table -------------------------------------------------------------------------------------
 
 -- | A table to carry additional information we collect when decending into the tree
@@ -908,3 +931,14 @@ addMoreVT v t tt
 		Just _	-> tt { tableMore = Map.insert v t (Map.delete v (tableMore tt)) }
 
 	
+-- Clamp -------------------------------------------------------------------------------------------
+-- | Clamp a sum by throwing out any elements of the second one that are not members of the first
+clampSum :: Type -> Type -> Type
+clampSum t1 t2
+	| kindOfType t1 == kindOfType t2
+	= let	parts1		= flattenTSum t1
+	 	parts2		= flattenTSum t2
+		parts_clamped	= [p	| p <- parts2
+	   				, elem p parts1]
+
+	  in	makeTSum (kindOfType t1) parts_clamped

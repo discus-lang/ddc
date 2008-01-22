@@ -1,20 +1,28 @@
 
 module Type.Effect.MaskLocal
-	( maskLocalT )
+	( maskLocalT 
+	, visibleRsT )
 
 where
 
 -----
 import Util
 
-import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace (..))
-
-import Shared.VarPrim
 
 import Type.Exp
 import Type.Plate
 import Type.Util
+
+import Shared.Error
+import Shared.VarPrim
+import qualified Shared.Var	as Var
+import Shared.Var		(NameSpace (..))
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+-----
+stage	= "Type.Effect.MaskLocal"
 
 -- | Mask effects on local regions.
 --	
@@ -25,56 +33,51 @@ import Type.Util
 --	We can also erase Const/Mutable Lazy/Direct constraints because these will be
 --	fulfilled by the letregion construct used to locally create the region.
 --
-maskLocalT :: Type -> Type
-maskLocalT	t
- = let	visT		= visibleRs t
-   in	maskLocalT' visT t
-   
-			
-maskLocalT'	visR tt
+maskLocalT :: Set Type -> Type -> Type
+maskLocalT tsVis tt
  = case tt of
-	TForall  vks t1		-> TForall vks (maskLocalT' visR t1)
-	TFetters fs  t1		-> addFetters (catMaybes $ map (maskF visR) fs) t1
+	TForall  vks t1		-> TForall vks (maskLocalT tsVis t1)
+	TFetters fs  t1		-> addFetters (catMaybes $ map (maskF tsVis) fs) t1
 	_ 			-> tt
 
 
 -- | Erase read effects to regions not in this list.
 --	also erase Const, Mutable, Lazy, Direct constraints on regions not in the list
 
-maskF :: [Var] -> Fetter -> Maybe Fetter
+maskF :: Set Type -> Fetter -> Maybe Fetter
 
-maskF	visR	(FLet t1 t2)
+maskF	tsVis	(FLet t1 t2)
 	| kindOfType t1 == KEffect
-	= Just $ FLet t1 (maskE visR t2)
+	= Just $ FLet t1 (maskE tsVis t2)
 
-maskF	visR	(FConstraint v [TVar KRegion r])
+maskF	tsVis	(FConstraint v [tR])
 	| elem v [primConst, primMutable, primLazy, primDirect]
-	, not $ elem r visR
+	, tR =@= TClass{} || tR =@= TVar{}
+	, not $ Set.member tR tsVis
 	= Nothing
 	
-maskF	visR	f	
+maskF	tsVis	f	
 	= Just f
 
 
 -- | Erase read effects to regions not in this list.
-maskE :: [Var] -> Effect -> Effect
-maskE	 env	eff
-	| TSum KEffect es <- eff
-	= makeTSum KEffect $ catMaybes $ map (maskE' env) es
+maskE :: Set Type -> Effect -> Effect
+maskE	 tsVis	eff
+	= makeTSum KEffect 
+	$ catMaybes $ map (maskE' tsVis) 
+	$ flattenTSum eff 
 
-	| otherwise
-	= eff
 	
-maskE'	env eff
+maskE'	tsVis eff
 
-	| TEffect v [TVar KRegion r]	<- eff
-	, elem (Var.name v ) ["Read", "Write"]
-	, not $ elem r env
+	| TEffect v [tR]	<- eff
+	, elem v [primRead, primWrite]
+	, tR =@= TClass{} || tR =@= TVar{}
+	, not $ Set.member tR tsVis
 	= Nothing
 	
 	| otherwise
 	= Just eff
-
 
 
 
@@ -84,6 +87,57 @@ maskE'	env eff
 --	We can't just call freeVarsT, because we don't want to get
 --		region vars present in the effect portion of the type.
 --
+visibleRsT :: Type -> Set Type
+visibleRsT tt
+ = case tt of
+	TForall vks t
+	 -> visibleRsT t
+	 
+	TFetters fs t
+	 -> visibleRsT t
+
+	TSum k ts
+	 -> Set.unions $ map visibleRsT ts
+	 
+	TMask k t1 t2
+	 -> Set.unions
+	 	[ visibleRsT t1 ]
+		
+	TVar KRegion _		-> Set.singleton tt
+	TVar{}			-> Set.empty
+
+	TTop{}	-> Set.empty
+	TBot{}	-> Set.empty
+
+	-- data
+	TData v ts
+	 -> Set.unions $ map visibleRsT ts
+
+ 	TFun t1 t2 eff clo	
+	 -> Set.unions
+	 	[ visibleRsT t1
+		, visibleRsT t2
+		, visibleRsT clo ]
+
+	-- 
+	TEffect{}		-> Set.empty	
+
+	-- closure
+	TFree v t	
+	 -> visibleRsT t
+	 
+	TClass KRegion cid	-> Set.singleton tt
+	TClass{}		-> Set.empty
+	
+	TError{}		-> Set.empty	
+
+	_
+	 -> panic stage
+	 	$ "visibleRsT: no match for " % tt
+	 
+	
+
+
 visibleRs :: Type -> [Var]
 visibleRs tt
 	= catMaybes

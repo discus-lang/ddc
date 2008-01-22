@@ -136,7 +136,7 @@ extractType_final True varT cid tTrim
  
 	-- close off never-quantified effect and closure vars
  	quantVars	<- gets stateQuantifiedVars
- 	let tFinal	=  finaliseT quantVars tPlug
+ 	let tFinal	=  packType $ finaliseT quantVars tPlug
 	
 	trace	$ "    tFinal          =\n" %> prettyTS tFinal	% "\n\n"
 	extractTypeC2 varT cid tFinal
@@ -243,13 +243,14 @@ generaliseType varT tCore envCids
 	-- Check context for problems.
 	checkContext tClean
 
-	-- Mask effects and CMDL constraints on local regions
+	-- Mask effects and CMDL constraints on local regions.
 	-- 	Do this before adding foralls so we don't end up with quantified regions which
 	--	aren't present in the type scheme.
 	--
-	let tMskLocal	= maskLocalT tClean
+	let rsVisible	= visibleRsT $ flattenT tClean
+	let tMskLocal	= maskLocalT rsVisible tClean
 
-
+	trace	$ "    rsVisible    = " % rsVisible		% "\n\n"
 	trace	$ "    tMskLocal\n"
 		%> prettyTS tMskLocal 	% "\n\n"
 

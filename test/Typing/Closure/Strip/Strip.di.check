@@ -40,10 +40,9 @@ foreign import extern add1X
         :$ Base.Data -> Base.Data;
         
 foreign import extern idF
-        :: forall t0 t1 %r0 !e0 $c0
-        .  (t0 -(!e0 $c0)> t1) -(!e1)> t0 -(!e0 $c0)> t1
-        :- !e1        = Base.!Read %r0
-        ,  !e0        :> System.Error.!Error
+        :: forall t0 t1 !e0 $c0
+        .  (t0 -(!e0 $c0)> t1) -> t0 -(!e0 $c0)> t1
+        :- !e0        :> System.Error.!Error
         ,  $c0        :> $Bot \ x
         :$ Base.Thunk -> Base.Thunk;
         
