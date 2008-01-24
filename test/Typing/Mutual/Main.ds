@@ -7,19 +7,21 @@
 --	Also, the region holding 'thing' should be in the closure of all three functions.
 
 
-thing	= 5
+thing1	= 5
 
 main ()
- = do	print	$ show $ fun1 20
+ = do	print	$ (show $ fun1 20 10) % "\n"
  
-fun1 x	
+fun1 x y
  = if x < 0
  	then 0
 	else 1 + fun2 (x-1) (x-2)
 
-fun2 x y	= 1 + fun3 (x-1) (y-1) (y-2)
+fun2 x 
+ = do	thing2	= 6
+ 	\y -> 1 + fun3 (x-1) (y-1) (y-2) + thing2
 
-fun3 x y z	= 1 + fun1 (x-1) + y + z + thing
+fun3 x y z	= 1 + fun1 (x-1) x + y + z + thing1
 
 
 {- -- We're not currently supporting mutually recurisve let or do's

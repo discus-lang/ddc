@@ -3,10 +3,6 @@ module Type.Port
 	( moreifyFettersT 
 	, slurpContraClassVarsT  
 	, portTypesT )
---	, forcePortsT
---	, renamePortsT
---	, 
---	, addToFetterTs )
 where
 
 import qualified Data.Map	as Map
@@ -22,6 +18,9 @@ import Type.Exp
 import Type.Util
 import Type.State
 import Type.Plate.Collect
+import Shared.Error
+
+stage	= "Type.Port"
 
 moreifyFettersT :: Set Type -> Type -> Type
 moreifyFettersT tsMore tt
@@ -47,7 +46,8 @@ slurpContraClassVarsT tt
 	TVar{}			-> []
 	TClass{}		-> []
 	TError{}		-> []	
-
+	_			-> panic stage
+				$ "slurpContraClassVarsT: no match for " % tt
 
 -----
 -- portTypesT

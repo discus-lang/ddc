@@ -10,6 +10,7 @@ module Type.State
 	, newVarN
 	, lookupSigmaVar
 	, addErrors 
+	, gotErrors
 	
 	-- get/set projections.
 	, sTrace
@@ -300,6 +301,12 @@ addErrors ::	[Error]	-> SquidM ()
 addErrors	errs
 	= modify (\s -> s { stateErrors = stateErrors s ++ errs })
 
+
+-- | See if there are any errors in the state
+gotErrors :: SquidM Bool
+gotErrors
+ = do	errs	<- gets stateErrors
+ 	return	$ not $ isNil errs
 
 
 -- get/set projections

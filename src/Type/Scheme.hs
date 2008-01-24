@@ -121,12 +121,16 @@ extractTypeC1 final varT cid tTrace
 	-- Trim closures
 	let tTrim	= 
 		case kindOfType tPack of
-			KClosure	-> packType $ trimClosureC tPack
-			_		-> packType $ trimClosureT tPack
+			KClosure	-> trimClosureC tPack
+			_		-> trimClosureT tPack
 
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
-	extractType_final final varT cid tTrim
+	let tTrimPack	= packType tTrim
+	trace	$ "    tTrimPack        =\n" %> prettyTS tTrimPack % "\n\n"
+
+
+	extractType_final final varT cid tTrimPack
 	
 
 extractType_final True varT cid tTrim
@@ -158,9 +162,9 @@ extractTypeC2 varT cid tFinal
 -- | Generalise a type
 --
 generaliseType
-	:: Var 
-	-> Type
-	-> [ClassId]
+	:: Var 			-- binding variable of the type being generalised
+	-> Type			-- the type to generalise
+	-> Set ClassId		-- the classIds which must remain fixed (non general)
 	-> SquidM Type
 
 generaliseType varT tCore envCids
@@ -218,7 +222,7 @@ generaliseType varT tCore envCids
 	trace	$ "    staticDanger     = " % staticDanger	% "\n"
 
 	-- These are all the cids we can't generalise
-	let staticCids		= envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
+	let staticCids		= Set.toList envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
 
 	-- Rewrite non-static cids to the var for their equivalence class.
 	tPlug			<- plugClassIds staticCids tMore

@@ -19,10 +19,15 @@ import qualified Data.Set	as Set
 import Util
 import Util.Graph.Deps
 
-import Debug.Trace
+import qualified Debug.Trace
 
 -----
 stage	= "Type.Util.Pack"
+debug = True
+trace ss x
+	= if debug 
+		then (Debug.Trace.trace (pprStr ss) x)
+		else x
 
 ------------------------
 -- packType
@@ -43,9 +48,13 @@ packType tt
 
 
 packData  :: Data -> Data
-packData tt	
+packData tt
+-- = trace ("packData\n" %> prettyTS tt % "\n") $
+ = packData2 tt
+ 
+packData2 tt
  | KData	<- kindOfType tt
- = let	tt'	= packTypeLs [] tt
+ = let	tt'	= packTypeLs False [] tt
    in	if tt == tt'
    	 then tt'
 	 else packData tt'
@@ -53,7 +62,7 @@ packData tt
 packRegion :: Region -> Region
 packRegion tt
  | KRegion	<- kindOfType tt
- = let 	tt'	= packTypeLs [] tt
+ = let 	tt'	= packTypeLs True [] tt
    in	if tt == tt'
    	 then tt'
 	 else packRegion tt'
@@ -68,7 +77,7 @@ packRegion tt
 packEffect :: Effect -> Effect
 packEffect tt
  | KEffect	<- kindOfType tt
- = let 	tt'	= inlineFsT $ packTypeLs [] tt
+ = let 	tt'	= inlineFsT $ packTypeLs True [] tt
    in	if tt	== tt'
       	 then tt'
 	 else packEffect tt'
@@ -76,7 +85,7 @@ packEffect tt
 packClosure :: Closure -> Closure
 packClosure tt
  | KClosure	<- kindOfType tt
- = let 	tt'	= crushT $ inlineFsT $ packTypeLs [] tt
+ = let 	tt'	= crushT $ inlineFsT $ packTypeLs True [] tt
    in	if tt	== tt'
       	 then tt'
 	 else packClosure tt'
@@ -89,74 +98,92 @@ packClosure tt
 	 
 	 
 -----
-packTypeLs :: [(Type, Type)] -> Type -> Type
-packTypeLs ls tt
+packTypeLs 
+	:: Bool			-- whether to effect and closure constructors as well
+	-> [(Type, Type)]	-- types to substitute for
+	-> Type			-- type to substitute into
+	-> Type			-- result type
+
+packTypeLs ld ls tt
+-- = trace ("packTypeLs: " % tt % "\n") $
+ = packTypeLs' ld ls tt
+
+packTypeLs' ld ls tt
  = case tt of
 	TError{}
  	 -> tt
 
 	-- push foralls under closure tags
 	TForall vks (TFree v1 t)	
-	 -> TFree v1 (TForall vks t)
+	 -> TFree v1 (TForall vks (packTypeLs ld ls t))
 
  	TForall vks t	
-	 -> let	t'	= packTypeLs ls t
+	 -> let	t'	= packTypeLs ld ls t
 	    in	TForall vks t'
 
 	-- keep fetters under foralls.
 	TFetters fs (TForall vks t)
-	 -> TForall vks (TFetters fs t)
+	 -> TForall vks (TFetters fs (packTypeLs ld ls t))
 
 	TFetters fs t
-	 -> packTFettersLs ls tt
+	 -> packTFettersLs ld ls tt
 
-	
-	TSum KData ts
-	 -> let ts'	= nub
-	 		$ map (packTypeLs ls)
-			$ map (loadFunData ls) ts
- 	    in	makeTSum KData ts'
-	 	 
 	TSum k ts
 	 -> let	ts'	= nub
-	 		$ map (packTypeLs ls) 
-			$ map (loadType ls) ts
+	 		$ map (packTypeLs True ls) ts
 	    in	makeTSum k ts'
 
-	    
+	-- don't substitute into the lhs of mask expression so we end up with
+	--	c2 = c3 \ x ; c3 = { x : ... }   etc
 	TMask k t1 t2
-	 -> let	t1'	= packTypeLs ls t1
-	 	t2'	= packTypeLs ls $ loadType ls t2
+	 -> let	t1'	= packTypeLs ld ls t1
+	 	t2'	= packTypeLs True ls t2
 	    
 	    in  makeTMask k t1' t2'
 	    
-	TVar{}	-> tt
+	TVar k v2
+	 -> case lookup tt ls of
+	 	-- always substitute in trivial @cid1 = @cid2 constraints.
+		Just t'@TVar{}		-> t'
+
+		-- only substitute effect and closures if ld is turned on
+		Just TSum{}	| not ld	-> tt
+		Just TEffect{}	| not ld	-> tt		
+		Just TFree{}	| not ld	-> tt
+		Just TMask{}	| not ld	-> tt
+
+		-- don't substitute for TBots or we risk loosing port vars
+		Just TBot{}			-> tt
+
+		Just t'				-> t'
+		Nothing				-> tt
+
 
 	TTop k	-> tt
 	TBot k 	-> tt
 		 
 	-- data
 	TData v ts
-	 -> let	ts'	= map ((packTypeLs ls) . (loadFunData ls)) ts
+	 -> let	ts'	= map (packTypeLs ld ls) ts
 	    in	TData v ts'
 
  	TFun t1 t2 eff clo
-	 -> let	t1'	= packTypeLs ls $ loadFunData ls t1
-	 	t2'	= packTypeLs ls $ loadFunData ls t2
-		eff'	= packTypeLs ls $ loadCV ls eff 
-		clo'	= packTypeLs ls $ loadCV ls clo 
+	 -> let	t1'	= packTypeLs ld ls t1
+	 	t2'	= packTypeLs ld ls t2
+		eff'	= packTypeLs ld ls eff
+		clo'	= packTypeLs ld ls clo
 	    in	TFun t1' t2' eff' clo'
 
 	-- effect
 	TEffect v ts
-	 -> let	ts'	= map ((packTypeLs ls) . (loadFunData ls)) ts
+	 -> let	ts'	= map (packTypeLs ld ls) ts
 	    in	TEffect v ts'
 	    
 	-- closure
 	TFree v1 (TFree v2 t)		-> TFree v1 t
 	TFree v1 (TBot KClosure)	-> TBot KClosure
 
-	TFree v t -> TFree v (loadType ls t)
+	TFree v t -> TFree v (packTypeLs True ls t)
 	 
 	TTag v	-> tt
 	    
@@ -164,23 +191,34 @@ packTypeLs ls tt
 	TWild{}	-> tt
 
 	-- solver
-	--	substitute in trivial @cid1 = @cid2 constraints.
 	TClass k cid1
 	 -> case lookup tt ls of
-	 	Just t@(TClass _ cid2)	-> t
-		_			-> tt
+		-- always substitute in trivial @cid1 = @cid2 constraints.
+		Just t'@TClass{}		-> t'
+
+		-- only substitute effect and closures if ld is turned on
+		Just TSum{}	| not ld	-> tt
+		Just TEffect{}	| not ld	-> tt		
+		Just TFree{}	| not ld	-> tt
+		Just TMask{}	| not ld	-> tt
+
+		-- don't substitute for TBots or we risk loosing port vars
+		Just TBot{}			-> tt
+
+		Just t'				-> t'
+		Nothing				-> tt
 
 	TAccept t
-	 -> let	t'	= packTypeLs ls $ loadType ls t
+	 -> let	t'	= packTypeLs ld ls t
 	    in	TAccept t'
 
 	-- sugar
 	TMutable t
-	 -> let t'	= packTypeLs ls $ loadType ls t
+	 -> let t'	= packTypeLs ld ls t
 	    in	TMutable t'
 	    
 	TElaborate t
-	 -> let t'	= packTypeLs ls $ loadType ls t
+	 -> let t'	= packTypeLs ld ls t
 	    in	TElaborate t'
 
 	_ -> panic stage
@@ -190,8 +228,13 @@ packTypeLs ls tt
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
 --	(ie, find a fixpoint of restrictFs . packFettersLs) 
 --
-packTFettersLs :: [(Type, Type)] -> Type -> Type
-packTFettersLs ls tt
+packTFettersLs 
+	:: Bool
+	-> [(Type, Type)] 
+	-> Type 
+	-> Type
+
+packTFettersLs ld ls tt
  = case tt of
 	TFetters fs (TError{})
 	 -> tt
@@ -199,10 +242,9 @@ packTFettersLs ls tt
  	TFetters fs t
 	 -> let	ls'	= [(t1, t2) | FLet t1 t2 <- fs] ++ ls
 
-		tPacked		= packTypeLs ls' 	
-				$ loadType ls' t
+		tPacked		= packTypeLs ld ls' t
 
-		fsPacked	= map (packFetterLs ls') 
+		fsPacked	= map (packFetterLs ld ls') 
 				$ map shortLoopsF
 				$ fs
 
@@ -214,8 +256,6 @@ packTFettersLs ls tt
 		(tInlined, fsInlined)
 				= inlineFs1 tZapped fsZapped
 
---		(tBot, fsBot)	= inlineTBots tInlined fsInlined
-
 		fsSorted	= sortFs		
 				$ restrictFs tInlined
 				$ fsInlined
@@ -223,7 +263,7 @@ packTFettersLs ls tt
 		tFinal		= addFetters fsSorted tInlined
 
 	    in	if length fsSorted < length fs
-	    	 then packTFettersLs ls tFinal
+	    	 then packTFettersLs ld ls tFinal
 		 else tFinal
 
 	_ -> tt
@@ -231,54 +271,18 @@ packTFettersLs ls tt
 
 -- | Pack the type in the RHS of a TLet
 --
-packFetterLs :: [(Type, Type)] -> Fetter -> Fetter
-packFetterLs ls ff
+packFetterLs :: Bool -> [(Type, Type)] -> Fetter -> Fetter
+packFetterLs ld ls ff
  = case ff of
  	FLet t1 t2
-	 -> FLet t1 (crushT (packTypeLs ls t2))
+	 -> FLet t1 (crushT (packTypeLs ld ls t2))
 
 	FConstraint v ts
 	 -> FConstraint v 
-	 	(map (\t -> packTypeLs ls $ loadType ls t) ts)
+	 	(map (packTypeLs True ls) ts)
 
 	_	
 	 -> ff
-
-
--- | Substitute for TClasses in this type.
-loadType :: [(Type, Type)] -> Type -> Type
-loadType ls tt
- = case tt of
- 	TClass k cid
-	 -> case lookup tt ls of
-	 	Just t2	-> t2
-		_	-> tt
-		
-	TVar k v
-	 -> case lookup tt ls of
-	 	Just t2	-> t2
-		_	-> tt
-		
-	_	-> tt
-
-
-loadFunData :: [(Type, Type)] -> Type -> Type
-loadFunData ls tt
- = let	tt'	= loadType ls tt 
-   in	case tt' of
-		TFun{}		-> tt'
-		TData{}		-> tt'
-		TVar{}		-> tt'
-
-		_		-> tt
-
-loadCV :: [(Type, Type)] -> Type -> Type
-loadCV ls tt
- = let tt'	= loadType ls tt
-   in  case tt' of
-   		TClass{}	-> tt'
-		TVar{}		-> tt'
-		_		-> tt		
 
 
 -- | Restrict the list of TLet fetters to ones which are 

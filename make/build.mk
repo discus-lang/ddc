@@ -11,7 +11,7 @@ GHC=ghc
 # -- Development compile
 GHC_FLAGS	:= -XPatternGuards -XImplicitParams -XUnboxedTuples -XParallelListComp -XPatternSignatures \
 		   -XMultiParamTypeClasses -XFlexibleInstances -XFlexibleContexts -XFunctionalDependencies \
-		   -tmpdir /tmp -Onot
+		   -XScopedTypeVariables -tmpdir /tmp -Onot
 GCC_FLAGS	:= -std=c99 -Wundef -fPIC
 
 # -- For Haskell Program Coverage

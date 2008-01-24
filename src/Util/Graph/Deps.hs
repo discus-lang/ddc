@@ -3,7 +3,9 @@ module Util.Graph.Deps
 	( graphReachableS
 	, graphReachable
 	, graphReachable1_nr
-	, graphSequence)
+	, graphSequence
+	, graphSCC
+	, graphPrune)
 where
 
 import qualified Debug.Trace	as Debug
@@ -114,6 +116,38 @@ graphSequence graph visited (x:xs)
 	  
 
 
+-- | Work out the stronlly connected components in this graph starting from the given element.
+--	
+graphSCC :: Ord a => Map a (Set a) -> a	-> [Set a]
+graphSCC graph x
+	= graphSCC' graph Set.empty [] x
 
+graphSCC' :: Ord a => Map a (Set a) -> Set a -> [a] -> a -> [Set a]
+graphSCC' 
+	graph 		-- the graph
+	visited 	-- the set of nodes already visited
+	path 		-- the path we've taken during the search (in reverse order)
+	x		-- the current node
+	
+	-- If we've already visited this node then we've found a loop in the graph
+ 	| Set.member x visited
+	= [Set.fromList path]
+	
+	-- Otherwise follow all the out edges
+	| otherwise
+	= let	out 		= fromMaybe Set.empty (Map.lookup x graph)
+		visited'	= Set.insert x visited
+	  in	concat	$ map (\o -> graphSCC' graph visited' (o : path) o) 
+	  		$ Set.toList out
+
+
+-- | Prune a graph to just the elements reachable from this node
+--
+graphPrune :: Ord a => Map a (Set a) -> a -> Map a (Set a)
+graphPrune graph k
+ = case	Map.lookup k graph of
+ 	Just xs		-> Map.insert k xs (Map.unions $ map (graphPrune graph) $ Set.toList xs)
+	Nothing		-> Map.empty
+	
 
 

@@ -55,9 +55,17 @@ import Type.Crush.Sum
 import Type.Check.CheckPure
 import Type.Check.CheckConst
 
+import Util.Graph.Deps
+
 -----
+-- debug the solver
 debug	= True
 trace s	= when debug $ traceM s
+
+-- debug the grinder
+debugG	= False
+traceG s = when debugG $ traceM s
+
 stage	= "Type.Solve"
 
 -----
@@ -114,30 +122,8 @@ solve	args ctree
 
 		return ()
 
-	 else	solveFinalise
+	 else	return ()
 	 	
-solveFinalise
- = do
-	-- Generalise left over types.
-	--	Types are only generalised before instantiations. If a function has been defined
-	--	but not instantiated here (common for libraries) then we'll need to perform the 
-	--	generalisation now so we can export its type scheme.
-	--
-	sGenSusp		<- gets stateGenSusp
-	let sGeneraliseMe 	= Set.toList sGenSusp
-
-	trace	$ "\n=== solve: Generalising left over types.\n"
-		% "    sGeneraliseMe   = " % sGeneraliseMe % "\n"
-	
-	mapM_ solveGeneralise $ sGeneraliseMe
-	
-
-	-- When generalised schemes are added back to the graph we can end up with (var = ctor)
-	--	constraints in class queues which need to be pushed into the graph by another grind.
-	--
-	solveCs [CGrind]
-		
-	return ()
  			
 -----
 solveCs :: [CTree] 
@@ -331,8 +317,8 @@ solveNext cs
 	 then 	solveCs cs
 	 else do
 	 	trace	$ "\n"
-	 		% "####################################\n"
-	 		% "### Errors detected, bailing out\n\n"
+	 		% "#####################################################\n"
+	 		% "### solveNext: Errors detected, bailing out\n\n"
 			
 		return True
 
@@ -439,36 +425,39 @@ solveCInst_let
 	gContains	<- gets stateContains
 	gInstantiates	<- gets stateInstantiates
 
-	-- Restrict the instantiatesmap to just instantiations of let bindings.
+	-- The instantiates map contains instantiatons of lambda bindings, but
+	--	restruct it to just instantiations of let bindings because that's all we
+	--	care about here.	
 	let gInstLet	= Map.map (Set.filter (\b -> b =@= BLet{})) gInstantiates
 
 	-- The branch dependency graph is the union of the contains and instantiates graph
 	let gDeps	=  Map.unionWith (Set.union) gContains gInstLet
 	genSusp		<- gets stateGenSusp
 
-{-	trace	$ "    gContains:\n" 	%> prettyBranchGraph gContains	% "\n\n"
-		% "    gInstLet:\n" 	%> prettyBranchGraph gInstLet	% "\n\n"
-		% "    gDeps:\n" 	%> prettyBranchGraph gDeps 	% "\n\n"
-		% "    genSusp       = " % genSusp			% "\n\n"
--}
-	solveCInst_find cs c bindInst path gDeps genSusp
+	-- Work out the bindings in this ones group
+	mBindGroup	<- bindGroup vInst
+
+	trace	$ "    genSusp       = " % genSusp			% "\n\n"
+
+
+	solveCInst_find cs c bindInst path mBindGroup genSusp
 	
 
 solveCInst_find 
 	cs 
 	c@(CInst src vUse vInst)
-	bindInst path gDeps genSusp
+	bindInst path mBindGroup genSusp
 	
-	-- If 	There is a suspended generalisation
-	-- AND	we can reach the branch that we're in from the one we're trying to generalise
-	-- THEN we're on a recursive loop and it's not safe to generalise.
- 	| Set.member vInst genSusp
-	, sDeps		<- graphReachableS gDeps (Set.singleton bindInst)
-	, (p : _)	<- path
-	, Set.member p sDeps
+	-- If the binding to be instantiated is part of a recursive group and we're not ready
+	--	to generalise all the members yet, then we must be inside one of them.
+	--	
+	| Just vsGroup	<- mBindGroup
+	, not $ and $ map (\v -> Set.member v genSusp) $ Set.toList vsGroup
 	= do 	
-		trace	$ ppr "*   solveCInst_find: Recursive path\n"
+		trace	$ ppr "*   solveCInst_find: Recursive binding.\n"
 		return	$ (CInstLetRec src vUse vInst) : cs
+
+
 
 		
 	-- IF	There is a suspended generalisation
@@ -477,6 +466,7 @@ solveCInst_find
 	| Set.member vInst genSusp
 	= do	
 		trace	$ ppr "*   solveCInst_find: Generalisation\n"
+
 		return	$ CGrind : (CInstLet src vUse vInst) : cs
 			
 	-- The type we're trying to generalise is nowhere to be found. The branch for it
@@ -485,7 +475,7 @@ solveCInst_find
 	--	we try the instantiation again.
 	| otherwise
 	= do	
---		trace	$ "=== Reorder.\n"
+		trace	$ ppr "=== Reorder.\n"
 --			% "    queue =\n" %> (", " %!% map prettyCTreeS (c:cs)) % "\n\n"
 	
 		let floatBranch prev cc
@@ -510,54 +500,131 @@ solveCInst_find
 
 
 
--- | Extract and generalise the type scheme for this var.
---	The var should be present in the map of suspended generalisations
-
-solveGeneralise ::	Var -> SquidM Type
+-- | Extract and generalise the binding group containing this variable, and return
+--	the type scheme for this variable.
+--
+--	Only the type for the variable asked for is returned, but the whole binding
+--	group is generalised and their schemes written back to the type graph.
+--	
+solveGeneralise :: Var -> SquidM Type
 solveGeneralise	vGen
  = do
-	trace	$ "\n=============================================================\n"
+	trace	$ "\n"
+		% "=============================================================\n"
 		% "=== Generalise " % vGen % "\n"
 
-	-- Work out the tyvars of all the bindings in this ones environment.
-	--	We'll assume things are scoped properly, so the environment
-	--	is just all the vars instantiated \\ all the vars bound.
+	-- We now need to work out if this binding is a member of a mutually recursive group.
+	--	If we're generalising one member, then constraints from all other members should
+	--	already be in the graph. (sanity check this against genSusp)
+	vsBindGroup	<- liftM Set.toList 
+			$  liftM (fromMaybe Set.empty)
+			$  bindGroup vGen
+
+	-- Sort the bind group so that the variable that was originally asked for, vGen, is at
+	--	the front of the list. We do this so its type is also at the front of the list
+	--	returned from solveGeneralise_group
+	let vsGroup_sorted = vGen : (vsBindGroup \\ [vGen])
+
+	-- Generalise the group of bindings
+	tsGen		<- solveGeneralise_group vsGroup_sorted
+	
+	trace	$ "=== Generalise " % vGen % " done\n"
+		% "=============================================================\n"
+
+	-- Return the type that was requested by the caller
+	let Just tGen	= takeHead tsGen
+	
+	return tGen
+
+
+-- | Generalise a group of bindings.
+--	All members of the binding group should be present in the list of suspended generalisations.
+
+solveGeneralise_group
+	:: [Var]	-> SquidM [Type]
+	
+solveGeneralise_group vsGen@(vGen : vsGenRest)
+ = do
+	genSusp		<- gets stateGenSusp
+	trace	$ "    genSusp    = " % genSusp	% "\n"
+
+
+	-- We first need to work out the types for all the free variables in the bind group.
+	--	This can't be done statically before type inference starts because we wont know what
+	--	names our projections will resolve to.
+	
+	-- 	However, when it comes time to generalise a group of bindings, all the projections that
+	--	were their constraint branches will have been resolved to real function names and instantiated
+	--	so we can work out the free variables of the bind group by using the branch containment 
+	--	and instantiation maps in the solver state.
+	
+	-- First use the contains map to work out all the constraint branches contained
+	--	within the ones that define the binding froup.
 	gContains	<- gets stateContains
-	gInstantiated	<- gets stateInstantiates
+
+	-- start the search at the outermost branch for each of the bindings
+	let bsRoots	= map Set.singleton
+			$ map (\v -> BLet [v])
+			$ vsGen
+
+	-- work out all other branches contained within
+	let bsContained	= Set.toList
+			$ Set.unions 
+			$ map (graphReachableS gContains)
+			$ bsRoots
+
+	-- this gives us all the variables that were bound within the code for this bind group.
+	let vsBound	= catMap takeCBindVs bsContained
 	
-	let bsBound	= Set.toList $ graphReachableS gContains (Set.singleton (BLet [vGen]))
-	let vsBound	= catMap takeCBindVs bsBound
-	
-	-- all the vars instantiated by the contained branches
+	-- Now collect up all the variables that were instantiated by the bind group
+	gInstantiates	<- gets stateInstantiates
 	let bsInst	= Set.toList
 			$ Set.unions
-			$ map (\b -> fromMaybe Set.empty $ Map.lookup b gInstantiated)
-			$ bsBound
+			$ map (\b -> fromMaybe Set.empty $ Map.lookup b gInstantiates)
+			$ bsContained
 	
 	let vsInst	= catMap takeCBindVs bsInst
 	
+	-- The free variables are the ones that were instantiated minus the ones that were bound.
 	let vsEnv	= vsInst \\ vsBound
 				
 	trace	$ "    vsBound    = " % vsBound		% "\n"
 		% "    vsInst     = " % vsInst		% "\n"
 		% "    vsEnv      = " % vsEnv		% "\n"
 	
-	-- Extract the types present in the environment.
-	--	No need to worry about generalisation here, if a var was in the environment
-	--	then it was instantiated, so generalisation was already forced.
+
+	-- Extract the types for the free variables.
+	--	This forms our type environment.
+	--	As all the constraints for the branch to be generalised are in the graph now (including
+	--	instantiations) all these types for the environment are guaranteed to be already
+	--	generalised and in the graph
+
 	Just tsEnv	<- liftM sequence
 			$  mapM (extractType False) vsEnv
 
-	-- Collect up the cids free in the types in the environment.
-	let cidsEnv	= nub $ catMap collectClassIds tsEnv
-
+	-- Collect up the cids free in in the environment.
+	--	These cids are fixed during the generalisation.
+	let cidsEnv	= Set.fromList $ catMap collectClassIds tsEnv
 	trace	$ "    cidsEnv    = " % cidsEnv		% "\n"
 
+	-- Extract and generalise the types for all of the members of the binding group
+	tsScheme	<- mapM (solveGeneralise_single cidsEnv) vsGen
+
+	return tsScheme
+
+
+-- | Extract a single type from the graph and generalise it using this set of fixed classIds.
+--
+solveGeneralise_single 
+	:: Set ClassId -> Var -> SquidM Type
+
+solveGeneralise_single cidsFixed vGen
+ = do	
 	-- Extract the type from the graph.
 	Just tGraph	<- extractType False vGen
 
 	-- Generalise the type into a scheme.
-	tScheme		<- generaliseType vGen tGraph cidsEnv
+	tScheme		<- generaliseType vGen tGraph cidsFixed
 	
 	-- Add the scheme back to the graph.
 	addSchemeToGraph vGen tScheme
@@ -567,10 +634,102 @@ solveGeneralise	vGen
 		{ stateGenDone	= Set.insert vGen (stateGenDone s) 
 		, stateGenSusp	= Set.delete vGen (stateGenSusp s) })
 
-	trace	$ "=== Generalise " % vGen % " done\n"
-		% "=============================================================\n"
-	
 	return tScheme
+
+
+-- Use the current contains and instantiates maps in the solver state to work out what
+--	bindings are in this one's bind group. ie, what set of mutually recursive bindings this
+--	one belongs to.
+--
+--	This should only be called when generalising this binding, because it uses the current
+--	path to work out what other variables were let bound at the same scope.
+--
+--	returns 	Nothing		if the binding is not recursive
+--	otherwise	Just vs		where vs are the vars of the let bindings which are
+--					recursive with this one
+--
+bindGroup 
+	:: Var
+	-> SquidM (Maybe (Set Var))
+	
+bindGroup vBind
+ = do
+	trace	$ "*   bindGroup " % vBind % "\n"
+	let bBind	= BLet [vBind]
+
+	-- Grab what path we're on and follow it back up until we find the CBind that tells
+	--	us what other variables were let-bound at the same level as this one.
+	path		<- gets statePath
+	trace	$ "    path          = " % path	% "\n"
+
+	let mbUseGroup	= find	(\b -> case b of
+					BLetGroup vs		-> elem vBind vs
+					_			-> False)
+					path
+
+	-- if there is no let group on the path this means the binding was defined 
+	--	but never instantiated..
+	let bUseGroup@(BLetGroup vsLetGroup)
+			= case mbUseGroup of
+				Nothing	-> BLetGroup []
+				Just bb	-> bb
+
+	trace	$ "    bUseGroup     = " % bUseGroup			% "\n\n"
+
+	-- Build the constraint dependency graph.
+	--	This is a union of the contains and instantiates map.
+
+	-- Lookup the branch containment graph and prune it down to just those branches
+	--	reachable from the let group containing the binding to generalise.
+	gContains_	<- gets stateContains
+	let gContains	= graphPrune gContains_ bUseGroup
+	let sContains	= Set.unions (Map.keysSet gContains : Map.elems gContains)
+
+	-- Lookup the branch instantiation graph and prune it down to just those members
+	--	that are present in the containment graph. 
+	--	Also restrict it to just instantiations of let bindings. 
+	gInst1		<- gets stateInstantiates
+	let gInst2	= Map.filterWithKey (\k a -> Set.member k sContains) gInst1
+	let gInst	= Map.map (Set.filter (\b -> b =@= BLet{})) gInst2
+
+	-- The dependency graph is the union of both of these.
+	let gDeps	=  Map.unionWith (Set.union) gContains gInst
+
+	trace	$ "    gContains:\n" 		%> prettyBranchGraph gContains		% "\n\n"
+		% "    gInst:\n"		%> prettyBranchGraph gInst		% "\n\n"		
+		% "    gDeps:\n"		%> prettyBranchGraph gDeps		% "\n\n"
+
+	-- Work out all the stronly connected components (mutually recursive groups) 
+	--	reachable from the binding which needs its type generalised.
+	let sccs_all	= graphSCC gDeps bBind
+	trace	$ "    sccs_all    = " % sccs_all	% "\n"
+	
+	-- Only keep the sccs that this binding is actually a member of.
+	--	We need to this otherwise we'll also pick up mutually recursive groups defined 
+	--	at the same level, but which vBind isn't actually a member of.
+	let sccs_member	= filter (Set.member bBind) sccs_all
+	trace	$ "    sccs_member = " % sccs_member	% "\n"
+
+	-- Pack all the individual sccs together, they're in the same binding group.
+	let scc		= Set.unions sccs_member
+
+	-- The containment graph contains information about lambda bindings as well.
+	--	They're in the scc, but we only care about let bindings here.
+	let scc_let
+		= Set.fromList
+		$ catMaybes
+		$ map	(\b -> case b of
+				BLet [v] 
+				 | elem v vsLetGroup	-> Just v
+				_	 		-> Nothing)
+		$ Set.toList scc
+
+	trace	$ "    scc_let     = " % scc_let	% "\n\n"
+
+	if Set.null scc_let 
+		then return Nothing
+		else return $ Just scc_let
+		
 
 
 -- | Add a generalised type scheme to the graph
@@ -601,32 +760,7 @@ addSchemeToGraph vGen tScheme
 	 -- Update the class
 	 _		-> updateClass cidGen	
 				cls { classType = Just tScheme_stripped }
- 	
 
-	
-
-
-
--- | Work out which types are in the environmen of this branch
---	This makes use of the contains and instantiates maps from the state
-
-traceEnvironment :: Var -> SquidM [Var]
-traceEnvironment var
- = do	gContains	<- gets stateContains
- 	gInstantiates	<- gets stateInstantiates
-
-	-- Work out the names of the branches contained in this one
---	let branches	= graphReachableS gContains (Set.singleton [var])
-	let branches	= []
-
-	-- Collect the vars instantiated by all the 
-	
-	trace		$ "=== traceEnvironment " % var % "\n"
---			% "    branches = " % branches	% "\n"
-	
-	return []
-
-	
 
 prettyCTreeS :: CTree -> PrettyP
 prettyCTreeS xx
@@ -649,11 +783,6 @@ prettyCTreeS xx
 	
 
 
-
-
-
-
-
 -- | Push a new var on the path queue.
 --	This records the fact that we've entered a branch.
 
@@ -667,18 +796,66 @@ pathEnter v
 --	This records the fact that we've left the branch.
 
 pathLeave :: CBind -> SquidM ()
+
+-- BNil's don't get pushed onto the path
 pathLeave BNil	= return ()
-pathLeave v
+
+pathLeave bind
  = do	path	<- gets statePath
  	
-	case path of 
-	 (v' : vs)	
-	   | v' == v
-	   -> modify (\s -> s { statePath = vs })
+	let res	
+		-- When leaving a LetGroup, generalise any types that haven't already
+		--	been generalised. Especially in library code, we're not expecting to see instantiations 
+		--	of top level variables in this module - but we still need the types for the interface file.
+		| [BLetGroup vs]	<- path
+		, bind == BLetGroup vs
+		= do	solveFinalise
+			modify $ \s -> s { statePath = [] }
 
-	 _ -> panic stage
-	 	$ "pathLeave: can't leave " % v % "\n"
-		% "  path = " % path % "\n"
+		-- pop matching binders off the path
+		| b1 : bs		<- path
+		, bind == b1
+		= modify $ \s -> s { statePath = bs }
+	
+		-- nothing matched.. :(
+		| otherwise
+		= panic stage
+		 	$ "pathLeave: can't leave " % bind % "\n"
+			% "  path = " % path % "\n"
+	res
+	
+
+solveFinalise
+ = do
+	-- Generalise left over types.
+	--	Types are only generalised before instantiations. If a function has been defined
+	--	but not instantiated here (common for libraries) then we'll need to perform the 
+	--	generalisation now so we can export its type scheme.
+	--
+	sGenSusp		<- gets stateGenSusp
+	let sGenLeftover 	= Set.toList sGenSusp
+
+	trace	$ "\n== Finalise ====================================================================\n"
+		% "     sGenLeftover   = " % sGenLeftover % "\n"
+	
+	solveCs [CGrind]
+
+	-- If grind adds errors to the state then don't do the generalisations.
+	errs	<- gotErrors
+	when (not errs)
+	 $ do 	
+	 	mapM_ solveGeneralise $ sGenLeftover
+
+		-- When generalised schemes are added back to the graph we can end up with (var = ctor)
+		--	constraints in class queues which need to be pushed into the graph by another grind.
+		--
+		solveCs [CGrind]
+		return ()
+	
+		
+	return ()
+
+
 		
 -- | Add to the who instantiates who list
 graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
@@ -725,7 +902,7 @@ solveGrind
 	 else do
 	 	-- Run the unifier/projection resolver.
 	 	-- Doing this can generate more constraints.
-		trace	$ ppr "*   Grind.solveGrind, unifying.\n"
+		traceG	$ ppr "*   Grind.solveGrind, unifying.\n"
 		csMore	<- solveUnify
 		
 		case csMore of
@@ -755,7 +932,7 @@ solveGrind_crush
 		regFMutableT	<- getReg Var.FMutableT
 		regFConstT	<- getReg Var.FConstT
  
-	 	trace	$ "*   Grind.solveGrind: crushing.\n"
+	 	traceG	$ "*   Grind.solveGrind: crushing.\n"
 			% "    regEReadT    = " % regEReadT	% "\n"
 			% "    regEReadH    = " % regEReadH	% "\n"
 			% "    regFLazyH    = " % regFLazyH	% "\n"
@@ -769,15 +946,15 @@ solveGrind_crush
 		--	to nodes in the graph, so there is no need to interleave it with unification.
 
 		-- Crush out EReadTs
-		trace	$ ppr "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
+		traceG	$ ppr "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
 		mapM_ crushEffectC (regEReadH ++ regEReadT ++ regEWriteT)
 
 		-- Crush out FLazyHs, FMutableTs
-		trace	$ ppr "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
+		traceG	$ ppr "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
 		mapM_ crushFetterC (regFLazyH ++ regFMutableT ++ regFConstT)
 	
 		-- all done
-		trace	$ "\n"
+		traceG	$ "\n"
 			% "=== Grind.solveGrind done\n"
 			% "=============================================================\n"
 			% "\n\n"
@@ -806,7 +983,7 @@ solveUnify
 	-- check if there are any errors in the state
 	errors		<- gets stateErrors
 
-	trace	$ "*   Grid.solveUnify\n"
+	traceG	$ "*   Grid.solveUnify\n"
 		% "    queued      = " % queued			% "\n"
 		% "    regProj     = " % regProj		% "\n"
 		% "    regShape    = " % regShape		% "\n"

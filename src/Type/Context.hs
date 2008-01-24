@@ -110,6 +110,10 @@ purifyEff eff
  	| TEffect v [tR@(TVar KRegion r)]	<- eff
 	, v == primRead
 	= (Nothing, Just (FConstraint primConst [tR]))
+
+ 	| TEffect v [tR@(TClass KRegion _)]	<- eff
+	, v == primRead
+	= (Nothing, Just (FConstraint primConst [tR]))
 	
 	| otherwise
 	= (Just eff, Nothing)

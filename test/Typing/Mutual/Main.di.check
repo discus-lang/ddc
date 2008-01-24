@@ -19,35 +19,39 @@
 -- Foreign imports
 
 -- Binds
-foreign import extern thing
+foreign import extern thing1
         :: Base.Int %rTC0
         :$ Base.Data;
         
 foreign import extern main
         :: Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %rTS3; Base.!Read %rTC9; Base.!Read %rTC10; Base.!Read %rTC8; Base.!Read %rTS6; Base.!Read %rTS4; Base.!Read %rTC4; System.Console.!Console}
+        :- !e0        = System.Console.!Console
         ,  $c0        = fun1 : Base.Int %rTC0
         :$ Base.Data -> Base.Data;
         
 foreign import extern fun1
-        :: Base.Int %rTS3 -(!e0 $c0)> Base.Int %rTC4
-        :- !e0        = !{Base.!Read %rTS3; Base.!Read %rTC9; Base.!Read %rTC10; Base.!Read %rTC8; Base.!Read %rTS6; Base.!Read %rTS4}
-        ,  $c0        = fun2 : Base.Int %rTC0
-        :$ Base.Data -> Base.Data;
-        
-foreign import extern fun2
-        :: Base.Int %rTS3 -($c0)> Base.Int %rTS3 -(!e0 $c1)> Base.Int %rTS4
-        :- !e0        = !{Base.!Read %rTS3; Base.!Read %rTC9; Base.!Read %rTC10; Base.!Read %rTC8; Base.!Read %rTS6}
+        :: forall %r0 %r1 %r2
+        .  Base.Int %r1 -($c0)> Base.Int %r0 -(!e0 $c1)> Base.Int %r2
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r0}
         ,  $c0        = $c1 \ x
-        ,  $c1        = ${fun3 : Base.Int %rTC0; x : Base.Int %rTS3}
+        ,  $c1        = ${x : Base.Int %r1; fun2 : Base.Int %rTC0}
         :$ Base.Data -> Base.Data -> Base.Data;
         
+foreign import extern fun2
+        :: forall %r0 %r1 %r2
+        .  Base.Int %r1 -($c0)> Base.Int %r1 -(!e0 $c1)> Base.Int %r2
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r0}
+        ,  $c0        = $c1 \ ${thing2; x}
+        ,  $c1        = ${fun3 : Base.Int %rTC0; x : Base.Int %r1; thing2 : Base.Int %r0}
+        :$ Base.Data -> Base.Thunk;
+        
 foreign import extern fun3
-        :: Base.Int %rTC9 -($c0)> Base.Int %rTC10 -($c1)> Base.Int %rTS3 -(!e0 $c2)> Base.Int %rTS6
-        :- !e0        = !{Base.!Read %rTC9; Base.!Read %rTS3; Base.!Read %rTC10; Base.!Read %rTC8; Base.!Read %rTS6; Base.!Read %rTS4; Base.!Read %rTC4; Base.!Read %rTC0}
+        :: forall %r0 %r1 %r2 %r3
+        .  Base.Int %r0 -($c0)> Base.Int %r1 -($c1)> Base.Int %r2 -(!e0 $c2)> Base.Int %r3
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Read %r3; Base.!Read %rTC0}
         ,  $c0        = $c1 \ x
         ,  $c1        = $c2 \ y
-        ,  $c2        = ${fun1 : Base.Int %rTC0; x : Base.Int %rTC9; y : Base.Int %rTC10; thing : Base.Int %rTC0}
+        ,  $c2        = ${fun1 : Base.Int %rTC0; x : Base.Int %r0; y : Base.Int %r1; thing1 : Base.Int %rTC0}
         :$ Base.Data -> Base.Data -> Base.Data -> Base.Data;
         
 

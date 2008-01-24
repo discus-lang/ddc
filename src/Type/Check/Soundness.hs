@@ -164,6 +164,14 @@ dangerT rsMutable fsClosure tt
 	TMask KClosure t v
 	 -> dangerT rsMutable fsClosure t
 
+	-- effects
+	TSum KEffect ts
+	 -> Set.empty
+
+	TEffect{}
+	 -> Set.empty
+
+
 	-- skip over errors
 	TError{}		-> Set.empty
 	 

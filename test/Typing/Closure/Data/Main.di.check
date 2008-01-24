@@ -44,9 +44,9 @@ foreign import extern f
         :$ Base.Data -> Base.Data;
         
 foreign import extern fun
-        :: Base.Unit -(!e0 $c1)> Base.Unit
+        :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS1; Base.!Read %rTC0; Base.!Write %rTC0}
-        ,  $c1        = thing : Thing %rTS1 !e1 $c0 :- !e1        = !{Base.!Read %rTC0; Base.!Write %rTC0}, $c0        = x : Base.Int %rTC0
+        ,  $c0        = thing : Thing %rTS1 !{Base.!Read %rTC0; Base.!Write %rTC0} (x : Base.Int %rTC0)
         ,  Base.Mutable %rTC0
         :$ Base.Data -> Base.Data;
         
@@ -57,9 +57,9 @@ foreign import extern runThing
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: Base.Unit -(!e0 $c1)> Base.Unit
+        :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS1; Base.!Read %rTC0; Base.!Write %rTC0; System.Console.!Console}
-        ,  $c1        = ${thing : Thing %rTS1 !e1 $c0 :- !e1        = !{Base.!Read %rTC0; Base.!Write %rTC0}, $c0        = x : Base.Int %rTC0; x : Base.Int %rTC0}
+        ,  $c0        = ${thing : Thing %rTS1 !{Base.!Read %rTC0; Base.!Write %rTC0} (x : Base.Int %rTC0); x : Base.Int %rTC0}
         ,  Base.Mutable %rTC0
         :$ Base.Data -> Base.Data;
         
