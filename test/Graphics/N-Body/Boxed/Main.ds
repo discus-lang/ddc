@@ -87,7 +87,7 @@ initBodies ()
 	-- make a new array of bodies.
 	body0	= array_new (length bodies) (errorNoEff @ "elem not initialised")
 	zipWith_ (\b i -> body0 #(i) #= b)
-		bodies [0 .. array_size body0 -1]
+		bodies [0 .. array_size body0 - 1]
 
 
 	-- an array to hold the body positions for the next frame.
@@ -177,7 +177,6 @@ data Body %r1
 		acc	:: Vec2 %r1 (Float %r1);
 	}
 
-
 project Body where
 
 	-- | Convert a body to a string.
@@ -227,14 +226,13 @@ project Body where
 			_pos.x += toFloat worldSize.x
 	
 	 	when (_pos.x > toFloat worldSize.x)
-			_pos.x += 0.0 - toFloat worldSize.x
+			_pos.x += - (toFloat worldSize.x)
 
 	 	when (_pos.y < 0.0)
 			_pos.y += toFloat worldSize.y
 
 	 	when (_pos.y > toFloat worldSize.y)
-			_pos.y += 0.0 - toFloat worldSize.y
-
+			_pos.y += - (toFloat worldSize.y)
 
 	-- | Draw this body in the frame.
 	draw :: Body -> Frame -> ()

@@ -278,7 +278,9 @@ data Action
 -- poor man's type signatures
 --	Says what to do with the arguments of a function.
 --	We tend to ignore type arguments, and unbox boxed values.
-opI3U2	= [Ignore, Ignore, Ignore, Unbox, Unbox]
+
+-- opI3U2	= [Ignore, Ignore, Ignore, Unbox, Unbox]
+opD1U1	= [Discard, Discard, Unbox]
 opD3U2	= [Discard, Discard, Discard, Unbox, Unbox]
 
 ----------------------------------------------------------------------------------------------------
@@ -293,7 +295,8 @@ unboxableFuns
  = Map.fromList
 
 	-- boxed int functions
-	[ ("primInt32_add",	(OpAdd,	opD3U2))
+	[ ("primInt32_neg",	(OpNeg, opD1U1))
+	, ("primInt32_add",	(OpAdd,	opD3U2))
 	, ("primInt32_sub",	(OpSub,	opD3U2))
 	, ("primInt32_div",	(OpDiv,	opD3U2))
 	, ("primInt32_mod",	(OpMod,	opD3U2))
@@ -330,7 +333,9 @@ primFuns
  = Map.fromList
 
 	-- unboxed int functions
- 	[ ("primInt32U_add",	OpAdd)
+ 	[ ("primInt32U_neg",	OpNeg)
+	
+	, ("primInt32U_add",	OpAdd)
 	, ("primInt32U_sub",	OpSub)
 	, ("primInt32U_div",	OpDiv)
 	, ("primInt32U_mod",	OpMod)

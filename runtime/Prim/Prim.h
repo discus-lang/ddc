@@ -35,6 +35,8 @@ String	_unboxString	(Obj*	obj);
 // -----------------------------------------------------------------------------
 
 // -- Int
+Obj*	primInt32_neg			(Obj* x1);
+
 Obj*	primInt32_add			(Obj* x1, Obj* x2);
 Obj*	primInt32_sub			(Obj* x1, Obj* x2);
 Obj*	primInt32_mul			(Obj* x1, Obj* x2);
@@ -52,6 +54,8 @@ Obj* 	primInt32_update		(Obj* dest_, Obj* src_);
 
 
 // -- Float
+Obj*	primFloat32_neg			(Obj* x1);
+
 Obj*	primFloat32_add			(Obj* x1, Obj* x2);
 Obj*	primFloat32_sub			(Obj* x1, Obj* x2);
 Obj*	primFloat32_mul			(Obj* x1, Obj* x2);

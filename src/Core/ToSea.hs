@@ -632,6 +632,7 @@ toSeaOp :: C.Op -> E.Prim
 toSeaOp op
  = case op of
 	-- arithmetic
+	C.OpNeg -> E.FNeg
  	C.OpAdd	-> E.FAdd
 	C.OpSub	-> E.FSub
 	C.OpMul	-> E.FMul

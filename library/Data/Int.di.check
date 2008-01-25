@@ -51,6 +51,8 @@ instance Num (Base.Int %_) where
         (/)      = Data.Int.primInt32_div;
         
         mod      = Data.Int.primInt32_mod;
+        
+        negate   = Data.Int.primInt32_neg;
 }
 
 instance Updatable (Base.Int %_) where
@@ -65,6 +67,10 @@ instance Accum (Base.Int %_) where
 
 
 -- Foreign imports
+foreign import extern "primInt32_neg"
+ primInt32_neg
+        :: elaborate Base.Int -> Base.Int ;
+
 foreign import extern "primInt32_add"
  primInt32_add
         :: elaborate Base.Int -> Base.Int -> Base.Int ;

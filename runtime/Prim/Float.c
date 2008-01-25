@@ -9,6 +9,10 @@
 
 #include <math.h>
 
+#define MAKE_PRIMOP1FUN(Type, op, opName) \
+	Obj* prim##Type##_##opName (Obj* a) \
+	{	return _box##Type (op _unbox##Type(a)); }
+
 #define MAKE_PRIMOP2FUN(Type, op, opName) \
 	Obj* prim##Type##_##opName (Obj* a, Obj* b) \
 	{	return _box##Type (_unbox##Type(a) op _unbox##Type(b)); } 
@@ -24,6 +28,8 @@
 // -----
 // -- Primitive operations
 //
+MAKE_PRIMOP1FUN  (Float32, -, neg);
+
 MAKE_PRIMOP2FUN  (Float32, +, add);
 MAKE_PRIMOP2FUN  (Float32, -, sub);
 MAKE_PRIMOP2FUN  (Float32, *, mul);

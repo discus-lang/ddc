@@ -33,6 +33,7 @@ checkArithmetic ()
 	checkI 5  	(7 - 2)
 	checkI 23 	(2 + 2 + 3 * 2 + 2 * 5 + 6 - 3)
 	checkI 6	(1 `add` 2 `add` 3)
+	checkI -3	(-5 + 2)
 	print "\n"
 
 

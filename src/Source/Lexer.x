@@ -165,7 +165,7 @@ tokens :-
 
  $digit+ \. $digit+	{ ptags (\s -> CFloat  $ read s)		}
 
- $digit+		{ ptags (\s -> CInt    $ read s)	 	}
+ \-?$digit+		{ ptags (\s -> CInt    $ read s)	 	}
  \'\\n\'		{ ptags (\s -> CChar   $ read s)  		}
  \' . \'		{ ptags (\s -> CChar   $ read s)		}
 

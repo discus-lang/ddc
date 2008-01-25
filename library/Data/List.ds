@@ -128,7 +128,7 @@ replicate :: 	Int -> a -> [a];
 replicate i x	
  = if i == 0 
  	then	[]
-	else	x : replicate (i-1) x;
+	else	x : replicate (i - 1) x;
 
 
 iterateL ::	(a -> a) -> a -> [a];
@@ -286,7 +286,7 @@ take n xx
  = match {
  	| n == 0		= [];
 	| [] 		<- xx	= [];
-	| (x:xs) 	<- xx	= x : take (n-1) xs;
+	| (x:xs) 	<- xx	= x : take (n - 1) xs;
  };
 
 

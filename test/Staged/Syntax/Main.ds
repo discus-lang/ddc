@@ -1,24 +1,40 @@
 
--- Syntax tests
-
+-- Test some basic source parsing and desugaring.
 
 main ()
- = do {
-	-- Defixer.
-	print $ "-- Defixer.\n";
-	println $ (show $ 1 + 2 + 3);
-	println $ (show $ 1 + 2 * 3);
-	println $ (show $ 1 * 2 + 3 * 4);
+ = do 
+	-- Defixer
+	print $ "-- Defixer.\n"
+	println $ show $ 1 + 2 + 3
+	println $ show $ 1 + 2 * 3
+	println $ show $ 1 * 2 + 3 * 4
+	println $ show $ 1 - 2 + 3 - 4
 
+	--------------------------------------------
+	-- Negation syntax
+	print $ "-- Negation.\n"
+	x	= 5
+	y	= 5.0
+
+	-- unary minus out the front of expressions
+	println $ show (-x + 5)	
+	println $ show (-y + 5.0)
+
+	-- unary minus on literal function params
+	println $ show $ negate -5 + negate -27
+
+	-- unary minus after a infix op
+	println $ show $ 1 + - (id 5)
+
+	--------------------------------------------
 	-- List ranges.
-	print $ "-- List Ranges.\n";
-	println $ showListInt [5..23];
---	print $ showListInt [@ 5..23]			% "\n";
+	print $ "-- List Ranges.\n"
+	println $ showListInt [5..23]
 
+--	print $ showListInt [@ 5..23]			% "\n";
 --	print $ (showListInt $ take 10 [2..])		% "\n";
 --	print $ (showListInt $ take 10 [@ 2..])		% "\n";
-
 	-- List comprehensions.
 --	print $ (showListInt [x + y | x <@- [1..5], y <- [5..9]])	% "\n";
 	
- };
+

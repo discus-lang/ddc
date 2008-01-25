@@ -1,97 +1,89 @@
 
-import Base;
-import Data.Bool;
+import Base
+import Data.Bool
 
-import Class.Num;
-import Class.Eq;
-import Class.Ord;
-import Class.Update;
+import Class.Num
+import Class.Eq
+import Class.Ord
+import Class.Update
 
-infix  5 <, <=, >=, > ;
+infix  5 <, <=, >=, > 
 
 -- math
+foreign import extern "primInt32_neg"
+ primInt32_neg  :: elaborate Int -> Int
+
 foreign import extern "primInt32_add"
- primInt32_add	:: elaborate Int -> Int -> Int;
+ primInt32_add	:: elaborate Int -> Int -> Int
 
 foreign import extern "primInt32_sub"	
- primInt32_sub	:: elaborate Int -> Int -> Int;
+ primInt32_sub	:: elaborate Int -> Int -> Int
 
 foreign import extern "primInt32_mul"	
- primInt32_mul	:: elaborate Int -> Int -> Int;
+ primInt32_mul	:: elaborate Int -> Int -> Int
 
 foreign import extern "primInt32_div"	
- primInt32_div	:: elaborate Int -> Int -> Int;
+ primInt32_div	:: elaborate Int -> Int -> Int
 
 foreign import extern "primInt32_mod"	
- primInt32_mod	:: elaborate Int -> Int -> Int;
+ primInt32_mod	:: elaborate Int -> Int -> Int
 
 -- comparisons
 foreign import extern "primInt32_eq"	
- primInt32_eq	:: elaborate Int -> Int -> Bool;
+ primInt32_eq	:: elaborate Int -> Int -> Bool
 
 foreign import extern "primInt32_neq"	
- primInt32_neq	:: elaborate Int -> Int -> Bool;
+ primInt32_neq	:: elaborate Int -> Int -> Bool
 
 foreign import extern "primInt32_gt"	
- primInt32_gt	:: elaborate Int -> Int -> Bool;
+ primInt32_gt	:: elaborate Int -> Int -> Bool
 
 foreign import extern "primInt32_lt"	
- primInt32_lt	:: elaborate Int -> Int -> Bool;
+ primInt32_lt	:: elaborate Int -> Int -> Bool
 
 foreign import extern "primInt32_ge"	
- primInt32_ge	:: elaborate Int -> Int -> Bool;
+ primInt32_ge	:: elaborate Int -> Int -> Bool
 
 foreign import extern "primInt32_le"	
- primInt32_le	:: elaborate Int -> Int -> Bool;
+ primInt32_le	:: elaborate Int -> Int -> Bool
 
 -- update
 foreign import extern "primInt32_update"
  primInt32_update
- 		:: elaborate (mutable Int) -> Int -> ();
+ 		:: elaborate (mutable Int) -> Int -> ()
 
 
 instance Eq (Int %_) where
-{
-	(==)	= primInt32_eq;
-	(/=)	= primInt32_neq;
-}
+	(==)		= primInt32_eq
+	(/=)		= primInt32_neq
 
 instance Ord (Int %_) where
-{
-	(>)	= primInt32_gt;
-	(<)	= primInt32_lt;
-	(>=)	= primInt32_ge;
-	(<=)	= primInt32_le;
-}
+	(>)		= primInt32_gt
+	(<)		= primInt32_lt
+	(>=)		= primInt32_ge
+	(<=)		= primInt32_le
 
 instance Num (Int %_) where 
-{
- 	(+) 	= primInt32_add;
-	(-) 	= primInt32_sub;
-	(*) 	= primInt32_mul;
-	(/) 	= primInt32_div;
-	mod	= primInt32_mod;
-}
+ 	(+) 		= primInt32_add
+	(-) 		= primInt32_sub
+	(*) 		= primInt32_mul
+	(/) 		= primInt32_div
+	mod		= primInt32_mod
+	negate		= primInt32_neg
 
 instance Updatable (Int %_) where
-{
-	(:=)	= primInt32_update;
-
-}
+	(:=)		= primInt32_update
 
 instance Accum (Int %_) where
-{
-	(+=) a b	
-		= primInt32_update a (primInt32_add a b);
-}
+	(+=) a b	= primInt32_update a (primInt32_add a b)
 
 
 -----
-(<>) :: Int -> (Int -> Int) -> ();
+(<>) :: Int -> (Int -> Int) -> ()
 (<>) x f
- = do {	x'	= f x;
-	x	:= x'; };
+ = do 	x'	= f x
+	x	:= x'
 
-inc x	= x + 1;
+inc x	= x + 1
 
 

@@ -113,6 +113,9 @@ primPure	= primVar NameClass	"Base.Pure"				FPure
 -- from Base.Thunk
 primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i) 
 					[Var.ISeaName ("primSuspend" ++ show i)]
+
+-- from Class.Num
+primNegate	= primVar NameValue	"Class.Num.negate"			VNegate
 								
 -- from Data.Bool
 primTrue	= primVar NameValue 	"Data.Bool.True"			VTrue
@@ -186,6 +189,7 @@ bindPrimVar n v
  
  | NameValue	<- n
  = case Var.name v of
+	"negate"	-> Just $ v { Var.bind = VNegate }
 	"Unit"		-> Just $ v { Var.bind = VUnit }
 	'T':'u':'p':'l':'e':xs
 			-> Just $ v { Var.bind = VTuple (read xs) }

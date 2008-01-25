@@ -1,10 +1,10 @@
 test/Error/Unify/FieldInit/Main.ds:8:42
     Type mismatch during unification.
-          cannot match: Data.String.String %325
-                  with: Base.Int %281
+          cannot match: Data.String.String %330
+                  with: Base.Int %286
 
          literal value: "fast"
-               of type: Data.String.String %325
+               of type: Data.String.String %330
                     at: test/Error/Unify/FieldInit/Main.ds:8:42
 
         conflicts with, 

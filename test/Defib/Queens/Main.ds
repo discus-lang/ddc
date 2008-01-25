@@ -25,7 +25,7 @@ safe x d xx
 gen nq n 
  = if n == 0	
  	then [[]]
- 	else [ (q:b) | b <@- gen nq (n-1), q <- [1..nq], safe q 1 b];
+ 	else [ (q:b) | b <@- gen nq (n - 1), q <- [1..nq], safe q 1 b];
 
 
 nsoln nq

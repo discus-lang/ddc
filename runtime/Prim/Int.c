@@ -10,7 +10,9 @@
 // We can't just return primTrue / primFalse here
 //	because the return region might be mutable.
 //	
-
+#define MAKE_PRIMOP1FUN(Type, op, opName) \
+	Obj* prim##Type##_##opName (Obj* a) \
+	{	return _box##Type (op _unbox##Type(a)); }
 
 #define MAKE_PRIMOP2FUN(Type, op, opName) \
 	Obj* prim##Type##_##opName (Obj* a, Obj* b) \
@@ -27,6 +29,8 @@
 // -----
 // -- Primitive operations
 //
+MAKE_PRIMOP1FUN  (Int32, -, neg);
+
 MAKE_PRIMOP2FUN  (Int32, +, add);
 MAKE_PRIMOP2FUN  (Int32, -, sub);
 MAKE_PRIMOP2FUN  (Int32, *, mul);

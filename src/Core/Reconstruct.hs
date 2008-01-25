@@ -596,6 +596,11 @@ reconOpApp :: Table -> Op -> [Exp] -> (Type, Effect)
 reconOpApp tt op xs
 
 	-- arithmetic operators
+	| op == OpNeg
+	, [t1]		<- map (t4_2 . reconX tt) xs
+	, isUnboxedNumericType t1
+	= (t1, pure)
+
 	| elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
 	, [t1, t2]	<- map (t4_2 . reconX tt) xs
 	, isUnboxedNumericType t1

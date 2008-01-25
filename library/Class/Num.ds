@@ -35,3 +35,8 @@ class Num a where
 	:- !e1 = !{ !ReadT a; !ReadT b }
 	,  $c1 = x : a
 	,  Shape3 a b c
+
+ negate :: forall b
+ 	.  a -(!ReadT a)> b
+	:- Shape2 a b
+	

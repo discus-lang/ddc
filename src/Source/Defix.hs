@@ -27,14 +27,12 @@
 --
 --
 module Source.Defix
-(
-	defixP,
-)
+	(defixP)
 
 where
 
 -----
-import Debug.Trace
+import qualified Debug.Trace
 import Control.Monad.State
 
 import Util
@@ -54,25 +52,27 @@ import Source.DefixApps
 -----
 stage	= "Normal.Defix"
 
------
+trace ss x	
+	= Debug.Trace.trace (pprStr ss) x
+
+-- | Resolve infix ops in this top level thing
+--	Walk down the tree until we see an XDefix node and call defixInfix on the parts.
 defixP ::	[FixDef] -> 	Top 	-> (Top, [Error])
 defixP		fixTable	top	
  	= runState
 	 	(transformXM (defixX fixTable) top)
 		[]
 
-
------
-defixX ::	[FixDef] -> 	Exp 	-> State [Error] Exp
-defixX		fixTable	x
+defixX fixTable	x
  = case x of
  	XDefix sp xs	
 	 -> do
 		let result = defixInfix sp fixTable $ defixApps sp xs
+		
+		-- if we get error during the defix then add them to the state.
 		case result of
 		 Left  errs	
-		  -> do
-		  	modify (\s -> s ++ errs)
+		  -> do	modify (\s -> s ++ errs)
 			return x
 		  		 
 		 Right x'
@@ -82,15 +82,19 @@ defixX		fixTable	x
 
 
 -----
--- defixInfix
---	Keep calling defixEs until we've resolved all the operators.
---	
 defixInfix ::	SourcePos -> [FixDef] -> [Exp]	-> Either [Error] Exp
 defixInfix	sp fixTable    es
 
-	| [e]	<- es
+	-- If there is only one element then we're already done
+	| [e]			<- es
 	= Right e
-	
+
+	-- If the first operator is a symbol then we've got a prefix application
+	| XOp sp v : esRest	<- es
+	, Right x'		<- defixInfix sp fixTable esRest
+	= Right (XApp sp (XVar sp v) x')
+
+	-- Otherwise keep calling defixEs until we've resolved all the operators
 	| otherwise
 	= case defixEs sp fixTable es of
 		Left  errs	-> Left  errs
@@ -102,7 +106,7 @@ defixInfix	sp fixTable    es
 ---	call defixEsLeft / defixEsRight to turn it into an (App e1 e2) node
 ---
 defixEs ::	SourcePos -> [FixDef] -> [Exp]	-> Either [Error] [Exp]
-defixEs		sp fixTable	es	
+defixEs sp fixTable es 
  = let
 	-- Get the list of ops in the expression.
 	opVars		= map (\(XOp sp v) -> v)

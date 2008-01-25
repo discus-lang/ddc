@@ -210,7 +210,8 @@ data Type
 
 
 data	Prim
-	= FAdd
+	= FNeg
+	| FAdd
 	| FSub
 	| FMul
 	| FDiv

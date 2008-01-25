@@ -215,7 +215,8 @@ data Prim
 
 data Op
 	-- arithmetic
-	= OpAdd		-- addition
+	= OpNeg		-- negation
+	| OpAdd		-- addition
 	| OpSub		-- subtraction
 	| OpMul		-- multiplication
 	| OpDiv		-- division

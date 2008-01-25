@@ -217,6 +217,10 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 	 	FProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 	 	FProjFieldR	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 
+	XPrim f [x1]
+	 |  f == FNeg
+	 -> "-(" % x1 % ")"
+
 	XPrim f [x1, x2]
 	 -> case f of
 	 	FAdd		-> "(" % x1 % " + "	% x2 % ")"

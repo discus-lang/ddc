@@ -1,64 +1,69 @@
 
-import Class.Num;
+-- Primitive functions for unboxed Float32 operations.
+--	There are no actual C functions associated with these.
+--	We define them so the type inferencer has a schemes for them.
+--
+
+import Class.Num
 
 
 -- math
+foreign import extern "primFloat32U_neg"
+ primFloat32U_neg	:: elaborate Float32# -> Float32#
+
 foreign import extern "primFloat32U_add"
- primFloat32U_add	:: elaborate Float32# -> Float32# -> Float32#;
+ primFloat32U_add	:: elaborate Float32# -> Float32# -> Float32#
 
 foreign import extern "primFloat32U_sub"
- primFloat32U_sub	:: elaborate Float32# -> Float32# -> Float32#;
+ primFloat32U_sub	:: elaborate Float32# -> Float32# -> Float32#
 
 foreign import extern "primFloat32U_mul"
- primFloat32U_mul	:: elaborate Float32# -> Float32# -> Float32#;
+ primFloat32U_mul	:: elaborate Float32# -> Float32# -> Float32#
 
 foreign import extern "primFloat32U_div"
- primFloat32U_div	:: elaborate Float32# -> Float32# -> Float32#;
+ primFloat32U_div	:: elaborate Float32# -> Float32# -> Float32#
 
 foreign import extern "primFloat32U_mod"
- primFloat32U_mod	:: elaborate Float32# -> Float32# -> Float32#;
+ primFloat32U_mod	:: elaborate Float32# -> Float32# -> Float32#
 
 
 
 -- comparisons
 foreign import extern "primFloat32U_eq"
- primFloat32U_eq	:: elaborate Float32# -> Float32# -> Int32#;
+ primFloat32U_eq	:: elaborate Float32# -> Float32# -> Int32#
 
 foreign import extern "primFloat32U_neq"
- primFloat32U_neq	:: elaborate Float32# -> Float32# -> Int32#;
+ primFloat32U_neq	:: elaborate Float32# -> Float32# -> Int32#
 
 foreign import extern "primFloat32U_gt"
- primFloat32U_gt	:: elaborate Float32# -> Float32# -> Int32#;
+ primFloat32U_gt	:: elaborate Float32# -> Float32# -> Int32#
 
 foreign import extern "primFloat32U_ge"
- primFloat32U_ge	:: elaborate Float32# -> Float32# -> Int32#;
+ primFloat32U_ge	:: elaborate Float32# -> Float32# -> Int32#
 
 foreign import extern "primFloat32U_lt"
- primFloat32U_lt	:: elaborate Float32# -> Float32# -> Int32#;
+ primFloat32U_lt	:: elaborate Float32# -> Float32# -> Int32#
 
 foreign import extern "primFloat32U_le"
- primFloat32U_le	:: elaborate Float32# -> Float32# -> Int32#;
+ primFloat32U_le	:: elaborate Float32# -> Float32# -> Int32#
 
 
 instance Eq Float32# where
-{
-	(#==)	= primFloat32U_eq;
-	(#/=)	= primFloat32U_neq;
-}
+	(#==)		= primFloat32U_eq
+	(#/=)		= primFloat32U_neq
+
 
 instance Ord Float32# where
-{
-	(>)	= primFloat32U_gt;
-	(<)	= primFloat32U_lt;
-	(>=)	= primFloat32U_ge;
-	(<=)	= primFloat32U_le;
-}
+	(>)		= primFloat32U_gt
+	(<)		= primFloat32U_lt
+	(>=)		= primFloat32U_ge
+	(<=)		= primFloat32U_le
+
 
 instance Num Float32# where 
-{
- 	(+) 	= primFloat32U_add;
-	(-) 	= primFloat32U_sub;
-	(*) 	= primFloat32U_mul;
-	(/) 	= primFloat32U_div;
-	mod	= primFloat32U_mod;
-}
+ 	(+) 		= primFloat32U_add
+	(-) 		= primFloat32U_sub
+	(*) 		= primFloat32U_mul
+	(/) 		= primFloat32U_div
+	mod		= primFloat32U_mod
+	negate		= primFloat32U_neg

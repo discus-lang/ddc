@@ -34,8 +34,6 @@ crushS	s
 	 -> let (ss, x')	= milk crushX x
 	    in	ss ++ [SBind mV x']
     
-	_			-> [s]
-
 
 crushX xx
  = case xx of

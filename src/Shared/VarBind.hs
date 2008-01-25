@@ -106,6 +106,7 @@ data VarBind
 	| FInject Int
 
 	-- Value variables.
+	| VNegate
 	| VTuple Int	-- ^ Tuple data constructor of given airity.
 
 	| VUnit		-- ^ the unit value.

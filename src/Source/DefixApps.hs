@@ -1,12 +1,10 @@
 
 module Source.DefixApps
-(
-	defixApps
-
-)
+	(defixApps)
 
 where
 
+import Source.Pretty
 import qualified Shared.Var	as Var
 import qualified Shared.VarPrim	as Var
 import Shared.Var		(Var)
@@ -15,6 +13,7 @@ import Shared.Error
 import Shared.Base
 
 import Source.Exp
+import Util
 
 -----
 stage	= "Source.DefixApps"
@@ -42,20 +41,45 @@ defixApps	sp xx
 --
 dropApps :: 	SourcePos -> [Exp] -> [Exp]
 dropApps sp es	
+
+	-- Check if the expression starts with a unary minus
+	--	- x + 5   parses as  (negate x) + 5
+	| XOp sp v : e2 : esRest	<- es
+	, Var.name v == "-"
+	= dropApps' sp [XApp sp (XVar sp Var.primNegate) e2] esRest
+	
+	| otherwise
 	= dropApps' sp [] es
 
-dropApps' sp acc []	= [makeXDefixApps sp acc]
-dropApps' sp acc (x:xs)
- = case x of
- 	XOp sp v
-	 |  Var.name v /= "@"
-	 -> makeXDefixApps sp acc : x : dropApps' sp [] xs
+-- Collect up pieces of applications in the accumualtor a1 a2 a3 
+dropApps' sp acc []	
+	= [makeXDefixApps sp acc]
 
-	_ -> dropApps' sp (acc ++ [x]) xs
+dropApps' sp acc xx
+	-- Chop out the unary minus if we see two ops in a row
+	--	x1 += - f x 	parses as   x1 += (- (f x))
+	| x1@(XOp sp1 v1) : x2@(XOp sp2 v2) : xsRest	<- xx
+	, Var.name v2 == "-"
+	= makeXDefixApps sp acc : x1 
+	: dropApps' sp [XVar sp Var.primNegate] xsRest
+	
+	
+	-- when we hit a non '@' operator, mark the parts in the accumulator
+	--	as an application and start collecting again.
+ 	| x@(XOp sp v) : xs				<- xx
+	, Var.name v /= "@"
+	= makeXDefixApps sp acc : x : dropApps' sp [] xs
+
+	| x : xs	<- xx
+	= dropApps' sp (acc ++ [x]) xs
 
 makeXDefixApps sp xx	
  = case xx of
-	[]	-> panic stage "makeXDefixApps: parse error"
+	-- If we hit two operators in a row, and the second one isn't unary 
+	--	minus then we'll get an empty list here. eg  x + + 1
+	[]	-> panic stage 
+			$ "makeXDefixApps: parse error at\n" % sp
+			% "   xx = " % xx	% "\n"	
 	[x]	-> x
 	_	-> XDefixApps sp xx
 

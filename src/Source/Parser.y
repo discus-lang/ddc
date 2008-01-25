@@ -381,11 +381,26 @@ expInfix
 								[s]	-> s
 								(s:_)	-> XDefix (spX s) $1	}
 
+-- An application list is a list of expressions and symbols.
+--	If there is only one element it must be an expression.
+--	Source.Defix sorts out what is actually a prefix/infix application
 expApps
 	:: { [Exp] }
 	: expApp				{ [$1]					}
-	| expApp symbol expApps			{ $1 : XOp (spX $1) (vNameV $2) : $3	}
-	| expApp expApps			{ $1 : $2				}
+	| expApp expApps_more			{ $1 : $2				}
+	| symbol expApps_more			{ XOp (spV $1) (vNameV $1) : $2		}
+
+expApps_more 
+	:: { [Exp] }
+	: symbol				{ [XOp (spV $1) (vNameV $1)]		}
+	| expApp				{ [$1]					}
+	
+	| symbol expApps_more			{ XOp (spV $1) (vNameV $1) : $2		}
+	| expApp expApps_more			{ $1 : $2				}
+
+
+--	: expApp expApps_more			{ $1 : $2				}
+--	| expApp symbol expApps_more		{ $1 : XOp (spV $2) (vNameV $2) : $3	}
 
 expAppZs
 	:: { [Exp] }
@@ -591,8 +606,8 @@ list	:: { Exp }
 	| '[' exp '..' exp ']'			{ XListRange  (spTP $1) False $2 (Just $4)	}
 	| '[' exp '..' ']'			{ XListRange  (spTP $1) True  $2 Nothing	}
 
-	| '[' '@' exp '..' exp ']'		{ XListRange  (spTP $1) True  $3 (Just $5)	}
-	| '[' '@' exp '..' ']'			{ XListRange  (spTP $1) True  $3 Nothing	}
+--	| '[' '@' exp '..' exp ']'		{ XListRange  (spTP $1) True  $3 (Just $5)	}
+--	| '[' '@' exp '..' ']'			{ XListRange  (spTP $1) True  $3 Nothing	}
 
 	| '[' exp '|' lcQual_Cs ']'		{ XListComp   (spTP $1) $2 $4			}
 

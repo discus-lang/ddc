@@ -16,12 +16,12 @@ drawBresenhamLine
 	-- setup dy
 	dy	= y1	- y0;
 	dyP	= case dy `primInt32U_lt` 0# of {
-			1#	-> 0# - dy;
+			1#	-> -dy;
 			0#	-> dy;
 		};
 
 	stepy	= case dy `primInt32U_lt` 0# of {
-			1#	-> 0# - width;
+			1#	-> -width;
 			0#	-> width;
 		};
 
@@ -30,12 +30,12 @@ drawBresenhamLine
 	-- setup dx
 	dx	= x1	- x0;
 	dxP	= case dx `primInt32U_lt` 0# of {
-			1#	-> 0# - dx;
+			1#	-> -dx;
 			0#	-> dx;
 		};
 		
 	stepx	= case dx `primInt32U_lt` 0# of {
-			1#	-> 0# - 1#;
+			1#	-> - 1#;
 			0#	-> 1#;
 		};
 		
