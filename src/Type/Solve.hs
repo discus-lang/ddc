@@ -653,6 +653,9 @@ bindGroup
 	-> SquidM (Maybe (Set Var))
 	
 bindGroup vBind
+ = {-# SCC "bindGroup" #-} bindGroup' vBind
+
+bindGroup' vBind
  = do
 	trace	$ "*   bindGroup " % vBind % "\n"
 	let bBind	= BLet [vBind]

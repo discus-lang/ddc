@@ -14,6 +14,8 @@ import Type.Plate.Collect
 import Type.Util.Bits
 import Shared.Error
 
+import Data.Map			(Map)
+import qualified Data.Map	as Map
 import qualified Util.Map	as Map
 import qualified Data.Set	as Set
 import Util
@@ -54,7 +56,7 @@ packData tt
  
 packData2 tt
  | KData	<- kindOfType tt
- = let	tt'	= packTypeLs False [] tt
+ = let	tt'	= packTypeLs False Map.empty tt
    in	if tt == tt'
    	 then tt'
 	 else packData tt'
@@ -62,7 +64,7 @@ packData2 tt
 packRegion :: Region -> Region
 packRegion tt
  | KRegion	<- kindOfType tt
- = let 	tt'	= packTypeLs True [] tt
+ = let 	tt'	= packTypeLs True Map.empty tt
    in	if tt == tt'
    	 then tt'
 	 else packRegion tt'
@@ -77,7 +79,7 @@ packRegion tt
 packEffect :: Effect -> Effect
 packEffect tt
  | KEffect	<- kindOfType tt
- = let 	tt'	= inlineFsT $ packTypeLs True [] tt
+ = let 	tt'	= inlineFsT $ packTypeLs True Map.empty tt
    in	if tt	== tt'
       	 then tt'
 	 else packEffect tt'
@@ -85,7 +87,7 @@ packEffect tt
 packClosure :: Closure -> Closure
 packClosure tt
  | KClosure	<- kindOfType tt
- = let 	tt'	= crushT $ inlineFsT $ packTypeLs True [] tt
+ = let 	tt'	= crushT $ inlineFsT $ packTypeLs True Map.empty tt
    in	if tt	== tt'
       	 then tt'
 	 else packClosure tt'
@@ -100,16 +102,13 @@ packClosure tt
 -----
 packTypeLs 
 	:: Bool			-- whether to effect and closure constructors as well
-	-> [(Type, Type)]	-- types to substitute for
+	-> Map Type Type	-- types to substitute for
 	-> Type			-- type to substitute into
 	-> Type			-- result type
 
 packTypeLs ld ls tt
--- = trace ("packTypeLs: " % tt % "\n") $
- = packTypeLs' ld ls tt
-
-packTypeLs' ld ls tt
- = case tt of
+ = {-# SCC "packTypeLs" #-}
+   case tt of
 	TError{}
  	 -> tt
 
@@ -142,7 +141,7 @@ packTypeLs' ld ls tt
 	    in  makeTMask k t1' t2'
 	    
 	TVar k v2
-	 -> case lookup tt ls of
+	 -> case Map.lookup tt ls of
 	 	-- always substitute in trivial @cid1 = @cid2 constraints.
 		Just t'@TVar{}		-> t'
 
@@ -192,7 +191,7 @@ packTypeLs' ld ls tt
 
 	-- solver
 	TClass k cid1
-	 -> case lookup tt ls of
+	 -> case Map.lookup tt ls of
 		-- always substitute in trivial @cid1 = @cid2 constraints.
 		Just t'@TClass{}		-> t'
 
@@ -230,17 +229,20 @@ packTypeLs' ld ls tt
 --
 packTFettersLs 
 	:: Bool
-	-> [(Type, Type)] 
+	-> Map Type Type
 	-> Type 
 	-> Type
 
 packTFettersLs ld ls tt
- = case tt of
+ = {-# SCC "packTFettersLs" #-}
+   case tt of
 	TFetters fs (TError{})
 	 -> tt
 
  	TFetters fs t
-	 -> let	ls'	= [(t1, t2) | FLet t1 t2 <- fs] ++ ls
+	 -> let	ls'	= Map.union 
+	 			(Map.fromList [(t1, t2) | FLet t1 t2 <- fs])
+				ls
 
 		tPacked		= packTypeLs ld ls' t
 
@@ -271,9 +273,15 @@ packTFettersLs ld ls tt
 
 -- | Pack the type in the RHS of a TLet
 --
-packFetterLs :: Bool -> [(Type, Type)] -> Fetter -> Fetter
+packFetterLs 
+	:: Bool 
+	-> Map Type Type 
+	-> Fetter 
+	-> Fetter
+
 packFetterLs ld ls ff
- = case ff of
+ = {-# SCC "packFetterLs" #-}
+   case ff of
  	FLet t1 t2
 	 -> FLet t1 (crushT (packTypeLs ld ls t2))
 
@@ -290,7 +298,8 @@ packFetterLs ld ls ff
 --
 restrictFs :: Type -> [Fetter] -> [Fetter]
 restrictFs tt ls
- = let	reachFLetsMap
+ = {-# SCC "restrictFs" #-}
+   let	reachFLetsMap
  		= Map.fromList
 		$ [(t, Set.fromList $ collectTClassVars tLet)	
  			| FLet t tLet	<- ls]
@@ -314,7 +323,8 @@ restrictFs tt ls
 --
 inlineFs1 :: Type -> [Fetter] -> (Type, [Fetter])
 inlineFs1 tt fs
- = let	
+ = {-# SCC "inlineFs1" #-}
+   let	
  	-- count how many times each var is used in the RHSs of the fs.
  	useCount
  		= Map.populationCount
@@ -356,7 +366,8 @@ inlineFs1 tt fs
 --
 inlineFsT :: Type -> Type
 inlineFsT tt
- = case tt of
+ = {-# SCC "inlineFsT" #-}
+   case tt of
  	TFetters fs t
 	 -> let	sub	= Map.fromList
 			$ catMaybes
@@ -384,13 +395,17 @@ inlineFsT tt
 --			joining in a copy of itself isn't going to change its value.
 --
 shortLoopsF :: Fetter -> Fetter
-shortLoopsF (FLet t1 t2)
+shortLoopsF ff
+ = {-# SCC "shortLoopsF" #-}
+   shortLoopsF' ff
+
+shortLoopsF' (FLet t1 t2)
 	|  elem (kindOfType t1) [KRegion, KEffect, KClosure]
 	=  let	bot	= TBot (kindOfType t1)
 	   	t2'	= substituteTT (Map.singleton t1 bot) t2
 	   in	FLet t1 t2'
 	   
-shortLoopsF f	= f
+shortLoopsF' f	= f
 	
 
 
@@ -400,7 +415,8 @@ shortLoopsF f	= f
 --
 sortFs :: [Fetter] -> [Fetter]
 sortFs fs
- = let 	isLetK k f
+ = {-# SCC "sortFs" #-}
+   let 	isLetK k f
   	 = case f of
 	 	FLet _ t2	-> kindOfType t2 == k
 		FMore _ t2	-> kindOfType t2 == k
@@ -432,10 +448,18 @@ sortFsT tt
 --	  1 -> 2 -(5)> 3
 --        :-  5        = f :: ...
 --
-zapCoveredTMaskF :: [(Type, Type)] -> Type -> Fetter -> (Type, Fetter)
+zapCoveredTMaskF 
+	:: Map Type Type 
+	-> Type 
+	-> Fetter 
+	-> (Type, Fetter)
+
 zapCoveredTMaskF ls tt ff
+ = {-# SCC "zapCoveredTMaskF" #-} zapCoveredTMaskF' ls tt ff
+	
+zapCoveredTMaskF' ls tt ff
 	| FLet t1 (TMask k t2 t3)	<- ff
-	, Just t2l			<- lookup t2 ls
+	, Just t2l			<- Map.lookup t2 ls
 	, coversCC t2l t3
 	= ( substituteTT (Map.singleton t1 (TBot k)) tt
 	  , FLet t1 (TBot k))

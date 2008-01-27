@@ -71,6 +71,9 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
+ = {-# SCC "extractType" #-} extractType' final varT
+
+extractType' final varT
  = do	mCid	<- lookupVarToClassId varT
 
 	case mCid of
@@ -88,12 +91,18 @@ extractTypeC final varT cid
  = do 	trace	$ "*** Scheme.extractType " % varT % "\n"
 		% "\n"
 	
- 	tTrace		<- liftM sortFsT 	$ traceType cid
+ 	tTrace	<- liftM sortFsT 	
+		$ {-# SCC "extract/trace" #-} 
+		  traceType cid
+
 	trace	$ "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
 
 	-- Check if the data portion of the type is graphical.
 	--	If it is then it'll hang packType when it tries to construct an infinite type.
-	let cidsDataLoop	= checkGraphicalDataT tTrace
+	let cidsDataLoop	
+		= {-# SCC "extract/checkData" #-}
+		   checkGraphicalDataT tTrace
+
 	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
 
 	
@@ -111,11 +120,17 @@ extractTypeC final varT cid
 extractTypeC1 final varT cid tTrace
  = do	
 	-- Cut loops through the effect and closure portions of this type
-	let tCutLoops	= cutLoopsT tTrace
+	let tCutLoops	
+		= {-# SCC "extract/cut" #-} 
+		  cutLoopsT tTrace
+
 	trace	$ "    tCutLoops        =\n" %> prettyTS tCutLoops % "\n\n"
 
 	-- Pack type into standard form
-	let tPack	= packType tCutLoops
+	let tPack	
+		= {-# SCC "extract/pack" #-} 
+		  packType tCutLoops
+
 	trace	$ "    tPack            =\n" %> prettyTS tPack % "\n\n"
 
 	-- Trim closures
@@ -126,7 +141,10 @@ extractTypeC1 final varT cid tTrace
 
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
-	let tTrimPack	= packType tTrim
+	let tTrimPack	
+		= {-# SCC "extract/pack trim" #-}
+		  packType tTrim
+
 	trace	$ "    tTrimPack        =\n" %> prettyTS tTrimPack % "\n\n"
 
 
@@ -152,7 +170,11 @@ extractTypeC2 varT cid tFinal
  = do	
 	-- Reduce context
 	classInst	<- gets stateClassInst
-	let tReduced	= reduceContextT classInst tFinal
+
+	let tReduced	
+		= {-# SCC "extract/redude" #-}
+		  reduceContextT classInst tFinal
+
 	trace	$ "    tReduced         =\n" %> prettyTS tReduced % "\n\n"
 
 	return	$ Just tReduced
@@ -168,6 +190,9 @@ generaliseType
 	-> SquidM Type
 
 generaliseType varT tCore envCids
+ = {-# SCC "generaliseType" #-} generaliseType' varT tCore envCids 
+
+generaliseType' varT tCore envCids
  = do
 	args			<- gets stateArgs
 	trace	$ "*** Scheme.generaliseType " % varT % "\n"
