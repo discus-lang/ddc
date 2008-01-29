@@ -1,13 +1,13 @@
 <unknown>:0:-1
     Type mismatch during unification.
-          cannot match: *341 -(!345 $346)> *318
-                  with: Base.Int %329
+          cannot match: *334 -(!338 $339)> *314
+                  with: Base.Int %325
 
         function application
-         which expects: *341 -(!345 $346)> *318
+         which expects: *334 -(!338 $339)> *314
 
         conflicts with, 
                 use of: f1
-             with type: Base.Int %329
+             with type: Base.Int %325
                     at: test/Error/Unify/FunMore/Main.ds:6:10
 

@@ -36,6 +36,7 @@ import qualified Type.State			as Squid
 import qualified Type.Export			as Squid
 import qualified Type.Dump			as Squid
 
+import qualified Constraint.Simplify		as N
 import qualified Constraint.Exp			as N
 
 import qualified Source.Token			as Token
@@ -304,26 +305,37 @@ slurpC	sTree
    do
 	let state	= D.initCSlurpS 
 	
+	-- slurp constraints from the header
 	let ((header', hctrs, vsBound_header), state2)
 			= runState (slurpTreeM hTree)
 			$ state
 		
+	-- slurp constraints from the source 
 	let ((source', sctrs, vsBound_source), state3)
 			= runState (slurpTreeM sTree)
 			$ state2
 
+	-- handle errors arrising from constraint slurping
 	handleErrors (D.stateErrors state3)
 
-	let constraints	= hctrs ++ sctrs
-	let sigmaTable	= D.stateVarType   state3
+	-- these are the vars we'll need types for during the Core->Desugar transform
+	let vsTypesPlease = D.stateTypesRequest state3
 
-	let vsTypesPlease 	= D.stateTypesRequest state3
+	-- this is the table mapping value vars to type vars
+	let sigmaTable	= D.stateVarType state3
+
+	-- simplify source constraints (header constraints are already pretty simple)
+	let sctrs_simple = N.simplify vsTypesPlease sctrs
+
 
 	-- dump
 	dumpST	DumpDesugaredSlurped "desugared-slurped" source'
 	
 	dumpS	DumpTypeConstraints "type-constraints--source"
 		$ (catInt "\n" $ map pprStr sctrs)
+
+	dumpS	DumpTypeConstraints "type-constraints--source-simple"
+		$ (catInt "\n" $ map pprStr sctrs_simple)
 		
 	dumpS	DumpTypeConstraints "type-constraints--header"
 		$ (catInt "\n" $ map pprStr hctrs)
@@ -333,6 +345,10 @@ slurpC	sTree
 		
 	dumpS	DumpTypeSlurp  "type-slurp-trace"
 		$ concat $ D.stateTrace state3
+
+	-- all the constraints we're passing to the inferencer
+	let constraints	= hctrs ++ sctrs_simple
+
 	--
 	return	( source'
 		, constraints

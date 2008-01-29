@@ -153,10 +153,6 @@ slurpContains' mParent _
 	= []
 	
 	
-chainLinks :: [a] -> [(a, a)]
-chainLinks []		= []
-chainLinks (x1:[])	= []
-chainLinks (x1:x2:xs)	= (x1, x2) : chainLinks (x2 : xs)
 
 
 

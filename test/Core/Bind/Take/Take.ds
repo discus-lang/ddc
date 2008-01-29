@@ -1,0 +1,12 @@
+
+-- Triggered a bug in Core.Bind.
+--	In the first guard, the region in the Bool type produced by (==) is not local
+--	to that guard. The letregion must be on the outer do{} not in the RHS of the guard.
+
+take2 :: Int -> [a] -> [a];
+take2 n xx
+ = match {
+ 	| n == 0		= [];
+	| [] 		<- xx	= [];
+	| (x:xs) 	<- xx	= x : take2 (n - 1) xs;
+ };

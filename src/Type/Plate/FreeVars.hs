@@ -79,6 +79,9 @@ instance FreeVars Type where
 	TFree v t	-> freeVars t
 	TTag v		-> empty
 
+	-- wildcards
+	TWild{}		-> empty
+
 	-- used in solver
 	TClass{}	-> empty
 	TAccept t	-> freeVars t

@@ -51,8 +51,8 @@ foreign import extern unboxed
         
 foreign import extern listPairTuples
         :: forall %r0 %r1 %r2 %r3 %r4
-        .  Data.List.List %r0 (Data.Tuple.Tuple2 %r1 (Base.Char %r2) (Base.Char %r2)) -(!e0)> Data.List.List %r4 (Data.Tuple.Tuple2 %r3 (Base.Char %r2) (Base.Char %r2))
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2}
+        .  Data.List.List %r0 (Data.Tuple.Tuple2 %r2 (Base.Char %r1) (Base.Char %r1)) -(!e0)> Data.List.List %r4 (Data.Tuple.Tuple2 %r3 (Base.Char %r1) (Base.Char %r1))
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 
