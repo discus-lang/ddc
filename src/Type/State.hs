@@ -111,11 +111,6 @@ data SquidS
 	--	
 	, stateInst		:: Map Var	(InstanceInfo Var Type)			
 
-	-- | Records the port-forcing table for each generalised type.
-	--	We'll need this to rewrite the Core IR to use the new names for type varibles
-	--	introduced by the port-forcing process.
-	, statePortTable	:: Map Var	(Map Var Type)
-
 	-- | Records what vars have been quantified.
 	--	After the solver is finished and all generalisations have been performed,
 	--	all effect and closure ports will be in this set. We can then clean out
@@ -182,7 +177,6 @@ squidSInit
 		, stateGenDone		= Set.empty
 
 		, stateInst		= Map.empty
-		, statePortTable	= Map.empty
 		, stateQuantifiedVars	= Set.empty
 
 		, stateRegister		

@@ -404,7 +404,7 @@ solveSquid
 		$ Squid.stateErrors state
 
 	-- extract out the stuff we'll need for conversion to core.
-	(typeTable, typeInst, quantVars, portTable, vsRegionClasses)
+	(typeTable, typeInst, quantVars, vsRegionClasses)
 		<- {-# SCC "solveSquid/export" #-} evalStateT 
 			(Squid.squidExport vsTypesPlease) state
 
@@ -430,11 +430,6 @@ solveSquid
 		$ catInt "\n"
 		$ map pprStr
 		$ Set.toList quantVars
-
-	dumpS	DumpTypeSolve	"type-solve--portTable"
-		$ catInt "\n\n"
-		$ map pprStr
-		$ Map.toList  portTable
 
 	dumpS	DumpTypeSolve	"type-solve--regionClasses"
 		$ catInt "\n"
