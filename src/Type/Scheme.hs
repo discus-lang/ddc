@@ -107,8 +107,7 @@ extractTypeC final varT cid
 	-- Check if the data portion of the type is graphical.
 	--	If it is then it'll hang packType when it tries to construct an infinite type.
 	let cidsDataLoop	
-		= {-# SCC "extract/checkData" #-}
-		   checkGraphicalDataT tTrace
+		= checkGraphicalDataT tTrace
 
 	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
 

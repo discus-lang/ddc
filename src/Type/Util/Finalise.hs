@@ -35,8 +35,8 @@ finaliseT bound tt
 		t'	= finaliseT bound' t
 	    in	TFetters fs' t'
 	    
-	TSum  k ts	-> TSum  k (map down ts)
-	TMask k t1 t2	-> TMask k (down t1) (down t2)
+	TSum  k ts	-> makeTSum k (map down ts)
+	TMask k t1 t2	-> makeTMask k (down t1) (down t2)
 
 	TVar  k v
 	 	| elem k [KEffect, KClosure]

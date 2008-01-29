@@ -202,7 +202,7 @@ solveCs	(c:cs)
 
 	-- Projection constraints
 	CProject src j vInst tDict tBind
-	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind
+	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind	% "\n"
 		feedConstraint c
 		solveNext cs
 
@@ -357,7 +357,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	path			<- gets statePath
 	trace	$ "\n"
 		% "### CInst " % vUse % " <- " % vInst					% "\n"
-		% "    path          = " % path 					% "\n"
+--		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	sGenDone		<- gets stateGenDone
@@ -378,7 +378,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 			BLet _		-> BLet    [vInst]					
 			BLetGroup _	-> BLet    [vInst]
 
-	trace	$ "    bindInst      = " % bindInst					% "\n\n"
+--	trace	$ "    bindInst      = " % bindInst					% "\n\n"
 	
 	-- Record the current branch depends on the one being instantiated
 	-- 	Only record instances of Let bound vars, cause these are the ones we care
@@ -453,9 +453,7 @@ solveCInst_let
 
 	-- Work out the bindings in this ones group
 	mBindGroup	<- bindGroup vInst
-
 	trace	$ "    genSusp       = " % genSusp			% "\n\n"
-
 
 	solveCInst_find cs c bindInst path mBindGroup genSusp
 	
@@ -715,10 +713,10 @@ bindGroup' vBind
 	-- The dependency graph is the union of both of these.
 	let gDeps	=  Map.unionWith (Set.union) gContains gInst
 
-	trace	$ "    gContains:\n" 		%> prettyBranchGraph gContains		% "\n\n"
+{-	trace	$ "    gContains:\n" 		%> prettyBranchGraph gContains		% "\n\n"
 		% "    gInst:\n"		%> prettyBranchGraph gInst		% "\n\n"		
 		% "    gDeps:\n"		%> prettyBranchGraph gDeps		% "\n\n"
-
+-}
 	-- Work out all the stronly connected components (mutually recursive groups) 
 	--	reachable from the binding which needs its type generalised.
 	let sccs_all	= graphSCC gDeps bBind

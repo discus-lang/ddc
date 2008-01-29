@@ -115,7 +115,7 @@ exportType t
 	 KData
 	  -> return	$ trimClosureT tFinal
 
-	 _ ->  return	$ packType tFinal
+	 _ ->  return	$ tFinal
 		
  
 

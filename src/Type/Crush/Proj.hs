@@ -32,7 +32,7 @@ import Util
 
 -----
 stage	= "Type.Squid.CrushProj"
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 
 -----

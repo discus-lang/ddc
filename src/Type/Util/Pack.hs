@@ -425,8 +425,7 @@ shortLoopsF' f	= f
 --
 sortFs :: [Fetter] -> [Fetter]
 sortFs fs
- = {-# SCC "sortFs" #-}
-   let 	isLetK k f
+ = let	isLetK k f
   	 = case f of
 	 	FLet _ t2	-> kindOfType t2 == k
 		FMore _ t2	-> kindOfType t2 == k
@@ -465,7 +464,7 @@ zapCoveredTMaskF
 	-> (Type, Fetter)
 
 zapCoveredTMaskF ls tt ff
- = {-# SCC "zapCoveredTMaskF" #-} zapCoveredTMaskF' ls tt ff
+ = zapCoveredTMaskF' ls tt ff
 	
 zapCoveredTMaskF' ls tt ff
 	| FLet t1 (TMask k t2 t3)	<- ff
