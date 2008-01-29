@@ -145,11 +145,12 @@ solveCs	(c:cs)
 	CDef src t1@(TVar k vDef) t
  	 -> do	
 --	 	trace	$ "### Def  " % vDef %> ("\n:: " % prettyTypeSplit t) % "\n\n"
-		feedConstraint c
+--		feedConstraint c
 
-		-- Record that this type is good to go.
-		modify (\s -> s 
-			{ stateGenDone	= Set.insert vDef (stateGenDone s) })
+		-- Record the constraint in the solver state
+		modify $ \s -> s 
+			{ stateDefs	= Map.insert vDef t (stateDefs s)
+			, stateGenDone	= Set.insert vDef (stateGenDone s) }
 
 		solveNext cs
 
@@ -278,16 +279,26 @@ solveCs	(c:cs)
 	CInstLet src vUse vInst
 	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
 
-	 	-- If the scheme is already generalised we can just extract it from the graph,
-		--	otherwise we have to do the generalisation first.
+		defs		<- gets stateDefs
 		genDone		<- gets stateGenDone
-		tScheme		<- if Set.member vInst genDone
-					then do	Just tScheme_	<- extractType False vInst
-						return tScheme_
 
-					else solveGeneralise vInst
+		let getScheme
+			-- The scheme is in our table of external definitions
+			| Just tt	<- Map.lookup vInst defs
+			= return tt
 
-	 	-- extract the scheme from the graph and instantiate it
+			-- The scheme has already been generalised so we can extract it straight from the graph			
+			| Set.member vInst genDone
+			= do	Just tt	<- extractType False vInst
+				return tt
+				
+			-- Scheme hasn't been generalised yet
+			| otherwise
+			= solveGeneralise vInst
+			
+		tScheme	<- getScheme
+			
+	 	-- Instantiate the scheme
 		(tInst, tInstVs)<- instantiateT_table instVar tScheme
 
 		-- Add information about how the scheme was instantiated

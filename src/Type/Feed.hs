@@ -32,6 +32,8 @@ import qualified Data.Set	as Set
 
 import qualified Data.Array.IO	as Array
 
+import qualified Debug.Trace
+
 -----
 stage	= "Type.Feed"
 
@@ -149,16 +151,6 @@ feedType	mParent t
  = case t of
 	TFetters fs t
 	 -> do	
-{-	 	let isMonoLet f = 
-			case f of
-				FLet TClass{} _	-> True
-				_		-> False
-				
-		let (fsMono, fsOther)
-				= pariti
--}			
-	 
-	 
 	 	-- Rename the vars on the LHS of FLet bindings to make sure
 	 	--	they don't conflict with any vars already in the graph.
 		vtSub		<- liftM (Map.fromList . catMaybes)
@@ -250,13 +242,41 @@ feedType	mParent t
 		returnJ		$ TClass KEffect cidE
 
 	-- closure
-	TFree v t
+	-- TFree's that we get from the constraints might refer to types that are in
+	--	the defs table but not the graph. We don't want to pollute the graph
+	--	with the whole external def so trim these types down and just add the
+	--	closure information that we need.
+	TFree v1 t@(TVar KData v2)
 	 -> do	cid		<- allocClass KClosure
 	 	patchBackRef cid mParent
-		
+
+		defs		<- gets stateDefs
+		case Map.lookup v2 defs of
+		 -- type that we're refering to is in the defs table
+		 Just tDef
+		  -> do	let tDef_trim	= trimClosureT $ flattenT tDef
+		  	tDef'		<- linkType mParent [] tDef_trim
+
+			-- we use addToClass here because we don't need to register effects and 
+			--	classes for crushing in this type
+			addToClass cid ?src $ TFree v1 tDef'
+			returnJ		$ TClass KClosure cid
+
+		 -- type must be in the graph
+		 Nothing
+		  -> do	t'		<- linkType mParent [] t
+			addNode	cid	$ TFree v1 t'
+			returnJ		$ TClass KClosure cid
+
+	-- A non-var closure. We can get these from signatures and instantiated schemes
+	TFree v1 t
+	 -> do	cid		<- allocClass KClosure
+	 	patchBackRef cid mParent
+
 		t'		<- linkType mParent [] t
-		addNode	cid	$ TFree v t'
+		addNode	cid	$ TFree v1 t'
 		returnJ		$ TClass KClosure cid
+
 
 	TTag v
 	 -> do	cid		<- allocClass KClosure
@@ -336,8 +356,8 @@ feedType1 mParent tt
 		
 	-- closures
 	TFree v t
-	 -> do	Just t'	<- feedType mParent t
-	 	returnJ	$ TFree v t'
+	 -> do	Just tt'	<- feedType mParent tt
+	 	returnJ	$ tt'
 
 	TTag{}
 	 ->	returnJ	$ tt
@@ -458,31 +478,3 @@ isFShape (Var.FShape _)	= True
 isFShape _		= False
 	
 
-{-
- = case t of
-	-- effects
- 	TSum KEffect [TEffect v _]			-- ReadH
-	 | Var.bind v == Var.EReadH 
-	 -> registerClass Var.EReadH cid
-
-	 | Var.bind v == Var.EReadT			-- ReadT
-	 -> registerClass Var.EReadT cid
-
-	 | Var.bind v == Var.EWriteT			-- WriteT
-	 -> registerClass Var.EWriteT cid
-
-	-- fetters
- 	TFetter (FConstraint v _)
-	 | Var.bind v == Var.FLazyH			-- LazyH
-	 -> registerClass Var.FLazyH cid
-
-	 | Var.bind v == Var.FMutableT			-- MutableT
-	 -> registerClass Var.FMutableT cid
-	 
-	 | Var.bind v == Var.FConstT			-- ConstT
-	 -> registerClass Var.FConstT cid
-
-
-	TFetter (FProj{})				-- Proj
-	 -> registerClass Var.FProj cid
--}

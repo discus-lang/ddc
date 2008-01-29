@@ -81,6 +81,12 @@ data SquidS
 	-- | The type graph
 	, stateGraph		:: Graph
 
+	-- | Type definitons from CDef constraints.
+	--	Most of these won't be used in any particular program and we don't want to pollute
+	--	the type graph with this information, nor have to extract them back from the graph
+	--	when it's time to export types to the Desugar->Core transform.
+	, stateDefs		:: Map Var Type
+
 	-- | The current path we've taken though the branches.
 	--	This tells us what branch we're currently in, and by tracing
 	--	through the path we can work out how a particular variable was bound.
@@ -168,6 +174,7 @@ squidSInit
 
 		, stateGraph		= graph
 	
+		, stateDefs		= Map.empty
 		, statePath		= []
 
 		, stateContains		= Map.empty

@@ -34,7 +34,7 @@ import Type.Plate.Collect	(collectClassIds)
 import Type.Plate.Trans
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effect"
 
@@ -59,7 +59,7 @@ crushEffectC cid
 		 	% "    eTrace = " %> prettyTS eTrace	% "\n"
 
 	-- pack the effect into normal form
-	let ePacked	= packEffect eTrace
+	let Just ePacked = packEffect eTrace
 	trace	$ "    ePacked     = " 	% ePacked		% "\n"
 
 	-- crush out some ctors.

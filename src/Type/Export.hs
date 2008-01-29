@@ -45,8 +45,6 @@ squidExport
 		( Map Var Type				-- Type schemes.
 		, Map Var (InstanceInfo Type Type)	-- How each instantiation was done.
 		, Set Var				-- Which vars were quantified, ie which vars are ports.
---		, Map Var (Map Var Type) 		-- The substition from the "contra-variant vars are ports"
-							--	rewriting process.
 		, Map Var [Var])			-- The constraints acting on each region.
 
 squidExport vsTypesPlease

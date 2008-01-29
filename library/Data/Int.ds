@@ -52,7 +52,6 @@ foreign import extern "primInt32_update"
  primInt32_update
  		:: elaborate (mutable Int) -> Int -> ()
 
-
 instance Eq (Int %_) where
 	(==)		= primInt32_eq
 	(/=)		= primInt32_neq
@@ -76,7 +75,6 @@ instance Updatable (Int %_) where
 
 instance Accum (Int %_) where
 	(+=) a b	= primInt32_update a (primInt32_add a b)
-
 
 -----
 (<>) :: Int -> (Int -> Int) -> ()

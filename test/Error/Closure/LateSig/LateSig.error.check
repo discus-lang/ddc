@@ -1,14 +1,14 @@
 test/Error/Closure/LateSig/LateSig.ds:15:20
     Type mismatch during unification.
-          cannot match: Base.Char %503
-                  with: Base.Int %442
+          cannot match: Base.Char %227
+                  with: Base.Int %166
 
          literal value: 'a'
-               of type: Base.Char %503
+               of type: Base.Char %227
                     at: test/Error/Closure/LateSig/LateSig.ds:15:20
 
         conflicts with, 
                 use of: box
-             with type: Base.Int %442
+             with type: Base.Int %166
                     at: test/Error/Closure/LateSig/LateSig.ds:15:8
 

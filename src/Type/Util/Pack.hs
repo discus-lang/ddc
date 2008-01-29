@@ -44,7 +44,10 @@ packType :: Type -> Type
 packType tt
  = case kindOfType tt of
  	KData		-> packData    tt
-	KEffect		-> packEffect  tt
+	KEffect		-> eff' where Just eff' = packEffect tt
+	 
+	 
+	 
 	KClosure	-> packClosure tt
 	KRegion		-> packRegion  tt
 
@@ -76,13 +79,20 @@ packRegion tt
 --		:- !3386      = !{!3369; Base.!ReadT (Base.Int %481)}
 --
 
-packEffect :: Effect -> Effect
+packEffect :: Effect -> Maybe Effect
 packEffect tt
  | KEffect	<- kindOfType tt
  = let 	tt'	= inlineFsT $ packTypeLs True Map.empty tt
    in	if tt	== tt'
-      	 then tt'
+      	 then Just tt'
 	 else packEffect tt'
+
+ | otherwise
+ = freakout stage
+ 	("packEffect: not an effect\n"
+	% "  e = " % tt % "\n")
+	Nothing
+	
 
 packClosure :: Closure -> Closure
 packClosure tt

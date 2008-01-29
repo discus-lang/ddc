@@ -71,7 +71,14 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = {-# SCC "extractType" #-} extractType' final varT
+ = do	defs	<- gets stateDefs
+
+	-- if scheme is in the defs table then we're already done
+ 	case Map.lookup varT defs of
+	 Just tt	-> return $ Just tt
+
+	 -- otherwise extract it from the graph
+	 Nothing	-> {-# SCC "extractType" #-} extractType' final varT
 
 extractType' final varT
  = do	mCid	<- lookupVarToClassId varT
