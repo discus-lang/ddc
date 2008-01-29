@@ -28,13 +28,13 @@ traceType :: ClassId -> SquidM Type
 traceType cid
  = do 	
  	-- See which classes are reachable by tracing down from this one.
- 	cidsDown	<- traceCidsDown cid
+ 	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
 	-- Find fetters acting on this subgraph by tracing back up from the nodes.
-	cidsFetterUp	<- traceFetterCidsUp cidsDown
+	cidsFetterUp	<- {-# SCC "trace/Up" #-} traceFetterCidsUp cidsDown
 
 	-- Trace out the subgraph reachable by these fetters.
-	cidsFetterDown	<- traceCidsDowns cidsFetterUp Set.empty
+	cidsFetterDown	<- {-# SCC "trace/Down2" #-} traceCidsDowns cidsFetterUp Set.empty
 
 	-- These are all the interesting cids.
 	let cidsReachable	= Set.union cidsDown cidsFetterDown

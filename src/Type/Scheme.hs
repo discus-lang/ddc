@@ -142,7 +142,7 @@ extractTypeC1 final varT cid tTrace
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
 	let tTrimPack	
-		= {-# SCC "extract/pack trim" #-}
+		= {-# SCC "extract/pack_trim" #-}
 		  packType tTrim
 
 	trace	$ "    tTrimPack        =\n" %> prettyTS tTrimPack % "\n\n"
