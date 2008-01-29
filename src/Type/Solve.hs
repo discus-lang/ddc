@@ -111,6 +111,12 @@ solve	args ctree
 	-- Do a final grind to make sure the graph is up to date
 	solveCs [CGrind]
 	
+	
+	-- Report how large the graph was
+	graph		<- gets stateGraph
+	trace	$ "=== Final graph size: " % graphClassIdGen graph % "\n"
+	
+	
 	-- Check if there were any errors
 	errors	<- gets stateErrors
 	

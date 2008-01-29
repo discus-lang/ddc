@@ -408,6 +408,10 @@ solveSquid
 		<- {-# SCC "solveSquid/export" #-} evalStateT 
 			(Squid.squidExport vsTypesPlease) state
 
+	-- report some state
+	when (elem Verbose ?args)
+	 $ do	putStr $ pprStr $ "    - graph size: " % Squid.graphClassIdGen (Squid.stateGraph state) % "\n"
+
 
 	-- dump final solver state
 	dumpS	DumpTypeSolve  "type-solve--types"
