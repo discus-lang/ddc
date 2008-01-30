@@ -1,14 +1,14 @@
 test/Error/Unify/DefConst/Main.ds:6:15
     Type mismatch during unification.
-          cannot match: Data.String.String %49
-                  with: Base.Int %41
+          cannot match: Data.String.String %48
+                  with: Base.Int %40
 
          literal value: "perch"
-               of type: Data.String.String %49
+               of type: Data.String.String %48
                     at: test/Error/Unify/DefConst/Main.ds:6:15
 
         conflicts with, 
                 use of: fish
-             with type: Base.Int %41
+             with type: Base.Int %40
                     at: test/Error/Unify/DefConst/Main.ds:6:10
 

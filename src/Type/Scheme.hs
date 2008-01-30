@@ -52,10 +52,13 @@ watchClass src code
  = do	mC	<- lookupClass (ClassId code)
  
  	let res
-		| Just Class { classQueue = queue }	<- mC
+		| Just Class 
+			{ classType	= mType
+			, classQueue 	= queue  	}	<- mC
 		= trace ( "--- class " % code % "----------------------\n"
-			% "-- src   = " % src		% "\n"
-			% "-- queue = " % queue		% "\n")
+			% "--  src   = " % src			% "\n"
+			% "--  type  = " % mType		% "\n"
+			% "--  queue = " % queue		% "\n\n")
 
 		| otherwise
 		= return ()

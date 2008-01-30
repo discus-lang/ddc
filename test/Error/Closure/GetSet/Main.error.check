@@ -1,14 +1,14 @@
 test/Error/Closure/GetSet/Main.ds:28:14
     Type mismatch during unification.
-          cannot match: Data.String.String %330
-                  with: Base.Int %292
+          cannot match: Data.String.String %322
+                  with: Base.Int %285
 
          literal value: "a"
-               of type: Data.String.String %330
+               of type: Data.String.String %322
                     at: test/Error/Closure/GetSet/Main.ds:28:14
 
         conflicts with, 
                 use of: setB
-             with type: Base.Int %292
+             with type: Base.Int %285
                     at: test/Error/Closure/GetSet/Main.ds:28:8
 

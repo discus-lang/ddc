@@ -53,8 +53,6 @@ foreign import extern fun
         ,  !e1        = Base.!Read %rTC2
         ,  $c0        = ${x : Base.Int %rTC1; y : Base.Int %rTC2}
         ,  $c1        = y : Base.Int %rTC2
-        ,  Num (Base.Int %rTC2)
-        ,  Show (Base.Int %rTC1)
         :$ Base.Data -> Base.Thunk;
         
 foreign import extern runBox

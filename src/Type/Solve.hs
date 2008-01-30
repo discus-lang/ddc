@@ -23,6 +23,7 @@ import System.IO
 
 import Shared.Error
 import qualified Shared.Var	as Var
+import qualified Shared.VarBind	as Var
 
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
@@ -37,6 +38,7 @@ import Type.Util
 import Type.Error
 import Type.Plate.Collect
 
+import Type.Dump
 import Type.State
 import Type.Class
 import Type.Scheme
@@ -63,7 +65,7 @@ debug	= True
 trace s	= when debug $ traceM s
 
 -- debug the grinder
-debugG	= False
+debugG	= True
 traceG s = when debugG $ traceM s
 
 stage	= "Type.Solve"
@@ -249,7 +251,7 @@ solveCs	(c:cs)
 	CLeave vs
 	 -> do	trace	$ "\n### CLeave " % vs % "\n"
 	 	path	<- gets statePath
-		trace	$ "    path = " % path 	% "\n"
+--		trace	$ "    path = " % path 	% "\n"
 
 		-- We're leaving the branch, so pop ourselves off the path.
 	 	pathLeave vs
@@ -912,78 +914,150 @@ solveGrind
 	:: SquidM [CTree]
 
 solveGrind
- = do	
- 	-- Don't unify if there are errors
+ = do	-- if there are already errors in the state then don't start the grind.
  	errs		<- gets stateErrors
-	if not $ isNil errs
-	 then	return []
-	 else do
-	 	-- Run the unifier/projection resolver.
-	 	-- Doing this can generate more constraints.
-		traceG	$ ppr "*   Grind.solveGrind, unifying.\n"
-		csMore	<- solveUnify
+	if isNil errs
+	 then do 
+	 	trace	$ ppr "-- Grind Start --------------------------------\n"
+	 	cs	<- solveGrindStep
+		trace	$ ppr "------------------------------------ Grind Stop\n"
+
+		return cs
+
+	 else return []
 		
-		case csMore of
-		 []	-> solveGrind_crush
-		 _	-> return $ csMore ++ [CGrind]
-
-solveGrind_crush
- = do	errs		<- gets stateErrors
- 	if not $ isNil errs
-	 then return []
-	 else do
-	  	-- Crush other things
-	 	-- These don't generate more constraints, so once we've finished processing them the
-		--	grind is complete.
-	 
-	 	-- Grab lists of interesting equivalence classes from the register.
-		register		<- gets stateRegister
-
-		let getReg bind		
-			= return $ Set.toList $ (\(Just x) -> x) $ Map.lookup bind register
-
-		regEReadH	<- getReg Var.EReadH
-		regEReadT	<- getReg Var.EReadT
-		regEWriteT	<- getReg Var.EWriteT
-
-		regFLazyH	<- getReg Var.FLazyH
-		regFMutableT	<- getReg Var.FMutableT
-		regFConstT	<- getReg Var.FConstT
- 
-	 	traceG	$ "*   Grind.solveGrind: crushing.\n"
-			% "    regEReadT    = " % regEReadT	% "\n"
-			% "    regEReadH    = " % regEReadH	% "\n"
-			% "    regFLazyH    = " % regFLazyH	% "\n"
-			% "    regFMutableT = " % regFMutableT	% "\n"
-			% "    regFConstT   = " % regFConstT	% "\n"
-			% "\n\n"
-
-
-		-- Now that the graph is unified, we can try and crush out some of the simpler compound
-		--	effects and fetters. Crushing these constructors will not add any more constraints
-		--	to nodes in the graph, so there is no need to interleave it with unification.
-
-		-- Crush out EReadTs
-		traceG	$ ppr "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
-		mapM_ crushEffectC (regEReadH ++ regEReadT ++ regEWriteT)
-
-		-- Crush out FLazyHs, FMutableTs
-		traceG	$ ppr "*   Grind.solveGrind, crushing FLazyHs, FMutableTs\n"
-		mapM_ crushFetterC (regFLazyH ++ regFMutableT ++ regFConstT)
+			
+solveGrindStep 
+ = do	traceG	$ "\n"
+ 		% "*   solveGrindStep\n"
+  	
+	 -- get the set of active classes
+ 	active	<- liftM Set.toList $ clearActive
 	
-		-- all done
-		traceG	$ "\n"
-			% "=== Grind.solveGrind done\n"
-			% "=============================================================\n"
-			% "\n\n"
+	traceG	$ "    active      = " % active	% "\n"
 
-		return 	[]
+	-- make sure all classes are unified
+	progressUnify
+		<- liftM or
+		$  mapM crushUnifyClass active
 
 
+	-- grind those classes
+	(progressCrush, qssMore)
+		<- liftM unzip
+		$  mapM grindClass active
+ 	
+	let qsMore	= concat qssMore
+	errs		<- gets stateErrors
+	
+	traceG	$ ppr "\n"
+	let next
+		-- if we've hit any errors then bail out now
+		| not $ null errs
+		= return []
+
+		-- if we've crushed a projection and ended up with more constraints
+		--	then stop grinding for now, but ask to be resumed later when
+		--	new constraints are added.
+		| not $ null qsMore
+		= return (qsMore ++ [CGrind])
+		
+		-- if we've made progress then keep going.
+		| progressUnify || or progressCrush
+		= solveGrindStep 
+		
+		-- no progress, all done.
+		| otherwise
+		= return []
+		
+	next
+
+
+grindClass :: ClassId -> SquidM (Bool, [CTree])
+grindClass cid
+ = do	Just c	<- lookupClass cid
+	grindClass2 cid c
+
+grindClass2 cid c@(ClassForward cid')
+	= grindClass cid'
+	
+grindClass2 cid c@(ClassNil)
+	= return (False, [])
+	 	
+-- type nodes
+grindClass2 cid c@(Class	
+			{ classType 	= mType
+			, classKind	= k 
+			, classFetters	= fs})
+ = do	
+	-- if a class contains an effect it might need to be crushed
+--	traceG	$ ppr "   - crushing effects\n"
+	progressCrushE	
+		<- case k of
+			KEffect	-> crushEffectC cid
+			_	-> return False
+
+	-- try and crush other fetters in this class
+--	traceG	$ ppr "   - crushing type fetters\n"
+	progressCrush
+		<- case fs of
+			[]	-> return False
+			_	-> crushFetterC cid
+	
+	return	( progressCrushE || progressCrush
+		, [])
+	
+-- fetter nodes
+grindClass2 cid c@(ClassFetter { classFetter = f })
+ = do
+	-- crush projection fetters
+--	traceG	$ ppr "   - crushing projections\n"
+	qsMore	<- case f of
+			FProj{}	-> crushProjClassT cid
+			_	-> return Nothing
+			
+	let progressProj
+		= isJust qsMore
+		
+	-- crush shape fetters
+--	traceG	$ ppr "   - crushing shapes\n"
+	let isFShape b
+		= case b of
+			Var.FShape _	-> True
+			_		-> False
+
+	progressShape
+		<- case f of
+			FConstraint v _
+			 | isFShape $ Var.bind v	-> crushShape cid
+			_				-> return False
+		
+	-- crush other fetters
+--	traceG	$ ppr "   - crushing other fetters\n"
+	progressCrush
+		<- crushFetterC cid
+		
+	return	( progressProj || progressShape || progressCrush
+		, fromMaybe [] qsMore )
+		
+
+{-
+watchClass ix
+ = do	mC	<- lookupClass (ClassId ix)
+ 	case mC of
+	 Nothing	-> return ()
+	 Just c		
+	  -> do	trace	$ "-- watch " % ix % "\n"
+	  		% prettyClass ix c
+		
+		return ()
+-}	
+		
 -- Unify some classes in the graph.
 --	The crushing of Shape fetters is interleaved with batches of unification
 --	because the crushing can add more constraints to the graph.
 --
+{-
 solveUnify 
 	:: SquidM [CTree]
 
@@ -1090,5 +1164,69 @@ getRegShapes
 
 	return regShapes
 
-
+-}
 	
+{-
+	 	-- Run the unifier/projection resolver.
+	 	-- Doing this can generate more constraints.
+		traceG	$ ppr "*   Grind.solveGrind, unifying.\n"
+		csMore	<- solveUnify
+		
+		case csMore of
+		 []	-> solveGrind_crush
+		 _	-> return $ csMore ++ [CGrind]
+
+solveGrind_crush
+ = do	errs		<- gets stateErrors
+ 	if not $ isNil errs
+	 then return []
+	 else do
+	  	-- Crush other things
+	 	-- These don't generate more constraints, so once we've finished processing them the
+		--	grind is complete.
+	 
+	 	-- Grab lists of interesting equivalence classes from the register.
+		register		<- gets stateRegister
+
+		let getReg bind		
+			= return $ Set.toList $ (\(Just x) -> x) $ Map.lookup bind register
+
+		regEReadH	<- getReg Var.EReadH
+		regEReadT	<- getReg Var.EReadT
+		regEWriteT	<- getReg Var.EWriteT
+
+		regFLazyH	<- getReg Var.FLazyH
+		regFMutableT	<- getReg Var.FMutableT
+		regFConstT	<- getReg Var.FConstT
+ 		regFPure	<- getReg Var.FPure
+ 
+	 	traceG	$ "*   Grind.solveGrind: crushing.\n"
+			% "    regEReadT    = " % regEReadT	% "\n"
+			% "    regEReadH    = " % regEReadH	% "\n"
+			% "    regFLazyH    = " % regFLazyH	% "\n"
+			% "    regFMutableT = " % regFMutableT	% "\n"
+			% "    regFConstT   = " % regFConstT	% "\n"
+			% "    regFPure     = " % regFPure	% "\n"
+			% "\n\n"
+
+
+		-- Now that the graph is unified, we can try and crush out some of the simpler compound
+		--	effects and fetters. Crushing these constructors will not add any more constraints
+		--	to nodes in the graph, so there is no need to interleave it with unification.
+
+		-- Crush out EReadTs
+		traceG	$ ppr "*   Grind.solveGrind, crushing EReadHs, EReadTs, EWriteTs\n"
+		mapM_ crushEffectC (regEReadH ++ regEReadT ++ regEWriteT)
+
+		-- Crush out FLazyHs, FMutableTs
+		traceG	$ ppr "*   Grind.solveGrind, crushing FLazyHs, FMutableTs, FConstT, FPure\n"
+		mapM_ crushFetterC (regFLazyH ++ regFMutableT ++ regFConstT ++ regFPure)
+	
+		-- all done
+		traceG	$ "\n"
+			% "=== Grind.solveGrind done\n"
+			% "=============================================================\n"
+			% "\n\n"
+
+		return 	[]
+-}

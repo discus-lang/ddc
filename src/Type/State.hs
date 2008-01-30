@@ -123,11 +123,6 @@ data SquidS
 	--	non-ports while we extract them from the graph.
 	, stateQuantifiedVars	:: Set Var
 	
-	-- | A register of which classes contain various, interesting effect \/ class constructors.
-	--	When we want to crush out some of the class constraints, we can use this register
-	--	to find them, instead of searching through the whole group.
-	, stateRegister		:: Map VarBind  (Set ClassId)		
-									
 	-- | The data field definitions.
 	-- 	type name	-> (type vars, [(field name, field type)])
 	, stateDataFields	:: Map Var	([Var], [(Var, Type)]) 
@@ -185,22 +180,6 @@ squidSInit
 
 		, stateInst		= Map.empty
 		, stateQuantifiedVars	= Set.empty
-
-		, stateRegister		
-			-- effects
-			= Map.insert Var.EReadH 	Set.empty
-			$ Map.insert Var.EReadT		Set.empty
-			$ Map.insert Var.EWriteT	Set.empty
-	
-			-- fetters
-			$ Map.insert Var.FLazyH 	Set.empty
-			$ Map.insert Var.FMutableT	Set.empty
-			$ Map.insert Var.FConstT 	Set.empty
-
-			$ Map.insert (Var.FShape 0) 	Set.empty
-			$ Map.insert Var.FProj	 	Set.empty
-
-			$ Map.empty
 
 		, stateDataFields	= Map.empty 
 		, stateProject		= Map.empty

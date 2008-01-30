@@ -31,8 +31,8 @@ foreign import extern "primSuspend2"
 	:: forall a b c !e1 !e2 $c1 $c2
 	.  (a -(!e1 $c1)> b -(!e2 $c2)> c) -($c3)> a -($c4)> b -($c5)> c
 	:- $c5 = ${ f : ${ $c1 ; $c2 }; x : a}
-	,  $c4 = $c5 \ a
-	,  $c3 = $c4 \ b
+	,  $c4 = $c5 \ x
+	,  $c3 = $c4 \ f
 	,  Pure  !e1
 	,  Pure  !e2
 	,  LazyH c

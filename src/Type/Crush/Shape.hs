@@ -17,7 +17,7 @@ import Type.Class
 import Type.Crush.Unify
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Shape"
 
@@ -69,15 +69,16 @@ crushShape shapeCid
 		
 	case template of
 	 -- There's no template to work from, and nothing else we can do.
-	 Nothing	-> return False
+	 --	We need to reactivate ourselves so we get called in the next grind
+	 Nothing	
+	  -> do	activateClass shapeCid
+	  	return False
 
 	 -- We've got a template. 
 	 --	We can merge the sub classes and remove the shape constaint.
 	 Just tt	
 	  -> do	crushShapeMerge mergeCids mergeCs mts tt
 		delClass shapeCid
-		
-		unregisterClass (Var.FShape 0) shapeCid
 		return True
 
 

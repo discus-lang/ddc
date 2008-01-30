@@ -59,18 +59,25 @@ crushProjClassT cidT
 	let FProj proj _ (TClass KData cidObj) _	= fProj
 	
 	-- lookup the node for the object
-	
-	-- HACK: on rare occasions the class hasn't been unified yet
-	--	 why is this? Is the graph active queue getting munged for some reason???
-	crushUnifyClass cidObj
-
 	Just cObj	<- lookupClass cidObj
-	let tObj	=  case cObj of
-				Class { classType = Just tObj_ }	
-				  -> tObj_
-				_ -> panic stage
-					$ "crushProjClassT: can't get object type from class\n"
-					% prettyClass 0 cObj
+	
+	crushProjClass2 cidT fProj cObj 
+	
+
+crushProjClass2 cidT fProj cObj
+	| Class { classType = Just tObj }	<- cObj
+	= crushProjClass3 cidT fProj cObj tObj
+
+	-- if this crush is interleaved with something that's added to this node
+	--	then we'll have to wait for it to be unified
+	| otherwise
+	= do	activateClass cidT
+		return Nothing
+
+	
+crushProjClass3 cidT fProj cObj tObj
+ = do
+ 	let FProj proj _ (TClass KData cidObj) _	= fProj
 
 	trace	$ "    cObj type   = " % classType cObj	% "\n"
 
@@ -81,8 +88,10 @@ crushProjClassT cidT
 	--	be able to get the projection dictionary for it.
 	let res	
 		-- a var might turn into a type constructor after more constraints are added
+		--	re-activate ourselves so we get called again in the next grind
 		| TBot{}		<- tObj
-		=	return Nothing
+		= do	activateClass cidT
+			return Nothing
 
 		-- the object is a constructor, but there's no projection dictionary for it.
 		| tCon@(TData vCon _)	<- tObj
@@ -160,9 +169,7 @@ crushProj2
 						= Map.insert vInst vImpl (stateProjectResolve s) }
 
 			-- We can ignore this class from now on.
-			unregisterClass Var.FProj cid
 			delClass cid
-			
 			
 			return $ Just qs
 						

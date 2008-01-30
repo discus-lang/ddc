@@ -53,7 +53,7 @@ loadType
 loadType cid cidsReachable
  = do
 	-- Build a new let for each of the classes
-	fsLet		<- liftM catMaybes
+	fsLet		<- liftM concat
 			$  mapM	loadTypeNode
 			$  Set.toList cidsReachable
 
@@ -62,10 +62,10 @@ loadType cid cidsReachable
 	return tTrace
 
 
--- | Make a new fetter representing this node in the type graph.
+-- | Make new fetters representing this node in the type graph.
 loadTypeNode
 	:: ClassId
-	-> SquidM (Maybe Fetter)
+	-> SquidM [Fetter]
 
 loadTypeNode cid
  = do	Just c		<- lookupClass cid
@@ -74,7 +74,7 @@ loadTypeNode cid
 loadTypeNode2 cid c
 	| ClassFetter { classFetter = f } <- c
 	= do	t'	<- refreshCids f
-		return	$ Just t'
+		return	[t']
 
 	-- If the class type is Nothing then it hasn't been unified yet..
 	| Nothing	<- classType c
@@ -86,14 +86,17 @@ loadTypeNode2 cid c
 
 	-- don't bother showing bottoms
 	| Just (TBot k)	<- classType c
-	=	return	$ Nothing
+	= do	tfs		<- refreshCids $ classFetters c
+		let fs		= map (\(TFetter f) -> f) tfs
+		return	fs
 
 	-- a regular type node
 	| Just t	<- classType c
 	= do	
-
 		-- make sure all the cids are canconical
-		t'	<- refreshCids t
+		(t': tfs)	<- refreshCids (t : classFetters c)
+
+		let fs		= map (\(TFetter f) -> f) tfs
 
 		-- If this node has additional fetters where the LHS are all cids then we can strip them here
 		-- 	because they're cids they'll already be returned as their separate nodes
@@ -109,7 +112,8 @@ loadTypeNode2 cid c
 				_	-> t'
 				
 		k	<- kindOfCid cid
-		return $ Just (FLet (TClass k cid) tX)
+	
+		return $ (FLet (TClass k cid) tX : fs)
 
 refreshCids xx
  	= transZM 

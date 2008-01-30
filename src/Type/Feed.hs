@@ -3,8 +3,7 @@ module Type.Feed
 	( feedConstraint
 	, feedType 
 	, feedFetter
-	, registerNodeT
-	, registerNodeF )
+	, addFetter)
 
 where
 
@@ -72,32 +71,14 @@ feedConstraint cc
 
 	-- Signatures behave the same way as plain equality constraints.
 	CSig src t1@(TVar k v1) t2
-	 -> do
-	 	feedConstraint (CEq src t1 t2)
+	 -> do 	feedConstraint (CEq src t1 t2)
 		return ()
 
-
-	-- Class constraints.
-	CClass src v ts
+	-- Class constraints
+	CClass src vC ts
 	 -> do	let ?src	= src
-
-	 	-- a new class to hold this node
-	 	cid		<- allocClass KFetter
-	 	
-		-- add the type args to the graph
-	 	Just ts'	<- liftM sequence
-				$  mapM (feedType (Just cid)) ts
-		
-		-- add the constraint
-		graph	<- gets stateGraph
-		let c	= ClassFetter
-			{ classId	= cid
-			, classFetter	= FConstraint v ts' }
-		
-		liftIO (Array.writeArray (graphClass graph) cid c)
-		registerClass (Var.bind v) cid
-		return ()		
-
+		addFetter (FConstraint vC ts)
+		return ()
 
 	-- Projection constraints.
 	CProject src j v1 tDict tBind
@@ -116,9 +97,9 @@ feedConstraint cc
 		let c	= ClassFetter
 			{ classId	= cid
 			, classFetter	= FProj j v1 tDict' tBind' }
-		
 		liftIO (Array.writeArray (graphClass graph) cid c)
-		registerClass Var.FProj cid
+		activateClass cid
+
 		return ()		
 				
 
@@ -383,11 +364,11 @@ feedFetter	mParent f
 		return ()
 
 	FMore t1 t2	
-	 -> feedFetter mParent (FLet t1 t2)
+	 -> 	feedFetter mParent (FLet t1 t2)
 
 	FConstraint v ts
-	 -> do 	addFetterNode f
-		return ()
+	 -> do	addFetter f
+	 	return ()
 
 	FProj pj v tDict tBind
 	 -> do	cidC		<- allocClass KFetter
@@ -409,72 +390,75 @@ addNode :: (?src :: TypeSource)
 	-> SquidM ()
 	
 addNode    cidT	t
- = do	registerNodeT cidT t
- 	addToClass cidT	?src t
+ = do	addToClass cidT	?src t
+	activateClass cidT
 
-
+-- addFetter ---------------------------------------------------------------------------------------
 -- | Add a new fetter constraint to the graph
-addFetterNode 
+addFetter
 	:: (?src :: TypeSource)
-	-> Fetter 
-	-> SquidM ClassId
+	=> Fetter 
+	-> SquidM Bool		-- returns True if the fetter was new information
 
-addFetterNode f@(FConstraint v ts)
- = do 	-- a new class to hold this node
+
+-- Single parameter type class contraints are added directly to the equivalence
+--	class which they constrain.
+--
+addFetter (FConstraint vC [t1])
+ = do	
+ 	-- work out the equivalence class that this constraint refers to
+ 	cid1	<- case t1 of
+ 			TVar k v1	-> makeClassV ?src (kindOfSpace $ Var.nameSpace v1) v1
+			TClass k cid	-> return cid
+
+	let k	= case t1 of
+			TVar k1 _	-> k1
+			TClass k1 _	-> k1
+
+	-- add the fetter to the equivalence class
+	let f	= FConstraint vC [TClass k cid1]
+
+	Just c		<- lookupClass cid1
+	let fsThere	= map (\(TFetter f) -> f) $ classFetters c
+
+	-- add the fetter even if it's already there so we get the extra classNode
+ 	modifyClass cid1
+	 $ \c -> c	
+	 	{ classFetters	= nub $ (TFetter f) 		: classFetters c
+		, classNodes	= nub $ (TFetter f, ?src) 	: classNodes c }
+
+	if (elem f $ fsThere)
+	 then	return False
+	 else do
+	 	activateClass cid1
+		return True
+			
+
+	
+	
+-- Multi parameter type class constraints are added as ClassFetter nodes in the graph 
+--	and the equivalence classes which they constraint hold ClassIds which point to them.
+--
+addFetter f@(FConstraint v ts)
+ = do 	
+ 	-- create a new class to hold this node
 	cid		<- allocClass KFetter
 	 	
 	-- add the type args to the graph
 	Just ts'	<- liftM sequence
 			$  mapM (feedType (Just cid)) ts
 		
-	-- add the constraint
-	graph	<- gets stateGraph
-	let c	= ClassFetter
-		{ classId	= cid
-		, classFetter	= FConstraint v ts' }
-	
-	liftIO (Array.writeArray (graphClass graph) cid c)
-	registerNodeF cid f
-	
-	return cid
+	-- add the fetter to the graph
+	let f	= FConstraint v ts'
+
+	modifyClass cid
+	 $ \c -> ClassFetter
+	 	{ classId	= cid
+		, classFetter	= f }
+
+	activateClass cid
+
+	return True
 
 
--- | Register a type node.
-registerNodeT :: ClassId -> Type -> SquidM ()
-registerNodeT	cid tt
-	| elem Var.EReadH
-		$ map Var.bind 
-		$ Set.toList $ freeVars tt
-
-	= registerClass Var.EReadH cid
-
-	| elem Var.EReadT
-		$ map Var.bind 
-		$ Set.toList $ freeVars tt
-
-	= registerClass Var.EReadT cid
-
-	| otherwise
-	= return ()				
-
--- | Register a fetter node.
-registerNodeF :: ClassId -> Fetter -> SquidM ()
-registerNodeF cid ff
- = case ff of
- 	FConstraint v ts
- 	 -- Register shape constraints with arity to zero so that they're all recorded
-	 --	in the same register slot.
-	 | isFShape (Var.bind v)
-	 -> registerClass (Var.FShape 0) cid
-
-	 | elem (Var.bind v) [Var.FLazyH, Var.FMutableT, Var.FConstT]
-	 -> registerClass (Var.bind v) cid
-	 
-	_ 
-	 -> return ()
-
-
-isFShape (Var.FShape _)	= True
-isFShape _		= False
-	
 

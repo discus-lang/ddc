@@ -18,12 +18,12 @@ import Shared.VarPrim
 import Shared.Var		(VarBind, NameSpace(..))
 import Shared.Error
 
+import Type.Trace
 import Type.Exp
 import Type.Util
 import Type.State
 import Type.Class
 import Type.Feed
-import Type.Trace
 import Type.Pretty
 import Type.Util.Pack
 
@@ -34,155 +34,131 @@ import Type.Plate.Collect	(collectClassIds)
 import Type.Plate.Trans
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effect"
 
 -- Try and crush the effect in this node.
-crushEffectC :: ClassId -> SquidM ()
+crushEffectC 
+	:: ClassId 
+	-> SquidM Bool	-- whether we crushed something from this class
+
 crushEffectC cid
- = do	
+ = do	Just c		<- lookupClass cid
 	trace	$ "*   crushEffectC " 	% cid			% "\n"
+		% "    eff    = " % classType c			% "\n"
 
-	-- trace out the effect
-	eTrace		<- liftM (sortFsT . eraseFConstraints) $ traceType cid
- 	trace	$ "    eTrace      = "  %> prettyTS eTrace	% "\n"
+	crushEffectC2 cid c
 
-	-- check for loops in the data.
-	--	this should never happen, but check anyway so that we don't end up in an infinite loop
-	--	during packEffect.
-	let cidsDataLoop	= checkGraphicalDataT eTrace
-	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
+crushEffectC2 cid (ClassForward cid')
+	= crushEffectC cid'
 
-	when (not $ isNil cidsDataLoop)
-	 $ panic stage 	$ "crushEffectC: found loops through data portion of type\n"
-		 	% "    eTrace = " %> prettyTS eTrace	% "\n"
-
-	-- pack the effect into normal form
-	let Just ePacked = packEffect eTrace
-	trace	$ "    ePacked     = " 	% ePacked		% "\n"
-
-	-- crush out some ctors.
-	eCrushed	<- transformTM crushEffectT ePacked
-	trace	$ "    eCrushed    = "	% eCrushed 	% "\n"
-	
-	if eCrushed /= ePacked
+crushEffectC2 cid (Class { classType = Just eff })
+ = do
+	let effs	=  flattenTSum eff
+	effs_crushed	<- mapM crushEffectT effs
+		
+	if effs == effs_crushed
 	 then do	
-		-- update the class queue with the new effect
-		Just c	<- lookupClass cid
-	 	updateClass cid
-			c { classType = Just eCrushed }
+	 	trace	$ ppr "\n"
+		
+		-- if the class still contains effect constructors then it needs to remain
+		--	active so crushEffects gets called on the next grind
+		when (isCrushable eff)
+		 $ activateClass cid
+
+		return False
+
+	 else do
+	 	let eff'	= makeTSum KEffect effs_crushed
+		trace	$ "    eff' = " % eff % "\n\n"
 			
-		-- For the classIds in the new effect, update the backrefs to point
-		--	to this class.
-		let classIds	= collectClassIds eCrushed
-		mapM_ (\cid' -> addBackRef cid' cid) classIds
+		modifyClass cid
+		 $ \c -> c { classType = Just eff' }
+		 
+		activateClass cid
+	
+		return True
 
-		-- update the register
-		mapM_ (\e -> unregisterClass e cid)
-			$ catMaybes
-			$ map (\t -> case t of 
-					TEffect ve _ 	
-					 -> Just $ Var.bind ve
-
-					TFetters fs (TEffect ve _)
-					 -> Just $ Var.bind ve
-
-					TVar{}		-> Nothing 
-					TClass{}	-> Nothing
-					_ -> panic stage 
-						$ "crushEffectC: can't crush weird looking effect\n"
-						% "   t       = " % t			% "\n\n"
-						% "   eTrace  = " % prettyTS eTrace	% "\n\n"
-						% "   ePacked = " % ePacked		% "\n\n")
-						
-							
-			$ flattenTSum ePacked
-
-		registerNodeT cid eCrushed
-		return ()
-
-	 else	return ()
-
-eraseFConstraints tt
- = case tt of
- 	TFetters fs t	
-	 -> let eraseF (FConstraint{})	= True
-	 	eraseF (FProj{})	= True
-		eraseF _		= False
-	    in  addFetters (filter (not . eraseF) fs) t
-
-	_		-> tt
-
+crushEffectC2 cid _
+	= return False
+		
 
 -- Try and crush this effect into parts.
 crushEffectT :: Effect -> SquidM Effect
+crushEffectT tt@(TEffect ve [TClass k cidT])
+ = do	
+	-- the effect in the original class operates on a classId, so we need to 
+	--	look up this type before we can crush the effect.
+ 	Just (Class { classType = mType })
+			<- lookupClass cidT
+
+	case mType of
+	 Just tNode	-> return $ crushEffectT' tt tNode
+	 _		-> return tt
+	
 crushEffectT tt
+	= return tt
+
+
+crushEffectT' tt tNode
 
 	-- Read of outer constructor of object.
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadH
-	= do	case t1 of
-		 TData v (tR : ts)	-> return $ TEffect primRead [tR]
-		 TData v []		-> return $ TBot KEffect
-		 _			-> return $ tt
+	= case tNode of
+		TData v (tR : ts)	-> TEffect primRead [tR]
+		TData v []		-> TBot KEffect
+		_			-> tt
 	
 
 
 	-- Read of whole object. (deep read).
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadT
-	= do	
-		let (rs, ds)	= slurpVarsRD t1
-		let esRegion	= map (\r -> TEffect primRead  [r])  rs
-		let esType	= map (\d -> TEffect primReadT [d]) ds
+	, TData{}		<- tNode
+	= let
+		(rs, ds)	= slurpVarsRD tNode
+		esRegion	= map (\r -> TEffect primRead  [r]) rs
+		esType		= map (\d -> TEffect primReadT [d]) ds
 
-	  	return	$ makeTSum KEffect 
+	  in 	makeTSum KEffect 
 			$ (esRegion ++ esType)
 
 
 	-- Write of whole object. (deep write)
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EWriteT
-	= do	
-		let (rs, ds)	= slurpVarsRD t1
-		let esRegion	= map (\r -> TEffect primWrite  [r])   rs
-		let esType	= map (\d -> TEffect primWriteT [d]) ds
+	, TData{}		<- tNode
+	= let	
+		(rs, ds)	= slurpVarsRD tNode
+		esRegion	= map (\r -> TEffect primWrite  [r])   rs
+		esType	= map (\d -> TEffect primWriteT [d]) ds
 				
-	  	return	$ makeTSum KEffect 
+	  in	makeTSum KEffect 
 			$ (esRegion ++ esType)
-
 
 	-- can't crush this one
 	| otherwise
-	= return $ tt
+	= tt
 
 
--- | Load in the effect for this cid.
-loadEffect :: ClassId -> SquidM Type
-loadEffect cid
- = do	Just c		<- lookupClass cid
- 	let Just tNode	= classType c
-
-	tPacked		<- liftM packType $ loadType tNode
-
-	let es		= map (\e -> case e of
-				TEffect v ts	-> TEffect v (map (fst . stripFettersT) ts)
-				_		-> e)
-			$ flattenTSum tPacked
-
-	return		$ makeTSum KEffect es
-
-
--- | Load in nodes for every cid in this type.
-loadType :: Type -> SquidM Type
-loadType tt	= transformTM loadType' tt
-
-loadType' tt
- = case tt of
- 	TClass k cid	-> liftM packType $ traceType cid
-	_ 		-> return tt
 	
+-- | Checks whether this effect might ever need to be crushed
+isCrushable :: Effect -> Bool
+isCrushable eff
+ = case eff of
+ 	TEffect v _
+	 | elem v [primReadH, primReadT, primWriteT]	-> True
+	 | otherwise					-> False
 	 
+	TSum KEffect ts
+	 -> or $ map isCrushable ts
+	 
+	TClass{}
+	 -> False
+	
+	TVar{}	-> False
+	TBot{}	-> False
 
-
+	_ ->  panic stage $ "isCrushable: no match for " % eff % "\n"

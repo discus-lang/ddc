@@ -12,6 +12,8 @@ import Type.Exp
 import Type.Pretty
 import Type.Plate.Collect
 import Type.Util.Bits
+
+import Shared.VarPrim
 import Shared.Error
 
 import Data.Map			(Map)
@@ -418,11 +420,8 @@ shortLoopsF' (FLet t1 t2)
 shortLoopsF' f	= f
 	
 
-
-
-
 -- | Sort fetters so effect and closure information comes out first in the list.
---
+--	Also sort known contexts so there's less jitter in their placement in interface files
 sortFs :: [Fetter] -> [Fetter]
 sortFs fs
  = let	isLetK k f
@@ -430,12 +429,33 @@ sortFs fs
 	 	FLet _ t2	-> kindOfType t2 == k
 		FMore _ t2	-> kindOfType t2 == k
 		_		-> False
+
+	isCon v1 f
+	 = case f of
+	 	FConstraint v _
+		 | v == v1	-> True
+		_		-> False
 		
-	(fsData, fs2)		= partition (isLetK KData) 	fs
-	(fsEffect, fs3)		= partition (isLetK KEffect) 	fs2
-	(fsClosure, fs4)	= partition (isLetK KClosure)	fs3
-	
-    in	fsData ++ fsEffect ++ fsClosure ++ fs4
+
+	( [ fsData,   fsEffect, fsClosure
+	  , fsConstT, fsMutableT
+	  , fsConst,  fsMutable
+	  , fsLazy,   fsDirect
+	  , fsPure ], fsRest)	
+		= partitionFs 
+			[ isLetK KData, 	isLetK KEffect, 	isLetK KClosure
+			, isCon primConstT,	isCon primMutableT
+			, isCon primConst,	isCon primMutable
+			, isCon primLazy,	isCon primDirect
+			, isCon primPure ]
+			fs
+				
+    in	   fsData 	++ fsEffect ++ fsClosure 
+    	++ fsConstT 	++ fsMutableT
+	++ fsConst	++ fsMutable
+	++ fsLazy 	++ fsDirect
+	++ fsPure 
+	++ fsRest
     
 sortFsT :: Type -> Type
 sortFsT tt

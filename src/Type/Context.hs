@@ -10,6 +10,8 @@ where
 import Type.Exp
 import Type.Plate
 import Type.Util
+import Type.Crush.Fetter	(crushFetter)
+import Type.Effect.MaskLocal	(visibleRsT)
 import Shared.VarPrim
 import Shared.Error
 
@@ -36,87 +38,76 @@ reduceContextT
 	
 reduceContextT classInst tt
  = case tt of
- 	TFetters fs t	
-	 -> let	vsFreeT	= freeVars t
-	 	fs'	= concat
-	 		$ map (reduceContextF vsFreeT classInst) fs
+ 	TFetters fs tShape
+	 -> let	fs'	= concat
+	 		$ map (reduceContextF (flattenT tt) classInst) fs
 
 	    in	case fs' of
-	    		[]	-> t
-			_	-> TFetters fs' t
+	    		[]	-> tShape
+			_	-> TFetters fs' tShape
 			
 	_ 		-> tt
 	
 
 reduceContextF 
-	:: Set Var		-- vars that are free in the shape of the type
+	:: Type			-- the shape of the type
 	-> Map Var [Fetter]	-- (class var -> instances) for each class
 	-> Fetter		-- the constraint being used
 	-> [Fetter]		-- maybe some new constraints
 
-reduceContextF vsShape classInstances ff
---  = trace (pprStr $ "reduceContextF: " % ff % "\n")
- = reduceContextF' vsShape classInstances ff
+reduceContextF tShape classInstances ff
 
-reduceContextF' vsShape classInstances ff
-
-	-- If there is a Const, Lazy, Mutable, Direct fetter on a region that isn't in the shape of the
-	--	type then we can safely ditch it
-	| FConstraint v [TVar KRegion r]	<- ff
-	, v == primConst -- elem v [primConst, primMutable, primMutable, primDirect]
-	, not $ Set.member r vsShape
+	-- We can remove Const, Lazy, Mutable, Direct context if they are on regions which are not present
+	--	in the shape of the type.
+	--
+	--	These regions are local to the function and a local region binding will be introduced
+	--	which will create the required witnesses.
+	--	
+	| FConstraint v [tR@(TVar KRegion r)]	<- ff
+	, elem v [primConst, primMutable, primMutable, primDirect]
+	, not $ Set.member tR $ visibleRsT tShape
 	= []
 
-
-	-- If there is a matching instance for this class then we can remove the constraint.
+	-- We can remove type class constraints when we have a matching instance in the table
+	--	These can be converted to a direct function call in the CoreIR, so we don't need to
+	--	pass dictionaries at runtime.
+	--
  	| FConstraint v ts	<- ff
 	, Just instances	<- Map.lookup v classInstances
 	, Just inst'		<- find (matchInstance ff) instances
 	= []
 
 	-- Purity constraints on bottom effects can be removed.
+	--	This doesn't give us any useful information.
 	| FConstraint v [TBot KEffect]	<- ff
 	, v == primPure 
 	= []
 
-	-- Purity constraints on read effects can be dischared by 
-	--	making the region constant
-	| FConstraint v effs	<- ff
+	-- Purity constraints on manifest effects can be discharged. 
+	--	These can be reconstructed in the CoreIR by using the Const witnesses that will have
+	--	been generated when the Purity constraint was crushed.
+	| FConstraint v [t]		<- ff
 	, v == primPure
-	, effsFlat		<- catMap flattenTSum effs
-	, (effs', fsMore)	<- unzip $ map purifyEff effsFlat
-
-	-- build the effs we couldn't purify back into a sum
-	, remainingEff		<- makeTSum KEffect $ catMaybes effs'
-
-	-- this produces constraints (like Const) that might be able to be further reduced,
-	--	so make sure to call ourselves recursively..
-	= case remainingEff of
-	    TBot KEffect	
-	      -> catMap (reduceContextF vsShape classInstances) 
-	      $ catMaybes fsMore
-
-	    _ -> FConstraint primPure [remainingEff] 
-	      :  (   catMap (reduceContextF vsShape classInstances)
-	          $  catMaybes fsMore)
-	    
-
+	= case t of
+		TSum KEffect _		-> []
+		TEffect{}		-> []
+		_			-> [ff]
 	
+	-- These compound fetters can be converted to their crushed forms.
+	--	Although Type.Crush.Fetter also crushes fetters in the graph, if a scheme is generalised
+	--	which contains a fetter acting on a monomorphic class, and then that class is updated,
+	--	we'll get a non-crushed fetter when that scheme is re-extracted from the graph
+	| FConstraint v [t]		<- ff
+	= case crushFetter ff of
+		Nothing	-> [ff]
+		Just fs	-> fs
+
+
+	-- have to keep this context
 	| otherwise
 	= [ff]
 
 
-purifyEff eff
- 	| TEffect v [tR@(TVar KRegion r)]	<- eff
-	, v == primRead
-	= (Nothing, Just (FConstraint primConst [tR]))
-
- 	| TEffect v [tR@(TClass KRegion _)]	<- eff
-	, v == primRead
-	= (Nothing, Just (FConstraint primConst [tR]))
-	
-	| otherwise
-	= (Just eff, Nothing)
 
 
 

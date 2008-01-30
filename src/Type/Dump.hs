@@ -1,8 +1,6 @@
 
 module Type.Dump
 	( dumpGraph
-	, dumpGens
-	, dumpSchemes
 	, dumpInst
 	, dumpSub
 	, prettyClass)
@@ -27,52 +25,31 @@ import Type.Util
 import Type.State
 import Type.Class
 
+-- | dump the type graph
 dumpGraph ::	SquidM String
 dumpGraph
  = do
 	school		<- gets stateGraph
 	classes		<- liftIO (getElems $ graphClass school)
-	classesU	<- mapM updateC classes
+	classesU	<- mapM fowardCids classes
 	
 	return	$ pprStr
 		$ "===== Equiv Clases =====================================\n"
 		% concat (zipWith prettyClass [0..] classesU)
 		% "\n\n"
 
-dumpSchemes :: 	SquidM String
-dumpSchemes	= return "no schemes"
-
-
-dumpGens :: 	SquidM String
-dumpGens
- = do
- 	-- Generalisations
-{-	gens		<- gets stateGen
-	
-	return	$ pprStr
-		$ "===== Generalisations =========================================\n"
-		% (concat $ map pprStr $ map prettyVTE $ Map.toList gens)
-		% "\n\n"
--}
-	return ""
 		
-prettyVTE (v, (t, env))
- =   padR 20 (pprStr v) % "\n" 
- %> ( ":: " % (pprStr $ prettyTS t) % "\n"
-    % ":- ENV = " % env) % "\n\n"
-		
-	
+-- | dump scheme instantiations
 dumpInst :: 	SquidM String
 dumpInst
- = do
- 	-- Instantiations
+ = do 	-- Instantiations
 	mInst		<- gets stateInst
-
 	return	$ pprStr
 		$ "===== Instantiations ========================================\n"
 		% prettyVMap mInst
 		% "\n\n"
 
+-- | dump variable substitution
 dumpSub :: SquidM String
 dumpSub
  = do
@@ -86,9 +63,7 @@ dumpSub
 		% "\n\n"
 
 
-
-
------	
+-- | pretty print an equivalence class
 prettyClass (ix :: Int) c
  = case c of
 	ClassNil{}	-> []
@@ -106,13 +81,30 @@ prettyClass (ix :: Int) c
 
  	Class{}
 	 -> pprStr
-		$ "Class " % classKind c % classId c 
-		%> ("\n" % ":: " % liftM prettyTS (classType c))	% "\n\n"
-		% "        -- name\n"
-		% "        " % className c				% "\n\n"
+		-- class id / name / kind 
+		$ classKind c 
+			% classId c 
+			% (case className c of 
+				Nothing	-> pNil
+				Just n	-> ppr n)			% "\n"
+	
+		-- class type
+		%> (case classType c of
+			Nothing	-> ppr "-- no type --\n"
+			Just t	-> ":: " % prettyTS t % "\n\n")
 
-		% "        -- queue\n"
-		% "        " % classQueue c				% "\n\n"
+		-- class fetters
+		% (case classFetters c of
+			[]	-> pNil
+			_	-> "        -- fetters\n"
+				%> "\n" %!% classFetters c % "\n\n")
+	
+		-- unification queue
+		% (case classQueue c of
+			[]	-> pNil
+			_	-> "        -- queue\n"
+				%> "\n" %!% classQueue c % "\n\n")
+				
 		% "        -- back refs\n"
 		% "        " % (Set.toList $ classBackRef c) 		% "\n"
 		% "\n"
@@ -138,20 +130,26 @@ prettyVMapT 	m
 	$ Map.toList m
  	 
  
------
-updateC :: Class -> SquidM Class
-updateC c@ClassForward{}	= return c
-updateC c@ClassNil{}		= return c
-updateC c@ClassFetter { classFetter = f }
+-- Rewrite this class so all its classIds are in canconical form.
+fowardCids :: Class -> SquidM Class
+fowardCids c@ClassForward{}	= return c
+fowardCids c@ClassNil{}		= return c
+fowardCids c@ClassFetter { classFetter = f }
  = do	cid'		<- updateVC $ classId 	c
  	fetter'		<- updateVC f
 	return	$ c 
 		{ classId	= cid'
 		, classFetter	= fetter' }
 
-updateC c@Class{}
+fowardCids c@Class{}
  = do	cid'		<- updateVC $ classId	   c
  	backRef'	<- updateVC $ classBackRef c
+	fs'		<- mapM updateVC $ classFetters c
+	
+	let (ts, ns)	= unzip $ classNodes c
+	ts'		<- mapM updateVC ts
+	let nodes'	= zip ts' ns
+
 	
 	typ'		<- case classType c of
 				Nothing	-> return Nothing
@@ -162,7 +160,9 @@ updateC c@Class{}
 	return	$ c
 		{ classId	= cid'
 		, classBackRef	= backRef'
-		, classType	= typ' }
+		, classType	= typ' 
+		, classFetters	= fs' 
+		, classNodes	= nodes' }
 
 		
 		

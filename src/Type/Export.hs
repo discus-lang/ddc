@@ -198,13 +198,11 @@ slurpRegionConstraintVars
 	
 slurpRegionConstraintVars c
 	-- got a region class		
- 	| Class { classKind = KRegion }	<- c
+ 	| Class { classKind 	= KRegion 
+		, classFetters	= fs }	<- c
 	= do
 		-- extract the vars for all the fetters acting on this class
-	 	vars	<- liftM catMaybes 
-	 		$  mapM slurpFetterVar
-			$  Set.toList
-			$  classBackRef c
+	 	let vars	= map (\(TFetter (FConstraint vC _)) -> vC) fs
  		
 		-- get the name of this class
 		name	<- makeClassName (classId c)
@@ -214,25 +212,4 @@ slurpRegionConstraintVars c
 	 -- not a region class
 	| otherwise
 	= 	return	$ Nothing
-
-
--- | If there is a fetter in this class then return its var.
-slurpFetterVar :: ClassId -> SquidM (Maybe Var)
-slurpFetterVar cid
- = do	Just c	<- lookupClass cid
-
-	let xx 	| ClassFetter { classFetter = f }	<- c
-		, FConstraint v ts			<- f
-		= Just v
-		
-		| otherwise
-		= Nothing
-
-	return xx		
-
-
-
-
-
-
 

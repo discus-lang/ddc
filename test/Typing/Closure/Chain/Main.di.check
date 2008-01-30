@@ -28,7 +28,6 @@ foreign import extern fun
         .  Base.Unit -(!e0 $c0)> Base.Int %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = x : Base.Int %rTC0
-        ,  Num (Base.Int %rTC0)
         :$ Base.Data -> Base.Data;
         
 foreign import extern fun2
@@ -37,7 +36,6 @@ foreign import extern fun2
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = fun : Base.Int %rTC0
         ,  $c1        = x : Base.Int %rTC0
-        ,  Num (Base.Int %rTC0)
         :$ Base.Data -> Base.Thunk;
         
 foreign import extern main

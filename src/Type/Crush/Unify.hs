@@ -33,16 +33,40 @@ trace s	= when debug $ traceM s
 --	Unify the elements in an equivalences classes queue.
 --	If there are any errors then these are added to the SquidM monad.
 --
-crushUnifyClass :: ClassId	-> SquidM ()
+crushUnifyClass 
+	:: ClassId	
+	-> SquidM Bool	-- whether this class was unified
+
 crushUnifyClass	cidT
- = do
-	Just c	<- lookupClass cidT
-	trace	$ "*   Unify.unifyClass " % cidT % "\n"
+ = do	Just c	<- lookupClass cidT
+	crushUnifyClass2 cidT c
+	
+crushUnifyClass2 cidT (ClassForward cid')
+	= crushUnifyClass cid'
+
+crushUnifyClass2 cidT c@Class{}
+
+	-- class is already unified
+	| []		<- classQueue c 
+	, Just t	<- classType c
+	= return False
+	
+	-- do some unification
+	| otherwise
+	= crushUnifyClass3 cidT c
+
+crushUnifyClass2 cidT c
+	= return False
+	
+
+crushUnifyClass3 cidT c
+ = do	trace	$ "*   Unify.unifyClass " % cidT % "\n"
 		% "    type         = " % classType c	% "\n"
 		% "    name         = " % className c	% "\n"
-		% "    queue        = " % classQueue c	% "\n"
+		% "    queue        = " % classQueue c	% "\n\n"
 
-	-- crush out nested unifiers and filter out vars and bottoms as they don't 
+
+ 	-- crush out nested unifiers and filter out vars and bottoms as they don't 
 	--	contribute to the constructor
 	let queue_clean	
 		= filter 
@@ -68,6 +92,7 @@ crushUnifyClass	cidT
 		{ classType 	= Just t_final
 		, classQueue	= [] }
 
+	return True
 
 -----
 -- Merge the nodes in this class.

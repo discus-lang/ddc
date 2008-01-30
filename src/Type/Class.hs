@@ -8,6 +8,7 @@ module Type.Class
 	, addToClass
 	, lookupClass
 	, updateClass
+	, modifyClass
 	, mergeClasses
 	, mergeClassesT
 	, sinkClassId
@@ -22,9 +23,7 @@ module Type.Class
 
 	, updateVC
 
-	, kindOfCid
-	, registerClass
-	, unregisterClass)
+	, kindOfCid)
 
 where
 
@@ -227,6 +226,21 @@ updateClass cid_ c
 	liftIO (writeArray (graphClass graph) cid c)
 	return ()
 
+
+-- | Modify a class in the graph using this modification function
+modifyClass
+	:: ClassId
+	-> (Class -> Class)
+	-> SquidM ()
+	
+modifyClass cid_ f
+ = do	cid	<- sinkClassId cid_
+ 	graph	<- gets stateGraph
+	c	<- liftIO (readArray (graphClass graph) cid)
+	liftIO (writeArray (graphClass graph) cid (f c))
+	return ()
+	
+
 	
 -----
 -- addClassForwards
@@ -306,9 +320,9 @@ patchBackRef	cidT mParent
 	Just cidP	-> addBackRef cidT cidP
 	
 	  
------
--- unifyClasses
---	Doing this makes the class active.
+-- | Merge two classes by concatenating their queue and node list
+--	The one with the lowesed classId gets all the constraints and the others 
+--	are updated to be ClassFowards which point to it.
 mergeClasses
 	:: [ClassId] 
 	-> SquidM ClassId
@@ -341,6 +355,8 @@ mergeClasses cids_
 							_	-> Just t)
 					$  concat (map classQueue cs)
 					++ concat (map (maybeToList . classType) cs)
+
+			, classFetters	= concat $ map classFetters cs
 
 			, classBackRef	= Set.unions $ map classBackRef cs }
 
@@ -480,32 +496,4 @@ kindOfCid cid
  	return	$ classKind c
 
 
------
-registerClass 
-	:: Var.VarBind -> ClassId -> SquidM ()
 
-registerClass bind cid
- = do	modify (\s -> s {
-	 	stateRegister
-			= Map.adjust 
-				(Set.insert cid)
-				bind
-				(stateRegister s) })
-
-
-
-unregisterClass
-	:: Var.VarBind -> ClassId -> SquidM ()
-	
-unregisterClass bind cid
- = do 	register	<- gets stateRegister
-	let Just reg	= Map.lookup bind register
-	
-	modify (\s -> s {
-		stateRegister
-			= Map.insert 
-				bind
-				(Set.delete cid reg)
-				register })
-
-	

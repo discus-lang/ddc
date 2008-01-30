@@ -1,6 +1,7 @@
 
 module Type.Crush.Fetter
-	( crushFetterC )
+	( crushFetterC 
+	, crushFetter)
 
 where
 
@@ -10,6 +11,7 @@ import Type.State
 import Type.Util
 import Type.Class
 import Type.Exp
+import Type.Dump
 
 import Shared.Error
 import Shared.VarPrim
@@ -31,93 +33,153 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Fetter"
 
-crushFetterC :: ClassId -> SquidM ()
+crushFetterC 
+	:: ClassId 
+	-> SquidM Bool	-- whether we crushed something from this class
+
 crushFetterC cid
- = do	mFetter	<- lookupClass cid
- 	crushFetterC2 cid mFetter
-	
-crushFetterC2 cid mFetter
-	| Nothing	<- mFetter
-	= panic stage $ "crushFetter: no fetter in graph for classId " % cid
+ = do	Just c	<- lookupClass cid
+ 	crushFetterC2 cid c
 
-	-- class has already been handled and deleted
-	| Just ClassNil	<- mFetter
-	= return ()
+crushFetterC2 cid (ClassForward cid')
+	= crushFetterC cid'
 
-	| Just ClassFetter { classFetter = FConstraint v ts }	
-			<- mFetter
-	= crushFetterC3 cid v ts
-	
-	
-	
-crushFetterC3 cid v ts
- = do
-	-- Load up the arguments for this fetter
-	let argCids		= map (\(TClass k cid) -> cid) ts
+crushFetterC2 cid (ClassFetter { classFetter = f })
+	= crushFetterMulti cid f
 
-	argTs_traced		<- mapM traceType argCids
-	let argTs_packed	= map packType argTs_traced
-
-	let fetter		= FConstraint v argTs_packed
-
-	-- Try and reduce it
-	let fetters_reduced	= reduceFetter fetter
-
- 	trace	$ "\n"
-		% "*   crushFetterC " 		% cid			% "\n"
-		% "    fetter           = " 	% fetter		% "\n"
-		% "    fetter_reduced   = "	% fetters_reduced	% "\n"
-
-	-- Update the graph
-	case fetters_reduced of
-
-	 -- we didn't manage to crush it
-	 Nothing
-	  -> return ()
-	  
-	 -- crushed this fetter into smaller ones
-	 Just fs
-	  -> do	delClass cid
-	  	let ?src = TSCrushed fetter
-	  	mapM (feedFetter Nothing) fs
+crushFetterC2 cid 
+	(Class	{ classKind	= k
+		, classType	= Just tNode
+		, classFetters 	= fs })
+ = do	
+	trace	$ "*   crushFetterC "	% k % cid		% "\n"
+		% "    tNode      = " % tNode			% "\n"
+		% "    fs         = " % fs			% "\n"
 		
-		unregisterClass (Var.bind v) cid
+	(progresss, mfsReduced)	
+		<- liftM unzip
+		$  mapM (crushFetterSingle cid tNode) fs
 
-		return ()
+	trace	$ "    progress   = " % progresss		% "\n"
 
-	return ()
+	-- update the class with the new fetters
+	let fsReduced	= catMaybes mfsReduced
+	modifyClass cid
+	 $ \c -> c { classFetters = map TFetter $ fsReduced }
+		
+	-- if any of the remaining fetters might still need to be crushed then
+	--	reactivate this class so we get called again in the next grind
+--	let stillCrushable	= or $ map isCrushableF fsReduced
+--	trace	$ "    stillCrush = " % stillCrushable	% "\n\n"
 
+--	when (stillCrushable)
+--	 $ activateClass cid
+		
+	return $ or progresss
 
-reduceFetter :: Fetter -> Maybe [Fetter]
-reduceFetter f@(FConstraint v [t])
-	-- lazy head region	    
-	| Var.FLazyH	<- Var.bind v
+crushFetterC2 cid c
+	= return False
+
+-- crushFetterSingle -------------------------------------------------------------------------------
+crushFetterSingle cid tNode (TFetter f@(FConstraint vC [TClass k cidC]))
+ = do	
+	cid'	<- sinkClassId cid
+ 	cidC'	<- sinkClassId cidC
+	
+	when (cid' /= cidC')
+	 $ panic stage
+	 	$ "crushFetterSingle: Fetter in class " % cid % " constrains some other class " % cidC' % "\n"
+		
+	crushFetterSingle' cid tNode vC f
+
+crushFetterSingle' cid tNode vC f
+
+	-- keep the original fetter when crushing purity
+	| vC	== primPure
+	, Just fsBits	<- crushFetter $ FConstraint vC [tNode]
+	= do	
+		trace	$ "    fsBits     = " % fsBits			% "\n"
+
+		let ?src	= TSCrushed f
+		progress	<- liftM or 
+				$  mapM addFetter fsBits
+
+		return	( progress
+			, Just f)
+			
+	-- could crush this fetter
+	| Just fsBits	<- crushFetter $ FConstraint vC [tNode]
+	= do
+		trace	$ "    fsBits     = " % fsBits			% "\n"
+
+		let ?src	= TSCrushed f
+		progress	<- liftM or
+				$ mapM addFetter fsBits
+						
+		return	( progress
+			, Nothing)
+	-- can't crush
+	| otherwise
+	= 	return	( False
+			, Just f)
+			
+
+crushFetter :: Fetter -> Maybe [Fetter]
+crushFetter (FConstraint vC ts)
+	-- purity
+	| vC	== primPure
+	, [t]		<- ts
+	= Just $ catMaybes $ map purifyEff $ flattenTSum t
+	
+	-- lazy head
+	| vC	== primLazyH
+	, [t]		<- ts
 	, Just tR	<- slurpHeadR t
 	= Just [FConstraint primLazy [tR]]
 	
 	-- deep mutability
-	| Var.FMutableT	<- Var.bind v
-	= let
-		(rs, ds)	= slurpVarsRD t
+	| vC	 == primMutableT
+	, [t]		<- ts
+	, TData{}	<- t
+	= let	(rs, ds)	= slurpVarsRD t
 		fsRegion	= map (\r -> FConstraint primMutable  [r]) rs
 		fsData		= map (\d -> FConstraint primMutableT [d]) ds
-	  in Just $ fsRegion ++ fsData
+	  in	Just $ fsRegion ++ fsData
 	  
 	-- deep const
-	| Var.FConstT	<- Var.bind v
-	= let
-		(rs, ds)	= slurpVarsRD t
+	| vC	== primConstT
+	, [t]		<- ts
+	, TData{}	<- t
+	= let 	(rs, ds)	= slurpVarsRD t
 		fsRegion	= map (\r -> FConstraint primConst  [r]) rs
 		fsData		= map (\d -> FConstraint primConstT [d]) ds
 	  in	Just $ fsRegion ++ fsData
-	
-	
-	| otherwise 
+	  
+	| otherwise
 	= Nothing
+	
 
-reduceFetter _
-	= Nothing
+-- | produce the fetter which purifies this effect
+purifyEff :: Type -> Maybe Fetter
+purifyEff eff
+	-- read
+ 	| TEffect v [tR@(TClass KRegion _)]	<- eff
+	, v == primRead
+	= Just $ FConstraint primConst [tR]
 
+	-- deep read
+ 	| TEffect v [tR@(TClass KData _)]	<- eff
+	, v == primReadT
+	= Just $ FConstraint primConstT [tR]
+	
+	-- effect variable
+	| TClass KEffect cid			<- eff
+	= Just $ FConstraint primPure [eff]
+
+	| otherwise
+	= panic stage
+		$ "purifyEff: can't purify " % eff % "\n"	
+	
 
 -- | Slurp the head region from this type, if there is one.
 slurpHeadR :: Type -> Maybe Type
@@ -132,3 +194,59 @@ slurpHeadR tt
 	_ -> Nothing
 
 
+-- crushFetterMulti --------------------------------------------------------------------------------
+
+-- projections are handled by Type.Crush.Proj instead
+crushFetterMulti cid (FProj{})
+	= return False
+
+crushFetterMulti cid (FConstraint vC ts)
+ = do
+{-	-- Load up the arguments for this fetter
+	let argCids		= map (\(TClass k cid) -> cid) ts
+	argTs_traced		<- mapM traceType argCids
+	let argTs_packed	= map packType argTs_traced
+
+	-- this is the fetter with its args traced
+	let fetter		= FConstraint vC argTs_packed
+
+	-- Try and reduce it
+	let fetters_reduced	= Nothing -- fetter --  reduceFetter cid fetter
+
+ 	trace	$ "\n"
+		% "*   crushFetterC " 		% cid			% "\n"
+		% "    fetter           = " 	% fetter		% "\n"
+--		% "    fetter_reduced   = "	% fetters_reduced	% "\n"
+
+	-- Update the graph
+	case fetters_reduced of
+
+	 -- we didn't manage to crush it
+	 Nothing
+	  -> return False
+	  
+	 -- crushed this fetter into smaller ones
+	 Just fs
+	  -> do	
+	  	-- delete and unregister the old fetter class
+	  	delClass cid
+		unregisterClass (Var.bind vC) cid
+
+		-- add the new, crushed pieces
+	  	let ?src = TSCrushed fetter
+	  	mapM (feedFetter Nothing) fs
+		return True
+-}
+	return False
+
+
+-- checks whether this fetter might ever need to be crushed
+isCrushableF :: Fetter -> Bool
+isCrushableF ff
+ = case ff of
+ 	FConstraint v _
+	 | elem v [primLazy, primDirect, primConst, primMutable]
+	 -> False
+	 
+	_ 	-> True
+	 
