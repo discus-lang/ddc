@@ -43,6 +43,7 @@ import qualified Desugar.Pretty		as D
 import qualified Core.Exp		as C
 import qualified Core.Pretty		as C
 import qualified Core.Util		as C
+import qualified Core.ToSea		as C
 
 -----
 stage	= "Module.Export"

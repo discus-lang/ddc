@@ -48,95 +48,50 @@ foreign import extern "ftell"
 	-(!File)>	Int32#;			-- position in file
 
 
-
-
-
- 
--- Some nicely wrapped functions.
-{-
-file_open :: String -> String -> Ptr# FILE#;
-file_open name mode
- = do {	file	= fopenU (unboxString name) (unboxString mode);
-
-	case unsafe_castToInt32U file #== 0# of {
-	 1# -> throw ExceptionIO;
-	 0# -> ();
-	};
-
-	file;
- };
-
-
-file_length :: String -> Int;
-file_length name
- = do {	file	= file_open name "r+";
-
- 	fseekU file 0# file_SEEK_END;
-	
-	len	= ftellU file;
-	boxInt32 len;
- };
- 
- 
-file_read :: String -> String;
-file_read name
- = do {	len	= file_length name;
- 	str	= newString len;
-	
-	file	= file_open name "r+";
-
-	freadU	(unboxString str) (unboxInt32 len) 1# file;
-	
-	str;
- };
--}
-
-
-
--- 2007/2/16.8 workarounds, 
---	can't return unboxed values from functions, so can't factor out file_open.
---
-
 --- move along, nothing to see here...
 foreign import extern "(Int32)"
  unsafe_castToInt32U 
- 	:: forall a %r1
-	.  a -> Int32# %r1;
+ 	:: forall a
+	.  a -> Int32#;
 
-{-
--- | Determine the lengh of the file with this path.
+
+-- | open a file
+file_open 
+	:: String 		-- ^ file name
+	-> String 		-- ^ fopen mode string
+	-> Ptr# FILE#
+
+file_open name mode
+ = do	file	= fopenU (unboxString name) (unboxString mode)
+
+	case unsafe_castToInt32U file `primInt32U_eq` 0# of
+		1#	-> throw ExceptionIO
+		0#	-> ()
+		
+	file
+
+
+-- | return the length of the file with this path
 file_length :: String -> Int;
 file_length name
- = do {	
- 	file	= fopenU (unboxString name) "r+"#;
+ = do 	file	= file_open name "r+"
 
-	case unsafe_castToInt32U file #== 0# of {
-	 1# -> throw ExceptionIO;
-	 0# -> ();
-	};
-
- 	fseekU file 0# file_SEEK_END;
-	len	= ftellU file;
-	
-	boxInt32 len;
- };
--}
-{-
-
--- | Read the contents of the file with this path.
+ 	fseekU file 0# file_SEEK_END
+	boxInt32 (ftellU file)
+ 
+ 
+ -- | read the contents of the file at this path
 file_read :: String -> String;
 file_read name
- = do {	len	= file_length name;
- 	str	= newString len;
+ = do 	len	= file_length name
+ 	str	= newString len
 	
-	file	= fopenU (unboxString name) "r+"#;
+	file	= file_open name "r+"
 
-	case unsafe_castToInt32U file #== 0# of {
-	 1# -> throw ExceptionIO;
-	 0# -> ();
-	};
+	freadU	(unboxString str) (unboxInt32 len) 1# file
+	
+	str
 
-	freadU	(unboxString str) (unboxInt32 len) 1# file;
-	str;
- };
--}
+
+
+

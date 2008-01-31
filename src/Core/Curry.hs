@@ -32,6 +32,7 @@ import Main.Arg			(Arg)
 
 import Core.Exp
 import Core.Util
+import Core.ToSea
 import Core.Pretty
 import Core.Plate.Trans
 

@@ -35,9 +35,6 @@ module Core.Util.Bits
 	, sortLambdaVars
 	, superAirity
 
-	, superOpTypeP
-	, superOpTypeX
-
 	, isUnboxedT
 	, collectAirity
 	, crushToXDo
@@ -350,61 +347,6 @@ superAirity	xx
 		
 	_ -> 0
 
-
------------------------
--- superOpType
---	Work out the operational type for a super.
---
-superOpTypeP ::	 Top -> Type
-superOpTypeP	(PBind v e)
- = let	parts	= superOpType' e
-	t	= unflattenFun parts
-   in t 
-
-superOpTypeP 	(PExtern v tv to)	= to
-superOpTypeP	(PCtor 	 v tv to)	= to
-
-superOpTypeP p	= panic stage $ "superOpTypeP: no match for " % show p % "\n"
-
-superOpTypeX :: Exp -> Type
-superOpTypeX	xx
-	= unflattenFun $ superOpType' xx
-
-
-superOpType'	xx
- = case xx of
-	XLAM    v k x	-> superOpType' x
-	XTet    vts x	-> superOpType' x
-	 
- 	XLam v t x eff clo 
-	 -> superOpTypePartT t :  superOpType' x
-
-	XTau	t x	-> [superOpTypePartT t]
-	
-	_		-> [TData primTObj []]
---	_		-> panic stage
---			$ "superOpType': no match for " % show xx
-
-
-superOpTypePartT	t
- = case t of
-	TNil				-> TNil
-
-	TForall v  k t			-> superOpTypePartT t
-	
-	TContext c t			-> superOpTypePartT t
-	TFetters t fs			-> superOpTypePartT t
-
-	TFunEC{}			-> TData primTThunk []
-
-	TData v _
-	 | elem v primTypesUnboxed	-> TData v []
-	 | otherwise			-> TData primTData []
-
-	TVar KData _			-> TData primTObj   []
-
-	_		-> panic stage
-			$  "superOpTypePart: no match for " % show t % "\n"
 
 
 isUnboxedT :: Type -> Bool

@@ -1,7 +1,9 @@
 
 -- | Convert CoreIR to Abstract-C
 module Core.ToSea
-	( toSeaTree )
+	( toSeaTree 
+	, superOpTypeP
+	, superOpTypeX)
 
 where
 
@@ -117,7 +119,7 @@ toSeaP	xx
 	 ->	return []
 	 	 
  	C.PBind v x
-	 -> do	let to		= C.superOpTypeX x
+	 -> do	let to		= superOpTypeX x
 
 		let (argTypes, resultType)	
 				= splitOpType to
@@ -665,3 +667,94 @@ toSeaPrimV var
 	
 	_			-> panic stage
 				$ "toSeaPrim: no match for " % var
+
+
+
+
+
+
+
+
+
+-- superOpType -------------------------------------------------------------------------------------
+
+-- | Work out the operational type of a supercombinator.
+--	The operational type of an object different from the value type in two main respects:
+--
+--	1) The Sea translation doesn't care about alot of the type information present
+--	   in the core types. eg boxed objects are just Obj*, and regions aren't used at all
+--
+--	2) Supercombinators can return function objects, with value type (a -> b), but the 
+--	   sea code treats them as just vanilla boxed objects.
+--
+superOpTypeP ::	 C.Top -> C.Type
+superOpTypeP	pp
+ = case pp of
+ 	C.PBind v x
+	 -> let	parts	= superOpType' x
+	    in	C.unflattenFun parts
+
+	-- external functions and ctors carry their operational
+	--	types around with them.
+	C.PExtern v tv to	-> to
+	C.PCtor   v tv to	-> to
+
+	_ 	-> panic stage 
+		$ "superOpTypeP: no match for " % show pp % "\n"
+
+
+-- | Work out the operational type of this expression
+superOpTypeX :: C.Exp -> C.Type
+superOpTypeX	xx
+	= C.unflattenFun $ superOpType' xx
+
+superOpType'	xx
+ = case xx of
+	-- skip over type information
+	C.XLAM    v k x	-> superOpType' x
+	C.XTet    vts x	-> superOpType' x
+
+	-- slurp off parameter types
+ 	C.XLam v t x eff clo 
+	 -> superOpTypePart t :  superOpType' x
+
+	-- take the type of the body of the super from the XTau enclosing it.
+	C.XTau	t x	-> [superOpTypePart t]
+	
+	-- there's no XTau enclosing the body, so we'll have to reconstruct
+	--	the type for it manually.
+	_		-> [superOpTypePart 
+			$  C.reconX_type (stage ++ "superOpType") xx]
+			
+superOpTypePart	t
+ = case t of
+	C.TNil			-> C.TNil
+
+	-- skip over type information
+	C.TForall v  k t	-> superOpTypePart t
+	C.TContext c t		-> superOpTypePart t
+	C.TFetters t fs		-> superOpTypePart t
+
+	-- all function objects are considered to be 'Thunk'
+	C.TFunEC{}		-> C.TData Var.primTThunk []
+
+	C.TData v ts
+	 -- unboxed types are represented directly, and the Sea
+	 --	code must know about them.
+	 | v == Var.primTPtrU	-> C.TData v (map superOpTypePart ts)
+	 | C.isUnboxedT t	-> C.TData v []
+
+	 -- boxed types are just 'Data'
+	 | otherwise		-> C.TData Var.primTData []
+
+	-- some unknown, boxed object 'Obj'
+	C.TVar C.KData _	-> C.TData Var.primTObj   []
+
+	_	-> panic stage
+		$  "superOpTypePart: no match for " % show t % "\n"
+
+
+
+
+
+
