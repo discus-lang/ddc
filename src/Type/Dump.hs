@@ -75,7 +75,7 @@ prettyClass (ix :: Int) c
 -}
 	ClassFetter { classFetter = f }
 	 -> pprStr
-	 	$ "Class +" % classId c % "\n"
+	 	$ "+" % classId c % "\n"
 		% "        " % f % "\n"
 		% "\n\n"
 
@@ -98,6 +98,12 @@ prettyClass (ix :: Int) c
 			[]	-> pNil
 			_	-> "        -- fetters\n"
 				%> "\n" %!% classFetters c % "\n\n")
+	
+		-- multi-parameter type classes
+		% (if Set.null $ classFettersMulti c
+			then pNil
+			else 	   "        -- fetters multi-parameter\n"
+				 % "        " % classFettersMulti c % "\n\n")
 	
 		-- unification queue
 		% (case classQueue c of

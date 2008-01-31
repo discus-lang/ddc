@@ -11,12 +11,14 @@ import Data.Set			(Set)
 import Util
 import Type.Exp
 import Type.Base
+import Type.Dump
 import Type.State
 import Type.Class
 import Type.Plate.Collect
 import Type.Plate.Trans
 
 import Shared.Error
+import Debug.Trace
 
 stage	= "Type.Trace"
 
@@ -30,17 +32,8 @@ traceType cid
  	-- See which classes are reachable by tracing down from this one.
  	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
-	-- Find fetters acting on this subgraph by tracing back up from the nodes.
-	cidsFetterUp	<- {-# SCC "trace/Up" #-} traceFetterCidsUp cidsDown
-
-	-- Trace out the subgraph reachable by these fetters.
-	cidsFetterDown	<- {-# SCC "trace/Down2" #-} traceCidsDowns cidsFetterUp Set.empty
-
-	-- These are all the interesting cids.
-	let cidsReachable	= Set.union cidsDown cidsFetterDown
-
 	-- Load in the nodes for this subgraph.
-	t	<- loadType cid cidsReachable
+	t	<- loadType cid cidsDown
 	return t
 
 
@@ -67,40 +60,50 @@ loadTypeNode
 	:: ClassId
 	-> SquidM [Fetter]
 
-loadTypeNode cid
+loadTypeNode cid@(ClassId ix)
  = do	Just c		<- lookupClass cid
 	loadTypeNode2 cid c
 
 loadTypeNode2 cid c
-	| ClassFetter { classFetter = f } <- c
+
+	-- when mptc's are crushed out they are replaced by ClassNils.
+	-- we could perhaps differentiate this case and raw, never-allocated classes...
+	| ClassNil				<- c
+	= return []
+
+	| ClassForward cid'			<- c
+	= loadTypeNode cid'
+
+	| ClassFetter { classFetter = f } 	<- c
 	= do	t'	<- refreshCids f
 		return	[t']
 
 	-- If the class type is Nothing then it hasn't been unified yet..
-	| Nothing	<- classType c
+	| Class { classType = Nothing}		<- c
 	= panic stage
 		$ "loadTypeNode2: can't trace which hasn't been unified yet\n"
 		% "    cid   = " % cid		% "\n"
 		% "    queue = " % classQueue c	% "\n"
 		% "    nodes:\n" % "\n" %!% classNodes c % "\n"
 
-	-- don't bother showing bottoms
-	| Just (TBot k)	<- classType c
-	= do	tfs		<- refreshCids $ classFetters c
-		let fs		= map (\(TFetter f) -> f) tfs
-		return	fs
-
 	-- a regular type node
-	| Just t	<- classType c
-	= do	
+	| Class { classType = Just t}		<- c
+	= do
 		-- make sure all the cids are canconical
 		(t': tfs)	<- refreshCids (t : classFetters c)
 
+		-- single parameter constraints are stored directly in this node
 		let fs		= map (\(TFetter f) -> f) tfs
 
-		-- If this node has additional fetters where the LHS are all cids then we can strip them here
-		-- 	because they're cids they'll already be returned as their separate nodes
-		--
+		-- multi parameter constraints are stored in nodes referenced by classFettersMulti
+		fsMulti		<- liftM concat 
+				$ mapM loadTypeNode 
+				$ Set.toList 
+				$ classFettersMulti c
+
+		-- If this node has additional fetters where the LHS are all cids
+		--	then we can strip them here because they're cids they'll
+		--	already be returned as their separate nodes
 		let tX	= case t' of
 				TFetters fs t2	
 				 | and	$ map (\f -> case f of
@@ -113,7 +116,13 @@ loadTypeNode2 cid c
 				
 		k	<- kindOfCid cid
 	
-		return $ (FLet (TClass k cid) tX : fs)
+		case t of
+			-- don't bother showing bottom constraints
+			--	If a constraint for a class is missing it is assumed to be bottom.
+			TBot k	-> return $ fs ++ fsMulti
+
+			_	-> return $ FLet (TClass k cid) tX : (fs ++ fsMulti)
+	
 
 refreshCids xx
  	= transZM 

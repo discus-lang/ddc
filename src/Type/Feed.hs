@@ -83,23 +83,7 @@ feedConstraint cc
 	-- Projection constraints.
 	CProject src j v1 tDict tBind
 	 -> do	let ?src	= src
-
-	 	-- a new class to hold this node
-	 	cid		<- allocClass KFetter
-	 	
-		-- add the type args to the graph
-	 	Just [tDict', tBind']
-				<- liftM sequence
-				$  mapM (feedType (Just cid)) [tDict, tBind]
-		
-		-- add the constraint
-		graph	<- gets stateGraph
-		let c	= ClassFetter
-			{ classId	= cid
-			, classFetter	= FProj j v1 tDict' tBind' }
-		liftIO (Array.writeArray (graphClass graph) cid c)
-		activateClass cid
-
+		addFetter (FProj j v1 tDict tBind)
 		return ()		
 				
 
@@ -433,8 +417,6 @@ addFetter (FConstraint vC [t1])
 	 	activateClass cid1
 		return True
 			
-
-	
 	
 -- Multi parameter type class constraints are added as ClassFetter nodes in the graph 
 --	and the equivalence classes which they constraint hold ClassIds which point to them.
@@ -442,23 +424,70 @@ addFetter (FConstraint vC [t1])
 addFetter f@(FConstraint v ts)
  = do 	
  	-- create a new class to hold this node
-	cid		<- allocClass KFetter
+	cidF		<- allocClass KFetter
 	 	
 	-- add the type args to the graph
 	Just ts'	<- liftM sequence
-			$  mapM (feedType (Just cid)) ts
-		
+			$  mapM (feedType (Just cidF)) ts
+
 	-- add the fetter to the graph
 	let f	= FConstraint v ts'
 
-	modifyClass cid
+	modifyClass cidF
 	 $ \c -> ClassFetter
-	 	{ classId	= cid
+	 	{ classId	= cidF
 		, classFetter	= f }
 
-	activateClass cid
+	activateClass cidF
+
+	-- work out what cids this constraint is acting on
+	let cids	= map (\(TClass k cid) -> cid) ts'
+	
+	-- add a reference to this constraint to all those classes
+	mapM	(\cid -> modifyClass cid
+			$ \c -> c { classFettersMulti = Set.insert cidF (classFettersMulti c) })
+		$ cids
 
 	return True
 
+addFetter f@(FProj j v1 tDict tBind)
+ = do
+ 	-- a new class to hold this node
+ 	cidF	<- allocClass KFetter
+	
+	-- add the type args to the graph
+ 	Just [tDict', tBind']
+		<- liftM sequence
+		$  mapM (feedType (Just cidF)) [tDict, tBind]
 
+	-- add the fetter to the graph
+	let f	= FProj j v1 tDict' tBind'
+	
+	modifyClass cidF
+	 $ \c -> ClassFetter
+	 	{ classId	= cidF
+		, classFetter	= f }
+		
+	activateClass cidF
+	
+	-- add a reference to the constraint to all those classes it is acting on
+	let cids	= map (\(TClass k cid) -> cid) [tDict', tBind']
 
+	mapM	(\cid -> modifyClass cid
+			$ \c -> c { classFettersMulti = Set.insert cidF (classFettersMulti c) })
+		cids
+			
+	return True
+	
+
+{-	 	cid		<- allocClass KFetter
+	 	
+		
+		-- add the constraint
+		graph	<- gets stateGraph
+		let c	= ClassFetter
+			{ classId	= cid
+			, classFetter	= FProj j v1 tDict' tBind' }
+		liftIO (Array.writeArray (graphClass graph) cid c)
+		activateClass cid
+-}

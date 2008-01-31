@@ -57,11 +57,12 @@ data Class
 		-- | Type constraints waiting to be unified.
 		, classQueue		:: [Type]
 
-		-- | Fetters acting on this class
-		--	Single parameter type class constraints are placed directly in this list, 
-		--	while multi-parameter constraints are recored as a classId which points to
-		--	the ClassFetter which holds the constraint.
+		-- | Single parameter type class constraints which are acting on this equivalence class.
 		, classFetters		:: [Type]
+
+		-- | Multi-parameter type class constraints acting on this equivalence class
+		--	each of the ClassIs in this set points to a ClassFetter
+		, classFettersMulti	:: Set ClassId
 
 		-- | Constraints that have been added to this class, including source information.
 		, classNodes		:: [(Type, TypeSource)]		
@@ -82,6 +83,7 @@ classInit cid kind
 	, classQueue		= []
 	, classNodes		= []
 	, classFetters		= []
+	, classFettersMulti	= Set.empty
 	
 	, classBackRef		= Set.empty }
 		

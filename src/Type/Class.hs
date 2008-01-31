@@ -357,6 +357,8 @@ mergeClasses cids_
 					++ concat (map (maybeToList . classType) cs)
 
 			, classFetters	= concat $ map classFetters cs
+			, classFettersMulti
+					= Set.unions $ map classFettersMulti cs 
 
 			, classBackRef	= Set.unions $ map classBackRef cs }
 
