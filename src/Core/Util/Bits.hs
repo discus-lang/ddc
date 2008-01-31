@@ -63,7 +63,6 @@ import Shared.Var 		(NameSpace(..))
 import Shared.Error		(panic)
 import qualified Shared.Var as Var
 import Shared.VarPrim
-import Shared.Prim
 
 -----
 import qualified Data.Map	as Map
