@@ -38,37 +38,38 @@ data Class
 
 	-- | An equivalence class.
 	| Class
-		{ 	
-		-- | An Id for this class
+		-- | A unique id for this class
+		{ classId		:: ClassId	
 
-		  classId		:: ClassId	
-
-		-- | Kind of this class.
+		-- | The kind of this class.
 		, classKind		:: Kind				
 
-		-- | The name for this class.
-		--	This is taken as one of the vars from the Nodes list, or generated fresh if none exists.
+		-- | A (non-unique) name for this class.
+		--	This is taken as one of the vars from the nodes list, or generated fresh if 
+		--	none exists. 
 		, className		:: Maybe Var
 	
 		-- | The type of this class (if available)
-		--	If there are constraints waiting to be unified this will be Nothing.
+		--	If there are constraints waiting to be unified then classQueue will be 
+		--	non-empty and classType will be Nothing.
 		, classType		:: Maybe Type
 
 		-- | Type constraints waiting to be unified.
 		, classQueue		:: [Type]
 
 		-- | Single parameter type class constraints which are acting on this equivalence class.
+		--	SPTC's are stored directly in the node with they constrain.
 		, classFetters		:: [Type]
 
-		-- | Multi-parameter type class constraints acting on this equivalence class
-		--	each of the ClassIs in this set points to a ClassFetter
+		-- | Multi-parameter type class constraints acting on this equivalence class.
+		--	MPTC's are stored in their own ClassFetter nodes, and this list points to all
+		--	the MPTC's which are constraining this node.
 		, classFettersMulti	:: Set ClassId
 
 		-- | Constraints that have been added to this class, including source information.
-		, classNodes		:: [(Type, TypeSource)]		
-
-		-- | Other classes which reference this one.
-		, classBackRef		:: Set ClassId }		
+		--	If a type error is encountered, then this information can be used to reconstruct
+		--	/why/ this particular node has the type it does.
+		, classNodes		:: [(Type, TypeSource)]	}
 
 	deriving (Show)
 
@@ -77,15 +78,13 @@ classInit cid kind
 	= Class
 	{ classId		= cid
 	, classKind		= kind
-
 	, className		= Nothing
 	, classType		= Nothing
 	, classQueue		= []
 	, classNodes		= []
 	, classFetters		= []
-	, classFettersMulti	= Set.empty
+	, classFettersMulti	= Set.empty }
 	
-	, classBackRef		= Set.empty }
 		
 
 -- | The Type Graph.

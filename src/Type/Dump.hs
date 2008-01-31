@@ -110,10 +110,6 @@ prettyClass (ix :: Int) c
 			[]	-> pNil
 			_	-> "        -- queue\n"
 				%> "\n" %!% classQueue c % "\n\n")
-				
-		% "        -- back refs\n"
-		% "        " % (Set.toList $ classBackRef c) 		% "\n"
-		% "\n"
 		% "        -- nodes\n"
 		% (concat
 			$ map pprStr
@@ -149,7 +145,6 @@ fowardCids c@ClassFetter { classFetter = f }
 
 fowardCids c@Class{}
  = do	cid'		<- updateVC $ classId	   c
- 	backRef'	<- updateVC $ classBackRef c
 	fs'		<- mapM updateVC $ classFetters c
 	
 	let (ts, ns)	= unzip $ classNodes c
@@ -165,7 +160,6 @@ fowardCids c@Class{}
 	
 	return	$ c
 		{ classId	= cid'
-		, classBackRef	= backRef'
 		, classType	= typ' 
 		, classFetters	= fs' 
 		, classNodes	= nodes' }

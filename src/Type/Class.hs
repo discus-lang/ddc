@@ -13,8 +13,6 @@ module Type.Class
 	, mergeClassesT
 	, sinkClassId
 	, lookupVarToClassId
-	, addBackRef
-	, patchBackRef
 	, makeClassName
 	, clearActive
 	, activateClass
@@ -114,35 +112,18 @@ allocClass kind
 	return cid
 
 
--- | Delete a class by setting it to Nil and removing the backrefs from its children
-delClass
-	:: ClassId
-	-> SquidM ()
-
+-- | Delete a class by setting it to Nil.
+--	Note: 	This class *cannot* be re-used because it may have been deleted due to a MPTC
+--		being crushed out. Other nodes will still refer to this one, and Type.Trace 
+--		treats the ClassNil as generating no constraints.
+--
+delClass :: ClassId -> SquidM ()
 delClass cid
  = do	Just c		<- lookupClass cid
 	updateClass cid ClassNil
-
- 	let cidChildren	= classChildren c
-	mapM_ (delBackRef cid) cidChildren
-
 	return ()	
 	
 	
--- | Delete a backref from the graph.
-delBackRef
-	:: ClassId 	-- parent node
-	-> ClassId 	-- child node
-	-> SquidM ()
-
-delBackRef cidParent cidChild
- = do	
- 	Just c	<- lookupClass cidChild
-	let c'	= c { classBackRef = Set.delete cidParent (classBackRef c) }
-	updateClass cidChild c'
-
-	
-
 -- | If there is already a class for this variable then return that
 --		otherwise make a new one containing this var.
 makeClassV	
@@ -298,28 +279,7 @@ lookupVarToClassId v
 	  	return	$ Just cid'
 	 
 	 
------		
--- addBackRef
---
-addBackRef	::  ClassId -> ClassId -> SquidM ()
-addBackRef cid_ cidRef_ 
- = do 	cid	<- sinkClassId cid_
-	cidRef	<- sinkClassId cidRef_
-	
-	Just c	<- lookupClass cid
-
-	updateClass cid 
-		c { classBackRef 
-			= Set.insert cidRef (classBackRef c) }
-
------
-patchBackRef :: ClassId -> Maybe ClassId -> SquidM ()
-patchBackRef	cidT mParent
- = case mParent of
- 	Nothing		-> return ()
-	Just cidP	-> addBackRef cidT cidP
-	
-	  
+  
 -- | Merge two classes by concatenating their queue and node list
 --	The one with the lowesed classId gets all the constraints and the others 
 --	are updated to be ClassFowards which point to it.
@@ -356,11 +316,12 @@ mergeClasses cids_
 					$  concat (map classQueue cs)
 					++ concat (map (maybeToList . classType) cs)
 
-			, classFetters	= concat $ map classFetters cs
-			, classFettersMulti
-					= Set.unions $ map classFettersMulti cs 
+			, classFetters	
+				= concat $ map classFetters cs
 
-			, classBackRef	= Set.unions $ map classBackRef cs }
+			, classFettersMulti
+				= Set.unions $ map classFettersMulti cs  }
+
 
 	updateClass cidL cL'
 	activateClass cidL

@@ -1,8 +1,7 @@
 
 module Type.Trace 
 	( traceType 
-	, traceCidsDown
-	, traceFetterCidsUp)
+	, traceCidsDown)
 where
 
 import qualified Data.Set	as Set
@@ -155,51 +154,3 @@ traceCidsDowns toVisit visited
 
 		let toVisit'	= (toVisit `Set.union` more) `Set.difference` visited'
 		traceCidsDowns toVisit' visited'
-
-
------
--- traceFetterCidsUp
---	Find all the fetter classes which are reachable by tracing up from this
---	set of cids.
---
-traceFetterCidsUp :: Set ClassId -> SquidM (Set ClassId)
-traceFetterCidsUp roots
-	= traceFetterCidsUp1 Set.empty Set.empty roots
-
-traceFetterCidsUp1 visited acc work
-	| Set.null work
-	= return acc
-
-traceFetterCidsUp1 visited acc work
-	| otherwise
-	= do	let (cid : workTail) = Set.toList work
-		Just c	<- lookupClass cid
-		traceFetterCidsUp2 visited acc work cid c workTail
-
-traceFetterCidsUp2 visited acc work cid c workTail
-
-	-- found one
-	| ClassFetter{}	<- c
-	= do	traceFetterCidsUp1
-			(Set.insert cid visited)
-			(Set.insert cid acc)
-			(Set.delete cid work)
-
-	-- class has no backrefs, but isn't a fetter - skip.
-	| Set.null $ classBackRef c
-	= 	traceFetterCidsUp1
-			(Set.insert cid visited)
-			acc
-			(Set.delete cid work)
-
-	-- class has some backrefs
-	| otherwise
-	= do	-- no point visiting nodes we've already seen
-		let back	= Set.difference (classBackRef c) visited
-
-		traceFetterCidsUp1
-			(Set.insert cid visited)
-			acc
-			(Set.union (Set.delete cid work) back)
-
-

@@ -137,8 +137,6 @@ feedType	mParent t
 
 	TSum k ts
 	 -> do 	cidE		<- allocClass k
-		patchBackRef cidE mParent
-
 		Just es'	<- liftM sequence
 				$  mapM (feedType1 (Just cidE)) ts
 		addNode cidE 	$ TSum k es'
@@ -147,8 +145,6 @@ feedType	mParent t
 
 	TMask k t1 t2
 	 -> do	cidE		<- allocClass k
-	 	patchBackRef cidE mParent
-		
 		Just t1'	<- feedType1 (Just cidE) t1
 		Just t2'	<- feedType1 (Just cidE) t2
 		addNode cidE	$ TMask k t1' t2'
@@ -157,18 +153,15 @@ feedType	mParent t
 
  	TVar k v 
 	 -> do 	cidT		<- makeClassV ?src k v 
-		patchBackRef cidT mParent
 		returnJ		$ TClass k cidT
 
 	TBot kind
 	 -> do	cid		<- allocClass kind
-	 	patchBackRef cid mParent
 		addNode cid	$ TBot kind
 		returnJ		$ TClass kind cid
 
 	TTop kind
 	 -> do	cid		<- allocClass kind
-	 	patchBackRef cid mParent
 		addNode cid	$ TTop kind
 		returnJ		$ TClass kind cid
 
@@ -176,8 +169,6 @@ feedType	mParent t
 	-- data
 	TFun t1 t2 eff clo
 	 -> do	cidT		<- allocClass KData
-		patchBackRef cidT mParent 
-
 		Just t1'	<- feedType (Just cidT) t1
 		Just t2'	<- feedType (Just cidT) t2
 		Just eff'	<- feedType (Just cidT) eff
@@ -188,8 +179,6 @@ feedType	mParent t
 		
 	TData v ts
 	 -> do 	cidT		<- allocClass KData
-		patchBackRef cidT mParent
-
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidT)) ts
 
@@ -199,8 +188,6 @@ feedType	mParent t
 	-- effect
 	TEffect v ts
 	 -> do 	cidE		<- allocClass KEffect
-		patchBackRef cidE mParent
-	
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidE)) ts
 		addNode cidE 	$ TEffect v ts'
@@ -213,8 +200,6 @@ feedType	mParent t
 	--	closure information that we need.
 	TFree v1 t@(TVar KData v2)
 	 -> do	cid		<- allocClass KClosure
-	 	patchBackRef cid mParent
-
 		defs		<- gets stateDefs
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
@@ -236,8 +221,6 @@ feedType	mParent t
 	-- A non-var closure. We can get these from signatures and instantiated schemes
 	TFree v1 t
 	 -> do	cid		<- allocClass KClosure
-	 	patchBackRef cid mParent
-
 		t'		<- linkType mParent [] t
 		addNode	cid	$ TFree v1 t'
 		returnJ		$ TClass KClosure cid
@@ -245,27 +228,21 @@ feedType	mParent t
 
 	TTag v
 	 -> do	cid		<- allocClass KClosure
-	 	patchBackRef cid mParent
-		
 		addNode cid	$ TTag v
 		returnJ		$ TClass KClosure cid
 
 	TWild kind
 	 -> do	cid		<- allocClass kind
-	 	patchBackRef cid mParent
 		addNode cid	$ TWild kind
 		returnJ		$ TClass kind cid
 
 	TClass k cid
 	 -> do 	cidT'		<- sinkClassId cid
-		patchBackRef cid mParent
 		returnJ		$ TClass k cidT'
 		
 	TAccept t
 	 -> do	let k		= kindOfType t
 	 	cid		<- allocClass k
-		patchBackRef cid mParent
-
 	 	Just t'		<- feedType mParent t
 		
 		addNode cid 	$ TAccept t'

@@ -56,12 +56,10 @@ linkType mParent bound tt
 	 	case mCid of
 		 Nothing 
 		  -> do	cid	<- makeClassV ?src k v
-		  	patchBackRef cid mParent
 			return	$ TClass k cid
 			
 		 Just cid
-		  -> do	patchBackRef cid mParent
-		  	return	$ TClass k cid
+		  -> do	return	$ TClass k cid
 
 	-- top/bot
 	TTop k	-> return tt
