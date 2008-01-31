@@ -62,7 +62,10 @@ file_open
 	-> Ptr# FILE#
 
 file_open name mode
- = do	file	= fopenU (unboxString name) (unboxString mode)
+ = do	name_flat	= name.flatten
+ 	mode_flat	= mode.flatten
+ 
+ 	file	= fopenU (dangerUnboxString name_flat) (dangerUnboxString mode_flat)
 
 	case unsafe_castToInt32U file `primInt32U_eq` 0# of
 		1#	-> throw ExceptionIO
@@ -87,8 +90,8 @@ file_read name
  	str	= newString len
 	
 	file	= file_open name "r+"
-
-	freadU	(unboxString str) (unboxInt32 len) 1# file
+	
+	freadU	(dangerUnboxString str) (unboxInt32 len) 1# file
 	
 	str
 

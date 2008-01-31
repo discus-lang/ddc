@@ -10,12 +10,13 @@ main ()
  
  	print	$ string_join "Joined " "string.\n";
 	
-	strMerged	
-		= string_merge $ "Some " % "merged " % "string.\n";
-	print	$ strMerged;
-	print	$ "strMerged isFlat  = " % show (string_isFlat strMerged) % "\n";
+	strFlat
+		= string_flatten $ "Some " % "merged " % "string.\n";
 
-	print	$ (show $ "Some appended string.\n" == strApp.merge) % "\n";
+	print	$ strFlat;
+	print	$ "strMerged isFlat  = " % show (string_isFlat strFlat) % "\n";
+
+	print	$ (show $ "Some appended string.\n" == strApp.flatten) % "\n";
 	
 
  };

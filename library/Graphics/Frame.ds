@@ -100,12 +100,15 @@ frame_poly frame xx c
  };
 
 
-
+frame_new :: String -> Int -> Int -> Frame 
 frame_new name sizeX sizeY
- = do {	ptcOpen (unboxString name) (unboxInt32 sizeX) (unboxInt32 sizeY);
- 	array	= arrayUI_new 1 (400 * 400 * 4);
-	Frame sizeX sizeY array;
- };
+ = do 	sizeX'		= unboxInt32 sizeX
+	sizeY'		= unboxInt32 sizeY
+	name_flat	= name.flatten
+
+ 	ptcOpen (dangerUnboxString name_flat) sizeX' sizeY'
+ 	array	= arrayUI_new 1 (400 * 400 * 4)
+	Frame sizeX sizeY array
  
 		
 

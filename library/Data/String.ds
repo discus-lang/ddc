@@ -13,159 +13,188 @@ data	String %r1
 		right	:: String %r1;
 	};
 
--- boxing
+----------------------------------------------------------------------------------------------------
+-- Primitive functions operating on strings
+
+
+-- | Create a new string.
+--	This creates a new heap object and copies the source string into it.
+--
 foreign import extern "_boxString"
  boxString	:: forall %r1
- 		.  String# %r1 -> String %r1
+ 		.  String# %r1 -(!Read %r1)> String %r1
 		:$ String# -> Obj;
 		
-		
--- unboxing a string returns a pointer to the string inside the heap allocated object.
+-- | Unboxing a string returns a pointer to a C string. 
+--	
+--    * The returned pointer will point inside a heap allocated object. 
+--	Unless the string is anchored, this pointer will become invalid during 
+--	the next GC cycle.
+--
+--    *	It /must/ be an SChunk, not an SAppend else badness.
+--
 --	The unboxed string data shares the region with the data constructor.
+--
 foreign import extern "_unboxString"
- unboxString	:: forall %r1
- 		.  String %r1 -(!Read %r1)> String# %r1
-		:$ Obj -> String#;
-		
+ dangerUnboxString	
+ 	:: forall %r1
+ 	.  String %r1 -(!Read %r1)> String# %r1
+	:$ Obj -> String#;
+
+
+-- | Compare two strings for equality.
 foreign import extern "strcmp"
  strcmpU	:: elaborate String# -> String# -> Int32#;
- primString_eq	s1 s2	
-  = do {
- 	s1M	= string_merge s1;
-	s2M	= string_merge s2;
-	
-	case primInt32U_eq (strcmpU (unboxString s1M) (unboxString s2M))  0# of {
-  		1#	-> True;
-		0#	-> False;
-	};
-  };
 
+-- | Return the length of this string.
 foreign import extern "strlen"
  strlenU	:: elaborate String# -> Int32#;
- string_length ss
-  = case ss of {
-	SAppend l r	-> string_length l + string_length r;
-	_		-> boxInt32 (strlenU (unboxString ss));
- };
-  
 
+-- | Append the src string to the dest string by overwriting the dest
+--	* The destination string must be large enough to hold the result, else badness.
 foreign import extern "strcat"
- unsafe_strcatU	:: elaborate (mutable String#) -> String# -> String#;
- string_unsafe_concat s1 s2
-  = do { 
-  	unsafe_strcatU (unboxString s1) (unboxString s2);
-	s1;
- };
-  	
-foreign import extern "memset"
- unsafe_memsetU	:: elaborate (mutable String#) -> Int32# -> Int32# -> String#;
+ dangerStrcatU	:: elaborate (mutable String#) -> String# -> String#
 
+-- | Write some characters into this string.
+--	* number of bytes must be < length of string else badness.
+foreign import extern "memset"
+ dangerMemsetU	
+ 	:: elaborate (mutable String#) 	-- destination string
+	-> Int32# 			-- byte to use
+	-> Int32# 			-- number of bytes to set
+	-> String#			-- same as desination string
+
+
+
+dangerConcat s1 s2
+  = do 	dangerStrcatU (dangerUnboxString s1) (dangerUnboxString s2)
+	s1
+
+-- | Pack this string into the destination
+--	* the desination must be big enough else badness.
+dangerPack :: String -> String -> String
+dangerPack sDest ss
+ = case ss of 
+ 	SAppend left right	
+	 -> do 	dangerPack sDest left
+		dangerPack sDest right
+	 
+	_ -> dangerConcat sDest ss
+
+
+----------------------------------------------------------------------------------------------------
+-- These have custom C functions in the runtime system
+--
+
+-- | Get the first character of a string as a new string
 foreign import extern "primString_heads"
  string_char	:: elaborate String -> String;
  
+-- | Get the tail of a string as a new string
 foreign import extern "primString_tails"
  string_rest	:: elaborate String -> String;
 
+-- | Check whether a string is empty
 foreign import extern "primString_isNul"
  string_isNul	:: elaborate String -> Bool;
 
+-- | Return the ASCII code of the first character in this string
 foreign import extern "primString_ord"
  string_ord	:: elaborate String -> Int;
 
 
-instance Eq (String %_) where
-{
-	(==) 	= primString_eq;
+----------------------------------------------------------------------------------------------------
 
-}
-
-
-newString :: Int -> String;
+-- | Create a new string with this length on the heap
+newString :: Int -> String
 newString length
- = do {	
+ = do 
 	-- make sure to include space for the nul char on the end.
- 	len	= unboxInt32 length + 1#;
+ 	len	= unboxInt32 length + 1#
 
 	-- round length up to 4 byte word boundary for the DataR object.
-	spill	= mod len 4#;
-	lenS	= case spill #== 0# of {
-				1#	-> len;
-				0#	-> len + (4# - spill);
-			};		
+	spill	= mod len 4#
+	lenS	= case spill #== 0# of
+			1#	-> len
+			0#	-> len + (4# - spill)
 
 	-- alloc the object.
-	str 	:: String %r;
-	str	= primAlloc_dataR 0# lenS;
+	str 	:: String %r
+	str	= primAlloc_dataR 0# lenS
  
  	-- grab a ptr to the raw string from the new object.
-	strU	= unboxString str;
+	strU	= dangerUnboxString str
 	
 	-- set the string to all nul chars;
-	unsafe_memsetU strU 0# len;
+	dangerMemsetU strU 0# len
 	
-	str;
- }; 
+	str
+
+-- | Return the how many characters are in this string.
+string_length :: String -> Int
+string_length ss
+  = case ss of 
+	SAppend l r	-> string_length l + string_length r
+	_		-> boxInt32 (strlenU (dangerUnboxString ss))
 
 
-
-string_isFlat :: String -> Bool;
+-- | Check whether this string is flat, ie is a single SChink and contains
+--	contains no SAppend constructors.
+string_isFlat :: String -> Bool
 string_isFlat ss
- = case ss of {
- 	SAppend left right 	-> False;
-	_ 			-> True;
- };
+ = case ss of 
+ 	SAppend left right 	-> False
+	_ 			-> True
 
 
-string_join :: String -> String -> String;
-string_join  s1 s2
- = do {	len	= string_length s1 + string_length s2;
- 	s3	= newString len;
-	
-	string_unsafe_concat s3 s1;
-	string_unsafe_concat s3 s2;
-	s3;
- };
-
-
-string_merge :: String -> String;
-string_merge ss
- = case ss of {
+-- | Flatten a string so that is contains no SAppend constructors.
+string_flatten :: String -> String;
+string_flatten ss
+ = case ss of 
  	SAppend left right
-	 -> do {
-	 	len	= string_length ss;
- 		sDest	= newString len;
+	 -> do 	len	= string_length ss
+ 		sDest	= newString len
 	
-		string_unsafe_concats sDest ss;
- 		sDest;
-	 };
+		dangerPack sDest ss
+ 		sDest
 	 
-	_ -> ss;
- };
- 
-string_unsafe_concats :: String -> String -> String;
-string_unsafe_concats sDest ss
- = case ss of {
- 	SAppend left right	
-	 -> do { 
-	 	string_unsafe_concats sDest left;
-		string_unsafe_concats sDest right;
-	 };
-	 
-	_ -> string_unsafe_concat sDest ss;
- };
+	_ -> ss
+
+
+-- | Join two strings.
+string_join :: String -> String -> String
+string_join  s1 s2
+ = do 	len	= string_length s1 + string_length s2
+ 	s3	= newString len
+	
+	dangerConcat s3 s1
+	dangerConcat s3 s2
+	s3
+
+
+-- | String equality
+primString_eq :: String -> String -> Bool
+primString_eq	s1 s2	
+  = do 
+ 	s1M	= string_flatten s1
+	s2M	= string_flatten s2
+	
+	case strcmpU (dangerUnboxString s1M) (dangerUnboxString s2M) `primInt32U_eq` 0# of
+  		1#	-> True
+		0#	-> False
+
+
+instance Eq (String %_) where
+	(==) 	= primString_eq
 
 
 project String where
-{
-	unbox x		= unboxString x;
-	length x	= string_length x;
-	merge x		= string_merge x;
-	isFloat x	= string_isFlat x;
-	char x		= string_char x;
-	rest x		= string_rest x;
-	isNul x		= string_isNul x;	
-	ord x		= string_ord x;
-}
-
+	length x	= string_length x
+	flatten x	= string_flatten x
+	isFloat x	= string_isFlat x
+	char x		= string_char x
+	rest x		= string_rest x
+	isNul x		= string_isNul x
+	ord x		= string_ord x
 
 
