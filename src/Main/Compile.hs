@@ -20,6 +20,7 @@ import GHC.IOBase
 -----
 import qualified Shared.Var		as Var
 import Shared.Var			(Module(..), NameSpace(..))
+import Shared.Error
 
 import qualified Main.Arg		as Arg
 import Main.Arg 			(Arg)
@@ -139,6 +140,21 @@ compileFile	argsCmd     fileName
 	-- Load the source file
 	sSource		<- readFile fileName
 
+	compileFile_parse 
+		fileName pathBase filePaths moduleName importDirs 
+		mBuild   sSource
+
+compileFile_parse 
+	fileName pathBase filePaths moduleName importDirs 
+	mBuild   sSource
+
+ -- Check for empty source file and emit a nice error message.
+ --	If we parse an empty file to happy it will bail with "reading EOF!" which isn't as nice.
+ | words sSource == []
+ = exitWithUserError ?args [fileName % "\n    Source file is empty.\n"]
+
+ | otherwise
+ = do
 	-- Parse the source file.
 	sParsed		<- SS.parse 
 				fileName

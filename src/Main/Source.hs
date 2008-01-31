@@ -147,7 +147,7 @@ defix	sParsed
 			$ map (defixP fixTable)
 			$ sParsed
 	
-	handleErrors 	$ concat errss
+	exitWithUserError ?args $ concat errss
 	
 	-- dump
 	dumpST	DumpSourceDefixed "source-defixed" sDefixed
@@ -172,7 +172,7 @@ rename	mTrees
 		= runState (S.renameTrees mTrees)
 		$ S.initRenameS
 
-	handleErrors (S.stateErrors state')
+	exitWithUserError ?args $ S.stateErrors state'
 
 	-- dump
 	let Just sTree	= liftM snd $ takeHead mTrees'
@@ -316,7 +316,7 @@ slurpC	sTree
 			$ state2
 
 	-- handle errors arrising from constraint slurping
-	handleErrors (D.stateErrors state3)
+	exitWithUserError ?args $ D.stateErrors state3
 
 	-- these are the vars we'll need types for during the Core->Desugar transform
 	let vsTypesPlease = D.stateTypesRequest state3
@@ -400,8 +400,7 @@ solveSquid
 
 	-- stop the compiler and print out errors
 	--	if there were any during type inference.
-	handleErrors 
-		$ Squid.stateErrors state
+	exitWithUserError ?args	$ Squid.stateErrors state
 
 	-- extract out the stuff we'll need for conversion to core.
 	(typeTable, typeInst, quantVars, vsRegionClasses)
@@ -496,24 +495,6 @@ toCore	sourceTree
 	
 
 
------
-handleErrors 
-	:: Pretty a
-	=> (?args :: [Arg])
-	-> [a] -> IO ()
-		
-handleErrors []
-	= return ()
-		
-handleErrors errs
- = case filter (=@= StopErrors{}) ?args of
-  	(StopErrors [file] : _)
-	 -> do 	writeFile file 
-			(catInt "\n" $ map pprStr errs)
-			
-		exitWith ExitSuccess
-		
-	_ -> 	dieWithUserError errs
 			
 
 	 	

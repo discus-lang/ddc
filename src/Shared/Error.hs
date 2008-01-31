@@ -5,13 +5,15 @@ module Shared.Error
 	( panic
 	, freakout
 	, warning
-	, dieWithUserError)
+	, dieWithUserError
+	, exitWithUserError)
 where
 
 -----
 import Util
 import Debug.Trace
-
+import Main.Arg
+import System.Exit
 
 -- | The walls are crashing down.
 --	Print a last, dying message and bail out.
@@ -52,3 +54,23 @@ dieWithUserError  errs
 	= error	(pprStr $ "\nERROR\n" ++ (catInt "\n" $ map pprStr errs))
 
 	
+-- | A compile time error in the user program
+--	If the args have StopErrors set, then write the errors to a file, 
+--	otherwise write them to stderr
+--
+exitWithUserError 
+	:: Pretty a
+	=> [Arg] -> [a] -> IO ()
+		
+exitWithUserError args []
+	= return ()
+		
+exitWithUserError args errs
+ = case filter (=@= StopErrors{}) args of
+  	(StopErrors [file] : _)
+	 -> do 	writeFile file 
+			(catInt "\n" $ map pprStr errs)
+			
+		exitWith ExitSuccess
+		
+	_ -> 	dieWithUserError errs

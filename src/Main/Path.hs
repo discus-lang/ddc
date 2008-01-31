@@ -7,8 +7,6 @@ module Main.Path
 
 where
 
-import Shared.Error
-
 
 -----
 stage	= "Main.Path"
@@ -37,5 +35,4 @@ makePaths	basePath
 	
 -- define this so we can derive Ord Main.Args
 instance Ord Path where
- compare x1 x2	= panic stage 
- 		$ "can't compare Path tables."
+ compare x1 x2	= error "can't compare Path tables."
