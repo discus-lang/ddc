@@ -34,7 +34,7 @@ import Type.Plate.Collect	(collectClassIds)
 import Type.Plate.Trans
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effect"
 

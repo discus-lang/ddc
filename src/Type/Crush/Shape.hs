@@ -45,7 +45,6 @@ crushShape shapeCid
 		% "    fetter      = "	 	% f		% "\n"
 		% "    mergeCids   = "		% mergeCids 	% "\n"
 
-
  	-- Make sure that all the classes to be merged are unified.
 	--	We're expecting a maximum of one constructor per class queue.
 	--
@@ -55,33 +54,40 @@ crushShape shapeCid
  	mergeCs		<- liftM (map (\(Just c) -> c)) 
  			$  mapM lookupClass mergeCids
 
-	-- Try and extract a type template from one of the nodes.
-	let mts		= map (\c -> case classType c of
+	-- See if any of the nodes already contain data constructors.
+	let mData	= map (\c -> case classType c of
 				Just t@(TData{})	-> Just t
 				Just _			-> Nothing)
 			$ mergeCs
 	
-	let template	= takeFirstJust mts
-
-	trace	$ "    mTs         = "	% mts		% "\n"
-		% "    template    = "	% template	% "\n"
+	-- If we have to propagate the constraint we'll use the first constructor as a template.
+	let mTemplate	= takeFirstJust mData
+	trace	$ "    mData       = "	% mData		% "\n"
+		% "    mTemplate    = "	% mTemplate	% "\n"
 		% "\n"
+
+	let result
+		-- all of the nodes already contain data constructors.
+		-- TODO: add more fetters recursively
+		| and $ map isJust mData
+		= do	delClass shapeCid
+			return True
+			
+		-- none of the nodes contain data constructors, so there's no template to work from
+		| Nothing	<- mTemplate
+		= return False
 		
-	case template of
-	 -- There's no template to work from, and nothing else we can do.
-	 --	We need to reactivate ourselves so we get called in the next grind
-	 Nothing	
-	  -> do	activateClass shapeCid
-	  	return False
+		-- we've got a template
+		--	we can now merge the sub-classes and remove the shape constraint.
+		| Just template	<- mTemplate
+		= do	crushShapeMerge mergeCids mergeCs mData template
+			delClass shapeCid
+			return True
+		
+	result
 
-	 -- We've got a template. 
-	 --	We can merge the sub classes and remove the shape constaint.
-	 Just tt	
-	  -> do	crushShapeMerge mergeCids mergeCs mts tt
-		delClass shapeCid
-		return True
-
-
+-- TODO: only constrain nodes that haven't already got a data constructor in them
+--	otherwise we'll over-constrain the regions.
 crushShapeMerge 
 	:: [ClassId] 		-- classIds to merge
 	-> [Class] 		-- classes corresponding to each classId above.
@@ -107,6 +113,7 @@ crushShapeMerge cids cs mts template@(TData v templateTs)
 				argsMerged
 	
 	zipWithM updateClass cids cs'
+	mapM activateClass cids
 			
 	-- debugging
 	trace	$ "    kinds        = " % kinds			% "\n"

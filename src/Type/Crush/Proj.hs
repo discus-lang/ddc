@@ -71,8 +71,7 @@ crushProjClass2 cidT fProj cObj
 	-- if this crush is interleaved with something that's added to this node
 	--	then we'll have to wait for it to be unified
 	| otherwise
-	= do	activateClass cidT
-		return Nothing
+	= do	return Nothing
 
 	
 crushProjClass3 cidT fProj cObj tObj
@@ -87,11 +86,8 @@ crushProjClass3 cidT fProj cObj tObj
 	-- if the object type has resolved to a type constructor we should
 	--	be able to get the projection dictionary for it.
 	let res	
-		-- a var might turn into a type constructor after more constraints are added
-		--	re-activate ourselves so we get called again in the next grind
 		| TBot{}		<- tObj
-		= do	activateClass cidT
-			return Nothing
+		= do	return Nothing
 
 		-- the object is a constructor, but there's no projection dictionary for it.
 		| tCon@(TData vCon _)	<- tObj

@@ -9,6 +9,9 @@ import qualified Debug.Trace	as Debug
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import Shared.Error
 
 import qualified Shared.Var	as Var
@@ -91,6 +94,9 @@ crushUnifyClass3 cidT c
   	updateClass cidT c 
 		{ classType 	= Just t_final
 		, classQueue	= [] }
+
+	-- Wake up any MPTCs acting on this class
+	mapM activateClass $ Set.toList $ classFettersMulti c
 
 	return True
 

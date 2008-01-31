@@ -408,14 +408,21 @@ clearActive
 
 
 -- | Activate a class, tagging it for inspection by the unifier \/ crusher.
+--	Also activate any MPTCs acting on it.
 activateClass :: ClassId -> SquidM ()
 activateClass cid
  = do	graph		<- gets stateGraph
- 	
  	let graph'	= graph 
 			{ graphActive	= Set.insert cid (graphActive graph) }
-			
+
 	modify (\s -> s { stateGraph = graph' })
+
+	Just c		<- lookupClass cid
+	(case c of
+		Class { classFettersMulti = cidsMulti}
+		 	-> mapM_ activateClass $ Set.toList cidsMulti
+		_	-> return ())
+		
 
 
 -----

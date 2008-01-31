@@ -38,17 +38,17 @@ foreign import extern fun1
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern fun2
-        :: forall %r0 %r1 %r2
-        .  Base.Int %r1 -($c0)> Base.Int %r1 -(!e0 $c1)> Base.Int %r2
-        :- !e0        = !{Base.!Read %r1; Base.!Read %r0}
+        :: forall %r0 %r1 %r2 %r3
+        .  Base.Int %r2 -($c0)> Base.Int %r3 -(!e0 $c1)> Base.Int %r1
+        :- !e0        = !{Base.!Read %r2; Base.!Read %r3; Base.!Read %r0}
         ,  $c0        = $c1 \ ${thing2; x}
-        ,  $c1        = ${fun3 : Base.Int %rTC0; x : Base.Int %r1; thing2 : Base.Int %r0}
+        ,  $c1        = ${fun3 : Base.Int %rTC0; x : Base.Int %r2; thing2 : Base.Int %r0}
         :$ Base.Data -> Base.Thunk;
         
 foreign import extern fun3
         :: forall %r0 %r1 %r2 %r3
-        .  Base.Int %r0 -($c0)> Base.Int %r1 -($c1)> Base.Int %r2 -(!e0 $c2)> Base.Int %r3
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1; Base.!Read %r3; Base.!Read %rTC0}
+        .  Base.Int %r0 -($c0)> Base.Int %r1 -($c1)> Base.Int %r3 -(!e0 $c2)> Base.Int %r2
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r3; Base.!Read %rTC0}
         ,  $c0        = $c1 \ x
         ,  $c1        = $c2 \ y
         ,  $c2        = ${fun1 : Base.Int %rTC0; x : Base.Int %r0; y : Base.Int %r1; thing1 : Base.Int %rTC0}

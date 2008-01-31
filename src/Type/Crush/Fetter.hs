@@ -29,7 +29,7 @@ import Data.Map			(Map)
 
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Fetter"
 
@@ -60,20 +60,12 @@ crushFetterC2 cid
 		<- liftM unzip
 		$  mapM (crushFetterSingle cid tNode) fs
 
-	trace	$ "    progress   = " % progresss		% "\n"
+	trace	$ "    progress   = " % progresss		% "\n\n"
 
 	-- update the class with the new fetters
 	let fsReduced	= catMaybes mfsReduced
 	modifyClass cid
 	 $ \c -> c { classFetters = map TFetter $ fsReduced }
-		
-	-- if any of the remaining fetters might still need to be crushed then
-	--	reactivate this class so we get called again in the next grind
---	let stillCrushable	= or $ map isCrushableF fsReduced
---	trace	$ "    stillCrush = " % stillCrushable	% "\n\n"
-
---	when (stillCrushable)
---	 $ activateClass cid
 		
 	return $ or progresss
 
@@ -240,13 +232,3 @@ crushFetterMulti cid (FConstraint vC ts)
 	return False
 
 
--- checks whether this fetter might ever need to be crushed
-isCrushableF :: Fetter -> Bool
-isCrushableF ff
- = case ff of
- 	FConstraint v _
-	 | elem v [primLazy, primDirect, primConst, primMutable]
-	 -> False
-	 
-	_ 	-> True
-	 

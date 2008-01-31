@@ -125,18 +125,18 @@ foreign import extern lengthR
         
 foreign import extern (!!)
         :: forall t0 %r0 %r1
-        .  List %r0 t0 -> Base.Int %r1 -(!e0 $c0)> t0
-        :- !e0        = !{Base.!Read %r0; System.Error.!Error; Base.!Read %r1}
-        ,  $c0        = xx : List %r0 t0
+        .  List %r1 t0 -> Base.Int %r0 -(!e0 $c0)> t0
+        :- !e0        = !{Base.!Read %r1; System.Error.!Error; Base.!Read %r0}
+        ,  $c0        = xx : List %r1 t0
         :$ Base.Data -> Base.Data -> Base.Obj;
         
 foreign import extern indexL
         :: forall t0 %r0 %r1
-        .  List %r0 t0 -> Base.Int %r1 -(!e0 $c0)> t0
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0        = xx : List %r0 t0
-        ,  Base.Const %r1
+        .  List %r1 t0 -> Base.Int %r0 -(!e0 $c0)> t0
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r0}
+        ,  $c0        = xx : List %r1 t0
         ,  Base.Const %r0
+        ,  Base.Const %r1
         ,  Base.LazyH t0
         :$ Base.Data -> Base.Data -> Base.Obj;
         
@@ -237,22 +237,22 @@ foreign import extern mapAccumL'
         
 foreign import extern sum
         :: forall %r0 %r1 %r2
-        .  List %r1 (Base.Int %r2) -(!e0)> Base.Int %r0
-        :- !e0        = !{Base.!Read %r1; Base.!Read %r0; Base.!Read %r2; Base.!Write %r0}
-        ,  Base.Mutable %r0
+        .  List %r2 (Base.Int %r0) -(!e0)> Base.Int %r1
+        :- !e0        = !{Base.!Read %r2; Base.!Read %r1; Base.!Read %r0; Base.!Write %r1}
+        ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         
 foreign import extern sumU
         :: forall %r0 %r1 %r2
-        .  List %r1 (Base.Int %r2) -(!e0)> Base.Int %r0
-        :- !e0        = !{Base.!Read %r1; Base.!Read %r0; Base.!Read %r2; Base.!Write %r0}
-        ,  Base.Mutable %r0
+        .  List %r2 (Base.Int %r0) -(!e0)> Base.Int %r1
+        :- !e0        = !{Base.!Read %r2; Base.!Read %r1; Base.!Read %r0; Base.!Write %r1}
+        ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         
 foreign import extern sumR
-        :: forall %r0 %r1
-        .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r1
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        :: forall %r0 %r1 %r2
+        .  List %r1 (Base.Int %r0) -(!e0)> Base.Int %r2
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r0; Base.!Read %r2}
         :$ Base.Data -> Base.Data;
         
 foreign import extern prod
@@ -332,19 +332,20 @@ foreign import extern filterL
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
 foreign import extern rangeInt
-        :: forall %r0 %r1
-        .  Base.Int %r0 -> Base.Int %r0 -(!e0 $c0)> List %r1 (Base.Int %r0)
-        :- !e0        = Base.!Read %r0
-        ,  $c0        = x : Base.Int %r0
+        :: forall %r0 %r1 %r2
+        .  Base.Int %r1 -> Base.Int %r0 -(!e0 $c0)> List %r2 (Base.Int %r1)
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r0}
+        ,  $c0        = x : Base.Int %r1
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern rangeIntL
-        :: forall %r0 %r1
-        .  Base.Int %r0 -> Base.Int %r0 -(!e0 $c0)> List %r1 (Base.Int %r0)
-        :- !e0        = Base.!Read %r0
-        ,  $c0        = x : Base.Int %r0
+        :: forall %r0 %r1 %r2
+        .  Base.Int %r1 -> Base.Int %r0 -(!e0 $c0)> List %r2 (Base.Int %r1)
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r0}
+        ,  $c0        = x : Base.Int %r1
         ,  Base.Const %r0
-        ,  Base.Lazy %r1
+        ,  Base.Const %r1
+        ,  Base.Lazy %r2
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern rangeInfIntL
