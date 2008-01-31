@@ -340,13 +340,15 @@ invokeSeaCompiler extraFlags
 --
 invokeLinker 
 	:: (?args :: [Arg])
-	-> [String]			-- more libs to link with
-	-> [String]			-- more objs to link with
-	-> [FilePath]			-- paths of interfaces of all modules to link
+	-> [String]			-- ^ more libs to link with
+	-> [String]			-- ^ more lib dirs to search
+	-> [String]			-- ^ more objs to link with
+	-> [FilePath]			-- ^ paths of interfaces of all modules to link
 	-> IO ()
 
 invokeLinker 
 	moreLinkLibs
+	moreLinkLibDirs
 	moreLinkObjs
 	objects
  = do
@@ -376,8 +378,8 @@ invokeLinker
 			then " runtime/ddc-runtime.a"
 			else " runtime/ddc-runtime.so")
 
-		++ " " ++ (catInt " " ["-L" ++ dir | dir <- linkLibDirs])
-		++ " " ++ (catInt " " ["-l" ++ lib | lib <- linkLibs ++ moreLinkLibs])
+		++ " " ++ (catInt " " ["-L" ++ dir | dir <- linkLibDirs ++ moreLinkLibDirs])
+		++ " " ++ (catInt " " ["-l" ++ lib | lib <- linkLibs 	++ moreLinkLibs])
 
 	when (elem Verbose ?args)
 	 (do

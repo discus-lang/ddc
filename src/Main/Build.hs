@@ -23,6 +23,9 @@ data Build
 	  -- Extra libraries to link with
 	, buildExtraLinkLibs	:: [String]
 	
+	  -- Extra dirs to look for libraries in
+	, buildExtraLinkLibDirs :: [String]
+	
 	  -- Extra objects to link with
 	, buildExtraLinkObjs	:: [String] 
 	
@@ -39,6 +42,7 @@ buildZero
 	= Build
 	{ buildExtraDDCArgs	= []
 	, buildExtraLinkLibs	= []
+	, buildExtraLinkLibDirs	= []
 	, buildExtraLinkObjs	= []
 	, buildExtraCCFlags	= []
 	, buildExtraLDFlags	= [] }
@@ -46,11 +50,12 @@ buildZero
 -- | Add the info from two builds together
 buildAdd b1 b2
 	= Build
-	{ buildExtraDDCArgs	= buildExtraDDCArgs  b1 ++ buildExtraDDCArgs  b2
-	, buildExtraLinkLibs	= buildExtraLinkLibs b1 ++ buildExtraLinkLibs b2
-	, buildExtraLinkObjs	= buildExtraLinkObjs b1 ++ buildExtraLinkObjs b2
-	, buildExtraCCFlags	= buildExtraCCFlags  b1 ++ buildExtraCCFlags  b2
-	, buildExtraLDFlags	= buildExtraLDFlags  b1 ++ buildExtraLDFlags  b2 }
+	{ buildExtraDDCArgs	= buildExtraDDCArgs  	b1 ++ buildExtraDDCArgs 	b2
+	, buildExtraLinkLibs	= buildExtraLinkLibs 	b1 ++ buildExtraLinkLibs	b2
+	, buildExtraLinkLibDirs	= buildExtraLinkLibDirs b1 ++ buildExtraLinkLibDirs	b2
+	, buildExtraLinkObjs	= buildExtraLinkObjs 	b1 ++ buildExtraLinkObjs	b2
+	, buildExtraCCFlags	= buildExtraCCFlags  	b1 ++ buildExtraCCFlags 	b2
+	, buildExtraLDFlags	= buildExtraLDFlags  	b1 ++ buildExtraLDFlags 	b2 }
 	
 
 -- | Load a build file from this file path
@@ -99,6 +104,11 @@ parseSection pathBuild (s : ss)
 	| isPrefixOf "extra-link-libs:" s
 	, (words, ssRest)	<- chopSection (s : ss)
 	= ( buildZero { buildExtraLinkLibs  = words }
+	  , ssRest)		
+
+	| isPrefixOf "extra-link-lib-dirs:" s
+	, (words, ssRest)	<- chopSection (s : ss)
+	= ( buildZero { buildExtraLinkLibDirs  = words }
 	  , ssRest)		
 
 	| isPrefixOf "extra-link-objs:" s

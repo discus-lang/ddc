@@ -571,15 +571,11 @@ compileFile_parse
 	when (elem Arg.StopCompile ?args)
 		compileExit
 			
-
-
 	-- Invoke GCC to link main binary.
-
-	-- Chase down any objects from the build file.
-	let linkObjsBuild	= fromMaybe [] $ liftM Build.buildExtraLinkObjs mBuild
 	SE.invokeLinker
 		(fromMaybe [] $ liftM Build.buildExtraLinkLibs mBuild)
-		linkObjsBuild
+		(fromMaybe [] $ liftM Build.buildExtraLinkLibDirs mBuild)
+		(fromMaybe [] $ liftM Build.buildExtraLinkObjs mBuild)
 		([pathBase ++ ".o"]
 			++ (map    idFilePathO $ Map.elems importsExp)
 			++ (catMap idLinkObjs  $ Map.elems importsExp))	
