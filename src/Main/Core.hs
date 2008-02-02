@@ -144,7 +144,7 @@ coreReconstruct name cHeader cTree
  
  	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
  			   reconTree table cHeader cTree
- 	dumpCT DumpCoreReconstruct name cTree'
+ 	dumpCT DumpCoreRecon name cTree'
 	return	cTree'
 
 
@@ -351,9 +351,9 @@ coreLambdaLift cSource cHeader
 			
 	let vsBinds_new	= catMap slurpBoundVarsP cBinds_new
 			
-	dumpCT DumpCoreLifted "core-lifted" 		cLifted
-	dumpS  DumpCoreLifted "core-lifted-new-vars"	(show vsBinds_new)
-	dumpS  DumpCoreLifted "core-lifted-vsBoundTop"	(catInt "\n" $ map show $ sort $ Set.toList vsBoundTop)
+	dumpCT DumpCoreLift "core-lift" 		cLifted
+	dumpS  DumpCoreLift "core-lift--new-vars"	(show vsBinds_new)
+	dumpS  DumpCoreLift "core-lift--vsBoundTop"	(catInt "\n" $ map show $ sort $ Set.toList vsBoundTop)
 			
 	return	( cLifted
 		, Set.fromList vsBinds_new)
@@ -411,11 +411,11 @@ curryCall cSource cHeader
 
 	dumpCT DumpCoreCurry "core-curry" cCurryCall
 
-	dumpS  DumpCoreCurry "core-curry-supers"
+	dumpS  DumpCoreCurry "core-curry--supers"
 		("-- names of supers\n"
 		++ (catInt "\n" $ sort $ map show $ map fst $ Map.toList supers))
 	
-	dumpS  DumpCoreCurry "core-curry-cafs"
+	dumpS  DumpCoreCurry "core-curry--cafs"
 		("-- names of supers which are also CAFs\n"
 		++ (catInt "\n" $ sort $ map show $ map fst $ Map.toList cafs))
 	
@@ -461,11 +461,11 @@ toSea	unique cTree cHeader
 				(slurpCtorDefs cHeader)
 
 	let eTree	= toSeaTree (unique ++ "S") mapCtorDefs cTree
-	dumpET DumpSea "sea-source"
+	dumpET DumpSea "sea--source"
 		$ E.eraseAnnotsTree eTree
 
 	let eHeader	= toSeaTree (unique ++ "H") mapCtorDefs cHeader
-	dumpET DumpSea "sea-header"
+	dumpET DumpSea "sea--header"
 		$ E.eraseAnnotsTree eHeader
 
  	return (eTree, eHeader)

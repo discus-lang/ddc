@@ -1,29 +1,28 @@
 
 module Main.Arg
-(
-	Arg (..),
-	parse,
-	expand,
-	helpString,
-	options
-)
+	( Arg (..)
+	, parse
+	, expand
+	, helpString
+	, options)
 
 where
 
 import Util.List
 import Util.Options
+import Util.Pretty
 import Main.Version
 import Main.Path
 
------------------------
--- Arg
---	Data type to hold command line arguments.
---
+-- | Holds command line arguments
 data Arg
 	= Error String
 
+	-- used internally
+	| ArgPath	Path
+
 	-- general
-	| Help
+	| Help		[String]
 	| Verbose
 	| Compile	[String]
 	| InputFile	[String]
@@ -31,36 +30,23 @@ data Arg
 	| ImportDirs	[String]
 	| Make		[String]
 
-	| StopConstraint
-	| StopType
-	| StopCore
-	| StopSea
-	| StopCompile
-	| StopErrors	[String]
-
-	| KeepCFiles
-	| KeepOFiles
 	| NoImplicitPrelude
-	| ArgPath	Path
 
 	-- lint options
 	| LintAll
 	| LintCore
-	
-	-- type checker
-	| NoEffects
-	| NoInducedFetters
-	| NoPurityCheck
+
+	-- type system options
 	| GenDangerousVars
 
-	-- opt
+	-- optimisation
 	| OptAll
 	| OptAtomise
 	| OptSimplify
 	| OptFullLaziness
 	| OptInline
 	| OptTailCall
-	
+
 	-- code generation
 	| Debug
 	| StaticRuntime
@@ -71,47 +57,58 @@ data Arg
 	| LinkObj	[String]
 	| LinkLib	[String]
 	| LinkLibDir	[String]
-	
+
+	-- graph
+	| GraphModules
+	| GraphModulesCut	[String]
+
+	| GraphApps
+	| GraphCalls
+	| GraphSuperDeps
+
+	-- partial compilation
+	| StopConstraint
+	| StopType
+	| StopCore
+	| StopSea
+	| StopCompile
+	| StopErrors	[String]
+
+	| KeepCFiles
+	| KeepOFiles
+
 	-- dump
 	| DumpAll
 
-	| DumpSource
+	| DumpSourceParse
+	| DumpSourceDefix
+	| DumpSourceRename
 
-	| DumpSourceParsed
-	| DumpSourceDefixed
-	| DumpSourceRenamed
-	| DumpSourceRenameTrace
-	| DumpSourceKinds
-	| DumpSourceAliased
+	| DumpDesugar
+	| DumpDesugarProject
+	| DumpDesugarSlurp
 
-	| DumpDesugared
-	| DumpDesugaredProject
-	| DumpDesugaredSlurped
-
-	| DumpTypeSlurp
 	| DumpTypeConstraints
 	| DumpTypeSolve
 
-	| DumpCoreSchemes
 	| DumpCore
 	| DumpCoreBlock
 	| DumpCoreCrush
 	| DumpCoreSnip
 	| DumpCoreClean
 	| DumpCoreThread
-	| DumpCoreReconstruct
+	| DumpCoreRecon
 	| DumpCoreDict
 	| DumpCoreBind
 	| DumpCorePrim
 	| DumpCoreSimplify
 	| DumpCoreFullLaziness
 	| DumpCoreInline
-	| DumpCoreLifted
+	| DumpCoreLift
 	| DumpCoreLabelIndex
 	| DumpCoreSequence
 	| DumpCoreCurry
 	| DumpCoreAtomise
-	| DumpCoreDitch
 
 	| DumpSea
 	| DumpSeaSub
@@ -122,81 +119,86 @@ data Arg
 	| DumpSeaFlatten
 	| DumpSeaInit
 
-	-- graph
-
-	| GraphModules
-	| GraphModulesCut	[String]
-
-	| GraphApps
-	| GraphCalls
-	| GraphSuperDeps
-
-	| GraphTypeGraph
-	| GraphTypeVars		[String]
-
-	-- junk
-	| AnnotAll
-	| AnnotMisc
-	| AnnotVar
-	| AnnotType
 
 	deriving (Show, Eq, Ord)
 
------
--- expand
---	Turns a list of freshly parsed command arguments into a more useful form.
---
+
+-- | Expand out all options implied by these ones.
 expand ::	[Arg] 	-> [Arg]
 expand		[]	= []
 expand		(x:xs)
  = case x of
-	AnnotAll	
-	 -> x : 
-	   [AnnotMisc, AnnotVar, AnnotType] 
-	 ++ expand xs
 
+	-- general
 	Compile{}
 	 -> x : StopCompile : KeepOFiles : expand xs
 
 	Make ss
 	 -> x : Compile ss : expand xs
 
+	LintAll
+	 -> x : [LintCore]
+	  ++ expand xs
+
+	-- optimisations
+	OptAll
+	 -> 	[ OptSimplify
+		, OptTailCall ]
+	 ++ expand xs
+
+	-- partial
 	StopSea
 	 -> x : KeepCFiles : expand xs
 	 
 	StopCompile
 	 -> x : KeepOFiles : expand xs
 
-	OptAll
-	 -> 	[ -- OptAtomise
-	 	  OptSimplify
-		, OptTailCall ] 
-		-- OptFullLaziness ]
-	 ++ expand xs
 
 	DumpAll		
 	 -> x : 
-	   [DumpSource
-	   , DumpSourceRenameTrace
+	   [ DumpSourceParse
+	   , DumpSourceDefix
+	   , DumpSourceRename
+
+	   , DumpDesugar
+	   , DumpDesugarProject
+	   , DumpDesugarSlurp
+
 	   , DumpTypeConstraints
-	   , DumpTypeSlurp
 	   , DumpTypeSolve
+
 	   , DumpCore
-	   , DumpCoreLifted
+	   , DumpCoreBlock
+	   , DumpCoreCrush
+	   , DumpCoreSnip
+	   , DumpCoreClean
+	   , DumpCoreThread
+	   , DumpCoreRecon
+	   , DumpCoreDict
+	   , DumpCoreBind
+	   , DumpCorePrim
+	   , DumpCoreSimplify
+	   , DumpCoreLift
+	   , DumpCoreLabelIndex
+	   , DumpCoreSequence
 	   , DumpCoreCurry
-	   , DumpSea ]
+
+	   , DumpSea 
+	   , DumpSeaSub
+	   , DumpSeaCtor
+	   , DumpSeaThunk
+	   , DumpSeaForce
+	   , DumpSeaSlot
+	   , DumpSeaFlatten
+	   , DumpSeaInit]
+
 	 ++ expand xs
 	 
-	LintAll
-	 -> x : [LintCore]
-	  ++ expand xs
-	 
-	GraphTypeVars{}
-	 -> x : GraphTypeGraph : expand xs
 	_		
 	 -> x : expand xs
 
 
+-- | Parse these arguments
 parse ::	String -> [Arg]
 parse		ss
  = let
@@ -206,18 +208,61 @@ parse		ss
 
   in 	(map Error errs) ++ (nub args')
 	
+
+-- | Build the DDC option help page
+helpString :: [Arg] -> String	
+helpString args
+ = let	
+ 	-- work out sections we've been asked for
+	secs	= concat [ss | Help ss <- args]
 	
-helpString
-	= unlines $
-	[ "Trauma " ++ version
-	, "  usage: trauma [options] files.." ]
-	++ [makeOptionHelp 40 options]
+	-- if no sections were requested then display the general ones
+	secs_display
+		= case secs of
+			[]	-> ["general"]
+			_	-> secs
+   in	helpString2 args secs secs_display
+   
+helpString2 args secs secs_display
+
+	-- check if any unknown manual sections were asked for
+	| badSecs	<- filter (\s -> not $ elem s ("all" : "contents" : sections)) secs
+	, not $ null badSecs
+	= pprStr 
+		$ "  Unknown help section(s): " % " " %!% badSecs % "\n"
+		% "   Available sections are: " % " " %!% sections % "\n\n"
+	
+	| otherwise
+	= let
+		-- If no specific sections were asked for then add the meta-help as well
+		metaHelp
+		 | secs == []
+		 = unlines
+		 	[ ""
+			, "  Meta help:"
+			, "    ddc -help all                  Display help for all options."
+			, "    ddc -help contents             Show the names of help pages."
+			, "    ddc -help <sections..>         Show these particular help pages." ]
+
+		 | otherwise
+		 = []
+	 
+		-- build the help string
+	  	help	=   ddcName ++ "." ++ "\n"
+			++ "  Usage: ddc <options..>\n" 
+			++ metaHelp
+			++ makeOptionHelp 35 secs_display options
+			++ "\n"
+	   in	help
+
+-- | Section table
+--	These are the available option sections.
+sections
+	= [s	| OGroup s _ <- options]
 
 
-
------------------------
--- Option table
---	All option tokens must start with a '-'
+-- | Option table
+--	all options must start with a '-'
 --
 options	= 
 	
@@ -227,10 +272,11 @@ options	=
 	, OGroup	"general"	
 			"General Options."
 			
-	, OFlag		Help			
-			["-h", "-help", "--help"]
-			"Display this help."
-
+	, OOpts		Help
+			["-h", "-help"]
+			"-h, -help <sections..>"
+			"Print help on DDC options"
+			
 	, OFlag 	Verbose	
 			["-v", "-verbose"]
 			"Print debugging info to stdout."
@@ -238,12 +284,7 @@ options	=
 	, OOpts		Compile
 			["-c",	"-compile"]
 			"-c, -compile <files..>"
-			"Compile .ts files to .o files. Implies -stop-compile, -keep-o."
-
-	, OOpts		ImportDirs
-			["-i", "-import"]
-			"-i, -import  <dirs..>"
-			"Add dirs to the import path."
+			"Compile .ts files to .o files."
 
 	, OOpts		Make
 			["-m", "-make"]
@@ -253,64 +294,62 @@ options	=
 	, OOpts		OutputFile
 			["-o", "-output"]
 			"-o, -output  <files..>"
-			"Output files."
-	, OBlank
-	, OFlag		StopConstraint
-			["-stop-constraint"]
-			"Stop after generating type constraints."
+			"Redirect output to these files."
 
-	, OFlag		StopType
-			["-stop-type"]
-			"Stop after type checking program."
-
-	, OFlag		StopCore
-			["-stop-core"]
-			"Stop after finishing core transforms."
-
-	, OFlag		StopSea
-			["-stop-c"]
-			"Stop after producing .c files, do not invoke gcc. Implies -keep-c."
-		 
-	, OFlag		StopCompile
-			["-stop-compile"]
-			"Stop after producing .o files, do not invoke linker. Implies -keep-o."
-
-	, OOpts		StopErrors
-			["-stop-errors"]
-			"-stop-errors <file>"
-			"If there are errors in the source then write them to <file> and exit successfully."
-
-	, OBlank
-	, OFlag		KeepCFiles
-			["-keep-c"]
-			"Keep intermediate .c and .h files."
-
-	, OFlag 	KeepOFiles
-			["-keep-o"]
-			"Keep intermediate .o files."
+	, OOpts		ImportDirs
+			["-i", "-import"]
+			"-i, -import  <dirs..>"
+			"Add dirs to the import path."
 
 	, OBlank
 	, OFlag		NoImplicitPrelude
 			["-no-implicit-prelude"]
 			"Don't implicitly import Prelude."
 
+	, OBlank
+	, OFlag		LintAll			
+			["-lint"]
+			"Perform all available lint checks. (default)"
+
+	, OFlag		LintCore
+			["-lint-core"]
+			"Check for lint in Core IR. (default)"
+
+	-- type system
+	, OGroup	"type"
+			"Type System."
+
+	, OFlag		GenDangerousVars	
+			["-gen-dangerous-vars"]		
+			"Generalise dangerous type variables. (danger)"
+
+	-- optimisation
+	, OGroup	"opt"			
+			"Optimisation."
+			
+	, OFlag		OptAll			["-O"]				"Perform all optimizations."
+	, OFlag		OptSimplify		["-opt-simplify"]		"Do core simplification."
+	, OFlag		OptTailCall		["-opt-tail-call"]		"Perform tail call optimisation. (default)"
+--	, OFlag		OptAtomise		["-opt-atomise"]		"Share constructors of zero arity."
+--	, OFlag		OptFullLaziness		["-opt-full-laziness"]		"Perform full laziness optimization."
+--	, OFlag		OptInline		["-opt-inline"]			"Perform inlining."
+
 	-- code generation
 	, OGroup	"code"
 			"Code Generation."
 			
-	, OFlag		Debug			["-debug"]			""
-	, OFlag		StaticRuntime		["-static-runtime"]		"Statically link the runtime system."
-	, OFlag		Profile			["-profile"]			""
-	, OFlag		ProfileRuntime		["-profile-runtime"]		""
+	, OFlag		Debug			
+			["-debug"]
+			"Add debugging symbols to object file. (for gdb)"
+
+	, OFlag		Profile
+			["-profile"]
+			"Profile the object file (for gprof)."
+
 
 	-- linker
 	, OGroup	"link"
-			"Linker"
-			
-	, OOpts 	LinkObj
-			["-link-obj"]
-			"-link-obj <files..>"
-			"Also link with these objects."
+			"Linker."
 
 	, OOpts		LinkLib
 			["-l", "-link-lib"]
@@ -322,114 +361,121 @@ options	=
 			"-L, -link-lib-dir <dirs..>"
 			"Also search for libraries in these directories."
 			
-	-- opt
-	, OGroup	"opt"			
-			"Optimisation."
-			
-	, OFlag		OptAll			["-O"]				"Perform all optimizations."
-	, OFlag		OptAtomise		["-opt-atomise"]		"Share constructors of zero arity."
-	, OFlag		OptSimplify		["-opt-simplify"]		"Do core csimplification.\n"
-	, OFlag		OptFullLaziness		["-opt-full-laziness"]		"Perform full laziness optimization."
-	, OFlag		OptTailCall		["-opt-tail-call"]		"Perform tail call optimisation."
-	, OFlag		OptInline		["-opt-inline"]			"Perform inlining."
+	, OOpts 	LinkObj
+			["-link-obj"]
+			"-link-obj <files..>"
+			"Also link with these objects."
 
-	-- lint
-	, OGroup	"lint"
-			"Internal consistency checks."
+	, OBlank
+	, OFlag		StaticRuntime		
+			["-static-runtime"]
+			"Statically link the runtime system."
 			
-	, OFlag		LintAll			["-lint"]			"Perform all available lint checks."
-	, OFlag		LintCore		["-lint-core"]			"Check for lint in Core IR."
+	-- graphing
+	, OGroup	"graph"
+			"Graphing."
+
+	, OFlag		GraphModules		
+			["-graph-modules"]		
+			"Produce a module hierarchy graph."
+
+	, OOpts		GraphModulesCut
+			["-graph-modules-cut"]
+			"-graph-modules-cut <modules..>"
+			"Don't include these modules or their imports."
+
+	, OFlag		GraphSuperDeps		
+			["-graph-super-deps"]		
+			"Produce a supercombinator and CAF dependency graph."
+
+	-- partial compilation
+	, OGroup	"partial"
+			"Partial Compilation"
 	
-	-- type checker
-	, OGroup	"type"
-			"Type Inference."
+	, OFlag		StopConstraint
+			["-stop-constraint"]
+			"Stop after generating type constraints."
+
+	, OFlag		StopType
+			["-stop-type"]
+			"Stop after type checking program"
+
+	, OFlag		StopCore
+			["-stop-core"]
+			"Stop after finishing core transforms."
+
+	, OFlag		StopSea
+			["-stop-c"]
+			"Stop after producing .c files. Implies -keep-c."
+		 
+	, OFlag		StopCompile
+			["-stop-compile"]
+			"Stop after producing .o files. Implies -keep-o."
+
+	, OOpts		StopErrors
+			["-stop-errors"]
+			"-stop-errors <file>"
+			"Write errors to <file> and exit successfully."
 			
-	, OFlag		NoEffects		["-no-effects"]			"(unsafe) Do not infer effect information."
-	, OFlag		NoInducedFetters	["-no-induced-fetters"]		"(unsafe) Do not infer induced fetters."
-	, OFlag		NoPurityCheck		["-no-purity-check"]		"(unsafe) Do not check purity constraints."
-	, OFlag		GenDangerousVars	["-gen-dangerous-vars"]		"(unsafe) Generalise dangerous type variables."
+	, OBlank
+	, OFlag		KeepCFiles
+			["-keep-c"]
+			"Keep intermediate .c and .h files."
+
+	, OFlag 	KeepOFiles
+			["-keep-o"]
+			"Keep intermediate .o files."
 
 	-- dump
 	, OGroup	"dump"
 			"Dumping/Tracing."
-			
+	
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."
-
-	, OFlag		DumpSource		["-dump-source"]		""
-	, OFlag		DumpSourceParsed	["-dump-source-parsed"]		"Parsed source file."
-	, OFlag		DumpSourceDefixed	["-dump-source-defixed"]	"Infix applications converted to prefix."
-	, OFlag		DumpSourceRenamed	["-dump-source-renamed"]	"Unique identifiers introduced for variables."
-	, OFlag 	DumpSourceRenameTrace	["-dump-source-rename-trace"]	""
-	, OFlag		DumpSourceKinds		["-dump-source-kinds"]		""
-	, OFlag		DumpSourceAliased	["-dump-source-aliased"]	""
 	, OBlank
 
-	, OFlag		DumpDesugared		["-dump-desugared"]		"Desugared IR version of Source code."
-	, OFlag		DumpDesugaredProject	["-dump-desugared-project"]	"Add default projections and snip dictionaries."
-	, OFlag		DumpDesugaredSlurped	["-dump-desugared-slurped"]	"Slurp type constraints and add type vars to code."
+	, OFlag		DumpSourceParse		["-dump-source-parse"]		"Parsed source file."
+	, OFlag		DumpSourceDefix		["-dump-source-defix"]		"Infix applications converted to prefix."
+	, OFlag		DumpSourceRename	["-dump-source-rename"]		"Unique identifiers introduced for variables."
 	, OBlank
 
-	, OFlag		DumpTypeConstraints	["-dump-type-constraints"]	"Type constraints from Desugared IR."
-	, OFlag		DumpTypeSlurp		["-dump-type-slurp"]		"Dump type slurper debugging info."
-	, OFlag		DumpTypeSolve		["-dump-type-solve"]		"Dump type solver debugging info."
+	, OFlag		DumpDesugar		["-dump-desugar"]		"Desugared version of source code."
+	, OFlag		DumpDesugarProject	["-dump-desugar-project"]	"Add default projections and snip dictionaries."
+	, OFlag		DumpDesugarSlurp	["-dump-desugar-slurp"]		"Slurp type constraints and add type vars to code."
+	, OBlank
+
+	, OFlag		DumpTypeConstraints	["-dump-type-constraints"]	"Type constraints from desugared code."
+	, OFlag		DumpTypeSolve		["-dump-type-solve"]		"Trace of constraint solver."
 
 	, OBlank
 
-	, OFlag		DumpCoreSchemes		["-dump-core-schemes"]		"Inferred type schemes converted to Core IR."
-	, OFlag		DumpCore		["-dump-core"]			"Core IR version of Desugared IR code."
-	, OFlag		DumpCoreBlock		["-dump-core-block"]		"Applications placed in Do blocks."
-	, OFlag		DumpCoreSnip		["-dump-core-snip"]		"Fresh bindings for all function applications."
-	, OFlag		DumpCoreCrush		["-dump-core-crush"]		"Do-Do expressions crushed to single Dos."
-	, OFlag		DumpCoreClean		["-dump-core-clean"]		"Clean out empty effect/closure variables."
-	, OFlag		DumpCoreThread		["-dump-core-thread"]		"Thread through witnesses"
-	, OFlag		DumpCoreDict		["-dump-core-dict"]		"Call class instance functions and add dictionaries."
-	, OFlag		DumpCoreReconstruct	["-dump-core-reconstruct"]	"Type information reconstructed for all bindings."
-	, OFlag		DumpCoreBind		["-dump-core-bind"]		"All regions bound and annotated with fetters."
+	, OFlag		DumpCore		["-dump-core"]			"Core version of desugared code."
+	, OFlag		DumpCoreBlock		["-dump-core-block"]		"RHS of bindings made into do expressions."
+	, OFlag		DumpCoreCrush		["-dump-core-crush"]		"Crush nested do expressions."
+	, OFlag		DumpCoreBind		["-dump-core-bind"]		"Bind regions locally within functions."
+	, OFlag		DumpCoreSnip		["-dump-core-snip"]		"Create fresh bindings for function applications."
+	, OFlag		DumpCoreThread		["-dump-core-thread"]		"Thread witnesses through bindings."
+	, OFlag		DumpCoreRecon		["-dump-core-recon"]		"Reconstruct type information."
+	, OFlag		DumpCoreDict		["-dump-core-dict"]		"Resolve type-class overloading of functions."
 	, OFlag		DumpCorePrim		["-dump-core-prim"]		"Identify primitive operations."
-	, OFlag		DumpCoreSimplify	["-dump-core-simplify"]		"Core simplification."
-	, OFlag		DumpCoreFullLaziness	["-dump-core-full-laziness"]	"Full laziness optimisation."
-	, OFlag		DumpCoreInline		["-dump-core-inline"]		"Inlining."
-	, OFlag		DumpCoreLifted		["-dump-core-lifted"]		"Lambda lifting."
+	, OFlag		DumpCoreSimplify	["-dump-core-simplify"]		"Core simplification. (when enabled)"
+--	, OFlag		DumpCoreFullLaziness	["-dump-core-full-laziness"]	"Full laziness optimisation."
+--	, OFlag		DumpCoreInline		["-dump-core-inline"]		"Inlining."
+	, OFlag		DumpCoreLift		["-dump-core-lift"]		"Convert nested functions to supercombinators."
 	, OFlag		DumpCoreLabelIndex	["-dump-core-labelIndex"]	"Convert field labels to indicies."
-	, OFlag		DumpCoreSequence	["-dump-core-sequence"]		"Sequenced CAFs and bindings."
-	, OFlag		DumpCoreCurry		["-dump-core-curry"]		"Detect currying vs direct super calls."
-	, OFlag		DumpCoreAtomise		["-dump-core-atomise"]		"Share instances of zero airity data objects."
-	, OFlag		DumpCoreDitch		["-dump-core-ditch"]		"Erase extraneous type info for Sea conversion."
+	, OFlag		DumpCoreSequence	["-dump-core-sequence"]		"Sequence CAFs and bindings into dependency order."
+	, OFlag		DumpCoreCurry		["-dump-core-curry"]		"Identify super calls vs curried applications."
+--	, OFlag		DumpCoreAtomise		["-dump-core-atomise"]		"Share instances of zero airity data objects."
 	, OBlank
 
 	, OFlag		DumpSea			["-dump-sea"]			"Sea IR version of Core IR."
 	, OFlag		DumpSeaSub		["-dump-sea-sub"]		"Substitute trivial v1 = v2 bindings."
 	, OFlag		DumpSeaCtor		["-dump-sea-ctor"]		"Expand code for constructor applications."
 	, OFlag		DumpSeaThunk		["-dump-sea-thunk"]		"Expand code for thunk building."
-	, OFlag		DumpSeaForce		["-dump-sea-force"]		"Force lazy objects."
+	, OFlag		DumpSeaForce		["-dump-sea-force"]		"Rewrite switch stmts to force lazy objects."
 	, OFlag		DumpSeaSlot		["-dump-sea-slot"]		"Store intermediate object ptrs on GC slot stack."
 	, OFlag		DumpSeaFlatten		["-dump-sea-flatten"]		"Flatten out match statements."
-	, OFlag		DumpSeaInit		["-dump-sea-init"]		"Emit module initialisation code."
+	, OFlag		DumpSeaInit		["-dump-sea-init"]		"Insert module initialisation code."
 	, OBlank
 
-	-- graphing
-	, OGroup	"graph"			"Graphing."
-	, OFlag		GraphModules		["-graph-modules"]		"Module hierarchy graph."
-
-	, OOpts		GraphModulesCut
-			["-graph-modules-cut"]
-			"-graph-modules-cut <modules..>"
-			"Don't include these modules or their imports in the module hierarchy graph."
-
-	, OFlag		GraphApps		["-graph-apps"]			"Function application graph."
-	, OFlag		GraphCalls		["-graph-calls"]		"Function call graph."
-	, OFlag		GraphSuperDeps		["-graph-super-deps"]		"Supercombinator and CAF dependency graph."
-	
-	, OFlag		GraphTypeGraph		["-graph-type-graph"]		""
-	, OOpts		GraphTypeVars		["-graph-type-vars"]		"-graph-type-vars <names..>"	""
 
 	]
-				
-
-
-
-
-
-
-
-

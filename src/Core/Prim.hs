@@ -350,7 +350,7 @@ primFuns
 	, ("primInt32U_le",	OpLe) 
 	
 	-- unboxed float functions
-	, ("primFloat32U_add",	OpEq)
+	, ("primFloat32U_add",	OpAdd)
 	, ("primFloat32U_sub",	OpSub)
 	, ("primFloat32U_div",	OpDiv)
 	, ("primFloat32U_mod",	OpMod)

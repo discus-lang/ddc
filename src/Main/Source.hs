@@ -12,7 +12,6 @@ module Main.Source
 	, sourceKinds
 	, desugar
 	, desugarProject
-	, desugarSnipLambda
 	, alias
 	, slurpC
 	, solveSquid
@@ -97,7 +96,7 @@ parse	fileName
 	let sParsed	= Source.Parser.parse tokens
 	
 	-- dump
-	dumpST 	DumpSourceParsed "source-parsed" sParsed
+	dumpST 	DumpSourceParse "source-parse" sParsed
 
 	return	sParsed
 
@@ -150,7 +149,7 @@ defix	sParsed
 	exitWithUserError ?args $ concat errss
 	
 	-- dump
-	dumpST	DumpSourceDefixed "source-defixed" sDefixed
+	dumpST	DumpSourceDefix "source-defix" sDefixed
 	
 	return	 sDefixed
 	
@@ -177,8 +176,8 @@ rename	mTrees
 	-- dump
 	let Just sTree	= liftM snd $ takeHead mTrees'
 
-	dumpST 	DumpSourceRenamed "source-renamed" sTree
-	dumpST 	DumpSourceRenamed "header-renamed" (concat $ map snd $ tail mTrees')
+	dumpST 	DumpSourceRename "source-rename" sTree
+	dumpST 	DumpSourceRename "source-rename--header" (concat $ map snd $ tail mTrees')
 	
 	return mTrees'
 
@@ -191,8 +190,8 @@ sourceKinds
 	
 sourceKinds sTree
  = do	let kinds	= slurpKinds sTree
-	dumpS DumpSourceKinds "source-kinds" 
-		(catMap (\(v, k) -> pprStr $ v %>> " :: " % k % ";\n") kinds)
+--	dumpS DumpSourceKinds "source-kinds" 
+--		(catMap (\(v, k) -> pprStr $ v %>> " :: " % k % ";\n") kinds)
 		
 	return	kinds
 
@@ -207,7 +206,7 @@ alias 	:: (?args :: [Arg])
 alias sTree
  = do
  	let sTree'	= aliasTree sTree
-	dumpST	DumpSourceAliased "source-aliased" sTree'
+--	dumpST	DumpSourceAlias "source-alias" sTree'
 
 	return	sTree'
 	
@@ -228,10 +227,10 @@ desugar	kinds sTree hTree
 	let hTree'	= rewriteTree "SDh" kindMap hTree
 			
 	-- dump
-	dumpST DumpDesugared "desugared-source" 
+	dumpST DumpDesugar "desugar--source" 
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sTree')
 
-	dumpST DumpDesugared "desugared-header" 
+	dumpST DumpDesugar "desugar--header" 
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) hTree')
 		
 	return	(sTree', hTree')
@@ -239,6 +238,7 @@ desugar	kinds sTree hTree
 -----------------------
 -- desugarSnipLambda
 --
+{-
 desugarSnipLambda
 	:: (?args :: [Arg])
 	-> String
@@ -250,11 +250,11 @@ desugarSnipLambda name unique tree
  = do	let tree'	= snipLambdaTree unique tree
  	
 	-- 
-	dumpST DumpDesugared name
+	dumpST DumpDesugar name
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) tree')
 		
 	return tree'
-	
+-}
 	
 -----------------------
 -- desugarProject
@@ -272,13 +272,13 @@ desugarProject moduleName headerTree sourceTree
 	-- Snip down projection dictionaries and add default projections.
  	let sourceTree'	= projectTree moduleName headerTree sourceTree 
 	
-	dumpST DumpDesugaredProject "desugared-project"
+	dumpST DumpDesugarProject "desugar-project"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sourceTree')
 
 	-- Slurp out the ProjTable
 	let projTable	= slurpProjTable (headerTree ++ sourceTree')
 
-	dumpS  DumpDesugaredProject "desugared-project-dicts"
+	dumpS  DumpDesugarProject "desugar-project--dicts"
 		(pprStr $ "\n" %!% (map ppr $ Map.toList projTable))
 
 		
@@ -329,7 +329,7 @@ slurpC	sTree
 
 
 	-- dump
-	dumpST	DumpDesugaredSlurped "desugared-slurped" source'
+	dumpST	DumpDesugarSlurp "desugar-slurp" source'
 	
 	dumpS	DumpTypeConstraints "type-constraints--source"
 		$ (catInt "\n" $ map pprStr sctrs)
@@ -343,9 +343,6 @@ slurpC	sTree
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
 		$ (catInt "\n" $ map pprStr $ Set.toList vsTypesPlease)
 		
-	dumpS	DumpTypeSlurp  "type-slurp-trace"
-		$ concat $ D.stateTrace state3
-
 	-- all the constraints we're passing to the inferencer
 	let constraints	= hctrs ++ sctrs_simple
 

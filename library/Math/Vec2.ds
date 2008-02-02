@@ -64,21 +64,6 @@ project Vec2 Float where
 
 }
 
-
-vec2_angleU :: Float32# -> Float32# -> Float32#;
-vec2_angleU x y
- = do {
- 	pi	= 3.1415926536#;
-	match {
-		| 1#	<- x `primFloat32U_lt` 0.0#
-		= pi + atanU (y / x);
-		
-		\= atanU (y / x);
-	};
- };
-
-
-
 instance Num (Vec2 Float) where
 {
 	(+) 	= add	&{Vec2 Float};

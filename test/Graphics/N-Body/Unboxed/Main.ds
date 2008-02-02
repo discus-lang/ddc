@@ -1,0 +1,314 @@
+
+import Graphics.Render
+import Data.Array
+import DDC.Runtime
+import Math.Vec2
+
+time_compression	= 1.0
+attract_range		= 20.0
+draw_force_step		= 2
+
+worldSize		= Vec2 500 500
+newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
+
+frameCount		= 0
+frameCount_max		= 5
+
+-- Main -----------------------------------------------------------------------------
+
+-----
+main ()
+ = topHandle nbody
+
+nbody ()
+ = do 	frame	= frame_new "N-Body" worldSize.x worldSize.y
+
+	case initBodies () of
+		Tuple2 body0 body1 -> run frame body0 body1
+
+
+-- | Main loop.
+run :: 	Frame -> Array Body -> Array Body -> ()
+run 	a b c
+	-- bail out if we've reached the maximum frame count.
+ 	| frameCount_max /= 0
+	, frameCount > frameCount_max
+	= ()
+
+run	frame body0 body1	
+ = do	-- update all the positions
+	mapArrayIx_ (\x -> x.update body0) body1
+	mapArray_   (\x -> x.clampPos)	body1
+
+	-- clear the buffer and draw the new forces
+	frame.clear (frame_color 0 0 0)
+	draw_force frame body1 0 0
+
+	mapArray_   (\x -> x.draw frame) body1
+
+	-- flip the buffer
+ 	frame.update
+
+	frameCount += 1
+	run frame body1 body0;
+
+
+
+-- | Initialise the world world.
+initBodies ()
+ = do
+ 	-- all the bodies have static starting positions.
+	bodies 
+	 = 	[ newBody (Vec2 200.0 300.0) (Vec2 (0.0 - 0.5)	0.0)
+		, newBody (Vec2 280.0 350.0) (Vec2  0.5		0.0)
+		, newBody (Vec2 520.0 200.0) (Vec2  0.0         1.0)
+	 	, newBody (Vec2 100.0 300.0) (Vec2  0.0        (0.0 - 1.0))
+		, newBody (Vec2 280.0 450.0) (Vec2  1.0         1.0)
+		, newBody (Vec2 020.0 200.0) (Vec2  0.0         0.0) ]
+
+
+	-- make a new array of bodies.
+	body0	= array_new (length bodies) (errorNoEff @ "elem not initialised")
+	zipWith_ (\b i -> body0 #(i) #= b)
+		bodies [0 .. array_size body0 - 1]
+
+
+	-- an array to hold the body positions for the next frame.
+	body1	= array_new (length bodies) (errorNoEff @ "elem not initialised")
+
+	map_	(\i -> body1 #(i) #= newBody (Vec2 0.0 0.0) (Vec2 0.0 0.0))
+		[0.. array_size body1 - 1]
+		
+	(body0, body1)
+
+
+-- | Draw the forces (optimised version)
+--
+draw_force :: Frame -> Array Body -> Int -> Int -> ()
+draw_force frame body x y
+ 	| x >= 600	= draw_force frame body 0 (y + draw_force_step)
+	| y >= 600	= ()
+	
+	\= do 
+		forceV	= Vec2 0.0 0.0
+
+		sumAllForces 
+			(unboxFloat32 (toFloat x)) (unboxFloat32 (toFloat y))
+			body 0 forceV
+
+		forceS	= forceV.magnitude
+		fS	= log forceS + 6.0
+		color	= forceColor fS
+				
+		frame.point  
+			x (frame.sizeY - y)
+			color
+			
+		draw_force frame body (x + draw_force_step) y
+
+
+sumAllForces 
+	:: Float32# -> Float32# 
+	-> Array Body 
+	-> Int
+	-> Vec2 Float -> Vec2 Float
+
+sumAllForces pX pY array ix vForce
+ 	| ix >= array_size array
+	= vForce
+	
+	\= do 
+		body	= array .(ix)
+		vForce	+= forceVec_work&{Body}
+				1.0# (unboxFloat32 body.mass)
+				pX pY
+				(unboxFloat32 body.pos.x) (unboxFloat32 body.pos.y)
+		
+		sumAllForces pX pY array (ix + 1) vForce
+
+
+
+-- | Choose a color to render this force
+forceColor fS
+	| fS < 0.0	= frame_color 0 0 0
+
+	| fS < 1.0	
+	= do 	x	= fS
+		c	= truncate (x * 255.0)
+		frame_color 0 0 c
+		
+	| fS < 2.0
+	= do 	x	= fS - 1.0
+		c	= truncate (x * 255.0)
+		frame_color 0 c (255 - c)
+
+	| fS < 3.0
+	= do 	x	= fS - 2.0
+		c	= truncate (x * 255.0)
+		frame_color c (255 - c) 0
+
+	| fS < 4.0
+	= do 	x	= fS - 3.0
+		c	= truncate (x * 255.0)
+		frame_color (255 - c) c c
+
+	| fS < 5.0
+	= do 	x	= fS - 4.0
+		c	= truncate (x * 255.0)
+		frame_color c (255 - c) c
+				
+	\= 	frame_color 255 255 255
+					
+
+-- Body -----------------------------------------------------------------------------
+data Body %r1 
+
+	-- Bodies move around the world.
+	= Body {
+		mass	:: Float %r1;
+		pos	:: Vec2 %r1 (Float %r1);
+		vel	:: Vec2 %r1 (Float %r1);
+		acc	:: Vec2 %r1 (Float %r1);
+	}
+
+project Body where
+
+	-- | Convert a body to a string.
+	show (Body mass pos vel acc)
+	 = "Body " 
+		% show mass 
+		% " (" % pos.show % ")"
+		% " (" % vel.show % ")"
+
+	
+	-- | Calculate the force vector acting on the first body from the second.
+	force2 :: Body -> Body -> Vec2 Float
+	force2 body0 body1
+	 = forceVec&{Body}
+	 	body0.mass body1.mass 
+		body0.pos.x body0.pos.y
+		body1.pos.x body1.pos.y
+
+
+	-- | Increment position based on current velocity.
+	pulse :: Body -> ()
+	pulse ^body
+	 = do 	_vel += _acc
+		_pos += _vel
+
+
+	update :: Body -> Array Body -> Int -> ()
+	update	^b1 body0 i
+	 = do 
+	 	-- copy the old body info
+		b0	= body0.(i)
+		_mass	:= b0.mass
+	
+		-- calculate force on this body.
+		fV	= sumForces&{Body} body0 i
+	
+		-- acc = force / mass
+		_acc 	:= (Vec2 (0.0 - fV.x / b0.mass) (0.0 - fV.y / b0.mass))
+		_vel 	:= (b0.vel + (_acc.muls time_compression))
+		_pos 	:= (b0.pos + (_vel.muls time_compression))
+
+
+	-- | Clamp a body's position so it remains in the world.
+	clampPos :: Body -> ()
+	clampPos ^b
+	 = do  	when (_pos.x < 0.0) 
+			_pos.x += toFloat worldSize.x
+	
+	 	when (_pos.x > toFloat worldSize.x)
+			_pos.x += - (toFloat worldSize.x)
+
+	 	when (_pos.y < 0.0)
+			_pos.y += toFloat worldSize.y
+
+	 	when (_pos.y > toFloat worldSize.y)
+			_pos.y += - (toFloat worldSize.y)
+
+	-- | Draw this body in the frame.
+	draw :: Body -> Frame -> ()
+	draw body frame
+	 	| Body mass pos vel acc	<- body
+		, Vec2 pX pY		<- pos
+		= match 
+			| (truncate pX < 0) || (truncate pX > worldSize.x) 
+			= ()
+			
+			\= ()
+
+
+	-- | Work out the force acting on the body with this index in the array.
+	sumForces :: Array Body -> Int -> Vec2 Float
+	sumForces body i
+		= sum&{Vec2 Float}
+		$ map (body.(i).force2)
+		$ map (index body) 
+		$ deleteF (==) [0.. array_size body - 1] i
+
+
+	-- | Work out the force between two bodies.
+	forceVec 
+	 	:: Float -> Float 	-- mass1, mass2
+	 	-> Float -> Float 	-- position x1, y1
+		-> Float -> Float 	-- position x2, y2
+		-> Vec2 Float		-- resulting force
+
+	forceVec m1 m2 x1 y1 x2 y2
+	 = do  	m1'	= unboxFloat32 m1
+		m2'	= unboxFloat32 m2
+		x1'	= unboxFloat32 x1
+		y1'	= unboxFloat32 y1
+		x2'	= unboxFloat32 x2
+		y2'	= unboxFloat32 y2
+
+		forceVec_work&{Body} m1' m2' x1' y1' x2' y2'
+
+
+	forceVec_work
+		:: Float32# -> Float32# 
+		-> Float32# -> Float32#
+		-> Float32# -> Float32#
+		-> Vec2 Float
+
+	forceVec_work m1 m2 x1 y1 x2 y2
+	 = do 
+  		dx	= x2 - x1
+		dy	= y2 - y1
+
+ 		d2	= dx * dx  +  dy * dy
+		d	= sqrtU d2
+
+		attract_rangeU	
+			= unboxFloat32 attract_range
+
+		attract_force	= m1 * (m2 / d2)
+
+		forceS
+			| 1#	<- d `primFloat32U_lt` attract_rangeU
+			= attract_force * (d / attract_rangeU) 
+			  -  (attract_force * (attract_rangeU / d))
+
+			\= attract_force
+
+		theta	= vec2_angleU dx dy
+
+		forceX	= forceS * cosU theta
+		forceY	= forceS * sinU theta
+
+		Vec2 (boxFloat32 forceX) (boxFloat32 forceY)
+
+	
+
+vec2_angleU :: Float32# -> Float32# -> Float32#
+vec2_angleU x y
+ = do 	pi	= 3.1415926536#
+	match 
+		| 1#	<- x `primFloat32U_lt` 0.0#
+		= pi + atanU (y / x)
+		
+		\= atanU (y / x)
+
+				

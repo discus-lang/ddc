@@ -44,9 +44,9 @@ ddc argStrings
 	
 	-- no args, print help
 	when (args == []
-	   || elem Arg.Help args)
+	   || (not $ null $ filter (=@= Arg.Help{}) args))
 	 (do
-		putStr Arg.helpString
+		putStr (Arg.helpString args)
 		System.exitWith System.ExitSuccess)
 
 
@@ -72,7 +72,7 @@ ddc argStrings
 	
 	-- no input files, bail out
 	when (compileFiles == [])
-	 (do	putStr ("* Error - no input files\n")
+	 (do	putStr (Arg.helpString args)
 		System.exitFailure)
 
 

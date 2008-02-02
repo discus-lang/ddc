@@ -125,27 +125,61 @@ munchOption options option ts
 	  in	Right (sf strs) : munchR options rest
 
 
-makeOptionHelp :: Int -> [Option a] -> String
-makeOptionHelp descIndent x
+-- | Make a help page from this list of options
+makeOptionHelp 
+	:: Int 			-- indent level of descriptions
+	-> [String] 		-- tags of the sections to show
+	-> [Option a] 		-- options
+	-> String
+
+makeOptionHelp indent secs os
 	= concat 
-	$ map (makeOptionHelp' descIndent)
-	$ x
+	$ (if elem "contents" secs
+		then "\n  -- Contents --\n"
+		else "")
+	:  makeOptionHelp' indent secs False os
 
+makeOptionHelp' _ _ _ []	
+	= []
+	
+makeOptionHelp' indent secs squash (o:os)
+ = case o of
+	OGroup tag name
+	 -- print a contents entry, but not the body of the section
+	 | elem "contents" secs
+	 -> "  " : makeHelp indent o : makeOptionHelp' indent secs True os
 
-makeOptionHelp' descIndent o
+	 -- print an interesting section
+	 | elem tag secs || elem "all" secs
+	 -> "\n  " : makeHelp indent o : makeOptionHelp' indent secs False os
+		
+	 -- skip over a boring section
+	 | otherwise
+	 -> makeOptionHelp' indent secs True os
+		
+	_ 
+		| squash	
+		-> makeOptionHelp' indent secs squash os
+		
+		| otherwise	
+		-> makeHelp indent o
+		:  makeOptionHelp' indent secs squash os
+			
+
+makeHelp indent o
  = case o of
 	ODefault optF
 	 -> ""
 
  	OGroup tag name	
-	 -> "\n  " ++ name ++ "\n"
+	 -> name ++ " (" ++ tag ++ ")\n"
 
 	OFlag  opt names desc
-	 -> padR descIndent ("    " ++ (catInt ", " $ names))
+	 -> padR indent ("    " ++ (catInt ", " $ names))
 	 ++ desc ++ "\n"
 
 	OOpts  optF names use desc
-	 -> padR descIndent ("    " ++ use)
+	 -> padR indent ("    " ++ use)
 	 ++ desc ++ "\n"
 	 
 	OBlank
