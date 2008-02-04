@@ -136,14 +136,38 @@ defixEs sp fixTable es
 		  $ reverse es
 
 	[InfixNone]
-	 | length opVarsHigh == 1
-	 -> 	Right $ defixEsLeft sp fixTable highPrec es
-
-	 | otherwise
-	 -> 	Left [ErrorDefixNonAssoc opVarsHigh]
+	 -> defixEsNone sp fixTable highPrec es
 	 
 	_ -> 	Left [ErrorDefixMixedAssoc opVarsHigh]
 
+
+-- | find uses of this operator and convert them to real function calls
+defixEsNone :: SourcePos -> [FixDef] -> Int -> [Exp] -> Either [Error] [Exp]
+defixEsNone sp fixTable highPrec xx
+
+	-- If there are two ops in a row that are non-associative and have the same
+	--	precedence then we don't know which one should be evaluated first
+	--	
+	| x1 : XOp spo2 op2 : x3 : XOp spo4 op4 : x5 : xs	<- xx
+	, getPrec fixTable op2 == getPrec fixTable op4
+	= Left [ErrorDefixNonAssoc [op2, op4]]
+
+	-- found a use of the operator of interest
+	| x1 : XOp spo2 op2 : x3 : xs				<- xx
+	, getPrec fixTable op2 == highPrec
+	= Right (XApp spo2 (XApp spo2 (XVar spo2 op2) x1) x3 : xs)
+
+	-- some other operator
+	| x1 : x2@XOp{} : x3 : xs				<- xx
+	= case defixEsNone sp fixTable highPrec (x3 : xs) of
+		Right xsRight	-> Right (x1 : x2 : xsRight)
+		Left errs	-> Left errs
+
+	| otherwise
+	= panic stage 
+		$ "defixEsNone: broken input expression."
+		% xx
+	
 		 
 -----
 --- defixEsLeft

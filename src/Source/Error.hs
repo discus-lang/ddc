@@ -114,8 +114,8 @@ instance Pretty Error where
  ppr (ErrorDefixNonAssoc (v:vs))
 	= prettyPos v % "\n"
 	% "    Precedence parsing error.\n"
-	% "      Cannot have multiple non-associative operators of the same precedence\n"
-	% "      in an infix expression.\n"
+	% "      Cannot have multiple, adjacent, non-associative operators of the\n"
+	% "      same precedence in an infix expression.\n"
 	% "\n"
 	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
 
