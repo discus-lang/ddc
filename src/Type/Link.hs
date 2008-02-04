@@ -11,6 +11,7 @@ import Shared.Error
 import qualified Shared.Var as Var
 
 import Type.Exp
+import Type.Location
 import Type.State
 import Type.Class
 

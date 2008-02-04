@@ -14,6 +14,8 @@ import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpA
 
+import Type.Location
+
 -----
 stage	= "Desugar.Slurp.SlurpS"
 
@@ -29,14 +31,13 @@ slurpS 	:: Stmt Annot1
 -- statements (bindings with out a bound var)
 slurpS 	(SBind sp Nothing e1)
  = do
- 	let src		= TSStmt sp
 	tBind		<- newTVarD
 	
 	(tX@(TVar _ tXv), eX, cX, x1', qsX)	
 			<- slurpX e1
 	
 	let qs	= 
-		[ CEq  src tBind	$ tX ]
+		[ CEq  (TSU $ SUBind sp) tBind	$ tX ]
 
 	return	( tX
 		, eX
@@ -49,8 +50,6 @@ slurpS 	(SBind sp Nothing e1)
 -- regular bindings
 slurpS	(SBind sp (Just v) e1)
  = do
-	let src			= TSStmt sp 
-
 	tBind@(TVar _ vBindT)	<- lbindVtoT v
 	
  	(tX@(TVar _ tXv), eX, cX, x1', qsX)	
@@ -66,18 +65,17 @@ slurpS	(SBind sp (Just v) e1)
 		, [newCBranch
 			{ branchBind	= BLet [vBindT]
 			, branchSub	
-			   	=  [ CEq  src tBind tX ]
+			   	=  [ CEq  (TSU $ SUBind sp) tBind tX ]
 				++ qsX  
-				++ [ CGen src tBind ] } ] )
+				++ [ CGen (TSM $ SMGen sp v) tBind ] } ] )
 
 -- type signatures
 slurpS	stmt@(SSig sp varV t)
  = do
-	let src		= TSSig sp varV
  	tX		<- lbindVtoT varV
 	
 	let qs	= 
-		[ CSig src tX 	$ t ]
+		[ CSig (TSV $ SVSig sp varV) tX	$ t ]
 		
 	return	( tX
 		, pure

@@ -33,6 +33,7 @@ import Constraint.Exp
 import Constraint.Pretty
 import Constraint.Bits
 
+import Type.Location
 import Type.Exp
 import Type.Pretty
 import Type.Util
@@ -336,7 +337,7 @@ solveCs	(c:cs)
 				
 			-- Scheme hasn't been generalised yet
 			| otherwise
-			= solveGeneralise vInst
+			= solveGeneralise (TSI $ SIGenInst vUse) vInst
 			
 		tScheme	<- getScheme
 			
@@ -563,8 +564,8 @@ solveCInst_find
 --	Only the type for the variable asked for is returned, but the whole binding
 --	group is generalised and their schemes written back to the type graph.
 --	
-solveGeneralise :: Var -> SquidM Type
-solveGeneralise	vGen
+solveGeneralise :: TypeSource -> Var -> SquidM Type
+solveGeneralise	src vGen
  = do
 	trace	$ "\n"
 		% "=============================================================\n"
@@ -583,7 +584,7 @@ solveGeneralise	vGen
 	let vsGroup_sorted = vGen : (vsBindGroup \\ [vGen])
 
 	-- Generalise the group of bindings
-	tsGen		<- solveGeneralise_group vsGroup_sorted
+	tsGen		<- solveGeneralise_group src vsGroup_sorted
 	
 	trace	$ "=== Generalise " % vGen % " done\n"
 		% "=============================================================\n"
@@ -598,9 +599,9 @@ solveGeneralise	vGen
 --	All members of the binding group should be present in the list of suspended generalisations.
 
 solveGeneralise_group
-	:: [Var]	-> SquidM [Type]
+	:: TypeSource -> [Var]	-> SquidM [Type]
 	
-solveGeneralise_group vsGen@(vGen : vsGenRest)
+solveGeneralise_group src vsGen@(vGen : vsGenRest)
  = do
 	genSusp		<- gets stateGenSusp
 	trace	$ "    genSusp    = " % genSusp	% "\n"
@@ -665,7 +666,7 @@ solveGeneralise_group vsGen@(vGen : vsGenRest)
 	trace	$ "    cidsEnv    = " % cidsEnv		% "\n"
 
 	-- Extract and generalise the types for all of the members of the binding group
-	tsScheme	<- mapM (solveGeneralise_single cidsEnv) vsGen
+	tsScheme	<- mapM (solveGeneralise_single src cidsEnv) vsGen
 
 	return tsScheme
 
@@ -673,9 +674,9 @@ solveGeneralise_group vsGen@(vGen : vsGenRest)
 -- | Extract a single type from the graph and generalise it using this set of fixed classIds.
 --
 solveGeneralise_single 
-	:: Set ClassId -> Var -> SquidM Type
+	:: TypeSource -> Set ClassId -> Var -> SquidM Type
 
-solveGeneralise_single cidsFixed vGen
+solveGeneralise_single src cidsFixed vGen
  = do	
 	-- Extract the type from the graph.
 	Just tGraph	<- extractType False vGen
@@ -684,7 +685,7 @@ solveGeneralise_single cidsFixed vGen
 	tScheme		<- generaliseType vGen tGraph cidsFixed
 	
 	-- Add the scheme back to the graph.
-	addSchemeToGraph vGen tScheme
+	addSchemeToGraph src vGen tScheme
 
 	-- Record that this type has been generalised, and delete the suspended generalisation
 	modify (\s -> s 
@@ -797,12 +798,12 @@ bindGroup' vBind
 --	node in the graph instead of being distributed throughout.
 --
 addSchemeToGraph
-	:: Var -> Type -> SquidM ()
+	:: TypeSource -> Var -> Type -> SquidM ()
 	
-addSchemeToGraph vGen tScheme
+addSchemeToGraph src vGen tScheme
  = do
 	-- call makeClass to get the classId of this var
-	cidGen		<- makeClassV TSNil KData vGen 
+	cidGen		<- makeClassV src KData vGen 
 
 	-- grab the class from the graph
 	Just cls	<- lookupClass cidGen
@@ -904,7 +905,7 @@ solveFinalise
 	errs	<- gotErrors
 	when (not errs)
 	 $ do 	
-	 	mapM_ solveGeneralise $ sGenLeftover
+	 	mapM_ (solveGeneralise (TSI $ SIGenFinal)) $ sGenLeftover
 
 		-- When generalised schemes are added back to the graph we can end up with (var = ctor)
 		--	constraints in class queues which need to be pushed into the graph by another grind.

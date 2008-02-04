@@ -10,6 +10,7 @@ import {-# SOURCE #-} Desugar.Slurp.SlurpA
 import Desugar.Slurp.Base
 
 import Type.Util
+import Type.Location
 import qualified Shared.Var	as Var
 import Util
 
@@ -35,8 +36,6 @@ slurpX	:: Exp Annot1
 --	
 slurpX	exp@(XLambda sp vBound xBody)
  = do
-	let src		= TSLambda sp
-	
 	tX		<- newTVarDS "lam"
 	cX		<- newTVarCS "lam"
 
@@ -49,8 +48,8 @@ slurpX	exp@(XLambda sp vBound xBody)
 			<- slurpX xBody
 
 	let qs	= 
-		[ CEq src tX	$ TFun tBound tBody eBody cX
-		, CEq src cX	$ makeTMask KClosure cBody (TTag vBound)]
+		[ CEq (TSV $ SVLambda sp) tX	$ TFun tBound tBody eBody cX
+		, CEq (TSC $ SCLambda sp) cX	$ makeTMask KClosure cBody (TTag vBound)]
 	
 
 	-- If the sub expression is also a lambda
@@ -88,8 +87,6 @@ slurpX	exp@(XLambda sp vBound xBody)
 --
 slurpX	exp@(XApp sp fun arg)
  = do
-	let src		= TSApp sp 
-
 	tX		<- newTVarDS "app"
 	eX		<- newTVarES "app"
 	cX		<- newTVarCS "app"
@@ -106,9 +103,9 @@ slurpX	exp@(XApp sp fun arg)
 			<- slurpX arg
 	
 	let qs	= 
-		[ CEq src tFun		$ TFun tArg tX eApp empty 
-		, CEq src eX		$ makeTSum KEffect  [eFun, eArg, eApp]
-		, CEq src cX		$ makeTSum KClosure [cFun, cArg] ]
+		[ CEq (TSV $ SVApp sp) tFun	$ TFun tArg tX eApp empty 
+		, CEq (TSE $ SEApp sp) eX	$ makeTSum KEffect  [eFun, eArg, eApp]
+		, CEq (TSC $ SCApp sp) cX	$ makeTSum KClosure [cFun, cArg] ]
 	
 	return	( tX
 		, eX
@@ -122,10 +119,6 @@ slurpX	exp@(XApp sp fun arg)
 --
 slurpX	exp@(XMatch sp (Just obj) alts)
  = do
-	let srcObj	= TSMatchObj sp 
-	let srcAlts	= TSMatchAlt sp
-	let srcMatch	= TSMatch sp
-
 	-- unification vars
 	tRHS		<- newTVarDS "matRHS"
 	eX		<- newTVarES "mat"
@@ -146,11 +139,11 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 			<- liftM unzip6 $ mapM slurpA alts
 
 	let qsMatch	= 
-		[ CEqs srcObj  (tObj : tsAltsLHS)
-		, CEqs srcAlts (tRHS : tsAltsRHS)
-		, CEq  srcMatch eMatch	$ TEffect primReadH [tObj]
-		, CEq  srcMatch eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) 
-		, CEq  srcMatch cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]
+		[ CEqs (TSU $ SUAltLeft sp)	(tObj : tsAltsLHS)
+		, CEqs (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
+		, CEq  (TSE $ SEMatchObj sp)	eMatch	$ TEffect primReadH [tObj]
+		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) 
+		, CEq  (TSC $ SCMatch sp)	cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]
 
 	return	( tRHS
 		, eX
@@ -161,10 +154,6 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 
 slurpX	exp@(XMatch sp Nothing alts)
  = do
-	let srcObj	= TSMatchObj sp
-	let srcAlts	= TSMatchAlt sp
-	let srcMatch	= TSMatch sp
-
 	-- unification vars
 	tLHS		<- newTVarDS "matLHS"
 	tRHS		<- newTVarDS "matRHS"
@@ -176,10 +165,10 @@ slurpX	exp@(XMatch sp Nothing alts)
 			<- liftM unzip6 $ mapM slurpA alts
 	
 	let matchQs	=  
-		[ CEqs srcObj   (tLHS 	: altsTP)
-		, CEqs srcAlts  (tRHS	: altsTX)
-		, CEq  srcMatch eMatch	$ makeTSum KEffect altsEs
-		, CEq  srcMatch cMatch	$ makeTSum KClosure altsClos ]
+		[ CEqs (TSU $ SUAltLeft sp)	(tLHS 	: altsTP)
+		, CEqs (TSU $ SUAltRight sp)	(tRHS	: altsTX)
+		, CEq  (TSE $ SEMatch sp)	eMatch	$ makeTSum KEffect altsEs
+		, CEq  (TSC $ SCMatch sp)	cMatch	$ makeTSum KClosure altsClos ]
 		
 				  
 	return	( tRHS
@@ -194,12 +183,10 @@ slurpX	exp@(XMatch sp Nothing alts)
 --
 slurpX	exp@(XConst sp c)
  = do	
- 	let src	= TSLiteral sp c
-
  	tX@(TVar KData vT)	<- newTVarDS "lit"
 	tConst			<- getConstType c
 	let qs = 
-		[ CEq src tX 		$ tConst]
+		[ CEq (TSV $ SVLiteral sp c) tX	$ tConst]
 
 	wantTypeV vT
 	
@@ -225,8 +212,6 @@ slurpX 	exp@(XVar sp var)
 --
 slurpX	exp@(XDo sp stmts)
  = do
-	let src		= TSDo sp
-
 	tX		<- newTVarDS 	"do"
 	eX		<- newTVarES	"do"
 	cX		<- newTVarCS	"do"
@@ -264,11 +249,11 @@ slurpX	exp@(XDo sp stmts)
 	let q	= CBranch 
 		{ branchBind	= bindLeave
 		, branchSub	
-		   = 	[ CEq src 	tX 	$ tLast
-			, CEq src 	eX 	$ makeTSum  KEffect  esStmts
-			, CEq src	cX	$ makeTMask KClosure 
-							(makeTSum KClosure csStmts) 
-							(makeTSum KClosure $ map TTag boundVs) ] 
+		   = 	[ CEq (TSV $ SVDoLast sp) tX 	$ tLast
+			, CEq (TSE $ SEDo sp)	eX 	$ makeTSum  KEffect  esStmts
+			, CEq (TSC $ SCDo sp)	cX	$ makeTMask KClosure 
+								(makeTSum KClosure csStmts) 
+								(makeTSum KClosure $ map TTag boundVs) ] 
 		   ++ qsStmts }
 
 	return	( tX
@@ -283,10 +268,6 @@ slurpX	exp@(XDo sp stmts)
 --
 slurpX	exp@(XIfThenElse sp xObj xThen xElse)
  = do
-	let srcObj	= TSIfObj sp
-	let srcAlt	= TSIfAlt sp
-	let src		= TSIf sp
-
 	tAlts		<- newTVarDS 	"ifAlts"
 	eX		<- newTVarES	"if"
 	cX		<- newTVarCS 	"if"
@@ -313,12 +294,12 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 			<- slurpX xElse
 	
 	let qs	= 
-		[ CEq  srcObj 	tObj	$ tBool
-		, CEqs srcAlt	(tAlts	: [tThen, tElse])
+		[ CEq  (TSV $ SVIfObj sp)	tObj	$ tBool
+		, CEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse])
 		
-		, CEq  srcObj	eTest 	$ TEffect primReadH [tObj]
-		, CEq  src	eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest]
-		, CEq  src	cX	$ makeTSum KClosure [cObj, cThen, cElse] ]
+		, CEq  (TSE $ SEIfObj sp)	eTest 	$ TEffect primReadH [tObj]
+		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest]
+		, CEq  (TSC $ SCIf sp)		cX	$ makeTSum KClosure [cObj, cThen, cElse] ]
 		
 	return	( tAlts
 		, eX
@@ -337,8 +318,6 @@ slurpX 	exp@(XProj sp xBody proj)
 	let projT	= case proj of
 				JField  nn l	-> TJField  l
 				JFieldR nn l	-> TJFieldR l
-
-	let src	= TSProj sp projT
 
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
@@ -365,9 +344,9 @@ slurpX 	exp@(XProj sp xBody proj)
 	let proj'	= transformN (\n -> Nothing) proj
 			
 	let qs	 = 
-		[ CProject src projT vInst tBody (TFun tBody tX eProj cProj)
-		, CEq	   src eX	$ makeTSum KEffect  [eBody, eProj]
-		, CEq	   src cX	$ makeTSum KClosure [cBody, cProj] ]
+		[ CProject (TSV $ SVProj sp)	projT vInst tBody (TFun tBody tX eProj cProj)
+		, CEq	   (TSE $ SEProj sp)	eX	$ makeTSum KEffect  [eBody, eProj]
+		, CEq	   (TSC $ SCProj sp)	cX	$ makeTSum KClosure [cBody, cProj] ]
 
 	return	( tX
 		, eX
@@ -386,8 +365,6 @@ slurpX	exp@(XProjT sp tDict proj)
 				JField  nn l	-> l
 				JFieldR nn l	-> l
 
-	let src	= TSProj sp projT
-
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
@@ -405,8 +382,8 @@ slurpX	exp@(XProjT sp tDict proj)
 	let proj'	= transformN (\n -> Nothing) proj
 
 	let qs	 = 
-		[ CEq	   src tDictVar	$ tDict
-		, CProject src projT vInst tDictVar tX ]
+		[ CEq	   (TSV $ SVProj sp) tDictVar	$ tDict
+		, CProject (TSV $ SVProj sp) projT vInst tDictVar tX ]
 
 	return	( tX
 		, eX
@@ -424,14 +401,12 @@ slurpX x
 slurpV exp@(XVar sp var) tV@(TVar _ vT)
  = do
 	vTu		<- makeUseVar var vT
-	let src		= TSInst vT vTu
-
 	let tX		= TVar KData vTu
 	let eX		= pure
 	let cX		= TFree var tV
 
 	let qs	= 
-		[ CInst src vTu vT ]
+		[ CInst (TSV $ SVInst sp vT) vTu vT ]
 
 	return	( tX
 		, eX

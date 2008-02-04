@@ -4,9 +4,9 @@ test/Error/Unify/IfFun/Main.ds:5:14
                   with: Data.Bool.Bool %4
 
         lambda abstraction
-               of type: *8 -(!10 $11)> *9
+                      at: test/Error/Unify/IfFun/Main.ds:5:14
 
         conflicts with, 
-        if-then-else expression
-         which expects: Data.Bool.Bool %4
-
+        object of if-then-else expression
+           which must be: Bool
+                      at: test/Error/Unify/IfFun/Main.ds:5:10

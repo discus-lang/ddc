@@ -8,6 +8,7 @@ import Util
 import Shared.Var	(Var, NameSpace(..))
 import qualified Shared.VarBind	as Var
 
+import Type.Location
 import Type.Exp
 import Type.Pretty
 import Type.Util
@@ -80,7 +81,7 @@ crushShape shapeCid
 		-- we've got a template
 		--	we can now merge the sub-classes and remove the shape constraint.
 		| Just template	<- mTemplate
-		= do	crushShapeMerge mergeCids mergeCs mData template
+		= do	crushShapeMerge f mergeCids mergeCs mData template
 			delClass shapeCid
 			return True
 		
@@ -89,13 +90,14 @@ crushShape shapeCid
 -- TODO: only constrain nodes that haven't already got a data constructor in them
 --	otherwise we'll over-constrain the regions.
 crushShapeMerge 
-	:: [ClassId] 		-- classIds to merge
+	:: Fetter		-- the fetter being crushed
+	-> [ClassId] 		-- classIds to merge
 	-> [Class] 		-- classes corresponding to each classId above.
 	-> [Maybe Type] 	-- the types of the nodes, or Nothing if they're bottom.
 	-> Type			-- the template type.
 	-> SquidM ()
 
-crushShapeMerge cids cs mts template@(TData v templateTs)
+crushShapeMerge f cids cs mts template@(TData v templateTs)
  = do 	let kinds	= map kindOfType templateTs
 
 	-- Grab the type args from each of the available constructors.
@@ -104,7 +106,7 @@ crushShapeMerge cids cs mts template@(TData v templateTs)
 	-- Merge together type/effect/closure args but leave region args independent.
 	--	If there is no region arg in a type then make a fresh one.
 	--
-	argsMerged	<- mapM (shapeArgs templateTs) mArgss
+	argsMerged	<- mapM (shapeArgs f templateTs) mArgss
 
 	-- Update the classes with the freshly merged types
 	let cs'		= zipWith 
@@ -128,29 +130,29 @@ crushShapeMerge cids cs mts template@(TData v templateTs)
 --	This'll end up being a type error, but just merge all the classes for now
 --	so unify finds the error.
 --	
-crushShapeMerge cids cs mts template
+crushShapeMerge f cids cs mts template
  = do	mergeClasses cids
  	return ()
 	
 	
-shapeArgs aa Nothing	= synthArgs	aa
-shapeArgs aa (Just bb)	= mergeArgs	aa bb
+shapeArgs f aa Nothing		= synthArgs f aa
+shapeArgs f aa (Just bb)	= mergeArgs aa bb
  
-synthArgs :: [Type] -> SquidM [Type]
-synthArgs []	
+synthArgs :: Fetter -> [Type] -> SquidM [Type]
+synthArgs f []	
 	= return []
 	
-synthArgs (a:as) 
+synthArgs f (a:as) 
 	| TClass KRegion cidA	<- a
 	= do	var	<- newVarN    NameRegion
 		cidB	<- allocClass KRegion
-		addToClass cidB (TSSynth var) (TVar KRegion var)
+		addToClass cidB (TSI $ SICrushed f) (TVar KRegion var)
 		
-		rest	<- synthArgs as
+		rest	<- synthArgs f as
 		return	(TClass KRegion cidB : rest)
 		
 	| otherwise
-	= do	rest	<- synthArgs as
+	= do	rest	<- synthArgs f as
 		return	(a : rest)
 		
 		

@@ -4,6 +4,7 @@ module Type.Crush.Proj
 	( crushProjClassT )
 where
 
+import Type.Location
 import Type.Exp
 import Type.Util
 import Type.Error
@@ -153,8 +154,8 @@ crushProj2
 			Just vImplT	<- lookupSigmaVar vImpl
 
 			-- Build the new constraints
-			let qs	= 	[ CInst (TSCrushed fProj) vInst vImplT
-					, CEq   (TSCrushed fProj) (TVar KData vInst) tBind ]
+			let qs	= 	[ CInst (TSI $ SICrushed fProj) vInst vImplT
+					, CEq   (TSI $ SICrushed fProj) (TVar KData vInst) tBind ]
 					 
 			trace $ 	"    qs : " %> "\n" %!% qs % "\n"
 

@@ -1,0 +1,27 @@
+@NoSourcePos
+    Type mismatch during unification.
+          cannot match: Data.Bool.Bool %27
+                  with: Base.Float %23
+
+        match against pattern
+                 at type: Data.Bool.Bool %27
+                      at: @NoSourcePos
+
+        conflicts with, 
+        match against literal value 4.0
+                 of type: Base.Float %23
+                      at: @NoSourcePos
+
+test/Error/Unify/Multi/Main.ds:9:19
+    Type mismatch during unification.
+          cannot match: Data.String.String %25
+                  with: Base.Int %5
+
+        literal value "wibble"
+                 of type: Data.String.String %25
+                      at: test/Error/Unify/Multi/Main.ds:9:19
+
+        conflicts with, 
+        type signature for 'Main.dude'
+          which requires: Base.Int %5
+                      at: test/Error/Unify/Multi/Main.ds:6:5

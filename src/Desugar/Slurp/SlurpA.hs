@@ -20,6 +20,8 @@ import Shared.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 
+import Type.Location
+
 -----
 stage	= "Desugar.Slurp.SlurpA"
 
@@ -37,8 +39,6 @@ slurpA	:: Alt Annot1
 
 slurpA	alt@(AAlt sp gs x)
  = do
-	let src	= TSMatchAlt sp
-
 	tGuards	<- newTVarDS "guards"
 	eAlt	<- newTVarES "alt"
 	cAlt	<- newTVarCS "alt"
@@ -58,12 +58,12 @@ slurpA	alt@(AAlt sp gs x)
 	let tsBoundT	= map (TVar KData) $ map snd $ concat cbindssGuards
 
 	let qs	=
-		[ CEqs src (tGuards : catMaybes mtsGuards)
-		, CEq  src eAlt	  $ makeTSum   KEffect  (eX : esGuards)
-		, CEq  src cAlt   $ makeTMask  KClosure 
-						(makeTSum KClosure (cX : csGuards))
-						(makeTSum KClosure 
-							$ map TTag vsBoundV) ]
+		[ CEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
+		, CEq  (TSE $ SEGuards sp) eAlt	  $ makeTSum   KEffect  (eX : esGuards)
+		, CEq  (TSC $ SCGuards sp) cAlt   $ makeTMask  KClosure 
+							(makeTSum KClosure (cX : csGuards))
+							(makeTSum KClosure 
+								$ map TTag vsBoundV) ]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind 
@@ -111,8 +111,6 @@ slurpG	(GCase sp w)
  	
 slurpG	(GExp sp w x)
  = do
-	let src	= TSGuard sp
-
 	eGuard	<- newTVarES "guard"
 	cGuard	<- newTVarCS "guard"
 
@@ -127,12 +125,12 @@ slurpG	(GExp sp w x)
 	let tsBoundT	= map (TVar KData) $ map snd $ cbindsW
 
 	let qs = 
-		[ CEq	src	tX	$ tW 
-		, CEq	src	eGuard	$ makeTSum KEffect [eX, TEffect primReadH [tX]]
-		, CEq	src	cGuard	$ makeTMask 
-						KClosure 
-						cX
-						(makeTSum KClosure (map TTag vsBoundV)) ]
+		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
+		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum KEffect [eX, TEffect primReadH [tX]]
+		, CEq	(TSC $ SCGuards sp)	cGuard	$ makeTMask 
+							KClosure 
+							cX
+							(makeTSum KClosure (map TTag vsBoundV)) ]
 
 	-----	
 	return	( cbindsW		
@@ -195,14 +193,12 @@ slurpW	(WConst sp c)
 	tE			<- newTVarES "const"
 	tConst			<- getConstType c
 
-	let src	= TSLiteral sp c
-
 	wantTypeV tV
 
  	return	( []
 		, tD
 		, WConst (Just (tD, tE)) c
-		, [CEq src tD tConst])
+		, [CEq (TSV $ SVLiteralMatch sp c) tD tConst])
 
 
 slurpW w
@@ -244,11 +240,9 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 	  -> do	let tField	= substituteVT subInst
 				$ dType field
 
-		let src			= TSMatchAlt sp
-
 		return	( (LIndex Nothing ix, v)
 			, Just (v, vT)
-			, [CEq src (TVar KData vT) tField] )
+			, [CEq (TSV $ SVMatchCtorArg sp) (TVar KData vT) tField] )
 
          -- Uh oh, there's no field with this index.
 	 --	Add the error to the monad and return some dummy info so
@@ -292,12 +286,9 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 	let tField	= substituteVT subInst 
 			$ tField_
 
-	let src		= TSMatchAlt sp
-
- 
  	return 	( (LVar Nothing vField, v)
  		, Just (v, vT)
-		, [CEq src (TVar KData vT) tField] )
+		, [CEq (TSV $ SVMatchCtorArg sp) (TVar KData vT) tField] )
 		
 
 

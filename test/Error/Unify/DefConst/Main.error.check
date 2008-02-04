@@ -3,12 +3,11 @@ test/Error/Unify/DefConst/Main.ds:6:15
           cannot match: Data.String.String %48
                   with: Base.Int %40
 
-         literal value: "perch"
-               of type: Data.String.String %48
-                    at: test/Error/Unify/DefConst/Main.ds:6:15
+        literal value "perch"
+                 of type: Data.String.String %48
+                      at: test/Error/Unify/DefConst/Main.ds:6:15
 
         conflicts with, 
-                use of: fish
-             with type: Base.Int %40
-                    at: test/Error/Unify/DefConst/Main.ds:6:10
-
+                  use of: fish
+                 at type: Base.Int %40
+                      at: test/Error/Unify/DefConst/Main.ds:6:10

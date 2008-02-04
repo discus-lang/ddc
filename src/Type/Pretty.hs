@@ -175,42 +175,6 @@ instance Pretty Fetter where
 
 
 -----
-instance Pretty TypeSource where
- ppr ts = 
-  case ts of
-  	TSNil				-> ppr "@TSNil"
-	TSLiteral 	sp c		-> "@TSLiteral " % sp % " " % c
-	TSInst   	vDef vInst	-> "@TSInst   "	% vDef % " " % vInst
-	TSProj		sp pf		-> "@TSProj "	% sp % pf
-	TSLambda 	sp		-> "@TSLambda "	% sp
-	TSApp    	sp 		-> "@TSApp    "	% sp
-
-	TSMatchObj 	sp		-> "@TSMatchObj " % sp
-	TSMatchAlt 	sp		-> "@TSMatchAlt " % sp
-	TSMatch 	sp		-> "@TSMatch "	  % sp
-	 
-	TSDo		sp		-> "@TSDo "	% sp
-	
-	TSIfObj		sp		-> "@TSIfObj "	% sp
-	TSIfAlt		sp		-> "@TSIfAlt "	% sp
-	TSIf		sp		-> "@TSIf "	% sp
-
-	TSStmt		sp		-> "@TSStmt "	% sp
-	TSGuard		sp		-> "@TSGuard "	% sp
-	TSSig	    	sp v		-> "@TSSig "	% sp % " " % v
-	TSField		varT varC varF	-> "@TSField "	% " " %!% [varT, varC, varF]
-
-	TSClassInst	sp v		-> "@TSClasInst " % sp % " " % v
-	TSData		sp 		-> "@TSData "	% sp
-	TSProjDict	sp 		-> "@TSData " 	% sp
-		
-	TSCrushed	f		-> "@TSCrushed " % f
-	TSSynth	 	v		-> "@TSSynth  " % " " % v
-	TSProjCrushed  	cidT cidP pf	-> "@TSProjCrushed " % cidT % " " % cidP % " " % pf
-	TSClassName			-> ppr "@TSClassName "
-	
-
------
 instance Pretty Kind where
  ppr k
   = case k of

@@ -5,14 +5,13 @@ module Type.Exp
 	, ClassId	(..)
 	, TProj		(..)
 	, Fetter  	(..)
-	, TypeSource 	(..)
 	, Kind		(..)
 
 	, Data
 	, Region
 	, Effect
 	, Closure
-	
+
 	, InstanceInfo (..))
 
 where
@@ -177,60 +176,6 @@ data TProj
 
 	| TJIndex  Var				-- ^ Indexed field projection		(.<int>)
 	| TJIndexR Var				-- ^ Indexed field reference projection	(#<int>)
-	deriving (Show, Eq)
-
-
------------------------
--- TypeSource
---	| Records where constraints came from.
---	  These are useful for debugging and reporting the source of type error.
---
-data TypeSource
-	= TSNil
-
-
-	| TSLiteral	SourcePos Const		-- ^ Literal value.
-
-	| TSInst	Var Var 		-- ^ Constraint from an instantiated type scheme.
-						--	(type var of definition, type var of instance)
-
-	| TSProj	SourcePos TProj		-- ^ Field projection.
-
-	| TSLambda	SourcePos		-- ^ Lambda abstraction.
-
-	| TSApp		SourcePos 		-- ^ Function application.
-
-	| TSMatchObj	SourcePos		-- ^ Match object.
-	| TSMatchAlt	SourcePos		-- ^ Match alternatives.
-	| TSMatch	SourcePos		-- ^ Match expression.
-
-	| TSDo		SourcePos		-- ^ Constraint from do expression.
-
-	| TSIfObj	SourcePos		-- ^ If object.
-	| TSIfAlt	SourcePos		-- ^ If alternatives.
-	| TSIf		SourcePos		-- ^ If expression.
-
-	| TSStmt	SourcePos		-- ^ Statement.
-	| TSGuard	SourcePos		-- ^ Chard.
-					
-	| TSSig		SourcePos Var 		-- ^ Type signature.
-
-	| TSField	Var Var Var		-- ^ Field type signature within a data type declaration.
-						--	(data type, constructor, field label)	
-
-	| TSClassInst	SourcePos Var		-- ^ Class Instance
-						--	(name of class)
-
-	| TSData	SourcePos		-- ^ Data definition.
-	| TSProjDict	SourcePos		-- ^ Projection dictionary.
-
-	-----
-	| TSSynth	Var			-- ^ Constraint synthesised by the solver in order to generate fresh names.
-	| TSCrushed	Fetter			-- ^ Constraint from a crushed fetter
-	| TSProjCrushed	ClassId ClassId TProj	-- ^ Constraint from a (crushed) field projection.
-	| TSClassName				-- ^ Added by Class.makeClassName
-
-
 	deriving (Show, Eq)
 
 

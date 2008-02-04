@@ -3,12 +3,11 @@ test/Error/Closure/GetSet/Main.ds:28:14
           cannot match: Data.String.String %322
                   with: Base.Int %285
 
-         literal value: "a"
-               of type: Data.String.String %322
-                    at: test/Error/Closure/GetSet/Main.ds:28:14
+        literal value "a"
+                 of type: Data.String.String %322
+                      at: test/Error/Closure/GetSet/Main.ds:28:14
 
         conflicts with, 
-                use of: setB
-             with type: Base.Int %285
-                    at: test/Error/Closure/GetSet/Main.ds:28:8
-
+                  use of: setB
+                 at type: Base.Int %285
+                      at: test/Error/Closure/GetSet/Main.ds:28:8

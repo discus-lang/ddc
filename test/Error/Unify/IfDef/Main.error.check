@@ -3,11 +3,11 @@ test/Error/Unify/IfDef/Main.ds:6:13
           cannot match: Base.Int %3
                   with: Data.Bool.Bool %8
 
-                use of: x
-             with type: Base.Int %3
-                    at: test/Error/Unify/IfDef/Main.ds:6:13
+                  use of: x
+                 at type: Base.Int %3
+                      at: test/Error/Unify/IfDef/Main.ds:6:13
 
         conflicts with, 
-        if-then-else expression
-         which expects: Data.Bool.Bool %8
-
+        object of if-then-else expression
+           which must be: Bool
+                      at: test/Error/Unify/IfDef/Main.ds:6:10

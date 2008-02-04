@@ -13,6 +13,7 @@ import Util
 import Data.Map			(Map)
 
 import Type.Exp
+import Type.Location
 import Shared.Base
 
 -----------------------

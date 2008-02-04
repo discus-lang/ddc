@@ -1,13 +1,12 @@
-<unknown>:0:-1
+test/Error/Unify/FunMore/Main.ds:6:10
     Type mismatch during unification.
           cannot match: *53 -(!57 $58)> *33
                   with: Base.Int %44
 
         function application
-         which expects: *53 -(!57 $58)> *33
+                      at: test/Error/Unify/FunMore/Main.ds:6:10
 
         conflicts with, 
-                use of: f1
-             with type: Base.Int %44
-                    at: test/Error/Unify/FunMore/Main.ds:6:10
-
+                  use of: f1
+                 at type: Base.Int %44
+                      at: test/Error/Unify/FunMore/Main.ds:6:10

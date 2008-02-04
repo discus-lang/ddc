@@ -9,6 +9,7 @@ where
 
 import Util
 import Type.Exp
+import Type.Location
 import Type.Pretty
 
 import qualified Data.Map	as Map

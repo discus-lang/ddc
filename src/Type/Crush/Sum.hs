@@ -1,7 +1,7 @@
 
 
 module Type.Crush.Sum
-	( crushSumClass )
+	() -- crushSumClass )
 where
 
 import Util
@@ -30,7 +30,7 @@ stage	= "Type.Crush.Sum"
 trace s	= when debug $ traceM s
 
 
-
+{-
 crushSumClass :: ClassId -> SquidM ()
 crushSumClass cid
  = do 	Just c		<- lookupClass cid
@@ -124,7 +124,7 @@ sumContraTS :: [Type] -> SquidM Type
 sumContraTS ts@(t1 : tRest)
 	= mergeClassesT ts 	
 
-
+-}
 	
 		
 	

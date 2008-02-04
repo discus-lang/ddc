@@ -1,9 +1,6 @@
 
 module Type.Error
-(
-	Error(..)
-)
-
+	( Error(..) )
 where
 
 -----
@@ -18,6 +15,7 @@ import Shared.Base		(SourcePos(..))
 
 import Type.Exp
 import Type.Pretty
+import Type.Location
 
 -- import Type.Util
 
@@ -159,16 +157,15 @@ instance Pretty Error where
 		, eTypeSource1	= ts1
 		, eCtor2 	= t2 
 		, eTypeSource2	= ts2})
- 	= (getTSP $ selectSourceTS [ts1, ts2])				% "\n"
+ 	= (dispSourcePos $ selectSourceTS [ts1, ts2])			% "\n"
 	% "    Type mismatch during unification.\n"
 	% "          cannot match: " % t1				% "\n"
 	% "                  with: " % t2				% "\n"
 	% "\n"
-	% prettyTypeConflict t1 ts1 				
+	%> dispTypeSource t1 ts1
 	% "\n"
 	% "        conflicts with, " 					% "\n"
-	% prettyTypeConflict t2 ts2					
-	% "\n"	
+	%> dispTypeSource t2 ts2
 
  -- Infinite types.
  ppr err@(ErrorInfiniteTypeClassId
@@ -253,7 +250,7 @@ instance Pretty Error where
 		, eFetter	= f
 		, eFetterSource	= fSource })
 		
-	= (getTSP eSource)						% "\n" 
+	= (dispSourcePos eSource)					% "\n" 
 	% "    Cannot purify effect `" % e % "'.\n"
 	% prettyETS e eSource
 	% "\n"
@@ -268,7 +265,7 @@ instance Pretty Error where
 		, eFetter	= f
 		, eFetterSource	= fSource })
 	
-	= (getTSP eSource)						% "\n"
+	= (dispSourcePos  eSource)					% "\n"
 	% "    Cannot write to Const region.\n"
 	% prettyETS e eSource
 	% "\n"
@@ -284,7 +281,7 @@ instance Pretty Error where
 		, eWriteEff	= w
 		, eWriteSource	= wTS })
 
-	= getTSP wTS							% "\n"
+	= dispSourcePos wTS						% "\n"
 	% "    Cannot write to Const region.\n"
 	% "      This region is being forced Const because there is a\n"
 	% "      purity constraint on a Read effect which accesses it.\n"
@@ -367,74 +364,37 @@ selectSourceTS []
 
 selectSourceTS (t : ts)
  = case t of
- 	TSIfObj{}	-> selectSourceTS ts
+-- 	TSIfObj{}	-> selectSourceTS ts
 	_		-> t
 
 	
 
------
--- prettyTypeConflict
+-- Show the source of a conflict
 --
 prettyTypeConflict :: Type -> TypeSource -> PrettyP	    
 prettyTypeConflict t ts
- = case ts of
- 	TSLiteral _ (CConst lit)
-	 -> "         literal value: " % lit			% "\n"
-	 %  "               of type: " % t			% "\n"
-	 %  "                    at: " % getTSP ts		% "\n"
-	 
-	TSInst vDef vInst
-	 -> "                use of: " % vDef			% "\n"
-	 %  "             with type: " % t			% "\n"
-	 %  "                    at: " % getTSP ts		% "\n"
-	 
-	TSIfObj sp
-	 -> "        if-then-else expression"			% "\n"
-	  % "         which expects: " % t			% "\n"
-
-	TSApp sp 
-	 -> "        function application" 			% "\n"
-	  % "         which expects: " % t			% "\n"
-
-	TSLambda sp 
-	 -> "        lambda abstraction"			% "\n"
-	  % "               of type: " % t			% "\n"
-
-	TSSig sp var
-	 -> "          type signature"				% "\n"
-	 %  "          for variable: " % var			% "\n"
-	 %  "                    at: " % sp			% "\n"
-
-	TSProjCrushed c1 c2 j
-	 -> "             projection"				% "\n"
-	 %  "              of field: " % j			% "\n"
-
-	TSField vData vCtor vField
-	 -> "        declaration of,"				% "\n"
-	 %  "                 field: " % vField			% "\n"
-	 %  "             with type: " % t			% "\n"
-	 %  "        in constructor: " % vCtor			% "\n"
-	 %  "          of data type: " % vData			% "\n"
-	 %  "                    at: " % getVSP vField		% "\n"
-
-	_ -> ppr "ERROR: prettyTypeConflict: cannot show source of error\n" % "\n"
-
---	_ -> panic stage
---		$ "prettyTypeConflict: no match for " % show ts % "\n"
-
-
+ = ppr  t
+ 
 
 
 prettyFTS :: Fetter -> TypeSource -> PrettyP 
+prettyFTS f ts = ppr $ show f
+
+
+{-
 prettyFTS f ts
  = case ts of
  	TSInst vDef vInst
 	 -> "            constraint: " % f			% "\n"
 	 %  "       from the use of: " % vDef			% "\n"
 	 %  "                    at: " % getTSP ts		% "\n"
-
+-}
 
 prettyETS :: Effect -> TypeSource -> PrettyP
+prettyETS eff ts	
+	= ppr $ show eff
+
+{-
 prettyETS e ts
  = case ts of
  	TSInst vDef vInst
@@ -451,62 +411,8 @@ prettyETS e ts
 	TSNil
 	 -> "                effect: " % e			% "\n"
 	 %  " ERROR: prettyETS: cannot show source of error\n"  % "\n" 
-
+-}
 	 
-prettyTSP ::	TypeSource -> PrettyP
-prettyTSP	ts
- = case ts of
- 	TSInst vDef vInst
-	 -> ppr vDef
-
-	TSMatch sp
-	 -> ppr "case"
-
-	_ -> panic stage
-		$ "prettyTSP: no match for " % show ts	% "\n"
-
-
-
------
--- getTSP
---	get TypeSource pos
---	
-getTSP :: TypeSource	-> SourcePos
-getTSP ts
- 	| TSLiteral sp c		<- ts
-	= sp
-
-	| TSInst vDefT vInstT 		<- ts
-	, Just (Var.IValueVar vInstV)	
-		<- find ((=@=) Var.IValueVar{})
-		$  Var.info vInstT
-			
-	, Just (Var.ISourcePos posInst)
-		<- find ((=@=) Var.ISourcePos{})
-		$  Var.info vInstV
-			
-	= posInst
-
-	| TSLambda sp			<- ts
-	= sp
-
-	| TSMatch sp			<- ts
-	= sp
-	
-	| TSSig sp var			<- ts
-	= sp
-
-	| TSField vData vCtor vField	<- ts
-	= getVSP vField
-
-	| TSProj{}			<- ts
-	= SourcePos ("<internal>", 0, 0)
-
-	| otherwise		
-	= SourcePos ("<unknown>", 0, 0)
-
---	_ -> panic stage
---		$ "getTSP: not match for " % show ts % "\n"
 
 
 getVSP :: Var	-> SourcePos

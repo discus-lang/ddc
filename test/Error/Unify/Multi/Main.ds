@@ -1,0 +1,10 @@
+
+
+-- Check that we can generate proper type error messages when 
+--	there are multiple conflict sources in the type graph.
+
+dude :: Int -> Int
+dude xx
+ = case xx of
+ 	4.0	-> "wibble"
+	True	-> False

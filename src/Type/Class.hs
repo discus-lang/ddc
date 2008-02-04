@@ -44,6 +44,7 @@ import Util
 import Shared.Error
 
 import Type.Exp
+import Type.Location
 import Type.Util
 import Type.Plate.Trans
 import Type.State
@@ -367,7 +368,7 @@ makeClassName cid_
 	  -> do	v	<- newVarN (spaceOfKind kind)
 		let t	= TVar kind v
 		updateClass cid 
-			c { classNodes	= (t, TSClassName) : classNodes c}
+			c { classNodes	= (t, TSI $ SIClassName) : classNodes c}
 
 		return	v
 		

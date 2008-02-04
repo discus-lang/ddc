@@ -15,6 +15,7 @@ import Shared.Var		(NameSpace (..))
 
 
 import Type.Exp
+import Type.Location
 import Type.State
 import Type.Class
 import Type.Util

@@ -14,6 +14,7 @@ import qualified	Debug.Trace	as Debug
 import Shared.Error
 import qualified Shared.Error	as Error
 
+
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 
@@ -23,9 +24,11 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import Shared.Base
 import Shared.Exp
 
 import Type.Exp
+import Type.Location
 import Type.Pretty
 import Type.Util
 import Type.Plate
@@ -101,11 +104,9 @@ slurpP 	:: Top Annot1
 -- external types
 slurpP	(PExtern sp v tv to) 
  = do
-	let src		= TSSig sp v
-
 	vT		<- lbindVtoT v
 	let qs	= 
-		[CDef src vT 	tv]
+		[CDef (TSV $ SVSigExtern sp v) vT 	tv]
 	
 	return	( PExtern Nothing v tv to
 		, qs)
@@ -126,8 +127,7 @@ slurpP top@(PClassDict sp v ts context sigs)
  = do 	
  	qs	<- mapM (\(v, t) 
 			 -> do	vT	<- lbindVtoT v
-			 	let src	= TSSig sp v
-				return	$ CDef src vT t)
+				return	$ CDef (TSV $ SVSigClass sp v) vT t)
 			$ sigs
 
 	return	( PClassDict Nothing v ts context sigs
@@ -137,8 +137,6 @@ slurpP top@(PClassDict sp v ts context sigs)
 
 slurpP top@(PClassInst sp v ts context ss)
  = do	
-	let src	= TSClassInst sp v
-
 	-- All the RHS of the statements are vars, so we don't get any useful constraints back
 	(_, _, _, ss', _)
 			<- liftM unzip5
@@ -146,17 +144,16 @@ slurpP top@(PClassInst sp v ts context ss)
 
 
 	return	( PClassInst Nothing v ts context ss'
-		, [ CClassInst src v ts ] )
+		, [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
 
 	
 -- type Signatures
 slurpP	(PSig sp v tSig) 
  = do
-	let src		= TSSig sp v
 	tVar		<- lbindVtoT v
 
 	let qs	= 
-		[CSig src tVar tSig]
+		[CSig (TSV $ SVSig sp v) tVar tSig]
 
  	return	( PSig Nothing v tSig
 		, qs)
@@ -165,8 +162,6 @@ slurpP	(PSig sp v tSig)
 -- data definitions
 slurpP	(PData sp v vs ctors)
  = do
-	let src		= TSData sp
-
  	(ctors', constrss)
 			<- liftM unzip
 			$  mapM (slurpCtorDef v vs) ctors
@@ -178,7 +173,7 @@ slurpP	(PData sp v vs ctors)
 	-- in the object. The constraint solver will need this to work out
 	-- the result type for projections.
 	--
-	let dataFields	= CDataFields src v vs 
+	let dataFields	= CDataFields (TSM $ SMData sp) v vs 
 			$ catMaybes
 			$ map (\df -> case dLabel df of
 					Nothing	-> Nothing
@@ -193,8 +188,6 @@ slurpP	(PData sp v vs ctors)
 -- projection dictionaries
 slurpP	(PProjDict sp t ss)
  = do
-	let src		= TSProjDict sp
-
  	let projVars	= [ (vField, vImpl)
 				| SBind _ (Just vField) (XVar _ vImpl) <-  ss]
 
@@ -204,7 +197,7 @@ slurpP	(PProjDict sp t ss)
 			$  mapM slurpS ss
 
 	return	( PProjDict Nothing t ss'
-		, [CDictProject src t (Map.fromList projVars)] )
+		, [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
 	
 	
 -- bindings
@@ -247,15 +240,13 @@ slurpCtorDef
 
 slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
  = do
-	let src		= TSData sp
-
 	Just (TVar _ cNameT)	
 			<- bindVtoT cName
 
 	-- Slurp the initialization code from the data fields.
 	(fieldDefs', initConstrss)
 			<- liftM unzip
-			$  mapM (slurpDataField vData cName) fieldDefs
+			$  mapM (slurpDataField sp vData cName) fieldDefs
 	
 	-- Build a constructor type from the data definition.
  	ctorType	<- makeCtorType (vData, vs) (cNameT, fieldDefs')
@@ -277,7 +268,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 				$ stateCtorFields s })
 
 	let constr = 
-		   [ CDef src (TVar KData cNameT) ctorType ]
+		   [ CDef (TSV $ SVCtorDef sp vData cName) (TVar KData cNameT) ctorType ]
 		++ case concat initConstrss of
 			[]	-> []
 			_	-> [newCBranch 
@@ -290,18 +281,18 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
  	
 	
 slurpDataField 
-	:: Var 					-- Datatype name.
+	:: SourcePos
+	-> Var 					-- Datatype name.
 	-> Var					-- Constructor name
 	-> DataField (Exp Annot1) Type	 	-- DataField def.
 	-> CSlurpM 
 		( DataField (Exp Annot2) Type	-- Annotated DataField def.
 		, [CTree])			-- Constraints for field initialisation code.
 	
-slurpDataField vData vCtor field
+slurpDataField sp vData vCtor field
  | Just initX 	<- dInit field
  , Just label	<- dLabel field
  = do
-	let src		= TSField vData vCtor label
 	tInit		<- newTVarD
 
 	-- vars for the initialisation function
@@ -314,7 +305,8 @@ slurpDataField vData vCtor field
 	tField_fresh	<- freshenType $ dType field
 	
 	let qs	=
-		[ CEq src tX (TFun tInitFun tField_fresh pure empty) ]
+		[ CEq (TSV $ SVCtorField sp vData vCtor label) 
+			tX (TFun tInitFun tField_fresh pure empty) ]
 
 	let field'	= 
 		DataField 

@@ -10,6 +10,7 @@ import Type.Trace
 import Type.State
 import Type.Util
 import Type.Class
+import Type.Location
 import Type.Exp
 import Type.Dump
 
@@ -92,7 +93,7 @@ crushFetterSingle' cid tNode vC f
 	= do	
 		trace	$ "    fsBits     = " % fsBits			% "\n"
 
-		let ?src	= TSCrushed f
+		let ?src	= TSI $ SICrushed f
 		progress	<- liftM or 
 				$  mapM addFetter fsBits
 
@@ -104,7 +105,7 @@ crushFetterSingle' cid tNode vC f
 	= do
 		trace	$ "    fsBits     = " % fsBits			% "\n"
 
-		let ?src	= TSCrushed f
+		let ?src	= TSI $ SICrushed f
 		progress	<- liftM or
 				$ mapM addFetter fsBits
 						

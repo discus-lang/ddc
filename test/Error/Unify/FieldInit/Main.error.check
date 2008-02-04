@@ -3,12 +3,11 @@ test/Error/Unify/FieldInit/Main.ds:8:42
           cannot match: Data.String.String %49
                   with: Base.Int %5
 
-         literal value: "fast"
-               of type: Data.String.String %49
-                    at: test/Error/Unify/FieldInit/Main.ds:8:42
+        literal value "fast"
+                 of type: Data.String.String %49
+                      at: test/Error/Unify/FieldInit/Main.ds:8:42
 
         conflicts with, 
-          type signature
-          for variable: Main.init_Fish_Perch_speed
-                    at: @NoSourcePos
-
+        type signature for 'Main.init_Fish_Perch_speed'
+          which requires: Base.Int %5
+                      at: @NoSourcePos
