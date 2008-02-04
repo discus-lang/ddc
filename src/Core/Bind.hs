@@ -70,10 +70,13 @@ bindM classMap rsGlobal tree
 
 	-- add bindings for global regions
 	-- TODO: don't rebind regions already bound in the header.
-	let tree_global	= map (\r -> PRegion r []) (Set.toList rsGlobal)
-			++ tree_local
+	tree_global	<- mapM (\vR -> do
+					let tR	= TVar KRegion vR
+					ws	<- makeWitnesses tR classMap
+					return	$ PRegion vR ws)
+				(Set.toList rsGlobal)
 	
-	return	tree_global
+	return	(tree_global ++ tree_local)
 
 
 -- | Bind local regions in this top level thing

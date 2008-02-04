@@ -60,7 +60,8 @@ threadTree hTree sTree
    
 	walkTable 
 		 = walkTableId
-		 { transX 	= thread_transX instMap 
+		 { transP	= thread_transP 
+		 , transX 	= thread_transX instMap 
 		 , transX_enter	= thread_transX_enter }
 	
    in	evalState (walkZM walkTable sTree) []
@@ -73,7 +74,18 @@ slurpClassInstMap tree
  = 	Map.gather
  	[ (v, p)	| p@(PClassInst v ts context defs) <- tree]
 
-	
+
+-- | push witnesses to properties of top-level regions.
+thread_transP :: WalkTable ThreadM -> Top -> ThreadM Top
+thread_transP table pp
+ = case pp of
+ 	PRegion r vts
+	 -> do	mapM_ (\(v, t) -> pushWitnessVK v (kindOfType t)) vts
+	 	return pp
+
+	_ -> return pp
+
+
 -- | bottom-up: replace applications of static witnesses with bound witness variables.
 thread_transX :: ClassInstMap -> WalkTable ThreadM -> Exp -> ThreadM Exp
 thread_transX instMap table xx
@@ -82,10 +94,12 @@ thread_transX instMap table xx
 	 -> do	t'	<- rewriteWitness instMap t
 	 	return	$ XAPP x t'
 
+	-- pop lambda bound witnesses on the way back up because we're leaving their scope.
 	XLAM b k x
 	 -> do	popWitnessVK (varOfBind b) k
 	 	return	xx
 
+	-- pop locally bound witnesses on the way back up because we're leaving their scope.
 	XLocal r vts x
 	 -> do	mapM_ (\(v, k) -> popWitnessVK v k)
 	 		[ (v, kindOfType t)	| (v, t) <- reverse vts]
@@ -206,7 +220,6 @@ lookupWitness vRegion vClass
 			$ Nothing
 
 	return mvWitness
-
 
 -- Inspect this kind. If it binds a witness then record it in the state.
 pushWitnessVK :: Var -> Kind -> ThreadM ()
