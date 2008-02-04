@@ -4,14 +4,12 @@
 --	present in the type of any bound variable in the CoreIR.
 
 f () 
- = do {
- 	print "erk\n";
-	5;
- };
+ = do 
+ 	print "erk\n"
+	5
  
  
 main ()
- = do {	f (); 
- 	23; 
- };
+ = do 	f ()
+	()
  

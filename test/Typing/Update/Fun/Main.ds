@@ -6,17 +6,17 @@
 --
 
 data Box %r1 a b !e1 $c1
-	= Box { x :: a -(!e1 $c1)> b; };
+	= Box { x :: a -(!e1 $c1)> b; }
 	
-box 	:: Box %r1 a b !e1 $c1 :- Mutable %r1;
-box	= Box (\x -> 5);
+box 	:: Box %r1 a b !e1 $c1 :- Mutable %r1
+box	= Box (\x -> 5)
 
-fun2 ()	= do { print "erk"; 5; };
+fun2 ()	= do { print "erk"; 5; }
 
 main () 
- = do {
-	box#x	#= fun2;
+ = do 
+	box#x	#= fun2
 
-	fun	= box.x;
-	fun ();
- };
+	fun	= box.x
+	fun ()
+	()

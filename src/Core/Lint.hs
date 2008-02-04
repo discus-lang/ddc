@@ -16,11 +16,6 @@ module Core.Lint
 
 where
 
-import qualified Debug.Trace	as Debug
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import Util
 import Shared.Error
 import Core.Exp
@@ -29,6 +24,13 @@ import Core.Plate.Walk
 import Core.Util
 import Core.Util.Slurp
 import Core.ReconKind
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Debug.Trace	as Debug
+import qualified Shared.Var	as Var
+import qualified Shared.VarPrim	as Var
 
 -----
 stage	= "Core.Lint"
@@ -114,11 +116,26 @@ lintTreeM tree
 --
 lintP :: Table -> Top -> LintM Table
 
-lintP 	tt (PBind v x)	
- = do	let Just vT	=  maybeSlurpTypeX x
-	tt'		<- addVT v vT tt
- 	lintX tt' x
- 	return tt'
+lintP	tt (PBind v x)
+ 	| Var.name v == "main"
+	, Var.nameModule v == Var.ModuleAbsolute ["Main"]
+	= do
+		let Just vT	= maybeSlurpTypeX x
+		tt'	<- addVT v vT tt
+		lintX tt' x
+
+		-- When the top level binding is the main function then check that all
+		--	its witnesses are available, and that it has the appropriate 
+		--	type () -> ()
+		lintMainType tt vT
+		return tt'
+		
+	| otherwise
+	= do
+		let Just vT	=  maybeSlurpTypeX x
+		tt'		<- addVT v vT tt
+	 	lintX tt' x
+	 	return tt'
 	
 -- TODO: check that witnesses are only of the created region
 lintP	tt (PRegion r vts)
@@ -140,6 +157,33 @@ lintP	tt _
  =	return tt
 
 
+-- | Check the type of the main function.
+--	
+lintMainType :: Table -> Type -> LintM ()
+lintMainType table tt
+ = case tt of
+
+	-- All witnesses passed to main need to be available at top level.
+ 	TContext k t
+	  | elem k (map kindOfType $ Map.elems $ tableTypes table)	
+ 	  -> lintMainType table t
+
+	  | otherwise
+	  -> do	addError $ "Context of main function " % k % " is not available at top level.\n"
+		return ()
+	
+	-- main must have type () -> ()
+	TFunEC (TData v1 []) (TData v2 []) eff clo
+	 | v1 == Var.primTUnit && v2 == Var.primTUnit
+	 -> return ()
+	 
+	_ -> do	addError 
+			$ "Main function does not have type () -> ().\n"
+			% "    T[main] = " % tt	% "\n"
+		return ()
+		
+	 	
+	
 
 --------------------------------------------------------------------------------
 -- Lint for Expressions

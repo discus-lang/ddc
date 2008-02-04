@@ -14,6 +14,7 @@ import Util
 import Debug.Trace
 import Main.Arg
 import System.Exit
+import qualified Main.Version	as Version
 
 -- | The walls are crashing down.
 --	Print a last, dying message and bail out.
@@ -22,7 +23,8 @@ panic :: Pretty msg => String -> msg -> a
 panic  stage msg
 	=  error
 		( pprStr $ "\nPANIC in " % stage % "\n" 
-		%> (msg % "\nPlease report this as a bug to the maintainers.\n"))
+		%> (msg  % "\nPlease report this bug to the maintainers at:\n"
+			 % Version.maintainers))
 
 
 -- | Something bad has happened, and it's likely to be terminal.
@@ -33,7 +35,8 @@ freakout :: Pretty msg => String -> msg -> a -> a
 freakout stage msg a
 	= trace 
 		(pprStr $ "\nFREAKOUT in " % stage % "\n"
-		%> (msg	% "\nPlease report this as a bug to the maintainers.\n"))
+		%> (msg	% "\nPlease report this bug to the maintainers at:\n"
+			% Version.maintainers))
 		a
 
 	

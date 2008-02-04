@@ -49,7 +49,7 @@ foreign import extern fun2
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: Base.Unit -(!e0 $c0)> Base.Int %rTS4
+        :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r1; Base.!Write %r1; System.Console.!Console}
         ,  $c0        = box : Box %r1 Base.Unit (Base.Int %rTS4) System.Console.!Console $Bot
         ,  Base.Mutable %r1

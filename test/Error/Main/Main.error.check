@@ -1,0 +1,6 @@
+test/Error/Main/Main.ds:4:0
+    Inferred type of main is not () -> ().
+
+        inferred type:
+            main
+              :: Data.String.String %rTC0

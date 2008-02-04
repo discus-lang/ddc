@@ -5,6 +5,7 @@ Patterns
 Unify
 Grind
 Closure
+Main
 CheckPure-skip
 CheckConst-skip
 Capture-skip

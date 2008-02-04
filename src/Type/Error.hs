@@ -30,7 +30,7 @@ data Error
 	= ErrorBadness
 		{ eMessage	:: String }
 
-	-- Constructor airity
+	-- Constructor airity mismatch.
 	| ErrorCtorAirity				-- Wrong number of arguments to constructor
 		{ eCtorVar		:: Var		--	in pattern match.
 		, eCtorAirity		:: Int
@@ -129,6 +129,9 @@ data Error
 		{ eScheme	:: (Var, Type)		-- 	The scheme we've been using.
 		, eRegen	:: Type }		-- 	The scheme we should have used.
 		
+	-- Main function has wrong type
+	| ErrorWrongMainType	
+		{ eScheme	:: (Var, Type) }	-- the type that was inferred for main		
 		
 	deriving (Show)
 
@@ -328,7 +331,14 @@ instance Pretty Error where
 	% "        the mutability constraints present in the second scheme.\n"
 	% "\n\n"
 
-
+ -- Main function has wrong type
+ ppr err@(ErrorWrongMainType
+ 		{ eScheme	= (v, scheme) })
+		
+	= prettyValuePos v				% "\n"
+	% "    Inferred type of main is not () -> ().\n"
+	% "\n"
+	% "        inferred type:" % prettyVTS (v, scheme) % "\n"
 
 -----
 prettyVTS (v, t)

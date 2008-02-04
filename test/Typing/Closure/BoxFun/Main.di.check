@@ -62,7 +62,7 @@ foreign import extern runBox
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
-        :: Base.Unit -(!e0 $c0)> Base.Int %rTS7
+        :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS7; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
         ,  $c0        = runBox : BoxFun2 %rTS7 !{Base.!Read %rTC1; System.Console.!Console} ${x : Base.Int %rTC1; y : Base.Int %rTC2} (Base.!Read %rTC2) (y : Base.Int %rTC2)
         :$ Base.Data -> Base.Data;

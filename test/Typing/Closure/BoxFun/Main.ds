@@ -38,7 +38,9 @@ runBox ()
 
 
 -- | Run the box.
-main ()	= runBox ();
+main ()	
+ = do	runBox ()
+ 	()
 
 
 

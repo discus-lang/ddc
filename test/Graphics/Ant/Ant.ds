@@ -1,21 +1,18 @@
 
-import Graphics.Render;
+import Graphics.Render
 
-
-main = topHandle ant;
+main () = topHandle ant
 
 
 ant ()
- = do {	frame	= frame_new "Ant" 600 600;
- 	run	frame;
- };
+ = do 	frame	= frame_new "Ant" 600 600
+ 	run	frame
  
-run :: Frame -> ();
+run :: Frame -> ()
 run frame
- = do {	frame.clear (frame_color 0 0 0);
+ = do 	frame.clear (frame_color 0 0 0)
 
-	frame.circle 10 100 100 10 (frame_color 255 255 255);
+	frame.circle 10 100 100 10 (frame_color 255 255 255)
 
- 	frame.update;
-	run frame;
- };
+ 	frame.update
+	run frame
