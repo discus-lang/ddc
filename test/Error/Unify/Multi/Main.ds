@@ -1,0 +1,12 @@
+
+-- Check reporting of multiple type errors
+--	in the same equivalance class.
+
+thing	= 5
+main ()
+ = do	print	$ show $ fun1 5
+  
+fun1 y	= 1 + fun2 (y - 1) (y - 2)
+fun2 y1 y2
+ | y1 > 5	=  fun1 y1 y2
+ 		\= fun2 y2 y1

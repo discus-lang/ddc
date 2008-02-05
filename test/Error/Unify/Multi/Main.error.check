@@ -1,0 +1,12 @@
+test/Error/Unify/Multi/Main.ds:11:19
+    Type mismatch during unification.
+          cannot match: *116 -(!131 $171)> *117
+                  with: Base.Int %138
+
+        function application
+                      at: test/Error/Unify/Multi/Main.ds:11:19
+
+        conflicts with, 
+                  use of: (+)
+                 at type: Base.Int %138
+                      at: test/Error/Unify/Multi/Main.ds:9:12
