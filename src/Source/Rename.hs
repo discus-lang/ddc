@@ -323,16 +323,23 @@ instance Rename Exp where
 		cs'	<- rename cs
 		return	$ XCase sp e1' cs'
 
+	XDo sp ss 
+	 -> local
+	 $ do 	ss'	<- renameSs ss
+		return	$  XDo sp ss'
+
  	XLet sp ss e	
 	 -> local
 	 $ do 	ss'	<- renameSs ss
 		e'	<- rename e
 		return	$ XLet sp ss' e'
 		
-	XDo sp ss 
+	XWhere sp x ss
 	 -> local
-	 $ do 	ss'	<- renameSs ss
-		return	$  XDo sp ss'
+	 $ do	ss'	<- renameSs ss
+		x'	<- rename x
+		return	$ XWhere sp x' ss'
+		
 
 	XIfThenElse sp e1 e2 e3 
 	 -> do 	e1'	<- rename e1

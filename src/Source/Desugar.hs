@@ -236,21 +236,26 @@ instance Rewrite S.Exp (D.Exp Annot) where
 	S.XApp sp x1 x2
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
-		return	$ D.XApp 	sp x1' x2'
+		return	$ D.XApp sp x1' x2'
 		
 	S.XCase sp x aa
 	 -> do	x'	<- rewrite x
 	 	aa'	<- rewrite aa
-		return	$ D.XMatch 	sp (Just x') aa'
+		return	$ D.XMatch sp (Just x') aa'
+
+	S.XDo sp ss
+	 -> do	ss'	<- rewrite ss
+	 	return	$ D.XDo sp ss'
 		
 	S.XLet sp ss x
 	 -> do	ss'	<- rewrite ss
 	 	x'	<- rewrite x
-		return	$ D.XDo 	sp (ss' ++ [D.SBind sp Nothing x'])
-		
-	S.XDo sp ss
+		return	$ D.XDo sp (ss' ++ [D.SBind sp Nothing x'])
+
+	S.XWhere sp x ss
 	 -> do	ss'	<- rewrite ss
-	 	return	$ D.XDo 	sp ss'
+	 	x'	<- rewrite x
+		return	$ D.XDo	sp (ss' ++ [D.SBind sp Nothing x'])
 		
 	S.XIfThenElse sp x1 x2 x3
 	 -> do	x1'	<- rewrite x1

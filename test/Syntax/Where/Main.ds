@@ -1,0 +1,20 @@
+
+-- test out where syntax
+
+main () 
+ = do	fun1 ()
+ 	print $ show $ fun2 True
+	
+
+
+fun1 ()
+ = print $ show z % "\n"
+ 	where	x	= 5
+		y	= 6
+		z	= x + y
+
+fun2 xx
+ = case xx of
+ 	True	-> z + y
+		where 	z 	= 5
+			y	= 27

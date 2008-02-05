@@ -372,7 +372,7 @@ expE	:: { Exp }
 
 expE2	:: { Exp }
 	: expInfix				{ $1					}
-	| 'let' '{' bindSigs '}' 'in' expInfix	{ XLet		(spTP $1) $3 $6		}
+	| 'let' bindSigs 'in' expInfix		{ XLet		(spTP $1) $2 $4		}
 	| 'throw'  expInfix			{ XThrow	(spTP $1) $2		}
 
 expInfix
@@ -483,7 +483,7 @@ constU
 -- a binding
 bind
 	:: { Stmt }
-	:  expApps '=' exp 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3		}
+	:  expApps '=' rhs 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3		}
 
 	|  expApps matchAlts 			{ let sp	= spX (head $1)
 						  in  SBindPats sp (checkVarSP sp $ head $1) (tail $1) (XMatch sp $2)	}
@@ -492,6 +492,10 @@ binds
 	:  bind	mSemis				{ [$1] }
 	|  bind semis binds			{ $1 : $3 }
 
+
+rhs	:: { Exp }
+	: exp					{ $1 }
+	| exp 'where' '{' binds '}'		{ XWhere (spTP $2) $1 $4 }
 
 -- | A binding or signature
 bindSig
@@ -529,8 +533,8 @@ caseAlts
 
 caseAlt
 	:: { Alt }				
-	:  pat      '->' exp 			{ APat (spTP $2) $1 $3			}
-	|  '_'      '->' exp 			{ ADefault (spTP $2) $3			}
+	:  pat      '->' rhs 			{ APat (spTP $2) $1 $3			}
+	|  '_'      '->' rhs 			{ ADefault (spTP $2) $3			}
 
 -----
 matchAlts
@@ -545,7 +549,7 @@ matchAltsS
 		
 matchAlt
 	:: { Alt }
-	:  guards '=' exp 			{ AAlt (spTP $2) $1 $3			}
+	:  guards '=' rhs 			{ AAlt (spTP $2) $1 $3			}
 	|  '\\=' exp				{ AAlt (spTP $1) [] $2			}
 		
 guards	:: { [Guard] }
@@ -553,8 +557,8 @@ guards	:: { [Guard] }
 	| guard1 guard2s			{ $1 : $2				}
 
 guard1	:: { Guard }
-	: '|'  pat '<-' exp			{ GExp   (spTP $1) $2 $4		}
-	| '|'  exp				{ GBool  (spTP $1) $2			}
+	: '|'  pat '<-' rhs			{ GExp   (spTP $1) $2 $4		}
+	| '|'  rhs				{ GBool  (spTP $1) $2			}
 		
 	| '|-' pat				{ GCase  (spTP $1) $2			}
 
@@ -565,8 +569,8 @@ guard2s	:: { [Guard] }
 	|  guard2 guard2s			{ $1 : $2				}
 
 guard2	:: { Guard }
-	: ',' pat '<-' exp			{ GExp	 (spTP $3) $2 $4		}
-	| ',' exp				{ GBool	 (spTP $1) $2			}
+	: ',' pat '<-' rhs			{ GExp	 (spTP $3) $2 $4		}
+	| ',' rhs				{ GBool	 (spTP $1) $2			}
 
 		
 pat	:: { Pat }
@@ -682,7 +686,7 @@ dataField
 dataInit	
 	:: { Maybe Exp }
 	: 						{ Nothing 				}
-	| '=' exp					{ Just $2 				}
+	| '=' rhs					{ Just $2 				}
 		
 
 dataField_Ss

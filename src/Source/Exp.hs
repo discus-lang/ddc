@@ -166,8 +166,9 @@ data Exp
 
 	| XCase 	SP Exp [Alt]			-- case EXP of { ALTS }
 
-	| XLet		SP [Stmt] Exp			-- let STMTS in EXP
 	| XDo		SP [Stmt]			-- do { STMTS }
+	| XLet		SP [Stmt] Exp			-- let STMTS in EXP
+	| XWhere	SP Exp [Stmt]			-- EXP where { STMTS }
 	
 	| XIfThenElse	SP Exp Exp Exp			-- if EXP1 then EXP2 else EXP3
 

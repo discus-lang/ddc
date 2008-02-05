@@ -265,14 +265,20 @@ instance Monad m => TransM m Exp where
 	 	aa'		<- transZM table aa
 	    	transX table	$ XCase sp x1' aa'
 
+	XDo 	sp ss
+	 -> do	ss'		<- transZM table ss
+	    	transX table	$ XDo sp ss'
+
  	XLet 	sp ss x1
 	 -> do	ss'		<- transZM table ss
 	 	x1'		<- transZM table x1
 	    	transX table	$ XLet sp ss' x1'
 
-	XDo 	sp ss
+	XWhere	sp x1 ss
 	 -> do	ss'		<- transZM table ss
-	    	transX table	$ XDo sp ss'
+	 	x1'		<- transZM table x1
+		transX table	$ XWhere sp x1' ss'
+
 	    
 	XIfThenElse sp x1 x2 x3
 	 -> do	x1'		<- transZM table x1

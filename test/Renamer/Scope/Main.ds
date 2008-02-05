@@ -18,13 +18,13 @@ fun1 b
 
 fun2 b
  =	if b
- 	then let {
-		whoop	= 5;
-	} in	print	$ show whoop % "\n"
+ 	then let 
+		whoop	= 5
+	in	print	$ show whoop % "\n"
 
-	else let {
-		whoop	= 6;
-	} in	print	$ show whoop % "\n";
+	else let 
+		whoop	= 6
+	in	print	$ show whoop % "\n";
 	
 		
 
