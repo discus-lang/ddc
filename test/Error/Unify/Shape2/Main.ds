@@ -1,0 +1,6 @@
+
+-- Test reporting for errors involving shape constraints
+
+x = 5
+main () = println $ show - x
+
