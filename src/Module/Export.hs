@@ -131,7 +131,7 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 
 	++ "-- Pragmas\n"
 	++ (concat [pprStr p 
-			| p@(S.PPragma (S.XVar sp v : _))	<- ps
+			| p@(S.PPragma _ (S.XVar sp v : _))	<- ps
 			, Var.name v == "LinkObjs" ])
 
 	++ "\n"
@@ -167,7 +167,7 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 	
 	++ "-- Foreign imports\n"
 	++ (concat [pprStr p 
-			| p@(S.PForeign (S.OImport (S.OExtern{})))	<- ps])
+			| p@(S.PForeign _ (S.OImport (S.OExtern{})))	<- ps])
 	++ "\n"
 
 	++ "-- Binds\n"

@@ -82,10 +82,10 @@ rewritePatX xx
 		
 rewritePatA co aa
  = case aa of
-	D.AAlt nn gs x
-	 -> do	gsAts		<- mapM (sprinkleAtsG none) gs
+	D.AAlt sp gs x
+	 -> do	gsAts		<- mapM (sprinkleAtsG sp) gs
 	  	let gsLift	= catMap simplifyGuard gsAts
-		return	$ D.AAlt none gsLift x
+		return	$ D.AAlt sp gsLift x
 
 
 -- SprinkleAts -------------------------------------------------------------------------------------
@@ -204,7 +204,7 @@ sprinkleAtsW_down sp ww
 -- simplifyGuard -----------------------------------------------------------------------------------
 
 -- A list of vars and what pattern to match them against
-type CollectAtS 	= [(Var, D.Pat Annot)]
+type CollectAtS 	= [(Var, D.Pat Annot, SourcePos)]
 type CollectAtM		= State CollectAtS
 
 
@@ -227,18 +227,17 @@ simplifyGuard guard
 			[]
 
 	gs	= g 					-- the outer pattern is returned
-		: [ D.GExp none p (D.XVar none v) 	-- build a match for each internal node
-				| (v, p) <- vws]
-
+		: [ D.GExp sp p (D.XVar sp v) 		-- build a match for each internal node
+				| (v, p, sp) <- vws]
   in	gs
 
 collectAtNodesW :: D.Pat Annot -> CollectAtM (D.Pat Annot)
 collectAtNodesW ww
  = case ww of
- 	D.WAt nn v w
+ 	D.WAt sp v w
 	 -> do	s	<- get
-	 	put	((v, w) : s)
-		return	$ D.WVar nn v
+	 	put	((v, w, sp) : s)
+		return	$ D.WVar sp v
 
 	D.WConLabelP nn v lws
 	 ->  do	let lvs	= mapZipped id (\(D.WVar _ v) -> v) lws
@@ -321,20 +320,20 @@ expToPat xx
  = case xx of
 	S.XVar sp v
 	 | Var.isCtorName v
-	 -> S.WCon v []
+	 -> S.WCon sp v []
 
 	 | otherwise
-	 -> S.WVar v
+	 -> S.WVar sp v
 
- 	S.XTuple sp xs	-> S.WTuple (map expToPat xs)
+ 	S.XTuple sp xs	-> S.WTuple sp (map expToPat xs)
 
 	S.XApp sp x1 x2
 	 -> let	(S.XVar sp v : xs)	= S.flattenApps xx
-	    in	S.WCon v (map expToPat xs)
+	    in	S.WCon sp v (map expToPat xs)
 		
-	S.XList sp xx	-> S.WList (map expToPat xx)	
+	S.XList sp xx	-> S.WList sp (map expToPat xx)	
 
-	S.XConst sp c	-> S.WConst c
+	S.XConst sp c	-> S.WConst sp c
 	
 	_	-> panic stage
 		$ "expToPat: no match for " % show xx % "\n"

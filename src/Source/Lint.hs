@@ -58,28 +58,28 @@ death x s
 instance Lint Top where
  lint xx
   = case xx of
-	PPragma es			-> PPragma es
- 	PModule ms			-> PModule ms		
-	PImportExtern 	v tv to		
+	PPragma sp es			-> PPragma sp es
+ 	PModule sp ms			-> PModule sp ms		
+	PImportExtern sp v tv to		
 	 | not $ inSpaceV [v]		-> death xx "PImportExtern - vars in wrong namespace."
-	 | otherwise			-> PImportExtern (lint v) (lint tv) (lint to)
+	 | otherwise			-> PImportExtern sp (lint v) (lint tv) (lint to)
 
-	PImportModule 	ms		-> PImportModule ms
+	PImportModule sp ms		-> PImportModule sp ms
 
-	PType 		sp v t		-> PType	sp (lint v) (lint t)
-	PInfix		m i vs		-> PInfix	m i      (lint vs)
+	PType sp v t			-> PType	sp (lint v) (lint t)
+	PInfix sp m i vs		-> PInfix	sp m i      (lint vs)
 	
-	PData		v vs cs		-> PData	(lint v) (lint vs) cs
+	PData sp v vs cs		-> PData	sp (lint v) (lint vs) cs
 
-	PRegion v			-> PRegion	(lint v)
-	PEffect	v k			-> PEffect 	(lint v) k
+	PRegion sp v			-> PRegion	sp (lint v)
+	PEffect sp v k			-> PEffect 	sp (lint v) k
 
 	-- classes
-	PClass   v k			-> PClass 	(lint v) k
-	PClassDict v vs inh sigs	-> PClassDict	(lint v) (lint vs) (lint inh) (lint sigs)
-	PClassInst v ts inh stmts	-> PClassInst	(lint v) (lint ts) (lint inh) (lint stmts)
+	PClass sp v k			-> PClass 	sp (lint v) k
+	PClassDict sp v vs inh sigs	-> PClassDict	sp (lint v) (lint vs) (lint inh) (lint sigs)
+	PClassInst sp v ts inh stmts	-> PClassInst	sp (lint v) (lint ts) (lint inh) (lint stmts)
 
-	PStmt		s		-> PStmt	(lint s)
+	PStmt s				-> PStmt	(lint s)
 	
 
 -----------------------
@@ -152,8 +152,7 @@ instance Lint Exp where
 instance Lint Alt where
  lint a
   = case a of				
---  	ACon v xs x	-> ACon (lint v) (lint xs) (lint x)
-	ADefault  x	-> ADefault (lint x)
+	ADefault sp x	-> ADefault sp (lint x)
 	
 -----------------------
 -- Type

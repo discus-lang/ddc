@@ -95,7 +95,7 @@ freeVA a
 	 -> let ?bound	= ?bound ++ map (\(XVar v) -> v) es
 	    in	freeVE x
 -}
-	ADefault x
+	ADefault sp x
 	 -> freeVE x
 
 

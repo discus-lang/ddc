@@ -38,10 +38,10 @@ aliasTreeM	ps
 
 aliasP p
  = case p of
- 	PClassInst v ts inh ss
+ 	PClassInst sp v ts inh ss
 	 -> do
 	 	ss'	<- mapM aliasS ss
-		return	$  PClassInst v ts inh ss'
+		return	$  PClassInst sp v ts inh ss'
 
 	_ -> return p
 

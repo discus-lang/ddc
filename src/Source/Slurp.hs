@@ -31,7 +31,7 @@ slurpFixTable
 slurpFixTable	 tops			
 	= concat $ map slurpFixTable' tops
 
-slurpFixTable'	 (PInfix mode prec syms) 
+slurpFixTable'	 (PInfix sp mode prec syms) 
 	= zip syms (repeat (prec, mode))
 
 slurpFixTable'	 _			= []
@@ -48,8 +48,8 @@ slurpDataDefs	 	tops
 	= catMaybes 
 	$ map 	(\top ->
 		 case top of
-	 		PData v vs cs	-> Just (v, vs, cs)
-			_		-> Nothing)
+	 		PData sp v vs cs	-> Just (v, vs, cs)
+			_			-> Nothing)
 	$ tops
 
 
@@ -65,8 +65,8 @@ slurpImportModules	tops
 	$ catMaybes 
 	$ map (\x -> 
 		case x of 
-			PImportModule xx -> Just xx
-			_		 -> Nothing)
+			PImportModule sp xx 	-> Just xx
+			_		 	-> Nothing)
 	$ tops
 
 
@@ -81,7 +81,7 @@ slurpImportExterns	tops
 	= concat $ catMaybes 
 	$ map	(\top ->
 		 case top of
-			PImportExtern v t o  	-> Just [(v, t)]
+			PImportExtern sp v t o 	-> Just [(v, t)]
 			_		  	-> Nothing)
 	$ tops
 
@@ -95,9 +95,9 @@ slurpKinds
 slurpKinds tree
 	= catMaybes
 	$ map (\p -> case p of
-		PEffect v k	-> Just (v, k)
-		PData   v vs fs	-> Just (v, makeDataKind vs)
-		_		-> Nothing)
+		PEffect sp v k		-> Just (v, k)
+		PData   sp v vs fs	-> Just (v, makeDataKind vs)
+		_			-> Nothing)
 	$ tree
 	
 makeDataKind vs
@@ -119,26 +119,26 @@ slurpTopNames p
 	PPragma{}			-> []
 
  	PType 		sp v t		-> []
-	PInfix 		im i vs		-> []
+	PInfix 		sp im i vs	-> []
 
-	PImportExtern 	v t mt		-> [ v { Var.nameSpace = NameValue }]
+	PImportExtern 	sp v t mt	-> [ v { Var.nameSpace = NameValue }]
 	PImportModule{}			-> []
 
-	PForeign 	(OImport (OCCall mS v t))	
+	PForeign sp (OImport (OCCall mS v t))	
 	 -> [bindSeaName mS v { Var.nameSpace = NameValue }]	
 
-	PForeign 	(OImport (OExtern mS v t mT))	
+	PForeign sp (OImport (OExtern mS v t mT))	
 	 -> [bindSeaName mS v { Var.nameSpace = NameValue }]	
 
-	PData		v vs ctors 		
+	PData sp v vs ctors 		
 	 -> ( v { Var.nameSpace = NameType }) 
 	 :  [ c { Var.nameSpace = NameValue} 
 	 	| (c, fs) <- ctors ]
 	 
-	PEffect		v k	
+	PEffect	sp v k	
 	 -> [v { Var.nameSpace = NameEffect }]
 
-	PRegion 	v	
+	PRegion sp v	
 	 -> [v { Var.nameSpace = NameRegion }]
 
 	PStmt (SSig sp v t) 
@@ -148,10 +148,10 @@ slurpTopNames p
 	 -> [v { Var.nameSpace = NameValue }]
 
 	-- classes		
-	PClass v k	
+	PClass sp v k	
 	 -> [v { Var.nameSpace = NameClass}]
 
-	PClassDict n ps inh sigs
+	PClassDict sp n ps inh sigs
 	 -> [v { Var.nameSpace = NameValue }
 	 	| v <- catMap fst sigs ]
 		
@@ -159,7 +159,7 @@ slurpTopNames p
 	 -> []
 		
 	-- projections
-	PProjDict t ss
+	PProjDict{}
 	 -> []
 		
 	_	-> panic stage

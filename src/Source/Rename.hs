@@ -81,48 +81,48 @@ renameTree m tree
 instance Rename Top where
  rename	top
   = case top of
-	PPragma es
-	 -> do 	return	$ PPragma es 	
+	PPragma sp es
+	 -> do 	return	$ PPragma sp es 	
 
-	PModule m
+	PModule sp m
 	 -> do 	m'	<- rename m
 		modify (\s -> s { stateCurrentModule = m' })
-		return	$ PModule m'
+		return	$ PModule sp m'
 
- 	PImportExtern	v tv to
+ 	PImportExtern sp v tv to
 	 -> do	v'	<- lookupV v
 		tv'	<- local $ rename tv
 		to'	<- local $ rename to
-		return	$ PImportExtern v' tv' to'
+		return	$ PImportExtern sp v' tv' to'
 
-	PImportModule	ms
+	PImportModule sp ms
 	 -> do	ms'	<- rename ms
-		return	$ PImportModule ms'
+		return	$ PImportModule sp ms'
 
-	PForeign f
+	PForeign sp f
 	 -> do	f'	<- rename f
-	 	return	$ PForeign f'
+	 	return	$ PForeign sp f'
 
-	PType	sp v t		
+	PType sp v t		
 	 -> do 	v'	<- lookupV v
 	 	t'	<- local $ rename t
 		return	$ PType sp v' t'
 		
-	PInfix 	m i vs
+	PInfix sp m i vs
 	 -> do 	vs'	<- mapM lbindV vs
-		return	$ PInfix m i vs'
+		return	$ PInfix sp m i vs'
 	
-	PData	v vs cs		
+	PData sp v vs cs		
 	 -> do	(v', vs', cs')	<- renameData v vs cs
-		return	$ PData v' vs' cs' 
+		return	$ PData sp v' vs' cs' 
 	
-	PRegion v
+	PRegion sp v
 	 -> do	v'	<- lookupN NameRegion v
-	 	return	$ PRegion v'
+	 	return	$ PRegion sp v'
 	
-	PEffect	v k
+	PEffect sp v k
 	 -> do 	v'	<- lookupN NameEffect v
-		return	$ PEffect v' k
+		return	$ PEffect sp v' k
 
 	PStmt	s
 	 -> do	s'	<- rename s
@@ -130,11 +130,11 @@ instance Rename Top where
 
 	
 	-- classes
-	PClass v k
+	PClass sp v k
 	 -> do 	v'	<- lookupN NameClass v
-	 	return	$ PClass v' k
+	 	return	$ PClass sp v' k
 
-	PClassDict v vs inh sigs
+	PClassDict sp v vs inh sigs
 	 -> do 	v'	<- lbindN NameClass v
 
 		(vs', inh', sigs')
@@ -144,9 +144,9 @@ instance Rename Top where
 			sigs'	<- mapM renameClassSig sigs
 			return	(vs', inh', sigs')
 	
-		return	$ PClassDict v' vs' inh' sigs'
+		return	$ PClassDict sp v' vs' inh' sigs'
 
-	PClassInst v ts inh stmts
+	PClassInst sp v ts inh stmts
 	 -> do
 	 	v'	<- lbindN NameClass v
 
@@ -158,10 +158,10 @@ instance Rename Top where
 
 		stmts'	<- rename stmts
 
-		return	$ PClassInst v' ts' inh' stmts'			
+		return	$ PClassInst sp v' ts' inh' stmts'			
 
 	-- projections
-	PProjDict t ss
+	PProjDict sp t ss
 	 -> do	
 	 	-- The way the projection dict is parsed, the projection funtions end up in the wrong namespace, 
 		--	NameValue. Convert them to NameField vars here.
@@ -180,7 +180,7 @@ instance Rename Top where
 				return	t'
 	
 		ss'	<- rename ssF
-		return	$ PProjDict t' ss'
+		return	$ PProjDict sp t' ss'
 
 	
 -- Module ------------------------------------------------------------------------------------------
@@ -344,7 +344,7 @@ instance Rename Exp where
 	XObjField sp v
 	 -> do	objV	<- peekObjectVar
 		v'	<- lbindN NameField v
-		return	$ XProj sp (XVar sp objV) (JField v')
+		return	$ XProj sp (XVar sp objV) (JField sp v')
 		
 	-- sugar
 	XLambdaPats sp ps x
@@ -461,59 +461,59 @@ instance Rename Exp where
 instance Rename Proj where
  rename jj 
   = case jj of
-	JField v
+	JField sp v
 	 -> do	v'	<- lbindN NameField v
-		return	$ JField v'
+		return	$ JField sp v'
 		
-	JFieldR v
+	JFieldR sp v
 	 -> do	v'	<- lbindN NameField v
-	 	return	$ JFieldR v'
+	 	return	$ JFieldR sp v'
 
-	JIndex x
+	JIndex sp x
 	 -> do	x'	<- rename x
-	 	return	$ JIndex x'
+	 	return	$ JIndex sp x'
 		
-	JIndexR x
+	JIndexR sp x
 	 -> do	x'	<- rename x
-	 	return	$ JIndexR x'
+	 	return	$ JIndexR sp x'
 
 	
 -- Alternatives ------------------------------------------------------------------------------------
 instance Rename Alt where
  rename a
   = case a of
-	APat p x2
+	APat sp p x2
 	 -> do	(p', x2')
 	 	 	<- local
 		  	$ do	p'	<- bindPat p
 			 	x2'	<- rename x2
 				return (p', x2')
 
-		return	$ APat p' x2'
+		return	$ APat sp p' x2'
 
-	AAlt gs x
+	AAlt sp gs x
 	 -> do	(gs', x')
 	 		<- local
 			$ do	gs'	<- mapM bindGuard gs
 				x'	<- rename x
 				return	(gs', x')
 				
-		return	$ AAlt gs' x'
+		return	$ AAlt sp gs' x'
 
-	ADefault x
+	ADefault sp x
 	 -> do	x'	<- rename x
-	 	return	$  ADefault x'
+	 	return	$  ADefault sp x'
 
 
 -- Labels ------------------------------------------------------------------------------------------
 instance Rename Label where
  rename ll
   = case ll of
-  	LIndex i	-> return ll
+  	LIndex sp i	-> return ll
 
-	LVar v 
+	LVar sp v 
 	 -> do	v'	<- lbindN NameField v
-	 	return	$  LVar v'
+	 	return	$  LVar sp v'
 	 
 
 
@@ -548,11 +548,11 @@ bindPatternExp xx
 	 -> do	xs'	<- mapM bindPatternExp xs
 	 	return	$ XTuple sp xs'
 
-	XApp{} 
+	XApp sp _ _
 	 -> do	let (x:xs)	=  flattenApps xx
 	 	x'		<- rename x
 		xs'		<- mapM bindPatternExp xs
-		return		$ unflattenApps (x':xs')
+		return		$ unflattenApps sp (x':xs')
 
 	XDefix sp xs
 	 -> do	xs'	<- mapM bindPatternExp xs
@@ -573,33 +573,33 @@ bindPatternExp xx
 bindGuard :: Guard -> RenameM Guard
 bindGuard gg
  = case gg of
- 	GCase pat
+ 	GCase sp pat
 	 -> do	pat'	<- bindPat pat
-	 	return	$ GCase pat'
+	 	return	$ GCase sp pat'
 		
-	GExp  pat x
+	GExp sp  pat x
 	 -> do	x'	<- rename x	
 	 	pat'	<- bindPat pat
-		return	$ GExp pat' x'
+		return	$ GExp sp pat' x'
 		
-	GBool x
+	GBool sp x
 	 -> do	x'	<- rename x
-	 	return	$ GBool x'
+	 	return	$ GBool sp x'
 		
 
 -- | Bind the variables in a pattern
 bindPat :: Pat -> RenameM Pat
 bindPat ww
  = case ww of
- 	WVar v
+ 	WVar sp v
 	 -> do	v'	<- bindV v
-	 	return	$ WVar v'
+	 	return	$ WVar sp v'
  
  	WExp x	
 	 -> do	x'	<- bindPatternExp x
 	 	return	$ WExp x'
 
-	WConLabel v lvs 
+	WConLabel sp v lvs 
 	 -> do	v'		<- lookupV v
 
 	 	let (ls, vs)	= unzip lvs
@@ -607,7 +607,7 @@ bindPat ww
 		vs'		<- mapM bindPat vs
 		let lvs'	= zip ls' vs'
 		
-		return		$ WConLabel v' lvs'
+		return		$ WConLabel sp v' lvs'
 		
 	_	-> panic stage
 		$ "bindPat: no match for " % show ww % "\n"

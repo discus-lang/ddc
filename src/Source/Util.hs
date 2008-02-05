@@ -39,16 +39,16 @@ flattenApps xx
 -- eg	   unflattenApps [x1, x2, x3, x4]
 --	=> XApp (XApp (XApp x1 x2) x3) x4
 --
-unflattenApps :: [Exp] -> Exp
-unflattenApps (x:xs)
- = unflattenApps' x xs
+unflattenApps :: SourcePos -> [Exp] -> Exp
+unflattenApps sp (x:xs)
+ = unflattenApps' sp x xs
  
-unflattenApps' x xx
+unflattenApps' sp x xx
  = case xx of
  	[]	-> x
 	xs	
 	 -> let	Just xsL	= takeLast xs
-	    in	XApp NoSourcePos (unflattenApps' x (init xs)) xsL
+	    in	XApp sp (unflattenApps' sp x (init xs)) xsL
 	
 -----
 -- 

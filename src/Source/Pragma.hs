@@ -22,7 +22,7 @@ data Pragma
 slurpPragmaTree tree
 	= concat $ map slurpPragma tree
 
-slurpPragma pp@(PPragma (XVar sp v : _))
+slurpPragma pp@(PPragma _ (XVar sp v : _))
 	| Var.name v == "cc_includes"
 	= slurp_ccIncludes pp
 
@@ -37,7 +37,7 @@ slurpPragma _	= []
 -- cc_includes
 -- 	Adds an include statement directly into the emitted C program. 
 --	Good for getting the correct function prototypes in ffi code.
-slurp_ccIncludes (PPragma [XVar sp v, XList _ xStrs])
+slurp_ccIncludes (PPragma _ [XVar sp v, XList _ xStrs])
  = let	Just strs	= sequence $ map slurpConstStr xStrs
    in	map PragmaCCInclude strs
    

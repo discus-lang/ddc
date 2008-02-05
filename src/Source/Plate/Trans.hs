@@ -112,49 +112,49 @@ instance Monad m => TransM m Var where
 instance Monad m => TransM m Top where
  transZM table pp
   = case pp of
-	PForeign f
+	PForeign sp f
 	 -> do	f'		<- transZM table f
-	 	transP table	$ PForeign f'
+	 	transP table	$ PForeign sp f'
 
 	-- Imports
-	PImportExtern  v t mT
+	PImportExtern sp v t mT
 	 -> do	v'		<- transZM table v
 	 	t'		<- transZM table t
 		mT'		<- transZM table mT
-		return		$ PImportExtern v' t' mT'
+		return		$ PImportExtern sp v' t' mT'
 
 
-	PData v vs fs
+	PData sp v vs fs
 	 -> do	v'		<- transZM table v
 	 	vs'		<- transZM table vs
 		fs'		<- transZM table fs
-		transP table	$ PData v' vs' fs'
+		transP table	$ PData sp v' vs' fs'
 
 	-- Classes
-	PClass v k
+	PClass sp v k
 	 -> do	v'		<- transZM table v
-	 	return		$ PClass v' k
+	 	return		$ PClass sp v' k
 
-	PClassInst v ts inh ss
+	PClassInst sp v ts inh ss
 	 -> do 	ss'		<- transZM table ss
-		transP table 	$ PClassInst v ts inh ss'
+		transP table 	$ PClassInst sp v ts inh ss'
 
-	PProjDict t ss
+	PProjDict sp t ss
 	 -> do	ss'		<- transZM table ss
-	 	transP table	$ PProjDict t ss'
+	 	transP table	$ PProjDict sp t ss'
 
 	-- 
  	PStmt s	
 	 -> do 	s'		<- transZM table s
 		transP table 	$ PStmt s'
 		
-	PEffect v k
+	PEffect sp v k
 	 -> do	v'		<- transZM table v
-	 	return		$ PEffect v' k
+	 	return		$ PEffect sp v' k
 		
-	PRegion v
+	PRegion sp v
 	 -> do	v'		<- transZM table v
-	 	return		$ PRegion v'
+	 	return		$ PRegion sp v'
 		
 		
 	_ -> return pp
@@ -405,87 +405,88 @@ instance Monad m => TransM m Exp where
 
 	XWildCard{}
 	 ->	return		$ x
+
 -----
 instance Monad m => TransM m Alt where
  transZM table a
   = case a of
-	APat p x
+	APat sp p x
 	 -> do	p'		<- transZM table p
 	 	x'		<- transZM table x
-		transA table	$ APat p' x'
+		transA table	$ APat sp p' x'
 
-	AAlt gs x
+	AAlt sp gs x
 	 -> do	gs'		<- transZM table gs
 	 	x'		<- transZM table x
-		transA table	$ AAlt gs' x'
+		transA table	$ AAlt sp gs' x'
 
-	ADefault x
+	ADefault sp x
 	 -> do	x'		<- transZM table x
-	 	transA table	$ ADefault x'
+	 	transA table	$ ADefault sp x'
 
 
 -----
 instance Monad m => TransM m Guard where
  transZM table a
   = case a of
-  	GCase pat
+  	GCase sp pat
 	 -> do	pat'		<- transZM table pat
-	 	return		$ GCase pat'
+	 	return		$ GCase sp pat'
 		
-	GExp x1 x2
+	GExp sp x1 x2
 	 -> do	x1'		<- transZM table x1
 	 	x2'		<- transZM table x2
-		return		$ GExp x1' x2'
+		return		$ GExp sp x1' x2'
 		
-	GBool x
+	GBool sp x
 	 -> do	x'		<- transZM table x
-	 	return		$ GBool x'
+	 	return		$ GBool sp x'
 		
 	 
 -----
 instance Monad m => TransM m Pat where
  transZM table ww
   = case ww of
-  	WVar v
+  	WVar sp v
 	 -> do	v'		<- transZM table v
-	 	return		$ WVar v
+	 	return		$ WVar sp v
 		
-	WConst c
-	 ->  	return		$ WConst c
+	WConst sp c
+	 ->  	return		$ WConst sp c
 		
-	WCon v ps
+	WCon sp v ps
 	 -> do	v'		<- transZM table v
 	 	ps'		<- transZM table ps
-		return		$ WCon v' ps'
+		return		$ WCon sp v' ps'
 
-	WConLabel v ps
+	WConLabel sp v ps
 	 -> do	v'		<- transZM table v
 	 	ps'		<- transZM table ps
-		return		$ WConLabel v' ps'
+		return		$ WConLabel sp v' ps'
 		
-	WAt v p
+	WAt sp v p
 	 -> do	v'		<- transZM table v
 	 	p'		<- transZM table p
-		return		$ WAt v' p'
+		return		$ WAt sp v' p'
   
-  	WWildcard 
-	 -> do	return		$ WWildcard 
+  	WWildcard sp 
+	 -> do	return		$ WWildcard sp 
   
-	WUnit
-	 ->	return		$ WUnit
+	WUnit sp
+	 ->	return		$ WUnit sp
 	 
-	WTuple ps
+	WTuple sp ps
 	 -> do	ps'		<- transZM table ps
-	 	return		$ WTuple ps'
+	 	return		$ WTuple sp ps'
 		
-	WCons p1 p2
+	WCons sp p1 p2
 	 -> do	p1'		<- transZM table p1
 	 	p2'		<- transZM table p2
-		return		$ WCons p1' p2'
+		return		$ WCons sp p1' p2'
 		
-	WList ps
+	WList sp ps
 	 -> do	ps'		<- transZM table ps
-	 	return		$ WList ps'
+	 	return		$ WList sp ps'
 		
 	WExp x
 	 -> do	x'		<- transZM table x
@@ -496,11 +497,11 @@ instance Monad m => TransM m Pat where
 instance Monad m => TransM m Label where
  transZM table ll
   = case ll of
-  	LIndex i		-> return ll
+  	LIndex sp i		-> return ll
 	
-	LVar v
+	LVar sp v
 	 -> do	v'		<- transZM table v
-	 	return		$ LVar v'
+	 	return		$ LVar sp v'
 	
 -----
 instance Monad m => TransM m LCQual where

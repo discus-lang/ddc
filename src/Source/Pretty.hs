@@ -38,38 +38,38 @@ stage	= "Source.Pretty"
 instance Pretty Top where
  ppr xx
   = case xx of
-	PPragma es	 -> "pragma " % " " %!% es % ";\n"
-	PModule v	 -> "module " % v % ";\n"
+	PPragma _ es	 -> "pragma " % " " %!% es % ";\n"
+	PModule _ v	 -> "module " % v % ";\n"
 
-	PImportExtern  v tv to
+	PImportExtern _ v tv to
 	 -> "import extern " % prettyVTT v tv to % "\n"
 
-	PImportModule [m] -> "import " % m % ";\n"
+	PImportModule _ [m] -> "import " % m % ";\n"
 	
-	PImportModule xx
+	PImportModule _ xx
 	 -> "import " 
 		% "{\n"
 			%> "\n" %!% map (\x -> x % ";") xx
 		% "\n}\n\n"
 		
-	PForeign f 
+	PForeign _ f 
 	 -> "foreign " % f % ";\n\n"
 	
-	PData typeName vars [] 
+	PData _ typeName vars [] 
 	 -> "data " % " " %!% (typeName : vars) % ";\n\n"
 
-	PData typeName vars ctors
+	PData _ typeName vars ctors
 	 -> "data " % " " %!% (typeName : vars) % "\n"
 		%> ("= "  % "\n\n| " %!% (map prettyCtor ctors) % ";")
 		%  "\n\n"
 
-	PRegion v	 -> "region " % v % ";\n"
-	PEffect v k	 -> "effect " % v %>> " :: " % k % ";\n"
+	PRegion _ v	 -> "region " % v % ";\n"
+	PEffect _ v k	 -> "effect " % v %>> " :: " % k % ";\n"
 
 	-- Classes
-	PClass v k	 -> "class " % v %>> " :: " % k % ";\n"
+	PClass _ v k	 -> "class " % v %>> " :: " % k % ";\n"
 
-	PClassDict c vs inh sigs
+	PClassDict _ c vs inh sigs
 	 -> "class " % c % " " % (" " %!% vs) % " where\n"
 		% "{\n"
 	 	%> ("\n\n" %!% 
@@ -78,20 +78,20 @@ instance Pretty Top where
 				% " :: " %> prettyTypeSplit t % ";") sigs)) % "\n"
 		% "}\n\n"
 
-	PClassInst v ts inh ss
+	PClassInst _ v ts inh ss
 	 -> "instance " % v % " " % " " %!% (map prettyTB ts) % " where\n"
 		% "{\n"
 		%> ("\n\n" %!% 
 			(map 	(\s -> case s of 
-					SBindPats sp v xs x
-					 -> pprStr $ SBindPats sp (v { Var.nameModule = Var.ModuleNil }) xs x)
-
+					SBindPats sp v xs x	-> pprStr $ SBindPats sp (v { Var.nameModule = Var.ModuleNil }) xs x
+					_			-> panic stage $ "pretty[Top]: malformed PClassInst\n")
+					
 				ss)
 			% "\n")
 		% "}\n\n"
 
 	-- Projections
-	PProjDict t ss
+	PProjDict _ t ss
 	 -> "project " % t % " where\n"
 		% "{\n"
 		%> ("\n\n" %!% ss) % "\n"
@@ -105,7 +105,7 @@ instance Pretty Top where
 
 	PStmt s		 -> ppr s % "\n\n"
 	
-	PInfix mode prec syms
+	PInfix _ mode prec syms
 	 -> mode % " " % prec % " " % ", " %!% (map Var.name syms) % " ;\n"
 
 
@@ -293,13 +293,13 @@ instance Pretty Exp where
 instance Pretty Proj where
  ppr f
   = case f of
-  	JField  l	-> "." % l
-	JFieldR l	-> "#" % l
+  	JField  sp l	-> "." % l
+	JFieldR sp l	-> "#" % l
 
-	JIndex	x	-> ".[" % x % "]"
-	JIndexR	x	-> "#[" % x % "]"
+	JIndex	sp x	-> ".[" % x % "]"
+	JIndexR	sp x	-> "#[" % x % "]"
 
-	JAttr	v	-> ".{" % v % "}"
+	JAttr	sp v	-> ".{" % v % "}"
 
 -----
 isEBlock x
@@ -348,37 +348,42 @@ instance Pretty Annot where
 instance Pretty Alt where
  ppr a
   = case a of
-	APat 	 p1 x2		-> p1	% "\n -> " % prettyX_naked x2 % ";"
+	APat 	 sp p1 x2	-> p1	% "\n -> " % prettyX_naked x2 % ";"
 
-	AAlt	 [] x		-> "\\= " % x % ";"
-	AAlt	 gs x		-> "|"  % "\n," %!% gs % "\n=  " % x % ";"
+	AAlt	 sp [] x	-> "\\= " % x % ";"
+	AAlt	 sp gs x	-> "|"  % "\n," %!% gs % "\n=  " % x % ";"
 
-	ADefault x		-> "_ ->" % x % "\n"
+	ADefault sp x		-> "_ ->" % x % "\n"
 	
-
+-----
 instance Pretty Guard where
  ppr gg
   = case gg of
-  	GCase pat		-> "- " % pat
-	GExp  pat exp		-> " "  % pat %>> " <- " % exp
-	GBool exp		-> " "  % ppr exp
-	
+  	GCase	sp pat		-> "- " % pat
+	GExp	sp pat exp	-> " "  % pat %>> " <- " % exp
+	GBool	sp exp		-> " "  % ppr exp
+
+-----	
 instance Pretty Pat where
  ppr ww
   = case ww of
-  	WVar v			-> ppr v
-	WConst c		-> ppr c
-	WCon v ps		-> v % " " % ps %!% " " 
-	WConLabel v lvs		-> v % " { " % ", " %!% map (\(l, v) -> l % " = " % v ) lvs % "}"
-	WAt v w			-> v % "@" % w
-	WWildcard 		-> ppr "_"
-	WExp x			-> ppr x
+  	WVar 	sp v		-> ppr v
+	WConst 	sp c		-> ppr c
+	WCon 	sp v ps		-> v % " " % ps %!% " " 
+	WConLabel sp v lvs	-> v % " { " % ", " %!% map (\(l, v) -> l % " = " % v ) lvs % "}"
+	WAt 	sp v w		-> v % "@" % w
+	WWildcard sp 		-> ppr "_"
+	WExp 	x		-> ppr x
+	WUnit	sp		-> ppr "()"
+	WTuple  sp ls		-> "(" % ", " %!% ls % ")"
+	WCons   sp x xs		-> x % " : " % xs
+	WList   sp ls		-> "[" % ", " %!% ls % ")"
 
 instance Pretty Label where
  ppr ll
   = case ll of
-  	LIndex i		-> "." % i
-	LVar   v		-> "." % v
+  	LIndex sp i		-> "." % i
+	LVar   sp v		-> "." % v
 
 -----
 instance Pretty LCQual where

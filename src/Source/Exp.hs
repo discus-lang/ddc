@@ -54,37 +54,39 @@ import Type.Exp			hiding (Var)
 type Tree	= [Top]
 
 data Top
-	= PPragma	[Exp]
-	| PModule	Module
-	| PType		SourcePos Var Type
-	| PInfix	InfixMode Int [Var]
+	= PPragma	SP [Exp]
+	| PModule	SP Module
+	| PType		SP Var Type
+	| PInfix	SP InfixMode Int [Var]
 
 	-- Imports
-	| PImportExtern	Var Type (Maybe Type)		-- name, value type, operational type
-	| PImportModule [Module]
+	| PImportExtern	SP Var Type (Maybe Type)		-- name, value type, operational type
+	| PImportModule SP [Module]
 
-	| PForeign	Foreign
+	| PForeign	SP Foreign
 
 	-- Data 
-	| PData	
+	| PData	SP
 		Var 
 		[Var] 
 		[(Var, [DataField Exp Type])]
 
 	-- Effects
-	| PEffect	Var Kind
-	| PRegion	Var
+	| PEffect SP	Var Kind
+	| PRegion SP	Var
 
 	-- Classes
-	| PClass	Var Kind			-- An abstract class.
+	| PClass  SP	Var Kind			-- An abstract class.
 
 	| PClassDict					-- A class dictionary definition.
+		SP
 		Var 					-- Class name.
 		[Var] 					-- Class parameters
 		[(Var, [Var])]  			-- Context.
 		[([Var], Type)]				-- Type sigs.
 
 	| PClassInst					-- A class instance.
+		SP
 		Var 					-- Class name
 		[Type]					-- Instance types
 		[(Var, [Type])]				-- Context.
@@ -92,11 +94,12 @@ data Top
 
 	-- Projections
 	| PProjDict					-- A projection dictionary.
+		SP
 		Type					-- Projection type.
 		[Stmt]					-- Projection functions.
 
 	-- Stmts
-	| PStmt		Stmt
+	| PStmt	Stmt
 	deriving (Show, Eq)
 
 -----
@@ -227,13 +230,13 @@ data Exp
 -- | Projections
 --	Used by XProjF
 data Proj
-	= JField	Var				-- Field projection, 		eg exp .field1
-	| JFieldR	Var				-- Field reference projection,	eg exp #field1
+	= JField	SP Var				-- Field projection, 		eg exp .field1
+	| JFieldR	SP Var				-- Field reference projection,	eg exp #field1
 
-	| JAttr		Var				-- Object attribute projection,	eg exp .{field1}
+	| JAttr		SP Var				-- Object attribute projection,	eg exp .{field1}
 
-	| JIndex	Exp				-- Object index,		eg exp1.[exp2]
-	| JIndexR	Exp				-- Object reference,		eg exp1#[exp2]
+	| JIndex	SP Exp				-- Object index,		eg exp1.[exp2]
+	| JIndexR	SP Exp				-- Object reference,		eg exp1#[exp2]
 	deriving (Show, Eq)
 
 
@@ -259,33 +262,33 @@ data Stmt
 -- | Case alternatives.
 --	Used by XCase, XCaseL and XTry.
 data Alt
-	= APat		Pat 	Exp			-- ^ Case style pattern match	p1 -> e2
-	| AAlt		[Guard]	Exp			-- ^ Match style pattern match  guards -> e2
+	= APat		SP Pat Exp			-- ^ Case style pattern match	p1 -> e2
+	| AAlt		SP [Guard] Exp			-- ^ Match style pattern match  guards -> e2
 
-	| ADefault	Exp				-- ^ Default alternative. 
+	| ADefault	SP Exp				-- ^ Default alternative. 
 							--	There should only be one of these per set of alts.
 
 	deriving (Show, Eq)
 
 data Guard
-	= GCase		Pat				-- ^ Match against case object
-	| GExp		Pat Exp				-- ^ Match against this expression.
+	= GCase		SP Pat				-- ^ Match against case object
+	| GExp		SP Pat Exp			-- ^ Match against this expression.
 
-	| GBool		Exp				-- ^ Test for boolean.
+	| GBool		SP Exp				-- ^ Test for boolean.
 	deriving (Show, Eq)
 	
 data Pat
-	= WVar		Var				-- ^ Plain var, always matches.		v 
-	| WConst	Const				-- ^ Constant pattern			5
-	| WCon		Var [Pat]			-- ^ A constructor pattern		(C p1 p2 ...)
-	| WConLabel	Var [(Label, Pat)]		-- ^ A constructor with field labels.	Con { .f1 = p1, ... }
-	| WAt		Var Pat				-- ^ At expression			v\@pat
-	| WWildcard		 			-- ^ Wildcard, always matches		_
+	= WVar		SP Var				-- ^ Plain var, always matches.		v 
+	| WConst	SP Const			-- ^ Constant pattern			5
+	| WCon		SP Var [Pat]			-- ^ A constructor pattern		(C p1 p2 ...)
+	| WConLabel	SP Var [(Label, Pat)]		-- ^ A constructor with field labels.	Con { .f1 = p1, ... }
+	| WAt		SP Var Pat			-- ^ At expression			v\@pat
+	| WWildcard	SP	 			-- ^ Wildcard, always matches		_
 
-	| WUnit						-- ^ The unit value			()
-	| WTuple	[Pat]				-- ^ Tuple pattern			(p1, p2)
-	| WCons		Pat Pat				-- ^ Cons pattern			(x : xs)
-	| WList		[Pat]				-- ^ List pattern			[p1, p2, ...]
+	| WUnit		SP				-- ^ The unit value			()
+	| WTuple	SP [Pat]			-- ^ Tuple pattern			(p1, p2)
+	| WCons		SP Pat Pat			-- ^ Cons pattern			(x : xs)
+	| WList		SP [Pat]			-- ^ List pattern			[p1, p2, ...]
 
 	-- Contains an XDefix from the parser.
 	--	The defixer is run on patterns as well as expressions
@@ -293,8 +296,8 @@ data Pat
 	deriving (Show, Eq)
 
 data Label
-	= LIndex 	Int				-- ^ A numerically indexed field.
-	| LVar		Var				-- ^ A field label.
+	= LIndex 	SP Int				-- ^ A numerically indexed field.
+	| LVar		SP Var				-- ^ A field label.
 	deriving (Show, Eq)
 
 -- |  List comprehension qualifiers

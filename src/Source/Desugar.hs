@@ -78,43 +78,43 @@ rewriteTreeM tree
  	
 
 
------
+-- Top ---------------------------------------------------------------------------------------------
 instance Rewrite S.Top (Maybe (D.Top Annot)) where
  rewrite xx
   = case xx of
 
-	S.PImportExtern v tv to
-	 ->	returnJ $ D.PExtern none v tv to
+	S.PImportExtern sp v tv to
+	 ->	returnJ $ D.PExtern sp v tv to
 
-	S.PImportModule ms
-	 ->	returnJ	$ D.PImport none ms
+	S.PImportModule sp ms
+	 ->	returnJ	$ D.PImport sp ms
 
-	S.PForeign (S.OImport (S.OExtern mName v tv to)) 
+	S.PForeign sp (S.OImport (S.OExtern mName v tv to)) 
 	 -> do	tv'	<- rewrite tv
 		let v'	= case mName of
 				Nothing		-> v
 				Just seaName	-> v { Var.info = Var.info v ++ [Var.ISeaName seaName ]}
 		
 		let to'	= maybeJust to (let Just to2 = makeOpTypeT tv' in to2)
-	 	returnJ $ D.PExtern none v' tv' to'
+	 	returnJ $ D.PExtern sp v' tv' to'
 
 
-	S.PData v vs ctors
-	 -> do	ctors'	<- mapM rewriteCtorDef ctors
-	 	returnJ	$ D.PData none v vs ctors'
+	S.PData sp v vs ctors
+	 -> do	ctors'	<- mapM (rewriteCtorDef sp) ctors
+	 	returnJ	$ D.PData sp v vs ctors'
 	
-	S.PEffect v k
-	 ->	returnJ	$ D.PEffect none v k
+	S.PEffect sp v k
+	 ->	returnJ	$ D.PEffect sp v k
 	 
-	S.PRegion v
-	 ->	returnJ	$ D.PRegion none v
+	S.PRegion sp v
+	 ->	returnJ	$ D.PRegion sp v
 	 
 	-- classes
-	S.PClass v k
-	 ->	returnJ	$ D.PClass  none v k
+	S.PClass sp v k
+	 ->	returnJ	$ D.PClass sp v k
 
 	-- class dictionaries
- 	S.PClassDict vC vsParam context sigs
+ 	S.PClassDict sp vC vsParam context sigs
 	 -> do
 	 	-- convert type param vars into actual types
 		let tsParam	= map makeTVar vsParam
@@ -129,10 +129,10 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 
 	 	let sigs'	= catMap makeSigs sigs
 
-		returnJ		$ D.PClassDict none vC tsParam [] sigs'
+		returnJ		$ D.PClassDict sp vC tsParam [] sigs'
 
 	-- class instances
-	S.PClassInst vC ts context ss
+	S.PClassInst sp vC ts context ss
 	 -> do	
 		ss'		<- mapM rewrite ss
 
@@ -146,17 +146,16 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 		ts_elab		<- liftM (map t3_1)
 				$  mapM (elaborateRegionsT newVarN getKind) ts_rewrite
 
-	 	returnJ		$ D.PClassInst none vC ts_elab context' ss'
+	 	returnJ		$ D.PClassInst sp vC ts_elab context' ss'
 
 	-- projections
-	S.PProjDict t ss
+	S.PProjDict sp t ss
 	 -> do	ss'		<- mapM rewrite ss
 	 	
 		let ?getKind	= getKind
---		tExp		<- expandT t
 		t'		<- rewrite t
 		
-		returnJ		$ D.PProjDict none t' ss'
+		returnJ		$ D.PProjDict sp t' ss'
 		
 
 	S.PStmt (S.SSig sp v t)
@@ -174,16 +173,16 @@ instance Rewrite S.Top (Maybe (D.Top Annot)) where
 	_  ->	return	Nothing
 	
 -----
-rewriteCtorDef (v, fs)
+rewriteCtorDef sp (v, fs)
  = do	fs'	<- mapM rewriteField fs
- 	return	$ D.CtorDef none v fs'
+ 	return	$ D.CtorDef sp v fs'
 	
 rewriteField field
  = do	mX'	<- liftMaybe rewrite $ dInit field
  	return	$ field { dInit = mX' }
 
 
------
+-- Exp ---------------------------------------------------------------------------------------------
 instance Rewrite S.Exp (D.Exp Annot) where
  rewrite xx
   = case xx of
@@ -204,12 +203,12 @@ instance Rewrite S.Exp (D.Exp Annot) where
 	 -> 	return	$ D.XVar 	sp v
 
 	-- projections
-	S.XProj sp x1 (S.JIndex x2)
+	S.XProj sp x1 (S.JIndex sp2 x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
 		return	$ D.XApp sp (D.XApp sp (D.XVar sp primIndex) x1') x2'
 	
-	S.XProj sp x1 (S.JIndexR x2)
+	S.XProj sp x1 (S.JIndexR sp2 x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
 		return	$ D.XApp sp (D.XApp sp (D.XVar sp primIndexR) x1') x2'
@@ -405,23 +404,23 @@ instance Rewrite S.Exp (D.Exp Annot) where
 		$ "rewrite[Exp]: can't rewrite " % show xx	% "\n"
 
 		
------
+-- Proj ---------------------------------------------------------------------------------------------
 instance Rewrite S.Proj (D.Proj Annot) where
  rewrite pp
   = case pp of
-  	S.JField  v	-> return $ D.JField  none v
-	S.JFieldR v	-> return $ D.JFieldR none v
+  	S.JField  sp v	-> return $ D.JField  sp v
+	S.JFieldR sp v	-> return $ D.JFieldR sp v
 
-	S.JIndex  x	
+	S.JIndex  sp x	
 	 -> do	v	<- newVarN NameValue
-	 	return	$ D.JField none v
+	 	return	$ D.JField sp v
 
-	S.JIndexR  x	
+	S.JIndexR sp x	
 	 -> do	v	<- newVarN NameValue
-	 	return	$ D.JFieldR none v
+	 	return	$ D.JFieldR sp v
 
 
------
+-- Stmt ---------------------------------------------------------------------------------------------
 instance Rewrite S.Stmt (D.Stmt Annot) where
  rewrite ss
   = case ss of
@@ -444,44 +443,45 @@ instance Rewrite S.Stmt (D.Stmt Annot) where
 	 	return	$ D.SSig sp v tElab
 
 
------
+-- Alt ---------------------------------------------------------------------------------------------
 instance Rewrite S.Alt (D.Alt Annot) where
  rewrite aa
   = case aa of
-	S.APat w x
+	S.APat sp w x
 	 -> do	w'		<- rewrite w
 	  	x'		<- rewrite x
-	 	return	$ D.AAlt none 	[D.GCase none w'] x'
+	 	return	$ D.AAlt sp [D.GCase sp w'] x'
 
-	S.AAlt gs x
+	S.AAlt sp gs x
 	 -> do	gs'	<- rewrite gs
 	 	x'	<- rewrite x
-		return	$ D.AAlt none gs' x'
+		return	$ D.AAlt sp gs' x'
 
-	S.ADefault x
+	S.ADefault sp x
 	 -> do	x'	<- rewrite x
-	 	return	$ D.AAlt none 	[] x'
+	 	return	$ D.AAlt sp [] x'
 
 
------
+-- Guard ---------------------------------------------------------------------------------------------
 instance Rewrite S.Guard (D.Guard Annot) where
  rewrite gg 
   = case gg of
-	S.GCase w
+	S.GCase sp w
 	 -> do	w'	<- rewrite w
-	 	return	$ D.GCase none w'
+	 	return	$ D.GCase sp w'
 		
-	S.GExp w x
+	S.GExp sp w x
 	 -> do	w'	<- rewrite w
 	 	x'	<- rewrite x
-		return	$ D.GExp none w' x'
+		return	$ D.GExp sp w' x'
 		
-	S.GBool x
+	S.GBool sp x
 	 -> do	x'	<- rewrite x
-	 	return	$ D.GExp none (D.WConLabel none primTrue []) x'
+	 	return	$ D.GExp sp (D.WConLabel sp primTrue []) x'
 		
 	
 
+-- Pat ---------------------------------------------------------------------------------------------
 ----
 -- This is basic rewriting of the AST from S.Pat to D.Pat
 --	all the more involved rewrites should go in Desugar.Patterns
@@ -489,53 +489,52 @@ instance Rewrite S.Guard (D.Guard Annot) where
 instance Rewrite S.Pat (D.Pat Annot) where
  rewrite ww
   = case ww of
-	S.WVar v
-	 -> do	return	$ D.WVar none  v
+	S.WVar sp v
+	 -> do	return	$ D.WVar sp v
 
-	S.WConst c
-	 -> do	return	$ D.WConst none c
+	S.WConst sp c
+	 -> do	return	$ D.WConst sp c
 
-	S.WCon v ps
+	S.WCon sp v ps
 	 -> do	ps'	<- mapM rewrite ps
-	 	return	$ D.WConLabelP none 
+	 	return	$ D.WConLabelP sp
 				(rewritePatVar v) 
-				(zip [D.LIndex none i | i <- [0..]] ps')
+				(zip [D.LIndex sp i | i <- [0..]] ps')
 		
-	S.WAt v p
+	S.WAt sp v p
 	 -> do	p'	<- rewrite p
-	 	return	$ D.WAt none v p'
+	 	return	$ D.WAt sp v p'
 		
-	S.WWildcard
-	 -> do	return	$ D.WWildcard none
+	S.WWildcard sp
+	 -> do	return	$ D.WWildcard sp
 	 
-	S.WConLabel v lvs
+	S.WConLabel sp v lvs
 	 -> do	lvs'	<- mapZippedM 
 	 			rewrite rewrite 
 	 			lvs
 
-	 	return	$ D.WConLabelP none (rewritePatVar v) lvs'
+	 	return	$ D.WConLabelP sp (rewritePatVar v) lvs'
 
 	---
-	S.WUnit 
-	 -> do	return	$ D.WConLabel none primUnit []
+	S.WUnit sp
+	 -> do	return	$ D.WConLabel sp primUnit []
 
-	S.WTuple ps
+	S.WTuple sp ps
 	 -> do	ps'	<- mapM rewrite ps
-	 	return	$ D.WConLabelP none 
+	 	return	$ D.WConLabelP sp
 				(primTuple (length ps)) 
-				(zip [D.LIndex none i | i <- [0..]] ps')
+				(zip [D.LIndex sp i | i <- [0..]] ps')
 		
-	S.WCons p1 p2
+	S.WCons sp p1 p2
 	 -> do	p1'	<- rewrite p1
 	 	p2'	<- rewrite p2
-		return	$ D.WConLabelP none 
+		return	$ D.WConLabelP sp
 				primCons 
-				[ (D.LIndex none 0, p1')
-				, (D.LIndex none 1, p2') ]
+				[ (D.LIndex sp 0, p1')
+				, (D.LIndex sp 1, p2') ]
 
-	S.WList []
-	 -> 	return	$ D.WConLabelP none 
-	 			primNil []
+	S.WList sp []
+	 -> 	return	$ D.WConLabelP sp primNil []
 
 	---
 	S.WExp x
@@ -548,16 +547,15 @@ instance Rewrite S.Pat (D.Pat Annot) where
 		
 	
 		
------
+-- Label ---------------------------------------------------------------------------------------------
 instance Rewrite S.Label (D.Label Annot) where
  rewrite ll
   = case ll of
-  	S.LIndex i	-> return $ D.LIndex none i
-	
-	S.LVar v	-> return $ D.LVar   none v
+  	S.LIndex sp i	-> return $ D.LIndex sp i
+	S.LVar sp v	-> return $ D.LVar   sp v
 
 
------
+-- Try syntax------------------------------------------------------------------------------------------
 rewriteTry
 	:: SourcePos -> [D.Stmt Annot] -> D.Exp Annot -> [D.Alt Annot] 
 	-> RewriteM (D.Exp Annot)
@@ -594,7 +592,7 @@ addWithAlt	w (D.AAlt sp aa x)
 	_		-> D.AAlt sp aa (D.XDo sp [D.SBind sp Nothing x, D.SBind sp Nothing w])
 	
 
------
+-- Type ---------------------------------------------------------------------------------------------
 instance Rewrite S.Type S.Type where
  rewrite tt
   = case tt of

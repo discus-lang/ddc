@@ -5,7 +5,6 @@ module Source.Desugar.Base
 	, RewriteM
 	, RewriteS(..)
 	, Annot
-	, none
 	, newVarN
 	, newVarNS
 	, newVarNI
@@ -91,4 +90,3 @@ instance Rewrite a b => Rewrite (Maybe a) (Maybe b) where
 
 -----
 type	Annot	= SourcePos
-none		= NoSourcePos

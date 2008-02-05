@@ -177,37 +177,37 @@ tops
 -----
 top		
 	:: { [Top] }
-	: 'pragma' expApps 				{ [PPragma $2]					}
-	| 'module' module 				{ [PModule $2]					}
+	: 'pragma' expApps 				{ [PPragma (spTP $1) $2]			}
+	| 'module' module 				{ [PModule (spTP $1) $2]			}
 		 
 	| 'import' 'extern'  externSig			{ [$3]						}
 	| 'import' 'extern' '{' externSigs '}' 		{ $4						}
 		
-	| 'import' module        			{ [PImportModule   [$2]]			}
-	| 'import' '{' module_semi '}' 			{ [PImportModule   $3]				}
+	| 'import' module        			{ [PImportModule (spTP $1) [$2]]		}
+	| 'import' '{' module_semi '}' 			{ [PImportModule (spTP $1) $3]			}
 
-	| 'foreign' foreign				{ [PForeign $2]					}
+	| 'foreign' foreign				{ [PForeign (spTP $1) $2]			}
 
 
-	| infixMode INT symbolList 			{ [PInfix    $1 (getCIntValue $2) $3]		}
+	| infixMode INT symbolList 			{ [PInfix (spTP $2) $1 (getCIntValue $2) $3]	}
 	| dataDef 					{ [$1]						}
 
-	| 'effect' pCon '::' kind 			{ [PEffect  (vNameE $2) $4]			}
-	| 'region' pVar 				{ [PRegion  (vNameR $2)]			}
+	| 'effect' pCon '::' kind 			{ [PEffect (spTP $1) (vNameE $2) $4]		}
+	| 'region' pVar 				{ [PRegion (spTP $1) (vNameR $2)]		}
 
 	-- class defs
 	| 'class' pCon '::' kind  
-	{ [PClass   (vNameW $2) $4] }
+	{ [PClass (spTP $1) (vNameW $2) $4] }
 
 	| 'class' pCon pVar 'where' '{' typeSig_Ss '}'
-	{ [PClassDict (vNameW $2) [vNameT $3] [] $6 ] }
+	{ [PClassDict (spTP $1) (vNameW $2) [vNameT $3] [] $6 ] }
 
 	| 'instance' pCon typeZ_space 'where' '{' binds '}'
-	{ [PClassInst (vNameW $2) $3 [] $6 ] }
+	{ [PClassInst (spTP $1) (vNameW $2) $3 [] $6 ] }
 
 	-- projection defs
 	| 'project' typeA 'where' '{' bindSigs '}'
-	{ [PProjDict $2 $5]		}
+	{ [PProjDict (spTP $1) $2 $5]		}
 
 	-- type sigs
 --	| pVar '::' type 	
@@ -283,7 +283,7 @@ symbolList
 
 externSig
 	:: { Top }
-	: pVar '::' type ':$' typeN ';'		{ PImportExtern $1 $3 (Just $5)		}
+	: pVar '::' type ':$' typeN ';'		{ PImportExtern (spTP $2) $1 $3 (Just $5)		}
 
 externSigs
 	:: { [Top] }
@@ -362,7 +362,7 @@ tryWith
 expE	:: { Exp }
 	: expE2					{ $1						}
 	| '\\' 	   expApps '->'  expE		{ XLambdaPats   (spTP $1) $2 $4			}		
-	| '\\' '.' pVar expAppZs		{ XLambdaProj   (spTP $1) (JField  $3) $4	}
+	| '\\' '.' pVar expAppZs		{ XLambdaProj   (spTP $1) (JField (spTP $2) $3) $4	}
 
 	| 'if'     exp 'then' exp 'else' expE	{ XIfThenElse 	(spTP $1) $2 $4 $6	}
 
@@ -442,14 +442,14 @@ expA
 	: '(' exp ')'				{ $2					}
 
 	-- field projections
-	| expA '.' pVar				{ XProj  (spTP $2) $1 (JField  $3)	}
-	| expA '#' pVar				{ XProj  (spTP $2) $1 (JFieldR $3)	}
+	| expA '.' pVar				{ XProj  (spTP $2) $1 (JField  (spTP $2) $3)	}
+	| expA '#' pVar				{ XProj  (spTP $2) $1 (JFieldR (spTP $2) $3)	}
 
-	| pVar '&' '{' typeN '}'		{ XProjT (spTP $2) $4 (JField  $1)	}
+	| pVar '&' '{' typeN '}'		{ XProjT (spTP $2) $4 (JField  (spTP $2) $1)	}
 
 	-- index projection
-	| expA '.' '(' exp ')'			{ XProj  (spTP $2) $1 (JIndex  $4) 	}
-	| expA '#' '(' exp ')'			{ XProj  (spTP $2) $1 (JIndexR $4)	}
+	| expA '.' '(' exp ')'			{ XProj  (spTP $2) $1 (JIndex  (spTP $2) $4) 	}
+	| expA '#' '(' exp ')'			{ XProj  (spTP $2) $1 (JIndexR (spTP $2) $4)	}
 
 	-- object syntax
 	| '^' pVar				{ XObjVar   (spTP $1) (vNameV $2)	}
@@ -529,8 +529,8 @@ caseAlts
 
 caseAlt
 	:: { Alt }				
-	:  pat      '->' exp 			{ APat $1 $3				}
-	|  '_'      '->' exp 			{ ADefault $3				}
+	:  pat      '->' exp 			{ APat (spTP $2) $1 $3			}
+	|  '_'      '->' exp 			{ ADefault (spTP $2) $3			}
 
 -----
 matchAlts
@@ -545,18 +545,18 @@ matchAltsS
 		
 matchAlt
 	:: { Alt }
-	:  guards '=' exp 			{ AAlt $1 $3				}
-	|  '\\=' exp				{ AAlt [] $2				}
+	:  guards '=' exp 			{ AAlt (spTP $2) $1 $3			}
+	|  '\\=' exp				{ AAlt (spTP $1) [] $2			}
 		
 guards	:: { [Guard] }
 	: guard1				{ [$1]					}
 	| guard1 guard2s			{ $1 : $2				}
 
 guard1	:: { Guard }
-	: '|'  pat '<-' exp			{ GExp   $2 $4				}
-	| '|'  exp				{ GBool  $2				}
+	: '|'  pat '<-' exp			{ GExp   (spTP $1) $2 $4		}
+	| '|'  exp				{ GBool  (spTP $1) $2			}
 		
-	| '|-' pat				{ GCase  $2				}
+	| '|-' pat				{ GCase  (spTP $1) $2			}
 
 
 
@@ -565,15 +565,15 @@ guard2s	:: { [Guard] }
 	|  guard2 guard2s			{ $1 : $2				}
 
 guard2	:: { Guard }
-	: ',' pat '<-' exp			{ GExp	$2 $4				}
-	| ',' exp				{ GBool	$2				}
+	: ',' pat '<-' exp			{ GExp	 (spTP $3) $2 $4		}
+	| ',' exp				{ GBool	 (spTP $1) $2			}
 
 		
 pat	:: { Pat }
 	: expInfix				{ WExp    $1				}
 
-	| pCon '{' '}'				{ WConLabel $1 []			}
-	| pCon '{' labelPat_Cs '}'		{ WConLabel $1 $3			}
+	| pCon '{' '}'				{ WConLabel (spTP $2) $1 []		}
+	| pCon '{' labelPat_Cs '}'		{ WConLabel (spTP $2) $1 $3		}
 
 
 labelPat_Cs
@@ -583,8 +583,8 @@ labelPat_Cs
 		
 labelPat
 	:: { (Label, Pat) }
-	: '.' pVar '=' pVar			{ (LVar $2, WVar $4)				}
-	| '.' INT  '=' pVar			{ (LIndex (getCIntValue $2), WVar $4)	}
+	: '.' pVar '=' pVar			{ (LVar (spTP $1) $2, WVar (spTP $3) $4)			}
+	| '.' INT  '=' pVar			{ (LIndex (spTP $1) (getCIntValue $2), WVar (spTP $3) $4)	}
 		
 
 ----------------------------------------------------------------------------------------------------
@@ -633,19 +633,19 @@ lcQual	:: { LCQual }
 
 dataDef	:: { Top }
 	: 'data' pCon pVars_space_empty				
-	{ PData $2 (map (vNameDefaultN NameType) $3) []	}
+	{ PData (spTP $1) $2 (map (vNameDefaultN NameType) $3) []	}
 
 	| 'data' pCon pVars_space_empty '=' dataConss		
-	{ PData $2 (map (vNameDefaultN NameType) $3) $5	}
+	{ PData (spTP $1) $2 (map (vNameDefaultN NameType) $3) $5	}
 
 	| 'data' CON  '#' pVars_space_empty
-	{ PData (toVarHash NameType $2) (map (vNameDefaultN NameType) $4) []	}
+	{ PData (spTP $1) (toVarHash NameType $2) (map (vNameDefaultN NameType) $4) []	}
 		
 	| 'data' CON  '#' pVars_space_empty 'foreign' STRING 	
 	{ 
 		let	K.CString name	= token $6
 			var		= (toVarHash NameType $2) { Var.info = [Var.ISeaName name] }
-	  	in	PData var (map (vNameDefaultN NameType) $4) [] 
+	  	in	PData (spTP $1) var (map (vNameDefaultN NameType) $4) [] 
 	}
 		
 dataConss

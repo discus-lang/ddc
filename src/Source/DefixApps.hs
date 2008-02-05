@@ -17,7 +17,6 @@ import Util
 
 -----
 stage	= "Source.DefixApps"
-none	= NoSourcePos
 
 -----------------------
 -- defixApps

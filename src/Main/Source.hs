@@ -123,7 +123,7 @@ sourceSlurpInlineVars
  = 
  	return	$ catMap
 			(\p -> case p of
- 				PPragma [XVar sp v, XList _ xs]
+ 				PPragma _ [XVar sp v, XList _ xs]
 				 | Var.name v == "Inline"
 				 , vs		 <- map (\(XVar sp v) -> v) xs
 				 -> vs
