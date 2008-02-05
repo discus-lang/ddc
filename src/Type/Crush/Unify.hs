@@ -26,7 +26,7 @@ import Type.Dump
 
 
 -----
-debug	= False
+debug	= True
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
@@ -66,8 +66,8 @@ crushUnifyClass3 cidT c
  = do	trace	$ "*   Unify.unifyClass " % cidT % "\n"
 		% "    type         = " % classType c	% "\n"
 		% "    name         = " % className c	% "\n"
-		% "    queue        = " % classQueue c	% "\n\n"
-
+		% "    queue        = " % classQueue c	% "\n"
+		% "    nodes        = " % (map fst $ classNodes c) % "\n\n"
 
  	-- crush out nested unifiers and filter out vars and bottoms as they don't 
 	--	contribute to the constructor
@@ -172,8 +172,10 @@ unifyClassMerge cidT c queue@(t:_)
 				
 	, (vs, tss)		<- unzip vsTss
 
-	-- all ctors must have the same name and the same number of args.
+	-- all ctors must have the same name.
 	, length (nub vs) == 1
+
+	-- also check number of args (kind) while we're here.
 	, length (nub $ map length tss) == 1
 	= do
 		ts'	<- mapM mergeClassesT
@@ -195,23 +197,11 @@ unifyClassMerge cidT c queue@(t:_)
 	= do	return	$ makeTSum KClosure queue
 
 
-	-- Oh oh..
-	-- A conflict at this stage means that something has
-	--	gone wrong internally and the graph is corrupted. 
+	-- Found a user type error in the graph
 	| otherwise
---	= return (TUnify (kindOfType t) queue)
-	
  	= do	errorConflict cidT c 
 		return (TError (kindOfType t) (classQueue c))
 
-{-	panic stage
-	$ "unifyClass: Found unexpected conflict in type graph.\n"
-	% "    cid = " % cidT 	% "\n"
-	% "  queue = " % queue 	% "\n"
-
-	% "nodes:\n"
-	% catMap (\(t, ts) -> pretty $ t % " " % ts % "\n") (classNodes c)
--}
 
 -----------------------
 -- errorConflict
@@ -223,22 +213,34 @@ unifyClassMerge cidT c queue@(t:_)
 --
 errorConflict :: ClassId -> Class -> SquidM ()
 errorConflict	 cid c
- = do	let (tsData, tsFun)	= splitDataFun (classNodes c) [] []
- 	
-	-- check for errors between data and function ctors
-	when (not $ isNil tsFun)
-	 $ do	errorConflictCF tsData tsFun
-	 	let (tF1: tFs)	= tsFun
-		errorConflictCC tF1 tFs
-	 
-	 
-	-- check for errors between data ctors
-	when (not $ isNil tsData)
-	 $ do	let (tC1: tCs)	= tsData
-	 	errorConflictCC tC1 tCs
-		
+ = do	
+	-- filter out TVars, as they don't conflict with anything
+ 	let tsCtorsNode
+		= filter (\(t, _) -> not $ t =@= TVar{})
+		$ classNodes c
+ 
+	-- gather up the pairs that conflict
+ 	let conflicts
+		= [ (n1, n2)
+			| n1@(t1, _)	<- tsCtorsNode
+			, n2@(t2, _)	<- tsCtorsNode
+			, isConflict t1 t2 ]
+	
+	-- We could perhaps do some more extended diagnosis, but just
+	--	report the first conflict for now.
+	let Just ((t1, s1), (t2, s2))	
+		= takeHead conflicts
+	
+	addErrors [
+		ErrorUnifyCtorMismatch 
+		{ eCtor1	= t1
+		, eTypeSource1	= s1
+		, eCtor2	= t2
+		, eTypeSource2	= s2}]
+
 	updateClass cid
 		c { classType	= Just $ TError (classKind c) (classQueue c)}
+
 
 	-- sanity, check that we've actually identified the problem and added
 	--	an error to the state.
@@ -252,76 +254,31 @@ errorConflict	 cid c
 	 
 	return ()
 
-
-splitDataFun [] ds fs 				= (ds, fs)
-splitDataFun (x@(TData{}, _) : xs) ds fs	= splitDataFun xs (x : ds) fs
-splitDataFun (x@(TFun{}, _)  : xs) ds fs	= splitDataFun xs ds (x : fs)
-splitDataFun (_ : xs)		   ds fs	= splitDataFun xs ds fs
+-- Checks if these two types are conflicting 
+isConflict :: Type -> Type -> Bool
+isConflict t1 t2
+	| TData v1 ts1	<- t1
+	, TData v2 ts2	<- t2
+	, v1 == v2
+	, length ts1 == length ts2
+	= False
 	
+	| TFun{}	<- t1
+	, TFun{}	<- t2
+	= False
 	
-errorConflictCF tCons tFuns
- = case (tCons, tFuns) of
- 	([], [])	-> return ()
-	([],  _)	-> return ()
-	(_,  [])	-> return ()
-
-	(  ((c, cInfo) : _)
-	 , ((f, fInfo) : _))
-	 -> addErrors [
-		ErrorUnifyCtorMismatch 
-		{ eCtor1	= f
-		, eTypeSource1	= fInfo
-		, eCtor2	= c
-		, eTypeSource2	= cInfo}]
+	| TVar{}	<- t1
+	= False
+	
+	| TVar{}	<- t2
+	= False
+	
+	| otherwise
+	= True
 
 
-errorConflictCC x@(c@(TData v ts), cInfo) tCs
- = case tCs of
- 	[]				-> return ()
-	(TData v' ts', _) : cs
-	 | v         == v'
-	 , length ts == length ts'	-> errorConflictCC x cs
- 
-	(c', cInfo') : cs
-	 -> addErrors [
-		ErrorUnifyCtorMismatch 
-		{ eCtor1	= c
-		, eTypeSource1	= cInfo
-		, eCtor2	= c'
-		, eTypeSource2	= cInfo'}]
-		
-errorConflictCC x@(c@(TFun a1 b1 eff1 clo1), cInfo) tCs
- = case tCs of
- 	[]				-> return ()
 
-	(TFun a2 b2 eff2 clo2, _) : cs
-	 -> errorConflictCC x cs
-	 
-	(c', cInfo') : cs
-	 -> addErrors [
-		ErrorUnifyCtorMismatch 
-		{ eCtor1	= c
-		, eTypeSource1	= cInfo
-		, eCtor2	= c'
-		, eTypeSource2	= cInfo'}]
-
-
------
--- Check for type conflicts in this class.
---	These are the conflicts which are likely to arise from 
---	bugs in the user code.
---			
-unifyClassCheck cidT c queue@(q:qs)
- = case q of
-{- 	TData v ts
-	 |  unifyCheckTCon v (length ts) qs 	
-	 -> errorConflict  cidT c 
-	 
-	TFun{}
-	 |  unifyCheckTFun qs			
-	 -> errorConflict  cidT c
--}	 
-	_ -> unifyClassMerge cidT c queue
+{-
 	
 unifyCheckTCon v argCount qq
  = case qq of
@@ -337,3 +294,4 @@ unifyCheckTFun qq
 	_					-> True
 
 
+-}

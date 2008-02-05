@@ -49,7 +49,8 @@ crushFetterC2 cid (ClassFetter { classFetter = f })
 	= crushFetterMulti cid f
 
 crushFetterC2 cid 
-	(Class	{ classKind	= k
+	c@(Class	
+		{ classKind	= k
 		, classType	= Just tNode
 		, classFetters 	= fs })
  = do	
@@ -59,7 +60,7 @@ crushFetterC2 cid
 		
 	(progresss, mfsReduced)	
 		<- liftM unzip
-		$  mapM (crushFetterSingle cid tNode) fs
+		$  mapM (crushFetterSingle cid c tNode) fs
 
 	trace	$ "    progress   = " % progresss		% "\n\n"
 
@@ -74,7 +75,7 @@ crushFetterC2 cid c
 	= return False
 
 -- crushFetterSingle -------------------------------------------------------------------------------
-crushFetterSingle cid tNode (TFetter f@(FConstraint vC [TClass k cidC]))
+crushFetterSingle cid c tNode (TFetter f@(FConstraint vC [TClass k cidC]))
  = do	
 	cid'	<- sinkClassId cid
  	cidC'	<- sinkClassId cidC
@@ -83,17 +84,20 @@ crushFetterSingle cid tNode (TFetter f@(FConstraint vC [TClass k cidC]))
 	 $ panic stage
 	 	$ "crushFetterSingle: Fetter in class " % cid % " constrains some other class " % cidC' % "\n"
 		
-	crushFetterSingle' cid tNode vC f
+	crushFetterSingle' cid c tNode vC f
 
-crushFetterSingle' cid tNode vC f
+crushFetterSingle' cid c tNode vC f
 
 	-- keep the original fetter when crushing purity
 	| vC	== primPure
 	, Just fsBits	<- crushFetter $ FConstraint vC [tNode]
 	= do	
 		trace	$ "    fsBits     = " % fsBits			% "\n"
+		
+		-- record the source of the new fetter based on the old one
+		let Just ts	= lookup (TFetter f) $ classNodes c
+		let ?src	= TSI $ SICrushed ts f
 
-		let ?src	= TSI $ SICrushed f
 		progress	<- liftM or 
 				$  mapM addFetter fsBits
 
@@ -104,8 +108,10 @@ crushFetterSingle' cid tNode vC f
 	| Just fsBits	<- crushFetter $ FConstraint vC [tNode]
 	= do
 		trace	$ "    fsBits     = " % fsBits			% "\n"
+		
+		let Just ts	= lookup (TFetter f) $ classNodes c
+		let ?src	= TSI $ SICrushed ts f
 
-		let ?src	= TSI $ SICrushed f
 		progress	<- liftM or
 				$ mapM addFetter fsBits
 						

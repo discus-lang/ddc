@@ -145,8 +145,9 @@ fowardCids c@ClassFetter { classFetter = f }
 
 fowardCids c@Class{}
  = do	cid'		<- updateVC $ classId	   c
+
 	fs'		<- mapM updateVC $ classFetters c
-	
+
 	let (ts, ns)	= unzip $ classNodes c
 	ts'		<- mapM updateVC ts
 	let nodes'	= zip ts' ns

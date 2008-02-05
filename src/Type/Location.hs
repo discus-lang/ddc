@@ -118,7 +118,7 @@ data SourceMisc
 -- | Sources of things added by the inferencer.
 data SourceInfer
 	= SIClassName						-- ^ A name for an equivalence class invented by Type.Class.makeClassName
-	| SICrushed	Fetter					-- ^ The result of crushing some fetter or effect
+	| SICrushed	{ ts :: TypeSource, iF :: Fetter}	-- ^ The result of crushing some fetter or effect
 	| SIGenInst	Var					-- ^ A scheme that was generalised and added to the graph because its 
 								--	bound var was instantiated.
 	| SIGenFinal						-- ^ A scheme that was generalised and added to the graph during 
@@ -147,7 +147,9 @@ takeSourcePos ts
 	TSU su	-> Just $ usp su
 	TSM sm	-> Just $ msp sm
 	
-	TSI _	-> Nothing
+	TSI si	-> case si of
+			SICrushed ts' _ -> takeSourcePos ts'
+			_		-> Nothing
 
 
 dispSourcePos :: TypeSource -> PrettyP
@@ -164,11 +166,19 @@ dispSourcePos ts
 
 dispTypeSource :: Type -> TypeSource -> PrettyP
 dispTypeSource tt ts
- = case ts of
- 	TSV sv	-> dispSourceValue tt sv
-	TSU su	-> dispSourceUnify tt su
-	_	-> panic stage
-		$  "dispTypeSource: no match for " % ts % "\n"
+	| TSV sv	<- ts
+	= dispSourceValue tt sv
+	
+	| TSU su	<- ts
+	= dispSourceUnify tt su
+	
+	| TSI si		<- ts
+	, SICrushed ts'	_	<- si
+	= dispTypeSource tt ts'
+	
+	| otherwise
+	= panic stage
+	$  "dispTypeSource: no match for " % ts % "\n"
 
 	
 -- | Show the source of a type error due to this reason

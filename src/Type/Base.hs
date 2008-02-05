@@ -35,7 +35,8 @@ data Class
 	-- | Some auxilliary constraint between classes.
 	| ClassFetter
 		{ classId		:: ClassId
-		, classFetter		:: Fetter }
+		, classFetter		:: Fetter 
+		, classSource		:: TypeSource }
 
 	-- | An equivalence class.
 	| Class

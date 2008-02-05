@@ -37,9 +37,10 @@ crushShape :: ClassId -> SquidM Bool
 crushShape shapeCid
  = do 	
  	-- Grab the Shape fetter from the class and extract the list of cids to be merged.
-	Just shapeC	<- lookupClass shapeCid
+	Just shapeC@ClassFetter
+		{ classFetter	= f@(FConstraint v shapeTs)
+		, classSource	= src }	<- lookupClass shapeCid
 
-	let f@(FConstraint v shapeTs) = classFetter shapeC
 	let mergeCids	= map (\(TClass k cid) -> cid) shapeTs
 
 	trace	$ "*   Crush.crushShape " 	% shapeCid 	% "\n"
@@ -81,7 +82,7 @@ crushShape shapeCid
 		-- we've got a template
 		--	we can now merge the sub-classes and remove the shape constraint.
 		| Just template	<- mTemplate
-		= do	crushShapeMerge f mergeCids mergeCs mData template
+		= do	crushShapeMerge f src mergeCids mergeCs mData template
 			delClass shapeCid
 			return True
 		
@@ -91,13 +92,14 @@ crushShape shapeCid
 --	otherwise we'll over-constrain the regions.
 crushShapeMerge 
 	:: Fetter		-- the fetter being crushed
+	-> TypeSource		-- the source of the original fetter
 	-> [ClassId] 		-- classIds to merge
 	-> [Class] 		-- classes corresponding to each classId above.
 	-> [Maybe Type] 	-- the types of the nodes, or Nothing if they're bottom.
 	-> Type			-- the template type.
 	-> SquidM ()
 
-crushShapeMerge f cids cs mts template@(TData v templateTs)
+crushShapeMerge f src cids cs mts template@(TData v templateTs)
  = do 	let kinds	= map kindOfType templateTs
 
 	-- Grab the type args from each of the available constructors.
@@ -106,17 +108,14 @@ crushShapeMerge f cids cs mts template@(TData v templateTs)
 	-- Merge together type/effect/closure args but leave region args independent.
 	--	If there is no region arg in a type then make a fresh one.
 	--
-	argsMerged	<- mapM (shapeArgs f templateTs) mArgss
+	argsMerged	<- mapM (shapeArgs f src templateTs) mArgss
 
 	-- Update the classes with the freshly merged types
-	let cs'		= zipWith 
-				(\c args -> c { classType = Just (TData v args) }) 
-				cs 
-				argsMerged
+	zipWithM
+		(\c args -> addToClass (classId c) (TSI $ SICrushed src f) (TData v args))
+		cs 
+		argsMerged
 	
-	zipWithM updateClass cids cs'
-	mapM activateClass cids
-			
 	-- debugging
 	trace	$ "    kinds        = " % kinds			% "\n"
 		% "    mArgss       = "	% mArgss		% "\n"
@@ -125,34 +124,35 @@ crushShapeMerge f cids cs mts template@(TData v templateTs)
 		
 	return () 
 	
-
 -- The template isn't a TData as we were expecting.
 --	This'll end up being a type error, but just merge all the classes for now
 --	so unify finds the error.
 --	
-crushShapeMerge f cids cs mts template
+crushShapeMerge f src cids cs mts template
  = do	mergeClasses cids
  	return ()
+
+
 	
-	
-shapeArgs f aa Nothing		= synthArgs f aa
-shapeArgs f aa (Just bb)	= mergeArgs aa bb
+shapeArgs f src aa Nothing	= synthArgs f src aa
+shapeArgs f src aa (Just bb)	= mergeArgs aa bb
  
-synthArgs :: Fetter -> [Type] -> SquidM [Type]
-synthArgs f []	
+
+synthArgs :: Fetter -> TypeSource -> [Type] -> SquidM [Type]
+synthArgs f src []	
 	= return []
 	
-synthArgs f (a:as) 
+synthArgs f src (a:as) 
 	| TClass KRegion cidA	<- a
 	= do	var	<- newVarN    NameRegion
 		cidB	<- allocClass KRegion
-		addToClass cidB (TSI $ SICrushed f) (TVar KRegion var)
+		addToClass cidB (TSI $ SICrushed src f) (TVar KRegion var)
 		
-		rest	<- synthArgs f as
+		rest	<- synthArgs f src as
 		return	(TClass KRegion cidB : rest)
 		
 	| otherwise
-	= do	rest	<- synthArgs f as
+	= do	rest	<- synthArgs f src as
 		return	(a : rest)
 		
 		

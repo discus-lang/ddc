@@ -50,8 +50,10 @@ crushProjClassT cidT
 	 		% errs
   
 	-- lookup the fetter from the node and unpack it.
- 	Just cProj@(ClassFetter { classFetter = fProj })
-			<- lookupClass cidT
+ 	Just cProj@(ClassFetter 
+			{ classFetter = fProj 
+			, classSource	= src })
+				<- lookupClass cidT
 
 	trace	$ "*   Proj.crushProjClassT\n"
 		% "    cidT        = " % cidT		% "\n"
@@ -62,12 +64,12 @@ crushProjClassT cidT
 	-- lookup the node for the object
 	Just cObj	<- lookupClass cidObj
 	
-	crushProjClass2 cidT fProj cObj 
+	crushProjClass2 cidT src fProj cObj 
 	
 
-crushProjClass2 cidT fProj cObj
-	| Class { classType = Just tObj }	<- cObj
-	= crushProjClass3 cidT fProj cObj tObj
+crushProjClass2 cidT src fProj cObj
+	| Class { classType 	= Just tObj }<- cObj
+	= crushProjClass3 cidT src fProj cObj tObj
 
 	-- if this crush is interleaved with something that's added to this node
 	--	then we'll have to wait for it to be unified
@@ -75,7 +77,7 @@ crushProjClass2 cidT fProj cObj
 	= do	return Nothing
 
 	
-crushProjClass3 cidT fProj cObj tObj
+crushProjClass3 cidT src fProj cObj tObj
  = do
  	let FProj proj _ (TClass KData cidObj) _	= fProj
 
@@ -102,7 +104,7 @@ crushProjClass3 cidT fProj cObj tObj
 		-- yay, we've got a projection dictionary
 		| TData vCon _		<- tObj
 		, Just vsDict		<- Map.lookup vCon projectDicts
-		= crushProj2 cidT fProj cObj tObj (snd vsDict)
+		= crushProj2 cidT src fProj cObj tObj (snd vsDict)
 
 		| otherwise
 		= panic stage
@@ -112,13 +114,13 @@ crushProjClass3 cidT fProj cObj tObj
 
 
 crushProj2 
-	:: ClassId -> Fetter
+	:: ClassId -> TypeSource -> Fetter
 	-> Class   -> Type
 	-> Map Var Var 
 	-> SquidM (Maybe [CTree])
 
 crushProj2 
-	cid 
+	cid src
 	fProj@(FProj proj vInst tObj tBind)
 	cObj tObjCon vsDict
  = do
@@ -154,8 +156,8 @@ crushProj2
 			Just vImplT	<- lookupSigmaVar vImpl
 
 			-- Build the new constraints
-			let qs	= 	[ CInst (TSI $ SICrushed fProj) vInst vImplT
-					, CEq   (TSI $ SICrushed fProj) (TVar KData vInst) tBind ]
+			let qs	= 	[ CInst (TSI $ SICrushed src fProj) vInst vImplT
+					, CEq   (TSI $ SICrushed src fProj) (TVar KData vInst) tBind ]
 					 
 			trace $ 	"    qs : " %> "\n" %!% qs % "\n"
 

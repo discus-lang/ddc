@@ -414,7 +414,8 @@ addFetter f@(FConstraint v ts)
 	modifyClass cidF
 	 $ \c -> ClassFetter
 	 	{ classId	= cidF
-		, classFetter	= f }
+		, classFetter	= f 
+		, classSource	= ?src }
 
 	activateClass cidF
 
@@ -444,7 +445,8 @@ addFetter f@(FProj j v1 tDict tBind)
 	modifyClass cidF
 	 $ \c -> ClassFetter
 	 	{ classId	= cidF
-		, classFetter	= f }
+		, classFetter	= f 
+		, classSource	= ?src }
 		
 	activateClass cidF
 	

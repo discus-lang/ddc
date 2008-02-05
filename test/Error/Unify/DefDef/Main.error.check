@@ -1,13 +1,13 @@
-test/Error/Unify/DefDef/Main.ds:8:14
+test/Error/Unify/DefDef/Main.ds:8:10
     Type mismatch during unification.
-          cannot match: Data.String.String %66
-                  with: Base.Int %56
+          cannot match: Base.Int %56
+                  with: Data.String.String %66
 
-                  use of: f2
-                 at type: Data.String.String %66
-                      at: test/Error/Unify/DefDef/Main.ds:8:14
-
-        conflicts with, 
                   use of: f1
                  at type: Base.Int %56
                       at: test/Error/Unify/DefDef/Main.ds:8:10
+
+        conflicts with, 
+                  use of: f2
+                 at type: Data.String.String %66
+                      at: test/Error/Unify/DefDef/Main.ds:8:14

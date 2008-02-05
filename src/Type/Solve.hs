@@ -971,7 +971,9 @@ solveGrind
 solveGrindStep 
  = do	traceG	$ "\n"
  		% "*   solveGrindStep\n"
-  	
+	watchClass "grind" 57
+  	watchClass "grind" 14
+	
 	 -- get the set of active classes
  	active	<- liftM Set.toList $ clearActive
 	
