@@ -1,0 +1,3 @@
+
+-- Cannot purify top level effects
+list2	= (\f x -> mapL f x) (\x -> print x) ["perch", "tetra", "cichlid"]

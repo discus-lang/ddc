@@ -10,7 +10,8 @@ module Type.Location
 	, takeSourcePos
 	, dispSourcePos
 	, dispTypeSource
-	, dispSourceValue)
+	, dispSourceValue
+	, dispFetterSource)
 
 where
 
@@ -164,7 +165,7 @@ dispSourcePos ts
 -- | These are the long versions of source locations that are placed in error messages
 
 
-dispTypeSource :: Type -> TypeSource -> PrettyP
+dispTypeSource :: Pretty tt => tt -> TypeSource -> PrettyP
 dispTypeSource tt ts
 	| TSV sv	<- ts
 	= dispSourceValue tt sv
@@ -182,7 +183,7 @@ dispTypeSource tt ts
 
 	
 -- | Show the source of a type error due to this reason
-dispSourceValue :: Type -> SourceValue -> PrettyP
+dispSourceValue :: Pretty tt => tt -> SourceValue -> PrettyP
 dispSourceValue tt sv
  = case sv of
 	SVLambda sp 	
@@ -252,7 +253,7 @@ dispSourceValue tt sv
 
 
 -- | Show the source of a type error due to this reason
-dispSourceUnify :: Type -> SourceUnify -> PrettyP
+dispSourceUnify :: Pretty tt => tt -> SourceUnify -> PrettyP
 dispSourceUnify tt sv
  = case sv of
  	SUAltLeft sp 
@@ -274,3 +275,19 @@ dispSourceUnify tt sv
 
 	SUBind sp
 		-> ppr "binding"	
+
+
+-- | Show the source of a fetter
+--	This is used to print sources of class constraints when
+--	we get a purity or mutability conflict.
+--
+--	The only possible source of these is instantiations of type schemes
+--
+dispFetterSource :: Fetter -> TypeSource -> PrettyP
+dispFetterSource f ts
+	| TSV sv		<- ts
+	, SVInst sp var		<- sv
+	= "      constraint: " % f 	% "\n"
+	% "     from use of: " % var	% "\n"
+	% "              at: " % sp	% "\n"
+	

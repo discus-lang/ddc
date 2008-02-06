@@ -6,6 +6,6 @@ Unify
 Grind
 Closure
 Main
-CheckPure-skip
+Purity
 CheckConst-skip
 Capture-skip

@@ -1,0 +1,9 @@
+
+-- Cannot purify write effects.
+x
+ = do 	a	= 5
+	(:=)@ a 27
+	
+ 	
+
+

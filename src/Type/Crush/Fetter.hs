@@ -13,6 +13,7 @@ import Type.Class
 import Type.Location
 import Type.Exp
 import Type.Dump
+import Type.Error
 
 import Shared.Error
 import Shared.VarPrim
@@ -90,19 +91,29 @@ crushFetterSingle' cid c tNode vC f
 
 	-- keep the original fetter when crushing purity
 	| vC	== primPure
-	, Just fsBits	<- crushFetter $ FConstraint vC [tNode]
-	= do	
-		trace	$ "    fsBits     = " % fsBits			% "\n"
+	= case crushPure c $ FConstraint vC [tNode] of
+
+		-- fetter crushed ok
+		Left fsBits
+		 -> do	trace	$ "    fsBits     = " % fsBits			% "\n"
 		
-		-- record the source of the new fetter based on the old one
-		let Just ts	= lookup (TFetter f) $ classNodes c
-		let ?src	= TSI $ SICrushed ts f
+			-- record the source of the new fetter based on the old one
+			let Just ts	= lookup (TFetter f) $ classNodes c
+			let ?src	= TSI $ SICrushed ts f
 
-		progress	<- liftM or 
-				$  mapM addFetter fsBits
+			progress	<- liftM or 
+					$  mapM addFetter fsBits
 
-		return	( progress
-			, Just f)
+			return	( progress
+				, Just f)
+			
+		-- got a purity error
+		Right err
+		 -> do	trace	$ ppr "    ! purity error\n"
+		 
+		 	addErrors [err]
+			return 	( False
+				, Just f)
 			
 	-- could crush this fetter
 	| Just fsBits	<- crushFetter $ FConstraint vC [tNode]
@@ -123,13 +134,63 @@ crushFetterSingle' cid c tNode vC f
 			, Just f)
 			
 
+-- Crush a purity fetter.
+--	This can generate an error if the effect that the fetter is acting 
+--	on cannot be purified.
+--
+crushPure :: Class -> Fetter -> Either [Fetter] Error
+crushPure c fPure@(FConstraint vC ts)
+	| vC	== primPure
+	, [t]	<- ts
+	= let	
+		-- flatten out the sum into individual effects
+		effs	= flattenTSum t
+
+		-- try and generate the additional constraints needed to purify 
+		--	each effect.
+		mFsPure	= map purifyEff $ flattenTSum t
+
+		-- See if any of the effects couldn't be purified
+		effsBad	= catMaybes
+			$ map (\(eff, mfPure) 
+				-> case mfPure of
+					Nothing	-> Just eff
+					Just _	-> Nothing)
+			$ zip effs mFsPure
+									
+	  in case effsBad of
+	  	[]		-> Left  $ catMaybes mFsPure
+		(effBad : _)	-> Right $ makePurityError c fPure effBad
+		
+
+
+-- | Make an error for when the purity fetter in this class could not be satisfied.
+makePurityError :: Class -> Fetter -> Effect -> Error
+makePurityError c@Class	{ classNodes = nodes }
+		fPure
+		effBad
+ = let	
+	-- lookup the type-source for the purify fetter
+ 	fSrc : _	= [tsPure	| (TFetter (FConstraint v _), tsPure)	<- nodes
+					, v == primPure ]
+
+	-- lookup the type-source for the conflicting effect
+	--	The nodes hold effect sums, so we need to look inside them
+	--	to find which one holds our (single) conflicting effect
+	effSrc : _ 	= [tsEff	| (eff,  tsEff)		<- nodes
+					, elem effBad $ flattenTSum eff]
+					
+   in	ErrorCannotPurify
+   		{ eEffect	= effBad
+		, eEffectSource	= effSrc
+		, eFetter	= fPure
+		, eFetterSource	= fSrc }
+
+
+-- | Crush a non-purity fetter
+--
 crushFetter :: Fetter -> Maybe [Fetter]
 crushFetter (FConstraint vC ts)
-	-- purity
-	| vC	== primPure
-	, [t]		<- ts
-	= Just $ catMaybes $ map purifyEff $ flattenTSum t
-	
 	-- lazy head
 	| vC	== primLazyH
 	, [t]		<- ts
@@ -158,7 +219,10 @@ crushFetter (FConstraint vC ts)
 	= Nothing
 	
 
--- | produce the fetter which purifies this effect
+-- | produce either 
+--	the fetter which purifies this effect
+--	or an error saying why it cannot be purified.
+--
 purifyEff :: Type -> Maybe Fetter
 purifyEff eff
 	-- read
@@ -176,8 +240,7 @@ purifyEff eff
 	= Just $ FConstraint primPure [eff]
 
 	| otherwise
-	= panic stage
-		$ "purifyEff: can't purify " % eff % "\n"	
+	= Nothing
 	
 
 -- | Slurp the head region from this type, if there is one.

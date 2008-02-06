@@ -1,0 +1,4 @@
+
+-- Cannot purify top-level effects.
+list	= mapL print ["perch", "tetra", "cichlid"]
+

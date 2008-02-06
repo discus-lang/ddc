@@ -252,10 +252,11 @@ instance Pretty Error where
 		
 	= (dispSourcePos eSource)					% "\n" 
 	% "    Cannot purify effect `" % e % "'.\n"
-	% prettyETS e eSource
+	% "\n"
+	% dispTypeSource e eSource 
 	% "\n"
 	% "     conflicts with,\n"
-	% prettyFTS f fSource
+	% dispFetterSource f fSource
 
 
  -- Mutability problems.
