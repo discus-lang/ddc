@@ -76,7 +76,7 @@ initBodies ()
  = do
  	-- all the bodies have static starting positions.
 	bodies 
-	 = 	[ newBody (Vec2 200.0 300.0) (Vec2 (0.0 - 0.5)	0.0)
+	 = 	[ newBody (Vec2 200.0 300.0) (Vec2 (0.0 - 0.5) 0.0)
 		, newBody (Vec2 280.0 350.0) (Vec2  0.5		0.0)
 		, newBody (Vec2 520.0 200.0) (Vec2  0.0         1.0)
 	 	, newBody (Vec2 100.0 300.0) (Vec2  0.0        (0.0 - 1.0))

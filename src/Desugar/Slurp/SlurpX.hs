@@ -344,9 +344,14 @@ slurpX 	exp@(XProj sp xBody proj)
 	let proj'	= transformN (\n -> Nothing) proj
 			
 	let qs	 = 
-		[ CProject (TSV $ SVProj sp)	projT vInst tBody (TFun tBody tX eProj cProj)
-		, CEq	   (TSE $ SEProj sp)	eX	$ makeTSum KEffect  [eBody, eProj]
-		, CEq	   (TSC $ SCProj sp)	cX	$ makeTSum KClosure [cBody, cProj] ]
+		[ CProject (TSV $ SVProj sp projT)	
+			projT vInst tBody (TFun tBody tX eProj cProj)
+
+		, CEq	(TSE $ SEProj sp)	
+			eX $ makeTSum KEffect  [eBody, eProj]
+
+		, CEq	(TSC $ SCProj sp)	
+			cX $ makeTSum KClosure [cBody, cProj] ]
 
 	return	( tX
 		, eX
@@ -382,8 +387,11 @@ slurpX	exp@(XProjT sp tDict proj)
 	let proj'	= transformN (\n -> Nothing) proj
 
 	let qs	 = 
-		[ CEq	   (TSV $ SVProj sp) tDictVar	$ tDict
-		, CProject (TSV $ SVProj sp) projT vInst tDictVar tX ]
+		[ CEq	   (TSV $ SVProj sp projT) 
+			tDictVar $ tDict
+
+		, CProject (TSV $ SVProj sp projT) 
+			projT vInst tDictVar tX ]
 
 	return	( tX
 		, eX

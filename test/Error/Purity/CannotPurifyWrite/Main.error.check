@@ -1,11 +1,11 @@
 test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
     Cannot purify effect `Base.!WriteT *34'.
 
-          use of: (:=)
-         at type: Base.!WriteT *34
-              at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
+                  use of: (:=)
+             with effect: Base.!WriteT *34
+                      at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
 
      conflicts with,
-      constraint: Base.Pure !{Base.!ReadT *34; Base.!ReadT *35; Base.!WriteT *34}
-     from use of: suspend2
-              at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:12
+          purity constraint
+             from use of: suspend2
+                      at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:12

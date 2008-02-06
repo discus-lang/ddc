@@ -8,6 +8,6 @@ test/Error/Closure/GetSet/Main.ds:28:8
                       at: test/Error/Closure/GetSet/Main.ds:28:8
 
         conflicts with, 
-        literal value "a"
+          literal value "a"
                  of type: Data.String.String %322
                       at: test/Error/Closure/GetSet/Main.ds:28:14

@@ -3,7 +3,7 @@ test/Error/Unify/IfFun/Main.ds:5:10
           cannot match: Data.Bool.Bool %4
                   with: *8 -(!10 $11)> *9
 
-        object of if-then-else expression
+          object of if-then-else expression
            which must be: Bool
                       at: test/Error/Unify/IfFun/Main.ds:5:10
 

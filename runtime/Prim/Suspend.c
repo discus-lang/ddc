@@ -52,7 +52,7 @@ Obj*	primSuspend3 (Obj* f, Obj* x1, Obj* x2, Obj* x3)
 	_ENTER(3);
 	_S(0)		= x1;
 	_S(1)		= x2;
-	_S(3)		= x3;
+	_S(2)		= x3;
 	
 	Susp* susp	= (Susp*)_allocSusp (f, 3);
 	susp ->a[0]	= _S(0);
@@ -69,7 +69,7 @@ Obj*	primSuspend4 (Obj* f, Obj* x1, Obj* x2, Obj* x3, Obj* x4)
 	_ENTER(4);
 	_S(0)		= x1;
 	_S(1)		= x2;
-	_S(3)		= x3;
+	_S(2)		= x3;
 	_S(3)		= x4;
 	
 	Susp* susp	= (Susp*)_allocSusp (f, 4);

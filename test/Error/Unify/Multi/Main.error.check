@@ -3,7 +3,7 @@ test/Error/Unify/Multi/Main.ds:11:19
           cannot match: *116 -(!131 $171)> *117
                   with: Base.Int %138
 
-        function application
+          function application
                       at: test/Error/Unify/Multi/Main.ds:11:19
 
         conflicts with, 

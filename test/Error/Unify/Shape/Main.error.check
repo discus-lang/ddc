@@ -8,6 +8,6 @@ test/Error/Unify/Shape/Main.ds:7:6
                       at: test/Error/Unify/Shape/Main.ds:7:6
 
         conflicts with, 
-        literal value "erk"
+          literal value "erk"
                  of type: Data.String.String %45
                       at: test/Error/Unify/Shape/Main.ds:7:8

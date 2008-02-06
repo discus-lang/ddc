@@ -8,6 +8,6 @@ test/Error/Unify/DefConst/Main.ds:6:10
                       at: test/Error/Unify/DefConst/Main.ds:6:10
 
         conflicts with, 
-        literal value "perch"
+          literal value "perch"
                  of type: Data.String.String %48
                       at: test/Error/Unify/DefConst/Main.ds:6:15

@@ -15,12 +15,17 @@ module Type.Location
 
 where
 
-import Type.Exp
+import Type.Util.Bits
 import Type.Pretty
+import Type.Exp
+
 import Shared.Base
 import Shared.Exp
 import Shared.Literal
 import Shared.Error
+import Shared.VarPrim
+
+import qualified Shared.Var	as Var
 
 import Util
 
@@ -50,7 +55,7 @@ data SourceValue
 	| SVLiteral	{ vsp :: SourcePos, vLit :: Const }	-- ^ Literal values in expressions have distinct types
 	| SVDoLast	{ vsp :: SourcePos }			-- ^ Do expressions have the type of the last stmt.
 	| SVIfObj	{ vsp :: SourcePos }			-- ^ Match object of an if-expression must be Bool	
-	| SVProj	{ vsp :: SourcePos }			-- ^ Value type constraints from field projection.
+	| SVProj	{ vsp :: SourcePos, vProj :: TProj }	-- ^ Value type constraints from field projection.
 	| SVInst	{ vsp :: SourcePos, vVar :: Var }	-- ^ Type constraint from instance of this bound variable
 
 	| SVLiteralMatch 
@@ -164,8 +169,7 @@ dispSourcePos ts
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
 
-
-dispTypeSource :: Pretty tt => tt -> TypeSource -> PrettyP
+dispTypeSource :: Type -> TypeSource -> PrettyP
 dispTypeSource tt ts
 	| TSV sv	<- ts
 	= dispSourceValue tt sv
@@ -181,9 +185,28 @@ dispTypeSource tt ts
 	= panic stage
 	$  "dispTypeSource: no match for " % ts % "\n"
 
+
+-- Some fns to make showing error messages easier
+--		'of' refers to the entire effect/type of some binding
+--	whereas 'at' / 'with' refers to just a small part of it.
+
+ofKind :: Type -> String
+ofKind tt
+ = case kindOfType tt of
+ 	KData	-> "         of type: "
+ 	KEffect	-> "       of effect: "
+
+atKind :: Type -> String
+atKind tt
+ = case kindOfType tt of
+ 	KData	-> "         at type: "
+ 	KEffect	-> "     with effect: "
+
+
+
 	
 -- | Show the source of a type error due to this reason
-dispSourceValue :: Pretty tt => tt -> SourceValue -> PrettyP
+dispSourceValue :: Type -> SourceValue -> PrettyP
 dispSourceValue tt sv
  = case sv of
 	SVLambda sp 	
@@ -191,64 +214,71 @@ dispSourceValue tt sv
 		%  "              at: " % sp	% "\n"
 
 	SVApp sp	
-		-> "function application\n"
+		-> "  function application\n"
 		%  "              at: " % sp	% "\n"
 		
 
 	SVLiteral sp vLit 
-		-> "literal value " % vLit	% "\n"
+		-> "  literal value " % vLit	% "\n"
 		%  "         of type: " % tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
 		
 	SVDoLast sp
-		-> "result of do expression\n"
+		-> "  result of do expression\n"
 		%  "              at: " % sp	% "\n"
 		
 		
 	SVIfObj sp 
-		-> "object of if-then-else expression\n"
+		-> "  object of if-then-else expression\n"
 		%  "   which must be: Bool"	% "\n"
 		%  "              at: " % sp	% "\n"
 		
 		
-	SVProj sp
-		-> "field projection\n"
+	SVProj sp j
+	 -> let	cJ	= case j of
+	 			TJField v	-> TJField  v { Var.nameModule = Var.ModuleNil }
+	 			TJFieldR v	-> TJFieldR v { Var.nameModule = Var.ModuleNil }
+	 			TJIndex v	-> TJIndex  v { Var.nameModule = Var.ModuleNil }
+	 			TJIndexR v	-> TJIndexR v { Var.nameModule = Var.ModuleNil }
+
+	    in	   "      projection '" % cJ % "'\n"
+		%  atKind tt		% tt	% "\n"
 		%  "              at: " % sp	% "\n"
 	
 	SVInst sp var
 		-> "          use of: " % var 	% "\n"
-		%  "         at type: " % tt	% "\n"
+		%  atKind tt 		% tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
 	SVLiteralMatch sp lit
-		-> "match against literal value " % lit % "\n"
+		-> "  match against literal value " % lit % "\n"
 		%  "         of type: " % tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
 	SVMatchCtorArg sp
-		-> "argument of constructor match" 
+		-> "  argument of constructor match" 
 		%  "         of type: " % tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
 	SVSig sp var
-		-> "type signature for '" % var % "'\n"
+		-> "  type signature for '" % var % "'\n"
 		%  "  which requires: " % tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
 	SVSigClass sp var
-		-> "type signature for '" % var % "' in type-class definiton\n"
+		-> "  type signature for '" % var % "' in type-class definiton\n"
 		%  "              at: " % sp	% "\n"
 		
 	SVSigExtern sp var
-		-> "type of import '" % var % "'\n"
+		-> "  type of import '" % var % "'\n"
 		
 	SVCtorDef sp vData vCtor
-		-> "definition of constructor '" % vCtor % "' of '" % vData % "'\n"
+		-> "  definition of constructor '" % vCtor % "' of '" % vData % "'\n"
 		%  "              at: " % sp	% "\n"
 		
 	SVCtorField sp vData vCtor vField
-		-> "definition of field " % vField % " of '" % vCtor % "' in type '" % vData % "'\n"
+		-> "  definition of field " % vField % " of '" % vCtor % "' in type '" % vData % "'\n"
 		%  "              at: " % sp	% "\n"
 
 
@@ -281,13 +311,29 @@ dispSourceUnify tt sv
 --	This is used to print sources of class constraints when
 --	we get a purity or mutability conflict.
 --
---	The only possible source of these is instantiations of type schemes
+--	The only possible source of these is instantiations of type schemes,
+--	or from crushing other fetters.
 --
 dispFetterSource :: Fetter -> TypeSource -> PrettyP
 dispFetterSource f ts
-	| TSV sv		<- ts
-	, SVInst sp var		<- sv
+
+	-- For purity constraints, don't bother displaying the entire effect
+	--	purified, as most of it won't be in conflict.
+	| FConstraint v _	<- f
+	, v == primPure
+	, TSV (SVInst sp var)	<- ts
+	= "  purity constraint\n"
+	% "     from use of: " % var	% "\n"
+	% "              at: " % sp	% "\n"
+	
+
+	| TSV (SVInst sp var)	<- ts
 	= "      constraint: " % f 	% "\n"
 	% "     from use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 	
+	| TSI (SICrushed ts' f') <- ts
+	= dispFetterSource f ts'
+
+	| otherwise
+	= panic stage $ "dispFetterSource: no match for " % ts % "\n"

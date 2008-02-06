@@ -8,5 +8,5 @@ test/Error/Unify/FunMore/Main.ds:6:10
                       at: test/Error/Unify/FunMore/Main.ds:6:10
 
         conflicts with, 
-        function application
+          function application
                       at: test/Error/Unify/FunMore/Main.ds:6:10

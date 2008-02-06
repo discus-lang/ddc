@@ -41,10 +41,14 @@ foreign import extern "primSuspend2"
 
 foreign import extern "primSuspend3"
  suspend3
-	:: forall a b c d !e1 !e2 !e3
-	.  (a -(!e1)> b -(!e2)> c -(!e3)> d) -> a -> b -> c -> d
-	:- Pure  !e1
-	,  Pure  !e2
+	:: forall a b c d !e1 !e2 !e3 $c1 $c2 $c3
+	.  (a -(!e1 $c1)> b -(!e2 $c2)> c -(!e3 $c3)> d) 
+		-($c4)> a -($c5)> b -($c6)> c -($c7)> d
+	:- $c7 = ${ f : ${ $c1 ; $c2 ; $c3 }; x : a; y : b } 
+	,  $c6 = $c7 \ y
+	,  $c5 = $c6 \ x
+	,  $c4 = $c5 \ f
+	,  Pure  !e1,  Pure  !e2
 	,  Pure  !e3
 	,  LazyH d
 	:$ Obj -> Obj -> Obj -> Obj -> Obj;
@@ -52,12 +56,16 @@ foreign import extern "primSuspend3"
 
 foreign import extern "primSuspend4"
  suspend4
-	:: forall a b c d e !e1 !e2 !e3 !e4
-	.  (a -(!e1)> b -(!e2)> c -(!e3)> d -(!e4)> e) -> a -> b -> c -> d -> e
-	:- Pure  !e1
-	,  Pure  !e2
-	,  Pure  !e3
-	,  Pure  !e4
+	:: forall a b c d e !e1 !e2 !e3 !e4 $c1 $c2 $c3 $c4
+	.  (a -(!e1 $c1)> b -(!e2 $c2)> c -(!e3 $c3)> d -(!e4 $c4)> e) 
+		-($c5)> a -($c6)> b -($c7)> c -($c8)> d -($c9)> e
+	:- $c9	= ${ f : ${ $c1; $c2; $c3; $c4}; x : a; y : b; z : c }
+	,  $c8	= $c9 \ z
+	,  $c7	= $c9 \ y
+	,  $c6	= $c9 \ x
+	,  $c5	= $c9 \ f
+	,  Pure  !e1,  Pure  !e2
+	,  Pure  !e3,  Pure  !e4
 	,  LazyH e
 	:$ Obj -> Obj -> Obj -> Obj -> Obj -> Obj;
 

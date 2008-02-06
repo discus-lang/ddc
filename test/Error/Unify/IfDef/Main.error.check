@@ -3,7 +3,7 @@ test/Error/Unify/IfDef/Main.ds:6:10
           cannot match: Data.Bool.Bool %8
                   with: Base.Int %3
 
-        object of if-then-else expression
+          object of if-then-else expression
            which must be: Bool
                       at: test/Error/Unify/IfDef/Main.ds:6:10
 
