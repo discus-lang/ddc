@@ -8,6 +8,7 @@ where
 
 import Type.Exp
 
+import Type.Error
 import Type.Base
 import Type.Class
 import Type.State
@@ -17,6 +18,8 @@ import Type.Util
 import Type.Plate.Trans
 import Type.Plate.FreeVars
 import Type.Context
+import Type.Location
+import Type.Diagnose
 
 import Data.Array.MArray
 import qualified Data.Map	as Map
@@ -27,6 +30,7 @@ import Data.Set			(Set)
 
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, NameSpace(..))
+import Shared.VarPrim
 
 import Shared.Error
 import Util
@@ -192,6 +196,7 @@ exportRegionConstraints
 
 
 -- | If this is a region class then build a map of the constraints acting on it.
+--	This is also a good time to check for Mutability/Const and Lazy/Direct constraints
 slurpRegionConstraintVars 
 	:: Class
 	-> SquidM (Maybe (Var, [Var]))
@@ -206,10 +211,51 @@ slurpRegionConstraintVars c
  		
 		-- get the name of this class
 		name	<- makeClassName (classId c)
- 
- 		return	$ Just (name, nub vars)
+		let vars'	= nub vars
+
+		-- check for errors on region constraints
+		mErr		<- checkRegionError c
+		addErrors (maybeToList mErr)
+	
+		return	$ Just (name, vars)
 		
 	 -- not a region class
 	| otherwise
 	= 	return	$ Nothing
+
+
+-- | Check for constraint errors on this region.
+checkRegionError :: Class -> SquidM (Maybe Error)
+checkRegionError c@Class 
+	{ classFetters 	= fs 
+	, classNodes	= nodes }
+
+	-- found a mutability conflict.
+	| Just (TFetter fConst, tsConst)	<- find (isFConstraintNode primConst) nodes
+	, Just (TFetter fMutable, tsMutable)	<- find (isFConstraintNode primMutable) nodes
+	= do	err	<- diagMutConflict fConst tsConst fMutable tsMutable
+		return	$ Just err
+	
+	-- found a direct/lazy conflict.
+	| Just (TFetter fDirect, tsDirect)	<- find (isFConstraintNode primDirect) nodes
+	, Just (TFetter fLazy, tsLazy)		<- find (isFConstraintNode primLazy) nodes
+	= return $ Just $ ErrorRegionConstraint
+			{ eFetter1		= fDirect
+			, eFetterSource1	= tsDirect
+			, eFetter2		= fLazy
+			, eFetterSource2	= tsLazy }
+		
+	-- no problems.
+	| otherwise
+	= return $ Nothing
+
+
+isFConstraintNode v1 (t, n)
+	| TFetter f		<- t
+	, FConstraint v2 _	<- f
+	= v1 == v2
+	
+	| otherwise
+	= False
+
 

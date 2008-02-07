@@ -1,23 +1,21 @@
 
 module Util.Pretty.Comb
-(
-	Pretty (..),
-	PrettyP,
-	(%),
-	(%>),
-	(%#>),
-	(%#<),
-	(%!%),
-	(%>>),
-
-	appendMapPretty,
-
-	reduce,
-	initRenderS,
-	pNil,
+	( Pretty (..)
+	, PrettyP
+	, (%)
+	, (%>)
+	, (%#>)
+	, (%#<)
+	, (%!%)
+	, (%>>)
+	, (<>)
+	, parens
 	
-	pprStr
-)
+	, appendMapPretty
+	, reduce
+	, initRenderS
+	, pNil
+	, pprStr)
 
 where
 
@@ -274,7 +272,7 @@ pcs s	= map PChar s
 -----------------------
 -- combinators
 --	
-infixr 7 %, %#>, %#<
+infixr 7 %, %#>, %#<, <>
 infixr 8 %>
 infixl 9 %!%
 
@@ -286,6 +284,9 @@ infixl 9 %!%
 (%#>) a b	= PAppend [ppr a, PTabInc, ppr b]
 (%#<) a b 	= PAppend [ppr a, PTabDec, ppr b]
 (%>>) a b	= PAppend [ppr a, PTabNext, ppr b]
+
+(<>)  a b	= a % " " % b
+parens a	= "(" % a % ")"
 	
 appendMapPretty	xx
 	= PAppend $ map ppr xx

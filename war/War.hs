@@ -141,7 +141,8 @@ enterDir2 path_
 		paths	<- getDirectoryContents path
 
 		let sources
-			= [ path ++ p
+			= sort
+			$ [ path ++ p
 				| p	<- paths
 				, let dirParts 	= chopOnRight '/' p
 				, let fileParts	= chopOnRight '.' $ last dirParts

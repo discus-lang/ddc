@@ -1,0 +1,17 @@
+test/Error/Purity/PurifyReadWrite3/Main.ds:3:23
+    Cannot purify Read effect on Mutable region.
+      A purity constraint on a Read effect requires the region it
+      acts on to be Const, and it cannot be Mutable at the same time.
+
+              the use of: (+)
+             with effect: Base.!Read %72
+                      at: test/Error/Purity/PurifyReadWrite3/Main.ds:3:21
+
+        is being purified by
+              the use of: suspend2
+                      at: test/Error/Purity/PurifyReadWrite3/Main.ds:3:23
+
+        which conflicts with
+              constraint: Base.Mutable %72
+         from the use of: (:=)
+                      at: test/Error/Purity/PurifyReadWrite3/Main.ds:4:18

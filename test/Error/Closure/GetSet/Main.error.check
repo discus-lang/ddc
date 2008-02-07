@@ -3,7 +3,7 @@ test/Error/Closure/GetSet/Main.ds:28:8
           cannot match: Base.Int %285
                   with: Data.String.String %322
 
-                  use of: setB
+              the use of: setB
                  at type: Base.Int %285
                       at: test/Error/Closure/GetSet/Main.ds:28:8
 

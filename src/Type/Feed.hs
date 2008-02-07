@@ -3,7 +3,8 @@ module Type.Feed
 	( feedConstraint
 	, feedType 
 	, feedFetter
-	, addFetter)
+	, addFetter
+	, addFetterSource)
 
 where
 
@@ -355,14 +356,21 @@ addNode    cidT	t
  = do	addToClass cidT	?src t
 	activateClass cidT
 
+
+
 -- addFetter ---------------------------------------------------------------------------------------
 -- | Add a new fetter constraint to the graph
+addFetterSource :: TypeSource -> Fetter -> SquidM Bool
+addFetterSource src f 
+	= let 	?src	= src
+	  in	addFetter f
+
+
 addFetter
 	:: (?src :: TypeSource)
-	=> Fetter 
-	-> SquidM Bool		-- returns True if the fetter was new information
-
-
+	-> Fetter
+	-> SquidM Bool
+	
 -- Single parameter type class contraints are added directly to the equivalence
 --	class which they constrain.
 --
@@ -460,14 +468,3 @@ addFetter f@(FProj j v1 tDict tBind)
 	return True
 	
 
-{-	 	cid		<- allocClass KFetter
-	 	
-		
-		-- add the constraint
-		graph	<- gets stateGraph
-		let c	= ClassFetter
-			{ classId	= cid
-			, classFetter	= FProj j v1 tDict' tBind' }
-		liftIO (Array.writeArray (graphClass graph) cid c)
-		activateClass cid
--}

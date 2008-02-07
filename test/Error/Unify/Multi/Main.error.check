@@ -7,6 +7,6 @@ test/Error/Unify/Multi/Main.ds:11:19
                       at: test/Error/Unify/Multi/Main.ds:11:19
 
         conflicts with, 
-                  use of: (+)
+              the use of: (+)
                  at type: Base.Int %138
                       at: test/Error/Unify/Multi/Main.ds:9:12

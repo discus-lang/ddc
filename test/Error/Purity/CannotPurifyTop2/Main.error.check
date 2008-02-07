@@ -1,11 +1,10 @@
 test/Error/Purity/CannotPurifyTop2/Main.ds:3:36
     Cannot purify effect `System.Console.!Console'.
 
-                  use of: print
+              the use of: print
              with effect: System.Console.!Console
                       at: test/Error/Purity/CannotPurifyTop2/Main.ds:3:36
 
      conflicts with,
-          purity constraint
-             from use of: mapL
+              the use of: mapL
                       at: test/Error/Purity/CannotPurifyTop2/Main.ds:3:19

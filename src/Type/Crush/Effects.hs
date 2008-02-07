@@ -25,6 +25,7 @@ import Type.State
 import Type.Class
 import Type.Feed
 import Type.Pretty
+import Type.Location
 import Type.Util.Pack
 
 import Type.Check.GraphicalData
@@ -55,8 +56,10 @@ crushEffectC2 cid (ClassForward cid')
 
 crushEffectC2 cid (Class { classType = Just eff })
  = do
-	let effs	=  flattenTSum eff
-	effs_crushed	<- mapM crushEffectT effs
+	let effs		=  flattenTSum eff
+
+	(effs_crushed, newNodes)
+		<- crushMilkEffects cid effs [] []
 		
 	if effs == effs_crushed
 	 then do	
@@ -74,7 +77,8 @@ crushEffectC2 cid (Class { classType = Just eff })
 		trace	$ "    eff' = " % eff % "\n\n"
 			
 		modifyClass cid
-		 $ \c -> c { classType = Just eff' }
+		 $ \c -> c 	{ classType  = Just eff' 
+		 		, classNodes = newNodes ++ (classNodes c) }
 		 
 		activateClass cid
 	
@@ -84,9 +88,34 @@ crushEffectC2 cid _
 	= return False
 		
 
+-- Try and crush a list of effects, keeping effects that don't crush,
+--	and remembering nodes of the extra crushed parts.
+crushMilkEffects
+	:: ClassId
+	-> [Effect] 
+	-> [Effect] -> [(Effect, TypeSource)]
+	-> SquidM ([Effect], [(Effect, TypeSource)])
+	
+crushMilkEffects cid [] effAcc nodeAcc
+	= return (reverse effAcc, reverse nodeAcc)
+	
+crushMilkEffects cid (e : es) effAcc nodeAcc
+ = do	mCrushed	<- crushEffectT cid e
+ 
+ 	case mCrushed of
+	 Nothing		
+	 	-> crushMilkEffects cid es (e : effAcc) nodeAcc
+
+	 Just n@(eCrushed, tsCrushed)
+		-> crushMilkEffects cid es (eCrushed : effAcc) (n : nodeAcc)
+		
+		
 -- Try and crush this effect into parts.
-crushEffectT :: Effect -> SquidM Effect
-crushEffectT tt@(TEffect ve [TClass k cidT])
+crushEffectT 
+	:: ClassId
+	-> Effect -> SquidM (Maybe (Effect, TypeSource))
+
+crushEffectT cid tt@(TEffect ve [TClass k cidT])
  = do	
 	-- the effect in the original class operates on a classId, so we need to 
 	--	look up this type before we can crush the effect.
@@ -94,22 +123,27 @@ crushEffectT tt@(TEffect ve [TClass k cidT])
 			<- lookupClass cidT
 
 	case mType of
-	 Just tNode	-> return $ crushEffectT' tt tNode
-	 _		-> return tt
+	 Just tNode	-> return $ crushEffectT' cid tt tNode
+	 _		-> return Nothing
 	
-crushEffectT tt
-	= return tt
+crushEffectT cid tt
+	= return Nothing
 
-
-crushEffectT' tt tNode
+crushEffectT' cid tt tNode
 
 	-- Read of outer constructor of object.
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadH
 	= case tNode of
-		TData v (tR : ts)	-> TEffect primRead [tR]
-		TData v []		-> TBot KEffect
-		_			-> tt
+		TData v (tR : ts)	
+			-> Just ( TEffect primRead [tR]
+				, TSI $ SICrushedE cid tt)
+
+		TData v []		
+			-> Just ( TBot KEffect
+				, TSI $ SICrushedE cid tt)
+
+		_	-> Nothing
 	
 
 
@@ -122,8 +156,8 @@ crushEffectT' tt tNode
 		esRegion	= map (\r -> TEffect primRead  [r]) rs
 		esType		= map (\d -> TEffect primReadT [d]) ds
 
-	  in 	makeTSum KEffect 
-			$ (esRegion ++ esType)
+	  in 	Just 	( makeTSum KEffect $ (esRegion ++ esType)
+		  	, TSI $ SICrushedE cid tt)
 
 
 	-- Write of whole object. (deep write)
@@ -135,12 +169,12 @@ crushEffectT' tt tNode
 		esRegion	= map (\r -> TEffect primWrite  [r])   rs
 		esType	= map (\d -> TEffect primWriteT [d]) ds
 				
-	  in	makeTSum KEffect 
-			$ (esRegion ++ esType)
+	  in	Just	( makeTSum KEffect $ (esRegion ++ esType)
+	  		, TSI $ SICrushedE cid tt)
 
 	-- can't crush this one
 	| otherwise
-	= tt
+	= Nothing
 
 
 	

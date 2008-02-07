@@ -1,11 +1,10 @@
 test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
     Cannot purify effect `Base.!WriteT *34'.
 
-                  use of: (:=)
+              the use of: (:=)
              with effect: Base.!WriteT *34
                       at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
 
      conflicts with,
-          purity constraint
-             from use of: suspend2
+              the use of: suspend2
                       at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:12

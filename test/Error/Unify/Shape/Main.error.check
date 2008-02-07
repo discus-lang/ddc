@@ -1,9 +1,9 @@
-test/Error/Unify/Shape/Main.ds:7:6
+no location
     Type mismatch during unification.
           cannot match: Base.Int %38
                   with: Data.String.String %45
 
-                  use of: (+)
+              the use of: (+)
                  at type: Base.Int %38
                       at: test/Error/Unify/Shape/Main.ds:7:6
 

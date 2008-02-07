@@ -1,0 +1,9 @@
+
+-- Can't update head of list1 because the suspended list2 depends on its value.
+fun2 ()
+ = do 	list1	= [1, 2, 3]
+	list2	= mapL ((*) 2) list1
+
+	(head list1) := 5
+
+	print $ show list2 % "\n"

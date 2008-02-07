@@ -3,7 +3,7 @@ test/Error/Closure/LateSig/LateSig.ds:15:8
           cannot match: Base.Int %163
                   with: Base.Char %222
 
-                  use of: box
+              the use of: box
                  at type: Base.Int %163
                       at: test/Error/Closure/LateSig/LateSig.ds:15:8
 

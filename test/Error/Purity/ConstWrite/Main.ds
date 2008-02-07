@@ -1,0 +1,18 @@
+
+-- This function has a direct const/mutable conflict between the instance
+--	of addS2 and the instance of (:=).
+
+-- suspension of addition requires the two arguments to be constant.
+addS2 ::  Int -> Int -> Int
+addS2 x y = (+)@ x y
+
+direct1 
+ = do 	a	= 5
+
+	-- can't pass a mutable int here
+ 	b	= addS2 a 2
+
+	a	:= 27
+	a
+
+

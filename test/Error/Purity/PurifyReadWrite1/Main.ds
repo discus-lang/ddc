@@ -1,0 +1,10 @@
+
+-- x1 is forced const due to suspension.
+--	this conflicts with update, which requires it to be mutable.
+fun1 ()
+ = do 	x1	= 2
+	y	= (+)@ x1 3
+	x1	:= 27
+	
+	
+	

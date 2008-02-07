@@ -3,7 +3,7 @@ test/Error/Unify/DefConst/Main.ds:6:10
           cannot match: Base.Int %40
                   with: Data.String.String %48
 
-                  use of: fish
+              the use of: fish
                  at type: Base.Int %40
                       at: test/Error/Unify/DefConst/Main.ds:6:10
 

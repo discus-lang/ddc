@@ -58,6 +58,7 @@ data Error
 
 
 	-- Signature mismatch.
+{-
 	| ErrorSigScheme				-- An inferred type scheme does not match a type signature
 		{ eSig		:: (Var, Type)		-- 	typeVar, type
 		, eScheme	:: (Var, Type)		-- 	
@@ -74,7 +75,7 @@ data Error
 		{ eSig		:: (Var, Type)		--	
 		, eScheme	:: (Var, Type) 		--
 		, eErrVar	:: Var }		--	Offending variable.
-
+-}
 	-- Type class problems
 	| ErrorNoInstance				-- There is no instance for the class at these arguments.
 		{ eClassVar	:: Var
@@ -100,7 +101,25 @@ data Error
 		, eFetter	:: Fetter		--	The Pure fetter we were trying to satisfy.
 		, eFetterSource	:: TypeSource }
 
-	-- Mutability conflicts.
+	-- Region constraint conflicts
+	| ErrorRegionConstraint
+		{ eFetter1	:: Fetter
+		, eFetterSource1 :: TypeSource
+		
+		, eFetter2	:: Fetter
+		, eFetterSource2 :: TypeSource }
+		
+	
+
+	| ErrorMutablePurifiedRead			-- Mutable region is also constraint to be constant
+		{ eMutableFetter :: Fetter		--	due to a purified read effect.
+		, eMutableSource :: TypeSource		
+		, ePureFetter	:: Fetter
+		, ePureSource	:: TypeSource
+		, eReadEff	:: Effect
+		, eReadSource	:: TypeSource }
+
+{-
 	| ErrorConstWrite				-- Attempted write to a const region.
 		{ eFetter	:: Fetter		--	Const fetter.
 		, eFetterSource	:: TypeSource		-- 	Source of Const fetter.
@@ -115,7 +134,7 @@ data Error
 		, ePureSource	:: TypeSource
 		, eWriteEff	:: Effect
 		, eWriteSource	:: TypeSource }
-		
+-}
 	-- Update soundness problems.
 	| ErrorUpdateSoundness				-- Update soundness problem 
 		{ eErrVar	:: Var
@@ -174,6 +193,7 @@ instance Pretty Error where
 	% "    (through node " % cid % " in the type graph)" 		% "\n"
 	 
  -- Signature mismatch.
+{-
  ppr err@(ErrorSigScheme{})
 	= prettyValuePos (fst $ eScheme err)				% "\n"
 	% "    Inferred type for '" 
@@ -213,6 +233,7 @@ instance Pretty Error where
 	% "       inferred type: " % prettyVTS (eScheme err)		% "\n"
 	% "\n"
 	% "      type signature: " % prettyVTS (eSig err)		% "\n"
+-}
 	
  -- Type class problems.
  ppr err@(ErrorNoInstance
@@ -259,7 +280,41 @@ instance Pretty Error where
 	%> dispFetterSource f fSource
 
 
- -- Mutability problems.
+ -- Region constraint problems
+ ppr err@(ErrorRegionConstraint
+ 		{ eFetter1	= f1
+		, eFetterSource1 = fSource1
+ 		, eFetter2	= f2
+		, eFetterSource2 = fSource2})
+	= (dispSourcePos fSource1)					% "\n"
+	% "    Conflicting region constraints.\n"
+	%> (dispFetterSource f1 fSource1)
+	% "\n"
+	% "     conflicts with,\n"
+	%> (dispFetterSource f2 fSource2)
+
+ ppr err@(ErrorMutablePurifiedRead
+		{ eMutableFetter = mut
+		, eMutableSource = mutSource
+		, ePureFetter	 = pure
+		, ePureSource	 = pureSource
+		, eReadEff	 = read
+		, eReadSource	 = readSource })
+		
+	= (dispSourcePos pureSource)					% "\n"
+	% "    Cannot purify Read effect on Mutable region.\n"
+	% "      A purity constraint on a Read effect requires the region it\n"
+	% "      acts on to be Const, and it cannot be Mutable at the same time.\n"
+	% "\n"
+	%> dispTypeSource read readSource
+	% "\n"
+	% "        is being purified by\n"
+	%> dispFetterSource pure pureSource
+	% "\n"
+	% "        which conflicts with\n"
+	%> dispFetterSource mut mutSource
+
+{-
  ppr err@(ErrorConstWrite 
  		{ eEffect	= e
 		, eEffectSource	= eSource
@@ -272,8 +327,9 @@ instance Pretty Error where
 	% "\n"
 	% "     conflicts with,\n"
 	% prettyFTS f fSource
-	
+-}	
 
+{-
  ppr err@(ErrorPureReadWrite
 		{ eReadEff	= r
 		, eReadSource	= rTS
@@ -294,7 +350,7 @@ instance Pretty Error where
 	% "\n"
 	% "          which is being purified by,\n"
 	% prettyFTS p pTS
-
+-}
 
  -- Update soundness problems.
  ppr err@(ErrorUpdateSoundness

@@ -24,6 +24,7 @@ import Shared.Exp
 import Shared.Literal
 import Shared.Error
 import Shared.VarPrim
+import Shared.VarUtil
 
 import qualified Shared.Var	as Var
 
@@ -47,6 +48,16 @@ data TypeSource
 	-- Things that were added to the graph by the type inferencer.
 	| TSI SourceInfer
 	deriving (Show, Eq)
+
+instance Pretty TypeSource where
+ ppr (TSV sv)	= "TSV " % ppr sv
+ ppr (TSE se)	= "TSE " % ppr se
+ ppr (TSC sc)	= "TSC " % ppr sc
+ ppr (TSU su)	= "TSU " % ppr su
+ ppr (TSM sm)	= "TSM " % ppr sm
+ ppr (TSI si)	= "TSI " % ppr si
+
+ 
 
 -- | Sources of value constraints
 data SourceValue
@@ -80,6 +91,11 @@ data SourceValue
 
 	deriving (Show, Eq)
 
+instance Pretty SourceValue where
+ ppr (SVInst sp v)	= parens $ "SVInst" <> sp <> v
+ ppr sv			= "SV " % vsp sv
+
+
 -- | Sources of effect constraints
 data SourceEffect
 	= SEApp		{ esp :: SourcePos }			-- ^ Sum effects from application.
@@ -93,6 +109,10 @@ data SourceEffect
 	| SEGuards	{ esp :: SourcePos }			-- ^ Sum effects from guards.
 	deriving (Show, Eq)
 
+instance Pretty SourceEffect where
+ ppr se		= "SE " % esp se
+
+
 -- | Sources of closure constraints
 data SourceClosure
 	= SCApp		{ csp :: SourcePos }			-- ^ Sum closure from application.
@@ -104,6 +124,9 @@ data SourceClosure
 	| SCGuards	{ csp :: SourcePos }			-- ^ Sum closure from guards.
 	deriving (Show, Eq)
 
+instance Pretty SourceClosure where
+ ppr sc		= "SE " % csp sc
+
 -- | Sources of unification constraints
 data SourceUnify
 	= SUAltLeft	{ usp :: SourcePos }			-- ^ All LHS of case alternatives must have same type.
@@ -113,6 +136,9 @@ data SourceUnify
 	| SUBind	{ usp :: SourcePos }			-- ^ LHS of binding has same type as RHS.
 	deriving (Show, Eq)
 
+instance Pretty SourceUnify where
+ ppr su		= "SU " % usp su
+
 -- | Sources of other things (mostly to tag dictionaries)
 data SourceMisc
 	= SMGen		{ msp :: SourcePos, mVar :: Var }	-- ^ Used to tag source of generalisations due to let-bindings.
@@ -121,26 +147,57 @@ data SourceMisc
 	| SMProjDict	{ msp :: SourcePos }			-- ^ Used to tag projection dictionaries.
 	deriving (Show, Eq)
 
+
+instance Pretty SourceMisc where
+ ppr sm		= "SM " % msp sm
+
 -- | Sources of things added by the inferencer.
 data SourceInfer
-	= SIClassName						-- ^ A name for an equivalence class invented by Type.Class.makeClassName
-	| SICrushed	{ ts :: TypeSource, iF :: Fetter}	-- ^ The result of crushing some fetter or effect
-	| SIGenInst	Var					-- ^ A scheme that was generalised and added to the graph because its 
-								--	bound var was instantiated.
-	| SIGenFinal						-- ^ A scheme that was generalised and added to the graph during 
-								--	the finialisation process of the solver.
+	-- | A name for an equivalence class invented by Type.Class.makeClassName
+	= SIClassName
+
+	-- | Used to tag const constraints arrising from purification of effects.
+	| SIPurify	
+		ClassId		-- the class holding that effect and purity constraint
+		Effect 		-- the effect that was purified
+
+	-- ^ The result of crushing some fetter 
+	| SICrushedF	
+		ClassId		-- the class holding the fetter that was crushed
+		Fetter		-- the fetter that was crushed
+
+	-- ^ The result of crushing some fetter, also carrying typeSource information
+	--	This is used when crushing things like Shape constraints, where the node
+	--	in the graph is deleted after crushing, so we can't look it back up if
+	--	we hit an error involving it.
+	| SICrushedFS
+		ClassId
+		Fetter
+		TypeSource
+
+	-- ^ The result of crushing some effect
+	| SICrushedE	
+		ClassId		-- the class holding the effect that was crushed
+		Effect		-- the effect that was crushed
+
+	-- ^ A scheme that was generalised and added to the graph because its 
+	--	bound var was instantiated.
+	| SIGenInst	Var
+
+	-- ^ A scheme that was generalised and added to the graph during 
+	--	the finialisation process of the solver.
+	| SIGenFinal
+
 	deriving (Show, Eq)
 
-
--- Pretty ------------------------------------------------------------------------------------------
-instance Pretty TypeSource where
- ppr 	= ppr . show
- 
-instance Pretty SourceEffect where
- ppr 	= ppr . show
- 
-instance Pretty SourceValue where
- ppr	= ppr . show
+instance Pretty SourceInfer where
+ ppr SIClassName		= ppr "SIClassName"
+ ppr (SIPurify eff f)		= "SIPurify" <> eff <> parens f
+ ppr (SICrushedF cid iF)	= "SICrushedF" <> cid <> parens iF
+ ppr (SICrushedFS cid iF src)	= "SICrushedFS" <> cid <> parens iF <> src
+ ppr (SICrushedE cid iF)	= "SICrushedE" <> cid <> parens iF
+ ppr (SIGenInst v)		= "SIGenInst " % v
+ ppr SIGenFinal			= ppr "SIGenFinal"
 
 
 ---------------------------------------------------------------------------------------------------
@@ -153,9 +210,7 @@ takeSourcePos ts
 	TSU su	-> Just $ usp su
 	TSM sm	-> Just $ msp sm
 	
-	TSI si	-> case si of
-			SICrushed ts' _ -> takeSourcePos ts'
-			_		-> Nothing
+	TSI si	-> Nothing
 
 
 dispSourcePos :: TypeSource -> PrettyP
@@ -163,8 +218,9 @@ dispSourcePos ts
  = case takeSourcePos ts of
  	Just sp	-> ppr sp
 
-	Nothing	-> panic stage
-		$ "dispSourcePos: no source location in " % ts
+	Nothing -> ppr "no location"
+--	Nothing	-> panic stage
+--		$ "dispSourcePos: no source location in " % ts
 
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
@@ -177,8 +233,7 @@ dispTypeSource tt ts
 	| TSU su	<- ts
 	= dispSourceUnify tt su
 	
-	| TSI si		<- ts
-	, SICrushed ts'	_	<- si
+	| TSI (SICrushedFS c f ts') <- ts
 	= dispTypeSource tt ts'
 	
 	| otherwise
@@ -247,7 +302,7 @@ dispSourceValue tt sv
 		%  "              at: " % sp	% "\n"
 	
 	SVInst sp var
-		-> "          use of: " % var 	% "\n"
+		-> "      the use of: " % var 	% "\n"
 		%  atKind tt 		% tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
@@ -322,18 +377,40 @@ dispFetterSource f ts
 	| FConstraint v _	<- f
 	, v == primPure
 	, TSV (SVInst sp var)	<- ts
-	= "  purity constraint\n"
-	% "     from use of: " % var	% "\n"
+	= "      the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 	
+	| FConstraint v _	<- f
+	, TSV (SVInst sp var)	<- ts
+	= "      constraint: " % f	% "\n"
+	% " from the use of: " % var	% "\n"
+	% "              at: " % sp	% "\n"
 
 	| TSV (SVInst sp var)	<- ts
 	= "      constraint: " % f 	% "\n"
-	% "     from use of: " % var	% "\n"
+	% " from the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
+
+	| FConstraint v _	<- f
+	, TSI (SICrushedFS cid f' src)	<- ts
+	= dispFetterSource f' src
 	
-	| TSI (SICrushed ts' f') <- ts
-	= dispFetterSource f ts'
+--	| otherwise
+--	= panic stage $ "dispFetterSource: no match for " % ts % "\n"
 
 	| otherwise
-	= panic stage $ "dispFetterSource: no match for " % ts % "\n"
+	= "(no location for " % f <> ts % ")"
+
+
+
+-- Normalise ---------------------------------------------------------------------------------------
+--	We don't want to display raw classIds in the error messages for two reasons
+--
+--	1) Don't want to worry the user about non-useful information.
+--	2) They tend to change when we modify the type inferencer, and we don't want to 
+--		have to update all the check files for inferencer tests every time this happens.
+--
+
+-- Could do this directly on the string, if we displayed an * infront of type variables..
+
+

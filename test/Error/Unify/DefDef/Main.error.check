@@ -3,11 +3,11 @@ test/Error/Unify/DefDef/Main.ds:8:10
           cannot match: Base.Int %56
                   with: Data.String.String %66
 
-                  use of: f1
+              the use of: f1
                  at type: Base.Int %56
                       at: test/Error/Unify/DefDef/Main.ds:8:10
 
         conflicts with, 
-                  use of: f2
+              the use of: f2
                  at type: Data.String.String %66
                       at: test/Error/Unify/DefDef/Main.ds:8:14

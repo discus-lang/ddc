@@ -8,6 +8,6 @@ test/Error/Unify/IfDef/Main.ds:6:10
                       at: test/Error/Unify/IfDef/Main.ds:6:10
 
         conflicts with, 
-                  use of: x
+              the use of: x
                  at type: Base.Int %3
                       at: test/Error/Unify/IfDef/Main.ds:6:13

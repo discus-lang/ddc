@@ -85,24 +85,21 @@ crushFetterSingle cid c tNode (TFetter f@(FConstraint vC [TClass k cidC]))
 	 $ panic stage
 	 	$ "crushFetterSingle: Fetter in class " % cid % " constrains some other class " % cidC' % "\n"
 		
-	crushFetterSingle' cid c tNode vC f
+	crushFetterSingle' cid c tNode vC cidC f
 
-crushFetterSingle' cid c tNode vC f
+crushFetterSingle' cid c tNode vC cidC f
 
 	-- keep the original fetter when crushing purity
 	| vC	== primPure
-	= case crushPure c $ FConstraint vC [tNode] of
+	= case crushPure c cidC f tNode of
 
 		-- fetter crushed ok
-		Left fsBits
-		 -> do	trace	$ "    fsBits     = " % fsBits			% "\n"
+		Left fsBitsSrc
+		 -> do	trace	$ "    fsBits     = " % fsBitsSrc		% "\n"
 		
 			-- record the source of the new fetter based on the old one
-			let Just ts	= lookup (TFetter f) $ classNodes c
-			let ?src	= TSI $ SICrushed ts f
-
 			progress	<- liftM or 
-					$  mapM addFetter fsBits
+					$  mapM (\(f, src) -> addFetterSource src f) fsBitsSrc
 
 			return	( progress
 				, Just f)
@@ -120,9 +117,7 @@ crushFetterSingle' cid c tNode vC f
 	= do
 		trace	$ "    fsBits     = " % fsBits			% "\n"
 		
-		let Just ts	= lookup (TFetter f) $ classNodes c
-		let ?src	= TSI $ SICrushed ts f
-
+		let ?src	= TSI $ SICrushedF cid f
 		progress	<- liftM or
 				$ mapM addFetter fsBits
 						
@@ -138,37 +133,46 @@ crushFetterSingle' cid c tNode vC f
 --	This can generate an error if the effect that the fetter is acting 
 --	on cannot be purified.
 --
-crushPure :: Class -> Fetter -> Either [Fetter] Error
-crushPure c fPure@(FConstraint vC ts)
-	| vC	== primPure
-	, [t]	<- ts
-	= let	
-		-- flatten out the sum into individual effects
-		effs	= flattenTSum t
+crushPure 
+	:: Class 	-- ^ The class of the purify effect (for error reporting)
+	-> ClassId	-- ^ The classId of the effect being purified (for error reporting)
+	-> Fetter 	-- ^ The purity fetter being crushed (for error reporting)
 
-		-- try and generate the additional constraints needed to purify 
-		--	each effect.
-		mFsPure	= map purifyEff $ flattenTSum t
+	-> Effect	-- ^ The effect to purify
 
-		-- See if any of the effects couldn't be purified
-		effsBad	= catMaybes
-			$ map (\(eff, mfPure) 
-				-> case mfPure of
-					Nothing	-> Just eff
-					Just _	-> Nothing)
-			$ zip effs mFsPure
-									
-	  in case effsBad of
-	  	[]		-> Left  $ catMaybes mFsPure
-		(effBad : _)	-> Right $ makePurityError c fPure effBad
+	-> Either [(Fetter, TypeSource)] Error
+
+crushPure c cidEff fPure tNode
+ = let	
+	-- flatten out the sum into individual effects
+	effs	= flattenTSum tNode
+
+	-- try and generate the additional constraints needed to purify 
+	--	each effect.
+	mFsPureSrc	
+		= map (purifyEffSrc cidEff) 
+		$ flattenTSum tNode
+
+	-- See if any of the effects couldn't be purified
+	effsBad	= catMaybes
+		$ map (\(eff, mfPureSrc) 
+			-> case mfPureSrc of
+				Nothing	-> Just eff
+				Just _	-> Nothing)
+		$ zip effs mFsPureSrc
+								
+  in case effsBad of
+  	[]		-> Left  $ catMaybes mFsPureSrc
+	(effBad : _)	-> Right $ makePurityError c fPure effBad
 		
 
 
 -- | Make an error for when the purity fetter in this class could not be satisfied.
 makePurityError :: Class -> Fetter -> Effect -> Error
-makePurityError c@Class	{ classNodes = nodes }
-		fPure
-		effBad
+makePurityError 
+	c@Class	{ classNodes = nodes }
+	fPure
+	effBad
  = let	
 	-- lookup the type-source for the purify fetter
  	fSrc : _	= [tsPure	| (TFetter (FConstraint v _), tsPure)	<- nodes
@@ -217,6 +221,15 @@ crushFetter (FConstraint vC ts)
 	  
 	| otherwise
 	= Nothing
+
+
+-- | Try and purify this effect, 
+--	tagging the new constraint with the appropriate typesource
+purifyEffSrc :: ClassId -> Effect -> Maybe (Fetter, TypeSource)
+purifyEffSrc cidEff eff
+ = case purifyEff eff of
+ 	Nothing		-> Nothing
+	Just fNew	-> Just (fNew, TSI (SIPurify cidEff eff))
 	
 
 -- | produce either 

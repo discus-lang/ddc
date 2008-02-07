@@ -385,11 +385,6 @@ solveSquid
 			sigmaTable
 			hTrace
 
-	-- flush the trace output to make sure it's written to the file.
-	(case hTrace of
-	 Just handle	-> hFlush handle
-	 Nothing	-> return ())
-
 	-- dump out the type graph
 	--	do this before bailing on errors so we can see what's gone wrong.
 	dGraph	<- evalStateT Squid.dumpGraph state
@@ -397,16 +392,43 @@ solveSquid
 
 	-- stop the compiler and print out errors
 	--	if there were any during type inference.
-	exitWithUserError ?args	$ Squid.stateErrors state
+	case Squid.stateErrors state of
 
+	 -- no errors, carry on
+	 [] ->	solveSquid2 vsTypesPlease hTrace state
+
+	 -- time to die
+	 _ -> do
+		-- flush the trace output to make sure it's written to the file.
+		(case hTrace of
+		 Just handle	-> hFlush handle
+		 Nothing	-> return ())
+
+		exitWithUserError ?args $ Squid.stateErrors state
+		
+		panic "Core.SolveSquid" "done already"
+
+	 
+solveSquid2 vsTypesPlease hTrace state
+ = do	
 	-- extract out the stuff we'll need for conversion to core.
-	(typeTable, typeInst, quantVars, vsRegionClasses)
-		<- {-# SCC "solveSquid/export" #-} evalStateT 
-			(Squid.squidExport vsTypesPlease) state
+	(junk, state2)	<- {-# SCC "solveSquid/export" #-} runStateT 
+				(Squid.squidExport vsTypesPlease) state
 
+	let (typeTable, typeInst, quantVars, vsRegionClasses)
+			= junk
+
+	-- flush the trace output to make sure it's written to the file.
+	(case hTrace of
+	 Just handle	-> hFlush handle
+	 Nothing	-> return ())
+
+	-- the export process can find more errors
+	exitWithUserError ?args $ Squid.stateErrors state2
+		
 	-- report some state
 	when (elem Verbose ?args)
-	 $ do	putStr $ pprStr $ "    - graph size: " % Squid.graphClassIdGen (Squid.stateGraph state) % "\n"
+	 $ do	putStr $ pprStr $ "    - graph size: " % Squid.graphClassIdGen (Squid.stateGraph state2) % "\n"
 
 
 	-- dump final solver state
@@ -440,7 +462,7 @@ solveSquid
 		, quantVars
 		, vsFree
 		, vsRegionClasses
-		, Squid.stateProjectResolve state)
+		, Squid.stateProjectResolve state2)
 
 
 
