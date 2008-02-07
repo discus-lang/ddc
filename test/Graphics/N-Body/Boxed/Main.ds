@@ -127,7 +127,7 @@ draw_force frame body x y
 	color	= forceColor fS
 
 	-- draw the point				
-	frame.point 
+	frame.point
 		x (frame.sizeY - y)
 		color
 			

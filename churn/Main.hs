@@ -1,0 +1,311 @@
+
+-- Try and uncover compiler errors by generating random programs and compiling them
+
+import System.Random
+import System.Exit
+import System.Cmd
+
+import Control.Monad.State
+import Util
+
+import Type.Pretty
+
+import Source.Util
+import Source.Pretty
+import Source.Exp
+
+import Shared.Base
+import Shared.Literal
+import Shared.VarPrim
+
+import Shared.Var		(NameSpace(..))
+import qualified Shared.Var	as Var
+
+----------------------------------------------------------------------------------------------------
+type Env	= [(Type, Var)]
+
+-- Generator Monad ---------------------------------------------------------------------------------
+-- TODO: add deterministic support
+type GenM a 	= StateT GenS IO a
+
+data GenS
+	= GenS 
+	{ stateVarGen	:: Int 
+	, stateFuel	:: Int }
+
+genStateZero
+	= GenS
+	{ stateVarGen	= 0 
+	, stateFuel	= 100 }
+
+evalGen f = evalStateT f genStateZero
+
+-- | burn some fuel
+burn n		= modify $ \s -> s { stateFuel = stateFuel s - n }
+
+-- | check how much fuel is left
+checkFuel :: GenM Int
+checkFuel 	= gets stateFuel
+
+
+-- | Eval a generator and print the result
+eval :: Pretty a => GenM a -> IO ()
+eval f 
+ = do	x	<- evalGen f
+ 	putStr $ pprStr x
+	putStr $ "\n\n"
+
+
+-- | Eval and print this generator multiple times
+runN 	:: Pretty a 
+	=> Int -> GenM a -> IO ()
+runN n f 
+ = do	xs	<- replicateM n (evalGen f)
+ 	putStr $ catInt "\n" $ map pprStr xs
+	putStr $ "\n\n"
+
+----------------------------------------------------------------------------------------------------
+
+-- we don't use source positions in the Source.Exp type
+none	= error "no source position"
+
+varV s		= (Var.new s) { Var.nameSpace = NameValue }
+tInt		= TData primTInt [TWild KRegion]
+tFun t1 t2	= TFun t1 t2 ePure cEmpty
+ePure		= TBot KEffect
+cEmpty		= TBot KClosure
+
+initEnv		= [(tFun tInt (tFun tInt tInt), varV "+")]
+
+xVar s		= XVar none (varV s)
+
+----------------------------------------------------------------------------------------------------
+
+-- | return the types of the arguments of this function
+argTypesT :: Type -> [Type]
+argTypesT tt
+ = case tt of
+ 	TFun t1 t2 _ _	-> t1 : argTypesT t2
+	_		-> []
+
+-- | return the result type of this function,
+--	or id if it isn't
+resultTypeT :: Type -> Type
+resultTypeT tt
+ = case tt of
+ 	TFun t1 t2 _ _	-> resultTypeT t2
+	_		-> tt
+
+-- | test whether a type is a function
+isFun :: Type -> Bool
+isFun tt
+ = case tt of
+ 	TFun{}		-> True
+	_		-> False
+
+-- | make a function call
+makeCall 	= unflattenApps none
+
+----------------------------------------------------------------------------------------------------
+genInt :: Int -> Int -> GenM Int
+genInt	min max	= liftIO $ getStdRandom (randomR (min, max))
+
+genBool :: GenM Bool
+genBool
+ = do	r	<- genInt 0 1
+ 	case r of
+		0 	-> return False
+		1	-> return True
+		
+
+genVar :: NameSpace -> GenM Var
+genVar space
+ = do	ix	<- gets stateVarGen
+ 	modify $ \s -> s { stateVarGen = ix + 1 }
+	
+	let var	= (Var.new ("v" ++ show ix))
+			{ Var.nameSpace = space }
+	
+	return	var
+	
+
+-- generate a random type
+genType :: GenM Type
+genType 
+ = do	r	<- genInt 0 2
+ 	case r of
+	 0	-> return $ TData primTUnit []
+	 1	-> return $ TData primTInt  [TWild KRegion]
+
+	 2	-> do
+	 	t1	<- genType
+		t2	<- genType
+		return	$ TFun t1 t2 (TWild KEffect) (TWild KClosure)	
+
+
+-- Exp ---------------------------------------------------------------------------------------------
+-- generate a random expression
+genExpT 
+	:: Env			-- environment
+	-> Type			-- type of expression to generate
+	-> GenM Exp
+
+genExpT env tt
+ = do	doApp	<- genBool
+	fuel	<- checkFuel
+ 	if (doApp && fuel > 0) || fuel > 95
+		then genExpT_app  env tt
+		else genExpT_base env tt
+
+-- make an expression of this type, and do it by applying 
+--	a function in the environment
+genExpT_app env tt
+ = do	
+ 	-- try and find a function in the environment that can give us
+	--	the result type we're after
+	let mTV		= find (\(t, v)	-> resultTypeT t == tt
+					&& isFun t)
+			$ env
+			
+	case mTV of
+		Nothing			-> genExpT_base env tt
+		Just (tFun, vFun)	-> genExpT_call env tt tFun vFun
+
+genExpT_call env tt tFun vFun
+ = do	
+ 	-- make the arguments to the call
+ 	let tsArgs	= argTypesT tFun
+	burn (length tsArgs)
+ 	xsArgs		<- mapM (genExpT env) tsArgs
+	return	$ makeCall (XVar none vFun : xsArgs)
+		
+		
+genExpT_base env tt
+	-- unit
+	| TData v []			<- tt
+	, v == primTUnit
+	= do	burn 1
+		return $ XUnit none
+
+	-- literal
+	| TData v [TWild KRegion]	<- tt
+	, v == primTInt 
+	= do	burn 1
+		r	<- genInt 0 100
+		return	$ XConst none (CConst (LInt r))
+		
+
+	-- function
+	| TFun t1 t2 _ _		<- tt
+	= do	burn 1
+		v	<- genVar NameValue
+		xBody	<- genExpT [(t1, v)] t2 
+		return	$  XLambda none v xBody
+		
+
+-- generate a random expression, starting from an empty environment
+genExp :: GenM Exp
+genExp 
+ = do	t	<- genType
+ 	x	<- genExpT initEnv t
+	return	$ x
+
+-- Bind --------------------------------------------------------------------------------------------
+genBind :: Env -> Type -> GenM (Var, Stmt)
+genBind env tt
+ = do	var	<- genVar NameValue
+ 	x	<- genExpT env tt
+	return	( var
+		, SBindPats none var [] x)
+
+genTopsChain :: Env -> Int -> GenM [Top]
+genTopsChain env 0	
+ = do	x	<- genExpT env tInt
+	let pr	= XApp none (xVar "print") (XApp none (xVar "show") x)
+ 	return	$ [PStmt (SBindPats none (varV "main") [XUnit none] pr)]
+
+genTopsChain env n
+ = do	tt	<- genType
+ 	(v, s)	<- genBind env tt
+ 	rest	<- genTopsChain ((tt, v) : env) (n-1)
+	return	$ PStmt s : rest
+
+-- Prog --------------------------------------------------------------------------------------------
+genProg :: GenM [Top]
+genProg
+ = do	nBinds		<- genInt 1 20
+ 	binds		<- genTopsChain initEnv nBinds
+ 	return binds
+
+
+
+-- runTest ------------------------------------------------------------------------------------------
+main 	= churn 0
+ 
+
+churn :: Int -> IO ()
+churn ix
+ = do	(prog, code)	<- runTest ix
+ 	case code of
+	 ExitSuccess	-> churn (ix + 1)
+	 ExitFailure _	
+	  -> do	stashFailure prog
+	  	churn (ix + 1)
+	  	
+ 
+stashFailure code
+ = do	let codeSize	= sizeTree code
+ 	putStr $ "! failed at size " ++ show codeSize ++ "\n"
+
+	let logName	= "tmp/foo.error" ++ show codeSize ++ ".ds"
+	writeFile logName (pprProg code)
+
+	return ()
+	
+
+ 
+
+runTest :: Int -> IO (Tree, ExitCode)
+runTest ix
+ = do	putStr $ "* running test " ++ show ix ++ "\n"
+ 	prog	<- evalGen $ genProg
+ 	writeFile "tmp/foo.ds" (pprProg prog)
+
+	system "rm -f ./tmp/foo.dump*"
+	code	<- system "bin/ddc -i library -c ./tmp/foo.ds"
+	return (prog, code)
+
+pprProg prog
+	= catInt "\n" $ map pprStr prog
+
+
+-- size --------------------------------------------------------------------------------------------
+
+sizeTree tree
+ = sum $ map size tree
+
+class Size a where
+ size :: a -> Int
+ 
+instance Size Top where
+ size pp
+  = case pp of
+  	PStmt s	-> size s
+
+instance Size Stmt where
+ size ss
+  = case ss of
+  	SBindPats _ v ps x
+	  -> 1 + length ps + size x 
+	
+instance Size Exp where
+ size xx 
+  = case xx of
+	XVar{}		-> 1
+	XUnit{}		-> 1
+	XConst{}	-> 1
+	XApp _ x1 x2  	-> 1 + size x1 + size x2
+	XLambda _ v x	-> 1 + size x
+	_		-> error $ "size: no match for " ++ show xx ++ "\n"	
+
+

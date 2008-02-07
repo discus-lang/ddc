@@ -1,0 +1,17 @@
+
+thing	= 5
+
+main ()
+ = 	print	$ show $ fun1 5
+
+fun1 x	
+	| x < 0		=  0
+	
+	\= 1 + fun2 (x-1)
+
+fun2 x	= 1 + fun1 (x-1)
+fun2 y1 y2
+ 	| y1 < 0	=  0
+	
+	\= fun2 y2 y1
+ 
