@@ -153,13 +153,20 @@ traceFetterSource' vC (node : nodes)
 	= traceFetterSource vC2 cidF
 	
 	-- purity fetter is the result of purifying something else
-	| ( TFetter (FConstraint vC' _)
+{-	| ( TFetter (FConstraint vC' _)
 	  , TSI (SIPurify cidF (TClass KEffect cidE)) )	
 	  		<- node
 	, vC == vC'
 	, vC == primPure
 	= traceFetterSource vC cidE
-	
+-}
+
+	| ( TFetter (FConstraint vC' _)
+	  , TSI (SICrushedFS cid eff ts) )
+	  		<- node
+	, vC' == vC
+	= return $ Just ts
+		
 	-- found the root cause
 	| (TFetter (FConstraint vC' _), ts@(TSV sv))
 			<- node

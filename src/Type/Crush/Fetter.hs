@@ -32,7 +32,7 @@ import Data.Map			(Map)
 
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Fetter"
 
@@ -88,31 +88,31 @@ crushFetterSingle cid c tNode (TFetter f@(FConstraint vC [TClass k cidC]))
 		
 	crushFetterSingle' cid c tNode vC cidC f
 
-crushFetterSingle' cid c tNode vC cidC f
+crushFetterSingle' cid c@Class { classNodes = nodes} tNode vC cidC f
 
 	-- keep the original fetter when crushing purity
 	| vC	== primPure
-	= do fEff	<- crushPure c cidC f tNode
-	     case fEff of
+	= do	fEff	<- crushPure c cidC f tNode
+		case fEff of
 
-		-- fetter crushed ok
-		Left fsBitsSrc
-		 -> do	trace	$ "    fsBits     = " % fsBitsSrc		% "\n"
+			-- fetter crushed ok
+			Left fsBitsSrc
+			 -> do	trace	$ "    fsBits     = " % fsBitsSrc		% "\n"
 		
-			-- record the source of the new fetter based on the old one
-			progress	<- liftM or 
-					$  mapM (\(f, src) -> addFetterSource src f) fsBitsSrc
+				-- record the source of the new fetter based on the old one
+				progress	<- liftM or 
+						$  mapM (\(f, src) -> addFetterSource src f) fsBitsSrc
 
-			return	( progress
-				, Just f)
+				return	( progress
+					, Just f)
 			
-		-- got a purity error
-		Right err
-		 -> do	trace	$ ppr "    ! purity error\n"
-		 
-		 	addErrors [err]
-			return 	( False
-				, Just f)
+			-- got a purity error
+			Right err
+			 -> do	trace	$ ppr "    ! purity error\n"
+			 
+			 	addErrors [err]
+				return 	( False
+					, Just f)
 			
 	-- could crush this fetter
 	| Just fsBits	<- crushFetter $ FConstraint vC [tNode]
@@ -139,7 +139,6 @@ crushPure
 	:: Class 	-- ^ The class of the purify effect (for error reporting)
 	-> ClassId	-- ^ The classId of the effect being purified (for error reporting)
 	-> Fetter 	-- ^ The purity fetter being crushed (for error reporting)
-
 	-> Effect	-- ^ The effect to purify
 
 	-> SquidM (Either [(Fetter, TypeSource)] Error)
@@ -147,13 +146,13 @@ crushPure
 crushPure c cidEff fPure tNode
  = do
 	-- flatten out the sum into individual effects
-	let effs	
-		= flattenTSum tNode
+	let effs = flattenTSum tNode
+	trace	$ "    effs_flat  = " % effs % "\n"
 
 	-- try and generate the additional constraints needed to purify 
 	--	each effect.
 	let mFsPureSrc	
-		= map (purifyEffSrc cidEff) 
+		= map (purifyEffSrc c fPure cidEff) 
 		$ flattenTSum tNode
 
 	-- See if any of the effects couldn't be purified
@@ -165,6 +164,9 @@ crushPure c cidEff fPure tNode
 				Just _	-> Nothing)
 		$ zip effs mFsPureSrc
 								
+	trace	$ "    effs_bad   = " % effsBad % "\n"
+
+
  	case effsBad of
 	  	[]		-> return $ Left  $ catMaybes mFsPureSrc
 		(effBad : _)	
@@ -233,10 +235,22 @@ crushFetter (FConstraint vC ts)
 
 -- | Try and purify this effect, 
 --	tagging the new constraint with the appropriate typesource
-purifyEffSrc :: ClassId -> Effect -> Maybe (Fetter, TypeSource)
-purifyEffSrc cidEff eff
+purifyEffSrc :: Class -> Fetter -> ClassId -> Effect -> Maybe (Fetter, TypeSource)
+
+purifyEffSrc 
+	cPure@Class { classNodes = nodes }
+	fPure cidEff 
+	eff@(TClass KEffect cidE)
+
+ = let	Just src	= lookup (TFetter fPure) nodes
+   in	Just 	( FConstraint primPure [eff]
+		, TSI (SICrushedFS cidEff fPure src) )
+
+purifyEffSrc
+	cPure fPure cidEff
+	eff
  = case purifyEff eff of
- 	Nothing		-> Nothing
+	Nothing		-> Nothing
 	Just fNew	-> Just (fNew, TSI (SIPurify cidEff eff))
 	
 

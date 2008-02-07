@@ -1,0 +1,9 @@
+
+-- coma has a top level effect, and we can't suspend a call to it.
+--	Make sure the error-diagnosis doesn't get stuck in a recursive loop
+--	trying to work out where the purity constraint came from.
+
+coma ()
+ = do	print "wibble"
+ 	coma @ ()
+	
