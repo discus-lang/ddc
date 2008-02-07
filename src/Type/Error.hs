@@ -13,9 +13,9 @@ import Shared.Literal
 import Shared.Error
 import Shared.Base		(SourcePos(..))
 
+import Type.Location
 import Type.Exp
 import Type.Pretty
-import Type.Location
 
 -- import Type.Util
 

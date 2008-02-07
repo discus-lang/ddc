@@ -1,6 +1,8 @@
 
 module Type.Diagnose 
-	( diagMutConflict )
+	( diagMutConflict 
+	, traceFetterSource
+	, traceEffectSource)
 	
 where
 
@@ -144,10 +146,19 @@ traceFetterSource' vC (node : nodes)
 	
 	-- fetter is the result of crushing some other fetter,
 	--	so trace that instead
-	| (TFetter (FConstraint vC' _), TSI (SICrushedF cidF (FConstraint vC2 _)))	
+	| ( TFetter (FConstraint vC' _)
+	  , TSI (SICrushedF cidF (FConstraint vC2 _)))	
 			<- node
 	, vC == vC'
 	= traceFetterSource vC2 cidF
+	
+	-- purity fetter is the result of purifying something else
+	| ( TFetter (FConstraint vC' _)
+	  , TSI (SIPurify cidF (TClass KEffect cidE)) )	
+	  		<- node
+	, vC == vC'
+	, vC == primPure
+	= traceFetterSource vC cidE
 	
 	-- found the root cause
 	| (TFetter (FConstraint vC' _), ts@(TSV sv))
@@ -239,3 +250,6 @@ takeClass tt
  	TClass k cid	-> lookupClass cid
 	_		-> return Nothing
  
+
+
+

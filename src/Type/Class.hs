@@ -38,19 +38,16 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import Shared.Var		(NameSpace(..))
 
-
 import Util
 
 import Shared.Error
 
 import Type.Exp
 import Type.Location
-import Type.Util
+import Type.Util.Bits
 import Type.Plate.Trans
 import Type.State
 import Type.Plate.Collect
-
-import qualified Type.School as School
 
 -----
 stage	= "Type.Squid.Class"

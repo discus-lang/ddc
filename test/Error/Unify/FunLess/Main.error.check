@@ -1,4 +1,4 @@
-no location
+test/Error/Unify/FunLess/Main.ds:6:15
     Type mismatch during unification.
           cannot match: Base.Int %89
                   with: *67 -(!59 $62)> *68

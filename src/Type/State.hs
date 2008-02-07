@@ -39,9 +39,9 @@ import qualified Shared.Unique	as U
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
 
+import Type.Error
 import Type.Exp
 import Type.Base
-import Type.Error
 import Constraint.Exp
 
 import System.IO

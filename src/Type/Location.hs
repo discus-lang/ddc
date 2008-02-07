@@ -210,7 +210,10 @@ takeSourcePos ts
 	TSU su	-> Just $ usp su
 	TSM sm	-> Just $ msp sm
 	
-	TSI si	-> Nothing
+	TSI (SICrushedFS _ _ src)
+		-> takeSourcePos src
+		
+	_	-> Nothing
 
 
 dispSourcePos :: TypeSource -> PrettyP
@@ -218,9 +221,9 @@ dispSourcePos ts
  = case takeSourcePos ts of
  	Just sp	-> ppr sp
 
-	Nothing -> ppr "no location"
---	Nothing	-> panic stage
---		$ "dispSourcePos: no source location in " % ts
+	-- this shouldn't happen
+	Nothing	-> panic stage
+		$ "dispSourcePos: no source location in " % ts
 
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
@@ -229,13 +232,17 @@ dispTypeSource :: Type -> TypeSource -> PrettyP
 dispTypeSource tt ts
 	| TSV sv	<- ts
 	= dispSourceValue tt sv
+
+	| TSE se	<- ts
+	= dispSourceEffect tt se
 	
 	| TSU su	<- ts
 	= dispSourceUnify tt su
-	
+
 	| TSI (SICrushedFS c f ts') <- ts
 	= dispTypeSource tt ts'
-	
+
+	-- hrm.. this shouldn't happen
 	| otherwise
 	= panic stage
 	$  "dispTypeSource: no match for " % ts % "\n"
@@ -336,6 +343,55 @@ dispSourceValue tt sv
 		-> "  definition of field " % vField % " of '" % vCtor % "' in type '" % vData % "'\n"
 		%  "              at: " % sp	% "\n"
 
+-- | Show the source of a type error due to this reason
+dispSourceEffect :: Pretty tt => tt -> SourceEffect -> PrettyP
+dispSourceEffect tt se
+ = case se of
+	SEApp sp
+		-> "  effect from function application\n"
+		%  "          namely: " % tt 	% "\n"
+		%  "              at: " % sp 	% "\n"
+		
+	SEMatchObj sp
+		-> "  effect due to testing match object\n"
+		%  "          namely: " % tt 	% "\n"
+		%  "              at: " % sp 	% "\n"
+		
+	SEMatch sp
+		-> "  effect of match alternative\n"
+		%  "          namely: " % tt	% "\n"
+		%  "              at: " % sp 	% "\n"
+
+	SEDo sp
+		-> "  effect of do expression\n"
+		%  "          namely: " % tt 	% "\n"
+		%  "              at: " % sp 	% "\n"
+
+	SEIfObj sp
+		-> "  effect due to testing if-then-else discriminant\n"
+		%  "              at: " % sp	% "\n"
+
+	SEIf sp
+		-> "  effect of if-then-else expression\n"
+		%  "          namely: " % tt 	% "\n"
+		%  "              at: " % sp 	% "\n"
+
+	SEProj sp
+		-> "  effect of field projection\n"
+		%  "          namely: " % tt 	% "\n"
+		%  "              at: " % sp	% "\n"
+		
+	SEGuardObj sp
+		-> "  effect due to testing pattern guard\n"
+		%  "          namely: " % tt 	% "\n"
+		%  "              at: " % sp	% "\n"
+
+	SEGuards sp
+		-> "  effect of pattern guards\n"
+		%  "          namely: " % tt 	% "\n"
+		%  "              at: " % sp 	% "\n"
+
+
 
 -- | Show the source of a type error due to this reason
 dispSourceUnify :: Pretty tt => tt -> SourceUnify -> PrettyP
@@ -360,6 +416,18 @@ dispSourceUnify tt sv
 
 	SUBind sp
 		-> ppr "binding"	
+
+
+
+-- Normalise ---------------------------------------------------------------------------------------
+--	We don't want to display raw classIds in the error messages for two reasons
+--
+--	1) Don't want to worry the user about non-useful information.
+--	2) They tend to change when we modify the type inferencer, and we don't want to 
+--		have to update all the check files for inferencer tests every time this happens.
+--
+
+-- Could do this directly on the string, if we displayed an * infront of type variables..
 
 
 -- | Show the source of a fetter
@@ -395,22 +463,6 @@ dispFetterSource f ts
 	, TSI (SICrushedFS cid f' src)	<- ts
 	= dispFetterSource f' src
 	
---	| otherwise
---	= panic stage $ "dispFetterSource: no match for " % ts % "\n"
-
+	-- hrm.. this shouldn't happen
 	| otherwise
-	= "(no location for " % f <> ts % ")"
-
-
-
--- Normalise ---------------------------------------------------------------------------------------
---	We don't want to display raw classIds in the error messages for two reasons
---
---	1) Don't want to worry the user about non-useful information.
---	2) They tend to change when we modify the type inferencer, and we don't want to 
---		have to update all the check files for inferencer tests every time this happens.
---
-
--- Could do this directly on the string, if we displayed an * infront of type variables..
-
-
+	= panic stage $ "dispFetterSource: no match for " % ts % "\n"

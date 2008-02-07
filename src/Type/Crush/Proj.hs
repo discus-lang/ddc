@@ -156,8 +156,8 @@ crushProj2
 			Just vImplT	<- lookupSigmaVar vImpl
 
 			-- Build the new constraints
-			let qs	= 	[ CInst (TSI $ SICrushedF cid fProj) vInst vImplT
-					, CEq   (TSI $ SICrushedF cid fProj) (TVar KData vInst) tBind ]
+			let qs	= 	[ CInst (TSI $ SICrushedFS cid fProj src) vInst vImplT
+					, CEq   (TSI $ SICrushedFS cid fProj src) (TVar KData vInst) tBind ]
 					 
 			trace $ 	"    qs : " %> "\n" %!% qs % "\n"
 

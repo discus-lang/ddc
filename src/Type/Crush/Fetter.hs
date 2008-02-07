@@ -5,6 +5,7 @@ module Type.Crush.Fetter
 
 where
 
+import Type.Diagnose
 import Type.Feed
 import Type.Trace
 import Type.State
@@ -91,7 +92,8 @@ crushFetterSingle' cid c tNode vC cidC f
 
 	-- keep the original fetter when crushing purity
 	| vC	== primPure
-	= case crushPure c cidC f tNode of
+	= do fEff	<- crushPure c cidC f tNode
+	     case fEff of
 
 		-- fetter crushed ok
 		Left fsBitsSrc
@@ -140,55 +142,61 @@ crushPure
 
 	-> Effect	-- ^ The effect to purify
 
-	-> Either [(Fetter, TypeSource)] Error
+	-> SquidM (Either [(Fetter, TypeSource)] Error)
 
 crushPure c cidEff fPure tNode
- = let	
+ = do
 	-- flatten out the sum into individual effects
-	effs	= flattenTSum tNode
+	let effs	
+		= flattenTSum tNode
 
 	-- try and generate the additional constraints needed to purify 
 	--	each effect.
-	mFsPureSrc	
+	let mFsPureSrc	
 		= map (purifyEffSrc cidEff) 
 		$ flattenTSum tNode
 
 	-- See if any of the effects couldn't be purified
-	effsBad	= catMaybes
+	let effsBad	
+		= catMaybes
 		$ map (\(eff, mfPureSrc) 
 			-> case mfPureSrc of
 				Nothing	-> Just eff
 				Just _	-> Nothing)
 		$ zip effs mFsPureSrc
 								
-  in case effsBad of
-  	[]		-> Left  $ catMaybes mFsPureSrc
-	(effBad : _)	-> Right $ makePurityError c fPure effBad
+ 	case effsBad of
+	  	[]		-> return $ Left  $ catMaybes mFsPureSrc
+		(effBad : _)	
+		 -> do	eff	<- makePurityError c fPure effBad
+		 	return	$ Right eff
 		
 
 
 -- | Make an error for when the purity fetter in this class could not be satisfied.
-makePurityError :: Class -> Fetter -> Effect -> Error
+makePurityError :: Class -> Fetter -> Effect -> SquidM Error
 makePurityError 
 	c@Class	{ classNodes = nodes }
-	fPure
+	fPure@(FConstraint vC [TClass _ cidE])
 	effBad
- = let	
+ = do
 	-- lookup the type-source for the purify fetter
- 	fSrc : _	= [tsPure	| (TFetter (FConstraint v _), tsPure)	<- nodes
-					, v == primPure ]
+-- 	fSrc : _	= [tsPure	| (TFetter (FConstraint v _), tsPure)	<- nodes
+--					, v == primPure ]
+
+	Just fSrc	<- traceFetterSource vC cidE
 
 	-- lookup the type-source for the conflicting effect
 	--	The nodes hold effect sums, so we need to look inside them
 	--	to find which one holds our (single) conflicting effect
-	effSrc : _ 	= [tsEff	| (eff,  tsEff)		<- nodes
+	let effSrc : _ 	= [tsEff	| (eff,  tsEff)		<- nodes
 					, elem effBad $ flattenTSum eff]
 					
-   in	ErrorCannotPurify
-   		{ eEffect	= effBad
-		, eEffectSource	= effSrc
-		, eFetter	= fPure
-		, eFetterSource	= fSrc }
+	return 	$ ErrorCannotPurify
+	   		{ eEffect	= effBad
+			, eEffectSource	= effSrc
+			, eFetter	= fPure
+			, eFetterSource	= fSrc }
 
 
 -- | Crush a non-purity fetter

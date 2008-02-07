@@ -1,4 +1,4 @@
-no location
+test/Error/Unify/Shape2/Main.ds:5:25
     Type mismatch during unification.
           cannot match: Base.Int %3
                   with: Data.String.String %42
@@ -12,7 +12,7 @@ no location
                  at type: Data.String.String %42
                       at: test/Error/Unify/Shape2/Main.ds:5:10
 
-no location
+test/Error/Unify/Shape2/Main.ds:5:25
     Type mismatch during unification.
           cannot match: Base.Int %81
                   with: *66 -(!64 $70)> *68

@@ -1,4 +1,4 @@
-no location
+test/Error/Unify/Shape/Main.ds:7:6
     Type mismatch during unification.
           cannot match: Base.Int %38
                   with: Data.String.String %45
