@@ -90,6 +90,11 @@ test :
 	@echo "* Building tests"
 	@bin/war
 
+.PHONY : churn
+churn : 
+	@echo "* Churning compiler"
+	@ghci -isrc -fglasgow-exts churn/Main.hs -e main
+
 # -- Cleaning --------------------------------------------------------------------------------------
 
 # -- clean objects in the runtime system
@@ -135,6 +140,8 @@ cleanWar :
 		-o 	-name "*.diff"  \
 		-o	-name "*.tix"	\
 		-follow | xargs -n 1 rm -f
+
+	@rm -f churn/scratch/*
 	
 	@echo
 

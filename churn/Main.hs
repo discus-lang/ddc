@@ -257,7 +257,7 @@ stashFailure code
  = do	let codeSize	= sizeTree code
  	putStr $ "! failed at size " ++ show codeSize ++ "\n"
 
-	let logName	= "tmp/foo.error" ++ show codeSize ++ ".ds"
+	let logName	= "./churn/scratch/test.error-size" ++ show codeSize ++ ".ds"
 	writeFile logName (pprProg code)
 
 	return ()
@@ -269,10 +269,10 @@ runTest :: Int -> IO (Tree, ExitCode)
 runTest ix
  = do	putStr $ "* running test " ++ show ix ++ "\n"
  	prog	<- evalGen $ genProg
- 	writeFile "tmp/foo.ds" (pprProg prog)
+ 	writeFile "./churn/scratch/test.ds" (pprProg prog)
 
-	system "rm -f ./tmp/foo.dump*"
-	code	<- system "bin/ddc -i library -c ./tmp/foo.ds"
+	system "rm -f ./churn/scratch/test.dump*"
+	code	<- system "bin/ddc -i library -c ./churn/scratch/test.ds"
 	return (prog, code)
 
 pprProg prog
