@@ -3,6 +3,7 @@ module Type.Util.Quantify
 	(quantifyVarsT)
 where
 
+import Type.Plate.FreeVars
 import Type.Util.Bits
 import Type.Exp
 import Util.Graph.Deps
@@ -38,7 +39,7 @@ quantifyVarsT vks tt@(TFetters fs t)
 	-- build a map of which vars need to come before others
  	deps		= Map.fromListWith (++) 
 			$ concat
-			$ [zip (repeat v1) [takeVars ts]
+			$ [zip (repeat v1) [Set.toList $ freeVars ts]
 				| FMore (TVar k v1) ts
 				<- fs]
 

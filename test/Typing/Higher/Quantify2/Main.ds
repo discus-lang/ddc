@@ -1,0 +1,26 @@
+
+
+-- churn error
+v24      = \v25 -> v25 (\v26 -> \v27 -> 41);
+v30      = v24 (\v31 -> v31 33 (\v32 -> \v33 -> 99));
+
+
+main () = print (show v30);
+
+{-
+Type.Quantify is expecting the rhs of :> to be a sum, but its a mask.	
+	make sure to use freevars
+
+Main.v24
+ =      /\  *tTC451app, *v26, *v27, %rTC7, !eTC10app, !eTS4, !eTS5, ($cTC17lam :> $cTC18lam \ v26), $cTC18lam, $cTS1 ->
+        \  (v25              :: (*v26 -(!eTS5 ($cTC18lam \ v26))> *v27 -(!eTS4 $cTC18lam)> Base.Int %rTC7) -(!eTC10app $cTS1)> *tTC451app)
+                             of !eTC10app
+                                ($cTC18lam \ ${v26; v25}) ->
+        [** *tTC451app ]
+        v25
+                (\  (v26              :: *v26)
+                                     of ($cTC18lam \ v26) ->
+                \  (v27              :: *v27)
+                                     of $cTC18lam ->
+                prim{Box} %rTC7 41#32i);
+-}
