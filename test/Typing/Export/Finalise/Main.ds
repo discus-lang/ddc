@@ -1,0 +1,34 @@
+
+-- churn error
+v4       = \v5 -> ();
+
+v7       = v4 (\v8 -> \v9 -> \v10 -> \v11 -> \v12 -> 18);
+
+main () 
+ = print (show 54);
+
+{-
+PANIC in core-lint-reconstruct
+        Type variable $cTC4lam is not in scope.
+        
+        Please report this bug to the maintainers at:
+            http://code.google.com/p/disciple/issues
+            or by emailing ddc-bugs@majestic.fastmail.fm
+
+Main.v7
+ =      [** Base.Unit ]
+        Main.v4
+                ((Base.Unit -($cTC2lam)> Base.Unit -($cTC3lam)> Base.Unit -($cTC4lam)> Base.Unit -> Base.Unit -> Base.Int %rTC0)
+                :- $cTC2lam =  $cTC3lam \ v8
+                ,  $cTC3lam =  $cTC4lam \ v9)
+                (\  (v8               :: Base.Unit) ->
+                \  (v9               :: Base.Unit) ->
+                \  (v10              :: Base.Unit) ->
+                \  (v11              :: Base.Unit) ->
+                \  (v12              :: Base.Unit) ->
+                prim{Box} %rTC0 18#32i);
+
+
+	Make sure to flatten/finalise types in instance info.
+
+-}

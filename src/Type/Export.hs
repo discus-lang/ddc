@@ -174,9 +174,13 @@ exportInstInfo (v, ii)
 					_		-> tt
 
 		let ts_hacked	= map chopForalls ts
+		
+		-- need to finalise again because quantified vars have been chopped off
+		quantVars	<- gets stateQuantifiedVars
+		let ts_final	= map (finaliseT quantVars) ts_hacked
 
 	 	t'		<- exportType t
-	 	return		$ (v, InstanceLet v1 v2 ts_hacked t')
+	 	return		$ (v, InstanceLet v1 v2 ts_final t')
 		
 	InstanceLetRec 	vUse vDef Nothing
 	 -> do 	Just tDef	<- exportVarType vDef
