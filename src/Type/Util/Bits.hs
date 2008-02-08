@@ -7,7 +7,6 @@ module Type.Util.Bits
 	
 	, crushT
 	, makeTSum,	flattenTSum
---	, makeTUnify,	flattenTUnify
 	, makeTMask,	applyTMask
 
 	, makeTForall

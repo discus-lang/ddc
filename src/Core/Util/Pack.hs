@@ -97,6 +97,10 @@ packT1 tt
 	 	| k == k1
 		-> TBot k1
 	 
+	TMask k1 (TMask k2 t1 t2) t3
+	 | k1 == k2
+	 -> makeTMask k1 t1 (makeTSum k1 [t2, t3])
+	 
 	TMask k t1 t2
 	 -> let t1'	= packT1 t1
 	 	t2'	= packT1 t2

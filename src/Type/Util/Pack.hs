@@ -144,6 +144,10 @@ packTypeLs ld ls tt
 	 		$ map (packTypeLs True ls) ts
 	    in	makeTSum k ts'
 
+	TMask k1 (TMask k2 t1 t2) t3
+	 | k1 == k2
+	 -> makeTMask k1 t1 (makeTSum KClosure [t2, t3])
+
 	-- don't substitute into the lhs of mask expression so we end up with
 	--	c2 = c3 \ x ; c3 = { x : ... }   etc
 	TMask k t1 t2

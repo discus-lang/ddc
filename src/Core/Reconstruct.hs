@@ -842,11 +842,11 @@ applyTypeT table (TForall (BMore v tB) k t1) t2
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
 		% "    caller = " % tableCaller table % "\n"
-		% "   (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")"
+		% "   in application: (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")" % "\n"
 		% "\n"
-		%> t2 % "\n"
-		% "is not :>\n"
-		%> tB % "\n"
+		% "        type: "  % t2 % "\n"
+		% "\n"
+		% "    is not :> " % tB % "\n"
 		% "\n")
 
 		$ Nothing

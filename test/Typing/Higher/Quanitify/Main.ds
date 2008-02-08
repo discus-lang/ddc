@@ -1,0 +1,33 @@
+
+-- churn error
+v4	= \v5 -> v5 23 (\v6 -> v6 (\v7 -> ()) ())
+v20	= v4 (\v21 -> \v22 -> v22 (\v23 -> \v24 -> 19))
+
+main ()	= print (show v20)
+
+{-
+FREAKOUT in Core.Reconstruct
+        applyTypeT: Kind error in type application.
+            caller = Just Core.Bind.bindXDo
+           in application: (\/ !eTC4app :> (!{!eTC7app; !eTC5app}) ! -> ...) (!PURE)
+        
+                type: !PURE
+        
+            is not :> !{!eTC7app; !eTC5app}
+
+
+Inferred type for v4 was:
+
+v4 	:: forall tTC393app tTC399app v7 %rTC0 !eTC1app !eTC3app !eTC4app !eTC5app !eTC7app !eTS0 $cTC3lam $cTC6lam $cTS0 $cTS1 $cTS2 $cTS3
+	.  (Base.Int %rTC0 -(!eTC3app $cTS3)> (((v7 -(!eTS0 $cTC6lam)> Base.Unit) -(!eTC7app $cTS1)> Base.Unit -(!eTC5app $cTS0)> tTC399app) 
+		-(!eTC4app $cTC3lam)> tTC399app) -(!eTC1app $cTS2)> tTC393app) -(!eTC0app $cTC0lam)> tTC393app
+	:- !eTC0app   = !{!eTC3app; !eTC1app}
+	,  !eTC4app   :> !{!eTC7app; !eTC5app}
+	,  $cTC0lam   = $cTC3lam \ v5
+
+
+	We need to arrange for !eTC7app and !eTC5app to appear in the list of
+	quanfified vars before eTC4app, otherwise their manifest effects won't
+	be in scope during type application.
+
+-}

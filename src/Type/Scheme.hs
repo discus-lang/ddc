@@ -312,9 +312,8 @@ generaliseType' varT tCore envCids
 					, stateQuantifiedVars s ] }
 	
 	trace	$ "    vksFree   = " % vksFree	% "\n\n"
-
-	let tScheme	= makeTForall vksFree tMskLocal
-	
+	let tScheme	= quantifyVarsT vksFree tMskLocal
+		
 	
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"

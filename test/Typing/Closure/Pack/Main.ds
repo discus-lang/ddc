@@ -1,0 +1,21 @@
+
+-- churn error
+--	Closure's aren't being packed properly.
+
+v4	 = \v5 -> v5 (\v6 -> ()) () (\v7 -> \v8 -> \v9 -> 18);
+
+
+{-
+FREAKOUT in Core.Reconstruct
+applyValueT: Type error in value application.
+    called by = Just Core.Bind.bindXDo
+
+    can't apply argument:
+        *v7 -($cTC7lam \ ${v8; v7})> *v8 -($cTC7lam \ v8)> *v9 -($cTC7lam)> Base.Int32 %rTC0
+
+    to:
+        (*v7 -(!eTS3 ($cTC7lam \ v8 \ v7))> *v8 -(!eTS2 ($cTC7lam \ v8))> *v9 -(!eTS1 $cTC7lam)> Base.Int %rTC0) -(!eTC1app $cTS0)> *tTC393app
+
+    as it is not <: than:
+        *v7 -(!eTS3 ($cTC7lam \ v8 \ v7))> *v8 -(!eTS2 ($cTC7lam \ v8))> *v9 -(!eTS1 $cTC7lam)> Base.Int %rTC0
+-}

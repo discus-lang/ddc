@@ -28,6 +28,7 @@ import qualified Shared.Literal		as S
 import qualified Type.Exp		as T
 import Type.ToCore			(toCoreT, toCoreK)
 
+import qualified Core.Util.Pack		as C
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Pretty		as C
@@ -313,8 +314,8 @@ toCoreX xx
 		return		
 		 $ C.XLam 	v tArg
 				x'
-				(effAnnot)
-				(cloAnnot)
+				(C.packT  $ effAnnot)
+				(C.packT $ cloAnnot)
 
 
 	D.XApp	_ x1 x2

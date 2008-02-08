@@ -9,7 +9,8 @@ module Type.Util
 	, module Type.Util.Unify 
 	, module Type.Util.Cut
 	, module Type.Util.Trim
-	, module Type.Util.Finalise)
+	, module Type.Util.Finalise
+	, module Type.Util.Quantify)
 	
 where
 
@@ -24,3 +25,4 @@ import Type.Util.Unify
 import Type.Util.Cut
 import Type.Util.Trim
 import Type.Util.Finalise
+import Type.Util.Quantify
