@@ -29,8 +29,8 @@ bin/ddc	: $(obj) $(GHC_INCOBJS)
 	
 
 # -- build the test driver
-bin/war : war/War.hs war/Diff.hs war/Interface.hs war/Order.hs war/Bits.hs war/TestSource.hs
-	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc -iwar --make war/War.hs -o bin/war
+bin/war : tools/war/War.hs tools/war/Diff.hs tools/war/Interface.hs tools/war/Order.hs tools/war/Bits.hs tools/war/TestSource.hs
+	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc -itools/war --make tools/war/War.hs -o bin/war
 	
 # -- build the runtime system
 runtime_c = \
@@ -85,15 +85,15 @@ doc	: $(filter-out $(nodoc),$(src_hs))
 	@haddock -h -o doc/haddock --ignore-all-exports $^ 
 
 # -- Testing ---------------------------------------------------------------------------------------
-.PHONY : test
-test : 
+.PHONY : war
+war : 
 	@echo "* Building tests"
 	@bin/war
 
 .PHONY : churn
 churn : 
 	@echo "* Churning compiler"
-	@ghci -isrc -fglasgow-exts churn/Main.hs -e main
+	@ghci -isrc -fglasgow-exts tools/churn/Main.hs -e main
 
 # -- Cleaning --------------------------------------------------------------------------------------
 

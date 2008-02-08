@@ -21,6 +21,13 @@ import Shared.VarPrim
 import Shared.Var		(NameSpace(..))
 import qualified Shared.Var	as Var
 
+-- Config ------------------------------------------------------------------------------------------
+
+-- what scratch dir to use
+scratch	= "tools/churn/scratch/"
+
+
+
 ----------------------------------------------------------------------------------------------------
 type Env	= [(Type, Var)]
 
@@ -63,6 +70,54 @@ runN n f
  = do	xs	<- replicateM n (evalGen f)
  	putStr $ catInt "\n" $ map pprStr xs
 	putStr $ "\n\n"
+
+-- runTest ------------------------------------------------------------------------------------------
+main 	= churn 0
+ 
+churn :: Int -> IO ()
+churn ix
+ = do	(prog, code)	<- runTest ix
+ 	case code of
+	 ExitSuccess	-> churn (ix + 1)
+	 ExitFailure _	
+	  -> do	stashFailure prog
+	  	churn (ix + 1)
+	  	
+-- | Handle compile failure
+--	 
+stashFailure :: Tree -> IO ()
+stashFailure code
+ = do	
+ 	-- calculate program size
+	let codeSize	= sizeTree code
+ 	putStr $ "! failed at size " ++ show codeSize ++ "\n"
+
+	-- write the offending program to a new file
+	let logName	= scratch ++ "test.error-size" ++ show codeSize ++ ".ds"
+	writeFile logName (pprProg code)
+
+	return ()
+	
+
+-- | Generate a random program and compile it.
+
+runTest :: Int 			-- index of test
+	-> IO (Tree, ExitCode)
+
+runTest ix
+ = do	putStr $ "* running test " ++ show ix ++ "\n"
+ 	prog		<- evalGen $ genProg
+	let fileSource	= scratch ++ "test.ds"
+
+ 	writeFile fileSource (pprProg prog)
+
+	system	$ "rm -f " ++ scratch ++ "test.dump*"
+	code	<- system $ "bin/ddc -i library -c " ++ fileSource
+	return (prog, code)
+
+pprProg prog
+	= catInt "\n" $ map pprStr prog
+
 
 ----------------------------------------------------------------------------------------------------
 
@@ -237,46 +292,6 @@ genProg
  	binds		<- genTopsChain initEnv nBinds
  	return binds
 
-
-
--- runTest ------------------------------------------------------------------------------------------
-main 	= churn 0
- 
-
-churn :: Int -> IO ()
-churn ix
- = do	(prog, code)	<- runTest ix
- 	case code of
-	 ExitSuccess	-> churn (ix + 1)
-	 ExitFailure _	
-	  -> do	stashFailure prog
-	  	churn (ix + 1)
-	  	
- 
-stashFailure code
- = do	let codeSize	= sizeTree code
- 	putStr $ "! failed at size " ++ show codeSize ++ "\n"
-
-	let logName	= "./churn/scratch/test.error-size" ++ show codeSize ++ ".ds"
-	writeFile logName (pprProg code)
-
-	return ()
-	
-
- 
-
-runTest :: Int -> IO (Tree, ExitCode)
-runTest ix
- = do	putStr $ "* running test " ++ show ix ++ "\n"
- 	prog	<- evalGen $ genProg
- 	writeFile "./churn/scratch/test.ds" (pprProg prog)
-
-	system "rm -f ./churn/scratch/test.dump*"
-	code	<- system "bin/ddc -i library -c ./churn/scratch/test.ds"
-	return (prog, code)
-
-pprProg prog
-	= catInt "\n" $ map pprStr prog
 
 
 -- size --------------------------------------------------------------------------------------------
