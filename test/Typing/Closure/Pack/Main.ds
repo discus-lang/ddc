@@ -4,7 +4,7 @@
 
 v4	 = \v5 -> v5 (\v6 -> ()) () (\v7 -> \v8 -> \v9 -> 18);
 
-
+main ()	= ()
 {-
 FREAKOUT in Core.Reconstruct
 applyValueT: Type error in value application.
