@@ -9,6 +9,8 @@ import Type.Exp
 import Util.Graph.Deps
 import Util
 
+import qualified Shared.VarUtil	as Var
+
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -39,7 +41,8 @@ quantifyVarsT vks tt@(TFetters fs t)
 	-- build a map of which vars need to come before others
  	deps		= Map.fromListWith (++) 
 			$ concat
-			$ [zip (repeat v1) [Set.toList $ freeVars ts]
+			$ [zip (repeat v1) [filter (\v -> not $ Var.isCtorName v) 
+						$ Set.toList $ freeVars ts]
 				| FMore (TVar k v1) ts
 				<- fs]
 
@@ -52,7 +55,7 @@ quantifyVarsT vks tt@(TFetters fs t)
 			$ vsSequence
 		
    in {- trace (pprStr 	$ "deps       = " % deps % "\n"
-   			% "vsSequence = " % vsSequence	% "\n") -}
+   			% "vsSequence = " % vsSequence	% "\n") $ -}
 	-- add the TForall out the front
    	makeTForall vksSequence tt
 
