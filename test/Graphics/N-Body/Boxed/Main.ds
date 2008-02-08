@@ -86,7 +86,7 @@ initBodies ()
 
 	-- make a new array of bodies.
 	body0	= array_new (length bodies) (errorNoEff @ "elem not initialised")
-	zipWith_ (\b i -> body0 #(i) #= b)
+	zipWith_ (\b i -> body0 #(i) #= b) 
 		bodies [0 .. array_size body0 - 1]
 
 
