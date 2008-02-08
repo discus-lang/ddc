@@ -314,7 +314,7 @@ toCoreX xx
 		return		
 		 $ C.XLam 	v tArg
 				x'
-				(C.packT  $ effAnnot)
+				(C.packT $ effAnnot)
 				(C.packT $ cloAnnot)
 
 

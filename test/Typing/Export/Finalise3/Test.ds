@@ -1,0 +1,40 @@
+
+-- churn error
+v0       = \v1 -> \v2 -> v2 (\v3 -> \v4 -> \v5 -> \v6 -> 22);
+v11      = v0 (\v12 -> \v13 -> 39) (\v14 -> ());
+
+
+-- main () 
+-- = print (show (v37 50));
+
+
+
+{-
+--	cTS3 is not in scope
+
+
+Main.v11
+ =      [** Base.Unit ]
+        Main.v0
+                (Base.Unit -> Base.Unit -> Base.Int %rTC1)
+                Base.Unit
+                Base.Unit
+                Base.Unit
+                Base.Unit
+                Base.Unit %rTS0
+                !PURE
+                !PURE
+                !PURE
+                !PURE
+                !PURE
+                $EMPTY
+                $EMPTY
+                $EMPTY
+                $EMPTY
+                $EMPTY
+                (\  (v12              :: Base.Unit) ->
+                \  (v13              :: Base.Unit) ->
+                prim{Box} %rTC1 39#32i)
+                (\  (v14              :: Base.Unit -($cTS3 \ v3)> Base.Unit -($cTS3)> Base.Unit -> Base.Unit -> Base.Int %rTS0) ->
+                Base.Unit);
+-}

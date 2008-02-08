@@ -5,6 +5,7 @@ module Type.Util.Finalise
 where
 
 import Type.Exp
+import Type.Util.Pack
 import Type.Util.Bits
 import Shared.VarPrim
 import Util
@@ -17,22 +18,29 @@ import Data.Set			(Set)
 --	replaced by bottoms.
 --	
 finaliseT 
-	:: Set Var 	-- vars that were bound at a higher level
-	-> Type 
+	:: Set Var
+	-> Type
 	-> Type
 
 finaliseT bound tt
- = let down	= finaliseT bound
+ = let tt'	= packType $ finaliseT' bound tt
+   in  if tt == tt'
+   	then tt
+	else finaliseT bound tt'
+
+
+finaliseT' bound tt
+ = let down	= finaliseT' bound
    in  case tt of
   	TForall vks t	
 	 -> let	bound'	= Set.union bound (Set.fromList $ map fst vks)
-	 	t'	= finaliseT bound' t
+	 	t'	= finaliseT' bound' t
 	    in	TForall vks t'
 	    
 	TFetters fs t
 	 -> let	bound'	= Set.union bound (Set.fromList $ catMaybes $ map takeBindingVarF fs)
 	    	fs'	= map (finaliseF bound') fs
-		t'	= finaliseT bound' t
+		t'	= finaliseT' bound' t
 	    in	TFetters fs' t'
 	    
 	TSum  k ts	-> makeTSum k (map down ts)

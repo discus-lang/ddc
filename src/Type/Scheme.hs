@@ -170,7 +170,7 @@ extractType_final True varT cid tTrim
  
 	-- close off never-quantified effect and closure vars
  	quantVars	<- gets stateQuantifiedVars
- 	let tFinal	=  packType $ finaliseT quantVars tPlug
+ 	let tFinal	=  finaliseT quantVars tPlug
 	
 	trace	$ "    tFinal          =\n" %> prettyTS tFinal	% "\n\n"
 	extractTypeC2 varT cid tFinal
