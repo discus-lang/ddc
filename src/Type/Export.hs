@@ -74,15 +74,6 @@ squidExport vsTypesPlease
 
 
    
--- | Export the type for this variable.
---	If no type is in the graph for this var then return Nothing.
---
-exportVarType :: Var -> SquidM (Maybe Type)
-exportVarType v
- = do 	trace	$ "*   Export.exportVarType: " % v	% "\n"
- 
- 	mEx	<- extractType True v
-	return mEx	
 
 --
 exportTypes :: Set Var -> SquidM (Map Var Type)
@@ -122,6 +113,22 @@ exportType t
 	 _ ->  return	$ tFinal
 		
  
+ -- | Export the type for this variable.
+--	If no type is in the graph for this var then return Nothing.
+--
+exportVarType :: Var -> SquidM (Maybe Type)
+exportVarType v
+ = do 	trace	$ "*   Export.exportVarType: " % v	% "\n"
+ 
+ 	mT	<- extractType True v
+	mTEx	<- case mT of
+			Nothing	-> return Nothing
+			Just t	
+			 -> do	t'	<- exportType t
+			 	return $ Just t'
+
+	return mTEx
+
 
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
 exportMaybeType mt

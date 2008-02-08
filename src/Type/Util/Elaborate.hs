@@ -21,6 +21,7 @@ import Shared.Error
 
 import Type.Exp
 import Type.Pretty		()
+import Type.Util.Pack
 import Type.Util.Bits		
 import Type.Plate.Collect
 
@@ -275,7 +276,7 @@ elaborateCloT' env tt
 		varC		<- ?newVarN NameClosure
 		let cloVarC	= TVar KClosure varC
 
-		let fNew	=
+		let fNewClo	=
 		     case t2 of
 			-- rhs of this function is another function
 			--	set this closure to be closure of rhs without the arg bound here
@@ -288,9 +289,15 @@ elaborateCloT' env tt
 			--	pretend that all the args are referenced here.
 			_	-> FLet cloVarC (makeTSum KClosure env)
 
-		return	( TFun t1 t2' eff cloVarC
-			, fNew : fs
-			, Just cloVarC)
+		-- Don't add the closure variable if the fetter is just bottom.
+		let (fNew, cloAnnot)
+			= case fNewClo of 
+				FLet _ (TBot KClosure)	-> (Nothing, 	TBot KClosure)
+				_			-> (Just fNewClo, cloVarC)
+
+		return	( TFun t1 t2' eff cloAnnot
+			, maybeToList fNew ++ fs
+			, Just cloAnnot)
 
 
 -- | Elaborate effects in this type.
@@ -327,7 +334,7 @@ elaborateEffT vsRsConst vsRsMutable tt
 	
 	let tFinal	= addEffectsToFsT effs hookVar tHooked
   
- 	return tFinal
+ 	return $ packType tFinal
 
 
 -- | Find the right most function arrow in this function type and return the effect variable

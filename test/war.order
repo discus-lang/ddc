@@ -2,6 +2,7 @@ Error
 Staged
 Syntax
 Renamer
+Desugar
 Core
 Optimise
 Defib

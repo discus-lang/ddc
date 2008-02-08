@@ -44,7 +44,6 @@ import Type.Dump
 import Type.State
 import Type.Class
 import Type.Scheme
-import Type.Finalise
 import Type.Feed
 import Type.Trace
 import Type.Context
