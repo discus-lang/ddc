@@ -1,0 +1,269 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
+
+module Source.Plate.Trans
+	( TransTable(..)
+	, transTableId
+	, transZM 
+	, trans
+	
+	, Trans
+	, Trans1 )
+
+where
+
+import Util
+import qualified Shared.Var	as Var
+import Source.Exp
+import Debug.Trace
+
+-- | The transform class.
+--	It transforms some thing 'a' into some other thing 'b'.
+--	The n1 and n2 are optional annotations sprinkled over those things.
+--
+class Monad m => TransM m n1 n2 a b
+ where	
+ 	-- apply all the three transforms
+ 	transZM		:: TransTable m n1 n2 -> a -> m b
+
+	-- decend into the expression
+	followZM 	:: TransTable m n1 n2 -> a -> m b	
+	followZM	= error "followZM: undefined"
+
+
+-- Apply the various transforms
+--	first apply the in-place top-down transform
+--	then decend with the follow function
+--	then apply the in-place bottom-up transform
+--	
+transMe
+	:: Monad m 
+	=> (TransTable m n1 n2 -> x n1 -> m (x n2))
+	-> (x n1 -> m (x n1))
+	-> (x n2 -> m (x n2))
+	-> TransTable m n1 n2
+	-> x n1
+	-> m (x n2)
+	
+transMe pTrans pEnter pLeave table xx
+ = do	xxE	<- pEnter xx
+	xxF	<- (pTrans table) xxE
+	xxL	<- pLeave xxF
+	return	$ xxL
+	
+
+type Trans  m n1 n2 x	= TransTable m n1 n2 -> x n1 -> m (x n2)
+type Trans1 m n1 x	= x n1 -> m (x n1)
+
+-- Basic Instances ---------------------------------------------------------------------------------
+
+-- maybe
+instance(  Monad  m
+	,  TransM m n1 n2 a b)
+	=> TransM m n1 n2 (Maybe a) (Maybe b)
+
+ where 	transZM table Nothing	
+   	 = 	return Nothing
+
+ 	transZM table (Just x)
+	 = do	x'	<- transZM table x
+	 	return	$ Just x'
+
+-- lists
+instance(  Monad  m
+	,  TransM m n1 n2 a b)
+	=> TransM m n1 n2 [a] [b]
+
+ where	transZM table xx	
+ 	 = mapM (transZM table) xx
+
+-- tuples
+instance(  Monad  m
+	,  TransM m n1 n2 a1 a2
+	,  TransM m n1 n2 b1 b2)
+	=> TransM m n1 n2 (a1, b1) (a2, b2)
+
+ where	transZM table (a, b)
+ 	 = do 	a'		<- transZM table a
+		b'		<- transZM table b
+		return		(a', b')
+
+-----
+instance Monad m 
+	=> TransM m n1 n2 (DataField (Exp n1) Type) (DataField (Exp n2) Type) where
+
+ transZM table ff
+  = case ff of
+  	DataField{}
+	 -> do	dLabel'		<- transZM table $ dLabel ff
+		dInit'		<- transZM table $ dInit ff
+		return		$ ff 	{ dLabel	= dLabel'
+					, dInit		= dInit' }
+
+instance Monad m => TransM m n1 n2 Var Var
+ where	transZM table xx = (transVar table) xx
+
+instance Monad m => TransM m n1 n2 Type Type
+ where	transZM table xx = (transType table) xx
+
+-- Identity Instances ------------------------------------------------------------------------------
+-- We don't do anything special with these elements of the tree
+
+instance Monad m => TransM m n1 n2 Int Int
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Bool Bool
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Var.Module Var.Module
+ where	transZM table xx = return xx
+ 
+instance Monad m => TransM m n1 n2 Const Const
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Kind Kind
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Char Char
+ where 	transZM table xx = return xx
+
+
+-- Helper functions --------------------------------------------------------------------------------
+-- | Transform some thing with the identity monad
+trans	:: TransM (State ()) n1 n2 a b
+	=> TransTable (State ()) n1 n2
+	-> a -> b
+	
+trans table x 
+	= evalState (transZM table x) ()
+
+
+-- The transform table -----------------------------------------------------------------------------
+
+-- | Table of transform functions
+data TransTable m n1 n2
+	= TransTable
+	{ transN		:: n1		-> m n2
+
+	, transVar		:: Var  -> m Var
+	, transType		:: Type -> m Type
+
+	-- top
+	, transTop		:: Trans m n1 n2 Top
+	, transTop_enter	:: Trans1 m n1 Top
+	, transTop_leave	:: Trans1 m n2 Top 
+
+	-- foreign
+	, transForeign		:: Trans m n1 n2 Foreign
+	, transForeign_enter	:: Trans1 m n1 Foreign
+	, transForeign_leave	:: Trans1 m n2 Foreign
+
+	-- infixmode
+	, transInfixMode	:: Trans m n1 n2 InfixMode
+	, transInfixMode_enter	:: Trans1 m n1 InfixMode
+	, transInfixMode_leave	:: Trans1 m n2 InfixMode
+
+
+	-- stmt
+	, transStmt		:: Trans m n1 n2 Stmt
+	, transStmt_enter	:: Trans1 m n1 Stmt
+	, transStmt_leave	:: Trans1 m n2 Stmt 
+	
+	-- exp
+	, transExp		:: Trans m n1 n2 Exp
+	, transExp_enter	:: Trans1 m n1 Exp
+	, transExp_leave	:: Trans1 m n2 Exp 
+
+	-- proj
+	, transProj		:: Trans m n1 n2 Proj
+	, transProj_enter	:: Trans1 m n1 Proj
+	, transProj_leave	:: Trans1 m n2 Proj 
+
+	-- alt
+	, transAlt		:: Trans m n1 n2 Alt
+	, transAlt_enter	:: Trans1 m n1 Alt
+	, transAlt_leave	:: Trans1 m n2 Alt 
+
+	-- guard
+	, transGuard		:: Trans m n1 n2 Guard
+	, transGuard_enter	:: Trans1 m n1 Guard
+	, transGuard_leave	:: Trans1 m n2 Guard 
+	
+	-- pat
+	, transPat		:: Trans m n1 n2 Pat
+	, transPat_enter	:: Trans1 m n1 Pat
+	, transPat_leave	:: Trans1 m n2 Pat
+
+	-- label
+	, transLabel		:: Trans m n1 n2 Label
+	, transLabel_enter	:: Trans1 m n1 Label
+	, transLabel_leave	:: Trans1 m n2 Label 
+
+	-- LCQual
+	, transLCQual		:: Trans m n1 n2 LCQual
+	, transLCQual_enter	:: Trans1 m n1 LCQual
+	, transLCQual_leave	:: Trans1 m n2 LCQual 
+
+	}
+
+
+-- | Zero transform table
+
+-- this is the sig, but GHC won't take it
+transTableId 
+	:: forall a b n1 n2 (m :: * -> *)
+	.  Monad m
+	=>  (n1 -> m n2) 
+	-> TransTable m n1 n2
+
+transTableId transN'
+	= TransTable
+	{ transN		= transN'
+
+	, transVar		= \x -> return x
+	, transType		= \x -> return x
+	
+	, transTop		= followZM
+	, transTop_enter	= \x -> return x
+	, transTop_leave	= \x -> return x 
+
+	, transForeign		= followZM
+	, transForeign_enter	= \x -> return x
+	, transForeign_leave	= \x -> return x 
+
+	, transInfixMode		= followZM
+	, transInfixMode_enter	= \x -> return x
+	, transInfixMode_leave	= \x -> return x 
+	
+	, transExp		= followZM
+	, transExp_enter	= \x -> return x
+	, transExp_leave	= \x -> return x 
+	
+	, transProj		= followZM
+	, transProj_enter	= \x -> return x
+	, transProj_leave	= \x -> return x 
+
+	, transStmt		= followZM
+	, transStmt_enter	= \x -> return x
+	, transStmt_leave	= \x -> return x 
+		
+	, transAlt		= followZM
+	, transAlt_enter	= \x -> return x
+	, transAlt_leave	= \x -> return x 
+
+	, transGuard		= followZM
+	, transGuard_enter	= \x -> return x
+	, transGuard_leave	= \x -> return x 
+
+	, transPat		= followZM
+	, transPat_enter	= \x -> return x
+	, transPat_leave	= \x -> return x 
+
+	, transLabel		= followZM
+	, transLabel_enter	= \x -> return x
+	, transLabel_leave	= \x -> return x 
+
+	, transLCQual		= followZM
+	, transLCQual_enter	= \x -> return x
+	, transLCQual_leave	= \x -> return x  }
+
+

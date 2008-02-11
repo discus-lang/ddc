@@ -51,7 +51,7 @@ stage	= "Module.Export"
 -----
 makeInterface 
 	:: Module		-- name of this module
-	-> S.Tree		-- source tree
+	-> S.Tree SourcePos	-- source tree
 	-> D.Tree SourcePos	-- desugared tree
 	-> C.Tree		-- core tree
 	-> Map Var Var		-- sigma table
@@ -92,15 +92,14 @@ makeInterface
 -----
 eraseVarModuleTree
 	:: Module
-	-> S.Tree	
-	-> S.Tree
+	-> S.Tree SourcePos
+	-> S.Tree SourcePos
 	
 eraseVarModuleTree
 	m tree
- =	S.transZ 
- 		S.transTableId 
-		{ S.transV	= \v -> return $ eraseVarModuleV m v 
-		, S.transT	= \t -> return $ T.transformV (eraseVarModuleV m) t 
+ =	S.trans (S.transTableId (\(x :: SourcePos) -> return x))
+		{ S.transVar	= \v -> return $ eraseVarModuleV m v 
+		, S.transType	= \t -> return $ T.transformV (eraseVarModuleV m) t 
 		}
 		tree	
 
@@ -117,7 +116,7 @@ eraseVarModuleV m v
 exportAll 
 	:: (Var -> Type)
 	-> Set Var			-- vars in scope at top level
-	-> [S.Top] 
+	-> [S.Top SourcePos] 
 	-> [D.Top SourcePos]
 	-> [C.Top]
 	-> Set Var

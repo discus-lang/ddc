@@ -42,7 +42,7 @@ slurp_ccIncludes (PPragma _ [XVar sp v, XList _ xStrs])
    in	map PragmaCCInclude strs
    
 
-slurpConstStr :: Exp -> Maybe String
+slurpConstStr :: Exp SourcePos -> Maybe String
 slurpConstStr xx
  = case xx of
 	(XConst _ (CConst (LString str)))	-> Just str

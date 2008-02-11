@@ -21,7 +21,7 @@ import Source.Plate.Trans
 type AliasM	= State VarBind
 
 
-aliasTree ::	Tree -> Tree
+aliasTree ::	Tree a -> Tree a
 aliasTree	ps
  = 	evalState 
  		(aliasTreeM ps) 
@@ -29,7 +29,7 @@ aliasTree	ps
  
 
 
-aliasTreeM :: 	Tree	-> AliasM Tree
+aliasTreeM :: 	Tree a	-> AliasM (Tree a)
 aliasTreeM	ps
  = do
 	ps2	<- mapM aliasP ps

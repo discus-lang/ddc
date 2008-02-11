@@ -55,14 +55,20 @@ stage	= "Normal.Defix"
 trace ss x	
 	= Debug.Trace.trace (pprStr ss) x
 
+type Annot	= SourcePos
+
 -- | Resolve infix ops in this top level thing
 --	Walk down the tree until we see an XDefix node and call defixInfix on the parts.
-defixP ::	[FixDef] -> 	Top 	-> (Top, [Error])
-defixP		fixTable	top	
+defixP :: [FixDef Annot] -> Top Annot 	-> (Top Annot , [Error])
+defixP	  fixTable	top
  	= runState
-	 	(transformXM (defixX fixTable) top)
+	 	(transZM
+			(transTableId (\(x :: Annot) -> return x))
+				{ transExp_leave	= defixX fixTable }
+			top)
 		[]
 
+defixX :: [FixDef Annot] -> Exp Annot -> State [Error] (Exp Annot)
 defixX fixTable	x
  = case x of
  	XDefix sp xs	
@@ -82,7 +88,7 @@ defixX fixTable	x
 
 
 -----
-defixInfix ::	SourcePos -> [FixDef] -> [Exp]	-> Either [Error] Exp
+defixInfix :: a -> [FixDef a ] -> [Exp a]	-> Either [Error] (Exp a)
 defixInfix	sp fixTable    es
 
 	-- If there is only one element then we're already done
@@ -105,7 +111,7 @@ defixInfix	sp fixTable    es
 ---	Find the highest binding op, work out its precendence and 
 ---	call defixEsLeft / defixEsRight to turn it into an (App e1 e2) node
 ---
-defixEs ::	SourcePos -> [FixDef] -> [Exp]	-> Either [Error] [Exp]
+defixEs :: a -> [FixDef a] -> [Exp a]	-> Either [Error] [Exp a] 
 defixEs sp fixTable es 
  = let
 	-- Get the list of ops in the expression.
@@ -142,7 +148,7 @@ defixEs sp fixTable es
 
 
 -- | find uses of this operator and convert them to real function calls
-defixEsNone :: SourcePos -> [FixDef] -> Int -> [Exp] -> Either [Error] [Exp]
+defixEsNone :: a -> [FixDef a] -> Int -> [Exp a] -> Either [Error] [Exp a]
 defixEsNone sp fixTable highPrec xx
 
 	-- If there are two ops in a row that are non-associative and have the same
@@ -173,7 +179,7 @@ defixEsNone sp fixTable highPrec xx
 --- defixEsLeft
 ---	Find the left-most op with highPrec and turn it into an (App e1 e2) node.
 ---
-defixEsLeft  :: SourcePos -> [FixDef] -> Int -> [Exp] -> [Exp]
+defixEsLeft  :: a -> [FixDef a] -> Int -> [Exp a] -> [Exp a]
 defixEsLeft sp
 	fixTable
 	highPrec
@@ -195,7 +201,7 @@ defixEsLeft sp fixTable	highPrec	p
 ---	Input expression list is reversed, so we can just can ('left' -> 'right')
 ---	Be careful to build the App node the right way around.
 ---
-defixEsRight :: SourcePos -> [FixDef] -> Int -> [Exp] -> [Exp] 
+defixEsRight :: a -> [FixDef a] -> Int -> [Exp a] -> [Exp a] 
 defixEsRight sp	
 	fixTable
 	highPrec
@@ -213,7 +219,7 @@ defixEsRight sp
 --- defaultFix
 ---	Unspecified infix operators default to the highest precedence = 10, assoc = Left.
 ---
-defaultFix :: (Int, InfixMode)
+defaultFix :: (Int, InfixMode a)
 defaultFix
 	= (10, InfixLeft)
 
@@ -222,11 +228,11 @@ defaultFix
 --- getPrec / getAssoc
 ---	Get the prec / assoc for this var from the table.
 ---
-getPrec  :: [FixDef] -> Var -> Int
+getPrec  :: [FixDef a] -> Var -> Int
 getPrec  fixTable v
 	= fst $ fromMaybe defaultFix $ lookupF (=~=) v fixTable
 
-getAssoc :: [FixDef] -> Var -> InfixMode
+getAssoc :: [FixDef a] -> Var -> InfixMode a
 getAssoc fixTable v	
 	| otherwise
 	= snd $ fromMaybe defaultFix $ lookupF (=~=) v fixTable

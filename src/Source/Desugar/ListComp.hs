@@ -9,6 +9,7 @@ where
 import qualified Shared.Var as Var
 import Shared.Var	(NameSpace(..))
 import Shared.VarPrim
+import Shared.Base
 
 import qualified Source.Exp		as S
 import qualified Desugar.Exp		as D
@@ -24,7 +25,7 @@ import Source.Desugar.Base
 --	BUGS: let patterns not implemented yet.
 --
 rewriteListComp 
-	:: S.Exp -> RewriteM (D.Exp Annot)
+	:: S.Exp SourcePos -> RewriteM (D.Exp Annot)
 	
 rewriteListComp x 
  = case x of

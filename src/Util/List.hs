@@ -240,12 +240,12 @@ sequenceFF	a		(f:fs)		= sequenceF fs (f a)
 
 -- | Split a list on the left of the first element where this predicate matches.
 splitWhenLeft ::	(a -> Bool) -> [a]	-> ([a], [a])
-splitWhenLeft	p	xx		= splitWhenLeft' p xx []
+splitWhenLeft	p	xx	= splitWhenLeft' p xx []
 
-splitWhenLeft'	p	[]	acc	= (acc, [])
-splitWhenLeft'	p	(x:xs)	acc
-	| p x				= (acc, x : xs)
-	| otherwise			= splitWhenLeft' p xs (acc ++ [x])
+splitWhenLeft'	p []	 acc	= (acc, [])
+splitWhenLeft'	p (x:xs) acc
+	| p x			= (acc, x : xs)
+	| otherwise		= splitWhenLeft' p xs (acc ++ [x])
 
 chopWhenLeft :: (a -> Bool) -> [a] -> [[a]]
 chopWhenLeft f xx	= makeSplits (splitWhenLeft f) xx
@@ -299,11 +299,19 @@ makeSplits
 	:: ([a] -> ([a], [a])) 
 	-> ([a] -> [[a]])
 
-makeSplits	splitFunc xx
- = case splitFunc xx of
- 	(chunk, [])			-> [chunk]
-	(chunk, more)			-> chunk : makeSplits splitFunc more
+makeSplits splitFunc xx
+	| []	<- back
+	= [front]
+
+	| []		<- front
+	, (x:xs)	<- xx
+	= [] ++ appendFront x (makeSplits splitFunc xs)
 	
+	| otherwise
+	= front : makeSplits splitFunc back
+	
+	where 	(front, back) 		= splitFunc xx
+		appendFront z (x:xs)	= ((z : x) :xs)
 
 
 

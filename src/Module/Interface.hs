@@ -20,6 +20,7 @@ import Util.Tuple
 import qualified Shared.Var	as Var
 import Shared.Var 	(Var, Module)
 import Shared.Pretty
+import Shared.Base
 
 import qualified Shared.VarGen	as VarGen
 import Shared.VarGen (VarGen)
@@ -48,7 +49,7 @@ data	Interface =
 	, fileName	:: String
      
 	, imports	:: [Module]		-- Other modules imported by this one.
-	, sourceTree	:: [S.Top] 
+	, sourceTree	:: [S.Top SourcePos] 
 	}
 
   	deriving (Show)

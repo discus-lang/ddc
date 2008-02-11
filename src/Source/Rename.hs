@@ -16,6 +16,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace (..), Module(..))
 import Shared.VarUtil		(isCtorName)
+import Shared.Base
 
 import qualified Debug.Trace	as Debug
 
@@ -35,8 +36,8 @@ stage	= "Source.Rename"
 
 -- Tree --------------------------------------------------------------------------------------------
 renameTrees
-	:: [(Module, Tree)]
-	-> RenameM [(Module, Tree)]
+	:: [(Module, Tree SourcePos)]
+	-> RenameM [(Module, Tree SourcePos)]
 
 renameTrees 
 	(mTree1: mTreeHs)
@@ -70,7 +71,7 @@ renameTrees' mTrees
 	return mTrees'
  	
 
-renameTree :: Module -> Tree -> RenameM Tree
+renameTree :: Module -> Tree SourcePos -> RenameM (Tree SourcePos)
 renameTree m tree
  = do	
  	modify (\s -> s { stateCurrentModule = m })
@@ -78,7 +79,7 @@ renameTree m tree
 	return tree'
 	
 -- Top ---------------------------------------------------------------------------------------------
-instance Rename Top where
+instance Rename (Top SourcePos) where
  rename	top
   = case top of
 	PPragma sp es
@@ -189,7 +190,7 @@ instance Rename Module where
  
  
 -- Foreign -----------------------------------------------------------------------------------------
-instance Rename Foreign where
+instance Rename (Foreign SourcePos) where
  rename ff
   = case ff of
   	OImport f
@@ -240,8 +241,8 @@ renameInstInh    (v, ts)
 	return	(v', ts')
 		
 renameData 	
-	:: Var -> [Var] -> [(Var, [DataField Exp Type])]	
-	-> RenameM (Var, [Var], [Ctor])
+	:: Var -> [Var] -> [(Var, [DataField (Exp SourcePos) Type])]	
+	-> RenameM (Var, [Var], [Ctor SourcePos])
 
 renameData v vs cs
  = local
@@ -251,8 +252,8 @@ renameData v vs cs
 	return	(v', vs', cs')
 
 renameCtor 
-	:: (Var, [DataField Exp Type])	
-	-> RenameM (Var, [DataField Exp Type])
+	:: (Var, [DataField (Exp SourcePos) Type])	
+	-> RenameM (Var, [DataField (Exp SourcePos) Type])
 
 renameCtor	(v, fs)
  = do	v'	<- lookupV v
@@ -261,7 +262,7 @@ renameCtor	(v, fs)
 
 
 -- DataField ---------------------------------------------------------------------------------------
-instance Rename (DataField Exp Type) where
+instance Rename (DataField (Exp SourcePos) Type) where
  rename df
   = do	
  	m	<- gets stateCurrentModule
@@ -285,7 +286,7 @@ instance Rename (DataField Exp Type) where
 		
 	
 -- Expressions -----------------------------------------------------------------
-instance Rename Exp where 
+instance Rename (Exp SourcePos) where 
  rename exp
   = case exp of
 
@@ -465,7 +466,7 @@ instance Rename Exp where
 		
 			
 -- Projections -------------------------------------------------------------------------------------
-instance Rename Proj where
+instance Rename (Proj SourcePos) where
  rename jj 
   = case jj of
 	JField sp v
@@ -486,7 +487,7 @@ instance Rename Proj where
 
 	
 -- Alternatives ------------------------------------------------------------------------------------
-instance Rename Alt where
+instance Rename (Alt SourcePos) where
  rename a
   = case a of
 	APat sp p x2
@@ -513,7 +514,7 @@ instance Rename Alt where
 
 
 -- Labels ------------------------------------------------------------------------------------------
-instance Rename Label where
+instance Rename (Label SourcePos) where
  rename ll
   = case ll of
   	LIndex sp i	-> return ll
@@ -530,7 +531,7 @@ instance Rename Label where
 --	The data type for patterns in function bindings is shared with that for expressions.
 --	However, only  some constructors should appear in a pattern context. ie XList but not XMatch
 --
-bindPatternExp :: Exp -> RenameM Exp
+bindPatternExp :: (Exp SourcePos) -> RenameM (Exp SourcePos)
 bindPatternExp xx
  = case xx of
  	XVar sp v		
@@ -577,7 +578,7 @@ bindPatternExp xx
 
 
 -- | Bind the variables in a guard
-bindGuard :: Guard -> RenameM Guard
+bindGuard :: Guard SourcePos -> RenameM (Guard SourcePos)
 bindGuard gg
  = case gg of
  	GCase sp pat
@@ -595,7 +596,7 @@ bindGuard gg
 		
 
 -- | Bind the variables in a pattern
-bindPat :: Pat -> RenameM Pat
+bindPat :: Pat SourcePos -> RenameM (Pat SourcePos)
 bindPat ww
  = case ww of
  	WVar sp v
@@ -626,7 +627,7 @@ bindPat ww
 --	In a sequence of qualifiers, the vars bound in a qualifier
 --	are in-scope for subsequent qualifiers.
 --
-renameLCQuals :: [LCQual] -> RenameM [LCQual]
+renameLCQuals :: [LCQual SourcePos] -> RenameM [LCQual SourcePos]
 renameLCQuals qq
  = case qq of
   	[]			
@@ -645,7 +646,7 @@ renameLCQuals qq
 		return	$ LCExp x' : qs'
 		
 
-boundByLCQual :: LCQual -> [Var]
+boundByLCQual :: LCQual SourcePos -> [Var]
 boundByLCQual    q
  = case q of
  	LCGen _ (XVar sp v) _	-> [v]
@@ -661,7 +662,7 @@ boundByLCQual    q
 --
 --	It is an error for non-consecutive bindings to bind the same variable.
 ---
-renameSs ::	[Stmt]	-> RenameM [Stmt]
+renameSs ::	[Stmt SourcePos] -> RenameM [Stmt SourcePos]
 renameSs	ss
  = do	-- work out all the vars that are bound by this list of stmts
  	let vsBound	= catMaybes $ map takeStmtBoundV ss
@@ -674,7 +675,7 @@ renameSs	ss
 	return	ss'
 		
 
-instance Rename Stmt where
+instance Rename (Stmt SourcePos) where
  rename s
   = case s of
 	SBindPats sp v ps x
@@ -717,9 +718,9 @@ instance Rename Stmt where
 -- |	Rename a pattern. 
 --
 renamePat 
-	:: Exp			-- expression to rename
+	:: Exp SourcePos	-- expression to rename
 	-> RenameM 
-		( Exp		-- renamed expression
+		( Exp SourcePos	-- renamed expression
 		, [Var])	-- bound object vars
 
 renamePat	e

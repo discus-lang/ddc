@@ -6,10 +6,11 @@ module Source.Desugar.ListComp
 
 where
 
+import Shared.Base
 import qualified Source.Exp		as S
 import qualified Desugar.Exp		as D
 
 import Source.Desugar.Base
 
 rewriteListComp 
-	:: S.Exp -> RewriteM (D.Exp Annot)
+	:: S.Exp SourcePos -> RewriteM (D.Exp Annot)

@@ -87,7 +87,7 @@ churn ix
 	  	
 -- | Handle compile failure
 --	 
-stashFailure :: Tree -> IO ()
+stashFailure :: Tree a -> IO ()
 stashFailure code
  = do	
  	-- calculate program size
@@ -104,7 +104,7 @@ stashFailure code
 -- | Generate a random program and compile it.
 
 runTest :: Int 			-- index of test
-	-> IO (Tree, ExitCode)
+	-> IO (Tree a, ExitCode)
 
 runTest ix
  = do	putStr $ "* running test " ++ show ix ++ "\n"
@@ -165,7 +165,7 @@ genType
 genExpT 
 	:: Env			-- environment
 	-> Type			-- type of expression to generate
-	-> GenM Exp
+	-> GenM (Exp a)
 
 genExpT env tt
  = do	doApp	<- genBool
@@ -221,21 +221,21 @@ genExpT_base env tt
 		
 
 -- generate a random expression, starting from an empty environment
-genExp :: GenM Exp
+genExp :: GenM (Exp a)
 genExp 
  = do	t	<- genType
  	x	<- genExpT initEnv t
 	return	$ x
 
 -- Bind --------------------------------------------------------------------------------------------
-genBind :: Env -> Type -> GenM (Var, Stmt)
+genBind :: Env -> Type -> GenM (Var, Stmt a)
 genBind env tt
  = do	var	<- genVar NameValue
  	x	<- genExpT env tt
 	return	( var
 		, SBindPats none var [] x)
 
-genTopsChain :: Env -> Int -> GenM [Top]
+genTopsChain :: Env -> Int -> GenM [Top a]
 genTopsChain env 0	
  = do	x	<- genExpT env tInt
 	let pr	= XApp none (xVar "print") (XApp none (xVar "show") x)
@@ -248,7 +248,7 @@ genTopsChain env n
 	return	$ PStmt s : rest
 
 -- Prog --------------------------------------------------------------------------------------------
-genProg :: GenM [Top]
+genProg :: GenM [Top a]
 genProg
  = do	nBinds		<- genInt 1 20
  	binds		<- genTopsChain initEnv nBinds
@@ -264,18 +264,18 @@ sizeTree tree
 class Size a where
  size :: a -> Int
  
-instance Size Top where
+instance Size (Top a) where
  size pp
   = case pp of
   	PStmt s	-> size s
 
-instance Size Stmt where
+instance Size (Stmt a) where
  size ss
   = case ss of
   	SBindPats _ v ps x
 	  -> 1 + length ps + size x 
 	
-instance Size Exp where
+instance Size (Exp a) where
  size xx 
   = case xx of
 	XVar{}		-> 1
@@ -283,6 +283,6 @@ instance Size Exp where
 	XConst{}	-> 1
 	XApp _ x1 x2  	-> 1 + size x1 + size x2
 	XLambda _ v x	-> 1 + size x
-	_		-> error $ "size: no match for " ++ show xx ++ "\n"	
+
 
 

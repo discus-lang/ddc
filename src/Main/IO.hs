@@ -26,6 +26,7 @@ import Shared.Var			(Var, Module(..))
 
 import Shared.Error			(panic)
 import Shared.Pretty
+import Shared.Base
 
 import qualified Module.IO		as MIO
 import qualified Module.Export		as ME
@@ -53,7 +54,7 @@ data ImportDef
 	{ idModule		:: Module
 	, idFilePathDI		:: FilePath
 	, idFilePathO		:: FilePath
-	, idInterface		:: S.Tree
+	, idInterface		:: S.Tree SourcePos
 	, idImportedModules	:: [Module]
 	, idLinkObjs		:: [FilePath] }
 

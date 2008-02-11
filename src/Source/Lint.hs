@@ -14,6 +14,7 @@ import Util
 import	Shared.Error	(panic)
 import	qualified Shared.Var	as Var	
 import Shared.Var		(NameSpace(..))
+import Shared.Base
 
 import	Source.Exp
 import	Type.Exp
@@ -26,7 +27,7 @@ stage	= "Source.Lint"
 -- Check source tree for lint before handing
 --	it off to the type checker.
 --	
-lintFinal ::	Tree -> Tree
+lintFinal ::	Show a => Tree a -> Tree a
 lintFinal	t	= lint t
 
 class Lint a  
@@ -55,7 +56,7 @@ death x s
 -----------------------
 -- Top
 --
-instance Lint Top where
+instance Show a => Lint (Top a) where
  lint xx
   = case xx of
 	PPragma sp es			-> PPragma sp es
@@ -85,7 +86,7 @@ instance Lint Top where
 -----------------------
 -- Stmt
 --
-instance Lint Stmt where
+instance Show a => Lint (Stmt a) where
  lint s
   = case s of
 	SStmt sp x			-> SStmt sp (lint x)
@@ -94,7 +95,7 @@ instance Lint Stmt where
 -----------------------
 -- Exp
 --
-instance Lint Exp where
+instance Show a => Lint (Exp a) where
  lint x
   = case x of
 	XNil				-> x
@@ -136,8 +137,6 @@ instance Lint Exp where
 	
 	XProj sp e p			-> XProj sp (lint e) p
 	
-	XAnnot ns e			-> XAnnot ns (lint e)
-	
 	XAppE sp e1 e2 eff		-> XAppE  sp (lint e1) (lint e2) (lint eff)
 	
 	XCaseE sp e1 alts eff		-> XCaseE sp (lint e1) (lint alts) (lint eff)
@@ -149,7 +148,7 @@ instance Lint Exp where
 -----------------------
 -- Alt
 --
-instance Lint Alt where
+instance Show a => Lint (Alt a) where
  lint a
   = case a of				
 	ADefault sp x	-> ADefault sp (lint x)

@@ -58,7 +58,7 @@ stage	= "Source.Desugar"
 rewriteTree 
 	:: String
 	-> Map Var Kind
-	-> S.Tree 
+	-> (S.Tree SourcePos)
 	-> D.Tree Annot
 
 rewriteTree unique kindMap tree
@@ -67,7 +67,7 @@ rewriteTree unique kindMap tree
 	{ stateKind	= kindMap 
 	, stateVarGen	= Var.XBind unique 0 }
 
-rewriteTreeM :: S.Tree -> RewriteM (D.Tree Annot)
+rewriteTreeM :: (S.Tree SourcePos) -> RewriteM (D.Tree Annot)
 rewriteTreeM tree
  = do	treeR		<- liftM catMaybes 
  			$ mapM rewrite tree
@@ -79,7 +79,7 @@ rewriteTreeM tree
 
 
 -- Top ---------------------------------------------------------------------------------------------
-instance Rewrite S.Top (Maybe (D.Top Annot)) where
+instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
  rewrite xx
   = case xx of
 
@@ -183,7 +183,7 @@ rewriteField field
 
 
 -- Exp ---------------------------------------------------------------------------------------------
-instance Rewrite S.Exp (D.Exp Annot) where
+instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
  rewrite xx
   = case xx of
 
@@ -410,7 +410,7 @@ instance Rewrite S.Exp (D.Exp Annot) where
 
 		
 -- Proj ---------------------------------------------------------------------------------------------
-instance Rewrite S.Proj (D.Proj Annot) where
+instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where
  rewrite pp
   = case pp of
   	S.JField  sp v	-> return $ D.JField  sp v
@@ -426,7 +426,7 @@ instance Rewrite S.Proj (D.Proj Annot) where
 
 
 -- Stmt ---------------------------------------------------------------------------------------------
-instance Rewrite S.Stmt (D.Stmt Annot) where
+instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
  rewrite ss
   = case ss of
 	S.SBindPats sp v ps x
@@ -449,7 +449,7 @@ instance Rewrite S.Stmt (D.Stmt Annot) where
 
 
 -- Alt ---------------------------------------------------------------------------------------------
-instance Rewrite S.Alt (D.Alt Annot) where
+instance Rewrite (S.Alt SourcePos) (D.Alt Annot) where
  rewrite aa
   = case aa of
 	S.APat sp w x
@@ -468,7 +468,7 @@ instance Rewrite S.Alt (D.Alt Annot) where
 
 
 -- Guard ---------------------------------------------------------------------------------------------
-instance Rewrite S.Guard (D.Guard Annot) where
+instance Rewrite (S.Guard SourcePos) (D.Guard Annot) where
  rewrite gg 
   = case gg of
 	S.GCase sp w
@@ -491,7 +491,7 @@ instance Rewrite S.Guard (D.Guard Annot) where
 -- This is basic rewriting of the AST from S.Pat to D.Pat
 --	all the more involved rewrites should go in Desugar.Patterns
 
-instance Rewrite S.Pat (D.Pat Annot) where
+instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
  rewrite ww
   = case ww of
 	S.WVar sp v
@@ -553,7 +553,7 @@ instance Rewrite S.Pat (D.Pat Annot) where
 	
 		
 -- Label ---------------------------------------------------------------------------------------------
-instance Rewrite S.Label (D.Label Annot) where
+instance Rewrite (S.Label SourcePos) (D.Label Annot) where
  rewrite ll
   = case ll of
   	S.LIndex sp i	-> return $ D.LIndex sp i

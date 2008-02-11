@@ -13,21 +13,21 @@ import Source.Exp
 -- TopS / separate
 --	Helps break up the top level defs into their different kinds.
 --
-data TopS 	
+data TopS a
 	= TopS
-	{ tForeign	:: [Top]
-	, tImportExtern	:: [Top]
-	, tTypeDecl	:: [Top]
-	, tData		:: [Top]
-	, tEffect	:: [Top]
-	, tRegion	:: [Top]
-	, tClass	:: [Top]
-	, tClassDict	:: [Top]
-	, tStmt		:: [Top]
-	, tOther	:: [Top] }
+	{ tForeign	:: [Top a]
+	, tImportExtern	:: [Top a]
+	, tTypeDecl	:: [Top a]
+	, tData		:: [Top a]
+	, tEffect	:: [Top a]
+	, tRegion	:: [Top a]
+	, tClass	:: [Top a]
+	, tClassDict	:: [Top a]
+	, tStmt		:: [Top a]
+	, tOther	:: [Top a] }
 
      
-initTopS	:: TopS
+initTopS	:: TopS a
 initTopS 
 	= TopS 
 	{ tForeign	= []
@@ -43,7 +43,7 @@ initTopS
 
 
 -----
-separate ::	[Top] 	-> TopS
+separate ::	[Top a] -> TopS a
 separate	ts	= tops'
  where
 	tops	= foldl separate' initTopS ts
@@ -62,7 +62,7 @@ separate	ts	= tops'
 		, tOther	= reverse $ tOther	  tops }
 
 
-separate' :: 	TopS -> Top	-> TopS
+separate' :: 	TopS a -> Top a	-> TopS a
 separate'	tops	t
  = case t of
 	PForeign{}		-> tops { tForeign	= t : tForeign tops }

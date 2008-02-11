@@ -39,6 +39,7 @@ import Debug.Trace
 
 stage 	= "Source.Parser"
 
+type SP	= SourcePos
 }
 
 %name 		parse
@@ -164,19 +165,19 @@ stage 	= "Source.Parser"
 ----------------------------------------------------------------------------------------------------
 -- Top level ---------------------------------------------------------------------------------------
 
-file 	:: { [Top] }
+file 	:: { [Top SP] }
 	: '{' tops '}'					{ $2				}
 
 
 tops		
-	:: { [Top] }	
+	:: { [Top SP] }	
 	:  top mSemis					{ $1				}
 	|  top semis tops				{ $1 ++ $3			}
 
 	
 -----
 top		
-	:: { [Top] }
+	:: { [Top SP] }
 	: 'pragma' expApps 				{ [PPragma (spTP $1) $2]			}
 	| 'module' module 				{ [PModule (spTP $1) $2]			}
 		 
@@ -229,11 +230,11 @@ top
 -- Foreign
 --
 foreign		
-	:: { Foreign }
+	:: { Foreign SP }
 	: 'import' foreignExtern			{ OImport $2				}
 		
 foreignExtern	
-	:: { Foreign }
+	:: { Foreign SP }
 	: 'extern' mString pVar '::' type 		 { OExtern $2 $3 $5 Nothing	}
 	| 'extern' mString pVar '::' type ':$' typeN     { OExtern $2 $3 $5 (Just $7) 	}
 
@@ -271,7 +272,7 @@ module_semi
 	| module ';' module_semi		{ $1 : $3 				}	
 
 infixMode	
-	:: { InfixMode }	
+	:: { InfixMode SP }	
 	: 'infixl'				{ InfixLeft				}
 	| 'infixr'				{ InfixRight				}		
 	| 'infix'				{ InfixNone				}
@@ -282,11 +283,11 @@ symbolList
 	| symbol ',' symbolList			{ $1 : $3				}
 
 externSig
-	:: { Top }
+	:: { Top SP }
 	: pVar '::' type ':$' typeN ';'		{ PImportExtern (spTP $2) $1 $3 (Just $5)		}
 
 externSigs
-	:: { [Top] }
+	:: { [Top SP] }
 	: externSig				{ [$1]					}
 	| externSig externSigs			{ $1 : $2				}
 
@@ -345,21 +346,21 @@ instCstr
 
 
 -----
-exp	:: { Exp }
+exp	:: { Exp SP }
 	: 'try' expE tryCatch tryWith		{ XTry		(spTP $1) $2 $3 $4	}
 	| expE					{ $1}
 	
 tryCatch
-	:: { [Alt] }
+	:: { [Alt SP] }
 	: {- empty -}				{ []					}
 	| 'catch' '{' caseAlts '}' tryCatch	{ $3 ++ $5				}
 
 tryWith	
-	:: { Maybe Exp }
+	:: { Maybe (Exp SP) }
 	: {- empty -}				{ Nothing				}
 	| 'with'  expE				{ Just $2				}
 		
-expE	:: { Exp }
+expE	:: { Exp SP }
 	: expE2					{ $1						}
 	| '\\' 	   expApps '->'  expE		{ XLambdaPats   (spTP $1) $2 $4			}		
 	| '\\' '.' pVar expAppZs		{ XLambdaProj   (spTP $1) (JField (spTP $2) $3) $4	}
@@ -370,13 +371,13 @@ expE	:: { Exp }
 	| 'unless' expApp expE			{ XUnless	(spTP $1) $2 $3		}
 	| 'while'  expApp expE			{ XWhile	(spTP $1) $2 $3		}
 
-expE2	:: { Exp }
+expE2	:: { Exp SP }
 	: expInfix				{ $1					}
 	| 'let' bindSigs 'in' expInfix		{ XLet		(spTP $1) $2 $4		}
 	| 'throw'  expInfix			{ XThrow	(spTP $1) $2		}
 
 expInfix
-	:: { Exp }
+	:: { Exp SP }
 	: expApps				{ case $1 of
 								[s]	-> s
 								(s:_)	-> XDefix (spX s) $1	}
@@ -385,13 +386,13 @@ expInfix
 --	If there is only one element it must be an expression.
 --	Source.Defix sorts out what is actually a prefix/infix application
 expApps
-	:: { [Exp] }
+	:: { [Exp SP] }
 	: expApp				{ [$1]					}
 	| expApp expApps_more			{ $1 : $2				}
 	| symbol expApps_more			{ XOp (spV $1) (vNameV $1) : $2		}
 
 expApps_more 
-	:: { [Exp] }
+	:: { [Exp SP] }
 	: symbol				{ [XOp (spV $1) (vNameV $1)]		}
 	| expApp				{ [$1]					}
 	
@@ -403,12 +404,12 @@ expApps_more
 --	| expApp symbol expApps_more		{ $1 : XOp (spV $2) (vNameV $2) : $3	}
 
 expAppZs
-	:: { [Exp] }
+	:: { [Exp SP] }
 	: {- empty -}				{ []					}
 	| expApp expAppZs			{ $1 : $2				}
 		
 expApp
-	:: { Exp }
+	:: { Exp SP }
 	: expZ					{ $1					}
 
 	| '`' qVar '`'				{ XOp  	(spV $2) (vNameV $2)		}
@@ -419,7 +420,7 @@ expApp
 	| list					{ $1					}
 
 expZ
-	:: { Exp }
+	:: { Exp SP }
 	: expA					{ $1					}
 
 	-- do
@@ -437,7 +438,7 @@ expZ
 
 
 expA	
-	:: { Exp }				
+	:: { Exp SP }				
 
 	: '(' exp ')'				{ $2					}
 
@@ -464,7 +465,7 @@ expA
 
 -- literal constants
 const
-	:: { Exp }
+	:: { Exp SP }
 	:  INT   	constU			{ makeConst    	$2 $1			}
 	|  CHAR		constU			{ makeConst 	$2 $1			}
 	|  FLOAT	constU			{ makeConst 	$2 $1 			}
@@ -482,41 +483,41 @@ constU
 
 -- a binding
 bind
-	:: { Stmt }
+	:: { Stmt SP }
 	:  expApps '=' rhs 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3		}
 
 	|  expApps matchAlts 			{ let sp	= spX (head $1)
 						  in  SBindPats sp (checkVarSP sp $ head $1) (tail $1) (XMatch sp $2)	}
 binds
-	:: { [Stmt] }
+	:: { [Stmt SP] }
 	:  bind	mSemis				{ [$1] }
 	|  bind semis binds			{ $1 : $3 }
 
 
-rhs	:: { Exp }
+rhs	:: { Exp SP }
 	: exp					{ $1 }
 	| exp 'where' '{' binds '}'		{ XWhere (spTP $2) $1 $4 }
 
 -- | A binding or signature
 bindSig
- 	:: { Stmt }
+ 	:: { Stmt SP }
 	:  bind					{ $1					}
 	|  pVar '::' type 			{ SSig (spTP $2) (vNameV $1) ($3)	}
 
 bindSigs
-	:: { [Stmt] }
+	:: { [Stmt SP] }
 	: bindSig mSemis			{ [$1] }
 	| bindSig semis bindSigs		{ $1 : $3 }
 
 
 -- a binding, signature or statement
 bindSigStmt
-	:: {  Stmt }
+	:: { Stmt SP }
 	:  bindSig				{ $1 }
 	|  exp          			{ SStmt (spX $1) $1			}
 
 bindSigStmts
-	:: { [Stmt] }
+	:: { [Stmt SP] }
 	:  bindSigStmt mSemis			{ [$1] 					}
 	|  bindSigStmt semis bindSigStmts	{ $1 : $3				}
 
@@ -527,36 +528,36 @@ bindSigStmts
 -- Case Alternatives -------------------------------------------------------------------------------
 
 caseAlts
-	:: { [Alt] }
+	:: { [Alt SP] }
 	:  caseAlt mSemis			{ [$1]					}
 	|  caseAlt semis caseAlts		{ $1 : $3				}
 
 caseAlt
-	:: { Alt }				
+	:: { Alt SP }				
 	:  pat      '->' rhs 			{ APat (spTP $2) $1 $3			}
 	|  '_'      '->' rhs 			{ ADefault (spTP $2) $3			}
 
 -----
 matchAlts
-	:: { [Alt] }
+	:: { [Alt SP] }
 	:  matchAlt 				{ [$1]					}
 	|  matchAlt matchAlts			{ $1 : $2				}
 
 matchAltsS
-	:: { [Alt] }
+	:: { [Alt SP] }
 	: matchAlt mSemis			{ [$1]					}
 	| matchAlt semis matchAltsS 		{ $1 : $3				}
 		
 matchAlt
-	:: { Alt }
+	:: { Alt SP }
 	:  guards '=' rhs 			{ AAlt (spTP $2) $1 $3			}
 	|  '\\=' exp				{ AAlt (spTP $1) [] $2			}
 		
-guards	:: { [Guard] }
+guards	:: { [Guard SP] }
 	: guard1				{ [$1]					}
 	| guard1 guard2s			{ $1 : $2				}
 
-guard1	:: { Guard }
+guard1	:: { Guard SP}
 	: '|'  pat '<-' rhs			{ GExp   (spTP $1) $2 $4		}
 	| '|'  rhs				{ GBool  (spTP $1) $2			}
 		
@@ -564,16 +565,16 @@ guard1	:: { Guard }
 
 
 
-guard2s	:: { [Guard] }
+guard2s	:: { [Guard SP] }
 	:  guard2				{ [$1]					}
 	|  guard2 guard2s			{ $1 : $2				}
 
-guard2	:: { Guard }
+guard2	:: { Guard SP }
 	: ',' pat '<-' rhs			{ GExp	 (spTP $3) $2 $4		}
 	| ',' rhs				{ GBool	 (spTP $1) $2			}
 
 		
-pat	:: { Pat }
+pat	:: { Pat SP }
 	: expInfix				{ WExp    $1				}
 
 	| pCon '{' '}'				{ WConLabel (spTP $2) $1 []		}
@@ -581,12 +582,12 @@ pat	:: { Pat }
 
 
 labelPat_Cs
-	:: { [(Label, Pat)] }
+	:: { [(Label SP, Pat SP)] }
 	: labelPat				{ [$1]					}
 	| labelPat ',' labelPat_Cs		{ $1 : $3				}
 		
 labelPat
-	:: { (Label, Pat) }
+	:: { (Label SP, Pat SP) }
 	: '.' pVar '=' pVar			{ (LVar (spTP $1) $2, WVar (spTP $3) $4)			}
 	| '.' INT  '=' pVar			{ (LIndex (spTP $1) (getCIntValue $2), WVar (spTP $3) $4)	}
 		
@@ -595,16 +596,16 @@ labelPat
 -- Constructor Sugar -------------------------------------------------------------------------------
 
 -----
-tuple	:: { Exp }			
+tuple	:: { Exp SP }			
 	: '(' exp ',' tupleExps ')'		{ XTuple (spTP $1) ($2:$4)		}
 		
 tupleExps
-	:: { [Exp] }
+	:: { [Exp SP] }
 	:  exp					{ [$1] 					}
 	|  exp ',' tupleExps			{ $1 : $3				}
 
 -----
-list	:: { Exp }
+list	:: { Exp SP }
 	: '[' ']'				{ XList (spTP $1) []				}
 	| '[' listExps ']'			{ XList (spTP $1) $2				}
 	| '[' exp '..' exp ']'			{ XListRange  (spTP $1) False $2 (Just $4)	}
@@ -616,17 +617,17 @@ list	:: { Exp }
 	| '[' exp '|' lcQual_Cs ']'		{ XListComp   (spTP $1) $2 $4			}
 
 listExps
-	:: { [Exp] }
+	:: { [Exp SP] }
 	: exp					{ [$1]					}		
 	| exp ',' listExps			{ $1 : $3				}
 
 
 lcQual_Cs
-	:: { [LCQual] }
+	:: { [LCQual SP] }
 	: lcQual				{ [$1]					}
 	| lcQual ',' lcQual_Cs			{ $1 : $3				}
 
-lcQual	:: { LCQual }
+lcQual	:: { LCQual SP }
 	: exp '<-'  exp				{ LCGen False $1 $3			}
 	| exp '<@-' exp				{ LCGen True  $1 $3			}
 	| exp					{ LCExp $1				}
@@ -635,7 +636,7 @@ lcQual	:: { LCQual }
 ----------------------------------------------------------------------------------------------------
 -- Data Definitions --------------------------------------------------------------------------------
 
-dataDef	:: { Top }
+dataDef	:: { Top SP }
 	: 'data' pCon pVars_space_empty				
 	{ PData (spTP $1) $2 (map (vNameDefaultN NameType) $3) []	}
 
@@ -653,18 +654,18 @@ dataDef	:: { Top }
 	}
 		
 dataConss
-	:: { [(Var, [DataField Exp Type])] }
+	:: { [(Var, [DataField (Exp SP) Type])] }
 	: dataCons					{ [$1]					}
 	| dataCons '|' dataConss			{ $1 : $3				}
 
 dataCons
-	:: { (Var, [DataField Exp Type]) }
+	:: { (Var, [DataField (Exp SP) Type]) }
 	: pCon						{ ($1, [])				}
 	| pCon dataType_Ss				{ ($1, $2)				}
 	| pCon '{' dataField_Ss '}'			{ ($1, $3)				}
 		
 dataField
-	:: { DataField Exp Type }
+	:: { DataField (Exp SP) Type }
 	: type ';'					{ DataField 
 								{ dPrimary	= True
 								, dLabel	= Nothing
@@ -684,18 +685,18 @@ dataField
 								, dType		= $4
 								, dInit		= $5 } 		}
 dataInit	
-	:: { Maybe Exp }
+	:: { Maybe (Exp SP) }
 	: 						{ Nothing 				}
 	| '=' rhs					{ Just $2 				}
 		
 
 dataField_Ss
-	:: { [DataField Exp Type] }
+	:: { [DataField (Exp SP) Type] }
 	: dataField					{ [$1]					}
 	| dataField dataField_Ss			{ $1 : $2				}
 
 dataType
- 	:: { DataField Exp Type}
+ 	:: { DataField (Exp SP) Type}
 	: typeZ						{ DataField
 								{ dPrimary	= True
 								, dLabel	= Nothing
@@ -703,7 +704,7 @@ dataType
 								, dInit		= Nothing } }
 								
 dataType_Ss
-	:: { [DataField Exp Type] }
+	:: { [DataField (Exp SP) Type] }
 	: dataType					{ [$1]					}
 	| dataType dataType_Ss				{ $1 : $2				}
 
@@ -1065,19 +1066,19 @@ makeModule tok
 
 -- | Force an expresion to be a variable
 --	Throw a user error if it's not.
-checkVar ::	TokenP -> Exp -> Var
+checkVar ::	TokenP -> Exp SP -> Var
 checkVar	tok	  (XVar sp v)	= v
 checkVar	tok	  e
  	= dieWithUserError [ErrorParse tok "parse error"]
 
-checkVarSP ::	SourcePos -> Exp -> Var
+checkVarSP ::	SourcePos -> Exp SP -> Var
 checkVarSP	sp'	  (XVar sp v)	= v
 checkVarSP	sp'	  e
  	= dieWithUserError [ErrorParsePos sp' "parse error"]
 
 
 -- | Make a constant expression from this token
-makeConst ::	Bool -> TokenP -> Exp
+makeConst ::	Bool -> TokenP -> Exp SP
 makeConst	isUnboxed tok
  = let	sp	= SourcePos (tokenFile tok, tokenLine tok, tokenColumn tok)
    in   if isUnboxed 
@@ -1107,18 +1108,18 @@ getCIntValue	tok
 --
 
 -- | Slurp the source position from this token.
-spTP :: TokenP -> SourcePos
+spTP :: TokenP -> SP
 spTP    tok
  = SourcePos (tokenFile tok, tokenLine tok, tokenColumn tok)
 
 
 -- | Slurp the source position from this expression.
-spX :: Exp -> SourcePos
+spX :: Exp SP -> SP
 spX 	= sourcePosX
 
 
 -- | Slurp the source position from this variable.
-spV :: Var -> SourcePos
+spV :: Var -> SP
 spV var
  = let	[sp]	= [sp | Var.ISourcePos sp <- Var.info var]
    in	sp

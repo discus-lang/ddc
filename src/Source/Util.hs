@@ -25,7 +25,7 @@ stage	= "Source.Util"
 -- eg	   flattenApps (XApp (XApp (XApp x1 x2) x3) x4)
 --    =>   [x1, x2, x3, x4]
 --
-flattenApps ::	Exp	-> [Exp]
+flattenApps ::	Exp a	-> [Exp a]
 flattenApps xx
  = case xx of
  	XApp sp x1 x2	-> flattenApps x1 ++ [x2]
@@ -39,7 +39,7 @@ flattenApps xx
 -- eg	   unflattenApps [x1, x2, x3, x4]
 --	=> XApp (XApp (XApp x1 x2) x3) x4
 --
-unflattenApps :: SourcePos -> [Exp] -> Exp
+unflattenApps :: a -> [Exp a] -> Exp a
 unflattenApps sp (x:xs)
  = unflattenApps' sp x xs
  
@@ -52,11 +52,11 @@ unflattenApps' sp x xx
 	
 -----
 -- 
-sourcePosX :: Exp -> SourcePos
+sourcePosX :: Exp SourcePos -> SourcePos
 sourcePosX xx 
  = case xx of
  	XNil				-> panic stage "sourcePosX: no source pos in XNil"
-	XAnnot		aa x		-> sourcePosX x
+--	XAnnot		aa x		-> sourcePosX x
 
 	XUnit		sp		-> sp
 	XVoid		sp		-> sp

@@ -24,7 +24,7 @@ stage	= "Source.DefixApps"
 --	builds (suspended) function applications.
 --
 --
-defixApps ::	SourcePos -> [Exp] -> [Exp]
+defixApps ::	Pretty a => a -> [Exp a] -> [Exp a]
 defixApps	sp xx
 	= rewriteApps $ dropApps sp xx
 
@@ -38,7 +38,7 @@ defixApps	sp xx
 --
 --	=>  [$XDefixApps [f, x, @, a, b], +, $XDefixApps [g, y], -, XDefixApps [h, @, 5]]
 --
-dropApps :: 	SourcePos -> [Exp] -> [Exp]
+dropApps :: 	Pretty a => a -> [Exp a] -> [Exp a]
 dropApps sp es	
 
 	-- Check if the expression starts with a unary minus
@@ -93,7 +93,7 @@ makeXDefixApps sp xx
 --	=> suspend3 (suspend2 (f x) a b) c d e
 --
 --
-rewriteApps ::	[Exp] 	-> [Exp]
+rewriteApps ::	[Exp a] -> [Exp a]
 rewriteApps	[]	= []
 rewriteApps	(x:xs)
  = case x of
@@ -103,7 +103,7 @@ rewriteApps	(x:xs)
 	_ -> x : rewriteApps xs
 	
 	
-rewriteApp :: 	SourcePos -> [Exp] -> Exp
+rewriteApp :: 	a -> [Exp a] -> (Exp a)
 rewriteApp	sp es	
 	= rewriteApp' sp [] es
 
@@ -143,14 +143,14 @@ takeUntilXOp acc (x:xs)
  	
 
  
-flattenApps  :: Exp	-> [Exp]
+flattenApps  :: Exp a	-> [Exp a]
 flattenApps x
  = case x of
 	XApp sp x1 x2 	-> x1 : flattenApps x2
 	e		-> [e]	
  
 
-unflattenApps :: SourcePos -> [Exp] -> Exp
+unflattenApps :: a -> [Exp a] -> (Exp a)
 unflattenApps	sp [x]	= x
 unflattenApps  	sp xx	
  = unflattenApps' sp $ reverse xx

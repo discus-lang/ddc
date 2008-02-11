@@ -26,7 +26,7 @@ stage	= "Source.Slurp"
 ---	Strip the fixity table from some top level defs.
 ---
 slurpFixTable 
-	:: [Top] -> [FixDef]
+	:: [Top a] -> [FixDef a]
 
 slurpFixTable	 tops			
 	= concat $ map slurpFixTable' tops
@@ -42,7 +42,7 @@ slurpFixTable'	 _			= []
 --	Strips data constructor definitions from a Source.Exp tree.
 --
 slurpDataDefs 
-	:: Tree	-> [DataDef]
+	:: Tree	a -> [DataDef a]
 
 slurpDataDefs	 	tops		
 	= catMaybes 
@@ -58,7 +58,7 @@ slurpDataDefs	 	tops
 --	Strips off the list of modules imported by this one.
 --
 slurpImportModules
-	:: Tree	-> [Var.Module]
+	:: Tree	a -> [Var.Module]
 
 slurpImportModules	tops
 	= concat 
@@ -75,7 +75,7 @@ slurpImportModules	tops
 --	Strips list the list of external functions imported by this module.
 --
 slurpImportExterns 
-	:: Tree	-> [(Var, Type)]
+	:: Tree	a -> [(Var, Type)]
 
 slurpImportExterns	tops
 	= concat $ catMaybes 
@@ -90,7 +90,7 @@ slurpImportExterns	tops
 -- slurpKinds
 --
 slurpKinds 
-	:: Tree	-> [(Var, Kind)]
+	:: Tree a -> [(Var, Kind)]
 
 slurpKinds tree
 	= catMaybes
@@ -113,7 +113,7 @@ makeDataKind vs
 --	Slurp out binding occurances for top level vars from this Top.
 --	Recover the NameSpace as well, so we can use this fn in the renamer.
 --
-slurpTopNames :: Top -> [Var]
+slurpTopNames :: Show a => Top a -> [Var]
 slurpTopNames p
  = case p of
 	PPragma{}			-> []

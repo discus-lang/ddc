@@ -3,95 +3,63 @@
 module Source.Plate.Trans
 	( TransTable(..)
 	, transTableId
-	, transformV
-	, transformVM
-	, transformX
-	, transformXM
-	, transZ
-	, transZM )
+	, transZM 
+	, trans
+	
+	, Trans
+	, Trans1 )
 
 where
 
 import Util
+import qualified Shared.Var	as Var
 import Source.Exp
+import Debug.Trace
 
------
-class Monad m => TransM m a
- where	transZM :: TransTable m -> a -> m a
- 
------
-transZ 
-	:: TransM (State ()) a
-	=> TransTable (State ())
-	-> a -> a
+-- | The transform class.
+--	It transforms some thing 'a' into some other thing 'b'.
+--	The n1 and n2 are optional annotations sprinkled over those things.
+--
+class Monad m => TransM m n1 n2 a b
+ where	
+ 	-- apply all the three transforms
+ 	transZM		:: TransTable m n1 n2 -> a -> m b
+
+	-- decend into the expression
+	followZM 	:: TransTable m n1 n2 -> a -> m b	
+	followZM	= error "followZM: undefined"
+
+
+-- Apply the various transforms
+--	first apply the in-place top-down transform
+--	then decend with the follow function
+--	then apply the in-place bottom-up transform
+--	
+transMe
+	:: Monad m 
+	=> (TransTable m n1 n2 -> x n1 -> m (x n2))
+	-> (x n1 -> m (x n1))
+	-> (x n2 -> m (x n2))
+	-> TransTable m n1 n2
+	-> x n1
+	-> m (x n2)
 	
-transZ	table x 
-	= evalState (transZM table x) ()
+transMe pTrans pEnter pLeave table xx
+ = do	xxE	<- pEnter xx
+	xxF	<- (pTrans table) xxE
+	xxL	<- pLeave xxF
+	return	$ xxL
+	
 
+type Trans  m n1 n2 x	= TransTable m n1 n2 -> x n1 -> m (x n2)
+type Trans1 m n1 x	= x n1 -> m (x n1)
 
------
-data TransTable m
-	= TransTable
-	{ transV	:: Var   -> m Var
+-- Basic Instances ---------------------------------------------------------------------------------
 
-	, transX	:: Exp   -> m Exp
-	, decendX	:: Bool
-
-	, transT	:: Type	 -> m Type
-
-	, transS	:: Stmt  -> m Stmt
-	, transA	:: Alt	 -> m Alt 
-	, transP	:: Top	 -> m Top }
-
-
-transTableId :: TransTable (State s)
-transTableId
-	= TransTable
-	{ transV	= \x -> return x
-
-	, transX	= \x -> return x
-	, decendX	= True
-
-	, transT	= \x -> return x
-
-	, transS	= \x -> return x
-	, transA	= \x -> return x
-	, transP	= \x -> return x }
-
------
-transformV f t	= transZ  transTableId { transV = \x -> return $ f x } t
-transformX f t	= transZ  transTableId { transX = \x -> return $ f x } t
-
-transformVM f t = transZM transTableId { transV = f } t
-transformXM f t	= transZM transTableId { transX = f } t
-
------
-instance (Monad m, TransM m a) 
-		=> TransM m [a]
- where	transZM table xx	
- 	 = 	mapM (transZM table) xx
- 
-
-instance (Monad m, TransM m a, TransM m b) 
-	 	=> TransM m (a, b)
- where	transZM table (a, b)
- 	 = do
-	 	a'		<- transZM table a
-		b'		<- transZM table b
-		return		(a', b')
-
-
-instance (Monad m, TransM m a, TransM m b, TransM m c)
-		=> TransM m (a, b, c)
- where	transZM table (a, b, c)
- 	 = do	a'		<- transZM table a
-	 	b'		<- transZM table b
-		c'		<- transZM table c
-		return		(a', b', c')
-
-
-instance (Monad m, TransM m a)
-		=> TransM m (Maybe a)
+-- maybe
+instance(  Monad  m
+	,  TransM m n1 n2 a b)
+	=> TransM m n1 n2 (Maybe a) (Maybe b)
 
  where 	transZM table Nothing	
    	 = 	return Nothing
@@ -99,436 +67,30 @@ instance (Monad m, TransM m a)
  	transZM table (Just x)
 	 = do	x'	<- transZM table x
 	 	return	$ Just x'
- 
 
+-- lists
+instance(  Monad  m
+	,  TransM m n1 n2 a b)
+	=> TransM m n1 n2 [a] [b]
 
+ where	transZM table xx	
+ 	 = mapM (transZM table) xx
 
------
-instance Monad m => TransM m Var where
- transZM = transV
+-- tuples
+instance(  Monad  m
+	,  TransM m n1 n2 a1 a2
+	,  TransM m n1 n2 b1 b2)
+	=> TransM m n1 n2 (a1, b1) (a2, b2)
 
-
------
-instance Monad m => TransM m Top where
- transZM table pp
-  = case pp of
-	PForeign sp f
-	 -> do	f'		<- transZM table f
-	 	transP table	$ PForeign sp f'
-
-	-- Imports
-	PImportExtern sp v t mT
-	 -> do	v'		<- transZM table v
-	 	t'		<- transZM table t
-		mT'		<- transZM table mT
-		return		$ PImportExtern sp v' t' mT'
-
-
-	PData sp v vs fs
-	 -> do	v'		<- transZM table v
-	 	vs'		<- transZM table vs
-		fs'		<- transZM table fs
-		transP table	$ PData sp v' vs' fs'
-
-	-- Classes
-	PClass sp v k
-	 -> do	v'		<- transZM table v
-	 	return		$ PClass sp v' k
-
-	PClassInst sp v ts inh ss
-	 -> do 	ss'		<- transZM table ss
-		transP table 	$ PClassInst sp v ts inh ss'
-
-	PProjDict sp t ss
-	 -> do	ss'		<- transZM table ss
-	 	transP table	$ PProjDict sp t ss'
-
-	-- 
- 	PStmt s	
-	 -> do 	s'		<- transZM table s
-		transP table 	$ PStmt s'
-		
-	PEffect sp v k
-	 -> do	v'		<- transZM table v
-	 	return		$ PEffect sp v' k
-		
-	PRegion sp v
-	 -> do	v'		<- transZM table v
-	 	return		$ PRegion sp v'
-		
-		
-	_ -> return pp
+ where	transZM table (a, b)
+ 	 = do 	a'		<- transZM table a
+		b'		<- transZM table b
+		return		(a', b')
 
 -----
-instance Monad m => TransM m Foreign where
- transZM table ff
-  = case ff of
-  	OImport f
-	 -> do	f'		<- transZM table f
-	 	return		$ OImport f'
-		
-	OExport f
-	 -> do	f'		<- transZM table f
-	 	return		$ OExport f'
-		
-	OCCall mS v t
-	 -> do	v'		<- transZM table v
-	 	t'		<- transZM table t
-		return		$ OCCall mS v' t'
-		
-	OExtern mS v t mT
-	 -> do	v'		<- transZM table v
-	 	t'		<- transZM table t
-		mT'		<- transZM table mT
-		return		$ OExtern mS v' t' mT'
+instance Monad m 
+	=> TransM m n1 n2 (DataField (Exp n1) Type) (DataField (Exp n2) Type) where
 
-
------
-instance Monad m => TransM m Stmt where
- transZM table s
-  = case s of
-    	SStmt sp x
-	 | decendX table
-	 -> do 	x'		<- transZM table x
-		transS table	$ SStmt sp x'
-		
-	 | otherwise
-	 -> return s
-    
-    
-	SBindPats sp v ps x
-	 | decendX table
-	 -> do	v'		<- transZM table v
-		ps'		<- transZM table ps
-	 	x'		<- transZM table x
-		transS table 	$ SBindPats sp v' ps' x'
-
-	 | otherwise
-	 -> return s
-
-	SSig {}	-> return s
-	
-{-
-	SSig sp v t
-	 | decendX table
-	 -> do	v'		<- transZM table v
-	 	t'		<- transZM table t
-		transS table	$ SSig sp v' t'
-		
-	 | otherwise
-	 -> return s
--}	
-
------
-instance Monad m => TransM m Exp where
- transZM table x
-  = case x of
-	XNil 
-	 ->	transX table	$ XNil
-
-	XAnnot n x1
-	 -> do	x1'		<- transZM table x1
-	    	transX table	$ XAnnot n x1'
-	
-	XUnit 	sp
-	 ->	transX table	$ XUnit sp
-
-	XVoid 	sp
-	 ->	transX table	$ XVoid sp
-
-	XVar 	sp v
-	 -> do	v'		<- transZM table v
-	 	transX table 	$ XVar sp v'
-	 
-	XConst	sp c
-	 -> 	transX table	x
-	 
-	XProj 	sp x1 p
-	 -> do 	x1'		<- transZM table x1
-	 	transX table	$ XProj sp x1' p
-
-	XProjT sp t p
-	 -> do	t'		<- transZM table t
-	 	transX table	$ XProjT sp t' p
-
-	XLambda sp vs x1
-	 -> do	x1'		<- transZM table x1
-	    	transX table	$ XLambda sp vs x1'
-	    
-	XApp 	sp x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-	    	transX table	$ XApp sp x1' x2'
-	    
-	XCase 	sp x1 aa
-	 -> do	x1'		<- transZM table x1
-	 	aa'		<- transZM table aa
-	    	transX table	$ XCase sp x1' aa'
-
-	XDo 	sp ss
-	 -> do	ss'		<- transZM table ss
-	    	transX table	$ XDo sp ss'
-
- 	XLet 	sp ss x1
-	 -> do	ss'		<- transZM table ss
-	 	x1'		<- transZM table x1
-	    	transX table	$ XLet sp ss' x1'
-
-	XWhere	sp x1 ss
-	 -> do	ss'		<- transZM table ss
-	 	x1'		<- transZM table x1
-		transX table	$ XWhere sp x1' ss'
-
-	    
-	XIfThenElse sp x1 x2 x3
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		x3'		<- transZM table x3
-	    	transX table	$ XIfThenElse sp x1' x2' x3'
-
-	-- lambda sugar	    
-	XLambdaPats sp ps x1
-	 -> do	ps'		<- transZM table ps
-	 	x1'		<- transZM table x1
-		return		$ XLambdaPats sp ps' x1'
-
-	XLambdaCase sp aa
-	 -> do	aa'		<- transZM table aa
-	    	transX table	$ XLambdaCase sp aa'
-
-	XLambdaProj sp j xs
-	 -> do	xs'		<- transZM table xs
-	 	transX table	$ XLambdaProj sp j xs'
-	    
-	-- match sugar
-	XMatch sp aa
-	 -> do	aa'		<- transZM table aa
-	 	transX table	$ XMatch sp aa'
-	    
-	-- defix
-	XDefix 	sp xx
-	 -> do	xx'		<- transZM table xx
-	    	transX table	$ XDefix sp xx'
-	    
-	XDefixApps sp xx
-	 -> do	xx'		<- transZM table xx
-	 	transX table	$ XDefixApps sp xx'
-
-	XAppSusp sp e1 e2 
-	 -> do	e1'		<- transZM table e1
-	 	e2'		<- transZM table e2
-		transX table	$ XAppSusp sp e1' e2'
-
-	XOp sp v
-	 -> do	return x
-
-	-- exceptions
-	XThrow sp x
-	 -> do	x'		<- transZM  table x
-	 	transX table	$ XThrow sp x'
-	
-	XTry sp x aa w
-	 -> do	x'		<- transZM table x
-	 	aa'		<- transZM table aa
-		w'		<- transZM table w
-		transX table	$ XTry sp x' aa' w'
-	 	
-	-- imperative
-	XWhile	sp x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		transX table	$ XWhile sp x1' x2'
-	
-	XWhen	sp x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		transX table	$ XWhen sp x1' x2'
-		
-	XUnless	sp x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		transX table	$ XUnless sp x1' x2'
-
-	XBreak sp
-	 ->	transX table	$ x
-
-	-- oop
-	XObjVar	sp v
-	 -> do	v'		<- transZM table v
-	 	transX table	$ XObjVar sp v'
-		
-	XObjField sp v
-	 -> do	v'		<- transZM table v
-	 	transX table	$ XObjField sp v'
-		
-	XObjFieldR sp v
-	 -> do	v'		<- transZM table v
-	 	transX table	$ XObjFieldR sp v'
-
-	XListRange sp b x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		transX table	$ XListRange sp b x1' x2'
-
-	XListComp sp x qs
-	 -> do	x'		<- transZM table x
-	 	qs'		<- transZM table qs
-		transX table	$ XListComp sp x' qs'
-
-	-- 
-	XAppE sp x1 x2 eff
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-	    	transX table	$ XAppE sp x1' x2' eff
-	    
-	XCaseE sp x1 aa eff
-	 -> do	x1'		<- transZM table x1
-	 	aa'		<- transZM table aa
-	    	transX table	$ XCaseE sp x1' aa' eff
-	    
-	XAt 	sp v x1
-	 -> do	x1'		<- transZM table x1
-		transX table	$ XAt sp v x1'
- 
-	-- patterns
-	XCon 	sp v xx
-	 -> do	v'		<- transZM table v
-	 	xx'		<- transZM table xx
-		return		$ XCon sp v' xx'
-		
-	XTuple 	sp xx
-	 -> do	xx'		<- transZM table xx
-	 	return		$ XTuple sp xx'
-		
-	XCons 	sp x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		return		$ XCons sp x1' x2'
-		
-	XList 	sp xx
-	 -> do	xx'		<- transZM table xx
-	 	return		$ XList sp xx'
-
-	XWildCard{}
-	 ->	return		$ x
-
------
-instance Monad m => TransM m Alt where
- transZM table a
-  = case a of
-	APat sp p x
-	 -> do	p'		<- transZM table p
-	 	x'		<- transZM table x
-		transA table	$ APat sp p' x'
-
-	AAlt sp gs x
-	 -> do	gs'		<- transZM table gs
-	 	x'		<- transZM table x
-		transA table	$ AAlt sp gs' x'
-
-	ADefault sp x
-	 -> do	x'		<- transZM table x
-	 	transA table	$ ADefault sp x'
-
-
------
-instance Monad m => TransM m Guard where
- transZM table a
-  = case a of
-  	GCase sp pat
-	 -> do	pat'		<- transZM table pat
-	 	return		$ GCase sp pat'
-		
-	GExp sp x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		return		$ GExp sp x1' x2'
-		
-	GBool sp x
-	 -> do	x'		<- transZM table x
-	 	return		$ GBool sp x'
-		
-	 
------
-instance Monad m => TransM m Pat where
- transZM table ww
-  = case ww of
-  	WVar sp v
-	 -> do	v'		<- transZM table v
-	 	return		$ WVar sp v
-		
-	WConst sp c
-	 ->  	return		$ WConst sp c
-		
-	WCon sp v ps
-	 -> do	v'		<- transZM table v
-	 	ps'		<- transZM table ps
-		return		$ WCon sp v' ps'
-
-	WConLabel sp v ps
-	 -> do	v'		<- transZM table v
-	 	ps'		<- transZM table ps
-		return		$ WConLabel sp v' ps'
-		
-	WAt sp v p
-	 -> do	v'		<- transZM table v
-	 	p'		<- transZM table p
-		return		$ WAt sp v' p'
-  
-  	WWildcard sp 
-	 -> do	return		$ WWildcard sp 
-  
-	WUnit sp
-	 ->	return		$ WUnit sp
-	 
-	WTuple sp ps
-	 -> do	ps'		<- transZM table ps
-	 	return		$ WTuple sp ps'
-		
-	WCons sp p1 p2
-	 -> do	p1'		<- transZM table p1
-	 	p2'		<- transZM table p2
-		return		$ WCons sp p1' p2'
-		
-	WList sp ps
-	 -> do	ps'		<- transZM table ps
-	 	return		$ WList sp ps'
-		
-	WExp x
-	 -> do	x'		<- transZM table x
-	 	return		$ WExp x'
-
-	
------
-instance Monad m => TransM m Label where
- transZM table ll
-  = case ll of
-  	LIndex sp i		-> return ll
-	
-	LVar sp v
-	 -> do	v'		<- transZM table v
-	 	return		$ LVar sp v'
-	
------
-instance Monad m => TransM m LCQual where
- transZM table q
-  = case q of
-  	LCGen b x1 x2
-	 -> do	x1'		<- transZM table x1
-	 	x2'		<- transZM table x2
-		return		$  LCGen b x1' x2'
-		
-	LCLet ss
-	 -> do	ss'		<- transZM table ss
-	 	return		$  LCLet ss'
-		
-	LCExp x
-	 -> do	x'		<- transZM table x
-	 	return		$  LCExp x'
-		
-
------
-instance Monad m => TransM m (DataField Exp Type) where
  transZM table ff
   = case ff of
   	DataField{}
@@ -536,10 +98,681 @@ instance Monad m => TransM m (DataField Exp Type) where
 		dInit'		<- transZM table $ dInit ff
 		return		$ ff 	{ dLabel	= dLabel'
 					, dInit		= dInit' }
-					
------
-instance Monad m => TransM m Type where
- transZM table tt	
- 	= transT table tt
-		
 
+instance Monad m => TransM m n1 n2 Var Var
+ where	transZM table xx = (transVar table) xx
+
+instance Monad m => TransM m n1 n2 Type Type
+ where	transZM table xx = (transType table) xx
+
+-- Identity Instances ------------------------------------------------------------------------------
+-- We don't do anything special with these elements of the tree
+
+instance Monad m => TransM m n1 n2 Int Int
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Bool Bool
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Var.Module Var.Module
+ where	transZM table xx = return xx
+ 
+instance Monad m => TransM m n1 n2 Const Const
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Kind Kind
+ where	transZM table xx = return xx
+
+instance Monad m => TransM m n1 n2 Char Char
+ where 	transZM table xx = return xx
+
+
+-- Helper functions --------------------------------------------------------------------------------
+-- | Transform some thing with the identity monad
+trans	:: TransM (State ()) n1 n2 a b
+	=> TransTable (State ()) n1 n2
+	-> a -> b
+	
+trans table x 
+	= evalState (transZM table x) ()
+
+
+-- The transform table -----------------------------------------------------------------------------
+
+-- | Table of transform functions
+data TransTable m n1 n2
+	= TransTable
+	{ transN		:: n1		-> m n2
+
+	, transVar		:: Var  -> m Var
+	, transType		:: Type -> m Type
+
+	-- top
+	, transTop		:: Trans m n1 n2 Top
+	, transTop_enter	:: Trans1 m n1 Top
+	, transTop_leave	:: Trans1 m n2 Top 
+
+	-- foreign
+	, transForeign		:: Trans m n1 n2 Foreign
+	, transForeign_enter	:: Trans1 m n1 Foreign
+	, transForeign_leave	:: Trans1 m n2 Foreign
+
+	-- infixmode
+	, transInfixMode	:: Trans m n1 n2 InfixMode
+	, transInfixMode_enter	:: Trans1 m n1 InfixMode
+	, transInfixMode_leave	:: Trans1 m n2 InfixMode
+
+
+	-- stmt
+	, transStmt		:: Trans m n1 n2 Stmt
+	, transStmt_enter	:: Trans1 m n1 Stmt
+	, transStmt_leave	:: Trans1 m n2 Stmt 
+	
+	-- exp
+	, transExp		:: Trans m n1 n2 Exp
+	, transExp_enter	:: Trans1 m n1 Exp
+	, transExp_leave	:: Trans1 m n2 Exp 
+
+	-- proj
+	, transProj		:: Trans m n1 n2 Proj
+	, transProj_enter	:: Trans1 m n1 Proj
+	, transProj_leave	:: Trans1 m n2 Proj 
+
+	-- alt
+	, transAlt		:: Trans m n1 n2 Alt
+	, transAlt_enter	:: Trans1 m n1 Alt
+	, transAlt_leave	:: Trans1 m n2 Alt 
+
+	-- guard
+	, transGuard		:: Trans m n1 n2 Guard
+	, transGuard_enter	:: Trans1 m n1 Guard
+	, transGuard_leave	:: Trans1 m n2 Guard 
+	
+	-- pat
+	, transPat		:: Trans m n1 n2 Pat
+	, transPat_enter	:: Trans1 m n1 Pat
+	, transPat_leave	:: Trans1 m n2 Pat
+
+	-- label
+	, transLabel		:: Trans m n1 n2 Label
+	, transLabel_enter	:: Trans1 m n1 Label
+	, transLabel_leave	:: Trans1 m n2 Label 
+
+	-- LCQual
+	, transLCQual		:: Trans m n1 n2 LCQual
+	, transLCQual_enter	:: Trans1 m n1 LCQual
+	, transLCQual_leave	:: Trans1 m n2 LCQual 
+
+	}
+
+
+-- | Zero transform table
+
+-- this is the sig, but GHC won't take it
+transTableId 
+	:: forall a b n1 n2 (m :: * -> *)
+	.  Monad m
+	=>  (n1 -> m n2) 
+	-> TransTable m n1 n2
+
+transTableId transN'
+	= TransTable
+	{ transN		= transN'
+
+	, transVar		= \x -> return x
+	, transType		= \x -> return x
+	
+	, transTop		= followZM
+	, transTop_enter	= \x -> return x
+	, transTop_leave	= \x -> return x 
+
+	, transForeign		= followZM
+	, transForeign_enter	= \x -> return x
+	, transForeign_leave	= \x -> return x 
+
+	, transInfixMode		= followZM
+	, transInfixMode_enter	= \x -> return x
+	, transInfixMode_leave	= \x -> return x 
+	
+	, transExp		= followZM
+	, transExp_enter	= \x -> return x
+	, transExp_leave	= \x -> return x 
+	
+	, transProj		= followZM
+	, transProj_enter	= \x -> return x
+	, transProj_leave	= \x -> return x 
+
+	, transStmt		= followZM
+	, transStmt_enter	= \x -> return x
+	, transStmt_leave	= \x -> return x 
+		
+	, transAlt		= followZM
+	, transAlt_enter	= \x -> return x
+	, transAlt_leave	= \x -> return x 
+
+	, transGuard		= followZM
+	, transGuard_enter	= \x -> return x
+	, transGuard_leave	= \x -> return x 
+
+	, transPat		= followZM
+	, transPat_enter	= \x -> return x
+	, transPat_leave	= \x -> return x 
+
+	, transLabel		= followZM
+	, transLabel_enter	= \x -> return x
+	, transLabel_leave	= \x -> return x 
+
+	, transLCQual		= followZM
+	, transLCQual_enter	= \x -> return x
+	, transLCQual_leave	= \x -> return x  }
+
+
+
+
+ 
+instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
+        transZM table xx
+          = transMe (transTop table) (transTop_enter table)
+              (transTop_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                PPragma x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (PPragma x0' x1')
+                PModule x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (PModule x0' x1')
+                PType x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (PType x0' x1' x2')
+                PInfix x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (PInfix x0' x1' x2' x3')
+                PImportExtern x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (PImportExtern x0' x1' x2' x3')
+                PImportModule x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (PImportModule x0' x1')
+                PForeign x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (PForeign x0' x1')
+                PData x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (PData x0' x1' x2' x3')
+                PEffect x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (PEffect x0' x1' x2')
+                PRegion x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (PRegion x0' x1')
+                PClass x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (PClass x0' x1' x2')
+                PClassDict x0 x1 x2 x3 x4
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        x4' <- transZM table x4
+                        return (PClassDict x0' x1' x2' x3' x4')
+                PClassInst x0 x1 x2 x3 x4
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        x4' <- transZM table x4
+                        return (PClassInst x0' x1' x2' x3' x4')
+                PProjDict x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (PProjDict x0' x1' x2')
+                PStmt x0
+                  -> do x0' <- transZM table x0
+                        return (PStmt x0')
+ 
+instance (Monad m) => TransM m n1 n2 (Foreign n1) (Foreign n2)
+         where
+        transZM table xx
+          = transMe (transForeign table) (transForeign_enter table)
+              (transForeign_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                OImport x0
+                  -> do x0' <- transZM table x0
+                        return (OImport x0')
+                OExport x0
+                  -> do x0' <- transZM table x0
+                        return (OExport x0')
+                OCCall x0 x1 x2
+                  -> do x0' <- transZM table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (OCCall x0' x1' x2')
+                OExtern x0 x1 x2 x3
+                  -> do x0' <- transZM table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (OExtern x0' x1' x2' x3')
+ 
+instance (Monad m) => TransM m n1 n2 (InfixMode n1) (InfixMode n2)
+         where
+        transZM table xx
+          = transMe (transInfixMode table) (transInfixMode_enter table)
+              (transInfixMode_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                InfixLeft -> do return (InfixLeft)
+                InfixRight -> do return (InfixRight)
+                InfixNone -> do return (InfixNone)
+                InfixSuspend -> do return (InfixSuspend)
+ 
+instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
+        transZM table xx
+          = transMe (transExp table) (transExp_enter table)
+              (transExp_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                XNil -> do return (XNil)
+                XUnit x0
+                  -> do x0' <- transN table x0
+                        return (XUnit x0')
+                XVoid x0
+                  -> do x0' <- transN table x0
+                        return (XVoid x0')
+                XConst x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XConst x0' x1')
+                XVar x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XVar x0' x1')
+                XProj x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XProj x0' x1' x2')
+                XProjT x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XProjT x0' x1' x2')
+                XLambda x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XLambda x0' x1' x2')
+                XApp x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XApp x0' x1' x2')
+                XCase x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XCase x0' x1' x2')
+                XDo x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XDo x0' x1')
+                XLet x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XLet x0' x1' x2')
+                XWhere x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XWhere x0' x1' x2')
+                XIfThenElse x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XIfThenElse x0' x1' x2' x3')
+                XAppE x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XAppE x0' x1' x2' x3')
+                XCaseE x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XCaseE x0' x1' x2' x3')
+                XAt x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XAt x0' x1' x2')
+                XObjVar x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XObjVar x0' x1')
+                XObjField x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XObjField x0' x1')
+                XObjFieldR x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XObjFieldR x0' x1')
+                XOp x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XOp x0' x1')
+                XDefix x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XDefix x0' x1')
+                XDefixApps x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XDefixApps x0' x1')
+                XAppSusp x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XAppSusp x0' x1' x2')
+                XLambdaPats x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XLambdaPats x0' x1' x2')
+                XLambdaProj x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XLambdaProj x0' x1' x2')
+                XLambdaCase x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XLambdaCase x0' x1')
+                XMatch x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XMatch x0' x1')
+                XTry x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XTry x0' x1' x2' x3')
+                XThrow x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XThrow x0' x1')
+                XWhile x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XWhile x0' x1' x2')
+                XWhen x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XWhen x0' x1' x2')
+                XUnless x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XUnless x0' x1' x2')
+                XBreak x0
+                  -> do x0' <- transN table x0
+                        return (XBreak x0')
+                XListRange x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XListRange x0' x1' x2' x3')
+                XListComp x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XListComp x0' x1' x2')
+                XCon x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XCon x0' x1' x2')
+                XTuple x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XTuple x0' x1')
+                XCons x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XCons x0' x1' x2')
+                XList x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XList x0' x1')
+                XWildCard x0
+                  -> do x0' <- transN table x0
+                        return (XWildCard x0')
+ 
+instance (Monad m) => TransM m n1 n2 (Proj n1) (Proj n2) where
+        transZM table xx
+          = transMe (transProj table) (transProj_enter table)
+              (transProj_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                JField x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (JField x0' x1')
+                JFieldR x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (JFieldR x0' x1')
+                JAttr x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (JAttr x0' x1')
+                JIndex x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (JIndex x0' x1')
+                JIndexR x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (JIndexR x0' x1')
+ 
+instance (Monad m) => TransM m n1 n2 (Stmt n1) (Stmt n2) where
+        transZM table xx
+          = transMe (transStmt table) (transStmt_enter table)
+              (transStmt_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                SSig x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (SSig x0' x1' x2')
+                SStmt x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (SStmt x0' x1')
+                SBindPats x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (SBindPats x0' x1' x2' x3')
+ 
+instance (Monad m) => TransM m n1 n2 (Alt n1) (Alt n2) where
+        transZM table xx
+          = transMe (transAlt table) (transAlt_enter table)
+              (transAlt_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                APat x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (APat x0' x1' x2')
+                AAlt x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (AAlt x0' x1' x2')
+                ADefault x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (ADefault x0' x1')
+ 
+instance (Monad m) => TransM m n1 n2 (Guard n1) (Guard n2) where
+        transZM table xx
+          = transMe (transGuard table) (transGuard_enter table)
+              (transGuard_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                GCase x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (GCase x0' x1')
+                GExp x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (GExp x0' x1' x2')
+                GBool x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (GBool x0' x1')
+ 
+instance (Monad m) => TransM m n1 n2 (Pat n1) (Pat n2) where
+        transZM table xx
+          = transMe (transPat table) (transPat_enter table)
+              (transPat_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                WVar x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (WVar x0' x1')
+                WConst x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (WConst x0' x1')
+                WCon x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (WCon x0' x1' x2')
+                WConLabel x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (WConLabel x0' x1' x2')
+                WAt x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (WAt x0' x1' x2')
+                WWildcard x0
+                  -> do x0' <- transN table x0
+                        return (WWildcard x0')
+                WUnit x0
+                  -> do x0' <- transN table x0
+                        return (WUnit x0')
+                WTuple x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (WTuple x0' x1')
+                WCons x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (WCons x0' x1' x2')
+                WList x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (WList x0' x1')
+                WExp x0
+                  -> do x0' <- transZM table x0
+                        return (WExp x0')
+ 
+instance (Monad m) => TransM m n1 n2 (Label n1) (Label n2) where
+        transZM table xx
+          = transMe (transLabel table) (transLabel_enter table)
+              (transLabel_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                LIndex x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (LIndex x0' x1')
+                LVar x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (LVar x0' x1')
+ 
+instance (Monad m) => TransM m n1 n2 (LCQual n1) (LCQual n2) where
+        transZM table xx
+          = transMe (transLCQual table) (transLCQual_enter table)
+              (transLCQual_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                LCGen x0 x1 x2
+                  -> do x0' <- transZM table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (LCGen x0' x1' x2')
+                LCLet x0
+                  -> do x0' <- transZM table x0
+                        return (LCLet x0')
+                LCExp x0
+                  -> do x0' <- transZM table x0
+                        return (LCExp x0')

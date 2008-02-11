@@ -85,7 +85,7 @@ stage = "Stages.Source"
 parse 	:: (?args :: [Arg])
 	-> FilePath			-- path of source file
 	-> String			-- source of root module
-	-> IO Tree			-- source parse tree
+	-> IO (Tree SourcePos)		-- source parse tree
 			
 parse	fileName
 	source
@@ -103,8 +103,8 @@ parse	fileName
 
 -- | Slurp out fixity table
 sourceSlurpFixTable
-	:: Tree				-- source and header parse tree
-	-> IO [FixDef]			-- fixity table
+	:: Tree SourcePos		-- source and header parse tree
+	-> IO [FixDef SourcePos]	-- fixity table
 		
 sourceSlurpFixTable
 	sTree
@@ -115,7 +115,7 @@ sourceSlurpFixTable
 
 -- | Slurp out table of bindings to inline
 sourceSlurpInlineVars
-	:: Tree
+	:: Tree SourcePos
 	-> IO [Var]
 	
 sourceSlurpInlineVars 
@@ -134,9 +134,9 @@ sourceSlurpInlineVars
 
 -- | Write uses of infix operatiors to preix form.
 defix	:: (?args :: [Arg])
-	-> Tree				-- source parse tree
-	-> [FixDef]			-- fixity table
-	-> IO Tree			-- defixed parse tree, will have no more XInfix nodes.
+	-> Tree	SourcePos		-- source parse tree
+	-> [FixDef SourcePos]		-- fixity table
+	-> IO (Tree SourcePos)		-- defixed parse tree, will have no more XInfix nodes.
 	
 defix	sParsed
 	fixTable
@@ -161,8 +161,8 @@ defix	sParsed
 --	which is present on foreign decls gets propagated to uses of these functions.
 --
 rename	:: (?args :: [Arg])
-	-> 	[(Module, Tree)]
-	-> IO 	[(Module, Tree)]
+	-> 	[(Module, Tree SourcePos)]
+	-> IO 	[(Module, Tree SourcePos)]
 
 
 rename	mTrees
@@ -185,7 +185,7 @@ rename	mTrees
 -- Slurp out the kinds for user defined classes.
 sourceKinds
 	:: (?args :: [Arg])
-	-> Tree
+	-> Tree SourcePos
 	-> IO [(Var, Kind)]
 	
 sourceKinds sTree
@@ -200,8 +200,8 @@ sourceKinds sTree
 -- alias
 --
 alias 	:: (?args :: [Arg])
-	-> Tree
-	-> IO Tree
+	-> Tree SourcePos
+	-> IO (Tree SourcePos)
 	
 alias sTree
  = do
@@ -215,8 +215,8 @@ alias sTree
 desugar
 	:: (?args :: [Arg])
 	-> [(Var, Kind)]		-- kind table
-	-> Tree				-- source tree
-	-> Tree				-- header tree
+	-> Tree	SourcePos		-- source tree
+	-> Tree	SourcePos		-- header tree
 	-> IO 	( D.Tree SourcePos
 		, D.Tree SourcePos)
 	

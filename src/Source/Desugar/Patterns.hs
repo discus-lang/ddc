@@ -95,7 +95,7 @@ rewritePatA co aa
 --	name the nodes on the fly.
 
 -- | Name intermediate nodes in a pattern expression
-sprinkleAtsX :: SourcePos -> S.Exp -> RewriteM S.Exp
+sprinkleAtsX :: a -> S.Exp a -> RewriteM (S.Exp a)
 sprinkleAtsX sp p
  = case p of
  	S.XVar sp var
@@ -315,7 +315,7 @@ addLambdas sp (v:vs) x	= D.XLambda sp v (addLambdas sp vs x)
 --
 --	This function converts these expressions to actual patterns.
 --
-expToPat :: S.Exp -> S.Pat
+expToPat :: Show a => S.Exp a -> S.Pat a
 expToPat xx
  = case xx of
 	S.XVar sp v

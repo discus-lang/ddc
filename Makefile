@@ -22,20 +22,31 @@ include make/plate.mk
 
 # -- Building --------------------------------------------------------------------------------------
 
+# -- build the boiler plate generator
+bin/plate : tools/plate/Main.hs
+	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^ 
+
+
 # -- build the main compiler
 bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
 	$(GHC) $(GHC_FLAGS) -o bin/ddc $^ $(LIBS) -package unix -package mtl -package containers
-	
 
+src/Source/Plate/Trans.hs : src/Source/Plate/Trans.hs-stub bin/plate
+	@echo "* Generating boilerplate for $@"
+	bin/plate src/Source/Exp.hs src/Source/Plate/Trans.hs-stub src/Source/Plate/Trans.hs
+	@echo
+	
 # -- build the test driver
 bin/war : tools/war/War.hs tools/war/Diff.hs tools/war/Interface.hs tools/war/Order.hs tools/war/Bits.hs tools/war/TestSource.hs
 	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc -itools/war --make tools/war/War.hs -o bin/war
+
 
 # -- build the churner
 bin/churn : tools/churn/Main.hs tools/churn/Bits.hs
 	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc -itools/churn --make tools/churn/Main.hs -o bin/churn
 	
+
 # -- build the runtime system
 runtime_c = \
 	$(shell ls runtime/*.c) \
