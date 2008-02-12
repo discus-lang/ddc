@@ -93,13 +93,23 @@ packT1 tt
 	 -> makeTSum k $ nub $ map packT1 ts
 	 
 	-- mask
+	
+	-- mask of bottom is just bottom
 	TMask k (TBot k1) t2
 	 	| k == k1
 		-> TBot k1
 	 
+	-- combine mask of mask
 	TMask k1 (TMask k2 t1 t2) t3
 	 | k1 == k2
 	 -> makeTMask k1 t1 (makeTSum k1 [t2, t3])
+	 
+	-- in core, all closure vars are quantified, and fully sunk
+	--	so if we can't see some tagged component, it's not there.
+	TMask k1 t1@(TVar k2 v) t3
+	 | k1 == k2
+	 , k1 == KClosure
+	 -> t1
 	 
 	TMask k t1 t2
 	 -> let t1'	= packT1 t1

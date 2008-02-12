@@ -118,7 +118,6 @@ subsumes3 table t s
 	, t2 == s2
 	= True 
 
-
 	-- SubFun
 	-- fun
  	| TFunEC t1 t2 tEff tClo	<- t
@@ -129,6 +128,14 @@ subsumes3 table t s
 	, subsumes1 table tClo sClo
 	= True
 
+	-- SubTag
+	| TFree _ t1			<- t
+	, s1				<- s
+	= subsumes1 table t1 s1
+	
+	| t1				<- t
+	, TFree _ s1			<- s
+	= subsumes1 table t1 s1
 
 	-- SubReplay
 	-- hmm, perhaps should be using separate constraints, 

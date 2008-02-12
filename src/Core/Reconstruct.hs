@@ -248,20 +248,20 @@ reconX tt exp@(XLam v t x eff clo)
 			 then ()
 			 else panic stage
 				$ "reconX: Effect error in core.\n"
-				% "    caller = " % tableCaller tt			% "\n"
-				% "    in lambda abstraction:\n" 			%> exp	% "\n\n"
-				% "    reconstructed effect of body:\n" 		%> xE'	% "\n\n"
-				% "    does not match effect annot on lambda:\n"	%> eff'	% "\n\n"
+				% "    caller = " % tableCaller tt		% "\n"
+				% "    in lambda abstraction:\n" 		%> exp	% "\n\n"
+				% "    reconstructed effect of body:\n" 	%> xE'	% "\n\n"
+				% "    is not smaller than annot on lambda:\n"	%> eff'	% "\n\n"
 
 		-- check closures match
 		, () <- if subsumes (tableMore tt) clo_sub xC'
 			 then ()
 			 else panic stage
 				$ "reconX: Closure error in core.\n"
-				% "    caller = " % tableCaller tt			% "\n"
-				% "    in lambda abstraction:\n" 			%> exp		% "\n\n"
-				% "    reconstructed closure of body:\n" 		%> xC'		% "\n\n"
-				% "    does not match closure annot on lambda:\n"	%> clo_sub	% "\n\n"
+				% "    caller = " % tableCaller tt		% "\n"
+				% "    in lambda abstraction:\n" 		%> exp		% "\n\n"
+				% "    reconstructed closure of body:\n" 	%> xC'		% "\n\n"
+				% "    is not smaller than annot on lambda:\n"	%> clo_sub	% "\n\n"
 	
 
 		-- Now that we know that the reconstructed effect closures of the body is less
