@@ -108,8 +108,8 @@ war :
 .PHONY : churn
 churn : 
 	@echo "* Churning compiler"
-	@ghci -isrc -fglasgow-exts tools/churn/Main.hs -e main
-
+	@bin/churn
+	
 # -- Cleaning --------------------------------------------------------------------------------------
 
 # -- clean objects in the runtime system
