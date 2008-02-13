@@ -27,7 +27,7 @@ import qualified Debug.Trace
 
 -----
 stage	= "Type.Util.Pack"
-debug = True
+debug	= False
 trace ss x
 	= if debug 
 		then (Debug.Trace.trace (pprStr ss) x)
@@ -96,6 +96,10 @@ packEffect tt
 
 packClosure :: Closure -> Closure
 packClosure tt
+ = trace ("packClosure\n" %> prettyTS tt % "\n") $
+   packClosure' tt
+
+packClosure' tt
  | KClosure	<- kindOfType tt
  = let 	tt'	= crushT $ inlineFsT $ packTypeLs True Map.empty tt
    in	if tt	== tt'
@@ -137,9 +141,12 @@ packTypeLs ld ls tt
 	TFetters fs t
 	 -> packTFettersLs ld ls tt
 
-	TSum k ts
-	 -> let	ts'	= nub
-	 		$ map (packTypeLs True ls) ts
+	TSum k@KClosure ts
+	 -> let	ts'	= nub	$ map (packTypeLs True ls) ts
+	    in	makeTSum k (maskMerge ts')
+
+	TSum k@KEffect ts
+	 -> let	ts'	= nub	$ map (packTypeLs True ls) ts
 	    in	makeTSum k ts'
 
 	TMask k1 (TMask k2 t1 t2) t3
@@ -249,7 +256,62 @@ makeSub KEffect  t1 t2	= makeTSum KEffect  [t1, t2]
 makeSub KClosure t1 t2	= makeTSum KClosure [t1, t2]
 makeSub _	 t1 t2	= t2
 	
+
+
+-- Merges a list of mask expressions.
+--	We need to do this to avoid exponential blowup of closure expressions
+--	as per test/Typing/Loop/Loop1
+--	
+--	eg:	$c1 \ x, $c1 \ y, $c1 \ z	-> $c1 \ [x, y, z]
+--
+maskMerge :: [Closure] -> [Closure]
+maskMerge cc
+ = case maskMerge_run False [] cc of
+ 	Nothing		-> cc
+	Just cc'	-> maskMerge cc'
+
+-- we're at the end of the list, but we merged something along the way
+maskMerge_run True acc []
+	= Just (reverse acc)
 	
+-- we're at the end of the list, and nothing merged
+maskMerge_run False acc []
+	= Nothing
+
+maskMerge_run hit acc (x:xs)
+	-- try and merge this element into the rest of the list
+	| Just xs'	<- maskMerge_step x xs
+	= maskMerge_run True acc xs'
+	
+	| otherwise
+	= maskMerge_run hit (x : acc) xs
+
+maskMerge_step z (x:xs)
+	-- we could merge with the current element
+	| Just x'	<- maskMerge1 z x
+	= Just (x' : xs)
+	
+	-- try and merge with later elementts
+	| Just xs'	<- maskMerge_step z xs
+	= Just (x : xs')
+
+	| otherwise
+	= Nothing
+	
+maskMerge_step z []	
+	= Nothing
+	
+maskMerge1 cc1 cc2
+	| TMask k1 c1 t1	<- cc1
+	, TMask k2 c2 t2	<- cc2
+	, k1 == k2
+	, c1 == c2
+	= Just $ makeTMask k1 c1 (makeTSum k1 [t1, t2])
+
+	| otherwise
+	= Nothing
+
+
 	
 
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
