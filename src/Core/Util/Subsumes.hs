@@ -14,6 +14,9 @@ import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import qualified Debug.Trace
 
 -----
@@ -43,13 +46,14 @@ subsumes1 table t s
  = let ans	= subsumes2 table t s
    in  trace 	("subsumes (T :> S) |- " % ans 	% "\n"
 	 	% "    T = " %> t 		% "\n"
-		% "    S = " %> s		% "\n")
+		% "    S = " %> s		% "\n"
+		% "   with " %> "\n" %!% (map (\(v, t) -> v % " :> " % t) $ Map.toList table) % "\n")
 		ans
 
 -- make sure closure terms are trimmed before comparing them
 subsumes2 table t s
  = let trimC tt
- 	| kindOfType tt == KClosure	= trimClosureC tt
+ 	| kindOfType tt == KClosure	= trimClosureC Set.empty tt
 	| otherwise			= tt
 	
    in	subsumes3 table (trimC t) (trimC s)
@@ -85,8 +89,17 @@ subsumes3 table t s
 	-- G[t :> S] |- S <: t
 	| TVar tKind tVar	<- t
 	, Just s2		<- Map.lookup tVar table
-	, s2 == s
+	, subsumes table s s2
 	= True
+
+	| TVarMore tKind tVar tMore <- t
+	= let table'	= Map.insert tVar tMore table
+	  in  subsumes1 table' (TVar tKind tVar) s
+
+	| TVarMore sKind sVar sMore <- s
+	= let table'	= Map.insert sVar sMore table
+	  in  subsumes1 table' t (TVar sKind sVar)
+	
 
 	-- SubAll
 	| TForall v1 k1 t1	<- t
@@ -173,7 +186,17 @@ subsumes3 table t s
 	, ts == ss
 	= True
 	
+	| TFree tVar ts		<- t
+	, ts == s
+	= True
+
+	| TFree tVar ss		<- s
+	, t == ss
+	= True	
+	
 	--
 	| otherwise
 	= False
+
+
 

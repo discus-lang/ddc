@@ -18,6 +18,7 @@ import Shared.Error
 import Util
 
 import qualified Data.Set	as Set
+import Data.Set			(Set)
 
 -----
 stage	= "Core.Util.Trim"
@@ -35,36 +36,48 @@ trimClosureT2 tt
 
 trimClosureT' tt		
  = case tt of
- 	TFetters t fs	-> makeTFetters t (catMaybes $ map trimClosureT_f fs)
+ 	TFetters t fs	
+	 -> let	vsBound	= Set.fromList
+	 		$ catMaybes 
+			$ map takeBoundVarF fs
+
+	    in	makeTFetters t (catMaybes $ map (trimClosureT_f vsBound) fs)
+
 	_		-> tt
+
+
+takeBoundVarF ff
+ = case ff of
+ 	FWhere v _	-> Just v
+	FMore  v _	-> Just v
 
 	
 -- | Trim the closure in this binding
 --	where the binding was on a type
-trimClosureT_f :: Fetter -> Maybe Fetter
-trimClosureT_f ff
+trimClosureT_f :: Set Var -> Fetter -> Maybe Fetter
+trimClosureT_f bound ff
  = case ff of
  	FWhere v t2
 	 |  kindOfType t2 == KClosure
-	 -> Just $ FWhere v (trimClosureC t2)
+	 -> Just $ FWhere v (trimClosureC bound t2)
 
  	FMore v t2
 	 |  kindOfType t2 == KClosure
-	 -> Just $ FMore v (trimClosureC t2)
+	 -> Just $ FMore v (trimClosureC bound t2)
 
 	_ -> Just ff
 
 
 -- | Trim a closure down to its interesting parts
-trimClosureC :: Closure -> Closure
-trimClosureC cc = {-# SCC "trimClosureC" #-} trimClosureC2 cc
+trimClosureC :: Set Var -> Closure -> Closure
+trimClosureC bound cc = {-# SCC "trimClosureC" #-} trimClosureC2 bound cc
 
-trimClosureC2 cc
+trimClosureC2 bound cc
  | KClosure	<- kindOfType cc
-  = let cc'	= packT $ trimClosureC' cc
+  = let cc'	= packT $ trimClosureC' bound cc
     in  if cc' == cc
    	 then cc'
-	 else trimClosureC2 cc'
+	 else trimClosureC2 bound cc'
 
  | otherwise
  = panic stage
@@ -72,9 +85,11 @@ trimClosureC2 cc
 	% "    cc = " % cc 
 
 
-trimClosureC' cc
- = case cc of
+trimClosureC' bound cc
+ = let down	= trimClosureC bound
+   in case cc of
  	TVar{}			-> cc
+	TVarMore{}		-> cc
 	TClass{}		-> cc
 	TBot  KClosure		-> cc
 	TTop  KClosure 		-> cc
@@ -82,23 +97,36 @@ trimClosureC' cc
 	-- Trim all the elements of a sum
 	TSum  KClosure cs	
 		-> makeTSum KClosure 
-		$  map trimClosureC
+		$  map down
 		$  flattenTSum cc
 
+	TMask KClosure t1@(TVar k v) t2
+	 | Set.member v bound
+	 -> t1
+	 
+	 | otherwise
+	 -> cc
+
 	TMask KClosure t1 t2	
-	 -> let	t1'	= trimClosureC t1
+	 -> let	t1'	= trimClosureC bound t1
 	    in	TMask KClosure t1' t2
 
 	TFetters c fs
-	 -> makeTFetters
-	 	(trimClosureC c)
-		(catMaybes $ map trimClosureC_f fs) 
+	 -> let	vsBound	= Set.fromList
+	 		$ catMaybes 
+			$ map takeBoundVarF fs
+
+		bound'	= Set.union vsBound bound
+
+	    in  makeTFetters
+		 	(trimClosureC bound' c)
+			(catMaybes $ map (trimClosureC_f bound') fs) 
 
 	-- Erase the quantifier if the var is no longer free in the type
 	TForall b k t		
 	 -> if Set.member (varOfBind b) (freeVars t)
-	 	then TForall b k (trimClosureC t)
-		else (trimClosureC t)
+	 	then TForall b k (down t)
+		else down t
 
 	-- If this closure has no free variables
 	--	then it is closed and can safely be erased.
@@ -109,7 +137,7 @@ trimClosureC' cc
 	 -> TBot KClosure
 
 	 | otherwise
-	 -> TFree v $ trimClosureC_z t
+	 -> TFree v $ trimClosureC_z bound t
 	 
 	TTag   v		-> cc
 	 
@@ -121,26 +149,32 @@ trimClosureC' cc
 --	We need this dispatch because the right hand side of a 
 --	TFree can be either data or more closure
 --
-trimClosureC_z :: Type -> Type
-trimClosureC_z z
+trimClosureC_z :: Set Var -> Type -> Type
+trimClosureC_z bound z
  = case kindOfType z of
- 	KData		-> trimClosureC_t z
-	KClosure	-> trimClosureC z
+ 	KData		-> trimClosureC_t bound z
+	KClosure	-> trimClosureC bound z
 
 
 -- | Trim a data element of a closure.
-trimClosureC_t :: Type -> Type
-trimClosureC_t tt
+trimClosureC_t :: Set Var -> Type -> Type
+trimClosureC_t bound tt
  = case tt of
 	-- Trim the fetters of this data
  	TFetters c fs
-	 -> makeTFetters (trimClosureC_t c) (catMaybes $ map trimClosureC_f fs)
+	 -> let	vsBound	= Set.fromList
+	 		$ catMaybes 
+			$ map takeBoundVarF fs
+
+		bound'	= Set.union vsBound bound
+
+	    in	makeTFetters (trimClosureC_t bound' c) (catMaybes $ map (trimClosureC_f bound') fs)
 
 	-- Trim under foralls
 	TForall b k t		
 	 -> if Set.member (varOfBind b) (freeVars t)
-	 	then TForall b k (trimClosureC_t t)
-		else (trimClosureC_t t)
+	 	then TForall b k (trimClosureC_t bound t)
+		else (trimClosureC_t bound t)
 
 	-- Don't care about contexts
 	TContext t1 t2
@@ -159,17 +193,17 @@ trimClosureC_t tt
 
 
 -- | Trim a fetter of a closure
-trimClosureC_f :: Fetter -> Maybe Fetter
-trimClosureC_f ff
+trimClosureC_f :: Set Var -> Fetter -> Maybe Fetter
+trimClosureC_f bound ff
  = case ff of
 	-- Only more closure information is interesting
  	FWhere v1 c2
 	 |  kindOfType c2 == KClosure
-	 -> Just $ FWhere v1 (trimClosureC c2)
+	 -> Just $ FWhere v1 (trimClosureC bound c2)
 
  	FMore v1 c2
 	 |  kindOfType c2 == KClosure
-	 -> Just $ FMore v1 (trimClosureC c2)
+	 -> Just $ FMore v1 (trimClosureC bound c2)
 
 	_ -> Nothing
 

@@ -239,7 +239,7 @@ reconX tt exp@(XLam v t x eff clo)
 		--	so it doesn't loose them, or the closure equivalence rule so it doesn't care.
 		, xC_masked	<- makeTMask KClosure xC (TTag v)
 		, xC_flat	<- flattenT xC_masked
-		, xC'		<- trimClosureC $ xC_flat
+		, xC'		<- trimClosureC Set.empty $ xC_flat
 
 		, xE'		<- packT xE
 	
@@ -248,21 +248,25 @@ reconX tt exp@(XLam v t x eff clo)
 			 then ()
 			 else panic stage
 				$ "reconX: Effect error in core.\n"
-				% "    caller = " % tableCaller tt		% "\n"
-				% "    in lambda abstraction:\n" 		%> exp	% "\n\n"
-				% "    reconstructed effect of body:\n" 	%> xE'	% "\n\n"
-				% "    is not smaller than annot on lambda:\n"	%> eff'	% "\n\n"
+				% "    caller = " % tableCaller tt	% "\n"
+				% "    in lambda abstraction:\n" 	%> exp	% "\n\n"
+				% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
+				% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
+				% "    with bounds:\n"
+				% pprBounds (tableMore tt)			% "\n\n"
+				
 
 		-- check closures match
 		, () <- if subsumes (tableMore tt) clo_sub xC'
 			 then ()
 			 else panic stage
 				$ "reconX: Closure error in core.\n"
-				% "    caller = " % tableCaller tt		% "\n"
-				% "    in lambda abstraction:\n" 		%> exp		% "\n\n"
-				% "    reconstructed closure of body:\n" 	%> xC'		% "\n\n"
-				% "    is not smaller than annot on lambda:\n"	%> clo_sub	% "\n\n"
-	
+				% "    caller = " % tableCaller tt	% "\n"
+				% "    in lambda abstraction:\n" 	%> exp		% "\n\n"
+				% "    reconstructed closure of body:\n"%> xC'		% "\n\n"
+				% "    is not <: annot on lambda:\n"	%> clo_sub	% "\n\n"
+				% pprBounds (tableMore tt)				% "\n\n"
+
 
 		-- Now that we know that the reconstructed effect closures of the body is less
 		--	than the annotations on the lambda we can reduce the annotation so it only 
@@ -279,7 +283,7 @@ reconX tt exp@(XLam v t x eff clo)
 		--	Another way of looking at this is that we're doing the effect masking that Core.Bind
 		--	should have done originally.
 		--
-		, eff_clamped	<- clampSum xE' eff'
+		, eff_clamped	<- clampSum tt xE' eff'
 
 		-- don't clamp closures. There is no need to, and clampSum gives the wrong answer
 		--	because two closures   (x : Int %r1) and (y : Int %r1) are taken to be non-equal
@@ -362,10 +366,10 @@ reconX tt (XDo ss)
    in	( XDo ss'
         , t
 	, makeTSum KEffect sEs
-	, trimClosureC 
+	, trimClosureC Set.empty
 		$ makeTMask 
 			KClosure
-			(makeTSum KClosure (map (trimClosureC . flattenT) sCs))
+			(makeTSum KClosure (map ((trimClosureC Set.empty) . flattenT) sCs))
 			(makeTSum KClosure (map TTag vsBind)) )
    
 -- match
@@ -831,7 +835,7 @@ applyTypeT table (TForall (BVar v) k t1) t2
 applyTypeT table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == KClosure
-	, subsumes (tableMore table) (flattenT $ trimClosureC t2) (flattenT $ trimClosureC tB)
+	, subsumes (tableMore table) (flattenT $ trimClosureC Set.empty t2) (flattenT $ trimClosureC Set.empty tB)
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 	-- check that the constraint is satisfied
@@ -938,12 +942,21 @@ addMoreVT v t tt
 	
 -- Clamp -------------------------------------------------------------------------------------------
 -- | Clamp a sum by throwing out any elements of the second one that are not members of the first
-clampSum :: Type -> Type -> Type
-clampSum t1 t2
+--	result is at least as big as t1
+
+clampSum :: Table -> Type -> Type -> Type
+clampSum table t1 t2
 	| kindOfType t1 == kindOfType t2
-	= let	parts1		= flattenTSum t1
-	 	parts2		= flattenTSum t2
+	= let	parts2		= flattenTSum t1
 		parts_clamped	= [p	| p <- parts2
-	   				, elem p parts1]
+	   				, subsumes (tableMore table) t1 p]
 
 	  in	makeTSum (kindOfType t1) parts_clamped
+
+
+
+
+-- Bits --------------------------------------------------------------------------------------------
+
+pprBounds more
+ 	= "\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) $ Map.toList more) % "\n"

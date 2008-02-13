@@ -117,11 +117,11 @@ data SquidS
 	--	
 	, stateInst		:: Map Var	(InstanceInfo Var Type)			
 
-	-- | Records what vars have been quantified.
+	-- | Records what vars have been quantified. (with optional :> bounds)
 	--	After the solver is finished and all generalisations have been performed,
 	--	all effect and closure ports will be in this set. We can then clean out
 	--	non-ports while we extract them from the graph.
-	, stateQuantifiedVars	:: Set Var
+	, stateQuantifiedVars	:: Map Var (Kind, Maybe Type)
 	
 	-- | The data field definitions.
 	-- 	type name	-> (type vars, [(field name, field type)])
@@ -179,7 +179,7 @@ squidSInit
 		, stateGenDone		= Set.empty
 
 		, stateInst		= Map.empty
-		, stateQuantifiedVars	= Set.empty
+		, stateQuantifiedVars	= Map.empty
 
 		, stateDataFields	= Map.empty 
 		, stateProject		= Map.empty

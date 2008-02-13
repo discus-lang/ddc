@@ -16,7 +16,6 @@ module Type.Class
 	, makeClassName
 	, clearActive
 	, activateClass
-	, addVarSubs
 	, sinkVar
 
 	, updateVC
@@ -36,6 +35,7 @@ import Data.Array.IO
 
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
+import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..))
 
 import Util
@@ -137,16 +137,50 @@ makeClassV tSource kind v
    	 Just cid	-> return cid
 	 Nothing 
 	  -> do	cid	<- allocClass kind
-		addToClass cid tSource (TVar kind v)
-
-		----
-		graph	<- gets stateGraph
-		let graph'	= graph 
-				{ graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
-
-		modify (\s -> s { stateGraph = graph' })
-
+		addNameToClass cid tSource v kind
 	     	return	cid
+
+-- | Return a variable to identify this class.
+--	If the class already contains variables then choose the one with the smallest display name
+--	otherwise make a new variable and use that.
+--	
+makeClassName :: ClassId -> SquidM Var
+makeClassName cid_
+ = do
+ 	cid		<- sinkClassId cid_
+	Just c		<- lookupClass cid
+
+	let kind	= case c of { Class { classKind = kind } -> kind }
+
+	let vars	= catMaybes
+			$ map (\t -> case t of
+					TVar k v		-> Just v
+					_			-> Nothing)
+			$ map fst
+			$ classNodes c
+			
+	case vars of
+	 [] 
+	  -> do	v	<- newVarN (spaceOfKind kind)
+		let tSource	= TSI $ SIClassName
+		addNameToClass cid tSource v kind
+		return	v
+		
+	 (_:_)
+	  -> do
+	  	let v	= head $ sortBy classNameOrd vars
+		return v
+			
+classNameOrd v1 v2
+
+	| length (Var.name v1) < length (Var.name v2)
+	= Prelude.LT
+	
+	| length (Var.name v1) > length (Var.name v2)
+	= Prelude.GT
+	
+	| otherwise
+	= Prelude.EQ
 
 
 -- | Add a new type constraint to a class
@@ -165,6 +199,8 @@ addToClass cid_ src t
 	c'		<- addToClass2 cid src t c
 	liftIO (writeArray (graphClass graph) cid c')
 
+	linkVar cid t
+
 	return ()
 
 addToClass2 cid src t c
@@ -178,6 +214,46 @@ addToClass3 cid src t c
 			, classType	= Nothing
 		  	, classQueue	= (maybeToList $ classType c) ++ classQueue c ++ [t] }
 
+linkVar cid tt
+ = case tt of
+ 	TVar k v
+	 -> do	graph	<- gets stateGraph
+		let graph'	
+			= graph 
+			{ graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
+		modify $ \s -> s { stateGraph = graph' }
+
+	_ -> return ()
+
+
+-- | This is like addToClass, except that if we just give a class a new name
+--	then we don't need to change its type
+addNameToClass 
+	:: ClassId
+	-> TypeSource
+	-> Var
+	-> Kind
+	-> SquidM ()
+
+addNameToClass cid_ src v k
+ = do	let t	= TVar k v
+ 	graph	<- gets stateGraph
+ 	cid	<- sinkClassId cid_
+
+ 	c	<- liftIO (readArray (graphClass graph) cid)
+	c'	<- addNameToClass2 cid src t c
+	liftIO (writeArray (graphClass graph) cid c')
+	linkVar cid t
+	return ()
+
+addNameToClass2 cid src t c
+ = case c of
+ 	ClassNil	-> addNameToClass3 cid src t (classInit cid (kindOfType t))
+	Class{}		-> addNameToClass3 cid src t c
+	
+addNameToClass3 cid src t c
+ = do 	activateClass cid
+ 	return	$ c	{ classNodes	= (t, src) : classNodes c }
 
 
 -- | Lookup a class from the graph.
@@ -342,48 +418,6 @@ mergeClassesT	 ts@(t:_)
 	return		$ TClass (kindOfType t) cid'
 
 
--- | Return a variable to identify this class.
---	If the class already contains variables then choose the one with the smallest display name
---	otherwise make a new variable and use that.
---	
-makeClassName :: ClassId -> SquidM Var
-makeClassName cid_
- = do	cid		<- sinkClassId cid_
-	Just c		<- lookupClass cid
-
-	let kind	= case c of { Class { classKind = kind } -> kind }
-
-	let vars	= catMaybes
-			$ map (\t -> case t of
-					TVar k v		-> Just v
-					_			-> Nothing)
-			$ map fst
-			$ classNodes c
-			
-	case vars of
-	 [] 
-	  -> do	v	<- newVarN (spaceOfKind kind)
-		let t	= TVar kind v
-		updateClass cid 
-			c { classNodes	= (t, TSI $ SIClassName) : classNodes c}
-
-		return	v
-		
-	 (_:_)
-	  -> do
-	  	let v	= head $ sortBy classNameOrd vars
-		return v
-			
-classNameOrd v1 v2
-
-	| length (Var.name v1) < length (Var.name v2)
-	= Prelude.LT
-	
-	| length (Var.name v1) > length (Var.name v2)
-	= Prelude.GT
-	
-	| otherwise
-	= Prelude.EQ
 
 
 -- | Clear the set of active classes.
@@ -426,6 +460,7 @@ activateClass cid
 -----
 -- addVarSubs
 --
+{-
 addVarSubs ::	Var -> [Var]	-> SquidM ()
 addVarSubs	varL_ 	vars_
  = do
@@ -435,19 +470,22 @@ addVarSubs	varL_ 	vars_
  	sVarSub <##> \s 
 		-> foldl (\m x -> Map.insert x varL m) s 
 		$  filter (/= varL) vars
-	
+
+-}
+
 sinkVar ::	Var -> SquidM Var
 sinkVar		var
- = do
- 	sub	<- gets stateVarSub
-	return	$ sinkVar' sub var
-	
-sinkVar' sub var
- = case Map.lookup var sub of
- 	Nothing		-> var
-	Just var'	-> sinkVar' sub var'
-	
+ = do	mCid	<- lookupVarToClassId var
+	let result
+		| Nothing	<- mCid
+		= return var
 
+		| Just cid	<- mCid
+		= do		
+			var'		<- makeClassName cid 	
+			return	$ var'
+	
+	result
 
 updateVC :: TransM SquidM a => a -> SquidM a
 updateVC  z	

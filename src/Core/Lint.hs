@@ -368,7 +368,9 @@ lintT tt (TVar k v)
 	= addError
 	  	$ "Type variable " % v % " is not in scope.\n"
 
-
+-- BUGS: ignore the constraint for now
+lintT tt (TVarMore k v t)
+ =	lintT tt (TVar k v)
 
 lintT tt (TTop k)
  =	return ()

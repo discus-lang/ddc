@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Core.ReconKind
 	(kindOfType)
@@ -22,6 +23,7 @@ kindOfType t
 	TSum  k _		-> k
 	TMask k _ _		-> k
 	TVar  k _		-> k
+	TVarMore k _ _		-> k
 
 	TBot k			-> k
 	TTop k			-> k
@@ -46,6 +48,9 @@ kindOfType t
 		takePureEff (KClass v [eff])
 			| v == primPure
 			= eff
+		
+		takePureEff _
+			= panic stage $ "kindOfType: takePureEff"
 		
 		effs	= map takePureEff ks
 		

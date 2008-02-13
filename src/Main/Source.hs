@@ -362,7 +362,8 @@ solveSquid :: (?args :: [Arg])
 	
 	-> IO 	( Map Var T.Type			-- inferred types
 		, Map Var (InstanceInfo T.Type T.Type)	-- how each var was instantiated
-		, Set Var				-- the vars that were quantified during type inference
+		, Map Var (T.Kind, Maybe T.Type)	-- the vars that were quantified during type inference
+							--	(with optional :> bound)
 		, Set Var				-- the TREC vars which are free in the returned types
 		, Map Var [Var]				-- map of constraints on each region
 		, Map Var Var)				-- how projections were resolved
@@ -447,12 +448,17 @@ solveSquid2 vsTypesPlease hTrace state
 	dumpS	DumpTypeSolve	"type-solve--quantVars"
 		$ catInt "\n"
 		$ map pprStr
-		$ Set.toList quantVars
+		$ Map.toList quantVars
 
 	dumpS	DumpTypeSolve	"type-solve--regionClasses"
 		$ catInt "\n"
 		$ map pprStr
 		$ Map.toList vsRegionClasses
+
+	dumpS	DumpTypeSolve	"type-solve--varSub"
+		$ catInt "\n"
+		$ map pprStr
+		$ Map.toList (Squid.stateVarSub state2)
 
 	let vsFree	= Set.empty
 
@@ -475,7 +481,7 @@ toCore 	:: (?args :: [Arg])
 	-> Map Var Var					-- sigmaTable
 	-> Map Var T.Type				-- typeTable
 	-> Map Var (T.InstanceInfo T.Type T.Type)	-- typeInst
-	-> Set Var					-- typeQuantVars
+	-> Map Var (T.Kind, Maybe T.Type)		-- typeQuantVars
 	-> ProjTable					-- projection dictinary
 	-> Map Var Var					-- how to resolve projections
 	-> IO	( C.Tree

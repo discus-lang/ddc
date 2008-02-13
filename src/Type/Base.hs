@@ -56,6 +56,9 @@ data Class
 		--	non-empty and classType will be Nothing.
 		, classType		:: Maybe Type
 
+		-- | Whether this class has been quantified
+		, classQuant		:: Bool
+
 		-- | Type constraints waiting to be unified.
 		, classQueue		:: [Type]
 
@@ -71,7 +74,8 @@ data Class
 		-- | Constraints that have been added to this class, including source information.
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
-		, classNodes		:: [(Type, TypeSource)]	}
+		, classNodes		:: [(Type, TypeSource)]	 }
+		
 
 	deriving (Show)
 
@@ -82,6 +86,7 @@ classInit cid kind
 	, classKind		= kind
 	, className		= Nothing
 	, classType		= Nothing
+	, classQuant		= False
 	, classQueue		= []
 	, classNodes		= []
 	, classFetters		= []

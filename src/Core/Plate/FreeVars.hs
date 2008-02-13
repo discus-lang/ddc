@@ -235,6 +235,11 @@ instance FreeVars Type where
 
 	TVar k v	-> Set.singleton v
 	
+	TVarMore k v t
+	 -> unions
+	 	[ Set.singleton v
+		, freeVars t]
+	
 	TBot k		-> Set.empty
 	TTop k		-> Set.empty
 

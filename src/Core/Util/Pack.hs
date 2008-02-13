@@ -117,6 +117,8 @@ packT1 tt
 	    in	applyTMask $ TMask k t1' t2'
 	    
 	TVar k v	-> tt
+	TVarMore k v t	-> TVarMore k v (packT1 t)
+
 	TBot k		-> tt
 	TTop k 		-> tt
 	 
@@ -272,6 +274,19 @@ inlineTWheresMapT sub block tt
 	TMask k t1 t2		-> TMask k 	(down t1) (down t2)
 	    
 	TVar k v	
+	 -- If this var is in our block set then we're trying to recursively
+	 --	substitute for it.. bail out now or we'll loop forever.
+	 |  Set.member v block
+	 -> tt
+
+	 -- Lookup the var and add it to the block list so we can detect loops
+	 --	in the type.
+	 | otherwise
+	 -> case Map.lookup v sub of
+	 	Just t	-> inlineTWheresMapT sub (Set.insert v block) t
+		_	-> tt
+
+	TVarMore k v tMore
 	 -- If this var is in our block set then we're trying to recursively
 	 --	substitute for it.. bail out now or we'll loop forever.
 	 |  Set.member v block

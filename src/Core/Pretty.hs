@@ -31,16 +31,17 @@ prettyFoldXLAM		= True
 
 
 -------------------------------------------------------------------------------------------------
-sv v	= pprStr $ pv v
+sv v		= pprStr $ pv v
 
 sb (BVar v)	= pprStr $ pv v
 sb (BMore v t)	= pprStr $ "(" % (pprStr $ pv v) % " :> " % t % ")"
 
 -- | force display of type namespace qualifier
 pv v
- = case Var.nameSpace v of
- 	Var.NameType	-> "*" % v
-	_		-> ppr v
+ = let vStrip	= v { Var.nameModule = Var.ModuleNil }
+   in  case Var.nameSpace v of
+ 	Var.NameType	-> "*" % vStrip
+	_		-> ppr vStrip
 
 -- Top ----------------------------------------------------------------------------------------------
 instance Pretty Top where
@@ -403,9 +404,10 @@ instance Pretty Pat where
   	WLit c		-> ppr c 
 	
 
-	WCon v []	-> ppr v 
+	WCon v []	-> pv v
+
 	WCon v binds
-	 -> v % "\n"
+	 -> pv v % "\n"
 	  %> ("{ " % "\n, " %!% (map prettyLVT binds))  % " }"
  
 prettyLVT (label, var, t)
@@ -451,7 +453,7 @@ instance Pretty Type where
 	TContext c t	-> c % " => " % t
 
 	TFetters t1 fs
-	 -> prettyTB t1 % "\n:- " % "\n,  " %!% fs
+	 -> prettyTB t1 % " :- " % ", " %!% fs
 
 	TApp	t1 t2	-> prettyTB t1 % " " % prettyTB t2
 
@@ -463,6 +465,11 @@ instance Pretty Type where
 	 -> case k of
 	 	KData	-> "*" % v
 		_	-> ppr v
+
+	TVarMore k v t
+	 -> case k of
+	 	KData	-> "*" % sv v % " :> " % t 
+		_	-> sv v % " :> " % t
 
 	-- data
 	TFun x1 x2
@@ -486,7 +493,7 @@ instance Pretty Type where
 	 ->       " " %!% (ppr v : map prettyTB ts)
 
 	-- effect
-	TEffect v xs	-> " " %!% (ppr v : map prettyTB xs)
+	TEffect v xs	-> " " %!% (pv v : map prettyTB xs)
 	TBot KEffect	-> ppr "!PURE"
 	TTop KEffect	-> ppr "!SYNC"
 
@@ -501,7 +508,7 @@ instance Pretty Type where
 	TTop k		-> "@Top " % k
 
 	-- class	
-  	TClass v ts		-> v % " " % " " %!% map prettyTB ts
+  	TClass v ts		-> pv v % " " % " " %!% map prettyTB ts
 	TPurify eff wit		-> "purify " % prettyTB eff % " " % prettyTB wit
 	TPurifyJoin wits	-> "pjoin {" % "; " %!% wits % "}"
 	
@@ -549,8 +556,8 @@ instance Pretty Fetter where
 instance Pretty Bind where
  ppr xx
   = case xx of
-  	BVar v		-> ppr v
-	BMore v t	-> "(" % v % " :> " % t % ")"
+  	BVar v		-> pv v
+	BMore v t	-> "(" % sv v % " :> " % t % ")"
 
 
 -- Kind --------------------------------------------------------------------------------------------

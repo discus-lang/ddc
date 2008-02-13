@@ -39,7 +39,7 @@ foreign import extern add1X
         
 foreign import extern idF
         :: forall t0 t1 !e0 $c0
-        .  (t0 -(!e0 $c0)> t1) -> t0 -(!e0 $c0)> t1
+        .  (t0 -(!e0 $c0)> t1) -($c0)> t0 -(!e0 $c0)> t1
         :- !e0        :> System.Error.!Error
         :$ Base.Thunk -> Base.Thunk;
         

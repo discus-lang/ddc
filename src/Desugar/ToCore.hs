@@ -55,7 +55,7 @@ toCoreTree
 	:: Map Var Var					-- ^ value -> type vars
 	-> Map Var T.Type				-- ^ inferred type schemes
 	-> Map Var (T.InstanceInfo T.Type T.Type)	-- ^ instantiation info
-	-> Set Var					-- ^ the vars that were quantified during type inference
+	-> Map Var (T.Kind, Maybe T.Type)		-- ^ the vars that were quantified during type inference
 	-> ProjTable
 	-> Map Var Var					-- ^ how to resolve projections
 	-> D.Tree Annot
@@ -296,12 +296,18 @@ toCoreX xx
 		let (argQuant, argFetters, argContext, argShape)
 				= C.stripSchemeT tArg1
 
+		trace 	( "XLambdaTEC " % v % "\n"
+			% "tArg1 = " 	% tArg1	% "\n")
+			$ return ()
+			
+
+
 		portVars	<- gets coreQuantVars
 		let tArg	= C.packT
 				$ C.buildScheme
 					argQuant
 					[(v, t)	| C.FWhere v t	<- argFetters
-						, not $ Set.member v portVars]
+						, not $ Map.member v portVars]
 					[]
 					argShape
 
@@ -309,7 +315,7 @@ toCoreX xx
 		effAnnot	<- loadEffAnnot $ toCoreT eff
 		cloAnnot	<- loadCloAnnot $ toCoreT clo
 				
-		x'	<- toCoreX x
+		x'		<- toCoreX x
 		
 		return		
 		 $ C.XLam 	v tArg

@@ -1,0 +1,28 @@
+
+-- churn error
+v16     = \v17 -> v17 (v17 (v17 (v17 (v17 (v17 (v17 () (\v18 -> 20)) 
+		(\v19 -> 34)) (\v20 -> 0)) (\v21 -> 40)) (\v22 -> v22 (v22 (v22 51)))) (\v23 -> 69)) (\v24 -> v24 90);
+
+{-
+ddc: 
+PANIC in Core.Reconstruct
+        reconX: Effect error in core.
+            caller = Just Core.Bind.bindXDo
+            in lambda abstraction:
+                \  (v22              :: Base.Int %rTC4 -(!eTC33app $cTS0)> Base.Int %rTC4)
+                                     of $cTC15lam ->
+                do {
+                        v22
+                                (v22
+                                        (v22
+                                                (prim{Box} %rTC4 51#32i)));
+                }
+        
+            reconstructed effect of body:
+                !eTC33app
+        
+            is not smaller than annot on lambda:
+                !PURE
+        
+     
+-}

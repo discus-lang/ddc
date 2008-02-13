@@ -7,6 +7,9 @@ where
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 import Util
 import Type.Exp
 import Type.Base
@@ -113,14 +116,25 @@ loadTypeNode2 cid c
 				 -> t2
 				_	-> t'
 				
-		k	<- kindOfCid cid
-	
-		case t of
+		k		<- kindOfCid cid
+		var		<- makeClassName cid
+		quantVars	<- gets stateQuantifiedVars
+		let isQuant	= isJust $ Map.lookup var quantVars
+		
+		let result
 			-- don't bother showing bottom constraints
 			--	If a constraint for a class is missing it is assumed to be bottom.
-			TBot k	-> return $ fs ++ fsMulti
-
-			_	-> return $ FLet (TClass k cid) tX : (fs ++ fsMulti)
+			| TBot k	<- t
+			= return $ fs ++ fsMulti
+			
+			| isQuant
+			= return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
+	
+	
+			| otherwise
+			= return $ FLet (TClass k cid) tX : (fs ++ fsMulti)
+	
+		result
 	
 
 refreshCids xx

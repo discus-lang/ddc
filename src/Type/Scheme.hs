@@ -77,14 +77,37 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = do	defs	<- gets stateDefs
+ = do	defs		<- gets stateDefs
+	varT'		<- sinkVar varT
+	quantKinds	<- gets stateQuantifiedVars
 
-	-- if scheme is in the defs table then we're already done
- 	case Map.lookup varT defs of
-	 Just tt	-> return $ Just tt
+	trace	$ "*** Scheme.extractType " % varT % "\n"
+		% "\n"
 
-	 -- otherwise extract it from the graph
-	 Nothing	-> {-# SCC "extractType" #-} extractType' final varT
+	let result
+		-- if this var is in the defs table then return that type
+		| Just tt		<- Map.lookup varT defs
+		= do	trace 	$ "    def: " %> prettyTS tt % "\n"
+			return $ Just tt
+		
+		-- if this is a quantified tyvar then there's nothing to do
+		--	(this can happen during Type.Export)
+		| Just (k, Nothing)	<- Map.lookup varT' quantKinds
+		= do	let tt	= TVar k varT'
+			trace 	$ "    quant: " %> prettyTS tt % "\n"
+			return	$ Just tt 
+
+		| Just (k, Just tMore)	<- Map.lookup varT' quantKinds
+		= do	let tt	= (TFetters [FMore (TVar k varT') tMore] (TVar k varT'))
+			trace 	$ "    quantMore: " %> prettyTS tt % "\n"
+			return $ Just tt
+		
+		-- otherwise extract it from the graph
+		| otherwise
+		= {-# SCC "extractType" #-} extractType' final varT
+		
+	result
+	
 
 extractType' final varT
  = do	mCid	<- lookupVarToClassId varT
@@ -101,8 +124,7 @@ extractType' final varT
 	 Just cid	-> extractTypeC final varT cid
 	 
 extractTypeC final varT cid
- = do 	trace	$ "*** Scheme.extractType " % varT % "\n"
-		% "\n"
+ = do 	
 	
  	tTrace	<- liftM sortFsT 	
 		$ {-# SCC "extract/trace" #-} 
@@ -148,8 +170,8 @@ extractTypeC1 final varT cid tTrace
 	-- Trim closures
 	let tTrim	= 
 		case kindOfType tPack of
-			KClosure	-> trimClosureC tPack
-			_		-> trimClosureT tPack
+			KClosure	-> trimClosureC Set.empty tPack
+			_		-> trimClosureT Set.empty tPack
 
 	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
 
@@ -297,28 +319,44 @@ generaliseType' varT tCore envCids
 
 
 	-- Quantify free variables.
-	let vksFree	= map 	 (\v -> (v, kindOfSpace $ Var.nameSpace v)) 
-			$ filter (\v -> not $ Var.nameSpace v == NameValue)
+	let vsFree	= filter (\v -> not $ Var.nameSpace v == NameValue)
 			$ filter (\v -> not $ Var.isCtorName v)
 			$ Var.sortForallVars
 			$ Set.toList $ freeVars tMskLocal
 
+	let vksFree	= map 	 (\v -> (v, kindOfSpace $ Var.nameSpace v)) 
+			$ vsFree
+
+	trace	$ "    vksFree   = " % vksFree	% "\n\n"
+	let tScheme	= quantifyVarsT vksFree tMskLocal
+
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
 	--	once the solver is done.
-	modify $ \s -> s { stateQuantifiedVars	
-				= Set.unions
-					[ Set.fromList $ map fst vksFree
-					, stateQuantifiedVars s ] }
+	let vtsMore	= Map.fromList 
+			$ [(v, t)	| FMore (TVar k v) t
+					<- slurpFetters tScheme]
 	
-	trace	$ "    vksFree   = " % vksFree	% "\n\n"
-	let tScheme	= quantifyVarsT vksFree tMskLocal
+	-- lookup :> bounds for each quantified var
+	let vkbsFree	= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
+
+	modify $ \s -> s { stateQuantifiedVars	
+				= Map.unions
+					[ Map.fromList vkbsFree
+					, stateQuantifiedVars s ] }
 		
 	
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"
 
 	return	tScheme
+
+
+slurpFetters tt
+	= case tt of
+		TForall vks t'	-> slurpFetters t'
+		TFetters fs _	-> fs
+		_		-> []
 
 
 {-

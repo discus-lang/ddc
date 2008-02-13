@@ -12,6 +12,7 @@ import Shared.Error		(panic)
 import Shared.Var		(Var)
 import Util.Pretty
 import Util.Maybe
+
 import qualified Debug.Trace	as Debug
 import qualified Shared.Var 	as Var
 import qualified Shared.VarUtil	as Var
@@ -22,33 +23,45 @@ import qualified Type.Pretty	as T
 import qualified Core.Exp 	as C
 import qualified Core.Util	as C
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 -----
 stage	= "Type.ToCore"
+
+-- Convertion of source types to core representation.
+--	- :> constraints on type variables are carried directly in the variable
 
 
 -- | Convert this type to core representation.
 toCoreT:: T.Type -> C.Type
-toCoreT	   tt
- = case tt of
-	-- Check for constraints on quantifiers
-	--	If any are present they'll be in the list of fetters
+toCoreT tt	= toCoreT' Map.empty tt
+
+toCoreT' :: Map Var T.Type -> T.Type -> C.Type
+toCoreT' table tt
+ = let down x	= toCoreT' table x
+   in case tt of
+	
+	
+	-- Add :> constraints on type variables directly to the quantifer.
 	T.TForall vks (T.TFetters fs t)
 	 -> let	(fsMore, fsRest)	
 			= partition ((=@=) T.FMore{}) fs
 
-		vsMore	= [(v, t)	| T.FMore (T.TVar _ v) t	<- fsMore]
+		vtsMore	= Map.fromList
+			$ [(v, t)	| T.FMore (T.TVar _ v) t	<- fsMore]
 
-		bsKinds	= map	(\v -> ( case lookup v vsMore of
+		bsKinds	= map	(\v -> (case Map.lookup v vtsMore of
 						Nothing	-> C.BVar v
 						Just t	-> C.BMore v (toCoreT t)
 
 				       , toCoreK $ fromJust $ lookup v vks))
 			$ map fst vks
-
-		t'	= toCoreT (T.TFetters fsRest t)
+		
+		table'	= Map.union table vtsMore
 
 	   in	foldl	(\t (b, k) -> C.TForall b k t)
-	   		t'
+	   		(toCoreT' table' $ T.TFetters fsRest t)
 			(reverse bsKinds)
 
 	-- Forall with no fetters underneath
@@ -57,27 +70,36 @@ toCoreT	   tt
 				       , toCoreK $ fromJust $ lookup v vks))
 			$ map fst vks
 
-		t'	= toCoreT t
-
 	   in	foldl	(\t (v, k) -> C.TForall (C.BVar v) k t)
-	   		t'
+	   		(down t)
 			(reverse vsKinds)
 	   
 	T.TFetters fs t
 	 -> let	
 	 	-- separate out all the FLet bindings, we'll add these as a TWhere to the core type
-	 	(fsLet, fsRest1)	
-	 		= partition ((=@=) T.FLet{}) fs
+	 	([fsLet, fsMore], fsRest1)
+	 		= partitionFs [(=@=) T.FLet{}, (=@=) T.FMore{}] fs
 				
-		vts		= [ (v, toCoreT t) | T.FLet (T.TVar k v) t	<- fsLet]
+		vtsLet	= [ (v, toCoreT t) 	
+					| T.FLet (T.TVar k v) t		<- fsLet]
 
-	    in	C.makeTWhere (addContexts (map toCoreF fsRest1) (toCoreT t)) vts
+		vtsMore	= Map.fromList
+			$ [ (v, t)	| T.FMore (T.TVar _ v) t	<- fsMore]
+
+		table'	= Map.union table vtsMore
+		t'	= toCoreT' table' t
+
+	    in	C.makeTWhere (addContexts (map toCoreF fsRest1) t') vtsLet
 	
-	T.TSum k ts		-> C.TSum (toCoreK k) (map toCoreT ts)
+	T.TSum k ts		-> C.TSum (toCoreK k) (map down ts)
 
-	T.TMask k t1 t2		-> C.TMask (toCoreK k) (toCoreT t1) (toCoreT t2)
+	T.TMask k t1 t2		-> C.TMask (toCoreK k) (down t1) (down t2)
 
-	T.TVar k v		-> C.TVar (toCoreK k) v 
+	-- attach :> constraints directly to variables
+	T.TVar k v		
+	 -> case Map.lookup v table of
+	 	Nothing		-> C.TVar     (toCoreK k) v 
+		Just tMore	-> C.TVarMore (toCoreK k) v (down tMore)
 
 	T.TBot k		-> C.TBot (toCoreK k)
 
@@ -85,19 +107,19 @@ toCoreT	   tt
 
 	-- data
 	T.TData v ts		-> C.TData v (map toCoreT ts)
-	T.TFun t1 t2 eff clo	-> C.TFunEC (toCoreT t1) (toCoreT t2) (toCoreT eff) (toCoreT clo)
+	T.TFun t1 t2 eff clo	-> C.TFunEC (down t1) (down t2) (down eff) (down clo)
 	
 	-- effect
-	T.TEffect v ts		-> C.TEffect v (map toCoreT ts)
+	T.TEffect v ts		-> C.TEffect v (map down ts)
 	
 	-- closure
-	T.TFree v t		-> C.TFree v (toCoreT t)
+	T.TFree v t		-> C.TFree v (down t)
 	T.TTag v		-> C.TTag  v
 	
 	-- wildcards	
 	T.TWild k		-> C.TWild (toCoreK k)
 
-	T.TNode _ t		-> toCoreT t
+	T.TNode _ t		-> down t
 
 	_ -> panic stage $ "toCoreT: failed to convert " ++ show tt
 

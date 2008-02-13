@@ -290,8 +290,10 @@ data Type
 	| TApp		Type 	Type			-- ^ Type application.
 
 	| TSum		Kind 	[Type]			-- ^ A summation \/ lub.
-	| TMask		Kind	Type Type
-	| TVar		Kind 	Var
+	| TMask		Kind	Type 	Type
+
+	| TVar		Kind 	Var			-- ^ a variable of the given kind
+	| TVarMore	Kind 	Var	Type		-- ^ an effect/closure variable with a :> bound
 
 	| TTop		Kind
 	| TBot		Kind

@@ -36,8 +36,8 @@ slurpX	:: Exp Annot1
 --	
 slurpX	exp@(XLambda sp vBound xBody)
  = do
-	tX		<- newTVarDS "lam"
-	cX		<- newTVarCS "lam"
+	tX		<- newTVarDS "" -- "lam"
+	cX		<- newTVarCS "" -- "lam"
 
 	-- Create type vars for all the lambda bound vars.
 	Just tBound@(TVar _ vBoundT)	
@@ -87,12 +87,12 @@ slurpX	exp@(XLambda sp vBound xBody)
 --
 slurpX	exp@(XApp sp fun arg)
  = do
-	tX		<- newTVarDS "app"
-	eX		<- newTVarES "app"
-	cX		<- newTVarCS "app"
+	tX		<- newTVarDS "" --  "app"
+	eX		<- newTVarES "" -- "app"
+	cX		<- newTVarCS "" -- "app"
 
 	eApp@(TVar KEffect vEApp)
-			<- newTVarES "app"
+			<- newTVarES "" -- "app"
 
 	-- function
  	(tFun, eFun, cFun, fun', qsFun)	

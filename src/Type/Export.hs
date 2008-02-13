@@ -38,7 +38,7 @@ import Util
 import qualified Debug.Trace
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Export"
 
@@ -48,7 +48,7 @@ squidExport
 	-> SquidM 
 		( Map Var Type				-- Type schemes.
 		, Map Var (InstanceInfo Type Type)	-- How each instantiation was done.
-		, Set Var				-- Which vars were quantified, ie which vars are ports.
+		, Map Var (Kind, Maybe Type)		-- Which vars were quantified (with optional :> bound)
 		, Map Var [Var])			-- The constraints acting on each region.
 
 squidExport vsTypesPlease
@@ -105,10 +105,10 @@ exportType t
 	 --	There's no point exporting this junk and making the Core stages
 	 --	have to trim it themselves.
 	 KClosure	
-	  -> return	$ trimClosureC tFinal
+	  -> return	$ trimClosureC Set.empty tFinal
 
 	 KData
-	  -> return	$ trimClosureT tFinal
+	  -> return	$ trimClosureT Set.empty tFinal
 
 	 _ ->  return	$ tFinal
 		
@@ -186,8 +186,6 @@ exportInstInfo (v, ii)
 	 -> do 	Just tDef	<- exportVarType vDef
 	 	return		$ (v, InstanceLetRec vUse vDef (Just tDef))
 	 
-
-
 
 --------------------------------------------------------------------------------
 -- | Build a map of the constraints acting on each region

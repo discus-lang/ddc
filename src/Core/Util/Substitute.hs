@@ -30,7 +30,11 @@ substituteT sub tt
 subTT ::  Map Var Type -> Type -> Type
 subTT sub tt
  	| TVar k v		<- tt
-	, Just t		<- Map.lookup v sub	= t
+	, Just t'		<- Map.lookup v sub	= t'
+
+	| TVarMore k v tMore	<- tt
+	, Just t'		<- Map.lookup v sub	= t'
+
 	| otherwise					= tt
 
 

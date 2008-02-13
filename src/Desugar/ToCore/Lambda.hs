@@ -1,7 +1,6 @@
 
 module Desugar.ToCore.Lambda
 	( fillLambdas
-	, addTau 
 	, loadEffAnnot 
 	, loadCloAnnot)
 
@@ -22,11 +21,13 @@ import Shared.Error
 
 import Core.Exp
 import Core.Util
+import Core.Plate.FreeVars
 
 import Desugar.ToCore.Base
 
 import qualified Type.ToCore	as T
 import qualified Type.Exp	as T
+import qualified Type.Util	as T
 
 -----
 stage 		= "Desugar.ToCore.Lambda"
@@ -35,11 +36,12 @@ trace ss x	= if debug
 			then Debug.trace (pprStr ss) x
 			else x
 
--- | Add a LAMBDAs around this expression for each forall / context in the provided type.
+-- | Add type lambdas and contexts to this expression, based on the provided type scheme.
+--	Used on RHS of let-bindings.
 fillLambdas
-	:: Var
-	-> Type
-	-> Exp
+	:: Var		-- name of bound variable
+	-> Type		-- type scheme
+	-> Exp		-- rhs expression
 	-> CoreM Exp
 	
 fillLambdas v tScheme x
@@ -66,64 +68,53 @@ fillLambdas' tsWhere tScheme x
 		x'	<- fillLambdas' tsWhere' tRest x
 		return	$ x'
 
-{-	| TFunEC t1 t2 eff clo		<- tScheme
-	, XLam v _ x' eff clo		<- x
- 	= do	x2		<- fillLambdas' tsWhere t2 x'
---		effAnnot	<- loadEffAnnot eff
---		cloAnnot	<- loadCloAnnot clo
-		return	$ XLam v t1 x2 eff clo -- effAnnot cloAnnot
--}
 	| otherwise
 	= return x
 
 
-loadEffAnnot :: Effect -> CoreM Effect
+-- | Create an effect annotation to attach to an XLam
+loadEffAnnot 
+	:: Effect 	-- the tag var from the desugared code (or TBot)
+	-> CoreM Effect	
+
 loadEffAnnot ee
  = case ee of
 	TVar KEffect vE	
-	 -> do	Just vT	<- lookupType vE
-		botVarT $ packT $ flattenT $ stripContextT vT
+	 -> do	Just tE		<- lookupType vE
+{-		trace	( "*   loadEffAnnot\n"
+			% "    vE       = " % vE	% "\n"
+			% "    tE       = " % tE	% "\n"
+			% "    tE_bound = " % tE_bound	% "\n"
+			% "    free = " % freeVars tE	% "\n")
+		-}
+		return	$ flattenT $ stripContextT tE
 
  	TBot KEffect	
 	  -> 	return	$ TBot KEffect
 
 
-loadCloAnnot :: Closure -> CoreM Closure
+-- Load a closure annotation to attach to an XLam
+loadCloAnnot 
+	:: Closure 	-- the tag var from the desugared code (or TBot)
+	-> CoreM Closure
+
 loadCloAnnot cc
  = case cc of
 	TVar KClosure vC	
-	 -> do	Just vT	<- lookupType vC
-	 	botVarT	$ packT $ trimClosureC $ flattenT $ stripContextT vT
+	 -> do	Just tC		<- lookupType vC
+	 	return $ trimClosureC Set.empty $ flattenT $ stripContextT tC
 			 
 	TBot KClosure 	
 	 -> 	return	$ TBot KClosure
 
--- | If this type is a TVar that was never quantified during type inference
---	then convert it to TBot
---
-botVarT :: Type -> CoreM Type
-botVarT tt@(TVar k v)
+
+{-
+attachBounds :: Type -> CoreM Type
+attachBounds tt
  = do	quantVars	<- gets coreQuantVars
- 	if Set.member v quantVars
-	 then return $ tt
-	 else return $ TBot k
-
-botVarT tt	= return tt
-
-
-
-addTau xT x
-	| gotAnnot x	= x
-	| otherwise	= XTau xT x
-	
-gotAnnot x
- = case x of
- 	XLAM{}		-> True
-	XLam{}		-> True
-	XTau{}		-> True
-	XTet vts x	-> gotAnnot x
-	_		-> False
-
-
-
-
+	let fsBound	= [ FMore v (T.toCoreT t)
+				| v		<- Set.toList $ freeVars tt
+				, (k, Just t)	<- Map.lookup v quantVars ]
+				
+	return	$ makeTFetters tt fsBound	
+-}

@@ -195,7 +195,7 @@ genExpT_call env tt tFun vFun
 	burn (length tsArgs)
  	xsArgs		<- mapM (genExpT env) tsArgs
 	return	$ makeCall (XVar none vFun : xsArgs)
-		
+
 		
 genExpT_base env tt
 	-- unit

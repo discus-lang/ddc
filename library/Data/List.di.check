@@ -218,21 +218,21 @@ foreign import extern foldl
         
 foreign import extern mapAccumL
         :: forall t0 t1 t2 %r0 %r1 %r2 %r3 !e0 !e1 $c0 $c1
-        .  (t2 -(!e1 $c1)> t0 -(!e0 $c0)> Data.Tuple.Tuple2 %r3 t2 t1) -($c4)> t2 -($c3)> List %r0 t0 -(!e2 $c2)> Data.Tuple.Tuple2 %r1 t2 (List %r2 t1)
+        .  (t2 -(!e1 $c0)> t0 -(!e0 $c1)> Data.Tuple.Tuple2 %r3 t2 t1) -($c4)> t2 -($c3)> List %r0 t0 -(!e2 $c2)> Data.Tuple.Tuple2 %r1 t2 (List %r2 t1)
         :- !e2        = !{Base.!Read %r0; Base.!Read %r2; !e1; !e0; Base.!Read %r3}
-        ,  $c2        = ${f : $c1; acc : t2}
+        ,  $c2        = ${f : $c0; acc : t2}
         ,  $c3        = $c2 \ acc
         ,  $c4        = $c3 \ f
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data;
         
 foreign import extern mapAccumL'
         :: forall t0 t1 t2 %r0 %r1 %r2 %r3 %r4 !e0 !e1 $c0 $c1
-        .  (t0 -(!e1 $c1)> t1 -(!e0 $c0)> Data.Tuple.Tuple2 %r4 t0 t2) -($c2)> t0 -($c3)> List %r0 t1 -($c4)> List %r2 t2 -(!e2 $c5)> Data.Tuple.Tuple2 %r1 t0 (List %r3 t2)
+        .  (t0 -(!e1 $c0)> t1 -(!e0 $c1)> Data.Tuple.Tuple2 %r4 t0 t2) -($c2)> t0 -($c3)> List %r0 t1 -($c4)> List %r2 t2 -(!e2 $c5)> Data.Tuple.Tuple2 %r1 t0 (List %r3 t2)
         :- !e2        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r3; !e1; !e0; Base.!Read %r4}
         ,  $c2        = $c3 \ f
         ,  $c3        = $c4 \ acc
         ,  $c4        = $c5 \ xx
-        ,  $c5        = ${xx : List %r0 t1; acc : t0; f : $c1}
+        ,  $c5        = ${xx : List %r0 t1; acc : t0; f : $c0}
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern sum

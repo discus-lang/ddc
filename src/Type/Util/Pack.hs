@@ -48,8 +48,6 @@ packType tt
  	KData		-> packData    tt
 	KEffect		-> eff' where Just eff' = packEffect tt
 	 
-	 
-	 
 	KClosure	-> packClosure tt
 	KRegion		-> packRegion  tt
 
@@ -220,7 +218,14 @@ packTypeLs ld ls tt
 		-- don't substitute for TBots or we risk loosing port vars
 		Just TBot{}			-> tt
 
-		Just t'				-> t'
+		-- hrm.. don't substitute for Effects and Closures when extracting un-generalised types.
+		--	Or we risk loosing port vars in the substitution.
+		--	Only Type.Scheme follows this codepath - but we should handle this a different way
+		--	perhaps a flag to pack.
+		Just t'				-- -> t'
+			| k == KData		-> t'
+			| otherwise		-> tt
+
 		Nothing				-> tt
 
 	TAccept t
@@ -239,6 +244,13 @@ packTypeLs ld ls tt
 	_ -> panic stage
 		$ "packTypeLs: no match for " % show tt
 		    
+
+makeSub KEffect  t1 t2	= makeTSum KEffect  [t1, t2]
+makeSub KClosure t1 t2	= makeTSum KClosure [t1, t2]
+makeSub _	 t1 t2	= t2
+	
+	
+	
 
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
 --	(ie, find a fixpoint of restrictFs . packFettersLs) 
@@ -328,6 +340,12 @@ restrictFs tt ls
 	tsReachable	= tsSeed `Set.union` graphReachableS reachFLetsMap tsSeed
 	 
    in	filter (\f -> case f of
+			FLet t1 t2
+			 | t1 == t2	-> False
+			 
+			FMore t1 t2
+			 | t1 == t2	-> False
+			 
 			FLet t (TBot _)	-> False
    			FLet t _	-> Set.member t tsReachable
 			_		-> True)
