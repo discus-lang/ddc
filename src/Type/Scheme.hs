@@ -67,6 +67,28 @@ watchClass src code
 		= return ()
 	res
 
+addTMores :: Type -> SquidM Type
+addTMores tt	= transformTM addTMores1 tt
+
+addTMores1 tt
+	| TVar k var	<- tt
+	= do	quantKinds	<- gets stateQuantifiedVars
+	 	var'		<- sinkVar var
+		
+		let result
+			| Just (k, Just tMore)	<- Map.lookup var' quantKinds
+			= do	tMore'	<- addTMores tMore
+			  	return	$ TFetters [FMore (TVar k var') tMore'] (TVar k var')
+
+			| otherwise
+			= return tt
+
+		result
+		 
+	| otherwise
+	= return tt
+ 
+
 
 -- | Extract a type from the graph and pack it into standard form.
 --	BUGS: we need to add fetters from higher up which are acting on this type.
@@ -86,28 +108,24 @@ extractType final varT
 
 	let result
 		-- if this var is in the defs table then return that type
-		| Just tt		<- Map.lookup varT defs
+		| Just tt	<- Map.lookup varT defs
 		= do	trace 	$ "    def: " %> prettyTS tt % "\n"
 			return $ Just tt
 		
-		-- if this is a quantified tyvar then there's nothing to do
+		-- if this is a quantified tyvar then return it directly
 		--	(this can happen during Type.Export)
-		| Just (k, Nothing)	<- Map.lookup varT' quantKinds
+		| Just (k, _)	<- Map.lookup varT' quantKinds
 		= do	let tt	= TVar k varT'
-			trace 	$ "    quant: " %> prettyTS tt % "\n"
-			return	$ Just tt 
-
-		| Just (k, Just tMore)	<- Map.lookup varT' quantKinds
-		= do	let tt	= (TFetters [FMore (TVar k varT') tMore] (TVar k varT'))
-			trace 	$ "    quantMore: " %> prettyTS tt % "\n"
-			return $ Just tt
+			tt_more	<- addTMores tt
+			trace 	$ "    quant: " %> prettyTS tt_more % "\n"
+			return	$ Just $ packType tt_more
 		
 		-- otherwise extract it from the graph
 		| otherwise
 		= {-# SCC "extractType" #-} extractType' final varT
-		
+
 	result
-	
+
 
 extractType' final varT
  = do	mCid	<- lookupVarToClassId varT
@@ -189,6 +207,7 @@ extractType_final True varT cid tTrim
  = do	
  	-- plug classIds with vars
  	tPlug		<- plugClassIds [] tTrim
+	trace	$ "    tPlug           =\n" %> prettyTS tPlug	% "\n\n"
  
 	-- close off never-quantified effect and closure vars
  	quantVars	<- gets stateQuantifiedVars

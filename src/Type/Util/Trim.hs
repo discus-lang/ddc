@@ -105,6 +105,10 @@ trimClosureC' bound cc
 
 	-- If there is no bound constraint for a closure var we can erase the mask
 	--	(this is sound because it only ever makes the closure bigger)
+	TMask KClosure t1@(TFetters _ (TVar{})) t2
+	 	| not $ Set.member t1 bound	-> down t1
+	 	| otherwise			-> TMask KClosure (down t1) t2
+
 	TMask KClosure t1@(TVar{}) t2
 	 	| not $ Set.member t1 bound	-> down t1
 	 	| otherwise			-> TMask KClosure (down t1) t2

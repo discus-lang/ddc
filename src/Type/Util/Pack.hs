@@ -391,8 +391,13 @@ restrictFs tt ls
  = {-# SCC "restrictFs" #-}
    let	reachFLetsMap
  		= Map.fromList
-		$ [(t, Set.fromList $ collectTClassVars tLet)	
- 			| FLet t tLet	<- ls]
+		$ catMaybes
+		$ map (\f -> case f of
+			FLet  t1 t2	-> Just (t1, Set.fromList $ collectTClassVars t2)
+			FMore t1 t2	-> Just (t1, Set.fromList $ collectTClassVars t2)
+			FProj j v t1 t2	-> Nothing
+			FConstraint{}	-> Nothing)
+		$ ls
  
  	tsSeed		= Set.fromList 
 			$ collectTClassVars tt

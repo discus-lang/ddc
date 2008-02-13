@@ -7,6 +7,7 @@ where
 import Core.Exp
 import Core.Pretty
 import Core.ReconKind
+import Core.Util.Bits
 import Core.Util.Trim
 import Shared.Error
 import Util
@@ -40,7 +41,7 @@ subsumes
 subsumes tableMore t s
  = let 	?t		= t
 	?s		= s
-   in	{-# SCC "subsumes" #-} subsumes1 tableMore t s
+   in	{-# SCC "subsumes" #-} subsumes1 tableMore (stripTFree t) (stripTFree s)
 	
 subsumes1 table t s
  = let ans	= subsumes2 table t s
@@ -60,14 +61,24 @@ subsumes2 table t s
 
 subsumes3 table t s
 
+	-- load up embedded TVarMore constraints
+	| TVarMore tKind tVar tMore <- t
+	= let table'	= slurpMore (tVar, tMore) table
+	  in  subsumes1 table' (TVar tKind tVar) s
+
+	| TVarMore sKind sVar sMore <- s
+	= let table'	= slurpMore (sVar, sMore) table
+	  in  subsumes1 table' t (TVar sKind sVar)
+
+
 	-- load up embedded FMore constraints
 	| TFetters t' fs	<- t
-	= let table'	= foldl (\tab (FMore v1 t2) -> Map.insert v1 t2 tab) table fs
+	= let table'	= foldl (\tab (FMore v1 t2) -> slurpMore (v1, t2) tab) table fs
 	  in  subsumes3 table' t' s
 	
 
 	| TFetters s' fs	<- s
-	= let table'	= foldl (\tab (FMore v1 t2) -> Map.insert v1 t2 tab) table fs
+	= let table'	= foldl (\tab (FMore v1 t2) -> slurpMore (v1, t2) tab) table fs
 	  in  subsumes3 table' t s'
 
 
@@ -92,13 +103,11 @@ subsumes3 table t s
 	, subsumes table s s2
 	= True
 
-	| TVarMore tKind tVar tMore <- t
-	= let table'	= Map.insert tVar tMore table
-	  in  subsumes1 table' (TVar tKind tVar) s
-
-	| TVarMore sKind sVar sMore <- s
-	= let table'	= Map.insert sVar sMore table
-	  in  subsumes1 table' t (TVar sKind sVar)
+	-- SubTrans
+	| TVar tKind tVar 	<- t
+	, Just s2@(TVar sKind sVar) <- Map.lookup tVar table 
+	, subsumes table t s2
+	= True
 	
 
 	-- SubAll
@@ -112,17 +121,20 @@ subsumes3 table t s
 	| TSum tKind ts		<- t
 	, TSum sKind ss		<- s
 	, tKind == sKind
-	= and $ map (\si -> subsumes1 table t si) ss
+	, and $ map (\si -> subsumes1 table t si) ss
+	= True
 	
 	-- sum / single
 	| TSum k ts		<- t
 	, elem k [KEffect, KClosure]
-	= or $ map (\ti -> subsumes1 table ti s) ts
+	, or $ map (\ti -> subsumes1 table ti s) ts
+	= True
 
 	-- single / sum
 	| TSum k ss		<- s
 	, elem k [KEffect, KClosure]
-	= and $ map (\si -> subsumes1 table t si) ss
+	, and $ map (\si -> subsumes1 table t si) ss
+	= True
 
 	-- masks
 	| TMask k t1 t2		<- t
@@ -144,11 +156,13 @@ subsumes3 table t s
 	-- SubTag
 	| TFree _ t1			<- t
 	, s1				<- s
-	= subsumes1 table t1 s1
+	, subsumes1 table t1 s1
+	= True
 	
 	| t1				<- t
 	, TFree _ s1			<- s
-	= subsumes1 table t1 s1
+	, subsumes1 table t1 s1
+	= True
 
 	-- SubReplay
 	-- hmm, perhaps should be using separate constraints, 
@@ -193,10 +207,35 @@ subsumes3 table t s
 	| TFree tVar ss		<- s
 	, t == ss
 	= True	
+
 	
 	--
 	| otherwise
 	= False
 
 
+-- Add the fact that T[v1] :> t2 to the table
+--	In the case that t2 has more constraints, ie
+--	v1 :> v2 :> t3, we get a chain of constraints added to the table.
+-- ie	
+--	v1 :> v2
+--	v2 :> t3
+--
+slurpMore (v1, t2) table
+ = case t2 of
+--	TSum k ts
+--	 -> foldl (\tab t -> slurpMore (v1, t) tab) table ts
 
+ 	TVarMore k v2 t3
+	 -> let	table'	= Map.insert v1 (TVar k v2) table
+	    in	slurpMore (v2, t3) table'
+	    
+	_ -> Map.insert v1 t2 table
+
+
+
+stripTFree tt
+ = case tt of
+ 	TSum k ts			-> makeTSum k $ map stripTFree ts
+	TFree v t@(TVar KClosure _)	-> t
+	_				-> tt
