@@ -1,5 +1,6 @@
 
 -- Try and uncover compiler errors by generating random programs and compiling them
+module Main where
 
 import Bits
 
@@ -45,7 +46,7 @@ data GenS
 genStateZero
 	= GenS
 	{ stateVarGen	= 0 
-	, stateFuel	= 100 }
+	, stateFuel	= 1000 }
 
 evalGen f = evalStateT f genStateZero
 
@@ -56,6 +57,14 @@ burn n		= modify $ \s -> s { stateFuel = stateFuel s - n }
 checkFuel :: GenM Int
 checkFuel 	= gets stateFuel
 
+
+withFuel :: Int -> GenM a -> GenM a
+withFuel fuel f
+ = do	oldFuel	<- gets stateFuel
+ 	modify $ \s -> s { stateFuel = fuel }
+	x	<- f
+	modify $ \s -> s { stateFuel = oldFuel }
+	return x
 
 -- | Eval a generator and print the result
 eval :: Pretty a => GenM a -> IO ()
@@ -149,17 +158,31 @@ genVar space
 -- generate a random type
 genType :: GenM Type
 genType 
- = do	r	<- genInt 0 2
- 	case r of
-	 0	-> return $ TData primTUnit []
-	 1	-> return $ TData primTInt  [TWild KRegion]
+ = do	r_	<- genInt 0 3
+	fuel	<- checkFuel
+	
+	let r	| fuel > 0	= r_
+		| otherwise	= 0
 
-	 2	-> do
-	 	t1	<- genType
-		t2	<- genType
-		return	$ TFun t1 t2 (TWild KEffect) (TWild KClosure)	
+--	liftIO 	$ putStr $ "r = " ++ show r ++ "\n"
 
+	let result
+		| r == 0	
+		= do	burn 1
+			return $ TData primTUnit []
 
+		| r <= 1
+		= do	burn 1
+			return $ TData primTInt  [TWild KRegion]
+		
+		| r <= 3
+		= do	burn 1
+		 	t1	<- genType
+			t2	<- genType
+			return	$ TFun t1 t2 (TWild KEffect) (TWild KClosure)	
+			
+	result
+	
 -- Exp ---------------------------------------------------------------------------------------------
 -- generate a random expression
 genExpT 
@@ -170,7 +193,7 @@ genExpT
 genExpT env tt
  = do	doApp	<- genBool
 	fuel	<- checkFuel
- 	if (doApp && fuel > 0) || fuel > 95
+ 	if (doApp && fuel > 0)
 		then genExpT_app  env tt
 		else genExpT_base env tt
 
@@ -232,6 +255,9 @@ genBind :: Env -> Type -> GenM (Var, Stmt a)
 genBind env tt
  = do	var	<- genVar NameValue
  	x	<- genExpT env tt
+
+--	liftIO $ putStr $ pprStr $ "bindType = " % tt % "\n"
+
 	return	( var
 		, SBindPats none var [] x)
 
@@ -242,7 +268,7 @@ genTopsChain env 0
  	return	$ [PStmt (SBindPats none (varV "main") [XUnit none] pr)]
 
 genTopsChain env n
- = do	tt	<- genType
+ = do	tt	<- withFuel 100 $ genType
  	(v, s)	<- genBind env tt
  	rest	<- genTopsChain ((tt, v) : env) (n-1)
 	return	$ PStmt s : rest
@@ -250,7 +276,7 @@ genTopsChain env n
 -- Prog --------------------------------------------------------------------------------------------
 genProg :: GenM [Top a]
 genProg
- = do	nBinds		<- genInt 1 20
+ = do	nBinds		<- genInt 5 15
  	binds		<- genTopsChain initEnv nBinds
  	return binds
 
