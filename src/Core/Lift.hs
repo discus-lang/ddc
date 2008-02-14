@@ -1,8 +1,4 @@
 
-------------
--- Core.Lift
---	Only lifts a single layer of bindings
---
 module Core.Lift
 	( lambdaLiftTree )
 
@@ -31,6 +27,7 @@ import Core.Lift.BindTypes
 import Core.Lift.LiftLambdas
 import Core.Plate.Trans
 
+-----
 debug		= False
 trace ss x	
  = if debug

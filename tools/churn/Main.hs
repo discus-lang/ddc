@@ -28,7 +28,8 @@ import qualified Shared.Var	as Var
 
 -- what scratch dir to use
 scratch	= "tools/churn/scratch/"
-
+expFuel		= 50
+typeFuel	= 50
 
 
 ----------------------------------------------------------------------------------------------------
@@ -46,7 +47,7 @@ data GenS
 genStateZero
 	= GenS
 	{ stateVarGen	= 0 
-	, stateFuel	= 1000 }
+	, stateFuel	= 0 }
 
 evalGen f = evalStateT f genStateZero
 
@@ -203,13 +204,21 @@ genExpT_app env tt
  = do	
  	-- try and find a function in the environment that can give us
 	--	the result type we're after
-	let mTV		= find (\(t, v)	-> resultTypeT t == tt
-					&& isFun t)
+	let  candidates	= filter (\(t, v) -> resultTypeT t == tt
+					  && isFun t)
 			$ env
 			
-	case mTV of
-		Nothing			-> genExpT_base env tt
-		Just (tFun, vFun)	-> genExpT_call env tt tFun vFun
+	ix 	<- genInt 0 (length candidates -1)
+			
+	let result
+		| []		<- candidates
+		= genExpT_base env tt
+		
+		| (tFun, vFun)	<- candidates !! ix
+		= genExpT_call env tt tFun vFun
+	
+	result
+	
 
 genExpT_call env tt tFun vFun
  = do	
@@ -254,7 +263,7 @@ genExp
 genBind :: Env -> Type -> GenM (Var, Stmt a)
 genBind env tt
  = do	var	<- genVar NameValue
- 	x	<- genExpT env tt
+ 	x	<- withFuel expFuel $ genExpT env tt
 
 --	liftIO $ putStr $ pprStr $ "bindType = " % tt % "\n"
 
@@ -263,12 +272,12 @@ genBind env tt
 
 genTopsChain :: Env -> Int -> GenM [Top a]
 genTopsChain env 0	
- = do	x	<- genExpT env tInt
+ = do	x	<- withFuel expFuel $ genExpT env tInt
 	let pr	= XApp none (xVar "print") (XApp none (xVar "show") x)
  	return	$ [PStmt (SBindPats none (varV "main") [XUnit none] pr)]
 
 genTopsChain env n
- = do	tt	<- withFuel 100 $ genType
+ = do	tt	<- withFuel typeFuel $ genType
  	(v, s)	<- genBind env tt
  	rest	<- genTopsChain ((tt, v) : env) (n-1)
 	return	$ PStmt s : rest
@@ -276,7 +285,7 @@ genTopsChain env n
 -- Prog --------------------------------------------------------------------------------------------
 genProg :: GenM [Top a]
 genProg
- = do	nBinds		<- genInt 5 15
+ = do	nBinds		<- genInt 5 10
  	binds		<- genTopsChain initEnv nBinds
  	return binds
 

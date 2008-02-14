@@ -38,14 +38,16 @@ subsumes
 	-> Type 
 	-> Type 
 	-> Bool
+
 subsumes tableMore t s
  = let 	?t		= t
 	?s		= s
    in	{-# SCC "subsumes" #-} subsumes1 tableMore (stripTFree t) (stripTFree s)
 	
 subsumes1 table t s
- = let ans	= subsumes2 table t s
-   in  trace 	("subsumes (T :> S) |- " % ans 	% "\n"
+ = let (ans, rule)	= subsumes2 table t s
+   in  trace 	("subsumes (T :> S) |- " % ans	% "\n"
+   		% " rule = " %> rule		% "\n"
 	 	% "    T = " %> t 		% "\n"
 		% "    S = " %> s		% "\n"
 		% "   with " %> "\n" %!% (map (\(v, t) -> v % " :> " % t) $ Map.toList table) % "\n")
@@ -64,11 +66,11 @@ subsumes3 table t s
 	-- load up embedded TVarMore constraints
 	| TVarMore tKind tVar tMore <- t
 	= let table'	= slurpMore (tVar, tMore) table
-	  in  subsumes1 table' (TVar tKind tVar) s
+	  in  (subsumes1 table' (TVar tKind tVar) s, "load VarMore")
 
 	| TVarMore sKind sVar sMore <- s
 	= let table'	= slurpMore (sVar, sMore) table
-	  in  subsumes1 table' t (TVar sKind sVar)
+	  in  (subsumes1 table' t (TVar sKind sVar), "load VarMore")
 
 
 	-- load up embedded FMore constraints
@@ -84,30 +86,30 @@ subsumes3 table t s
 
 	-- SubRefl
 	| t == s
-	= True
+	= (True, "SubRefl")
 
 	-- SubTop
 	-- top subsumes everything
 	| TTop _		<- t
-	= True
+	= (True, "SubTop")
 
 	-- SubBot
 	-- anything subsumes bottom
 	| TBot _		<- s
-	= True
+	= (True, "SubBot")
+
+	-- SubTrans
+	| TVar tKind tVar 	<- t
+	, Just s2		<- Map.lookup tVar table 
+	, subsumes table s2 s
+	= (True, "SubTrans")
 
 	-- SubVar
 	-- G[t :> S] |- S <: t
 	| TVar tKind tVar	<- t
 	, Just s2		<- Map.lookup tVar table
-	, subsumes table s s2
-	= True
-
-	-- SubTrans
-	| TVar tKind tVar 	<- t
-	, Just s2@(TVar sKind sVar) <- Map.lookup tVar table 
-	, subsumes table t s2
-	= True
+	, s == s2
+	= (True, "SubVar")
 	
 
 	-- SubAll
@@ -115,33 +117,33 @@ subsumes3 table t s
 	, TForall v2 k2 t2	<- s
 	, v1 == v2
 	, k1 == k2
-	= subsumes1 table t1 t2
+	= (subsumes1 table t1 t2, "SubAll")
 
 	-- sums
 	| TSum tKind ts		<- t
 	, TSum sKind ss		<- s
 	, tKind == sKind
 	, and $ map (\si -> subsumes1 table t si) ss
-	= True
+	= (True, "SubSum - sums")
 	
 	-- sum / single
 	| TSum k ts		<- t
 	, elem k [KEffect, KClosure]
 	, or $ map (\ti -> subsumes1 table ti s) ts
-	= True
+	= (True, "SubSum - sum single")
 
 	-- single / sum
 	| TSum k ss		<- s
 	, elem k [KEffect, KClosure]
 	, and $ map (\si -> subsumes1 table t si) ss
-	= True
+	= (True, "SubSum - single sum")
 
 	-- masks
 	| TMask k t1 t2		<- t
 	, TMask k s1 s2		<- s
 	, subsumes1 table t1 s1
 	, t2 == s2
-	= True 
+	= (True, "SubMask")
 
 	-- SubFun
 	-- fun
@@ -151,18 +153,18 @@ subsumes3 table t s
 	, subsumes1 table t2 s2
 	, subsumes1 table tEff sEff
 	, subsumes1 table tClo sClo
-	= True
+	= (True, "SubFun")
 
 	-- SubTag
 	| TFree _ t1			<- t
 	, s1				<- s
 	, subsumes1 table t1 s1
-	= True
+	= (True, "SubTag - tag t")
 	
 	| t1				<- t
 	, TFree _ s1			<- s
 	, subsumes1 table t1 s1
-	= True
+	= (True, "SubTag - tag s")
 
 	-- SubReplay
 	-- hmm, perhaps should be using separate constraints, 
@@ -175,7 +177,7 @@ subsumes3 table t s
 	, subsumes1 table t (TFunEC t1 t2 tE tClo)
 --	= warning stage
 --		("subsumes: Used SubReplay for (" % s % ")\n")
-	=	True
+	= (True, "SubReplay")
 	
 	-- SubCtor
 	--	BUGS: doesn't handle contra variant vars
@@ -185,7 +187,7 @@ subsumes3 table t s
 	, tVar == sVar
 	, length ts == length ss
 	, and $ zipWith (subsumes1 table) ts ss
-	= True
+	= (True, "SubCtor")
 	
 
 	-- This is really Eq
@@ -198,20 +200,20 @@ subsumes3 table t s
 	| TFree tVar ts		<- t
 	, TFree sVar ss		<- s
 	, ts == ss
-	= True
+	= (True, "SubFree - both")
 	
 	| TFree tVar ts		<- t
 	, ts == s
-	= True
+	= (True, "SubFree - t")
 
 	| TFree tVar ss		<- s
 	, t == ss
-	= True	
+	= (True, "SubFree - s")
 
 	
 	--
 	| otherwise
-	= False
+	= (False, "fail")
 
 
 -- Add the fact that T[v1] :> t2 to the table

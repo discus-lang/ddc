@@ -120,6 +120,14 @@ chopInnerS2	topName	(SBind (Just v) x)
 
 	-- Work out the type of the new super.
 	let tSuper	= reconP_type (stage ++ ".chopInnerS2") pSuper_lifted
+
+
+	trace 	( "chopInnerS2: new super\n"
+		% " pSuper_lifted:\n" 	%> pSuper_lifted	% "\n\n"
+		% " superType:\n" 	%> tSuper		% "\n\n")
+		$ return ()
+		
+
 	
 	-- build the call to the new super
 	let typeArgs	= map makeSuperArgK freeVKs
