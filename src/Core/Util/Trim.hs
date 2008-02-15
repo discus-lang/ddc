@@ -8,7 +8,6 @@ where
 
 import Core.Util.Bits
 import Core.Util.Pack
-import Core.Plate.FreeVars
 import Core.ReconKind
 import Core.Exp
 
