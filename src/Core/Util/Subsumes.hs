@@ -145,6 +145,10 @@ subsumes3 table t s
 	, t2 == s2
 	= (True, "SubMask")
 
+	| TMask k t1 t2		<- t
+	, subsumes1 table t1 s
+	= (True, "SubMask2")
+
 	-- SubFun
 	-- fun
  	| TFunEC t1 t2 tEff tClo	<- t
