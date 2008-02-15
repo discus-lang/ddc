@@ -8,11 +8,12 @@ where
 
 import Type.Exp
 
+import Type.Pretty
 import Type.Error
 import Type.Base
 import Type.Class
 import Type.State
-import Type.Scheme
+import Type.Extract
 import Type.Plug
 import Type.Util
 import Type.Plate.Trans
@@ -38,7 +39,7 @@ import Util
 import qualified Debug.Trace
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Export"
 
@@ -98,22 +99,21 @@ exportType t
  = do	tPlug		<- plugClassIds [] t
 
 	quantVars	<- gets stateQuantifiedVars
-	let tFinal	= finaliseT quantVars tPlug
+	let tFinal	= finaliseT quantVars True tPlug
 
-	case kindOfType tFinal of
-	 -- trim exported closures.
-	 --	There's no point exporting this junk and making the Core stages
-	 --	have to trim it themselves.
-	 KClosure	
-	  -> return	$ trimClosureC Set.empty tFinal
+	trace	$ "*   Export.exportType: final\n"
+		% "    tPlug:\n" 	%> prettyTS tPlug	% "\n"
+		% "    tFinal:\n"	%> prettyTS tPlug	% "\n"
 
-	 KData
-	  -> return	$ trimClosureT Set.empty tFinal
-
-	 _ ->  return	$ tFinal
-		
+	let tTrim	= case  kindOfType tFinal of
+				KClosure	-> trimClosureC Set.empty tFinal
+				KData		-> trimClosureT Set.empty tFinal
+				_		-> tFinal
+				
+	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
+	return tTrim		
  
- -- | Export the type for this variable.
+-- | Export the type for this variable.
 --	If no type is in the graph for this var then return Nothing.
 --
 exportVarType :: Var -> SquidM (Maybe Type)
@@ -177,9 +177,15 @@ exportInstInfo (v, ii)
 		
 		-- need to finalise again because quantified vars have been chopped off
 		quantVars	<- gets stateQuantifiedVars
-		let ts_final	= map (finaliseT quantVars) ts_hacked
-
+		let ts_final	= map (finaliseT quantVars True) ts_hacked
 	 	t'		<- exportType t
+
+		trace 	$ "*   Export.exportInstInfo\n"
+			% "    tt = " % ii % "\n"
+			% "    ts:\n" 		%> "\n" %!% ts		% "\n\n"
+			% "    ts_final\n"	%> "\n" %!% ts_final	% "\n\n"
+			
+
 	 	return		$ (v, InstanceLet v1 v2 ts_final t')
 		
 	InstanceLetRec 	vUse vDef Nothing

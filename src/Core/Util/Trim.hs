@@ -156,14 +156,7 @@ trimClosureC' bound cc
 	    in	TMask KClosure t1' t2
 
 	TFetters c fs
-	 -> let	
-{-	 	vsBound	= Set.fromList
-	 		$ catMaybes 
-			$ map takeBoundVarF fs
-
-		bound'	= Set.union vsBound bound
--}
-	    in  makeTFetters
+	 -> makeTFetters
 		 	(trimClosureC bound c)
 			(catMaybes $ map (trimClosureC_f bound) fs) 
 
@@ -206,39 +199,41 @@ trimClosureC_t bound tt
 	-- Trim the fetters of this data
 	-- BUGS: we sometimes get fetters relating to :> constraints on effects, but we shouldn't
  	TFetters c fs
-	 -> let	{-vsBound	= Set.fromList
-	 		$ catMaybes 
-			$ map takeBoundVarF fs
-
-		bound'	= Set.union vsBound bound -}
-
-	    in	map (\t -> makeTFetters t (catMaybes $ map (trimClosureC_f bound) fs))
+	 -> map (\t -> makeTFetters t (catMaybes $ map (trimClosureC_f bound) fs))
 	    		$ (trimClosureC_t bound c)
 
 	-- Trim under foralls
 	TForall b k t		
 	 -> trimClosureC_t (Set.insert (varOfBind b) bound) t
-	 	 
-	-- Don't care about contexts
-	TContext t1 t2
-	 -> trimClosureC_t bound t2
 
-	-- An object of type (t1 -($c1)> t2) does not contain a value of 
-	-- either type t1 or t2.  nly the closure portion of a function actually holds data.
-	TFunEC t1 t2 eff clo	
-	 -> [clo]
-
-	-- BUGS: we need to look at the data definiton to work out what parts of 
-	--	this actually hold values.
-	TData v ts	
-	 -> []
-
+	TSum k ts	-> catMap (trimClosureC_t bound) ts
+	TMask k t1 t2	-> [TMask k (makeTSum k $ trimClosureC_t bound t1) t2]
+	
 	TVar k v	
 		| Set.member v bound
 		-> []
 		
 		| otherwise
 		-> [tt]
+
+	TBot{}		-> []
+	TTop{}		-> [tt]
+
+	-- BUGS: we need to look at the data definiton to work out what parts of 
+	--	this actually hold values.
+	TData v ts	-> catMap (trimClosureC_t bound) ts
+
+	-- An object of type (t1 -($c1)> t2) does not contain a value of 
+	-- either type t1 or t2.  nly the closure portion of a function actually holds data.
+	TFunEC t1 t2 eff clo	
+	 -> [clo]
+
+	TEffect{}	-> []
+	TFree v t	-> [trimClosureC bound tt]
+	 	 
+	-- Don't care about contexts
+	TContext t1 t2
+	 -> trimClosureC_t bound t2
 
 	_ -> panic stage
 		$ "trimClosureC_t: no match for (" % tt % ")"

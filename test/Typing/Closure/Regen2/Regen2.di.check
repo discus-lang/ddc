@@ -23,18 +23,18 @@ foreign import extern fun1_u
         :: Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Int %rTS0
         :- $c0        = $c1 \ xSDt0
         ,  $c1        = $c2 \ xSDt1
-        ,  $c2        = i1 : Base.Int %rTS0
+        ,  $c2        = i1 : %rTS0
         :$ Base.Thunk;
         
 foreign import extern fun1_uu
         :: Base.Unit -($c0)> Base.Unit -($c1)> Base.Int %rTS0
         :- $c0        = $c1 \ xSDt1
-        ,  $c1        = i1 : Base.Int %rTS0
+        ,  $c1        = i1 : %rTS0
         :$ Base.Thunk;
         
 foreign import extern fun1_uuu
         :: Base.Unit -($c0)> Base.Int %rTS0
-        :- $c0        = i1 : Base.Int %rTS0
+        :- $c0        = i1 : %rTS0
         :$ Base.Thunk;
         
 foreign import extern fun1_uuuu
@@ -46,7 +46,7 @@ foreign import extern fun1
         .  Base.Unit -> Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Int %r0
         :- $c0        = $c1 \ xSDt0
         ,  $c1        = $c2 \ xSDt1
-        ,  $c2        = i1 : Base.Int %r0
+        ,  $c2        = i1 : %r0
         :$ Base.Data -> Base.Thunk;
         
 

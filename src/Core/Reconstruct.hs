@@ -253,7 +253,7 @@ reconX tt exp@(XLam v t x eff clo)
 				% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
 				% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
 				% "    with bounds:\n"
-				% pprBounds (tableMore tt)			% "\n\n"
+				% pprBounds (tableMore tt)
 				
 
 		-- check closures match
@@ -265,7 +265,7 @@ reconX tt exp@(XLam v t x eff clo)
 				% "    in lambda abstraction:\n" 	%> exp		% "\n\n"
 				% "    reconstructed closure of body:\n"%> xC'		% "\n\n"
 				% "    is not <: annot on lambda:\n"	%> clo_sub	% "\n\n"
-				% pprBounds (tableMore tt)				% "\n\n"
+				% pprBounds (tableMore tt)
 
 
 		-- Now that we know that the reconstructed effect closures of the body is less

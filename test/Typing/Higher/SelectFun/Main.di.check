@@ -39,7 +39,7 @@ foreign import extern selectFun2
         ,  !e0        :> !{Base.!Read %r1; System.Console.!Console}
         ,  $c1        = $c2 \ x
         ,  $c2        = $c3 \ f
-        ,  $c3        = ${x : Data.Bool.Bool %r0; f : $c0}
+        ,  $c3        = ${x : %r0; f : $c0}
         :$ Base.Data -> Base.Thunk -> Base.Thunk -> Base.Thunk;
         
 foreign import extern main

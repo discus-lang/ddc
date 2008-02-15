@@ -68,7 +68,7 @@ isFConstraint ff
 	_			-> False
 
 
--- |
+-- | do some simple packing
 crushT :: Type -> Type
 crushT t
  = let	t'	= transformT crushT1 t
@@ -81,9 +81,6 @@ crushT1 t
  = case t of
  	TSum k ts			
 	 -> makeTSum k 		$ flattenTSum t
-
---	TUnify k ts			
---	 -> makeTUnify k	$ flattenTUnify t
 
 	TFree v (TFree v' t)	
 	 -> TFree v t

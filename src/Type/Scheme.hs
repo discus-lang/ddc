@@ -1,8 +1,7 @@
 {-# OPTIONS -fwarn-unused-imports #-}
 
 module Type.Scheme
-	( extractType
-	, generaliseType 
+	( generaliseType 
 	, watchClass)
 where
 
@@ -10,15 +9,11 @@ import Type.Exp
 import Type.Pretty
 import Type.Plate
 import Type.Util
-import Type.Trace
 import Type.Error
 
-import Type.Check.GraphicalData
 import Type.Check.Soundness
 
 import Type.Effect.MaskLocal
--- import Type.Effect.MaskFresh	(maskEsFreshT)
--- import Type.Effect.MaskPure	(maskEsPureT)
 
 import Type.State
 import Type.Class
@@ -27,7 +22,6 @@ import Type.Port
 import Type.Context
 import Type.Util
 
-import Shared.Error
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..))
@@ -41,13 +35,13 @@ import Data.Set			(Set)
 
 import Util
 
-
-
 -----
 stage	= "Type.Scheme"
 debug	= True
 trace s	= when debug $ traceM s
 
+
+-----
 watchClass src code
  = do	mC	<- lookupClass (ClassId code)
  
@@ -67,170 +61,6 @@ watchClass src code
 		= return ()
 	res
 
-addTMores :: Type -> SquidM Type
-addTMores tt	= transformTM addTMores1 tt
-
-addTMores1 tt
-	| TVar k var	<- tt
-	= do	quantKinds	<- gets stateQuantifiedVars
-	 	var'		<- sinkVar var
-		
-		let result
-			| Just (k, Just tMore)	<- Map.lookup var' quantKinds
-			= do	tMore'	<- addTMores tMore
-			  	return	$ TFetters [FMore (TVar k var') tMore'] (TVar k var')
-
-			| otherwise
-			= return tt
-
-		result
-		 
-	| otherwise
-	= return tt
- 
-
-
--- | Extract a type from the graph and pack it into standard form.
---	BUGS: we need to add fetters from higher up which are acting on this type.
-
-extractType 
-	:: Bool 		-- whether to treat effect and closure vars that were never quantified as TBot
-	-> Var 			-- var of type to extract
-	-> SquidM (Maybe Type)
-
-extractType final varT
- = do	defs		<- gets stateDefs
-	varT'		<- sinkVar varT
-	quantKinds	<- gets stateQuantifiedVars
-
-	trace	$ "*** Scheme.extractType " % varT % "\n"
-		% "\n"
-
-	let result
-		-- if this var is in the defs table then return that type
-		| Just tt	<- Map.lookup varT defs
-		= do	trace 	$ "    def: " %> prettyTS tt % "\n"
-			return $ Just tt
-		
-		-- if this is a quantified tyvar then return it directly
-		--	(this can happen during Type.Export)
-		| Just (k, _)	<- Map.lookup varT' quantKinds
-		= do	let tt	= TVar k varT'
-			tt_more	<- addTMores tt
-			trace 	$ "    quant: " %> prettyTS tt_more % "\n"
-			return	$ Just $ packType tt_more
-		
-		-- otherwise extract it from the graph
-		| otherwise
-		= {-# SCC "extractType" #-} extractType' final varT
-
-	result
-
-
-extractType' final varT
- = do	mCid	<- lookupVarToClassId varT
-
-	case mCid of
-	 Nothing	
-	  -> do	graph			<- gets stateGraph
-	  	let varToClassId	=  graphVarToClassId graph
-	  	freakout stage
-		 	("extractType: no classId defined for variable " % (varT, Var.bind varT)		% "\n"
-			% " visible vars = " % (map (\v -> (v, Var.bind v)) $ Map.keys varToClassId)		% "\n")
-			$ return Nothing
-
-	 Just cid	-> extractTypeC final varT cid
-	 
-extractTypeC final varT cid
- = do 	
-	
- 	tTrace	<- liftM sortFsT 	
-		$ {-# SCC "extract/trace" #-} 
-		  traceType cid
-
-	trace	$ "    tTrace           =\n" %> prettyTS tTrace	% "\n\n"
-
-	-- Check if the data portion of the type is graphical.
-	--	If it is then it'll hang packType when it tries to construct an infinite type.
-	let cidsDataLoop	
-		= checkGraphicalDataT tTrace
-
-	trace	$ "    cidsDataLoop     = " % cidsDataLoop % "\n\n"
-
-	
-	if (isNil cidsDataLoop)
-	 -- no graphical data, ok to continue.
-	 then extractTypeC1 final varT cid tTrace
-
-	 -- we've got graphical data, add an error to the solver state and bail out.
-	 else do
-	 	addErrors [ErrorInfiniteTypeClassId {
-	 			eClassId	= head cidsDataLoop }]
-
-		return $ Just $ TError KData [tTrace]
-
-extractTypeC1 final varT cid tTrace
- = do	
-	-- Cut loops through the effect and closure portions of this type
-	let tCutLoops	
-		= {-# SCC "extract/cut" #-} 
-		  cutLoopsT tTrace
-
-	trace	$ "    tCutLoops        =\n" %> prettyTS tCutLoops % "\n\n"
-
-	-- Pack type into standard form
-	let tPack	
-		= {-# SCC "extract/pack" #-} 
-		  packType tCutLoops
-
-	trace	$ "    tPack            =\n" %> prettyTS tPack % "\n\n"
-
-	-- Trim closures
-	let tTrim	= 
-		case kindOfType tPack of
-			KClosure	-> trimClosureC Set.empty tPack
-			_		-> trimClosureT Set.empty tPack
-
-	trace	$ "    tTrim            =\n" %> prettyTS tTrim % "\n\n"
-
-	let tTrimPack	
-		= {-# SCC "extract/pack_trim" #-}
-		  packType tTrim
-
-	trace	$ "    tTrimPack        =\n" %> prettyTS tTrimPack % "\n\n"
-
-
-	extractType_final final varT cid tTrimPack
-	
-
-extractType_final True varT cid tTrim
- = do	
- 	-- plug classIds with vars
- 	tPlug		<- plugClassIds [] tTrim
-	trace	$ "    tPlug           =\n" %> prettyTS tPlug	% "\n\n"
- 
-	-- close off never-quantified effect and closure vars
- 	quantVars	<- gets stateQuantifiedVars
- 	let tFinal	=  finaliseT quantVars tPlug
-	
-	trace	$ "    tFinal          =\n" %> prettyTS tFinal	% "\n\n"
-	extractTypeC2 varT cid tFinal
-	
-extractType_final False varT cid tTrim
-	= extractTypeC2 varT cid tTrim
-
-extractTypeC2 varT cid tFinal
- = do	
-	-- Reduce context
-	classInst	<- gets stateClassInst
-
-	let tReduced	
-		= {-# SCC "extract/redude" #-}
-		  reduceContextT classInst tFinal
-
-	trace	$ "    tReduced         =\n" %> prettyTS tReduced % "\n\n"
-
-	return	$ Just tReduced
 	
 
 
@@ -256,24 +86,8 @@ generaliseType' varT tCore envCids
 		% "    envCids          = " % envCids		% "\n"
 		% "\n"
 
-	-- work out what effect and closure vars are in contra-variant branches
-	let contraTs	= catMaybes
-			$ map (\t -> case t of
-					TClass KEffect cid	-> Just t
-					TClass KClosure cid	-> Just t
-					_			-> Nothing)
-			$ slurpContraClassVarsT tCore
-	
-	let tMore	= moreifyFettersT (Set.fromList contraTs) tCore
-	
-	trace	$ "    contraTs = " % contraTs	% "\n"
-
-	trace	$ "    tMore\n"
-		%> prettyTS tMore	% "\n\n"
-
-
 	-- flatten out the scheme so its easier for staticRs.. to deal with
-	let tFlat	= flattenT tMore
+	let tFlat	= flattenT tCore
 	trace	$ "    tFlat\n"
 		%> prettyTS tFlat	% "\n\n"
 
@@ -295,7 +109,7 @@ generaliseType' varT tCore envCids
 	--	
 	let staticDanger	= if Set.member Arg.GenDangerousVars args
 					then []
-					else dangerousCidsT tMore
+					else dangerousCidsT tCore
 
 	trace	$ "    staticDanger     = " % staticDanger	% "\n"
 
@@ -303,21 +117,17 @@ generaliseType' varT tCore envCids
 	let staticCids		= Set.toList envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
 
 	-- Rewrite non-static cids to the var for their equivalence class.
-	tPlug			<- plugClassIds staticCids tMore
+	tPlug			<- plugClassIds staticCids tCore
 
 	trace	$ "    staticCids       = " % staticCids	% "\n\n"
 		% "    tPlug\n"
 		%> prettyTS tPlug 	% "\n\n"
 
-	-- Clean empty effect classes that aren't ports.
-	-- 	BUGS: don't clean variables in the type environment.
-	--	TODO we have to do a reduceContext again to pick up (Pure TBot) 
-	--	.. the TBot won't show up until we do the cleaning. Won't need this 
-	--	once we can discharge these during the grind. It's duplicated in extractType above
+	-- Clean empty effect and closure classes that aren't ports.
+	let tsContra	=  slurpContraClassVarsT tPlug
 	classInst	<- gets stateClassInst
-
 	let tClean	= reduceContextT classInst 
-			$ cleanType Set.empty tPlug
+			$ cleanType (Set.fromList tsContra) tPlug
 
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
@@ -378,23 +188,6 @@ slurpFetters tt
 		_		-> []
 
 
-{-
-	-- Mask effects on local and fresh regions
-	let tMskFresh		= maskEsFreshT tMskLocal
-	let tMskPure		= maskEsPureT  tMskFresh
-
-	let tPack		= packType tMskPure
-
-
-	-- Check the scheme against any available type signature.
-	schemeSig	<- gets stateSchemeSig
-	let mSig	= (Map.lookup varT schemeSig) :: Maybe Type
-	let errsSig	= case mSig of
-				Nothing		-> []
-				Just sig	-> checkSig varT sig varT tPack
-	addErrors errsSig
--}
-
 
 -- | Empty effect and closure eq-classes which do not appear in the environment or 
 --	a contra-variant position in the type can never be anything but _|_,
@@ -408,35 +201,20 @@ slurpFetters tt
 --	where all of !e1 .. !en are cleanable.
 --	Are two passes enough?
 --	
-cleanType :: Set Var -> Type -> Type
-cleanType save tt
-	= cleanType' save $ cleanType' save  tt
-
-cleanType' save tt
- = let	vsFree	= Set.toList $ freeVars tt
-
-	vsPorts	
-		= catMaybes
-		$ map (\t -> case t of 
-			TVar k v	-> Just v
-			_		-> Nothing)
-		$ portTypesT tt
-
-	vsClean	= [ v 	| v <- vsFree
-			, elem (Var.nameSpace v) [Var.NameEffect, Var.NameClosure]
-			, not $ Var.isCtorName v 
-			, not $ elem v vsPorts 
-			, not $ Set.member v save]
-
-	sub	= Map.fromList
-		$ map (\v -> (v, TBot (kindOfSpace $ Var.nameSpace v)))
-		$ vsClean 
-
-	tClean	= packType 
-		$ substituteVT sub tt
-	
-   in	tClean
-
+cleanType :: Set Type -> Type -> Type
+cleanType tsSave tt
+ = let 	vsKeep	= Map.fromList
+		$ catMaybes
+ 		$ map (\t -> case t of
+				TVar k v 
+				 	| k == KEffect || k == KClosure
+					-> Just (v, (k, Nothing))
+				
+				_	-> Nothing)
+		$ Set.toList tsSave
+		
+   in	finaliseT vsKeep False tt
+ 
 
 
 -- | After reducing the context of a type to be generalised, if certain constraints

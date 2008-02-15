@@ -27,34 +27,34 @@ foreign import extern fun
         :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Int %r0
         :- !e0        = Base.!Read %rTC0
-        ,  $c0        = x : Base.Int %rTC0
+        ,  $c0        = x : %rTC0
         :$ Base.Data -> Base.Data;
         
 foreign import extern fun2
         :: forall %r0
         .  Base.Unit -($c0)> Base.Unit -(!e0 $c1)> Base.Int %r0
         :- !e0        = Base.!Read %rTC0
-        ,  $c0        = fun : Base.Int %rTC0
-        ,  $c1        = x : Base.Int %rTC0
+        ,  $c0        = fun : %rTC0
+        ,  $c1        = x : %rTC0
         :$ Base.Data -> Base.Thunk;
         
 foreign import extern fun3
         :: forall %r0
         .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -(!e0 $c2)> Base.Int %r0
         :- !e0        = Base.!Read %rTC0
-        ,  $c0        = fun2 : Base.Int %rTC0
-        ,  $c1        = fun : Base.Int %rTC0
-        ,  $c2        = x : Base.Int %rTC0
+        ,  $c0        = fun2 : %rTC0
+        ,  $c1        = fun : %rTC0
+        ,  $c2        = x : %rTC0
         :$ Base.Data -> Base.Thunk;
         
 foreign import extern fun4
         :: forall %r0
         .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Unit -(!e0 $c3)> Base.Int %r0
         :- !e0        = Base.!Read %rTC0
-        ,  $c0        = fun3 : Base.Int %rTC0
-        ,  $c1        = fun2 : Base.Int %rTC0
-        ,  $c2        = fun : Base.Int %rTC0
-        ,  $c3        = x : Base.Int %rTC0
+        ,  $c0        = fun3 : %rTC0
+        ,  $c1        = fun2 : %rTC0
+        ,  $c2        = fun : %rTC0
+        ,  $c3        = x : %rTC0
         :$ Base.Data -> Base.Thunk;
         
 

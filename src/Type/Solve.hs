@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-unused-imports #-}
 
 module Type.Solve
 	( squidSolve )
@@ -5,7 +6,40 @@ module Type.Solve
 where
 
 -----
-import qualified Debug.Trace	as Debug
+import System.IO
+
+import qualified Main.Arg	as Arg
+import Main.Arg			(Arg)
+
+import Constraint.Bits
+import Constraint.Exp
+
+import Type.Crush.Unify
+import Type.Crush.Fetter
+import Type.Crush.Shape
+import Type.Crush.Proj
+import Type.Crush.Effects
+
+import Type.Extract
+import Type.State
+import Type.Class
+import Type.Scheme
+import Type.Feed
+
+import Type.Location
+import Type.Pretty
+import Type.Util
+import Type.Error
+import Type.Plate.Collect
+import Type.Exp
+
+import Shared.Error
+import qualified Shared.Var	as Var
+import qualified Shared.VarBind	as Var
+import qualified Shared.VarPrim	as Var
+
+import Util.Graph.Deps
+import Util
 
 import qualified Data.Map	as Map
 import qualified Util.Map	as Map
@@ -14,51 +48,6 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
-import Data.Array.IO
-
-import Util
-import Util.Graph.Deps
-
-import System.IO
-
-import Shared.Error
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-import qualified Shared.VarPrim	as Var
-
-import qualified Main.Arg	as Arg
-import Main.Arg			(Arg)
-
-import Constraint.Exp
-import Constraint.Pretty
-import Constraint.Bits
-
-import Type.Location
-import Type.Exp
-import Type.Pretty
-import Type.Util
-import Type.Error
-import Type.Plate.Collect
-
-import Type.Dump
-import Type.State
-import Type.Class
-import Type.Scheme
-import Type.Feed
-import Type.Trace
-import Type.Context
-
-import Type.Crush.Unify
-import Type.Crush.Fetter
-import Type.Crush.Shape
-import Type.Crush.Proj
-import Type.Crush.Effects
-import Type.Crush.Sum
-
-import Type.Check.CheckPure
-import Type.Check.CheckConst
-
-import Util.Graph.Deps
 
 -----
 -- debug the solver

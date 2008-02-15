@@ -3,8 +3,7 @@ module Type.Util.Pack
 	, packData
 	, packEffect
 	, packClosure
-	, sortFsT
-	, flattenT)
+	, sortFsT)
 
 where
 
@@ -12,6 +11,7 @@ import Type.Exp
 import Type.Pretty
 import Type.Plate.Collect
 import Type.Util.Bits
+import Type.Util.Substitute
 
 import Shared.VarPrim
 import Shared.Error
@@ -111,8 +111,6 @@ packClosure' tt
  	$ "packClosure: not a closure\n"
 	% "  c = " % tt % "\n\n"
 
-	 
-	 
 -----
 packTypeLs 
 	:: Bool			-- whether to effect and closure constructors as well
@@ -200,8 +198,9 @@ packTypeLs ld ls tt
 	    in	TEffect v ts'
 	    
 	-- closure
-	TFree v1 (TFree v2 t)		-> TFree v1 t
-	TFree v1 (TBot KClosure)	-> TBot KClosure
+	TFree v1 (TFree v2 t)			-> TFree v1 t
+	TFree v1 (TBot KClosure)		-> TBot KClosure
+	TFree v1 (TFetters _ (TBot KClosure))	-> TBot KClosure
 
 	TFree v t -> TFree v (packTypeLs True ls t)
 	 
@@ -258,61 +257,7 @@ makeSub _	 t1 t2	= t2
 	
 
 
--- Merges a list of mask expressions.
---	We need to do this to avoid exponential blowup of closure expressions
---	as per test/Typing/Loop/Loop1
---	
---	eg:	$c1 \ x, $c1 \ y, $c1 \ z	-> $c1 \ [x, y, z]
---
-maskMerge :: [Closure] -> [Closure]
-maskMerge cc
- = case maskMerge_run False [] cc of
- 	Nothing		-> cc
-	Just cc'	-> maskMerge cc'
 
--- we're at the end of the list, but we merged something along the way
-maskMerge_run True acc []
-	= Just (reverse acc)
-	
--- we're at the end of the list, and nothing merged
-maskMerge_run False acc []
-	= Nothing
-
-maskMerge_run hit acc (x:xs)
-	-- try and merge this element into the rest of the list
-	| Just xs'	<- maskMerge_step x xs
-	= maskMerge_run True acc xs'
-	
-	| otherwise
-	= maskMerge_run hit (x : acc) xs
-
-maskMerge_step z (x:xs)
-	-- we could merge with the current element
-	| Just x'	<- maskMerge1 z x
-	= Just (x' : xs)
-	
-	-- try and merge with later elementts
-	| Just xs'	<- maskMerge_step z xs
-	= Just (x : xs')
-
-	| otherwise
-	= Nothing
-	
-maskMerge_step z []	
-	= Nothing
-	
-maskMerge1 cc1 cc2
-	| TMask k1 c1 t1	<- cc1
-	, TMask k2 c2 t2	<- cc2
-	, k1 == k2
-	, c1 == c2
-	= Just $ makeTMask k1 c1 (makeTSum k1 [t1, t2])
-
-	| otherwise
-	= Nothing
-
-
-	
 
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
 --	(ie, find a fixpoint of restrictFs . packFettersLs) 
@@ -346,7 +291,7 @@ packTFettersLs ld ls tt
 		
 		-- inline TBots, and fetters that are only referenced once
 		(tInlined, fsInlined)
-				= inlineFs1 tZapped fsZapped
+				= inlineFs tZapped fsZapped
 
 		fsSorted	= sortFs		
 				$ restrictFs tInlined
@@ -412,55 +357,39 @@ restrictFs tt ls
 			 
 			FMore t1 t2
 			 | t1 == t2	-> False
+			
+			FMore  t (TBot _) -> False
 			 
 			FLet t (TBot _)	-> False
    			FLet t _	-> Set.member t tsReachable
 			_		-> True)
 		$ ls
 
-
+-- InlineFs ----------------------------------------------------------------------------------------
 -- | Inline Effect and Closure fetters which are only referenced once.
 --	Also inline (t = TBot) fetters
 --
-inlineFs1 :: Type -> [Fetter] -> (Type, [Fetter])
-inlineFs1 tt fs
+inlineFs :: Type -> [Fetter] -> (Type, [Fetter])
+inlineFs tt fs
  = {-# SCC "inlineFs1" #-}
-   let	
- 	-- count how many times each var is used in the RHSs of the fs.
- 	useCount
- 		= Map.populationCount
-		( (concat
- 			$ map (\f -> case f of
- 				FLet t1 t2	-> collectTClassVars t2
-				_		-> [])
-			$ fs)
-		++ collectTClassVars tt)
-
-		
-	-- create a substitution containing the fs to substitute.
-	--	always inline vars and cids,
-	--	don't inline other types if they're used more than once, to prevent duplication of info in the type.
-	
-	sub	= Map.fromList
-		$ catMaybes
-		$ map (\f -> case f of
-				FLet t1 t2@TVar{}	-> Just (t1, t2)
-				FLet t1 t2@TClass{}	-> Just (t1, t2)
-				FLet t1 t2	
-				 |  Map.lookup t1 useCount == Just 1 	 -> Just (t1, t2)
-
-				_ 					 -> Nothing)
-		$ fs
+   let	vsFree	= collectTClassVars tt
+   
+   	-- build a substitution from the let fetters
+	sub	= Map.fromList	
+		$ [(t1, t2)	
+			| FLet t1 t2 <- fs
+			, not $ elem t1 vsFree]
 
 	-- substitute in the the RHSs
-	fs'	= map (\f -> case f of
-				FLet t1 t2 	 -> FLet t1 (substituteTT sub t2)
-				FConstraint v ts -> FConstraint v (map (substituteTT sub) ts)
-				_		 -> f)
-		$ fs
-		
- in 	( tt
- 	, fs')
+	subF ff
+		= case ff of
+			FLet  t1 t2 	 -> FLet  t1 (subTT sub t2)
+			FMore t1 t2	 -> FMore t1 (subTT sub t2)
+			FConstraint v ts -> FConstraint v (map (subTT sub) ts)
+			_		 -> ff
+
+	fs'	= map subF fs
+   in	(tt, fs')
 
 
 -- | Inline Effect and Closure fetters, regardless of the number of times they are used
@@ -508,9 +437,10 @@ shortLoopsF' (FLet t1 t2)
 	   
 shortLoopsF' f	= f
 	
-
+-- Sort Fetters ------------------------------------------------------------------------------------
 -- | Sort fetters so effect and closure information comes out first in the list.
 --	Also sort known contexts so there's less jitter in their placement in interface files
+
 sortFs :: [Fetter] -> [Fetter]
 sortFs fs
  = let	isLetK k f
@@ -553,6 +483,7 @@ sortFsT tt
 	_		-> tt
 
 
+-- Zap Covered -------------------------------------------------------------------------------------
 -- | Erase TMasks where the LHS can only ever contain the values present in the RHS
 -- eg
 --	  1 -(4)> 2 -(5)> 3
@@ -589,61 +520,57 @@ coversCC (TFree v1 _) 	(TTag v2)	= v1 == v2
 coversCC _		_		= False
 
 
-flattenT :: Type -> Type
-flattenT tt
- = flattenT' Map.empty Set.empty tt
 
-flattenT' sub block tt
- = let down	= flattenT' sub block
-   in  case tt of
-   	TNil		-> TNil
+-- MaskMerge ---------------------------------------------------------------------------------------
+-- Merges a list of mask expressions.
+--	We need to do this to avoid exponential blowup of closure expressions
+--	as per test/Typing/Loop/Loop1
+--	
+--	eg:	$c1 \ x, $c1 \ y, $c1 \ z	-> $c1 \ [x, y, z]
+--
+maskMerge :: [Closure] -> [Closure]
+maskMerge cc
+ = case maskMerge_run False [] cc of
+ 	Nothing		-> cc
+	Just cc'	-> maskMerge cc'
 
-	TForall vks t	-> TForall vks (down t)
+-- we're at the end of the list, but we merged something along the way
+maskMerge_run True acc []
+	= Just (reverse acc)
+	
+-- we're at the end of the list, and nothing merged
+maskMerge_run False acc []
+	= Nothing
 
-	TFetters fs t
-	 -> let (fsWhere, fsRest)
-	 		= partition (=@= FLet{}) fs
+maskMerge_run hit acc (x:xs)
+	-- try and merge this element into the rest of the list
+	| Just xs'	<- maskMerge_step x xs
+	= maskMerge_run True acc xs'
+	
+	| otherwise
+	= maskMerge_run hit (x : acc) xs
 
-		sub'	= Map.union 
-				(Map.fromList $ map (\(FLet t1 t2) -> (t1, t2)) fsWhere)
-				sub
+maskMerge_step z (x:xs)
+	-- we could merge with the current element
+	| Just x'	<- maskMerge1 z x
+	= Just (x' : xs)
+	
+	-- try and merge with later elementts
+	| Just xs'	<- maskMerge_step z xs
+	= Just (x : xs')
 
-		tFlat	= flattenT' sub' block t
+	| otherwise
+	= Nothing
+	
+maskMerge_step z []	
+	= Nothing
+	
+maskMerge1 cc1 cc2
+	| TMask k1 c1 t1	<- cc1
+	, TMask k2 c2 t2	<- cc2
+	, k1 == k2
+	, c1 == c2
+	= Just $ makeTMask k1 c1 (makeTSum k1 [t1, t2])
 
-	   in	addFetters fsRest tFlat
-
-	TSum k ts	-> makeTSum  k (map down ts)
-	TMask k t1 t2	-> makeTMask k (down t1) (down t2)
-
-	TVar{}
-	 | Set.member tt block
-	 -> tt
-
-	 | otherwise
-	 -> case Map.lookup tt sub of
-	 	Just t	-> flattenT' sub (Set.insert tt block) t
-		Nothing	-> tt
-
-	TClass{}
-	 | Set.member tt block
-	 -> tt
-
-	 | otherwise
-	 -> case Map.lookup tt sub of
-	 	Just t	-> flattenT' sub (Set.insert tt block) t
-		Nothing	-> tt
-
-	TTop{}			-> tt
-	TBot{}			-> tt
-
-	TData v ts		-> TData v (map down ts)
-	TFun t1 t2 eff clo	-> TFun (down t1) (down t2) (down eff) (down clo)
-
-	TEffect v ts		-> TEffect v (map down ts)
-
-	TFree v t		-> TFree v (down t)
-	TTag v			-> TTag v
-
-	TError{}		-> tt
-
-
+	| otherwise
+	= Nothing

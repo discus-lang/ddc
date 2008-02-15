@@ -57,7 +57,7 @@ foreign import extern tetra
         ,  !e0        :> Base.!Read %r3
         ,  $c4        = $c5 \ b
         ,  $c5        = $c6 \ p
-        ,  $c6        = ${b : Data.Bool.Bool %r0; p : $c2}
+        ,  $c6        = ${b : %r0; p : $c2}
         :$ Base.Data -> Base.Thunk -> Base.Thunk -> Base.Obj;
         
 foreign import extern main

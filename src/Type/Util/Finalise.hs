@@ -22,25 +22,26 @@ import qualified Debug.Trace	as Debug
 --	
 finaliseT 
 	:: Map Var (Kind, Maybe Type)
+	-> Bool				-- whether to default unbound value tyvars to unit.
 	-> Type
 	-> Type
 
-finaliseT bound tt
- = let tt'	= packType $ finaliseT' bound tt
+finaliseT bound def tt
+ = let tt'	= packType $ finaliseT' bound def tt
    in  if tt == tt'
    	then tt
-	else finaliseT bound tt'
+	else finaliseT bound def tt'
 
 
-finaliseT' bound tt
- = let down	= finaliseT' bound
+finaliseT' bound def tt
+ = let down	= finaliseT' bound def
    in  case tt of
   	TForall vks t	
 	 -> let	bound'	= Map.union bound 
 	 		$ Map.fromList 
 			$ map (\(v, k) -> (v, (k, Nothing))) vks
 
-	 	t'	= finaliseT' bound' t
+	 	t'	= finaliseT' bound' def t
 	    in	TForall vks t'
 	    
 	TFetters fs t
@@ -52,8 +53,8 @@ finaliseT' bound tt
 		-- prefer the already bound vars here
 	 	bound'	= Map.union bound vksMore
 
-	    	fs'	= map (finaliseF bound') fs
-		t'	= finaliseT' bound' t
+	    	fs'	= map (finaliseF bound' def) fs
+		t'	= finaliseT' bound' def t
 	    in	TFetters fs' t'
 	    
 	TSum  k ts	-> makeTSum k (map down ts)
@@ -63,7 +64,8 @@ finaliseT' bound tt
 	 	| elem k [KEffect, KClosure]
 		, not $ Map.member v bound	-> TBot k
 	 
-	 	| elem k [KData]
+	 	| def
+		, elem k [KData]
 		, not $ Map.member v bound	-> TData primTUnit []
 	 
 		| otherwise			-> tt
@@ -78,7 +80,10 @@ finaliseT' bound tt
 	TFree   v t		-> TFree v (down t)
 	TTag{}			-> tt
 
-finaliseF bound ff
+	TClass{}		-> tt
+
+
+finaliseF bound def ff
 	| FLet t1@(TVar k v1) t2	<- ff
 	, Just (k', Just tMore)		<- Map.lookup v1 bound
 	, k 	== k'
@@ -97,7 +102,7 @@ finaliseF bound ff
 	| FProj j v t1 t2		<- ff
 	= FProj j v (down t1) (down t2)
 
-	where down	= finaliseT bound
+	where down	= finaliseT bound def
 
 	
 

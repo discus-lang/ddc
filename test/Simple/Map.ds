@@ -1,7 +1,6 @@
 
 import Base;
 
-
 data	List %r1 a
 	= Nil
 	| Cons { 

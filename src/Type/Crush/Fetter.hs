@@ -211,6 +211,12 @@ crushFetter (FConstraint vC ts)
 	, Just tR	<- slurpHeadR t
 	= Just [FConstraint primLazy [tR]]
 	
+	-- lazy head where the ctor has no region (ie LazyH Unit)
+	| vC	== primLazyH
+	, [t]		<- ts
+	, TData v []	<- t
+	= Just []
+	
 	-- deep mutability
 	| vC	 == primMutableT
 	, [t]		<- ts

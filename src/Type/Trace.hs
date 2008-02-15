@@ -117,6 +117,7 @@ loadTypeNode2 cid c
 				_	-> t'
 				
 		k		<- kindOfCid cid
+
 		var		<- makeClassName cid
 		quantVars	<- gets stateQuantifiedVars
 		let isQuant	= isJust $ Map.lookup var quantVars
@@ -127,12 +128,16 @@ loadTypeNode2 cid c
 			| TBot k	<- t
 			= return $ fs ++ fsMulti
 			
-			| isQuant
-			= return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
-	
+--			| isQuant
+--			= return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
 	
 			| otherwise
-			= return $ FLet (TClass k cid) tX : (fs ++ fsMulti)
+			= case k of
+				KData	-> return $ FLet  (TClass k cid) tX : (fs ++ fsMulti)
+				_	-> return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
+		
+--			| otherwise
+--			= return $ FLet (TClass k cid) tX : (fs ++ fsMulti)
 	
 		result
 	

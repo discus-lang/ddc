@@ -1,8 +1,8 @@
 
 module Type.Port
-	( moreifyFettersT 
-	, slurpContraClassVarsT  
-	, portTypesT )
+	( dropFMoresT
+	, slurpContraClassVarsT 
+	, portTypesT)
 where
 
 import qualified Data.Map	as Map
@@ -13,33 +13,56 @@ import Data.Set			(Set)
 
 import qualified Shared.Var	as Var
 
-import Util
 import Type.Exp
+import Type.Class
 import Type.Util
 import Type.State
 import Type.Plate.Collect
 import Shared.Error
+import Util
 
 stage	= "Type.Port"
 
-moreifyFettersT :: Set Type -> Type -> Type
-moreifyFettersT tsMore tt
+dropFMoresT :: Set Type -> Type -> SquidM Type
+dropFMoresT tsContra tt
  = case tt of
- 	TFetters fs t	-> TFetters (map (moreifyFs tsMore) fs) t
-	t		-> t
+ 	TFetters fs t	
+	 -> do	fs'	<- mapM (letifyFs tsContra) fs
+	 	return	$ TFetters fs' t
+
+	t -> return t
 	
-moreifyFs tsMore ff
+letifyFs tsContra ff
  = case ff of
- 	FLet t1 t2	
-	 | Set.member t1 tsMore	-> FMore t1 t2
-	
-	_ 			-> ff
+ 	FMore t1@(TClass k cid) t2
+	 -> do	quantVars	<- gets stateQuantifiedVars
+	 	v		<- makeClassName cid
+
+		let result
+			-- can't convert vars that have been quantified.
+			| Map.member v quantVars 
+			= ff
+			
+			-- can't convert vars that appear in contra-variant positions
+			--	in the shape of the type
+			| Set.member t1 tsContra
+			= ff
+			
+			| otherwise
+			= FLet t1 t2
+			
+		return result
+			
+	_ -> return ff
+
+
 
 
 ----
 slurpContraClassVarsT :: Type -> [Type]
 slurpContraClassVarsT tt
  = case tt of
+	TForall vks t		-> slurpContraClassVarsT t
 	TFetters fs t		-> slurpContraClassVarsT t
  	TFun t1 t2 eff clo	-> collectTClassVars t1 ++ slurpContraClassVarsT t2
 	TData{}			-> []
@@ -79,9 +102,9 @@ portTypesC t
 
 	_			-> []
 
-
-
 {-
+
+
 -----
 forcePortsT 
 	:: Type	-> SquidM (Type, Table)

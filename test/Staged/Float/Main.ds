@@ -1,7 +1,6 @@
 
-
 main ()
  = do {	
- 	print	$ showFloat (1.23 .+ 3.15) % "\n";
+ 	print	$ show (1.23 + 3.15) % "\n";
  	print	$ "\n";
  };

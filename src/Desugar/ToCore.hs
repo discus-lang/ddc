@@ -1,3 +1,4 @@
+
 module Desugar.ToCore
 	( toCoreTree
 	, toCoreP
@@ -44,13 +45,13 @@ import qualified Desugar.Bits		as D
 
 -----
 stage	= "Desugar.ToCore"
+debug	= False
+trace ss x	
+	= if debug 
+		then Debug.trace (pprStr ss) x
+		else x
 
-debug		= False
-trace ss x	= if debug 
-			then Debug.trace (pprStr ss) x
-			else x
-
------------------------
+-- Tree --------------------------------------------------------------------------------------------
 toCoreTree
 	:: Map Var Var					-- ^ value -> type vars
 	-> Map Var T.Type				-- ^ inferred type schemes
@@ -98,7 +99,7 @@ flattenEs e
 	C.TSum C.KEffect es	-> es
 	e			-> [e]
 	
-
+-- Top ---------------------------------------------------------------------------------------------
 -- | Convert a top level thing to core.
 toCoreP	:: D.Top Annot	
 	-> CoreM [C.Top]
@@ -193,9 +194,7 @@ toCoreP	p
 		$ "toCoreP: no match for " % show p % "\n"
 	
 
-
-
------
+-- CtorDef -----------------------------------------------------------------------------------------
 toCoreCtorDef	
 	:: D.CtorDef Annot
 	-> CoreM C.CtorDef
@@ -213,7 +212,6 @@ toCoreFieldDef	df
 		, S.dInit	= case S.dInit df of
 					Nothing			-> Nothing
 					Just (D.XVarInst _ v)	-> Just v }
-		
 
 makeCtor 
 	:: Var 
@@ -249,6 +247,7 @@ makeCtorTypeAVT    argTypes dataVar ts
 		(reverse ts)
 
 
+-- Stmt --------------------------------------------------------------------------------------------
 -- | Statements
 toCoreS	:: D.Stmt Annot	
 	-> CoreM (Maybe C.Stmt)
@@ -278,6 +277,7 @@ toCoreS	D.SSig{}
  	= return Nothing
 
 
+-- Exp ---------------------------------------------------------------------------------------------
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
@@ -295,12 +295,6 @@ toCoreX xx
 		Just tArg1	<- lookupType vTV
 		let (argQuant, argFetters, argContext, argShape)
 				= C.stripSchemeT tArg1
-
-		trace 	( "XLambdaTEC " % v % "\n"
-			% "tArg1 = " 	% tArg1	% "\n")
-			$ return ()
-			
-
 
 		portVars	<- gets coreQuantVars
 		let tArg	= C.packT
@@ -481,6 +475,8 @@ toCoreX xx
 		$ "toCoreX: cannot convert expression to core.\n" 
 		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
 
+
+-- Lit ---------------------------------------------------------------------------------------------
 -- | Convert a source constant to core
 --	We don't know what implementation type a source literal is supposed to be until 
 --	we do the type checking, so we need its type to guide the conversion. 
@@ -540,6 +536,7 @@ toCoreLit' tLit lit
 		Var.TString	-> (C.LString s, True)
 
 
+-- Const -------------------------------------------------------------------------------------------
 -- | Convert a constant to core expression
 --	All literals in the core are unboxed.
 --	Perhaps literals in the desugared source should be unboxed as well.
@@ -609,6 +606,7 @@ toCoreConst' tt const
 		% "   tConst = " % show tt	% "\n"
 		% "   const  = " % show const	% "\n"
 
+-- VarInst -----------------------------------------------------------------------------------------
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
 toCoreVarInst v vT
  = do
@@ -700,9 +698,7 @@ toCoreVarInst v vT
 		return $ xResult
 			 
 
-
-
-
+-- Proj --------------------------------------------------------------------------------------------
 -- | Field porjections
 toCoreJ :: D.Proj Annot -> CoreM C.Proj
 toCoreJ jj
@@ -710,6 +706,8 @@ toCoreJ jj
 	D.JField _ v	-> return $ C.JField v 	
 	D.JFieldR _ v	-> return $ C.JFieldR v
 
+
+-- Alt ---------------------------------------------------------------------------------------------
 -- | Case Alternatives
 toCoreA	:: Maybe (Var, C.Type)
 	-> D.Alt Annot -> CoreM C.Alt
@@ -722,10 +720,9 @@ toCoreA mObj alt
 		x'	<- toCoreX x
 		
 		return	$ C.AAlt gs' x'
-			
-
 	
-
+	
+-- Guards ------------------------------------------------------------------------------------------
 -- | Guards
 toCoreG :: Maybe (Var, C.Type)
 	-> D.Guard Annot
@@ -746,8 +743,8 @@ toCoreG mObj gg
 		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XType r, C.XPrim C.MForce [x']])
 		 Nothing	-> return $ C.GExp w' x'
 
-	
 
+-- Patterns ----------------------------------------------------------------------------------------
 -- | Patterns
 toCoreW :: D.Pat Annot
 	-> CoreM 
@@ -809,4 +806,6 @@ toCoreA_LV (D.LVar nn vField, v)
  = do	Just t		<- lookupType v
  	let t_flat	= (C.stripContextT . C.flattenT) t
  	return	(C.LVar vField, v, t_flat)
+
+
 

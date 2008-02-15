@@ -24,8 +24,8 @@ foreign import extern fun1_u
         .  Data.Tuple.Tuple2 %rTS5 (Base.Unit -(!e0 $c0)> Base.Int %r0) (Base.Unit -(!e1 $c1)> Base.Unit)
         :- !e0        = Base.!Read %rTS4
         ,  !e1        = !{Base.!Read %rTS4; Base.!Write %rTS4}
-        ,  $c0        = x : Base.Int %rTS4
-        ,  $c1        = x : Base.Int %rTS4
+        ,  $c0        = x : %rTS4
+        ,  $c1        = x : %rTS4
         ,  Base.Mutable %rTS4
         :$ Base.Data;
         
@@ -33,14 +33,14 @@ foreign import extern fun1_get1
         :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Int %r0
         :- !e0        = Base.!Read %rTS4
-        ,  $c0        = x : Base.Int %rTS4
+        ,  $c0        = x : %rTS4
         ,  Base.Mutable %rTS4
         :$ Base.Thunk;
         
 foreign import extern fun1_inc
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS4; Base.!Write %rTS4}
-        ,  $c0        = x : Base.Int %rTS4
+        ,  $c0        = x : %rTS4
         ,  Base.Mutable %rTS4
         :$ Base.Thunk;
         
@@ -49,15 +49,15 @@ foreign import extern fun1
         .  Base.Unit -> Data.Tuple.Tuple2 %r1 (Base.Unit -(!e0 $c0)> Base.Int %r2) (Base.Unit -(!e1 $c1)> Base.Unit)
         :- !e0        = Base.!Read %r0
         ,  !e1        = !{Base.!Read %r0; Base.!Write %r0}
-        ,  $c0        = x : Base.Int %r0
-        ,  $c1        = x : Base.Int %r0
+        ,  $c0        = x : %r0
+        ,  $c1        = x : %r0
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data;
         
 foreign import extern main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS4; Base.!Write %rTS4; System.Console.!Console}
-        ,  $c0        = ${fun1_inc : Base.Int %rTS4; fun1_get1 : Base.Int %rTS4}
+        ,  $c0        = ${fun1_inc : %rTS4; fun1_get1 : %rTS4}
         ,  Base.Mutable %rTS4
         :$ Base.Data -> Base.Data;
         
