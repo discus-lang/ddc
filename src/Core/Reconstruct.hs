@@ -61,8 +61,11 @@ import qualified Debug.Trace	as Debug
 -----
 stage	= "Core.Reconstruct"
 
-debug		= False
-trace ss x	= if debug then Debug.trace (pprStr ss) x else x
+debug	= False
+trace ss x	
+	= if debug 
+		then Debug.trace (pprStr ss) x 
+		else x
 
 
 -- Tree --------------------------------------------------------------------------------------------
@@ -139,27 +142,41 @@ reconX 	:: Table
 
 -- LAM
 reconX tt xx@(XLAM b@(BMore v t1) t2 x)
- = trace ("reconX[XLam]: " % xx % "\n")
- $ let	tt'			= addMoreVT v t1 tt
+ = let	tt'			= addMoreVT v t1 tt
  	(x', xT, xE, xC)	= reconX tt' x
-   in	( XLAM b t2 x'
-   	, TForall b t2 xT
-	, xE
+
+   in 
+{-   	trace 	("(/\\ " % b % " -> ...)\n"
+   		% "  xT:\n" %> xT	% "\n"
+		% "  xC:\n" %> xC	% "\n\n") $ -}
+
+	( XLAM b t2 x'
+	, TForall b t2 xT
+	, xE	  
 	, xC)
 
 reconX tt (XLAM v k@KClass{} x)
- = let	(x', tx, xe, xc)	= reconX tt x
-   in	( XLAM 	   v k x'
-    	, TContext k tx 
-	, xe
-	, xc)
+ = let	(x', xT, xE, xC)	= reconX tt x
+   in 
+{-    trace 	("(/\\ " % v % " -> ...)\n"
+   		% "  xT:\n" %> xT	% "\n"
+		% "  xC:\n" %> xC	% "\n\n") $ -}
+      	( XLAM 	   v k x'
+    	, TContext k xT 
+	, xE
+	, xC)
 
 reconX tt (XLAM v k x)
- = let	(x', tx, xe, xc)	= reconX tt x
-   in	( XLAM 	  v k x'
-    	, TForall v k tx 
-	, xe
-	, xc)
+ = let	(x', xT, xE, xC)	= reconX tt x
+   in 
+{-      trace 	("(/\\ " % v % " -> ...)\n"
+   		% "  xT:\n" %> xT	% "\n"
+		% "  xC:\n" %> xC	% "\n\n") $ -}
+
+   	( XLAM 	  v k x'
+    	, TForall v k xT 
+	, xE
+	, xC)
  
 -- APP
 
@@ -181,20 +198,26 @@ reconX tt exp@(XAPP (XLit l) (TVar KRegion r))
 
 
 reconX tt exp@(XAPP x t)
- = let	(x', tx, xe, xc)	= reconX tt x
-   in	case applyTypeT tt tx t of
-   	 Just t'	
-	  -> 	( XAPP x' t
-		, t'
-		, xe
-		, xc)
+ = let	(x', tX, eX, cX)	= reconX tt x
+   in	
+   	case applyTypeT tt tX t of
+   	 Just tApp
+	  -> trace 	("(" % x % " @ " % t % ")\n"
+	     		% "    tApp:\n"	%> tApp		% "\n"
+			% "    eX:\n" 	%> eX		% "\n"
+			% "    cX:\n"	%> cX		% "\n\n\n") $
+	     	  
+		( XAPP x' t
+		, tApp
+		, eX
+		, cX)
 	  
 	 _ -> panic stage
 	 	$ " reconX: Kind error in type application (x t).\n"
 		% "     caller = "  % tableCaller tt	% "\n"
 		% "     x      =\n" %> x		% "\n\n"
 		% "     t      =\n" %> t		% "\n\n"
-		% "   T[x]     =\n" %> tx	% "\n\n"
+		% "   T[x]     =\n" %> tX	% "\n\n"
 
 -- Tet
 reconX tt (XTet vts x)
@@ -290,10 +313,10 @@ reconX tt exp@(XLam v t x eff clo)
 		--	due to their differing tags.
 --		, clo_clamped	<- clampSum xC' clo_sub
 
-		= trace ( "reconX: XLam\n"
+		={- trace ( "reconX: XLam\n"
 			% "    xE'  (recon) = " % xE'	% "\n"
 			% "    eff' (annot) = " % eff'	% "\n"
-			% "    eff_clamped  = " % eff_clamped	% "\n") $
+			% "    eff_clamped  = " % eff_clamped	% "\n") $ -}
 
 		   ( XLam v t x' eff_clamped clo_sub
 		   , TFunEC t xT eff_clamped clo_sub
@@ -340,10 +363,18 @@ reconX tt exp@(XApp x1 x2 eff)
    in	case mResultTE of
    	 Just (appT, appE)
   	  -> let x'		= XApp x1' x2' pure
-     	     in ( x'
-	        , appT
-		, makeTSum KEffect  [x1e, x2e, appE]
-		, makeTSum KClosure [x1c, x2c])
+	  	 xE		= makeTSum KEffect  [x1e, x2e, appE]
+		 xC		= makeTSum KClosure [x1c, x2c]
+
+     	     in trace 	("(" % x1 % " $ ..)\n"
+	     		% "    appT:\n"	%> appT	% "\n"
+			% "    xE:\n" 	%> xE	% "\n"
+			% "    xC:\n"	%> xC	% "\n\n\n") $
+	     
+		     	( x'
+		        , appT
+			, xE
+			, xC)
 	       	
 	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
@@ -428,7 +459,7 @@ reconX tt (XVar v t)
    in	( XVar v t
 	, t'
 	, TBot KEffect
-	, TFree v t)
+	, trimClosureC Set.empty $ TFree v t)
 
 
 -- prim

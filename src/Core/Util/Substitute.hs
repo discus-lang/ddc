@@ -27,16 +27,17 @@ substituteT sub tt
 	 	{ transT	= \x -> return $ subTT sub x }
 	tt
 
-subTT ::  Map Var Type -> Type -> Type
 subTT sub tt
  	| TVar k v		<- tt
-	, Just t'		<- Map.lookup v sub	= t'
+	, Just t'		<- Map.lookup v sub	
+	= substituteT (Map.delete v sub) t'
 
 	| TVarMore k v tMore	<- tt
-	, Just t'		<- Map.lookup v sub	= t'
+	, Just t'		<- Map.lookup v sub	
+	= substituteT (Map.delete v sub) t'
 
-	| otherwise					= tt
-
+	| otherwise					
+	= tt
 
 
 -- substitute variables for variables
@@ -55,6 +56,10 @@ subVVinT :: Map Var Var -> Type -> Type
 subVVinT sub tt
 	| TVar k v1		<- tt
 	, Just v2		<- Map.lookup v1 sub 
+	= TVar k v2
+
+	| TVarMore k v1 tMore	<- tt
+	, Just v2		<- Map.lookup v1 sub
 	= TVar k v2
 	
 	| TFree v1 t		<- tt
