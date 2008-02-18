@@ -113,6 +113,12 @@ toCoreT' table tt
 	T.TEffect v ts		-> C.TEffect v (map down ts)
 	
 	-- closure
+	T.TFree v (T.TDanger t1 t2)
+				-> C.makeTSum C.KClosure
+					[ C.TFree v (down t1)
+					, C.TFree v (down t2)]
+				
+				
 	T.TFree v t		-> C.TFree v (down t)
 	T.TTag v		-> C.TTag  v
 	

@@ -206,7 +206,7 @@ feedType	mParent t
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
 		 Just tDef
-		  -> do	let tDef_trim	= trimClosureT Set.empty $ flattenT tDef
+		  -> do	let tDef_trim	= trimClosureT Set.empty Set.empty $ flattenT tDef
 		  	tDef'		<- linkType mParent [] tDef_trim
 
 			-- we use addToClass here because we don't need to register effects and 

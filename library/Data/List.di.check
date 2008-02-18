@@ -127,7 +127,7 @@ foreign import extern (!!)
         :: forall t0 %r0 %r1
         .  List %r1 t0 -($c1)> Base.Int %r0 -(!e0 $c0)> t0
         :- !e0        = !{Base.!Read %r1; System.Error.!Error; Base.!Read %r0}
-        ,  $c0        = ${xx : %r1; xx : t0}
+        ,  $c0        = ${xx : %r1; xx : %r1 $> t0}
         ,  $c1        = $c0 \ xx
         :$ Base.Data -> Base.Data -> Base.Obj;
         
@@ -135,7 +135,7 @@ foreign import extern indexL
         :: forall t0 %r0 %r1
         .  List %r1 t0 -($c1)> Base.Int %r0 -(!e0 $c0)> t0
         :- !e0        = !{Base.!Read %r1; Base.!Read %r0}
-        ,  $c0        = ${xx : %r1; xx : t0}
+        ,  $c0        = ${xx : %r1; xx : %r1 $> t0}
         ,  $c1        = $c0 \ xx
         ,  Base.Const %r1
         ,  Base.Const %r0
@@ -146,7 +146,7 @@ foreign import extern append
         :: forall t0 %r0
         .  List %r0 t0 -($c1)> List %r0 t0 -(!e0 $c0)> List %r0 t0
         :- !e0        = Base.!Read %r0
-        ,  $c0        = ${xs : %r0; xs : t0}
+        ,  $c0        = ${xs : %r0; xs : %r0 $> t0}
         ,  $c1        = $c0 \ xs
         :$ Base.Data -> Base.Data -> Base.Data;
         
@@ -154,7 +154,7 @@ foreign import extern (++)
         :: forall t0 %r0
         .  List %r0 t0 -($c1)> List %r0 t0 -(!e0 $c0)> List %r0 t0
         :- !e0        = Base.!Read %r0
-        ,  $c0        = ${xx : %r0; xx : t0}
+        ,  $c0        = ${xx : %r0; xx : %r0 $> t0}
         ,  $c1        = $c0 \ xx
         :$ Base.Data -> Base.Data -> Base.Data;
         
@@ -201,7 +201,7 @@ foreign import extern maps
         :: forall t0 t1 %r0 %r1 !e0 $c0
         .  List %r0 t0 -($c2)> (t0 -(!e0 $c0)> t1) -(!e1 $c1)> List %r1 t1
         :- !e1        = !{Base.!Read %r0; !e0}
-        ,  $c1        = ${xx : %r0; xx : t0}
+        ,  $c1        = ${xx : %r0; xx : %r0 $> t0}
         ,  $c2        = $c1 \ xx
         :$ Base.Data -> Base.Thunk -> Base.Data;
         
@@ -209,7 +209,7 @@ foreign import extern maps_
         :: forall t0 t1 %r0 !e0 $c0
         .  List %r0 t0 -($c2)> (t0 -(!e0 $c0)> t1) -(!e1 $c1)> Base.Unit
         :- !e1        = !{Base.!Read %r0; !e0}
-        ,  $c1        = ${xx : %r0; xx : t0}
+        ,  $c1        = ${xx : %r0; xx : %r0 $> t0}
         ,  $c2        = $c1 \ xx
         :$ Base.Data -> Base.Thunk -> Base.Data;
         
@@ -238,7 +238,7 @@ foreign import extern mapAccumL'
         ,  $c2        = $c3 \ f
         ,  $c3        = $c4 \ acc
         ,  $c4        = $c5 \ xx
-        ,  $c5        = ${xx : %r0; xx : t1; acc : t0; f : $c0}
+        ,  $c5        = ${xx : %r0; xx : %r0 $> t1; acc : t0; f : $c0}
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern sum
@@ -278,7 +278,7 @@ foreign import extern zipWith_
         :: forall t0 t1 %r0 %r1 !e0 !e1 $c0 $c1
         .  (t0 -(!e1 $c1)> t1 -(!e0 $c0)> Base.Unit) -($c4)> List %r0 t0 -($c3)> List %r1 t1 -(!e2 $c2)> Base.Unit
         :- !e2        = !{Base.!Read %r0; Base.!Read %r1; !e1; !e0}
-        ,  $c2        = ${xx : %r0; xx : t0; f : $c1}
+        ,  $c2        = ${xx : %r0; xx : %r0 $> t0; f : $c1}
         ,  $c3        = $c2 \ xx
         ,  $c4        = $c3 \ f
         :$ Base.Thunk -> Base.Data -> Base.Data -> Base.Data;
@@ -314,7 +314,7 @@ foreign import extern deleteF
         :: forall t0 %r0 %r1 !e0 !e1 $c0 $c1
         .  (t0 -(!e1 $c1)> t0 -(!e0 $c0)> Data.Bool.Bool %r0) -($c4)> List %r1 t0 -($c3)> t0 -(!e2 $c2)> List %r1 t0
         :- !e2        = !{Base.!Read %r1; !e1; !e0; Base.!Read %r0}
-        ,  $c2        = ${xx : %r1; xx : t0; eqF : $c1}
+        ,  $c2        = ${xx : %r1; xx : %r1 $> t0; eqF : $c1}
         ,  $c3        = $c2 \ xx
         ,  $c4        = $c3 \ eqF
         :$ Base.Thunk -> Base.Data -> Base.Obj -> Base.Data;

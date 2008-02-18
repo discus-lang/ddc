@@ -143,6 +143,8 @@ data Token
 
 	| RightArrow		-- ^ ->
 
+	| HoldsMono		-- ^ $>
+
 	-- shared between types and expressions
 	| LeftArrow		-- ^ <-
 	| Unit			-- ^ ()

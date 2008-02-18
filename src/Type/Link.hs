@@ -88,6 +88,11 @@ linkType mParent bound tt
 	 -> do	t'	<- linkType mParent bound t
 	 	return	$ TFree v t'
 		
+	TDanger t1 t2
+	 -> do	t1'	<- linkType mParent bound t1
+	 	t2'	<- linkType mParent bound t2
+		return	$ TDanger t1' t2'
+		
 	TTag v		-> return tt
 		
 		

@@ -114,6 +114,7 @@ tokString =
 	, (HasConstraint,	":-")
 
 	, (RightArrow,		"->")
+	, (HoldsMono,		"$>")
 
 	-- shared between types and expressions 
 	, (LeftArrow,		"<-")

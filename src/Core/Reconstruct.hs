@@ -262,7 +262,7 @@ reconX tt exp@(XLam v t x eff clo)
 		--	so it doesn't loose them, or the closure equivalence rule so it doesn't care.
 		, xC_masked	<- makeTMask KClosure xC (TTag v)
 		, xC_flat	<- flattenT xC_masked
-		, xC'		<- trimClosureC Set.empty $ xC_flat
+		, xC'		<- trimClosureC Set.empty Set.empty $ xC_flat
 
 		, xE'		<- packT xE
 	
@@ -397,10 +397,10 @@ reconX tt (XDo ss)
    in	( XDo ss'
         , t
 	, makeTSum KEffect sEs
-	, trimClosureC Set.empty
+	, trimClosureC Set.empty Set.empty
 		$ makeTMask 
 			KClosure
-			(makeTSum KClosure (map ((trimClosureC Set.empty) . flattenT) sCs))
+			(makeTSum KClosure (map ((trimClosureC Set.empty Set.empty) . flattenT) sCs))
 			(makeTSum KClosure (map TTag vsBind)) )
    
 -- match
@@ -459,7 +459,7 @@ reconX tt (XVar v t)
    in	( XVar v t
 	, t'
 	, TBot KEffect
-	, trimClosureC Set.empty $ TFree v t)
+	, trimClosureC Set.empty Set.empty $ TFree v t)
 
 
 -- prim
@@ -866,7 +866,9 @@ applyTypeT table (TForall (BVar v) k t1) t2
 applyTypeT table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == KClosure
-	, subsumes (tableMore table) (flattenT $ trimClosureC Set.empty t2) (flattenT $ trimClosureC Set.empty tB)
+	, subsumes (tableMore table) 
+			(flattenT $ trimClosureC Set.empty Set.empty t2) 
+			(flattenT $ trimClosureC Set.empty Set.empty tB)
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 	-- check that the constraint is satisfied

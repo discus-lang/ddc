@@ -123,8 +123,8 @@ visibleRsT tt
 	TEffect{}		-> Set.empty	
 
 	-- closure
-	TFree v t	
-	 -> visibleRsT t
+	TFree v t		-> visibleRsT t
+	TDanger t1 t2		-> Set.union (visibleRsT t1) (visibleRsT t2)
 	 
 	TClass KRegion cid	-> Set.singleton tt
 	TClass{}		-> Set.empty

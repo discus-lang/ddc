@@ -205,6 +205,11 @@ followT table tt
 		t'	<- transZM table t
 	 	return	$ TFree v' t'
 
+	TDanger v t
+	 -> do	v'	<- transZM table v
+	 	t'	<- transZM table t
+		return	$ TDanger v' t'
+
 	TTag v
 	 -> do	v'	<- transZM table v
 	 	return	$ TTag v'

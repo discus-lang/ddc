@@ -24,8 +24,8 @@ foreign import extern makeGetGet
         .  t0 -> Data.Tuple.Tuple2 %r1 (Base.Unit -(!e0 $c0)> t0) (Base.Unit -(!e1 $c1)> t0)
         :- !e0        = Base.!Read %r0
         ,  !e1        = Base.!Read %r0
-        ,  $c0        = ${box : %r0; box : t0}
-        ,  $c1        = ${box : %r0; box : t0}
+        ,  $c0        = ${box : %r0; box : %r0 $> t0}
+        ,  $c1        = ${box : %r0; box : %r0 $> t0}
         :$ Base.Obj -> Base.Data;
         
 foreign import extern checkGetGet

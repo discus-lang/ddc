@@ -68,6 +68,7 @@ flattenT' sub block tt
 	TEffect v ts		-> TEffect v (map down ts)
 
 	TFree v t		-> TFree v (down t)
+	TDanger t1 t2		-> TDanger (down t1) (down t2)
 	TTag v			-> TTag v
 
 	TError{}		-> tt

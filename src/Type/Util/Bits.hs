@@ -297,7 +297,6 @@ takeKindOfType tt
  	TForall vks t	-> takeKindOfType t
 	TFetters fs t	-> takeKindOfType t
 	
---	TUnify k ts	-> Just k
 	TSum k ts	-> Just k
 	TMask k _ _	-> Just k
 	TVar k v	-> Just k
@@ -310,6 +309,7 @@ takeKindOfType tt
 	TEffect{}	-> Just KEffect
 	
 	TFree{}		-> Just KClosure
+	TDanger{}	-> Just KClosure
 	TTag{}		-> Just KClosure
 	
 	TWild k		-> Just k

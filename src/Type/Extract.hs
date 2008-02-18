@@ -178,8 +178,8 @@ extractType_pack final varT cid tTrace
 	-- Trim closures
 	let tTrim	= 
 		case kindOfType tDeMore of
-			KClosure	-> trimClosureC Set.empty tDeMore
-			_		-> trimClosureT Set.empty tDeMore
+			KClosure	-> trimClosureC Set.empty Set.empty tDeMore
+			_		-> trimClosureT Set.empty Set.empty tDeMore
 
 	trace	$ " -- trimming closures\n"
 		% "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"

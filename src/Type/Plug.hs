@@ -79,6 +79,7 @@ staticRsDataT tt
 	TForall vks t		-> staticRsDataT t
 	
 	TFree v t		-> staticRsDataT t
+	TDanger t1 t2		-> Set.unions $ map staticRsDataT [t1, t2]
 	
 	TError k t		-> Set.empty
 
@@ -95,6 +96,8 @@ staticRsDataT tt
 --	Region cids that are free in the closure of the outer-most function
 --	constructor(s) are being shared with the caller. These functions
 --	did not allocate those regions, so they be can't generalised here.
+--
+--	BUGS: handle functions in data
 --
 staticRsClosureT
 	:: Type -> Set ClassId

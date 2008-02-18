@@ -13,10 +13,20 @@ import qualified Shared.VarBind	as Var
 
 import Util
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 -- var helpers
 varX d	= (Var.new $ "x" ++ show d)
 		{ Var.nameSpace = Var.NameValue
 		, Var.bind	= Var.XBind "x" d }
+
+varD d	= (Var.new $ "r" ++ show d)
+		{ Var.nameSpace = Var.NameType
+		, Var.bind	= Var.XBind "t" d }
 
 varR d	= (Var.new $ "r" ++ show d)
 		{ Var.nameSpace = Var.NameRegion
@@ -32,7 +42,7 @@ varC d	= (Var.new $ "c" ++ show d)
 
 	
 -- type helpers
-tVarX d = TVar KData    (varX d)
+tVarD d = TVar KData    (varD d)
 tVarR d = TVar KRegion  (varR d)
 tVarE d = TVar KEffect  (varE d)
 tVarC d = TVar KClosure (varC d)
@@ -64,6 +74,15 @@ type1		= tFetters
 			, FLet (tVarC 0) (cMask (tVarC 1) (varX 0)) ]
 
 
+type3		= tFetters
+			(tVarD 0)
+			[ FLet (tVarD 0) (tFun (tIntR 0) (tVarC 1) tBotE (tIntR 0))
+			, FLet (tVarC 1) (cFree 0 (tIntR 3)) ]
+			
+		
+-- trimC
+trimC t = trimClosureC Set.empty Set.empty t
+trimT t = trimClosureT Set.empty Set.empty t
 
 outType t 	
 	= putStr	

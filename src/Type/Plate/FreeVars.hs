@@ -77,6 +77,12 @@ instance FreeVars Type where
 	 
 	-- closure
 	TFree v t	-> freeVars t
+
+	TDanger t1 t2	
+	 -> unions 
+	 	[ freeVars t1
+		, freeVars t2]
+
 	TTag v		-> empty
 
 	-- wildcards

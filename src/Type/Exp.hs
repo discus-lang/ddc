@@ -102,8 +102,12 @@ data Type
 	| TEffect	Var [Type]			-- ^ An effect constructor
 	
 	-- closure
-	| TFree		Var Type			-- ^ An tagged object which is free in the closure. 
+	| TFree		Var Type			-- ^ An tagged object which is free in the closure.
 							--	The tag should be a Value var.
+							--	The type parameter should be a value type, region or closure.
+
+	| TDanger	Type Type			-- ^ If a region is mutable then free type variables in the 
+							--	associated type must be held monomorphic.
 	
 	| TTag		Var				-- ^ A tag for one of these objects, used in the RHS of TMask.
 

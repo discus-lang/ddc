@@ -857,6 +857,11 @@ instance Rename Type where
 		 $  do	t'	<- rename t
 		 	return	$ TFree v' t'
 	
+	TDanger t1 t2
+	 -> do	t1'	<- rename t1
+	 	t2'	<- rename t2
+		return	$ TDanger t1' t2'
+	
 	TMask k t1 t2
 	 -> do	t1'	<- rename t1
 	 	t2'	<- rename t2

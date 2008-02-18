@@ -56,7 +56,7 @@ subsumes1 table t s
 -- make sure closure terms are trimmed before comparing them
 subsumes2 table t s
  = let trimC tt
- 	| kindOfType tt == KClosure	= trimClosureC Set.empty tt
+ 	| kindOfType tt == KClosure	= trimClosureC Set.empty Set.empty tt
 	| otherwise			= tt
 	
    in	subsumes3 table (trimC t) (trimC s)

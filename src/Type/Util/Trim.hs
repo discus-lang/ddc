@@ -19,7 +19,8 @@
 
 module Type.Util.Trim
 	( trimClosureT 
-	, trimClosureC)
+	, trimClosureC
+	, trimClosureT')
 	
 where
 
@@ -53,45 +54,56 @@ trace ss x
 
 
 -- | Trim the closure portion of this type
-trimClosureT :: Set Type -> Type -> Type
-trimClosureT quant tt
-  = let	tt'	= packType $ trimClosureT' quant tt
+trimClosureT :: Set Type -> Set Type -> Type -> Type
+trimClosureT quant rsData tt
+  = let	tt'	= packType $ trimClosureT' quant rsData tt
     in	if tt' == tt
     		then tt'
-		else trimClosureT quant tt'
+		else trimClosureT quant rsData tt'
 
-trimClosureT' quant tt		
+trimClosureT' quant rsData tt		
  = case tt of
  	TFetters fs t	
-	 	-> addFetters (catMaybes $ map (trimClosureT_fs quant) fs) t
+	  -> let fs'	= catMaybes 
+	  		$ map (trimClosureT_fs quant rsData) fs
+	     in  addFetters fs' t
 
 	_	-> tt
 
 	
 -- | Trim the closure in this fetter.
 --	where the fetter was on a type.
-trimClosureT_fs :: Set Type -> 	Fetter	-> Maybe Fetter
-trimClosureT_fs quant ff
+trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
+trimClosureT_fs quant rsData ff
  = case ff of
  	FLet c1 c2	
 	 |  kindOfType c2 == KClosure
-	 -> Just $ FLet c1 $ trimClosureC quant c2
+	 -> Just $ FLet c1 $ trimClosureC quant rsData c2
 
 	FMore c1 c2
 	 | kindOfType c2 == KClosure
-	 -> Just $ FMore c1 $ trimClosureC quant c2
+	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
 	_ -> Just ff
 
 
 -- | Trim a closure down to its interesting parts
-trimClosureC :: Set Type -> Closure -> Closure
-trimClosureC quant cc
+trimClosureC :: Set Type -> Set Type -> Closure -> Closure
+trimClosureC quant rsData cc
+ = let cc'	= trimClosureC2 quant rsData cc
+   in  trace 
+ 	( "trimClosureC\n"	
+ 	% "    rsData = " % rsData	% "\n"
+	% "    cc     = " % cc		% "\n"
+	% "    cc'    = " % cc'		% "\n")
+ $ trimClosureC2 quant rsData cc
+
+trimClosureC2 quant rsData cc
  | KClosure	<- kindOfType cc
-  = let cc'	= packClosure $ trimClosureC' quant cc
+  = let cc'	= packClosure $ trimClosureC' quant rsData cc
     in  if cc' == cc
    	 then cc'
-	 else trimClosureC quant cc'
+	 else trimClosureC quant rsData cc'
 
  | otherwise
  = panic stage
@@ -99,17 +111,23 @@ trimClosureC quant cc
 	% "    cc = " % cc 
 
 
-trimClosureC' quant cc
- = let down	= trimClosureC quant
+trimClosureC' quant rsData cc
+ = let down	= trimClosureC quant rsData
    in  case cc of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
 	TVar KClosure v
-		| Set.member cc quant	-> TBot KClosure
-		| otherwise		-> cc
+		| Set.member cc quant 	-> TBot KClosure
+		| otherwise		
+		-> makeTSum KClosure 
+			$ (cc : [TDanger r cc	| r	<- Set.toList rsData
+						, r /= cc])
 
 	-- cids are never quantified so we always have to keep them.
-	TClass{}		-> cc
+	TClass KClosure _	
+		-> makeTSum KClosure
+			$ cc : [TDanger r cc	| r	<- Set.toList rsData
+						, r /= cc]
 
 	TBot  KClosure		-> cc
 	TTop  KClosure 		-> cc
@@ -126,92 +144,144 @@ trimClosureC' quant cc
 
 	TFetters fs c
 	 -> addFetters 
-	 	(catMaybes $ map (trimClosureC_fs quant) fs) 
-	 	(trimClosureC quant c)
+	 	(catMaybes $ map (trimClosureC_fs quant rsData) fs) 
+	 	(down c)
 
-	-- update quantifiers to not quantify over vars which have been trimmed out
+	-- add quantified vars to the set
 	TForall vks t		
 	 -> let quant'	= foldr Set.insert quant 
 				[TVar k v | (v, k) <- vks]
 		
-	    in	trimClosureC quant' t
+	    in	trimClosureC quant' rsData t
+
+	-- free
+	TFree v1 (TDanger t1 t2)
+	 | kindOfType t1 == KRegion
+	 , kindOfType t2 == KRegion
+	 -> makeTSum KClosure
+	 	[ TFree v1 t1
+		, TFree v1 t2]
+
 	     
-	-- If this closure element has no classids or free variables
-	--	then it is closed and can safely be erased.
+	TFree tag (TDanger t1 (TDanger t2 t3))
+	 -> makeTSum KClosure
+	 	[ TFree tag (TDanger t1 t2)
+		, TFree tag (TDanger t1 t3)
+		, TFree tag (TDanger t2 t3) ]
+
+	TFree tag (TDanger t1 t2)
+	 -> case kindOfType t2 of
+	 	KClosure -> TFree tag 
+			  $ makeTDanger tag t1 (down t2)
+
+		_	 -> makeTSum KClosure
+			  $ map (TFree tag)
+			  $ map (makeTDanger tag t1)
+			  $ trimClosureC_t tag quant rsData t2
+
+
 	TFree tag t
 	 -> case kindOfType t of
-	 	KClosure 
-		  -> TFree tag $ trimClosureC quant t
+	 	KClosure -> TFree tag 	$ down t
+		_ 	 -> TFree tag 	$ makeTSum KClosure 
+					$ trimClosureC_t tag quant rsData t
 
-		_ -> makeTSum KClosure 
-			$ map (TFree tag)
-			$ trimClosureC_t quant t
-			
+	-- hrmm. this shouln't be needed
+	TTag{}			-> cc
 
-	TTag   v		-> cc
-	 
 	_ -> panic stage
 		$ "trimClosureC: no match for " % show cc
 
 
 
--- | Trim a data element of a closure.
-trimClosureC_t :: Set Type -> Type -> [Type]
-trimClosureC_t quant tt
- = case tt of
+-- | Trim a value type element of a closure.
+trimClosureC_t :: Var -> Set Type -> Set Type -> Type -> [Type]
+trimClosureC_t tag quant rsData tt
+ = let tsBits	= trimClosureC_t' tag quant rsData tt
+   in  trace 	( "trimClosureC_t " % tt % "\n"
+   		% "    rsData: " %> rsData	% "\n"
+   		% "    tsBits: " %> tsBits	% "\n")	$  
+		tsBits
+ 
+trimClosureC_t' tag quant rsData tt
+ = let down	= trimClosureC_t tag quant rsData
+   in  case tt of
+	-- if some var has been quantified by a forall then it's not free
+	--	and not part of the closure
+	TVar k v
+		| Set.member tt quant	-> []
+		
+		| otherwise		
+		-> makeFreeDanger tag rsData tt
+
+	-- classids are never quantified, so we always have to keep them.
+	TClass{} 	
+		-> makeFreeDanger tag rsData tt
+		
+
 	-- Trim the fetters of this data
  	TFetters fs c		
-	 -> let	-- can't dicard 
-	 	-- quant'	= foldl' slurpBoundF quant fs
-	    in  map (\t -> addFetters (catMaybes $ map (trimClosureC_fs quant) fs) t)
-		 	$ trimClosureC_t quant c
-
+	 -> let	fs'	= catMaybes $ map (trimClosureC_fs quant rsData) fs
+	    	cBits	= down c
+	    in	map (addFetters fs') cBits
+	    
 	-- Trim under foralls
 	TForall vks t		
 	 -> let	quant'	= foldr Set.insert quant
 				[ TVar k v | (v, k) <- vks]
 
-	    in	trimClosureC_t quant' t
+	    in	trimClosureC_t tag quant' rsData t
 	
-	TSum k ts	-> catMap (trimClosureC_t quant) ts
-	TMask k t1 t2	-> [TMask k (makeTSum k $ trimClosureC_t quant t1) t2]
+	TSum k ts	-> catMap down ts
+	TMask k t1 t2	-> [TMask k (makeTSum k $ down t1) t2]
 
-	-- if some var has been quantified by a forall then it's not free
-	--	and not part of the closure
-	TVar k v
-		| Set.member tt quant	-> []
-		| otherwise		-> [tt]
-	
+
 	TBot{}		-> []
 	TTop{}		-> [tt]
 
-	-- 
-	TData v ts	-> catMap (trimClosureC_t quant) ts
+	-- when we enter into a data object remember that we're under its primary region.
+	TData v []	-> []
+	TData v (t:ts)
+	 	| kindOfType t == KRegion
+		-> let rsData'	= Set.insert t rsData
+		   in  catMap (trimClosureC_t tag quant rsData') (t:ts)
+		   
+		| otherwise
+		-> catMap down ts
+	
 	    
 	-- Only the closure portion of a function actually holds data
-	TFun t1 t2 eff clo	
-	 -> trimClosureC_t quant clo
+	TFun t1 t2 eff clo	-> down clo
 
-	TEffect{}	-> []
-	TFree v t	-> [trimClosureC quant tt]
-	
-	-- classids are never quantified, so we always have to keep them.
-	TClass{} -> [tt]
-
+	TEffect{}		-> []
+	TFree v t		-> [trimClosureC quant rsData tt]
 
 	_ -> panic stage
 		$ "trimClosureC_t: no match for (" % tt % ")"
 
+makeFreeDanger tag rsData t
+	| Set.null rsData	= [t]
+
+	| otherwise		
+	= map (\r -> makeTDanger tag r t) 
+		$ Set.toList rsData
+
+makeTDanger tag r t
+	| kindOfType t == KRegion
+	= TFree tag t
+	
+	| otherwise	= TDanger r t
+
 
 -- | Trim a fetter of a closure
-trimClosureC_fs :: Set Type -> Fetter -> Maybe Fetter
-trimClosureC_fs quant ff
+trimClosureC_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
+trimClosureC_fs quant rsData ff
  = case ff of
  	FLet c1 c2	
 
 	 -- more closure information
 	 |  kindOfType c2 == KClosure
-	 -> Just $ FLet c1 $ trimClosureC quant c2
+	 -> Just $ FLet c1 $ trimClosureC quant rsData c2
 
 	 -- effect information might be referenced in a type constructor
 	 | kindOfType c1 == KEffect
@@ -219,7 +289,7 @@ trimClosureC_fs quant ff
 
 	FMore c1 c2
 	 | kindOfType c2 == KClosure
-	 -> Just $ FMore c1 $ trimClosureC quant c2
+	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
 	 | kindOfType c2 == KEffect
 	 -> Just $ FMore c1 c2

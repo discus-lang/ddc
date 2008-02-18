@@ -99,13 +99,12 @@ type SP	= SourcePos
 		
 	'::'		{ TokenP { token = K.HasType	   } }
 	
---	'<:'		{ TokenP { token = K.IsSubtypeOf   } }
---	'<*'		{ TokenP { token = K.IsSubtypeOfQuant } }
-
 	':$'		{ TokenP { token = K.HasOpType	   } }
 	':-'		{ TokenP { token = K.HasConstraint } }
 
 	'->'		{ TokenP { token = K.RightArrow } }
+	'$>'		{ TokenP { token = K.HoldsMono }}
+
 	'()'		{ TokenP { token = K.Unit	} }
 	
 	'|-'		{ TokenP { token = K.GuardCase } }
@@ -861,12 +860,14 @@ closure :: { Closure }
 	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
 	| pVar ':' closureK				{ TFree (vNameV $1) $3			}
 	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
-	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TVar KClosure $3)	}
+	| pVar '\\' pVar				{ TMask   KClosure (TVar KClosure $1) (TVar KClosure $3)	}
+	| pVar '$>' typeN				{ TDanger (TVar KRegion $1) $3		}
 
 closureK 
 	:: { Closure }
 	: '$' '{' closure_semi '}'			{ TSum  KClosure $3					}
 	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3)		}
+	| pVar '$>' typeN				{ TDanger (TVar KRegion $1) $3		}
 		
 closure_semi
 	:: { [Closure] }

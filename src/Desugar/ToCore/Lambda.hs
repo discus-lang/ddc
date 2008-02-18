@@ -102,7 +102,8 @@ loadCloAnnot cc
  = case cc of
 	TVar KClosure vC	
 	 -> do	Just tC		<- lookupType vC
-	 	return $ trimClosureC Set.empty $ flattenT $ stripContextT tC
+	 	return 	$ trimClosureC Set.empty Set.empty 
+			$ flattenT $ stripContextT tC
 			 
 	TBot KClosure 	
 	 -> 	return	$ TBot KClosure

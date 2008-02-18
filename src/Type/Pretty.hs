@@ -57,6 +57,7 @@ instance Pretty Type where
 
 	-- closure
 	TFree  v t		-> v % " : " % t
+	TDanger v t		-> v % " $> " % t
 	TTag v			-> ppr v
 	
 	-- wild cards

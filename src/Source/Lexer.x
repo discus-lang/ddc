@@ -100,6 +100,8 @@ tokens :-
  \:\-			{ ptag HasConstraint		}
 
  \-\>			{ ptag RightArrow		}
+ \$\>			{ ptag HoldsMono		}
+ 
  \(\)			{ ptag Unit			}
  \.\.			{ ptag DotDot			}
 

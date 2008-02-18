@@ -202,7 +202,21 @@ packTypeLs ld ls tt
 	TFree v1 (TBot KClosure)		-> TBot KClosure
 	TFree v1 (TFetters _ (TBot KClosure))	-> TBot KClosure
 
-	TFree v t -> TFree v (packTypeLs True ls t)
+	TFree v1 (TDanger t1 (TFree v t2))
+		-> TFree v1 (TDanger t1 t2)
+
+	TFree v t 	
+		-> TFree v (packTypeLs True ls t)
+
+	-- danger
+	TDanger t1 (TBot KClosure)
+		-> TBot KClosure
+
+	TDanger t1 (TSum KClosure ts)
+		-> makeTSum KClosure 
+		$  map (TDanger t1) ts
+
+	TDanger t1 t2	-> TDanger t1 (packTypeLs True ls t2)
 	 
 	TTag v	-> tt
 	    

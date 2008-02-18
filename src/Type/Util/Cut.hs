@@ -148,6 +148,7 @@ cutT cid cidsEntered tt
 	 -> TBot KClosure
 
 	TFree v t		-> TFree	v (down t)
+	TDanger t1 t2		-> TDanger	(down t1) (down t2)
 
 	TClass k cid
 	 |  Set.member tt cidsEntered
