@@ -143,18 +143,6 @@ dotBindVar_SC str colorStr v
 	% " , color = " % colorStr 
 	% "];\n"
 
-	
------
-dotVarNode
-	:: Var -> String
-
-dotVarNode v
-	= pprStr
-	$ "\t"
-	% quote (pprStr $ Var.bind v)
-	% " [ label = " % quote (pprStr v) % "];\n"
-	
-
 dotApp :: Var -> [Var] -> String
 dotApp	v vs
 	=  pprStr

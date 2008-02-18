@@ -23,10 +23,6 @@ import qualified Source.Slurp		as S
 import qualified Source.Token		as Token
 
 -----
-stage	= "Main.Interface"
-
-
------
 -- munchFileName
 --	| Break a fileName into directory, base name and extension parts.
 --	  eg 

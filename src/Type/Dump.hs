@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
 module Type.Dump
 	( dumpGraph
@@ -123,15 +124,7 @@ prettyVMap 	m
 	$ map (\(v, t) -> (padR 20 $ pprStr v) ++ " = " ++ (pprStr t) ++ "\n")
 	$ Map.toList m
 	
-prettyVMapT 	m
-	= concat
-	$ map pprStr
-	$ map (\(v, t) 
-		-> (padR 20 $ pprStr v) 	% "\n"
-		%> (":: " % (pprStr $ prettyTS t)) % "\n\n")
-	$ Map.toList m
- 	 
- 
+
 -- Rewrite this class so all its classIds are in canconical form.
 fowardCids :: Class -> SquidM Class
 fowardCids c@ClassForward{}	= return c

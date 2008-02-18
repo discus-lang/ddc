@@ -1,5 +1,10 @@
 
 { 
+{-# OPTIONS 
+	-fno-warn-monomorphism-restriction 
+	-fno-warn-unused-binds
+	-fno-warn-incomplete-record-updates #-}
+
 module Source.Lexer
 	( scan 
 	, showSource

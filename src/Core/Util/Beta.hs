@@ -27,11 +27,11 @@ data BetaS
 		
 type BetaM = State BetaS
 
-
+{-
 bindType :: Var -> Type -> Type -> BetaM ()
 bindType v k t
 	= modify (\s -> s { sBoundT = Map.insert v k (sBoundT s) })
-	
+-}
 	
 bindValue :: Var -> Type -> Exp -> BetaM ()
 bindValue v k x

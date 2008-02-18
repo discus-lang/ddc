@@ -13,12 +13,10 @@ module Desugar.Plate.Trans
 
 where
 
-import Util
-import Shared.Var	(Var)
-
 import Desugar.Exp
 import Shared.Exp
 import Type.Exp
+import Util
 
 -----
 class Monad m => TransM m a1 a2 exp where

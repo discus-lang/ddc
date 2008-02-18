@@ -9,6 +9,7 @@ module Core.Exp
 	, Top 		(..)	-- top level things
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
+	, ClassContext	(..)	-- type class context
 	, Exp 		(..)	-- expressions
 	, Lit		(..)	-- literal values
 	, Proj		(..)	-- projections
@@ -79,6 +80,7 @@ data CtorDef
 data ClassContext
 	= ClassContext Var [Var]
 	deriving (Show, Eq)
+
 
 
 -- Exp ---------------------------------------------------------------------------------------------

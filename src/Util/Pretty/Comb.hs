@@ -299,6 +299,7 @@ appendMapPretty	xx
 
 
 ------
+{-
 test1	
  = let	?state	= initRenderS
    in   spaceTab ?state
@@ -308,13 +309,12 @@ test1
 		%  "bites fish\n" 
 			%> "walk " % "my" % "dog\n"
 
-
 test1' 
 	= putStr
 	$ catMaybes
 	$ map toString
 	$ test1
-
+-}
 
 
 

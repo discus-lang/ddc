@@ -106,7 +106,7 @@ lookupType :: Var -> CoreM (Maybe C.Type)
 lookupType v
  = do	sigmaTable	<- gets coreSigmaTable
  
- 	let res
+ 	let (res :: CoreM (Maybe C.Type))
 		| Var.nameSpace v /= NameValue
 		= lookupType' v
 		

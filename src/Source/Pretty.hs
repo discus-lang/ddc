@@ -287,6 +287,8 @@ instance Pretty (Exp a) where
 	XCons  sp x1 x2			-> x1 % ":" % x2
 	XList  sp xx			-> "[" % ", " %!% xx % "]"
 
+	_ -> panic stage
+		$ "ppr[Exp]: no match\n"
 
 instance Pretty (Proj a) where
  ppr f
@@ -414,14 +416,5 @@ spaceDown xx
 	XIfThenElse{}	-> ppr "\n"
 	XDo{}		-> ppr "\n"
 	_		-> pNil
-
-
--- instance Pretty FixDef where
---  pprStr	= prettyFD
-
-prettyFD :: 	FixDef a -> String
-prettyFD 	(v, (fixity, mode))
-	= pprStr mode ++ " " ++ show fixity ++ " " ++ Var.name v ++ " ;"
-	
 
 

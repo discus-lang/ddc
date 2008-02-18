@@ -120,25 +120,18 @@ loadTypeNode2 cid c
 
 		var		<- makeClassName cid
 		quantVars	<- gets stateQuantifiedVars
-		let isQuant	= isJust $ Map.lookup var quantVars
-		
-		let result
+	
+		let (result :: SquidM [Fetter])
 			-- don't bother showing bottom constraints
 			--	If a constraint for a class is missing it is assumed to be bottom.
 			| TBot k	<- t
 			= return $ fs ++ fsMulti
-			
---			| isQuant
---			= return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
 	
 			| otherwise
 			= case k of
 				KData	-> return $ FLet  (TClass k cid) tX : (fs ++ fsMulti)
 				_	-> return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
 		
---			| otherwise
---			= return $ FLet (TClass k cid) tX : (fs ++ fsMulti)
-	
 		result
 	
 

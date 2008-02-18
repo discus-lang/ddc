@@ -1,15 +1,9 @@
 
 module Main.Path
-(
-	Path(..),
-	makePaths
-)
+	( Path(..)
+	, makePaths)
 
 where
-
-
------
-stage	= "Main.Path"
 
 -----
 data	Path

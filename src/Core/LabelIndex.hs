@@ -51,7 +51,7 @@ convertLabel (CtorDef v fields) label
  	LIndex i	-> label
 	
 	LVar v
-	 -> let	Just (field, ix)	
+	 -> let	Just (_, ix)	
 	 		= find (\(f, i) -> dLabel f == Just v) 
 			$ zip fields [0..]
 			

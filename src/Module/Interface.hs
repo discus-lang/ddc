@@ -68,12 +68,3 @@ initInterface
 	}
 
 
------
-tagInfixTable		= "-- infix table\n"
-tagDataDefs		= "-- data defs\n"
-tagConstructors		= "-- constructors\n"
-tagImportExterns	= "-- import externs\n"
-tagBoundTypes		= "-- bound types\n"
-
-
-

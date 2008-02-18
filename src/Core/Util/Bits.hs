@@ -411,7 +411,7 @@ tossRegionEffects' eMap e
 	= eMap
 
 
- 
+{- 
 gatherFunT :: Type -> [Type]
 gatherFunT t
  = case t of
@@ -425,7 +425,7 @@ gatherFunT t
 	 ->  concat $ map gatherFunT tt
 
 	_ -> []
- 
+ -}
 
 
 -----

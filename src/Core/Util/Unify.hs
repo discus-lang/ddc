@@ -13,7 +13,7 @@ import Core.Pretty
 import Core.ReconKind
 import Core.Util.Bits
 
-stage	= "Core.Util.Unify"
+-- stage	= "Core.Util.Unify"
 
 
 -- Unify two types

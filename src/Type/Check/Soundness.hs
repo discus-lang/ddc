@@ -28,10 +28,8 @@ import Data.Map			(Map)
 
 -----
 stage	= "Type.Soundness"
-debug	= True
-trace s = when debug $ traceM s
-
-
+-- debug	= True
+-- trace s = when debug $ traceM s
 
 
 dangerousCidsT :: Type -> [ClassId]

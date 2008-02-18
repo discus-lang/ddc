@@ -23,7 +23,7 @@ import Core.Exp
 import Core.Plate.Trans
 
 -----
-stage	= "Core.Block"
+-- stage	= "Core.Block"
 
 -----
 blockTree :: Tree -> Tree

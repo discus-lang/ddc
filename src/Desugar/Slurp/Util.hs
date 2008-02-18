@@ -170,7 +170,7 @@ bindVtoT	varV
 	varType		<- gets stateVarType
 	
 	-- Check that this var isn't already bound.
-	let mVarT	= Map.lookup varV varType
+	let mVarT :: Maybe Var	= Map.lookup varV varType
 
 	case mVarT of
 	 Just vBound

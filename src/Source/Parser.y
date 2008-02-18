@@ -8,6 +8,8 @@
 --	This way we'll get better error messages during type checking.
 --
 {
+{-# OPTIONS -fno-warn-unused-binds #-}
+
 module Source.Parser 
 	(parse) 
 

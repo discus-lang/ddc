@@ -241,7 +241,7 @@ followK table k
  | decendK table	= transZM table k
  | otherwise		= return k
  
-followVs table vs	= mapM (followV table) vs
+-- followVs table vs	= mapM (followV table) vs
 followV table v		= transV table v
 
 followV_free table v

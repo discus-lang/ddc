@@ -221,9 +221,9 @@ instance Lint Var where
 		
 -----
 inSpaceV vs	= and $ map (\v -> Var.nameSpace v == NameValue)  vs
-inSpaceR vs	= and $ map (\v -> Var.nameSpace v == NameRegion) vs
+-- inSpaceR vs	= and $ map (\v -> Var.nameSpace v == NameRegion) vs
 inSpaceT vs	= and $ map (\v -> Var.nameSpace v == NameType)	  vs
-inSpaceE vs	= and $ map (\v -> Var.nameSpace v == NameEffect) vs
-inSpaceM vs	= and $ map (\v -> Var.nameSpace v == NameModule) vs
+-- inSpaceE vs	= and $ map (\v -> Var.nameSpace v == NameEffect) vs
+-- inSpaceM vs	= and $ map (\v -> Var.nameSpace v == NameModule) vs
 
 

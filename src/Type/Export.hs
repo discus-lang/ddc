@@ -41,7 +41,7 @@ import qualified Debug.Trace
 -----
 debug	= True
 trace s	= when debug $ traceM s
-stage	= "Type.Export"
+-- stage	= "Type.Export"
 
 -- | Export some stuff from the constraint solver state.
 squidExport 
@@ -226,7 +226,6 @@ slurpRegionConstraintVars c
  		
 		-- get the name of this class
 		name	<- makeClassName (classId c)
-		let vars'	= nub vars
 
 		-- check for errors on region constraints
 		mErr		<- checkRegionError c

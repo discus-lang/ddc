@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
 module Type.Class
 	( classChildren
@@ -50,7 +51,7 @@ import Type.State
 import Type.Plate.Collect
 
 -----
-stage	= "Type.Squid.Class"
+-- stage	= "Type.Squid.Class"
 
 -- | Return the cids of all the children of this class.
 classChildren :: Class -> [ClassId]
@@ -208,7 +209,7 @@ addToClass2 cid src t c
  	ClassNil	-> addToClass3 cid src t (classInit cid (kindOfType t))
 	Class{}		-> addToClass3 cid src t c
 	
-addToClass3 cid src t c
+addToClass3 cid src t c@Class{}
  = do 	activateClass cid
  	return	$ c	{ classNodes	= (t, src) : classNodes c
 			, classType	= Nothing

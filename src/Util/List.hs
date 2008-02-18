@@ -43,6 +43,7 @@ module Util.List
 	, breakWhens
 
 	, update
+	, updateF
 
 	, isNil
 	, gather
@@ -156,8 +157,7 @@ foldlR_ :: (s -> i -> (s, o)) -> s -> [i] -> s
 
 foldlR_	   f s []	= s
 foldlR_	   f s (x:xs)	= foldlR_ f s' xs
- where
- 	(s', y)		= f s x
+ where	(s', _)		= f s x
 
 
 -----

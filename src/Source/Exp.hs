@@ -141,8 +141,6 @@ type FixDef a	= (Var, (Int, InfixMode a))
 type Ctor a	= (Var, [DataField (Exp a) Type])
 type DataDef a	= (Var, [Var], [Ctor a])
 
-type SP		= SourcePos
-
 -----------------------
 -- Value expressions
 --

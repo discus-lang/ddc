@@ -8,7 +8,6 @@ where
 import Util
 
 -----
-import Shared.Pretty
 import Shared.Base
 
 -----

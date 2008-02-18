@@ -57,7 +57,6 @@ import Util
 import Numeric
 
 out 	ss	= putStr $ pprStr ss
-outl   ss	= putStr $ pprStr $ ss % "\n"
 
 -----
 -----
@@ -92,7 +91,7 @@ compileFile	argsCmd     fileName_
 	let pathLibrary_test = map (++ "/library") pathBase
 	mPathLibrary	<- liftM (liftM fst)
 			$  SI.findFile pathLibrary_test
-			$ "Base.di"
+			$ "Base.ds"
 	
 	let pathRuntime_test = map (++ "/runtime") pathBase
 	mPathRuntime	<- liftM (liftM fst)
@@ -140,7 +139,7 @@ compileFile	argsCmd     fileName_
 	-- Load build files ------------------------------------------------------
 	
 	-- Break out the file name
- 	let Just (fileDir_, fileBase, fileExt)
+ 	let Just (fileDir_, fileBase, _)
 			= munchFileName fileName
 
 	let fileDir	= if fileDir_ == []
@@ -676,63 +675,6 @@ handleStage name ex
 		error "failed."
 		
 	_ ->	throwIO ex
-
-
-
-
-
-putStrF s
- = do
- 	System.hFlush System.stdout
-	putStr s
- 	System.hFlush System.stdout
-	
-
-getTimeF :: IO Double
-getTimeF 
- = do
- 	clock		<- getClockTime
-	calTime		<- toCalendarTime clock
-	
-	let secs	= (ctMin calTime) * 60
-			+ (ctSec calTime)
-			
-	let frac 	= ((fromIntegral $ ctPicosec calTime) / 1000000000000.0 :: Double)
-			
-	return (fromIntegral secs + frac)
-		
-showF :: Double -> String
-showF	f	= (showFFloat (Just 6) f "") ++ "s"
-
-
-
------
-runPragmaShell fileName fileDir c
- = do
-	when ?verbose
-	 $ 	putStr $ pprStr $ "  - pragma Shell \"" % c % "\"\n"
-
-	-- Change to the same dir as the source file.
-	oldDir	<- System.getWorkingDirectory
-	System.changeWorkingDirectory fileDir	 
-
-	-- Run the command.
-	ret	<- System.system c
-
-	-- Change back to original dir.
-	System.changeWorkingDirectory oldDir
-	
-	case ret of
-	 System.ExitSuccess	-> return ()
-	 System.ExitFailure _
-	  -> do	System.hPutStr System.stderr 
-		  	$  pprStr
-			$ "* DDC ERROR - embedded pragma shell command failed.\n"
-			% "    source file = '" % fileName % "'\n"
-			% "    command     = '" % c % "'\n"
-			% "\n"
-	
-		System.exitWith (System.ExitFailure 1)
 	 	 
 -----
 dumpImportDef def

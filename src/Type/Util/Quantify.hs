@@ -14,8 +14,6 @@ import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
-import Debug.Trace
-
 -- When quantifying vars we need to arrange that vars free in FMore
 --	fetters appear before the bound varaible, else they won't be
 --	in scope during type application in the core.
@@ -35,9 +33,6 @@ import Debug.Trace
 quantifyVarsT :: [(Var, Kind)] -> Type -> Type
 quantifyVarsT vks tt@(TFetters fs t)
  = let
-	takeVars tt	= [v 	| TVar k v	
-				<- flattenTSum tt]
-
 	-- build a map of which vars need to come before others
  	deps		= Map.fromListWith (++) 
 			$ concat

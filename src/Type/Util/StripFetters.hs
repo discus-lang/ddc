@@ -13,8 +13,8 @@ stage	= "Type.Util.StripFetters"
 
 
 stripFettersT :: Type	-> (Type, [Fetter])
-stripFettersT	t
- = case t of
+stripFettersT	tt
+ = case tt of
 	TForall vks t
 	 -> let	(t', fs)	= stripFettersT t
 	    in	( TForall vks t'
@@ -41,9 +41,9 @@ stripFettersT	t
 	   in	( TMask k t1' t2'
 	   	, fs1 ++ fs2 )
 
- 	TVar{}	-> (t, [])
-	TBot{}	-> (t, [])
-	TTop{}	-> (t, [])
+ 	TVar{}	-> (tt, [])
+	TBot{}	-> (tt, [])
+	TTop{}	-> (tt, [])
 
 	-- data
 	TFun t1 t2 eff clo
@@ -74,7 +74,7 @@ stripFettersT	t
 	    	, fs)
 
 	TTag v
-	 -> (t, [])
+	 -> (tt, [])
 
 	TAccept t
 	 -> let (t', fs)	= stripFettersT t
@@ -82,9 +82,9 @@ stripFettersT	t
 	    	, fs)
 
 	 
-	TClass k cid	-> (t, [])
+	TClass k cid	-> (tt, [])
 
-	_	-> panic stage ("stripFettersT: no match for " % show t)
+	_	-> panic stage ("stripFettersT: no match for " % show tt)
 
 
 -- | Strip all the monomorphic FLets from this type.

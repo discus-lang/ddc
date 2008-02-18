@@ -57,13 +57,6 @@ subTreeP	p
  = case p of
  	PSuper v aa t ss
 	 -> let
-
-		-- Count how many times each var is assigned to 
-		--	within this super.
-		--
-		tableCount	= (transTableId return)
-				{ transS	= assignCountS }
-
 	 	mapAssignCount	= execState (mapM (transformSM assignCountS) ss) 
 				$ Map.empty
 

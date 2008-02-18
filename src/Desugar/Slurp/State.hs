@@ -39,7 +39,7 @@ import Constraint.Exp
 import Desugar.Exp
 
 -----
-stage	= "Source.CSlurpM"
+-- stage	= "Source.CSlurpM"
 
 type	Annot1	= SourcePos
 type	Annot2	= Maybe (Type, Effect)

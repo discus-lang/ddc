@@ -23,7 +23,7 @@ import Type.Plate.Trans
 import Type.Util.Bits
 
 -----
-stage	= "Type.Instantiate"
+-- stage	= "Type.Instantiate"
 
 -- | Instantiate a type scheme using the provided gn to create
 --	the new variables.

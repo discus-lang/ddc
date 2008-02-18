@@ -41,10 +41,6 @@ stage		= "Core.Curry"
 debug		= False
 trace s	x 	= if debug then Debug.trace (pprStr s) x else x
 
------ 
-
-type CurryM	= State Int
-
 -----
 curryTree 
 	:: (?args :: [Arg])

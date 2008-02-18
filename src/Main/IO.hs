@@ -153,8 +153,6 @@ loadInterface
 	let fileNameO		= fileDir ++ ".o"
 	let fileNameH		= fileDir ++ ".ddc.h"
 
-	let fileBase		= pprStr $ "/" %!% init vs
-		
 	mPathDI			<- findFile importDirs fileNameDI
 	mPathO			<- findFile importDirs fileNameO
 	mPathH			<- findFile importDirs fileNameH

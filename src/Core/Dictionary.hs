@@ -83,7 +83,7 @@ rewriteX xx
 	
 rewriteApp xx
  = let	xParts				=  flattenAppsE xx
-	(XAppFP (XVar overV t) _ : _)	= xParts
+	(XAppFP (XVar overV _) _ : _)	= xParts
 	
    in	case Map.lookup overV ?classMap of
    	 Nothing		-> xx
@@ -121,7 +121,7 @@ rewriteOverApp
 		Just tInstScheme= Map.lookup vInst mapTypes
 
 		-- Strip this scheme down to its shape
-		(vtsForall, vtsTet, ksClass, tInstShape)
+		(vtsForall, _, ksClass, tInstShape)
 				= stripSchemeT $ packT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
@@ -155,7 +155,7 @@ rewriteOverApp
 
 		-- Have a look at the original application 
 		--	split off the type/class args and keep the value args.
-		(XAppFP (XVar overV t) _ : xsArgs)	
+		(XAppFP (XVar _ _) _ : xsArgs)	
 				= flattenAppsE xx
 	
 		(vtsForallO, _, csClassO, _)
@@ -233,7 +233,7 @@ determineInstance
 	cvInstances	
  = let
  	-- See how many foralls there are on the front of the overloaded scheme.
-	(vtsForall, vtsTet, csClass, tOverShape)
+	(vtsForall, _, _, tOverShape)
 			= stripSchemeT overScheme
 
 	vsForall	= map fst vtsForall
@@ -241,7 +241,7 @@ determineInstance
 
 	-- Split out enough args to saturate all the foralls.
 	(_ : xsArgs)	= flattenAppsE xx
-	(xsArgsQuant, xsArgsRest)
+	(xsArgsQuant, _)
 			= splitAt vsForall_count xsArgs
 
 	tsArgsQuant	= map (\(XAppFP (XType t) _) -> t) xsArgsQuant

@@ -20,7 +20,7 @@ import Util
 import Util.Pretty
 
 -----
-stage	= "Core.Pretty"
+-- stage	= "Core.Pretty"
 
 -------------------------------------------------------------------------------------------------
 -- Some useful options for debugging
@@ -258,37 +258,6 @@ spaceApp xx
 	_			-> True
 
 
-prettyE_caused	eff
- = case eff of
-	TBot KEffect	-> ppr "<>"
-	_		-> "<" % ppr eff % ">"
-
-prettyClosureV (v, (eff, env))
-	=  v %  " = " 
-		% prettyClosureEff eff 
-		% prettyClosureEnv env
-	
-
-prettyClosureEff es
- = case es of
- 	[]	-> ppr " "
-	_	-> " {" % ", " %!% es % "}"
-	
-prettyClosureEnv es
- = case es of
- 	[]	-> ppr " "
-	_	-> " [" % ", " %!% es % "]"
-
-
-prettyVK	(var, kind)
- = case kind of
- 	KData		-> ppr var
-	KRegion		-> ppr var
-	KEffect		-> ppr var
-	KClosure	-> ppr var
-	_		-> "(" % var % " :: " % kind % ")"
-	
-
 prettyExpB x
  = case x of
 	XVar{}		-> ppr x
@@ -371,9 +340,6 @@ instance Pretty Stmt where
 	 | otherwise
 	 -> v 	% "\n"
 	  	% " =      " 	%> x  
-
-prettyRFs (r, [])	= r % ";"
-prettyRFs (r, fs)	= r %> " :- " % ", " %!% fs	% ";"
 
 -- Alt --------------------------------------------------------------------------------------------
 instance Pretty Alt where

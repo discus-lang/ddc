@@ -9,12 +9,10 @@ module	Constraint.Exp
 where
 
 -----
-import Util
-import Data.Map			(Map)
-
 import Type.Exp
 import Type.Location
-import Shared.Base
+
+import Data.Map			(Map)
 
 -----------------------
 -- CTree

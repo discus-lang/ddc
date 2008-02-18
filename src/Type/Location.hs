@@ -16,15 +16,12 @@ module Type.Location
 where
 
 import Type.Util.Bits
-import Type.Pretty
 import Type.Exp
 
 import Shared.Base
-import Shared.Exp
 import Shared.Literal
 import Shared.Error
 import Shared.VarPrim
-import Shared.VarUtil
 
 import qualified Shared.Var	as Var
 
@@ -252,12 +249,13 @@ dispTypeSource tt ts
 --		'of' refers to the entire effect/type of some binding
 --	whereas 'at' / 'with' refers to just a small part of it.
 
+{-
 ofKind :: Type -> String
 ofKind tt
  = case kindOfType tt of
  	KData	-> "         of type: "
  	KEffect	-> "       of effect: "
-
+-}
 atKind :: Type -> String
 atKind tt
  = case kindOfType tt of
@@ -280,8 +278,8 @@ dispSourceValue tt sv
 		%  "              at: " % sp	% "\n"
 		
 
-	SVLiteral sp vLit 
-		-> "  literal value " % vLit	% "\n"
+	SVLiteral sp lit
+		-> "  literal value " % lit	% "\n"
 		%  "         of type: " % tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		

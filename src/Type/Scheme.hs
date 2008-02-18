@@ -30,13 +30,14 @@ import Shared.VarPrim
 import qualified Main.Arg	as Arg
 
 import qualified Data.Map	as Map
+
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
 import Util
 
 -----
-stage	= "Type.Scheme"
+-- stage	= "Type.Scheme"
 debug	= True
 trace s	= when debug $ traceM s
 
@@ -167,7 +168,8 @@ generaliseType' varT tCore envCids
 					<- slurpFetters tScheme]
 	
 	-- lookup :> bounds for each quantified var
-	let vkbsFree	= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
+	let (vkbsFree	:: [(Var, (Kind, Maybe Type))])
+		= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
 
 	modify $ \s -> s { stateQuantifiedVars	
 				= Map.unions

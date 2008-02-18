@@ -910,11 +910,12 @@ instance Rename Fetter where
 
 
 -----
+{-
 slurpVarsT :: 	Type -> [Var]
 slurpVarsT	t
  = case t of
 	TForall  vks t		-> collectVarsT t \\ map fst vks
 	_			-> collectVarsT t
 	
-
+-}
 

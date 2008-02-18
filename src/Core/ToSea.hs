@@ -57,7 +57,6 @@ data SeaS
 	, stateDirectRegions	:: Set Var }
 
 type SeaM	= State SeaS
-type Table	= Map String Var
 	
 newVarN ::	NameSpace -> SeaM Var
 newVarN		space
@@ -249,32 +248,32 @@ toSeaX		xx
 
 	-- function calls
 	C.XPrim C.MTailCall xs
-	 -> do	let (C.XVar v t) : args	= stripValues xs
+	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 		return	$ E.XTailCall v args'
 
 	C.XPrim C.MCall xs
-	 -> do	let (C.XVar v t) : args	= stripValues xs
+	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 	    	return	$ E.XCall v args'
 
 	C.XPrim (C.MCallApp superA) xs
-	 -> do	let (C.XVar v t) : args	= stripValues xs
+	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 		return	$ E.XCallApp v superA args'
 
 	C.XPrim C.MApply xs
-	 -> do	let (C.XVar v t) : args	= stripValues xs
+	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 	    	return	$ E.XApply (E.XVar v) args'
 	   
 	C.XPrim (C.MCurry superA) xs
-	 -> do	let (C.XVar v t) : args	= stripValues xs
+	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 		return	$ E.XCurry v superA args'
 
 	C.XPrim (C.MFun) xs
-	 -> do	let (C.XVar v t) : args	= stripValues xs
+	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 		return	$ E.XPrim (toSeaPrimV v) args'
 
@@ -330,7 +329,7 @@ toSeaX		xx
 	C.XAPP{}
 	 -> let
 	 	parts		= C.flattenApps xx
-		(C.XVar vF t : _)	= parts
+		(C.XVar vF _ : _)	= parts
 		
 	    in 	return	$ E.XVar vF
 	 	
@@ -498,11 +497,6 @@ toSeaW  (Just (C.XVar objV t))
  = 	( E.XCon v
  	, map (toSeaGL objV) lvts)
 
-
-isAltConst  aa
- = case aa of
--- 	C.AAlt [C.GCase (C.WConst c)] x	-> True
-	_				-> False
 
 isPatConst gg
  = case gg of

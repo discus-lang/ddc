@@ -77,10 +77,10 @@ crushT t
 	 else 	crushT t'
 
 crushT1 :: Type -> Type
-crushT1 t
- = case t of
+crushT1 tt
+ = case tt of
  	TSum k ts			
-	 -> makeTSum k 		$ flattenTSum t
+	 -> makeTSum k 		$ flattenTSum tt
 
 	TFree v (TFree v' t)	
 	 -> TFree v t
@@ -93,8 +93,9 @@ crushT1 t
 	 -> TMask k1 t1 (TSum k1 [t2, t3])
 
 	TMask k t1 t2
-	 -> applyTMask t
-	_				-> t
+	 -> applyTMask tt
+
+	_	-> tt
 
 
 ----------------------
@@ -155,7 +156,7 @@ makeTMask k t1 t2
 applyTMask :: Type -> Type
 applyTMask tt@(TMask k t1 t2)
  = let	vsKill	= map (\t -> case t of
- 				TFree v t	-> v
+ 				TFree v _	-> v
 				TTag  v		-> v
 				_		
 				 -> panic stage 

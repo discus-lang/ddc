@@ -141,15 +141,6 @@ takeUntilXOp acc (x:xs)
  	XOp{}		-> (acc, x:xs)
 	_		-> takeUntilXOp (acc ++ [x]) xs
  	
-
- 
-flattenApps  :: Exp a	-> [Exp a]
-flattenApps x
- = case x of
-	XApp sp x1 x2 	-> x1 : flattenApps x2
-	e		-> [e]	
- 
-
 unflattenApps :: a -> [Exp a] -> (Exp a)
 unflattenApps	sp [x]	= x
 unflattenApps  	sp xx	

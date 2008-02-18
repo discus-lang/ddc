@@ -46,9 +46,9 @@ instance Pretty Type where
 	TFun t1 t2 eff clo
 	 -> case (eff, clo) of
 	 	(TBot _ ,	TBot _)		-> prettyTBF t1 % " -> " % prettyTRight t2
-		(eff,		TBot _)		-> prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
-		(TBot _,	clo)		-> prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
-		(eff,		clo)		-> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " 
+		(eff',		TBot _)		-> prettyTBF t1 % " -(" % eff' % ")> " % prettyTRight t2
+		(TBot _,	clo')		-> prettyTBF t1 % " -(" % clo' % ")> " % prettyTRight t2
+		(eff',		clo')		-> prettyTBF t1 % " -(" % prettyTB eff' % " " % prettyTB clo' % ")> " 
 								% prettyTRight t2
 		
 	-- effect

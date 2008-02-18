@@ -20,7 +20,7 @@ import Type.Crush.Unify
 -----
 debug	= True
 trace s	= when debug $ traceM s
-stage	= "Type.Crush.Shape"
+-- stage	= "Type.Crush.Shape"
 
 
 -----

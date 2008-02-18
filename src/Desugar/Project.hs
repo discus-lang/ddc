@@ -90,7 +90,7 @@ snipProjDictTree moduleName  tree
 -- Snip RHS of bindings in projection dictionaries.
 snipProjDictP moduleName (PProjDict sp t ss)
  = do
-	let (TData vCon ts)	= t
+	let (TData vCon _)	= t
 
 	-- See what vars are in the dict and make a map of new vars.
  	let dictVs	= nub
@@ -290,7 +290,7 @@ addProjDictDataTree
 addProjDictDataTree tree
  = do
 	-- Slurp out all the data defs
-	let dataDefs	= [p		| p@(PData _ v vs ctors)	<- tree]
+--	let dataDefs	= [p		| p@(PData _ v vs ctors)	<- tree]
 
  	-- Slurp out all the available projection dictionaries.
 	let projMap	= Map.fromList
@@ -394,8 +394,9 @@ makeProjFun sp tData ctors fieldV
 				
 makeProjFunAlt sp objV fieldV (CtorDef _ vCon fields)
  = do
-	let mFieldIx	= lookup (Just fieldV)
-			$ zip (map dLabel fields) [0..]
+	let (mFieldIx :: Maybe Int)
+		= lookup (Just fieldV)
+		$ zip (map dLabel fields) [0..]
 
 	bindV		<- newVarN NameValue
 			
@@ -452,8 +453,9 @@ makeProjR_fun sp tData ctors fieldV
 				
 makeProjR_alt sp objV fieldV (CtorDef _ vCon fields)
  = do
-	let mFieldIx	= lookup (Just fieldV)
-			$ zip (map dLabel fields) [0..]
+	let (mFieldIx :: Maybe Int)
+		= lookup (Just fieldV)
+		$ zip (map dLabel fields) [0..]
 			
 	return
 	 $ case mFieldIx of

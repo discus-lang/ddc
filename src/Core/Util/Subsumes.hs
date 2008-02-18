@@ -27,7 +27,7 @@ trace ss x
 		then Debug.Trace.trace (pprStr ss) x
 		else x
 
-stage	= "Core.Util.Subsumes"
+-- stage	= "Core.Util.Subsumes"
 -----
 
 -- | Check if t subsumes s another. t :> s

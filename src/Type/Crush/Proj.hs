@@ -59,7 +59,7 @@ crushProjClassT cidT
 		% "    cidT        = " % cidT		% "\n"
 		% "    fetter      = " % fProj		% "\n"
 
-	let FProj proj _ (TClass KData cidObj) _	= fProj
+	let FProj _ _ (TClass KData cidObj) _	= fProj
 	
 	-- lookup the node for the object
 	Just cObj	<- lookupClass cidObj
@@ -79,7 +79,7 @@ crushProjClass2 cidT src fProj cObj
 	
 crushProjClass3 cidT src fProj cObj tObj
  = do
- 	let FProj proj _ (TClass KData cidObj) _	= fProj
+ 	let FProj proj _ (TClass KData _) _	= fProj
 
 	trace	$ "    cObj type   = " % classType cObj	% "\n"
 

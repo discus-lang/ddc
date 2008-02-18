@@ -9,10 +9,9 @@ import {-# SOURCE #-} Desugar.Slurp.SlurpS
 import {-# SOURCE #-} Desugar.Slurp.SlurpA
 import Desugar.Slurp.Base
 
-import Type.Util
 import Type.Location
 import qualified Shared.Var	as Var
-import Util
+import Util	(liftM, unzip6, unzip5, takeLast, catMap)
 
 -----
 stage	= "Desugar.Slurp.SlurpX"
@@ -59,12 +58,12 @@ slurpX	exp@(XLambda sp vBound xBody)
 	let qs' = case xBody of
 		XLambda{}
 		  -> let [branch2]	= qsBody
-		     in	 newCBranch
+		     in	 CBranch
 		     		{ branchBind 	= mergeCBinds (BLambda [vBoundT]) (branchBind branch2)
 				, branchSub  	= qs ++ branchSub branch2 }
 				
 		_
-		 ->	newCBranch
+		 ->	CBranch
 		 		{ branchBind 	= BLambda [vBoundT]
 				, branchSub  	= qs ++ qsBody }
 	

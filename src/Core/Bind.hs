@@ -380,10 +380,6 @@ bindRegionsX rsLocal xx
 			
    	return	xx'
 
-getFetters r lookupFetters 
- = []
-
-
 
 -- Construct appropriate witnesses for this regions constraints
 makeWitnesses

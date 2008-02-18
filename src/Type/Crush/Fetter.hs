@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
 module Type.Crush.Fetter
 	( crushFetterC 

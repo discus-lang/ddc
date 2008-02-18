@@ -11,6 +11,7 @@ import qualified Shared.Var	as Var
 import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
+import Shared.Pretty()
 
 stripAnnot xx	= transformN (\n -> Nothing :: Maybe ()) xx
 
@@ -67,7 +68,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 	 -> annot nn
 	 	("class " % v % " " % " " %!% map prettyTB ts % " where\n"
 			% "{\n"
-			%> ("\n\n" %!% map (\(v, sig) -> v % ("\n        :: " %> prettyTS sig 	% ";")) sigs)
+			%> ("\n\n" %!% map (\(v', sig) -> v' % ("\n        :: " %> prettyTS sig 	% ";")) sigs)
 			% "\n}\n")
 
 	PClassInst nn v ts context ss
@@ -108,8 +109,7 @@ instance Pretty a => Pretty (CtorDef (Maybe a)) where
 	
 	CtorDef nn v fs
 	 -> annot nn
-	 	(v % " {\n"
-			%> ("\n" %!% fs) % "\n" % "}")
+	 	(v % " {\n" %> ("\n" %!% fs) % "\n" % "}")
 
 
 -- Exp -------------------------------------------------------------------------
@@ -214,8 +214,8 @@ instance Pretty a => Pretty (Alt (Maybe a)) where
 instance Pretty a => Pretty (Guard (Maybe a)) where
  ppr gg
   = case gg of
-  	GCase nn pat		-> annot nn ("| " % pat)
-	GExp  nn pat exp	-> annot nn (" "  % pat %>> " <- " % exp)
+  	GCase nn pat	-> annot nn ("| " % pat)
+	GExp  nn pat x	-> annot nn (" "  % pat %>> " <- " % x)
 	
 
 -- Pat ------------------------------------------------------------------------
@@ -225,7 +225,7 @@ instance Pretty a => Pretty (Pat (Maybe a)) where
 	WConLabel nn v lvs	
 		-> annot nn (
 			v % " {" % 
-				", " %!% (map (\(l, v) -> l % " = " % v) lvs) % 
+				", " %!% (map (\(l, v') -> l % " = " % v') lvs) % 
 			"}")
 
 	WConst	nn c		
@@ -241,7 +241,7 @@ instance Pretty a => Pretty (Pat (Maybe a)) where
 	WConLabelP nn v lvs	
 		-> annot nn (
 			v % " (--pat--){" % 
-				", " %!% (map (\(l, v) -> l % " = " % v) lvs) % 
+				", " %!% (map (\(l, v') -> l % " = " % v') lvs) % 
 			"}")
 
 	WWildcard nn

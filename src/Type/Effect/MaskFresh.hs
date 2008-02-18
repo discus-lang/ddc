@@ -39,13 +39,14 @@ import Type.Plate
 import qualified Debug.Trace	as Debug
 
 -----
+{-
 stage	= "Type.Effect.MaskFresh"
 debug	= True
 trace s	= when debug $ traceM s
+-}
 
-
-maskEsFreshT ::	Type -> Type
-maskEsFreshT t = t
+--maskEsFreshT ::	Type -> Type
+--maskEsFreshT t = t
 
 {-
 maskEsFreshT	t@(TForall vks t1@(TFetters fs x@(TFun{})))

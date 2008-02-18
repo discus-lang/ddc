@@ -21,8 +21,8 @@ import Sea.Exp
 stage	= "Sea.Pretty"
 
 -----
-maxSpecialApply	= 4
-maxSpecialCurry	= 4
+-- maxSpecialApply	= (4 :: Int)
+-- maxSpecialCurry	= (4 :: Int)
 
 -----
 sV  v		= ppr $ seaVar False v
@@ -217,6 +217,7 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 	 -> case f of
 	 	FProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 	 	FProjFieldR	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
+		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
 
 	XPrim f [x1]
 	 |  f == FNeg
@@ -242,6 +243,8 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 
 		FArrayPeek t	-> "_arrayPeek (" % t % ", " % x1 % ", " % x2 % ")"
 		FArrayPoke t	-> "_arrayPoke (" % t % ", " % x1 % ", " % x2 % ")"
+
+		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
 	
 	-- projection
 	XTag x
@@ -252,6 +255,7 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 	 	TData		-> "_DARG(" % x % ", " % i % ")"
 		TThunk		-> "_TARG(" % x % ", " % i % ")"
 		TSusp 	 	-> "_SARG(" % x % ", " % i % ")"
+		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
 
 	XField x v l		-> "_FIELD("  % x % ", " % "_S" % sV v % ", " % l % ")"
 	XFieldR x v l		-> "_FIELDR(" % x % ", " % "_S" % sV v % ", " % l % ")"
@@ -360,6 +364,7 @@ seaModule	m
  = case m of
 	ModuleNil		-> ""
 	ModuleAbsolute ns	-> (catInt "_" $ ns) ++ "_"
+	_			-> panic stage $ "seaModule: no match for: " % show m
 
 
 --	= show (Var.nameModule v) ++ Var.name v

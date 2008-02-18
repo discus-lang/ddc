@@ -126,11 +126,11 @@ cutF cid cidsEntered ff
 cutT cid cidsEntered tt	
  = let down	= cutT cid cidsEntered
    in  case tt of
-	TForall  vks tt		-> TForall	 vks (down tt)
+	TForall  vks t		-> TForall	 vks (down t)
 
 	-- These fetters are wrapped around a type in the RHS of our traced type
 	--	they're from type which have already been generalised
-	TFetters fs  tt		-> TFetters 	(map (cutF_follow cidsEntered) fs) (down tt)
+	TFetters fs  t		-> TFetters 	(map (cutF_follow cidsEntered) fs) (down t)
 
 	TSum  k ts		-> TSum 	k (map down ts)
 	TMask k t1 t2		-> TMask 	k (down t1) (down t2)
@@ -143,19 +143,19 @@ cutT cid cidsEntered tt
 
 	TEffect	v ts		-> TEffect	v (map down ts)
 
-	TFree v t2@(TClass k cid)
+	TFree v t2@(TClass k _)
 	 |  Set.member t2 cidsEntered
 	 -> TBot KClosure
 
 	TFree v t		-> TFree	v (down t)
 	TDanger t1 t2		-> TDanger	(down t1) (down t2)
 
-	TClass k cid
+	TClass k cid'
 	 |  Set.member tt cidsEntered
 	 -> case k of
 	 	KEffect		-> TBot KEffect
 		KClosure	-> TBot KClosure
-		KData		-> panic stage $ "cutT: uncaught loop through class " % cid % "\n"
+		KData		-> panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
 
 	 | otherwise
 	 -> tt

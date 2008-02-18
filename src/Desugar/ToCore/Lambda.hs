@@ -30,11 +30,13 @@ import qualified Type.Exp	as T
 import qualified Type.Util	as T
 
 -----
+{-
 stage 		= "Desugar.ToCore.Lambda"
 debug		= True
 trace ss x	= if debug 
 			then Debug.trace (pprStr ss) x
 			else x
+-}
 
 -- | Add type lambdas and contexts to this expression, based on the provided type scheme.
 --	Used on RHS of let-bindings.

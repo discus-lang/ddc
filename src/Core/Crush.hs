@@ -16,7 +16,7 @@ import Util
 import Shared.Error
 
 -----
-stage	= "Core.Crush"
+-- stage	= "Core.Crush"
 
 -----
 crushTree :: Tree -> Tree

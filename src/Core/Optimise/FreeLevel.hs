@@ -22,7 +22,7 @@ import Core.Util.Slurp
 import Core.Plate.FreeVars
 
 -----
-stage	= "Core.Optimise.FreeLevel"
+-- stage	= "Core.Optimise.FreeLevel"
 
 -----
 annotLevelTree 

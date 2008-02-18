@@ -55,12 +55,12 @@ trimClosureT' tt
 
 	_		-> tt
 
-
+{-
 takeBoundVarF ff
  = case ff of
  	FWhere v _	-> Just v
 	FMore  v _	-> Just v
-
+-}
 	
 -- | Trim the closure in this binding
 --	where the binding was on a type

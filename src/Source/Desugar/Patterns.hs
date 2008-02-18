@@ -95,6 +95,7 @@ rewritePatA co aa
 --	name the nodes on the fly.
 
 -- | Name intermediate nodes in a pattern expression
+{-
 sprinkleAtsX :: a -> S.Exp a -> RewriteM (S.Exp a)
 sprinkleAtsX sp p
  = case p of
@@ -124,7 +125,7 @@ sprinkleAtsX sp p
 	 	xs'		<- mapM (sprinkleAtsX sp) xs
 		let var'	=  rewritePatVar var
 		return	$ S.XAt sp v (S.XCon sp var' xs')
-			
+-}
 
 -- | These variables are treated as special aliases for list functions.
 -- 	TODO: 	It would be better to define these in the source program, or allow

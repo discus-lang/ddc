@@ -92,12 +92,13 @@ toCoreTreeM tree
 	= liftM concat
 	$ mapM toCoreP tree
 	
-
+{-
 flattenEs e
  = case e of
  	C.TNil			-> []
 	C.TSum C.KEffect es	-> es
 	e			-> [e]
+-}
 	
 -- Top ---------------------------------------------------------------------------------------------
 -- | Convert a top level thing to core.
@@ -293,7 +294,7 @@ toCoreX xx
 		--	will be passed into the outer function.
 		--
 		Just tArg1	<- lookupType vTV
-		let (argQuant, argFetters, argContext, argShape)
+		let (argQuant, argFetters, _, argShape)
 				= C.stripSchemeT tArg1
 
 		portVars	<- gets coreQuantVars
@@ -613,7 +614,7 @@ toCoreVarInst v vT
 	Just tScheme	<- lookupType v
 	mapInst		<- gets coreMapInst
 
-	let (btsForall, vtsWhere, ksContextC, tShape)
+	let (btsForall, _, ksContextC, tShape)
 			= C.stripSchemeT tScheme
 		
 	-- TODO: break this out into a separate fn

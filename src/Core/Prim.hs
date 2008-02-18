@@ -230,7 +230,7 @@ doActions tt (Ignore:as) (x:xs)
 	
 doActions tt (Unbox:as) (x:xs)
 
- = let	tX@(TData v [tR@(TVar KRegion vR)])	
+ = let	tX@(TData _ [tR@(TVar KRegion vR)])	
  		= Recon.reconX_type (stage ++ "doActions") x
 
 	x'	| Set.member vR (tableDirectRegions tt) 
@@ -260,7 +260,7 @@ flattenAppsEff xx
 flattenAppsEff' xx
  = let	bits	= flattenAppsE xx
  	
-	(parts, effss)
+	(parts, _)
 		= unzip
 		$ map (\p -> case p of
 				XAppFP x mEff	-> (x, mEff))

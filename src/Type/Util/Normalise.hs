@@ -22,10 +22,10 @@ import Type.Plate
 -----
 normaliseT :: 	Type -> Type
 normaliseT	tt
- = let	vsBinding		= collectBindingVarsT tt
- 	(vsBinding', state')	= runState (mapM bindVar vsBinding) initState
-	varMap			= stateVarMap state'
-	t2			= transformV (rewriteVarV varMap) tt
+ = let	vsBinding	= collectBindingVarsT tt
+ 	(_, state')	= runState (mapM bindVar vsBinding) initState
+	varMap		= stateVarMap state'
+	t2		= transformV (rewriteVarV varMap) tt
  in 	t2
 
 -----

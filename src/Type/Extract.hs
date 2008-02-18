@@ -81,7 +81,6 @@ extractType_findClass final varT
 	 --	something that doens't exist in the graph. bad news, dude.
 	 Nothing	
 	  -> do	graph			<- gets stateGraph
-	  	let varToClassId	=  graphVarToClassId graph
 	  	freakout stage
 		 	("extractType: no classId defined for variable " % (varT, Var.bind varT)		% "\n")
 -- debug		% " visible vars = " % (map (\v -> (v, Var.bind v)) $ Map.keys varToClassId)		% "\n")

@@ -17,7 +17,7 @@ import Desugar.Slurp.SlurpA
 import Type.Location
 
 -----
-stage	= "Desugar.Slurp.SlurpS"
+-- stage	= "Desugar.Slurp.SlurpS"
 
 -- | Slurp the type constraints for this statement.
 slurpS 	:: Stmt Annot1
@@ -43,7 +43,7 @@ slurpS 	(SBind sp Nothing e1)
 		, eX
 		, cX
 		, SBind (Just (tX, eX)) Nothing x1'
-		, [newCBranch
+		, [CBranch
 			{ branchBind	= BNil
 			, branchSub	= qs ++ qsX }])
 
@@ -62,7 +62,7 @@ slurpS	(SBind sp (Just v) e1)
 		, eX
 		, cX 
 		, SBind (Just (tX, eX)) (Just v) x1'
-		, [newCBranch
+		, [CBranch
 			{ branchBind	= BLet [vBindT]
 			, branchSub	
 			   	=  [ CEq  (TSU $ SUBind sp) tBind tX ]

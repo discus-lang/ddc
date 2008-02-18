@@ -28,8 +28,8 @@ import qualified Shared.Var	as Var
 
 -- what scratch dir to use
 scratch	= "tools/churn/scratch/"
-expFuel		= 50
-typeFuel	= 50
+expFuel		= 50 :: Int
+typeFuel	= 50 :: Int
 
 
 ----------------------------------------------------------------------------------------------------

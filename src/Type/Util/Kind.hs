@@ -20,16 +20,16 @@ import Type.Plate
 -- addDefaultKinds
 --
 addDefaultKinds :: 	Type -> Type
-addDefaultKinds		t
-	= transformT addDefaultKinds' t
+addDefaultKinds	tt
+	= transformT addDefaultKinds' tt
 
-addDefaultKinds'	t
- = case t of
+addDefaultKinds' tt
+ = case tt of
  	TForall vsKinds t
 	 -> let vsKinds'	= map (\v -> (v, defaultKindV v)) $ map fst vsKinds
 	    in  TForall vsKinds' t
 		
-	_ -> t
+	_ -> tt
 
 
 -----------------------

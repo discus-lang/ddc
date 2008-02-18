@@ -26,7 +26,7 @@ import Data.Map			(Map)
 import Debug.Trace
 -----
 
-stage	= "Type.Context"
+-- stage	= "Type.Context"
 
 
 -- | Reduce the context of this type using the provided map of instance definitions.

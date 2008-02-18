@@ -17,9 +17,7 @@ module Type.Exp
 where
 
 import Util
-import Shared.Base		(SourcePos)
 import Shared.Var		(Var)
-import Shared.Literal
 import Shared.Error
 import Data.Ix
 import qualified Shared.Var	as Var

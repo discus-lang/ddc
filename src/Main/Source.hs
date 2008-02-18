@@ -79,7 +79,7 @@ import Util
 
 
 -----
-stage = "Stages.Source"
+-- stage = "Stages.Source"
 
 -- | Parse source code.
 parse 	:: (?args :: [Arg])
@@ -306,7 +306,7 @@ slurpC	sTree
 	let state	= D.initCSlurpS 
 	
 	-- slurp constraints from the header
-	let ((header', hctrs, vsBound_header), state2)
+	let ((_, hctrs, _), state2)
 			= runState (slurpTreeM hTree)
 			$ state
 		

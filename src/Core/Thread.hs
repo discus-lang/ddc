@@ -239,7 +239,8 @@ popWitnessVK vWitness k
 	= do
 		state	<- get
 
-		let xx	| (c : cs)			<- state
+		let (xx	:: ThreadM ())
+			| (c : cs)			<- state
 			, c == ((vClass, vRE), vWitness)
 			= put cs
 			

@@ -28,8 +28,8 @@ instance FreeVars Var where
  
 -----
 instance FreeVars Type where
- freeVars t
-  = case t of
+ freeVars tt
+  = case tt of
 	TNil
 	 -> empty
 
@@ -95,7 +95,7 @@ instance FreeVars Type where
 	TError{}	-> empty
 	TFetter f	-> freeVars f
 	 
-	_ -> panic stage $ "freeT: no match for " ++ show t ++ "\n"	 
+	_ -> panic stage $ "freeT: no match for " ++ show tt ++ "\n"	 
 	    
 -----
 instance FreeVars Kind where

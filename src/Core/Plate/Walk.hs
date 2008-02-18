@@ -388,26 +388,6 @@ instance Monad m => WalkM m Fetter where
 	 -> do	t'	<- walkZM z t
 	 	return	$ FMore v t'
 
-
-
-
-
-
------------------------
--- Helpers for binding Types/Regions
---
-bindTFs_VT v t z
- = let z'	= bindFs_Type t z
-   in  bindT z' z' v t
-
-
-bindFs_Type t z
- = case t of
- 	TForall v k t2	-> bindFs_Type t2 z
-
-	_ -> z
-			
-			
 -- bindTKF_Stmt 
 --	Bind the vars and regions present in the type of this statement.
 --
@@ -424,12 +404,6 @@ bindTKF_Stmt z ss
 
 	_	-> return z
 
-
-
-bindTK_Alt z a
- = case a of
- 	AAlt gs x 	-> foldM bindTK_Guard z gs
-	 
 bindTK_Guard zz g
  = case g of
 	GExp  w x	-> bindTK_Pat zz w

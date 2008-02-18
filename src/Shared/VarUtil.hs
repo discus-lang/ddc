@@ -58,7 +58,7 @@ newVarNI	space	     info
 	
 	
 
-
+{-
 cookName ::	Var	-> String
 cookName	var
 	-- Wrap symbols in parenthesis ala Haskell.
@@ -66,6 +66,7 @@ cookName	var
 	
 	-- Prefix dummy variables with underscore to guarantee that they don't clash with user variables.
 	| isDummy  var	= "_"  ++ Var.name var
+-}
 	
 prettyPos :: Var	-> String
 prettyPos var

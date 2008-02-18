@@ -51,9 +51,8 @@ import Source.DefixApps
 
 -----
 stage	= "Normal.Defix"
-
-trace ss x	
-	= Debug.Trace.trace (pprStr ss) x
+-- trace ss x	
+--	= Debug.Trace.trace (pprStr ss) x
 
 type Annot	= SourcePos
 

@@ -14,13 +14,11 @@ where
 
 import Util
 import Type.Exp
-import Shared.Error
 import Type.Plate.Trans
 
-
 collectEffsT :: Type -> [Effect]
-collectEffsT t
- = case t of
+collectEffsT tt
+ = case tt of
  	TForall vks t		
 	 -> collectEffsT t
 
@@ -95,7 +93,7 @@ collectBindingVarsF' ff
 
 -----
 collectTClassVars :: Type -> [Type]
-collectTClassVars t
+collectTClassVars tt
  = let collect t
  	= case t of
 		TClass{}	
@@ -109,7 +107,7 @@ collectTClassVars t
 		_ -> 	return t
 		
    in	execState
-   		(transZM transTableId { transT_enter = collect } t)
+   		(transZM transTableId { transT_enter = collect } tt)
 		[]
 		
 		

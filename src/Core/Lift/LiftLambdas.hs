@@ -132,7 +132,6 @@ chopInnerS2	topName	(SBind (Just v) x)
 	-- build the call to the new super
 	let typeArgs	= map makeSuperArgK freeVKs
 	let valueArgs	= [XVar v t | (v, t) <- freeVTs]
-	let callArgs	= typeArgs ++ valueArgs
 
 	let Just xCall	= buildApp (XVar vSuper tSuper : typeArgs ++ valueArgs)
 
@@ -219,14 +218,6 @@ hasLambdasA	a
  = case a of
  	AAlt 	gs x	-> hasLambdasX x
 
-hasLambdasG	gg
- = case gg of
-	GExp p x	-> hasLambdasX x 	
-
-
-
-
-
 
 -- | Turn this PBind into a combinator by binding its free variables as new parameters.
 --   Returns the freshly bound vars and there type/kinds to help construct calls to it
@@ -269,7 +260,7 @@ bindFreeVarsP
 	-- TODO: better to get the type directly from the XVar
 	tsFreeVal	<- mapM getType vsFreeVal
 	let vtsFreeVal	= zip vsFreeVal tsFreeVal
-	let (xBindVal, cBindVal)
+	let (xBindVal, _)
 			= foldr addLambda (xRecon, cRecon) vtsFreeVal
 
 	-- Bind free type vars with new type lambdas
@@ -311,13 +302,3 @@ addLambda (v, t) (x, clo)
    in	(XLam v t x (TBot KEffect) clo', clo')
 
 
--- | Take the closure annotation from the outermost XLam in this expression
-takeXLamClosure :: Exp -> Maybe Closure
-takeXLamClosure xx
- = case xx of
-	XAnnot 	nn x		-> takeXLamClosure x
-	XLAM	v t x		-> takeXLamClosure x
-	XTet	vts x		-> takeXLamClosure x
-	XTau	t x		-> takeXLamClosure x
-	XLam	v k x eff clo	-> Just clo
-	_			-> Nothing

@@ -45,7 +45,7 @@ import Desugar.Slurp.SlurpS
 
 
 -----
-stage	= "Desugar.Slurp.Slurp"
+-- stage	= "Desugar.Slurp.Slurp"
 
 -- | Slurp out type constraints from this tree.
 slurpTreeM ::	Tree Annot1	-> CSlurpM (Tree Annot2, [CTree], Set Var)
@@ -216,7 +216,7 @@ slurpP (PBind sp mV x)
 		
 		Nothing	-> return ())
 			
-	let (SBind nn mV' x')
+	let (SBind _ mV' x')
 			= stmt'
 	
 	return	( PBind Nothing mV' x'
@@ -271,8 +271,9 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 		   [ CDef (TSV $ SVCtorDef sp vData cName) (TVar KData cNameT) ctorType ]
 		++ case concat initConstrss of
 			[]	-> []
-			_	-> [newCBranch 
-					{ branchSub = concat initConstrss }]
+			_	-> [CBranch 
+					{ branchBind = BNil
+					, branchSub = concat initConstrss }]
 	
 	-----
 	

@@ -96,9 +96,6 @@ invokeLinker
 	moreLinkObjs
 	objects
  = do
-	let Just (ArgPath paths)
-		= find (=@= ArgPath{}) ?args
-
 	let outFileName	
 		= case filter (\x -> x =@= OutputFile{}) ?args of
 			[OutputFile [fileName]] 	-> fileName
@@ -145,11 +142,4 @@ invokeLinker
 		% (catMap (\s -> pprStr $ "        " % s % "\n") objects) % "\n"
 
 	return ()
-
-
-nameTItoO s
- = let
- 	parts@(_:_)	= chopOnRight '.' s
-	name		= (concat $ init parts) ++ "o"
-   in	name
 

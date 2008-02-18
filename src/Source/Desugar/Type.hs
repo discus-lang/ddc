@@ -11,7 +11,7 @@ import Type.Exp
 import Type.Util
 
 -----
-stage	= "Source.Desugar.Type"
+-- stage	= "Source.Desugar.Type"
 
 -----
 {-

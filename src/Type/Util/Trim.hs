@@ -296,10 +296,11 @@ trimClosureC_fs quant rsData ff
 
 	_ -> Nothing
 
-
+{-
 slurpBoundF :: Set Type -> Fetter -> Set Type
 slurpBoundF quant ff
  = case ff of
  	FMore t1 _	-> Set.insert t1 quant
 	FLet  t1 _	-> Set.insert t1 quant
 	_		-> quant
+-}

@@ -12,7 +12,7 @@ import qualified Core.Util	as C
 import Desugar.ToCore.Base
 
 -----
-stage	= "Desugar.ToCore.Util"
+-- stage	= "Desugar.ToCore.Util"
 
 
 -----------------------
@@ -60,13 +60,13 @@ doMe		x
  	C.XDo{}			-> x
 	_			-> C.XDo [C.SBind Nothing x]
 
-
+{-
 stripAnnot xx
  = case xx of
  	C.XAnnot _ x	-> x
 	_		-> xx
 
-
+-}
 
 
 

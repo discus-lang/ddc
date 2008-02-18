@@ -16,8 +16,9 @@ import Type.Util.Substitute
 import Shared.VarPrim
 import Shared.Error
 
-import Data.Map			(Map)
 import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 import qualified Util.Map	as Map
 import qualified Data.Set	as Set
 import Util
@@ -264,11 +265,11 @@ packTypeLs ld ls tt
 	_ -> panic stage
 		$ "packTypeLs: no match for " % show tt
 		    
-
+{-
 makeSub KEffect  t1 t2	= makeTSum KEffect  [t1, t2]
 makeSub KClosure t1 t2	= makeTSum KClosure [t1, t2]
 makeSub _	 t1 t2	= t2
-	
+-}
 
 
 

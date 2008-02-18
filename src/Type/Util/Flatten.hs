@@ -9,10 +9,8 @@ import Type.Exp
 import Util
 
 import qualified Data.Map	as Map
-import Data.Map			(Map)
 
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 
 flattenT :: Type -> Type

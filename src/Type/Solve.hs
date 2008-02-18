@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports #-}
+{-# OPTIONS -fwarn-unused-imports -fno-warn-incomplete-record-updates #-}
 
 module Type.Solve
 	( squidSolve )
@@ -476,10 +476,10 @@ solveCInst_let
 	-- The instantiates map contains instantiatons of lambda bindings, but
 	--	restruct it to just instantiations of let bindings because that's all we
 	--	care about here.	
-	let gInstLet	= Map.map (Set.filter (\b -> b =@= BLet{})) gInstantiates
+--	let gInstLet	= Map.map (Set.filter (\b -> b =@= BLet{})) gInstantiates
 
 	-- The branch dependency graph is the union of the contains and instantiates graph
-	let gDeps	=  Map.unionWith (Set.union) gContains gInstLet
+-- 	let gDeps	=  Map.unionWith (Set.union) gContains gInstLet
 	genSusp		<- gets stateGenSusp
 
 	-- Work out the bindings in this ones group
@@ -799,7 +799,7 @@ addSchemeToGraph src vGen tScheme
 	-- If this type has any FLets on it where the LHS is a (monomorphic) TClass 
 	--	then this information is shared with the graph, and shouldn't be duplicated
 	--	locally.
-	let (tScheme_stripped, fsMono) = stripMonoFLetsT tScheme
+	let (tScheme_stripped, _) = stripMonoFLetsT tScheme
 
 	case tScheme_stripped of 
 
@@ -809,27 +809,6 @@ addSchemeToGraph src vGen tScheme
 	 -- Update the class
 	 _		-> updateClass cidGen	
 				cls { classType = Just tScheme_stripped }
-
-
-prettyCTreeS :: CTree -> PrettyP
-prettyCTreeS xx
- = case xx of
- 	CBranch{} 
-	 -> "\nBranch " 
-	 	% branchBind xx 
-			% " {" %> (", " %!% map prettyCTreeS (branchSub xx)) % "}"
-
---	CGen ts v env
---	 -> "(Gen " % v % ")"
-
-	CLeave v
-	 -> "(Leave " % v % ")"
-
-	CInst ts vI vD
-	 -> "(Inst " % vI % " " % vD % ")"
-
-	_	  -> ppr "X"
-	
 
 
 -- | Push a new var on the path queue.
@@ -916,14 +895,6 @@ graphInstantiatesAdd    vBranch vInst
 			Set.empty
 			vBranch
 			(stateInstantiates s) })
-
--- | Pretty print a branch graph	
--- prettyBranchGraph :: Map [Var] (Set [Var]) -> PrettyP
-prettyBranchGraph graph
-	= "\n" %!% ls
-	where 	ls	= map (\(v, set)	
-				-> (padR 16 $ pprStr v) % " -> " % set)
-			$ Map.toList graph
 
 
 -- | Perform unification, resolve projections and grind out any available effects 

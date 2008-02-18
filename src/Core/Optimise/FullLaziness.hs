@@ -31,13 +31,13 @@ import qualified Core.Plate.Trans	as Trans
 import Core.Optimise.FreeLevel
 
 -----
-stage	= "Core.Optimise.FullLaziniess"
+-- stage	= "Core.Optimise.FullLaziniess"
 
-uniqueLift n	= "x" ++ show n ++ "l" 	++ Unique.coreFullLaziness
-unqiueSnip 	= "x" ++ Unique.coreFullLaziness
+-- uniqueLift n	= "x" ++ show n ++ "l" 	++ Unique.coreFullLaziness
+-- unqiueSnip 	= "x" ++ Unique.coreFullLaziness
 
 
-type FullM	= State ()
+-- type FullM	= State ()
 
 
 fullLazinessTree 

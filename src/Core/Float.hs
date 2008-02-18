@@ -433,7 +433,8 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 					effBind
 
 		-- lookup how this binding is used
-		mUse		= Map.lookup vBind (tableBoundUse table)
+		(mUse :: Maybe [Use])	
+			= Map.lookup vBind (tableBoundUse table)
 
 		-- decide whether its ok to move it
 		(canMove, tt2)	= shouldMove level table mUse vBind effReduced

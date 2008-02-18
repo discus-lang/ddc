@@ -35,12 +35,14 @@ import Data.Set				(Set)
 import qualified Debug.Trace		as Trace
 
 -----
+{-
 stage	= "Constraint.Simplify"
 debug	= True
 trace ss x
  = if debug 
  	then Trace.trace (pprStr ss) x
  	else x
+-}
 
 -----
 simplify 

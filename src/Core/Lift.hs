@@ -27,14 +27,6 @@ import Core.Lift.BindTypes
 import Core.Lift.LiftLambdas
 import Core.Plate.Trans
 
------
-debug		= False
-trace ss x	
- = if debug
- 	then	Debug.trace ss x
-	else	x
-
-
 -----------------------
 -- lambdaLiftTree
 --

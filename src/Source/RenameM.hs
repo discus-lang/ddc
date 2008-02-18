@@ -134,7 +134,7 @@ initRenameS
 traceM	::  String -> RenameM ()
 traceM ss	= modify (\s -> s { stateTrace = (stateTrace s) ++ [ss] })
 		
-trace ss	= whenM (gets stateDebug) $ traceM $ unlines ss
+-- trace ss	= whenM (gets stateDebug) $ traceM $ unlines ss
 				
 -- | run a renamer computation.
 runRename :: RenameM a	-> a

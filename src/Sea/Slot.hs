@@ -33,10 +33,6 @@ import Sea.Plate.Trans
 
 
 -----
-stage	= "Sea.Slot"
-
-
------
 --	
 slotTree ::	Tree () -> Tree () -> Set Var -> Tree ()
 slotTree	tree	eHeader cafVars
@@ -136,17 +132,6 @@ slotAssignArg	(v, t)
 		return	$ Just
 			$ SAssign exp t (XVar v)
 		
-	
-
-
-
-slotArgs i aa
- = case aa of
- 	[]		-> []
-	((v, t) : xs)
-	 -> (v, XSlotA v i) : slotArgs (i+1) xs
-  
-
 slotifyX x m cafVars
 	| XVar v	<- x
 	, Just exp	<- Map.lookup v m

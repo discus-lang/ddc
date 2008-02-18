@@ -1,3 +1,5 @@
+{-# OPTIONS -fno-warn-incomplete-record-updates #-}
+
 -- | Crush effects into their parts.
 
 module Type.Crush.Effects

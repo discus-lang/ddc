@@ -49,9 +49,6 @@ import Main.Path
 import Main.Arg
 import Main.Dump
 
------
-stage	= "Stages.Sea"
-
 ------
 -- seaSub
 --

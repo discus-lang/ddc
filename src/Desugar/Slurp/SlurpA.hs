@@ -55,7 +55,7 @@ slurpA	alt@(AAlt sp gs x)
 			<- slurpX x
 
 	let vsBoundV	= map fst $ concat cbindssGuards
-	let tsBoundT	= map (TVar KData) $ map snd $ concat cbindssGuards
+--	let tsBoundT	= map (TVar KData) $ map snd $ concat cbindssGuards
 
 	let qs	=
 		[ CEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
@@ -78,7 +78,7 @@ slurpA	alt@(AAlt sp gs x)
 		, eAlt
 		, cAlt
 		, AAlt Nothing gs' x'
-		, newCBranch
+		, CBranch
 			{ branchBind	= bind
 			, branchSub	= qs ++ (concat qssGuards) ++ qsX})
 
@@ -122,7 +122,7 @@ slurpG	(GExp sp w x)
 		<- slurpX x
 
 	let vsBoundV	= map fst cbindsW
-	let tsBoundT	= map (TVar KData) $ map snd $ cbindsW
+--	let tsBoundT	= map (TVar KData) $ map snd $ cbindsW
 
 	let qs = 
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 

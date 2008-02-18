@@ -119,7 +119,7 @@ reconP	:: Table
 	-> Top
 
 reconP tt (PBind v x)
- = let	(x', xt, xe, xc)	
+ = let	(x', _, _, _)	
  		= {-# SCC "reconP/reconX" #-} reconX tt x
    in	PBind v x'
 
@@ -389,7 +389,7 @@ reconX tt exp@(XApp x1 x2 eff)
    
 -- do
 reconX tt (XDo ss)
- = let	(tt', sts)		= mapAccumL reconS tt ss
+ = let	(_, sts)		= mapAccumL reconS tt ss
 	(ss', sTs, sEs, sCs)	= unzip4 sts
 	Just t			= takeLast sTs
 	vsBind			= catMaybes $ map takeVarOfStmt ss'

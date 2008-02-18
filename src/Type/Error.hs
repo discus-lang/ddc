@@ -298,7 +298,7 @@ instance Pretty Error where
 		, eMutableSource = mutSource
 		, ePureFetter	 = pure
 		, ePureSource	 = pureSource
-		, eReadEff	 = read
+		, eReadEff	 = eRead
 		, eReadSource	 = readSource })
 		
 	= (dispSourcePos pureSource)					% "\n"
@@ -306,7 +306,7 @@ instance Pretty Error where
 	% "      A purity constraint on a Read effect requires the region it\n"
 	% "      acts on to be Const, and it cannot be Mutable at the same time.\n"
 	% "\n"
-	%> dispTypeSource read readSource
+	%> dispTypeSource eRead readSource
 	% "\n"
 	% "        is being purified by\n"
 	%> dispFetterSource pure pureSource
@@ -424,51 +424,6 @@ selectSourceTS (t : ts)
 -- 	TSIfObj{}	-> selectSourceTS ts
 	_		-> t
 
-	
-
--- Show the source of a conflict
---
-prettyTypeConflict :: Type -> TypeSource -> PrettyP	    
-prettyTypeConflict t ts
- = ppr  t
- 
-
-
-prettyFTS :: Fetter -> TypeSource -> PrettyP 
-prettyFTS f ts = ppr $ show f
-
-
-{-
-prettyFTS f ts
- = case ts of
- 	TSInst vDef vInst
-	 -> "            constraint: " % f			% "\n"
-	 %  "       from the use of: " % vDef			% "\n"
-	 %  "                    at: " % getTSP ts		% "\n"
--}
-
-prettyETS :: Effect -> TypeSource -> PrettyP
-prettyETS eff ts	
-	= ppr $ show eff
-
-{-
-prettyETS e ts
- = case ts of
- 	TSInst vDef vInst
-	 -> "                effect: " % e			% "\n"
-	 %  "             caused by: " % vDef			% "\n"
-	 %  "                    at: " % getTSP ts		% "\n"
-	 
-	TSMatchObj sp
-	 -> "                effect: " % e			% "\n"
-	 %  "             caused by: match expression"		% "\n"
-	 %  "                    at: " % getTSP ts		% "\n"
-	 
-	 
-	TSNil
-	 -> "                effect: " % e			% "\n"
-	 %  " ERROR: prettyETS: cannot show source of error\n"  % "\n" 
--}
 	 
 
 

@@ -18,7 +18,7 @@ import Shared.VarPrim
 import Util
 
 -----
-stage	= "Type.Diagnose"
+-- stage	= "Type.Diagnose"
 debug	= True
 trace ss	
  = if debug 
@@ -57,7 +57,7 @@ diagMutConflict
 			(cidE, effPurified) : _	-> diagMutPurifiedRead fMutable tsMutable cidR cidE effPurified
 			_			-> return $ Nothing
 
-	let result
+	let (result :: SquidM Error)
 		| Just err	<- mErrPurifiedRead
 		= return err
 		
@@ -250,12 +250,6 @@ traceES_follow vC tE (node : nodes)
 	  , ts) <- node
 	= return $ Just ts
 
-
--- Utils -------------------------------------------------------------------------------------------
-takeClass tt
- = case tt of
- 	TClass k cid	-> lookupClass cid
-	_		-> return Nothing
  
 
 

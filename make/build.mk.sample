@@ -1,17 +1,54 @@
 GHC=ghc
 
 # -- Optimised / distribution compile
-# GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 
-# GCC_FLAGS	:= -std=c99 -Werror -Wundef -fPIC
+GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 
+GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
 
 # -- Profiling compile
 # GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 -prof -auto-all
 # GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
 
-# -- Development compile
-GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -Onot
-GCC_FLAGS	:= -std=c99 -Werror -Wundef -fPIC
-
 # -- For Haskell Program Coverage
-# GHC_FLAGS	:= -fhpc -fallow-undecidable-instances -fglasgow-exts -tmpdir /tmp 
-# GCC_FLAGS	:= -std=c99 -Wundef -fPIC -O3
+# GHC_FLAGS	:= -fglasgow-exts -fhpc -tmpdir /tmp 
+# GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
+
+# ----------------------------------------------------------------------------------------
+# -- Development compile -----------------------------------------------------------------
+# ----------------------------------------------------------------------------------------
+
+GHC_WARNINGS	:= \
+	-Werror \
+	-fwarn-deprecations \
+	-fwarn-duplicate-exports \
+	-fwarn-hi-shadowing \
+	-fwarn-missing-fields \
+	-fwarn-missing-methods \
+	-fwarn-overlapping-patterns \
+	-fwarn-type-defaults \
+	-fwarn-monomorphism-restriction \
+	-fwarn-unused-binds
+
+#	-fwarn-unused-matches			# we should probably enable this one
+#	-fwarn-name-shadowing 			# this generates lots of warnings about shadowing
+						# a binding called 'exp'. Is this real, or broken?
+
+#	-fwarn-incomplete-patterns 		# incomplete pattern warnings are buggy in GHC
+#	-fwarn-incomplete-record-updates 	# this isn't smart enough to be useful
+#	-fwarn-orphans  			# not sure if this is a problem
+#	-fwarn-unused-imports 			# unused imports warnings are buggy in GHC
+
+#	-fwarn-missing-signatures		# I use this all the time.
+#	-fwarn-simple-patterns			# I use this all the time.
+#	-fwarn-tabs				# heresy!
+
+			
+# -- Enable GHC language features individually so we can keep an eye
+#	on what is being used.
+GHC_LANGUAGE	:= \
+	-XPatternGuards -XImplicitParams -XUnboxedTuples \
+	-XParallelListComp -XPatternSignatures -XMultiParamTypeClasses \
+	-XFlexibleInstances -XFlexibleContexts -XFunctionalDependencies \
+	-XScopedTypeVariables -XKindSignatures
+
+# GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot 
+# GCC_FLAGS	:= -std=c99 -O3 -fPIC

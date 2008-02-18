@@ -24,16 +24,14 @@ import Data.Set			(Set)
 
 import Util
 
-
 -----
-stage		= "Core.Boxing"
+{-stage		= "Core.Boxing"
 debug		= False
 trace ss x
  = if debug 
  	then Debug.trace (pprStr ss) x
 	else x
-
-type SimplifyM	= VarGenM
+-}
 
 -- Stats -------------------------------------------------------------------------------------------
 -- stats about what happened during a pass of the simplifier

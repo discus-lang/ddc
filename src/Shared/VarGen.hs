@@ -12,7 +12,6 @@ where
 
 -----
 import Control.Monad.State
-import Util.Pretty
 import qualified Shared.Var as Var
 import Shared.Var (Var, VarBind)
 
