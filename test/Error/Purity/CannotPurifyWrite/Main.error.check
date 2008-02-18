@@ -1,10 +1,10 @@
-test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
+./test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
     Cannot purify effect `Base.!WriteT *34'.
 
               the use of: (:=)
              with effect: Base.!WriteT *34
-                      at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
+                      at: ./test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
 
      conflicts with,
               the use of: suspend2
-                      at: test/Error/Purity/CannotPurifyWrite/Main.ds:5:12
+                      at: ./test/Error/Purity/CannotPurifyWrite/Main.ds:5:12

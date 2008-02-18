@@ -1,13 +1,13 @@
-test/Error/Unify/DefConst/Main.ds:6:10
+./test/Error/Unify/DefConst/Main.ds:6:10
     Type mismatch during unification.
           cannot match: Base.Int %40
                   with: Data.String.String %48
 
               the use of: fish
                  at type: Base.Int %40
-                      at: test/Error/Unify/DefConst/Main.ds:6:10
+                      at: ./test/Error/Unify/DefConst/Main.ds:6:10
 
         conflicts with, 
           literal value "perch"
                  of type: Data.String.String %48
-                      at: test/Error/Unify/DefConst/Main.ds:6:15
+                      at: ./test/Error/Unify/DefConst/Main.ds:6:15

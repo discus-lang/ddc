@@ -22,7 +22,7 @@ import qualified Main.Version	as Version
 panic :: Pretty msg => String -> msg -> a
 panic  stage msg
 	=  error
-		( pprStr $ "\nPANIC in " % stage % "\n" 
+		( pprStr $ "PANIC in " % stage % "\n" 
 		%> (msg  % "\nPlease report this bug to the maintainers at:\n"
 			 % Version.maintainers))
 
@@ -34,7 +34,7 @@ panic  stage msg
 freakout :: Pretty msg => String -> msg -> a -> a
 freakout stage msg a
 	= trace 
-		(pprStr $ "\nFREAKOUT in " % stage % "\n"
+		(pprStr $ "FREAKOUT in " % stage % "\n"
 		%> (msg	% "\nPlease report this bug to the maintainers at:\n"
 			% Version.maintainers))
 		a
@@ -45,7 +45,7 @@ freakout stage msg a
 --
 warning :: Pretty msg => String -> msg -> a -> a
 warning stage msg a
-	= trace (pprStr $ "\nWARNING in " % stage % "\n" %> msg) 
+	= trace (pprStr $ "WARNING in " % stage % "\n" %> msg) 
 		a
 
 
@@ -54,7 +54,7 @@ warning stage msg a
 --
 dieWithUserError :: Pretty err => [err] -> a
 dieWithUserError  errs
-	= error	(pprStr $ "\nERROR\n" ++ (catInt "\n" $ map pprStr errs))
+	= error	(pprStr $ "ERROR\n" ++ (catInt "\n" $ map pprStr errs))
 
 	
 -- | A compile time error in the user program

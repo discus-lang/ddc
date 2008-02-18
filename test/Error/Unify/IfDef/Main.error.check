@@ -1,13 +1,13 @@
-test/Error/Unify/IfDef/Main.ds:6:10
+./test/Error/Unify/IfDef/Main.ds:6:10
     Type mismatch during unification.
           cannot match: Data.Bool.Bool %8
                   with: Base.Int %3
 
           object of if-then-else expression
            which must be: Bool
-                      at: test/Error/Unify/IfDef/Main.ds:6:10
+                      at: ./test/Error/Unify/IfDef/Main.ds:6:10
 
         conflicts with, 
               the use of: x
                  at type: Base.Int %3
-                      at: test/Error/Unify/IfDef/Main.ds:6:13
+                      at: ./test/Error/Unify/IfDef/Main.ds:6:13

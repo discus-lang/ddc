@@ -146,6 +146,9 @@ instance Monad m => TransM m a1 a2 Top where
 	PInclude s
 	 ->	transP table	$ PInclude s
 	 
+	PIncludeAbs s
+	 ->	transP table	$ PIncludeAbs s
+	 
 	PHackery s
 	 ->	transP table	$ PHackery s
 	 

@@ -83,6 +83,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 
 	-- Sea hackery.
 	PInclude s		-> "#include <" % s % ">\n"
+	PIncludeAbs s		-> "#include \"" % s % "\"\n"
 	PHackery s		-> ppr s
 	PComment s		-> "// " % s
 	PBlank			-> ppr "\n"

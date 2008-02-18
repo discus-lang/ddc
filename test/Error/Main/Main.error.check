@@ -1,4 +1,4 @@
-test/Error/Main/Main.ds:4:0
+./test/Error/Main/Main.ds:4:0
     Inferred type of main is not () -> ().
 
         inferred type:

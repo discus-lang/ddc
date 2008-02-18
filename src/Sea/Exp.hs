@@ -75,7 +75,8 @@ data Top a
 
 	-- hackery
 	| PHashDef	String String			-- evil hash-def. Used to define ctor tags.
-	| PInclude	String
+	| PInclude	String				-- #include <...>
+	| PIncludeAbs	String				-- #include "..."
 
 	| PHackery	String				-- string is inlined straight into the output file
 

@@ -3,7 +3,8 @@ module Main.IO
 	( ImportDef(..)
 	, chaseLinkObjs
 	, chaseModules
-	, chooseModuleName)
+	, chooseModuleName
+	, findFile)
 
 where
 
@@ -48,15 +49,27 @@ import Main.Arg
 -----
 stage	= "Stages.IO"
 
-
+-- | Where an imported modules files are
 data ImportDef
 	= ImportDef
-	{ idModule		:: Module
+	{ -- | The module name
+	  idModule		:: Module
+
+	  -- | Full path to its .di interface file.
 	, idFilePathDI		:: FilePath
+
+	  -- | Full path to its .o object file. 
 	, idFilePathO		:: FilePath
+
+	  -- | Relative path between source .ds and .ddc.h header
+	, idFileRelPathH	:: FilePath	
+
+	  -- | The (parsed) interface.
 	, idInterface		:: S.Tree SourcePos
-	, idImportedModules	:: [Module]
-	, idLinkObjs		:: [FilePath] }
+
+	  -- | Other modules imported by this one.
+	, idImportedModules	:: [Module] }
+
 
 -----
 chaseLinkObjs
@@ -138,42 +151,49 @@ loadInterface
 	let fileDir		= pprStr $ "/" %!% vs
 	let fileNameDI		= fileDir ++ ".di"
 	let fileNameO		= fileDir ++ ".o"
+	let fileNameH		= fileDir ++ ".ddc.h"
 
 	let fileBase		= pprStr $ "/" %!% init vs
 		
 	mPathDI			<- findFile importDirs fileNameDI
 	mPathO			<- findFile importDirs fileNameO
+	mPathH			<- findFile importDirs fileNameH
 	
-	loadInterface' importDirs fileBase mod mPathDI mPathO
-	
-loadInterface' importDirs fileDir mod mPathDI mPathO
-	| Just (dirDI, pathDI)	<- mPathDI
-	, Just (dirO,  pathO)	<- mPathO
-	= do
-		source		<- readFile pathDI
-		let tree
-			= S.parse 
-			$ map (\t -> t { Token.tokenFile = pathDI })
-			$ S.scan source
+	let result
+		| Just (dirDI, pathDI)	<- mPathDI
+		, Just (dirO,  pathO)	<- mPathO
+		, Just (dirH,  pathH)	<- mPathH
+		= do
+			source		<- readFile pathDI
+			let tree
+				= S.parse 
+				$ map (\t -> t { Token.tokenFile = pathDI })
+				$ S.scan source
 		
-{-		linkObjs
-			<- chaseLinkObjs 
-				[i ++ "/" ++ fileDir | i <- importDirs]
-				[]
--}
-		returnJ	
-			$ ImportDef
-			{ idModule		= mod
-			, idFilePathDI		= pathDI
-			, idFilePathO		= pathO
-			, idInterface		= tree
-			, idImportedModules	= S.slurpImportModules tree
-			, idLinkObjs		= [] }
+			returnJ	
+				$ ImportDef
+				{ idModule		= mod
+				, idFilePathDI		= pathDI
+				, idFilePathO		= pathO
+				, idFileRelPathH	= chompFile $ dropPrefix [dirH] pathH
+				, idInterface		= tree
+				, idImportedModules	= S.slurpImportModules tree }
 
-	| otherwise
-	= return Nothing
+		| otherwise
+		= return Nothing
 
------
+	result
+
+chompFile ('/':ss)	= ss
+chompFile ss		= ss
+
+dropPrefix [] x	= x
+dropPrefix (p:ps) x
+	| isPrefixOf p x	= drop (length p) x
+	| otherwise		= dropPrefix ps x
+	
+
+--
 findFile 
 	:: [FilePath] 
 	-> String

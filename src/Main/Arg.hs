@@ -29,6 +29,7 @@ data Arg
 	| OutputFile	[String]
 	| ImportDirs	[String]
 	| Make		[String]
+	| PathBase	[String]
 
 	| NoImplicitPrelude
 
@@ -273,7 +274,7 @@ options	=
 			"General Options."
 			
 	, OOpts		Help
-			["-h", "-help"]
+			["-h", "-help", "--help"]
 			"-h, -help <sections..>"
 			"Print help on DDC options"
 			
@@ -281,6 +282,12 @@ options	=
 			["-v", "-verbose"]
 			"Print debugging info to stdout."
 
+	, OOpts		PathBase
+			["-B",  "-basedir"]
+			"-B, -basedir <path>"
+			"The base directory containing ./library and ./runtime"
+
+	, OBlank
 	, OOpts		Compile
 			["-c",	"-compile"]
 			"-c, -compile <files..>"

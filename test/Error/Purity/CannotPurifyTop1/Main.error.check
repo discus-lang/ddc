@@ -1,10 +1,10 @@
-test/Error/Purity/CannotPurifyTop1/Main.ds:3:15
+./test/Error/Purity/CannotPurifyTop1/Main.ds:3:15
     Cannot purify effect `System.Console.!Console'.
 
               the use of: print
              with effect: System.Console.!Console
-                      at: test/Error/Purity/CannotPurifyTop1/Main.ds:3:15
+                      at: ./test/Error/Purity/CannotPurifyTop1/Main.ds:3:15
 
      conflicts with,
               the use of: mapL
-                      at: test/Error/Purity/CannotPurifyTop1/Main.ds:3:10
+                      at: ./test/Error/Purity/CannotPurifyTop1/Main.ds:3:10

@@ -34,6 +34,7 @@ import Main.Source			as SS
 import Main.Core			as SC
 import Main.Sea				as SE
 import Main.Dump			as SD
+import Main.Invoke
 
 import Source.Slurp			as S
 
@@ -55,6 +56,9 @@ import Debug.Trace
 import Util
 import Numeric
 
+out 	ss	= putStr $ pprStr ss
+outl   ss	= putStr $ pprStr $ ss % "\n"
+
 -----
 -----
 -- compileFile
@@ -69,24 +73,86 @@ compileFile
 	-> FilePath	-- path to source file
 	-> IO ()
 
-compileFile	argsCmd     fileName
+compileFile	argsCmd     fileName_
  = do 
+	-- Initialisation ------------------------------------------------------
 	let  ?verbose	= or $ map (== Arg.Verbose) argsCmd
-	when ?verbose 
-	 (do
-	 	putStr $ "    * Compiling " ++ fileName ++ "\n")
-	
-	------------------------------------------------------------------------
-	-- IO Stages
-	------------------------------------------------------------------------
 
+	-- this is the base of our installation
+	--	it should contain the /runtime and /library subdirs.
+	let pathBase_	= concat 
+			$ [dirs | Arg.PathBase dirs	<- argsCmd]
+
+	-- if no base path is specified then look in the current directory.
+	let pathBase 	= if pathBase_ == []
+				then ["."]
+				else pathBase_
+
+	-- use the pathBase args and see if we can find the base library and the runtime system.
+	let pathLibrary_test = map (++ "/library") pathBase
+	mPathLibrary	<- liftM (liftM fst)
+			$  SI.findFile pathLibrary_test
+			$ "Base.di"
+	
+	let pathRuntime_test = map (++ "/runtime") pathBase
+	mPathRuntime	<- liftM (liftM fst)
+			$  SI.findFile pathRuntime_test
+			$ "ddc-runtime.so"
+
+	-- normalise the source file name
+	let fileName
+		= case fileName_ of
+			('/':_)	-> fileName_
+			('~':_)	-> fileName_
+			_	-> "./" ++ fileName_
+
+	-- say hello
+	when ?verbose 
+	 $ do	out	$ "  * Compiling " % fileName % "\n"
+			% "    - pathBase    = " % pathBase	% "\n"
+			% "    - pathLibrary = " % mPathLibrary	% "\n"
+			% "    - pathRuntime = " % mPathRuntime  % "\n\n"
+
+	
+	-- if /runtime and /library can't be found then die with an appropriate error
+	when (isNothing mPathLibrary)
+	 $ dieWithUserError 
+	 	[ "Can't find the DDC base library.\n"
+		% "    Please supply a '-basedir' option to specify the directory\n"
+		% "    containing 'library/Base.di'\n"
+		% "\n"
+	 	% "    tried:\n" %> ("\n" %!% pathLibrary_test) % "\n\n"
+		% "    use 'ddc -help' for more information\n"]
+	
+	let Just pathLibrary	= mPathLibrary
+
+	when (isNothing mPathRuntime)
+	 $ dieWithUserError 
+	 	[ "Can't find the DDC runtime system.\n"
+		% "    Please supply a '-basedir' option to specify the directory\n"
+		% "    containing 'runtime/ddc-runtime.so'\n"
+		% "\n"
+	 	% "    tried:\n" %> ("\n" %!% pathRuntime_test) % "\n\n"
+		% "    use 'ddc -help' for more information\n"]
+
+	let Just pathRuntime	= mPathRuntime
+	
+	-- Load build files ------------------------------------------------------
+	
 	-- Break out the file name
- 	let Just (fileDir, fileBase, fileExt)
+ 	let Just (fileDir_, fileBase, fileExt)
 			= munchFileName fileName
 
-	let Just pathBase	= chopOffExt fileName
+	let fileDir	= if fileDir_ == []
+				then "."
+				else fileDir_
+
+	let Just pathSourceBase	= chopOffExt fileName
 
 	-- See if there is a build file
+	--	For some source file,             ./Thing.ds
+	--	the build file should be called   ./Thing.build
+	--
 	let buildFilePath	= fileDir ++ "/" ++ fileBase ++ ".build"
 	when ?verbose
 	 (do	putStr $ "  * Checking for build file " ++ buildFilePath ++ "\n")
@@ -95,19 +161,18 @@ compileFile	argsCmd     fileName
 
 	when ?verbose
 	 (case mBuild of
-	 	Nothing		-> putStr $ "  - none\n\n"
+	 	Nothing		-> putStr $ "    - none\n\n"
 		Just build	-> putStr $ " " ++ show build ++ "\n\n")
 
 
-	-- Parse extra args from the build file
+	-- Load extra args from the build file
 	let argsBuild	= case mBuild of
 				Just build	-> Arg.parse $ catInt " " $ Build.buildExtraDDCArgs build
 				Nothing		-> []
 
 	let args	= argsCmd ++ argsBuild
-
 	when ?verbose
-	 $ do	putStr	$ "  * Options are:\n"
+	 $ do	putStr	$ "  * Compile options are:\n"
 
 		putStr  $ concat 
 			$ map (\s -> "    " ++ s ++ "\n") 
@@ -116,18 +181,20 @@ compileFile	argsCmd     fileName
 		putStr 	$ "\n"
 
 
+	-- Decide on module names  ---------------------------------------------
+
 	-- Gather up all the import dirs.
-	let importDirs	= concat
-			$ map (\a -> case a of { Arg.ImportDirs dirs -> dirs; _ -> []})
-			$ args
-	
+	let importDirs	
+		= pathLibrary
+		: (concat $ [dirs | Arg.ImportDirs dirs <- args])
+
 	-- Choose a name for this module.
 	let Just moduleName	
 			= chooseModuleName 
 				importDirs
 				fileName
 	when ?verbose
-	 $ do  	putStr	$  "  * Chasing module name\n"
+	 $ do  	putStr	$  "  * Choosing module name\n"
 	 	putStr	$  "    - fileName      = " ++ fileName			++ "\n"
 			++ "    - fileDir       = " ++ fileDir			++ "\n"
 			++ "    - fileBase      = " ++ fileBase			++ "\n"
@@ -141,61 +208,58 @@ compileFile	argsCmd     fileName
 	sSource		<- readFile fileName
 
 	compileFile_parse 
-		fileName pathBase filePaths moduleName importDirs 
+		pathLibrary pathRuntime
+		fileName pathSourceBase filePaths moduleName importDirs 
 		mBuild   sSource
 
+
 compileFile_parse 
-	fileName pathBase filePaths moduleName importDirs 
+	pathLibrary pathRuntime
+	fileName pathSourceBase filePaths moduleName importDirs 
 	mBuild   sSource
 
- -- Check for empty source file and emit a nice error message.
+ -- Emit a nice error message if the source file is empty.
  --	If we parse an empty file to happy it will bail with "reading EOF!" which isn't as nice.
  | words sSource == []
  = exitWithUserError ?args [fileName % "\n    Source file is empty.\n"]
 
  | otherwise
  = do
+
+	-- Chase down imports --------------------------------------------------
+
 	-- Parse the source file.
 	sParsed		<- SS.parse 
 				fileName
 				sSource
 
-	-- Slurp out pragmas
-	let pragmas	= Pragma.slurpPragmaTree sParsed
-
 	-- Check if we're supposed to import the prelude
 	let importPrelude	
 			= not $ elem Arg.NoImplicitPrelude ?args
 
-	-- Slurp out the list of modules imported by the source file
-	when ?verbose
-	 $ 	putStr $ "  * Chasing imported modules.\n"
-
+	-- Slurp out the list of modules directly imported by the source file.
 	let importsRoot	= S.slurpImportModules
 				sParsed
 			++ if importPrelude
 				then [ModuleAbsolute ["Prelude"]]
 				else []
 	when ?verbose
-	 $ 	putStr $ "    - root imports   = " ++ pprStr importsRoot ++ "\n"
+	 $ do	out 	$ "  * Chasing imported modules.\n"
+	 		% "    - direct imports   = " % importsRoot 	% "\n"
+			% "    - import dirs      = " % importDirs	% "\n"
 
 
-	-- Chase down imported modules
+	-- Recursively chase down all modules needed by this one.
 	importsExp	<- SI.chaseModules
 				importDirs
 				importsRoot
-	
-	let interfacePaths
-		= [SI.idFilePathDI e | e <- Map.elems importsExp]
 
-	
-	-- Dump module hierarchy graph
 	when ?verbose
-	 $ do	putStr	$ "    - all imports:\n"
+	 $ do	putStr	$ "    - recursive imports:\n"
 	 	mapM_ dumpImportDef $ Map.elems importsExp
 		putStr	$ "\n"
-
 	
+	-- Dump a nice graph of the module hierarchy.
 	let modulesCut	= concat
 			$ [ss | Arg.GraphModulesCut ss <- ?args]
 			
@@ -208,13 +272,17 @@ compileFile_parse
 			importsExp)
 
 
-	-- Chase down extra header files to include into source
+	-- Slurp out pragmas
+	let pragmas	= Pragma.slurpPragmaTree sParsed
+
+	-- Chase down extra C header files to include into source via pragmas.
 	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
 	
 	when ?verbose
 	 $ do	mapM_ (\path -> putStr $ pprStr $ "  - included file   " % path % "\n")
 	 		$ includeFilesHere
 	 	
+
 	------------------------------------------------------------------------
 	-- Source Stages
 	------------------------------------------------------------------------
@@ -538,8 +606,9 @@ compileFile_parse
 				moduleName
 	 			eInit
 				fileName
-				interfacePaths
+				[ SI.idFileRelPathH e | e <- Map.elems importsExp ]
 				includeFilesHere
+
 
 	-- If this module binds the top level main function
 	--	then append RTS initialisation code.
@@ -563,7 +632,9 @@ compileFile_parse
 	
 
 	-- Invoke GCC to compile C source.
-	SE.invokeSeaCompiler
+	invokeSeaCompiler
+		pathRuntime
+		pathLibrary
 		(fromMaybe [] $ liftM Build.buildExtraCCFlags mBuild)
 
 
@@ -572,13 +643,14 @@ compileFile_parse
 		compileExit
 			
 	-- Invoke GCC to link main binary.
-	SE.invokeLinker
+	invokeLinker
+		pathRuntime
 		(fromMaybe [] $ liftM Build.buildExtraLinkLibs mBuild)
 		(fromMaybe [] $ liftM Build.buildExtraLinkLibDirs mBuild)
 		(fromMaybe [] $ liftM Build.buildExtraLinkObjs mBuild)
-		([pathBase ++ ".o"]
-			++ (map    idFilePathO $ Map.elems importsExp)
-			++ (catMap idLinkObjs  $ Map.elems importsExp))	
+		([pathSourceBase ++ ".o"]
+			++ (map    idFilePathO $ Map.elems importsExp))
+			-- ++ (catMap idLinkObjs  $ Map.elems importsExp))	
 
 	return ()
 		
@@ -664,19 +736,18 @@ runPragmaShell fileName fileDir c
 	 	 
 -----
 dumpImportDef def
- 	| isNil (idLinkObjs def)
 	= putStr	
 	$ pprStr
- 	$ "        " % (padR 40 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
- 
+ 	$ "        " % (padR 30 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
+{-
  | otherwise
  = putStr
  	$ pprStr
- 	$ "        " % (padR 40 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
+ 	$ "        " % (padR 30 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
 	% "          linkObjs:\n" 
 	% "\n" %!% (map (\p -> "             " % p) $ idLinkObjs def)
 	% "\n"
-	
+-}
 
 
 

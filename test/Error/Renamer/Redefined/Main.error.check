@@ -1,24 +1,24 @@
-test/Error/Renamer/Redefined/Main.ds:11:13
+./test/Error/Renamer/Redefined/Main.ds:11:13
      Redefined variable 'x'
           in namespace: Value
-      first defined at: test/Error/Renamer/Redefined/Main.ds:11:11
+      first defined at: ./test/Error/Renamer/Redefined/Main.ds:11:11
 
-test/Error/Renamer/Redefined/Main.ds:15:30
+./test/Error/Renamer/Redefined/Main.ds:15:30
      Redefined variable 'xx'
           in namespace: Value
-      first defined at: test/Error/Renamer/Redefined/Main.ds:15:27
+      first defined at: ./test/Error/Renamer/Redefined/Main.ds:15:27
 
-test/Error/Renamer/Redefined/Main.ds:21:20
+./test/Error/Renamer/Redefined/Main.ds:21:20
      Redefined variable 'a'
           in namespace: Type
-      first defined at: test/Error/Renamer/Redefined/Main.ds:21:18
+      first defined at: ./test/Error/Renamer/Redefined/Main.ds:21:18
 
-test/Error/Renamer/Redefined/Main.ds:24:26
+./test/Error/Renamer/Redefined/Main.ds:24:26
      Redefined variable '%r1'
           in namespace: Region
-      first defined at: test/Error/Renamer/Redefined/Main.ds:24:20
+      first defined at: ./test/Error/Renamer/Redefined/Main.ds:24:20
 
-test/Error/Renamer/Redefined/Main.ds:27:28
+./test/Error/Renamer/Redefined/Main.ds:27:28
      Redefined variable '!e1'
           in namespace: Effect
-      first defined at: test/Error/Renamer/Redefined/Main.ds:27:24
+      first defined at: ./test/Error/Renamer/Redefined/Main.ds:27:24

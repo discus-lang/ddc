@@ -1,12 +1,12 @@
-test/Error/Unify/IfFun/Main.ds:5:10
+./test/Error/Unify/IfFun/Main.ds:5:10
     Type mismatch during unification.
           cannot match: Data.Bool.Bool %4
                   with: *8 -(!10 $11)> *9
 
           object of if-then-else expression
            which must be: Bool
-                      at: test/Error/Unify/IfFun/Main.ds:5:10
+                      at: ./test/Error/Unify/IfFun/Main.ds:5:10
 
         conflicts with, 
         lambda abstraction
-                      at: test/Error/Unify/IfFun/Main.ds:5:14
+                      at: ./test/Error/Unify/IfFun/Main.ds:5:14
