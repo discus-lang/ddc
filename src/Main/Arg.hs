@@ -143,7 +143,8 @@ expand		(x:xs)
 
 	-- optimisations
 	OptAll
-	 -> 	[ OptSimplify
+	 -> 	[ OptAll
+	 	, OptSimplify
 		, OptTailCall ]
 	 ++ expand xs
 
