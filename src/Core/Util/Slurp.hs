@@ -6,10 +6,7 @@ module Core.Util.Slurp
 	, slurpSuperMapPs
 	, slurpCtorDefs 
 	, slurpExpX
-	, slurpEffsX
 	, slurpBoundVarsP
-	, slurpBoundVarsS 
-	
 	, dropXTau)
 
 where
@@ -120,40 +117,6 @@ slurpExpX xx
 	_		-> xx
 
 
------
-slurpEffsX ::	Exp -> Effect
-slurpEffsX xx	
-	= makeTSum KEffect 
-	$ slurpEffsX' xx
-	
-slurpEffsX'	xx
- = case xx of
-	XAnnot n x		-> slurpEffsX' x
-
- 	XLAM v k x		-> slurpEffsX' x
-	XAPP x t		-> slurpEffsX' x
-
-	XLam v t x eff c	-> []
-	XApp x1 x2 eff		-> [eff] ++ slurpEffsX' x1 ++ slurpEffsX' x2
-	
-	XTet vts x		-> slurpEffsX' x
-	XTau  t x		-> slurpEffsX' x
-	
-	XDo _			-> [TNil]
-	XMatch aa		-> [TNil]
-	XLit{}			-> []
-	XVar{}			-> []
-
-	XPrim m xx		-> []
-	XLocal v vs x		-> slurpEffsX' x
-	
-	-- atoms
-	XAtom v xx		-> []
-	
-	
-	_ -> panic stage
-		$ "slurpEffsX': no match for " % show xx	
-
 slurpCtorDefs :: Tree -> Map Var CtorDef
 slurpCtorDefs tree
  	= Map.fromList
@@ -178,17 +141,6 @@ slurpBoundVarsP pp
 	PEffect	v k			-> [v]
 	PClass 	v k			-> [v]
 	
------
-slurpBoundVarsS
-	:: Stmt -> [Var]
-
-slurpBoundVarsS ss
- = case ss of
-	SBind (Just v) x	-> [v]
-	_			-> []
-
-
-
 
 -- | Decend into this expression and annotate the first value found with its type
 --	doing this makes it possible to slurpType this expression

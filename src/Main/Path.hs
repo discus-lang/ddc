@@ -28,5 +28,6 @@ makePaths	basePath
 
 	
 -- define this so we can derive Ord Main.Args
+--	but it never actually gets used
 instance Ord Path where
  compare x1 x2	= error "can't compare Path tables."

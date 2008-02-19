@@ -134,10 +134,10 @@ data Type
 	--	Intermediate constructors.
 	--	Different representations for things, used in lots of places.
 	--
-	| TFunF		[(Type, Effect, Closure)]	-- ^ Flat Function representation.
+--	| TFunF		[(Type, Effect, Closure)]	-- ^ Flat Function representation.
 							-- 	The list of terms must have at least 2 elements.
 
-	| TFunV	  	Type Type (Maybe Var)		-- ^ Labeled function representation
+--	| TFunV	  	Type Type (Maybe Var)		-- ^ Labeled function representation
 							--	Used in Type.Pretty
 
 	deriving (Show, Eq)

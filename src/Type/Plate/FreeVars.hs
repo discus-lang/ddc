@@ -61,13 +61,13 @@ instance FreeVars Type where
 		, freeVars eff
 		, freeVars clo ]
 
-	TFunF tsEffClo
+{-	TFunF tsEffClo
 	 -> let	(ts, eff, clo)	= unzip3 tsEffClo
 	    in unions
 	    	[ freeVars ts
 		, freeVars eff
 		, freeVars clo ]
-
+-}
 	TData v ts	
 	 -> union (singleton v) (freeVars ts)
 	

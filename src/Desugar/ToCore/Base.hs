@@ -7,9 +7,7 @@ module Desugar.ToCore.Base
 	, initCoreS
 	, newVarN
 	, lookupType
-	, lookupAnnotT, lookupAnnotE
-	, getKind
-	, lookupInst)
+	, lookupAnnotT)
 
 where
 
@@ -95,12 +93,6 @@ lookupAnnotT :: Annot -> CoreM (Maybe C.Type)
 lookupAnnotT (Just (T.TVar T.KData vT, _))
 	= lookupType vT
 
--- | Get the effect corresponding to the effect of this annotation
-lookupAnnotE :: Annot -> CoreM (Maybe C.Effect)
-lookupAnnotE (Just (_, T.TVar T.KEffect vE))
-	= lookupType vE
-
-
 -- | Get the type of this variable.
 lookupType :: Var -> CoreM (Maybe C.Type)
 lookupType v
@@ -140,37 +132,4 @@ lookupType' vT
 			$ return ()
 -}
 		return $ Just $ C.flattenT cType
-
-
--- | Get the kind of this variable.
-getKind :: Var 	-> CoreM C.Kind
-getKind	v	
- = let	Just k	= C.kindOfSpace $ Var.nameSpace v
-   in	return k
-
-
--- | Lookup how the type scheme for this variable was instantiate.
-lookupInst ::	Var	-> CoreM (Maybe (T.InstanceInfo C.Type C.Type))
-lookupInst	v
- = do 	mapInst	<- gets coreMapInst
-	return	$ liftM toCoreInfo 
-		$ Map.lookup v mapInst
-
-
--- | Convert the types in an InstanceInfo from source to core representation.
-toCoreInfo 
-	:: T.InstanceInfo T.Type T.Type
-	-> T.InstanceInfo C.Type C.Type
-
-toCoreInfo ii
- = case ii of
- 	T.InstanceLambda v1 v2 mt	
-	 -> T.InstanceLambda v1 v2 (liftM T.toCoreT mt)
-	
-	T.InstanceLet    v1 v2 ts t
-	 -> T.InstanceLet v1 v2 (map T.toCoreT ts) (T.toCoreT t)
-	
-	T.InstanceLetRec v1 v2 mt
-	 -> T.InstanceLetRec v1 v2 (liftM T.toCoreT mt)
-	
 

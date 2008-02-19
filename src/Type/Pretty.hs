@@ -71,33 +71,12 @@ instance Pretty Type where
 	TFetter f		-> "@TFetter " % f
 	TError k t		-> "@TError" % k % " " % t
 
-
-	-- used in constraint generator
---	TInstLet v		-> "@TInstLet " % v
---	TUnify ts		-> "@TUnify " % ts
-	
-
 	-----
 	TElaborate t	-> "elaborate " % t
 	TMutable   t	-> "mutable " 	% t 
 
 	-----
-
-{-
-	TInst vDef vInst t
-	 -> "@TInst " % vDef % " " % vInst % " " % t 
-
-	TField v t	-> "@TField " % "(" % v % " :: " % t % ")"
-	TLiteral c t	-> "@TLiteral " % c % " " % prettyTB t
-	TIfObj t	-> "@TIfObj " % prettyTB t
--}
-	
-	-----
---	TProj 	j t e c	-> "@TProj " % j % " " % prettyTB t % " " % e % " " % c
-
-
-	-----
-	TFunF tEs	-> ppr tEs
+{-	TFunF tEs	-> ppr tEs
 
 	TFunV t1 t2 mV
 	 -> case mV of
@@ -106,7 +85,7 @@ instance Pretty Type where
 	
 		Just l
 		 -> prettyTBF t1 % " -" % l % "> " % t2
-
+-}
 	
 
 instance Pretty ClassId where

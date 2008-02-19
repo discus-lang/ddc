@@ -1,7 +1,6 @@
 
 module Main.IO
 	( ImportDef(..)
-	, chaseLinkObjs
 	, chaseModules
 	, chooseModuleName
 	, findFile)
@@ -72,6 +71,7 @@ data ImportDef
 
 
 -----
+{-
 chaseLinkObjs
 	:: (?args :: [Arg])
 	-> [FilePath]			-- directory roots to search for extra objects.
@@ -93,6 +93,7 @@ deathLinkObj importDirs file
  	$ "chaseLinkObjs: cannot find external object.\n" 
 	% "    file       = '" % file 		% "'\n"
 	% "    importDirs = '" % importDirs	% "'\n"
+-}
 	
 -----
 chaseModules 

@@ -1,64 +1,17 @@
 
 module Type.Plate.Collect
-	( collectEffsT
-	, collectCloT
-	, collectTConsT
-	, collectTClassVars
+	( collectTClassVars
 	, collectVarsT
 	, collectBindingVarsT
 	, collectClassIds
-	, collectTClasses
-	, collectVars
-	, collectFetters)
+	, collectTClasses)
+
+
 where 
 
 import Util
 import Type.Exp
 import Type.Plate.Trans
-
-collectEffsT :: Type -> [Effect]
-collectEffsT tt
- = case tt of
- 	TForall vks t		
-	 -> collectEffsT t
-
-	TFun  t1 t2 eff clo
-	 -> collectEffsT t1 
-	 ++ collectEffsT t2 
-	 ++ [eff]
-
-	TData v ts
-	 -> concat $ map collectEffsT ts
-	 
-	_	-> []
-
-
------
-collectCloT :: Type -> [Closure]
-collectCloT	t
- 	= execState (transformTM collectCloT' t) []
-	
-collectCloT' t
- = case t of
- 	TFun _ _ _ clo
-	 -> do	modify (\s -> clo : s)
-	 	return t
-		
-	_ -> 	return t
-
-
------
-collectTConsT :: Type -> [Type]
-collectTConsT    t
-	= execState (transformTM collectTConsT' t) []
-	
-collectTConsT' t
- = case t of
- 	TData{}
-	 -> do 	modify (\s -> t : s)
-	 	return t
-	 
-	_ -> 	return t
 
 
 -----
@@ -123,21 +76,6 @@ collectVarsT t
 			
 			t)
 		[]
-
------
-collectVars 
-	:: (TransM (State [Var]) a)
-	=> a -> [Var]
-	
-collectVars x
- = let 	collect var
- 	 = do	modify (\s -> var : s)
-	 	return var
-
-   in	execState
-   		(transZM transTableId { transV = collect } x)
-		[]
-		
  
 -----
 collectClassIds 
@@ -172,19 +110,5 @@ collectTClasses x
 		[]
 
 
------
-collectFetters
-	:: (TransM (State [Fetter]) a)
-	=> a -> [Fetter]
-	
-collectFetters x
- = let	collect f
- 	 = do	modify (\s -> f : s)
-	 	return f
-		
-   in	execState
-   		(transZM transTableId { transF = collect } x)
-		[]
-		
 		
 

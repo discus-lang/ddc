@@ -191,7 +191,6 @@ subFollowVT_f sub block ff
 	FLet t1 t2		-> FLet t1 (down t2)
 	FMore t1 t2		-> FMore t1 (down t2)
 	FProj j v t1 t2		-> FProj j v (down t1) (down t2)
-	
 
 
 -- | Collect up effect and closure vars in these constraints that must

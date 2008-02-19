@@ -555,12 +555,12 @@ bindPatternExp xx
 	 -> do	xs'	<- mapM bindPatternExp xs
 	 	return	$ XTuple sp xs'
 
-	XApp sp _ _
+{-	XApp sp _ _
 	 -> do	let (x:xs)	=  flattenApps xx
 	 	x'		<- rename x
 		xs'		<- mapM bindPatternExp xs
 		return		$ unflattenApps sp (x':xs')
-
+-}
 	XDefix sp xs
 	 -> do	xs'	<- mapM bindPatternExp xs
 	 	return	$ XDefix sp xs'
@@ -883,11 +883,6 @@ instance Rename Type where
 	 -> do	t'	<- rename t
 	 	return	$ TMutable t'
 
-	TFunV t1 t2 mLabel
-	 -> do 	t1'	<- rename t1
-		t2'	<- rename t2
-		return	$ TFunV t1' t2' mLabel
-		
 -----
 instance Rename Fetter where
  rename f

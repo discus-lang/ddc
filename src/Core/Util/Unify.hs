@@ -1,7 +1,6 @@
 
 module Core.Util.Unify
-	( unifyT2
-	, matchC2)
+	( unifyT2)
 
 where
 
@@ -66,23 +65,3 @@ unifyT2 t1 t2
 
 	| otherwise			= Nothing
 	
-	
--- Check if two classes match
---	they match if they have the same class constructor name, 
---	and their arguments unify
---
-matchC2	:: Class -> Class -> Bool
-matchC2 c1 c2
- 	| TClass v1 ts1	<- c1
-	, TClass v2 ts2	<- c2
-	, length ts1	== length ts2
-	, v1 == v2
-	, and $ map isJust (zipWith unifyT2 ts1 ts2)
-	= True
-	
-	| otherwise
-	= False
-	
-
-
-

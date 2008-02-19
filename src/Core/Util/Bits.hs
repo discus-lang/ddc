@@ -16,7 +16,6 @@ module Core.Util.Bits
 	, makeTSum,	flattenTSum
 	, makeTMask,	applyTMask
 	
-	, makeXTet	
 	, makeTWhere
 	, makeTFetters
 	, makeTWitJoin
@@ -32,23 +31,13 @@ module Core.Util.Bits
 	, flattenFun,	unflattenFun,	unflattenFunE
 		
 	, chopLambdas
-	, sortLambdaVars
-	, superAirity
 
 	, isUnboxedT
-	, collectAirity
-	, crushToXDo
-	, tossRegionEffects
-	, addXAnnot
 	, crushClo
-	, boundRsT
-	, boundVsT
 	, splitApps
 	, isCafP 
 	, typeToVar
-	, varToType 
 
-	, addLambdas
 	, addLAMBDAs
 	
 	, slurpVarsRD)
@@ -316,38 +305,6 @@ chopLambdas	x
 	= (x, [])
 
 
------------------------
--- sortLambdaVars
---	Sort lambda bound vars in to standard order
---	region-effect-type-value
---
-sortLambdaVars :: [Var] -> [Var]
-sortLambdaVars vs
- = let
- 	tVars	= filter (\v -> Var.nameSpace v == NameType)	vs
-	rVars	= filter (\v -> Var.nameSpace v == NameRegion)	vs
-	eVars	= filter (\v -> Var.nameSpace v == NameEffect)	vs
-	vVars	= filter (\v -> Var.nameSpace v == NameValue) 	vs
-   in
-	rVars ++ eVars ++ tVars ++ vVars   	
-
-
------------------------
--- superAirity
---	Only value lambdas are counted.
---
-superAirity ::	Exp -> Int
-superAirity	xx
- = case xx of
- 	XLam v t x eff clo
-	 -> case Var.nameSpace v of
-	 	NameValue	-> 1 + superAirity x
-		_		-> superAirity x
-		
-	_ -> 0
-
-
-
 isUnboxedT :: Type -> Bool
 isUnboxedT t
  = case t of
@@ -355,92 +312,7 @@ isUnboxedT t
 	 | last (Var.name v) == '#'	-> True	 
 	_				-> False
 
------------------------
--- collectAirity
---	Work out airity for all visible supers
---
-collectAirity ::	Tree -> Map Var Int
-collectAirity	tree
- = let
- 	aa	= catMaybes
-		$ map collectAirity' tree
-		
-	am	= foldl (\m (v, a) -> Map.insert v a m) 
-			Map.empty
-			aa
-	
-   in am
-		
 
-collectAirity'	ps
- = case ps of
- 	PBind v e
-	 -> Just (v, superAirity e)
-	 
-	_ -> Nothing
-
-
-	
-crushToXDo :: [Stmt] -> Exp
-crushToXDo ss
- = case ss of
- 	[SBind v e]	-> e
-	_		-> XDo ss
-	
-
------------------------
--- tossRegionEffects
---	Toss effects for Read/Write based on region
---
-tossRegionEffects :: [Effect] -> Map Var [Effect]
-tossRegionEffects ee
-	= Map.map nub
-	$ foldl tossRegionEffects' Map.empty ee
-
-tossRegionEffects' eMap e
-
-	| TEffect v [TVar KRegion r]  <- e
-	,    Var.name v   == "Read"
-	  || Var.name v   == "Write"
-	, Var.nameSpace r == NameRegion
-
-	= Map.insertWith (++) r [e] eMap
-
-	
-	| otherwise
-	= eMap
-
-
-{- 
-gatherFunT :: Type -> [Type]
-gatherFunT t
- = case t of
-	TFun t1 t2	
-	 ->  t : gatherFunT t1 ++ gatherFunT t2
-
-	TFunEC t1 t2 effs env
-	 ->  t : gatherFunT t1 ++ gatherFunT t2
-	
-	TData v tt
-	 ->  concat $ map gatherFunT tt
-
-	_ -> []
- -}
-
-
------
--- addAnnotX
---
-addXAnnot :: Annot -> Exp -> Exp
-addXAnnot a xx
- = case xx of
- 	XAnnot aa x	-> XAnnot (a : aa) x
-	_		-> XAnnot [a] xx
-
-
------
--- crushClo
---
 crushClo :: Closure -> [Closure]
 crushClo cc
  = case cc of
@@ -449,41 +321,7 @@ crushClo cc
 	_			-> [cc]
 
 
--- slurp out all the regions free in this type
-boundRsT ::	Type -> Set Var
-boundRsT	t
- = case t of
-	TForall b k t
-	 -> boundRsT t `Set.difference` (Set.singleton $ varOfBind b)
-	 
-	TFunEC t1 t2 eff env
-	 -> boundRsT t1 `Set.union` boundRsT t2
-	 
-	TData v ts
-	 -> Set.unions $ map boundRsT ts
-	 
-	TVar KRegion r
-	 -> Set.singleton r
-	 
-	_ -> Set.empty
 
-
-
------
--- boundEsT
---	Collect the type vars which have been bound by 
---	TForalls or TLets in this type
---
-
-boundVsT :: Type -> [Var]
-boundVsT tt
- = case tt of
-	TForall	 b k   t	-> varOfBind b : boundVsT t
---	TLet     v t1  t2	-> v : boundVsT t2
-	_			-> []
-
-   
-	    
 
 -----
 splitApps ::	Exp -> [(Exp, Effect)]
@@ -524,8 +362,6 @@ isCafX xx
 	_		-> True
 	
 
-
-
 typeToVar :: Type -> Maybe Var
 typeToVar tt
  = case tt of
@@ -533,42 +369,11 @@ typeToVar tt
 	_			-> Nothing
 	
 	
-varToType :: Var -> Maybe Type
-varToType v
- = case Var.nameSpace v of
- 	NameType		-> Just (TVar KData 	v)
-	NameRegion		-> Just (TVar KRegion 	v)
-	NameEffect		-> Just (TVar KEffect 	v)
-	NameClosure		-> Just (TVar KClosure 	v)
- 	
-
-
-
-
------
--- addLambdas
---
-addLambdas ::	[(Var, Type)] -> Exp -> Exp
-addLambdas	vts x
- = case vts of
- 	[]			-> x
-	((v, t) : vts)		-> XLam v t (addLambdas vts x) (TBot KEffect) (TBot KClosure)
-	
-	
 addLAMBDAs ::	[(Bind, Kind)] -> Exp -> Exp
 addLAMBDAs	vks x
  = case vks of
  	[]			-> x
 	((v, k) : vks)		-> XLAM v k (addLAMBDAs vks x)
-
-
-
-makeXTet ::	[(Var, Type)] -> Exp -> Exp
-makeXTet	[] x	= x
-makeXTet	vts x	= XTet vts x
-
-		
-
 
 
 -- | Slurp out the region and data vars present in this type

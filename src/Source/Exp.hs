@@ -26,7 +26,6 @@ module Source.Exp
 
 	, LCQual (..)
 	, Var
-	, takeVar
 
 	-- Re-exported from Type.Exp
 	, module Type.Exp
@@ -305,8 +304,6 @@ data LCQual a
 	| LCLet		[Stmt a]			-- ^ Local declaration.		Stmt can only be SBind.
 	| LCExp		(Exp a)				-- ^ Guard.
 	deriving (Show, Eq)
-
-takeVar e	= case e of { XVar sp v	-> Just v; _ -> Nothing; }
 
 -- | take the binding variable of this statement
 takeStmtBoundV :: Stmt a -> Maybe Var

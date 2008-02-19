@@ -18,8 +18,6 @@ module Type.Util.Bits
 	, spaceOfKind
 	, kindOfSpace 
 	, kindOfType,	takeKindOfType
-	, flattenKind 
-	, bindFreeVarsT
 
 	, addFetters 
 	, takeBindingVarF
@@ -27,10 +25,6 @@ module Type.Util.Bits
 	, makeOpTypeT 
 	, makeTVar
 	, takeCidOfTClass
-	
-	, snocTFun
-	, snocTData
-	
 	, slurpVarsRD)
 
 
@@ -324,37 +318,6 @@ takeKindOfType tt
 	_		-> Nothing
 	
 	
------
-flattenKind ::	Kind	-> [Kind]
-flattenKind kk
- = case kk of
- 	KFun k1 k2	-> k1 : flattenKind k2
-	_		-> [kk]
-
-
-
------------------------
--- bindFreeVarsT
---	Gather up the list of unbound vars in a type and add explicitly
---	generalise them by adding a forall out the front.
---	
-bindFreeVarsT :: 	Type -> Type
-bindFreeVarsT	t
- = let	vsFree	= Set.toList $ freeVars t
-   in	bindFreeVarsT' 
-   		[ (v, kindOfSpace $ Var.nameSpace v) | v <- vsFree ]
-		t
-	
-bindFreeVarsT' vks t
- = case vks of
- 	[]	-> t
-	_	-> case t of
-			TForall vks' x 	-> TForall (vks ++ vks') x
-			_		-> TForall vks t
-
-
-	
-
 -- | Add some fetters to a type.
 addFetters :: 	[Fetter] -> Type -> Type
 addFetters	fsMore	t
@@ -421,23 +384,6 @@ makeTVar v	= TVar (kindOfSpace $ Var.nameSpace v) v
 takeCidOfTClass :: Type -> Maybe ClassId
 takeCidOfTClass (TClass k cid)	= Just cid
 takeCidOfTClass _		= Nothing
-
-
-
-snocTFun :: 	Type -> Maybe (Type, Type, Type, Type)
-snocTFun	tt
- = case tt of
- 	TFun t1 t2 eff clo	-> Just (t1, t2, eff, clo)
-	_			-> Nothing
-	
-snocTData ::	Type -> Maybe (Var, [Type])
-snocTData	tt
- = case tt of
- 	TData v ts		-> Just (v, ts)
-	_			-> Nothing
-
-
-
 
 
 -- | Slurp out the region and data vars present in this type

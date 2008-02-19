@@ -1,17 +1,14 @@
 
 module Type.Util.StripFetters
-	( stripFettersT 
-	, stripMonoFLetsT )
+	( stripMonoFLetsT )
 where
 
 import Util
 import Shared.Error
 import Type.Exp
 
------
-stage	= "Type.Util.StripFetters"
 
-
+{-
 stripFettersT :: Type	-> (Type, [Fetter])
 stripFettersT	tt
  = case tt of
@@ -25,11 +22,6 @@ stripFettersT	tt
 	    in	( t'
 	    	, fs ++ fs')
 	
-{-	TUnify k ts
-	 -> let	(ts', fss)	= unzip $ map stripFettersT ts
-	    in	( TUnify k ts'
-	    	, concat fss)
--}
 	TSum k ts
 	 -> let	(ts', fss)	= unzip $ map stripFettersT ts
 	    in	( TSum k ts'
@@ -85,6 +77,7 @@ stripFettersT	tt
 	TClass k cid	-> (tt, [])
 
 	_	-> panic stage ("stripFettersT: no match for " % show tt)
+-}
 
 
 -- | Strip all the monomorphic FLets from this type.

@@ -1,9 +1,7 @@
 
 module Source.Slurp 
 	( slurpFixTable
-	, slurpDataDefs
 	, slurpImportModules
-	, slurpImportExterns
 	, slurpKinds
 	, slurpTopNames )
 where
@@ -38,22 +36,6 @@ slurpFixTable'	 _			= []
 
 
 -----
--- slurpDataDefs
---	Strips data constructor definitions from a Source.Exp tree.
---
-slurpDataDefs 
-	:: Tree	a -> [DataDef a]
-
-slurpDataDefs	 	tops		
-	= catMaybes 
-	$ map 	(\top ->
-		 case top of
-	 		PData sp v vs cs	-> Just (v, vs, cs)
-			_			-> Nothing)
-	$ tops
-
-
------
 -- slurpImportModules
 --	Strips off the list of modules imported by this one.
 --
@@ -67,22 +49,6 @@ slurpImportModules	tops
 		case x of 
 			PImportModule sp xx 	-> Just xx
 			_		 	-> Nothing)
-	$ tops
-
-
------
--- slurpImportExterns
---	Strips list the list of external functions imported by this module.
---
-slurpImportExterns 
-	:: Tree	a -> [(Var, Type)]
-
-slurpImportExterns	tops
-	= concat $ catMaybes 
-	$ map	(\top ->
-		 case top of
-			PImportExtern sp v t o 	-> Just [(v, t)]
-			_		  	-> Nothing)
 	$ tops
 
 

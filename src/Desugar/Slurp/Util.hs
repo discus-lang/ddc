@@ -11,22 +11,16 @@ module Desugar.Slurp.Util
 	, newTVarC, newTVarCS
 	, newTVarF, newTVarFS
 	, newVarZ
-	, newVarInst
-
 	, bindVtoT
 	, lbindVtoT
 	, getVtoT
 
 	, addDataDef
-	, lookupDataDef
 
 	, getGroundType
 	, getConstType
 
-	, slurpInstantiate
-	
 	, addDef
-	, getDef
 	, addError 
 	
 	, wantTypeV
@@ -154,11 +148,6 @@ newVarNS	space		str
 
 newVarZ ::	Var	-> CSlurpM Var
 newVarZ		var	= newVarN (Var.nameSpace var) 
-
-newVarInst ::	Var	-> CSlurpM (Maybe Var)
-newVarInst	var	
- = do	var'	<- newVarZ var
- 	return	$ Just var'
 
 -----------------------
 -- bindVtoT ... 
@@ -304,40 +293,10 @@ addDataDef	ddef@(PData _ v vs ctors)
  	= modify (\s -> s 
 		{ stateDataDefs = Map.insert v ddef (stateDataDefs s) })
 
-lookupDataDef :: Var		-> CSlurpM (Top Annot2)
-lookupDataDef	 v
- = do 	dataDefs	<- gets stateDataDefs
- 	let (Just def)	=  Map.lookup v dataDefs
-	return def
- 	
-
------
--- instantiate
---	Instantiates a type, removing forall nodes.
---
---	PANIC: If any type variables are encountered which have not been bound by a forall.
---	
-slurpInstantiate ::	Type	-> CSlurpM Type
-slurpInstantiate	t	
- 	= instantiateT newVarInst t
-
------
--- addDef
---
 addDef ::	Var -> Type -> CSlurpM ()
 addDef		v	t
  	= modify (\s -> s 
 		{ stateSlurpDefs = Map.insert v t (stateSlurpDefs s)})
-	
-getDef ::	Var -> CSlurpM Type
-getDef		v
- = do
- 	slurpDefs	<- gets stateSlurpDefs
-
-	case Map.lookup v slurpDefs of
-	 Nothing	-> panic stage $ "getDef: no def for " ++ pprStr v
-	 Just t		-> return t
-
 
 -----
 addError :: 	Error -> CSlurpM ()

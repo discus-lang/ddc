@@ -681,16 +681,3 @@ dumpImportDef def
 	= putStr	
 	$ pprStr
  	$ "        " % (padR 30 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
-{-
- | otherwise
- = putStr
- 	$ pprStr
- 	$ "        " % (padR 30 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
-	% "          linkObjs:\n" 
-	% "\n" %!% (map (\p -> "             " % p) $ idLinkObjs def)
-	% "\n"
--}
-
-
-
-

@@ -1,6 +1,5 @@
 module Source.Util
 	( flattenApps
-	, unflattenApps
 	, sourcePosX )
 
 where
@@ -31,27 +30,7 @@ flattenApps xx
  	XApp sp x1 x2	-> flattenApps x1 ++ [x2]
 	_		-> [xx]
 
-
------
--- unflattenApps
---	| Converts a list of expressions into function applications.
---	
--- eg	   unflattenApps [x1, x2, x3, x4]
---	=> XApp (XApp (XApp x1 x2) x3) x4
---
-unflattenApps :: a -> [Exp a] -> Exp a
-unflattenApps sp (x:xs)
- = unflattenApps' sp x xs
- 
-unflattenApps' sp x xx
- = case xx of
- 	[]	-> x
-	xs	
-	 -> let	Just xsL	= takeLast xs
-	    in	XApp sp (unflattenApps' sp x (init xs)) xsL
 	
------
--- 
 sourcePosX :: Exp SourcePos -> SourcePos
 sourcePosX xx 
  = case xx of

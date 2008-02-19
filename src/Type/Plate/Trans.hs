@@ -254,13 +254,8 @@ followT table tt
 	 -> do	t'	<- transZM table t
 	 	return	$ TMutable t'
 		
-	-- extra type constraints
---	TUnify ts
---	 -> do	ts'	<- transZM table ts
---	 	return	$ TUnify ts'
-
 	-- type constraints
-	TFunV t1 t2 ml
+{-	TFunV t1 t2 ml
 	 -> do	t1'	<- transZM table t1
 	 	t2'	<- transZM table t2
 		return	$ TFunV t1' t2' ml 
@@ -268,7 +263,7 @@ followT table tt
 	TFunF xx
 	 ->  do	xx'	<- transZM table xx
 	 	return	$ TFunF xx
-
+-}
 	
 
 	

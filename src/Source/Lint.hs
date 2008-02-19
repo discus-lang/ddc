@@ -192,11 +192,6 @@ instance Lint Type where
 	-- closure
 	TFree v t			-> TFree v (lint t)
 		
-	-- 
--- 	TProj p t e c			-> TProj p (lint t) e c
-	
-	TFunV t1 t2 v			-> TFunV (lint t1) (lint t2) v
-	
 	_ 				-> death tt "unexpected constructor."
 
 	 
