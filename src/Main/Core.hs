@@ -54,7 +54,6 @@ import Core.Exp
 import Core.Util
 
 import Core.Graph
-import Core.Plate.Util			(eraseModuleTree)
 import Core.Sequence			(slurpSuperDepsTree, dotSuperDeps, sequenceCafsTree)
 
 import qualified Sea.Exp	as E
@@ -264,7 +263,7 @@ coreFullLaziness
 		$ dotAppGraph appMap
 
 	let cTree'	= fullLazinessTree moduleName cHeader cTree
-	dumpCT DumpCoreFullLaziness "core-full-laziness" (eraseModuleTree cTree')
+--	dumpCT DumpCoreFullLaziness "core-full-laziness" (eraseModuleTree cTree')
 	-- eraseModuleTree
 
 	return cTree'
@@ -290,7 +289,7 @@ coreInline
  | elem OptInline ?args
  = do	let cTree'	= inlineTree cTree cHeader inlineVars
  	
-	dumpCT DumpCoreInline "core-inline" (eraseModuleTree cTree')
+--	dumpCT DumpCoreInline "core-inline" (eraseModuleTree cTree')
 	
 	return cTree'
 

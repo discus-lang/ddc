@@ -36,15 +36,14 @@ import qualified Source.Util		as S
 import qualified Source.Pretty		as S
 import qualified Source.Plate.Trans	as S
 
-import qualified Desugar.Exp		as D
 import qualified Desugar.Util		as D
 import qualified Desugar.Pretty		as D
+import qualified Desugar.Exp		as D
 
 import Shared.Exp
 
 import Source.Desugar.Base
 import Source.Desugar.Patterns
-import Source.Desugar.Dict
 import Source.Desugar.Type
 
 import {-# SOURCE #-} Source.Desugar.ListComp

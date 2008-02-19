@@ -36,7 +36,6 @@ import qualified Core.Pretty		as C
 
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
-import Desugar.ToCore.Util
 import qualified Desugar.Pretty		as D
 import Desugar.Project			(ProjTable)
 import qualified Desugar.Exp 		as D

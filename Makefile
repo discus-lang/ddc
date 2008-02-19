@@ -109,6 +109,11 @@ war :
 churn : 
 	@echo "* Churning compiler"
 	@bin/churn
+
+.PHONY : hpcmarkup
+hpcmarkup :
+	@echo "* Marking up HPC output"
+	@hpc markup --destdir=doc/hpc ddc.tix
 	
 # -- Cleaning --------------------------------------------------------------------------------------
 

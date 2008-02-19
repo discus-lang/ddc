@@ -1,17 +1,9 @@
 module Shared.Pretty
-(
-	annotMisc, scrubAnnotMisc,
-	annotVar,  scrubAnnotVar,
-	annotType, scrubAnnotType,
-	scrubAnnots
-)
-
+	()
 where
 
 import Util
 import Shared.Exp
-import Shared.Bits
-
 
 ----
 instance (Pretty x, Pretty t) 

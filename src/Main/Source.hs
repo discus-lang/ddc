@@ -55,7 +55,6 @@ import qualified Desugar.Slurp.State		as D
 import qualified Desugar.Plate.Trans		as D
 import Desugar.Slurp.Slurp			(slurpTreeM)
 import Desugar.Project				(projectTree, ProjTable, slurpProjTable)
-import Desugar.SnipLambda			(snipLambdaTree)
 import Desugar.ToCore				(toCoreTree)
 
 import qualified Core.Exp			as C

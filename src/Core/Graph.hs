@@ -20,7 +20,6 @@ import Shared.Var		(NameSpace(..))
 import Core.Exp
 import Core.Util
 import Core.Util.Slurp
-import Core.Util.Mask
 import Core.Plate.Walk
 import Core.Plate.FreeVars
 
@@ -103,10 +102,10 @@ appModeX	xx
 
 appModeX_app xx
  = let	effs	= [eff | (x, eff) <- splitApps xx]
-  	effs'	= flattenSumT  $ TSum KEffect effs
+  	effs'	= flattenTSum  $ TSum KEffect effs
    in	case effs' of
-   		TBot KEffect	-> AppPure
-		_		-> AppEffect effs'
+   		[]	-> AppPure
+		_	-> AppEffect (makeTSum KEffect effs')
 
 
 dotAppGraph ::	Map Var (App, [Var])	-> String

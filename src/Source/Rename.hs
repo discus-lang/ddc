@@ -24,7 +24,6 @@ import Source.Exp
 import Source.Util
 import Source.Horror
 import Source.RenameM
-import Source.Separate
 import Source.Slurp
 import Source.Error
 

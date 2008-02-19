@@ -28,8 +28,6 @@ import Core.Plate.FreeVars
 
 import qualified Core.Plate.Trans	as Trans
 
-import Core.Optimise.FreeLevel
-
 -----
 -- stage	= "Core.Optimise.FullLaziniess"
 

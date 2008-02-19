@@ -34,9 +34,9 @@ import Shared.Error
 
 import qualified Shared.VarBind	as Var
 
+import Desugar.Util
 import Desugar.Bits
 import Desugar.Exp
-import Desugar.Util
 
 -----
 stage	= "Desugar.Project"

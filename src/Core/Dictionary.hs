@@ -20,7 +20,6 @@ import Core.Plate.Trans
 import Core.Util.Unify
 import Core.ReconKind
 
-import Core.Class.Discharge
 import Core.Util.Strip
 import Core.Util.Substitute
 import Core.Util.Slurp

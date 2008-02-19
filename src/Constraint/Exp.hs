@@ -3,7 +3,7 @@
 --	Functions for source level type constraints.
 --
 module	Constraint.Exp
-	( CTree(..), newCBranch
+	( CTree(..)
 	, CBind(..) )
 	
 where
@@ -115,12 +115,6 @@ data	CTree
 	| CInstLetRec		TypeSource Var Var
 
 	deriving (Show)
-
-newCBranch
-	= CBranch
-	{ branchBind	= BNil
-	, branchSub	= [] }
-
 
 
 -- CBind
