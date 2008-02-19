@@ -184,7 +184,8 @@ instance Pretty (Exp a) where
 		%> ";\n" %!% ss
 		%  "\n} in " % e
 
-	XDo 	sp ss	 -> "do {\n" %> "\n" %!% ss % "\n}"
+	XDo 	sp ss	 	-> "do {\n" %> "\n" %!% ss % "\n}"
+	XWhere  sp xx ss	-> xx % " where {\n" %> "\n" %!% ss % "\n"
 
 	XCase 	sp co ca
 	 -> "case " % co % " of {\n" 
@@ -201,6 +202,12 @@ instance Pretty (Exp a) where
 	 -> "\\case {\n"
 	 	%> "\n\n" %!% cs
 		%  "\n}"
+
+	XAppE	sp e1 e2 _
+	 -> if orf e1 [isXVar, isXApp, isXUnit]
+		then e1 % " " % prettyXB e2
+		else "(" % e1 % ")\n" %> prettyXB e2
+		
 
 	XCaseE 	sp co ca eff
 	 -> "case " % co % " of " % eff % " {\n" 
@@ -226,13 +233,15 @@ instance Pretty (Exp a) where
 	XAt 	sp v exp	 -> v % "@" % prettyXB exp
 
 	-- object expressions
-	XObjVar 	sp v	 -> "^" % v
-	XObjField 	sp v	 -> "_" % v
+	XObjVar 	sp v	-> "^" % v
+	XObjField 	sp v	-> "_" % v
+	XObjFieldR	sp v	-> "_#" % v
 
 	-- infix expressions
 	XOp 		sp v	 -> "@XOp " % v
 	XDefix 		sp es	 -> "@XDefix " % es
  	XDefixApps 	sp es	 -> "@XDefixApps " % es
+	XAppSusp	sp x1 x2 -> "@XAppSusp " % x1 <> x2
 
 	-- lambda sugar
 
@@ -256,6 +265,9 @@ instance Pretty (Exp a) where
 	 %> ("\n" %!% aa)
 	 %  "}\n"
 	 %  "with " % wX % ";"
+
+	XThrow sp x
+	 -> "throw " % x
 
 	-- imperative sugar
 	XWhile sp x1 x2
@@ -282,13 +294,12 @@ instance Pretty (Exp a) where
 	
 
 	-- patterns
-	XCon   sp v xx			-> v % " " % " " %!% xx
-	XTuple sp xx			-> "(" % ", " %!% xx % ")"
-	XCons  sp x1 x2			-> x1 % ":" % x2
-	XList  sp xx			-> "[" % ", " %!% xx % "]"
+	XCon   sp v xx		-> v % " " % " " %!% xx
+	XTuple sp xx		-> "(" % ", " %!% xx % ")"
+	XCons  sp x1 x2		-> x1 % ":" % x2
+	XList  sp xx		-> "[" % ", " %!% xx % "]"
+	XWildCard sp		-> ppr "_"
 
-	_ -> panic stage
-		$ "ppr[Exp]: no match\n"
 
 instance Pretty (Proj a) where
  ppr f
