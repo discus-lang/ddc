@@ -45,10 +45,19 @@ GHC_WARNINGS	:= \
 # -- Enable GHC language features individually so we can keep an eye
 #	on what is being used.
 GHC_LANGUAGE	:= \
-	-XPatternGuards -XImplicitParams -XUnboxedTuples \
-	-XParallelListComp -XPatternSignatures -XMultiParamTypeClasses \
-	-XFlexibleInstances -XFlexibleContexts -XFunctionalDependencies \
-	-XScopedTypeVariables -XKindSignatures
+	-XPatternGuards \
+	-XImplicitParams \
+	-XUnboxedTuples \
+	-XParallelListComp \
+	-XPatternSignatures \
+	-XMultiParamTypeClasses \
+	-XFlexibleInstances \
+	-XFlexibleContexts \
+	-XFunctionalDependencies \
+	-XScopedTypeVariables \
+	-XKindSignatures \
+	-XUndecidableInstances \
+	-XTypeSynonymInstances
 
 # GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot 
 # GCC_FLAGS	:= -std=c99 -O3 -fPIC
