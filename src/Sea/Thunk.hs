@@ -11,11 +11,7 @@ module Sea.Thunk
 
 where
 
-import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
+import Shared.Pretty
 import Shared.Var		(VarBind)
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as Unique
@@ -24,6 +20,11 @@ import Sea.Exp
 import Sea.Pretty
 import Sea.Util
 import Sea.Plate.Trans
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import Util
 
 -----
 type	ExM	= State VarBind
@@ -36,7 +37,7 @@ newVar mName
 	let gen'	= Var.incVarBind gen
 	put gen'
 	
-	let name	= fromMaybe (pprStr gen) mName
+	let name	= fromMaybe (pprStrPlain gen) mName
 	let var		= (Var.new name) { Var.bind = gen }
 	
 	return var

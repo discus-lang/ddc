@@ -11,6 +11,7 @@ import Shared.Var		(Var)
 
 import Shared.Error
 import Shared.Base
+import Shared.Pretty
 
 import Source.Exp
 import Util
@@ -24,7 +25,7 @@ stage	= "Source.DefixApps"
 --	builds (suspended) function applications.
 --
 --
-defixApps ::	Pretty a => a -> [Exp a] -> [Exp a]
+defixApps ::	Pretty a PMode => a -> [Exp a] -> [Exp a]
 defixApps	sp xx
 	= rewriteApps $ dropApps sp xx
 
@@ -38,7 +39,7 @@ defixApps	sp xx
 --
 --	=>  [$XDefixApps [f, x, @, a, b], +, $XDefixApps [g, y], -, XDefixApps [h, @, 5]]
 --
-dropApps :: 	Pretty a => a -> [Exp a] -> [Exp a]
+dropApps :: 	Pretty a PMode => a -> [Exp a] -> [Exp a]
 dropApps sp es	
 
 	-- Check if the expression starts with a unary minus

@@ -6,12 +6,12 @@ module Desugar.Pretty
 
 where
 
-import Util
-import qualified Shared.Var	as Var
 import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
-import Shared.Pretty()
+import qualified Shared.Var	as Var
+import Shared.Pretty
+import Util
 
 stripAnnot xx	= transformN (\n -> Nothing :: Maybe ()) xx
 
@@ -22,7 +22,7 @@ annot nn x
 	Just n	-> "[" % n % ": " % x % "]"
 
 -- Top -------------------------------------------------------------------------
-instance Pretty a => Pretty (Top (Maybe a)) where
+instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
  ppr xx
   = case xx of
   	PNil		-> ppr "@PNil\n"
@@ -42,7 +42,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 
 	PEffect nn v k
 	 -> annot nn
-	 	("effect " % v %>> " :: " % k) % ";\n"
+	 	("effect " % v %> " :: " % k) % ";\n"
 		
 	PRegion nn v
 	 -> annot nn
@@ -62,7 +62,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 	-- classes
 	PClass nn v k
 	 -> annot nn
-	 	("class " % v %>> " :: " % k) % ";\n"
+	 	("class " % v %> " :: " % k) % ";\n"
 
 	PClassDict nn v ts context sigs
 	 -> annot nn
@@ -102,7 +102,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 
 
 -- CtorDef ---------------------------------------------------------------------
-instance Pretty a => Pretty (CtorDef (Maybe a)) where
+instance Pretty a PMode => Pretty (CtorDef (Maybe a)) PMode where
  ppr xx
   = case xx of
   	CtorDef nn v []	-> ppr v
@@ -113,7 +113,7 @@ instance Pretty a => Pretty (CtorDef (Maybe a)) where
 
 
 -- Exp -------------------------------------------------------------------------
-instance Pretty a => Pretty (Exp (Maybe a)) where
+instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
  ppr xx	
   = case xx of
   	XNil				-> ppr "@XNil"
@@ -171,7 +171,7 @@ prettyXB xx
 
 
 -- Proj ------------------------------------------------------------------------
-instance Pretty a => Pretty (Proj (Maybe a)) where
+instance Pretty a PMode => Pretty (Proj (Maybe a)) PMode where
  ppr xx
   = case xx of
   	JField  nn v		-> annot nn ("." % v)
@@ -179,7 +179,7 @@ instance Pretty a => Pretty (Proj (Maybe a)) where
 	
 
 -- Stmt ------------------------------------------------------------------------
-instance Pretty a => Pretty (Stmt (Maybe a)) where
+instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
  ppr xx
   = case xx of
 	SBind nn Nothing x
@@ -189,7 +189,7 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
   	SBind nn (Just v) x@XLambda{}		
 	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
 	    in  annot nn 
-	  	 	(v' % "\n =      " %> x) % ";\n"
+	  	 	(v' %>> "\n =      " %> x) % ";\n"
 	 
 	SBind nn (Just v) x
 	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
@@ -199,11 +199,11 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 	
 	SSig  nn v  t	
 	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
-	    in	annot nn (v'  % " :: " % t) % ";"
+	    in	annot nn (v' %>> " :: " % t) % ";"
 
 
 -- Alt -------------------------------------------------------------------------
-instance Pretty a => Pretty (Alt (Maybe a)) where
+instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
  ppr xx
   = case xx of
 	AAlt	 nn [] x	-> annot nn ("\\= " % x) 				% ";"
@@ -211,15 +211,15 @@ instance Pretty a => Pretty (Alt (Maybe a)) where
 
 
 -- Guard -----------------------------------------------------------------------
-instance Pretty a => Pretty (Guard (Maybe a)) where
+instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
  ppr gg
   = case gg of
   	GCase nn pat	-> annot nn ("| " % pat)
-	GExp  nn pat x	-> annot nn (" "  % pat %>> " <- " % x)
+	GExp  nn pat x	-> annot nn (" "  % pat %> " <- " % x)
 	
 
 -- Pat ------------------------------------------------------------------------
-instance Pretty a => Pretty (Pat (Maybe a)) where
+instance Pretty a PMode => Pretty (Pat (Maybe a)) PMode where
  ppr ww
   = case ww of
 	WConLabel nn v lvs	
@@ -248,7 +248,7 @@ instance Pretty a => Pretty (Pat (Maybe a)) where
 		-> annot nn (ppr "_")
 
 -- Label -----------------------------------------------------------------------
-instance Pretty a => Pretty (Label (Maybe a)) where
+instance Pretty a PMode => Pretty (Label (Maybe a)) PMode where
  ppr ll
   = case ll of
   	LIndex	nn i		-> annot nn ("." % i)

@@ -12,7 +12,7 @@ import Core.Util.Strip
 import qualified Shared.Var	as Var
 import Shared.Var (Var)
 import Shared.Error
-import Shared.Pretty		()
+import Shared.Pretty
 
 import qualified Data.Set	as Set
 
@@ -31,10 +31,10 @@ prettyFoldXLAM		= True
 
 
 -------------------------------------------------------------------------------------------------
-sv v		= pprStr $ pv v
+sv v		= pprStrPlain $ pv v
 
-sb (BVar v)	= pprStr $ pv v
-sb (BMore v t)	= pprStr $ "(" % (pprStr $ pv v) % " :> " % t % ")"
+sb (BVar v)	= pprStrPlain $ pv v
+sb (BMore v t)	= pprStrPlain $ "(" % (pprStrPlain $ pv v) % " :> " % t % ")"
 
 -- | force display of type namespace qualifier
 pv v
@@ -44,7 +44,7 @@ pv v
 	_		-> ppr vStrip
 
 -- Top ----------------------------------------------------------------------------------------------
-instance Pretty Top where
+instance Pretty Top PMode where
  ppr xx
   = case xx of
 	PNil
@@ -60,7 +60,7 @@ instance Pretty Top where
 	PExtern v tv to
 	 -> "extern " % v % "\n"
 	 %  " =      "
-	 	%> (pprStr tv % "\n"
+	 	%> (tv % "\n"
 		%  ":$ " % to % ";\n")
 
 	PData v vs []
@@ -77,7 +77,7 @@ instance Pretty Top where
 		%> (":$ " % to % ";\n")
 
 	PRegion v vts
-	 -> "region " % v %>> "  with {" % "; " 
+	 -> "region " % v %> "  with {" % "; " 
 	 	%!% (map (\(v, t) -> pv v % " = " % t) vts)
 		% "};"
 
@@ -106,7 +106,7 @@ instance Pretty Top where
 
 
 -- CtorDef --------------------------------------------------------------------------------------------
-instance Pretty CtorDef where
+instance Pretty CtorDef PMode where
  ppr xx
   = case xx of
   	CtorDef v fs
@@ -115,7 +115,7 @@ instance Pretty CtorDef where
 	 
 	 
 -- Exp ----------------------------------------------------------------------------------------------
-instance Pretty Exp where
+instance Pretty Exp PMode where
  ppr xx
   = case xx of
 	XNil	
@@ -158,7 +158,7 @@ instance Pretty Exp where
 
 
 	XLam v t x eff clo
-	 -> "\\  (" % padR 16 (sv v) % " :: " % t % ")"
+	 -> "\\  (" % sv v % " :: " % t % ")"
 		 % pEffClo % " ->\n"
 		 % x
 	 
@@ -218,7 +218,7 @@ instance Pretty Exp where
 	 -> ppr lit
 
 	XLocal v vts x
-	 -> "local " % v %>> "  with {" % "; " 
+	 -> "local " % v %> "  with {" % "; " 
 	 	%!% (map (\(v, t) -> pv v % " = " % t) vts)
 		% "} in\n" % x
 	 
@@ -268,7 +268,7 @@ prettyExpB x
 
 
 -- Lit ---------------------------------------------------------------------------------------------
-instance Pretty Lit where
+instance Pretty Lit PMode where
  ppr xx
   = case xx of
 	LInt8	i	-> i	% "#8i"
@@ -289,7 +289,7 @@ instance Pretty Lit where
 
 
 -- Proj --------------------------------------------------------------------------------------------
-instance Pretty Proj where
+instance Pretty Proj PMode where
  ppr xx
   = case xx of
   	JField v	-> "." % v
@@ -297,7 +297,7 @@ instance Pretty Proj where
 
 
 -- Prim --------------------------------------------------------------------------------------------
-instance Pretty Prim where
+instance Pretty Prim PMode where
  ppr xx 
   = case xx of
   	MSuspend v	-> "prim{Suspend} " 	% v
@@ -314,12 +314,12 @@ instance Pretty Prim where
 
 
 -- Op ---------------------------------------------------------------------------------------------
-instance Pretty Op where
+instance Pretty Op PMode where
  ppr xx	= ppr $ show xx
 
 
 -- Stmt --------------------------------------------------------------------------------------------
-instance Pretty Stmt where
+instance Pretty Stmt PMode where
  ppr xx
   = case xx of
 --	SComment s
@@ -330,11 +330,11 @@ instance Pretty Stmt where
 
 
 	SBind (Just v) x
-	 |  length (pprStr v) < 7  
+	 |  length (pprStrPlain v) < 7  
 	    && (not $ isXLambda x)
 	    && (not $ isXLAMBDA x)
 	    && (not $ isXTau x)
-	 -> (padR 7 (pprStr v)) 
+	 -> (padR 7 (pprStrPlain v)) 
 	 	% " = " 	%> x
 	 
 	 | otherwise
@@ -342,7 +342,7 @@ instance Pretty Stmt where
 	  	% " =      " 	%> x  
 
 -- Alt --------------------------------------------------------------------------------------------
-instance Pretty Alt where
+instance Pretty Alt PMode where
  ppr xx
   = case xx of
 	AAlt [] x
@@ -356,15 +356,15 @@ instance Pretty Alt where
 
   
 -- Guard --------------------------------------------------------------------------------------------
-instance Pretty Guard where
+instance Pretty Guard PMode where
  ppr xx
   = case xx of
 	GExp pat exp
-	 -> pat	%>> " <- " % exp
+	 -> pat	%> " <- " % exp
 	 
 
 -- Pat ---------------------------------------------------------------------------------------------
-instance Pretty Pat where
+instance Pretty Pat PMode where
  ppr xx 
   = case xx of
   	WLit c		-> ppr c 
@@ -378,11 +378,11 @@ instance Pretty Pat where
  
 prettyLVT (label, var, t)
 	= "." % label 
-	% " = " % padR 5 (pprStr var) 
+	% " = " % pprStrPlain var
 		%> (" :: " % t)
 	
 -- Label --------------------------------------------------------------------------------------------
-instance Pretty Label where
+instance Pretty Label PMode where
  ppr xx
   = case xx of
   	LIndex	i	-> ppr i
@@ -390,7 +390,7 @@ instance Pretty Label where
 
 
 -- Annot --------------------------------------------------------------------------------------------
-instance Pretty Annot where
+instance Pretty Annot PMode where
  ppr xx
   = case xx of
   	NString s	-> "&NString " 	 % s
@@ -405,7 +405,7 @@ instance Pretty Annot where
 
 
 -- Type --------------------------------------------------------------------------------------------
-instance Pretty Type where
+instance Pretty Type PMode where
  ppr xx
   = case xx of
 	TNil 
@@ -511,7 +511,7 @@ prettyTBF e
 	= ppr e
 
 -- TFetter -----------------------------------------------------------------------------------------
-instance Pretty Fetter where
+instance Pretty Fetter PMode where
  ppr xx
   = case xx of
   	FWhere v t	-> sv v % " =  " % t
@@ -519,7 +519,7 @@ instance Pretty Fetter where
 
 
 -- TBind -------------------------------------------------------------------------------------------
-instance Pretty Bind where
+instance Pretty Bind PMode where
  ppr xx
   = case xx of
   	BVar v		-> pv v
@@ -527,7 +527,7 @@ instance Pretty Bind where
 
 
 -- Kind --------------------------------------------------------------------------------------------
-instance Pretty Kind where
+instance Pretty Kind PMode where
  ppr xx
   = case xx of
 	KNil		-> ppr "KNil"

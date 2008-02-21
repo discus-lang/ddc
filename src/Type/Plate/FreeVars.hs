@@ -5,28 +5,27 @@ module Type.Plate.FreeVars
 
 where
 
------
 import Shared.Error
 import Type.Exp
 
 import qualified Data.Set	as Set
 import Data.Set			(Set, (\\), empty, union, unions, fromList, singleton)
 
------
-stage	= "Type.Plate.FreeVars"
-
+-- A class of things that can have their free variables collected.
 class FreeVars a where
  freeVars :: a -> Set Var
 
------
+-- simple instances.
 instance FreeVars a => FreeVars [a] where
  freeVars xx	= unions $ map freeVars xx
 
------
+
+
+-- Var ---------------------------------------------------------------------------------------------
 instance FreeVars Var where
  freeVars v	= singleton v
  
------
+-- Type --------------------------------------------------------------------------------------------
 instance FreeVars Type where
  freeVars tt
   = case tt of
@@ -61,13 +60,6 @@ instance FreeVars Type where
 		, freeVars eff
 		, freeVars clo ]
 
-{-	TFunF tsEffClo
-	 -> let	(ts, eff, clo)	= unzip3 tsEffClo
-	    in unions
-	    	[ freeVars ts
-		, freeVars eff
-		, freeVars clo ]
--}
 	TData v ts	
 	 -> union (singleton v) (freeVars ts)
 	
@@ -90,18 +82,20 @@ instance FreeVars Type where
 
 	-- used in solver
 	TClass{}	-> empty
-	TAccept t	-> freeVars t
-	TNode x t	-> freeVars t
 	TError{}	-> empty
 	TFetter f	-> freeVars f
 	 
-	_ -> panic stage $ "freeT: no match for " ++ show tt ++ "\n"	 
-	    
------
+	-- sugar
+	TElaborate t	-> freeVars t
+	TMutable t	-> freeVars t
+	
+    
+-- Kind --------------------------------------------------------------------------------------------
 instance FreeVars Kind where
  freeVars kk	= empty
 	
------
+
+-- Fetter ------------------------------------------------------------------------------------------
 instance FreeVars Fetter where
  freeVars f
   = case f of
@@ -124,6 +118,6 @@ instance FreeVars Fetter where
 		, freeVars tDict
 		, freeVars tBind]
 
-	_ -> panic stage $ "free[Fetter]: no match for " ++ show f ++ "\n"
+
 
 

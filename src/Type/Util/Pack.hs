@@ -14,6 +14,7 @@ import Type.Util.Bits
 import Type.Util.Substitute
 
 import Shared.VarPrim
+import Shared.Pretty
 import Shared.Error
 
 import qualified Data.Map	as Map
@@ -31,7 +32,7 @@ stage	= "Type.Util.Pack"
 debug	= False
 trace ss x
 	= if debug 
-		then (Debug.Trace.trace (pprStr ss) x)
+		then (Debug.Trace.trace (pprStrPlain ss) x)
 		else x
 
 ------------------------
@@ -248,10 +249,6 @@ packTypeLs ld ls tt
 			| otherwise		-> tt
 
 		Nothing				-> tt
-
-	TAccept t
-	 -> let	t'	= packTypeLs ld ls t
-	    in	TAccept t'
 
 	-- sugar
 	TMutable t

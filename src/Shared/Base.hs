@@ -1,12 +1,10 @@
 
 module Shared.Base
-(
-	SourcePos(..),
-	Literal  (..)
-)
-
+	( SourcePos(..)
+	, Literal  (..))
 where
 
+import Shared.Pretty
 import Util
 
 -----
@@ -14,7 +12,7 @@ data SourcePos
 	= SourcePos (String, Int, Int)
 	deriving (Show, Eq)
 	
-instance Pretty SourcePos where
+instance Pretty SourcePos PMode where
  ppr (SourcePos (f, l, c))	= ppr $ f ++ ":" ++ show l ++ ":" ++ show (c - 1)
 
 
@@ -25,7 +23,7 @@ data Literal
 	| LString	String	
 	deriving (Show, Eq)
 
-instance Pretty Literal where
+instance Pretty Literal PMode where
  ppr lit 
   = case lit of
   	LInt    i	-> ppr $ show i

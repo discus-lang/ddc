@@ -7,14 +7,15 @@ module Constraint.Pretty
 where
 
 -----
-import Util
 
 import qualified Data.Map	as Map
 import Type.Pretty
 import Constraint.Exp
+import Shared.Pretty
+import Util
 
 -- CTree -----------------------------------------------------------------------
-instance Pretty CTree where
+instance Pretty CTree PMode where
  ppr c  
   = case c of
  	CTreeNil
@@ -27,13 +28,13 @@ instance Pretty CTree where
 	  % "}\n"
 
 	CDef 	src v t	
-	 -> "@CDef " % padR 15 (pprStr v) % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
+	 -> "@CDef " % padR 15 (pprStrPlain v) % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
 
 	CSig	src v t
-	 -> "@CSig  " % padR 15 (pprStr v) % " " % prettyTB t % ";"
+	 -> "@CSig  " % padR 15 (pprStrPlain v) % " " % prettyTB t % ";"
 
 	CEq 	src v t	
-	 -> "@CEq   " % padR 15 (pprStr v) % " " % prettyTB t % ";"
+	 -> "@CEq   " % padR 15 (pprStrPlain v) % " " % prettyTB t % ";"
 
 	CEqs 	src ts
 	 -> "@CEqs  " % ts
@@ -63,7 +64,7 @@ instance Pretty CTree where
 	 -> "@ClassInst " % v % " " % ts % ";"
 
 	CInst src v1 v2
-	 -> "@CInst " % padR 15 (pprStr v1) % " " % v2 % ";"
+	 -> "@CInst " % padR 15 (pprStrPlain v1) % " " % v2 % ";"
 	 
 	CGen src v1
 	 -> "@CGen  " % v1 % ";"
@@ -94,7 +95,7 @@ instance Pretty CTree where
 
 
 -- CBind -----------------------------------------------------------------------
-instance Pretty CBind where
+instance Pretty CBind PMode where
  ppr bb	
   = case bb of
 	BNil		-> ppr "@BNil"

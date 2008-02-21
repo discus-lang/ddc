@@ -35,6 +35,7 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import Shared.Pretty
 import Shared.Literal
 
 import Debug.Trace
@@ -64,7 +65,7 @@ newVarN		space
 	let varBind'	= Var.incVarBind varBind
 	modify (\s -> s { stateVarGen = varBind' })
 
-	let var		= (Var.new $ pprStr varBind)
+	let var		= (Var.new $ pprStrPlain varBind)
 			{ Var.bind	= varBind
 			, Var.nameSpace	= space }
 	return var

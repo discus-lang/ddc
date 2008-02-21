@@ -10,6 +10,7 @@ module Bits
 	, psecsOfClockTime)
 where
 
+import Shared.Pretty
 import System.Time
 
 import Util.Options	as Options
@@ -24,7 +25,7 @@ data Arg
 	| ArgHelp
 	deriving (Show, Eq)
 
-instance Pretty Arg where
+instance Pretty Arg a where
  ppr	= ppr . show
 
 options
@@ -48,7 +49,7 @@ parseArgs args	= Options.munch options $ Options.tokenise $ catInt " " args
 
 
 -- Timing ------------------------------------------------------------------------------------------
-instance Pretty ClockTime where
+instance Pretty ClockTime a where
  ppr (TOD sec_ psec_)
   = let	psecs	= sec_ * 10^12 + psec_
     in	(psecs `div` 10^12) % "." % (take 3 $ padLc '0' 12 $ show $ psecs `mod` 10^12)

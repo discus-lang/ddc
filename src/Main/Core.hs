@@ -62,10 +62,10 @@ import qualified Sea.Util	as E
 import Main.Arg
 import Main.Dump
 
-
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, Module)
 import Shared.Error
+import Shared.Pretty
 
 -----
 import Util
@@ -171,7 +171,7 @@ coreBind
 
 	dumpS  DumpCoreBind "core-bind--rsGlobal" 
 		$ catInt "\n"
-		$ map pprStr $ Set.toList rsGlobal
+		$ map pprStrPlain $ Set.toList rsGlobal
 	
 	return tree'
 
@@ -222,7 +222,7 @@ coreSimplify unique topVars cSource cHeader
  		= Simplify.coreSimplifyTree unique topVars cSource
 
 	when (elem Verbose ?args)
-	 $ do	putStr	$ pprStr	$ "\n" %!% statss % "\n\n"
+	 $ do	putStr	$ pprStrPlain	$ "\n" %!% statss % "\n\n"
 
 	-- when dumping our state, refloat let bindings so we can see 
 	--	where the simplifier gave up.
@@ -233,12 +233,12 @@ coreSimplify unique topVars cSource cHeader
 
 		(case takeLast statss of
 		   Just stats	-> dumpS DumpCoreSimplify "core-simplify--missedUnboxing" 
-		   			(pprStr $ "\n" %!% map ppr (reverse $ Float.statsMissedUnboxing 
+		   			(pprStrPlain $ "\n" %!% map ppr (reverse $ Float.statsMissedUnboxing 
 									(Simplify.statsFloat stats)))
 		   Nothing	-> return ())
 
 		dumpS DumpCoreSimplify "core-simplify--stats"
-			(pprStr	$ "\n" %!% statss % "\n\n")
+			(pprStrPlain	$ "\n" %!% statss % "\n\n")
 
 	return	cSimplify
 
@@ -390,7 +390,7 @@ coreSequence cSource cHeader
 	-- emit super deps
 	let superDeps	= slurpSuperDepsTree cSource
 	let superDepsG	= dotSuperDeps superDeps
-	dumpDot GraphSuperDeps "super-deps" $ pprStr superDepsG
+	dumpDot GraphSuperDeps "super-deps" $ pprStrPlain superDepsG
 
 	return tree'
 

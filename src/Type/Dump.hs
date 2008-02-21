@@ -7,6 +7,16 @@ module Type.Dump
 	, prettyClass)
 where
 
+
+import Type.Exp
+import Type.Pretty
+import Type.Util
+import Type.State
+import Type.Class
+
+import Shared.Pretty
+import Util
+
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
@@ -15,16 +25,7 @@ import Data.Set			(Set)
 
 import Data.Array.IO	
 
-import qualified Util.Data.Bag	as Bag
-import Util.Data.Bag		(Bag)
 
-import Util
-
-import Type.Exp
-import Type.Pretty
-import Type.Util
-import Type.State
-import Type.Class
 
 -- | dump the type graph
 dumpGraph ::	SquidM String
@@ -34,7 +35,7 @@ dumpGraph
 	classes		<- liftIO (getElems $ graphClass school)
 	classesU	<- mapM fowardCids classes
 	
-	return	$ pprStr
+	return	$ pprStrPlain
 		$ "===== Equiv Clases =====================================\n"
 		% concat (zipWith prettyClass [0..] classesU)
 		% "\n\n"
@@ -45,7 +46,7 @@ dumpInst :: 	SquidM String
 dumpInst
  = do 	-- Instantiations
 	mInst		<- gets stateInst
-	return	$ pprStr
+	return	$ pprStrPlain
 		$ "===== Instantiations ========================================\n"
 		% prettyVMap mInst
 		% "\n\n"
@@ -58,7 +59,7 @@ dumpSub
 	mVarSub		<- gets stateVarSub
 		
 	-----
-	return 	$ pprStr 
+	return 	$ pprStrPlain
 		$ "===== Var Sub ===============================================\n"
 		% prettyVMap mVarSub
 		% "\n\n"
@@ -75,13 +76,13 @@ prettyClass (ix :: Int) c
 	 	$ ". ClassForward @" % ix % " ==> " % c % "\n\n"
 -}
 	ClassFetter { classFetter = f }
-	 -> pprStr
+	 -> pprStrPlain
 	 	$ "+" % classId c % "\n"
 		% "        " % f % "\n"
 		% "\n\n"
 
  	Class{}
-	 -> pprStr
+	 -> pprStrPlain
 		-- class id / name / kind 
 		$ classKind c 
 			% classId c 
@@ -113,15 +114,15 @@ prettyClass (ix :: Int) c
 				%> "\n" %!% classQueue c % "\n\n")
 		% "        -- nodes\n"
 		% (concat
-			$ map pprStr
+			$ map pprStrPlain
 			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t) % "\n\n")
 			$ (classNodes c))
 		% "\n"
 	
 
 prettyVMap 	m
-	= concat
-	$ map (\(v, t) -> (padR 20 $ pprStr v) ++ " = " ++ (pprStr t) ++ "\n")
+	= punc "\n"
+	$ map (\(v, t) -> padL 20 v % " = " % t)
 	$ Map.toList m
 	
 

@@ -27,6 +27,7 @@ import Shared.Var			(Var, Module(..))
 import Shared.Error			(panic)
 import Shared.Pretty
 import Shared.Base
+import Shared.Pretty
 
 import qualified Module.IO		as MIO
 import qualified Module.Export		as ME
@@ -149,7 +150,7 @@ loadInterface
 	mod
  = do
  	let ModuleAbsolute vs	= mod
-	let fileDir		= pprStr $ "/" %!% vs
+	let fileDir		= pprStrPlain $ "/" %!% vs
 	let fileNameDI		= fileDir ++ ".di"
 	let fileNameO		= fileDir ++ ".o"
 	let fileNameH		= fileDir ++ ".ddc.h"

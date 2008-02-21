@@ -4,6 +4,8 @@ module TestSource
 	
 where
 
+import Shared.Pretty
+
 import System.Posix
 import System.Directory
 import System.IO
@@ -25,7 +27,7 @@ import Util
 --
 testSource 
 	:: (?args :: [Arg])
-	-> (?trace :: PrettyP -> IO ())
+	-> (?trace :: PrettyM PMode -> IO ())
 	=> FilePath -> IO ()
 	
 testSource path
@@ -59,7 +61,7 @@ testSource path
 -- | Test a source file, expecting the compile to succeed
 testSourceOK 
 	:: (?args :: [Arg])
-	-> (?trace :: PrettyP -> IO ())
+	-> (?trace :: PrettyM PMode -> IO ())
 	=> FilePath 
 	-> FilePath
 	-> Bool
@@ -87,7 +89,7 @@ testSourceOK_single pathB isMain moreDDCArgs
 
  	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
 
-	out	$ (padL 6 $ pprStr $ compileTime)
+	out	$ (padL 6 $ pprStrPlain $ compileTime)
 		% "s)"
 
 	-- check any .di file
@@ -102,7 +104,7 @@ testSourceOK_single pathB isMain moreDDCArgs
 	 	-- run the produced binary
 		execTime	<- executeProg pathB
 		
-		out	$ (padL 6 $ pprStr $ execTime)
+		out	$ (padL 6 $ pprStrPlain $ execTime)
 			% "s)"
 
 		-- check any stdout file
@@ -156,7 +158,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 
  	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
 
-	out	$ (padL 6 $ pprStr $ compileTime)
+	out	$ (padL 6 $ pprStrPlain $ compileTime)
 		% "s)"
 
 	-- check any .di file
@@ -171,7 +173,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 	 	-- run the produced binary
 		execTime	<- executeProg pathB
 		
-		out	$ (padL 6 $ pprStr $ execTime)
+		out	$ (padL 6 $ pprStrPlain $ execTime)
 			% "s)"
 
 		-- check any stdout file
@@ -189,7 +191,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 	let rCompile :: Double	= fromIntegral (psecsOfClockTime compileTime) 
 				/ fromIntegral (psecsOfClockTime baseCompileTime)
 
-	out	$ " " % (padL 6 $ take 4 $ pprStr $ rCompile)
+	out	$ " " % (padL 6 $ take 4 $ pprStrPlain $ rCompile)
 
 	-- work out percentage change in exec time
 	when isMain 
@@ -199,7 +201,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 		let rExec :: Double	= fromIntegral (psecsOfClockTime execTime) 
 					/ fromIntegral (psecsOfClockTime baseExecTime)
 	
-		out	$ " " % (padL 6 $ take 4 $ pprStr $ rExec)
+		out	$ " " % (padL 6 $ take 4 $ pprStrPlain $ rExec)
 
 	
 	out "\n"
@@ -211,7 +213,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 -- | Test a source file, expecting the compile to fail
 testSourceFail
 	:: (?args :: [Arg])
-	-> (?trace :: PrettyP -> IO ())
+	-> (?trace :: PrettyM PMode -> IO ())
 	=> FilePath
 	-> FilePath 
 	-> Bool
@@ -225,7 +227,7 @@ testSourceFail path pathB isMain
 
 	-- print the compile time
 	out	$ "comp("
-		% (padL 6 $ pprStr $ compileTime)
+		% (padL 6 $ pprStrPlain $ compileTime)
 		% "s)"
 	
 	-- check the error 
@@ -244,7 +246,7 @@ testSourceFail path pathB isMain
 -- | Compile a source file, expecting it to succeed
 compileSourceOk 
 	:: (?args :: [Arg])
-	-> (?trace :: PrettyP -> IO ())
+	-> (?trace :: PrettyM PMode -> IO ())
 	=> FilePath 		-- base path
 	-> Bool 		-- whether this is a main file
 	-> [String]		-- more args to pass to ddc
@@ -276,7 +278,7 @@ compileSourceOk pathB isMain moreDDCArgs
 -- | Compile a source file, expecting it to fail with an error
 compileSourceFail
 	:: (?args :: [Arg])
-	-> (?trace :: PrettyP -> IO ())
+	-> (?trace :: PrettyM PMode -> IO ())
 	=> FilePath 		-- base path
 	-> Bool 		-- whether this is a main file
 	-> IO ClockTime		-- compile time

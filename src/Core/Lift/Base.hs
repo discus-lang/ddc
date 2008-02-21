@@ -25,6 +25,7 @@ import Util
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, VarBind, NameSpace(..))
 import Shared.Error
+import Shared.Pretty
 import qualified Shared.Unique	as Unique
 
 import Core.Exp
@@ -105,7 +106,7 @@ newVar	space
  = do
  	gen		<- gets stateVarGen
 	let gen'	= Var.incVarBind gen
-	let var		= (Var.new $ pprStr gen) 
+	let var		= (Var.new $ pprStrPlain gen) 
 				{ Var.bind 		= gen 
 				, Var.nameSpace		= space }
 	

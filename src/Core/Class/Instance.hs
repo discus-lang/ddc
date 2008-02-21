@@ -1,8 +1,6 @@
 
 module Core.Class.Instance
-(
-	callInstances
-)
+	(callInstances)
 
 where
 
@@ -11,6 +9,7 @@ import Util
 import qualified Debug.Trace	as Debug
 import qualified Shared.Var	as Var
 import Shared.Var		(Var)
+import Shared.Pretty
 
 import Core.Exp
 
@@ -19,7 +18,7 @@ callInstances :: Tree -> Tree
 callInstances	 ps
  = let	aliases	= catMaybes $ map slurpAliasP ps
 	
-   in	Debug.trace (pprStr $ "aliases = " % aliases) $ ps
+   in	Debug.trace (pprStrPlain $ "aliases = " % aliases) $ ps
 
 
 

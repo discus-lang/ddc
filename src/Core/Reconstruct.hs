@@ -41,6 +41,7 @@ import Core.Util
 import Core.ReconKind
 import Core.Plate.FreeVars
 
+import Shared.Pretty
 import Shared.Error
 import Shared.VarPrim
 import Util.Graph.Deps
@@ -64,7 +65,7 @@ stage	= "Core.Reconstruct"
 debug	= False
 trace ss x	
 	= if debug 
-		then Debug.trace (pprStr ss) x 
+		then Debug.trace (pprStrPlain ss) x 
 		else x
 
 

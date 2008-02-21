@@ -18,6 +18,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..))
 import Shared.Error
+import Shared.Pretty
 
 import Core.Exp
 import Core.Util
@@ -127,7 +128,7 @@ dotSuperDeps deps
 			-> let 	cafMark	= if isCaf then "\nCAF" else ""
 				color	= if isCaf then "blue" else "black"
 			   in	[ G.SNode (G.NVar v) 
-					[ G.ALabel (pprStr v ++ cafMark)
+					[ G.ALabel (pprStrPlain v ++ cafMark)
 					, G.AColor color ]
 				]
 

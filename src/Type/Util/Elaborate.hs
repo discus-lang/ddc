@@ -17,6 +17,7 @@ import Util
 import qualified Shared.Var as Var
 import Shared.Var 	(Var, NameSpace(..))
 import Shared.VarPrim
+import Shared.Pretty
 import Shared.Error 
 
 import Type.Exp
@@ -32,7 +33,7 @@ stage	= "Type.Elaborate"
 debug	= False
 trace ss xx
  = if debug 
- 	then Debug.trace (pprStr ss) xx
+ 	then Debug.trace (pprStrPlain ss) xx
 	else xx
 	
 -- | Elaborate this type

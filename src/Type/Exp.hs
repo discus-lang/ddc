@@ -114,13 +114,8 @@ data Type
 
 	-- used in solver
 	| TClass	Kind	ClassId			-- ^ A reference to some equivalence class.
-	| TAccept	Type				-- ^ The eq class can only be this type.
 	| TFetter	Fetter				-- ^ Holds a fetter, so we can put it in an equivalence class.
 	| TError        Kind	[Type]			-- ^ Classes with unification errors get their queues set to [TError].
-
-	| TNode		Type	Type			-- ^ A type along with its node name
-							--	t1 should be TClass or TVar
-
 
 	-- Type sugar, used during foreign import/export
 	--	This is removed by the desugarer.
@@ -128,17 +123,6 @@ data Type
 	--	and subsume TSig, TSigExact, TQuant
 	| TElaborate	Type				-- ^ Elaborate a type by adding region/effect/closure information.
 	| TMutable	Type				-- ^ This object is modified by the function.
-
-
-	-- ???? Where is this stuff actually used? better to ditch it.
-	--	Intermediate constructors.
-	--	Different representations for things, used in lots of places.
-	--
---	| TFunF		[(Type, Effect, Closure)]	-- ^ Flat Function representation.
-							-- 	The list of terms must have at least 2 elements.
-
---	| TFunV	  	Type Type (Maybe Var)		-- ^ Labeled function representation
-							--	Used in Type.Pretty
 
 	deriving (Show, Eq)
 	
@@ -159,12 +143,6 @@ data Fetter
 			Type 	-- type of the dictionary to choose the projection from.
 			Type 	-- type to unify the projection function with, once it's resolved.
 				
-
-	-- junk?
-	-- Intermediate constructors.
-	| FFunInfo	Var     Effect Closure		-- ^ Information about function labels.
-							-- 	Used to help with pretty printing.
-
 	deriving (Show, Eq)
 
 

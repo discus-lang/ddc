@@ -22,19 +22,7 @@ module Type.State
 where
 
 -----
-import Util
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import Shared.Error
-import Shared.Var		(Var, VarBind, NameSpace(..))
-import qualified Shared.Var	as Var
-
-import qualified Shared.Unique	as U
 
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
@@ -44,7 +32,22 @@ import Type.Exp
 import Type.Base
 import Constraint.Exp
 
+import Shared.Pretty
+import Shared.Error
+import Shared.Var		(Var, VarBind, NameSpace(..))
+import qualified Shared.Var	as Var
+
+import qualified Shared.Unique	as U
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import System.IO
+
+import Util
 
 -----
 stage	= "Type.State"
@@ -190,14 +193,14 @@ squidSInit
 
 
 -- | Add some stuff to the inferencer trace.
-traceM :: PrettyP -> SquidM ()
+traceM :: PrettyM PMode -> SquidM ()
 traceM p
  = do	mHandle		<- gets stateTrace
 	i		<- gets stateTraceIndent
  	case mHandle of
 	 Nothing	-> return ()
 	 Just handle
-	  -> do liftIO (hPutStr handle $ indent i $ pprStr p)
+	  -> do liftIO (hPutStr handle $ indent i $ pprStrPlain p)
 	  	liftIO (hFlush  handle)
 
 	
@@ -241,7 +244,7 @@ instVar' var space mVarId
 		sVarGen		<##> Map.insert space varId'
 
 		-- the new variable remembers what it's an instance of..
-		let name	= pprStr varId
+		let name	= pprStrPlain varId
 		let var'	= (Var.new name)
 			 { Var.nameSpace		= Var.nameSpace var
 			 , Var.bind		= varId
@@ -260,7 +263,7 @@ newVarN	space
 	let varId'	= Var.incVarBind varId
 	sVarGen		<##> Map.insert space varId'
 	
-	let name	= pprStr varId
+	let name	= pprStrPlain varId
 	let var'	= (Var.new name)
 			{ Var.nameSpace		= space 
 			, Var.bind		= varId }

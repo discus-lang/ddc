@@ -21,10 +21,6 @@ import Sea.Exp
 stage	= "Sea.Pretty"
 
 -----
--- maxSpecialApply	= (4 :: Int)
--- maxSpecialCurry	= (4 :: Int)
-
------
 sV  v		= ppr $ seaVar False v
 sVn n v		= ppr $ padR n $ seaVar False v
 
@@ -33,7 +29,7 @@ sVLn n v 	= ppr $ padR n $ seaVar True v
 
 
 -- Top ---------------------------------------------------------------------------------------------
-instance Pretty a => Pretty (Top (Maybe a)) where
+instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
  ppr xx
   = case xx of
 	PNil	 		-> ppr $ "$PNil\n"
@@ -92,7 +88,7 @@ instance Pretty a => Pretty (Top (Maybe a)) where
 
 
 -- Stmt --------------------------------------------------------------------------------------------
-instance Pretty a => Pretty (Stmt (Maybe a)) where
+instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
  ppr xx
   = case xx of
 	-- misc
@@ -104,13 +100,13 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 	SHackery str		-> "/**/ " % str
 
 	-- stacks
-	SAuto	v t		-> (padR 12 $ pprStr t) % " " % sVL v % ";"
+	SAuto	v t		-> (padR 12 $ pprStrPlain t) % " " % sVL v % ";"
 	SEnter countS		-> "_ENTER (" % countS % ");"
 	SLeave countS		-> "_LEAVE (" % countS % ");"
 
 	-- assignment
 	SAssign (XVar v) t x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
-	SAssign x1 t x2		-> (padR 23 $ pprStr x1) 	% " = " % x2 % ";"
+	SAssign x1 t x2		-> (padR 23 $ pprStrPlain x1) 	% " = " % x2 % ";"
 
 	SStmt s			-> ppr s % ";"
 
@@ -121,17 +117,17 @@ instance Pretty a => Pretty (Stmt (Maybe a)) where
 
 	SSwitch x aa
 	 -> "switch (" % x % ") {\n"
-	    % (appendMapPretty aa)
+	    % punc "\n" aa
 	    % "}"
 
 	SMatch aa
 	 -> "match {\n"
-	    % (appendMapPretty aa)
+	    % punc "\n" aa
 	    % "}"
 
 
 -- Alt ---------------------------------------------------------------------------------------------
-instance Pretty a => Pretty (Alt (Maybe a))where
+instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
  ppr xx
   = case xx of
 	AAlt gs ss
@@ -166,7 +162,7 @@ instance Pretty a => Pretty (Alt (Maybe a))where
 
 
 -- Guard -------------------------------------------------------------------------------------------
-instance Pretty a => Pretty (Guard (Maybe a)) where
+instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
  ppr gg
   = case gg of
   	GCase True ss x1 x2
@@ -181,7 +177,7 @@ instance Pretty a => Pretty (Guard (Maybe a)) where
 	 
 
 -- Exp ---------------------------------------------------------------------------------------------
-instance Pretty a => Pretty (Exp (Maybe a))where
+instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
  ppr xx
   = case xx of
   	XNil			-> ppr "$XNil"
@@ -308,7 +304,7 @@ instance Pretty a => Pretty (Exp (Maybe a))where
 
 
 -- Type --------------------------------------------------------------------------------------------
-instance Pretty Type where
+instance Pretty Type PMode where
  ppr xx
   = case xx of
 	TVoid		-> ppr "void"
@@ -333,7 +329,7 @@ makeLiteral lit
 
 
 -----
-seaVar :: 	Bool -> Var -> String
+seaVar :: Bool -> Var -> String
 seaVar local v
 	| name : _	<- [name | Var.ISeaName name <- Var.info v]
 	= name
@@ -345,7 +341,7 @@ seaVar local v
 	|    Var.isSymbol v
 	  || (elem '\'' $ Var.name v)
 	= seaModule (Var.nameModule v)
-	++ (if local then "_" ++ (pprStr $ Var.bind v) ++ "_" else "")
+	++ (if local then "_" ++ (pprStrPlain $ Var.bind v) ++ "_" else "")
 	++ "_sym" ++ (Var.deSymString $ Var.name v)	
 
 	| Var.isDummy v
@@ -359,14 +355,11 @@ seaVar local v
 	++ Var.name v
 
 
-seaModule ::	Module -> String
-seaModule	m
+seaModule :: Module -> String
+seaModule m
  = case m of
 	ModuleNil		-> ""
 	ModuleAbsolute ns	-> (catInt "_" $ ns) ++ "_"
 	_			-> panic stage $ "seaModule: no match for: " % show m
 
-
---	= show (Var.nameModule v) ++ Var.name v
---	= Var.name v ++ (show $ Var.info v)
 

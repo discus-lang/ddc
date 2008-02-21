@@ -5,10 +5,10 @@ module Shared.Literal
 where
 
 -----
+import Shared.Base
+import Shared.Pretty
 import Util
 
------
-import Shared.Base
 
 -----
 data Const
@@ -20,7 +20,7 @@ data Const
 	deriving (Show, Eq)
 
 -----
-instance Pretty Const where
+instance Pretty Const PMode where
  ppr c 
   = case c of
   	CConst  literal	-> ppr literal

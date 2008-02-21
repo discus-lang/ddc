@@ -11,6 +11,7 @@ import Core.Exp
 import Core.BoundUse
 import Core.Plate.Trans
 
+import Shared.Pretty
 import qualified Debug.Trace	as Debug
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
@@ -52,7 +53,7 @@ statsProgress stats
 	| not $ isNil $ Float.statsSharedUnboxings $ statsFloat stats	= True
 	| otherwise							= False
 
-instance Pretty Stats where
+instance Pretty Stats PMode where
  ppr stats
  	= "Simplify.Stats\n"
 	% "    - stats from let-floater:\n"

@@ -175,12 +175,12 @@ makeHelp indent o
 	 -> name ++ " (" ++ tag ++ ")\n"
 
 	OFlag  opt names desc
-	 -> padR indent ("    " ++ (catInt ", " $ names))
-	 ++ desc ++ "\n"
+	 -> pprStr ()
+	 $  padL indent ("    " % punc ", " names) % desc % "\n"
 
 	OOpts  optF names use desc
-	 -> padR indent ("    " ++ use)
-	 ++ desc ++ "\n"
+	 -> pprStr ()
+	 $  padL indent ("    " % use) % desc % "\n"
 	 
 	OBlank
 	 -> "\n"

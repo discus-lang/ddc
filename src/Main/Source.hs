@@ -26,6 +26,7 @@ import qualified Shared.Var		as Var
 import Shared.Var			(Var, Module)
 import Shared.Base
 import Shared.Error
+import Shared.Pretty
 
 -----
 import qualified Type.Exp			as T
@@ -234,27 +235,7 @@ desugar	kinds sTree hTree
 		
 	return	(sTree', hTree')
 
------------------------
--- desugarSnipLambda
---
-{-
-desugarSnipLambda
-	:: (?args :: [Arg])
-	-> String
-	-> String
-	-> D.Tree SourcePos
-	-> IO	(D.Tree SourcePos)
-	
-desugarSnipLambda name unique tree
- = do	let tree'	= snipLambdaTree unique tree
- 	
-	-- 
-	dumpST DumpDesugar name
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) tree')
-		
-	return tree'
--}
-	
+
 -----------------------
 -- desugarProject
 -- 
@@ -278,7 +259,7 @@ desugarProject moduleName headerTree sourceTree
 	let projTable	= slurpProjTable (headerTree ++ sourceTree')
 
 	dumpS  DumpDesugarProject "desugar-project--dicts"
-		(pprStr $ "\n" %!% (map ppr $ Map.toList projTable))
+		(pprStrPlain $ "\n" %!% (map ppr $ Map.toList projTable))
 
 		
 	return (sourceTree', projTable)
@@ -331,16 +312,16 @@ slurpC	sTree
 	dumpST	DumpDesugarSlurp "desugar-slurp" source'
 	
 	dumpS	DumpTypeConstraints "type-constraints--source"
-		$ (catInt "\n" $ map pprStr sctrs)
+		$ (catInt "\n" $ map pprStrPlain sctrs)
 
 	dumpS	DumpTypeConstraints "type-constraints--source-simple"
-		$ (catInt "\n" $ map pprStr sctrs_simple)
+		$ (catInt "\n" $ map pprStrPlain sctrs_simple)
 		
 	dumpS	DumpTypeConstraints "type-constraints--header"
-		$ (catInt "\n" $ map pprStr hctrs)
+		$ (catInt "\n" $ map pprStrPlain hctrs)
 
 	dumpS	DumpTypeConstraints "type-constraints--typesPlease"
-		$ (catInt "\n" $ map pprStr $ Set.toList vsTypesPlease)
+		$ (catInt "\n" $ map pprStrPlain $ Set.toList vsTypesPlease)
 		
 	-- all the constraints we're passing to the inferencer
 	let constraints	= hctrs ++ sctrs_simple
@@ -428,35 +409,37 @@ solveSquid2 vsTypesPlease hTrace state
 		
 	-- report some state
 	when (elem Verbose ?args)
-	 $ do	putStr $ pprStr $ "    - graph size: " % Squid.graphClassIdGen (Squid.stateGraph state2) % "\n"
+	 $ do	putStr 	$ pprStrPlain
+	 		$ "    - graph size: " 
+	 		% Squid.graphClassIdGen (Squid.stateGraph state2) % "\n"
 
 
 	-- dump final solver state
 	dumpS	DumpTypeSolve  "type-solve--types"
 		$ catInt "\n\n"
-		$ map pprStr
+		$ map pprStrPlain
 		$ map (\(v, t) -> v % " ::\n" %> T.prettyTS t)
 		$ Map.toList typeTable
 
 	dumpS 	DumpTypeSolve   "type-solve--inst" 
 		$ catInt "\n\n"
-		$ map pprStr
+		$ map pprStrPlain
 		$ map (\(v, inst) -> v % "\n" % inst % "\n")
 		$ Map.toList typeInst
 
 	dumpS	DumpTypeSolve	"type-solve--quantVars"
 		$ catInt "\n"
-		$ map pprStr
+		$ map pprStrPlain
 		$ Map.toList quantVars
 
 	dumpS	DumpTypeSolve	"type-solve--regionClasses"
 		$ catInt "\n"
-		$ map pprStr
+		$ map pprStrPlain
 		$ Map.toList vsRegionClasses
 
 	dumpS	DumpTypeSolve	"type-solve--varSub"
 		$ catInt "\n"
-		$ map pprStr
+		$ map pprStrPlain
 		$ Map.toList (Squid.stateVarSub state2)
 
 	let vsFree	= Set.empty

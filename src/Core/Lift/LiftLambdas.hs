@@ -4,14 +4,6 @@ module Core.Lift.LiftLambdas
 
 where
 
-import Util
-
-import qualified Shared.VarUtil	as Var
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 import Core.Exp
 import Core.Util
@@ -21,12 +13,21 @@ import Core.Plate.FreeVars
 import Core.Lift.Base
 import Core.Reconstruct
 
+import qualified Shared.VarUtil	as Var
+import qualified Shared.Var	as Var
+import Shared.Var		(Var, NameSpace(..))
+import Shared.Pretty
+import Util
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import qualified Debug.Trace	as Debug
 
 debug	= False
 trace ss x	
 	= if debug
-		then Debug.trace (pprStr ss) x
+		then Debug.trace (pprStrPlain ss) x
 		else x
 		
 
@@ -279,7 +280,7 @@ bindFreeVarsP
 	bindType vTop (reconP_type (stage ++ ".bindFreeVarsP") pBound)
 
 	trace
-	 (pprStr	$ "\n\n\n"
+	 (pprStrPlain	$ "\n\n\n"
 	 		% "* bindFreeVarsP\n"
 			% "    vTop      = "	% vTop		% "\n"
 			% "    x:\n"		%> x		% "\n\n"

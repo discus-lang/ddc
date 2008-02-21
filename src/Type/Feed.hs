@@ -39,9 +39,8 @@ import qualified Debug.Trace
 -----
 stage	= "Type.Feed"
 
------------------------
--- feedConstraint
---	Add a new constraint to the type graph.
+-- feedConstraint ----------------------------------------------------------------------------------
+-- | Add a new constraint to the type graph.
 --
 feedConstraint 
 	:: CTree -> SquidM ()
@@ -105,9 +104,8 @@ feedConstraint cc
 	_ -> 	panic stage
 		 $ "feedConstraint: can't feed " % cc % "\n"
 
------------------------
--- feedType
---	Add a type to the type graph.
+-- feedType --------------------------------------------------------------------------------------------
+-- | Add a type to the type graph.
 --	This always creates a new class and returns a classid.
 --
 feedType 	
@@ -243,14 +241,6 @@ feedType	mParent t
 	 -> do 	cidT'		<- sinkClassId cid
 		returnJ		$ TClass k cidT'
 		
-	TAccept t
-	 -> do	let k		= kindOfType t
-	 	cid		<- allocClass k
-	 	Just t'		<- feedType mParent t
-		
-		addNode cid 	$ TAccept t'
-	 	returnJ		$ TClass k cid
-
 	_  ->	freakout stage
 			( "feedType: cannot feed this type into the graph.\n"
 			% "   type    = " % t 		% "\n"
@@ -310,9 +300,7 @@ feedType1 mParent tt
 	_ 	-> feedType mParent tt
 
 
------------------------
--- feedFetter
---
+-- Fetter ------------------------------------------------------------------------------------------
 feedFetter 
 	:: (?src :: TypeSource)
 	-> Maybe ClassId
@@ -342,9 +330,6 @@ feedFetter	mParent f
 
 		addNode cidC	$ TFetter (FProj pj v tDict' tBind')
 		
-	_ -> panic stage 
-		$ "feedFetter: cannot feed " % f % "\n"
-		% "      " % show f % "\n"
 
 
 -----

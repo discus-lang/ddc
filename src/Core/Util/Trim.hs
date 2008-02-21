@@ -13,6 +13,7 @@ import Core.Exp
 
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
+import Shared.Pretty
 import Shared.Error
 import Util
 
@@ -24,7 +25,7 @@ import qualified Debug.Trace	as Debug
 debug	= False
 trace ss x	
 	= if debug
-		then Debug.trace (pprStr ss) x
+		then Debug.trace (pprStrPlain ss) x
 		else x
 
 -----

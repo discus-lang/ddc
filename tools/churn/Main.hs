@@ -17,6 +17,7 @@ import Source.Util
 import Source.Pretty
 import Source.Exp
 
+import Shared.Pretty
 import Shared.Base
 import Shared.Literal
 import Shared.VarPrim
@@ -68,19 +69,19 @@ withFuel fuel f
 	return x
 
 -- | Eval a generator and print the result
-eval :: Pretty a => GenM a -> IO ()
+eval :: Pretty a PMode => GenM a -> IO ()
 eval f 
  = do	x	<- evalGen f
- 	putStr $ pprStr x
+ 	putStr $ pprStrPlain x
 	putStr $ "\n\n"
 
 
 -- | Eval and print this generator multiple times
-runN 	:: Pretty a 
+runN 	:: Pretty a PMode
 	=> Int -> GenM a -> IO ()
 runN n f 
  = do	xs	<- replicateM n (evalGen f)
- 	putStr $ catInt "\n" $ map pprStr xs
+ 	putStr $ catInt "\n" $ map pprStrPlain xs
 	putStr $ "\n\n"
 
 -- runTest ------------------------------------------------------------------------------------------
@@ -128,7 +129,7 @@ runTest ix
 	return (prog, code)
 
 pprProg prog
-	= catInt "\n" $ map pprStr prog
+	= catInt "\n" $ map pprStrPlain prog
 
 
 

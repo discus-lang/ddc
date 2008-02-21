@@ -16,7 +16,7 @@ import Core.Util
 import qualified Core.Reconstruct	as Recon
 import Core.ReconKind
 import Core.Plate.Trans
-
+import Shared.Pretty
 
 import Data.Map			(Map)
 import qualified Data.Map	as Map
@@ -32,7 +32,7 @@ import qualified Debug.Trace
 debug	= False
 trace ss x
  = if debug 
- 	then Debug.Trace.trace (pprStr ss) x
+ 	then Debug.Trace.trace (pprStrPlain ss) x
   	else x
 
 -----

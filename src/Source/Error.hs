@@ -14,6 +14,7 @@ import Shared.VarUtil		(prettyPos, prettyPosBound)
 import Shared.VarSpace		(spaceName)
 import Shared.Error
 import Shared.Base
+import Shared.Pretty
 
 import qualified Source.Token	as Token
 import qualified Source.TokenShow as Token
@@ -56,7 +57,7 @@ data Error
 
 
 -- | Pretty printer for error messages
-instance Pretty Error where
+instance Pretty Error PMode where
 
  ppr (ErrorLayoutLeft tok)
  	= ppr $ unlines
@@ -77,7 +78,7 @@ instance Pretty Error where
  ppr (ErrorParsePos sp str)
  	= ppr
 	$ unlines $
-	[ pprStr sp
+	[ pprStrPlain sp
 	, "    Parse error: " ++ str ]
 
  ppr (ErrorParseBefore tt@(t1 : _))

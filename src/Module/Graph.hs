@@ -15,6 +15,7 @@ import Data.Set				(Set)
 ----
 import qualified Shared.Var		as Var
 import Shared.Var			(Var, Module(..))
+import Shared.Pretty
 
 import Main.IO
 
@@ -67,11 +68,11 @@ dotImport modulesCut m ms
 	
 
 dotImportS m ms
- = pprStr 
+ = pprStrPlain
 	$ "\t" 
-	% (show $ pprStr m)
+	% (show $ pprStrPlain m)
 	% " -> " 
-	% "{" % " " %!% (map (show . pprStr) ms) % "};\n"
+	% "{" % " " %!% (map (show . pprStrPlain) ms) % "};\n"
  
 
 -----
@@ -81,7 +82,7 @@ lookupNamedModule
 	-> Maybe Module
 	
 lookupNamedModule ms name
-	= find (\m -> name == pprStr m) ms
+	= find (\m -> name == pprStrPlain m) ms
 		
 
 -----

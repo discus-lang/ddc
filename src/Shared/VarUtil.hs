@@ -17,12 +17,14 @@ module Shared.VarUtil
 
 where
 
-import Util
 import Data.Char	hiding (isSymbol)
 
 import qualified Shared.Var as Var
 import Shared.Var 
 	(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
+
+import Shared.Pretty
+import Util
 
 import qualified Data.Map	as Map
 
@@ -36,7 +38,7 @@ newVarN		space
 	let varBind'	= Var.incVarBind varBind
 	put varBind'
 	
-	let var		= (Var.new $ pprStr varBind)
+	let var		= (Var.new $ pprStrPlain varBind)
 			{ Var.bind	= varBind
 			, Var.nameSpace	= space }
 	
@@ -47,7 +49,7 @@ newVarNS ::	NameSpace -> String	-> VarGenM Var
 newVarNS	space	     str
  = do
 	var	<- newVarN space
-	return	var { Var.name = (pprStr $ Var.bind var) ++ str }
+	return	var { Var.name = (pprStrPlain $ Var.bind var) ++ str }
 
 
 newVarNI ::	NameSpace -> [Var.VarInfo]	-> VarGenM Var
@@ -71,7 +73,7 @@ cookName	var
 prettyPos :: Var	-> String
 prettyPos var
  	= fromMaybe "?"
-	$ liftM (\(ISourcePos sp) -> pprStr sp)
+	$ liftM (\(ISourcePos sp) -> pprStrPlain sp)
 	$ find (=@= ISourcePos{}) 
 	$ Var.info var 
 

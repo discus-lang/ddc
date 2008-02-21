@@ -8,6 +8,7 @@ module Source.Token
 
 where
 
+import Shared.Pretty
 import Util
 
 -- | Wraps up a token with its position in the source file
@@ -41,7 +42,7 @@ instance Show TokenP where
 	StartBlock i		-> "StartBlock " ++ show i
 	StartLine  i		-> "StartLine " ++ show i
 
-instance Pretty TokenP where
+instance Pretty TokenP PMode where
  ppr	= ppr . show 
 
 -- | pretty print the position of this token

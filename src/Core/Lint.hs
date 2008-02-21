@@ -18,6 +18,7 @@ where
 
 import Util
 import Shared.Error
+import Shared.Pretty
 import Core.Exp
 import Core.Pretty
 import Core.Plate.Walk
@@ -36,7 +37,7 @@ import qualified Shared.VarPrim	as Var
 stage	= "Core.Lint"
 
 -----
-type Error	= PrettyP
+type Error	= PrettyM PMode
 type LintM	= State [Error]
 
 
@@ -95,7 +96,7 @@ lintTree
 	-> [String]	-- errors found
 
 lintTree tree
- =	map pprStr $ execState (lintTreeM tree) []
+ =	map pprStrPlain $ execState (lintTreeM tree) []
 
 
 lintTreeM :: Tree -> LintM ()

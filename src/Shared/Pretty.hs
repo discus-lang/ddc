@@ -1,44 +1,20 @@
 module Shared.Pretty
-	()
+	( Pretty(..)
+	, PrettyFlag(..)
+	, PMode
+	, pprStrPlain)
+	
 where
 
 import Util
-import Shared.Exp
 
-----
-instance (Pretty x, Pretty t) 
- => 	 Pretty (DataField x t) where
+-- The pretty printing modes that we support
+type PMode	= [PrettyFlag]
 
- ppr DataField
- 	{ dPrimary	= True
-	, dLabel	= Nothing
-	, dType		= t
-	, dInit		= Nothing }
-	= t % ";"
+data PrettyFlag
+	= PrettyUnique		-- annotate vars with their uniqueBinds
+	deriving (Eq, Show)
 
- ppr DataField
- 	{ dPrimary	= True
-	, dLabel	= mLabel
-	, dType		= t
-	, dInit		= mInit }
-	
-	= fromMaybe (ppr " ") (liftM ppr mLabel)
-	%> (" :: "
-		% t
-		% case mInit of 
-		   Nothing	-> ppr " "
-		   Just i	-> "\n = " % i) % ";"
-
- ppr DataField
- 	{ dPrimary	= False
-	, dLabel	= mLabel
-	, dType		= t
-	, dInit		= mInit }
-	
-	= "." % fromMaybe (ppr " ") (liftM ppr mLabel)
-	%> (" :: "
-		% t
-		% case mInit of 
-		   Nothing	-> ppr " "
-		   Just i	-> "\n = " % i) % ";"
+pprStrPlain x
+ 	= pprStr [] x
 

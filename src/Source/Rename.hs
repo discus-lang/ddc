@@ -356,8 +356,8 @@ instance Rename (Exp SourcePos) where
 	-- sugar
 	XLambdaPats sp ps x
 	 -> local
-	 $ do 	ps'	<- mapM bindPatternExp ps
-		x'	<- rename x
+	 $ do 	(ps', _)	<- liftM unzip $ mapM bindPatternExp ps
+		x'		<- rename x
 		return	$ XLambdaPats sp ps' x'
 
 	XLambdaCase sp cs
@@ -530,30 +530,40 @@ instance Rename (Label SourcePos) where
 --	The data type for patterns in function bindings is shared with that for expressions.
 --	However, only  some constructors should appear in a pattern context. ie XList but not XMatch
 --
-bindPatternExp :: (Exp SourcePos) -> RenameM (Exp SourcePos)
+bindPatternExp 
+	:: (Exp SourcePos) 
+	-> RenameM 
+		( Exp SourcePos		-- renamed pattern expression
+		, [Var])		-- bound object vars
+		
 bindPatternExp xx
  = case xx of
  	XVar sp v		
 	 | Var.isCtorName v
 	 -> do	v'	<- lookupV v
-	 	return	$ XVar sp v'
+	 	return	( XVar sp v'
+			, [])
 		
 	 | otherwise
 	 -> do	v'	<- bindV v
-	 	return	$ XVar sp v'
+	 	return	( XVar sp v'
+			, [])
 		
 	XList sp xx
-	 -> do	xx'	<- mapM bindPatternExp xx
-	 	return	$ XList sp xx'	
+	 -> do	(xx', vss)	<- liftM unzip $ mapM bindPatternExp xx
+	 	return	( XList sp xx'	
+			, concat vss)
 
 	XCons sp x1 x2
-	 -> do	x1'	<- bindPatternExp x1
-	 	x2'	<- bindPatternExp x2
-		return	$ XCons sp x1' x2'
+	 -> do	(x1', vs1)	<- bindPatternExp x1
+	 	(x2', vs2)	<- bindPatternExp x2
+		return	( XCons sp x1' x2'
+			, vs1 ++ vs2)
 		
 	XTuple sp xs
-	 -> do	xs'	<- mapM bindPatternExp xs
-	 	return	$ XTuple sp xs'
+	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPatternExp xs
+	 	return	( XTuple sp xs'
+			, concat vss)
 
 {-	XApp sp _ _
 	 -> do	let (x:xs)	=  flattenApps xx
@@ -562,15 +572,25 @@ bindPatternExp xx
 		return		$ unflattenApps sp (x':xs')
 -}
 	XDefix sp xs
-	 -> do	xs'	<- mapM bindPatternExp xs
-	 	return	$ XDefix sp xs'
+	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPatternExp xs
+	 	return	( XDefix sp xs'
+			, concat vss)
 	 
 	XOp sp v
-	 -> do	--v'		<- lookupV v
-	 	return	$ XOp sp v
+	 -> do	v'	<- lookupV v
+	 	return	( XOp sp v'
+			, [])
+
+	XObjVar sp v
+	 ->  do
+	 	v'	<- bindV v
+		return	( XVar sp v'
+			, [v'])
+
 
 	XConst{}
-	 ->	return	$ xx
+	 ->	return	( xx
+	 		, [])
 
 	_ 	-> panic stage
 		$ "bindPatternExp: no match for " % show xx	% "\n"
@@ -603,7 +623,7 @@ bindPat ww
 	 	return	$ WVar sp v'
  
  	WExp x	
-	 -> do	x'	<- bindPatternExp x
+	 -> do	(x', _)	<- bindPatternExp x
 	 	return	$ WExp x'
 
 	WConLabel sp v lvs 
@@ -654,26 +674,6 @@ boundByLCQual    q
 
 -- Stmt --------------------------------------------------------------------------------------------
 
--- | Rename the variables in a list of statements
---	When using pattern bindings, the bound variable can appear in multiple statements
---	ie 	not True	= False
---		not False	= True
---
---	It is an error for non-consecutive bindings to bind the same variable.
----
-renameSs ::	[Stmt SourcePos] -> RenameM [Stmt SourcePos]
-renameSs	ss
- = do	-- work out all the vars that are bound by this list of stmts
- 	let vsBound	= catMaybes $ map takeStmtBoundV ss
-
-	-- create fresh binding occurances to shadow anything with the same name bound above.
-	mapM_ (lbindN_shadow NameValue) $ nub vsBound
-	
-	-- Rename each statement.
-	ss'	<- mapM rename ss
-	return	ss'
-		
-
 instance Rename (Stmt SourcePos) where
  rename s
   = case s of
@@ -682,7 +682,7 @@ instance Rename (Stmt SourcePos) where
 
 	 	local
 		 $ do	(ps', objVss)	<- liftM unzip
-					$  mapM renamePat ps
+					$  mapM bindPatternExp ps
 
 			let objVs	= concat objVss
 
@@ -709,13 +709,31 @@ instance Rename (Stmt SourcePos) where
 		return	$ SSig sp v' t'
 		
 
-		
+-- | Rename the variables in a list of statements
+--	When using pattern bindings, the bound variable can appear in multiple statements
+--	ie 	not True	= False
+--		not False	= True
+--
+--	It is an error for non-consecutive bindings to bind the same variable.
+---
+renameSs ::	[Stmt SourcePos] -> RenameM [Stmt SourcePos]
+renameSs	ss
+ = do	-- work out all the vars that are bound by this list of stmts
+ 	let vsBound	= catMaybes $ map takeStmtBoundV ss
 
+	-- create fresh binding occurances to shadow anything with the same name bound above.
+	mapM_ (lbindN_shadow NameValue) $ nub vsBound
+	
+	-- Rename each statement.
+	ss'	<- mapM rename ss
+	return	ss'
+		
 
 -----------------------
 -- renamePat
 -- |	Rename a pattern. 
 --
+{-
 renamePat 
 	:: Exp SourcePos	-- expression to rename
 	-> RenameM 
@@ -769,7 +787,6 @@ renamePat	e
 	 -> 	return	( XOp sp v
 	 		, [])
 
-
 	_ -> panic stage
 		$ "renamePat: no match for " % show e
 
@@ -779,7 +796,7 @@ renamePats bound done []
 renamePats bound done (x:xs)
  = do	(x', boundHere)	<- renamePat x
  	renamePats (bound ++ boundHere) (done ++ [x']) xs
-
+-}
 
 -----
 instance Rename Type where
@@ -896,20 +913,4 @@ instance Rename Fetter where
 	 -> do	t1'	<- rename t1
 		t2'	<- rename t2
 		return	$ FLet t1' t2'
-
-	FFunInfo l e n
-	 -> do	e'	<- rename e
-	 	n'	<- rename n
-		return	$  FFunInfo l e' n'
-
-
------
-{-
-slurpVarsT :: 	Type -> [Var]
-slurpVarsT	t
- = case t of
-	TForall  vks t		-> collectVarsT t \\ map fst vks
-	_			-> collectVarsT t
-	
--}
 

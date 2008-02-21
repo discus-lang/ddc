@@ -21,6 +21,7 @@ import qualified Shared.VarBind	as Var
 import Shared.VarPrim
 import Shared.VarGen
 import Shared.Error
+import Shared.Pretty
 
 import Util
 import Core.Plate.Trans
@@ -41,7 +42,7 @@ stage	= "Core.Bind"
 debug	= False
 trace ss xx
  = if debug 
- 	then Debug.trace (pprStr ss) xx
+ 	then Debug.trace (pprStrPlain ss) xx
 	else xx
 
 
@@ -241,7 +242,7 @@ bindXDo
 
 bindXDo shared xx@(XDo ss)
  = trace 
- 	( pprStr 
+ 	( pprStrPlain
  	$ "bindXDo_enter\n" 
 	% "  stmts        = " % (catMaybes $ map takeStmtBoundV ss) 	% "\n"
 	% "  shared above = " % (Set.toList shared)			% "\n"
@@ -321,7 +322,7 @@ bindXDo shared xx@(XDo ss)
 	--	the set of regions free in this expression
 	let vsFree	= Set.difference vsFree_stmts vsBindHere
 
-	trace	( pprStr 
+	trace	( pprStrPlain 
 			$ "bindXDo_leave\n"
 			%  "  stmts        = " % (catMaybes $ map takeStmtBoundV ss) 			% "\n"
 			%  "  shared above = " % (Set.toList shared)					% "\n"

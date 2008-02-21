@@ -42,6 +42,7 @@ import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..), (=^=))
 import Shared.Error
 import Shared.Literal
+import Shared.Pretty
 import Shared.Exp
 
 import Type.Exp
@@ -134,7 +135,7 @@ newVarNS	space		str
 				then []
 				else "" ++ str
 			
-	let var'	= (Var.new (pprStr spaceGen ++ postfix))
+	let var'	= (Var.new (pprStrPlain spaceGen ++ postfix))
 			{ Var.bind		= spaceGen 
 			, Var.nameSpace		= space }
 		

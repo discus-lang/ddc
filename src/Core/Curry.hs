@@ -26,6 +26,7 @@ import qualified Shared.VarUtil	as Var
 import Shared.VarPrim
 import Shared.Error
 import Shared.Exp
+import Shared.Pretty
 
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
@@ -39,7 +40,7 @@ import Core.Plate.Trans
 -----
 stage		= "Core.Curry"
 debug		= False
-trace s	x 	= if debug then Debug.trace (pprStr s) x else x
+trace s	x 	= if debug then Debug.trace (pprStrPlain s) x else x
 
 -----
 curryTree 

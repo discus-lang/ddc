@@ -14,6 +14,7 @@ where
 -----
 import Util
 import Shared.Var			(Var, VarBind, NameSpace(..))
+import Shared.Pretty
 import Shared.Error
 import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
@@ -86,7 +87,8 @@ newVarN	space
 	let gen'	= Var.incVarBind gen
 	modify (\s -> s { coreGenValue = gen' })
 	
-	return		(Var.new (pprStr gen)) { Var.bind = gen, Var.nameSpace = space }
+	return	(Var.new (pprStrPlain gen)) 
+		{ Var.bind = gen, Var.nameSpace = space }
 
 -- | Get the type corresponding to the type of this annotation
 lookupAnnotT :: Annot -> CoreM (Maybe C.Type)

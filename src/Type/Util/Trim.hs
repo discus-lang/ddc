@@ -33,6 +33,7 @@ import Type.Plate.FreeVars
 import Type.Util.Pack
 import Type.Util.Bits
 
+import Shared.Pretty
 import qualified Shared.Var		as Var
 import qualified Shared.VarSpace	as Var
 import qualified Shared.VarUtil		as Var
@@ -49,7 +50,7 @@ stage	= "Type.Closure.Trim"
 debug	= False
 trace ss x	
 	= if debug
-		then Debug.trace (pprStr ss) x
+		then Debug.trace (pprStrPlain ss) x
 		else x
 
 

@@ -9,9 +9,6 @@ module Main.Dump
 
 where
 
-import Util
-import System.IO
-
 import Main.Arg
 import Main.Path
 
@@ -22,6 +19,10 @@ import qualified Core.Util
 
 import qualified Sea.Pretty
 import qualified Type.Pretty
+
+import Shared.Pretty
+import System.IO
+import Util
 
 -----
 -- dumpST
@@ -35,7 +36,7 @@ dumpST flag name sourceTree
  	when (elem flag ?args)
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".ds")
-		(concat $ map pprStr
+		(concat $ map pprStrPlain
 			$ sourceTree))
 	
 	return ()
@@ -83,7 +84,7 @@ dumpCT flag name tree
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".dc")
 		(catInt "\n"
-			$ map pprStr
+			$ map pprStrPlain
 --			$ map Core.Util.labelTypeP
 			$ tree))
 	
@@ -103,7 +104,7 @@ dumpET flag name tree
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".c")
 		(catInt "\n"
-			$ map pprStr
+			$ map pprStrPlain
 			$ tree))
 	
 	return ()

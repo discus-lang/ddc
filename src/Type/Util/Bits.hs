@@ -309,7 +309,6 @@ takeKindOfType tt
 	
 	TWild k		-> Just k
 	TClass k cid	-> Just k
-	TAccept t	-> takeKindOfType t
 
 	TElaborate t	-> takeKindOfType t
 	TMutable t	-> takeKindOfType t

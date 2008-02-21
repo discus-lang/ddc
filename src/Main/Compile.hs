@@ -21,6 +21,7 @@ import GHC.IOBase
 import qualified Shared.Var		as Var
 import Shared.Var			(Module(..), NameSpace(..))
 import Shared.Error
+import Shared.Pretty
 
 import qualified Main.Arg		as Arg
 import Main.Arg 			(Arg)
@@ -56,7 +57,7 @@ import Debug.Trace
 import Util
 import Numeric
 
-out 	ss	= putStr $ pprStr ss
+out 	ss	= putStr $ pprStrPlain ss
 
 -----
 -----
@@ -197,7 +198,7 @@ compileFile	argsCmd     fileName_
 	 	putStr	$  "    - fileName      = " ++ fileName			++ "\n"
 			++ "    - fileDir       = " ++ fileDir			++ "\n"
 			++ "    - fileBase      = " ++ fileBase			++ "\n"
-	 		++ "    - moduleName    = " ++ pprStr moduleName	++ "\n"
+	 		++ "    - moduleName    = " ++ pprStrPlain moduleName	++ "\n"
 			++ "\n"
 		
 	let filePaths	= makePaths (fileDir ++ "/" ++ fileBase)
@@ -278,7 +279,7 @@ compileFile_parse
 	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
 	
 	when ?verbose
-	 $ do	mapM_ (\path -> putStr $ pprStr $ "  - included file   " % path % "\n")
+	 $ do	mapM_ (\path -> putStr $ pprStrPlain $ "  - included file   " % path % "\n")
 	 		$ includeFilesHere
 	 	
 
@@ -614,7 +615,7 @@ compileFile_parse
 	--
 	seaSourceInit	<- if SE.gotMain eInit 
 				then do mainCode <- SE.seaMain $ map fst $ Map.toList importsExp
-				     	return 	$ seaSource ++ (catInt "\n" $ map pprStr $ E.eraseAnnotsTree mainCode)
+				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
 				
 	writeFile (pathC filePaths)	seaSourceInit
@@ -679,5 +680,5 @@ handleStage name ex
 -----
 dumpImportDef def
 	= putStr	
-	$ pprStr
- 	$ "        " % (padR 30 $ pprStr $ idModule def) % " " % idFilePathDI def % "\n"
+	$ pprStrPlain
+ 	$ "        " % (padR 30 $ pprStrPlain $ idModule def) % " " % idFilePathDI def % "\n"

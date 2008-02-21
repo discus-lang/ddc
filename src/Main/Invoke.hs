@@ -4,12 +4,11 @@ module Main.Invoke
 
 where
 
------
 import Main.Path
 import Main.Arg
+import Shared.Pretty
 import Shared.Error
 import Util
-
 
 import System.Cmd
 import System.Exit
@@ -139,7 +138,7 @@ invokeLinker
 	  -> panic stage
 	  	$ "invokeLinker: link failed\n"
 		% "     objects:\n"
-		% (catMap (\s -> pprStr $ "        " % s % "\n") objects) % "\n"
+		% (catMap (\s -> pprStrPlain $ "        " % s % "\n") objects) % "\n"
 
 	return ()
 

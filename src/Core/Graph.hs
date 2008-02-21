@@ -16,6 +16,7 @@ import Data.Set			(Set)
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..))
+import Shared.Pretty
 
 import Core.Exp
 import Core.Util
@@ -115,7 +116,7 @@ dotAppGraph appMap
  	--allVars	= Map.keys appMap
  	--	++ concat (map snd $ Map.elems appMap)
  	
-   in	pprStr
+   in	pprStrPlain
 	$ "digraph G {\n"
 --	% (catMap dotVarNode allVars)
 	% (catMap dotBindVar $ Map.toList appMap)
@@ -135,16 +136,16 @@ dotBindVar (v, (app, freeVs))
 	_			-> dotBindVar_SC ""    "black" v
 
 dotBindVar_SC str colorStr v
- = pprStr
+ = pprStrPlain
 	$ "\t"
-	% quote (pprStr $ Var.bind v)
-	% " [ label = " % quote (pprStr v ++ str) 
+	% quote (pprStrPlain $ Var.bind v)
+	% " [ label = " % quote (pprStrPlain v ++ str) 
 	% " , color = " % colorStr 
 	% "];\n"
 
 dotApp :: Var -> [Var] -> String
 dotApp	v vs
-	=  pprStr
+	=  pprStrPlain
 	$ "\t"
 	% (dotVarBind v)
 	% " -> {" 
@@ -153,6 +154,6 @@ dotApp	v vs
 
 dotVarBind :: Var -> String
 dotVarBind    v	
-	= "\"" ++ (pprStr $ Var.bind v) ++ "\""
+	= "\"" ++ (pprStrPlain $ Var.bind v) ++ "\""
 
 quote s	= "\"" ++ s ++ "\""

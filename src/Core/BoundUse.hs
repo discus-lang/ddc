@@ -14,6 +14,7 @@ import Core.Exp
 import Control.Monad.State
 import qualified Data.Map	as Map
 import Data.Map			(Map)
+import Shared.Pretty
 import Util
 
 -- How many (value) lambdas in from top level this use was
@@ -39,8 +40,7 @@ useLevel uu
  	Use l		-> l
 	UseUnbox l	-> l
 
-
-instance Pretty Use where
+instance Pretty Use PMode where
  ppr use	= ppr $ show use
 	
 

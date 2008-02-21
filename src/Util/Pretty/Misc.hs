@@ -1,32 +1,12 @@
 
 module Util.Pretty.Misc
-(
-	padRc,
-	padLc,
-	padR,
-	padL,
-	indent,
-	showHex,
-	showHexPad,
-)
+	( indent
+	, showHex
+	, showHexPad)
 
 where
 
 import qualified Numeric
-
------
-padRc	:: Char -> Int -> String -> String
-padRc	   c       n      str
-	= str ++ take (n - length str) (repeat c)
-
-padR n str	= padRc ' ' n str
-
-
-padLc	:: Char -> Int -> String -> String
-padLc	   c       n      str
-	= take (n - length str) (repeat c) ++ str
-
-padL n str	= padLc ' ' n str
 
 -----
 indent ::	Int ->	String -> String

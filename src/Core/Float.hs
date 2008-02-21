@@ -18,6 +18,7 @@ import Util
 import Shared.VarPrim	
 import Shared.VarGen
 import Shared.Error
+import Shared.Pretty
 import Core.Exp
 import Core.ReconKind
 import Core.BoundUse
@@ -36,7 +37,7 @@ stage	= "Core.Float"
 debug	= False
 trace ss x
  = if debug 
- 	then Debug.trace (pprStr (stage % ":" % ss)) x
+ 	then Debug.trace (pprStrPlain (stage % ":" % ss)) x
 	else x
 
 
@@ -197,7 +198,7 @@ statsSharedForcings_		= (statsSharedForcings,		\x s -> s { statsSharedForcings	 
 statsSharedUnboxings_		= (statsSharedUnboxings, 	\x s -> s { statsSharedUnboxings	= x})
 
 	
-instance Pretty Stats where
+instance Pretty Stats PMode where
  ppr ss
  	= "Float.Stats:\n"
 	% "  * total bindings inspected                : " % statsTotalBindings ss			% "\n"

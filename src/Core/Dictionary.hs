@@ -5,14 +5,6 @@ module Core.Dictionary
 
 where
 
-import qualified Data.Map	as Map
-import qualified Util.Map	as Map
-import Data.Map			(Map)
-
-import qualified Debug.Trace	as Debug
-import Shared.Error
-
-import Util
 import Core.Exp
 import Core.Pretty
 import Core.Util
@@ -24,6 +16,16 @@ import Core.Util.Strip
 import Core.Util.Substitute
 import Core.Util.Slurp
 import Core.Pretty
+
+import qualified Debug.Trace	as Debug
+import Shared.Error
+import Shared.Pretty
+
+import qualified Data.Map	as Map
+import qualified Util.Map	as Map
+import Data.Map			(Map)
+
+import Util
 
 -----
 stage		= "Core.Dictionary"
@@ -124,7 +126,7 @@ rewriteOverApp
 				= stripSchemeT $ packT tInstScheme					
 
 		-- Unify the instance shape with the overloaded shape.
-		ttSub	= trace (pprStr 
+		ttSub	= trace (pprStrPlain 
 				$ "    tInstScheme = " %> tInstScheme 	% "\n\n"
 				% "    tInstShape  = " %> tInstShape 	% "\n\n"
 				% "    tOverShapeI = " %> tOverShapeI	% "\n\n")
@@ -135,7 +137,7 @@ rewriteOverApp
 				$ unifyT2 tInstShape tOverShapeI
 		
 
-		vtSub	= trace (pprStr $ "  vtSub      = " % ttSub)
+		vtSub	= trace (pprStrPlain $ "  vtSub      = " % ttSub)
 			$ map 	(\(t1, t2) -> 
 					-- if this fails then the type params passed to the overloaded
 					--	fn weren't specific enough to determine the type 
@@ -174,7 +176,8 @@ rewriteOverApp
 	  	xx'		= unflattenAppsE xxParts'
 
    	in trace
-		(pprStr	$ "rewriteOverApp/leave\n"
+		(pprStrPlain
+			$ "rewriteOverApp/leave\n"
 			% "  tInstScheme        = \n" %> tInstScheme	% "\n\n"
 			% "  vtSub              = " % vtSub		% "\n\n"
 			% "  tsInstArgs         = " % tsInstArgs	% "\n\n"
@@ -192,7 +195,8 @@ rewriteOverApp
 rewriteOverApp_trace
 	xx overV cClass tOverScheme cxInstances mapTypes
  =  trace
-	(pprStr	$ "* rewriteOverApp_trace/enter\n"
+	(pprStrPlain
+		$ "* rewriteOverApp_trace/enter\n"
 
 		% "    function application to rewrite (xx)\n"
 			%> (" = " % xx		% "\n\n")
@@ -258,7 +262,8 @@ determineInstance
 	tInstShape	= substituteT tsSubst tOverShape
 
  in	trace
- 		(pprStr	$ "* determineInstance\n"
+ 		(pprStrPlain
+			$ "* determineInstance\n"
 			% "    subst these type args into the class context (tsSubst)\n"
 				%> ("  = " % tsSubst % "\n\n")
 

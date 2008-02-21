@@ -9,6 +9,7 @@ import Core.Pretty
 import Core.ReconKind
 import Core.Util.Bits
 import Core.Util.Trim
+import Shared.Pretty
 import Shared.Error
 import Util
 
@@ -24,7 +25,7 @@ import qualified Debug.Trace
 debug	= False
 trace ss x	
  	= if debug 
-		then Debug.Trace.trace (pprStr ss) x
+		then Debug.Trace.trace (pprStrPlain ss) x
 		else x
 
 -- stage	= "Core.Util.Subsumes"

@@ -1,8 +1,6 @@
 
 module Module.Export
-(
-	makeInterface
-)
+	(makeInterface)
 
 where
 
@@ -21,6 +19,7 @@ import Shared.Var			(Var, (=~=), Module)
 import Shared.Pretty
 import Shared.Error			(panic)
 import Shared.Base			(SourcePos)
+import Shared.Error
 
 import qualified Module.Interface	as MI
 
@@ -76,11 +75,11 @@ makeInterface
 	let sTree'	= eraseVarModuleTree moduleName sTree
 
 
-	let getTVar 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStr v)
+	let getTVar 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStrPlain v)
 			$ Map.lookup v 
 			$ sigmaTable
 
-	let getType 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStr v)
+	let getType 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStrPlain v)
 			$ liftM (eraseVarModuleT moduleName)
 			$ Map.lookup (getTVar v) schemeTable
 
@@ -123,49 +122,49 @@ exportAll
 	-> String
 
 exportAll getType topNames ps psDesugared psCore vsNoExport
- 	=  pprStr
+ 	=  pprStrPlain
 	$  "-- Imports\n"
-	++ (concat [pprStr p | p@S.PImportModule{} 	<- ps])
+	++ (concat [pprStrPlain p | p@S.PImportModule{} 	<- ps])
 	++ "\n"
 
 	++ "-- Pragmas\n"
-	++ (concat [pprStr p 
+	++ (concat [pprStrPlain p 
 			| p@(S.PPragma _ (S.XVar sp v : _))	<- ps
 			, Var.name v == "LinkObjs" ])
 
 	++ "\n"
 
 	++ "-- Infix\n"
-	++ (concat [pprStr p | p@S.PInfix{}		<- ps])
+	++ (concat [pprStrPlain p | p@S.PInfix{}		<- ps])
 	++ "\n"
 
 	++ "-- Data\n"
-	++ (concat [pprStr p | p@S.PData{}		<- ps])
+	++ (concat [pprStrPlain p | p@S.PData{}		<- ps])
 	++ "\n"
 
 	++ "-- Effects\n"
-	++ (concat [pprStr p | p@S.PEffect{}		<- ps])
+	++ (concat [pprStrPlain p | p@S.PEffect{}		<- ps])
 	++ "\n"
 
 	++ "-- Regions\n"
-	++ (concat [pprStr p | p@S.PRegion{}		<- ps])
+	++ (concat [pprStrPlain p | p@S.PRegion{}		<- ps])
 	++ "\n"
 	
 	++ "-- Classes\n"
-	++ (concat [pprStr p | p@S.PClass{}		<- ps])
+	++ (concat [pprStrPlain p | p@S.PClass{}		<- ps])
 	++ "\n"
 	
 	++ "-- Class dictionaries\n"
-	++ (concat [pprStr p | p@S.PClassDict{}		<- ps])
+	++ (concat [pprStrPlain p | p@S.PClassDict{}		<- ps])
 	++ "\n"
 
 	++ "-- Class instances\n"
-	++ (concat [pprStr p | 	p@D.PClassInst{}			
+	++ (concat [pprStrPlain p | 	p@D.PClassInst{}			
 			     <- map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared])
 	++ "\n"
 	
 	++ "-- Foreign imports\n"
-	++ (concat [pprStr p 
+	++ (concat [pprStrPlain p 
 			| p@(S.PForeign _ (S.OImport (S.OExtern{})))	<- ps])
 	++ "\n"
 
@@ -190,11 +189,11 @@ exportVTT
 	-> String
 
 exportVTT	v      tv to
-	= pprStr
+	= pprStrPlain
 	$ "foreign import extern "
-	% pprStr v { Var.nameModule = Var.ModuleNil }
-	%>	(  "\n:: " ++ (pprStr $ T.prettyTS $ T.normaliseT tv)
-		++ "\n:$ " ++ pprStr to
+	% pprStrPlain v { Var.nameModule = Var.ModuleNil }
+	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTS $ T.normaliseT tv)
+		++ "\n:$ " ++ pprStrPlain to
 
 		++ ";\n\n")
 
@@ -206,7 +205,7 @@ exportProjDict (D.PProjDict _ t [])
 	= []
 
 exportProjDict (D.PProjDict _ t ss)
- 	= pprStr
+ 	= pprStrPlain
 	$ "project " % t % " where\n"
 	% "{\n"
 	%> "\n" %!% (map (\(D.SBind _ (Just v1) (D.XVar _ v2)) 

@@ -5,6 +5,7 @@ module Shared.VarSpace
 	, namePrefix )
 where
 
+import Shared.Pretty
 import Util
 
 -----
@@ -31,7 +32,7 @@ data NameSpace
 
 
 -----
-instance Pretty NameSpace where
+instance Pretty NameSpace PMode where
  ppr x		= ppr $ show x
  
 spaceName space

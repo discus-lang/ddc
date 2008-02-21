@@ -154,10 +154,6 @@ followT table tt
 	 	fs'	<- transZM table fs
 		return	$ TFetters fs' t'
 
---	TUnify k ts
---	 -> do	ts'	<- transZM table ts
---	 	return	$ TUnify k ts'
-
 	TSum k ts
 	 -> do	ts'	<- transZM table ts
 	 	return	$ TSum k ts'
@@ -225,10 +221,6 @@ followT table tt
 	 -> do	cid'	<- transZM table cid
 	 	return	$ TClass k cid'
 
-	TAccept t
-	 -> do	t'	<- transZM table t
-	 	return	$ TAccept t'
-
 	TFetter f
 	 -> do	f'	<- transZM table f
 		return	$ TFetter f'
@@ -236,13 +228,6 @@ followT table tt
 	TError k t
 	 -> do	t'	<- transZM table t
 	  	return 	$ TError k t'
-
-
-	TNode cid t
-	 -> do	cid'	<- transZM table cid
-	 	t'	<- transZM table t
-		return	$ TNode cid' t'
-
 
 
 	-- type sugar
@@ -254,18 +239,6 @@ followT table tt
 	 -> do	t'	<- transZM table t
 	 	return	$ TMutable t'
 		
-	-- type constraints
-{-	TFunV t1 t2 ml
-	 -> do	t1'	<- transZM table t1
-	 	t2'	<- transZM table t2
-		return	$ TFunV t1' t2' ml 
-	
-	TFunF xx
-	 ->  do	xx'	<- transZM table xx
-	 	return	$ TFunF xx
--}
-	
-
 	
 -----------------------
 -- TProj
@@ -317,10 +290,6 @@ instance Monad m => TransM m Fetter
 		tBind'		<- transZM table tBind
 		transF table	$ FProj pj v' tDict' tBind'
 	
-	FFunInfo v eff env
-	 -> do	eff'		<- transZM table eff
-	 	env'		<- transZM table env
-		transF table	$ FFunInfo v eff' env'
 	
 -----------------------
 -- Kind

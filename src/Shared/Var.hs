@@ -14,13 +14,14 @@ module Shared.Var
 
 where
 
-import Util
 import Data.Char
 
+import Shared.Pretty
 import Shared.Base
 import Shared.VarBind
 import Shared.VarSpace
 import Shared.Error
+import Util
 
 -----
 stage	= "Shared.Var"
@@ -82,7 +83,7 @@ loadSpaceQualifier var
 -----
 -- Pretty printing.
 --
-instance Pretty Var where
+instance Pretty Var PMode where
  ppr v
  	= case nameModule v of
 		ModuleNil		-> ppr $ prettyVarN v
@@ -149,7 +150,7 @@ data VarInfo
 	deriving (Show)
 
 
-instance Pretty VarInfo where
+instance Pretty VarInfo PMode where
  ppr x 	= ppr $ show x
 
 
@@ -160,7 +161,7 @@ data Module
 	| ModuleRelative [String]		-- ^ A module name relative to the current one, of the form ".M1.M2.M3 ..."
 	deriving (Show, Eq, Ord)
 
-instance Pretty Module where
+instance Pretty Module PMode where
  ppr m
   = case m of
 	ModuleNil		-> ppr "@ModuleNil"

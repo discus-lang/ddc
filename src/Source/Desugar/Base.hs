@@ -23,6 +23,7 @@ import qualified Shared.Var		as Var
 import Shared.Var			(Var, NameSpace(..))
 import Shared.Base
 import Shared.Error
+import Shared.Pretty
 import Type.Exp
 		
 -----
@@ -42,7 +43,7 @@ newVarNS space str
  = do	bind@(Var.XBind unique n) <- gets stateVarGen
 	modify $ \s -> s { stateVarGen	= Var.XBind unique (n+1) }
 
-	let var		= (Var.new (Var.namePrefix space ++ pprStr bind ++ str))
+	let var		= (Var.new (Var.namePrefix space ++ pprStrPlain bind ++ str))
 			{  Var.bind		= bind
 			,  Var.nameSpace	= space }
 	return var

@@ -24,6 +24,7 @@ import qualified Shared.Var 	as Var
 import Shared.Var		(Var, VarBind, (=^=), NameSpace(..))
 import qualified Shared.Unique	as Unique
 
+import Shared.Pretty
 import Shared.Exp
 import Shared.Base
 import Shared.VarUtil
@@ -68,7 +69,7 @@ data	BindMode
 	| BindSnoc			-- var bound by a pattern / deconstructor
 	deriving (Show, Eq)
 
-instance Pretty BindMode
+instance Pretty BindMode PMode
  where
  	ppr xx	= ppr $ show xx
 

@@ -18,6 +18,7 @@ where
 import Type.Util.Bits
 import Type.Exp
 
+import Shared.Pretty
 import Shared.Base
 import Shared.Literal
 import Shared.Error
@@ -46,7 +47,7 @@ data TypeSource
 	| TSI SourceInfer
 	deriving (Show, Eq)
 
-instance Pretty TypeSource where
+instance Pretty TypeSource PMode where
  ppr (TSV sv)	= "TSV " % ppr sv
  ppr (TSE se)	= "TSE " % ppr se
  ppr (TSC sc)	= "TSC " % ppr sc
@@ -88,7 +89,7 @@ data SourceValue
 
 	deriving (Show, Eq)
 
-instance Pretty SourceValue where
+instance Pretty SourceValue PMode where
  ppr (SVInst sp v)	= parens $ "SVInst" <> sp <> v
  ppr sv			= "SV " % vsp sv
 
@@ -106,7 +107,7 @@ data SourceEffect
 	| SEGuards	{ esp :: SourcePos }			-- ^ Sum effects from guards.
 	deriving (Show, Eq)
 
-instance Pretty SourceEffect where
+instance Pretty SourceEffect PMode where
  ppr se		= "SE " % esp se
 
 
@@ -121,7 +122,7 @@ data SourceClosure
 	| SCGuards	{ csp :: SourcePos }			-- ^ Sum closure from guards.
 	deriving (Show, Eq)
 
-instance Pretty SourceClosure where
+instance Pretty SourceClosure PMode where
  ppr sc		= "SE " % csp sc
 
 -- | Sources of unification constraints
@@ -133,7 +134,7 @@ data SourceUnify
 	| SUBind	{ usp :: SourcePos }			-- ^ LHS of binding has same type as RHS.
 	deriving (Show, Eq)
 
-instance Pretty SourceUnify where
+instance Pretty SourceUnify PMode where
  ppr su		= "SU " % usp su
 
 -- | Sources of other things (mostly to tag dictionaries)
@@ -145,7 +146,7 @@ data SourceMisc
 	deriving (Show, Eq)
 
 
-instance Pretty SourceMisc where
+instance Pretty SourceMisc PMode where
  ppr sm		= "SM " % msp sm
 
 -- | Sources of things added by the inferencer.
@@ -187,7 +188,7 @@ data SourceInfer
 
 	deriving (Show, Eq)
 
-instance Pretty SourceInfer where
+instance Pretty SourceInfer PMode where
  ppr SIClassName		= ppr "SIClassName"
  ppr (SIPurify eff f)		= "SIPurify" <> eff <> parens f
  ppr (SICrushedF cid iF)	= "SICrushedF" <> cid <> parens iF
@@ -213,7 +214,7 @@ takeSourcePos ts
 	_	-> Nothing
 
 
-dispSourcePos :: TypeSource -> PrettyP
+dispSourcePos :: TypeSource -> PrettyM PMode
 dispSourcePos ts
  = case takeSourcePos ts of
  	Just sp	-> ppr sp
@@ -225,7 +226,7 @@ dispSourcePos ts
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
 
-dispTypeSource :: Type -> TypeSource -> PrettyP
+dispTypeSource :: Type -> TypeSource -> PrettyM PMode
 dispTypeSource tt ts
 	| TSV sv	<- ts
 	= dispSourceValue tt sv
@@ -266,7 +267,7 @@ atKind tt
 
 	
 -- | Show the source of a type error due to this reason
-dispSourceValue :: Type -> SourceValue -> PrettyP
+dispSourceValue :: Type -> SourceValue -> PrettyM PMode
 dispSourceValue tt sv
  = case sv of
 	SVLambda sp 	
@@ -342,7 +343,7 @@ dispSourceValue tt sv
 		%  "              at: " % sp	% "\n"
 
 -- | Show the source of a type error due to this reason
-dispSourceEffect :: Pretty tt => tt -> SourceEffect -> PrettyP
+dispSourceEffect :: Pretty tt PMode => tt -> SourceEffect -> PrettyM PMode
 dispSourceEffect tt se
  = case se of
 	SEApp sp
@@ -392,7 +393,7 @@ dispSourceEffect tt se
 
 
 -- | Show the source of a type error due to this reason
-dispSourceUnify :: Pretty tt => tt -> SourceUnify -> PrettyP
+dispSourceUnify :: Pretty tt PMode => tt -> SourceUnify -> PrettyM PMode
 dispSourceUnify tt sv
  = case sv of
  	SUAltLeft sp 
@@ -435,7 +436,7 @@ dispSourceUnify tt sv
 --	The only possible source of these is instantiations of type schemes,
 --	or from crushing other fetters.
 --
-dispFetterSource :: Fetter -> TypeSource -> PrettyP
+dispFetterSource :: Fetter -> TypeSource -> PrettyM PMode
 dispFetterSource f ts
 
 	-- For purity constraints, don't bother displaying the entire effect

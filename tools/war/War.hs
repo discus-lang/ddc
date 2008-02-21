@@ -7,6 +7,8 @@ import Interface
 import Bits
 import TestSource
 
+import Shared.Pretty
+
 import System.Cmd
 import System.Exit
 import System.Time
@@ -86,7 +88,7 @@ buildLibrary args
 
 enterDir 
 	:: (?args :: [Arg])
-	-> (?trace :: PrettyP -> IO ())
+	-> (?trace :: PrettyM PMode -> IO ())
 	=> FilePath -> IO ()
 
 enterDir path_

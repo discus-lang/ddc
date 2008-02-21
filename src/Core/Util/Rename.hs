@@ -14,6 +14,7 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 import qualified Shared.Var	as Var
+import Shared.Pretty
 import Shared.Var		(Var)
 import Shared.VarBind		(VarBind, incVarBind)
 
@@ -57,7 +58,7 @@ renameV_bind v
 	modify (\s -> s { sVarGen = incVarBind varGen})
 
 	-- make the new var and add it to the map
-	let v'	= v { Var.name = pprStr varGen, Var.bind = varGen }
+	let v'	= v { Var.name = pprStrPlain varGen, Var.bind = varGen }
 	modify (\s -> s { sVarMap = Map.insert v v' (sVarMap s)})
 	
 	return v'

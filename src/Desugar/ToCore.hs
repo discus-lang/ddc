@@ -21,6 +21,7 @@ import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var 	as Var
 
 import Shared.VarPrim
+import Shared.Pretty
 import Shared.Error
 import qualified Shared.Exp		as S
 import qualified Shared.Literal		as S
@@ -47,7 +48,7 @@ stage	= "Desugar.ToCore"
 debug	= False
 trace ss x	
 	= if debug 
-		then Debug.trace (pprStr ss) x
+		then Debug.trace (pprStrPlain ss) x
 		else x
 
 -- Tree --------------------------------------------------------------------------------------------

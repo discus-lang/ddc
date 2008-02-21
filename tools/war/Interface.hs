@@ -5,6 +5,7 @@ module Interface
 	
 where
 
+import Shared.Pretty
 import Util
 
 import System.IO
@@ -13,14 +14,14 @@ import System.Exit
 
 
 -- | Write something to the console
-out :: Pretty a => a -> IO ()
+out :: Pretty a PMode => a -> IO ()
 out s	
- = do	putStr $ pprStr s
+ = do	putStr $ pprStrPlain s
  	hFlush stdout
 
 
 -- | Run a system command and bail out if it returns an error
-systemE :: (?trace :: PrettyP -> IO ()) 
+systemE :: (?trace :: PrettyM PMode -> IO ()) 
 	=> String -> IO ()
 systemE command
  = do

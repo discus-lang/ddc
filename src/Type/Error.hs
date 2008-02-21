@@ -3,12 +3,9 @@ module Type.Error
 	( Error(..) )
 where
 
------
-import Util
-
------
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
+import Shared.Pretty
 import Shared.Literal
 import Shared.Error
 import Shared.Base		(SourcePos(..))
@@ -17,7 +14,7 @@ import Type.Location
 import Type.Exp
 import Type.Pretty
 
--- import Type.Util
+import Util
 
 -----
 stage	= "Type.Error"
@@ -153,7 +150,7 @@ data Error
 	deriving (Show)
 
 -----	
-instance Pretty Error where
+instance Pretty Error PMode where
 
  -- Random badness.
  ppr err@(ErrorBadness
@@ -398,7 +395,7 @@ instance Pretty Error where
 prettyVTS (v, t)
  	= indent 12 (
 		"\n" ++ (Var.name v) ++ "\n  :: "
-		++ (indent 2 $ pprStr $ prettyTypeSplit $ t))
+		++ (indent 2 $ pprStrPlain $ prettyTypeSplit $ t))
 
 prettyValuePos var
 	= fromMaybe "?"

@@ -1,5 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
+-- | Pretty printer for type expressions.
 module Type.Pretty
 	( prettyTB
 	, prettyVK
@@ -8,103 +9,77 @@ module Type.Pretty
 
 where
 
------
-import Util
-
------
-import Shared.Error
 import Type.Exp
+import Shared.Pretty
+import Shared.Error
+import Util
 
 -----
 stage	= "Type.Pretty"
 
------
--- pretty Type
---
-instance Pretty Type where
+-- Type --------------------------------------------------------------------------------------------
+instance Pretty Type PMode where
  ppr xx
   = case xx of
- 	TNil			-> ppr "@TNil"
+ 	TNil		-> ppr "@TNil"
 
-	TForall vs t		-> "forall " % " " %!% (map prettyVK vs) % ". " % t
-	TFetters fs t		-> t % " :- " % ", " %!% fs
+	TForall vs t	-> "forall " % " " %!% (map prettyVK vs) % ". " % t
+	TFetters fs t	-> t % " :- " % ", " %!% fs
+	TSum   k  es	-> k  % "{" % "; " %!% es % "}"
+	TMask  k  t1 t2	-> prettyTB t1 % " \\ " % prettyTB t2
 
---	TUnify k  ts		-> k  % "<" % "; " %!% ts % ">"
-	TSum   k  es		-> k  % "{" % "; " %!% es % "}"
-	TMask  k  t1 t2		-> prettyTB t1 % " \\ " % prettyTB t2
+	TVar k v	-> ppr v
 
-	TVar k v		-> ppr v
-
-	TTop k			-> k % "Top"
-	TBot k			-> k % "Bot"
+	TTop k		-> k % "Top"
+	TBot k		-> k % "Bot"
 
 
 	-- data
-	TData v []		-> ppr v 
-	TData v ts		-> v % " " % " " %!% (map prettyTB ts)
+	TData v []	-> ppr v 
+	TData v ts	-> v % " " % " " %!% (map prettyTB ts)
 
 	TFun t1 t2 eff clo
 	 -> case (eff, clo) of
-	 	(TBot _ ,	TBot _)		-> prettyTBF t1 % " -> " % prettyTRight t2
-		(eff',		TBot _)		-> prettyTBF t1 % " -(" % eff' % ")> " % prettyTRight t2
-		(TBot _,	clo')		-> prettyTBF t1 % " -(" % clo' % ")> " % prettyTRight t2
-		(eff',		clo')		-> prettyTBF t1 % " -(" % prettyTB eff' % " " % prettyTB clo' % ")> " 
+	 	(TBot _ ,	TBot _)	-> prettyTBF t1 % " -> " % prettyTRight t2
+		(eff',		TBot _)	-> prettyTBF t1 % " -(" % eff' % ")> " % prettyTRight t2
+		(TBot _,	clo')	-> prettyTBF t1 % " -(" % clo' % ")> " % prettyTRight t2
+		(eff',		clo')	-> prettyTBF t1 % " -(" % prettyTB eff' % " " % prettyTB clo' % ")> " 
 								% prettyTRight t2
 		
 	-- effect
-	TEffect    v []		-> ppr v
-	TEffect    v ts		-> v % " " % " " %!% map prettyTB ts
+	TEffect    v []	-> ppr v
+	TEffect    v ts	-> v % " " % " " %!% map prettyTB ts
 
 	-- closure
-	TFree  v t		-> v % " : " % t
-	TDanger v t		-> v % " $> " % t
-	TTag v			-> ppr v
+	TFree  v t	-> v % " : " % t
+	TDanger v t	-> v % " $> " % t
+	TTag v		-> ppr v
 	
 	-- wild cards
-	TWild k			-> k % "_"
+	TWild k		-> k % "_"
 
 
 	---- used in the type solver
-	TClass k c		-> k % c
-	TAccept t		-> "@Accept " % prettyTB t
-	TNode  c t		-> c % ": " % t
-	TFetter f		-> "@TFetter " % f
-	TError k t		-> "@TError" % k % " " % t
+	TClass k c	-> k % c
+	TFetter f	-> "@TFetter " % f
+	TError k t	-> "@TError" % k % " " % t
 
 	-----
 	TElaborate t	-> "elaborate " % t
 	TMutable   t	-> "mutable " 	% t 
 
-	-----
-{-	TFunF tEs	-> ppr tEs
-
-	TFunV t1 t2 mV
-	 -> case mV of
-	 	Nothing
-		 -> prettyTBF t1 % " -> " % t2
-	
-		Just l
-		 -> prettyTBF t1 % " -" % l % "> " % t2
--}
-	
-
-instance Pretty ClassId where
- ppr c
-  = case c of
-  	ClassId i	-> ppr i
-
------
-prettyTBF t
- = case t of
- 	TFun{}		-> "(" % t % ")"
-	TMutable{}	-> "(" % t % ")"
-	
-	_ 		-> ppr t
 
 prettyTRight tt
  = case tt of
  	TFetters{}	-> "(" % tt % ")"
 	_		-> ppr tt
+
+
+prettyTBF t
+ = case t of
+ 	TFun{}		-> "(" % t % ")"
+	TMutable{}	-> "(" % t % ")"
+	_ 		-> ppr t
 
 prettyTB t
  = case t of
@@ -119,76 +94,9 @@ prettyTB t
 	TTop{}		-> ppr t
 	_		-> "(" % t % ")"
 
-----
-instance Pretty TProj where
- ppr p
-  = case p of
-  	TJField  v	-> "." % v
-	TJFieldR v	-> "#" % v
-	_		-> panic stage "ppr[TProj]: no match"
 
-----
-prettyVK ::	(Var, Kind)	-> PrettyP
-prettyVK	(var, kind)
- = case kind of
-	KData		-> ppr var
-	KRegion		-> ppr var
-	KEffect		-> ppr var
-	KClosure	-> ppr var
-	_		-> "(" % var % " :: " % kind % ")"
-
------
-instance Pretty Fetter where
- ppr f
-  = case f of
-  	FConstraint	c ts	-> c % " " % " " %!% map prettyTB ts
-	FLet		t1 t2	-> padR 10 (pprStr t1) % " = "	% t2
-	FMore		t1 t2	-> padR 10 (pprStr t1) % " :> " % t2
-	
-	FProj     pj v1 tDict tBind
-	 -> "Proj "	% pj	% " " % v1 % " " % tDict % " " % tBind
-
-	FFunInfo v eff   	(TBot _)	-> padR 5 (pprStr v) % " = " % eff
-	FFunInfo v (TBot _) 	clo		-> padR 5 (pprStr v) % " = " % clo
-	FFunInfo v eff   	clo		-> padR 5 (pprStr v) 	% " = " % eff % "\n"
-						%  "        "		% " | " % clo
-
-
------
-instance Pretty Kind where
- ppr k
-  = case k of
-	KFun k1 k2	-> k1 % " -> " % k2
-	KData		-> ppr "*"
-	KRegion		-> ppr "%"
-	KEffect		-> ppr "!"
-	KFetter		-> ppr"+"
-	KClosure	-> ppr "$"
-	_		-> panic stage "pretty[Kind]: no match"
-
-instance  (Pretty param)
-	=> Pretty (InstanceInfo param Type) where
- ppr ii
-  = case ii of
-  	InstanceLambda v1 v2 mt
-	 -> "InstanceLambda " 	% v1 % " " % v2 % " " % mt
-
-	InstanceLet    v1 v2 ts	t 
-	 -> "InstanceLet\n" 	
-	 	% "    use var     = " % v1 % "\n"
-		% "    binding var = " % v2 % "\n\n"
-		% "    type parameters:\n"
-			%> ("\n" %!% ts) % "\n\n"
-		% "    scheme:\n"
-			%>  (prettyTS t)
-		% "\n\n"
-
-	InstanceLetRec v1 v2 mt
-	 -> "InstanceLetRec "	% v1 % " " % v2 % " " % mt
-
------------------------
--- 
-prettyTypeSplit :: Type	-> PrettyP
+-- | Prints a type with the fetters on their own lines
+prettyTypeSplit :: Type	-> PrettyM PMode
 prettyTypeSplit	   x
  = case x of
  	TForall vs t
@@ -208,9 +116,79 @@ prettyTypeSplit2 x
 prettyTypeFS fs
  	= "\n,  " %!% fs
 		
-
 prettyTS t
 	= prettyTypeSplit t 
 
 
+-- | Prints a variable with an optional kind.
+prettyVK ::	(Var, Kind)	-> PrettyM PMode
+prettyVK	(var, kind)
+ = case kind of
+	KData		-> ppr var
+	KRegion		-> ppr var
+	KEffect		-> ppr var
+	KClosure	-> ppr var
+	_		-> "(" % var % " :: " % kind % ")"
+
+
+-- TProj -------------------------------------------------------------------------------------------
+instance Pretty TProj PMode where
+ ppr p
+  = case p of
+  	TJField  v	-> "." % v
+	TJFieldR v	-> "#" % v
+	_		-> panic stage "ppr[TProj]: no match"
+
+
+-- ClassId -----------------------------------------------------------------------------------------
+instance Pretty ClassId PMode where
+ ppr c
+  = case c of
+  	ClassId i	-> ppr i
+
+-- Fetter ------------------------------------------------------------------------------------------
+instance Pretty Fetter PMode where
+ ppr f
+  = case f of
+  	FConstraint	c ts	-> c  % " " % " " %!% map prettyTB ts
+	FLet		t1 t2	-> padL 10 t1 % " = "	% t2
+	FMore		t1 t2	-> padL 10 t1 % " :> " % t2
+
+	FProj     pj v1 tDict tBind
+	 -> "Proj "	% pj	% " " % v1 % " " % tDict % " " % tBind
+
+
+-- Kind --------------------------------------------------------------------------------------------
+instance Pretty Kind PMode where
+ ppr k
+  = case k of
+	KFun k1 k2	-> k1 % " -> " % k2
+	KData		-> ppr "*"
+	KRegion		-> ppr "%"
+	KEffect		-> ppr "!"
+	KFetter		-> ppr"+"
+	KClosure	-> ppr "$"
+	_		-> panic stage "pretty[Kind]: no match"
+
+
+-- InstanceInfo ------------------------------------------------------------------------------------
+instance  (Pretty param PMode)
+	=> Pretty (InstanceInfo param Type) PMode where
+ ppr ii
+  = case ii of
+  	InstanceLambda v1 v2 mt
+	 -> "InstanceLambda " 	% v1 % " " % v2 % " " % mt
+
+	InstanceLet    v1 v2 ts	t 
+	 -> "InstanceLet\n" 	
+	 	% "    use var     = " % v1 % "\n"
+		% "    binding var = " % v2 % "\n\n"
+		% "    type parameters:\n"
+			%> ("\n" %!% ts) % "\n\n"
+		% "    scheme:\n"
+			%>  (prettyTS t)
+		% "\n\n"
+
+	InstanceLetRec v1 v2 mt
+	 -> "InstanceLetRec "	% v1 % " " % v2 % " " % mt
 

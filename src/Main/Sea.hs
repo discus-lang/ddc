@@ -14,20 +14,9 @@ module Main.Sea
 where
 
 -----
-import System.Cmd
-import System.Exit
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-import Data.Char
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import Util
-
------
 import Shared.Var		(Module(..))
 import Shared.Error
+import Shared.Pretty
 
 import Sea.Pretty
 import Sea.Exp
@@ -48,6 +37,17 @@ import qualified Main.Version	as Version
 import Main.Path
 import Main.Arg
 import Main.Dump
+
+import System.Cmd
+import System.Exit
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+import Data.Char
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+import Util
 
 ------
 -- seaSub
@@ -233,7 +233,7 @@ outSea
 		++ [ PHackery "\n#endif\n\n" ]
 
 	let seaHeaderS	
-		= catMap pprStr 
+		= catMap pprStrPlain 
 			$ eraseAnnotsTree seaHeader
 
 	-- Build the C code
@@ -248,7 +248,7 @@ outSea
 		++ [PHackery "\n"]	++ seaSupers
 
 	let seaCodeS	
-		= catMap pprStr 
+		= catMap pprStrPlain
 			$ eraseAnnotsTree seaCode
 	
 	--

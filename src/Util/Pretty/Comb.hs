@@ -1,22 +1,21 @@
-
+-- | Pretty printer combinators
 module Util.Pretty.Comb
-	( Pretty (..)
-	, PrettyP
-	, (%)
+	( Pretty  (..)
+	, PrettyM (..)
+	, pprStr
+
+	, pNil
+
+	, paste, (%)
+	, punc,  (%!%)
+	, padRc, padR
+	, padLc, padL
+
 	, (%>)
-	, (%#>)
-	, (%#<)
-	, (%!%)
 	, (%>>)
 	, (<>)
 	, parens
-	
-	, appendMapPretty
-	, reduce
-	, initRenderS
-	, pNil
-	, pprStr)
-
+	, braces)
 where
 
 -----
@@ -35,121 +34,230 @@ import Data.Set			(Set)
 
 import GHC.Exts
 
------------------------
-class Pretty a where
- ppr		:: a -> PrettyP
+-- | The pretty printer class
+--	A 'PrettyMode' data type should be defined by the caller to manage the various
+--	ways it would want to print a structure.
+--
+class Pretty a mode | a -> mode where
+ ppr		:: a -> PrettyM mode
 
-instance IsString PrettyP where
- fromString x	= PString x
 
-pprStr x	= render $ ppr x
+-- | PrettyM holds a function which produces a pretty thing in a particular mode.
+data PrettyM mode
+	= PrettyM (mode -> PrettyP)
 
------
+
+-- | PrettyP holds primitive things that can be printed on the screen, 
+--	along with meta-commands for controlling the layout.
+--	
 data PrettyP
-	= PNil	
-	| PString String
-	| PChar   Char
-	| PList   [PrettyP]
+	= PNil				-- an empty pretty thing (no charaters)
+	| PString String		-- a literal string
+	| PChar   Char			-- a literal character
 
-	| PAppend [PrettyP]
+	| PAppend [PrettyP]		-- print all these things one after the other
 
+	-- Lists have their own ctor so we can print Strings of [Char]
+	-- without decoration, but other things as [ x1, x2, ... ]. 
+	-- It would be better to use a different String type...
+	| PList   [PrettyP]		
+
+	-- | An indented pretty thing
 	| PIndent PrettyP
 
-	| PTabAdd Int
-
-	| PTabInc 
-	| PTabDec
-	| PTabNext
-
-	| PAnnot String		-- for debugging
+	-- | A pretty thing in a left/right justified column of the given width
+	--	with empty space padded with a char.
+	| PPadLeft  Int Char PrettyP
+	| PPadRight Int Char PrettyP
+	
+	-- | Indent commands
+	| PTabAdd Int			-- change the indent level by some number of chars
+	| PTabNext			-- move to the next tabstop
 
 	deriving (Eq, Show)
 
-pNil	= PNil
+-- didn't managed to get this to work...
+-- instance IsString PrettyP where
+-- fromString x	= PString x
 
------
--- Base types
---
-instance Pretty PrettyP where
- ppr x		= x
+-- | Render a pretty thing as a string.
+pprStr 	:: Pretty a m
+	=> m -> a -> String
 
-instance Pretty Bool where
- ppr x		= PString $ show x
- 
-instance Pretty Int where
- ppr x 		= PString $ show x
-
-instance Pretty Integer where
- ppr x		= PString $ show x
-
-instance Pretty Float where
- ppr x		= PString $ show x
- 
-instance Pretty Double where
- ppr x		= PString $ show x
- 
-instance Pretty Char where
- ppr x		= PChar x
+pprStr mode x	
+ = case ppr x of
+ 	PrettyM f -> render $ f mode
 
 
------
--- Unit
---
-instance Pretty () where
- ppr ()		= ppr "()"
+-- Primitive Combinators ---------------------------------------------------------------------------
+infixr 7 %
+infixr 8 %>
+infixl 9 %!%
 
------
--- Lists
---
-instance Pretty a => Pretty [a] where
- ppr xx		= PList $ map ppr xx
+-- paste two pretty things together
+paste 	:: (Pretty a m, Pretty b m)
+	=> a -> b -> PrettyM m
+
+paste a b 
+ = case (ppr a, ppr b) of
+ 	(PrettyM fa, PrettyM fb)
+		-> PrettyM (\m -> PAppend [fa m, fb m])
+
+(%) 	:: (Pretty a m, Pretty b m)	
+	=> a -> b -> PrettyM m
+(%)	= paste
+		
+-- Intersperse a pretty thing between others
+punc	:: (Pretty a m, Pretty b m)
+	=> a -> [b] -> PrettyM m
+
+punc p []		= pNil
+punc p (x : [])		= ppr x
+punc p (x1 : x2 : xs)	= x1 % p % punc p (x2 : xs)
+
+(%!%)	:: (Pretty a m, Pretty b m)
+	=> a -> [b] -> PrettyM m
+(%!%)	= punc
 
 
------
--- Tuples
---
-instance (Pretty a, Pretty b) 
-	=> Pretty (a, b) where
+-- Indent a pretty thing to the right of this one
+(%>) 	:: (Pretty a m, Pretty b m)
+	=> a -> b -> PrettyM m
 
- ppr (a, b)	
- 	= "(" % a % ", " % b % ")"
+(%>)  a b 
+ = case (ppr a, ppr b) of
+ 	(PrettyM fa, PrettyM fb)
+		-> PrettyM (\m -> PAppend [fa m, PIndent $ fb m])
 
-
-instance (Pretty a, Pretty b, Pretty c) 
-	=> Pretty (a, b, c) where
-
- ppr (a, b, c)
- 	= "(" % a % ", " % b % ", " % c % ")"
-
-
-instance (Pretty a, Pretty b, Pretty c, Pretty d) 
-	=> Pretty (a, b, c, d) where
-
- ppr (a, b, c, d)
- 	= "(" % a % ", " % b % ", " % c % ", " % d % ")"
+-- Move to the next tabstop
+(%>>)	:: (Pretty a m, Pretty b m)
+	=> a -> b -> PrettyM m
 	
------
--- Maybe
---
-instance Pretty a => Pretty (Maybe a) where
+(%>>) a b
+ = case (ppr a, ppr b) of
+ 	(PrettyM fa, PrettyM fb)
+		-> PrettyM (\m -> PAppend [fa m, PTabNext, fb m])
+
+
+-- Padding things out in left or right justified columns
+padRc :: Pretty a m => Int -> Char -> a -> PrettyM m
+padRc n c x
+ = case ppr x of
+  	PrettyM fx -> PrettyM (\m -> PPadRight n c (fx m))
+	
+padLc :: Pretty a m => Int -> Char -> a -> PrettyM m
+padLc n c x
+ = case ppr x of
+ 	PrettyM fx -> PrettyM (\m -> PPadLeft n c (fx m))
+
+
+-- Derived Combinators -----------------------------------------------------------------------------
+-- These are derived from more primitive combinators above.
+
+infixr 7 <>
+
+-- | An empty pretty thing.
+--	We need this because "" is the same as [], and we don't want to print it as such.
+--	sigh.. we really want a different String type here.
+pNil		= plain PNil
+
+-- | Put a space between these things.
+(<>)  a b	= a % " " % b
+
+-- | Wrap in parenthesis.
+parens a	= "(" % a % ")"
+
+-- | Wrap in brackets.
+braces a	= "{" % a % "}"
+
+-- | Pad into a right justified column.
+padR n x	= padRc n ' ' x
+
+-- | Pad into a left justified column.
+padL n x	= padLc n ' ' x
+
+
+-- Simple Instances  -------------------------------------------------------------------------------
+-- These are instances for simple things that are always printed the same way,
+-- independant of the printer mode.
+-- As the mode type has no effect, so is left as tyvar, which breaks the
+--	fundep coverage condition on the instances (yay!)
+
+plain x	= PrettyM (\_ -> x)
+
+-- self
+instance Pretty (PrettyM m) m where
+ ppr x	= x
+
+-- base types
+instance Pretty () m where
+ ppr ()	= ppr "()"
+
+instance Pretty Int m where
+ ppr x	= plain $ PString $ show x
+
+instance Pretty Char m where
+ ppr x	= plain $ PChar x
+
+instance Pretty Bool m where
+ ppr x	= plain $ PString $ show x
+
+instance Pretty Integer m where
+ ppr x	= plain $ PString $ show x
+
+instance Pretty Float m where
+ ppr x 	= plain $ PString $ show x
+
+instance Pretty Double m where
+ ppr x 	= plain $ PString $ show x
+
+
+-- maybe
+instance Pretty a m => Pretty (Maybe a) m where
  ppr (Just x)	= "Just " % x
  ppr Nothing	= ppr "Nothing"
 
+-- lists
+instance Pretty a m => Pretty [a] m where
+ ppr xs
+ 	= PrettyM (\m -> PList 	$ map (\x -> case ppr x of
+						PrettyM fx	-> fx m)
+				$ xs)
+-- tuples
+instance (Pretty a m, Pretty b m) 
+	=> Pretty (a, b) m where
+ ppr (a, b)	
+ 	= "(" % a % ", " % b % ")"
 
------
--- Maps
---
-instance (Pretty a, Pretty b) => Pretty (Map a b) where
- ppr m		= ppr $ Map.toList m
+instance (Pretty a m, Pretty b m, Pretty c m) 
+	=> Pretty (a, b, c) m where
+ ppr (a, b, c)
+ 	= "(" % a % ", " % b % ", " % c % ")"
+
+instance (Pretty a m, Pretty b m, Pretty c m, Pretty d m) 
+	=> Pretty (a, b, c, d) m where
+ ppr (a, b, c, d) 
+ 	= "(" % a % ", " % b % ", " % c % ", " % d % ")"
+
+-- maps
+instance (Pretty a m, Pretty b m) => Pretty (Map a b) m where
+ ppr mm 
+ 	= braces
+	$ punc ", " 
+	$ map (\(x, y) -> x % " := " % y)
+	$ Map.toList mm
  
+-- sets
+instance (Pretty a m) => Pretty (Set a) m where
+ ppr ss	
+ 	= braces
+	$ punc ", "
+	$ Set.toList ss
 
-instance (Pretty a) => Pretty (Set a) where
- ppr ss	= "{" % ", " %!% Set.toList ss % "}"
 
+-- Render ------------------------------------------------------------------------------------------
 
------------------------
--- render
----
+-- | the render state holds the current tab with and cursor position.
 data RenderS
 	= RenderS
 	{ stateTabWidth		:: Int
@@ -162,28 +270,50 @@ initRenderS
 	, stateIndent		= 0 
 	, stateCol		= 0 }
 	
-	
+-- render a pretty thing as a string	
 render	:: PrettyP -> String
 render xx	= render' initRenderS xx
 
 render'	state xx
- = let ?state = state
-   in   catMaybes
-   	$ map toString 
-	$ spaceTab state
-	$ reduce xx
+ 	= spaceTab state $ reduce state xx
 
+-- Reduce a PrettyP to a simpler list of commands in preparation for rendering.
+reduce 	:: RenderS -> PrettyP -> [PrettyP]
+reduce	state xx
+ = case xx of
+	PNil		-> [PNil]
 
-toString x
- = case x of
-	PNil		-> Nothing
- 	PChar c		-> Just c
-	PAnnot _	-> Nothing
+ 	PString	s	-> map PChar s
+
+	PChar c		-> [PChar c]
+
+	PList   zz@(PChar c:xs)	
+	 -> zz
+
+	PList 	zz	
+	 -> [PChar '[']
+	 ++ (concat $ intersperse (map PChar ", ") $ map (reduce state) zz) 
+	 ++ [PChar ']']
+
+	PAppend ss	-> concat $ map (reduce state) ss
 	
-spaceTab :: RenderS -> [PrettyP] -> [PrettyP]
+	PIndent ss	
+	 ->   [ PTabAdd (stateTabWidth state)]
+	   ++ (reduce state) ss
+	   ++ [PTabAdd (- (stateTabWidth state))]
+	 
+	PTabNext
+	 -> [PTabNext]
+	
+	PPadLeft n c p	-> [PPadLeft n c  (PAppend $ reduce state p)]
+	PPadRight n c p	-> [PPadRight n c (PAppend $ reduce state p)]
+	
+
+-- render a pretty thing as characters.	
+spaceTab :: RenderS -> [PrettyP] -> [Char]
 spaceTab state xx
  = case xx of
-	PNil :xs	
+	PNil : xs	
 	 ->    spaceTab state xs
 
  	PTabAdd i  :xs	
@@ -195,133 +325,55 @@ spaceTab state xx
 	PTabNext : xs
 	 -> let tabHere	= (stateCol state) `div` (stateTabWidth state)
 	 	tabNext	= (tabHere + 1) * (stateTabWidth state)
-		pad	= replicate (tabNext - stateCol state) $ PChar ' '
+		pad	= replicate (tabNext - stateCol state) $ ' '
 
 	 	state'	= state
 	 		{ stateCol	= tabNext }
 
-		str	= "tabHere = " ++ show tabHere 
-			++ " col  = " 	++ (show $ stateCol state)
-			++ " next = " ++ show tabNext
-			
-	   in	PAnnot str : pad ++ spaceTab state' xs
+	   in	pad ++ spaceTab state' xs
 
 	PChar '\n' : PTabAdd i : xs
 	 -> spaceTab state (PTabAdd i : PChar '\n' : xs)
 
 	PChar '\n' : xs	
-	 -> let	pad	= replicate (stateIndent state) $ PChar ' '
+	 -> let	pad	= replicate (stateIndent state) ' '
 	 	state'	= state
 	 		{ stateCol	= stateIndent state }
 
-	    in  PChar '\n' 
-	    	:  pad 	
-		++ spaceTab state' xs
-			
-	x:xs
+	    in  '\n' : (pad ++ spaceTab state' xs)
+		
+	PChar x : xs
 	 -> let state'	= state
-			{ stateCol	= (stateCol state) + 1 }
-	    in x : spaceTab state' xs
+	 		{ stateCol	= stateCol state + 1 }
+	    in  x : spaceTab state' xs
+
+	PAppend xx : xs
+	 -> spaceTab state (xx ++ xs)
+
+	PPadLeft n c p : xs
+	 -> let cs	= spaceTab state [p]
+		csLen	= length cs
+		colLen	= max csLen n
+		state'	= state { stateCol = stateCol state + colLen }
+	    in	cs ++ replicate (n - length cs) c ++ spaceTab state' xs
+	    
+	PPadRight n c p : xs
+	 -> let cs	= spaceTab state [p]
+		csLen	= length cs
+		colLen	= max csLen n
+		state'	= state { stateCol = stateCol state + colLen }
+	    in	replicate (n - length cs) c ++ cs ++ spaceTab state' xs
 
 	[]		-> []
-	
-	
-reduce 	:: (?state :: RenderS)
-	-> PrettyP -> [PrettyP]
-reduce	xx
- = case xx of
-	PNil	-> [PNil]
+		
+	_		-> "Util.Pretty.Comb: no match for " ++ show xx
 
- 	PString	s		
-	 -> map PChar s
-
-	PChar c
-	 -> [PChar c]
-
-
-	PList   zz@(PChar c:xs)	
-	 -> zz
-
-	PList 	zz	
-	 -> [PChar '[']
-	 ++ (concat $ intersperse (pcs ", ") $ map reduce zz) 
-	 ++ [PChar ']']
-
-	PAppend ss	
-	 -> concat $ map reduce ss
-	
-	PIndent ss	
-	 ->   [PTabAdd (stateTabWidth ?state)]
-	   ++ reduce ss
-	   ++ [PTabAdd (- (stateTabWidth ?state))]
-	 
-	PTabInc
-	 -> [PTabAdd (stateTabWidth ?state)]
-	 
-	PTabDec
-	 -> [PTabAdd (- (stateTabWidth ?state))]
-	 
-	PTabNext
-	 -> [PTabNext]
-
-
-pcs s	= map PChar s
-	
-
-
------------------------
--- combinators
---	
-infixr 7 %, %#>, %#<, <>
-infixr 8 %>
-infixl 9 %!%
-
-
------
-(%) 		:: (Pretty a, Pretty b) => a -> b -> PrettyP
-(%)   a b	= PAppend [ppr a, ppr b]
-(%>)  a b	= PAppend [ppr a, PIndent $ ppr b]
-(%#>) a b	= PAppend [ppr a, PTabInc, ppr b]
-(%#<) a b 	= PAppend [ppr a, PTabDec, ppr b]
-(%>>) a b	= PAppend [ppr a, PTabNext, ppr b]
-
-(<>)  a b	= a % " " % b
-parens a	= "(" % a % ")"
-	
-appendMapPretty	xx
-	= PAppend $ map ppr xx
-	
------
-(%!%)		:: (Pretty a, Pretty b)
-		=> a -> [b] -> PrettyP
-	
-(%!%) i xx	= PAppend $ intersperse (ppr i) $ map ppr xx
-
-
-------
+-- Test Code ---------------------------------------------------------------------------------------
 {-
 test1	
- = let	?state	= initRenderS
-   in   spaceTab ?state
-   	$ reduce
-	$ "fish " % "<" % ", " %!% ([1, 2, 3] :: [Int]) % ">\n" 
-		%> "dude " %>> "that\n" 
-		%  "bites fish\n" 
+ = pprStr ()
+ $ "perch " % "<" % ", " %!% ([1, 2, 3] :: [Int]) % ">\n" 
+		%> "rabbit " %>> "frog\n" 
+		%  "cat fish\n" 
 			%> "walk " % "my" % "dog\n"
-
-test1' 
-	= putStr
-	$ catMaybes
-	$ map toString
-	$ test1
 -}
-
-
-
-
-
-
-
-
-
-

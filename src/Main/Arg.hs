@@ -8,11 +8,11 @@ module Main.Arg
 
 where
 
-import Util.List
-import Util.Options
-import Util.Pretty
 import Main.Version
 import Main.Path
+import Shared.Pretty
+import Util
+import Util.Options
 
 -- | Holds command line arguments
 data Arg
@@ -230,7 +230,7 @@ helpString2 args secs secs_display
 	-- check if any unknown manual sections were asked for
 	| badSecs	<- filter (\s -> not $ elem s ("all" : "contents" : sections)) secs
 	, not $ null badSecs
-	= pprStr 
+	= pprStrPlain
 		$ "  Unknown help section(s): " % " " %!% badSecs % "\n"
 		% "   Available sections are: " % " " %!% sections % "\n\n"
 	
@@ -250,7 +250,7 @@ helpString2 args secs secs_display
 		 = []
 	 
 		-- build the help string
-	  	help	=   ddcName ++ "." ++ "\n"
+	  	help	=  ddcName ++ "." ++ "\n"
 			++ "  Usage: ddc <options..>\n" 
 			++ metaHelp
 			++ makeOptionHelp 35 secs_display options
@@ -442,8 +442,8 @@ options	=
 	, OBlank
 
 	, OFlag		DumpSourceParse		["-dump-source-parse"]		"Parsed source file."
-	, OFlag		DumpSourceDefix		["-dump-source-defix"]		"Infix applications converted to prefix."
 	, OFlag		DumpSourceRename	["-dump-source-rename"]		"Unique identifiers introduced for variables."
+	, OFlag		DumpSourceDefix		["-dump-source-defix"]		"Infix applications converted to prefix."
 	, OBlank
 
 	, OFlag		DumpDesugar		["-dump-desugar"]		"Desugared version of source code."

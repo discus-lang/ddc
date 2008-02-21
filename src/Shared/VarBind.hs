@@ -1,12 +1,10 @@
 
 module Shared.VarBind
-(
-	VarBind (..),
-	incVarBind
-)
-
+	( VarBind (..)
+	, incVarBind)
 where
 
+import Shared.Pretty
 import Util
 
 -----------------------
@@ -157,7 +155,7 @@ incVarBind	b
 	_		-> error $ "incVarBind: cannot increment " ++ show b
 
 ----
-instance Pretty VarBind where
+instance Pretty VarBind PMode where
  ppr b
   = case b of
   	XBind	s i	-> ppr $ s ++ show i

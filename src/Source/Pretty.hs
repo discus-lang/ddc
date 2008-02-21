@@ -32,10 +32,8 @@ import Type.Pretty
 -----
 stage	= "Source.Pretty"
 
------
--- prettyTop
---
-instance Pretty (Top a) where
+-- Top ---------------------------------------------------------------------------------------------
+instance Pretty (Top a) PMode where
  ppr xx
   = case xx of
 	PPragma _ es	 -> "pragma " % " " %!% es % ";\n"
@@ -83,7 +81,7 @@ instance Pretty (Top a) where
 		% "{\n"
 		%> ("\n\n" %!% 
 			(map 	(\s -> case s of 
-					SBindPats sp v xs x	-> pprStr $ SBindPats sp (v { Var.nameModule = Var.ModuleNil }) xs x
+					SBindPats sp v xs x	-> ppr $ SBindPats sp (v { Var.nameModule = Var.ModuleNil }) xs x
 					_			-> panic stage $ "pretty[Top]: malformed PClassInst\n")
 					
 				ss)
@@ -109,27 +107,26 @@ instance Pretty (Top a) where
 	 -> mode % " " % prec % " " % ", " %!% (map Var.name syms) % " ;\n"
 
 
-prettyVTT ::	Var -> 	Type -> Maybe Type	-> PrettyP
+prettyVTT ::	Var -> 	Type -> Maybe Type	-> PrettyM PMode
 prettyVTT   	v	tv	mto
-	=  v 	% "\n"
-			%> (":: " % prettyTS tv % "\n" 
-			% case mto of 
-				Nothing	-> ppr ""
-				Just to	-> ":$ " % to % "\n")
+ =  v 	% "\n"
+		%> (":: " % prettyTS tv % "\n" 
+		% case mto of 
+			Nothing	-> ppr ""
+			Just to	-> ":$ " % to % "\n")
 
 
-prettyCtor ::	(Var, [DataField (Exp a) Type])	-> PrettyP
+prettyCtor ::	(Var, [DataField (Exp a) Type])	-> PrettyM PMode
 prettyCtor	xx
  = case xx of
  	(v, [])		-> ppr v
 	(v, fs)		
 	 -> v % " {\n"
-		%> ("\n" %!% (map pprStr fs)) % "\n"
+		%> ("\n" %!% (map pprStrPlain fs)) % "\n"
 		% "}"
------
--- Foreign
---
-instance Pretty (Foreign a) where
+
+-- Foreign -----------------------------------------------------------------------------------------
+instance Pretty (Foreign a) PMode where
  ppr ff
   = case ff of
   	OImport f		-> "import " % f
@@ -145,10 +142,9 @@ instance Pretty (Foreign a) where
 	OCCall mS v tv 
 	 -> ppr "@CCall"
 
------
--- InfixMode
---
-instance Pretty (InfixMode a) where
+
+-- InfixMode ---------------------------------------------------------------------------------------
+instance Pretty (InfixMode a) PMode where
  ppr mode
   = case mode of
  	InfixLeft	-> ppr "infixl"
@@ -156,14 +152,12 @@ instance Pretty (InfixMode a) where
 	InfixNone	-> ppr "infix "
 	InfixSuspend	-> ppr "@InfixSuspend"
 	
------
--- Exp
---
-instance Pretty (Exp a) where
+
+-- Exp ---------------------------------------------------------------------------------------------
+instance Pretty (Exp a) PMode where
  ppr xx
   = case xx of
   	XNil		 -> ppr "@XNil"
---	XAnnot aa e	 -> aa % prettyXB e
 
 	XUnit sp	 -> ppr "()"
 
@@ -301,7 +295,8 @@ instance Pretty (Exp a) where
 	XWildCard sp		-> ppr "_"
 
 
-instance Pretty (Proj a) where
+-- Proj --------------------------------------------------------------------------------------------
+instance Pretty (Proj a) PMode where
  ppr f
   = case f of
   	JField  sp l	-> "." % l
@@ -348,15 +343,9 @@ prettyX_appR xx
 	XApp sp e1 e2	->  "(" % prettyX_appL e1 % " " % prettyX_appR e2 % ")"
 	e 		-> prettyXB e
 
------
-{-instance Pretty Annot where
- ppr xx 
-  = case xx of
-  	ATypeVar   v	-> "@T " % v
-	AEffectVar v	-> "@E " % v
--}
------
-instance Pretty (Alt a) where
+
+-- Alt ---------------------------------------------------------------------------------------------
+instance Pretty (Alt a) PMode where
  ppr a
   = case a of
 	APat 	 sp p1 x2	-> p1	% "\n -> " % prettyX_naked x2 % ";"
@@ -366,16 +355,18 @@ instance Pretty (Alt a) where
 
 	ADefault sp x		-> "_ ->" % x % "\n"
 	
------
-instance Pretty (Guard a) where
+
+-- Guard -------------------------------------------------------------------------------------------
+instance Pretty (Guard a) PMode where
  ppr gg
   = case gg of
   	GCase	sp pat		-> "- " % pat
 	GExp	sp pat exp	-> " "  % pat %>> " <- " % exp
 	GBool	sp exp		-> " "  % ppr exp
 
------	
-instance Pretty (Pat a) where
+
+-- Pat ---------------------------------------------------------------------------------------------
+instance Pretty (Pat a) PMode where
  ppr ww
   = case ww of
   	WVar 	sp v		-> ppr v
@@ -390,14 +381,17 @@ instance Pretty (Pat a) where
 	WCons   sp x xs		-> x % " : " % xs
 	WList   sp ls		-> "[" % ", " %!% ls % ")"
 
-instance Pretty (Label a) where
+
+-- Label -------------------------------------------------------------------------------------------
+instance Pretty (Label a) PMode where
  ppr ll
   = case ll of
   	LIndex sp i		-> "." % i
 	LVar   sp v		-> "." % v
 
------
-instance Pretty (LCQual a) where
+
+-- LCQual ------------------------------------------------------------------------------------------
+instance Pretty (LCQual a) PMode where
  ppr q
   = case q of
   	LCGen False p x	-> p % " <- " % x
@@ -405,12 +399,13 @@ instance Pretty (LCQual a) where
 	LCExp x		-> ppr x
 	LCLet ss	-> "let { " % ss % "}"
 
------
-instance Pretty (Stmt a) where
+
+-- Stmt --------------------------------------------------------------------------------------------
+instance Pretty (Stmt a) PMode where
  ppr xx
   = case xx of
 	SStmt sp  x		-> prettyX_naked x 					% ";"
-	SBindPats sp v [] x	-> v % " " 		%>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
+	SBindPats sp v [] x	-> padL 8 v % " " %>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
 	SBindPats sp v ps x	
 		-> v % " " % " " %!% map prettyXB ps 
 		%>> (spaceDown x) % "\n = " % prettyX_naked x 	% ";"

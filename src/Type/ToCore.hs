@@ -125,8 +125,6 @@ toCoreT' table tt
 	-- wildcards	
 	T.TWild k		-> C.TWild (toCoreK k)
 
-	T.TNode _ t		-> down t
-
 	_ -> panic stage $ "toCoreT: failed to convert " ++ show tt
 
 -----
