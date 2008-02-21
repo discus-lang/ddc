@@ -36,9 +36,12 @@ import Data.Set			(Set)
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, VarBind, NameSpace(..), (=~=), Module(..))
 import Shared.VarPrim		(bindPrimVar)
+import Shared.Pretty
 
 import Shared.Error
 import Source.Error
+
+import qualified Debug.Trace	as Debug
 
 -----
 stage = "Source.RenameM"
@@ -77,9 +80,6 @@ data	RenameS
 	  -- Fresh variable generators
 	, stateGen		:: Map NameSpace  VarBind			
 
-	  -- The path of the current module.
-	, stateCurrentModule	:: Module
-
 	  -- A stack of bound variables
 	  --	Each level of the stack contains all the vars bound by the same construct, 
 	  --	eg, in (\x y z -> e), the vars {x, y, z} are all at the same level.
@@ -111,8 +111,6 @@ initRenameS
 				, (NameField,	Var.XBind "fR"  0) 
 				, (NameClass,	Var.XBind "aR"  0) ] 
 
-	, stateCurrentModule	= ModuleNil
-			
 	-- Each NameSpace starts with an empty toplevel.
 	, stateStack		= Map.fromList
 				$ zip	
@@ -129,6 +127,10 @@ initRenameS
 	, stateObjectVar 	= []
 	}
 
+-- | Add an error to the renamer state
+addError :: Error -> RenameM ()
+addError err
+ 	= modify $ \s -> s { stateErrors = stateErrors s ++ [err] }
 
 -- | Add a message to the trace in the renamer state.
 traceM	::  String -> RenameM ()
@@ -288,10 +290,11 @@ lookupV		= lookupN NameValue
 
 -- | Link this var to the binding occurance with the same name.
 linkBoundVar 
-	:: Bool 		-- whether to look in enclosing scopes
-	-> NameSpace 		-- namespace to look in
-	-> Var 			-- a variable with the name we're looking for
-	-> RenameM (Maybe Var)
+	:: Bool 			-- whether to look in enclosing scopes
+	-> NameSpace 			-- namespace to look in
+	-> Var 				-- a variable with the name we're looking for
+	-> RenameM 
+		(Maybe (Var, Var))	-- binding occurance, renamed var.
 
 linkBoundVar enclosing space var
  = do	
@@ -306,11 +309,13 @@ linkBoundVar enclosing space var
 	 -- found it
 	 Just bindingVar	
 	  -> return 
-	  $ Just var
-		{ Var.bind 	 = Var.bind 	  bindingVar
-		, Var.nameModule = Var.nameModule bindingVar
-		, Var.nameSpace  = Var.nameSpace  bindingVar 
-		, Var.info       = Var.info var ++ [Var.IBoundBy bindingVar]}
+	  $  Just 
+	    	( bindingVar
+		, var
+			{ Var.bind 	 = Var.bind 	  bindingVar
+			, Var.nameModule = Var.nameModule bindingVar
+			, Var.nameSpace  = Var.nameSpace  bindingVar 
+			, Var.info       = Var.info var ++ [Var.IBoundBy bindingVar]})
 				
 	 -- no binding occurance :(
 	 Nothing
@@ -359,46 +364,61 @@ lookupN	 space var
 					++ [ErrorUndefinedVar var { Var.nameSpace = space }] }
 		return var
 		
-	 Just var'
+	 Just (_, var')
 	  -> 	return var'
 
 
--- Lazy bind
+-- Lazy bind ---------------------------------------------------------------------------------------
 --	See if this variable name is already bound in the current scope.
 --	If it isn't then bind it with this namespace, otherwise
 --	rename it after the one that's already there.
 
 -- | Lazy bind, using the name and namespace of this variable
 lbindZ :: Var -> RenameM Var
-lbindZ v	= lbindN (Var.nameSpace v) v
+lbindZ v	= lbindN' True (Var.nameSpace v) v
+
+lbindN space v	= lbindN' True space v
+
+-- | Lazy bind, shadowing any variable with the same name that is defined in an enclosing scope.
+lbindZ_shadow :: Var -> RenameM Var
+lbindZ_shadow v	= lbindN' False (Var.nameSpace v) v
+
+lbindN_shadow :: NameSpace -> Var -> RenameM Var
+lbindN_shadow space var = lbindN' False space var
 
 -- | Lazy bind in this namespace
-lbindN :: NameSpace -> Var -> RenameM Var
-lbindN space var
- = do 	mVar	<- linkBoundVar True space var
+lbindN' withEnclosing space var
+ = do 	mVar	<- linkBoundVar withEnclosing space var
 	
-	case mVar of
-	 Just var	-> return var
-	 Nothing	-> bindN space var
+	let result
+
+		-- we don't do real namespacing yet, so we if we see the same var
+		--	defined in different modules we'll treat is as an error.
+		| Just (bindingVar, var')	<- mVar
+		, Var.nameModule var /= ModuleNil
+		, Var.nameModule var /= Var.nameModule var'
+		= do	addError
+				$ ErrorRedefinedVar
+					{ eFirstDefined = bindingVar
+					, eRedefined	= var }
+			return var
+		
+		-- var was already bound
+		| Just (bindingVar, var')	<- mVar
+		= return var'
+		
+		-- var wasn't bound yet
+		| otherwise
+		= bindN space var
+		
+	result
 
 -- | Lazy bind in the value namespace
 lbindV :: Var -> RenameM Var
 lbindV 		= lbindN NameValue
 
 
--- | Lazy bind, shadowing any variable with the same name that is defined in an enclosing scope.
-lbindZ_shadow :: Var -> RenameM Var
-lbindZ_shadow v	= lbindN (Var.nameSpace v) v
-
-lbindN_shadow :: NameSpace -> Var -> RenameM Var
-lbindN_shadow space var
- = do	mVar	<- linkBoundVar False space var
- 
- 	case mVar of
-	 Just var	-> return var
-	 Nothing	-> bindN space var
-
-
+-- Scope management --------------------------------------------------------------------------------
 -- | Push this space of names down to create a local scope.
 pushN :: NameSpace -> RenameM ()
 pushN space

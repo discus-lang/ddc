@@ -1,3 +1,8 @@
+./test/Error/Renamer/Redefined/Main.ds:32:0
+     Redefined variable 'Main.force'
+          in namespace: Value
+      first defined at: ./library/Base/Thunk.di:85:1
+
 ./test/Error/Renamer/Redefined/Main.ds:11:13
      Redefined variable 'x'
           in namespace: Value

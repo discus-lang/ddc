@@ -19,8 +19,6 @@ import Shared.VarUtil		(isCtorName)
 import Shared.Pretty
 import Shared.Base
 
-import qualified Debug.Trace	as Debug
-
 import Source.Exp
 import Source.Util
 import Source.Horror
@@ -31,52 +29,52 @@ import Source.Error
 import Type.Util
 import Type.Plate.Collect
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+import qualified Debug.Trace	as Debug
+
 -----
 stage	= "Source.Rename"
 
 -- Tree --------------------------------------------------------------------------------------------
 renameTrees
-	:: [(Module, Tree SourcePos)]
-	-> RenameM [(Module, Tree SourcePos)]
+	-- | the modules to rename.
+	--   the current module should be first, and all the imported ones afterwards.
+	:: [(Module, Tree SourcePos)]		
 
-renameTrees 
-	(mTree1: mTreeHs)
+	-> RenameM 
+		[(Module, Tree SourcePos)]	
+
+renameTrees mTrees@(mTree1 : mTreeImports)
  = do
- 	let mTree1'	= mTree1
+	-- bind all the top-level names.
+	--	Do the imports first so if we have name clashes at top level the vars
+	--	in the error messages will come out in the right order.
+	mapM_ bindTopNames mTreeImports
+	bindTopNames mTree1
+	
+	-- now rename all the trees
+	mTrees'	<- mapM renameTree mTrees
+	return	mTrees'
 
-	mTreeHs'	<- renameTrees' mTreeHs	
-	[mTree1']	<- renameTrees' [mTree1']	
-				
-	return 	$ (mTree1' : mTreeHs')
-
-renameTrees' mTrees
+-- Add the top-level names from this module to the renamer state
+bindTopNames :: (Module, Tree SourcePos) -> RenameM ()
+bindTopNames (moduleName, tree)
  = do
-	-- Slurp out all the top-level names.
-	let topNamesHs	= concat 
-			$ map (\(m, tree) -> [(v, m) | v <- catMap slurpTopNames tree])
-			$ mTrees
-		
-	-- Add them to the rename state.
-	mapM_	(\(v, m) 
-		  -> lbindZ 
-			v { Var.nameModule	= m })
-		topNamesHs
-		
-	-- Now rename trees
-	mTrees'	<- mapM (\(m, tree) 
-			-> do	tree' <- renameTree m tree
-				return (m, tree'))
-				mTrees
-				
-	return mTrees'
- 	
+ 	-- Slurp out all the top-level names.	
+	let vsTop	= catMap slurpTopNames tree
+	
+	-- Add them to the rename state, along with the module name so it gets
+	--	set on linked vars. 
+	mapM_ (\v -> lbindZ v { Var.nameModule = moduleName }) vsTop
 
-renameTree :: Module -> Tree SourcePos -> RenameM (Tree SourcePos)
-renameTree m tree
- = do	
- 	modify (\s -> s { stateCurrentModule = m })
-	tree'	<- rename tree
-	return tree'
+	return ()
+
+-- Rename a source tree in this module
+renameTree :: (Module, Tree SourcePos) -> RenameM (Module, Tree SourcePos)
+renameTree (moduleName, tree)
+ = do	tree'	<- rename tree
+	return	(moduleName, tree')
 	
 -- Top ---------------------------------------------------------------------------------------------
 instance Rename (Top SourcePos) where
@@ -87,7 +85,6 @@ instance Rename (Top SourcePos) where
 
 	PModule sp m
 	 -> do 	m'	<- rename m
-		modify (\s -> s { stateCurrentModule = m' })
 		return	$ PModule sp m'
 
  	PImportExtern sp v tv to
@@ -176,9 +173,7 @@ instance Rename (Top SourcePos) where
 	 	-- The way the projection dict is parsed, the projection funtions end up in the wrong namespace, 
 		--	NameValue. Convert them to NameField vars here.
 		--	
-	 	m	<- gets stateCurrentModule
-		let fixupV v	= v 	{ Var.nameSpace 	= NameField
-					, Var.nameModule 	= m }
+		let fixupV v	= v 	{ Var.nameSpace 	= NameField }
 		
 		let ssF		= map (\s -> case s of 
 					SSig  sp v t		-> SSig   sp 	(fixupV v) t
@@ -274,7 +269,6 @@ renameCtor	(v, fs)
 instance Rename (DataField (Exp SourcePos) Type) where
  rename df
   = do	
- 	m	<- gets stateCurrentModule
 	let fixupV v	= v 	{ Var.nameSpace 	= NameField
 				, Var.nameModule 	= ModuleNil }
 
@@ -738,8 +732,7 @@ renameSs	ss
 	-- Rename each statement.
 	ss'	<- mapM rename ss
 
-	return 	$ Debug.trace "hello"
-		$ ss'
+	return ss'
 
 		
 

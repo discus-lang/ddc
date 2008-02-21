@@ -122,7 +122,7 @@ testSourceOK_single pathB isMain moreDDCArgs
 testSourceOK_comparison path pathB isMain setups@(setupBase: setupOther)
  = do 	
   	-- do the tests
- 	out	$ "  - Comparison: " % (padR 50 path) 
+ 	out	$ "  - Comparison: " % (padL 50 path) 
 
  	out	$ "\n"
 	
@@ -221,7 +221,7 @@ testSourceFail
 
 testSourceFail path pathB isMain
  = do 	-- do the tests
- 	out	$ "    " % (padR 50 path) 
+ 	out	$ "    " % (padL 50 path) 
 
  	compileTime	<- compileSourceFail pathB isMain
 

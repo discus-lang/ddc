@@ -28,3 +28,14 @@ funTE 	:: forall a %r1 !e1 !e1
 	.  Tuple2 %r1 (a -(!e1)> a);
 	
 
+-- this should clash with the force function in Base.Thunk
+force	= 27;
+
+-- 'sin' is in the math library, but should be shadowed.
+fun4 sin 	= sin + 1;
+
+-- use of 'fun5' in fun6 should shadow the one at toplevel
+dude	= 5;
+fun5 dude 	= print dude;
+fun6 fun5	= fun5 + 1;
+

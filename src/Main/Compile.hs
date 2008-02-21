@@ -681,4 +681,4 @@ handleStage name ex
 dumpImportDef def
 	= putStr	
 	$ pprStrPlain
- 	$ "        " % (padR 30 $ pprStrPlain $ idModule def) % " " % idFilePathDI def % "\n"
+ 	$ "        " % (padL 30 $ pprStrPlain $ idModule def) % " " % idFilePathDI def % "\n"
