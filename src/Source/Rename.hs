@@ -16,6 +16,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace (..), Module(..))
 import Shared.VarUtil		(isCtorName)
+import Shared.Pretty
 import Shared.Base
 
 import qualified Debug.Trace	as Debug
@@ -125,7 +126,16 @@ instance Rename (Top SourcePos) where
 		return	$ PEffect sp v' k
 
 	PStmt	s
-	 -> do	s'	<- rename s
+	 -> -- local
+	    do	{-(case takeStmtBoundV s of
+	  	 	Just v	-> do 
+				lbindN_shadow NameValue v
+				return ()
+				
+			Nothing	-> 
+				return ())
+	 	-}
+	 	s'	<- rename s
 		return	$ PStmt s'
 
 	
@@ -714,7 +724,7 @@ instance Rename (Stmt SourcePos) where
 --	ie 	not True	= False
 --		not False	= True
 --
---	It is an error for non-consecutive bindings to bind the same variable.
+--	BUGS: make it an error for non-consecutive bindings to bind the same variable.
 ---
 renameSs ::	[Stmt SourcePos] -> RenameM [Stmt SourcePos]
 renameSs	ss
@@ -722,11 +732,15 @@ renameSs	ss
  	let vsBound	= catMaybes $ map takeStmtBoundV ss
 
 	-- create fresh binding occurances to shadow anything with the same name bound above.
-	mapM_ (lbindN_shadow NameValue) $ nub vsBound
-	
+	mapM_ (lbindN_shadow NameValue) 
+		$ nub vsBound
+
 	-- Rename each statement.
 	ss'	<- mapM rename ss
-	return	ss'
+
+	return 	$ Debug.trace "hello"
+		$ ss'
+
 		
 
 -----------------------

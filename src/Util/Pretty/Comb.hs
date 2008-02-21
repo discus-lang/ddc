@@ -10,6 +10,7 @@ module Util.Pretty.Comb
 	, punc,  (%!%)
 	, padRc, padR
 	, padLc, padL
+	, ifMode
 
 	, (%>)
 	, (%>>)
@@ -35,8 +36,8 @@ import Data.Set			(Set)
 import GHC.Exts
 
 -- | The pretty printer class
---	A 'PrettyMode' data type should be defined by the caller to manage the various
---	ways it would want to print a structure.
+--	A 'PrettyMode' data type should be defined by the caller
+--	to manage the various ways it would want to print a structure.
 --
 class Pretty a mode | a -> mode where
  ppr		:: a -> PrettyM mode
@@ -149,6 +150,22 @@ padLc :: Pretty a m => Int -> Char -> a -> PrettyM m
 padLc n c x
  = case ppr x of
  	PrettyM fx -> PrettyM (\m -> PPadLeft n c (fx m))
+
+
+-- Choose a pretty thing based on the mode.
+ifMode 
+	:: Pretty a m
+	=> (m -> Bool)	-- mode predicate
+	-> a		-- option if predicate is true
+	-> a		-- option if predicate is false
+	-> PrettyM m
+
+ifMode fun x y
+ = case (ppr x, ppr y) of
+ 	(PrettyM fa, PrettyM fb)
+		-> PrettyM (\m -> if fun m 
+					then fa m
+					else fb m)
 
 
 -- Derived Combinators -----------------------------------------------------------------------------
@@ -272,7 +289,8 @@ initRenderS
 	
 -- render a pretty thing as a string	
 render	:: PrettyP -> String
-render xx	= render' initRenderS xx
+render xx	
+	= render' initRenderS xx
 
 render'	state xx
  	= spaceTab state $ reduce state xx

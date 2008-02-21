@@ -24,6 +24,13 @@ import Shared.Pretty
 import System.IO
 import Util
 
+-- | Convert an arg into the pretty mode it enables
+takePrettyMode :: Arg -> Maybe PrettyMode
+takePrettyMode aa
+ = case aa of
+ 	DumpPrettyUnique	-> Just $ PrettyUnique
+	_			-> Nothing
+
 -----
 -- dumpST
 --	Dump a source tree 
@@ -33,10 +40,12 @@ dumpST flag name sourceTree
 	let [ArgPath paths]	
 		= filter (=@= ArgPath{}) ?args
 
+	let pprMode	= catMaybes $ map takePrettyMode ?args
+
  	when (elem flag ?args)
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".ds")
-		(concat $ map pprStrPlain
+		(concat $ map (pprStr pprMode)
 			$ sourceTree))
 	
 	return ()

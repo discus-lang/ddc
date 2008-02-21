@@ -95,7 +95,7 @@ enterDir path_
 
 	-- if the path name contains -skip then skip over the whole dir
 	| isInfixOf "-skip" path_
-	= do	out	$ "    " % padR 50 path_ % "(skipped)\n"
+	= do	out	$ "    " % padL 50 path_ % "(skipped)\n"
 		return ()
 
 	| otherwise

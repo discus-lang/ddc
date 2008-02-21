@@ -1,6 +1,6 @@
 module Shared.Pretty
 	( Pretty(..)
-	, PrettyFlag(..)
+	, PrettyMode(..)
 	, PMode
 	, pprStrPlain)
 	
@@ -9,9 +9,9 @@ where
 import Util
 
 -- The pretty printing modes that we support
-type PMode	= [PrettyFlag]
+type PMode	= [PrettyMode]
 
-data PrettyFlag
+data PrettyMode
 	= PrettyUnique		-- annotate vars with their uniqueBinds
 	deriving (Eq, Show)
 

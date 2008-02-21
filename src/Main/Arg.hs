@@ -78,7 +78,10 @@ data Arg
 	| KeepCFiles
 	| KeepOFiles
 
-	-- dump
+	-- dump pretty flags
+	| DumpPrettyUnique	
+
+	-- things that can be dumped
 	| DumpAll
 
 	| DumpSourceParse
@@ -437,6 +440,8 @@ options	=
 	-- dump
 	, OGroup	"dump"
 			"Dumping/Tracing."
+	
+	, OFlag		DumpPrettyUnique	["-dump-pretty-unique"]		"Append unique identifiers to variables."
 	
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."
 	, OBlank

@@ -74,7 +74,7 @@ testSourceOK path pathB isMain
 	case setups of
 	 -- no setups, just use default options
 	 [] -> do
-		out	$ "    " % (padR 50 path) 	
+		out	$ "    " % (padL 50 path) 	
 		testSourceOK_single pathB isMain []
 		return ()
 	 
@@ -89,7 +89,7 @@ testSourceOK_single pathB isMain moreDDCArgs
 
  	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
 
-	out	$ (padL 6 $ pprStrPlain $ compileTime)
+	out	$ (padR 6 compileTime)
 		% "s)"
 
 	-- check any .di file
@@ -104,7 +104,7 @@ testSourceOK_single pathB isMain moreDDCArgs
 	 	-- run the produced binary
 		execTime	<- executeProg pathB
 		
-		out	$ (padL 6 $ pprStrPlain $ execTime)
+		out	$ (padR 6 execTime)
 			% "s)"
 
 		-- check any stdout file
@@ -158,7 +158,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 
  	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
 
-	out	$ (padL 6 $ pprStrPlain $ compileTime)
+	out	$ (padR 6 compileTime)
 		% "s)"
 
 	-- check any .di file
@@ -173,7 +173,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 	 	-- run the produced binary
 		execTime	<- executeProg pathB
 		
-		out	$ (padL 6 $ pprStrPlain $ execTime)
+		out	$ (padR 6 execTime)
 			% "s)"
 
 		-- check any stdout file
@@ -191,7 +191,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 	let rCompile :: Double	= fromIntegral (psecsOfClockTime compileTime) 
 				/ fromIntegral (psecsOfClockTime baseCompileTime)
 
-	out	$ " " % (padL 6 $ take 4 $ pprStrPlain $ rCompile)
+	out	$ " " % (padR 6 $ take 4 $ pprStrPlain $ rCompile)
 
 	-- work out percentage change in exec time
 	when isMain 
@@ -201,7 +201,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 		let rExec :: Double	= fromIntegral (psecsOfClockTime execTime) 
 					/ fromIntegral (psecsOfClockTime baseExecTime)
 	
-		out	$ " " % (padL 6 $ take 4 $ pprStrPlain $ rExec)
+		out	$ " " % (padR 6 $ take 4 $ pprStrPlain $ rExec)
 
 	
 	out "\n"
@@ -227,7 +227,7 @@ testSourceFail path pathB isMain
 
 	-- print the compile time
 	out	$ "comp("
-		% (padL 6 $ pprStrPlain $ compileTime)
+		% (padR 6 compileTime)
 		% "s)"
 	
 	-- check the error 

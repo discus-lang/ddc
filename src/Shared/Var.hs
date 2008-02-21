@@ -80,51 +80,57 @@ loadSpaceQualifier var
 	Just '$'	-> var { nameSpace = NameClosure, name = tail (name var) }
 	_		-> var
 
------
--- Pretty printing.
---
+
+-- Pretty print a variable
 instance Pretty Var PMode where
  ppr v
- 	= case nameModule v of
-		ModuleNil		-> ppr $ prettyVarN v
-		ModuleAbsolute ns	-> 	 "." %!% ns % "." % prettyVarN v
-		ModuleRelative ns	-> "." % "." %!% ns % "." % prettyVarN v
+  = case nameModule v of
+	ModuleNil		-> ppr $ pprVarSpaced v
+	ModuleAbsolute ns	-> 	 punc "." ((map ppr ns) ++ [pprVarSpaced v])
+	ModuleRelative ns	-> "." % punc "." ((map ppr ns) ++ [pprVarSpaced v])
  
- 
-prettyVarN v
+pprVarSpaced v
   = case nameSpace v of
-	NameNothing	-> "??" ++ name v
+	-- if no namespace print ?? as a warning
+	NameNothing	-> "??" % pprVarName v
 
   	NameValue
 	 -> case name v of
 	  	(v1:_)
- 	 	 | not $ isAlpha v1	-> "(" ++ name v ++ ")" 
-		 | otherwise		->  name v	
+ 	 	 | not $ isAlpha v1	-> parens $ pprVarName v
+		 | otherwise		-> pprVarName v
 
 		[] -> panic stage $ "prettyVarN: null var " % show v
 
 	NameType
 	 -> case name v of
 	  	(v1:_)
- 	 	 | not $ isAlpha v1	-> "(" ++ name v ++ ")" 
-		 | otherwise		->  name v	
+ 	 	 | not $ isAlpha v1	-> parens $ pprVarName v
+		 | otherwise		-> pprVarName v
 
 		[] -> panic stage $ "prettyVarN: null var " % show v
 
-	NameRegion	-> "%" ++ name v
-	NameEffect	-> "!" ++ name v
-	NameClosure	-> "$" ++ name v
+	NameRegion	-> "%" % pprVarName v
+	NameEffect	-> "!" % pprVarName v
+	NameClosure	-> "$" % pprVarName v
 
 	-- Classes/witness,
-	--	Prepent a + to witness variables, these only show up in the core.
+	--	Prepend a + to witness variables, these only show up in the core.
 	--	
 	NameClass	
 	 -> let	(x:_)	= name v
 	    in	if isUpper x 
-	   		then name v
-	   		else "+" ++ name v
+	   		then pprVarName v
+	   		else "+" % pprVarName v
 
-	_ 		-> name v	 
+	_ 		-> pprVarName v	 
+
+pprVarName v
+ = ifMode (elem PrettyUnique)	-- append unique binds if requested
+ 	(name v % "_" % bind v)
+	(ppr $ name v)
+
+
 
 -----------------------
 -- VarInfo

@@ -52,7 +52,7 @@ parseArgs args	= Options.munch options $ Options.tokenise $ catInt " " args
 instance Pretty ClockTime PMode where
  ppr (TOD sec_ psec_)
   = let	psecs	= sec_ * 10^12 + psec_
-    in	(psecs `div` 10^12) % "." % (take 3 $ (pprStrPlain $ padLc 12 '0' $ show $ psecs `mod` 10^12))
+    in	(psecs `div` 10^12) % "." % (take 3 $ (pprStrPlain $ padRc 12 '0' $ show $ psecs `mod` 10^12))
 
 instance Num ClockTime where
  (TOD s1 p1) - (TOD s2 p2)	= TOD (s1 - s2) (p1 - p2)
