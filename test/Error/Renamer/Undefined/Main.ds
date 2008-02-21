@@ -1,9 +1,19 @@
 
 -- Checks renamer error reporting.
---	These expressions include undefined vars.
---
+--	These expressions include unbound vars.
 
+-- y is not bound
 fun1	= \x -> y;
+
+-- z is not bound
 fun2	= case z of { Tuple2 x y -> x; };
 
-
+-- $c0 is not bound
+foreign import extern "primSuspend1"
+ suspend1_wibble 
+	:: forall a b !e1
+	.  (a -(!e1 $c0)> b) -> a -($c1)> b
+	:- $c1	= f : $c0
+	,  Pure  !e1
+	,  LazyH b
+	:$ Obj -> Obj -> Obj;

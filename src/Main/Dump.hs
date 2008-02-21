@@ -29,6 +29,7 @@ takePrettyMode :: Arg -> Maybe PrettyMode
 takePrettyMode aa
  = case aa of
  	DumpPrettyUnique	-> Just $ PrettyUnique
+	DumpPrettyTypeSpaces	-> Just $ PrettyTypeSpaces
 	_			-> Nothing
 
 -----

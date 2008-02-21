@@ -105,8 +105,15 @@ pprVarSpaced v
 	NameType
 	 -> case name v of
 	  	(v1:_)
- 	 	 | not $ isAlpha v1	-> parens $ pprVarName v
-		 | otherwise		-> pprVarName v
+ 	 	 | not $ isAlpha v1	
+		 -> ifMode (elem PrettyTypeSpaces)
+		 	("*" % (parens $ pprVarName v))
+			(parens $ pprVarName v)
+
+		 | otherwise		
+		 -> ifMode (elem PrettyTypeSpaces)
+		 	("*" % pprVarName v)
+			(pprVarName v)
 
 		[] -> panic stage $ "prettyVarN: null var " % show v
 

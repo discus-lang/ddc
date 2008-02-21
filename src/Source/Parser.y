@@ -211,21 +211,10 @@ top
 	| 'project' typeA 'where' '{' bindSigs '}'
 	{ [PProjDict (spTP $1) $2 $5]		}
 
-	-- type sigs
---	| pVar '::' type 	
---	{ [PType (spTP $2) (vNameV $1) $3]						}
-		
 	-- statements
 	| bindSig
 	{ [PStmt $1] }
 
-{-	| expApps '=' exp 				
-	{ [PStmt (SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3)]		}
-
-	|  expApps matchAlts
-	{ let sp	= spX (head $1)
-	  in  PStmt (SBindPats sp (checkVarSP sp $ head $1) (tail $1) (XMatch sp $2)	}
--}
 
 -----
 -- Foreign
@@ -260,12 +249,7 @@ module
 						
 		++ [Var.name $1]
 	}
-{-
-module_parts
-	:: { [String] }
-	: CON 					{ let K.Con str = token $1 in [str]	}
-	| CON '.' module_parts			{ let K.Con str = token $1 in str : $3	}
--}
+
 module_semi
 	:: { [Module] }
 	: {- empty -}				{ [] 					}
@@ -399,10 +383,6 @@ expApps_more
 	
 	| symbol expApps_more			{ XOp (spV $1) (vNameV $1) : $2		}
 	| expApp expApps_more			{ $1 : $2				}
-
-
---	: expApp expApps_more			{ $1 : $2				}
---	| expApp symbol expApps_more		{ $1 : XOp (spV $2) (vNameV $2) : $3	}
 
 expAppZs
 	:: { [Exp SP] }
@@ -788,16 +768,6 @@ typeN_Scp
 	: typeN						{ [$1]					}
 	| typeN ',' typeN_Scp				{ $1 : $3				}
 
------
--- typeArg_Ss	
---	:: { [Type] }
---	: typeArg					{ [$1]					}
---	| typeArg typeArg_Ss				{ $1 : $2				}
-
--- typeArg	
---	:: { Type }
---	: typeZ						{ $1					}
-
 
 -- quantified Vars
 quantVars
@@ -1131,17 +1101,20 @@ spV var
 --	If it has already been set differently then panic
 vNameN :: NameSpace -> Var -> Var
 vNameN space v
+	-- var has no namespace, so give it one
 	| Var.nameSpace v == NameNothing
 	= v { Var.nameSpace = space }
 
+	-- var had a different namespace, oh oh.
 	| Var.nameSpace v /= space
 	= panic stage
 	$ "vNameN: conflicting namespace for variable " % v	% "\n"
 	% "   name space was     " % Var.nameSpace v		% "\n"
 	% "   tried to set it to " % space			% "\n"
 	
+	-- var already has the right namespace
 	| otherwise
-	= v { Var.nameSpace = NameValue }
+	= v 
 
 vNameV		= vNameN NameValue
 vNameT		= vNameN NameType

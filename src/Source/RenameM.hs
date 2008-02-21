@@ -4,6 +4,7 @@ module Source.RenameM
 	, RenameM, runRename
 	, initRenameS
 	, traceM
+	, addError
 
 	, pushObjectVar
 	, popObjectVar

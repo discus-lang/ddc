@@ -7,10 +7,6 @@ module Source.Rename
 where
 
 -----
-import qualified Debug.Trace	as Debug
-import Util
-
------
 import Shared.Error		(panic)
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
@@ -19,19 +15,24 @@ import Shared.VarUtil		(isCtorName)
 import Shared.Pretty
 import Shared.Base
 
-import Source.Exp
 import Source.Util
 import Source.Horror
 import Source.RenameM
 import Source.Slurp
 import Source.Error
+import Source.Exp
 
 import Type.Util
 import Type.Plate.Collect
+import Type.Plate.FreeVars
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 import qualified Debug.Trace	as Debug
+
+import qualified Debug.Trace	as Debug
+import Util
+
 
 -----
 stage	= "Source.Rename"
@@ -736,76 +737,7 @@ renameSs	ss
 
 		
 
------------------------
--- renamePat
--- |	Rename a pattern. 
---
-{-
-renamePat 
-	:: Exp SourcePos	-- expression to rename
-	-> RenameM 
-		( Exp SourcePos	-- renamed expression
-		, [Var])	-- bound object vars
-
-renamePat	e
- = case e of
- 	XApp sp e1 e2
-	 -> do
-	 	(e1', objVs1)	<- renamePat e1
-		(e2', objVs2)	<- renamePat e2
-
-		return	( XApp sp e1' e2'
-			, objVs1 ++ objVs2)
-
-	XTuple sp xs
-	 -> do	(xs', vss)	<- liftM unzip
-	 			$  mapM renamePat xs
-				
-		return	(XTuple sp xs', concat vss)
-		
-	XConst sp c
-	 -> 	return	( XConst sp c, [])
-	 
-	XVar sp v
-	 -> if Var.isCtorName v
-
-		-- a constructor pattern
-	 	then do
-			v'	<- lookupV v
-			return	(XVar sp v', [])
-
-		-- a bound variable
-		else do
-			v'	<- bindV v
-			return	(XVar sp v', [])
-
-	XObjVar sp v
-	 ->  do
-	 	v'	<- bindV v
-		return	( XVar sp v'
-			, [v'])
-
-	XDefix sp xx
-	 -> do	(xx', vs)	<- renamePats [] [] xx
-	 	return	( XDefix sp xx'
-			, vs)
-	
-	XOp sp v
-	 -> 	return	( XOp sp v
-	 		, [])
-
-	_ -> panic stage
-		$ "renamePat: no match for " % show e
-
-renamePats bound done []	
- = 	return (done, bound)
- 
-renamePats bound done (x:xs)
- = do	(x', boundHere)	<- renamePat x
- 	renamePats (bound ++ boundHere) (done ++ [x']) xs
--}
-
------
+-- Type --------------------------------------------------------------------------------------------
 instance Rename Type where
  rename tt
   = case tt of
@@ -815,7 +747,24 @@ instance Rename Type where
 			t'	<- rename t
 			return	(vs', t')
 
-		return	$ TForall vs' t'
+		let tt'		= TForall vs' t'
+		return tt'
+{-
+		-- If a type contains an explicit forall then all free vars must be bound by it.
+		-- .. this doesn't work for class definitions.
+		-- .. perhaps we should use the renamer state to indicate whether all tyvars need
+		-- .. to be bound by the forall.
+
+		let vsFree	= Set.filter (not . Var.isCtorName)
+				$ freeVars tt'
+		
+		if Set.null vsFree
+		 then return	$ tt'
+		 else do
+		 	mapM_ 	(\v -> addError ErrorUndefinedVar { eUndefined = v })
+				$ Set.toList vsFree
+			return tt
+-}
 
 	TFetters fs t
 	 -> do
@@ -907,7 +856,7 @@ instance Rename Type where
 	 -> do	t'	<- rename t
 	 	return	$ TMutable t'
 
------
+-- Fetter ------------------------------------------------------------------------------------------
 instance Rename Fetter where
  rename f
   = case f of

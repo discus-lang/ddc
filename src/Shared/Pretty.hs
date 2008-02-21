@@ -13,6 +13,7 @@ type PMode	= [PrettyMode]
 
 data PrettyMode
 	= PrettyUnique		-- annotate vars with their uniqueBinds
+	| PrettyTypeSpaces	-- show a '*' namespace qualifier on type variables.
 	deriving (Eq, Show)
 
 pprStrPlain x

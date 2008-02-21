@@ -80,6 +80,7 @@ data Arg
 
 	-- dump pretty flags
 	| DumpPrettyUnique	
+	| DumpPrettyTypeSpaces
 
 	-- things that can be dumped
 	| DumpAll
@@ -442,6 +443,8 @@ options	=
 			"Dumping/Tracing."
 	
 	, OFlag		DumpPrettyUnique	["-dump-pretty-unique"]		"Append unique identifiers to variables."
+	, OFlag		DumpPrettyTypeSpaces	["-dump-pretty-type-spaces"]	"Show a '*' namespace qualifier on type vars."
+	, OBlank
 	
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."
 	, OBlank
