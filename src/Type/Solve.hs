@@ -33,7 +33,6 @@ import Type.Error
 import Type.Plate.Collect
 import Type.Exp
 
-import Shared.Pretty
 import Shared.Error
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
@@ -188,7 +187,7 @@ solveCs	(c:cs)
 
 	-- type signature
 	CSig src t1 t2
-	 -> do	trace	$ "### CSig  " % padR 20 (pprStrPlain t1) % " = " %> prettyTS t2 % "\n"
+	 -> do	trace	$ "### CSig  " % padL 20 t1 % " = " %> prettyTS t2 % "\n"
 
 		t2_inst	<- instantiateT instVar t2
 		feedConstraint (CSig src t1 t2_inst)
@@ -212,7 +211,7 @@ solveCs	(c:cs)
 
 	-- Equality Constraint
 	CEq src t1 t2
- 	 -> do	trace	$ "### CEq  " % padR 20 (pprStrPlain t1) % " = " %> prettyTS t2 % "\n"
+ 	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTS t2 % "\n"
 		feedConstraint c
 		solveNext cs
 	

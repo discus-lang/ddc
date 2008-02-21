@@ -28,13 +28,13 @@ instance Pretty CTree PMode where
 	  % "}\n"
 
 	CDef 	src v t	
-	 -> "@CDef " % padR 15 (pprStrPlain v) % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
+	 -> "@CDef " % padL 15 v % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
 
 	CSig	src v t
-	 -> "@CSig  " % padR 15 (pprStrPlain v) % " " % prettyTB t % ";"
+	 -> "@CSig  " % padL 15 v % " " % prettyTB t % ";"
 
 	CEq 	src v t	
-	 -> "@CEq   " % padR 15 (pprStrPlain v) % " " % prettyTB t % ";"
+	 -> "@CEq   " % padL 15 v % " " % prettyTB t % ";"
 
 	CEqs 	src ts
 	 -> "@CEqs  " % ts
@@ -64,7 +64,7 @@ instance Pretty CTree PMode where
 	 -> "@ClassInst " % v % " " % ts % ";"
 
 	CInst src v1 v2
-	 -> "@CInst " % padR 15 (pprStrPlain v1) % " " % v2 % ";"
+	 -> "@CInst " % padL 15 v1 % " " % v2 % ";"
 	 
 	CGen src v1
 	 -> "@CGen  " % v1 % ";"

@@ -24,9 +24,9 @@ fun1 ()
 fun1_u		= fun1 ();
 fun1_uu		= fun1_u ();
 
-fun1_get	= t3_1 fun1_uu;
-fun1_get1	= t3_2 fun1_uu;
-fun1_inc	= t3_3 fun1_uu;
+fun1_get	= fun1_uu.x1
+fun1_get1	= fun1_uu.x2
+fun1_inc	= fun1_uu.x3
 
 
 

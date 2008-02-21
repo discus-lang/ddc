@@ -1,42 +1,19 @@
 
-import Base;
+import Base
 
 data Tuple2 %r a b
 	= Tuple2  { 
 		x1	:: a;
 		x2	:: b;
-	};
+	}
 	
 data Tuple3 %r a b c
 	= Tuple3  {
 		x1	:: a;
 		x2	:: b;
 		x3	:: c;
-	};
+	}
 
 
--- fst 	:: forall %r0 a b
---	.  Tuple2 %r0 a b -{!Read %r0}> a;
-fst xx
- = case xx of {
- 	Tuple2 a b	-> a;
- };
- 
-
--- snd	:: forall %r0 a b 
---	.  Tuple2 %r0 a b -{!Read %r0}> a;
-
-snd xx
- = case xx of {
- 	Tuple2 a b	-> b;
- };
-
-
-t2_1 xx		= case xx of { Tuple2 a b	-> a; };
-t2_2 xx		= case xx of { Tuple2 a b	-> b; };
-
-
-t3_1 xx		= case xx of { Tuple3 a b c	-> a; };
-t3_2 xx		= case xx of { Tuple3 a b c	-> b; };
-t3_3 xx		= case xx of { Tuple3 a b c	-> c; };
-
+fst (a, b)	= a
+snd (a, b)	= b

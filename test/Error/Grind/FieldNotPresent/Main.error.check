@@ -1,6 +1,2 @@
-./test/Error/Grind/FieldNotPresent/Main.ds:11:39
-    Type 'Main.Fish' has no field named '.tastiness'
-      possible fields: name
-finCount
-ref_name
-ref_finCount
+./test/Error/Grind/FieldNotPresent/Main.ds:13:39
+    Type 'Main.Fish' has no projection named '.tastiness'

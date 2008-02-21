@@ -4,7 +4,7 @@
       acts on to be Const, and it cannot be Mutable at the same time.
 
               the use of: (*)
-             with effect: Base.!Read %149
+             with effect: Base.!Read %155
                       at: ./test/Error/Purity/PurifyReadWrite2/Main.ds:5:25
 
         is being purified by
@@ -12,6 +12,6 @@
                       at: ./test/Error/Purity/PurifyReadWrite2/Main.ds:5:18
 
         which conflicts with
-              constraint: Base.Mutable %57
+              constraint: Base.Mutable %59
          from the use of: (:=)
                       at: ./test/Error/Purity/PurifyReadWrite2/Main.ds:7:21

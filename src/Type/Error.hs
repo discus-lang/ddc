@@ -251,8 +251,8 @@ instance Pretty Error PMode where
 		, eConstructor	= TData v _
 		, eFields	= fields })
 	= (getProjSP p)							% "\n"
-	% "    Type '" % v 	% "' has no field named '" % p		% "'\n"
-	% "      possible fields: " % "\n" %!% fields			% "\n"
+	% "    Type '" % v 	% "' has no projection named '" % p	% "'\n"
+--	% "      possible fields: " % punc " " fields			% "\n"
 
 	
  ppr err@(ErrorAmbiguousProjection

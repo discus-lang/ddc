@@ -106,6 +106,14 @@ crushProjClass3 cidT src fProj cObj tObj
 		, Just vsDict		<- Map.lookup vCon projectDicts
 		= crushProj2 cidT src fProj cObj tObj (snd vsDict)
 
+		-- functions don't have projections (not yet)
+		| TFun{}		<- tObj
+		= do	addErrors
+			 [ErrorNoProjections
+			 	{ eProj		= proj
+				, eConstructor	= tObj }]
+			return Nothing
+
 		| otherwise
 		= panic stage
 		$ "crushProjClassT: no match for " % tObj % "\n"

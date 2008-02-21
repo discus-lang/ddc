@@ -42,8 +42,10 @@ instance Show (Bool %_) where
 
 -----------------------
 infixr 7 %;
-(%) a b	= SAppend a b;
+infixr 7 %%;
 
+(%)  a b	= SAppend a b
+(%%) a b	= a % " " % b
 
 -----------------------
 -- showListL

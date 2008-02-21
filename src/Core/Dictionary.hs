@@ -110,11 +110,9 @@ rewriteOverApp
 	tOverScheme 
 	cxInstances
 	mapTypes
-
-	-- See if we can find an instance for this overloaded function
- 	| (Just vInst, tOverShapeI)
-			<- determineInstance xx overV cClass tOverScheme cxInstances
-	= let
+ = case determineInstance xx overV cClass tOverScheme cxInstances of
+    (cClassInst, tOverShapeI, Just vInst)
+        -> let
 		-- Ok, we know what types the overloaded was called at, and what instance function to call.
 		--	We now have to work out what type args to pass to the instance function.
 		
@@ -185,10 +183,9 @@ rewriteOverApp
 		$ xx'
 			
 
-
-	| otherwise
-	=  panic stage 
-	$ "rewriteOverApp: no instance for " % cClass % "\n"
+    (cClassInst, tOverShapeI, Nothing)
+      -> panic stage 
+	$ "rewriteOverApp: no instance for " % cClassInst % "\n"
 	% "  in " % xx % "\n"
 
 
@@ -225,9 +222,10 @@ determineInstance
 	-> Type			-- ^ scheme of overloaded
 	-> [(Class, Var)]	-- ^ possible instances for this fn
 
-	-> ( Maybe Var		-- var of the instance function.
-	   , Type)		-- shape of overloaded scheme, once the type args have been applied to it.
-				
+	-> ( Class		-- the instance we need
+	   , Type		-- shape of overloaded scheme, once the type args have been applied to it.
+	   , Maybe Var)		-- var of the instance function (if found)
+		
 determineInstance 
 	xx 		
 	overV 		
@@ -279,7 +277,7 @@ determineInstance
 			% "    shape of the instance fn (tInstShape)\n"
 				%> (" = "  % tInstShape % "\n\n"))
 
-		$ (mInstV, tInstShape)
+		$ (cClassInst, tInstShape, mInstV)
 
 
 -- Checks if an class instance supports a certain type.

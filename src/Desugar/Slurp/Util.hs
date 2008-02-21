@@ -82,33 +82,14 @@ makeCtorType	(vData, vs)	  (name, fs)
 			$ vs
 
 	-- Constructors don't inspect their arguments.
-	-- BUGS: closure information is wrong	
- 	let tCtor	= makeTFunEC (TBot KEffect) (TBot KClosure) (tsPrimary ++ [objType])
+	let ?newVarN	= newVarN
+ 	tCtor		<- elaborateCloT 
+			$  makeTFunEC (TBot KEffect) (TBot KClosure) (tsPrimary ++ [objType])
 
 	let tQuant	= TForall (map (\v -> (v, defaultKindV v)) vs)
 			$ tCtor
 
 	return tQuant
-
-{-
-defaultCtorRegion ::	Type	-> CSlurpM Type
-defaultCtorRegion	t
- = do
-	-- allocate a top level region for the top level
-	--	type constructor.
-	topRegion	<- newVarR
-
-	-- all unnotated component constructors get this region.
-	let t'		= transformT  (defaultCtorRegion' topRegion) t
-	return t'
-
-
-defaultCtorRegion' r t
- = case t of
- 	TData v ts 	-> TData v [TVar KRegion r] : ts
-	_ 		-> t
--}
-
 
 -----------------------
 -- Debugging

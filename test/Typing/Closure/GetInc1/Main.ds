@@ -20,8 +20,8 @@ fun1_u		= fun1 ();
 
 -- project out the get and inc functions.
 --	The shared integer should appear in these functions' closures.
-fun1_get1	= t2_1 fun1_u;
-fun1_inc	= t2_2 fun1_u;
+fun1_get1	= fst fun1_u;
+fun1_inc	= snd fun1_u;
 
 main ()
  = do {	
