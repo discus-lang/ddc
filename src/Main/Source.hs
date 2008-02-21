@@ -155,7 +155,7 @@ defix	sParsed
 	
 
 -- | Check scoping of variables and 
--- NOTES:
+-- NOTE:
 -- 	We need to rename infix defs _after_ foreign imports
 --	We do this so that the Sea name for functions like (+ / primInt32Add)
 --	which is present on foreign decls gets propagated to uses of these functions.
@@ -171,13 +171,14 @@ rename	mTrees
 		= runState (S.renameTrees mTrees)
 		$ S.initRenameS
 
-	exitWithUserError ?args $ S.stateErrors state'
-
 	-- dump
 	let Just sTree	= liftM snd $ takeHead mTrees'
 
 	dumpST 	DumpSourceRename "source-rename" sTree
 	dumpST 	DumpSourceRename "source-rename--header" (concat $ map snd $ tail mTrees')
+
+	-- exit after dumping, so we can see what's going on.
+	exitWithUserError ?args $ S.stateErrors state'
 	
 	return mTrees'
 

@@ -39,3 +39,7 @@ dude	= 5;
 fun5 dude 	= print dude;
 fun6 fun5	= fun5 + 1;
 
+-- make sure we can shadow vars defined at top level.
+fun7 ()
+ = do	dude = 5
+ 	dude
