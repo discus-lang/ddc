@@ -1,20 +1,6 @@
-GHC=ghc
-
-# -- Optimised / distribution compile
-GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 
-GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
-
-# -- Profiling compile
-# GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 -prof -auto-all
-# GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
-
-# -- For Haskell Program Coverage
-# GHC_FLAGS	:= -fglasgow-exts -fhpc -tmpdir /tmp 
-# GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
-
-# ----------------------------------------------------------------------------------------
-# -- Development compile -----------------------------------------------------------------
-# ----------------------------------------------------------------------------------------
+# -- Warnings ----------------------------------------------------------------------------
+# -- 	GHC warnings we compile with.
+# --	There's no point turning warnings on without -Werror.
 
 GHC_WARNINGS	:= \
 	-Werror \
@@ -41,9 +27,10 @@ GHC_WARNINGS	:= \
 #	-fwarn-simple-patterns			# I use this all the time.
 #	-fwarn-tabs				# heresy!
 
+
+# -- Language features -------------------------------------------------------------------
+# -- 	Enable these individually so we can keep an eye on what's being used.
 			
-# -- Enable GHC language features individually so we can keep an eye
-#	on what is being used.
 GHC_LANGUAGE	:= \
 	-XPatternGuards \
 	-XImplicitParams \
@@ -59,5 +46,28 @@ GHC_LANGUAGE	:= \
 	-XUndecidableInstances \
 	-XTypeSynonymInstances
 
+
+# -- Environment -------------------------------------------------------------------------
+
+# what compiler to use
+GHC=ghc
+
+
+# -- Compile Options ---------------------------------------------------------------------
+
+# -- Distribution compile (fastest at runtime)
+GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 
+GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
+
+# -- Development Compile (fastest compile)
 # GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot 
 # GCC_FLAGS	:= -std=c99 -O3 -fPIC
+
+# -- Profiling compile
+# GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 -prof -auto-all
+# GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
+
+# -- For Haskell Program Coverage
+# GHC_FLAGS	:= -fglasgow-exts -fhpc -tmpdir /tmp 
+# GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
+

@@ -1,0 +1,8 @@
+
+-- Make sure we can suspend applications which return function types.
+add :: Int -> Int -> Int
+add x y		= x + y
+
+main ()	
+	= print $ show $ (add @ 2) 3
+

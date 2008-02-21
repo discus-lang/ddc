@@ -114,10 +114,6 @@ enterDir2 path_
 	--	telling us what order to run the tests in
 	exist	<- fileExist (path ++ "war.order")
 
-	when (exist)
-	 $ 	out	$ "* Entering " % path	% "\n"
-	
-
 	-- We've got an explit war.order, so follow that.
 	--
 	if exist
@@ -131,11 +127,11 @@ enterDir2 path_
 		?trace		$ show ll	% "\n"
 
 		let dirs	= map (\s -> path ++ s ++ "/") ll
+	
+		out	$ "* Entering " % path	% "\n"
 		mapM_ enterDir dirs
-		
-		when exist
-		 $ 	out "\n"
-		
+		out	$ "\n"		
+
 		return	()
 
 	 -- Otherwise look to see what's in this dir.
@@ -162,12 +158,15 @@ enterDir2 path_
 			% "dirs     = " % dirs		% "\n"
 			% "\n"
 
+		when (null sources)
+		 $ out	$ "* Entering " % path	% "\n"
+
 		mapM_ enterDir dirs
 		mapM_ testSource sources
+
+		when (null sources)
+		 $ out	$ "\n"
 		
-		when exist
-		 $	out "\n"
-				 
 	 	return	()
 
 

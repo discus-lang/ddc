@@ -131,7 +131,9 @@ thread_transX_enter table xx
 rewriteWitness :: ClassInstMap -> Type -> ThreadM Type
 rewriteWitness instMap tt
  
-	-- got an application of an explicit witness to some region class
+	-- Got an application of an explicit witness to some region.
+	--	Lookup the appropriate witness from the environment and use
+	--	that here.
 	| TClass vC [TVar k vT] 	<- tt
 	= do	Just vW	<- lookupWitness vT vC
 		return $ TVar (kindOfType tt) vW
@@ -141,7 +143,7 @@ rewriteWitness instMap tt
 	, vC == primPure
 	= return tt
 
-	-- ignore other purity witnesses for now
+	-- build a witness for purity of this effect
 	| TClass vC [eff]		<- tt
 	, vC == primPure
 	= do	w	<- buildPureWitness eff
@@ -157,11 +159,20 @@ rewriteWitness instMap tt
 	, Just _			<- Map.lookup vC instMap
 	= return tt
 
+	-- function types are always assumed to be lazy, 
+	--	Lazy witnesses on them are trivially satisfied.
+	| TClass vC [TFunEC{}]		<- tt
+	, vC == primLazyH
+	= return tt
+
+	| TClass vC [TFetters TFunEC{} _]	<- tt
+	, vC == primLazyH
+	= return tt
+	
 	-- some other witness we don't handle
 	| TClass vC ts			<- tt
-	= freakout stage
-		("thread_transX: don't have a witness for " % tt % "\n")
-		$ return tt
+	= panic stage
+		("thread_transX: can't find a witness for " % tt % "\n")
 
 	-- some other type
 	| otherwise

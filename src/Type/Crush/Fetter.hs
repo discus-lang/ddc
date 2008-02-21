@@ -33,7 +33,7 @@ import Data.Map			(Map)
 
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Fetter"
 
