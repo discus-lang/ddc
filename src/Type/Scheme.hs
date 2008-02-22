@@ -42,29 +42,6 @@ debug	= True
 trace s	= when debug $ traceM s
 
 
------
-watchClass src code
- = do	mC	<- lookupClass (ClassId code)
- 
- 	let res
-		| Just Class 
-			{ classType	= mType
-			, classQueue 	= queue  	
-			, classNodes	= nodes		}	<- mC
-			
-		= trace ( "--- class " % code % "----------------------\n"
-			% "--  src   = " % src			% "\n"
-			% "--  type  = " % mType		% "\n"
-			% "--  queue = " % queue		% "\n"
-			% "--  nodes = " % (map fst nodes)	% "\n\n")
-
-		| otherwise
-		= return ()
-	res
-
-	
-
-
 -- | Generalise a type
 --
 generaliseType
@@ -251,4 +228,28 @@ checkContextF ff
 			, eTypeArgs		= ts } ]
 		
 	_ -> return ()
+	
+
+
+
+-----
+watchClass src code
+ = do	mC	<- lookupClass (ClassId code)
+ 
+ 	let res
+		| Just Class 
+			{ classType	= mType
+			, classQueue 	= queue  	
+			, classNodes	= nodes		}	<- mC
+			
+		= trace ( "--- class " % code % "----------------------\n"
+			% "--  src   = " % src			% "\n"
+			% "--  type  = " % mType		% "\n"
+			% "--  queue = " % queue		% "\n"
+			% "--  nodes = " % (map fst nodes)	% "\n\n")
+
+		| otherwise
+		= return ()
+	res
+
 	

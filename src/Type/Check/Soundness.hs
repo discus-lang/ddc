@@ -70,12 +70,7 @@ dangerT rsMutable fsClosure tt
 		-- decend into type and fetters
 		t1Danger	= dangerT rsMutable' fsClosure' t1
 
-		fsDanger	= Set.unions 
-				$ map (dangerT rsMutable' fsClosure') 
-					[ u2	| FLet u1 u2	<- fs
-						, kindOfType u1 == KClosure]	
-
-	    in	Set.union t1Danger fsDanger
+	    in	t1Danger
 	    
 	    
 	-- functions
