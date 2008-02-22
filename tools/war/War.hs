@@ -128,9 +128,9 @@ enterDir2 path_
 
 		let dirs	= map (\s -> path ++ s ++ "/") ll
 	
-		out	$ "* Entering " % path	% "\n"
+--		out	$ "* Entering " % path	% "\n"
 		mapM_ enterDir dirs
-		out	$ "\n"		
+--		out	$ "\n"		
 
 		return	()
 
@@ -158,14 +158,14 @@ enterDir2 path_
 			% "dirs     = " % dirs		% "\n"
 			% "\n"
 
-		when (null sources)
-		 $ out	$ "* Entering " % path	% "\n"
+--		when (null sources)
+--		 $ out	$ "* Entering " % path	% "\n"
 
 		mapM_ enterDir dirs
 		mapM_ testSource sources
 
-		when (null sources)
-		 $ out	$ "\n"
+--		when (null sources)
+--		 $ out	$ "\n"
 		
 	 	return	()
 
