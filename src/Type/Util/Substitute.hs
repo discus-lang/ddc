@@ -1,53 +1,146 @@
 
 module Type.Util.Substitute
 	( subTT
-	, subTT_all)
+	, subTT_noLoops
+	, subTT_all
+	, SubM)
 where
 
 import Type.Plate.Trans
+import Type.Util.Bits
 import Type.Exp
 
+import Shared.Error
 import Util
+
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 
-subTT 	:: Map Type Type 
-	-> Type -> Type
-	
+stage	= "Type.Util.Substitute"
+
+-- | Do a loop cutting substition and panic if there are any loops
+--	through the data portion of the type.
+subTT_noLoops
+	:: Map Type Type
+	-> Type
+	-> Type
+
+subTT_noLoops sub tt
+ = let	(tt', loopSet)	= runState (subTT_cutM sub Set.empty tt) Set.empty
+   in	if Set.null loopSet
+   		then tt'
+		else panic stage
+			$ "subTT_noLoops: found loops through data portion of type\n"
+			% "  tt            = " % tt		% "\n\n"
+			% "  loops through = " % loopSet	% "\n"
+
+-- Do a loop cutting substitution on this type.
+subTT 	:: Map Type Type 	-- ^ types to substitute for.
+	-> Type 		-- ^ type to substitute into.
+	-> ( Type		-- ^ result type.
+	   , [Type])		-- ^ list of data vars that were looping.
+
 subTT sub tt
- = let down	= subTT sub
+ = let	(tt', loopSet)	= runState (subTT_cutM sub Set.empty tt) Set.empty
+   in	(tt', Set.toList loopSet)
+	
+	
+type SubM	= State (Set Type)
+
+
+-- Loop cutting substitution
+subTT_cutM 
+	:: Map Type Type	-- types to substitute for
+	-> Set Type		-- types that have already been substituted, and should be cut
+	-> Type 		-- type to substitute for
+	-> SubM Type
+	
+subTT_cutM sub cut tt
+ = let down	= subTT_cutM sub cut
    in case tt of
- 	TForall vks t		-> TForall vks (down t)
-	TFetters fs t		-> TFetters fs (down t)
-	TSum k ts		-> TSum k (map down ts)
-	TMask k t1 t2		-> TMask k (down t1) (down t2)
+ 	TForall vks t		
+	 -> do	t'	<- down t
+	 	return	$ TForall vks t'
 
-	TVar{}
-	 -> case Map.lookup tt sub of
-	 	Nothing		-> tt
-		Just tt'	-> subTT (Map.delete tt sub) tt'
+	TFetters fs t		
+	 -> do	t'	<- down t
+	 	return	$ TFetters fs t'
+
+	TSum k ts
+	 -> do	ts'	<- mapM down ts
+	 	return	$ TSum k ts'
 		
-	TTop{}			-> tt
-	TBot{}			-> tt
+	TMask k t1 t2
+	 -> do	t1'	<- down t1
+	 	t2'	<- down t2
+		return	$ TMask k t1' t2'
+		
+		
+	TTop{}		-> return tt
+	TBot{}		-> return tt
 	
-	TData v ts		-> TData v (map down ts)
-	TFun t1 t2 eff clo	-> TFun (down t1) (down t2) (down eff) (down clo)
+	TData v ts		
+	 -> do	ts'	<- mapM down ts
+	 	return	$ TData v ts'
+		
+	TFun t1 t2 eff clo
+	 -> do	t1'	<- down t1
+	 	t2'	<- down t2
+		eff'	<- down eff
+		clo'	<- down clo
+		return	$ TFun t1' t2' eff' clo'
 	
-	TEffect v ts		-> TEffect v (map down ts)
+	TEffect v ts
+	 -> do	ts'	<- mapM down ts
+	 	return	$ TEffect v ts'
 
-	TFree v t		-> TFree v (down t)
-	TDanger t1 t2		-> TDanger (down t1) (down t2)
-	TTag{}			-> tt
-	
-	TWild{}			-> tt
-	
-	TClass{}
-	 -> case Map.lookup tt sub of
-	 	Nothing		-> tt
-		Just tt'	-> subTT (Map.delete tt sub) tt'
+	TFree v t
+	 -> do	t'	<- down t
+	 	return	$ TFree v t'
 
-	TError{}		-> tt
+	TDanger t1 t2
+	 -> do	t1' 	<- down t1
+	 	t2'	<- down t2
+		return	$ TDanger t1' t2'
+
+	TTag{}		-> return tt
+	
+	TWild{}		-> return tt
+
+	TError{}	-> return tt
+
+	TVar{} 		-> subTT_enter sub cut tt
+	TClass{}	-> subTT_enter sub cut tt
+	
+subTT_enter sub cut tt
+
+ 	-- check for loops
+	| Set.member tt cut
+	= case kindOfType tt of
+		-- Loops in effect and closure types can be cut by replacing
+		--	the looping variable with bottom.
+		KEffect		
+		 -> 	return	$ TBot KEffect
+		
+		KClosure	
+		 -> 	return	$ TBot KClosure
+		
+		-- Loops in other parts of the graph are errors.
+		_ -> do
+			modify $ \s -> Set.insert tt s
+			return	tt
+
+	-- see if we can substitute something
+	| Just tt'	<- Map.lookup tt sub
+	= subTT_cutM sub (Set.insert tt cut) tt'
+	
+	-- nothing can be substituted
+	| otherwise
+	= return tt
+	
 
 
 

@@ -348,7 +348,7 @@ freshenType tt
 	
 	let sub		= Map.fromList $ zip tsFree' tsFresh
 
-	let tt'		= subTT sub tt
+	let tt'		= subTT_noLoops sub tt
 	return	tt'
 						
 

@@ -169,7 +169,7 @@ slurpW	(WConLabel sp vCon lvs)
 	let subInst	= Map.fromList 
 			$ zip tsData tsInst
 
-	let tPat	= subTT subInst tData
+	let tPat	= subTT_noLoops subInst tData
 
 	-- Slurp constraints for each of the bound fields.
 	(lvs', cBinds, cTrees)
@@ -232,7 +232,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 	case mField of
 	 -- Ctor has required field, ok.
 	 Just field
-	  -> do	let tField	= subTT subInst
+	  -> do	let tField	= subTT_noLoops subInst
 				$ dType field
 
 		return	( (LIndex Nothing ix, v)
@@ -278,7 +278,7 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 							% "    tData     = " % tData	% "\n"
 							% "    fields are " % (map dLabel fields) % "\n"
 					
-	let tField	= subTT subInst 
+	let tField	= subTT_noLoops subInst 
 			$ tField_
 
  	return 	( (LVar Nothing vField, v)

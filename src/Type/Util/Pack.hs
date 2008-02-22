@@ -74,6 +74,7 @@ packRegion tt
    	 then tt'
 	 else packRegion tt'
 
+
 -- | Pack an effect into the standard form
 --	Regular packType won't flatten out recursive effects like this example:
 --
@@ -113,7 +114,8 @@ packClosure' tt
  	$ "packClosure: not a closure\n"
 	% "  c = " % tt % "\n\n"
 
------
+
+-- PackTypeLs --------------------------------------------------------------------------------------
 packTypeLs 
 	:: Bool			-- whether to substitute effect and closure constructors as well
 	-> Map Type Type	-- types to substitute for
@@ -262,14 +264,6 @@ packTypeLs ld ls tt
 	_ -> panic stage
 		$ "packTypeLs: no match for " % show tt
 		    
-{-
-makeSub KEffect  t1 t2	= makeTSum KEffect  [t1, t2]
-makeSub KClosure t1 t2	= makeTSum KClosure [t1, t2]
-makeSub _	 t1 t2	= t2
--}
-
-
-
 
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
 --	(ie, find a fixpoint of restrictFs . packFettersLs) 
@@ -294,7 +288,6 @@ packTFettersLs ld ls tt
 		tPacked		= packTypeLs ld ls' t
 
 		fsPacked	= map (packFetterLs ld ls') 
-				$ map shortLoopsF
 				$ fs
 
 		-- erase trivial closures
@@ -339,7 +332,71 @@ packFetterLs ld ls ff
 	_	
 	 -> ff
 
+-- InlineFs ----------------------------------------------------------------------------------------
+-- | Inline Effect and Closure fetters which are only referenced once.
+--	Also inline (t = TBot) fetters
+--
+inlineFs :: Type -> [Fetter] -> (Type, [Fetter])
+inlineFs tt fs
+ = {-# SCC "inlineFs1" #-}
+   let	vsFree	= collectTClassVars tt
+   
+   	-- build a substitution from the let fetters
+	sub	= Map.fromList	
+		$ [(t1, t2)	
+			| FLet t1 t2 <- fs
+			, not $ elem t1 vsFree]
 
+	-- substitute in the the RHSs
+	subF ff
+		= case ff of
+			FLet  t1 t2 	 
+			 -> let	(t2', [])	= subTT sub t2
+			    in	FLet  t1 t2'
+
+			FMore t1 t2	 
+			 -> let (t2', [])	= subTT sub t2
+			    in	FMore t1 t2'
+
+			FConstraint v ts 
+			 -> let (ts', _)	= unzip $ map (subTT sub) ts
+			    in	FConstraint v ts'
+
+			_		 -> ff
+
+	fs'	= map subF fs
+   in	(tt, fs')
+
+
+-- | Inline Effect and Closure fetters, regardless of the number of times they are used
+--
+inlineFsT :: Type -> Type
+inlineFsT tt
+ = {-# SCC "inlineFsT" #-}
+   case tt of
+ 	TFetters fs t
+	 -> let	sub	= Map.fromList
+			$ catMaybes
+			$ map (\f -> case f of
+					FLet t1 t2	-> Just (t1, t2)
+					_ 		-> Nothing)
+			$ fs
+
+		fs'	= map (\f -> case f of
+					FLet t1 t2 	
+					 -> let (t2', []) = subTT sub t2
+					    in  FLet t1 t2'
+
+					_		-> f)
+			$ fs
+
+		(t', []) = subTT sub t
+
+	    in	addFetters fs' t'
+
+	_	-> tt	     	
+
+-- RestrictFs --------------------------------------------------------------------------------------
 -- | Restrict the list of TLet fetters to ones which are 
 --	reachable from this type. Also erase x = Bot fetters.
 --
@@ -377,78 +434,8 @@ restrictFs tt ls
 			_		-> True)
 		$ ls
 
--- InlineFs ----------------------------------------------------------------------------------------
--- | Inline Effect and Closure fetters which are only referenced once.
---	Also inline (t = TBot) fetters
---
-inlineFs :: Type -> [Fetter] -> (Type, [Fetter])
-inlineFs tt fs
- = {-# SCC "inlineFs1" #-}
-   let	vsFree	= collectTClassVars tt
-   
-   	-- build a substitution from the let fetters
-	sub	= Map.fromList	
-		$ [(t1, t2)	
-			| FLet t1 t2 <- fs
-			, not $ elem t1 vsFree]
-
-	-- substitute in the the RHSs
-	subF ff
-		= case ff of
-			FLet  t1 t2 	 -> FLet  t1 (subTT sub t2)
-			FMore t1 t2	 -> FMore t1 (subTT sub t2)
-			FConstraint v ts -> FConstraint v (map (subTT sub) ts)
-			_		 -> ff
-
-	fs'	= map subF fs
-   in	(tt, fs')
 
 
--- | Inline Effect and Closure fetters, regardless of the number of times they are used
---
-inlineFsT :: Type -> Type
-inlineFsT tt
- = {-# SCC "inlineFsT" #-}
-   case tt of
- 	TFetters fs t
-	 -> let	sub	= Map.fromList
-			$ catMaybes
-			$ map (\f -> case f of
-					FLet t1 t2	-> Just (t1, t2)
-					_ 		-> Nothing)
-			$ fs
-
-		fs'	= map (\f -> case f of
-					FLet t1 t2 	-> FLet t1 (subTT sub t2)
-					_		-> f)
-			$ fs
-
-		t'	= subTT sub t
-
-	    in	addFetters fs' t'
-
-	_	-> tt	     	
-
-
--- | Short circuit loops in individual fetters,
---	ie !e1 = !{ ... !e1}  => !e1 = !{ ... Bot }
---
---	resoning: 	the sum is a lub.
---			joining in a copy of itself isn't going to change its value.
---
-shortLoopsF :: Fetter -> Fetter
-shortLoopsF ff
- = {-# SCC "shortLoopsF" #-}
-   shortLoopsF' ff
-
-shortLoopsF' (FLet t1 t2)
-	|  elem (kindOfType t1) [KRegion, KEffect, KClosure]
-	=  let	bot	= TBot (kindOfType t1)
-	   	t2'	= subTT (Map.singleton t1 bot) t2
-	   in	FLet t1 t2'
-	   
-shortLoopsF' f	= f
-	
 -- Sort Fetters ------------------------------------------------------------------------------------
 -- | Sort fetters so effect and closure information comes out first in the list.
 --	Also sort known contexts so there's less jitter in their placement in interface files
@@ -522,7 +509,8 @@ zapCoveredTMaskF' ls tt ff
 	| FLet t1 (TMask k t2 t3)	<- ff
 	, Just t2l			<- Map.lookup t2 ls
 	, coversCC t2l t3
-	= ( subTT (Map.singleton t1 (TBot k)) tt
+	, (tt', [])			<- subTT (Map.singleton t1 (TBot k)) tt
+	= ( tt'
 	  , FLet t1 (TBot k))
 
 	| otherwise
