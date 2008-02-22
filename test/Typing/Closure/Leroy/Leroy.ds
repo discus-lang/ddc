@@ -46,11 +46,12 @@ impMap_id	= impMap id;
 
 -- Infinite types / graphical types.
 --
+{-
 eta f		
  = if True
  	 then f 
 	 else (\x -> f x);
-
+-}
 
 -- Variable capture.
 either a b	= if True then a else b
@@ -61,6 +62,4 @@ captId f
 	 	y
 
  	cId cId
-	
-
 -}

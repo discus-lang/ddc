@@ -34,12 +34,11 @@ foreign import extern increment
         
 foreign import extern selectFun2
         :: forall %r0 %r1 !e0 $c0
-        .  Data.Bool.Bool %r0 -($c1)> (Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -($c2)> (Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -(!e1 $c3)> Base.Int %r1 -(!e0 $c0)> Base.Int %r1
+        .  Data.Bool.Bool %r0 -> (Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -($c1)> (Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1 -(!e0 $c0)> Base.Int %r1
         :- !e1        = Base.!Read %r0
         ,  !e0        :> !{Base.!Read %r1; System.Console.!Console}
-        ,  $c1        = $c2 \ x
-        ,  $c2        = $c3 \ f
-        ,  $c3        = ${x : %r0; f : $c0}
+        ,  $c1        = x : %r0
+        ,  $c2        = ${x : %r0; f : $c0}
         :$ Base.Data -> Base.Thunk -> Base.Thunk -> Base.Thunk;
         
 foreign import extern main

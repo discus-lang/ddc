@@ -128,18 +128,11 @@ extractType_fromClass final varT cid
 
 extractType_pack final varT cid tTrace
  = do	
-	-- Cut loops through the effect and closure portions of this type.
-	let tCutLoops	
-		= {-# SCC "extract/cut" #-} 
-		  cutLoopsT tTrace
-
-	trace	$ "    tCutLoops:\n" 	%> prettyTS tCutLoops % "\n\n"
-
 	-- Pack the type into standard form.
 	trace	$ ppr " -- packing into standard form\n"	
 	let tPack	
 		= {-# SCC "extract/pack" #-} 
-		  packType tCutLoops
+		  packType tTrace
 
 	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
 
