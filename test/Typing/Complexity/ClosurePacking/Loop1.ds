@@ -50,5 +50,8 @@ v3
 
 	-- and then i got bored with waiting
 	
+	need to pack $41 in the first type to
+		${ $47 \ { v46; v41; v36; v31 ... }
+	before substittion so we don't get so may repeated copies of $47.
 
 -}
