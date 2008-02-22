@@ -1,7 +1,15 @@
 
 {- Test detection of closure loops.
-	From Leroy.
+
+	The variable capture example from Chapter 4 of Leroy's thesis.
+
 	The type for captId has a loops via *28 and *28 -> $88.
+
+	Unification of 'f' with '(\z -> do { y; z;})' gives f the following type:
+	f :: b -(y : a)> b 
+
+	When generalising a the type 'id :: a -> a', 'a' is part of its type environment
+	through 'f', so its not generalisable, and the application 'id id' is ill-typed.
 
         tTrace:
             *24
