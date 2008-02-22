@@ -1,0 +1,17 @@
+
+-- creates a [] at top level
+fun ()
+ = do 	x	= []
+ 	fun2 ()	= x
+	fun2
+ 
+
+fun_u	= fun ();
+
+-- grab the shared []
+xx	= fun_u ();
+ 
+-- 'a' and 'b' should have the same region for their
+--	list ctor, as they share the same []
+a	=  1  : fun_u ();
+b	= 'a' : fun_u ();  	

@@ -25,10 +25,10 @@ main ()
 	setA2	[1];
 	setB2	[2];
 
-	print	$ "a1 = " % showInt (head ((fst box2) ()))	% "\n";
+	print	$ "a1 = " % show (head ((fst box2) ()))	% "\n";
 
 	x	= head ((fst box2) ());
-	print (showInt x);
+	print (show x);
 
 	-----
 	box3	= makeGetSet [];
