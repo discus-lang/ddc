@@ -405,9 +405,6 @@ solveSquid2 vsTypesPlease hTrace state
 	 Just handle	-> hFlush handle
 	 Nothing	-> return ())
 
-	-- the export process can find more errors
-	exitWithUserError ?args $ Squid.stateErrors state2
-		
 	-- report some state
 	when (elem Verbose ?args)
 	 $ do	putStr 	$ pprStrPlain
@@ -444,6 +441,9 @@ solveSquid2 vsTypesPlease hTrace state
 		$ Map.toList (Squid.stateVarSub state2)
 
 	let vsFree	= Set.empty
+
+	-- the export process can find more errors
+	exitWithUserError ?args $ Squid.stateErrors state2
 
 	-----
 	return 	( typeTable

@@ -268,11 +268,11 @@ isConflict t1 t2
 	, TFun{}	<- t2
 	= False
 	
-	| TVar{}	<- t1
-	= False
+	| TVar{}	<- t1	= False
+	| TVar{}	<- t2	= False
 	
-	| TVar{}	<- t2
-	= False
+	| TFetter{}	<- t1	= False
+	| TFetter{}	<- t2	= False
 	
 	| otherwise
 	= True
