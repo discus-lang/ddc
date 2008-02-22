@@ -1,8 +1,6 @@
 
 module Desugar.Slurp.SlurpA 
-(
-	slurpA
-)
+	(slurpA)
 
 where
 
@@ -20,6 +18,7 @@ import Shared.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 
+import Type.Util.Substitute
 import Type.Location
 
 -----
@@ -168,19 +167,15 @@ slurpW	(WConLabel sp vCon lvs)
 
 	-- Apply the substitution to the data type.
 	let subInst	= Map.fromList 
-				$ zip vsData tsInst
+			$ zip tsData tsInst
 
-	let tPat	= substituteVT subInst tData
+	let tPat	= subTT subInst tData
 
 	-- Slurp constraints for each of the bound fields.
 	(lvs', cBinds, cTrees)
 			<- liftM unzip3
 			$  mapM (slurpLV vCon tData subInst) lvs
 			
---	tD@(TVar KData tV)	<- newTVarDS "con"
---	let src			= TSGuard sp
---	wantTypeV tV
-	
  	return	( catMaybes cBinds
 		, tPat
 		, WConLabel Nothing vCon lvs'
@@ -208,9 +203,9 @@ slurpW w
 -----------------------
 -- slurpL
 --
-slurpLV	:: Var						-- Constructor name.
-	-> Type						-- Return type of constructor.
-	-> (Map Var Type)				-- Instantiation of data type vars.
+slurpLV	:: Var				-- Constructor name.
+	-> Type				-- Return type of constructor.
+	-> Map Type Type		-- Instantiation of data type vars.
 	-> (Label Annot1, Var)
 	-> CSlurpM 
 		( (Label Annot2, Var)
@@ -237,7 +232,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 	case mField of
 	 -- Ctor has required field, ok.
 	 Just field
-	  -> do	let tField	= substituteVT subInst
+	  -> do	let tField	= subTT subInst
 				$ dType field
 
 		return	( (LIndex Nothing ix, v)
@@ -283,7 +278,7 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 							% "    tData     = " % tData	% "\n"
 							% "    fields are " % (map dLabel fields) % "\n"
 					
-	let tField	= substituteVT subInst 
+	let tField	= subTT subInst 
 			$ tField_
 
  	return 	( (LVar Nothing vField, v)

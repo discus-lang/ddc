@@ -1,10 +1,13 @@
 
 module Type.Util.Substitute
-	(subTT)
+	( subTT
+	, subTT_all)
 where
 
+import Type.Plate.Trans
 import Type.Exp
 
+import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
@@ -45,3 +48,27 @@ subTT sub tt
 		Just tt'	-> subTT (Map.delete tt sub) tt'
 
 	TError{}		-> tt
+
+
+
+-- Substitute types for types everywhere in a type, including binding positions.
+--	This is not loop-avoiding.
+subTT_all	
+	:: TransM (State ()) a
+	=> Map Type Type
+	-> a -> a
+
+subTT_all sub tt
+ 	= transformT (\t -> case t of
+			TVar{}
+			 -> case Map.lookup t sub of
+				Just t'	-> t'
+				Nothing	-> t
+					
+			TClass{} 
+			 -> case Map.lookup t sub of
+			 	Just t'	-> t'
+				Nothing	-> t
+				
+			_	-> t)
+	$ tt

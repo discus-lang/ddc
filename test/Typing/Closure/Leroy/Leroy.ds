@@ -52,14 +52,15 @@ eta f
 	 else (\x -> f x);
 
 
--- either a b	= if True then a else b;
-
-
-{-
 -- Variable capture.
+either a b	= if True then a else b
+{-
 captId f 
- = do {	cId y	= do { either f (\z -> do { y; z; }); y; };
- 	cId cId;
- };
- 	
+ = do 	cId y	
+  	 = do	either f (\z -> do { y; z; }) 
+	 	y
+
+ 	cId cId
+	
+
 -}

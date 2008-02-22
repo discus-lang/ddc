@@ -340,15 +340,15 @@ freshenType
 	
 freshenType tt
  = do	let vsFree	= freeVars tt
- 	let vsFree'	= filter (\v -> (not $ Var.isCtorName v)) 
-			$ Set.toList vsFree
+ 	let vsFree'	= filter (\v -> (not $ Var.isCtorName v)) $ Set.toList vsFree
+	let tsFree'	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsFree'
 	
 	vsFresh		<- mapM newVarZ vsFree'
 	let tsFresh	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsFresh
 	
-	let sub		= Map.fromList $ zip vsFree' tsFresh
+	let sub		= Map.fromList $ zip tsFree' tsFresh
 
-	let tt'		= substituteVT sub tt
+	let tt'		= subTT sub tt
 	return	tt'
 						
 

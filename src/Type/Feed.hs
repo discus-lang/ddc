@@ -119,17 +119,17 @@ feedType	mParent t
 	 -> do	
 	 	-- Rename the vars on the LHS of FLet bindings to make sure
 	 	--	they don't conflict with any vars already in the graph.
-		vtSub		<- liftM (Map.fromList . catMaybes)
+		ttSub		<- liftM (Map.fromList . catMaybes)
 				$  mapM (\f -> case f of
-					FLet (TVar k v1) t2	
+					FLet t1@(TVar k v1) t2	
 					 -> do	v1'	<- newVarN (spaceOfKind k)
-					 	return	$ Just (v1, TVar k v1')
+					 	return	$ Just (t1, TVar k v1')
 
 					_ -> 	return	$ Nothing)
 				$ fs
 
-		let fs2		= substituteVT vtSub fs
-		let t2		= substituteVT vtSub t
+		let fs2		= subTT_all ttSub fs
+		let t2		= subTT_all ttSub t
 				
 		mapM_ (feedFetter mParent) fs2
 	 	t3		<- feedType mParent t2

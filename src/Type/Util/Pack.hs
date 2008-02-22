@@ -115,7 +115,7 @@ packClosure' tt
 
 -----
 packTypeLs 
-	:: Bool			-- whether to effect and closure constructors as well
+	:: Bool			-- whether to substitute effect and closure constructors as well
 	-> Map Type Type	-- types to substitute for
 	-> Type			-- type to substitute into
 	-> Type			-- result type
@@ -419,11 +419,11 @@ inlineFsT tt
 			$ fs
 
 		fs'	= map (\f -> case f of
-					FLet t1 t2 	-> FLet t1 (substituteTT sub t2)
+					FLet t1 t2 	-> FLet t1 (subTT sub t2)
 					_		-> f)
 			$ fs
 
-		t'	= substituteTT sub t
+		t'	= subTT sub t
 
 	    in	addFetters fs' t'
 
@@ -444,7 +444,7 @@ shortLoopsF ff
 shortLoopsF' (FLet t1 t2)
 	|  elem (kindOfType t1) [KRegion, KEffect, KClosure]
 	=  let	bot	= TBot (kindOfType t1)
-	   	t2'	= substituteTT (Map.singleton t1 bot) t2
+	   	t2'	= subTT (Map.singleton t1 bot) t2
 	   in	FLet t1 t2'
 	   
 shortLoopsF' f	= f
@@ -522,7 +522,7 @@ zapCoveredTMaskF' ls tt ff
 	| FLet t1 (TMask k t2 t3)	<- ff
 	, Just t2l			<- Map.lookup t2 ls
 	, coversCC t2l t3
-	= ( substituteTT (Map.singleton t1 (TBot k)) tt
+	= ( subTT (Map.singleton t1 (TBot k)) tt
 	  , FLet t1 (TBot k))
 
 	| otherwise

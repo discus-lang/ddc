@@ -7,6 +7,7 @@ where
 import Type.Exp
 import Type.Util.Pack
 import Type.Util.Bits
+import Shared.Error
 import Shared.VarPrim
 import Util
 
@@ -16,6 +17,8 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 import qualified Debug.Trace	as Debug
+
+stage	= "Type.Util.Finalise"
 
 -- | After all constraints are processed, unbound effect and closure vars can be
 --	replaced by bottoms.
@@ -82,7 +85,10 @@ finaliseT' bound def tt
 	TTag{}			-> tt
 
 	TClass{}		-> tt
-
+	TError{}		-> tt
+	
+	_	-> panic stage
+		$ "finaliseT: no match for " % tt
 
 finaliseF bound def ff
 	| FLet t1@(TVar k v1) t2	<- ff
@@ -104,6 +110,7 @@ finaliseF bound def ff
 	= FProj j v (down t1) (down t2)
 
 	where down	= finaliseT bound def
+
 
 	
 

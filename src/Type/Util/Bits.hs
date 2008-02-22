@@ -13,8 +13,6 @@ module Type.Util.Bits
 	, makeTForall_back
 
 	, makeTFunEC 
-	, substituteTT
-	, substituteVT
 	, spaceOfKind
 	, kindOfSpace 
 	, kindOfType,	takeKindOfType
@@ -116,26 +114,6 @@ flattenTSum tt
 
 
 -----------------------
--- Unify
-
--- | Crush nested TUnifys into their components.
-{-flattenTUnify :: Type -> [Type]
-flattenTUnify tt
- = case tt of
- 	TBot k		-> []
-	TUnify k ts	-> catMap flattenTUnify ts
-	_		-> [tt]
-
--- | Make a unify from the list of these types.	
-makeTUnify :: Kind -> [Type] -> Type
-makeTUnify k ts
- = case nub $ catMap flattenTUnify ts of
- 	[]	-> TBot k
-	[t]	-> t
-	ts'	-> TUnify k ts'
--}
-
------------------------
 -- Masks
 --
 makeTMask :: Kind -> Type -> Type -> Type
@@ -212,46 +190,6 @@ makeTFunEC ::	Effect -> Closure -> [Type]	-> Type
 makeTFunEC	eff clo (x:[])			= x
 makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
 
-
--- | Substitute types for types in some type.
-	
-substituteTT 
-	:: TransM (State ()) a
-	=> Map Type Type
-	-> a -> a
-	
-substituteTT sub tt
- 	= transformT (\t -> case t of
-			TVar{}
-			 -> case Map.lookup t sub of
-				Just t'	-> t'
-				Nothing	-> t
-					
-			TClass{} 
-			 -> case Map.lookup t sub of
-			 	Just t'	-> t'
-				Nothing	-> t
-				
-			_	-> t)
-	$ tt
-
-
--- | Substitute vars for types in some type
-
-substituteVT 
-	:: TransM (State ()) a
-	=> Map Var Type
-	-> a -> a
-
-substituteVT sub tt
-	= transformT (\t -> case t of
-			TVar _ v
-			 -> case Map.lookup v sub of
-			 	Just t'	-> t'
-				Nothing	-> t
-				
-			_	-> t)
-	$ tt
 
 -- | Get the namespace associated with a kind.
 spaceOfKind ::	Kind -> NameSpace

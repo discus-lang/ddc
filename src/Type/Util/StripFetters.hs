@@ -136,6 +136,8 @@ stripMonoFLetsT tt
 	
 	TClass{} -> (tt, [])
 
+	TError{} -> (tt, [])
+
 isMonoFLet ff
  = case ff of
 	FLet TClass{} _	-> True
