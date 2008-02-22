@@ -1,0 +1,39 @@
+
+-- Tail calling optimisation can't tail call functions in the RHS of
+--	match expressions 
+--
+--	fun ()
+--	 = match {
+--	 	| ... <- fun ()			.. don't tail call here!
+--		= ...
+--
+--	prints acc = [] 		with bug
+--	prints acc = [4, 3, 2, 1, 0] 	without bug	
+--
+tailCall1 ()
+ = do
+ 	print "-----\n"
+	ret	= loopJust fun (5, [])
+	
+	case ret of
+	 Just (x, acc) 
+	  -> do	print $ "x   = " % show x % "\n"
+		print $ "acc = " % showListInt acc % "\n"
+ 
+loopJust f (x, acc)
+ 	| Just x2		<- f x
+	, Just (x3, acc')	<- loopJust f (x2, acc)
+	= Just (x3, x2 : acc')
+	
+	\= Just (x, acc)
+ 
+fun x
+ = if x > 0
+    then do 
+    	print $ "loop " % show x % "\n"
+	Just (x - 1)
+
+    else Nothing
+
+main () = tailCall1 ()
+ 
