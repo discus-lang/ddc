@@ -4,11 +4,11 @@
 --
 -- 	They've been converted to DDC syntax, but are otherwise identical.
 --
-{-
+
 -- makeRef must have a polymorphic type.
 makeRef x = ref x;
 
-
+{-
 -- An imperative version of map. 
 --	Should have the same type as the applicative version of map below.
 impMap f l
@@ -44,22 +44,3 @@ appMap_makeRef	= appMap makeRef;
 impMap_id	= impMap id;
 -}
 
--- Infinite types / graphical types.
---
-{-
-eta f		
- = if True
- 	 then f 
-	 else (\x -> f x);
--}
-
--- Variable capture.
-either a b	= if True then a else b
-{-
-captId f 
- = do 	cId y	
-  	 = do	either f (\z -> do { y; z; }) 
-	 	y
-
- 	cId cId
--}

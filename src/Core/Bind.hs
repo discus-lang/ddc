@@ -39,6 +39,7 @@ type   BindM	= VarGenM
 
 -----
 stage	= "Core.Bind"
+
 debug	= False
 trace ss xx
  = if debug 

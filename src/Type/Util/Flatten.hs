@@ -12,6 +12,8 @@ import qualified Data.Map	as Map
 
 import qualified Data.Set	as Set
 
+import Shared.Pretty
+import Debug.Trace
 
 flattenT :: Type -> Type
 flattenT tt

@@ -16,6 +16,7 @@ import Type.Util
 import Type.Pretty
 import Type.Plate
 import Type.Exp
+import Type.Util.Cut
 
 import qualified Shared.Var	as Var
 import Shared.Var		(Var)
@@ -107,34 +108,30 @@ extractType_fromClass final varT cid
 
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 
-	-- Check if the data portion of the type is graphical.
-	--	If it is then it'll hang packType when it tries to construct an infinite type.
-	let cidsDataLoop	
-		= checkGraphicalDataT tTrace
 
-	trace	$ "    cidsDataLoop:\n" %> cidsDataLoop % "\n\n"
-
-	if (isNil cidsDataLoop)
-	 -- no graphical data, ok to continue.
-	 then extractType_pack final varT cid tTrace
-
-	 -- we've got graphical data, add an error to the solver state and bail out.
-	 else do
-	 	addErrors [ErrorInfiniteTypeClassId {
-	 			eClassId	= head cidsDataLoop }]
-
-		return $ Just $ TError KData [tTrace]
-
-
-extractType_pack final varT cid tTrace
- = do	
-	-- Pack the type into standard form.
+	-- Pack the type into standard form,
+	--	looking out for loops through the data portion of the graph.
 	trace	$ ppr " -- packing into standard form\n"	
-	let tPack	
+	let (tPack, tsLoops)
 		= {-# SCC "extract/pack" #-} 
 		  packType tTrace
 
 	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
+
+	if (isNil tsLoops)
+	 -- no graphical data, ok to continue.
+	 then extractType_more final varT cid tPack
+
+	 -- we've got graphical data, add an error to the solver state and bail out.
+	 else do
+	 	addErrors [ErrorInfiniteType 
+				{ eVar	= varT 
+				, eLoops	= tsLoops }]
+
+		return $ Just $ TError KData [tTrace]
+
+extractType_more final varT cid tPack
+ = do	
 
 	-----
 	-- More-ify fetters
@@ -166,7 +163,7 @@ extractType_pack final varT cid tTrace
 	trace	$ "    tDeMore\n"
 		%> prettyTS tDeMore	% "\n\n"
 
-	-----
+
 	-- Trim closures
 	let tTrim	= 
 		case kindOfType tDeMore of
@@ -176,14 +173,20 @@ extractType_pack final varT cid tTrace
 	trace	$ " -- trimming closures\n"
 		% "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"
 
-	let tTrimPack	
-		= {-# SCC "extract/pack_trim" #-}
-		  packType tTrim
+	-- Cut loops through :> fetters in this type
+	let tCut	= cutLoopsT tTrim
 
-	trace	$ "    tTrimPack:\n"	%> prettyTS tTrimPack % "\n\n"
+	trace	$ " -- cutting loops\n"
+		% "    tCut:\n" 	%> prettyTS tCut % "\n\n"
+	
+	let tCutPack
+		= {-# SCC "extract/pack_cut" #-}
+		  packType_noLoops tCut
+
+	trace	$ "    tCutPack:\n"	%> prettyTS tCutPack % "\n\n"
 
 
-	extractType_final final varT cid tTrimPack
+	extractType_final final varT cid tCutPack
 	
 
 extractType_final True varT cid tTrim

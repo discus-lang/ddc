@@ -30,7 +30,7 @@ finaliseT
 	-> Type
 
 finaliseT bound def tt
- = let tt'	= packType $ finaliseT' bound def tt
+ = let tt'	= packType_noLoops $ finaliseT' bound def tt
    in  if tt == tt'
    	then tt
 	else finaliseT bound def tt'

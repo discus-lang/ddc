@@ -99,7 +99,7 @@ toCoreT' table tt
 	T.TVar k v		
 	 -> case Map.lookup v table of
 	 	Nothing		-> C.TVar     (toCoreK k) v 
-		Just tMore	-> C.TVarMore (toCoreK k) v (down tMore)
+		Just tMore	-> C.TVarMore (toCoreK k) v (toCoreT' (Map.delete v table) tMore)
 
 	T.TBot k		-> C.TBot (toCoreK k)
 

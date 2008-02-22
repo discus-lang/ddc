@@ -139,7 +139,7 @@ inlineDump acc (c : cs)
 		
 	CEq sp t1@(TVar k v1) t2
 	 -> do	sub	<- gets tableSub
-		let t2'	= packType $ subFollowVT sub t2
+		let t2'	= packType_noLoops $ subFollowVT sub t2
 		inlineDump (CEq sp t1 t2' : acc) cs
 		
 	_ ->	inlineDump (c : acc) cs

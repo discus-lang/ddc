@@ -57,7 +57,7 @@ trace ss x
 -- | Trim the closure portion of this type
 trimClosureT :: Set Type -> Set Type -> Type -> Type
 trimClosureT quant rsData tt
-  = let	tt'	= packType $ trimClosureT' quant rsData tt
+  = let	tt'	= packType_noLoops $ trimClosureT' quant rsData tt
     in	if tt' == tt
     		then tt'
 		else trimClosureT quant rsData tt'
@@ -101,7 +101,7 @@ trimClosureC quant rsData cc
 
 trimClosureC2 quant rsData cc
  | KClosure	<- kindOfType cc
-  = let cc'	= packClosure $ trimClosureC' quant rsData cc
+  = let cc'	= packClosure_noLoops $ trimClosureC' quant rsData cc
     in  if cc' == cc
    	 then cc'
 	 else trimClosureC quant rsData cc'

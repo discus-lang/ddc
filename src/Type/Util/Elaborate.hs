@@ -335,7 +335,7 @@ elaborateEffT vsRsConst vsRsMutable tt
 	
 	let tFinal	= addEffectsToFsT effs hookVar tHooked
   
- 	return $ packType tFinal
+ 	return $ packType_noLoops tFinal
 
 
 -- | Find the right most function arrow in this function type and return the effect variable

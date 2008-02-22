@@ -1,0 +1,29 @@
+
+{- Test detection of closure loops.
+	From Leroy.
+	The type for captId has a loops via *28 and *28 -> $88.
+
+        tTrace:
+            *24
+            :- *0         = forall a. a -> a -(!eTC0if $cTC21)> a :- !eTC0if    = !Bot, $cTC21     = a : a
+            ,  *24        = *27 -(!29 $30)> *28
+            ,  *27        = *69 -(!71 $46)> *69
+            ,  *28        = *28 -(!91 $88)> *28
+            ,  $30        :> $32 \ $33
+            ,  $32        :> ${$43; $44; $45}
+            ,  $33        :> ${cId; f}
+            ,  $43        :> Main.either : *0
+            ,  $44        :> f : *27
+            ,  $45        :> $46 \ y
+            ,  $46        :> y : *28
+            ,  $88        :> f : *28
+-}
+
+either a b	= if True then a else b
+
+captId f 
+ = do 	cId y	
+  	 = do	either f (\z -> do { y; z; }) 
+	 	y
+
+ 	cId cId

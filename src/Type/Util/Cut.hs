@@ -64,7 +64,7 @@ stage	= "Type.Util.Cut"
 
 -- Cut loops in this type
 cutLoopsT :: Type -> Type
-cutLoopsT (TFetters fs cid@(TClass{}))
+cutLoopsT (TFetters fs tt)
  = let	
 	-- split the fetters into the let/more and the rest.
 	(fsLetMore, fsOther)	
@@ -78,10 +78,14 @@ cutLoopsT (TFetters fs cid@(TClass{}))
 			$ fsLetMore
 	
 	-- cut loops in these lets
-	fsLetMore'	= cutLoopsF (Set.singleton cid) sub cid
+	cidsRoot	= collectTClasses tt
+	fsLetMore'	= foldl' (cutLoopsF Set.empty) sub cidsRoot
 	
 	-- rebuild the type, with the new fetters
-     in	TFetters (Map.elems fsLetMore' ++ fsOther) cid
+     in	TFetters (Map.elems fsLetMore' ++ fsOther) tt
+
+cutLoopsT tt
+ 	= tt
 
 
 cutLoopsF

@@ -92,20 +92,13 @@ toCoreTreeM tree
 	= liftM concat
 	$ mapM toCoreP tree
 	
-{-
-flattenEs e
- = case e of
- 	C.TNil			-> []
-	C.TSum C.KEffect es	-> es
-	e			-> [e]
--}
-	
 -- Top ---------------------------------------------------------------------------------------------
 -- | Convert a top level thing to core.
 toCoreP	:: D.Top Annot	
 	-> CoreM [C.Top]
 
 toCoreP	p
+-- = trace ("toCoreP")
  = case p of
 	D.PNil
 	 ->	return []
@@ -282,7 +275,8 @@ toCoreS	D.SSig{}
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
- = case xx of
+ = trace ("toCoreX: " % xx % "\n")
+ $ case xx of
 
 	D.XLambdaTEC 
 		_ v x (T.TVar T.KData vTV) eff clo
@@ -610,7 +604,8 @@ toCoreConst' tt const
 -- VarInst -----------------------------------------------------------------------------------------
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
 toCoreVarInst v vT
- = do
+ = trace ("toCoreVarInst" % v <> vT % "\n")
+ $ do
 	Just tScheme	<- lookupType v
 	mapInst		<- gets coreMapInst
 

@@ -1,8 +1,8 @@
 module Type.Util.Pack
-	( packType
-	, packData
-	, packEffect
-	, packClosure
+	( packType, packType_noLoops
+	, packData, packData_noLoops
+	, packEffect, packEffect_noLoops
+	, packClosure, packClosure_noLoops
 	, sortFsT)
 
 where
@@ -30,11 +30,13 @@ import qualified Debug.Trace
 -----
 stage	= "Type.Util.Pack"
 
-debug	= False
+{-
+debug	= True
 trace ss x
 	= if debug 
 		then (Debug.Trace.trace (pprStrPlain ss) x)
 		else x
+-}
 
 ------------------------
 -- packType
@@ -45,38 +47,54 @@ trace ss x
 --	* Substitute TPure/TEmpty and crush TSums
 --	* Erase TFrees if they contain no classids.
 --
-packType :: Type -> Type
-packType tt
+packType_noLoops :: Type -> Type
+packType_noLoops tt
  = case kindOfType tt of
- 	KData		-> packData    tt
-	KEffect		-> eff' where Just eff' = packEffect tt
+ 	KData		-> packData_noLoops  tt
+	KEffect		-> packEffect_noLoops tt
 	 
-	KClosure	-> packClosure tt
+	KClosure	-> packClosure_noLoops tt
 	KRegion		-> packRegion  tt
 
+packType :: Type -> (Type, [(Type, Type)])
+packType tt
+ = case kindOfType tt of
+ 	KData		-> packData   tt
+	KEffect		-> packEffect tt
+	 
+	KClosure	-> packClosure tt
+	KRegion		-> (packRegion  tt, [])
+
+
+-- PackData ----------------------------------------------------------------------------------------
+-- | Pack a value type, and panic if we find loops in the substitution.
+packData_noLoops  :: Data -> Data
+packData_noLoops tt
+ = case packData tt of
+ 	(tt_packed, [])		-> tt_packed
+	(tt_packed, tsLoops)
+	 	-> panic stage 
+		$ "packData: got loops\n"
+		% "loops:\n" %> punc "\n" tsLoops % "\n"
 
 -- | Pack a value type
-packData  :: Data -> Data
+packData :: Data -> (Data, [(Type, Type)])
 packData tt
 	| KData			<- kindOfType tt
-	, (tt_packed, tsLoop)	<- runState (packTypeLs False Map.empty tt) Set.empty
+	, (tt_packed, tsLoop)	<- runState (packTypeLs False Map.empty tt) []
 	= let result
-		| not $ Set.null tsLoop = panic stage "packData: got loops\n"
-		| tt_packed == tt	= tt_packed
+
+		-- if we've hit loops in the substitution then bail out early
+		| not $ null tsLoop 	= (tt_packed, tsLoop)
+			
+		-- type has stopped moving.
+		| tt_packed == tt	= (tt_packed, [])
+
+		-- keep packing
 		| otherwise		= packData tt_packed
 	  in  result
 
 
--- | Pack a region
-packRegion :: Region -> Region
-packRegion tt
-	| KRegion		<- kindOfType tt
-	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) Set.empty
-	, Set.null tsLoop
-	= if tt == tt_packed
-		then tt_packed
-		else packRegion tt_packed
-	
 
 -- | Pack an effect into the standard form
 --	Regular packType won't flatten out recursive effects like this example:
@@ -84,32 +102,43 @@ packRegion tt
 --	!{!3386; Base.!ReadH (Data.Bool.Bool %3368)} 
 --		:- !3386      = !{!3369; Base.!ReadT (Base.Int %481)}
 --
-packEffect :: Effect -> Maybe Effect
+packEffect_noLoops :: Effect -> Effect
+packEffect_noLoops tt
+ = case packEffect tt of
+ 	(tt_packed, [])		-> tt_packed
+	(tt_packed, tsLoops)
+		-> panic stage
+		$  "packEffects: got loops\n"
+
+
+packEffect :: Effect -> (Effect, [(Type, Type)])
 packEffect tt
 	| KEffect		<- kindOfType tt
-	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) Set.empty
+	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
 	, tt'			<- inlineFsT $ tt_packed
 	= let result
-		| not $ Set.null tsLoop	= panic stage "packClosure: got loops"
-		| tt == tt'		= Just tt'
+		| not $ null tsLoop	= (tt', tsLoop)
+		| tt == tt'		= (tt', [])
 		| otherwise		= packEffect tt'
 	  in result
 
-	| otherwise
-	= freakout stage
-		("packEffect: not an effect\n"
-		% "  e = " % tt % "\n")
-		Nothing
-	
 
-packClosure :: Closure -> Closure
+-- 
+packClosure_noLoops :: Closure -> Closure
+packClosure_noLoops tt
+ = case packClosure tt of
+ 	(tt_packed, [])		-> tt_packed
+	(tt_packed, tsLoops)
+		-> panic stage
+		$ "packClosure: got loops\n"
+		
 packClosure tt
 	| KClosure		<- kindOfType tt
-	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) Set.empty
+	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
  	, tt'			<- crushT $ inlineFsT $ tt_packed
 	= let result
-		| not $ Set.null tsLoop	= panic stage "packClosure: got loops"
-		| tt == tt'		= tt'
+		| not $ null tsLoop	= (tt_packed, tsLoop)
+		| tt == tt'		= (tt', [])
 		| otherwise		= packClosure tt'
 	  in result
 
@@ -117,6 +146,16 @@ packClosure tt
 	= panic stage 
 	 	$ "packClosure: not a closure\n"
 		% "  c = " % tt % "\n\n"
+
+-- | Pack a region
+packRegion :: Region -> Region
+packRegion tt
+	| KRegion		<- kindOfType tt
+	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
+	, null tsLoop
+	= if tt == tt_packed
+		then tt_packed
+		else packRegion tt_packed
 
 
 -- PackTypeLs --------------------------------------------------------------------------------------
@@ -279,7 +318,9 @@ packTypeLs ld ls tt
 		    
 
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
---	(ie, find a fixpoint of restrictFs . packFettersLs) 
+--	(or we hit an infinite type error)
+
+--	ie, find a fixpoint of restrictFs . packFettersLs
 --
 packTFettersLs 
 	:: Bool
@@ -307,8 +348,7 @@ packTFettersLs ld ls tt
 				= mapAccumL (zapCoveredTMaskF ls') tPacked fsPacked
 		
 		-- inline TBots, and fetters that are only referenced once
-		let (fsInlined)
-				= inlineFs fsZapped
+		fsInlined	<- inlineFs fsZapped
 
 		let fsSorted	= sortFs		
 				$ restrictFs tZapped
@@ -316,7 +356,10 @@ packTFettersLs ld ls tt
 				
 		let tFinal	= addFetters fsSorted tZapped
 
-		if length fsSorted < length fs
+		-- bail out if we find an infinite type problem
+		tsLoops		<- get
+		if   (length fsSorted < length fs)
+		  && null tsLoops 
 	    	 	then packTFettersLs ld ls tFinal
 			else return tFinal
 
@@ -346,44 +389,63 @@ packFetterLs ld ls ff
 
 
 -- InlineFs ----------------------------------------------------------------------------------------
--- | Inline Effect and Closure fetters
---	Also inline (t = TBot) fetters
+-- | Inline fetters into themselves.
 --
-inlineFs :: [Fetter] -> [Fetter]
+inlineFs :: [Fetter] -> SubM [Fetter]
 inlineFs fs
  = {-# SCC "inlineFs1" #-}
-   let	-- vsFree	= collectTClassVars tt
-   
-   	-- build a substitution from the let fetters
-	sub	= Map.fromList	
-		$ [(t1, t2)	
-			| FLet t1 t2 <- fs]
-	--		, not $ elem t1 vsFree]
+   do
+   	-- build a substitution from the fetters
+	let takeSub ff
+		 = case ff of
+		 	FLet t1 t2	-> Just (t1, t2)
+--			FMore t1 t2	-> Just (t1, TSum (kindOfType t1) [t1, t2])
+			_		-> Nothing
+	
+	let sub	= Map.fromList	
+			$ catMaybes
+			$ map takeSub fs
 
+	-- a substitutions with only data fetters.
+	let subD = Map.filterWithKey
+			(\k x -> kindOfType k == KData)
+			sub
+
+	-- Don't substitute closures and effects into data, it's too hard to read.				
+	--	Also bail out early if one of the substitutions hits an infinite
+	--	type error, otherwise we'll get multiple copies of the error
+	--	in the SubM state.
+	let subRHS t1 t2
+		= do	tsLoops	<- get
+			if null tsLoops
+			 then case kindOfType t1 of
+				KData	-> subTT_cutM subD (Set.singleton t1) t2
+				_	-> subTT_cutM sub  (Set.singleton t1) t2
+
+			 else return t2
+				
 	-- substitute in the the RHSs
-	subF ff
+	let subF ff
 		= case ff of
 			FLet  t1 t2 	 
-			 -> let	(t2', [])	= subTT sub t2
-			    in	FLet  t1 t2'
-
+			 -> do	t2'	<- subRHS t1 t2
+			 	return	$ FLet t1 t2'
+			 
 			FMore t1 t2	 
-			 -> let (t2', [])	= subTT sub t2
-			    in	FMore t1 t2'
+			 -> do	t2'	<- subRHS t1 t2
+			    	return $ FMore t1 t2'
 
 			FConstraint v ts 
-			 -> let (ts', _)	= unzip $ map (subTT sub) ts
-			    in	FConstraint v ts'
+			 -> do	ts'	<- mapM (subTT_cutM sub (Set.empty)) ts
 
-			_		 -> ff
+				return $ FConstraint v ts'
+		
+			_ -> return ff
 
-	fs'	= map subF fs
+	-- substitute into all the fetters
+	fs'	<- mapM subF fs
 
-   in	trace 	( "inlineFs\n"
-		% "  fs':\n" %> punc "\n" fs	% "\n\n"
-		% "  fs':\n" %> punc "\n" fs'	% "\n\n"
-		% "  sub:\n" %> sub		% "\n\n")
-		fs'
+	return fs'
 
 
 -- | Inline Effect and Closure fetters, regardless of the number of times they are used
