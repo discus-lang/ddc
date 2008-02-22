@@ -1,4 +1,6 @@
 
+-- makeGetSet creates a box and functions to access it.
+--	the tyvar of the created box should be monomorphic.
 data Box %r a
 	= Box { x :: a; };
 

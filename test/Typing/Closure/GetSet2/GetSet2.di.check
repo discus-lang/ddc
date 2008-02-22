@@ -1,0 +1,68 @@
+-- Imports
+
+-- Pragmas
+
+-- Infix
+
+-- Data
+data Box %r a
+        = Box {
+                x :: a ;
+        };
+
+
+-- Effects
+
+-- Regions
+
+-- Classes
+
+-- Class dictionaries
+
+-- Class instances
+
+-- Foreign imports
+
+-- Binds
+foreign import extern box2
+        :: Data.Tuple.Tuple2 %rTS5 (Base.Unit -($c0)> Base.Unit -(!e0 $c1)> Data.List.List %rTS6 Base.Unit) (Base.Unit -($c2)> Data.List.List %rTS6 Base.Unit -(!e1 $c3)> Base.Unit)
+        :- !e0        = Base.!Read %rTS4
+        ,  !e1        = !{Base.!Read %rTS4; Base.!Write %rTS4}
+        ,  $c0        = ${box : %rTS4; box : %rTS6}
+        ,  $c1        = ${box : %rTS4; box : %rTS6}
+        ,  $c2        = ${box : %rTS4; box : %rTS6}
+        ,  $c3        = ${box : %rTS4; box : %rTS6}
+        ,  Base.Mutable %rTS4
+        :$ Base.Data;
+        
+foreign import extern project_Box_x
+        :: forall t0 %r0
+        .  Box %r0 t0 -(!e0)> t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Obj;
+        
+foreign import extern project_Box_ref_x
+        :: forall t0 %r0
+        .  Box %r0 t0 -(!e0)> Data.Ref.Ref %r0 t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern makeGetSet2
+        :: forall t0 %r0 %r1
+        .  t0 -> Data.Tuple.Tuple2 %r1 (Base.Unit -($c0)> Base.Unit -(!e0 $c1)> t0) (Base.Unit -($c2)> t0 -(!e1 $c3)> Base.Unit)
+        :- !e0        = Base.!Read %r0
+        ,  !e1        = !{Base.!Read %r0; Base.!Write %r0}
+        ,  $c0        = ${box : %r0; box : %r0 $> t0}
+        ,  $c1        = ${box : %r0; box : %r0 $> t0}
+        ,  $c2        = ${box : %r0; box : %r0 $> t0}
+        ,  $c3        = ${box : %r0; box : %r0 $> t0}
+        ,  Base.Mutable %r0
+        :$ Base.Obj -> Base.Data;
+        
+project Main.Box %_ *_ where
+{
+        x        = project_Box_x;
+        ref_x    = project_Box_ref_x;
+}
+
+
