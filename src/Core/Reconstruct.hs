@@ -785,19 +785,32 @@ reconG tt gg@(GExp p x)
  	tt'		= foldr addEqVT' tt binds
 	
 	-- Work out the effect of testing the case object.
-	eff		= case stripToShapeT tX of
-			   TData vD []	
-			     -> TBot KEffect
+	tX_shape	= stripToShapeT tX
 
-			   TData vD (TVar KRegion rH : _)
-			     -> TEffect primRead [TVar KRegion rH]
+	effTest	
+		-- If the type of the object has no regions we assume that
+		--	it is constant, so matching against it generates no effects.
+		| TData vD []	<- tX_shape
+		= TBot KEffect
+
+		-- Otherwise, matching against some object cause a read effect
+		--	on its primary region.
+		| TData vD (TVar KRegion rH : _)
+				<- tX_shape
+		= TEffect primRead [TVar KRegion rH]
+
+		-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
+		| TVar{}	<- tX_shape
+		, WVar{}	<- p
+		= TBot KEffect
+
    in trace 	( "regonG\n"
-		% "    gg  = " % gg	% "\n"
-		% "    eff = " % eff	% "\n") $
+		% "    gg      = " % gg		% "\n"
+		% "    effTest = " % effTest	% "\n") $
    	( tt'
    	, ( GExp p x'
 	  , map fst binds
-   	  , makeTSum KEffect ([eX, eff])
+   	  , makeTSum KEffect ([eX, effTest])
 	  , cX))
  
 slurpVarTypesW tRHS (WVar v)		= [(v, tRHS)]
