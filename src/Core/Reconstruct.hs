@@ -789,8 +789,7 @@ reconG tt gg@(GExp p x)
 
 	effTest	
 		-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
-		| TVar{}	<- tX_shape
-		, WVar{}	<- p
+		| WVar{}	<- p
 		= TBot KEffect
 
 		-- If the type of the object has no regions we assume that

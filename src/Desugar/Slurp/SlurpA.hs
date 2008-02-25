@@ -116,11 +116,19 @@ slurpG	(GExp sp w x)
 		<- slurpX x
 
 	let vsBoundV	= map fst cbindsW
---	let tsBoundT	= map (TVar KData) $ map snd $ cbindsW
+
+	-- make the effect of testing the case object
+	let effMatch
+		= case w of
+			-- if the LHS is a plain var there is no effect
+			WVar{}	-> []
+
+			-- otherwise we need to read the primary region
+			_	-> [TEffect primReadH [tX]]
 
 	let qs = 
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
-		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum KEffect [eX, TEffect primReadH [tX]]
+		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum KEffect (eX : effMatch)
 		, CEq	(TSC $ SCGuards sp)	cGuard	$ makeTMask 
 							KClosure 
 							cX

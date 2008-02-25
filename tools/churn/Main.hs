@@ -122,6 +122,9 @@ sizeTree tree
 
 class Size a where
  size :: a -> Int
+
+instance Size a => Size [a] where
+ size xx	= sum $ map size xx
  
 instance Size (Top a) where
  size pp
@@ -142,6 +145,33 @@ instance Size (Exp a) where
 	XConst{}	-> 1
 	XApp _ x1 x2  	-> 1 + size x1 + size x2
 	XLambda _ v x	-> 1 + size x
+	XMatch _ aa	-> 1 + size aa
+	
+instance Size (Alt a) where
+ size xx
+  = case xx of
+  	AAlt _ gs x	-> 1 + size gs + size x
+	
+instance Size (Guard a) where
+ size xx
+  = case xx of
+  	GExp _ w x	-> 1 + size w + size x
+	
+instance Size (Pat a) where
+ size xx
+  = case xx of
+  	WVar _ v	-> 1
+	WConst{}	-> 1
+	WCon {}		-> 1
+	WConLabel{}	-> 1
+	WAt _ v w	-> 1 + size w
+	WWildcard _	-> 1
+	
+	WUnit _		-> 1
+	WTuple _ ps	-> size ps
+	WCons _ p1 p2	-> size p1 + size p2
+	WList _ ps	-> size ps
+	WExp x		-> size x
 
 
 
