@@ -260,7 +260,7 @@ bindXDo shared xx@(XDo ss)
 			([0..] :: [Int])
 			ss
 	
-  	-- Decend into each statement, passing down the set of regions which a local to it.
+  	-- Decend into each statement, passing down the set of regions which are local to it.
 	let decendS :: Int -> Stmt -> BindM (Stmt, Set Var, Set Var)
 	    decendS ix (SBind mV x) = do
 		-- work out the regions which are shared with other bindings in this group

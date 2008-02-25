@@ -44,8 +44,11 @@ genExpT env tt
 		| otherwise	= 0
 	
 	let result
-		| r <= 3
+		| r <= 1
 		= genExpT_base env tt
+
+		| r <= 2
+		= genExpT_var env tt
 		
 		| r <= 4
 		= genExpT_app  env tt
@@ -54,6 +57,53 @@ genExpT env tt
 		= genExpT_match env tt
 	result
 		
+
+-- Exp Base ----------------------------------------------------------------------------------------
+-- | Make an expression as a base value.
+
+genExpT_base env tt
+	-- unit
+	| TData v []			<- tt
+	, v == primTUnit
+	= do	burn 1
+		return $ XUnit none
+
+	-- literal
+	| TData v [TWild KRegion]	<- tt
+	, v == primTInt 
+	= do	burn 1
+		r	<- genInt 0 100
+		return	$ XConst none (CConst (LInt r))
+		
+
+	-- function
+	| TFun t1 t2 _ _		<- tt
+	= do	burn 1
+		v	<- genVar NameValue
+		xBody	<- genExpT [(t1, v)] t2 
+		return	$  XLambda none v xBody
+
+
+-- Exp Var -----------------------------------------------------------------------------------------
+-- | Make an expression by referencing something 
+
+genExpT_var env tt
+ = do
+ 	-- try and find something from the environment of the desired type
+	let  candidates	= filter (\(t, v) -> t == tt) env
+
+	ix 	<- genInt 0 (length candidates -1)
+
+	let result
+		-- no candidates, try again
+		| []		<- candidates
+		= genExpT env tt
+		
+		| (tVar, var)	<- candidates !! ix
+		= return	$ XVar none var
+ 	
+	result
+	
 
 -- Exp App -----------------------------------------------------------------------------------------
 -- | Make an expression of this type, and do it by applying a function in the environment
@@ -69,8 +119,9 @@ genExpT_app env tt
 	ix 	<- genInt 0 (length candidates -1)
 			
 	let result
+		-- no candidates of this type, try again
 		| []		<- candidates
-		= genExpT_base env tt
+		= genExpT env tt
 		
 		| (tFun, vFun)	<- candidates !! ix
 		= genExpT_call env tt tFun vFun
@@ -104,28 +155,6 @@ genExpT_match env tRHS
 	return	$ XMatch none alts
 
 
--- Exp Base ----------------------------------------------------------------------------------------
-genExpT_base env tt
-	-- unit
-	| TData v []			<- tt
-	, v == primTUnit
-	= do	burn 1
-		return $ XUnit none
-
-	-- literal
-	| TData v [TWild KRegion]	<- tt
-	, v == primTInt 
-	= do	burn 1
-		r	<- genInt 0 100
-		return	$ XConst none (CConst (LInt r))
-		
-
-	-- function
-	| TFun t1 t2 _ _		<- tt
-	= do	burn 1
-		v	<- genVar NameValue
-		xBody	<- genExpT [(t1, v)] t2 
-		return	$  XLambda none v xBody
 
 -- Alternative -------------------------------------------------------------------------------------
 genAltTT :: Env -> Type -> Type -> GenM (Alt a)

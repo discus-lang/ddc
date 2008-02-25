@@ -8,8 +8,8 @@ fun
  }
 
 
--- churn test
-v0              
+-- churn error (we weren't handling guards with the LHS as a plain var)
+v0a          
  = \v1 -> match {
         | ()     <- ()
         , v2     <- v1 ()
@@ -25,5 +25,9 @@ v0
 };
 
 
+
 main ()
 	= print "wibble"
+
+
+

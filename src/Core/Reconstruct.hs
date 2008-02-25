@@ -788,6 +788,11 @@ reconG tt gg@(GExp p x)
 	tX_shape	= stripToShapeT tX
 
 	effTest	
+		-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
+		| TVar{}	<- tX_shape
+		, WVar{}	<- p
+		= TBot KEffect
+
 		-- If the type of the object has no regions we assume that
 		--	it is constant, so matching against it generates no effects.
 		| TData vD []	<- tX_shape
@@ -798,11 +803,6 @@ reconG tt gg@(GExp p x)
 		| TData vD (TVar KRegion rH : _)
 				<- tX_shape
 		= TEffect primRead [TVar KRegion rH]
-
-		-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
-		| TVar{}	<- tX_shape
-		, WVar{}	<- p
-		= TBot KEffect
 
    in trace 	( "regonG\n"
 		% "    gg      = " % gg		% "\n"
