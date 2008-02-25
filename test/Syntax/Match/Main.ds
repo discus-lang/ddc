@@ -25,6 +25,33 @@ v0a
 };
 
 
+-- churn error (no effects when the LHS of a guard is a plain var)
+v0x               =  \v28 -> \v29 -> \v30 -> \v31 -> \v32 -> 63;
+v33             
+ = \v34 -> v34 (\v35 -> match {
+        | v53    <- match {
+                | ()     <- match {
+                        | v49    <- match {
+                                | v36    <- ()
+                                , v37    <- v35
+                                , v38    <- 100
+                                =  89;
+                                
+                        }
+                        =  ();
+                        
+                }
+                , ()     <- ()
+                =  ();
+                
+        }
+        , v54    <- ()
+        =  ();
+        
+});
+v57              = v0x (v33 (\v58 -> v58 ())) 19 (\v59 -> v59) (v33 (\v60 -> ())) ();
+
+
 
 main ()
 	= print "wibble"

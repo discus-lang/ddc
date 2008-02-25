@@ -169,7 +169,9 @@ bindX 	shared xx
 				vsFree
 			, vsLocal)
 
-	-- BUGS: handle regions bound in different alternatives
+	-- TODO: push regions used only in a single alternative down 
+	--	 into that alternative. Better if we can refactor the trash in 
+	--	 bindXDo do be more general, then use that.
 	XMatch aa
 	 -> do	(aa', vssFree, vssLocal)	
 	 		<- liftM unzip3 $ mapM (bindA shared) aa
@@ -192,9 +194,8 @@ bindX 	shared xx
 	 		, Set.empty )
 
 
--- BUGS: shared regions in local funs in case expr
---	usage in different guards, guard and body
---
+-- TODO: push regions used in only a single guard down into that guard
+--	 also regions used in only the case object.
 bindA shared aa@(AAlt gs x)
  = do	(gs', vssFreeGs, vssLocalGs)	<- liftM unzip3 $ mapM (bindG shared) gs
  	(x',  vsFreeX, vsLocalX)	<- bindX shared x

@@ -16,6 +16,7 @@ import Shared.Var	(Var, NameSpace(..))
 import Shared.VarPrim
 import Shared.Base
 import Shared.Error
+import Shared.Pretty
 
 import qualified Source.Exp		as S
 import qualified Source.Util		as S
@@ -27,7 +28,10 @@ import Desugar.Bits			as D
 import Desugar.Plate.Trans		as D
 import Desugar.Pretty			as D
 
+
 import Source.Desugar.Base
+import Source.Pretty
+
 
 import qualified Data.Map		as Map
 import Data.Map				(Map)
@@ -36,7 +40,6 @@ import Debug.Trace
 
 -----
 stage	= "Source.Desugar.Patterns"
-
 
 -- rewritePatTree ----------------------------------------------------------------------------------
 
@@ -87,45 +90,6 @@ rewritePatA co aa
 	  	let gsLift	= catMap simplifyGuard gsAts
 		return	$ D.AAlt sp gsLift x
 
-
--- SprinkleAts -------------------------------------------------------------------------------------
-
--- SprinkleAts ensures that every intermediate node in a pattern is named with an XAt variable.
---	This makes crushing and slurping pattern much easier because we don't have to
---	name the nodes on the fly.
-
--- | Name intermediate nodes in a pattern expression
-{-
-sprinkleAtsX :: a -> S.Exp a -> RewriteM (S.Exp a)
-sprinkleAtsX sp p
- = case p of
- 	S.XVar sp var
-	 | Var.isCtorName var
-	 -> do	v	<- newVarN NameValue
-	 	return	$ S.XAt sp v (S.XCon sp var [])
-		
-	 | otherwise
-	 ->	return	$ S.XVar sp var
- 
- 	S.XCons sp x1 x2
-	 -> do	v	<- newVarN NameValue
-	 	x1'	<- sprinkleAtsX sp x1
-		x2'	<- sprinkleAtsX sp x2
-		return	$ S.XAt sp v (S.XCons sp x1' x2')
- 
- 	S.XTuple sp xx
-	 -> do	v	<- newVarN NameValue
-	 	xx'	<- mapM (sprinkleAtsX sp) xx
-		return	$ S.XAt sp v (S.XTuple sp xx')
-		
-	-- convert from defixed pattern into XCon form.
-	S.XApp{} 
-	 -> do	v	<- newVarN NameValue
-	 	let (S.XVar sp var : xs)	= S.flattenApps p
-	 	xs'		<- mapM (sprinkleAtsX sp) xs
-		let var'	=  rewritePatVar var
-		return	$ S.XAt sp v (S.XCon sp var' xs')
--}
 
 -- | These variables are treated as special aliases for list functions.
 -- 	TODO: 	It would be better to define these in the source program, or allow
@@ -316,7 +280,7 @@ addLambdas sp (v:vs) x	= D.XLambda sp v (addLambdas sp vs x)
 --
 --	This function converts these expressions to actual patterns.
 --
-expToPat :: Show a => S.Exp a -> S.Pat a
+expToPat :: Show Annot => S.Exp Annot -> S.Pat Annot
 expToPat xx
  = case xx of
 	S.XVar sp v
@@ -349,7 +313,7 @@ expToPat xx
 
 --
 mergeBindings
-	:: [Stmt a] -> ([Stmt a], [S.Error])
+	:: [D.Stmt Annot] -> ([D.Stmt Annot], [S.Error])
 	
 mergeBindings ss	
  = let	( ss', errs)	= mergeBindings' [] [] ss
@@ -389,10 +353,10 @@ mergeBindings2
 	v2 vs2 xResult2
 	
 	-- all bindings must have the same airity
---	| length vs1 /= length vs2
---	= ( [s1, s2]
---	  , [S.ErrorBindingAirity v1 (length vs1) v2 (length vs2)] )
-	  
+	| length vs1 /= length vs2
+	= dieWithUserError
+		[S.ErrorBindingAirity v1 (length vs1) v2 (length vs2)]
+	
 	-- looks ok
 	| otherwise
 	= let	
@@ -407,12 +371,15 @@ mergeBindings2
 
 		sMerged		= SBind sp (Just v1) xMerged_lam
 		
-	  in ( [sMerged]
-	     , [])
-	
+	  in  ([sMerged]
+	      , [])
 
 -- | Merge these two expressions into a single match
-mergeMatchX :: Exp a -> Exp a -> Exp a
+mergeMatchX 
+	:: D.Exp Annot 
+	-> D.Exp Annot 
+	-> D.Exp Annot
+		
 
 -- two match expressions
 mergeMatchX (XMatch n1 Nothing as1) (XMatch _ Nothing as2)
@@ -423,6 +390,14 @@ mergeMatchX (XMatch n1 Nothing as1) x2
 	= XMatch n1 Nothing
 		(as1 ++ [AAlt n1 [] x2])
 
+-- neither are a match expression, or only the second one is.
+--	this is an obvious overlapped patterns problem, but Haskell
+--	doesn't treat it as an error, so we won't either.
+mergeMatchX x1 x2
+ = let	n	= D.getAnnotX x1
+   in  XMatch n Nothing
+		[ AAlt n [] x1
+		, AAlt n [] x2]
 
 
 -- | Slurp the lambda bound variables from the front of this expression
