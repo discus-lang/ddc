@@ -2,28 +2,27 @@
 -- Try and uncover compiler errors by generating random programs and compiling them
 module Main where
 
+import Exp
 import Bits
+import Base
+
+----
+import Source.Util
+import Source.Pretty
+import Source.Exp
+
+import Type.Exp
 
 import System.Random
 import System.Exit
 import System.Cmd
 
-import Control.Monad.State
-import Util
-
-import Type.Pretty
-
-import Source.Util
-import Source.Pretty
-import Source.Exp
-
-import Shared.Pretty
-import Shared.Base
-import Shared.Literal
 import Shared.VarPrim
-
-import Shared.Var		(NameSpace(..))
+import Shared.Pretty
+import Shared.Var	(NameSpace(..))
 import qualified Shared.Var	as Var
+
+import Util
 
 -- Config ------------------------------------------------------------------------------------------
 
@@ -32,57 +31,6 @@ scratch	= "tools/churn/scratch/"
 expFuel		= 50 :: Int
 typeFuel	= 50 :: Int
 
-
-----------------------------------------------------------------------------------------------------
-type Env	= [(Type, Var)]
-
--- Generator Monad ---------------------------------------------------------------------------------
--- TODO: add deterministic support
-type GenM a 	= StateT GenS IO a
-
-data GenS
-	= GenS 
-	{ stateVarGen	:: Int 
-	, stateFuel	:: Int }
-
-genStateZero
-	= GenS
-	{ stateVarGen	= 0 
-	, stateFuel	= 0 }
-
-evalGen f = evalStateT f genStateZero
-
--- | burn some fuel
-burn n		= modify $ \s -> s { stateFuel = stateFuel s - n }
-
--- | check how much fuel is left
-checkFuel :: GenM Int
-checkFuel 	= gets stateFuel
-
-
-withFuel :: Int -> GenM a -> GenM a
-withFuel fuel f
- = do	oldFuel	<- gets stateFuel
- 	modify $ \s -> s { stateFuel = fuel }
-	x	<- f
-	modify $ \s -> s { stateFuel = oldFuel }
-	return x
-
--- | Eval a generator and print the result
-eval :: Pretty a PMode => GenM a -> IO ()
-eval f 
- = do	x	<- evalGen f
- 	putStr $ pprStrPlain x
-	putStr $ "\n\n"
-
-
--- | Eval and print this generator multiple times
-runN 	:: Pretty a PMode
-	=> Int -> GenM a -> IO ()
-runN n f 
- = do	xs	<- replicateM n (evalGen f)
- 	putStr $ catInt "\n" $ map pprStrPlain xs
-	putStr $ "\n\n"
 
 -- runTest ------------------------------------------------------------------------------------------
 main 	= churn 0
@@ -131,134 +79,9 @@ runTest ix
 pprProg prog
 	= catInt "\n" $ map pprStrPlain prog
 
-
-
-
-----------------------------------------------------------------------------------------------------
-genInt :: Int -> Int -> GenM Int
-genInt	min max	= liftIO $ getStdRandom (randomR (min, max))
-
-genBool :: GenM Bool
-genBool
- = do	r	<- genInt 0 1
- 	case r of
-		0 	-> return False
-		1	-> return True
-		
-
-genVar :: NameSpace -> GenM Var
-genVar space
- = do	ix	<- gets stateVarGen
- 	modify $ \s -> s { stateVarGen = ix + 1 }
-	
-	let var	= (Var.new ("v" ++ show ix))
-			{ Var.nameSpace = space }
-	
-	return	var
 	
 
--- generate a random type
-genType :: GenM Type
-genType 
- = do	r_	<- genInt 0 3
-	fuel	<- checkFuel
 	
-	let r	| fuel > 0	= r_
-		| otherwise	= 0
-
---	liftIO 	$ putStr $ "r = " ++ show r ++ "\n"
-
-	let result
-		| r == 0	
-		= do	burn 1
-			return $ TData primTUnit []
-
-		| r <= 1
-		= do	burn 1
-			return $ TData primTInt  [TWild KRegion]
-		
-		| r <= 3
-		= do	burn 1
-		 	t1	<- genType
-			t2	<- genType
-			return	$ TFun t1 t2 (TWild KEffect) (TWild KClosure)	
-			
-	result
-	
--- Exp ---------------------------------------------------------------------------------------------
--- generate a random expression
-genExpT 
-	:: Env			-- environment
-	-> Type			-- type of expression to generate
-	-> GenM (Exp a)
-
-genExpT env tt
- = do	doApp	<- genBool
-	fuel	<- checkFuel
- 	if (doApp && fuel > 0)
-		then genExpT_app  env tt
-		else genExpT_base env tt
-
--- make an expression of this type, and do it by applying 
---	a function in the environment
-genExpT_app env tt
- = do	
- 	-- try and find a function in the environment that can give us
-	--	the result type we're after
-	let  candidates	= filter (\(t, v) -> resultTypeT t == tt
-					  && isFun t)
-			$ env
-			
-	ix 	<- genInt 0 (length candidates -1)
-			
-	let result
-		| []		<- candidates
-		= genExpT_base env tt
-		
-		| (tFun, vFun)	<- candidates !! ix
-		= genExpT_call env tt tFun vFun
-	
-	result
-	
-
-genExpT_call env tt tFun vFun
- = do	
- 	-- make the arguments to the call
- 	let tsArgs	= argTypesT tFun
-	burn (length tsArgs)
- 	xsArgs		<- mapM (genExpT env) tsArgs
-	return	$ makeCall (XVar none vFun : xsArgs)
-
-		
-genExpT_base env tt
-	-- unit
-	| TData v []			<- tt
-	, v == primTUnit
-	= do	burn 1
-		return $ XUnit none
-
-	-- literal
-	| TData v [TWild KRegion]	<- tt
-	, v == primTInt 
-	= do	burn 1
-		r	<- genInt 0 100
-		return	$ XConst none (CConst (LInt r))
-		
-
-	-- function
-	| TFun t1 t2 _ _		<- tt
-	= do	burn 1
-		v	<- genVar NameValue
-		xBody	<- genExpT [(t1, v)] t2 
-		return	$  XLambda none v xBody
-		
-
--- generate a random expression, starting from an empty environment
-genExp :: GenM (Exp a)
-genExp 
- = do	t	<- genType
- 	x	<- genExpT initEnv t
-	return	$ x
 
 -- Bind --------------------------------------------------------------------------------------------
 genBind :: Env -> Type -> GenM (Var, Stmt a)
@@ -278,7 +101,7 @@ genTopsChain env 0
  	return	$ [PStmt (SBindPats none (varV "main") [XUnit none] pr)]
 
 genTopsChain env n
- = do	tt	<- withFuel typeFuel $ genType
+ = do	tt	<- withFuel typeFuel $ genType True
  	(v, s)	<- genBind env tt
  	rest	<- genTopsChain ((tt, v) : env) (n-1)
 	return	$ PStmt s : rest

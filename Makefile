@@ -43,7 +43,7 @@ bin/war : tools/war/War.hs tools/war/Diff.hs tools/war/Interface.hs tools/war/Or
 
 
 # -- build the churner
-bin/churn : tools/churn/Main.hs tools/churn/Bits.hs
+bin/churn : tools/churn/Main.hs tools/churn/Bits.hs tools/churn/Base.hs tools/churn/Exp.hs
 	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc -itools/churn --make tools/churn/Main.hs -o bin/churn
 	
 
