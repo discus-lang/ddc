@@ -1,0 +1,12 @@
+
+-- match syntax
+fun 
+ = match {
+	| ()		<- ()			-- match against constructor
+	, a		<- (1, 2)		-- match against var
+	= (a, 5);
+ }
+
+
+main ()
+	= print "wibble"

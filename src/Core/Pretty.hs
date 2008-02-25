@@ -367,8 +367,9 @@ instance Pretty Guard PMode where
 instance Pretty Pat PMode where
  ppr xx 
   = case xx of
+	WVar v		-> pv v
+
   	WLit c		-> ppr c 
-	
 
 	WCon v []	-> pv v
 

@@ -30,6 +30,9 @@ labelIndexTree
   
 labelIndexW mapCtorDefs xx
  = case xx of
+	WVar{}
+	 ->	xx
+
  	WCon ctorName lvts	
 	 -> let	(ls, vs, ts)	= unzip3 lvts
 		Just ctorDef	= Map.lookup ctorName mapCtorDefs

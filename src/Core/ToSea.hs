@@ -418,14 +418,11 @@ toSeaA	   mObjV xx
 				$  mapM toSeaS
 				$  slurpStmtsX x
 	 
-{-	 	ss'	<- case x of
-				C.XDo ss	-> liftM concat $ mapM toSeaS ss
-				_ 		-> return	$ [E.SStmt (toSeaX x)] -}
-
 	    	return	$ E.ADefault ss'
 
 	C.AAlt gs x
-	 -> do	(ssFront, gs')	<- mapAccumLM (toSeaG mObjV) [] gs
+	 -> do	(ssFront, mgs')	<- mapAccumLM (toSeaG mObjV) [] gs
+		let gs'		= catMaybes mgs'
 
 	    	ss'		<- liftM concat
 				$  mapM toSeaS
@@ -439,7 +436,7 @@ toSeaG	:: Maybe C.Exp 		-- match object
 	-> [E.Stmt ()] 		-- stmts to add to the front of this guard.
 	-> C.Guard 
 	-> SeaM ( [E.Stmt ()]	-- stmts to add to the front of the next guard.
-		,  E.Guard ())
+		,  Maybe (E.Guard ()))
 
 
 toSeaG	mObjV ssFront gg
@@ -450,30 +447,48 @@ toSeaG	mObjV ssFront gg
 	 	let t		= C.reconX_type (stage ++ ".toSeaG") x
 		let t'		= toSeaT t
 	
+	  	-- convert the RHS expression into a sequence of stmts
+	 	ssRHS		<- liftM concat
+				$  mapM toSeaS
+				$  slurpStmtsX x
+		
+
 		-- if the guard expression is in a direct region then we don't need to check
 		--	for suspensions during the match
 		rhsIsDirect	<- isDirectType t
 
-	  	-- convert the RHS expression
-	 	ss'		<- liftM concat
-				$  mapM toSeaS
-				$  slurpStmtsX x
-		
-		var		<- newVarN NameValue
+		let result
+			-- if the LHS is var we can make the last stmt of the RHS assign it.
+			| C.WVar var'	<- w
+			= do	let ssL		= assignLastSS (E.XVar var', t') ssRHS
+				return	( ssL
+					, Nothing)
 
-		let ssL		= assignLastSS (E.XVar var, t') ss'
+			-- match against literal value
+			| C.WLit l	<- w
+			= do	var		<- newVarN NameValue
 
-		let (w', ssDecon)	
-	 			= toSeaW (Just (C.XVar var t)) w
-
-		let compX	= if isPatConst w
+				let compX	= if isPatConst w
 					then E.XVar var
 					else E.XTag $ E.XVar var
 
-		directRegions	<- gets stateDirectRegions
+				let ssL		= assignLastSS (E.XVar var, t') ssRHS
+				return	( []
+					, Just $ E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX (toSeaConst l))
+			  
+			-- match against constructor
+			| C.WCon v lvts	<- w
+			= do	var		<- newVarN NameValue
 
-	    	return	( ssDecon 
-			, E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX w')
+				let compX	= if isPatConst w
+					then E.XVar var
+					else E.XTag $ E.XVar var
+
+				let ssL		= assignLastSS (E.XVar var, t') ssRHS
+				return	( map (toSeaGL var) lvts
+					, Just $ E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX (E.XCon v))
+
+		result
 
 
 -- check if this type is in a direct region
@@ -485,8 +500,9 @@ isDirectType (C.TData v (C.TVar C.KRegion vR : _))
 isDirectType _
  = 	return False
 
-
--- Pat ---------------------------------------------------------------------------------------------
+	
+-----
+{-
 toSeaW	_ 
 	(C.WLit l)
  = 	( toSeaConst l
@@ -496,8 +512,8 @@ toSeaW  (Just (C.XVar objV t))
 	(C.WCon   v lvts)	
 
  = 	( E.XCon v
- 	, map (toSeaGL objV) lvts)
-
+ 	, )
+-}
 
 isPatConst gg
  = case gg of

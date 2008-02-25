@@ -22,10 +22,10 @@ stage	= "Sea.Pretty"
 
 -----
 sV  v		= ppr $ seaVar False v
-sVn n v		= ppr $ padR n $ seaVar False v
+sVn n v		= ppr $ padL n $ seaVar False v
 
 sVL  v		= ppr $ seaVar True v
-sVLn n v 	= ppr $ padR n $ seaVar True v
+sVLn n v 	= ppr $ padL  n $ seaVar True v
 
 
 -- Top ---------------------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PHackery s		-> ppr s
 	PComment s		-> "// " % s
 	PBlank			-> ppr "\n"
-	PHashDef s1 s2		-> "#define " %  padR 8 s1 %>> " " % s2 % "\n"
+	PHashDef s1 s2		-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
 
 
 
@@ -100,13 +100,13 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SHackery str		-> "/**/ " % str
 
 	-- stacks
-	SAuto	v t		-> (padR 12 $ pprStrPlain t) % " " % sVL v % ";"
+	SAuto	v t		-> (padL 12 $ pprStrPlain t) % " " % sVL v % ";"
 	SEnter countS		-> "_ENTER (" % countS % ");"
 	SLeave countS		-> "_LEAVE (" % countS % ");"
 
 	-- assignment
 	SAssign (XVar v) t x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
-	SAssign x1 t x2		-> (padR 23 $ pprStrPlain x1) 	% " = " % x2 % ";"
+	SAssign x1 t x2		-> (padL 23 $ pprStrPlain x1) 	% " = " % x2 % ";"
 
 	SStmt s			-> ppr s % ";"
 

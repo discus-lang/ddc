@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 -- Transform a tree while walking down it collecting up types
 --
@@ -123,6 +124,9 @@ instance (Monad m, WalkM m a, WalkM m b) => WalkM m (a, b)
 instance Monad m => WalkM m Top where
  walkZM z p 
   = case p of
+	PNil
+	 -> do	transP z z	$ PNil
+
   	PBind	v x		
 	 -> do	let Just t	= maybeSlurpTypeX x
 	 	z'		<- bindT z z v t
@@ -299,6 +303,7 @@ instance Monad m => WalkM m Guard where
 instance Monad m => WalkM m Pat where
  walkZM z ss
   = case ss of
+	WVar v		-> return ss
   	WLit v 		-> return ss
 	WCon v lvts	-> return ss
 
@@ -410,6 +415,7 @@ bindTK_Guard zz g
 	
 bindTK_Pat zz ww
  = case ww of
+	WVar{}		-> return zz
 	WLit{}		-> return zz
  	WCon v lvt
 	 -> foldM (\z (l, v, t) -> bindT z z v t) zz lvt

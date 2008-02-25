@@ -258,7 +258,8 @@ data Guard
 	deriving (Show, Eq)
 
 data Pat
-	= WLit		Lit				-- ^ Match against a literal value
+	= WVar		Var				-- ^ Bind a variable
+	| WLit		Lit				-- ^ Match against a literal value
 	| WCon		Var	[(Label, Var, Type)]	-- ^ Match against a constructor and bind arguments.
 	deriving (Show, Eq)
 	

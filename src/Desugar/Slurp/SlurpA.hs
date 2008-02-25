@@ -24,9 +24,7 @@ import Type.Location
 -----
 stage	= "Desugar.Slurp.SlurpA"
 
------------------------
--- slurpA
---
+-- Alt ---------------------------------------------------------------------------------------------
 slurpA	:: Alt Annot1	
 	-> CSlurpM 
 		( Type					-- type constraint placed on the case object.
@@ -82,10 +80,7 @@ slurpA	alt@(AAlt sp gs x)
 			, branchSub	= qs ++ (concat qssGuards) ++ qsX})
 
 
-
------------------------
--- slurpG
---
+-- Guards ------------------------------------------------------------------------------------------
 slurpG 	:: Guard Annot1
 	-> CSlurpM 
 		( [(Var, Var)]		-- (value var, type var) of vars bound by the guard.
@@ -140,16 +135,13 @@ slurpG	(GExp sp w x)
 		, qsW ++ qsX ++ qs )
 		
 
-
------------------------
--- slurpW
---
+-- Pat ---------------------------------------------------------------------------------------------
 slurpW	:: Pat Annot1
 	-> CSlurpM		
-		( [(Var, Var)]				-- (value var, type var) of vars bound by pattern.
-		, Type					-- type of the pattern.
-		, Pat Annot2				-- annotatted pattern.
-		, [CTree])				-- constraints for each arg in the pattern.
+		( [(Var, Var)]		-- (value var, type var) of vars bound by pattern.
+		, Type			-- type of the pattern.
+		, Pat Annot2		-- annotatted pattern.
+		, [CTree])		-- constraints for each arg in the pattern.
 
 slurpW	(WConLabel sp vCon lvs)
  = do	
@@ -195,14 +187,21 @@ slurpW	(WConst sp c)
 		, WConst (Just (tD, tE)) c
 		, [CEq (TSV $ SVLiteralMatch sp c) tD tConst])
 
+slurpW	(WVar sp v)
+ = do	Just tBound@(TVar k vT)	<- bindVtoT v
+ 			
+	return	( [(v, vT)]
+		, tBound
+		, WVar (Just (tBound, pure)) v
+		, [])
+	
+
 
 slurpW w
  = panic stage $ "slurpW: no match for " % show w % "\n"
 
 
------------------------
--- slurpL
---
+-- Labels ------------------------------------------------------------------------------------------
 slurpLV	:: Var				-- Constructor name.
 	-> Type				-- Return type of constructor.
 	-> Map Type Type		-- Instantiation of data type vars.

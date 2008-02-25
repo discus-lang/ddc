@@ -128,6 +128,7 @@ data Alt a
 
 
 data Guard a
+	-- Run some stmts then check if two objects have the same tag
 	= GCase						-- a guard in a case expression
 			Bool				-- true if the case object is in a lazy region
 			[Stmt a] 			-- run these statements

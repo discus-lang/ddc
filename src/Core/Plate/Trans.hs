@@ -656,6 +656,10 @@ instance Monad m => TransM m Guard where
 instance Monad m => TransM m Pat where
  transZM table xx
   = case xx of
+	WVar v
+	 -> do	v'		<- followV_bind table v
+	 	transW table	$ WVar v'
+
 	WLit c
 	 ->  	transW table	$ WLit c
 	 

@@ -190,6 +190,7 @@ instance FreeVars Guard where
 varsBoundByW ::	Pat	-> Set Var
 varsBoundByW	ww
  = case ww of
+	WVar v		-> Set.singleton v
  	WLit{}	 	-> empty
 	WCon	v fs	-> fromList $ map t3_2 fs
 	
@@ -198,8 +199,9 @@ varsBoundByW	ww
 instance FreeVars Pat where
  freeVars pp
   = case pp of
-  	WLit  c		-> empty
-	WCon 	v lts	-> Set.unions $ map (freeVars . t3_3) lts
+	WVar v		-> empty
+  	WLit c		-> empty
+	WCon v lts	-> Set.unions $ map (freeVars . t3_3) lts
 
 
 -- Type --------------------------------------------------------------------------------------------

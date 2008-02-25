@@ -779,12 +779,13 @@ reconG	:: Table
 	   , (Guard, [Var], Effect, Closure))
 
 reconG tt gg@(GExp p x)
- = let	binds		= slurpVarTypesW p
+ = let	
+	(x', tX, eX, cX)= reconX tt x
+	binds		= slurpVarTypesW tX p
  	tt'		= foldr addEqVT' tt binds
-	(x', xT, xE, xC)= reconX tt' x
 	
 	-- Work out the effect of testing the case object.
-	eff		= case stripToShapeT xT of
+	eff		= case stripToShapeT tX of
 			   TData vD []	
 			     -> TBot KEffect
 
@@ -796,12 +797,12 @@ reconG tt gg@(GExp p x)
    	( tt'
    	, ( GExp p x'
 	  , map fst binds
-   	  , makeTSum KEffect ([xE, eff])
-	  , xC))
+   	  , makeTSum KEffect ([eX, eff])
+	  , cX))
  
-
-slurpVarTypesW (WLit{})		= []
-slurpVarTypesW (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
+slurpVarTypesW tRHS (WVar v)		= [(v, tRHS)]
+slurpVarTypesW tRHS (WLit{})		= []
+slurpVarTypesW tRHS (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 
 
 

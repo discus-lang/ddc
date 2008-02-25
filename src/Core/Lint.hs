@@ -296,6 +296,11 @@ lintG tt (GExp w x)
 	
 -- | Lint for Patterns
 lintW :: Table -> Pat -> LintM Table
+lintW tt (WVar v)
+ = do	let Just t	=  Map.lookup v (tableTypes tt)
+	tt'		<- addVT v t tt
+	return tt'
+
 lintW tt (WLit c)
  = do 	return tt
  

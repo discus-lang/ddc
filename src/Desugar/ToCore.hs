@@ -788,6 +788,14 @@ toCoreW ww
 		let (lit', False)	= toCoreLit tLit lit
 	 	return	( C.WLit lit'
 			, Nothing)
+
+	D.WVar (Just 	(T.TVar T.KData vT
+			, _))
+		var
+	 -> do	
+	 	return	( C.WVar var
+			, Nothing)
+
 	 
 	_ -> panic stage
 		$ "tCoreW: no match for " % show ww % "\n"

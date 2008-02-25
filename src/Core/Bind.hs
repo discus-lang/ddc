@@ -221,6 +221,11 @@ bindG shared (GExp w x)
 
 bindW shared ww
  = case ww of
+	WVar v
+	 -> return	( WVar v
+	 		, Set.empty
+			, Set.empty )
+
  	WLit l
 	 -> return 	( WLit l
 	 		, Set.empty
