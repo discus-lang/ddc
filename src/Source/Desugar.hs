@@ -265,7 +265,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	-- lambda sugar.
 	S.XLambdaPats sp ps x
 	 -> do	x'	<- rewrite x
-		ps'	<- mapM rewrite $ map expToPat ps
+		ps'	<- mapM rewrite ps
 	 	x2	<- makeMatchFunction sp ps' x'
 		return x2
 
@@ -430,7 +430,7 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
   = case ss of
 	S.SBindPats sp v ps x
 	 -> do	x'	<- rewrite x
-		ps'	<- mapM rewrite $ map expToPat ps
+		ps'	<- mapM rewrite ps
 	 	x2	<- makeMatchFunction sp ps' x'
 		return	$ D.SBind sp (Just v) x2
 
@@ -542,11 +542,11 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 	 -> 	return	$ D.WConLabelP sp primNil []
 
 	---
-	S.WExp x
+{-	S.WExp x
 	 -> do	let p	= expToPat x
 	 	p'	<- rewrite p
 		return	p'
-
+-}
 	_	-> panic stage	
 		$ "rewrite[S.Pat]: can't rewrite " % show ww % "\n"
 		

@@ -370,12 +370,12 @@ instance Pretty (Pat a) PMode where
  ppr ww
   = case ww of
   	WVar 	sp v		-> ppr v
+	WObjVar	sp v		-> "^" % v
 	WConst 	sp c		-> ppr c
-	WCon 	sp v ps		-> v % " " % ps %!% " " 
+	WCon 	sp v ps		-> v <> punc " " ps
 	WConLabel sp v lvs	-> v % " { " % ", " %!% map (\(l, v) -> l % " = " % v ) lvs % "}"
 	WAt 	sp v w		-> v % "@" % w
 	WWildcard sp 		-> ppr "_"
-	WExp 	x		-> ppr x
 	WUnit	sp		-> ppr "()"
 	WTuple  sp ls		-> "(" % ", " %!% ls % ")"
 	WCons   sp x xs		-> x % " : " % xs
@@ -407,7 +407,7 @@ instance Pretty (Stmt a) PMode where
 	SStmt sp  x		-> prettyX_naked x 					% ";"
 	SBindPats sp v [] x	-> padL 8 v % " " %>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
 	SBindPats sp v ps x	
-		-> v % " " % " " %!% map prettyXB ps 
+		-> v % " " % punc " " ps
 		%>> (spaceDown x) % "\n = " % prettyX_naked x 	% ";"
 
 

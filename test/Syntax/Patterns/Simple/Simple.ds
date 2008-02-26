@@ -1,12 +1,12 @@
 
--- Check pattern match desugaring.
+-- Check pattern desugaring.
 --
 
+-- check list sugar is being resolved properly.
 map2 f xx
- = case xx of {
- 	[]	-> [];
-	x : xs	-> f x : map2 f xs;
- };
+ = case xx of 
+ 	[]	-> []
+	x : xs	-> f x : map2 f xs
 
 -- check expression patterns 
 addMe :: Tuple2 Int [Tuple2 Int Int] -> Tuple3 (Tuple2 Int Int) Int (Tuple2 Int Int) -> Int;
@@ -21,35 +21,40 @@ sumTuples xx
 	| ((x1, y1) : xs) 	<- xx	
 	= x1 + y1 + sumTuples xs
 	
--- check pattern matching of lists and unboxde data
+-- check matching against literal values
 listPairs xx
  	| a : 5 : xs	<- xx 	
 	=  (a, 5) : listPairs (23 : xs)
 	
 	\= []
 
--- check pattern matching against boxed data
+-- check matching against unboxed data
 unboxed xx
 	| 1#		<- xx
 	= 0#
 	
+-- check list and tuple sugar is being resolved.
 listPairTuples xx
  	| (x1, x2) : ('a', y2) : xs	<- xx
 	= (x1, 'b') : ('a', y2) : listPairTuples ((x2, y2) : xs)
 	
 	\= []
 
--- wildcards in patterns
+-- check wildcards in patterns
 thing  _	= 5
 thing2 (a, _)	= 6
 
--- wildcards on LHS of case
+-- check wildcards on LHS of case
 thing3 x 
  = case x of
  	(Just a, _)	-> True
 	_		-> False
 
--- wildcards on LHS of guard
+thing3a x
+ = case x of
+ 	(Just a : b, _)	-> (a, b)
+
+-- check wildcards on LHS of guard
 thing4 x 
  = match 
  	| (Just a, _)	<- x
@@ -57,3 +62,34 @@ thing4 x
 	
 	| _		<- x
 	= False
+
+-- check at patterns 
+thing5 dude@(a, b)	= (a, dude)
+
+-- check nested at patterns
+thing6 berk@(merk@(a, b), zerk@(Just x)) 
+	= (berk, zerk, a, x)
+
+-- at patterns in case expressions
+thing7 x
+ = case x of
+ 	(merk@(Just a, _))	-> (merk, a)
+
+-- at patterns in match guards
+thing8 x
+ = match 
+ 	| merk@(Just a, _)	<- x
+	= (merk, a)
+
+-- patterns with constructor airity == 0
+thing9 True	= False
+thing9 False	= True
+
+-- patterns with constructor airity > 1
+data Thing3 a b c
+	= Thing a b c
+	
+thing10 x
+ = case x of
+ 	Thing x y z	-> (x, y, z)
+

@@ -698,6 +698,10 @@ instance (Monad m) => TransM m n1 n2 (Pat n1) (Pat n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (WVar x0' x1')
+                WObjVar x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (WObjVar x0' x1')
                 WConst x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -736,9 +740,6 @@ instance (Monad m) => TransM m n1 n2 (Pat n1) (Pat n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (WList x0' x1')
-                WExp x0
-                  -> do x0' <- transZM table x0
-                        return (WExp x0')
  
 instance (Monad m) => TransM m n1 n2 (Label n1) (Label n2) where
         transZM table xx

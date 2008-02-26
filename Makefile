@@ -32,7 +32,7 @@ bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
 	$(GHC) $(GHC_FLAGS) -o bin/ddc $^ $(LIBS) -package unix -package mtl -package containers
 
-src/Source/Plate/Trans.hs : src/Source/Plate/Trans.hs-stub bin/plate
+src/Source/Plate/Trans.hs : src/Source/Plate/Trans.hs-stub src/Source/Exp.hs bin/plate
 	@echo "* Generating boilerplate for $@"
 	bin/plate src/Source/Exp.hs src/Source/Plate/Trans.hs-stub src/Source/Plate/Trans.hs
 	@echo

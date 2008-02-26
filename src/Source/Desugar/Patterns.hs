@@ -2,8 +2,7 @@
 module Source.Desugar.Patterns
 	( rewritePatVar
 	, rewritePatternsTreeM
-	, makeMatchFunction 
-	, expToPat )
+	, makeMatchFunction)
 
 where
 
@@ -38,8 +37,7 @@ import Data.Map				(Map)
 
 import Debug.Trace		
 
------
-stage	= "Source.Desugar.Patterns"
+-- stage	= "Source.Desugar.Patterns"
 
 -- rewritePatTree ----------------------------------------------------------------------------------
 
@@ -117,7 +115,7 @@ sprinkleAtsG sp gg
 	 -> do	p'	<- sprinkleAtsW_down sp p
 	 	return	$ D.GExp nn p' x
 
--- Name intermediate nodes in this pattern
+-- Name internal nodes in this pattern
 sprinkleAtsW 
 	:: SourcePos 
 	-> D.Pat Annot -> RewriteM (D.Pat Annot)
@@ -148,20 +146,30 @@ sprinkleAtsW sp ww
 	 -> do	w'	<- sprinkleAtsW_down sp w
 	 	return	$ D.WAt nn v w'
 
+
+-- name internal nodes in thie pattern, but not the outer one.
 sprinkleAtsW_down sp ww
  = case ww of
  	D.WConLabel nn var lvs
 	 -> do	return	$ D.WConLabel nn var lvs
 	
+	D.WConst nn l
+	 ->	return ww
+	
+	D.WVar nn v
+	 ->	return ww
+	
+	D.WAt nn v w
+	 -> do	w'	<- sprinkleAtsW_down nn w
+	 	return	$ D.WAt nn v w'
+
 	D.WConLabelP nn v lws
 	 -> do	lws'	<- mapZippedM
 	 			return
-				(sprinkleAtsW sp)
+				(sprinkleAtsW nn)
 				lws
 		return	$ D.WConLabelP nn v lws'
-		
-	_ 	-> return ww
-	
+
 
 -- simplifyGuard -----------------------------------------------------------------------------------
 
@@ -202,7 +210,12 @@ collectAtNodesW ww
 		return	$ D.WVar sp v
 
 	D.WConLabelP nn v lws
-	 ->  do	let lvs	= mapZipped id (\(D.WVar _ v) -> v) lws
+	 ->  do	let lvs	= mapZipped 
+	 			id 
+				(\w -> case w of
+	 				D.WVar _ v 	-> v)
+				lws
+
 	 	return	$ D.WConLabel nn v lvs
 		
 	_ -> return ww
@@ -268,40 +281,6 @@ addLambdas
 
 addLambdas sp [] x	= x
 addLambdas sp (v:vs) x	= D.XLambda sp v (addLambdas sp vs x)
- 
-
-
--- | Rewrite a source pattern expression to an actual pattern
---	Patterns in the arguments to function bindings are initially parsed as
---	expressions due to limiations with the LR(1) parser.
---
---	This function converts these expressions to actual patterns.
---
-expToPat :: Show Annot => S.Exp Annot -> S.Pat Annot
-expToPat xx
- = case xx of
-	S.XVar sp v
-	 | Var.isCtorName v
-	 -> S.WCon sp v []
-
-	 | otherwise
-	 -> S.WVar sp v
-
- 	S.XTuple sp xs	-> S.WTuple sp (map expToPat xs)
-
-	S.XApp sp x1 x2
-	 -> let	(S.XVar sp v : xs)	= S.flattenApps xx
-	    in	S.WCon sp v (map expToPat xs)
-		
-	S.XList sp xx	-> S.WList sp (map expToPat xx)	
-
-	S.XConst sp c	-> S.WConst sp c
-	
-	S.XWildCard sp 	-> S.WWildcard sp
-	
-	_	-> panic stage
-		$ "expToPat: no match for " % show xx % "\n"
-
  
 
 -- Merge -------------------------------------------------------------------------------------------

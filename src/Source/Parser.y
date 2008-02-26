@@ -1,11 +1,12 @@
------
--- Source.Parser
+-- | Source.Parser
 --
--- Summary:
---	Do the minimal amount of work in the parser. 
---	Try not to do any desugaring here.
---	Source parse tree should preserve structure of program as entered by user.
---	This way we'll get better error messages during type checking.
+-- Note:
+--	Do the minimal amount of work in the parser, avoid eliminating and
+--	desugaring here. The source parse tree should preserve structure of
+--	program as entered by user.
+--	
+--	No shift-reduce conflicts are permitted. They freak me out and we should 
+--	always be able rewrite the grammar to eliminate them.
 --
 {
 {-# OPTIONS -fno-warn-unused-binds #-}
@@ -23,9 +24,11 @@ import Util
 
 -----
 import qualified Shared.Var 	as Var
+import qualified Shared.VarUtil	as Var
 import Shared.Base		(SourcePos(..))
 import Shared.Var 		(NameSpace(..), Module(..))
 import Shared.VarPrim
+import Shared.Pretty
 
 import Shared.Error
 import Source.Error
@@ -344,11 +347,16 @@ tryWith
 	| 'with'  expE				{ Just $2				}
 		
 expE	:: { Exp SP }
-	: expE2					{ $1						}
-	| '\\' 	   expApps '->'  expE		{ XLambdaPats   (spTP $1) $2 $4			}		
-	| '\\' '.' pVar expAppZs		{ XLambdaProj   (spTP $1) (JField (spTP $2) $3) $4	}
+	: expE2					{ $1					}
 
-	| 'if'     exp 'then' exp 'else' expE	{ XIfThenElse 	(spTP $1) $2 $4 $6	}
+	| '\\' 	   expApps '->'  expE		
+	{ XLambdaPats   (spTP $1) (toPatterns $2) $4	}		
+
+	| '\\' '.' pVar expAppZs		
+	{ XLambdaProj   (spTP $1) (JField (spTP $2) $3) $4	}
+
+	| 'if'     exp 'then' exp 'else' expE	
+	{ XIfThenElse 	(spTP $1) $2 $4 $6	}
 
 	| 'when'   expApp expE			{ XWhen		(spTP $1) $2 $3		}
 	| 'unless' expApp expE			{ XUnless	(spTP $1) $2 $3		}
@@ -465,10 +473,13 @@ constU
 -- a binding
 bind
 	:: { Stmt SP }
-	:  expApps '=' rhs 			{ SBindPats (spTP $2) (checkVar $2 $ head $1) (tail $1) $3		}
+	:  expApps '=' rhs 			
+	{ SBindPats (spTP $2) (checkVar $2 $ head $1) (toPatterns $ tail $1) $3	}
 
-	|  expApps matchAlts 			{ let sp	= spX (head $1)
-						  in  SBindPats sp (checkVarSP sp $ head $1) (tail $1) (XMatch sp $2)	}
+	|  expApps matchAlts 			
+	{ let sp	= spX (head $1)
+	  in  SBindPats sp (checkVarSP sp $ head $1) (toPatterns $ tail $1) (XMatch sp $2) }
+
 binds
 	:: { [Stmt SP] }
 	:  bind	mSemis				{ [$1] }
@@ -556,7 +567,7 @@ guard2	:: { Guard SP }
 
 		
 pat	:: { Pat SP }
-	: expInfix				{ WExp    $1				}
+	: expInfix				{ toPattern $1				}
 
 	| pCon '{' '}'				{ WConLabel (spTP $2) $1 []		}
 	| pCon '{' labelPat_Cs '}'		{ WConLabel (spTP $2) $1 $3		}
@@ -1156,8 +1167,107 @@ kindOfVarSpace space
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
+
+
+-- | Rewrite expression on the LHS of a binding to patterns.
+--	Patterns on the LHS of function bindings are initially parsed as expressions
+--	due to limiations with the LR(1) parser.
+--
+--	Namely, when parsing some expression:
+--
+--	     fun   (x, y) 5 ...
+--	         ^
+--	When we're at the point marked with the ^, we don't know whether the following
+--	(x, y) is going to be a pattern which matches a tuple, or an expression which 
+--	constructs one. For example, we might be parsing:
+--
+--		do { fun (x, y) 5; }			-- apply fun to two arguments
+--	or
+--		do { fun (x, y) 5 = x + y;  ... }	-- define a binding called fun
+--
+--	We won't know which option to take until reach the '=' (or the ';'), and
+--	LR(1) only gives us one token look-ahead, so we can't scan ahead to check.
+--
+--	In lesser languages, the programmer lets the parser know what option to take 
+--	with with a def or var keyword
+--
+--	ie, 
+--		do { fun (x, y) 5; }
+--		do { def fun (x, y) 5 = x + y; ... }
+--
+--	but we're not interested in that slackness here.
+--
+--	The solution we take is to parse the patterns in both options as
+--	expressions, then convert the LHS to real patterns during the production.
+--
+toPatterns :: [Exp SP] -> [Pat SP]
+toPatterns xx
+ {- = trace (pprStrPlain 
+   		$ "toPatterns\n"
+   		% "    xx = " % xx % "\n") -}
+ =		(toPatterns' xx)
+
+toPatterns' []	= []
+
+-- The at in at-patterns is parsed as an infix op.
+toPatterns' (XVar sp1 v : XOp sp2 vAt : x2 : xs)
+	| Var.name vAt == "@"
+	= WAt sp2 v (toPattern x2) : toPatterns xs
+	
+toPatterns' (x:xs)
+	= toPattern x : toPatterns' xs
+
+
+-- convert an expression to a pattern
+toPattern :: Exp SP -> Pat SP
+toPattern x
+{-  = trace (pprStrPlain
+   		$ "toPattern\n"
+		% "    x = " % x % "\n") -}
+ =		(toPattern' x)
+
+toPattern' x
+ = case x of
+	XVar sp v
+	  | Var.isCtorName v	-> WCon sp v []
+	  | otherwise		-> WVar sp v 
+
+	XObjVar sp v		-> WObjVar sp v
+
+	XApp sp _ _
+	 -> let	(XVar sp v : xs)	= flattenApps x
+	    in	if Var.isCtorName v
+	    		then WCon sp v (toPatterns xs)
+			else panic stage
+				$ "toPatterns: parse error in pattern " % x  % "\n"
+	  
+ 	XTuple sp xx		-> WTuple sp (toPatterns xx)
+	XList  sp xx		-> WList  sp (toPatterns xx)
+	XConst sp c		-> WConst sp c
+	XWildCard sp 		-> WWildcard sp
+	
+	-- We need to handle infix uses of '@' and ':' here because Source.Defix
+	--	needs a renamed tree, and the renamer doesn't handle expresison
+	--	patterns. This isn't as general as Source.Defix though as all the
+	--	infix constructors have the same precedence.
+	XDefix sp [xx]		-> toPattern xx
+
+	XDefix sp (XVar sp1 v : XOp sp2 vAt : x2 : [])		
+	 | Var.name vAt == "@"
+	 -> WAt sp2 v (toPattern x2) 
+
+	XDefix sp (x1 : XOp sp1 v : xs)		
+	 | Var.name v == ":"
+	 -> WCons sp (toPattern x1) (toPattern (XDefix sp xs))
+
+	XDefix sp (x1 : x2 : xs)
+	 -> toPattern $ XDefix sp (XApp sp x1 x2 : xs)
+
+	_	-> panic stage
+		$ "toPatterns: parse error in pattern " % x  % "\n"
+		
+	
+	
 	
 } -- end of Happy Haskell code
-
-
 

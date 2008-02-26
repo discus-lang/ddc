@@ -182,7 +182,7 @@ data Exp a
 	--	None of these make it to the type-constraint slurper.
 
 	-- object expressions, desugared by Source.Rename
-	| XObjVar	a Var				-- ~var.  Binds current object.
+	| XObjVar	a Var				-- ^var.  Binds current object.
 	| XObjField	a Var				-- _var.  A field of the current object.
 	| XObjFieldR	a Var				-- _#var. A reference to the field of the current object.
 
@@ -193,7 +193,7 @@ data Exp a
 	| XAppSusp	a (Exp a) (Exp a)		-- ex @ e1 .. eN	=> suspendN ex e1 .. eN
 
 	-- lambda sugar, desugared by Source.Desugar
-	| XLambdaPats	a [Exp a]  (Exp a)		-- \p1 p2 .. -> e
+	| XLambdaPats	a [Pat a]  (Exp a)		-- \p1 p2 .. -> e
 	| XLambdaProj 	a (Proj a) [Exp a]		-- \.field e1 e2 ...	=> \x' -> x'.field e1 e2 ...
 	| XLambdaCase	a [Alt a]			-- \case { ALTS }	=> \x' -> case x' of { ALTS }
 
@@ -251,7 +251,7 @@ data Stmt a
 	= SSig		a Var Type
 
 	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
-	| SBindPats	a Var [Exp a] (Exp a)		-- ^ a binding, with patterns for the arguments
+	| SBindPats	a Var [Pat a] (Exp a)		-- ^ a binding, with patterns for the arguments
 
 	deriving (Show, Eq)
 	
@@ -276,6 +276,7 @@ data Guard a
 	
 data Pat a
 	= WVar		a Var				-- ^ Plain var, always matches.		v 
+	| WObjVar	a Var				-- ^ Binds the current object.		^v
 	| WConst	a Const				-- ^ Constant pattern			5
 	| WCon		a Var [Pat a]			-- ^ A constructor pattern		(C p1 p2 ...)
 	| WConLabel	a Var [(Label a, Pat a)]	-- ^ A constructor with field labels.	Con { .f1 = p1, ... }
@@ -289,7 +290,7 @@ data Pat a
 
 	-- Contains an XDefix from the parser.
 	--	The defixer is run on patterns as well as expressions
-	| WExp		(Exp a)
+--	| WExp		(Exp a)
 	deriving (Show, Eq)
 
 data Label a

@@ -1,12 +1,18 @@
 
 import Base
 
+-- tuple2
 data Tuple2 %r a b
 	= Tuple2  { 
 		x1	:: a;
 		x2	:: b;
 	}
-	
+
+fst (a, b)	= a
+snd (a, b)	= b
+
+
+-- tuple3
 data Tuple3 %r a b c
 	= Tuple3  {
 		x1	:: a;
@@ -14,6 +20,35 @@ data Tuple3 %r a b c
 		x3	:: c;
 	}
 
+-- tuple4
+data Tuple4 %r a b c d
+	= Tuple4  {
+		x1	:: a;
+		x2	:: b;
+		x3	:: c;
+		x4	:: d;
+	}
 
-fst (a, b)	= a
-snd (a, b)	= b
+-- tuple5
+data Tuple5 %r a b c d
+	= Tuple5  {
+		x1	:: a;
+		x2	:: b;
+		x3	:: c;
+		x4	:: d;
+		x5	:: e;
+	}
+
+
+-- tuple6
+data Tuple6 %r a b c d e f
+	= Tuple6  {
+		x1	:: a;
+		x2	:: b;
+		x3	:: c;
+		x4	:: d;
+		x5	:: e;
+		x6	:: f;
+	}
+
+

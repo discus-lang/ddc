@@ -5,6 +5,13 @@
 -- Infix
 
 -- Data
+data Thing3 a b c
+        = Thing {
+                a;
+                b;
+                c;
+        };
+
 
 -- Effects
 
@@ -72,10 +79,51 @@ foreign import extern thing3
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
+foreign import extern thing3a
+        :: forall t0 t1 %r0 %r1 %r2 %r3
+        .  Data.Tuple.Tuple2 %r0 (Data.List.List %r1 (Data.Maybe.Maybe %r2 t1)) t0 -(!e0)> Data.Tuple.Tuple2 %r3 t1 (Data.List.List %r1 (Data.Maybe.Maybe %r2 t1))
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2}
+        :$ Base.Data -> Base.Data;
+        
 foreign import extern thing4
         :: forall t0 t1 %r0 %r1 %r2
         .  Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0 -(!e0)> Data.Bool.Bool %r2
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern thing5
+        :: forall t0 t1 %r0 %r1
+        .  Data.Tuple.Tuple2 %r0 t0 t1 -(!e0)> Data.Tuple.Tuple2 %r1 t0 (Data.Tuple.Tuple2 %r0 t0 t1)
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern thing6
+        :: forall t0 t1 t2 %r0 %r1 %r2 %r3
+        .  Data.Tuple.Tuple2 %r0 (Data.Tuple.Tuple2 %r2 t1 t2) (Data.Maybe.Maybe %r1 t0) -(!e0)> Data.Tuple.Tuple4 %r3 (Data.Tuple.Tuple2 %r0 (Data.Tuple.Tuple2 %r2 t1 t2) (Data.Maybe.Maybe %r1 t0)) (Data.Maybe.Maybe %r1 t0) t1 t0
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern thing7
+        :: forall t0 t1 %r0 %r1 %r2
+        .  Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0 -(!e0)> Data.Tuple.Tuple2 %r2 (Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0) t1
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern thing8
+        :: forall t0 t1 %r0 %r1 %r2
+        .  Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0 -(!e0)> Data.Tuple.Tuple2 %r2 (Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0) t1
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern thing9
+        :: forall %r0 %r1
+        .  Data.Bool.Bool %r0 -(!e0)> Data.Bool.Bool %r1
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern thing10
+        :: forall t0 t1 t2 %r0
+        .  Thing3 t0 t1 t2 -> Data.Tuple.Tuple3 %r0 t0 t1 t2
         :$ Base.Data -> Base.Data;
         
 

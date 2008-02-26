@@ -361,7 +361,9 @@ instance Rename (Exp SourcePos) where
 	-- sugar
 	XLambdaPats sp ps x
 	 -> local
-	 $ do 	(ps', _)	<- liftM unzip $ mapM bindPatternExp ps
+	 $ do 	(ps', _)	<- liftM unzip 
+	 			$ mapM bindPat ps
+
 		x'		<- rename x
 		return	$ XLambdaPats sp ps' x'
 
@@ -497,8 +499,8 @@ instance Rename (Alt SourcePos) where
 	APat sp p x2
 	 -> do	(p', x2')
 	 	 	<- local
-		  	$ do	p'	<- bindPat p
-			 	x2'	<- rename x2
+		  	$ do	(p', [])	<- bindPat p
+			 	x2'		<- rename x2
 				return (p', x2')
 
 		return	$ APat sp p' x2'
@@ -535,6 +537,7 @@ instance Rename (Label SourcePos) where
 --	The data type for patterns in function bindings is shared with that for expressions.
 --	However, only  some constructors should appear in a pattern context. ie XList but not XMatch
 --
+{-
 bindPatternExp 
 	:: (Exp SourcePos) 
 	-> RenameM 
@@ -594,19 +597,19 @@ bindPatternExp xx
 
 	_ 	-> panic stage
 		$ "bindPatternExp: no match for " % show xx	% "\n"
-
+-}
 
 -- | Bind the variables in a guard
 bindGuard :: Guard SourcePos -> RenameM (Guard SourcePos)
 bindGuard gg
  = case gg of
  	GCase sp pat
-	 -> do	pat'	<- bindPat pat
-	 	return	$ GCase sp pat'
+	 -> do	(pat', [])	<- bindPat pat
+	 	return		$ GCase sp pat'
 		
 	GExp sp  pat x
-	 -> do	x'	<- rename x	
-	 	pat'	<- bindPat pat
+	 -> do	x'		<- rename x	
+	 	(pat', [])	<- bindPat pat
 		return	$ GExp sp pat' x'
 		
 	GBool sp x
@@ -615,29 +618,69 @@ bindGuard gg
 		
 
 -- | Bind the variables in a pattern
-bindPat :: Pat SourcePos -> RenameM (Pat SourcePos)
+bindPat :: Pat SourcePos 
+	-> RenameM 
+		( Pat SourcePos
+		, [Var])
+
 bindPat ww
  = case ww of
  	WVar sp v
 	 -> do	v'	<- bindV v
-	 	return	$ WVar sp v'
- 
- 	WExp x	
-	 -> do	(x', _)	<- bindPatternExp x
-	 	return	$ WExp x'
+	 	return	( WVar sp v'
+			, [])
 
+	WObjVar sp v	
+	 -> do	v'	<- bindV v
+	 	return	( WVar sp v'
+			, [v'])
+ 
+ 	WConst sp l
+	 -> do	return	(ww, [])
+	 
+	WCon sp v ps
+	 -> do	v'		<- lookupV v
+	 	(ps', bvs)	<- liftM unzip $ mapM bindPat ps
+		return	( WCon sp v' ps'
+			, concat bvs)
+	 
 	WConLabel sp v lvs 
 	 -> do	v'		<- lookupV v
 
 	 	let (ls, vs)	= unzip lvs
 		ls'		<- rename ls
-		vs'		<- mapM bindPat vs
+		(vs', bvss)	<- liftM unzip 
+				$ mapM bindPat vs
 		let lvs'	= zip ls' vs'
 		
-		return		$ WConLabel sp v' lvs'
+		return	( WConLabel sp v' lvs'
+			, concat bvss)
+	
+	WAt sp v p
+	 -> do	(p', vs)	<- bindPat p
+	 	v'		<- bindV v
+		return	( WAt sp v' p'
+			, vs)
+	
+	WWildcard sp	-> return (ww, [])
+	WUnit sp	-> return (ww, [])
+
+	WTuple sp xs
+	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPat xs
+	 	return	( WTuple sp xs'
+			, concat vss)
+	
+	WCons sp x1 x2
+	 -> do	(x1', vs1)	<- bindPat x1
+	 	(x2', vs2)	<- bindPat x2
+		return	( WCons sp x1' x2'
+			, vs1 ++ vs2)
 		
-	_	-> panic stage
-		$ "bindPat: no match for " % show ww % "\n"
+	WList sp xs
+	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPat xs
+	 	return	( WList sp xs'
+			, concat vss)
+		
 	 
 
 -----------------------
@@ -682,7 +725,7 @@ instance Rename (Stmt SourcePos) where
 
 	 	local
 		 $ do	(ps', objVss)	<- liftM unzip
-					$  mapM bindPatternExp ps
+					$  mapM bindPat ps
 
 			let objVs	= concat objVss
 

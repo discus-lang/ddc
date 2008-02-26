@@ -797,11 +797,21 @@ reconG tt gg@(GExp p x)
 		| TData vD []	<- tX_shape
 		= TBot KEffect
 
-		-- Otherwise, matching against some object cause a read effect
-		--	on its primary region.
+		-- matching against some object cause a read effect on its primary region.
 		| TData vD (TVar KRegion rH : _)
 				<- tX_shape
 		= TEffect primRead [TVar KRegion rH]
+
+		-- object does not have a primary region, assume it is constant
+		| otherwise
+		= TBot KEffect
+		
+{-		| otherwise
+		= panic stage 
+			$ "reconG: no match for:\n"
+			% "  p        = " % p % "\n"
+			% "  tX_shape = " % tX_shape	% "\n"
+-}			
 
    in trace 	( "regonG\n"
 		% "    gg      = " % gg		% "\n"
