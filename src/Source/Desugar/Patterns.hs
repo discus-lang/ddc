@@ -144,9 +144,6 @@ sprinkleAtsW sp ww
 				
 		return	$ D.WAt nn v (D.WConLabelP nn var lws')
 		
-	D.WWildcard nn 
-	 ->	return	$ D.WWildcard nn
-	 
 	D.WAt nn v w	
 	 -> do	w'	<- sprinkleAtsW_down sp w
 	 	return	$ D.WAt nn v w'
@@ -299,6 +296,8 @@ expToPat xx
 	S.XList sp xx	-> S.WList sp (map expToPat xx)	
 
 	S.XConst sp c	-> S.WConst sp c
+	
+	S.XWildCard sp 	-> S.WWildcard sp
 	
 	_	-> panic stage
 		$ "expToPat: no match for " % show xx % "\n"

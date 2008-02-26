@@ -510,7 +510,8 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 	 	return	$ D.WAt sp v p'
 		
 	S.WWildcard sp
-	 -> do	return	$ D.WWildcard sp
+	 -> do	v	<- newVarN NameValue
+	 	return	$ D.WVar sp v
 	 
 	S.WConLabel sp v lvs
 	 -> do	lvs'	<- mapZippedM 

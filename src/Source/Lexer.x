@@ -33,10 +33,12 @@ $alpha	= [$lower $upper]
 -- The symbols that can appear in a var
 $varsym	= [\' \_]
 
+$sym		= [\. \! \# \$ \% \& \* \+ \/ \< \> \? \@ \^ \- \~ \\ \= \: \|]
+$var		= [$alpha $digit $varsym]
 
--- $ssym	= [\\ \= \: \|]
-$sym	= [\. \! \# \$ \% \& \* \+ \/ \< \> \? \@ \^ \- \~ \\ \= \: \|]
 
+@moduleSpec	= ($upper [$alpha $digit]* \.)*
+@nameSpaceQual	= [\% \! \$]?
 
 tokens :-
  $white # \n		;
@@ -158,12 +160,13 @@ tokens :-
  \.			{ ptag Dot			}
  \&			{ ptag And			}
 
- ($upper [$alpha $digit]* \.)* [\% \! \$]? $lower [$alpha $digit $varsym]*	 
+ @moduleSpec @nameSpaceQual $lower $var*	 
  			{ ptags (\s -> Var   s) 	}
 
- ($upper [$alpha $digit]* \.)* [\% \! \$]? $upper [$alpha $digit $varsym]*	 
+ @moduleSpec @nameSpaceQual $upper $var*	 
  			{ ptags (\s -> Con   s) 	}
 
+ \_ $var*		{ ptags (\s -> case s of (x:xs) -> VarField xs)	}
 
  $sym+  $sym*		{ ptags (\s -> Symbol s)	}
 

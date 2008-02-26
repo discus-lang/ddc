@@ -570,12 +570,6 @@ bindPatternExp xx
 	 	return	( XTuple sp xs'
 			, concat vss)
 
-{-	XApp sp _ _
-	 -> do	let (x:xs)	=  flattenApps xx
-	 	x'		<- rename x
-		xs'		<- mapM bindPatternExp xs
-		return		$ unflattenApps sp (x':xs')
--}
 	XDefix sp xs
 	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPatternExp xs
 	 	return	( XDefix sp xs'
@@ -592,10 +586,11 @@ bindPatternExp xx
 		return	( XVar sp v'
 			, [v'])
 
-
 	XConst{}
-	 ->	return	( xx
-	 		, [])
+	 ->	return	(xx, [])
+
+	XWildCard{}
+	 ->	return	(xx, [])
 
 	_ 	-> panic stage
 		$ "bindPatternExp: no match for " % show xx	% "\n"

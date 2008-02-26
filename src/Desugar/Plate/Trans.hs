@@ -422,10 +422,7 @@ instance Monad m => TransM m a1 a2 Pat where
 		lps'		<- mapZippedM (transZM table) (transZM table) lps
 		transW table	$ WConLabelP nn' v' lps'		 
 	 
-	WWildcard nn
-	  -> do	nn'		<- transN table nn
-	  	transW table	$ WWildcard nn'
-	 
+
 -----------------------
 -- Label
 --

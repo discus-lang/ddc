@@ -127,7 +127,6 @@ data Pat a
 	| WVar		a Var
 	| WAt		a Var (Pat a)
 	| WConLabelP	a Var [(Label a, Pat a)]
-	| WWildcard	a
 	deriving (Show, Eq)
 
 data Label a

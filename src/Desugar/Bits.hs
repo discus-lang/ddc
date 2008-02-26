@@ -45,6 +45,5 @@ getAnnotW ww
 	WVar		n _		-> n
 	WAt		n _ _		-> n
 	WConLabelP	n _ _		-> n
-	WWildcard	n 		-> n
 
 	

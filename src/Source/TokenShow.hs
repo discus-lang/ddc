@@ -28,6 +28,7 @@ showSource tok =
  case tok of
 	ModuleName strs	-> concat $ intersperse "." strs
 	Var	str	-> str
+	VarField str	-> "_" ++ str 
 	Con	str	-> str
 	Symbol	str	-> str
 	CInt	i	-> show i

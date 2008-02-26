@@ -52,16 +52,13 @@ type SP	= SourcePos
 
 	'foreign'	{ TokenP { token = K.Foreign	} }
 	'import'	{ TokenP { token = K.Import	} }
---	'export'	{ TokenP { token = K.Export	} }
 
 	'module'	{ TokenP { token = K.Module	} }
 	'elaborate'	{ TokenP { token = K.Elaborate	} }
 	'const'		{ TokenP { token = K.Const	} }
 	'mutable'	{ TokenP { token = K.Mutable	} }
 	'extern'	{ TokenP { token = K.Extern	} }
---	'ccall'		{ TokenP { token = K.CCall	} }
 	
---	'type'		{ TokenP { token = K.Type	} }
 	'data'		{ TokenP { token = K.Data	} }
 	'region'	{ TokenP { token = K.Region	} }
 	'effect'	{ TokenP { token = K.Effect     } }
@@ -151,6 +148,7 @@ type SP	= SourcePos
 	'<@-'		{ TokenP { token = K.LeftArrowLazy } }
 		
 	VAR		{ TokenP { token = K.Var    _	} }
+	VARFIELD	{ TokenP { token = K.VarField _ } }
 	CON		{ TokenP { token = K.Con    _   } }
 	SYM		{ TokenP { token = K.Symbol _	} }
 	MODULENAME	{ TokenP { token = K.ModuleName _ } }
@@ -435,7 +433,9 @@ expA
 
 	-- object syntax
 	| '^' pVar				{ XObjVar   (spTP $1) (vNameV $2)	}
-	| '_' pVar				{ XObjField (spTP $1) (vNameF $2)	}
+	| VARFIELD				{ XObjField (spTP $1) (vNameF (toVar $1)) }
+
+	| '_'					{ XWildCard (spTP $1)			}
 
 	| 'break'				{ XBreak  (spTP $1)			}
 	| '()'					{ XVar	  (spTP $1) (makeVar "Unit" $1)	}
@@ -516,7 +516,7 @@ caseAlts
 caseAlt
 	:: { Alt SP }				
 	:  pat      '->' rhs 			{ APat (spTP $2) $1 $3			}
-	|  '_'      '->' rhs 			{ ADefault (spTP $2) $3			}
+--	|  '_'      '->' rhs 			{ ADefault (spTP $2) $3			}
 
 -----
 matchAlts
@@ -982,9 +982,10 @@ happyError	(x:xs)	= dieWithUserError [ErrorParseBefore (x:xs)]
 toVar :: TokenP -> Var
 toVar	 tok
  = case token tok of
-	K.Var    name	-> Var.loadSpaceQualifier $ makeVar name tok
-	K.Con	 name	-> Var.loadSpaceQualifier $ makeVar name tok
-	K.Symbol name	-> makeVar name tok
+	K.Var    	name	-> Var.loadSpaceQualifier $ makeVar name tok
+	K.VarField	name	-> vNameF $ makeVar name tok
+	K.Con		name	-> Var.loadSpaceQualifier $ makeVar name tok
+	K.Symbol 	name	-> makeVar name tok
 	_ -> case lookup (token tok) toVar_table of
 		Just name	-> makeVar name tok
 		Nothing		-> panic stage ("toVar: bad token: " ++ show tok)

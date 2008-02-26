@@ -33,13 +33,27 @@ unboxed xx
 	| 1#		<- xx
 	= 0#
 	
-	
-
-
 listPairTuples xx
  	| (x1, x2) : ('a', y2) : xs	<- xx
 	= (x1, 'b') : ('a', y2) : listPairTuples ((x2, y2) : xs)
 	
 	\= []
 
+-- wildcards in patterns
+thing  _	= 5
+thing2 (a, _)	= 6
 
+-- wildcards on LHS of case
+thing3 x 
+ = case x of
+ 	(Just a, _)	-> True
+	_		-> False
+
+-- wildcards on LHS of guard
+thing4 x 
+ = match 
+ 	| (Just a, _)	<- x
+	= True
+	
+	| _		<- x
+	= False

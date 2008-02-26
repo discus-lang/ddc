@@ -244,9 +244,6 @@ instance Pretty a PMode => Pretty (Pat (Maybe a)) PMode where
 				", " %!% (map (\(l, v') -> l % " = " % v') lvs) % 
 			"}")
 
-	WWildcard nn
-		-> annot nn (ppr "_")
-
 -- Label -----------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Label (Maybe a)) PMode where
  ppr ll

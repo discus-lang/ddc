@@ -203,8 +203,6 @@ slurpW	(WVar sp v)
 		, WVar (Just (tBound, pure)) v
 		, [])
 	
-
-
 slurpW w
  = panic stage $ "slurpW: no match for " % show w % "\n"
 

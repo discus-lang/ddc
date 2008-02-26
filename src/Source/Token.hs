@@ -64,6 +64,7 @@ data Token
 	-- Variables -----------------------------------------------------------
 	= ModuleName	[String]	-- a qualified module name, broken into parts
 	| Var		String		-- a non-constructor variable
+	| VarField	String		-- a non-constructor variable which a field of the opened object ie (_var)
 	| Con		String		-- a constructor variable
 	| Symbol	String		-- a symbol
 
