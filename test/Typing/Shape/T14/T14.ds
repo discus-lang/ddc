@@ -1,0 +1,4 @@
+
+-- fun2 used to cause an error
+fun1 x y z = x + y + z + 1
+fun2 x y z = x + y + 1 + z

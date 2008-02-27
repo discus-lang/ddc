@@ -1,25 +1,15 @@
 
-
-
-intMutable 	= 5;
-intConst	= 5;
+-- check that shape constraints aren't forcing the regions
+--	of the types they're acting on to be the same.
+intMutable 	= 5
+intConst	= 5
 
 main ()
- = do {
- 	intMutable	:= 27;
+ = do 
+ 	intMutable	:= 27
+	x		= (+) @ intConst 6
+	result		= intMutable == intConst
 	
-	x		= (+) @ intConst 6;
-	
-	result		= intMutable == intConst;
- 
- 	result2		= select True intMutable intConst;
- };
+	print $ show result % "\n"
 
 
-
-select b x y
- = case b of {
- 	True	-> x;
-	False	-> y;
- };
- 
