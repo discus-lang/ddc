@@ -1,0 +1,15 @@
+
+class Copy a where
+ copy :: forall b
+      .  a -> b
+      :- Shape2 a b
+
+instance Copy Int where
+ copy x = x + 0
+ 
+instance Copy (List Int) where
+ copy xx	
+  = case xx of
+  	[]	-> []
+	(x:xs)	-> copy x : copy xs
+ 

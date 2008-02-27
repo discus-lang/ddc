@@ -180,11 +180,12 @@ exportInstInfo (v, ii)
 		let ts_final	= map (finaliseT quantVars True) ts_hacked
 	 	t'		<- exportType t
 
-		trace 	$ "*   Export.exportInstInfo\n"
+		trace 	$ "*   Export.exportInstInfo " % v % "\n"
 			% "    tt = " % ii % "\n"
 			% "    ts:\n" 		%> "\n" %!% ts		% "\n\n"
 			% "    ts_final\n"	%> "\n" %!% ts_final	% "\n\n"
-			
+			% "    t:\n"		%> prettyTS t		% "\n\n"
+			% "    t':\n"		%> prettyTS t'		% "\n\n"
 
 	 	return		$ (v, InstanceLet v1 v2 ts_final t')
 		

@@ -18,7 +18,7 @@ import Type.Class
 import Type.Crush.Unify
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 -- stage	= "Type.Crush.Shape"
 

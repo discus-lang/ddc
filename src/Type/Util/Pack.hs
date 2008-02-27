@@ -518,8 +518,6 @@ restrictFs tt ls
 
 -- Sort Fetters ------------------------------------------------------------------------------------
 -- | Sort fetters so effect and closure information comes out first in the list.
---	Also sort known contexts so there's less jitter in their placement in interface files
-
 sortFs :: [Fetter] -> [Fetter]
 sortFs fs
  = let	isLetK k f
@@ -528,32 +526,12 @@ sortFs fs
 		FMore _ t2	-> kindOfType t2 == k
 		_		-> False
 
-	isCon v1 f
-	 = case f of
-	 	FConstraint v _
-		 | v == v1	-> True
-		_		-> False
-		
-
-	( [ fsData,   fsEffect, fsClosure
-	  , fsConstT, fsMutableT
-	  , fsConst,  fsMutable
-	  , fsLazy,   fsDirect
-	  , fsPure ], fsRest)	
+	([ fsData,   fsEffect, fsClosure], fsRest)	
 		= partitionFs 
-			[ isLetK KData, 	isLetK KEffect, 	isLetK KClosure
-			, isCon primConstT,	isCon primMutableT
-			, isCon primConst,	isCon primMutable
-			, isCon primLazy,	isCon primDirect
-			, isCon primPure ]
+			[ isLetK KData, 	isLetK KEffect, 	isLetK KClosure]
 			fs
 				
-    in	   fsData 	++ fsEffect ++ fsClosure 
-    	++ fsConstT 	++ fsMutableT
-	++ fsConst	++ fsMutable
-	++ fsLazy 	++ fsDirect
-	++ fsPure 
-	++ fsRest
+    in	   fsData 	++ fsEffect ++ fsClosure ++ fsRest
     
 sortFsT :: Type -> Type
 sortFsT tt

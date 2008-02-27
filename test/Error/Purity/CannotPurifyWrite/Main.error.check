@@ -1,8 +1,8 @@
 ./test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
-    Cannot purify effect `Base.!WriteT *34'.
+    Cannot purify effect `Base.!WriteT *33'.
 
               the use of: (:=)
-             with effect: Base.!WriteT *34
+             with effect: Base.!WriteT *33
                       at: ./test/Error/Purity/CannotPurifyWrite/Main.ds:5:9
 
      conflicts with,

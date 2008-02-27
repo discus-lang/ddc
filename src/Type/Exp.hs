@@ -1,4 +1,5 @@
 
+-- | Type Expressions
 module Type.Exp
 	( Var
 	, Type		(..)
@@ -22,8 +23,7 @@ import Shared.Error
 import Data.Ix
 import qualified Shared.Var	as Var
 
------------------------
--- ClassId
+-- ClassId -----------------------------------------------------------------------------------------
 --	A unique name for a particular type/region/effect equivalence class.
 --
 newtype ClassId	
@@ -51,11 +51,7 @@ instance Ord Type where
 	% "    t2 = " % show t2 % "\n"
 
 
-
-
------------------------
--- Kind
---
+-- Kind --------------------------------------------------------------------------------------------
 data Kind
 	= KNil
 	| KBox						
@@ -73,11 +69,10 @@ type Region	= Type
 type Effect	= Type
 type Closure	= Type
 
------------------------
--- Type
---	| Type Expressions.
---	  This data type includes constructors for bona-fide type expressions, as well
---	  as various things used in parsing/printing and type inference.
+
+-- Type --------------------------------------------------------------------------------------------
+-- | This data type includes constructors for bona-fide type expressions, as well
+--   as various things used in parsing/printing and type inference.
 --
 data Type	
 	= TNil						-- ^ A hole. Something is missing.
@@ -127,10 +122,9 @@ data Type
 	deriving (Show, Eq)
 	
 
------------------------
--- Fetter
---	| A Fetter is a piece of type information which isn't part of the type's shape.
---	  This includes type classes, shape constraints, field constraints and effect constraints.
+-- Fetter ------------------------------------------------------------------------------------------
+-- | A Fetter is a piece of type information which isn't part of the type's shape.
+--   This includes type classes, shape constraints, field constraints and effect constraints.
 --
 data Fetter
 	= FConstraint	Var	[Type]			-- ^ Constraint between types.
@@ -146,9 +140,8 @@ data Fetter
 	deriving (Show, Eq)
 
 
------------------------
--- TProj
---	| Represents field and field reference projections.
+-- TProj -------------------------------------------------------------------------------------------
+-- | Represents field and field reference projections.
 --
 data TProj
 	= TJField  Var				-- ^ A field projection.   		(.fieldLabel)
@@ -159,6 +152,7 @@ data TProj
 	deriving (Show, Eq)
 
 
+-- InstanceInfo ------------------------------------------------------------------------------------
 -- | Records information about how the type of a bound var was determined.
 --	These carry information about instances of forall bound vars between the 
 --	solver and Desugar.toCore so it can fill in type parameters.
@@ -194,3 +188,5 @@ data InstanceInfo param t
 		(Maybe t)	-- the type of the bound var
 
 	deriving Show
+
+

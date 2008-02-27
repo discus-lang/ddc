@@ -31,10 +31,10 @@ instance Pretty CTree PMode where
 	 -> "@CDef " % padL 15 v % "\n" %> (":: " % prettyTypeSplit t) % ";\n"
 
 	CSig	src v t
-	 -> "@CSig  " % padL 15 v % " " % prettyTB t % ";"
+	 -> "@CSig  " % v % "\n" %> prettyTypeSplit t % ";\n"
 
 	CEq 	src v t	
-	 -> "@CEq   " % padL 15 v % " " % prettyTB t % ";"
+	 -> "@CEq   " % padL 15 v % " " % prettyTypeSplit t % ";"
 
 	CEqs 	src ts
 	 -> "@CEqs  " % ts

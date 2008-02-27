@@ -81,6 +81,7 @@ data Arg
 	-- dump pretty flags
 	| DumpPrettyUnique	
 	| DumpPrettyTypeSpaces
+	| DumpPrettyCoreTypes
 
 	-- things that can be dumped
 	| DumpAll
@@ -444,6 +445,7 @@ options	=
 	
 	, OFlag		DumpPrettyUnique	["-dump-pretty-unique"]		"Append unique identifiers to variables."
 	, OFlag		DumpPrettyTypeSpaces	["-dump-pretty-type-spaces"]	"Show a '*' namespace qualifier on type vars."
+	, OFlag		DumpPrettyCoreTypes	["-dump-pretty-core-types"]	"Show type annots on vars in core."
 	, OBlank
 	
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."

@@ -13,18 +13,15 @@ module Desugar.Project
 	, slurpProjTable )
 where
 
-import Util
-import qualified Util.Map	as Map
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(Var, NameSpace(..), Module)
+import Desugar.Util
+import Desugar.Bits
+import Desugar.Exp
 
 
 import Type.Exp
 import Type.Util
+import Type.Plate.FreeVars
+
 import Shared.Exp
 import Shared.VarUtil
 import Shared.Base
@@ -32,11 +29,19 @@ import Shared.Literal
 import Shared.VarPrim
 import Shared.Error
 
+import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
+import qualified Shared.VarUtil	as Var
+import Shared.Var		(Var, NameSpace(..), Module)
 
-import Desugar.Util
-import Desugar.Bits
-import Desugar.Exp
+import Util
+import qualified Util.Map	as Map
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 
 -----
 stage	= "Desugar.Project"
@@ -60,7 +65,12 @@ projectTreeM moduleName headerTree tree
  = do
 	-- Slurp out all the data defs
 	let dataMap	= Map.fromList
-			$ [(v, p) 	| p@(PData _ v vs ctors) <- tree ++ headerTree]
+			$ [(v, p) 	| p@(PData _ v vs ctors) 
+					<- tree ++ headerTree]
+
+	let classDicts	= Map.fromList
+			$ [(v, p)	| p@(PClassDict _ v ts cs vts)
+					<- tree ++ headerTree]
 
 	-- Each data type in the source file should have a projection dictionary
 	--	if none exists then make a new empty one.
@@ -70,7 +80,7 @@ projectTreeM moduleName headerTree tree
 	treeProjFuns	<- addProjDictFunsTree dataMap treeProjNewDict
 	
 	-- Snip user functions out of projection dictionaries.
- 	treeProjDict	<- snipProjDictTree moduleName treeProjFuns
+ 	treeProjDict	<- snipProjDictTree moduleName classDicts treeProjFuns
 
 	return treeProjDict
 
@@ -79,16 +89,17 @@ projectTreeM moduleName headerTree tree
 --	Also snip class instances while we're here.
 
 snipProjDictTree 
-	:: Module 		-- the name of the current module
+	:: Module 			-- the name of the current module
+	-> Map Var (Top SourcePos)	-- class dictionary definitions
 	-> Tree SourcePos
 	-> ProjectM (Tree SourcePos)
 
-snipProjDictTree moduleName  tree
+snipProjDictTree moduleName classDicts tree
  	= liftM concat
- 	$ mapM (snipProjDictP moduleName) tree
+ 	$ mapM (snipProjDictP moduleName classDicts) tree
 	
 -- Snip RHS of bindings in projection dictionaries.
-snipProjDictP moduleName (PProjDict sp t ss)
+snipProjDictP moduleName classDicts (PProjDict sp t ss)
  = do
 	let (TData vCon _)	= t
 
@@ -108,23 +119,20 @@ snipProjDictP moduleName (PProjDict sp t ss)
 
 
 -- Snip RHS of bindings in type class instances.
-snipProjDictP moduleName (PClassInst sp vClass ts context ss)
+snipProjDictP moduleName classDicts 
+	pInst@(PClassInst sp vClass ts context ssInst)
  = do	
-	-- build a map of new names for the RHS
-	--	only rewrite vars where the rhs isn't already a var
- 	let dictVs	= [ v	| SBind _ (Just v) x	<- ss
- 				, not $ isXVar x ]
- 
-	dictVsNew 	<- mapM (newInstFunVar sp moduleName vClass ts) dictVs
-	let varMap	= Map.fromList $ zip dictVs dictVsNew
- 
- 	let (mpp, mss')	= unzip $ map (snipProjDictS varMap) ss
+	-- lookup the class definition for this instance
+	let Just pClass	= Map.lookup vClass classDicts
 
-	return	$ PClassInst sp vClass ts context (catMaybes mss')
-		: catMaybes mpp
+	(ss', pss)	<- liftM unzip
+			$  mapM (snipInstBind moduleName pClass pInst) ssInst
+
+	return	$ PClassInst sp vClass ts context (ss')
+		: concat pss
 
 -- Snip field initializers
-snipProjDictP moduleName (PData nn vData vsArg ctorDefs)
+snipProjDictP moduleName classDicts (PData nn vData vsArg ctorDefs)
  = do	(ctorDefs', psNew)	
  		<- liftM unzip
 		$ mapM (snipCtorDef moduleName nn vData) ctorDefs
@@ -132,9 +140,59 @@ snipProjDictP moduleName (PData nn vData vsArg ctorDefs)
 	return	$ PData nn vData vsArg ctorDefs'
 		: concat psNew
 
-snipProjDictP _ pp
+snipProjDictP _ _ pp
  =	return [pp]
 
+
+
+-- snipInstBind ------------------------------------------------------------------------------------
+-- snip RHS of bindings in type class instances
+snipInstBind
+	:: Module
+	-> Top SourcePos		-- the class dict def of this instance
+	-> Top SourcePos		-- the class dict instance
+	-> Stmt SourcePos		-- the binding in this instance to snip
+	-> ProjectM ( Stmt SourcePos
+		    , [Top SourcePos])
+
+-- if the RHS is already a var we can leave it as it is.
+snipInstBind moduleName
+	pClass pInst 
+	bind@(SBind spBind (Just vInst) (XVar{}))
+ = 	return (bind, [])
+
+-- otherwise lift it out to top level
+snipInstBind moduleName 
+	(PClassDict _  vClass  tsClass ccClass vtsClass)
+	(PClassInst sp vClass' tsInst  ccInst  ssInst)
+	(SBind spBind (Just vInst) xx)
+ = do
+	-- create a new top-level variable to use for this binding
+ 	vTop	<- newInstFunVar sp moduleName vClass tsInst vInst
+	
+	-- lookup the type for this instance function and substitute
+	--	in the types for this instance
+--	let Just tInst = lookup vInst vtsClass
+	
+	-- we also need to quantify over any free variables in the parameters
+	-- eg for:
+	--	instance Int %r1 where
+	--	 (+) = ...
+	--
+	-- sig for (+) is 
+	--	(+) :: forall %r1 . ...
+	--
+{-	let tInst_sub	= subTT_noLoops
+				(Map.fromList $ zip tsClass tsInst)
+				tInst
+-}
+--	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) $ freeVars tsInst
+--	let vks_quant	= map (\v -> (v, kindOfSpace $ Var.nameSpace v)) $ Set.toList vsFree
+--	let tInst_quant	= makeTForall vks_quant tInst_sub
+	
+	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
+		,  [ --PSig spBind vTop tInst_quant
+		     PBind spBind (Just vTop)  xx])
 
 -- snip expressions out of data field intialisers in this ctor def
 snipCtorDef 

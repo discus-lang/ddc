@@ -30,12 +30,10 @@ takePrettyMode aa
  = case aa of
  	DumpPrettyUnique	-> Just $ PrettyUnique
 	DumpPrettyTypeSpaces	-> Just $ PrettyTypeSpaces
+	DumpPrettyCoreTypes	-> Just $ PrettyCoreTypes
 	_			-> Nothing
 
------
--- dumpST
---	Dump a source tree 
---
+-- | Dump a source tree
 dumpST flag name sourceTree
  = do
 	let [ArgPath paths]	
@@ -51,9 +49,7 @@ dumpST flag name sourceTree
 	
 	return ()
 
------
--- dumpS
---
+-- | Dump a string
 dumpS flag name str
  = do
  	let [ArgPath paths]
@@ -66,9 +62,7 @@ dumpS flag name str
 	
 	return ()
 
------
--- dumpDot
---
+-- | Dump a dot file
 dumpDot flag name str
  = do
  	let [ArgPath paths]
@@ -81,40 +75,38 @@ dumpDot flag name str
 	
 	return ()
 
------
--- dumpCT
---	Dump a core tree
---
+
+-- | Dump a core tree
 dumpCT flag name tree
  = do
 	let [ArgPath paths]	
 		= filter (=@= ArgPath{}) ?args
 
+	let pprMode	= catMaybes $ map takePrettyMode ?args
+
  	when (elem flag ?args)
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".dc")
 		(catInt "\n"
-			$ map pprStrPlain
---			$ map Core.Util.labelTypeP
+			$ map (pprStr pprMode)
 			$ tree))
 	
 	return ()
 
 
------
--- dumpET
---	Dump a sea tree
---
+-- Dump a sea tree
 dumpET flag name tree
  = do
 	let [ArgPath paths]	
 		= filter (=@= ArgPath{}) ?args
 
+	let pprMode	= catMaybes $ map takePrettyMode ?args
+
  	when (elem flag ?args)
   	 (writeFile 
 		(pathBase paths ++ ".dump-" ++ name ++ ".c")
 		(catInt "\n"
-			$ map pprStrPlain
+			$ map (pprStr pprMode)
 			$ tree))
 	
 	return ()

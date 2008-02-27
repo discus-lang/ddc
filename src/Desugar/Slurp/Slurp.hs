@@ -123,14 +123,34 @@ slurpP	(PClass	sp v k)
 
 
 -- class dictionaries
-slurpP top@(PClassDict sp v ts context sigs)
+slurpP top@(PClassDict sp vClass tsParam context sigs)
  = do 	
- 	qs	<- mapM (\(v, t) 
-			 -> do	vT	<- lbindVtoT v
-				return	$ CDef (TSV $ SVSigClass sp v) vT t)
-			$ sigs
+	-- create a signature from each of the bindings in the class definition
+	-- eg: for something like
+	--
+	--	class Num a where
+	--	 (+) :: a -> a -> a
+	--
+	-- the actual type of (+) is
+	--
+	-- 	(+) :: forall a. Num a => a -> a -> a
+	--
+	let makeDef (vSig, tSig)
+	     	= do 	vT		<- lbindVtoT vSig
 
-	return	( PClassDict Nothing v ts context sigs
+			-- add a forall for each of the parameters of the type class
+	     		let vsParam	= map (\(TVar _ v) -> v) tsParam
+			let TForall vks t = makeTForall (zip vsParam (repeat KData)) tSig
+
+			-- add the enclosing class constraint
+			let tSig'	= TForall vks 
+					$ addFetters_front [FConstraint vClass tsParam] t
+
+			return $ CDef 	(TSV $ SVSigClass sp vClass) vT tSig'
+
+	qs <- mapM makeDef sigs
+
+	return	( PClassDict Nothing vClass tsParam context sigs
 		, qs)
 			
 

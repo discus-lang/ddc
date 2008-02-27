@@ -362,15 +362,8 @@ addFetter
 --
 addFetter (FConstraint vC [t1])
  = do	
- 	-- work out the equivalence class that this constraint refers to
- 	cid1	<- case t1 of
- 			TVar k v1	-> makeClassV ?src (kindOfSpace $ Var.nameSpace v1) v1
-			TClass k cid	-> return cid
-
-	let k	= case t1 of
-			TVar k1 _	-> k1
-			TClass k1 _	-> k1
-
+	Just (TClass k cid1)	<- feedType Nothing t1
+	
 	-- add the fetter to the equivalence class
 	let f	= FConstraint vC [TClass k cid1]
 

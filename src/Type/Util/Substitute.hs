@@ -76,7 +76,8 @@ subTT_cutM' sub cut tt
 
 	TFetters fs t		
 	 -> do	t'	<- down t
-	 	return	$ TFetters fs t'
+		fs'	<- mapM (subTTf_cutM' sub cut) fs
+	 	return	$ TFetters fs' t'
 
 	TSum k ts
 	 -> do	ts'	<- mapM down ts
@@ -150,6 +151,25 @@ subTT_enter sub cut tt
 	| otherwise
 	= return tt
 	
+subTTf_cutM' sub cut ff
+ = case ff of
+ 	FConstraint v ts
+	 -> do	ts'	<- mapM (subTT_cutM' sub cut) ts
+	 	return	$ FConstraint v ts'
+		
+	FLet t1 t2
+	 -> do	t2'	<- subTT_cutM' sub cut t2
+	 	return	$ FLet t1 t2'
+		
+	FMore t1 t2
+	 -> do	t2'	<- subTT_cutM' sub cut t2
+	 	return	$ FMore t1 t2'
+		
+	FProj j v t1 t2
+	 -> do	t1'	<- subTT_cutM' sub cut t1
+	 	t2'	<- subTT_cutM' sub cut t2
+		return	$ FProj j v t1' t2'
+
 
 
 -- Substitute types for types everywhere in a type, including binding positions.

@@ -17,7 +17,7 @@ module Type.Util.Bits
 	, kindOfSpace 
 	, kindOfType,	takeKindOfType
 
-	, addFetters 
+	, addFetters,	addFetters_front
 	, takeBindingVarF
 
 	, makeOpTypeT 
@@ -264,6 +264,18 @@ addFetters	fsMore	t
 	 	[]	-> x
 		ff	-> TFetters (nub ff) x
 	 
+	_ -> case fsMore of
+		[]	-> t
+		ff	-> TFetters (nub ff) t
+
+addFetters_front :: [Fetter] -> Type -> Type
+addFetters_front fsMore t
+ = case t of
+ 	TFetters fs x
+	 -> case fsMore ++ fs of
+	 	[]	-> x
+		ff	-> TFetters (nub ff) x
+		
 	_ -> case fsMore of
 		[]	-> t
 		ff	-> TFetters (nub ff) t

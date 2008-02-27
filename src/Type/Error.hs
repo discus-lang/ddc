@@ -232,7 +232,7 @@ instance Pretty Error PMode where
  ppr err@(ErrorNoInstance
  		{ eClassVar	= v
 		, eTypeArgs	= ts })
-	= "    No instance for " % v % " " % " " %!% map prettyTS ts % "\n"
+	= "    No instance for " % v % " " % punc " " (map prettyTB ts) % "\n"
 	
  -- Field projection problems.
  ppr err@(ErrorNoProjections

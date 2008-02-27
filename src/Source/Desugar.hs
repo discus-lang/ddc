@@ -120,11 +120,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	 	-- For each member function in this class, quantify the class
 		--	params and add the constraints.
-	 	let makeSigs (vsT, t) =
-	  	     let TForall vks x	= makeTForall (zip vsParam (repeat KData)) t
-		     	 x'		= addFetters [FConstraint vC tsParam] x
-			 t'		= TForall vks x'
-		     in	 zip vsT (repeat t')
+	 	let makeSigs (vsT, t) = zip vsT (repeat t)
 
 	 	let sigs'	= catMap makeSigs sigs
 

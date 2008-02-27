@@ -15,7 +15,7 @@
 ./test/Error/Unify/Shape2/Main.ds:5:25
     Type mismatch during unification.
           cannot match: Base.Int %81
-                  with: *66 -(!64 $70)> *68
+                  with: *64 -(!65 $70)> *68
 
               the use of: (-)
                  at type: Base.Int %81
@@ -23,5 +23,5 @@
 
         conflicts with, 
               the use of: show
-                 at type: *66 -(!64 $70)> *68
+                 at type: *64 -(!65 $70)> *68
                       at: ./test/Error/Unify/Shape2/Main.ds:5:20

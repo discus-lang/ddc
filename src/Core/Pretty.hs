@@ -131,10 +131,9 @@ instance Pretty Exp PMode where
 	 -> "(" % pv v % " :: _)"
 
 	XVar v t
-	 -> pv v
-
---	XVar v t
---	 -> "(" % pv v % " :: " % t % ")"
+	 -> ifMode (elem PrettyCoreTypes)
+	 	("(" % pv v % " :: " % t % ")")
+		(pv v)
 		
 	XLAM v k e
 	 | prettyFoldXLAM
@@ -149,11 +148,11 @@ instance Pretty Exp PMode where
 	        (xRest, vsSimple)	= takeLAMs [] xx
 	    
 	     in	case vsSimple of
-	    	 []	-> "/\\ (" % padR 16 (sb v) % " :: " % k % ") ->\n" % e
+	    	 []	-> "/\\ (" % padL 16 (sb v) % " :: " % k % ") ->\n" % e
 		 _	-> "/\\  " % ", " %!% map sb (reverse vsSimple) % " ->\n" % xRest
 
 	 | otherwise
-	 -> "/\\ (" % padR 16 (sb v) % " :: " % k % ") ->\n" % e
+	 -> "/\\ (" % padL 16 (sb v) % " :: " % k % ") ->\n" % e
 
 
 
@@ -198,7 +197,7 @@ instance Pretty Exp PMode where
 
 	XTet vts x
 	 -> "\n" %!%
-	    (map (\(v, t) -> "let " % padR 16 (sv v) % " =  " % t % " in") vts)
+	    (map (\(v, t) -> "let " % padL 16 (sv v) % " =  " % t % " in") vts)
 	    % "\n" % x	 
 
 	XDo [s@(SBind Nothing XVar{})]
@@ -334,7 +333,7 @@ instance Pretty Stmt PMode where
 	    && (not $ isXLambda x)
 	    && (not $ isXLAMBDA x)
 	    && (not $ isXTau x)
-	 -> (padR 7 (pprStrPlain v)) 
+	 -> (padL 7 (pprStrPlain v)) 
 	 	% " = " 	%> x
 	 
 	 | otherwise

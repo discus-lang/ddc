@@ -72,36 +72,55 @@ rewriteS ss
 	
 rewriteX xx
  = case xx of
- 	XTau t x	-> XTau t (rewriteX x)
-
+	XTau t x	-> XTau t (rewriteX x)
 	XApp{}		-> rewriteApp xx
-	
-	XAPP XLit{} (TVar KRegion r)
-			-> xx
-	
+	XAPP XLit{} (TVar KRegion r) -> xx
 	XAPP{}		-> rewriteApp xx
 	_		-> xx
 	
+
+-- | if this function application calls an overloaded function then rewrite it 
+--	to be a call to the appropriate instance.
 rewriteApp xx
- = let	xParts				=  flattenAppsE xx
+ = let	
+ 	-- flatten the application to extract the var of the function being applied.
+ 	xParts				= flattenAppsE xx
 	(XAppFP (XVar overV _) _ : _)	= xParts
-	
-   in	case Map.lookup overV ?classMap of
-   	 Nothing		-> xx
-	 Just (cClass, tOverScheme, cxInstances)	
-	 	-> rewriteOverApp_trace xx overV cClass tOverScheme cxInstances ?typeMap
 
+ 	result
+		-- see if the var is in the classMap, if it is then it is overloaded.
+		| Just	( cClass@(TClass vClass tsClass)
+			, tOverScheme
+			, cxInstances)	
+				<- Map.lookup overV ?classMap
 		
-rewriteOverApp
- ::	Exp			-- expression being rewritten
- ->	Var			-- var of overloaded function
- ->	Class			-- class 		eg	Eq a
- -> 	Type			-- type of sig
- -> 	[(Class, Var)]		-- instances		eg 	[(Eq Int, primIntEq), (Eq Char, primCharEq)]
- ->	Map Var Type		-- type map
- -> 	Exp			-- rewritten expression
+		= let	vksClass 	= map (\(TVar k v) -> (v, k)) tsClass
+			tScheme	 	= foldl (\t (v, k) -> TForall (BVar v) k t) tOverScheme vksClass
+		  	tScheme_c	= addContext (KClass vClass tsClass) tScheme
+		  
+		  in 	rewriteOverApp_trace xx overV cClass tScheme_c cxInstances ?typeMap
+		
+		-- couldn't find it in the classMap, var isn't overloaded.
+		| otherwise
+		= xx
+	
+   in	result
 
--- ^ Rewrite an overloaded application to call the appropriate instance.
+addContext c tt
+ = case tt of
+ 	TForall b k t	-> TForall b k (addContext c t)
+	_		-> TContext c tt
+
+-- rewriteOverApp ----------------------------------------------------------------------------------	
+-- | Rewrite an overloaded application to call the appropriate instance.
+rewriteOverApp
+	:: Exp			-- function application to rewrite
+	-> Var			-- var of overloaded function
+	-> Class		-- class 		eg	Eq a
+	-> Type			-- type of sig
+	-> [(Class, Var)]	-- instances		eg 	[(Eq Int, primIntEq), (Eq Char, primCharEq)]
+	-> Map Var Type		-- type map
+	-> Exp			-- rewritten expression
 
 rewriteOverApp
 	xx 
@@ -110,9 +129,11 @@ rewriteOverApp
 	tOverScheme 
 	cxInstances
 	mapTypes
- = case determineInstance xx overV cClass tOverScheme cxInstances of
-    (cClassInst, tOverShapeI, Just vInst)
-        -> let
+
+	-- first work out what instance function to use
+	| (cClassInst, tOverShapeI, Just vInst)
+		<- determineInstance xx overV cClass tOverScheme cxInstances 
+	= let
 		-- Ok, we know what types the overloaded was called at, and what instance function to call.
 		--	We now have to work out what type args to pass to the instance function.
 		
@@ -146,7 +167,7 @@ rewriteOverApp
 		
 		-- Work out the type args to pass to the instance function.
 		vsForall	= map (varOfBind . fst) vtsForall
-		tsInstArgs	= map (\v -> let Just t = lookup v vtSub in t) 		vsForall
+		tsInstArgs	= map (\v -> let Just t = lookup v vtSub in t) vsForall
 
 		-- Work out the witnesses we need to pass to the instance function
 		ksClassArgs		= map (\c -> substituteT (Map.fromList vtSub) c)	ksClass
@@ -166,12 +187,13 @@ rewriteOverApp
 	
 		-- Construct the new call.
 		xxParts' :: [Exp]
-	  	xxParts'	= ((XAppFP (XVar vInst tInstScheme) Nothing)			-- the function var
-					:  (map (\t -> XAppFP (XType t) Nothing) tsInstArgs)	-- type args to instance fn
-					++ (map (\t -> XAppFP (XType t) Nothing) tsWitnesses)	-- class args to instance fn
-					++ xsArgsVal)						-- value args
+	  	xxParts'
+			= ((XAppFP (XVar vInst tInstScheme) Nothing)			-- the function var
+				:  (map (\t -> XAppFP (XType t) Nothing) tsInstArgs)	-- type args to instance fn
+				++ (map (\t -> XAppFP (XType t) Nothing) tsWitnesses)	-- class args to instance fn
+				++ xsArgsVal)						-- value args
 
-	  	xx'		= unflattenAppsE xxParts'
+	  	xx'	= unflattenAppsE xxParts'
 
    	in trace
 		(pprStrPlain
@@ -181,12 +203,13 @@ rewriteOverApp
 			% "  tsInstArgs         = " % tsInstArgs	% "\n\n"
 			% "  xx'                =\n" %> xx'		% "\n\n")
 		$ xx'
-			
 
-    (cClassInst, tOverShapeI, Nothing)
-      -> panic stage 
-	$ "rewriteOverApp: no instance for " % cClassInst % "\n"
-	% "  in " % xx % "\n"
+	-- couldn't find the instance for this function			
+	| (cClassInst, tOverShapeI, Nothing)
+    		<- determineInstance xx overV cClass tOverScheme cxInstances
+	= panic stage 
+		$ "rewriteOverApp: no instance for " % cClassInst % "\n"
+		% "  in " % xx % "\n"
 
 
 rewriteOverApp_trace
@@ -213,6 +236,7 @@ rewriteOverApp_trace
 	$ rewriteOverApp xx overV cClass tOverScheme cxInstances mapTypes
 
 
+-- determineInstance -------------------------------------------------------------------------------
 -- | Determine which instance to use for this application of an
 --	overloaded function.
 determineInstance
@@ -318,6 +342,7 @@ matchInstance cType cInst
 	= False
 
 
+-- Slurp -------------------------------------------------------------------------------------------
 -- Slurp out a map of all overloaded functions defined in this tree.
 slurpClassFuns 
  ::	Map Var [Top]
@@ -333,12 +358,12 @@ slurpClassFuns instMap pp
  	[ (vF, (TClass v ts, sig, exps))
 
 	| PClassDict v ts context sigs	<- pp 
-	, (vF, sig)			<- sigs 
-	, let (Just insts)		= Map.lookup v instMap
-	, let exps			= [ (TClass v' ts', instV)	
-							| PClassInst v' ts' _ defs	<- insts
-							, (v, (XVar instV t))		<- defs
-							, v == vF		] ]
+	, (vF, sig)		<- sigs 
+	, let (Just insts)	= Map.lookup v instMap
+	, let exps		= [ (TClass v' ts', instV)	
+					| PClassInst v' ts' _ defs	<- insts
+					, (v, (XVar instV t))		<- defs
+					, v == vF		] ]
 
 -- | Slurp out all the class instances from ths tree
 slurpClassInstMap

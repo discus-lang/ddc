@@ -318,7 +318,7 @@ dispSourceValue tt sv
 		%  "              at: " % sp	% "\n"
 		
 	SVMatchCtorArg sp
-		-> "  argument of constructor match" 
+		-> "  argument of constructor match\n" 
 		%  "         of type: " % tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
