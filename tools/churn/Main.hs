@@ -98,7 +98,7 @@ genTopsChain :: Env -> Int -> GenM [Top a]
 genTopsChain env 0	
  = do	x	<- withFuel expFuel $ genExpT env tInt
 	let pr	= XApp none (xVar "print") (XApp none (xVar "show") x)
- 	return	$ [PStmt (SBindPats none (varV "main") [XUnit none] pr)]
+ 	return	$ [PStmt (SBindPats none (varV "main") [WUnit none] pr)]
 
 genTopsChain env n
  = do	tt	<- withFuel typeFuel $ genType True
@@ -171,7 +171,6 @@ instance Size (Pat a) where
 	WTuple _ ps	-> size ps
 	WCons _ p1 p2	-> size p1 + size p2
 	WList _ ps	-> size ps
-	WExp x		-> size x
 
 
 
