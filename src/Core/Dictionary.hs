@@ -132,45 +132,53 @@ rewriteOverApp
 
 	-- first work out what instance function to use
 	| (cClassInst, tOverShapeI, Just vInst)
-		<- determineInstance xx overV cClass tOverScheme cxInstances 
-	= let
-		-- Ok, we know what types the overloaded was called at, and what instance function to call.
-		--	We now have to work out what type args to pass to the instance function.
-		
-		-- Lookup a scheme for the instance function
-		Just tInstScheme= Map.lookup vInst mapTypes
+			<- determineInstance xx overV cClass tOverScheme cxInstances 
 
-		-- Strip this scheme down to its shape
-		(vtsForall, _, ksClass, tInstShape)
-				= stripSchemeT $ packT tInstScheme					
+	-- Ok, we know what types the overloaded function was called at, and what instance to use.
+	--	We now have to work out what type args to pass to the instance function.
 
-		-- Unify the instance shape with the overloaded shape.
-		ttSub	= trace (pprStrPlain 
-				$ "    tInstScheme = " %> tInstScheme 	% "\n\n"
-				% "    tInstShape  = " %> tInstShape 	% "\n\n"
-				% "    tOverShapeI = " %> tOverShapeI	% "\n\n")
-			$ fromMaybe
+	-- Lookup the scheme for the instance function and strip out its parts
+	, Just tInstScheme	<- Map.lookup vInst mapTypes
+
+	, (bksForall, _, ksClass, tInstShape)
+			<- stripSchemeT $ packT tInstScheme					
+	
+	= trace (pprStrPlain
+		$ "    tInstScheme = " %> tInstScheme 	% "\n\n"
+		% "    tInstShape  = " %> tInstShape 	% "\n\n"
+		% "    tOverShapeI = " %> tOverShapeI	% "\n\n")
+	$ let
+		-- Match up the type args in the type of the call and the real instance function.
+		ttSub	= fromMaybe
 				(panic stage $ "rewriteOverApp: cannot unify types.\n\n"
 				% "    tInstShape  = " %> tInstShape  % "\n\n"
 				% "    tOverShapeI = " %> tOverShapeI % "\n")
 				$ unifyT2 tInstShape tOverShapeI
-		
 
-		vtSub	= trace (pprStrPlain $ "  vtSub      = " % ttSub)
-			$ map 	(\(t1, t2) -> 
-					-- if this fails then the type params passed to the overloaded
-					--	fn weren't specific enough to determine the type 
-					--	we need to call the instance fn at.
+		-- Make sure we have a type parameter for all free vars in the instance.
+		-- If this fails then the type params passed to the overloaded fn weren't specific enough
+		--	to determine the type we need to call the instance fn at.
+		vtSub	= map 	(\(t1, t2) -> 
 					let Just v1	= typeToVar t1
 					in  (v1, t2))
 				ttSub
-		
+
 		-- Work out the type args to pass to the instance function.
-		vsForall	= map (varOfBind . fst) vtsForall
-		tsInstArgs	= map (\v -> let Just t = lookup v vtSub in t) vsForall
+		getInstType (b, k)
+		 = case lookup (varOfBind b) vtSub of
+		 	Just t'	-> t'
+
+			-- if the instance is recursive then vtSub will be empty and we can just
+			--	pass the vars back to ourselves.
+			Nothing	
+			 | null vtSub	-> TVar k (varOfBind b)
+		 
+		tsInstArgs	
+		 	= trace (pprStrPlain $ "    vtSub:\n" %> vtSub % "\n")
+		 	$ map getInstType bksForall
 
 		-- Work out the witnesses we need to pass to the instance function
-		ksClassArgs		= map (\c -> substituteT (Map.fromList vtSub) c)	ksClass
+		ksClassArgs		= map (\c -> substituteT (Map.fromList vtSub) c) ksClass
 		Just tsWitnesses	= sequence $ map takeWitnessOfClass ksClassArgs
 
 		-- Have a look at the original application 
@@ -231,7 +239,7 @@ rewriteOverApp_trace
 			%> (" = " % tOverScheme	% "\n\n")
 
 		% "    possible instance for this var (cxInstance)\n"
-			%> (" = " % cxInstances	% "\n\n"))
+			%> (punc "\n" cxInstances	% "\n\n"))
 		
 	$ rewriteOverApp xx overV cClass tOverScheme cxInstances mapTypes
 
@@ -281,7 +289,7 @@ determineInstance
 
 	-- Also apply types to the shape of the overloaded fn to get the 
 	--	shape of the instance.
-	tInstShape	= substituteT tsSubst tOverShape
+	tOverShapeI	= substituteT tsSubst tOverShape
 
  in	trace
  		(pprStrPlain
@@ -293,15 +301,18 @@ determineInstance
 				%> (" = "  % cClassInst	% "\n\n")
 
 			% "    the available instances (cvInstances)\n"
-				%> (" = "  % cvInstances % "\n\n")
+				%> (punc "\n" cvInstances % "\n\n")
 
 			% "    var of the instance fn to use (mInstV)\n"
 				%> (" = "  % mInstV	% "\n\n")
 
-			% "    shape of the instance fn (tInstShape)\n"
-				%> (" = "  % tInstShape % "\n\n"))
+			% "    shape of the overloaded fn (tOverShape)\n"
+				%> (" = "  % tOverShape % "\n\n")
 
-		$ (cClassInst, tInstShape, mInstV)
+			% "    shape of the overloaded fn at this instance (tOverShapeI)\n"
+				%> (" = "  % tOverShapeI % "\n\n"))
+
+		$ (cClassInst, tOverShapeI, mInstV)
 
 
 -- Checks if an class instance supports a certain type.

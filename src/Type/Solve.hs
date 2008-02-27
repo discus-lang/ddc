@@ -185,16 +185,41 @@ solveCs	(c:cs)
 
 		solveNext cs
 
+
+	-- Strip fetters off the sig before adding it to the graph
+	--	We only really need sigs for guiding projection resolution.
+	--	We also need to avoid the wormhole problem for closures:
+	--
+	-- 	f1' :: a -> b -($c3)> c
+	--          :- $c3 = x : b
+	--
+	--	f1  :: a -($c1)> b -($c2)> c
+	--	    :- $c1 = $c2 \ z
+	--	    ,  $c2 = z : b
+	--
+	-- If f1' is the sig and f1 the type derived from the constraints,
+	--	unifying the two types gives
+	--
+	--	    :: a -($c1)> b -($c2)> c
+	--	    :- $c1 = { x : b; }
+	--	    ,  $c2 = { x : b; z : b }
+	--
+	-- Which is wrong. If we strip fetters from the sig before adding
+	-- it to the graph we get the desired shape information and avoid 
+	-- this problem.
+	--
 	-- type signature
 	CSig src t1 t2
 	 -> do	trace	$ "### CSig  " % t1 % "\n"
 	 		% "    t2:\n" %> prettyTS t2 % "\n\n"
 
 		t2_inst	<- instantiateT instVar t2
+		let (t2_strip, _) 
+			= stripFLetsT t2_inst
 
-		trace	$ "    t2_inst:\n" %> prettyTS t2_inst % "\n\n"
+		trace	$ "    t2_strip:\n" %> prettyTS t2_strip % "\n\n"
 
-		feedConstraint (CSig src t1 t2_inst)
+		feedConstraint (CSig src t1 t2_strip)
 
 		solveNext cs
 

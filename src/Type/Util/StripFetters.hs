@@ -1,93 +1,107 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Type.Util.StripFetters
-	( stripMonoFLetsT )
+	( stripMonoFLetsT 
+	, stripFLetsT)
 where
 
 import Util
 import Shared.Error
+import Type.Pretty
 import Type.Exp
 
+stage = "Type.Util.StripFetters"
 
-{-
-stripFettersT :: Type	-> (Type, [Fetter])
-stripFettersT	tt
+stripFLetsT :: Type	-> (Type, [Fetter])
+stripFLetsT	tt
  = case tt of
+	TNil	-> (TNil, [])
+
 	TForall vks t
-	 -> let	(t', fs)	= stripFettersT t
+	 -> let	(t', fs)	= stripFLetsT t
 	    in	( TForall vks t'
 	    	, fs)
 
 	TFetters fs t
-	 -> let	(t', fs')	= stripFettersT t
-	    in	( t'
-	    	, fs ++ fs')
+	 -> let	(t', fs')	= stripFLetsT t
+		(fsLet, fsOther)	
+				= partition isFLet fs
+	    in	( TFetters fsOther t'
+	    	, fsLet ++ fs')
 	
 	TSum k ts
-	 -> let	(ts', fss)	= unzip $ map stripFettersT ts
+	 -> let	(ts', fss)	= unzip $ map stripFLetsT ts
 	    in	( TSum k ts'
 	    	, concat fss)
 
 	TMask k t1 t2
-	 -> let	(t1', fs1)	= stripFettersT t1
-	 	(t2', fs2)	= stripFettersT t2
+	 -> let	(t1', fs1)	= stripFLetsT t1
+	 	(t2', fs2)	= stripFLetsT t2
 	   in	( TMask k t1' t2'
 	   	, fs1 ++ fs2 )
 
  	TVar{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	TTop{}	-> (tt, [])
+	TWild{}	-> (tt, [])
+	
 
 	-- data
 	TFun t1 t2 eff clo
-	 -> let	(t1', f1)	= stripFettersT t1 
-		(t2', f2)	= stripFettersT t2
-		(eff', fsEff)	= stripFettersT eff
-		(clo', fsClo)	= stripFettersT clo
+	 -> let	(t1', f1)	= stripFLetsT t1 
+		(t2', f2)	= stripFLetsT t2
+		(eff', fsEff)	= stripFLetsT eff
+		(clo', fsClo)	= stripFLetsT clo
 	    in
 	    	( TFun t1' t2' eff' clo'
 		, f1 ++ f2 ++ fsEff ++ fsClo)
 		
 	TData v ts
-	 -> let	(ts', fss)	= unzip $ map stripFettersT ts
+	 -> let	(ts', fss)	= unzip $ map stripFLetsT ts
 	    in
 	    	( TData v ts'
 		, concat fss)
 		
 	-- effect
 	TEffect v ts
-	 -> let	(ts', fss)	= unzip $ map stripFettersT ts
+	 -> let	(ts', fss)	= unzip $ map stripFLetsT ts
 	    in	( TEffect v ts'
 	    	, concat fss)
 
 	-- closure
 	TFree v t
-	 -> let	(t', fs)	= stripFettersT t
+	 -> let	(t', fs)	= stripFLetsT t
 	    in	( TFree v t'
 	    	, fs)
 
-	TTag v
-	 -> (tt, [])
+	TDanger t1 t2
+	 -> let (t1', fs1)	= stripFLetsT t1
+	  	(t2', fs2)	= stripFLetsT t2
+	    in	(TDanger t1' t2'
+	        , fs1 ++ fs2)
 
-	TAccept t
-	 -> let (t', fs)	= stripFettersT t
-	    in	( t' 
-	    	, fs)
-
-	 
+	TTag v		-> (tt, [])
 	TClass k cid	-> (tt, [])
 
-	_	-> panic stage ("stripFettersT: no match for " % show tt)
--}
+	_ -> panic stage
+		$ "stripFLetsT: no match for " % tt % "\n"
+
+isFLet ff
+ = case ff of
+	FLet _ _	-> True
+	_		-> False
 
 
 -- | Strip all the monomorphic FLets from this type.
---	TODO: merge this code into stripFettersT
+--	TODO: merge this code into stripFLets
 --
 stripMonoFLetsT
 	:: Type -> (Type, [Fetter])
 	
 stripMonoFLetsT tt
  = case tt of
+	TNil	-> (tt, [])
+
  	TForall vks t	
 	 -> let (t', fsMono)	= stripMonoFLetsT t
 	    in	(TForall vks t', fsMono)
@@ -132,11 +146,21 @@ stripMonoFLetsT tt
 	 -> let	(t',  fsMono)		= stripMonoFLetsT t
 	    in	(TFree v t', fsMono)
 	    
+	TDanger t1 t2 
+	 -> let (t1', fsMono1)		= stripMonoFLetsT t1
+	 	(t2', fsMono2)		= stripMonoFLetsT t2
+	    in	( TDanger t1' t2'
+	    	, fsMono1 ++ fsMono2)
+	    
 	TTag{}	-> (tt, [])
 	
 	TClass{} -> (tt, [])
+	TWild{}	-> (tt, [])
 
 	TError{} -> (tt, [])
+
+	_ -> panic stage
+		$ "stripMonoFLetsT: no match for " % tt 
 
 isMonoFLet ff
  = case ff of

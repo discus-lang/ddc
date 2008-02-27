@@ -1,8 +1,9 @@
 
 class Copy a where
- copy :: forall b
-      .  a -> b
-      :- Shape2 a b
+ copy	:: forall b
+	.  a -(!e1)> b
+	:- Shape2 a b
+	,  !e1 = !ReadT a
 
 instance Copy Int where
  copy x = x + 0
@@ -12,4 +13,15 @@ instance Copy (List Int) where
   = case xx of
   	[]	-> []
 	(x:xs)	-> copy x : copy xs
- 
+
+
+main ()
+ = do	list	= [1, 2, 3]
+ 	total	= sumR @ list
+	
+	list2	= copy list
+	(head list2) := 5
+
+	print $ show total % "\n"
+	
+	

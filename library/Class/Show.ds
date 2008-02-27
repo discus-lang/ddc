@@ -7,38 +7,27 @@ import
 
 
 class Show a where 
-{
-	show 	:: forall %r
-		.  a -(!e1)> String %r
-		:- !e1	= !{ !ReadT a };
-}
+ show 	:: forall %r
+	.  a -(!e1)> String %r
+	:- !e1	= !{ !ReadT a }
 
 
-instance Show (String %_) where
-{
-	show ss	= "'" % ss % "'";
-}
+instance Show String where
+ show ss = "'" % ss % "'";
 
 
-instance Show (Int %_) where
-{
-	show	= stringOfInt;
-}
+instance Show Int where
+ show	= stringOfInt;
 
 
-instance Show (Float %_) where
-{
-	show	= stringOfFloat32;
-}
+instance Show Float where
+ show	= stringOfFloat32;
 
-instance Show (Bool %_) where
-{
-	show b 
-	 = case b of {
-	 	True	-> "True";
-		False	-> "False";
-	 };
-}
+instance Show Bool where
+ show b 
+  = case b of 
+	True	-> "True"
+	False	-> "False"
 
 -----------------------
 infixr 7 %;

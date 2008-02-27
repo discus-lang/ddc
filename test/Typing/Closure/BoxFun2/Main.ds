@@ -1,5 +1,5 @@
 -----
--- 	Checsk progagation of effect and closure information via data types
+-- 	Checks progagation of effect and closure information via data types
 --	containing functions. 
 --
 --	If a data object containing a function is updated with new functions then

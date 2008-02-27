@@ -172,7 +172,7 @@ snipInstBind moduleName
 	
 	-- lookup the type for this instance function and substitute
 	--	in the types for this instance
---	let Just tInst = lookup vInst vtsClass
+	let Just tInst = lookup vInst vtsClass
 	
 	-- we also need to quantify over any free variables in the parameters
 	-- eg for:
@@ -182,17 +182,17 @@ snipInstBind moduleName
 	-- sig for (+) is 
 	--	(+) :: forall %r1 . ...
 	--
-{-	let tInst_sub	= subTT_noLoops
+	let tInst_sub	= subTT_noLoops
 				(Map.fromList $ zip tsClass tsInst)
 				tInst
--}
---	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) $ freeVars tsInst
---	let vks_quant	= map (\v -> (v, kindOfSpace $ Var.nameSpace v)) $ Set.toList vsFree
---	let tInst_quant	= makeTForall vks_quant tInst_sub
+
+	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) $ freeVars tsInst
+	let vks_quant	= map (\v -> (v, kindOfSpace $ Var.nameSpace v)) $ Set.toList vsFree
+	let tInst_quant	= makeTForall vks_quant tInst_sub
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
-		,  [ --PSig spBind vTop tInst_quant
-		     PBind spBind (Just vTop)  xx])
+		,  [ PSig spBind vTop tInst_quant
+		   , PBind spBind (Just vTop)  xx])
 
 -- snip expressions out of data field intialisers in this ctor def
 snipCtorDef 
