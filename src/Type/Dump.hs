@@ -33,12 +33,20 @@ dumpGraph
  = do
 	school		<- gets stateGraph
 	classes		<- liftIO (getElems $ graphClass school)
-	classesU	<- mapM fowardCids classes
+	classesU	<- mapM forwardCids classes
 	
 	return	$ pprStrPlain
 		$ "===== Equiv Clases =====================================\n"
-		% concat (zipWith prettyClass [0..] classesU)
+		% dumpGraph' pNil classesU
 		% "\n\n"
+
+dumpGraph' acc []	= acc
+dumpGraph' acc (c:cs)
+ = case c of
+ 	ClassNil{}	-> dumpGraph' acc cs
+	ClassForward{}	-> dumpGraph' acc cs
+	_		-> dumpGraph' (acc % c) cs
+	
 
 		
 -- | dump scheme instantiations
@@ -64,31 +72,35 @@ dumpSub
 		% prettyVMap mVarSub
 		% "\n\n"
 
+prettyClass :: Int -> Class -> PrettyM PMode
+prettyClass ix c
+ = case c of
+ 	ClassNil{}	-> pNil
+	ClassForward{}	-> pNil
+	_		-> ppr c
+
 
 -- | pretty print an equivalence class
-prettyClass (ix :: Int) c
- = case c of
-	ClassNil{}	-> []
+instance Pretty Class PMode where
+ ppr c 
+  = case c of
+	ClassNil{}	-> ppr "ClassNil{}"
 
-	ClassForward c	-> []		
-{-	ClassForward c
-	 -> pprStr
-	 	$ ". ClassForward @" % ix % " ==> " % c % "\n\n"
--}
+	ClassForward c
+	 -> ". ClassForward ==> " % c % "\n\n"
+
 	ClassFetter { classFetter = f }
-	 -> pprStrPlain
-	 	$ "+" % classId c % "\n"
-		% "        " % f % "\n"
-		% "\n\n"
+	 	-> "+" % classId c % "\n"
+		%  "        " % f % "\n"
+		%  "\n\n"
 
  	Class{}
-	 -> pprStrPlain
-		-- class id / name / kind 
-		$ classKind c 
+	 ->  	-- class id / name / kind 
+		classKind c 
 			% classId c 
 			% (case className c of 
 				Nothing	-> pNil
-				Just n	-> ppr n)			% "\n"
+				Just n	-> ppr n) % "\n"
 	
 		-- class type
 		%> (case classType c of
@@ -117,6 +129,7 @@ prettyClass (ix :: Int) c
 			$ map pprStrPlain
 			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t) % "\n\n")
 			$ (classNodes c))
+
 		% "\n"
 	
 
@@ -127,18 +140,22 @@ prettyVMap 	m
 	
 
 -- Rewrite this class so all its classIds are in canconical form.
-fowardCids :: Class -> SquidM Class
-fowardCids c@ClassForward{}	= return c
-fowardCids c@ClassNil{}		= return c
-fowardCids c@ClassFetter { classFetter = f }
- = do	cid'		<- updateVC $ classId 	c
+forwardCids :: Class -> SquidM Class
+forwardCids c@ClassForward{}	
+	= return c
+
+forwardCids c@ClassNil{}		
+	= return c
+
+forwardCids c@ClassFetter { classFetter = f }
+ = do	cid'		<- updateVC $ classId  c
  	fetter'		<- updateVC f
 	return	$ c 
 		{ classId	= cid'
 		, classFetter	= fetter' }
 
-fowardCids c@Class{}
- = do	cid'		<- updateVC $ classId	   c
+forwardCids c@Class{}
+ = do	cid'		<- updateVC $ classId c
 
 	fs'		<- mapM updateVC $ classFetters c
 
@@ -158,8 +175,3 @@ fowardCids c@Class{}
 		, classType	= typ' 
 		, classFetters	= fs' 
 		, classNodes	= nodes' }
-
-		
-		
- 
- 

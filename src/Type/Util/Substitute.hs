@@ -4,7 +4,9 @@ module Type.Util.Substitute
 	, subTT_cutM
 	, subTT_noLoops
 	, subTT_all
-	, SubM)
+	, SubM
+	, subVV
+	, subCidCid)
 where
 
 import Type.Plate.Collect
@@ -219,5 +221,19 @@ cutF (t1, t2)
 	| otherwise
 	= return $ Just (t1, t2)	
 
+-- | Substiute vars for vars in this type
+subVV :: Map Var Var -> Type -> Type
+subVV sub 
+ = transformV 
+ 	(\v -> case Map.lookup v sub of
+ 			Just v'	-> v'
+			Nothing	-> v)
 
+-- | Substitute cids for cids in this type
+subCidCid sub
+ = transformCid 
+ 	(\cid -> case Map.lookup cid sub of
+			Just cid' -> cid'
+			Nothing   -> cid)
+			
 

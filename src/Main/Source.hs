@@ -369,6 +369,9 @@ solveSquid
 
 	-- dump out the type graph
 	--	do this before bailing on errors so we can see what's gone wrong.
+	when (elem Verbose ?args)
+	 $ putStr "  * Type: Dumping graph\n"
+	 
 	dGraph	<- evalStateT Squid.dumpGraph state
 	dumpS	DumpTypeSolve  "type-solve--graph" dGraph
 
@@ -393,6 +396,9 @@ solveSquid
 	 
 solveSquid2 vsTypesPlease hTrace state
  = do	
+	when (elem Verbose ?args)
+	 $ putStr "  * Type: Exporting\n"
+
 	-- extract out the stuff we'll need for conversion to core.
 	(junk, state2)	<- {-# SCC "solveSquid/export" #-} runStateT 
 				(Squid.squidExport vsTypesPlease) state
@@ -411,6 +417,8 @@ solveSquid2 vsTypesPlease hTrace state
 	 		$ "    - graph size: " 
 	 		% Squid.graphClassIdGen (Squid.stateGraph state2) % "\n"
 
+	when (elem Verbose ?args)
+	 $ putStr "  * Type: Dumping final state\n"
 
 	-- dump final solver state
 	dumpS	DumpTypeSolve  "type-solve--types"
@@ -443,7 +451,8 @@ solveSquid2 vsTypesPlease hTrace state
 	let vsFree	= Set.empty
 
 	-- the export process can find more errors
-	exitWithUserError ?args $ Squid.stateErrors state2
+	when (not $ null $ Squid.stateErrors state2)
+	 $ exitWithUserError ?args $ Squid.stateErrors state2
 
 	-----
 	return 	( typeTable
@@ -501,11 +510,3 @@ toCore	sourceTree
 	return 	( cSource
 		, cHeader )
 	
-
-
-			
-
-	 	
-
-
-

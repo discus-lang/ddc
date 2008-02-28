@@ -4,23 +4,36 @@ module Type.Crush.Shape
 	( crushShape )
 where
 
-import Util
-import Shared.Var	(Var, NameSpace(..))
-import qualified Shared.VarBind	as Var
 
+import Type.Feed
 import Type.Location
 import Type.Exp
 import Type.Pretty
 import Type.Util
 import Type.State
 import Type.Class
+import Type.Plate.FreeVars
+import Type.Plate.Collect
 
 import Type.Crush.Unify
+
+import Shared.Error
+import Shared.VarPrim
+import Shared.Var	(Var, NameSpace(..))
+import qualified Shared.VarBind	as Var
+import qualified Shared.Var	as Var
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+import Util
 
 -----
 debug	= False
 trace s	= when debug $ traceM s
--- stage	= "Type.Crush.Shape"
 
 
 -----
@@ -34,17 +47,18 @@ trace s	= when debug $ traceM s
 --	returns whether we managed to crush this fetter.
 --
 crushShape :: ClassId -> SquidM Bool
-crushShape shapeCid
+crushShape cidShape
  = do 	
- 	-- Grab the Shape fetter from the class and extract the list of cids to be merged.
+	-- Grab the Shape fetter from the class and extract the list of cids to be merged.
 	Just shapeC@ClassFetter
-		{ classFetter	= f@(FConstraint v shapeTs)
-		, classSource	= src }	<- lookupClass shapeCid
+		{ classFetter	= fShape@(FConstraint v shapeTs)
+		, classSource	= srcShape }	
+			<- lookupClass cidShape
 
 	let mergeCids	= map (\(TClass k cid) -> cid) shapeTs
 
-	trace	$ "*   Crush.crushShape " 	% shapeCid 	% "\n"
-		% "    fetter      = "	 	% f		% "\n"
+	trace	$ "*   Crush.crushShape " 	% cidShape 	% "\n"
+		% "    fetter      = "	 	% fShape	% "\n"
 		% "    mergeCids   = "		% mergeCids 	% "\n"
 
  	-- Make sure that all the classes to be merged are unified.
@@ -53,14 +67,14 @@ crushShape shapeCid
  	mapM crushUnifyClass mergeCids
  
 	-- Lookup all the nodes.
- 	mergeCs		<- liftM (map (\(Just c) -> c)) 
+ 	csMerge		<- liftM (map (\(Just c) -> c)) 
  			$  mapM lookupClass mergeCids
 
 	-- See if any of the nodes already contain data constructors.
 	let mData	= map (\c -> case classType c of
 				Just t@(TData{})	-> Just t
 				Just _			-> Nothing)
-			$ mergeCs
+			$ csMerge
 	
 	-- If we have to propagate the constraint we'll use the first constructor as a template.
 	let mTemplate	= takeFirstJust mData
@@ -69,107 +83,112 @@ crushShape shapeCid
 		% "\n"
 
 	let result
-		-- all of the nodes already contain data constructors.
-		-- TODO: add more fetters recursively
-		| and $ map isJust mData
-		= do	delClass shapeCid
-			return True
-			
 		-- none of the nodes contain data constructors, so there's no template to work from
 		| Nothing	<- mTemplate
 		= return False
 		
 		-- we've got a template
 		--	we can now merge the sub-classes and remove the shape constraint.
-		| Just template	<- mTemplate
-		= do	crushShapeMerge shapeCid f src mergeCids mergeCs mData template
-			delClass shapeCid
+		| Just tTemplate	<- mTemplate
+		= do	-- crushShapeMerge cidShape fShape srcShape mergeCids csMerge mData tTemplate
+			
+			crushShape2 cidShape fShape srcShape tTemplate csMerge
+			delClass cidShape
+			
 			return True
-		
-	result
+	
+	result		
 
--- TODO: only constrain nodes that haven't already got a data constructor in them
---	otherwise we'll over-constrain the regions.
-crushShapeMerge 
+
+crushShape2 
 	:: ClassId		-- the classId of the fetter being crushed
-	-> Fetter		-- the fetter being crushed
-	-> TypeSource		-- the source of the original fetter
-	-> [ClassId] 		-- classIds to merge
-	-> [Class] 		-- classes corresponding to each classId above.
-	-> [Maybe Type] 	-- the types of the nodes, or Nothing if they're bottom.
-	-> Type			-- the template type.
+	-> Fetter		-- the shape fetter being crushed
+	-> TypeSource		-- the source of the shape fetter
+	-> Type			-- the template type"
+	-> [Class]		-- the classes being merged
 	-> SquidM ()
 
-crushShapeMerge shapeCid f src cids cs mts template@(TData v templateTs)
- = do 	let kinds	= map kindOfType templateTs
+crushShape2 cidShape fShape srcShape tTemplate csMerge
+ = do
+ 	trace  	( "*   Crush.crushShape2\n"
+	 	% "    cidShape  = " % cidShape		% "\n"
+		% "    fShape    = " % fShape		% "\n"
+		% "    srcShape  = " % srcShape		% "\n"
+		% "    tTemplate = " % tTemplate	% "\n")
 
-	-- Grab the type args from each of the available constructors.
- 	let mArgss	= map (\mt -> liftM (\(TData v ts) -> ts) mt) mts
+	let srcCrushed	= TSI $ SICrushedFS cidShape fShape srcShape
 
-	-- Merge together type/effect/closure args but leave region args independent.
-	--	If there is no region arg in a type then make a fresh one.
-	--
-	argsMerged	<- mapM (shapeArgs shapeCid f src templateTs) mArgss
-
-	-- Update the classes with the freshly merged types
-	zipWithM
-		(\c args -> addToClass (classId c) (TSI $ SICrushedFS shapeCid f src) (TData v args))
-		cs 
-		argsMerged
+	-- push the template into classes which don't already have a ctor
+	tsPushed	<- mapM (pushTemplate tTemplate srcCrushed) csMerge
 	
-	-- debugging
-	trace	$ "    kinds        = " % kinds			% "\n"
-		% "    mArgss       = "	% mArgss		% "\n"
-		% "    argsMerged   = " % argsMerged		% "\n"
-		% "\n"
+	let takeRec tt 	= case tt of
+			 	TData v ts	-> ts
+				TFun{}		-> []
+	
+	let tssMerged	= map takeRec tsPushed
+	
+	let tssMergeRec	= transpose tssMerged
 		
-	return () 
-	
--- The template isn't a TData as we were expecting.
---	This'll end up being a type error, but just merge all the classes for now
---	so unify finds the error.
---	
-crushShapeMerge shapeCid f src cids cs mts template
- = do	mergeClasses cids
- 	return ()
+	trace	( "    tssMergeRec = " % tssMergeRec		% "\n")
 
+	-- add shape constraints to constraint the args as well
+	mapM_ (addShapeFetter srcCrushed) tssMergeRec
 
+  	return ()
+
+addShapeFetter :: TypeSource -> [Type] -> SquidM ()
+addShapeFetter src ts@(t1 : _)
+
+	-- shape fetters don't constrain regions.
+ 	| kindOfType t1 == KRegion
+	= return ()
 	
-shapeArgs shapeCid f src aa Nothing	= synthArgs shapeCid f src aa
-shapeArgs shapeCid f src aa (Just bb)	= mergeArgs aa bb
+	| otherwise
+	= do	addFetterSource src (FConstraint (primFShape (length ts)) ts)
+		return ()
+
+-- 
+pushTemplate 
+	:: Type			-- the template type
+	-> TypeSource		-- the source of the shape fetter doing the pushing
+	-> Class		-- the class to push the template into.
+	-> SquidM Type
+	
+pushTemplate tTemplate srcShape cMerge
+
+	-- if this class does not have a constructor then we 
+	--	can push the template into it.
+	| Class { classType = Just (TBot k) }	<- cMerge
+	= do	
+		tPush	<- freshenType tTemplate
+		trace 	$ "  - merge class\n"
+			% "    tPush = " % tPush	% "\n"		
+
+		addToClass (classId cMerge) srcShape tPush
+		return tPush		
+		
+	| Class { classType = Just t}		<- cMerge
+	= return t
+ 	
+	
+-- | replace all the free vars in this type with new ones
+freshenType :: Type -> SquidM Type
+freshenType tt
+ = do	let cidsFree	= collectClassIds tt
+ 	cidsFresh	<- mapM freshenCid cidsFree
+	let sub		= Map.fromList $ zip cidsFree cidsFresh
+
+	return	$ subCidCid sub tt
+
+freshenCid :: ClassId -> SquidM ClassId
+freshenCid cid
+ = do	Just Class { classKind = k }	
+ 		<- lookupClass cid
  
+ 	cid'	<- allocClass k
+	updateClass cid'
+		(classInit cid' k)
+			{ classType = Just (TBot k) }
 
-synthArgs :: ClassId -> Fetter -> TypeSource -> [Type] -> SquidM [Type]
-synthArgs shapeCid f src []	
-	= return []
-	
-synthArgs shapeCid f src (a:as) 
-	| TClass KRegion cidA	<- a
-	= do	var	<- newVarN    NameRegion
-		cidB	<- allocClass KRegion
-		addToClass cidB (TSI $ SICrushedFS shapeCid f src) (TVar KRegion var)
-		
-		rest	<- synthArgs shapeCid f src as
-		return	(TClass KRegion cidB : rest)
-		
-	| otherwise
-	= do	rest	<- synthArgs shapeCid f src as
-		return	(a : rest)
-		
-		
-mergeArgs :: [Type] -> [Type] -> SquidM [Type]
-mergeArgs []	 []
-	= return []
-	
-mergeArgs (a:as) (b:bs)
-	| TClass kA cidA	<- a
-	, TClass kB cidB	<- b
-	= do
-		cid	<- mergeClasses [cidA, cidB]
-		rest	<- mergeArgs as bs
-		return	(TClass kA cid : rest)
-		
-	| otherwise
-	= do	rest	<- mergeArgs as bs
-		return	(b : rest)
-
+	return	cid'
+ 

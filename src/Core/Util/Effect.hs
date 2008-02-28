@@ -47,7 +47,8 @@ slurpDataRT :: Type -> [Type]
 slurpDataRT tt
  = case tt of
 	TFun{}			-> []
- 	TData v ts		-> catMap slurpDataRT ts
+ 	TFunEC{}		-> []
+	TData v ts		-> catMap slurpDataRT ts
 
 	TVar KRegion _		-> [tt]
 	TVar KData   _		-> [tt]

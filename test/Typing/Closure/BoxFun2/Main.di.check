@@ -29,8 +29,8 @@ foreign import extern thing
         :$ Base.Data;
         
 foreign import extern box
-        :: FunBox %r1 (Base.Int %rTS8) !e0 $c0
-        :- !e0        = !{Base.!Read %rTS8; Base.!Read %rTC3; System.Console.!Console}
+        :: FunBox %r1 (Base.Int %rTS6) !e0 $c0
+        :- !e0        = !{Base.!Read %rTS6; Base.!Read %rTC3; System.Console.!Console}
         ,  $c0        = thing : %rTC3
         ,  Base.Mutable %r1
         :$ Base.Data;
@@ -74,7 +74,7 @@ foreign import extern newFun
 foreign import extern main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r1; Base.!Write %r1}
-        ,  $c0        = ${box : %r1; box : %rTS8; box : %rTC3; newFun : %rTC3}
+        ,  $c0        = ${box : %r1; box : %rTS6; box : %rTC3; newFun : %rTC3}
         ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         

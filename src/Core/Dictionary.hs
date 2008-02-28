@@ -158,10 +158,15 @@ rewriteOverApp
 		-- Make sure we have a type parameter for all free vars in the instance.
 		-- If this fails then the type params passed to the overloaded fn weren't specific enough
 		--	to determine the type we need to call the instance fn at.
-		vtSub	= map 	(\(t1, t2) -> 
-					let Just v1	= typeToVar t1
-					in  (v1, t2))
-				ttSub
+		takeVSub (t1, t2)
+		 = case typeToVar t1 of
+		 	Just v1	-> (v1, t2)
+			Nothing	-> panic stage 
+				$ "rewriteOverApp: cannot determine type params for instance function.\n"
+				% "  (maybe a problem with shape constraint resolution?)\n"
+				% "  when rewriting:\n" %> xx	% "\n"
+		
+		vtSub	= map takeVSub ttSub
 
 		-- Work out the type args to pass to the instance function.
 		getInstType (b, k)

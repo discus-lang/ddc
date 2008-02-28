@@ -15,6 +15,9 @@ instance Copy (List Int) where
 	(x:xs)	-> copy x : copy xs
 
 
+-- test crushing of shape constraints
+--	the copied list2 needs to have different region annots than list1
+--	otherwise we'll get a purity error when we try and update it.
 main ()
  = do	list	= [1, 2, 3]
  	total	= sumR @ list

@@ -7,6 +7,7 @@ module Type.Plate.Trans
 	, transZ
 	, transformT
 	, transformV
+	, transformCid
 	, transformTM)
 where
 
@@ -70,8 +71,9 @@ transTableId
 	, transK	= \x -> return x }
 
 -----
-transformT f t	= transZ  transTableId { transT_leave = \x -> return $ f x } t
-transformV f t	= transZ  transTableId { transV = \x -> return $ f x } t
+transformT f t		= transZ  transTableId { transT_leave = \x -> return $ f x } t
+transformV f t		= transZ  transTableId { transV = \x -> return $ f x } t
+transformCid f t	= transZ  transTableId { transCid = \x -> return $ f x } t
 		
 transformTM f t	= transZM transTableId { transT_leave = f } t
 
