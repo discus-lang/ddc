@@ -39,7 +39,7 @@ import Util
 import qualified Debug.Trace
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 -- stage	= "Type.Export"
 
@@ -74,9 +74,7 @@ squidExport vsTypesPlease
 		, vsRegionClasses)
 
 
-   
-
---
+-- Export types from the graph for all these vars.
 exportTypes :: Set Var -> SquidM (Map Var Type)
 exportTypes vsTypesPlease
  = do	
@@ -93,7 +91,6 @@ exportTypes vsTypesPlease
 --	trim closures.
 --	bottom-out non-port effect/closure variables.
 --
-
 exportType :: Type -> SquidM Type
 exportType t
  = do	tPlug		<- plugClassIds [] t
@@ -195,29 +192,21 @@ exportInstInfo (v, ii)
 	 
 
 --------------------------------------------------------------------------------
+
 -- | Build a map of the constraints acting on each region
---
 exportRegionConstraints 
 	:: SquidM (Map Var [Var])
 	
 exportRegionConstraints
- = do	graph		<- gets stateGraph
-	classes		<- liftIO $ getElems $ graphClass graph
-	
-	pairs		<- liftM catMaybes 
-			$  mapM slurpRegionConstraintVars classes
-			
-	
-	return		$ Map.fromList pairs
-
-
--- | If this is a region class then build a map of the constraints acting on it.
---	This is also a good time to check for Mutability/Const and Lazy/Direct constraints
-slurpRegionConstraintVars 
-	:: Class
-	-> SquidM (Maybe (Var, [Var]))
-	
-slurpRegionConstraintVars c
+ 	= foldClasses slurpRsConstraints Map.empty 
+ 	
+slurpRsConstraints ccMap cls
+  = do	mp	<- slurpRsConstraints1 cls
+  	case mp of
+	 Nothing	-> return ccMap
+	 Just (v, cs)	-> return $ Map.insert v cs ccMap
+	 	
+slurpRsConstraints1 c
 	-- got a region class		
  	| Class { classKind 	= KRegion 
 		, classFetters	= fs }	<- c

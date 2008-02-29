@@ -19,10 +19,9 @@ module Type.Class
 	, clearActive
 	, activateClass
 	, sinkVar
-
 	, updateVC
-
-	, kindOfCid)
+	, kindOfCid
+	, foldClasses)
 
 where
 
@@ -481,4 +480,10 @@ kindOfCid cid
  	return	$ classKind c
 
 
-
+-- Fold a function through all the classes in the type graph.
+foldClasses :: (a -> Class -> SquidM a) -> a -> SquidM a
+foldClasses fun x
+ = do  	graph		<- gets stateGraph
+	classes		<- liftIO $ getElems $ graphClass graph
+	foldM fun x classes  
+	
