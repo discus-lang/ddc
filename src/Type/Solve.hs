@@ -6,13 +6,14 @@ module Type.Solve
 where
 
 -----
-import System.IO
 
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
 
 import Constraint.Bits
 import Constraint.Exp
+
+import Type.Check.Main
 
 import Type.Crush.Unify
 import Type.Crush.Fetter
@@ -25,18 +26,15 @@ import Type.State
 import Type.Class
 import Type.Scheme
 import Type.Feed
-
 import Type.Location
 import Type.Pretty
 import Type.Util
-import Type.Error
 import Type.Plate.Collect
 import Type.Exp
 
 import Shared.Error
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
-import qualified Shared.VarPrim	as Var
 
 import Util.Graph.Deps
 import Util
@@ -47,6 +45,8 @@ import Data.Map			(Map)
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)
+
+import System.IO
 
 
 -----
@@ -106,7 +106,7 @@ solve	args ctree
 	-- If the main function was defined, then check it has an appropriate type.
 	errors_checkMain	<- gets stateErrors
 	when (null errors_checkMain)
-	 $ solveCheckMain
+	 $ checkMain
 
 	-- Report how large the graph was
 	graph		<- gets stateGraph
@@ -124,43 +124,6 @@ solve	args ctree
 		return ()
 
 	 else	return ()
-	 	
--- | If the main function was defined then check that the shape 
---	of its type is () -> ()
-solveCheckMain :: SquidM ()
-solveCheckMain
- = do	sigmaTable	<- gets stateSigmaTable
- 
-	-- try and find an entry for the main variable in the sigma table
-	--	this will tell us if we've seen the binding for it or not
- 	let mMain	= find (\(v, t) -> isMainVar v)
-			$ Map.toList sigmaTable
- 
- 	case mMain of
-	 Nothing		-> return ()
-	 Just (vMain, vMainT)	
-	  -> do	Just tMain	<- extractType True vMainT
-	  	solveCheckMain' vMainT tMain tMain
-	  
-solveCheckMain' vMainT tMain tt
- = case tt of
- 	TFetters fs t	
-	 -> solveCheckMain' vMainT tMain t
-
-	TFun (TData v1 []) (TData v2 []) eff clo
-	 | v1 == Var.primTUnit && v2 == Var.primTUnit
-	 -> return ()
-	 
-	_ -> addErrors [ErrorWrongMainType { eScheme = (vMainT, tMain) }]
-			
-isMainVar var
-	| Var.name var		== "main"
-	, Var.nameModule var	== Var.ModuleAbsolute ["Main"]
-	= True
-	
-	| otherwise
-	= False
- 
  			
 -----
 solveCs :: [CTree] 

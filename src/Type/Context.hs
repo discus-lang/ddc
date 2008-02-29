@@ -25,12 +25,10 @@ import Data.Map			(Map)
 
 import Debug.Trace
 -----
-
 -- stage	= "Type.Context"
 
 
 -- | Reduce the context of this type using the provided map of instance definitions.
-
 reduceContextT 
 	:: Map Var [Fetter]	-- (class var -> instances) for this class
 	-> Type			-- the type to reduce  
@@ -106,9 +104,6 @@ reduceContextF tShape classInstances ff
 	-- have to keep this context
 	| otherwise
 	= [ff]
-
-
-
 
 
 -- Checks if an class instance supports a certain type.

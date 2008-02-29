@@ -1,5 +1,6 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
+-- | Basic utils for working with the type graph.
 module Type.Class
 	( classChildren
 	, expandGraph
@@ -25,6 +26,21 @@ module Type.Class
 
 where
 
+import Type.Exp
+import Type.Location
+import Type.Util.Bits
+import Type.Plate.Trans
+import Type.State
+import Type.Plate.Collect
+
+import Util
+
+import qualified Shared.Var	as Var
+import qualified Shared.VarBind	as Var
+import qualified Shared.VarUtil	as Var
+import Shared.Var		(NameSpace(..))
+import Shared.Error
+
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
@@ -33,22 +49,6 @@ import Data.Set			(Set)
 
 import qualified Data.Array.IO	as Array
 import Data.Array.IO
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace(..))
-
-import Util
-
-import Shared.Error
-
-import Type.Exp
-import Type.Location
-import Type.Util.Bits
-import Type.Plate.Trans
-import Type.State
-import Type.Plate.Collect
 
 -----
 -- stage	= "Type.Squid.Class"
@@ -296,12 +296,13 @@ modifyClass cid_ f
 	liftIO (writeArray (graphClass graph) cid (f c))
 	return ()
 	
-
 	
------
--- addClassForwards
---
-addClassForwards ::	ClassId -> [ClassId] -> SquidM ()
+-- | Add a forwards to this class.
+addClassForwards 
+	:: ClassId 		-- class to point to.
+	-> [ClassId] 		-- classes to point from.
+	-> SquidM ()
+
 addClassForwards cidL_ cids_
  = do	
 	-- sink the cids.
@@ -318,10 +319,7 @@ addClassForwards cidL_ cids_
 	
 	
 
------
--- sinkClassId
---
-
+-- | Convert this cid to canconical form.
 {-# INLINE sinkClassId #-}
 sinkClassId ::	ClassId -> SquidM ClassId
 sinkClassId  cid	
@@ -338,10 +336,7 @@ sinkClassId' classes cid
 		Class{}			-> return cid
 		
 
-		
------
--- lookupVarToClassId
---
+-- | Lookup the variable name of this class.
 lookupVarToClassId :: 	Var -> SquidM (Maybe ClassId)
 lookupVarToClassId v
  = do	graph		<- gets stateGraph
@@ -354,8 +349,7 @@ lookupVarToClassId v
 	  	return	$ Just cid'
 	 
 	 
-  
--- | Merge two classes by concatenating their queue and node list
+  -- | Merge two classes by concatenating their queue and node list
 --	The one with the lowesed classId gets all the constraints and the others 
 --	are updated to be ClassFowards which point to it.
 mergeClasses
@@ -407,18 +401,18 @@ mergeClasses cids_
 	
   	return	$ cidL
 		
-
+		
+-- | Merge these classes.
+--	args must all be TClasses
 mergeClassesT :: [Type] -> SquidM Type
 mergeClassesT	 ts@(t:_)
  = do
  	let Just cids	= sequence 
 			$ map takeCidOfTClass ts
-			
+
 	cid'		<- mergeClasses cids
 		
 	return		$ TClass (kindOfType t) cid'
-
-
 
 
 -- | Clear the set of active classes.
@@ -439,7 +433,6 @@ clearActive
 	return		active'
 
 
-
 -- | Activate a class, tagging it for inspection by the unifier \/ crusher.
 --	Also activate any MPTCs acting on it.
 activateClass :: ClassId -> SquidM ()
@@ -457,25 +450,9 @@ activateClass cid
 		_	-> return ())
 		
 
-
------
--- addVarSubs
---
-{-
-addVarSubs ::	Var -> [Var]	-> SquidM ()
-addVarSubs	varL_ 	vars_
- = do
- 	varL	<- sinkVar varL_
-	vars	<- mapM sinkVar vars_
-	
- 	sVarSub <##> \s 
-		-> foldl (\m x -> Map.insert x varL m) s 
-		$  filter (/= varL) vars
-
--}
-
-sinkVar ::	Var -> SquidM Var
-sinkVar		var
+-- Lookup the canconical name for this var.
+sinkVar :: Var -> SquidM Var
+sinkVar	var
  = do	mCid	<- lookupVarToClassId var
 	let result
 		| Nothing	<- mCid
@@ -488,6 +465,7 @@ sinkVar		var
 	
 	result
 
+-- rewrite all vars and cids in this thing to canconial form.
 updateVC :: TransM SquidM a => a -> SquidM a
 updateVC  z	
  = transZM 
@@ -496,7 +474,7 @@ updateVC  z
 		, transCid	= sinkClassId }
 	z
 
-
+-- lookup the kind of the class corresponding to this var.
 kindOfCid :: ClassId -> SquidM Kind
 kindOfCid cid
  = do	Just c	<- lookupClass cid
