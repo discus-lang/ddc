@@ -1,8 +1,8 @@
 
-import	Base;
+import	Base
 
-import	Data.Int32U;
-import 	Class.Eq;
+import	Data.Int
+import 	Class.Eq
 
 pragma	cc_includes ["string.h"];
 

@@ -121,15 +121,19 @@ snipProjDictP moduleName classDicts (PProjDict sp t ss)
 -- Snip RHS of bindings in type class instances.
 snipProjDictP moduleName classDicts 
 	pInst@(PClassInst sp vClass ts context ssInst)
- = do	
+
 	-- lookup the class definition for this instance
-	let Just pClass	= Map.lookup vClass classDicts
+	| Just pClass	<- Map.lookup vClass classDicts
+	= do	
+		(ss', pss)	<- liftM unzip
+				$  mapM (snipInstBind moduleName pClass pInst) ssInst
 
-	(ss', pss)	<- liftM unzip
-			$  mapM (snipInstBind moduleName pClass pInst) ssInst
+		return	$ PClassInst sp vClass ts context (ss')
+			: concat pss
+	
+	| otherwise
+	= panic stage $ "snipProjDictP: Type class '" % vClass % "' is not in scope."
 
-	return	$ PClassInst sp vClass ts context (ss')
-		: concat pss
 
 -- Snip field initializers
 snipProjDictP moduleName classDicts (PData nn vData vsArg ctorDefs)

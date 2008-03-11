@@ -394,3 +394,12 @@ concatMapL f xx
 	x : xs		-> (++)@ (f x) (concatMapL@ f xs);
  };
 
+
+-- Instances ---------------------------------------------------------------------------------------
+
+instance Copy (List Int) where
+ copy xx	
+  = case xx of
+  	[]	-> []
+	(x:xs)	-> copy x : copy xs
+

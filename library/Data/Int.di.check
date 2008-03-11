@@ -1,8 +1,10 @@
 -- Imports
 import Base;
 import Data.Bool;
-import Class.Num;
+import Data.Int32U;
+import Class.Copy;
 import Class.Eq;
+import Class.Num;
 import Class.Ord;
 import Class.Update;
 
@@ -22,14 +24,24 @@ infix  5 <, <=, >=, > ;
 -- Class dictionaries
 
 -- Class instances
-instance Eq (Base.Int %rSDt100) where
+instance Copy (Base.Int %rSDt100) where
+{
+        copy     = Data.Int.instance_Copy_Int_copy;
+}
+
+instance Updatable (Base.Int %rSDt101) where
+{
+        (:=)     = Data.Int.primInt32_update;
+}
+
+instance Eq (Base.Int %rSDt102) where
 {
         (==)     = Data.Int.primInt32_eq;
         
         (/=)     = Data.Int.primInt32_neq;
 }
 
-instance Ord (Base.Int %rSDt101) where
+instance Ord (Base.Int %rSDt103) where
 {
         (>)      = Data.Int.primInt32_gt;
         
@@ -40,7 +52,7 @@ instance Ord (Base.Int %rSDt101) where
         (<=)     = Data.Int.primInt32_le;
 }
 
-instance Num (Base.Int %rSDt102) where
+instance Num (Base.Int %rSDt104) where
 {
         (+)      = Data.Int.primInt32_add;
         
@@ -55,18 +67,25 @@ instance Num (Base.Int %rSDt102) where
         negate   = Data.Int.primInt32_neg;
 }
 
-instance Updatable (Base.Int %rSDt103) where
-{
-        (:=)     = Data.Int.primInt32_update;
-}
-
-instance Accum (Base.Int %rSDt104) where
+instance Accum (Base.Int %rSDt105) where
 {
         (+=)     = Data.Int.instance_Accum_Int_PsEq;
 }
 
 
 -- Foreign imports
+foreign import extern "_boxInt32"
+ boxInt32
+        :: forall %r1
+        .  Base.Int32# -> Base.Int %r1
+        :$ Base.Int32# -> Base.Obj;
+
+foreign import extern "_unboxInt32"
+ unboxInt32
+        :: forall %r1
+        .  Base.Int %r1 -(Base.!Read %r1)> Base.Int32#
+        :$ Base.Obj -> Base.Int32#;
+
 foreign import extern "primInt32_neg"
  primInt32_neg
         :: elaborate Base.Int -> Base.Int ;
@@ -121,6 +140,12 @@ foreign import extern "primInt32_update"
 
 
 -- Binds
+foreign import extern instance_Copy_Int_copy
+        :: forall %r0 %r1
+        .  Base.Int %r1 -(!e0)> Base.Int %r0
+        :- !e0        = Base.!Read %r1
+        :$ Base.Data -> Base.Data;
+        
 foreign import extern instance_Accum_Int_PsEq
         :: forall %r0 %r1
         .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Unit

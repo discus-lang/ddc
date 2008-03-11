@@ -3,21 +3,11 @@
 --	There are no actual C functions associated with these.
 --	We define them so the type inferencer has a schemes for them.
 --
-import Data.Int
-import Class.Num
 import Class.Eq
+import Class.Num
 import Class.Ord
 
 infix  0 #:=
-
-foreign import extern "_boxInt32"
- boxInt32 	:: forall %r1. Int32# -> Int %r1
-		:$ Int32# -> Obj
-
-foreign import extern "_unboxInt32"
- unboxInt32	:: forall %r1
- 		.  Int %r1 -(!Read %r1)> Int32#
-		:$ Obj -> Int32#
 
 -- math
 foreign import extern "primInt32U_neg"

@@ -1,13 +1,24 @@
 
 import Base
 import Data.Bool
+import Data.Int32U
 
-import Class.Num
+import Class.Copy
 import Class.Eq
+import Class.Num
 import Class.Ord
 import Class.Update
 
 infix  5 <, <=, >=, > 
+
+foreign import extern "_boxInt32"
+ boxInt32 	:: forall %r1. Int32# -> Int %r1
+		:$ Int32# -> Obj
+
+foreign import extern "_unboxInt32"
+ unboxInt32	:: forall %r1
+ 		.  Int %r1 -(!Read %r1)> Int32#
+		:$ Obj -> Int32#
 
 -- math
 foreign import extern "primInt32_neg"
@@ -52,6 +63,12 @@ foreign import extern "primInt32_update"
  primInt32_update
  		:: elaborate (mutable Int) -> Int -> ()
 
+instance Copy Int where
+ 	copy x 		= boxInt32 (unboxInt32 x)
+
+instance Updatable Int where
+	(:=)		= primInt32_update
+
 instance Eq Int where
 	(==)		= primInt32_eq
 	(/=)		= primInt32_neq
@@ -69,9 +86,6 @@ instance Num Int where
 	(/) 		= primInt32_div
 	mod		= primInt32_mod
 	negate		= primInt32_neg
-
-instance Updatable Int where
-	(:=)		= primInt32_update
 
 instance Accum Int where
 	(+=) a b	= primInt32_update a (primInt32_add a b)

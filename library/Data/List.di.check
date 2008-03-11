@@ -40,6 +40,11 @@ data List %r1 a
 -- Class dictionaries
 
 -- Class instances
+instance Copy (Data.List.List %rSDt103 (Base.Int %rSDt104)) where
+{
+        copy     = Data.List.instance_Copy_ListInt_copy;
+}
+
 
 -- Foreign imports
 
@@ -78,6 +83,12 @@ foreign import extern project_List_ref_xx
         :: forall t0 %r0
         .  List %r0 t0 -(!e0)> Data.Ref.Ref %r0 (List %r0 t0)
         :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import extern instance_Copy_ListInt_copy
+        :: forall %r0 %r1 %r2 %r3
+        .  List %r0 (Base.Int %r1) -(!e0)> List %r2 (Base.Int %r3)
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 foreign import extern (:)

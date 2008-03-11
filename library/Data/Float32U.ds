@@ -4,8 +4,9 @@
 --	We define them so the type inferencer has a schemes for them.
 --
 
+import Class.Eq
 import Class.Num
-
+import Class.Ord
 
 -- math
 foreign import extern "primFloat32U_neg"
@@ -25,8 +26,6 @@ foreign import extern "primFloat32U_div"
 
 foreign import extern "primFloat32U_mod"
  primFloat32U_mod	:: elaborate Float32# -> Float32# -> Float32#
-
-
 
 -- comparisons
 foreign import extern "primFloat32U_eq"

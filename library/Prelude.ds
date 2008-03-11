@@ -1,28 +1,26 @@
 
 
-import {
-	Base;
-	Base.Thunk;
+import	Base
+import	Base.Thunk
 	
-	Data.Ref;
-	Data.Bool;
-	Data.Int;
-	Data.Float;
-	Data.Tuple;
-	Data.String;
-	Data.Maybe;
-	Data.List;
-	Data.ArrayU;
+import	Data.Ref
+import	Data.Bool
+import	Data.Int
+import	Data.Float
+import	Data.Tuple
+import	Data.String
+import	Data.Maybe
+import	Data.List
+import	Data.ArrayU
 	
-	System.Error;
-	System.Console;
-	System.File;
+import	System.Error
+import	System.Console
+import	System.File
 
-	Class.Show;
-	Class.Eq;
-	Class.Ord;
+import	Class.Copy
+import	Class.Eq
+import	Class.Show
+import	Class.Ord
 	
-	Control.Exception;
-	Control.Imperative;
-	
-}
+import	Control.Exception
+import	Control.Imperative
