@@ -13,6 +13,7 @@ import Main.Arg			(Arg)
 import Constraint.Bits
 import Constraint.Exp
 
+import Type.Check.Instances
 import Type.Check.Main
 
 import Type.Crush.Unify
@@ -106,13 +107,18 @@ solve	args ctree
 	-- If the main function was defined, then check it has an appropriate type.
 	errors_checkMain	<- gets stateErrors
 	when (null errors_checkMain)
-	 $ checkMain
+		checkMain
+
+	-- Check there is an instance for each type class constraint left in the graph.
+	errors_checkInstances	<- gets stateErrors
+	when (null errors_checkInstances)
+		checkInstances
 
 	-- Report how large the graph was
 	graph		<- gets stateGraph
 	trace	$ "=== Final graph size: " % graphClassIdGen graph % "\n"
 
-	-- Check if there were any errors
+	-- Report whether there were any errors
 	errors	<- gets stateErrors
 	
 	if not $ isNil errors 

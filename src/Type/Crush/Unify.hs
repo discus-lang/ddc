@@ -1,7 +1,8 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
 module Type.Crush.Unify
-	( crushUnifyClass )
+	( crushUnifyClass 
+	, isShallowConflict )
 where
 
 import Util
@@ -225,7 +226,7 @@ errorConflict	 cid c
 		= [ (n1, n2)
 			| n1@(t1, _)	<- tsCtorsNode
 			, n2@(t2, _)	<- tsCtorsNode
-			, isConflict t1 t2 ]
+			, isShallowConflict t1 t2 ]
 	
 	-- We could perhaps do some more extended diagnosis, but just
 	--	report the first conflict for now.
@@ -256,8 +257,8 @@ errorConflict	 cid c
 	return ()
 
 -- Checks if these two types are conflicting 
-isConflict :: Type -> Type -> Bool
-isConflict t1 t2
+isShallowConflict :: Type -> Type -> Bool
+isShallowConflict t1 t2
 	| TData v1 ts1	<- t1
 	, TData v2 ts2	<- t2
 	, v1 == v2
@@ -279,20 +280,3 @@ isConflict t1 t2
 
 
 
-{-
-	
-unifyCheckTCon v argCount qq
- = case qq of
- 	q@(TData v' ts') : qs
-	 | v == v' && length ts' == argCount	-> unifyCheckTCon v argCount qs
-	[]					-> False
-	_					-> True
-
-unifyCheckTFun qq
- = case qq of
- 	q@(TFun{}) : qs				-> unifyCheckTFun qs
-	[]					-> False
-	_					-> True
-
-
--}

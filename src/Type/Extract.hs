@@ -1,7 +1,8 @@
 
 -- | Extracting types from the graph.
 module Type.Extract
-	( extractType)
+	( extractType
+	, extractTypeCid)
 where
 
 import Type.Check.GraphicalData
@@ -33,6 +34,11 @@ import Data.Set			(Set)
 stage	= "Type.Extract"
 debug	= True
 trace s	= when debug $ traceM s
+
+extractTypeCid :: Bool -> ClassId -> SquidM (Maybe Type)
+extractTypeCid final cid
+ = do	v	<- makeClassName cid
+ 	extractType final v
 
 
 -- | Extract a type from the graph and pack it into standard form.

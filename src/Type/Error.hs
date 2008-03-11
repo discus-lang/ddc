@@ -67,7 +67,8 @@ data Error
 	-- Type class problems
 	| ErrorNoInstance				-- There is no instance for the class at these arguments.
 		{ eClassVar	:: Var
-		, eTypeArgs	:: [Type] }		
+		, eTypeArgs	:: [Type] 
+		, eFetterMaybeSrc :: Maybe TypeSource }
 		
 	-- Field projection problems.
 	| ErrorNoProjections				-- This type has no projections defined for it.
@@ -231,7 +232,15 @@ instance Pretty Error PMode where
  -- Type class problems.
  ppr err@(ErrorNoInstance
  		{ eClassVar	= v
-		, eTypeArgs	= ts })
+		, eTypeArgs	= ts
+		, eFetterMaybeSrc = Just src })
+	= dispSourcePos src % "\n"
+	% "    No instance for " % v % " " % punc " " (map prettyTB ts) % "\n"
+
+ ppr err@(ErrorNoInstance
+ 		{ eClassVar	= v
+		, eTypeArgs	= ts
+		, eFetterMaybeSrc = Nothing })
 	= "    No instance for " % v % " " % punc " " (map prettyTB ts) % "\n"
 	
  -- Field projection problems.

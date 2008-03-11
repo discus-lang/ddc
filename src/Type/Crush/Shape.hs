@@ -32,9 +32,8 @@ import Data.Set			(Set)
 import Util
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
-
 
 -----
 -- crushShape
@@ -73,6 +72,7 @@ crushShape cidShape
 	-- See if any of the nodes already contain data constructors.
 	let mData	= map (\c -> case classType c of
 				Just t@(TData{})	-> Just t
+				Just t@(TFun{})		-> Just t
 				Just _			-> Nothing)
 			$ csMerge
 	
@@ -90,9 +90,7 @@ crushShape cidShape
 		-- we've got a template
 		--	we can now merge the sub-classes and remove the shape constraint.
 		| Just tTemplate	<- mTemplate
-		= do	-- crushShapeMerge cidShape fShape srcShape mergeCids csMerge mData tTemplate
-			
-			crushShape2 cidShape fShape srcShape tTemplate csMerge
+		= do	crushShape2 cidShape fShape srcShape tTemplate csMerge
 			delClass cidShape
 			
 			return True
@@ -119,22 +117,33 @@ crushShape2 cidShape fShape srcShape tTemplate csMerge
 	let srcCrushed	= TSI $ SICrushedFS cidShape fShape srcShape
 
 	-- push the template into classes which don't already have a ctor
-	tsPushed	<- mapM (pushTemplate tTemplate srcCrushed) csMerge
+	mtsPushed	<- mapM (pushTemplate tTemplate srcCrushed) csMerge
 	
-	let takeRec tt 	= case tt of
-			 	TData v ts	-> ts
-				TFun{}		-> []
+	let result
+		| Just tsPushed		<- sequence mtsPushed
+		= do	
+			let takeRec tt 	= case tt of
+					 	TData v ts		-> ts
+						TFun t1 t2 eff clo	-> [t1, t2]
 	
-	let tssMerged	= map takeRec tsPushed
+			let tssMerged	= map takeRec tsPushed
 	
-	let tssMergeRec	= transpose tssMerged
+			let tssMergeRec	= transpose tssMerged
 		
-	trace	( "    tssMergeRec = " % tssMergeRec		% "\n")
+			trace	( "    tssMergeRec = " % tssMergeRec		% "\n")
 
-	-- add shape constraints to constraint the args as well
-	mapM_ (addShapeFetter srcCrushed) tssMergeRec
+			-- add shape constraints to constraint the args as well
+			mapM_ (addShapeFetter srcCrushed) tssMergeRec
 
-  	return ()
+		  	return ()
+		
+		-- If adding the template to another class would result in a type error
+		--	then stop now. We don't want to change the graph anymore if it
+		--	already has errors.
+		| otherwise
+		= return ()
+
+	result
 
 addShapeFetter :: TypeSource -> [Type] -> SquidM ()
 addShapeFetter src ts@(t1 : _)
@@ -147,12 +156,12 @@ addShapeFetter src ts@(t1 : _)
 	= do	addFetterSource src (FConstraint (primFShape (length ts)) ts)
 		return ()
 
--- 
+-- | Add a template type to a class.
 pushTemplate 
 	:: Type			-- the template type
 	-> TypeSource		-- the source of the shape fetter doing the pushing
 	-> Class		-- the class to push the template into.
-	-> SquidM Type
+	-> SquidM (Maybe Type)
 	
 pushTemplate tTemplate srcShape cMerge
 
@@ -165,10 +174,15 @@ pushTemplate tTemplate srcShape cMerge
 			% "    tPush = " % tPush	% "\n"		
 
 		addToClass (classId cMerge) srcShape tPush
-		return tPush		
-		
+		return $ Just tPush		
+
+
+	-- Don't add the template if is will result in a type error
 	| Class { classType = Just t}		<- cMerge
-	= return t
+	= if isShallowConflict t tTemplate
+		then return Nothing
+		else return (Just t)
+	
  	
 	
 -- | replace all the free vars in this type with new ones

@@ -2,7 +2,8 @@
 -- | Functions for reducing the context of a type.
 
 module Type.Context
-	( reduceContextT )
+	( reduceContextT 
+	, matchInstance )
 
 where
 

@@ -225,7 +225,8 @@ checkContextF ff
 	 -> addErrors
 	 	[ ErrorNoInstance
 			{ eClassVar		= vClass
-			, eTypeArgs		= ts } ]
+			, eTypeArgs		= ts 
+			, eFetterMaybeSrc	= Nothing } ] -- TODO: find the source
 		
 	_ -> return ()
 	

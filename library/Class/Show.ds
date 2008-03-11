@@ -11,17 +11,18 @@ class Show a where
 	.  a -(!e1)> String %r
 	:- !e1	= !{ !ReadT a }
 
+instance Show Unit where
+ show ss = "()"
+
 
 instance Show String where
- show ss = "'" % ss % "'";
-
+ show ss = "'" % ss % "'"
 
 instance Show Int where
- show	= stringOfInt;
-
+ show	= stringOfInt
 
 instance Show Float where
- show	= stringOfFloat32;
+ show	= stringOfFloat32
 
 instance Show Bool where
  show b 
@@ -60,6 +61,9 @@ showListIntL
 -----------------------
 -- showList
 --
+
+instance Show (List Int) where
+ show = showList show
 
 showList  showX xx
  = "[" % showList2 showX xx;

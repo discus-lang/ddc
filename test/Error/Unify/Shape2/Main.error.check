@@ -1,3 +1,27 @@
-    No instance for Num (tTS5 -(Base.!ReadT tTS5)> Data.String.String %rTS1)
+./test/Error/Unify/Shape2/Main.ds:5:27
+    Type mismatch during unification.
+          cannot match: Base.Int %3
+                  with: *77 -(!75 $74)> *76
 
-    No instance for Show tTS5
+              the use of: x
+                 at type: Base.Int %3
+                      at: ./test/Error/Unify/Shape2/Main.ds:5:27
+
+        conflicts with, 
+              the use of: (-)
+                 at type: *77 -(!75 $74)> *76
+                      at: ./test/Error/Unify/Shape2/Main.ds:5:25
+
+./test/Error/Unify/Shape2/Main.ds:5:10
+    Type mismatch during unification.
+          cannot match: Data.String.String %42
+                  with: *81 -(!79 $78)> *80
+
+              the use of: println
+                 at type: Data.String.String %42
+                      at: ./test/Error/Unify/Shape2/Main.ds:5:10
+
+        conflicts with, 
+              the use of: (-)
+                 at type: *81 -(!79 $78)> *80
+                      at: ./test/Error/Unify/Shape2/Main.ds:5:25
