@@ -41,17 +41,16 @@ import Data.Set			(Set)
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
------
--- stage	= "Type.Check.ReGeneralise"
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 
- 
+
 checkSchemeDangerCid :: ClassId -> SquidM [Error]
 checkSchemeDangerCid cid
  = do	Just c	<- lookupClass cid
  	checkSchemeDanger c
  
+
 checkSchemeDanger :: Class -> SquidM [Error]
 checkSchemeDanger c
 	| Class { classKind	= KData 
@@ -124,39 +123,3 @@ regionIsMutable cid
 		(f:_)	-> return $ Just f
 		
 
--- checkUpdateSoundness
---	Check for update soudness problems in an already generalised scheme.
---
---
-{-
-checkUpdateSoundness
-	:: Var -> Type -> SquidM ()
-	
-checkUpdateSoundness varT t
- = do	
-	let ?fsMutable
-		= nub
-		$ [f 	| f@(FClass v _) <- collectFetters t
-			, Var.bind v == Var.FMutable]
-
-	let dangerTs
-		= nub
-		$ [t	| t@(TVar v)	<- dangerT [] t]
- 
- 	trace	$ "*   CheckUpdate.checkUpdate " 	% t 	% "\n"
-		% "    fsMutable = " % ?fsMutable		% "\n"
-		% "    dangerTs  = " % dangerTs			% "\n"
-		% "\n"
- 	
-	when (not $ isNil dangerTs)
-	 $ do
-	 	addErrors 
-			[ErrorUpdateSoundness 
-				{ eVar		= varT
-				, eType		= t
-				, eTypeDanger	= dangerTs }]
-		
-	return	()
- 
------
--}
