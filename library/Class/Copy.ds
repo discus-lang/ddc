@@ -1,0 +1,10 @@
+
+import Base;
+
+class Copy a where
+ copy	:: forall b
+	.  a -(!e1)> b
+	:- Shape2 a b
+	,  !e1 = !ReadT a
+
+ 
