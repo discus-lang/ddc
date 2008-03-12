@@ -1,0 +1,30 @@
+--------------------------------------------------------------------------------
+  The Disciplined Disciple Compiler          
+--------------------------------------------------------------------------------
+
+  1) Make a local copy of the build file.
+
+     $ cp make/build.mk.sample make/build.mk
+    
+  2) Build the compiler, runtime system and external libraries.
+  
+     $ make
+     
+  3) Build the libraries and run the test code (with optimisations enabled)
+  
+     $ bin/war -ddc O
+     
+  4) Copy the binary to your ~/bin dir 
+      (where ~/bin is in your PATH)
+  
+     $ cp bin/ddc ~/bin
+
+  5) Create an alias to give ddc the path to its library and runtime.
+      (You'll probably want to add this to your .profile, or similar)
+  
+     $ alias ddc='ddc -basedir $(DDC_BUILD)'
+
+--------------------------------------------------------------------------------
+    see doc/HACKING for more info or go to http://code.google.com/p/disciple
+--------------------------------------------------------------------------------
+     
