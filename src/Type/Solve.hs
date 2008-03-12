@@ -13,8 +13,9 @@ import Main.Arg			(Arg)
 import Constraint.Bits
 import Constraint.Exp
 
-import Type.Check.Instances
 import Type.Check.Main
+import Type.Check.Instances
+import Type.Check.SchemeDanger
 
 import Type.Crush.Unify
 import Type.Crush.Fetter
@@ -113,6 +114,11 @@ solve	args ctree
 	errors_checkInstances	<- gets stateErrors
 	when (null errors_checkInstances)
 		checkInstances
+
+	-- Check for soundness problems due to late addition of mutability constraints.
+--	errors_checkReGeneralise <- gets stateErrors
+--	when (null errors_checkReGeneralise)
+--		checkReGeneralise
 
 	-- Report how large the graph was
 	graph		<- gets stateGraph
@@ -303,6 +309,7 @@ solveCs	(c:cs)
 			$ [CEq src (TVar KData vUse) (TVar KData vInst)]
 			++ cs 
 
+
 	-- Instantiate a type from a let binding.
 	--	It may or may not be generalised yet.
 	CInstLet src vUse vInst
@@ -314,30 +321,48 @@ solveCs	(c:cs)
 		let getScheme
 			-- The scheme is in our table of external definitions
 			| Just tt	<- Map.lookup vInst defs
-			= return tt
+			= return (Just tt)
 
 			-- The scheme has already been generalised so we can extract it straight from the graph			
 			| Set.member vInst genDone
-			= do	Just tt	<- extractType False vInst
-				return tt
+			= do	Just cid	<- lookupVarToClassId vInst
+
+				-- we need to make sure that no new mutability constraints have
+				--	crept in and made any more vars in this type dangerous since
+				--	we generalised it.
+				errs		<- checkSchemeDangerCid cid
+				case errs of
+				 []	-> do
+				 	Just t	<- extractType False vInst
+					return	$ Just t
+				 _	
+				  -> do
+					addErrors errs
+				 	return Nothing
 				
 			-- Scheme hasn't been generalised yet
 			| otherwise
-			= solveGeneralise (TSI $ SIGenInst vUse) vInst
+			= do	t	<- solveGeneralise (TSI $ SIGenInst vUse) vInst
+				return $ Just t
 			
-		tScheme	<- getScheme
-			
-	 	-- Instantiate the scheme
-		(tInst, tInstVs)<- instantiateT_table instVar tScheme
+		mScheme	<- getScheme
+		case mScheme of
+		 Just tScheme
+		  -> do		
+		 	-- Instantiate the scheme
+			(tInst, tInstVs)<- instantiateT_table instVar tScheme
 
-		-- Add information about how the scheme was instantiated
-		sInst <##> Map.insert vUse
-			(InstanceLet vInst vInst tInstVs tScheme)
+			-- Add information about how the scheme was instantiated
+			sInst <##> Map.insert vUse
+				(InstanceLet vInst vInst tInstVs tScheme)
 
-		-- The type will be added via a new constraint
-		solveNext
-			$  [CEq src (TVar KData vUse) tInst]
-			++ cs
+			-- The type will be added via a new constraint
+			solveNext
+				$  [CEq src (TVar KData vUse) tInst]
+				++ cs
+		 Nothing
+		  ->	return True
+
 
 	-- Instantiate a recursive let binding
 	--	Once again, there's nothing to actually instantiate, but we record the 

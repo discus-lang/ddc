@@ -19,14 +19,13 @@
 -- 
 
 data Box %r a
-	= Box {x :: a; };
+	= Box {x :: a; }
 	
 main ()
- = do {	box	= Box [];
+ = do 	box	= Box []
 
-	box#x	#= ["hello"];
-	box#x	#= [27];
+	box#x	#= ["hello"]
+	box#x	#= [27]
 	
-	print $ head box.x % "\n";
- };
-		
+	print $ head box.x % "\n"
+

@@ -11,7 +11,7 @@ import Type.Plate
 import Type.Util
 import Type.Error
 
-import Type.Check.Soundness
+import Type.Check.Danger
 
 import Type.Effect.MaskLocal
 

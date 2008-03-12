@@ -132,8 +132,11 @@ data Error
 
 	-- Inference screw-ups.
 	| ErrorLateConstraint				-- Found out about a mutability constraint too late.
-		{ eScheme	:: (Var, Type)		-- 	The scheme we've been using.
-		, eRegen	:: Type }		-- 	The scheme we should have used.
+		{ eScheme		:: (Var, Type)	-- 	The scheme we've been using.
+		, eMutableRegion	:: Type		-- 	The region that is mutable.
+		, eMutableFetter	:: Fetter	--	The fetter holding the region mutable.
+		, eMutableSrc		:: TypeSource	--	The source of the mutability constraint.
+		, eDangerVar		:: Var }	--	The type variable that is dangerous and polymorphic.
 		
 	-- Main function has wrong type
 	| ErrorWrongMainType	
@@ -369,23 +372,27 @@ instance Pretty Error PMode where
 
  -- Inference screw-ups.
  ppr err@(ErrorLateConstraint
- 		{ eScheme	= (v, scheme)
-		, eRegen	= regen })
+ 		{ eScheme		= (v, scheme)
+		, eMutableRegion	= varR
+		, eMutableFetter	= fMutable
+		, eMutableSrc		= srcMutable
+		, eDangerVar		= varDanger })
 		
 	= prettyValuePos v				% "\n"
-	% "    The type inference algorithm made an incorrect assumption\n"
-	% "        about the mutability of `" % v % "'.\n"
-	% "                   (and backtracking isn't implemented yet).\n"
+	% "    The type inferencer made an incorrect assumption about the\n"
+	% "        mutability of '" % v % "', (and backtracking isn't implemented).\n"
 	% "\n"
-	% "        scheme we've been using:"
+	% "        we were using this type scheme:"
 	% prettyVTS (v, scheme)
 	% "\n\n"
-	% "        scheme we should have used:"
-	% prettyVTS (v, regen)
-	% "\n\n"
-	% "    Please add a type signature for `" % v % "' which provides\n"
-	% "        the mutability constraints present in the second scheme.\n"
-	% "\n\n"
+	% "        but a new\n"
+	%> dispFetterSource fMutable srcMutable
+	% "\n"
+	% "        was discovered, which means '" % varDanger % "' was not actually\n"
+	% "        safe to generalise.\n"
+	% "\n"
+	% "    Please add a type signature for '" % v % "' which provides this\n"
+	% "        mutability constraint.\n"
 
  -- Main function has wrong type
  ppr err@(ErrorWrongMainType

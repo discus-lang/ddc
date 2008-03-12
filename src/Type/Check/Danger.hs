@@ -1,7 +1,6 @@
-
-module Type.Check.Soundness
-	( --checkUpdateSoundness
-	  dangerousCidsT)
+ 
+module Type.Check.Danger
+	(dangerousCidsT)
 
 where
 
@@ -134,52 +133,3 @@ dangerT rsMutable fsClosure tt
 		$ "dangerT: no match for " % tt
 	 
 	 
-	 
-	 
-	 
-	 
-	  	
-
--- checkUpdateSoundness
---	Check for update soudness problems in an already generalised scheme.
---
---	The type inferencer might find out that some scheme has mutable components
---	after it's already generalised and instantiated it several times. It's 
---	too late to apply monomorphism restrictions, but we can at least report
---	an error.
---
---	If you want the monomorphism restriction, and not the error, then supply
---	a type sig for the scheme including an appropriate mutability constraint.
---
-{-
-checkUpdateSoundness
-	:: Var -> Type -> SquidM ()
-	
-checkUpdateSoundness varT t
- = do	
-	let ?fsMutable
-		= nub
-		$ [f 	| f@(FClass v _) <- collectFetters t
-			, Var.bind v == Var.FMutable]
-
-	let dangerTs
-		= nub
-		$ [t	| t@(TVar v)	<- dangerT [] t]
- 
- 	trace	$ "*   CheckUpdate.checkUpdate " 	% t 	% "\n"
-		% "    fsMutable = " % ?fsMutable		% "\n"
-		% "    dangerTs  = " % dangerTs			% "\n"
-		% "\n"
- 	
-	when (not $ isNil dangerTs)
-	 $ do
-	 	addErrors 
-			[ErrorUpdateSoundness 
-				{ eVar		= varT
-				, eType		= t
-				, eTypeDanger	= dangerTs }]
-		
-	return	()
- 
------
--}

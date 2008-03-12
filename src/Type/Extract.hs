@@ -58,8 +58,6 @@ extractType final varT
 		% "\n"
 
  	defs		<- gets stateDefs
---	varT'		<- sinkVar varT
---	quantKinds	<- gets stateQuantifiedVars
 
 	let result
 		-- If this var is in the defs table then it was imported from an external
