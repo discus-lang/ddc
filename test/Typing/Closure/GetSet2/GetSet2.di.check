@@ -59,7 +59,7 @@ foreign import extern makeGetSet2
         ,  Base.Mutable %r0
         :$ Base.Obj -> Base.Data;
         
-project Main.Box %_ *_ where
+project GetSet2.Box %_ *_ where
 {
         x        = project_Box_x;
         ref_x    = project_Box_ref_x;
