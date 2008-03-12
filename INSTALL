@@ -2,7 +2,7 @@
   The Disciplined Disciple Compiler          
 --------------------------------------------------------------------------------
 
-  0) You will need a working copies of GHC (at least 6.8.1) and GCC installed.
+  0) You will need working copies of GHC (at least 6.8.1) and GCC installed.
 
   1) Make a local copy of the build file.
 
