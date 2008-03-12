@@ -1,5 +1,11 @@
 -- Hacking ---------------------------------------------------------------------
 
+  * Tools
+    If you change src/Source/Lexer.x or Parser.y then you will need 
+            Alex   http://www.haskell.org/alex
+       and  Happy  http://www.haskell.org/happy
+
+
   * Build Flavours
     Set 'BuildFlavour' in make/build.mk file to 'devel' for faster builds.
 

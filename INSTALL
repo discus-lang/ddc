@@ -2,6 +2,8 @@
   The Disciplined Disciple Compiler          
 --------------------------------------------------------------------------------
 
+  0) You will need a working copies of GHC (at least 6.8.1) and GCC installed.
+
   1) Make a local copy of the build file.
 
      $ cp make/build.mk.sample make/build.mk
@@ -14,12 +16,12 @@
   
      $ bin/war -ddc O
      
-  4) Copy the binary to your ~/bin dir 
+  4) Copy the compiler binary to your ~/bin dir 
       (where ~/bin is in your PATH)
   
      $ cp bin/ddc ~/bin
 
-  5) Create an alias to give ddc the path to its library and runtime.
+  5) Create an alias to give ddc the path to its libraries and runtime.
       (You'll probably want to add this to your .profile, or similar)
   
      $ alias ddc='ddc -basedir $(DDC_BUILD)'
