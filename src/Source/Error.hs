@@ -90,6 +90,9 @@ instance Pretty Error PMode where
 	[ prettyTokenPos t1
 	, "    Parse error before: " ++ (catInt " " $ map Token.showSource toks) ++ " ..."]
 
+	| otherwise
+	= ppr "    Parse error at start of module"
+	
 
 
  ppr (ErrorParseEnd)

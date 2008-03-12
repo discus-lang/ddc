@@ -1,0 +1,11 @@
+
+import Math.Vec2
+
+time_compression	= 1.0
+attract_range		= 20.0
+draw_force_step		= 2
+
+frameCount		= 0
+frameCount_max		= 5
+
+worldSize		= Vec2 500 500

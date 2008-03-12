@@ -169,7 +169,7 @@ type SP	= SourcePos
 
 file 	:: { [Top SP] }
 	: '{' tops '}'					{ $2				}
-
+        | 'module' module 'where' '{' tops '}'		{ PModule (spTP $1) $2 : $5	} 
 
 tops		
 	:: { [Top SP] }	

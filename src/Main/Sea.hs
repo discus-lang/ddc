@@ -34,7 +34,6 @@ import Sea.Init			(initTree, mainTree, gotMain)
 import Sea.Plate.Trans
 
 import qualified Main.Version	as Version
-import Main.Path
 import Main.Arg
 import Main.Dump
 
@@ -54,6 +53,7 @@ import Util
 --
 seaSub
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree ()
 	-> IO (Tree ())
 	
@@ -73,6 +73,7 @@ seaSub tree
 --
 seaCtor 
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree ()
 	-> IO (Tree ())
 
@@ -94,6 +95,7 @@ seaCtor
 --
 seaThunking 
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree ()
 	-> IO (Tree ())
 	
@@ -112,6 +114,7 @@ seaThunking
 --
 seaForce 
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree ()
 	-> IO (Tree ())
 	
@@ -130,6 +133,7 @@ seaForce
 --
 seaSlot
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree ()		-- sea tree
 	-> Tree ()		-- sea header
 	-> Set Var		-- CAF vars
@@ -149,6 +153,7 @@ seaSlot	eTree eHeader cafVars
 --
 seaFlatten
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> String
 	-> Tree ()
 	-> IO (Tree ())
@@ -166,6 +171,7 @@ seaFlatten unique eTree
 --
 seaInit
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Module
 	-> (Tree ())
 	-> IO (Tree ())

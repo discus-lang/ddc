@@ -8,6 +8,7 @@ where
 import Main.Version
 import qualified Main.Arg 		as Arg
 import Main.Arg (Arg)
+import Main.Setup
 import Main.Compile
 
 import qualified Main.IO		as IO
@@ -75,9 +76,12 @@ ddc argStrings
 	 (do	putStr (Arg.helpString args)
 		System.exitFailure)
 
+	let setup
+		= setupZero
+		{ setupArgsCmd 	= args }
 
 	-- compile input files	
-	mapM (compileFile args) compileFiles
+	mapM (compileFile setup) compileFiles
 
 	-- emit a blank line to make things look nicer
 	when verbose

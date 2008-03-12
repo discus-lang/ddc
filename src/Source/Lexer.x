@@ -8,7 +8,8 @@
 module Source.Lexer
 	( scan 
 	, showSource
-	, sourceTokens )
+	, sourceTokens 
+	, alexScanTokens)
 
 where
 

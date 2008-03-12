@@ -50,6 +50,7 @@ import Source.Defix				(defixP)
 import Source.Desugar				(rewriteTree)
 import Source.Alias				(aliasTree)
 import Source.Exp
+import Source.Token
 
 import qualified Desugar.Exp			as D
 import qualified Desugar.Slurp.State		as D
@@ -83,6 +84,7 @@ import Util
 
 -- | Parse source code.
 parse 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> FilePath			-- path of source file
 	-> String			-- source of root module
 	-> IO (Tree SourcePos)		-- source parse tree
@@ -90,7 +92,7 @@ parse 	:: (?args :: [Arg])
 parse	fileName
 	source
  = do
-	let tokens	= map (\t -> t { Token.tokenFile = fileName }) 
+	let tokens	= map (tokenSetFileName fileName)
 			$ scan source
 			
 	let sParsed	= Source.Parser.parse tokens
@@ -100,6 +102,10 @@ parse	fileName
 
 	return	sParsed
 
+tokenSetFileName name token
+ = case token of
+ 	TokenP{}	-> token { Token.tokenFile = name }
+	_		-> token
 
 -- | Slurp out fixity table
 sourceSlurpFixTable
@@ -134,6 +140,7 @@ sourceSlurpInlineVars
 
 -- | Write uses of infix operatiors to preix form.
 defix	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree	SourcePos		-- source parse tree
 	-> [FixDef SourcePos]		-- fixity table
 	-> IO (Tree SourcePos)		-- defixed parse tree, will have no more XInfix nodes.
@@ -161,6 +168,7 @@ defix	sParsed
 --	which is present on foreign decls gets propagated to uses of these functions.
 --
 rename	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> 	[(Module, Tree SourcePos)]
 	-> IO 	[(Module, Tree SourcePos)]
 
@@ -186,6 +194,7 @@ rename	mTrees
 -- Slurp out the kinds for user defined classes.
 sourceKinds
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree SourcePos
 	-> IO [(Var, Kind)]
 	
@@ -201,6 +210,7 @@ sourceKinds sTree
 -- alias
 --
 alias 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Tree SourcePos
 	-> IO (Tree SourcePos)
 	
@@ -215,6 +225,7 @@ alias sTree
 -- | Convert from Source to Desugared IR.
 desugar
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> [(Var, Kind)]		-- kind table
 	-> Tree	SourcePos		-- source tree
 	-> Tree	SourcePos		-- header tree
@@ -242,6 +253,7 @@ desugar	kinds sTree hTree
 -- 
 desugarProject 
 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> Module
 	-> D.Tree SourcePos
 	-> D.Tree SourcePos
@@ -271,6 +283,7 @@ desugarProject moduleName headerTree sourceTree
 -- slurpC
 --
 slurpC 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> (D.Tree SourcePos)				-- source tree
 	-> (D.Tree SourcePos)				-- header tree
 	-> IO	( (D.Tree (Maybe (Type, Effect)))	-- source tree with type and effect annotations
@@ -337,6 +350,7 @@ slurpC	sTree
 	
 -----
 solveSquid :: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> [N.CTree]				-- type constraints
 	-> Set Var				-- the TEC vars to infer TECs for	
 	-> Map Var Var				-- sigma table
@@ -468,6 +482,7 @@ solveSquid2 vsTypesPlease hTrace state
 -- toCore
 --
 toCore 	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
 	-> D.Tree (Maybe (Type, Effect))		-- sourceTree
 	-> D.Tree (Maybe (Type, Effect))		-- headerTree
 	-> Map Var Var					-- sigmaTable

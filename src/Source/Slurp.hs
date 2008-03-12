@@ -83,6 +83,7 @@ slurpTopNames :: Show a => Top a -> [Var]
 slurpTopNames p
  = case p of
 	PPragma{}			-> []
+	PModule{}			-> []
 
  	PType 		sp v t		-> []
 	PInfix 		sp im i vs	-> []

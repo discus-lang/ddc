@@ -138,7 +138,7 @@ enterDir2 path_
 	 else do
 		paths	<- getDirectoryContents path
 
-		let sources
+		let sourcesAll
 			= sort
 			$ [ path ++ p
 				| p	<- paths
@@ -146,6 +146,18 @@ enterDir2 path_
 				, let fileParts	= chopOnRight '.' $ last dirParts
 				, last fileParts == "ds"
 				, length fileParts == 2 ]
+
+		-- if there is a Main.ds in this dir, then don't compile the others
+		--	leave that to the recursive -make
+		let isMain p
+			= (last $ chopOnRight '/' p) == "Main.ds"
+
+		let (sourcesMain, sourcesOther)
+			= partition isMain sourcesAll
+
+		let sources
+			| null sourcesMain	= sourcesOther
+			| otherwise		= sourcesMain
 		
 		dirs	<- filterM doesDirectoryExist 
 			$ [ path ++ p ++ "/"

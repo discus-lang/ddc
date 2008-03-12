@@ -1,6 +1,7 @@
 module Main.Compile
 	( compileFile )
 
+
 where
 
 -----
@@ -36,12 +37,12 @@ import Main.Core			as SC
 import Main.Sea				as SE
 import Main.Dump			as SD
 import Main.Invoke
+import Main.Setup
 
 import Source.Slurp			as S
 
 import qualified Source.Pragma		as Pragma
 
-import Main.Path
 import qualified Main.Build		as Build
 
 import qualified Core.Util.Slurp	as C
@@ -59,29 +60,27 @@ import Numeric
 
 out 	ss	= putStr $ pprStrPlain ss
 
------
------
--- compileFile
---	Top level compilation function.
+	
+
+-- Compile -----------------------------------------------------------------------------------------
+-- |	Top level compilation function.
 --	Compiles one source file.
---
 --	Returns a list of module names and the paths to their compiled object files.
---	
 --
 compileFile 
-	:: [Arg] 	-- DDC args from the command line
+	:: Setup 	-- DDC args from the command line
 	-> FilePath	-- path to source file
 	-> IO ()
 
-compileFile	argsCmd     fileName_
+compileFile setup fileName_
  = do 
 	-- Initialisation ------------------------------------------------------
-	let  ?verbose	= or $ map (== Arg.Verbose) argsCmd
+	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
 
 	-- this is the base of our installation
 	--	it should contain the /runtime and /library subdirs.
 	let pathBase_	= concat 
-			$ [dirs | Arg.PathBase dirs	<- argsCmd]
+			$ [dirs | Arg.PathBase dirs	<- setupArgsCmd setup]
 
 	-- if no base path is specified then look in the current directory.
 	let pathBase 	= if pathBase_ == []
@@ -170,13 +169,13 @@ compileFile	argsCmd     fileName_
 				Just build	-> Arg.parse $ catInt " " $ Build.buildExtraDDCArgs build
 				Nothing		-> []
 
-	let args	= argsCmd ++ argsBuild
+	let argsEffective = setupArgsCmd setup ++ argsBuild
 	when ?verbose
 	 $ do	putStr	$ "  * Compile options are:\n"
-
+		
 		putStr  $ concat 
 			$ map (\s -> "    " ++ s ++ "\n") 
-			$ map show args
+			$ map show argsEffective
 
 		putStr 	$ "\n"
 
@@ -186,13 +185,15 @@ compileFile	argsCmd     fileName_
 	-- Gather up all the import dirs.
 	let importDirs	
 		= pathLibrary
-		: (concat $ [dirs | Arg.ImportDirs dirs <- args])
+		: fileDir
+		: (concat $ [dirs | Arg.ImportDirs dirs <- argsEffective])
 
 	-- Choose a name for this module.
 	let Just moduleName	
 			= chooseModuleName 
 				importDirs
 				fileName
+				fileBase
 	when ?verbose
 	 $ do  	putStr	$  "  * Choosing module name\n"
 	 	putStr	$  "    - fileName      = " ++ fileName			++ "\n"
@@ -201,31 +202,35 @@ compileFile	argsCmd     fileName_
 	 		++ "    - moduleName    = " ++ pprStrPlain moduleName	++ "\n"
 			++ "\n"
 		
-	let filePaths	= makePaths (fileDir ++ "/" ++ fileBase)
-	let  ?args	= Arg.ArgPath filePaths : args
+--	let pathSrcBase	= fileDir ++ "/" ++ fileBase
 
 	-- Load the source file
 	sSource		<- readFile fileName
 
 	compileFile_parse 
+		setup
 		pathLibrary pathRuntime
-		fileName pathSourceBase filePaths moduleName importDirs 
+		fileName pathSourceBase moduleName importDirs 
 		mBuild   sSource
 
 
-compileFile_parse 
+compileFile_parse
+	setup
 	pathLibrary pathRuntime
-	fileName pathSourceBase filePaths moduleName importDirs 
+	fileName pathSourceBase moduleName importDirs 
 	mBuild   sSource
 
  -- Emit a nice error message if the source file is empty.
  --	If we parse an empty file to happy it will bail with "reading EOF!" which isn't as nice.
  | words sSource == []
- = exitWithUserError ?args [fileName % "\n    Source file is empty.\n"]
+ = exitWithUserError (setupArgs setup) [fileName % "\n    Source file is empty.\n"]
 
  | otherwise
  = do
-
+	let ?args		= setupArgs setup
+	let ?verbose		= elem Arg.Verbose ?args
+	let ?pathSourceBase	= pathSourceBase
+	
 	-- Chase down imports --------------------------------------------------
 
 	-- Parse the source file.
@@ -251,8 +256,11 @@ compileFile_parse
 
 	-- Recursively chase down all modules needed by this one.
 	importsExp	<- SI.chaseModules
+				setup
+				compileFile
 				importDirs
 				importsRoot
+				Map.empty
 
 	when ?verbose
 	 $ do	putStr	$ "    - recursive imports:\n"
@@ -287,16 +295,17 @@ compileFile_parse
 	-- Source Stages
 	------------------------------------------------------------------------
 
+--	when (isJust $ setupRecursive setup)
+--	 $ do	putStr $ pprStrPlain $ "ddc make: " % fileName % "\n"
+
 	-- slurp out name of vars to inline
 	inlineVars	<- SS.sourceSlurpInlineVars sParsed
-
-
 	
 	-- Rename variables and add uniqueBinds.
 	((_, sRenamed) : modHeaderRenamedTs)
 			<- SS.rename
 				$ (moduleName, sParsed) 
-				:[ (SI.idModule int, SI.idInterface int)
+				: [ (SI.idModule int, SI.idInterface int)
 					| int <- Map.elems importsExp ]
 	
 	let hRenamed	= concat 
@@ -547,7 +556,7 @@ compileFile_parse
 				typeTable
 				vsLambda_new
 
-	writeFile (pathDI filePaths)	diInterface	
+	writeFile (pathSourceBase ++ ".di") diInterface	
 
 
 	-- !! Early exit on StopCore
@@ -618,8 +627,8 @@ compileFile_parse
 				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
 				
-	writeFile (pathC filePaths)	seaSourceInit
-	writeFile (pathH filePaths)	seaHeader
+	writeFile (pathSourceBase ++ ".ddc.c") seaSourceInit
+	writeFile (pathSourceBase ++ ".ddc.h") seaHeader
 
 
 	------------------------------------------------------------------------
@@ -633,24 +642,23 @@ compileFile_parse
 
 	-- Invoke GCC to compile C source.
 	invokeSeaCompiler
+		pathSourceBase
 		pathRuntime
 		pathLibrary
+		importDirs
 		(fromMaybe [] $ liftM Build.buildExtraCCFlags mBuild)
 
-
-	-- !! Early exit on StopCompile
-	when (elem Arg.StopCompile ?args)
-		compileExit
-			
 	-- Invoke GCC to link main binary.
-	invokeLinker
-		pathRuntime
-		(fromMaybe [] $ liftM Build.buildExtraLinkLibs mBuild)
-		(fromMaybe [] $ liftM Build.buildExtraLinkLibDirs mBuild)
-		(fromMaybe [] $ liftM Build.buildExtraLinkObjs mBuild)
-		([pathSourceBase ++ ".o"]
-			++ (map    idFilePathO $ Map.elems importsExp))
-			-- ++ (catMap idLinkObjs  $ Map.elems importsExp))	
+	when ((not $ isJust $ setupRecursive setup)
+	   && (not $ elem Arg.StopCompile ?args))
+	 $ do	invokeLinker
+			pathRuntime
+			(fromMaybe [] $ liftM Build.buildExtraLinkLibs mBuild)
+			(fromMaybe [] $ liftM Build.buildExtraLinkLibDirs mBuild)
+			(fromMaybe [] $ liftM Build.buildExtraLinkObjs mBuild)
+			([pathSourceBase ++ ".o"]
+				++ (map    idFilePathO $ Map.elems importsExp))
+				-- ++ (catMap idLinkObjs  $ Map.elems importsExp))	
 
 	return ()
 		

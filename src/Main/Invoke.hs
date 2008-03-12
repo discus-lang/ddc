@@ -4,7 +4,6 @@ module Main.Invoke
 
 where
 
-import Main.Path
 import Main.Arg
 import Shared.Pretty
 import Shared.Error
@@ -21,19 +20,20 @@ stage	= "Main.Invoke"
 
 invokeSeaCompiler 
 	:: (?args :: [Arg])
+	-> FilePath		-- base path of source file
 	-> FilePath		-- path to the runtime system
 	-> FilePath		-- path to the base libraries
+	-> [FilePath]		-- extra include dirs
 	-> [String]		-- extra flags to compile with (from build files)
 	-> IO ()
 
 invokeSeaCompiler 
+	pathSourceBase
 	pathRuntime
 	pathLibrary
+	importDirs
 	extraFlags
  = do
-	let Just (ArgPath paths)
-		= find (=@= ArgPath{}) ?args
-
 	let cmd	= "gcc"
 		++ " -Werror"
 		++ " -std=c99"
@@ -56,9 +56,10 @@ invokeSeaCompiler
 
 		++ " -I"  ++ (take (length pathRuntime - length "/runtime") pathRuntime)
 		++ " -I"  ++ pathLibrary
+		++ (concat [ " -I" ++ p | p <- importDirs ])
 
-		++ " -c " ++ (pathC paths)
-		++ " -o " ++ (pathO paths)
+		++ " -c " ++ (pathSourceBase ++ ".ddc.c")
+		++ " -o " ++ (pathSourceBase ++ ".o")
 		++ " " ++ catInt " " extraFlags
 
  	when (elem Verbose ?args)
@@ -74,7 +75,7 @@ invokeSeaCompiler
 	 ExitFailure _
 	  -> panic stage
 	  	$ "invokeSeaCompiler: compilation of C file failed.\n"
-		% "    pathC = " % pathC paths % "\n"
+		% "    pathC = " % pathSourceBase % ".ddc.c" % "\n"
 		
 
 

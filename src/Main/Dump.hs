@@ -10,7 +10,6 @@ module Main.Dump
 where
 
 import Main.Arg
-import Main.Path
 
 import qualified Source.Pretty
 
@@ -35,15 +34,11 @@ takePrettyMode aa
 
 -- | Dump a source tree
 dumpST flag name sourceTree
- = do
-	let [ArgPath paths]	
-		= filter (=@= ArgPath{}) ?args
-
-	let pprMode	= catMaybes $ map takePrettyMode ?args
+ = do	let pprMode	= catMaybes $ map takePrettyMode ?args
 
  	when (elem flag ?args)
   	 (writeFile 
-		(pathBase paths ++ ".dump-" ++ name ++ ".ds")
+		(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
 		(concat $ map (pprStr pprMode)
 			$ sourceTree))
 	
@@ -51,26 +46,18 @@ dumpST flag name sourceTree
 
 -- | Dump a string
 dumpS flag name str
- = do
- 	let [ArgPath paths]
-		= filter (=@= ArgPath{}) ?args
-		
-	when (elem flag ?args)
+ = do	when (elem flag ?args)
 	 (writeFile 
-	 	(pathBase paths ++ ".dump-" ++ name ++ ".ds")
+	 	(?pathSourceBase ++ ".dump-" ++ name ++ ".ds")
 		str)
 	
 	return ()
 
 -- | Dump a dot file
 dumpDot flag name str
- = do
- 	let [ArgPath paths]
-		= filter (=@= ArgPath{}) ?args
-		
-	when (elem flag ?args)
+ = do	when (elem flag ?args)
 	 (writeFile 
-	 	(pathBase paths ++ ".graph-" ++ name ++ ".dot")
+	 	(?pathSourceBase ++ ".graph-" ++ name ++ ".dot")
 		str)
 	
 	return ()
@@ -78,15 +65,11 @@ dumpDot flag name str
 
 -- | Dump a core tree
 dumpCT flag name tree
- = do
-	let [ArgPath paths]	
-		= filter (=@= ArgPath{}) ?args
-
-	let pprMode	= catMaybes $ map takePrettyMode ?args
+ = do	let pprMode	= catMaybes $ map takePrettyMode ?args
 
  	when (elem flag ?args)
   	 (writeFile 
-		(pathBase paths ++ ".dump-" ++ name ++ ".dc")
+		(?pathSourceBase ++ ".dump-" ++ name ++ ".dc")
 		(catInt "\n"
 			$ map (pprStr pprMode)
 			$ tree))
@@ -96,15 +79,11 @@ dumpCT flag name tree
 
 -- Dump a sea tree
 dumpET flag name tree
- = do
-	let [ArgPath paths]	
-		= filter (=@= ArgPath{}) ?args
-
-	let pprMode	= catMaybes $ map takePrettyMode ?args
+ = do	let pprMode	= catMaybes $ map takePrettyMode ?args
 
  	when (elem flag ?args)
   	 (writeFile 
-		(pathBase paths ++ ".dump-" ++ name ++ ".c")
+		(?pathSourceBase ++ ".dump-" ++ name ++ ".c")
 		(catInt "\n"
 			$ map (pprStr pprMode)
 			$ tree))
@@ -115,13 +94,10 @@ dumpET flag name tree
 -----
 dumpOpen flag name
  = do	
- 	let [ArgPath paths]	=
-		 [x | x@ArgPath{} <- ?args]
-
 	if elem flag ?args
 	 then do
 	 	h	<- openFile 
-				(pathBase paths ++ ".dump-" ++ name ++ ".ds") 
+				(?pathSourceBase ++ ".dump-" ++ name ++ ".ds") 
 				WriteMode
 		return $ Just h
 		

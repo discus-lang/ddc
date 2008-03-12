@@ -1,18 +1,12 @@
 
+import Body
+
 import Graphics.Render
+import Math.Vec2
 import Data.Array
 import DDC.Runtime
-import Math.Vec2
 
-time_compression	= 1.0
-attract_range		= 20.0
-draw_force_step		= 2
-
-worldSize		= Vec2 500 500
 newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
-
-frameCount		= 0
-frameCount_max		= 5
 
 -- Main -----------------------------------------------------------------------------
 
@@ -149,121 +143,3 @@ forceColor fS
 	\= 	frame_color 255 255 255
 					
 
--- Body -----------------------------------------------------------------------------
-data Body %r1 
-
-	-- Bodies move around the world.
-	= Body {
-		mass	:: Float %r1;
-		pos	:: Vec2 %r1 (Float %r1);
-		vel	:: Vec2 %r1 (Float %r1);
-		acc	:: Vec2 %r1 (Float %r1);
-	}
-
-project Body where
-
-	-- | Convert a body to a string.
-	show (Body mass pos vel acc)
-	 = "Body " 
-		% show mass 
-		% " (" % pos.show % ")"
-		% " (" % vel.show % ")"
-
-	
-	-- | Calculate the force vector acting on the first body from the second.
-	force2 :: Body -> Body -> Vec2 Float
-	force2 body0 body1
-	 = forceVec&{Body}
-	 	body0.mass body1.mass 
-		body0.pos.x body0.pos.y
-		body1.pos.x body1.pos.y
-
-
-	-- | Increment position based on current velocity.
-	pulse :: Body -> ()
-	pulse ^body
-	 = do 	_vel += _acc
-		_pos += _vel
-
-
-	update :: Body -> Array Body -> Int -> ()
-	update	^b1 body0 i
-	 = do 
-	 	-- copy the old body info
-		b0	= body0.(i)
-		_mass	:= b0.mass
-	
-		-- calculate force on this body.
-		fV	= sumForces&{Body} body0 i
-	
-		-- acc = force / mass
-		_acc 	:= (Vec2 (0.0 - fV.x / b0.mass) (0.0 - fV.y / b0.mass))
-		_vel 	:= (b0.vel + (_acc.muls time_compression))
-		_pos 	:= (b0.pos + (_vel.muls time_compression))
-
-
-	-- | Clamp a body's position so it remains in the world.
-	clampPos :: Body -> ()
-	clampPos ^b
-	 = do  	when (_pos.x < 0.0) 
-			_pos.x += toFloat worldSize.x
-	
-	 	when (_pos.x > toFloat worldSize.x)
-			_pos.x += - (toFloat worldSize.x)
-
-	 	when (_pos.y < 0.0)
-			_pos.y += toFloat worldSize.y
-
-	 	when (_pos.y > toFloat worldSize.y)
-			_pos.y += - (toFloat worldSize.y)
-
-	-- | Draw this body in the frame.
-	draw :: Body -> Frame -> ()
-	draw body frame
-	 	| Body mass pos vel acc	<- body
-		, Vec2 pX pY		<- pos
-		= match 
-			| (truncate pX < 0) || (truncate pX > worldSize.x) 
-			= ()
-			
-			\= ()
---					frame.circle 10
---					(truncate pX) (truncate pY)
---					20
---					(frame_color 255 255 255);
-		
-
-
-	-- | Work out the force acting on the body with this index in the array.
-	sumForces :: Array Body -> Int -> Vec2 Float
-	sumForces body i
-		= sum&{Vec2 Float}
-		$ map (body.(i).force2)
-		$ map (index body) 
-		$ deleteF (==) [0.. array_size body - 1] i
-
-
-	-- | Work out the force between two bodies.
-	forceVec 
-	 	:: Float -> Float 	-- mass1, mass2
-	 	-> Float -> Float 	-- position x1, y1
-		-> Float -> Float 	-- position x2, y2
-		-> Vec2 Float		-- resulting force
-
-	forceVec m1 m2 x1 y1 x2 y2
-	 = do  	dx	= x2 - x1
-		dy	= y2 - y1
-		
-	 	d2	= dx * dx  +  dy * dy
-		d	= sqrt d2
-
-		attract_force	= m1 * (m2 / d2)
-		forceS		= if d < attract_range
-					then 	attract_force * (d / attract_range) 
-					   - 	(attract_force * (attract_range / d))
-					else attract_force
-
-		theta	= (Vec2 dx dy).angle
-		
-		Vec2 (forceS * cos theta) (forceS * sin theta)
-		

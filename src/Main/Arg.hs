@@ -9,7 +9,6 @@ module Main.Arg
 where
 
 import Main.Version
-import Main.Path
 import Shared.Pretty
 import Util
 import Util.Options
@@ -17,9 +16,6 @@ import Util.Options
 -- | Holds command line arguments
 data Arg
 	= Error String
-
-	-- used internally
-	| ArgPath	Path
 
 	-- general
 	| Help		[String]

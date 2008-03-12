@@ -1,7 +1,40 @@
+# -- BuildFlavour ------------------------------------------------------------------------
+# 
+# Options are:
+#    distro     - fastest at runtime.
+#    devel      - development compile (faster compiler build).
+#    devel_prof - development compile with profiling.
+
+BuildFlavour	= distro
+
+
+# ----------------------------------------------------------------------------------------
+# -- Environment -------------------------------------------------------------------------
+# what compiler to use
+GHC=ghc
+
+# -- Language features -------------------------------------------------------------------
+# -- 	Enable these individually so we can keep an eye on what's being used.
+		
+GHC_LANGUAGE	:= \
+	-XPatternGuards \
+	-XImplicitParams \
+	-XUnboxedTuples \
+	-XParallelListComp \
+	-XPatternSignatures \
+	-XMultiParamTypeClasses \
+	-XFlexibleInstances \
+	-XFlexibleContexts \
+	-XFunctionalDependencies \
+	-XScopedTypeVariables \
+	-XKindSignatures \
+	-XUndecidableInstances \
+	-XTypeSynonymInstances
+
+
 # -- Warnings ----------------------------------------------------------------------------
 # -- 	GHC warnings we compile with.
 # --	There's no point turning warnings on without -Werror.
-
 GHC_WARNINGS	:= \
 	-Werror \
 	-fwarn-deprecations \
@@ -28,46 +61,29 @@ GHC_WARNINGS	:= \
 #	-fwarn-tabs				# heresy!
 
 
-# -- Language features -------------------------------------------------------------------
-# -- 	Enable these individually so we can keep an eye on what's being used.
-			
-GHC_LANGUAGE	:= \
-	-XPatternGuards \
-	-XImplicitParams \
-	-XUnboxedTuples \
-	-XParallelListComp \
-	-XPatternSignatures \
-	-XMultiParamTypeClasses \
-	-XFlexibleInstances \
-	-XFlexibleContexts \
-	-XFunctionalDependencies \
-	-XScopedTypeVariables \
-	-XKindSignatures \
-	-XUndecidableInstances \
-	-XTypeSynonymInstances
-
-
-# -- Environment -------------------------------------------------------------------------
-
-# what compiler to use
-GHC=ghc
-
-
-# -- Compile Options ---------------------------------------------------------------------
+# -- Compile Flavours --------------------------------------------------------------------
 
 # -- Distribution compile (fastest at runtime)
-GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O2 
+ifeq "$(BuildFlavour)" "distro"
+GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 
 GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
+endif
 
 # -- Development Compile (fastest compile)
-# GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot 
-# GCC_FLAGS	:= -std=c99 -O3 -fPIC
+ifeq "$(BuildFlavour)" "devel"
+GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot 
+GCC_FLAGS	:= -std=c99 -O3 -fPIC
+endif
 
 # -- Profiling compile
-# GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O2 -prof -auto-all
-# GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
+ifeq "$(BuildFlavour)" "devel_prof"
+GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 -prof -auto-all
+GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
+endif
 
 # -- For Haskell Program Coverage
-# GHC_FLAGS	:= $(GHC_LANGUAGE) -fhpc -tmpdir /tmp 
-# GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
+ifeq "$(BuildFlavour)" "devel_hpc"
+GHC_FLAGS	:= -fglasgow-exts -fhpc -tmpdir /tmp 
+GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
+endif
 

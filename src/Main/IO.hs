@@ -24,7 +24,7 @@ import Util
 import qualified Shared.Var		as Var
 import Shared.Var			(Var, Module(..))
 
-import Shared.Error			(panic)
+import Shared.Error
 import Shared.Pretty
 import Shared.Base
 import Shared.Pretty
@@ -43,11 +43,11 @@ import qualified Source.Pragma		as Pragma
 import qualified Type.Exp		as T
 import Type.Pretty
 
-import Main.Path
+import Main.Setup
 import Main.Arg
 
 -----
-stage	= "Stages.IO"
+stage	= "Main.IO"
 
 -- | Where an imported modules files are
 data ImportDef
@@ -71,81 +71,108 @@ data ImportDef
 	, idImportedModules	:: [Module] }
 
 
------
-{-
-chaseLinkObjs
-	:: (?args :: [Arg])
-	-> [FilePath]			-- directory roots to search for extra objects.
-	-> [FilePath]			-- the list of object paths
-	-> IO [FilePath]
-	
-chaseLinkObjs
-	importDirs
-	objectPaths
- = 	mapM (findLinkObj importDirs) objectPaths
-
-findLinkObj importDirs objectPath
- = do	mObj	<- findFile importDirs objectPath
- 	return	$ fromMaybe (deathLinkObj importDirs objectPath) 
-		$ liftM snd mObj
-
-deathLinkObj importDirs file
- = panic stage
- 	$ "chaseLinkObjs: cannot find external object.\n" 
-	% "    file       = '" % file 		% "'\n"
-	% "    importDirs = '" % importDirs	% "'\n"
--}
-	
------
+-- | Chase down interface files for these modules.
+--	Do this recursively and return a map with all the interfaces needed.
+--
 chaseModules 
-	:: (?args :: [Arg])
-	-> [FilePath]			-- directories to search for imports.
-	-> [Module]			-- the root list of modules
+	:: Setup				-- ^ current compile setup
+	-> (Setup -> FilePath -> IO ())		-- ^ function to compile a module.
+	-> [FilePath]				-- ^ directories to search for imports.
+	-> [Module]				-- ^ the root list of modules.
+	-> Map Module ImportDef			-- ^ the map to add module interfaces to.
 	-> IO (Map Module ImportDef)
 
-chaseModules
-	importDirs
-	importsRoot
- = 	chaseModules' importDirs importsRoot Map.empty
+chaseModules setup compileFun importDirs importsRoot importMap
 
-
-chaseModules'
-	importDirs
-	importsRoot
-	importMap
-
+	-- no more modules to find, all done.
 	| []		<- importsRoot
 	= return importMap
 
+	-- this module is already in the map.
 	| (r:rs)	<- importsRoot
 	, elem r $ Map.keys importMap
-	= chaseModules' importDirs rs importMap
+	= chaseModules setup compileFun importDirs rs importMap
  
+	-- try and find the interface for this module
 	| (r:rs)	<- importsRoot
-	= do	mInt	<- loadInterface importDirs r
+	= do	mInt	<- loadInterface (setupArgs setup) importDirs r
+
 		case mInt of
-		 Nothing	
-	   	  -> panic stage
-	  		$ "chase: cannot find interface file for module " % r
-		
+		 -- add the interface file to the map
 	  	 Just int
-		  -> chaseModules' 
-		  	importDirs 
+		  -> chaseModules setup compileFun importDirs 
 			(idImportedModules int ++ rs)
 		 	(Map.insert r int $ importMap)
-	 
 
------------------------
--- loadInterface
---	Find, read and parse a module interface.
---
+		 -- we haven't got an interface file, maybe we can build the source..
+		 Nothing -> chaseModules_build setup compileFun importDirs importsRoot importMap
+	 
+chaseModules_build setup compileFun importDirs importsRoot importMap
+	
+	| (r : rs)	<- importsRoot
+	= do 	let ModuleAbsolute vs	= r
+		let fileDir		= pprStrPlain $ "/" %!% vs
+		let fileNameDS		= fileDir ++ ".ds"
+		
+		-- try and find source for this module
+		mPathDS	<- findFile importDirs fileNameDS
+		
+		case mPathDS of 
+                 -- build the source file.
+		 Just (_, pathDS)	
+		  -> do	
+		  	-- TODO: check for recursive modules
+		  	let setup'	= chaseModules_checkRecursive setup pathDS
+						
+		  	compileFun setup' pathDS
+
+		  	mInt	<- loadInterface (setupArgs setup) importDirs r
+			case mInt of 
+			 Just int	-> chaseModules setup compileFun importDirs 
+			 			(idImportedModules int ++ rs)
+						(Map.insert r int $ importMap)
+
+			 -- no interface file was dropped during compilation,
+			 --	but the compile function didn't end the program.
+			 Nothing	
+			  -> panic stage 
+			  		$ "chaseModules_build: source " % pathDS 
+			  		% " compiled, but no interface file was dropped."
+		  
+		 -- no source and no interface, time to die.
+		 Nothing		-> chaseModules_die r importDirs
+		
+chaseModules_die missingModule importDirs
+  = dieWithUserError
+	[ "    Can't find interface file for module '" % missingModule % "'\n"
+	% "    Import dirs are:\n" 
+	%> punc "\n" importDirs 	% "\n" ]
+
+chaseModules_checkRecursive setup fileName
+	| Just fs	<- setupRecursive setup
+	, elem fileName fs
+	= dieWithUserError
+		[ "    Can't compile recursive module '" % fileName % "'\n"
+		% "      imports are:\n"
+			%> punc "\n" fs % "\n"]
+		
+	| Just fs	<- setupRecursive setup
+	= setup { setupRecursive = Just (fileName : fs) }
+	
+	| otherwise
+	= setup { setupRecursive = Just [fileName] }
+
+
+
+-- | find, read and parse a module interface file.
 loadInterface 
-	:: (?args :: [Arg])
+	:: [Arg]
 	-> [FilePath]
 	-> Module
 	-> IO (Maybe ImportDef)
 
 loadInterface
+	args
 	importDirs
 	mod
  = do
@@ -221,16 +248,17 @@ findFile importDirs name
 chooseModuleName 
 	:: [FilePath]		-- import dirs
 	-> FilePath		-- filename of module
+	-> FilePath		-- base name of module
 	-> Maybe Module
 	
-chooseModuleName iDirs fileName
+chooseModuleName iDirs fileName fileBase
 	= takeFirstJust 
-	$ map (matchName fileName) iDirs
+	$ map (matchName fileBase fileName) iDirs
 	
-matchName ('/':aa)	[]	= Just $ munchModule aa
-matchName (a:aa) 	(b:bb)
-	| a == b		= matchName aa bb
-	| otherwise		= Just $ ModuleAbsolute ["Main"]
+matchName fileBase ('/':aa)	[]	= Just $ munchModule aa
+matchName fileBase (a:aa) 	(b:bb)
+	| a == b		= matchName fileBase aa bb
+	| otherwise		= Just $ ModuleAbsolute [fileBase]
 
 munchModule s					-- eg 	"Dir1/Dir2/File.ds"
  = let	
