@@ -160,7 +160,7 @@ tokens :-
  \.			{ ptag Dot			}
  \&			{ ptag And			}
 
- @moduleSpec @nameSpaceQual $lower $var*	 
+ @moduleSpec @nameSpaceQual $lower $var*
  			{ ptags (\s -> Var   s) 	}
 
  @moduleSpec @nameSpaceQual $upper $var*	 

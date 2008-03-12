@@ -210,8 +210,13 @@ getGroundType	 name
 				
 	case vsGround of 
 	 [v]	-> return v
-	 []	-> panic stage $ "getGroundType: no definition for " % name % " is in scope.\n"
-	 _	-> panic stage $ "getGroundType: multiple definitions of " % name % " in scope.\n"
+	 []	-> panic stage 
+	 		$ "getGroundType: no definition for " % name % " is in scope.\n"
+			% "    If you're not using the std prelude you still need to define\n"
+			% "    all the things in the Base module.\n"
+
+	 _	-> panic stage 
+	 		$ "getGroundType: multiple definitions of " % name % " in scope.\n"
 		
 
 -----

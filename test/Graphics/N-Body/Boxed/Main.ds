@@ -1,25 +1,8 @@
 
--- Testing out
---	Fix GC for anchored arrays.
---	Use/update of data with multiple alternatives.
---	case of case optimisation.
---	work pi into this somehow, fix up top level regions.
---	have tasty mutable data that the full laziness transform will lift if not careful.
---	Later: unboxed vectors?
---	BUGS: can't use name 'force' locally. Conflicts with thunk forcing function.
---
---	in forceBetween , we're not forcing possible thunks read from body structs.
---	add pass to suspend all possible non-effectful applications.
---
---	When id.field returns 'ambiguous projection'.. should return type conflict.
---	Unbox truncate/toFloat
---
-
 import Graphics.Render
 import Data.Array
 import DDC.Runtime
 import Math.Vec2
-
 
 time_compression	= 1.0
 attract_range		= 20.0

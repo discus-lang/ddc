@@ -304,10 +304,10 @@ project Body where
 
 vec2_angleU :: Float32# -> Float32# -> Float32#
 vec2_angleU x y
- = do 	pi	= 3.1415926536#
+ = do 	piU	= 3.1415926536#
 	match 
 		| 1#	<- x `primFloat32U_lt` 0.0#
-		= pi + atanU (y / x)
+		= piU + atanU (y / x)
 		
 		\= atanU (y / x)
 

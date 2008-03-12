@@ -59,17 +59,7 @@ newVarNI	space	     info
 	return	var { Var.info = info }
 	
 	
-
-{-
-cookName ::	Var	-> String
-cookName	var
-	-- Wrap symbols in parenthesis ala Haskell.
-	| isSymbol var	= "("  ++ Var.name var ++ ")"
-	
-	-- Prefix dummy variables with underscore to guarantee that they don't clash with user variables.
-	| isDummy  var	= "_"  ++ Var.name var
--}
-	
+-- Pretty print the source position of this variable.
 prettyPos :: Var	-> String
 prettyPos var
  	= fromMaybe "?"
@@ -77,6 +67,8 @@ prettyPos var
 	$ find (=@= ISourcePos{}) 
 	$ Var.info var 
 
+
+-- Pretty print the source position of the bounding occurance of this variable.
 prettyPosBound :: Var	-> String
 prettyPosBound var
 	= fromMaybe "?"
@@ -85,7 +77,7 @@ prettyPosBound var
 	$ Var.info var
 
 
------
+-- Sort vars to be quantified into a standard order
 sortForallVars :: [Var] -> [Var]
 sortForallVars	  vs
  = let
@@ -96,10 +88,16 @@ sortForallVars	  vs
  in
  	tVars ++ rVars ++ eVars ++ cVars
 
------
-isSymbol   var 
-	= (not $ isAlpha n) && (n /= '_')
-	where (n:_)	= Var.name var
+
+-- Check whether the name of this var contains symbols that the
+--	C compiler won't like.
+isSymbol var 
+ 	= not $ null $ filter isSymbolChar $ Var.name var
+
+isSymbolChar c
+	| isAlphaNum c 	= False
+	| c == '_'	= False
+	| otherwise	= True	
 
 isCtorName var 
 	= isUpper n

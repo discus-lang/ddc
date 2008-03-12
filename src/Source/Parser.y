@@ -841,15 +841,15 @@ effect1	:: { Effect }
 closure :: { Closure }
 	: pVar						{ TVar KClosure (vNameC $1)		}
 	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
-	| pVar ':' closureK				{ TFree (vNameV $1) $3			}
-	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
-	| pVar '\\' pVar				{ TMask   KClosure (TVar KClosure $1) (TVar KClosure $3)	}
+	| qVar ':' closureK				{ TFree (vNameV $1) $3			}
+	| qVar ':' typeN				{ TFree (vNameV $1) $3 			}
+	| pVar '\\' qVar				{ TMask   KClosure (TVar KClosure $1) (TVar KClosure $3)	}
 	| pVar '$>' typeN				{ TDanger (TVar KRegion $1) $3		}
 
 closureK 
 	:: { Closure }
 	: '$' '{' closure_semi '}'			{ TSum  KClosure $3					}
-	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3)		}
+	| pVar '\\' qVar				{ TMask KClosure (TVar KClosure $1) (TTag $3)		}
 	| pVar '$>' typeN				{ TDanger (TVar KRegion $1) $3		}
 		
 closure_semi
@@ -866,9 +866,9 @@ effect_closure
 	:: { Type }
 	: pVar						{ TVar (kindOfVarSpace (Var.nameSpace $1)) $1 }
 	| '$' '{' closure_semi '}'			{ TSum KClosure $3			}
-	| pVar ':' closureK				{ TFree (vNameV $1) $3			}
-	| pVar ':' typeN				{ TFree (vNameV $1) $3 			}
-	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) }
+	| qVar ':' closureK				{ TFree (vNameV $1) $3			}
+	| qVar ':' typeN				{ TFree (vNameV $1) $3 			}
+	| pVar '\\' qVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) }
 	| effectCtor					{ $1					}
 	| '!' '{' effect_semi '}'			{ TSum KEffect $3 			}	
 
@@ -882,9 +882,9 @@ trec1 :: { Type }
 	
 trec	:: { Type }
 	: trec1						{ $1						}
-	| pVar ':' closureK				{ TFree (vNameV $1) $3				}
-	| pVar ':' typeN				{ TFree (vNameV $1) $3 				}
-	| pVar '\\' pVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) 	}
+	| qVar ':' closureK				{ TFree (vNameV $1) $3				}
+	| qVar ':' typeN				{ TFree (vNameV $1) $3 				}
+	| pVar '\\' qVar				{ TMask KClosure (TVar KClosure $1) (TTag $3) 	}
 	| qCon typeZ_space				{ makeTECon (dNameN NameType $1) $2		}	
 	| qCon '#' typeZ_space				{ TData (vNameTU $1) $3				}
 

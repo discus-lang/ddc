@@ -21,6 +21,6 @@ import	Class.Copy
 import	Class.Eq
 import	Class.Show
 import	Class.Ord
-	
+
 import	Control.Exception
 import	Control.Imperative

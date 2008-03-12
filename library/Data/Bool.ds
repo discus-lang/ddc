@@ -1,5 +1,5 @@
 
-import	Base;
+import	Base
 
 -- The Boolean type
 -- 	* The runtime system assumes that the constructors are 
@@ -7,33 +7,29 @@ import	Base;
 --
 data Bool %r1
 	= False
-	| True;
+	| True
 	
 not b
- = case b of {
- 	True	-> False;
-	False   -> True;
- };
+ = case b of
+ 	True	-> False
+	False   -> True
 
 
-infixr 4 && ;
+infixr 4 &&
 (&&) a b
- = case a of {
-	False	-> False;
-	_	-> case b of {
-			True	-> True;
-			_	-> False;
-		};
- };
+ = case a of 
+	False	-> False
+	_	-> case b of 
+			True	-> True
+			_	-> False
 
-infixr 3 || ;
+infixr 3 ||
 (||) a b
- = case a of {
- 	True	-> True;
-	_	-> case b of {
-			True	-> True;
-			_	-> False;
-		};
- };
+ = case a of 
+ 	True	-> True
+	_	-> case b of 
+			True	-> True
+			_	-> False
  
  
+otherwise	= True

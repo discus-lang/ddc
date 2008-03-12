@@ -41,6 +41,7 @@ libraryModules =
 	, "DDC/Runtime"
 	, "System/File"
 	, "Prelude" 
+	, "Math/Constants"
 	, "Math/Vec2"
 	, "Math/Matrix/Matrix33" 
 	, "Graphics/Primitive"

@@ -1,8 +1,7 @@
 
-import Prelude;
+import Prelude
+import Math.Constants
 
-{-
-radToDeg r	= (180.0 / pi) 		* r;
-degToRad d	= (pi    / 180.0)	* d;
+radToDeg r	= (180.0 / pi) 	 	* r
+degToRad d	= (pi    / 180.0)	* d
 
--}
