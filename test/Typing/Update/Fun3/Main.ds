@@ -6,10 +6,6 @@
 --
 --	This time, textBox2 creates a tuple of functions to update and run the box.
 
--- BUGS:
---	Fails on textBox2. Box does not contain a value of type 'a' need to fix static region determinator
---	to check data alternatives.
-
 data FunBox %r1 a !e1 $c1
 	= FunBox { 
 		fun :: a -(!e1 $c1)> a;

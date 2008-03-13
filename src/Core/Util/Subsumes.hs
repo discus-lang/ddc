@@ -185,13 +185,16 @@ subsumes3 table t s
 	= (True, "SubReplay")
 	
 	-- SubCtor
-	--	BUGS: doesn't handle contra variant vars
-	-- data 
+	--	TODO: If we knew which of these args was covar/contravar we
+	--	could do a proper subsumption, but we don't have that info here. 
+	--	Just take all the args as being invariant instead.
+	--
 	| TData tVar ts		<- t
 	, TData sVar ss		<- s
 	, tVar == sVar
 	, length ts == length ss
-	, and $ zipWith (subsumes1 table) ts ss
+--	, and $ zipWith (subsumes1 table) ts ss
+	, ts == ss
 	= (True, "SubCtor")
 	
 

@@ -1,0 +1,17 @@
+
+
+data FunInt %r0 %r1 !e1 $c1
+	= FunInt (Int %r1 -(!e1 $c1)> Int %r1);
+	
+succ x	= x + 1
+
+funSucc = FunInt succ
+	
+runFun (FunInt f) x	
+	= f x
+	
+succ' x
+	= runFun funSucc x
+
+main ()
+ = print $ show (succ' 5)
