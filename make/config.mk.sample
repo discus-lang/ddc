@@ -1,7 +1,7 @@
 
-Target		= linux-x86
-BuildFlavour	= distro
-GHC		= ghc
+Target         = linux-x86
+BuildFlavour   = distro
+GHC            = ghc
 
 # Target: Set the target architecture
 #    linux-x86

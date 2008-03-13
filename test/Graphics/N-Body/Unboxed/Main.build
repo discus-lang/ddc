@@ -9,7 +9,6 @@ extra-link-lib-dirs:
 
 extra-link-objs: 
 	external/TinyPTC-X11-0.7.3/convert.o
-	external/TinyPTC-X11-0.7.3/mmx.o
 	external/TinyPTC-X11-0.7.3/xlib.o
 	external/TinyPTC-X11-0.7.3/xshm.o
 	

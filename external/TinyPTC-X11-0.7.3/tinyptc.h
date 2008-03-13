@@ -48,7 +48,7 @@ typedef unsigned char char8;
 /* This directive enables little-endian pixelformat converters - ignored for
  * the XVideo+Mit-Shm target */
 
-/* #define __PTC_LITTLE_ENDIAN__ */
+#define __PTC_LITTLE_ENDIAN__
 
 /* This directive enables a best-fit video-mode choice logic for DGA 1.x and
  * DGA 2.x targets */
@@ -67,7 +67,7 @@ typedef unsigned char char8;
 /* If you uncomment this directive, you'll choose X Shared memory extension
  * video rendering */
 
-/* #define __PTC_XSHM__ */
+// #define __PTC_XSHM__
 
 /* If you uncomment this directive, you'll choose X Double buffer extension
  * video rendering */
