@@ -292,18 +292,18 @@ options	=
 	, OBlank
 	, OOpts		Compile
 			["-c",	"-compile"]
-			"-c, -compile <files..>"
-			"Compile .ts files to .o files."
+			"-c, -compile <file>"
+			"Compile .ds to .o"
 
 	, OOpts		Make
 			["-m", "-make"]
-			"-m, -make    <files..>"
-			"Compile and link objects."
+			"-m, -make    <file>"
+			"Recursively compile and link (doesn't rebuild, use GNU make for that)"
 
 	, OOpts		OutputFile
 			["-o", "-output"]
-			"-o, -output  <files..>"
-			"Redirect output to these files."
+			"-o, -output  <file>"
+			"Redirect output to this file."
 
 	, OOpts		ImportDirs
 			["-i", "-import"]
