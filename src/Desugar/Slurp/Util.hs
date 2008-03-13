@@ -111,7 +111,7 @@ makeCtorType newVarN vData vs name fs
 
 	let vks		= map (\v -> (v, defaultKindV v)) 
 			$ Var.sortForallVars 
-			$ Set.toList vsFree
+			$ Set.toList (Set.union vsFree (Set.fromList vs))
 
 	let tQuant	= TForall vks (addFetters_front fsField tCtor)
 
