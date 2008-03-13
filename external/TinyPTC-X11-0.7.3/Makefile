@@ -31,7 +31,7 @@ STRIP	    = strip
 SWIG        = swig
 RM          = /bin/rm -f
 INCLUDES    = -I/usr/X11R6/include -I/usr/local/include -I/usr/include
-LIBS        = -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib -lX11 -lXext -lXxf86vm -lXv
+LIBS        = -L/usr/X11R6/lib -L/usr/lib -L/usr/local/lib -lX11 -lXext -lXv
 CSOURCES    = test.c
 CTARGETS    = xlib.c xdbe.c xshm.c convert.c xvshm.c
 ASOURCES    = mmx.s yv12.s
@@ -46,9 +46,9 @@ PYTHON_VERSION = 2.2
 
 all : $(OTARGETS)
 
+
 $(EXECUTABLE): $(OTARGETS) $(COBJECTS) $(LIBRARY)
 	$(LD) $(LDFLAGS) $(OTARGETS) $(COBJECTS) $(AOBJECTS) $(LIBS) -o $(EXECUTABLE)
-	$(STRIP) $(EXECUTABLE)
 
 $(LIBRARY): $(OTARGETS) $(AOBJECTS)
 	$(AR) cru $(LIBRARY) $(OTARGETS) $(AOBJECTS)

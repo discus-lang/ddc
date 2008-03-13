@@ -22,11 +22,8 @@
  * 
  */
 
-#define __USE_XOPEN
-
 #ifndef __TINYPTC_X11
 #define __TINYPTC_X11
-
 
 #define PTC_FAILURE 0
 #define PTC_SUCCESS 1
@@ -65,12 +62,12 @@ typedef unsigned char char8;
 
 /* If you uncomment this directive, you'll choose raw xlib video rendering */
 
-// #define __PTC_XLIB__
+#define __PTC_XLIB__
 
 /* If you uncomment this directive, you'll choose X Shared memory extension
  * video rendering */
 
-#define __PTC_XSHM__ 
+/* #define __PTC_XSHM__ */
 
 /* If you uncomment this directive, you'll choose X Double buffer extension
  * video rendering */
