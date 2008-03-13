@@ -54,7 +54,7 @@ GHC_WARNINGS	:= \
 
 # -- Distribution compile (fastest at runtime)
 ifeq "$(BuildFlavour)" "distro"
-GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2
+GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O2
 GCC_FLAGS	:= -std=c99 -O3 -Wundef
 
 # -- Development Compile (fastest compile)
@@ -64,12 +64,12 @@ GCC_FLAGS	:= -std=c99 -O3
 
 # -- Profiling compile
 else ifeq "$(BuildFlavour)" "devel_prof"
-GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 -prof -auto-all
+GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O2 -prof -auto-all
 GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg
 
 # -- For Haskell Program Coverage
 else ifeq "$(BuildFlavour)" "devel_hpc"
-GHC_FLAGS	:= -fglasgow-exts -fhpc -tmpdir /tmp 
+GHC_FLAGS	:= $(GHC_LANGUAGE) -fhpc -tmpdir /tmp 
 GCC_FLAGS	:= -std=c99 -O3 -Wundef
 
 else 
