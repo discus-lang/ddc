@@ -115,11 +115,6 @@ solve	args ctree
 	when (null errors_checkInstances)
 		checkInstances
 
-	-- Check for soundness problems due to late addition of mutability constraints.
---	errors_checkReGeneralise <- gets stateErrors
---	when (null errors_checkReGeneralise)
---		checkReGeneralise
-
 	-- Report how large the graph was
 	graph		<- gets stateGraph
 	trace	$ "=== Final graph size: " % graphClassIdGen graph % "\n"

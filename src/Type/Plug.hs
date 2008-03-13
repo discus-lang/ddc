@@ -2,9 +2,7 @@
 module Type.Plug
 	( plugClassIds
 	, staticRsDataT
-	, staticRsClosureT
-	)
-
+	, staticRsClosureT)	
 where
 
 import Util
@@ -51,18 +49,18 @@ plugT env t
 	_ -> 	return t
 	
 
-
------
--- staticRsDataT
---	return the list of region classes which are non-generalisable because
---	they appear in non-function types.
---
-staticRsDataT :: Type -> Set ClassId
+-- | return the list of region classes which are non-generalisable because
+--   they represent tangible data. ie, appear as the primary region of a 
+--   data constructor.
+staticRsDataT :: Type -> Set Type
 staticRsDataT tt
  = case tt of
-	TVar{}			-> Set.empty
+	TVar k v		
+	 | k == KRegion		-> Set.singleton tt
+	 | otherwise		-> Set.empty
+
 	TClass k cid		
-	 | k == KRegion		-> Set.singleton cid
+	 | k == KRegion		-> Set.singleton tt
 	 | otherwise		-> Set.empty
 
 	TSum k ts
@@ -71,7 +69,6 @@ staticRsDataT tt
 
 	TMask KClosure t1 t2	-> staticRsDataT t1
 	TMask{}			-> Set.empty
-
 
  	TData v ts		-> Set.unions $ map staticRsDataT ts
 	TFun{}			-> Set.empty
@@ -91,16 +88,15 @@ staticRsDataT tt
 	_ 	-> panic stage
 		$ "staticRsDataT: " ++ show tt
 		
------
--- staticRsClosureT
---	Region cids that are free in the closure of the outer-most function
+
+-- Region cids that are free in the closure of the outer-most function
 --	constructor(s) are being shared with the caller. These functions
 --	did not allocate those regions, so they be can't generalised here.
 --
 --	BUGS: handle functions in data
 --
 staticRsClosureT
-	:: Type -> Set ClassId
+	:: Type -> Set Type
 
 staticRsClosureT t
  = case t of
@@ -108,5 +104,3 @@ staticRsClosureT t
  	TFun t1 t2 eff clo	-> staticRsDataT clo
 	TData v ts		-> Set.unions $ map staticRsClosureT ts
 	_ 			-> Set.empty
-
-	

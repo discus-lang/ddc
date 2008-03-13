@@ -664,9 +664,7 @@ compileFile_parse
 		
 -----
 compileExit
- = do
- 	System.exitWith System.ExitSuccess
-
+ = do 	System.exitWith System.ExitSuccess
 
 
 runStage :: String -> IO a -> IO a

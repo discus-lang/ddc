@@ -280,6 +280,9 @@ addFetters_front fsMore t
 		[]	-> t
 		ff	-> TFetters (nub ff) t
 
+-- | Take the fetters of this type
+
+
 
 -- | Take the binding var from FLet's 
 takeBindingVarF :: Fetter -> Maybe Var

@@ -70,12 +70,12 @@ generaliseType' varT tCore envCids
 		%> prettyTS tFlat	% "\n\n"
 
 	-- Work out which cids can't be generalised in this type.
-
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	let staticRsData 	= Set.toList $ staticRsDataT	tFlat
-	let staticRsClosure 	= Set.toList $ staticRsClosureT	tFlat
+	let takeCid (TClass k cid) = cid
+	let staticRsData 	= map takeCid $ Set.toList $ staticRsDataT	tFlat
+	let staticRsClosure 	= map takeCid $ Set.toList $ staticRsClosureT	tFlat
 
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
 		% "    staticRsClosure  = " % staticRsClosure	% "\n"

@@ -32,4 +32,5 @@ infixr 3 ||
 			_	-> False
  
  
+otherwise :: Bool %r1 :- Const %r1
 otherwise	= True

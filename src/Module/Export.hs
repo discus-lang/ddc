@@ -5,21 +5,6 @@ module Module.Export
 where
 
 -----
-import qualified Data.Map		as Map
-import Data.Map				(Map)
-
-import qualified Data.Set		as Set
-import Data.Set				(Set)
-
------
-import Util
-
-import qualified Shared.Var		as Var
-import Shared.Var			(Var, (=~=), Module)
-import Shared.Pretty
-import Shared.Error			(panic)
-import Shared.Base			(SourcePos)
-import Shared.Error
 
 import qualified Module.Interface	as MI
 
@@ -34,6 +19,7 @@ import qualified Type.Exp		as T
 import qualified Type.Pretty		as T
 import qualified Type.Util		as T
 import qualified Type.Plate		as T
+import qualified Type.Plug		as T
 
 import qualified Desugar.Exp		as D
 import qualified Desugar.Plate.Trans	as D
@@ -44,82 +30,76 @@ import qualified Core.Pretty		as C
 import qualified Core.Util		as C
 import qualified Core.ToSea		as C
 
------
+import qualified Shared.Var		as Var
+import Shared.Var			(Var, (=~=), Module)
+import Shared.VarPrim
+import Shared.Pretty
+import Shared.Error			(panic)
+import Shared.Base			(SourcePos)
+import Shared.Error
+
+import Util
+
+import qualified Data.Map		as Map
+import Data.Map				(Map)
+
+import qualified Data.Set		as Set
+import Data.Set				(Set)
+
+import Debug.Trace
+
+--
 stage	= "Module.Export"
 
------
+-- Make a .di interface file for this module.
 makeInterface 
 	:: Module		-- name of this module
 	-> S.Tree SourcePos	-- source tree
 	-> D.Tree SourcePos	-- desugared tree
 	-> C.Tree		-- core tree
-	-> Map Var Var		-- sigma table
+	-> Map Var Var		-- sigma table (value var -> type var)
 	-> Map Var T.Type	-- schemeTable
 	-> Set Var		-- don't export these vars
 	-> IO String
 	
-makeInterface
-	moduleName
-	sTree
-	dTree
-	cTree
+makeInterface moduleName 
+	sTree dTree cTree
 	sigmaTable
 	schemeTable
 	vsNoExport
-
  = do
 	-- To make the interfaces easier to read:
 	--	For each var in the tree, if the var was bound in the current module
 	--	then erase that module annotation.
-	--	
 	let sTree'	= eraseVarModuleTree moduleName sTree
 
-
+	-- a fn to lookup the type var for a value var
 	let getTVar 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStrPlain v)
-			$ Map.lookup v 
-			$ sigmaTable
+			$ Map.lookup v $ sigmaTable
 
+	-- a fn to get a top level type scheme
 	let getType 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStrPlain v)
 			$ liftM (eraseVarModuleT moduleName)
 			$ Map.lookup (getTVar v) schemeTable
 
-	let topVars	= Set.fromList
-			$ catMap S.slurpTopNames sTree
+	-- the vars of all the top level things
+	let topVars	= Set.fromList $ catMap S.slurpTopNames sTree
 
-	return	$ exportAll getType topVars sTree' dTree cTree vsNoExport
+	-- export all the top level things
+	let interface	= exportAll getType topVars sTree' dTree cTree vsNoExport
 
------
-eraseVarModuleTree
-	:: Module
-	-> S.Tree SourcePos
-	-> S.Tree SourcePos
-	
-eraseVarModuleTree
-	m tree
- =	S.trans (S.transTableId (\(x :: SourcePos) -> return x))
-		{ S.transVar	= \v -> return $ eraseVarModuleV m v 
-		, S.transType	= \t -> return $ T.transformV (eraseVarModuleV m) t 
-		}
-		tree	
+	return interface
 
-eraseVarModuleT m t
-	= T.transformV (eraseVarModuleV m) t
 
-eraseVarModuleV m v
- = if Var.nameModule v == m
- 	then v { Var.nameModule = Var.ModuleNil }
-	else v
-
-	
------
+-- Export all the top level things in this module
 exportAll 
-	:: (Var -> Type)
-	-> Set Var			-- vars in scope at top level
-	-> [S.Top SourcePos] 
-	-> [D.Top SourcePos]
-	-> [C.Top]
-	-> Set Var
-	-> String
+	:: (Var -> Type)	-- ^ a fn to get the type scheme of a top level binding
+	-> Set Var		-- ^ vars of top level bindings.
+	-> [S.Top SourcePos] 	-- ^ source tree
+	-> [D.Top SourcePos]	-- ^ desugared tree
+	-> [C.Top]		-- ^ core tree
+	-> Set Var		-- ^ don't export these vars
+	-> String		-- ^ the interface file
 
 exportAll getType topNames ps psDesugared psCore vsNoExport
  	=  pprStrPlain
@@ -168,11 +148,10 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 			| p@(S.PForeign _ (S.OImport (S.OExtern{})))	<- ps])
 	++ "\n"
 
+	-- only export types for bindings that were in scope in the source, and
+	--	not lifted supers as well as they're not needed by the client module.
 	++ "-- Binds\n"
-	-- only export types for bindings that were in scope in the source
-	--	not lifted supers as well.
-
-	++ (concat [exportVTT v (getType v) (C.superOpTypeX x)
+	++ (concat [exportForeign v (getType v) (C.superOpTypeX x)
 			| p@(C.PBind v x) <- psCore
 			, not $ Set.member v vsNoExport])		
 
@@ -183,12 +162,14 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 	++ "\n"
 
  
------
-exportVTT
-	:: Var -> Type -> C.Type 
-	-> String
+-- | make a foreign import to import this scheme
+exportForeign
+	:: Var 		-- var of the binding
+	-> Type 	-- type of the binding
+	-> C.Type 	-- operational type of the binding
+	-> String	-- import text
 
-exportVTT	v      tv to
+exportForeign v tv to
 	= pprStrPlain
 	$ "foreign import extern "
 	% pprStrPlain v { Var.nameModule = Var.ModuleNil }
@@ -197,7 +178,8 @@ exportVTT	v      tv to
 
 		++ ";\n\n")
 
------
+
+-- | export  a projection dictionary
 exportProjDict 
 	:: D.Top a -> String
 
@@ -213,6 +195,25 @@ exportProjDict (D.PProjDict _ t ss)
 	% "\n}\n\n"
 	
 	
+-- | erase module qualifiers from variables in this tree
+eraseVarModuleTree
+	:: Module
+	-> S.Tree SourcePos
+	-> S.Tree SourcePos
+	
+eraseVarModuleTree
+	m tree
+ =	S.trans (S.transTableId (\(x :: SourcePos) -> return x))
+		{ S.transVar	= \v -> return $ eraseVarModuleV m v 
+		, S.transType	= \t -> return $ T.transformV (eraseVarModuleV m) t 
+		}
+		tree	
 
+eraseVarModuleT m t
+	= T.transformV (eraseVarModuleV m) t
 
+eraseVarModuleV m v
+ = if Var.nameModule v == m
+ 	then v { Var.nameModule = Var.ModuleNil }
+	else v
 
