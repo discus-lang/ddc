@@ -143,6 +143,11 @@ rewriteWitness instMap tt
 	, vC == primPure
 	= return tt
 
+	-- empty of no closure is trivial
+	| TClass vC [TBot KClosure]	<- tt
+	, vC == primEmpty
+	= return tt
+
 	-- build a witness for purity of this effect
 	| TClass vC [eff]		<- tt
 	, vC == primPure
@@ -236,7 +241,7 @@ lookupWitness vRegion vClass
 pushWitnessVK :: Var -> Kind -> ThreadM ()
 pushWitnessVK vWitness k
  	| KClass vClass [TVar kV vRE]	<- k
-	, elem kV [KRegion, KEffect, KData]
+	, elem kV [KRegion, KEffect, KData, KClosure]
 	= modify $ \s -> ((vClass, vRE), vWitness) : s
 	
 	| otherwise

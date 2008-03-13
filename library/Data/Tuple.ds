@@ -30,7 +30,7 @@ data Tuple4 %r a b c d
 	}
 
 -- tuple5
-data Tuple5 %r a b c d
+data Tuple5 %r a b c d e
 	= Tuple5  {
 		x1	:: a;
 		x2	:: b;

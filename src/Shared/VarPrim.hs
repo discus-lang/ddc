@@ -108,7 +108,7 @@ primLazyT	= primVar NameClass	"Base.LazyT"				FLazyT
 primLazyH	= primVar NameClass	"Base.LazyH"				FLazyH
 
 primPure	= primVar NameClass	"Base.Pure"				FPure
-
+primEmpty	= primVar NameClass	"Base.Empty"				FEmpty
 
 -- from Base.Thunk
 primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i) 
@@ -300,6 +300,7 @@ bindPrimVar n v
 	"Direct"	-> Just $ v { Var.bind = FDirect }
 	
  	"Pure"		-> Just $ v { Var.bind = FPure }
+	"Empty"		-> Just $ v { Var.bind = FEmpty }
 
 	'S':'h':'a':'p':'e':xs
 			-> Just $ v { Var.bind = FShape (read xs) }

@@ -65,7 +65,7 @@ checkFetter cls errs f@(FConstraint vClass tsArg)
 		-- these aren't type class constraints, so aren't a problem.
 		| elem vClass 
 			[ primMutable, primMutableT, primConst, primConstT
-			, primPure
+			, primPure, primEmpty
 			, primLazy, primLazyH, primDirect]
 		= return errs
 

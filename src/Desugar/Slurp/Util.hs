@@ -40,6 +40,8 @@ import Util
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..), (=^=))
+import Shared.VarPrim
+import Shared.VarUtil		(prettyPos)
 import Shared.Error
 import Shared.Literal
 import Shared.Pretty
@@ -57,22 +59,43 @@ import Constraint.Bits
 import Desugar.Exp
 import Desugar.Slurp.State
 
+import Debug.Trace
+
 -----
 stage	= "Desugar.Slurp.Util"
 
------------------------
--- makeCtorType
---	Make a constructor type out of the corresponding line
---	from a data definition.
+-- makeCtorType ------------------------------------------------------------------------------------
+--	Make a constructor type out of the corresponding line from a data definition.
 --
-makeCtorType ::	(Var,   [Var]) -> (Var, [DataField (Exp Annot2) Type])	-> CSlurpM Type
-makeCtorType	(vData, vs)	  (name, fs)
+makeCtorType 
+	:: Monad m
+	=> (NameSpace -> m Var)		-- newVarN
+	-> Var				-- data type name
+	-> [Var]			-- data type args
+	-> Var				-- constructor name
+	-> [DataField a Type]		-- constructor args
+	-> m Type
+
+makeCtorType newVarN vData vs name fs
  = do
+	-- the primary fields are the ones that can be passed to the constructor function.
 	let tsPrimary	= map dType
 			$ filter dPrimary fs
 
+	-- make sure there are variables present on all the effect and closure annots 
+	--	for fields with function types.
+	tsPrimary_elab	<- mapM (transformTM (elabBot newVarN)) tsPrimary
+
+	-- gather up all the vars from the field type.
+	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) 
+			$ freeVars tsPrimary_elab
+
+	-- Check for vars in the field type aren't params of the data type.
+	--	If they are effects or closures we can force them to be Bot with Pure / Empty fetters.
+	let fsField	= catMaybes 
+			$ map (checkTypeVar vs) $ Set.toList vsFree
+
 	-- The objType is the type of the constructed object.
-	--
  	let objType	= TData vData  
 			$ map (\v -> case Var.nameSpace v of
 					NameEffect	-> TVar KEffect  v
@@ -82,14 +105,55 @@ makeCtorType	(vData, vs)	  (name, fs)
 			$ vs
 
 	-- Constructors don't inspect their arguments.
-	let ?newVarN	= newVarN
+	let ?newVarN	=  newVarN
  	tCtor		<- elaborateCloT 
-			$  makeTFunEC (TBot KEffect) (TBot KClosure) (tsPrimary ++ [objType])
+			$  makeTFunEC (TBot KEffect) (TBot KClosure) (tsPrimary_elab ++ [objType])
 
-	let tQuant	= TForall (map (\v -> (v, defaultKindV v)) vs)
-			$ tCtor
+	let vks		= map (\v -> (v, defaultKindV v)) 
+			$ Var.sortForallVars 
+			$ Set.toList vsFree
 
-	return tQuant
+	let tQuant	= TForall vks (addFetters_front fsField tCtor)
+
+	return 	$ {- trace (pprStrPlain
+			$ "makeCtorType\n"
+			% "    vs              = " % vs			% "\n"
+			% "    tsPrimary       = " % tsPrimary		% "\n"
+			% "    tsPrimary_elab  = " % tsPrimary_elab	% "\n"
+			% "    vsFree          = " % vsFree             % "\n"
+			% "    fsField         = " % fsField		% "\n") -}
+			tQuant
+
+
+-- | Replace bottoms in this type with fresh variables.
+elabBot newVarN tt
+ = case tt of
+ 	TBot k	
+	 -> do	v	<- newVarN (spaceOfKind k)
+	 	return	$ TVar k v
+
+	_ ->	return tt
+
+
+checkTypeVar vs v
+	| elem v vs
+	= Nothing
+	
+	-- effect vars not present in the data type can be made pure
+	| Var.nameSpace v == NameEffect
+	= Just $ FConstraint primPure  [TVar KEffect v]
+	
+	-- closure vars not present in the data type can be made empty
+	| Var.nameSpace v == NameClosure
+	= Just $ FConstraint primEmpty [TVar KClosure v]
+	
+	| otherwise
+	= dieWithUserError
+		[ prettyPos v % "\n"
+		% "    Variable " % v % " is not present in the data type\n" ]
+	
+
+
 
 -----------------------
 -- Debugging

@@ -42,6 +42,7 @@ import Desugar.Project			(ProjTable)
 import qualified Desugar.Exp 		as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Desugar.Bits		as D
+import qualified Desugar.Slurp.Util	as D
 
 -----
 stage	= "Desugar.ToCore"
@@ -117,7 +118,7 @@ toCoreP	p
 		ctors'		<- mapM toCoreCtorDef ctors
 
 		let d		= C.PData v vs ctors'
-		let cs		= map (makeCtor primTObj v vs) ctors
+		cs		<- mapM (makeCtor primTObj v vs) ctors
 		return (d:cs)
 
 	D.PEffect _ v k
@@ -206,39 +207,29 @@ toCoreFieldDef	df
 		, S.dInit	= case S.dInit df of
 					Nothing			-> Nothing
 					Just (D.XVarInst _ v)	-> Just v }
-
+-- Make a constructor function
 makeCtor 
 	:: Var 
-	-> Var 
-	-> [Var] 
-	-> D.CtorDef Annot
-	-> C.Top
+	-> Var 			-- data type name
+	-> [Var] 		-- data type args
+	-> D.CtorDef Annot	-- the ctor definition
+	-> CoreM C.Top
 
-makeCtor    objVar dataVar ts (D.CtorDef _ ctorVar dataFields)
- = let
-	argTs	= map toCoreT
+makeCtor    objVar vData vsData (D.CtorDef _ ctorVar dataFields)
+ = do
+	let argTs	
+		= map toCoreT
 		$ map S.dType
 		$ filter (\df -> S.dPrimary df) 
 		$ dataFields
 
-	tv	= makeCtorTypeAVT argTs dataVar ts 
+	tv	<- liftM toCoreT 
+		$ D.makeCtorType newVarN vData vsData ctorVar dataFields
 
-	to	= C.unflattenFun (replicate (length argTs + 1) 
+	let to	= C.unflattenFun (replicate (length argTs + 1) 
 		$ (C.TData objVar []))
 
-   in   C.PCtor ctorVar tv to
-
--- | Build the type of a constructor
-makeCtorTypeAVT :: [C.Type] -> Var -> [Var] -> C.Type
-makeCtorTypeAVT    argTypes dataVar ts
-  	= foldl (\t v -> let Just k	= C.kindOfSpace (Var.nameSpace v)
-	                 in  C.TForall (C.BVar v) k t)
-		(C.unflattenFunE 
-			(argTypes ++ 
-				[C.TData dataVar 
-					(map (\v -> let Just k	= (C.kindOfSpace $ Var.nameSpace v)
-					 	    in  C.TVar k v) ts)]))
-		(reverse ts)
+	return	$ C.PCtor ctorVar tv to
 
 
 -- Stmt --------------------------------------------------------------------------------------------

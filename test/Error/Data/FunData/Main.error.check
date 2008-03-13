@@ -1,0 +1,10 @@
+./test/Error/Data/FunData/Main.ds:17:17
+    Cannot purify effect `System.Console.!Console'.
+
+              the use of: succP
+             with effect: System.Console.!Console
+                      at: ./test/Error/Data/FunData/Main.ds:17:17
+
+     conflicts with,
+              the use of: FunInt
+                      at: ./test/Error/Data/FunData/Main.ds:17:10

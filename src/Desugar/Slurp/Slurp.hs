@@ -269,8 +269,8 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 			$  mapM (slurpDataField sp vData cName) fieldDefs
 	
 	-- Build a constructor type from the data definition.
- 	ctorType	<- makeCtorType (vData, vs) (cNameT, fieldDefs')
-
+ 	ctorType	<- makeCtorType newVarN vData vs cNameT fieldDefs'
+	
 	-- Add the definition to the ctor table.
 	--	The slurper for pattern matching code will need these definitions later on.
 	addDef cNameT ctorType

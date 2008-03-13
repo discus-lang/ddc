@@ -221,7 +221,8 @@ checkContextF ff
 	 	[ primMutable,	primMutableT
 		, primConst,	primConstT
 		, primLazy, 	primDirect
-		, primPure,	primLazyH ]
+		, primPure,	primEmpty
+		, primLazyH ]
 	 -> addErrors
 	 	[ ErrorNoInstance
 			{ eClassVar		= vClass

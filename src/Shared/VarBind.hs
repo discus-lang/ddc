@@ -83,19 +83,20 @@ data VarBind
 	| EWriteT	-- :: * -> !
 	
 	-- Fetter constructors.
-	| FConst	-- :: % -> &
-	| FMutable	-- :: % -> &
-	| FLazy		-- :: % -> &
-	| FDirect	-- :: % -> &
+	| FConst	-- :: % -> +
+	| FMutable	-- :: % -> +
+	| FLazy		-- :: % -> +
+	| FDirect	-- :: % -> +
 
-	| FConstT	-- :: * -> &
-	| FMutableT	-- :: * -> &
-	| FDirectT	-- :: * -> &
+	| FConstT	-- :: * -> +
+	| FMutableT	-- :: * -> +
+	| FDirectT	-- :: * -> +
 
-	| FLazyT	-- :: * -> &
-	| FLazyH	-- :: * -> &,	head of object is in a lazy region.
+	| FLazyT	-- :: * -> +
+	| FLazyH	-- :: * -> +,	head of object is in a lazy region.
 	
-	| FPure		-- :: ! -> &
+	| FPure		-- :: ! -> +
+	| FEmpty	-- :: $ -> +
 	
 	| FProj		-- :: * -> * -> . -> +
 	

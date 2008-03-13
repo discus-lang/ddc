@@ -111,13 +111,3 @@ loadCloAnnot cc
 	 -> 	return	$ TBot KClosure
 
 
-{-
-attachBounds :: Type -> CoreM Type
-attachBounds tt
- = do	quantVars	<- gets coreQuantVars
-	let fsBound	= [ FMore v (T.toCoreT t)
-				| v		<- Set.toList $ freeVars tt
-				, (k, Just t)	<- Map.lookup v quantVars ]
-				
-	return	$ makeTFetters tt fsBound	
--}
