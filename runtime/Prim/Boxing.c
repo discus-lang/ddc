@@ -15,7 +15,7 @@
 
 // Box a string by creating a new heap object
 //	and copying these chars into it.
-Obj*	_boxString (Word8* str)
+Obj*	_boxString (Char8* str)
 {
 	UInt	len	= strlen (str) + 1;
 

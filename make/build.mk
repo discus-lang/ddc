@@ -1,17 +1,5 @@
-# -- BuildFlavour ------------------------------------------------------------------------
-# 
-# Options are:
-#    distro     - fastest at runtime.
-#    devel      - development compile (faster compiler build).
-#    devel_prof - development compile with profiling.
 
-BuildFlavour	= distro
-
-
-# ----------------------------------------------------------------------------------------
-# -- Environment -------------------------------------------------------------------------
-# what compiler to use
-GHC=ghc
+include make/config.mk
 
 # -- Language features -------------------------------------------------------------------
 # -- 	Enable these individually so we can keep an eye on what's being used.
@@ -35,6 +23,7 @@ GHC_LANGUAGE	:= \
 # -- Warnings ----------------------------------------------------------------------------
 # -- 	GHC warnings we compile with.
 # --	There's no point turning warnings on without -Werror.
+
 GHC_WARNINGS	:= \
 	-Werror \
 	-fwarn-deprecations \
@@ -61,29 +50,46 @@ GHC_WARNINGS	:= \
 #	-fwarn-tabs				# heresy!
 
 
-# -- Compile Flavours --------------------------------------------------------------------
+# -- Build Flavours --------------------------------------------------------------------
 
 # -- Distribution compile (fastest at runtime)
 ifeq "$(BuildFlavour)" "distro"
-GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 
-GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
-endif
+GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2
+GCC_FLAGS	:= -std=c99 -O3 -Wundef
 
 # -- Development Compile (fastest compile)
-ifeq "$(BuildFlavour)" "devel"
-GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot 
-GCC_FLAGS	:= -std=c99 -O3 -fPIC
-endif
+else ifeq "$(BuildFlavour)" "devel"
+GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot
+GCC_FLAGS	:= -std=c99 -O3
 
 # -- Profiling compile
-ifeq "$(BuildFlavour)" "devel_prof"
+else ifeq "$(BuildFlavour)" "devel_prof"
 GHC_FLAGS	:= -fglasgow-exts -tmpdir /tmp -O2 -prof -auto-all
-GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg -fPIC
-endif
+GCC_FLAGS	:= -std=c99 -Werror -Wundef -g -pg
 
 # -- For Haskell Program Coverage
-ifeq "$(BuildFlavour)" "devel_hpc"
+else ifeq "$(BuildFlavour)" "devel_hpc"
 GHC_FLAGS	:= -fglasgow-exts -fhpc -tmpdir /tmp 
-GCC_FLAGS	:= -std=c99 -O3 -Wundef -fPIC
+GCC_FLAGS	:= -std=c99 -O3 -Wundef
+
+else 
+all : $(error unknown BuildFlavour '$(BuildFlavour)')
 endif
 
+
+# -- Target setup -----------------------------------------------------------------------
+
+# -- Linux 
+ifeq "$(Target)" "linux-x86"
+GCC_FLAGS           += -fPIC
+BUILD_SHARED        := gcc -shared
+
+# -- Darwin
+else ifeq "$(Target)" "darwin-x86"
+GCC_FLAGS           += -fPIC 
+BUILD_SHARED        := gcc -dynamiclib -undefined dynamic_lookup
+
+else
+all : $(error unknown Target '$(Target)')
+
+endif

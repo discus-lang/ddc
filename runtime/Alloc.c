@@ -57,7 +57,7 @@ void	_allocCollect
 	_ddcProfileCollectorEnd();
 	_ddcProfileMutatorStart();
 #endif
-			
+	
 	
 	// Flip buffers
 	Word8*	tmp;

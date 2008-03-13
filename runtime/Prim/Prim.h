@@ -25,7 +25,7 @@ extern Obj*	_primFalse;
 // -- Boxing.c
 // -----------------------------------------------------------------------------
 
-Obj*	_boxString	(Word8 *s);
+Obj*	_boxString	(Char8 *s);
 Obj*	_boxRef		(Obj*  obj, void* field);
 
 String	_unboxString	(Obj*	obj);

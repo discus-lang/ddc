@@ -44,11 +44,13 @@ LIBRARY     = libtinyptc.a
 # Feel free to change this.
 PYTHON_VERSION = 2.2
 
+all : $(OTARGETS)
+
+
+
 $(EXECUTABLE): $(OTARGETS) $(COBJECTS) $(LIBRARY)
 	$(LD) $(LDFLAGS) $(OTARGETS) $(COBJECTS) $(AOBJECTS) $(LIBS) -o $(EXECUTABLE)
-	$(STRIP) --strip-all $(EXECUTABLE)
-	$(STRIP) --remove-section=".comment" $(EXECUTABLE)
-	$(STRIP) --remove-section=".note" $(EXECUTABLE)
+	$(STRIP) $(EXECUTABLE)
 
 $(LIBRARY): $(OTARGETS) $(AOBJECTS)
 	$(AR) cru $(LIBRARY) $(OTARGETS) $(AOBJECTS)

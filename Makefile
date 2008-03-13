@@ -26,12 +26,12 @@ include make/plate.mk
 bin/plate : tools/plate/Main.hs
 	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^ 
 
-
 # -- build the main compiler
 bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
 	$(GHC) $(GHC_FLAGS) -o bin/ddc $^ $(LIBS) -package unix -package mtl -package containers
 
+# -- generate boilerplate
 src/Source/Plate/Trans.hs : src/Source/Plate/Trans.hs-stub src/Source/Exp.hs bin/plate
 	@echo "* Generating boilerplate for $@"
 	bin/plate src/Source/Exp.hs src/Source/Plate/Trans.hs-stub src/Source/Plate/Trans.hs
@@ -57,7 +57,7 @@ runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 
 runtime/ddc-runtime.so : $(runtime_o)
 	@echo "* Linking $@"
-	gcc -shared -o $@ $^
+	$(BUILD_SHARED) -o $@ $^
 	@echo
 
 runtime/ddc-runtime.a  : $(runtime_o)
@@ -73,8 +73,6 @@ runtime : runtime/ddc-runtime.so runtime/ddc-runtime.a
 external :
 	@echo "* Building external libraries"
 	@cd external/TinyPTC-X11-0.7.3; make
-
-
 
 # -- build makefile deps
 .PHONY : deps

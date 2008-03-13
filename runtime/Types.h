@@ -25,6 +25,7 @@ typedef u_int64_t		UInt64;
 typedef float			Float32;
 typedef double			Float64;
 
+typedef char			Char8;
 typedef u_int32_t		Char32;		
 
 typedef char*			String;

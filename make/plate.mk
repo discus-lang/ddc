@@ -1,26 +1,8 @@
 
 #---- global defs
-GHC_INCDIRS 	= $(patsubst %,-i../%/src,$(MODULES))
-GHC_INCOBJS	= $(foreach module,$(MODULES),$(shell cat ../$(module)/lib/libH$(module).so.objs))
-GHC_INCLIBS	= $(foreach module,$(MODULES),../$(module)/lib/libH$(module).so)
-
-#---- stumpy
-src_hss		= $(shell find src -name "*.hss" -follow)
-
-src_stubHS_hs	= $(patsubst %.hss,%.hs,$(src_hss))
-
-src_stubC_c	= $(patsubst %.hss,%.stubC.c,$(src_hss))
-src_stubC_h	= $(patsubst %.hss,%.stubC.h,$(src_hss))
-
-.PRECIOUS	: $(src_stubHS_hs)
-.PRECIOUS	: $(src_stubC_c)
-
-
-%.hs %.stubC.c : %.hss
-	@echo "* Preprocessing $<"
-	$(stumpy) $<
-	@echo
-
+GHC_INCDIRS  = $(patsubst %,-i../%/src,$(MODULES))
+GHC_INCOBJS  = $(foreach module,$(MODULES),$(shell cat ../$(module)/lib/libH$(module).so.objs))
+GHC_INCLIBS  = $(foreach module,$(MODULES),../$(module)/lib/libH$(module).so)
 
 #---- alex
 src_alex_x	=  $(shell find src -name "*.x" -follow)
@@ -55,21 +37,16 @@ src_hs		+= $(src_happy_hs)
 	@true
 
 
-%.o : stubH = $(wildcard $(patsubst %.hs,%.stubC.h,$<))
+# -- compile Haskell source
 %.o : %.hs
 	@echo "* Compiling $<"
-
-	$(if $(stubH),								\
-		$(GHC) $(GHC_FLAGS) -isrc  $(GHC_INCDIRS) -c $< -#include $(stubH),	\
-		$(GHC) $(GHC_FLAGS) -isrc  $(GHC_INCDIRS) -c $<		\
-	 )	
-
+	$(GHC) $(GHC_FLAGS) -isrc $(GHC_INCDIRS) -c $<
 	@echo
 
-# %.o-boot
+# -- compile Haskell boot 
 %.hi-boot : %.hs-boot %.o-boot
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) -c $< -isrc $(GHC_INCDIRS)
+	@$(GHC) $(GHC_FLAGS) -isrc $(GHC_INCDIRS) -c $< 
 	@echo
 
 
@@ -93,7 +70,6 @@ src_c		+= $(src_stubC_c)
 obj		=  $(patsubst %.hs,%.o,$(src_hs_there))
 obj		+= $(patsubst %.c,%.o,$(src_c))
 
-# currentDir	=  $(shell pwd)
 obj_relName 	=  $(foreach o,$(obj),../$(MODULE)/$(o))
 
 

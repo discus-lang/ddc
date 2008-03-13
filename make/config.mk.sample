@@ -1,0 +1,14 @@
+
+Target			= darwin-x86
+BuildFlavour	= distro
+GHC				= ghc
+
+# Target: Set the target architecture
+#    linux-x86
+#    darwin-x86
+
+# BuildFlavour: Set the optimisations to enable when compiling the compiler
+#     distro     - fastest at runtime.
+#     devel      - development compile (faster compiler build).
+#     devel_prof - development compile with profiling.
+

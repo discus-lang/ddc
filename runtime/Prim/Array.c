@@ -12,8 +12,7 @@
 #include <stdio.h>
 
 // Should be defined in Base/Exception.ts
-Obj*	Control_Exception_ExceptionArrayBounds (Obj* size, Obj* index);
-
+extern Obj* Control_Exception_ExceptionArrayBounds (Obj* size, Obj* index);
 
 // -- new
 Obj*	primArray_new_unsafe_noInit
