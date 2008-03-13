@@ -70,7 +70,10 @@ staticRsDataT tt
 	TMask KClosure t1 t2	-> staticRsDataT t1
 	TMask{}			-> Set.empty
 
+	-- TODO: we're assuming that all args are tangible. This isn't strictly
+	--       correct but shouldn't hurt us too much.
  	TData v ts		-> Set.unions $ map staticRsDataT ts
+
 	TFun{}			-> Set.empty
 	TFetters fs t		-> staticRsDataT t
 	TForall vks t		-> staticRsDataT t
@@ -93,8 +96,6 @@ staticRsDataT tt
 --	constructor(s) are being shared with the caller. These functions
 --	did not allocate those regions, so they be can't generalised here.
 --
---	BUGS: handle functions in data
---
 staticRsClosureT
 	:: Type -> Set Type
 
@@ -102,5 +103,8 @@ staticRsClosureT t
  = case t of
 	TFetters fs t		-> staticRsClosureT t
  	TFun t1 t2 eff clo	-> staticRsDataT clo
+
+	-- TODO: we're assuming that all args are tangible. This isn't strictly
+	--       correct but shoudn't hurt us too much.
 	TData v ts		-> Set.unions $ map staticRsClosureT ts
 	_ 			-> Set.empty

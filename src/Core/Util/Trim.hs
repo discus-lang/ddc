@@ -31,8 +31,6 @@ trace ss x
 -----
 stage	= "Core.Util.Trim"
 
-
-	
 -- | Trim the closure portion of this type
 trimClosureT :: Type -> Type
 trimClosureT tt = {-# SCC "trimClosureT" #-} trimClosureT2 tt
@@ -48,20 +46,7 @@ trimClosureT' tt
  	TFetters t fs	
 	 -> makeTFetters t (catMaybes $ map (trimClosureT_f Set.empty Set.empty) fs)
 
-{-	 	let	vsBound	= Set.fromList
-	 		$ catMaybes 
-			$ map takeBoundVarF fs
-
-	    in -}	
-
 	_		-> tt
-
-{-
-takeBoundVarF ff
- = case ff of
- 	FWhere v _	-> Just v
-	FMore  v _	-> Just v
--}
 	
 -- | Trim the closure in this binding
 --	where the binding was on a type
@@ -226,8 +211,11 @@ trimClosureC_t quant rsData tt
 	TBot{}		-> []
 	TTop{}		-> [tt]
 
-	-- BUGS: we need to look at the data definiton to work out what parts of 
-	--	this actually hold values.
+	-- TODO: We don't know if which of these type are actually tangible data, so we have
+	--       to assume they all are. If a type is only used as the parameter/return of a
+	--       function then we could trim it out here, but it shouldn't hurt too much to 
+	--       leave it in. (it's always safe to _increase_ the closure)
+	--
 	TData v ts	-> catMap down ts
 
 	-- An object of type (t1 -($c1)> t2) does not contain a value of 
