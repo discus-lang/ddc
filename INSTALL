@@ -4,9 +4,9 @@
 
   0) You will need working copies of GHC (at least 6.8.1) and GCC installed.
 
-  1) Make a local copy of the build file.
+  1) Make a local copy of the build config file.
 
-     $ cp make/build.mk.sample make/build.mk
+     $ cp make/config.mk.sample make/config.mk
     
   2) Build the compiler, runtime system and external libraries.
   
