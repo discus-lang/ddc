@@ -21,6 +21,4 @@ static inline Obj*	_allocThunk		(FunPtr	func,	UInt airity,	UInt args);
 static inline Obj*	_allocSusp		(Obj*	thunk,	UInt args);
 static inline Thunk*	_copyThunk		(Thunk*	thunk);
 
-
-
 #endif

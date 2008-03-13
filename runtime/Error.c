@@ -19,7 +19,7 @@ void	_deathCase (const char* moduleName, Int32 line, Int32 column)
 
 	primException_throw 
 		(Control_Exception_ExceptionCaseNoMatch 
-			( _boxString 	((Word8*)moduleName)
+			( _boxString 	((Char8*)moduleName)
 			, _boxInt32	(line)
 			, _boxInt32	(column)));
 
