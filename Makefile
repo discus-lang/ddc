@@ -78,7 +78,7 @@ runtime_c = \
 runtime_dep	= $(patsubst %.c,%.dep,$(runtime_c))
 runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 
-runtime/libddc-runtime.so : $(runtime_o)
+runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
 	@echo "* Linking $@"
 	$(BUILD_SHARED) -o $@ $^
 	@echo
@@ -89,7 +89,7 @@ runtime/libddc-runtime.a  : $(runtime_o)
 	@echo
 
 .PHONY  : runtime
-runtime : runtime/libddc-runtime.so runtime/libddc-runtime.a
+runtime : runtime/libddc-runtime.$(SHARED_SUFFIX) runtime/libddc-runtime.a
 
 # -- build external libraries
 .PHONY	: external
@@ -141,6 +141,7 @@ cleanRuntime :
 		    	-name "*.o" \
 		-o	-name "*.dep" \
 		-o	-name "*.so" \
+		-o  -name "*.dylib" \
 		-o	-name "*.a" \
 		-follow | xargs -n 1 rm -f
 	@echo		
@@ -189,6 +190,7 @@ clean  : cleanWar cleanRuntime
 	@find . \
 			-name "*.o" \
 		-o	-name "*.so" \
+		-o  -name "*.dylib" \
 		-o	-name "*.hi" \
 		-o	-name "*.hi-boot" \
 		-o	-name "*.hcr" \

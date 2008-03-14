@@ -83,11 +83,13 @@ endif
 ifeq "$(Target)" "linux-x86"
 GCC_FLAGS           += -fPIC
 BUILD_SHARED        := gcc -shared
+SHARED_SUFFIX       := so
 
 # -- Darwin
 else ifeq "$(Target)" "darwin-x86"
 GCC_FLAGS           += -fPIC 
 BUILD_SHARED        := gcc -dynamiclib -undefined dynamic_lookup
+SHARED_SUFFIX       := dylib
 
 else
 all : $(error "Unknown Target '$(Target)'. Set this in make/config.mk")

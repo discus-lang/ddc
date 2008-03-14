@@ -39,6 +39,8 @@ import Main.Dump			as SD
 import Main.Invoke
 import Main.Setup
 
+import qualified Config.Config		as Config
+
 import Source.Slurp			as S
 
 import qualified Source.Pragma		as Pragma
@@ -103,7 +105,7 @@ compileFile setupCmd fileName_
 	
 	mPathRuntime	<- liftM (liftM fst)
 			$  SI.findFile pathRuntime_test
-			$ "libddc-runtime.so"
+			$ "libddc-runtime." ++ Config.extSharedObject 
 
 	-- normalise the source file name
 	let fileName

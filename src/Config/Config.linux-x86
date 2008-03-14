@@ -6,9 +6,6 @@ module Config.Config where
 
 import Main.Arg
 
--- The extension to use for a shared object
-extSharedObject
-	= "dylib"
 
 -- | The system command to compile a Sea source file.
 makeSeaCompileCmd
@@ -77,7 +74,7 @@ makeLinkCmd
 					
 	++ (if elem StaticRuntime args 
 		then " " ++ pathRuntime ++ "/libddc-runtime.a"
-		else " " ++ pathRuntime ++ "/libddc-runtime.dylib")
+		else " " ++ pathRuntime ++ "/libddc-runtime.so")
 
 	++ " -lm"
 
