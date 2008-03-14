@@ -6,6 +6,9 @@ module Config.Config where
 
 import Main.Arg
 
+-- The extension to use for a shared object
+extSharedObject
+	= "dylib"
 
 -- | The system command to compile a Sea source file.
 makeSeaCompileCmd
