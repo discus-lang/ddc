@@ -1,32 +1,63 @@
 --------------------------------------------------------------------------------
-  The Disciplined Disciple Compiler          
+  The Disciplined Disciple Compiler: Build and installation instructions.
 --------------------------------------------------------------------------------
 
   0) You will need working copies of GHC (at least 6.8.1) and GCC installed.
 
-  1) Make a local copy of the build config file.
+
+  1) Download the source.
+
+     Either:
+      a) grab the source tarball from http://code.google.com/p/disciple
+     
+      b) or use darcs to get the head branch:
+
+          $ darcs get http://code.haskell.org/~benl/disciple-HEAD
+
+      
+  2) Make a local copy of the build config file.
 
      $ cp make/config.mk.sample make/config.mk
+
     
-  2) Build the compiler, runtime system and external libraries.
+  3) Edit this make/config.mk file to set your target system.
+
+    
+  4) Build the compiler, runtime system and external libraries.
   
      $ make
+
      
-  3) Build the libraries and run the test code (with optimisations enabled)
+  5) Build the ddc libraries and run the test code (with optimisations enabled)
   
      $ bin/war -ddc O
+
      
-  4) Copy the compiler binary to your ~/bin dir 
+  6) Copy the compiler binary to your ~/bin dir 
       (where ~/bin is in your PATH)
   
-     $ cp bin/ddc ~/bin
+     $ mkdir ~/bin
+     $ cp bin/ddc ~/bin/ddc.real
 
-  5) Create an alias to give ddc the path to its libraries and runtime.
+
+  7) For Mac OS X: Copy the runtime library to your ~/lib dir
+     
+     $ mkdir ~/lib
+     $ cp runtime/libddc-runtime.so ~/lib
+
+
+  8) Create an alias to give ddc the path to its libraries and runtime.
       (You'll probably want to add this to your .profile, or similar)
   
      $ alias ddc='ddc -basedir $(DDC_BUILD)'
 
+
+  9) Compile and run your first program
+  
+     $ echo 'main () = println "Hello world"' > Main.ds
+     $ ddc -make Main.ds -o hello
+     $ ./hello
+
 --------------------------------------------------------------------------------
     see doc/HACKING for more info or go to http://code.google.com/p/disciple
 --------------------------------------------------------------------------------
-     

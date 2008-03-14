@@ -16,7 +16,7 @@
 #       churn           -- run the churner for a while
 
 # -- build everything
-all	: bin/ddc bin/war bin/churn runtime external
+all	: src/Config/Config.hs bin/ddc bin/war bin/churn runtime external
 
 include make/build.mk
 include make/plate.mk

@@ -10,6 +10,6 @@ main ()
 	x		= (+) @ intConst 6
 	result		= intMutable == intConst
 	
-	print $ show result % "\n"
+	print $ show result % " " % show x % "\n"
 
 

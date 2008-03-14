@@ -15,7 +15,7 @@ main ()
  = do {	
  	ralph		= Gibbon  "Ralph";
 	mary		= Unicorn "Mary";
-	gertrude	= Unicorn "Gertrude";
+--	gertrude	= Unicorn "Gertrude";
 --	animals		= [ralph, mary, gertrude];	
 	
 	snacks		= [Nachos, Flowers, Grass];

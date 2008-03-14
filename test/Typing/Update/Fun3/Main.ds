@@ -40,5 +40,5 @@ testBox2 ()
 
 -- | Call the tests
 main () 
- = do 	dude3	= testBox2 ()
+ = do 	testBox2 ()
 	()
