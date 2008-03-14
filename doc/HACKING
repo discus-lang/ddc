@@ -5,10 +5,8 @@
             Alex   http://www.haskell.org/alex
        and  Happy  http://www.haskell.org/happy
 
-
   * Build Flavours
-    Set 'BuildFlavour' in make/build.mk file to 'devel' for faster builds.
-
+    Set 'BuildFlavour' in make/config.mk file to 'devel' for faster builds.
 
   * Building
     Use the bin/ddc make target to avoid trying to recompile the runtime system
@@ -16,16 +14,13 @@
      
      > make bin/ddc
 
-
   * Dumping code at a particular stage.
   
      > bin/ddc -help dump
      > bin/ddc -c library/Data/List.ds -no-implicit-prelude -dump-core-prim
      > $(EDIT) library/Data/List.dump-core-prim.dc
 
-
   * Syntax highlighting
-
     Syntax highlighting makes a BIG difference when trying to read the core files.
     Set your editor to detect the sort of variable and set the color accordingly.
 
@@ -50,7 +45,6 @@
 	 throw try catch with 
 
        Symbols and Parens (also set to white)
-
 
   * Running tests
     
