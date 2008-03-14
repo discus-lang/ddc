@@ -4,7 +4,6 @@
 
   0) You will need working copies of GHC (at least 6.8.1) and GCC installed.
 
-
   1) Download the source.
 
      Either:
@@ -13,44 +12,36 @@
       b) or use darcs to get the head branch:
 
           $ darcs get http://code.haskell.org/~benl/disciple-HEAD
-
       
   2) Make a local copy of the build config file.
 
      $ cp make/config.mk.sample make/config.mk
-
     
   3) Edit this make/config.mk file to set your target system.
-
     
   4) Build the compiler, runtime system and external libraries.
   
      $ make
 
-     
   5) Build the ddc libraries and run the test code (with optimisations enabled)
   
      $ bin/war -ddc O
 
-     
   6) Copy the compiler binary to your ~/bin dir 
       (where ~/bin is in your PATH)
   
      $ mkdir ~/bin
      $ cp bin/ddc ~/bin/ddc.real
 
-
   7) For Mac OS X: Copy the runtime library to your ~/lib dir
      
      $ mkdir ~/lib
-     $ cp runtime/libddc-runtime.so ~/lib
+     $ cp runtime/libddc-runtime.dylib ~/lib
 
-
-  8) Create an alias to give ddc the path to its libraries and runtime.
+  8) Create an alias to give ddc the path to its libraries and (static) runtime.
       (You'll probably want to add this to your .profile, or similar)
   
-     $ alias ddc='ddc -basedir $(DDC_BUILD)'
-
+     $ alias ddc='~/bin/ddc.real -basedir $(DDC_BUILD)'
 
   9) Compile and run your first program
   

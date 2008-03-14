@@ -66,6 +66,7 @@ makeLinkCmd
 
 	= "gcc"
 	++ " -std=c99"
+	++ " -dead_strip"
 	
 	++ " -o " ++ outFile
 
