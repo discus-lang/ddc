@@ -325,15 +325,16 @@ compileFile_parse
 	hKinds		<- SS.sourceKinds (sDefixed ++ hRenamed)
 	
 	-- Rename aliased instance functions
-	--	and change main() to traumaMain()
+	--	and change main() to ddcMain()
 	sAliased	<- SS.alias sDefixed
 
 	-- Desugar the source language
-	(sDesugared, hDesugared)
+	(hDesugared, sDesugared)
 			<- SS.desugar
+				"SD"
 				hKinds
-				sAliased
 				hRenamed
+				sAliased
 
 	-- Snip down dictionaries and add default projections.
 	(dProject, projTable)	

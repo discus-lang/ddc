@@ -24,24 +24,24 @@ infix  5 <, <=, >=, > ;
 -- Class dictionaries
 
 -- Class instances
-instance Copy (Base.Int %rSDt100) where
+instance Copy (Base.Int %rSD161) where
 {
         copy     = Data.Int.instance_Copy_Int_copy;
 }
 
-instance Updatable (Base.Int %rSDt101) where
+instance Updatable (Base.Int %rSD162) where
 {
         (:=)     = Data.Int.primInt32_update;
 }
 
-instance Eq (Base.Int %rSDt102) where
+instance Eq (Base.Int %rSD163) where
 {
         (==)     = Data.Int.primInt32_eq;
         
         (/=)     = Data.Int.primInt32_neq;
 }
 
-instance Ord (Base.Int %rSDt103) where
+instance Ord (Base.Int %rSD164) where
 {
         (>)      = Data.Int.primInt32_gt;
         
@@ -52,7 +52,7 @@ instance Ord (Base.Int %rSDt103) where
         (<=)     = Data.Int.primInt32_le;
 }
 
-instance Num (Base.Int %rSDt104) where
+instance Num (Base.Int %rSD165) where
 {
         (+)      = Data.Int.primInt32_add;
         
@@ -67,7 +67,7 @@ instance Num (Base.Int %rSDt104) where
         negate   = Data.Int.primInt32_neg;
 }
 
-instance Accum (Base.Int %rSDt105) where
+instance Accum (Base.Int %rSD166) where
 {
         (+=)     = Data.Int.instance_Accum_Int_PsEq;
 }

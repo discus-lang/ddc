@@ -5,6 +5,11 @@
 -- Infix
 
 -- Data
+data Fruit
+        = Apple
+        
+        | Orange;
+
 data Foo a
         = FooInt {
                 Base.Int;
@@ -18,10 +23,10 @@ data Foo a
                 a -> a;
         };
 
-data Fruit
-        = Apple
-        
-        | Orange;
+data Bar a
+        = BarFoo {
+                Main.Foo a;
+        };
 
 
 -- Effects
@@ -39,17 +44,17 @@ data Fruit
 -- Binds
 foreign import extern fi
         :: forall t0
-        .  Foo %rTS0 t0 %rTS1 %rTS2
+        .  Foo %rTS0 t0
         :$ Base.Data;
         
 foreign import extern ff
         :: forall t0
-        .  Foo %rTS3 t0 %rTS4 %rTS5
+        .  Foo %rTS1 t0
         :$ Base.Data;
         
 foreign import extern ffun
-        :: Foo %rTS6 (Base.Int %rTS12) %rTS7 %rTS8
-        :- Base.Const %rTS12
+        :: Foo %rTS2 (Base.Int %rTS6)
+        :- Base.Const %rTS6
         :$ Base.Data;
         
 foreign import extern succ

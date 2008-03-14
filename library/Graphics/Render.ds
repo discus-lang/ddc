@@ -5,68 +5,56 @@ import Math.Matrix.Matrix33;
 
 import Data.List;
 
------
--- renderPrims
---
+-- | render some primitives in this frame
+renderPrims :: Frame -> [(Matrix33, Primitive)] -> [Primitive] -> ()
 renderPrims frame ctmStack prims
- 	= foldl (renderPrim frame)
+ = do	foldl (renderPrim frame)
 		ctmStack
-		prims;
+		prims
+	()
 
 renderPrim frame ((ctm, co) : cs) prim
- = case prim of {
-	Prims ps	
-	 -> 	foldl	(renderPrim frame) 
-	 		(Cons (ctm, co) cs) 
-			ps;
+ = case prim of 
+	Prims ps
+	 -> 	foldl	(renderPrim frame)
+	 		(Cons (ctm, co) cs)
+			ps
 
 	-- Shapes
  	Line{}	
-	 -> do {
-	 	line'	= transformLine ctm prim;
-		renderLine frame co line'; 
-		Cons (ctm, co) cs;
-	 };
+	 -> do 	line'	= transformLine ctm prim
+		renderLine frame co line'
+		Cons (ctm, co) cs
 
 	-- Transforms
  	Translate dx dy	
-	 -> do {
-	 	ctm'	= ctm.mul (translate&{Matrix33} dx dy);
-		Cons (ctm', co) cs;
-	 };
+	 -> do 	ctm'	= ctm.mul (translate&{Matrix33} dx dy)
+		Cons (ctm', co) cs
 
-	Rotate	  theta	
-	 -> do {
-	 	ctm'	= ctm.mul (rotate&{Matrix33} theta);
-		Cons (ctm', co) cs;
-	 };
+	Rotate theta	
+	 -> do 	ctm'	= ctm.mul (rotate&{Matrix33} theta);
+		Cons (ctm', co) cs
 
-	Scale     x  y	
-	 -> do {
-	 	ctm'	= ctm.mul (scale&{Matrix33} x y);
-		Cons (ctm', co) cs;
-	 };
+	Scale x  y	
+	 -> do 	ctm'	= ctm.mul (scale&{Matrix33} x y)
+		Cons (ctm', co) cs
 
 	-- Color
 	Color{}
-	 -> 	Cons (ctm, prim) cs;
+	 -> 	Cons (ctm, prim) cs
 
 	-- Stack
 	Local ps
 	 ->	foldl	(renderPrim frame)
 			(Cons (ctm, co) cs)
-			[ Push
-			, Prims ps
-			, Pop ];
+			[ Push, Prims ps, Pop ]
 
-	Push		-> Cons (ctm, co) (Cons (ctm, co) cs);
-	Pop		-> cs;
-
- };
+	Push		-> Cons (ctm, co) (Cons (ctm, co) cs)
+	Pop		-> cs
 
 
--- line
-renderLine :: Frame -> Primitive -> Primitive -> ();
+-- render a line in this frame
+renderLine :: Frame -> Primitive -> Primitive -> ()
 renderLine frame
 	(Color r g b)
 	(Line (Point x0 y0) (Point x1 y1))
@@ -76,17 +64,15 @@ renderLine frame
 		(truncate y0)
 		(truncate x1)
 		(truncate y1)
-		(frame_color r g b);
+		(frame_color r g b)
 
 
-transformLine :: Matrix33 -> Primitive -> Primitive;
+transformLine :: Matrix33 -> Primitive -> Primitive
 transformLine ctm
 	(Line (Point x0 y0) (Point x1 y1))
- = do {
- 	p0'	= ctm.mulVec (Vector3 x0 y0 1.0);
-	p1'	= ctm.mulVec (Vector3 x1 y1 1.0);
+ = do 
+ 	p0'	= ctm.mulVec (Vector3 x0 y0 1.0)
+	p1'	= ctm.mulVec (Vector3 x1 y1 1.0)
 	
-	Line (Point p0'.x p0'.y) (Point p1'.x p1'.y);
- };
-
+	Line (Point p0'.x p0'.y) (Point p1'.x p1'.y)
 

@@ -226,26 +226,27 @@ alias sTree
 desugar
 	:: (?args :: [Arg])
 	-> (?pathSourceBase :: FilePath)
+	-> String			-- unique
 	-> [(Var, Kind)]		-- kind table
-	-> Tree	SourcePos		-- source tree
 	-> Tree	SourcePos		-- header tree
+	-> Tree	SourcePos		-- source tree
 	-> IO 	( D.Tree SourcePos
 		, D.Tree SourcePos)
 	
-desugar	kinds sTree hTree
+desugar unique kinds hTree sTree
  = do
-	let kindMap	= Map.fromList kinds
-	let sTree'	= rewriteTree "SDt" kindMap sTree
-	let hTree'	= rewriteTree "SDh" kindMap hTree
+	let kindMap		= Map.fromList kinds
+	let (hTree', sTree')	= rewriteTree unique kindMap hTree sTree
 			
 	-- dump
+	dumpST DumpDesugar "desugar--header" 
+		(map (D.transformN $ \a -> (Nothing :: Maybe ())) hTree')
+
 	dumpST DumpDesugar "desugar--source" 
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sTree')
 
-	dumpST DumpDesugar "desugar--header" 
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) hTree')
 		
-	return	(sTree', hTree')
+	return	(hTree', sTree')
 
 
 -----------------------

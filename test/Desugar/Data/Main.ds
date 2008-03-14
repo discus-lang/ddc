@@ -1,9 +1,15 @@
 
+-- the primary region should be added to this one
+data Fruit
+	= Apple
+	| Orange
 
+-- should add primary and regions for Int and Float
 data Foo a
 	= FooInt   Int
 	| FooFloat Float
 	| FooFun   (a -> a)
+
 
 fi	= FooInt   5
 ff	= FooFloat 5.0
@@ -11,9 +17,10 @@ ff	= FooFloat 5.0
 succ x	= x + 1
 ffun	= FooFun succ
 	
-data Fruit
-	= Apple
-	| Orange
+
+data Bar a
+	= BarFoo (Foo a)
+
 	
 main ()
  = do	()

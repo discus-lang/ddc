@@ -1,45 +1,53 @@
 
-import Prelude;
+import Prelude
 
------
-data Point %r1
-	= Point 	(Float %r1) (Float %r1);
+-- A point on the 2D plane
+data Point
+	= Point Float Float
 
-showPoint (Point x y)
-	= "Point " % show x % " " % show y;
+instance Show Point where
+ show (Point x y)	= "Point " % show x % " " % show y
 
------
-data Vector2 %r1
-	= Vector2 	(Float %r1) (Float %r1);
+-- A vector
+data Vector2 
+	= Vector2 Float Float
 
 
------
-data Primitive %r1
-	= Prims (List %r1 (Primitive %r1))
+-- A graphics primimitive
+data Primitive %r
 
-	-- Shapes
+	-- more primitives
+	= Prims (List (Primitive %r))
+
+	-- a line
 	| Line {
-		p1	:: Point %r1;
-		p2	:: Point %r1;
+		p1	:: Point;
+		p2	:: Point;
 	}
 
-	-- Transforms
-	| Translate	(Float %r1) (Float %r1)
-	| Rotate	(Float %r1) 
-	| Scale		(Float %r1) (Float %r1)
+	-- transforms ----------------------
+	-- translate the current ctm
+	| Translate	Float Float		
+
+	-- rotate the current ctm
+	| Rotate	Float			
 	
-	-- Colors
-	| Color		(Int %r1) (Int %r1) (Int %r1)
-	
-	-- Stack
-	| Local 	(List %r1 (Primitive %r1))
+	-- scale the current ctm
+	| Scale		Float Float
+
+	-- ctm stack management -----------
+	-- some primitives with a local ctm
+	| Local 	(List (Primitive %r))	
+
+	-- push / pop members from the ctm stack
 	| Push
-	| Pop;
-
-
-
-showLine (Line p1 p2)
-	= "Line (" % showPoint p1 % ") (" % showPoint p2 % ")";
-
-
+	| Pop
 	
+	-- set the current color
+	| Color		Int Int Int
+
+-- yawn
+instance Show Primitive where
+ show (Line p1 p2)	= "Line (" % show p1 % ") (" % show p2 % ")";
+
+

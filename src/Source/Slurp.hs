@@ -65,14 +65,6 @@ slurpKinds tree
 		PData   sp v vs fs	-> Just (v, makeDataKind vs)
 		_			-> Nothing)
 	$ tree
-	
-makeDataKind vs
- 	= foldl (flip KFun) KData 
-	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
-	$ reverse vs
-
-
-
 
 -----
 -- slurpTopNames

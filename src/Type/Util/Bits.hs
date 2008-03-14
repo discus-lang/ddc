@@ -23,9 +23,9 @@ module Type.Util.Bits
 	, makeOpTypeT 
 	, makeTVar
 	, takeCidOfTClass
-	, slurpVarsRD)
-
-
+	, slurpVarsRD
+	
+	, makeDataKind)
 
 where
 
@@ -378,3 +378,11 @@ slurpVarsRD' tt
 
 	_ 	-> panic stage
 		$  "slurpVarsRD: no match for " % tt % "\n"
+
+
+-- Make a kind from the parameters to a data type
+makeDataKind :: [Var] -> Kind
+makeDataKind vs
+ 	= foldl (flip KFun) KData 
+	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
+	$ reverse vs

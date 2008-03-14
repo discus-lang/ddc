@@ -37,7 +37,7 @@ foreign import extern addMe
         :: forall %r0 %r1 %r2 %r3 %r4 %r5 %r6 %r7 %r8 %r9 %r10 %r11 %r12 %r13 %r14
         .  Data.Tuple.Tuple2 %r9 (Base.Int %r0) (Data.List.List %r10 (Data.Tuple.Tuple2 %r11 (Base.Int %r1) (Base.Int %r2))) -> Data.Tuple.Tuple3 %r12 (Data.Tuple.Tuple2 %r14 (Base.Int %r3) (Base.Int %r4)) (Base.Int %r5) (Data.Tuple.Tuple2 %r13 (Base.Int %r6) (Base.Int %r7)) -(!e0 $c0)> Base.Int %r8
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r3; Base.!Read %r4; Base.!Read %r5; Base.!Read %r6; Base.!Read %r7; Base.!Read %r9; Base.!Read %r10; Base.!Read %r11; Base.!Read %r12; Base.!Read %r13; Base.!Read %r14}
-        ,  $c0        = ${xSDt15 : %r9; xSDt15 : %r0; xSDt15 : %r10; xSDt15 : %r11; xSDt15 : %r1; xSDt15 : %r2}
+        ,  $c0        = ${xSD506 : %r9; xSD506 : %r0; xSD506 : %r10; xSD506 : %r11; xSD506 : %r1; xSD506 : %r2}
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern sumTuples

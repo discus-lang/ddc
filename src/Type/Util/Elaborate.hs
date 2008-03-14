@@ -58,7 +58,7 @@ elaborateT t
  = do	
  	-- elaborate regions
  	(tRegions, vksRsConst, vksRsMutable)	
- 			<- elaborateRegionsT' t
+ 			<- elaborateRegionsT (?newVarN NameRegion) ?getKind t
 
 	-- if the type is a function then elaborate its closure and effect as well.
 	case tRegions of
@@ -79,15 +79,15 @@ elaborateT t
 --
 elaborateRegionsT
 	:: Monad m
-	=> (NameSpace -> m Var)	-- ^ fn to create new vars
+	=> (m Var)		-- ^ A compuation to generate a fresh region var
 	-> (Var -> m Kind)	-- ^ fn to get kind of type ctor
 	-> Type 		-- ^ the type to elaborate
 	-> m ( Type		-- new type
 	     , [(Var, Kind)]	-- extra constant regions
 	     , [(Var, Kind)])	-- extra mutable regions
 
-elaborateRegionsT newVarN getKind tt
- = let	?newVarN	= newVarN
+elaborateRegionsT newVar getKind tt
+ = let	?newVar		= newVar
  	?getKind	= getKind
    in	elaborateRegionsT' tt
 
@@ -150,6 +150,10 @@ elaborateRegionsT2 tt
 	--	to the right kind.
 	| TData v ts		<- tt
 	= do	kind		<- ?getKind v
+
+		trace ("elaborateRegionsT: " % v % " :: " % kind % "\n")
+			$ return ()
+		
 		(ts2, vks2)	<- elabRs ts kind
 		(ts3, vksC3, vksM3, fs3)	
 				<- liftM unzip4 $ mapM elaborateRegionsT2 ts2
@@ -164,7 +168,7 @@ elaborateRegionsT2 tt
 --	so the reconstructed ctor with these args will have this kind.
 --
 elabRs 	:: Monad m
-	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to create new vars
+	=> (?newVar  :: m Var)			-- ^ fn to create new region vars
 	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
 	-> [Type]				-- ^ ctor args
 	-> Kind					-- ^ kind to turn the ctor into
@@ -172,8 +176,8 @@ elabRs 	:: Monad m
 	     , [(Var, Kind)])	-- added vars
 
 elabRs args kind
- = trace ("elabRs: " % args % " " % kind % "\n")
- $ do	(args', vks)	<- elabRs2 args kind
+-- = trace ("elabRs: " % args % " " % kind % "\n")
+  = do	(args', vks)	<- elabRs2 args kind
  	return	(args', nub vks)
 
 elabRs2 [] KData
@@ -182,7 +186,7 @@ elabRs2 [] KData
 elabRs2 [] (KFun k1 k2)
 	| KRegion		<- k1
 	= do	(ts', vks')	<- elabRs2 [] k2
-		vR		<- ?newVarN NameRegion
+		vR		<- ?newVar
 		return		( TVar KRegion vR : ts'
 				, (vR, KRegion) : vks')
 
@@ -199,7 +203,7 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 	| KRegion		<- k1
 	, k			<- let Just k = takeKindOfType t in k
 	, k /= KRegion
-	= do	vR		<- ?newVarN NameRegion
+	= do	vR		<- ?newVar
 
 		(tt', vksMore)	<- elabRs2 
 					(TVar KRegion vR : t : ts) 

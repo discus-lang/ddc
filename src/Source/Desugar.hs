@@ -56,27 +56,30 @@ stage	= "Source.Desugar"
 
 -----
 rewriteTree 
-	:: String
-	-> Map Var Kind
-	-> (S.Tree SourcePos)
-	-> D.Tree Annot
+	:: String		-- unique id
+	-> Map Var Kind		-- kind table
+	-> S.Tree SourcePos	-- header tree
+	-> S.Tree SourcePos	-- source tree
 
-rewriteTree unique kindMap tree
- 	= evalState (rewriteTreeM tree)
+	-> ( D.Tree Annot	-- desugared header tree
+	   , D.Tree Annot)	-- desugared source tree
+
+rewriteTree unique kindMap hTree sTree
+ 	= evalState (rewriteTreeM hTree sTree)
 	$ RewriteS
 	{ stateKind	= kindMap 
 	, stateVarGen	= Var.XBind unique 0 }
 
-rewriteTreeM :: (S.Tree SourcePos) -> RewriteM (D.Tree Annot)
-rewriteTreeM tree
- = do	treeR		<- liftM catMaybes 
- 			$ mapM rewrite tree
+rewriteTreeM :: S.Tree SourcePos -> S.Tree SourcePos -> RewriteM (D.Tree Annot, D.Tree Annot)
+rewriteTreeM hTree sTree
+ = do	hTreeR	<- liftM catMaybes $ mapM rewrite hTree
+	hTreeP	<- rewritePatternsTreeM hTreeR
 
-	treeP		<- rewritePatternsTreeM treeR
+	sTreeR	<- liftM catMaybes $ mapM rewrite sTree
+	sTreeP	<- rewritePatternsTreeM sTreeR
 
-	return		$ treeP
+	return	(hTreeP, sTreeP)
  	
-
 
 -- Top ---------------------------------------------------------------------------------------------
 instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
@@ -104,6 +107,12 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 -> do	-- elaborate the data definition to add missing regions etc
 	 	(S.PData sp v vs ctors)	
 			<- elaborateData newVarN getKind pp
+
+		-- update the kind for this type
+		-- TODO: this means the data definitions in the source file must be in the right order, 
+		--	 and not recursive :( would be better to tie this to kind inference.
+		let kind = makeDataKind vs
+		modify $ \s -> s { stateKind = Map.insert v kind (stateKind s) }
 
 		-- desugar field initialisation code
 	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
@@ -147,7 +156,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		ts_rewrite	<- mapM rewrite ts
 
 		ts_elab		<- liftM (map t3_1)
-				$  mapM (elaborateRegionsT newVarN getKind) ts_rewrite
+				$  mapM (elaborateRegionsT (newVarN NameRegion) getKind) ts_rewrite
 
 	 	returnJ		$ D.PClassInst sp vC ts_elab context' ss'
 
@@ -165,7 +174,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 -> do	t'	<- rewrite t
 
 	 	(tElab, vksConst, vksMutable)	
-			<- elaborateRegionsT newVarN getKind t'
+			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
 	 	returnJ	$ D.PSig sp v tElab
 
@@ -226,7 +235,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	 	pj'	<- rewrite pj
 
 	 	(tElab, vksConst, vksMutable)	
-			<- elaborateRegionsT newVarN getKind t'
+			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
 		return	$ D.XProjT sp tElab pj'
 
@@ -446,7 +455,7 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
 	 -> do 	t'	<- rewrite t
 
 	 	(tElab, vksConst, vksMutable)	
-			<- elaborateRegionsT newVarN getKind t'
+			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
 	 	return	$ D.SSig sp v tElab
 

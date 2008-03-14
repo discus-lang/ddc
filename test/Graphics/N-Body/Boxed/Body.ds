@@ -4,14 +4,14 @@ import Data.Array
 import Graphics.Render
 
 -- Body -----------------------------------------------------------------------------
-data Body %r1 
+data Body
 
 	-- Bodies move around the world.
 	= Body {
-		mass	:: Float %r1;
-		pos	:: Vec2 %r1 (Float %r1);
-		vel	:: Vec2 %r1 (Float %r1);
-		acc	:: Vec2 %r1 (Float %r1);
+		mass	:: Float;
+		pos	:: Vec2 Float;
+		vel	:: Vec2 Float;
+		acc	:: Vec2 Float;
 	}
 
 project Body where
@@ -81,12 +81,6 @@ project Body where
 			= ()
 			
 			\= ()
---					frame.circle 10
---					(truncate pX) (truncate pY)
---					20
---					(frame_color 255 255 255);
-		
-
 
 	-- | Work out the force acting on the body with this index in the array.
 	sumForces :: Array Body -> Int -> Vec2 Float

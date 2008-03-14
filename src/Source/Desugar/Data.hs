@@ -38,26 +38,41 @@ elaborateData newVarN getKind
 		% "    in:\n" %> p	% "\n")
 		$ return ()
 
-	let ?newVarN	= newVarN
+	let ?newVar	= newVarN
 	let ?getKind	= getKind
 
+	-- work out what var to use as the primary region.
+	let mPrimary
+		| Just v	<- takeHead vsData
+		, Var.nameSpace v == NameRegion
+		= Just v
+		
+		| otherwise
+		= Nothing
 
-	-- If there are no regions in the data type at all then we need to add one
-	--	to serve as the primary region.
-	let dontAddPrimary v
-		= vData == primTUnit || Set.member v primTVarsUnboxed
+	let thing
+		-- unboxed types and TUnit don't need a primary region
+		| vData == primTUnit || Set.member vData primTVarsUnboxed
+		= return p
+		
+		-- if the data type already has a primary region then use that
+		| Just v	<- mPrimary
+		= do	(ctors', vksNew)	
+					<- liftM unzip $ mapM (elaborateCtor (return v) getKind) ctors
+			let vsData'	= nub $ v : vsData ++ (map fst $ concat vksNew)
 
-	vsPrimary
-		<- if    (null (filter (\v -> Var.nameSpace v == NameRegion) vsData))
-		      && (not $ dontAddPrimary vData)
-			then do	vPrimary	<- newVarN NameRegion
-				return	[vPrimary]
-			else	return	[]
+			return $ PData sp vData vsData' ctors'
+		
+		-- otherwise make a new one
+		| otherwise
+		= do	v	<- newVarN NameRegion
+			(ctors', vksNew)	
+					<- liftM unzip $ mapM (elaborateCtor (return v) getKind) ctors
+			let vsData'	= nub $ v : vsData ++ (map fst $ concat vksNew)
 
-	-- Add missing regions to constructor types
-	(ctors', vksNew)	<- liftM unzip $ mapM elaborateCtor ctors
-	let vsData'		= nub $ vsPrimary ++ vsData ++ (map fst $ concat vksNew)
-	let p'			= PData sp vData vsData' ctors'
+			return $ PData sp vData vsData' ctors'
+
+	p'	<- thing
 
 	trace	( "    out:\n"	%> p'	% "\n")
 		$ return ()
@@ -67,24 +82,24 @@ elaborateData newVarN getKind
 
 elaborateCtor 
 	:: Monad m
-	=> (?newVarN :: NameSpace 	-> m Var)
-	-> (?getKind :: Var		-> m Kind)
+	=> (m Var)			-- a fn to generate a new region var
+	-> (Var -> m Kind)		-- a fn to get the kind of a data type
 	-> (Var, [DataField a Type])
 	-> m 	( (Var, [DataField a Type])
 		, [(Var, Kind)] )
 
-elaborateCtor (var, fields)
+elaborateCtor newVar getKind (var, fields)
  = do	(fields', vksNew)
  		<- liftM unzip 
-		$ mapM elaborateField fields
+		$ mapM (elaborateField newVar getKind) fields
 
  	return	( (var, fields')
 		, concat vksNew)
 
-elaborateField field@(DataField { dType = t })
+elaborateField newVar getKind field@(DataField { dType = t })
  = do	
  	(t_elab, vksConst, vksMutable)	
- 		<- elaborateRegionsT ?newVarN ?getKind t
+ 		<- elaborateRegionsT newVar getKind t
 
  	return	( field { dType = t_elab }
 		, vksConst ++ vksMutable )

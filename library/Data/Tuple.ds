@@ -2,7 +2,7 @@
 import Base
 
 -- tuple2
-data Tuple2 %r a b
+data Tuple2 a b
 	= Tuple2  { 
 		x1	:: a;
 		x2	:: b;
@@ -13,7 +13,7 @@ snd (a, b)	= b
 
 
 -- tuple3
-data Tuple3 %r a b c
+data Tuple3 a b c
 	= Tuple3  {
 		x1	:: a;
 		x2	:: b;
@@ -21,7 +21,7 @@ data Tuple3 %r a b c
 	}
 
 -- tuple4
-data Tuple4 %r a b c d
+data Tuple4 a b c d
 	= Tuple4  {
 		x1	:: a;
 		x2	:: b;
@@ -30,7 +30,7 @@ data Tuple4 %r a b c d
 	}
 
 -- tuple5
-data Tuple5 %r a b c d e
+data Tuple5 a b c d e
 	= Tuple5  {
 		x1	:: a;
 		x2	:: b;
@@ -41,7 +41,7 @@ data Tuple5 %r a b c d e
 
 
 -- tuple6
-data Tuple6 %r a b c d e f
+data Tuple6 a b c d e f
 	= Tuple6  {
 		x1	:: a;
 		x2	:: b;
