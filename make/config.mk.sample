@@ -1,5 +1,5 @@
 
-Target         = linux-x86
+Target         = nothing
 BuildFlavour   = distro
 GHC            = ghc
 

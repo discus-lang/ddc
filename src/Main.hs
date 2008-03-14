@@ -34,33 +34,31 @@ ddc argStrings
  = do
 	-- check args
 	let args	= (Arg.parse $ catInt " " argStrings)
-			++ [Arg.LintCore]
 
 	let verbose	= or $ map (== Arg.Verbose) args
 
 	-- print banner if requested
 	when verbose
-	 (do 	putStr	$ "* Disciplined Disciple Compiler " ++ version ++ " starting up...\n")
+	 $	putStr	$ "* Disciplined Disciple Compiler " ++ version ++ " starting up...\n"
 
 	
 	-- no args, print help
 	when (args == []
 	   || (not $ null $ filter (=@= Arg.Help{}) args))
-	 (do
+	 $ do
 		putStr (Arg.helpString args)
-		System.exitWith System.ExitSuccess)
+		System.exitWith System.ExitSuccess
 
 
 	-- bad args, bail out
 	when (or $ map (=@= Arg.Error{}) args)
-	 (do
+	 $ do
 		let eArg	= head $ filter (=@= Arg.Error{}) args
 		let eString 	= case eArg of { Arg.Error x -> x; }
 
 	 	putStr ("* Error - bad argument: '" ++ eString ++ "'\n")
 		
 		System.exitFailure
-	 )
 
 
 	-- gather up list of files to compile
@@ -69,16 +67,16 @@ ddc argStrings
 						Arg.Compile fs  -> fs;
 						_		-> [] })
 				$ args
-				
 	
 	-- no input files, bail out
 	when (compileFiles == [])
-	 (do	putStr (Arg.helpString args)
-		System.exitFailure)
+	 $ do	putStr (Arg.helpString args)
+		System.exitFailure
 
+	let argsDefault		= args ++ [Arg.OptTailCall, Arg.LintAll]
 	let setup
 		= setupZero
-		{ setupArgsCmd 	= args }
+		{ setupArgsCmd 	= argsDefault }
 
 	-- compile input files	
 	mapM (compileFile setup) compileFiles

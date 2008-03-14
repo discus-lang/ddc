@@ -6,6 +6,7 @@ module Main.Setup
 where
 
 import Main.Arg
+import Util
 
 -- Compile setup 
 data Setup
@@ -22,4 +23,4 @@ setupZero
 	
 
 setupArgs setup
-	= setupArgsCmd setup ++ setupArgsBuild setup
+	= nub $ setupArgsCmd setup ++ setupArgsBuild setup

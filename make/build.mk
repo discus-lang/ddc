@@ -73,7 +73,7 @@ GHC_FLAGS	:= $(GHC_LANGUAGE) -fhpc -tmpdir /tmp
 GCC_FLAGS	:= -std=c99 -O3 -Wundef
 
 else 
-all : $(error unknown BuildFlavour '$(BuildFlavour)')
+all : $(error "Unknown BuildFlavour '$(BuildFlavour)'. Set this in make/config.mk")
 endif
 
 
@@ -90,6 +90,6 @@ GCC_FLAGS           += -fPIC
 BUILD_SHARED        := gcc -dynamiclib -undefined dynamic_lookup
 
 else
-all : $(error unknown Target '$(Target)')
+all : $(error "Unknown Target '$(Target)'. Set this in make/config.mk")
 
 endif

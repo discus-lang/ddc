@@ -72,31 +72,38 @@ compileFile
 	-> FilePath	-- path to source file
 	-> IO ()
 
-compileFile setup fileName_
+compileFile setupCmd fileName_
  = do 
 	-- Initialisation ------------------------------------------------------
-	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
+	let ?verbose	= elem Arg.Verbose (setupArgsCmd setupCmd)
 
 	-- this is the base of our installation
 	--	it should contain the /runtime and /library subdirs.
 	let pathBase_	= concat 
-			$ [dirs | Arg.PathBase dirs	<- setupArgsCmd setup]
+			$ [dirs | Arg.PathBase dirs	<- setupArgsCmd setupCmd]
 
 	-- if no base path is specified then look in the current directory.
 	let pathBase 	= if pathBase_ == []
 				then ["."]
 				else pathBase_
 
-	-- use the pathBase args and see if we can find the base library and the runtime system.
 	let pathLibrary_test = map (++ "/library") pathBase
+	let pathRuntime_test = map (++ "/runtime") pathBase
+
+	when ?verbose
+	 $ do	out	$ "  * Setup\n"
+	 		% "    - pathLibrary_test = " % pathLibrary_test	% "\n"
+			% "    - pathRuntime_test = " % pathRuntime_test	% "\n\n"
+
+
+	-- use the pathBase args and see if we can find the base library and the runtime system.
 	mPathLibrary	<- liftM (liftM fst)
 			$  SI.findFile pathLibrary_test
 			$ "Base.ds"
 	
-	let pathRuntime_test = map (++ "/runtime") pathBase
 	mPathRuntime	<- liftM (liftM fst)
 			$  SI.findFile pathRuntime_test
-			$ "ddc-runtime.so"
+			$ "libddc-runtime.so"
 
 	-- normalise the source file name
 	let fileName
@@ -118,7 +125,7 @@ compileFile setup fileName_
 	 $ dieWithUserError 
 	 	[ "Can't find the DDC base library.\n"
 		% "    Please supply a '-basedir' option to specify the directory\n"
-		% "    containing 'library/Base.di'\n"
+		% "    containing 'library/Base.ds'\n"
 		% "\n"
 	 	% "    tried:\n" %> ("\n" %!% pathLibrary_test) % "\n\n"
 		% "    use 'ddc -help' for more information\n"]
@@ -169,7 +176,9 @@ compileFile setup fileName_
 				Just build	-> Arg.parse $ catInt " " $ Build.buildExtraDDCArgs build
 				Nothing		-> []
 
-	let argsEffective = setupArgsCmd setup ++ argsBuild
+	let setup	= setupCmd { setupArgsBuild = argsBuild }
+
+	let argsEffective = setupArgs setup
 	when ?verbose
 	 $ do	putStr	$ "  * Compile options are:\n"
 		
@@ -643,6 +652,7 @@ compileFile_parse
 
 	-- Invoke GCC to compile C source.
 	invokeSeaCompiler
+		?args
 		pathSourceBase
 		pathRuntime
 		pathLibrary

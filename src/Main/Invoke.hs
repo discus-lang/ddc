@@ -12,61 +12,42 @@ import Util
 import System.Cmd
 import System.Exit
 
+import qualified Config.Config	as Config
+
 -----
 stage	= "Main.Invoke"
 
 -----
 -- | Invoke the external C compiler to compile this source program.
-
 invokeSeaCompiler 
-	:: (?args :: [Arg])
-	-> FilePath		-- base path of source file
-	-> FilePath		-- path to the runtime system
-	-> FilePath		-- path to the base libraries
-	-> [FilePath]		-- extra include dirs
-	-> [String]		-- extra flags to compile with (from build files)
+	:: [Arg]		-- ^ ddc command line args
+	-> FilePath		-- ^ base path of source file
+	-> FilePath		-- ^ path to the runtime system
+	-> FilePath		-- ^ path to the base libraries
+	-> [FilePath]		-- ^ extra include dirs
+	-> [String]		-- ^ extra flags to compile with (from build files)
 	-> IO ()
 
 invokeSeaCompiler 
+	args
 	pathSourceBase
 	pathRuntime
 	pathLibrary
 	importDirs
 	extraFlags
  = do
-	let cmd	= "gcc"
-		++ " -Werror"
-		++ " -std=c99"
+	let cmd	= Config.makeSeaCompileCmd 
+			args
+			pathSourceBase
+			pathRuntime
+			pathLibrary
+			importDirs
+			extraFlags
 
-		++ (if elem Debug ?args
-			then " -g"
-			else "")
-
-		++ (if elem OptAll ?args
-			then " -O3"
-			else "")
-
-		++ (if elem Profile ?args
-			then " -pg"
-			else "")
-
---		++ " -Wall -Werror"
-
-		++ " -I."
-
-		++ " -I"  ++ (take (length pathRuntime - length "/runtime") pathRuntime)
-		++ " -I"  ++ pathLibrary
-		++ (concat [ " -I" ++ p | p <- importDirs ])
-
-		++ " -c " ++ (pathSourceBase ++ ".ddc.c")
-		++ " -o " ++ (pathSourceBase ++ ".o")
-		++ " " ++ catInt " " extraFlags
-
- 	when (elem Verbose ?args)
-	 (do
-		putStr	$ "\n"
+ 	when (elem Verbose args)
+	 $ do	putStr	$ "\n"
 	 	putStr	$ " * Invoking C compiler.\n"
-		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n")
+		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n"
 		
 	retCompile	<- system cmd
 	
@@ -76,7 +57,8 @@ invokeSeaCompiler
 	  -> panic stage
 	  	$ "invokeSeaCompiler: compilation of C file failed.\n"
 		% "    pathC = " % pathSourceBase % ".ddc.c" % "\n"
-		
+
+
 
 
 -- | Invoke the external linker to link these objects
@@ -101,35 +83,22 @@ invokeLinker
 			[OutputFile [fileName]] 	-> fileName
 			_				-> "a.out"
 
-	let moreObjs	= concat $ [files 	| LinkObj 	files 	<- ?args]
-	let linkLibs	= concat $ [libs	| LinkLib 	libs	<- ?args]
-	let linkLibDirs	= concat $ [dirs	| LinkLibDir	dirs	<- ?args]
+	let moreObjs	= concat $ [files | LinkObj 	files 	<- ?args]
+	let linkLibs	= concat $ [libs  | LinkLib 	libs	<- ?args]
+	let linkLibDirs	= concat $ [dirs  | LinkLibDir	dirs	<- ?args]
+
+	let cmd	= Config.makeLinkCmd
+			?args
+			(objects ++ moreObjs ++ moreLinkObjs)
+			outFileName
+			pathRuntime
+			(linkLibs ++ moreLinkLibs)
+			(linkLibDirs ++ moreLinkLibDirs)
 			
-	let cmd = "gcc"
-		++ " -std=c99"
-		++ " -o " ++ outFileName
-
-		++ (if elem Profile ?args 
-			then " -pg" 
-			else "")
-
-		++ " " ++ (catInt " " $ objects ++ moreObjs ++ moreLinkObjs)
-					
-		++ (if elem StaticRuntime ?args 
-			then " " ++ pathRuntime ++ "/ddc-runtime.a"
-			else " " ++ pathRuntime ++ "/ddc-runtime.so")
-
-		-- most everything needs the math library, so always link against it
-		++ " -lm"
-
-		++ " " ++ (catInt " " ["-L" ++ dir | dir <- linkLibDirs ++ moreLinkLibDirs])
-		++ " " ++ (catInt " " ["-l" ++ lib | lib <- linkLibs 	++ moreLinkLibs])
-
 	when (elem Verbose ?args)
-	 (do
-	 	putStr	$ "\n"
+	 $ do	putStr	$ "\n"
 		putStr	$ " * Invoking linker.\n"
-		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n")
+		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n"
 		
 	retLink		<- system cmd
 
