@@ -122,8 +122,9 @@ foreign import extern thing9
         :$ Base.Data -> Base.Data;
         
 foreign import extern thing10
-        :: forall t0 t1 t2 %r0
-        .  Thing3 t0 t1 t2 -> Data.Tuple.Tuple3 %r0 t0 t1 t2
+        :: forall t0 t1 t2 %r0 %r1
+        .  Thing3 %r0 t0 t1 t2 -(!e0)> Data.Tuple.Tuple3 %r1 t0 t1 t2
+        :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 

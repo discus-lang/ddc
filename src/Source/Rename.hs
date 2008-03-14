@@ -2,7 +2,6 @@
 -- | Apply scoping rules and add VarBinds to every variable in the program.
 module Source.Rename
 	( Rename
-	, renameData
 	, renameTrees )
 where
 
@@ -28,14 +27,15 @@ import Type.Plate.FreeVars
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)
-import qualified Debug.Trace	as Debug
 
-import qualified Debug.Trace	as Debug
+import qualified Debug.Trace
 import Util
 
 
 -----
-stage	= "Source.Rename"
+stage		= "Source.Rename"
+-- debug	= True
+-- trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
 
 -- Tree --------------------------------------------------------------------------------------------
 renameTrees
@@ -111,9 +111,15 @@ instance Rename (Top SourcePos) where
 	 -> do 	vs'	<- mapM lbindV vs
 		return	$ PInfix sp m i vs'
 	
-	PData sp v vs cs		
-	 -> do	(v', vs', cs')	<- renameData v vs cs
-		return	$ PData sp v' vs' cs' 
+	-- data type definition
+	PData sp vData vsData ctors
+	 -> local
+	  $ do
+	 	vData'	<- lookupN NameType vData
+		vsData'	<- mapM bindZ vsData
+		ctors'	<- mapM (renameCtor vData' vsData') ctors
+	
+		return	$ PData sp vData' vsData' ctors' 
 	
 	PRegion sp v
 	 -> do	v'	<- lookupN NameRegion v
@@ -245,47 +251,51 @@ renameInstInh    (v, ts)
 	ts'	<- rename ts
 	return	(v', ts')
 		
-renameData 	
-	:: Var -> [Var] -> [(Var, [DataField (Exp SourcePos) Type])]	
-	-> RenameM (Var, [Var], [Ctor SourcePos])
 
-renameData v vs cs
- = local
- $ do 	v'	<- lookupN NameType v
-	vs'	<- mapM bindZ vs
-	cs'	<- mapM renameCtor cs
-	return	(v', vs', cs')
-
+-- Constructor -----------------------------------------------------------------
 renameCtor 
-	:: (Var, [DataField (Exp SourcePos) Type])	
+	:: Var			-- type constructor name
+	-> [Var]		-- type constructor parameters
+	-> (Var, [DataField (Exp SourcePos) Type])	
 	-> RenameM (Var, [DataField (Exp SourcePos) Type])
 
-renameCtor	(v, fs)
+renameCtor vData vsData (v, fields)
  = do	v'	<- lookupV v
-	fs'	<- mapM rename fs
-	return	(v', fs')
+	fields'	<- mapM (renameDataField vData vsData) fields
+	return	(v', fields')
 
 
--- DataField ---------------------------------------------------------------------------------------
-instance Rename (DataField (Exp SourcePos) Type) where
- rename df
+renameDataField vData vsData df
   = do	
-	let fixupV v	= v 	{ Var.nameSpace 	= NameField
-				, Var.nameModule 	= ModuleNil }
+  	-- field vars aren't supposed to have module qualifiers...
+  	let fixupV v	
+  		= v { Var.nameSpace 	= NameField
+		    , Var.nameModule 	= ModuleNil }
 
-  
-  	mLabel'	<- case dLabel df of
+   	mLabel'	<- case dLabel df of
 			Nothing		-> return Nothing
 			Just label
 			 -> do 	label'	<- lbindN NameField label
 				return	$ Just $ fixupV label'
 
-	t'	<- rename $ dType df
+	tField'	<- rename $ dType df
+
+	-- check that all vars in the field type are params to the type constructor.
+	let vsFree	= Set.filter (not . Var.isCtorName) $ freeVars tField'
+	let vsBad	= Set.difference vsFree (Set.fromList vsData)
+
+{-	trace 	( "vData  = " % vData % "\n"
+		% "vsFree = " % vsFree % "\n")
+		$ return ()
+-}
+	when (not $ Set.null vsBad)
+	 $ mapM_ (\v -> addError $ ErrorUndefinedVar v) $ Set.toList vsBad
+
 	mExp'	<- rename $ dInit df
-	 	
+
 	return 	df
 		{ dLabel	= mLabel'
-		, dType		= t'
+		, dType		= tField'
 		, dInit		= mExp' }
 		
 	
@@ -532,72 +542,6 @@ instance Rename (Label SourcePos) where
 
 
 -- Patterns ----------------------------------------------------------------------------------------
-
--- | Bind the variables in a pattern.
---	The data type for patterns in function bindings is shared with that for expressions.
---	However, only  some constructors should appear in a pattern context. ie XList but not XMatch
---
-{-
-bindPatternExp 
-	:: (Exp SourcePos) 
-	-> RenameM 
-		( Exp SourcePos		-- renamed pattern expression
-		, [Var])		-- bound object vars
-		
-bindPatternExp xx
- = case xx of
- 	XVar sp v		
-	 | Var.isCtorName v
-	 -> do	v'	<- lookupV v
-	 	return	( XVar sp v'
-			, [])
-		
-	 | otherwise
-	 -> do	v'	<- bindV v
-	 	return	( XVar sp v'
-			, [])
-		
-	XList sp xx
-	 -> do	(xx', vss)	<- liftM unzip $ mapM bindPatternExp xx
-	 	return	( XList sp xx'	
-			, concat vss)
-
-	XCons sp x1 x2
-	 -> do	(x1', vs1)	<- bindPatternExp x1
-	 	(x2', vs2)	<- bindPatternExp x2
-		return	( XCons sp x1' x2'
-			, vs1 ++ vs2)
-		
-	XTuple sp xs
-	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPatternExp xs
-	 	return	( XTuple sp xs'
-			, concat vss)
-
-	XDefix sp xs
-	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPatternExp xs
-	 	return	( XDefix sp xs'
-			, concat vss)
-	 
-	XOp sp v
-	 -> do	v'	<- lookupV v
-	 	return	( XOp sp v'
-			, [])
-
-	XObjVar sp v
-	 ->  do
-	 	v'	<- bindV v
-		return	( XVar sp v'
-			, [v'])
-
-	XConst{}
-	 ->	return	(xx, [])
-
-	XWildCard{}
-	 ->	return	(xx, [])
-
-	_ 	-> panic stage
-		$ "bindPatternExp: no match for " % show xx	% "\n"
--}
 
 -- | Bind the variables in a guard
 bindGuard :: Guard SourcePos -> RenameM (Guard SourcePos)

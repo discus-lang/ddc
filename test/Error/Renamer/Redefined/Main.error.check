@@ -1,29 +1,23 @@
 ./test/Error/Renamer/Redefined/Main.ds:32:0
-     Redefined variable 'Main.force'
-          in namespace: Value
+     Redefined value variable 'Main.force'
       first defined at: ./library/Base/Thunk.di:85:1
 
 ./test/Error/Renamer/Redefined/Main.ds:11:13
-     Redefined variable 'x'
-          in namespace: Value
+     Redefined value variable 'x'
       first defined at: ./test/Error/Renamer/Redefined/Main.ds:11:11
 
 ./test/Error/Renamer/Redefined/Main.ds:15:30
-     Redefined variable 'xx'
-          in namespace: Value
+     Redefined value variable 'xx'
       first defined at: ./test/Error/Renamer/Redefined/Main.ds:15:27
 
 ./test/Error/Renamer/Redefined/Main.ds:21:20
-     Redefined variable 'a'
-          in namespace: Type
+     Redefined type variable 'a'
       first defined at: ./test/Error/Renamer/Redefined/Main.ds:21:18
 
 ./test/Error/Renamer/Redefined/Main.ds:24:26
-     Redefined variable '%r1'
-          in namespace: Region
+     Redefined region variable '%r1'
       first defined at: ./test/Error/Renamer/Redefined/Main.ds:24:20
 
 ./test/Error/Renamer/Redefined/Main.ds:27:28
-     Redefined variable '!e1'
-          in namespace: Effect
+     Redefined effect variable '!e1'
       first defined at: ./test/Error/Renamer/Redefined/Main.ds:27:24

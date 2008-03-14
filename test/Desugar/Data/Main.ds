@@ -1,0 +1,19 @@
+
+
+data Foo a
+	= FooInt   Int
+	| FooFloat Float
+	| FooFun   (a -> a)
+
+fi	= FooInt   5
+ff	= FooFloat 5.0
+
+succ x	= x + 1
+ffun	= FooFun succ
+	
+data Fruit
+	= Apple
+	| Orange
+	
+main ()
+ = do	()

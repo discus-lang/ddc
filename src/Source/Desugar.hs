@@ -45,6 +45,7 @@ import Shared.Exp
 import Source.Desugar.Base
 import Source.Desugar.Patterns
 import Source.Desugar.Type
+import Source.Desugar.Data
 
 import {-# SOURCE #-} Source.Desugar.ListComp
 
@@ -79,8 +80,8 @@ rewriteTreeM tree
 
 -- Top ---------------------------------------------------------------------------------------------
 instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
- rewrite xx
-  = case xx of
+ rewrite pp
+  = case pp of
 
 	S.PImportExtern sp v tv to
 	 ->	returnJ $ D.PExtern sp v tv to
@@ -98,8 +99,15 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 	returnJ $ D.PExtern sp v' tv' to'
 
 
-	S.PData sp v vs ctors
-	 -> do	ctors'	<- mapM (rewriteCtorDef sp) ctors
+	-- data definitions
+	S.PData{}
+	 -> do	-- elaborate the data definition to add missing regions etc
+	 	(S.PData sp v vs ctors)	
+			<- elaborateData newVarN getKind pp
+
+		-- desugar field initialisation code
+	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
+
 	 	returnJ	$ D.PData sp v vs ctors'
 	
 	S.PEffect sp v k

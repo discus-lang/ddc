@@ -1,18 +1,20 @@
 
+-- | These are the variables that have a special meaning to the compiler.
+--	They all need to be defined in the base libraries or runtime system.
+
 module Shared.VarPrim
 
 where
 
-import Util
 import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace(..), VarBind(..), Module(..))
+import Shared.Var		(Var, NameSpace(..), VarBind(..), Module(..), VarInfo)
 import Shared.VarBind
 
+import Util
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 			
------------------------
--- from Base
-
--- primitive unboxed types.
+-- Unboxed Types -----------------------------------------------------------------------------------
 primTVoidU	= primVarI NameType	"Base.Void#"	TVoidU		[Var.ISeaName "void"]
 primTPtrU	= primVarI NameType	"Base.Ptr#"	TPtrU		[Var.ISeaName "Ptr"]
 
@@ -34,8 +36,20 @@ primTFloat64U	= primVarI NameType	"Base.Float64#"	TFloat64U	[Var.ISeaName "Int64
 primTChar32U	= primVarI NameType	"Base.Char32#"	TChar32U	[Var.ISeaName "Char32"]
 primTStringU	= primVarI NameType	"Base.String#"	TStringU	[Var.ISeaName "String"]
 
+primTVarsUnboxed
+ = Set.fromList
+ 	[ primTVoidU,	primTPtrU
+	, primTBoolU
+	, primTWord8U,	 primTWord16U,	primTWord32U,	primTWord64U
+	, primTInt8U,	 primTInt16U,	primTInt32U,	primTInt64U
+	, primTFloat32U, primTFloat64U
+	, primTChar32U
+	, primTStringU ]
+	
 
--- primitive boxed types
+-- Boxed Types -------------------------------------------------------------------------------------
+primTUnit	= primVar NameType	"Base.Unit"				TUnit
+
 primTBool	= primVar NameType 	"Base.Bool"				TBool
 
 primTWord	= primVar NameType	"Base.Word32"				TWord32
@@ -44,49 +58,36 @@ primTWord16	= primVar NameType	"Base.Word16"				TWord16
 primTWord32	= primVar NameType	"Base.Word32"				TWord32
 primTWord64	= primVar NameType	"Base.Word64"				TWord64
 
--- hack Int -> Int32
---	would be better to have real type aliases
-primTInt	= primVar NameType	"Base.Int32"				TInt32
-
 primTInt8	= primVar NameType	"Base.Int8"				TInt8
 primTInt16	= primVar NameType	"Base.Int16"				TInt16
 primTInt32	= primVar NameType	"Base.Int32"				TInt32
 primTInt64	= primVar NameType	"Base.Int64"				TInt64
 
--- hack Float -> Float32
-primTFloat	= primVar NameType	"Base.Float32"				TFloat32
 primTFloat32	= primVar NameType	"Base.Float32"				TFloat32
 primTFloat64	= primVar NameType	"Base.Float64"				TFloat64
 
--- hack Char -> Char32
-primTChar	= primVar NameType	"Base.Char32"				TChar32
 primTChar32	= primVar NameType	"Base.Char32"				TChar32
 
 primTString	= primVar NameType	"Base.String"				TString
 
+primTRef	= primVar NameType	"Data.Ref.Ref"				TRef
+primTList	= primVar NameType	"Data.List.List"			TList
+primTTuple i	= primVar NameType	("Data.Tuple.Tuple" ++ show i) 		(TTuple i)	
 
--- simple types
-primTUnit	= primVar NameType	"Base.Unit"				TUnit
-primUnit	= primVar NameValue	"Base.Unit"				VUnit
+-- word size hacks
+--	It would be better to define this in the source file with a type alias...
+primTFloat	= primVar NameType	"Base.Float32"				TFloat32
+primTChar	= primVar NameType	"Base.Char32"				TChar32
+primTInt	= primVar NameType	"Base.Int32"				TInt32
 
 
-
+-- Operational Types -------------------------------------------------------------------------------
 primTObj	= primVar NameType	"Base.Obj"				TObj
 primTData	= primVar NameType	"Base.Data"				TData
 primTThunk	= primVar NameType	"Base.Thunk"				TThunk
 
-primFShape i	= primVar NameClass	("Base.Shape" ++ show i)		(FShape  i)
-primFUnify i	= primVar NameClass	("Base.Unify" ++ show i)		(FUnify  i)
-primFInject i	= primVar NameClass	("Base.Inject" ++ show i)		(FInject i)
 
-primProjField	= primVarI NameValue	"Base.primProjField"			VProjField
-					[ Var.ISeaName "primProjField"]
-
-primProjFieldR	= primVarI NameValue	"Base.primProjFieldR"			VProjFieldR
-					[ Var.ISeaName "primProjFieldR"]
-
-
---	effects
+-- Effects -----------------------------------------------------------------------------------------
 primRead	= primVar NameEffect	"Base.Read"				ERead
 primReadT	= primVar NameEffect	"Base.ReadT"				EReadT
 primReadH	= primVar NameEffect	"Base.ReadH"				EReadH
@@ -94,7 +95,10 @@ primReadH	= primVar NameEffect	"Base.ReadH"				EReadH
 primWrite	= primVar NameEffect	"Base.Write"				EWrite
 primWriteT	= primVar NameEffect	"Base.WriteT"				EWriteT
 
---	classes
+
+-- Classes -----------------------------------------------------------------------------------------
+primFShape i	= primVar NameClass	("Base.Shape" ++ show i)		(FShape  i)
+
 primLazy	= primVar NameClass	"Base.Lazy"				FLazy
 primConst	= primVar NameClass	"Base.Const"				FConst
 primMutable	= primVar NameClass	"Base.Mutable"				FMutable
@@ -110,49 +114,41 @@ primLazyH	= primVar NameClass	"Base.LazyH"				FLazyH
 primPure	= primVar NameClass	"Base.Pure"				FPure
 primEmpty	= primVar NameClass	"Base.Empty"				FEmpty
 
--- from Base.Thunk
-primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i) 
-					[Var.ISeaName ("primSuspend" ++ show i)]
 
--- from Class.Num
-primNegate	= primVar NameValue	"Class.Num.negate"			VNegate
-								
--- from Data.Bool
-primTrue	= primVar NameValue 	"Data.Bool.True"			VTrue
-primFalse	= primVar NameValue	"Data.Bool.False"			VFalse
+-- Values ------------------------------------------------------------------------------------------
+primUnit	= primVar NameValue	"Base.Unit"				VUnit
 
--- from Data.Array
+primProjField	= primVarI NameValue	"Base.primProjField"			VProjField
+					[ Var.ISeaName "primProjField"]
+
+primProjFieldR	= primVarI NameValue	"Base.primProjFieldR"			VProjFieldR
+					[ Var.ISeaName "primProjFieldR"]
+
 primIndex	= primVarI NameValue	"Data.Array.index"			VIndex
 					[Var.ISeaName "primArray_index"]
 					
 primIndexR	= primVarI NameValue	"Data.Array.indexR"			VIndexR
 					[Var.ISeaName "primArray_indexR"]
 
--- from Data.Ref
-primTRef	= primVar NameType	"Data.Ref.Ref"				TRef
+primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i) 
+					[Var.ISeaName ("primSuspend" ++ show i)]
 
+primNegate	= primVar NameValue	"Class.Num.negate"			VNegate
 
--- from Data.Tuple
-primTTuple i	= primVar NameType	("Data.Tuple.Tuple" ++ show i) 		(TTuple i)	
+primTrue	= primVar NameValue 	"Data.Bool.True"			VTrue
+primFalse	= primVar NameValue	"Data.Bool.False"			VFalse
+
 primTuple i	= primVar NameValue	("Data.Tuple.Tuple" ++ show i) 		(VTuple i)
 
-
--- from Data.List
-primTList	= primVar NameType	"Data.List.List"			TList
 primNil		= primVar NameValue	"Data.List.Nil"				VNil	
 primCons	= primVar NameValue	"Data.List.Cons"			VCons	
-
-
 primAppend	= primVar NameValue	"Data.List.Append"			VAppend	
-
 primRange	= primVar NameValue	"Data.List.rangeInt" 			VRange
 primRangeL	= primVar NameValue	"Data.List.rangeIntL"			VRangeL
 primRangeInfL	= primVar NameValue	"Data.List.rangeInfIntL"		VRangeInfL
 primConcatMap	= primVar NameValue	"Data.List.concatMap"			VConcatMap
 primConcatMapL	= primVar NameValue	"Data.List.concatMapL"			VConcatMapL
 
-
--- from Control.Exception
 primThrow	= primVarI NameValue	"Control.Exception.primThrow"		VThrow
 					[Var.ISeaName ("primException_throw")]
 
@@ -162,15 +158,15 @@ primTry		= primVarI NameValue	"Control.Exception.primTry"		VTry
 primExceptionBreak
 		= primVar NameValue	"Control.Exception.ExceptionBreak"	VExceptionBreak	
 
--- from Control.Imperative
 primGateLoop	= primVar NameValue	"Control.Exception.gateLoop"		VGateLoop
 
 primWhile	= primVar NameValue	"Control.Imperative.while"		VWhile	
 
-	
 
+-- Utils -------------------------------------------------------------------------------------------
 
------
+-- | Create a primitive variable
+primVar :: NameSpace -> String -> VarBind -> Var
 primVar space name bind
  = let	parts		= breakOns '.' name
  	Just modParts	= takeInit parts
@@ -181,10 +177,14 @@ primVar space name bind
 	, Var.nameSpace		= space
 	, Var.nameModule	= ModuleAbsolute modParts }
 
+-- | Create a primitive variable with some extended info
+primVarI :: NameSpace -> String -> VarBind -> [VarInfo] -> Var
 primVarI space name bind info
   = (primVar space name bind) { Var.info = info }
 
 
+-- | If this var has a special meaning to the compiler then write it's VarBind to the common one.
+bindPrimVar :: NameSpace -> Var -> Maybe Var
 bindPrimVar n v
  
  | NameValue	<- n
@@ -211,8 +211,8 @@ bindPrimVar n v
 	"Cons"		-> Just $ v { Var.bind = VCons }
 	"Append"	-> Just $ v { Var.bind = VAppend }
 
-	"ExceptionBreak" 	-> Just $ v { Var.bind = VExceptionBreak }
-	"gateLoop"		-> Just $ v { Var.bind = VGateLoop	 }
+	"ExceptionBreak" -> Just $ v { Var.bind = VExceptionBreak }
+	"gateLoop"	 -> Just $ v { Var.bind = VGateLoop }
 
 	"primThrow"	-> Just $ v { Var.bind = VThrow }
 	"primTry"	-> Just $ v { Var.bind = VTry }
