@@ -1,23 +1,58 @@
 
 import Graphics.Primitive;
 
------
--- rectangleC
---
-rectangleC sizeX sizeY
- = do {	x0	= 0.0 - sizeX / 2.0;
- 	x1	= 0.0 + sizeX / 2.0;
+
+-- | Make a list of line segments connecting these points (in a loop)
+lineLoop :: [Point] -> [Primitive]
+lineLoop pp
+ = case pp of
+	p0 : p1 : ps	-> Line p0 p1 : lineLoop' p0 (p1 : ps)
+	_		-> throw Exception "lineLoop: line must have at least two points." 
+
+lineLoop' p0 pp
+ = case pp of
+	p : []		-> [Line p p0]
+	p1 : p2 : ps	-> Line p1 p2 : lineLoop' p0 (p2 : ps)
+
+
+-- | A list of points on the perimeter of a circle.
+circlePoints 
+	:: Point 	-- ^ center point of the circle
+	-> Float 	-- ^ circle radius 
+	-> Int 		-- ^ the number of points
+	-> [Point]
+
+circlePoints (Point x y) radius steps
+ = do	tStep	= 2.0 * pi / toFloat steps
+	tStop	= 2.0 * pi
+	circlePoints' x y radius tStep tStop 0.0
+
+circlePoints' x y radius tStep tStop theta
+	| theta >= tStop	= []
+	\= do	theta'	= theta + tStep
+		point	= Point (x + radius * cos theta) 
+				(y + radius * sin theta) 
+
+		point	: circlePoints' x y radius tStep tStop theta'
+
+
+-- | A rectangle centered around a point.
+rectangle_centered 
+	:: Point 	-- ^ center point of the rectangle
+	-> Float	-- ^ width
+	-> Float 	-- ^ height
+	-> [Primitive]
+
+rectangle_centered (Point x y) sizeX sizeY
+ = do 	x0	=  x - sizeX / 2.0
+ 	x1	=  x + sizeX / 2.0
 	
-	y0	= 0.0 - sizeY / 2.0;
-	y1	= 0.0 + sizeY / 2.0;
+	y0	=  y - sizeY / 2.0
+	y1	=  y + sizeY / 2.0
 	
-	p0	= Point x0 y0;
-	p1	= Point x0 y1;
-	p2	= Point x1 y1;
-	p3	= Point x1 y0;
-	
-	[ Line p0 p1
-	, Line p1 p2
-	, Line p2 p3
-	, Line p3 p0 ];
- };
+	lineLoop 
+		[ Point x0 y0
+		, Point x0 y1
+		, Point x1 y1
+		, Point x1 y0 ]
+
