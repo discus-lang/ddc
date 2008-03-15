@@ -32,13 +32,13 @@ frac ::	Int %r2 -> Float -> [Primitive %r1]
 	,  Const %r2
 
 frac 0 r
-	= rectangleC 50.0 50.0
+	= rectangle_centered (Point 0.0 0.0) 50.0 50.0
 	
 frac n r
  = do
 	c	= Color (n * 40 + 50) (n * 40 + 50) (n * 60 + 50)
 		
-	rectangleC 50.0 50.0
+	rectangle_centered (Point 0.0 0.0) 50.0 50.0
 	  ++ 	[ Local	[ Translate (0.0 + 50.0) (0.0 + 50.0)
 			, Rotate    r
 			, c

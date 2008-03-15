@@ -1,5 +1,6 @@
 
-import Graphics.Primitive;
+import Graphics.Primitive
+import Math.Constants
 
 
 -- | Make a list of line segments connecting these points (in a loop)
