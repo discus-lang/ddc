@@ -33,6 +33,7 @@ libraryModules =
 	, "System/Error"
 	, "System/Console"
 	, "Data/List"
+	, "Class/Out"
 	, "Class/Show"
 	, "Control/Imperative"
 	, "Control/Exception"

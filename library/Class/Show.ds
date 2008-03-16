@@ -1,10 +1,8 @@
 
-import 
-{	Base.Thunk;
-	Data.List;
-	System.Console;
-}
-
+import	Base.Thunk
+import	Data.List
+import 	System.Console
+import	Class.Out
 
 class Show a where 
  show 	:: forall %r
@@ -115,6 +113,18 @@ concats xx
  	Cons x xs	-> SAppend x (concats xs);
  };
 
+parens :: String -> String
+parens ss	= "(" % ss % ")"
 
+-- We're using the Out class until dictionary passing comes online and we can
+--	make 'print' polymoprhic.
+instance Out Int where
+ out x	= println $ show x
+
+instance Out Float where
+ out x	= println $ show x
+
+instance Out String where
+ out x	= println $ show x
 
 
