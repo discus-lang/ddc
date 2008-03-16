@@ -1,13 +1,13 @@
-./test/Error/Unify/Shape/Main.ds:7:16
+./test/Error/Unify/Shape/Main.ds:7:6
     Type mismatch during unification.
-          cannot match: Data.Bool.Bool %59
-                  with: Base.Int %55
+          cannot match: Base.Int %38
+                  with: Data.String.String %45
 
-              the use of: True
-                 at type: Data.Bool.Bool %59
-                      at: ./test/Error/Unify/Shape/Main.ds:7:16
+              the use of: (+)
+                 at type: Base.Int %38
+                      at: ./test/Error/Unify/Shape/Main.ds:7:6
 
         conflicts with, 
-              the use of: (+)
-                 at type: Base.Int %55
-                      at: ./test/Error/Unify/Shape/Main.ds:7:14
+          literal value "erk"
+                 of type: Data.String.String %45
+                      at: ./test/Error/Unify/Shape/Main.ds:7:8

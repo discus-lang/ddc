@@ -176,12 +176,19 @@ pushTemplate tTemplate srcShape cMerge
 		addToClass (classId cMerge) srcShape tPush
 		return $ Just tPush		
 
-
-	-- Don't add the template if is will result in a type error
+	-- If adding the template will result in a type error then add the error to
+	-- 	the solver state, and return Nothing.
+	--	This prevents the caller, crushShape2 recursively adding more errornous
+	--	Shape constraints to the graph.
+	--	
 	| Class { classType = Just t}		<- cMerge
 	= if isShallowConflict t tTemplate
-		then return Nothing
-		else return (Just t)
+	   then	
+	    do	let cError	= cMerge { classNodes = (tTemplate, srcShape) : classNodes cMerge }
+	 	addErrorConflict (classId cError) cError
+		return Nothing
+
+	   else return (Just t)
 	
  	
 	

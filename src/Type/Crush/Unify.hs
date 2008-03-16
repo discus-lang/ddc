@@ -2,7 +2,8 @@
 
 module Type.Crush.Unify
 	( crushUnifyClass 
-	, isShallowConflict )
+	, isShallowConflict 
+	, addErrorConflict )
 where
 
 import Util
@@ -201,7 +202,7 @@ unifyClassMerge cidT c queue@(t:_)
 
 	-- Found a user type error in the graph
 	| otherwise
- 	= do	errorConflict cidT c 
+ 	= do	addErrorConflict cidT c 
 		return (TError (kindOfType t) (classQueue c))
 
 
@@ -211,10 +212,8 @@ unifyClassMerge cidT c queue@(t:_)
 --	in the graph. We diagnose the problem, add an error message to 
 --	the SquidM monad and poison the class.
 --
---	BUGS: 	only handles 2 conflicting ctors in the node.
---
-errorConflict :: ClassId -> Class -> SquidM ()
-errorConflict	 cid c
+addErrorConflict :: ClassId -> Class -> SquidM ()
+addErrorConflict  cid c
  = do	
 	-- filter out TVars, as they don't conflict with anything
  	let tsCtorsNode
