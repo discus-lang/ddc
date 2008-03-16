@@ -488,7 +488,7 @@ binds
 
 rhs	:: { Exp SP }
 	: exp					{ $1 }
-	| exp 'where' '{' binds '}'		{ XWhere (spTP $2) $1 $4 }
+	| exp 'where' '{' bindSigs '}'		{ XWhere (spTP $2) $1 $4 }
 
 -- | A binding or signature
 bindSig
