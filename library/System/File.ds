@@ -68,7 +68,7 @@ file_open name mode
  	file	= fopenU (dangerUnboxString name_flat) (dangerUnboxString mode_flat)
 
 	case unsafe_castToInt32U file `primInt32U_eq` 0# of
-		1#	-> throw ExceptionIO
+		1#	-> throw ExceptionIO ("file_open: Can't open file " % name)
 		0#	-> ()
 		
 	file

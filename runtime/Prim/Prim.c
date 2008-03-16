@@ -57,7 +57,7 @@ Obj*	primError 	(Obj* obj)
 
 Obj*	primExit	(Obj* code)
 {
-	fprintf (stderr, "primExit: exiting\n");
+//	fprintf (stderr, "primExit: exiting\n");
 	exit (_unbox(Int32, code));
 }
 

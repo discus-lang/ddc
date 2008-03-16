@@ -66,8 +66,6 @@ makeLinkCmd
 
 	= "gcc"
 	++ " -std=c99"
-	++ " -dead_strip"
-	
 	++ " -o " ++ outFile
 
 	++ (if elem Profile args 

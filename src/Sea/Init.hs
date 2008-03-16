@@ -67,7 +67,7 @@ mainTree imports
 	 ++	[ "        _ddcInitModule_Main();"]
 		
 	 ++ 	[ ""
-		, "        Main_main (_atomBase_Unit);"
+		, "        Control_Exception_topHandle(_allocThunk(Main_main, 1, 0));"
 		, ""
 		, "        _ddcRuntimeCleanup();"
 		, "}"

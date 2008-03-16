@@ -39,7 +39,7 @@ foreign import extern runFun
         :: forall %r0 %r1 !e0 $c0
         .  FunInt %r0 %r1 !e0 $c0 -> Base.Int %r1 -(!e1 $c1)> Base.Int %r1
         :- !e1        = !{!e0; Base.!Read %r0}
-        ,  $c1        = ${xSD491 : %r0; xSD491 : %r1; xSD491 : %r0 $> !e0; xSD491 : %r0 $> $c0}
+        ,  $c1        = ${xSD492 : %r0; xSD492 : %r1; xSD492 : %r0 $> !e0; xSD492 : %r0 $> $c0}
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import extern succ'
