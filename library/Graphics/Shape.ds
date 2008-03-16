@@ -57,3 +57,13 @@ rectangle_centered (Point x y) sizeX sizeY
 		, Point x1 y1
 		, Point x1 y0 ]
 
+
+-- | A circle centered around some point.
+circle_centered
+	:: Point	-- ^ the center point of the circle
+	-> Float	-- ^ circle radius
+	-> Int		-- ^ number of line segments to use -1
+	-> [Primitive]
+	
+circle_centered center radius steps
+ = lineLoop (circlePoints center radius steps)

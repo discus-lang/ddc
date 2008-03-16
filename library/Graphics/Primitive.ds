@@ -50,4 +50,6 @@ data Primitive %r
 instance Show Primitive where
  show (Line p1 p2)	= "Line (" % show p1 % ") (" % show p2 % ")";
 
+instance Show [Primitive] where
+ show xx = showList show xx
 

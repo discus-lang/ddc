@@ -174,7 +174,7 @@ tokens :-
  \" ($printable # \")* \" 
  			{ ptags (\s -> CString (read s))		}
 
- $digit+ \. $digit+	{ ptags (\s -> CFloat  $ read s)		}
+ \-?$digit+ \. $digit+	{ ptags (\s -> CFloat  $ read s)		}
 
  \-?$digit+		{ ptags (\s -> CInt    $ read s)	 	}
  \'\\n\'		{ ptags (\s -> CChar   $ read s)  		}
