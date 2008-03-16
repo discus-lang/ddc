@@ -1,7 +1,11 @@
 
 import Prelude;
 
-
+-- Draw a raster line in this frame.
+-- DANGER: 
+--	This doesn't do any clipping or checking, and the array access is unsafe.
+--	If you write outside the window you'll get heap corrpution.
+--
 drawBresenhamLine 
 	frame widthB height cB
 	x0B y0B x1B y1B 

@@ -6,8 +6,18 @@ import Math.Matrix.Matrix33;
 import Data.List;
 
 -- | render some primitives in this frame
-renderPrims :: Frame -> [(Matrix33, Primitive)] -> [Primitive] -> ()
-renderPrims frame ctmStack prims
+--   DANGER: 	Prims aren't clipped to the window. 
+--		If you draw prims outside the window you'll corrupt the heap. 
+--
+renderPrims :: Frame -> [Primitive] -> ()
+renderPrims frame ctmStack
+ 	= renderPrims_withStack 
+		frame 
+		[(id&{Matrix33} (), Color 255 255 255)] 
+		ctmStack
+
+renderPrims_withStack :: Frame -> [(Matrix33, Primitive)] -> [Primitive] -> ()
+renderPrims_withStack frame ctmStack prims
  = do	foldl (renderPrim frame)
 		ctmStack
 		prims

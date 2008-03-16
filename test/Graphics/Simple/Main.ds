@@ -15,7 +15,7 @@ squareSpin :: Frame -> Float -> ()
 squareSpin frame rot
  = do 	arrayUI_fill frame.array 0
 
-	renderPrims frame [(id&{Matrix33} (), Color 255 255 255)]
+	renderPrims frame
 		$  [ Translate 300.0 300.0 ]
 		++ frac 3 rot
 
