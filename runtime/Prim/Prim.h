@@ -123,6 +123,7 @@ Obj*	primString_heads 		(Obj* str_);
 Obj*	primString_tails 		(Obj* str_);
 Obj*	primString_isNul 		(Obj* str_);
 Obj*	primString_ord			(Obj* str_);
+Obj*	primString_copy			(Obj* str_);
 
 
 

@@ -1,0 +1,47 @@
+
+{- 
+-- We only hit this bug when compiling with -O because otherwise the core 
+--	isn't type checked.
+
+
+-- from Main.dump-core-dict.dc
+
+Class.Show.instance_Out_String_out
+ =      /\  %rTS10 ->
+        \  (x :: Data.String.String %rTS10)
+                             of !{!Read %rTS10; !Console} ->
+        [** Base.Unit ]
+        local %rTS21  with {+wCB4 = Const %rTS21; +wCB5 = Direct %rTS21} in
+        do {
+                xCS10   = instance_Show_String_show %rTS10 x;
+                println %rTS21 xCS10;
+        };
+
+----
+String bound to xCS10 is in the wrong region
+-}
+
+class Show2 a where 
+ show2 	:: forall %r
+	.  a -(!e1)> String %r
+	:- !e1	= !{ !ReadT a }
+
+-- instance Show2 String where
+--  show2 ss = "'" % ss % "'"
+
+-- original code didn't copy ss, so was in the wrong region.
+--	source level error, not catched in type checking.
+instance Show2 String where
+ show2 ss = "'" % copy ss % "'"
+
+class Out2 a where
+ out2 	:: a -(!e1)> ()
+	:- !e1 = !{ !ReadT a; !Console }
+
+instance Out2 String where
+ out2 x	= println (show2 x)
+
+
+main ()
+ = do	out2 "dude"
+ 

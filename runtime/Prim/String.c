@@ -69,3 +69,18 @@ Obj*	primString_ord	(Obj* str_)
 	
 	return	_boxInt32 (cStr[0]);
 }
+
+
+Obj*	primString_copy (Obj* str_)
+{
+	// cStr points _inside_ a heap object, we can't allocate the new one
+	// while we hold this pointer.
+	Char8*	cStr	= _unbox(String, str_);
+
+	Char8*	tmp	= malloc (strlen(cStr) + 1);
+	strcpy(tmp, cStr);
+	
+	Obj*	nString	= _boxString (tmp);
+	free (tmp);
+	return nString;
+}

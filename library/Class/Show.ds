@@ -14,7 +14,7 @@ instance Show Unit where
 
 
 instance Show String where
- show ss = "'" % ss % "'"
+ show ss = "'" % copy ss % "'"
 
 instance Show Int where
  show	= stringOfInt
@@ -125,6 +125,6 @@ instance Out Float where
  out x	= println $ show x
 
 instance Out String where
- out x	= println x
+ out x	= println (show x)
 
 

@@ -3,6 +3,7 @@ import	Base
 
 import	Data.Int
 import 	Class.Eq
+import	Class.Copy
 
 pragma	cc_includes ["string.h"];
 
@@ -21,8 +22,8 @@ data	String %r1
 --	This creates a new heap object and copies the source string into it.
 --
 foreign import extern "_boxString"
- boxString	:: forall %r1
- 		.  String# %r1 -(!Read %r1)> String %r1
+ boxString	:: forall %r1 %r2
+ 		.  String# %r1 -(!Read %r1)> String %r2
 		:$ String# -> Obj;
 		
 -- | Unboxing a string returns a pointer to a C string. 
@@ -102,6 +103,9 @@ foreign import extern "primString_isNul"
 foreign import extern "primString_ord"
  string_ord	:: elaborate String -> Int;
 
+-- | Copy a string
+foreign import extern "primString_copy"
+ string_copy	:: elaborate String -> String;
 
 ----------------------------------------------------------------------------------------------------
 
@@ -171,7 +175,6 @@ string_join  s1 s2
 	dangerConcat s3 s2
 	s3
 
-
 -- | String equality
 primString_eq :: String -> String -> Bool
 primString_eq	s1 s2	
@@ -184,9 +187,12 @@ primString_eq	s1 s2
 		0#	-> False
 
 
-instance Eq (String %_) where
-	(==) 	= primString_eq
+-- Instances ---------------------------------------------------------------------------------------
+instance Eq String where
+	(==) 		= primString_eq
 
+instance Copy String where	
+	copy		= string_copy
 
 project String where
 	length x	= string_length x
