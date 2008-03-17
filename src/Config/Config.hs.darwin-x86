@@ -1,5 +1,5 @@
 
--- Compiler configuration for the linux-x86 target
+-- Compiler configuration for the darwin-x86 target
 --	Everything specific to this target should be in this file.
 --
 module Config.Config where

@@ -8,7 +8,7 @@ import Main.Arg
 
 -- The extension to use for a shared object
 extSharedObject
-	= "dylib"
+	= "so"
 
 -- | The system command to compile a Sea source file.
 makeSeaCompileCmd
