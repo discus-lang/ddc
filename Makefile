@@ -48,7 +48,7 @@ make/Makefile.deps : $(src_hs) src/Config/Config.hs
 # -- Building --------------------------------------------------------------------------------------
 
 # -- build the boiler plate generator
-bin/plate : tools/plate/Main.hs
+bin/plate : tools/plate/Main.hs src/Config/Config.hs
 	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^ 
 
 # -- generate boilerplate
