@@ -146,7 +146,13 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	-- class instances
 	S.PClassInst sp vC ts context ss
 	 -> do	
+		-- merge pattern bindings
 		ss'		<- mapM rewrite ss
+		let (ss_merged, errs)
+				= mergeBindings ss'
+				
+		when (not $ isNil errs)
+		 $ dieWithUserError errs
 
 		let context'	= map (\(v, vs) ->
 					D.ClassContext v ts)
@@ -158,7 +164,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		ts_elab		<- liftM (map t3_1)
 				$  mapM (elaborateRegionsT (newVarN NameRegion) getKind) ts_rewrite
 
-	 	returnJ		$ D.PClassInst sp vC ts_elab context' ss'
+	 	returnJ		$ D.PClassInst sp vC ts_elab context' ss_merged
 
 	-- projections
 	S.PProjDict sp t ss
@@ -256,18 +262,37 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		return	$ D.XMatch sp (Just x') aa'
 
 	S.XDo sp ss
-	 -> do	ss'	<- rewrite ss
-	 	return	$ D.XDo sp ss'
+	 -> do
+		ss'		<- mapM rewrite ss
+
+		-- merge pattern bindings
+		let (ss_merged, errs) = mergeBindings ss'
+		when (not $ isNil errs)
+		 $ dieWithUserError errs
+
+		return	$ D.XDo sp ss_merged
 		
 	S.XLet sp ss x
 	 -> do	ss'	<- rewrite ss
+	 
+ 		-- merge pattern bindings
+		let (ss_merged, errs) = mergeBindings ss'
+		when (not $ isNil errs)
+		 $ dieWithUserError errs
+	 
 	 	x'	<- rewrite x
-		return	$ D.XDo sp (ss' ++ [D.SBind sp Nothing x'])
+		return	$ D.XDo sp (ss_merged ++ [D.SBind sp Nothing x'])
 
 	S.XWhere sp x ss
 	 -> do	ss'	<- rewrite ss
+	 
+ 		-- merge pattern bindings
+		let (ss_merged, errs) = mergeBindings ss'
+		when (not $ isNil errs)
+		 $ dieWithUserError errs
+
 	 	x'	<- rewrite x
-		return	$ D.XDo	sp (ss' ++ [D.SBind sp Nothing x'])
+		return	$ D.XDo	sp (ss_merged ++ [D.SBind sp Nothing x'])
 		
 	S.XIfThenElse sp x1 x2 x3
 	 -> do	x1'	<- rewrite x1

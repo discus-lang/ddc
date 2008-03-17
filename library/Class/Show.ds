@@ -23,11 +23,13 @@ instance Show Float where
  show	= stringOfFloat32
 
 instance Show Bool where
- show b 
+ show True	= "True"
+ show False	= "False"
+{-
   = case b of 
 	True	-> "True"
 	False	-> "False"
-
+-}
 -----------------------
 infixr 7 %;
 infixr 7 %%;

@@ -2,7 +2,8 @@
 module Source.Desugar.Patterns
 	( rewritePatVar
 	, rewritePatternsTreeM
-	, makeMatchFunction)
+	, makeMatchFunction
+	, mergeBindings)
 
 where
 
