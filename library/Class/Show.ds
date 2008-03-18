@@ -127,6 +127,6 @@ instance Out Float where
  out x	= println $ show x
 
 instance Out String where
- out x	= println (show x)
+ out x	= println x
 
 
