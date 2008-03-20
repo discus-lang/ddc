@@ -41,7 +41,10 @@
   8) Create an alias to give ddc the path to its libraries and (static) runtime.
       (You'll probably want to add this to your .profile, or similar)
   
-     $ alias ddc='~/bin/ddc.real -basedir $(DDC_BUILD)'
+     $ alias ddc='~/bin/ddc.real -basedir $(DDC_BUILD)'  (for bash)
+     $ alias ddc '~/bin/ddc.real -basedir $(DDC_BUILD)'  (for c shells)
+
+
 
   9) Compile and run your first program
   
