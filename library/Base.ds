@@ -69,6 +69,7 @@ class	Shape4		:: * -> * -> * -> * -> +
 class	Shape5		:: * -> * -> * -> * -> * -> +
 class	Shape6		:: * -> * -> * -> * -> * -> * -> +
 
+
 -----------------------
 -- Global Effects.
 --
@@ -82,26 +83,14 @@ effect	!ReadH		:: * -> !	-- Read of top level constructor of an object.
 effect	!Write		:: % -> !	-- Write to some region.
 effect	!WriteT		:: * -> !	-- Write to whole object.
 
+
 -----------------------
--- Global regions.
+-- Global regions (not used yet)
 --
 region	%const;
 region	%mutable;
 
-------------------------
--- Fixity defs.
---
-{-
-infixl 8 *, / ;
-infixl 7 +, - ;
-infixr 6 : ;
-infix  5 ==, /=, <, <=, >=, > ;
-infixr 4 && ;
-infixr 3 || ;
-infixl 2 >>, >>= ;
-infixr 1 $ ;
-infixl 0 :=, #=;
--}
+
 -----------------------
 -- Simple Functions
 --	We won't get very far without these.
@@ -111,6 +100,7 @@ id    x = x
 
 infixr 1 $ ;
 ($) f x	 = f x
+
 
 -----
 -- primProj*
@@ -122,8 +112,6 @@ infixr 1 $ ;
 --	The desugarer adds the required type sig and forcing constructs to ensure
 --	that the resulting projection functions are sound.
 --
---
-
 foreign import extern "primProjField"
  primProjField	
  	:: forall a b
@@ -146,7 +134,6 @@ foreign import extern "_allocDataM"
  	:: forall a 
 	.  Int32# -> Int32# -> Int32# -> a			-- tag, ptrCount, dataSize (in bytes).
 	:$ Word32# -> Word32# -> Word32# -> Data
-
 
 -----
 -- primAlloc_unsafe_dataR

@@ -6,10 +6,12 @@ import	System.Console
 import	Class.Show
 import	Control.Imperative
 
+
 -- Functions which might throw a user exception have the Throw effect.
 --	Non-exhaustive pattern match, and array bounds exceptions are not included
 --	in this. These effects should always be fatal.
 effect !Throw	:: !
+
 
 foreign import extern "primException_init"
  primExceptionInit

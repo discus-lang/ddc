@@ -8,9 +8,9 @@ main ()
 	vec	= Vector3 1.0 0.0 1.0;
 	
  	print	$ trans.show		% "\n";
-	print	$ showVector3  vec	% "\n";
+	print	$ show vec		% "\n";
 	
-	print	$ showVector3 (trans.mulVec vec);
+	print	$ show (trans.mulVec vec);
 
  };  
  

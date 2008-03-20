@@ -1,25 +1,20 @@
 
-import Body
-
-import Graphics.Render
 import Math.Vec2
+import Body
+import Graphics.Render
 import Data.Array
 import DDC.Runtime
 
-newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
 
 -- Main -----------------------------------------------------------------------------
-
------
 main ()
- = topHandle nbody
-
-nbody ()
- = do 	frame	= frame_new "N-Body" worldSize.x worldSize.y
+ = do 	frame	= new&{Frame} "N-Body" worldSize.x worldSize.y
 
 	case initBodies () of
 		Tuple2 body0 body1 -> run frame body0 body1
 
+newBody :: Vec2 Float -> Vec2 Float -> Body
+newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
 
 -- | Main loop.
 run :: 	Frame -> Array Body -> Array Body -> ()
@@ -35,7 +30,7 @@ run	frame body0 body1
 	mapArray_   (\x -> x.clampPos)	body1
 
 	-- clear the buffer and draw the new forces
-	frame.clear (frame_color 0 0 0)
+	frame.clear (color&{Frame} 0 0 0)
 	draw_force frame body1 0 0
 
 	mapArray_   (\x -> x.draw frame) body1
@@ -113,33 +108,33 @@ draw_force frame body x y
 
 -- | Choose a color to render this force
 forceColor fS
-	| fS < 0.0	= frame_color 0 0 0
+	| fS < 0.0	= color&{Frame} 0 0 0
 
 	| fS < 1.0	
 	= do 	x	= fS
 		c	= truncate (x * 255.0)
-		frame_color 0 0 c
+		color&{Frame} 0 0 c
 		
 	| fS < 2.0
 	= do 	x	= fS - 1.0
 		c	= truncate (x * 255.0)
-		frame_color 0 c (255 - c)
+		color&{Frame} 0 c (255 - c)
 
 	| fS < 3.0
 	= do 	x	= fS - 2.0
 		c	= truncate (x * 255.0)
-		frame_color c (255 - c) 0
+		color&{Frame} c (255 - c) 0
 
 	| fS < 4.0
 	= do 	x	= fS - 3.0
 		c	= truncate (x * 255.0)
-		frame_color (255 - c) c c
+		color&{Frame} (255 - c) c c
 
 	| fS < 5.0
 	= do 	x	= fS - 4.0
 		c	= truncate (x * 255.0)
-		frame_color c (255 - c) c
+		color&{Frame} c (255 - c) c
 				
-	\= 	frame_color 255 255 255
+	\= 	color&{Frame} 255 255 255
 					
 

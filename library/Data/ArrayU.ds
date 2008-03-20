@@ -1,41 +1,44 @@
 
-import
-{	Base;
-	Data.Int;
-	Data.Int32U;
-	Control.Imperative;
-	Control.Exception;
-}
+import	Base
+import	Data.Int
+import 	Data.Int32U
+import	Control.Imperative
+import	Control.Exception
 
-data ArrayU %r a;
+-- An array of unboxed ints
+data ArrayU %r a
 
-
+-- Create a new array and fill it with this value
+--	If the first arg is 1 the array is anchored and is not coppied around by the Garbage collector
+--	If the first 
 foreign import extern "primArrayU_Int_new"
- arrayUI_new :: elaborate Int -> Int -> ArrayU Int;
+ arrayUI_new :: elaborate Int -> Int -> ArrayU Int
  
 foreign import extern "primArrayU_Int_get"
- arrayUI_get :: elaborate ArrayU Int -> Int -> Int;
+ arrayUI_get :: elaborate ArrayU Int -> Int -> Int
 
 foreign import extern "primArrayU_Int_set"
- arrayUI_set :: elaborate ArrayU (mutable Int) -> Int -> Int -> ();
+ arrayUI_set :: elaborate ArrayU (mutable Int) -> Int -> Int -> ()
  
 foreign import extern "primArrayU_Int_dump"
- arrayUI_dump :: elaborate ArrayU Int -> ();
+ arrayUI_dump :: elaborate ArrayU Int -> ()
  
 foreign import extern "primArrayU_Int_size"
- arrayUI_size :: elaborate ArrayU Int -> Int;
+ arrayUI_size :: elaborate ArrayU Int -> Int
 
 foreign import extern "primArrayU_Int_fill"
- arrayUI_fill :: elaborate ArrayU (mutable Int) -> Int -> ();
+ arrayUI_fill :: elaborate ArrayU (mutable Int) -> Int -> ()
 
+-- An fast, unchecked read from an array
 foreign import extern "primArrayInt32_peek"
  arrayUI_peek  
  	:: forall %r1 %r2 %r3 %r4
 	.  ArrayU %r1 (Int %r2) -> Int32# -(!e1 $c1)> Int32#
 	:- !e1 = !{ !Read %r1; !Read %r2; !Read %r3; !Read %r4 }
 	,  $c1 =  x : ArrayU %r1 Int32#
-	:$ Obj -> Int32# -> Int32#;
+	:$ Obj -> Int32# -> Int32#
 
+-- A fast, unchecked write to an array.
 foreign import extern "primArrayInt32_poke"
  arrayUI_poke
  	:: forall %r1 %r2 %r3 %r4
@@ -44,42 +47,20 @@ foreign import extern "primArrayInt32_poke"
 	,  $c2 = ${ a :  ArrayU %r1 (Int %r2); ix : Int32# }
 	,  !e2 = !{ !Read %r1; !Write %r2; !Read %r3; !Read %r4 }
 	,  Mutable %r2
-	:$ Obj -> Int32# -> Int32# -> Obj;
+	:$ Obj -> Int32# -> Int32# -> Obj
 
 foreign import extern "primArrayU_Int_getBufPtr"
- arrayUI_getBufPtr :: elaborate (ArrayU Int) -> Ptr# Int32#;
+ arrayUI_getBufPtr :: elaborate (ArrayU Int) -> Ptr# Int32#
 
 
 -- This is very slow
 --
 arrayUI_fill2 array x
- = do {	i	= 0;
- 	size	= arrayUI_size array;
+ = do 	i	= 0
+ 	size	= arrayUI_size array
 	
-	while (i < size) 
-	do {
+	while (i < size) do 
 		arrayUI_set array i x;
 		i	:= i + 1;
-	};
- };
 
 
-{-
--- This freaks because of stack overflow.
--- 	
-arrayUI_fill3 array x
- = arrayUI_fill3' array x 0;
-
-arrayUI_fill3' array x i
- = if i >= arrayUI_size array
-   then ()
-   else do {
- 	arrayUI_set array i x;
-	arrayUI_fill3' array x (i + 1);
-   };
--}
-
-{-
-foreign import extern "primArrayInt32_poke"
- arrayUI_poke  :: elaborate ArrayU (mutable Int32#) -> Int32# -> Int32# -> ();
--}

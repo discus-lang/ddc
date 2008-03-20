@@ -101,8 +101,9 @@ exportAll
 	-> Set Var		-- ^ don't export these vars
 	-> String		-- ^ the interface file
 
-exportAll getType topNames ps psDesugared psCore vsNoExport
- 	=  pprStrPlain
+exportAll getType topNames ps psDesugared_ psCore vsNoExport
+ = let	psDesugared	= map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared_
+   in   pprStrPlain
 	$  "-- Imports\n"
 	++ (concat [pprStrPlain p | p@S.PImportModule{} 	<- ps])
 	++ "\n"
@@ -119,7 +120,9 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 	++ "\n"
 
 	++ "-- Data\n"
-	++ (concat [pprStrPlain p | p@S.PData{}		<- ps])
+	++ (concat [pprStrPlain (D.PData sp (eraseModule vData) vsData (map eraseModule_ctor ctors))
+			| D.PData sp vData vsData ctors
+			<- psDesugared])
 	++ "\n"
 
 	++ "-- Effects\n"
@@ -139,8 +142,7 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 	++ "\n"
 
 	++ "-- Class instances\n"
-	++ (concat [pprStrPlain p | 	p@D.PClassInst{}			
-			     <- map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared])
+	++ (concat [pprStrPlain p | 	p@D.PClassInst{}	<- psDesugared])
 	++ "\n"
 	
 	++ "-- Foreign imports\n"
@@ -160,6 +162,17 @@ exportAll getType topNames ps psDesugared psCore vsNoExport
 					<- psDesugared])
 
 	++ "\n"
+
+
+-- | Erase a the module name from this var 
+eraseModule :: Var -> Var
+eraseModule v
+	= v { Var.nameModule = Var.ModuleNil }
+
+
+eraseModule_ctor (D.CtorDef sp v fs)
+	= D.CtorDef sp (eraseModule v) fs
+
 
  
 -- | make a foreign import to import this scheme
@@ -194,6 +207,7 @@ exportProjDict (D.PProjDict _ t ss)
 			-> v1 %>> " = " % v2 { Var.nameModule = Var.ModuleNil } % ";") ss)
 	% "\n}\n\n"
 	
+
 	
 -- | erase module qualifiers from variables in this tree
 eraseVarModuleTree

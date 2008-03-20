@@ -1,21 +1,21 @@
 
-import
-{	Base;
-	Data.Int32U;
-	System.Console;
-}
+import	Base
+import	Data.Int32U
+import	System.Console
 
-
-
+-- The effect of functions that prod the runtime system
 effect !Runtime	:: !;
 
+
+-- Get the current slot usage
 foreign import extern "primRuntime_slotUsage"
  runtime_slotUsage
  	:: forall %r1
  	. Unit -(!e1)> Int32# %r1
 	:- !e1 = !{ !Runtime };
 	
- 
+
+-- Print a low level description of a heap object to stdout
 foreign import extern "primRuntime_printObj"
  runtime_printObj
  	:: forall a

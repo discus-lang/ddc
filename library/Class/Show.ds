@@ -4,14 +4,27 @@ import	Data.List
 import 	System.Console
 import	Class.Out
 
+-- The show class for converting things to string
 class Show a where 
  show 	:: forall %r
 	.  a -(!e1)> String %r
 	:- !e1	= !{ !ReadT a }
 
+
+-- The string paste operator
+infixr 7 %;
+infixr 7 %%;
+
+(%)  a b	= SAppend a b
+(%%) a b	= a % " " % b
+
+
+-- Instances for Show are defined here instead of in the Data.* modules so we don't 
+--	have to worry about recursive module definitions.
+
+-- Simple Instances 
 instance Show Unit where
  show ss = "()"
-
 
 instance Show String where
  show ss = "'" % copy ss % "'"
@@ -25,43 +38,28 @@ instance Show Float where
 instance Show Bool where
  show True	= "True"
  show False	= "False"
-{-
-  = case b of 
-	True	-> "True"
-	False	-> "False"
--}
------------------------
-infixr 7 %;
-infixr 7 %%;
 
-(%)  a b	= SAppend a b
-(%%) a b	= a % " " % b
 
------------------------
--- showListL
---
-{-
+-- Show a list lazilly
 showListL showX xx
- = case xx of {
-	Nil -> "[]";
+ = case xx of 
+	Nil -> "[]"
 	Cons x xs
-	 -> (%)@ "[" ((%)@ (showX@ x) (showListL2@ showX xs));
- };	 
+	 -> (%) @ "[" ( (%) @ (showX @ x) (showListL2 @ showX xs))
 
 showListL2 showX xx
- = case xx of {
- 	Nil -> "]";
+ = case xx of 
+ 	Nil -> "]"
 	Cons x xs 
-	 -> (%)@ ", " ((%)@ (showX@ x) (showListL2@ showX xs));
- };
+	 -> (%)@ ", " ((%)@ (showX@ x) (showListL2@ showX xs))
 
+-- Show a list of ints, lazilly
+showListIntL :: [Int] -> String
 showListIntL 
-	= showListL showInt;
--}
------------------------
--- showList
---
+	= showListL show
 
+
+-- Show a list
 instance Show (List Int) where
  show = showList show
 
@@ -69,55 +67,64 @@ showList  showX xx
  = "[" % showList2 showX xx;
  
 showList2 showX xx
- = case xx of {
- 	Nil	-> "]";
+ = case xx of 
+ 	Nil	-> "]"
 	
 	Cons x xs
-	 -> showX x 		% showList3 showX xs;
+	 -> showX x 		% showList3 showX xs
 	 
-	Append xs ys
-	 -> showList2 showX xs 	% showList3 showX ys;
- };
  
 showList3 showX xx
- = case xx of {
- 	Nil 	-> "]";
+ = case xx of 
+ 	Nil 	-> "]"
 
 	Cons x xs
-	 -> ", " 	% showX x	% showList3 showX xs;
-	 
-	Append xs ys
-	 -> showList3 showX xs 		% showList3 showX ys;
- };
+	 -> ", " 	% showX x	% showList3 showX xs
 
 
+-- | Show a lits of ints
 showListInt :: [Int] -> String;
 showListInt 
-	= showList show;
+	= showList show
 
-print :: String -> ();
+
+-- | Print a string to the console
+putStr :: String -> ()
+putStr ss = print ss
+
+
+-- | Print a string to the console.
+--	This will become polymorphic when type classes are finished
+print :: String -> ()
 print xx
- = case xx of {
+ = case xx of 
  	SChunk x	
-	-> printString xx;
+	-> primPrintStringChunk xx
 
 	SAppend s1 s2	
-	-> do {	print s1;
-		print s2; };
- };	
+	-> do 	print s1
+		print s2
 
+
+-- | Print a string to the console followed by a newline.
 println :: String -> ();
 println s	= print (s % "\n");
 
-concats xx
- = case xx of {
-	Nil		-> "";
- 	Cons x xs	-> SAppend x (concats xs);
- };
 
+-- | Contatenate some strings
+concats :: [String] -> String
+concats xx
+ = case xx of
+	Nil		-> ""
+ 	Cons x xs	-> SAppend x (concats xs)
+
+
+-- | Wrap a string in parens
 parens :: String -> String
 parens ss	= "(" % ss % ")"
 
+
+-- Out ---------------------------------------------------------------------------------------------
 -- We're using the Out class until dictionary passing comes online and we can
 --	make 'print' polymoprhic.
 instance Out Int where
@@ -129,4 +136,5 @@ instance Out Float where
 instance Out String where
  out x	= println x
 
-
+instance Out [Int] where
+ out x	= println $ show x

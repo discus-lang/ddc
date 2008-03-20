@@ -1,57 +1,49 @@
 
-import
-{	Base;
-	Data.String;
-	Data.Int;
-	Data.Int32U;
-	Data.Float;
-	Data.Char;
-}
+import	Base
+import	Data.String
+import	Data.Int
+import 	Data.Int32U
+import	Data.Float
+import	Data.Char
 
-pragma cc_includes [ "unistd.h" ];
+pragma cc_includes [ "unistd.h" ]
 
 -- an effect on stdin/stderr/stdout
-effect !Console	:: !;	
+effect !Console	:: !
 
+-- | Print a single string chunk
 foreign import extern "primPrintString"
- printString 
-	:: forall %r1
-	.  String %r1 -(!e1)> Unit
-	:- !e1	= !{ !Console; !Read %r1 }
-	:$ Obj -> Obj;
+	primPrintStringChunk
+		:: forall %r1
+		.  String %r1 -(!e1)> Unit
+		:- !e1	= !{ !Console; !Read %r1 }
+		:$ Obj -> Obj
 
 foreign import extern "primStringChar"
- stringOfChar
-	:: forall %r1 %r2
-	.  Char %r1 -(!e1)> String %r2
-	:- !e1	= !{ !Read %r1 }
-	:$ Obj -> Obj;
+	stringOfChar
+		:: forall %r1 %r2
+		.  Char %r1 -(!e1)> String %r2
+		:- !e1	= !{ !Read %r1 }
+		:$ Obj -> Obj
 
 foreign import extern "primStringInt"
- stringOfInt
-	:: forall %r1 %r2
-	.  Int %r1 -(!e1)> String %r2
-	:- !e1	= !{ !Read %r1 }
-	:$ Obj -> Obj;
+	stringOfInt
+		:: forall %r1 %r2
+		.  Int %r1 -(!e1)> String %r2
+		:- !e1	= !{ !Read %r1 }
+		:$ Obj -> Obj
 
 foreign import extern "primStringFloat32"
- stringOfFloat32	
-	:: forall %r1 %r2
-	.  Float %r1 -(!e1)> String %r2
-	:- !e1 = !{ !Read %r1 }
-	:$ Obj -> Obj;
+	stringOfFloat32	
+		:: forall %r1 %r2
+		.  Float %r1 -(!e1)> String %r2
+		:- !e1 = !{ !Read %r1 }
+		:$ Obj -> Obj
 
 
 foreign import extern "usleep"
- usleep	:: forall %r1
- 	.  Int32# %r1 -(!e1)> ()
-	:- !e1 = !{ !Console }
-	:$ Int32# -> Obj;
+	usleep	:: forall %r1
+	 	.  Int32# %r1 -(!e1)> ()
+		:- !e1 = !{ !Console }
+		:$ Int32# -> Obj
 
-{-
-foreign import extern "random"
- random	:: forall %r1 !e1
- 	.  Void# -(!e1) Int32# %r1
-	:- !e1 = !{ !Console }
-	$: Void# -> Int32# %r1;
--}

@@ -4,39 +4,40 @@ import Base
 infixl 8 *, / 
 infixl 7 +, - 
 
+-- The class of types whichare numbers
 class Num a where 
 
- (+)	:: forall b c
-	.  a -> b -(!e1 $c1)> c
-	:- !e1 = !{ !ReadT a; !ReadT b }
-	,  $c1 = x : a
-	,  Shape3 a b c
+	(+)	:: forall b c
+		.  a -> b -(!e1 $c1)> c
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		,  $c1 = x : a
+		,  Shape3 a b c
 
- (-)	:: forall b c
-	.  a -> b -(!e1 $c1)> c
-	:- !e1 = !{ !ReadT a; !ReadT b }
-	,  $c1 = x : a
-	,  Shape3 a b c
+	(-)	:: forall b c
+		.  a -> b -(!e1 $c1)> c
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		,  $c1 = x : a
+		,  Shape3 a b c
 
- (*)	:: forall b c
-	.  a -> b -(!e1 $c1)> c
-	:- !e1 = !{ !ReadT a; !ReadT b }
-	,  $c1 = x : a
-	,  Shape3 a b c
+	(*)	:: forall b c
+		.  a -> b -(!e1 $c1)> c
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		,  $c1 = x : a
+		,  Shape3 a b c
 
- (/)	:: forall b c
-	.  a -> b -(!e1 $c1)> c
-	:- !e1 = !{ !ReadT a; !ReadT b }
-	,  $c1 = x : a
-	,  Shape3 a b c
+	(/)	:: forall b c
+		.  a -> b -(!e1 $c1)> c
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		,  $c1 = x : a
+		,  Shape3 a b c
 
- mod	:: forall b c
-	.  a -> b -(!e1 $c1)> c
-	:- !e1 = !{ !ReadT a; !ReadT b }
-	,  $c1 = x : a
-	,  Shape3 a b c
+	mod	:: forall b c
+		.  a -> b -(!e1 $c1)> c
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		,  $c1 = x : a
+		,  Shape3 a b c
 
- negate :: forall b
- 	.  a -(!ReadT a)> b
-	:- Shape2 a b
+	negate :: forall b
+	 	.  a -(!ReadT a)> b
+		:- Shape2 a b
 	

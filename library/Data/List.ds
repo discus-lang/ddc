@@ -1,227 +1,152 @@
 
-import
-{	Base;
-	Base.Thunk;
-	Data.Bool;
-	Data.Ref;
-	Data.Tuple;
-	Data.Maybe;
-	Data.Int;
-	System.Error;
-}
+import	Base
+import	Base.Thunk
+import	Data.Bool
+import	Data.Ref
+import	Data.Tuple
+import 	Data.Maybe
+import 	Data.Int
+import	System.Error
 
+
+-- We need to manually provide the %r1 region annotation here because the elaborator
+--	can't elaborate a recursive definition yet. (ticket #116)
 data	List %r1 a
 	= Nil
 	| Cons { 
 		x 	:: a;
 		xs	:: List %r1 a; }
 
-	| Append {
-		xx	:: List %r1 a; 
-		xs	:: List %r1 a; }
-
------
 -- Construction
---
-infixr 6 : ;
-(:)  x xs 	= Cons   x xs;
+infixr 6 : 
+(:)  x xs 	= Cons   x xs
 
 
------
--- Projections
---
-head :: [a] -> a;
-head =
- \case { x : xs		-> x; };
+-- Simple Projections  -----------------------------------------------------------------------------
+
+head :: [a] -> a
+head (x:xs)	= x
+
+tail ::	[a] -> [a]
+tail (x:xs)	= xs
+
+last :: [a] -> a;
+last (x:[])	= x
+last (x:xs)	= last xs
 
 
-tail ::	[a] -> [a];
-tail =	
- \case { x  :  xs	-> xs; };
+-- Predicates --------------------------------------------------------------------------------------
+isNil :: [a] -> Bool
+isNil Nil	= True
+isNil _		= False
 
 
-last :: 	[a] -> a;
-last = 
- \case { []	-> error "last: empty list";
-	 x : xs	-> case xs of {
-			[]	-> x;
-			y : ys	-> last xs; }; };
+-- Length ------------------------------------------------------------------------------------------
 
------
--- Predicates
---
-isNil :: [a] -> Bool;
-isNil =
- \case { Nil		-> True;
-	_		-> False; };
-
------
--- Length
---
+-- | Find the length of a list using an accumulator.
+--	This uses constant stack space.
+--	Unfortunately, the return value's region is mutable so it's not always useful (ticket #49)
+--	
 length :: [a] -> Int;
 length xx
- = do {	count	= 0;
+ = do 	count	= 0;
 	
 	maps_ xx (\x ->	count <> inc);
 	count;
- };	 
 
+
+-- | Find the length of a list recursively.
+--	This uses stack space proportional to the length of the list :(
 lengthR :: [a] -> Int;
-lengthR xx
- = case xx of {
- 	[]	-> 0;
-	x : xs	-> 1 + lengthR xs;
- };
+lengthR []	= 0
+lengthR (x:xs)	= 1 + lengthR xs
 
 
------
--- Indexing
---
+-- | Select a numbered element of a list
 (!!) ::	[a] -> Int -> a;
-(!!) xx n
- = case xx of {
-	[]	-> error "(!!): not found";
- 	x : xs	-> if n == 0
-		 	then x
-			else xs !! (n - 1);
- };
+(!!) (x:xs) 0	= x
+(!!) (x:xs) n	= xs !! (n - 1)
 
 
-indexL ::	[a] -> Int -> a;
-indexL xx n
- = case xx of {
- 	[]	 -> errorL "indexL: not found";
-	x : xs	 -> if n == 0
-		 	then x
-			else indexL@ xs (n - 1);
- };
-
-
------
--- Append
+-- | Append two lists. 
+--   This uses time and stack space proportional to the length of the first list.
 --
-append :: [a] -> [a] -> [a];
-append xs ys
- = case xs of {
- 	[]	-> ys;
-	_	-> case ys of {
-			[]	-> xs;
-			_	-> Append xs ys;
-		};
- };
+(++) :: [a] -> [a] -> [a]
+(++) [] b	= b
+(++) (x:xs) b	= x : (xs ++ b)
 
 
-(++) :: [a] -> [a] -> [a];
-(++) xx b	
- = case xx of {
- 	[]		-> b;
-	Cons   x  xs	-> x : (xs ++ b);
-	Append xs ys	-> Append xs (ys ++ b);
- };
+-- | Replicate an an element a number of times.
+replicate :: 	Int -> a -> [a]
+replicate 0 x	= []
+replicate i x	= x : replicate (i - 1) x
 
 
------
--- Replicate / Iterate
---
-
-replicate :: 	Int -> a -> [a];
-replicate i x	
- = if i == 0 
- 	then	[]
-	else	x : replicate (i - 1) x;
-
-
-iterateL ::	(a -> a) -> a -> [a];
+-- | Keep applying this function to a value and return an infinite list of the results.
+iterateL ::	(a -> a) -> a -> [a]
 iterateL f a	
-	= a : iterateL@ f (f a);
-
------
--- Mapping / Folding
---
-map 	:: (a -> b) -> [a] -> [b];
-map f xx
- = case xx of { 
- 	[]		-> [];
-	x  :  xs	-> f x      :  map f xs;
- };
+	= a : iterateL@ f (f a)
 
 
-mapL 	:: (a -> b) -> [a] -> [b];
-mapL f xx
- = case xx of {
- 	[]		-> [];
-	x  :  xs	-> (:)  (f x) (mapL@ f xs);
- };
+-- | Apply a function to all the elements of a list, returning a new list
+map :: (a -> b) -> [a] -> [b]
+map f []	= []
+map f (x : xs)	= f x : map f xs
 
 
-map_ :: (a -> b) -> [a] -> ();
-map_ f xx
- = case xx of {
- 	[]		-> ();
-
-	x : xs		
-	 -> do { f x;
-		 map_ f xs; };
- };
+-- | A spine-lazy map
+mapL 	:: (a -> b) -> [a] -> [b]
+mapL f []	= []
+mapL f (x:xs)	= f x : (mapL@ f xs)
 
 
-maps 	:: [a] -> (a -> b) -> [b];
-maps xx f = map f xx;
+-- | A map where the return value of the function is ignored
+map_ :: (a -> b) -> [a] -> ()
+map_ f []	= ()
+map_ f (x:xs)
+ = do	f x
+ 	map_ f xs
+	
 
+-- | A map with the arguments switched around
+maps 	:: [a] -> (a -> b) -> [b]
+maps xx f = map f xx
 
-maps_ :: [a] -> (a -> b) -> ();
+-- | map_ with the arugments switched around
+maps_ :: [a] -> (a -> b) -> ()
 maps_ xx f 
- = 	map_ f xx;
+ = 	map_ f xx
 
+-- | fold a function throug a list
+foldl :: (s -> a -> s) -> s -> [a] -> s
+foldl f state []	= state
+foldl f state (x:xs)	= foldl f (f state x) xs
 
-foldl :: (s -> a -> s) -> s -> [a] -> s;
-foldl    f state xx
- = case xx of {
- 	[]	-> state;
-	x : xs	
-	-> do {	x'	= f state x;
-		foldl f x' xs; };
- };
-
-
+-- | a combination of map and fold.
 mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y]);
 mapAccumL  f acc xx	
- = mapAccumL' f acc xx [];
+ 	= mapAccumL' f acc xx [];
  
-mapAccumL' f acc xx yy
- = case xx of {
- 	[]	-> (acc, reverse yy);
-	(x:xs)	
-	 -> do { 
-	 	zz	= f acc x;
-	 	acc'	= fst zz;
-		y	= snd zz;
-		mapAccumL' f acc' xs (y:yy);
-	};
- };
+mapAccumL' f acc [] yy	
+	= (acc, reverse yy)
 
+mapAccumL' f acc (x:xs) yy
+ = do	zz	= f acc x
+ 	acc'	= fst zz
+	y	= snd zz
+   	mapAccumL' f acc' xs (y:yy)
+	
 
------
--- Sum / Prod
---
-
+-- | Sum up the elements of this int list
 sum ::	[Int] -> Int;
 sum xx
- = do {	count	= 0; 
+ = do 	count	= 0; 
 	maps_ xx 
-	 (\x ->	count := count + x);
-	count; 
- };
+	 (\x ->	count := count + x)
+	count
 
 
-sumU :: [Int] -> Int;
-sumU xx
- = do {	count	= 0;
-	maps xx 
-	 (\x -> count := count + x);
-	count;
- };
-
+-- | Sum up the elements of this int list, recursively
 sumR :: [Int] -> Int;
 sumR xx
  = case xx of {
@@ -229,170 +154,123 @@ sumR xx
 	x : xs	-> x + sumR xs;
  };
 
+-- | Multiply all the elements of this int list together
 prod :: [Int] -> Int;
 prod xs		= foldl (*) 1 xs;
 
+-- | Raise this int to a power.
 pow :: Int -> Int -> Int;
 pow x n		= prod $ replicate n x;
 
 
------
--- Zipping
---
-zipWith_ :: (a -> b -> ()) -> [a] -> [b] -> ();
-zipWith_ f xx yy
- = match {
- 	| Nil 	<- xx
-	= ();
+-- | Zip these lists together with a function, ignoring the return value
+zipWith_ :: (a -> b -> ()) -> [a] -> [b] -> ()
+zipWith_ f []  yy	= ()
+zipWith_ f xx  []	= ()
+zipWith_ f (x:xs) (y:ys)	
+ = do	f x y
+ 	zipWith_ f xs ys
 	
-	| Nil	<- yy
-	= ();
-	
-	| Cons x xs	<- xx
-	, Cons y ys	<- yy
- 	= do {	f x y;
-		zipWith_ f xs ys;
-	};
- };
+
+-- | Reverse the elements of this list
+reverse :: [a] -> [a]
+reverse []	= []
+reverse (x:xs)	= reverse xs ++ [x]
+
+
+-- | Intersperse an element between every member of this list
+intersperse :: a -> [a] -> [a];
+intersperse s []	= []
+intersperse s (x:xs)	= x : s : intersperse s xs
+
+
+-- | Take the first few elements from the front of this this list
+take :: Int -> [a] -> [a];
+take 0 xx	= []
+take _ []	= []
+take n (x:xs)	= x : take (n - 1) xs
+
+
+-- | Drop the first few elements from the front of this list
+drop :: Int -> [a] -> [a];
+drop 0 xx	= xx
+drop n (_:xs)	= drop (n - 1) xs
+
+
+-- | Delete all the elements which match this one, using the provided equality function
+deleteF :: (a -> a -> Bool) -> [a] -> a -> [a]
+deleteF eqF [] y	= []
+deleteF eqF (x:xs) y	
+	|  eqF x y	= xs
+			\= x : deleteF eqF xs y
+			
+
+-- | Find the first element in the list that matches this predicate.
+find :: (a -> Bool) -> [a] -> Maybe a;
+find f (x:xs)	
+	| f x	=  Just x
+		\= find f xs
+		
+find f _	= Nothing
+
+
+-- | Return a list of all the elements that match this predicate
+filter :: (a -> Bool) -> [a] -> [a]
+filter f []	= []
+filter f (x:xs)	
+	| f x	=  x : filter f xs
+		\= filter f xs
 		
 
------
--- Reverse
---
-reverse :: [a] -> [a];
-reverse xx 
- = case xx of {
- 	[]	-> [];
-	x :  xs	-> reverse xs ++ [x];
- };
+-- | Return a list of all the elements that match this predicate (lazy spine)
+filterL	:: (a -> Bool) -> [a] -> [a]
+filterL f []	= []
+filterL f (x:xs)
+	| f x	= x : filterL @ f xs
+		\= filterL @ f xs
+		
 
-
------
--- Intersperse
---
-intersperse :: a -> [a] -> [a];
-intersperse s
- = \case {
- 	[]	-> [];
-	x : xs	-> x : s : intersperse s xs;
- };
-
-
------
--- Take / Drop
--- 
-take :: Int -> [a] -> [a];
-take n xx
- = match {
- 	| n == 0		= [];
-	| [] 		<- xx	= [];
-	| (x:xs) 	<- xx	= x : take (n - 1) xs;
- };
-
-
-drop :: Int -> [a] -> [a];
-drop n xx
- = if n == 0 
- 	then xx
-	else drop (n - 1) (tail xx);
-
-
------
--- Delete
---
-deleteF :: (a -> a -> Bool) -> [a] -> a -> [a];
-deleteF eqF xx y
- = case xx of {
- 	[]	-> [];
-	
-	x : xs	
-	 -> if eqF x y
-	 	then xs
-		else x : deleteF eqF xs y;
- }; 
-
-
------
--- find
---
-find :: (a -> Bool) -> [a] -> Maybe a;
-find f xx
- = match {
-	| x:xs	<- xx
-	, f x
-	= Just x;
-
-	| x:xs	<- xx
-	= find f xs;
-	
-	\= Nothing;
- };
-
------
--- Filtering
---
-filterL	::	(a -> Bool) -> [a] -> [a];
-filterL f xx
- = case xx of {
- 	[]	-> [];
-	x : xs	-> if f x 
-		 	then x : filterL@ f xs
-			else filterL@ f xs;
- };
-
------
+-- | Return a list of ints in this range
 rangeInt :: Int -> Int -> [Int];
 rangeInt x y
- = if x >= y 
- 	then [x]
-	else x  : rangeInt (x + 1) y;
-
+	| x >= y	=  [x]
+			\= x : rangeInt (x + 1) y
+			
+-- | Return a list of ints in this range (lazy spine)
 rangeIntL :: Int -> Int -> [Int];
 rangeIntL x y
- = if x >= y
- 	then [x]
-	else x : rangeIntL@ (x + 1) y;
+	| x >= y	= [x]
+			\= x : rangeIntL @ (x + 1) y
+			
 
-rangeInfIntL :: Int -> [Int];
+-- | Return the infinite list of ints starting from this value (lazy spine)
+rangeInfIntL :: Int -> [Int]
 rangeInfIntL x
-	= x : rangeInfIntL@ (x + 1);
+	= x : rangeInfIntL @ (x + 1)
 
 
------
--- Concat / ConcatMap
---
-concat :: [[a]] -> [a];
-concat xx
- = case xx of {
-	[]	-> [];
- 	x : xs 	-> x ++ concat xs;
- };
+-- | Concatenate all these lists together
+concat :: [[a]] -> [a]
+concat []	= []
+concat (x:xs)	= x ++ concat xs
 
 
-concatL :: [[a]] -> [a];
-concatL xx
- = case xx of {
- 	[]		-> [];
-	x  : xs		-> (++)@ x (concatL@ xs);
---	xs ++ ys	-> (++)  (concatL@ xs) (concatL@ ys);
- };
+-- | Concat all these lists together (lazy spine)
+concatL :: [[a]] -> [a]
+concatL []		= []
+concatL (x:xs)		= (++)@ x (concatL @ xs)
 
 
-concatMap :: (a -> [b]) -> [a] -> [b];
-concatMap f xx
- = case xx of {
- 	[]		-> [];
-	x  : xs		-> f x ++ concatMap f xs;
---	xs ++ ys	-> concatMap f xs `append` concatMap f ys;
- };
- 
+-- | Map a function across this list and concatenate the elements together
+concatMap :: (a -> [b]) -> [a] -> [b]
+concatMap f []		= []
+concatMap f (x:xs)	= f x ++ concatMap f xs
 
-concatMapL :: (a -> [b]) -> [a] -> [b];
-concatMapL f xx
- = case xx of {
- 	[] 		-> [];
-	x : xs		-> (++)@ (f x) (concatMapL@ f xs);
- };
+
+-- | Map a function across this list and concatenate the elements together (lazy spine)
+concatMapL :: (a -> [b]) -> [a] -> [b]
+concatMapL f []		= []
+concatMapL f (x:xs)	= (++)@ (f x) (concatMapL @ f xs)
 
 
 -- Instances ---------------------------------------------------------------------------------------

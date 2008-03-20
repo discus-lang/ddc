@@ -1,27 +1,22 @@
 
-import	Base;
+import	Base
 
 infixl 0 #= ;
 foreign import extern "primRefUpdate"
- (#=)
-	:: forall a %r1
-	.  Ref %r1 a -> a -(!e1)> ()
-	:- Mutable %r1
-	,  !e1 = !Write %r1
-	:$ Obj -> Obj -> Obj;
+	(#=)
+		:: forall a %r1
+		.  Ref %r1 a -> a -(!e1)> ()
+		:- Mutable %r1
+		,  !e1 = !Write %r1
+		:$ Obj -> Obj -> Obj;
  	
 
-ref	:: forall a %r1
-        .  a -> Ref %r1 a
+-- Create a mutable reference to some object
+--	This isn't a pull-back reference of anything else.
+ref	:: forall a %r1. a -> Ref %r1 a
 	:- Mutable %r1; 
-ref x 
- = do {	r	:: forall %r1 a
-                .  Ref %r1 a 
-		:- Mutable %r1;
- 	r	= Ref x;
-	
-	r;
- };
+ref x 	= Ref x
+
 
 
 

@@ -1,9 +1,10 @@
 
-import Base;
-import Data.Bool;
+import Base
+import Data.Bool
 
-infix  5 ==, /=;
+infix  5 ==, /=
 
+-- The class of types which support equality
 class Eq a where 
 
 	(==)	:: forall b %r1
@@ -18,7 +19,7 @@ class Eq a where
 		,  $c1 = x : a
 		,  Shape2 a b
 
-
+	-- should probably make these return unboxed bools instead.
 	(#==)	:: forall b
 		.  a -> b -(!e1 $c1)> Int32#
 		:- !e1 = !{ !ReadT a; !ReadT b }

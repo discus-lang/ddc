@@ -9,67 +9,60 @@ import Prelude;
 drawBresenhamLine 
 	frame widthB height cB
 	x0B y0B x1B y1B 
- = do {
-	x0	= unboxInt32 x0B;
-	y0	= unboxInt32 y0B;
-	x1	= unboxInt32 x1B;
-	y1	= unboxInt32 y1B;
-	width	= unboxInt32 widthB;
-	c	= unboxInt32 cB;
+ = do 
+	x0	= unboxInt32 x0B
+	y0	= unboxInt32 y0B
+	x1	= unboxInt32 x1B
+	y1	= unboxInt32 y1B
+	width	= unboxInt32 widthB
+	c	= unboxInt32 cB
 
 	-- setup dy
-	dy	= y1	- y0;
-	dyP	= case dy `primInt32U_lt` 0# of {
-			1#	-> -dy;
-			0#	-> dy;
-		};
+	dy	= y1	- y0
 
-	stepy	= case dy `primInt32U_lt` 0# of {
-			1#	-> -width;
-			0#	-> width;
-		};
+	dyP	= case dy `primInt32U_lt` 0# of 
+			1#	-> -dy
+			0#	-> dy
 
-	dy2	= dyP * 2#;
+	stepy	= case dy `primInt32U_lt` 0# of 
+			1#	-> -width
+			0#	-> width
+
+	dy2	= dyP * 2#
 
 	-- setup dx
-	dx	= x1	- x0;
-	dxP	= case dx `primInt32U_lt` 0# of {
-			1#	-> -dx;
-			0#	-> dx;
-		};
+	dx	= x1	- x0
+	dxP	= case dx `primInt32U_lt` 0# of 
+			1#	-> -dx
+			0#	-> dx
 		
-	stepx	= case dx `primInt32U_lt` 0# of {
-			1#	-> - 1#;
-			0#	-> 1#;
-		};
+	stepx	= case dx `primInt32U_lt` 0# of 
+			1#	-> - 1#
+			0#	-> 1#
 		
-	dx2	= dxP * 2#;
+	dx2	= dxP * 2#
 
 	-- 
-	y0w	= y0 * width;
-	y1w	= y1 * width;
+	y0w	= y0 * width
+	y1w	= y1 * width
 
 	-- set first pixel
-	arrayUI_poke frame (x0 + y0w) c;
+	arrayUI_poke frame (x0 + y0w) c
 	
-	case dx2 `primInt32U_gt` dy2 of {
-		1# -> do {
-			fraction1	= dy2 - dxP;
+	case dx2 `primInt32U_gt` dy2 of 
+	 1# 
+	  -> do fraction1	= dy2 - dxP
 
-			drawLoopH frame c
-				stepx	stepy	dx2	dy2
-				x0	x1	y0w	fraction1;
-		};
+		drawLoopH frame c
+			stepx	stepy	dx2	dy2
+			x0	x1	y0w	fraction1;
 		
-		0# -> do {
-			fraction 	= dx2 - dyP;
+	 0# 
+	  -> do fraction 	= dx2 - dyP;
 
-			drawLoopV frame c
-				stepx 	stepy	dx2	dy2
-				x0	y0w	y1w	fraction;
-		};
-	};
-};
+		drawLoopV frame c
+			stepx 	stepy	dx2	dy2
+			x0	y0w	y1w	fraction;
 
 
 drawLoopH 
@@ -79,33 +72,29 @@ drawLoopH
 	x0	x1	y0w 
 	fraction
 
- = match {
+ = match 
  	| 1#	<- x0 `primInt32U_eq` x1
-	= ();
+	= ()
 	
 	| 1#	<- fraction `primInt32U_ge` 0#
-	= do {
-		x0' :: Int32#;
-		x0'		= x0		+ stepx;
+	= do 
+		x0' :: Int32#
+		x0'		= x0		+ stepx
 
-		y0w' :: Int32#;
-		y0w'		= y0w 		+ stepy;
-		fraction'	= fraction 	- dx2 + dy2;
+		y0w' :: Int32#
+		y0w'		= y0w 		+ stepy
+		fraction'	= fraction 	- dx2 + dy2
 			
-		arrayUI_poke frame (x0' + y0w') c;
-		drawLoopH frame c stepx stepy dx2 dy2 x0' x1 y0w' fraction';
-	};
+		arrayUI_poke frame (x0' + y0w') c
+		drawLoopH frame c stepx stepy dx2 dy2 x0' x1 y0w' fraction'
 	
-	\= do {
-		x0'		= x0		+ stepx;
-		fraction'	= fraction	+ dy2;
+	\= do 
+		x0'		= x0		+ stepx
+		fraction'	= fraction	+ dy2
 				
-		arrayUI_poke frame (x0' + y0w) c;
-		drawLoopH frame c stepx stepy dx2 dy2 x0' x1 y0w fraction';
-	};
- };		
+		arrayUI_poke frame (x0' + y0w) c
+		drawLoopH frame c stepx stepy dx2 dy2 x0' x1 y0w fraction'
 
-		
  	
 drawLoopV 
 	frame	c
@@ -114,36 +103,33 @@ drawLoopV
 	x0	y0w	y1w
 	fraction
 
- = match {
+ = match 
 	| 1#	<- y0w `primInt32U_eq` y1w 
-	= ();
+	= ()
 	
 	| 1#	<- fraction `primInt32U_ge` 0# 
-	= do {
-		x0' :: Int32#;
-		x0'		= x0		+ stepx;
+	= do 
+		x0' :: Int32#
+		x0'		= x0		+ stepx
 
-		y0w' :: Int32#;
-		y0w'		= y0w		+ stepy;
-		fraction'	= fraction	+ dx2 - dy2;
+		y0w' :: Int32#
+		y0w'		= y0w		+ stepy
+		fraction'	= fraction	+ dx2 - dy2
 				
-		arrayUI_poke frame (x0' + y0w') c;
-		drawLoopV frame c stepx stepy dx2 dy2 x0' y0w' y1w fraction';
-	};
+		arrayUI_poke frame (x0' + y0w') c
+		drawLoopV frame c stepx stepy dx2 dy2 x0' y0w' y1w fraction'
 	
-	\= do {
-		y0w'		= y0w		+ stepy;
-		fraction'	= fraction	+ dx2;
+	\= do 	y0w'		= y0w		+ stepy
+		fraction'	= fraction	+ dx2
 
-		arrayUI_poke frame (x0 + y0w') c;
-		drawLoopV frame c stepx stepy dx2 dy2 x0 y0w' y1w fraction';
-	};
- };
+		arrayUI_poke frame (x0 + y0w') c
+		drawLoopV frame c stepx stepy dx2 dy2 x0 y0w' y1w fraction'
 
 				
 				
 	
-{-
+{- A cleaner version that uses boxed math
+
 drawBresenhamLine 
 	frame width height c 
 	x0i y0i x1i y1i 
@@ -217,6 +203,5 @@ drawBresenhamLine
 		};
 	};
 };
-
 
 -}

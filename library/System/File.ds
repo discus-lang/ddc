@@ -3,7 +3,11 @@ import Base;
 import Data.String;
 import Control.Exception;
 
-data FILE# %r1	foreign "FILE";
+-- The foreign unboxed FILE type
+--	it reads 'FILE' in the C source
+data FILE# %r1	foreign "FILE"
+
+-- The effect of functions that poke the file system
 effect !File	:: !;
 
 -- fopen
@@ -11,7 +15,7 @@ foreign import extern "fopen"
  fopenU :: elaborate 
  	   		String# 		-- fileName 
 	-> 		String# 		-- mode
-	-(!File)> 	Ptr# FILE#;
+	-(!File)> 	Ptr# FILE#
  
 -- fread
 foreign import extern "fread"
@@ -20,7 +24,7 @@ foreign import extern "fread"
 	-> 		Int32# 			-- size of member
 	-> 		Int32# 			-- number of members to read
 	-> 		Ptr# FILE# 		-- file to read from
-	-(!File)>	Int32#; 		-- number of members read
+	-(!File)>	Int32#	 		-- number of members read
 
 -- fseek
 foreign import extern "fseek"
@@ -28,17 +32,17 @@ foreign import extern "fseek"
  			Ptr# FILE# 		-- file
 	-> 		Int32#			-- offset
 	-> 		Int32#			-- whence SEEK_SET, SEEK_END or SEEK_CUR
-	-(!File)> 	Int32#;			-- 0 on success, -1 on fail and set errno
+	-(!File)> 	Int32#			-- 0 on success, -1 on fail and set errno
 
 -- file position constants
 foreign import extern "SEEK_SET"
- file_SEEK_SET :: elaborate Int32#;
+ file_SEEK_SET :: elaborate Int32#
 
 foreign import extern "SEEK_CUR" 
- file_SEEK_CUR :: elaborate Int32#;
+ file_SEEK_CUR :: elaborate Int32#
 
 foreign import extern "SEEK_END" 
- file_SEEK_END :: elaborate Int32#;
+ file_SEEK_END :: elaborate Int32#
 
 -- ftell
 foreign import extern "ftell"
@@ -75,7 +79,7 @@ file_open name mode
 
 
 -- | return the length of the file with this path
-file_length :: String -> Int;
+file_length :: String -> Int
 file_length name
  = do 	file	= file_open name "r+"
 
@@ -84,7 +88,7 @@ file_length name
  
  
  -- | read the contents of the file at this path
-file_read :: String -> String;
+file_read :: String -> String
 file_read name
  = do 	len	= file_length name
  	str	= newString len
@@ -92,7 +96,6 @@ file_read name
 	file	= file_open name "r+"
 	
 	freadU	(dangerUnboxString str) (unboxInt32 len) 1# file
-	
 	str
 
 

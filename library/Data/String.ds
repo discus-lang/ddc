@@ -5,18 +5,18 @@ import	Data.Int
 import 	Class.Eq
 import	Class.Copy
 
-pragma	cc_includes ["string.h"];
+pragma	cc_includes ["string.h"]
 
+-- | A string type which supports fast append (paste)
 data	String %r1 
 	= SChunk (String# %r1)
 	| SAppend {
 		left	:: String %r1;
 		right	:: String %r1;
-	};
+	}
 
 ----------------------------------------------------------------------------------------------------
 -- Primitive functions operating on strings
-
 
 -- | Create a new string.
 --	This creates a new heap object and copies the source string into it.

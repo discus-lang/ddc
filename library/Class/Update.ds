@@ -4,19 +4,25 @@ import Base
 infix  0 :=
 infix  0 +=
 
+
+-- The class of types which can be updated.
+--	The (:=) operator should copy the second argument over the first.
+--	
 class Updatable a where
- (:=)	:: forall b 
-	.  a -> b -(!e1 $c1)> ()
-	:- Shape2 a b
-	,  MutableT a
-	,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
-	,  $c1  = x : a
+	(:=)	:: forall b 
+		.  a -> b -(!e1 $c1)> ()
+		:- Shape2 a b
+		,  MutableT a
+		,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
+		,  $c1  = x : a
 
 
+-- The class of types which support destructive accumulation.
+--	The second argument should be added to the first.
 class Accum a where
- (+=)	:: forall b  
-	. a -> b -(!e1 $c1)> ()
-	:- Shape2 a b
-	,  MutableT a
-	,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
-	,  $c1  = x : a
+	(+=)	:: forall b  
+		. a -> b -(!e1 $c1)> ()
+		:- Shape2 a b
+		,  MutableT a
+		,  !e1	= !{ !ReadT a; !ReadT b; !WriteT a }
+		,  $c1  = x : a

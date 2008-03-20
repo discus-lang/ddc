@@ -6,7 +6,7 @@ main ()
  = topHandle simple
 
 simple ()
- = do 	frame	= frame_new "Square" 600 600
+ = do 	frame	= new&{Frame} "Square" 600 600
 	gate (\z -> squareSpin frame 1.0)
 
 	

@@ -2,6 +2,7 @@
 import Config
 import Data.Array
 import Graphics.Render
+import Math.Vec2
 
 -- Body -----------------------------------------------------------------------------
 data Body

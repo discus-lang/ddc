@@ -1,6 +1,6 @@
 
-import	Graphics.TinyPTC;
-import	Graphics.Raster.Bresenham;
+import	Graphics.TinyPTC
+import	Graphics.Raster.Bresenham
 
 -- A frame of pixels that can be drawn on the screen.
 --	Allow the pixels to be mutable while the sizeX, sizeY is constant.
@@ -12,6 +12,25 @@ data Frame %r1 %r2
 	};
 
 project Frame where
+	-- create a new frame of this size
+	new :: String -> Int -> Int -> Frame
+	new name sizeX sizeY
+	 = do	sizeX'		= unboxInt32 sizeX
+		sizeY'		= unboxInt32 sizeY
+		name_flat	= name.flatten
+
+	 	ptcOpen (dangerUnboxString name_flat) sizeX' sizeY'
+	 	array	= arrayUI_new 1 (400 * 400 * 4)
+		Frame sizeX sizeY array
+
+	-- make a color from these RGB components.
+	--	components should be in the range [0..255]
+	color :: Int -> Int -> Int -> Int
+	color r g b
+		= b
+		+ (256 * g)
+		+ (256 * 256 * r)
+	
 	-- write this frame to the screen
 	update :: Frame -> ()
 	update frame
@@ -47,10 +66,15 @@ project Frame where
 		x0 y0
 		x1 y1
 
-	-- draw a wireframe polygon
-	poly :: Frame -> [(Int, Int)] -> Int -> ()
-	poly frame xx c
-		= frame_poly frame xx c
+	-- draw a line through all these points
+	lines :: Frame -> [(Int, Int)] -> Int -> ()
+	lines frame xx color
+	 = match 
+		| ((x1, y1) : (x2, y2) : xs)	<- xx
+		= do	frame.line x1 y1 x2 y2 color
+			frame.lines ((x2, y2) : xs) color
+			
+		\= ()
 
 	-- draw a circle
 	circle :: Frame -> Int -> Int -> Int -> Int -> Int -> ()
@@ -69,33 +93,4 @@ project Frame where
 		 = 	maps	points
 		 	(\case { (x, y) -> (pX + truncate x, frame.sizeY - (pY + truncate y)); })
 
-		frame.poly points' color
-
-
-frame_poly :: Frame -> [(Int, Int)] -> Int -> ()
-frame_poly frame xx c
- = match 
-	| ((x1, y1) : (x2, y2) : xs)	<- xx
-	= do	frame.line x1 y1 x2 y2 c
-		frame_poly frame ((x2, y2) : xs) c
-		
-	\= ()
-
-
-frame_new :: String -> Int -> Int -> Frame 
-frame_new name sizeX sizeY
- = do 	sizeX'		= unboxInt32 sizeX
-	sizeY'		= unboxInt32 sizeY
-	name_flat	= name.flatten
-
- 	ptcOpen (dangerUnboxString name_flat) sizeX' sizeY'
- 	array	= arrayUI_new 1 (400 * 400 * 4)
-	Frame sizeX sizeY array
- 
-
-frame_color r g b
-	= b
-	+ (256 * g)
-	+ (256 * 256 * r);
-
-
+		frame.lines points' color

@@ -1,34 +1,35 @@
 
 import Prelude;
 
-data Matrix33 %r1
-	= Matrix33 
-		(Float %r1) (Float %r1) (Float %r1)
-		(Float %r1) (Float %r1) (Float %r1)
-		(Float %r1) (Float %r1) (Float %r1);
-
-data Vector3 %r1
+-- | A 3D Float vector
+data Vector3 
 	= Vector3 { 
-		x	:: Float %r1;
-		y	:: Float %r1;
-		z	:: Float %r1;
-	 };
+		x	:: Float;
+		y	:: Float;
+		z	:: Float;
+	 }
 
-	
------
-showVector3
- (Vector3	x1 x2 x3)
-	 = show x1 % " " % show x2 % " " % show x3 % " ";
+instance Show Vector3 where
+ 	show (Vector3 x1 x2 x3)
+	 = show x1 % " " % show x2 % " " % show x3 % " "
+
+
+-- | A 3x3 matrix of floats, good for a 2D transform.
+data Matrix33
+	= Matrix33 
+		Float Float Float
+		Float Float Float
+		Float Float Float
 
 
 project Matrix33 where 
-{
+
 	-- | The identity matrix.
 	id ()
 	 = Matrix33
 	 	1.0 0.0 0.0
  		0.0 1.0 0.0
-		0.0 0.0 1.0;
+		0.0 0.0 1.0
 
 
 	-- | The translation matrix.
@@ -36,28 +37,28 @@ project Matrix33 where
 	 = Matrix33	
 	 	1.0	0.0	x
  		0.0	1.0	y
-		0.0	0.0	1.0;
+		0.0	0.0	1.0
 
 	-- | The rotation matrix.
 	rotate x
 	 = Matrix33	
-	 	(cos x) (0.0 - sin x) 	0.0
+	 	(cos x) (- (sin x)) 	0.0
 	 	(sin x) (cos x)		0.0
-		0.0	0.0		1.0;
+		0.0	0.0		1.0
 
 	-- | The scale matrix.
 	scale x y
 	 = Matrix33	
 	 	x	0.0	0.0
 		0.0	y	0.0
-		0.0	0.0	1.0;
+		0.0	0.0	1.0
 	
 	-- | Show a matrix.
 	show :: Matrix33 -> String;
 	show (Matrix33 a1 a2 a3 a4 a5 a6 a7 a8 a9)
 	 = show a1 % " " % show a2 % " " % show a3 % "\n"
 	 % show a4 % " " % show a5 % " " % show a6 % "\n"
-	 % show a7 % " " % show a8 % " " % show a9 % "\n";
+	 % show a7 % " " % show a8 % " " % show a9 % "\n"
 
 	
 	-- | Add two matricies component-wise
@@ -68,7 +69,7 @@ project Matrix33 where
 	 = Matrix33
 	 	(a1 + b1) (a2 + b2) (a3 + b3)
 	 	(a4 + b4) (a4 + b4) (a5 + b5)
-		(a6 + b6) (a7 + b7) (a8 + b8);
+		(a6 + b6) (a7 + b7) (a8 + b8)
 	
 	-- | Multiply a matrix by a vector
 	mulVec :: Matrix33 -> Vector3 -> Vector3;
@@ -78,7 +79,7 @@ project Matrix33 where
  	 = Vector3	
 	 	(a1 * x1  +  a2 * x2  +  a3 * x3)
  		(a4 * x1  +  a5 * x2  +  a6 * x3)
-		(a7 * x1  +  a8 * x2  +  a9 * x3);
+		(a7 * x1  +  a8 * x2  +  a9 * x3)
 		
 	-- | Multiply a matrix by a matrix
 	mul :: Matrix33 -> Matrix33 -> Matrix33;
@@ -96,12 +97,9 @@ project Matrix33 where
 		
 		(a7 * b1  +  a8 * b4  +  a9 * b7)
 		(a7 * b2  +  a8 * b5  +  a9 * b8)
-		(a7 * b3  +  a8 * b6  +  a9 * b9);
-}
+		(a7 * b3  +  a8 * b6  +  a9 * b9)
 
 
 instance Show Matrix33 where
-{
-	show	= show&{Matrix33};
-}		
+	show	= show&{Matrix33}
 		

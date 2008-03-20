@@ -74,7 +74,7 @@ renderLine frame
 		(truncate y0)
 		(truncate x1)
 		(truncate y1)
-		(frame_color r g b)
+		(color&{Frame} r g b)
 
 
 transformLine :: Matrix33 -> Primitive -> Primitive

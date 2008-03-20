@@ -1,43 +1,52 @@
 
-import
-{	Base;
-	Data.Int;
-	Data.Ref;
-	Data.List;
-}
+import	Base
+import	Data.Int
+import	Data.Ref
+import	Data.List
 
+-- An array of boxed balues
 data Array %r1 a;
 
+-- Create a new array and point all the cells to this initial object.
+--	If the first agument is '1' then this array is anchored and not copied around by the
+--	garbage collector (and will never be colleted, so don't used it much). If it is '0' the 
+--	array is collected normally.
+--
 foreign import extern "primArray_new"
- array_new 
- 	:: forall a %r1 %r2
- 	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
-	:- !e1 = !{ !Read %r1 }
-	,  $c1 = size : Int %r1
-	,  Mutable %r2
-	:$ Obj -> Obj -> Obj;
+	array_new 
+	 	:: forall a %r1 %r2
+	 	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
+		:- !e1 = !{ !Read %r1 }
+		,  $c1 = size : Int %r1
+		,  Mutable %r2
+		:$ Obj -> Obj -> Obj;
 
+-- Return the number of elements in an array
 foreign import extern "primArray_size"
- array_size
- 	:: forall a %r1 %r2
-	.  Array %r1 a -(!e1)> Int %r2
-	:- !e1 = !{ !Read %r1 }
-	:$ Obj -> Obj;
+	array_size
+	 	:: forall a %r1 %r2
+		.  Array %r1 a -(!e1)> Int %r2
+		:- !e1 = !{ !Read %r1 }
+		:$ Obj -> Obj;
  
+-- Return the element at this index
+--	the array.(i) syntax is desugared into this.
 foreign import extern "primArray_index"
- index	:: forall a %r1 %r2 
- 	.  Array %r1 a -> Int %r2 -(!e1)> a
-	:- !e1 = !{ !Read %r1; !Read %r2 }
-	:$ Obj -> Obj -> Obj;
- 
+	index	:: forall a %r1 %r2 
+	 	.  Array %r1 a -> Int %r2 -(!e1)> a
+		:- !e1 = !{ !Read %r1; !Read %r2 }
+		:$ Obj -> Obj -> Obj;
+ 	
+-- Return a reference to this index. 
+--	If this reference is updated then that cell in the array is pointed to the new object.
+--	the array#(i) syntax is desuated into this
 foreign import extern "primArray_indexR"
- indexR	:: forall a %r1 %r2 
- 	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
-	:- !e1 = !{ !Read %r1; !Read %r2 }
-	,  $c1 = a : Array %r1 a
-	:$ Obj -> Obj -> Obj;
+	indexR	:: forall a %r1 %r2 
+	 	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
+		:- !e1 = !{ !Read %r1; !Read %r2 }
+		,  $c1 = a : Array %r1 a
+		:$ Obj -> Obj -> Obj;
  
-
 -----
 mapArray_ f array
  	= mapArray2_ f array 0 (array_size array);
