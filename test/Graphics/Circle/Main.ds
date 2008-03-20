@@ -1,0 +1,75 @@
+
+-- Draw a cute fractal that looks a bit like the inner workings of a clock.
+import Graphics.Frame
+import Graphics.Primitive
+import Graphics.Render
+import Graphics.Shape
+import Math.Constants
+
+-- the time is updated for every frame
+time = 0.0
+
+main ()
+ = do 	frame	= new&{Frame} "Clock Fractal" 600 600
+	coma frame
+
+-- the main display loop
+coma :: Frame -> a
+coma frame
+	-- bail out eventually
+	| time > 0.050	= ()
+
+coma frame
+ = do	-- clear the buffer
+	frame.clear (color&{Frame} 0 0 0)
+		
+	-- generate the picture
+	frac 	= Local ( Translate 300.0 300.0 
+			: Scale 120.0 120.0 
+			: Rotate (time * 20.0)
+			: clockFractal 5 time)
+
+	-- render the picture in the buffer
+	renderPrims frame [frac]
+
+	-- copy the buffer to the screeen
+	frame.update
+
+	-- move along
+	time += 0.001
+	coma frame
+	
+	
+clockFractal :: Int -> Float -> [Primitive]
+clockFractal 0 t	= []
+clockFractal n t	= circ1 : circ2 : circ3 : lines
+ where
+ 	-- y offset from origin to center of circle 1.
+	a	= 1.0 / sin (2.0 * pi / 6.0)
+
+	-- x offset from origin to center of circles 2 and 3.
+ 	b	= a * cos (2.0 * pi / 6.0)
+
+	-- rotate each circle left or right depending on the current degree.
+	nf	= toFloat n
+	rot	| n `mod` 2 == 0	
+		= 50.0  * t * (log (1.0 + nf)) 
+		
+		| otherwise
+		= -50.0 * t * (log (1.0 + nf))
+
+	-- each element contains three copies of the (n-1) iteration contained within a larger circle.
+	circNm1 =
+		(circle_centered (Point 0.0 0.0) 1.0 50 ) ++ 
+		[ Local	(Scale (a / 2.5) (a / 2.5) : clockFractal (n - 1) t ) ]
+
+	circ1	= Local (Translate  0.0 a	: Rotate rot		: circNm1)
+	circ2 	= Local (Translate  1.0  (- b)	: Rotate (- rot)	: circNm1)
+	circ3	= Local (Translate -1.0  (- b)	: Rotate rot		: circNm1)
+
+	-- join each iteration to the origin with some lines.
+	lines	= 
+		[ Line (Point 0.0 0.0) (Point 0.0 a)
+		, Line (Point 0.0 0.0) (Point  1.0 (- b))
+		, Line (Point 0.0 0.0) (Point -1.0 (- b)) ]
+		
