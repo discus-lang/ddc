@@ -350,6 +350,7 @@ compileFile_parse
 	-- Snip down dictionaries and add default projections.
 	(dProject, projTable)	
 			<- SS.desugarProject
+				"SP"
 				moduleName
 				hDesugared
 				sDesugared

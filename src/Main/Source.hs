@@ -255,16 +255,18 @@ desugar unique kinds hTree sTree
 desugarProject 
 	:: (?args :: [Arg])
 	-> (?pathSourceBase :: FilePath)
+	-> String
 	-> Module
 	-> D.Tree SourcePos
 	-> D.Tree SourcePos
 	-> IO	( D.Tree SourcePos
 		, ProjTable )
 
-desugarProject moduleName headerTree sourceTree
+desugarProject unique moduleName headerTree sourceTree
  = do
 	-- Snip down projection dictionaries and add default projections.
- 	let sourceTree'	= projectTree moduleName headerTree sourceTree 
+ 	let (sourceTree', errors)
+		= projectTree unique moduleName headerTree sourceTree 
 	
 	dumpST DumpDesugarProject "desugar-project"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sourceTree')
@@ -275,6 +277,8 @@ desugarProject moduleName headerTree sourceTree
 	dumpS  DumpDesugarProject "desugar-project--dicts"
 		(pprStrPlain $ "\n" %!% (map ppr $ Map.toList projTable))
 
+	when (not $ null errors)
+	 $ exitWithUserError ?args errors
 		
 	return (sourceTree', projTable)
 

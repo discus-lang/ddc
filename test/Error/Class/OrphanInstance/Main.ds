@@ -1,0 +1,11 @@
+
+-- Test error reporting for orphan instances.
+class Thing a where
+ 	thingFun :: a -> Int
+
+instance Thing a where
+	thingFun x 	= x + 1
+	
+	-- this function isn't in the class definition.
+	orphanFun x 	= x - 1
+	

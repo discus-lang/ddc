@@ -53,6 +53,10 @@ data Error
 		, eVar2			:: Var
 		, eAirity2		:: Int }
 
+	| ErrorNotMethodOfClass
+		{ eInstVar		:: Var
+		, eClassVar		:: Var }
+
 	deriving Show		
 
 
@@ -140,7 +144,10 @@ instance Pretty Error PMode where
 	% "    binding at " % prettyPos var1 % " has " % airity1 % " arguments\n"
 	% "           but " % prettyPos var2 % " has " % airity2 % "\n"
 	
-	
+ ppr (ErrorNotMethodOfClass vInst vClass)
+	= prettyPos vInst % "\n"
+	% "    '" % vInst % "' is not a (visible) method of class '" % vClass % "'.\n"
+
  
  ppr x
   	= panic stage

@@ -13,17 +13,18 @@ module Desugar.Project
 	, slurpProjTable )
 where
 
+import Source.Error
+
 import Desugar.Util
 import Desugar.Bits
 import Desugar.Exp
-
 
 import Type.Exp
 import Type.Util
 import Type.Plate.FreeVars
 
+import Shared.Pretty
 import Shared.Exp
-import Shared.VarUtil
 import Shared.Base
 import Shared.Literal
 import Shared.VarPrim
@@ -46,18 +47,49 @@ import Data.Set			(Set)
 -----
 stage	= "Desugar.Project"
 
------
-type	ProjectM	= VarGenM
+-- State ------------------------------------------------------------------------------------------
+data ProjectS
+	= ProjectS
+	{ stateVarGen	:: Var.VarBind
+	, stateErrors	:: [Error] }
+	
+stateInit unique
+	= ProjectS
+	{ stateVarGen	= Var.XBind unique 0
+	, stateErrors	= [] }
+	
+newVarN :: NameSpace -> ProjectM Var
+newVarN	space
+ = do
+ 	varBind		<- gets stateVarGen
+	let varBind'	= Var.incVarBind varBind
+	modify $ \s -> s { stateVarGen = varBind' }
+
+	let var		= (Var.new $ pprStrPlain varBind)
+			{ Var.bind	= varBind
+			, Var.nameSpace	= space }
+	return var
+
+addError :: Error -> ProjectM ()
+addError err
+	= modify $ \s -> s { stateErrors = err : stateErrors s }
+
+type	ProjectM	= State ProjectS
 type	Annot		= SourcePos
 
+-- Project ----------------------------------------------------------------------------------------
 projectTree 
-	:: Module		-- the name of the current module
+	:: String		-- unique string
+	-> Module		-- the name of the current module
 	-> Tree Annot 		-- header tree
 	-> Tree Annot 		-- source tree
-	-> Tree Annot
+	-> (Tree Annot, [Error])
 
-projectTree moduleName headerTree tree
-	= evalState (projectTreeM moduleName headerTree tree) (Var.XBind "xDict" 0)
+projectTree unique moduleName headerTree tree
+ = let	(tree', state')
+		= runState (projectTreeM moduleName headerTree tree) 
+		$ stateInit unique
+   in	(tree', stateErrors state')
 		
 	
 projectTreeM :: Module -> Tree Annot -> Tree Annot -> ProjectM (Tree Annot)
@@ -167,17 +199,29 @@ snipInstBind moduleName
 
 -- otherwise lift it out to top level
 snipInstBind moduleName 
-	(PClassDict _  vClass  tsClass ccClass vtsClass)
-	(PClassInst sp vClass' tsInst  ccInst  ssInst)
-	(SBind spBind (Just vInst) xx)
+	pDict@(PClassDict _  vClass  tsClass _       vtsClass)
+	pInst@(PClassInst _  _       tsInst  _       _)
+	sBind@(SBind sp (Just vInst) _)
  = do
 	-- create a new top-level variable to use for this binding
  	vTop	<- newInstFunVar sp moduleName vClass tsInst vInst
 	
 	-- lookup the type for this instance function and substitute
 	--	in the types for this instance
-	let Just tInst = lookup vInst vtsClass
-	
+	case lookup vInst vtsClass of
+	 Nothing	
+	  -> do	addError $ ErrorNotMethodOfClass vInst vClass
+		return (sBind, [])
+		
+	 Just tInst	-> snipInstBind' moduleName pDict pInst sBind vTop tInst
+
+snipInstBind' moduleName 
+	pDict@(PClassDict _  vClass  tsClass ccClass vtsClass)
+	pInst@(PClassInst sp vClass' tsInst  ccInst  ssInst)
+	sBind@(SBind spBind (Just vInst) xx)
+	vTop
+	tInst
+ = do
 	-- we also need to quantify over any free variables in the parameters
 	-- eg for:
 	--	instance Int %r1 where
@@ -197,6 +241,7 @@ snipInstBind moduleName
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
 		,  [ PSig spBind vTop tInst_quant
 		   , PBind spBind (Just vTop)  xx])
+
 
 -- snip expressions out of data field intialisers in this ctor def
 snipCtorDef 
