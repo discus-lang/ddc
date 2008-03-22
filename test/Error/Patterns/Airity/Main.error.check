@@ -1,4 +1,4 @@
-./test/Error/Patterns/Airity/Main.ds:21:8
+./test/Error/Patterns/Airity/Main.ds:20:8
     Wrong number of arguments for constructor match.
          constructor: Main.ThingC2
           defined at: ./test/Error/Patterns/Airity/Main.ds:14:10

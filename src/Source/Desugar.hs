@@ -35,6 +35,7 @@ import qualified Source.Exp		as S
 import qualified Source.Util		as S
 import qualified Source.Pretty		as S
 import qualified Source.Plate.Trans	as S
+import qualified Source.Error		as S
 
 import qualified Desugar.Util		as D
 import qualified Desugar.Pretty		as D
@@ -62,13 +63,19 @@ rewriteTree
 	-> S.Tree SourcePos	-- source tree
 
 	-> ( D.Tree Annot	-- desugared header tree
-	   , D.Tree Annot)	-- desugared source tree
+	   , D.Tree Annot	-- desugared source tree
+	   , [S.Error] ) 	-- errors encountered during desugaring
 
 rewriteTree unique kindMap hTree sTree
- 	= evalState (rewriteTreeM hTree sTree)
-	$ RewriteS
-	{ stateKind	= kindMap 
-	, stateVarGen	= Var.XBind unique 0 }
+ = let	state	= RewriteS
+		{ stateKind	= kindMap 
+		, stateVarGen	= Var.XBind unique 0 
+		, stateErrors	= [] }
+	
+	((hTree', sTree'), state')
+		= runState (rewriteTreeM hTree sTree) state
+
+   in	(hTree', sTree', stateErrors state')
 
 rewriteTreeM :: S.Tree SourcePos -> S.Tree SourcePos -> RewriteM (D.Tree Annot, D.Tree Annot)
 rewriteTreeM hTree sTree

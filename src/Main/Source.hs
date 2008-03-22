@@ -235,8 +235,9 @@ desugar
 	
 desugar unique kinds hTree sTree
  = do
-	let kindMap		= Map.fromList kinds
-	let (hTree', sTree')	= rewriteTree unique kindMap hTree sTree
+	let kindMap	= Map.fromList kinds
+	let (hTree', sTree', errors)	
+			= rewriteTree unique kindMap hTree sTree
 			
 	-- dump
 	dumpST DumpDesugar "desugar--header" 
@@ -245,6 +246,8 @@ desugar unique kinds hTree sTree
 	dumpST DumpDesugar "desugar--source" 
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sTree')
 
+	when (not $ null errors)
+	 $ exitWithUserError ?args errors
 		
 	return	(hTree', sTree')
 

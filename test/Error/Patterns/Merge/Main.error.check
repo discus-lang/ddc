@@ -1,0 +1,5 @@
+./test/Error/Patterns/Merge/Main.ds:5:0
+    Bindings for 'Main.fun3' have a differing number of arguments.
+
+    binding at ./test/Error/Patterns/Merge/Main.ds:5:0 has 2 arguments
+           but ./test/Error/Patterns/Merge/Main.ds:6:0 has 1

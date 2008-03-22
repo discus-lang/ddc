@@ -8,36 +8,41 @@ module Source.Desugar.Base
 	, newVarN
 	, newVarNS
 	, newVarNI
-	, getKind)
+	, getKind
+	, addError)
 
 where
 
-import Util
-import qualified Data.Map	as Map
-import Data.Map			(Map)
+import Type.Exp
+import Source.Error
 
 import qualified Shared.VarBind		as Var
 import qualified Shared.VarSpace	as Var
-import qualified Shared.Unique		as Unique
 import qualified Shared.Var		as Var
 import Shared.Var			(Var, NameSpace(..))
 import Shared.Base
 import Shared.Error
 import Shared.Pretty
-import Type.Exp
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+import Util
 		
 -----
 stage	= "Source.Desugar.Base"
 				
 -----
+type Annot	= SourcePos
 type RewriteM	= State RewriteS
 
 data RewriteS
 	= RewriteS
 	{ stateVarGen	:: Var.VarBind
-	, stateKind	:: Map Var Kind }
+	, stateKind	:: Map Var Kind 
+	, stateErrors	:: [Error] }
+
 	
------
+-- | Make a new variable in this namespace and name it after a string.
 newVarNS :: NameSpace -> String -> RewriteM Var
 newVarNS space str
  = do	bind@(Var.XBind unique n) <- gets stateVarGen
@@ -49,20 +54,18 @@ newVarNS space str
 	return var
 
 
+-- | Make a new variable in this namespace.
 newVarN space 	= newVarNS space ""
+
 	
-
------
-newVarNI 
-	:: NameSpace -> [Var.VarInfo]	
-	-> RewriteM Var
-
+-- | Make a new variable in this namespace with some info attached to the var.
+newVarNI :: NameSpace -> [Var.VarInfo]	-> RewriteM Var
 newVarNI space info
  = do 	var	<- newVarN space 
 	return	var { Var.info = info }
 
 
------
+-- | Get the kind for this var from the kind table.
 getKind :: Var -> RewriteM Kind
 getKind	v
  = do	kindMap		<- gets stateKind
@@ -71,8 +74,13 @@ getKind	v
 				Just k'	-> k'
 	return k
 
+-- | Add an error to the rewrite state.
+addError :: Error -> RewriteM ()
+addError err
+ 	= modify $ \s -> s { stateErrors = err : stateErrors s }
 
------
+
+-- Simple Rewrite Instanes ------------------------------------------------------------------------
 class Rewrite a b | a -> b where
  rewrite :: a -> RewriteM b
   
@@ -89,5 +97,4 @@ instance Rewrite a b => Rewrite (Maybe a) (Maybe b) where
 	 -> do	x'	<- rewrite x
 		return	$ Just x'
 
------
-type	Annot	= SourcePos
+

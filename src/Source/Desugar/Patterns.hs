@@ -1,4 +1,3 @@
-
 module Source.Desugar.Patterns
 	( rewritePatVar
 	, rewritePatternsTreeM
@@ -10,40 +9,31 @@ where
 import Util
 
 import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
 
 import Shared.Var	(Var, NameSpace(..))
 import Shared.VarPrim
 import Shared.Base
-import Shared.Error
-import Shared.Pretty
 
 import qualified Source.Exp		as S
-import qualified Source.Util		as S
 import qualified Source.Error		as S
 
 import Desugar.Util			as D
 import Desugar.Exp			as D
 import Desugar.Bits			as D
 import Desugar.Plate.Trans		as D
-import Desugar.Pretty			as D
-
 
 import Source.Desugar.Base
-import Source.Pretty
 
-
-import qualified Data.Map		as Map
 import Data.Map				(Map)
-
-import Debug.Trace		
+import qualified Data.Map 		as Map
 
 -- stage	= "Source.Desugar.Patterns"
 
 -- rewritePatTree ----------------------------------------------------------------------------------
 
 rewritePatternsTreeM
-	:: D.Tree Annot -> RewriteM (D.Tree Annot)
+	:: D.Tree Annot 
+	-> RewriteM (D.Tree Annot)
 
 rewritePatternsTreeM tree
  = do	
@@ -54,18 +44,14 @@ rewritePatternsTreeM tree
 	let (psBind, psRest)	= partition (=@= PBind{}) tree'
 	let (ssMerged, errs)	= mergeBindings $ map topBindToStmt psBind
 	let psMerged		= map stmtToTopBind ssMerged
-		
-	when (not $ isNil errs)
-	 $ dieWithUserError errs
-	 
+	mapM_ addError errs
+			
 	return	$ psRest ++ psMerged
 
 topBindToStmt (PBind n mV x)	= SBind n mV x
 stmtToTopBind (SBind n mV x)	= PBind n mV x
 
-rewritePatX 
-	:: D.Exp Annot -> RewriteM (D.Exp Annot)
-
+rewritePatX :: D.Exp Annot -> RewriteM (D.Exp Annot)
 rewritePatX xx
  = case xx of
  	D.XMatch nn co aa
@@ -74,9 +60,7 @@ rewritePatX xx
 
 	D.XDo nn ss
 	 -> do	let (ss', errs)	= mergeBindings ss
-		
-		when (not $ null errs)
-		 $ dieWithUserError errs
+		mapM_ addError errs
 		
 	   	return	$ D.XDo nn ss'
 
@@ -331,10 +315,11 @@ mergeBindings2
 	v1 vs1 xResult1 
 	v2 vs2 xResult2
 	
-	-- all bindings must have the same airity
+	-- all bindings must have the same airity.
+	--	don't return anything for the first argument so mergeBindings' can progress.
 	| length vs1 /= length vs2
-	= dieWithUserError
-		[S.ErrorBindingAirity v1 (length vs1) v2 (length vs2)]
+	= ( []
+	  , [S.ErrorBindingAirity v1 (length vs1) v2 (length vs2)] ) 
 	
 	-- looks ok
 	| otherwise
@@ -353,13 +338,12 @@ mergeBindings2
 	  in  ([sMerged]
 	      , [])
 
--- | Merge these two expressions into a single match
-mergeMatchX 
-	:: D.Exp Annot 
-	-> D.Exp Annot 
-	-> D.Exp Annot
-		
 
+-- | Merge these two match expressions into a single match
+mergeMatchX 
+	:: D.Exp Annot -> D.Exp Annot	-- expressions to merge
+	-> D.Exp Annot			-- result expression
+		
 -- two match expressions
 mergeMatchX (XMatch n1 Nothing as1) (XMatch _ Nothing as2)
 	= XMatch n1 Nothing (as1 ++ as2)
@@ -389,9 +373,3 @@ slurpLambdaVars xx
 	    	, xFinal)
 	
 	_ 	-> ([], xx)
-
-
-
-
-
-
