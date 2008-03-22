@@ -5,14 +5,14 @@ main ()
  = do	fun1 ()
  	print $ show $ fun2 True
 	
-
-
+-- where in RHS of binding
 fun1 ()
  = print $ show z % "\n"
  	where	x	= 5
 		y	= 6
 		z	= x + y
 
+-- where in RHS of case alternative
 fun2 xx
  = case xx of
  	True	-> z + y

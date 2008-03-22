@@ -1,0 +1,10 @@
+
+-- test out let syntax
+main ()
+ = do	x	= fun1 5
+	println	$ show x
+
+fun1 x
+ = let	y	= x + 1
+	z	= y + 1
+   in	y + z

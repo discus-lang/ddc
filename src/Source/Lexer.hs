@@ -345,6 +345,7 @@ isBlockStart TokenP { token = tok }
  	Do		-> True
 	Of		-> True
 	Where		-> True
+	Let		-> True
 	Catch		-> True
 	Match		-> True
 	_		-> False

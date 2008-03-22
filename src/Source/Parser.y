@@ -364,7 +364,7 @@ expE	:: { Exp SP }
 
 expE2	:: { Exp SP }
 	: expInfix				{ $1					}
-	| 'let' bindSigs 'in' expInfix		{ XLet		(spTP $1) $2 $4		}
+	| 'let' '{' bindSigs '}' 'in' expInfix	{ XLet		(spTP $1) $3 $6		}
 	| 'throw'  expInfix			{ XThrow	(spTP $1) $2		}
 
 expInfix
