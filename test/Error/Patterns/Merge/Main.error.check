@@ -3,3 +3,21 @@
 
     binding at ./test/Error/Patterns/Merge/Main.ds:5:0 has 2 arguments
            but ./test/Error/Patterns/Merge/Main.ds:6:0 has 1
+
+./test/Error/Patterns/Merge/Main.ds:30:16
+    Bindings for 'fun9' have a differing number of arguments.
+
+    binding at ./test/Error/Patterns/Merge/Main.ds:30:16 has 1 arguments
+           but ./test/Error/Patterns/Merge/Main.ds:31:16 has 2
+
+./test/Error/Patterns/Merge/Main.ds:19:8
+    Bindings for 'fun5' have a differing number of arguments.
+
+    binding at ./test/Error/Patterns/Merge/Main.ds:19:8 has 1 arguments
+           but ./test/Error/Patterns/Merge/Main.ds:20:8 has 2
+
+./test/Error/Patterns/Merge/Main.ds:14:8
+    Bindings for 'Class.Show.show' have a differing number of arguments.
+
+    binding at ./test/Error/Patterns/Merge/Main.ds:14:8 has 1 arguments
+           but ./test/Error/Patterns/Merge/Main.ds:15:8 has 2

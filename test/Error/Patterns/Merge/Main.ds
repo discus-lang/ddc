@@ -1,6 +1,31 @@
 
 -- Check error reporting for problems encountered when merging bindings.
 
--- bindings have differing airities.
+-- bindings at top level have differing airities.
 fun3 True False	= 5
 fun3 False	= 6
+
+-- bindings in instance def have differing airities
+data Thing
+	= Thing1
+	| Thing2
+	
+instance Show Thing where
+	show Thing1	= "broken"
+	show Thing1 x	= "fun"
+	
+-- bindings in do expression have differing airities
+fun4 ()
+ = do	fun5 x		= x
+	fun5 x y	= x + y
+	
+-- bindings in let expression have differing airities
+fun6 ()
+ = let	dude1	= 5
+   in	()
+
+-- bindings in where expression have differing airities
+fun8 ()
+ 	= 27
+	where	fun9 x		= x
+		fun9 x y	= x + y

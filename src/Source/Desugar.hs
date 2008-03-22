@@ -157,9 +157,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		ss'		<- mapM rewrite ss
 		let (ss_merged, errs)
 				= mergeBindings ss'
-				
-		when (not $ isNil errs)
-		 $ dieWithUserError errs
+		mapM_ addError errs
 
 		let context'	= map (\(v, vs) ->
 					D.ClassContext v ts)
@@ -269,13 +267,11 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		return	$ D.XMatch sp (Just x') aa'
 
 	S.XDo sp ss
-	 -> do
-		ss'		<- mapM rewrite ss
+	 -> do	ss'		<- mapM rewrite ss
 
 		-- merge pattern bindings
 		let (ss_merged, errs) = mergeBindings ss'
-		when (not $ isNil errs)
-		 $ dieWithUserError errs
+		mapM_ addError errs
 
 		return	$ D.XDo sp ss_merged
 		
@@ -284,8 +280,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	 
  		-- merge pattern bindings
 		let (ss_merged, errs) = mergeBindings ss'
-		when (not $ isNil errs)
-		 $ dieWithUserError errs
+		mapM_ addError errs
 	 
 	 	x'	<- rewrite x
 		return	$ D.XDo sp (ss_merged ++ [D.SBind sp Nothing x'])
@@ -295,8 +290,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	 
  		-- merge pattern bindings
 		let (ss_merged, errs) = mergeBindings ss'
-		when (not $ isNil errs)
-		 $ dieWithUserError errs
+		mapM_ addError errs
 
 	 	x'	<- rewrite x
 		return	$ D.XDo	sp (ss_merged ++ [D.SBind sp Nothing x'])
