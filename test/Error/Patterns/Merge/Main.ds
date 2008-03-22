@@ -21,7 +21,8 @@ fun4 ()
 	
 -- bindings in let expression have differing airities
 fun6 ()
- = let	dude1	= 5
+ = let	dude1 x		= 5
+	dude1 x y	= 6
    in	()
 
 -- bindings in where expression have differing airities
