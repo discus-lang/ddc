@@ -121,8 +121,8 @@ tokens :-
 
  \| \#			{ ptag GuardUnboxed		}
  \, \#			{ ptag GuardUnboxedC		}
-
  \\ \=			{ ptag GuardDefault		}
+ \\ \.			{ ptag BackSlashDot		}
 
  $sym $sym+		{ ptags (\s -> Symbol s)	}
 

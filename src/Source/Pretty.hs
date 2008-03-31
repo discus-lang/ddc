@@ -161,17 +161,12 @@ instance Pretty (Exp a) PMode where
 
 	XUnit sp	 -> ppr "()"
 
-	XVoid	sp	 -> ppr "_"
 	XConst 	sp c	 -> ppr c
 
 	XVar 	sp v	 -> ppr v
 
 	XProj 	sp x p	 -> prettyXB x % p
 	XProjT 	sp t p	 -> "@XProjT " % prettyTB t % " " % p
-
-
-	XLambda sp v e	 -> "\\" % v % " -> " % e
-
 
 	XLet 	sp ss e
 	 -> "let {\n" 
@@ -190,22 +185,11 @@ instance Pretty (Exp a) PMode where
 	 -> "\\" % " " %!% ps % " -> " % e
 
 	XLambdaProj sp j xs
-	 -> "\\" % j % " " % xs
+	 -> "\\" % j % " " % (punc " " $ map prettyXB xs)
 
 	XLambdaCase sp cs
 	 -> "\\case {\n"
 	 	%> "\n\n" %!% cs
-		%  "\n}"
-
-	XAppE	sp e1 e2 _
-	 -> if orf e1 [isXVar, isXApp, isXUnit]
-		then e1 % " " % prettyXB e2
-		else "(" % e1 % ")\n" %> prettyXB e2
-		
-
-	XCaseE 	sp co ca eff
-	 -> "case " % co % " of " % eff % " {\n" 
-	 	%> "\n\n" %!% ca
 		%  "\n}"
 
 	XApp 	sp e1 e2
@@ -229,7 +213,6 @@ instance Pretty (Exp a) PMode where
 	-- object expressions
 	XObjVar 	sp v	-> "^" % v
 	XObjField 	sp v	-> "_" % v
-	XObjFieldR	sp v	-> "_#" % v
 
 	-- infix expressions
 	XOp 		sp v	 -> "@XOp " % v
@@ -302,10 +285,8 @@ instance Pretty (Proj a) PMode where
   	JField  sp l	-> "." % l
 	JFieldR sp l	-> "#" % l
 
-	JIndex	sp x	-> ".[" % x % "]"
-	JIndexR	sp x	-> "#[" % x % "]"
-
-	JAttr	sp v	-> ".{" % v % "}"
+	JIndex	sp x	-> ".(" % x % ")"
+	JIndexR	sp x	-> "#(" % x % ")"
 
 -----
 isEBlock x
@@ -360,7 +341,7 @@ instance Pretty (Alt a) PMode where
 instance Pretty (Guard a) PMode where
  ppr gg
   = case gg of
-  	GCase	sp pat		-> "- " % pat
+--  	GCase	sp pat		-> "- " % pat
 	GExp	sp pat exp	-> " "  % pat %>> " <- " % exp
 	GBool	sp exp		-> " "  % ppr exp
 
@@ -429,10 +410,10 @@ instance Pretty (Stmt a) PMode where
 
 spaceDown xx
  = case xx of
-	XLambda{}	-> ppr "\n"
+--	XLambda{}	-> ppr "\n"
 	XLambdaCase{}	-> ppr "\n"
  	XCase{}		-> ppr "\n"
-	XCaseE{}	-> ppr "\n"
+--	XCaseE{}	-> ppr "\n"
 	XIfThenElse{}	-> ppr "\n"
 	XDo{}		-> ppr "\n"
 	_		-> pNil

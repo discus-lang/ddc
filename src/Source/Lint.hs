@@ -100,14 +100,10 @@ instance Show a => Lint (Exp a) where
   = case x of
 	XNil				-> x
 	XUnit sp			-> x
-	XVoid sp			-> x
 
 	XLet sp ss e			
 	 | isNil ss			-> death x "XLet - no bindings."
 	 | otherwise			-> XLet sp (lint ss) (lint e)
-
-	XLambda	sp vs e			
-	 | otherwise			-> XLambda sp  (lint vs) (lint e)
 
 	XApp sp e1 e2			-> XApp sp (lint e1) (lint e2)
 
@@ -136,10 +132,6 @@ instance Show a => Lint (Exp a) where
  	XDefix{}			-> death x "XDefix - should have been eliminated by Source.Defix."
 	
 	XProj sp e p			-> XProj sp (lint e) p
-	
-	XAppE sp e1 e2 eff		-> XAppE  sp (lint e1) (lint e2) (lint eff)
-	
-	XCaseE sp e1 alts eff		-> XCaseE sp (lint e1) (lint alts) (lint eff)
 	
 	XAt sp v x				
 	 | not $ inSpaceV [v]		-> death x "XAt - var in wrong namespace."

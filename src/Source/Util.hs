@@ -58,23 +58,23 @@ sourcePosX xx
 --	XAnnot		aa x		-> sourcePosX x
 
 	XUnit		sp		-> sp
-	XVoid		sp		-> sp
+--	XVoid		sp		-> sp
 	XConst		sp c		-> sp
 	XVar 		sp v		-> sp
 	XProj 		sp x j		-> sp
 	XProjT		sp t j		-> sp
-	XLambda	 	sp v x		-> sp
+--	XLambda	 	sp v x		-> sp
 	XApp		sp x1 x2	-> sp
 	XCase		sp x aa		-> sp
 	XLet		sp ss x		-> sp
 	XDo		sp ss		-> sp
 	XIfThenElse	sp x1 x2 x3	-> sp
-	XAppE		sp x1 x2 eff	-> sp
-	XCaseE		sp x1 aa eff	-> sp
+--	XAppE		sp x1 x2 eff	-> sp
+--	XCaseE		sp x1 aa eff	-> sp
 	XAt		sp v x		-> sp
 	XObjVar		sp v		-> sp
 	XObjField	sp v		-> sp
-	XObjFieldR	sp v		-> sp
+--	XObjFieldR	sp v		-> sp
 	XOp		sp v		-> sp
 	XDefix		sp x		-> sp
 	XDefixApps	sp x		-> sp

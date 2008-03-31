@@ -407,9 +407,6 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                 XUnit x0
                   -> do x0' <- transN table x0
                         return (XUnit x0')
-                XVoid x0
-                  -> do x0' <- transN table x0
-                        return (XVoid x0')
                 XConst x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -418,6 +415,10 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (XVar x0' x1')
+                XObjField x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XObjField x0' x1')
                 XProj x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -428,87 +429,6 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         return (XProjT x0' x1' x2')
-                XLambda x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XLambda x0' x1' x2')
-                XApp x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XApp x0' x1' x2')
-                XCase x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XCase x0' x1' x2')
-                XDo x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XDo x0' x1')
-                XLet x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XLet x0' x1' x2')
-                XWhere x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XWhere x0' x1' x2')
-                XIfThenElse x0 x1 x2 x3
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        x3' <- transZM table x3
-                        return (XIfThenElse x0' x1' x2' x3')
-                XAppE x0 x1 x2 x3
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        x3' <- transZM table x3
-                        return (XAppE x0' x1' x2' x3')
-                XCaseE x0 x1 x2 x3
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        x3' <- transZM table x3
-                        return (XCaseE x0' x1' x2' x3')
-                XAt x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XAt x0' x1' x2')
-                XObjVar x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XObjVar x0' x1')
-                XObjField x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XObjField x0' x1')
-                XObjFieldR x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XObjFieldR x0' x1')
-                XOp x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XOp x0' x1')
-                XDefix x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XDefix x0' x1')
-                XDefixApps x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XDefixApps x0' x1')
-                XAppSusp x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XAppSusp x0' x1' x2')
                 XLambdaPats x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -523,10 +443,66 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (XLambdaCase x0' x1')
+                XCase x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XCase x0' x1' x2')
                 XMatch x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (XMatch x0' x1')
+                XDo x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XDo x0' x1')
+                XLet x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XLet x0' x1' x2')
+                XIfThenElse x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XIfThenElse x0' x1' x2' x3')
+                XWhere x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XWhere x0' x1' x2')
+                XDefix x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XDefix x0' x1')
+                XDefixApps x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XDefixApps x0' x1')
+                XOp x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XOp x0' x1')
+                XApp x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XApp x0' x1' x2')
+                XAppSusp x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XAppSusp x0' x1' x2')
+                XAt x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XAt x0' x1' x2')
+                XObjVar x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XObjVar x0' x1')
                 XTry x0 x1 x2 x3
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -604,10 +580,6 @@ instance (Monad m) => TransM m n1 n2 (Proj n1) (Proj n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (JFieldR x0' x1')
-                JAttr x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (JAttr x0' x1')
                 JIndex x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -672,10 +644,6 @@ instance (Monad m) => TransM m n1 n2 (Guard n1) (Guard n2) where
               xx
         followZM table xx
           = case xx of
-                GCase x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (GCase x0' x1')
                 GExp x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

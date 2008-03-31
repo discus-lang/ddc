@@ -145,60 +145,35 @@ type DataDef a	= (Var, [Var], [Ctor a])
 --
 data Exp a
 	= XNil
---	| XAnnot	[Annot]	(Exp a)
-
-	-- This is the core language that is checked by the type system.
-	--
 	| XUnit		a
-	| XVoid		a				-- used in patterns to represent an unused element
+
 	| XConst	a Const				-- CONST
-
 	| XVar 		a Var				-- VAR
+	| XObjField	a Var				-- _VAR.
 	| XProj		a (Exp a) (Proj a)		-- EXP . PROJ
-	| XProjT	a Type (Proj a)
-	
-	| XLambda 	a Var     (Exp a)		-- \VAR -> EXP
-	| XApp 		a (Exp a) (Exp a)		-- EXP1 EXP2
-
-	| XCase 	a (Exp a) [Alt a]		-- case EXP of { ALTS }
-
-	| XDo		a [Stmt a]			-- do { STMTS }
-	| XLet		a [Stmt a] (Exp a)		-- let STMTS in EXP
-	| XWhere	a (Exp a) [Stmt a]		-- EXP where { STMTS }
-	
-	| XIfThenElse	a (Exp a) (Exp a) (Exp a)	-- if EXP1 then EXP2 else EXP3
-
-	-- Type constraint slurper converts the previous forms
-	--	these effect annotated forms.
-	--
-	| XAppE		a (Exp a) (Exp a) [Effect]	-- effect caused by application.
-	| XCaseE	a (Exp a) [Alt a] [Effect]	-- effect caused by matching case object.
-
-	-- The slurper binds fresh value variables to
-	--	all nodes in a patter via XAt.
-	| XAt		a Var (Exp a)
-
-	-- Syntactic sugar
-	--	None of these make it to the type-constraint slurper.
-
-	-- object expressions, desugared by Source.Rename
-	| XObjVar	a Var				-- ^var.  Binds current object.
-	| XObjField	a Var				-- _var.  A field of the current object.
-	| XObjFieldR	a Var				-- _#var. A reference to the field of the current object.
-
-	-- infix expressions, desugared by Source.Defix
-	| XOp		a Var				-- An infix operator
-	| XDefix	a [Exp a]			-- Some collection of apps / suspensions / infix expressions
-	| XDefixApps	a [Exp a]
-	| XAppSusp	a (Exp a) (Exp a)		-- ex @ e1 .. eN	=> suspendN ex e1 .. eN
-
-	-- lambda sugar, desugared by Source.Desugar
+	| XProjT	a Type (Proj a)			-- VAR & { TYPE }
 	| XLambdaPats	a [Pat a]  (Exp a)		-- \p1 p2 .. -> e
 	| XLambdaProj 	a (Proj a) [Exp a]		-- \.field e1 e2 ...	=> \x' -> x'.field e1 e2 ...
 	| XLambdaCase	a [Alt a]			-- \case { ALTS }	=> \x' -> case x' of { ALTS }
-
-	-- match sugar, desugared by Source.Desugar
+	| XCase 	a (Exp a) [Alt a]		-- case EXP of { ALTS }
 	| XMatch	a [Alt a]			-- match { ALTS };
+	| XDo		a [Stmt a]			-- do { STMTS }
+	| XLet		a [Stmt a] (Exp a)		-- let STMTS in EXP
+	| XIfThenElse	a (Exp a) (Exp a) (Exp a)	-- if EXP1 then EXP2 else EXP3
+
+	| XWhere	a (Exp a) [Stmt a]		-- EXP where { STMTS }
+
+	-- Source.Defix desuaring ---------------------
+	| XDefix	a [Exp a]			-- Some collection of apps / suspensions / infix expressions
+	| XDefixApps	a [Exp a]
+	| XOp		a Var				-- An infix operator
+	
+	| XApp 		a (Exp a) (Exp a)		-- EXP1 EXP2
+	| XAppSusp	a (Exp a) (Exp a)		-- ex @ e1 .. eN	=> suspendN ex e1 .. eN
+
+	-- Dodgy pattern expression overloading --------
+	| XAt		a Var (Exp a)
+	| XObjVar	a Var				-- ^var.
 
 	-- exception sugar, desugared by Source.Desugar
 	| XTry		a (Exp a) [Alt a] (Maybe (Exp a))	-- exp, catchAlts, with exp
@@ -230,29 +205,17 @@ data Proj a
 	= JField	a Var				-- Field projection, 		eg exp .field1
 	| JFieldR	a Var				-- Field reference projection,	eg exp #field1
 
-	| JAttr		a Var				-- Object attribute projection,	eg exp .{field1}
-
 	| JIndex	a (Exp a)			-- Object index,		eg exp1.[exp2]
 	| JIndexR	a (Exp a)			-- Object reference,		eg exp1#[exp2]
 	deriving (Show, Eq)
 
 
--- | Annotations.
---	These appear in XAnnot.
-{- data Annot
-	= ATypeVar	Var				-- ^ A type variable for an Exp node.
-	| AEffectVar	Var				-- ^ An effect variable for am Exp node.
-	deriving (Show, Eq)
--}
-
 -- | Statements and bindings
 --	Used by XLet and XDo.
 data Stmt a	
 	= SSig		a Var Type
-
 	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
 	| SBindPats	a Var [Pat a] (Exp a)		-- ^ a binding, with patterns for the arguments
-
 	deriving (Show, Eq)
 	
 
@@ -268,9 +231,8 @@ data Alt a
 	deriving (Show, Eq)
 
 data Guard a
-	= GCase		a (Pat a)			-- ^ Match against case object
-	| GExp		a (Pat a) (Exp a)		-- ^ Match against this expression.
-
+--	  GCase		a (Pat a)			-- ^ Match against case object
+	= GExp		a (Pat a) (Exp a)		-- ^ Match against this expression.
 	| GBool		a (Exp a)			-- ^ Test for boolean.
 	deriving (Show, Eq)
 	
@@ -287,10 +249,6 @@ data Pat a
 	| WTuple	a [Pat a]			-- ^ Tuple pattern			(p1, p2)
 	| WCons		a (Pat a) (Pat a)		-- ^ Cons pattern			(x : xs)
 	| WList		a [Pat a]			-- ^ List pattern			[p1, p2, ...]
-
-	-- Contains an XDefix from the parser.
-	--	The defixer is run on patterns as well as expressions
---	| WExp		(Exp a)
 	deriving (Show, Eq)
 
 data Label a

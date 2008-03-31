@@ -216,9 +216,6 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	S.XUnit	sp
 	 -> 	return	$ D.XVar  	sp primUnit
 
-	S.XVoid	sp	
-	 -> 	return	$ D.XVoid 	sp
-
 	S.XConst sp c
 	 -> 	return	$ D.XConst 	sp c
 
@@ -249,12 +246,6 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
 		return	$ D.XProjT sp tElab pj'
-
-
-		
-	S.XLambda sp v x
-	 -> do	x'	<- rewrite x
-		return	$ D.XLambda sp v x'
 		
 	S.XApp sp x1 x2
 	 -> do	x1'	<- rewrite x1
@@ -509,10 +500,10 @@ instance Rewrite (S.Alt SourcePos) (D.Alt Annot) where
 instance Rewrite (S.Guard SourcePos) (D.Guard Annot) where
  rewrite gg 
   = case gg of
-	S.GCase sp w
+{-	S.GCase sp w
 	 -> do	w'	<- rewrite w
 	 	return	$ D.GCase sp w'
-		
+-}		
 	S.GExp sp w x
 	 -> do	w'	<- rewrite w
 	 	x'	<- rewrite x
@@ -559,7 +550,6 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 
 	 	return	$ D.WConLabelP sp (rewritePatVar v) lvs'
 
-	---
 	S.WUnit sp
 	 -> do	return	$ D.WConLabel sp primUnit []
 
@@ -580,12 +570,6 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 	S.WList sp []
 	 -> 	return	$ D.WConLabelP sp primNil []
 
-	---
-{-	S.WExp x
-	 -> do	let p	= expToPat x
-	 	p'	<- rewrite p
-		return	p'
--}
 	_	-> panic stage	
 		$ "rewrite[S.Pat]: can't rewrite " % show ww % "\n"
 		
@@ -668,6 +652,3 @@ instance Rewrite S.Type S.Type where
 	 	t'	<- elaborateT t
 	 	return	$ t'
 		
-
-
-	

@@ -9,7 +9,8 @@ module Source.Parser.Util
 	, vNameN
 	, vNameV, vNameT, vNameR, vNameE, vNameC, vNameW, vNameF
 	, spV, spTP, spX, spW
-	, makeParsecSourcePos)
+	, makeParsecSourcePos
+	, chainl1_either)
 
 where
 
@@ -26,6 +27,8 @@ import Shared.Base
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Text.ParserCombinators.Parsec.Pos	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
+import qualified Text.ParserCombinators.Parsec.Error	as Parsec
+
 
 import Text.ParserCombinators.Parsec.Prim		( (<|>) )
 
@@ -136,3 +139,39 @@ makeParsecSourcePos tok
 	= (flip Parsec.setSourceColumn) (K.tokenColumn tok)
 	$ (flip Parsec.setSourceLine)   (K.tokenLine tok)
 	$ Parsec.initialPos      	(K.tokenFile tok)
+
+
+
+
+chainl1_either
+	:: Parsec.GenParser tok st a 
+	-> Parsec.GenParser tok st (a -> a -> (Either String a))
+	-> Parsec.GenParser tok st a
+
+chainl1_either p op    
+ = do	x	<- p
+ 	
+	let rest x 
+	     =	(do
+			f	<- op
+			y	<- p
+		
+			case f x y of
+			 Left str	-> Parsec.unexpected str
+			 Right more	-> rest $ more)
+
+		<|> return x
+		 
+	rest x
+	
+{-
+
+chainl1 p op        = do{ x <- p; rest x }
+                    where
+                      rest x    = do{ f <- op
+                                    ; y <- p
+                                    ; rest (f x y)
+                                    }
+                                <|> return x
+-}
+				

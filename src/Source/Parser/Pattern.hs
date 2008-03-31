@@ -60,7 +60,7 @@ pPat1
 
   <|>	-- CON
 	do	con		<- pCon
-		return	$ WCon (spV con) con []
+		return	$ WCon (spV con) (vNameV con) []
 
   <|>	-- const
   	do	(const, sp)	<- pConstSP
@@ -104,6 +104,7 @@ pPat1
   <|>	-- ( PAT )
   	do	pat		<- pRParen pPat
 		return	pat
+
 
 -- CON { label = PAT ... }
 pPat_conLabel :: Parser (Pat SP)

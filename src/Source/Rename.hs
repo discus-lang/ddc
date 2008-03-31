@@ -322,11 +322,12 @@ instance Rename (Exp SourcePos) where
 	 	proj'	<- rename proj
 		return	$ XProjT sp t' proj'
 
-	XLambda sp v e	
+{-	XLambda sp v e	
 	 -> local
 	 $  do	v'	<- bindV v
 		e'	<- rename e
 		return	$ XLambda sp v' e'
+-}
 
 	XApp sp e1 e2	
 	 -> do 	e1'	<- rename e1
@@ -547,10 +548,10 @@ instance Rename (Label SourcePos) where
 bindGuard :: Guard SourcePos -> RenameM (Guard SourcePos)
 bindGuard gg
  = case gg of
- 	GCase sp pat
+{- 	GCase sp pat
 	 -> do	(pat', [])	<- bindPat pat
 	 	return		$ GCase sp pat'
-		
+-}		
 	GExp sp  pat x
 	 -> do	x'		<- rename x	
 	 	(pat', [])	<- bindPat pat

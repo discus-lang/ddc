@@ -131,6 +131,8 @@ tokString =
 	, (GuardUnboxedC,	",#")
 	, (GuardDefault,	"\\=")
 
+	, (BackSlashDot,	"\\.")
+
 	, (Dot,			".")
 	, (DotDot,		"..")
 

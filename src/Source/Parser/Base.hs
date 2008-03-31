@@ -5,7 +5,7 @@ module Source.Parser.Base
 	, pCParen, pRParen
 	, token
 	, pTok
-	, pVar, pCon, pVarCon
+	, pVar, pVarField, pCon, pVarCon
 	, pSymbol
 	, pConstSP
 	, pLitSP
@@ -64,6 +64,15 @@ pVar
 		_					-> Nothing)
 
 
+-- | Parse a object field name
+--	TODO: can ditch this when we move to the new parser
+pVarField :: Parser Var
+pVarField
+ = token
+	(\t -> case t of
+		K.TokenP { K.token = K.VarField name }	-> Just (makeVar name t)
+		_					-> Nothing)
+
 -- | Parse a constructor variable
 pCon :: Parser Var
  = token
@@ -100,7 +109,6 @@ pSymbol	= token parseSymbol
 		K.AKet		-> Just $ toVar t
 		K.ForwardSlash	-> Just $ toVar t
 		K.Plus		-> Just $ toVar t
-		K.Dot		-> Just $ toVar t
 		K.Dollar	-> Just $ toVar t
 		K.Tilde		-> Just $ toVar t
 		K.Percent	-> Just $ toVar t

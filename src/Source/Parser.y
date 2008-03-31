@@ -553,7 +553,7 @@ guard1	:: { Guard SP}
 	: '|'  pat '<-' rhs			{ GExp   (spTP $1) $2 $4		}
 	| '|'  rhs				{ GBool  (spTP $1) $2			}
 		
-	| '|-' pat				{ GCase  (spTP $1) $2			}
+--	| '|-' pat				{ GCase  (spTP $1) $2			}
 
 
 

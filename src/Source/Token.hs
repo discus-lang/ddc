@@ -159,7 +159,9 @@ data Token
 	| GuardUnboxed		-- ^ |#
 	| GuardUnboxedC		-- ^ ,#
 	| GuardDefault		-- ^ \=
-
+	
+	| BackSlashDot		-- ^ \.
+	
 	| Dot			-- ^ .
 	| DotDot		-- ^ ..
 
