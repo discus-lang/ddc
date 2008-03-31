@@ -1,7 +1,8 @@
 module Source.Util
 	( flattenApps
 	, unflattenApps
-	, sourcePosX )
+	, sourcePosX 
+	, sourcePosW)
 
 where
 
@@ -97,3 +98,18 @@ sourcePosX xx
 
 --	_ -> panic stage
 --		$ "sourcePosX: no match for " % show xx % "\n"	
+
+sourcePosW :: Pat SourcePos -> SourcePos
+sourcePosW xx
+ = case xx of
+ 	WVar 		sp v		-> sp
+	WObjVar		sp v		-> sp
+	WConst		sp c		-> sp
+	WCon		sp v ws		-> sp
+	WConLabel	sp v lws	-> sp
+	WAt		sp v p		-> sp
+	WWildcard	sp 		-> sp
+	WUnit		sp		-> sp
+	WTuple		sp ws		-> sp
+	WCons		sp w1 w2	-> sp
+	WList 		sp ws		-> sp
