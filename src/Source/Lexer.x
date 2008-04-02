@@ -108,6 +108,7 @@ tokens :-
  \:\-			{ ptag HasConstraint		}
 
  \-\>			{ ptag RightArrow		}
+ \=\>			{ ptag RightArrowEquals		}
  \$\>			{ ptag HoldsMono		}
  
  \(\)			{ ptag Unit			}

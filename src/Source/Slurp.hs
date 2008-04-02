@@ -110,9 +110,10 @@ slurpTopNames p
 	PClass sp v k	
 	 -> [v { Var.nameSpace = NameClass}]
 
-	PClassDict sp n ps inh sigs
-	 -> [v { Var.nameSpace = NameValue }
-	 	| v <- catMap fst sigs ]
+	PClassDict sp vClass ps inh sigs
+	 -> vClass : 
+	  [ v { Var.nameSpace = NameValue }
+	 		| v <- catMap fst sigs ]
 		
 	PClassInst{}		
 	 -> []

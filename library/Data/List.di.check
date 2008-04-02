@@ -32,7 +32,7 @@ data List %r1 a
 -- Class dictionaries
 
 -- Class instances
-instance Copy (Data.List.List %rSD356 (Base.Int %rSD357)) where
+instance Class.Copy.Copy (Data.List.List %rSD356 (Base.Int %rSD357)) where
 {
         copy     = Data.List.instance_Copy_ListInt_copy;
 }

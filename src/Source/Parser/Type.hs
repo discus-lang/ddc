@@ -18,7 +18,7 @@ import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 
 import Control.Monad
-
+import Data.Maybe
 
 -- Kind --------------------------------------------------------------------------------------------
 pKind :: Parser Kind
@@ -97,21 +97,52 @@ pVar_withKind1
 			, kindOfVarSpace (Var.nameSpace var) )
 	
 
--- Parse a body type with an optional fetter list
+-- Parse a body type with an optional context and fetter list
 pType_bodyFetters :: Parser Type
 pType_bodyFetters
- = do	body		<- pType_body
- 	
-	mFetters	<- 	do 	pTok K.HasConstraint
-					fetters	<- Parsec.sepBy1 pFetter (pTok K.Comma)
-					return $ Just fetters
+ = do	mContext	<- (Parsec.try $ do
+					fs	<- pType_context
+					pTok K.RightArrowEquals
+					return $ Just fs)
+			  <|> return Nothing
+			
+  	body		<- pType_body
 
-			   <|>	return Nothing
+ 	mFetters	<- (Parsec.try $ do
+				pTok K.HasConstraint
+				fetters	<- Parsec.sepBy1 pFetter (pTok K.Comma)
+				return $ Just fetters)
+			 <|> return Nothing
 	
-	case mFetters of
-		Nothing	-> return body
-		Just fs	-> return $ TFetters fs body	
+	case concat $ maybeToList mContext ++ maybeToList mFetters of
+		[]	-> return body
+		fs	-> return $ TFetters fs body	
 	
+	
+-- Parse some fetters written as a Haskell style type context
+pType_context :: Parser [Fetter]
+pType_context
+	-- CONTEXT => CONTEXT ..
+ = 	(Parsec.try $ do 	
+ 		fs1	<- pType_context1
+ 		pTok K.RightArrowEquals
+		fs2	<- pType_context1
+		return	$ fs1 ++ fs2)
+
+ <|>	pType_context1
+ 
+
+pType_context1
+ = 	-- (CONTEXT, ..)
+ 	do	cs	<- pRParen $ Parsec.sepBy1 pType_context1 (pTok K.Comma)
+ 		return	(concat cs)
+
+	-- CON TYPE..  
+ <|> 	do	con	<- liftM vNameW pCon
+	 	ts	<- Parsec.many1 pType_body1
+		return	[FConstraint con ts]
+	
+
 
 -- Parse a body type (without a forall or fetters)
 pType_body :: Parser Type
