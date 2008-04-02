@@ -220,7 +220,6 @@ instance Pretty (Exp a) PMode where
  	XDefixApps 	sp es	 -> "@XDefixApps " % es
 	XAppSusp	sp x1 x2 -> "@XAppSusp " % x1 <> x2
 
-	-- lambda sugar
 
 
 	-- match sugar
@@ -239,8 +238,8 @@ instance Pretty (Exp a) PMode where
 	XTry sp x aa (Just wX)
 	 -> "try " % prettyXB x % "\n"
 	 %  "catch {\n" 
-	 %> ("\n" %!% aa)
-	 %  "}\n"
+	 %> ("\n\n" %!% aa)
+	 %  "\n}\n"
 	 %  "with " % wX % ";"
 
 	XThrow sp x
@@ -263,11 +262,13 @@ instance Pretty (Exp a) PMode where
 	 -> ppr "break"
 	 
 	-- list range sugar
-	XListRange sp b x Nothing		-> "[" % x % "..]"
-	XListRange sp b x (Just x2)	-> "[" % x % ".." % x2 % "]"
-	
-	
+	XListRange sp b x Nothing	-> "[" % x % "..]"
+	XListRange sp b x (Just x2)	-> "[" % x % " .. " % x2 % "]"
+		
 	XListComp sp x qs 		-> "[" % x % " | " % ", " %!% qs % "]"
+	
+	-- parser helpers
+	XParens a x		-> "@XParens " % x
 	
 
 	-- patterns

@@ -56,7 +56,7 @@ mapArray2_ f array i max
  	| i >= max	= ();
 	
 	\= do { f array.(i); 
-		mapArray2_ f array (i+1) max;
+		mapArray2_ f array (i + 1) max;
 	};
  };
 
@@ -70,7 +70,7 @@ mapArrayIx2_ f array i max
  	| i	>= max	= ();
 	
 	\= do {	f array.(i) i; 
-		mapArrayIx2_ f array (i+1) max;
+		mapArrayIx2_ f array (i + 1) max;
 	};
  };
 	

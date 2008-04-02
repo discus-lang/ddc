@@ -36,7 +36,7 @@ import qualified Source.Slurp		as S
 import qualified Source.Exp		as S
 import qualified Source.Pretty		as S
 import qualified Source.Lexer		as S
-import qualified Source.Parser		as S
+import qualified Source.Parser.Module	as S
 import qualified Source.Token		as Token
 import qualified Source.Pragma		as Pragma
 
@@ -193,9 +193,9 @@ loadInterface
 		= do
 			source		<- readFile pathDI
 			let tree
-				= S.parse 
+				= S.parseModule pathDI 
 				$ map (\t -> t { Token.tokenFile = pathDI })
-				$ S.scan source
+				$ S.scanModuleWithOffside source
 		
 			returnJ	
 				$ ImportDef

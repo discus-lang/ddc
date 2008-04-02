@@ -1,10 +1,7 @@
 
 module Module.IO
-(
-	munchFileName,
-	chopOffExt,
-)
-
+	( munchFileName
+	, chopOffExt)
 where
 
 -----
@@ -18,7 +15,6 @@ import Util.Monad
 import qualified Shared.Error		as Error
 
 import qualified Source.Lexer		as S
-import qualified Source.Parser		as S
 import qualified Source.Slurp		as S
 import qualified Source.Token		as Token
 

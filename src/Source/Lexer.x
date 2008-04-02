@@ -6,7 +6,7 @@
 	-fno-warn-incomplete-record-updates #-}
 
 module Source.Lexer
-	( scan 
+	( scan, scanModuleWithOffside
 	, showSource
 	, sourceTokens 
 	, alexScanTokens)
@@ -164,7 +164,7 @@ tokens :-
  @moduleSpec @nameSpaceQual $lower $var*
  			{ ptags (\s -> Var   s) 	}
 
- @moduleSpec @nameSpaceQual $upper $var*	 
+ @moduleSpec @nameSpaceQual $upper $var* \#?	 
  			{ ptags (\s -> Con   s) 	}
 
  \_ $var*		{ ptags (\s -> case s of (x:xs) -> VarField xs)	}
@@ -212,11 +212,16 @@ ptag	 tok (AlexPn _ l c) s
 -- scan --------------------------------------------------------------------------------------------
 -- This is the top level of the scanner
 -- Add a newline to help ourselves out
-scan 	:: String -> [TokenP]
-scan ss	
+
+scanModuleWithOffside :: String -> [TokenP]
+scanModuleWithOffside str
 	= (flip offside) []	-- apply the offside rule
 	$ addStarts		-- add BlockStart / LineStart tokens in preparation for offside rule
-	$ breakModules 		-- detect module names, and break into projections if required
+	$ scan str
+
+scan 	:: String -> [TokenP]
+scan ss	
+	= breakModules 		-- detect module names, and break into projections if required
 	$ eatComments 		-- remove comments
 	$ alexScanTokens ss
 

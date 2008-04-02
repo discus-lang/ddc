@@ -2,15 +2,29 @@
 module Source.Parser.Util
 	( Var		-- from Shared.Var
 	, (<|>)		-- from Parsec
+	, (<?>)		-- from Parsec
 
 	, SP, Parser
+
+	-- Variable Creation
 	, toVar
 	, makeVar
+
+	-- NameSpace Utils
 	, vNameN
 	, vNameV, vNameT, vNameR, vNameE, vNameC, vNameW, vNameF
+	, vNameDefaultN
+	, kindOfVarSpace
+
+	-- Source Positions
 	, spV, spTP, spX, spW
+
+	-- Parsing Combinators
 	, makeParsecSourcePos
-	, chainl1_either)
+	, chainl1_either
+	
+	-- Debugging
+	, traceStateS, traceState)
 
 where
 
@@ -24,16 +38,15 @@ import Shared.VarSpace		(NameSpace(..))
 import Shared.Error
 import Shared.Base
 
+import Util
+
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Text.ParserCombinators.Parsec.Pos	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Text.ParserCombinators.Parsec.Error	as Parsec
+import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
 
-
-import Text.ParserCombinators.Parsec.Prim		( (<|>) )
-
-
-import Util
+import qualified Debug.Trace
 
 stage	= "Source.Parser.Util"
 
@@ -41,7 +54,8 @@ stage	= "Source.Parser.Util"
 type SP		= SourcePos
 type Parser a 	= Parsec.GenParser K.TokenP () a
 
--- Conversion --------------------------------------------------------------------------------------
+-- Variable Creation -------------------------------------------------------------------------------
+
 -- | Convert a token to a variable
 --	We need to undo the lexer tokens here because some of our 
 --	"reserved symbols" alias with valid variable names.
@@ -84,6 +98,7 @@ makeVar    name@(n:_) tok
 	 	{ Var.info	= [ Var.ISourcePos sp ] }
 
 
+-- NameSpace Utils ---------------------------------------------------------------------------------
 -- | Force the namespace of this variable
 --	If it has already been set differently then panic
 vNameN :: NameSpace -> Var -> Var
@@ -98,6 +113,7 @@ vNameN space v
 	$ "vNameN: conflicting namespace for variable " % v	% "\n"
 	% "   name space was     " % Var.nameSpace v		% "\n"
 	% "   tried to set it to " % space			% "\n"
+	% "   info               " % Var.info v			% "\n"
 	
 	-- var already has the right namespace
 	| otherwise
@@ -112,12 +128,32 @@ vNameW		= vNameN NameClass
 vNameF		= vNameN NameField
 
 
+-- | If the var has no namespace set, then give it this one.
+vNameDefaultN	:: NameSpace -> Var -> Var
+vNameDefaultN space var
+ = case Var.nameSpace var of
+ 	NameNothing	-> var { Var.nameSpace = space }
+	_		-> var
+
+
+-- | Decide on the kind of a type var from it's namespace
+kindOfVarSpace :: NameSpace -> Kind
+kindOfVarSpace space
+ = case space of
+ 	NameNothing	-> KData
+	NameRegion	-> KRegion
+	NameEffect	-> KEffect
+	NameClosure	-> KClosure
+
 
 -- | Slurp the source position from this token.
 spTP :: K.TokenP -> SP
 spTP    tok
 	= SourcePos (K.tokenFile tok, K.tokenLine tok, K.tokenColumn tok)
 
+
+
+-- Source Positions --------------------------------------------------------------------------------
 
 -- | Slurp the source position from this expression.
 spX :: Exp SP -> SP
@@ -142,6 +178,7 @@ makeParsecSourcePos tok
 
 
 
+-- Parsing combinators -----------------------------------------------------------------------------
 
 chainl1_either
 	:: Parsec.GenParser tok st a 
@@ -163,15 +200,18 @@ chainl1_either p op
 		<|> return x
 		 
 	rest x
-	
-{-
 
-chainl1 p op        = do{ x <- p; rest x }
-                    where
-                      rest x    = do{ f <- op
-                                    ; y <- p
-                                    ; rest (f x y)
-                                    }
-                                <|> return x
--}
-				
+-- Debugging ---------------------------------------------------------------------------------------
+
+traceStateS :: Show tok => String -> Parsec.GenParser tok st ()
+traceStateS str
+ = do	state	<- Parsec.getParserState
+	Debug.Trace.trace 
+		(  "-- state " ++ str ++ "\n"
+		++ "   input = " ++ show (take 10 $ Parsec.stateInput state) ++ "\n")
+		$ return ()
+
+traceState :: Show tok => Parsec.GenParser tok st ()
+traceState = traceStateS ""
+
+

@@ -14,17 +14,6 @@ src_alex_hs	=  $(patsubst %.x,%.hs,$(src_alex_x))
 	@echo
 
 
-#---- happy
-src_happy_y	=  $(shell find src -name "*.y" -follow)
-src_happy_hs	=  $(patsubst %.y,%.hs,$(src_happy_y))
-
-
-%.hs : %.y
-	@echo "* Preprocessing $<"
-	happy $< -i$<.info
-	@echo
-
-
 #---- ghc
 src_hs_there	=  $(shell find src -name "*.hs" -follow)
 src_hs		+= $(src_hs_there)

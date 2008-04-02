@@ -43,8 +43,8 @@ import qualified Source.Token			as Token
 import qualified Source.Rename			as S
 import qualified Source.RenameM			as S
 import qualified Source.RenameM			as Rename
-import Source.Lexer				(scan)
-import Source.Parser				(parse)
+import Source.Lexer				(scanModuleWithOffside)
+import Source.Parser.Module			(parseModule)
 import Source.Slurp				(slurpFixTable, slurpKinds)
 import Source.Defix				(defixP)
 import Source.Desugar				(rewriteTree)
@@ -93,9 +93,10 @@ parse	fileName
 	source
  = do
 	let tokens	= map (tokenSetFileName fileName)
-			$ scan source
+			$ scanModuleWithOffside source
 			
-	let sParsed	= Source.Parser.parse tokens
+--	let sParsed	= Source.Parser.parse tokens
+	let sParsed	= parseModule fileName tokens
 	
 	-- dump
 	dumpST 	DumpSourceParse "source-parse" sParsed

@@ -8,7 +8,9 @@ module Source.Pragma
 where
 
 import qualified Shared.Var	as Var
+import Source.Pretty
 import Source.Exp
+import Shared.Pretty
 import Shared.Base
 import Shared.Error
 import Shared.Literal
@@ -37,14 +39,15 @@ slurpPragma _	= []
 -- cc_includes
 -- 	Adds an include statement directly into the emitted C program. 
 --	Good for getting the correct function prototypes in ffi code.
-slurp_ccIncludes (PPragma _ [XVar sp v, XList _ xStrs])
- = let	Just strs	= sequence $ map slurpConstStr xStrs
-   in	map PragmaCCInclude strs
+slurp_ccIncludes (PPragma _ xx@[XVar sp v, XList _ xStrs])
+ = case sequence $ map slurpConstStr xStrs of
+ 	Just strs	-> map PragmaCCInclude strs
+	Nothing		-> panic stage $ pprStrPlain $ "slurp_ccIncludes: bad arg " % xx
    
 
 slurpConstStr :: Exp SourcePos -> Maybe String
 slurpConstStr xx
  = case xx of
-	(XConst _ (CConst (LString str)))	-> Just str
-	_					-> Nothing
+	XConst _ (CConst (LString str))	-> Just str
+	_				-> Nothing
 

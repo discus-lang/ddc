@@ -2,21 +2,35 @@
 module Source.Parser.Base
 	( module Source.Parser.Util
 
-	, pCParen, pRParen
+	-- Helper parsers
+	, pCParen, pRParen, pSParen
 	, token
-	, pTok
-	, pVar, pVarField, pCon, pVarCon
+	, pTok, pQualified
+	, pVar, pVarPlain, pVarPlainOfSpace, pVarField
+	, pCon, pConOfSpace
+	, pVarCon
 	, pSymbol
+	, pSemis
+	, pModuleNameQual
+	
+	-- Literal Constants
 	, pConstSP
 	, pLitSP
-	, pInt )
+	, pInt, pIntSP
+	, pString, pStringSP )
 where
 
 import Source.Exp
 import Source.Parser.Util
 import qualified Source.Token		as K
 import qualified Source.TokenShow	as K
-import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
+
+import qualified Shared.Var		as Var
+import Shared.VarSpace			(NameSpace(..))
+
+import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
+import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
+import Control.Monad
 
 -- Helper Parsers ----------------------------------------------------------------------------------
 -- { inside }
@@ -33,6 +47,13 @@ pRParen inside
 	pTok K.RKet
 	return x
 
+-- [ inside ]
+pSParen inside
+ = do	pTok K.SBra
+	x	<- inside
+	pTok K.SKet
+	return x
+
 
 -- | Match some token with a function.
 token :: (K.TokenP -> Maybe a) -> Parser a
@@ -41,9 +62,6 @@ token fun
 		(K.showSource . K.token)
 		makeParsecSourcePos
 		fun
-
-
--- Simple Parsers ----------------------------------------------------------------------------------
 
 -- | Match a single token.
 pTok :: K.Token -> Parser K.TokenP
@@ -54,14 +72,61 @@ pTok tok
 		 | tok == tok'	-> Just t
 		_		-> Nothing)
 
+-- | Parse some semi colons
+pSemis :: Parser ()
+pSemis	
+ = do	Parsec.many1 (pTok K.SemiColon)
+ 	return ()
 
--- | Parse a variable
+
+-- | Parse a module name qualifier
+pModuleNameQual :: Parser [String]
+pModuleNameQual = token parseMod
+ where parseMod t
+ 	| K.TokenP { K.token = K.ModuleName ss } <- t
+	= return ss
+	
+	| otherwise
+	= Nothing
+
+pQualified :: Parser Var -> Parser Var
+pQualified parser
+ = 	(Parsec.try $ do
+ 		mods	<- pModuleNameQual 
+ 		pTok K.Dot
+		v	<- parser
+		return	$ v { Var.nameModule = Var.ModuleAbsolute mods })
+ <|>	parser
+ 
+
+-- Variables ---------------------------------------------------------------------------------------
+
+-- | Parse a plain or (symbol) variable
 pVar :: Parser Var
-pVar 
+pVar	
+ = 	pVarPlain
+  <|>	(Parsec.try $ pRParen pSymbol)
+
+
+-- | Parse a plain variable
+pVarPlain :: Parser Var
+pVarPlain 
  = token
 	(\t -> case t of
-		K.TokenP { K.token = K.Var name }	-> Just (makeVar name t)
+		K.TokenP { K.token = K.Var name }	-> Just $ toVar t
 		_					-> Nothing)
+
+-- | Parse a plain variable, but only from certain name spaces
+pVarPlainOfSpace :: [NameSpace] -> Parser Var
+pVarPlainOfSpace spaces
+ = token	
+ 	(\t -> case t of
+		K.TokenP { K.token = K.Var name }
+		 -> let	var	= toVar t
+		    in	if elem (Var.nameSpace var) spaces
+		   		then Just var
+				else Nothing
+		_ -> Nothing)
 
 
 -- | Parse a object field name
@@ -70,27 +135,38 @@ pVarField :: Parser Var
 pVarField
  = token
 	(\t -> case t of
-		K.TokenP { K.token = K.VarField name }	-> Just (makeVar name t)
+		K.TokenP { K.token = K.VarField name }	-> Just $ toVar t
 		_					-> Nothing)
 
--- | Parse a constructor variable
+
+-- Constructors ------------------------------------------------------------------------------------
+-- | Parse a constructor
 pCon :: Parser Var
  = token
  	(\t -> case t of
-		K.TokenP { K.token = K.Con name }	-> Just (makeVar name t)
+		K.TokenP { K.token = K.Con name }	-> Just $ toVar t
 		_					-> Nothing)
+
+-- | Parse a constructor, but only from certain name spaces
+pConOfSpace :: [NameSpace] -> Parser Var
+pConOfSpace spaces
+ = token
+ 	(\t -> case t of
+		K.TokenP { K.token = K.Con name }
+		 -> let	var	= toVar t
+		    in	if elem (Var.nameSpace var) spaces
+		   		then Just var
+				else Nothing
+		_ -> Nothing)	
 
 
 -- | Parse a variable or constructor
 pVarCon :: Parser Var
-pVarCon
- = token
-	(\t -> case t of
-		K.TokenP { K.token = K.Var name }	-> Just (makeVar name t)
-		K.TokenP { K.token = K.Con name }	-> Just (makeVar name t)
-		_					-> Nothing)
+pVarCon	= pVar <|> pCon
+ 
+ 
 
-
+-- Symbols -----------------------------------------------------------------------------------------
 -- | Parse a symbolic operator.
 --	Several token have special meanings in the type language,
 --	but are just regular operators in the term language.
@@ -147,14 +223,29 @@ pLitSP = token parseLit
 	| otherwise
 	= Nothing
 
+
 -- | Parse a single integer.
-pInt :: Parser (Int, SP)
-pInt = token parseInt
+pIntSP :: Parser (Int, SP)
+pIntSP = token parseInt
  where parseInt t
  	| K.TokenP	{ K.token = K.CInt i }	<- t
 	= Just (i, spTP t)
 	
 	| otherwise
 	= Nothing
+
+pInt	= liftM fst pIntSP
+
+
+-- | Parse a single string
+pStringSP :: Parser (String, SP)
+pStringSP = token parseString
+ where parseString t
+ 	| K.TokenP	{ K.token = K.CString s } <- t
+	= Just (s, spTP t)
 	
+	| otherwise
+	= Nothing
+
+pString	= liftM fst pStringSP
 

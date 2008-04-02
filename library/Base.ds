@@ -98,7 +98,7 @@ region	%mutable;
 id :: forall a. a -> a
 id    x = x
 
-infixr 1 $ ;
+infixr 1 $ 
 ($) f x	 = f x
 
 

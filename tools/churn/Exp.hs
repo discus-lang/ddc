@@ -81,7 +81,7 @@ genExpT_base env tt
 	= do	burn 1
 		v	<- genVar NameValue
 		xBody	<- genExpT [(t1, v)] t2 
-		return	$  XLambda none v xBody
+		return	$  XLambdaPats none [WVar none v] xBody
 
 
 -- Exp Var -----------------------------------------------------------------------------------------

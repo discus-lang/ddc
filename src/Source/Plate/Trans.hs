@@ -404,9 +404,6 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
         followZM table xx
           = case xx of
                 XNil -> do return (XNil)
-                XUnit x0
-                  -> do x0' <- transN table x0
-                        return (XUnit x0')
                 XConst x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -467,11 +464,58 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                         x2' <- transZM table x2
                         x3' <- transZM table x3
                         return (XIfThenElse x0' x1' x2' x3')
+                XTry x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XTry x0' x1' x2' x3')
+                XThrow x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XThrow x0' x1')
                 XWhere x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         return (XWhere x0' x1' x2')
+                XTuple x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XTuple x0' x1')
+                XList x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XList x0' x1')
+                XListRange x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (XListRange x0' x1' x2' x3')
+                XListComp x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XListComp x0' x1' x2')
+                XWhile x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XWhile x0' x1' x2')
+                XWhen x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XWhen x0' x1' x2')
+                XUnless x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (XUnless x0' x1' x2')
+                XBreak x0
+                  -> do x0' <- transN table x0
+                        return (XBreak x0')
                 XDefix x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -494,75 +538,35 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         return (XAppSusp x0' x1' x2')
+                XParens x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (XParens x0' x1')
                 XAt x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         return (XAt x0' x1' x2')
+                XUnit x0
+                  -> do x0' <- transN table x0
+                        return (XUnit x0')
                 XObjVar x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (XObjVar x0' x1')
-                XTry x0 x1 x2 x3
+                XWildCard x0
                   -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        x3' <- transZM table x3
-                        return (XTry x0' x1' x2' x3')
-                XThrow x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XThrow x0' x1')
-                XWhile x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XWhile x0' x1' x2')
-                XWhen x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XWhen x0' x1' x2')
-                XUnless x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XUnless x0' x1' x2')
-                XBreak x0
-                  -> do x0' <- transN table x0
-                        return (XBreak x0')
-                XListRange x0 x1 x2 x3
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        x3' <- transZM table x3
-                        return (XListRange x0' x1' x2' x3')
-                XListComp x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XListComp x0' x1' x2')
+                        return (XWildCard x0')
                 XCon x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         return (XCon x0' x1' x2')
-                XTuple x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XTuple x0' x1')
                 XCons x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         return (XCons x0' x1' x2')
-                XList x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XList x0' x1')
-                XWildCard x0
-                  -> do x0' <- transN table x0
-                        return (XWildCard x0')
  
 instance (Monad m) => TransM m n1 n2 (Proj n1) (Proj n2) where
         transZM table xx

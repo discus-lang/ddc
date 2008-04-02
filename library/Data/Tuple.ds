@@ -1,6 +1,9 @@
 
 import Base
 
+fst (a, b)	= a
+snd (a, b)	= b
+
 -- tuple2
 data Tuple2 a b
 	= Tuple2  { 
@@ -8,8 +11,6 @@ data Tuple2 a b
 		x2	:: b;
 	}
 
-fst (a, b)	= a
-snd (a, b)	= b
 
 
 -- tuple3

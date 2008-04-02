@@ -640,12 +640,12 @@ renameLCQuals qq
   	[]			
 	 -> 	return []
 
-	(LCGen b (XVar sp v) x2 : qs)
+	(LCGen b (WVar sp v) x2 : qs)
 	 -> do	x2'	<- rename x2
 		local
 		 $ do	v'	<- bindV v
 			qs'	<- renameLCQuals qs		
-			return	$ (LCGen b (XVar sp v') x2' : qs')
+			return	$ (LCGen b (WVar sp v') x2' : qs')
 		
 	(LCExp x : qs)
 	 -> do	x'	<- rename x
@@ -656,7 +656,7 @@ renameLCQuals qq
 boundByLCQual :: LCQual SourcePos -> [Var]
 boundByLCQual    q
  = case q of
- 	LCGen _ (XVar sp v) _	-> [v]
+ 	LCGen _ (WVar sp v) _	-> [v]
 	LCExp{}			-> []
 
 

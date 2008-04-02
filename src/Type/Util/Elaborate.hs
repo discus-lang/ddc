@@ -55,7 +55,8 @@ elaborateT
 	-> Type -> m Type
 
 elaborateT t
- = do	
+ = do	trace ("elaborating " % t) $ return ()
+ 
  	-- elaborate regions
  	(tRegions, vksRsConst, vksRsMutable)	
  			<- elaborateRegionsT (?newVarN NameRegion) ?getKind t
@@ -89,7 +90,11 @@ elaborateRegionsT
 elaborateRegionsT newVar getKind tt
  = let	?newVar		= newVar
  	?getKind	= getKind
-   in	elaborateRegionsT' tt
+   in	trace ("elaborateRegionsT: " % tt % "\n")
+			$ elaborateRegionsT' tt
+
+
+   
 
 elaborateRegionsT' tt
  = do	(tt', vksConst, vksMutable, fs)	<- elaborateRegionsT2 tt
@@ -151,9 +156,6 @@ elaborateRegionsT2 tt
 	| TData v ts		<- tt
 	= do	kind		<- ?getKind v
 
-		trace ("elaborateRegionsT: " % v % " :: " % kind % "\n")
-			$ return ()
-		
 		(ts2, vks2)	<- elabRs ts kind
 		(ts3, vksC3, vksM3, fs3)	
 				<- liftM unzip4 $ mapM elaborateRegionsT2 ts2
@@ -176,8 +178,8 @@ elabRs 	:: Monad m
 	     , [(Var, Kind)])	-- added vars
 
 elabRs args kind
--- = trace ("elabRs: " % args % " " % kind % "\n")
-  = do	(args', vks)	<- elabRs2 args kind
+  = trace ("elabRs: " % args % " " % kind % "\n")
+  $ do	(args', vks)	<- elabRs2 args kind
  	return	(args', nub vks)
 
 elabRs2 [] KData
@@ -218,7 +220,7 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 
 elabRs2 args kind
 	= panic stage
-	$ "elabRs2': no match for " % (args, kind) % "\n"
+	$ "elabRs2: no match for " % (args, kind) % "\n"
 
 
 -----------------------

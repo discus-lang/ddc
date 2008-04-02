@@ -88,7 +88,7 @@ data Top a
 		Var 					-- Class name
 		[Type]					-- Instance types
 		[(Var, [Type])]				-- Context.
-		[Stmt a]					-- Instance defs
+		[Stmt a]				-- Instance defs
 
 	-- Projections
 	| PProjDict					-- A projection dictionary.
@@ -145,7 +145,6 @@ type DataDef a	= (Var, [Var], [Ctor a])
 --
 data Exp a
 	= XNil
-	| XUnit		a
 
 	| XConst	a Const				-- CONST
 	| XVar 		a Var				-- VAR
@@ -160,8 +159,21 @@ data Exp a
 	| XDo		a [Stmt a]			-- do { STMTS }
 	| XLet		a [Stmt a] (Exp a)		-- let STMTS in EXP
 	| XIfThenElse	a (Exp a) (Exp a) (Exp a)	-- if EXP1 then EXP2 else EXP3
+	| XTry		a (Exp a) [Alt a] (Maybe (Exp a)) -- try EXP catch { ALTS } (with EXP)
+	| XThrow	a (Exp a)	
 
 	| XWhere	a (Exp a) [Stmt a]		-- EXP where { STMTS }
+
+	| XTuple	a [Exp a]
+	| XList		a [Exp a]
+
+	| XListRange	a Bool (Exp a) (Maybe (Exp a))	-- [EXP .. EXP] / [EXP .. ]
+	| XListComp	a (Exp a) [LCQual a]		-- [ EXP | QUAL .. ]
+
+	| XWhile	a (Exp a) (Exp a)		-- test, body
+	| XWhen		a (Exp a) (Exp a)		-- test, body
+	| XUnless	a (Exp a) (Exp a)		-- test, body
+	| XBreak	a				--			=> throw ExceptionBreak
 
 	-- Source.Defix desuaring ---------------------
 	| XDefix	a [Exp a]			-- Some collection of apps / suspensions / infix expressions
@@ -171,31 +183,18 @@ data Exp a
 	| XApp 		a (Exp a) (Exp a)		-- EXP1 EXP2
 	| XAppSusp	a (Exp a) (Exp a)		-- ex @ e1 .. eN	=> suspendN ex e1 .. eN
 
+	-- Used by Source.Parser.Exp to track  EXP.(EXP) indexing
+	| XParens	a (Exp a)
+
 	-- Dodgy pattern expression overloading --------
+	-- delete me
 	| XAt		a Var (Exp a)
+	| XUnit		a
 	| XObjVar	a Var				-- ^var.
-
-	-- exception sugar, desugared by Source.Desugar
-	| XTry		a (Exp a) [Alt a] (Maybe (Exp a))	-- exp, catchAlts, with exp
-	| XThrow	a (Exp a)	
-
-	-- imperative sugar, desugared by Source.Desugar
-	| XWhile	a (Exp a) (Exp a)		-- test, body
-	| XWhen		a (Exp a) (Exp a)		-- test, body
-	| XUnless	a (Exp a) (Exp a)		-- test, body
-	| XBreak	a				--			=> throw ExceptionBreak
-
-	-- list range sugar, desugared by Source.Desugar
-	| XListRange	a Bool (Exp a) (Maybe (Exp a))	-- lazy, from, to.
-	| XListComp	a (Exp a) [LCQual a]		-- lazy, exp, qualifiers.
-
-	-- data expressions/patterns sugar, desugared by Source.Desugar
-	| XCon		a Var [Exp a]
-	| XTuple	a [Exp a]
-	| XCons		a (Exp a) (Exp a)
-	| XList		a [Exp a]
 	| XWildCard	a 
-	
+	| XCon		a Var [Exp a]
+	| XCons		a (Exp a) (Exp a)
+
 	deriving (Show, Eq)
 
 
@@ -231,7 +230,6 @@ data Alt a
 	deriving (Show, Eq)
 
 data Guard a
---	  GCase		a (Pat a)			-- ^ Match against case object
 	= GExp		a (Pat a) (Exp a)		-- ^ Match against this expression.
 	| GBool		a (Exp a)			-- ^ Test for boolean.
 	deriving (Show, Eq)
@@ -259,7 +257,7 @@ data Label a
 -- |  List comprehension qualifiers
 --	Used by XListComp.
 data LCQual a
-	= LCGen		Bool (Exp a) (Exp a)		-- ^ Generator.			p <\@- e, p <- e
+	= LCGen		Bool (Pat a) (Exp a)		-- ^ Generator.			p <\@- e, p <- e
 	| LCLet		[Stmt a]			-- ^ Local declaration.		Stmt can only be SBind.
 	| LCExp		(Exp a)				-- ^ Guard.
 	deriving (Show, Eq)

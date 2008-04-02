@@ -155,8 +155,15 @@ slurpW	(WConLabel sp vCon lvs)
  = do	
 	-- Lookup what data type this constructor belongs to.
 	ctorType	<- gets stateCtorType
-	let Just tData@(TData _ tsData)	
-		= Map.lookup vCon ctorType
+
+	let tData@(TData _ tsData)
+		= case Map.lookup vCon ctorType of
+			Nothing -> panic stage 
+				$ "slurpW: can't find type data type definition for data constructor '" 
+				% vCon % "'"
+
+			Just x	-> x
+
 
 	-- Instantiate each of the poly-vars in the data type.
 	let vsData	= map (\(TVar k v) -> v) tsData

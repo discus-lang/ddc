@@ -48,7 +48,7 @@ rewriteListComp x
 	 	return 	$ D.XIfThenElse sp b' lc' (D.XVar sp primNil)
 	
 	-- [ e | p <- l, Q]		=> let ok p = [e | Q] in concatMap ok l
-	S.XListComp sp exp (S.LCGen lazy (S.XVar _ p) l : qs)
+	S.XListComp sp exp (S.LCGen lazy (S.WVar _ p) l : qs)
 	 -> do
 		let catMapVar	= if lazy then primConcatMapL else primConcatMap;
 

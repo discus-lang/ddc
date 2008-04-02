@@ -300,8 +300,13 @@ linkBoundVar
 linkBoundVar enclosing space var
  = do	
  	-- grab the context stack for the appropriate namespace
-  	(Just spaceStack)	<- liftM (Map.lookup space)
-				$ gets stateStack
+	stack		<- gets stateStack
+	let spaceStack	= case Map.lookup space stack of
+				Just s	-> s
+				Nothing	-> panic stage 
+					$ "linkBoundVar: no space stack for " % space
+					% "    var: " % var 		% "\n"
+					% "   info: " % Var.info var	% "\n"
 
 	-- try and find the binding occurance
 	let mBindingVar		= lookupBindingVar enclosing (Var.name var) spaceStack

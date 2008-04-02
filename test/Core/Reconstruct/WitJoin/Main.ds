@@ -6,7 +6,7 @@
 --
 -- If the core is checked before dictionary rewrite the type checker needs to handle this.
 --
-instance Updatable (Tuple2 %_ (Int %_) (Int %_)) where
+instance Updatable (Int, Int) where
 {
 	(:=)	= updateTupleInt2;
 }

@@ -144,7 +144,7 @@ instance Size (Exp a) where
 	XUnit{}		-> 1
 	XConst{}	-> 1
 	XApp _ x1 x2  	-> 1 + size x1 + size x2
-	XLambda _ v x	-> 1 + size x
+	XLambdaPats _ _ x	-> 1 + size x
 	XMatch _ aa	-> 1 + size aa
 	
 instance Size (Alt a) where
