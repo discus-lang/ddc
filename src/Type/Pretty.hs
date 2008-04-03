@@ -25,9 +25,10 @@ instance Pretty Type PMode where
 
 	TForall vs t	-> "forall " % " " %!% (map prettyVK vs) % ". " % t
 	TFetters fs t	-> t % " :- " % ", " %!% fs
-	TSum   k  es	-> k  % "{" % "; " %!% es % "}"
-	TMask  k  t1 t2	-> prettyTB t1 % " \\ " % prettyTB t2
-
+	TSum	k  es	-> k  % "{" % "; " %!% es % "}"
+	TMask	k  t1 t2 -> prettyTB t1 % " \\ " % prettyTB t2
+	TApp	t1 t2	 -> prettyTBF t1 % " " % prettyTRight t2
+	TCon	tycon	-> ppr tycon
 	TVar k v	-> ppr v
 
 	TTop k		-> k % "Top"
@@ -129,6 +130,13 @@ prettyVK	(var, kind)
 	KEffect		-> ppr var
 	KClosure	-> ppr var
 	_		-> "(" % var % " :: " % kind % ")"
+
+-- TyCon -------------------------------------------------------------------------------------------
+instance Pretty TyCon PMode where
+ ppr p
+  = case p of
+  	TyConFun{}		-> ppr "(->)"
+	TyConData { tyConName }	-> ppr tyConName
 
 
 -- TProj -------------------------------------------------------------------------------------------

@@ -17,7 +17,8 @@ GHC_LANGUAGE	:= \
 	-XScopedTypeVariables \
 	-XKindSignatures \
 	-XUndecidableInstances \
-	-XTypeSynonymInstances
+	-XTypeSynonymInstances \
+	-XRecordPuns
 
 
 # -- Warnings ----------------------------------------------------------------------------

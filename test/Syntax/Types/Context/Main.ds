@@ -10,4 +10,12 @@ foo3	:: Num a => Eq a => a -> a -> Bool
 
 -}
 
+
+
 main ()	= putStr "foo"
+
+{-
+class Functor f where
+ fmap :: (a -> b) -> f a -> f b
+-}
+

@@ -197,6 +197,11 @@ pType_body2
  		args	<- Parsec.many pType_body1
 		return	$ TData con args
 
+ <|>	(Parsec.try $ do
+ 		t1	<- pType_body1
+ 		ts	<- Parsec.many1 pType_body1
+		return	$ makeTApp (t1:ts))
+
  <|>	pType_body1
 
 

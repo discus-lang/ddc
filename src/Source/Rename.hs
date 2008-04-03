@@ -780,11 +780,17 @@ instance Rename Type where
 	 -> do	ts'	<- rename ts
 	 	return	$ TSum k ts'
 
-	TTop k 
-	 -> 	return tt
-	 
-	TBot k
-	 ->	return tt
+	TApp t1 t2
+	 -> do	t1'	<- rename t1
+	 	t2'	<- rename t2
+		return	$ TApp t1' t2'
+		
+	TCon tc
+	 -> do	tc'	<- rename tc
+	 	return	$ TCon tc'
+
+	TTop k 	 -> return tt
+	TBot k	 -> return tt
 
 	-- data
  	TFun t1 t2 eff clo
@@ -838,6 +844,18 @@ instance Rename Type where
 	TMutable t
 	 -> do	t'	<- rename t
 	 	return	$ TMutable t'
+
+-- TyCon -------------------------------------------------------------------------------------------
+instance Rename TyCon where
+ rename tc
+  = case tc of
+  	TyConFun { tyConName }
+	 -> do	v	<- lbindN NameType tyConName
+	 	return	$ tc { tyConName = v }
+		
+	TyConData { tyConName }
+	 -> do	v	<- lookupN NameType tyConName
+	 	return	$ tc { tyConName = v }
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance Rename Fetter where

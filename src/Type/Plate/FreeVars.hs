@@ -40,11 +40,14 @@ instance FreeVars Type where
 	 -> union (freeVars fs) (freeVars t)
 	 	\\ (fromList [ v | FLet (TVar k v) _ <- fs])
 		
-	TSum k ts		
-	 -> freeVars ts
+	TSum k ts	-> freeVars ts
 	 
-	TMask k t1 t2
-	 -> union (freeVars t1) (freeVars t2)
+	TMask k t1 t2	-> union (freeVars t1) (freeVars t2)
+
+	TApp t1 t2	-> union (freeVars t1) (freeVars t2)
+	
+	TCon tycon	-> freeVars tycon
+	
 
  	TVar k v	
 	 -> singleton v
@@ -89,6 +92,10 @@ instance FreeVars Type where
 	TElaborate t	-> freeVars t
 	TMutable t	-> freeVars t
 	
+-- TyCon -------------------------------------------------------------------------------------------
+instance FreeVars TyCon where
+ freeVars tycon
+ 	= singleton $ tyConName tycon
     
 -- Kind --------------------------------------------------------------------------------------------
 instance FreeVars Kind where

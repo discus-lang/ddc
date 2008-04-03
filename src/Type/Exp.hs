@@ -3,6 +3,7 @@
 module Type.Exp
 	( Var
 	, Type		(..)
+	, TyCon		(..)
 	, ClassId	(..)
 	, TProj		(..)
 	, Fetter  	(..)
@@ -84,6 +85,9 @@ data Type
 	| TMask		Kind	Type	Type		-- ^ Mask out some effects/vars from this effect/closure
 	| TVar     	Kind 	Var			-- ^ A type variable.
 
+	| TApp		Type	Type			-- ^ General type application.
+	| TCon		TyCon
+
 	| TTop		Kind
 	| TBot		Kind
 	
@@ -121,6 +125,18 @@ data Type
 
 	deriving (Show, Eq)
 	
+
+-- | Type constructors
+data TyCon
+	= TyConFun
+		{ tyConName	:: Var 
+		, tyConKind	:: Kind }
+
+	| TyConData
+		{ tyConName	:: Var
+		, tyConKind	:: Kind }
+
+	deriving (Show, Eq)
 
 -- Fetter ------------------------------------------------------------------------------------------
 -- | A Fetter is a piece of type information which isn't part of the type's shape.

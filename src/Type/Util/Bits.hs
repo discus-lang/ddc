@@ -8,6 +8,7 @@ module Type.Util.Bits
 	, crushT
 	, makeTSum,	flattenTSum
 	, makeTMask,	applyTMask
+	, makeTApp
 
 	, makeTForall
 	, makeTForall_back
@@ -151,6 +152,16 @@ applyTMask tt@(TMask k t1 t2)
    
 applyTMask tt	= tt
 
+
+-- | Make a type application
+makeTApp :: [Type] -> Type
+makeTApp ts = makeTApp' $ reverse ts
+
+makeTApp' xx
+ = case xx of
+ 	x : []		-> x
+	x1 : xs		-> TApp (makeTApp' xs) x1
+	
 
 -- | Add some forall bindings to the front of this type, 
 --	new quantified vars go at front of list.
@@ -386,3 +397,5 @@ makeDataKind vs
  	= foldl (flip KFun) KData 
 	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
 	$ reverse vs
+
+

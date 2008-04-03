@@ -46,6 +46,7 @@ data TransTable m
 	, transT_enter	:: Type		-> m Type
 	, transT_leave	:: Type		-> m Type
 
+	, transC	:: TyCon	-> m TyCon
 	, transJ	:: TProj 	-> m TProj
 	, transF	:: Fetter	-> m Fetter
 	, transK	:: Kind		-> m Kind }
@@ -66,6 +67,7 @@ transTableId
 	, transT_enter	= \t -> return t
 	, transT_leave	= \t -> return t
 
+	, transC	= \x -> return x
 	, transJ	= \x -> return x
 	, transF	= \x -> return x
 	, transK	= \x -> return x }
@@ -118,9 +120,7 @@ instance (Monad m, TransM m a, TransM m b, TransM m c)
 	return	(a', b', c')
 
  
------------------------
--- Var
---
+-- Var / ClassId -----------------------------------------------------------------------------------
 instance Monad m => TransM m Var
  where	transZM	= transV
 
@@ -128,9 +128,7 @@ instance Monad m => TransM m ClassId
  where	transZM = transCid
 
 
------------------------
--- Type
---
+-- Type --------------------------------------------------------------------------------------------
 instance Monad m => TransM m Type where
  transZM table tt 
   = transT table table tt
@@ -169,6 +167,15 @@ followT table tt
  	TVar k v
 	 -> do	v'	<- transZM table v
 	 	return	$ TVar k v'
+
+	TApp t1 t2
+	 -> do	t1'	<- transZM table t1
+	 	t2'	<- transZM table t2
+		return	$ TApp t1' t2'
+		
+	TCon tycon
+	 -> do	tycon'	<- transZM table tycon
+	 	return	$ TCon tycon'
 
 	TTop k
 	 -> do	return	$ tt
@@ -241,12 +248,20 @@ followT table tt
 	 -> do	t'	<- transZM table t
 	 	return	$ TMutable t'
 		
+-- TyCon -------------------------------------------------------------------------------------------
+instance Monad m => TransM m TyCon where
+ transZM table tt
+  = case tt of
+  	TyConFun { tyConName }
+	 -> do	v'	<- transZM table tyConName
+	 	return	$ tt { tyConName = v' }
+		
+	TyConData { tyConName }
+	 -> do	v'	<- transZM table tyConName
+	 	return	$ tt { tyConName = v' }
 	
------------------------
--- TProj
---
-instance Monad m => TransM m TProj
- where 
+-- TProj -------------------------------------------------------------------------------------------
+instance Monad m => TransM m TProj where 
   transZM table jj
    = case jj of
  	TJField v
@@ -264,11 +279,8 @@ instance Monad m => TransM m TProj
 	 ->	transJ table 	jj		
 
 
------------------------
--- Fetter
---
-instance Monad m => TransM m Fetter
- where	
+-- Fetter ------------------------------------------------------------------------------------------
+instance Monad m => TransM m Fetter where	
   transZM table ff
    = case ff of
 	FConstraint v ts
@@ -293,11 +305,8 @@ instance Monad m => TransM m Fetter
 		transF table	$ FProj pj v' tDict' tBind'
 	
 	
------------------------
--- Kind
---
-instance Monad m => TransM m Kind
- where
+-- Kind --------------------------------------------------------------------------------------------
+instance Monad m => TransM m Kind where
   transZM table kk
    = case kk of
  	KFun k1 k2
