@@ -15,6 +15,7 @@ import qualified Data.Set	as Set
 import Shared.Pretty
 import Debug.Trace
 
+-- | Flattening a type inlines all the (t1 = t2) fetters bound within in it.
 flattenT :: Type -> Type
 flattenT tt
  = flattenT' Map.empty Set.empty tt
@@ -40,6 +41,9 @@ flattenT' sub block tt
 
 	TSum k ts	-> makeTSum  k (map down ts)
 	TMask k t1 t2	-> makeTMask k (down t1) (down t2)
+
+	TApp t1 t2	-> TApp (down t1) (down t2)
+	TCon{}		-> tt
 
 	TVar{}
 	 | Set.member tt block

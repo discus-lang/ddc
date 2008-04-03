@@ -16,6 +16,9 @@ main ()	= putStr "foo"
 
 {-
 class Functor f where
- fmap :: (a -> b) -> f a -> f b
--}
+ fmap :: (a -> b) -> (f :: * -> *) a -> (f :: * -> *) b
 
+instance Functor List where
+ fmap f []	= []
+ fmap f (x:xs)	= f x : fmap f xs
+-}

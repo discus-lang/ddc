@@ -40,6 +40,15 @@ stripFLetsT	tt
 	   in	( TMask k t1' t2'
 	   	, fs1 ++ fs2 )
 
+	TApp t1 t2
+	 -> let	(t1', fs1)	= stripFLetsT t1
+	 	(t2', fs2)	= stripFLetsT t2
+	    in	( TApp t1' t2'
+	    	, fs1 ++ fs2)
+		
+	TCon tc	-> (tt, [])
+	
+
  	TVar{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	TTop{}	-> (tt, [])

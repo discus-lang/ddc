@@ -58,7 +58,9 @@ subTT_noLoops sub tt
 
 	
 -- | Do a loop cutting substitution on this type.
---	Collect any loops in the data portion of the type in the monad.
+--	If we find any loops through the data potion of this type then
+--	push them as errors into the monad.
+--
 subTT_cutM 
 	:: Map Type Type	-- types to substitute for
 	-> Set Type		-- types that have already been substituted, and should be cut
@@ -90,6 +92,12 @@ subTT_cutM' sub cut tt
 	 	t2'	<- down t2
 		return	$ TMask k t1' t2'
 		
+	TApp t1 t2
+	 -> do	t1'	<- down t1
+	 	t2'	<- down t2
+		return	$ TApp t1' t2'
+		
+	TCon{}		-> return tt
 		
 	TTop{}		-> return tt
 	TBot{}		-> return tt

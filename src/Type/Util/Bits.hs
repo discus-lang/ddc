@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Type.Util.Bits
 	( pure
@@ -17,6 +18,7 @@ module Type.Util.Bits
 	, spaceOfKind
 	, kindOfSpace 
 	, kindOfType,	takeKindOfType
+	, resultKind
 
 	, addFetters,	addFetters_front
 	, takeBindingVarF
@@ -159,6 +161,7 @@ makeTApp ts = makeTApp' $ reverse ts
 
 makeTApp' xx
  = case xx of
+	[]		-> panic stage $ "makeTApp': empty list"
  	x : []		-> x
 	x1 : xs		-> TApp (makeTApp' xs) x1
 	
@@ -200,16 +203,19 @@ makeTForall_back vks tt
 makeTFunEC ::	Effect -> Closure -> [Type]	-> Type
 makeTFunEC	eff clo (x:[])			= x
 makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
+makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for function"
 
 
 -- | Get the namespace associated with a kind.
 spaceOfKind ::	Kind -> NameSpace
 spaceOfKind  kind
- = case kind of
+ = case resultKind kind of
  	KData		-> NameType
 	KRegion		-> NameRegion
 	KEffect		-> NameEffect
 	KClosure	-> NameClosure
+	_		-> panic stage
+			$ "spaceOfKind: no space for " % kind
 
 -- | Get the kind associated with a namespace.
 kindOfSpace :: NameSpace -> Kind
@@ -233,7 +239,8 @@ kindOfType tt
  = case takeKindOfType tt of
  	Just k		-> k
 	Nothing		-> panic stage
-			$ "kindOfType: no match for " % show tt
+			$ "kindOfType: no match for " % tt % "\n"
+			%> show tt
 
 takeKindOfType :: Type -> Maybe Kind
 takeKindOfType tt
@@ -247,7 +254,30 @@ takeKindOfType tt
 	TTop k		-> Just k
 	TBot k		-> Just k
 	
-	TData{}		-> Just KData
+	TApp t1 t2
+	  -> let result
+	  		| Just k1	<- takeKindOfType t1
+			, Just k2	<- takeKindOfType t2
+			= case k1 of
+				KFun k11 k12
+				 | k2 == k11	-> Just k12
+				 
+				_ -> freakout stage	
+					( "takeKindOfType: kind error in type application (t1 t2)\n"
+					% "    t1  = " % t1 	% "\n"
+					% "  K[t1] = " % k1	% "\n"
+					% "\n"
+					% "    t2  = " % t2 	% "\n"
+					% "  K[t2] = " % k2	% "\n")
+					Nothing
+			| otherwise
+			= Nothing
+
+	    in result
+	    
+	TCon tc		-> Just $ tyConKind tc
+
+	TData{}		-> Just KData		-- BUGS: this is a lie now we have real type application
 	TFun{}		-> Just KData
 	
 	TEffect{}	-> Just KEffect
@@ -263,7 +293,20 @@ takeKindOfType tt
 	TMutable t	-> takeKindOfType t
 
 	TError k t	-> Just k 
-	_		-> Nothing
+	
+	_		
+	 -> freakout stage 
+		("takeKindOfType: no match for " % tt % "\n") 
+		Nothing
+
+
+-- | Get the result of applying all the paramters to a kind.
+resultKind :: Kind -> Kind
+resultKind kk
+ = case kk of
+ 	KFun k1 k2	-> resultKind k2
+	_		-> kk
+
 	
 	
 -- | Add some fetters to a type.
@@ -336,6 +379,8 @@ makeOpTypeData (TData v ts)
 	
 	| otherwise
 	= Just $ TData primTObj []
+
+makeOpTypeData _	= Nothing
 
 
 -- | Make a TVar, using the namespace of the var to determine it's kind

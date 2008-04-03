@@ -206,6 +206,23 @@ packTypeLs ld ls tt
 	 -> do	t1'	<- packTypeLs ld ls t1
 	 	t2'	<- packTypeLs True ls t2
 	    	return	$ makeTMask k t1' t2'
+
+	-- try and flatten out TApps into their specific constructors
+	TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
+	 -> 	return	$ TFun t1 t2 eff clo
+	    
+--	TApp (TCon (TyConData { tyConName })) t2
+--	 ->	return	$ TData tyConName [t2]
+	 
+--	TApp (TData v ts) t2
+--	 ->	return	$ TData v (ts ++ [t2])
+	 
+	TApp t1 t2
+	 -> do 	t1'	<- packTypeLs ld ls t1
+	 	t2'	<- packTypeLs ld ls t2
+		return	$ TApp t1' t2'
+
+	TCon{} -> return tt
 	    
 	TVar k v2
 	 -> case Map.lookup tt ls of

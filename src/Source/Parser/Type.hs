@@ -216,6 +216,16 @@ pType_body1
 		return	$ TVar 	(kindOfSpace $ Var.nameSpace var)
 				var
 
+	-- (VAR :: KIND)
+ <|>	(Parsec.try $ do
+ 		pTok K.RBra
+		var	<- liftM (vNameDefaultN NameType) $ pVarPlain
+		pTok K.HasType
+		kind	<- pKind
+		pTok K.RKet
+		
+		return	$ TVar kind var)
+		
  <|>	-- CON
  	do	con	<- liftM vNameT $ pQualified pCon
 		return	$ TData con []

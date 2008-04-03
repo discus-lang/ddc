@@ -186,11 +186,14 @@ elabRs2 [] KData
 	= return ([], [])
 
 elabRs2 [] (KFun k1 k2)
+	-- add a fresh region varaible
 	| KRegion		<- k1
 	= do	(ts', vks')	<- elabRs2 [] k2
 		vR		<- ?newVar
 		return		( TVar KRegion vR : ts'
 				, (vR, KRegion) : vks')
+	| otherwise
+	= return ([], [])
 
 elabRs2 (t:ts) kk@(KFun k1 k2)
 

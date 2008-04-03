@@ -50,6 +50,13 @@ linkType mParent bound tt
 	 -> do	es'	<- mapM (linkType mParent bound) es
 	 	return	$ TSum k es'
 
+	TApp t1 t2
+	 -> do	t1'	<- linkType mParent bound t1
+	 	t2'	<- linkType mParent bound t2
+		return	$ TApp t1' t2'
+		
+	TCon{} -> return	tt
+
  	TVar k v
 	 | elem v bound	-> return tt
 	 | otherwise

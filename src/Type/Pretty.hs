@@ -27,7 +27,7 @@ instance Pretty Type PMode where
 	TFetters fs t	-> t % " :- " % ", " %!% fs
 	TSum	k  es	-> k  % "{" % "; " %!% es % "}"
 	TMask	k  t1 t2 -> prettyTB t1 % " \\ " % prettyTB t2
-	TApp	t1 t2	 -> prettyTBF t1 % " " % prettyTRight t2
+	TApp	t1 t2	 -> parens t1 % " " % prettyTRight t2
 	TCon	tycon	-> ppr tycon
 	TVar k v	-> ppr v
 

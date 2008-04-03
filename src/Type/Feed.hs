@@ -152,6 +152,19 @@ feedType	mParent t
 		
 		returnJ		$ TClass k cidE
 
+	TApp t1 t2
+	 -> do	let k		=  kindOfType t
+	 	cidT		<- allocClass k
+	 	Just t1'	<- feedType1 (Just cidT) t1
+		Just t2'	<- feedType1 (Just cidT) t2
+		addNode cidT	$ TApp t1' t2'
+		returnJ		$ TClass k cidT
+
+	TCon tc
+	 -> do	cidT		<- allocClass (tyConKind tc)
+	 	addNode cidT	$ TCon tc
+		returnJ		$ TClass (tyConKind tc) cidT
+
  	TVar k v 
 	 -> do 	cidT		<- makeClassV ?src k v 
 		returnJ		$ TClass k cidT
