@@ -72,7 +72,7 @@ staticRsDataT tt
 
 	-- TODO: we're assuming that all args are tangible. This isn't strictly
 	--       correct but shouldn't hurt us too much.
- 	TData v ts		-> Set.unions $ map staticRsDataT ts
+ 	TData k v ts		-> Set.unions $ map staticRsDataT ts
 
 	TFun{}			-> Set.empty
 	TFetters fs t		-> staticRsDataT t
@@ -106,5 +106,5 @@ staticRsClosureT t
 
 	-- TODO: we're assuming that all args are tangible. This isn't strictly
 	--       correct but shoudn't hurt us too much.
-	TData v ts		-> Set.unions $ map staticRsClosureT ts
+	TData k v ts		-> Set.unions $ map staticRsClosureT ts
 	_ 			-> Set.empty

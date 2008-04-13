@@ -132,11 +132,11 @@ matchInstance cType cInst
 	--	a var or wildcard for the RHS
 	, and 	$ map (\(ta, tb) -> case tb of
 				TVar  k v
-				 | kindOfType ta == k
+				 | takeKindOfType ta == Just k
 			 	 -> True
 
 				TWild k
-				 | kindOfType ta == k
+				 | takeKindOfType ta == Just k
 				 -> True
 
 				_	-> False)

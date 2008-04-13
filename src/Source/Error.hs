@@ -53,9 +53,12 @@ data Error
 		, eVar2			:: Var
 		, eAirity2		:: Int }
 
+	-- TODO: These rrors emitted by the desugar stages and should
+	--	really be in a different module
 	| ErrorNotMethodOfClass
 		{ eInstVar		:: Var
 		, eClassVar		:: Var }
+
 
 	deriving Show		
 

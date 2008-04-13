@@ -12,24 +12,24 @@ data ArrayU %r a
 --	If the first arg is 1 the array is anchored and is not coppied around by the Garbage collector
 --	If the first 
 foreign import extern "primArrayU_Int_new"
- arrayUI_new :: elaborate Int -> Int -> ArrayU Int
+ arrayUI_new :: Int{read} -> Int{read} -> ArrayU Int
  
 foreign import extern "primArrayU_Int_get"
- arrayUI_get :: elaborate ArrayU Int -> Int -> Int
+ arrayUI_get :: ArrayU Int {read} -> Int{read} -> Int
 
 foreign import extern "primArrayU_Int_set"
- arrayUI_set :: elaborate ArrayU (mutable Int) -> Int -> Int -> ()
+ arrayUI_set :: ArrayU (Int{write}) {read} -> Int{read} -> Int -> ()
  
 foreign import extern "primArrayU_Int_dump"
- arrayUI_dump :: elaborate ArrayU Int -> ()
+ arrayUI_dump :: ArrayU Int {read} -> ()
  
 foreign import extern "primArrayU_Int_size"
- arrayUI_size :: elaborate ArrayU Int -> Int
+ arrayUI_size :: ArrayU Int {read} -> Int
 
 foreign import extern "primArrayU_Int_fill"
- arrayUI_fill :: elaborate ArrayU (mutable Int) -> Int -> ()
+ arrayUI_fill :: ArrayU (Int {write}) {read} -> Int{read} -> ()
 
--- An fast, unchecked read from an array
+-- A fast, unchecked read from an array
 foreign import extern "primArrayInt32_peek"
  arrayUI_peek  
  	:: forall %r1 %r2 %r3 %r4
@@ -50,7 +50,7 @@ foreign import extern "primArrayInt32_poke"
 	:$ Obj -> Int32# -> Int32# -> Obj
 
 foreign import extern "primArrayU_Int_getBufPtr"
- arrayUI_getBufPtr :: elaborate (ArrayU Int) -> Ptr# Int32#
+ arrayUI_getBufPtr :: (ArrayU Int){read} -> Ptr# Int32#
 
 
 -- This is very slow

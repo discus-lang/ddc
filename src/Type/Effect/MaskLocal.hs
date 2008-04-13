@@ -47,7 +47,7 @@ maskLocalT tsVis tt
 maskF :: Set Type -> Fetter -> Maybe Fetter
 
 maskF	tsVis	(FLet t1 t2)
-	| kindOfType t1 == KEffect
+	| Just KEffect	<- takeKindOfType t1
 	= Just $ FLet t1 (maskE tsVis t2)
 
 maskF	tsVis	(FConstraint v [tR])
@@ -110,7 +110,7 @@ visibleRsT tt
 	TBot{}	-> Set.empty
 
 	-- data
-	TData v ts
+	TData k v ts
 	 -> Set.unions $ map visibleRsT ts
 
  	TFun t1 t2 eff clo	

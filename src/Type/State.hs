@@ -195,12 +195,14 @@ squidSInit
 -- | Add some stuff to the inferencer trace.
 traceM :: PrettyM PMode -> SquidM ()
 traceM p
- = do	mHandle		<- gets stateTrace
-	i		<- gets stateTraceIndent
+ = do	mHandle	<- gets stateTrace
+	i	<- gets stateTraceIndent
+	args	<- gets stateArgs
  	case mHandle of
 	 Nothing	-> return ()
 	 Just handle
-	  -> do liftIO (hPutStr handle $ indent i $ pprStrPlain p)
+	  -> do 
+	  	liftIO (hPutStr handle $ indent i $ pprStr (catMaybes $ map Arg.takePrettyMode $ Set.toList args) p)
 	  	liftIO (hFlush  handle)
 
 	

@@ -33,6 +33,7 @@ import Shared.Error
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import qualified Shared.VarUtil	as Var
+import qualified Shared.VarSpace as Var
 import Shared.Var		(Var, NameSpace(..), Module)
 
 import Util
@@ -65,7 +66,7 @@ newVarN	space
 	let varBind'	= Var.incVarBind varBind
 	modify $ \s -> s { stateVarGen = varBind' }
 
-	let var		= (Var.new $ pprStrPlain varBind)
+	let var		= (Var.new $ (Var.namePrefix space ++ pprStrPlain varBind))
 			{ Var.bind	= varBind
 			, Var.nameSpace	= space }
 	return var
@@ -133,7 +134,7 @@ snipProjDictTree moduleName classDicts tree
 -- Snip RHS of bindings in projection dictionaries.
 snipProjDictP moduleName classDicts (PProjDict sp t ss)
  = do
-	let (TData vCon _)	= t
+	let (TData _ vCon _)	= t
 
 	-- See what vars are in the dict and make a map of new vars.
  	let dictVs	= nub
@@ -301,7 +302,7 @@ snipDataField moduleName sp vData vCtor field
 		varR	<- newVarN NameRegion
 				
 		return	( field { dInit = Just $ XVar sp var }
-			, [ PSig  sp var (TFun 	(TData primUnit [TVar KRegion varR]) 
+			, [ PSig  sp var (TFun 	(TData KData primTUnit []) 
 						(dType field) 
 						(TBot KEffect) (TBot KClosure))
 			  , PBind sp (Just var) (XLambda sp varL xInit)])
@@ -356,7 +357,7 @@ makeTypeName :: Type -> String
 makeTypeName tt
  = case tt of
  	TFun t1 t2 eff clo	-> "Fun" ++ makeTypeName t1 ++ makeTypeName t2
-	TData v ts		-> (Var.name v) ++ (catMap makeTypeName ts)
+	TData _ v ts		-> (Var.name v) ++ (catMap makeTypeName ts)
 	TVar k v		-> ""
 	TWild k			-> ""
 
@@ -401,7 +402,7 @@ addProjDictDataTree tree
 
  	-- Slurp out all the available projection dictionaries.
 	let projMap	= Map.fromList
-			$ [(v, p)	| p@(PProjDict _ t@(TData v ts) ss)	<- tree]
+			$ [(v, p)	| p@(PProjDict _ t@(TData _ v ts) ss)	<- tree]
 		
 	-- If there is no projection dictionary for a given data type
 	--	then make a new empty one. Add new dictionary straight after the data def
@@ -416,7 +417,7 @@ addProjDataP projMap p
  = case p of
 	PData sp v vs ctors
  	 -> case Map.lookup v projMap of
-		Nothing	-> [p, PProjDict sp (TData v (map varToTWild vs)) []]
+		Nothing	-> [p, PProjDict sp (TData (makeDataKind vs) v (map varToTWild vs)) []]
 		Just _	-> [p]
 		
 	_		-> [p]
@@ -438,13 +439,14 @@ addProjDictFunsTree dataMap tree
 	
 addProjDictFunsP 
 	dataMap 
-	p@(PProjDict sp projType@(TData v ts) ss)
+	p@(PProjDict sp projType@(TData k v ts) ss)
  = do
 	-- Lookup the data def for this type.
  	let (Just (PData _ vData vsData ctors))	
 		= Map.lookup v dataMap
 	
-	let tData	= TData vData (map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsData)
+	let tsData	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsData
+	let tData	= TData (makeDataKind vsData) vData tsData
 	
 	-- See what projections have already been defined.
 	let dictVs	= nub 
@@ -542,16 +544,18 @@ makeProjR_fun sp tData ctors fieldV
 					, dLabel field == Just fieldV ]
 
 	let rData	= case tData of
-				TData vData (TVar KRegion rData : _)	
+				TData _ vData (TVar KRegion rData : _)	
 					-> rData
 				_ 	-> panic stage
 					$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
 					% "  tData = " % show tData			% "\n"
 
 	return	$ 	[ SSig  sp funV 	
-				(TFun tData (TData primTRef [TVar KRegion rData, resultT]) 
-						pure
-						empty)
+				(TFun tData 	(TData 	(KFun KRegion (KFun KData KData))
+							primTRef 
+							[TVar KRegion rData, resultT]) 
+							pure
+							empty)
 
 
 			, SBind sp (Just funV) 
@@ -606,7 +610,7 @@ slurpProjTable tree
 			SBind _ (Just v1) (XVar     _ v2)	-> Just (v1, v2)
 			_					-> Nothing
 
-	packProjDict (PProjDict _ t@(TData vCon _) ss)
+	packProjDict (PProjDict _ t@(TData _ vCon _) ss)
 		= (vCon, (t, Map.fromList $ catMaybes $ map projDictS ss))
 
 	projTable	= Map.gather 

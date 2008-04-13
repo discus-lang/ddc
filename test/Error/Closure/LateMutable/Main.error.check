@@ -5,10 +5,10 @@
         we were using this type scheme:
             box
               :: forall tTS3
-              .  Main.Box %118 (Data.List.List %123 tTS3)
+              .  Main.Box %115 (Data.List.List %120 tTS3)
 
         but a new
-              constraint: Base.Mutable %118
+              constraint: Base.Mutable %115
          from the use of: (#=)
                       at: ./test/Error/Closure/LateMutable/Main.ds:27:16
 

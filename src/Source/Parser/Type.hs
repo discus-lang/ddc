@@ -60,13 +60,8 @@ pKind1
 pType :: Parser Type
 pType
  = 
- 	-- elaborate TYPE
-	do	pTok K.Elaborate
-		t	<- pType
-		return	$ TElaborate t
- 
  	-- forall VAR .. . TYPE
- <|>	do	tok	<- pTok K.Forall
+ 	do	tok	<- pTok K.Forall
 		vks	<- Parsec.many1 pVar_withKind
 		pTok K.Dot
 		body	<- pType_bodyFetters
@@ -150,26 +145,26 @@ pType_body
  = 	-- TYPE -> TYPE
 	-- overlaps with the rest
  	(Parsec.try $ do
-		t1	<- pType_body2
+		t1	<- pType_body3
 		pTok K.RightArrow
 		t2	<- pType_body
 		return	$ TFun t1 t2 (TBot KEffect) (TBot KClosure))
 
  <|>	-- TYPE -(EFF/CLO)> TYPE
  	(Parsec.try $ do
-		t1	<- pType_body2
+		t1	<- pType_body3
 		pTok K.Dash
 		effclo	<- pRParen (Parsec.try pEffect <|> pClosure)
 		pTok K.AKet
 		t2	<- pType_body
 		
-		case kindOfType effclo of
-			KEffect	 -> return $ TFun t1 t2 effclo (TBot KClosure)
-			KClosure -> return $ TFun t1 t2 (TBot KEffect) effclo)
+		case takeKindOfType effclo of
+			Just KEffect	-> return $ TFun t1 t2 effclo (TBot KClosure)
+			Just KClosure 	-> return $ TFun t1 t2 (TBot KEffect) effclo)
 		
  <|>	-- TYPE (EFF CLO) TYPE
  	(Parsec.try $ do
-		t1	<- pType_body2
+		t1	<- pType_body3
 		pTok K.Dash
 		pTok K.RBra
 		eff	<- pEffect
@@ -181,21 +176,40 @@ pType_body
 		return	$ TFun t1 t2 eff clo)
 
  <|>	-- TYPE
-	pType_body2
+	pType_body3
+
+
+pType_body3 :: Parser Type
+pType_body3
+	-- read TYPE
+ =	(Parsec.try $ do
+		t	<- pType_body2
+		pCParen $ pVarPlainNamed "read"	
+		return	$ TElaborate ElabRead t)
+
+	-- write TYPE
+ <|>	(Parsec.try $ do
+		t	<- pType_body2
+		pCParen $ pVarPlainNamed "write"
+		return	$ TElaborate ElabWrite t)
+
+	-- modify TYPE
+ <|>	(Parsec.try $ do	
+		t	<- pType_body2
+		pCParen $ pVarPlainNamed "modify"
+		return	$ TElaborate ElabModify t)
+
+ <|>	pType_body2
 
 
 -- | Parse a type that can be used as an argument to a function constructor
 pType_body2 :: Parser Type
 pType_body2
- =	-- mutable TYPE
- 	do	pTok K.Mutable
-		t	<- pType_body2
-		return	$ TMutable t
-  
- 	-- CON TYPE..
- <|>	do	con	<- liftM vNameT $ pQualified pCon
+ =	-- CON TYPE..
+ 	(Parsec.try $ do	
+		con	<- liftM vNameT $ pQualified pCon
  		args	<- Parsec.many pType_body1
-		return	$ TData con args
+		return	$ TData KNil con args)
 
  <|>	(Parsec.try $ do
  		t1	<- pType_body1
@@ -225,14 +239,24 @@ pType_body1
 		pTok K.RKet
 		
 		return	$ TVar kind var)
-		
+
  <|>	-- CON
  	do	con	<- liftM vNameT $ pQualified pCon
-		return	$ TData con []
+		return	$ TData KNil con []
+
+ <|>	-- (CON :: KIND)
+ 	(Parsec.try $ do
+		pTok K.RBra
+		con	<- liftM vNameT $ pQualified pCon
+		pTok K.HasType
+		kind	<- pKind
+		pTok K.RKet
+
+		return	$ TData kind con [])
 	
  <|>	-- ()
  	do	pTok K.Unit
-		return	$ TData (Var.primTUnit) []
+		return	$ TData KData (Var.primTUnit) []
 
  <|>	-- KIND _
  	(Parsec.try $ do
@@ -242,7 +266,9 @@ pType_body1
  	
  <|>	-- [ TYPE , .. ]
  	do	ts	<- pSParen $ Parsec.sepBy1 pType_body (pTok K.Comma)
-		return	$ TData Var.primTList ts
+		return	$ TData (KFun (KFun KRegion KData) KData)
+				Var.primTList 
+				ts
 
  <|>	-- ( TYPE, TYPE .. )
  	-- overlaps with (TYPE)
@@ -252,7 +278,9 @@ pType_body1
 		pTok K.Comma
 		ts	<- Parsec.sepBy1 pType_body (pTok K.Comma)
 		pTok K.RKet
-		return	$ TData (Var.primTTuple (length (t1:ts))) (t1 : ts))
+		return	$ TData (KFun (KFun KRegion KData) KData)
+				(Var.primTTuple (length (t1:ts))) 
+				(t1 : ts))
 
  <|>	-- ( TYPE )
  	pRParen pType_body
@@ -373,5 +401,5 @@ pTypeOp1
  = 	-- CON
  	do	con	<- liftM vNameT $ pQualified pCon
 		ts	<- Parsec.many pTypeOp1
-		return	$ TData con ts
+		return	$ TData KNil con ts
 		

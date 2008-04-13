@@ -237,7 +237,7 @@ solveCs	(c:cs)
 		solveNext cs
 
 	-- Projection dictionaries
-	CDictProject src t@(TData v ts) vvs
+	CDictProject src t@(TData _ v ts) vvs
 	 -> do	trace	$ "### CDictProj " % t % "\n"
 	 	modify $ \s -> s { stateProject
 	 				= Map.insert v (t, vvs) (stateProject s)}
@@ -936,7 +936,7 @@ solveGrind
  	errs		<- gets stateErrors
 	if isNil errs
 	 then do 
-	 	trace	$ ppr "-- Grind Start --------------------------------\n"
+		trace	$ ppr "-- Grind Start --------------------------------\n"
 	 	cs	<- solveGrindStep
 		trace	$ ppr "------------------------------------ Grind Stop\n"
 

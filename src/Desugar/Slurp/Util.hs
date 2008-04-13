@@ -96,7 +96,7 @@ makeCtorType newVarN vData vs name fs
 			$ map (checkTypeVar vs) $ Set.toList vsFree
 
 	-- The objType is the type of the constructed object.
- 	let objType	= TData vData  
+ 	let objType	= TData (makeDataKind vs) vData  
 			$ map (\v -> case Var.nameSpace v of
 					NameEffect	-> TVar KEffect  v
 					NameRegion	-> TVar KRegion  v
@@ -296,7 +296,7 @@ getConstType	c
 		let var'	= var { Var.info = 
 					[ Var.IValueLiteral lit ] }
 	
-		return		$ TData var' [TVar KRegion r]
+		return		$ TData (KFun KRegion KData) var' [TVar KRegion r]
 
 	-- unboxed string literals have regions annotations
 	CConstU lit@(LString{})
@@ -305,7 +305,7 @@ getConstType	c
 		let var'	= var { Var.info = 
 					[ Var.IValueLiteral lit ] }
 	
-		return		$ TData var' [TVar KRegion r]
+		return		$ TData (KFun KRegion KData) var' [TVar KRegion r]
 
 
 	-- other literals ie: Ints, Floats, Chars don't have regions
@@ -315,7 +315,7 @@ getConstType	c
 		let var'	= var { Var.info = 
 					[ Var.IValueLiteral lit ] }
 
-		return		$ TData var' []
+		return		$ TData KData var' []
 
 
 getConstType' lit

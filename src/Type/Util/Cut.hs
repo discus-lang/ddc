@@ -142,7 +142,7 @@ cutT cid cidsEntered tt
 	TTop{}			-> tt
 	TBot{}			-> tt
 
-	TData	v ts		-> TData 	v (map down ts)
+	TData	k v ts		-> TData k	v (map down ts)
 	TFun 	t1 t2 eff clo	-> TFun 	(down t1) (down t2) (down eff) (down clo)
 
 	TEffect	v ts		-> TEffect	v (map down ts)

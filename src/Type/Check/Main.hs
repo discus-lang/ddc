@@ -40,7 +40,7 @@ checkMain' vMainT tMain tt
  	TFetters fs t	
 	 -> checkMain' vMainT tMain t
 
-	TFun (TData v1 []) (TData v2 []) eff clo
+	TFun (TData _ v1 []) (TData _ v2 []) eff clo
 	 | v1 == primTUnit && v2 == primTUnit
 	 -> return ()
 	 

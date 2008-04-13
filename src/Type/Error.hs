@@ -256,7 +256,7 @@ instance Pretty Error PMode where
 
  ppr err@(ErrorFieldNotPresent 
  		{ eProj		= p
-		, eConstructor	= TData v _
+		, eConstructor	= TData k v _
 		, eFields	= fields })
 	= (getProjSP p)							% "\n"
 	% "    Type '" % v 	% "' has no projection named '" % p	% "'\n"

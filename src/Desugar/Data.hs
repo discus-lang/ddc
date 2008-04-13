@@ -1,18 +1,20 @@
 
 -- | Elaborate data definitions.
-module Source.Desugar.Data 
+module Desugar.Data 
 	(elaborateData)
 where
 
 import Type.Util.Elaborate
+import Type.Exp
 
-import Source.Pretty
-import Source.Exp
+import Desugar.Pretty
+import Desugar.Exp
 
 import Shared.Pretty
+import Shared.Exp
 import Shared.Base
 import Shared.VarPrim
-import Shared.Var		(NameSpace(..))
+import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var	as Var
 
 import Util
@@ -35,7 +37,7 @@ elaborateData newVarN getKind
 	p@(PData sp vData vsData ctors)
  = do
 	trace 	( "elaborateData\n"
-		% "    in:\n" %> p	% "\n")
+		% "    in:\n" %> stripAnnot p	% "\n")
 		$ return ()
 
 	let ?newVar	= newVarN
@@ -74,7 +76,7 @@ elaborateData newVarN getKind
 
 	p'	<- thing
 
-	trace	( "    out:\n"	%> p'	% "\n")
+	trace	( "    out:\n"	%> stripAnnot p'	% "\n")
 		$ return ()
 		
 	return p'
@@ -84,23 +86,23 @@ elaborateCtor
 	:: Monad m
 	=> (m Var)			-- a fn to generate a new region var
 	-> (Var -> m Kind)		-- a fn to get the kind of a data type
-	-> (Var, [DataField a Type])
-	-> m 	( (Var, [DataField a Type])
+	-> (CtorDef SourcePos)
+	-> m 	( CtorDef SourcePos
 		, [(Var, Kind)] )
 
-elaborateCtor newVar getKind (var, fields)
+elaborateCtor newVar getKind (CtorDef sp var fields)
  = do	(fields', vksNew)
  		<- liftM unzip 
 		$ mapM (elaborateField newVar getKind) fields
 
- 	return	( (var, fields')
+ 	return	( CtorDef sp var fields'
 		, concat vksNew)
 
 elaborateField newVar getKind field@(DataField { dType = t })
  = do	
- 	(t_elab, vksConst, vksMutable)	
- 		<- elaborateRegionsT newVar getKind t
+ 	(t_elab, vks)	
+ 		<- elaborateRsT newVar getKind t
 
  	return	( field { dType = t_elab }
-		, vksConst ++ vksMutable )
+		, vks )
 	

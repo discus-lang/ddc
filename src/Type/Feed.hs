@@ -14,7 +14,7 @@ import Util
 import Shared.Error
 import qualified Shared.Var as Var
 import Shared.Var		(NameSpace (..))
-
+import Shared.Pretty
 
 import Type.Exp
 import Type.Location
@@ -113,7 +113,17 @@ feedType
 	-> Maybe ClassId 
 	-> Type -> SquidM (Maybe Type)
 
-feedType	mParent t
+feedType mParent t
+ = do	t'	<- feedType' mParent t
+{- 	Debug.Trace.trace
+		(pprStr [PrettyTypeKinds]
+			$ "feedType\n"
+			% "    t  = " % t % "\n"
+			% "    t' = " % t' % "\n") 
+-}
+	return t'
+
+feedType'	mParent t
  = case t of
 	TFetters fs t
 	 -> do	
@@ -153,7 +163,8 @@ feedType	mParent t
 		returnJ		$ TClass k cidE
 
 	TApp t1 t2
-	 -> do	let k		=  kindOfType t
+	 -> do	
+		let Just k	= takeKindOfType t
 	 	cidT		<- allocClass k
 	 	Just t1'	<- feedType1 (Just cidT) t1
 		Just t2'	<- feedType1 (Just cidT) t2
@@ -191,13 +202,15 @@ feedType	mParent t
 		returnJ		$ TClass KData cidT
 
 		
-	TData v ts
-	 -> do 	cidT		<- allocClass KData
+	TData kData v ts
+	 -> do	let Just k	= takeKindOfType t
+	 	cidT		<- allocClass k
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidT)) ts
 
-		addNode cidT 	$ TData v ts'
-		returnJ		$ TClass KData cidT
+		addNode cidT 	$ TData kData v ts'
+
+		returnJ		$ TClass k cidT
 
 	-- effect
 	TEffect v ts

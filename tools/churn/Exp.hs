@@ -63,13 +63,13 @@ genExpT env tt
 
 genExpT_base env tt
 	-- unit
-	| TData v []			<- tt
+	| TData KData v []			<- tt
 	, v == primTUnit
 	= do	burn 1
 		return $ XUnit none
 
 	-- literal
-	| TData v [TWild KRegion]	<- tt
+	| TData (KFun KRegion KData) v [TWild KRegion]	<- tt
 	, v == primTInt 
 	= do	burn 1
 		r	<- genInt 0 100
@@ -184,7 +184,7 @@ genGuardT env tLHS
 -- Pat ---------------------------------------------------------------------------------------------
 genPatT :: Type -> GenM (Pat a)
 genPatT tt
- 	| TData v []	<- tt
+ 	| TData KData v []	<- tt
 	, v == primTUnit
 	= chooseM 
 		[ do	return (WUnit none)
@@ -192,7 +192,7 @@ genPatT tt
 		, do	var	<- genVar NameValue
 			return	$ WVar none var]
 	
-	| TData v _	<- tt
+	| TData (KFun KRegion KData) v _	<- tt
 	, v == primTInt
 	= chooseM
 		[ do	var	<- genVar NameValue
@@ -231,11 +231,11 @@ genType genFun
 	let result
 		| r == 0	
 		= do	burn 1
-			return $ TData primTUnit []
+			return $ TData KData primTUnit []
 
 		| r <= 1
 		= do	burn 1
-			return $ TData primTInt  [TWild KRegion]
+			return $ TData (KFun KRegion KData) primTInt  [TWild KRegion]
 
 		| r <= 2
 		= do	burn 1

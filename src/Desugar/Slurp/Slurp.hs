@@ -277,9 +277,11 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 
 
 	-- Record what data type this constructor belongs to.
+	let kData	= makeDataKind vs
+	let tsData	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vs
 	modify (\s -> s {
 		stateCtorType	= Map.insert cName 
-					(TData vData (map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vs))
+					(TData kData vData tsData)
 				$ stateCtorType s })
 
 	-- Record the fields for this constructor.
@@ -288,7 +290,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 				$ stateCtorFields s })
 
 	let constr = 
-		   [ CDef (TSV $ SVCtorDef sp vData cName) (TVar KData cNameT) ctorType ]
+		   [ CDef (TSV $ SVCtorDef sp vData cName) (TVar kData cNameT) ctorType ]
 		++ case concat initConstrss of
 			[]	-> []
 			_	-> [CBranch 

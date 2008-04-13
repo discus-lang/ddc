@@ -12,6 +12,8 @@ where
 import Type.Exp
 import Shared.Pretty
 import Shared.Error
+import qualified Shared.Var	as Var
+import Shared.Var		(NameSpace(..))
 import Util
 
 -----
@@ -25,19 +27,19 @@ instance Pretty Type PMode where
 
 	TForall vs t	-> "forall " % " " %!% (map prettyVK vs) % ". " % t
 	TFetters fs t	-> t % " :- " % ", " %!% fs
-	TSum	k  es	-> k  % "{" % "; " %!% es % "}"
-	TMask	k  t1 t2 -> prettyTB t1 % " \\ " % prettyTB t2
-	TApp	t1 t2	 -> parens t1 % " " % prettyTRight t2
-	TCon	tycon	-> ppr tycon
-	TVar k v	-> ppr v
+	TSum k  es	-> k  % "{" % "; " %!% es % "}"
+	TMask k  t1 t2	-> prettyTB t1 % " \\ " % prettyTB t2
+	TApp t1 t2	-> parens t1 % " " % prettyTRight t2
+	TCon tycon	-> ppr tycon
+
+	TVar k v	-> pprVarKind v k 
 
 	TTop k		-> k % "Top"
 	TBot k		-> k % "Bot"
 
-
 	-- data
-	TData v []	-> ppr v 
-	TData v ts	-> v % " " % " " %!% (map prettyTB ts)
+	TData k v []	-> pprVarKind v k
+	TData k v ts	-> pprVarKind v k <> " " %!% (map prettyTB ts)
 
 	TFun t1 t2 eff clo
 	 -> case (eff, clo) of
@@ -59,15 +61,17 @@ instance Pretty Type PMode where
 	-- wild cards
 	TWild k		-> k % "_"
 
-
 	---- used in the type solver
-	TClass k c	-> k % c
+	TClass k c
+	 -> case k of	
+	 	KFun{}	-> parens k % c
+		_	-> k % c
+
 	TFetter f	-> "@TFetter " % f
 	TError k t	-> "@TError" % k % " " % t
 
 	-----
-	TElaborate t	-> "elaborate " % t
-	TMutable   t	-> "mutable " 	% t 
+	TElaborate elab t -> prettyTB t % "{" % elab % "}"
 
 
 prettyTRight tt
@@ -79,12 +83,11 @@ prettyTRight tt
 prettyTBF t
  = case t of
  	TFun{}		-> "(" % t % ")"
-	TMutable{}	-> "(" % t % ")"
 	_ 		-> ppr t
 
 prettyTB t
  = case t of
- 	TData v []	-> ppr t
+ 	TData k v []	-> ppr t
 	TVar k v 	-> ppr t
 	TSum{}		-> ppr t
 	TEffect v []	-> ppr t
@@ -94,6 +97,34 @@ prettyTB t
 	TBot{}		-> ppr t
 	TTop{}		-> ppr t
 	_		-> "(" % t % ")"
+
+
+pprVarKind :: Var -> Kind -> PrettyM PMode
+pprVarKind v k
+ = ifMode 
+ 	(elem PrettyTypeKinds)
+	(if kindOfSpace2 v (Var.nameSpace v) == k
+		then ppr v
+		else "(" % ppr v % " :: " % k % ")")
+
+	(ppr v)
+
+
+-- | Get the kind associated with a namespace.
+--	This is a local local copy to avoid module recursion.
+--	Also in Type.Util.Bits
+kindOfSpace2 :: Var -> NameSpace -> Kind
+kindOfSpace2 var space
+ = case space of
+ 	NameType	-> KData
+	NameRegion	-> KRegion
+	NameEffect	-> KEffect
+	NameClosure	-> KClosure
+	NameClass	-> KFetter	
+	_		-> freakout stage
+				("kindOfSpace2: no match for " % show space % "\n"
+				% "   var = " % show var % "\n")
+				KNil
 
 
 -- | Prints a type with the fetters on their own lines
@@ -130,6 +161,16 @@ prettyVK	(var, kind)
 	KEffect		-> ppr var
 	KClosure	-> ppr var
 	_		-> "(" % var % " :: " % kind % ")"
+
+-- Elaboration -------------------------------------------------------------------------------------
+instance Pretty Elaboration PMode where
+ ppr ee
+  = case ee of
+	ElabRead	-> ppr "read"
+	ElabWrite	-> ppr "write"
+	ElabModify	-> ppr "modify"
+	
+
 
 -- TyCon -------------------------------------------------------------------------------------------
 instance Pretty TyCon PMode where
@@ -170,6 +211,7 @@ instance Pretty Fetter PMode where
 instance Pretty Kind PMode where
  ppr k
   = case k of
+	KNil		-> ppr "?"
 	KFun k1 k2	-> k1 % " -> " % k2
 	KData		-> ppr "*"
 	KRegion		-> ppr "%"

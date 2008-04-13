@@ -156,7 +156,7 @@ slurpW	(WConLabel sp vCon lvs)
 	-- Lookup what data type this constructor belongs to.
 	ctorType	<- gets stateCtorType
 
-	let tData@(TData _ tsData)
+	let tData@(TData _ _ tsData)
 		= case Map.lookup vCon ctorType of
 			Nothing -> panic stage 
 				$ "slurpW: can't find type data type definition for data constructor '" 

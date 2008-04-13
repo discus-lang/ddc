@@ -192,10 +192,10 @@ followT table tt
 		clo'	<- transZM table clo
 		return	$ TFun t1' t2' eff' clo'
 
-	TData v ts
+	TData k v ts
 	 -> do	v'	<- transZM table v
 	 	ts'	<- transZM table ts
-		return	$ TData v' ts'
+		return	$ TData k v' ts'
 		
 
 	-- effect
@@ -238,16 +238,11 @@ followT table tt
 	 -> do	t'	<- transZM table t
 	  	return 	$ TError k t'
 
-
 	-- type sugar
-	TElaborate t
+	TElaborate ee t
 	 -> do	t'	<- transZM table t
-	 	return	$ TElaborate t'
-		
-	TMutable t
-	 -> do	t'	<- transZM table t
-	 	return	$ TMutable t'
-		
+	 	return	$ TElaborate ee t'
+				
 -- TyCon -------------------------------------------------------------------------------------------
 instance Monad m => TransM m TyCon where
  transZM table tt

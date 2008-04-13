@@ -8,6 +8,7 @@ module Type.Exp
 	, TProj		(..)
 	, Fetter  	(..)
 	, Kind		(..)
+	, Elaboration	(..)
 
 	, Data
 	, Region
@@ -92,7 +93,7 @@ data Type
 	| TBot		Kind
 	
 	-- data
-	| TData     	Var [Type]			-- ^ Type constructor. (ctor name, regions, args).
+	| TData     	Kind Var [Type]			-- ^ A data type constructor.
 	| TFun          Type Type Effect Closure	-- ^ A function with an effect and environment.
 
 	-- effect
@@ -117,14 +118,15 @@ data Type
 	| TError        Kind	[Type]			-- ^ Classes with unification errors get their queues set to [TError].
 
 	-- Type sugar, used during foreign import/export
-	--	This is removed by the desugarer.
-	--	Perhaps change this to (TElaborate Elaboration Type)
-	--	and subsume TSig, TSigExact, TQuant
-	| TElaborate	Type				-- ^ Elaborate a type by adding region/effect/closure information.
-	| TMutable	Type				-- ^ This object is modified by the function.
-
+	| TElaborate	Elaboration Type
 	deriving (Show, Eq)
-	
+
+-- Helps with defining foreign function interfaces.
+data Elaboration
+	= ElabRead					-- ^ read from some object
+	| ElabWrite					-- ^ write to some object
+	| ElabModify					-- ^ read and write some object
+	deriving (Show, Eq)
 
 -- | Type constructors
 data TyCon

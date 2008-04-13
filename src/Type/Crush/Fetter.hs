@@ -215,7 +215,7 @@ crushFetter (FConstraint vC ts)
 	-- lazy head where the ctor has no region (ie LazyH Unit)
 	| vC	== primLazyH
 	, [t]		<- ts
-	, TData v []	<- t
+	, TData k v []	<- t
 	= Just []
 	
 	-- deep mutability
@@ -292,7 +292,7 @@ slurpHeadR tt
  	TFetters fs t	
 	 -> slurpHeadR t
 
-	TData v (tR@(TClass KRegion _) : _)
+	TData k v (tR@(TClass KRegion _) : _)
 	 -> Just tR
 	 
 	_ -> Nothing

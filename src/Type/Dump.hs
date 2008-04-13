@@ -28,15 +28,14 @@ import Data.Array.IO
 
 
 -- | dump the type graph
-dumpGraph ::	SquidM String
+dumpGraph ::	SquidM (PrettyM PMode)
 dumpGraph
  = do
 	school		<- gets stateGraph
 	classes		<- liftIO (getElems $ graphClass school)
 	classesU	<- mapM forwardCids classes
 	
-	return	$ pprStrPlain
-		$ "===== Equiv Clases =====================================\n"
+	return	$ "===== Equiv Clases =====================================\n"
 		% dumpGraph' pNil classesU
 		% "\n\n"
 
@@ -125,12 +124,10 @@ instance Pretty Class PMode where
 			_	-> "        -- queue\n"
 				%> "\n" %!% classQueue c % "\n\n")
 		% "        -- nodes\n"
-		% (concat
-			$ map pprStrPlain
-			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t) % "\n\n")
+		% (punc "\n\n"
+			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t))
 			$ (classNodes c))
-
-		% "\n"
+		% "\n\n"
 	
 
 prettyVMap 	m

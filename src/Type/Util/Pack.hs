@@ -12,6 +12,7 @@ import Type.Pretty
 import Type.Plate.Collect
 import Type.Util.Bits
 import Type.Util.Substitute
+import Type.Util.Kind
 
 import Shared.VarPrim
 import Shared.Pretty
@@ -49,21 +50,24 @@ trace ss x
 --
 packType_noLoops :: Type -> Type
 packType_noLoops tt
- = case kindOfType tt of
- 	KData		-> packData_noLoops  tt
-	KEffect		-> packEffect_noLoops tt
+ = case liftM resultKind $ takeKindOfType tt of
+ 	Just KData	-> packData_noLoops  tt
+ 	Just KNil	-> packData_noLoops  tt
+
+
+	Just KEffect	-> packEffect_noLoops tt
 	 
-	KClosure	-> packClosure_noLoops tt
-	KRegion		-> packRegion  tt
+	Just KClosure	-> packClosure_noLoops tt
+	Just KRegion	-> packRegion  tt
 
 packType :: Type -> (Type, [(Type, Type)])
 packType tt
- = case kindOfType tt of
- 	KData		-> packData   tt
-	KEffect		-> packEffect tt
+ = case takeKindOfType tt of
+ 	Just KData	-> packData   tt
+	Just KEffect	-> packEffect tt
 	 
-	KClosure	-> packClosure tt
-	KRegion		-> (packRegion  tt, [])
+	Just KClosure	-> packClosure tt
+	Just KRegion	-> (packRegion  tt, [])
 
 
 -- PackData ----------------------------------------------------------------------------------------
@@ -80,7 +84,9 @@ packData_noLoops tt
 -- | Pack a value type
 packData :: Data -> (Data, [(Type, Type)])
 packData tt
-	| KData			<- kindOfType tt
+	| Just k		<- liftM resultKind $ takeKindOfType tt
+	, elem k [KData, KNil]
+
 	, (tt_packed, tsLoop)	<- runState (packTypeLs False Map.empty tt) []
 	= let result
 
@@ -113,7 +119,7 @@ packEffect_noLoops tt
 
 packEffect :: Effect -> (Effect, [(Type, Type)])
 packEffect tt
-	| KEffect		<- kindOfType tt
+	| Just KEffect		<- takeKindOfType tt
 	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
 	, tt'			<- inlineFsT $ tt_packed
 	= let result
@@ -133,7 +139,7 @@ packClosure_noLoops tt
 		$ "packClosure: got loops\n"
 		
 packClosure tt
-	| KClosure		<- kindOfType tt
+	| Just KClosure		<- takeKindOfType tt
 	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
  	, tt'			<- crushT $ inlineFsT $ tt_packed
 	= let result
@@ -150,7 +156,7 @@ packClosure tt
 -- | Pack a region
 packRegion :: Region -> Region
 packRegion tt
-	| KRegion		<- kindOfType tt
+	| Just KRegion		<- takeKindOfType tt
 	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
 	, null tsLoop
 	= if tt == tt_packed
@@ -246,9 +252,9 @@ packTypeLs ld ls tt
 	TBot k 	-> return tt
 		 
 	-- data
-	TData v ts
+	TData k v ts
 	 -> do	ts'	<- mapM (packTypeLs ld ls) ts
-	    	return	$ TData v ts'
+	    	return	$ TData k v ts'
 
  	TFun t1 t2 eff clo
 	 -> do	t1'	<- packTypeLs ld ls t1
@@ -322,13 +328,9 @@ packTypeLs ld ls tt
 		Nothing				-> return tt
 
 	-- sugar
-	TMutable t
+	TElaborate ee t
 	 -> do	t'	<- packTypeLs ld ls t
-		return	$ TMutable t'
-	    
-	TElaborate t
-	 -> do	t'	<- packTypeLs ld ls t
-		return	$ TElaborate t'
+		return	$ TElaborate ee t'
 
 	_ -> panic stage
 		$ "packTypeLs: no match for " % show tt
@@ -425,7 +427,7 @@ inlineFs fs
 
 	-- a substitutions with only data fetters.
 	let subD = Map.filterWithKey
-			(\k x -> kindOfType k == KData)
+			(\t x -> (let Just k = takeKindOfType t in k) == KData)
 			sub
 
 	-- Don't substitute closures and effects into data, it's too hard to read.				
@@ -435,9 +437,9 @@ inlineFs fs
 	let subRHS t1 t2
 		= do	tsLoops	<- get
 			if null tsLoops
-			 then case kindOfType t1 of
-				KData	-> subTT_cutM subD (Set.singleton t1) t2
-				_	-> subTT_cutM sub  (Set.singleton t1) t2
+			 then case takeKindOfType t1 of
+				Just KData	-> subTT_cutM subD (Set.singleton t1) t2
+				Just _		-> subTT_cutM sub  (Set.singleton t1) t2
 
 			 else return t2
 				
@@ -539,8 +541,8 @@ sortFs :: [Fetter] -> [Fetter]
 sortFs fs
  = let	isLetK k f
   	 = case f of
-	 	FLet _ t2	-> kindOfType t2 == k
-		FMore _ t2	-> kindOfType t2 == k
+	 	FLet _ t2	-> (let Just k1 = takeKindOfType t2 in k1) == k
+		FMore _ t2	-> (let Just k1 = takeKindOfType t2 in k1) == k
 		_		-> False
 
 	([ fsData,   fsEffect, fsClosure], fsRest)	

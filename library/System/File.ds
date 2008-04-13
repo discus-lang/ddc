@@ -12,45 +12,43 @@ effect !File	:: !;
 
 -- fopen
 foreign import extern "fopen"
- fopenU :: elaborate 
- 	   		String# 		-- fileName 
-	-> 		String# 		-- mode
-	-(!File)> 	Ptr# FILE#
- 
+ fopenU ::  	String# {read} 		-- fileName 
+	-> 	String# {read}		-- mode
+	-(!e1)> Ptr# FILE#
+ 	:- !e1 = !File
+
 -- fread
 foreign import extern "fread"
- freadU :: elaborate
- 	   (mutable	String#)		-- buffer to write into 
-	-> 		Int32# 			-- size of member
-	-> 		Int32# 			-- number of members to read
-	-> 		Ptr# FILE# 		-- file to read from
-	-(!File)>	Int32#	 		-- number of members read
-
+ freadU :: 	String# 	{write}	-- buffer to write into 
+	-> 	Int32# 		{read}	-- size of member
+	-> 	Int32# 		{read}	-- number of members to read
+	-> 	Ptr# FILE#  	{read}	-- file to read from
+	-(!e)>	Int32#	 		-- number of members read
+	:- !e = !File
+	
 -- fseek
 foreign import extern "fseek"
- fseekU	:: elaborate
- 			Ptr# FILE# 		-- file
-	-> 		Int32#			-- offset
-	-> 		Int32#			-- whence SEEK_SET, SEEK_END or SEEK_CUR
-	-(!File)> 	Int32#			-- 0 on success, -1 on fail and set errno
+ fseekU	:: Ptr# FILE# 		{read}	-- file
+	-> 	Int32#		{read}	-- offset
+	-> 	Int32#		{read}	-- whence SEEK_SET, SEEK_END or SEEK_CUR
+	-(!e)> 	Int32#			-- 0 on success, -1 on fail and set errno
+	:- !e = !File
 
 -- file position constants
 foreign import extern "SEEK_SET"
- file_SEEK_SET :: elaborate Int32#
+ file_SEEK_SET :: Int32#
 
 foreign import extern "SEEK_CUR" 
- file_SEEK_CUR :: elaborate Int32#
+ file_SEEK_CUR :: Int32#
 
 foreign import extern "SEEK_END" 
- file_SEEK_END :: elaborate Int32#
+ file_SEEK_END :: Int32#
 
 -- ftell
 foreign import extern "ftell"
- ftellU	
- 	:: elaborate
-			Ptr# FILE#		-- file
-	-(!File)>	Int32#;			-- position in file
-
+ ftellU	:: 	Ptr# FILE#	{read}	-- file
+	-(!e)>	Int32#			-- position in file
+	:- !e = !File
 
 --- move along, nothing to see here...
 foreign import extern "(Int32)"

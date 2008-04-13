@@ -23,14 +23,6 @@ import Shared.Pretty
 import System.IO
 import Util
 
--- | Convert an arg into the pretty mode it enables
-takePrettyMode :: Arg -> Maybe PrettyMode
-takePrettyMode aa
- = case aa of
- 	DumpPrettyUnique	-> Just $ PrettyUnique
-	DumpPrettyTypeSpaces	-> Just $ PrettyTypeSpaces
-	DumpPrettyCoreTypes	-> Just $ PrettyCoreTypes
-	_			-> Nothing
 
 -- | Dump a source tree
 dumpST flag name sourceTree

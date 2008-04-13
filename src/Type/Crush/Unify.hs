@@ -29,7 +29,7 @@ import Type.Dump
 
 
 -----
-debug	= False
+debug	= True
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
@@ -70,7 +70,9 @@ crushUnifyClass3 cidT c
 		% "    type         = " % classType c	% "\n"
 		% "    name         = " % className c	% "\n"
 		% "    queue        = " % classQueue c	% "\n"
-		% "    nodes        = " % (map fst $ classNodes c) % "\n\n"
+--		% "    nodes        = " % (map fst $ classNodes c) % "\n\n"
+		% "    nodes        = " % classNodes c % "\n\n"
+
 
  	-- crush out nested unifiers and filter out vars and bottoms as they don't 
 	--	contribute to the constructor
@@ -163,13 +165,11 @@ unifyClassMerge cidT c queue@(t:_)
 					
 		return		$ TFun t1' t2' eff' clo'
 
-	
-
 	-- data		
-	| TData v ts		<- t
+	| TData k v ts		<- t
 	, Just vsTss		<- sequence 
 					$ map (\x -> case x of
-							TData v ts	-> Just (v, ts)
+							TData k v ts	-> Just (v, ts)
 							_		-> Nothing)
 					$ queue
 				
@@ -183,27 +183,27 @@ unifyClassMerge cidT c queue@(t:_)
 	= do
 		ts'	<- mapM mergeClassesT
 			$  transpose 
-			$  map (\(TData v ts) -> ts)
+			$  map (\(TData _ _ ts) -> ts)
 			$  queue
 
-		return	$ TData v ts'
+		return	$ TData k v ts'
 
 	-- Effect constructors.
 	--	From the effect weakening rule it's always return a larger effect than needed.
 	--	Therefore, if we want to "Unify" two effects E1 and E1 it's safe to return
 	--	their l.u.b and use that inplace of both.
-	| and $ map (\t -> kindOfType t == KEffect) queue
+	| and $ map (\t -> kindOfType_orDie t == KEffect) queue
 	= do	return	$ makeTSum KEffect queue
 
 	-- .. likewise for closures
-	| and $ map (\t -> kindOfType t == KClosure) queue
+	| and $ map (\t -> kindOfType_orDie t == KClosure) queue
 	= do	return	$ makeTSum KClosure queue
 
 
 	-- Found a user type error in the graph
 	| otherwise
  	= do	addErrorConflict cidT c 
-		return (TError (kindOfType t) (classQueue c))
+		return (TError (kindOfType_orDie t) (classQueue c))
 
 
 -----------------------
@@ -258,8 +258,8 @@ addErrorConflict  cid c
 -- Checks if these two types are conflicting 
 isShallowConflict :: Type -> Type -> Bool
 isShallowConflict t1 t2
-	| TData v1 ts1	<- t1
-	, TData v2 ts2	<- t2
+	| TData _ v1 ts1	<- t1
+	, TData _ v2 ts2	<- t2
 	, v1 == v2
 	, length ts1 == length ts2
 	= False

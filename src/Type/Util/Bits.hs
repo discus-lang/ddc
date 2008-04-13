@@ -15,20 +15,13 @@ module Type.Util.Bits
 	, makeTForall_back
 
 	, makeTFunEC 
-	, spaceOfKind
-	, kindOfSpace 
-	, kindOfType,	takeKindOfType
-	, resultKind
-
 	, addFetters,	addFetters_front
 	, takeBindingVarF
 
 	, makeOpTypeT 
 	, makeTVar
 	, takeCidOfTClass
-	, slurpVarsRD
-	
-	, makeDataKind)
+	, slurpVarsRD)
 
 where
 
@@ -49,6 +42,7 @@ import Shared.VarPrim
 import Type.Exp
 import Type.Plate
 import Type.Pretty		()
+import Type.Util.Kind
 
 -----
 stage	= "Type.Util.Bits"
@@ -206,106 +200,6 @@ makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
 makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for function"
 
 
--- | Get the namespace associated with a kind.
-spaceOfKind ::	Kind -> NameSpace
-spaceOfKind  kind
- = case resultKind kind of
- 	KData		-> NameType
-	KRegion		-> NameRegion
-	KEffect		-> NameEffect
-	KClosure	-> NameClosure
-	_		-> panic stage
-			$ "spaceOfKind: no space for " % kind
-
--- | Get the kind associated with a namespace.
-kindOfSpace :: NameSpace -> Kind
-kindOfSpace space
- = case space of
- 	NameType	-> KData
-	NameRegion	-> KRegion
-	NameEffect	-> KEffect
-	NameClosure	-> KClosure
-	NameClass	-> KFetter
-	_		-> panic stage
-			$  "kindOfSpace: no match for " % show space
-
-
--- | Get the kind of a type
---	For some constructors, ie TClass, there's no way to work out the kind
---	directly, so kindOfType will fail in this case.
---
-kindOfType :: Type -> Kind
-kindOfType tt
- = case takeKindOfType tt of
- 	Just k		-> k
-	Nothing		-> panic stage
-			$ "kindOfType: no match for " % tt % "\n"
-			%> show tt
-
-takeKindOfType :: Type -> Maybe Kind
-takeKindOfType tt
- = case tt of
- 	TForall vks t	-> takeKindOfType t
-	TFetters fs t	-> takeKindOfType t
-	
-	TSum k ts	-> Just k
-	TMask k _ _	-> Just k
-	TVar k v	-> Just k
-	TTop k		-> Just k
-	TBot k		-> Just k
-	
-	TApp t1 t2
-	  -> let result
-	  		| Just k1	<- takeKindOfType t1
-			, Just k2	<- takeKindOfType t2
-			= case k1 of
-				KFun k11 k12
-				 | k2 == k11	-> Just k12
-				 
-				_ -> freakout stage	
-					( "takeKindOfType: kind error in type application (t1 t2)\n"
-					% "    t1  = " % t1 	% "\n"
-					% "  K[t1] = " % k1	% "\n"
-					% "\n"
-					% "    t2  = " % t2 	% "\n"
-					% "  K[t2] = " % k2	% "\n")
-					Nothing
-			| otherwise
-			= Nothing
-
-	    in result
-	    
-	TCon tc		-> Just $ tyConKind tc
-
-	TData{}		-> Just KData		-- BUGS: this is a lie now we have real type application
-	TFun{}		-> Just KData
-	
-	TEffect{}	-> Just KEffect
-	
-	TFree{}		-> Just KClosure
-	TDanger{}	-> Just KClosure
-	TTag{}		-> Just KClosure
-	
-	TWild k		-> Just k
-	TClass k cid	-> Just k
-
-	TElaborate t	-> takeKindOfType t
-	TMutable t	-> takeKindOfType t
-
-	TError k t	-> Just k 
-	
-	_		
-	 -> freakout stage 
-		("takeKindOfType: no match for " % tt % "\n") 
-		Nothing
-
-
--- | Get the result of applying all the paramters to a kind.
-resultKind :: Kind -> Kind
-resultKind kk
- = case kk of
- 	KFun k1 k2	-> resultKind k2
-	_		-> kk
 
 	
 	
@@ -313,6 +207,9 @@ resultKind kk
 addFetters :: 	[Fetter] -> Type -> Type
 addFetters	fsMore	t
  = case t of
+	TForall vks x
+	 -> TForall vks (addFetters fsMore x)
+
 	TFetters fs  x	
 	 -> case fs ++ fsMore of
 	 	[]	-> x
@@ -325,6 +222,9 @@ addFetters	fsMore	t
 addFetters_front :: [Fetter] -> Type -> Type
 addFetters_front fsMore t
  = case t of
+	TForall vks x
+	 -> TForall vks (addFetters_front fsMore x)
+
  	TFetters fs x
 	 -> case fsMore ++ fs of
 	 	[]	-> x
@@ -354,31 +254,34 @@ makeOpTypeT tt
 	TFetters fs t		-> makeOpTypeT t
 	TFun t1 t2 eff clo	
 	 -> case (makeOpTypeT2 t1, makeOpTypeT t2) of
-	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TTop KEffect) (TTop KClosure)
+	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TBot KEffect) (TBot KClosure)
 		_			-> Nothing
 		
 	TData{}			-> makeOpTypeData tt
-	_			-> Nothing
-
+	TElaborate ee t		-> makeOpTypeT t
+	_			-> freakout stage
+					("makeOpType: can't make operational type from " % show tt)
+					Nothing
 makeOpTypeT2 tt
  = case tt of
  	TForall vks t		-> makeOpTypeT2 t
 	TFetters fs t		-> makeOpTypeT2 t
-	TVar{}			-> Just $ TData primTObj   []
-	TFun{}			-> Just $ TData primTThunk []
+	TVar{}			-> Just $ TData KData primTObj   []
+	TFun{}			-> Just $ TData KData primTThunk []
 	TData{}			-> makeOpTypeData tt
+	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
 					("makeOpType: can't make operational type from " % show tt)
 					Nothing
 
-makeOpTypeData (TData v ts)
+makeOpTypeData (TData k v ts)
 	| last (Var.name v) == '#'
-	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType t == KData])) of
-		Just ts'	-> Just $ TData v ts'
+	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == KData])) of
+		Just ts'	-> Just $ TData KData v ts'
 		_		-> Nothing
 	
 	| otherwise
-	= Just $ TData primTObj []
+	= Just $ TData KData primTObj []
 
 makeOpTypeData _	= Nothing
 
@@ -418,7 +321,7 @@ slurpVarsRD_split rs ds (t:ts)
 slurpVarsRD' tt
  = case tt of
 	TFun{}			-> []
- 	TData v ts		-> catMap slurpVarsRD' ts
+ 	TData k v ts		-> catMap slurpVarsRD' ts
 
 	TVar KRegion _		-> [tt]
 	TVar KData   _		-> [tt]
@@ -434,13 +337,5 @@ slurpVarsRD' tt
 
 	_ 	-> panic stage
 		$  "slurpVarsRD: no match for " % tt % "\n"
-
-
--- Make a kind from the parameters to a data type
-makeDataKind :: [Var] -> Kind
-makeDataKind vs
- 	= foldl (flip KFun) KData 
-	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
-	$ reverse vs
 
 

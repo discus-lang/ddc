@@ -7,6 +7,7 @@ where
 import Type.Exp
 import Type.Util.Pack
 import Type.Util.Bits
+import Type.Util.Kind
 import Shared.Error
 import Shared.VarPrim
 import Util
@@ -69,14 +70,14 @@ finaliseT' bound def tt
 	 
 	 	| def
 		, elem k [KData]
-		, not $ Map.member v bound	-> TData primTUnit []
+		, not $ Map.member v bound	-> TData k primTUnit []
 	 
 		| otherwise			-> tt
 		
 	TTop{}			-> tt
 	TBot{}			-> tt
 	
-	TData v ts		-> TData v (map down ts)
+	TData k v ts		-> TData k v (map down ts)
 	TFun t1 t2 eff clo 	-> TFun (down t1) (down t2) (down eff) (down clo)
 	
 	TEffect v ts		-> TEffect v (map down ts)

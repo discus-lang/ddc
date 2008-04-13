@@ -6,13 +6,13 @@ pragma cc_includes
 effect !Graphics	:: !;
 	
 foreign import extern "ptc_open"
- ptcOpen	:: elaborate String# -> Int32# -> Int32# -(!Graphics)> Int32#;
+ ptcOpen 	:: String# {read} -> Int32# -> Int32# -(!Graphics)> Int32#;
 		
 foreign import extern "ptc_close"
- ptcClose	:: elaborate Void# -(!Graphics)> Void#;
+ ptcClose	:: Void# -(!Graphics)> Void#;
 				
 foreign import extern "ptc_update"
- ptcUpdate 	:: elaborate Ptr# Int32# -(!Graphics)> Void#;
+ ptcUpdate 	:: Ptr# Int32# {read} -(!Graphics)> Void#;
 
 
 

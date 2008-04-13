@@ -24,24 +24,24 @@ infix  5 <, <=, >=, > ;
 -- Class dictionaries
 
 -- Class instances
-instance Class.Copy.Copy (Base.Int %rSD158) where
+instance Class.Copy.Copy (Base.Int %rDK39) where
 {
         copy     = Data.Int.instance_Copy_Int_copy;
 }
 
-instance Class.Update.Updatable (Base.Int %rSD159) where
+instance Class.Update.Updatable (Base.Int %rDK40) where
 {
         (:=)     = Data.Int.primInt32_update;
 }
 
-instance Class.Eq.Eq (Base.Int %rSD160) where
+instance Class.Eq.Eq (Base.Int %rDK41) where
 {
         (==)     = Data.Int.primInt32_eq;
         
         (/=)     = Data.Int.primInt32_neq;
 }
 
-instance Class.Ord.Ord (Base.Int %rSD161) where
+instance Class.Ord.Ord (Base.Int %rDK42) where
 {
         (>)      = Data.Int.primInt32_gt;
         
@@ -52,7 +52,7 @@ instance Class.Ord.Ord (Base.Int %rSD161) where
         (<=)     = Data.Int.primInt32_le;
 }
 
-instance Class.Num.Num (Base.Int %rSD162) where
+instance Class.Num.Num (Base.Int %rDK43) where
 {
         (+)      = Data.Int.primInt32_add;
         
@@ -67,7 +67,7 @@ instance Class.Num.Num (Base.Int %rSD162) where
         negate   = Data.Int.primInt32_neg;
 }
 
-instance Class.Update.Accum (Base.Int %rSD163) where
+instance Class.Update.Accum (Base.Int %rDK44) where
 {
         (+=)     = Data.Int.instance_Accum_Int_PsEq;
 }
@@ -76,67 +76,65 @@ instance Class.Update.Accum (Base.Int %rSD163) where
 -- Foreign imports
 foreign import extern "_boxInt32"
  boxInt32
-        :: forall %r1
-        .  Base.Int32# -> Base.Int %r1
+        :: Base.Int32#{read} -> Base.Int
         :$ Base.Int32# -> Base.Obj;
 
 foreign import extern "_unboxInt32"
  unboxInt32
-        :: forall %r1
-        .  Base.Int %r1 -(Base.!Read %r1)> Base.Int32#
+        :: Base.Int{read} -> Base.Int32#
         :$ Base.Obj -> Base.Int32#;
 
 foreign import extern "primInt32_neg"
  primInt32_neg
-        :: elaborate Base.Int -> Base.Int ;
+        :: Base.Int{read} -> Base.Int ;
 
 foreign import extern "primInt32_add"
  primInt32_add
-        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
 foreign import extern "primInt32_sub"
  primInt32_sub
-        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
 foreign import extern "primInt32_mul"
  primInt32_mul
-        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
 foreign import extern "primInt32_div"
  primInt32_div
-        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
 foreign import extern "primInt32_mod"
  primInt32_mod
-        :: elaborate Base.Int -> Base.Int -> Base.Int ;
+        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
 foreign import extern "primInt32_eq"
  primInt32_eq
-        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
 foreign import extern "primInt32_neq"
  primInt32_neq
-        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
 foreign import extern "primInt32_gt"
  primInt32_gt
-        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
 foreign import extern "primInt32_lt"
  primInt32_lt
-        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
 foreign import extern "primInt32_ge"
  primInt32_ge
-        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
 foreign import extern "primInt32_le"
  primInt32_le
-        :: elaborate Base.Int -> Base.Int -> Data.Bool.Bool ;
+        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
 foreign import extern "primInt32_update"
  primInt32_update
-        :: elaborate (mutable Base.Int) -> Base.Int -> Base.Unit ;
+        :: Base.Int{write} -> Base.Int{read} -> Base.Unit ;
 
 
 -- Binds

@@ -11,7 +11,7 @@ effect !Runtime	:: !;
 foreign import extern "primRuntime_slotUsage"
  runtime_slotUsage
  	:: forall %r1
- 	. Unit -(!e1)> Int32# %r1
+ 	. Unit -(!e1)> Int32#
 	:- !e1 = !{ !Runtime };
 	
 

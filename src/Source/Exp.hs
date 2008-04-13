@@ -54,7 +54,6 @@ type Tree a	= [Top a]
 data Top a
 	= PPragma	a [Exp a]
 	| PModule	a Module
-	| PType		a Var Type
 	| PInfix	a (InfixMode a) Int [Var]
 
 	-- Imports
@@ -63,15 +62,18 @@ data Top a
 
 	| PForeign	a (Foreign a)
 
-	-- Data 
-	| PData	a
+	-- Types
+	| PTypeSynonym	a Var Type			-- Define a type synonym.
+	| PTypeKind	a Var Kind			-- Define the kind of a type constructor.
+
+	| PData	a					-- Define an algebraic data type.
 		Var 
 		[Var] 
 		[(Var, [DataField (Exp a) Type])]
 
 	-- Effects
-	| PEffect a	Var Kind
-	| PRegion a	Var
+	| PEffect a	Var Kind			-- Define the kind of an effect constructor.
+	| PRegion a	Var				-- Introduce a top level region.
 
 	-- Classes
 	| PClass  a	Var Kind			-- An abstract class.

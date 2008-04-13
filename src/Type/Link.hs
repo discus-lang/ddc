@@ -81,9 +81,9 @@ linkType mParent bound tt
 		clo'	<- linkType mParent bound clo
 		return	$ TFun t1' t2' eff' clo'
 	
-	TData v ts
+	TData k v ts
 	 -> do	ts'	<- mapM (linkType mParent bound) ts
-	 	return	$ TData v ts'
+	 	return	$ TData k v ts'
 
 	-- effect
 	TEffect v ts

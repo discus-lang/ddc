@@ -77,6 +77,7 @@ renameTree (moduleName, tree)
  = do	tree'	<- rename tree
 	return	(moduleName, tree')
 	
+	
 -- Top ---------------------------------------------------------------------------------------------
 instance Rename (Top SourcePos) where
  rename	top
@@ -102,16 +103,20 @@ instance Rename (Top SourcePos) where
 	 -> do	f'	<- rename f
 	 	return	$ PForeign sp f'
 
-	PType sp v t		
-	 -> do 	v'	<- lookupV v
-	 	t'	<- local $ rename t
-		return	$ PType sp v' t'
-		
 	PInfix sp m i vs
 	 -> do 	vs'	<- mapM lbindV vs
 		return	$ PInfix sp m i vs'
-	
-	-- data type definition
+
+	-- types
+	PTypeKind sp v k
+	 -> do	v'	<- lookupV v
+	 	return	$ PTypeKind sp v' k
+
+	PTypeSynonym sp v t		
+	 -> do 	v'	<- lookupV v
+	 	t'	<- local $ rename t
+		return	$ PTypeSynonym sp v' t'
+
 	PData sp vData vsData ctors
 	 -> local
 	  $ do
@@ -131,17 +136,8 @@ instance Rename (Top SourcePos) where
 
 	PStmt	s
 	 -> -- local
-	    do	{-(case takeStmtBoundV s of
-	  	 	Just v	-> do 
-				lbindN_shadow NameValue v
-				return ()
-				
-			Nothing	-> 
-				return ())
-	 	-}
-	 	s'	<- rename s
+	    do	s'	<- rename s
 		return	$ PStmt s'
-
 	
 	-- classes
 	PClass sp v k
@@ -284,10 +280,6 @@ renameDataField vData vsData df
 	let vsFree	= Set.filter (not . Var.isCtorName) $ freeVars tField'
 	let vsBad	= Set.difference vsFree (Set.fromList vsData)
 
-{-	trace 	( "vData  = " % vData % "\n"
-		% "vsFree = " % vsFree % "\n")
-		$ return ()
--}
 	when (not $ Set.null vsBad)
 	 $ mapM_ (\v -> addError $ ErrorUndefinedVar v) $ Set.toList vsBad
 
@@ -321,13 +313,6 @@ instance Rename (Exp SourcePos) where
 	 -> do	t'	<- rename t
 	 	proj'	<- rename proj
 		return	$ XProjT sp t' proj'
-
-{-	XLambda sp v e	
-	 -> local
-	 $  do	v'	<- bindV v
-		e'	<- rename e
-		return	$ XLambda sp v' e'
--}
 
 	XApp sp e1 e2	
 	 -> do 	e1'	<- rename e1
@@ -548,10 +533,6 @@ instance Rename (Label SourcePos) where
 bindGuard :: Guard SourcePos -> RenameM (Guard SourcePos)
 bindGuard gg
  = case gg of
-{- 	GCase sp pat
-	 -> do	(pat', [])	<- bindPat pat
-	 	return		$ GCase sp pat'
--}		
 	GExp sp  pat x
 	 -> do	x'		<- rename x	
 	 	(pat', [])	<- bindPat pat
@@ -800,10 +781,10 @@ instance Rename Type where
 		clo'	<- rename clo
 		return	$ TFun t1' t2' eff' clo'
 
-	TData v ts		
+	TData k v ts		
 	 -> do 	v'	<- lookupN NameType v
 		ts'	<- mapM rename ts
-		return	$ TData v' ts'
+		return	$ TData k v' ts'
 	
 	-- effect
 	TEffect v rs
@@ -837,14 +818,10 @@ instance Rename Type where
 	 -> 	return	$ TWild k
 
 	-- 
-	TElaborate t
+	TElaborate ee t
 	 -> do	t'	<- rename t
-	 	return	$ TElaborate t'
+	 	return	$ TElaborate ee t'
 		
-	TMutable t
-	 -> do	t'	<- rename t
-	 	return	$ TMutable t'
-
 -- TyCon -------------------------------------------------------------------------------------------
 instance Rename TyCon where
  rename tc

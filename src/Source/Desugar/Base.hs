@@ -8,7 +8,7 @@ module Source.Desugar.Base
 	, newVarN
 	, newVarNS
 	, newVarNI
-	, getKind
+--	, getKind
 	, addError)
 
 where
@@ -29,7 +29,7 @@ import Data.Map			(Map)
 import Util
 		
 -----
-stage	= "Source.Desugar.Base"
+-- stage	= "Source.Desugar.Base"
 				
 -----
 type Annot	= SourcePos
@@ -38,7 +38,6 @@ type RewriteM	= State RewriteS
 data RewriteS
 	= RewriteS
 	{ stateVarGen	:: Var.VarBind
-	, stateKind	:: Map Var Kind 
 	, stateErrors	:: [Error] }
 
 	
@@ -66,6 +65,7 @@ newVarNI space info
 
 
 -- | Get the kind for this var from the kind table.
+{-
 getKind :: Var -> RewriteM Kind
 getKind	v
  = do	kindMap		<- gets stateKind
@@ -73,6 +73,7 @@ getKind	v
 				Nothing	-> panic stage $ "getKind: no kind for '" % v % "'.\n"
 				Just k'	-> k'
 	return k
+-}
 
 -- | Add an error to the rewrite state.
 addError :: Error -> RewriteM ()

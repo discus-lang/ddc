@@ -16,6 +16,7 @@ module Type.Location
 where
 
 import Type.Util.Bits
+import Type.Util.Kind
 import Type.Exp
 
 import Shared.Pretty
@@ -259,9 +260,9 @@ ofKind tt
 -}
 atKind :: Type -> String
 atKind tt
- = case kindOfType tt of
- 	KData	-> "         at type: "
- 	KEffect	-> "     with effect: "
+ = case takeKindOfType tt of
+ 	Just KData	-> "         at type: "
+ 	Just KEffect	-> "     with effect: "
 
 
 

@@ -43,7 +43,7 @@ foreign import extern "primStringFloat32"
 
 foreign import extern "usleep"
 	usleep	:: forall %r1
-	 	.  Int32# %r1 -(!e1)> ()
+	 	.  Int32# -(!e1)> ()
 		:- !e1 = !{ !Console }
 		:$ Int32# -> Obj
 

@@ -27,10 +27,10 @@ where
 
 import Type.Exp
 import Type.Location
-import Type.Util.Bits
 import Type.Plate.Trans
 import Type.State
 import Type.Plate.Collect
+import Type.Util
 
 import Util
 
@@ -205,8 +205,12 @@ addToClass cid_ src t
 
 addToClass2 cid src t c
  = case c of
- 	ClassNil	-> addToClass3 cid src t (classInit cid (kindOfType t))
-	Class{}		-> addToClass3 cid src t c
+ 	ClassNil	
+	 -> let Just k	= takeKindOfType t
+	    in  addToClass3 cid src t (classInit cid k)
+
+	Class{}		
+	 -> addToClass3 cid src t c
 	
 addToClass3 cid src t c@Class{}
  = do 	activateClass cid
@@ -248,8 +252,12 @@ addNameToClass cid_ src v k
 
 addNameToClass2 cid src t c
  = case c of
- 	ClassNil	-> addNameToClass3 cid src t (classInit cid (kindOfType t))
-	Class{}		-> addNameToClass3 cid src t c
+ 	ClassNil	
+	 -> let Just k	= takeKindOfType t
+	    in  addNameToClass3 cid src t (classInit cid k)
+
+	Class{}		
+	 -> addNameToClass3 cid src t c
 	
 addNameToClass3 cid src t c
  = do 	activateClass cid
@@ -410,8 +418,9 @@ mergeClassesT	 ts@(t:_)
 			$ map takeCidOfTClass ts
 
 	cid'		<- mergeClasses cids
+	let Just k	= takeKindOfType t
 		
-	return		$ TClass (kindOfType t) cid'
+	return		$ TClass k cid'
 
 
 -- | Clear the set of active classes.

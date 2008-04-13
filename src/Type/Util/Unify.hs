@@ -8,6 +8,7 @@ where
 
 import Type.Exp
 import Type.Util.Bits
+import Type.Util.Kind
 
 import Util
 
@@ -19,9 +20,10 @@ import Util
 unifyT2 :: Type -> Type -> Maybe [(Type, Type)]
 unifyT2 t1 t2
 	-- data
-	| TData v1 ts1			<- t1
-	, TData v2 ts2			<- t2
+	| TData k1 v1 ts1		<- t1
+	, TData k2 v2 ts2		<- t2
 	, v1 == v2
+	, k1 == k2
 	= liftM concat 
 		$ sequence 
 		$ zipWith unifyT2 ts1 ts2
@@ -33,27 +35,37 @@ unifyT2 t1 t2
 	= Just (subA ++ subB)
 
 	-- vars
-	| TVar k1 v1			<- t1
-	, TVar k2 v2			<- t2
+	| TVar k1 v1	<- t1
+	, TVar k2 v2	<- t2
 	, k1 == k2
-	, v1 == v2			= Just []
+	, v1 == v2	= Just []
 	
-	| TVar k1 v1			<- t1	
-	, kindOfType t2 == k1		= Just [(t1, t2)]
+
+	| TVar _ v1	<- t1	
+	, k1 == k2	
+	= Just [(t1, t2)]
 	
-	| TVar k2 v2			<- t2
-	, kindOfType t1 == k2		= Just [(t1, t2)]
+	| TVar _ v2	<- t2
+	, k1 == k2
+	= Just [(t1, t2)]
 
 	-- regions, effects, closures and classes always unify
-	| elem (kindOfType t1) [KRegion, KEffect, KClosure]
-	, kindOfType t1 == kindOfType t2
+	| elem k1 [KRegion, KEffect, KClosure]
+	, t1 == t2
 	= Just [(t1, t2)]
+
 
 	-- wildcards
 	| TWild k		<- t1		
-	, kindOfType t2 == k		= Just [(t1, t2)]
+	, k1 == k2
+	= Just [(t1, t2)]
 	
 	| TWild k		<- t2
-	, kindOfType t1 == k		= Just [(t1, t2)]
+	, k1 == k2
+	= Just [(t1, t2)]
 
-	| otherwise			= Nothing
+	| otherwise			
+	= Nothing
+
+	where	Just k1	= takeKindOfType t1
+		Just k2	= takeKindOfType t2

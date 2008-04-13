@@ -65,10 +65,10 @@ stripFLetsT	tt
 	    	( TFun t1' t2' eff' clo'
 		, f1 ++ f2 ++ fsEff ++ fsClo)
 		
-	TData v ts
+	TData k v ts
 	 -> let	(ts', fss)	= unzip $ map stripFLetsT ts
 	    in
-	    	( TData v ts'
+	    	( TData k v ts'
 		, concat fss)
 		
 	-- effect
@@ -134,9 +134,9 @@ stripMonoFLetsT tt
 	TTop{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	
-	TData v ts
+	TData k v ts
 	 -> let (ts', fssMono)		= unzip $ map stripMonoFLetsT ts
-	    in	(TData v ts', concat fssMono)
+	    in	(TData k v ts', concat fssMono)
 	
 	TFun t1 t2 eff clo
 	 -> let	(t1',  fsMono1)		= stripMonoFLetsT t1

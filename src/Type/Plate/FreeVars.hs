@@ -63,7 +63,7 @@ instance FreeVars Type where
 		, freeVars eff
 		, freeVars clo ]
 
-	TData v ts	
+	TData k v ts	
 	 -> union (singleton v) (freeVars ts)
 	
 	-- effect
@@ -89,8 +89,7 @@ instance FreeVars Type where
 	TFetter f	-> freeVars f
 	 
 	-- sugar
-	TElaborate t	-> freeVars t
-	TMutable t	-> freeVars t
+	TElaborate ee t	-> freeVars t
 	
 -- TyCon -------------------------------------------------------------------------------------------
 instance FreeVars TyCon where

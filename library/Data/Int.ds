@@ -12,56 +12,55 @@ import Class.Update
 infix  5 <, <=, >=, > 
 
 foreign import extern "_boxInt32"
- boxInt32 	:: forall %r1. Int32# -> Int %r1
+ boxInt32 	:: Int32#{read} -> Int
 		:$ Int32# -> Obj
 
 foreign import extern "_unboxInt32"
- unboxInt32	:: forall %r1
- 		.  Int %r1 -(!Read %r1)> Int32#
+ unboxInt32	:: Int {read} -> Int32#
 		:$ Obj -> Int32#
 
 -- math
 foreign import extern "primInt32_neg"
- primInt32_neg  :: elaborate Int -> Int
+ primInt32_neg  :: Int{read} -> Int
 
 foreign import extern "primInt32_add"
- primInt32_add	:: elaborate Int -> Int -> Int
+ primInt32_add	:: Int{read} -> Int{read} -> Int
 
 foreign import extern "primInt32_sub"	
- primInt32_sub	:: elaborate Int -> Int -> Int
+ primInt32_sub	:: Int{read} -> Int{read} -> Int
 
 foreign import extern "primInt32_mul"	
- primInt32_mul	:: elaborate Int -> Int -> Int
+ primInt32_mul	:: Int{read} -> Int{read} -> Int
 
 foreign import extern "primInt32_div"	
- primInt32_div	:: elaborate Int -> Int -> Int
+ primInt32_div	:: Int{read} -> Int{read} -> Int
 
 foreign import extern "primInt32_mod"	
- primInt32_mod	:: elaborate Int -> Int -> Int
+ primInt32_mod	:: Int{read} -> Int{read} -> Int
 
 -- comparisons
 foreign import extern "primInt32_eq"	
- primInt32_eq	:: elaborate Int -> Int -> Bool
+ primInt32_eq	:: Int{read} -> Int{read} -> Bool
 
 foreign import extern "primInt32_neq"	
- primInt32_neq	:: elaborate Int -> Int -> Bool
+ primInt32_neq	:: Int{read} -> Int{read} -> Bool
 
 foreign import extern "primInt32_gt"	
- primInt32_gt	:: elaborate Int -> Int -> Bool
+ primInt32_gt	:: Int{read} -> Int{read} -> Bool
 
 foreign import extern "primInt32_lt"	
- primInt32_lt	:: elaborate Int -> Int -> Bool
+ primInt32_lt	:: Int{read} -> Int{read} -> Bool
 
 foreign import extern "primInt32_ge"	
- primInt32_ge	:: elaborate Int -> Int -> Bool
+ primInt32_ge	:: Int{read} -> Int{read} -> Bool
 
 foreign import extern "primInt32_le"	
- primInt32_le	:: elaborate Int -> Int -> Bool
+ primInt32_le	:: Int{read} -> Int{read} -> Bool
 
 -- update
 foreign import extern "primInt32_update"
  primInt32_update
- 		:: elaborate (mutable Int) -> Int -> ()
+ 	:: Int{write} -> Int{read} -> ()
 
 instance Copy Int where
  	copy x 		= boxInt32 (unboxInt32 x)

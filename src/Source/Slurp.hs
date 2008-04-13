@@ -77,7 +77,9 @@ slurpTopNames p
 	PPragma{}			-> []
 	PModule{}			-> []
 
- 	PType 		sp v t		-> []
+	PTypeKind	sp v k		-> []
+ 	PTypeSynonym 	sp v t		-> [v]
+
 	PInfix 		sp im i vs	-> []
 
 	PImportExtern 	sp v t mt	-> [ v { Var.nameSpace = NameValue }]

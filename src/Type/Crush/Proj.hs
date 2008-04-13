@@ -93,7 +93,7 @@ crushProjClass3 cidT src fProj cObj tObj
 		= do	return Nothing
 
 		-- the object is a constructor, but there's no projection dictionary for it.
-		| tCon@(TData vCon _)	<- tObj
+		| tCon@(TData _ vCon _)	<- tObj
 		, Nothing		<- Map.lookup vCon projectDicts
 		= do	addErrors
 			  [ErrorNoProjections
@@ -102,7 +102,7 @@ crushProjClass3 cidT src fProj cObj tObj
 			return Nothing
 	
 		-- yay, we've got a projection dictionary
-		| TData vCon _		<- tObj
+		| TData _ vCon _	<- tObj
 		, Just vsDict		<- Map.lookup vCon projectDicts
 		= crushProj2 cidT src fProj cObj tObj (snd vsDict)
 

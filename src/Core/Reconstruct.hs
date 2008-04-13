@@ -534,7 +534,7 @@ reconX tt xx@(XPrim prim xs)
 
 		| otherwise
 		= panic stage
-		$ "reconX/Prim: no match for " % prim % "\n"
+		$ "reconX/Prim: no match for " % prim <> punc " " xs % "\n"
 		
    in	( XPrim prim xs'
    	, tPrim

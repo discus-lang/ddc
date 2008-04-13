@@ -106,7 +106,7 @@ toCoreT' table tt
 	T.TTop k		-> C.TTop (toCoreK k)
 
 	-- data
-	T.TData v ts		-> C.TData v (map toCoreT ts)
+	T.TData k v ts		-> C.TData v (map toCoreT ts)
 	T.TFun t1 t2 eff clo	-> C.TFunEC (down t1) (down t2) (down eff) (down clo)
 	
 	-- effect

@@ -33,6 +33,7 @@ import Module.IO			(munchFileName, chopOffExt)
 
 import Main.IO				as SI
 import Main.Source			as SS
+import Main.Desugar
 import Main.Core			as SC
 import Main.Sea				as SE
 import Main.Dump			as SD
@@ -333,7 +334,7 @@ compileFile_parse
 
 
 	-- Slurp out kind table
-	hKinds		<- SS.sourceKinds (sDefixed ++ hRenamed)
+	kindTable	<- SS.sourceKinds (sDefixed ++ hRenamed)
 	
 	-- Rename aliased instance functions
 	--	and change main() to ddcMain()
@@ -343,22 +344,25 @@ compileFile_parse
 	(hDesugared, sDesugared)
 			<- SS.desugar
 				"SD"
-				hKinds
+				kindTable
 				hRenamed
 				sAliased
 
+	------------------------------------------------------------------------
+	-- Desugar/Type inference stages
+	------------------------------------------------------------------------
+
+	-- Do kind inference and tag all type constructors with their kinds
+	(hKinds, sKinds, kindTable)
+		<- desugarInferKinds "DK" hDesugared sDesugared
+	
+	-- Elaborate effects and closures of types in foreign imports
+	(hElab, sElab)
+		<- desugarElaborate "DE" hKinds sKinds
+			
 	-- Snip down dictionaries and add default projections.
 	(dProject, projTable)	
-			<- SS.desugarProject
-				"SP"
-				moduleName
-				hDesugared
-				sDesugared
-				
-
-	------------------------------------------------------------------------
-	-- Type stages
-	------------------------------------------------------------------------
+		<- desugarProject "SP" moduleName hElab sElab
 
 	-- Slurp out type constraints.
 	when ?verbose
@@ -369,11 +373,11 @@ compileFile_parse
 	 , sigmaTable
 	 , vsTypesPlease
 	 , vsBound_source)
-			<- SS.slurpC 
+			<- desugarSlurpConstraints
 				dProject
-				hDesugared
+				hElab
 
-	let hTagged	= map (D.transformN (\n -> Nothing)) hDesugared
+	let hTagged	= map (D.transformN (\n -> Nothing)) hElab
 
 	-- !! Early exit on StopConstraint
 	when (elem Arg.StopConstraint ?args)
@@ -390,7 +394,7 @@ compileFile_parse
 	 , vsRegionClasses 
 	 , vsProjectResolve)
 	 		<- runStage "solve"
-			$  SS.solveSquid
+			$  desugarSolveConstraints
 				sConstrs
 				vsTypesPlease
 				sigmaTable
@@ -405,7 +409,7 @@ compileFile_parse
 	-- Convert source tree to core tree
 	(  cSource
 	 , cHeader )	<- runStage "core"
-	 		$ SS.toCore
+	 		$ desugarToCore
 		 		sTagged
 				hTagged
 				sigmaTable
@@ -425,6 +429,7 @@ compileFile_parse
 			$ map (T.freeVars)
 			$ [t	| (v, t)	<- Map.toList typeTable
 				, Set.member v vsBound_source]
+
 
 	------------------------------------------------------------------------
 	-- Core stages
@@ -480,9 +485,12 @@ compileFile_parse
 	-- Identify primitive operations
 	cPrim		<- SC.corePrim	cDict
 
-	-----------------------
-	-- Optimisations
-	-- 
+
+
+	------------------------------------------------------------------------
+	-- Core stages
+	------------------------------------------------------------------------	
+
 	when ?verbose
 	 $ do	putStr $ "  * Core: Optimise\n"
 
@@ -504,10 +512,6 @@ compileFile_parse
 				cSimplify
 				cHeader
 
-
-
-	----------------------
-	-- 
 
 	-- Check the program one last time
 	--	Lambda lifting doesn't currently preserve the typing.

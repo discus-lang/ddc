@@ -32,6 +32,7 @@ import Type.Pretty
 import Type.Plate.FreeVars
 import Type.Util.Pack
 import Type.Util.Bits
+import Type.Util.Kind
 
 import Shared.Pretty
 import qualified Shared.Var		as Var
@@ -78,11 +79,11 @@ trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
 trimClosureT_fs quant rsData ff
  = case ff of
  	FLet c1 c2	
-	 |  kindOfType c2 == KClosure
+	 |  kindOfType_orDie c2 == KClosure
 	 -> Just $ FLet c1 $ trimClosureC quant rsData c2
 
 	FMore c1 c2
-	 | kindOfType c2 == KClosure
+	 | kindOfType_orDie c2 == KClosure
 	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
 	_ -> Just ff
@@ -100,7 +101,7 @@ trimClosureC quant rsData cc
  $ trimClosureC2 quant rsData cc
 
 trimClosureC2 quant rsData cc
- | KClosure	<- kindOfType cc
+ | KClosure	<- kindOfType_orDie cc
   = let cc'	= packClosure_noLoops $ trimClosureC' quant rsData cc
     in  if cc' == cc
    	 then cc'
@@ -157,8 +158,8 @@ trimClosureC' quant rsData cc
 
 	-- free
 	TFree v1 (TDanger t1 t2)
-	 | kindOfType t1 == KRegion
-	 , kindOfType t2 == KRegion
+	 | kindOfType_orDie t1 == KRegion
+	 , kindOfType_orDie t2 == KRegion
 	 -> makeTSum KClosure
 	 	[ TFree v1 t1
 		, TFree v1 t2]
@@ -171,7 +172,7 @@ trimClosureC' quant rsData cc
 		, TFree tag (TDanger t2 t3) ]
 
 	TFree tag (TDanger t1 t2)
-	 -> case kindOfType t2 of
+	 -> case kindOfType_orDie t2 of
 	 	KClosure -> TFree tag 
 			  $ makeTDanger tag t1 (down t2)
 
@@ -182,7 +183,7 @@ trimClosureC' quant rsData cc
 
 
 	TFree tag t
-	 -> case kindOfType t of
+	 -> case kindOfType_orDie t of
 	 	KClosure -> TFree tag 	$ down t
 		_ 	 -> TFree tag 	$ makeTSum KClosure 
 					$ trimClosureC_t tag quant rsData t
@@ -241,9 +242,9 @@ trimClosureC_t' tag quant rsData tt
 	TTop{}		-> [tt]
 
 	-- when we enter into a data object remember that we're under its primary region.
-	TData v []	-> []
-	TData v (t:ts)
-	 	| kindOfType t == KRegion
+	TData k v []	-> []
+	TData k v (t:ts)
+	 	| kindOfType_orDie t == KRegion
 		-> let rsData'	= Set.insert t rsData
 		   in  catMap (trimClosureC_t tag quant rsData') (t:ts)
 		   
@@ -268,7 +269,7 @@ makeFreeDanger tag rsData t
 		$ Set.toList rsData
 
 makeTDanger tag r t
-	| kindOfType t == KRegion
+	| kindOfType_orDie t == KRegion
 	= TFree tag t
 	
 	| otherwise	= TDanger r t
@@ -281,18 +282,18 @@ trimClosureC_fs quant rsData ff
  	FLet c1 c2	
 
 	 -- more closure information
-	 |  kindOfType c2 == KClosure
+	 |  kindOfType_orDie c2 == KClosure
 	 -> Just $ FLet c1 $ trimClosureC quant rsData c2
 
 	 -- effect information might be referenced in a type constructor
-	 | kindOfType c1 == KEffect
+	 | kindOfType_orDie c1 == KEffect
 	 -> Just $ FLet c1 c2
 
 	FMore c1 c2
-	 | kindOfType c2 == KClosure
+	 | kindOfType_orDie c2 == KClosure
 	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
-	 | kindOfType c2 == KEffect
+	 | kindOfType_orDie c2 == KEffect
 	 -> Just $ FMore c1 c2
 
 	_ -> Nothing

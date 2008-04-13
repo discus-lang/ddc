@@ -6,6 +6,7 @@ module Type.Extract
 where
 
 import Type.Check.GraphicalData
+import Type.Dump
 import Type.Plug
 import Type.Context
 import Type.Port
@@ -170,9 +171,9 @@ extractType_more final varT cid tPack
 
 	-- Trim closures
 	let tTrim	= 
-		case kindOfType tDeMore of
-			KClosure	-> trimClosureC Set.empty Set.empty tDeMore
-			_		-> trimClosureT Set.empty Set.empty tDeMore
+		case takeKindOfType tDeMore of
+			Just KClosure	-> trimClosureC Set.empty Set.empty tDeMore
+			Just _		-> trimClosureT Set.empty Set.empty tDeMore
 
 	trace	$ " -- trimming closures\n"
 		% "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"

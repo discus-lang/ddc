@@ -1,15 +1,13 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Desugar.Plate.Trans
-(
-	TransM(..),
-	TransTable(..),
-	transTableId,
-	transformN,
-	transformW,
-	
-	transformXM
-)
+	( TransM(..)
+	, TransTable(..)
+	, transTableId
+	, transformN
+	, transformW
+	, transformXM
+	, transZ)
 
 where
 
@@ -43,10 +41,12 @@ data TransTable m a1 a2
 	, transP	:: Top  a2	-> m (Top  a2)
 	, transJ	:: Proj	a2	-> m (Proj a2)
 	, transW	:: Pat  a2	-> m (Pat  a2) 
+	, transT	:: Type		-> m Type
 
 	-- stmt
 	, transS	:: TransTable m a1 a2 -> Stmt a1 -> m (Stmt a2)
 	, transS_follow	:: TransTable m a1 a2 -> Stmt a1 -> m (Stmt a2)
+	, transS_leave	:: Stmt a2	-> m (Stmt a2)
 	, transSS	:: [Stmt a2]	-> m [Stmt a2] 
 
 	-- exp
@@ -75,10 +75,13 @@ transTableId transN'
 	, transP	= \x -> return x 
 	, transJ	= \x -> return x
 	, transW	= \x -> return x 
+	, transT	= \x -> return x
 
 	-- stmt
 	, transS	= transS_default
 	, transS_follow	= \table x	-> followS table x
+	, transS_leave	= \x -> return x
+
 	, transSS	= \x -> return x 
 	
 	-- exp
@@ -113,51 +116,71 @@ instance Monad m => TransM m a1 a2 Top where
 	 -> do 	nn'		<- transN	table nn
 	 	transP table	$ PImport nn' ms
 
-	PExtern nn v tv to
-	 -> do	nn'		<- transN  	table nn
-	 	v'		<- transV 	table v
-		transP table	$ PExtern nn' v' tv to
+	PExtern nn v tv mto
+	 -> do	nn'		<- transN  table nn
+	 	v'		<- transV  table v
+		tv'		<- transT  table tv
+
+		mto'		<- case mto of
+					Just to	-> do	to'	<- transT  table to
+							return	$ Just to'
+					_	-> return $ Nothing
+							
+
+		transP table	$ PExtern nn' v' tv' mto'
 
 	PEffect nn v k
 	 -> do	nn'		<- transN	table nn
-	 	return		$ PEffect nn' v k
+	 	transP table	$ PEffect nn' v k
 		
 	PRegion nn v
 	 -> do	nn'		<- transN	table nn
-	 	return		$ PRegion nn' v
+	 	transP table	$ PRegion nn' v
 
 	-- data defs
+	PTypeKind nn v k
+	 -> do	nn'		<- transN 	table nn
+	 	v'		<- transV table v
+		transP table	$ PTypeKind nn' v' k
+
 	PData nn v vs ctors
 	 -> do	nn'		<- transN	table nn
 	 	(v':vs')	<- mapM (transV table) (v:vs)
 		ctors'		<- mapM (transZM table) ctors
-		return		$ PData nn' v' vs' ctors'
+		transP table	$ PData nn' v' vs' ctors'
 
-		
 	-- classes
 	PClass nn v k
 	 -> do	nn'		<- transN 	table nn
-	 	return		$ PClass nn' v k
+	 	transP table		$ PClass nn' v k
 
 	PClassDict nn v ts cs sigs
 	 -> do	nn'		<- transN	table nn
-		return		$ PClassDict nn' v ts cs sigs
+
+		let (vsSig, tsSig)	= unzip sigs
+		tsSig'			<- mapM (transT table) tsSig
+		let sigs'		= zip vsSig tsSig'
+
+		transP table	$ PClassDict nn' v ts cs sigs'
 	 	
 	PClassInst nn v ts cs ss
 	 -> do	nn'		<- transN	table nn
 		ss'		<- mapM (transZM table) ss
-		return		$ PClassInst nn' v ts cs ss'
+		ts'		<- mapM (transT table) ts
+		transP table	$ PClassInst nn' v ts' cs ss'
 
 	-- projections
 	PProjDict nn t ss
 	 -> do	nn'		<- transN 	table nn
 	 	ss'		<- mapM (transZM table) ss
-		return		$ PProjDict nn' t ss'	
+		t'		<- transT table t
+		transP table	$ PProjDict nn' t' ss'	
 
 	PSig nn v t
 	 -> do	nn'		<- transN	table nn
 	 	v'		<- transV	table v
-		return		$ PSig nn' v' t
+		t'		<- transT	table t
+		transP table	$ PSig nn' v' t'
 		 
 	PBind nn mV x
 	 -> do	nn'		<- transN  	table nn
@@ -195,10 +218,12 @@ transDataField table xx
 				x'	<- transZM table x
 				return	$ Just x'
  
+	t'	<- transT table (dType xx)
+ 
  	return	$ DataField
 		{ dPrimary	= dPrimary xx
 		, dLabel	= dLabel   xx
-		, dType		= dType    xx
+		, dType		= t'
 		, dInit		= dInit' }
 
 
@@ -243,7 +268,8 @@ followX table xx
 	XProjT nn t j
 	 -> do	nn'	<- transN  table nn
 		j'	<- transZM table j
-		return	$ XProjT nn' t j'
+		t'	<- transT  table t
+		return	$ XProjT nn' t' j'
 		
 	XLambda nn v x
 	 -> do	nn'	<- transN  table nn
@@ -326,9 +352,10 @@ instance Monad m => TransM m a1 a2 Stmt where
  transZM table s
   = transS table table s
  
-transS_default table xx
- = do	xx'	<- transS_follow table table xx
- 	return	xx'
+transS_default table ss
+ = do	ssF	<- transS_follow table table ss
+	ssL	<- transS_leave table ssF
+ 	return	ssL
 	
 followS table xx
   = case xx of
@@ -341,7 +368,8 @@ followS table xx
 	SSig nn v t
 	 -> do	nn'	<- transN  table nn
 	 	v'	<- transV  table v
-		return	$ SSig nn' v' t
+		t'	<- transT table t
+		return	$ SSig nn' v' t'
 		
 	
 -----------------------

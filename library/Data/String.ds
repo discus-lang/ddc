@@ -2,6 +2,7 @@
 import	Base
 
 import	Data.Int
+import	Data.Int32U
 import 	Class.Eq
 import	Class.Copy
 
@@ -45,27 +46,25 @@ foreign import extern "_unboxString"
 
 -- | Compare two strings for equality.
 foreign import extern "strcmp"
- strcmpU	:: elaborate String# -> String# -> Int32#;
+ strcmpU	:: String#{read} -> String#{read} -> Int32#;
 
 -- | Return the length of this string.
 foreign import extern "strlen"
- strlenU	:: elaborate String# -> Int32#;
+ strlenU	:: String#{read} -> Int32#;
 
 -- | Append the src string to the dest string by overwriting the dest
 --	* The destination string must be large enough to hold the result, else badness.
 foreign import extern "strcat"
- dangerStrcatU	:: elaborate (mutable String#) -> String# -> String#
+ dangerStrcatU	:: String#{write} -> String#{read} -> String#
 
 -- | Write some characters into this string.
 --	* number of bytes must be < length of string else badness.
 foreign import extern "memset"
  dangerMemsetU	
- 	:: elaborate (mutable String#) 	-- destination string
-	-> Int32# 			-- byte to use
-	-> Int32# 			-- number of bytes to set
-	-> String#			-- same as desination string
-
-
+ 	:: String#{write} 	-- destination string
+	-> Int32# 		-- byte to use
+	-> Int32# 		-- number of bytes to set
+	-> String#		-- same as desination string
 
 dangerConcat s1 s2
   = do 	dangerStrcatU (dangerUnboxString s1) (dangerUnboxString s2)
@@ -89,23 +88,23 @@ dangerPack sDest ss
 
 -- | Get the first character of a string as a new string
 foreign import extern "primString_heads"
- string_char	:: elaborate String -> String;
+ string_char	:: String{read} -> String;
  
 -- | Get the tail of a string as a new string
 foreign import extern "primString_tails"
- string_rest	:: elaborate String -> String;
+ string_rest	:: String{read} -> String;
 
 -- | Check whether a string is empty
 foreign import extern "primString_isNul"
- string_isNul	:: elaborate String -> Bool;
+ string_isNul	:: String{read} -> Bool;
 
 -- | Return the ASCII code of the first character in this string
 foreign import extern "primString_ord"
- string_ord	:: elaborate String -> Int;
+ string_ord	:: String{read} -> Int;
 
 -- | Copy a string
 foreign import extern "primString_copy"
- string_copy	:: elaborate String -> String;
+ string_copy	:: String{read} -> String;
 
 ----------------------------------------------------------------------------------------------------
 

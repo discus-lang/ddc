@@ -66,6 +66,7 @@ tokens :-
  infixl			{ ptag InfixL			}
  infix			{ ptag Infix			}
 
+ type			{ ptag Type			}
  data			{ ptag Data			}
  effect			{ ptag Effect			}
  region			{ ptag Region			}

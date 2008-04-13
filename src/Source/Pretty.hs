@@ -53,6 +53,13 @@ instance Pretty (Top a) PMode where
 	PForeign _ f 
 	 -> "foreign " % f % ";\n\n"
 	
+	-- types
+	PTypeKind sp v k
+	 -> "type" <> v %>> " :: " % k % ";\n"
+
+	PTypeSynonym sp v t
+         -> "type" <> v %>> " = " % prettyTS t % ";\n"
+
 	PData _ typeName vars [] 
 	 -> "data " % " " %!% (typeName : vars) % ";\n\n"
 
@@ -62,6 +69,7 @@ instance Pretty (Top a) PMode where
 		%  "\n\n"
 
 	PRegion _ v	 -> "region " % v % ";\n"
+
 	PEffect _ v k	 -> "effect " % v %>> " :: " % k % ";\n"
 
 	-- Classes
@@ -95,12 +103,6 @@ instance Pretty (Top a) PMode where
 		%> ("\n\n" %!% ss) % "\n"
 		% "}\n\n"
 	 
-
-	-- type sigs	 
-	PType sp v t
-         -> v %>> " :: " % prettyTS t % ";\n"
-	 
-
 	PStmt s		 -> ppr s % "\n\n"
 	
 	PInfix _ mode prec syms

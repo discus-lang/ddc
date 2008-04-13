@@ -9,7 +9,9 @@ foreign import extern "primRefUpdate"
 		:- Mutable %r1
 		,  !e1 = !Write %r1
 		:$ Obj -> Obj -> Obj;
- 	
+
+
+type Ref :: % -> * -> *
 
 -- Create a mutable reference to some object
 --	This isn't a pull-back reference of anything else.

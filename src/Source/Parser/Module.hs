@@ -58,9 +58,11 @@ pTop
    <|>	pTopImport
    <|> 	pTopForeignImport
    <|>	pTopInfix
+   <|>	pTopTypeKind
+   <|>	pTopTypeSynonym
+   <|>	pTopData
    <|>	pTopEffect
    <|>	pTopRegion
-   <|>	pTopData
    <|>	pTopClass
    <|>  pTopInstance
    <|>  pTopProject
@@ -146,6 +148,32 @@ pTopInfix
 		prec	<- pInt
 		syms	<- liftM (map vNameV) $ Parsec.sepBy1 pSymbol (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixNone prec syms
+
+
+-- Type Kind ---------------------------------------------------------------------------------------
+-- | Parse a type kind signature.
+pTopTypeKind :: Parser (Top SP)
+pTopTypeKind 
+ = 	-- type CON :: KIND
+ 	Parsec.try $ do	
+		tok	<- pTok K.Type
+		con	<- liftM vNameT pCon
+		pTok	K.HasType
+		kind	<- pKind
+		return	$ PTypeKind (spTP tok) con kind
+		
+
+-- Type Synonym ------------------------------------------------------------------------------------
+-- | Parse a type synonym.
+pTopTypeSynonym :: Parser (Top SP)
+pTopTypeSynonym
+ = 	-- type VAR :: TYPE
+ 	Parsec.try $ do	
+		tok	<- pTok K.Type
+		var	<- liftM vNameT pVar
+		pTok	K.HasType
+		t	<- pType
+		return	$ PTypeSynonym (spTP tok) var t
 
 
 -- Effect ------------------------------------------------------------------------------------------
@@ -314,5 +342,5 @@ pTopProject
 		ts	<- Parsec.many pType_body1
 		pTok	K.Where
 		binds	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
-		return	$ PProjDict (spTP tok) (TData con ts) binds
+		return	$ PProjDict (spTP tok) (TData KNil con ts) binds
 		

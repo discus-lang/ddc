@@ -33,11 +33,17 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 		%> ("\n" %!% (map (\m -> m % ";") ms))
 			% "\n}\n\n")
 
-	PExtern nn v tv to
+	PExtern nn v tv (Just to)
 	 -> annot nn 
 	 	("extern " % v	
 			%> ("\n" % ":: " % prettyTS tv	% "\n"
 				 % ":$ " % to		% ";\n"))
+		% "\n"
+
+	PExtern nn v tv Nothing
+	 -> annot nn 
+	 	("extern " % v	
+			%> ("\n" % ":: " % prettyTS tv	% ";\n"))
 		% "\n"
 
 	PEffect nn v k
@@ -48,7 +54,11 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 	 	("region " % v) % ";\n"
 
-	-- data defs
+	-- types
+	PTypeKind nn v k
+	 -> annot nn 
+	 	("type" <> v <> "::" <> k % ";\n\n")
+
 	PData nn v vs []
 	 -> annot nn 
 	 	("data " % " " %!% (v : vs)) % ";\n\n"

@@ -6,7 +6,7 @@ module Source.Parser.Base
 	, pCParen, pRParen, pSParen
 	, token
 	, pTok, pQualified
-	, pVar, pVarPlain, pVarPlainOfSpace, pVarField
+	, pVar, pVarPlain, pVarPlainNamed, pVarPlainOfSpace, pVarField
 	, pCon, pConOfSpace
 	, pVarCon
 	, pSymbol
@@ -115,6 +115,18 @@ pVarPlain
 	(\t -> case t of
 		K.TokenP { K.token = K.Var name }	-> Just $ toVar t
 		_					-> Nothing)
+
+-- | Parse a plain var with a specific name
+pVarPlainNamed :: String -> Parser Var
+pVarPlainNamed str
+ = token
+	(\t -> case t of
+		K.TokenP { K.token = K.Var name }
+			| name == str		-> Just $ toVar t
+			| otherwise		-> Nothing
+		_				-> Nothing)
+
+
 
 -- | Parse a plain variable, but only from certain name spaces
 pVarPlainOfSpace :: [NameSpace] -> Parser Var

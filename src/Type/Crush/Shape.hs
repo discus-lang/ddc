@@ -123,7 +123,7 @@ crushShape2 cidShape fShape srcShape tTemplate csMerge
 		| Just tsPushed		<- sequence mtsPushed
 		= do	
 			let takeRec tt 	= case tt of
-					 	TData v ts		-> ts
+					 	TData _ v ts		-> ts
 						TFun t1 t2 eff clo	-> [t1, t2]
 	
 			let tssMerged	= map takeRec tsPushed
@@ -149,7 +149,7 @@ addShapeFetter :: TypeSource -> [Type] -> SquidM ()
 addShapeFetter src ts@(t1 : _)
 
 	-- shape fetters don't constrain regions.
- 	| kindOfType t1 == KRegion
+ 	| kindOfType_orDie t1 == KRegion
 	= return ()
 	
 	| otherwise

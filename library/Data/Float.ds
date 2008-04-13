@@ -23,46 +23,46 @@ foreign import extern "_unboxFloat32"
 		:$ Obj -> Float32#
 
 foreign import extern "primFloat32_toFloat"
- toFloat	:: elaborate Int -> Float
+ toFloat	:: Int{read} -> Float
 
 -- math
 foreign import extern "primFloat32_neg"
- primFloat32_neg	:: elaborate Float -> Float
+ primFloat32_neg	:: Float{read} -> Float
 
 foreign import extern "primFloat32_add"
- primFloat32_add	:: elaborate Float -> Float -> Float
+ primFloat32_add	:: Float{read} -> Float{read} -> Float
 
 foreign import extern "primFloat32_sub"
- primFloat32_sub	:: elaborate Float -> Float -> Float
+ primFloat32_sub	:: Float{read} -> Float{read} -> Float
 
 foreign import extern "primFloat32_mul"
- primFloat32_mul	:: elaborate Float -> Float -> Float
+ primFloat32_mul	:: Float{read} -> Float{read} -> Float
 
 foreign import extern "primFloat32_div"
- primFloat32_div	:: elaborate Float -> Float -> Float
+ primFloat32_div	:: Float{read} -> Float{read} -> Float
 
 -- comparisons
 foreign import extern "primFloat32_eq"
- primFloat32_eq		:: elaborate Float -> Float -> Bool
+ primFloat32_eq		:: Float{read} -> Float{read} -> Bool
 
 foreign import extern "primFloat32_neq"
- primFloat32_neq	:: elaborate Float -> Float -> Bool
+ primFloat32_neq	:: Float{read} -> Float{read} -> Bool
 
 foreign import extern "primFloat32_gt"
- primFloat32_gt		:: elaborate Float -> Float -> Bool
+ primFloat32_gt		:: Float{read} -> Float{read} -> Bool
 
 foreign import extern "primFloat32_ge"
- primFloat32_ge		:: elaborate Float -> Float -> Bool
+ primFloat32_ge		:: Float{read} -> Float{read} -> Bool
 
 foreign import extern "primFloat32_lt"
- primFloat32_lt		:: elaborate Float -> Float -> Bool
+ primFloat32_lt		:: Float{read} -> Float{read} -> Bool
 
 foreign import extern "primFloat32_le"
- primFloat32_le		:: elaborate Float -> Float -> Bool
+ primFloat32_le		:: Float{read} -> Float{read} -> Bool
 
 -- update
 foreign import extern "primFloat32_update"
- primFloat32_update	:: elaborate (mutable Float) -> Float -> ()
+ primFloat32_update	:: Float{write} -> Float{read} -> ()
 
 
 instance Eq Float where
@@ -95,28 +95,28 @@ instance Accum Float where
 
 -- trig
 foreign import extern "sinf"
- sinU	:: elaborate Float32# -> Float32#
+ sinU	:: Float32# -> Float32#
 
 foreign import extern "asinf"
- asinU	:: elaborate Float32# -> Float32#
+ asinU	:: Float32# -> Float32#
 
 foreign import extern "cosf"
- cosU	:: elaborate Float32# -> Float32#
+ cosU	:: Float32# -> Float32#
  
 foreign import extern "acosf"
- acosU	:: elaborate Float32# -> Float32#
+ acosU	:: Float32# -> Float32#
 
 foreign import extern "tanf"
- tanU	:: elaborate Float32# -> Float32#
+ tanU	:: Float32# -> Float32#
  
 foreign import extern "atanf"
- atanU	:: elaborate Float32# -> Float32#
+ atanU	:: Float32# -> Float32#
 
 foreign import extern "sqrtf"
- sqrtU	:: elaborate Float32# -> Float32#
+ sqrtU	:: Float32# -> Float32#
 
 foreign import extern "truncf"
- truncU	:: elaborate Float32# -> Float32#
+ truncU	:: Float32# -> Float32#
 
 sin x	= boxFloat32 (sinU   (unboxFloat32 x))
 asin x	= boxFloat32 (asinU  (unboxFloat32 x))
@@ -129,13 +129,13 @@ trunc x = boxFloat32 (truncU (unboxFloat32 x))
 
 -- 
 foreign import extern "logf"
- logU   :: elaborate Float32# -> Float32#
+ logU   :: Float32# -> Float32#
 
 foreign import extern "floorf"
- floorU :: elaborate Float32# -> Float32#
+ floorU :: Float32# -> Float32#
 
 foreign import extern "fabsf"
- fabsU  :: elaborate Float32# -> Float32#
+ fabsU  :: Float32# -> Float32#
 
 log   x	= boxFloat32 (logU   (unboxFloat32 x))
 floor x	= boxFloat32 (floorU (unboxFloat32 x))
@@ -143,5 +143,5 @@ fabs x	= boxFloat32 (fabsU  (unboxFloat32 x))
 
 -- conversion
 foreign import extern "primFloat32_truncate"
- truncate :: elaborate Float -> Int
+ truncate :: Float{read} -> Int
 

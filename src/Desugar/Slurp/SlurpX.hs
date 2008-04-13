@@ -11,6 +11,7 @@ import Desugar.Slurp.Base
 
 import Type.Location
 import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
 import Util	(liftM, unzip6, unzip5, takeLast, catMap)
 
 -----
@@ -282,7 +283,7 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 	-- The case object must be a Bool
 	boolType	<- getGroundType "Bool"
 	tR		<- newTVarR
-	let tBool	= TData boolType [tR]
+	let tBool	= TData (KFun KRegion KData) boolType [tR]
 
 	-- Slurp the THEN expression.
 	(tThen, eThen, cThen, xThen', qsThen)	
@@ -405,12 +406,14 @@ slurpX x
 ---------------------------
 -- slurpV
 --
-slurpV exp@(XVar sp var) tV@(TVar _ vT)
+slurpV exp@(XVar sp var) tV@(TVar k vT)
  = do
 	vTu		<- makeUseVar var vT
-	let tX		= TVar KData vTu
+	let tX		= TVar k vTu
 	let eX		= pure
-	let cX		= TFree var tV
+	let cX		= if Var.isCtorName var
+				then TBot KClosure
+				else TFree var tV
 
 	let qs	= 
 		[ CInst (TSV $ SVInst sp vT) vTu vT ]

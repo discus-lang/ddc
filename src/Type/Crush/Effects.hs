@@ -137,11 +137,11 @@ crushEffectT' cid tt tNode
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadH
 	= case tNode of
-		TData v (tR : ts)	
+		TData _ v (tR : ts)	
 			-> Just ( TEffect primRead [tR]
 				, TSI $ SICrushedE cid tt)
 
-		TData v []		
+		TData _ v []		
 			-> Just ( TBot KEffect
 				, TSI $ SICrushedE cid tt)
 

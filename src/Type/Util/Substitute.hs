@@ -12,6 +12,7 @@ where
 import Type.Plate.Collect
 import Type.Plate.Trans
 import Type.Util.Bits
+import Type.Util.Kind
 import Type.Exp
 
 import Shared.Error
@@ -102,9 +103,9 @@ subTT_cutM' sub cut tt
 	TTop{}		-> return tt
 	TBot{}		-> return tt
 	
-	TData v ts		
+	TData k v ts		
 	 -> do	ts'	<- mapM down ts
-	 	return	$ TData v ts'
+	 	return	$ TData k v ts'
 		
 	TFun t1 t2 eff clo
 	 -> do	t1'	<- down t1
@@ -140,17 +141,17 @@ subTT_enter sub cut tt
 	-- see if we can substitute something
 	| Just tt'	<- Map.lookup tt sub
 	= if Set.member tt cut
-	   then case kindOfType tt of
+	   then case takeKindOfType tt of
 			-- Loops in effect and closure types can be cut by replacing
 			--	the looping variable with bottom.
-			KEffect		
+			Just KEffect		
 			 -> 	return	$ TBot KEffect
 		
-			KClosure	
+			Just KClosure	
 			 -> 	return	$ TBot KClosure
 		
 			-- Loops in other parts of the graph are errors.
-			_ -> do
+			Just _ -> do
 				modify $ \s -> (tt, tt') : s
 				return	tt
 
@@ -219,7 +220,7 @@ cutSub sub
 cutF :: (Type, Type) -> SubM (Maybe (Type, Type))
 cutF (t1, t2)
 	-- If the binding var is in the rhs then we've got an infinite type error
-	| kindOfType t1 == KData
+	| (let Just k1 = takeKindOfType t1 in k1) == KData
 	= if elem t1 $ collectTClassVars t2
 		then do	modify $ \s -> (t1, t2) : s
 			return $ Nothing

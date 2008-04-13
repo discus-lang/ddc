@@ -4,7 +4,8 @@ module Main.Arg
 	, parse
 	, expand
 	, helpString
-	, options)
+	, options
+	, takePrettyMode)
 
 where
 
@@ -77,6 +78,7 @@ data Arg
 	-- dump pretty flags
 	| DumpPrettyUnique	
 	| DumpPrettyTypeSpaces
+	| DumpPrettyTypeKinds
 	| DumpPrettyCoreTypes
 
 	-- things that can be dumped
@@ -87,6 +89,8 @@ data Arg
 	| DumpSourceRename
 
 	| DumpDesugar
+	| DumpDesugarKinds
+	| DumpDesugarElaborate
 	| DumpDesugarProject
 	| DumpDesugarSlurp
 
@@ -164,6 +168,8 @@ expand		(x:xs)
 	   , DumpSourceRename
 
 	   , DumpDesugar
+	   , DumpDesugarKinds
+	   , DumpDesugarElaborate
 	   , DumpDesugarProject
 	   , DumpDesugarSlurp
 
@@ -441,6 +447,7 @@ options	=
 	
 	, OFlag		DumpPrettyUnique	["-dump-pretty-unique"]		"Append unique identifiers to variables."
 	, OFlag		DumpPrettyTypeSpaces	["-dump-pretty-type-spaces"]	"Show a '*' namespace qualifier on type vars."
+	, OFlag		DumpPrettyTypeKinds	["-dump-pretty-type-kinds"]	"Show kinds on type vars and constructors."
 	, OFlag		DumpPrettyCoreTypes	["-dump-pretty-core-types"]	"Show type annots on vars in core."
 	, OBlank
 	
@@ -453,6 +460,8 @@ options	=
 	, OBlank
 
 	, OFlag		DumpDesugar		["-dump-desugar"]		"Desugared version of source code."
+	, OFlag		DumpDesugarKinds	["-dump-desugar-kinds"]		"Infer kinds and annotate types."
+	, OFlag		DumpDesugarElaborate	["-dump-desugar-elaborate"]	"Elaborate types and effects in sigs."
 	, OFlag		DumpDesugarProject	["-dump-desugar-project"]	"Add default projections and snip dictionaries."
 	, OFlag		DumpDesugarSlurp	["-dump-desugar-slurp"]		"Slurp type constraints and add type vars to code."
 	, OBlank
@@ -490,6 +499,16 @@ options	=
 	, OFlag		DumpSeaFlatten		["-dump-sea-flatten"]		"Flatten out match statements."
 	, OFlag		DumpSeaInit		["-dump-sea-init"]		"Insert module initialisation code."
 	, OBlank
-
-
 	]
+
+
+
+-- | Convert an arg into the pretty mode it enables
+takePrettyMode :: Arg -> Maybe PrettyMode
+takePrettyMode aa
+ = case aa of
+ 	DumpPrettyUnique	-> Just $ PrettyUnique
+	DumpPrettyTypeSpaces	-> Just $ PrettyTypeSpaces
+	DumpPrettyTypeKinds	-> Just $ PrettyTypeKinds
+	DumpPrettyCoreTypes	-> Just $ PrettyCoreTypes
+	_			-> Nothing

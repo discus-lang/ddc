@@ -23,8 +23,7 @@ type VarGen	= Var.VarBind
 -- | Create a fresh variable id
 newVarId :: State VarGen VarBind
 newVarId
- = do
- 	Var.XBind prefix num	<- get
+ = do	Var.XBind prefix num	<- get
 	put 	$ Var.XBind prefix (num + 1)
 	return 	$ Var.XBind prefix num	
 

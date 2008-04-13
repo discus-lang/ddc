@@ -64,7 +64,7 @@ dangerT rsMutable fsClosure tt
 		fsClosure'	= Map.union 
 					fsClosure 
 					(Map.fromList [(u1, u2) | FLet u1 u2	<- fs
-								, kindOfType u1 == KClosure])
+								, takeKindOfType u1 == Just KClosure])
 
 		-- decend into type and fetters
 		t1Danger	= dangerT rsMutable' fsClosure' t1
@@ -87,7 +87,7 @@ dangerT rsMutable fsClosure tt
 			[ cloDanger ]
 
 	-- data constructors
-	TData v ts
+	TData k v ts
 		-- if this ctor has any mutable regions then all vars from this point down are dangerous
 	 	| or $ map 	(\t -> case t of 
 	 				TVar{}		-> Set.member t rsMutable

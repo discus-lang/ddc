@@ -72,6 +72,7 @@ tokString =
 	, (Export,		"export")
 
 	-- type definitions ------------------------------------
+	, (Type,		"type")
 	, (Data, 		"data")
 	, (Region,		"region")
 	, (Effect,		"effect")

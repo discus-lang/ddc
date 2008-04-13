@@ -45,8 +45,6 @@ import Shared.Exp
 
 import Source.Desugar.Base
 import Source.Desugar.Patterns
-import Source.Desugar.Type
-import Source.Desugar.Data
 
 import {-# SOURCE #-} Source.Desugar.ListComp
 
@@ -68,8 +66,7 @@ rewriteTree
 
 rewriteTree unique kindMap hTree sTree
  = let	state	= RewriteS
-		{ stateKind	= kindMap 
-		, stateVarGen	= Var.XBind unique 0 
+		{ stateVarGen	= Var.XBind unique 0 
 		, stateErrors	= [] }
 	
 	((hTree', sTree'), state')
@@ -108,10 +105,14 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		let to'	= maybeJust to (let Just to2 = makeOpTypeT tv' in to2)
 	 	returnJ $ D.PExtern sp v' tv' to'
 
+	-- types
+	S.PTypeKind sp v k
+	 -> returnJ $ D.PTypeKind sp v k
 
 	-- data definitions
-	S.PData{}
-	 -> do	-- elaborate the data definition to add missing regions etc
+	S.PData sp v vs ctors
+	 -> do	
+{-	 	-- elaborate the data definition to add missing regions etc
 	 	(S.PData sp v vs ctors)	
 			<- elaborateData newVarN getKind pp
 
@@ -120,7 +121,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		--	 and not recursive :( would be better to tie this to kind inference.
 		let kind = makeDataKind vs
 		modify $ \s -> s { stateKind = Map.insert v kind (stateKind s) }
-
+-}
 		-- desugar field initialisation code
 	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
 
@@ -163,19 +164,19 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 					D.ClassContext v ts)
 				$ context
 
-		let ?getKind	= getKind
+--		let ?getKind	= getKind
 		ts_rewrite	<- mapM rewrite ts
 
-		ts_elab		<- liftM (map t3_1)
-				$  mapM (elaborateRegionsT (newVarN NameRegion) getKind) ts_rewrite
+--		ts_elab		<- liftM (map t3_1)
+--				$  mapM (elaborateRegionsT (newVarN NameRegion) getKind) ts_rewrite
 
-	 	returnJ		$ D.PClassInst sp vC ts_elab context' ss_merged
+	 	returnJ		$ D.PClassInst sp vC ts context' ss_merged
 
 	-- projections
 	S.PProjDict sp t ss
 	 -> do	ss'		<- mapM rewrite ss
 	 	
-		let ?getKind	= getKind
+--		let ?getKind	= getKind
 		t'		<- rewrite t
 		
 		returnJ		$ D.PProjDict sp t' ss'
@@ -184,10 +185,10 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	S.PStmt (S.SSig sp v t)
 	 -> do	t'	<- rewrite t
 
-	 	(tElab, vksConst, vksMutable)	
-			<- elaborateRegionsT (newVarN NameRegion) getKind t'
+--	 	(tElab, vksConst, vksMutable)	
+--			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
-	 	returnJ	$ D.PSig sp v tElab
+	 	returnJ	$ D.PSig sp v t
 
   	S.PStmt s
 	 -> do	(D.SBind sp mV x)	<- rewrite s
@@ -242,10 +243,10 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	 -> do	t'	<- rewrite t
 	 	pj'	<- rewrite pj
 
-	 	(tElab, vksConst, vksMutable)	
-			<- elaborateRegionsT (newVarN NameRegion) getKind t'
+--	 	(tElab, vksConst, vksMutable)	
+--			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
-		return	$ D.XProjT sp tElab pj'
+		return	$ D.XProjT sp t pj'
 		
 	S.XApp sp x1 x2
 	 -> do	x1'	<- rewrite x1
@@ -471,10 +472,10 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
 	S.SSig sp v t
 	 -> do 	t'	<- rewrite t
 
-	 	(tElab, vksConst, vksMutable)	
-			<- elaborateRegionsT (newVarN NameRegion) getKind t'
+--	 	(tElab, vksConst, vksMutable)	
+--			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
-	 	return	$ D.SSig sp v tElab
+	 	return	$ D.SSig sp v t
 
 
 -- Alt ---------------------------------------------------------------------------------------------
@@ -632,9 +633,9 @@ instance Rewrite S.Type S.Type where
 	 	t2'	<- rewrite t2
 		return	$ TFun t1' t2' eff clo
 		
-	TData v ts
+	TData k v ts
 	 -> do	ts'	<- rewrite ts
-	 	return	$ TData v ts'
+	 	return	$ TData k v ts'
 		
 	TForall vks t
 	 -> do	t'	<- rewrite t
@@ -645,10 +646,6 @@ instance Rewrite S.Type S.Type where
 	 	return	$ TFetters fs t'
 		
 	TWild k		-> return tt
-	
-	TElaborate t	
-	 -> do	let ?newVarN	= newVarN
-	 	let ?getKind	= getKind
-	 	t'	<- elaborateT t
-	 	return	$ t'
-		
+
+	TElaborate ee t	-> return tt
+

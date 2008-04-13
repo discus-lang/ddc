@@ -5,8 +5,8 @@
 --	keywords, we can add this information automatically.
 --
 module Type.Util.Elaborate
-	( elaborateT 
-	, elaborateRegionsT
+	( elaborateRsT, elaborateRsT_quant
+	, elaborateEffT
 	, elaborateCloT )
 where
 
@@ -21,150 +21,97 @@ import Shared.Pretty
 import Shared.Error 
 
 import Type.Exp
-import Type.Pretty		()
+import Type.Pretty
 import Type.Util.Pack
-import Type.Util.Bits		
+import Type.Util.Bits
+import Type.Util.Kind	
 import Type.Plate.Collect
 
 import qualified Debug.Trace	as Debug
 
 -----
-stage	= "Type.Elaborate"
+stage	= "Type.Util.Elaborate"
 debug	= False
 trace ss xx
  = if debug 
  	then Debug.trace (pprStrPlain ss) xx
 	else xx
 	
--- | Elaborate this type
---
---	* Fresh, forall bound region variables are applied to type constructors
---	  of higher kind so that the result is something of kind data.
---
---	* For all regions marked Mutable, an appropriate context is added to the
---	  front of the type.
---
---	* For all regions added this way, an effect which Reads them is added
---	  to the right most function arrow in the type. In addition, if they were 
---	  marked as mutable an effect which Writes to them is also added.
---
-elaborateT 
-	:: Monad m
-	=> (?newVarN 	:: NameSpace 	-> m Var)
-	-> (?getKind	:: Var		-> m Kind)
-	-> Type -> m Type
-
-elaborateT t
- = do	trace ("elaborating " % t) $ return ()
- 
- 	-- elaborate regions
- 	(tRegions, vksRsConst, vksRsMutable)	
- 			<- elaborateRegionsT (?newVarN NameRegion) ?getKind t
-
-	-- if the type is a function then elaborate its closure and effect as well.
-	case tRegions of
-	 TData{}	
-	  -> return tRegions
-
-	 _		
-	  -> do	tClosure	<- elaborateCloT tRegions
-		tEffect		<- elaborateEffT (map fst vksRsConst) (map fst vksRsMutable) tClosure
-	 	return	$ makeTForall_back (vksRsConst ++ vksRsMutable)
-			$ tEffect
-
 
 -----------------------
 -- elaborateRegionsT
 --	Check the kinds of data type constructors, and if they don't have enough region 
 --	args then add new ones to make them the right kind.
 --
-elaborateRegionsT
+elaborateRsT_quant
 	:: Monad m
 	=> (m Var)		-- ^ A compuation to generate a fresh region var
 	-> (Var -> m Kind)	-- ^ fn to get kind of type ctor
 	-> Type 		-- ^ the type to elaborate
-	-> m ( Type		-- new type
-	     , [(Var, Kind)]	-- extra constant regions
-	     , [(Var, Kind)])	-- extra mutable regions
+	-> m Type
+	
+elaborateRsT_quant newVar getKind tt
+ = do	(t_elab, vks)	<- elaborateRsT newVar getKind tt
+	let t_quant	= makeTForall_back vks t_elab
 
-elaborateRegionsT newVar getKind tt
- = let	?newVar		= newVar
- 	?getKind	= getKind
-   in	trace ("elaborateRegionsT: " % tt % "\n")
-			$ elaborateRegionsT' tt
+   	trace ("elaborateRsT: " % tt % "\n")
+		$ return t_quant
 
+elaborateRsT newVar getKind tt
+ = do	let ?newVar	= newVar
+	let ?getKind	= getKind
+	elaborateRsT' tt
 
-   
-
-elaborateRegionsT' tt
- = do	(tt', vksConst, vksMutable, fs)	<- elaborateRegionsT2 tt
-	return	( addFetters fs tt'
-		, vksConst
-		, vksMutable)
-
-elaborateRegionsT2 tt
-
-	-- if we see a forall then drop new regions on that quantifier
+elaborateRsT' tt
  	| TForall vks x		<- tt
-	= do	(x', vksC', vksM', fs)	<- elaborateRegionsT2 x
-		return	( makeTForall_back (vksC' ++ vksM') (TForall vks x')
-			, []
-			, []
-			, fs)
+	= do	(x', vks')	<- elaborateRsT' x
+		return	( tt
+			, vks')
 
 	| TFetters fs x		<- tt
-	= do	(x', vksC, vksM, fs')	<- elaborateRegionsT2 x
-		return	( TFetters (fs ++ fs') x'
-			, vksC
-			, vksM
-			, [])
+	= do	(x', vks')	<- elaborateRsT' x
+		return	( TFetters fs x'
+			, vks')
 
-	| TVar{}		<- tt
-	=	return 	( tt, [], [], [])
+	| TVar{}	<- tt	
+	= return (tt, [])
 
-	| TWild{}		<- tt
-	=	return	( tt, [], [], [])
+	| TApp t1 t2 	<- tt
+	= do	(t1', vks1)	<- elaborateRsT' t1
+		(t2', vks2)	<- elaborateRsT' t2
+		return	( TApp t1' t2'
+			, vks1 ++ vks2)
+
+	| TWild{}	<- tt
+	= return (tt, [])
 
 	| TFun t1 t2 eff clo	<- tt
 	= do
-		(t1', vksC1, vksM1, fs1)	<- elaborateRegionsT2 t1
-		(t2', vksC2, vksM2, fs2)	<- elaborateRegionsT2 t2
+		(t1', vks1)	<- elaborateRsT' t1
+		(t2', vks2)	<- elaborateRsT' t2
 		return	( TFun t1' t2' eff clo
-			, vksC1 ++ vksC2 
-			, vksM1 ++ vksM2
-			, fs1 ++ fs2)
+			, vks1 ++ vks2)
 
-	-- assume every region under a mutable operator is mutable
-	| TMutable x		<- tt
-	= do	(x', vksC, vksM, fs1)	<- elaborateRegionsT2 x
-
-		-- collect up all the vars in the rewritten type and choose all the regions
-		let vsRegions	= filter (\v -> Var.nameSpace v == NameRegion)
-				$ collectVarsT x'
-
-		-- build a Mutable constraint for these regions
-		let fNew	= FConstraint primMutable
-					[ makeTSum KRegion $ map (TVar KRegion) vsRegions ]
-
-		return	( x'
-			, []
-			, vksC ++ vksM
-			, fNew : fs1)
+	| TElaborate ee t	<- tt
+	= do	(t', vks)	<- elaborateRsT' t
+		return	( TElaborate ee t'
+			, vks)
 
 	-- add new regions to data type constructors to bring them up
 	--	to the right kind.
-	| TData v ts		<- tt
+	| TData k v ts		<- tt
 	= do	kind		<- ?getKind v
-
+		let ?topType	= tt 
 		(ts2, vks2)	<- elabRs ts kind
-		(ts3, vksC3, vksM3, fs3)	
-				<- liftM unzip4 $ mapM elaborateRegionsT2 ts2
+		(ts3, vks3)	<- liftM unzip $ mapM elaborateRsT' ts2
 		
-		return	( TData v ts3
-			, vks2 ++ concat vksC3
-			, concat vksM3
-			, concat fs3)
+		return	( TData k v ts3
+			, vks2 ++ concat vks3)
 
+	| otherwise
+	= panic stage
+		$ "elaborateRsT': no match for " % tt % "\n\n"
+		% " tt = " % show tt % "\n"
 
 -- | Take some arguments from a type ctor and if needed insert fresh region vars
 --	so the reconstructed ctor with these args will have this kind.
@@ -172,6 +119,7 @@ elaborateRegionsT2 tt
 elabRs 	:: Monad m
 	=> (?newVar  :: m Var)			-- ^ fn to create new region vars
 	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
+	-> (?topType :: Type)			-- ^ for debugging
 	-> [Type]				-- ^ ctor args
 	-> Kind					-- ^ kind to turn the ctor into
 	-> m ( [Type]		-- new ctor args
@@ -199,15 +147,14 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 
 	-- (% : _)   % -> _
 	| KRegion		<- k1
-	, KRegion		<- let Just k = takeKindOfType t in k
+	, hasRegionKind t
 	= do	(ts', vks')	<- elabRs2 ts k2
 		return		( t : ts'
 				, vks')
 
 	-- (_ : _)   % -> _
 	| KRegion		<- k1
-	, k			<- let Just k = takeKindOfType t in k
-	, k /= KRegion
+	, not $ hasRegionKind t
 	= do	vR		<- ?newVar
 
 		(tt', vksMore)	<- elabRs2 
@@ -224,6 +171,14 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 elabRs2 args kind
 	= panic stage
 	$ "elabRs2: no match for " % (args, kind) % "\n"
+	% "    topType = " % prettyTS ?topType % "\n"
+
+
+hasRegionKind tt
+ = case tt of
+ 	TVar KRegion _	-> True
+	TWild KRegion	-> True
+	_		-> False
 
 
 -----------------------
@@ -458,7 +413,7 @@ slurpConRegionsCo tt
 	 -> slurpConRegionsCon t1
 	 ++ slurpConRegionsCo  t2
 
-	TData v ts		-> catMap slurpConRegionsCo ts
+	TData k v ts		-> catMap slurpConRegionsCo ts
 
 	TVar _ _			-> []
 	 
@@ -468,7 +423,7 @@ slurpConRegionsCon tt
 	 -> slurpConRegionsCon t1
 	 ++ slurpConRegionsCon t2
 	 
-	TData v ts		-> catMap slurpConRegionsCon ts
+	TData k v ts		-> catMap slurpConRegionsCon ts
 
 	TVar KRegion v		-> [v]
 	TVar _ _		-> []	

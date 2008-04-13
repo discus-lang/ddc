@@ -67,8 +67,9 @@ instance Show a => Lint (Top a) where
 
 	PImportModule sp ms		-> PImportModule sp ms
 
-	PType sp v t			-> PType	sp (lint v) (lint t)
-	PInfix sp m i vs		-> PInfix	sp m i      (lint vs)
+	PInfix sp m i vs		-> PInfix	sp m i (lint vs)
+	PTypeKind sp v k		-> PTypeKind	sp (lint v) k
+	PTypeSynonym sp v t		-> PTypeSynonym	sp (lint v) (lint t)
 	
 	PData sp v vs cs		-> PData	sp (lint v) (lint vs) cs
 
@@ -174,9 +175,9 @@ instance Lint Type where
 	-- data
 	TFun t1 t2 eff clo		-> TFun (lint t1) (lint t2) (lint eff) (lint clo)
 	
-	TData v ts
+	TData k v ts
 	 | not $ inSpaceT [v]		-> death tt "TCon - var in wrong namespace."
-	 | otherwise			-> TData (lint v) (lint ts)
+	 | otherwise			-> TData k (lint v) (lint ts)
 	 	
 	-- effect
 	TEffect v ts			-> TEffect v (lint ts)

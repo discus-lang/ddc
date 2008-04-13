@@ -1,18 +1,16 @@
 
 module Desugar.Exp
-(
-	Tree,
-	Top		(..),
-	CtorDef		(..),
-	ClassContext	(..),
-	Exp		(..),
-	Proj		(..),
-	Stmt		(..),
-	Alt		(..),
-	Guard		(..),
-	Pat		(..),
-	Label		(..)
-)
+	( Tree
+	, Top		(..)
+	, CtorDef	(..)
+	, ClassContext	(..)
+	, Exp		(..)
+	, Proj		(..)
+	, Stmt		(..)
+	, Alt		(..)
+	, Guard		(..)
+	, Pat		(..)
+	, Label		(..))
 
 where
 
@@ -39,7 +37,8 @@ data Top a
 	| PEffect	a Var Kind
 	| PRegion	a Var
 
-	-- data defs
+	-- types
+	| PTypeKind	a Var Kind
 	| PData		a Var [Var]  [CtorDef a]
 
 	-- classes

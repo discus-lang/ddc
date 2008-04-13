@@ -102,10 +102,10 @@ exportType t
 		% "    tPlug:\n" 	%> prettyTS tPlug	% "\n"
 		% "    tFinal:\n"	%> prettyTS tPlug	% "\n"
 
-	let tTrim	= case  kindOfType tFinal of
-				KClosure	-> trimClosureC Set.empty Set.empty tFinal
-				KData		-> trimClosureT Set.empty Set.empty tFinal
-				_		-> tFinal
+	let tTrim	= case takeKindOfType tFinal of
+				Just KClosure	-> trimClosureC Set.empty Set.empty tFinal
+				Just KData	-> trimClosureT Set.empty Set.empty tFinal
+				Just _		-> tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
 	return tTrim		
