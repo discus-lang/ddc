@@ -525,13 +525,17 @@ instance Monad m => TransM m Type where
 	 -> do	t1'		<- followT table t1
 		t2'		<- followT table t2
 		return		$ TApp t1' t2'
+	
+	TCon tyCon
+	 -> do	tyCon'		<- transZM table tyCon
+	 	return		$ TCon tyCon'
 
 	-- data
-	TData v ts
+{-	TData v ts
 	 -> do	v'		<- followV_free  table v
 	 	ts'		<- followTs table ts
 		transT table	$ TData v' ts'
-
+-}
   	TFun t1 t2
 	 -> do	t1'		<- followT table t1
 	 	t2'		<- followT table t2
@@ -585,6 +589,16 @@ instance Monad m => TransM m Type where
 	_ 	-> panic stage
 		$  "transZM[Type]: no match for " % show tt
 
+-- TyCon -------------------------------------------------------------------------------------------
+instance Monad m => TransM m TyCon where
+ transZM table tt
+  = case tt of
+  	TyConFun{}
+	 -> 	return	$ tt
+	 
+	TyConData { tyConName }
+	 -> do	name'	<- followV_free table tyConName
+	 	return	$ tt { tyConName = name' }
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance Monad m => TransM m Fetter where

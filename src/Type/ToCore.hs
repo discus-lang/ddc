@@ -18,6 +18,7 @@ import qualified Shared.Var 	as Var
 import qualified Shared.VarUtil	as Var
 
 import qualified Type.Exp	as T
+import qualified Type.Util	as T
 import qualified Type.Pretty	as T
 
 import qualified Core.Exp 	as C
@@ -32,7 +33,7 @@ stage	= "Type.ToCore"
 -- Convertion of source types to core representation.
 --	- :> constraints on type variables are carried directly in the variable
 
-
+-- Type ---------------------------------------------------------------------------------------------
 -- | Convert this type to core representation.
 toCoreT:: T.Type -> C.Type
 toCoreT tt	= toCoreT' Map.empty tt
@@ -106,9 +107,16 @@ toCoreT' table tt
 	T.TTop k		-> C.TTop (toCoreK k)
 
 	T.TApp t1 t2		-> C.TApp (toCoreT t1) (toCoreT t2)
+	T.TCon tyCon		-> C.TCon (toCoreTyCon tyCon)
 
 	-- data
-	T.TData k v ts		-> C.TData v (map toCoreT ts)
+	T.TData k v ts		
+	 -> let tyCon	= T.TyConData 
+		 		{ T.tyConName	= v
+				, T.tyConKind	= k }
+	   in  toCoreT $ T.makeTApp (T.TCon tyCon : ts)
+
+
 	T.TFun t1 t2 eff clo	-> C.TFunEC (down t1) (down t2) (down eff) (down clo)
 	
 	-- effect
@@ -131,8 +139,17 @@ toCoreT' table tt
 			$ "toCoreT: failed to convert " % tt 	% "\n"
 			% "    tt = " % show tt			% "\n"
 	
+-- TyCon -------------------------------------------------------------------------------------------
+toCoreTyCon :: T.TyCon -> C.TyCon
+toCoreTyCon tt
+ = case tt of
+ 	T.TyConFun k 
+	 -> C.TyConFun (toCoreK k)
 
------
+	T.TyConData v k
+	 -> C.TyConData v (toCoreK k)
+
+-- Kind ---------------------------------------------------------------------------------------------
 toCoreK :: T.Kind -> C.Kind
 toCoreK k
  = case k of
@@ -147,7 +164,7 @@ toCoreK k
 		$ "toCoreK: cannot convert " % k % "\n"
 
 
------
+-- Fetter ------------------------------------------------------------------------------------------
 toCoreF :: T.Fetter -> C.Class
 toCoreF	   f
  = case f of

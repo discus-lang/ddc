@@ -493,12 +493,13 @@ toSeaG	mObjV ssFront gg
 
 -- check if this type is in a direct region
 isDirectType :: C.Type -> SeaM Bool
-isDirectType (C.TData v (C.TVar C.KRegion vR : _))
- = do	directRegions	<- gets stateDirectRegions
- 	return	$ Set.member vR directRegions
+isDirectType tt
+	| Just (v, k, C.TVar C.KRegion vR : _)	<- C.takeTData tt
+	= do	directRegions	<- gets stateDirectRegions
+	 	return	$ Set.member vR directRegions
 
-isDirectType _
- = 	return False
+	| otherwise
+	= 	return False
 
 	
 -----
@@ -540,12 +541,12 @@ toSeaT :: C.Type	-> E.Type
 toSeaT	xx
 
 	-- void type
-	| C.TData v _	<- xx
-	, Var.TVoidU	<- Var.bind v
+	| Just (v, _, _)	<- C.takeTData xx
+	, Var.TVoidU		<- Var.bind v
 	= E.TVoid
 	
 	-- some unboxed object
-	| C.TData v ts	<- xx
+	| Just (v, _, ts)	<- C.takeTData xx
 	, last (Var.name v) == '#'
 	= E.TCon v (map toSeaT $ filter (not . isREC) ts)
 	
@@ -737,32 +738,53 @@ superOpType'	xx
 	_		-> [superOpTypePart 
 			$  C.reconX_type (stage ++ "superOpType") xx]
 			
-superOpTypePart	t
- = case t of
+superOpTypePart	tt
+ = case tt of
 	C.TNil			-> C.TNil
 
 	-- skip over type information
-	C.TForall v  k t	-> superOpTypePart t
+	C.TForall v k t		-> superOpTypePart t
 	C.TContext c t		-> superOpTypePart t
 	C.TFetters t fs		-> superOpTypePart t
 
 	-- all function objects are considered to be 'Thunk'
-	C.TFunEC{}		-> C.TData Var.primTThunk []
+	C.TFunEC{}		-> C.makeTData Var.primTThunk C.KData []
 
-	C.TData v ts
-	 -- unboxed types are represented directly, and the Sea
-	 --	code must know about them.
-	 | v == Var.primTPtrU	-> C.TData v (map superOpTypePart ts)
-	 | C.isUnboxedT t	-> C.TData v []
+	-- an unboxed var of airity zero, eg Int32#
+	C.TCon (C.TyConData name kind)
+	 | C.isUnboxedT tt
+	 -> C.makeTData name C.KData []
 
-	 -- boxed types are just 'Data'
-	 | otherwise		-> C.TData Var.primTData []
+	-- a tycon of arity zero, eg Unit
+	C.TCon (C.TyConData name kind)
+	 -> C.makeTData Var.primTData C.KData []
+
+	C.TApp{}
+	 -> let	result	
+		 	-- unboxed types are represented directly, and the Sea
+			--	code must know about them.
+	 		| Just (v, k, ts)	<- C.takeTData tt
+			, v == Var.primTPtrU	
+			= C.makeTData v k (map superOpTypePart ts)
+
+			-- an unboxed tycon of some aritity, eg String#
+			| Just (v, k, ts)	<- C.takeTData tt
+			, C.isUnboxedT tt
+			= C.makeTData v k []
+
+			-- boxed types are just 'Data'
+			| Just (v, k, ts)	<- C.takeTData tt
+			= C.makeTData Var.primTData k []
+			
+			| otherwise
+			= C.makeTData Var.primTObj C.KData []
+	   in result			
 
 	-- some unknown, boxed object 'Obj'
-	C.TVar C.KData _	-> C.TData Var.primTObj   []
+	C.TVar C.KData _	-> C.makeTData Var.primTObj C.KData []
 
 	_	-> panic stage
-		$  "superOpTypePart: no match for " % show t % "\n"
+		$  "superOpTypePart: no match for " % show tt % "\n"
 
 
 

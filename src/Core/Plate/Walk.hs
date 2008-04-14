@@ -352,10 +352,10 @@ instance Monad m => WalkM m Type where
 		transT z z	$ TMask k t1' t2'
 		
 	-- data
-	TData 	v ts
+{-	TData 	v ts
 	 -> do	ts'		<- mapM (walkZM z) ts
 	 	transT z z	$ TData v ts'
-		
+-}		
 	TFunEC t1 t2 eff clo
 	 -> do	t1'		<- walkZM z t1
 		t2'		<- walkZM z t2

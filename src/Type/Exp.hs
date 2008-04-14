@@ -131,8 +131,7 @@ data Elaboration
 -- | Type constructors
 data TyCon
 	= TyConFun
-		{ tyConName	:: Var 
-		, tyConKind	:: Kind }
+		{ tyConKind	:: Kind }
 
 	| TyConData
 		{ tyConName	:: Var

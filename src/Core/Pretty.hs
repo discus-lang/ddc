@@ -266,6 +266,7 @@ prettyExpB x
 	_		-> "(" % x % ")"
 
 
+
 -- Lit ---------------------------------------------------------------------------------------------
 instance Pretty Lit PMode where
  ppr xx
@@ -437,6 +438,9 @@ instance Pretty Type PMode where
 	 	KData	-> "*" % sv v % " :> " % t 
 		_	-> sv v % " :> " % t
 
+	TCon tyCon
+	 -> ppr tyCon
+
 	-- data
 	TFun x1 x2
 	 -> prettyTBF x1 % " -> "  % x2
@@ -455,8 +459,8 @@ instance Pretty Type PMode where
 		(eff,   	clo)		
 		 -> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
 
-	TData v ts
-	 ->       " " %!% (ppr v : map prettyTB ts)
+--	TData v ts
+--	 ->       " " %!% (ppr v : map prettyTB ts)
 
 	-- effect
 	TEffect v xs	-> " " %!% (pv v : map prettyTB xs)
@@ -493,7 +497,8 @@ prettyTB t
  = case t of
 	TSum{}		-> ppr t
  	TVar{}		-> ppr t
-	TData v []	-> ppr t
+	TCon{}		-> ppr t
+--	TData v []	-> ppr t
 	TEffect v []	-> ppr t
 	TWild{}		-> ppr t
 	TBot{}		-> ppr t
@@ -509,6 +514,14 @@ prettyTBF e
 
 	| otherwise
 	= ppr e
+
+-- TyCon -------------------------------------------------------------------------------------------
+instance Pretty TyCon PMode where
+ ppr p
+  = case p of
+  	TyConFun{}		-> ppr "(->)"
+	TyConData { tyConName }	-> ppr tyConName
+
 
 -- TFetter -----------------------------------------------------------------------------------------
 instance Pretty Fetter PMode where

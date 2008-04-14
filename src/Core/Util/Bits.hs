@@ -18,6 +18,9 @@ module Core.Util.Bits
 	
 	, makeTWhere
 	, makeTFetters
+	, makeTApp
+	, makeTData,	takeTData
+
 	, makeTWitJoin
 	, makeKWitJoin
 
@@ -167,8 +170,39 @@ makeTWhere	t vts	= TFetters t $ map (uncurry FWhere) vts
 makeTFetters :: Type -> [Fetter] -> Type
 makeTFetters t []	= t
 makeTFetters t fs	= TFetters t fs
+
+
+-- | Make a type application
+makeTApp :: [Type] -> Type
+makeTApp ts = makeTApp' $ reverse ts
+
+makeTApp' xx
+ = case xx of
+	[]		-> panic stage $ "makeTApp': empty list"
+ 	x : []		-> x
+	x1 : xs		-> TApp (makeTApp' xs) x1
 		
+
+-- | Make a data type
+makeTData :: Var -> Kind -> [Type] -> Type
+makeTData v k ts
+ = makeTApp (TCon TyConData { tyConName = v, tyConKind = k } : ts )
+	
+-- | take a data type
+takeTData :: Type -> Maybe (Var, Kind, [Type])
+takeTData tt
+ = case tt of
+ 	TCon TyConData { tyConName = v, tyConKind = k }
+		-> Just (v, k, [])
 		
+	TApp t1 t2
+	 -> case takeTData t1 of
+	 	Just (v, k, ts)	-> Just (v, k, ts ++ [t2])
+		Nothing		-> Nothing
+		
+	_ -> Nothing
+		
+	
 		
 -- | Get the kind associated with a namespace.
 kindOfSpace :: NameSpace -> Maybe Kind
@@ -307,8 +341,8 @@ chopLambdas	x
 
 isUnboxedT :: Type -> Bool
 isUnboxedT t
- = case t of
- 	TData v _
+ = case takeTData t of
+ 	Just (v, _, _)
 	 | last (Var.name v) == '#'	-> True	 
 	_				-> False
 
@@ -395,15 +429,20 @@ slurpVarsRD_split rs ds (t:ts)
 	_			-> slurpVarsRD_split rs ds ts
 	
 slurpVarsRD' tt
- = case tt of
-	TFun{}			-> []
- 	TData v ts		-> catMap slurpVarsRD' ts
+	| TFun{}		<- tt	= []
 
-	TVar KRegion _		-> [tt]
-	TVar KData   _		-> [tt]
-	TVar _  _		-> []
+	| TApp{}		<- tt
+	, Just (v, k, ts)	<- takeTData tt
+	= catMap slurpVarsRD' ts
 
-	_ 	-> panic stage
-		$  "slurpVarsRD: no match for " % show tt % "\n"
+	| TFun{}		<- tt	= []
+
+	| TVar KRegion _	<- tt	= [tt]
+	| TVar KData   _	<- tt	= [tt]
+	| TVar _  _		<- tt	= []
+
+	| otherwise
+	= panic stage
+	$ "slurpVarsRD: no match for " % show tt % "\n"
 
 

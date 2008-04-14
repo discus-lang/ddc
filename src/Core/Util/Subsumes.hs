@@ -189,8 +189,8 @@ subsumes3 table t s
 	--	could do a proper subsumption, but we don't have that info here. 
 	--	Just take all the args as being invariant instead.
 	--
-	| TData tVar ts		<- t
-	, TData sVar ss		<- s
+	| Just (tVar, k, ts)	<- takeTData t
+	, Just (sVar, k, ss)	<- takeTData s
 	, tVar == sVar
 	, length ts == length ss
 --	, and $ zipWith (subsumes1 table) ts ss

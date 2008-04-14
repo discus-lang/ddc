@@ -22,8 +22,8 @@ import Core.Util.Bits
 
 unifyT2 :: Type -> Type -> Maybe [(Type, Type)]
 unifyT2 t1 t2
-	| TData v1 ts1			<- t1
-	, TData v2 ts2			<- t2
+	| Just (v1, k1, ts1)		<- takeTData t1
+	, Just (v2, k2, ts2)		<- takeTData t2
 	, v1 == v2
 	= liftM concat 
 		$ sequence 

@@ -204,7 +204,8 @@ primX1 tt xx
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
 	, Just (operator, actions)		<- Map.lookup (Var.name v) unboxableFuns
-	, tResult@(TData vResult tsResult)	<- Recon.reconX_type (stage ++ ".primX") xx
+	, tResult				<- Recon.reconX_type (stage ++ ".primX") xx
+	, Just (vResult, _, tsResult)		<- takeTData tResult
 	, length psArgs == length actions
 	= trace ( "primX:\n"
 		% "    xx      = " % xx 	% "\n"
@@ -230,8 +231,11 @@ doActions tt (Ignore:as) (x:xs)
 	
 doActions tt (Unbox:as) (x:xs)
 
- = let	tX@(TData _ [tR@(TVar KRegion vR)])	
- 		= Recon.reconX_type (stage ++ "doActions") x
+ = let	tX	= Recon.reconX_type (stage ++ "doActions") x
+
+ 	Just (_, _, [tR@(TVar KRegion vR)])
+		= takeTData tX
+ 		
 
 	x'	| Set.member vR (tableDirectRegions tt) 
 		= XPrim MUnbox [XType tR, x] 

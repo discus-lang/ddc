@@ -25,12 +25,24 @@ kindOfType t
 	TVar  k _		-> k
 	TVarMore k _ _		-> k
 
+	TCon tyCon		-> tyConKind tyCon
+
 	TBot k			-> k
 	TTop k			-> k
 
-	TApp t1 t2		-> KData
+	TApp t1 t2		
+	 -> let result
+		 	| KFun k11 k12	<- kindOfType t1
+			, k2		<- kindOfType t2
+			, k11 == k2
+			= k12
 
- 	TData{}			-> KData
+			| otherwise
+			= panic stage $ "kindOfType: kind error\n"
+		
+	   in	result	
+
+-- 	TData{}			-> KData
 	TFunEC{}		-> KData
 	TFun{}			-> KData
 	

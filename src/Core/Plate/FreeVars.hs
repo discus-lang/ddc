@@ -242,6 +242,9 @@ instance FreeVars Type where
 	 	[ Set.singleton v
 		, freeVars t]
 	
+	TCon TyConData { tyConName }
+	 -> Set.singleton tyConName
+	
 	TBot k		-> Set.empty
 	TTop k		-> Set.empty
 
@@ -251,11 +254,11 @@ instance FreeVars Type where
 		, freeVars t2 ]
 
 	-- data
-	TData v xs
+{-	TData v xs
 	 -> unions
 	 	[ fromList [v] 
 		, unions $ map freeVars xs ]
-
+-}
 	TFun t1 t2
 	 -> unions
 	 	[ freeVars t1 

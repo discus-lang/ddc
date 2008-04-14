@@ -188,7 +188,7 @@ reconX tt (XLAM v k x)
 
 reconX tt exp@(XAPP (XLit l) (TVar KRegion r))
  = let	t	= case l of
- 			LString{}	-> TData primTStringU 	[TVar KRegion r]
+ 			LString{}	-> makeTData primTStringU (KFun KRegion KData) [TVar KRegion r]
 			_		-> panic stage
 					$  "reconX/XApp: non string constant applied to region\n"
 					%  "    exp = " % exp	% "\n"
@@ -544,20 +544,20 @@ reconX tt xx@(XPrim prim xs)
 
 reconX tt xx@(XLit l)
  = let	tLit = case l of
- 			LInt8{}		-> TData primTInt8U	[]
- 			LInt16{}	-> TData primTInt16U	[]
- 			LInt32{}	-> TData primTInt32U	[]
- 			LInt64{}	-> TData primTInt64U	[]
+ 			LInt8{}		-> makeTData primTInt8U	 	KData	[]
+ 			LInt16{}	-> makeTData primTInt16U 	KData	[]
+ 			LInt32{}	-> makeTData primTInt32U 	KData	[]
+ 			LInt64{}	-> makeTData primTInt64U	KData	[]
 
- 			LWord8{}	-> TData primTWord8U 	[]
- 			LWord16{}	-> TData primTWord16U	[]
- 			LWord32{}	-> TData primTWord32U	[]
- 			LWord64{}	-> TData primTWord64U	[]
+ 			LWord8{}	-> makeTData primTWord8U 	KData	[]
+ 			LWord16{}	-> makeTData primTWord16U	KData	[]
+ 			LWord32{}	-> makeTData primTWord32U	KData	[]
+ 			LWord64{}	-> makeTData primTWord64U	KData	[]
 
- 			LFloat32{}	-> TData primTFloat32U	[]
- 			LFloat64{}	-> TData primTFloat64U	[]
+ 			LFloat32{}	-> makeTData primTFloat32U	KData	[]
+ 			LFloat64{}	-> makeTData primTFloat64U	KData	[]
 
- 			LChar32{}	-> TData primTChar32U 	[]
+ 			LChar32{}	-> makeTData primTChar32U 	KData	[]
 			_		-> panic stage
 					$  "reconX/XLit: no match for " % xx % "\n"
 
@@ -576,8 +576,12 @@ reconX tt xx
 
 -- | Convert this type to the boxed version
 reconBoxType :: Region -> Type -> Type
-reconBoxType r (TData v _)
-	= TData (reconBoxType_bind (Var.bind v)) [r]
+reconBoxType r tt
+	| Just (v, k, _)	<- takeTData tt
+	= makeTData 
+		(reconBoxType_bind (Var.bind v)) 
+		(KFun KRegion KData) 
+		[r]
 
 reconBoxType_bind bind
  = case bind of
@@ -599,11 +603,18 @@ reconBoxType_bind bind
 	Var.TChar32U	-> primTChar32
 	Var.TStringU	-> primTString
 
--- | Convert this type to the boxed version
+
+-- | Convert this type to the unboxed version
 reconUnboxType :: Region -> Type -> Type
-reconUnboxType r1 (TData v [r2@(TVar KRegion _)])
-	| r1 == r2
-	= TData (reconUnboxType_bind (Var.bind v)) []
+reconUnboxType r1 tt
+	| Just (v, k, [r2@(TVar KRegion _)])	
+			<- takeTData tt
+	, r1 == r2
+	= makeTData 
+		(reconUnboxType_bind (Var.bind v)) 
+		KData
+		[]
+
 	
 reconUnboxType_bind bind
  = case bind of
@@ -648,15 +659,15 @@ reconOpApp tt op xs
 	, [t1, t2]	<- map (t4_2 . reconX tt) xs
 	, isUnboxedNumericType t1
 	, t1 == t2
-	= (TData primTBoolU [], pure)
+	= (makeTData primTBoolU KData [], pure)
 
 	-- boolean operators
 	| elem op [OpAnd, OpOr]
-	, [t1, t2]	<- map (t4_2 . reconX tt) xs
-	, TData v []	<- t1
+	, [t1, t2]		<- map (t4_2 . reconX tt) xs
+	, Just (v, k, [])	<- takeTData t1
 	, v == primTBoolU
 	, t1 == t2
-	= (TData primTBoolU [], pure)
+	= (makeTData primTBoolU KData [], pure)
 	
 	| otherwise
 	= panic stage
@@ -666,7 +677,7 @@ reconOpApp tt op xs
 -- | Checks whether a type is an unboxed numeric type
 isUnboxedNumericType :: Type -> Bool
 isUnboxedNumericType tt
- 	| TData v []	<- tt
+ 	| Just (v, _, []) <- takeTData tt
 	, elem v 	[ primTInt8U, primTInt16U, primTInt32U, primTInt64U
 			, primTFloat32U, primTFloat32U]
 	= True
@@ -789,17 +800,17 @@ reconG tt gg@(GExp p x)
 
 	effTest	
 		-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
-		| WVar{}	<- p
+		| WVar{}		<- p
 		= TBot KEffect
 
 		-- If the type of the object has no regions we assume that
 		--	it is constant, so matching against it generates no effects.
-		| TData vD []	<- tX_shape
+		| Just (vD, _, [])	<- takeTData tX_shape
 		= TBot KEffect
 
 		-- matching against some object cause a read effect on its primary region.
-		| TData vD (TVar KRegion rH : _)
-				<- tX_shape
+		| Just (vD, _, TVar KRegion rH : _)
+					<- takeTData tX_shape
 		= TEffect primRead [TVar KRegion rH]
 
 		-- object does not have a primary region, assume it is constant

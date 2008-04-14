@@ -29,7 +29,6 @@ import qualified Data.Set	as Set
 stage	= "Core.Util.Pack"
 
 
-
 -- | Pack a type into standard form.
 packT :: Type -> Type
 packT tt
@@ -84,16 +83,33 @@ packT1 tt
 	 	fs'	= restrictBinds t1' fs
 	    in	makeTFetters t1' fs'
 
+
+	-- try and flatten out TApps into their specific constructors
+{-	TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
+	 -> 	TFunEC t1 t2 eff clo
+	    
+	TApp (TCon (TyConData { tyConName, tyConKind })) t2
+	 ->	TData tyConName [t2]
+	
+	TApp (TData k v ts) t2
+	 ->	TData v (ts ++ [t2])
+-}	 
+
 	TApp t1 t2
 	 -> let	t1'	= packT1 t1
 	 	t2'	= packT1 t2
-	    in	TApp t1' t2'
+		
+		-- lift fetters above args
+		(t1_lift, fss1)	= slurpTFetters t1'
+		(t2_lift, fss2) = slurpTFetters t2'
+
+	    in	makeTFetters (TApp t1_lift t2_lift) (fss1 ++ fss2)
+
 	    
+	-- sums
 	TSum k ts
 	 -> makeTSum k $ nub $ map packT1 ts
-	 
-	-- mask
-	
+	 	
 	-- mask of bottom is just bottom
 	TMask k (TBot k1) t2
 	 	| k == k1
@@ -119,11 +135,13 @@ packT1 tt
 	TVar k v	-> tt
 	TVarMore k v t	-> TVarMore k v (packT1 t)
 
+	TCon{}		-> tt
+
 	TBot k		-> tt
 	TTop k 		-> tt
 	 
 	-- data
-	TData v ts
+{-	TData v ts
 	 -> let	ts2	= map packT1 ts
 
 		-- lift fetters above args
@@ -132,7 +150,7 @@ packT1 tt
 			$ map slurpTFetters ts2
 
 	    in	makeTFetters (TData v ts3) (concat fss)
-	    
+-}
 	TFunEC t1 t2 eff clo
 	 -> let (t1',  fs1)	= slurpTFetters $ packT1 t1
 	  	(t2',  fs2)	= slurpTFetters $ packT1 t2
@@ -149,17 +167,25 @@ packT1 tt
 	    
 	-- effect
 	-- crush EReadH on the way
-	TEffect v [TData vD (TVar KRegion r : ts)]
-	 | v == primReadH
-	 -> TEffect primRead [TVar KRegion r]
+	TEffect v [t1]
+	 -> let result
+	 		| Just (vD, k, (TVar KRegion r : ts)) <- takeTData t1
+			, v == primReadH
+			= TEffect primRead [TVar KRegion r]
+			
+			| Just (vD, k, [])	<- takeTData t1
+			, v == primReadH
+			= TBot KEffect
 	
-	TEffect v [TData vD []]
-	 | v == primReadH
-	 -> TBot KEffect
+			| Just (vD, k, ts)	<- takeTData t1
+			= TEffect v [makeTData v k $ map packT1 ts]
 
+			| otherwise
+			= TEffect v [packT1 t1]
+	    in	result
+	    
 	TEffect v ts
-	 -> let	ts'	= map packT1 ts
-	    in	TEffect v ts'
+	 -> TEffect v (map packT1 ts)
 	    
 	-- closure
 	TFree v (TBot KClosure)
@@ -178,23 +204,30 @@ packT1 tt
 	TTag v	-> tt
 	
 	-- class
-	-- crush LazyH on the way
-	TClass v [TData vD (TVar KRegion r : ts)]
-	 | v == primLazyH
-	 -> TClass primLazy [TVar KRegion r]
 
-	-- crush MutableT on the way
-	TClass v [t@(TData{})]
-	 | v == primMutableT
-	 -> let	(rs, ds)	= slurpVarsRD t
-	    in TWitJoin 
-	    	$ (   map (\r -> TClass primMutable  [r]) rs
-		   ++ map (\d -> TClass primMutableT [d]) ds)
+	TClass v [t1]
+	 -> let result
+			-- crush LazyH on the way
+	 		| Just (vD, k, (TVar KRegion r : ts))	<- takeTData t1
+			, v == primLazyH
+			= TClass primLazy [TVar KRegion r]
+
+			-- crush MutableT on the way
+			| Just _		<- takeTData t1
+			, v == primMutableT
+			, (rs, ds)		<- slurpVarsRD t1
+			= TWitJoin 
+			    	$ (   map (\r -> TClass primMutable  [r]) rs
+				   ++ map (\d -> TClass primMutableT [d]) ds)
+
+			| otherwise
+			= TClass v [packT1 t1]
+	   in	result
 
 	TClass v ts
-	 -> let	ts'	= map packT1 ts
-	    in	TClass v ts'
-	
+	 -> TClass v (map packT1 ts)
+
+
 	TWitJoin ts
 	 -> makeTWitJoin (map packT1 ts)
 	
@@ -212,28 +245,27 @@ slurpTFetters tt		= (tt, [])
 -- | Do one round of packing on this kind
 packK1 :: Kind -> Kind
 packK1 kk
- = case kk of
 	-- crush LazyH on the way
-	KClass v [TData vD (TVar KRegion r : ts)]
-	 | v == primLazyH
-	 -> KClass primLazy [TVar KRegion r]
-	
+	| KClass v [t1]	<- kk
+	, Just (vD, k, TVar KRegion r : ts)	<- takeTData t1
+	, v == primLazyH
+	= KClass primLazy [TVar KRegion r]
+
+
 	-- crush MutableT on the way
-	KClass v [t@(TData{})]
-	 | v == primMutableT
-	 -> let	(rs, ds)	= slurpVarsRD t
-	    in makeKWitJoin 
+	| KClass v [t1]	<- kk
+	, Just _			<- takeTData t1
+	, v == primMutableT
+	, (rs, ds)			<- slurpVarsRD t1
+	= makeKWitJoin 
 	    	$ (   map (\r -> KClass primMutable  [r]) rs
 		   ++ map (\d -> KClass primMutableT [d]) ds)
-		
-
- 	KClass v ts
-	 -> let	ts'	= map packT1 ts
-	    in	KClass v ts'
-
-
+	
+	| KClass v ts	<- kk
+	= KClass v (map packT1 ts)
 	    
-	_ -> kk
+	| otherwise
+	= kk
 
 
 
@@ -299,14 +331,15 @@ inlineTWheresMapT sub block tt
 	 	Just t	-> inlineTWheresMapT sub (Set.insert v block) t
 		_	-> tt
 		
-    	TTop k			-> tt
-	TBot k			-> tt
+    	TTop{}			-> tt
+	TBot{}			-> tt
+    	TCon{}			-> tt
     
 	TApp t1 t2		-> TApp (down t1) (down t2)
 
 	-- data
 	TFunEC t1 t2 eff clo	-> TFunEC (down t1) (down t2) (down eff) (down clo)
-	TData v ts		-> TData v (map down ts)
+--	TData v ts		-> TData v (map down ts)
 	
 	-- effect
 	TEffect  v ts		-> TEffect v (map down ts)

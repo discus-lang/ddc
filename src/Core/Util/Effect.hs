@@ -45,16 +45,26 @@ crushEffs tt
 --	duplicated in Core.Crush
 slurpDataRT :: Type -> [Type]
 slurpDataRT tt
- = case tt of
-	TFun{}			-> []
- 	TFunEC{}		-> []
-	TData v ts		-> catMap slurpDataRT ts
+	| TFun{}		<- tt	= []
 
-	TVar KRegion _		-> [tt]
-	TVar KData   _		-> [tt]
-	TVar _  _		-> []
+	| TFunEC{}		<- tt	= []
+
+	| TApp{}		<- tt
+	, Just (v, k, ts)	<- takeTData tt
+	= catMap slurpDataRT ts
 	
-	_ 	-> panic stage
+	| TFun{}		<- tt	= []
+	
+ 	| TFunEC{}		<- tt	= []
+	
+	| TVar KRegion _ 	<- tt	= [tt]
+	| TVar KData   _	<- tt	= [tt]
+	| TVar _  _		<- tt	= []
+	
+	| TCon{}		<- tt	= []
+	
+	| otherwise			
+	= panic stage
 		$  "slurpDataRT: no match for " % tt % "\n"
 
 

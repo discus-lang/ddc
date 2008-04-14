@@ -829,9 +829,8 @@ instance Rename Type where
 instance Rename TyCon where
  rename tc
   = case tc of
-  	TyConFun { tyConName }
-	 -> do	v	<- lbindN NameType tyConName
-	 	return	$ tc { tyConName = v }
+  	TyConFun{}
+	 -> do 	return	tc
 		
 	TyConData { tyConName }
 	 -> do	v	<- lookupN NameType tyConName

@@ -162,23 +162,24 @@ lintP	tt _
 --	
 lintMainType :: Table -> Type -> LintM ()
 lintMainType table tt
- = case tt of
-
+	
 	-- All witnesses passed to main need to be available at top level.
- 	TContext k t
-	  | elem k (map kindOfType $ Map.elems $ tableTypes table)	
- 	  -> lintMainType table t
-
-	  | otherwise
-	  -> do	addError $ "Context of main function " % k % " is not available at top level.\n"
-		return ()
+ 	| TContext k t		<- tt
+	= if elem k (map kindOfType $ Map.elems $ tableTypes table)	
+ 		then lintMainType table t
+		else do	addError $ "Context of main function " % k % " is not available at top level.\n"
+			return ()
 	
 	-- main must have type () -> ()
-	TFunEC (TData v1 []) (TData v2 []) eff clo
-	 | v1 == Var.primTUnit && v2 == Var.primTUnit
-	 -> return ()
-	 
-	_ -> do	addError 
+	| TFunEC t1 t2 eff clo	<- tt
+	, Just (v1, _, [])	<- takeTData t1
+	, Just (v2, _, [])	<- takeTData t2
+	, v1 == Var.primTUnit
+	, v2 == Var.primTUnit
+	= return ()
+	
+	| otherwise
+	= do	addError
 			$ "Main function does not have type () -> ().\n"
 			% "    T[main] = " % tt	% "\n"
 		return ()
@@ -374,6 +375,9 @@ lintT tt (TVar k v)
 	= addError
 	  	$ "Type variable " % v % " is not in scope.\n"
 
+lintT tt (TCon tyCon)
+ =	return ()
+
 -- BUGS: ignore the constraint for now
 lintT tt (TVarMore k v t)
  =	lintT tt (TVar k v)
@@ -384,9 +388,6 @@ lintT tt (TTop k)
 lintT tt (TBot k)
  = 	return ()
 		
-lintT tt (TData v ts)
- = do	mapM_ (lintT tt) ts
- 
 lintT tt (TFunEC t1 t2 eff clo)
  = do	lintT tt t1
  	lintT tt t2

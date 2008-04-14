@@ -247,9 +247,8 @@ followT table tt
 instance Monad m => TransM m TyCon where
  transZM table tt
   = case tt of
-  	TyConFun { tyConName }
-	 -> do	v'	<- transZM table tyConName
-	 	return	$ tt { tyConName = v' }
+  	TyConFun{}
+	 -> do	return tt
 		
 	TyConData { tyConName }
 	 -> do	v'	<- transZM table tyConName

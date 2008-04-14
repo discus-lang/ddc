@@ -23,6 +23,7 @@ module Core.Exp
 	, Label		(..)	-- labels in guards
 
 	, Type 		(..)	-- core types
+	, TyCon		(..)	-- type constructors
 	, Fetter	(..)
 	, varOfFetter
 
@@ -269,6 +270,21 @@ data Label
 	deriving (Show, Eq)
 
 
+-- Kind --------------------------------------------------------------------------------------------
+-- Kind expressions
+
+data Kind	
+	= KNil
+
+	| KData						-- ^ the kind of value types  (change to KValue)
+	| KRegion
+	| KEffect
+	| KClosure
+	| KFun 		Kind	Kind
+	| KClass	Var	[Type]
+
+	| KWitJoin	[Kind]				-- ^ joining of witness kinds
+	deriving (Show, Eq)
 
 
 -- Type --------------------------------------------------------------------------------------------
@@ -295,6 +311,7 @@ data Type
 	| TSum		Kind 	[Type]			-- ^ A summation \/ lub.
 	| TMask		Kind	Type 	Type
 
+	| TCon		TyCon
 	| TVar		Kind 	Var			-- ^ a variable of the given kind
 	| TVarMore	Kind 	Var	Type		-- ^ an effect/closure variable with a :> bound
 
@@ -302,7 +319,7 @@ data Type
 	| TBot		Kind
 
 	-- data
-	| TData		Var [Type]			-- ^ A data constructor
+--	| TData		Var [Type]			-- ^ A data constructor
 	| TFunEC	Type Type Effect Closure	-- ^ A function with an effect and closure.
 	| TFun		Type Type			-- ^ Functions without effect or closure information
 							--	Used for operational types.
@@ -324,6 +341,19 @@ data Type
 	| TWild		Kind				-- ^ Type wildcard. 
 							--	Will unify with anything of the given kind.
 	deriving (Show, Eq)
+
+
+-- | Type constructors
+data TyCon
+	= TyConFun
+		{ tyConKind	:: Kind }
+
+	| TyConData
+		{ tyConName	:: Var
+		, tyConKind	:: Kind }
+
+	deriving (Show, Eq)
+
 
 data Fetter
 	= FWhere	Var Type
@@ -351,24 +381,6 @@ varOfBind (BMore v t)	= v
 -- | order TBinds by their var so we can use them as Set and Map keys.
 instance Ord Bind where
  compare b1 b2		= compare (varOfBind b1) (varOfBind b2)
-
-
--- Kind --------------------------------------------------------------------------------------------
--- Kind expressions
-
-data Kind	
-	= KNil
-
-	| KData						-- ^ the kind of value types  (change to KValue)
-	| KRegion
-	| KEffect
-	| KClosure
-	| KFun 		Kind	Kind
-	| KClass	Var	[Type]
-
-	| KWitJoin	[Kind]				-- ^ joining of witness kinds
-	deriving (Show, Eq)
-
 
 -- Annot -------------------------------------------------------------------------------------------
 -- Expression annotations
