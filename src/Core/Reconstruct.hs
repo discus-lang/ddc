@@ -898,6 +898,19 @@ applyTypeT table (TForall (BVar v) k t1) t2
 	| k == kindOfType t2
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
+	| otherwise
+	= freakout stage
+		( "applyTypeT: Kind error in type application.\n"
+		% "    caller = " % tableCaller table	% "\n"
+		% "    in application:\n"
+			%> "(\\/ " % parens (v % " :: " % k) % " -> ...)" <> parens t2 %"\n"
+		% "\n"
+		% "        type: " % t2		% "\n"
+		% "    has kind: " % kindOfType t2 	% "\n\n"
+		
+		% "    expected: " % k	% "\n\n")
+		$ Nothing
+
 applyTypeT table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == KClosure
@@ -914,7 +927,7 @@ applyTypeT table (TForall (BMore v tB) k t1) t2
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
 		% "    caller = " % tableCaller table % "\n"
-		% "   in application: (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")" % "\n"
+		% "    in application: (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")" % "\n"
 		% "\n"
 		% "        type: "  % t2 % "\n"
 		% "\n"
