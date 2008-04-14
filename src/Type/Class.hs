@@ -50,7 +50,7 @@ import qualified Data.Array.IO	as Array
 import Data.Array.IO
 
 -----
--- stage	= "Type.Squid.Class"
+stage	= "Type.Squid.Class"
 
 -- | Return the cids of all the children of this class.
 classChildren :: Class -> [ClassId]
@@ -204,14 +204,15 @@ addToClass cid_ src t
 	return ()
 
 addToClass2 cid src t c
- = case c of
- 	ClassNil	
-	 -> let Just k	= takeKindOfType t
-	    in  addToClass3 cid src t (classInit cid k)
-
-	Class{}		
-	 -> addToClass3 cid src t c
+	| ClassNil	<- c
+	, Just k	<- takeKindOfType t
+	= addToClass3 cid src t (classInit cid k)
 	
+	| Class { classKind } <- c
+	, Just k	<- takeKindOfType t
+	, k == classKind
+	= addToClass3 cid src t c
+
 addToClass3 cid src t c@Class{}
  = do 	activateClass cid
  	return	$ c	{ classNodes	= (t, src) : classNodes c
@@ -355,14 +356,15 @@ lookupVarToClassId v
 	  -> do	cid'	<- sinkClassId cid
 	  	return	$ Just cid'
 	 
-	 
-  -- | Merge two classes by concatenating their queue and node list
+-- Merge ------------------------------------------------------------------------------------------	 
+-- | Merge two classes by concatenating their queue and node list
 --	The one with the lowesed classId gets all the constraints and the others 
 --	are updated to be ClassFowards which point to it.
 mergeClasses
 	:: [ClassId] 
 	-> SquidM ClassId
 
+-- if there's just a single cids then there's nothing to do
 mergeClasses [cid_]
  = do	cid'		<- sinkClassId cid_
    	return	cid'
@@ -370,34 +372,41 @@ mergeClasses [cid_]
 mergeClasses cids_
  = do	
 	-- Sink the cids and lookup their classes.
- 	cids		<- liftM nub $ mapM (\cid -> sinkClassId cid) cids_
-
-	cs		<- liftM (map (\(Just c) -> c))
-			$  mapM  (\cid -> lookupClass cid)
-			$  cids
+ 	cids	<- liftM nub $ mapM sinkClassId cids_
+	Just cs	<- liftM sequence  $ mapM lookupClass cids
+			
+	-- Make sure all the classes have the same kind	
+	let ks	= map (\c@Class { classKind } -> classKind) cs
 	
-	-- The class with the lowest cid gets all the items.
+	case nub ks of
+	 [k]	-> mergeClasses2 cids cs 
+	 _	-> panic stage
+			$ "mergeClasses: classes have differing kinds\n"
+			% "    cids = " % cids 	% "\n"
+			% "    ks   = " % ks	% "\n"
+	
+mergeClasses2 cids cs
+ = do	-- The class with the lowest cid gets all the items.
 	let Just cidL	= takeMinimum cids
 	Just cL		<- lookupClass cidL
 
-	let cL'		= cL 	
-			{ classNodes	= concat $ map classNodes cs
-			, classType	= Nothing
+	let cL'	= cL 	
+		{ classNodes	= concat $ map classNodes cs
+		, classType	= Nothing
 
-			, classQueue	=  nub
-					$  catMaybes
-					$  map (\t -> case t of
-							TBot _	-> Nothing
-							_	-> Just t)
-					$  concat (map classQueue cs)
-					++ concat (map (maybeToList . classType) cs)
+		, classQueue	=  nub
+				$  catMaybes
+				$  map (\t -> case t of
+						TBot _	-> Nothing
+						_	-> Just t)
+				$  concat (map classQueue cs)
+				++ concat (map (maybeToList . classType) cs)
 
-			, classFetters	
-				= concat $ map classFetters cs
+		, classFetters	
+			= concat $ map classFetters cs
 
-			, classFettersMulti
-				= Set.unions $ map classFettersMulti cs  }
-
+		, classFettersMulti
+			= Set.unions $ map classFettersMulti cs  }
 
 	updateClass cidL cL'
 	activateClass cidL
@@ -417,10 +426,15 @@ mergeClassesT	 ts@(t:_)
  	let Just cids	= sequence 
 			$ map takeCidOfTClass ts
 
-	cid'		<- mergeClasses cids
-	let Just k	= takeKindOfType t
-		
-	return		$ TClass k cid'
+	let Just ks	= sequence $ map takeKindOfType ts
+
+	case nub ks of
+	 [k] ->	do	
+		cid'	<- mergeClasses cids
+		return	$ TClass k cid'
+	
+	 _ 	-> panic stage
+		$ "mergeClassesT: " % ks % "\n"
 
 
 -- | Clear the set of active classes.

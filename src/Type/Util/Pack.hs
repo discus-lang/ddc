@@ -62,7 +62,7 @@ packType_noLoops tt
 
 packType :: Type -> (Type, [(Type, Type)])
 packType tt
- = case takeKindOfType tt of
+ = case liftM resultKind $ takeKindOfType tt of
  	Just KData	-> packData   tt
 	Just KEffect	-> packEffect tt
 	 
@@ -217,11 +217,11 @@ packTypeLs ld ls tt
 	TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
 	 -> 	return	$ TFun t1 t2 eff clo
 	    
---	TApp (TCon (TyConData { tyConName })) t2
---	 ->	return	$ TData tyConName [t2]
-	 
---	TApp (TData v ts) t2
---	 ->	return	$ TData v (ts ++ [t2])
+	TApp (TCon (TyConData { tyConName, tyConKind })) t2
+	 ->	return	$ TData tyConKind tyConName [t2]
+	
+	TApp (TData k v ts) t2
+	 ->	return	$ TData k v (ts ++ [t2])
 	 
 	TApp t1 t2
 	 -> do 	t1'	<- packTypeLs ld ls t1
@@ -427,7 +427,7 @@ inlineFs fs
 
 	-- a substitutions with only data fetters.
 	let subD = Map.filterWithKey
-			(\t x -> (let Just k = takeKindOfType t in k) == KData)
+			(\t x -> (let Just k = takeKindOfType t in resultKind k) == KData)
 			sub
 
 	-- Don't substitute closures and effects into data, it's too hard to read.				
@@ -437,7 +437,7 @@ inlineFs fs
 	let subRHS t1 t2
 		= do	tsLoops	<- get
 			if null tsLoops
-			 then case takeKindOfType t1 of
+			 then case liftM resultKind $ takeKindOfType t1 of
 				Just KData	-> subTT_cutM subD (Set.singleton t1) t2
 				Just _		-> subTT_cutM sub  (Set.singleton t1) t2
 

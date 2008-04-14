@@ -13,13 +13,17 @@ import Data.Map			(Map)
 import Util
 import Type.Exp
 import Type.Base
+import Type.Util
 import Type.State
 import Type.Class
 import Type.Plate.Collect
 import Type.Plate.Trans
 
+import Shared.Pretty
 import Shared.Error
 import Debug.Trace
+
+import qualified Debug.Trace	as Trace
 
 stage	= "Type.Trace"
 
@@ -88,7 +92,8 @@ loadTypeNode2 cid c
 		% "    nodes:\n" % "\n" %!% classNodes c % "\n"
 
 	-- a regular type node
-	| Class { classType = Just t}		<- c
+	| Class { classType = Just t
+		, classKind = k } 	<- c
 	= do
 		-- make sure all the cids are canconical
 		(t': tfs)	<- refreshCids (t : classFetters c)
@@ -115,8 +120,6 @@ loadTypeNode2 cid c
 				 -> t2
 				_	-> t'
 				
-		k		<- kindOfCid cid
-
 		var		<- makeClassName cid
 		quantVars	<- gets stateQuantifiedVars
 	
@@ -127,7 +130,7 @@ loadTypeNode2 cid c
 			= return $ fs ++ fsMulti
 	
 			| otherwise
-			= case k of
+			= case resultKind k of
 				KData	-> return $ FLet  (TClass k cid) tX : (fs ++ fsMulti)
 				_	-> return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
 		

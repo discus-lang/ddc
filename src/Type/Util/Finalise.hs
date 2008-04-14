@@ -64,6 +64,7 @@ finaliseT' bound def tt
 	TSum  k ts	-> makeTSum k (map down ts)
 	TMask k t1 t2	-> makeTMask k (down t1) (down t2)
 
+	TCon{}		-> tt 
 	TVar  k v
 	 	| elem k [KEffect, KClosure]
 		, not $ Map.member v bound	-> TBot k
@@ -77,6 +78,7 @@ finaliseT' bound def tt
 	TTop{}			-> tt
 	TBot{}			-> tt
 	
+	TApp t1 t2		-> TApp (down t1) (down t2)
 	TData k v ts		-> TData k v (map down ts)
 	TFun t1 t2 eff clo 	-> TFun (down t1) (down t2) (down eff) (down clo)
 	

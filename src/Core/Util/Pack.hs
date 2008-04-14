@@ -302,19 +302,21 @@ inlineTWheresMapT sub block tt
     	TTop k			-> tt
 	TBot k			-> tt
     
+	TApp t1 t2		-> TApp (down t1) (down t2)
+
 	-- data
-	TFunEC t1 t2 eff clo	-> TFunEC	(down t1) (down t2) (down eff) (down clo)
-	TData v ts		-> TData v 	(map down ts)
+	TFunEC t1 t2 eff clo	-> TFunEC (down t1) (down t2) (down eff) (down clo)
+	TData v ts		-> TData v (map down ts)
 	
 	-- effect
-	TEffect  v ts		-> TEffect v 	(map down ts)
+	TEffect  v ts		-> TEffect v (map down ts)
  	
 	-- closure
-	TFree v t		-> TFree v 	(down t)
+	TFree v t		-> TFree v (down t)
 	TTag v			-> tt
 
 	-- class
-	TClass v ts		-> TClass v 	(map down ts)
+	TClass v ts		-> TClass v (map down ts)
 
 	TWild k			-> tt
 	    

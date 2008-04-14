@@ -245,6 +245,11 @@ instance FreeVars Type where
 	TBot k		-> Set.empty
 	TTop k		-> Set.empty
 
+	TApp t1 t2
+	 -> unions
+		[ freeVars t1
+		, freeVars t2 ]
+
 	-- data
 	TData v xs
 	 -> unions

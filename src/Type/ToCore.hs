@@ -105,6 +105,8 @@ toCoreT' table tt
 
 	T.TTop k		-> C.TTop (toCoreK k)
 
+	T.TApp t1 t2		-> C.TApp (toCoreT t1) (toCoreT t2)
+
 	-- data
 	T.TData k v ts		-> C.TData v (map toCoreT ts)
 	T.TFun t1 t2 eff clo	-> C.TFunEC (down t1) (down t2) (down eff) (down clo)
@@ -125,7 +127,10 @@ toCoreT' table tt
 	-- wildcards	
 	T.TWild k		-> C.TWild (toCoreK k)
 
-	_ -> panic stage $ "toCoreT: failed to convert " ++ show tt
+	_ 	-> panic stage 
+			$ "toCoreT: failed to convert " % tt 	% "\n"
+			% "    tt = " % show tt			% "\n"
+	
 
 -----
 toCoreK :: T.Kind -> C.Kind

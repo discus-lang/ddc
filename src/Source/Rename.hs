@@ -144,15 +144,18 @@ instance Rename (Top SourcePos) where
 	 -> do 	v'	<- lookupN NameClass v
 	 	return	$ PClass sp v' k
 
-	PClassDict sp v vs inh sigs
+	PClassDict sp v vks inh sigs
 	 -> do 	v'	<- lbindN NameClass v
 
 		(vs', inh', sigs')
 		 <- local
-		 $ do	vs'	<- mapM (lbindN NameType) vs
+		 $ do	let (vs, ks)	= unzip vks
+			vs'		<- mapM (lbindN NameType) vs
+			let vks'	= zip vs' ks
+			
 			inh'	<- mapM renameClassInh inh
 			sigs'	<- mapM renameClassSig sigs
-			return	(vs', inh', sigs')
+			return	(vks', inh', sigs')
 	
 		return	$ PClassDict sp v' vs' inh' sigs'
 

@@ -110,6 +110,11 @@ visibleRsT tt
 	TBot{}	-> Set.empty
 
 	-- data
+	TApp t1 t2
+	 -> Set.unions
+		[ visibleRsT t1
+		, visibleRsT t2 ]
+
 	TData k v ts
 	 -> Set.unions $ map visibleRsT ts
 

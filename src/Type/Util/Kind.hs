@@ -95,8 +95,10 @@ takeKindOfType' tt
 		case k1 of
 		 KFun k11 k12
 		  | k2 == k11	-> return k12
-		  | otherwise 	-> kindOfType_freakout t1 k1 t2 k2
-	    
+		 
+		 _		-> kindOfType_freakout t1 k1 t2 k2
+	              
+	
 	TCon tc		-> Just $ tyConKind tc
 
 	TData k v ts	

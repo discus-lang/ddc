@@ -138,7 +138,7 @@ exportAll getType topNames ps psDesugared_ psCore vsNoExport
 	++ "\n"
 	
 	++ "-- Class dictionaries\n"
-	++ (concat [pprStrPlain p | p@S.PClassDict{}		<- ps])
+	++ (concat [pprStrPlain p | p@D.PClassDict{}		<- psDesugared])
 	++ "\n"
 
 	++ "-- Class instances\n"

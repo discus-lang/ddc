@@ -12,10 +12,12 @@ foo3	:: Num a => Eq a => a -> a -> Bool
 
 main ()	= putStr "foo"
 {-
-class Functor f where
- fmap :: (a -> b) -> (f :: * -> *) a -> (f :: * -> *) b
-
-instance Functor (List :: % -> * -> *) where
+class Functor (f :: * -> *) where
+ fmap 	:: (a -(!e1 $c1)> b) -> (f :: * -> *) a -(!e2 $c2)> (f :: * -> *) b
+	:- !e2 = !e1
+	,  $c1 = $c1
+	
+instance Functor List where
  fmap f []	= []
  fmap f (x:xs)	= f x : fmap f xs
 -}

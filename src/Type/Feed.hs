@@ -115,12 +115,12 @@ feedType
 
 feedType mParent t
  = do	t'	<- feedType' mParent t
-{- 	Debug.Trace.trace
+{-	Debug.Trace.trace
 		(pprStr [PrettyTypeKinds]
 			$ "feedType\n"
 			% "    t  = " % t % "\n"
 			% "    t' = " % t' % "\n") 
--}
+		$ -}
 	return t'
 
 feedType'	mParent t

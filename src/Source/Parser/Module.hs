@@ -303,12 +303,28 @@ pTopClass
  <|>	-- class CON VAR.. where { SIG ; .. }
 	do	tok	<- pTok K.Class
 		con	<- liftM vNameW $ pCon
-		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
+		vks	<- Parsec.many pVarKind
 		pTok K.Where
 		sigs	<- pCParen $ Parsec.sepEndBy1 pTopClass_sig pSemis
 
-		return	$ PClassDict (spTP tok) con vars [] sigs
-		
+		return	$ PClassDict (spTP tok) con vks [] sigs
+
+-- parse a var with optional kind
+pVarKind :: Parser (Var, Kind)
+pVarKind 
+ = 	-- (VAR :: KIND)
+	(pRParen $ do	
+		var	<- liftM (vNameDefaultN NameType) pVar
+		pTok K.HasType
+		kind	<- pKind
+		return	(var, kind))
+
+	-- VAR
+ <|>	do	var	<- liftM (vNameDefaultN NameType) pVar
+		return	(var, KNil)
+
+
+
 
 -- VAR, .. :: TYPE
 pTopClass_sig :: Parser ([Var], Type)

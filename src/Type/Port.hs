@@ -65,6 +65,7 @@ slurpContraClassVarsT tt
 	TFetters fs t		-> slurpContraClassVarsT t
  	TFun t1 t2 eff clo	-> collectTClassVars t1 ++ slurpContraClassVarsT t2
 	TData{}			-> []
+	TApp{}			-> []
 	TVar{}			-> []
 	TClass{}		-> []
 	TError{}		-> []	

@@ -134,6 +134,12 @@ stripMonoFLetsT tt
 	TTop{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	
+	TApp t1 t2
+	 -> let	(t1', fsMono1)		= stripMonoFLetsT t1
+		(t2', fsMono2)		= stripMonoFLetsT t2
+	    in	( TApp t1' t2'
+		, fsMono1 ++ fsMono2)
+	
 	TData k v ts
 	 -> let (ts', fssMono)		= unzip $ map stripMonoFLetsT ts
 	    in	(TData k v ts', concat fssMono)

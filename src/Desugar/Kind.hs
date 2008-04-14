@@ -224,21 +224,30 @@ elabRegionsT t
 -- | Slurp kind constraints from the desugared module
 slurpConstraints :: Tree SourcePos -> Seq Constraint
 slurpConstraints ps
-	= Seq.fromList $ mapMaybe slurpConstraint ps
+	= Seq.fromList $ catMap slurpConstraint ps
 	
 slurpConstraint pp
  = case pp of
- 	PTypeKind sp v k	-> Just $ Constraint (KSSig sp) v k
+ 	PTypeKind sp v k	
+ 	 -> [Constraint (KSSig sp) v k]
+
+	PClassDict sp v ts context vts
+	 -> map (\(TVar k v) -> Constraint (KSClass sp) v (defaultKind v k)) ts
 
  	PData sp v vs ctors	
 	 -> let	k	= makeDataKind vs
 	        k'	= forcePrimaryRegion v k
-	     in	Just $ Constraint (KSData sp) v k'
+	    in	[Constraint (KSData sp) v k']
 
 
-	PEffect sp v k		-> Just $ Constraint (KSEffect sp) v k
-	PClass sp v k		-> Just $ Constraint (KSClass sp) v k
-	_			-> Nothing
+	PEffect sp v k	-> [Constraint (KSEffect sp) v k]
+	PClass sp v k	-> [Constraint (KSClass sp) v k]
+	_		-> []
+
+
+defaultKind v k
+ 	| k == KNil	= kindOfSpace $ Var.nameSpace v
+	| otherwise	= k 
 
 
 -- Make sure the kinds of data type constructors have their primary regions.

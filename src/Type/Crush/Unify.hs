@@ -20,12 +20,14 @@ import Shared.Error
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
 
+import Type.Location
 import Type.Exp
 import Type.Error
 import Type.State
 import Type.Util
 import Type.Class
 import Type.Dump
+import Type.Feed
 
 
 -----
@@ -105,10 +107,25 @@ crushUnifyClass3 cidT c
 
 	return True
 
------
--- Merge the nodes in this class.
---
-unifyClassMerge cidT c queue@(t:_)
+isTApp tt
+ = case tt of
+	TApp{}	-> True
+	_	-> False
+
+unifyClassMerge cidT c queue
+ = do	-- if one of the elements in the queue is a TApp then we'll need to break up
+	-- all the other elements into TApp form to get them through the unifier.
+	let hasTApp	= or $ map isTApp queue
+	let queue_decon	= if hasTApp 
+				then map deconstructT queue
+				else queue
+		
+	traceM $ "    queue_decon  = " % queue_decon % "\n"
+
+	unifyClassMerge2 cidT c queue_decon
+				
+
+unifyClassMerge2 cidT c queue@(t:_)
 	
 	-- ClassIds
 	| TClass k _	<- t
@@ -117,6 +134,24 @@ unifyClassMerge cidT c queue@(t:_)
 		cid		<- mergeClasses cids
 		return	$ TClass k cid
 
+
+	-- applications
+	| TApp t1 t2	<- t
+	, Just (t1s, t2s)
+		<- liftM unzip $ sequence
+		$ map (\x -> case x of
+				TApp t1 t2 	-> Just (t1, t2)
+				_		-> Nothing)
+		$ queue
+	= do
+		let ?src	= TSNil "Type.Crush.Unify/TApp"
+		Just t1s_fed	<- liftM sequence $ mapM (feedType Nothing) t1s
+		Just t2s_fed 	<- liftM sequence $ mapM (feedType Nothing) t2s
+
+		t1' <- mergeClassesT t1s_fed
+		t2' <- mergeClassesT t2s_fed
+		
+		return	$ TApp t1' t2'
 
 	-- functions
  	| TFun{}	<- t
@@ -205,7 +240,6 @@ unifyClassMerge cidT c queue@(t:_)
  	= do	addErrorConflict cidT c 
 		return (TError (kindOfType_orDie t) (classQueue c))
 
-
 -----------------------
 -- errorConflict
 --	This function is called by unifyClassCheck when it finds a problem
@@ -277,5 +311,23 @@ isShallowConflict t1 t2
 	| otherwise
 	= True
 
-
+-- Deconstruct a packed type into TApp form
+deconstructT :: Type -> Type
+deconstructT tt
+ = case tt of
+	TData k v ts
+	 -> makeTApp (TCon (TyConData v k) : map deconstructT ts)
+	
+	TApp t1 t2
+	 -> TApp (deconstructT t1) (deconstructT t2)
+	
+	TFun t1 t2 eff clo
+	 -> TFun (deconstructT t1) (deconstructT t2) eff clo
+	
+	_ -> tt
+	
+	
+	
+	
+	
 

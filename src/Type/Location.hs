@@ -37,8 +37,12 @@ stage	= "Type.Location"
 --	These are used for producing nice error messages when a type error is found during inference
 
 data TypeSource
+	-- A dummy typesource for hacking around
+	--	this shouldn't be present in deployed code.
+	= TSNil	String
+	
 	-- These are positions from the actual source file.
-	= TSV SourceValue			-- ^ Constraints on value types
+	| TSV SourceValue			-- ^ Constraints on value types
 	| TSE SourceEffect			-- ^ Constraints on effect types
 	| TSC SourceClosure			-- ^ Constraints on closure types
 	| TSU SourceUnify			-- ^ Why types were unified
@@ -49,6 +53,7 @@ data TypeSource
 	deriving (Show, Eq)
 
 instance Pretty TypeSource PMode where
+ ppr (TSNil str) = "TSNil " % ppr str
  ppr (TSV sv)	= "TSV " % ppr sv
  ppr (TSE se)	= "TSE " % ppr se
  ppr (TSC sc)	= "TSC " % ppr sc

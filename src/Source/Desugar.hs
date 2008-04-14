@@ -138,10 +138,10 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 ->	returnJ	$ D.PClass sp v k
 
 	-- class dictionaries
- 	S.PClassDict sp vC vsParam context sigs
+ 	S.PClassDict sp vC vks context sigs
 	 -> do
 	 	-- convert type param vars into actual types
-		let tsParam	= map makeTVar vsParam
+		let tsParam	= map (\(v, k) -> TVar k v) vks
 
 	 	-- For each member function in this class, quantify the class
 		--	params and add the constraints.

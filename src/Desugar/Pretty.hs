@@ -9,9 +9,13 @@ where
 import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
+import Type.Exp
 import qualified Shared.Var	as Var
 import Shared.Pretty
+import Shared.Error
 import Util
+
+stage = "Desugar.Pretty"
 
 stripAnnot xx	= transformN (\n -> Nothing :: Maybe ()) xx
 
@@ -20,6 +24,9 @@ annot nn x
  = case nn of
  	Nothing	-> x
 	Just n	-> "[" % n % ": " % x % "]"
+
+pprVar_unqual var
+ = ppr $ var { Var.nameModule = Var.ModuleNil }
 
 -- Top -------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
@@ -76,9 +83,9 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	PClassDict nn v ts context sigs
 	 -> annot nn
-	 	("class " % v % " " % " " %!% map prettyTB ts % " where\n"
+	 	("class " % pprVar_unqual v % " " % " " %!% map pprPClassDict_varKind ts % " where\n"
 			% "{\n"
-			%> ("\n\n" %!% map (\(v', sig) -> v' % ("\n        :: " %> prettyTS sig 	% ";")) sigs)
+			%> ("\n\n" %!% map (\(v', sig) -> pprVar_unqual v' % ("\n        :: " %> prettyTS sig 	% ";")) sigs)
 			% "\n}\n")
 
 	PClassInst nn v ts context ss
@@ -110,6 +117,10 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 	 	(ppr x) % ";\n\n"
 
+pprPClassDict_varKind tt
+ = case tt of
+	TVar k v	-> parens $ v <> "::" <> k
+	_		-> panic stage "pprPClassDict_varKind: no match\n"
 
 -- CtorDef ---------------------------------------------------------------------
 instance Pretty a PMode => Pretty (CtorDef (Maybe a)) PMode where

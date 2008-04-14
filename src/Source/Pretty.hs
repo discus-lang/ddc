@@ -75,8 +75,8 @@ instance Pretty (Top a) PMode where
 	-- Classes
 	PClass _ v k	 -> "class " % v %>> " :: " % k % ";\n"
 
-	PClassDict _ c vs inh sigs
-	 -> "class " % c % " " % (" " %!% vs) % " where\n"
+	PClassDict _ c vks inh sigs
+	 -> "class " % c % " " % (punc " " $ map pprPClass_vk vks) % " where\n"
 		% "{\n"
 	 	%> ("\n\n" %!% 
 			(map (\(vs, t) -> ", " %!% 
@@ -107,6 +107,14 @@ instance Pretty (Top a) PMode where
 	
 	PInfix _ mode prec syms
 	 -> mode % " " % prec % " " % ", " %!% (map Var.name syms) % " ;\n"
+
+pprPClass_vk :: (Var, Kind) -> PrettyM PMode
+pprPClass_vk (v, k)
+ 	| elem k [KData, KRegion, KEffect, KClosure]
+	= ppr v
+	
+	| otherwise
+	= parens $ v <> "::" <> k
 
 
 prettyVTT ::	Var -> 	Type -> Maybe Type	-> PrettyM PMode

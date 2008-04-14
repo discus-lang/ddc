@@ -81,7 +81,7 @@ data Top a
 	| PClassDict					-- A class dictionary definition.
 		a
 		Var 					-- Class name.
-		[Var] 					-- Class parameters
+		[(Var, Kind)] 				-- Class parameters
 		[(Var, [Var])]  			-- Context.
 		[([Var], Type)]				-- Type sigs.
 

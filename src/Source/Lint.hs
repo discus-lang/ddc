@@ -1,24 +1,19 @@
 
 module Source.Lint
-(
-	lintFinal
-)
-
+	( lintFinal )
 where
 
------
-import	Util.Generics
+import Util.Generics
 import Util
 
------
-import	Shared.Error	(panic)
-import	qualified Shared.Var	as Var	
+import Shared.Error	(panic)
+import qualified Shared.Var	as Var	
 import Shared.Var		(NameSpace(..))
 import Shared.Base
 
-import	Source.Exp
-import	Type.Exp
-import	Type.Pretty
+import Source.Exp
+import Type.Exp
+import Type.Pretty
 
 -----
 stage	= "Source.Lint"
@@ -53,9 +48,7 @@ death x s
 	% "  snip = " 	% show x	% "\n"
 
 
------------------------
--- Top
---
+-- Top --------------------------------------------------------------------------------------------
 instance Show a => Lint (Top a) where
  lint xx
   = case xx of
@@ -84,18 +77,15 @@ instance Show a => Lint (Top a) where
 	PStmt s				-> PStmt	(lint s)
 	
 
------------------------
--- Stmt
---
+-- Stmt --------------------------------------------------------------------------------------------
 instance Show a => Lint (Stmt a) where
  lint s
   = case s of
 	SStmt sp x			-> SStmt sp (lint x)
 	SSig  sp v t			-> SSig  sp (lint v) (lint t)
 
------------------------
--- Exp
---
+
+-- Exp --------------------------------------------------------------------------------------------
 instance Show a => Lint (Exp a) where
  lint x
   = case x of
@@ -138,17 +128,15 @@ instance Show a => Lint (Exp a) where
 	 | not $ inSpaceV [v]		-> death x "XAt - var in wrong namespace."
 	 | otherwise			-> XAt sp   (lint v) (lint x)
 
------------------------
--- Alt
---
+
+-- Alt --------------------------------------------------------------------------------------------
 instance Show a => Lint (Alt a) where
  lint a
   = case a of				
 	ADefault sp x	-> ADefault sp (lint x)
+
 	
------------------------
--- Type
--- 
+-- Type --------------------------------------------------------------------------------------------
 instance Lint Type where
  lint tt
   = case tt of
@@ -187,11 +175,12 @@ instance Lint Type where
 		
 	_ 				-> death tt "unexpected constructor."
 
-	 
 
------------------------
--- Var
---
+-- Kind -------------------------------------------------------------------------------------------
+instance Lint Kind where
+ lint k	= k
+
+-- Var --------------------------------------------------------------------------------------------
 instance Lint Var where
  lint v
  	| Var.bind v		== Var.XNil

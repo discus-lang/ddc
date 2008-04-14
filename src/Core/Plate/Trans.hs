@@ -521,6 +521,11 @@ instance Monad m => TransM m Type where
 	 	t'		<- followT table t
 		transT table	$ TVarMore k v' t'
 
+	TApp t1 t2
+	 -> do	t1'		<- followT table t1
+		t2'		<- followT table t2
+		return		$ TApp t1' t2'
+
 	-- data
 	TData v ts
 	 -> do	v'		<- followV_free  table v
