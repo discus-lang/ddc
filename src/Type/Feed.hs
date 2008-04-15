@@ -202,13 +202,13 @@ feedType'	mParent t
 		returnJ		$ TClass KValue cidT
 
 		
-	TData KValue v ts
+	TData kData v ts
 	 -> do	let Just k	= takeKindOfType t
 	 	cidT		<- allocClass k
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidT)) ts
 
-		addNode cidT 	$ TData KValue v ts'
+		addNode cidT 	$ TData kData v ts'
 
 		returnJ		$ TClass k cidT
 
@@ -270,6 +270,7 @@ feedType'	mParent t
 	_  ->	freakout stage
 			( "feedType: cannot feed this type into the graph.\n"
 			% "   type    = " % t 		% "\n"
+			% "           = " % show t	% "\n"
 			% "   source  = " % ?src 	% "\n"
 			% "   mParent = " % mParent	% "\n")
 			$ return Nothing

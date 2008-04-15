@@ -210,7 +210,7 @@ takeTData tt
 kindOfSpace :: NameSpace -> Maybe Kind
 kindOfSpace space
  = case space of
- 	NameType	-> Just KData
+ 	NameType	-> Just KValue
 	NameRegion	-> Just KRegion
 	NameEffect	-> Just KEffect
 	NameClosure	-> Just KClosure
@@ -426,7 +426,7 @@ slurpVarsRD_split rs ds []	= (rs, ds)
 slurpVarsRD_split rs ds (t:ts)
  = case t of
  	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
- 	TVar   KData _		-> slurpVarsRD_split rs (t : ds) ts
+ 	TVar   KValue _		-> slurpVarsRD_split rs (t : ds) ts
 	
 	_			-> slurpVarsRD_split rs ds ts
 	
@@ -440,7 +440,7 @@ slurpVarsRD' tt
 	| TFun{}		<- tt	= []
 
 	| TVar KRegion _	<- tt	= [tt]
-	| TVar KData   _	<- tt	= [tt]
+	| TVar KValue   _	<- tt	= [tt]
 	| TVar _  _		<- tt	= []
 
 	| otherwise

@@ -566,7 +566,7 @@ reduceEffect1 rsConst tsConst esPure eff
 	= TBot KEffect
 	
 	-- reduce reads from known constant types
-	| TEffect v [TVar KData t]	<- eff
+	| TEffect v [TVar KValue t]	<- eff
 	, v == primReadT
 	, Set.member t rsConst
 	= TBot KEffect
@@ -595,7 +595,7 @@ slurpWitnessKind tt kk
 	 		= Set.insert r (tableConstRegions tt)}
 	
 	-- const types
-	KClass v [TVar KData t]
+	KClass v [TVar KValue t]
 	 | v == primConstT 
 	 -> tt { tableConstTypes
 	 		= Set.insert t (tableConstTypes tt)}

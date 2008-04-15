@@ -188,7 +188,7 @@ reconX tt (XLAM v k x)
 
 reconX tt exp@(XAPP (XLit l) (TVar KRegion r))
  = let	t	= case l of
- 			LString{}	-> makeTData primTStringU (KFun KRegion KData) [TVar KRegion r]
+ 			LString{}	-> makeTData primTStringU (KFun KRegion KValue) [TVar KRegion r]
 			_		-> panic stage
 					$  "reconX/XApp: non string constant applied to region\n"
 					%  "    exp = " % exp	% "\n"
@@ -544,20 +544,20 @@ reconX tt xx@(XPrim prim xs)
 
 reconX tt xx@(XLit l)
  = let	tLit = case l of
- 			LInt8{}		-> makeTData primTInt8U	 	KData	[]
- 			LInt16{}	-> makeTData primTInt16U 	KData	[]
- 			LInt32{}	-> makeTData primTInt32U 	KData	[]
- 			LInt64{}	-> makeTData primTInt64U	KData	[]
+ 			LInt8{}		-> makeTData primTInt8U	 	KValue	[]
+ 			LInt16{}	-> makeTData primTInt16U 	KValue	[]
+ 			LInt32{}	-> makeTData primTInt32U 	KValue	[]
+ 			LInt64{}	-> makeTData primTInt64U	KValue	[]
 
- 			LWord8{}	-> makeTData primTWord8U 	KData	[]
- 			LWord16{}	-> makeTData primTWord16U	KData	[]
- 			LWord32{}	-> makeTData primTWord32U	KData	[]
- 			LWord64{}	-> makeTData primTWord64U	KData	[]
+ 			LWord8{}	-> makeTData primTWord8U 	KValue	[]
+ 			LWord16{}	-> makeTData primTWord16U	KValue	[]
+ 			LWord32{}	-> makeTData primTWord32U	KValue	[]
+ 			LWord64{}	-> makeTData primTWord64U	KValue	[]
 
- 			LFloat32{}	-> makeTData primTFloat32U	KData	[]
- 			LFloat64{}	-> makeTData primTFloat64U	KData	[]
+ 			LFloat32{}	-> makeTData primTFloat32U	KValue	[]
+ 			LFloat64{}	-> makeTData primTFloat64U	KValue	[]
 
- 			LChar32{}	-> makeTData primTChar32U 	KData	[]
+ 			LChar32{}	-> makeTData primTChar32U 	KValue	[]
 			_		-> panic stage
 					$  "reconX/XLit: no match for " % xx % "\n"
 
@@ -580,7 +580,7 @@ reconBoxType r tt
 	| Just (v, k, _)	<- takeTData tt
 	= makeTData 
 		(reconBoxType_bind (Var.bind v)) 
-		(KFun KRegion KData) 
+		(KFun KRegion KValue) 
 		[r]
 
 reconBoxType_bind bind
@@ -612,7 +612,7 @@ reconUnboxType r1 tt
 	, r1 == r2
 	= makeTData 
 		(reconUnboxType_bind (Var.bind v)) 
-		KData
+		KValue
 		[]
 
 	
@@ -659,7 +659,7 @@ reconOpApp tt op xs
 	, [t1, t2]	<- map (t4_2 . reconX tt) xs
 	, isUnboxedNumericType t1
 	, t1 == t2
-	= (makeTData primTBoolU KData [], pure)
+	= (makeTData primTBoolU KValue [], pure)
 
 	-- boolean operators
 	| elem op [OpAnd, OpOr]
@@ -667,7 +667,7 @@ reconOpApp tt op xs
 	, Just (v, k, [])	<- takeTData t1
 	, v == primTBoolU
 	, t1 == t2
-	= (makeTData primTBoolU KData [], pure)
+	= (makeTData primTBoolU KValue [], pure)
 	
 	| otherwise
 	= panic stage

@@ -54,7 +54,7 @@ instance Pretty Top PMode where
 	 -> v % "\n"
 		% " =      " %> e  % ";\n"
 
-	PExtern v (TBot KData) tv
+	PExtern v (TBot KValue) tv
 	 -> "extern " % v % ";\n"
 	
 	PExtern v tv to
@@ -143,7 +143,7 @@ instance Pretty Exp PMode where
 	 | prettyFoldXLAM
 	 -> let -- split off vars with simple kinds
 	 	takeLAMs acc exp@(XLAM v k x)
-	 	  | elem k [KRegion, KEffect, KClosure, KData]	
+	 	  | elem k [KRegion, KEffect, KClosure, KValue]	
 		  		= takeLAMs (v : acc) x
 	 
 	 	takeLAMs acc exp
@@ -434,12 +434,12 @@ instance Pretty Type PMode where
 
 	TVar	k v	
 	 -> case k of
-	 	KData	-> "*" % v
+	 	KValue	-> "*" % v
 		_	-> ppr v
 
 	TVarMore k v t
 	 -> case k of
-	 	KData	-> "*" % sv v % " :> " % t 
+	 	KValue	-> "*" % sv v % " :> " % t 
 		_	-> sv v % " :> " % t
 
 	TCon tyCon
@@ -547,15 +547,14 @@ instance Pretty Bind PMode where
 instance Pretty Kind PMode where
  ppr xx
   = case xx of
-	KNil		-> ppr "KNil"
-	KData		-> ppr "*"
+	KNil		-> ppr "?"
+	KValue		-> ppr "*"
 	KRegion		-> ppr "%"
 	KEffect		-> ppr "!"
 	KClosure	-> ppr "$"
 	KFun k1 k2	-> k1 % " -> " % k2
 
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts
-
 	KWitJoin ks	-> "kjoin {" % "; " %!% ks % "}"
 
 

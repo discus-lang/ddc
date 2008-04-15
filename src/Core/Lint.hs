@@ -434,7 +434,7 @@ lintK tt kk
  	KNil	
 	 -> addError $ ppr "lintK: found a KNil"
 	
-	KData		-> return ()
+	KValue		-> return ()
 	KRegion		-> return ()
 	KEffect		-> return ()
 	KClosure	-> return ()

@@ -619,7 +619,7 @@ instance Monad m => TransM m Kind where
  transZM table kk
   = case kk of
 	KNil		-> return KNil
-  	KData 		-> return KData
+  	KValue 		-> return KValue
   	KRegion 	-> return KRegion
   	KEffect		-> return KEffect
   	KClosure	-> return KClosure

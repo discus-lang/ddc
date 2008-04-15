@@ -315,7 +315,7 @@ instance FreeVars Kind where
  freeVars kk
   = case kk of
  	KNil		-> Set.empty
-	KData		-> Set.empty
+	KValue		-> Set.empty
 	KRegion		-> Set.empty
 	KEffect		-> Set.empty
 	KClosure	-> Set.empty

@@ -241,7 +241,7 @@ lookupWitness vRegion vClass
 pushWitnessVK :: Var -> Kind -> ThreadM ()
 pushWitnessVK vWitness k
  	| KClass vClass [TVar kV vRE]	<- k
-	, elem kV [KRegion, KEffect, KData, KClosure]
+	, elem kV [KRegion, KEffect, KValue, KClosure]
 	= modify $ \s -> ((vClass, vRE), vWitness) : s
 	
 	| otherwise

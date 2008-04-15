@@ -227,7 +227,7 @@ makeCtor    objVar vData vsData (D.CtorDef _ ctorVar dataFields)
 		$ D.makeCtorType newVarN vData vsData ctorVar dataFields
 
 	let to	= C.unflattenFun (replicate (length argTs + 1) 
-		$ (C.makeTData objVar C.KData []))
+		$ (C.makeTData objVar C.KValue []))
 
 	return	$ C.PCtor ctorVar tv to
 

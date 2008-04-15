@@ -42,9 +42,8 @@ kindOfType t
 		
 	   in	result	
 
--- 	TData{}			-> KData
-	TFunEC{}		-> KData
-	TFun{}			-> KData
+	TFunEC{}		-> KValue
+	TFun{}			-> KValue
 	
 	TEffect{}		-> KEffect
 	
@@ -84,15 +83,3 @@ kindOfType t
 		
 	_			-> panic stage $ "kindOfType: cannot get kind for " % show t % "\n"
 
-{-
--- | Apply some kinds to a kind function
---	If this results in a kind error then return Nothing
-appKinds :: Kind -> [Kind] 	-> Maybe Kind
-
-appKinds k []		= Just k
-
-appKinds (KFun k1 k2) (k:ks)
-	| k1 == k	= appKinds k2 ks
-
-appKinds  k ks		= Nothing
--}

@@ -274,16 +274,15 @@ data Label
 -- Kind expressions
 
 data Kind	
-	= KNil
+	= KNil					-- ^ some missing / unknown kind
+	| KValue				-- ^ the kind of value types
+	| KRegion				-- ^ the kind of regions
+	| KEffect				-- ^ the kind of effects
+	| KClosure				-- ^ the kind of closures
+	| KFun 		Kind	Kind		-- ^ the kind of type constructors
 
-	| KData						-- ^ the kind of value types  (change to KValue)
-	| KRegion
-	| KEffect
-	| KClosure
-	| KFun 		Kind	Kind
-	| KClass	Var	[Type]
-
-	| KWitJoin	[Kind]				-- ^ joining of witness kinds
+	| KClass	Var	[Type]		-- ^ the kind of witnesses
+	| KWitJoin	[Kind]			-- ^ joining of witness kinds
 	deriving (Show, Eq)
 
 
@@ -298,9 +297,6 @@ type Class	= Type
 type Witness	= Type
 
 data Type
-	-------
-	-- Type/kind/effect constructs.
-	--
 	= TNil
 
 	| TForall	Bind	Kind	Type		-- ^ Type abstraction.
@@ -319,7 +315,6 @@ data Type
 	| TBot		Kind
 
 	-- data
---	| TData		Var [Type]			-- ^ A data constructor
 	| TFunEC	Type Type Effect Closure	-- ^ A function with an effect and closure.
 	| TFun		Type Type			-- ^ Functions without effect or closure information
 							--	Used for operational types.

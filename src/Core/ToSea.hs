@@ -748,16 +748,16 @@ superOpTypePart	tt
 	C.TFetters t fs		-> superOpTypePart t
 
 	-- all function objects are considered to be 'Thunk'
-	C.TFunEC{}		-> C.makeTData Var.primTThunk C.KData []
+	C.TFunEC{}		-> C.makeTData Var.primTThunk C.KValue []
 
 	-- an unboxed var of airity zero, eg Int32#
 	C.TCon (C.TyConData name kind)
 	 | C.isUnboxedT tt
-	 -> C.makeTData name C.KData []
+	 -> C.makeTData name C.KValue []
 
 	-- a tycon of arity zero, eg Unit
 	C.TCon (C.TyConData name kind)
-	 -> C.makeTData Var.primTData C.KData []
+	 -> C.makeTData Var.primTData C.KValue []
 
 	C.TApp{}
 	 -> let	result	
@@ -777,11 +777,11 @@ superOpTypePart	tt
 			= C.makeTData Var.primTData k []
 			
 			| otherwise
-			= C.makeTData Var.primTObj C.KData []
+			= C.makeTData Var.primTObj C.KValue []
 	   in result			
 
 	-- some unknown, boxed object 'Obj'
-	C.TVar C.KData _	-> C.makeTData Var.primTObj C.KData []
+	C.TVar C.KValue _	-> C.makeTData Var.primTObj C.KValue []
 
 	_	-> panic stage
 		$  "superOpTypePart: no match for " % show tt % "\n"

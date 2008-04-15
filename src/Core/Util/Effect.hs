@@ -61,7 +61,7 @@ slurpDataRT tt
  	| TFunEC{}		<- tt	= []
 	
 	| TVar k _		<- tt	
-	, elem (resultKind k) [KRegion, KData]
+	, elem (resultKind k) [KRegion, KValue]
 	= [tt]
 
 	| TVar _  _		<- tt	= []

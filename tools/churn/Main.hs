@@ -141,7 +141,6 @@ instance Size (Exp a) where
  size xx 
   = case xx of
 	XVar{}		-> 1
-	XUnit{}		-> 1
 	XConst{}	-> 1
 	XApp _ x1 x2  	-> 1 + size x1 + size x2
 	XLambdaPats _ _ x	-> 1 + size x
