@@ -53,7 +53,7 @@ checkSchemeDangerCid cid
 
 checkSchemeDanger :: Class -> SquidM [Error]
 checkSchemeDanger c
-	| Class { classKind	= KData 
+	| Class { classKind	= KValue 
 		, classId	= cid
 		, classType	= Just t }	<- c
 	, TForall vks x				<- t

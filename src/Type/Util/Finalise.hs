@@ -70,7 +70,7 @@ finaliseT' bound def tt
 		, not $ Map.member v bound	-> TBot k
 	 
 	 	| def
-		, elem k [KData]
+		, elem k [KValue]
 		, not $ Map.member v bound	-> TData k primTUnit []
 	 
 		| otherwise			-> tt

@@ -104,7 +104,7 @@ exportType t
 
 	let tTrim	= case takeKindOfType tFinal of
 				Just KClosure	-> trimClosureC Set.empty Set.empty tFinal
-				Just KData	-> trimClosureT Set.empty Set.empty tFinal
+				Just KValue	-> trimClosureT Set.empty Set.empty tFinal
 				Just _		-> tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"

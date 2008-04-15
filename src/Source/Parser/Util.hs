@@ -140,7 +140,7 @@ vNameDefaultN space var
 kindOfVarSpace :: NameSpace -> Kind
 kindOfVarSpace space
  = case space of
- 	NameNothing	-> KData
+ 	NameNothing	-> KValue
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure

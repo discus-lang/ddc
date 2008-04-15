@@ -308,14 +308,6 @@ instance Monad m => TransM m Kind where
 	 	k2'		<- transZM table k2
 		transK table	$ KFun k1' k2'
 		
-	KData	 -> transK table kk
-	KRegion	 -> transK table kk
-	KEffect	 -> transK table kk
-	KClosure -> transK table kk
-	KFetter  -> transK table kk	
-
-	KNil	-> transK table kk
-	KBox	-> transK table kk
-	KError	-> transK table kk
+	_	-> transK table kk
 	
 

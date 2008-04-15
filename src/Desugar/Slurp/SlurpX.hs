@@ -131,7 +131,7 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 	(tObj, eObj, cObj, obj', qsObj)	
 			<- slurpX obj
 
-	let TVar KData vObj = tObj
+	let TVar KValue vObj = tObj
 	wantTypeV vObj
 
 	-- alternatives
@@ -183,7 +183,7 @@ slurpX	exp@(XMatch sp Nothing alts)
 --
 slurpX	exp@(XConst sp c)
  = do	
- 	tX@(TVar KData vT)	<- newTVarDS "lit"
+ 	tX@(TVar KValue vT)	<- newTVarDS "lit"
 	tConst			<- getConstType c
 	let qs = 
 		[ CEq (TSV $ SVLiteral sp c) tX	$ tConst]
@@ -277,13 +277,13 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
  	(tObj, eObj, cObj, xObj', qsObj)	
 			<- slurpX xObj
 
-	let TVar KData vObj = tObj
+	let TVar KValue vObj = tObj
 	wantTypeV vObj
 
 	-- The case object must be a Bool
 	boolType	<- getGroundType "Bool"
 	tR		<- newTVarR
-	let tBool	= TData (KFun KRegion KData) boolType [tR]
+	let tBool	= TData (KFun KRegion KValue) boolType [tR]
 
 	-- Slurp the THEN expression.
 	(tThen, eThen, cThen, xThen', qsThen)	
@@ -327,7 +327,7 @@ slurpX 	exp@(XProj sp xBody proj)
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar KData vInst) 
+	tInst@(TVar KValue vInst) 
 		<- newTVarD
 
 	-- effect and closure of projection function
@@ -381,7 +381,7 @@ slurpX	exp@(XProjT sp tDict proj)
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar KData vInst) 
+	tInst@(TVar KValue vInst) 
 		<- newTVarD
 
 	let proj'	= transformN (\n -> Nothing) proj

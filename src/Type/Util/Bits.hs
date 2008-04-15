@@ -290,8 +290,8 @@ makeOpTypeT2 tt
  = case tt of
  	TForall vks t		-> makeOpTypeT2 t
 	TFetters fs t		-> makeOpTypeT2 t
-	TVar{}			-> Just $ TData KData primTObj   []
-	TFun{}			-> Just $ TData KData primTThunk []
+	TVar{}			-> Just $ TData KValue primTObj   []
+	TFun{}			-> Just $ TData KValue primTThunk []
 	TData{}			-> makeOpTypeData tt
 	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
@@ -300,12 +300,12 @@ makeOpTypeT2 tt
 
 makeOpTypeData (TData k v ts)
 	| last (Var.name v) == '#'
-	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == KData])) of
-		Just ts'	-> Just $ TData KData v ts'
+	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == KValue])) of
+		Just ts'	-> Just $ TData KValue v ts'
 		_		-> Nothing
 	
 	| otherwise
-	= Just $ TData KData primTObj []
+	= Just $ TData KValue primTObj []
 
 makeOpTypeData _	= Nothing
 
@@ -337,8 +337,8 @@ slurpVarsRD_split rs ds (t:ts)
  	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
 	TClass KRegion _	-> slurpVarsRD_split (t : rs) ds ts
 
- 	TVar   KData _		-> slurpVarsRD_split rs (t : ds) ts
-	TClass KData _		-> slurpVarsRD_split rs (t : ds) ts
+ 	TVar   KValue _		-> slurpVarsRD_split rs (t : ds) ts
+	TClass KValue _		-> slurpVarsRD_split rs (t : ds) ts
 	
 	_			-> slurpVarsRD_split rs ds ts
 	
@@ -348,11 +348,11 @@ slurpVarsRD' tt
  	TData k v ts		-> catMap slurpVarsRD' ts
 
 	TVar KRegion _		-> [tt]
-	TVar KData   _		-> [tt]
+	TVar KValue   _		-> [tt]
 	TVar _  _		-> []
 	
 	TClass KRegion _	-> [tt]	
-	TClass KData   _	-> [tt]
+	TClass KValue   _	-> [tt]
 	TClass _ _		-> []
 
 	TFetters fs t		-> slurpVarsRD' t

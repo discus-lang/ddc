@@ -51,7 +51,7 @@ trace ss x
 packType_noLoops :: Type -> Type
 packType_noLoops tt
  = case liftM resultKind $ takeKindOfType tt of
- 	Just KData	-> packData_noLoops  tt
+ 	Just KValue	-> packData_noLoops  tt
  	Just KNil	-> packData_noLoops  tt
 
 
@@ -63,7 +63,7 @@ packType_noLoops tt
 packType :: Type -> (Type, [(Type, Type)])
 packType tt
  = case liftM resultKind $ takeKindOfType tt of
- 	Just KData	-> packData   tt
+ 	Just KValue	-> packData   tt
 	Just KEffect	-> packEffect tt
 	 
 	Just KClosure	-> packClosure tt
@@ -85,7 +85,7 @@ packData_noLoops tt
 packData :: Data -> (Data, [(Type, Type)])
 packData tt
 	| Just k		<- liftM resultKind $ takeKindOfType tt
-	, elem k [KData, KNil]
+	, elem k [KValue, KNil]
 
 	, (tt_packed, tsLoop)	<- runState (packTypeLs False Map.empty tt) []
 	= let result
@@ -327,7 +327,7 @@ packTypeLs ld ls tt
 		--	Only Type.Scheme follows this codepath - but we should handle this a different way
 		--	perhaps a flag to pack.
 		Just t'
-			| k == KData		-> return t'
+			| k == KValue		-> return t'
 			| otherwise		-> return tt
 
 		Nothing				-> return tt
@@ -432,7 +432,7 @@ inlineFs fs
 
 	-- a substitutions with only data fetters.
 	let subD = Map.filterWithKey
-			(\t x -> (let Just k = takeKindOfType t in resultKind k) == KData)
+			(\t x -> (let Just k = takeKindOfType t in resultKind k) == KValue)
 			sub
 
 	-- Don't substitute closures and effects into data, it's too hard to read.				
@@ -443,7 +443,7 @@ inlineFs fs
 		= do	tsLoops	<- get
 			if null tsLoops
 			 then case liftM resultKind $ takeKindOfType t1 of
-				Just KData	-> subTT_cutM subD (Set.singleton t1) t2
+				Just KValue	-> subTT_cutM subD (Set.singleton t1) t2
 				Just _		-> subTT_cutM sub  (Set.singleton t1) t2
 
 			 else return t2
@@ -552,7 +552,7 @@ sortFs fs
 
 	([ fsData,   fsEffect, fsClosure], fsRest)	
 		= partitionFs 
-			[ isLetK KData, 	isLetK KEffect, 	isLetK KClosure]
+			[ isLetK KValue, 	isLetK KEffect, 	isLetK KClosure]
 			fs
 				
     in	   fsData 	++ fsEffect ++ fsClosure ++ fsRest

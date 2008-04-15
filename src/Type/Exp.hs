@@ -55,15 +55,13 @@ instance Ord Type where
 
 -- Kind --------------------------------------------------------------------------------------------
 data Kind
-	= KNil
-	| KBox						
+	= KNil						-- ^ An missing / unknown kind.
 	| KFun	   Kind	Kind				-- ^ The kind of type constructors.	(->)
-	| KData						-- ^ The kind of data.			(*)
+	| KValue					-- ^ The kind of value types.		(*)
 	| KRegion					-- ^ The kind of regions.		(%)
 	| KEffect					-- ^ The kind of effects.		(!)
 	| KClosure					-- ^ The kind of closures.		($)
-	| KFetter					-- ^ The kind of fetters.		(+)
-	| KError					-- ^ An Error in the kind expression.
+	| KFetter					-- ^ The kind of class constraints	(+)
 	deriving (Show, Eq)	
 
 type Data	= Type

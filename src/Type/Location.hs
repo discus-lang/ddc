@@ -260,13 +260,13 @@ dispTypeSource tt ts
 ofKind :: Type -> String
 ofKind tt
  = case kindOfType tt of
- 	KData	-> "         of type: "
+ 	KValue	-> "         of type: "
  	KEffect	-> "       of effect: "
 -}
 atKind :: Type -> String
 atKind tt
  = case takeKindOfType tt of
- 	Just KData	-> "         at type: "
+ 	Just KValue	-> "         at type: "
  	Just KEffect	-> "     with effect: "
 
 

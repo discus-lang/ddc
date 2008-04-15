@@ -148,7 +148,7 @@ loadTypeNode2 incFs cid c
 	
 			| otherwise
 			= case resultKind k of
-				KData	-> return $ FLet  (TClass k cid) tX : (fs ++ fsMulti)
+				KValue	-> return $ FLet  (TClass k cid) tX : (fs ++ fsMulti)
 				_	-> return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
 		
 		result

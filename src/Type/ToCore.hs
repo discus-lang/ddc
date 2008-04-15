@@ -154,7 +154,7 @@ toCoreK :: T.Kind -> C.Kind
 toCoreK k
  = case k of
 	T.KNil			-> C.KNil
-	T.KData			-> C.KData
+	T.KValue		-> C.KData
 	T.KRegion		-> C.KRegion
 	T.KEffect		-> C.KEffect
 	T.KClosure		-> C.KClosure

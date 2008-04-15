@@ -161,7 +161,7 @@ cutT cid cidsEntered tt
 	 -> case k of
 	 	KEffect		-> TBot KEffect
 		KClosure	-> TBot KClosure
-		KData		-> panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
+		KValue		-> panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
 
 	 | otherwise
 	 -> tt

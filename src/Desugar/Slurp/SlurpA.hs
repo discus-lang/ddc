@@ -52,7 +52,7 @@ slurpA	alt@(AAlt sp gs x)
 			<- slurpX x
 
 	let vsBoundV	= map fst $ concat cbindssGuards
---	let tsBoundT	= map (TVar KData) $ map snd $ concat cbindssGuards
+--	let tsBoundT	= map (TVar KValue) $ map snd $ concat cbindssGuards
 
 	let qs	=
 		[ CEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
@@ -191,7 +191,7 @@ slurpW	(WConLabel sp vCon lvs)
 
 slurpW	(WConst sp c)
  = do
-	tD@(TVar KData tV)	<- newTVarDS "const"
+	tD@(TVar KValue tV)	<- newTVarDS "const"
 	tE			<- newTVarES "const"
 	tConst			<- getConstType c
 
@@ -227,7 +227,7 @@ slurpLV	:: Var				-- Constructor name.
 slurpLV vCon tData subInst (LIndex sp ix, v)
  = do	
 	-- create a new type var for this arg.
- 	Just (TVar KData vT)	<- bindVtoT v
+ 	Just (TVar KValue vT)	<- bindVtoT v
 
 	-- Lookup the fields for this constructor.
 	ctorFields	<- gets stateCtorFields
@@ -249,7 +249,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 
 		return	( (LIndex Nothing ix, v)
 			, Just (v, vT)
-			, [CEq (TSV $ SVMatchCtorArg sp) (TVar KData vT) tField] )
+			, [CEq (TSV $ SVMatchCtorArg sp) (TVar KValue vT) tField] )
 
          -- Uh oh, there's no field with this index.
 	 --	Add the error to the monad and return some dummy info so
@@ -272,7 +272,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 slurpLV vCon tData subInst (LVar sp vField, v)
  = do
  	-- Create a new type var for this arg.
- 	Just (TVar KData vT)	<- bindVtoT v
+ 	Just (TVar KValue vT)	<- bindVtoT v
  
  	-- Lookup the fields for this constructor.
  	ctorFields	<- gets stateCtorFields
@@ -295,7 +295,7 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 
  	return 	( (LVar Nothing vField, v)
  		, Just (v, vT)
-		, [CEq (TSV $ SVMatchCtorArg sp) (TVar KData vT) tField] )
+		, [CEq (TSV $ SVMatchCtorArg sp) (TVar KValue vT) tField] )
 		
 
 

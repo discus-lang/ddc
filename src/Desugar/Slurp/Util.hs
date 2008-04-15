@@ -101,7 +101,7 @@ makeCtorType newVarN vData vs name fs
 					NameEffect	-> TVar KEffect  v
 					NameRegion	-> TVar KRegion  v
 					NameClosure	-> TVar KClosure v
-					NameType	-> TVar KData    v)
+					NameType	-> TVar KValue    v)
 			$ vs
 
 	-- Constructors don't inspect their arguments.
@@ -227,7 +227,7 @@ bindVtoT	varV
 		modify (\s -> s { 
 			stateVarType	= Map.insert varV varT' (stateVarType s) })
 		
-		return $ Just (TVar KData varT')
+		return $ Just (TVar KValue varT')
 
 
 lookupVtoT ::	Var	-> CSlurpM (Maybe Var)
@@ -253,7 +253,7 @@ lbindVtoT	varV
  = do
  	mVar		<- lookupVtoT varV
 	case mVar of
-	 Just varT	-> return $ TVar KData varT
+	 Just varT	-> return $ TVar KValue varT
 	 Nothing	
 	  -> do	Just v	<- bindVtoT varV
 	  	return	v
@@ -296,7 +296,7 @@ getConstType	c
 		let var'	= var { Var.info = 
 					[ Var.IValueLiteral lit ] }
 	
-		return		$ TData (KFun KRegion KData) var' [TVar KRegion r]
+		return		$ TData (KFun KRegion KValue) var' [TVar KRegion r]
 
 	-- unboxed string literals have regions annotations
 	CConstU lit@(LString{})
@@ -305,7 +305,7 @@ getConstType	c
 		let var'	= var { Var.info = 
 					[ Var.IValueLiteral lit ] }
 	
-		return		$ TData (KFun KRegion KData) var' [TVar KRegion r]
+		return		$ TData (KFun KRegion KValue) var' [TVar KRegion r]
 
 
 	-- other literals ie: Ints, Floats, Chars don't have regions
@@ -315,7 +315,7 @@ getConstType	c
 		let var'	= var { Var.info = 
 					[ Var.IValueLiteral lit ] }
 
-		return		$ TData KData var' []
+		return		$ TData KValue var' []
 
 
 getConstType' lit
@@ -387,8 +387,8 @@ newVarV		= newVarN  NameValue
 newVarVS	= newVarNS NameValue
 
 -- data
-newTVarD	= newVarN  NameType	   >>= \v -> return $ TVar KData v
-newTVarDS s	= newVarNS NameType	s  >>= \v -> return $ TVar KData v
+newTVarD	= newVarN  NameType	   >>= \v -> return $ TVar KValue v
+newTVarDS s	= newVarNS NameType	s  >>= \v -> return $ TVar KValue v
 
 -- region
 newTVarR	= newVarN  NameRegion	   >>= \v -> return $ TVar KRegion v

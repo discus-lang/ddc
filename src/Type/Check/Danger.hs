@@ -35,7 +35,7 @@ dangerousCidsT :: Type -> [ClassId]
 dangerousCidsT tt
  = let	tsDanger	= dangerT Set.empty Map.empty tt
    in	[ cid	| TClass k cid	<- Set.toList tsDanger
-	    		, elem k [KData, KEffect, KClosure] ]
+	    		, elem k [KValue, KEffect, KClosure] ]
 	    
 
 dangerT 

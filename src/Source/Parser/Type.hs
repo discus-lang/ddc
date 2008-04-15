@@ -36,7 +36,7 @@ pKind
 pKind1 :: Parser Kind
 pKind1 
  = 	do	pTok K.Star
- 		return	KData
+ 		return	KValue
 		
  <|>	do	pTok K.Percent
  		return	KRegion
@@ -256,7 +256,7 @@ pType_body1
 	
  <|>	-- ()
  	do	pTok K.Unit
-		return	$ TData KData (Var.primTUnit) []
+		return	$ TData KValue (Var.primTUnit) []
 
  <|>	-- KIND _
  	(Parsec.try $ do
@@ -266,7 +266,7 @@ pType_body1
  	
  <|>	-- [ TYPE , .. ]
  	do	ts	<- pSParen $ Parsec.sepBy1 pType_body (pTok K.Comma)
-		return	$ TData (KFun (KFun KRegion KData) KData)
+		return	$ TData (KFun (KFun KRegion KValue) KValue)
 				Var.primTList 
 				ts
 
@@ -278,7 +278,7 @@ pType_body1
 		pTok K.Comma
 		ts	<- Parsec.sepBy1 pType_body (pTok K.Comma)
 		pTok K.RKet
-		return	$ TData (KFun (KFun KRegion KData) KData)
+		return	$ TData (KFun (KFun KRegion KValue) KValue)
 				(Var.primTTuple (length (t1:ts))) 
 				(t1 : ts))
 

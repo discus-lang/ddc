@@ -193,22 +193,22 @@ feedType'	mParent t
 
 	-- data
 	TFun t1 t2 eff clo
-	 -> do	cidT		<- allocClass KData
+	 -> do	cidT		<- allocClass KValue
 		Just t1'	<- feedType (Just cidT) t1
 		Just t2'	<- feedType (Just cidT) t2
 		Just eff'	<- feedType (Just cidT) eff
 		Just clo'	<- feedType (Just cidT) clo
 		addNode cidT	$ TFun t1' t2' eff' clo'
-		returnJ		$ TClass KData cidT
+		returnJ		$ TClass KValue cidT
 
 		
-	TData kData v ts
+	TData KValue v ts
 	 -> do	let Just k	= takeKindOfType t
 	 	cidT		<- allocClass k
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidT)) ts
 
-		addNode cidT 	$ TData kData v ts'
+		addNode cidT 	$ TData KValue v ts'
 
 		returnJ		$ TClass k cidT
 
@@ -225,7 +225,7 @@ feedType'	mParent t
 	--	the defs table but not the graph. We don't want to pollute the graph
 	--	with the whole external def so trim these types down and just add the
 	--	closure information that we need.
-	TFree v1 t@(TVar KData v2)
+	TFree v1 t@(TVar KValue v2)
 	 -> do	cid		<- allocClass KClosure
 		defs		<- gets stateDefs
 		case Map.lookup v2 defs of

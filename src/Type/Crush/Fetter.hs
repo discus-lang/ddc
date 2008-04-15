@@ -273,7 +273,7 @@ purifyEff eff
 	= Just $ FConstraint primConst [tR]
 
 	-- deep read
- 	| TEffect v [tR@(TClass KData _)]	<- eff
+ 	| TEffect v [tR@(TClass KValue _)]	<- eff
 	, v == primReadT
 	= Just $ FConstraint primConstT [tR]
 	

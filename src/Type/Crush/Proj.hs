@@ -59,7 +59,7 @@ crushProjClassT cidT
 		% "    cidT        = " % cidT		% "\n"
 		% "    fetter      = " % fProj		% "\n"
 
-	let FProj _ _ (TClass KData cidObj) _	= fProj
+	let FProj _ _ (TClass KValue cidObj) _	= fProj
 	
 	-- lookup the node for the object
 	Just cObj	<- lookupClass cidObj
@@ -79,7 +79,7 @@ crushProjClass2 cidT src fProj cObj
 	
 crushProjClass3 cidT src fProj cObj tObj
  = do
- 	let FProj proj _ (TClass KData _) _	= fProj
+ 	let FProj proj _ (TClass KValue _) _	= fProj
 
 	trace	$ "    cObj type   = " % classType cObj	% "\n"
 
@@ -165,7 +165,7 @@ crushProj2
 
 			-- Build the new constraints
 			let qs	= 	[ CInst (TSI $ SICrushedFS cid fProj src) vInst vImplT
-					, CEq   (TSI $ SICrushedFS cid fProj src) (TVar KData vInst) tBind ]
+					, CEq   (TSI $ SICrushedFS cid fProj src) (TVar KValue vInst) tBind ]
 					 
 			trace $ 	"    qs : " %> "\n" %!% qs % "\n"
 

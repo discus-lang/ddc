@@ -116,7 +116,7 @@ pprVarKind v k
 kindOfSpace2 :: Var -> NameSpace -> Kind
 kindOfSpace2 var space
  = case space of
- 	NameType	-> KData
+ 	NameType	-> KValue
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
@@ -156,7 +156,7 @@ prettyTS t
 prettyVK ::	(Var, Kind)	-> PrettyM PMode
 prettyVK	(var, kind)
  = case kind of
-	KData		-> ppr var
+	KValue		-> ppr var
 	KRegion		-> ppr var
 	KEffect		-> ppr var
 	KClosure	-> ppr var
@@ -213,12 +213,11 @@ instance Pretty Kind PMode where
   = case k of
 	KNil		-> ppr "?"
 	KFun k1 k2	-> k1 % " -> " % k2
-	KData		-> ppr "*"
+	KValue		-> ppr "*"
 	KRegion		-> ppr "%"
 	KEffect		-> ppr "!"
 	KFetter		-> ppr"+"
 	KClosure	-> ppr "$"
-	_		-> panic stage "pretty[Kind]: no match"
 
 
 -- InstanceInfo ------------------------------------------------------------------------------------

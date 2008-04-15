@@ -26,7 +26,7 @@ stage	= "Type.Util.Kind"
 defaultKindV ::	Var	-> Kind
 defaultKindV	v
  = case Var.nameSpace v of
- 	NameType	-> KData
+ 	NameType	-> KValue
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
@@ -36,7 +36,7 @@ defaultKindV	v
 spaceOfKind ::	Kind -> NameSpace
 spaceOfKind  kind
  = case resultKind kind of
- 	KData		-> NameType
+ 	KValue		-> NameType
 	KRegion		-> NameRegion
 	KEffect		-> NameEffect
 	KClosure	-> NameClosure
@@ -47,7 +47,7 @@ spaceOfKind  kind
 kindOfSpace :: NameSpace -> Kind
 kindOfSpace space
  = case space of
- 	NameType	-> KData
+ 	NameType	-> KValue
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
@@ -108,7 +108,7 @@ takeKindOfType' tt
 		 Just k'	-> return k'
 		 _		-> kindOfType_freakouts (TVar k v) k $ zip ts ks
 	 
-	TFun{}		-> Just KData
+	TFun{}		-> Just KValue
 	
 	TEffect{}	-> Just KEffect
 	
@@ -171,7 +171,7 @@ resultKind kk
 -- Make a kind from the parameters to a data type
 makeDataKind :: [Var] -> Kind
 makeDataKind vs
- 	= foldl (flip KFun) KData 
+ 	= foldl (flip KFun) KValue 
 	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
 	$ reverse vs
 

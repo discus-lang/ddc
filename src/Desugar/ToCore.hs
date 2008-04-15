@@ -270,7 +270,7 @@ toCoreX xx
  $ case xx of
 
 	D.XLambdaTEC 
-		_ v x (T.TVar T.KData vTV) eff clo
+		_ v x (T.TVar T.KValue vTV) eff clo
 	 -> do	
 		-- Only keep effect and closure bindings which are not quantified so they don't
 		--	conflict with constraints on /\ bound vars.
@@ -340,7 +340,7 @@ toCoreX xx
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 		
 	-- primitive constants
-	D.XConst (Just (T.TVar T.KData vT, _)) 
+	D.XConst (Just (T.TVar T.KValue vT, _)) 
 		cc@(S.CConst lit)
 	 -> do	
 	 	Just t		<- lookupType vT
@@ -349,7 +349,7 @@ toCoreX xx
 		return		$ toCoreConst t_flat cc
 
 	D.XConst
-		(Just (T.TVar T.KData vT, _))
+		(Just (T.TVar T.KValue vT, _))
 		cc@(S.CConstU lit)
 	 -> do	
 	 	Just t		<- lookupType vT
@@ -409,7 +409,7 @@ toCoreX xx
 	
 	-- projections
 	D.XProjTagged 
-		(Just 	( T.TVar T.KData vT
+		(Just 	( T.TVar T.KValue vT
 			, T.TVar T.KEffect vE))
 		vTag x2 j
 	 -> do
@@ -432,7 +432,7 @@ toCoreX xx
 
 
 	D.XProjTaggedT
-		(Just 	( T.TVar T.KData vT
+		(Just 	( T.TVar T.KValue vT
 			, T.TVar T.KEffect vE))
 		vTag j
 	 -> do
@@ -452,7 +452,7 @@ toCoreX xx
 
 	-- variables
 	D.XVarInst 
-		(Just (T.TVar T.KData vT, _))
+		(Just (T.TVar T.KValue vT, _))
 		v
 	 -> 	toCoreVarInst v vT
 
@@ -750,7 +750,7 @@ toCoreW ww
 	 
 	-- match against boxed literal
 	D.WConst 
-		(Just	( T.TVar T.KData vT
+		(Just	( T.TVar T.KValue vT
 			, _))
 		(S.CConst lit)
 		
@@ -766,7 +766,7 @@ toCoreW ww
 	
 	-- match against unboxed literal
 	D.WConst 
-		(Just 	( T.TVar T.KData vT
+		(Just 	( T.TVar T.KValue vT
 			, _ )) 
 		(S.CConstU lit)
 
@@ -779,7 +779,7 @@ toCoreW ww
 	 	return	( C.WLit lit'
 			, Nothing)
 
-	D.WVar (Just 	(T.TVar T.KData vT
+	D.WVar (Just 	(T.TVar T.KValue vT
 			, _))
 		var
 	 -> do	

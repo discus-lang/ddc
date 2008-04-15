@@ -107,7 +107,7 @@ instance Pretty (Top a) PMode where
 
 pprPClass_vk :: (Var, Kind) -> PrettyM PMode
 pprPClass_vk (v, k)
- 	| elem k [KData, KRegion, KEffect, KClosure]
+ 	| elem k [KValue, KRegion, KEffect, KClosure]
 	= ppr v
 	
 	| otherwise

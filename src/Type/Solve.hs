@@ -301,7 +301,7 @@ solveCs	(c:cs)
 			(InstanceLambda vUse vInst Nothing)
 
 		solveNext
-			$ [CEq src (TVar KData vUse) (TVar KData vInst)]
+			$ [CEq src (TVar KValue vUse) (TVar KValue vInst)]
 			++ cs 
 
 
@@ -353,7 +353,7 @@ solveCs	(c:cs)
 
 			-- The type will be added via a new constraint
 			solveNext
-				$  [CEq src (TVar KData vUse) tInst]
+				$  [CEq src (TVar KValue vUse) tInst]
 				++ cs
 		 Nothing
 		  ->	return True
@@ -369,7 +369,7 @@ solveCs	(c:cs)
 	 		(InstanceLetRec vUse vInst Nothing)
 
 		solveNext
-			$ [CEq src (TVar KData vUse) (TVar KData vInst)]
+			$ [CEq src (TVar KValue vUse) (TVar KValue vInst)]
 			++ cs
 
 	-- Some other constraint	
@@ -809,7 +809,7 @@ addSchemeToGraph
 addSchemeToGraph src vGen tScheme
  = do
 	-- call makeClass to get the classId of this var
-	cidGen		<- makeClassV src KData vGen 
+	cidGen		<- makeClassV src KValue vGen 
 
 	-- grab the class from the graph
 	Just cls	<- lookupClass cidGen

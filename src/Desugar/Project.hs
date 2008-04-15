@@ -302,7 +302,7 @@ snipDataField moduleName sp vData vCtor field
 		varR	<- newVarN NameRegion
 				
 		return	( field { dInit = Just $ XVar sp var }
-			, [ PSig  sp var (TFun 	(TData KData primTUnit []) 
+			, [ PSig  sp var (TFun 	(TData KValue primTUnit []) 
 						(dType field) 
 						(TBot KEffect) (TBot KClosure))
 			  , PBind sp (Just var) (XLambda sp varL xInit)])
@@ -551,7 +551,7 @@ makeProjR_fun sp tData ctors fieldV
 					% "  tData = " % show tData			% "\n"
 
 	return	$ 	[ SSig  sp funV 	
-				(TFun tData 	(TData 	(KFun KRegion (KFun KData KData))
+				(TFun tData 	(TData 	(KFun KRegion (KFun KValue KValue))
 							primTRef 
 							[TVar KRegion rData, resultT]) 
 							pure

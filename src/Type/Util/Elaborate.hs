@@ -130,7 +130,7 @@ elabRs args kind
   $ do	(args', vks)	<- elabRs2 args kind
  	return	(args', nub vks)
 
-elabRs2 [] KData
+elabRs2 [] KValue
 	= return ([], [])
 
 elabRs2 [] (KFun k1 k2)
