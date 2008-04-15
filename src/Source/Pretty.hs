@@ -380,11 +380,16 @@ instance Pretty (Stmt a) PMode where
  ppr xx
   = case xx of
 	SStmt sp  x		-> prettyX_naked x 					% ";"
-	SBindPats sp v [] x	-> padL 8 v % " " %>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
-	SBindPats sp v ps x	
-		-> v % " " % punc " " (map prettyWB ps)
-		%>> (spaceDown x) % "\n = " % prettyX_naked x 	% ";"
 
+	SBindPats sp v [] x	
+	 -> padL 8 v % " " %>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
+
+	SBindPats sp v ps x	
+	 -> v % " " % punc " " (map prettyWB ps)
+	 %>> (spaceDown x) % "\n = " % prettyX_naked x 	% ";"
+	
+	SBindMonadic sp v x
+	 -> v <> "<-" <> x % ";"
 
 	SSig sp v t		-> v %> " :: " % t % ";"
 

@@ -145,6 +145,8 @@ data VarBind
 	
 	| VConcatMap	-- ^ Used by Source.Hacks to de-sugar list comprehensions.
 	| VConcatMapL
+
+	| VBind		-- ^ monadic bind operation (>>=)
 	deriving (Eq, Show, Ord)
 
 

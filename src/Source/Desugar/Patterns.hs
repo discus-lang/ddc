@@ -2,6 +2,7 @@ module Source.Desugar.Patterns
 	( rewritePatVar
 	, rewritePatternsTreeM
 	, makeMatchFunction
+	, makeMatchExp
 	, mergeBindings)
 
 where
@@ -211,12 +212,13 @@ collectAtNodesW ww
 
 -- | Build a function that matches on the given pattern expressions then returns the result
 --
--- eg 	makeMatchFunction  [(x, y) : xs, Just 3]
+-- eg 	makeMatchFunction  [(x, y) : xs, Just 3] exp
 --
 -- => 	\v1 v2  
 --	  -> match { 
 --		| (v1, y) : xs 	<- v1 
 --		| Just 3	<- v2
+--		= exp
 --	  }
 --
 --	where v1 and v2 are fresh variables
@@ -230,6 +232,22 @@ makeMatchFunction
 	
 makeMatchFunction sp pp xResult
  = do	
+	-- make the body expression
+	(vsFree, xBody)	<- makeMatchExp sp pp xResult
+
+	-- add the lambdas out the front
+	let xFinal	= addLambdas sp vsFree xBody
+
+	return	$ xFinal
+	
+makeMatchExp
+	:: SourcePos 
+	-> [D.Pat Annot]
+	-> D.Exp Annot
+	-> RewriteM ([Var], D.Exp Annot)
+	
+makeMatchExp sp pp xResult
+ = do
 	-- make a guard for each of the patterns
 	(vs, mGs)	<- liftM unzip $ mapM makeGuard pp
 	let gs		= catMaybes mGs
@@ -239,11 +257,8 @@ makeMatchFunction sp pp xResult
 	let xMatch	= case gs of
 				[]	-> xResult
 				_	-> D.XMatch sp Nothing [D.AAlt sp gs xResult]
+	return (vs, xMatch)
 
-	-- add the lambdas out the front
-	let xFinal	= addLambdas sp vs xMatch
-
-	return	$ xFinal
 	
 -- Make a new guard to match this pattern
 makeGuard :: D.Pat a	-> RewriteM (Var, Maybe (D.Guard a))

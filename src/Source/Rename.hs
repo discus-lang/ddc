@@ -34,7 +34,7 @@ import Util
 
 -----
 stage		= "Source.Rename"
--- debug	= True
+-- debug		= True
 -- trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
 
 -- Tree --------------------------------------------------------------------------------------------
@@ -349,7 +349,7 @@ instance Rename (Exp SourcePos) where
 	XLambdaPats sp ps x
 	 -> local
 	 $ do 	(ps', _)	<- liftM unzip 
-	 			$ mapM bindPat ps
+	 			$ mapM (bindPat False) ps
 
 		x'		<- rename x
 		return	$ XLambdaPats sp ps' x'
@@ -475,7 +475,7 @@ instance Rename (Alt SourcePos) where
 	APat sp p x2
 	 -> do	(p', x2')
 	 	 	<- local
-		  	$ do	(p', [])	<- bindPat p
+		  	$ do	(p', [])	<- bindPat False p
 			 	x2'		<- rename x2
 				return (p', x2')
 
@@ -515,7 +515,7 @@ bindGuard gg
  = case gg of
 	GExp sp  pat x
 	 -> do	x'		<- rename x	
-	 	(pat', [])	<- bindPat pat
+	 	(pat', [])	<- bindPat False pat
 		return	$ GExp sp pat' x'
 		
 	GBool sp x
@@ -524,15 +524,18 @@ bindGuard gg
 		
 
 -- | Bind the variables in a pattern
-bindPat :: Pat SourcePos 
+bindPat :: Bool			-- lazy bind
+	-> Pat SourcePos 
 	-> RenameM 
 		( Pat SourcePos
 		, [Var])
 
-bindPat ww
+bindPat lazy ww
  = case ww of
  	WVar sp v
-	 -> do	v'	<- bindV v
+	 -> do	v'	<- if lazy 	then lbindV v
+	 				else bindV v
+
 	 	return	( WVar sp v'
 			, [])
 
@@ -546,7 +549,7 @@ bindPat ww
 	 
 	WCon sp v ps
 	 -> do	v'		<- lookupV v
-	 	(ps', bvs)	<- liftM unzip $ mapM bindPat ps
+	 	(ps', bvs)	<- liftM unzip $ mapM (bindPat lazy) ps
 		return	( WCon sp v' ps'
 			, concat bvs)
 	 
@@ -556,14 +559,14 @@ bindPat ww
 	 	let (ls, vs)	= unzip lvs
 		ls'		<- rename ls
 		(vs', bvss)	<- liftM unzip 
-				$ mapM bindPat vs
+				$ mapM (bindPat lazy) vs
 		let lvs'	= zip ls' vs'
 		
 		return	( WConLabel sp v' lvs'
 			, concat bvss)
 	
 	WAt sp v p
-	 -> do	(p', vs)	<- bindPat p
+	 -> do	(p', vs)	<- (bindPat lazy) p
 	 	v'		<- bindV v
 		return	( WAt sp v' p'
 			, vs)
@@ -572,18 +575,18 @@ bindPat ww
 	WUnit sp	-> return (ww, [])
 
 	WTuple sp xs
-	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPat xs
+	 -> do	(xs', vss)	<- liftM unzip $ mapM (bindPat lazy) xs
 	 	return	( WTuple sp xs'
 			, concat vss)
 	
 	WCons sp x1 x2
-	 -> do	(x1', vs1)	<- bindPat x1
-	 	(x2', vs2)	<- bindPat x2
+	 -> do	(x1', vs1)	<- bindPat lazy x1
+	 	(x2', vs2)	<- bindPat lazy x2
 		return	( WCons sp x1' x2'
 			, vs1 ++ vs2)
 		
 	WList sp xs
-	 -> do	(xs', vss)	<- liftM unzip $ mapM bindPat xs
+	 -> do	(xs', vss)	<- liftM unzip $ mapM (bindPat lazy) xs
 	 	return	( WList sp xs'
 			, concat vss)
 		
@@ -631,7 +634,7 @@ instance Rename (Stmt SourcePos) where
 
 	 	local
 		 $ do	(ps', objVss)	<- liftM unzip
-					$  mapM bindPat ps
+					$  mapM (bindPat False) ps
 
 			let objVs	= concat objVss
 
@@ -647,6 +650,11 @@ instance Rename (Stmt SourcePos) where
 
 			return	$ SBindPats sp v' ps' x'
 	 	
+	SBindMonadic sp pat x
+	 -> do	(pat', _) <- bindPat True pat
+	 	x'	<- rename x
+		return	$ SBindMonadic sp pat' x'
+
 	SStmt sp x
 	 -> do	x'	<- local $ rename x
 		return	$ SStmt sp x'		
@@ -668,7 +676,7 @@ instance Rename (Stmt SourcePos) where
 renameSs ::	[Stmt SourcePos] -> RenameM [Stmt SourcePos]
 renameSs	ss
  = do	-- work out all the vars that are bound by this list of stmts
- 	let vsBound	= catMaybes $ map takeStmtBoundV ss
+ 	let vsBound	= catMap takeStmtBoundVs ss
 
 	-- create fresh binding occurances to shadow anything with the same name bound above.
 	mapM_ (lbindN_shadow NameValue) 

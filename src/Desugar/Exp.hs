@@ -105,7 +105,8 @@ data Proj a
 
 data Stmt a
 	= SBind 	a (Maybe Var) (Exp a)
-	| SSig		a Var	  Type
+	| SBindMonadic	a (Pat a) (Exp a)
+	| SSig		a Var	Type
 	deriving (Show, Eq)
 	
 

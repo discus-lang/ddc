@@ -1,5 +1,6 @@
 module Source.Util
-	( takeStmtBoundV
+	( takeStmtBoundVs
+	, takePatBoundVs
 	, flattenApps
 	, unflattenApps
 	, sourcePosX 
@@ -18,15 +19,31 @@ import Util
 -----
 stage	= "Source.Util"
 
--- | take the binding variable of this statement
-takeStmtBoundV :: Stmt a -> Maybe Var
-takeStmtBoundV s
+-- | take the vars which are bound by this statement of this statement
+takeStmtBoundVs :: Stmt a -> [Var]
+takeStmtBoundVs s
  = case s of 
-	SStmt 	  sp e		-> Nothing
-	SBindPats sp v  es x	-> Just v
-	SSig      sp v  t	-> Just v	
-
-
+	SStmt 	  	sp e		-> []
+	SBindPats 	sp v  es x	-> [v]
+	SBindMonadic 	sp pat x	-> takePatBoundVs pat
+	SSig      	sp v  t		-> [v]
+	
+-- | take the vars which are bound by this pattern
+takePatBoundVs :: Pat a -> [Var]
+takePatBoundVs w
+ = case w of
+ 	WVar 		sp v		-> [v]
+	WObjVar		sp v		-> [v]
+	WConst		sp _		-> []
+	WCon		sp v ws		-> v : catMap takePatBoundVs ws
+	WConLabel 	sp v lws	-> v : catMap (takePatBoundVs . snd) lws
+	WAt		sp v w		-> v : takePatBoundVs w
+	WWildcard	sp		-> []
+	WUnit		sp		-> []
+	WTuple		sp ws		-> catMap takePatBoundVs ws
+	WCons		sp w1 w2	-> takePatBoundVs w1 ++ takePatBoundVs w2
+	WList		sp ws		-> catMap takePatBoundVs ws
+		
 -- | Convert some function applications into a list of expressions.
 --
 -- eg	   flattenApps (XApp (XApp (XApp x1 x2) x3) x4)

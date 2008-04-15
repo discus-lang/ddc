@@ -162,6 +162,7 @@ primGateLoop	= primVar NameValue	"Control.Exception.gateLoop"		VGateLoop
 
 primWhile	= primVar NameValue	"Control.Imperative.while"		VWhile	
 
+primBind	= primVar NameValue	"Class.Monad.>>="			VBind
 
 -- Utils -------------------------------------------------------------------------------------------
 
@@ -223,6 +224,8 @@ bindPrimVar n v
 
 	"concatMap"	-> Just $ v { Var.bind = VConcatMap }
 	"concatMapL"	-> Just $ v { Var.bind = VConcatMapL }
+
+	">>="		-> Just $ v { Var.bind = VBind }
 	_		-> Nothing
 
  | NameType	<- n

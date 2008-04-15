@@ -377,12 +377,21 @@ pStmt_bind
 		alts	<- Parsec.many1 pMatchAlt
 		return	$ SBindPats (spV var) var pats (XMatch (spV var) alts))
 
+	-- PAT	<- EXPRHS
+ <|>	(Parsec.try $ do	
+ 		pat	<- pPat1
+		pTok K.LeftArrow
+		exp	<- pExpRHS
+		return	$ SBindMonadic (spW pat) pat exp)
+
 	-- VAR PAT = EXPRHS
  <|>	do	var	<- liftM vNameV $ pVar
 		pats	<- Parsec.many pPat1
 		pTok K.Equals
 		exp	<- pExpRHS
 		return	$ SBindPats (spV var) var pats exp
+
+ 		
 
 -- | Parse a type sig (only)
 pStmt_sig :: Parser (Stmt SP)

@@ -230,9 +230,12 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 
 	S.XDo sp ss
 	 -> do	ss'		<- mapM rewrite ss
+	
+		-- desugar monadic bindings
+		ss_demon	<- rewriteDoSS ss'
 
 		-- merge pattern bindings
-		let (ss_merged, errs) = mergeBindings ss'
+		let (ss_merged, errs) = mergeBindings ss_demon
 		mapM_ addError errs
 
 		return	$ D.XDo sp ss_merged
@@ -435,6 +438,11 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
 	 	x2	<- makeMatchFunction sp ps' x'
 		return	$ D.SBind sp (Just v) x2
 
+	S.SBindMonadic sp pat x
+	 -> do	pat'	<- rewrite pat
+	 	x'	<- rewrite x
+	 	return	$ D.SBindMonadic sp pat' x'
+
 	S.SStmt sp x
 	 -> do	x'	<- rewrite x
 	 	return	$ D.SBind sp Nothing x'
@@ -534,6 +542,10 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 	S.WList sp []
 	 -> 	return	$ D.WConLabelP sp primNil []
 
+{-	S.WList sp ps
+	 -> do	ps'	<- mapM rewrite ps
+	 	return	$ D.WList sp ps'
+-}
 	_	-> panic stage	
 		$ "rewrite[S.Pat]: can't rewrite " % show ww % "\n"
 		
@@ -583,6 +595,35 @@ addWithAlt	w (D.AAlt sp aa x)
  	D.XDo sp ss	-> D.AAlt sp aa (D.XDo sp (ss ++ [D.SBind sp Nothing w]))
 	_		-> D.AAlt sp aa (D.XDo sp [D.SBind sp Nothing x, D.SBind sp Nothing w])
 	
+
+-- Monadic do syntax --------------------------------------------------------------------------------
+-- | Desugar monadic do notation
+rewriteDoSS :: [D.Stmt Annot] -> RewriteM [D.Stmt Annot]
+rewriteDoSS []		= return []
+rewriteDoSS (s : ss)
+ = case s of
+	D.SSig{}	
+	 -> do	ss'	<- rewriteDoSS ss
+	 	return	$ s : ss'
+
+	D.SBind{}	
+	 -> do	ss'	<- rewriteDoSS ss
+	 	return	$ s : ss'
+
+ 	D.SBindMonadic sp pat x 
+	 -> do 	ss'	<- rewriteDoSS ss
+	  	let xDo		= D.XDo sp ss'
+
+		([var], xMatch)	<- makeMatchExp sp [pat] xDo
+
+	        let xRest	= D.XLambda sp var xMatch
+
+	    	return	[D.SBind sp Nothing 
+				(D.XApp sp (D.XApp sp (D.XVar sp primBind) x) xRest)]
+			
+	
+	
+
 
 -- Type ---------------------------------------------------------------------------------------------
 instance Rewrite S.Type S.Type where

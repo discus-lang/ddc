@@ -366,6 +366,12 @@ followS table xx
 		x'	<- transZM 	table x
 		return	$ SBind nn' mV' x'
 		
+	SBindMonadic nn w x
+	 -> do	nn'	<- transN table nn
+	 	w'	<- transZM table w
+		x'	<- transZM table x
+		return	$ SBindMonadic nn' w' x'
+				
 	SSig nn v t
 	 -> do	nn'	<- transN  table nn
 	 	v'	<- transV  table v

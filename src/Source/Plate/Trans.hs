@@ -585,6 +585,11 @@ instance (Monad m) => TransM m n1 n2 (Stmt n1) (Stmt n2) where
                         x2' <- transZM table x2
                         x3' <- transZM table x3
                         return (SBindPats x0' x1' x2' x3')
+                SBindMonadic x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (SBindMonadic x0' x1' x2')
  
 instance (Monad m) => TransM m n1 n2 (Alt n1) (Alt n2) where
         transZM table xx
