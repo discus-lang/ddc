@@ -536,31 +536,6 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (XParens x0' x1')
-                XAt x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XAt x0' x1' x2')
-                XUnit x0
-                  -> do x0' <- transN table x0
-                        return (XUnit x0')
-                XObjVar x0 x1
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        return (XObjVar x0' x1')
-                XWildCard x0
-                  -> do x0' <- transN table x0
-                        return (XWildCard x0')
-                XCon x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XCon x0' x1' x2')
-                XCons x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (XCons x0' x1' x2')
  
 instance (Monad m) => TransM m n1 n2 (Proj n1) (Proj n2) where
         transZM table xx

@@ -89,10 +89,6 @@ rewriteTreeM hTree sTree
 instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
  rewrite pp
   = case pp of
-
---	S.PImportExtern sp v tv to
---	 ->	returnJ $ D.PExtern sp v tv to
-
 	S.PImportModule sp ms
 	 ->	returnJ	$ D.PImport sp ms
 
@@ -111,20 +107,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	-- data definitions
 	S.PData sp v vs ctors
-	 -> do	
-{-	 	-- elaborate the data definition to add missing regions etc
-	 	(S.PData sp v vs ctors)	
-			<- elaborateData newVarN getKind pp
-
-		-- update the kind for this type
-		-- TODO: this means the data definitions in the source file must be in the right order, 
-		--	 and not recursive :( would be better to tie this to kind inference.
-		let kind = makeDataKind vs
-		modify $ \s -> s { stateKind = Map.insert v kind (stateKind s) }
--}
-		-- desugar field initialisation code
+	 -> do	-- desugar field initialisation code
 	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
-
 	 	returnJ	$ D.PData sp v vs ctors'
 	
 	S.PEffect sp v k
@@ -164,11 +148,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 					D.ClassContext v ts)
 				$ context
 
---		let ?getKind	= getKind
 		ts_rewrite	<- mapM rewrite ts
-
---		ts_elab		<- liftM (map t3_1)
---				$  mapM (elaborateRegionsT (newVarN NameRegion) getKind) ts_rewrite
 
 	 	returnJ		$ D.PClassInst sp vC ts context' ss_merged
 
@@ -176,7 +156,6 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	S.PProjDict sp t ss
 	 -> do	ss'		<- mapM rewrite ss
 	 	
---		let ?getKind	= getKind
 		t'		<- rewrite t
 		
 		returnJ		$ D.PProjDict sp t' ss'
@@ -184,9 +163,6 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	S.PStmt (S.SSig sp v t)
 	 -> do	t'	<- rewrite t
-
---	 	(tElab, vksConst, vksMutable)	
---			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
 	 	returnJ	$ D.PSig sp v t
 
@@ -214,9 +190,6 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	-- core language.
 	S.XNil		-> return D.XNil
 
-	S.XUnit	sp
-	 -> 	return	$ D.XVar  	sp primUnit
-
 	S.XConst sp c
 	 -> 	return	$ D.XConst 	sp c
 
@@ -242,9 +215,6 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	S.XProjT sp t pj
 	 -> do	t'	<- rewrite t
 	 	pj'	<- rewrite pj
-
---	 	(tElab, vksConst, vksMutable)	
---			<- elaborateRegionsT (newVarN NameRegion) getKind t'
 
 		return	$ D.XProjT sp t pj'
 		
@@ -472,9 +442,6 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
 	S.SSig sp v t
 	 -> do 	t'	<- rewrite t
 
---	 	(tElab, vksConst, vksMutable)	
---			<- elaborateRegionsT (newVarN NameRegion) getKind t'
-
 	 	return	$ D.SSig sp v t
 
 
@@ -501,10 +468,6 @@ instance Rewrite (S.Alt SourcePos) (D.Alt Annot) where
 instance Rewrite (S.Guard SourcePos) (D.Guard Annot) where
  rewrite gg 
   = case gg of
-{-	S.GCase sp w
-	 -> do	w'	<- rewrite w
-	 	return	$ D.GCase sp w'
--}		
 	S.GExp sp w x
 	 -> do	w'	<- rewrite w
 	 	x'	<- rewrite x

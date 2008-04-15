@@ -54,10 +54,6 @@ instance Show a => Lint (Top a) where
   = case xx of
 	PPragma sp es			-> PPragma sp es
  	PModule sp ms			-> PModule sp ms		
-{-	PImportExtern sp v tv to		
-	 | not $ inSpaceV [v]		-> death xx "PImportExtern - vars in wrong namespace."
-	 | otherwise			-> PImportExtern sp (lint v) (lint tv) (lint to)
--}
 	PImportModule sp ms		-> PImportModule sp ms
 
 	PInfix sp m i vs		-> PInfix	sp m i (lint vs)
@@ -90,7 +86,6 @@ instance Show a => Lint (Exp a) where
  lint x
   = case x of
 	XNil				-> x
-	XUnit sp			-> x
 
 	XLet sp ss e			
 	 | isNil ss			-> death x "XLet - no bindings."
@@ -123,11 +118,6 @@ instance Show a => Lint (Exp a) where
  	XDefix{}			-> death x "XDefix - should have been eliminated by Source.Defix."
 	
 	XProj sp e p			-> XProj sp (lint e) p
-	
-	XAt sp v x				
-	 | not $ inSpaceV [v]		-> death x "XAt - var in wrong namespace."
-	 | otherwise			-> XAt sp   (lint v) (lint x)
-
 
 -- Alt --------------------------------------------------------------------------------------------
 instance Show a => Lint (Alt a) where
@@ -198,9 +188,6 @@ instance Lint Var where
 		
 -----
 inSpaceV vs	= and $ map (\v -> Var.nameSpace v == NameValue)  vs
--- inSpaceR vs	= and $ map (\v -> Var.nameSpace v == NameRegion) vs
 inSpaceT vs	= and $ map (\v -> Var.nameSpace v == NameType)	  vs
--- inSpaceE vs	= and $ map (\v -> Var.nameSpace v == NameEffect) vs
--- inSpaceM vs	= and $ map (\v -> Var.nameSpace v == NameModule) vs
 
 

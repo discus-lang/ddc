@@ -57,7 +57,6 @@ data Top a
 	| PInfix	a (InfixMode a) Int [Var]
 
 	-- Imports
---	| PImportExtern	a Var Type (Maybe Type)		-- name, value type, operational type
 	| PImportModule a [Module]
 
 	| PForeign	a (Foreign a)
@@ -186,16 +185,6 @@ data Exp a
 
 	-- Used by Source.Parser.Exp to track  EXP.(EXP) indexing
 	| XParens	a (Exp a)
-
-	-- Dodgy pattern expression overloading --------
-	-- delete me
-	| XAt		a Var (Exp a)
-	| XUnit		a
-	| XObjVar	a Var				-- ^var.
-	| XWildCard	a 
-	| XCon		a Var [Exp a]
-	| XCons		a (Exp a) (Exp a)
-
 	deriving (Show, Eq)
 
 

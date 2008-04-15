@@ -39,9 +39,6 @@ instance Pretty (Top a) PMode where
 	PPragma _ es	 -> "pragma " % " " %!% es % ";\n"
 	PModule _ v	 -> "module " % v % ";\n"
 
---	PImportExtern _ v tv to
---	 -> "import extern " % prettyVTT v tv to % "\n"
-
 	PImportModule _ [m] -> "import " % m % ";\n"
 	
 	PImportModule _ xx
@@ -116,16 +113,6 @@ pprPClass_vk (v, k)
 	| otherwise
 	= parens $ v <> "::" <> k
 
-{-
-prettyVTT ::	Var -> 	Type -> Maybe Type	-> PrettyM PMode
-prettyVTT   	v	tv	mto
- =  v 	% "\n"
-		%> (":: " % prettyTS tv % "\n" 
-		% case mto of 
-			Nothing	-> ppr ""
-			Just to	-> ":$ " % to % "\n")
--}
-
 prettyCtor ::	(Var, [DataField (Exp a) Type])	-> PrettyM PMode
 prettyCtor	xx
  = case xx of
@@ -166,8 +153,6 @@ instance Pretty (Exp a) PMode where
   = case xx of
   	XNil		 -> ppr "@XNil"
 
-	XUnit sp	 -> ppr "()"
-
 	XConst 	sp c	 -> ppr c
 
 	XVar 	sp v	 -> ppr v
@@ -200,7 +185,7 @@ instance Pretty (Exp a) PMode where
 		%  "\n}"
 
 	XApp 	sp e1 e2
-	 -> if orf e1 [isXVar, isXApp, isXUnit]
+	 -> if orf e1 [isXVar, isXApp]
 
 	 	then e1 % " " % prettyXB e2
 
@@ -214,11 +199,7 @@ instance Pretty (Exp a) PMode where
 		% (if isEBlock e2 then "\n" else " ")
 		%> ("\nelse "	% (if isEBlock e3 then "\n" else " ") % e3)
 
-	-----
-	XAt 	sp v exp	 -> v % "@" % prettyXB exp
-
 	-- object expressions
-	XObjVar 	sp v	-> "^" % v
 	XObjField 	sp v	-> "_" % v
 
 	-- infix expressions
@@ -227,7 +208,9 @@ instance Pretty (Exp a) PMode where
  	XDefixApps 	sp es	 -> "@XDefixApps " % es
 	XAppSusp	sp x1 x2 -> "@XAppSusp " % x1 <> x2
 
-
+	-- constructor sugar
+	XTuple sp xx		-> "(" % ", " %!% xx % ")"
+	XList  sp xx		-> "[" % ", " %!% xx % "]"
 
 	-- match sugar
 	XMatch sp aa	
@@ -277,15 +260,6 @@ instance Pretty (Exp a) PMode where
 	-- parser helpers
 	XParens a x		-> "@XParens " % x
 	
-
-	-- patterns
-	XCon   sp v xx		-> v % " " % " " %!% xx
-	XTuple sp xx		-> "(" % ", " %!% xx % ")"
-	XCons  sp x1 x2		-> x1 % ":" % x2
-	XList  sp xx		-> "[" % ", " %!% xx % "]"
-	XWildCard sp		-> ppr "_"
-
-
 -- Proj --------------------------------------------------------------------------------------------
 instance Pretty (Proj a) PMode where
  ppr f
@@ -306,7 +280,6 @@ prettyXB xx
  = case xx of
  	XVar sp v	-> ppr v
 	XConst sp c	-> ppr c
-	XUnit sp	-> ppr xx
 	XProj{}		-> ppr xx
 	e		-> "(" % e % ")"
 	
@@ -349,7 +322,6 @@ instance Pretty (Alt a) PMode where
 instance Pretty (Guard a) PMode where
  ppr gg
   = case gg of
---  	GCase	sp pat		-> "- " % pat
 	GExp	sp pat exp	-> " "  % pat %>> " <- " % exp
 	GBool	sp exp		-> " "  % ppr exp
 
@@ -418,10 +390,8 @@ instance Pretty (Stmt a) PMode where
 
 spaceDown xx
  = case xx of
---	XLambda{}	-> ppr "\n"
 	XLambdaCase{}	-> ppr "\n"
  	XCase{}		-> ppr "\n"
---	XCaseE{}	-> ppr "\n"
 	XIfThenElse{}	-> ppr "\n"
 	XDo{}		-> ppr "\n"
 	_		-> pNil
