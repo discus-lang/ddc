@@ -21,7 +21,6 @@ import Shared.Error
 import Shared.Pretty
 import Core.Exp
 import Core.Pretty
-import Core.Plate.Walk
 import Core.Util
 import Core.Util.Slurp
 import Core.ReconKind

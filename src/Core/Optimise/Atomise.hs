@@ -4,7 +4,6 @@ module Core.Optimise.Atomise
 where
 
 import	Core.Exp
-import	Core.Plate.Walk
 
 import	qualified Shared.Var		as Var
 import	qualified Shared.VarBind	as Var

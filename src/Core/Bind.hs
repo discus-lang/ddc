@@ -25,7 +25,6 @@ import Shared.Pretty
 
 import Util
 import Core.Plate.Trans
-import Core.Plate.Walk
 import Core.Plate.FreeVars
 import Core.Exp
 import Core.Util

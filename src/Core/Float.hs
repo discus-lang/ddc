@@ -28,7 +28,6 @@ import Core.Util.Rename
 import Core.Util.Slurp
 
 import qualified Core.Plate.Trans	as Trans
-import qualified Core.Plate.Walk	as Walk
 
 import qualified Debug.Trace		as Debug
 
