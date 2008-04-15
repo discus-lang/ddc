@@ -26,7 +26,7 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 -----
-stage	= "Type.Soundness"
+stage	= "Type.Check.Danger"
 -- debug	= True
 -- trace s = when debug $ traceM s
 
@@ -87,19 +87,12 @@ dangerT rsMutable fsClosure tt
 			[ cloDanger ]
 
 	-- data constructors
-	TData k v ts
-		-- if this ctor has any mutable regions then all vars from this point down are dangerous
-	 	| or $ map 	(\t -> case t of 
-	 				TVar{}		-> Set.member t rsMutable
-					TClass{}	-> Set.member t rsMutable
-					_		-> False)
-				ts
+	TApp{}	
+	 -> case takeTData tt of
+	 	Just (v, k, ts)	-> dangerT_data rsMutable fsClosure (v, k, ts)
+		_		-> Set.empty
 
-		-> Set.unions $ map (Set.fromList . collectTClassVars) ts
-
-		 -- check for dangerous vars in subterms
-		| otherwise
-	 	-> Set.unions $ map (dangerT rsMutable fsClosure) ts
+	TData k v ts		-> dangerT_data rsMutable fsClosure (v, k, ts)
 
 	-- closures
 	TFree v t
@@ -132,4 +125,17 @@ dangerT rsMutable fsClosure tt
 	_ -> panic stage
 		$ "dangerT: no match for " % tt
 	 
-	 
+
+dangerT_data rsMutable fsClosure (v, k, ts)
+	-- if this ctor has any mutable regions then all vars from this point down are dangerous
+ 	| or $ map 	(\t -> case t of 
+ 				TVar{}		-> Set.member t rsMutable
+				TClass{}	-> Set.member t rsMutable
+				_		-> False)
+			ts
+
+	= Set.unions $ map (Set.fromList . collectTClassVars) ts
+
+	 -- check for dangerous vars in subterms
+	| otherwise
+ 	= Set.unions $ map (dangerT rsMutable fsClosure) ts

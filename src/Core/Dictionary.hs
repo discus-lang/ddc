@@ -20,6 +20,7 @@ import Core.Pretty
 import qualified Debug.Trace	as Debug
 import Shared.Error
 import Shared.Pretty
+import qualified Shared.Var	as Var
 
 import qualified Data.Map	as Map
 import qualified Util.Map	as Map
@@ -31,7 +32,7 @@ import Util
 stage		= "Core.Dictionary"
 debug		= False
 trace ss x	= if debug 
-			then Debug.trace ss x
+			then Debug.trace (pprStrPlain ss) x
 			else x
 
 -----
@@ -159,25 +160,44 @@ rewriteOverApp
 		-- If this fails then the type params passed to the overloaded fn weren't specific enough
 		--	to determine the type we need to call the instance fn at.
 		takeVSub (t1, t2)
-		 = case typeToVar t1 of
-		 	Just v1	-> (v1, t2)
-			Nothing	-> panic stage 
+		 = case t1 of
+		 	TVar k1 v1	
+			 -> (v1, t2)
+
+			TVarMore k1 v1 tMore
+			 -> (v1, t2)
+
+			_	-> panic stage 
 				$ "rewriteOverApp: cannot determine type params for instance function.\n"
 				% "  (maybe a problem with shape constraint resolution?)\n"
 				% "  when rewriting:\n" %> xx	% "\n"
+				% "  t1 = " % t1	% "\n"
+				% "  t2 = " % t2	% "\n"
 		
 		vtSub	= map takeVSub ttSub
 
 		-- Work out the type args to pass to the instance function.
 		getInstType (b, k)
-		 = case lookup (varOfBind b) vtSub of
-		 	Just t'	-> t'
+		 = trace ("getInstType " % b <> k)
+		 $ case lookup (varOfBind b) vtSub of
+		 	Just t'	-> weakenInst b t'
 
 			-- if the instance is recursive then vtSub will be empty and we can just
 			--	pass the vars back to ourselves.
 			Nothing	
-			 | null vtSub	-> TVar k (varOfBind b)
-		 
+			 -> case b of
+			 	BVar v		-> TVar k v
+				BMore v t	-> TVarMore k v t -- (substituteT (Map.fromList vtSub) t)
+			 
+		weakenInst b t1
+			| BMore v tMore	<- b
+			= case Var.nameSpace v of
+				Var.NameEffect	-> makeTSum KEffect  [tMore, t1]
+				Var.NameClosure	-> makeTSum KClosure [tMore, t1]
+				
+			| otherwise
+			= t1
+			
 		tsInstArgs	
 		 	= trace (pprStrPlain $ "    vtSub:\n" %> vtSub % "\n")
 		 	$ map getInstType bksForall

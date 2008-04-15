@@ -10,6 +10,7 @@ module Type.Util.Bits
 	, makeTSum,	flattenTSum
 	, makeTMask,	applyTMask
 	, makeTApp
+	, makeTData,	takeTData
 
 	, makeTForall
 	, makeTForall_back
@@ -159,6 +160,29 @@ makeTApp' xx
  	x : []		-> x
 	x1 : xs		-> TApp (makeTApp' xs) x1
 	
+
+-- | Make a data type
+makeTData :: Var -> Kind -> [Type] -> Type
+makeTData v k ts
+ = makeTApp (TCon TyConData { tyConName = v, tyConKind = k } : ts )
+	
+-- | take a data type
+takeTData :: Type -> Maybe (Var, Kind, [Type])
+takeTData tt
+ = case tt of
+	TData k v ts
+		-> Just (v, k, ts)
+
+ 	TCon TyConData { tyConName = v, tyConKind = k }
+		-> Just (v, k, [])
+		
+	TApp t1 t2
+	 -> case takeTData t1 of
+	 	Just (v, k, ts)	-> Just (v, k, ts ++ [t2])
+		Nothing		-> Nothing
+		
+	_ -> Nothing
+
 
 -- | Add some forall bindings to the front of this type, 
 --	new quantified vars go at front of list.

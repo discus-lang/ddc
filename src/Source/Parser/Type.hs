@@ -293,13 +293,18 @@ pEffect
  = 	-- VAR
  	do	var	<- pVarPlainOfSpace [NameEffect]
 		return $ TVar KEffect var
-		
-	-- !CON VAR..
+
+	-- !SYNC
+ <|>	do	var	<- pConOfSpaceNamed [NameEffect] "SYNC"
+ 		return	$ TTop KEffect
+ 				
+	-- !CON TYPE..
  <|>	do	con	<- pQualified $ pConOfSpace [NameEffect]
- 		vars	<- Parsec.many (liftM (vNameDefaultN NameType) pVarPlain)
+ 		ts	<- Parsec.many pType_body1 --  (liftM (vNameDefaultN NameType) pVarPlain)
 		return	$ TEffect 
 				(vNameE con) 
-				(map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vars)
+				ts	
+--				(map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vars)
 
  <|>	-- !{ EFF; .. }
  	do	pTok	K.Bang

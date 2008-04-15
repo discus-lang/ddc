@@ -31,7 +31,7 @@ import Type.Feed
 
 
 -----
-debug	= True
+debug	= False
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
@@ -120,7 +120,7 @@ unifyClassMerge cidT c queue
 				then map deconstructT queue
 				else queue
 		
-	traceM $ "    queue_decon  = " % queue_decon % "\n"
+	trace $ "    queue_decon  = " % queue_decon % "\n"
 
 	unifyClassMerge2 cidT c queue_decon
 				

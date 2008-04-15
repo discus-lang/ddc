@@ -121,12 +121,14 @@ data Type
 	| TElaborate	Elaboration Type
 	deriving (Show, Eq)
 
+
 -- Helps with defining foreign function interfaces.
 data Elaboration
 	= ElabRead					-- ^ read from some object
 	| ElabWrite					-- ^ write to some object
 	| ElabModify					-- ^ read and write some object
 	deriving (Show, Eq)
+
 
 -- | Type constructors
 data TyCon

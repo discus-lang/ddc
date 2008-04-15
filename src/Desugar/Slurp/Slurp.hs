@@ -139,8 +139,8 @@ slurpP top@(PClassDict sp vClass tsParam context sigs)
 	     	= do 	vT		<- lbindVtoT vSig
 
 			-- add a forall for each of the parameters of the type class
-	     		let vsParam	= map (\(TVar _ v) -> v) tsParam
-			let TForall vks t = makeTForall (zip vsParam (repeat KData)) tSig
+	     		let vksParam	= map (\(TVar k v) -> (v, k)) tsParam
+			let TForall vks t = makeTForall vksParam tSig
 
 			-- add the enclosing class constraint
 			let tSig'	= TForall vks 

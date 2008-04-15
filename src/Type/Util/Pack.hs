@@ -264,10 +264,15 @@ packTypeLs ld ls tt
 		return	$ TFun t1' t2' eff' clo'
 
 	-- effect
+	TEffect vE [TData k vD (TVar KRegion r : ts)]
+	  | vE == primReadH
+	  -> return $ TEffect primRead [TVar KRegion r]
+
 	TEffect v ts
 	 -> do	ts'	<- mapM (packTypeLs ld ls) ts
 		return	$ TEffect v ts'
 	    
+		    
 	-- closure
 	TFree v1 (TFree v2 t)			
 		-> return $ TFree v1 t

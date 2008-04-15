@@ -1,4 +1,68 @@
 
+-- Functor -----------------------------------------------------------------------------------------
+class Functor (f :: * -> *) where
+	fmap 	:: forall a b !e0 $c0
+	 	.  (a -(!e0 $c0)> b) -> f a -(!e1 $c1)> f b
+		:- !e1 	= !{ !e0 ; !ReadT (f a) }
+		,  $c1	= f : $c0
+
+instance Functor List where
+	fmap f []	= []
+	fmap f (x:xs)	= f x : fmap f xs
+
+
+-- Monad -------------------------------------------------------------------------------------------
+class Monad (m :: * -> *) where
+
+ 	return	:: forall a
+		.  a -> m a
+	
+	bind	:: forall a b !e0 $c0
+		.  m a -> (a -(!e0 $c0)> m b) -(!e1 $c1)> m b
+		:- !e1	= !{ !e0 ; !ReadT (m a) }
+		,  $c1	= x : m a
+ 
+ 
+instance Monad Maybe where
+ 	return x	= Just x
+	
+	bind m1 fun
+	 = case m1 of
+	 	Nothing	-> Nothing
+		Just a	-> fun a
+
+-----
+main ()	
+ = do	putStr	$ show (fmap (\x -> x + 1) [1, 2, 3])	% "\n"
+ 	putStr	$ show thing				% "\n"
+
+
+count 	:: Int %r :- Mutable %r
+count	= 0
+
+thing :: Maybe Int
+thing 
+ = 	Just 5 			`bind` 	\x ->
+	Just (x + 10)		`bind`  \y -> 
+	Just (y + 100)		`bind`	\z -> 
+	Just (z + 1000)	
+
+{-
+thing' :: Maybe Int
+thing'
+ = do	x	<- Just 5
+ 	y	<- Just (x + 10)
+	z	<- Just (y + 100)
+	return	$ z + 1000
+-}
+
+instance Show (Maybe Int) where
+	show Nothing	= "Nothing"
+	show (Just x)	= "Just " % show x
+
+
+
+
 -- test syntax of class contexts
 --	can't actually compile this until we finish dictionary passing
 {-
@@ -9,16 +73,3 @@ foo2	:: (Num a, Eq a) => a -> a -> Bool
 foo3	:: Num a => Eq a => a -> a -> Bool
 
 -}
-
-main ()	= putStr "foo"
-
-
-class Functor (f :: * -> *) where
- fmap 	:: (a -(!e1 $c1)> b) -> (f :: * -> *) a -(!e2 $c2)> (f :: * -> *) b
-	:- !e2 = !e1
-	,  $c1 = $c1
-	
-instance Functor List where
- fmap f []	= []
- fmap f (x:xs)	= f x : fmap f xs
-

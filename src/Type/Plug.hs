@@ -72,6 +72,11 @@ staticRsDataT tt
 
 	-- TODO: we're assuming that all args are tangible. This isn't strictly
 	--       correct but shouldn't hurt us too much.
+	TApp{}
+	 -> case takeTData tt of
+	 	Just (k, v, ts)	-> Set.unions $ map staticRsDataT ts
+		_		-> Set.empty
+
  	TData k v ts		-> Set.unions $ map staticRsDataT ts
 
 	TFun{}			-> Set.empty

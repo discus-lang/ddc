@@ -379,8 +379,8 @@ reconX tt exp@(XApp x1 x2 eff)
 	       	
 	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
-		% " in expression:\n"
-		% "     (" % x1 % ") " % "(" % x2	% ")" % "\n\n"
+		% "    x1:\n" %> x1	% "\n\n"
+		% "    x2:\n" %> x2	% "\n\n"
 
 		% "   T[x1]   = " %> x1t		% "\n\n"
 		% "   (flat)  = " %> flattenT x1t	% "\n\n"

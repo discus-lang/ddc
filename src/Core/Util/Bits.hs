@@ -43,7 +43,9 @@ module Core.Util.Bits
 
 	, addLAMBDAs
 	
-	, slurpVarsRD)
+	, slurpVarsRD
+	
+	, resultKind)
 
 
 where
@@ -445,4 +447,11 @@ slurpVarsRD' tt
 	= panic stage
 	$ "slurpVarsRD: no match for " % show tt % "\n"
 
+
+-- | Get the result of applying all the paramters to a kind.
+resultKind :: Kind -> Kind
+resultKind kk
+ = case kk of
+ 	KFun k1 k2	-> resultKind k2
+	_		-> kk
 

@@ -33,9 +33,9 @@ crushEffs tt
 	= makeTSum KEffect
 		$ map (\bit -> case (Var.bind v, bit) of 
 				(Var.EReadT,  TVar KRegion v)	-> TEffect Var.primRead  [bit]
-				(Var.EReadT,  TVar KData   v)	-> TEffect Var.primReadT [bit]
+				(Var.EReadT,  TVar _       v)	-> TEffect Var.primReadT [bit]
 				(Var.EWriteT, TVar KRegion v)	-> TEffect Var.primWrite [bit]
-				(Var.EWriteT, TVar KData   v)	-> TEffect Var.primWriteT [bit])
+				(Var.EWriteT, TVar _       v)	-> TEffect Var.primWriteT [bit])
 		$ bits
 	
 	| otherwise
@@ -53,12 +53,17 @@ slurpDataRT tt
 	, Just (v, k, ts)	<- takeTData tt
 	= catMap slurpDataRT ts
 	
+	| TApp t1 t2		<- tt
+	= slurpDataRT t1 ++ slurpDataRT t2
+	
 	| TFun{}		<- tt	= []
 	
  	| TFunEC{}		<- tt	= []
 	
-	| TVar KRegion _ 	<- tt	= [tt]
-	| TVar KData   _	<- tt	= [tt]
+	| TVar k _		<- tt	
+	, elem (resultKind k) [KRegion, KData]
+	= [tt]
+
 	| TVar _  _		<- tt	= []
 	
 	| TCon{}		<- tt	= []

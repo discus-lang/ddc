@@ -46,7 +46,7 @@ import Data.Set			(Set)
 import qualified Debug.Trace	as Debug
 
 -----
-stage	= "Type.Closure.Trim"
+stage	= "Type.Util.Trim"
 
 debug	= False
 trace ss x	
@@ -242,6 +242,19 @@ trimClosureC_t' tag quant rsData tt
 	TTop{}		-> [tt]
 
 	-- when we enter into a data object remember that we're under its primary region.
+	TApp{}
+	 -> case takeTData tt of
+	 	Just (v, k, [])		-> []
+		Just (v, k, (t:ts))
+		 	| kindOfType_orDie t == KRegion
+			-> let rsData'	= Set.insert t rsData
+			   in  catMap (trimClosureC_t tag quant rsData') (t:ts)
+		   
+			| otherwise
+			-> catMap down ts
+		_			-> [tt]
+	
+	
 	TData k v []	-> []
 	TData k v (t:ts)
 	 	| kindOfType_orDie t == KRegion

@@ -37,6 +37,9 @@ checkMain
 	  
 checkMain' vMainT tMain tt
  = case tt of
+	TForall vks t
+	 -> checkMain' vMainT tMain t
+
  	TFetters fs t	
 	 -> checkMain' vMainT tMain t
 

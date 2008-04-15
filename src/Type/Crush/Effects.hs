@@ -37,7 +37,7 @@ import Type.Plate.Collect	(collectClassIds)
 import Type.Plate.Trans
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effect"
 
@@ -123,10 +123,27 @@ crushEffectT cid tt@(TEffect ve [TClass k cidT])
 	--	look up this type before we can crush the effect.
  	Just (Class { classType = mType })
 			<- lookupClass cidT
+	
+	trace	$ "    part   = " % tt 	% "\n"
+		% "    mType  = " % mType	% "\n"
 
 	case mType of
-	 Just tNode	-> return $ crushEffectT' cid tt tNode
-	 _		-> return Nothing
+	 Just tNode	
+	  -> do	let mParts	= crushEffectT' cid tt tNode
+	  	trace $ "    mParts = " % mParts % "\n\n"
+		return	mParts
+
+{-		let mOut	= case mParts of
+					 Just parts'	-> Just parts'
+					 Nothing	-> Just ( TEffect ve [tNode]
+					 			, TSI $ SICrushedE cid tt)
+								
+
+		return	mOut
+-}	
+
+	 _ -> 	return 	Nothing
+
 	
 crushEffectT cid tt
 	= return Nothing
@@ -136,23 +153,28 @@ crushEffectT' cid tt tNode
 	-- Read of outer constructor of object.
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadH
-	= case tNode of
-		TData _ v (tR : ts)	
-			-> Just ( TEffect primRead [tR]
-				, TSI $ SICrushedE cid tt)
+	= let result
+		| Just	(v, k, tR : ts)	<- takeTData tNode
+		= Just	( TEffect primRead [tR]
+			, TSI $ SICrushedE cid tt)
+			
+		| Just	(v, k, [])	<- takeTData tNode
+		= Just	( TBot KEffect
+			, TSI $ SICrushedE cid tt)
 
-		TData _ v []		
-			-> Just ( TBot KEffect
-				, TSI $ SICrushedE cid tt)
-
-		_	-> Nothing
-	
+{-		| TApp t1 t2		<- tNode
+		= Just	( TEffect primReadH [t1]
+			, TSI $ SICrushedE cid tt)
+-}		
+		| otherwise
+		= Nothing
+	  in	result
 
 
 	-- Read of whole object. (deep read).
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadT
-	, TData{}		<- tNode
+	, Just _ 		<- takeTData tNode
 	= let
 		(rs, ds)	= slurpVarsRD tNode
 		esRegion	= map (\r -> TEffect primRead  [r]) rs
@@ -165,7 +187,7 @@ crushEffectT' cid tt tNode
 	-- Write of whole object. (deep write)
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EWriteT
-	, TData{}		<- tNode
+	, Just _		<- takeTData tNode
 	= let	
 		(rs, ds)	= slurpVarsRD tNode
 		esRegion	= map (\r -> TEffect primWrite  [r])   rs

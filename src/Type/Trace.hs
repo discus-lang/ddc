@@ -1,6 +1,7 @@
 
 module Type.Trace 
 	( traceType 
+	, traceType_shape
 	, traceCidsDown)
 where
 
@@ -38,21 +39,32 @@ traceType cid
  	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
 	-- Load in the nodes for this subgraph.
-	t	<- loadType cid cidsDown
+	t	<- loadType True cid cidsDown
 	return t
 
+-- Trace the shape of this type, no fetters
+traceType_shape :: ClassId -> SquidM Type
+traceType_shape cid
+ = do	-- See which classes are reachable by tracing down from this one.
+ 	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
+	-- Load in the nodes for this subgraph.
+	t	<- loadType False cid cidsDown
+	return t
+
+-- LoadType ----------------------------------------------------------------------------------------
 -- | Extract type subgraph.
 loadType 
-	:: ClassId 	-- ^ root node of the type
+	:: Bool		-- ^ whether to include fetters
+	-> ClassId 	-- ^ root node of the type
 	-> Set ClassId 	-- ^ all the cids reachable from the root
 	-> SquidM Type
 
-loadType cid cidsReachable
+loadType incFs cid cidsReachable
  = do
 	-- Build a new let for each of the classes
 	fsLet		<- liftM concat
-			$  mapM	loadTypeNode
+			$  mapM	(loadTypeNode incFs)
 			$  Set.toList cidsReachable
 
 	k		<- kindOfCid cid
@@ -62,14 +74,15 @@ loadType cid cidsReachable
 
 -- | Make new fetters representing this node in the type graph.
 loadTypeNode
-	:: ClassId
+	:: Bool		-- ^ whether to include fetters
+	-> ClassId
 	-> SquidM [Fetter]
 
-loadTypeNode cid@(ClassId ix)
+loadTypeNode incFs cid@(ClassId ix)
  = do	Just c		<- lookupClass cid
-	loadTypeNode2 cid c
+	loadTypeNode2 incFs cid c
 
-loadTypeNode2 cid c
+loadTypeNode2 incFs cid c
 
 	-- when mptc's are crushed out they are replaced by ClassNils.
 	-- we could perhaps differentiate this case and raw, never-allocated classes...
@@ -77,7 +90,7 @@ loadTypeNode2 cid c
 	= return []
 
 	| ClassForward cid'			<- c
-	= loadTypeNode cid'
+	= loadTypeNode incFs cid'
 
 	| ClassFetter { classFetter = f } 	<- c
 	= do	t'	<- refreshCids f
@@ -99,13 +112,17 @@ loadTypeNode2 cid c
 		(t': tfs)	<- refreshCids (t : classFetters c)
 
 		-- single parameter constraints are stored directly in this node
-		let fs		= map (\(TFetter f) -> f) tfs
+		let fs		= if incFs
+					then map (\(TFetter f) -> f) tfs
+					else []
 
 		-- multi parameter constraints are stored in nodes referenced by classFettersMulti
-		fsMulti		<- liftM concat 
-				$ mapM loadTypeNode 
-				$ Set.toList 
-				$ classFettersMulti c
+		fsMulti		<- if incFs
+					then liftM concat 
+						$ mapM (loadTypeNode incFs)
+						$ Set.toList 
+						$ classFettersMulti c
+					else return []
 
 		-- If this node has additional fetters where the LHS are all cids
 		--	then we can strip them here because they're cids they'll

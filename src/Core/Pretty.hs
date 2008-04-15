@@ -20,7 +20,7 @@ import Util
 import Util.Pretty
 
 -----
--- stage	= "Core.Pretty"
+stage	= "Core.Pretty"
 
 -------------------------------------------------------------------------------------------------
 -- Some useful options for debugging
@@ -89,7 +89,7 @@ instance Pretty Top PMode where
 
 
 	PClassDict v ts context sigs
-	 -> ("class " % v % " " % " " %!% map prettyTB ts % " where\n"
+	 -> ("class " % v <> (punc " " $ map pprPClassDict_varKind ts) <> "where\n"
 	 	% "{\n"
 		%> (";\n\n" %!% map (\(v, sig) -> v % "\n ::     " %> sig) sigs)
 		% "\n}\n")
@@ -103,6 +103,10 @@ instance Pretty Top PMode where
 			% "\n"
 			% "}\n\n")
 
+pprPClassDict_varKind tt
+ = case tt of
+	TVar k v	-> parens $ v <> "::" <> k
+	_		-> panic stage "pprPClassDict_varKind: no match\n"
 
 
 -- CtorDef --------------------------------------------------------------------------------------------

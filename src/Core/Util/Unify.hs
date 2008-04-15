@@ -33,8 +33,22 @@ unifyT2 t1 t2
 	, TFunEC a2 b2 eff2 clo2	<- t2
 	, Just subA		<- unifyT2 a1 a2
 	, Just subB		<- unifyT2 b1 b2
-	= Just (subA ++ subB)
+	, Just subE		<- unifyT2 eff1 eff2
+	, Just subC		<- unifyT2 clo1 clo2
+	= Just (subA ++ subB ++ subE ++ subC)
 
+	| TSum{}			<- t1
+	= Just []
+	
+	| TFree{}			<- t1
+	= Just []
+	
+	| TBot{}			<- t1
+	= Just []
+	
+{-	| TSum{}			<- t2
+	= Just []
+-}
 	-- vars
 	| TVar k1 v1			<- t1
 	, TVar k2 v2			<- t2
@@ -46,6 +60,28 @@ unifyT2 t1 t2
 	
 	| TVar k2 v2			<- t2
 	, kindOfType t1 == k2		= Just [(t1, t2)]
+{-
+	| TVarMore k1 v1 tMore1		<- t1
+	, TVarMore k2 v2 tMore2		<- t2
+	, k1 == k2
+	, v1 == v2
+	, tMore1 == tMore2
+	= Just []
+
+	| TVarMore k1 v1 tMore1		<- t1
+	, kindOfType t2 == k1		= Just [(TVar k1 v1, makeTSum k1 [t2, tMore1])]
+-}
+	
+	| TTop	k1			<- t1
+	, TTop  k2			<- t2
+	, k1 == k2
+	= Just []
+
+	| TBot	k1			<- t1
+	, TBot  k2			<- t2
+	, k1 == k2
+	= Just []
+	
 
 	-- regions, effects, closures and classes always unify
 	| KClass{}			<- kindOfType t1
@@ -65,3 +101,4 @@ unifyT2 t1 t2
 
 	| otherwise			= Nothing
 	
+
