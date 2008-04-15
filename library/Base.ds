@@ -112,14 +112,14 @@ infixr 1 $
 --	The desugarer adds the required type sig and forcing constructs to ensure
 --	that the resulting projection functions are sound.
 --
-foreign import extern "primProjField"
+foreign import "primProjField"
  primProjField	
  	:: forall a b
 	.  a -> Int32# -(!e1)> b
 	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj
  
-foreign import extern "primProjFieldR"
+foreign import "primProjFieldR"
  primProjFieldR 
  	:: forall a b
 	.  a -> Int32# -(!e1)> b
@@ -129,7 +129,7 @@ foreign import extern "primProjFieldR"
 -----
 -- BUGS: dodgy conversion of Int32# to Word32#
 
-foreign import extern "_allocDataM"
+foreign import "_allocDataM"
  primAlloc_dataM
  	:: forall a 
 	.  Int32# -> Int32# -> Int32# -> a			-- tag, ptrCount, dataSize (in bytes).
@@ -140,33 +140,33 @@ foreign import extern "_allocDataM"
 --	Allocate an object on the heap to contain raw (unboxed) data.
 --	Data size /must/ be a multiple of 4 bytes.
 
-foreign import extern "_allocDataR"
+foreign import "_allocDataR"
  primAlloc_dataR
  	:: forall a
 	.  Int32# -> Int32# -> a				-- tag, dataSize (in bytes).
 	:$ Word32# -> Word32# -> Data
 
 -----
-foreign import extern "primInt32U_read"
+foreign import "primInt32U_read"
  primInt32U_read
  	:: forall a 
 	.  a -> Int32# -> Int32#				-- obj, offset (in bytes), result.
 	:$ Data -> Int32# -> Int32#
 	
-foreign import extern "primInt32U_write"
+foreign import "primInt32U_write"
  primInt32U_write
  	:: forall a
 	.  a -> Int32# -> Int32# -> Void#			-- obj, offset (in bytes), data.
 	:$ Data -> Int32# -> Int32# -> Void#
 
 -----
-foreign import extern "primFloat32U_read"
+foreign import "primFloat32U_read"
  primFloat32U_read
  	:: forall a
 	.  a -> Int32# -> Float32#				-- obj, offset (in bytes), result.
 	:$ Data -> Int32# -> Float32#
 	
-foreign import extern "primFloat32U_write"
+foreign import "primFloat32U_write"
  primFloat32U_write
  	:: forall a
 	.  a -> Int32# -> Float32# -> Void#			-- obj, offset (in bytes), data.

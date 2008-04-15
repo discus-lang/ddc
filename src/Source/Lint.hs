@@ -54,10 +54,10 @@ instance Show a => Lint (Top a) where
   = case xx of
 	PPragma sp es			-> PPragma sp es
  	PModule sp ms			-> PModule sp ms		
-	PImportExtern sp v tv to		
+{-	PImportExtern sp v tv to		
 	 | not $ inSpaceV [v]		-> death xx "PImportExtern - vars in wrong namespace."
 	 | otherwise			-> PImportExtern sp (lint v) (lint tv) (lint to)
-
+-}
 	PImportModule sp ms		-> PImportModule sp ms
 
 	PInfix sp m i vs		-> PInfix	sp m i (lint vs)

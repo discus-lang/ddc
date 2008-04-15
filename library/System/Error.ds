@@ -7,7 +7,7 @@ import	Data.String
 effect !Error	:: !
 
 -- | Throw an error exception
-foreign import extern "primError"
+foreign import "primError"
 	error
 		:: forall a %r1
 		.  String %r1	-(!e1)> a
@@ -15,7 +15,7 @@ foreign import extern "primError"
 		:$ Obj -> Obj
 
 -- | Throw an error exception, asynchronosly
-foreign import extern "primError"
+foreign import "primError"
 	errorNoEff
 	 	:: forall a %r1
 		.  String %r1 -> a
@@ -25,7 +25,7 @@ foreign import extern "primError"
 errorL str	= errorNoEff @ str
 
 -- | End the program
-foreign import extern "primExit"
+foreign import "primExit"
 	exit	:: forall a %r1
 		.  Int %r1 -(!e1)> a
 		:- !e1 = !{ !Error }

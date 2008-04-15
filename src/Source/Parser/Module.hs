@@ -109,7 +109,6 @@ pTopForeignImport :: Parser (Top SP)
 pTopForeignImport
  = do	tok	<- pTok K.Foreign
  	pTok K.Import
-	pTok K.Extern
 
 	mExName	<-  liftM Just pString 
 		<|> return Nothing

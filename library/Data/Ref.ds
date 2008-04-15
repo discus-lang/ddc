@@ -2,7 +2,7 @@
 import	Base
 
 infixl 0 #= 
-foreign import extern "primRefUpdate"
+foreign import "primRefUpdate"
 	(#=)
 		:: forall a %r1
 		.  Ref %r1 a -> a -(!e1)> ()

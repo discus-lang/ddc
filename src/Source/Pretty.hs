@@ -39,8 +39,8 @@ instance Pretty (Top a) PMode where
 	PPragma _ es	 -> "pragma " % " " %!% es % ";\n"
 	PModule _ v	 -> "module " % v % ";\n"
 
-	PImportExtern _ v tv to
-	 -> "import extern " % prettyVTT v tv to % "\n"
+--	PImportExtern _ v tv to
+--	 -> "import extern " % prettyVTT v tv to % "\n"
 
 	PImportModule _ [m] -> "import " % m % ";\n"
 	
@@ -116,7 +116,7 @@ pprPClass_vk (v, k)
 	| otherwise
 	= parens $ v <> "::" <> k
 
-
+{-
 prettyVTT ::	Var -> 	Type -> Maybe Type	-> PrettyM PMode
 prettyVTT   	v	tv	mto
  =  v 	% "\n"
@@ -124,7 +124,7 @@ prettyVTT   	v	tv	mto
 		% case mto of 
 			Nothing	-> ppr ""
 			Just to	-> ":$ " % to % "\n")
-
+-}
 
 prettyCtor ::	(Var, [DataField (Exp a) Type])	-> PrettyM PMode
 prettyCtor	xx
@@ -146,11 +146,8 @@ instance Pretty (Foreign a) PMode where
 	 -> let pName	= case mS of  { Nothing -> ppr " "; Just s  -> ppr $ show s }
 		pTo	= case mTo of { Nothing -> ppr " "; Just to -> "\n:$ " % to }
 	    in 
-	 	"extern " % pName % "\n " 
-		 % v 	%> ("\n:: " % prettyTS tv 	% pTo)
-
-	OCCall mS v tv 
-	 -> ppr "@CCall"
+		pName	% "\n " 
+			% v 	%> ("\n:: " % prettyTS tv 	% pTo)
 
 
 -- InfixMode ---------------------------------------------------------------------------------------

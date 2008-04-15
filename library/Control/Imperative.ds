@@ -5,27 +5,27 @@ import	Data.Bool
 
 -- These imperative-ish features in the source language are desugared
 --	to calls to these primitive functions.
-foreign import extern 
+foreign import
 	primControl_while 
 		:: forall a %r1 !e1 !e2
 		.  (() -(!e1)> Bool %r1) -> (() -(!e2)> a) -(!e3)> ()
 		:- !e3 	= !{ !Read %r1; !e1; !e2 }
 		:$ Obj -> Obj -> Obj
 	
-foreign import extern
+foreign import
 	 primControl_break
 		:: forall a
 		. () -> a
 		:$ Obj -> Obj
 
-foreign import extern	
+foreign import
 	primControl_when
 		:: forall a %r1 !e1 !e2 
 		.  (() -(!e1)> Bool %r1) -> (() -(!e2)> a) -(!e3)> ()
 		:- !e3 	= !{ !Read %r1; !e1; !e2 }
 		:$ Obj -> Obj -> Obj
 
-foreign import extern
+foreign import
 	primControl_unless
 		:: forall a %r1 !e1 !e2
 		.  (() -(!e1)> Bool %r1) -> (() -(!e2)> a) -(!e3)> ()

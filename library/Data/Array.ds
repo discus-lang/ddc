@@ -12,7 +12,7 @@ data Array %r1 a;
 --	garbage collector (and will never be colleted, so don't used it much). If it is '0' the 
 --	array is collected normally.
 --
-foreign import extern "primArray_new"
+foreign import "primArray_new"
 	array_new 
 	 	:: forall a %r1 %r2
 	 	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
@@ -22,7 +22,7 @@ foreign import extern "primArray_new"
 		:$ Obj -> Obj -> Obj;
 
 -- Return the number of elements in an array
-foreign import extern "primArray_size"
+foreign import "primArray_size"
 	array_size
 	 	:: forall a %r1 %r2
 		.  Array %r1 a -(!e1)> Int %r2
@@ -31,7 +31,7 @@ foreign import extern "primArray_size"
  
 -- Return the element at this index
 --	the array.(i) syntax is desugared into this.
-foreign import extern "primArray_index"
+foreign import "primArray_index"
 	index	:: forall a %r1 %r2 
 	 	.  Array %r1 a -> Int %r2 -(!e1)> a
 		:- !e1 = !{ !Read %r1; !Read %r2 }
@@ -40,7 +40,7 @@ foreign import extern "primArray_index"
 -- Return a reference to this index. 
 --	If this reference is updated then that cell in the array is pointed to the new object.
 --	the array#(i) syntax is desuated into this
-foreign import extern "primArray_indexR"
+foreign import "primArray_indexR"
 	indexR	:: forall a %r1 %r2 
 	 	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
 		:- !e1 = !{ !Read %r1; !Read %r2 }

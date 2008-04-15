@@ -89,12 +89,12 @@ instance Rename (Top SourcePos) where
 	 -> do 	m'	<- rename m
 		return	$ PModule sp m'
 
- 	PImportExtern sp v tv to
+{- 	PImportExtern sp v tv to
 	 -> do	v'	<- lookupV v
 		tv'	<- local $ rename tv
 		to'	<- local $ rename to
 		return	$ PImportExtern sp v' tv' to'
-
+-}
 	PImportModule sp ms
 	 -> do	ms'	<- rename ms
 		return	$ PImportModule sp ms'
@@ -211,12 +211,12 @@ instance Rename (Foreign SourcePos) where
 	 -> do	f'	<- rename f
 	 	return	$ OExport f'
 		
-	OCCall mS v t
+{-	OCCall mS v t
 	 -> local
 	 $ do	v'	<- lookupV v
 	 	t'	<- rename t
 		return	$ OCCall mS v' t'
-		
+-}		
 	OExtern mS v tv to 
 	 -> local
 	 $  do 	v'	<- lookupV v

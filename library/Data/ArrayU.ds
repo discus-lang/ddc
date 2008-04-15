@@ -1,4 +1,5 @@
 
+
 import	Base
 import	Data.Int
 import 	Data.Int32U
@@ -11,26 +12,26 @@ data ArrayU %r a
 -- Create a new array and fill it with this value
 --	If the first arg is 1 the array is anchored and is not coppied around by the Garbage collector
 --	If the first 
-foreign import extern "primArrayU_Int_new"
+foreign import "primArrayU_Int_new"
  arrayUI_new :: Int{read} -> Int{read} -> ArrayU Int
  
-foreign import extern "primArrayU_Int_get"
+foreign import "primArrayU_Int_get"
  arrayUI_get :: ArrayU Int {read} -> Int{read} -> Int
 
-foreign import extern "primArrayU_Int_set"
+foreign import "primArrayU_Int_set"
  arrayUI_set :: ArrayU (Int{write}) {read} -> Int{read} -> Int -> ()
  
-foreign import extern "primArrayU_Int_dump"
+foreign import "primArrayU_Int_dump"
  arrayUI_dump :: ArrayU Int {read} -> ()
  
-foreign import extern "primArrayU_Int_size"
+foreign import "primArrayU_Int_size"
  arrayUI_size :: ArrayU Int {read} -> Int
 
-foreign import extern "primArrayU_Int_fill"
+foreign import "primArrayU_Int_fill"
  arrayUI_fill :: ArrayU (Int {write}) {read} -> Int{read} -> ()
 
 -- A fast, unchecked read from an array
-foreign import extern "primArrayInt32_peek"
+foreign import "primArrayInt32_peek"
  arrayUI_peek  
  	:: forall %r1 %r2 %r3 %r4
 	.  ArrayU %r1 (Int %r2) -> Int32# -(!e1 $c1)> Int32#
@@ -39,7 +40,7 @@ foreign import extern "primArrayInt32_peek"
 	:$ Obj -> Int32# -> Int32#
 
 -- A fast, unchecked write to an array.
-foreign import extern "primArrayInt32_poke"
+foreign import "primArrayInt32_poke"
  arrayUI_poke
  	:: forall %r1 %r2 %r3 %r4
 	.  ArrayU %r1 (Int %r2) -> Int32# -($c1)> Int32# -(!e2 $c2)> ()
@@ -49,7 +50,7 @@ foreign import extern "primArrayInt32_poke"
 	,  Mutable %r2
 	:$ Obj -> Int32# -> Int32# -> Obj
 
-foreign import extern "primArrayU_Int_getBufPtr"
+foreign import "primArrayU_Int_getBufPtr"
  arrayUI_getBufPtr :: (ArrayU Int){read} -> Ptr# Int32#
 
 

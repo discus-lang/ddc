@@ -1,22 +1,21 @@
  
 import Base;
 
-
-foreign import extern "primPrintThunk"
+foreign import "primPrintThunk"
  printThunk 
 	:: forall a
  	.  a -> ()
 	:$ Obj -> Obj;
 
 
-foreign import extern "primPrintData"
+foreign import  "primPrintData"
  printData
 	:: forall a
 	.  a -> ()
 	:$ Obj -> Obj;
 
 
-foreign import extern "primSuspend1"
+foreign import "primSuspend1"
  suspend1 
 	:: forall a b !e1 $c0
 	.  (a -(!e1 $c0)> b) -> a -($c1)> b
@@ -26,7 +25,7 @@ foreign import extern "primSuspend1"
 	:$ Obj -> Obj -> Obj;
 
 
-foreign import extern "primSuspend2"
+foreign import "primSuspend2"
  suspend2
 	:: forall a b c !e1 !e2 $c1 $c2
 	.  (a -(!e1 $c1)> b -(!e2 $c2)> c) -($c3)> a -($c4)> b -($c5)> c
@@ -39,7 +38,7 @@ foreign import extern "primSuspend2"
 	:$ Obj -> Obj -> Obj -> Obj;
 
 
-foreign import extern "primSuspend3"
+foreign import "primSuspend3"
  suspend3
 	:: forall a b c d !e1 !e2 !e3 $c1 $c2 $c3
 	.  (a -(!e1 $c1)> b -(!e2 $c2)> c -(!e3 $c3)> d) 
@@ -54,7 +53,7 @@ foreign import extern "primSuspend3"
 	:$ Obj -> Obj -> Obj -> Obj -> Obj;
 
 
-foreign import extern "primSuspend4"
+foreign import "primSuspend4"
  suspend4
 	:: forall a b c d e !e1 !e2 !e3 !e4 $c1 $c2 $c3 $c4
 	.  (a -(!e1 $c1)> b -(!e2 $c2)> c -(!e3 $c3)> d -(!e4 $c4)> e) 
@@ -70,7 +69,7 @@ foreign import extern "primSuspend4"
 	:$ Obj -> Obj -> Obj -> Obj -> Obj -> Obj;
 
 
-foreign import extern "primForce"
+foreign import "primForce"
  force 
  	:: forall a.  a -> a
 	:$ Obj -> Obj;

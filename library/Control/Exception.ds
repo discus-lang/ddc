@@ -13,13 +13,13 @@ import	Control.Imperative
 effect !Throw	:: !
 
 
-foreign import extern "primException_init"
+foreign import "primException_init"
  primExceptionInit
 	:: forall %r1
 	.  Int %r1 -> ()
 	:$ Obj -> Obj
 
-foreign import extern "primException_try"	
+foreign import "primException_try"	
  primTry
 	:: forall a %r !e1 !e2 $c1
 	.  (() -(!e1 $c1)> a) -> (Exception %r -(!e2)> a) -(!e3 $c3)> a
@@ -27,14 +27,14 @@ foreign import extern "primException_try"
 	,  $c3 = f : $c1
 	:$ Obj -> Obj -> Obj
 		
-foreign import extern "primException_throw"
+foreign import "primException_throw"
  primThrow
 	:: forall a %r
 	.  Exception %r -(!e1)> a
 	:- !e1 = !{ !Throw }
 	:$ Obj -> Obj
 
-foreign import extern "primException_handleUncaught"
+foreign import "primException_handleUncaught"
  primHandleUncaught
 	:: forall a %r
 	.  Exception %r -> a

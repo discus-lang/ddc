@@ -12,56 +12,56 @@ import Class.Ord
 pragma	cc_includes ["math.h"]
 
 -- boxing
-foreign import extern "_boxFloat32"
+foreign import "_boxFloat32"
  boxFloat32 	:: forall %r1
   		.  Float32# -> Float %r1
 		:$ Float32# -> Obj
 
-foreign import extern "_unboxFloat32"
+foreign import "_unboxFloat32"
  unboxFloat32	:: forall %r1
  		.  Float %r1 -(!Read %r1)> Float32#
 		:$ Obj -> Float32#
 
-foreign import extern "primFloat32_toFloat"
+foreign import "primFloat32_toFloat"
  toFloat	:: Int{read} -> Float
 
 -- math
-foreign import extern "primFloat32_neg"
+foreign import "primFloat32_neg"
  primFloat32_neg	:: Float{read} -> Float
 
-foreign import extern "primFloat32_add"
+foreign import "primFloat32_add"
  primFloat32_add	:: Float{read} -> Float{read} -> Float
 
-foreign import extern "primFloat32_sub"
+foreign import "primFloat32_sub"
  primFloat32_sub	:: Float{read} -> Float{read} -> Float
 
-foreign import extern "primFloat32_mul"
+foreign import "primFloat32_mul"
  primFloat32_mul	:: Float{read} -> Float{read} -> Float
 
-foreign import extern "primFloat32_div"
+foreign import "primFloat32_div"
  primFloat32_div	:: Float{read} -> Float{read} -> Float
 
 -- comparisons
-foreign import extern "primFloat32_eq"
+foreign import "primFloat32_eq"
  primFloat32_eq		:: Float{read} -> Float{read} -> Bool
 
-foreign import extern "primFloat32_neq"
+foreign import "primFloat32_neq"
  primFloat32_neq	:: Float{read} -> Float{read} -> Bool
 
-foreign import extern "primFloat32_gt"
+foreign import "primFloat32_gt"
  primFloat32_gt		:: Float{read} -> Float{read} -> Bool
 
-foreign import extern "primFloat32_ge"
+foreign import "primFloat32_ge"
  primFloat32_ge		:: Float{read} -> Float{read} -> Bool
 
-foreign import extern "primFloat32_lt"
+foreign import "primFloat32_lt"
  primFloat32_lt		:: Float{read} -> Float{read} -> Bool
 
-foreign import extern "primFloat32_le"
+foreign import "primFloat32_le"
  primFloat32_le		:: Float{read} -> Float{read} -> Bool
 
 -- update
-foreign import extern "primFloat32_update"
+foreign import "primFloat32_update"
  primFloat32_update	:: Float{write} -> Float{read} -> ()
 
 
@@ -94,28 +94,28 @@ instance Accum Float where
 	(+=) a b 	= primFloat32_update a (primFloat32_add a b)
 
 -- trig
-foreign import extern "sinf"
+foreign import "sinf"
  sinU	:: Float32# -> Float32#
 
-foreign import extern "asinf"
+foreign import "asinf"
  asinU	:: Float32# -> Float32#
 
-foreign import extern "cosf"
+foreign import "cosf"
  cosU	:: Float32# -> Float32#
  
-foreign import extern "acosf"
+foreign import "acosf"
  acosU	:: Float32# -> Float32#
 
-foreign import extern "tanf"
+foreign import "tanf"
  tanU	:: Float32# -> Float32#
  
-foreign import extern "atanf"
+foreign import "atanf"
  atanU	:: Float32# -> Float32#
 
-foreign import extern "sqrtf"
+foreign import "sqrtf"
  sqrtU	:: Float32# -> Float32#
 
-foreign import extern "truncf"
+foreign import "truncf"
  truncU	:: Float32# -> Float32#
 
 sin x	= boxFloat32 (sinU   (unboxFloat32 x))
@@ -128,13 +128,13 @@ sqrt x	= boxFloat32 (sqrtU  (unboxFloat32 x))
 trunc x = boxFloat32 (truncU (unboxFloat32 x))
 
 -- 
-foreign import extern "logf"
+foreign import "logf"
  logU   :: Float32# -> Float32#
 
-foreign import extern "floorf"
+foreign import "floorf"
  floorU :: Float32# -> Float32#
 
-foreign import extern "fabsf"
+foreign import "fabsf"
  fabsU  :: Float32# -> Float32#
 
 log   x	= boxFloat32 (logU   (unboxFloat32 x))
@@ -142,6 +142,6 @@ floor x	= boxFloat32 (floorU (unboxFloat32 x))
 fabs x	= boxFloat32 (fabsU  (unboxFloat32 x))
 
 -- conversion
-foreign import extern "primFloat32_truncate"
+foreign import "primFloat32_truncate"
  truncate :: Float{read} -> Int
 

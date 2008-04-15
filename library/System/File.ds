@@ -11,14 +11,14 @@ data FILE# %r1	foreign "FILE"
 effect !File	:: !;
 
 -- fopen
-foreign import extern "fopen"
+foreign import "fopen"
  fopenU ::  	String# {read} 		-- fileName 
 	-> 	String# {read}		-- mode
 	-(!e1)> Ptr# FILE#
  	:- !e1 = !File
 
 -- fread
-foreign import extern "fread"
+foreign import "fread"
  freadU :: 	String# 	{write}	-- buffer to write into 
 	-> 	Int32# 		{read}	-- size of member
 	-> 	Int32# 		{read}	-- number of members to read
@@ -27,7 +27,7 @@ foreign import extern "fread"
 	:- !e = !File
 	
 -- fseek
-foreign import extern "fseek"
+foreign import "fseek"
  fseekU	:: Ptr# FILE# 		{read}	-- file
 	-> 	Int32#		{read}	-- offset
 	-> 	Int32#		{read}	-- whence SEEK_SET, SEEK_END or SEEK_CUR
@@ -35,23 +35,23 @@ foreign import extern "fseek"
 	:- !e = !File
 
 -- file position constants
-foreign import extern "SEEK_SET"
+foreign import "SEEK_SET"
  file_SEEK_SET :: Int32#
 
-foreign import extern "SEEK_CUR" 
+foreign import "SEEK_CUR" 
  file_SEEK_CUR :: Int32#
 
-foreign import extern "SEEK_END" 
+foreign import "SEEK_END" 
  file_SEEK_END :: Int32#
 
 -- ftell
-foreign import extern "ftell"
+foreign import  "ftell"
  ftellU	:: 	Ptr# FILE#	{read}	-- file
 	-(!e)>	Int32#			-- position in file
 	:- !e = !File
 
 --- move along, nothing to see here...
-foreign import extern "(Int32)"
+foreign import  "(Int32)"
  unsafe_castToInt32U 
  	:: forall a
 	.  a -> Int32#;

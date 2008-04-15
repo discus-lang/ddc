@@ -90,8 +90,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
  rewrite pp
   = case pp of
 
-	S.PImportExtern sp v tv to
-	 ->	returnJ $ D.PExtern sp v tv to
+--	S.PImportExtern sp v tv to
+--	 ->	returnJ $ D.PExtern sp v tv to
 
 	S.PImportModule sp ms
 	 ->	returnJ	$ D.PImport sp ms

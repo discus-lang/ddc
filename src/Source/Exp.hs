@@ -57,7 +57,7 @@ data Top a
 	| PInfix	a (InfixMode a) Int [Var]
 
 	-- Imports
-	| PImportExtern	a Var Type (Maybe Type)		-- name, value type, operational type
+--	| PImportExtern	a Var Type (Maybe Type)		-- name, value type, operational type
 	| PImportModule a [Module]
 
 	| PForeign	a (Foreign a)
@@ -106,7 +106,6 @@ data Top a
 data Foreign a
 	= OImport (Foreign a)
 	| OExport (Foreign a)
-	| OCCall  (Maybe String) Var Type
 	| OExtern (Maybe String) Var Type (Maybe Type)
 	deriving (Show, Eq)
 

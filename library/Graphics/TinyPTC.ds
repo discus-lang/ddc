@@ -5,13 +5,13 @@ pragma cc_includes
 
 effect !Graphics	:: !;
 	
-foreign import extern "ptc_open"
+foreign import "ptc_open"
  ptcOpen 	:: String# {read} -> Int32# -> Int32# -(!Graphics)> Int32#;
 		
-foreign import extern "ptc_close"
+foreign import "ptc_close"
  ptcClose	:: Void# -(!Graphics)> Void#;
 				
-foreign import extern "ptc_update"
+foreign import "ptc_update"
  ptcUpdate 	:: Ptr# Int32# {read} -(!Graphics)> Void#;
 
 

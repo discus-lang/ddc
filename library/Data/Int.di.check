@@ -74,77 +74,77 @@ instance Class.Update.Accum (Base.Int %rDK44) where
 
 
 -- Foreign imports
-foreign import extern "_boxInt32"
+foreign import "_boxInt32"
  boxInt32
         :: Base.Int32#{read} -> Base.Int
         :$ Base.Int32# -> Base.Obj;
 
-foreign import extern "_unboxInt32"
+foreign import "_unboxInt32"
  unboxInt32
         :: Base.Int{read} -> Base.Int32#
         :$ Base.Obj -> Base.Int32#;
 
-foreign import extern "primInt32_neg"
+foreign import "primInt32_neg"
  primInt32_neg
         :: Base.Int{read} -> Base.Int ;
 
-foreign import extern "primInt32_add"
+foreign import "primInt32_add"
  primInt32_add
         :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
-foreign import extern "primInt32_sub"
+foreign import "primInt32_sub"
  primInt32_sub
         :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
-foreign import extern "primInt32_mul"
+foreign import "primInt32_mul"
  primInt32_mul
         :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
-foreign import extern "primInt32_div"
+foreign import "primInt32_div"
  primInt32_div
         :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
-foreign import extern "primInt32_mod"
+foreign import "primInt32_mod"
  primInt32_mod
         :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
 
-foreign import extern "primInt32_eq"
+foreign import "primInt32_eq"
  primInt32_eq
         :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
-foreign import extern "primInt32_neq"
+foreign import "primInt32_neq"
  primInt32_neq
         :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
-foreign import extern "primInt32_gt"
+foreign import "primInt32_gt"
  primInt32_gt
         :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
-foreign import extern "primInt32_lt"
+foreign import "primInt32_lt"
  primInt32_lt
         :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
-foreign import extern "primInt32_ge"
+foreign import "primInt32_ge"
  primInt32_ge
         :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
-foreign import extern "primInt32_le"
+foreign import "primInt32_le"
  primInt32_le
         :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
 
-foreign import extern "primInt32_update"
+foreign import "primInt32_update"
  primInt32_update
         :: Base.Int{write} -> Base.Int{read} -> Base.Unit ;
 
 
 -- Binds
-foreign import extern instance_Copy_Int_copy
+foreign import instance_Copy_Int_copy
         :: forall %r0 %r1
         .  Base.Int %r1 -(!e0)> Base.Int %r0
         :- !e0        = Base.!Read %r1
         :$ Base.Data -> Base.Data;
         
-foreign import extern instance_Accum_Int_PsEq
+foreign import instance_Accum_Int_PsEq
         :: forall %r0 %r1
         .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}
@@ -152,7 +152,7 @@ foreign import extern instance_Accum_Int_PsEq
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
-foreign import extern (<>)
+foreign import (<>)
         :: forall %r0 %r1 !e0 $c0
         .  Base.Int %r0 -> (Base.Int %r0 -(!e0 $c0)> Base.Int %r1) -(!e1 $c1)> Base.Unit
         :- !e1        = !{!e0; Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}
@@ -160,7 +160,7 @@ foreign import extern (<>)
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Thunk -> Base.Data;
         
-foreign import extern inc
+foreign import inc
         :: forall %r0 %r1
         .  Base.Int %r0 -(!e0)> Base.Int %r1
         :- !e0        = Base.!Read %r0

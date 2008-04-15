@@ -9,7 +9,7 @@ fun1	= \x -> y;
 fun2	= case z of { Tuple2 x y -> x; };
 
 -- $c0 is not bound
-foreign import extern "primSuspend1"
+foreign import "primSuspend1"
  suspend1_wibble 
 	:: forall a b !e1
 	.  (a -(!e1 $c0)> b) -> a -($c1)> b

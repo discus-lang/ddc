@@ -184,7 +184,7 @@ exportForeign
 
 exportForeign v tv to
 	= pprStrPlain
-	$ "foreign import extern "
+	$ "foreign import "
 	% pprStrPlain v { Var.nameModule = Var.ModuleNil }
 	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTS $ T.normaliseT tv)
 		++ "\n:$ " ++ pprStrPlain to

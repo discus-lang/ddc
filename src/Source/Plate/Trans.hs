@@ -292,12 +292,6 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                         x2' <- transZM table x2
                         x3' <- transZM table x3
                         return (PInfix x0' x1' x2' x3')
-                PImportExtern x0 x1 x2 x3
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        x3' <- transZM table x3
-                        return (PImportExtern x0' x1' x2' x3')
                 PImportModule x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -374,11 +368,6 @@ instance (Monad m) => TransM m n1 n2 (Foreign n1) (Foreign n2)
                 OExport x0
                   -> do x0' <- transZM table x0
                         return (OExport x0')
-                OCCall x0 x1 x2
-                  -> do x0' <- transZM table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (OCCall x0' x1' x2')
                 OExtern x0 x1 x2 x3
                   -> do x0' <- transZM table x0
                         x1' <- transZM table x1

@@ -11,54 +11,54 @@ import Class.Update
 
 infix  5 <, <=, >=, > 
 
-foreign import extern "_boxInt32"
+foreign import "_boxInt32"
  boxInt32 	:: Int32#{read} -> Int
 		:$ Int32# -> Obj
 
-foreign import extern "_unboxInt32"
+foreign import "_unboxInt32"
  unboxInt32	:: Int {read} -> Int32#
 		:$ Obj -> Int32#
 
 -- math
-foreign import extern "primInt32_neg"
+foreign import "primInt32_neg"
  primInt32_neg  :: Int{read} -> Int
 
-foreign import extern "primInt32_add"
+foreign import "primInt32_add"
  primInt32_add	:: Int{read} -> Int{read} -> Int
 
-foreign import extern "primInt32_sub"	
+foreign import "primInt32_sub"	
  primInt32_sub	:: Int{read} -> Int{read} -> Int
 
-foreign import extern "primInt32_mul"	
+foreign import "primInt32_mul"	
  primInt32_mul	:: Int{read} -> Int{read} -> Int
 
-foreign import extern "primInt32_div"	
+foreign import "primInt32_div"	
  primInt32_div	:: Int{read} -> Int{read} -> Int
 
-foreign import extern "primInt32_mod"	
+foreign import "primInt32_mod"	
  primInt32_mod	:: Int{read} -> Int{read} -> Int
 
 -- comparisons
-foreign import extern "primInt32_eq"	
+foreign import "primInt32_eq"	
  primInt32_eq	:: Int{read} -> Int{read} -> Bool
 
-foreign import extern "primInt32_neq"	
+foreign import "primInt32_neq"	
  primInt32_neq	:: Int{read} -> Int{read} -> Bool
 
-foreign import extern "primInt32_gt"	
+foreign import "primInt32_gt"	
  primInt32_gt	:: Int{read} -> Int{read} -> Bool
 
-foreign import extern "primInt32_lt"	
+foreign import "primInt32_lt"	
  primInt32_lt	:: Int{read} -> Int{read} -> Bool
 
-foreign import extern "primInt32_ge"	
+foreign import "primInt32_ge"	
  primInt32_ge	:: Int{read} -> Int{read} -> Bool
 
-foreign import extern "primInt32_le"	
+foreign import "primInt32_le"	
  primInt32_le	:: Int{read} -> Int{read} -> Bool
 
 -- update
-foreign import extern "primInt32_update"
+foreign import "primInt32_update"
  primInt32_update
  	:: Int{write} -> Int{read} -> ()
 
