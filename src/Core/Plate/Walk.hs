@@ -3,21 +3,22 @@
 -- Transform a tree while walking down it collecting up types
 --
 module Core.Plate.Walk
-	( WalkTable (..)
-	, walkZM
-	, walkTreeM
-	, walkTableId
-	, lookupT)
+--	( 
+--	WalkTable (..)
+--	, walkZM
+--	, walkTreeM
+--	, walkTableId
+--	, lookupT)
 
 where
-
+{-
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 import Util
 import Shared.Error
 import Core.Exp
-import Core.Util.Slurp		(maybeSlurpTypeX)
+-- import Core.Util.Slurp		(maybeSlurpTypeX)
 
 -----
 stage	= "Core.Plate.Walk"
@@ -420,3 +421,4 @@ bindTK_Pat zz ww
  	WCon v lvt
 	 -> foldM (\z (l, v, t) -> bindT z z v t) zz lvt
  	
+-}

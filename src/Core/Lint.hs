@@ -25,6 +25,7 @@ import Core.Plate.Walk
 import Core.Util
 import Core.Util.Slurp
 import Core.ReconKind
+import Core.Reconstruct		(reconX_type)
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -121,7 +122,7 @@ lintP	tt (PBind v x)
  	| Var.name v == "main"
 	, Var.nameModule v == Var.ModuleAbsolute ["Main"]
 	= do
-		let Just vT	= maybeSlurpTypeX x
+		let vT	= reconX_type "Core.Lint.lintP" x
 		tt'	<- addVT v vT tt
 		lintX tt' x
 
@@ -132,9 +133,8 @@ lintP	tt (PBind v x)
 		return tt'
 		
 	| otherwise
-	= do
-		let Just vT	=  maybeSlurpTypeX x
-		tt'		<- addVT v vT tt
+	= do	let vT	=  reconX_type "Core.Lint.lintP" x
+		tt'	<- addVT v vT tt
 	 	lintX tt' x
 	 	return tt'
 	
@@ -274,8 +274,8 @@ lintS tt (SBind Nothing x)
  	return tt
  
 lintS tt (SBind (Just v) x)
- = do	let Just xT	= maybeSlurpTypeX x
- 	tt'		<- addVT v xT tt
+ = do	let xT	= reconX_type "Core.Lint.lintS" x
+ 	tt'	<- addVT v xT tt
  	lintX tt' x
 	return tt'
 	

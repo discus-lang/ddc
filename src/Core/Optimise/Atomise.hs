@@ -12,7 +12,7 @@ import	qualified Shared.VarBind	as Var
 import	Util
 
 -----
-type	AtomiseM	= State ()
+-- type	AtomiseM	= State ()
 
 atomiseTree 
 	:: Tree 	-- source tree
@@ -20,7 +20,10 @@ atomiseTree
 	-> Tree
 
 atomiseTree cSource cHeader 
- = evalState
+ = cSource
+ 
+ {-
+ evalState
  	(walkZM	walkTableId
 		{ transX	= atomiseX }
 		cSource)
@@ -31,16 +34,15 @@ atomBinds
 
 
 atomiseX 
-	:: WalkTable AtomiseM 
-	-> Exp 
+	:: Exp 
 	-> AtomiseM Exp
 
-atomiseX table xx
+atomiseX xx
  	| XPrim MCall ts@[XVar v tV, _, XType (TVar KRegion r)]	
 					<- xx
 
 	, elem (Var.bind v) atomBinds
-	, isConst table r
+	, isConst r
 	= return $ XAtom v ts
 
 	| XPrim MCall [XVar v tV]	<- xx
@@ -51,15 +53,16 @@ atomiseX table xx
 	= return xx
 	
 
-isConst :: WalkTable AtomiseM -> Var -> Bool
-isConst table v
+isConst ::  Var -> Bool
+isConst  v
 --	= Debug.trace ("fs = " ++ (show $ Map.keys $ boundFs table))
-	= isConst' table v
+	= isConst'  v
 
-isConst' table v
+isConst'  v
 	| Just fs	<- Nothing -- Map.lookup v $ boundFs table
 	, or $ map (\(TClass v _) -> Var.bind v == Var.FConst) fs
 	= True
 	
 	| otherwise
 	= False
+-}

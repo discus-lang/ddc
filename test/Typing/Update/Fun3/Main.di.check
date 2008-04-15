@@ -24,36 +24,36 @@ data FunBox %r1 a !e1 $c1
 -- Foreign imports
 
 -- Binds
-foreign import extern thing
+foreign import thing
         :: Base.Int %rTC4
         :$ Base.Data;
         
-foreign import extern project_FunBox_fun
+foreign import project_FunBox_fun
         :: forall t0 %r0 !e0 $c0
         .  FunBox %r0 t0 !e0 $c0 -(!e1)> t0 -(!e0 $c0)> t0
         :- !e1        = Base.!Read %r0
         :$ Base.Data -> Base.Thunk;
         
-foreign import extern project_FunBox_ref_fun
+foreign import project_FunBox_ref_fun
         :: forall t0 %r0 !e0 $c0
         .  FunBox %r0 t0 !e0 $c0 -(!e1)> Data.Ref.Ref %r0 (t0 -(!e0 $c0)> t0)
         :- !e1        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern oldFun
+foreign import oldFun
         :: forall %r0 %r1
         .  Base.Int %r0 -(!e0)> Base.Int %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern newFun
+foreign import newFun
         :: forall %r0
         .  Base.Int %r0 -(!e0 $c0)> Base.Int %r0
         :- !e0        = !{Base.!Read %r0; Base.!Read %rTC4; System.Console.!Console}
         ,  $c0        = thing : %rTC4
         :$ Base.Data -> Base.Data;
         
-foreign import extern testBox2
+foreign import testBox2
         :: forall %r0 %r1 %r2
         .  Base.Unit -($c0)> Data.Tuple.Tuple3 %r2 (FunBox %r0 (Base.Int %r1) !e0 $c1) (Base.Unit -(!e1 $c2)> Base.Unit) (Base.Unit -(!e2 $c3)> Base.Int %r1)
         :- !e0        = !{Base.!Read %r1; Base.!Read %rTC4; System.Console.!Console}
@@ -66,7 +66,7 @@ foreign import extern testBox2
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern main
+foreign import main
         :: Base.Unit -($c0)> Base.Unit
         :- $c0        = testBox2 : %rTC4
         :$ Base.Data -> Base.Data;

@@ -1,8 +1,6 @@
 
 module Core.Lift.BindTypes
-(
-	bindTypesTree
-)
+	( bindTypesTree )
 
 where
 
@@ -11,6 +9,7 @@ import Util
 import Core.Exp
 import Core.Lift.Base
 import Core.Plate.Trans
+import Core.Reconstruct
 import Core.Util
 import Core.Util.Slurp
 
@@ -51,7 +50,8 @@ bindTypesS ::	Stmt	-> LiftM Stmt
 bindTypesS	s
  = case s of
 	SBind (Just v) x
-	 -> do	let Just t	= maybeSlurpTypeX x
+	 -> do	let t	= reconX_type "Core.Lift.BindTypes" x
+	 	-- let Just t	= maybeSlurpTypeX x
 	 	bindType v t
 	 	return s
 
@@ -77,6 +77,6 @@ bindTypesW	ww
 		
 	_	-> return ww
 	
-	
+
 
 

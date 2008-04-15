@@ -1,8 +1,7 @@
 
 module Core.Util.Slurp
-	( maybeSlurpTypeX
-	, slurpTypesP
-	, slurpTypeMapPs
+	( slurpTypesP
+ 	, slurpTypeMapPs
 	, slurpSuperMapPs
 	, slurpCtorDefs 
 	, slurpExpX
@@ -24,8 +23,26 @@ import Core.Pretty
 -----
 stage	= "Core.Util.Slurp"
 
------
+-- | Slurp out the types defined by this top level thing
+slurpTypesP :: Top -> [(Var, Type)]
+slurpTypesP pp
+ = case pp of
+	PExtern v tv to	-> [(v, tv)]
+	PCtor   v tv to	-> [(v, tv)]
+	PBind   v x
+	 -> case maybeSlurpTypeX x of
+	 	Just t	-> [(v, t)]
+		Nothing	-> panic stage
+			$ "Core.Util.Slurp: slurpTypesP\n"
+			% "  can't get type from this top-level thing\n"
+			% pp % "\n\n"
 
+	PClassDict v ts context sigs -> sigs
+	_ -> []
+
+
+-- | The types of top level things can be extracted directly from their annotations, 
+--	without having to do a full type reconstruction.
 maybeSlurpTypeX :: Exp -> Maybe Type
 maybeSlurpTypeX	xx
 	| XAnnot n x		<- xx
@@ -51,63 +68,23 @@ maybeSlurpTypeX	xx
 	| XTau t x		<- xx
 	= Just t
 
-	| XDo ss		<- xx
-	, Just sLast		<- takeLast ss
-	= maybeSlurpTypeS sLast
-
-	| XMatch aa 		<- xx
-	, Just aLast		<- takeLast aa
-	= maybeSlurpTypeA aLast
-	
-	
 	| otherwise
 	= Nothing
 
-
-maybeSlurpTypeA :: Alt -> Maybe Type
-maybeSlurpTypeA (AAlt gs x)	= maybeSlurpTypeX x
-
-maybeSlurpTypeS :: Stmt -> Maybe Type
-maybeSlurpTypeS (SBind mV x)	= maybeSlurpTypeX x
-
-
-
-
--- | Slurp off the types of the bindings defined by this top level thing
-slurpTypesP :: Top -> [(Var, Type)]
-slurpTypesP pp
- = case pp of
-	PExtern v tv to	-> [(v, tv)]
-	PCtor   v tv to	-> [(v, tv)]
-	PBind   v x
-	 -> case maybeSlurpTypeX x of
-	 	Just t	-> [(v, t)]
-		Nothing	-> panic stage
-			$ "Core.Util.Slurp: slurpTypesP\n"
-			% "  can't get type from this top-level thing\n"
-			% pp % "\n\n"
-
-	PClassDict v ts context sigs -> sigs
-	_ -> []
-
-
------
+-- | Slurp out a map of types of top level things
 slurpTypeMapPs ::	[Top] -> Map Var Type
 slurpTypeMapPs ps
  	= Map.fromList
 	$ catMap slurpTypesP ps
-	
-	
------
+
+-- | Slurp out a map of all top-level super combinators
 slurpSuperMapPs ::	[Top] -> Map Var Top
 slurpSuperMapPs	ps
 	= Map.fromList
 	$ [ (v, p) | p@(PBind v _) <- ps]
-
-
 	
 
------
+-- | Slurp out the body expression from this annotated thing.
 slurpExpX ::	Exp -> Exp
 slurpExpX xx
  = case xx of
@@ -116,13 +93,14 @@ slurpExpX xx
 	XTau 	t x	-> slurpExpX x
 	_		-> xx
 
-
+-- | Slurp out all the constructors defined in this tree
 slurpCtorDefs :: Tree -> Map Var CtorDef
 slurpCtorDefs tree
  	= Map.fromList
 	$ [ (vCtor, c)	| PData vData vs ctors		<- tree 
 			, c@(CtorDef vCtor fields)	<- ctors ]
------
+
+-- | Slurp out a list of vars bound by this top level thing
 slurpBoundVarsP
 	:: Top -> [Var]
 	
@@ -179,3 +157,4 @@ dropXTau xx env tt
 	-- we've hit a value, drop the annot
 	| otherwise
 	= XTau (packT $ makeTWhere tt (Map.toList env)) xx
+

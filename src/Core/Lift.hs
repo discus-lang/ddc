@@ -55,7 +55,6 @@ lambdaLiftTreeM
 	--	This adds types for all bound variables to the 
 	--	stateTypes member of LiftS
 	bindTypesTree binds
-	
 
 	-- lift out lambdas from binds, leaving supers.
 	(bindsL, pssNew)

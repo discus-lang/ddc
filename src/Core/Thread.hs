@@ -14,7 +14,7 @@ module Core.Thread
 	
 where
 
-import Core.Plate.Walk
+import Core.Plate.Trans
 import Core.Util
 import Core.ReconKind
 import Core.Exp
@@ -58,13 +58,13 @@ threadTree :: Tree -> Tree -> Tree
 threadTree hTree sTree 
  = let	instMap	= slurpClassInstMap (sTree ++ hTree)
    
-	walkTable 
-		 = walkTableId
+	transTable
+		 = transTableId
 		 { transP	= thread_transP 
 		 , transX 	= thread_transX instMap 
 		 , transX_enter	= thread_transX_enter }
 	
-   in	evalState (walkZM walkTable sTree) []
+   in	evalState (transZM transTable sTree) []
 
 -- | Slurp out all the class instances from ths tree
 slurpClassInstMap
@@ -76,8 +76,8 @@ slurpClassInstMap tree
 
 
 -- | push witnesses to properties of top-level regions.
-thread_transP :: WalkTable ThreadM -> Top -> ThreadM Top
-thread_transP table pp
+thread_transP :: Top -> ThreadM Top
+thread_transP pp
  = case pp of
  	PRegion r vts
 	 -> do	mapM_ (\(v, t) -> pushWitnessVK v (kindOfType t)) vts
@@ -87,8 +87,8 @@ thread_transP table pp
 
 
 -- | bottom-up: replace applications of static witnesses with bound witness variables.
-thread_transX :: ClassInstMap -> WalkTable ThreadM -> Exp -> ThreadM Exp
-thread_transX instMap table xx
+thread_transX :: ClassInstMap -> Exp -> ThreadM Exp
+thread_transX instMap xx
  = case xx of
  	XAPP x t@(TClass{})
 	 -> do	t'	<- rewriteWitness instMap t
@@ -109,8 +109,8 @@ thread_transX instMap table xx
 	_ ->	return xx
 
 
-thread_transX_enter :: WalkTable ThreadM -> Exp -> ThreadM Exp
-thread_transX_enter table xx
+thread_transX_enter :: Exp -> ThreadM Exp
+thread_transX_enter xx
  = case xx of
  	XLAM b k x
 	 -> do	pushWitnessVK (varOfBind b) k

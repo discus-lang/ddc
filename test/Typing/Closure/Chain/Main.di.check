@@ -19,18 +19,18 @@
 -- Foreign imports
 
 -- Binds
-foreign import extern x
+foreign import x
         :: Base.Int %rTC0
         :$ Base.Data;
         
-foreign import extern fun
+foreign import fun
         :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Int %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = x : %rTC0
         :$ Base.Data -> Base.Data;
         
-foreign import extern fun2
+foreign import fun2
         :: forall %r0
         .  Base.Unit -($c0)> Base.Unit -(!e0 $c1)> Base.Int %r0
         :- !e0        = Base.!Read %rTC0
@@ -38,7 +38,7 @@ foreign import extern fun2
         ,  $c1        = x : %rTC0
         :$ Base.Data -> Base.Thunk;
         
-foreign import extern main
+foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTC0; System.Console.!Console}
         ,  $c0        = fun2 : %rTC0

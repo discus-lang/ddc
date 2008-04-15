@@ -21,7 +21,7 @@ import Shared.Pretty
 import Core.Exp
 import Core.Util
 import Core.Util.Slurp
-import Core.Plate.Walk
+import Core.Plate.Trans
 import Core.Plate.FreeVars
 
 data GraphS
@@ -56,7 +56,7 @@ slurpAppGraph
 	topVs		= [v	| PBind	  v x		<- tree]
   
  	state'	= execState
-	 		(walkZM walkTableId { transS	= slurpS }
+	 		(transZM transTableId { transS	= slurpS }
 				cTree)
 
 			GraphS 
@@ -66,8 +66,8 @@ slurpAppGraph
    in	stateGraph state'
 
 
-slurpS :: WalkTable GraphM -> Stmt -> GraphM Stmt
-slurpS	table ss
+slurpS :: Stmt -> GraphM Stmt
+slurpS ss
  = case ss of
 	SBind (Just v) x	
 	 -> do	topVs	<- gets stateTopVs

@@ -40,74 +40,74 @@ data Body %r1
 -- Foreign imports
 
 -- Binds
-foreign import extern project_Vec2_x
+foreign import project_Vec2_x
         :: forall t0 %r0
         .  Vec2 %r0 t0 -(!e0)> t0
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Obj;
         
-foreign import extern project_Vec2_y
+foreign import project_Vec2_y
         :: forall t0 %r0
         .  Vec2 %r0 t0 -(!e0)> t0
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Obj;
         
-foreign import extern project_Vec2_ref_x
+foreign import project_Vec2_ref_x
         :: forall t0 %r0
         .  Vec2 %r0 t0 -(!e0)> Data.Ref.Ref %r0 t0
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern project_Vec2_ref_y
+foreign import project_Vec2_ref_y
         :: forall t0 %r0
         .  Vec2 %r0 t0 -(!e0)> Data.Ref.Ref %r0 t0
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern project_Body_mass
+foreign import project_Body_mass
         :: forall %r0
         .  Body %r0 -(!e0)> Base.Float %r0
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern project_Body_pos
+foreign import project_Body_pos
         :: forall %r0
         .  Body %r0 -(!e0)> Vec2 %r0 (Base.Float %r0)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern project_Body_vel
+foreign import project_Body_vel
         :: forall %r0
         .  Body %r0 -(!e0)> Vec2 %r0 (Base.Float %r0)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern project_Body_ref_mass
+foreign import project_Body_ref_mass
         :: forall %r0
         .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Base.Float %r0)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern project_Body_ref_pos
+foreign import project_Body_ref_pos
         :: forall %r0
         .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Vec2 %r0 (Base.Float %r0))
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern project_Body_ref_vel
+foreign import project_Body_ref_vel
         :: forall %r0
         .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Vec2 %r0 (Base.Float %r0))
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern dude
+foreign import dude
         :: forall %r0
         .  Base.Unit -(!e0)> Vec2 %r0 (Base.Float %r0)
         :- !e0        = Base.!Read %r0
         ,  Base.Lazy %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern main
+foreign import main
         :: Base.Unit -(!e0)> Base.Unit
         :- !e0        = System.Console.!Console
         :$ Base.Data -> Base.Data;

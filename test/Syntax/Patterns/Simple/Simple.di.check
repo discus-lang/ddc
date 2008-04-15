@@ -26,102 +26,102 @@ data Thing3 %rDK0 a b c
 -- Foreign imports
 
 -- Binds
-foreign import extern map2
+foreign import map2
         :: forall t0 t1 %r0 %r1 !e0 $c0
         .  (t0 -(!e0 $c0)> t1) -> Data.List.List %r0 t0 -(!e1 $c1)> Data.List.List %r1 t1
         :- !e1        = !{Base.!Read %r0; !e0}
         ,  $c1        = f : $c0
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
-foreign import extern addMe
+foreign import addMe
         :: forall %r0 %r1 %r2 %r3 %r4 %r5 %r6 %r7 %r8 %r9 %r10 %r11 %r12 %r13 %r14
         .  Data.Tuple.Tuple2 %r9 (Base.Int %r0) (Data.List.List %r10 (Data.Tuple.Tuple2 %r11 (Base.Int %r1) (Base.Int %r2))) -> Data.Tuple.Tuple3 %r12 (Data.Tuple.Tuple2 %r14 (Base.Int %r3) (Base.Int %r4)) (Base.Int %r5) (Data.Tuple.Tuple2 %r13 (Base.Int %r6) (Base.Int %r7)) -(!e0 $c0)> Base.Int %r8
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2; Base.!Read %r3; Base.!Read %r4; Base.!Read %r5; Base.!Read %r6; Base.!Read %r7; Base.!Read %r9; Base.!Read %r10; Base.!Read %r11; Base.!Read %r12; Base.!Read %r13; Base.!Read %r14}
         ,  $c0        = ${xSD0 : %r9; xSD0 : %r0; xSD0 : %r10; xSD0 : %r11; xSD0 : %r1; xSD0 : %r2}
         :$ Base.Data -> Base.Data -> Base.Data;
         
-foreign import extern sumTuples
+foreign import sumTuples
         :: forall %r0 %r1 %r2 %r3 %r4
         .  Data.List.List %r0 (Data.Tuple.Tuple2 %r2 (Base.Int %r3) (Base.Int %r4)) -(!e0)> Base.Int %r1
         :- !e0        = !{Base.!Read %r0; Base.!Read %r3; Base.!Read %r4; Base.!Read %r1; Base.!Read %r2}
         :$ Base.Data -> Base.Data;
         
-foreign import extern listPairs
+foreign import listPairs
         :: forall %r0 %r1 %r2 %r3 %r4
         .  Data.List.List %r3 (Base.Int %r1) -(!e0)> Data.List.List %r4 (Data.Tuple.Tuple2 %r2 (Base.Int %r1) (Base.Int %r0))
         :- !e0        = !{Base.!Read %r3; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
-foreign import extern unboxed
+foreign import unboxed
         :: Base.Int32# -> Base.Int32#
         :$ Base.Int32# -> Base.Int32#;
         
-foreign import extern listPairTuples
+foreign import listPairTuples
         :: forall %r0 %r1 %r2 %r3 %r4
         .  Data.List.List %r0 (Data.Tuple.Tuple2 %r2 (Base.Char %r1) (Base.Char %r1)) -(!e0)> Data.List.List %r3 (Data.Tuple.Tuple2 %r4 (Base.Char %r1) (Base.Char %r1))
         :- !e0        = !{Base.!Read %r0; Base.!Read %r2; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing
+foreign import thing
         :: forall t0 %r0
         .  t0 -> Base.Int %r0
         :$ Base.Obj -> Base.Data;
         
-foreign import extern thing2
+foreign import thing2
         :: forall t0 t1 %r0 %r1
         .  Data.Tuple.Tuple2 %r0 t0 t1 -(!e0)> Base.Int %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing3
+foreign import thing3
         :: forall t0 t1 %r0 %r1 %r2
         .  Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0 -(!e0)> Data.Bool.Bool %r2
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing3a
+foreign import thing3a
         :: forall t0 t1 %r0 %r1 %r2 %r3
         .  Data.Tuple.Tuple2 %r0 (Data.List.List %r1 (Data.Maybe.Maybe %r2 t1)) t0 -(!e0)> Data.Tuple.Tuple2 %r3 t1 (Data.List.List %r1 (Data.Maybe.Maybe %r2 t1))
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2}
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing4
+foreign import thing4
         :: forall t0 t1 %r0 %r1 %r2
         .  Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0 -(!e0)> Data.Bool.Bool %r2
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing5
+foreign import thing5
         :: forall t0 t1 %r0 %r1
         .  Data.Tuple.Tuple2 %r0 t0 t1 -(!e0)> Data.Tuple.Tuple2 %r1 t0 (Data.Tuple.Tuple2 %r0 t0 t1)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing6
+foreign import thing6
         :: forall t0 t1 t2 %r0 %r1 %r2 %r3
         .  Data.Tuple.Tuple2 %r0 (Data.Tuple.Tuple2 %r2 t1 t2) (Data.Maybe.Maybe %r1 t0) -(!e0)> Data.Tuple.Tuple4 %r3 (Data.Tuple.Tuple2 %r0 (Data.Tuple.Tuple2 %r2 t1 t2) (Data.Maybe.Maybe %r1 t0)) (Data.Maybe.Maybe %r1 t0) t1 t0
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r2}
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing7
+foreign import thing7
         :: forall t0 t1 %r0 %r1 %r2
         .  Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0 -(!e0)> Data.Tuple.Tuple2 %r2 (Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0) t1
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing8
+foreign import thing8
         :: forall t0 t1 %r0 %r1 %r2
         .  Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0 -(!e0)> Data.Tuple.Tuple2 %r2 (Data.Tuple.Tuple2 %r0 (Data.Maybe.Maybe %r1 t1) t0) t1
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing9
+foreign import thing9
         :: forall %r0 %r1
         .  Data.Bool.Bool %r0 -(!e0)> Data.Bool.Bool %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern thing10
+foreign import thing10
         :: forall t0 t1 t2 %r0 %r1
         .  Thing3 %r0 t0 t1 t2 -(!e0)> Data.Tuple.Tuple3 %r1 t0 t1 t2
         :- !e0        = Base.!Read %r0

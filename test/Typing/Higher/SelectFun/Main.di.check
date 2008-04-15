@@ -19,20 +19,20 @@
 -- Foreign imports
 
 -- Binds
-foreign import extern succ
+foreign import succ
         :: forall %r0 %r1
         .  Base.Int %r0 -(!e0)> Base.Int %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern increment
+foreign import increment
         :: forall %r0
         .  Base.Int %r0 -(!e0)> Base.Int %r0
         :- !e0        = !{Base.!Read %r0; Base.!Write %r0}
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern selectFun2
+foreign import selectFun2
         :: forall %r0 %r1 !e0 $c0
         .  Data.Bool.Bool %r0 -> (Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -($c1)> (Base.Int %r1 -(!e0 $c0)> Base.Int %r1) -(!e1 $c2)> Base.Int %r1 -(!e0 $c0)> Base.Int %r1
         :- !e1        = Base.!Read %r0
@@ -41,7 +41,7 @@ foreign import extern selectFun2
         ,  $c2        = ${x : %r0; f : $c0}
         :$ Base.Data -> Base.Thunk -> Base.Thunk -> Base.Thunk;
         
-foreign import extern main
+foreign import main
         :: Base.Unit -(!e0)> Base.Unit
         :- !e0        = System.Console.!Console
         :$ Base.Data -> Base.Data;

@@ -42,28 +42,28 @@ data Bar %rDK2 a
 -- Foreign imports
 
 -- Binds
-foreign import extern fi
+foreign import fi
         :: forall t0
         .  Foo %rTS0 t0
         :$ Base.Data;
         
-foreign import extern ff
+foreign import ff
         :: forall t0
         .  Foo %rTS1 t0
         :$ Base.Data;
         
-foreign import extern ffun
+foreign import ffun
         :: Foo %rTS2 (Base.Int %rTS6)
         :- Base.Const %rTS6
         :$ Base.Data;
         
-foreign import extern succ
+foreign import succ
         :: forall %r0 %r1
         .  Base.Int %r0 -(!e0)> Base.Int %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-foreign import extern main
+foreign import main
         :: Base.Unit -> Base.Unit
         :$ Base.Data -> Base.Data;
         
