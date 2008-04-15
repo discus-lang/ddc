@@ -1,10 +1,5 @@
------
--- Source.Exp
---
--- Summary:
---	Source expression tree data type.
---
---
+
+-- | Data type for source language.
 module Source.Exp
 	( Tree
 	, Top 		(..)
@@ -17,7 +12,7 @@ module Source.Exp
 
 	-- Value expressions
 	, Exp 		(..)
-	, Stmt 		(..), 	takeStmtBoundV
+	, Stmt 		(..)
 	, Proj		(..)
 	, Alt 		(..)
 	, Guard 	(..)
@@ -36,9 +31,6 @@ module Source.Exp
 
 where
 
------
-import Util
-
 import qualified Shared.Var	as Var
 import Shared.Base		(SourcePos)
 import Shared.Var 		(Var, Module)
@@ -46,11 +38,14 @@ import Shared.Literal
 import Shared.Exp
 import Type.Exp			hiding (Var)
 
------------------------
--- Top level expressions
---
+import Util
+
+
+-- Tree --------------------------------------------------------------------------------------------
 type Tree a	= [Top a]
 
+
+-- Top ---------------------------------------------------------------------------------------------
 data Top a
 	= PPragma	a [Exp a]
 	| PModule	a Module
@@ -101,17 +96,22 @@ data Top a
 	| PStmt	(Stmt a)
 	deriving (Show, Eq)
 
------
+
+-- TODO: make these into their own data types.
+type FixDef a	= (Var, (Int, InfixMode a))
+type Ctor a	= (Var, [DataField (Exp a) Type])
+type DataDef a	= (Var, [Var], [Ctor a])
+
+
+-- Foreign -----------------------------------------------------------------------------------------
 data Foreign a
 	= OImport (Foreign a)
 	| OExport (Foreign a)
 	| OExtern (Maybe String) Var Type (Maybe Type)
 	deriving (Show, Eq)
 
------
--- InfixMode
--- 	Infix operator associativity.
---
+
+-- InfixMode ---------------------------------------------------------------------------------------
 data InfixMode a
 
 	-- Left associative.
@@ -135,14 +135,8 @@ data InfixMode a
 	
 	deriving (Show, Eq)
 
-type FixDef a	= (Var, (Int, InfixMode a))
 
-type Ctor a	= (Var, [DataField (Exp a) Type])
-type DataDef a	= (Var, [Var], [Ctor a])
-
------------------------
--- Value expressions
---
+-- Value Expressions -------------------------------------------------------------------------------
 data Exp a
 	= XNil
 
@@ -188,8 +182,7 @@ data Exp a
 	deriving (Show, Eq)
 
 
--- | Projections
---	Used by XProjF
+-- Projections -------------------------------------------------------------------------------------
 data Proj a
 	= JField	a Var				-- Field projection, 		eg exp .field1
 	| JFieldR	a Var				-- Field reference projection,	eg exp #field1
@@ -199,8 +192,7 @@ data Proj a
 	deriving (Show, Eq)
 
 
--- | Statements and bindings
---	Used by XLet and XDo.
+-- Statements --------------------------------------------------------------------------------------
 data Stmt a	
 	= SSig		a Var Type
 	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
@@ -208,8 +200,7 @@ data Stmt a
 	deriving (Show, Eq)
 	
 
--- | Case alternatives.
---	Used by XCase, XCaseL and XTry.
+-- Alternatives / Guards / Patterns ----------------------------------------------------------------
 data Alt a
 	= APat		a (Pat a) (Exp a)		-- ^ Case style pattern match	p1 -> e2
 	| AAlt		a [Guard a] (Exp a)		-- ^ Match style pattern match  guards -> e2
@@ -244,19 +235,10 @@ data Label a
 	| LVar		a Var				-- ^ A field label.
 	deriving (Show, Eq)
 
--- |  List comprehension qualifiers
---	Used by XListComp.
+
+-- List Comprehensions -----------------------------------------------------------------------------
 data LCQual a
 	= LCGen		Bool (Pat a) (Exp a)		-- ^ Generator.			p <\@- e, p <- e
 	| LCLet		[Stmt a]			-- ^ Local declaration.		Stmt can only be SBind.
 	| LCExp		(Exp a)				-- ^ Guard.
 	deriving (Show, Eq)
-
--- | take the binding variable of this statement
-takeStmtBoundV :: Stmt a -> Maybe Var
-takeStmtBoundV s
- = case s of 
-	SStmt 	  sp e		-> Nothing
-	SBindPats sp v  es x	-> Just v
-	SSig      sp v  t	-> Just v	
-

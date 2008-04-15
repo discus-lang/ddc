@@ -1,5 +1,6 @@
 module Source.Util
-	( flattenApps
+	( takeStmtBoundV
+	, flattenApps
 	, unflattenApps
 	, sourcePosX 
 	, sourcePosW)
@@ -16,6 +17,15 @@ import Util
 
 -----
 stage	= "Source.Util"
+
+-- | take the binding variable of this statement
+takeStmtBoundV :: Stmt a -> Maybe Var
+takeStmtBoundV s
+ = case s of 
+	SStmt 	  sp e		-> Nothing
+	SBindPats sp v  es x	-> Just v
+	SSig      sp v  t	-> Just v	
+
 
 -- | Convert some function applications into a list of expressions.
 --
