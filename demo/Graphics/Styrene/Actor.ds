@@ -1,0 +1,54 @@
+
+import Math.Vec2
+
+-- The actors in the world.
+data Actor
+	= Wall 	Int 		-- ^ index
+		(Vec2 Float)	-- ^ wall start point
+		(Vec2 Float)	-- ^ wall end point
+
+	| Bead 	Int 		-- ^ unique index
+		Bool 		-- ^ whether this bead is stuck
+		Float 		-- ^ radius of bead
+		(Vec2 Float) 	-- ^ position of bead
+		(Vec2 Float)	-- ^ velocity of bead
+	
+instance Eq Actor where
+ (==) a1 a2	= actorIx a1 == actorIx a2
+	
+instance Ord Actor where
+ (>)  a1 a2	= actorIx a1 > actorIx a2
+ (<)  a1 a2	= actorIx a1 < actorIx a2
+ (>=) a1 a2	= actorIx a1 >= actorIx a2
+ (<=) a1 a2	= actorIx a1 <= actorIx a2
+
+
+-- | Check whether an actor is a bead.
+isBead :: Actor -> Bool
+isBead (Bead _ _ _ _ _)	= True
+isBead _		= False
+
+
+-- | Check whether an actor is a wall.
+isWall :: Actor -> Bool
+isWall (Wall _ _ _)	= True
+isWall _		= False
+
+-- | Take the index of an actor
+actorIx :: Actor -> Int
+actorIx actor
+ = case actor of
+	Wall ix _ _	-> ix
+ 	Bead ix _ _ _ _	-> ix
+
+-- | Set the index of an actor
+actorSetIndex :: Actor -> Int -> Actor
+actorSetIndex actor ix
+ = case actor of
+ 	Bead _ m r pos vel 	-> Bead ix m r pos vel 
+	Wall _ p1 p2		-> Wall ix p1 p2
+
+-- | Set whether a bead is stuck
+actorSetMode :: Bool -> Actor -> Actor
+actorSetMode m (Bead ix _ r p v)
+	= Bead ix m r p v

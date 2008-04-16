@@ -1,0 +1,131 @@
+
+-- | Find actors in the world that are in contact with each other.
+import World
+import QuadTree
+import Actor
+
+import Data.Set
+
+-- Find all pairs of actors in the world that are in contact with each other.
+findContacts 
+	:: World 
+	-> ( Set (Int, Int)		-- ^ a set of all pairs of actors that are in contact.
+	   , QuadTree Actor)		-- ^ also return the quadtree so we can draw it in the window.
+	   
+findContacts (World actors _)
+ = do
+	-- the initial tree has no actors in it and has a
+	--	size of 300 (with is half the width of the box).
+   	treeInit	= treeZero 300.0
+
+	-- insert all the actors into the quadtree.
+	tree'		= array_fold insertActor treeInit actors
+
+	-- the potential contacts are lists of actors
+	--	that _might_ be in contact.
+	potentialContacts
+			= treeElems tree'
+
+	-- filter the lists of potential contacts to determine the actors
+	--	which are _actually_ in contact.
+	contactSet	= makeContacts potentialContacts
+	
+	(contactSet, tree')
+  	
+
+
+-- | Make add all these test pairs to a map
+--	normalise so the actor with the lowest ix is first in the pair.
+makeContacts :: [[Actor]] -> Set (Int, Int)
+makeContacts contactLists
+ 	= makeContacts' empty&{Set a} contactLists 
+
+makeContacts' acc xx
+ = case xx of
+	-- no more potentials to add, return the current contact set
+	[]	-> acc
+
+	-- add pairs of actors that are actually in contact to the contact set
+	(list : lists)
+	 	-> makeContacts' (makeTests acc list) lists
+
+
+makeTests acc []		= acc
+makeTests acc (x:xs)
+	= makeTests (makeTests1 acc x xs) xs
+	
+makeTests1 :: Set (Int, Int) -> Actor -> [Actor] -> Set (Int, Int)
+makeTests1 acc a1 []		= acc
+makeTests1 acc a1 (a2 : as)
+	| inContact a1 a2
+	= let	k1		= actorIx a1
+		k2		= actorIx a2
+		contact		= (k1 .min k2, k1 .max k2)
+		acc'		= acc. insertF compareIxPair contact
+	  in	makeTests1 acc' a1 as
+	
+	\= makeTests1 acc a1 as
+	
+
+compareIxPair :: (Int, Int) -> (Int, Int) -> Ordering
+compareIxPair (a1, a2) (b1, b2)
+ 	| a1 < b1	=  LT
+	| a1 > b1	=  GT
+			\= compare a2 b2
+
+
+-- Contact -----------------------------------------------------------------------------------------
+-- See if these two actors are in contact
+inContact :: Actor -> Actor -> Bool
+inContact a1 a2
+	| isBead a1 && isWall a2	= inContact_beadWall a1 a2
+	| isWall a1 && isBead a2	= inContact_beadWall a2 a1
+	| isBead a1 && isBead a2	= inContact_beadBead a1 a2
+					\= False
+
+
+-- | Check whether a bead is in contact with a wall.
+inContact_beadWall :: Actor -> Actor -> Bool
+inContact_beadWall 
+	bead@(Bead ix mode radius pBead _) 
+	wall@(Wall _  pWall1 pWall2)
+
+ = do	-- work out the point on the infinite line between pWall1 and pWall2
+	--	which is closest to the bead.
+ 	pClosest	= closestPointOnLine pWall1 pWall2 pBead
+
+	-- the distance between the bead center and pClosest 
+	--	needs to be less than the bead radius for them to touch.
+	closeEnough	= distancePP_contact pBead pClosest < radius
+
+	-- uParam gives where pClosest is relative to the endponts of the wall
+	uParam		= closestPointOnLine_param pWall1 pWall2 pBead
+
+	-- pClosest needs to lie on the line segment between pWal1 and pWall2
+	inSegment	= uParam >= 0.0 && uParam <= 1.0
+
+	closeEnough && inSegment
+
+
+
+-- | Check whether a bead is in concat with another bead.
+inContact_beadBead :: Actor -> Actor -> Bool
+inContact_beadBead 
+	bead1@(Bead ix1 _ radius1 pBead1 _) 
+	bead2@(Bead ix2 _ radius2 pBead2 _)
+
+ = do 	dist	= distancePP_contact pBead1 pBead2
+	rad	= radius1 + radius2
+
+	(dist < rad ) && (dist > 0.1)
+
+-- | Return the distance between these two points.
+distancePP_contact :: Vec2 Float -> Vec2 Float -> Float
+distancePP_contact (Vec2 x1 y1) (Vec2 x2 y2)
+	= sqrt (xd2 + yd2)
+	where	xd	= x2 - x1
+		xd2	= xd * xd
+
+		yd	= y2 - y1
+		yd2	= yd * yd	
+

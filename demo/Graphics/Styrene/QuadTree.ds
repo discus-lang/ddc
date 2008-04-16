@@ -1,0 +1,84 @@
+
+import Math.Vec2
+
+data QuadTree a
+	-- Nil cells take up space in the world, but don't contain any elements.
+	--	They can be at any depth in the tree.
+	= QNil	(Vec2 Float)	-- cell center point 
+		Float		-- cell size
+
+	-- Leaf cells are the only ones that contain elements.
+	--	They are always at the bottom of the tree.
+	| QLeaf (Vec2 Float)	-- cell center point 
+		Float 		-- cell size
+		[a]		-- elements in this cell
+
+	-- Node cells contain more sub-trees
+	| QNode	(Vec2 Float)	-- cell center point
+		Float		-- cell size
+		(QuadTree a) (QuadTree a)	-- NW NE
+		(QuadTree a) (QuadTree a)	-- SW SE
+		
+-- Initial -----------------------------------------------------------------------------------------
+treeZero size
+	= QNil (Vec2 0.0 0.0) size
+
+-- Quadrant ----------------------------------------------------------------------------------------
+
+-- | Insert an element with a bounding box into the tree
+treeInsert 
+	:: Int		-- ^ maximum depth to place a leaf
+	-> Int		-- ^ current depth
+	-> Vec2 Float	-- ^ bottom left of bounding box of new element
+	-> Vec2 Float	-- ^ top right of bounding box of new element
+	-> a		-- ^ element to insert into tree
+	-> QuadTree a	-- ^ current tree
+	-> QuadTree a
+
+treeInsert depthMax depth p0@(Vec2 x0 y0) p1@(Vec2 x1 y1) a tree
+ = match {
+ 	| QNode p@(Vec2 x y) size tNW tNE tSW tSE <- tree
+	= do {	 
+	 	tNW'	= if y1 > y && x0 < x
+				then treeInsert depthMax (depth + 1) p0 p1 a tNW
+				else tNW;
+
+		tNE'	= if y1 > y && x1 > x
+				then treeInsert depthMax (depth + 1) p0 p1 a tNE
+				else tNE;
+
+		tSW'	= if y0 < y && x0 < x	
+				then treeInsert depthMax (depth + 1) p0 p1 a tSW
+				else tSW ;
+
+		tSE'	= if y0 < y && x1 > x
+				then treeInsert depthMax (depth + 1) p0 p1 a tSE
+				else tSE;
+	
+		QNode p size tNW' tNE' tSW' tSE'; };
+
+	| QLeaf p size elems		<- tree
+	, depth >= depthMax
+	= QLeaf p size (a : elems);
+
+	| QNil p@(Vec2 x y) size	<- tree
+	= if depth >= depthMax
+		then QLeaf p size [a]
+		else do
+			s2	= size / 2.0
+			node'	= QNode p size 
+			 		(QNil (Vec2 (x - s2) (y + s2)) s2) (QNil (Vec2 (x + s2) (y + s2)) s2)
+					(QNil (Vec2 (x - s2) (y - s2)) s2) (QNil (Vec2 (x + s2) (y - s2)) s2)
+	
+			treeInsert depthMax depth p0 p1 a node';
+ }
+
+-- flatten a quadtree into a list of its elements.
+treeElems :: QuadTree a -> [[a]]
+treeElems tree 
+ = case tree of
+ 	QNode _ _ tNW tNE tSW tSE
+	 -> treeElems tNW ++ treeElems tNE ++ treeElems tSW ++ treeElems tSE
+	
+	QLeaf _ _ elems	 -> [elems]
+	QNil{}		 -> []

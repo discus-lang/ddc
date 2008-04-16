@@ -1,0 +1,134 @@
+
+import Actor
+import Collide
+import World
+import Contact
+
+import Data.Set
+import Data.Array
+import Math.Vec2
+
+
+-- Advance -------------------------------------------------------------------------------------------
+
+-- | Advance all the actors in this world by a certain time.
+advanceWorld 
+	:: Float 		-- ^ time to advance them for.
+	-> Vec2 Float 		-- ^ ambient force on the actors during this time.
+	-> World 		-- ^ the world to advance.
+	-> World 		-- ^ the new world.
+
+advanceWorld time force (World actors tree)
+ = do
+	-- move all the actors 
+	array_updateWith_ actors (moveActor_free time force)
+      
+      	-- find contacts in the world
+	contactsTree
+		= findContacts (World actors tree)
+		
+	contacts	= fst contactsTree
+	tree'		= snd contactsTree
+
+	-- apply contacts to each pair of actors
+	map_ (applyContact time force actors) 
+		(contacts .toList)
+
+ 	World actors tree'
+
+
+array_updateWith_ :: Array a -> (a -> a) -> ()
+array_updateWith_ array fun
+ = do	max	= array_size array
+ 	array_updateWith' array fun max 0
+	
+array_updateWith' array fun max ix
+	| max >= ix	= ()
+	\= do	
+		x'	= fun array .(ix)
+		array #(ix) #= x'
+
+		array_updateWith' array fun max (ix + 1)		
+
+
+-- Move two actors which are known to be in contact.
+applyContact 
+	:: Float 		-- ^ time step
+	-> Vec2 Float 		-- ^ ambient force on the actors
+	-> Array Actor 		-- ^ the old world (updated)
+	-> (Int, Int) 		-- ^ indicies of the the two actors in contact
+	-> ()			-- ^ 
+
+applyContact time force actors (ix1, ix2) 
+ = do	-- use the indicies to lookup the data for each actor from the map
+	a1	= actors .(ix1)
+	a2	= actors .(ix2)
+
+	match 
+		-- handle a collision between bead and a wall
+		| Bead _ _ r1 p1 v1	<- a1
+		, Wall{}		<- a2
+		= do	a1'		= collideBeadWall a1 a2
+			a1_final	= actorSetMode True a1'
+
+		 	actors #(ix1)	#= a1_final
+		
+		-- handle a collision between two beads
+		| Bead ix1 m1 r1 p1 v1	<- a1
+		, Bead ix2 m2 r2 p2 v2	<- a2
+		= do	
+{-
+			a12'
+				-- if one of the beads is stuck then do a safer, static collision.
+				--	with this method the beads don't transfer energy into each other
+				--	so there is less of a chance of lots of beads being crushed together
+				--	if there are many in the same place.
+				| m1 || m2
+				= do 	a1'	= collideBeadBead_static a1 a2
+			  		a2'	= collideBeadBead_static a2 a1
+			  	  	(a1', a2')
+
+				-- otherwise do the real elastic collision
+				--	this is much more realistic.
+				| otherwise
+				= collideBeadBead_elastic a1 a2
+-}
+			a1'	= collideBeadBead_static a1 a2
+			a2'	= collideBeadBead_static a2 a1
+
+			-- After two beads have collided, set them as being stuck.
+			a1_final	= actorSetMode True a1'
+			a2_final	= actorSetMode True a2'
+
+			-- write the new data for the actors back into the map
+		 	actors #(ix1)	#= a1_final
+			actors #(ix2)	#= a2_final
+			
+
+
+-- | Move a bead which isn't in contact with anything else.
+moveActor_free 
+	:: Float 		-- ^ time to move it for
+	-> Vec2 Float  		-- ^ ambient force on the actor during this time
+	-> Actor 		-- ^ the bead to move
+	-> Actor		-- ^ the new bead
+
+moveActor_free time force actor
+	-- move a bead
+	| Bead ix stuck radius pos vel	<- actor
+	= do 	-- assume all beads have the same mass.
+		beadMass	= 1.0
+		
+		-- calculate the new position and velocity of the bead.
+		pos'		= (pos + vel .muls time)
+		vel'		= (vel + force .muls (time / beadMass))
+
+		-- if the bead is travelling slowly then set it as being stuck.
+		stuck'		= vel'.magnitude < 5.0
+
+		Bead ix stuck' radius pos' vel'
+
+	-- walls don't move
+	| Wall{}			<- actor
+	= actor
+	

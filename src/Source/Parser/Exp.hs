@@ -151,8 +151,14 @@ pExp1'
 			<|>	do	exp	<- pExp
 					pTok K.SKet
 					return $ Just exp
-					
-		return	$ XListRange (spTP tok) False exp1 mExp2)
+			
+		-- force infinite lists to be lazy
+		let lazy
+			= case mExp2 of
+				Nothing	-> True
+				_	-> False
+											
+		return	$ XListRange (spTP tok) lazy exp1 mExp2)
 
   <|>	-- [ EXP | QUAL .. ]
 	-- overlaps with list syntax
@@ -328,7 +334,7 @@ pMatchAlt :: Parser (Alt SP)
 pMatchAlt
  =	-- | GUARD, ... = EXP
    	do	tok	<- pTok K.Bar
-	   	guards	<- (Parsec.sepEndBy1 pGuard (pTok K.Comma))
+	   	guards	<- (Parsec.sepBy1 pGuard (pTok K.Comma))
 		pTok K.Equals
 		exp	<- pExpRHS
 		return	$ AAlt (spTP tok) guards exp

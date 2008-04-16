@@ -1,0 +1,129 @@
+
+import Base
+import Class.Ord
+import Class.Num
+import Data.Int
+
+-- | A set of values @a@.
+data Set a    = Tip 
+              | Bin 	Int 		-- size
+			a 		-- elem
+			(Set a) 	-- left
+			(Set a) 	-- right
+			
+project Set a where
+
+	delta 	= 4
+	ratio	= 2
+
+
+	-- | /O(1)/. The empty set.
+	empty	:: Set a
+	empty = Tip
+
+
+	-- | /O(1)/. Create a singleton set.
+	singleton :: a -> Set a
+	singleton x 
+  	 = Bin 1 x Tip Tip
+
+
+	-- | /O(1)/. The number of elements in the set.
+	size :: Set a -> Int
+	size t
+	  = case t of
+	      Tip           -> 0
+	      Bin sz x l r  -> sz
+
+
+	-- | /O(log n)/. Insert an element in a set.
+	-- If the set already contains an element equal to the given value,
+	-- it is replaced with the new value.
+	insertF :: Set a -> (a -> a -> Ordering) -> a -> Set a
+	insertF	t compare x
+	 = case t of
+	      Tip -> singleton&{Set a} x
+	      Bin sz y l r
+	          -> case compare x y of
+	               LT -> balance&{Set a} y (l .insertF compare x) r
+	               GT -> balance&{Set a} y l (r.insertF compare x)
+	               EQ -> Bin sz x l r
+
+
+	-- | /O(log n)/. Is the element in the set?
+	memberF :: Set a -> (a -> a -> Ordering) -> a -> Bool
+	memberF t compare x
+	  = case t of
+	      Tip -> False
+	      Bin sz y l r
+	          -> case compare x y of
+	               LT -> l.memberF compare x
+	               GT -> r.memberF compare x
+	               EQ -> True       
+
+	toList :: Set a -> [a]
+	toList set = set_foldr (:) [] set
+
+
+
+	------------------------------------------------------------------------
+	-- The bin constructor maintains the size of the tree
+
+	bin :: a -> Set a -> Set a -> Set a
+	bin x l r
+	  = Bin (l.size + r.size + 1) x l r
+
+
+	balance :: a -> Set a -> Set a -> Set a
+	balance x l r
+	 = do
+		sizeL = l.size
+		sizeR = r.size
+		sizeX = sizeL + sizeR + 1
+	
+		match 
+			| sizeL + sizeR <= 1		
+			= Bin sizeX x l r
+			
+			
+			| sizeR >= delta&{Set a} * sizeL
+			= rotateL&{Set a} x l r
+
+	  		\= Bin sizeX x l r
+
+
+	singleL x1 t1 (Bin _ x2 t2 t3)  
+		= bin&{Set a} x2 (bin&{Set a} x1 t1 t2) t3
+
+
+	singleR x1 (Bin _ x2 t1 t2) t3  
+		= bin&{Set a} x2 t1 (bin&{Set a} x1 t2 t3)
+
+
+	doubleL x1 t1 (Bin _ x2 (Bin _ x3 t2 t3) t4) 
+		= bin&{Set a} x3 (bin&{Set a} x1 t1 t2) (bin&{Set a} x2 t3 t4)
+
+
+	doubleR x1 (Bin _ x2 t1 (Bin _ x3 t2 t3)) t4 
+		= bin&{Set a} x3 (bin&{Set a} x2 t1 t2) (bin&{Set a} x1 t3 t4)
+
+	
+	rotateL x l r@(Bin _ _ ly ry)
+		| size&{Set a} ly < ratio&{Set a} *size&{Set a} ry 
+		= singleL&{Set a} x l r
+
+		\= doubleL&{Set a} x l r
+
+
+	rotateR x l@(Bin _ _ ly ry) r
+		| size&{Set a} ry < ratio&{Set a}*size&{Set a} ly 
+		= singleR&{Set a} x l r
+
+		\= doubleR&{Set a} x l r
+
+
+
+-- | /O(n)/. Post-order fold.
+set_foldr :: (a -> b -> b) -> b -> Set a -> b
+set_foldr f z Tip           = z
+set_foldr f z (Bin _ x l r) = set_foldr f (f x (set_foldr f z r)) l

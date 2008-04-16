@@ -145,3 +145,16 @@ fabs x	= boxFloat32 (fabsU  (unboxFloat32 x))
 foreign import "primFloat32_truncate"
  truncate :: Float{read} -> Int
 
+
+project Float where
+	
+	min :: Float -> Float -> Float
+	min x y
+	 = if x < y	then x
+			else y
+
+	max :: Float -> Float -> Float		
+	max x y
+	 = if x > y	then x
+ 			else y
+

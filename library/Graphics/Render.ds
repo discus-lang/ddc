@@ -10,11 +10,11 @@ import Data.List;
 --		If you draw prims outside the window you'll corrupt the heap. 
 --
 renderPrims :: Frame -> [Primitive] -> ()
-renderPrims frame ctmStack
+renderPrims frame prims
  	= renderPrims_withStack 
 		frame 
 		[(id&{Matrix33} (), Color 255 255 255)] 
-		ctmStack
+		prims
 
 renderPrims_withStack :: Frame -> [(Matrix33, Primitive)] -> [Primitive] -> ()
 renderPrims_withStack frame ctmStack prims

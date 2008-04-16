@@ -4,6 +4,9 @@ import Data.Bool
 
 infix  5 <, <=, >=, > 
 
+data Ordering %r1
+	= LT | GT | EQ
+
 -- The class of types which support ordering
 class Ord a where 
 
@@ -31,5 +34,8 @@ class Ord a where
 		,  $c1 = x : a
 		,  Shape2 a b
 
-
-
+	compare :: forall b %r1
+		. a -> b -(!e1 $c1)> Ordering %r1
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		, $c1 = x : a
+		, Shape2 a b

@@ -1,0 +1,23 @@
+
+import Data.Set
+
+
+ordInt :: Int -> Int -> Ordering
+ordInt x y
+ = match {
+ 	| x == y	= EQ;
+	| x <= y	= LT;
+			\= GT;
+ };
+
+main ()
+ = do	set1	= singleton&{Set a} 5
+	set2	= set1.insertF ordInt 27
+	set3	= set2.insertF ordInt 30
+	
+ 	putStr	$ show (set3.memberF ordInt 5) % "\n"
+ 	putStr	$ show (set3.memberF ordInt 6) % "\n"
+
+ 	putStr	$ show (set3.memberF ordInt 27) % "\n"
+
+ 	()

@@ -263,9 +263,19 @@ addErrorConflict  cid c
 	
 	-- We could perhaps do some more extended diagnosis, but just
 	--	report the first conflict for now.
-	let Just ((t1, s1), (t2, s2))	
-		= takeHead conflicts
-	
+	case takeHead conflicts of
+	 Just conf	-> addErrorConflict' cid c conf
+
+	-- sanity, check that we've actually identified the problem and added
+	--	an error to the state.
+	 _ -> (panic stage
+		 $ "errorConflict: Couldn't identify the error in class " % cid % "\n"
+		 % "   type: \n" %> (classType c) % "\n\n"
+		 % "   queue: \n" %> (classQueue c) % "\n\n"
+		 % "   nodes:\n" %> ("\n" %!% classNodes c) % "\n\n")
+	 
+addErrorConflict' cid c ((t1, s1), (t2, s2))
+ = do	
 	addErrors [
 		ErrorUnifyCtorMismatch 
 		{ eCtor1	= t1
@@ -276,17 +286,6 @@ addErrorConflict  cid c
 	updateClass cid
 		c { classType	= Just $ TError (classKind c) (classQueue c)}
 
-
-	-- sanity, check that we've actually identified the problem and added
-	--	an error to the state.
-	errors	<- gets stateErrors
-	when (isNil errors)
-	 $ (panic stage
-		 $ "errorConflict: Couldn't identify the error in class " % cid % "\n"
-		 % "   type: \n" %> (classType c) % "\n\n"
-		 % "   queue: \n" %> (classQueue c) % "\n\n"
-		 % "   nodes:\n" %> ("\n" %!% classNodes c) % "\n\n")
-	 
 	return ()
 
 -- Checks if these two types are conflicting 

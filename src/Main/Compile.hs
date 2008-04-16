@@ -310,6 +310,9 @@ compileFile_parse
 --	when (isJust $ setupRecursive setup)
 --	 $ do	putStr $ pprStrPlain $ "ddc make: " % fileName % "\n"
 
+	when ?verbose
+	 $ do	putStr	$ "  * Source: Parse\n"
+
 	-- slurp out name of vars to inline
 	inlineVars	<- SS.sourceSlurpInlineVars sParsed
 	

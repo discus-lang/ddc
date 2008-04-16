@@ -1,0 +1,116 @@
+
+-- The world contains a map of all the actors, along with the current
+--	quadtree so we can also draw it on the screen.
+
+import QuadTree
+import Actor
+import Data.Array
+
+-- import qualified Data.Map	as Map
+-- import Data.Map			(Map)
+
+-- The world ---------------------------------------------------------------------------------------
+data World	
+	= World (Array Actor)		-- actors
+		(QuadTree Actor)	-- tree
+
+-- | The initial world
+worldInit :: World
+worldInit	
+  	= World (actorArrayInit (walls ++ beads)) treeInit
+
+actorArrayInit :: [Actor] -> Array Actor
+actorArrayInit actors
+ = do	count	= length actors
+ 	arrayFromList count (errorNoEff @ "no actor")
+		$ map (\a -> (actorIx a, a))
+		$ zipWith actorSetIndex (walls ++ beads) [0 .. count - 1]
+ 
+treeInit = treeZero 300.0
+
+
+arrayFromList :: Int -> a -> [(Int, a)] -> Array a
+arrayFromList size def elems 
+ = 	arrayFromList' (array_new size def) elems
+
+arrayFromList' array elems
+	| []		<- elems
+	= array
+	
+	| (ix, e) : es	<- elems
+	= do	array #(ix) #= e
+		arrayFromList' array es
+ 
+
+-- Walls ------------------
+boxSize :: Float
+boxSize	= 280.0
+
+walls :: [Actor]
+walls	= (box ++ splitter)
+
+box :: [Actor]
+box
+ = do 	bs	= boxSize
+	[ Wall  0 (Vec2 (-bs) (-bs))	(Vec2 bs (-bs))		-- bot
+ 	, Wall  0 (Vec2 (-bs)   bs) 	(Vec2 bs bs)		-- top
+
+ 	, Wall  0 (Vec2 (-bs) (-bs)) 	(Vec2 (-bs)  bs)	-- left
+ 	, Wall  0 (Vec2 bs (-bs)) 	(Vec2 (bs)  bs)] 	-- right
+
+splitter :: [Actor]
+splitter
+ =	[ Wall	0 (Vec2 -15.0 100.0) (Vec2 -200.0 0.0) 
+ 	, Wall  0 (Vec2  15.0 100.0) (Vec2  200.0 0.0) ]
+
+
+-- Beads ------------------
+beadRadius	= 5.0
+beadSpace	= 1.0
+beadBoxSize	= 2.0 * beadRadius + beadSpace
+
+-- the initial grid of beads, change this if you want more/less beads in the simulation.
+beadCountX	= 5
+beadCountY	= 5
+
+
+-- beads start off with their index just set to 0
+beads :: [Actor]
+beads	
+ = [Bead 0 False beadRadius (beadPos (toFloat ix) (toFloat iy)) (Vec2 0.0 0.0)
+		| ix <- [0 .. beadCountX - 1]
+		, iy <- [0 .. beadCountY - 1 ] ]
+	
+		 
+beadPos ix iy	
+ = Vec2	( (ix * beadBoxSize) - (beadBoxSize * (toFloat beadCountX) / 2.0))
+	(iy * beadBoxSize)  
+
+
+
+-- QuadTree ----------------------------------------------------------------------------------------
+
+-- The maximum depth of the quad tree
+maxDepth	= 4
+
+-- | insert an actor into the tree
+insertActor :: Actor -> QuadTree Actor -> QuadTree Actor
+
+insertActor actor tree
+	-- insert a bead into the tree
+	| bead@(Bead ix _ radius pos@(Vec2 x y) vel) 	<- actor
+	= do
+		-- the bottom left and top right of the bead's bounding box.
+		p0	= Vec2 (x - radius) (y - radius)
+ 		p1	= Vec2 (x + radius) (y + radius)
+
+   	  	treeInsert maxDepth 0 p0 p1 bead tree
+
+	| wall@(Wall ix (Vec2 x0 y0) (Vec2 x1 y1))		<- actor
+	= do
+		-- the bottom left and top right of the wall's bounding box.
+		p0	= Vec2 (x0 .min x1) (y0 .min y1)
+ 		p1	= Vec2 (x0 .max x1) (y0 .max y1)
+   	
+		treeInsert maxDepth 0 p0 p1 wall tree
+

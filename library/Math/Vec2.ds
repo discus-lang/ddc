@@ -27,15 +27,29 @@ project Vec2 Float where
 	magnitude (Vec2 x y)
 	 	= sqrt (x * x + y * y)
 
+	-- | normalise a vector
+	normalised :: Vec2 Float -> Vec2 Float
+	normalised v	= v . muls (1.0 / v.magnitude) 
+
 	-- | Multiply a vector by a scalar.
 	muls :: Vec2 Float -> Float -> Vec2 Float
 	muls (Vec2 x1 y1) s
 	 	= Vec2 (s * x1) (s * y1)
 
+	-- | Negate a vector
+	negate :: Vec2 Float -> Vec2 Float
+	negate (Vec2 x y)
+		= Vec2 (-x) (-y)
+	
 	-- | Add two vectors component wise.
 	add :: Vec2 Float -> Vec2 Float -> Vec2 Float
 	add (Vec2 x1 y1) (Vec2 x2 y2)  	
 		= Vec2 (x1 + x2) (y1 + y2)
+
+	-- | Subract two vectors component wise.
+	sub :: Vec2 Float -> Vec2 Float -> Vec2 Float
+	sub (Vec2 x1 y1) (Vec2 x2 y2)  	
+		= Vec2 (x1 - x2) (y1 - y2)
 
 	-- | Show a vector as a string.
 	show :: Vec2 Float -> String
@@ -54,9 +68,36 @@ project Vec2 Float where
 	 = Vec2 (foldl (+) 0.0 $ map (\v -> v.x) xx) 
 		(foldl (+) 0.0 $ map (\v -> v.y) xx)
 
+	-- | The the angle between two vectors
+	angleVV :: Vec2 Float -> Vec2 Float -> Float
+	angleVV p1 p2
+	 = do 	m1	= p1.magnitude 
+	 	m2	= p2.magnitude 
+		d	= p1.dot p2
+		acos $ d / (m1 * m2)
+		
+	-- | The dot product for vectors
+	dot :: Vec2 Float -> Vec2 Float -> Float
+	dot (Vec2 x1 x2) (Vec2 y1 y2)
+		= x1 * y1 + x2 * y2
+
+	-- | The determinant of two vectors
+	det :: Vec2 Float -> Vec2 Float -> Float
+	det (Vec2 x1 y1) (Vec2 x2 y2)
+		= x1 * y2 - y1 * x2
+
+	-- | Rotate a vector by an angle (radians)
+	--	+ve is counter clockwise
+	rotate :: Vec2 Float -> Float -> Vec2 Float
+	rotate (Vec2 x y) r
+	 = Vec2	(x * cos r - y * sin r)
+	        (x * sin r + y * cos r)
+
 
 instance Num (Vec2 Float) where
 	(+) 	= add	&{Vec2 Float}
+	(-)	= sub	&{Vec2 Float}
+	negate	= negate &{Vec2 Float}
 
 instance Updatable (Vec2 Float) where
 	(:=)	= update&{Vec2 Float}
@@ -66,4 +107,33 @@ instance Accum (Vec2 Float) where
 
 instance Show (Vec2 Float) where
 	show	= show	&{Vec2 Float}
+
+
+
+-- Line Utils --------------------------------------------------------------------------------------
+
+-- | Given an infinite line which intersects p1 and p2
+--	return the point on that line which is closest to p3
+closestPointOnLine
+	:: Vec2 Float -> Vec2 Float	-- p1 p2	(the line)
+	-> Vec2 Float			-- p3		(the point)
+	-> Vec2 Float			-- the point on the line which is closest to p3
+
+closestPointOnLine p1 p2 p3
+ = do	u	= closestPointOnLine_param p1 p2 p3
+ 	p1 + ((p2 - p1) .muls u)
+
+-- | Given an infinite line which intersects p1 and p2
+--	pC is the point on the line which is closest to p3
+--
+--	u is the parameter indicating where on the line pC is relative to p1 and p2.
+--	
+--	ie 	if pC == p1	then u = 0
+--		if pC == p2	then u = 1
+--		if pC is halfway between p1 and p2 then u = 0.5
+--
+closestPointOnLine_param :: Vec2 Float -> Vec2 Float -> Vec2 Float -> Float
+closestPointOnLine_param p1 p2 p3
+ 	= (p3 - p1) .dot (p2 - p1) 
+ 	/ (p2 - p1) .dot (p2 - p1)
 

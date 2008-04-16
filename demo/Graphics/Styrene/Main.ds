@@ -1,0 +1,78 @@
+
+import World
+import Actor
+import QuadTree
+import Advance
+
+import Graphics.Render
+import Graphics.Shape
+
+main ()
+ = do	frame	= new&{Frame} "styrene" 800 800
+	coma frame worldInit
+
+coma :: Frame -> World -> ()
+coma frame world@(World actors _)
+ = do	
+	-- advance the world
+	world'	= advanceWorld 0.1 (Vec2 0.0 -10.0) world
+	putStr "frame\n"
+ 	renderPrims frame [Local [Translate 400.0 400.0, drawWorld world']]
+ 	frame .update
+ 	coma frame world'
+
+
+-- Draw --------------------------------------------------------------------------------------------
+-- whether to draw velocity vectors as well as the beads
+showBeadVelocity	= False
+beadColor 		= Color 128 128 255
+
+
+-- | Draw this world as a picture.
+drawWorld :: World -> Primitive
+drawWorld (World actors tree)
+ = do
+	-- split the list of actors into beads and walls.
+	--	this lets us draw all the beads at once without having to keep changing 
+	--	the current color (which is a bit of a performance improvement)
+	picActors	= Prims $ mapArrayToList drawActor actors
+	picTree		= drawQuadTree tree
+	Prims	[ picActors, picTree ]
+
+
+-- | Draw an actor as a picture.
+drawActor :: Actor -> Primitive
+drawActor actor 
+ = case actor of
+ 	Bead ix mode radius p@(Vec2 posX posY) v@(Vec2 velX velY)
+	 -> 	Prims (circle_centered (Point posX posY) radius 10)
+		
+	Wall _ p1@(Vec2 x1 y1) p2@(Vec2 x2 y2)
+	 -> Local
+	 	[ Color 200 200 200
+		, Line (Point x1 y1) (Point x2 y2)]
+	 
+-- | Draw a quadtree as a picture
+drawQuadTree :: QuadTree a -> Primitive
+drawQuadTree tree 
+ = case tree of
+	QNode p size tTL tTR tBL tBR
+	 -> Prims
+	 	[ drawQuadTree tTL 
+		, drawQuadTree tTR
+		, drawQuadTree tBL
+		, drawQuadTree tBR 
+		, nodeBox p size (Color 0 255 0) ]
+
+	QLeaf p size elems
+	 -> 	nodeBox p size (Color 255 0 0)
+	 
+	QNil (Vec2 x0 y0) size
+	 -> Prims []
+
+nodeBox p@(Vec2 x0 y0) size color
+ = do 	Local 
+	 	( color 
+	 	: rectangle_centered (Point x0 y0) (size * 2.0) (size * 2.0)) 
+	
+

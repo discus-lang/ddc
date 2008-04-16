@@ -78,6 +78,11 @@ instance Ord Int where
 	(>=)		= primInt32_ge
 	(<=)		= primInt32_le
 
+	compare x y
+	 | x == y	=  EQ
+	 | x <= y	=  LT
+	 		\= GT
+	 
 instance Num Int where 
  	(+) 		= primInt32_add
 	(-) 		= primInt32_sub
@@ -98,4 +103,16 @@ instance Accum Int where
 
 inc x	= x + 1
 
+
+project Int where
+	
+	min :: Int -> Int -> Int
+	min x y
+	 = if x < y	then x
+			else y
+
+	max :: Int -> Int -> Int
+	max x y
+	 = if x > y	then x
+ 			else y
 
