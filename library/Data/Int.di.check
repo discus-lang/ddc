@@ -50,6 +50,8 @@ instance Class.Ord.Ord (Base.Int %rDK42) where
         (>=)     = Data.Int.primInt32_ge;
         
         (<=)     = Data.Int.primInt32_le;
+        
+        compare  = Data.Int.instance_Ord_Int_compare;
 }
 
 instance Class.Num.Num (Base.Int %rDK43) where
@@ -144,12 +146,33 @@ foreign import instance_Copy_Int_copy
         :- !e0        = Base.!Read %r1
         :$ Base.Data -> Base.Data;
         
+foreign import instance_Ord_Int_compare
+        :: forall %r0 %r1 %r2
+        .  Base.Int %r0 -> Base.Int %r2 -(!e0 $c0)> Class.Ord.Ordering %r1
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r2}
+        ,  $c0        = x : %r0
+        :$ Base.Data -> Base.Data -> Base.Data;
+        
 foreign import instance_Accum_Int_PsEq
         :: forall %r0 %r1
         .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}
         ,  $c0        = a : %r0
         ,  Base.Mutable %r0
+        :$ Base.Data -> Base.Data -> Base.Data;
+        
+foreign import project_Int_min
+        :: forall %r0
+        .  Base.Int %r0 -> Base.Int %r0 -(!e0 $c0)> Base.Int %r0
+        :- !e0        = Base.!Read %r0
+        ,  $c0        = x : %r0
+        :$ Base.Data -> Base.Data -> Base.Data;
+        
+foreign import project_Int_max
+        :: forall %r0
+        .  Base.Int %r0 -> Base.Int %r0 -(!e0 $c0)> Base.Int %r0
+        :- !e0        = Base.!Read %r0
+        ,  $c0        = x : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import (<>)
@@ -166,4 +189,10 @@ foreign import inc
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
+project Base.Int %rDK54 where
+{
+        min      = project_Int_min;
+        max      = project_Int_max;
+}
+
 

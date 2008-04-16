@@ -279,6 +279,10 @@ compileFile_parse
 	 	mapM_ dumpImportDef $ Map.elems importsExp
 		putStr	$ "\n"
 	
+	dumpST 	Arg.DumpSourceParse "source-parse--header" 
+		(catMap SI.idInterface $ Map.elems importsExp)
+
+	
 	-- Dump a nice graph of the module hierarchy.
 	let modulesCut	= concat
 			$ [ss | Arg.GraphModulesCut ss <- ?args]

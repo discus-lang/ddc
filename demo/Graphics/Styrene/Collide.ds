@@ -31,6 +31,62 @@ collideBeadWall
 		beadWallLoss
 
 
+-- | Move two beads which have bounced into each other.
+collideBeadBead_elastic
+	:: Actor -> Actor
+	-> (Actor, Actor)
+
+collideBeadBead_elastic
+	bead1@(Bead ix1 mode1 r1 p1 v1)	
+	bead2@(Bead ix2 mode2 r2 p2 v2)
+
+ = do	mass1	= 1.0
+	mass2	= 1.0
+
+	-- the axis of collision (towards p2)
+	vCollision	= (p2 - p1) .normalised
+
+	vCollisionR
+	 = case vCollision of
+	 	Vec2 cX cY	-> Vec2 cY (-cX)
+	
+	-- the velocity component of each bead along the axis of collision
+	s1	= v1 .dot vCollision
+	s2	= v2 .dot vCollision
+
+	-- work out new velocities along the collision
+	s1'	= (s1 * (mass1 - mass2) + 2.0 * mass2 * s2) / (mass1 + mass2)
+	s2'	= (s2 * (mass2 - mass1) + 2.0 * mass1 * s1) / (mass1 + mass2)
+	
+	-- the velocity components at right angles to the collision
+	--	there is no friction in the collision so these don't change
+	k1	= v1 .dot vCollisionR
+	k2	= v2 .dot vCollisionR
+	
+	-- new bead velocities
+	v1'	= vCollision .muls s1' + vCollisionR .muls k1
+	v2'	= vCollision .muls s2' + vCollisionR .muls k2
+
+	v1_slow	= v1' .muls beadBeadLoss
+	v2_slow	= v2' .muls beadBeadLoss
+
+	-- work out the point of collision
+	u1	= r1 / (r1 + r2)
+--	u2	= r2 / (r1 + r2)
+
+	pCollision	
+		= p1 + (p2 - p1) .muls u1
+
+	-- place the beads just next to each other so they are no longer overlapping.
+	p1'	= pCollision - vCollision .muls (r1 + 0.001)
+	p2'	= pCollision + vCollision .muls (r2 + 0.001)
+
+	bead1'	= Bead ix1 mode1 r1 p1' v1_slow
+	bead2'	= Bead ix2 mode2 r2 p2' v2_slow
+
+	(bead1', bead2')
+
+
 -- | Move a bead which has collided with another bead.
 collideBeadBead_static
 	:: Actor -> Actor 

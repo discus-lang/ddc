@@ -21,7 +21,9 @@ advanceWorld
 advanceWorld time force (World actors tree)
  = do
 	-- move all the actors 
-	array_updateWith_ actors (moveActor_free time force)
+	array_updateWith_ 
+		actors 
+		(moveActor_free time force)
       
       	-- find contacts in the world
 	contactsTree
@@ -43,9 +45,9 @@ array_updateWith_ array fun
  	array_updateWith' array fun max 0
 	
 array_updateWith' array fun max ix
-	| max >= ix	= ()
+	| ix >= max	= ()
 	\= do	
-		x'	= fun array .(ix)
+		x'	= fun array.(ix)
 		array #(ix) #= x'
 
 		array_updateWith' array fun max (ix + 1)		
@@ -65,19 +67,20 @@ applyContact time force actors (ix1, ix2)
 	a2	= actors .(ix2)
 
 	match 
-		-- handle a collision between bead and a wall
-		| Bead _ _ r1 p1 v1	<- a1
-		, Wall{}		<- a2
-		= do	a1'		= collideBeadWall a1 a2
-			a1_final	= actorSetMode True a1'
+		-- handle a collision between a wall and a bead
+		--	walls always have a lower ix than beads
+		--	so we don't have to have a Bead<>Wall case as well.
+		| Wall{}		<- a1
+		, Bead _ _ r1 p1 v1	<- a2
+		= do	aBead'		= collideBeadWall a2 a1
+			aBead_final	= actorSetMode True aBead'
 
-		 	actors #(ix1)	#= a1_final
+		 	actors #(ix2)	#= aBead_final
 		
 		-- handle a collision between two beads
 		| Bead ix1 m1 r1 p1 v1	<- a1
 		, Bead ix2 m2 r2 p2 v2	<- a2
 		= do	
-{-
 			a12'
 				-- if one of the beads is stuck then do a safer, static collision.
 				--	with this method the beads don't transfer energy into each other
@@ -92,9 +95,9 @@ applyContact time force actors (ix1, ix2)
 				--	this is much more realistic.
 				| otherwise
 				= collideBeadBead_elastic a1 a2
--}
-			a1'	= collideBeadBead_static a1 a2
-			a2'	= collideBeadBead_static a2 a1
+
+			a1'	= fst a12' 
+			a2'	= snd a12' 
 
 			-- After two beads have collided, set them as being stuck.
 			a1_final	= actorSetMode True a1'
@@ -104,7 +107,11 @@ applyContact time force actors (ix1, ix2)
 		 	actors #(ix1)	#= a1_final
 			actors #(ix2)	#= a2_final
 			
-
+		\= do	putStr 
+				$ "applyContact: no match for\n"
+				% "    a1 = " % show a1	% "\n"
+				% "    a2 = " % show a2	% "\n\n"	
+			error "bye"		
 
 -- | Move a bead which isn't in contact with anything else.
 moveActor_free 

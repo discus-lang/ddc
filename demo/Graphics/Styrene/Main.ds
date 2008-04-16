@@ -7,19 +7,44 @@ import Advance
 import Graphics.Render
 import Graphics.Shape
 
+timeStep	= 0.04
+worldRot	= 0.0
+
 main ()
  = do	frame	= new&{Frame} "styrene" 800 800
 	coma frame worldInit
+
 
 coma :: Frame -> World -> ()
 coma frame world@(World actors _)
  = do	
 	-- advance the world
-	world'	= advanceWorld 0.1 (Vec2 0.0 -10.0) world
-	putStr "frame\n"
- 	renderPrims frame [Local [Translate 400.0 400.0, drawWorld world']]
+	force	= (Vec2 0.0 8.0) .rotate (- worldRot)
+
+	world'	= advance world force 10
+
+	frame.clear (color&{Frame} 0 0 0)
+
+	renderPrims frame 
+	 [Local	[ Translate 400.0 400.0
+	 	, Rotate worldRot
+		, Scale 0.9 0.9
+		, drawWorld world']]
+
  	frame .update
+
  	coma frame world'
+
+
+advance world force n	
+	| n == 0	
+	= world
+	
+	\= do	world'	= advanceWorld timeStep force world
+		worldRot := worldRot + 0.001
+		
+		advance world' force (n - 1)
+
 
 
 -- Draw --------------------------------------------------------------------------------------------
@@ -35,9 +60,9 @@ drawWorld (World actors tree)
 	-- split the list of actors into beads and walls.
 	--	this lets us draw all the beads at once without having to keep changing 
 	--	the current color (which is a bit of a performance improvement)
-	picActors	= Prims $ mapArrayToList drawActor actors
 	picTree		= drawQuadTree tree
-	Prims	[ picActors, picTree ]
+	picActors	= Prims $ mapArrayToList drawActor actors
+	Prims	[ picTree, picActors ]
 
 
 -- | Draw an actor as a picture.
@@ -51,6 +76,7 @@ drawActor actor
 	 -> Local
 	 	[ Color 200 200 200
 		, Line (Point x1 y1) (Point x2 y2)]
+
 	 
 -- | Draw a quadtree as a picture
 drawQuadTree :: QuadTree a -> Primitive

@@ -5,9 +5,7 @@
 import QuadTree
 import Actor
 import Data.Array
-
--- import qualified Data.Map	as Map
--- import Data.Map			(Map)
+import Data.List
 
 -- The world ---------------------------------------------------------------------------------------
 data World	
@@ -24,7 +22,7 @@ actorArrayInit actors
  = do	count	= length actors
  	arrayFromList count (errorNoEff @ "no actor")
 		$ map (\a -> (actorIx a, a))
-		$ zipWith actorSetIndex (walls ++ beads) [0 .. count - 1]
+		$ zipWith actorSetIndex actors [0 .. count - 1]
  
 treeInit = treeZero 300.0
 
@@ -47,7 +45,7 @@ boxSize :: Float
 boxSize	= 280.0
 
 walls :: [Actor]
-walls	= (box ++ splitter)
+walls	= (box ++ splitterMid ++ splitterBot ++ splitterTop)
 
 box :: [Actor]
 box
@@ -58,10 +56,21 @@ box
  	, Wall  0 (Vec2 (-bs) (-bs)) 	(Vec2 (-bs)  bs)	-- left
  	, Wall  0 (Vec2 bs (-bs)) 	(Vec2 (bs)  bs)] 	-- right
 
-splitter :: [Actor]
-splitter
+splitterMid :: [Actor]
+splitterMid
  =	[ Wall	0 (Vec2 -15.0 100.0) (Vec2 -200.0 0.0) 
  	, Wall  0 (Vec2  15.0 100.0) (Vec2  200.0 0.0) ]
+
+
+splitterBot :: [Actor]
+splitterBot
+ = 	[ Wall  0 (Vec2 -15.0 280.0) (Vec2    0.0 150.0) 
+ 	, Wall  0 (Vec2  15.0 280.0) (Vec2    0.0 150.0) ]
+
+splitterTop :: [Actor]
+splitterTop
+ = 	[ Wall  0 (Vec2 -15.0 -280.0) (Vec2    0.0 -150.0) 
+ 	, Wall  0 (Vec2  15.0 -280.0) (Vec2    0.0 -150.0) ]
 
 
 -- Beads ------------------
@@ -70,8 +79,8 @@ beadSpace	= 1.0
 beadBoxSize	= 2.0 * beadRadius + beadSpace
 
 -- the initial grid of beads, change this if you want more/less beads in the simulation.
-beadCountX	= 5
-beadCountY	= 5
+beadCountX	= 10
+beadCountY	= 10
 
 
 -- beads start off with their index just set to 0
@@ -84,7 +93,7 @@ beads
 		 
 beadPos ix iy	
  = Vec2	( (ix * beadBoxSize) - (beadBoxSize * (toFloat beadCountX) / 2.0))
-	(iy * beadBoxSize)  
+	(iy * beadBoxSize - 50.0)  
 
 
 

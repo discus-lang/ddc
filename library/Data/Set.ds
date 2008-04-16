@@ -18,8 +18,8 @@ project Set a where
 
 
 	-- | /O(1)/. The empty set.
-	empty	:: Set a
-	empty = Tip
+	empty	:: () -> Set a
+	empty () = Tip
 
 
 	-- | /O(1)/. Create a singleton set.

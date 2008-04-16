@@ -32,7 +32,7 @@ data List %r1 a
 -- Class dictionaries
 
 -- Class instances
-instance Class.Copy.Copy (Data.List.List %rDK147 (Base.Int %rDK148)) where
+instance Class.Copy.Copy (Data.List.List %rDK151 (Base.Int %rDK152)) where
 {
         copy     = Data.List.instance_Copy_ListInt_copy;
 }
@@ -189,6 +189,14 @@ foreign import foldl
         ,  $c3        = f : $c1
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
         
+foreign import foldr
+        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
+        .  (t1 -(!e1 $c1)> t0 -(!e0 $c0)> t0) -> t0 -($c3)> List %r0 t1 -(!e2 $c2)> t0
+        :- !e2        = !{Base.!Read %r0; !e1; !e0}
+        ,  $c2        = ${state : t0; f : $c1}
+        ,  $c3        = f : $c1
+        :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
+        
 foreign import mapAccumL
         :: forall t0 t1 t2 %r0 %r1 %r2 %r3 !e0 !e1 $c0 $c1
         .  (t2 -(!e1 $c0)> t0 -(!e0 $c1)> Data.Tuple.Tuple2 %r3 t2 t1) -> t2 -($c3)> List %r2 t0 -(!e2 $c2)> Data.Tuple.Tuple2 %r0 t2 (List %r1 t1)
@@ -203,7 +211,7 @@ foreign import mapAccumL'
         :- !e2        = !{Base.!Read %r2; Base.!Read %r3; Base.!Read %r0; !e1; !e0; Base.!Read %r4}
         ,  $c2        = f : $c0
         ,  $c3        = ${acc : t0; f : $c0}
-        ,  $c4        = ${acc : t0; xSD22 : %r0; xSD22 : %r0 $> t1; f : $c0}
+        ,  $c4        = ${acc : t0; xSD24 : %r0; xSD24 : %r0 $> t1; f : $c0}
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data -> Base.Data;
         
 foreign import sum
@@ -232,11 +240,19 @@ foreign import pow
         ,  $c0        = x : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
+foreign import zipWith
+        :: forall t0 t1 t2 %r0 %r1 %r2 !e0 !e1 $c0 $c1
+        .  (t0 -(!e1 $c1)> t1 -(!e0 $c0)> t2) -> List %r0 t0 -($c3)> List %r1 t1 -(!e2 $c2)> List %r2 t2
+        :- !e2        = !{Base.!Read %r0; Base.!Read %r1; !e1; !e0}
+        ,  $c2        = ${xSD26 : %r0; xSD26 : %r0 $> t0; f : $c1}
+        ,  $c3        = f : $c1
+        :$ Base.Thunk -> Base.Data -> Base.Data -> Base.Data;
+        
 foreign import zipWith_
         :: forall t0 t1 %r0 %r1 !e0 !e1 $c0 $c1
         .  (t0 -(!e1 $c1)> t1 -(!e0 $c0)> Base.Unit) -> List %r0 t0 -($c3)> List %r1 t1 -(!e2 $c2)> Base.Unit
         :- !e2        = !{Base.!Read %r0; Base.!Read %r1; !e1; !e0}
-        ,  $c2        = ${xSD24 : %r0; xSD24 : %r0 $> t0; f : $c1}
+        ,  $c2        = ${xSD30 : %r0; xSD30 : %r0 $> t0; f : $c1}
         ,  $c3        = f : $c1
         :$ Base.Thunk -> Base.Data -> Base.Data -> Base.Data;
         
@@ -257,21 +273,21 @@ foreign import take
         :: forall t0 %r0 %r1 %r2
         .  Base.Int %r0 -> List %r1 t0 -(!e0 $c0)> List %r2 t0
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0        = xSD32 : %r0
+        ,  $c0        = xSD38 : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import drop
         :: forall t0 %r0 %r1
         .  Base.Int %r0 -> List %r1 t0 -(!e0 $c0)> List %r1 t0
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0        = xSD36 : %r0
+        ,  $c0        = xSD42 : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import deleteF
         :: forall t0 %r0 %r1 !e0 !e1 $c0 $c1
         .  (t0 -(!e1 $c1)> t0 -(!e0 $c0)> Data.Bool.Bool %r0) -> List %r1 t0 -($c3)> t0 -(!e2 $c2)> List %r1 t0
         :- !e2        = !{Base.!Read %r1; !e1; !e0; Base.!Read %r0}
-        ,  $c2        = ${xSD39 : %r1; xSD39 : %r1 $> t0; eqF : $c1}
+        ,  $c2        = ${xSD45 : %r1; xSD45 : %r1 $> t0; eqF : $c1}
         ,  $c3        = eqF : $c1
         :$ Base.Thunk -> Base.Data -> Base.Obj -> Base.Data;
         
