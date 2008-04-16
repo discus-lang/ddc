@@ -38,12 +38,18 @@ import Data.Set			(Set)
 import Shared.Pretty
 import Shared.Literal
 
-import Debug.Trace
+import qualified		Debug.Trace
 
 
 -----
 stage	= "Core.ToSea"
-
+{-
+debug	= True
+trace ss x	
+	= if debug 
+		then Debug.Trace.trace (pprStrPlain ss) x
+		else x
+-}
 
 -- State -------------------------------------------------------------------------------------------
 data SeaS
@@ -427,8 +433,10 @@ toSeaA	   mObjV xx
 	    	ss'		<- liftM concat
 				$  mapM toSeaS
 				$  slurpStmtsX x
+		
+		return	$ E.AAlt gs' (ssFront ++ ss')
 				
-	   	return	$ E.AAlt gs' (ssFront ++ ss')
+	
 
 
 -- Guard -------------------------------------------------------------------------------------------
@@ -461,7 +469,7 @@ toSeaG	mObjV ssFront gg
 			-- if the LHS is var we can make the last stmt of the RHS assign it.
 			| C.WVar var'	<- w
 			= do	let ssL		= assignLastSS (E.XVar var', t') ssRHS
-				return	( ssL
+				return	( ssFront ++ ssL
 					, Nothing)
 
 			-- match against literal value
@@ -502,20 +510,6 @@ isDirectType tt
 	= 	return False
 
 	
------
-{-
-toSeaW	_ 
-	(C.WLit l)
- = 	( toSeaConst l
- 	, [])
-
-toSeaW  (Just (C.XVar objV t))
-	(C.WCon   v lvts)	
-
- = 	( E.XCon v
- 	, )
--}
-
 isPatConst gg
  = case gg of
  	C.WLit{}	-> True
