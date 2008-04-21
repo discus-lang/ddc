@@ -80,6 +80,7 @@ data Arg
 	| DumpPrettyTypeSpaces
 	| DumpPrettyTypeKinds
 	| DumpPrettyCoreTypes
+	| DumpPrettyCoreMore
 
 	-- things that can be dumped
 	| DumpAll
@@ -449,6 +450,7 @@ options	=
 	, OFlag		DumpPrettyTypeSpaces	["-dump-pretty-type-spaces"]	"Show a '*' namespace qualifier on type vars."
 	, OFlag		DumpPrettyTypeKinds	["-dump-pretty-type-kinds"]	"Show kinds on type vars and constructors."
 	, OFlag		DumpPrettyCoreTypes	["-dump-pretty-core-types"]	"Show type annots on vars in core."
+	, OFlag		DumpPrettyCoreMore	["-dump-pretty-core-more"]	"Show :> constraints on type vars in core."
 	, OBlank
 	
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."
@@ -511,4 +513,5 @@ takePrettyMode aa
 	DumpPrettyTypeSpaces	-> Just $ PrettyTypeSpaces
 	DumpPrettyTypeKinds	-> Just $ PrettyTypeKinds
 	DumpPrettyCoreTypes	-> Just $ PrettyCoreTypes
+	DumpPrettyCoreMore	-> Just $ PrettyCoreMore
 	_			-> Nothing

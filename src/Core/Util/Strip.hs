@@ -84,7 +84,7 @@ slurpForallContextT tt
  	TForall b k t2	
 	 -> let	tBind	= case b of
 	 			BVar v 		-> TVar k v
-				BMore v t	-> TVar k v
+				BMore v t	-> TVarMore k v t
 				
 		(vs, ks) = slurpForallContextT t2
 		

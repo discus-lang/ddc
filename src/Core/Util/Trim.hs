@@ -154,10 +154,16 @@ trimClosureC' quant rsData cc
 	 -> let quant'	= Set.insert (varOfBind b) quant
 	    in  trimClosureC quant' rsData t
 
-	-- If this closure has no free variables
-	--	then it is closed and can safely be erased.
 	TFree tag (TVar k v)
+		| k == KEffect
+		-> TBot KClosure
+		
+		-- If this closure has no free variables
+		--	then it is closed and can safely be erased.
 		| Set.member v quant
+		-> TBot KClosure
+		
+	TFree tag (TBot _)
 		-> TBot KClosure
 		
 	-- Trim either a data or closure element of a closure
@@ -167,6 +173,9 @@ trimClosureC' quant rsData cc
 	  -> case kindOfType t of
 		KClosure
 		  -> TFree tag $ down t
+
+		KEffect	-> TBot KClosure
+		
 
 	  	_ -> makeTSum KClosure 
 			$ map (TFree tag) 

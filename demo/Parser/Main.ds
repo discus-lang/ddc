@@ -24,20 +24,37 @@ runParser (Parser fun) str
 
 
 instance Monad (Parser !e1 $c1 tok) where
-	return x	
-	 = Parser $ \str -> Success x str
+	return	= parserReturn
 
-	(>>=) (Parser parse1) mkParser2
-	 = Parser $ \str ->
-		case parse1 str of
-			Success result rest	-> runParser (mkParser2 result) rest
-			err			-> err
+	(>>=) 	= parserBind
+
+parserReturn x
+ = Parser (\str -> Success x str)
+
+parserBind (Parser parse1) mkParser2
+ = Parser parse
+ where parse str
+ 	 = case parse1 str of
+		Success result rest	-> runParser (mkParser2 result) rest
+		Error err		-> Error err
+
 
 -- Bits and pieces ---------------------------------------------------------------------------------
 isSuccess rr
  = case rr of
 	Success _ _	-> True
 	_		-> False
+
+
+-- Primitive Parsers -------------------------------------------------------------------------------
+pChar :: Char -> Parser !e $c Char ()
+pChar c
+ = Parser $ \str -> 
+ 	case str of
+ 	 (s : rest) -> if s == c 
+			then Success () rest
+			else Error (ErrorUnexpected s)
+	 []	  -> Error (ErrorEOF)
 
 
 -- Combinators ------------------------------------------------------------------------------------
@@ -53,36 +70,33 @@ isSuccess rr
 	 result@(Success _ _)	-> result
 	 _			-> runParser parser2 str
 
-{-
+
 -- | Parse many strings in sequence
 many :: Parser %r1 !e1 $c1 tok a -> Parser %r2 !e2 $c2 tok [a]
-many parser1
- =   do	x	<- parser1
-	rest	<- many parser1
-	return	$ x : rest
+many parser
+ =   do	x	<- parser
+	rest	<- many parser
+	return (x : rest)
 
  <|>	return []
--}
 
+
+-- | Parse at least one of these
+many1 :: Parser %r1 !e1 $c1 tok a -> Parser %r2 !e2 $c2 tok [a]
+many1 parser
+ = do	x	<- parser
+ 	rest	<- many parser
+	return	(x : rest)
 
 -----
-test	= ['d', 'b', 'c']
-
-pChar :: Char -> Parser !e $c Char ()
-pChar c
- = Parser $ \str -> 
- 	case str of
- 	 (s : rest) -> if s == c 
-			then Success () rest
-			else Error (ErrorUnexpected s)
-	 []	  -> Error (ErrorEOF)
+test	= ['b', 'a', 'a', 'a', 'a', 'b']
 
 pTest
- =   do	_	<- pChar 'a'
+ =   do	_	<- many (pChar 'a')
  	_	<- pChar 'b'
 	return	()
 
- <|> do	_	<- pChar 'c'
+ <|> do	_	<- pChar 'z'
  	return	()
  	
 

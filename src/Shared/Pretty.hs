@@ -16,6 +16,7 @@ data PrettyMode
 	| PrettyTypeSpaces	-- show a '*' namespace qualifier on type variables.
 	| PrettyTypeKinds	-- show kinds on type vars and constructors
 	| PrettyCoreTypes	-- show type annotations on vars in core
+	| PrettyCoreMore	-- show :> constraints on type vars in core
 	deriving (Eq, Show)
 
 pprStrPlain x

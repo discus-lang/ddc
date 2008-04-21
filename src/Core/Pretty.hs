@@ -254,12 +254,10 @@ instance Pretty Exp PMode where
 	 -> "@XLifted " % vLifted % " " % vsFree
 
 
-
-
-
 spaceApp xx
  = case xx of
 	TVar{}			-> False
+	TVarMore{}		-> False
 	_			-> True
 
 
@@ -434,8 +432,11 @@ instance Pretty Type PMode where
 		  | otherwise		= prettyTypeB x
 
 		pprAppRight x
-		  | x =@= TVar{} 	= ppr x
-		  | otherwise		= prettyTypeB x
+		  | x =@= TVar{} || x =@= TVarMore{}	
+		  = ppr x
+
+		  | otherwise		
+		  = prettyTypeB x
 
 	    in	pprAppLeft t1 % " " % pprAppRight t2
 
@@ -449,9 +450,14 @@ instance Pretty Type PMode where
 		_	-> ppr v
 
 	TVarMore k v t
-	 -> case k of
-	 	KValue	-> "*" % sv v % " :> " % t 
-		_	-> sv v % " :> " % t
+	 -> ifMode (elem PrettyCoreMore)
+	 	(case k of
+		 	KValue	-> "*" % sv v % " :> " % t 
+			_	-> sv v % " :> " % t)
+			
+		(case k of
+		 	KValue	-> "*" % v
+			_	-> ppr v)
 
 	TCon tyCon
 	 -> ppr tyCon
@@ -509,6 +515,7 @@ prettyTypeB t
  = case t of
 	TSum{}		-> ppr t
  	TVar{}		-> ppr t
+	TVarMore{}	-> ppr t
 	TCon{}		-> ppr t
 	TEffect v []	-> ppr t
 	TWild{}		-> ppr t
