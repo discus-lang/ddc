@@ -1,17 +1,21 @@
-
-import Base
-import Class.Ord
-import Class.Num
-import Data.Int
-import Data.List
-
+{-
+export	setSingleton
+	setSize
+	set
+-}
+import	Base
+	Class.Ord
+	Class.Num
+	Data.Int
+	Data.List
+	
 -- | A set of values @a@.
 data Set a    = Tip 
               | Bin 	Int 		-- size
 			a 		-- elem
 			(Set a) 	-- left
 			(Set a) 	-- right
-			
+
 project Set a where
 
 	delta 	= 4

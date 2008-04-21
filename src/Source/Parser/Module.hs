@@ -83,10 +83,10 @@ pTopPragma
 -- Import ------------------------------------------------------------------------------------------
 pTopImport :: Parser (Top SP)
 pTopImport
- = do	-- import MODULE
+ = do	-- import { MODULE ; ... }
    	tok	<- pTok K.Import
-	mod	<- pModuleName 
-	return	$ PImportModule (spTP tok) [mod]
+	mods	<- pCParen (Parsec.sepEndBy1 pModuleName pSemis)
+	return	$ PImportModule (spTP tok) mods
 
 pModuleName :: Parser (Var.Module)
 pModuleName

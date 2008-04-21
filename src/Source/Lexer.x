@@ -331,6 +331,14 @@ addStarts ts
 
 addStarts'  :: [TokenP] -> [TokenP]
 addStarts' []	= []
+
+addStarts' 
+	( t1@TokenP { token = Foreign } 
+	: t2@TokenP { token = Import } 
+	: ts)
+	
+	= t1 : t2 : addStarts' ts
+
 addStarts' (t1 : ts)
 
 	-- We're starting a block
@@ -372,6 +380,7 @@ isBlockStart TokenP { token = tok }
 	Let		-> True
 	Catch		-> True
 	Match		-> True
+	Import		-> True
 	_		-> False
 
 isBlockStart _

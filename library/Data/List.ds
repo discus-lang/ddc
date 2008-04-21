@@ -1,13 +1,12 @@
 
 import	Base
-import	Base.Thunk
-import	Data.Bool
-import	Data.Ref
-import	Data.Tuple
-import 	Data.Maybe
-import 	Data.Int
-import	System.Error
-
+	Base.Thunk
+	Data.Bool
+	Data.Ref
+	Data.Tuple
+	Data.Maybe
+	Data.Int
+	System.Error
 
 -- We need to manually provide the %r1 region annotation here because the elaborator
 --	can't elaborate a recursive definition yet. (ticket #116)
