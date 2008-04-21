@@ -5,27 +5,27 @@
 -- Infix
 
 -- Data
-data Fruit %rDK0
+data Fruit %rDK15
         = Apple
         
         | Orange;
 
-data Foo %rDK1 a
+data Foo %rDK16 a
         = FooInt {
-                Base.Int %rDK1;
+                Base.Int %rDK16;
         }
         
         | FooFloat {
-                Base.Float %rDK1;
+                Base.Float %rDK16;
         }
         
         | FooFun {
                 a -> a;
         };
 
-data Bar %rDK2 a
+data Bar %rDK17 a
         = BarFoo {
-                Main.Foo %rDK2 a;
+                Main.Foo %rDK17 a;
         };
 
 

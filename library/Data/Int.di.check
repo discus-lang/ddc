@@ -24,24 +24,24 @@ infix  5 <, <=, >=, > ;
 -- Class dictionaries
 
 -- Class instances
-instance Class.Copy.Copy (Base.Int %rDK39) where
+instance Class.Copy.Copy (Base.Int %rDK54) where
 {
         copy     = Data.Int.instance_Copy_Int_copy;
 }
 
-instance Class.Update.Updatable (Base.Int %rDK40) where
+instance Class.Update.Updatable (Base.Int %rDK55) where
 {
         (:=)     = Data.Int.primInt32_update;
 }
 
-instance Class.Eq.Eq (Base.Int %rDK41) where
+instance Class.Eq.Eq (Base.Int %rDK56) where
 {
         (==)     = Data.Int.primInt32_eq;
         
         (/=)     = Data.Int.primInt32_neq;
 }
 
-instance Class.Ord.Ord (Base.Int %rDK42) where
+instance Class.Ord.Ord (Base.Int %rDK57) where
 {
         (>)      = Data.Int.primInt32_gt;
         
@@ -54,7 +54,7 @@ instance Class.Ord.Ord (Base.Int %rDK42) where
         compare  = Data.Int.instance_Ord_Int_compare;
 }
 
-instance Class.Num.Num (Base.Int %rDK43) where
+instance Class.Num.Num (Base.Int %rDK58) where
 {
         (+)      = Data.Int.primInt32_add;
         
@@ -69,7 +69,7 @@ instance Class.Num.Num (Base.Int %rDK43) where
         negate   = Data.Int.primInt32_neg;
 }
 
-instance Class.Update.Accum (Base.Int %rDK44) where
+instance Class.Update.Accum (Base.Int %rDK59) where
 {
         (+=)     = Data.Int.instance_Accum_Int_PsEq;
 }
@@ -189,7 +189,7 @@ foreign import inc
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-project Base.Int %rDK54 where
+project Base.Int %rDK69 where
 {
         min      = project_Int_min;
         max      = project_Int_max;

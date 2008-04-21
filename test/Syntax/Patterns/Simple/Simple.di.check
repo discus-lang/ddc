@@ -5,7 +5,7 @@
 -- Infix
 
 -- Data
-data Thing3 %rDK0 a b c
+data Thing3 %rDK15 a b c
         = Thing {
                 a;
                 b;

@@ -45,7 +45,7 @@ trace ss xx
 --
 elaborateRsT_quant
 	:: Monad m
-	=> (m Var)		-- ^ A compuation to generate a fresh region var
+	=> (NameSpace -> m Var)	-- ^ A compuation to generate a fresh region var
 	-> (Var -> m Kind)	-- ^ fn to get kind of type ctor
 	-> Type 		-- ^ the type to elaborate
 	-> m Type
@@ -117,7 +117,7 @@ elaborateRsT' tt
 --	so the reconstructed ctor with these args will have this kind.
 --
 elabRs 	:: Monad m
-	=> (?newVar  :: m Var)			-- ^ fn to create new region vars
+	=> (?newVar  :: NameSpace -> m Var)	-- ^ fn to create new region vars
 	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
 	-> (?topType :: Type)			-- ^ for debugging
 	-> [Type]				-- ^ ctor args
@@ -134,34 +134,34 @@ elabRs2 [] KValue
 	= return ([], [])
 
 elabRs2 [] (KFun k1 k2)
-	-- add a fresh region varaible
-	| KRegion		<- k1
+	-- add fresh vars at the end
+	| elem k1 [KRegion, KEffect, KClosure]
 	= do	(ts', vks')	<- elabRs2 [] k2
-		vR		<- ?newVar
-		return		( TVar KRegion vR : ts'
-				, (vR, KRegion) : vks')
+		vR		<- ?newVar (spaceOfKind k1)
+		return		( TVar k1 vR : ts'
+				, (vR, k1) : vks')
 	| otherwise
 	= return ([], [])
 
 elabRs2 (t:ts) kk@(KFun k1 k2)
 
 	-- (% : _)   % -> _
-	| KRegion		<- k1
-	, hasRegionKind t
+	| elem k1 [KRegion, KEffect, KClosure]
+	, hasKind k1 t
 	= do	(ts', vks')	<- elabRs2 ts k2
 		return		( t : ts'
 				, vks')
 
 	-- (_ : _)   % -> _
-	| KRegion		<- k1
-	, not $ hasRegionKind t
-	= do	vR		<- ?newVar
+	| elem k1 [KRegion, KEffect, KClosure]
+	, not $ hasKind k1 t
+	= do	vR		<- ?newVar (spaceOfKind k1)
 
 		(tt', vksMore)	<- elabRs2 
-					(TVar KRegion vR : t : ts) 
+					(TVar k1 vR : t : ts) 
 					kk
 		return		( tt'
-				, (vR, KRegion) : vksMore)
+				, (vR, k1) : vksMore)
 
 	| otherwise
 	= do	(ts', vks')	<- elabRs2 ts k2
@@ -174,11 +174,12 @@ elabRs2 args kind
 	% "    topType = " % prettyTS ?topType % "\n"
 
 
-hasRegionKind tt
+hasKind k tt
  = case tt of
- 	TVar KRegion _	-> True
-	TWild KRegion	-> True
+ 	TVar k2 _	-> k == k2
+	TWild k2	-> k == k2
 	_		-> False
+
 
 
 -----------------------

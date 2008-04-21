@@ -215,7 +215,7 @@ elabRegionsX xx
 	_ ->	return xx
 
 elabRegionsT t
- = do	(t_elab, _)	<- elaborateRsT (newVarN NameRegion) getKind t
+ = do	(t_elab, _)	<- elaborateRsT newVarN getKind t
    	return t_elab
 
 
