@@ -266,8 +266,8 @@ toCoreS	D.SSig{}
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
- = trace ("toCoreX: " % xx % "\n")
- $ case xx of
+-- = trace ("toCoreX: " % xx % "\n")
+ = case xx of
 
 	D.XLambdaTEC 
 		_ v x (T.TVar T.KValue vTV) eff clo
@@ -283,12 +283,23 @@ toCoreX xx
 				= C.stripSchemeT tArg1
 
 		portVars	<- gets coreQuantVars
-		let tArg	= C.packT
+		let fsWhere	= [ C.FWhere v t	
+					| C.FWhere v t	<- argFetters
+					, not $ Map.member v portVars]
+
+		let fsMore	= [ f	| f@(C.FMore v t) <- argFetters ]
+		
+		let tArg	
+			= trace 
+				( "toCoreX:\n"
+				% "    vTV     " % vTV		% "\n"
+				% "    tArg1   " % tArg1 	% "\n"
+				% "    fsWhere " % fsWhere	% "\n"
+				% "    fsMore  " % fsMore	% "\n")
+				$ C.packT
 				$ C.buildScheme
 					argQuant
-					[ C.FWhere v t	
-						| C.FWhere v t	<- argFetters
-						, not $ Map.member v portVars]
+					(fsWhere ++ fsMore)
 					[]
 					argShape
 
@@ -422,11 +433,11 @@ toCoreX xx
 		
 		let Just vProj	= Map.lookup vTag projResolve
 		
-		trace 	( "XProjTagged\n"
+{-		trace 	( "XProjTagged\n"
 			% "    vTag  = " % vTag		% "\n"
 			% "    vProj = " % vProj	% "\n")
 			$ return ()
-
+-}
 		x1'	<- toCoreVarInst vProj vTag
 			
 		return	$ C.XApp x1' x2' C.pure
@@ -441,11 +452,11 @@ toCoreX xx
 		projResolve	<- gets coreProjResolve
 		let Just vProj	= Map.lookup vTag projResolve
 		
-		trace 	( "XProjTaggedT\n"
+{-		trace 	( "XProjTaggedT\n"
 			% "    vTag  = " % vTag		% "\n"
 			% "    vProj = " % vProj	% "\n")
 			$ return ()
-
+-}
 		x1'	<- toCoreVarInst vProj vTag
 		return	$ x1' 
 
@@ -596,8 +607,8 @@ toCoreConst' tt const
 -- VarInst -----------------------------------------------------------------------------------------
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
 toCoreVarInst v vT
- = trace ("toCoreVarInst" % v <> vT % "\n")
- $ do
+-- = trace ("toCoreVarInst" % v <> vT % "\n")
+ = do
 	Just tScheme	<- lookupType v
 	mapInst		<- gets coreMapInst
 
@@ -618,12 +629,12 @@ toCoreVarInst v vT
 	 -- use of a lambda bound variable.
 	 -- 	only rank1 polymorphism => lambda bound vars have monotypes
 	 T.InstanceLambda vUse vBind _
-	  -> do	trace 	( "varInst: TInstanceLambda\n"
+	  -> do	{-trace 	( "varInst: TInstanceLambda\n"
 	  		% "    vUse    = " % vUse	% "\n"
 			% "    tScheme = " % tScheme	% "\n"
 			% "    tShape  = " % tShape	% "\n")
 			$ return ();
-		  
+		 -}
 	  	return $ C.XVar v tShape
 
 	 -- non-recursive use of a let bound variable 
@@ -653,7 +664,7 @@ toCoreVarInst v vT
 						C.KClass v ts	-> C.TClass v ts) 
 				$ ksContextC'
 
-		trace ("varInst: "
+{-		trace ("varInst: "
 			% vT 				% "\n"
 			% "    tScheme         =\n" %> tScheme 		% "\n\n"
 			% "    ksContext       = " % ksContextC		% "\n"
@@ -663,7 +674,7 @@ toCoreVarInst v vT
 			% "    tsSub           = " % tsSub 		% "\n"
 			% "    tsContestC'     = " % tsContextC' 	% "\n")
 			$ return ()
-
+-}
 		let Just xResult = 
 			C.buildApp (C.XVar v tScheme : map C.XType (tsInstC_packed ++ tsContextC'))
 

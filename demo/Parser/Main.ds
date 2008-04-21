@@ -27,10 +27,12 @@ data ParseResult tok a
 	| ErrorUnexpected tok
 	| ErrorEOF
 
+{-
 isSuccess rr
  = case rr of
 	Success _ _	-> True
 	_		-> False
+-}
 {-	
 -----
 test	= ['a', 'b', 'c']

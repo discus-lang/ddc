@@ -98,7 +98,6 @@ lookupAnnotT (Just (T.TVar T.KValue vT, _))
 -- | Get the type of this variable.
 lookupType :: Var -> CoreM (Maybe C.Type)
 lookupType v
--- = trace (pprStrPlain $ "lookupType: " % v)
  = do	sigmaTable	<- gets coreSigmaTable
  
  	let (res :: CoreM (Maybe C.Type))
@@ -130,7 +129,8 @@ lookupType' vT
 
 {-		trace (pprStrPlain 
 			$ "    type = " % tType % "\n"
-			% "    core = " % cType % "\n")	$ -}
-
+			% "    core = " % cType % "\n")	
+			$ 
+-}		
 		return $ Just cType_flat
 

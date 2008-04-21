@@ -106,7 +106,7 @@ toCoreT' table tt
 
 	T.TTop k		-> C.TTop (toCoreK k)
 
-	T.TApp t1 t2		-> C.TApp (toCoreT t1) (toCoreT t2)
+	T.TApp t1 t2		-> C.TApp (down t1) (down t2)
 	T.TCon tyCon		-> C.TCon (toCoreTyCon tyCon)
 
 	-- data
@@ -114,7 +114,7 @@ toCoreT' table tt
 	 -> let tyCon	= T.TyConData 
 		 		{ T.tyConName	= v
 				, T.tyConKind	= k }
-	   in  toCoreT $ T.makeTApp (T.TCon tyCon : ts)
+	   in  down $ T.makeTApp (T.TCon tyCon : ts)
 
 
 	T.TFun t1 t2 eff clo	-> C.TFunEC (down t1) (down t2) (down eff) (down clo)
