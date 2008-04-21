@@ -29,7 +29,6 @@ trace ss x
 		else x
 
 -- stage	= "Core.Util.Subsumes"
------
 
 -- | Check if t subsumes s another. t :> s
 --	BUGS: assumes that effect and closures in data types are all covariant
@@ -185,18 +184,30 @@ subsumes3 table t s
 	= (True, "SubReplay")
 	
 	-- SubCtor
-	--	TODO: If we knew which of these args was covar/contravar we
+	--	BUGS: If we knew which of these args was covar/contravar we
 	--	could do a proper subsumption, but we don't have that info here. 
-	--	Just take all the args as being invariant instead.
+	--	Just take all the args as being covariant instead.
 	--
 	| Just (tVar, k, ts)	<- takeTData t
 	, Just (sVar, k, ss)	<- takeTData s
 	, tVar == sVar
 	, length ts == length ss
---	, and $ zipWith (subsumes1 table) ts ss
-	, ts == ss
-	= (True, "SubCtor")
-	
+	, and $ zipWith (subsumes1 table) ts ss
+	= let result
+		| ts == ss 	
+		= (True, "SubCtor")
+
+		| and $ zipWith (subsumes1 table) ts ss
+		= (True, "SubCtor")
+
+{-		= warning stage
+			( "subsumes: did a dodgy subsumption (T :> S)\n"
+			% "  T = " % t % "\n"
+			% "  S = " % s % "\n")
+			(True, "SubCtor")
+-}		
+	  in	result
+			
 
 	-- This is really Eq
 	--	T <: T

@@ -58,6 +58,11 @@ slurpDataRT tt
 	 | elem (resultKind k) [KRegion, KValue]	-> [tt]
 	 | otherwise	-> []
 	
+	TVarMore{}	-> []
+	
+	TEffect{}	-> []
+	TFree{}		-> []
+	
 	TCon{}		-> []
 	TSum{}		-> []
 	

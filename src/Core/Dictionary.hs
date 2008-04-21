@@ -35,9 +35,8 @@ trace ss x	= if debug
 			then Debug.trace (pprStrPlain ss) x
 			else x
 
------
---	The RHS of every instance function must be the var of a top level function.
-
+----
+-- The RHS of every instance function must be the var of a top level function.
 dictTree 
 	:: Tree
 	-> Tree 	
@@ -143,38 +142,23 @@ rewriteOverApp
 
 	, (bksForall, _, ksClass, tInstShape)
 			<- stripSchemeT $ packT tInstScheme					
+
+	, tOverShapeI_flat	<- flattenT tOverShapeI
 	
 	= trace (pprStrPlain
-		$ "    tInstScheme = " %> tInstScheme 	% "\n\n"
-		% "    tInstShape  = " %> tInstShape 	% "\n\n"
-		% "    tOverShapeI = " %> tOverShapeI	% "\n\n")
+		$ "    tInstScheme      = " %> tInstScheme 	% "\n\n"
+		% "    tInstShape       = " %> tInstShape 	% "\n\n"
+		% "    tOverShapeI_flat = " %> tOverShapeI_flat	% "\n\n")
 	$ let
 		-- Match up the type args in the type of the call and the real instance function.
 		ttSub	= fromMaybe
 				(panic stage $ "rewriteOverApp: cannot unify types.\n\n"
-				% "    tInstShape  = " %> tInstShape  % "\n\n"
-				% "    tOverShapeI = " %> tOverShapeI % "\n")
-				$ unifyT2 tInstShape tOverShapeI
+				% "    tInstShape       = " %> tInstShape  % "\n\n"
+				% "    tOverShapeI_flat = " %> tOverShapeI_flat % "\n")
+				$ unifyT2 tInstShape tOverShapeI_flat
 
-		-- Make sure we have a type parameter for all free vars in the instance.
-		-- If this fails then the type params passed to the overloaded fn weren't specific enough
-		--	to determine the type we need to call the instance fn at.
-		takeVSub (t1, t2)
-		 = case t1 of
-		 	TVar k1 v1	
-			 -> (v1, t2)
-
-			TVarMore k1 v1 tMore
-			 -> (v1, t2)
-
-			_	-> panic stage 
-				$ "rewriteOverApp: cannot determine type params for instance function.\n"
-				% "  (maybe a problem with shape constraint resolution?)\n"
-				% "  when rewriting:\n" %> xx	% "\n"
-				% "  t1 = " % t1	% "\n"
-				% "  t2 = " % t2	% "\n"
 		
-		vtSub	= map takeVSub ttSub
+		vtSub	= mapMaybe (takeVSub xx ttSub) ttSub
 
 		-- Work out the type args to pass to the instance function.
 		getInstType (b, k)
@@ -245,6 +229,37 @@ rewriteOverApp
 		% "  in " % xx % "\n"
 
 
+-- Make sure we have a type parameter for all free vars in the instance.
+-- If this fails then the type params passed to the overloaded fn weren't specific enough
+--	to determine the type we need to call the instance fn at.
+takeVSub xx ttSub (t1, t2)
+ 	| TVar k1 v1		<- t1
+	= Just (v1, t2)
+
+	| TVarMore k1 v1 tMore	<- t1
+	= Just (v1, t2)
+	
+	-- DOH:	Unifying the shape of the type from the class definition doesn't work
+	--	properly when it's a H.O function with effect/clo vars in multiple places.
+	--
+	--	In the Parsec demo we end up with things like
+	--		(!Read %r, {!Read %r, !Read %r2}) being returned from the unifier.
+	--	
+	| elem (kindOfType t1) [KEffect, KClosure]
+	= Nothing
+	
+	| otherwise
+	= panic stage 
+		$ "rewriteOverApp: cannot determine type params for instance function.\n"
+		% "  (maybe a problem with shape constraint resolution?)\n"
+		% "  when rewriting:\n" 
+			%> xx	% "\n\n"
+		% "  t1 = " % t1	% "\n"
+		% "  t2 = " % t2	% "\n"
+		% "\n"
+		% "  ttSub:\n" % punc "\n" ttSub	% "\n"
+
+
 rewriteOverApp_trace
 	xx overV cClass tOverScheme cxInstances mapTypes
  =  trace
@@ -292,7 +307,7 @@ determineInstance
  = let
  	-- See how many foralls there are on the front of the overloaded scheme.
 	(vtsForall, _, _, tOverShape)
-			= stripSchemeT overScheme
+			= stripSchemeT (flattenT overScheme)
 
 	vsForall	= map fst vtsForall
 	vsForall_count	= length vsForall
@@ -305,9 +320,12 @@ determineInstance
 	tsArgsQuant	= map (\(XAppFP (XType t) _) -> t) xsArgsQuant
 	
 	-- Substitute the bound types into the context
-	tsSubst		= Map.fromList $ zip (map varOfBind vsForall) tsArgsQuant
+	tsSubst		= Map.fromList 
+			$ zip 	(map varOfBind vsForall) 
+				tsArgsQuant
+				
 	tsClassParams'	= map (substituteT tsSubst) tsClassParams
-	cClassInst	= TClass vClass tsClassParams'
+	cClassInst	= TClass vClass (map stripToShapeT tsClassParams')
 
 	-- Lookup the instance fn
 	mInstV		= lookupF matchInstance cClassInst cvInstances
@@ -343,30 +361,30 @@ determineInstance
 -- Checks if an class instance supports a certain type.
 --	The class instance has to be more polymorphic than the type we want to support.
 matchInstance 
-	:: Type 	-- the class we want to support
-	-> Type		-- the class of the instance
+	:: Type 	-- the instance we want to support
+	-> Type		-- a type from the instance definition
 	-> Bool
 
 matchInstance cType cInst
-	| TClass v1 ts1		<- cType
-	, TClass v2 ts2		<- cInst
+	| TClass v1 ts1		<- cInst
+	, TClass v2 ts2		<- cType
 
 	-- check the class is the same
 	, v1 == v2
 	, length ts1 == length ts2
 
 	-- all the type arguments of the class must unify
-	, Just constrs		<- sequence $ zipWith unifyT2 ts1 ts2
+	, Just constrs		<- sequence $ zipWith matchTT ts1 ts2
 
 	-- any extra constraint from the unification must have 
 	--	a var or wildcard for the RHS
-	, and 	$ map (\(ta, tb) -> case tb of
+	, and 	$ map (\(ta, tb) -> case ta of
 				TVar  k v
-				 | kindOfType ta == k
+				 | kindOfType tb == k
 			 	 -> True
 
 				TWild k
-				 | kindOfType ta == k
+				 | kindOfType tb == k
 				 -> True
 
 				_	-> False)
@@ -376,6 +394,16 @@ matchInstance cType cInst
 
 	| otherwise
 	= False
+
+matchTT t1 t2
+	| kindOfType t1 == KValue
+	, kindOfType t2	== KValue
+	= unifyT2 t1 t2 
+	
+	| kindOfType t1 == kindOfType t2
+	= Just []
+	
+		
 
 
 -- Slurp -------------------------------------------------------------------------------------------

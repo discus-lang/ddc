@@ -45,32 +45,21 @@ unifyT2 t1 t2
 	
 	| TBot{}			<- t1
 	= Just []
-	
-{-	| TSum{}			<- t2
-	= Just []
--}
+
 	-- vars
 	| TVar k1 v1			<- t1
 	, TVar k2 v2			<- t2
 	, k1 == k2
-	, v1 == v2			= Just []
+	, v1 == v2			
+	= Just []
 	
 	| TVar k1 v1			<- t1	
-	, kindOfType t2 == k1		= Just [(t1, t2)]
+	, kindOfType t2 == k1		
+	= Just [(t1, t2)]
 	
 	| TVar k2 v2			<- t2
-	, kindOfType t1 == k2		= Just [(t1, t2)]
-{-
-	| TVarMore k1 v1 tMore1		<- t1
-	, TVarMore k2 v2 tMore2		<- t2
-	, k1 == k2
-	, v1 == v2
-	, tMore1 == tMore2
-	= Just []
-
-	| TVarMore k1 v1 tMore1		<- t1
-	, kindOfType t2 == k1		= Just [(TVar k1 v1, makeTSum k1 [t2, tMore1])]
--}
+	, kindOfType t1 == k2		
+	= Just [(t1, t2)]
 	
 	| TTop	k1			<- t1
 	, TTop  k2			<- t2
@@ -81,7 +70,6 @@ unifyT2 t1 t2
 	, TBot  k2			<- t2
 	, k1 == k2
 	= Just []
-	
 
 	-- regions, effects, closures and classes always unify
 	| KClass{}			<- kindOfType t1

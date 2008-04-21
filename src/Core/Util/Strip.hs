@@ -81,13 +81,14 @@ slurpForallsT tt
 slurpForallContextT :: Type -> ([Type], [Kind])
 slurpForallContextT tt
  = case tt of
- 	TForall b t1 t2	
-	 -> let	v	= varOfBind b
-	    	Just k	= kindOfSpace $ Var.nameSpace v
-		
+ 	TForall b k t2	
+	 -> let	tBind	= case b of
+	 			BVar v 		-> TVar k v
+				BMore v t	-> TVar k v
+				
 		(vs, ks) = slurpForallContextT t2
 		
-	    in	( TVar k v : vs
+	    in	( tBind : vs
 	    	, ks)
 
 	TContext k1 t2	
