@@ -65,18 +65,17 @@ Obj*	primExit	(Obj* code)
 
 
 // -----
-/*
 Obj*	primStringChar (Obj* dChar)
 {
-	Word8 c	= _unbox(Char32, dChar);
+	Char32 c = _unbox(Char32, dChar);
 
 	Char8 s[2];
-	s[0]	= c;
+	s[0]	= (Char8)c;
 	s[1]	= '\0';
 	
 	return	_boxString (s);
 }
-*/
+
 
 Obj*	primStringInt (Obj* dInt)
 {

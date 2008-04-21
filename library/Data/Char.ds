@@ -1,2 +1,14 @@
 
-import Base;
+import Base
+import Data.Word32U
+
+foreign import "_boxChar32"
+ boxChar32	:: Char32#{read} -> Char
+		:$ Char32# -> Obj
+		
+foreign import "_unboxChar32"
+ unboxChar32	:: Char {read} -> Word32#
+		:$ Obj -> Word32#
+		
+instance Eq Char where
+ (==) a b	= unboxChar32 a == unboxChar32 b

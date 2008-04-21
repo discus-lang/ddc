@@ -3,6 +3,7 @@ import Base
 import Class.Ord
 import Class.Num
 import Data.Int
+import Data.List
 
 -- | A set of values @a@.
 data Set a    = Tip 

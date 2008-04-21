@@ -679,7 +679,8 @@ isUnboxedNumericType :: Type -> Bool
 isUnboxedNumericType tt
  	| Just (v, _, []) <- takeTData tt
 	, elem v 	[ primTInt8U, primTInt16U, primTInt32U, primTInt64U
-			, primTFloat32U, primTFloat32U]
+			, primTWord8U, primTWord16U, primTWord32U, primTWord64U
+			, primTFloat32U, primTFloat64U]
 	= True
 	
 	| otherwise

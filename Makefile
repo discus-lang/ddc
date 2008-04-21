@@ -150,7 +150,7 @@ cleanRuntime :
 .PHONY  : cleanWar
 cleanWar :
 	@echo "* Cleaning up war"
-	@find test \
+	@find library test demo \
 			-name "*.dump-*.*"  \
 		-o	-name "*.graph-*.dot" \
 		-o	-name "*.di"    \
@@ -162,20 +162,6 @@ cleanWar :
 		-o	-name "*.out"   \
 		-o 	-name "*.diff"  \
 		-o	-name "*.tix"   \
-		-follow | xargs -n 1 rm -f
-
-	@find library \
-			-name "*.dump-*.*"  \
-		-o	-name "*.graph-*.dot" \
-		-o	-name "*.di" 	\
-		-o	-name "*.gdl"	\
-		-o	-name "*.o"	\
-		-o	-name "*.ddc.c" \
-		-o	-name "*.ddc.h" \
-		-o	-name "*.bin" 	\
-		-o	-name "*.out"	\
-		-o 	-name "*.diff"  \
-		-o	-name "*.tix"	\
 		-follow | xargs -n 1 rm -f
 
 	@rm -f churn/scratch/*

@@ -1,4 +1,6 @@
 
+import Class.Monad
+
 -- Functor -----------------------------------------------------------------------------------------
 class Functor (f :: * -> *) where
 	fmap 	:: forall a b !e0 $c0
@@ -10,21 +12,6 @@ instance Functor List where
 	fmap f []	= []
 	fmap f (x:xs)	= f x : fmap f xs
 
-
--- Monad -------------------------------------------------------------------------------------------
-infixl 1 >>, >>=
-
-class Monad (m :: * -> *) where
-
- 	return	:: forall a
-		.  a -> m a
-	
-	(>>=)	:: forall a b !e0 $c0
-		.  m a -> (a -(!e0 $c0)> m b) -(!e1 $c1)> m b
-		:- !e1	= !{ !e0 ; !ReadT (m a) }
-		,  $c1	= x : m a
- 
- 
 
  
 instance Monad Maybe where

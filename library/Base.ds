@@ -31,6 +31,8 @@ data	Int64#
 data	Float32#
 data	Float64#
 
+data 	Char32#
+
 -- Strings are represented as pointers to blocks of memory that 
 --	can be updated, so they need a region.
 data	String# %r

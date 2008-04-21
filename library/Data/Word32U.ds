@@ -1,0 +1,70 @@
+
+-- Primitive functions for unboxed Word32 operations.
+--	There are no actual C functions associated with these.
+--	We define them so the type inferencer has a schemes for them.
+--
+import Class.Eq
+import Class.Num
+import Class.Ord
+
+-- math
+foreign import "primWord32U_neg"
+ primWord32U_neg :: Word32# -> Word32#
+
+foreign import "primWord32U_add"
+ primWord32U_add :: Word32# -> Word32# -> Word32#
+
+foreign import "primWord32U_sub"
+ primWord32U_sub :: Word32# -> Word32# -> Word32#
+
+foreign import "primWord32U_mul"
+ primWord32U_mul :: Word32# -> Word32# -> Word32#
+
+foreign import "primWord32U_div"
+ primWord32U_div :: Word32# -> Word32# -> Word32#
+
+foreign import "primWord32U_mod"
+ primWord32U_mod :: Word32# -> Word32# -> Word32#
+ 
+foreign import "primWord32U_eq"	
+ primWord32U_eq	:: Word32# -> Word32# -> Int32#
+
+foreign import "primWord32U_neq"	
+ primWord32U_neq :: Word32# -> Word32# -> Int32#
+
+foreign import "primWord32U_gt"	
+ primWord32U_gt	:: Word32# -> Word32# -> Int32#
+
+foreign import "primWord32U_ge"	
+ primWord32U_ge	:: Word32# -> Word32# -> Int32#
+
+foreign import "primWord32U_lt"	
+ primWord32U_lt	:: Word32# -> Word32# -> Int32#
+
+foreign import "primWord32U_le"	
+ primWord32U_le	:: Word32# -> Word32# -> Int32#
+
+
+-----
+instance Eq Word32# where
+	(#==)		= primWord32U_eq
+	(#/=)		= primWord32U_neq
+
+	(==) a b	= case primWord32U_eq a b of
+				0#	-> False
+				_	-> True
+
+instance Ord Word32# where
+	(>)		= primWord32U_gt
+	(<)		= primWord32U_lt
+	(>=)		= primWord32U_ge
+	(<=)		= primWord32U_le
+
+
+instance Num Word32# where 
+ 	(+) 		= primWord32U_add
+	(-) 		= primWord32U_sub
+	(*) 		= primWord32U_mul
+	(/) 		= primWord32U_div
+	mod		= primWord32U_mod
+	negate		= primWord32U_neg

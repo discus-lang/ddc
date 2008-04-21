@@ -1,0 +1,57 @@
+
+import Data.Char
+import Class.Monad
+
+-- Parser -----------------------------------------------------------------------------------------
+data Parser %r !e1 $c1 tok a 
+	= Parser ([tok] -(!e1 $c1)> ParseResult tok a)
+
+runParser :: Parser %r !e $c Char a -> [Char] -> ParseResult Char a
+runParser (Parser fun) str
+	= fun str
+
+instance Monad (Parser !e1 $c1 tok) where
+	return x	
+	 = Parser $ \str -> Success x str
+
+	(>>=) (Parser parse1) mkParser2
+	 = Parser $ \str ->
+		case parse1 str of
+			Success a rest	-> runParser (mkParser2 a) rest
+			err		-> err
+			
+	
+-- Parse Result -----------------------------------------------------------------------------------
+data ParseResult tok a
+	= Success a [tok]
+	| ErrorUnexpected tok
+	| ErrorEOF
+
+isSuccess rr
+ = case rr of
+	Success _ _	-> True
+	_		-> False
+	
+-----
+test	= ['a', 'b', 'c']
+
+pChar :: Char -> Parser !e $c Char ()
+pChar c
+ = Parser $ \str -> 
+ 	case str of
+ 	 (s : rest) -> if s == c 
+			then Success () rest
+			else ErrorUnexpected s
+	 []	  -> ErrorEOF
+			
+main ()
+ = do	putStr	$ show test % "\n"
+	result	= runParser (pChar 'z') test
+	
+	putStr	$ show (isSuccess result) % "\n"
+
+	()
+	
+	
+	
+	

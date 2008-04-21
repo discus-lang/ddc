@@ -26,6 +26,9 @@ infixr 7 %%;
 instance Show Unit where
  show ss = "()"
 
+instance Show Char where
+ show ss = "'" % stringOfChar ss % "'"
+
 instance Show String where
  show ss = "'" % copy ss % "'"
 
@@ -60,7 +63,10 @@ showListIntL
 
 
 -- Show a list
-instance Show (List Int) where
+instance Show [Int] where
+ show = showList show
+
+instance Show [Char] where
  show = showList show
 
 showList  showX xx

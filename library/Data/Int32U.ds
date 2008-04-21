@@ -7,8 +7,6 @@ import Class.Eq
 import Class.Num
 import Class.Ord
 
-infix  0 #:=
-
 -- math
 foreign import "primInt32U_neg"
  primInt32U_neg :: Int32# -> Int32#

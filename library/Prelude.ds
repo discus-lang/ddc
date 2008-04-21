@@ -11,6 +11,7 @@ import	Data.Tuple
 import	Data.String
 import	Data.Maybe
 import	Data.List
+import	Data.Either
 import	Data.ArrayU
 	
 import	System.Error
