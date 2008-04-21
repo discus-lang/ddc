@@ -44,12 +44,20 @@ pChar c
 			then Success () rest
 			else ErrorUnexpected s
 	 []	  -> ErrorEOF
-			
+
+
+pTest
+ = do	_	<- pChar 'a'
+ 	_	<- pChar 'b'
+	return	()
+
+	
 main ()
  = do	putStr	$ show test % "\n"
-	result	= runParser (pChar 'z') test
+	result	= runParser (pChar 'a') test
 	
 	putStr	$ show (isSuccess result) % "\n"
 
 	()
 	
+
