@@ -22,6 +22,9 @@ import Util
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 import qualified Debug.Trace	as Debug
 
 debug	= False
@@ -48,7 +51,7 @@ liftLambdasP	p@(PBind superName x)
  = do
 	-- Chop out the inner most lambda abstractions from this binding
 	--	The new supers get added to the lift state
- 	xChopped	<- lambdaLiftX superName x
+ 	xChopped	<- lambdaLiftX superName Map.empty x
 	let pLifted	= PBind superName xChopped
 
 	-- Load the new supers from the stage
@@ -58,51 +61,61 @@ liftLambdasP	p@(PBind superName x)
  	return	(pLifted, psChopped)
 
 
-lambdaLiftX	superName x
+lambdaLiftX superName vtMore x
 	
 	-- decend the first set of lambdas in top level bindings
-	| XLAM v k e		<- x
-	= do	e'	<- lambdaLiftX superName e
-		return	$ XLAM v k e'	
+	| XLAM b k x1		<- x
+	= do	x1'	<- lambdaLiftX superName (slurpBMore vtMore b) x1
+		return	$ XLAM b k x1'	
 
 	| XLam v t e eff clo	<- x
-	= do	e'	<- lambdaLiftX superName e
+	= do	e'	<- lambdaLiftX superName vtMore e
 		return	$ XLam v t e' eff clo
 	
 	-- walk over the expression and chop out the inner most functions
 	| otherwise
-	= do
-		let table	
+	= do	let table	
 			= transTableId 
-			{ transS 	= chopInnerS superName
+			{ transS 	= chopInnerS superName vtMore
 			, decendT	= False }
 
 		transZM table x
 		
+
+-- If this binding is a BMore than add the constraint to the map
+slurpBMore :: Map Var Type -> Bind -> Map Var Type
+slurpBMore vtMore b
+ = case b of
+ 	BMore v t	-> Map.insert v t (vtMore)
+	_		-> vtMore
 
 -- | Chop the inner most function from this statement
 --	
 chopInnerS 
 	:: Var		-- the name of the top-level binding that this statement is a part of
 			-- used to give chopped functions nicer names
+
+	-> Map Var Type	-- a table of :> constraints on type variables.
+			--	we need this when we re-quantify free type vars on lifted supers.
+
 	-> Stmt	
 	-> LiftM Stmt
 
-chopInnerS topName s
+chopInnerS topName vtMore s
  = case s of
  	SBind v x
 	 | isFunctionX x
 	 , not $ hasEmbeddedLambdasX x
-	 -> 	chopInnerS2 topName s
+	 -> 	chopInnerS2 topName vtMore s
 	 
 	_ -> 	return	s
 
 -- | Chop out this function
-chopInnerS2	topName	(SBind Nothing x)
- = do	v		<- newVar Var.NameValue
-	chopInnerS2 topName (SBind (Just v) x)
+chopInnerS2 topName vtMore (SBind Nothing x)
+ = do	v	<- newVar Var.NameValue
+	chopInnerS2 topName vtMore (SBind (Just v) x)
 
-chopInnerS2	topName	(SBind (Just v) x)
+chopInnerS2 topName vtMore (SBind (Just v) x)
  = do	
 	-- make a name for the new super
 	vN		<- newVar Var.NameValue
@@ -114,7 +127,7 @@ chopInnerS2	topName	(SBind (Just v) x)
 	-- turn this binding into a super-combinator by binding its free variables as new parameters.
 	let pSuper	= PBind vSuper x
 	(pSuper_lifted, freeVKs, freeVTs)	
-			<- bindFreeVarsP pSuper
+			<- bindFreeVarsP vtMore pSuper
 
 	-- add the new super to the lift state
 	addChopped v vSuper pSuper_lifted
@@ -122,14 +135,11 @@ chopInnerS2	topName	(SBind (Just v) x)
 	-- Work out the type of the new super.
 	let tSuper	= reconP_type (stage ++ ".chopInnerS2") pSuper_lifted
 
-
 	trace 	( "chopInnerS2: new super\n"
 		% " pSuper_lifted:\n" 	%> pSuper_lifted	% "\n\n"
 		% " superType:\n" 	%> tSuper		% "\n\n")
 		$ return ()
 		
-
-	
 	-- build the call to the new super
 	let typeArgs	= map makeSuperArgK freeVKs
 	let valueArgs	= [XVar v t | (v, t) <- freeVTs]
@@ -147,12 +157,14 @@ chopInnerS2	topName	(SBind (Just v) x)
 --
 makeSuperArgK :: (Bind, Kind) -> Exp
 makeSuperArgK (b, k)
- = case k of
- 	KClass v ts	-> XType (TClass v ts)
-	_		-> XType (TVar k (varOfBind b))
+	| KClass v ts	<- k
+	= XType (TClass v ts)
 	
-
-
+	| BVar v	<- b
+	= XType (TVar k v)
+	
+	| BMore v t	<- b
+	= XType (TVarMore k v t)
 
 
 -- | Tests whether an expression is syntactically a function.
@@ -224,7 +236,8 @@ hasLambdasA	a
 --   Returns the freshly bound vars and there type/kinds to help construct calls to it
 --
 bindFreeVarsP 
-	:: Top
+	:: Map Var Type			-- table of :> constrains on type variables
+	-> Top
 	-> LiftM 
 		( Top
 		, [(Bind, Kind)]	--  type vars that were bound
@@ -232,6 +245,7 @@ bindFreeVarsP
 		
 
 bindFreeVarsP
+	vtMore
 	(PBind vTop x)
  = do
 
@@ -250,13 +264,6 @@ bindFreeVarsP
 	let (xRecon, tRecon, TBot KEffect, cRecon) 
 			= reconX' (stage ++ ".bindFreeVarsP") x
 
-	-- Take the closure annotation from the inner most lambda. 
-	--	We'll use this instead of cRecon when adding more closure annotations because it's more
-	--	likely to be a variable (ie not a TSum) so the output will be more readable.
-	-- 
-	-- TODO: nice idea, but the XTet binding it is in the wrong place.
---	let Just cTake	= takeXLamClosure xRecon
-
 	-- Bind free value vars with new value lambdas.
 	-- TODO: better to get the type directly from the XVar
 	tsFreeVal	<- mapM getType vsFreeVal
@@ -265,11 +272,15 @@ bindFreeVarsP
 			= foldr addLambda (xRecon, cRecon) vtsFreeVal
 
 	-- Bind free type vars with new type lambdas
-	-- TODO: better to get the type directly from the TVar
-	-- BUGS: bound quantification isn't being preserved here
-
+	-- TODO: better to get the kind directly from the TVar
 	ksFreeType	<- mapM getKind vsFreeType
-	let bksFreeType	= zip (map BVar vsFreeType) $ ksFreeType
+	let bksFreeType	= zipWith
+				(\v k -> case Map.lookup v vtMore of
+						Nothing		-> (BVar v, k)
+						Just tMore	-> (BMore v tMore, k))
+				vsFreeType
+				ksFreeType
+
 	let xBindType	= addLAMBDAs bksFreeType xBindVal
 
 	-- make the top level binding
