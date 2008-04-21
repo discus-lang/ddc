@@ -23,12 +23,19 @@ runParser (Parser fun) str
 	= fun str
 
 
+-- we can't use regular return here, because it's type
+--	doesn't capture the fact that the arg becomes part
+--	of the closure of the parser
+--
+--	return  :: a -> m a
+-- vs	pReturn :: a -> Parser %r !PURE (x : a) tok a
+--
+
 instance Monad (Parser tok) where
-	return		= parserReturn
 	(>>=) 		= parserBind
 	(>>)		= parserThen
 
-parserReturn x
+pReturn x
  = Parser (\str -> Success x str)
 
 parserBind (Parser parse1) mkParser2
@@ -80,9 +87,9 @@ many :: Parser tok a -> Parser tok [a]
 many parser
  =   do	x	<- parser
 	rest	<- many parser
-	return (x : rest)
+	pReturn (x : rest)
 
- <|>	return []
+ <|>	pReturn []
 
 
 -- | Parse at least one of these
@@ -90,7 +97,7 @@ many1 :: Parser tok a -> Parser tok [a]
 many1 parser
  = do	x	<- parser
  	rest	<- many parser
-	return	(x : rest)
+	pReturn	(x : rest)
 
 
 -- | A list of tokens, separated by another
@@ -98,7 +105,7 @@ sepBy1 :: Parser tok a -> Parser tok b -> Parser tok [a]
 sepBy1 pTok pSep 
  = do	x	<- pTok
  	xs	<- many (do { _ <- pSep; pTok })
-	return	(x : xs)
+	pReturn	(x : xs)
 
 -----
 test	= ['a', 'v', 'a', 'v', 'a', 'b']
@@ -106,10 +113,10 @@ test	= ['a', 'v', 'a', 'v', 'a', 'b']
 pTest
  =   do	_	<- sepBy1 (pChar 'a') (pChar 'v')
  	_	<- pChar 'b'
-	return	()
+	pReturn	()
 
  <|> do	_	<- pChar 'z'
- 	return	()
+ 	pReturn	()
  	
 
 	

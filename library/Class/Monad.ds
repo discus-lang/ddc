@@ -7,7 +7,7 @@ class Monad (m :: * -> *) where
 
  	return	:: forall a
 		.  a -> m a
-	
+
 	(>>=)	:: forall a b !e0 $c0
 		.  m a -> (a -(!e0 $c0)> m b) -(!e1 $c1)> m b
 		:- !e1	= !{ !e0 ; !ReadT (m a) }

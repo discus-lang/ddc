@@ -452,8 +452,8 @@ instance Pretty Type PMode where
 	TVarMore k v t
 	 -> ifMode (elem PrettyCoreMore)
 	 	(case k of
-		 	KValue	-> "*" % sv v % " :> " % t 
-			_	-> sv v % " :> " % t)
+		 	KValue	-> parens $ "*" % sv v % " :> " % t 
+			_	-> parens $ sv v % " :> " % t)
 			
 		(case k of
 		 	KValue	-> "*" % v
