@@ -38,6 +38,7 @@ libraryModules =
 	, "Data/Set"
 	, "Class/Out"
 	, "Class/Show"
+	, "Class/Monad"
 	, "Control/Imperative"
 	, "Control/Exception"
 	, "Data/Array"

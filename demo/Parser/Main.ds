@@ -20,7 +20,7 @@ instance Monad (Parser !e1 $c1 tok) where
 			Success a rest	-> runParser (mkParser2 a) rest
 			err		-> err
 			
-	
+
 -- Parse Result -----------------------------------------------------------------------------------
 data ParseResult tok a
 	= Success a [tok]
@@ -31,7 +31,7 @@ isSuccess rr
  = case rr of
 	Success _ _	-> True
 	_		-> False
-	
+{-	
 -----
 test	= ['a', 'b', 'c']
 
@@ -52,6 +52,4 @@ main ()
 
 	()
 	
-	
-	
-	
+-}

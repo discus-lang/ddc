@@ -56,13 +56,13 @@ stripSchemeT' forallVTs fsAcc classes tt
 
 
 -----
-buildScheme ::	[(Bind, Kind)] -> [(Var, Type)] -> [Kind] -> Type -> Type
+buildScheme ::	[(Bind, Kind)] -> [Fetter] -> [Kind] -> Type -> Type
 buildScheme	forallVTs bindVTs classes shape
  = let	tC	= foldl (\s c	   -> TContext c s)  shape	$ reverse classes
 
 	tL	= case bindVTs of
 			[]	-> tC
-			_	-> TFetters tC (map (uncurry FWhere) bindVTs)
+			_	-> TFetters tC bindVTs
 
  	tF	= foldl (\s (v, t) -> TForall v t s) tL 	$ reverse forallVTs
 

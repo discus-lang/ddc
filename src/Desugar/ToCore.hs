@@ -286,7 +286,8 @@ toCoreX xx
 		let tArg	= C.packT
 				$ C.buildScheme
 					argQuant
-					[(v, t)	| C.FWhere v t	<- argFetters
+					[ C.FWhere v t	
+						| C.FWhere v t	<- argFetters
 						, not $ Map.member v portVars]
 					[]
 					argShape

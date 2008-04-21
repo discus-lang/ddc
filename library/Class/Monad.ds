@@ -1,4 +1,6 @@
 
+import Base
+
 infixl 1 >>, >>=
 
 class Monad (m :: * -> *) where

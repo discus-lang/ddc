@@ -95,7 +95,7 @@ instance Pretty Top PMode where
 		% "\n}\n")
 
 	PClassInst v ts context defs
-	 -> ("instance " % v % " " % " " %!% map prettyTB ts % "\n"
+	 -> ("instance " % v % " " % " " %!% map prettyTypeB ts % "\n"
 			% "{\n"
 			%> ("\n\n" %!% (map (\(v, exp) 
 						-> v % "\n" 
@@ -168,22 +168,22 @@ instance Pretty Exp PMode where
 	 where	pEffClo	= case (eff, clo) of 
 	 			(TBot KEffect, TBot KClosure) 	-> pNil
 				(TBot KEffect, _)		
-				  -> "\n" % replicate 20 ' ' % " of " % prettyTB clo
+				  -> "\n" % replicate 20 ' ' % " of " % prettyTypeB clo
 
 				(_, TBot KClosure)		
-				  -> "\n" % replicate 20 ' ' % " of " % prettyTB eff
+				  -> "\n" % replicate 20 ' ' % " of " % prettyTypeB eff
 
-				_ -> "\n" % replicate 20 ' ' % " of " % prettyTB eff 
-				   % "\n" % replicate 20 ' ' % "    " % prettyTB clo
+				_ -> "\n" % replicate 20 ' ' % " of " % prettyTypeB eff 
+				   % "\n" % replicate 20 ' ' % "    " % prettyTypeB clo
 					 
 	 
 	XAPP x t
 	 | spaceApp t
 	 ->  x % "\n" 
-	 	%> prettyTB t
+	 	%> prettyTypeB t
 
 	 | otherwise
-	 ->  x % " " % prettyTB t
+	 ->  x % " " % prettyTypeB t
 
 	XApp e1 e2 eff
 	 -> let	pprAppLeft x 
@@ -197,7 +197,7 @@ instance Pretty Exp PMode where
 	    in	pprAppLeft e1 % pprAppRight e2
 
 	XTau t x
-	 -> "[** " % prettyTB t % " ]\n" % x
+	 -> "[** " % prettyTypeB t % " ]\n" % x
 
 	XTet vts x
 	 -> "\n" %!%
@@ -255,6 +255,8 @@ instance Pretty Exp PMode where
 
 
 
+
+
 spaceApp xx
  = case xx of
 	TVar{}			-> False
@@ -266,7 +268,7 @@ prettyExpB x
 	XVar{}		-> ppr x
 	XLit{}		-> ppr x
 	XAnnot{}	-> ppr x
-	XType t		-> prettyTB t
+	XType t		-> prettyTypeB t
 	_		-> "(" % x % ")"
 
 
@@ -417,16 +419,25 @@ instance Pretty Type PMode where
 	 -> ppr "@TNil"
 	 
 	TForall v k t
-	 -> "forall (" % v % " :: " % k % "). " % t
---	 	let	(forallVTs, whereVTs, context, tx)	= stripSchemeT xx
---	 	   in	"forall " % " " %!% (map fst forallVTs) % ". " % buildScheme [] whereVTs context tx
+--	 -> "forall (" % v % " :: " % k % "). " % t
+         -> 	let	(forallVTs, whereVTs, context, tx)	= stripSchemeT xx
+	 	in	"forall " % " " %!% (map fst forallVTs) % ". " % buildScheme [] whereVTs context tx
 
 	TContext c t	-> c % " => " % t
 
 	TFetters t1 fs
-	 -> prettyTB t1 % " :- " % ", " %!% fs
+	 -> prettyTypeB t1 % " :- " % ", " %!% fs
 
-	TApp	t1 t2	-> prettyTB t1 % " " % prettyTB t2
+	TApp t1 t2
+	 -> let	pprAppLeft x 
+	 	  | x =@= TApp{} 	= ppr x
+		  | otherwise		= prettyTypeB x
+
+		pprAppRight x
+		  | x =@= TVar{} 	= ppr x
+		  | otherwise		= prettyTypeB x
+
+	    in	pprAppLeft t1 % " " % pprAppRight t2
 
 	TSum	k ts	-> k % "{" % "; " %!% ts % "}"
 
@@ -447,27 +458,24 @@ instance Pretty Type PMode where
 
 	-- data
 	TFun x1 x2
-	 -> prettyTBF x1 % " -> "  % x2
+	 -> prettyTypeBF x1 % " -> "  % x2
 
 	TFunEC t1 t2 eff clo
 	 -> case (eff, clo) of
 	 	(TBot KEffect, 	TBot KClosure)	
-		 -> prettyTBF t1 % " -> " % prettyTRight t2
+		 -> prettyTypeBF t1 % " -> " % prettyTRight t2
 
 		(eff,   	TBot KClosure)	
-		 -> prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
+		 -> prettyTypeBF t1 % " -(" % eff % ")> " % prettyTRight t2
 
 		(TBot KEffect,	clo)		
-		 -> prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
+		 -> prettyTypeBF t1 % " -(" % clo % ")> " % prettyTRight t2
 
 		(eff,   	clo)		
-		 -> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
-
---	TData v ts
---	 ->       " " %!% (ppr v : map prettyTB ts)
+		 -> prettyTypeBF t1 % " -(" % prettyTypeB eff % " " % prettyTypeB clo % ")> " % prettyTRight t2
 
 	-- effect
-	TEffect v xs	-> " " %!% (pv v : map prettyTB xs)
+	TEffect v xs	-> " " %!% (pv v : map prettyTypeB xs)
 	TBot KEffect	-> ppr "!PURE"
 	TTop KEffect	-> ppr "!SYNC"
 
@@ -482,8 +490,8 @@ instance Pretty Type PMode where
 	TTop k		-> "@Top " % k
 
 	-- class	
-  	TClass v ts		-> pv v % " " % " " %!% map prettyTB ts
-	TPurify eff wit		-> "purify " % prettyTB eff % " " % prettyTB wit
+  	TClass v ts		-> pv v % " " % " " %!% map prettyTypeB ts
+	TPurify eff wit		-> "purify " % prettyTypeB eff % " " % prettyTypeB wit
 	TPurifyJoin wits	-> "pjoin {" % "; " %!% wits % "}"
 	
 	TWitJoin wits		-> "wjoin {" % "; " %!% wits % "}"
@@ -497,19 +505,18 @@ prettyTRight tt
 	_		-> ppr tt
 
 
-prettyTB t
+prettyTypeB t
  = case t of
 	TSum{}		-> ppr t
  	TVar{}		-> ppr t
 	TCon{}		-> ppr t
---	TData v []	-> ppr t
 	TEffect v []	-> ppr t
 	TWild{}		-> ppr t
 	TBot{}		-> ppr t
 	TTop{}		-> ppr t
 	_		-> "(" % t % ")" 	
 
-prettyTBF e
+prettyTypeBF e
 	| TFunEC{}	<- e
 	= "(" % e % ")"
 	
@@ -554,7 +561,7 @@ instance Pretty Kind PMode where
 	KClosure	-> ppr "$"
 	KFun k1 k2	-> k1 % " -> " % k2
 
-  	KClass v ts	-> v % " " % " " %!% map prettyTB ts
+  	KClass v ts	-> v % " " % " " %!% map prettyTypeB ts
 	KWitJoin ks	-> "kjoin {" % "; " %!% ks % "}"
 
 
