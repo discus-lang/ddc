@@ -3,6 +3,7 @@
 module Source.Exp
 	( Tree
 	, Top 		(..)
+	, Export	(..)
 	, Foreign 	(..)
 	, DataField 	(..)
 	, InfixMode 	(..)
@@ -53,6 +54,7 @@ data Top a
 
 	-- Imports
 	| PImportModule a [Module]
+	| PExport	a [Export a]
 
 	| PForeign	a (Foreign a)
 
@@ -102,6 +104,14 @@ type FixDef a	= (Var, (Int, InfixMode a))
 type Ctor a	= (Var, [DataField (Exp a) Type])
 type DataDef a	= (Var, [Var], [Ctor a])
 
+-- Export ------------------------------------------------------------------------------------------
+data Export a
+	= EValue  a Var
+	| EType   a Var
+	| ERegion a Var
+	| EEffect a Var
+	| EClass  a Var
+	deriving (Show, Eq)
 
 -- Foreign -----------------------------------------------------------------------------------------
 data Foreign a

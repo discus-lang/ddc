@@ -56,6 +56,7 @@ pTop
  =
         pTopPragma
    <|>	pTopImport
+   <|>  pTopExport
    <|> 	pTopForeignImport
    <|>	pTopInfix
    <|>	pTopTypeKind
@@ -102,6 +103,39 @@ pModuleName
  	do	con	<- pCon
 		return	$ Var.ModuleAbsolute [Var.name con]
 
+-- Export -----------------------------------------------------------------------------------------
+pTopExport :: Parser (Top SP)
+pTopExport 
+ = do	-- export { EXPORT ; .. }
+	tok	<- pTok K.Export
+	exps	<- pCParen (Parsec.sepEndBy1 pExport pSemis)
+	return	$ PExport (spTP tok) exps
+
+pExport :: Parser (Export SP)
+pExport 
+ = do	-- var
+	var	<- liftM vNameV pVarCon
+	return	$ EValue (spV var) var
+
+ <|> do	-- type VAR
+	tok	<- pTok K.Type
+	var	<- liftM vNameT pVarCon
+	return	$ EType (spTP tok) var
+	
+ <|> do	-- region VAR
+	tok	<- pTok K.Region
+	var	<- liftM vNameR pVar
+	return	$ ERegion (spTP tok) var
+	
+ <|> do	-- effect VAR
+	tok	<- pTok K.Effect
+	var	<- liftM vNameE pVar
+	return	$ EEffect (spTP tok) var
+	
+ <|> do	-- class VAR
+	tok	<- pTok K.Class
+	var	<- liftM vNameW pVar
+	return	$ EClass (spTP tok) var
 
 -- Foreign -----------------------------------------------------------------------------------------
 -- Parse a foreign import.

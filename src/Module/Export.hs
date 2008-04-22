@@ -13,6 +13,7 @@ import qualified Source.Horror		as S
 import qualified Source.Pretty		as S
 import qualified Source.Plate.Trans	as S
 import qualified Source.Slurp		as S
+import qualified Source.Util		as S
 
 import Type.Exp				(Type)
 import qualified Type.Exp		as T
@@ -59,7 +60,8 @@ makeInterface
 	-> C.Tree		-- core tree
 	-> Map Var Var		-- sigma table (value var -> type var)
 	-> Map Var T.Type	-- schemeTable
-	-> Set Var		-- don't export these vars
+	-> Set Var		-- don't export these vars under any circumustances
+				--	(eg, lifted super combinators aren't useful for anyone else)
 	-> IO String
 	
 makeInterface moduleName 
@@ -85,11 +87,39 @@ makeInterface moduleName
 	-- the vars of all the top level things
 	let topVars	= Set.fromList $ catMap S.slurpTopNames sTree
 
+	-- see if there is an explicit export list
+	let mExports	= case [exs | S.PExport _ exs <- sTree'] of
+				[]	-> Nothing
+				ee	-> Just $ Set.fromList 
+						$ map S.takeExportVar $ concat ee
+
 	-- export all the top level things
-	let interface	= exportAll getType topVars sTree' dTree cTree vsNoExport
+	let interface	= exportAll getType topVars sTree' dTree cTree 
+				(shouldExport vsNoExport mExports)
 
 	return interface
 
+-- Decide whether to export a particular var
+shouldExport :: Set Var -> Maybe (Set Var) -> Var -> Bool
+shouldExport vsNoExport mExports v
+	| Set.member v vsNoExport	
+	= False
+
+	-- force projection functions to be exported 
+	-- TODO: this is dodgey
+	| take 7 (Var.name v) == "project"
+	= True
+
+	-- force instance functions to be exported 
+	-- TODO: this is dodgey
+	| take 8 (Var.name v) == "instance"
+	= True
+	
+	| Just exports	<- mExports
+	= Set.member v exports
+	
+	| otherwise
+	= True
 
 -- Export all the top level things in this module
 exportAll 
@@ -98,10 +128,10 @@ exportAll
 	-> [S.Top SourcePos] 	-- ^ source tree
 	-> [D.Top SourcePos]	-- ^ desugared tree
 	-> [C.Top]		-- ^ core tree
-	-> Set Var		-- ^ don't export these vars
+	-> (Var -> Bool)	-- ^ don't export these vars
 	-> String		-- ^ the interface file
 
-exportAll getType topNames ps psDesugared_ psCore vsNoExport
+exportAll getType topNames ps psDesugared_ psCore export
  = let	psDesugared	= map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared_
    in   pprStrPlain
 	$  "-- Imports\n"
@@ -155,7 +185,7 @@ exportAll getType topNames ps psDesugared_ psCore vsNoExport
 	++ "-- Binds\n"
 	++ (concat [exportForeign v (getType v) (C.superOpTypeX x)
 			| p@(C.PBind v x) <- psCore
-			, not $ Set.member v vsNoExport])		
+			, export v])		
 
 --	++ "-- Projection dictionaries\n"
 	++ (concat [exportProjDict p 	| p@D.PProjDict{}		

@@ -93,6 +93,10 @@ instance Rename (Top SourcePos) where
 	 -> do	ms'	<- rename ms
 		return	$ PImportModule sp ms'
 
+	PExport sp exs
+	 -> do	exs'	<- rename exs
+		return	$ PExport sp exs'
+
 	PForeign sp f
 	 -> do	f'	<- rename f
 	 	return	$ PForeign sp f'
@@ -187,7 +191,30 @@ instance Rename (Top SourcePos) where
 		ss'	<- rename ssF
 		return	$ PProjDict sp t' ss'
 
+-- Export ------------------------------------------------------------------------------------------
+instance Rename (Export SourcePos) where
+ rename ex	
+  = case ex of
+	EValue sp v 
+	 -> do	v'	<- lookupV v
+		return	$ EValue sp v'
+
+	EType sp v 
+	 -> do	v'	<- lookupN NameType v
+		return	$ EType sp v'
 	
+	ERegion sp v 
+	 -> do	v'	<- lookupN NameRegion v
+		return	$ ERegion sp v'
+
+	EEffect sp v 
+	 -> do	v'	<- lookupN NameEffect v
+		return	$ EEffect sp v'
+
+	EClass sp v 
+	 -> do	v'	<- lookupN NameClass v
+		return	$ EClass sp v'
+
 -- Module ------------------------------------------------------------------------------------------
 instance Rename Module where
  rename m	= return m

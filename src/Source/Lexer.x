@@ -336,7 +336,6 @@ addStarts'
 	( t1@TokenP { token = Foreign } 
 	: t2@TokenP { token = Import } 
 	: ts)
-	
 	= t1 : t2 : addStarts' ts
 
 addStarts' (t1 : ts)
@@ -381,6 +380,7 @@ isBlockStart TokenP { token = tok }
 	Catch		-> True
 	Match		-> True
 	Import		-> True
+	Export		-> True
 	_		-> False
 
 isBlockStart _

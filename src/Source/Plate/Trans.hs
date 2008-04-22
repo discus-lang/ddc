@@ -152,6 +152,11 @@ data TransTable m n1 n2
 	, transTop_enter	:: Trans1 m n1 Top
 	, transTop_leave	:: Trans1 m n2 Top 
 
+	-- export
+	, transExport		:: Trans m n1 n2 Export
+	, transExport_enter	:: Trans1 m n1 Export
+	, transExport_leave	:: Trans1 m n2 Export
+
 	-- foreign
 	, transForeign		:: Trans m n1 n2 Foreign
 	, transForeign_enter	:: Trans1 m n1 Foreign
@@ -226,6 +231,10 @@ transTableId transN'
 	, transTop_enter	= \x -> return x
 	, transTop_leave	= \x -> return x 
 
+	, transExport		= followZM
+	, transExport_enter	= \x -> return x
+	, transExport_leave	= \x -> return x 
+
 	, transForeign		= followZM
 	, transForeign_enter	= \x -> return x
 	, transForeign_leave	= \x -> return x 
@@ -296,6 +305,10 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (PImportModule x0' x1')
+                PExport x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (PExport x0' x1')
                 PForeign x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -352,6 +365,35 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                 PStmt x0
                   -> do x0' <- transZM table x0
                         return (PStmt x0')
+ 
+instance (Monad m) => TransM m n1 n2 (Export n1) (Export n2) where
+        transZM table xx
+          = transMe (transExport table) (transExport_enter table)
+              (transExport_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                EValue x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (EValue x0' x1')
+                EType x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (EType x0' x1')
+                ERegion x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (ERegion x0' x1')
+                EEffect x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (EEffect x0' x1')
+                EClass x0 x1
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        return (EClass x0' x1')
  
 instance (Monad m) => TransM m n1 n2 (Foreign n1) (Foreign n2)
          where

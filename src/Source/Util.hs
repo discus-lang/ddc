@@ -1,5 +1,6 @@
 module Source.Util
-	( takeStmtBoundVs
+	( takeExportVar
+	, takeStmtBoundVs
 	, takePatBoundVs
 	, flattenApps
 	, unflattenApps
@@ -18,6 +19,16 @@ import Util
 
 -----
 stage	= "Source.Util"
+
+-- | take the var from an Eport
+takeExportVar :: Export a -> Var
+takeExportVar xx
+ = case xx of
+	EValue _ v	-> v
+	EType _ v	-> v
+	ERegion _ v	-> v
+	EEffect _ v	-> v
+	EClass _ v	-> v
 
 -- | take the vars which are bound by this statement of this statement
 takeStmtBoundVs :: Stmt a -> [Var]

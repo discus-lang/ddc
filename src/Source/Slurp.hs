@@ -82,8 +82,8 @@ slurpTopNames p
 
 	PInfix 		sp im i vs	-> []
 
---	PImportExtern 	sp v t mt	-> [ v { Var.nameSpace = NameValue }]
 	PImportModule{}			-> []
+	PExport{}			-> []
 
 --	PForeign sp (OImport (OCCall mS v t))	
 --	 -> [bindSeaName mS v { Var.nameSpace = NameValue }]	

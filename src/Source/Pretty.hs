@@ -47,6 +47,12 @@ instance Pretty (Top a) PMode where
 			%> "\n" %!% map (\x -> x % ";") xx
 		% "\n}\n\n"
 		
+	PExport _ exs
+	 -> "export "
+	 	% "{\n"
+			%> punc ";\n" exs
+		% "\n}\n\n"
+		
 	PForeign _ f 
 	 -> "foreign " % f % ";\n\n"
 	
@@ -121,6 +127,17 @@ prettyCtor	xx
 	 -> v % " {\n"
 		%> ("\n" %!% (map pprStrPlain fs)) % "\n"
 		% "}"
+
+-- Export ------------------------------------------------------------------------------------------
+instance Pretty (Export a) PMode where
+ ppr ex
+  = case ex of
+	EValue _ v	-> ppr v
+	EType _ v	-> "type" <> v
+	ERegion _ v	-> "region" <> v
+	EEffect _ v	-> "effect" <> v
+	EClass _ v	-> "class" <> v
+
 
 -- Foreign -----------------------------------------------------------------------------------------
 instance Pretty (Foreign a) PMode where
