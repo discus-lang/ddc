@@ -1,6 +1,7 @@
 
 import	Base
 	Base.Thunk
+	Class.Foldable
 	Data.Bool
 	Data.Ref
 	Data.Tuple
@@ -19,6 +20,15 @@ data	List %r1 a
 -- Construction
 infixr 6 : 
 (:)  x xs 	= Cons   x xs
+
+
+-- | Folding
+instance Foldable (List %r) where
+	foldl f state []	= state
+	foldl f state (x:xs)	= foldl f (f state x) xs
+
+	foldr f state []	= state
+	foldr f state (x:xs)	= f x (foldr f state xs)
 
 
 -- Simple Projections  -----------------------------------------------------------------------------
@@ -111,20 +121,12 @@ map_ f (x:xs)
 maps 	:: [a] -> (a -> b) -> [b]
 maps xx f = map f xx
 
+
 -- | map_ with the arugments switched around
 maps_ :: [a] -> (a -> b) -> ()
 maps_ xx f 
  = 	map_ f xx
 
--- | fold a function through a list
-foldl :: (s -> a -> s) -> s -> [a] -> s
-foldl f state []	= state
-foldl f state (x:xs)	= foldl f (f state x) xs
-
--- | fold a function through a list
-foldr :: (a -> s -> s) -> s -> [a] -> s
-foldr f state []	= state
-foldr f state (x:xs)	= f x (foldr f state xs)
 
 -- | a combination of map and fold.
 mapAccumL :: (acc -> x -> (acc, y)) -> acc -> [x] -> (acc, [y]);
@@ -158,13 +160,16 @@ sumR xx
 	x : xs	-> x + sumR xs;
  };
 
+
 -- | Multiply all the elements of this int list together
 prod :: [Int] -> Int;
 prod xs		= foldl (*) 1 xs;
 
+
 -- | Raise this int to a power.
 pow :: Int -> Int -> Int;
 pow x n		= prod $ replicate n x;
+
 
 -- | Zip these lists together with a function
 zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]

@@ -282,9 +282,10 @@ makeOpTypeT tt
 		_			-> Nothing
 		
 	TData{}			-> makeOpTypeData tt
+	TVar{}			-> Just $ TData KValue primTObj []
 	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
-					("makeOpType: can't make operational type from " % show tt)
+					("makeOpTypeT: can't make operational type from " % show tt)
 					Nothing
 makeOpTypeT2 tt
  = case tt of

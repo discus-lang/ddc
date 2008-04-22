@@ -15,12 +15,14 @@ data Actor
 	
 instance Eq Actor where
  (==) a1 a2	= actorIx a1 == actorIx a2
+
 	
 instance Ord Actor where
  (>)  a1 a2	= actorIx a1 > actorIx a2
  (<)  a1 a2	= actorIx a1 < actorIx a2
  (>=) a1 a2	= actorIx a1 >= actorIx a2
  (<=) a1 a2	= actorIx a1 <= actorIx a2
+
 
 instance Show Actor where
  show (Wall ix p1 p2)			
@@ -41,6 +43,7 @@ isWall :: Actor -> Bool
 isWall (Wall _ _ _)	= True
 isWall _		= False
 
+
 -- | Take the index of an actor
 actorIx :: Actor -> Int
 actorIx actor
@@ -48,12 +51,14 @@ actorIx actor
 	Wall ix _ _	-> ix
  	Bead ix _ _ _ _	-> ix
 
+
 -- | Set the index of an actor
 actorSetIndex :: Actor -> Int -> Actor
 actorSetIndex actor ix
  = case actor of
  	Bead _ m r pos vel 	-> Bead ix m r pos vel 
 	Wall _ p1 p2		-> Wall ix p1 p2
+
 
 -- | Set whether a bead is stuck
 actorSetMode :: Bool -> Actor -> Actor

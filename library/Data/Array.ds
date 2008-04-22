@@ -1,4 +1,9 @@
 
+export	array_new
+	array_size
+	index
+	indexR
+	
 import	Base
 import	Data.Int
 import	Data.Ref
@@ -7,42 +12,41 @@ import	Data.List
 -- An array of boxed balues
 data Array %r1 a;
 
+
 -- Create a new array and point all the cells to this initial object.
 foreign import "primArray_new"
-	array_new 
-	 	:: forall a %r1 %r2
+ array_new  	:: forall a %r1 %r2
 	 	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
 		:- !e1 = !{ !Read %r1 }
 		,  $c1 = size : Int %r1
 		,  Mutable %r2
-		:$ Obj -> Obj -> Obj;
 
 -- Return the number of elements in an array
 foreign import "primArray_size"
-	array_size
-	 	:: forall a %r1 %r2
+ array_size	:: forall a %r1 %r2
 		.  Array %r1 a -(!e1)> Int %r2
 		:- !e1 = !{ !Read %r1 }
-		:$ Obj -> Obj;
  
 -- Return the element at this index
 --	the array.(i) syntax is desugared into this.
 foreign import "primArray_index"
-	index	:: forall a %r1 %r2 
+ index		:: forall a %r1 %r2 
 	 	.  Array %r1 a -> Int %r2 -(!e1)> a
 		:- !e1 = !{ !Read %r1; !Read %r2 }
-		:$ Obj -> Obj -> Obj;
  	
 -- Return a reference to this index. 
 --	If this reference is updated then that cell in the array is pointed to the new object.
 --	the array#(i) syntax is desuated into this
 foreign import "primArray_indexR"
-	indexR	:: forall a %r1 %r2 
+ indexR		:: forall a %r1 %r2 
 	 	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
 		:- !e1 = !{ !Read %r1; !Read %r2 }
 		,  $c1 = a : Array %r1 a
-		:$ Obj -> Obj -> Obj;
- 
+
+{-
+array_map_ f array
+	= array_map2_ f array 0 (array_size array)
+-}
 -----
 mapArray_ f array
  	= mapArray2_ f array 0 (array_size array);

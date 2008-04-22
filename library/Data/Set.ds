@@ -42,6 +42,12 @@ project Set a
 	insertF; memberF;
 	toList }
 
+-- | /O(n)/. Post-order fold.
+instance Foldable Set where
+	foldr f z Tip           = z
+	foldr f z (Bin _ x l r) = foldr f (f x (foldr f z r)) l
+
+
 ------
 delta	= 4
 ratio	= 2
@@ -88,12 +94,7 @@ memberF t compare x
 
 -- | /O(n)/. Convert a set to a list
 toList :: Set a -> [a]
-toList set = set_foldr (:) [] set
-
--- | /O(n)/. Post-order fold.
-set_foldr :: (a -> b -> b) -> b -> Set a -> b
-set_foldr f z Tip           = z
-set_foldr f z (Bin _ x l r) = set_foldr f (f x (set_foldr f z r)) l
+toList set = foldr (:) [] set
 
 
 -- Internals --------------------------------------------------------------------------------------
