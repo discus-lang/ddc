@@ -2,18 +2,7 @@
 import Class.Monad
 
 -- Functor -----------------------------------------------------------------------------------------
-class Functor (f :: * -> *) where
-	fmap 	:: forall a b !e0 $c0
-	 	.  (a -(!e0 $c0)> b) -> f a -(!e1 $c1)> f b
-		:- !e1 	= !{ !e0 ; !ReadT (f a) }
-		,  $c1	= f : $c0
 
-instance Functor List where
-	fmap f []	= []
-	fmap f (x:xs)	= f x : fmap f xs
-
-
- 
 instance Monad Maybe where
  	return x	= Just x
 	
@@ -24,7 +13,7 @@ instance Monad Maybe where
 
 -----
 main ()	
- = do	putStr	$ show (fmap (\x -> x + 1) [1, 2, 3])	% "\n"
+ = do	putStr	$ show (map (\x -> x + 1) [1, 2, 3])	% "\n"
  	putStr	$ show thing				% "\n"
 
 

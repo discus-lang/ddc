@@ -1,6 +1,7 @@
 
 import	Base
 	Base.Thunk
+	Class.Functor
 	Class.Foldable
 	Data.Bool
 	Data.Ref
@@ -9,18 +10,33 @@ import	Base
 	Data.Int
 	System.Error
 
--- We need to manually provide the %r1 region annotation here because the elaborator
---	can't elaborate a recursive definition yet. (ticket #116)
-data	List %r1 a
+
+data	List a
 	= Nil
 	| Cons { 
 		x 	:: a;
-		xs	:: List %r1 a; }
+		xs	:: List a; }
+
+-- 
+project List a 
+ with {	head; tail; last;
+ 	isNil;
+	length }
+		
 
 -- Construction
 infixr 6 : 
 (:)  x xs 	= Cons   x xs
 
+
+-- | Mapping
+instance Functor (List %r) where
+	map f []	= []
+	map f (x : xs)	= f x : map f xs
+
+	map_ f []	= ()
+	map_ f (x : xs)	= do { f x; map_ f xs }
+	
 
 -- | Folding
 instance Foldable (List %r) where
@@ -31,8 +47,7 @@ instance Foldable (List %r) where
 	foldr f state (x:xs)	= f x (foldr f state xs)
 
 
--- Simple Projections  -----------------------------------------------------------------------------
-
+-- Simple projections ------------------------------------------------------------------------------
 head :: [a] -> a
 head (x:xs)	= x
 
@@ -96,26 +111,11 @@ iterateL ::	(a -> a) -> a -> [a]
 iterateL f a	
 	= a : iterateL@ f (f a)
 
-
--- | Apply a function to all the elements of a list, returning a new list
-map :: (a -> b) -> [a] -> [b]
-map f []	= []
-map f (x : xs)	= f x : map f xs
-
-
 -- | A spine-lazy map
 mapL 	:: (a -> b) -> [a] -> [b]
 mapL f []	= []
 mapL f (x:xs)	= f x : (mapL@ f xs)
 
-
--- | A map where the return value of the function is ignored
-map_ :: (a -> b) -> [a] -> ()
-map_ f []	= ()
-map_ f (x:xs)
- = do	f x
- 	map_ f xs
-	
 
 -- | A map with the arguments switched around
 maps 	:: [a] -> (a -> b) -> [b]

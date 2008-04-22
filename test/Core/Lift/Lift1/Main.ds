@@ -61,9 +61,16 @@ lift3 ()
  = do {	a1	= 20;
 	a2	= 42;
 
-	z = 	try do { throw Exception "whoop"; a1 + a2 + 1; }
-		catch { Exception msg	-> print $ "message: " % msg % "\n"; }
-		with  5;
+	z = 	try do { 
+			throw (Exception "whoop"); a1 + a2 + 1; 
+		}
+		
+		catch { 
+			Exception msg	-> print $ "message: " % msg % "\n";
+		}
+		with { 
+			5; 
+		};
 
 	println	$ "z = " % show z;
  };

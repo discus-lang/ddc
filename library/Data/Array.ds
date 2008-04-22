@@ -3,6 +3,10 @@ export	array_new
 	array_size
 	index
 	indexR
+	mapArray_
+	mapArrayIx_
+	mapArrayToList
+	array_fold
 	
 import	Base
 import	Data.Int

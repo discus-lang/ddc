@@ -1,0 +1,12 @@
+
+import Base
+
+class Functor (f :: * -> *) where
+
+	map 	:: forall a b !e1 $c1
+		.  (a -(!e1 $c1)> b) -> f a -(!e2 $c2)> f b
+		:- !e2 = !{ !ReadT (f a); !e1 }
+		
+	map_	:: forall a b !e1 $c1
+		.  (a -(!e1 $c1)> b) -> f a -(!e2 $c2)> ()
+		:- !e2 = !{ !ReadT (f a); !e1 }	

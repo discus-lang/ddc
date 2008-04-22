@@ -1,12 +1,17 @@
 -- Imports
-import Base;
-import Base.Thunk;
-import Data.Bool;
-import Data.Ref;
-import Data.Tuple;
-import Data.Maybe;
-import Data.Int;
-import System.Error;
+import {
+        Base;
+        Base.Thunk;
+        Class.Functor;
+        Class.Foldable;
+        Data.Bool;
+        Data.Ref;
+        Data.Tuple;
+        Data.Maybe;
+        Data.Int;
+        System.Error;
+}
+
 
 -- Pragmas
 
@@ -14,12 +19,12 @@ import System.Error;
 infixr 6 : ;
 
 -- Data
-data List %r1 a
+data List %rDK15 a
         = Nil
         
         | Cons {
                 x :: a ;
-                xs :: Data.List.List %r1 a ;
+                xs :: Data.List.List %rDK15 a ;
         };
 
 
@@ -32,7 +37,21 @@ data List %r1 a
 -- Class dictionaries
 
 -- Class instances
-instance Class.Copy.Copy (Data.List.List %rDK166 (Base.Int %rDK167)) where
+instance Class.Functor.Functor (Data.List.List %r) where
+{
+        map      = Data.List.instance_Functor_List_map;
+        
+        map_     = Data.List.instance_Functor_List_map_;
+}
+
+instance Class.Foldable.Foldable (Data.List.List %r) where
+{
+        foldl    = Data.List.instance_Foldable_List_foldl;
+        
+        foldr    = Data.List.instance_Foldable_List_foldr;
+}
+
+instance Class.Copy.Copy (Data.List.List %rDK163 (Base.Int %rDK164)) where
 {
         copy     = Data.List.instance_Copy_ListInt_copy;
 }
@@ -41,6 +60,37 @@ instance Class.Copy.Copy (Data.List.List %rDK166 (Base.Int %rDK167)) where
 -- Foreign imports
 
 -- Binds
+foreign import project_List_head
+        :: forall t0 %r0
+        .  List %r0 t0 -(!e0)> t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Thunk;
+        
+foreign import project_List_tail
+        :: forall t0 %r0
+        .  List %r0 t0 -(!e0)> List %r0 t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Thunk;
+        
+foreign import project_List_last
+        :: forall t0 %r0
+        .  List %r0 t0 -(!e0)> t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Thunk;
+        
+foreign import project_List_isNil
+        :: forall t0 %r0 %r1
+        .  List %r0 t0 -(!e0)> Data.Bool.Bool %r1
+        :- !e0        = Base.!Read %r0
+        :$ Base.Thunk;
+        
+foreign import project_List_length
+        :: forall t0 %r0 %r1
+        .  List %r0 t0 -(!e0)> Base.Int %r1
+        :- !e0        = !{Base.!Read %r0; Base.!ReadT t0; Base.!Read %r1; Base.!Write %r1}
+        ,  Base.Mutable %r1
+        :$ Base.Thunk;
+        
 foreign import project_List_x
         :: forall t0 %r0
         .  List %r0 t0 -(!e0)> t0
@@ -64,6 +114,36 @@ foreign import project_List_ref_xs
         .  List %r0 t0 -(!e0)> Data.Ref.Ref %r0 (List %r0 t0)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
+        
+foreign import instance_Functor_List_map
+        :: forall t0 t1 %r0 !e0 $c0
+        .  (t0 -(!e0 $c0)> t1) -> List %r0 t0 -(!e1 $c1)> List %r0 t1
+        :- !e1        = !{Base.!Read %r0; !e0; Base.!ReadT (List %r0 t0)}
+        ,  $c1        = f : $c0
+        :$ Base.Thunk -> Base.Data -> Base.Data;
+        
+foreign import instance_Functor_List_map_
+        :: forall t0 t1 %r0 !e0 $c0
+        .  (t0 -(!e0 $c0)> t1) -> List %r0 t0 -(!e1 $c1)> Base.Unit
+        :- !e1        = !{Base.!Read %r0; !e0; Base.!ReadT (List %r0 t0)}
+        ,  $c1        = f : $c0
+        :$ Base.Thunk -> Base.Data -> Base.Data;
+        
+foreign import instance_Foldable_List_foldl
+        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
+        .  (t1 -(!e0 $c0)> t0 -(!e1 $c1)> t1) -> t1 -($c3)> List %r0 t0 -(!e2 $c2)> t1
+        :- !e2        = !{Base.!Read %r0; !e0; !e1; Base.!ReadT (List %r0 t0)}
+        ,  $c2        = ${state : t1; f : $c0}
+        ,  $c3        = f : $c0
+        :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
+        
+foreign import instance_Foldable_List_foldr
+        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
+        .  (t0 -(!e0 $c0)> t1 -(!e1 $c1)> t1) -> t1 -($c3)> List %r0 t0 -(!e2 $c2)> t1
+        :- !e2        = !{Base.!Read %r0; !e0; Base.!ReadT (List %r0 t0); !e1}
+        ,  $c2        = ${state : t1; f : $c0}
+        ,  $c3        = f : $c0
+        :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
         
 foreign import instance_Copy_ListInt_copy
         :: forall %r0 %r1 %r2 %r3
@@ -104,7 +184,7 @@ foreign import isNil
 foreign import length
         :: forall t0 %r0 %r1
         .  List %r0 t0 -(!e0)> Base.Int %r1
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Write %r1}
+        :- !e0        = !{Base.!Read %r0; Base.!ReadT t0; Base.!Read %r1; Base.!Write %r1}
         ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         
@@ -118,21 +198,21 @@ foreign import (!!)
         :: forall t0 %r0 %r1
         .  List %r0 t0 -> Base.Int %r1 -(!e0 $c0)> t0
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
-        ,  $c0        = ${xSD8 : %r0; xSD8 : %r0 $> t0}
+        ,  $c0        = ${xSD16 : %r0; xSD16 : %r0 $> t0}
         :$ Base.Data -> Base.Data -> Base.Obj;
         
 foreign import (++)
         :: forall t0 %r0 %r1
         .  List %r0 t0 -> List %r1 t0 -(!e0 $c0)> List %r1 t0
         :- !e0        = Base.!Read %r0
-        ,  $c0        = ${xSD11 : %r0; xSD11 : %r0 $> t0}
+        ,  $c0        = ${xSD19 : %r0; xSD19 : %r0 $> t0}
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import replicate
         :: forall t0 %r0 %r1
         .  Base.Int %r0 -> t0 -(!e0 $c0)> List %r1 t0
         :- !e0        = Base.!Read %r0
-        ,  $c0        = xSD13 : %r0
+        ,  $c0        = xSD21 : %r0
         :$ Base.Data -> Base.Obj -> Base.Data;
         
 foreign import iterateL
@@ -142,13 +222,6 @@ foreign import iterateL
         ,  Base.Pure !e0
         ,  Base.Lazy %r0
         :$ Base.Thunk -> Base.Obj -> Base.Data;
-        
-foreign import map
-        :: forall t0 t1 %r0 %r1 !e0 $c0
-        .  (t0 -(!e0 $c0)> t1) -> List %r0 t0 -(!e1 $c1)> List %r1 t1
-        :- !e1        = !{Base.!Read %r0; !e0}
-        ,  $c1        = f : $c0
-        :$ Base.Thunk -> Base.Data -> Base.Data;
         
 foreign import mapL
         :: forall t0 t1 %r0 %r1 !e0 $c0
@@ -160,47 +233,24 @@ foreign import mapL
         ,  Base.Lazy %r1
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
-foreign import map_
-        :: forall t0 t1 %r0 !e0 $c0
-        .  (t0 -(!e0 $c0)> t1) -> List %r0 t0 -(!e1 $c1)> Base.Unit
-        :- !e1        = !{Base.!Read %r0; !e0}
-        ,  $c1        = f : $c0
-        :$ Base.Thunk -> Base.Data -> Base.Data;
-        
 foreign import maps
-        :: forall t0 t1 %r0 %r1 !e0 $c0
-        .  List %r0 t0 -> (t0 -(!e0 $c0)> t1) -(!e1 $c1)> List %r1 t1
-        :- !e1        = !{Base.!Read %r0; !e0}
+        :: forall t0 t1 %r0 !e0 $c0
+        .  List %r0 t0 -> (t0 -(!e0 $c0)> t1) -(!e1 $c1)> List %r0 t1
+        :- !e1        = !{Base.!ReadT (List %r0 t0); !e0}
         ,  $c1        = ${xx : %r0; xx : %r0 $> t0}
         :$ Base.Data -> Base.Thunk -> Base.Data;
         
 foreign import maps_
         :: forall t0 t1 %r0 !e0 $c0
         .  List %r0 t0 -> (t0 -(!e0 $c0)> t1) -(!e1 $c1)> Base.Unit
-        :- !e1        = !{Base.!Read %r0; !e0}
+        :- !e1        = !{Base.!ReadT (List %r0 t0); !e0}
         ,  $c1        = ${xx : %r0; xx : %r0 $> t0}
         :$ Base.Data -> Base.Thunk -> Base.Data;
         
-foreign import foldl
-        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
-        .  (t0 -(!e1 $c1)> t1 -(!e0 $c0)> t0) -> t0 -($c3)> List %r0 t1 -(!e2 $c2)> t0
-        :- !e2        = !{Base.!Read %r0; !e1; !e0}
-        ,  $c2        = ${state : t0; f : $c1}
-        ,  $c3        = f : $c1
-        :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
-        
-foreign import foldr
-        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
-        .  (t1 -(!e1 $c1)> t0 -(!e0 $c0)> t0) -> t0 -($c3)> List %r0 t1 -(!e2 $c2)> t0
-        :- !e2        = !{Base.!Read %r0; !e1; !e0}
-        ,  $c2        = ${state : t0; f : $c1}
-        ,  $c3        = f : $c1
-        :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
-        
 foreign import mapAccumL
         :: forall t0 t1 t2 %r0 %r1 %r2 %r3 !e0 !e1 $c0 $c1
-        .  (t2 -(!e1 $c0)> t0 -(!e0 $c1)> Data.Tuple.Tuple2 %r3 t2 t1) -> t2 -($c3)> List %r0 t0 -(!e2 $c2)> Data.Tuple.Tuple2 %r1 t2 (List %r2 t1)
-        :- !e2        = !{Base.!Read %r2; Base.!Read %r0; !e1; !e0; Base.!Read %r3}
+        .  (t2 -(!e1 $c0)> t0 -(!e0 $c1)> Data.Tuple.Tuple2 %r3 t2 t1) -> t2 -($c3)> List %r1 t0 -(!e2 $c2)> Data.Tuple.Tuple2 %r0 t2 (List %r2 t1)
+        :- !e2        = !{Base.!Read %r2; Base.!Read %r1; !e1; !e0; Base.!Read %r3}
         ,  $c2        = ${f : $c0; acc : t2}
         ,  $c3        = f : $c0
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data;
@@ -217,7 +267,7 @@ foreign import mapAccumL'
 foreign import sum
         :: forall %r0 %r1 %r2
         .  List %r2 (Base.Int %r0) -(!e0)> Base.Int %r1
-        :- !e0        = !{Base.!Read %r2; Base.!Read %r1; Base.!Read %r0; Base.!Write %r1}
+        :- !e0        = !{Base.!Read %r2; Base.!Read %r0; Base.!Read %r1; Base.!Write %r1}
         ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         
@@ -229,14 +279,14 @@ foreign import sumR
         
 foreign import prod
         :: forall %r0 %r1 %r2
-        .  List %r2 (Base.Int %r0) -(!e0)> Base.Int %r1
-        :- !e0        = !{Base.!Read %r2; Base.!Read %r1; Base.!Read %r0}
+        .  List %r0 (Base.Int %r1) -(!e0)> Base.Int %r2
+        :- !e0        = !{Base.!ReadT (List %r0 (Base.Int %r1)); Base.!Read %r2; Base.!Read %r1}
         :$ Base.Data -> Base.Data;
         
 foreign import pow
         :: forall %r0 %r1 %r2
         .  Base.Int %r0 -> Base.Int %r2 -(!e0 $c0)> Base.Int %r1
-        :- !e0        = !{Base.!Read %r2; Base.!Read %r1; Base.!Read %r0}
+        :- !e0        = !{Base.!Read %r2; Base.!Read %r0; Base.!Read %r1}
         ,  $c0        = x : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
@@ -374,12 +424,17 @@ foreign import concatMapL
         ,  Base.Lazy %r1
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
-project Data.List.List %_ *_ where
+project Data.List.List %rDK73 a where
 {
         x        = project_List_x;
         xs       = project_List_xs;
         ref_x    = project_List_ref_x;
         ref_xs   = project_List_ref_xs;
+        head     = project_List_head;
+        tail     = project_List_tail;
+        last     = project_List_last;
+        isNil    = project_List_isNil;
+        length   = project_List_length;
 }
 
 

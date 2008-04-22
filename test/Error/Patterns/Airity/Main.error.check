@@ -7,11 +7,11 @@
 ./test/Error/Patterns/Airity/Main.ds:8:8
     Wrong number of arguments for constructor match.
          constructor: Data.List.Nil
-          defined at: ./library/Data/List.di:18:10
+          defined at: ./library/Data/List.di:23:10
                  has: 0 arguments, but has been used here with 1.
 
 ./test/Error/Patterns/Airity/Main.ds:7:8
     Wrong number of arguments for constructor match.
          constructor: Data.List.Cons
-          defined at: ./library/Data/List.di:20:10
+          defined at: ./library/Data/List.di:25:10
                  has: 2 arguments, but has been used here with 3.

@@ -178,15 +178,15 @@ pExp1'
 		pTok K.SKet
 		return	$ XList (spTP tok) exps)
 
-  <|>	-- try EXP catch { ALT .. } (with EXP)
+  <|>	-- try EXP catch { ALT .. } (with { STMT; .. })
   	do	tok	<- pTok K.Try
 		exp1	<- pExp
 		pTok K.Catch
 		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
 		
 		mWith	<-	do	pTok K.With
-					exp	<- pExp
-				 	return	$ Just exp
+					stmts	<- pCParen (Parsec.sepEndBy1 pStmt pSemis)
+				 	return	$ Just (XDo (spTP tok) stmts)
 
 			<|> 	return Nothing
 
