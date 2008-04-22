@@ -627,6 +627,11 @@ instance (Monad m) => TransM m n1 n2 (Stmt n1) (Stmt n2) where
                         x2' <- transZM table x2
                         x3' <- transZM table x3
                         return (SBindFun x0' x1' x2' x3')
+                SBindPat x0 x1 x2
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (SBindPat x0' x1' x2')
                 SBindMonadic x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

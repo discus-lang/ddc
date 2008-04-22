@@ -240,6 +240,7 @@ makeMatchFunction sp pp xResult
 
 	return	$ xFinal
 	
+	
 makeMatchExp
 	:: SourcePos 
 	-> [D.Pat Annot]

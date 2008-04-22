@@ -92,13 +92,13 @@ genBind env tt
 --	liftIO $ putStr $ pprStr $ "bindType = " % tt % "\n"
 
 	return	( var
-		, SBindPats none var [] x)
+		, SBindFun none var [] x)
 
 genTopsChain :: Env -> Int -> GenM [Top a]
 genTopsChain env 0	
  = do	x	<- withFuel expFuel $ genExpT env tInt
 	let pr	= XApp none (xVar "print") (XApp none (xVar "show") x)
- 	return	$ [PStmt (SBindPats none (varV "main") [WUnit none] pr)]
+ 	return	$ [PStmt (SBindFun none (varV "main") [WUnit none] pr)]
 
 genTopsChain env n
  = do	tt	<- withFuel typeFuel $ genType True
@@ -134,7 +134,7 @@ instance Size (Top a) where
 instance Size (Stmt a) where
  size ss
   = case ss of
-  	SBindPats _ v ps x
+  	SBindFun _ v ps x
 	  -> 1 + length ps + size x 
 	
 instance Size (Exp a) where

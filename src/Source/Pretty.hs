@@ -405,6 +405,9 @@ instance Pretty (Stmt a) PMode where
 	 -> v % " " % punc " " (map prettyWB ps)
 	 %>> (spaceDown x) % "\n = " % prettyX_naked x 	% ";"
 	
+	SBindPat sp pat x
+	 -> pat %>> (spaceDown x) % " = " % prettyX_naked x % ";"
+	
 	SBindMonadic sp v x
 	 -> v <> "<-" <> x % ";"
 

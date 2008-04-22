@@ -25,12 +25,9 @@ advanceWorld time force (World actors tree)
 		(moveActor_free time force)
       
       	-- find contacts in the world
-	contactsTree
+	(contacts, tree')
 		= findContacts (World actors tree)
 		
-	contacts	= fst contactsTree
-	tree'		= snd contactsTree
-
 	-- apply contacts to each pair of actors
 	map_ (applyContact time force actors) 
 		(contacts .toList)
@@ -68,7 +65,7 @@ applyContact time force actors (ix1, ix2)
 		| Bead ix1 m1 r1 p1 v1	<- a1
 		, Bead ix2 m2 r2 p2 v2	<- a2
 		= do	
-			a12'
+			(a1', a2')
 				-- if one of the beads is stuck then do a safer, static collision.
 				--	with this method the beads don't transfer energy into each other
 				--	so there is less of a chance of lots of beads being crushed together
@@ -83,8 +80,6 @@ applyContact time force actors (ix1, ix2)
 				| otherwise
 				= collideBeadBead_elastic a1 a2
 
-			a1'	= fst a12' 
-			a2'	= snd a12' 
 
 			-- After two beads have collided, set them as being stuck.
 			a1_final	= actorSetMode True a1'

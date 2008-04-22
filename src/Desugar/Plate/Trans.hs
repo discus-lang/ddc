@@ -360,11 +360,23 @@ transS_default table ss
 	
 followS table xx
   = case xx of
+	SSig nn v t
+	 -> do	nn'	<- transN  table nn
+	 	v'	<- transV  table v
+		t'	<- transT table t
+		return	$ SSig nn' v' t'
+
   	SBind nn mV x
 	 -> do	nn'	<- transN  	table nn
 	 	mV'	<- liftMaybe 	(transV table) mV
 		x'	<- transZM 	table x
 		return	$ SBind nn' mV' x'
+
+	SBindPat nn pat x
+	 -> do	nn'	<- transN table nn
+	 	pat'	<- transZM table pat
+		x'	<- transZM table x
+		return	$ SBindPat nn' pat' x'
 		
 	SBindMonadic nn w x
 	 -> do	nn'	<- transN table nn
@@ -372,11 +384,7 @@ followS table xx
 		x'	<- transZM table x
 		return	$ SBindMonadic nn' w' x'
 				
-	SSig nn v t
-	 -> do	nn'	<- transN  table nn
-	 	v'	<- transV  table v
-		t'	<- transT table t
-		return	$ SSig nn' v' t'
+				
 		
 	
 -----------------------

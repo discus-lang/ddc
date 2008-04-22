@@ -432,25 +432,31 @@ instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where
 instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
  rewrite ss
   = case ss of
+	S.SSig sp v t
+	 -> do 	t'	<- rewrite t
+	 	return	$ D.SSig sp v t
+
+	S.SStmt sp x
+	 -> do	x'	<- rewrite x
+	 	return	$ D.SBind sp Nothing x'
+				
 	S.SBindFun sp v ps x
 	 -> do	x'	<- rewrite x
 		ps'	<- mapM rewrite ps
 	 	x2	<- makeMatchFunction sp ps' x'
 		return	$ D.SBind sp (Just v) x2
 
+	S.SBindPat sp pat x
+	 -> do	pat'	<- rewrite pat
+	 	x'	<- rewrite x
+		return	$ D.SBindPat sp pat' x'
+	 	
+
 	S.SBindMonadic sp pat x
 	 -> do	pat'	<- rewrite pat
 	 	x'	<- rewrite x
 	 	return	$ D.SBindMonadic sp pat' x'
 
-	S.SStmt sp x
-	 -> do	x'	<- rewrite x
-	 	return	$ D.SBind sp Nothing x'
-				
-	S.SSig sp v t
-	 -> do 	t'	<- rewrite t
-
-	 	return	$ D.SSig sp v t
 
 
 -- Alt ---------------------------------------------------------------------------------------------
@@ -610,9 +616,18 @@ rewriteDoSS (s : ss)
 	 -> do	ss'	<- rewriteDoSS ss
 	 	return	$ s : ss'
 
+	D.SBindPat sp pat x
+	 -> do	ss'		<- rewriteDoSS ss
+	 	let xRest	= D.XDo sp ss'
+		let g		= D.GExp sp pat x
+		
+		return	[ D.SBind sp Nothing 
+				(D.XMatch sp Nothing [D.AAlt sp [g] xRest]) ]
+				
+
  	D.SBindMonadic sp pat x 
 	 -> do 	ss'	<- rewriteDoSS ss
-	  	let xDo		= D.XDo sp ss'
+	  	let xDo	= D.XDo sp ss'
 
 		([var], xMatch)	<- makeMatchExp sp [pat] xDo
 

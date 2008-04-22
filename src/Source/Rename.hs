@@ -656,6 +656,15 @@ boundByLCQual    q
 instance Rename (Stmt SourcePos) where
  rename s
   = case s of
+	SSig sp v t
+	 -> do	v'	<- lbindZ v
+		t'	<- local $ rename t
+		return	$ SSig sp v' t'
+
+	SStmt sp x
+	 -> do	x'	<- local $ rename x
+		return	$ SStmt sp x'		
+
 	SBindFun sp v ps x
 	 -> do	v'	<- lbindZ v
 
@@ -676,21 +685,18 @@ instance Rename (Stmt SourcePos) where
 			  [v]	-> do { popObjectVar; return () })
 
 			return	$ SBindFun sp v' ps' x'
+
+	SBindPat sp pat x
+	 -> do	(pat', _) <- bindPat True pat
+	 	x'	<- rename x
+		return	$ SBindPat sp pat' x'
 	 	
 	SBindMonadic sp pat x
 	 -> do	(pat', _) <- bindPat True pat
 	 	x'	<- rename x
 		return	$ SBindMonadic sp pat' x'
 
-	SStmt sp x
-	 -> do	x'	<- local $ rename x
-		return	$ SStmt sp x'		
-				
 
-	SSig sp v t
-	 -> do	v'	<- lbindZ v
-		t'	<- local $ rename t
-		return	$ SSig sp v' t'
 		
 
 -- | Rename the variables in a list of statements

@@ -72,7 +72,6 @@ collideBeadBead_elastic
 
 	-- work out the point of collision
 	u1	= r1 / (r1 + r2)
---	u2	= r2 / (r1 + r2)
 
 	pCollision	
 		= p1 + (p2 - p1) .muls u1
