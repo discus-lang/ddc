@@ -85,9 +85,6 @@ slurpTopNames p
 	PImportModule{}			-> []
 	PExport{}			-> []
 
---	PForeign sp (OImport (OCCall mS v t))	
---	 -> [bindSeaName mS v { Var.nameSpace = NameValue }]	
-
 	PForeign sp (OImport (OExtern mS v t mT))	
 	 -> [bindSeaName mS v { Var.nameSpace = NameValue }]	
 
@@ -105,7 +102,7 @@ slurpTopNames p
 	PStmt (SSig sp v t) 
 	 -> []
 	
-	PStmt (SBindPats sp v xx x)
+	PStmt (SBindFun sp v xx x)
 	 -> [v { Var.nameSpace = NameValue }]
 
 	-- classes		

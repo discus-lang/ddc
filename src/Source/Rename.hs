@@ -181,7 +181,7 @@ instance Rename (Top SourcePos) where
 		
 		let ssF		= map (\s -> case s of 
 					SSig  sp v t		-> SSig   sp 	(fixupV v) t
-					SBindPats sp v xs x	-> SBindPats sp	(fixupV v) xs x)
+					SBindFun sp v xs x	-> SBindFun sp	(fixupV v) xs x)
 			$ ss
 	 
 	   	t' 	<- local
@@ -656,7 +656,7 @@ boundByLCQual    q
 instance Rename (Stmt SourcePos) where
  rename s
   = case s of
-	SBindPats sp v ps x
+	SBindFun sp v ps x
 	 -> do	v'	<- lbindZ v
 
 	 	local
@@ -675,7 +675,7 @@ instance Rename (Stmt SourcePos) where
 			  []	-> return ()
 			  [v]	-> do { popObjectVar; return () })
 
-			return	$ SBindPats sp v' ps' x'
+			return	$ SBindFun sp v' ps' x'
 	 	
 	SBindMonadic sp pat x
 	 -> do	(pat', _) <- bindPat True pat

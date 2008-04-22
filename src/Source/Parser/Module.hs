@@ -406,7 +406,7 @@ pTopProject_pun :: Parser (Stmt SP)
 pTopProject_pun
  = do	-- VAR
 	var	<- pVar
- 	return	$ SBindPats (spV var) (vNameF var) [] (XVar (spV var) (vNameV var))
+ 	return	$ SBindFun (spV var) (vNameF var) [] (XVar (spV var) (vNameV var))
 	
 	
  

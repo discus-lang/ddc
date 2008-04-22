@@ -152,6 +152,11 @@ data TransTable m n1 n2
 	, transTop_enter	:: Trans1 m n1 Top
 	, transTop_leave	:: Trans1 m n2 Top 
 
+	-- export
+	, transExport		:: Trans m n1 n2 Export
+	, transExport_enter	:: Trans1 m n1 Export
+	, transExport_leave	:: Trans1 m n2 Export
+
 	-- foreign
 	, transForeign		:: Trans m n1 n2 Foreign
 	, transForeign_enter	:: Trans1 m n1 Foreign
@@ -225,6 +230,10 @@ transTableId transN'
 	, transTop		= followZM
 	, transTop_enter	= \x -> return x
 	, transTop_leave	= \x -> return x 
+
+	, transExport		= followZM
+	, transExport_enter	= \x -> return x
+	, transExport_leave	= \x -> return x 
 
 	, transForeign		= followZM
 	, transForeign_enter	= \x -> return x

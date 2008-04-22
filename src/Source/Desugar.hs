@@ -432,7 +432,7 @@ instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where
 instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
  rewrite ss
   = case ss of
-	S.SBindPats sp v ps x
+	S.SBindFun sp v ps x
 	 -> do	x'	<- rewrite x
 		ps'	<- mapM rewrite ps
 	 	x2	<- makeMatchFunction sp ps' x'

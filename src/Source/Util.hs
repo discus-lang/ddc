@@ -35,7 +35,7 @@ takeStmtBoundVs :: Stmt a -> [Var]
 takeStmtBoundVs s
  = case s of 
 	SStmt 	  	sp e		-> []
-	SBindPats 	sp v  es x	-> [v]
+	SBindFun 	sp v  es x	-> [v]
 	SBindMonadic 	sp pat x	-> takePatBoundVs pat
 	SSig      	sp v  t		-> [v]
 	
