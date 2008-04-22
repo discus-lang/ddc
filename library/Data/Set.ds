@@ -27,8 +27,8 @@ import	Base
 	Data.Int
 	Data.List
 	
-	
--- | A set of values @a@.
+-----
+-- | A set of values a
 data Set a    
 	= Tip 
 	| Bin 	Int 		-- size
@@ -36,20 +36,11 @@ data Set a
 		(Set a) 	-- left
 		(Set a) 	-- right
 
-{-
 project Set a 
- with {	empty; singleton; size; 
-	insertF; memberF; 
+ with { empty; singleton; 
+ 	size;
+	insertF; memberF;
 	toList }
--}
-
-project Set a where
-	empty		= empty
-	singleton	= singleton
-	size		= size
-	insertF		= insertF
-	memberF		= memberF
-	toList		= toList
 
 ------
 delta	= 4

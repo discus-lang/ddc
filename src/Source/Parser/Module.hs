@@ -386,10 +386,30 @@ pTopInstance
 pTopProject :: Parser (Top SP)
 pTopProject
  = 	-- project CON TYPE .. where { SIG/BIND ; .. }
- 	do	tok	<- pTok K.Project
+ 	(Parsec.try $ do	
+		tok	<- pTok K.Project
 		con	<- liftM vNameT $ pQualified pCon
 		ts	<- Parsec.many pType_body1
 		pTok	K.Where
 		binds	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
+		return	$ PProjDict (spTP tok) (TData KNil con ts) binds)
+
+  	-- project CON TYPE .. with { VAR ; .. }
+  <|>	do	tok	<- pTok K.Project
+		con	<- liftM vNameT $ pQualified pCon
+		ts	<- Parsec.many pType_body1
+		pTok	K.With
+		binds	<- pCParen $ Parsec.sepEndBy1 pTopProject_pun pSemis
 		return	$ PProjDict (spTP tok) (TData KNil con ts) binds
 		
+pTopProject_pun :: Parser (Stmt SP)
+pTopProject_pun
+ = do	-- VAR
+	var	<- pVar
+ 	return	$ SBindPats (spV var) (vNameF var) [] (XVar (spV var) (vNameV var))
+	
+	
+ 
+
+
+
