@@ -103,9 +103,9 @@ beadPos ix iy
 maxDepth	= 4
 
 -- | insert an actor into the tree
-insertActor :: Actor -> QuadTree Actor -> QuadTree Actor
+insertActor :: QuadTree Actor -> Actor -> QuadTree Actor
 
-insertActor actor tree
+insertActor tree actor
 	-- insert a bead into the tree
 	| bead@(Bead ix _ radius pos@(Vec2 x y) vel) 	<- actor
 	= do

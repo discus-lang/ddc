@@ -183,14 +183,14 @@ run 	a b c
 
 run	frame body0 body1	
  = do	-- update all the positions
-	mapArrayIx_ (\x -> x.update body0) body1
-	mapArray_   (\x -> x.clampPos)	body1
+	body1 .mapIx_ 	(\ix x -> x.update body0 ix)
+	body1 .map_	(\x -> x.clampPos)
 
 	-- clear the buffer and draw the new forces
 	frame.clear (color&{Frame} 0 0 0)
 	draw_force frame body1 0 0
 
-	mapArray_   (\x -> x.draw frame) body1
+	body1 .map_	(\x -> x.draw frame)
 
 	-- flip the buffer
  	frame.update

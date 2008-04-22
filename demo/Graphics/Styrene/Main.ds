@@ -61,7 +61,7 @@ drawWorld (World actors tree)
 	--	this lets us draw all the beads at once without having to keep changing 
 	--	the current color (which is a bit of a performance improvement)
 	picTree		= drawQuadTree tree
-	picActors	= Prims $ mapArrayToList drawActor actors
+	picActors	= Prims $ actors .mapToList drawActor
 	Prims	[ picTree, picActors ]
 
 

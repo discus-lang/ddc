@@ -21,8 +21,7 @@ advanceWorld
 advanceWorld time force (World actors tree)
  = do
 	-- move all the actors 
-	array_updateWith_ 
-		actors 
+	actors .updateWith
 		(moveActor_free time force)
       
       	-- find contacts in the world
@@ -39,18 +38,6 @@ advanceWorld time force (World actors tree)
  	World actors tree'
 
 
-array_updateWith_ :: Array a -> (a -> a) -> ()
-array_updateWith_ array fun
- = do	max	= array_size array
- 	array_updateWith' array fun max 0
-	
-array_updateWith' array fun max ix
-	| ix >= max	= ()
-	\= do	
-		x'	= fun array.(ix)
-		array #(ix) #= x'
-
-		array_updateWith' array fun max (ix + 1)		
 
 
 -- Move two actors which are known to be in contact.

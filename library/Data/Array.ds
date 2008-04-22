@@ -1,12 +1,8 @@
 
-export	array_new
-	array_size
-	index
+export	index
 	indexR
-	mapArray_
-	mapArrayIx_
-	mapArrayToList
-	array_fold
+	array_map_
+	array_foldl
 	
 import	Base
 import	Data.Int
@@ -47,55 +43,89 @@ foreign import "primArray_indexR"
 		:- !e1 = !{ !Read %r1; !Read %r2 }
 		,  $c1 = a : Array %r1 a
 
-{-
+
+project Array a where
+	new		= array_new
+	size		= array_size
+
+	map_      arr f	= array_map_ f arr
+	mapIx_    arr f	= mapIx_     f arr
+	mapToList arr f = mapToList  f arr
+
+	updateWith arr f = updateWith f arr
+
+
+instance Functor Array where
+	map_		= array_map_
+
+
+instance Foldable Array where
+	foldl		= array_foldl
+
+
+
+
+-- Apply a function to all the elements of an array, ignoring the result
+array_map_ :: (a -> b) -> Array a -> ()
 array_map_ f array
-	= array_map2_ f array 0 (array_size array)
--}
------
-mapArray_ f array
- 	= mapArray2_ f array 0 (array_size array);
- 
-mapArray2_ f array i max
- = match {
- 	| i >= max	= ();
+	= array_map2_ f array 0 (array .size)
+
+array_map2_ f array ix max
+	| ix >= max	= ()
+
+	\= do	f array.(ix)
+		array_map2_ f array (ix + 1) max
+
+		
+-- Map a  function across all the elements of an array
+--	with the array index, ignoring the result
+mapIx_ :: (Int -> a -> b) -> Array a -> ()
+mapIx_ f array
+	= mapIx2_ f array 0 (array .size)
 	
-	\= do { f array.(i); 
-		mapArray2_ f array (i + 1) max;
-	};
- };
+mapIx2_ f array ix max
+	| ix >= max	= ()
+	
+	\= do	f ix array.(ix)
+		mapIx2_ f array (ix + 1) max
 
 
------
-mapArrayIx_ f array
-	= mapArrayIx2_ f array 0 (array_size array);
- 
-mapArrayIx2_ f array i max
- = match {
- 	| i	>= max	= ();
-	
-	\= do {	f array.(i) i; 
-		mapArrayIx2_ f array (i + 1) max;
-	};
- };
-	
-	
------
-mapArrayToList  f array = mapArrayToList' f array 0;
-mapArrayToList' f array i
- = if i >= array_size array
- 	then []
-	else f (array.(i)) : mapArrayToList' f array (i + 1);
+-- Map a function across all the elements of an array, 
+--	returning a list
+mapToList :: (a -> b) -> Array a -> [b]
+mapToList  f array 
+	= mapToList' f array 0 (array .size)
 
-
-array_fold :: (a -> b -> b) -> b -> Array a -> b
-array_fold f acc array 
- 	= array_fold' f acc array 0
+mapToList' f array i max
+	| i >= max	
+	=  []
 	
-array_fold' f acc array ix
-	| ix >= array_size array
+	\= f (array .(i)) : mapToList' f array (i + 1) max
+	
+
+-- pre-order fold
+array_foldl :: (a -> b -> a) -> a -> Array b -> a
+array_foldl f acc array 
+ 	= array_foldl' f acc array 0 (array .size)
+	
+array_foldl' f acc array ix max
+	| ix >= max
 	= acc
 	
-	\= array_fold' f (f array.(ix) acc) array (ix + 1)
-	
+	\= array_foldl' f (f acc array.(ix)) array (ix + 1) max
 
+
+-- update all the elements of an array with this function
+--	the array cells are pointed to the new objects
+updateWith :: (a -> a) -> Array a -> ()
+updateWith fun array
+ = do	max	= array_size array
+ 	updateWith' fun array 0 max
+	
+updateWith' fun array ix max
+	| ix >= max	= ()
+	\= do	x'	= fun array.(ix)
+		array #(ix) #= x'
+
+		updateWith' fun array (ix + 1) max
 

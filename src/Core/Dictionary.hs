@@ -396,13 +396,20 @@ matchInstance cType cInst
 	= False
 
 matchTT t1 t2
-	| kindOfType t1 == KValue
-	, kindOfType t2	== KValue
-	= unifyT2 t1 t2 
-	
-	| kindOfType t1 == kindOfType t2
+	| elem (kindOfType t1) [KEffect, KClosure, KRegion]
+	, kindOfType t1 == kindOfType t2
 	= Just []
-	
+
+	| resultKind (kindOfType t1) == KValue
+	, resultKind (kindOfType t2) == KValue
+	= unifyT2 t1 t2 
+		
+	| otherwise
+	= panic stage
+		$ "matchTT: no match for\n"
+		% "    t1 = " % t1	% "\n"
+		% "    t2 = " % t2	% "\n"
+		
 		
 
 

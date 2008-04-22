@@ -19,7 +19,7 @@ findContacts (World actors _)
    	treeInit	= treeZero 300.0
 
 	-- insert all the actors into the quadtree.
-	tree'		= array_fold insertActor treeInit actors
+	tree'		= foldl insertActor treeInit actors
 
 	-- the potential contacts are lists of actors
 	--	that _might_ be in contact.
