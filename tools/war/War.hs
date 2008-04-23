@@ -79,7 +79,7 @@ buildLibrary args
 	let ?args	= args ++ [ArgFlagsDDC ["-no-implicit-prelude"]]
 
 	-- build the sources
-	mapM_ testSource libraryOrder
+	mapM_ testSource (libraryOrder args)
 	return ()	
 
 

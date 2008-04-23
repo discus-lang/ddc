@@ -7,15 +7,15 @@ module Order
 	
 where
 
+import Bits
+
 -----
-libraryOrder
+libraryOrder args
 	= map (\s -> "library/" ++ s ++ ".ds")
-	$ libraryModules
+	$ (libraryModules args)
 	
-libraryModules = 
-	[ "Base"
-	, "Data/Ref"
-	, "Base/Thunk"
+libraryModules args = 
+	[ "Base", "Data/Ref", "Base/Thunk"
 	, "Data/Bool"
 	, "Class/Copy"
 	, "Class/Eq"
@@ -52,12 +52,15 @@ libraryModules =
 	, "Math/Vec2"
 	, "Math/Matrix/Matrix33" 
 	, "Graphics/Primitive"
-	, "Graphics/Shape"
-	, "Graphics/TinyPTC" 
-	, "Graphics/Raster/Bresenham"
+	, "Graphics/Shape" 
+	, "Graphics/Raster/Bresenham" ]
+
+	++ if elem ArgOmitX11 args 
+		then []
+		else libraryX11
+
+libraryX11 
+ = 	[ "Graphics/TinyPTC" 
 	, "Graphics/Frame"
 	, "Graphics/Render" ]
 
-{-	, "DDC/Source/Token"
-	, "DDC/Source/Lexer" ]
--}	

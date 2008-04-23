@@ -16,12 +16,13 @@ import System.Time
 import Util.Options	as Options
 import Util
 
--- Arguments to DDC --------------------------------------------------------------------------------
+-- Arguments to War --------------------------------------------------------------------------------
 data Arg
 	= ArgDebug			-- print debugging messages about the test driver
 	| ArgFlagsDDC  [String]		-- flags to pass to DDC when compiling test files
 	| ArgTestDirs  [String]		-- only run on these test dirs
 	| ArgTestWith  [String]		-- a set of DDC flags to test with
+	| ArgOmitX11			-- leave out support and tests requiring X11
 	| ArgHelp
 	deriving (Show, Eq)
 
@@ -42,7 +43,11 @@ options
 	, OOpts		(\ss -> ArgTestWith $ map ('-' :) ss)
 			[ "-with" ]
 			"-with <options>"
-			"Test with these DDC compile options." ]
+			"Test with these DDC compile options." 
+			
+	, OFlag		ArgOmitX11
+			[ "-omit-x11" ]
+			"Omit support and tests requiring X11" ]
 			
 parseArgs :: [String] -> ([String], [Arg])
 parseArgs args	= Options.munch options $ Options.tokenise $ catInt " " args
