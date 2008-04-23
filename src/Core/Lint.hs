@@ -170,9 +170,9 @@ lintMainType table tt
 			return ()
 	
 	-- main must have type () -> ()
-	| TFunEC t1 t2 eff clo	<- tt
-	, Just (v1, _, [])	<- takeTData t1
-	, Just (v2, _, [])	<- takeTData t2
+	| Just (t1, t2, eff, clo)	<- takeTFun tt
+	, Just (v1, _, [])		<- takeTData t1
+	, Just (v2, _, [])		<- takeTData t2
 	, v1 == Var.primTUnit
 	, v2 == Var.primTUnit
 	= return ()
@@ -387,12 +387,6 @@ lintT tt (TTop k)
 lintT tt (TBot k)
  = 	return ()
 		
-lintT tt (TFunEC t1 t2 eff clo)
- = do	lintT tt t1
- 	lintT tt t2
-	lintT tt eff
-	lintT tt clo		
-		 	
 lintT tt (TEffect v ts)
  = do	mapM_ (lintT tt) ts
   

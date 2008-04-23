@@ -29,8 +29,8 @@ unifyT2 t1 t2
 		$ sequence 
 		$ zipWith unifyT2 ts1 ts2
 
-	| TFunEC a1 b1 eff1 clo1	<- t1
-	, TFunEC a2 b2 eff2 clo2	<- t2
+	| Just (a1, b1, eff1, clo1)	<- takeTFun t1
+	, Just (a2, b2, eff2, clo2)	<- takeTFun t2
 	, Just subA		<- unifyT2 a1 a2
 	, Just subB		<- unifyT2 b1 b2
 	, Just subE		<- unifyT2 eff1 eff2

@@ -117,7 +117,7 @@ toCoreT' table tt
 	   in  down $ T.makeTApp (T.TCon tyCon : ts)
 
 
-	T.TFun t1 t2 eff clo	-> C.TFunEC (down t1) (down t2) (down eff) (down clo)
+	T.TFun t1 t2 eff clo	-> C.makeTFun (down t1) (down t2) (down eff) (down clo)
 	
 	-- effect
 	T.TEffect v ts		-> C.TEffect v (map down ts)

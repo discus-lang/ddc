@@ -320,7 +320,7 @@ reconX tt exp@(XLam v t x eff clo)
 			% "    eff_clamped  = " % eff_clamped	% "\n") $ -}
 
 		   ( XLam v t x' eff_clamped clo_sub
-		   , TFunEC t xT eff_clamped clo_sub
+		   , makeTFun t xT eff_clamped clo_sub
 		   , TBot KEffect
 		   , xC')
 
@@ -866,7 +866,8 @@ applyValueT' table t1@(TFetters t1Shape fs) t2
 	
    in	applyValueT' table' t1Shape t2
  
-applyValueT' table t0@(TFunEC t1 t2 eff clo) t3	
+applyValueT' table t0 t3	
+	| Just (t1, t2, eff, clo)	<- takeTFun t0
 	= if subsumes (tableMore table) t1 t3
 		then Just (t2, eff)
 		else freakout stage

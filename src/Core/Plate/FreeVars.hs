@@ -245,6 +245,9 @@ instance FreeVars Type where
 	TCon TyConData { tyConName }
 	 -> Set.singleton tyConName
 	
+	TCon TyConFun{}
+	 -> Set.empty
+	
 	TBot k		-> Set.empty
 	TTop k		-> Set.empty
 
@@ -252,14 +255,6 @@ instance FreeVars Type where
 	 -> unions
 		[ freeVars t1
 		, freeVars t2 ]
-
-	-- data
-	TFunEC	t1 t2 eff clo
-	 -> unions 
-	 	[ freeVars t1
-		, freeVars t2 
-		, freeVars eff
-		, freeVars clo ]
 
 	-- effect
 	TEffect v ts

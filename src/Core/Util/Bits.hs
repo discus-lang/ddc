@@ -20,6 +20,7 @@ module Core.Util.Bits
 	, makeTFetters
 	, makeTApp
 	, makeTData,	takeTData
+	, makeTFun,	takeTFun
 
 	, makeTWitJoin
 	, makeKWitJoin
@@ -203,6 +204,24 @@ takeTData tt
 		Nothing		-> Nothing
 		
 	_ -> Nothing
+
+
+-- | make a function type
+makeTFun :: Type -> Type -> Effect -> Closure -> Type
+makeTFun t1 t2 eff clo
+	= TApp (TApp (TApp (TApp (TCon fun) t1) t2) eff) clo
+	where	fun	= TyConFun { tyConKind = KFun KValue (KFun KValue (KFun KEffect (KFun KClosure KValue))) }
+
+
+-- | break up a function type
+takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)
+takeTFun tt
+ 	| TApp (TApp (TApp (TApp fun t1) t2) eff) clo	<- tt
+	, TCon TyConFun{}	<- fun
+	= Just (t1, t2, eff, clo)
+	
+	| otherwise
+	= Nothing
 		
 	
 		
@@ -267,8 +286,8 @@ buildApp' xx
 -----
 flattenFun ::	Type -> [Type]
 flattenFun	xx
- = case xx of
-	TFunEC e1 e2 _ _	-> e1 : flattenFun e2
+ = case takeTFun xx of
+	Just (t1, t2, _, _)	-> t1 : flattenFun t2
 	_			-> [xx]
 
 -----
@@ -276,7 +295,7 @@ unflattenFunE :: [Type] -> Type
 unflattenFunE xx
  = case xx of
  	x : []		-> x
-	x : xs		-> TFunEC x (unflattenFunE xs) pure empty
+	x : xs		-> makeTFun x (unflattenFunE xs) pure empty
 
 
 -----

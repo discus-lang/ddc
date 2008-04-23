@@ -141,7 +141,7 @@ packT1 tt
 	TTop k 		-> tt
 	 
 	-- data
-	TFunEC t1 t2 eff clo
+{-	TFunEC t1 t2 eff clo
 	 -> let (t1',  fs1)	= slurpTFetters $ packT1 t1
 	  	(t2',  fs2)	= slurpTFetters $ packT1 t2
 		(eff', fsE)	= slurpTFetters $ packT1 eff
@@ -149,6 +149,7 @@ packT1 tt
 
 	    in	makeTFetters (TFunEC t1' t2' eff' clo')
 	    		(fs1 ++ fs2 ++ fsE ++ fsC)
+-}
 	    
 	-- effect
 	-- crush EReadH on the way
@@ -323,7 +324,7 @@ inlineTWheresMapT sub block tt
 	TApp t1 t2		-> TApp (down t1) (down t2)
 
 	-- data
-	TFunEC t1 t2 eff clo	-> TFunEC (down t1) (down t2) (down eff) (down clo)
+--	TFunEC t1 t2 eff clo	-> TFunEC (down t1) (down t2) (down eff) (down clo)
 --	TData v ts		-> TData v (map down ts)
 	
 	-- effect

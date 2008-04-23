@@ -741,9 +741,6 @@ superOpTypePart	tt
 	C.TContext c t		-> superOpTypePart t
 	C.TFetters t fs		-> superOpTypePart t
 
-	-- all function objects are considered to be 'Thunk'
-	C.TFunEC{}		-> C.makeTData Var.primTThunk C.KValue []
-
 	-- an unboxed var of airity zero, eg Int32#
 	C.TCon (C.TyConData name kind)
 	 | C.isUnboxedT tt
@@ -769,6 +766,10 @@ superOpTypePart	tt
 			-- boxed types are just 'Data'
 			| Just (v, k, ts)	<- C.takeTData tt
 			= C.makeTData Var.primTData k []
+			
+			-- all function objects are considered to be 'Thunk'
+			| Just _		<- C.takeTFun tt
+			= C.makeTData Var.primTThunk C.KValue []
 			
 			| otherwise
 			= C.makeTData Var.primTObj C.KValue []

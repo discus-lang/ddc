@@ -226,18 +226,20 @@ trimClosureC_t quant rsData tt
 	--       function then we could trim it out here, but it shouldn't hurt too much to 
 	--       leave it in. (it's always safe to _increase_ the closure)
 	--
---	TData v ts	-> catMap down ts
-
 	TApp{}
-	 -> case takeTData tt of
-	 	Just (v, k, ts)	-> catMap down ts
-		_		-> panic stage
-					$ "trimClosureC_t: no match for (" % tt % ")"
-
-	-- An object of type (t1 -($c1)> t2) does not contain a value of 
-	-- either type t1 or t2.  nly the closure portion of a function actually holds data.
-	TFunEC t1 t2 eff clo	
-	 -> down clo
+	 -> let result
+			| Just (v, k, ts)	<- takeTData tt
+			= catMap down ts
+			
+			-- An object of type (t1 -($c1)> t2) does not contain a value of 
+			-- either type t1 or t2.  nly the closure portion of a function actually holds data.
+			| Just (t1, t2, eff, clo) <- takeTFun tt
+			= down clo
+			
+			| otherwise
+			= panic stage
+			$ "trimClosureC_t: no match for (" % tt % ")"
+	   in result
 
 	TEffect{}	-> []
 	TFree v t	-> [trimClosureC quant rsData tt]

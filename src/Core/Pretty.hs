@@ -427,18 +427,35 @@ instance Pretty Type PMode where
 	 -> prettyTypeB t1 % " :- " % ", " %!% fs
 
 	TApp t1 t2
-	 -> let	pprAppLeft x 
-	 	  | x =@= TApp{} 	= ppr x
-		  | otherwise		= prettyTypeB x
+	 -> let result
+	 		| Just (t1, t2, eff, clo)	<- takeTFun xx
+			= case (eff, clo) of
+			 	(TBot KEffect, 	TBot KClosure)	
+				 -> prettyTypeBF t1 % " -> " % prettyTRight t2
 
-		pprAppRight x
-		  | x =@= TVar{} || x =@= TVarMore{}	
-		  = ppr x
+				(eff,   	TBot KClosure)	
+				 -> prettyTypeBF t1 % " -(" % eff % ")> " % prettyTRight t2
+		
+				(TBot KEffect,	clo)		
+				 -> prettyTypeBF t1 % " -(" % clo % ")> " % prettyTRight t2
 
-		  | otherwise		
-		  = prettyTypeB x
+				(eff,   	clo)		
+				 -> prettyTypeBF t1 % " -(" % prettyTypeB eff % " " % prettyTypeB clo % ")> " % prettyTRight t2
 
-	    in	pprAppLeft t1 % " " % pprAppRight t2
+			| otherwise
+			= let	pprAppLeft x 
+			 	  | x =@= TApp{} 	= ppr x
+				  | otherwise		= prettyTypeB x
+
+				pprAppRight x
+				  | x =@= TVar{} || x =@= TVarMore{}	
+				  = ppr x
+
+				  | otherwise		
+				  = prettyTypeB x
+
+			 in	pprAppLeft t1 % " " % pprAppRight t2
+	   in result
 
 	TSum	k ts	-> k % "{" % "; " %!% ts % "}"
 
@@ -461,21 +478,6 @@ instance Pretty Type PMode where
 
 	TCon tyCon
 	 -> ppr tyCon
-
-	-- data
-	TFunEC t1 t2 eff clo
-	 -> case (eff, clo) of
-	 	(TBot KEffect, 	TBot KClosure)	
-		 -> prettyTypeBF t1 % " -> " % prettyTRight t2
-
-		(eff,   	TBot KClosure)	
-		 -> prettyTypeBF t1 % " -(" % eff % ")> " % prettyTRight t2
-
-		(TBot KEffect,	clo)		
-		 -> prettyTypeBF t1 % " -(" % clo % ")> " % prettyTRight t2
-
-		(eff,   	clo)		
-		 -> prettyTypeBF t1 % " -(" % prettyTypeB eff % " " % prettyTypeB clo % ")> " % prettyTRight t2
 
 	-- effect
 	TEffect v xs	-> " " %!% (pv v : map prettyTypeB xs)
@@ -521,7 +523,7 @@ prettyTypeB t
 	_		-> "(" % t % ")" 	
 
 prettyTypeBF e
-	| TFunEC{}	<- e
+	| isJust (takeTFun e)
 	= "(" % e % ")"
 
 	| otherwise

@@ -59,7 +59,7 @@ maybeSlurpTypeX	xx
 	
 	| XLam v t x eff clo	<- xx
 	, Just x'		<- maybeSlurpTypeX x
-	= Just $ TFunEC t x' eff clo
+	= Just $ makeTFun t x' eff clo
 	
 	| XTet vts x		<- xx
 	, Just x'		<- maybeSlurpTypeX x
@@ -140,7 +140,7 @@ dropXTau xx env tt
 	
 	-- decend into XLams
 	| XLam v t x eff clo	<- xx
-	, TFunEC _ t2 _ _	<- tt
+	, Just (_, t2, _, _)	<- takeTFun tt
 	= XLam v t (dropXTau x env t2) eff clo
 	
 	-- If we see an XTet on the way down then we won't need to give a TWhere

@@ -530,14 +530,6 @@ instance Monad m => TransM m Type where
 	 -> do	tyCon'		<- transZM table tyCon
 	 	return		$ TCon tyCon'
 
-	-- data
-	TFunEC t1 t2 eff clo
-	 -> do	t1'		<- followT  table t1
-	 	t2'		<- followT  table t2
-		eff'		<- followT  table eff
-		clo'		<- followT  table clo
-		transT table	$ TFunEC t1' t2' eff' clo'
-		
 	-- effect
 	TEffect v ts
 	 -> do	v'		<- followV_free  table v

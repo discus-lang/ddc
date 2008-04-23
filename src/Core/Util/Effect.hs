@@ -46,8 +46,6 @@ crushEffs tt
 slurpDataRT :: Type -> [Type]
 slurpDataRT tt
  = case tt of
-	TFunEC{}	-> []
-
 	TApp t1 t2
 	 -> case takeTData tt of
 	 	Just (v, k, ts)	-> catMap slurpDataRT ts

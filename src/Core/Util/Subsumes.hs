@@ -151,8 +151,8 @@ subsumes3 table t s
 
 	-- SubFun
 	-- fun
- 	| TFunEC t1 t2 tEff tClo	<- t
-	, TFunEC s1 s2 sEff sClo	<- s
+ 	| Just (t1, t2, tEff, tClo)	<- takeTFun t
+	, Just (s1, s2, sEff, sClo)	<- takeTFun s
 	, subsumes1 table s1 t1
 	, subsumes1 table t2 s2
 	, subsumes1 table tEff sEff
@@ -176,9 +176,9 @@ subsumes3 table t s
 	--
 	-- G[e :> E] |- (a -(e)> b)  <: (a -(E)> b)
 	--
-	| TFunEC t1 t2 tEff@(TVar KEffect vE) tClo	<- s
+	| Just (t1, t2, tEff@(TVar KEffect vE), tClo)	<- takeTFun s
 	, Just tE		<- Map.lookup vE table
-	, subsumes1 table t (TFunEC t1 t2 tE tClo)
+	, subsumes1 table t (makeTFun t1 t2 tE tClo)
 --	= warning stage
 --		("subsumes: Used SubReplay for (" % s % ")\n")
 	= (True, "SubReplay")

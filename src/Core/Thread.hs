@@ -166,11 +166,13 @@ rewriteWitness instMap tt
 
 	-- function types are always assumed to be lazy, 
 	--	Lazy witnesses on them are trivially satisfied.
-	| TClass vC [TFunEC{}]		<- tt
+	| TClass vC [t1]		<- tt
+	, isJust (takeTFun t1)
 	, vC == primLazyH
 	= return tt
 
-	| TClass vC [TFetters TFunEC{} _]	<- tt
+	| TClass vC [TFetters t1 _]	<- tt
+	, isJust (takeTFun t1)
 	, vC == primLazyH
 	= return tt
 	

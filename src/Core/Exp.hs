@@ -314,10 +314,6 @@ data Type
 	| TTop		Kind
 	| TBot		Kind
 
-	-- data
-	| TFunEC	Type Type Effect Closure	-- ^ A function with an effect and closure.
---	| TFun		Type Type			-- ^ Functions without effect or closure information
---							--	Used for operational types.
 	-- effect
 	| TEffect 	Var [Type]			-- ^ a manifest effect
 
