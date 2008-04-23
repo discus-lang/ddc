@@ -80,7 +80,7 @@ staticRsDataT tt
  	TData k v ts		-> Set.unions $ map staticRsDataT ts
 
 	TFun{}			-> Set.empty
-	TFetters fs t		-> staticRsDataT t
+	TFetters t fs		-> staticRsDataT t
 	TForall vks t		-> staticRsDataT t
 	
 	TFree v t		-> staticRsDataT t
@@ -106,7 +106,7 @@ staticRsClosureT
 
 staticRsClosureT t
  = case t of
-	TFetters fs t		-> staticRsClosureT t
+	TFetters t fs		-> staticRsClosureT t
  	TFun t1 t2 eff clo	-> staticRsDataT clo
 
 	-- TODO: we're assuming that all args are tangible. This isn't strictly

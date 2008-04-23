@@ -80,7 +80,7 @@ takeKindOfType tt
 takeKindOfType' tt
  = case tt of
  	TForall vks t	-> takeKindOfType t
-	TFetters fs t	-> takeKindOfType t
+	TFetters t fs	-> takeKindOfType t
 	
 	TSum k ts	-> Just k
 	TMask k _ _	-> Just k

@@ -751,7 +751,7 @@ instance Rename Type where
 			return tt
 -}
 
-	TFetters fs t
+	TFetters t fs
 	 -> do
 	 	let bindingVars	=  catMaybes $ map takeBindingVarF fs
 
@@ -772,7 +772,7 @@ instance Rename Type where
 
 			fs'	<- rename fs
 			t'	<- rename t
-			return	$ TFetters fs' t'
+			return	$ TFetters t' fs'
 			 	
 	TVar k v 	
 	 -> do 	v'	<- lbindN (spaceOfKind k) v

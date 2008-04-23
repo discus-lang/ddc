@@ -25,9 +25,9 @@ stage	= "Type.Port"
 dropFMoresT :: Set Type -> Type -> SquidM Type
 dropFMoresT tsContra tt
  = case tt of
- 	TFetters fs t	
+ 	TFetters t fs
 	 -> do	fs'	<- mapM (letifyFs tsContra) fs
-	 	return	$ TFetters fs' t
+	 	return	$ TFetters t fs'
 
 	t -> return t
 	
@@ -62,7 +62,7 @@ slurpContraClassVarsT :: Type -> [Type]
 slurpContraClassVarsT tt
  = case tt of
 	TForall vks t		-> slurpContraClassVarsT t
-	TFetters fs t		-> slurpContraClassVarsT t
+	TFetters t fs		-> slurpContraClassVarsT t
  	TFun t1 t2 eff clo	-> collectTClassVars t1 ++ slurpContraClassVarsT t2
 	TData{}			-> []
 	TApp{}			-> []

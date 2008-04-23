@@ -37,7 +37,7 @@ maskLocalT :: Set Type -> Type -> Type
 maskLocalT tsVis tt
  = case tt of
 	TForall  vks t1		-> TForall vks (maskLocalT tsVis t1)
-	TFetters fs  t1		-> addFetters (catMaybes $ map (maskF tsVis) fs) t1
+	TFetters t1 fs		-> addFetters (catMaybes $ map (maskF tsVis) fs) t1
 	_ 			-> tt
 
 
@@ -93,7 +93,7 @@ visibleRsT tt
 	TForall vks t
 	 -> visibleRsT t
 	 
-	TFetters fs t
+	TFetters t fs
 	 -> visibleRsT t
 
 	TSum k ts

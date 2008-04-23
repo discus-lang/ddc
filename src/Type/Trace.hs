@@ -68,7 +68,7 @@ loadType incFs cid cidsReachable
 			$  Set.toList cidsReachable
 
 	k		<- kindOfCid cid
-	let tTrace	= TFetters fsLet (TClass k cid)
+	let tTrace	= TFetters (TClass k cid) fsLet
 	return tTrace
 
 
@@ -128,7 +128,7 @@ loadTypeNode2 incFs cid c
 		--	then we can strip them here because they're cids they'll
 		--	already be returned as their separate nodes
 		let tX	= case t' of
-				TFetters fs t2	
+				TFetters t2 fs
 				 | and	$ map (\f -> case f of
 				 		FLet  (TClass _ _) _	-> True
 						FMore (TClass _ _) _	-> True

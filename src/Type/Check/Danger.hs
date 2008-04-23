@@ -52,7 +52,7 @@ dangerT rsMutable fsClosure tt
 	 -> dangerT rsMutable fsClosure t
 
 	-- fetters
-	TFetters fs t1
+	TFetters t1 fs
 	 ->     -- remember any regions flagged as mutable
 	    let	rsMoreMutable	= Set.fromList
 	 			$ [r	| FConstraint v [r]	<- fs

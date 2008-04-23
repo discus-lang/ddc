@@ -187,11 +187,11 @@ packTypeLs ld ls tt
 	   	return	$ TForall vks t'
 
 	-- keep fetters under foralls.
-	TFetters fs (TForall vks t)
+	TFetters (TForall vks t) fs 
 	 -> do	t'	<- packTypeLs ld ls t
-		return	$ TForall vks (TFetters fs t')
+		return	$ TForall vks (TFetters t' fs)
 
-	TFetters fs t
+	TFetters t fs
 	 -> packTFettersLs ld ls tt
 
 	TSum k@KClosure ts
@@ -280,7 +280,7 @@ packTypeLs ld ls tt
 	TFree v1 (TBot KClosure)
 		-> return $ TBot KClosure
 
-	TFree v1 (TFetters _ (TBot KClosure))
+	TFree v1 (TFetters (TBot KClosure) _ )
 		-> return $ TBot KClosure
 
 	TFree v1 (TDanger t1 (TFree v t2))
@@ -355,10 +355,10 @@ packTFettersLs
 packTFettersLs ld ls tt
  = {-# SCC "packTFettersLs" #-}
    case tt of
-	TFetters fs (TError{})
+	TFetters TError{} fs
 	 -> return tt
 
- 	TFetters fs t
+ 	TFetters t fs
 	 -> do	let ls'	= Map.union 
 	 			(Map.fromList [(t1, t2) | FLet t1 t2 <- fs])
 				ls
@@ -478,7 +478,7 @@ inlineFsT :: Type -> Type
 inlineFsT tt
  = {-# SCC "inlineFsT" #-}
    case tt of
- 	TFetters fs t
+ 	TFetters t fs
 	 -> let	sub	= Map.fromList
 			$ catMaybes
 			$ map (\f -> case f of
@@ -560,7 +560,7 @@ sortFs fs
 sortFsT :: Type -> Type
 sortFsT tt
  = case tt of
- 	TFetters fs t	-> TFetters (sortFs fs) t
+ 	TFetters t fs	-> TFetters t (sortFs fs) 
 	_		-> tt
 
 

@@ -37,13 +37,13 @@ reduceContextT
 	
 reduceContextT classInst tt
  = case tt of
- 	TFetters fs tShape
+ 	TFetters tShape fs
 	 -> let	fs'	= concat
 	 		$ map (reduceContextF (flattenT tt) classInst) fs
 
 	    in	case fs' of
 	    		[]	-> tShape
-			_	-> TFetters fs' tShape
+			_	-> TFetters tShape fs'
 			
 	_ 		-> tt
 	

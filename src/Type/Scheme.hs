@@ -163,7 +163,7 @@ generaliseType' varT tCore envCids
 slurpFetters tt
 	= case tt of
 		TForall vks t'	-> slurpFetters t'
-		TFetters fs _	-> fs
+		TFetters _ fs	-> fs
 		_		-> []
 
 
@@ -206,7 +206,7 @@ cleanType tsSave tt
 checkContext :: Type -> SquidM ()
 checkContext tt
  = case tt of
- 	TFetters fs t	-> mapM_ checkContextF fs
+ 	TFetters t fs	-> mapM_ checkContextF fs
 	_		-> return ()
  
 checkContextF ff

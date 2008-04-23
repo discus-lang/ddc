@@ -64,7 +64,7 @@ stage	= "Type.Util.Cut"
 
 -- Cut loops in this type
 cutLoopsT :: Type -> Type
-cutLoopsT (TFetters fs tt)
+cutLoopsT (TFetters tt fs)
  = let	
 	-- split the fetters into the let/more and the rest.
 	(fsLetMore, fsOther)	
@@ -82,7 +82,7 @@ cutLoopsT (TFetters fs tt)
 	fsLetMore'	= foldl' (cutLoopsF Set.empty) sub cidsRoot
 	
 	-- rebuild the type, with the new fetters
-     in	TFetters (Map.elems fsLetMore' ++ fsOther) tt
+     in	TFetters tt (Map.elems fsLetMore' ++ fsOther)
 
 cutLoopsT tt
  	= tt
@@ -134,7 +134,7 @@ cutT cid cidsEntered tt
 
 	-- These fetters are wrapped around a type in the RHS of our traced type
 	--	they're from type which have already been generalised
-	TFetters fs  t		-> TFetters 	(map (cutF_follow cidsEntered) fs) (down t)
+	TFetters t fs		-> TFetters 	(down t) (map (cutF_follow cidsEntered) fs)
 
 	TSum  k ts		-> TSum 	k (map down ts)
 	TMask k t1 t2		-> TMask 	k (down t1) (down t2)

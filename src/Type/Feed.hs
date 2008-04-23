@@ -125,7 +125,7 @@ feedType mParent t
 
 feedType'	mParent t
  = case t of
-	TFetters fs t
+	TFetters t fs
 	 -> do	
 	 	-- Rename the vars on the LHS of FLet bindings to make sure
 	 	--	they don't conflict with any vars already in the graph.

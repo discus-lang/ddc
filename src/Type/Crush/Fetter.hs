@@ -289,7 +289,7 @@ purifyEff eff
 slurpHeadR :: Type -> Maybe Type
 slurpHeadR tt
  = case tt of
- 	TFetters fs t	
+ 	TFetters t fs
 	 -> slurpHeadR t
 
 	TData k v (tR@(TClass KRegion _) : _)

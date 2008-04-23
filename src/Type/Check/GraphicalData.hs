@@ -20,7 +20,7 @@ import Type.Plate.Collect
 --
 checkGraphicalDataT :: Type -> [ClassId]
 
-checkGraphicalDataT (TFetters fs t)
+checkGraphicalDataT (TFetters t fs)
  = let	
 	-- select only the data portion of this type's FLets
  	fsData		= [ f 	| f@(FLet t1 t2) <- fs

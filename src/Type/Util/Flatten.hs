@@ -30,7 +30,7 @@ flattenT' sub block tt
 
 	TForall vks t	-> TForall vks (down t)
 
-	TFetters fs t
+	TFetters t fs
 	 -> let (fsWhere, fsRest)
 	 		= partition (=@= FLet{}) fs
 

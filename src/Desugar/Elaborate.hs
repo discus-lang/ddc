@@ -55,7 +55,7 @@ elaborateT :: Type -> ElabM Type
 elaborateT tt
  = case tt of
 	TFun{}			-> elaborateT_fun tt
-	TFetters fs (TFun{})	-> elaborateT_fun tt
+	TFetters TFun{} fs 	-> elaborateT_fun tt
 
 	_	-> return tt
 

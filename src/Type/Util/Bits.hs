@@ -234,14 +234,14 @@ addFetters	fsMore	t
 	TForall vks x
 	 -> TForall vks (addFetters fsMore x)
 
-	TFetters fs  x	
+	TFetters x fs
 	 -> case fs ++ fsMore of
 	 	[]	-> x
-		ff	-> TFetters (nub ff) x
+		ff	-> TFetters x (nub ff)
 	 
 	_ -> case fsMore of
 		[]	-> t
-		ff	-> TFetters (nub ff) t
+		ff	-> TFetters t (nub ff)
 
 addFetters_front :: [Fetter] -> Type -> Type
 addFetters_front fsMore t
@@ -249,14 +249,14 @@ addFetters_front fsMore t
 	TForall vks x
 	 -> TForall vks (addFetters_front fsMore x)
 
- 	TFetters fs x
+ 	TFetters x fs
 	 -> case fsMore ++ fs of
 	 	[]	-> x
-		ff	-> TFetters (nub ff) x
+		ff	-> TFetters x (nub ff)
 		
 	_ -> case fsMore of
 		[]	-> t
-		ff	-> TFetters (nub ff) t
+		ff	-> TFetters t (nub ff)
 
 -- | Take the fetters of this type
 
@@ -275,7 +275,7 @@ makeOpTypeT :: Type -> Maybe Type
 makeOpTypeT tt
  = case tt of
  	TForall vks t		-> makeOpTypeT t
-	TFetters fs t		-> makeOpTypeT t
+	TFetters t fs		-> makeOpTypeT t
 	TFun t1 t2 eff clo	
 	 -> case (makeOpTypeT2 t1, makeOpTypeT t2) of
 	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TBot KEffect) (TBot KClosure)
@@ -290,7 +290,7 @@ makeOpTypeT tt
 makeOpTypeT2 tt
  = case tt of
  	TForall vks t		-> makeOpTypeT2 t
-	TFetters fs t		-> makeOpTypeT2 t
+	TFetters t fs		-> makeOpTypeT2 t
 	TVar{}			-> Just $ TData KValue primTObj   []
 	TFun{}			-> Just $ TData KValue primTThunk []
 	TData{}			-> makeOpTypeData tt
@@ -356,7 +356,7 @@ slurpVarsRD' tt
 	TClass KValue   _	-> [tt]
 	TClass _ _		-> []
 
-	TFetters fs t		-> slurpVarsRD' t
+	TFetters t fs		-> slurpVarsRD' t
 
 	TError k t		-> []
 

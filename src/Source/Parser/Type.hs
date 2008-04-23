@@ -111,7 +111,7 @@ pType_bodyFetters
 	
 	case concat $ maybeToList mContext ++ maybeToList mFetters of
 		[]	-> return body
-		fs	-> return $ TFetters fs body	
+		fs	-> return $ TFetters body fs
 	
 	
 -- Parse some fetters written as a Haskell style type context

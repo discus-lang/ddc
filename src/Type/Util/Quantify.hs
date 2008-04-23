@@ -31,7 +31,7 @@ import qualified Data.Set	as Set
 --
 
 quantifyVarsT :: [(Var, Kind)] -> Type -> Type
-quantifyVarsT vks tt@(TFetters fs t)
+quantifyVarsT vks tt@(TFetters t fs)
  = let
 	-- build a map of which vars need to come before others
  	deps		= Map.fromListWith (++) 

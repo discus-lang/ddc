@@ -45,7 +45,7 @@ toCoreT' table tt
 	
 	
 	-- Add :> constraints on type variables directly to the quantifer.
-	T.TForall vks (T.TFetters fs t)
+	T.TForall vks (T.TFetters t fs)
 	 -> let	(fsMore, fsRest)	
 			= partition ((=@=) T.FMore{}) fs
 
@@ -62,7 +62,7 @@ toCoreT' table tt
 		table'	= Map.union table vtsMore
 
 	   in	foldl	(\t (b, k) -> C.TForall b k t)
-	   		(toCoreT' table' $ T.TFetters fsRest t)
+	   		(toCoreT' table' $ T.TFetters t fsRest)
 			(reverse bsKinds)
 
 	-- Forall with no fetters underneath
@@ -75,7 +75,7 @@ toCoreT' table tt
 	   		(down t)
 			(reverse vsKinds)
 	   
-	T.TFetters fs t
+	T.TFetters t fs
 	 -> let	
 	 	-- separate out all the FLet bindings, we'll add these as a TWhere to the core type
 	 	([fsLet, fsMore], fsRest1)

@@ -48,7 +48,7 @@ finaliseT' bound def tt
 	 	t'	= finaliseT' bound' def t
 	    in	TForall vks t'
 	    
-	TFetters fs t
+	TFetters t fs
 	 -> let	vksMore	= Map.fromList 
 	 		$ map (\v -> (v, (kindOfSpace $ Var.nameSpace v, Nothing)))
 	 		$ catMaybes 
@@ -59,7 +59,7 @@ finaliseT' bound def tt
 
 	    	fs'	= map (finaliseF bound' def) fs
 		t'	= finaliseT' bound' def t
-	    in	TFetters fs' t'
+	    in	TFetters t' fs'
 	    
 	TSum  k ts	-> makeTSum k (map down ts)
 	TMask k t1 t2	-> makeTMask k (down t1) (down t2)

@@ -136,9 +136,9 @@ instance Lint Type where
 	 | otherwise			-> TForall vks (lint t)
 
 
-	TFetters fs t			
+	TFetters t fs
 	 | isNil fs			-> death tt "TFetters - list is empty"
-	 | otherwise			-> TFetters fs (lint t)
+	 | otherwise			-> TFetters (lint t) fs
 
   	TVar k v
 	 | not $ inSpaceT [v]		-> death tt "TVar - var in wrong namespace."

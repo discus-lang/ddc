@@ -660,9 +660,9 @@ instance Rewrite S.Type S.Type where
 	 -> do	t'	<- rewrite t
 	 	return	$ TForall vks t'
 		
-	TFetters fs t
+	TFetters t fs
 	 -> do	t'	<- rewrite t
-	 	return	$ TFetters fs t'
+	 	return	$ TFetters t' fs
 		
 	TWild k		-> return tt
 

@@ -68,9 +68,9 @@ elaborateRsT' tt
 		return	( tt
 			, vks')
 
-	| TFetters fs x		<- tt
+	| TFetters x fs		<- tt
 	= do	(x', vks')	<- elaborateRsT' x
-		return	( TFetters fs x'
+		return	( TFetters x' fs
 			, vks')
 
 	| TVar{}	<- tt	
@@ -212,9 +212,9 @@ elaborateCloT' env tt
 			
 	-- if we see an existing set of fetters,
 	--	then drop the new ones in the same place.
-	| TFetters fs x		<- tt
+	| TFetters x fs		<- tt
 	= do	(x', fs', mClo)	<- elaborateCloT' env x
-		return	( TFetters (fs ++ fs') x'
+		return	( TFetters x' (fs ++ fs')
 			, []
 			, mClo)
 			
@@ -327,9 +327,9 @@ hookEffT hookVar tt
 		, mEff)
 	
 	-- decend into fettered types
-	| TFetters fs t		<- tt
+	| TFetters t fs		<- tt
 	, Just (t', var, mEff)	<- hookEffT hookVar t
-	= Just	( TFetters fs t'
+	= Just	( TFetters t' fs
 		, var
 		, mEff)
 
@@ -378,11 +378,11 @@ addEffectsToFsT effs var tt
  	TForall vks t1 
 	 -> TForall vks (addEffectsToFsT effs var t1)
 
-	TFetters fs t1
-	 -> TFetters (addEffectsToFs var effs fs) t1
+	TFetters t1 fs
+	 -> TFetters t1 (addEffectsToFs var effs fs)
 	 
 	tx
-	 -> TFetters [FLet (TVar KEffect var) (makeTSum KEffect effs)] tx
+	 -> TFetters tx [FLet (TVar KEffect var) (makeTSum KEffect effs)]
 	 
 
 -- didn't find a fetter with this var, so add a new one
@@ -408,7 +408,7 @@ slurpConRegions
 slurpConRegionsCo tt
  = case tt of
  	TForall vks t		-> slurpConRegionsCo t
-	TFetters fs t		-> slurpConRegionsCo t
+	TFetters t fs		-> slurpConRegionsCo t
 
 	TFun t1 t2 eff clo
 	 -> slurpConRegionsCon t1

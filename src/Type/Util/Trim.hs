@@ -65,7 +65,7 @@ trimClosureT quant rsData tt
 
 trimClosureT' quant rsData tt		
  = case tt of
- 	TFetters fs t	
+ 	TFetters t fs
 	  -> let fs'	= catMaybes 
 	  		$ map (trimClosureT_fs quant rsData) fs
 	     in  addFetters fs' t
@@ -144,7 +144,7 @@ trimClosureC' quant rsData cc
 	 -> let	t1'	= down t1
 	    in	TMask KClosure t1' t2
 
-	TFetters fs c
+	TFetters c fs
 	 -> addFetters 
 	 	(catMaybes $ map (trimClosureC_fs quant rsData) fs) 
 	 	(down c)
@@ -222,7 +222,7 @@ trimClosureC_t' tag quant rsData tt
 		
 
 	-- Trim the fetters of this data
- 	TFetters fs c		
+ 	TFetters c fs
 	 -> let	fs'	= catMaybes $ map (trimClosureC_fs quant rsData) fs
 	    	cBits	= down c
 	    in	map (addFetters fs') cBits

@@ -22,11 +22,11 @@ stripFLetsT	tt
 	    in	( TForall vks t'
 	    	, fs)
 
-	TFetters fs t
+	TFetters t fs
 	 -> let	(t', fs')	= stripFLetsT t
 		(fsLet, fsOther)	
 				= partition isFLet fs
-	    in	( TFetters fsOther t'
+	    in	( TFetters t' fsOther
 	    	, fsLet ++ fs')
 	
 	TSum k ts
@@ -115,11 +115,11 @@ stripMonoFLetsT tt
 	 -> let (t', fsMono)	= stripMonoFLetsT t
 	    in	(TForall vks t', fsMono)
 	 
-	TFetters fs t
+	TFetters t fs
 	 -> let	(fsMono, fsOther)	= partition isMonoFLet fs
 		(t', fsMono2)		= stripMonoFLetsT t
 
-	    in	(TFetters fsOther t', fsMono ++ fsMono2)
+	    in	(TFetters t' fsOther, fsMono ++ fsMono2)
 	    
 	TSum k ts
 	 -> let	(ts', fssMono)		= unzip $ map stripMonoFLetsT ts

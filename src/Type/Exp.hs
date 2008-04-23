@@ -78,15 +78,17 @@ data Type
 	= TNil						-- ^ A hole. Something is missing.
 
 	| TForall	[(Var, Kind)] Type		-- ^ Universal quantifier.
-	| TFetters	[Fetter]      Type		-- ^ Holds extra constraint information.
+--	| TContext		Kind	Type
+	| TFetters	Type	[Fetter]		-- ^ Holds extra constraint information.
+	| TApp		Type	Type			-- ^ General type application.
 
 	| TSum		Kind 	[Type]
 	| TMask		Kind	Type	Type		-- ^ Mask out some effects/vars from this effect/closure
-	| TVar     	Kind 	Var			-- ^ A type variable.
 
-	| TApp		Type	Type			-- ^ General type application.
 	| TCon		TyCon
-
+	| TVar     	Kind 	Var			-- ^ A type variable.
+--	| TVarMore	Kind	Var	Type		-- ^ an effect/closure var with an embedded :> constraint
+							--	from its quantifier
 	| TTop		Kind
 	| TBot		Kind
 	

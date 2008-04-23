@@ -40,7 +40,7 @@ checkMain' vMainT tMain tt
 	TForall vks t
 	 -> checkMain' vMainT tMain t
 
- 	TFetters fs t	
+ 	TFetters t fs
 	 -> checkMain' vMainT tMain t
 
 	TFun (TData _ v1 []) (TData _ v2 []) eff clo

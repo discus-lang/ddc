@@ -26,13 +26,14 @@ instance Pretty Type PMode where
  	TNil		-> ppr "@TNil"
 
 	TForall vs t	-> "forall " % " " %!% (map prettyVK vs) % ". " % t
-	TFetters fs t	-> t % " :- " % ", " %!% fs
+	TFetters t fs	-> t % " :- " % ", " %!% fs
 	TSum k  es	-> k  % "{" % "; " %!% es % "}"
 	TMask k  t1 t2	-> prettyTB t1 % " \\ " % prettyTB t2
 	TApp t1 t2	-> parens t1 % " " % prettyTRight t2
 	TCon tycon	-> ppr tycon
 
 	TVar k v	-> pprVarKind v k 
+--	TVar k v	-> pprVarKind v k 
 
 	TTop k		-> k % "Top"
 	TBot k		-> k % "Bot"
@@ -139,7 +140,7 @@ prettyTypeSplit	   x
 	 
 prettyTypeSplit2 x
  = case x of
- 	TFetters fs t
+ 	TFetters t fs
 	 -> t 	% "\n"
 	 % ":- " % prettyTypeFS fs
 	

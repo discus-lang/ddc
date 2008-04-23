@@ -40,10 +40,10 @@ linkType mParent bound tt
 	 -> do	t'	<- linkType mParent (map fst vks ++ bound) t
 	 	return	$ TForall vks t'
 		
-	TFetters fs t
+	TFetters t fs
 	 -> do	t'	<- linkType mParent bound t
 	 	fs'	<- mapM (linkFetter mParent bound) fs
-		return	$ TFetters fs' t'
+		return	$ TFetters t' fs'
 
 
 	TSum k es

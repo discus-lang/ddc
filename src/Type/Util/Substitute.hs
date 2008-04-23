@@ -79,10 +79,10 @@ subTT_cutM' sub cut tt
 	 -> do	t'	<- down t
 	 	return	$ TForall vks t'
 
-	TFetters fs t		
+	TFetters t fs
 	 -> do	t'	<- down t
 		fs'	<- mapM (subTTf_cutM' sub cut) fs
-	 	return	$ TFetters fs' t'
+	 	return	$ TFetters t' fs'
 
 	TSum k ts
 	 -> do	ts'	<- mapM down ts
