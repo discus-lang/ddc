@@ -92,14 +92,8 @@ data Type
 	| TTop		Kind
 	| TBot		Kind
 	
-	-- data
-	| TData     	Kind Var [Type]			-- ^ A data type constructor.
-	| TFun          Type Type Effect Closure	-- ^ A function with an effect and environment.
-
-	-- effect
+	-- effect and closure constructors are always fully applied..
 	| TEffect	Var [Type]			-- ^ An effect constructor
-	
-	-- closure
 	| TFree		Var Type			-- ^ An tagged object which is free in the closure.
 							--	The tag should be a Value var.
 							--	The type parameter should be a value type, region or closure.
@@ -109,16 +103,21 @@ data Type
 	
 	| TTag		Var				-- ^ A tag for one of these objects, used in the RHS of TMask.
 
-	-- wildcards	
-	| TWild		Kind				-- ^ Type wildcard, can be unified with anything of the given kind.
 
-	-- used in solver
+	-- Type wildcards can be unified with anything of the given kind.
+	-- 	Wildcards are used in the source language and type inference, but not in core.
+	| TWild		Kind				-- ^ 
+
+	-- Type sugar, used in source and desugar stages only.
+	| TElaborate	Elaboration Type
+
+	-- Helpers for type inference. Not present in core.
+	| TData     	Kind Var [Type]			-- ^ A data type constructor. Perhaps partially applied.
+	| TFun          Type Type Effect Closure	-- ^ A function with an effect and environment. Fully applied.
 	| TClass	Kind	ClassId			-- ^ A reference to some equivalence class.
 	| TFetter	Fetter				-- ^ Holds a fetter, so we can put it in an equivalence class.
 	| TError        Kind	[Type]			-- ^ Classes with unification errors get their queues set to [TError].
 
-	-- Type sugar, used during foreign import/export
-	| TElaborate	Elaboration Type
 	deriving (Show, Eq)
 
 
