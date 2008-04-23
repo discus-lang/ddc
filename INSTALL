@@ -7,11 +7,11 @@
   1) Download the source.
 
      Either:
-      a) grab the source tarball from http://code.google.com/p/disciple
+      a) grab the latest source tarball from http://code.google.com/p/disciple
      
       b) or use darcs to get the head branch:
 
-          $ darcs get http://code.haskell.org/~benl/disciple-HEAD
+          $ darcs get http://code.haskell.org/ddc/disciple-HEAD
       
   2) Make a local copy of the build config file.
 
