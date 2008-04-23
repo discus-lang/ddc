@@ -31,7 +31,7 @@ module Core.Util.Bits
 	
 	, buildApp
 	, flattenApps,	flattenAppsE,	unflattenAppsE
-	, flattenFun,	unflattenFun,	unflattenFunE
+	, flattenFun,	unflattenFunE
 		
 	, chopLambdas
 
@@ -269,15 +269,7 @@ flattenFun ::	Type -> [Type]
 flattenFun	xx
  = case xx of
 	TFunEC e1 e2 _ _	-> e1 : flattenFun e2
-	TFun   e1 e2		-> e1 : flattenFun e2
 	_			-> [xx]
-
-unflattenFun ::	[Type] 	-> Type
-unflattenFun	xx
- = case xx of
- 	x:[]		-> x
-	x:xs		-> TFun x (unflattenFun xs)
-
 
 -----
 unflattenFunE :: [Type] -> Type
@@ -431,13 +423,13 @@ slurpVarsRD_split rs ds (t:ts)
 	_			-> slurpVarsRD_split rs ds ts
 	
 slurpVarsRD' tt
-	| TFun{}		<- tt	= []
+--	| TFun{}		<- tt	= []
 
 	| TApp{}		<- tt
 	, Just (v, k, ts)	<- takeTData tt
 	= catMap slurpVarsRD' ts
 
-	| TFun{}		<- tt	= []
+--	| TFun{}		<- tt	= []
 
 	| TVar KRegion _	<- tt	= [tt]
 	| TVar KValue   _	<- tt	= [tt]

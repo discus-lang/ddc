@@ -254,16 +254,6 @@ instance FreeVars Type where
 		, freeVars t2 ]
 
 	-- data
-{-	TData v xs
-	 -> unions
-	 	[ fromList [v] 
-		, unions $ map freeVars xs ]
--}
-	TFun t1 t2
-	 -> unions
-	 	[ freeVars t1 
-		, freeVars t2 ]
-	
 	TFunEC	t1 t2 eff clo
 	 -> unions 
 	 	[ freeVars t1

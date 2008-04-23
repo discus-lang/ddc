@@ -531,16 +531,6 @@ instance Monad m => TransM m Type where
 	 	return		$ TCon tyCon'
 
 	-- data
-{-	TData v ts
-	 -> do	v'		<- followV_free  table v
-	 	ts'		<- followTs table ts
-		transT table	$ TData v' ts'
--}
-  	TFun t1 t2
-	 -> do	t1'		<- followT table t1
-	 	t2'		<- followT table t2
-		transT table	$ TFun t1' t2'
-		
 	TFunEC t1 t2 eff clo
 	 -> do	t1'		<- followT  table t1
 	 	t2'		<- followT  table t2

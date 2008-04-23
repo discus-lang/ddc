@@ -43,7 +43,6 @@ kindOfType t
 	   in	result	
 
 	TFunEC{}		-> KValue
-	TFun{}			-> KValue
 	
 	TEffect{}		-> KEffect
 	

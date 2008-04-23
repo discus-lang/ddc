@@ -698,7 +698,7 @@ superOpTypeP	pp
  = case pp of
  	C.PBind v x
 	 -> let	parts	= superOpType' x
-	    in	C.unflattenFun parts
+	    in	C.unflattenFunE parts
 
 	-- external functions and ctors carry their operational
 	--	types around with them.
@@ -712,7 +712,7 @@ superOpTypeP	pp
 -- | Work out the operational type of this expression
 superOpTypeX :: C.Exp -> C.Type
 superOpTypeX	xx
-	= C.unflattenFun $ superOpType' xx
+	= C.unflattenFunE $ superOpType' xx
 
 superOpType'	xx
  = case xx of

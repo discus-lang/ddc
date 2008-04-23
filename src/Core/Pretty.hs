@@ -463,9 +463,6 @@ instance Pretty Type PMode where
 	 -> ppr tyCon
 
 	-- data
-	TFun x1 x2
-	 -> prettyTypeBF x1 % " -> "  % x2
-
 	TFunEC t1 t2 eff clo
 	 -> case (eff, clo) of
 	 	(TBot KEffect, 	TBot KClosure)	
@@ -525,9 +522,6 @@ prettyTypeB t
 
 prettyTypeBF e
 	| TFunEC{}	<- e
-	= "(" % e % ")"
-	
-	| TFun{}	<- e
 	= "(" % e % ")"
 
 	| otherwise

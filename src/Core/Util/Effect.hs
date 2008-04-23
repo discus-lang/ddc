@@ -46,7 +46,6 @@ crushEffs tt
 slurpDataRT :: Type -> [Type]
 slurpDataRT tt
  = case tt of
- 	TFun{}		-> []
 	TFunEC{}	-> []
 
 	TApp t1 t2

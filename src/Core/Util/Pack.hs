@@ -141,16 +141,6 @@ packT1 tt
 	TTop k 		-> tt
 	 
 	-- data
-{-	TData v ts
-	 -> let	ts2	= map packT1 ts
-
-		-- lift fetters above args
-		(ts3, fss)	
-			= unzip
-			$ map slurpTFetters ts2
-
-	    in	makeTFetters (TData v ts3) (concat fss)
--}
 	TFunEC t1 t2 eff clo
 	 -> let (t1',  fs1)	= slurpTFetters $ packT1 t1
 	  	(t2',  fs2)	= slurpTFetters $ packT1 t2
@@ -159,11 +149,6 @@ packT1 tt
 
 	    in	makeTFetters (TFunEC t1' t2' eff' clo')
 	    		(fs1 ++ fs2 ++ fsE ++ fsC)
-	    
-	TFun t1 t2
-	 -> let	t1'	= packT1 t1
-	 	t2'	= packT1 t2
-	    in	TFun t1' t2'
 	    
 	-- effect
 	-- crush EReadH on the way

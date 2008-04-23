@@ -393,10 +393,6 @@ lintT tt (TFunEC t1 t2 eff clo)
 	lintT tt eff
 	lintT tt clo		
 		 	
-lintT tt (TFun t1 t2)
- = do	lintT tt t1
- 	lintT tt t2
-				
 lintT tt (TEffect v ts)
  = do	mapM_ (lintT tt) ts
   
