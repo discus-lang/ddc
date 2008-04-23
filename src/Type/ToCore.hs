@@ -144,7 +144,7 @@ toCoreTyCon :: T.TyCon -> C.TyCon
 toCoreTyCon tt
  = case tt of
  	T.TyConFun k 
-	 -> C.TyConFun (toCoreK k)
+	 -> C.TyConFun
 
 	T.TyConData v k
 	 -> C.TyConData v (toCoreK k)

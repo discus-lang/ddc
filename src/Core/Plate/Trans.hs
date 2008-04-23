@@ -582,6 +582,13 @@ instance Monad m => TransM m TyCon where
 	 -> do	name'	<- followV_free table tyConName
 	 	return	$ tt { tyConName = name' }
 
+	TyConClass { tyConName }
+	 -> do	name'	<- followV_free table tyConName
+	 	return	$ tt { tyConName = name' }
+
+	TyConPurify {}	 -> return tt
+	TyConPureJoin {} -> return tt
+
 -- Fetter ------------------------------------------------------------------------------------------
 instance Monad m => TransM m Fetter where
  transZM table ff
@@ -611,6 +618,7 @@ instance Monad m => TransM m Kind where
 	 	k2'	<- followK table k2
 		return	$ KFun k1' k2'
 		
+	KSuper{}	-> return KSuper
 	KClass v ts
 	 -> do	v'	<- followV_free table v
 	 	ts'	<- followTs table ts

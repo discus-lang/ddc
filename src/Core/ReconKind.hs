@@ -12,7 +12,31 @@ import Util
 
 stage	= "Core.ReconKind"
 
+-- | Take the kind of a tycon
+tyConKind :: TyCon -> Kind
+tyConKind tyCon
+ = case tyCon of
+	TyConFun			-> KFun KValue (KFun KValue (KFun KEffect (KFun KClosure KValue)))
+	TyConData { tyConDataKind }	-> tyConDataKind
+	TyConClass { tyConClassKind }	-> tyConClassKind	 
 
+
+	-- We don't give a real kind for TConPurify because its type rule requires
+	--	the witness to purity to be of the same region as the effect to be purified.
+	--	This is checked as a special case of TApp in kindOfType below, but we still want
+	--	something to give for its 'kind' in dumps of the CoreIR
+	
+	--	W :: (Const r) |- purify (Read r) W :: (Pure (Read r))
+
+	TyConPurify			-> KFun KEffect (KFun KSuper KSuper)
+
+	TyConPureJoin { tyConAirity }	
+	 -> let makeKind 0	= KSuper
+	 	makeKind n	= KFun KSuper (makeKind (n-1))
+	    in	makeKind tyConAirity
+	 	
+	
+-- | Reconstruct the kind of this type, kind checking along the way
 kindOfType :: Type -> Kind
 kindOfType t
  = case t of
@@ -41,11 +65,9 @@ kindOfType t
 			= panic stage $ "kindOfType: kind error\n"
 		
 	   in	result	
-
---	TFunEC{}		-> KValue
 	
+	-- effect and closure constructors are always fully applied
 	TEffect{}		-> KEffect
-	
 	TFree{}			-> KClosure
 
 	-- witnesses

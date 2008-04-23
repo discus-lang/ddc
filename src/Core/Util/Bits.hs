@@ -189,13 +189,13 @@ makeTApp' xx
 -- | Make a data type
 makeTData :: Var -> Kind -> [Type] -> Type
 makeTData v k ts
- = makeTApp (TCon TyConData { tyConName = v, tyConKind = k } : ts )
+ = makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k } : ts )
 	
 -- | take a data type
 takeTData :: Type -> Maybe (Var, Kind, [Type])
 takeTData tt
  = case tt of
- 	TCon TyConData { tyConName = v, tyConKind = k }
+ 	TCon TyConData { tyConName = v, tyConDataKind = k }
 		-> Just (v, k, [])
 		
 	TApp t1 t2
@@ -209,9 +209,7 @@ takeTData tt
 -- | make a function type
 makeTFun :: Type -> Type -> Effect -> Closure -> Type
 makeTFun t1 t2 eff clo
-	= TApp (TApp (TApp (TApp (TCon fun) t1) t2) eff) clo
-	where	fun	= TyConFun { tyConKind = KFun KValue (KFun KValue (KFun KEffect (KFun KClosure KValue))) }
-
+	= TApp (TApp (TApp (TApp (TCon TyConFun) t1) t2) eff) clo
 
 -- | break up a function type
 takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)

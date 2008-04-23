@@ -305,15 +305,16 @@ instance FreeVars Kind where
 	KEffect		-> Set.empty
 	KClosure	-> Set.empty
 
+	KFun k1 k2
+	 -> unions
+	 	[ freeVars k1 
+		, freeVars k2 ]
+
+	KSuper{}	-> Set.empty
 	KClass v ts
 	 -> unions
 	 	[ Set.singleton v
 		, unions $ map freeVars ts ]
 		
-	KFun k1 k2
-	 -> unions
-	 	[ freeVars k1 
-		, freeVars k2 ]
-	
 	KWitJoin ks
 	 -> freeVars ks

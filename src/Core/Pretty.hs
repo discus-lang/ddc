@@ -535,7 +535,10 @@ instance Pretty TyCon PMode where
   = case p of
   	TyConFun{}		-> ppr "(->)"
 	TyConData { tyConName }	-> ppr tyConName
-
+	TyConClass { tyConName}	-> ppr tyConName
+	TyConPurify {}		-> ppr "purify"
+	TyConPureJoin {}	-> ppr "pjoin"
+	
 
 -- TFetter -----------------------------------------------------------------------------------------
 instance Pretty Fetter PMode where
@@ -564,6 +567,7 @@ instance Pretty Kind PMode where
 	KClosure	-> ppr "$"
 	KFun k1 k2	-> k1 % " -> " % k2
 
+	KSuper		-> ppr "+"
   	KClass v ts	-> v % " " % " " %!% map prettyTypeB ts
 	KWitJoin ks	-> "kjoin {" % "; " %!% ks % "}"
 

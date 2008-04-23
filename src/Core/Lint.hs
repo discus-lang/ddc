@@ -433,6 +433,7 @@ lintK tt kk
 	 -> do	lintK tt k1
 	 	lintK tt k2
 		
+	KSuper		-> return ()
 	KClass v ts
 	 -> do	mapM_ (lintT tt) ts
 	 	

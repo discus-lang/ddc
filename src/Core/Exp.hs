@@ -275,12 +275,16 @@ data Label
 
 data Kind	
 	= KNil					-- ^ some missing / unknown kind
+
 	| KValue				-- ^ the kind of value types
 	| KRegion				-- ^ the kind of regions
 	| KEffect				-- ^ the kind of effects
 	| KClosure				-- ^ the kind of closures
 	| KFun 		Kind	Kind		-- ^ the kind of type constructors
 
+	| KSuper				-- ^ the superkind of classes
+						--	all the actual KClasses are sub-kinds of this one
+	
 	| KClass	Var	[Type]		-- ^ the kind of witnesses
 	| KWitJoin	[Kind]			-- ^ joining of witness kinds
 	deriving (Show, Eq)
@@ -336,14 +340,31 @@ data Type
 
 -- | Type constructors
 data TyCon
+	-- Function type constructor
 	= TyConFun
-		{ tyConKind	:: Kind }
 
+	-- Data type constructor.
 	| TyConData
-		{ tyConName	:: Var
-		, tyConKind	:: Kind }
+		{ tyConName	 :: Var			-- ^ name of the type constructor
+		, tyConDataKind	 :: Kind }
+
+	-- Constructs a witness to some type/region/effect/closure class.
+	| TyConClass
+		{ tyConName	 :: Var			-- ^ name of the class
+		, tyConClassKind :: Kind }
+		
+	-- Constructs a witness that some effect is pure
+	| TyConPurify
+
+	-- Joins purification witnesses 
+	--	eg: pjoin (Pure E1) (Pure E2) :: Pure !{ E1; !E2 }
+	| TyConPureJoin
+		{ tyConAirity	:: Int }		-- ^ number of witnesses being joined
+		
 
 	deriving (Show, Eq)
+
+ 	
 
 
 data Fetter
