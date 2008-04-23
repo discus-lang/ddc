@@ -55,13 +55,13 @@ instance Ord Type where
 
 -- Kind --------------------------------------------------------------------------------------------
 data Kind
-	= KNil						-- ^ An missing / unknown kind.
-	| KFun	   Kind	Kind				-- ^ The kind of type constructors.	(->)
-	| KValue					-- ^ The kind of value types.		(*)
-	| KRegion					-- ^ The kind of regions.		(%)
-	| KEffect					-- ^ The kind of effects.		(!)
-	| KClosure					-- ^ The kind of closures.		($)
-	| KFetter					-- ^ The kind of class constraints	(+)
+	= KNil					-- ^ An missing / unknown kind.
+	| KFun	   Kind	Kind			-- ^ The kind of type constructors.	(->)
+	| KValue				-- ^ The kind of value types.		(*)
+	| KRegion				-- ^ The kind of regions.		(%)
+	| KEffect				-- ^ The kind of effects.		(!)
+	| KClosure				-- ^ The kind of closures.		($)
+	| KFetter				-- ^ The kind of class constraints	(+)
 	deriving (Show, Eq)	
 
 type Data	= Type
@@ -69,54 +69,63 @@ type Region	= Type
 type Effect	= Type
 type Closure	= Type
 
-
 -- Type --------------------------------------------------------------------------------------------
--- | This data type includes constructors for bona-fide type expressions, as well
---   as various things used in parsing/printing and type inference.
+-- | This data type includes constructors for bona-fide type expressions, 
+--	as well as various helper constructors used in parsing/printing and type inference.
 --
 data Type	
-	= TNil						-- ^ A hole. Something is missing.
+	= TNil					-- ^ A hole. Something is missing.
 
-	| TForall	[(Var, Kind)] Type		-- ^ Type abstraction.
-	| TContext		Kind	Type		-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
-	| TFetters	Type	[Fetter]		-- ^ Holds extra constraint information.
-	| TApp		Type	Type			-- ^ Type application.
+	| TForall	[(Var, Kind)] Type	-- ^ Type abstraction.
+	| TContext		Kind	Type	-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
+	| TFetters	Type	[Fetter]	-- ^ Holds extra constraint information.
+	| TApp		Type	Type		-- ^ Type application.
 
-	| TSum		Kind 	[Type]			-- ^ A summation, least upper bound.
-	| TMask		Kind	Type	Type		-- ^ Mask out some elements from this closure.
+	| TSum		Kind 	[Type]		-- ^ A summation, least upper bound.
+	| TMask		Kind	Type	Type	-- ^ Mask out some elements from this closure.
 
-	| TCon		TyCon
-	| TVar     	Kind 	Var			-- ^ A type variable.
---	| TVarMore	Kind	Var	Type		-- ^ an effect/closure var with an embedded :> constraint
-							--	from its quantifier
-	| TTop		Kind
-	| TBot		Kind
+	| TCon		TyCon			-- ^ A type constructor.
+	| TVar     	Kind 	Var		-- ^ A type variable.
+
+	| TTop		Kind			-- ^ Valid for Effects (!SYNC) and Closures ($OPEN) only.
+	| TBot		Kind			-- ^ Valid for Effects (!PURE) and Closures ($EMPTY)
+						--	also used in the inferencer to represent the type of an equivalence
+						--	class that has not been constrained by a constructor.
 	
-	-- effect and closure constructors are always fully applied..
-	| TEffect	Var [Type]			-- ^ An effect constructor
-	| TFree		Var Type			-- ^ An tagged object which is free in the closure.
-							--	The tag should be a Value var.
-							--	The type parameter should be a value type, region or closure.
+	-- Effect and closure constructors are always fully applied..
+	| TEffect	Var [Type]		-- ^ An effect constructor
+	| TFree		Var Type		-- ^ An tagged object which is free in the closure.
+						--	The tag should be a Value var.
+						--	The type parameter should be a value type, region or closure.
 
-	| TDanger	Type Type			-- ^ If a region is mutable then free type variables in the 
-							--	associated type must be held monomorphic.
+	| TDanger	Type Type		-- ^ If a region is mutable then free type variables in the 
+						--	associated type must be held monomorphic.
 	
-	| TTag		Var				-- ^ A tag for one of these objects, used in the RHS of TMask.
-
+	| TTag		Var			-- ^ A tag for one of these objects, used in the RHS of TMask.
+						--   TODO: this isn't actually a type. Change TMask to reflect this.
 
 	-- Type wildcards can be unified with anything of the given kind.
-	-- 	Wildcards are used in the source language and type inference, but not in core.
-	| TWild		Kind				-- ^ 
+	-- 	Used in the source language and type inference only.
+	| TWild		Kind			
 
-	-- Type sugar, used in source and desugar stages only.
+	-- Type sugar.
+	--	Used in source and desugar stages only.
 	| TElaborate	Elaboration Type
 
-	-- Helpers for type inference. Not present in core.
-	| TData     	Kind Var [Type]			-- ^ A data type constructor. Perhaps partially applied.
-	| TFun          Type Type Effect Closure	-- ^ A function with an effect and environment. Fully applied.
-	| TClass	Kind	ClassId			-- ^ A reference to some equivalence class.
-	| TFetter	Fetter				-- ^ Holds a fetter, so we can put it in an equivalence class.
-	| TError        Kind	[Type]			-- ^ Classes with unification errors get their queues set to [TError].
+	-- Helpers for type inference.
+	---	Used in type inference stages only.
+	| TData    Kind Var [Type]		-- ^ A data type constructor. Perhaps partially applied.
+	| TFun     Type Type Effect Closure	-- ^ A function with an effect and environment. Fully applied.
+	| TClass   Kind	ClassId			-- ^ A reference to some equivalence class.
+	| TError   Kind	[Type]			-- ^ Classes with unification errors get their queues set to [TError].
+
+	| TFetter  Fetter			-- ^ Holds a fetter, so we can put it in an equivalence class.
+						--	TODO: is this still being used??
+
+	-- A type variable with an embedded :> constraint.
+	--	Used in core only, so we can reconstruct the type of an expression
+	--	without having to see the bounds on enclosing foralls.
+	| TVarMore	Kind	Var	Type
 
 	deriving (Show, Eq)
 

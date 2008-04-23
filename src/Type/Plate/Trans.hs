@@ -247,6 +247,12 @@ followT table tt
 	TElaborate ee t
 	 -> do	t'	<- transZM table t
 	 	return	$ TElaborate ee t'
+		
+	TVarMore k v t
+	 -> do	k'	<- transZM table k
+	 	v'	<- transZM table v
+		t'	<- transZM table t
+		return	$ TVarMore k' v' t'
 				
 -- TyCon -------------------------------------------------------------------------------------------
 instance Monad m => TransM m TyCon where

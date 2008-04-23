@@ -51,9 +51,7 @@ instance FreeVars Type where
 	
 	TCon tycon	-> freeVars tycon
 	
-
- 	TVar k v	
-	 -> singleton v
+ 	TVar k v	-> singleton v
 
 	TTop k	-> empty
 	TBot k	-> empty
@@ -93,6 +91,11 @@ instance FreeVars Type where
 	 
 	-- sugar
 	TElaborate ee t	-> freeVars t
+	
+	TVarMore k v t
+	 -> unions
+	 	[ Set.singleton v
+		, freeVars t]
 	
 -- TyCon -------------------------------------------------------------------------------------------
 instance FreeVars TyCon where

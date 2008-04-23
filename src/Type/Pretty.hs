@@ -34,7 +34,6 @@ instance Pretty Type PMode where
 	TCon tycon	-> ppr tycon
 
 	TVar k v	-> pprVarKind v k 
---	TVar k v	-> pprVarKind v k 
 
 	TTop k		-> k % "Top"
 	TBot k		-> k % "Bot"
@@ -74,6 +73,16 @@ instance Pretty Type PMode where
 
 	-----
 	TElaborate elab t -> prettyTB t % "{" % elab % "}"
+
+	TVarMore k v t
+	 -> ifMode (elem PrettyCoreMore)
+	 	(case k of
+		 	KValue	-> parens $ "*" % v % " :> " % t 
+			_	-> parens $ v % " :> " % t)
+			
+		(case k of
+		 	KValue	-> "*" % v
+			_	-> ppr v)
 
 
 prettyTRight tt
