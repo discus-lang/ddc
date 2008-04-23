@@ -26,6 +26,7 @@ instance Pretty Type PMode where
  	TNil		-> ppr "@TNil"
 
 	TForall vs t	-> "forall " % " " %!% (map prettyVK vs) % ". " % t
+	TContext c t	-> c % " => " % t
 	TFetters t fs	-> t % " :- " % ", " %!% fs
 	TSum k  es	-> k  % "{" % "; " %!% es % "}"
 	TMask k  t1 t2	-> prettyTB t1 % " \\ " % prettyTB t2

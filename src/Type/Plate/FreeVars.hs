@@ -36,6 +36,9 @@ instance FreeVars Type where
 	 -> (union (freeVars t) (freeVars $ map snd vks))
 	 	\\ (fromList $ map fst vks)
 
+	TContext k t
+	 -> union (freeVars k) (freeVars t)
+
 	TFetters t fs
 	 -> union (freeVars fs) (freeVars t)
 	 	\\ (fromList [ v | FLet (TVar k v) _ <- fs])

@@ -77,13 +77,13 @@ type Closure	= Type
 data Type	
 	= TNil						-- ^ A hole. Something is missing.
 
-	| TForall	[(Var, Kind)] Type		-- ^ Universal quantifier.
---	| TContext		Kind	Type
+	| TForall	[(Var, Kind)] Type		-- ^ Type abstraction.
+	| TContext		Kind	Type		-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
 	| TFetters	Type	[Fetter]		-- ^ Holds extra constraint information.
-	| TApp		Type	Type			-- ^ General type application.
+	| TApp		Type	Type			-- ^ Type application.
 
-	| TSum		Kind 	[Type]
-	| TMask		Kind	Type	Type		-- ^ Mask out some effects/vars from this effect/closure
+	| TSum		Kind 	[Type]			-- ^ A summation, least upper bound.
+	| TMask		Kind	Type	Type		-- ^ Mask out some elements from this closure.
 
 	| TCon		TyCon
 	| TVar     	Kind 	Var			-- ^ A type variable.

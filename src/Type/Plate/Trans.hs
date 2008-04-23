@@ -149,6 +149,11 @@ followT table tt
 	 	t'	<- transZM table t
 		return	$ TForall vks' t'
 
+	TContext k t
+	 -> do	k'	<- transZM table k
+	 	t'	<- transZM table t
+		return	$ TContext k' t'
+
 	TFetters fs t
 	 -> do	t'	<- transZM table t
 	 	fs'	<- transZM table fs

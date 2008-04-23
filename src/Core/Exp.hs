@@ -297,15 +297,15 @@ type Class	= Type
 type Witness	= Type
 
 data Type
-	= TNil
+	= TNil						-- ^ A hole. Something is missing.
 
 	| TForall	Bind	Kind	Type		-- ^ Type abstraction.
-	| TContext		Kind	Type		-- ^ Class context.
-	| TFetters	Type	[Fetter]		-- ^ Type level where expression.
+	| TContext		Kind	Type		-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
+	| TFetters	Type	[Fetter]		-- ^ Holds extra constraint information.
 	| TApp		Type 	Type			-- ^ Type application.
 
-	| TSum		Kind 	[Type]			-- ^ A summation \/ lub.
-	| TMask		Kind	Type 	Type
+	| TSum		Kind 	[Type]			-- ^ A summation, least upper bound.
+	| TMask		Kind	Type 	Type		-- ^ Mask out some elements from this closure.
 
 	| TCon		TyCon
 	| TVar		Kind 	Var			-- ^ a variable of the given kind
