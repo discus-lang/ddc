@@ -65,7 +65,7 @@ instance Pretty Type PMode where
 	-- wild cards
 	TWild k		-> k % "_"
 
-	---- used in the type solver
+	-- used in type inference
 	TClass k c
 	 -> case k of	
 	 	KFun{}	-> parens k % c
@@ -74,9 +74,10 @@ instance Pretty Type PMode where
 	TFetter f	-> "@TFetter " % f
 	TError k t	-> "@TError" % k % " " % t
 
-	-----
+	-- type elaboration in source
 	TElaborate elab t -> prettyTB t % "{" % elab % "}"
 
+	-- core stuff
 	TVarMore k v t
 	 -> ifMode (elem PrettyCoreMore)
 	 	(case k of
@@ -88,6 +89,9 @@ instance Pretty Type PMode where
 			_	-> ppr v)
 
 	TWitJoin wits		-> "wjoin {" % "; " %!% wits % "}"
+
+	TIndex ix
+	 -> parens $ ppr ix
 
 prettyTRight tt
  = case tt of
@@ -175,14 +179,17 @@ prettyTS t
 
 
 -- | Prints a variable with an optional kind.
-prettyVK ::	(Var, Kind)	-> PrettyM PMode
-prettyVK	(var, kind)
- = case kind of
-	KValue		-> ppr var
-	KRegion		-> ppr var
-	KEffect		-> ppr var
-	KClosure	-> ppr var
-	_		-> "(" % var % " :: " % kind % ")"
+prettyVK :: Var -> Kind -> PrettyM PMode
+prettyVK v k
+ = ifMode (elem PrettyTypeKinds)
+ 	(parens $ v % " :: " % k)
+	(ppr v)
+
+prettyTyClassK :: TyClass -> Kind -> PrettyM PMode
+prettyTyClassK tc k
+ = ifMode (elem PrettyTypeKinds)
+ 	(parens $ ppr tc % " :: " % k)
+	(ppr tc)
 
 -- Elaboration -------------------------------------------------------------------------------------
 instance Pretty Elaboration PMode where
@@ -199,7 +206,14 @@ instance Pretty TyCon PMode where
  ppr p
   = case p of
   	TyConFun{}		-> ppr "(->)"
-	TyConData { tyConName }	-> ppr tyConName
+
+	TyConData 
+	 { tyConName, tyConDataKind }	
+	 	-> prettyVK tyConName (tyConDataKind)
+
+	TyConClass 
+	 { tyConClass, tyConClassKind}	
+		-> prettyTyClassK tyConClass tyConClassKind
 
 -- TyClass -----------------------------------------------------------------------------------------
 instance Pretty TyClass PMode where

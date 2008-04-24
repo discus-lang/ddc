@@ -217,8 +217,8 @@ packTypeLs ld ls tt
 	TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
 	 -> 	return	$ TFun t1 t2 eff clo
 	    
-	TApp (TCon (TyConData { tyConName, tyConKind })) t2
-	 ->	return	$ TData tyConKind tyConName [t2]
+	TApp (TCon (TyConData { tyConName, tyConDataKind })) t2
+	 ->	return	$ TData tyConDataKind tyConName [t2]
 	
 	TApp (TData k v ts) t2
 	 ->	return	$ TData k v (ts ++ [t2])

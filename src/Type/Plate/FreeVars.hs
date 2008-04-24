@@ -99,6 +99,7 @@ instance FreeVars Type where
 	-- sugar
 	TElaborate ee t	-> freeVars t
 	
+	-- core stuff
 	TVarMore k v t
 	 -> unions
 	 	[ Set.singleton v
@@ -106,6 +107,9 @@ instance FreeVars Type where
 	
 	TWitJoin ts
 	 -> unions $ map freeVars ts
+
+	TIndex{}	-> empty
+	
 
 -- TyCon -------------------------------------------------------------------------------------------
 instance FreeVars TyCon where

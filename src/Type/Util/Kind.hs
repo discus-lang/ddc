@@ -3,6 +3,7 @@ module Type.Util.Kind
 	( defaultKindV
 	, spaceOfKind
 	, kindOfSpace 
+	, tyConKind
 	, takeKindOfType, kindOfType_orDie
 	, resultKind
 	, makeDataKind
@@ -55,6 +56,14 @@ kindOfSpace space
 	_		-> panic stage
 			$  "kindOfSpace: no match for " % show space
 
+-- | Take the kind of a tycon
+tyConKind :: TyCon -> Kind
+tyConKind tyCon
+ = case tyCon of
+	TyConFun			-> KFun KValue (KFun KValue (KFun KEffect (KFun KClosure KValue)))
+	TyConData { tyConDataKind }	-> tyConDataKind
+	TyConClass { tyConClassKind }	-> tyConClassKind	 
+
 
 -- | Get the kind of a type, or die if there is a kind error.
 --	This is harder to debug with...
@@ -65,7 +74,6 @@ kindOfType_orDie tt
 	Nothing		-> panic stage
 			$ "kindOfType: no match for " % tt % "\n"
 			%> show tt
-
 
 -- | Get the kind of a type
 --	A types include TApp, they might have internal errors where no kind is extractable.

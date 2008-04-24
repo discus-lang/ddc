@@ -272,6 +272,7 @@ followT table tt
 	 -> do	ts'	<- transZM table ts
 	 	return	$ TWitJoin ts'
 
+	TIndex{}	-> return tt
 				
 -- TyCon -------------------------------------------------------------------------------------------
 instance Monad m => TransM m TyCon where
@@ -283,6 +284,14 @@ instance Monad m => TransM m TyCon where
 	TyConData { tyConName }
 	 -> do	v'	<- transZM table tyConName
 	 	return	$ tt { tyConName = v' }
+	
+	TyConClass { tyConClass = TyClass v }
+	 -> do	v'	<- transZM table v
+	 	return	$ tt { tyConClass = TyClass v' }
+
+	TyConClass {}
+	 -> 	return tt
+
 	
 -- TProj -------------------------------------------------------------------------------------------
 instance Monad m => TransM m TProj where 

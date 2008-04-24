@@ -121,8 +121,8 @@ toCoreT' table tt
 	-- data
 	T.TData k v ts		
 	 -> let tyCon	= T.TyConData 
-		 		{ T.tyConName	= v
-				, T.tyConKind	= k }
+		 		{ T.tyConName		= v
+				, T.tyConDataKind	= k }
 	   in  down $ T.makeTApp (T.TCon tyCon : ts)
 
 
@@ -152,8 +152,7 @@ toCoreT' table tt
 toCoreTyCon :: T.TyCon -> C.TyCon
 toCoreTyCon tt
  = case tt of
- 	T.TyConFun k 
-	 -> C.TyConFun
+ 	T.TyConFun 	 -> C.TyConFun
 
 	T.TyConData v k
 	 -> C.TyConData v (toCoreK k)

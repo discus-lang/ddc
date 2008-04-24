@@ -3,9 +3,20 @@
 module Type.Exp
 	( Var
 	, Bind		(..)
+
 	, Type		(..)
+	, Index
+
 	, TyCon		(..)
 	, TyClass	(..)
+
+	-- constructors for build in classes
+	, tcConst,	tcConstT
+	, tcMutable,	tcMutableT
+	, tcLazy, 	tcLazyH
+	, tcDirect
+	, tcPurify
+
 	, ClassId	(..)
 	, TProj		(..)
 	, Fetter  	(..)
@@ -23,6 +34,7 @@ where
 
 import Util
 import Shared.Var		(Var)
+import Shared.VarPrim
 import Shared.Error
 import Data.Ix
 import qualified Shared.Var	as Var
@@ -56,6 +68,10 @@ instance Ord Type where
 
 
 -- Kind --------------------------------------------------------------------------------------------
+-- de bruijn indicies
+type Index
+	= Int
+
 data Kind
 	= KNil					-- ^ An missing / unknown kind.
 
@@ -142,6 +158,10 @@ data Type
 	--	without having to see the bounds on enclosing foralls.
 	| TVarMore	Kind	Var	Type
 
+	-- A debruijn index
+	--	Used in core only, in the kinds for witness constructors.
+	| TIndex	Int
+
 	-- Witness Joining
 	--	Used in core only.
 	--	We could perhaps create a family of specific joining functions
@@ -163,14 +183,35 @@ data Elaboration
 -- TyCon -------------------------------------------------------------------------------------------
 -- | Type constructors
 data TyCon
+	-- Function type constructor.
 	= TyConFun
-		{ tyConKind	:: Kind }
 
+	-- A data type constructor.
 	| TyConData
 		{ tyConName	:: Var
-		, tyConKind	:: Kind }
+		, tyConDataKind	:: Kind }
+
+	-- Constructs a witness to some type/region/effect/closure class.
+	| TyConClass
+		{ tyConClass	 :: TyClass
+		, tyConClassKind :: Kind }
 
 	deriving (Show, Eq)
+
+-- Built in type constructors
+tcConst		= TyConClass TyClassConst	(KForall KRegion (KClass TyClassConst 	[TIndex 0]))
+tcConstT 	= TyConClass TyClassConstT	(KForall KValue  (KClass TyClassConstT	[TIndex 0]))
+tcMutable	= TyConClass TyClassMutable	(KForall KRegion (KClass TyClassMutable	[TIndex 0]))
+tcMutableT	= TyConClass TyClassMutableT	(KForall KValue  (KClass TyClassMutableT [TIndex 0]))
+tcLazy		= TyConClass TyClassLazy	(KForall KRegion (KClass TyClassLazy 	[TIndex 0]))
+tcLazyH		= TyConClass TyClassLazyH	(KForall KValue	 (KClass TyClassLazyH	[TIndex 0]))
+tcDirect	= TyConClass TyClassDirect	(KForall KRegion (KClass TyClassDirect	[TIndex 0]))
+
+tcPurify	= TyConClass TyClassPurify	
+			(KForall KRegion 
+				(KFun 	(KClass TyClassConst [TIndex 0])
+					(KClass TyClassPure  [TEffect primRead [TIndex 0]])))
+
 
 -- TyClass -----------------------------------------------------------------------------------------
 -- | Type / Region / Effect classes.

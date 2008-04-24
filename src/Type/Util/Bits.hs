@@ -172,7 +172,7 @@ makeTApp' xx
 -- | Make a data type
 makeTData :: Var -> Kind -> [Type] -> Type
 makeTData v k ts
- = makeTApp (TCon TyConData { tyConName = v, tyConKind = k } : ts )
+ = makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k } : ts )
 	
 -- | take a data type
 takeTData :: Type -> Maybe (Var, Kind, [Type])
@@ -181,7 +181,7 @@ takeTData tt
 	TData k v ts
 		-> Just (v, k, ts)
 
- 	TCon TyConData { tyConName = v, tyConKind = k }
+ 	TCon TyConData { tyConName = v, tyConDataKind = k }
 		-> Just (v, k, [])
 		
 	TApp t1 t2
