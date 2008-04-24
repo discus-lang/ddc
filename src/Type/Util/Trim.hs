@@ -78,9 +78,9 @@ trimClosureT' quant rsData tt
 trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
 trimClosureT_fs quant rsData ff
  = case ff of
- 	FLet c1 c2	
+ 	FWhere c1 c2	
 	 |  kindOfType_orDie c2 == KClosure
-	 -> Just $ FLet c1 $ trimClosureC quant rsData c2
+	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
 
 	FMore c1 c2
 	 | kindOfType_orDie c2 == KClosure
@@ -288,15 +288,15 @@ makeTDanger tag r t
 trimClosureC_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
 trimClosureC_fs quant rsData ff
  = case ff of
- 	FLet c1 c2	
+ 	FWhere c1 c2	
 
 	 -- more closure information
 	 |  kindOfType_orDie c2 == KClosure
-	 -> Just $ FLet c1 $ trimClosureC quant rsData c2
+	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
 
 	 -- effect information might be referenced in a type constructor
 	 | kindOfType_orDie c1 == KEffect
-	 -> Just $ FLet c1 c2
+	 -> Just $ FWhere c1 c2
 
 	FMore c1 c2
 	 | kindOfType_orDie c2 == KClosure

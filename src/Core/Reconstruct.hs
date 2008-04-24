@@ -225,7 +225,10 @@ reconX tt (XTet vts x)
  = let	tt'			= foldr addEqVT' tt vts
  	(x', tx, xe, xc)	= reconX tt' x
    in	( XTet   vts x'
-   	, TFetters tx (map (uncurry FWhere) vts)
+   	, TFetters tx 
+		[ FWhere (TVar k v) t2
+			| (v, t2)	<- vts
+			, let Just k	= kindOfSpace $ Var.nameSpace v ]
 	, xe
 	, xc)
    
@@ -436,7 +439,10 @@ reconX tt (XVar v TNil)
 						Just t	-> Just (u, t))
 			$ Set.toList vsFree
 
-	, tDrop		<- makeTFetters t' (map (uncurry FMore) vtsMore)
+	, tDrop		<- makeTFetters t' 
+				[ FMore (TVar k v) t2
+					| (v, t2)	<- vtsMore
+					, let Just k	= kindOfSpace $ Var.nameSpace v ]
 
 {-	= trace ( "reconX[XVar]: dropping type\n"
 		% "    var    = " %> v		% "\n"
@@ -1017,7 +1023,7 @@ addEqVT' (v, t) tt
 
 
 addMoreF :: Fetter -> Table -> Table
-addMoreF (FMore v t) table	= addMoreVT v t table
+addMoreF (FMore (TVar k v) t) table	= addMoreVT v t table
 
 addMoreVT :: Var -> Type -> Table -> Table
 addMoreVT v t tt

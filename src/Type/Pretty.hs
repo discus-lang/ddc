@@ -10,6 +10,7 @@ module Type.Pretty
 where
 
 import Type.Exp
+import Type.Util.Bits
 import Shared.Pretty
 import Shared.Error
 import qualified Shared.Var	as Var
@@ -18,6 +19,13 @@ import Util
 
 -----
 stage	= "Type.Pretty"
+
+-- Bind -------------------------------------------------------------------------------------------
+instance Pretty Bind PMode where
+ ppr xx
+  = case xx of
+  	BVar v		-> ppr v
+	BMore v t	-> "(" % v % " :> " % t % ")"
 
 -- Type --------------------------------------------------------------------------------------------
 instance Pretty Type PMode where
@@ -33,7 +41,39 @@ instance Pretty Type PMode where
 	TFetters t fs	-> t % " :- " % ", " %!% fs
 	TSum k  es	-> k  % "{" % "; " %!% es % "}"
 	TMask k  t1 t2	-> prettyTB t1 % " \\ " % prettyTB t2
-	TApp t1 t2	-> parens t1 % " " % prettyTRight t2
+
+	TApp t1 t2
+	 -> let result
+	 		| Just (t1, t2, eff, clo)	<- takeTFun xx
+			= case (eff, clo) of
+			 	(TBot KEffect, 	TBot KClosure)	
+				 -> prettyTBF t1 % " -> " % prettyTRight t2
+
+				(eff,   	TBot KClosure)	
+				 -> prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
+		
+				(TBot KEffect,	clo)		
+				 -> prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
+
+				(eff,   	clo)		
+				 -> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
+
+			| otherwise
+			= let	pprAppLeft x 
+			 	  | x =@= TApp{} 	= ppr x
+				  | otherwise		= prettyTB x
+
+				pprAppRight x
+				  | x =@= TVar{} || x =@= TVarMore{}	
+				  = ppr x
+
+				  | otherwise		
+				  = prettyTB x
+
+			 in	pprAppLeft t1 % " " % pprAppRight t2
+	   in result
+
+
 	TCon tycon	-> ppr tycon
 
 	TVar k v	-> pprVarKind v k 
@@ -115,6 +155,7 @@ prettyTB t
 	TClass{}	-> ppr t
 	TBot{}		-> ppr t
 	TTop{}		-> ppr t
+	TCon{}		-> ppr t
 	_		-> "(" % t % ")"
 
 
@@ -251,7 +292,7 @@ instance Pretty Fetter PMode where
  ppr f
   = case f of
   	FConstraint	c ts	-> c  % " " % " " %!% map prettyTB ts
-	FLet		t1 t2	-> padL 10 t1 % " = "	% t2
+	FWhere		t1 t2	-> padL 10 t1 % " = "	% t2
 	FMore		t1 t2	-> padL 10 t1 % " :> " % t2
 
 	FProj     pj v1 tDict tBind
@@ -300,15 +341,3 @@ instance  (Pretty param PMode)
 
 
 
-----------------------------------------------------------------------------------------------------
--- Duplicated in Type.Util.Bits
-
--- | Slurp forall bindings from this type
-slurpTForall :: Type -> ([(Bind, Kind)], Type)
-slurpTForall tt
- = case tt of
- 	TForall b k t	
-	 -> let	(bksRest, tRest)	= slurpTForall t
-	    in	( (b, k) : bksRest, tRest)
-	    
-	_ -> ([], tt)

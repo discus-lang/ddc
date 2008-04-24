@@ -48,7 +48,7 @@ letifyFs tsContra ff
 			= ff
 			
 			| otherwise
-			= FLet t1 t2
+			= FWhere t1 t2
 			
 		return result
 			

@@ -68,13 +68,13 @@ cutLoopsT (TFetters tt fs)
  = let	
 	-- split the fetters into the let/more and the rest.
 	(fsLetMore, fsOther)	
-			= partition (\f -> f =@= FMore{} || f =@= FLet{}) fs
+			= partition (\f -> f =@= FMore{} || f =@= FWhere{}) fs
 
 	-- build a map of let/more fetters so we can look them up easilly.
  	sub		= Map.fromList 
 			$ map (\f -> case f of
 					FMore t1 t2	-> (t1, f)
-					FLet  t1 t2	-> (t1, f))
+					FWhere  t1 t2	-> (t1, f))
 			$ fsLetMore
 	
 	-- cut loops in these lets
@@ -111,7 +111,7 @@ cutLoopsF cidsEntered sub cid
 	
 	 	-- collect up remaining classIds in this type
 		cidsMore	= case fetter' of
-					FLet _  t2	-> collectTClasses t2
+					FWhere _  t2	-> collectTClasses t2
 					FMore _ t2	-> collectTClasses t2
 	
 		-- decend into branches
@@ -124,7 +124,7 @@ cutLoopsF cidsEntered sub cid
 cutF 	:: Maybe Type -> Set Type -> Fetter -> Fetter
 cutF cid cidsEntered ff
  = case ff of
- 	FLet  t1 t2	-> FLet  t1 (cutT cid cidsEntered t2)
+ 	FWhere  t1 t2	-> FWhere  t1 (cutT cid cidsEntered t2)
 	FMore t1 t2	-> FMore t1 (cutT cid cidsEntered t2)
 
 cutT cid cidsEntered tt	
@@ -180,7 +180,7 @@ cutF_follow cidsEntered ff
  = let down	= cutT Nothing cidsEntered
    in case ff of
  	FConstraint 	v ts		-> FConstraint v (map down ts)
-	FLet 		t1 t2		-> FLet  t1  (down t2)
+	FWhere 		t1 t2		-> FWhere  t1  (down t2)
 	FMore		t1 t2		-> FMore t1  (down t2)
 	FProj		j v tDict tBind	-> FProj j v (down tDict) (down tBind)
 

@@ -29,6 +29,7 @@ import qualified Shared.Literal		as S
 
 import qualified Type.Exp		as T
 import Type.ToCore			(toCoreT, toCoreK)
+import qualified Type.Util		as T
 
 import qualified Core.Util.Pack		as C
 import qualified Core.ReconKind		as C
@@ -284,8 +285,8 @@ toCoreX xx
 				= C.stripSchemeT tArg1
 
 		portVars	<- gets coreQuantVars
-		let fsWhere	= [ C.FWhere v t	
-					| C.FWhere v t	<- argFetters
+		let fsWhere	= [ C.FWhere t1 t2	
+					| C.FWhere t1@(C.TVar _ v) t2	<- argFetters
 					, not $ Map.member v portVars]
 
 		let fsMore	= [ f	| f@(C.FMore v t) <- argFetters ]
@@ -653,7 +654,7 @@ toCoreVarInst v vT
 			
 		-- Work out what types belong to each quantified var in the type
 		--	being instantiated.			
-		let tsSub	= Map.fromList $ zip (map (C.varOfBind . fst) btsForall) tsInstC_packed
+		let tsSub	= Map.fromList $ zip (map (T.varOfBind . fst) btsForall) tsInstC_packed
 
 		-- If this function needs a witnesses we'll just make them up.
 		--	Real witnesses will be threaded through in a later stage.

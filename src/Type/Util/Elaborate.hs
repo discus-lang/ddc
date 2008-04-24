@@ -246,19 +246,19 @@ elaborateCloT' env tt
 		     case t2 of
 			-- rhs of this function is another function
 			--	set this closure to be closure of rhs without the arg bound here
-			TFun{}	-> FLet cloVarC
+			TFun{}	-> FWhere cloVarC
 				$ TMask KClosure
 					(makeTSum KClosure [clo, fromMaybe (TBot KClosure) mClo])
 					(TTag varVal) 
 
 			-- rhs of function isn't another function
 			--	pretend that all the args are referenced here.
-			_	-> FLet cloVarC (makeTSum KClosure env)
+			_	-> FWhere cloVarC (makeTSum KClosure env)
 
 		-- Don't add the closure variable if the fetter is just bottom.
 		let (fNew, cloAnnot)
 			= case fNewClo of 
-				FLet _ (TBot KClosure)	-> (Nothing, 	TBot KClosure)
+				FWhere _ (TBot KClosure)	-> (Nothing, 	TBot KClosure)
 				_			-> (Just fNewClo, cloVarC)
 
 		return	( TFun t1 t2' eff cloAnnot
@@ -382,17 +382,17 @@ addEffectsToFsT effs var tt
 	 -> TFetters t1 (addEffectsToFs var effs fs)
 	 
 	tx
-	 -> TFetters tx [FLet (TVar KEffect var) (makeTSum KEffect effs)]
+	 -> TFetters tx [FWhere (TVar KEffect var) (makeTSum KEffect effs)]
 	 
 
 -- didn't find a fetter with this var, so add a new one
 addEffectsToFs v1 effs1 []
-	= [FLet (TVar KEffect v1) (makeTSum KEffect effs1)]
+	= [FWhere (TVar KEffect v1) (makeTSum KEffect effs1)]
 	
 addEffectsToFs v1 effs1 (f:fs)
  = case f of
- 	FLet (TVar KEffect v2) eff2
-	 | v1 == v2	-> FLet (TVar KEffect v2) (makeTSum KEffect (eff2 : effs1)) : fs
+ 	FWhere (TVar KEffect v2) eff2
+	 | v1 == v2	-> FWhere (TVar KEffect v2) (makeTSum KEffect (eff2 : effs1)) : fs
 	
 	_		-> f : addEffectsToFs v1 effs1 fs
 

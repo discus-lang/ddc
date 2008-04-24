@@ -17,6 +17,7 @@ import Shared.Var		(Var, NameSpace(..))
 import Shared.Error
 
 import Core.Exp
+import Type.Util.Bits		(varOfBind)
 
 -----
 stage	= "Core.Plate.FreeVars"
@@ -225,7 +226,7 @@ instance FreeVars Type where
 	 -> unions 
 	 	[ freeVars t1
 		, freeVars fs ]
-		\\ (Set.fromList $ map varOfFetter fs)
+		\\ Set.fromList [v | FWhere (TVar _ v) _ <- fs]
 		
 	TSum k ts
 	 -> unions $ map freeVars ts
@@ -293,8 +294,10 @@ instance FreeVars TyCon where
 instance FreeVars Fetter where
  freeVars ff
   = case ff of
-  	FWhere v t	-> freeVars t \\ singleton v
-	FMore  v t	-> freeVars t
+  	FWhere (TVar k v) t	-> freeVars t \\ singleton v
+	FMore  v t		-> freeVars t
+	_	-> panic stage
+		$ "freeVars[Fetter]: no match for " % ff
 
 
 -- Kind --------------------------------------------------------------------------------------------
@@ -325,3 +328,8 @@ instance FreeVars Kind where
 		
 	KWitJoin ks
 	 -> freeVars ks
+
+	_ 	-> panic stage
+		$ "freeVars[Kind]: no match for " % kk
+		
+		

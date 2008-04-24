@@ -168,9 +168,9 @@ subTTf_cutM' sub cut ff
 	 -> do	ts'	<- mapM (subTT_cutM' sub cut) ts
 	 	return	$ FConstraint v ts'
 		
-	FLet t1 t2
+	FWhere t1 t2
 	 -> do	t2'	<- subTT_cutM' sub cut t2
-	 	return	$ FLet t1 t2'
+	 	return	$ FWhere t1 t2'
 		
 	FMore t1 t2
 	 -> do	t2'	<- subTT_cutM' sub cut t2

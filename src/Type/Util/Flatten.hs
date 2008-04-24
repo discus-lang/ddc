@@ -32,10 +32,10 @@ flattenT' sub block tt
 
 	TFetters t fs
 	 -> let (fsWhere, fsRest)
-	 		= partition (=@= FLet{}) fs
+	 		= partition (=@= FWhere{}) fs
 
 		sub'	= Map.union 
-				(Map.fromList $ map (\(FLet t1 t2) -> (t1, t2)) fsWhere)
+				(Map.fromList $ map (\(FWhere t1 t2) -> (t1, t2)) fsWhere)
 				sub
 
 		tFlat	= flattenT' sub' block t

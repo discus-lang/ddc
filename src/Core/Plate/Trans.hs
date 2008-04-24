@@ -33,6 +33,7 @@ import Util
 import Core.Exp
 import Shared.Error
 
+
 -----
 stage	= "Core.Plate.Trans"
 
@@ -548,21 +549,6 @@ instance Monad m => TransM m Type where
 	 	transT table	$ TTag v'
 
 	
-	-- class		
-{-  	TClass v ts	
-	 -> do	ts'		<- followTs table ts
-	 	v'		<- followV_free  table v
-		return		$  TClass v' ts'
--}
-{-	TPurify eff wit
-	 -> do	eff'	<- followT table eff
-	 	wit'	<- followT table wit
-		return	$ TPurify eff' wit'
--}		
-{-	TPurifyJoin ts
-	 -> do	ts'	<- followTs table ts
-	 	return	$ TPurifyJoin ts'
--}
 	TWitJoin ts
 	 -> do	ts'	<- followTs table ts
 	 	return	$ TWitJoin ts'
@@ -594,15 +580,19 @@ instance Monad m => TransM m TyCon where
 instance Monad m => TransM m Fetter where
  transZM table ff
   = case ff of
-  	FWhere v t
+  	FWhere (TVar k v) t
 	 -> do	v'	<- followV_bind table v
 	 	t'	<- followT table t
-		return	$ FWhere v' t'
+		return	$ FWhere (TVar k v') t'
 		
-	FMore v t
+	FMore (TVar k v) t
 	 -> do	v'	<- followV_bind table v
 	 	t'	<- followT table t
-		return	$ FMore v' t'
+		return	$ FMore (TVar k v') t'
+
+	_	-> panic stage
+		$ "transZM[Fetter]: no match for " % show ff
+		
 
 -- Kind --------------------------------------------------------------------------------------------
 instance Monad m => TransM m Kind where
@@ -632,6 +622,9 @@ instance Monad m => TransM m Kind where
 	KWitJoin ks
 	 -> do	ks'	<- mapM (followK table) ks
 	 	return	$ KWitJoin ks'
+
+	_	-> panic stage
+		$ "transZM[Kind]: no match for " % show kk
 
 -----
 instance Monad m => TransM m Stmt where

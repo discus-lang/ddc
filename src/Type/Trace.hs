@@ -130,8 +130,8 @@ loadTypeNode2 incFs cid c
 		let tX	= case t' of
 				TFetters t2 fs
 				 | and	$ map (\f -> case f of
-				 		FLet  (TClass _ _) _	-> True
-						FMore (TClass _ _) _	-> True
+				 		FWhere (TClass _ _) _	-> True
+						FMore  (TClass _ _) _	-> True
 						_			-> False)
 					$ fs
 				 -> t2
@@ -148,8 +148,8 @@ loadTypeNode2 incFs cid c
 	
 			| otherwise
 			= case resultKind k of
-				KValue	-> return $ FLet  (TClass k cid) tX : (fs ++ fsMulti)
-				_	-> return $ FMore (TClass k cid) tX : (fs ++ fsMulti)
+				KValue	-> return $ FWhere (TClass k cid) tX : (fs ++ fsMulti)
+				_	-> return $ FMore  (TClass k cid) tX : (fs ++ fsMulti)
 		
 		result
 	

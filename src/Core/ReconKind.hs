@@ -101,6 +101,9 @@ betaTK depth tX kk
 	KClass v ts	-> KClass v (map (betaTT depth tX) ts)
 	KWitJoin ks	-> kk
 
+	_	-> panic stage
+		$ "betaTK: no match for " % kk
+		
 	
 betaTT :: Int -> Type -> Type -> Type
 betaTT depth tX tt
@@ -128,11 +131,11 @@ betaTT depth tX tt
 	TFree v t	-> TFree v (down t)
 	TTag{}		-> tt
 
---	TPurify t1 t2	-> TPurify (down t1) (down t2)
---	TPurifyJoin ts	-> TPurifyJoin (map down ts)
 	TWitJoin ts	-> TWitJoin (map down ts)
 	TWild k		-> tt
 
+	_	-> panic stage
+		$ "betaTT: no match for " % tt
 
 -- | Invent an explicit witness needed to satisfy a certain constraint
 --	This is used in Desugar.ToCore to invent witnesses we don't know how to properly construct yet.

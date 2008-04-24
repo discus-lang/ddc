@@ -8,11 +8,14 @@ module Core.Bind
 
 where
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
+import Core.Plate.Trans
+import Core.Plate.FreeVars
+import Core.Exp
+import Core.Util
+import Core.Pretty
+import Core.Reconstruct
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
+import Type.Util.Bits		(varOfBind)
 
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
@@ -24,13 +27,12 @@ import Shared.Error
 import Shared.Pretty
 
 import Util
-import Core.Plate.Trans
-import Core.Plate.FreeVars
-import Core.Exp
-import Core.Util
-import Core.Pretty
-import Core.Reconstruct
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 
 import qualified Debug.Trace	as Debug
 

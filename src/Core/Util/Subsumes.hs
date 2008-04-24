@@ -78,12 +78,12 @@ subsumes3 table t s
 
 	-- load up embedded FMore constraints
 	| TFetters t' fs	<- t
-	= let table'	= foldl (\tab (FMore v1 t2) -> slurpMore (v1, t2) tab) table fs
+	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) -> slurpMore (v1, t2) tab) table fs
 	  in  subsumes3 table' t' s
 	
 
 	| TFetters s' fs	<- s
-	= let table'	= foldl (\tab (FMore v1 t2) -> slurpMore (v1, t2) tab) table fs
+	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) -> slurpMore (v1, t2) tab) table fs
 	  in  subsumes3 table' t s'
 
 

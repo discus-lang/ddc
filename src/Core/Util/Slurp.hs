@@ -10,8 +10,7 @@ module Core.Util.Slurp
 
 where
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
+import qualified Shared.Var	as Var
 
 import Util
 import Shared.Error
@@ -19,6 +18,9 @@ import Core.Exp
 import Core.Util.Pack
 import Core.Util.Bits
 import Core.Pretty
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 
 -----
 stage	= "Core.Util.Slurp"
@@ -63,7 +65,10 @@ maybeSlurpTypeX	xx
 	
 	| XTet vts x		<- xx
 	, Just x'		<- maybeSlurpTypeX x
-	= Just $ TFetters x' [FWhere v t | (v, t) <- vts]
+	= Just $ TFetters x' 
+			[FWhere (TVar k v) t 
+				| (v, t) <- vts
+				, let Just k	= kindOfSpace $ Var.nameSpace v]
 
 	| XTau t x		<- xx
 	= Just t
@@ -127,7 +132,7 @@ dropXTau :: Exp -> Map Var Type -> Type -> Exp
 dropXTau xx env tt
 	-- load up bindings into the environment
 	| TFetters t fs		<- tt
-	= dropXTau xx (Map.union (Map.fromList [(v, t) | FWhere v t <- fs]) env) t
+	= dropXTau xx (Map.union (Map.fromList [(v, t) | FWhere (TVar _ v) t <- fs]) env) t
 
 	-- decend into XLAMs
 	| XLAM v t x		<- xx

@@ -185,7 +185,7 @@ solveCs	(c:cs)
 
 		t2_inst	<- instantiateT instVar t2
 		let (t2_strip, _) 
-			= stripFLetsT t2_inst
+			= stripFWheresT t2_inst
 
 		trace	$ "    t2_strip:\n" %> prettyTS t2_strip % "\n\n"
 
@@ -817,7 +817,7 @@ addSchemeToGraph src vGen tScheme
 	-- If this type has any FLets on it where the LHS is a (monomorphic) TClass 
 	--	then this information is shared with the graph, and shouldn't be duplicated
 	--	locally.
-	let (tScheme_stripped, _) = stripMonoFLetsT tScheme
+	let (tScheme_stripped, _) = stripMonoFWheresT tScheme
 
 	case tScheme_stripped of 
 

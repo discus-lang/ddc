@@ -377,8 +377,8 @@ pFetter
 		pTok K.Equals
 		
 		effClo	<- Parsec.try pEffect <|> pClosure
-		return	$ FLet 	(TVar (kindOfSpace $ Var.nameSpace var) var)
-				effClo)
+		return	$ FWhere (TVar (kindOfSpace $ Var.nameSpace var) var)
+				 effClo)
 
  <|>	-- VAR :> EFFECT/CLOSURE
  	do	var	<- pVarPlainOfSpace [NameEffect, NameClosure]

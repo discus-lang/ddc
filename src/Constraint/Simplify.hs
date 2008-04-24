@@ -188,7 +188,7 @@ subFollowVT_f sub block ff
  = let down	= subFollowVT' sub block
    in case ff of
  	FConstraint v ts	-> FConstraint v (map down ts)
-	FLet t1 t2		-> FLet t1 (down t2)
+	FWhere t1 t2		-> FWhere t1 (down t2)
 	FMore t1 t2		-> FMore t1 (down t2)
 	FProj j v t1 t2		-> FProj j v (down t1) (down t2)
 

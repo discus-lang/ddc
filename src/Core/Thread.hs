@@ -19,6 +19,9 @@ import Core.Util
 import Core.ReconKind
 import Core.Exp
 
+import Type.Util.Bits		(varOfBind)
+
+
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import Shared.VarPrim

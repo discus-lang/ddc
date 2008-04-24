@@ -17,6 +17,9 @@ import Core.Util.Substitute
 import Core.Util.Slurp
 import Core.Pretty
 
+import Type.Util.Bits		(varOfBind)
+import Type.Pretty
+
 import qualified Debug.Trace	as Debug
 import Shared.Error
 import Shared.Pretty
@@ -57,10 +60,10 @@ rewriteS
  ::	(?typeMap 	:: Map Var Type)
  ->	(?classMap 	
  	 :: Map Var 			-- overloaded variable, eg (+)
-		( Class			-- class that the var belongs to, eg (Num a)
+		( Witness			-- class that the var belongs to, eg (Num a)
 		, Type			-- type of this overloaded function
 					--	eg Num a => a -> a -> a
-		, [(Class, Var)]))	-- the possible instances for this function
+		, [(Witness, Var)]))	-- the possible instances for this function
 					--	eg Int   -> Int -> Int
 					--	   Float -> Float -> Float
 
@@ -119,9 +122,9 @@ addContext c tt
 rewriteOverApp
 	:: Exp			-- function application to rewrite
 	-> Var			-- var of overloaded function
-	-> Class		-- class 		eg	Eq a
+	-> Witness		-- class 		eg	Eq a
 	-> Type			-- type of sig
-	-> [(Class, Var)]	-- instances		eg 	[(Eq Int, primIntEq), (Eq Char, primCharEq)]
+	-> [(Witness, Var)]	-- instances		eg 	[(Eq Int, primIntEq), (Eq Char, primCharEq)]
 	-> Map Var Type		-- type map
 	-> Exp			-- rewritten expression
 
@@ -298,11 +301,11 @@ rewriteOverApp_trace
 determineInstance
 	:: Exp			-- ^ fn application being rewritten
 	-> Var			-- ^ var of overloaded
-	-> Class		-- ^ type class of the overloaded
+	-> Witness		-- ^ type class of the overloaded
 	-> Type			-- ^ scheme of overloaded
-	-> [(Class, Var)]	-- ^ possible instances for this fn
+	-> [(Witness, Var)]	-- ^ possible instances for this fn
 
-	-> ( Class		-- the instance we need
+	-> ( Witness		-- the instance we need
 	   , Type		-- shape of overloaded scheme, once the type args have been applied to it.
 	   , Maybe Var)		-- var of the instance function (if found)
 		
@@ -434,9 +437,9 @@ slurpClassFuns
  -> 	[Top]	
 
  -> Map Var 			-- name of overloaded function
- 	( Class			-- the class that this function is in
+ 	( Witness			-- the class that this function is in
 	, Type			-- type of the overloaded function
-	, [(Class, Var)])	-- instances
+	, [(Witness, Var)])	-- instances
 
 slurpClassFuns instMap pp
  = Map.fromList

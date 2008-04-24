@@ -11,6 +11,8 @@ import Core.Util.Pack
 import Core.ReconKind
 import Core.Exp
 
+import Type.Util.Bits		(varOfBind)
+
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Pretty
@@ -257,13 +259,13 @@ trimClosureC_f :: Set Var -> Set Var -> Fetter -> Maybe Fetter
 trimClosureC_f quant rsData ff
  = case ff of
 	-- Only more closure information is interesting
- 	FWhere v1 c2
+ 	FWhere t1 c2
 	 |  kindOfType c2 == Just KClosure
-	 -> Just $ FWhere v1 (trimClosureC quant rsData c2)
+	 -> Just $ FWhere t1 (trimClosureC quant rsData c2)
 
- 	FMore v1 c2
+ 	FMore t1 c2
 	 |  kindOfType c2 == Just KClosure
-	 -> Just $ FMore v1 (trimClosureC quant rsData c2)
+	 -> Just $ FMore t1 (trimClosureC quant rsData c2)
 
 	_ -> Nothing
 

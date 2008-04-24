@@ -40,7 +40,7 @@ collectBindingVarsT' tt
 	
 collectBindingVarsF' ff
  = case ff of
- 	FLet (TVar k v) _	
+ 	FWhere (TVar k v) _	
 	 -> do	modify (\s -> s ++ [v])
 	 	return ff
 		

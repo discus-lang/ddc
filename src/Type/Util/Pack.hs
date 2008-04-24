@@ -360,7 +360,7 @@ packTFettersLs ld ls tt
 
  	TFetters t fs
 	 -> do	let ls'	= Map.union 
-	 			(Map.fromList [(t1, t2) | FLet t1 t2 <- fs])
+	 			(Map.fromList [(t1, t2) | FWhere t1 t2 <- fs])
 				ls
 
 		tPacked		<- packTypeLs ld ls' t
@@ -401,9 +401,9 @@ packFetterLs
 packFetterLs ld ls ff
  = {-# SCC "packFetterLs" #-}
    case ff of
- 	FLet t1 t2
+ 	FWhere t1 t2
 	 -> do	t2'	<- packTypeLs ld ls t2
-	 	return	$ FLet t1 (crushT t2')
+	 	return	$ FWhere t1 (crushT t2')
 
 	FConstraint v ts
 	 -> do	ts'	<- mapM (packTypeLs True ls) ts
@@ -422,7 +422,7 @@ inlineFs fs
    	-- build a substitution from the fetters
 	let takeSub ff
 		 = case ff of
-		 	FLet t1 t2	-> Just (t1, t2)
+		 	FWhere t1 t2	-> Just (t1, t2)
 --			FMore t1 t2	-> Just (t1, TSum (kindOfType t1) [t1, t2])
 			_		-> Nothing
 	
@@ -451,9 +451,9 @@ inlineFs fs
 	-- substitute in the the RHSs
 	let subF ff
 		= case ff of
-			FLet  t1 t2 	 
+			FWhere  t1 t2 	 
 			 -> do	t2'	<- subRHS t1 t2
-			 	return	$ FLet t1 t2'
+			 	return	$ FWhere t1 t2'
 			 
 			FMore t1 t2	 
 			 -> do	t2'	<- subRHS t1 t2
@@ -482,14 +482,14 @@ inlineFsT tt
 	 -> let	sub	= Map.fromList
 			$ catMaybes
 			$ map (\f -> case f of
-					FLet t1 t2	-> Just (t1, t2)
+					FWhere t1 t2	-> Just (t1, t2)
 					_ 		-> Nothing)
 			$ fs
 
 		fs'	= map (\f -> case f of
-					FLet t1 t2 	
+					FWhere t1 t2 	
 					 -> let (t2', []) = subTT sub t2
-					    in  FLet t1 t2'
+					    in  FWhere t1 t2'
 
 					_		-> f)
 			$ fs
@@ -507,11 +507,11 @@ inlineFsT tt
 restrictFs :: Type -> [Fetter] -> [Fetter]
 restrictFs tt ls
  = {-# SCC "restrictFs" #-}
-   let	reachFLetsMap
+   let	reachFWheresMap
  		= Map.fromList
 		$ catMaybes
 		$ map (\f -> case f of
-			FLet  t1 t2	-> Just (t1, Set.fromList $ collectTClassVars t2)
+			FWhere  t1 t2	-> Just (t1, Set.fromList $ collectTClassVars t2)
 			FMore t1 t2	-> Just (t1, Set.fromList $ collectTClassVars t2)
 			FProj j v t1 t2	-> Nothing
 			FConstraint{}	-> Nothing)
@@ -522,10 +522,10 @@ restrictFs tt ls
 			++ concat [catMap collectTClassVars ts 
 					| FConstraint v ts	<- ls]
 
-	tsReachable	= tsSeed `Set.union` graphReachableS reachFLetsMap tsSeed
+	tsReachable	= tsSeed `Set.union` graphReachableS reachFWheresMap tsSeed
 	 
    in	filter (\f -> case f of
-			FLet t1 t2
+			FWhere t1 t2
 			 | t1 == t2	-> False
 			 
 			FMore t1 t2
@@ -533,8 +533,8 @@ restrictFs tt ls
 			
 			FMore  t (TBot _) -> False
 			 
-			FLet t (TBot _)	-> False
-   			FLet t _	-> Set.member t tsReachable
+			FWhere t (TBot _)	-> False
+   			FWhere t _	-> Set.member t tsReachable
 			_		-> True)
 		$ ls
 
@@ -546,7 +546,7 @@ sortFs :: [Fetter] -> [Fetter]
 sortFs fs
  = let	isLetK k f
   	 = case f of
-	 	FLet _ t2	-> (let Just k1 = takeKindOfType t2 in k1) == k
+	 	FWhere _ t2	-> (let Just k1 = takeKindOfType t2 in k1) == k
 		FMore _ t2	-> (let Just k1 = takeKindOfType t2 in k1) == k
 		_		-> False
 
@@ -588,12 +588,12 @@ zapCoveredTMaskF ls tt ff
  = zapCoveredTMaskF' ls tt ff
 	
 zapCoveredTMaskF' ls tt ff
-	| FLet t1 (TMask k t2 t3)	<- ff
+	| FWhere t1 (TMask k t2 t3)	<- ff
 	, Just t2l			<- Map.lookup t2 ls
 	, coversCC t2l t3
 	, (tt', [])			<- subTT (Map.singleton t1 (TBot k)) tt
 	= ( tt'
-	  , FLet t1 (TBot k))
+	  , FWhere t1 (TBot k))
 
 	| otherwise
 	= (tt, ff)

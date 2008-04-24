@@ -3,8 +3,6 @@
 module Core.Exp
 	( Var
 	, Bind		(..)	-- binders
-	, varOfBind
-
 	, Tree
 	, Top 		(..)	-- top level things
 	, DataField 	(..)	-- data fields
@@ -34,13 +32,10 @@ module Core.Exp
 	, tcPurify
 
 	, Fetter	(..)
-	, varOfFetter
-
 	, Data			-- alias of Type
 	, Region
 	, Effect
 	, Closure
-	, Class	
 	, Witness
 
 	, Kind		(..))	-- kind expressions
@@ -54,6 +49,7 @@ import Util
 import Shared.Var (Var)
 import Shared.VarPrim
 import Shared.Exp
+import Type.Exp
 
 import Data.Set		(Set)
 
@@ -280,166 +276,6 @@ data Label
 	deriving (Show, Eq)
 
 
--- Kind --------------------------------------------------------------------------------------------
--- Kind expressions
-
--- de bruijn indicies
-type Index
-	= Int
-	
-data Kind	
-	= KNil					-- ^ some missing / unknown kind
-
-	| KForall	Kind 	Kind		-- ^ Dependent kinds.
-	| KFun 		Kind	Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
-
-	| KValue				-- ^ the kind of value types
-	| KRegion				-- ^ the kind of regions
-	| KEffect				-- ^ the kind of effects
-	| KClosure				-- ^ the kind of closures
-
-	| KClass	TyClass	[Type]		-- ^ the kind of witnesses
-	| KWitJoin	[Kind]			-- ^ joining of witnesses
-	deriving (Show, Eq)
-
-
--- Type --------------------------------------------------------------------------------------------
--- Type expressions
-
-type Data	= Type
-type Effect	= Type
-type Closure	= Type
-type Region	= Type
-type Class	= Type
-type Witness	= Type
-
-data Type
-	= TNil						-- ^ A hole. Something is missing.
-
-	| TForall	Bind	Kind	Type		-- ^ Type abstraction.
-	| TContext		Kind	Type		-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
-	| TFetters	Type	[Fetter]		-- ^ Holds extra constraint information.
-	| TApp		Type 	Type			-- ^ Type application.
-
-	| TSum		Kind 	[Type]			-- ^ A summation, least upper bound.
-	| TMask		Kind	Type 	Type		-- ^ Mask out some elements from this closure.
-
-	| TCon		TyCon
-	| TVar		Kind 	Var			-- ^ a variable of the given kind
-	| TVarMore	Kind 	Var	Type		-- ^ an effect/closure variable with a :> bound
-
-	| TIndex	Index				-- ^ a de bruijn index, used in kind application.
-
-	| TTop		Kind
-	| TBot		Kind
-
-	-- effect
-	| TEffect 	Var [Type]			-- ^ a manifest effect
-
-	-- closure
-	| TFree		Var Type			-- ^ some object free in the closure of a function.
-	| TTag		Var
-	
-	-- Witness Joining
-	--	We could perhaps create a family of specific joining functions
-	--	instead but dealing with all the different combinations of argument
-	--	types would be too much pain..
-	| TWitJoin	[Class]
-
-	-- wildcards
-	| TWild		Kind				-- ^ Type wildcard. 
-							--	Will unify with anything of the given kind.
-	deriving (Show, Eq)
-
-
--- TyCon -------------------------------------------------------------------------------------------
--- | Type constructors
-data TyCon
-	-- Function type constructor.
-	= TyConFun
-
-	-- A data type constructor.
-	| TyConData
-		{ tyConName	 :: Var
-		, tyConDataKind	 :: Kind }
-
-
-	-- Constructs a witness to some type/region/effect/closure class.
-	| TyConClass
-		{ tyConClass	 :: TyClass
-		, tyConClassKind :: Kind }
-
-	deriving (Show, Eq)
-
-
--- Built in type constructors ----------------------------------------------------------------------
-tcConst		= TyConClass TyClassConst	(KForall KRegion (KClass TyClassConst 	[TIndex 0]))
-tcConstT 	= TyConClass TyClassConstT	(KForall KValue  (KClass TyClassConstT	[TIndex 0]))
-tcMutable	= TyConClass TyClassMutable	(KForall KRegion (KClass TyClassMutable	[TIndex 0]))
-tcMutableT	= TyConClass TyClassMutableT	(KForall KValue  (KClass TyClassMutableT [TIndex 0]))
-tcLazy		= TyConClass TyClassLazy	(KForall KRegion (KClass TyClassLazy 	[TIndex 0]))
-tcLazyH		= TyConClass TyClassLazyH	(KForall KValue	 (KClass TyClassLazyH	[TIndex 0]))
-tcDirect	= TyConClass TyClassDirect	(KForall KRegion (KClass TyClassDirect	[TIndex 0]))
-
-tcPurify	= TyConClass TyClassPurify	
-			(KForall KRegion 
-				(KFun 	(KClass TyClassConst [TIndex 0])
-					(KClass TyClassPure  [TEffect primRead [TIndex 0]])))
-
-
--- TyClass -----------------------------------------------------------------------------------------
--- | Type / Region / Effect classes.
---	As most of the type-level witnesses have the same names as
---	their kind-level classes, we'll overload TyClass for both.
---
-data TyClass
-	-- Various built-in classes.
-	--	These have special meaning to the compiler.
-
-	-- region classes	-- type classes
-	= TyClassConst		| TyClassConstT
-	| TyClassMutable	| TyClassMutableT
-	| TyClassLazy		| TyClassLazyH
-	| TyClassDirect
-
-	-- purification
-	| TyClassPurify		-- witness
-	| TyClassPure		-- class
-
-	-- empty closures
-	| TyClassEmpty
-
-	-- Some user defined class
-	| TyClass Var
-	deriving (Show, Eq)
-
-
-				
-
--- Fetter ------------------------------------------------------------------------------------------
-data Fetter
-	= FWhere	Var Type
-	| FMore		Var Type
-	deriving (Show, Eq)
-
-varOfFetter ff
- = case ff of
- 	FWhere v t	-> v
-	FMore  v t	-> v
-
-data Bind
-	= BVar	Var					-- ^ unbounded quantification.
-	| BMore	Var Type				-- ^ bounded quantification. Type of v1 must be :> t2
-	deriving (Show, Eq)
-
--- | slurp out the variable from a TBind
-varOfBind :: Bind	-> Var
-varOfBind (BVar v)	= v
-varOfBind (BMore v t)	= v
-
--- | order TBinds by their var so we can use them as Set and Map keys.
-instance Ord Bind where
- compare b1 b2		= compare (varOfBind b1) (varOfBind b2)
 
 -- Annot -------------------------------------------------------------------------------------------
 -- Expression annotations

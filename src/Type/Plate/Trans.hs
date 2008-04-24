@@ -321,10 +321,10 @@ instance Monad m => TransM m Fetter where
 	 	ts'		<- transZM table ts
 		transF table	$ FConstraint v' ts'
 		
-	FLet t1 t2
+	FWhere t1 t2
 	 -> do	t1'		<- transZM table t1
 	 	t2'		<- transZM table t2
-		transF table	$ FLet t1' t2'
+		transF table	$ FWhere t1' t2'
 
 	FMore t1 t2
 	 -> do	t1'		<- transZM table t1

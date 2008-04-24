@@ -94,14 +94,14 @@ finaliseT' bound def tt
 		$ "finaliseT: no match for " % tt
 
 finaliseF bound def ff
-	| FLet t1@(TVar k v1) t2	<- ff
+	| FWhere t1@(TVar k v1) t2	<- ff
 	, Just (k', Just tMore)		<- Map.lookup v1 bound
 	, k 	== k'
 	, tMore == t2
 	= FMore t1 (down t2)
 
-	| FLet t1 t2			<- ff
-	= FLet t1 (down t2)
+	| FWhere t1 t2			<- ff
+	= FWhere t1 (down t2)
 
 	| FMore t1 t2			<- ff
 	= FMore t1 (down t2)

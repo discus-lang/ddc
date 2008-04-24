@@ -27,6 +27,7 @@ module Type.Exp
 	, Region
 	, Effect
 	, Closure
+	, Witness
 
 	, InstanceInfo (..))
 
@@ -93,7 +94,7 @@ type Data	= Type
 type Region	= Type
 type Effect	= Type
 type Closure	= Type
-type Class	= Type
+type Witness	= Type
 
 -- Type --------------------------------------------------------------------------------------------
 -- | This data type includes constructors for bona-fide type expressions, 
@@ -167,7 +168,7 @@ data Type
 	--	We could perhaps create a family of specific joining functions
 	--	instead but dealing with all the different combinations of argument
 	--	types would be too much pain..
-	| TWitJoin	[Class]
+	| TWitJoin	[Witness]
 
 	deriving (Show, Eq)
 
@@ -246,7 +247,7 @@ data TyClass
 --
 data Fetter
 	= FConstraint	Var	[Type]			-- ^ Constraint between types.
-	| FLet		Type	Type			-- ^ Equality of types, t1 must be TVar or TClass
+	| FWhere	Type	Type			-- ^ Equality of types, t1 must be TVar or TClass
 	| FMore		Type	Type			-- ^ t1 :> t2
 
 	-- | projections

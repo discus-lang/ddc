@@ -19,12 +19,15 @@ where
 import Util
 import Shared.Error
 import Shared.Pretty
+
 import Core.Exp
 import Core.Pretty
 import Core.Util
 import Core.Util.Slurp
 import Core.ReconKind
 import Core.Reconstruct		(reconX_type)
+
+import Type.Util.Bits		(varOfBind)
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -329,7 +332,7 @@ lintT tt (TContext k1 t2)
  	lintT tt t2
 	
 lintT tt (TFetters t1 fs)
- = do	tt'	<- addVTs [(v, t) | FWhere v t <- fs] tt
+ = do	tt'	<- addVTs [(v, t) | FWhere (TVar k v) t <- fs] tt
  	lintT tt' t1
 
 lintT tt (TApp t1 t2)
@@ -414,6 +417,8 @@ lintT tt (TWitJoin wits)
 lintT tt (TWild k)
  =	return ()
  
+lintT tt _
+ =	return ()
 
 --------------------------------------------------------------------------------
 -- Lint for Kinds
@@ -444,4 +449,5 @@ lintK tt kk
 	KWitJoin ks
 	 -> do	mapM_ (lintK tt) ks
 	
+	_	-> return ()
 

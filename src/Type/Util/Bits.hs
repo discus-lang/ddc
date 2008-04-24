@@ -10,6 +10,7 @@ module Type.Util.Bits
 	, makeTMask,	applyTMask
 	, makeTApp
 	, makeTData,	takeTData
+	, makeTFun,	takeTFun
 
 	, makeTForall_front
 	, makeTForall_back
@@ -19,8 +20,6 @@ module Type.Util.Bits
 	, addFetters,	addFetters_front
 	, takeBindingVarF
 
-	, makeOpTypeT 
-	, makeTVar
 	, takeCidOfTClass
 	, slurpVarsRD)
 
@@ -42,8 +41,7 @@ import Shared.VarPrim
 
 import Type.Exp
 import Type.Plate
-import Type.Pretty		()
-import Type.Util.Kind
+-- import Type.Util.Kind
 
 -----
 stage	= "Type.Util.Bits"
@@ -64,7 +62,6 @@ varOfBind bb
  = case bb of
  	BVar v		-> v
 	BMore v t	-> v
-
 
 -- | do some simple packing
 crushT :: Type -> Type
@@ -136,10 +133,7 @@ applyTMask tt@(TMask k t1 t2)
  = let	vsKill	= map (\t -> case t of
  				TFree v _	-> v
 				TTag  v		-> v
-				_		
-				 -> panic stage 
-				 	$ "applyTMask: no match for " % show t % "\n"
-				  	% "  tt = " % tt % "\n")
+				_		-> panic stage $ "applyTMask: no match")
 		$ flattenTSum t2
 		
 	tsMasked
@@ -190,6 +184,23 @@ takeTData tt
 		Nothing		-> Nothing
 		
 	_ -> Nothing
+
+
+-- | make a function type
+makeTFun :: Type -> Type -> Effect -> Closure -> Type
+makeTFun t1 t2 eff clo
+	= TApp (TApp (TApp (TApp (TCon TyConFun) t1) t2) eff) clo
+
+
+-- | break up a function type
+takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)
+takeTFun tt
+ 	| TApp (TApp (TApp (TApp fun t1) t2) eff) clo	<- tt
+	, TCon TyConFun{}	<- fun
+	= Just (t1, t2, eff, clo)
+	
+	| otherwise
+	= Nothing
 
 
 -- | Add some forall bindings to the front of this type, 
@@ -285,55 +296,8 @@ addFetters_front fsMore t
 takeBindingVarF :: Fetter -> Maybe Var
 takeBindingVarF ff
  = case ff of
- 	FLet (TVar k v) t2	-> Just v
+ 	FWhere (TVar k v) t2	-> Just v
 	_			-> Nothing
-
-
--- | Make an operational type.
-makeOpTypeT :: Type -> Maybe Type
-makeOpTypeT tt
- = case tt of
- 	TForall v k t		-> makeOpTypeT t
-	TFetters t fs		-> makeOpTypeT t
-	TFun t1 t2 eff clo	
-	 -> case (makeOpTypeT2 t1, makeOpTypeT t2) of
-	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TBot KEffect) (TBot KClosure)
-		_			-> Nothing
-		
-	TData{}			-> makeOpTypeData tt
-	TVar{}			-> Just $ TData KValue primTObj []
-	TElaborate ee t		-> makeOpTypeT t
-	_			-> freakout stage
-					("makeOpTypeT: can't make operational type from " % show tt)
-					Nothing
-makeOpTypeT2 tt
- = case tt of
- 	TForall v k t		-> makeOpTypeT2 t
-	TFetters t fs		-> makeOpTypeT2 t
-	TVar{}			-> Just $ TData KValue primTObj   []
-	TFun{}			-> Just $ TData KValue primTThunk []
-	TData{}			-> makeOpTypeData tt
-	TElaborate ee t		-> makeOpTypeT t
-	_			-> freakout stage
-					("makeOpType: can't make operational type from " % show tt)
-					Nothing
-
-makeOpTypeData (TData k v ts)
-	| last (Var.name v) == '#'
-	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == KValue])) of
-		Just ts'	-> Just $ TData KValue v ts'
-		_		-> Nothing
-	
-	| otherwise
-	= Just $ TData KValue primTObj []
-
-makeOpTypeData _	= Nothing
-
-
--- | Make a TVar, using the namespace of the var to determine it's kind
-
-makeTVar :: Var -> Type
-makeTVar v	= TVar (kindOfSpace $ Var.nameSpace v) v
 
 
 takeCidOfTClass :: Type -> Maybe ClassId
@@ -380,6 +344,6 @@ slurpVarsRD' tt
 	TError k t		-> []
 
 	_ 	-> panic stage
-		$  "slurpVarsRD: no match for " % tt % "\n"
+		$  "slurpVarsRD: no match"
 
 

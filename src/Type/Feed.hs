@@ -131,7 +131,7 @@ feedType'	mParent t
 	 	--	they don't conflict with any vars already in the graph.
 		ttSub		<- liftM (Map.fromList . catMaybes)
 				$  mapM (\f -> case f of
-					FLet t1@(TVar k v1) t2	
+					FWhere t1@(TVar k v1) t2	
 					 -> do	v1'	<- newVarN (spaceOfKind k)
 					 	return	$ Just (t1, TVar k v1')
 
@@ -336,14 +336,14 @@ feedFetter
 
 feedFetter	mParent f
  = case f of
-	FLet t1 t2
+	FWhere t1 t2
 	 -> do	Just (TClass k1 cid1)	<- feedType mParent t1
 	 	Just (TClass k2 cid2)	<- feedType mParent t2
 		mergeClasses [cid1, cid2]
 		return ()
 
 	FMore t1 t2	
-	 -> 	feedFetter mParent (FLet t1 t2)
+	 -> 	feedFetter mParent (FWhere t1 t2)
 
 	FConstraint v ts
 	 -> do	addFetter f

@@ -129,10 +129,10 @@ linkFetter mParent bound ff
 	 -> do	ts'	<- mapM (linkType mParent bound) ts
 	 	return	$ FConstraint v ts'
 		
-	FLet t1 t2
+	FWhere t1 t2
 	 -> do	t1'	<- linkType mParent bound t1
 	 	t2'	<- linkType mParent bound t2
-	 	return	$ FLet t1' t2'
+	 	return	$ FWhere t1' t2'
 			 
 	FProj pj v tDict tBind
 	 -> do	tDict'	<- linkType mParent bound tDict

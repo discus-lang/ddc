@@ -48,7 +48,7 @@ instance FreeVars Type where
 
 	TFetters t fs
 	 -> union (freeVars fs) (freeVars t)
-	 	\\ (fromList [ v | FLet (TVar k v) _ <- fs])
+	 	\\ (fromList [ v | FWhere (TVar k v) _ <- fs])
 		
 	TSum k ts	-> freeVars ts
 	 
@@ -128,11 +128,11 @@ instance FreeVars Fetter where
 	FConstraint v ts	
 	 -> union (singleton v) (freeVars ts)
 
-	FLet (TVar k v) t2
+	FWhere (TVar k v) t2
 	 -> freeVars t2
 	 	\\ singleton v
 
-	FLet t1 t2
+	FWhere t1 t2
 	 -> union (freeVars t1) (freeVars t2)
 		
 	FMore t1 t2

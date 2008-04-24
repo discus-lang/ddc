@@ -168,8 +168,11 @@ makeKWitJoin ts
 		
 makeTWhere ::	Type	-> [(Var, Type)] -> Type
 makeTWhere	t []	= t
-makeTWhere	t vts	= TFetters t $ map (uncurry FWhere) vts
-
+makeTWhere	t vts	
+	= TFetters t 
+	$ [ FWhere (TVar (let Just k = kindOfSpace $ Var.nameSpace v in k) v) t'
+		| (v, t')	<- vts ]
+		
 
 makeTFetters :: Type -> [Fetter] -> Type
 makeTFetters t []	= t

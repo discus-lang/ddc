@@ -88,10 +88,10 @@ toCoreT' table tt
 	 -> let	
 	 	-- separate out all the FLet bindings, we'll add these as a TWhere to the core type
 	 	([fsLet, fsMore], fsRest1)
-	 		= partitionFs [(=@=) T.FLet{}, (=@=) T.FMore{}] fs
+	 		= partitionFs [(=@=) T.FWhere{}, (=@=) T.FMore{}] fs
 				
 		vtsLet	= [ (v, toCoreT t) 	
-					| T.FLet (T.TVar k v) t		<- fsLet]
+					| T.FWhere (T.TVar k v) t	<- fsLet]
 
 		vtsMore	= Map.fromList
 			$ [ (v, t)	| T.FMore (T.TVar _ v) t	<- fsMore]
@@ -173,7 +173,7 @@ toCoreK k
 
 
 -- Fetter ------------------------------------------------------------------------------------------
-toCoreF :: T.Fetter -> C.Class
+toCoreF :: T.Fetter -> C.Witness
 toCoreF	   f
  = case f of
 
@@ -208,7 +208,7 @@ tyClassPrim
 	, (primEmpty,		C.TyClassEmpty) ]
 
 
-addContexts :: [C.Class] -> C.Type -> C.Type
+addContexts :: [C.Witness] -> C.Type -> C.Type
 addContexts []	   t	= t
 addContexts (f:fs) t	
 	| Just k	<- C.kindOfType f

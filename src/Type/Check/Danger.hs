@@ -63,7 +63,7 @@ dangerT rsMutable fsClosure tt
 		-- collect up more closure bindings
 		fsClosure'	= Map.union 
 					fsClosure 
-					(Map.fromList [(u1, u2) | FLet u1 u2	<- fs
+					(Map.fromList [(u1, u2) | FWhere u1 u2	<- fs
 								, takeKindOfType u1 == Just KClosure])
 
 		-- decend into type and fetters

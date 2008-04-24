@@ -46,9 +46,9 @@ maskLocalT tsVis tt
 
 maskF :: Set Type -> Fetter -> Maybe Fetter
 
-maskF	tsVis	(FLet t1 t2)
+maskF	tsVis	(FWhere t1 t2)
 	| Just KEffect	<- takeKindOfType t1
-	= Just $ FLet t1 (maskE tsVis t2)
+	= Just $ FWhere t1 (maskE tsVis t2)
 
 maskF	tsVis	(FConstraint v [tR])
 	| elem v [primConst, primMutable, primLazy, primDirect]

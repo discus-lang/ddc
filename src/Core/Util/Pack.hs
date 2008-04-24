@@ -74,7 +74,7 @@ packT1 tt
 	 	t2'	= packT1 t2
 	    in 	TContext k1' t2'
 
-	TFetters (TVar k v1) [FWhere v2 t2]
+	TFetters (TVar k v1) [FWhere (TVar _ v2) t2]
 	 | v1 == v2
 	 -> t2
 	 
@@ -251,7 +251,7 @@ inlineTWheresMapT sub block tt
 	 		= partitionFs [(=@=) FWhere{}, (=@=) FMore{}] fs
 		
 		sub'	= Map.union 
-				(Map.fromList [(v, t) | FWhere v t <- fsWhere])
+				(Map.fromList [(v, t) | FWhere (TVar _ v) t <- fsWhere])
 				sub
 				
 				
@@ -317,8 +317,8 @@ restrictBinds :: Type -> [Fetter] -> [Fetter]
 restrictBinds tt ls
  = let	splitFetter ff
   	 = case ff of
-	 	FWhere v t	-> (v, t)
-		FMore  v t	-> (v, t)
+	 	FWhere (TVar k v) t	-> (v, t)
+		FMore  (TVar k v) t	-> (v, t)
 
  	reachFLetsMap
  		= Map.fromList
@@ -328,6 +328,11 @@ restrictBinds tt ls
  	vsSeed		= freeVars tt
 
 	vsReachable	= vsSeed `Set.union` graphReachableS reachFLetsMap vsSeed
+	
+	varOfFetter f
+	 = case f of
+		FWhere (TVar k v) _	-> v
+		FMore  (TVar k v) _	-> v
 	 
    in	filter	(\f -> Set.member (varOfFetter f) vsReachable)
    		ls

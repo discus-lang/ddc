@@ -23,17 +23,17 @@ checkGraphicalDataT :: Type -> [ClassId]
 checkGraphicalDataT (TFetters t fs)
  = let	
 	-- select only the data portion of this type's FLets
- 	fsData		= [ f 	| f@(FLet t1 t2) <- fs
+ 	fsData		= [ f 	| f@(FWhere t1 t2) <- fs
 	 			, takeKindOfType t1 == Just KValue]
 
 	-- these are the data cids that we have FLets for
-	cidsData	= map (\(FLet (TClass k cid) t2) -> cid) fsData
+	cidsData	= map (\(FWhere (TClass k cid) t2) -> cid) fsData
 	cidsDataS	= Set.fromList cidsData
 
 	-- build a map of what cids are reachable from what lets in a single step
 	ccData		= Map.fromList
 
-			$ map (\(FLet t1@(TClass k cid) t2)
+			$ map (\(FWhere t1@(TClass k cid) t2)
 				-> ( cid
 				   , Set.fromList 
 				   	$ filter (\c -> Set.member c cidsDataS) 

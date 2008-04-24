@@ -864,8 +864,8 @@ instance Rename Fetter where
 		ts'	<- rename ts
 		return	$ FConstraint v' ts'
 
-  	FLet t1 t2
+  	FWhere t1 t2
 	 -> do	t1'	<- rename t1
 		t2'	<- rename t2
-		return	$ FLet t1' t2'
+		return	$ FWhere t1' t2'
 
