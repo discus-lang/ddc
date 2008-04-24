@@ -242,11 +242,8 @@ instance FreeVars Type where
 	 	[ Set.singleton v
 		, freeVars t]
 	
-	TCon TyConData { tyConName }
-	 -> Set.singleton tyConName
-	
-	TCon TyConFun{}
-	 -> Set.empty
+	TCon con
+	 -> freeVars con
 	
 	TBot k		-> Set.empty
 	TTop k		-> Set.empty
@@ -266,26 +263,31 @@ instance FreeVars Type where
 	TFree v t	-> freeVars t
 	TTag v		-> Set.empty
 	
-	-- class
- 	TClass v ts	
-	 -> unions
-	 	[ Set.singleton v
-		, unions $ map freeVars ts ]
-	
-	TPurify eff cls
+{-	TPurify eff cls
 	 -> unions
 	 	[ freeVars eff
 		, freeVars cls ]
-	
-	TPurifyJoin ts
-	 -> unions
-	 	$ map freeVars ts
+-}
+--	TPurifyJoin ts
+--	 -> unions
+--	 	$ map freeVars ts
 	
 	TWitJoin ts
 	 -> unions $ map freeVars ts
 
 	_ 	-> panic stage
 		$ "freeVarsT: no match for " % show tt
+
+-- TyCon -------------------------------------------------------------------------------------------
+instance FreeVars TyCon where
+ freeVars tt
+  = case tt of
+  	TyConFun{}			-> Set.empty
+	TyConData  { tyConName }	-> Set.singleton tyConName
+	TyConClass { }			-> Set.empty
+--	TyConPurify{}			-> Set.empty
+--	TyConPureJoin{}			-> Set.empty
+	
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance FreeVars Fetter where
@@ -300,21 +302,26 @@ instance FreeVars Kind where
  freeVars kk
   = case kk of
  	KNil		-> Set.empty
-	KValue		-> Set.empty
-	KRegion		-> Set.empty
-	KEffect		-> Set.empty
-	KClosure	-> Set.empty
+
+	KForall k1 k2
+	 -> unions
+	 	[ freeVars k1
+		, freeVars k2 ]
 
 	KFun k1 k2
 	 -> unions
 	 	[ freeVars k1 
 		, freeVars k2 ]
 
-	KSuper{}	-> Set.empty
-	KClass v ts
+
+	KValue		-> Set.empty
+	KRegion		-> Set.empty
+	KEffect		-> Set.empty
+	KClosure	-> Set.empty
+
+	KClass tc ts
 	 -> unions
-	 	[ Set.singleton v
-		, unions $ map freeVars ts ]
+	 	[ unions $ map freeVars ts ]
 		
 	KWitJoin ks
 	 -> freeVars ks

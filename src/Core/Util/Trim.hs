@@ -54,11 +54,11 @@ trimClosureT_f :: Set Var -> Set Var -> Fetter -> Maybe Fetter
 trimClosureT_f quant rsData ff
  = case ff of
  	FWhere v t2
-	 |  kindOfType t2 == KClosure
+	 |  kindOfType t2 == Just KClosure
 	 -> Just $ FWhere v (trimClosureC quant rsData t2)
 
  	FMore v t2
-	 |  kindOfType t2 == KClosure
+	 |  kindOfType t2 == Just KClosure
 	 -> Just $ FMore v (trimClosureC quant rsData t2)
 
 	_ -> Just ff
@@ -99,7 +99,7 @@ trimClosureC quant rsData cc
 
 -- keep packing and trimming until it won't trim anymore
 trimClosureC2 quant rsData cc
- | KClosure	<- kindOfType cc
+ | Just KClosure <- kindOfType cc
   = let cc'	= packT $ trimClosureC' quant rsData cc
     in  if cc' == cc
    	 then cc'
@@ -171,10 +171,10 @@ trimClosureC' quant rsData cc
 	--	TFree can be either data or more closure
 	TFree tag t
 	  -> case kindOfType t of
-		KClosure
+		Just KClosure
 		  -> TFree tag $ down t
 
-		KEffect	-> TBot KClosure
+		Just KEffect	-> TBot KClosure
 		
 
 	  	_ -> makeTSum KClosure 
@@ -258,11 +258,11 @@ trimClosureC_f quant rsData ff
  = case ff of
 	-- Only more closure information is interesting
  	FWhere v1 c2
-	 |  kindOfType c2 == KClosure
+	 |  kindOfType c2 == Just KClosure
 	 -> Just $ FWhere v1 (trimClosureC quant rsData c2)
 
  	FMore v1 c2
-	 |  kindOfType c2 == KClosure
+	 |  kindOfType c2 == Just KClosure
 	 -> Just $ FMore v1 (trimClosureC quant rsData c2)
 
 	_ -> Nothing

@@ -263,8 +263,8 @@ floatBindsX level share tt xx
 
 	-- check for constant regions on the way down
 	XLocal v vts x
-	 -> let tt2	= foldl' slurpWitnessKind tt 
-	 		$ map (kindOfType . snd) vts
+	 -> let Just ks	= sequence $ map (kindOfType . snd) vts
+	 	tt2	= foldl' slurpWitnessKind tt ks
 		
 		(tt3, x')	= floatBindsX level share tt2 x
 	    in	(tt3, XLocal v vts x')
@@ -589,20 +589,17 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KClass v [TVar KRegion r]
-	 |  v == primConst	
+ 	KClass TyClassConst [TVar KRegion r]
 	 -> tt { tableConstRegions 
 	 		= Set.insert r (tableConstRegions tt)}
 	
 	-- const types
-	KClass v [TVar KValue t]
-	 | v == primConstT 
+	KClass TyClassConstT [TVar KValue t]
 	 -> tt { tableConstTypes
 	 		= Set.insert t (tableConstTypes tt)}
 
 	-- pure effects
-	KClass v [TVar KEffect e]
-	 |  v == primPure
+	KClass TyClassPure [TVar KEffect e]
 	 -> tt { tablePureEffects
 	 		= Set.insert e (tablePureEffects tt) }
 

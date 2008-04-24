@@ -463,18 +463,21 @@ instance Pretty Type PMode where
 
 	TVar	k v	
 	 -> case k of
-	 	KValue	-> "*" % v
-		_	-> ppr v
+	 	KValue	-> "*" % prettyVK v k
+		_	-> prettyVK v k 
 
 	TVarMore k v t
 	 -> ifMode (elem PrettyCoreMore)
 	 	(case k of
-		 	KValue	-> parens $ "*" % sv v % " :> " % t 
-			_	-> parens $ sv v % " :> " % t)
+		 	KValue	-> parens $ "*" % prettyVK v k % " :> " % t 
+			_	-> parens $ prettyVK v k % " :> " % t)
 			
 		(case k of
-		 	KValue	-> "*" % v
-			_	-> ppr v)
+		 	KValue	-> "*" % prettyVK v k
+			_	-> prettyVK v k)
+
+	TIndex ix
+	 -> parens $ ppr ix
 
 	TCon tyCon
 	 -> ppr tyCon
@@ -495,15 +498,30 @@ instance Pretty Type PMode where
 	TTop k		-> "@Top " % k
 
 	-- class	
-  	TClass v ts		-> pv v % " " % " " %!% map prettyTypeB ts
-	TPurify eff wit		-> "purify " % prettyTypeB eff % " " % prettyTypeB wit
-	TPurifyJoin wits	-> "pjoin {" % "; " %!% wits % "}"
+--  	TClass v ts		-> pv v % " " % " " %!% map prettyTypeB ts
+--	TPurify eff wit		-> "purify " % prettyTypeB eff % " " % prettyTypeB wit
+--	TPurifyJoin wits	-> "pjoin {" % "; " %!% wits % "}"
 	
 	TWitJoin wits		-> "wjoin {" % "; " %!% wits % "}"
 	
 	-- wildcards
 	TWild	 k	-> "(" % k % ")"
 	
+	
+prettyVK :: Var -> Kind -> PrettyM PMode
+prettyVK v k
+ = ifMode (elem PrettyTypeKinds)
+ 	(parens $ sv v % " :: " % k)
+	(ppr v)
+
+prettyTyClassK :: TyClass -> Kind -> PrettyM PMode
+prettyTyClassK tc k
+ = ifMode (elem PrettyTypeKinds)
+ 	(parens $ ppr tc % " :: " % k)
+	(ppr tc)
+
+
+
 prettyTRight tt
  = case tt of
  	TFetters{}	-> "(" % tt % ")"
@@ -515,6 +533,7 @@ prettyTypeB t
 	TSum{}		-> ppr t
  	TVar{}		-> ppr t
 	TVarMore{}	-> ppr t
+	TIndex{}	-> ppr t
 	TCon{}		-> ppr t
 	TEffect v []	-> ppr t
 	TWild{}		-> ppr t
@@ -534,11 +553,31 @@ instance Pretty TyCon PMode where
  ppr p
   = case p of
   	TyConFun{}		-> ppr "(->)"
-	TyConData { tyConName }	-> ppr tyConName
-	TyConClass { tyConName}	-> ppr tyConName
-	TyConPurify {}		-> ppr "purify"
-	TyConPureJoin {}	-> ppr "pjoin"
+	TyConData 
+	 { tyConName, tyConDataKind }	
+	 	-> prettyVK tyConName (tyConDataKind)
+
+	TyConClass 
+	 { tyConClass, tyConClassKind}	
+		-> prettyTyClassK tyConClass tyConClassKind
 	
+-- TyClass -----------------------------------------------------------------------------------------
+instance Pretty TyClass PMode where
+ ppr cc
+  = case cc of
+  	TyClassConst	-> ppr "Const"
+	TyClassConstT	-> ppr "ConstT"
+	TyClassMutable	-> ppr "Mutable"
+	TyClassMutableT	-> ppr "MutableT"
+	TyClassLazy	-> ppr "Lazy"
+	TyClassLazyH	-> ppr "LazyH"
+	TyClassDirect	-> ppr "Direct"
+	TyClassPurify	-> ppr "Purify"
+	TyClassPure	-> ppr "Pure"
+	TyClassEmpty	-> ppr "Empty"
+	TyClass var	-> ppr var
+	
+
 
 -- TFetter -----------------------------------------------------------------------------------------
 instance Pretty Fetter PMode where
@@ -561,16 +600,16 @@ instance Pretty Kind PMode where
  ppr xx
   = case xx of
 	KNil		-> ppr "?"
+	KFun    k1 k2	-> k1 % " -> " % k2
+	KForall k1 k2	-> "\\" % k1 % ". " % k2
+
 	KValue		-> ppr "*"
 	KRegion		-> ppr "%"
 	KEffect		-> ppr "!"
 	KClosure	-> ppr "$"
-	KFun k1 k2	-> k1 % " -> " % k2
 
-	KSuper		-> ppr "+"
   	KClass v ts	-> v % " " % " " %!% map prettyTypeB ts
-	KWitJoin ks	-> "kjoin {" % "; " %!% ks % "}"
-
+	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
 
 

@@ -10,6 +10,7 @@ where
 import Util
 import Shared.Error		(panic)
 import Shared.Var		(Var)
+import Shared.VarPrim
 import Util.Pretty
 import Util.Maybe
 
@@ -23,6 +24,7 @@ import qualified Type.Pretty	as T
 
 import qualified Core.Exp 	as C
 import qualified Core.Util	as C
+import qualified Core.ReconKind	as C
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -168,22 +170,45 @@ toCoreK k
 toCoreF :: T.Fetter -> C.Class
 toCoreF	   f
  = case f of
-	T.FConstraint v ts		-> C.TClass v (map toCoreT ts)
-	
+
+	-- TODO: don't assume there are no kind problems in the constraint
+	T.FConstraint v ts		
+	 -> let	ts'	= map toCoreT ts
+		Just t	= C.buildWitnessOfClass (C.KClass (tyClassOfVar v) ts')
+	    in	t
+	    
 	_ -> panic stage
 		$ "toCoreF: cannot convert " % f % "\n"
 		% "    f = " % show f % "\n"
 
 
+-- Detect type classes which have a special meaning to the compiler.
+tyClassOfVar :: Var -> C.TyClass
+tyClassOfVar v
+ = case Map.lookup v tyClassPrim of
+ 	Just tc	-> tc
+	_	-> C.TyClass v
+
+tyClassPrim
+ = Map.fromList
+ 	[ (primConst, 		C.TyClassConst)
+ 	, (primConstT,		C.TyClassConstT)
+	, (primMutable,		C.TyClassMutable)
+	, (primMutableT,	C.TyClassMutableT)
+	, (primLazy,		C.TyClassLazy)
+	, (primLazyH,		C.TyClassLazyH)
+	, (primDirect,		C.TyClassDirect)
+	, (primPure,		C.TyClassPure) 
+	, (primEmpty,		C.TyClassEmpty) ]
+
 
 addContexts :: [C.Class] -> C.Type -> C.Type
-addContexts []	  t	= t
-addContexts (f:fs) t
- = case f of
- 	C.TClass v ts	-> C.TContext (C.KClass v ts) (addContexts fs t)
---	_		-> C.TContext C.KNil          (addContexts fs t)
-	_ -> panic stage $ "addContexts: no match for " ++ show f	    
-	   
+addContexts []	   t	= t
+addContexts (f:fs) t	
+	| Just k	<- C.kindOfType f
+	= C.TContext k (addContexts fs t)
+		
+   
 
 
 

@@ -54,11 +54,13 @@ unifyT2 t1 t2
 	= Just []
 	
 	| TVar k1 v1			<- t1	
-	, kindOfType t2 == k1		
+	, Just k2			<- kindOfType t2
+	, k1 == k2		
 	= Just [(t1, t2)]
 	
 	| TVar k2 v2			<- t2
-	, kindOfType t1 == k2		
+	, Just k1			<- kindOfType t1
+	, k1 == k2
 	= Just [(t1, t2)]
 	
 	| TTop	k1			<- t1
@@ -72,20 +74,23 @@ unifyT2 t1 t2
 	= Just []
 
 	-- regions, effects, closures and classes always unify
-	| KClass{}			<- kindOfType t1
-	, KClass{}			<- kindOfType t2
+	| Just KClass{}			<- kindOfType t1
+	, Just KClass{}			<- kindOfType t2
 	= Just [(t1, t2)]
 	
-	| elem (kindOfType t1) [KRegion, KEffect, KClosure]
+	| Just k1			<- kindOfType t1
+	, elem k1 [KRegion, KEffect, KClosure]
 	, kindOfType t1 == kindOfType t2
 	= Just [(t1, t2)]
 
 	-- wildcards
 	| TWild k		<- t1		
-	, kindOfType t2 == k		= Just [(t1, t2)]
+	, kindOfType t2 == Just k		
+	= Just [(t1, t2)]
 	
 	| TWild k		<- t2
-	, kindOfType t1 == k		= Just [(t1, t2)]
+	, kindOfType t1 == Just k		
+	= Just [(t1, t2)]
 
 	| otherwise			= Nothing
 	

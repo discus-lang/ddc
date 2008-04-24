@@ -412,8 +412,8 @@ makeWitnesses r@(TVar KRegion vR) classMap
 	vWitnessMC		<- newVarN NameClass
 
 	let witnessMC		=
-	  	if gotMutable	then (vWitnessMC, TClass primMutable [r])
-				else (vWitnessMC, TClass primConst   [r])
+	  	if gotMutable	then (vWitnessMC, TApp (TCon tcMutable) r)
+				else (vWitnessMC, TApp (TCon tcConst)   r)
 				
 
 	-- Lazy vs Direct -------------------------------------------------------
@@ -428,8 +428,8 @@ makeWitnesses r@(TVar KRegion vR) classMap
 	vWitnessLD		<- newVarN NameClass
 	
 	let witnessLD		=
-		if gotLazy	then (vWitnessLD, TClass primLazy   [r])
-				else (vWitnessLD, TClass primDirect [r])
+		if gotLazy	then (vWitnessLD, TApp (TCon tcLazy) r)
+				else (vWitnessLD, TApp (TCon tcDirect) r)
 	
   	return	[witnessMC, witnessLD]
 

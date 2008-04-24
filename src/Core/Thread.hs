@@ -41,7 +41,7 @@ stage	= "Core.Thread"
 --------------------------------------------------------------------------------
 -- Maintain a map of regions, to what witnesses we have available for them.
 type ThreadS
-	= [((Var, Var), Var)]	-- (class name, region), witness variable
+	= [((TyClass, Var), Var)]	-- (class name, region), witness variable
 	
 
 type ThreadM 
@@ -80,7 +80,7 @@ thread_transP :: Top -> ThreadM Top
 thread_transP pp
  = case pp of
  	PRegion r vts
-	 -> do	mapM_ (\(v, t) -> pushWitnessVK v (kindOfType t)) vts
+	 -> do	mapM_ (\(v, t) -> let Just k = kindOfType t in pushWitnessVK v k) vts
 	 	return pp
 
 	_ -> return pp
@@ -89,24 +89,26 @@ thread_transP pp
 -- | bottom-up: replace applications of static witnesses with bound witness variables.
 thread_transX :: ClassInstMap -> Exp -> ThreadM Exp
 thread_transX instMap xx
- = case xx of
- 	XAPP x t@(TClass{})
-	 -> do	t'	<- rewriteWitness instMap t
+	| XAPP x t		<- xx
+	, Just _		<- takeTClass t
+	= do	t'	<- rewriteWitness instMap t
 	 	return	$ XAPP x t'
 
 	-- pop lambda bound witnesses on the way back up because we're leaving their scope.
-	XLAM b k x
-	 -> do	popWitnessVK (varOfBind b) k
+	| XLAM b k x		<- xx
+	= do	popWitnessVK (varOfBind b) k
 	 	return	xx
 
 	-- pop locally bound witnesses on the way back up because we're leaving their scope.
-	XLocal r vts x
-	 -> do	mapM_ (\(v, k) -> popWitnessVK v k)
-	 		[ (v, kindOfType t)	| (v, t) <- reverse vts]
+	| XLocal r vts x	<- xx
+	= do	mapM_ (\(v, k) -> popWitnessVK v k)
+	 		[ (v, let Just k = kindOfType t in k)	
+				| (v, t) <- reverse vts]
 		
 	 	return xx
 
-	_ ->	return xx
+	| otherwise
+	= return xx
 
 
 thread_transX_enter :: Exp -> ThreadM Exp
@@ -118,7 +120,8 @@ thread_transX_enter xx
 
 	XLocal r vts x
 	 -> do	mapM_ (\(v, k) -> pushWitnessVK v k)
-	 		[ (v, kindOfType t)	| (v, t) <- vts]
+	 		[ (v, let Just k = kindOfType t in k)	
+				| (v, t) <- vts]
 
  		return xx
 
@@ -134,50 +137,46 @@ rewriteWitness instMap tt
 	-- Got an application of an explicit witness to some region.
 	--	Lookup the appropriate witness from the environment and use
 	--	that here.
-	| TClass vC [TVar k vT] 	<- tt
+	| Just (vC, _, [TVar k vT]) 	<- mClass
 	= do	Just vW	<- lookupWitness vT vC
-		return $ TVar (kindOfType tt) vW
+		let Just k	= kindOfType tt
+		return $ TVar k vW
 
 	-- purity of no effects is trivial
-	| TClass vC [TBot KEffect]	<- tt
-	, vC == primPure
+	| Just (TyClassPure, _, [TBot KEffect])	<- mClass
 	= return tt
 
 	-- empty of no closure is trivial
-	| TClass vC [TBot KClosure]	<- tt
-	, vC == primEmpty
+	| Just (TyClassEmpty, _, [TBot KClosure]) <- mClass
 	= return tt
 
 	-- build a witness for purity of this effect
-	| TClass vC [eff]		<- tt
-	, vC == primPure
+	| Just (TyClassPure, _, [eff])	<- mClass
 	= do	w	<- buildPureWitness eff
 		return	$ w
 
 	-- leave shape witnesses for Core.Reconstruct to worry about
-	| TClass vC _			<- tt
+	| Just (TyClass vC, _, _)	<- mClass
 	, Var.FShape{}			<- Var.bind vC
 	= return tt
 
-	-- leave type classes for Core.Dict to worry about
-	| TClass vC _			<- tt
+	-- leave user type classes for Core.Dict to worry about
+	| Just (TyClass vC, _, _)	<- mClass
 	, Just _			<- Map.lookup vC instMap
 	= return tt
 
 	-- function types are always assumed to be lazy, 
 	--	Lazy witnesses on them are trivially satisfied.
-	| TClass vC [t1]		<- tt
+	| Just (TyClassLazyH, _, [t1])		<- mClass
 	, isJust (takeTFun t1)
-	, vC == primLazyH
 	= return tt
 
-	| TClass vC [TFetters t1 _]	<- tt
+	| Just (TyClassLazyH, _, [TFetters t1 _]) <- mClass
 	, isJust (takeTFun t1)
-	, vC == primLazyH
 	= return tt
 	
 	-- some other witness we don't handle
-	| TClass vC ts			<- tt
+	| Just (vC, _, ts)		<- mClass
 	= panic stage
 		("thread_transX: can't find a witness for " % tt % "\n")
 
@@ -185,6 +184,7 @@ rewriteWitness instMap tt
 	| otherwise
 	= return tt
 
+	where	mClass	= takeTClass tt
 
 
 -- | Build a witness that this effect is pure.
@@ -194,18 +194,22 @@ buildPureWitness
 
 buildPureWitness eff@(TEffect vE [tR@(TVar KRegion vR)])
 	| vE == primRead
-	= do	Just wConst	<- lookupWitness vR primConst
-		return		$ TPurify eff (TVar (KClass primConst [tR]) wConst)
+	= do	
+		-- try and find a witness for constness of the region
+		Just wConst	<- lookupWitness vR TyClassConst
+		let  kConst	= KClass TyClassConst [tR]
+
+		-- the purity witness gives us purity of read effects on that const region
+		return		$ TApp (TApp (TCon tcPurify) tR) (TVar kConst wConst)
 
 buildPureWitness eff@(TSum KEffect _)
  = do	let effs	= flattenTSum eff
- 	
-	wits		<- mapM buildPureWitness effs
-	return		$ TPurifyJoin wits
+ 	wits		<- mapM buildPureWitness effs
+	return		$ TWitJoin wits
 
 buildPureWitness eff@(TVar KEffect vE)
- = do	Just w	<- lookupWitness vE primPure
- 	return (TVar (KClass primPure [eff]) w)
+ = do	Just w	<- lookupWitness vE TyClassPure
+ 	return (TVar (KClass TyClassPure [eff]) w)
 
 buildPureWitness eff
  = panic stage
@@ -216,7 +220,7 @@ buildPureWitness eff
 -- | Lookup a witness for a constraint on this region
 lookupWitness 
 	:: Var 		-- ^ the data/region/effect variable
-	-> Var		-- ^ the witness needed
+	-> TyClass	-- ^ the witness needed
 	-> ThreadM (Maybe Var)
 	
 lookupWitness vRegion vClass

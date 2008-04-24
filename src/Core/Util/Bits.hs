@@ -18,15 +18,17 @@ module Core.Util.Bits
 	
 	, makeTWhere
 	, makeTFetters
-	, makeTApp
+	, makeTApp,	flattenTApp
 	, makeTData,	takeTData
 	, makeTFun,	takeTFun
+	, makeTClass,	takeTClass
+
+	, buildKFun,	makeKForall
 
 	, makeTWitJoin
 	, makeKWitJoin
 
 	, kindOfSpace 
-	, takeWitnessOfClass
 	, pure
 	, empty
 	
@@ -157,7 +159,6 @@ makeTWitJoin ts
  	[t]	-> t
 	ts	-> TWitJoin ts
 
--- 
 makeKWitJoin :: [Kind] -> Kind
 makeKWitJoin ts
  = case ts of
@@ -184,12 +185,20 @@ makeTApp' xx
 	[]		-> panic stage $ "makeTApp': empty list"
  	x : []		-> x
 	x1 : xs		-> TApp (makeTApp' xs) x1
+
+-- | Flatten out a type application into its parts
+flattenTApp :: Type -> [Type]
+flattenTApp tt
+ = case tt of
+ 	TApp t1 t2	-> flattenTApp t1 ++ [t2]
+	_		-> [tt]
 		
 
 -- | Make a data type
 makeTData :: Var -> Kind -> [Type] -> Type
 makeTData v k ts
  = makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k } : ts )
+
 	
 -- | take a data type
 takeTData :: Type -> Maybe (Var, Kind, [Type])
@@ -211,6 +220,7 @@ makeTFun :: Type -> Type -> Effect -> Closure -> Type
 makeTFun t1 t2 eff clo
 	= TApp (TApp (TApp (TApp (TCon TyConFun) t1) t2) eff) clo
 
+
 -- | break up a function type
 takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)
 takeTFun tt
@@ -221,7 +231,35 @@ takeTFun tt
 	| otherwise
 	= Nothing
 		
+-- | make a function kind
+buildKFun :: [Kind] -> Kind
+buildKFun [k]		= k
+buildKFun (k : ks)	= KFun k (buildKFun ks)
+
+
+-- | make a chain of KForalls
+makeKForall :: [Kind] -> Kind -> Kind
+makeKForall [] kk	= kk
+makeKForall (k:ks) kk	= KForall k (makeKForall ks kk)
+
+
+-- | take a class witness
+takeTClass :: Type -> Maybe (TyClass, Kind, [Type])
+takeTClass tt
+	| TCon (TyConClass v k)	<- tt
+	= Just (v, k, [])
+
+	| TApp t1 t2		<- tt
+	, Just (v, k, ts)	<- takeTClass t1
+	= Just (v, k, ts ++ [t2])
 	
+	| otherwise
+	= Nothing
+
+-- | make a class witness
+makeTClass :: TyClass -> Kind -> [Type] -> Type
+makeTClass v k ts
+	= makeTApp (TCon (TyConClass v k) : ts)
 		
 -- | Get the kind associated with a namespace.
 kindOfSpace :: NameSpace -> Maybe Kind
@@ -233,22 +271,10 @@ kindOfSpace space
 	NameClosure	-> Just KClosure
 	_		-> Nothing
 
---	_		-> panic stage
---			$  "kindOfSpace: no match for " % show space
 
-
--- | Build the witness needed to satify this constraint.
-takeWitnessOfClass :: Kind -> Maybe Type
-takeWitnessOfClass kk
- = case kk of
- 	KClass v ts	-> Just (TClass v ts)
-	_		-> Nothing
-	
-
-
+-- | Flatten an expression application into a list
 flattenApps :: Exp -> [Exp]
 flattenApps xx
-	
 	| XAPP e1 e2	<- xx
 	= flattenApps e1 ++ [XType e2]
 

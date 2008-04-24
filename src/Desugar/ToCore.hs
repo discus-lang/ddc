@@ -31,6 +31,7 @@ import qualified Type.Exp		as T
 import Type.ToCore			(toCoreT, toCoreK)
 
 import qualified Core.Util.Pack		as C
+import qualified Core.ReconKind		as C
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Pretty		as C
@@ -607,14 +608,13 @@ toCoreConst' tt const
 -- VarInst -----------------------------------------------------------------------------------------
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
 toCoreVarInst v vT
--- = trace ("toCoreVarInst" % v <> vT % "\n")
  = do
 	Just tScheme	<- lookupType v
 	mapInst		<- gets coreMapInst
 
 	let (btsForall, _, ksContextC, tShape)
-			= C.stripSchemeT tScheme
-		
+		= C.stripSchemeT tScheme
+	
 	-- TODO: break this out into a separate fn
 	-- tag var with its type
 	-- apply type args to scheme, add witness params
@@ -659,9 +659,15 @@ toCoreVarInst v vT
 		--	Real witnesses will be threaded through in a later stage.
 		let ksContextC'	= map (C.substituteT tsSub) ksContextC
 
+		trace 	( "toCoreVarInst\n"
+			% "    v           = " % v 		% "\n"
+			% "    vT          = " % vT 		% "\n"
+			% "    tScheme     = " % tScheme 	% "\n"
+			% "    ksContextC' = " % ksContextC'	% "\n")
+			$ return ()
+
 		let tsContextC' = map C.packT
-				$ map (\k -> case k of
-						C.KClass v ts	-> C.TClass v ts) 
+				$ map (\k -> let Just t = C.buildWitnessOfClass k in t)
 				$ ksContextC'
 
 {-		trace ("varInst: "
@@ -687,8 +693,7 @@ toCoreVarInst v vT
 		let tSchemeC			= toCoreT tSchemeT
 		let (tsReplay, ksContext)	= C.slurpForallContextT tSchemeC
 
-		let tsContext	= map (\k -> case k of
-						C.KClass v ts	-> C.TClass v ts)
+		let tsContext	= map (\k -> let Just t = C.buildWitnessOfClass k in t)
 				$ ksContext
 
 		let Just xResult =

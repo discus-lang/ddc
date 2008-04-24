@@ -24,6 +24,15 @@ module Core.Exp
 
 	, Type 		(..)	-- core types
 	, TyCon		(..)	-- type constructors
+	, TyClass	(..)	-- type class / witness names
+
+	-- built in tycons
+	, tcConst,	tcConstT
+	, tcMutable,	tcMutableT
+	, tcLazy, 	tcLazyH
+	, tcDirect
+	, tcPurify
+
 	, Fetter	(..)
 	, varOfFetter
 
@@ -43,6 +52,7 @@ import Util
 
 -----
 import Shared.Var (Var)
+import Shared.VarPrim
 import Shared.Exp
 
 import Data.Set		(Set)
@@ -273,20 +283,23 @@ data Label
 -- Kind --------------------------------------------------------------------------------------------
 -- Kind expressions
 
+-- de bruijn indicies
+type Index
+	= Int
+	
 data Kind	
 	= KNil					-- ^ some missing / unknown kind
+
+	| KForall	Kind 	Kind		-- ^ Dependent kinds.
+	| KFun 		Kind	Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
 
 	| KValue				-- ^ the kind of value types
 	| KRegion				-- ^ the kind of regions
 	| KEffect				-- ^ the kind of effects
 	| KClosure				-- ^ the kind of closures
-	| KFun 		Kind	Kind		-- ^ the kind of type constructors
 
-	| KSuper				-- ^ the superkind of classes
-						--	all the actual KClasses are sub-kinds of this one
-	
-	| KClass	Var	[Type]		-- ^ the kind of witnesses
-	| KWitJoin	[Kind]			-- ^ joining of witness kinds
+	| KClass	TyClass	[Type]		-- ^ the kind of witnesses
+	| KWitJoin	[Kind]			-- ^ joining of witnesses
 	deriving (Show, Eq)
 
 
@@ -315,6 +328,8 @@ data Type
 	| TVar		Kind 	Var			-- ^ a variable of the given kind
 	| TVarMore	Kind 	Var	Type		-- ^ an effect/closure variable with a :> bound
 
+	| TIndex	Index				-- ^ a de bruijn index, used in kind application.
+
 	| TTop		Kind
 	| TBot		Kind
 
@@ -325,48 +340,83 @@ data Type
 	| TFree		Var Type			-- ^ some object free in the closure of a function.
 	| TTag		Var
 	
-	-- witnesses
-	| TClass	Var [Type]			-- ^ A witness to some class
-	| TPurify	Effect Class			-- ^ A witness to purification of an effect
-	| TPurifyJoin	[Class]				-- ^ Joining of purification witnesses
+	-- Witness Joining
+	--	We could perhaps create a family of specific joining functions
+	--	instead but dealing with all the different combinations of argument
+	--	types would be too much pain..
+	| TWitJoin	[Class]
 
-	| TWitJoin	[Class]				-- ^ Join all these witnesses
-	
 	-- wildcards
 	| TWild		Kind				-- ^ Type wildcard. 
 							--	Will unify with anything of the given kind.
 	deriving (Show, Eq)
 
 
+-- TyCon -------------------------------------------------------------------------------------------
 -- | Type constructors
 data TyCon
-	-- Function type constructor
+	-- Function type constructor.
 	= TyConFun
 
-	-- Data type constructor.
+	-- A data type constructor.
 	| TyConData
-		{ tyConName	 :: Var			-- ^ name of the type constructor
+		{ tyConName	 :: Var
 		, tyConDataKind	 :: Kind }
+
 
 	-- Constructs a witness to some type/region/effect/closure class.
 	| TyConClass
-		{ tyConName	 :: Var			-- ^ name of the class
+		{ tyConClass	 :: TyClass
 		, tyConClassKind :: Kind }
-		
-	-- Constructs a witness that some effect is pure
-	| TyConPurify
-
-	-- Joins purification witnesses 
-	--	eg: pjoin (Pure E1) (Pure E2) :: Pure !{ E1; !E2 }
-	| TyConPureJoin
-		{ tyConAirity	:: Int }		-- ^ number of witnesses being joined
-		
 
 	deriving (Show, Eq)
 
- 	
+
+-- Built in type constructors ----------------------------------------------------------------------
+tcConst		= TyConClass TyClassConst	(KForall KRegion (KClass TyClassConst 	[TIndex 0]))
+tcConstT 	= TyConClass TyClassConstT	(KForall KValue  (KClass TyClassConstT	[TIndex 0]))
+tcMutable	= TyConClass TyClassMutable	(KForall KRegion (KClass TyClassMutable	[TIndex 0]))
+tcMutableT	= TyConClass TyClassMutableT	(KForall KValue  (KClass TyClassMutableT [TIndex 0]))
+tcLazy		= TyConClass TyClassLazy	(KForall KRegion (KClass TyClassLazy 	[TIndex 0]))
+tcLazyH		= TyConClass TyClassLazyH	(KForall KValue	 (KClass TyClassLazyH	[TIndex 0]))
+tcDirect	= TyConClass TyClassDirect	(KForall KRegion (KClass TyClassDirect	[TIndex 0]))
+
+tcPurify	= TyConClass TyClassPurify	
+			(KForall KRegion 
+				(KFun 	(KClass TyClassConst [TIndex 0])
+					(KClass TyClassPure  [TEffect primRead [TIndex 0]])))
 
 
+-- TyClass -----------------------------------------------------------------------------------------
+-- | Type / Region / Effect classes.
+--	As most of the type-level witnesses have the same names as
+--	their kind-level classes, we'll overload TyClass for both.
+--
+data TyClass
+	-- Various built-in classes.
+	--	These have special meaning to the compiler.
+
+	-- region classes	-- type classes
+	= TyClassConst		| TyClassConstT
+	| TyClassMutable	| TyClassMutableT
+	| TyClassLazy		| TyClassLazyH
+	| TyClassDirect
+
+	-- purification
+	| TyClassPurify		-- witness
+	| TyClassPure		-- class
+
+	-- empty closures
+	| TyClassEmpty
+
+	-- Some user defined class
+	| TyClass Var
+	deriving (Show, Eq)
+
+
+				
+
+-- Fetter ------------------------------------------------------------------------------------------
 data Fetter
 	= FWhere	Var Type
 	| FMore		Var Type

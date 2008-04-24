@@ -85,8 +85,7 @@ slurpWitnessKind
 slurpWitnessKind kk
  = case kk of
 	-- const regions
- 	C.KClass v [C.TVar C.KRegion r]
-	 |  v == Var.primDirect
+ 	C.KClass C.TyClassDirect [C.TVar C.KRegion r]
 	 -> modify $ \s -> s { stateDirectRegions 
 		 		= Set.insert r (stateDirectRegions s) }
 
@@ -118,7 +117,8 @@ toSeaP	xx
 	-- region
 	--	slurp witnesses on the way down
 	C.PRegion v vts
-	 -> do	mapM_ slurpWitnessKind $ map (C.kindOfType . snd) vts
+	 -> do	let Just ks	= sequence $ map (C.kindOfType . snd) vts
+	 	mapM_ slurpWitnessKind ks
 	 	return	[]
 
 	C.PExtern{}
@@ -182,7 +182,8 @@ splitSuper accArgs xx
 	= 	splitSuper accArgs x
 	
 	| C.XLocal v vts x	<- xx
-	= do	mapM_ (\t -> slurpWitnessKind $ (C.kindOfType . snd) t) vts
+	= do	let Just ks	= sequence $ map (C.kindOfType . snd) vts
+		mapM_ slurpWitnessKind ks
 		splitSuper accArgs x
 	
 	| otherwise
@@ -245,7 +246,8 @@ toSeaX		xx
 
 	-- slurp region witnesses on the way down
 	C.XLocal  v vts x	
-	 -> do	mapM_ (\t -> slurpWitnessKind ((C.kindOfType . snd) t)) vts
+	 -> do	let Just ks	= sequence $ map (C.kindOfType . snd) vts
+	 	mapM_ slurpWitnessKind ks
 	 	toSeaX x
 
 	-- slurp region witnesses on the way down
@@ -552,7 +554,9 @@ toSeaT	xx
 	| otherwise
 	= E.TObj
 
-	where isREC xx	= elem (C.kindOfType xx) [C.KRegion, C.KEffect, C.KClosure]
+	where isREC xx	
+		| Just k	<- C.kindOfType xx
+		= elem k [C.KRegion, C.KEffect, C.KClosure]
 	
 
 splitOpType to

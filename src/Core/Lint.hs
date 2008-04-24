@@ -149,8 +149,8 @@ lintP	tt (PClassDict v ts context vts)
  	-- v doesn't have this kind, but it'll do for now.
 	--	We're not checking kinds of class applications yet.
 	
- 	Just tt'	<- addVK v (KClass v ts) tt
-	return	tt'
+-- 	Just tt'	<- addVK v (KClass v ts) tt
+	return	tt
 
 
 lintP	tt _		
@@ -163,8 +163,9 @@ lintMainType :: Table -> Type -> LintM ()
 lintMainType table tt
 	
 	-- All witnesses passed to main need to be available at top level.
- 	| TContext k t		<- tt
-	= if elem k (map kindOfType $ Map.elems $ tableTypes table)	
+ 	| TContext k t	<- tt
+	, Just ks	<- sequence $ map kindOfType $ Map.elems $ tableTypes table
+	= if elem k ks
  		then lintMainType table t
 		else do	addError $ "Context of main function " % k % " is not available at top level.\n"
 			return ()
@@ -347,7 +348,7 @@ lintT tt (TVar k v)
 	-- Effects, Closures, bound via a XTet
 	-- ie   let !e1 = !{ ... }
 	| Just t	<- Map.lookup v (tableTypes tt)
-	, kt		<- kindOfType t
+	, Just kt	<- kindOfType t
 	= if  k /= kt
 		then  addError 
 			$ "Variable " % v % " has a different kind than the type bound to it.\n"
@@ -374,6 +375,9 @@ lintT tt (TVar k v)
 	= addError
 	  	$ "Type variable " % v % " is not in scope.\n"
 
+lintT tt (TIndex ix)
+ = 	return ()
+
 lintT tt (TCon tyCon)
  =	return ()
 
@@ -397,15 +401,12 @@ lintT tt (TTag v)
  = 	return () 
 
 -- witnesses
-lintT tt (TClass v ts)
- =	mapM_ (lintT tt) ts
- 
-lintT tt (TPurify eff wit)
- = do	lintT tt eff
- 	lintT tt wit
+-- lintT tt (TPurify eff wit)
+-- = do	lintT tt eff
+-- 	lintT tt wit
 
-lintT tt (TPurifyJoin wits)
- = do	mapM_ (lintT tt) wits	 
+-- lintT tt (TPurifyJoin wits)
+--  = do	mapM_ (lintT tt) wits	 
 
 lintT tt (TWitJoin wits)
  = do	mapM_ (lintT tt) wits
@@ -423,17 +424,20 @@ lintK tt kk
  = case kk of
  	KNil	
 	 -> addError $ ppr "lintK: found a KNil"
+
+	KFun k1 k2	
+	 -> do	lintK tt k1
+	 	lintK tt k2
+
+	KForall k1 k2
+	 -> do	lintK tt k1
+	 	lintK tt k2
 	
 	KValue		-> return ()
 	KRegion		-> return ()
 	KEffect		-> return ()
 	KClosure	-> return ()
 
-	KFun k1 k2	
-	 -> do	lintK tt k1
-	 	lintK tt k2
-		
-	KSuper		-> return ()
 	KClass v ts
 	 -> do	mapM_ (lintT tt) ts
 	 	

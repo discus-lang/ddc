@@ -12,6 +12,7 @@ import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Lift.Base
 import Core.Reconstruct
+import Core.ReconKind
 
 import qualified Shared.VarUtil	as Var
 import qualified Shared.Var	as Var
@@ -158,7 +159,8 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 makeSuperArgK :: (Bind, Kind) -> Exp
 makeSuperArgK (b, k)
 	| KClass v ts	<- k
-	= XType (TClass v ts)
+	, Just t	<- buildWitnessOfClass k
+	= XType t
 	
 	| BVar v	<- b
 	= XType (TVar k v)

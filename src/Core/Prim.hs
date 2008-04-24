@@ -56,8 +56,7 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KClass v [TVar KRegion r]
-	 |  v == primDirect
+ 	KClass TyClassDirect [TVar KRegion r]
 	 -> tt { tableDirectRegions 
 	 		= Set.insert r (tableDirectRegions tt)}
 
@@ -94,8 +93,8 @@ primX tt xx
 
 	-- check for direct regions on the way down
 	XLocal v vts x
-	 -> let tt2	= foldl' slurpWitnessKind tt 
-	 		$ map (kindOfType . snd) vts
+	 -> let Just ks	= sequence $ map (kindOfType . snd) vts
+	 	tt2	= foldl' slurpWitnessKind tt ks
 		
 		(tt3, x')	= primX tt2 x
 	    in	(tt3, XLocal v vts x')

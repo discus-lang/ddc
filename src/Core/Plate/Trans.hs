@@ -549,20 +549,20 @@ instance Monad m => TransM m Type where
 
 	
 	-- class		
-  	TClass v ts	
+{-  	TClass v ts	
 	 -> do	ts'		<- followTs table ts
 	 	v'		<- followV_free  table v
 		return		$  TClass v' ts'
-
-	TPurify eff wit
+-}
+{-	TPurify eff wit
 	 -> do	eff'	<- followT table eff
 	 	wit'	<- followT table wit
 		return	$ TPurify eff' wit'
-		
-	TPurifyJoin ts
+-}		
+{-	TPurifyJoin ts
 	 -> do	ts'	<- followTs table ts
 	 	return	$ TPurifyJoin ts'
-
+-}
 	TWitJoin ts
 	 -> do	ts'	<- followTs table ts
 	 	return	$ TWitJoin ts'
@@ -582,12 +582,13 @@ instance Monad m => TransM m TyCon where
 	 -> do	name'	<- followV_free table tyConName
 	 	return	$ tt { tyConName = name' }
 
-	TyConClass { tyConName }
-	 -> do	name'	<- followV_free table tyConName
-	 	return	$ tt { tyConName = name' }
+	TyConClass { tyConClass = TyClass v }
+	 -> do	v'	<- followV_free table v
+	 	return	$ tt { tyConClass = TyClass v }
 
-	TyConPurify {}	 -> return tt
-	TyConPureJoin {} -> return tt
+	TyConClass {}
+	 -> 	return tt
+
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance Monad m => TransM m Fetter where
@@ -608,33 +609,34 @@ instance Monad m => TransM m Kind where
  transZM table kk
   = case kk of
 	KNil		-> return KNil
-  	KValue 		-> return KValue
-  	KRegion 	-> return KRegion
-  	KEffect		-> return KEffect
-  	KClosure	-> return KClosure
-	
+
 	KFun k1 k2
 	 -> do	k1'	<- followK table k1
 	 	k2'	<- followK table k2
 		return	$ KFun k1' k2'
-		
-	KSuper{}	-> return KSuper
-	KClass v ts
-	 -> do	v'	<- followV_free table v
-	 	ts'	<- followTs table ts
-		return	$ KClass v' ts'
+
+	KForall k1 k2
+	 -> do	k1'	<- followK table k1
+		k2'	<- followK table k2
+		return	$ KForall k1' k2'
+
+  	KValue 		-> return KValue
+  	KRegion 	-> return KRegion
+  	KEffect		-> return KEffect
+  	KClosure	-> return KClosure
+
+	KClass tc ts
+	 -> do	ts'	<- followTs table ts
+		return	$ KClass tc ts'
 
 	KWitJoin ks
 	 -> do	ks'	<- mapM (followK table) ks
 	 	return	$ KWitJoin ks'
-	 
+
 -----
 instance Monad m => TransM m Stmt where
  transZM table s
   = case s of
--- 	SComment str
---	 -> 	transS table s
-	 
 	SBind mV x
 	 -> do	mV'		<- liftMaybe (followV_bind table) mV
 		x'		<- followX table x

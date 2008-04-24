@@ -84,16 +84,27 @@ packT1 tt
 	    in	makeTFetters t1' fs'
 
 
-	-- try and flatten out TApps into their specific constructors
-{-	TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
-	 -> 	TFunEC t1 t2 eff clo
-	    
-	TApp (TCon (TyConData { tyConName, tyConKind })) t2
-	 ->	TData tyConName [t2]
+	-- Crush witnesses along the way
+	TApp t1@(TCon (TyConClass tyClass k)) t2
+	 -> let result
+			-- crush LazyH on the way
+	 		| tyClass == TyClassLazyH
+			, Just (vD, k, (TVar KRegion r : ts))	<- takeTData t2
+			= TApp (TCon tcLazy) (TVar KRegion r)
+
+			-- crush MutableT on the way
+			| tyClass == TyClassMutableT 
+			, Just _		<- takeTData t2
+			, (rs, ds)		<- slurpVarsRD t2
+			= TWitJoin 
+			    	$ (   map (\r -> TApp (TCon tcMutable)  r) rs
+				   ++ map (\d -> TApp (TCon tcMutableT) d) ds)
+
+			| otherwise
+			= let	t2'	= packT1 t2
+			  in	TApp t1 t2'
+	    in	result
 	
-	TApp (TData k v ts) t2
-	 ->	TData v (ts ++ [t2])
--}	 
 
 	TApp t1 t2
 	 -> let	t1'	= packT1 t1
@@ -140,17 +151,7 @@ packT1 tt
 	TBot k		-> tt
 	TTop k 		-> tt
 	 
-	-- data
-{-	TFunEC t1 t2 eff clo
-	 -> let (t1',  fs1)	= slurpTFetters $ packT1 t1
-	  	(t2',  fs2)	= slurpTFetters $ packT1 t2
-		(eff', fsE)	= slurpTFetters $ packT1 eff
-		(clo', fsC)	= slurpTFetters $ packT1 clo
-
-	    in	makeTFetters (TFunEC t1' t2' eff' clo')
-	    		(fs1 ++ fs2 ++ fsE ++ fsC)
--}
-	    
+    
 	-- effect
 	-- crush EReadH on the way
 	TEffect v [t1]
@@ -188,31 +189,6 @@ packT1 tt
 	    in	TFree v t1'
 	    
 	TTag v	-> tt
-	
-	-- class
-
-	TClass v [t1]
-	 -> let result
-			-- crush LazyH on the way
-	 		| Just (vD, k, (TVar KRegion r : ts))	<- takeTData t1
-			, v == primLazyH
-			= TClass primLazy [TVar KRegion r]
-
-			-- crush MutableT on the way
-			| Just _		<- takeTData t1
-			, v == primMutableT
-			, (rs, ds)		<- slurpVarsRD t1
-			= TWitJoin 
-			    	$ (   map (\r -> TClass primMutable  [r]) rs
-				   ++ map (\d -> TClass primMutableT [d]) ds)
-
-			| otherwise
-			= TClass v [packT1 t1]
-	   in	result
-
-	TClass v ts
-	 -> TClass v (map packT1 ts)
-
 
 	TWitJoin ts
 	 -> makeTWitJoin (map packT1 ts)
@@ -221,7 +197,8 @@ packT1 tt
 	TWild{}	-> tt
 
 	_ -> panic stage
-		$ "packT: no match for " % tt
+		$ "packT: no match for " % tt % "\n"
+		% "  tt = " % show tt % "\n"
 
 
 slurpTFetters (TFetters t fs)	= (t, fs)
@@ -232,20 +209,19 @@ slurpTFetters tt		= (tt, [])
 packK1 :: Kind -> Kind
 packK1 kk
 	-- crush LazyH on the way
-	| KClass v [t1]	<- kk
+	| KClass tc [t1]	<- kk
 	, Just (vD, k, TVar KRegion r : ts)	<- takeTData t1
-	, v == primLazyH
-	= KClass primLazy [TVar KRegion r]
-
+	, tc == TyClassLazyH
+	= KClass TyClassLazy [TVar KRegion r]
 
 	-- crush MutableT on the way
-	| KClass v [t1]	<- kk
+	| KClass tc [t1]	<- kk
 	, Just _			<- takeTData t1
-	, v == primMutableT
+	, tc == TyClassMutableT
 	, (rs, ds)			<- slurpVarsRD t1
 	= makeKWitJoin 
-	    	$ (   map (\r -> KClass primMutable  [r]) rs
-		   ++ map (\d -> KClass primMutableT [d]) ds)
+	    	$ (   map (\r -> KClass TyClassMutable  [r]) rs
+		   ++ map (\d -> KClass TyClassMutableT [d]) ds)
 	
 	| KClass v ts	<- kk
 	= KClass v (map packT1 ts)
@@ -323,19 +299,12 @@ inlineTWheresMapT sub block tt
     
 	TApp t1 t2		-> TApp (down t1) (down t2)
 
-	-- data
---	TFunEC t1 t2 eff clo	-> TFunEC (down t1) (down t2) (down eff) (down clo)
---	TData v ts		-> TData v (map down ts)
-	
 	-- effect
 	TEffect  v ts		-> TEffect v (map down ts)
  	
 	-- closure
 	TFree v t		-> TFree v (down t)
 	TTag v			-> tt
-
-	-- class
-	TClass v ts		-> TClass v (map down ts)
 
 	TWild k			-> tt
 	    

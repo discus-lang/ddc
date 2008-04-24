@@ -89,16 +89,19 @@ rewriteApp xx
 
  	result
 		-- see if the var is in the classMap, if it is then it is overloaded.
-		| Just	( cClass@(TClass vClass tsClass)
+		| Just	( tClass
 			, tOverScheme
 			, cxInstances)	
 				<- Map.lookup overV ?classMap
+
+		, Just (vClass, kClass, tsClass)	
+				<- takeTClass tClass
 		
 		= let	vksClass 	= map (\(TVar k v) -> (v, k)) tsClass
 			tScheme	 	= foldl (\t (v, k) -> TForall (BVar v) k t) tOverScheme vksClass
 		  	tScheme_c	= addContext (KClass vClass tsClass) tScheme
 		  
-		  in 	rewriteOverApp_trace xx overV cClass tScheme_c cxInstances ?typeMap
+		  in 	rewriteOverApp_trace xx overV tClass tScheme_c cxInstances ?typeMap
 		
 		-- couldn't find it in the classMap, var isn't overloaded.
 		| otherwise
@@ -125,14 +128,18 @@ rewriteOverApp
 rewriteOverApp
 	xx 
 	overV 
-	cClass@(TClass classV classParamVs) 
+	tClass
 	tOverScheme 
 	cxInstances
 	mapTypes
 
+	
+	| Just (classV, classKind, classParamVs)
+			<- takeTClass tClass
+
 	-- first work out what instance function to use
-	| (cClassInst, tOverShapeI, Just vInst)
-			<- determineInstance xx overV cClass tOverScheme cxInstances 
+	, (cClassInst, tOverShapeI, Just vInst)
+			<- determineInstance xx overV tClass tOverScheme cxInstances 
 
 	-- Ok, we know what types the overloaded function was called at, and what instance to use.
 	--	We now have to work out what type args to pass to the instance function.
@@ -188,7 +195,7 @@ rewriteOverApp
 
 		-- Work out the witnesses we need to pass to the instance function
 		ksClassArgs		= map (\c -> substituteT (Map.fromList vtSub) c) ksClass
-		Just tsWitnesses	= sequence $ map takeWitnessOfClass ksClassArgs
+		Just tsWitnesses	= sequence $ map buildWitnessOfClass ksClassArgs
 
 		-- Have a look at the original application 
 		--	split off the type/class args and keep the value args.
@@ -223,7 +230,7 @@ rewriteOverApp
 
 	-- couldn't find the instance for this function			
 	| (cClassInst, tOverShapeI, Nothing)
-    		<- determineInstance xx overV cClass tOverScheme cxInstances
+    		<- determineInstance xx overV tClass tOverScheme cxInstances
 	= panic stage 
 		$ "rewriteOverApp: no instance for " % cClassInst % "\n"
 		% "  in " % xx % "\n"
@@ -245,7 +252,8 @@ takeVSub xx ttSub (t1, t2)
 	--	In the Parsec demo we end up with things like
 	--		(!Read %r, {!Read %r, !Read %r2}) being returned from the unifier.
 	--	
-	| elem (kindOfType t1) [KEffect, KClosure]
+	| Just k1	<- kindOfType t1
+	, elem k1 [KEffect, KClosure]
 	= Nothing
 	
 	| otherwise
@@ -301,9 +309,12 @@ determineInstance
 determineInstance 
 	xx 		
 	overV 		
-	cClass@(TClass vClass tsClassParams)	
+	tClass
 	overScheme	
 	cvInstances	
+
+ | Just (vClass, kClass, tsClassParams)
+ 	<- takeTClass tClass
  = let
  	-- See how many foralls there are on the front of the overloaded scheme.
 	(vtsForall, _, _, tOverShape)
@@ -325,7 +336,7 @@ determineInstance
 				tsArgsQuant
 				
 	tsClassParams'	= map (substituteT tsSubst) tsClassParams
-	cClassInst	= TClass vClass (map stripToShapeT tsClassParams')
+	cClassInst	= makeTClass vClass kClass (map stripToShapeT tsClassParams')
 
 	-- Lookup the instance fn
 	mInstV		= lookupF matchInstance cClassInst cvInstances
@@ -366,8 +377,8 @@ matchInstance
 	-> Bool
 
 matchInstance cType cInst
-	| TClass v1 ts1		<- cInst
-	, TClass v2 ts2		<- cType
+	| Just (v1, _, ts1)	<- takeTClass cInst
+	, Just (v2, _, ts2)	<- takeTClass cType
 
 	-- check the class is the same
 	, v1 == v2
@@ -380,11 +391,11 @@ matchInstance cType cInst
 	--	a var or wildcard for the RHS
 	, and 	$ map (\(ta, tb) -> case ta of
 				TVar  k v
-				 | kindOfType tb == k
+				 | kindOfType tb == Just k
 			 	 -> True
 
 				TWild k
-				 | kindOfType tb == k
+				 | kindOfType tb == Just k
 				 -> True
 
 				_	-> False)
@@ -396,12 +407,15 @@ matchInstance cType cInst
 	= False
 
 matchTT t1 t2
-	| elem (kindOfType t1) [KEffect, KClosure, KRegion]
+	| Just k1	<- kindOfType t1
+	, elem k1  [KEffect, KClosure, KRegion]
 	, kindOfType t1 == kindOfType t2
 	= Just []
 
-	| resultKind (kindOfType t1) == KValue
-	, resultKind (kindOfType t2) == KValue
+	| Just k1	<- kindOfType t1
+	, Just k2	<- kindOfType t2
+	, resultKind k1 == KValue
+	, resultKind k2 == KValue
 	= unifyT2 t1 t2 
 		
 	| otherwise
@@ -426,15 +440,20 @@ slurpClassFuns
 
 slurpClassFuns instMap pp
  = Map.fromList
- 	[ (vF, (TClass v ts, sig, exps))
+ 	[ (vF, (makeTClassFromDict v ts, sig, exps))
 
 	| PClassDict v ts context sigs	<- pp 
 	, (vF, sig)		<- sigs 
 	, let (Just insts)	= Map.lookup v instMap
-	, let exps		= [ (TClass v' ts', instV)	
+	, let exps		= [ (makeTClassFromDict v' ts', instV)	
 					| PClassInst v' ts' _ defs	<- insts
 					, (v, (XVar instV t))		<- defs
 					, v == vF		] ]
+
+makeTClassFromDict v ts 
+ = let 	Just ks	= sequence $ map kindOfType ts
+ 	k 	= buildKFun (ks ++ [KClass (TyClass v) ts])
+   in	makeTClass (TyClass v) k ts
 
 -- | Slurp out all the class instances from ths tree
 slurpClassInstMap
