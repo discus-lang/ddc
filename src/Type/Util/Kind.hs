@@ -19,7 +19,10 @@ module Type.Util.Kind
 
 	-- kind reconstruction
 	, kindOfType
-	, kindOfType_orDie)
+	, kindOfType_orDie
+	
+	-- fast kind utils
+	, isClosure)
 
 where
 
@@ -133,7 +136,9 @@ inventWitnessOfClass k
 -- Kind reconstruction -----------------------------------------------------------------------------
 -- | Reconstruct the kind of this type, kind checking along the way
 kindOfType :: Type -> Maybe Kind
-kindOfType tt
+kindOfType tt = {-# SCC "kindOfType" #-} kindOfType' tt
+
+kindOfType' tt
 
 	| TForall  b t1 t2	<- tt	= kindOfType t2		-- todo, add bound kind to env
 
@@ -307,3 +312,28 @@ betaTT depth tX tt
 		$ "betaTT: no match for " % tt
 
 
+-- Fast kind utils ---------------------------------------------------------------------------------
+
+-- Used in Core.Subsumes
+isClosure :: Type -> Bool
+isClosure tt
+ = case tt of
+	-- closures are always fully constructed
+	TApp{}			-> False
+	TData{}			-> False
+	TFun{}			-> False
+
+ 	TSum	KClosure _	-> True
+	TMask	KClosure _ _	-> True
+	TVar	KClosure _	-> True
+	TClass	KClosure _	-> True
+	TFree{}			-> True
+	TDanger{}		-> True
+	TTop	KClosure 	-> True
+	TBot	KClosure 	-> True
+	TWild	KClosure	-> True
+
+	TFetters t1 _		-> isClosure t1
+
+	
+	_			-> False

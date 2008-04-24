@@ -60,7 +60,7 @@ subsumes1 table t s
 -- make sure closure terms are trimmed before comparing them
 subsumes2 table t s
  = let trimC tt
- 	| kindOfType tt == Just KClosure	
+ 	| isClosure tt
 	= trimClosureC Set.empty Set.empty tt
 
 	| otherwise			

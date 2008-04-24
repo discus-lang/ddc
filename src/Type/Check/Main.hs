@@ -51,7 +51,7 @@ checkMain' vMainT tMain tt
 			
 isMainVar var
 	| Var.name var		== "main"
-	, Var.nameModule var	== Var.ModuleAbsolute ["Main"]
+	, Var.ModuleAbsolute ["Main"]	<- Var.nameModule var
 	= True
 	
 	| otherwise
