@@ -87,6 +87,7 @@ instance Pretty Type PMode where
 		 	KValue	-> "*" % v
 			_	-> ppr v)
 
+	TWitJoin wits		-> "wjoin {" % "; " %!% wits % "}"
 
 prettyTRight tt
  = case tt of
@@ -200,6 +201,21 @@ instance Pretty TyCon PMode where
   	TyConFun{}		-> ppr "(->)"
 	TyConData { tyConName }	-> ppr tyConName
 
+-- TyClass -----------------------------------------------------------------------------------------
+instance Pretty TyClass PMode where
+ ppr cc
+  = case cc of
+  	TyClassConst	-> ppr "Const"
+	TyClassConstT	-> ppr "ConstT"
+	TyClassMutable	-> ppr "Mutable"
+	TyClassMutableT	-> ppr "MutableT"
+	TyClassLazy	-> ppr "Lazy"
+	TyClassLazyH	-> ppr "LazyH"
+	TyClassDirect	-> ppr "Direct"
+	TyClassPurify	-> ppr "Purify"
+	TyClassPure	-> ppr "Pure"
+	TyClassEmpty	-> ppr "Empty"
+	TyClass var	-> ppr var
 
 -- TProj -------------------------------------------------------------------------------------------
 instance Pretty TProj PMode where
@@ -233,12 +249,18 @@ instance Pretty Kind PMode where
  ppr k
   = case k of
 	KNil		-> ppr "?"
+
 	KFun k1 k2	-> k1 % " -> " % k2
+	KForall k1 k2	-> "\\" % k1 % ". " % k2
+
 	KValue		-> ppr "*"
 	KRegion		-> ppr "%"
 	KEffect		-> ppr "!"
 	KFetter		-> ppr"+"
 	KClosure	-> ppr "$"
+
+  	KClass v ts	-> v % " " % " " %!% map prettyTB ts
+	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
 
 -- InstanceInfo ------------------------------------------------------------------------------------

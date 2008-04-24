@@ -267,6 +267,11 @@ followT table tt
 	 	v'	<- transZM table v
 		t'	<- transZM table t
 		return	$ TVarMore k' v' t'
+
+	TWitJoin ts
+	 -> do	ts'	<- transZM table ts
+	 	return	$ TWitJoin ts'
+
 				
 -- TyCon -------------------------------------------------------------------------------------------
 instance Monad m => TransM m TyCon where

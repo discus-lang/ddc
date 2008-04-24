@@ -600,6 +600,7 @@ instance Pretty Kind PMode where
  ppr xx
   = case xx of
 	KNil		-> ppr "?"
+
 	KFun    k1 k2	-> k1 % " -> " % k2
 	KForall k1 k2	-> "\\" % k1 % ". " % k2
 

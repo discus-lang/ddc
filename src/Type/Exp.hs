@@ -5,6 +5,7 @@ module Type.Exp
 	, Bind		(..)
 	, Type		(..)
 	, TyCon		(..)
+	, TyClass	(..)
 	, ClassId	(..)
 	, TProj		(..)
 	, Fetter  	(..)
@@ -57,18 +58,26 @@ instance Ord Type where
 -- Kind --------------------------------------------------------------------------------------------
 data Kind
 	= KNil					-- ^ An missing / unknown kind.
-	| KFun	   Kind	Kind			-- ^ The kind of type constructors.	(->)
-	| KValue				-- ^ The kind of value types.		(*)
-	| KRegion				-- ^ The kind of regions.		(%)
-	| KEffect				-- ^ The kind of effects.		(!)
-	| KClosure				-- ^ The kind of closures.		($)
-	| KFetter				-- ^ The kind of class constraints	(+)
+
+	| KForall	Kind 	Kind		-- ^ Dependent kinds.
+	| KFun 		Kind	Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
+
+	| KValue				-- ^ the kind of value types
+	| KRegion				-- ^ the kind of regions
+	| KEffect				-- ^ the kind of effects
+	| KClosure				-- ^ the kind of closures
+
+	| KFetter	-- ditch me
+
+	| KClass	TyClass	[Type]		-- ^ the kind of witnesses
+	| KWitJoin	[Kind]			-- ^ joining of witnesses
 	deriving (Show, Eq)	
 
 type Data	= Type
 type Region	= Type
 type Effect	= Type
 type Closure	= Type
+type Class	= Type
 
 -- Type --------------------------------------------------------------------------------------------
 -- | This data type includes constructors for bona-fide type expressions, 
@@ -133,6 +142,13 @@ data Type
 	--	without having to see the bounds on enclosing foralls.
 	| TVarMore	Kind	Var	Type
 
+	-- Witness Joining
+	--	Used in core only.
+	--	We could perhaps create a family of specific joining functions
+	--	instead but dealing with all the different combinations of argument
+	--	types would be too much pain..
+	| TWitJoin	[Class]
+
 	deriving (Show, Eq)
 
 
@@ -144,6 +160,7 @@ data Elaboration
 	deriving (Show, Eq)
 
 
+-- TyCon -------------------------------------------------------------------------------------------
 -- | Type constructors
 data TyCon
 	= TyConFun
@@ -154,6 +171,33 @@ data TyCon
 		, tyConKind	:: Kind }
 
 	deriving (Show, Eq)
+
+-- TyClass -----------------------------------------------------------------------------------------
+-- | Type / Region / Effect classes.
+--	As most of the type-level witnesses have the same names as
+--	their kind-level classes, we'll overload TyClass for both.
+--
+data TyClass
+	-- Various built-in classes.
+	--	These have special meaning to the compiler.
+
+	-- region classes	-- type classes
+	= TyClassConst		| TyClassConstT
+	| TyClassMutable	| TyClassMutableT
+	| TyClassLazy		| TyClassLazyH
+	| TyClassDirect
+
+	-- purification
+	| TyClassPurify		-- witness
+	| TyClassPure		-- class
+
+	-- empty closures
+	| TyClassEmpty
+
+	-- Some user defined class
+	| TyClass Var
+	deriving (Show, Eq)
+
 
 -- Fetter ------------------------------------------------------------------------------------------
 -- | A Fetter is a piece of type information which isn't part of the type's shape.
