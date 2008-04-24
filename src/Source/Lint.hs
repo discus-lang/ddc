@@ -131,9 +131,8 @@ instance Lint Type where
  lint tt
   = case tt of
 
-	TForall vks t
-	 | isNil vks			-> death tt "TForall - quant var list is empty."
-	 | otherwise			-> TForall vks (lint t)
+	TForall b k t
+	 | otherwise			-> TForall b k (lint t)
 
 
 	TFetters t fs

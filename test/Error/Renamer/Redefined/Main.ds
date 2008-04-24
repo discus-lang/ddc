@@ -17,7 +17,8 @@ fun2 x	= case x of { Cons xx xx -> xx; };
 
 -- Redefined vars in type expressions
 --	as well as no function body for type sigs.
---
+--	BL 4/2008: this isn't checked anymore
+{-
 funTT	:: forall a a
 	.  a -> a;
 
@@ -26,7 +27,7 @@ funTR 	:: forall a %r1 b %r1 %r2
 
 funTE 	:: forall a %r1 !e1 !e1
 	.  Tuple2 %r1 (a -(!e1)> a);
-	
+-}
 
 -- this should clash with the force function in Base.Thunk
 force	= 27;

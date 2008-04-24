@@ -178,18 +178,18 @@ packTypeLs ld ls tt
  	 -> return tt
 
 	-- push foralls under closure tags
-	TForall vks (TFree v1 t)	
+	TForall v k (TFree v1 t)	
 	 -> do	t'	<- packTypeLs ld ls t
-	 	return	$ TFree v1 (TForall vks t')
+	 	return	$ TFree v1 (TForall v k t')
 
- 	TForall vks t	
+ 	TForall b k t	
 	 -> do	t'	<- packTypeLs ld ls t
-	   	return	$ TForall vks t'
+	   	return	$ TForall b k t'
 
 	-- keep fetters under foralls.
-	TFetters (TForall vks t) fs 
+	TFetters (TForall b k t) fs 
 	 -> do	t'	<- packTypeLs ld ls t
-		return	$ TForall vks (TFetters t' fs)
+		return	$ TForall b k (TFetters t' fs)
 
 	TFetters t fs
 	 -> packTFettersLs ld ls tt

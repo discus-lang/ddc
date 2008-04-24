@@ -129,6 +129,19 @@ instance Monad m => TransM m ClassId
 
 
 -- Type --------------------------------------------------------------------------------------------
+instance Monad m => TransM m Bind where
+ transZM table tt
+  = case tt of
+  	BVar v
+	 -> do	v'	<- transZM table v
+	 	return	$ BVar v'
+		
+	BMore v t
+	 -> do	v'	<- transZM table v
+	 	t'	<- transZM table t
+		return	$ BMore v' t'
+
+
 instance Monad m => TransM m Type where
  transZM table tt 
   = transT table table tt
@@ -144,10 +157,11 @@ followT table tt
 	TNil
 	 -> do	return	$ TNil
 
-	TForall vks t
-	 -> do	vks'	<- transZM table vks
+	TForall b k t
+	 -> do	b'	<- transZM table b
+	 	k'	<- transZM table k
 	 	t'	<- transZM table t
-		return	$ TForall vks' t'
+		return	$ TForall b' k' t'
 
 	TContext k t
 	 -> do	k'	<- transZM table k

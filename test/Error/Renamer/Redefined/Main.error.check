@@ -9,15 +9,3 @@
 ./test/Error/Renamer/Redefined/Main.ds:15:30
      Redefined value variable 'xx'
       first defined at: ./test/Error/Renamer/Redefined/Main.ds:15:27
-
-./test/Error/Renamer/Redefined/Main.ds:21:20
-     Redefined type variable 'a'
-      first defined at: ./test/Error/Renamer/Redefined/Main.ds:21:18
-
-./test/Error/Renamer/Redefined/Main.ds:24:26
-     Redefined region variable '%r1'
-      first defined at: ./test/Error/Renamer/Redefined/Main.ds:24:20
-
-./test/Error/Renamer/Redefined/Main.ds:27:28
-     Redefined effect variable '!e1'
-      first defined at: ./test/Error/Renamer/Redefined/Main.ds:27:24

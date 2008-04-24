@@ -48,7 +48,7 @@ dangerT rsMutable fsClosure tt
  	TVar{}			-> Set.empty
 	TClass{}		-> Set.empty
 
-	TForall vks t		
+	TForall b k t		
 	 -> dangerT rsMutable fsClosure t
 
 	-- fetters

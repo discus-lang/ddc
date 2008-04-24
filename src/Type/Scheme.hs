@@ -162,7 +162,7 @@ generaliseType' varT tCore envCids
 
 slurpFetters tt
 	= case tt of
-		TForall vks t'	-> slurpFetters t'
+		TForall b k t'	-> slurpFetters t'
 		TFetters _ fs	-> fs
 		_		-> []
 

@@ -167,7 +167,7 @@ exportInstInfo (v, ii)
 		--	  See test/Typing/Closure/GetInc1 for an example that runs into this problem.
 
 		let chopForalls tt = case tt of
-					TForall vks t	-> chopForalls t
+					TForall b k t	-> chopForalls t
 					_		-> tt
 
 		let ts_hacked	= map chopForalls ts

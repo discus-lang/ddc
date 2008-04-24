@@ -37,6 +37,13 @@ stage	= "Type.ToCore"
 
 -- Type ---------------------------------------------------------------------------------------------
 -- | Convert this type to core representation.
+toCoreB :: T.Bind -> C.Bind
+toCoreB bb
+ = case bb of
+ 	T.BVar  v	-> C.BVar v
+	T.BMore v t	-> C.BMore v (toCoreT t)
+
+
 toCoreT:: T.Type -> C.Type
 toCoreT tt	= toCoreT' Map.empty tt
 
@@ -45,37 +52,37 @@ toCoreT' table tt
  = let down x	= toCoreT' table x
    in case tt of
 	
-	
 	-- Add :> constraints on type variables directly to the quantifer.
-	T.TForall vks (T.TFetters t fs)
-	 -> let	(fsMore, fsRest)	
-			= partition ((=@=) T.FMore{}) fs
+	T.TForall b k tQuant
+	 -> let result
+	 		| (bks, T.TFetters tBody fs)	<- T.slurpTForall tt
+			= let	
+				(fsMore, fsRest) = partition ((=@=) T.FMore{}) fs
+				vtsMore		 = Map.fromList
+							[(v, t)	| T.FMore (T.TVar _ v) t <- fsMore]
 
-		vtsMore	= Map.fromList
-			$ [(v, t)	| T.FMore (T.TVar _ v) t	<- fsMore]
+				makeBK b
+				 = let	v	= T.varOfBind b
+				 	b'	= case Map.lookup v vtsMore of
+							Nothing	-> C.BVar v
+							Just t	-> C.BMore v (toCoreT t)
+					k	= toCoreK $ fromJust $ lookup b bks
+				   in	(b', k)
+				   
+				bks'		= map (makeBK . fst) bks
+				
+				table'	= Map.union table vtsMore
 
-		bsKinds	= map	(\v -> (case Map.lookup v vtsMore of
-						Nothing	-> C.BVar v
-						Just t	-> C.BMore v (toCoreT t)
+	   		in	foldl	(\t (b, k) -> C.TForall b k t)
+			   		(toCoreT' table' $ T.TFetters tBody fsRest)
+					(reverse bks')
 
-				       , toCoreK $ fromJust $ lookup v vks))
-			$ map fst vks
-		
-		table'	= Map.union table vtsMore
+			| (bks, tBody)			<- T.slurpTForall tt
+			= foldl (\t (b, k) -> C.TForall (toCoreB b) (toCoreK k) t)
+				(toCoreT' table tBody)
+				(reverse bks)
 
-	   in	foldl	(\t (b, k) -> C.TForall b k t)
-	   		(toCoreT' table' $ T.TFetters t fsRest)
-			(reverse bsKinds)
-
-	-- Forall with no fetters underneath
-	T.TForall vks t
-	 -> let vsKinds	= map	(\v -> ( v
-				       , toCoreK $ fromJust $ lookup v vks))
-			$ map fst vks
-
-	   in	foldl	(\t (v, k) -> C.TForall (C.BVar v) k t)
-	   		(down t)
-			(reverse vsKinds)
+	    in	result
 	   
 	T.TFetters t fs
 	 -> let	

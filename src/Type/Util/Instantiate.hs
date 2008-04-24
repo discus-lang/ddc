@@ -48,22 +48,26 @@ instantiateT_table
 	     , [Var])			-- list of instance variables, one for 
 	     				--	each of the foralls at the front of the scheme
 
-instantiateT_table instF t
- = case t of
- 	TForall vks x
-	 -> do	-- build a table mapping each of the forall bound variables
+instantiateT_table instF tt
+ = case tt of
+ 	TForall b k tBody
+	 -> do	-- split of the quantifier so we can instantiate all the vars at once
+	 	let (bks, tBody) = slurpTForall tt
+	 
+		-- build a table mapping each of the forall bound variables
 		--	to a new instance variable.
-	 	let vs		= map fst vks
+	 	let  vs		= map (varOfBind . fst) bks
 	 	Just vsI	<- liftM sequence $ mapM instF vs
 		let table	= Map.fromList $ zip vs vsI
 				
 		-- substitute instance variables into the body of the type.
-		let x'		= transformV (\v -> case Map.lookup v table of
-							Nothing	-> v
-							Just v'	-> v')
-				$ x
+		let tBody'	= transformV 
+					(\v -> case Map.lookup v table of
+						Nothing	-> v
+						Just v'	-> v')
+					tBody
 				
-		return 		(x', vsI)
+		return 		(tBody', vsI)
 	
-	_ ->	return (t, [])
+	_ ->	return (tt, [])
 	

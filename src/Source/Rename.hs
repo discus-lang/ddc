@@ -726,13 +726,14 @@ renameSs	ss
 instance Rename Type where
  rename tt
   = case tt of
-	TForall vs t
-	 -> do 	(vs', t')	<- local 
-		 $  do	vs'	<- mapMt2_1 bindZ vs
+	TForall b k t
+	 -> do 	(b', t')	<- local 
+		 $  do	let (BVar v)	= b
+		 	v'	<- bindZ v
 			t'	<- rename t
-			return	(vs', t')
+			return	(BVar v', t')
 
-		let tt'		= TForall vs' t'
+		let tt'		= TForall b' k t'
 		return tt'
 {-
 		-- If a type contains an explicit forall then all free vars must be bound by it.

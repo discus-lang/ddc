@@ -28,7 +28,7 @@ flattenT' sub block tt
    in  case tt of
    	TNil		-> TNil
 
-	TForall vks t	-> TForall vks (down t)
+	TForall b k t	-> TForall b k (down t)
 
 	TFetters t fs
 	 -> let (fsWhere, fsRest)

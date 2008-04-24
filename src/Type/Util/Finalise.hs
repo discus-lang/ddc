@@ -40,13 +40,13 @@ finaliseT bound def tt
 finaliseT' bound def tt
  = let down	= finaliseT' bound def
    in  case tt of
-  	TForall vks t	
+  	TForall b k t	
 	 -> let	bound'	= Map.union bound 
 	 		$ Map.fromList 
-			$ map (\(v, k) -> (v, (k, Nothing))) vks
+			$ [(varOfBind b, (k, Nothing))]
 
 	 	t'	= finaliseT' bound' def t
-	    in	TForall vks t'
+	    in	TForall b k t'
 	    
 	TFetters t fs
 	 -> let	vksMore	= Map.fromList 

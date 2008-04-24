@@ -25,7 +25,10 @@ instance Pretty Type PMode where
   = case xx of
  	TNil		-> ppr "@TNil"
 
-	TForall vs t	-> "forall " % " " %!% (map prettyVK vs) % ". " % t
+	TForall b k t	
+	 -> let	(bks, tBody) = slurpTForall xx
+	    in	"forall " % punc " " (map (uncurry pprBindKind) bks) % ". " % tBody
+
 	TContext c t	-> c % " => " % t
 	TFetters t fs	-> t % " :- " % ", " %!% fs
 	TSum k  es	-> k  % "{" % "; " %!% es % "}"
@@ -120,6 +123,12 @@ pprVarKind v k
 
 	(ppr v)
 
+pprBindKind :: Bind -> Kind -> PrettyM PMode
+pprBindKind bb k
+ = case bb of
+ 	BVar v		-> pprVarKind v k
+	BMore v t	-> pprVarKind v k % " :> " % t
+	
 
 -- | Get the kind associated with a namespace.
 --	This is a local local copy to avoid module recursion.
@@ -140,11 +149,12 @@ kindOfSpace2 var space
 
 -- | Prints a type with the fetters on their own lines
 prettyTypeSplit :: Type	-> PrettyM PMode
-prettyTypeSplit	   x
- = case x of
- 	TForall vs t
-	 -> "forall " % (" " %!% (map prettyVK vs)) % "\n"
-	 %  ".  " % prettyTypeSplit2 t
+prettyTypeSplit	   tt
+ = case tt of
+ 	TForall b k t
+	 -> let (bks, tBody)	= slurpTForall tt
+	    in	"forall " % punc " " (map (uncurry pprBindKind) bks) % "\n"
+	    		% ".  " % prettyTypeSplit2 tBody
 	 
 	t -> prettyTypeSplit2 t
 	 
@@ -252,3 +262,17 @@ instance  (Pretty param PMode)
 	InstanceLetRec v1 v2 mt
 	 -> "InstanceLetRec "	% v1 % " " % v2 % " " % mt
 
+
+
+----------------------------------------------------------------------------------------------------
+-- Duplicated in Type.Util.Bits
+
+-- | Slurp forall bindings from this type
+slurpTForall :: Type -> ([(Bind, Kind)], Type)
+slurpTForall tt
+ = case tt of
+ 	TForall b k t	
+	 -> let	(bksRest, tRest)	= slurpTForall t
+	    in	( (b, k) : bksRest, tRest)
+	    
+	_ -> ([], tt)

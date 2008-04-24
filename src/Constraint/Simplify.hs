@@ -158,7 +158,7 @@ subFollowVT' sub block tt
  = let	down	= subFollowVT' 	sub block
 	downF	= subFollowVT_f sub block
    in case tt of
- 	TForall  vks t		-> TForall	vks (down t)
+ 	TForall  b k t		-> TForall	b k (down t)
 	TFetters t fs		-> TFetters	(down t) (map downF fs)
 	TSum 	k ts		-> TSum		k (map down ts)
 	TMask	k t1 t2		-> TMask	k (down t1) (down t2)

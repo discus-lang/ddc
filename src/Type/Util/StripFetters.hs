@@ -17,9 +17,9 @@ stripFLetsT	tt
  = case tt of
 	TNil	-> (TNil, [])
 
-	TForall vks t
+	TForall b k t
 	 -> let	(t', fs)	= stripFLetsT t
-	    in	( TForall vks t'
+	    in	( TForall b k t'
 	    	, fs)
 
 	TFetters t fs
@@ -111,9 +111,9 @@ stripMonoFLetsT tt
  = case tt of
 	TNil	-> (tt, [])
 
- 	TForall vks t	
+ 	TForall b k t	
 	 -> let (t', fsMono)	= stripMonoFLetsT t
-	    in	(TForall vks t', fsMono)
+	    in	(TForall b k t', fsMono)
 	 
 	TFetters t fs
 	 -> let	(fsMono, fsOther)	= partition isMonoFLet fs

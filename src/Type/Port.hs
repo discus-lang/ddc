@@ -61,7 +61,7 @@ letifyFs tsContra ff
 slurpContraClassVarsT :: Type -> [Type]
 slurpContraClassVarsT tt
  = case tt of
-	TForall vks t		-> slurpContraClassVarsT t
+	TForall b k t		-> slurpContraClassVarsT t
 	TFetters t fs		-> slurpContraClassVarsT t
  	TFun t1 t2 eff clo	-> collectTClassVars t1 ++ slurpContraClassVarsT t2
 	TData{}			-> []

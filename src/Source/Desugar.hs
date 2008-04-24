@@ -656,9 +656,9 @@ instance Rewrite S.Type S.Type where
 	 -> do	ts'	<- rewrite ts
 	 	return	$ TData k v ts'
 		
-	TForall vks t
+	TForall b k t
 	 -> do	t'	<- rewrite t
-	 	return	$ TForall vks t'
+	 	return	$ TForall b k t'
 		
 	TFetters t fs
 	 -> do	t'	<- rewrite t

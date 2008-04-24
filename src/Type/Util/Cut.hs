@@ -130,7 +130,7 @@ cutF cid cidsEntered ff
 cutT cid cidsEntered tt	
  = let down	= cutT cid cidsEntered
    in  case tt of
-	TForall  vks t		-> TForall	 vks (down t)
+	TForall  b k t		-> TForall	 b k (down t)
 
 	-- These fetters are wrapped around a type in the RHS of our traced type
 	--	they're from type which have already been generalised

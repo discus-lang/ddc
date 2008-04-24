@@ -150,10 +150,8 @@ trimClosureC' quant rsData cc
 	 	(down c)
 
 	-- add quantified vars to the set
-	TForall vks t		
-	 -> let quant'	= foldr Set.insert quant 
-				[TVar k v | (v, k) <- vks]
-		
+	TForall b k t		
+	 -> let quant'	= Set.insert (TVar k (varOfBind b)) quant
 	    in	trimClosureC quant' rsData t
 
 	-- free
@@ -228,10 +226,8 @@ trimClosureC_t' tag quant rsData tt
 	    in	map (addFetters fs') cBits
 	    
 	-- Trim under foralls
-	TForall vks t		
-	 -> let	quant'	= foldr Set.insert quant
-				[ TVar k v | (v, k) <- vks]
-
+	TForall b k t		
+	 -> let	quant'	= Set.insert (TVar k (varOfBind b)) quant
 	    in	trimClosureC_t tag quant' rsData t
 	
 	TSum k ts	-> catMap down ts

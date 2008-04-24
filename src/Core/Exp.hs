@@ -427,9 +427,6 @@ varOfFetter ff
  	FWhere v t	-> v
 	FMore  v t	-> v
 
------------------------
--- TBind
---
 data Bind
 	= BVar	Var					-- ^ unbounded quantification.
 	| BMore	Var Type				-- ^ bounded quantification. Type of v1 must be :> t2

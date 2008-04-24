@@ -10,6 +10,7 @@ import Util
 import Shared.Error
 import qualified Shared.Var as Var
 
+import Type.Util
 import Type.Exp
 import Type.Location
 import Type.State
@@ -36,9 +37,9 @@ linkType
 	
 linkType mParent bound tt
  = case tt of
-	TForall vks t
-	 -> do	t'	<- linkType mParent (map fst vks ++ bound) t
-	 	return	$ TForall vks t'
+	TForall b k t
+	 -> do	t'	<- linkType mParent (varOfBind b : bound) t
+	 	return	$ TForall b k t'
 		
 	TFetters t fs
 	 -> do	t'	<- linkType mParent bound t

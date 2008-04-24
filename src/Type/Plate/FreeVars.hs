@@ -32,10 +32,17 @@ instance FreeVars Type where
 	TNil
 	 -> empty
 
-	TForall vks t
-	 -> (union (freeVars t) (freeVars $ map snd vks))
-	 	\\ (fromList $ map fst vks)
+	TForall (BVar v) k t
+	 -> (unions 
+	 	[ freeVars k
+		, freeVars t]) 	\\ singleton v
 
+	TForall (BMore v t1) k t2
+	 -> (unions 
+	 	[ freeVars t1
+		, freeVars k
+		, freeVars t2])	\\ singleton v
+	 
 	TContext k t
 	 -> union (freeVars k) (freeVars t)
 

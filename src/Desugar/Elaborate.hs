@@ -67,10 +67,8 @@ elaborateT_fun tt
 	let free	= Set.filter (not . Var.isCtorName) $ freeVars tt'
 	
 	-- see what vars are already quantified in this scheme
-	let quantVs
-		= case tt' of
-			TForall vks _	-> Set.fromList $ map fst vks
-			_		-> Set.empty
+	let (bks, _)	= slurpTForall tt'
+	let quantVs	= Set.fromList $ map (varOfBind . fst) bks
 	
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.

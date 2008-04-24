@@ -81,7 +81,7 @@ staticRsDataT tt
 
 	TFun{}			-> Set.empty
 	TFetters t fs		-> staticRsDataT t
-	TForall vks t		-> staticRsDataT t
+	TForall b k t		-> staticRsDataT t
 	
 	TFree v t		-> staticRsDataT t
 	TDanger t1 t2		-> Set.unions $ map staticRsDataT [t1, t2]

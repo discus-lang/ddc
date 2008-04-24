@@ -1,10 +1,9 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
-
 module Type.Util.Bits
 	( pure
 	, empty
 
 	, isFConstraint
+	, varOfBind
 	
 	, crushT
 	, makeTSum,	flattenTSum
@@ -12,8 +11,9 @@ module Type.Util.Bits
 	, makeTApp
 	, makeTData,	takeTData
 
-	, makeTForall
+	, makeTForall_front
 	, makeTForall_back
+	, slurpTForall
 
 	, makeTFunEC 
 	, addFetters,	addFetters_front
@@ -56,6 +56,14 @@ isFConstraint ff
  = case ff of
  	FConstraint v ts	-> True
 	_			-> False
+
+
+-- | Get the var from a forall binder
+varOfBind :: Bind -> Var
+varOfBind bb
+ = case bb of
+ 	BVar v		-> v
+	BMore v t	-> v
 
 
 -- | do some simple packing
@@ -186,30 +194,41 @@ takeTData tt
 
 -- | Add some forall bindings to the front of this type, 
 --	new quantified vars go at front of list.
-makeTForall :: [(Var, Kind)] -> Type -> Type
-makeTForall vks tt
-	| []	<- vks
+makeTForall_front :: [(Var, Kind)] -> Type -> Type
+makeTForall_front vks tt
+ = makeTForall_front' (reverse vks) tt
+ 
+makeTForall_front' vks tt
+	| []		<- vks
 	= tt
 
-	| TForall vks' t	<- tt
-	= TForall (vks ++ vks') t
-
-	| otherwise
-	= TForall vks tt
+	| (v, k) : rest	<- vks
+	= makeTForall_front' rest (TForall (BVar v) k tt)
 
 
 -- | Add some forall bindings to the front of this type,
 --	new quantified vars go at back of list.
 makeTForall_back :: [(Var, Kind)] -> Type -> Type
 makeTForall_back vks tt
-	| []	<- vks
+	| []			<- vks
 	= tt
 	
-	| TForall vks' t	<- tt
-	= TForall (vks' ++ vks) t
+	| TForall b k t		<- tt
+	= TForall b k (makeTForall_back vks t)
 	
-	| otherwise
-	= TForall vks tt
+	| (v, k) : vksRest	<- vks
+	= TForall (BVar v) k (makeTForall_back vksRest tt)
+
+
+-- | Slurp forall bindings from this type
+slurpTForall :: Type -> ([(Bind, Kind)], Type)
+slurpTForall tt
+ = case tt of
+ 	TForall b k t	
+	 -> let	(bksRest, tRest)	= slurpTForall t
+	    in	( (b, k) : bksRest, tRest)
+	    
+	_ -> ([], tt)
 
 
 -----------------------
@@ -231,8 +250,8 @@ makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for functio
 addFetters :: 	[Fetter] -> Type -> Type
 addFetters	fsMore	t
  = case t of
-	TForall vks x
-	 -> TForall vks (addFetters fsMore x)
+	TForall v k x
+	 -> TForall v k (addFetters fsMore x)
 
 	TFetters x fs
 	 -> case fs ++ fsMore of
@@ -246,8 +265,8 @@ addFetters	fsMore	t
 addFetters_front :: [Fetter] -> Type -> Type
 addFetters_front fsMore t
  = case t of
-	TForall vks x
-	 -> TForall vks (addFetters_front fsMore x)
+	TForall v k x
+	 -> TForall v k (addFetters_front fsMore x)
 
  	TFetters x fs
 	 -> case fsMore ++ fs of
@@ -274,7 +293,7 @@ takeBindingVarF ff
 makeOpTypeT :: Type -> Maybe Type
 makeOpTypeT tt
  = case tt of
- 	TForall vks t		-> makeOpTypeT t
+ 	TForall v k t		-> makeOpTypeT t
 	TFetters t fs		-> makeOpTypeT t
 	TFun t1 t2 eff clo	
 	 -> case (makeOpTypeT2 t1, makeOpTypeT t2) of
@@ -289,7 +308,7 @@ makeOpTypeT tt
 					Nothing
 makeOpTypeT2 tt
  = case tt of
- 	TForall vks t		-> makeOpTypeT2 t
+ 	TForall v k t		-> makeOpTypeT2 t
 	TFetters t fs		-> makeOpTypeT2 t
 	TVar{}			-> Just $ TData KValue primTObj   []
 	TFun{}			-> Just $ TData KValue primTThunk []

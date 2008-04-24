@@ -237,7 +237,7 @@ snipInstBind' moduleName
 
 	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) $ freeVars tsInst
 	let vks_quant	= map (\v -> (v, kindOfSpace $ Var.nameSpace v)) $ Set.toList vsFree
-	let tInst_quant	= makeTForall vks_quant tInst_sub
+	let tInst_quant	= makeTForall_back vks_quant tInst_sub
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
 		,  [ PSig spBind vTop tInst_quant

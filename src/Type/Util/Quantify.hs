@@ -52,8 +52,8 @@ quantifyVarsT vks tt@(TFetters t fs)
    in {- trace (pprStr 	$ "deps       = " % deps % "\n"
    			% "vsSequence = " % vsSequence	% "\n") $ -}
 	-- add the TForall out the front
-   	makeTForall vksSequence tt
+   	makeTForall_back vksSequence tt
 
 
 quantifyVarsT vks tt
-	= makeTForall vks tt
+	= makeTForall_back vks tt

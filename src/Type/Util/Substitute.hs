@@ -75,9 +75,9 @@ subTT_cutM sub cut tt
 subTT_cutM' sub cut tt
  = let down	= subTT_cutM' sub cut
    in case tt of
- 	TForall vks t		
+ 	TForall v k t		
 	 -> do	t'	<- down t
-	 	return	$ TForall vks t'
+	 	return	$ TForall v k t'
 
 	TFetters t fs
 	 -> do	t'	<- down t

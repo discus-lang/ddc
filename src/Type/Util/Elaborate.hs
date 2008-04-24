@@ -63,7 +63,7 @@ elaborateRsT newVar getKind tt
 	elaborateRsT' tt
 
 elaborateRsT' tt
- 	| TForall vks x		<- tt
+ 	| TForall b k x		<- tt
 	= do	(x', vks')	<- elaborateRsT' x
 		return	( tt
 			, vks')
@@ -204,9 +204,9 @@ elaborateCloT tt
   	return	$ addFetters fs tt'
 	
 elaborateCloT' env tt
-	| TForall vks x		<- tt
+	| TForall b k x		<- tt
 	= do	(x', fs, clo)	<- elaborateCloT' env x
-		return	( TForall vks x'
+		return	( TForall b k x'
 			, fs
 			, Nothing)
 			
@@ -320,9 +320,9 @@ hookEffT
 
 hookEffT hookVar tt
 	-- decend into foralls
-	| TForall vks t		<- tt
+	| TForall b k t		<- tt
 	, Just (t', var, mEff)	<- hookEffT hookVar t
-	= Just	( TForall vks t'
+	= Just	( TForall b k t'
 		, var
 		, mEff)
 	
@@ -375,8 +375,8 @@ addEffectsToFsT
 	
 addEffectsToFsT effs var tt
  = case tt of
- 	TForall vks t1 
-	 -> TForall vks (addEffectsToFsT effs var t1)
+ 	TForall b k t1 
+	 -> TForall b k (addEffectsToFsT effs var t1)
 
 	TFetters t1 fs
 	 -> TFetters t1 (addEffectsToFs var effs fs)
@@ -407,7 +407,7 @@ slurpConRegions
 
 slurpConRegionsCo tt
  = case tt of
- 	TForall vks t		-> slurpConRegionsCo t
+ 	TForall b k t		-> slurpConRegionsCo t
 	TFetters t fs		-> slurpConRegionsCo t
 
 	TFun t1 t2 eff clo

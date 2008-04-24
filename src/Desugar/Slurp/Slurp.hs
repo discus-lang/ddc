@@ -140,11 +140,10 @@ slurpP top@(PClassDict sp vClass tsParam context sigs)
 
 			-- add a forall for each of the parameters of the type class
 	     		let vksParam	= map (\(TVar k v) -> (v, k)) tsParam
-			let TForall vks t = makeTForall vksParam tSig
 
 			-- add the enclosing class constraint
-			let tSig'	= TForall vks 
-					$ addFetters_front [FConstraint vClass tsParam] t
+			let tSig'	= makeTForall_front vksParam
+					$ addFetters_front [FConstraint vClass tsParam] tSig
 
 			return $ CDef 	(TSV $ SVSigClass sp vClass) vT tSig'
 

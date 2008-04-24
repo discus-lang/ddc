@@ -56,7 +56,7 @@ checkSchemeDanger c
 	| Class { classKind	= KValue 
 		, classId	= cid
 		, classType	= Just t }	<- c
-	, TForall vks x				<- t
+	, TForall b k x				<- t
 
 	= do	trace 	$ "*   checkReGeneralise\n"
 			% "    t = " % t % "\n"

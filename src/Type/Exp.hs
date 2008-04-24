@@ -2,6 +2,7 @@
 -- | Type Expressions
 module Type.Exp
 	( Var
+	, Bind		(..)
 	, Type		(..)
 	, TyCon		(..)
 	, ClassId	(..)
@@ -73,10 +74,15 @@ type Closure	= Type
 -- | This data type includes constructors for bona-fide type expressions, 
 --	as well as various helper constructors used in parsing/printing and type inference.
 --
+data Bind
+	= BVar	Var				-- ^ unbounded quantification.
+	| BMore	Var Type			-- ^ bounded quantification. Type of v1 must be :> t2
+	deriving (Show, Eq)
+
 data Type	
 	= TNil					-- ^ A hole. Something is missing.
 
-	| TForall	[(Var, Kind)] Type	-- ^ Type abstraction.
+	| TForall	Bind 	Kind	Type	-- ^ Type abstraction.
 	| TContext		Kind	Type	-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
 	| TFetters	Type	[Fetter]	-- ^ Holds extra constraint information.
 	| TApp		Type	Type		-- ^ Type application.

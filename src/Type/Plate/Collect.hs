@@ -28,8 +28,12 @@ collectBindingVarsT tt
 
 collectBindingVarsT' tt
  = case tt of
- 	TForall vks t		
-	 -> do	modify (\s -> s ++ map fst vks)
+ 	TForall (BVar v) k t		
+	 -> do	modify (\s -> s ++ [v])
+	 	return tt
+
+ 	TForall (BMore v _) k t		
+	 -> do	modify (\s -> s ++ [v])
 	 	return tt
 		
 	_ ->	return tt
