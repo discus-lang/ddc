@@ -162,7 +162,7 @@ pType_body
 			Just KEffect	-> return $ TFun t1 t2 effclo (TBot KClosure)
 			Just KClosure 	-> return $ TFun t1 t2 (TBot KEffect) effclo)
 		
- <|>	-- TYPE (EFF CLO) TYPE
+ <|>	-- TYPE -(EFF CLO)> TYPE
  	(Parsec.try $ do
 		t1	<- pType_body3
 		pTok K.Dash

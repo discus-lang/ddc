@@ -7,7 +7,6 @@ module Core.Util.Trim
 where	
 
 import Core.Util.Bits
-import Core.Util.Pack
 import Core.Exp
 
 import Type.Util.Bits
@@ -38,7 +37,7 @@ trimClosureT :: Type -> Type
 trimClosureT tt = {-# SCC "trimClosureT" #-} trimClosureT2 tt
 
 trimClosureT2 tt
-  = let	tt'	= packT $ trimClosureT' tt
+  = let	tt'	= trimClosureT' tt
     in	if tt' == tt
     		then tt'
 		else trimClosureT2 tt'
@@ -56,11 +55,11 @@ trimClosureT_f :: Set Var -> Set Var -> Fetter -> Maybe Fetter
 trimClosureT_f quant rsData ff
  = case ff of
  	FWhere v t2
-	 |  kindOfType t2 == Just KClosure
+	 |  isClosure t2
 	 -> Just $ FWhere v (trimClosureC quant rsData t2)
 
  	FMore v t2
-	 |  kindOfType t2 == Just KClosure
+	 |  isClosure t2
 	 -> Just $ FMore v (trimClosureC quant rsData t2)
 
 	_ -> Just ff
@@ -258,11 +257,11 @@ trimClosureC_f quant rsData ff
  = case ff of
 	-- Only more closure information is interesting
  	FWhere t1 c2
-	 |  kindOfType c2 == Just KClosure
+	 |  isClosure t1
 	 -> Just $ FWhere t1 (trimClosureC quant rsData c2)
 
  	FMore t1 c2
-	 |  kindOfType c2 == Just KClosure
+	 |  isClosure t1
 	 -> Just $ FMore t1 (trimClosureC quant rsData c2)
 
 	_ -> Nothing
