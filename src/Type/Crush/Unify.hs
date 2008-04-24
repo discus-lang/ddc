@@ -107,11 +107,6 @@ crushUnifyClass3 cidT c
 
 	return True
 
-isTApp tt
- = case tt of
-	TApp{}	-> True
-	_	-> False
-
 unifyClassMerge cidT c queue
  = do	-- if one of the elements in the queue is a TApp then we'll need to break up
 	-- all the other elements into TApp form to get them through the unifier.
@@ -251,7 +246,7 @@ addErrorConflict  cid c
  = do	
 	-- filter out TVars, as they don't conflict with anything
  	let tsCtorsNode
-		= filter (\(t, _) -> not $ t =@= TVar{})
+		= filter (\(t, _) -> not $ isSomeTVar t)
 		$ classNodes c
  
 	-- gather up the pairs that conflict

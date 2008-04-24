@@ -60,11 +60,11 @@ instance Pretty Type PMode where
 
 			| otherwise
 			= let	pprAppLeft x 
-			 	  | x =@= TApp{} 	= ppr x
+			 	  | isTApp x 	= ppr x
 				  | otherwise		= prettyTB x
 
 				pprAppRight x
-				  | x =@= TVar{} || x =@= TVarMore{}	
+				  | isSomeTVar x 
 				  = ppr x
 
 				  | otherwise		

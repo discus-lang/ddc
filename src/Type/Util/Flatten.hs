@@ -33,7 +33,7 @@ flattenT' sub block tt
 
 	TFetters t fs
 	 -> let (fsWhere, fsRest)
-	 		= partition (=@= FWhere{}) fs
+	 		= partition isFWhere fs
 
 		sub'	= Map.union 
 				(Map.fromList $ map (\(FWhere t1 t2) -> (t1, t2)) fsWhere)

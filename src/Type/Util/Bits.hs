@@ -4,7 +4,13 @@ module Type.Util.Bits
 	-- simple
 	( pure
 	, empty
+	, isTApp
+	, isSomeTVar
+	, isTClass
 	, isFConstraint
+	, isFWhere
+	, isFMore
+	
 	, isUnboxedT
 	, makeTFunEC
 
@@ -73,10 +79,36 @@ stage	= "Type.Util.Bits"
 pure	= TBot KEffect
 empty	= TBot KClosure
 
+isTApp tt
+ = case tt of
+ 	TApp{}	-> True
+	_	-> False
+
+isSomeTVar tt
+ = case tt of
+ 	TVar{}		-> True
+	TVarMore{}	-> True
+	_		-> False
+
+isTClass tt
+ = case tt of
+ 	TClass{}	-> True
+	_		-> False
+
 isFConstraint ff
  = case ff of
- 	FConstraint v ts	-> True
-	_			-> False
+ 	FConstraint v ts -> True
+	_		 -> False
+
+isFWhere ff
+ = case ff of
+ 	FWhere{}	-> True
+	_ 		-> False
+
+isFMore ff
+ = case ff of
+ 	FMore{}		-> True
+	_ 		-> False
 
 -- | Check if a type represents some unboxed value
 isUnboxedT :: Type -> Bool

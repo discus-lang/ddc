@@ -76,8 +76,8 @@ type Index
 data Kind
 	= KNil					-- ^ An missing / unknown kind.
 
-	| KForall	Kind 	Kind		-- ^ Dependent kinds.
-	| KFun 		Kind	Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
+	| KForall	!Kind 	!Kind		-- ^ Dependent kinds.
+	| KFun 		!Kind	!Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
 
 	| KValue				-- ^ the kind of value types
 	| KRegion				-- ^ the kind of regions
@@ -86,8 +86,8 @@ data Kind
 
 	| KFetter	-- ditch me
 
-	| KClass	TyClass	[Type]		-- ^ the kind of witnesses
-	| KWitJoin	[Kind]			-- ^ joining of witnesses
+	| KClass	!TyClass ![Type]	-- ^ the kind of witnesses
+	| KWitJoin	![Kind]			-- ^ joining of witnesses
 	deriving (Show, Eq)	
 
 type Data	= Type
@@ -108,67 +108,67 @@ data Bind
 data Type	
 	= TNil					-- ^ A hole. Something is missing.
 
-	| TForall	Bind 	Kind	Type	-- ^ Type abstraction.
-	| TContext		Kind	Type	-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
-	| TFetters	Type	[Fetter]	-- ^ Holds extra constraint information.
-	| TApp		Type	Type		-- ^ Type application.
+	| TForall	!Bind 	!Kind	!Type	-- ^ Type abstraction.
+	| TContext		!Kind	!Type	-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
+	| TFetters	!Type	![Fetter]	-- ^ Holds extra constraint information.
+	| TApp		!Type	!Type		-- ^ Type application.
 
-	| TSum		Kind 	[Type]		-- ^ A summation, least upper bound.
-	| TMask		Kind	Type	Type	-- ^ Mask out some elements from this closure.
+	| TSum		!Kind 	![Type]		-- ^ A summation, least upper bound.
+	| TMask		!Kind	!Type	!Type	-- ^ Mask out some elements from this closure.
 
-	| TCon		TyCon			-- ^ A type constructor.
-	| TVar     	Kind 	Var		-- ^ A type variable.
+	| TCon		!TyCon			-- ^ A type constructor.
+	| TVar     	!Kind 	!Var		-- ^ A type variable.
 
-	| TTop		Kind			-- ^ Valid for Effects (!SYNC) and Closures ($OPEN) only.
-	| TBot		Kind			-- ^ Valid for Effects (!PURE) and Closures ($EMPTY)
+	| TTop		!Kind			-- ^ Valid for Effects (!SYNC) and Closures ($OPEN) only.
+	| TBot		!Kind			-- ^ Valid for Effects (!PURE) and Closures ($EMPTY)
 						--	also used in the inferencer to represent the type of an equivalence
 						--	class that has not been constrained by a constructor.
 	
 	-- Effect and closure constructors are always fully applied..
-	| TEffect	Var [Type]		-- ^ An effect constructor
-	| TFree		Var Type		-- ^ An tagged object which is free in the closure.
+	| TEffect	!Var ![Type]		-- ^ An effect constructor
+	| TFree		!Var !Type		-- ^ An tagged object which is free in the closure.
 						--	The tag should be a Value var.
 						--	The type parameter should be a value type, region or closure.
 
-	| TDanger	Type Type		-- ^ If a region is mutable then free type variables in the 
+	| TDanger	!Type !Type		-- ^ If a region is mutable then free type variables in the 
 						--	associated type must be held monomorphic.
 	
-	| TTag		Var			-- ^ A tag for one of these objects, used in the RHS of TMask.
+	| TTag		!Var			-- ^ A tag for one of these objects, used in the RHS of TMask.
 						--   TODO: this isn't actually a type. Change TMask to reflect this.
 
 	-- Type wildcards can be unified with anything of the given kind.
 	-- 	Used in the source language and type inference only.
-	| TWild		Kind			
+	| TWild		!Kind			
 
 	-- Type sugar.
 	--	Used in source and desugar stages only.
-	| TElaborate	Elaboration Type
+	| TElaborate	!Elaboration !Type
 
 	-- Helpers for type inference.
 	---	Used in type inference stages only.
-	| TData    Kind Var [Type]		-- ^ A data type constructor. Perhaps partially applied.
-	| TFun     Type Type Effect Closure	-- ^ A function with an effect and environment. Fully applied.
-	| TClass   Kind	ClassId			-- ^ A reference to some equivalence class.
-	| TError   Kind	[Type]			-- ^ Classes with unification errors get their queues set to [TError].
+	| TData    !Kind !Var  ![Type]		-- ^ A data type constructor. Perhaps partially applied.
+	| TFun     !Type !Type !Effect !Closure	-- ^ A function with an effect and environment. Fully applied.
+	| TClass   !Kind !ClassId			-- ^ A reference to some equivalence class.
+	| TError   !Kind ![Type]			-- ^ Classes with unification errors get their queues set to [TError].
 
-	| TFetter  Fetter			-- ^ Holds a fetter, so we can put it in an equivalence class.
+	| TFetter  !Fetter			-- ^ Holds a fetter, so we can put it in an equivalence class.
 						--	TODO: is this still being used??
 
 	-- A type variable with an embedded :> constraint.
 	--	Used in core only, so we can reconstruct the type of an expression
 	--	without having to see the bounds on enclosing foralls.
-	| TVarMore	Kind	Var	Type
+	| TVarMore	!Kind	!Var	!Type
 
 	-- A debruijn index
 	--	Used in core only, in the kinds for witness constructors.
-	| TIndex	Int
+	| TIndex	!Int
 
 	-- Witness Joining
 	--	Used in core only.
 	--	We could perhaps create a family of specific joining functions
 	--	instead but dealing with all the different combinations of argument
 	--	types would be too much pain..
-	| TWitJoin	[Witness]
+	| TWitJoin	![Witness]
 
 	deriving (Show, Eq)
 
@@ -189,13 +189,13 @@ data TyCon
 
 	-- A data type constructor.
 	| TyConData
-		{ tyConName	:: Var
-		, tyConDataKind	:: Kind }
+		{ tyConName	:: !Var
+		, tyConDataKind	:: !Kind }
 
 	-- Constructs a witness to some type/region/effect/closure class.
 	| TyConClass
-		{ tyConClass	 :: TyClass
-		, tyConClassKind :: Kind }
+		{ tyConClass	 :: !TyClass
+		, tyConClassKind :: !Kind }
 
 	deriving (Show, Eq)
 
@@ -237,7 +237,7 @@ data TyClass
 	| TyClassEmpty
 
 	-- Some user defined class
-	| TyClass Var
+	| TyClass !Var
 	deriving (Show, Eq)
 
 
@@ -246,15 +246,15 @@ data TyClass
 --   This includes type classes, shape constraints, field constraints and effect constraints.
 --
 data Fetter
-	= FConstraint	Var	[Type]			-- ^ Constraint between types.
-	| FWhere	Type	Type			-- ^ Equality of types, t1 must be TVar or TClass
-	| FMore		Type	Type			-- ^ t1 :> t2
+	= FConstraint	!Var	![Type]			-- ^ Constraint between types.
+	| FWhere	!Type	!Type			-- ^ Equality of types, t1 must be TVar or TClass
+	| FMore		!Type	!Type			-- ^ t1 :> t2
 
 	-- | projections
-	| FProj		TProj	
-			Var 	-- var to tie the instantiated projection function to.
-			Type 	-- type of the dictionary to choose the projection from.
-			Type 	-- type to unify the projection function with, once it's resolved.
+	| FProj		!TProj	
+			!Var 	-- var to tie the instantiated projection function to.
+			!Type 	-- type of the dictionary to choose the projection from.
+			!Type 	-- type to unify the projection function with, once it's resolved.
 				
 	deriving (Show, Eq)
 
@@ -263,11 +263,11 @@ data Fetter
 -- | Represents field and field reference projections.
 --
 data TProj
-	= TJField  Var				-- ^ A field projection.   		(.fieldLabel)
-	| TJFieldR Var				-- ^ A field reference projection.	(#fieldLabel)
+	= TJField  !Var				-- ^ A field projection.   		(.fieldLabel)
+	| TJFieldR !Var				-- ^ A field reference projection.	(#fieldLabel)
 
-	| TJIndex  Var				-- ^ Indexed field projection		(.<int>)
-	| TJIndexR Var				-- ^ Indexed field reference projection	(#<int>)
+	| TJIndex  !Var				-- ^ Indexed field projection		(.<int>)
+	| TJIndexR !Var				-- ^ Indexed field reference projection	(#<int>)
 	deriving (Show, Eq)
 
 

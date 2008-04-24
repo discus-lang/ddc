@@ -271,7 +271,7 @@ inlineTWheresMapT sub block tt
 	    
 	TFetters t1 fs
 	 -> let	([fsWhere, fsMore], [])
-	 		= partitionFs [(=@=) FWhere{}, (=@=) FMore{}] fs
+	 		= partitionFs [isFWhere, isFMore] fs
 		
 		sub'	= Map.union 
 				(Map.fromList [(v, t) | FWhere (TVar _ v) t <- fsWhere])

@@ -865,7 +865,7 @@ applyValueT table t1 t2
 
 applyValueT' table t1@(TFetters t1Shape fs) t2
  = let	([[], fsMore], [])
- 		= partitionFs [(=@=) FWhere{}, (=@=) FMore{}] fs
+ 		= partitionFs [isFWhere, isFMore] fs
 	
 	table'	= foldr addMoreF table fsMore
 	

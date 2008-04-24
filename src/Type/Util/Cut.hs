@@ -43,10 +43,11 @@ module Type.Util.Cut
 
 where
 
-import Type.Exp
 import Type.Plate.Collect
 import Type.Pretty
 import Type.Error
+import Type.Util
+import Type.Exp
 
 import Shared.Error
 import Util
@@ -68,7 +69,7 @@ cutLoopsT (TFetters tt fs)
  = let	
 	-- split the fetters into the let/more and the rest.
 	(fsLetMore, fsOther)	
-			= partition (\f -> f =@= FMore{} || f =@= FWhere{}) fs
+			= partition (\f -> isFMore f || isFWhere f) fs
 
 	-- build a map of let/more fetters so we can look them up easilly.
  	sub		= Map.fromList 

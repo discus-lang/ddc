@@ -56,7 +56,7 @@ toCoreT' table tt
 	 -> let result
 	 		| (bks, T.TFetters tBody fs)	<- T.slurpTForall tt
 			= let	
-				(fsMore, fsRest) = partition ((=@=) T.FMore{}) fs
+				(fsMore, fsRest) = partition T.isFMore fs
 				vtsMore		 = Map.fromList
 							[(v, t)	| T.FMore (T.TVar _ v) t <- fsMore]
 
@@ -87,7 +87,7 @@ toCoreT' table tt
 	 -> let	
 	 	-- separate out all the FLet bindings, we'll add these as a TWhere to the core type
 	 	([fsLet, fsMore], fsRest1)
-	 		= partitionFs [(=@=) T.FWhere{}, (=@=) T.FMore{}] fs
+	 		= partitionFs [T.isFWhere, T.isFMore] fs
 				
 		vtsLet	= [ (v, toCoreT t) 	
 					| T.FWhere (T.TVar k v) t	<- fsLet]

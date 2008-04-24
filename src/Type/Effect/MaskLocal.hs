@@ -52,7 +52,7 @@ maskF	tsVis	(FWhere t1 t2)
 
 maskF	tsVis	(FConstraint v [tR])
 	| elem v [primConst, primMutable, primLazy, primDirect]
-	, tR =@= TClass{} || tR =@= TVar{}
+	, isTClass tR || isSomeTVar tR
 	, not $ Set.member tR tsVis
 	= Nothing
 	
@@ -72,7 +72,7 @@ maskE'	tsVis eff
 
 	| TEffect v [tR]	<- eff
 	, elem v [primRead, primWrite]
-	, tR =@= TClass{} || tR =@= TVar{}
+	, isTClass tR || isSomeTVar tR
 	, not $ Set.member tR tsVis
 	= Nothing
 	
