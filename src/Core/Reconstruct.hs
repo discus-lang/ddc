@@ -204,10 +204,10 @@ reconX tt exp@(XAPP x t)
    in	
    	case applyTypeT tt tX t of
    	 Just tApp
-	  -> trace 	("(" % x % " @ " % t % ")\n"
+	  -> {- trace 	("(" % x % " @ " % t % ")\n"
 	     		% "    tApp:\n"	%> tApp		% "\n"
 			% "    eX:\n" 	%> eX		% "\n"
-			% "    cX:\n"	%> cX		% "\n\n\n") $
+			% "    cX:\n"	%> cX		% "\n\n\n") $ -}
 	     	  
 		( XAPP x' t
 		, tApp
@@ -317,10 +317,10 @@ reconX tt exp@(XLam v t x eff clo)
 		--	due to their differing tags.
 --		, clo_clamped	<- clampSum xC' clo_sub
 
-		={- trace ( "reconX: XLam\n"
+		= trace ( "reconX: XLam\n"
 			% "    xE'  (recon) = " % xE'	% "\n"
 			% "    eff' (annot) = " % eff'	% "\n"
-			% "    eff_clamped  = " % eff_clamped	% "\n") $ -}
+			% "    eff_clamped  = " % eff_clamped	% "\n") $ 
 
 		   ( XLam v t x' eff_clamped clo_sub
 		   , makeTFun t xT eff_clamped clo_sub
@@ -370,10 +370,10 @@ reconX tt exp@(XApp x1 x2 eff)
 	  	 xE		= makeTSum KEffect  [x1e, x2e, appE]
 		 xC		= makeTSum KClosure [x1c, x2c]
 
-     	     in trace 	("(" % x1 % " $ ..)\n"
+     	     in {- trace 	("(" % x1 % " $ ..)\n"
 	     		% "    appT:\n"	%> appT	% "\n"
 			% "    xE:\n" 	%> xE	% "\n"
-			% "    xC:\n"	%> xC	% "\n\n\n") $
+			% "    xC:\n"	%> xC	% "\n\n\n") $ -}
 	     
 		     	( x'
 		        , appT
@@ -830,9 +830,9 @@ reconG tt gg@(GExp p x)
 			% "  tX_shape = " % tX_shape	% "\n"
 -}			
 
-   in trace 	( "regonG\n"
+   in {- trace 	( "regonG\n"
 		% "    gg      = " % gg		% "\n"
-		% "    effTest = " % effTest	% "\n") $
+		% "    effTest = " % effTest	% "\n") $ -}
    	( tt'
    	, ( GExp p x'
 	  , map fst binds

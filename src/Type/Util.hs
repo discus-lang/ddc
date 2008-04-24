@@ -122,11 +122,8 @@ slurpVarsRD_split rs ds (t:ts)
 	_			-> slurpVarsRD_split rs ds ts
 	
 slurpVarsRD' tt
-	| TFun{}	<- tt	
-	= []
-
-	| TData k v ts	<- tt	
-	= catMap slurpVarsRD' ts
+	| TFetters t f	<- tt
+	= slurpVarsRD' t
 
 	| TApp{}	<- tt
 	, Just (v, k, ts)	<- takeTData tt
@@ -138,12 +135,35 @@ slurpVarsRD' tt
 	
 	| TApp t1 t2	<- tt
 	= slurpVarsRD' t1 ++ slurpVarsRD' t2
-	
+
+	| TSum{}	<- tt	= []
+	| TMask{}	<- tt	= []
+
+	| TCon{}	<- tt	= []
+
 	| TVar k _	<- tt
 	= case k of
 		KRegion	-> [tt]
 		KValue	-> [tt]
 		_	-> []
+
+	| TVarMore k _ _ <- tt
+	= case k of
+		KRegion	-> [tt]
+		KValue	-> [tt]
+		_	-> []
+
+	| TTop{}	<- tt	= []
+	| TBot{}	<- tt	= []
+
+	| TEffect{}	<- tt	= []
+	| TFree{}	<- tt	= []
+	| TDanger{}	<- tt	= []
+
+	| TData k v ts	<- tt	
+	= catMap slurpVarsRD' ts
+
+	| TFun{}	<- tt	= []
 
 	| TClass k _	<- tt
 	= case k of
@@ -151,9 +171,6 @@ slurpVarsRD' tt
 		KValue	-> [tt]
 		_	-> []
 		
-	| TFetters t f	<- tt
-	= slurpVarsRD' t
-
 	| TError k t	<- tt	
 	= []
 

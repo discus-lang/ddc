@@ -10,7 +10,6 @@ where
 import Core.Exp
 import Core.Plate.Trans
 import Core.Plate.FreeVars
-import Core.Util.Effect
 import Core.Util.Bits
 
 import Type.Util		hiding (flattenT)
@@ -52,7 +51,7 @@ packK kk
 flattenT :: Type -> Type
 flattenT tt
  = {-# SCC "flattenT" #-}
-    packT $ crushEffsT $ inlineTWheresT tt
+    packT $ inlineTWheresT tt
 
 	
  
@@ -152,24 +151,47 @@ packT1 tt
 	TBot k		-> tt
 	TTop k 		-> tt
 	 
-    
 	-- effect
-	-- crush EReadH on the way
+	-- crush compound effects along the way
 	TEffect v [t1]
 	 -> let result
-	 		| Just (vD, k, (TVar KRegion r : ts)) <- takeTData t1
-			, v == primReadH
-			= TEffect primRead [TVar KRegion r]
-			
-			| Just (vD, k, [])	<- takeTData t1
-			, v == primReadH
-			= TBot KEffect
-	
-			| Just (vD, k, ts)	<- takeTData t1
-			= TEffect v [makeTData v k $ map packT1 ts]
+			-- ReadH 
+	 		| v == primReadH
+			= case takeTData t1 of
+				Just (vD, k, (TVar KRegion r : ts)) 
+					-> TEffect primRead [TVar KRegion r]
+				
+				Just (vD, k, [])
+					-> TBot KEffect
 
+				Nothing	-> tt
+					
+			-- ReadT
+			| v == primReadT
+			= case takeTData t1 of
+				Just (vD, k, ts)
+				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
+				    in  makeTSum KEffect
+						(  [TEffect primRead  [t]	| t <- concat tRs]
+						++ [TEffect primReadT [t]	| t <- concat tDs] )
+
+				Nothing	-> tt
+				
+			-- WriteT
+			| v == primWriteT
+			= case takeTData t1 of
+				Just (vD, k, ts)
+				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
+				    in  makeTSum KEffect
+						(  [TEffect primWrite  [t]	| t <- concat tRs]
+						++ [TEffect primWriteT [t]	| t <- concat tDs] )
+
+				Nothing	-> tt
+	
+			-- some other effect
 			| otherwise
 			= TEffect v [packT1 t1]
+
 	    in	result
 	    
 	TEffect v ts

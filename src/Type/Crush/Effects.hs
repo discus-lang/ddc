@@ -41,6 +41,7 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effect"
 
+
 -- Try and crush the effect in this node.
 crushEffectC 
 	:: ClassId 
@@ -102,7 +103,7 @@ crushMilkEffects cid [] effAcc nodeAcc
 	= return (reverse effAcc, reverse nodeAcc)
 	
 crushMilkEffects cid (e : es) effAcc nodeAcc
- = do	mCrushed	<- crushEffectT cid e
+ = do	mCrushed	<- crushEffectC_parts cid e
  
  	case mCrushed of
 	 Nothing		
@@ -113,11 +114,11 @@ crushMilkEffects cid (e : es) effAcc nodeAcc
 		
 		
 -- Try and crush this effect into parts.
-crushEffectT 
+crushEffectC_parts
 	:: ClassId
 	-> Effect -> SquidM (Maybe (Effect, TypeSource))
 
-crushEffectT cid tt@(TEffect ve [TClass k cidT])
+crushEffectC_parts cid tt@(TEffect ve [TClass k cidT])
  = do	
 	-- the effect in the original class operates on a classId, so we need to 
 	--	look up this type before we can crush the effect.
@@ -129,26 +130,19 @@ crushEffectT cid tt@(TEffect ve [TClass k cidT])
 
 	case mType of
 	 Just tNode	
-	  -> do	let mParts	= crushEffectT' cid tt tNode
+	  -> do	let mParts	= crushEffectT_node cid tt tNode
 	  	trace $ "    mParts = " % mParts % "\n\n"
 		return	mParts
-
-{-		let mOut	= case mParts of
-					 Just parts'	-> Just parts'
-					 Nothing	-> Just ( TEffect ve [tNode]
-					 			, TSI $ SICrushedE cid tt)
-								
-
-		return	mOut
--}	
 
 	 _ -> 	return 	Nothing
 
 	
-crushEffectT cid tt
+crushEffectC_parts cid tt
 	= return Nothing
 
-crushEffectT' cid tt tNode
+
+crushEffectT_node :: ClassId -> Type -> Type -> Maybe (Effect, TypeSource)
+crushEffectT_node cid tt tNode
 
 	-- Read of outer constructor of object.
 	| TEffect ve [t1]	<- tt
@@ -162,10 +156,6 @@ crushEffectT' cid tt tNode
 		= Just	( TBot KEffect
 			, TSI $ SICrushedE cid tt)
 
-{-		| TApp t1 t2		<- tNode
-		= Just	( TEffect primReadH [t1]
-			, TSI $ SICrushedE cid tt)
--}		
 		| otherwise
 		= Nothing
 	  in	result
@@ -200,7 +190,6 @@ crushEffectT' cid tt tNode
 	| otherwise
 	= Nothing
 
-
 	
 -- | Checks whether this effect might ever need to be crushed
 isCrushable :: Effect -> Bool
@@ -220,3 +209,5 @@ isCrushable eff
 	TBot{}	-> False
 
 	_ ->  panic stage $ "isCrushable: no match for " % eff % "\n"
+
+
