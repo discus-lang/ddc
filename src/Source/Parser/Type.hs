@@ -143,36 +143,44 @@ pType_context1
 pType_body :: Parser Type
 pType_body
  = 	-- TYPE -> TYPE
+	-- TYPE -(EFF/CLO)> TYPE
+	-- TYPE -(EFF)> TYPE
+	-- TYPE -(CLO)> TYPE
+
 	-- overlaps with the rest
  	(Parsec.try $ do
-		t1	<- pType_body3
-		pTok K.RightArrow
-		t2	<- pType_body
-		return	$ TFun t1 t2 (TBot KEffect) (TBot KClosure))
+		t1		<- pType_body3
 
- <|>	-- TYPE -(EFF/CLO)> TYPE
- 	(Parsec.try $ do
-		t1	<- pType_body3
-		pTok K.Dash
-		effclo	<- pRParen (Parsec.try pEffect <|> pClosure)
-		pTok K.AKet
+		(eff, clo)	<-  
+			-- TYPE -> TYPE
+			(do	pTok K.RightArrow
+				return	(TBot KEffect, TBot KClosure))
+				
+			-- TYPE -(EFF/CLO)> TYPE	
+			<|> (Parsec.try $ do
+				pTok K.Dash
+				pTok K.RBra
+				eff	<- pEffect
+				clo	<- pClosure
+				pTok K.RKet
+				pTok K.AKet
+				return	(eff, clo))
+
+			-- TYPE -(EFF)> TYPE
+			<|> (Parsec.try $ do
+				pTok K.Dash
+				eff	<- pRParen pEffect
+				pTok K.AKet
+				return (eff, TBot KClosure))
+
+			-- TYPE -(CLO)> TYPE
+			<|> (Parsec.try $ do
+				pTok K.Dash
+				clo	<- pRParen pClosure
+				pTok K.AKet
+				return (TBot KEffect, clo))
+					
 		t2	<- pType_body
-		
-		case kindOfType effclo of
-			Just KEffect	-> return $ TFun t1 t2 effclo (TBot KClosure)
-			Just KClosure 	-> return $ TFun t1 t2 (TBot KEffect) effclo)
-		
- <|>	-- TYPE -(EFF CLO)> TYPE
- 	(Parsec.try $ do
-		t1	<- pType_body3
-		pTok K.Dash
-		pTok K.RBra
-		eff	<- pEffect
-		clo	<- pClosure
-		pTok K.RKet
-		pTok K.AKet
-		t2	<- pType_body
-		
 		return	$ TFun t1 t2 eff clo)
 
  <|>	-- TYPE
@@ -181,26 +189,23 @@ pType_body
 
 pType_body3 :: Parser Type
 pType_body3
-	-- read TYPE
- =	(Parsec.try $ do
-		t	<- pType_body2
-		pCParen $ pVarPlainNamed "read"	
-		return	$ TElaborate ElabRead t)
+ = pType_body2 >>= \t ->
 
-	-- write TYPE
- <|>	(Parsec.try $ do
-		t	<- pType_body2
-		pCParen $ pVarPlainNamed "write"
-		return	$ TElaborate ElabWrite t)
+	-- TYPE {read}
+ 	(do	elab	<- pCParen 
+			    $	(do	pVarPlainNamed "read"
+					return ElabRead)
 
-	-- modify TYPE
- <|>	(Parsec.try $ do	
-		t	<- pType_body2
-		pCParen $ pVarPlainNamed "modify"
-		return	$ TElaborate ElabModify t)
-
- <|>	pType_body2
-
+			    <|>	(do	pVarPlainNamed "write"
+			    		return ElabWrite)
+					
+			    <|>	(do	pVarPlainNamed "modify"
+			    		return ElabModify)
+		return	$ TElaborate elab t)
+		
+	-- TYPE		
+   <|>		return	t
+   
 
 -- | Parse a type that can be used as an argument to a function constructor
 pType_body2 :: Parser Type
