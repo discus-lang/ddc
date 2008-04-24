@@ -87,17 +87,19 @@ packData tt
 	| Just k		<- liftM resultKind $ kindOfType tt
 	, elem k [KValue, KNil]
 
-	, (tt_packed, tsLoop)	<- runState (packTypeLs False Map.empty tt) []
+	, (tt_packed, tsLoop)	<- runState (packT1 False Map.empty tt) []
 	= let result
 
 		-- if we've hit loops in the substitution then bail out early
 		| not $ null tsLoop 	= (tt_packed, tsLoop)
 			
 		-- type has stopped moving.
-		| tt_packed == tt	= (tt_packed, [])
+--		| tt_packed == tt	= (tt_packed, [])
 
 		-- keep packing
-		| otherwise		= packData tt_packed
+--		| otherwise		= packData tt_packed
+
+		| otherwise		= (tt_packed, [])
 	  in  result
 
 
@@ -120,12 +122,13 @@ packEffect_noLoops tt
 packEffect :: Effect -> (Effect, [(Type, Type)])
 packEffect tt
 	| Just KEffect		<- kindOfType tt
-	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
+	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
 	, tt'			<- inlineFsT $ tt_packed
 	= let result
 		| not $ null tsLoop	= (tt', tsLoop)
-		| tt == tt'		= (tt', [])
-		| otherwise		= packEffect tt'
+--		| tt == tt'		= (tt', [])
+--		| otherwise		= packEffect tt'
+		| otherwise		= (tt', [])
 	  in result
 
 
@@ -140,12 +143,13 @@ packClosure_noLoops tt
 		
 packClosure tt
 	| Just KClosure		<- kindOfType tt
-	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
+	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
  	, tt'			<- crushT $ inlineFsT $ tt_packed
 	= let result
 		| not $ null tsLoop	= (tt_packed, tsLoop)
-		| tt == tt'		= (tt', [])
-		| otherwise		= packClosure tt'
+--		| tt == tt'		= (tt', [])
+--		| otherwise		= packClosure tt'
+		| otherwise		= (tt', [])
 	  in result
 
 	| otherwise
@@ -157,83 +161,85 @@ packClosure tt
 packRegion :: Region -> Region
 packRegion tt
 	| Just KRegion		<- kindOfType tt
-	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
+	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
 	, null tsLoop
-	= if tt == tt_packed
-		then tt_packed
-		else packRegion tt_packed
+	= tt_packed
+	
+--	if tt == tt_packed
+--		then tt_packed
+--		else packRegion tt_packed
 
 
--- PackTypeLs --------------------------------------------------------------------------------------
-packTypeLs 
+-- packT1 --------------------------------------------------------------------------------------
+packT1 
 	:: Bool			-- whether to substitute effect and closure constructors as well
 	-> Map Type Type	-- types to substitute for
 	-> Type			-- type to substitute into
 	-> SubM Type		-- result type
 
-packTypeLs ld ls tt
- = {-# SCC "packTypeLs" #-}
+packT1 ld ls tt
+ = {-# SCC "packT1" #-}
    case tt of
 	TError{}
  	 -> return tt
 
 	-- push foralls under closure tags
-	TForall v k (TFree v1 t)	
-	 -> do	t'	<- packTypeLs ld ls t
-	 	return	$ TFree v1 (TForall v k t')
-
- 	TForall b k t	
-	 -> do	t'	<- packTypeLs ld ls t
-	   	return	$ TForall b k t'
+	TForall v1 k1 tBody
+	 -> do	tBody'	<- packT1 ld ls tBody
+		case tBody' of
+		 	TFree v2 t2		-> return $ TFree v2 (TForall v1 k1 t2)
+			tBody'			-> return $ TForall v1 k1 tBody'
 
 	-- keep fetters under foralls.
-	TFetters (TForall b k t) fs 
-	 -> do	t'	<- packTypeLs ld ls t
-		return	$ TForall b k (TFetters t' fs)
+	TFetters t1 fs
+	 -> do	t1'	<- packT1 ld ls t1
+	 	case t1' of
+			TForall b k tBody	
+			 -> do	tBody'	<- packTFettersLs ld ls $ TFetters t1' fs
+			 	return	$ TForall b k tBody'
 
-	TFetters t fs
-	 -> packTFettersLs ld ls tt
+			_	-> packTFettersLs ld ls $ TFetters t1' fs
 
-	TSum k@KClosure ts
-	 -> do	ts'	<- liftM nub $ mapM (packTypeLs True ls) ts
-	    	return	$ makeTSum k (maskMerge ts')
-
-	TSum k@KEffect ts
-	 -> do	ts'	<- liftM nub $ mapM (packTypeLs True ls) ts
-	    	return	$ makeTSum k ts'
-
-	TMask k1 (TMask k2 t1 t2) t3
-	 	| k1 == k2
-		-> return $ makeTMask k1 t1 (makeTSum KClosure [t2, t3])
-
+	-- sums
+	TSum k ts
+	 -> do	ts'	<- liftM nub $ mapM (packT1 True ls) ts
+	 	case k of
+			KEffect			-> return $ makeTSum k ts'
+			KClosure		-> return $ makeTSum k (maskMerge ts')
+			
+	-- masks
 	-- don't substitute into the lhs of mask expression so we end up with
 	--	c2 = c3 \ x ; c3 = { x : ... }   etc
 	TMask k t1 t2
-	 -> do	t1'	<- packTypeLs ld ls t1
-	 	t2'	<- packTypeLs True ls t2
-	    	return	$ makeTMask k t1' t2'
-
+	 -> do	t1'	<- packT1 ld ls t1
+	 	t2'	<- packT1 True ls t2
+		case t1' of
+			TMask k1 t11 t12	-> return $ makeTMask k t11 $ makeTSum KClosure [t12, t2']
+			_			-> return $ makeTMask k t1' t2'
+			
 	-- try and flatten out TApps into their specific constructors
-	TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
-	 -> 	return	$ TFun t1 t2 eff clo
-	    
-	TApp (TCon (TyConData { tyConName, tyConDataKind })) t2
-	 ->	return	$ TData tyConDataKind tyConName [t2]
-	
-	TApp (TData k v ts) t2
-	 ->	return	$ TData k v (ts ++ [t2])
-	 
 	TApp t1 t2
-	 -> do 	t1'	<- packTypeLs ld ls t1
-	 	t2'	<- packTypeLs ld ls t2
-		return	$ TApp t1' t2'
-
+	 -> do	t1'	<- packT1 ld ls t1
+	 	t2'	<- packT1 ld ls t2
+		
+		case TApp t1' t2' of
+			TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
+	 		 -> return	$ TFun t1 t2 eff clo
+	    
+			TApp (TCon (TyConData { tyConName, tyConDataKind })) t2
+			 -> return	$ TData tyConDataKind tyConName [t2]
+	
+			TApp (TData k v ts) t2
+			 -> return	$ TData k v (ts ++ [t2])
+			
+			tt'	-> return tt'
+			
 	TCon{} -> return tt
 	    
 	TVar k v2
 	 -> case Map.lookup tt ls of
 	 	-- always substitute in trivial @cid1 = @cid2 constraints.
-		Just t'@TVar{}			-> return t'
+		Just t'@TVar{}			-> return t' -- packT1 ld ls t'.. detect loops
 
 		-- only substitute effect and closures if ld is turned on
 		Just TSum{}	| not ld	-> return tt
@@ -244,7 +250,7 @@ packTypeLs ld ls tt
 		-- don't substitute for TBots or we risk loosing port vars
 		Just TBot{}			-> return tt
 
-		Just t'				-> return t'
+		Just t'				-> return t' -- packT1 ld ls t'.. detect loops
 		Nothing				-> return tt
 
 
@@ -253,55 +259,51 @@ packTypeLs ld ls tt
 		 
 	-- data
 	TData k v ts
-	 -> do	ts'	<- mapM (packTypeLs ld ls) ts
+	 -> do	ts'	<- mapM (packT1 ld ls) ts
 	    	return	$ TData k v ts'
 
  	TFun t1 t2 eff clo
-	 -> do	t1'	<- packTypeLs ld ls t1
-	 	t2'	<- packTypeLs ld ls t2
-		eff'	<- packTypeLs ld ls eff
-		clo'	<- packTypeLs ld ls clo
+	 -> do	t1'	<- packT1 ld ls t1
+	 	t2'	<- packT1 ld ls t2
+		eff'	<- packT1 ld ls eff
+		clo'	<- packT1 ld ls clo
 		return	$ TFun t1' t2' eff' clo'
 
 	-- effect
-	TEffect vE [TData k vD (TVar KRegion r : ts)]
-	  | vE == primReadH
-	  -> return $ TEffect primRead [TVar KRegion r]
+	TEffect vE ts
+	 -> do	ts'	<- mapM (packT1 ld ls) ts
+	 	
+		
+		let result
+			| vE == primReadH
+			, [TData k vD (TVar KRegion r : _)]	<- ts'
+			= TEffect primRead [TVar KRegion r]
+			
+			| otherwise
+			= TEffect vE ts'
 
-	TEffect v ts
-	 -> do	ts'	<- mapM (packTypeLs ld ls) ts
-		return	$ TEffect v ts'
-	    
-		    
+		return result
+			
 	-- closure
-	TFree v1 (TFree v2 t)			
-		-> return $ TFree v1 t
+	TFree v1 t2
+	 -> do	t2'	<- packT1 ld ls t2
+	 	case t2' of
+			TFree v2 t2'			-> return $ TFree v1 t2'
+			TBot KClosure			-> return $ TBot KClosure
+			TFetters (TBot KClosure) _	-> return $ TBot KClosure
+			TDanger t21 (TFree v t22)	-> return $ TFree v1 (TDanger t21 t22)
+			_				-> return $ TFree v1 t2'						
 
-	TFree v1 (TBot KClosure)
-		-> return $ TBot KClosure
-
-	TFree v1 (TFetters (TBot KClosure) _ )
-		-> return $ TBot KClosure
-
-	TFree v1 (TDanger t1 (TFree v t2))
-		-> return $ TFree v1 (TDanger t1 t2)
-
-	TFree v t 	
-	 -> do	t'	<- packTypeLs True ls t
-	 	return	$ TFree v t'
 
 	-- danger
-	TDanger t1 (TBot KClosure)
-		-> return $ TBot KClosure
+	TDanger t1 t2
+	 -> do	t2'	<- packT1 ld ls t2
+	 	case t2' of
+			TBot KClosure		-> return $ TBot KClosure
+			TSum KClosure t2s	-> return $ makeTSum KClosure (map (TDanger t1) t2s)
+			_			-> return $ TDanger t1 t2'
 
-	TDanger t1 (TSum KClosure ts)
-	 -> do	let ts'	= map (TDanger t1) ts
-	 	return	$ makeTSum KClosure ts'
-
-	TDanger t1 t2	
-	 -> do	t2'	<- packTypeLs True ls t2
-	 	return	$ TDanger t1 t2'
-	 
+	-- tags
 	TTag{}	-> return tt
 	    
 	-- wildcards
@@ -311,7 +313,7 @@ packTypeLs ld ls tt
 	TClass k cid1
 	 -> case Map.lookup tt ls of
 		-- always substitute in trivial @cid1 = @cid2 constraints.
-		Just t'@TClass{}		-> return t'
+		Just t'@TClass{}		-> return t' -- packT1 ld ls t'.. detect loops
 
 		-- only substitute effect and closures if ld is turned on
 		Just TSum{}	| not ld	-> return tt
@@ -327,18 +329,18 @@ packTypeLs ld ls tt
 		--	Only Type.Scheme follows this codepath - but we should handle this a different way
 		--	perhaps a flag to pack.
 		Just t'
-			| k == KValue		-> return t'
+			| k == KValue		-> return t' -- packT1 ld ls t'.. detect loops
 			| otherwise		-> return tt
 
 		Nothing				-> return tt
 
 	-- sugar
 	TElaborate ee t
-	 -> do	t'	<- packTypeLs ld ls t
+	 -> do	t'	<- packT1 ld ls t
 		return	$ TElaborate ee t'
 
 	_ -> panic stage
-		$ "packTypeLs: no match for " % show tt
+		$ "packT1: no match for " % show tt
 		    
 
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
@@ -349,7 +351,7 @@ packTypeLs ld ls tt
 packTFettersLs 
 	:: Bool
 	-> Map Type Type
-	-> Type 
+	-> Type			-- should be pre-packed
 	-> SubM Type
 
 packTFettersLs ld ls tt
@@ -363,7 +365,7 @@ packTFettersLs ld ls tt
 	 			(Map.fromList [(t1, t2) | FWhere t1 t2 <- fs])
 				ls
 
-		tPacked		<- packTypeLs ld ls' t
+		tPacked		<- packT1 ld ls' t
 
 		fsPacked	<- mapM (packFetterLs ld ls') fs
 
@@ -402,11 +404,11 @@ packFetterLs ld ls ff
  = {-# SCC "packFetterLs" #-}
    case ff of
  	FWhere t1 t2
-	 -> do	t2'	<- packTypeLs ld ls t2
+	 -> do	t2'	<- packT1 ld ls t2
 	 	return	$ FWhere t1 (crushT t2')
 
 	FConstraint v ts
-	 -> do	ts'	<- mapM (packTypeLs True ls) ts
+	 -> do	ts'	<- mapM (packT1 True ls) ts
 	 	return	$ FConstraint v ts'
 
 	_ -> return ff
