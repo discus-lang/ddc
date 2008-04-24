@@ -4,7 +4,6 @@ module Core.Lift.LiftLambdas
 
 where
 
-
 import Core.Exp
 import Core.Util
 import Core.Util.Slurp
@@ -13,6 +12,8 @@ import Core.Plate.FreeVars
 import Core.Lift.Base
 import Core.Reconstruct
 import Core.ReconKind
+
+import Type.Util
 
 import qualified Shared.VarUtil	as Var
 import qualified Shared.Var	as Var

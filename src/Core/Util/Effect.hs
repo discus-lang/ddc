@@ -3,16 +3,18 @@ module Core.Util.Effect
 	( crushEffsT )
 where
 
-
-import Util
 import Core.Exp
 import Core.Plate.Trans
 import Core.Util.Bits
 import Core.Pretty
-import Shared.Error
 
+import Type.Util
+
+import Shared.Error
 import qualified Shared.VarPrim	as Var
 import qualified Shared.Var	as Var
+
+import Util
 
 stage	= "Core.Util.Effect"
 -----

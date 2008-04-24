@@ -9,16 +9,16 @@ module Core.Curry
 
 where
 
------
-import qualified Util.Map	as Map
-import Util.Map			(Map)
+import qualified Main.Arg	as Arg
+import Main.Arg			(Arg)
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
+import Core.Exp
+import Core.Util
+import Core.ToSea
+import Core.Pretty
+import Core.Plate.Trans
 
------
-import Util
-import qualified Debug.Trace	as Debug
+import Type.Util
 
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
@@ -28,14 +28,15 @@ import Shared.Error
 import Shared.Exp
 import Shared.Pretty
 
-import qualified Main.Arg	as Arg
-import Main.Arg			(Arg)
+import Util
 
-import Core.Exp
-import Core.Util
-import Core.ToSea
-import Core.Pretty
-import Core.Plate.Trans
+import qualified Util.Map	as Map
+import Util.Map			(Map)
+
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
+import qualified Debug.Trace	as Debug
 
 -----
 stage		= "Core.Curry"

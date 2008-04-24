@@ -12,8 +12,11 @@ module Type.Util
 	, module Type.Util.Finalise
 	, module Type.Util.Quantify
 	, module Type.Util.Flatten
+
 	, makeOpTypeT
-	, makeTVar )
+	, makeTVar 
+	, makeTWhere
+	, slurpVarsRD)
 	
 where
 
@@ -84,3 +87,79 @@ makeOpTypeData _	= Nothing
 -- | Make a TVar, using the namespace of the var to determine it's kind
 makeTVar :: Var -> Type
 makeTVar v	= TVar (kindOfSpace $ Var.nameSpace v) v
+
+
+-- | Add some where fetters to this type
+makeTWhere ::	Type	-> [(Var, Type)] -> Type
+makeTWhere	t []	= t
+makeTWhere	t vts	
+	= TFetters t 
+	$ [ FWhere (TVar (defaultKindV v) v) t'
+		| (v, t')	<- vts ]
+
+
+-- Slurping ----------------------------------------------------------------------------------------
+-- | Slurp out the region and data vars present in this type
+--	Used for crushing ReadT, ConstT and friends
+slurpVarsRD
+	:: Type 
+	-> ( [Region]	-- region vars and cids
+	   , [Data])	-- data vars and cids
+
+slurpVarsRD tt
+ 	= slurpVarsRD_split [] [] 
+	$ slurpVarsRD' tt
+
+slurpVarsRD_split rs ds []	= (rs, ds)
+slurpVarsRD_split rs ds (t:ts)
+ = case t of
+ 	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
+	TClass KRegion _	-> slurpVarsRD_split (t : rs) ds ts
+
+ 	TVar   KValue _		-> slurpVarsRD_split rs (t : ds) ts
+	TClass KValue _		-> slurpVarsRD_split rs (t : ds) ts
+	
+	_			-> slurpVarsRD_split rs ds ts
+	
+slurpVarsRD' tt
+	| TFun{}	<- tt	
+	= []
+
+	| TData k v ts	<- tt	
+	= catMap slurpVarsRD' ts
+
+	| TApp{}	<- tt
+	, Just (v, k, ts)	<- takeTData tt
+	= catMap slurpVarsRD' ts
+	
+	| TApp{}	<- tt
+	, Just _		<- takeTFun tt
+	= []
+	
+	| TApp t1 t2	<- tt
+	= slurpVarsRD' t1 ++ slurpVarsRD' t2
+	
+	| TVar k _	<- tt
+	= case k of
+		KRegion	-> [tt]
+		KValue	-> [tt]
+		_	-> []
+
+	| TClass k _	<- tt
+	= case k of
+		KRegion	-> [tt]
+		KValue	-> [tt]
+		_	-> []
+		
+	| TFetters t f	<- tt
+	= slurpVarsRD' t
+
+	| TError k t	<- tt	
+	= []
+
+	| otherwise
+	= panic stage
+	$  "slurpVarsRD: no match for " % tt
+
+
+

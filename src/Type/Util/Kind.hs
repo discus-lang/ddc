@@ -1,10 +1,18 @@
 
 module Type.Util.Kind
+	-- namespace things
 	( defaultKindV
 	, spaceOfKind
 	, kindOfSpace 
+
+	-- witnesses
+	, makeKWitJoin
+
+	, makeKFun
+
 	, tyConKind
-	, takeKindOfType, kindOfType_orDie
+	, takeKindOfType
+	, kindOfType_orDie
 	, resultKind
 	, makeDataKind
 	, kindOfType_freakouts)
@@ -24,6 +32,8 @@ import qualified Debug.Trace
 
 stage	= "Type.Util.Kind"
 
+
+-- Namespace things --------------------------------------------------------------------------------
 defaultKindV ::	Var	-> Kind
 defaultKindV	v
  = case Var.nameSpace v of
@@ -55,6 +65,21 @@ kindOfSpace space
 	NameClass	-> KFetter
 	_		-> panic stage
 			$  "kindOfSpace: no match for " % show space
+
+
+-- Witnesses ---------------------------------------------------------------------------------------
+-- | Join some kind classes
+makeKWitJoin :: [Kind] -> Kind
+makeKWitJoin ts
+ = case ts of
+ 	[t]	-> t
+	ts	-> KWitJoin ts
+
+-- | make a function kind
+makeKFun :: [Kind] -> Kind
+makeKFun [k]		= k
+makeKFun (k : ks)	= KFun k (makeKFun ks)
+
 
 -- | Take the kind of a tycon
 tyConKind :: TyCon -> Kind

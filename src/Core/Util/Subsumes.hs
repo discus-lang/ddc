@@ -9,8 +9,12 @@ import Core.Pretty
 import Core.ReconKind
 import Core.Util.Bits
 import Core.Util.Trim
+
+import Type.Util.Bits
+
 import Shared.Pretty
 import Shared.Error
+
 import Util
 
 import qualified Data.Map	as Map

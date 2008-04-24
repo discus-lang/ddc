@@ -228,8 +228,8 @@ makeCtor    objVar vData vsData (D.CtorDef _ ctorVar dataFields)
 	tv	<- liftM toCoreT 
 		$ D.makeCtorType newVarN vData vsData ctorVar dataFields
 
-	let to	= C.unflattenFunE (replicate (length argTs + 1) 
-		$ (C.makeTData objVar C.KValue []))
+	let to	= T.makeTFuns_pureEmpty (replicate (length argTs + 1) 
+		$ (T.makeTData objVar C.KValue []))
 
 	return	$ C.PCtor ctorVar tv to
 
@@ -322,7 +322,7 @@ toCoreX xx
 	 -> do
 	 	x1'	<- toCoreX x1
 		x2'	<- toCoreX x2
-		return	$ C.XApp x1' x2' C.pure
+		return	$ C.XApp x1' x2' T.pure
 
 
 	-- case match on a var
@@ -442,7 +442,7 @@ toCoreX xx
 -}
 		x1'	<- toCoreVarInst vProj vTag
 			
-		return	$ C.XApp x1' x2' C.pure
+		return	$ C.XApp x1' x2' T.pure
 
 
 	D.XProjTaggedT
@@ -498,7 +498,7 @@ toCoreLit' tLit lit
 
 	-- integers
 	| S.LInt i		<- lit
-	, Just (v, _, _)	<- C.takeTData tLit
+	, Just (v, _, _)	<- T.takeTData tLit
 	= case Var.bind v of
 		Var.TInt8U	-> (C.LInt8  $ fromIntegral i, False)
 		Var.TInt16U	-> (C.LInt16 $ fromIntegral i, False)
@@ -513,7 +513,7 @@ toCoreLit' tLit lit
 
 	-- floats
 	| S.LFloat f		<- lit
-	, Just (v, _, _)	<- C.takeTData tLit
+	, Just (v, _, _)	<- T.takeTData tLit
 	= case Var.bind v of
 		Var.TFloat32U	-> (C.LFloat32 $ (fromRational . toRational) f, False)
 		Var.TFloat64U	-> (C.LFloat64 $ (fromRational . toRational) f, False)
@@ -523,14 +523,14 @@ toCoreLit' tLit lit
 
 	-- chars
 	| S.LChar c		<- lit
-	, Just (v, _, _)	<- C.takeTData tLit
+	, Just (v, _, _)	<- T.takeTData tLit
 	= case Var.bind v of
 		Var.TChar32U	-> (C.LChar32 c, False)
 		Var.TChar32	-> (C.LChar32 c, True)
 	
 	-- strings
 	| S.LString s		<- lit
-	, Just (v, _, _)	<- C.takeTData tLit
+	, Just (v, _, _)	<- T.takeTData tLit
 	= case Var.bind v of
 		Var.TStringU	-> (C.LString s, False)
 		Var.TString	-> (C.LString s, True)
@@ -550,7 +550,7 @@ toCoreConst' tt const
 	-- unboxed integers
 	| S.CConstU lit			<- const
 	, S.LInt i			<- lit
-	, Just (v, k, [])		<- C.takeTData tt
+	, Just (v, k, [])		<- T.takeTData tt
 	= case Var.bind v of
 		Var.TInt8U	-> C.XLit $ C.LInt8  $ fromIntegral i
 		Var.TInt16U	-> C.XLit $ C.LInt16 $ fromIntegral i
@@ -561,7 +561,7 @@ toCoreConst' tt const
 	-- boxed integers
 	| S.CConst lit				<- const
 	, S.LInt i				<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- C.takeTData tt
+	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
 	= case Var.bind v of
 		Var.TInt8	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt8  $ fromIntegral i]
 		Var.TInt16	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt16 $ fromIntegral i]
@@ -571,7 +571,7 @@ toCoreConst' tt const
 	-- unboxed floats
 	| S.CConstU lit			<- const
 	, S.LFloat f			<- lit
-	, Just (v, k, [])		<- C.takeTData tt
+	, Just (v, k, [])		<- T.takeTData tt
 	= case Var.bind v of
 		Var.TFloat32U	-> C.XLit $ C.LFloat32 $ (fromRational . toRational) f
 		Var.TFloat64U	-> C.XLit $ C.LFloat64 $ (fromRational . toRational) f
@@ -579,7 +579,7 @@ toCoreConst' tt const
 	-- boxed floats
 	| S.CConst lit				<- const
 	, S.LFloat f				<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- C.takeTData tt
+	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
 	= case Var.bind v of
 		Var.TFloat32	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LFloat32 $ (fromRational . toRational) f]
 		Var.TFloat64	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LFloat64 $ (fromRational . toRational) f]
@@ -587,7 +587,7 @@ toCoreConst' tt const
 	-- boxed chars
 	| S.CConst lit	<- const
 	, S.LChar s	<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- C.takeTData tt
+	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
 	, Var.bind v == Var.TChar32
 	= C.XPrim C.MBox [C.XType r, C.XLit $ C.LChar32 s]
 
@@ -595,7 +595,7 @@ toCoreConst' tt const
 	-- boxed strings
 	| S.CConst lit	<- const
 	, S.LString s	<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- C.takeTData tt
+	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
 	, Var.bind v == Var.TString
 	= C.XPrim C.MBox [C.XType r, C.XAPP (C.XLit $ C.LString s) r]
 	
@@ -776,7 +776,7 @@ toCoreW ww
 	 			$  lookupType vT
 	 
 	 	let Just tLit		= mT
-		let Just (_, _, r : _)	= C.takeTData tLit
+		let Just (_, _, r : _)	= T.takeTData tLit
 	 
 		let (lit', True)	= toCoreLit tLit lit
 	 	return	( C.WLit lit'

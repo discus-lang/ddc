@@ -12,15 +12,20 @@ where
 
 import qualified Shared.Var	as Var
 
-import Util
-import Shared.Error
 import Core.Exp
 import Core.Util.Pack
 import Core.Util.Bits
 import Core.Pretty
 
+import Type.Util
+
+import Shared.Error
+
+import Util
+
 import qualified Data.Map	as Map
 import Data.Map			(Map)
+
 
 -----
 stage	= "Core.Util.Slurp"
@@ -66,10 +71,8 @@ maybeSlurpTypeX	xx
 	| XTet vts x		<- xx
 	, Just x'		<- maybeSlurpTypeX x
 	= Just $ TFetters x' 
-			[FWhere (TVar k v) t 
-				| (v, t) <- vts
-				, let Just k	= kindOfSpace $ Var.nameSpace v]
-
+			[FWhere (TVar (defaultKindV v) v) t 
+				| (v, t) <- vts ]
 	| XTau t x		<- xx
 	= Just t
 

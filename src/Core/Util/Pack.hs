@@ -7,12 +7,13 @@ module Core.Util.Pack
 	, inlineTWheresMapT )
 where
 	
------
 import Core.Exp
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Util.Effect
 import Core.Util.Bits
+
+import Type.Util		hiding (flattenT)
 
 import Shared.Error
 import Shared.VarUtil
@@ -191,7 +192,7 @@ packT1 tt
 	TTag v	-> tt
 
 	TWitJoin ts
-	 -> makeTWitJoin (map packT1 ts)
+	 -> makeTWitnessJoin (map packT1 ts)
 	
 	-- wildcards
 	TWild{}	-> tt

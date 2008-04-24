@@ -1,61 +1,101 @@
+
+-- | Bits and pieces for working with types.
 module Type.Util.Bits
+	-- simple
 	( pure
 	, empty
-
 	, isFConstraint
-	, varOfBind
-	
-	, crushT
-	, makeTSum,	flattenTSum
-	, makeTMask,	applyTMask
-	, makeTApp
-	, makeTData,	takeTData
-	, makeTFun,	takeTFun
+	, isUnboxedT
+	, makeTFunEC
 
+	-- projections
+	, varOfBind
+	, takeBindingVarF
+	, takeCidOfTClass
+	
+	-- crushing
+	, crushT
+
+	-- sums
+	, makeTSum
+	, flattenTSum
+
+	-- masks
+	, makeTMask
+	, applyTMask
+
+	-- type application
+	, makeTApp
+	, makeTData
+	, takeTData
+	, makeTFun
+	, takeTFun
+	, makeTFuns_pureEmpty
+	, flattenFun
+
+	-- forall
 	, makeTForall_front
 	, makeTForall_back
 	, slurpTForall
+	, makeKForall
 
-	, makeTFunEC 
-	, addFetters,	addFetters_front
-	, takeBindingVarF
+	-- witnesses
+	, makeTWitnessJoin
+	, makeTWitness
+	, takeTWitness
 
-	, takeCidOfTClass
-	, slurpVarsRD)
-
+	-- fetters
+	, makeTFetters
+	, addFetters
+	, addFetters_front)
 where
 
+import Type.Plate
+import Type.Exp
 
------
+import Shared.Error
+import qualified Shared.Var 	as Var
+import Shared.Var 		(Var, NameSpace(..))
+import Shared.VarPrim
+
 import Util
+
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 import qualified Data.Set	as Set
 
 -----
-import Shared.Error
-import qualified Shared.Var as Var
-import Shared.Var (Var, NameSpace(..))
-import Shared.VarPrim
-
-import Type.Exp
-import Type.Plate
--- import Type.Util.Kind
-
------
 stage	= "Type.Util.Bits"
 
+
+-- Simple things -----------------------------------------------------------------------------------
 pure	= TBot KEffect
 empty	= TBot KClosure
 
--- 
 isFConstraint ff
  = case ff of
  	FConstraint v ts	-> True
 	_			-> False
 
+-- | Check if a type represents some unboxed value
+isUnboxedT :: Type -> Bool
+isUnboxedT t
+ = case takeTData t of
+ 	Just (v, _, _)
+	 | last (Var.name v) == '#'	-> True	 
+	_				-> False
 
+-- | makeTFunEC
+--	Converts a list of types:	[t1, t2, t3, t4]
+--	into a function type:		t1 -> (t2 -> (t3 -> t4))
+makeTFunEC ::	Effect -> Closure -> [Type]	-> Type
+makeTFunEC	eff clo (x:[])			= x
+makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
+makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for function"
+
+
+-- Projections -------------------------------------------------------------------------------------
 -- | Get the var from a forall binder
 varOfBind :: Bind -> Var
 varOfBind bb
@@ -63,6 +103,20 @@ varOfBind bb
  	BVar v		-> v
 	BMore v t	-> v
 
+takeCidOfTClass :: Type -> Maybe ClassId
+takeCidOfTClass (TClass k cid)	= Just cid
+takeCidOfTClass _		= Nothing
+
+
+-- | Take the binding var from FLet's 
+takeBindingVarF :: Fetter -> Maybe Var
+takeBindingVarF ff
+ = case ff of
+ 	FWhere (TVar k v) t2	-> Just v
+	_			-> Nothing
+
+
+-- Crushing ----------------------------------------------------------------------------------------
 -- | do some simple packing
 crushT :: Type -> Type
 crushT t
@@ -93,9 +147,7 @@ crushT1 tt
 	_	-> tt
 
 
-----------------------
--- Sums
-
+-- Sums --------------------------------------------------------------------------------------------
 -- | Make a new sum from a list of type, crushing the list and substituting
 --	TPure\/TEmpty if there is nothing to sum. If there only one thing
 --	after crushing then return that thing instead of a sum.
@@ -116,9 +168,7 @@ flattenTSum tt
 	_			-> [tt]
 
 
------------------------
--- Masks
---
+-- Masks -------------------------------------------------------------------------------------------
 makeTMask :: Kind -> Type -> Type -> Type
 makeTMask k t1 t2
  = applyTMask $ case crushT t2 of
@@ -152,6 +202,7 @@ applyTMask tt@(TMask k t1 t2)
 applyTMask tt	= tt
 
 
+-- Type Application --------------------------------------------------------------------------------
 -- | Make a type application
 makeTApp :: [Type] -> Type
 makeTApp ts = makeTApp' $ reverse ts
@@ -167,8 +218,9 @@ makeTApp' xx
 makeTData :: Var -> Kind -> [Type] -> Type
 makeTData v k ts
  = makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k } : ts )
+
 	
--- | take a data type
+-- | Take a data type from a data type constructor application.
 takeTData :: Type -> Maybe (Var, Kind, [Type])
 takeTData tt
  = case tt of
@@ -186,13 +238,19 @@ takeTData tt
 	_ -> Nothing
 
 
--- | make a function type
+-- | Make a single function type
 makeTFun :: Type -> Type -> Effect -> Closure -> Type
 makeTFun t1 t2 eff clo
 	= TApp (TApp (TApp (TApp (TCon TyConFun) t1) t2) eff) clo
 
+-- | Make a chained function type with pure effects and empty closures
+makeTFuns_pureEmpty :: [Type] -> Type
+makeTFuns_pureEmpty xx
+ = case xx of
+ 	x : []		-> x
+	x : xs		-> makeTFun x (makeTFuns_pureEmpty xs) pure empty
 
--- | break up a function type
+-- | Take a function type from a type constructor application.
 takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)
 takeTFun tt
  	| TApp (TApp (TApp (TApp fun t1) t2) eff) clo	<- tt
@@ -203,6 +261,15 @@ takeTFun tt
 	= Nothing
 
 
+-- | Flatten a function type into parts
+flattenFun :: Type -> [Type]
+flattenFun xx
+ = case takeTFun xx of
+	Just (t1, t2, _, _)	-> t1 : flattenFun t2
+	_			-> [xx]
+
+
+-- Forall ------------------------------------------------------------------------------------------
 -- | Add some forall bindings to the front of this type, 
 --	new quantified vars go at front of list.
 makeTForall_front :: [(Var, Kind)] -> Type -> Type
@@ -242,21 +309,46 @@ slurpTForall tt
 	_ -> ([], tt)
 
 
------------------------
--- makeTFun / chopTFun
---	Converts a list of types:	[t1, t2, t3, t4]
---	into a function type:		t1 -> (t2 -> (t3 -> t4))
---		and vise versa
---
-makeTFunEC ::	Effect -> Closure -> [Type]	-> Type
-makeTFunEC	eff clo (x:[])			= x
-makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
-makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for function"
+-- | make a chain of KForalls
+makeKForall :: [Kind] -> Kind -> Kind
+makeKForall [] kk	= kk
+makeKForall (k:ks) kk	= KForall k (makeKForall ks kk)
 
 
+-- Witnesses ---------------------------------------------------------------------------------------
+-- | Join some witnesses together
+makeTWitnessJoin :: [Type] -> Type
+makeTWitnessJoin ts
+ = case ts of
+ 	[t]	-> t
+	ts	-> TWitJoin ts
 
+
+-- | Make a witness application.
+makeTWitness :: TyClass -> Kind -> [Type] -> Type
+makeTWitness v k ts
+	= makeTApp (TCon (TyConClass v k) : ts)
+
+-- | Take a witness from its constructor application
+takeTWitness :: Type -> Maybe (TyClass, Kind, [Type])
+takeTWitness tt
+	| TCon (TyConClass v k)	<- tt
+	= Just (v, k, [])
+
+	| TApp t1 t2		<- tt
+	, Just (v, k, ts)	<- takeTWitness t1
+	= Just (v, k, ts ++ [t2])
 	
-	
+	| otherwise
+	= Nothing
+
+
+-- Fetters -----------------------------------------------------------------------------------------	
+-- | Wrap a type with some fetters
+makeTFetters :: Type -> [Fetter] -> Type
+makeTFetters t []	= t
+makeTFetters t fs	= TFetters t fs
+
 -- | Add some fetters to a type.
 addFetters :: 	[Fetter] -> Type -> Type
 addFetters	fsMore	t
@@ -287,63 +379,4 @@ addFetters_front fsMore t
 	_ -> case fsMore of
 		[]	-> t
 		ff	-> TFetters t (nub ff)
-
--- | Take the fetters of this type
-
-
-
--- | Take the binding var from FLet's 
-takeBindingVarF :: Fetter -> Maybe Var
-takeBindingVarF ff
- = case ff of
- 	FWhere (TVar k v) t2	-> Just v
-	_			-> Nothing
-
-
-takeCidOfTClass :: Type -> Maybe ClassId
-takeCidOfTClass (TClass k cid)	= Just cid
-takeCidOfTClass _		= Nothing
-
-
--- | Slurp out the region and data vars present in this type
---	Used for crushing ReadT, ConstT and friends
-slurpVarsRD
-	:: Type 
-	-> ( [Region]	-- region vars and cids
-	   , [Data])	-- data vars and cids
-
-slurpVarsRD tt
- = 	slurpVarsRD_split [] [] $ slurpVarsRD' tt
-
-slurpVarsRD_split rs ds []	= (rs, ds)
-slurpVarsRD_split rs ds (t:ts)
- = case t of
- 	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
-	TClass KRegion _	-> slurpVarsRD_split (t : rs) ds ts
-
- 	TVar   KValue _		-> slurpVarsRD_split rs (t : ds) ts
-	TClass KValue _		-> slurpVarsRD_split rs (t : ds) ts
-	
-	_			-> slurpVarsRD_split rs ds ts
-	
-slurpVarsRD' tt
- = case tt of
-	TFun{}			-> []
- 	TData k v ts		-> catMap slurpVarsRD' ts
-
-	TVar KRegion _		-> [tt]
-	TVar KValue   _		-> [tt]
-	TVar _  _		-> []
-	
-	TClass KRegion _	-> [tt]	
-	TClass KValue   _	-> [tt]
-	TClass _ _		-> []
-
-	TFetters t fs		-> slurpVarsRD' t
-
-	TError k t		-> []
-
-	_ 	-> panic stage
-		$  "slurpVarsRD: no match"
-
 

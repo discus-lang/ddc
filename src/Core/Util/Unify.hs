@@ -4,13 +4,17 @@ module Core.Util.Unify
 
 where
 
-import Util
-import Shared.Error
 
 import Core.Exp
 import Core.Pretty
 import Core.ReconKind
 import Core.Util.Bits
+
+import Type.Util.Bits
+
+import Shared.Error
+
+import Util
 
 -- stage	= "Core.Util.Unify"
 

@@ -16,10 +16,6 @@ module Core.Lint
 
 where
 
-import Util
-import Shared.Error
-import Shared.Pretty
-
 import Core.Exp
 import Core.Pretty
 import Core.Util
@@ -27,14 +23,20 @@ import Core.Util.Slurp
 import Core.ReconKind
 import Core.Reconstruct		(reconX_type)
 
-import Type.Util.Bits		(varOfBind)
+import Type.Util
+
+import qualified Shared.Var	as Var
+import qualified Shared.VarPrim	as Var
+
+import Shared.Error
+import Shared.Pretty
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import Util
+
 import qualified Debug.Trace	as Debug
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
 
 -----
 stage	= "Core.Lint"

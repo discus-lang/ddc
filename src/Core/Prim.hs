@@ -10,12 +10,16 @@ module Core.Prim
 
 where
 
-import Util
 import Core.Exp
 import Core.Util
 import qualified Core.Reconstruct	as Recon
 import Core.ReconKind
 import Core.Plate.Trans
+
+import Type.Util
+
+import qualified Shared.Var	as Var
+import Shared.VarPrim
 import Shared.Pretty
 
 import Data.Map			(Map)
@@ -24,8 +28,7 @@ import qualified Data.Map	as Map
 import Data.Set			(Set)
 import qualified Data.Set	as Set
 
-import qualified Shared.Var	as Var
-import Shared.VarPrim
+import Util
 
 import qualified Debug.Trace
 

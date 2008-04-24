@@ -25,6 +25,8 @@ import qualified Core.Util.Slurp	as C
 import qualified Core.Reconstruct	as C
 import qualified Core.ReconKind		as C
 
+import qualified Type.Util		as T
+
 import qualified Sea.Exp  	as E
 import qualified Sea.Util	as E
 import qualified Sea.Pretty	as E
@@ -504,7 +506,7 @@ toSeaG	mObjV ssFront gg
 -- check if this type is in a direct region
 isDirectType :: C.Type -> SeaM Bool
 isDirectType tt
-	| Just (v, k, C.TVar C.KRegion vR : _)	<- C.takeTData tt
+	| Just (v, k, C.TVar C.KRegion vR : _)	<- T.takeTData tt
 	= do	directRegions	<- gets stateDirectRegions
 	 	return	$ Set.member vR directRegions
 
@@ -537,12 +539,12 @@ toSeaT :: C.Type	-> E.Type
 toSeaT	xx
 
 	-- void type
-	| Just (v, _, _)	<- C.takeTData xx
+	| Just (v, _, _)	<- T.takeTData xx
 	, Var.TVoidU		<- Var.bind v
 	= E.TVoid
 	
 	-- some unboxed object
-	| Just (v, _, ts)	<- C.takeTData xx
+	| Just (v, _, ts)	<- T.takeTData xx
 	, last (Var.name v) == '#'
 	= E.TCon v (map toSeaT $ filter (not . isREC) ts)
 	
@@ -561,7 +563,7 @@ toSeaT	xx
 
 splitOpType to
   = let
-  	opParts		= C.flattenFun to
+  	opParts		= T.flattenFun to
 	opParts'@(_:_)	= map toSeaT opParts
 		
 	argTypes	= init opParts'
@@ -702,7 +704,7 @@ superOpTypeP	pp
  = case pp of
  	C.PBind v x
 	 -> let	parts	= superOpType' x
-	    in	C.unflattenFunE parts
+	    in	T.makeTFuns_pureEmpty parts
 
 	-- external functions and ctors carry their operational
 	--	types around with them.
@@ -716,7 +718,7 @@ superOpTypeP	pp
 -- | Work out the operational type of this expression
 superOpTypeX :: C.Exp -> C.Type
 superOpTypeX	xx
-	= C.unflattenFunE $ superOpType' xx
+	= T.makeTFuns_pureEmpty $ superOpType' xx
 
 superOpType'	xx
  = case xx of
@@ -747,46 +749,41 @@ superOpTypePart	tt
 
 	-- an unboxed var of airity zero, eg Int32#
 	C.TCon (C.TyConData name kind)
-	 | C.isUnboxedT tt
-	 -> C.makeTData name C.KValue []
+	 | T.isUnboxedT tt
+	 -> T.makeTData name C.KValue []
 
 	-- a tycon of arity zero, eg Unit
 	C.TCon (C.TyConData name kind)
-	 -> C.makeTData Var.primTData C.KValue []
+	 -> T.makeTData Var.primTData C.KValue []
 
 	C.TApp{}
 	 -> let	result	
 		 	-- unboxed types are represented directly, and the Sea
 			--	code must know about them.
-	 		| Just (v, k, ts)	<- C.takeTData tt
+	 		| Just (v, k, ts)	<- T.takeTData tt
 			, v == Var.primTPtrU	
-			= C.makeTData v k (map superOpTypePart ts)
+			= T.makeTData v k (map superOpTypePart ts)
 
 			-- an unboxed tycon of some aritity, eg String#
-			| Just (v, k, ts)	<- C.takeTData tt
-			, C.isUnboxedT tt
-			= C.makeTData v k []
+			| Just (v, k, ts)	<- T.takeTData tt
+			, T.isUnboxedT tt
+			= T.makeTData v k []
 
 			-- boxed types are just 'Data'
-			| Just (v, k, ts)	<- C.takeTData tt
-			= C.makeTData Var.primTData k []
+			| Just (v, k, ts)	<- T.takeTData tt
+			= T.makeTData Var.primTData k []
 			
 			-- all function objects are considered to be 'Thunk'
-			| Just _		<- C.takeTFun tt
-			= C.makeTData Var.primTThunk C.KValue []
+			| Just _		<- T.takeTFun tt
+			= T.makeTData Var.primTThunk C.KValue []
 			
 			| otherwise
-			= C.makeTData Var.primTObj C.KValue []
+			= T.makeTData Var.primTObj C.KValue []
 	   in result			
 
 	-- some unknown, boxed object 'Obj'
-	C.TVar C.KValue _	-> C.makeTData Var.primTObj C.KValue []
+	C.TVar C.KValue _	-> T.makeTData Var.primTObj C.KValue []
 
 	_	-> panic stage
 		$  "superOpTypePart: no match for " % show tt % "\n"
-
-
-
-
-
 

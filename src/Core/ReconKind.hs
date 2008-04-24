@@ -8,12 +8,16 @@ module Core.ReconKind
 import Core.Exp
 import Core.Pretty
 import Core.Util.Bits
+import Type.Util
+
 import Shared.VarPrim
 import Shared.Error
+
 import Util
 
 stage	= "Core.ReconKind"
 
+{-
 -- | Take the kind of a tycon
 tyConKind :: TyCon -> Kind
 tyConKind tyCon
@@ -21,7 +25,7 @@ tyConKind tyCon
 	TyConFun			-> KFun KValue (KFun KValue (KFun KEffect (KFun KClosure KValue)))
 	TyConData { tyConDataKind }	-> tyConDataKind
 	TyConClass { tyConClassKind }	-> tyConClassKind	 
-
+-}
 	
 -- | Reconstruct the kind of this type, kind checking along the way
 kindOfType :: Type -> Maybe Kind

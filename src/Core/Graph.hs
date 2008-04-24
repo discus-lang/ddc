@@ -4,8 +4,18 @@ module Core.Graph
 	, dotAppGraph)
 
 where
+import Core.Exp
+import Core.Util
+import Core.Util.Slurp
+import Core.Plate.Trans
+import Core.Plate.FreeVars
 
-import Util
+import Type.Util
+
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import Shared.Var		(NameSpace(..))
+import Shared.Pretty
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -13,16 +23,7 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace(..))
-import Shared.Pretty
-
-import Core.Exp
-import Core.Util
-import Core.Util.Slurp
-import Core.Plate.Trans
-import Core.Plate.FreeVars
+import Util
 
 data GraphS
 	= GraphS

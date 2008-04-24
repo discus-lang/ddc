@@ -17,7 +17,7 @@ import Core.Util.Substitute
 import Core.Util.Slurp
 import Core.Pretty
 
-import Type.Util.Bits		(varOfBind)
+import Type.Util		hiding (flattenT, unifyT2) 
 import Type.Pretty
 
 import qualified Debug.Trace	as Debug
@@ -98,7 +98,7 @@ rewriteApp xx
 				<- Map.lookup overV ?classMap
 
 		, Just (vClass, kClass, tsClass)	
-				<- takeTClass tClass
+				<- takeTWitness tClass
 		
 		= let	vksClass 	= map (\(TVar k v) -> (v, k)) tsClass
 			tScheme	 	= foldl (\t (v, k) -> TForall (BVar v) k t) tOverScheme vksClass
@@ -138,7 +138,7 @@ rewriteOverApp
 
 	
 	| Just (classV, classKind, classParamVs)
-			<- takeTClass tClass
+			<- takeTWitness tClass
 
 	-- first work out what instance function to use
 	, (cClassInst, tOverShapeI, Just vInst)
@@ -317,7 +317,7 @@ determineInstance
 	cvInstances	
 
  | Just (vClass, kClass, tsClassParams)
- 	<- takeTClass tClass
+ 	<- takeTWitness tClass
  = let
  	-- See how many foralls there are on the front of the overloaded scheme.
 	(vtsForall, _, _, tOverShape)
@@ -339,7 +339,7 @@ determineInstance
 				tsArgsQuant
 				
 	tsClassParams'	= map (substituteT tsSubst) tsClassParams
-	cClassInst	= makeTClass vClass kClass (map stripToShapeT tsClassParams')
+	cClassInst	= makeTWitness vClass kClass (map stripToShapeT tsClassParams')
 
 	-- Lookup the instance fn
 	mInstV		= lookupF matchInstance cClassInst cvInstances
@@ -380,8 +380,8 @@ matchInstance
 	-> Bool
 
 matchInstance cType cInst
-	| Just (v1, _, ts1)	<- takeTClass cInst
-	, Just (v2, _, ts2)	<- takeTClass cType
+	| Just (v1, _, ts1)	<- takeTWitness cInst
+	, Just (v2, _, ts2)	<- takeTWitness cType
 
 	-- check the class is the same
 	, v1 == v2
@@ -455,8 +455,8 @@ slurpClassFuns instMap pp
 
 makeTClassFromDict v ts 
  = let 	Just ks	= sequence $ map kindOfType ts
- 	k 	= buildKFun (ks ++ [KClass (TyClass v) ts])
-   in	makeTClass (TyClass v) k ts
+ 	k 	= makeKFun (ks ++ [KClass (TyClass v) ts])
+   in	makeTWitness (TyClass v) k ts
 
 -- | Slurp out all the class instances from ths tree
 slurpClassInstMap

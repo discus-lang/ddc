@@ -19,8 +19,7 @@ import Core.Util
 import Core.ReconKind
 import Core.Exp
 
-import Type.Util.Bits		(varOfBind)
-
+import Type.Util
 
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
@@ -28,13 +27,13 @@ import Shared.VarPrim
 import Shared.Error
 import Util
 
-import Control.Monad.State
-
 import qualified Util.Map	as Map
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
 import qualified Debug.Trace	as Debug
+
+import Control.Monad.State
 
 
 -----
@@ -93,7 +92,7 @@ thread_transP pp
 thread_transX :: ClassInstMap -> Exp -> ThreadM Exp
 thread_transX instMap xx
 	| XAPP x t		<- xx
-	, Just _		<- takeTClass t
+	, Just _		<- takeTWitness t
 	= do	t'	<- rewriteWitness instMap t
 	 	return	$ XAPP x t'
 
@@ -187,7 +186,7 @@ rewriteWitness instMap tt
 	| otherwise
 	= return tt
 
-	where	mClass	= takeTClass tt
+	where	mClass	= takeTWitness tt
 
 
 -- | Build a witness that this effect is pure.

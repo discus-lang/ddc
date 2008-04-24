@@ -4,64 +4,39 @@
 --	They shouldn't depend on any other Core modules besides Exp.
 --
 module Core.Util.Bits
+
+	-- predicates
 	( isXApp
 	, isXLambda
 	, isXLAMBDA
 	, isXTau
-	, isTForall
-	
-	-- projections
+	, isCafP 
+
+	-- projections	
 	, takeVarOfStmt
 	
-	, makeTSum,	flattenTSum
-	, makeTMask,	applyTMask
-	
-	, makeTWhere
-	, makeTFetters
-	, makeTApp,	flattenTApp
-	, makeTData,	takeTData
-	, makeTFun,	takeTFun
-	, makeTClass,	takeTClass
-
-	, buildKFun,	makeKForall
-
-	, makeTWitJoin
-	, makeKWitJoin
-
-	, kindOfSpace 
-	, pure
-	, empty
-	
+	-- application
 	, buildApp
-	, flattenApps,	flattenAppsE,	unflattenAppsE
-	, flattenFun,	unflattenFunE
-		
-	, chopLambdas
-
-	, isUnboxedT
-	, crushClo
+	, flattenApps
+	, flattenAppsE
+	, unflattenAppsE
 	, splitApps
-	, isCafP 
-	, typeToVar
 
-	, addLAMBDAs
-	
-	, slurpVarsRD
-	
-	, resultKind)
-
-
+	-- lambda		
+	, chopLambdas
+	, addLAMBDAs)
 where
 
-import Util
 import Core.Exp
+
+import Type.Util
+
 import Shared.Error
 import Shared.Var 		(NameSpace(..))
 import Shared.Error		(panic)
 import qualified Shared.Var as Var
 import Shared.VarPrim
 
------
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
@@ -71,12 +46,8 @@ import Data.Set			(Set)
 import Debug.Trace
 import Util
 
------
-pure	= TBot KEffect
-empty	= TBot KClosure
 
-stage	= "Core.Util.Bits"
-
+-- Predicates --------------------------------------------------------------------------------------
 isXApp x
 	= or
 	[ x =@= XAPP{}
@@ -87,194 +58,37 @@ isXLambda x	= (x =@= XLam{})
 isXLAMBDA x	= (x =@= XLAM{})
 isXTau x	= (x =@= XTau{})
 
-isTForall x	= x =@= TForall{}
 
---------------------------------------------------------------------------------
--- Simple Projections
---
+-- | Check whether a top level thing is a CAF binding
+isCafP :: Top -> Bool
+isCafP	pp
+ = case pp of
+ 	PBind v x	-> isCafX x
+	_		-> False
+	
+isCafX xx
+ = case xx of
+	XAnnot n x	-> isCafX x
+
+ 	XLAM v k x	-> isCafX x
+	XLam{}		-> False
+	
+	XTet vts x	-> isCafX x
+	XTau t x	-> isCafX x
+	
+	XLocal v vs x	-> isCafX x
+	
+	_		-> True
+
+
+-- Projections -------------------------------------------------------------------------------------
 takeVarOfStmt :: Stmt -> Maybe Var
 takeVarOfStmt ss
  = case ss of
  	SBind mv x	-> mv
 
 
---------------------------------------------------------------------------------
--- Make / Flatten / Apply functions
-	
--- | make a sum from these things
---	return bottom if there aren't any
-makeTSum :: Kind -> [Type] -> Type
-makeTSum k ts
- = case nub $ catMap flattenTSum ts of
- 	[]	-> TBot k
-	[t]	-> t
-	ts'	-> TSum k ts'
-
-
--- | flatten this sum into a list of things
-flattenTSum :: Type -> [Type]
-flattenTSum tt
- = case tt of
- 	TBot k 		-> []
-	TSum k ts	-> catMap flattenTSum ts
-	_		-> [tt]
-
---
-makeTMask :: Kind -> Type -> Type -> Type
-makeTMask k t1 t2
- = case t2 of
- 	TBot KClosure	-> t1
-	_		-> applyTMask $ TMask k t1 t2
-
-
--- | Crush a TMask by discarding TFree and TEffects 
---	in the first term which are present in the second.
-applyTMask :: Type -> Type
-applyTMask tt@(TMask k t1 t2)
- = let	vsKill	= map (\t -> case t of
- 				TFree v t	-> v
-				TTag  v		-> v
-				_		
-				 -> panic stage 
-				 	$ "applyTMask: no match for " % show t % "\n"
-				  	% "  tt = " % show tt % "\n")
-		$ flattenTSum t2
-
-	tsMasked
-		= map (\t -> case t of
-				TFree v tr	
-				 | v `elem` vsKill	-> TBot k
-				 | otherwise		-> TFree v tr
-
-				_			-> TMask k t t2)
-		$ flattenTSum t1
-
-   in	makeTSum k tsMasked
- 
-
--- 
-makeTWitJoin :: [Type] -> Type
-makeTWitJoin ts
- = case ts of
- 	[t]	-> t
-	ts	-> TWitJoin ts
-
-makeKWitJoin :: [Kind] -> Kind
-makeKWitJoin ts
- = case ts of
- 	[t]	-> t
-	ts	-> KWitJoin ts
-
-		
-makeTWhere ::	Type	-> [(Var, Type)] -> Type
-makeTWhere	t []	= t
-makeTWhere	t vts	
-	= TFetters t 
-	$ [ FWhere (TVar (let Just k = kindOfSpace $ Var.nameSpace v in k) v) t'
-		| (v, t')	<- vts ]
-		
-
-makeTFetters :: Type -> [Fetter] -> Type
-makeTFetters t []	= t
-makeTFetters t fs	= TFetters t fs
-
-
--- | Make a type application
-makeTApp :: [Type] -> Type
-makeTApp ts = makeTApp' $ reverse ts
-
-makeTApp' xx
- = case xx of
-	[]		-> panic stage $ "makeTApp': empty list"
- 	x : []		-> x
-	x1 : xs		-> TApp (makeTApp' xs) x1
-
--- | Flatten out a type application into its parts
-flattenTApp :: Type -> [Type]
-flattenTApp tt
- = case tt of
- 	TApp t1 t2	-> flattenTApp t1 ++ [t2]
-	_		-> [tt]
-		
-
--- | Make a data type
-makeTData :: Var -> Kind -> [Type] -> Type
-makeTData v k ts
- = makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k } : ts )
-
-	
--- | take a data type
-takeTData :: Type -> Maybe (Var, Kind, [Type])
-takeTData tt
- = case tt of
- 	TCon TyConData { tyConName = v, tyConDataKind = k }
-		-> Just (v, k, [])
-		
-	TApp t1 t2
-	 -> case takeTData t1 of
-	 	Just (v, k, ts)	-> Just (v, k, ts ++ [t2])
-		Nothing		-> Nothing
-		
-	_ -> Nothing
-
-
--- | make a function type
-makeTFun :: Type -> Type -> Effect -> Closure -> Type
-makeTFun t1 t2 eff clo
-	= TApp (TApp (TApp (TApp (TCon TyConFun) t1) t2) eff) clo
-
-
--- | break up a function type
-takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)
-takeTFun tt
- 	| TApp (TApp (TApp (TApp fun t1) t2) eff) clo	<- tt
-	, TCon TyConFun{}	<- fun
-	= Just (t1, t2, eff, clo)
-	
-	| otherwise
-	= Nothing
-		
--- | make a function kind
-buildKFun :: [Kind] -> Kind
-buildKFun [k]		= k
-buildKFun (k : ks)	= KFun k (buildKFun ks)
-
-
--- | make a chain of KForalls
-makeKForall :: [Kind] -> Kind -> Kind
-makeKForall [] kk	= kk
-makeKForall (k:ks) kk	= KForall k (makeKForall ks kk)
-
-
--- | take a class witness
-takeTClass :: Type -> Maybe (TyClass, Kind, [Type])
-takeTClass tt
-	| TCon (TyConClass v k)	<- tt
-	= Just (v, k, [])
-
-	| TApp t1 t2		<- tt
-	, Just (v, k, ts)	<- takeTClass t1
-	= Just (v, k, ts ++ [t2])
-	
-	| otherwise
-	= Nothing
-
--- | make a class witness
-makeTClass :: TyClass -> Kind -> [Type] -> Type
-makeTClass v k ts
-	= makeTApp (TCon (TyConClass v k) : ts)
-		
--- | Get the kind associated with a namespace.
-kindOfSpace :: NameSpace -> Maybe Kind
-kindOfSpace space
- = case space of
- 	NameType	-> Just KValue
-	NameRegion	-> Just KRegion
-	NameEffect	-> Just KEffect
-	NameClosure	-> Just KClosure
-	_		-> Nothing
-
-
+-- Application -------------------------------------------------------------------------------------
 -- | Flatten an expression application into a list
 flattenApps :: Exp -> [Exp]
 flattenApps xx
@@ -284,10 +98,8 @@ flattenApps xx
 	| otherwise
 	= [xx]
 
-
 -- | Create an application from a list of expressions
 --	buildApp [x1, x2, x3] => (x1 x2) x3
---
 buildApp :: [Exp] -> Maybe Exp
 buildApp xx
 	= buildApp'
@@ -308,26 +120,10 @@ buildApp' xx
 
 	| otherwise
 	= Nothing
-	
-	
------
-flattenFun ::	Type -> [Type]
-flattenFun	xx
- = case takeTFun xx of
-	Just (t1, t2, _, _)	-> t1 : flattenFun t2
-	_			-> [xx]
 
------
-unflattenFunE :: [Type] -> Type
-unflattenFunE xx
- = case xx of
- 	x : []		-> x
-	x : xs		-> makeTFun x (unflattenFunE xs) pure empty
-
-
------
-flattenAppsE ::	Exp	-> [Exp]
-flattenAppsE	x
+-- | Flatten type and value applications, recording which ones we have by XAppFP nodes.
+flattenAppsE ::	Exp -> [Exp]
+flattenAppsE x
 	
 	| XApp e1 e2 eff	<- x
 	= flattenAppsE e1 ++ [XAppFP e2 (Just eff)]
@@ -339,8 +135,7 @@ flattenAppsE	x
 	| otherwise
 	= [XAppFP x Nothing]
 	
-
-
+-- | Build some type/value applications
 unflattenAppsE :: [Exp]	-> Exp
 unflattenAppsE	xx
 	
@@ -361,45 +156,10 @@ unflattenAppsE	xx
 	| x1:[]				<- xx
 	, XAppFP e1 Nothing		<- x1
 	= e1
-	
-
------------------------
--- chopLambdas
---	Chop the outer set of lambdas off a lambda expression and
---	return the var-scheme pairs.
---	
-chopLambdas ::	Exp -> (Exp, [(Var, Type)])
-chopLambdas	x
-
-	| XLam v t e eff clo	<- x
-	= let	(e', rest)	= chopLambdas e
-	  in 	(e', (v, t) : rest)
-	  
-	| otherwise
-	= (x, [])
 
 
-isUnboxedT :: Type -> Bool
-isUnboxedT t
- = case takeTData t of
- 	Just (v, _, _)
-	 | last (Var.name v) == '#'	-> True	 
-	_				-> False
-
-
-crushClo :: Closure -> [Closure]
-crushClo cc
- = case cc of
- 	TBot KClosure		-> []
-	TSum KClosure cs	-> catMap crushClo cs
-	_			-> [cc]
-
-
-
-
------
+-- | Split out args and effects produced at each application
 splitApps ::	Exp -> [(Exp, Effect)]
-
 splitApps	x
  = case x of
  	XAPP e1 e2
@@ -409,87 +169,23 @@ splitApps	x
 	 -> splitApps e1 ++ [(e2, eff)]
 		
 	_ -> [(x, pure)]
+	
+-- Lambda ------------------------------------------------------------------------------------------
+-- | Chop the outer set of lambdas off a lambda expression and return the var-scheme pairs.
+chopLambdas ::	Exp -> (Exp, [(Var, Type)])
+chopLambdas	x
 
-
+	| XLam v t e eff clo	<- x
+	= let	(e', rest)	= chopLambdas e
+	  in 	(e', (v, t) : rest)
+	  
+	| otherwise
+	= (x, [])
 	
-	
------
-isCafP :: Top -> Bool
-isCafP	pp
- = case pp of
- 	PBind v x	-> isCafX x
---	PSuper v x	-> isCafX x
-	_		-> False
-	
-isCafX xx
- = case xx of
-	XAnnot n x	-> isCafX x
-
- 	XLAM v k x	-> isCafX x
-	XLam{}		-> False
-	
-	XTet vts x	-> isCafX x
-	XTau t x	-> isCafX x
-	
-	XLocal v vs x	-> isCafX x
-	
-	_		-> True
-	
-
-typeToVar :: Type -> Maybe Var
-typeToVar tt
- = case tt of
-	TVar k v		-> Just v
-	_			-> Nothing
-	
-	
+-- | Add some type lambdas to an expression.	
 addLAMBDAs ::	[(Bind, Kind)] -> Exp -> Exp
 addLAMBDAs	vks x
  = case vks of
  	[]			-> x
 	((v, k) : vks)		-> XLAM v k (addLAMBDAs vks x)
-
-
--- | Slurp out the region and data vars present in this type
---	Used for crushing ReadT, ConstT and friends
-slurpVarsRD
-	:: Type 
-	-> ( [Region]	-- region vars and cids
-	   , [Data])	-- data vars and cids
-
-slurpVarsRD tt
- = 	slurpVarsRD_split [] [] $ slurpVarsRD' tt
-
-slurpVarsRD_split rs ds []	= (rs, ds)
-slurpVarsRD_split rs ds (t:ts)
- = case t of
- 	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
- 	TVar   KValue _		-> slurpVarsRD_split rs (t : ds) ts
-	
-	_			-> slurpVarsRD_split rs ds ts
-	
-slurpVarsRD' tt
---	| TFun{}		<- tt	= []
-
-	| TApp{}		<- tt
-	, Just (v, k, ts)	<- takeTData tt
-	= catMap slurpVarsRD' ts
-
---	| TFun{}		<- tt	= []
-
-	| TVar KRegion _	<- tt	= [tt]
-	| TVar KValue   _	<- tt	= [tt]
-	| TVar _  _		<- tt	= []
-
-	| otherwise
-	= panic stage
-	$ "slurpVarsRD: no match for " % show tt % "\n"
-
-
--- | Get the result of applying all the paramters to a kind.
-resultKind :: Kind -> Kind
-resultKind kk
- = case kk of
- 	KFun k1 k2	-> resultKind k2
-	_		-> kk
 

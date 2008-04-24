@@ -41,6 +41,8 @@ import Core.Util
 import Core.ReconKind
 import Core.Plate.FreeVars
 
+import Type.Util		hiding (flattenT, trimClosureC)
+
 import Shared.Pretty
 import Shared.Error
 import Shared.VarPrim
@@ -226,9 +228,8 @@ reconX tt (XTet vts x)
  	(x', tx, xe, xc)	= reconX tt' x
    in	( XTet   vts x'
    	, TFetters tx 
-		[ FWhere (TVar k v) t2
-			| (v, t2)	<- vts
-			, let Just k	= kindOfSpace $ Var.nameSpace v ]
+		[ FWhere (TVar (defaultKindV v) v) t2
+			| (v, t2)	<- vts]
 	, xe
 	, xc)
    
@@ -440,9 +441,8 @@ reconX tt (XVar v TNil)
 			$ Set.toList vsFree
 
 	, tDrop		<- makeTFetters t' 
-				[ FMore (TVar k v) t2
-					| (v, t2)	<- vtsMore
-					, let Just k	= kindOfSpace $ Var.nameSpace v ]
+				[ FMore (TVar (defaultKindV v) v) t2
+					| (v, t2)	<- vtsMore]
 
 {-	= trace ( "reconX[XVar]: dropping type\n"
 		% "    var    = " %> v		% "\n"

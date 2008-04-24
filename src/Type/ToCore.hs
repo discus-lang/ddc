@@ -99,7 +99,7 @@ toCoreT' table tt
 		table'	= Map.union table vtsMore
 		t'	= toCoreT' table' t
 
-	    in	C.makeTWhere (addContexts (map toCoreF fsRest1) t') vtsLet
+	    in	T.makeTWhere (addContexts (map toCoreF fsRest1) t') vtsLet
 	
 	T.TSum k ts		-> C.TSum (toCoreK k) (map down ts)
 
@@ -126,14 +126,14 @@ toCoreT' table tt
 	   in  down $ T.makeTApp (T.TCon tyCon : ts)
 
 
-	T.TFun t1 t2 eff clo	-> C.makeTFun (down t1) (down t2) (down eff) (down clo)
+	T.TFun t1 t2 eff clo	-> T.makeTFun (down t1) (down t2) (down eff) (down clo)
 	
 	-- effect
 	T.TEffect v ts		-> C.TEffect v (map down ts)
 	
 	-- closure
 	T.TFree v (T.TDanger t1 t2)
-				-> C.makeTSum C.KClosure
+				-> T.makeTSum C.KClosure
 					[ C.TFree v (down t1)
 					, C.TFree v (down t2)]
 				
