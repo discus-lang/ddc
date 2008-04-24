@@ -6,6 +6,7 @@ where
 
 import Type.Util.Bits
 import Type.Exp
+import Type.Pretty
 
 import Shared.Error
 import Shared.Pretty

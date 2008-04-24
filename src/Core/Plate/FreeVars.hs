@@ -18,6 +18,7 @@ import Shared.Error
 
 import Core.Exp
 import Type.Util.Bits		(varOfBind)
+import Type.Pretty
 
 -----
 stage	= "Core.Plate.FreeVars"
