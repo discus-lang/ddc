@@ -8,8 +8,6 @@ module Core.Float
 
 where
 
-
-import Core.ReconKind
 import Core.BoundUse
 import qualified Core.Plate.Trans	as Trans
 import qualified Core.Reconstruct	as Recon

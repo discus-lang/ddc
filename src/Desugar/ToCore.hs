@@ -32,7 +32,6 @@ import Type.ToCore			(toCoreT, toCoreK)
 import qualified Type.Util		as T
 
 import qualified Core.Util.Pack		as C
-import qualified Core.ReconKind		as C
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Pretty		as C
@@ -668,7 +667,7 @@ toCoreVarInst v vT
 			$ return ()
 
 		let tsContextC' = map C.packT
-				$ map (\k -> let Just t = C.buildWitnessOfClass k in t)
+				$ map (\k -> let Just t = T.inventWitnessOfClass k in t)
 				$ ksContextC'
 
 {-		trace ("varInst: "
@@ -694,7 +693,7 @@ toCoreVarInst v vT
 		let tSchemeC			= toCoreT tSchemeT
 		let (tsReplay, ksContext)	= C.slurpForallContextT tSchemeC
 
-		let tsContext	= map (\k -> let Just t = C.buildWitnessOfClass k in t)
+		let tsContext	= map (\k -> let Just t = T.inventWitnessOfClass k in t)
 				$ ksContext
 
 		let Just xResult =

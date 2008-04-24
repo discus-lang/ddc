@@ -23,7 +23,6 @@ import qualified Core.Pretty		as C
 import qualified Core.Util		as C
 import qualified Core.Util.Slurp	as C
 import qualified Core.Reconstruct	as C
-import qualified Core.ReconKind		as C
 
 import qualified Type.Util		as T
 
@@ -119,7 +118,7 @@ toSeaP	xx
 	-- region
 	--	slurp witnesses on the way down
 	C.PRegion v vts
-	 -> do	let Just ks	= sequence $ map (C.kindOfType . snd) vts
+	 -> do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
 	 	return	[]
 
@@ -184,7 +183,7 @@ splitSuper accArgs xx
 	= 	splitSuper accArgs x
 	
 	| C.XLocal v vts x	<- xx
-	= do	let Just ks	= sequence $ map (C.kindOfType . snd) vts
+	= do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
 		mapM_ slurpWitnessKind ks
 		splitSuper accArgs x
 	
@@ -248,7 +247,7 @@ toSeaX		xx
 
 	-- slurp region witnesses on the way down
 	C.XLocal  v vts x	
-	 -> do	let Just ks	= sequence $ map (C.kindOfType . snd) vts
+	 -> do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
 	 	toSeaX x
 
@@ -557,7 +556,7 @@ toSeaT	xx
 	= E.TObj
 
 	where isREC xx	
-		| Just k	<- C.kindOfType xx
+		| Just k	<- T.kindOfType xx
 		= elem k [C.KRegion, C.KEffect, C.KClosure]
 	
 

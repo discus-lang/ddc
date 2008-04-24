@@ -38,7 +38,6 @@ where
 
 import Core.Exp
 import Core.Util
-import Core.ReconKind
 import Core.Plate.FreeVars
 
 import Type.Util		hiding (flattenT, trimClosureC)

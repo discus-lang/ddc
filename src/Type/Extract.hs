@@ -171,7 +171,7 @@ extractType_more final varT cid tPack
 
 	-- Trim closures
 	let tTrim	= 
-		case takeKindOfType tDeMore of
+		case kindOfType tDeMore of
 			Just KClosure	-> trimClosureC Set.empty Set.empty tDeMore
 			Just _		-> trimClosureT Set.empty Set.empty tDeMore
 

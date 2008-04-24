@@ -5,31 +5,39 @@ module Type.Util.Kind
 	, spaceOfKind
 	, kindOfSpace 
 
+	-- projections
+	, tyConKind
+
 	-- witnesses
 	, makeKWitJoin
+	, inventWitnessOfClass
 
+	-- kind functions
 	, makeKFun
-
-	, tyConKind
-	, takeKindOfType
-	, kindOfType_orDie
 	, resultKind
 	, makeDataKind
-	, kindOfType_freakouts)
+
+	-- kind reconstruction
+	, kindOfType
+	, kindOfType_orDie)
 
 where
 
-import Type.Exp
 import Type.Pretty
+import Type.Util.Bits
+import Type.Exp
+
 import Shared.Var		(NameSpace(..))
 import Shared.Error
 import Shared.Pretty
 import qualified Shared.Var as Var
+
 import Util
 
 import Main.Arg
 import qualified Debug.Trace
 
+-----
 stage	= "Type.Util.Kind"
 
 
@@ -66,21 +74,7 @@ kindOfSpace space
 	_		-> panic stage
 			$  "kindOfSpace: no match for " % show space
 
-
--- Witnesses ---------------------------------------------------------------------------------------
--- | Join some kind classes
-makeKWitJoin :: [Kind] -> Kind
-makeKWitJoin ts
- = case ts of
- 	[t]	-> t
-	ts	-> KWitJoin ts
-
--- | make a function kind
-makeKFun :: [Kind] -> Kind
-makeKFun [k]		= k
-makeKFun (k : ks)	= KFun k (makeKFun ks)
-
-
+-- Projections -------------------------------------------------------------------------------------
 -- | Take the kind of a tycon
 tyConKind :: TyCon -> Kind
 tyConKind tyCon
@@ -90,76 +84,130 @@ tyConKind tyCon
 	TyConClass { tyConClassKind }	-> tyConClassKind	 
 
 
--- | Get the kind of a type, or die if there is a kind error.
---	This is harder to debug with...
-kindOfType_orDie :: Type -> Kind
-kindOfType_orDie tt
- = case takeKindOfType tt of
- 	Just k		-> k
-	Nothing		-> panic stage
-			$ "kindOfType: no match for " % tt % "\n"
-			%> show tt
+-- Kind Functions ----------------------------------------------------------------------------------
+-- | Get the result of applying all the paramters to a kind.
+resultKind :: Kind -> Kind
+resultKind kk
+ = case kk of
+ 	KFun k1 k2	-> resultKind k2
+	_		-> kk
 
--- | Get the kind of a type
---	A types include TApp, they might have internal errors where no kind is extractable.
---	In this case we freakout and return Nothing.
---
-takeKindOfType :: Type -> Maybe Kind
-takeKindOfType tt
- {- = Debug.Trace.trace
- 	( pprStr [PrettyTypeKinds] $ "takeKindOfType " % tt)
- 	$ -} =  takeKindOfType' tt
 
-takeKindOfType' tt
- = case tt of
- 	TForall v k t	-> takeKindOfType t
-	TFetters t fs	-> takeKindOfType t
-	
-	TSum k ts	-> Just k
-	TMask k _ _	-> Just k
-	TVar k v	-> Just k
-	TTop k		-> Just k
-	TBot k		-> Just k
-	
-	TApp t1 t2
-	 -> do	k1	<- takeKindOfType t1
-	 	k2	<- takeKindOfType t2
-		
-		case k1 of
-		 KFun k11 k12
-		  | k2 == k11	-> return k12
-		 
-		 _		-> kindOfType_freakout t1 k1 t2 k2
-	              
-	
-	TCon tc		-> Just $ tyConKind tc
+-- | make a function kind
+makeKFun :: [Kind] -> Kind
+makeKFun [k]		= k
+makeKFun (k : ks)	= KFun k (makeKFun ks)
 
-	TData k v ts	
-	 -> do	ks	<- sequence $ map takeKindOfType ts
-	 	
+
+-- Make a kind from the parameters to a data type
+makeDataKind :: [Var] -> Kind
+makeDataKind vs
+ 	= foldl (flip KFun) KValue 
+	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
+	$ reverse vs
+
+
+-- Witnesses ---------------------------------------------------------------------------------------
+-- | Join some kind classes
+makeKWitJoin :: [Kind] -> Kind
+makeKWitJoin ts
+ = case ts of
+ 	[t]	-> t
+	ts	-> KWitJoin ts
+
+-- | Invent an explicit witness needed to satisfy a certain constraint
+--	This is used in Desugar.ToCore when we don't know how to properly construct our witnesses yet.
+inventWitnessOfClass :: Kind -> Maybe Type
+inventWitnessOfClass (KClass v ts)
+ = let 	Just ks	= sequence $ map kindOfType ts
+	kResult	= KClass v (map TIndex $ reverse [0 .. length ks - 1])
+	k	= makeKForall ks kResult
+   in	Just (makeTApp (TCon (TyConClass v k) : ts))
+
+inventWitnessOfClass k
+	= freakout stage
+		("inventWitnessOfClass: don't know how to build witness for '" % k % "'\n")
+		Nothing
+
+
+-- Kind reconstruction -----------------------------------------------------------------------------
+-- | Reconstruct the kind of this type, kind checking along the way
+kindOfType :: Type -> Maybe Kind
+kindOfType tt
+
+	| TForall  b t1 t2	<- tt	= kindOfType t2		-- todo, add bound kind to env
+
+	| TContext t1 t2	<- tt	= kindOfType t2
+	| TFetters t1 _		<- tt	= kindOfType t1
+	
+	-- we'll just assume kind annots on TSum and TMask are right, and save
+	--	having to check all the elements
+	| TSum  k _		<- tt	= Just k
+	| TMask k _ _		<- tt	= Just k
+
+	| TVar  k _		<- tt	= Just k
+	| TVarMore k _ _	<- tt	= Just k
+	| TCon tyCon		<- tt	= Just (tyConKind tyCon)
+	| TBot k		<- tt	= Just k
+	| TTop k		<- tt	= Just k
+
+	-- application of KForall
+	| TApp t1 t2			<- tt
+	, Just (KForall k11 k12)	<- kindOfType t1
+	, Just k2			<- kindOfType t2
+	, k11 == k2
+	= Just (betaTK 0 t2 k12)
+
+	-- application of kind function (which is a sugared KForall)
+	| TApp t1 t2			<- tt
+	, Just (KFun k11 k12)		<- kindOfType t1
+	, Just k2			<- kindOfType t2
+	, k11 == k2
+	= Just k12
+
+	-- application failed.. :(
+	| TApp t1 t2			<- tt
+	= kindOfType_freakout t1 (kindOfType t1) t2 (kindOfType t2)
+	
+	-- effect and closure constructors should always be fully applied.
+	| TEffect{}		<- tt	= Just KEffect
+	| TFree{}		<- tt	= Just KClosure
+	| TDanger{}		<- tt	= Just KClosure
+	| TTag{}		<- tt	= Just KClosure		-- lies!
+
+	-- wildcards have kinds embedded in them
+	| TWild k		<- tt	
+	= Just k
+
+	-- used in type inferencer -------------------------------------------
+
+	-- TData might be partially applied
+	| TData k v ts		<- tt
+	= do	ks	<- sequence $ map kindOfType ts
 		case appKinds k ks of
 		 Just k'	-> return k'
 		 _		-> kindOfType_freakouts (TVar k v) k $ zip ts ks
-	 
-	TFun{}		-> Just KValue
-	
-	TEffect{}	-> Just KEffect
-	
-	TFree{}		-> Just KClosure
-	TDanger{}	-> Just KClosure
-	TTag{}		-> Just KClosure
-	
-	TWild k		-> Just k
-	TClass k cid	-> Just k
 
-	TElaborate e t	-> takeKindOfType t
+	-- TFuns are always fully applied
+	| TFun{}		<- tt
+	= Just KValue
 
-	TError k t	-> Just k 
-	
-	_		
-	 -> freakout stage 
-		("takeKindOfType: no match for " % tt % "\n") 
+	| TClass k _		<- tt
+	= Just k
+
+	| TError k _		<- tt
+	= Just k
+
+	-- used in source / desugar -----------------------------------------
+	| TElaborate e t	<- tt
+	= kindOfType t
+		
+	-- some of the helper constructors don't have real kinds ------------
+	| otherwise
+	= freakout stage 
+		("kindOfType: cannot get kind for " % show tt % "\n")
 		Nothing
+
 
 kindOfType_freakout t1 k1 t2 k2
  = freakout stage	
@@ -184,8 +232,7 @@ kindOfType_freakouts t1 k1 tks
 
 -- | Apply some kinds to a kind function
 --	If this results in a kind error then return Nothing
-appKinds :: Kind -> [Kind] 	-> Maybe Kind
-
+appKinds :: Kind -> [Kind] -> Maybe Kind
 appKinds k []		= Just k
 
 appKinds (KFun k1 k2) (k:ks)
@@ -194,17 +241,69 @@ appKinds (KFun k1 k2) (k:ks)
 appKinds  k ks		= Nothing
 
 
--- | Get the result of applying all the paramters to a kind.
-resultKind :: Kind -> Kind
-resultKind kk
- = case kk of
- 	KFun k1 k2	-> resultKind k2
-	_		-> kk
+-- | Get the kind of a type, or die if there is a kind error.
+--	This is harder to debug with...
+kindOfType_orDie :: Type -> Kind
+kindOfType_orDie tt
+ = case kindOfType tt of
+ 	Just k		-> k
+	Nothing		-> panic stage
+			$ "kindOfType: no match for " % tt % "\n"
+			%> show tt
 
--- Make a kind from the parameters to a data type
-makeDataKind :: [Var] -> Kind
-makeDataKind vs
- 	= foldl (flip KFun) KValue 
-	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
-	$ reverse vs
+
+-- Beta --------------------------------------------------------------------------------------------
+-- de bruijn style beta evalation
+--	used to handle substitution arrising from application of KForall's in kindOfType.
+
+betaTK :: Int -> Type -> Kind -> Kind
+betaTK depth tX kk
+ = let down 	= betaTK depth tX
+   in case kk of
+ 	KNil		-> kk
+	KForall k1 k2	-> KForall k1 (betaTK (depth + 1) tX k2)
+	KFun	k1 k2	-> KFun (down k1) (down k2)
+	KValue		-> kk
+	KRegion		-> kk
+	KEffect		-> kk
+	KClosure	-> kk
+	KClass v ts	-> KClass v (map (betaTT depth tX) ts)
+	KWitJoin ks	-> kk
+
+	_	-> panic stage
+		$ "betaTK: no match for " % kk
+		
+	
+betaTT :: Int -> Type -> Type -> Type
+betaTT depth tX tt
+ = let down	= betaTT depth tX
+   in  case tt of
+   	TNil		-> tt
+	TForall b k t	-> TForall b k (down t)
+	TContext k t	-> TContext k (down t)
+	TFetters t fs	-> TFetters (down t) fs
+	TApp t1 t2	-> TApp (down t1) (down t2)
+	TSum k ts	-> TSum k (map down ts)
+	TMask k t1 t2	-> TMask k (down t1) (down t2)
+	TCon{}		-> tt
+	TVar{}		-> tt
+	TVarMore{}	-> tt
+
+	TIndex ix
+	 | ix == depth	-> tX
+	 | ix > depth	-> TIndex (ix - 1)
+	 | otherwise	-> tt
+	 	
+	TTop{}		-> tt
+	TBot{}		-> tt
+	TEffect v ts	-> TEffect v (map down ts)
+	TFree v t	-> TFree v (down t)
+	TTag{}		-> tt
+
+	TWitJoin ts	-> TWitJoin (map down ts)
+	TWild k		-> tt
+
+	_	-> panic stage
+		$ "betaTT: no match for " % tt
+
 

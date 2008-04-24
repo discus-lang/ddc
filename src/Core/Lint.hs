@@ -13,14 +13,12 @@
 --			want withVT, withVK
 module Core.Lint
 	( lintTree )
-
 where
 
 import Core.Exp
 import Core.Pretty
 import Core.Util
 import Core.Util.Slurp
-import Core.ReconKind
 import Core.Reconstruct		(reconX_type)
 
 import Type.Util

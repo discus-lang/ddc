@@ -6,11 +6,11 @@ where
 
 import Core.Exp
 import Core.Pretty
-import Core.ReconKind
 import Core.Util.Bits
 import Core.Util.Trim
 
 import Type.Util.Bits
+import Type.Util.Kind
 
 import Shared.Pretty
 import Shared.Error

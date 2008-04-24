@@ -164,7 +164,7 @@ feedType'	mParent t
 
 	TApp t1 t2
 	 -> do	
-		let Just k	= takeKindOfType t
+		let Just k	= kindOfType t
 	 	cidT		<- allocClass k
 	 	Just t1'	<- feedType1 (Just cidT) t1
 		Just t2'	<- feedType1 (Just cidT) t2
@@ -203,7 +203,7 @@ feedType'	mParent t
 
 		
 	TData kData v ts
-	 -> do	let Just k	= takeKindOfType t
+	 -> do	let Just k	= kindOfType t
 	 	cidT		<- allocClass k
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidT)) ts

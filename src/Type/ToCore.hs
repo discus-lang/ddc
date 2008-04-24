@@ -24,7 +24,6 @@ import qualified Type.Pretty	as T
 
 import qualified Core.Exp 	as C
 import qualified Core.Util	as C
-import qualified Core.ReconKind	as C
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -180,7 +179,7 @@ toCoreF	   f
 	-- TODO: don't assume there are no kind problems in the constraint
 	T.FConstraint v ts		
 	 -> let	ts'	= map toCoreT ts
-		Just t	= C.buildWitnessOfClass (C.KClass (tyClassOfVar v) ts')
+		Just t	= T.inventWitnessOfClass (C.KClass (tyClassOfVar v) ts')
 	    in	t
 	    
 	_ -> panic stage
@@ -211,7 +210,7 @@ tyClassPrim
 addContexts :: [C.Witness] -> C.Type -> C.Type
 addContexts []	   t	= t
 addContexts (f:fs) t	
-	| Just k	<- C.kindOfType f
+	| Just k	<- T.kindOfType f
 	= C.TContext k (addContexts fs t)
 		
    

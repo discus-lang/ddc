@@ -50,7 +50,7 @@ trace ss x
 --
 packType_noLoops :: Type -> Type
 packType_noLoops tt
- = case liftM resultKind $ takeKindOfType tt of
+ = case liftM resultKind $ kindOfType tt of
  	Just KValue	-> packData_noLoops  tt
  	Just KNil	-> packData_noLoops  tt
 
@@ -62,7 +62,7 @@ packType_noLoops tt
 
 packType :: Type -> (Type, [(Type, Type)])
 packType tt
- = case liftM resultKind $ takeKindOfType tt of
+ = case liftM resultKind $ kindOfType tt of
  	Just KValue	-> packData   tt
 	Just KEffect	-> packEffect tt
 	 
@@ -84,7 +84,7 @@ packData_noLoops tt
 -- | Pack a value type
 packData :: Data -> (Data, [(Type, Type)])
 packData tt
-	| Just k		<- liftM resultKind $ takeKindOfType tt
+	| Just k		<- liftM resultKind $ kindOfType tt
 	, elem k [KValue, KNil]
 
 	, (tt_packed, tsLoop)	<- runState (packTypeLs False Map.empty tt) []
@@ -119,7 +119,7 @@ packEffect_noLoops tt
 
 packEffect :: Effect -> (Effect, [(Type, Type)])
 packEffect tt
-	| Just KEffect		<- takeKindOfType tt
+	| Just KEffect		<- kindOfType tt
 	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
 	, tt'			<- inlineFsT $ tt_packed
 	= let result
@@ -139,7 +139,7 @@ packClosure_noLoops tt
 		$ "packClosure: got loops\n"
 		
 packClosure tt
-	| Just KClosure		<- takeKindOfType tt
+	| Just KClosure		<- kindOfType tt
 	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
  	, tt'			<- crushT $ inlineFsT $ tt_packed
 	= let result
@@ -156,7 +156,7 @@ packClosure tt
 -- | Pack a region
 packRegion :: Region -> Region
 packRegion tt
-	| Just KRegion		<- takeKindOfType tt
+	| Just KRegion		<- kindOfType tt
 	, (tt_packed, tsLoop)	<- runState (packTypeLs True Map.empty tt) []
 	, null tsLoop
 	= if tt == tt_packed
@@ -432,7 +432,7 @@ inlineFs fs
 
 	-- a substitutions with only data fetters.
 	let subD = Map.filterWithKey
-			(\t x -> (let Just k = takeKindOfType t in resultKind k) == KValue)
+			(\t x -> (let Just k = kindOfType t in resultKind k) == KValue)
 			sub
 
 	-- Don't substitute closures and effects into data, it's too hard to read.				
@@ -442,7 +442,7 @@ inlineFs fs
 	let subRHS t1 t2
 		= do	tsLoops	<- get
 			if null tsLoops
-			 then case liftM resultKind $ takeKindOfType t1 of
+			 then case liftM resultKind $ kindOfType t1 of
 				Just KValue	-> subTT_cutM subD (Set.singleton t1) t2
 				Just _		-> subTT_cutM sub  (Set.singleton t1) t2
 
@@ -546,8 +546,8 @@ sortFs :: [Fetter] -> [Fetter]
 sortFs fs
  = let	isLetK k f
   	 = case f of
-	 	FWhere _ t2	-> (let Just k1 = takeKindOfType t2 in k1) == k
-		FMore _ t2	-> (let Just k1 = takeKindOfType t2 in k1) == k
+	 	FWhere _ t2	-> (let Just k1 = kindOfType t2 in k1) == k
+		FMore _ t2	-> (let Just k1 = kindOfType t2 in k1) == k
 		_		-> False
 
 	([ fsData,   fsEffect, fsClosure], fsRest)	

@@ -7,10 +7,10 @@ where
 
 import Core.Exp
 import Core.Pretty
-import Core.ReconKind
 import Core.Util.Bits
 
 import Type.Util.Bits
+import Type.Util.Kind
 
 import Shared.Error
 

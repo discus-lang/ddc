@@ -141,7 +141,7 @@ subTT_enter sub cut tt
 	-- see if we can substitute something
 	| Just tt'	<- Map.lookup tt sub
 	= if Set.member tt cut
-	   then case takeKindOfType tt of
+	   then case kindOfType tt of
 			-- Loops in effect and closure types can be cut by replacing
 			--	the looping variable with bottom.
 			Just KEffect		
@@ -220,7 +220,7 @@ cutSub sub
 cutF :: (Type, Type) -> SubM (Maybe (Type, Type))
 cutF (t1, t2)
 	-- If the binding var is in the rhs then we've got an infinite type error
-	| (let Just k1 = takeKindOfType t1 in k1) == KValue
+	| (let Just k1 = kindOfType t1 in k1) == KValue
 	= if elem t1 $ collectTClassVars t2
 		then do	modify $ \s -> (t1, t2) : s
 			return $ Nothing

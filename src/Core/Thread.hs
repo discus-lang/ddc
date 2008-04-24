@@ -16,7 +16,6 @@ where
 
 import Core.Plate.Trans
 import Core.Util
-import Core.ReconKind
 import Core.Exp
 
 import Type.Util

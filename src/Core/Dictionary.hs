@@ -10,8 +10,6 @@ import Core.Pretty
 import Core.Util
 import Core.Plate.Trans
 import Core.Util.Unify
-import Core.ReconKind
-
 import Core.Util.Strip
 import Core.Util.Substitute
 import Core.Util.Slurp
@@ -198,7 +196,7 @@ rewriteOverApp
 
 		-- Work out the witnesses we need to pass to the instance function
 		ksClassArgs		= map (\c -> substituteT (Map.fromList vtSub) c) ksClass
-		Just tsWitnesses	= sequence $ map buildWitnessOfClass ksClassArgs
+		Just tsWitnesses	= sequence $ map inventWitnessOfClass ksClassArgs
 
 		-- Have a look at the original application 
 		--	split off the type/class args and keep the value args.

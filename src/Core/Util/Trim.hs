@@ -8,10 +8,10 @@ where
 
 import Core.Util.Bits
 import Core.Util.Pack
-import Core.ReconKind
 import Core.Exp
 
 import Type.Util.Bits
+import Type.Util.Kind
 
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var

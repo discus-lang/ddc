@@ -67,5 +67,5 @@ unifyT2 t1 t2
 	| otherwise			
 	= Nothing
 
-	where	Just k1	= takeKindOfType t1
-		Just k2	= takeKindOfType t2
+	where	Just k1	= kindOfType t1
+		Just k2	= kindOfType t2

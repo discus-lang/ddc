@@ -158,7 +158,7 @@ pType_body
 		pTok K.AKet
 		t2	<- pType_body
 		
-		case takeKindOfType effclo of
+		case kindOfType effclo of
 			Just KEffect	-> return $ TFun t1 t2 effclo (TBot KClosure)
 			Just KClosure 	-> return $ TFun t1 t2 (TBot KEffect) effclo)
 		

@@ -205,11 +205,11 @@ addToClass cid_ src t
 
 addToClass2 cid src t c
 	| ClassNil	<- c
-	, Just k	<- takeKindOfType t
+	, Just k	<- kindOfType t
 	= addToClass3 cid src t (classInit cid k)
 	
 	| Class { classKind } <- c
-	, Just k	<- takeKindOfType t
+	, Just k	<- kindOfType t
 	, k == classKind
 	= addToClass3 cid src t c
 
@@ -254,7 +254,7 @@ addNameToClass cid_ src v k
 addNameToClass2 cid src t c
  = case c of
  	ClassNil	
-	 -> let Just k	= takeKindOfType t
+	 -> let Just k	= kindOfType t
 	    in  addNameToClass3 cid src t (classInit cid k)
 
 	Class{}		
@@ -426,7 +426,7 @@ mergeClassesT	 ts@(t:_)
  	let Just cids	= sequence 
 			$ map takeCidOfTClass ts
 
-	let Just ks	= sequence $ map takeKindOfType ts
+	let Just ks	= sequence $ map kindOfType ts
 
 	case nub ks of
 	 [k] ->	do	

@@ -13,7 +13,6 @@ where
 import Core.Exp
 import Core.Util
 import qualified Core.Reconstruct	as Recon
-import Core.ReconKind
 import Core.Plate.Trans
 
 import Type.Util

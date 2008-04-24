@@ -265,7 +265,7 @@ ofKind tt
 -}
 atKind :: Type -> String
 atKind tt
- = case takeKindOfType tt of
+ = case kindOfType tt of
  	Just KValue	-> "         at type: "
  	Just KEffect	-> "     with effect: "
 
