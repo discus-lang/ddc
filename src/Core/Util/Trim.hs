@@ -101,8 +101,8 @@ trimClosureC quant rsData cc
 
 -- keep packing and trimming until it won't trim anymore
 trimClosureC2 quant rsData cc
- | Just KClosure <- kindOfType cc
-  = let cc'	= packT $ trimClosureC' quant rsData cc
+ | isClosure cc
+  = let cc'	= trimClosureC' quant rsData cc
     in  if cc' == cc
    	 then cc'
 	 else trimClosureC2 quant rsData cc'
@@ -136,15 +136,16 @@ trimClosureC' quant rsData cc
 		$  map down
 		$  flattenTSum cc
 
-	TMask KClosure t1@(TVar k v) t2
-	 | Set.member v quant
-	 -> t1
-	 
-	 | otherwise
-	 -> cc
-
-	TMask KClosure t1 t2	
-	 -> TMask KClosure (down t1) t2
+	TMask KClosure t1 t2
+	 -> let t1'	= down t1
+	 	result
+	 		| TVar k v	<- t1'
+			, Set.member v quant
+			= t1'
+			
+			| otherwise
+			= applyTMask (TMask KClosure t1' t2)
+	    in	result						
 
 	TFetters c fs
 	 -> makeTFetters
@@ -172,16 +173,13 @@ trimClosureC' quant rsData cc
 	--	We need this dispatch because the right hand side of a 
 	--	TFree can be either data or more closure
 	TFree tag t
-	  -> case kindOfType t of
-		Just KClosure
-		  -> TFree tag $ down t
+	  | isClosure t
+	  -> TFree tag $ down t
 
-		Just KEffect	-> TBot KClosure
-		
-
-	  	_ -> makeTSum KClosure 
-			$ map (TFree tag) 
-			$ trimClosureC_t quant rsData t
+	  | otherwise
+	  -> makeTSum KClosure 
+		$ map (TFree tag) 
+		$ trimClosureC_t quant rsData t
 			
 	TTag   v		-> cc
 

@@ -326,6 +326,7 @@ isClosure tt
  	TSum	KClosure _	-> True
 	TMask	KClosure _ _	-> True
 	TVar	KClosure _	-> True
+	TVarMore KClosure _ _	-> True
 	TClass	KClosure _	-> True
 	TFree{}			-> True
 	TDanger{}		-> True
