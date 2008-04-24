@@ -31,13 +31,15 @@ stage	= "Core.Util.Pack"
 
 -- | Pack a type into standard form.
 packT :: Type -> Type
-packT tt
- = {-# SCC "packT" #-}
+packT tt	= {-# SCC "packT" #-} packT1 tt
+
+{-
+ = 
    let tt'	= packT1 tt
    in  if tt == tt'
    	then tt'
 	else packT1 tt'
-
+-}
 -- | Pack a kind into standard form.
 packK :: Kind -> Kind
 packK kk
@@ -53,56 +55,57 @@ flattenT tt
  = {-# SCC "flattenT" #-}
     packT $ inlineTWheresT tt
 
-	
  
 -- | Do one round of packing
 packT1 :: Type -> Type
 packT1 tt 
  = case tt of
 	-- push foralls under closure tags
-	TForall v1 k1 (TFree v2 t2)
-	 -> let t2'	= packT1 t2
-	    in	TFree v2 (TForall v1 k1 t2')
-
- 	TForall v k1 t2
-	 -> let	t2'	= packT1 t2
-	    in	TForall v k1 t2'
-
+	TForall v1 k1 tBody
+	 -> case packT1 tBody of
+	 	TFree v2 t2	-> TFree v2 (TForall v1 k1 t2)
+		tBody'		-> TForall v1 k1 tBody'
+		
 	 
 	TContext k1 t2
-	 -> let	k1'	= packK1 k1
-	 	t2'	= packT1 t2
-	    in 	TContext k1' t2'
+	 -> TContext (packK k1) (packT1 t2)
 
-	TFetters (TVar k v1) [FWhere (TVar _ v2) t2]
-	 | v1 == v2
-	 -> t2
-	 
 	TFetters t1 fs
 	 -> let t1'	= packT1 t1
 	 	fs'	= restrictBinds t1' fs
-	    in	makeTFetters t1' fs'
 
-
+		-- short out single (v :- v = ..) fetter
+	    	result	
+			| TVar k v1			<- t1'
+			, [FWhere (TVar _ v2) t2]	<- fs'
+			, v1 == v2
+			= t2
+			
+			| otherwise
+			= makeTFetters t1' fs'
+			
+	   in	result
+	
 	-- Crush witnesses along the way
 	TApp t1@(TCon (TyConClass tyClass k)) t2
-	 -> let result
+	 -> let t2'	= packT1 t2
+	 	
+		result
 			-- crush LazyH on the way
 	 		| tyClass == TyClassLazyH
-			, Just (vD, k, (TVar KRegion r : ts))	<- takeTData t2
+			, Just (vD, k, (TVar KRegion r : ts))	<- takeTData t2'
 			= TApp (TCon tcLazy) (TVar KRegion r)
 
 			-- crush MutableT on the way
 			| tyClass == TyClassMutableT 
-			, Just _		<- takeTData t2
-			, (rs, ds)		<- slurpVarsRD t2
+			, Just _		<- takeTData t2'
+			, (rs, ds)		<- slurpVarsRD t2'
 			= TWitJoin 
 			    	$ (   map (\r -> TApp (TCon tcMutable)  r) rs
 				   ++ map (\d -> TApp (TCon tcMutableT) d) ds)
 
 			| otherwise
-			= let	t2'	= packT1 t2
-			  in	TApp t1 t2'
+			= TApp t1 t2'
 	    in	result
 	
 
@@ -121,76 +124,84 @@ packT1 tt
 	TSum k ts
 	 -> makeTSum k $ nub $ map packT1 ts
 	 	
-	-- mask of bottom is just bottom
-	TMask k (TBot k1) t2
-	 	| k == k1
-		-> TBot k1
-	 
-	-- combine mask of mask
-	TMask k1 (TMask k2 t1 t2) t3
-	 | k1 == k2
-	 -> makeTMask k1 t1 (makeTSum k1 [t2, t3])
-	 
-	-- in core, all closure vars are quantified, and fully sunk
-	--	so if we can't see some tagged component, it's not there.
-	TMask k1 t1@(TVar k2 v) t3
-	 | k1 == k2
-	 , k1 == KClosure
-	 -> t1
-	 
+	-- mask 
 	TMask k t1 t2
-	 -> let t1'	= packT1 t1
+	 -> let	t1'	= packT1 t1
 	 	t2'	= packT1 t2
-	    in	applyTMask $ TMask k t1' t2'
-	    
+		
+		result
+			-- mask of bottom is just bottom
+			| TBot k1		<- t1'
+			, k == k1	
+			= TBot k1
+			
+			-- combine multiple masks
+			| TMask k1 t11 t12	<- t1'
+	 		, k == k1
+			= makeTMask k t11 (makeTSum k [t12, t2])
+
+			-- in core, all closure vars are quantified, and fully sunk
+			--	so if we can't see some tagged component, it's not there.
+			| TVar k1 v		<- t1'
+			, k == k1
+			, k == KClosure
+			= t1'
+
+			-- some other masking
+			| otherwise
+			= TMask k t1' t2'
+	   in	result
+			
+	-- vars
 	TVar k v	-> tt
 	TVarMore k v t	-> TVarMore k v (packT1 t)
 
 	TCon{}		-> tt
-
 	TBot k		-> tt
 	TTop k 		-> tt
 	 
 	-- effect
 	-- crush compound effects along the way
 	TEffect v [t1]
-	 -> let result
+	 -> let t1'	= packT1 t1
+	 
+	 	result
 			-- ReadH 
 	 		| v == primReadH
-			= case takeTData t1 of
+			= case takeTData t1' of
 				Just (vD, k, (TVar KRegion r : ts)) 
 					-> TEffect primRead [TVar KRegion r]
 				
 				Just (vD, k, [])
 					-> TBot KEffect
 
-				Nothing	-> tt
+				Nothing	-> TEffect v [t1']
 					
 			-- ReadT
 			| v == primReadT
-			= case takeTData t1 of
+			= case takeTData t1' of
 				Just (vD, k, ts)
 				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
 				    in  makeTSum KEffect
 						(  [TEffect primRead  [t]	| t <- concat tRs]
 						++ [TEffect primReadT [t]	| t <- concat tDs] )
 
-				Nothing	-> tt
+				Nothing	-> TEffect v [t1']
 				
 			-- WriteT
 			| v == primWriteT
-			= case takeTData t1 of
+			= case takeTData t1' of
 				Just (vD, k, ts)
 				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
 				    in  makeTSum KEffect
 						(  [TEffect primWrite  [t]	| t <- concat tRs]
 						++ [TEffect primWriteT [t]	| t <- concat tDs] )
 
-				Nothing	-> tt
+				Nothing	-> TEffect v [t1']
 	
 			-- some other effect
 			| otherwise
-			= TEffect v [packT1 t1]
+			= TEffect v [t1']
 
 	    in	result
 	    
@@ -198,19 +209,14 @@ packT1 tt
 	 -> TEffect v (map packT1 ts)
 	    
 	-- closure
-	TFree v (TBot KClosure)
-	 -> TBot KClosure
-
-	TFree v1 (TFree v2 t2)
-	 -> TFree v1 t2
-
-	TFree v1 (TSum KClosure ts)
-	 -> TSum KClosure (map (TFree v1) ts)
-
-	TFree v t1
-	 -> let t1'	= packT1 t1
-	    in	TFree v t1'
-	    
+	TFree v1 t2
+	 -> let	t2'	= packT1 t2
+	    in	case t2' of
+	    		TBot KClosure		-> TBot KClosure
+			TFree v2 t2X		-> TFree v1 t2X
+			TSum KClosure ts	-> TSum KClosure (map (TFree v1) ts)
+			_			-> TFree v1 t2'
+						
 	TTag v	-> tt
 
 	TWitJoin ts
