@@ -52,6 +52,9 @@ GHC_WARNINGS	:= \
 
 
 # -- Build Flavours --------------------------------------------------------------------
+Target          := $(strip $(TARGET))
+BuildFlavour    := $(strip $(BUILDFLAVOUR))
+
 
 # -- Distribution compile (fastest at runtime)
 ifeq "$(BuildFlavour)" "distro"
