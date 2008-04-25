@@ -28,8 +28,8 @@ import qualified Main.Arg		as Arg
 import Main.Arg 			(Arg)
 
 import qualified Module.Graph		as M
-import qualified Module.Export		as ME
-import Module.IO			(munchFileName, chopOffExt)
+import qualified Module.Export		as M
+import qualified Module.IO		as M
 
 import Main.IO				as SI
 import Main.Source			as SS
@@ -101,11 +101,11 @@ compileFile setupCmd fileName_
 
 	-- use the pathBase args and see if we can find the base library and the runtime system.
 	mPathLibrary	<- liftM (liftM fst)
-			$  SI.findFile pathLibrary_test
+			$  M.findFile pathLibrary_test
 			$ "Base.ds"
 	
 	mPathRuntime	<- liftM (liftM fst)
-			$  SI.findFile pathRuntime_test
+			$  M.findFile pathRuntime_test
 			$ "libddc-runtime." ++ Config.extSharedObject 
 
 	-- normalise the source file name
@@ -150,13 +150,13 @@ compileFile setupCmd fileName_
 	
 	-- Break out the file name
  	let Just (fileDir_, fileBase, _)
-			= munchFileName fileName
+			= M.munchFileName fileName
 
 	let fileDir	= if fileDir_ == []
 				then "."
 				else fileDir_
 
-	let Just pathSourceBase	= chopOffExt fileName
+	let Just pathSourceBase	= M.chopOffExt fileName
 
 	-- See if there is a build file
 	--	For some source file,             ./Thing.ds
@@ -571,7 +571,7 @@ compileFile_parse
 	
 	-- Generate the module interface
 	--
-	diInterface	<- ME.makeInterface
+	diInterface	<- M.makeInterface
 				moduleName
 				sRenamed
 				dProject

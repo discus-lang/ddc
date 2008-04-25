@@ -4,10 +4,6 @@ module Module.Export
 
 where
 
------
-
-import qualified Module.Interface	as MI
-
 import qualified Source.Exp		as S
 import qualified Source.Horror		as S
 import qualified Source.Pretty		as S

@@ -2,49 +2,36 @@
 module Main.IO
 	( ImportDef(..)
 	, chaseModules
-	, chooseModuleName
-	, findFile)
+	, chooseModuleName)
 
 where
 
------
-import System.Cmd
-import System.Directory			(doesFileExist)
+import qualified Shared.Var		as Var
+import Shared.Var			(Var, Module(..))
+
+import Shared.Error
+import Shared.Base
+import Shared.Pretty
+
+import Module.IO
+import qualified Module.Export		as ME
+
+import qualified Source.Slurp		as S
+import qualified Source.Exp		as S
+import qualified Source.Lexer		as S
+import qualified Source.Parser.Module	as S
+import qualified Source.Token		as Token
+
+import Util
+
+import Main.Setup
+import Main.Arg
 
 import qualified Data.Map		as Map
 import Data.Map				(Map)
 
 import qualified Data.Set		as Set
 import Data.Set				(Set)
-
------
-import Util
-
------
-import qualified Shared.Var		as Var
-import Shared.Var			(Var, Module(..))
-
-import Shared.Error
-import Shared.Pretty
-import Shared.Base
-import Shared.Pretty
-
-import qualified Module.IO		as MIO
-import qualified Module.Export		as ME
-
-import qualified Source.Slurp		as S
-import qualified Source.Exp		as S
-import qualified Source.Pretty		as S
-import qualified Source.Lexer		as S
-import qualified Source.Parser.Module	as S
-import qualified Source.Token		as Token
-import qualified Source.Pragma		as Pragma
-
-import qualified Type.Exp		as T
-import Type.Pretty
-
-import Main.Setup
-import Main.Arg
 
 -----
 stage	= "Main.IO"
@@ -106,7 +93,14 @@ chaseModules setup compileFun importDirs importsRoot importMap
 
 		 -- we haven't got an interface file, maybe we can build the source..
 		 Nothing -> chaseModules_build setup compileFun importDirs importsRoot importMap
-	 
+{-		chaseModules_die r importDirs -}
+
+chaseModules_die missingModule importDirs
+ = dieWithUserError
+	[ "    Can't find interface file for module '" % missingModule % "'\n"
+	% "    Import dirs are:\n" 
+	%> punc "\n" importDirs 	% "\n" ]
+
 chaseModules_build setup compileFun importDirs importsRoot importMap
 	
 	| (r : rs)	<- importsRoot
@@ -141,12 +135,6 @@ chaseModules_build setup compileFun importDirs importsRoot importMap
 		  
 		 -- no source and no interface, time to die.
 		 Nothing		-> chaseModules_die r importDirs
-		
-chaseModules_die missingModule importDirs
-  = dieWithUserError
-	[ "    Can't find interface file for module '" % missingModule % "'\n"
-	% "    Import dirs are:\n" 
-	%> punc "\n" importDirs 	% "\n" ]
 
 chaseModules_checkRecursive setup fileName
 	| Just fs	<- setupRecursive setup
@@ -161,7 +149,6 @@ chaseModules_checkRecursive setup fileName
 	
 	| otherwise
 	= setup { setupRecursive = Just [fileName] }
-
 
 
 -- | find, read and parse a module interface file.
@@ -220,22 +207,6 @@ dropPrefix (p:ps) x
 	| otherwise		= dropPrefix ps x
 	
 
---
-findFile 
-	:: [FilePath] 
-	-> String
-	-> IO (Maybe (FilePath, FilePath))
-
-findFile importDirs name
- 	| []		<- importDirs
- 	= return Nothing
- 
- 	| (d:ds)	<- importDirs
- 	= do	let testName	= d ++ "/" ++ name
-		exists	<- doesFileExist testName
-		if exists
-		 then	return $ Just (d, testName)
-		 else	findFile ds name
 
 -----
 -- chooseModuleName
