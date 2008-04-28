@@ -16,6 +16,7 @@ module Type.Exp
 	, tcLazy, 	tcLazyH
 	, tcDirect
 	, tcPurify
+	, tcPure
 
 	, ClassId	(..)
 	, TProj		(..)
@@ -213,6 +214,8 @@ tcPurify	= TyConClass TyClassPurify
 				(KFun 	(KClass TyClassConst [TIndex 0])
 					(KClass TyClassPure  [TEffect primRead [TIndex 0]])))
 
+tcPure		= TyConClass TyClassPure
+			(KForall KEffect (KClass TyClassPure [TIndex 0]))
 
 -- TyClass -----------------------------------------------------------------------------------------
 -- | Type / Region / Effect classes.

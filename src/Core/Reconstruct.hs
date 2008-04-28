@@ -941,25 +941,22 @@ applyTypeT table (TForall (BMore v tB) k t1) t2
 	
 
 applyTypeT table t1@(TContext k11 t12) t2
-	-- let witnesses go through for now
-	| otherwise
-	= Just t12
-
 	-- witnesses must match
 	| Just k2	<- kindOfType t2
 	, packK k11 == packK k2
 	= Just t12
-{-
-	| otherwise
+
+	-- kinds don't match
+	| Just k2	<- kindOfType t2
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
 		% "    caller = " % envCaller table	% "\n"
-		% "    can't apply\n"		%> t2	% "\n\n"
-		% "    to\n"			%> t1	% "\n\n"
-		% "    k11\n"		%> (packK k11)	% "\n\n")
---		% "    K[t2]\n"		%> (packK (kindOfType t2))	% "\n\n")
+		% "    can't apply\n"	%> t2		% "\n\n"
+		% "    to\n"		%> t1		% "\n\n"
+		% "    k11\n"		%> (packK k11)	% "\n\n"
+		% "    K[t2]\n"		%> (packK k2)	% "\n\n")
 		$ Nothing
--}
+
 
 applyTypeT table (TFetters t1 fs) t
 	| Just t1'	<- applyTypeT table t1 t

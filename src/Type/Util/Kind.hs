@@ -140,7 +140,7 @@ kindOfType tt = {-# SCC "kindOfType" #-} kindOfType' tt
 
 kindOfType' tt
 
-	| TForall  b t1 t2	<- tt	= kindOfType t2		-- todo, add bound kind to env
+	| TForall  b t1 t2	<- tt	= kindOfType t2
 
 	| TContext t1 t2	<- tt	= kindOfType t2
 	| TFetters t1 _		<- tt	= kindOfType t1
@@ -208,6 +208,7 @@ kindOfType' tt
 	= kindOfType t
 
 	-- used in core -----------------------------------------------------
+	-- The KJoins get crushed during Core.Util.Pack.packK
 	| TWitJoin ts		<- tt
 	, Just ks		<- sequence $ map kindOfType ts
 	= Just (makeKWitJoin ks)

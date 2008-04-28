@@ -13,6 +13,7 @@ import Core.Plate.FreeVars
 import Core.Util.Bits
 
 import Type.Util		hiding (flattenT)
+import Type.Exp
 
 import Shared.Error
 import Shared.VarUtil
@@ -32,22 +33,6 @@ stage	= "Core.Util.Pack"
 -- | Pack a type into standard form.
 packT :: Type -> Type
 packT tt	= {-# SCC "packT" #-} packT1 tt
-
-{-
- = 
-   let tt'	= packT1 tt
-   in  if tt == tt'
-   	then tt'
-	else packT1 tt'
--}
--- | Pack a kind into standard form.
-packK :: Kind -> Kind
-packK kk
- = let kk'	= packK1 kk
-   in  if kk == kk'
-   	then kk'
-	else packK1 kk'
-
 
 -- | Flatten a type so that all where bindings are inlined
 flattenT :: Type -> Type
@@ -234,6 +219,16 @@ slurpTFetters (TFetters t fs)	= (t, fs)
 slurpTFetters tt		= (tt, [])
 
 
+-- Kind Packing ------------------------------------------------------------------------------------
+-- | Pack a kind into standard form.
+packK :: Kind -> Kind
+packK kk
+ = let kk'	= packK1 kk
+   in  if kk == kk'
+   	then kk'
+	else packK1 kk'
+
+
 -- | Do one round of packing on this kind
 packK1 :: Kind -> Kind
 packK1 kk
@@ -245,13 +240,30 @@ packK1 kk
 
 	-- crush MutableT on the way
 	| KClass tc [t1]	<- kk
-	, Just _			<- takeTData t1
+	, Just _		<- takeTData t1
 	, tc == TyClassMutableT
-	, (rs, ds)			<- slurpVarsRD t1
+	, (rs, ds)		<- slurpVarsRD t1
 	= makeKWitJoin 
-	    	$ (   map (\r -> KClass TyClassMutable  [r]) rs
-		   ++ map (\d -> KClass TyClassMutableT [d]) ds)
+		$  map (\r -> KClass TyClassMutable  [r]) rs
+		++ map (\d -> KClass TyClassMutableT [d]) ds
 	
+	-- crush ConstT on the way
+	| KClass tc [t1]	<- kk
+	, Just _		<- takeTData t1
+	, tc == TyClassConstT
+	, (rs, ds)		<- slurpVarsRD t1
+	= makeKWitJoin 
+		$  map (\r -> KClass TyClassConst  [r]) rs
+		++ map (\d -> KClass TyClassConstT [d]) ds
+
+	-- Join purification witness kinds
+	| KWitJoin ks		<- kk
+	, Just tsEffs		<- sequence $ map takeKClass_pure ks
+	, Just ksEffs		<- sequence $ map kindOfType tsEffs
+	, and $ map (== KEffect) ksEffs
+	= KClass TyClassPure [TSum KEffect tsEffs]
+
+	-- pack types inside witness kinds
 	| KClass v ts	<- kk
 	= KClass v (map packT1 ts)
 	    
@@ -259,11 +271,16 @@ packK1 kk
 	= kk
 
 
+-- | Type the type args from a pure
+takeKClass_pure :: Kind -> Maybe Type
+takeKClass_pure kk
+ = case kk of
+ 	KClass TyClassPure [t]	-> Just t
+	_ 			-> Nothing
+	
 
------
--- inlineTWheresT
---	Inline all TLet expressions in this type.
---	
+-- Inline ------------------------------------------------------------------------------------------
+-- | Inline all TLet expressions in this type.
 inlineTWheresT :: Type -> Type
 inlineTWheresT tt
  = inlineTWheresMapT Map.empty Set.empty tt
