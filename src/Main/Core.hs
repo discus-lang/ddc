@@ -32,7 +32,6 @@ import Core.Crush			(crushTree)
 
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconTree)
-import qualified Core.Reconstruct	as Recon
 import qualified Core.Float		as Float
 
 import Core.Bind			(bindTree)
@@ -49,21 +48,21 @@ import Core.Optimise.Atomise		(atomiseTree)
 import Core.Optimise.FullLaziness	(fullLazinessTree)
 import Core.Optimise.Inline		(inlineTree)
 
-------
 import Core.Exp 	
 import Core.Util
-
 import Core.Graph
 import Core.Sequence			(slurpSuperDepsTree, dotSuperDeps, sequenceCafsTree)
 
-import qualified Sea.Exp	as E
-import qualified Sea.Util	as E
+import qualified Type.Util.Environment	as Env
+
+import qualified Sea.Exp		as E
+import qualified Sea.Util		as E
 
 import Main.Arg
 import Main.Dump
 
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, Module)
+import qualified Shared.Var		as Var
+import Shared.Var			(Var, Module)
 import Shared.Error
 import Shared.Pretty
 
@@ -71,11 +70,11 @@ import Shared.Pretty
 import Util
 import Debug.Trace
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
+import qualified Data.Map		as Map
+import Data.Map				(Map)
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
+import qualified Data.Set		as Set
+import Data.Set				(Set)
 
 
 -- | Convert to A-Normal form.
@@ -141,8 +140,8 @@ coreReconstruct
 	
 coreReconstruct name cHeader cTree
  = do	let table	= 
- 		Recon.emptyTable
- 		{ Recon.tableDropStmtEff	= False }
+ 		Env.emptyEnv
+ 		{ Env.envDropStmtEff	= False }
  
  	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
  			   reconTree table cHeader cTree

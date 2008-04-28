@@ -206,7 +206,12 @@ kindOfType' tt
 	-- used in source / desugar -----------------------------------------
 	| TElaborate e t	<- tt
 	= kindOfType t
-		
+
+	-- used in core -----------------------------------------------------
+	| TWitJoin ts		<- tt
+	, Just ks		<- sequence $ map kindOfType ts
+	= Just (makeKWitJoin ks)
+			
 	-- some of the helper constructors don't have real kinds ------------
 	| otherwise
 	= freakout stage 

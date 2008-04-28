@@ -27,11 +27,6 @@ module Core.Reconstruct
 	, reconA
 	, reconG
 
-	, Table (..)
-	, emptyTable
-	, addEqVT
-	, addMoreVT
-	
 	, reconBoxType
 	, reconUnboxType)
 where
@@ -41,6 +36,7 @@ import Core.Util
 import Core.Plate.FreeVars
 
 import Type.Util		hiding (flattenT, trimClosureC)
+import Type.Util.Environment
 
 import Shared.Pretty
 import Shared.Error
@@ -78,11 +74,11 @@ reconTree'
 	-> Tree		-- core tree with reconstructed type information
 reconTree' caller tHeader tCore
  = reconTree
- 	emptyTable { tableCaller = Just caller }
+ 	emptyEnv { envCaller = Just caller }
 	tHeader tCore
 
 reconTree
-	:: Table	
+	:: Env	
 	-> Tree		-- header tree 
 	-> Tree 	-- core tree
 	-> Tree		-- core tree with reconstructed type information
@@ -91,7 +87,7 @@ reconTree table tHeader tCore
  = {-# SCC "reconstructTree" #-}
    let	-- slurp out all the stuff defined at top level
 	topTypes	= {-# SCC "reconTree/topTypes" #-} catMap slurpTypesP (tHeader ++ tCore)
- 	tt		= {-# SCC "reconTree/table"    #-} foldr addEqVT' table topTypes
+ 	tt		= {-# SCC "reconTree/table"    #-} foldr (uncurry addEqVT) table topTypes
 	
 	-- reconstruct type info on each top level thing
 	tCore'		= map (reconP tt) tCore
@@ -105,7 +101,7 @@ reconP' caller (PBind v x)
 
  = let	(SBind (Just v') x', typ', eff', clo')
  		= snd 
-		$ reconS emptyTable { tableCaller = Just caller } 
+		$ reconS emptyEnv { envCaller = Just caller } 
 		$ SBind (Just v) x
 		
    in	(PBind v' x', typ', eff', clo')
@@ -116,7 +112,7 @@ reconP_type caller p
 	= t4_2 $ reconP' caller p
 
 
-reconP	:: Table 
+reconP	:: Env 
 	-> Top 
 	-> Top
 
@@ -131,13 +127,13 @@ reconP tt p		= p
 -- Expression --------------------------------------------------------------------------------------
 reconX' :: String -> Exp -> (Exp, Type, Effect, Closure)
 reconX' caller x 
-	= reconX emptyTable { tableCaller = Just caller } x
+	= reconX emptyEnv { envCaller = Just caller } x
 
 reconX_type :: String -> Exp -> Type
 reconX_type caller x
 	= t4_2 $ reconX' caller x
 
-reconX 	:: Table
+reconX 	:: Env
 	-> Exp 
 	-> ( Exp
 	   , Type, Effect, Closure)
@@ -216,14 +212,14 @@ reconX tt exp@(XAPP x t)
 	  
 	 _ -> panic stage
 	 	$ " reconX: Kind error in type application (x t).\n"
-		% "     caller = "  % tableCaller tt	% "\n"
+		% "     caller = "  % envCaller tt	% "\n"
 		% "     x      =\n" %> x		% "\n\n"
 		% "     t      =\n" %> t		% "\n\n"
 		% "   T[x]     =\n" %> tX	% "\n\n"
 
 -- Tet
 reconX tt (XTet vts x)
- = let	tt'			= foldr addEqVT' tt vts
+ = let	tt'			= foldr (uncurry addEqVT) tt vts
  	(x', tx, xe, xc)	= reconX tt' x
    in	( XTet   vts x'
    	, TFetters tx 
@@ -257,8 +253,8 @@ reconX tt exp@(XLam v t x eff clo)
 	 	| tt'			<- addEqVT v t tt
 		, (x', xT, xE, xC)	<- reconX tt' x
 
-		, eff'		<- packT $ substituteT (tableEq tt) eff
-		, clo_sub	<- packT $ substituteT (tableEq tt) clo
+		, eff'		<- packT $ substituteT (envEq tt) eff
+		, clo_sub	<- packT $ substituteT (envEq tt) clo
 
 
 		-- TODO: We need to flatten the closure before trimming to make sure effect annots
@@ -271,28 +267,28 @@ reconX tt exp@(XLam v t x eff clo)
 		, xE'		<- packT xE
 	
 		-- check effects match
-		, () <- if subsumes (tableMore tt) eff' xE'
+		, () <- if subsumes (envMore tt) eff' xE'
 			 then ()
 			 else panic stage
 				$ "reconX: Effect error in core.\n"
-				% "    caller = " % tableCaller tt	% "\n"
+				% "    caller = " % envCaller tt	% "\n"
 				% "    in lambda abstraction:\n" 	%> exp	% "\n\n"
 				% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
 				% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
 				% "    with bounds:\n"
-				% pprBounds (tableMore tt)
+				% pprBounds (envMore tt)
 				
 
 		-- check closures match
-		, () <- if subsumes (tableMore tt) clo_sub xC'
+		, () <- if subsumes (envMore tt) clo_sub xC'
 			 then ()
 			 else panic stage
 				$ "reconX: Closure error in core.\n"
-				% "    caller = " % tableCaller tt	% "\n"
+				% "    caller = " % envCaller tt	% "\n"
 				% "    in lambda abstraction:\n" 	%> exp		% "\n\n"
 				% "    reconstructed closure of body:\n"%> xC'		% "\n\n"
 				% "    is not <: annot on lambda:\n"	%> clo_sub	% "\n\n"
-				% pprBounds (tableMore tt)
+				% pprBounds (envMore tt)
 
 
 		-- Now that we know that the reconstructed effect closures of the body is less
@@ -338,7 +334,7 @@ reconX tt (XLocal v vs x)
    in	(if False -- Set.member v (freeVars xT) 
    		then panic stage 
 			( "reconX: region " % v % " is not local\n"
-			% "    caller = " % tableCaller tt	% "\n"
+			% "    caller = " % envCaller tt	% "\n"
 			% "    t      = " % xT	% "\n"
 			% "    x      = " % x'	% "\n\n")
 			id
@@ -426,15 +422,15 @@ reconX tt (XMatch aa)
 
 -- var has no type annotation, so look it up from the table
 reconX tt (XVar v TNil)
-	| Just t	<- Map.lookup v (tableEq tt)
-	, t'		<- inlineTWheresMapT (tableEq tt) Set.empty t 
+	| Just t	<- Map.lookup v (envEq tt)
+	, t'		<- inlineTWheresMapT (envEq tt) Set.empty t 
 
 	-- When we add the type to this var we need to attach any more constraints associated with it, 
 	--	else we won't be able to check expressions separate from their enclosing XLAMs 
 	--	(which carry these constraints)
 	, vsFree	<- freeVars t
 	, vtsMore	<- catMaybes
-			$  map (\u -> case Map.lookup u (tableMore tt) of
+			$  map (\u -> case Map.lookup u (envMore tt) of
 						Nothing	-> Nothing
 						Just t	-> Just (u, t))
 			$ Set.toList vsFree
@@ -456,12 +452,12 @@ reconX tt (XVar v TNil)
 	| otherwise
 	= panic stage 
 	 	$ "reconX: Variable " % v % " has no embeded type annotation and is not in the provided environment.\n"
-		% "    caller = " % tableCaller tt	% "\n"
+		% "    caller = " % envCaller tt	% "\n"
 
 	
 -- var has a type annotation, so use that as its type
 reconX tt (XVar v t)
- = let	t'	= inlineTWheresMapT (tableEq tt) Set.empty t
+ = let	t'	= inlineTWheresMapT (envEq tt) Set.empty t
    in	( XVar v t
 	, t'
 	, TBot KEffect
@@ -576,7 +572,7 @@ reconX tt xx@(XLit l)
 reconX tt xx
  	= panic stage 
  	$ "reconX: no match for " % show xx	% "\n"
-	% "    caller = " % tableCaller tt	% "\n"
+	% "    caller = " % envCaller tt	% "\n"
 
 
 -- | Convert this type to the boxed version
@@ -644,7 +640,7 @@ reconUnboxType_bind bind
 -- | Reconstruct the type and effect of an operator application
 --	Not sure if doing this manually is really a good way to do it.
 --	It'd be nice to have a more general mechanism like GHC rewrite rules..
-reconOpApp :: Table -> Op -> [Exp] -> (Type, Effect)
+reconOpApp :: Env -> Op -> [Exp] -> (Type, Effect)
 reconOpApp tt op xs
 
 	-- arithmetic operators
@@ -698,7 +694,7 @@ isUnboxedNumericType tt
 --	eg  [x1, x2, x3, x4] =>  ((x1 x2) x3) x4
 --
 reconApps 
-	:: Table
+	:: Env
 	-> [Exp] 
 	-> Type
 
@@ -732,14 +728,14 @@ reconApps table (x1 : x2 : xs)
 -- Stmt --------------------------------------------------------------------------------------------
 
 -- | running reconS also adds a type for this binding into the table
-reconS 	:: Table 
+reconS 	:: Env 
 	-> Stmt 
-	-> (Table, (Stmt, Type, Effect, Closure))
+	-> (Env, (Stmt, Type, Effect, Closure))
 
 reconS tt (SBind Nothing x)	
  = let	(x', xT, xE, xC)	= reconX tt x
 
-	xAnnot 	| tableDropStmtEff tt	= XTau xE x'
+	xAnnot 	| envDropStmtEff tt	= XTau xE x'
 		| otherwise		= x'
 	
    in	( tt
@@ -752,7 +748,7 @@ reconS tt (SBind (Just v) x)
  = let	(x', xT, xE, xC)	= reconX tt x
 	tt'			= addEqVT v xT tt
 
-	xAnnot	| tableDropStmtEff tt	= XTau xE x'
+	xAnnot	| envDropStmtEff tt	= XTau xE x'
 		| otherwise		= x'
 
    in	( tt'
@@ -763,7 +759,7 @@ reconS tt (SBind (Just v) x)
 	  
 
 -- Alt ---------------------------------------------------------------------------------------------
-reconA 	:: Table 
+reconA 	:: Env 
 	-> Alt 
 	-> (Alt, Type, Effect, Closure)
 
@@ -790,16 +786,16 @@ reconA tt (AAlt gs x)
 
 -- TODO: check type of pattern against type of expression
 --
-reconG	:: Table 
+reconG	:: Env 
 	-> Guard 
-	-> ( Table
+	-> ( Env
 	   , (Guard, [Var], Effect, Closure))
 
 reconG tt gg@(GExp p x)
  = let	
 	(x', tX, eX, cX)= reconX tt x
 	binds		= slurpVarTypesW tX p
- 	tt'		= foldr addEqVT' tt binds
+ 	tt'		= foldr (uncurry addEqVT) tt binds
 	
 	-- Work out the effect of testing the case object.
 	tX_shape	= stripToShapeT tX
@@ -853,7 +849,7 @@ slurpVarTypesW tRHS (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 --	an arg is applied to a function with this type.
 --
 applyValueT 
-	:: Table		-- ^ table of constraints
+	:: Env		-- ^ table of constraints
 	-> Type 		-- ^ type of function
 	-> Type 		-- ^ type of arg
 	-> Maybe 		
@@ -873,11 +869,11 @@ applyValueT' table t1@(TFetters t1Shape fs) t2
  
 applyValueT' table t0 t3	
 	| Just (t1, t2, eff, clo)	<- takeTFun t0
-	= if subsumes (tableMore table) t1 t3
+	= if subsumes (envMore table) t1 t3
 		then Just (t2, eff)
 		else freakout stage
 			( "applyValueT: Type error in value application.\n"
-			% "    called by = " % tableCaller table	% "\n\n"
+			% "    called by = " % envCaller table	% "\n\n"
 			% "    can't apply argument:\n"	%> t3 % "\n\n"
 			% "    to:\n"        		%> t0 % "\n"
 			% "\n"
@@ -885,7 +881,7 @@ applyValueT' table t0 t3
 			% "\n"
 			% "    with bounds: \n"
 			% ("\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) 
-				$ Map.toList (tableMore table)) % "\n\n"))
+				$ Map.toList (envMore table)) % "\n\n"))
 			$ Nothing
 	
 applyValueT' _ t1 t2
@@ -899,7 +895,7 @@ applyValueT' _ t1 t2
 -- | Apply a value argument to a forall/context type, yielding the result type.
 --	TODO: check that the kinds/contexts match as we apply.
 --
-applyTypeT :: Table -> Type -> Type -> Maybe Type
+applyTypeT :: Env -> Type -> Type -> Maybe Type
 
 applyTypeT table (TForall (BVar v) k t1) t2
 	| Just k == kindOfType t2
@@ -908,7 +904,7 @@ applyTypeT table (TForall (BVar v) k t1) t2
 	| otherwise
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % tableCaller table	% "\n"
+		% "    caller = " % envCaller table	% "\n"
 		% "    in application:\n"
 			%> "(\\/ " % parens (v % " :: " % k) % " -> ...)" <> parens t2 %"\n"
 		% "\n"
@@ -921,19 +917,19 @@ applyTypeT table (TForall (BVar v) k t1) t2
 applyTypeT table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == KClosure
-	, subsumes (tableMore table) 
+	, subsumes (envMore table) 
 			(flattenT $ trimClosureC Set.empty Set.empty t2) 
 			(flattenT $ trimClosureC Set.empty Set.empty tB)
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 	-- check that the constraint is satisfied
-	| subsumes (tableMore table) t2 tB
+	| subsumes (envMore table) t2 tB
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 	
 	| otherwise
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % tableCaller table % "\n"
+		% "    caller = " % envCaller table % "\n"
 		% "    in application: (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")" % "\n"
 		% "\n"
 		% "        type: "  % t2 % "\n"
@@ -950,14 +946,14 @@ applyTypeT table t1@(TContext k11 t12) t2
 	= Just t12
 
 	-- witnesses must match
---	| Just k2	<- kindOfType t2
---	, packK k11 == packK k2
---	= Just t12
+	| Just k2	<- kindOfType t2
+	, packK k11 == packK k2
+	= Just t12
 {-
 	| otherwise
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % tableCaller table	% "\n"
+		% "    caller = " % envCaller table	% "\n"
 		% "    can't apply\n"		%> t2	% "\n\n"
 		% "    to\n"			%> t1	% "\n\n"
 		% "    k11\n"		%> (packK k11)	% "\n\n")
@@ -972,78 +968,22 @@ applyTypeT table (TFetters t1 fs) t
 applyTypeT table t1 t2
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % tableCaller table	% "\n"
+		% "    caller = " % envCaller table	% "\n"
 		% "    can't apply\n"		%> t2	% "\n\n"
 		% "    to\n"			%> t1	% "\n\n")
 		$ Nothing
-
-
--- Table -------------------------------------------------------------------------------------
-
--- | A table to carry additional information we collect when decending into the tree
---	Eq 		constraints come from type level lets, and value lambda bindings.
---	More (:>) 	come from constraints on type lambdas bindings.
---
-data Table
-	= Table
-	{ -- the name of the function that called this reconstruct.
-	  -- this is printed in panic messages.
-	  tableCaller		:: Maybe String
-
-	, tableEq		:: Map Var Type		-- T[v1] == t2
-
-	, tableMore		:: Map Var Type 	-- T[v1] :> t2
-
-	  -- drop annotations as to what effects each statement has.
-	, tableDropStmtEff	:: Bool }
-	
-
-emptyTable
-	= Table
-	{ tableCaller		= Nothing
-	, tableEq		= Map.empty
-	, tableMore		= Map.empty 
-	, tableDropStmtEff	= False }
-
-
-
-
-addEqVT :: Var -> Type -> Table -> Table
-addEqVT v t tt
- = {- trace 
- 	( "addVT: " % v 	% "\n"
- 	% "   t = " %> t 	% "\n") -}
-	 case Map.lookup v (tableEq tt) of
-	 	Nothing	-> tt { tableEq = Map.insert v t (tableEq tt) }
-		Just _	-> tt { tableEq = Map.insert v t (Map.delete v (tableEq tt)) }
-
-addEqVT' (v, t) tt
-	= addEqVT v t tt
-
-
-addMoreF :: Fetter -> Table -> Table
-addMoreF (FMore (TVar k v) t) table	= addMoreVT v t table
-
-addMoreVT :: Var -> Type -> Table -> Table
-addMoreVT v t tt
- = {- trace 
- 	( "addVT: " % v 	% "\n"
- 	% "   t = " %> t 	% "\n") -}
-	 case Map.lookup v (tableMore tt) of
-	 	Nothing	-> tt { tableMore = Map.insert v t (tableMore tt) }
-		Just _	-> tt { tableMore = Map.insert v t (Map.delete v (tableMore tt)) }
 
 	
 -- Clamp -------------------------------------------------------------------------------------------
 -- | Clamp a sum by throwing out any elements of the second one that are not members of the first
 --	result is at least as big as t1
 
-clampSum :: Table -> Type -> Type -> Type
+clampSum :: Env -> Type -> Type -> Type
 clampSum table t1 t2
 	| kindOfType t1 == kindOfType t2
 	= let	parts2		= flattenTSum t1
 		parts_clamped	= [p	| p <- parts2
-	   				, subsumes (tableMore table) t1 p]
+	   				, subsumes (envMore table) t1 p]
 		Just k1		= kindOfType t1
 
 	  in	makeTSum k1 parts_clamped
