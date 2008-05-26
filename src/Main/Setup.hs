@@ -1,7 +1,6 @@
 
 module Main.Setup
 	( Setup (..)
-	, setupZero
 	, setupArgs )
 where
 
@@ -13,14 +12,10 @@ data Setup
 	= Setup
 	{ setupArgsCmd		:: [Arg]
 	, setupArgsBuild	:: [Arg]
-	, setupRecursive	:: Maybe [FilePath] }
-
-setupZero
-	= Setup
-	{ setupArgsCmd	= []
-	, setupArgsBuild	= []
-	, setupRecursive	= Nothing }
-	
+	, setupRuntime		:: FilePath
+	, setupLibrary		:: FilePath
+	, setupRecursive	:: Maybe [FilePath] }	-- files that we've already compile on this path
+	deriving Show
 
 setupArgs setup
 	= nub $ setupArgsCmd setup ++ setupArgsBuild setup

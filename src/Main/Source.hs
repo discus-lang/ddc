@@ -27,6 +27,7 @@ import Source.Desugar				(rewriteTree)
 import Source.Alias				(aliasTree)
 import Source.Exp
 import Source.Token
+import Source.TokenShow
 
 import Main.Arg
 import Main.Dump
@@ -48,27 +49,32 @@ import System.IO
 
 import Util
 
-
 -- | Parse source code.
 parse 	:: (?args :: [Arg])
 	-> (?pathSourceBase :: FilePath)
 	-> FilePath			-- path of source file
 	-> String			-- source of root module
-	-> IO (Tree SourcePos)		-- source parse tree
+	-> IO 	( Tree SourcePos	-- source parse tree
+		, [String])		-- pragma strings
 			
 parse	fileName
 	source
- = do
-	let tokens	= map (tokenSetFileName fileName)
-			$ scanModuleWithOffside source
-			
---	let sParsed	= Source.Parser.parse tokens
-	let sParsed	= parseModule fileName tokens
-	
-	-- dump
+ = do	
+	-- lex the source file
+	let (toksSource, toksPragma)
+		= scanModuleWithOffside source
+
+	dumpS DumpSourceParse "source-tokens" 
+		$ catInt " " 
+		$ map showSourceP toksSource
+		
+	-- parse the source file
+	let toksSource'	= map (tokenSetFileName fileName) toksSource
+	let sParsed	= parseModule fileName toksSource'
 	dumpST 	DumpSourceParse "source-parse" sParsed
 
-	return	sParsed
+	return	( sParsed
+		, [str	| CommentPragma str	<- map token toksPragma ])
 
 tokenSetFileName name token
  = case token of

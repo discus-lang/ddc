@@ -1,3 +1,4 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 -- Primitive functions for unboxed Float32 operations.
 --	There are no actual C functions associated with these.

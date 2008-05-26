@@ -50,7 +50,7 @@ testDefault args
 	out	$ "* Running default tests.\n"
 	
 	-- switch on these args when doing the default tests
-	let argsForce	= [ ArgFlagsDDC ["-l m -opt-tail-call"] ]
+	let argsForce	= [ ArgFlagsDDC ["-l m -opt-tail-call -quiet"] ]
 	let args'	= args ++ argsForce
 
 	buildLibrary args' 
@@ -63,7 +63,7 @@ testSome args testDirs
  = do	out	$ "\n"
  	out	$ "* Running tests.\n"
 	
-	let argsForce	= [ ArgFlagsDDC ["-l m -opt-tail-call"] ]
+	let argsForce	= [ ArgFlagsDDC ["-l m -opt-tail-call -quiet"] ]
 	let ?args	= args ++ argsForce
 	
 	-- enter the test dirs
@@ -76,7 +76,7 @@ buildLibrary args
  = do	out	$ "* Building library.\n"
 
 	-- force on implicit prelude when compiling the base libs
-	let ?args	= args ++ [ArgFlagsDDC ["-no-implicit-prelude"]]
+	let ?args	= args ++ [ArgFlagsDDC ["-no-implicit-prelude -quiet"]]
 
 	-- build the sources
 	mapM_ testSource (libraryOrder args)

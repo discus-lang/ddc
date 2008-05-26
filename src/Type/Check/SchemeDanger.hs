@@ -44,13 +44,14 @@ import Data.Map			(Map)
 debug	= False
 trace s	= when debug $ traceM s
 
+stage	= "Type.Check.SchemeDanger"
 
 checkSchemeDangerCid :: ClassId -> SquidM [Error]
 checkSchemeDangerCid cid
  = do	Just c	<- lookupClass cid
  	checkSchemeDanger c
  
-
+-- Check that the regions above quantified dangerous vars haven't become mutable.
 checkSchemeDanger :: Class -> SquidM [Error]
 checkSchemeDanger c
 	| Class { classKind	= KValue 
@@ -87,25 +88,38 @@ checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)
 checkDanger (Class 
 		{ classId 	= cidScheme
 		, classType 	= Just t })
-		(tRegion@(TClass KRegion cidR), TVar k varT)
+		( tRegion@(TClass KRegion cidR)
+		, t2)
 
- = do 	mIsMutable	<- regionIsMutable cidR
+	| TVar k varT	<- t2
+	= do 	mIsMutable	<- regionIsMutable cidR
+		case mIsMutable of
+	 	 Nothing	-> return Nothing
+	 	 Just fMutable
+	  	  -> do
+			varScheme	<- makeClassName cidScheme
+			Just srcMutable	<- traceFetterSource primMutable cidR
+			return	$ Just
+				$ ErrorLateConstraint
+					{ eScheme 		= (varScheme, t)
+					, eMutableRegion	= tRegion
+					, eMutableFetter	= fMutable
+					, eMutableSrc		= srcMutable
+					, eDangerVar		= varT }
+
+	-- var is monomorphic, ok
+	| TClass{}	<- t2
+	= 	return Nothing
 	
-	case mIsMutable of
-	 Nothing	-> return Nothing
-	 Just fMutable
-	  -> do
-		varScheme	<- makeClassName cidScheme
-		Just srcMutable	<- traceFetterSource primMutable cidR
-		return	
-			$ Just
-			$ ErrorLateConstraint
-				{ eScheme 		= (varScheme, t)
-				, eMutableRegion	= tRegion
-				, eMutableFetter	= fMutable
-				, eMutableSrc		= srcMutable
-				, eDangerVar		= varT }
-			
+checkDanger (Class { classType = t }) (t1, t2)
+ = panic stage
+	$ "checkDanger: no match\n"
+	% "    c  = " % t	% "\n"
+	% "    t1 = " % t1	% "\n"
+	% "    t2 = " % t2	% "\n"
+	% "\n"
+	
+	
 	
 regionIsMutable :: ClassId -> SquidM (Maybe Fetter)
 regionIsMutable cid

@@ -182,6 +182,7 @@ loadInterface
 			let tree
 				= S.parseModule pathDI 
 				$ map (\t -> t { Token.tokenFile = pathDI })
+				$ fst
 				$ S.scanModuleWithOffside source
 		
 			returnJ	
@@ -219,12 +220,13 @@ dropPrefix (p:ps) x
 chooseModuleName 
 	:: [FilePath]		-- import dirs
 	-> FilePath		-- filename of module
-	-> FilePath		-- base name of module
 	-> Maybe Module
 	
-chooseModuleName iDirs fileName fileBase
-	= takeFirstJust 
-	$ map (matchName fileBase fileName) iDirs
+chooseModuleName iDirs fileName
+ = let	-- Break out the file name
+	Just (_, fileBase, _)	= munchFileName fileName
+   in	takeFirstJust 
+		$ map (matchName fileBase fileName) iDirs
 	
 matchName fileBase ('/':aa)	[]	= Just $ munchModule aa
 matchName fileBase (a:aa) 	(b:bb)

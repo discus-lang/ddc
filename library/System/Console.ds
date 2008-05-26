@@ -1,3 +1,4 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 import	Base
 import	Data.String

@@ -1,6 +1,7 @@
 
 module Module.IO
-	( munchFileName
+	( normaliseFileName
+	, munchFileName
 	, chopOffExt
 	, findFile)
 where
@@ -8,6 +9,31 @@ where
 import Util
 import System
 import System.Directory
+
+-- | Normalise a file name
+normaliseFileName
+	:: FilePath
+	-> (String, String, String, String)
+
+normaliseFileName fileName
+ = let	fileName'
+	 = case fileName of
+		('/':_)		-> fileName
+		('~':_)		-> fileName
+		('.':'/':_)	-> fileName
+		_		-> "./" ++ fileName
+
+	-- Break out the file name
+	Just (fileDir, fileBase, fileExt)
+		= munchFileName fileName'
+		
+	fileDir'
+	 = if fileDir == []
+		then "."
+		else fileDir
+
+   in	(fileName', fileDir', fileBase, fileExt)
+
 
 -- | Break a fileName into directory, base name and extension parts.
 --	muchFileName "path1/path2/path3/file1.file2.ext:

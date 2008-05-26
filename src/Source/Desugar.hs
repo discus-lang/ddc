@@ -409,7 +409,8 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	 	return	$ D.unflattenApps sp ((D.XVar sp $ primTuple (length xx)) : xx')
 
 	_	-> panic stage
-		$ "rewrite[Exp]: can't rewrite " % show xx	% "\n"
+		$ "rewrite[Exp]: can't rewrite " % xx % "\n\n"
+		%  show xx	% "\n"
 
 		
 -- Proj ---------------------------------------------------------------------------------------------

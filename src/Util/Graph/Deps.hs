@@ -74,9 +74,7 @@ graphReachable' deps visited (x:xs)
 			(xs ++ step)
 			
 
------
--- graphSequence
---	Do a depencency walk over a graph.
+-- |	Do a depencency walk over a graph.
 --
 --	For each dependency xi -> yis, the yis are the elements which need to occur
 --	before xi in the output list.
@@ -85,8 +83,6 @@ graphReachable' deps visited (x:xs)
 --	order is the reverse of the order they are visited in.
 --
 --	Each node appears in the output list once and once only.
---
---	
 --	eg	For a list of dependencies
 --			x0 -> [x1, x2, x3]
 --			x1 -> [x1, x3]
@@ -116,7 +112,7 @@ graphSequence graph visited (x:xs)
 	  
 
 
--- | Work out the stronlly connected components in this graph starting from the given element.
+-- | Work out the strongly connected components in this graph starting from the given element.
 --	
 graphSCC :: Ord a => Map a (Set a) -> a	-> [Set a]
 graphSCC graph x

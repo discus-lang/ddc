@@ -60,7 +60,10 @@ src/Source/Plate/Trans.hs : src/Source/Plate/Trans.hs-stub src/Source/Exp.hs bin
 # -- build the main compiler
 bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
-	$(GHC) $(GHC_FLAGS) -o bin/ddc $^ $(LIBS) -package unix -package mtl -package containers -package parsec
+	@$(GHC) $(GHC_FLAGS) -o bin/ddc \
+		-package unix -package mtl -package containers -package parsec -package regex-compat \
+		$^ 
+		
 
 # -- build the test driver
 bin/war : tools/war/War.hs tools/war/Diff.hs tools/war/Interface.hs tools/war/Order.hs tools/war/Bits.hs tools/war/TestSource.hs

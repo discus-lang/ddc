@@ -1,3 +1,4 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 -- Efficient Sets
 -- Adapted from the GHC library, written by Daan Leijen

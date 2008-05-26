@@ -191,7 +191,7 @@ outSea
 	-> Module
 	-> (Tree ())		-- sea source
 	-> FilePath		-- path of the source file
-	-> [FilePath]		-- paths of the imported interfaces
+	-> [FilePath]		-- paths of the imported .h header files
 	-> [String]		-- extra header files to include
 	-> IO	( String
 		, String )

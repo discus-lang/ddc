@@ -5,6 +5,7 @@
 
 module Main.Build 
 	( Build(..)
+	, verbLoadBuildFile
 	, loadBuildFile
 	, chopSection)
 	
@@ -57,10 +58,24 @@ buildAdd b1 b2
 	, buildExtraCCFlags	= buildExtraCCFlags  	b1 ++ buildExtraCCFlags 	b2
 	, buildExtraLDFlags	= buildExtraLDFlags  	b1 ++ buildExtraLDFlags 	b2 }
 	
+	
+verbLoadBuildFile :: Bool -> FilePath -> IO (Maybe Build)
+verbLoadBuildFile verbose path
+ = do	
+	when verbose
+ 	 $	putStr $ "  * Checking for build file " ++ path ++ "\n"
+	
+	mBuild	<- loadBuildFile path
+	
+	when verbose
+	 $ case mBuild of
+	 	Nothing		-> putStr $ "    - none\n\n"
+		Just build	-> putStr $ " " ++ show build ++ "\n\n"
+	
+	return mBuild
 
 -- | Load a build file from this file path
 --	If it doesn't exist then return Nothing
-
 loadBuildFile :: FilePath -> IO (Maybe Build)
 loadBuildFile pathBuild
  = do	exists	<- doesFileExist pathBuild

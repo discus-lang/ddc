@@ -21,6 +21,7 @@ data Arg
 	-- general
 	| Help		[String]
 	| Verbose
+	| Quiet
 	| Compile	[String]
 	| InputFile	[String]
 	| OutputFile	[String]
@@ -52,6 +53,7 @@ data Arg
 	| ProfileRuntime
 	
 	-- linker
+	| Link
 	| LinkObj	[String]
 	| LinkLib	[String]
 	| LinkLibDir	[String]
@@ -141,7 +143,7 @@ expand		(x:xs)
 	 -> x : StopCompile : KeepOFiles : expand xs
 
 	Make ss
-	 -> x : Compile ss : expand xs
+	 -> x : expand xs
 
 	LintAll
 	 -> x : [LintCore]
@@ -291,6 +293,10 @@ options	=
 			["-v", "-verbose"]
 			"Print debugging info to stdout."
 
+	, OFlag		Quiet
+			["-q", "-quiet"]
+			"Don't print build info to stdout."
+
 	, OOpts		PathBase
 			["-B",  "-basedir"]
 			"-B, -basedir <path>"
@@ -366,6 +372,10 @@ options	=
 	-- linker
 	, OGroup	"link"
 			"Linker."
+
+	, OFlag		Link
+			["-link"]
+			"Produce an executable"
 
 	, OOpts		LinkLib
 			["-l", "-link-lib"]

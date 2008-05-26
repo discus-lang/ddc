@@ -1,3 +1,4 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 export	index
 	indexR

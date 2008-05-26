@@ -287,10 +287,16 @@ compileSourceFail pathB isMain
  = do
 	?trace	$ "* compileSourceFail " % pathB % " " % isMain % "\n"
 
+	-- work out the flags to pass to DDC
+	let flags	
+		= concat 
+		$ [ catMap (\f -> " " ++ f) fs | ArgFlagsDDC fs <- ?args]
+
  	-- compile, expect error
 	compileTime
 	 <- timeIO_
 	 $ do	systemE $ "bin/ddc"
+			++ flags
 			++ " -i library "
 			++ (if isMain 
 				then " -m " ++ (pathB ++ "ds") ++ " -o " ++ (pathB ++ "bin")

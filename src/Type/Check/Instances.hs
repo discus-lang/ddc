@@ -14,6 +14,7 @@ import Type.Base
 import Type.Exp
 
 import Shared.VarPrim
+import qualified Shared.Var	as Var
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -67,6 +68,9 @@ checkFetter cls errs f@(FConstraint vClass tsArg)
 			[ primMutable, primMutableT, primConst, primConstT
 			, primPure, primEmpty
 			, primLazy, primLazyH, primDirect]
+		= return errs
+		
+		| Var.name vClass == "Safe"
 		= return errs
 
 		-- constraint has an instances, ok.

@@ -49,6 +49,8 @@ tokens :-
  \{ \-			{ ptag CommentBlockStart	}
  \- \}			{ ptag CommentBlockEnd		}
 
+ \{ \- \# .* \# \- \}	{ ptags CommentPragma		}
+
  pragma			{ ptag Pragma			}
 
  foreign		{ ptag Foreign			}
@@ -215,13 +217,25 @@ ptag	 tok (AlexPn _ l c) s
 -- This is the top level of the scanner
 -- Add a newline to help ourselves out
 
-scanModuleWithOffside :: String -> [TokenP]
+scanModuleWithOffside 
+	:: String 
+	-> ( [TokenP]		-- source tokens
+	   , [TokenP] )		-- pragma tokens
+	
 scanModuleWithOffside str
-	= (flip offside) []	-- apply the offside rule
-	$ addStarts		-- add BlockStart / LineStart tokens in preparation for offside rule
-	$ scan str
+ = let	toks		= scan str
 
-scan 	:: String -> [TokenP]
+	(toksPragma, toksSource)
+		= partition isTokPragma toks
+
+	toksSourceOffside
+		= (flip offside) [] 	-- apply the offside rule
+		$ addStarts toksSource	-- add BlockStart / LineStart tokens in preparation for offside rule
+		
+  in	( toksSourceOffside
+	, toksPragma)
+	
+scan :: String -> [TokenP]
 scan ss	
 	= breakModules 		-- detect module names, and break into projections if required
 	$ eatComments 		-- remove comments
@@ -230,7 +244,11 @@ scan ss
 sourceTokens ts
 	= catInt " " $ map showSourceP ts
 
-
+isTokPragma tok
+ = case tok of
+	TokenP { token = CommentPragma _ }	-> True
+	_					-> False
+			
 lexOffside :: String -> String
 lexOffside ss = sourceTokens $ scan ss
 

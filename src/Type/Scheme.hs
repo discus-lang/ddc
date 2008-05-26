@@ -223,6 +223,7 @@ checkContextF ff
 		, primLazy, 	primDirect
 		, primPure,	primEmpty
 		, primLazyH ]
+	 , Var.name vClass /= "Safe"
 	 -> addErrors
 	 	[ ErrorNoInstance
 			{ eClassVar		= vClass

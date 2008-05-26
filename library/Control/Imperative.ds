@@ -1,7 +1,7 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 import	Base
 import	Data.Bool
-
 
 -- These imperative-ish features in the source language are desugared
 --	to calls to these primitive functions.

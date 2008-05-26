@@ -1,13 +1,10 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
------------------------
 -- Abstract operational types.
---
 data	Obj
 data	Data
 data	Thunk
 
-
------------------------
 -- Simple Data types
 --
 
@@ -45,10 +42,8 @@ data	Int 	%r
 data 	Float 	%r
 
 data 	Ref %r1 a
-	= Ref a
+	= Ref { x :: a }
 
-
------------------------
 -- Region / Effect Classes
 --
 class	Const		:: % -> +
@@ -72,7 +67,6 @@ class	Shape5		:: * -> * -> * -> * -> * -> +
 class	Shape6		:: * -> * -> * -> * -> * -> * -> +
 
 
------------------------
 -- Global Effects.
 --
 effect	!Sync		:: !		-- Total synchronisation.
@@ -86,14 +80,6 @@ effect	!Write		:: % -> !	-- Write to some region.
 effect	!WriteT		:: * -> !	-- Write to whole object.
 
 
------------------------
--- Global regions (not used yet)
---
-region	%const;
-region	%mutable;
-
-
------------------------
 -- Simple Functions
 --	We won't get very far without these.
 --
@@ -104,7 +90,6 @@ infixr 1 $
 ($) f x	 = f x
 
 
------
 -- primProj*
 --	These functions are used by the desugarer to make default data projections.
 --

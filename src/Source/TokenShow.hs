@@ -35,7 +35,7 @@ showSource tok =
 	CFloat  f	-> show f
 	CString s	-> show s
 	Junk    s	-> "<junk " ++ s ++ ">"
-	
+	CommentPragma s	-> s
 	tok		-> 
 	 case lookup tok tokString of
 	 	Just str	-> str
@@ -176,6 +176,7 @@ tokString =
 	, (CommentLineStart,	"@CommentLineStart")
 	, (CommentBlockStart,	"@CommentBlockStart")
 	, (CommentBlockEnd,	"@CommentBlockEnd") ]
+	
 	
 
 

@@ -14,6 +14,7 @@ import System.Time
 import qualified Control.Exception	as Exception
 
 import qualified Data.Map		as Map
+import Data.Map				(Map)
 import qualified Data.Set		as Set
 
 import GHC.IOBase
@@ -30,6 +31,7 @@ import Main.Arg 			(Arg)
 import qualified Module.Graph		as M
 import qualified Module.Export		as M
 import qualified Module.IO		as M
+import qualified Module.Scrape		as M
 
 import Main.IO				as SI
 import Main.Source			as SS
@@ -39,6 +41,8 @@ import Main.Sea				as SE
 import Main.Dump			as SD
 import Main.Invoke
 import Main.Setup
+import Main.Init
+import Main.Build
 
 import qualified Config.Config		as Config
 
@@ -46,7 +50,6 @@ import Source.Slurp			as S
 
 import qualified Source.Pragma		as Pragma
 
-import qualified Main.Build		as Build
 
 import qualified Core.Util.Slurp	as C
 import qualified Core.Plate.FreeVars	as C
@@ -63,228 +66,102 @@ import Numeric
 
 out 	ss	= putStr $ pprStrPlain ss
 
-	
-
 -- Compile -----------------------------------------------------------------------------------------
 -- |	Top level compilation function.
 --	Compiles one source file.
 --	Returns a list of module names and the paths to their compiled object files.
 --
 compileFile 
-	:: Setup 	-- DDC args from the command line
-	-> FilePath	-- path to source file
+	:: Setup 		-- compile setup.
+	-> Map Module M.Scrape	-- scrape graph of all modules reachable from the root.
+	-> Module		-- module to compile, must also be in the scrape graph.
 	-> IO ()
 
-compileFile setupCmd fileName_
- = do 
-	-- Initialisation ------------------------------------------------------
-	let ?verbose	= elem Arg.Verbose (setupArgsCmd setupCmd)
-
-	-- this is the base of our installation
-	--	it should contain the /runtime and /library subdirs.
-	let pathBase_	= concat 
-			$ [dirs | Arg.PathBase dirs	<- setupArgsCmd setupCmd]
-
-	-- if no base path is specified then look in the current directory.
-	let pathBase 	= if pathBase_ == []
-				then ["."]
-				else pathBase_
-
-	let pathLibrary_test = map (++ "/library") pathBase
-	let pathRuntime_test = map (++ "/runtime") pathBase
-
-	when ?verbose
-	 $ do	out	$ "  * Setup\n"
-	 		% "    - pathLibrary_test = " % pathLibrary_test	% "\n"
-			% "    - pathRuntime_test = " % pathRuntime_test	% "\n\n"
-
-
-	-- use the pathBase args and see if we can find the base library and the runtime system.
-	mPathLibrary	<- liftM (liftM fst)
-			$  M.findFile pathLibrary_test
-			$ "Base.ds"
-	
-	mPathRuntime	<- liftM (liftM fst)
-			$  M.findFile pathRuntime_test
-			$ "libddc-runtime." ++ Config.extSharedObject 
-
-	-- normalise the source file name
-	let fileName
-		= case fileName_ of
-			('/':_)	-> fileName_
-			('~':_)	-> fileName_
-			_	-> "./" ++ fileName_
-
-	-- say hello
-	when ?verbose 
-	 $ do	out	$ "  * Compiling " % fileName % "\n"
-			% "    - pathBase    = " % pathBase	% "\n"
-			% "    - pathLibrary = " % mPathLibrary	% "\n"
-			% "    - pathRuntime = " % mPathRuntime  % "\n\n"
-
-	
-	-- if /runtime and /library can't be found then die with an appropriate error
-	when (isNothing mPathLibrary)
-	 $ dieWithUserError 
-	 	[ "Can't find the DDC base library.\n"
-		% "    Please supply a '-basedir' option to specify the directory\n"
-		% "    containing 'library/Base.ds'\n"
-		% "\n"
-	 	% "    tried:\n" %> ("\n" %!% pathLibrary_test) % "\n\n"
-		% "    use 'ddc -help' for more information\n"]
-	
-	let Just pathLibrary	= mPathLibrary
-
-	when (isNothing mPathRuntime)
-	 $ dieWithUserError 
-	 	[ "Can't find the DDC runtime system.\n"
-		% "    Please supply a '-basedir' option to specify the directory\n"
-		% "    containing 'runtime/ddc-runtime.so'\n"
-		% "\n"
-	 	% "    tried:\n" %> ("\n" %!% pathRuntime_test) % "\n\n"
-		% "    use 'ddc -help' for more information\n"]
-
-	let Just pathRuntime	= mPathRuntime
-	
-	-- Load build files ------------------------------------------------------
-	
-	-- Break out the file name
- 	let Just (fileDir_, fileBase, _)
-			= M.munchFileName fileName
-
-	let fileDir	= if fileDir_ == []
-				then "."
-				else fileDir_
-
-	let Just pathSourceBase	= M.chopOffExt fileName
-
-	-- See if there is a build file
-	--	For some source file,             ./Thing.ds
-	--	the build file should be called   ./Thing.build
-	--
-	let buildFilePath	= fileDir ++ "/" ++ fileBase ++ ".build"
-	when ?verbose
-	 (do	putStr $ "  * Checking for build file " ++ buildFilePath ++ "\n")
-
-	mBuild		<- Build.loadBuildFile buildFilePath
-
-	when ?verbose
-	 (case mBuild of
-	 	Nothing		-> putStr $ "    - none\n\n"
-		Just build	-> putStr $ " " ++ show build ++ "\n\n")
-
-
-	-- Load extra args from the build file
-	let argsBuild	= case mBuild of
-				Just build	-> Arg.parse $ catInt " " $ Build.buildExtraDDCArgs build
-				Nothing		-> []
-
-	let setup	= setupCmd { setupArgsBuild = argsBuild }
-
-	let argsEffective = setupArgs setup
-	when ?verbose
-	 $ do	putStr	$ "  * Compile options are:\n"
-		
-		putStr  $ concat 
-			$ map (\s -> "    " ++ s ++ "\n") 
-			$ map show argsEffective
-
-		putStr 	$ "\n"
-
+compileFile setup scrapes mod
+ = do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
 
 	-- Decide on module names  ---------------------------------------------
+	let Just sRoot	= Map.lookup mod scrapes
+	let pathSource	= let Just s = M.scrapePathSource sRoot in s
+	let (fileName, fileDir, _, _)
+		= M.normaliseFileName pathSource
 
 	-- Gather up all the import dirs.
 	let importDirs	
-		= pathLibrary
+		= (setupLibrary setup)
 		: fileDir
-		: (concat $ [dirs | Arg.ImportDirs dirs <- argsEffective])
+		: (concat $ [dirs | Arg.ImportDirs dirs <- setupArgs setup])
 
-	-- Choose a name for this module.
-	let Just moduleName	
-			= chooseModuleName 
-				importDirs
-				fileName
-				fileBase
 	when ?verbose
-	 $ do  	putStr	$  "  * Choosing module name\n"
-	 	putStr	$  "    - fileName      = " ++ fileName			++ "\n"
-			++ "    - fileDir       = " ++ fileDir			++ "\n"
-			++ "    - fileBase      = " ++ fileBase			++ "\n"
-	 		++ "    - moduleName    = " ++ pprStrPlain moduleName	++ "\n"
-			++ "\n"
-		
---	let pathSrcBase	= fileDir ++ "/" ++ fileBase
+	 $ do	out	$ "  * CompileFile " % (M.scrapePathSource sRoot) % "\n"
+			% "    - setup  = " % show setup 	% "\n\n"
+			% "    - sRoot  = " % show sRoot	% "\n\n"
 
+	 	out	$ "  * Compile options are:\n"
+			% (concat 
+				$ map (\s -> "    " ++ s ++ "\n") 
+				$ map show $ setupArgs setup)
+			% "\n"
+			
 	-- Load the source file
 	sSource		<- readFile fileName
 
 	compileFile_parse 
 		setup
-		pathLibrary pathRuntime
-		fileName pathSourceBase moduleName importDirs 
-		mBuild   sSource
+		scrapes
+		sRoot
+		importDirs 
+		sSource
 
 
 compileFile_parse
 	setup
-	pathLibrary pathRuntime
-	fileName pathSourceBase moduleName importDirs 
-	mBuild   sSource
+	scrapes
+	sRoot
+	importDirs
+	sSource
 
  -- Emit a nice error message if the source file is empty.
  --	If we parse an empty file to happy it will bail with "reading EOF!" which isn't as nice.
  | words sSource == []
- = exitWithUserError (setupArgs setup) [fileName % "\n    Source file is empty.\n"]
+ = let Just pathSource	= M.scrapePathSource sRoot
+   in  exitWithUserError (setupArgs setup) 
+   		[pathSource % "\n    Source file is empty.\n"]
 
  | otherwise
  = do
 	let ?args		= setupArgs setup
 	let ?verbose		= elem Arg.Verbose ?args
-	let ?pathSourceBase	= pathSourceBase
+
+	-- extract some file names
+	let moduleName		= M.scrapeModuleName sRoot
+
+	let pathSource		= let Just s = M.scrapePathSource sRoot in s
+
+	let Just (fileDir, fileBase, _) 
+				= M.munchFileName pathSource
+	let ?pathSourceBase	= fileDir ++ "/" ++ fileBase
 	
-	-- Chase down imports --------------------------------------------------
+	-- Parse imported interface files --------------------------------------
+	let loadInterface (mod, scrape) = 
+	     case M.scrapePathInterface scrape of
+	      Nothing	-> panic "Main.Compile" $ "compileFile: no interface for " % mod % "\n"
+	      Just path	-> do
+		src		<- readFile path
+		(tree, _)	<- SS.parse path src
+		return	(mod, tree)
+		
+	let scrapes_noRoot	= Map.delete (M.scrapeModuleName sRoot) scrapes 
+	importsExp		<- liftM Map.fromList
+				$ mapM loadInterface 
+				$ Map.toList scrapes_noRoot
 
-	-- Parse the source file.
-	sParsed		<- SS.parse 
-				fileName
-				sSource
-
-	-- Check if we're supposed to import the prelude
-	let importPrelude	
-			= not $ elem Arg.NoImplicitPrelude ?args
-
-	-- Slurp out the list of modules directly imported by the source file.
-	let importsRoot	= S.slurpImportModules
-				sParsed
-			++ if importPrelude
-				then [ModuleAbsolute ["Prelude"]]
-				else []
-	when ?verbose
-	 $ do	out 	$ "  * Chasing imported modules.\n"
-	 		% "    - direct imports   = " % importsRoot 	% "\n"
-			% "    - import dirs      = " % importDirs	% "\n"
-
-
-	-- Recursively chase down all modules needed by this one.
-	importsExp	<- SI.chaseModules
-				setup
-				compileFile
-				importDirs
-				importsRoot
-				Map.empty
-
-	when ?verbose
-	 $ do	putStr	$ "    - recursive imports:\n"
-	 	mapM_ dumpImportDef $ Map.elems importsExp
-		putStr	$ "\n"
-	
 	dumpST 	Arg.DumpSourceParse "source-parse--header" 
-		(catMap SI.idInterface $ Map.elems importsExp)
+		(concat $ Map.elems importsExp)
 
-	
+
 	-- Dump a nice graph of the module hierarchy.
-	let modulesCut	= concat
+{-	let modulesCut	= concat
 			$ [ss | Arg.GraphModulesCut ss <- ?args]
 			
 	SD.dumpDot Arg.GraphModules
@@ -294,7 +171,15 @@ compileFile_parse
 			modulesCut 
 			importsRoot
 			importsExp)
+-}
 
+	-- Parse the source file.
+	(sParsed, pragmas)	<- SS.parse pathSource sSource
+
+	when ?verbose
+	 $ do	out	$ "  * Pragmas\n"
+			%> punc "\n" pragmas
+			% "\n\n"
 
 	-- Slurp out pragmas
 	let pragmas	= Pragma.slurpPragmaTree sParsed
@@ -323,9 +208,7 @@ compileFile_parse
 	-- Rename variables and add uniqueBinds.
 	((_, sRenamed) : modHeaderRenamedTs)
 			<- SS.rename
-				$ (moduleName, sParsed) 
-				: [ (SI.idModule int, SI.idInterface int)
-					| int <- Map.elems importsExp ]
+				$ (moduleName, sParsed) : Map.toList importsExp
 	
 	let hRenamed	= concat 
 			$ [tree	| (mod, tree) <- modHeaderRenamedTs ]
@@ -580,7 +463,7 @@ compileFile_parse
 				typeTable
 				vsLambda_new
 
-	writeFile (pathSourceBase ++ ".di") diInterface	
+	writeFile (?pathSourceBase ++ ".di") diInterface	
 
 
 	-- !! Early exit on StopCore
@@ -638,8 +521,8 @@ compileFile_parse
 	 , seaSource )	<- SE.outSea
 				moduleName
 	 			eInit
-				fileName
-				[ SI.idFileRelPathH e | e <- Map.elems importsExp ]
+				pathSource
+				(map ((\(Just f) -> f) . M.scrapePathHeader) $ Map.elems scrapes_noRoot)
 				includeFilesHere
 
 
@@ -651,8 +534,8 @@ compileFile_parse
 				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
 				
-	writeFile (pathSourceBase ++ ".ddc.c") seaSourceInit
-	writeFile (pathSourceBase ++ ".ddc.h") seaHeader
+	writeFile (?pathSourceBase ++ ".ddc.c") seaSourceInit
+	writeFile (?pathSourceBase ++ ".ddc.h") seaHeader
 
 
 	------------------------------------------------------------------------
@@ -663,29 +546,14 @@ compileFile_parse
 	when (elem Arg.StopSea ?args)
 		compileExit	
 	
-
 	-- Invoke GCC to compile C source.
 	invokeSeaCompiler
 		?args
-		pathSourceBase
-		pathRuntime
-		pathLibrary
+		?pathSourceBase
+		(setupRuntime setup)
+		(setupLibrary setup)
 		importDirs
-		(fromMaybe [] $ liftM Build.buildExtraCCFlags mBuild)
-
-	-- Invoke GCC to link main binary.
-	when ((not $ isJust $ setupRecursive setup)
-	   && (not $ elem Arg.StopCompile ?args))
-	 $ do	invokeLinker
-			pathRuntime
-			(fromMaybe [] $ liftM Build.buildExtraLinkLibs mBuild)
-			(fromMaybe [] $ liftM Build.buildExtraLinkLibDirs mBuild)
-			(fromMaybe [] $ liftM Build.buildExtraLinkObjs mBuild)
-			([pathSourceBase ++ ".o"]
-				++ (map    idFilePathO $ Map.elems importsExp))
-				-- ++ (catMap idLinkObjs  $ Map.elems importsExp))	
-
-	return ()
+		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
 		
 -----
 compileExit
@@ -709,7 +577,9 @@ handleStage name ex
 	_ ->	throwIO ex
 	 	 
 -----
+{-
 dumpImportDef def
 	= putStr	
 	$ pprStrPlain
  	$ "        " % (padL 30 $ pprStrPlain $ idModule def) % " " % idFilePathDI def % "\n"
+-}

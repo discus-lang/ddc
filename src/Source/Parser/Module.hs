@@ -3,7 +3,8 @@
 module Source.Parser.Module
 	( parseModule
 	, run
-	, pModule)
+	, pModule
+	, pTopImport)
 
 where
 import Source.Parser.Pattern

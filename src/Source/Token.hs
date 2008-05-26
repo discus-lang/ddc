@@ -207,6 +207,8 @@ data Token
 	| CommentBlockStart
 	| CommentBlockEnd
 
+	| CommentPragma	String
+
 	-- Some other junk not recognised by the lexer.
 	-- 	The junk token will cause a parse error.
 	| Junk 		String
