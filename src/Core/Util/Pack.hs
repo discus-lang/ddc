@@ -81,6 +81,14 @@ packT1 tt
 			, Just (vD, k, (TVar KRegion r : ts))	<- takeTData t2'
 			= TApp (TCon tcLazy) (TVar KRegion r)
 
+			-- crush ConstT on the way
+			| tyClass == TyClassConstT 
+			, Just _		<- takeTData t2'
+			, (rs, ds)		<- slurpVarsRD t2'
+			= TWitJoin 
+			    	$ (   map (\r -> TApp (TCon tcConst)  r) rs
+				   ++ map (\d -> TApp (TCon tcConstT) d) ds)
+
 			-- crush MutableT on the way
 			| tyClass == TyClassMutableT 
 			, Just _		<- takeTData t2'
@@ -88,6 +96,8 @@ packT1 tt
 			= TWitJoin 
 			    	$ (   map (\r -> TApp (TCon tcMutable)  r) rs
 				   ++ map (\d -> TApp (TCon tcMutableT) d) ds)
+
+
 
 			| otherwise
 			= TApp t1 t2'

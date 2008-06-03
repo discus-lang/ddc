@@ -29,12 +29,14 @@ src_hs		+= $(src_happy_hs)
 # -- compile Haskell source
 %.o : %.hs
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) -isrc $(GHC_INCDIRS) -c $<
+	$(GHC) $(GHC_FLAGS) -isrc $(GHC_INCDIRS) -c $<
+	@echo
 
 # -- compile Haskell boot 
 %.hi-boot : %.hs-boot %.o-boot
 	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) -isrc $(GHC_INCDIRS) -c $< 
+	$(GHC) $(GHC_FLAGS) -isrc $(GHC_INCDIRS) -c $< 
+	@echo
 
 
 #---- gcc

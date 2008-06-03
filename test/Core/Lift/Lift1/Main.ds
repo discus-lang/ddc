@@ -27,7 +27,7 @@ lift1 ()
  = do {	a1	= 23;
 	f1 x	= a1 + x;
 	list	= [1, 2, 3, 4, 5];
-	print	$ (showListInt $ map f1 list) % "\n";
+	print	$ (show $ map f1 list) % "\n";
  };
 
 -- | A function with lambda abstractions nested 3 levels deep.

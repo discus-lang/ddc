@@ -15,5 +15,5 @@ x1 	= map (\x -> x + 1) (map (\y -> y + 1) (list2 ()));
 
 main ()
  = do {	head (list2 ()) := 5;
- 	print (showListInt (z ()) % "\n");
+ 	print (show (z ()) % "\n");
  };

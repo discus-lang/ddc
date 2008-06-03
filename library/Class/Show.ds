@@ -5,12 +5,20 @@ import	Data.List
 import 	System.Console
 import	Class.Out
 
+----------------------------------------------------------------------------------------------------
 -- The show class for converting things to string
 class Show a where 
+
+ -- strict show which demands the entire structure
  show 	:: forall %r
 	.  a -(!e1)> String %r
 	:- !e1	= !{ !ReadT a }
 
+ -- lazy show which works for infinite structures,
+ --	but requires its argument to be const
+ showL	:: forall %r
+	.  a -> String %r
+	:- ConstT a
 
 -- The string paste operator
 infixr 7 %;
@@ -20,80 +28,76 @@ infixr 7 %%;
 (%%) a b	= a % " " % b
 
 
--- Instances for Show are defined here instead of in the Data.* modules so we don't 
+-- Strict Show -------------------------------------------------------------------------------------
+-- These instances are defined here instead of in Data.* so we don't 
 --	have to worry about recursive module definitions.
 
--- Simple Instances 
 instance Show Unit where
- show ss = "()"
-
+ show  ss  	= "()"
+ showL ss 	= "()"
+ 
 instance Show Char where
- show ss = "'" % stringOfChar ss % "'"
+ show  ss 	= "'" % stringOfChar ss % "'"
+ showL ss 	= "'" % stringOfChar @ ss % "'"
 
+-- We need to copy shown strings because the returned
+--	string might have a different mutability.
 instance Show String where
- show ss = "'" % copy ss % "'"
+ show  ss 	= "'" % copy ss % "'"
+ showL ss	= "'" % copy @ ss % "'"
 
 instance Show Int where
- show	= stringOfInt
+ show  ss	= stringOfInt ss
+ showL ss	= stringOfInt @ ss
 
 instance Show Float where
- show	= stringOfFloat32
+ show  ss	= stringOfFloat32 ss
+ showL ss	= stringOfFloat32 @ ss
 
 instance Show Bool where
- show True	= "True"
- show False	= "False"
+ show  True	= "True"
+ show  False	= "False"
 
-
--- Show a list lazilly
-showListL showX xx
- = case xx of 
-	Nil -> "[]"
-	Cons x xs
-	 -> (%) @ "[" ( (%) @ (showX @ x) (showListL2 @ showX xs))
-
-showListL2 showX xx
- = case xx of 
- 	Nil -> "]"
-	Cons x xs 
-	 -> (%)@ ", " ((%)@ (showX@ x) (showListL2@ showX xs))
-
--- Show a list of ints, lazilly
-showListIntL :: [Int] -> String
-showListIntL 
-	= showListL show
-
-
--- Show a list
+ showL True	= "True"
+ showL False	= "False"
+ 
 instance Show [Int] where
- show = showList show
+ show  ss	= showList  @ show  ss
+ showL ss	= showListL @ showL  ss
 
 instance Show [Char] where
- show = showList show
+ show  ss	= showList  @ show   ss
+ showL ss	= showListL @ showL  ss
 
+
+-- Show a list strictly
+--	this demands the entire list
 showList  showX xx
  = "[" % showList2 showX xx;
  
 showList2 showX xx
  = case xx of 
- 	Nil	-> "]"
-	
-	Cons x xs
-	 -> showX x 		% showList3 showX xs
+ 	Nil		-> "]"
+	Cons x xs	-> showX x % showList3 showX xs
 	 
  
 showList3 showX xx
+ = case xx of  	
+ 	Nil 		-> "]"
+	Cons x xs	-> ", " % showX x % showList3 showX xs
+
+-- Show a list lazilly
+--	this works for infinite data structures, but requires
+--	the list and elements to be constant.
+showListL showX xx
  = case xx of 
- 	Nil 	-> "]"
+	Nil 		-> "[]"
+	Cons x xs	-> "[" % showX x % showListL2 @ showX xs
 
-	Cons x xs
-	 -> ", " 	% showX x	% showList3 showX xs
-
-
--- | Show a lits of ints
-showListInt :: [Int] -> String;
-showListInt 
-	= showList show
-
+showListL2 showX xx
+ = case xx of 
+ 	Nil 		-> "]"
+	Cons x xs 	-> ", " % showX x % showListL2 @ showX xs
 
 -- | Print a string to the console
 putStr :: String -> ()

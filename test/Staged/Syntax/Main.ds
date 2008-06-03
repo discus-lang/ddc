@@ -29,7 +29,7 @@ main ()
 	--------------------------------------------
 	-- List ranges.
 	print $ "-- List Ranges.\n"
-	println $ showListInt [5..23]
+	println $ show [5..23]
 
 --	print $ showListInt [@ 5..23]			% "\n";
 --	print $ (showListInt $ take 10 [2..])		% "\n";

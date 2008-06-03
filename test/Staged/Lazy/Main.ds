@@ -13,26 +13,22 @@ main ()
 
 
 	-- mapping
-	print 	$ (showListInt 
-			$ take 20
+	print 	$ (show	$ take 20
 			$ mapL ((+) 10)
 			$ ints 0)
 
 		% "\n";
 
 	-- dotProd
-	print 	$ (showListInt 
-			$ dotProd (ints 0) [1, 2, 3, 5]) 
+	print 	$ (show	$ dotProd (ints 0) [1, 2, 3, 5]) 
 		% "\n";
 
 	-- primes
-	print	$ (showListInt
-			$ take 10 (primes ()))
+	print	$ (show	$ take 10 (primes ()))
 		% "\n";
 
 	-- fib
-	print	$ (showListInt
-			$ take 10
+	print	$ (show	$ take 10
 			$ mapL fib 
 			$ ints 0)
 		% "\n";

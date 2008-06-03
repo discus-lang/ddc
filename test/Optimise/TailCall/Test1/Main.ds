@@ -18,7 +18,7 @@ tailCall1 ()
 	case ret of
 	 Just (x, acc) 
 	  -> do	print $ "x   = " % show x % "\n"
-		print $ "acc = " % showListInt acc % "\n"
+		print $ "acc = " % show acc % "\n"
  
 loopJust f (x, acc)
  	| Just x2		<- f x
