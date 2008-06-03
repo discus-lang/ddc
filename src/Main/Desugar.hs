@@ -187,7 +187,8 @@ desugarSlurpConstraints
 			$ state2
 
 	-- handle errors arrising from constraint slurping
-	exitWithUserError ?args $ D.stateErrors state3
+	when (not $ null $ D.stateErrors state3)
+	 $ exitWithUserError ?args $ D.stateErrors state3
 
 	-- these are the vars we'll need types for during the Core->Desugar transform
 	let vsTypesPlease = D.stateTypesRequest state3
@@ -283,7 +284,8 @@ desugarSolveConstraints
 		 Just handle	-> hFlush handle
 		 Nothing	-> return ())
 
-		exitWithUserError ?args $ T.stateErrors state
+		when (not $ null $ T.stateErrors state)
+		 $ exitWithUserError ?args $ T.stateErrors state
 		
 		panic "Core.SolveSquid" "done already"
 

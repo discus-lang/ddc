@@ -76,12 +76,9 @@ dieWithUserError  errs
 --	If the args have StopErrors set, then write the errors to a file, 
 --	otherwise write them to stderr
 --
-exitWithUserError 
+exitWithUserError
 	:: Pretty a PMode
-	=> [Arg] -> [a] -> IO ()
-		
-exitWithUserError args []
-	= return ()
+	=> [Arg] -> [a] -> IO b
 		
 exitWithUserError args errs
  = case filter (=@= StopErrors{}) args of

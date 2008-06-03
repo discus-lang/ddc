@@ -396,7 +396,7 @@ coreSequence
 coreSequence cSource cHeader
  = do	
  	-- sequence the tree
-	let tree'	= sequenceCafsTree cSource
+	tree'		<- sequenceCafsTree ?args cSource
  	dumpCT DumpCoreSequence "core-sequence" tree'
 
 	-- emit super deps

@@ -126,7 +126,7 @@ compileFile_parse
  | words sSource == []
  = let Just pathSource	= M.scrapePathSource sRoot
    in  exitWithUserError (setupArgs setup) 
-   		[pathSource % "\n    Source file is empty.\n"]
+   	[pathSource % "\n    Source file is empty.\n"]
 
  | otherwise
  = do

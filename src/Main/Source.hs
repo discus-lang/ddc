@@ -126,8 +126,11 @@ defix	sParsed
 			= unzip
 			$ map (defixP fixTable)
 			$ sParsed
+
+	let errs	= concat errss
 	
-	exitWithUserError ?args $ concat errss
+	when (not $ null errs)
+	 $ exitWithUserError ?args errs
 	
 	-- dump
 	dumpST	DumpSourceDefix "source-defix" sDefixed
@@ -160,7 +163,8 @@ rename	mTrees
 	dumpST 	DumpSourceRename "source-rename--header" (concat $ map snd $ tail mTrees')
 
 	-- exit after dumping, so we can see what's going on.
-	exitWithUserError ?args $ S.stateErrors state'
+	when (not $ null $ S.stateErrors state')
+	 $ exitWithUserError ?args $ S.stateErrors state'
 	
 	return mTrees'
 

@@ -7,6 +7,18 @@ where
 
 import qualified Debug.Trace	as Debug
 
+import Core.Exp
+import Core.Util
+import Core.Util.Slurp
+import Core.Plate.FreeVars
+
+import qualified Dot.Exp	as G
+import qualified Dot.Graph	as G
+
+import Util.Graph.Deps
+
+import Main.Arg
+
 import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -20,24 +32,11 @@ import Shared.Var		(NameSpace(..))
 import Shared.Error
 import Shared.Pretty
 
-import Core.Exp
-import Core.Util
-import Core.Util.Slurp
-import Core.Plate.FreeVars
-
-import qualified Dot.Exp	as G
-import qualified Dot.Graph	as G
-
-import Util.Graph.Deps
-
------
-stage	= "Core.Sequence"
-
 -----
 sequenceCafsTree
-	:: Tree -> Tree
+	:: [Arg] -> Tree -> IO Tree
 
-sequenceCafsTree tree
+sequenceCafsTree args tree
  = let	
  	-- Slurp out the list of variables referenced
 	--	by each top level binding.
@@ -58,8 +57,11 @@ sequenceCafsTree tree
 				, Set.member v (graphReachable deps [v]) ]
 
    in	if not $ isNil recCafs
-   		then panic stage $ "sequenceCafsTree: Cafs are recursive " % recCafs % "\n"
-		else sequenceCafsTree2 deps cafVars tree
+   	 then exitWithUserError args
+	 	$ ["Values may not be mutually recursive.\n"
+		% "     offending variables: " % recCafs % "\n\n"]
+
+	 else return $ sequenceCafsTree2 deps cafVars tree
 		
 
 sequenceCafsTree2 deps cafVars tree
