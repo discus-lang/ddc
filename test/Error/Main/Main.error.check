@@ -1,6 +1,6 @@
 ./test/Error/Main/Main.ds:4:0
-    Inferred type of main is not () -> ().
-
-        inferred type:
+    The type of main must be a function.
+        but it was inferred to be:
             main
               :: Data.String.String %rTC0
+

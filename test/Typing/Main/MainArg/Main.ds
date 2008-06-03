@@ -1,0 +1,6 @@
+
+-- main is passed () by the RTS, but it doen't have to use it.
+--	Allow the type of its argument to be a variable.
+main _
+ = putStr "dude"
+ 

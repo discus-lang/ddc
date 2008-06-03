@@ -35,6 +35,8 @@ checkMain
 	  -> do	Just tMain	<- extractType True vMainT
 	  	checkMain' vMainT tMain tMain
 	  
+-- main is passed () by the runtime system at startup, 
+--	so it must be a function that will accept this.
 checkMain' vMainT tMain tt
  = case tt of
 	TForall b k t
@@ -43,8 +45,11 @@ checkMain' vMainT tMain tt
  	TFetters t fs
 	 -> checkMain' vMainT tMain t
 
-	TFun (TData _ v1 []) (TData _ v2 []) eff clo
-	 | v1 == primTUnit && v2 == primTUnit
+	TFun (TVar KValue _) _ eff clo
+	 -> return ()
+
+	TFun (TData _ v1 []) _ eff clo
+	 | v1 == primTUnit
 	 -> return ()
 	 
 	_ -> addErrors [ErrorWrongMainType { eScheme = (vMainT, tMain) }]

@@ -1,0 +1,12 @@
+
+-- Check use of fix to create recursive CAFs
+
+fix :: (a -> a) -> a
+fix f 	= f (fix @ f)
+
+ones :: [Int]
+ones	= fix (\r -> 1 : r)
+
+main _
+ = do	putStr $ show (head ones)	% "\n"
+ 	putStr $ show (take 10 ones)	% "\n"		

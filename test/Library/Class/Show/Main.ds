@@ -1,7 +1,0 @@
-
-fix f 	= f (fix @ f)
-
-ones	= fix (\r -> 1 : r)
-
-main ()
- = do	putStr (showL $ take 100 ones)

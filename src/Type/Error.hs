@@ -399,9 +399,10 @@ instance Pretty Error PMode where
  		{ eScheme	= (v, scheme) })
 		
 	= prettyValuePos v				% "\n"
-	% "    Inferred type of main is not () -> ().\n"
-	% "\n"
-	% "        inferred type:" % prettyVTS (v, scheme) % "\n"
+	% "    The type of main must be a function.\n"
+	% "        but it was inferred to be:"
+	% prettyVTS (v, scheme)
+	% "\n\n"
 
 -----
 prettyVTS (v, t)
