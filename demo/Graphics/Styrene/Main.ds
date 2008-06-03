@@ -10,6 +10,10 @@ import Graphics.Shape
 timeStep	= 0.04
 worldRot	= 0.0
 
+-- exit program after rotating the world this many radians
+worldRotMax	= pi
+
+
 main ()
  = do	frame	= new&{Frame} "styrene" 800 800
 	coma frame worldInit
@@ -17,25 +21,34 @@ main ()
 
 coma :: Frame -> World -> ()
 coma frame world@(World actors _)
- = do	
+
+	-- bail out after a number of frames
+	| worldRot >= worldRotMax
+ 	= ()
+
 	-- advance the world
-	force	= (Vec2 0.0 8.0) .rotate (- worldRot)
+	| otherwise 
+	= do	
+		-- the beads fall towards the bottom of the window
+		force	= (Vec2 0.0 8.0) .rotate (- worldRot)
 
-	world'	= advance world force 10
+		-- advance the world
+		world'	= advance world force 10
 
-	frame.clear (color&{Frame} 0 0 0)
+		-- draw the new frame
+		frame.clear (color&{Frame} 0 0 0)
 
-	renderPrims frame 
-	 [Local	[ Translate 400.0 400.0
-	 	, Rotate worldRot
-		, Scale 0.9 0.9
-		, drawWorld world']]
+		renderPrims frame 
+		 [Local	[ Translate 400.0 400.0
+		 	, Rotate worldRot
+			, Scale 0.9 0.9
+			, drawWorld world']]
 
- 	frame .update
+	 	frame .update
 
- 	coma frame world'
+	 	coma frame world'
 
-
+-- advance the world a number of steps
 advance world force n	
 	| n == 0	
 	= world
