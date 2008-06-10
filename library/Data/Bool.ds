@@ -32,6 +32,16 @@ infixr 3 ||
 			True	-> True
 			_	-> False
  
+xor a b
+ = case a of
+ 	True	-> case b of 
+			True	-> False
+			False	-> True
+			
+	False	-> case b of
+			True	-> True
+			False	-> False
+				
  
 otherwise :: Bool %r1 :- Const %r1
 otherwise	= True

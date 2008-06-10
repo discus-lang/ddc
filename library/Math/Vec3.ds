@@ -28,8 +28,8 @@ project Vec3 Float where
 	 	= sqrt (x * x + y * y + z * z)
 
 	-- | normalise a vector
-	normalised :: Vec3 Float -> Vec3 Float
-	normalised v	= v . muls (1.0 / v.magnitude) 
+	normalise :: Vec3 Float -> Vec3 Float
+	normalise v	= v . muls (1.0 / v.magnitude) 
 
 	-- | Multiply a vector by a scalar.
 	muls :: Vec3 Float -> Float -> Vec3 Float

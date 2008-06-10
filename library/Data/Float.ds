@@ -42,6 +42,12 @@ foreign import "primFloat32_mul"
 foreign import "primFloat32_div"
  primFloat32_div	:: Float{read} -> Float{read} -> Float
 
+foreign import "fmodf"
+ fmodU :: Float32# -> Float32# -> Float32#
+
+fmod x y		= boxFloat32 (fmodU (unboxFloat32 x) (unboxFloat32 y))
+
+
 -- comparisons
 foreign import "primFloat32_eq"
  primFloat32_eq		:: Float{read} -> Float{read} -> Bool
@@ -78,6 +84,10 @@ instance Ord Float where
 	(<)		= primFloat32_lt
 	(<=)		= primFloat32_le
 	
+	compare x y
+	 | x < y	= LT
+	 | x > y	= GT
+	 | otherwise	= EQ
 
 instance Num Float where
 	(+)		= primFloat32_add

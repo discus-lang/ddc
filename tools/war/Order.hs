@@ -15,7 +15,10 @@ libraryOrder args
 	$ (libraryModules args)
 	
 libraryModules args = 
-	[ "Base", "Data/Ref", "Base/Thunk"
+	[ "Base"
+	, "Data/Ref"
+	, "Base/Thunk"
+	, "Data/Function"
 	, "Data/Bool"
 	, "Class/Copy"
 	, "Class/Eq"

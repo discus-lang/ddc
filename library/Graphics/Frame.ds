@@ -30,7 +30,16 @@ project Frame where
 		= b
 		+ (256 * g)
 		+ (256 * 256 * r)
-	
+
+	-- make a color from these RGB components
+	--	components should be in range [0.0 .. 1.0]
+	colorf :: Float -> Float -> Float -> Int
+	colorf r g b
+		= color&{Frame}
+			(truncate (r * 255.0))
+			(truncate (g * 255.0))
+			(truncate (b * 255.0))
+				
 	-- write this frame to the screen
 	update :: Frame -> ()
 	update frame

@@ -3,6 +3,7 @@
 import	Base
 import	Base.Thunk
 	
+import	Data.Function
 import	Data.Ref
 import	Data.Bool
 import	Data.Int

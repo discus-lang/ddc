@@ -80,16 +80,6 @@ effect	!Write		:: % -> !	-- Write to some region.
 effect	!WriteT		:: * -> !	-- Write to whole object.
 
 
--- Simple Functions
---	We won't get very far without these.
---
-id :: forall a. a -> a
-id    x = x
-
-infixr 1 $ 
-($) f x	 = f x
-
-
 -- primProj*
 --	These functions are used by the desugarer to make default data projections.
 --

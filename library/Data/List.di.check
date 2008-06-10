@@ -4,6 +4,7 @@ import {
         Base.Thunk;
         Class.Functor;
         Class.Foldable;
+        Data.Function;
         Data.Bool;
         Data.Ref;
         Data.Tuple;
@@ -422,6 +423,13 @@ foreign import concatMapL
         ,  Base.Pure !e0
         ,  Base.Const %r0
         ,  Base.Lazy %r1
+        :$ Base.Thunk -> Base.Data -> Base.Data;
+        
+foreign import mapMaybe
+        :: forall t0 t1 %r0 %r1 %r2 !e0 $c0
+        .  (t0 -(!e0 $c0)> Data.Maybe.Maybe %r1 t1) -> List %r0 t0 -(!e1 $c1)> List %r2 t1
+        :- !e1        = !{Base.!Read %r0; !e0; Base.!Read %r1}
+        ,  $c1        = xSD61 : $c0
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
 project Data.List.List %rDK73 a where

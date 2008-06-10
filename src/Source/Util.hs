@@ -1,3 +1,5 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
+
 module Source.Util
 	( takeExportVar
 	, takeStmtBoundVs
@@ -73,6 +75,7 @@ flattenApps xx
 --	=> XApp (XApp (XApp x1 x2) x3) x4
 --
 unflattenApps :: a -> [Exp a] -> Exp a
+unflattenApps sp []			= panic stage "unflattenApps: empty list"
 unflattenApps sp (x:xs)
  = unflattenApps' sp x xs
  
@@ -117,7 +120,8 @@ sourcePosX xx
 	XListComp	sp x lc		-> sp
 	XTuple		sp xx		-> sp
 	XList 		sp xx		-> sp
-
+	XWhere		sp _ _		-> sp
+	XParens		sp _		-> sp
 
 -- | Slurp out the source position from some pattern
 sourcePosW :: Pat SourcePos -> SourcePos

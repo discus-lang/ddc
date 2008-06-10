@@ -1,0 +1,43 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- | Simple combinators that work solely on functions
+
+import Base.Thunk
+
+-- | Identity function
+id :: a -> a
+id    x = x
+
+
+-- | Constant function
+constf :: a -> b -> a
+constf x y = x
+
+-- | Application operator
+infixr 1 $ 
+($) f x	 = f x
+
+
+-- | Function composition
+comp	:: (b -> c) -> (a -> b) -> a -> c
+comp f g x	= f (g x)
+
+
+-- | Flip the arguments of a binary function
+flip	:: (a -> b -> c) -> b -> a -> c
+flip f x y	= f y x
+
+
+-- | The (lazy) fix-point operator
+fixL 	:: (a -> a) -> a
+fixL f	= f (fixL @ f)
+
+
+-- | A function-composition-ish operator
+on :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+on g f	= \x y -> g (f x) (f y)
+
+
+
+
+

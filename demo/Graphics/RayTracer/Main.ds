@@ -1,0 +1,345 @@
+-- Simple Raytracer
+--	Adapted from Haskell version on http://cdsmith.wordpress.com 10/6/2008
+
+import Math.Vec2
+import Math.Vec3
+import Graphics.Frame
+
+-- Color -------------------------------------------------------------------------------------------
+-- | A color 
+data Color
+	= Color {
+		red :: Float;
+		green :: Float;
+		blue :: Float;
+	}
+	
+project Color where
+	
+	muls :: Color -> Float -> Color
+	muls (Color r g b) s
+	 = Color (r * s) (g * s) (b * s)
+	
+	
+	clamp :: Color -> Float -> Float -> Color
+	clamp (Color r g b) min max
+	 = Color 
+	 	(fence min max r)
+		(fence min max g)
+		(fence min max b)
+
+
+instance Num Color where
+	(+) (Color r1 g1 b1) (Color r2 g2 b2)
+		= Color (r1 + r2) (g1 + g2) (b1 + b2)
+
+	(*) (Color r1 g1 b1) (Color r2 g2 b2)
+		= Color (r1 * r2) (g1 * g2) (b1 * b2)
+
+instance Show Color where
+	show (Color r g b)
+		= "Color " % show r %% show g %% show b
+
+-- Shape -------------------------------------------------------------------------------------------
+-- | A primitive shape in the scene.
+data Shape
+	= Sphere { 
+		center	:: Vec3 Float;
+		radius	:: Float;
+	}
+
+	| Plane	{ 
+		point	:: Vec3 Float;
+		normal 	:: Vec3 Float;
+	}
+
+project Shape where
+ 	
+ 	-- The distance to this shape
+	distance 
+		:: Shape 
+		-> Vec3 Float 	-- starting from this point
+		-> Vec3 Float 	-- along this ray
+		-> Maybe Float	-- Nothing if the ray does not intersect the shape
+
+	distance shape orig dir
+	 	| Sphere c r	<- shape
+		= do	p	= orig + dir .muls ((c - orig) .dot dir) 
+		 	d_cp	= (p - c) .magnitude
+			d	= (p - orig) .magnitude - sqrt (r * r - d_cp * d_cp)
+		
+			match 	| d_cp >= r			
+				= Nothing
+				
+				| (p - orig) .dot dir <= 0.0	
+				= Nothing
+				
+				| otherwise			
+				= Just d
+
+		| Plane p n	<- shape
+		= if dir .dot n >= 0.0	
+			then Nothing
+			else Just (((p - orig) .dot n) / (dir .dot n))
+
+		
+	-- The surface normal of the shape at this point
+	surfaceNormal 	:: Shape	
+		-> Vec3 Float	-- a point on the shape's surface
+		-> Vec3 Float	-- the surface normal at this point
+	
+	surfaceNormal shape point
+		| Sphere c r	<- shape
+		= (point - c) .normalise
+		
+		| Plane	p n	<- shape
+		= n
+
+-- Object ------------------------------------------------------------------------------------------
+data Object !e $c	
+	= Object { 
+		shape	:: Shape;
+		color	:: Vec3 Float 	-(!e $c)> Color;
+		shine 	:: Vec3 Float	-(!e $c)> Float;
+	}
+
+
+-- | Find the nearest point of intersection for a ray
+findNearest 
+	:: [Object] 
+	-> Vec3 Float 		-- ray origin
+	-> Vec3 Float 		-- ray direction
+	-> Maybe 
+		( Object	-- object that intersected first
+		, Vec3 Float)	-- position of intersection
+
+findNearest objs orig dir
+ = do	result	= mapMaybe (consider orig dir) objs
+	
+	case result of
+	 []	-> Nothing
+
+	 _	-> do	(obj, d)	= minT2F result
+	 		Just (obj, orig + dir .muls d)
+
+
+-- nasty comparison to get around compiler bugs
+minT2F :: [(a, Float)] -> (a, Float)
+minT2F (x:xs)	= minT2F' x xs
+	
+minT2F' :: (a, Float) -> [(a, Float)] -> (a, Float)
+minT2F' acc 		[]		= acc
+
+minT2F' acc@(_, y)	(a@(x0, y0) : rest)
+
+	| y0 < y	= minT2F' a rest
+	| otherwise	= minT2F' acc rest
+	
+
+consider 
+	:: Vec3 Float 		-- origin of ray
+	-> Vec3 Float 		-- direction of ray
+	-> Object 		-- object to test
+	-> Maybe ( Object	-- the object that intersected
+		 , Float)	-- distance of intersection point from origin
+
+consider orig dir obj
+ = case obj .shape .distance orig dir of
+ 	Nothing	-> Nothing
+	Just d	-> Just (obj, d)
+			
+
+
+-- Lighting ----------------------------------------------------------------------------------------
+data Light
+	= LightPoint {
+		point	:: Vec3 Float;
+		color	:: Color;
+	}
+	
+	| LightAmbient {
+		color	:: Color;
+	}
+
+applyLight :: [Object] -> Vec3 Float -> Vec3 Float -> Light -> Color
+applyLight objs pt n (LightPoint lpt color)
+ = do
+ 	dir	= (lpt - pt) .normalise
+
+	-- distance from light source to surface
+	dist	= (lpt - pt) .magnitude
+	
+	-- magnitude of reflection
+	mag	= (n .dot dir) / (dist * dist)
+
+	-- eliminate negative lights
+	final	= (color .muls mag) .clamp 0.0 999999.0
+	
+	case findNearest objs pt dir of
+		Just (_, opt)
+		 -> if (opt - pt) .magnitude < dist
+		 	then Color 0.0 0.0 0.0
+			else final 
+			
+		Nothing	
+		 -> final
+		 
+applyLight opt pt n (LightAmbient color)
+	= color
+
+
+-- Tracing -----------------------------------------------------------------------------------------
+trace 	:: [Object] 		-- objects in scene
+	-> [Light] 		-- lights in scene
+	-> Vec3 Float 		-- origin of ray
+	-> Vec3 Float 		-- direction of ray
+	-> Int 			-- reflection count
+	-> Color		-- visible color
+	
+-- ray exceeded reflection limit
+trace objs lights orig dir 0
+	= Color 0.0 0.0 0.0
+
+trace objs lights orig dir limit
+ = do	case findNearest objs orig dir of
+
+ 	 -- ray didn't intersect any objects
+ 	 Nothing		
+	  -> Color 0.0 0.0 0.0
+
+	 -- ray hit an object
+	 Just (obj, pt)
+	  -> do	
+	 	-- get the surface normal at that point
+	 	n	= obj.shape.surfaceNormal pt
+
+		-- result angle of ray after reflection
+	 	ndir	= dir - n .muls (2.0 * (n .dot dir))
+
+		-- see if ray hits anything else
+		refl	= trace objs lights pt ndir (limit - 1)
+		
+--		putStr $ "ndir " % show ndir % "\n"
+		color	= obj .color pt
+		shine	= obj .shine pt
+		
+		-- apply all the lights to this point
+		lighting 
+			= foldl (+) (Color 0.0 0.0 0.0) 
+			$ map (applyLight objs pt n) lights
+		
+		in_light 
+			= refl .muls shine
+			+ lighting .muls (1.0 - shine)
+
+		(color * in_light) .clamp 0.0 1.0
+
+
+showV2 :: Vec2 Float -> String
+showV2 vec	= show vec
+		
+-- World --------------------------------------------------------------------------------------------
+
+eyePos	= Vec3 0.0 0.0 -500.0
+
+-- World setup
+objs =
+	[ Object 
+		(Sphere (Vec3 0.0 0.0 0.0) 100.0)
+		(\x -> Color 1.0 0.3 1.0)
+		(\x -> 0.1) 
+		
+	, Object 
+		(Sphere (Vec3 100.0 0.0 0.0) 80.0)
+		(\x -> Color 0.3 0.3 1.0)
+		(\x -> 0.5) 
+
+	, Object 
+		(Sphere (Vec3 -100.0 0.0 0.0) 80.0)
+		(\x -> Color 0.3 0.3 1.0)
+		(\x -> 0.5) 
+
+	, Object 
+		(Sphere (Vec3 0.0 -100.0 -50.0) 20.0)
+		(\x -> Color 1.0 1.0 1.0)
+		(\x -> 0.8) 
+		
+	, Object 
+		(Plane (Vec3 0.0 100.0 0.0) (Vec3 0.0 -1.0 -0.2).normalise)
+		check
+--		(\x -> Color 1.0 1.0 1.0)
+		(\x -> 0.2) ]
+		
+check (Vec3 x y z)
+	| 	(truncate (z / 100.0) `mod` 2 == 0)
+	  `xor`	(truncate (x / 100.0) `mod` 2 == 0)
+	  `xor` (x < 0.0)
+	  `xor` (z < 0.0)
+	= Color 1.0 1.0 1.0
+	
+	| otherwise
+	= Color 0.2 0.2 0.2
+
+lights =
+	[ LightPoint
+		(Vec3  175.0 -200.0 -100.0)
+		(Color 40000.0 40000.0 40000.0)
+
+	, LightAmbient
+		(Color 0.03 0.03 0.03) ]
+		
+
+-- Main --------------------------------------------------------------------------------------------
+-- Window setup
+windowSize	= Vec2 600 400
+
+main ()
+ = do	frame	= new&{Frame} "RayTracer" windowSize.x windowSize.y
+
+	[ drawPixel frame x y
+ 		| y	<- [0 .. windowSize.y - 1]
+		, x 	<- [0 .. windowSize.x - 1] ]
+
+	coma frame
+		
+coma :: Frame -> ()
+coma frame
+ = do	frame .update
+	coma frame
+	
+plotPixel x y
+ = do	-- putStr $ "plotPixel" %% show x %% show y % "\n"
+  
+ 	color	= tracePixel x y
+ 	putStr	$ show color % "\n\n"
+	
+drawPixel :: Frame -> Int -> Int -> ()
+drawPixel frame x y
+ = do	color	= tracePixel x y
+
+ 	frame .point x y 
+		(colorf&{Frame} color.red color.green color.blue)
+		
+	when (x == 0)
+		frame .update
+	
+
+tracePixel x y
+ = do	x'	= toFloat x - toFloat windowSize.x / 2.0
+ 	y'	= toFloat y - toFloat windowSize.y / 2.0
+ 
+	trace objs lights 
+		eyePos
+ 		(Vec3 x' y' 0.0 - eyePos) .normalise
+		5
+
+
+
+-- Utils -------------------------------------------------------------------------------------------
+fence :: Float -> Float -> Float -> Float
+fence a b x
+	| x < a		= a
+	| x > b		= b
+	| otherwise	= x
+
+
