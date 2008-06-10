@@ -1,18 +1,6 @@
 
-import Prelude;
-
--- | A 3D Float vector
-data Vector3 
-	= Vector3 { 
-		x	:: Float;
-		y	:: Float;
-		z	:: Float;
-	 }
-
-instance Show Vector3 where
- 	show (Vector3 x1 x2 x3)
-	 = show x1 % " " % show x2 % " " % show x3 % " "
-
+import Prelude
+import Math.Vec3
 
 -- | A 3x3 matrix of floats, good for a 2D transform.
 data Matrix33
@@ -20,7 +8,6 @@ data Matrix33
 		Float Float Float
 		Float Float Float
 		Float Float Float
-
 
 project Matrix33 where 
 
@@ -72,11 +59,11 @@ project Matrix33 where
 		(a6 + b6) (a7 + b7) (a8 + b8)
 	
 	-- | Multiply a matrix by a vector
-	mulVec :: Matrix33 -> Vector3 -> Vector3;
+	mulVec :: Matrix33 -> Vec3 Float -> Vec3 Float;
 	mulVec	(Matrix33 a1 a2 a3 a4 a5 a6 a7 a8 a9)
-		(Vector3  x1 x2 x3)
+		(Vec3     x1 x2 x3)
  
- 	 = Vector3	
+ 	 = Vec3	
 	 	(a1 * x1  +  a2 * x2  +  a3 * x3)
  		(a4 * x1  +  a5 * x2  +  a6 * x3)
 		(a7 * x1  +  a8 * x2  +  a9 * x3)

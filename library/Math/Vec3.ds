@@ -1,0 +1,100 @@
+-- 3-dimensional vectors.
+--	This is much the same as Vec2.
+--	It would be nice to have vectors of arbitrary dimension, 
+--	but the 2d and 3d cases are used most often, so we use specialised versions.
+--	
+import Prelude
+import Math.Constants
+
+-- A polymorphic vector of dimension 3
+data Vec3 a
+	= Vec3 {
+		x	:: a;
+		y	:: a;
+		z	:: a;
+	}
+
+-- Operations on float vectors
+project Vec3 Float where
+	-- Update a vector.
+	update :: Vec3 Float -> Vec3 Float -> ()
+	update (Vec3 x1 y1 z1) (Vec3 x2 y2 z2)
+	 = do 	x1	:= x2
+	 	y1	:= y2
+		z1	:= z2
+
+	-- | Take the magnitute of a vector.
+	magnitude (Vec3 x y z)
+	 	= sqrt (x * x + y * y + z * z)
+
+	-- | normalise a vector
+	normalised :: Vec3 Float -> Vec3 Float
+	normalised v	= v . muls (1.0 / v.magnitude) 
+
+	-- | Multiply a vector by a scalar.
+	muls :: Vec3 Float -> Float -> Vec3 Float
+	muls (Vec3 x1 y1 z1) s
+	 	= Vec3 (s * x1) (s * y1) (s * z1)
+
+	-- | Negate a vector
+	negate :: Vec3 Float -> Vec3 Float
+	negate (Vec3 x y z)
+		= Vec3 (-x) (-y) (-z)
+	
+	-- | Add two vectors component wise.
+	add :: Vec3 Float -> Vec3 Float -> Vec3 Float
+	add (Vec3 x1 y1 z1) (Vec3 x2 y2 z2)  	
+		= Vec3 (x1 + x2) (y1 + y2) (z1 + z2)
+
+	-- | Subract two vectors component wise.
+	sub :: Vec3 Float -> Vec3 Float -> Vec3 Float
+	sub (Vec3 x1 y1 z1) (Vec3 x2 y2 z2)  	
+		= Vec3 (x1 - x2) (y1 - y2) (z1 - z2)
+
+	-- | Show a vector as a string.
+	show :: Vec3 Float -> String
+	show (Vec3 x y z)	
+	 	= "Vec2 " % show x % " " % show y % " " % show z
+
+	-- | Accumulate a vector component-wise.
+	acc :: Vec3 Float -> Vec3 Float -> ()
+	acc (Vec3 x1 y1 z1) (Vec3 x2 y2 z2)
+	 = do 	x1	+= x2
+	 	y1	+= y2
+		z1	+= z2
+
+	-- | Sum up a list of vectors component wise
+	sum :: [Vec3 Float] -> Vec3 Float;
+	sum xx 
+	 = Vec3 (foldl (+) 0.0 $ map (\v -> v.x) xx) 
+		(foldl (+) 0.0 $ map (\v -> v.y) xx)
+		(foldl (+) 0.0 $ map (\v -> v.z) xx)
+
+	-- | The dot product for vectors
+	dot :: Vec3 Float -> Vec3 Float -> Float
+	dot (Vec3 x1 y1 z1) (Vec3 x2 y2 z2)
+		= x1 * x2 + y1 * y2 + z1 * z2
+
+	-- | The cross product of two vectors
+	cross :: Vec3 Float -> Vec3 Float -> Vec3 Float
+	cross (Vec3 x1 y1 z1) (Vec3 x2 y2 z2)
+		= Vec3 	(y1*z2 - z1*y2)
+			(z1*x2 - x1*z2)
+			(x1*y2 - y1*x2)
+			
+
+instance Num (Vec3 Float) where
+	(+) 	= add	&{Vec3 Float}
+	(-)	= sub	&{Vec3 Float}
+	negate	= negate &{Vec3 Float}
+
+instance Updatable (Vec3 Float) where
+	(:=)	= update&{Vec3 Float}
+
+instance Accum (Vec3 Float) where
+	(+=)	= acc	&{Vec3 Float}
+
+instance Show (Vec3 Float) where
+	show	= show	&{Vec3 Float}
+
+

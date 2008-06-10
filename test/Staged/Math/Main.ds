@@ -1,11 +1,11 @@
 
-import Math.Matrix.Matrix33;
+import Math.Matrix33;
 
 main ()
  = do {	print	$ show (id&{Matrix33} ())	% "\n";
 
 	trans	= rotate&{Matrix33} 0.5;
-	vec	= Vector3 1.0 0.0 1.0;
+	vec	= Vec3 1.0 0.0 1.0;
 	
  	print	$ trans.show		% "\n";
 	print	$ show vec		% "\n";

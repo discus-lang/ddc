@@ -1,17 +1,6 @@
 
 import Prelude
-
--- A point on the 2D plane
-data Point
-	= Point Float Float
-
-instance Show Point where
- show (Point x y)	= "Point " % show x % " " % show y
-
--- A vector
-data Vector2 
-	= Vector2 Float Float
-
+import Math.Vec2
 
 -- A graphics primimitive
 data Primitive %r
@@ -21,8 +10,8 @@ data Primitive %r
 
 	-- a line
 	| Line {
-		p1	:: Point;
-		p2	:: Point;
+		p1	:: Vec2 Float;
+		p2	:: Vec2 Float;
 	}
 
 	-- transforms ----------------------

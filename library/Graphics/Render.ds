@@ -1,7 +1,7 @@
 
 import Graphics.Primitive;
 import Graphics.Frame;
-import Math.Matrix.Matrix33;
+import Math.Matrix33;
 
 import Data.List;
 
@@ -67,7 +67,7 @@ renderPrim frame ((ctm, co) : cs) prim
 renderLine :: Frame -> Primitive -> Primitive -> ()
 renderLine frame
 	(Color r g b)
-	(Line (Point x0 y0) (Point x1 y1))
+	(Line (Vec2 x0 y0) (Vec2 x1 y1))
 
  = 	frame.line
 		(truncate x0)
@@ -79,10 +79,10 @@ renderLine frame
 
 transformLine :: Matrix33 -> Primitive -> Primitive
 transformLine ctm
-	(Line (Point x0 y0) (Point x1 y1))
+	(Line (Vec2 x0 y0) (Vec2 x1 y1))
  = do 
- 	p0'	= ctm.mulVec (Vector3 x0 y0 1.0)
-	p1'	= ctm.mulVec (Vector3 x1 y1 1.0)
+ 	p0'	= ctm.mulVec (Vec3 x0 y0 1.0)
+	p1'	= ctm.mulVec (Vec3 x1 y1 1.0)
 	
-	Line (Point p0'.x p0'.y) (Point p1'.x p1'.y)
+	Line (Vec2 p0'.x p0'.y) (Vec2 p1'.x p1'.y)
 

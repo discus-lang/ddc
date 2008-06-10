@@ -83,12 +83,12 @@ drawActor :: Actor -> Primitive
 drawActor actor 
  = case actor of
  	Bead ix mode radius p@(Vec2 posX posY) v@(Vec2 velX velY)
-	 -> 	Prims (circle_centered (Point posX posY) radius 10)
+	 -> 	Prims (circle_centered (Vec2 posX posY) radius 10)
 		
 	Wall _ p1@(Vec2 x1 y1) p2@(Vec2 x2 y2)
 	 -> Local
 	 	[ Color 200 200 200
-		, Line (Point x1 y1) (Point x2 y2)]
+		, Line (Vec2 x1 y1) (Vec2 x2 y2)]
 
 	 
 -- | Draw a quadtree as a picture
@@ -112,6 +112,6 @@ drawQuadTree tree
 nodeBox p@(Vec2 x0 y0) size color
  = do 	Local 
 	 	( color 
-	 	: rectangle_centered (Point x0 y0) (size * 2.0) (size * 2.0)) 
+	 	: rectangle_centered (Vec2 x0 y0) (size * 2.0) (size * 2.0)) 
 	
 

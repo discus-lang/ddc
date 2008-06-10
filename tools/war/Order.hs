@@ -50,7 +50,8 @@ libraryModules args =
 	, "Prelude" 
 	, "Math/Constants"
 	, "Math/Vec2"
-	, "Math/Matrix/Matrix33" 
+	, "Math/Vec3"
+	, "Math/Matrix33" 
 	, "Graphics/Primitive"
 	, "Graphics/Shape" 
 	, "Graphics/Raster/Bresenham" ]

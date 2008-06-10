@@ -60,7 +60,7 @@ clockFractal n t	= circ1 : circ2 : circ3 : lines
 
 	-- each element contains three copies of the (n-1) iteration contained within a larger circle.
 	circNm1 =
-		(circle_centered (Point 0.0 0.0) 1.0 50 ) ++ 
+		[ Local (Color 128 128 (n * 50) : (circle_centered (Vec2 0.0 0.0) 1.0 50 ) ) ] ++ 
 		[ Local	(Scale (a / 2.5) (a / 2.5) : clockFractal (n - 1) t ) ]
 
 	circ1	= Local (Translate  0.0 a	: Rotate rot		: circNm1)
@@ -69,7 +69,7 @@ clockFractal n t	= circ1 : circ2 : circ3 : lines
 
 	-- join each iteration to the origin with some lines.
 	lines	= 
-		[ Line (Point 0.0 0.0) (Point 0.0 a)
-		, Line (Point 0.0 0.0) (Point  1.0 (- b))
-		, Line (Point 0.0 0.0) (Point -1.0 (- b)) ]
+		[ Line (Vec2 0.0 0.0) (Vec2 0.0 a)
+		, Line (Vec2 0.0 0.0) (Vec2  1.0 (- b))
+		, Line (Vec2 0.0 0.0) (Vec2 -1.0 (- b)) ]
 		

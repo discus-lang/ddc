@@ -2,7 +2,7 @@
 import Prelude
 import Math.Constants
 
--- A polymorphic vector of dimension 2;
+-- A polymorphic vector of dimension 2
 data Vec2 a
 	= Vec2 {
 		x	:: a;
