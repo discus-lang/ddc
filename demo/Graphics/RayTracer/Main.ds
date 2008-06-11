@@ -164,7 +164,8 @@ data Light
 applyLight :: [Object] -> Vec3 Float -> Vec3 Float -> Light -> Color
 applyLight objs pt n (LightPoint lpt color)
  = do
- 	dir	= (lpt - pt) .normalise
+ 	-- vector from the light to the surface point
+	dir	= (lpt - pt) .normalise
 
 	-- distance from light source to surface
 	dist	= (lpt - pt) .magnitude
@@ -175,14 +176,14 @@ applyLight objs pt n (LightPoint lpt color)
 	-- eliminate negative lights
 	final	= (color .muls mag) .clamp 0.0 999999.0
 	
+	-- check for occluding objects between the light and the surface point
 	case findNearest objs pt dir of
 		Just (_, opt)
 		 -> if (opt - pt) .magnitude < dist
 		 	then Color 0.0 0.0 0.0
 			else final 
 			
-		Nothing	
-		 -> final
+		Nothing	-> final
 		 
 applyLight opt pt n (LightAmbient color)
 	= color
@@ -196,7 +197,7 @@ trace 	:: [Object] 		-- objects in scene
 	-> Int 			-- reflection count
 	-> Color		-- visible color
 	
--- ray exceeded reflection limit
+-- too many reflections
 trace objs lights orig dir 0
 	= Color 0.0 0.0 0.0
 
@@ -218,59 +219,55 @@ trace objs lights orig dir limit
 
 		-- see if ray hits anything else
 		refl	= trace objs lights pt ndir (limit - 1)
-		
---		putStr $ "ndir " % show ndir % "\n"
-		color	= obj .color pt
-		shine	= obj .shine pt
-		
-		-- apply all the lights to this point
+				
+		-- sum the direct lighting of this point
 		lighting 
 			= foldl (+) (Color 0.0 0.0 0.0) 
 			$ map (applyLight objs pt n) lights
-		
+			
+		-- total incoming light is direct lighting plus reflections
+		color	= obj .color pt
+		shine	= obj .shine pt
+	
 		in_light 
-			= refl .muls shine
+			= refl     .muls shine
 			+ lighting .muls (1.0 - shine)
-
+		
+		-- incoming light is modified by surface color
 		(color * in_light) .clamp 0.0 1.0
-
-
-showV2 :: Vec2 Float -> String
-showV2 vec	= show vec
 		
 -- World --------------------------------------------------------------------------------------------
-
 eyePos	= Vec3 0.0 0.0 -500.0
 
--- World setup
+-- | Objects in the world
 objs =
 	[ Object 
 		(Sphere (Vec3 0.0 0.0 0.0) 100.0)
-		(\x -> Color 1.0 0.3 1.0)
-		(\x -> 0.1) 
+		(constf $ Color 1.0 0.3 1.0)
+		(constf 0.1)
 		
 	, Object 
 		(Sphere (Vec3 100.0 0.0 0.0) 80.0)
-		(\x -> Color 0.3 0.3 1.0)
-		(\x -> 0.5) 
+		(constf $ Color 0.3 0.3 1.0)
+		(constf 0.5) 
 
 	, Object 
 		(Sphere (Vec3 -100.0 0.0 0.0) 80.0)
-		(\x -> Color 0.3 0.3 1.0)
-		(\x -> 0.5) 
+		(constf $ Color 0.3 0.3 1.0)
+		(constf 0.5) 
 
 	, Object 
 		(Sphere (Vec3 0.0 -100.0 -50.0) 20.0)
-		(\x -> Color 1.0 1.0 1.0)
-		(\x -> 0.8) 
+		(constf $ Color 1.0 1.0 1.0)
+		(constf 0.8) 
 		
 	, Object 
-		(Plane (Vec3 0.0 100.0 0.0) (Vec3 0.0 -1.0 -0.2).normalise)
-		check
---		(\x -> Color 1.0 1.0 1.0)
-		(\x -> 0.2) ]
+		(Plane 	(Vec3 0.0 100.0 0.0) 
+			(Vec3 0.0 -1.0 -0.2).normalise)
+		checkers
+		(constf 0.2) ]
 		
-check (Vec3 x y z)
+checkers (Vec3 x y z)
 	| 	(truncate (z / 100.0) `mod` 2 == 0)
 	  `xor`	(truncate (x / 100.0) `mod` 2 == 0)
 	  `xor` (x < 0.0)
@@ -280,50 +277,57 @@ check (Vec3 x y z)
 	| otherwise
 	= Color 0.2 0.2 0.2
 
+-- Lights in the world
 lights =
 	[ LightPoint
 		(Vec3  175.0 -200.0 -100.0)
 		(Color 40000.0 40000.0 40000.0)
 
 	, LightAmbient
-		(Color 0.03 0.03 0.03) ]
+		(Color 0.08 0.08 0.08) ]
 		
 
 -- Main --------------------------------------------------------------------------------------------
+
 -- Window setup
 windowSize	= Vec2 600 400
 
 main ()
  = do	frame	= new&{Frame} "RayTracer" windowSize.x windowSize.y
+	drawFrame 
+		frame 
+		(windowSize.x - 1)
+		(windowSize.y - 1)
+		0 0	
 
-	[ drawPixel frame x y
- 		| y	<- [0 .. windowSize.y - 1]
-		, x 	<- [0 .. windowSize.x - 1] ]
-
-	coma frame
-		
+-- | busy wait for esc keypress
 coma :: Frame -> ()
 coma frame
  = do	frame .update
 	coma frame
 	
-plotPixel x y
- = do	-- putStr $ "plotPixel" %% show x %% show y % "\n"
-  
- 	color	= tracePixel x y
- 	putStr	$ show color % "\n\n"
-	
+-- | Draw the whole scene
+drawFrame :: Frame -> Int -> Int -> Int -> Int -> ()
+drawFrame frame xMax yMax x y
+	| y >= yMax	= ()
+	| x >= xMax	= drawFrame frame xMax yMax 0 (y+1)
+	| otherwise
+	= do	drawPixel frame x y
+		drawFrame frame xMax yMax (x+1) y
+		
+-- | Trace and draw a single pixel into the frame.
 drawPixel :: Frame -> Int -> Int -> ()
 drawPixel frame x y
- = do	color	= tracePixel x y
-
+ = do	-- plot a pixel into the frame
+	color	= tracePixel x y
  	frame .point x y 
 		(colorf&{Frame} color.red color.green color.blue)
 		
-	when (x == 0)
+	-- only copy the frame to the screen evey ten lines
+	when (x == 0 
+	   && y `mod` 10 == 0)
 		frame .update
 	
-
 tracePixel x y
  = do	x'	= toFloat x - toFloat windowSize.x / 2.0
  	y'	= toFloat y - toFloat windowSize.y / 2.0
