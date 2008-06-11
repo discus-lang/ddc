@@ -169,3 +169,9 @@ project Float where
 	 = if x > y	then x
  			else y
 
+	clamp :: Float -> Float -> Float -> Float 
+	clamp x a b
+		| x < a		= a
+		| x > b		= b
+		| otherwise	= x
+	

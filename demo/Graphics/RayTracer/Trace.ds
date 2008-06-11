@@ -1,0 +1,52 @@
+
+import Object
+import Light
+
+import Math.Vec3
+
+-- Cast a single ray into the scene
+trace 	:: [Object] 		-- objects in scene
+	-> [Light] 		-- lights in scene
+	-> Vec3 Float 		-- origin of ray
+	-> Vec3 Float 		-- direction of ray
+	-> Int 			-- maximum reflection count
+	-> Color		-- visible color for this ray
+	
+-- too many reflections
+trace objs lights orig dir 0
+	= Color 0.0 0.0 0.0
+
+trace objs lights orig dir limit
+ = do	case findNearest&{Object} objs orig dir of
+
+ 	 -- ray didn't intersect any objects
+ 	 Nothing		
+	  -> Color 0.0 0.0 0.0
+
+	 -- ray hit an object
+	 Just (obj, pt)
+	  -> do	
+	 	-- get the surface normal at that point
+	 	n	= obj.shape.surfaceNormal pt
+
+		-- result angle of ray after reflection
+	 	ndir	= dir - n .muls (2.0 * (n .dot dir))
+
+		-- see if ray hits anything else
+		refl	= trace objs lights pt ndir (limit - 1)
+				
+		-- sum the direct lighting of this point
+		lighting 
+			= foldl (+) (Color 0.0 0.0 0.0) 
+			$ map (apply&{Light} objs pt n) lights
+			
+		-- total incoming light is direct lighting plus reflections
+		color	= obj .color pt
+		shine	= obj .shine pt
+	
+		in_light 
+			= refl     .muls shine
+			+ lighting .muls (1.0 - shine)
+		
+		-- incoming light is modified by surface color
+		(color * in_light) .clamp 0.0 1.0

@@ -1,0 +1,48 @@
+
+export type Color
+
+-- | A color with RGB components
+data Color
+	= Color {
+		red 	:: Float;
+		green 	:: Float;
+		blue 	:: Float;
+	}
+	
+project Color
+ with	{ muls; clamp }
+
+	
+-- | multiply each compoenent by a scalar
+muls :: Color -> Float -> Color
+muls (Color r g b) s
+ = Color (r * s) (g * s) (b * s)
+
+	
+-- | clamp each component to limits
+clamp :: Color -> Float -> Float -> Color
+clamp (Color r g b) min max
+ = Color 
+ 	(r.clamp min max)
+	(g.clamp min max)
+	(b.clamp min max)
+
+
+-- arithmetic is component-wise
+instance Num Color where
+	(+) (Color r1 g1 b1) (Color r2 g2 b2)
+		= Color (r1 + r2) (g1 + g2) (b1 + b2)
+
+	(-) (Color r1 g1 b1) (Color r2 g2 b2)
+		= Color (r1 - r2) (g1 - g2) (b1 - b2)
+
+	(*) (Color r1 g1 b1) (Color r2 g2 b2)
+		= Color (r1 * r2) (g1 * g2) (b1 * b2)
+
+	(/) (Color r1 g1 b1) (Color r2 g2 b2)
+		= Color (r1 / r2) (g1 / g2) (b1 / b2)
+
+
+instance Show Color where
+	show (Color r g b)
+		= "Color " % show r %% show g %% show b

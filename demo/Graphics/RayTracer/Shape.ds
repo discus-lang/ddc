@@ -1,0 +1,61 @@
+
+export type Shape
+
+import Math.Vec3
+
+-- | A primitive shape in the scene
+data Shape
+	= Sphere { 
+		center	:: Vec3 Float;
+		radius	:: Float;
+	}
+
+	| Plane	{ 
+		point	:: Vec3 Float;
+		normal 	:: Vec3 Float;
+	}
+
+project Shape 
+ with	{ distance; surfaceNormal }
+ 
+ 
+-- | Compute the distance to the surface of this shape
+distance 
+	:: Shape 
+	-> Vec3 Float 	-- starting from this point
+	-> Vec3 Float 	-- along this ray
+	-> Maybe Float	-- Nothing if the ray does not intersect the shape
+
+distance shape orig dir
+ 	| Sphere c r	<- shape
+	= do	p	= orig + dir .muls ((c - orig) .dot dir) 
+	 	d_cp	= (p - c) .magnitude
+		d	= (p - orig) .magnitude - sqrt (r * r - d_cp * d_cp)
+		
+		match 	| d_cp >= r			
+			= Nothing
+			
+			| (p - orig) .dot dir <= 0.0	
+			= Nothing
+				
+			| otherwise			
+			= Just d
+
+	| Plane p n	<- shape
+	= if dir .dot n >= 0.0	
+		then Nothing
+		else Just (((p - orig) .dot n) / (dir .dot n))
+
+		
+-- | Compute the surface normal of the shape at this point
+surfaceNormal 	
+	:: Shape	
+	-> Vec3 Float	-- a point on the shape's surface
+	-> Vec3 Float
+
+surfaceNormal shape point
+	| Sphere c r	<- shape
+	= (point - c) .normalise
+		
+	| Plane	p n	<- shape
+	= n

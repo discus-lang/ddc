@@ -1,0 +1,57 @@
+
+import Math.Vec3
+import Object
+import Light
+
+-- | Position of the eye viewing the world
+eyePos	= Vec3 0.0 0.0 -500.0
+
+-- | Lights in the world
+lights =
+	[ LightPoint
+		(Vec3  300.0 -300.0 -100.0)
+		(Color 150000.0 150000.0 150000.0)
+
+	, LightAmbient
+		(Color 0.15 0.15 0.15) ]
+		
+
+-- | Objects in the world
+objs =
+	[ Object 
+		(Sphere (Vec3 0.0 0.0 0.0) 100.0)
+		(constf $ Color 1.0 0.3 1.0)
+		(constf 0.1)
+		
+	, Object 
+		(Sphere (Vec3 180.0 0.0 0.0) 80.0)
+		(constf $ Color 0.1 0.1 1.0)
+		(constf 0.5) 
+
+	, Object 
+		(Sphere (Vec3 -180.0 0.0 0.0) 80.0)
+		(constf $ Color 0.1 0.1 1.0)
+		(constf 0.5) 
+
+	, Object 
+		(Sphere (Vec3 0.0 -130.0 -80.0) 30.0)
+		(constf $ Color 1.0 1.0 1.0)
+		(constf 0.8) 
+		
+	, Object 
+		(Plane 	(Vec3 0.0 100.0 0.0) 
+			(Vec3 0.0 -1.0 -0.2).normalise)
+		checkers
+		(constf 0.5) ]
+		
+-- | A checkerboard pattern along the x/z coords
+checkers (Vec3 x y z)
+	| 	(truncate (z / 100.0) `mod` 2 == 0)
+	  `xor`	(truncate (x / 100.0) `mod` 2 == 0)
+	  `xor` (x < 0.0)
+	  `xor` (z < 0.0)
+	= Color 1.0 1.0 1.0
+	
+	| otherwise
+	= Color 0.2 0.2 0.2
+

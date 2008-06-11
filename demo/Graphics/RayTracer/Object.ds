@@ -1,0 +1,70 @@
+
+export type Object
+
+import Color
+import Shape
+
+import Math.Vec3
+
+-- | An object in the world
+data Object !e $c	
+	= Object { 
+		shape	:: Shape;
+
+		-- diffuse color of the object
+		color	:: Vec3 Float 	-(!e $c)> Color;
+
+		-- amount of reflectance, [0..1]
+		shine 	:: Vec3 Float	-(!e $c)> Float;
+	}
+
+project Object 
+ with	{ findNearest; consider }
+
+
+-- | Find the nearest point of intersection for a ray
+findNearest 
+	:: [Object] 		-- check for intersections on all these objects
+	-> Vec3 Float 		-- ray origin
+	-> Vec3 Float 		-- ray direction
+	-> Maybe 
+		( Object	-- object of first intersected
+		, Vec3 Float)	-- position of intersection, on surface of object
+
+findNearest objs orig dir
+ = do	result	= mapMaybe (consider orig dir) objs
+	
+	case result of
+	 []	-> Nothing
+
+	 _	-> do	(obj, d)	= minT2F result
+	 		Just (obj, orig + dir .muls d)
+
+
+-- nasty comparison to get around compiler bugs
+--	this should be minumumBy (compare `on` snd)
+minT2F :: [(a, Float)] -> (a, Float)
+minT2F (x:xs)	= minT2F' x xs
+	
+minT2F' :: (a, Float) -> [(a, Float)] -> (a, Float)
+minT2F' acc 		[]		= acc
+
+minT2F' acc@(_, y)	(a@(x0, y0) : rest)
+
+	| y0 < y	= minT2F' a rest
+	| otherwise	= minT2F' acc rest
+	
+
+-- | Check if a ray intersects this object
+consider 
+	:: Vec3 Float 		-- origin of ray
+	-> Vec3 Float 		-- direction of ray
+	-> Object 		-- object to test
+	-> Maybe ( Object	-- the object that intersected
+		 , Float)	-- distance of intersection point from origin
+
+consider orig dir obj
+ = case obj .shape .distance orig dir of
+ 	Nothing	-> Nothing
+	Just d	-> Just (obj, d)
+
