@@ -679,9 +679,15 @@ reconOpApp tt op xs
 isUnboxedNumericType :: Type -> Bool
 isUnboxedNumericType tt
  	| Just (v, _, []) <- takeTData tt
-	, elem v 	[ primTInt8U, primTInt16U, primTInt32U, primTInt64U
+	, elem v 	[ primTBoolU
+			, primTInt8U, primTInt16U, primTInt32U, primTInt64U
 			, primTWord8U, primTWord16U, primTWord32U, primTWord64U
 			, primTFloat32U, primTFloat64U]
+	= True
+
+	-- treat pointers as numeric types
+	| Just (v, _, _) <- takeTData tt
+	, v == primTPtrU
 	= True
 	
 	| otherwise

@@ -106,12 +106,11 @@ data VarBind
 
 	-- Value variables.
 	| VNegate
-	| VTuple Int	-- ^ Tuple data constructor of given airity.
+	| VTuple Int		-- ^ Tuple data constructor of given airity.
 
-	| VUnit		-- ^ the unit value.
+	| VUnit			-- ^ the unit value.
 
-	| VTrue
-	| VFalse
+	| VTrue	 | VFalse	-- ^ boxed boolean values.
 
 	| VSuspend Int	-- ^ Suspension function.
 	

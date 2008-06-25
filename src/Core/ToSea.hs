@@ -591,6 +591,8 @@ stripValues' a
 -----
 toSeaConst l
  = case l of
+	C.LBool b	-> E.XLiteral (LBool	b)
+
 	C.LInt8 i	-> E.XLiteral (LInt	$ fromIntegral i)
 	C.LInt16 i	-> E.XLiteral (LInt	$ fromIntegral i)
 	C.LInt32 i	-> E.XLiteral (LInt	$ fromIntegral i)

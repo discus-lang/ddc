@@ -9,7 +9,8 @@ import	Base
 data Bool %r1
 	= False
 	| True
-	
+
+
 not b
  = case b of
  	True	-> False

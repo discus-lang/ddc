@@ -337,8 +337,11 @@ primFuns :: Map String Op
 primFuns 
  = Map.fromList
 
+	-- unboxed ptr functions
+	[ ("primPtrVoid_eq",	OpEq)
+
 	-- unboxed int functions
- 	[ ("primInt32U_neg",	OpNeg)
+ 	, ("primInt32U_neg",	OpNeg)
 	
 	, ("primInt32U_add",	OpAdd)
 	, ("primInt32U_sub",	OpSub)

@@ -31,6 +31,12 @@ showSource tok =
 	VarField str	-> "_" ++ str 
 	Con	str	-> str
 	Symbol	str	-> str
+
+	CBoolU  b	
+	 -> case b of
+	 	True	-> "true#"
+		False	-> "false#"
+
 	CInt	i	-> show i
 	CFloat  f	-> show f
 	CString s	-> show s

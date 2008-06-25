@@ -327,6 +327,7 @@ getConstType' lit
 
 getConstTypeU' lit
  = case lit of
+	LBool	_ -> getGroundType "Bool#"
  	LInt	_ -> getGroundType "Int32#"
 	LFloat	_ -> getGroundType "Float32#"
 	LChar	_ -> getGroundType "Char#"

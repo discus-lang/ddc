@@ -170,7 +170,9 @@ data Proj
 -- (unboxed) literal values
 
 data Lit
-	= LInt8		Integer
+	= LBool		Bool
+	
+	| LInt8		Integer
 	| LInt16	Integer
 	| LInt32	Integer
 	| LInt64	Integer

@@ -226,12 +226,30 @@ pSymbol	= token parseSymbol
 pConstSP :: Parser (Const, SP)
 pConstSP 
  = 	(Parsec.try $ do
+ 		(lit, sp)	<- pUnboxedBoolSP
+		return	(CConstU lit, sp))
+
+  <|>   (Parsec.try $ do
 	 	(lit, sp)	<- pLitSP
 		pTok K.Hash
 		return	(CConstU lit, sp))
   <|>	do
   		(lit, sp)	<- pLitSP
 		return	(CConst lit, sp)
+
+
+-- | Parse an unboxed boolean token
+--	ie  true# or false#
+pUnboxedBoolSP :: Parser (Literal, SP)
+pUnboxedBoolSP = token parseBool
+ where parseBool t
+ 	| K.TokenP	{ K.token = tok }	<- t
+	= case tok of
+		K.CBoolU b	-> Just (LBool   b,	spTP t)
+		_		-> Nothing
+		
+	| otherwise
+	= Nothing
 		
 	
 -- | Parse a literal.
@@ -240,9 +258,9 @@ pLitSP = token parseLit
  where parseLit t
  	| K.TokenP	{ K.token = tok }	<- t
 	= case tok of
-		K.CInt i	-> Just (LInt i,	spTP t)
-		K.CChar	c	-> Just (LChar c,	spTP t)
-		K.CFloat f	-> Just (LFloat f,	spTP t)
+		K.CInt    i	-> Just (LInt    i,	spTP t)
+		K.CChar	  c	-> Just (LChar   c,	spTP t)
+		K.CFloat  f	-> Just (LFloat  f,	spTP t)
 		K.CString s	-> Just (LString s,	spTP t)
 		_		-> Nothing
  	

@@ -102,6 +102,9 @@ tokens :-
 
  forall			{ ptag Forall			}
 
+ true\#			{ ptag (CBoolU True)		}
+ false\#		{ ptag (CBoolU False)		}
+
  \:\:			{ ptag HasType			} 
 
  \<\:			{ ptag IsSubtypeOf		}

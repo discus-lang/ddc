@@ -322,6 +322,10 @@ instance Pretty Type PMode where
 
 makeLiteral lit
  = case lit of
+	LBool   b	
+	 -> case b of
+	 	True	-> ppr "true"
+		False	-> ppr "false"
 	LChar	c	-> ppr $ show c
 	LString s	-> ppr $ show s
  	LInt	i	-> ppr i 

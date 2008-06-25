@@ -1,8 +1,9 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base;
-import Data.String;
-import Control.Exception;
+import Base
+import Data.String
+import Data.Ptr
+import Control.Exception
 
 -- The foreign unboxed FILE type
 --	it reads 'FILE' in the C source
@@ -70,9 +71,9 @@ file_open name mode
  
  	file	= fopenU (dangerUnboxString name_flat) (dangerUnboxString mode_flat)
 
-	case unsafe_castToInt32U file `primInt32U_eq` 0# of
-		1#	-> throw ExceptionIO ("file_open: Can't open file " % name)
-		0#	-> ()
+	case castToVoidPtr file `primPtrVoid_eq` primPtrVoid_null of
+		true#	-> throw ExceptionIO ("file_open: Can't open file " % name)
+		false#	-> ()
 		
 	file
 

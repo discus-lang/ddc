@@ -276,6 +276,11 @@ prettyExpB x
 instance Pretty Lit PMode where
  ppr xx
   = case xx of
+	LBool   b
+	 -> case b of
+	 	True	-> ppr "true#"
+		False	-> ppr "false#"
+
 	LInt8	i	-> i	% "#8i"
 	LInt16	i	-> i	% "#16i"
 	LInt32	i	-> i	% "#32i"

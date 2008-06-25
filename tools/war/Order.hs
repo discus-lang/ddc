@@ -28,6 +28,7 @@ libraryModules args =
 	, "Class/Foldable"
 	, "Class/Functor"
 	, "Class/Monad"
+	, "Data/Ptr"
 	, "Data/Word32U"
 	, "Data/Int32U"
 	, "Data/Int"

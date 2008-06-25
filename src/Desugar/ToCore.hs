@@ -494,6 +494,11 @@ toCoreLit tLit lit
 	= toCoreLit' (C.stripToShapeT tLit) lit
 	
 toCoreLit' tLit lit
+	-- boolean
+	| S.LBool b		<- lit
+	, Just (v, _, _)	<- T.takeTData tLit
+	= case Var.bind v of
+		Var.TBoolU	-> (C.LBool b, False)
 
 	-- integers
 	| S.LInt i		<- lit
@@ -545,6 +550,13 @@ toCoreConst tt const
  	= toCoreConst' (C.stripToShapeT tt) const
 
 toCoreConst' tt const
+	-- unboxed booleans
+	| S.CConstU lit			<- const
+	, S.LBool b			<- lit
+	, Just (v, k, [])		<- T.takeTData tt
+	= case Var.bind v of
+		Var.TBoolU	-> C.XLit $ C.LBool b
+
 
 	-- unboxed integers
 	| S.CConstU lit			<- const

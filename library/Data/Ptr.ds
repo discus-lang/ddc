@@ -1,0 +1,15 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base
+
+foreign import "(void *)"
+ castToVoidPtr
+ 	:: forall a
+	.  Ptr# a -> Ptr# Void#
+
+foreign import "primPtrVoid_eq"
+ primPtrVoid_eq :: Ptr# Void# -> Ptr# Void# -> Bool#
+
+foreign import "0"
+ primPtrVoid_null :: Ptr# Void# 
+

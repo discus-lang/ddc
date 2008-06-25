@@ -69,6 +69,7 @@ data Token
 	| Symbol	String		-- a symbol
 
 	-- Literal values ------------------------------------------------------
+	| CBoolU	Bool		-- unboxed boolean, true#, false#
 	| CInt		Int
 	| CChar		Char
 	| CFloat	Float
