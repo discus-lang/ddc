@@ -119,8 +119,8 @@ newString length
 	-- round length up to 4 byte word boundary for the DataR object.
 	spill	= mod len 4#
 	lenS	= case spill #== 0# of
-			1#	-> len
-			0#	-> len + (4# - spill)
+			true#	-> len
+			false#	-> len + (4# - spill)
 
 	-- alloc the object.
 	str 	:: String %r
@@ -183,8 +183,8 @@ primString_eq	s1 s2
 	s2M	= string_flatten s2
 	
 	case strcmpU (dangerUnboxString s1M) (dangerUnboxString s2M) `primInt32U_eq` 0# of
-  		1#	-> True
-		0#	-> False
+  		true#	-> True
+		false#	-> False
 
 
 -- Instances ---------------------------------------------------------------------------------------

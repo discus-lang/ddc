@@ -3,10 +3,10 @@ import Data.Int32U;
 
 ack m n
  = case primInt32U_eq m 0# of {
- 	1#	-> n + 1#;
-	0#	-> case primInt32U_eq n 0# of {
-			1#	-> ack (m - 1#) 1#;
-			0#	-> ack (m - 1#) (ack m (n - 1#));
+ 	true#	-> n + 1#;
+	false#	-> case primInt32U_eq n 0# of {
+			true#	-> ack (m - 1#) 1#;
+			false#	-> ack (m - 1#) (ack m (n - 1#));
 		};
  };
  
@@ -21,17 +21,3 @@ main ()
 
 
 
-{-
-ack m n
- = match {
- 	| 1#	<- m #== 0#
-	= n #+ 1;
-	
-	| 1#	<- n #== 0#
-	= ack (m #- 1#) 1#;
-	
-	| otherwise
-	= ack (m #- 1#) (ack m (n #- 1#));
- };
- 
--}

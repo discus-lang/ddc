@@ -28,22 +28,22 @@ foreign import "primInt32U_mod"
  primInt32U_mod	:: Int32# -> Int32# -> Int32#
  
 foreign import "primInt32U_eq"	
- primInt32U_eq	:: Int32# -> Int32# -> Int32#
+ primInt32U_eq	:: Int32# -> Int32# -> Bool#
 
 foreign import "primInt32U_neq"	
- primInt32U_neq	:: Int32# -> Int32# -> Int32#
+ primInt32U_neq	:: Int32# -> Int32# -> Bool#
 
 foreign import "primInt32U_gt"	
- primInt32U_gt	:: Int32# -> Int32# -> Int32#
+ primInt32U_gt	:: Int32# -> Int32# -> Bool#
 
 foreign import "primInt32U_ge"	
- primInt32U_ge	:: Int32# -> Int32# -> Int32#
+ primInt32U_ge	:: Int32# -> Int32# -> Bool#
 
 foreign import "primInt32U_lt"	
- primInt32U_lt	:: Int32# -> Int32# -> Int32#
+ primInt32U_lt	:: Int32# -> Int32# -> Bool#
 
 foreign import "primInt32U_le"	
- primInt32U_le	:: Int32# -> Int32# -> Int32#
+ primInt32U_le	:: Int32# -> Int32# -> Bool#
 
 
 -----

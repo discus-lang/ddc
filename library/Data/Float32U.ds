@@ -30,22 +30,22 @@ foreign import "primFloat32U_mod"
 
 -- comparisons
 foreign import "primFloat32U_eq"
- primFloat32U_eq	:: Float32# -> Float32# -> Int32#
+ primFloat32U_eq	:: Float32# -> Float32# -> Bool#
 
 foreign import "primFloat32U_neq"
- primFloat32U_neq	:: Float32# -> Float32# -> Int32#
+ primFloat32U_neq	:: Float32# -> Float32# -> Bool#
 
 foreign import "primFloat32U_gt"
- primFloat32U_gt	:: Float32# -> Float32# -> Int32#
+ primFloat32U_gt	:: Float32# -> Float32# -> Bool#
 
 foreign import "primFloat32U_ge"
- primFloat32U_ge	:: Float32# -> Float32# -> Int32#
+ primFloat32U_ge	:: Float32# -> Float32# -> Bool#
 
 foreign import "primFloat32U_lt"
- primFloat32U_lt	:: Float32# -> Float32# -> Int32#
+ primFloat32U_lt	:: Float32# -> Float32# -> Bool#
 
 foreign import "primFloat32U_le"
- primFloat32U_le	:: Float32# -> Float32# -> Int32#
+ primFloat32U_le	:: Float32# -> Float32# -> Bool#
 
 
 instance Eq Float32# where

@@ -140,7 +140,7 @@ project Body where
 		attract_force	= m1 * (m2 / d2)
 
 		forceS
-			| 1#	<- d `primFloat32U_lt` attract_rangeU
+			| true#	<- d `primFloat32U_lt` attract_rangeU
 			= attract_force * (d / attract_rangeU) 
 			  -  (attract_force * (attract_rangeU / d))
 
@@ -158,7 +158,7 @@ vec2_angleU :: Float32# -> Float32# -> Float32#
 vec2_angleU x y
  = do 	piU	= 3.1415926536#
 	match 
-		| 1#	<- x `primFloat32U_lt` 0.0#
+		| true#	<- x `primFloat32U_lt` 0.0#
 		= piU + atanU (y / x)
 		
 		\= atanU (y / x)

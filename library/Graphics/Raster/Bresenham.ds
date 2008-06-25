@@ -21,24 +21,24 @@ drawBresenhamLine
 	dy	= y1	- y0
 
 	dyP	= case dy `primInt32U_lt` 0# of 
-			1#	-> -dy
-			0#	-> dy
+			true#	-> -dy
+			false#	-> dy
 
 	stepy	= case dy `primInt32U_lt` 0# of 
-			1#	-> -width
-			0#	-> width
+			true#	-> -width
+			false#	-> width
 
 	dy2	= dyP * 2#
 
 	-- setup dx
 	dx	= x1	- x0
 	dxP	= case dx `primInt32U_lt` 0# of 
-			1#	-> -dx
-			0#	-> dx
+			true#	-> -dx
+			false#	-> dx
 		
 	stepx	= case dx `primInt32U_lt` 0# of 
-			1#	-> - 1#
-			0#	-> 1#
+			true#	-> - 1#
+			false#	-> 1#
 		
 	dx2	= dxP * 2#
 
@@ -50,14 +50,14 @@ drawBresenhamLine
 	arrayUI_poke frame (x0 + y0w) c
 	
 	case dx2 `primInt32U_gt` dy2 of 
-	 1# 
+	 true# 
 	  -> do fraction1	= dy2 - dxP
 
 		drawLoopH frame c
 			stepx	stepy	dx2	dy2
 			x0	x1	y0w	fraction1;
 		
-	 0# 
+	 false# 
 	  -> do fraction 	= dx2 - dyP;
 
 		drawLoopV frame c
@@ -73,10 +73,10 @@ drawLoopH
 	fraction
 
  = match 
- 	| 1#	<- x0 `primInt32U_eq` x1
+ 	| true#	<- x0 `primInt32U_eq` x1
 	= ()
 	
-	| 1#	<- fraction `primInt32U_ge` 0#
+	| true#	<- fraction `primInt32U_ge` 0#
 	= do 
 		x0' :: Int32#
 		x0'		= x0		+ stepx
@@ -104,10 +104,10 @@ drawLoopV
 	fraction
 
  = match 
-	| 1#	<- y0w `primInt32U_eq` y1w 
+	| true#	<- y0w `primInt32U_eq` y1w 
 	= ()
 	
-	| 1#	<- fraction `primInt32U_ge` 0# 
+	| true#	<- fraction `primInt32U_ge` 0# 
 	= do 
 		x0' :: Int32#
 		x0'		= x0		+ stepx
