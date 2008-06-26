@@ -189,7 +189,7 @@ coreThread
 	-> IO Tree
 	
 coreThread hTree cTree
- = do	let tree'	= {-# SCC "Core.Thread " #-} 
+ = do	let tree'	= {-# SCC "Core.Thread" #-} 
  			  threadTree hTree cTree
  
  	dumpCT DumpCoreThread "core-thread" tree'
