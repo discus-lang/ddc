@@ -5,6 +5,7 @@ GHC            = ghc
 
 # TARGET: Set the target architecture
 #    linux-x86
+#    linux-x86_64
 #    darwin-x86
 
 # BUILDFLAVOUR: Set the optimisations to enable when compiling the compiler

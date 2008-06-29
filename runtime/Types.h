@@ -30,6 +30,19 @@ typedef u_int32_t		Char32;
 
 typedef char*			String;
 
+#if BITS == 32
+typedef int32_t			MachineInt;
+typedef u_int32_t		MachineWord;
+typedef u_int32_t		SizePtr;
+typedef u_int16_t		HalfPtr;
+
+#elif BITS == 64
+typedef int64_t			MachineInt;
+typedef u_int64_t		MachineWord;
+typedef u_int64_t		SizePtr;
+typedef u_int32_t		HalfPtr;
+
+#endif
 
 // -----
 // Obj

@@ -9,7 +9,7 @@
 
 Int32	primRuntime_slotUsage (Obj* x)
 {
-	return	((Int32)_ddcSlotPtr - (Int32)_ddcSlotBase) / sizeof (Obj*);
+	return	((SizePtr)_ddcSlotPtr - (SizePtr)_ddcSlotBase) / sizeof (Obj*);
 }
 
 

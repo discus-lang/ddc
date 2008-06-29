@@ -67,7 +67,7 @@ bool	_objIsAnchored (Obj* obj)
 	return	(_getObjFlags (obj) & _ObjFlagAnchored) ? true : false;
 }
 
-#ifdef ArchPtr32
+#if !defined(SPLIT_POINTERS)
 void	_writeBrokenHeart 
 		( Obj* obj
 		, Obj* newObj)
@@ -75,8 +75,8 @@ void	_writeBrokenHeart
 	_DEBUG(assert(obj    != 0));
 	_DEBUG(assert(newObj != 0));
 
-	Word32* obj32	= (Word32*)obj;
-	obj32[0]	= (Word32)newObj;
+	SizePtr* objPtr	= (SizePtr*)obj;
+	objPtr[0]	= (SizePtr)newObj;
 }
 
 Obj*	_readBrokenHeart
@@ -84,16 +84,14 @@ Obj*	_readBrokenHeart
 {
 	_DEBUG(assert(obj   != 0));
 
-	Word32*	obj32	= (Word32*)obj;
-	Obj*	newObj	= (Obj*)obj32[0];
+	SizePtr* objPtr = (SizePtr*)obj;
+	Obj*	newObj	= (Obj*) objPtr[0];
 	
 	_DEBUG(assert(newObj != 0));
 	return	newObj;
 }
-#endif // ArchPtr32
 
-
-#ifdef ArchPtr64
+#else
 void	_writeBrokenHeart
 		( Obj* obj
 		, Obj* newObj)
@@ -101,13 +99,13 @@ void	_writeBrokenHeart
 	_DEBUG(assert(obj    != 0));
 	_DEBUG(assert(newObj != 0));
 
-	Word64	ptr	= (Word64) newObj;
-	Word32	ptrH	= (Word32) (ptr >> 32);
-	Word32	ptrL	= (Word32) (ptr & 0x0ffffffff);
+	SizePtr ptr	= (SizePtr) newObj;
+	HalfPtr ptrH	= (HalfPtr) (ptr >> 32);
+	HalfPtr ptrL	= (HalfPtr) (ptr & 0x0ffffffff);
 
-	Word32*	obj32	= (Word32*)obj;
-	obj32[0]	= ptrL;
-	obj32[1]	= ptrH;
+	HalfPtr* objPtr	= (HalfPtr*) obj;
+	objPtr[0]	= ptrL;
+	objPtr[1]	= ptrH;
 }
 
 Obj*	_readBrokenHeart 
@@ -115,17 +113,18 @@ Obj*	_readBrokenHeart
 {
 	_DEBUG(assert(obj != 0));
 
-	Word32* obj32	= (Word32*)obj;
+	HalfPtr* objPtr	= (HalfPtr*)obj;
 	
-	Word32	ptrL	= obj32[0];
-	Word32	ptrH	= obj32[1];
+	HalfPtr	ptrL	= objPtr[0];
+	HalfPtr	ptrH	= objPtr[1];
 	
-	Word64	ptr	= ((Word64)ptrH << 32) | (Word64)ptrL;
+	SizePtr	ptr	= ((SizePtr)ptrH << 32) | (SizePtr)ptrL;
 
 	_DEBUG(assert(ptr != 0));
 	return	(Obj*) ptr;
 }
-#endif // ArchPtr64
+
+#endif
 
 
 // -----------------------------------------------------------------------------

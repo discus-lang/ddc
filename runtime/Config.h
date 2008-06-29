@@ -29,9 +29,6 @@
 //#define _DEBUG(x)	x;
 #define _DEBUG(x)
 
-#define ArchPtr32
-//#define ArchPtr64
-
 void	_ddcConfigSetup();
 
 
