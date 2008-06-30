@@ -73,9 +73,9 @@ project Vec2 Float where
 	angleVV p1 p2
 	 = do 	m1	= p1.magnitude 
 	 	m2	= p2.magnitude 
-		d	= p1.dot p2
-		acos $ d / (m1 * m2)
-		
+		d	= (p1.dot p2) / (m1 * m2)
+		acos $ d .clamp -1.0 1.0
+
 	-- | The dot product for vectors
 	dot :: Vec2 Float -> Vec2 Float -> Float
 	dot (Vec2 x1 x2) (Vec2 y1 y2)
