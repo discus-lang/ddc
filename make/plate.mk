@@ -46,7 +46,7 @@ src_c		+= $(src_stubC_c)
 
 %.o : %.c
 	@echo "* Compiling $<"
-	@gcc $(GCC_FLAGS) -c $< -o $@ 
+	gcc $(GCC_FLAGS) -c $< -o $@ 
 
 %.dep : %.c
 	@echo "* Building Deps $<"

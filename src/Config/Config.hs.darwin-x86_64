@@ -1,0 +1,87 @@
+
+-- Compiler configuration for the darwin-x86 target
+--	Everything specific to this target should be in this file.
+--
+module Config.Config where
+
+import Main.Arg
+
+-- The extension to use for a shared object
+extSharedObject
+	= "dylib"
+
+-- | The system command to compile a Sea source file.
+makeSeaCompileCmd
+	:: [Arg]		-- ^ ddc command line args
+	-> FilePath		-- ^ base path of source file
+	-> FilePath		-- ^ path to runtime system
+	-> FilePath		-- ^ path to base libraries
+	-> [FilePath]		-- ^ extra include dirs
+	-> [String]		-- ^ extra flags to compile with, from .build file
+	-> String		-- ^ the compile command
+	
+makeSeaCompileCmd
+	args pathSourceBase pathRuntime pathLibrary
+	extraIncludeDirs extraCompileFlags
+	
+	=  "gcc"
+	++ " -Werror"
+	++ " -std=c99"
+	++ " -m64"
+
+	++ " -c " ++ pathSourceBase ++ ".ddc.c"
+	++ " -o " ++ pathSourceBase ++ ".o"
+
+	++ (if elem Debug args
+		then " -g"
+		else "")
+
+	++ (if elem OptAll args
+		then " -O3"
+		else "")
+
+	++ (if elem Profile args
+		then " -pg"
+		else "")
+
+	++ " -I."
+	++ " -I"  ++ (take (length pathRuntime - length "/runtime") pathRuntime)
+	++ " -I"  ++ pathLibrary
+
+	++ concat [ " -I" ++ p | p <- extraIncludeDirs ]
+	++ concat [ " "   ++ f | f <- extraCompileFlags ]
+
+
+-- | The system command to link objects into an executable.
+makeLinkCmd
+	:: [Arg]		-- ^ ddc command line args
+	-> [FilePath]		-- ^ objects to link
+	-> FilePath		-- ^ path of output binary
+	-> FilePath		-- ^ path to the runtime system
+	-> [FilePath]		-- ^ extra libs to link with
+	-> [FilePath]		-- ^ extra lib dirs to search
+	-> String
+
+makeLinkCmd
+	args objects outFile pathRuntime extraLibs extraLibDirs
+
+	= "gcc"
+	++ " -std=c99"
+	++ " -m64"
+	++ " -o " ++ outFile
+
+	++ (if elem Profile args 
+		then " -pg" 
+		else "")
+
+	++ " " ++ concat [" " ++ obj | obj <- objects]
+					
+	++ (if elem StaticRuntime args 
+		then " " ++ pathRuntime ++ "/libddc-runtime.a"
+		else " " ++ pathRuntime ++ "/libddc-runtime.dylib")
+
+	++ " -lm"
+
+	++ " " ++ concat [" -L" ++ dir | dir <- extraLibDirs]
+	++ " " ++ concat [" -l" ++ lib | lib <- extraLibs]
+

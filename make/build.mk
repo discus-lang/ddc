@@ -83,22 +83,28 @@ endif
 
 # -- Target setup -----------------------------------------------------------------------
 
-# -- Linux for 32-bit x86
+# -- Linux on x86
 ifeq "$(Target)" "linux-x86"
 GCC_FLAGS           += -fPIC -D BITS=32
 BUILD_SHARED        := gcc -shared
 SHARED_SUFFIX       := so
 
-# -- Linux for 64-bit x86
+# -- Linux on x86_64
 else ifeq "$(Target)" "linux-x86_64"
 GCC_FLAGS           += -fPIC -D BITS=64
 BUILD_SHARED        := gcc -shared
 SHARED_SUFFIX       := so
 
-# -- Darwin x86
+# -- Darwin on x86
 else ifeq "$(Target)" "darwin-x86"
 GCC_FLAGS           += -fPIC -D BITS=32
 BUILD_SHARED        := gcc -dynamiclib -undefined dynamic_lookup
+SHARED_SUFFIX       := dylib
+
+# -- Darwin on x86_64
+else ifeq "$(Target)" "darwin-x86_64"
+GCC_FLAGS           += -fPIC -D BITS=64 -m64
+BUILD_SHARED        := gcc -m64 -dynamiclib -undefined dynamic_lookup
 SHARED_SUFFIX       := dylib
 
 else
