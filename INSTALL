@@ -2,6 +2,8 @@
   The Disciplined Disciple Compiler: Build and installation instructions.
 --------------------------------------------------------------------------------
 
+Building:
+
   0) You will need working copies of GHC (at least 6.8.1) and GCC installed.
 
   1) Download the source.
@@ -11,7 +13,7 @@
      
       b) or use darcs to get the head branch:
 
-          $ darcs get http://code.haskell.org/ddc/disciple-HEAD
+          $ darcs get http://code.haskell.org/ddc/ddc-head
       
   2) Make a local copy of the build config file.
 
@@ -27,26 +29,35 @@
   
      $ bin/war -ddc O
 
-  6) Copy the compiler binary to your ~/bin dir 
+  5b) Run some fancy graphics demos (these open up new X11 windows)
+
+     $ bin/war demo -ddc O
+
+
+Installation:
+
+  0) You can avoid this step by always running ddc from its root build directory
+     In this case it will still be able to find its libraries and runtime
+     system. Otherwise you can install is as a regular application:
+
+  1) Copy the compiler binary to your ~/bin dir 
       (where ~/bin is in your PATH)
   
      $ mkdir ~/bin
      $ cp bin/ddc ~/bin/ddc.real
 
-  7) For Mac OS X: Copy the runtime library to your ~/lib dir
+  2) For Mac OS X: Copy the runtime library to your ~/lib dir
      
      $ mkdir ~/lib
      $ cp runtime/libddc-runtime.dylib ~/lib
 
-  8) Create an alias to give ddc the path to its libraries and (static) runtime.
+  3) Create an alias to give ddc the path to its libraries and (static) runtime.
       (You'll probably want to add this to your .profile, or similar)
   
      $ alias ddc='~/bin/ddc.real -basedir $(DDC_BUILD)'  (for bash)
      $ alias ddc '~/bin/ddc.real -basedir $(DDC_BUILD)'  (for c shells)
 
-
-
-  9) Compile and run your first program
+  4) Compile and run your first program
   
      $ echo 'main () = println "Hello world"' > Main.ds
      $ ddc -make Main.ds -o hello
