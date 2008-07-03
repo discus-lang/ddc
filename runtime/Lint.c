@@ -4,6 +4,7 @@
 #include "Error.h"
 #include "Macro.h"
 
+// Debugging
 #if	_DDC_TRACE_GC
 static inline void _TRACE (const char* format, ...)
 {
@@ -22,6 +23,7 @@ static inline void _TRACE (const char* format, ...)
 #endif
 
 
+// Trace through the heap looking for malformed objects or bad pointers.
 void	_lintHeap
 		( Word8* base
 		, Word8* top)
@@ -35,7 +37,6 @@ void	_lintHeap
 	while (ptr < top)
 	{
 		Obj*	obj	= (Obj*)ptr;
-//		TRACES(_printObjP(obj));
 		
 		enum _ObjType
 			objType	= _objType (obj);
@@ -53,7 +54,6 @@ void	_lintHeap
 			_PANIC ("_lintHeap: Heap is broken.\n");
 		}
 
-		//
 		switch (objType) {
 		 case _ObjTypeThunk:	_lintThunk (obj, base, top);	break;
 		 case _ObjTypeSusp: 	_lintSusp  (obj, base, top);	break;
@@ -66,9 +66,6 @@ void	_lintHeap
 		 
 		}
 
-//		TRACE ("  obj %p OK\n", obj);
-//		TRACE ("\n");
-
 		ptr	+= _objSize (obj);
 	}
 
@@ -77,6 +74,7 @@ void	_lintHeap
 }
 
 
+// Lint all the data reachable from the GC slot stack.
 void	_lintSlotsD()
 {
 	_lintSlots 
@@ -111,6 +109,7 @@ void	_lintSlots
 }
 
 
+// Lint a pointer which is supposed to point to a valid object.
 void	_lintObjPtr
 		( Obj*		obj
 		, Word8*	base
@@ -151,7 +150,6 @@ void	_lintObjPtr
 		}
 	}
 
-
 	if (objType == _ObjTypeUnknown)
 	{
 		_ERROR ("Object type is Unknown.\n");
@@ -166,11 +164,10 @@ void	_lintObjPtr
 		_ERROR ("  obj        = %p\n", obj);
 		_panicCorruption();
 	}
-
-
 }
 
 
+// Lint an Thunk object which has a valid header.
 void	_lintThunk
 		( Obj*		obj
 		, Word8*	base
@@ -183,6 +180,7 @@ void	_lintThunk
 }
 
 
+// Lint a Susp object which has a valid header.
 void	_lintSusp
 		( Obj* 		obj
 		, Word8*	base
@@ -209,6 +207,7 @@ void	_lintSusp
 }
 
 
+// Lint a Data object which has a valid header.
 void	_lintData
 		( Obj* 		obj
 		, Word8*	base
@@ -221,6 +220,7 @@ void	_lintData
 }
 
 
+// Lint a mixed data object which has a vlaid header.
 void	_lintDataM
 		( Obj*		obj
 		, Word8*	base
@@ -233,9 +233,4 @@ void	_lintDataM
 	for (UInt i = 0; i < data ->ptrCount; i++)
 		_lintObjPtr (ptr[i], base, top);
 }
-
-
-
-
-
 

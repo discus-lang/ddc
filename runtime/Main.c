@@ -11,11 +11,13 @@
 #include "Collect.ci"
 #include "Alloc.ci"
 
+
+// Initialise the DDC runtime system
 void	_ddcRuntimeInit 
 		( int argc
 		, char** argv)
 {
-	// Create profile.
+	// Allocate profile data.
 	_ddcProfile	= _ddcProfileNew ();
 	_ddcConfigSetup ();
 
@@ -52,14 +54,14 @@ void	_ddcRuntimeInit
 
 	// Create stacks and heap.
 	_contextInit 	(initContextStackSize);
-	_slotInit	(initSlotStackSize);
+	_collectInit	(initSlotStackSize);
 	_allocInit	(initHeapSize);
 
 
 	// Alloc atoms that are owned by the RTS.
-	_primUnit	= _allocDataAnchored (0, 0);
-	_primTrue	= _allocDataAnchored (1, 0);
-	_primFalse	= _allocDataAnchored (0, 0);
+	_primUnit	= _allocData_anchored (0, 0);
+	_primTrue	= _allocData_anchored (1, 0);
+	_primFalse	= _allocData_anchored (0, 0);
 	
 
 	// Dump trace to stdout.
@@ -78,6 +80,7 @@ void	_ddcRuntimeInit
 }
 
 
+// Shutdown the runtime system, and emit profiling information if need be.
 void	_ddcRuntimeCleanup ()
 {
 	_ddcProfileMutatorEnd();
@@ -95,6 +98,8 @@ void	_ddcRuntimeCleanup ()
 }
 
 
+// Parse RTS options
+//	TODO:	this is pretty nasty.
 void	_ddcParseArgs
 		( int 		argc
 		, char**	argv
@@ -238,6 +243,7 @@ void	_ddcParseArgs
 }
 
 
+// Check that the profiling options requested have actually been built into this system.
 void	_ddcCheckProfileBuilt
 		( char*			option
 		, _ProfileEnable	flag)
@@ -252,6 +258,7 @@ void	_ddcCheckProfileBuilt
 }
 
 
+// Dump the RTS help page to the console.
 void	_ddcRTSHelp ()
 {
 	printf ("%s.\n", _DDC_VERSION);

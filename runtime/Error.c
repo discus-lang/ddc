@@ -6,7 +6,10 @@
 #include "Collect.ci"
 #include "Alloc.ci"
 
-// -- Errors which probably the user's fault --------------------------------------------
+
+// User errors -------------------------------------------------------------------------------------
+//	These will probably be the users fault
+
 // This needs to be defined Control.Exception
 Obj*	Control_Exception_ExceptionCaseNoMatch (Obj* moduleName, Obj* line, Obj* column);
 
@@ -21,9 +24,14 @@ void	_deathCase (const char* moduleName, Int32 line, Int32 column)
 	abort();
 }
 
-// -- Errors which are probably due to a bug in the runtime system ----------------------
 
-// -- Ran out of heap space.
+
+// Internal errors ---------------------------------------------------------------------------------
+//	These will probably be due to a bug in the runtime system.
+
+// Ran out of heap space.
+//	This can also be happen when we run out of heap space.
+//	The implementation can't grow the heap yet.
 void	_panicOutOfHeap (UInt allocCount, UInt64 heapSize)
 {
 	fprintf (stderr, "*** DDC RTS PANIC! Out of heap space.\n");
@@ -33,8 +41,8 @@ void	_panicOutOfHeap (UInt allocCount, UInt64 heapSize)
 }
 
 
-// -- Ran out of slots on the shadow stack.
-// -- 	This can also be due to regular stack overflow problems in the user source.
+// Ran out of slots on the shadow stack.
+// 	This can also be due to regular stack overflow problems in the user source.
 void	_panicOutOfSlots (void)
 {
 	fprintf ( stderr
@@ -45,7 +53,7 @@ void	_panicOutOfSlots (void)
 }
 
 
-// -- We don't have enough eval functions in Eval.ci, or Eval.ci is wrong.
+// We don't have enough eval functions in Eval.ci, or Eval.ci is wrong.
 void	_panicApply (void)
 {
 	fprintf ( stderr
@@ -56,7 +64,7 @@ void	_panicApply (void)
 }
 
 
-// -- This is likely a bug in the runtime system.
+// This is likely a bug in the runtime system.
 void	_panicSlotUnderflow (void)
 {
 	fprintf ( stderr
@@ -66,7 +74,7 @@ void	_panicSlotUnderflow (void)
 	abort();
 }
 
-// -- This is likely a bug in the runtime system.
+// This is likely a bug in the runtime system.
 void	_panicCorruption (void)
 {
 	fprintf ( stderr

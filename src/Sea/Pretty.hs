@@ -295,7 +295,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> "_allocData (" % "_tag" % sV ctor % ", " % arity % ")"
 
 	XAllocDataAnchored ctor arity
-	 -> "_allocDataAnchored (" % "_tag" % sV ctor % ", " % arity % ")"
+	 -> "_allocData_anchored (" % "_tag" % sV ctor % ", " % arity % ")"
 
 	XAllocSusp  thunk arity
 	 -> "_allocSusp (" % sV thunk % ", " % arity % ")"

@@ -16,7 +16,16 @@
 #include "Collect.ci"
 #include "Alloc.ci"
 
-// -----
+// Functions to apply extra arguments to a thunk / activation record.
+//	If the number of extra arguments gives us enough to call supercominator
+//	then do that. If not then we have to build a new thunk with all the 
+//	previous args, plus the new ones.
+//
+//	TODO: 	When adding more args, build a bigger object instead of copying 
+//		one which holds slack space.
+
+
+// Apply another argument to a thunk.
 Obj*	_apply1		(Obj* obj, Obj* x1)
 {
 	_DEBUG	(assert (_getObjTag(obj) == _tagThunk));
@@ -70,8 +79,7 @@ Obj*	_apply1		(Obj* obj, Obj* x1)
 }
 
 
-
-
+// Apply two more arguments to a thunk
 Obj*	_apply2		(Obj* obj, Obj* x1, Obj* x2)
 {
 	_DEBUG (assert (_getObjTag(obj) == _tagThunk));
@@ -138,7 +146,7 @@ Obj*	_apply2		(Obj* obj, Obj* x1, Obj* x2)
 
 
 
-
+// Apply three more arguments to a thunk
 Obj*	_apply3		(Obj* obj, Obj* x1, Obj* x2, Obj* x3)
 {
 	_DEBUG (assert (_getObjTag(obj) == _tagThunk));
@@ -212,8 +220,7 @@ Obj*	_apply3		(Obj* obj, Obj* x1, Obj* x2, Obj* x3)
 }
 
 
-
-
+// Apply four more arguments to a thunk.
 Obj*	_apply4		(Obj* obj, Obj* x1, Obj* x2, Obj* x3, Obj* x4)
 {
 	_DEBUG (assert (_getObjTag(obj) == _tagThunk));
@@ -294,5 +301,3 @@ Obj*	_apply4		(Obj* obj, Obj* x1, Obj* x2, Obj* x3, Obj* x4)
 	_LEAVE(5);
 	return objR;
 }
-
-

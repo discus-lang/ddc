@@ -13,14 +13,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Heap Allocations --------------------------------------------------------------------------------
+
+// Allocate some space in the heap.
+//	This just makes the space, the caller is responsible for building
+//	a valid object and adding the header.
 static inline 
 void*	_alloc		(UInt byteCount)
 {
-	_DEBUG(assert(byteCount >= 8));
-	_DEBUG(assert((byteCount % 4) == 0));
+#if _DEBUG
+	// Avoid allocating object of a size that will mis-align the heap.
+	assert(byteCount >= 8)
+	assert((byteCount % 4) == 0);
+#endif
 
-	// Not enough free space in heap
-	//	Time for a collection.
+	// If there's not enough space for the requested object then 
+	//	its time to perform a collection.
 	if (_ddcHeapPtr + byteCount > _ddcHeapMax) 
 		_allocCollect (byteCount);
 
@@ -34,6 +42,9 @@ void*	_alloc		(UInt byteCount)
 }
 
 
+// Allocate a thunk object.
+//	TODO: 	This makes an object big enough to hold the full airity, 
+//		even though only some args are used.
 static inline
 Obj*	_allocThunk	(FunPtr func, UInt arity, UInt args)
 {
@@ -52,15 +63,21 @@ Obj*	_allocThunk	(FunPtr func, UInt arity, UInt args)
 }
 
 
+// Copy a thunk object.
+//	We need to do this when we add extra arguments to a partial application.
+//	TODO: 	Make the caller build a new object of the correct size, 
+//		which would save the copy from becoming dead straight away.
 static inline
 Thunk*	_copyThunk	(Thunk* thunk)
 {
 	_ENTER(1);
 	_S(0)		= (Obj*)thunk;
 
+	// Work out the size of the object to be copied, and allocate a new one
 	UInt	size	= sizeof(Thunk) + sizeof(Obj*) * thunk ->arity;
 	Thunk*	thunkC	= (Thunk*)_alloc (size);
 
+	// Copy across all the parts
 	Thunk*	thunk1	= (Thunk*)_S(0);
 	thunkC ->tagFlags	= thunk1 ->tagFlags;
 	thunkC ->func		= thunk1 ->func;
@@ -78,6 +95,7 @@ Thunk*	_copyThunk	(Thunk* thunk)
 }
 
 
+// Allocate a data object.
 static inline
 Obj*	_allocData	
 		( Tag tag
@@ -96,27 +114,7 @@ Obj*	_allocData
 }
 
 
-static inline
-Obj*	_allocDataAnchored
-		( Tag 	tag
-		, UInt	arity)
-{
-	// GC doesn't handler ptrs in anchored objects yet.
-	assert (arity == 0);
-
-	UInt	size	= sizeof(Data) + sizeof(Obj*) * arity;
-	Data*	data	= (Data*)malloc(size);
-	
-	data ->tagFlags	= (tag << 8) | _ObjFixedData | _ObjFlagAnchored;
-	data ->arity	= arity;
-	
-	_PROFILE_ALLOC (data.count++);
-	_PROFILE_ALLOC (data.bytes += size);
-	
-	return (Obj*)data;
-}
-
-
+// Allocate a raw data object.
 static inline
 Obj*	_allocDataR	(Tag tag, UInt dataSize)
 {
@@ -135,25 +133,7 @@ Obj*	_allocDataR	(Tag tag, UInt dataSize)
 }
 
 
-static inline
-Obj*	_allocDataR_anchored
-		(Tag tag, UInt dataSize)
-{
-	UInt	size	= sizeof(DataR)
-			+ dataSize;
-			
-	DataR*	data	= (DataR*)malloc (size);
-	
-	data ->tagFlags	= (tag << 8) | _ObjFixedDataR | _ObjFlagAnchored;
-	data ->size	= size;
-	
-	_PROFILE_ALLOC (dataRaw.count++);
-	_PROFILE_ALLOC (dataRaw.bytes += size);
-	
-	return (Obj*)data;
-}
-
-
+// Allocate a small, raw data object.
 static inline
 Obj*	_allocDataRS	(Tag tag, UInt dataSize)
 {
@@ -173,9 +153,14 @@ Obj*	_allocDataRS	(Tag tag, UInt dataSize)
 	return (Obj*)data;
 }
 
-
+// Allocate a mixed data object.
 static inline
-Obj*	_allocDataM	(Tag tag, UInt ptrCount, UInt dataSize)
+Obj*	_allocDataM	
+		( Tag tag
+		, UInt ptrCount		// the number of pointers appearing at the start of the object
+		, UInt dataSize)	// the size of the trailing data. 
+					//	this needs to be a valid size, so the new object will 
+					//	not misalign the heap.
 {
 	UInt	size	= sizeof(DataM) 
 			+ ptrCount * sizeof (Obj*)
@@ -194,6 +179,7 @@ Obj*	_allocDataM	(Tag tag, UInt ptrCount, UInt dataSize)
 }
 
 
+// Allocate a suspension
 static inline
 Obj*	_allocSusp	(Obj* thunk, UInt args)
 {
@@ -212,6 +198,53 @@ Obj*	_allocSusp	(Obj* thunk, UInt args)
 	
 	_LEAVE(1);
 	return (Obj*)susp;
+}
+
+
+// External Allocations ----------------------------------------------------------------------------
+
+// These function allocate space in the external, C heap.
+// They won't be moved around by the GC, but need to be freed manually.
+
+// Allocate an anchored data object.
+static inline
+Obj*	_allocData_anchored
+		( Tag 	tag
+		, UInt	arity)
+{
+	// TODO: The GC doesn't handler ptrs in anchored objects yet.
+	assert (arity == 0);
+
+	UInt	size	= sizeof(Data) + sizeof(Obj*) * arity;
+	Data*	data	= (Data*)malloc(size);
+	
+	data ->tagFlags	= (tag << 8) | _ObjFixedData | _ObjFlagAnchored;
+	data ->arity	= arity;
+	
+	_PROFILE_ALLOC (data.count++);
+	_PROFILE_ALLOC (data.bytes += size);
+	
+	return (Obj*)data;
+}
+
+
+// Allocate a raw anchored data object.
+static inline
+Obj*	_allocDataR_anchored
+		(Tag tag, UInt dataSize)
+{
+	UInt	size	= sizeof(DataR)
+			+ dataSize;
+			
+	DataR*	data	= (DataR*)malloc (size);
+	
+	data ->tagFlags	= (tag << 8) | _ObjFixedDataR | _ObjFlagAnchored;
+	data ->size	= size;
+	
+	_PROFILE_ALLOC (dataRaw.count++);
+	_PROFILE_ALLOC (dataRaw.bytes += size);
+	
+	return (Obj*)data;
 }
 
 

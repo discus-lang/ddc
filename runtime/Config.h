@@ -5,8 +5,10 @@
 #define _DDC_VERSION "DDC Runtime System"
 
 
-// Do profiling.
-//	define these symbols to 1/0 to enable/disable profiling of that system.
+// Profiling options.
+//	Set these to 1/0 to enable/disable profiling of that system.
+//	Once this is done the options should show up when running the 
+//	compiled binaries with +RTS -help
 //
 #define _DDC_PROFILE_GC		1
 #define _DDC_PROFILE_SLOT	0
@@ -16,21 +18,26 @@
 #define _DDC_PROFILE_APPLY	0
 
 
-// Emit lots of tracing info
+// Debugging options
+//	These can be useful when you get desperate.
+//	It's all a bit nasty and should be unified into a single system.
+
+// Spew lots of tracing info to the console
 // #define	_DDC_TRACE
 
+// Do some consistency checks
+#define _DDC_DEBUG		0
 
-// -- This enables lots of internal consistency checks (slow).
+// Enable consistency checks and tracing for the garbage collector (0/1)
 #define _DDC_DEBUG_GC		0
 #define _DDC_TRACE_GC		0
 
-#define _DDC_DEBUG		0
-
+// Run some extra code
 //#define _DEBUG(x)	x;
 #define _DEBUG(x)
 
-void	_ddcConfigSetup();
 
+void	_ddcConfigSetup();
 
 #endif
 

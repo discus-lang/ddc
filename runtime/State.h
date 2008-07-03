@@ -19,7 +19,6 @@ extern Word8*		_ddcHeapBackBase;
 extern Word8*		_ddcHeapBackPtr;
 extern Word8*		_ddcHeapBackMax;
 
-
 // GC slot stack
 extern Obj**		_ddcSlotBase;
 extern Obj**		_ddcSlotPtr;

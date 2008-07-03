@@ -10,7 +10,7 @@
 #include "Collect.ci"
 
 
-// -- Force
+// If this object is a suspended application, then force it.
 Obj*	_force (Obj* obj)
 {
 #if _DDC_DEBUG
@@ -21,6 +21,8 @@ Obj*	_force (Obj* obj)
 	_ENTER(1);
 	_S(0)	= obj;
 
+	// Keep forcing suspensions and following indirections
+	//	until we get a real object.
 	again:
 	switch (_getObjTag (_S(0))) {
 	 case _tagSusp:	
@@ -39,6 +41,9 @@ Obj*	_force (Obj* obj)
 }
 
 
+// Do one step of the forcing.
+//	This does a single application.
+//
 Obj*	_forceStep (Obj* susp_)
 {
 	_DEBUG	 (assert (_TAG(susp_) == _tagSusp));
@@ -72,23 +77,21 @@ Obj*	_forceStep (Obj* susp_)
 			break;
 
 		default:
-			fprintf (stderr, "\n*** traumaRTS - _forceSusp - not enough funcs.\n");
-			fprintf (stderr, "    tag    = %d\n", susp ->tagFlags >> 8);
-			fprintf (stderr, "    flags  = %d\n", susp ->tagFlags & 0x0f);
-			fprintf (stderr, "    airity = %d\n", susp ->arity);
+			_panicApply();
 	}
 
 
-	// -- Overwrite the suspension with an indirection to the result.
-	//
+	// Overwrite the suspension with an indirection to the result.
 	Susp* susp2	= (Susp*)_S(0);
 	susp2 ->tagFlags= (_tagIndir << 8) | _ObjFixedSusp;
 	susp2 ->obj	= obj;
 	
-	// Zap the args for debugging purposes
+
+#if _DDC_DEBUG
+	// Zap any remaining args for debugging purposes
 	for (UInt i = 0; i < susp2 ->arity; i++)
 		susp2 ->a[i]	= 0;
-
+#endif
 
 	_LEAVE(1);
 	return obj;

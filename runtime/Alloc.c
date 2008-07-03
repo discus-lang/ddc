@@ -12,8 +12,7 @@
 #include <stdio.h>
 
 
-// -- Alloc
-//
+// Initialise the allocation system.
 void	_allocInit	(UInt heapSize)
 {
 	_ddcHeapBase		= malloc (heapSize);
@@ -23,17 +22,13 @@ void	_allocInit	(UInt heapSize)
 	_ddcHeapBackBase	= malloc (heapSize);
 	_ddcHeapBackPtr		= _ddcHeapBackBase;
 	_ddcHeapBackMax		= _ddcHeapBackBase + heapSize - 1;
-
 }
 
 
-// _allocCollect
-//	Perform a garbage collection.
-//	
-//
+// Perform a garbage collection
 void	_allocCollect	
-		(UInt byteCount)	// How much space we need to have left over
-					//	after the collection.
+		(UInt byteCount)	// How much space must be left over after the collection.
+					//	If we don't get at least this much back then the RTS will panic.
 {
 #if 	_DDC_PROFILE_GC
 	_ddcProfileMutatorEnd();
@@ -58,8 +53,7 @@ void	_allocCollect
 	_ddcProfileMutatorStart();
 #endif
 	
-	
-	// Flip buffers
+	// Flip the from and to space buffers
 	Word8*	tmp;
 	tmp			= _ddcHeapBase;
 	_ddcHeapBase		= _ddcHeapBackBase;
@@ -79,17 +73,10 @@ void	_allocCollect
 	_PROFILE_GC (lastCompactionSize = heapUsageEnd);
 
 
-	// Check if we've recovered enough space.
+	// If we haven't recovered enough space, 
+	//	then the allocation that triggered this collection won't be able to complete, 
+	//	so we're screwed. Emit a RTS panic.
 	if (_ddcHeapPtr + byteCount > _ddcHeapMax) 
 		_panicOutOfHeap (byteCount, (UInt64)(_ddcHeapMax - _ddcHeapBase));
-
-//	printf ("Collect\n");
-//	printf ("   heapUsageStart = %lld\n", heapUsageStart);
-//	printf ("   heapUsageEnd   = %lld\n", heapUsageEnd);
 }
-
-
-
-
-
 

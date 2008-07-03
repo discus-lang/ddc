@@ -4,7 +4,6 @@
 
 #include "Types.h"
 
-// -- Suspensions
 Obj*	_force		(Obj*	obj);
 Obj*	_forceStep	(Obj*	obj);
 

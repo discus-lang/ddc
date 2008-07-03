@@ -88,7 +88,6 @@ enum _ObjFlag
 #define _MaskObjAnchored	(~_objFlagAnchored)
 
 
-
 enum _ObjType	
 	_objType 	(Obj* obj);
 
@@ -99,22 +98,5 @@ UInt	_objSize 	(Obj* obj);
 
 bool	_objIsAnchored	(Obj* obj);
 
-void	_writeBrokenHeart
-		( Obj*		obj
-		, Obj*		newObj);
-
-Obj*	_readBrokenHeart
-	( Obj*		obj);
-
-// -----
-void		_printObj	(FILE* file, Obj* obj);
-void		_printObjP	(FILE* file, Obj* obj);
-
-void		_printThunk	(FILE* file, Obj* obj);
-void		_printSusp	(FILE* file, Obj* obj);
-void		_printData	(FILE* file, Obj* obj);
-void		_printDataR	(FILE* file, Obj* obj);
-void		_printDataRS	(FILE* file, Obj* obj);
-void		_printDataM	(FILE* file, Obj* obj);
 
 #endif

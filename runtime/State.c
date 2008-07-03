@@ -1,50 +1,65 @@
 
 #include "State.h"
 
-// -- Config.
+// Global state for the runtime system.
+
+// File to write the trace to.
 FILE*		_ddcTraceFile	= 0;
-bool		_ddcDumpOnPanic	= false;	// If this is true the state is dumped after a panic.
 
-// -- Profile.
-_Profile*	_ddcProfile		= 0;
+// If this is true the RTS will be dumped after a panic.
+bool		_ddcDumpOnPanic	= false;	
 
+// Profiling information
+_Profile*	_ddcProfile	= 0;
 
-// --- The heap
-Word8*		_ddcHeapBase		= 0;	// Base address of heap.	
-						//	First object in heap is allocated starting from this addr.
+// The Heap ----------------------------------------------------------------------------------------
+
+// The first object is allocated at this addr.
+Word8*	_ddcHeapBase		= 0;	
 	
-Word8*		_ddcHeapPtr		= 0;	// Heap alloc pointer.
-						//	Next object in heap is allocated starting from this addr.
-
-Word8*		_ddcHeapMax		= 0;	// Top of heap.
-						//	Points to the last byte in the heap which can be allocated.
-
-
-Word8*		_ddcHeapBackBase	= 0;	
-Word8*		_ddcHeapBackPtr		= 0;
-Word8*		_ddcHeapBackMax		= 0;
-
-
-// -- Slot stack.
-Obj**		_ddcSlotBase		= 0;	// Base address of slot stack.
-Obj**		_ddcSlotPtr		= 0;	// The top of the slot stack.
-						//	The next slot is allocated here.
-						//	_S(0) is *(slotPtr-1)
-
-Obj**		_ddcSlotMax		= 0;	// The maximum value that _slotPtr can take without overflowing the stack.
-Obj**		_ddcSlotHighWater	= 0;
+// The next object is allocated starting from this addr.
+Word8*	_ddcHeapPtr		= 0;	
+						
+// Points to the last byte in the heap which can be allocated.
+Word8*	_ddcHeapMax		= 0;
+			
+// The heap (to space)			
+Word8*	_ddcHeapBackBase	= 0;	
+Word8*	_ddcHeapBackPtr		= 0;
+Word8*	_ddcHeapBackMax		= 0;
 
 
-// -- Context stack.
+// GC slot stack -----------------------------------------------------------------------------------
+//	Holds pointers which serve as the roots for garbage collection
+
+// Base address of slot stack.
+Obj**	_ddcSlotBase		= 0;	
+
+// The top of the slot stack.
+//	The next slot is allocated here.
+//	_S(0) is *(slotPtr-1)
+Obj**	_ddcSlotPtr		= 0;	
+
+// The maximum value that _slotPtr can take without overflowing the stack.
+Obj**	_ddcSlotMax		= 0;	
+
+// The highest _ddcSlotPtr we've seen so far (used during profiling)
+Obj**	_ddcSlotHighWater	= 0;
+
+
+// Contest Stack -----------------------------------------------------------------------------------
+//	Holds longjmp targets for exception handling
+
 struct Context*	_ddcContextStack	= 0;
-int		_ddcContextIndex	= 0;	// Index of where the NEXT context will be stored.
-						//	The context on the top of the stack is at (_contextIndex - 1)
 
-int		_ddcContextMax		= 0;	// Index of the highest available context.
-Obj*		_ddcContextObject	= 0;	// Used to pass the exception information from primExceptionThrow
-						//	back to primExceptionTry.
+// Index of where the NEXT context will be stored.
+//	The context on the top of the stack is at (_contextIndex - 1)
+int	_ddcContextIndex	= 0;	
+						
+// Index of the highest available context.
+int	_ddcContextMax		= 0;	
 
-
-
-
+// Used to pass the exception information from primExceptionThrow
+//	back to primExceptionTry.
+Obj*	_ddcContextObject	= 0;	
 

@@ -14,6 +14,7 @@
 #include "State.h"
 #include "Types.h"
 #include "Main.h"
+#include "Dump.h"
 
 #include "Collect.ci"
 #include "Alloc.ci"

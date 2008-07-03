@@ -5,7 +5,7 @@
 #include "Types.h"
 #include "Force.h"
 
-// ----- Hackery on prim structures
+// Hackery on prim structures
 static inline UInt
 	_TAG	(Obj* obj)	
 {
@@ -21,12 +21,12 @@ static inline UInt
 	(_boxRef ( _force(exp) \
 		 , &(((struct type*)_force(exp)) ->label) ) )
 
-// ----- Hackery on suspensions
+// Hackery on suspensions
 #define _FORCE(v)	(_force(v))
 #define _FOLLOW(v)	(((Susp*)v) ->obj)
 
 
-// ----- Extra case alternatives.
+// Extra case alternatives.
 #define _CASESUSP(var, label) \
 	case _tagSusp: \
 	  var = _FORCE(var); \
@@ -35,14 +35,13 @@ static inline UInt
 	  var = _FOLLOW(var); \
 	  goto label; 
 
-// ----- Force loop hackery
+// Force loop hackery
 #define _FORCELOOP(dest,src) \
-
 	  
 #define _CASEDEATH \
 	default: _deathCase (__func__, 0, 0);
 
-// ----- Data tags.
+// Data tags
 #define _null		0
 #define _tagThunk	0x0ffffff
 #define _tagSusp	0x0fffffe

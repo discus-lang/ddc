@@ -7,6 +7,8 @@
 #include "../Alloc.h"
 #include "../Alloc.ci"
 
+#include "../Dump.h"
+
 Int32	primRuntime_slotUsage (Obj* x)
 {
 	return	((SizePtr)_ddcSlotPtr - (SizePtr)_ddcSlotBase) / sizeof (Obj*);
@@ -15,6 +17,6 @@ Int32	primRuntime_slotUsage (Obj* x)
 
 Obj*	primRuntime_printObj (Obj* x)
 {
-	_printObj (stdout, x);
+	_dumpObj (stdout, x);
 	return _primUnit;
 }

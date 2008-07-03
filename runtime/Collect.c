@@ -10,6 +10,9 @@
 #include <string.h>
 
 
+// For debugging. 
+//	_DDC_TRACE_GC is set in Config.h
+
 #if	_DDC_TRACE_GC
 static inline void _TRACE (const char* format, ...)
 {
@@ -19,7 +22,6 @@ static inline void _TRACE (const char* format, ...)
 	vfprintf (_traceFile, format, ap);
 	va_end(ap);
 }
-
 #	define _TRACES(s)	s;
 
 #else
@@ -28,15 +30,30 @@ static inline void _TRACE (const char* format, ...)
 #endif
 
 
-// -- Collect
-void	_collectHeap 
-		( Word8*	heapBase
-		, Word8*	heapPtr
-		, Word8*	heapMax 
-
-		, Word8*	heapBackBase
-		, Word8**	heapBackPtr)
+// Initialise the GC stack
+void	_collectInit (UInt maxGCSlots)
 {
+	_ddcSlotBase	= malloc (sizeof (Obj*) * maxGCSlots);
+	_ddcSlotPtr	= _ddcSlotBase;
+	_ddcSlotMax	= _ddcSlotBase + maxGCSlots - 1;
+
+	_ddcProfile ->slot.base
+			= _ddcSlotBase;
+}
+
+
+// Perform a collection on on this heap.
+//	This is a simple Cheney-scan collection.
+void	_collectHeap 
+		( Word8*	heapBase	// Start of the from space.
+		, Word8*	heapPtr		// Where the next object would be allocated.
+		, Word8*	heapMax 	// Last byte of the from space.
+
+		, Word8*	heapBackBase	// Start of the to space.
+		, Word8**	heapBackPtr)	// This is set to where the next object would be allocated
+						//	in the to space, after the live data has been copied across.
+{
+	// Debugging
 	_TRACES(char	fileName[80]);
 	_TRACES(snprintf (fileName, 80, "ddc-rts.trace.collect.%04lu", _gcCount));
 	_TRACES(_traceFile	= fopen (fileName, "w"));
@@ -65,7 +82,8 @@ void	_collectHeap
 	// Scan 
 	_scanHeap	(heapBackBase, heapBackPtr);
 
-	// -----
+
+	// Debugging
 	_TRACE ("-------------------------------------------------------------------------------------- collect Heap done\n");
 	_TRACES(fprintf(_traceFile, "  newSize = %u\n", (UInt)(*heapBackPtr - heapBackBase)));
 	_TRACES(_dumpState (_traceFile));
@@ -83,16 +101,17 @@ void	_collectHeap
 }
 
 
+// Evacuate all the object which are reachable from the heap slot stack
 void	_evacuateRoots 
 		( Word8*	heapBase
 		, Word8*	heapPtr
 		, Word8** 	toPtr )
 {
+	// Debugging
 	_TRACE("-------------------------------------------------------------------\n");
 	_TRACE("--- Evacuating Roots\n");
 	_TRACE("-------------------------------------------------------------------\n");
 
-	// Evacuate all the objects pointed to by the slot stack.
 	Obj** ptr	 = _ddcSlotBase;
 	while (ptr < _ddcSlotPtr)
 	{
@@ -109,6 +128,7 @@ Obj*	_evacuateObj
 		( Obj*		obj
 		, Word8**	toPtr)
 {
+	// Debugging
 	_TRACE("--- evacuateObj\n");
 	_TRACE("    obj     = %p\n", obj);
 	_TRACE("    toPtr   = %p\n", *toPtr);
@@ -148,7 +168,6 @@ Obj*	_evacuateObj
 			_ERROR ("  objR = %p\n", objR);
 		}
 #endif
-
 		_DEBUG(assert (_objType (objR) != _ObjTypeForward));
 
 		return objR;
@@ -156,6 +175,8 @@ Obj*	_evacuateObj
 
 	else {
 		// If the object is anchored then leave it alone.
+		//	These are allocated outside of the regular heap,
+		//	and are outside our juristiction.
 		if (_objIsAnchored (obj)) {
 			_TRACE("ANCHORED\n");
 			_TRACE("\n\n");
@@ -184,10 +205,11 @@ Obj*	_evacuateObj
 }
 		
 
-// --------------------
-// -- Scan
-// --
+// Scan functions ----------------------------------------------------------------------------------
+//	There is one of these for each sort of object in the heap.
 
+
+// Scan a thunk
 static inline
 void	_scanThunk
 		( Obj*		obj
@@ -200,11 +222,10 @@ void	_scanThunk
 	for (UInt i = 0; i < thunk->args; i++)
 		thunk->a[i]	= _evacuateObj (thunk->a[i], toPtr);
 
-
-	_TRACE("--- scanThunk end %p\n", obj);
 }
 
 
+// Scan a regular data object
 static inline
 void	_scanData
 		( Obj*		obj
@@ -218,6 +239,7 @@ void	_scanData
 }
 
 
+// Scan a data object with mixed pointer and non-pointer data
 static inline
 void	_scanDataM
 		( Obj*		obj
@@ -225,6 +247,7 @@ void	_scanDataM
 {
 	_TRACE("--- scanDataM\n");
 	
+	// The pointers all lie at the front of the data payload.
 	DataM*	data	= (DataM*)obj;
 	Obj**	ptr	= (Obj**)&(data->payload);
 	for (UInt i = 0; i < data->ptrCount; i++)
@@ -232,6 +255,7 @@ void	_scanDataM
 }
 
 
+// Scan a suspension or indirection
 static inline
 void	_scanSusp
 		( Obj*		obj
@@ -279,7 +303,8 @@ void	_scanSusp
 }
 
 
-
+// Scan an object.
+//	This checks the tag and calls a more specific scan function for that object.
 void	_scanObj
 		( Obj*		obj
 		, Word8**	toPtr)
@@ -302,14 +327,18 @@ void	_scanObj
 	 case _ObjTypeThunk:	_scanThunk (obj, toPtr);	break;
 	 case _ObjTypeData:	_scanData  (obj, toPtr);	break;
 
+	 // Raw data contains no pointers to scan.
 	 case _ObjTypeDataR:	_TRACE("--- scanDataR\n");	break;
+
 	 case _ObjTypeDataM:	_scanDataM (obj, toPtr);	break;
+
+	 // Small, raw data contains no pointers to scan.
 	 case _ObjTypeDataRS:	_TRACE("--- scanDataRS\n");	break;
 	 
 	 case _ObjTypeSusp:	_scanSusp  (obj, toPtr);	break;
 
 	 default:
-	 	_PANIC("no match\n");
+	 	_PANIC("Object has header\n");
 	 
 	}
 
@@ -319,6 +348,8 @@ void	_scanObj
 }
 
 
+// Scan all the objects in the to space.
+//	This copies in the data that is reachable from the object already there.
 void	_scanHeap 
 		( Word8*	heapBackBase
 		, Word8**	heapBackPtr)
@@ -336,3 +367,83 @@ void	_scanHeap
 		scanPtr	+= _objSize (obj);
 	}
 }
+
+
+// Forwarding Pointers -----------------------------------------------------------------------------
+
+// On 32 bit systems:
+//	When an object is moved from the 'from' space to the 'to' space,
+//	its header is overwritten with a forwarding pointer (aka broken heart)
+//	to its new location.
+//
+//	This forwarding pointer is is written over the 32 bit header of the object in 
+//	the from space. As heap objects are always 4 byte aligned, the lowest
+//	two bits of the pointer are zero, and we use this to distinguish forwarding 
+//	pointers from regular objects.
+//
+// On 64 bit systems:
+//	The header is still only 32 bits, but we now need to store a 64 bit pointer.
+//	We have to put the LOW half in the header, so that the lowest two bits are 
+//	still zero. The HIGH half goes after this.
+
+
+#if !defined(SPLIT_POINTERS)
+// 32 bit system
+void	_writeBrokenHeart 
+		( Obj* obj
+		, Obj* newObj)
+{
+	_DEBUG(assert(obj    != 0));
+	_DEBUG(assert(newObj != 0));
+
+	SizePtr* objPtr	= (SizePtr*)obj;
+	objPtr[0]	= (SizePtr)newObj;
+}
+
+Obj*	_readBrokenHeart
+		(Obj* obj)
+{
+	_DEBUG(assert(obj   != 0));
+
+	SizePtr* objPtr = (SizePtr*)obj;
+	Obj*	newObj	= (Obj*) objPtr[0];
+	
+	_DEBUG(assert(newObj != 0));
+	return	newObj;
+}
+
+#else
+// 64 bit system
+void	_writeBrokenHeart
+		( Obj* obj
+		, Obj* newObj)
+{
+	_DEBUG(assert(obj    != 0));
+	_DEBUG(assert(newObj != 0));
+
+	SizePtr ptr	= (SizePtr) newObj;
+	HalfPtr ptrH	= (HalfPtr) (ptr >> 32);
+	HalfPtr ptrL	= (HalfPtr) (ptr & 0x0ffffffff);
+
+	HalfPtr* objPtr	= (HalfPtr*) obj;
+	objPtr[0]	= ptrL;			// LOW  half of pointer overwrites the header
+	objPtr[1]	= ptrH;			// HIGH half comes after 
+}
+
+Obj*	_readBrokenHeart 
+		(Obj* obj)
+{
+	_DEBUG(assert(obj != 0));
+
+	HalfPtr* objPtr	= (HalfPtr*)obj;
+	
+	HalfPtr	ptrL	= objPtr[0];
+	HalfPtr	ptrH	= objPtr[1];
+	
+	SizePtr	ptr	= ((SizePtr)ptrH << 32) | (SizePtr)ptrL;
+
+	_DEBUG(assert(ptr != 0));
+	return	(Obj*) ptr;
+}
+
+#endif

@@ -1,6 +1,6 @@
 
-#ifndef _Trauma_Collect_I
-#define _Trauma_Collect_I
+#ifndef _DDC_Collect_I
+#define _DDC_Collect_I
 
 #include <stdlib.h>
 
@@ -10,10 +10,15 @@
 #include "Error.h"
 #include "Lint.h"
 
+// Get a pointer from the GC stack, indexed relative to the current frame.
 #define _S(index)	*(_ddcSlotS - index)
+
+// Take the pointer of the CAF with this name.
 #define _CAF(name)	*_ddcCAF_##name
 
-// -- ENTER
+// Push some slots on the GC stack.
+//	We also have to set them to zero incase the GC is activated
+//	before they are initialised.
 #if _DDC_PROFILE_SLOT
 #  define _ENTER(countS) \
 		_ddcSlotPtr	+= countS; \
@@ -35,25 +40,11 @@
 #endif
 
 
-// -- LEAVE	
+// Pop some slots from the GC stack.
 #define _LEAVE(countS) \
 		_ddcSlotPtr	-= countS; \
 		if (_ddcSlotPtr < _ddcSlotBase) \
 			_panicSlotUnderflow(); 
-
-
-// -----
-static inline void
-	_slotInit (UInt maxGCSlots)
-{
-	_ddcSlotBase	= malloc (sizeof (Obj*) * maxGCSlots);
-	_ddcSlotPtr	= _ddcSlotBase;
-	_ddcSlotMax	= _ddcSlotBase + maxGCSlots - 1;
-
-	_ddcProfile ->slot.base
-			= _ddcSlotBase;
-
-}
 
 
 #endif
