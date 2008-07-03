@@ -36,9 +36,12 @@ Building:
 
 Installation:
 
-  0) You can avoid this step by always running ddc from its root build directory
+  0) You can avoid this step by always running ddc from its root build directory:
+ 
+      $ bin/ddc -make /path/to/the/Main.ds
+
      In this case it will still be able to find its libraries and runtime
-     system. Otherwise you can install is as a regular application:
+     system. Otherwise you can install it as a regular application:
 
   1) Copy the compiler binary to your ~/bin dir 
       (where ~/bin is in your PATH)
