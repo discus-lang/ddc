@@ -15,7 +15,7 @@ Building:
      
       b) or use darcs to get the head branch:
 
-          $ darcs get http://code.haskell.org/ddc/ddc-head
+          $ darcs get http://code.haskell.org/~benl/disciple-HEAD
       
   2) Make a local copy of the build config file.
 
