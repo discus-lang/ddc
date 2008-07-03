@@ -1,6 +1,7 @@
 module Main.Desugar
 	( desugarInferKinds
 	, desugarElaborate
+	, desugarProjectEta
 	, desugarProject
 	, desugarSlurpConstraints
 	, desugarSolveConstraints
@@ -24,6 +25,7 @@ import qualified Type.Exp		as T
 import qualified Desugar.ToCore		as D
 import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D
+import qualified Desugar.ProjectEta	as D
 import qualified Desugar.Project	as D
 import qualified Desugar.Kind		as D
 import qualified Desugar.Elaborate	as D
@@ -122,6 +124,23 @@ desugarElaborate unique treeHeader treeSource
 		
 	return	( treeHeader'
 		, treeSource')
+	
+-- ProjectEta --------------------------------------------------------------------------------------
+desugarProjectEta
+	:: (?args :: [Arg])
+	-> (?pathSourceBase :: FilePath)
+	-> String
+	-> D.Tree SourcePos
+	-> IO	(D.Tree SourcePos)
+	
+desugarProjectEta unique sourceTree
+ = do
+	let sourceTree'	= D.projectEtaExpandTree unique sourceTree
+	
+	dumpST DumpDesugarProject "desugar-project-eta"
+		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sourceTree')
+
+	return sourceTree'
 	
 -- Project -----------------------------------------------------------------------------------------
 desugarProject 

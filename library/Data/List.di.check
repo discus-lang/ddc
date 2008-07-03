@@ -61,37 +61,6 @@ instance Class.Copy.Copy (Data.List.List %rDK163 (Base.Int %rDK164)) where
 -- Foreign imports
 
 -- Binds
-foreign import project_List_head
-        :: forall t0 %r0
-        .  List %r0 t0 -(!e0)> t0
-        :- !e0        = Base.!Read %r0
-        :$ Base.Thunk;
-        
-foreign import project_List_tail
-        :: forall t0 %r0
-        .  List %r0 t0 -(!e0)> List %r0 t0
-        :- !e0        = Base.!Read %r0
-        :$ Base.Thunk;
-        
-foreign import project_List_last
-        :: forall t0 %r0
-        .  List %r0 t0 -(!e0)> t0
-        :- !e0        = Base.!Read %r0
-        :$ Base.Thunk;
-        
-foreign import project_List_isNil
-        :: forall t0 %r0 %r1
-        .  List %r0 t0 -(!e0)> Data.Bool.Bool %r1
-        :- !e0        = Base.!Read %r0
-        :$ Base.Thunk;
-        
-foreign import project_List_length
-        :: forall t0 %r0 %r1
-        .  List %r0 t0 -(!e0)> Base.Int %r1
-        :- !e0        = !{Base.!Read %r0; Base.!ReadT t0; Base.!Read %r1; Base.!Write %r1}
-        ,  Base.Mutable %r1
-        :$ Base.Thunk;
-        
 foreign import project_List_x
         :: forall t0 %r0
         .  List %r0 t0 -(!e0)> t0
@@ -114,6 +83,37 @@ foreign import project_List_ref_xs
         :: forall t0 %r0
         .  List %r0 t0 -(!e0)> Data.Ref.Ref %r0 (List %r0 t0)
         :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import project_List_head
+        :: forall t0 %r0
+        .  List %r0 t0 -(!e0)> t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Obj;
+        
+foreign import project_List_tail
+        :: forall t0 %r0
+        .  List %r0 t0 -(!e0)> List %r0 t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import project_List_last
+        :: forall t0 %r0
+        .  List %r0 t0 -(!e0)> t0
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Obj;
+        
+foreign import project_List_isNil
+        :: forall t0 %r0 %r1
+        .  List %r0 t0 -(!e0)> Data.Bool.Bool %r1
+        :- !e0        = Base.!Read %r0
+        :$ Base.Data -> Base.Data;
+        
+foreign import project_List_length
+        :: forall t0 %r0 %r1
+        .  List %r0 t0 -(!e0)> Base.Int %r1
+        :- !e0        = !{Base.!Read %r0; Base.!ReadT t0; Base.!Read %r1; Base.!Write %r1}
+        ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         
 foreign import instance_Functor_List_map

@@ -249,10 +249,14 @@ compileFile_parse
 	-- Elaborate effects and closures of types in foreign imports
 	(hElab, sElab)
 		<- desugarElaborate "DE" hKinds sKinds
+
+	-- Eta expand simple v1 = v2 projections
+	sProjectEta
+		<- desugarProjectEta "DE" sElab
 			
 	-- Snip down dictionaries and add default projections.
 	(dProject, projTable)	
-		<- desugarProject "SP" moduleName hElab sElab
+		<- desugarProject "SP" moduleName hElab sProjectEta
 
 	-- Slurp out type constraints.
 	when ?verbose
