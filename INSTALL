@@ -5,6 +5,8 @@
 Building:
 
   0) You will need working copies of GHC (at least 6.8.1) and GCC installed.
+     The graphical demos also depend on libxv, but OSX and most (but not all)
+     linux distributions should already have this.
 
   1) Download the source.
 
