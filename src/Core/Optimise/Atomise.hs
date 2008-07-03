@@ -10,9 +10,7 @@ import	qualified Shared.VarBind	as Var
 
 import	Util
 
------
--- type	AtomiseM	= State ()
-
+-- Replace constant data constructors with references to a single
 atomiseTree 
 	:: Tree 	-- source tree
 	-> Tree		-- header tree
@@ -22,19 +20,11 @@ atomiseTree cSource cHeader
  = cSource
  
  {-
- evalState
- 	(walkZM	walkTableId
-		{ transX	= atomiseX }
-		cSource)
-	()
+ transformX atomiseX cSource
+ 
 	
-atomBinds
-	= [Var.VNil, Var.VFalse, Var.VTrue]
-
-
 atomiseX 
-	:: Exp 
-	-> AtomiseM Exp
+	:: Exp -> Exp
 
 atomiseX xx
  	| XPrim MCall ts@[XVar v tV, _, XType (TVar KRegion r)]	
@@ -50,6 +40,9 @@ atomiseX xx
 	 
 	| otherwise
 	= return xx
+
+atomBinds
+	= [Var.VNil, Var.VFalse, Var.VTrue]
 	
 
 isConst ::  Var -> Bool

@@ -22,14 +22,18 @@ import Shared.Var		(Var, VarBind, NameSpace(..))
 import qualified Shared.VarUtil	as Var
 import Shared.VarUtil		(VarGenM, newVarN)
 import Shared.Error
+import Shared.Pretty
 
 import Core.Exp
 import qualified Core.Reconstruct	as Recon
 import Core.Pretty
 import Core.Util
 import Core.Plate.Trans
+import qualified Debug.Trace	
 
-stage	= "Core.Snip"
+stage		= "Core.Snip"
+debug 		= False
+trace s	x 	= if debug then Debug.Trace.trace (pprStrPlain s) x else x
 
 -----
 type SnipM	= VarGenM
@@ -96,7 +100,8 @@ snipStmt table xx
 
 snipX1 :: Table -> Map Var Type -> Exp -> SnipM ([Stmt], Exp)
 snipX1	table env xx
- = case xx of
+ = trace ("snipX1: " % xx)
+ $ case xx of
 	XAnnot n x
 	 -> do	(ss, x')	<- snipX1 table env x
 	 	return	(ss, XAnnot n x')
@@ -131,6 +136,8 @@ snipX1	table env xx
 	-- Snip compound exprs from the arguments of applications.
 	XApp x1 x2 eff		-> snipXLeft table (substituteT env xx)
 
+	XAPP (XVar v t1) t2	-> leaveIt xx
+
 	XAPP x t	
 	 -> do	(ss, x')	<- snipX table (substituteT env x)
 	 	return		(ss, XAPP x' t)
@@ -149,7 +156,8 @@ snipX1	table env xx
 -- | Snip some stuff from an expression.
 
 snipX table xx
- = case xx of
+ = trace ("snipX " % xx)
+ $ case xx of
 	XLAM{}			-> snipIt table xx
 
 	XAPP{}			-> snipXLeft table xx
