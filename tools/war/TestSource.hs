@@ -74,7 +74,7 @@ testSourceOK path pathB isMain
 	case setups of
 	 -- no setups, just use default options
 	 [] -> do
-		out	$ "    " % (padL 50 path) 	
+		out	$ "    " % (padL 60 path) 	
 		testSourceOK_single pathB isMain []
 		return ()
 	 

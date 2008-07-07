@@ -1,0 +1,2 @@
+
+f g x = a where a = x: g a

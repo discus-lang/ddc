@@ -36,7 +36,7 @@ main
 	
 	-- dodgy trace function
 	let ?trace	= \s -> return ()
---	let ?trace	= \s -> do { putStr $ pprStr s; return (); }
+--	let ?trace	= \s -> do { putStr $ pprStrPlain s; return (); }
 
 	let testDirs	= concat $ [dirs | ArgTestDirs dirs <- args]
 
@@ -94,8 +94,8 @@ enterDir
 enterDir path_
 
 	-- if the path name contains -skip then skip over the whole dir
-	| isInfixOf "-skip" path_
-	= do	out	$ "    " % padL 50 path_ % "(skipped)\n"
+	| isInfixOf "-skip" path_ || isInfixOf "skip-" path_
+	= do	out	$ "    " % padL 60 path_ % "(skipped)\n"
 		return ()
 
 	| otherwise
@@ -162,8 +162,8 @@ enterDir2 path_
 		dirs	<- filterM doesDirectoryExist 
 			$ [ path ++ p ++ "/"
 				| p@(p1:_)	<- paths
-				, p /= "." && p /= ".."
-				, isUpper p1 ]
+				, p /= "." && p /= ".."]
+--				, isUpper p1 ]
 				
 		?trace	$ "paths    = " % paths		% "\n"
 			% "sources  = " % sources	% "\n"
