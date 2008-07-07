@@ -103,11 +103,11 @@ isCtorName var
 	= isUpper n
 	where (n:_)	= Var.name var
 
+-- Dummy vars introduced by the compiler won't have SourcePos's
 isDummy	   var	
-	= not $ any (=@= ISourcePos{}) 		-- Dummy vars introduced by the compiler won't have SourcePos's 
+	= not $ any (=@= ISourcePos{}) 		 
 	$ Var.info var	
-
-
+	
 
 -- | Rewrite symbolic chars in a string 
 deSymString :: String -> String

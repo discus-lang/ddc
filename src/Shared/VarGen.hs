@@ -3,6 +3,7 @@
 module Shared.VarGen
 	( VarGen, VarGenM
 	, newVarN
+	, newVarN_named
 	, newVarId
 	, newVarsN
 	, evalVarGen
@@ -14,6 +15,7 @@ where
 import Control.Monad.State
 import qualified Shared.Var as Var
 import Shared.Var (Var, VarBind)
+import Shared.VarSpace (NameSpace)
 
 -----
 type VarGenM 	= State VarGen
@@ -39,6 +41,12 @@ newVarN space
 			{ Var.bind = varId 
 			, Var.nameSpace = space }
 	return var
+
+-- | Create a fresh variable with the given name.
+newVarN_named :: NameSpace -> String	-> VarGenM Var
+newVarN_named space str
+ = do	var	<- newVarN space
+	return	var { Var.name = Var.name var ++ "_" ++ str }
 
 
 -- | Create some new variables.

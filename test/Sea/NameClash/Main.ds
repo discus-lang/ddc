@@ -1,0 +1,11 @@
+
+-- Check that produced C code is mangling names properly.
+--	We can't use 'default' or 'switch' directly in the output
+--	as these are C keywords.
+
+fun :: Int -> Int -> Int
+fun default switch 
+ = default + switch
+
+main ()
+ = putStr $ show $ fun 2 3 

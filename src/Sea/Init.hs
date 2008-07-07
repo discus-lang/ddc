@@ -42,12 +42,8 @@ makeInitCaf v
 
 	where	name	= seaVar False v
 		 
-
-
 makeInitVar (ModuleAbsolute vs)
-	= Var.new ("_ddcInitModule_" ++ (catInt "__" vs))
-	
-
+	= Var.new ("ddcInitModule_" ++ (catInt "_" vs))
 
 -----
 mainTree
@@ -62,10 +58,15 @@ mainTree imports
 		, "{"
 		, "        _ddcRuntimeInit (argc, argv);" 
 		, "" ]
-		
-	 ++ 	map (\m -> "\t" ++ (Var.name $ makeInitVar m) ++ "();") imports
+
+		-- call all the init functions for imported modules.
+	 ++ 	map (\m -> "\t" ++ "_" ++ (Var.name $ makeInitVar m) ++ "();") imports
+
+		-- call the init function for the main module.
 	 ++	[ "        _ddcInitModule_Main();"]
 		
+		-- catch exceptions from the main function so we can display nice 
+		--	error messages.
 	 ++ 	[ ""
 		, "        Control_Exception_topHandle(_allocThunk(Main_main, 1, 0));"
 		, ""

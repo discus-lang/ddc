@@ -335,35 +335,38 @@ makeLiteral lit
 -----
 seaVar :: Bool -> Var -> String
 seaVar local v
+
+	-- If the variable has an explicit sea name embedded in it, then use that
 	| name : _	<- [name | Var.ISeaName name <- Var.info v]
 	= name
-		
+	
+	-- Binding occurance has an explicit Sea name, so use that.
+	--	Used for calling foreign functions.
 	| name : _	<- [name |  Var.ISeaName name
 				 <- concat $ [Var.info bound | Var.IBoundBy bound <- Var.info v]]
 	= name
 	
 	|    Var.isSymbol v
-	  || (elem '\'' $ Var.name v)
 	= seaModule (Var.nameModule v)
-	++ (if local then "_" ++ (pprStrPlain $ Var.bind v) ++ "_" else "")
+	++ (if local then "_" ++ (pprStrPlain $ Var.bind v) ++ "_" else "_")
 	++ "_sym" ++ (Var.deSymString $ Var.name v)	
 
-	| Var.isDummy v
-	, Var.XBind{}	<- Var.bind v
-	= seaModule (Var.nameModule v)
-	++ "_" ++ Var.name v
-			
+	-- local vars are specific to a single Sea function.
+	-- 	we need to prepend "_v" to avoid conflicts with C keywords
+	--	and builtin functions from the RTS.
+	| local
+	= "_v" ++ Var.name v
+	
+	-- vars defined at top level need their module name prepended.
 	| otherwise
-	= seaModule (Var.nameModule v)
---	++ (if local then "_" ++ (pprStr $ Var.bind v) ++ "_" else "")
-	++ Var.name v
-
+	= seaModule (Var.nameModule v) ++ "_" ++ Var.name v
+	
 
 seaModule :: Module -> String
 seaModule m
  = case m of
 	ModuleNil		-> ""
-	ModuleAbsolute ns	-> (catInt "_" $ ns) ++ "_"
+	ModuleAbsolute ns	-> (catInt "_" $ ns)
 	_			-> panic stage $ "seaModule: no match for: " % show m
 
 

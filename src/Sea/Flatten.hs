@@ -6,7 +6,7 @@ module Sea.Flatten
 where
 
 import Util
-import Shared.VarUtil
+import Shared.VarGen
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
 
@@ -15,7 +15,7 @@ import Sea.Pretty
 import Sea.Plate.Trans
 
 -----
-type FlatM	= State Var.VarBind
+type FlatM	= VarGenM
 
 -- Tree --------------------------------------------------------------------------------------------
 flattenTree 
@@ -24,15 +24,12 @@ flattenTree
 	-> Tree ()
 
 flattenTree unique tree	
- = 	evalState (flattenTreeM tree) 
- 		$ Var.XBind ("x" ++ unique) 0
-
+ = 	evalVarGen (flattenTreeM tree) ("d" ++ unique)
 
 flattenTreeM :: Tree ()	-> FlatM (Tree ())
 flattenTreeM	tree
  	= mapM (transformSSM flattenSS) tree
-	
-	
+		
 flattenSS ss
  = do
  	sss'	<- mapM flattenS ss
@@ -46,11 +43,13 @@ flattenS s
  	SMatch aa
 	 -> do	
 		-- create a label for the end of the match
-		vMatchEnd	<- newVarNS NameLabel "_match_end"
+		vMatchEnd	<- newVarN_named NameLabel "match_end"
 
 	 	-- create a new label for each alt
-	 	vsStart		<- mapM (\i -> newVarNS NameLabel ("_a" ++ show i)) 		[0.. length aa - 1]
- 		vsExp		<- mapM (\i -> newVarNS NameLabel ("_a" ++ show i ++ "_exp"))	[0.. length aa - 1]
+	 	vsStart		<- mapM (\i -> newVarN_named NameLabel ("a" ++ show i))
+						[0.. length aa - 1]
+ 		vsExp		<- mapM (\i -> newVarN_named NameLabel ("a" ++ show i ++ "_exp"))
+						[0.. length aa - 1]
 
 		let Just vsStartT
 				= takeTail vsStart
@@ -99,10 +98,10 @@ flattenG
 
  = case g of
  	GCase isLazy ss x1 x2
-	 -> do	let lName	= "_a" ++ show ixAlt ++ "g" ++ show ixGuard
-	 
-	 	vGuardStart	<- newVarNS NameLabel (lName)
-	 	vGuardAgain	<- newVarNS NameLabel (lName ++ "_again")
+	 -> do	let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
+	
+	 	vGuardStart	<- newVarN_named NameLabel (lName)
+	 	vGuardAgain	<- newVarN_named NameLabel (lName ++ "_again")
 		
 		-- decide where to go if this guard fails
 		let aNext
