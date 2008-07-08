@@ -91,7 +91,7 @@ SHARED_SUFFIX       := so
 
 # -- Linux on x86_64
 else ifeq "$(Target)" "linux-x86_64"
-GCC_FLAGS           += -fPIC -D BITS=64
+GCC_FLAGS           += -fPIC -D BITS=64 -m64
 BUILD_SHARED        := gcc -shared
 SHARED_SUFFIX       := so
 

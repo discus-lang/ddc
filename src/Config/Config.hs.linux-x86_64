@@ -27,6 +27,8 @@ makeSeaCompileCmd
 	=  "gcc"
 	++ " -Werror"
 	++ " -std=c99"
+	++ " -m64"
+	++ " -D BITS=64"
 
 	++ " -c " ++ pathSourceBase ++ ".ddc.c"
 	++ " -o " ++ pathSourceBase ++ ".o"

@@ -384,7 +384,8 @@ void	_scanHeap
 // On 64 bit systems:
 //	The header is still only 32 bits, but we now need to store a 64 bit pointer.
 //	We have to put the LOW half in the header, so that the lowest two bits are 
-//	still zero. The HIGH half goes after this.
+//	still zero. The HIGH half goes after this. This happens automatically on
+//	little-endian systems, but on big-endian systems we have to do it manually.
 
 
 #if !defined(SPLIT_POINTERS)
@@ -413,7 +414,7 @@ Obj*	_readBrokenHeart
 }
 
 #else
-// 64 bit system
+// 64 bit big-endian system
 void	_writeBrokenHeart
 		( Obj* obj
 		, Obj* newObj)

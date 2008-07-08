@@ -49,6 +49,9 @@ typedef u_int64_t		MachineWord;
 typedef u_int64_t		SizePtr;
 typedef u_int32_t		HalfPtr;
 
+#else
+#error "BITS must be defined and must be either 32 or 64.  Set this value in make/config.mk and src/Config/Config.hs.platform for your platform."
+
 #endif
 
 
