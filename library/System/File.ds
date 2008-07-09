@@ -66,8 +66,8 @@ file_open
 	-> Ptr# FILE#
 
 file_open name mode
- = do	name_flat	= name.flatten
- 	mode_flat	= mode.flatten
+ = do	name_flat	= (copy name).flatten
+ 	mode_flat	= (copy mode).flatten
  
  	file	= fopenU (dangerUnboxString name_flat) (dangerUnboxString mode_flat)
 

@@ -48,8 +48,13 @@ import Desugar.Slurp.SlurpS
 -- stage	= "Desugar.Slurp.Slurp"
 
 -- | Slurp out type constraints from this tree.
-slurpTreeM ::	Tree Annot1	-> CSlurpM (Tree Annot2, [CTree], Set Var)
-slurpTreeM	tree
+slurpTreeM :: Tree Annot1
+	-> CSlurpM 
+		( Tree Annot2	-- the tree annotated with TREC variables linking it
+				--	with the constraints.
+		, [CTree]	-- list of type constraints
+		, Set Var)	-- type vars of top level bindings
+slurpTreeM tree
  = do
 	-- sort the top level things so that data definitions go through before their uses.
 	let psSorted	
@@ -81,7 +86,7 @@ slurpTreeM	tree
 				{ branchBind 	= BLetGroup vsLet
 				, branchSub	= qsBranch }]
 				
-	-- Sort tthe constraints into an order acceptable by the solver.
+	-- Sort the constraints into an order acceptable by the solver.
 	let qsFinal_rest
 		= partitionFsSort
 			[ (=@=) CDataFields{}, (=@=) CProject{}, (=@=) CClassInst{}

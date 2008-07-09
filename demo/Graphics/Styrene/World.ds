@@ -8,22 +8,25 @@ import Data.Array
 import Data.List
 
 -- The world ---------------------------------------------------------------------------------------
-data World	
-	= World (Array Actor)		-- actors
-		(QuadTree Actor)	-- tree
+data World %r1 %r2
+	= World (Array %r2 Actor)	-- actors
+		(QuadTree  Actor)	-- tree
 
 -- | The initial world
-worldInit :: World
+worldInit 
+	:: World   %r1 %r2 
+	:- Mutable %r2
+
 worldInit	
   	= World (actorArrayInit (walls ++ beads)) treeInit
 
 actorArrayInit :: [Actor] -> Array Actor
 actorArrayInit actors
- = do	count	= length actors
- 	arrayFromList count (errorNoEff @ "no actor")
+ = do	count	= lengthR actors
+ 	arrayFromList count ActorNil
 		$ map (\a -> (actorIx a, a))
 		$ zipWith actorSetIndex actors [0 .. count - 1]
- 
+
 treeInit = treeZero 300.0
 
 

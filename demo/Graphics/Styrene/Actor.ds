@@ -3,7 +3,8 @@ import Math.Vec2
 
 -- The actors in the world.
 data Actor
-	= Wall 	Int 		-- ^ index
+	= ActorNil
+	| Wall 	Int 		-- ^ index
 		(Vec2 Float)	-- ^ wall start point
 		(Vec2 Float)	-- ^ wall end point
 

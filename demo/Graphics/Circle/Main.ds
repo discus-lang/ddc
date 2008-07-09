@@ -7,6 +7,7 @@ import Graphics.Shape
 import Math.Constants
 
 -- the time is updated for every frame
+time :: Float %r1 :- Mutable %r1
 time = 0.0
 
 main ()

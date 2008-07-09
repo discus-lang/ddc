@@ -33,6 +33,11 @@ foreign import box2
         ,  $c2        = ${box : %rTS4; box : %rTS6}
         ,  $c3        = ${box : %rTS4; box : %rTS6}
         ,  Base.Mutable %rTS4
+        ,  Base.Const %rTS6
+        ,  Base.Const %rTS5
+        ,  Base.Direct %rTS6
+        ,  Base.Direct %rTS5
+        ,  Base.Direct %rTS4
         :$ Base.Data;
         
 foreign import project_Box_x

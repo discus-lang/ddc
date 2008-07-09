@@ -26,6 +26,8 @@ data FunBox %r1 a !e1 $c1
 -- Binds
 foreign import thing
         :: Base.Int %rTC3
+        :- Base.Const %rTC3
+        ,  Base.Direct %rTC3
         :$ Base.Data;
         
 foreign import box
@@ -33,6 +35,11 @@ foreign import box
         :- !e0        = !{Base.!Read %rTS6; Base.!Read %rTC3; System.Console.!Console}
         ,  $c0        = thing : %rTC3
         ,  Base.Mutable %r1
+        ,  Base.Const %rTS6
+        ,  Base.Direct %rTS6
+        ,  Base.Direct %r1
+        ,  Base.Direct %rTC3
+        ,  Base.Const %rTC3
         :$ Base.Data;
         
 foreign import gotBox
@@ -43,7 +50,14 @@ foreign import gotBox
         ,  $c0        = thing : %rTC3
         ,  $c1        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC3; newFun : %rTC3}
         ,  $c2        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC3}
+        ,  Base.Direct %rTC3
+        ,  Base.Const %rTC3
         ,  Base.Mutable %rTS21
+        ,  Base.Const %rTS22
+        ,  Base.Const %rTS23
+        ,  Base.Direct %rTS22
+        ,  Base.Direct %rTS21
+        ,  Base.Direct %rTS23
         :$ Base.Data;
         
 foreign import project_FunBox_fun
@@ -69,13 +83,20 @@ foreign import newFun
         .  Base.Int %r0 -(!e0 $c0)> Base.Int %r0
         :- !e0        = !{Base.!Read %r0; Base.!Read %rTC3; System.Console.!Console}
         ,  $c0        = thing : %rTC3
+        ,  Base.Const %rTC3
+        ,  Base.Direct %rTC3
         :$ Base.Data -> Base.Data;
         
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r1; Base.!Write %r1}
         ,  $c0        = ${box : %r1; box : %rTS6; box : %rTC3; newFun : %rTC3}
+        ,  Base.Direct %r1
         ,  Base.Mutable %r1
+        ,  Base.Direct %rTS6
+        ,  Base.Const %rTS6
+        ,  Base.Direct %rTC3
+        ,  Base.Const %rTC3
         :$ Base.Data -> Base.Data;
         
 foreign import makeBox2
@@ -90,6 +111,8 @@ foreign import makeBox2
         ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC3; hackBox : %r0; hackBox : %r1; hackBox : %rTC3; runBox : %r0; runBox : %r1; runBox : %rTC3}
         ,  $c4        = ${box2 : %r0; box2 : %r1; box2 : %rTC3; newFun : %rTC3}
         ,  $c5        = ${box2 : %r0; box2 : %r1; box2 : %rTC3}
+        ,  Base.Const %rTC3
+        ,  Base.Direct %rTC3
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data -> Base.Thunk;
         

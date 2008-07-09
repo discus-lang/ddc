@@ -62,24 +62,22 @@ traceG s = when debugG $ traceM s
 
 stage	= "Type.Solve"
 
------
+-- Solve some type constraints.
 squidSolve 	
-	:: [Arg]
-	-> [CTree] 
-	-> Map Var Var
-	-> (Maybe Handle)
+	:: [Arg]		-- ^ Compiler args.
+	-> [CTree] 		-- ^ The type constraints to solve.
+	-> Map Var Var		-- ^ table of value vars to type evars.
+	-> Set Var		-- ^ type vars of value vars which are bound at top level.
+	-> Maybe Handle		-- ^ If Just, write solve trace to this handle.
 	-> IO SquidS
 
-squidSolve 
-	args 
-	ctree 
-	sigmaTable
-	mTrace
+squidSolve args ctree sigmaTable vsBoundTopLevel mTrace
  = do
 	state1		<- squidSInit
  	let state2	= state1
 			{ stateTrace		= mTrace
 			, stateSigmaTable	= sigmaTable 
+			, stateVsBoundTopLevel	= vsBoundTopLevel
 			, stateArgs		= Set.fromList args }
 		
 	state'		<- execStateT (solve args ctree)

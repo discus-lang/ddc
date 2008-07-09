@@ -266,7 +266,7 @@ compileFile_parse
 	 , sConstrs
 	 , sigmaTable
 	 , vsTypesPlease
-	 , vsBound_source)
+	 , vsBoundTopLevel)
 			<- desugarSlurpConstraints
 				dProject
 				hElab
@@ -291,6 +291,7 @@ compileFile_parse
 			$  desugarSolveConstraints
 				sConstrs
 				vsTypesPlease
+				vsBoundTopLevel
 				sigmaTable
 
 	-- !! Early exit on StopType
@@ -322,7 +323,7 @@ compileFile_parse
 	let vsFreeTREC	= Set.unions
 			$ map (T.freeVars)
 			$ [t	| (v, t)	<- Map.toList typeTable
-				, Set.member v vsBound_source]
+				, Set.member v vsBoundTopLevel]
 
 
 	------------------------------------------------------------------------

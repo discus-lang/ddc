@@ -105,15 +105,21 @@ loadTypeNode2 incFs cid c
 		% "    nodes:\n" % "\n" %!% classNodes c % "\n"
 
 	-- a regular type node
-	| Class { classType = Just t
+	| Class { classType = Just tNode
 		, classKind = k } 	<- c
 	= do
 		-- make sure all the cids are canconical
-		(t': tfs)	<- refreshCids (t : classFetters c)
+		(tRefreshed: tFs)	<- refreshCids (tNode : classFetters c)
+
+		-- chop of fetters attached directly to the type in the node
+		let (tX, fsLocal) 	
+			= case tRefreshed of
+				TFetters t fs	-> (t, fs)
+				t		-> (t, [])
 
 		-- single parameter constraints are stored directly in this node
-		let fs		= if incFs
-					then map (\(TFetter f) -> f) tfs
+		let fsSingle	= if incFs
+					then map (\(TFetter f) -> f) tFs
 					else []
 
 		-- multi parameter constraints are stored in nodes referenced by classFettersMulti
@@ -124,32 +130,21 @@ loadTypeNode2 incFs cid c
 						$ classFettersMulti c
 					else return []
 
-		-- If this node has additional fetters where the LHS are all cids
-		--	then we can strip them here because they're cids they'll
-		--	already be returned as their separate nodes
-		let tX	= case t' of
-				TFetters t2 fs
-				 | and	$ map (\f -> case f of
-				 		FWhere (TClass _ _) _	-> True
-						FMore  (TClass _ _) _	-> True
-						_			-> False)
-					$ fs
-				 -> t2
-				_	-> t'
-				
 		var		<- makeClassName cid
 		quantVars	<- gets stateQuantifiedVars
 	
+		let fs	= nub (fsLocal ++ fsSingle ++ fsMulti)
+
 		let (result :: SquidM [Fetter])
 			-- don't bother showing bottom constraints
 			--	If a constraint for a class is missing it is assumed to be bottom.
-			| TBot k	<- t
-			= return $ fs ++ fsMulti
+			| TBot k	<- tX
+			= return fs
 	
 			| otherwise
 			= case resultKind k of
-				KValue	-> return $ FWhere (TClass k cid) tX : (fs ++ fsMulti)
-				_	-> return $ FMore  (TClass k cid) tX : (fs ++ fsMulti)
+				KValue	-> return $ FWhere (TClass k cid) tX : fs
+				_	-> return $ FMore  (TClass k cid) tX : fs
 		
 		result
 	

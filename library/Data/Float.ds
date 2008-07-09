@@ -71,6 +71,9 @@ foreign import "primFloat32_le"
 foreign import "primFloat32_update"
  primFloat32_update	:: Float{write} -> Float{read} -> ()
 
+instance Copy Float where
+	copy x		= boxFloat32 (unboxFloat32 x)
+
 
 instance Eq Float where
 	(==)		= primFloat32_eq

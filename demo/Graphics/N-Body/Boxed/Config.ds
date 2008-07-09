@@ -5,6 +5,7 @@ time_compression	= 1.0
 attract_range		= 20.0
 draw_force_step		= 2
 
+frameCount :: Int %r1 :- Mutable %r1
 frameCount		= 0
 frameCount_max		= 5
 

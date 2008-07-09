@@ -1,6 +1,7 @@
 
-
+x :: Int %r1 :- Mutable %r1;
 x	= 1;
+
 f ()	= x := x + 1;
 
 data Thing %r1 !e1 $c0

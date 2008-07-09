@@ -75,6 +75,10 @@ data SquidS
 	-- | Map of value variables to type variables.
 	, stateSigmaTable	:: Map Var Var
 
+	-- | Type vars of value vars bound at top level.
+	--	Free regions in the types of top level bindings default to be constant.
+	, stateVsBoundTopLevel	:: Set Var
+	
 	-- | New variable generator.
 	, stateVarGen		:: Map NameSpace VarBind 
 
@@ -161,6 +165,7 @@ squidSInit
 
 		, stateArgs		= Set.empty
 		, stateSigmaTable	= Map.empty
+		, stateVsBoundTopLevel	= Set.empty
 
 		, stateVarGen		= Map.insert NameType    (Var.XBind tT 0)
 					$ Map.insert NameRegion  (Var.XBind rT 0)

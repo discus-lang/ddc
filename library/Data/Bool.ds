@@ -44,5 +44,5 @@ xor a b
 			False	-> False
 				
  
-otherwise :: Bool %r1 :- Const %r1
-otherwise	= True
+otherwise :: Bool
+otherwise = True

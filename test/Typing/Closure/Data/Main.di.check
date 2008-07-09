@@ -25,29 +25,37 @@ data Thing %r1 !e1 $c0
 
 -- Binds
 foreign import x
-        :: Base.Int %rTC0
-        :- Base.Mutable %rTC0
+        :: Base.Int %r1
+        :- Base.Mutable %r1
+        ,  Base.Direct %r1
         :$ Base.Data;
         
 foreign import thing
         :: Thing %rTS0 !e0 $c0
-        :- !e0        = !{Base.!Read %rTC0; Base.!Write %rTC0}
-        ,  $c0        = x : %rTC0
-        ,  Base.Mutable %rTC0
+        :- !e0        = !{Base.!Read %r1; Base.!Write %r1}
+        ,  $c0        = x : %r1
+        ,  Base.Direct %r1
+        ,  Base.Mutable %r1
+        ,  Base.Const %rTS0
+        ,  Base.Direct %rTS0
         :$ Base.Data;
         
 foreign import f
         :: Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %rTC0; Base.!Write %rTC0}
-        ,  $c0        = x : %rTC0
-        ,  Base.Mutable %rTC0
+        :- !e0        = !{Base.!Read %r1; Base.!Write %r1}
+        ,  $c0        = x : %r1
+        ,  Base.Direct %r1
+        ,  Base.Mutable %r1
         :$ Base.Data -> Base.Data;
         
 foreign import fun
         :: Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %rTS0; Base.!Read %rTC0; Base.!Write %rTC0}
-        ,  $c0        = ${thing : %rTS0; thing : %rTC0}
-        ,  Base.Mutable %rTC0
+        :- !e0        = !{Base.!Read %rTS0; Base.!Read %r1; Base.!Write %r1}
+        ,  $c0        = ${thing : %rTS0; thing : %r1}
+        ,  Base.Direct %r1
+        ,  Base.Mutable %r1
+        ,  Base.Direct %rTS0
+        ,  Base.Const %rTS0
         :$ Base.Data -> Base.Data;
         
 foreign import runThing
@@ -58,9 +66,12 @@ foreign import runThing
         
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
-        :- !e0        = !{Base.!Read %rTS0; Base.!Read %rTC0; Base.!Write %rTC0; System.Console.!Console}
-        ,  $c0        = ${thing : %rTS0; thing : %rTC0; x : %rTC0}
-        ,  Base.Mutable %rTC0
+        :- !e0        = !{Base.!Read %rTS0; Base.!Read %r1; Base.!Write %r1; System.Console.!Console}
+        ,  $c0        = ${thing : %rTS0; thing : %r1; x : %r1}
+        ,  Base.Direct %r1
+        ,  Base.Mutable %r1
+        ,  Base.Direct %rTS0
+        ,  Base.Const %rTS0
         :$ Base.Data -> Base.Data;
         
 

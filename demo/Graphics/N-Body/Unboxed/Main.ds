@@ -11,6 +11,7 @@ draw_force_step		= 2
 worldSize		= Vec2 500 500
 newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
 
+frameCount :: Int %r1 :- Mutable %r1
 frameCount		= 0
 frameCount_max		= 5
 

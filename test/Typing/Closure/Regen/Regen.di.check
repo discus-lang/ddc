@@ -24,32 +24,68 @@ foreign import regen1
         .  Base.Unit -($c0)> Base.Unit -($c1)> Data.Tuple.Tuple2 %r1 (Base.Int %rTS4) (Base.Int %r0)
         :- $c0        = i1 : %rTS4
         ,  $c1        = ${i1 : %rTS4; i2 : %r0}
+        ,  Base.Const %rTS4
+        ,  Base.Direct %rTS4
         :$ Base.Thunk;
         
 foreign import regen2
         :: forall %r0
         .  Base.Unit -($c0)> Data.Tuple.Tuple2 %r0 (Base.Int %rTS7) (Base.Int %rTS8)
         :- $c0        = ${i1 : %rTS7; i2 : %rTS8}
+        ,  Base.Const %rTS8
+        ,  Base.Const %rTS7
+        ,  Base.Direct %rTS8
+        ,  Base.Direct %rTS7
         :$ Base.Thunk;
         
 foreign import regen3
         :: Data.Tuple.Tuple2 %rTS12 (Base.Int %rTS10) (Base.Int %rTS11)
+        :- Base.Const %rTS11
+        ,  Base.Const %rTS10
+        ,  Base.Const %rTS12
+        ,  Base.Direct %rTS11
+        ,  Base.Direct %rTS10
+        ,  Base.Direct %rTS12
         :$ Base.Data;
         
 foreign import regen1_app1
         :: Data.Tuple.Tuple2 %rTS14 (Base.Int %rTS4) (Base.Int %rTS13)
+        :- Base.Direct %rTS4
+        ,  Base.Const %rTS4
+        ,  Base.Const %rTS13
+        ,  Base.Const %rTS14
+        ,  Base.Direct %rTS13
+        ,  Base.Direct %rTS14
         :$ Base.Data;
         
 foreign import regen1_app2
         :: Data.Tuple.Tuple2 %rTS16 (Base.Int %rTS4) (Base.Int %rTS15)
+        :- Base.Direct %rTS4
+        ,  Base.Const %rTS4
+        ,  Base.Const %rTS15
+        ,  Base.Const %rTS16
+        ,  Base.Direct %rTS15
+        ,  Base.Direct %rTS16
         :$ Base.Data;
         
 foreign import regen2_app1
         :: Data.Tuple.Tuple2 %rTS17 (Base.Int %rTS7) (Base.Int %rTS8)
+        :- Base.Direct %rTS7
+        ,  Base.Const %rTS7
+        ,  Base.Direct %rTS8
+        ,  Base.Const %rTS8
+        ,  Base.Const %rTS17
+        ,  Base.Direct %rTS17
         :$ Base.Data;
         
 foreign import regen2_app2
         :: Data.Tuple.Tuple2 %rTS18 (Base.Int %rTS7) (Base.Int %rTS8)
+        :- Base.Direct %rTS7
+        ,  Base.Const %rTS7
+        ,  Base.Direct %rTS8
+        ,  Base.Const %rTS8
+        ,  Base.Const %rTS18
+        ,  Base.Direct %rTS18
         :$ Base.Data;
         
 foreign import fun1

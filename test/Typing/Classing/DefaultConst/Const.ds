@@ -1,0 +1,12 @@
+
+-- For unquantified regions present in top level types,
+--	if they are otherwise unconstraint, they should default to constant.
+
+someBool = True
+
+someList = [1, 2, 3, 4, 5]
+
+-- region is free in the closure
+dude 
+ = do	x	= 5
+ 	(\y -> x + 1)

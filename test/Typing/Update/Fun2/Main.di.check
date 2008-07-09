@@ -26,6 +26,8 @@ data FunBox %r1 a !e1 $c1
 -- Binds
 foreign import thing
         :: Base.Int %rTC4
+        :- Base.Const %rTC4
+        ,  Base.Direct %rTC4
         :$ Base.Data;
         
 foreign import project_FunBox_fun
@@ -51,6 +53,8 @@ foreign import newFun
         .  Base.Int %r0 -(!e0 $c0)> Base.Int %r0
         :- !e0        = !{Base.!Read %r0; Base.!Read %rTC4; System.Console.!Console}
         ,  $c0        = thing : %rTC4
+        ,  Base.Const %rTC4
+        ,  Base.Direct %rTC4
         :$ Base.Data -> Base.Data;
         
 foreign import testBox
@@ -60,12 +64,16 @@ foreign import testBox
         ,  !e1        = !{Base.!Read %r1; Base.!Read %rTC4; System.Console.!Console}
         ,  $c0        = newFun : %rTC4
         ,  $c1        = thing : %rTC4
+        ,  Base.Const %rTC4
+        ,  Base.Direct %rTC4
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data;
         
 foreign import main
         :: Base.Unit -($c0)> Base.Unit
         :- $c0        = testBox : %rTC4
+        ,  Base.Direct %rTC4
+        ,  Base.Const %rTC4
         :$ Base.Data -> Base.Data;
         
 project Main.FunBox %_ *_ !_ $_ where

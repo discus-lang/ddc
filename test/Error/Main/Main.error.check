@@ -3,4 +3,6 @@
         but it was inferred to be:
             main
               :: Data.String.String %rTC0
+              :- Base.Const %rTC0
+              ,  Base.Direct %rTC0
 

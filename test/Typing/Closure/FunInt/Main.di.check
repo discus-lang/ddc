@@ -27,6 +27,10 @@ data FunInt %r0 %r1 !e1 $c1
 foreign import funSucc
         :: FunInt %rTS0 %rTS5 !e0 $Bot
         :- !e0        = Base.!Read %rTS5
+        ,  Base.Const %rTS5
+        ,  Base.Const %rTS0
+        ,  Base.Direct %rTS5
+        ,  Base.Direct %rTS0
         :$ Base.Data;
         
 foreign import succ
@@ -46,12 +50,20 @@ foreign import succ'
         :: Base.Int %rTS5 -(!e0 $c0)> Base.Int %rTS5
         :- !e0        = !{Base.!Read %rTS5; Base.!Read %rTS0}
         ,  $c0        = ${funSucc : %rTS0; funSucc : %rTS5}
+        ,  Base.Direct %rTS5
+        ,  Base.Const %rTS5
+        ,  Base.Direct %rTS0
+        ,  Base.Const %rTS0
         :$ Base.Data -> Base.Data;
         
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS5; Base.!Read %rTS0; System.Console.!Console}
         ,  $c0        = ${succ' : %rTS0; succ' : %rTS5}
+        ,  Base.Direct %rTS5
+        ,  Base.Const %rTS5
+        ,  Base.Direct %rTS0
+        ,  Base.Const %rTS0
         :$ Base.Data -> Base.Data;
         
 

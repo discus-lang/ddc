@@ -41,21 +41,22 @@ import qualified Debug.Trace
 -----
 debug	= False
 trace s	= when debug $ traceM s
--- stage	= "Type.Export"
+stage	= "Type.Export"
 
 -- | Export some stuff from the constraint solver state.
 squidExport 
-	:: Set Var					-- ^ The vars for the bindings we want types for.
+	:: Set Var		-- ^ vars of the bindings we want types for.
 	-> SquidM 
-		( Map Var Type				-- Type schemes.
-		, Map Var (InstanceInfo Type Type)	-- How each instantiation was done.
-		, Map Var (Kind, Maybe Type)		-- Which vars were quantified (with optional :> bound)
-		, Map Var [Var])			-- The constraints acting on each region.
+		( Map Var Type				-- type schemes.
+		, Map Var (InstanceInfo Type Type)	-- how each instantiation was done.
+		, Map Var (Kind, Maybe Type)		-- which vars were quantified (with optional :> bound)
+		, Map Var [Var])			-- the constraints acting on each region.
 
-squidExport vsTypesPlease
+squidExport 
+	vsTypesPlease
  = do	trace	$ "== Export ====================================\n"
- 		% "    vsTypesPlease = " % vsTypesPlease	% "\n"
- 
+ 		% "    vsTypesPlease   = " % vsTypesPlease	% "\n"
+  
  	-- Export types for the requested vars.
 	types		<- exportTypes vsTypesPlease
 
@@ -75,15 +76,40 @@ squidExport vsTypesPlease
 
 
 -- Export types from the graph for all these vars.
-exportTypes :: Set Var -> SquidM (Map Var Type)
-exportTypes vsTypesPlease
+exportTypes 
+	:: Set Var 	-- export types for these vars
+	-> SquidM (Map Var Type)
+
+exportTypes vsTypesPlease 
  = do	
  	-- these are the type that were asked for by the slurper.
  	let vsPlease	=  Set.toList vsTypesPlease
-	Just ts		<- liftM sequence $ mapM exportVarType vsPlease
 
-	return	$ Map.fromList 
-		$ zip vsPlease ts
+	-- export types for all the vars asked for
+	vts 	<- mapM (\v -> do 
+			mT <- exportVarType v
+			return	(v, mT))
+		$ vsPlease
+
+	return	$ Map.fromList vts
+
+
+-- | Export the type for this variable.
+--	If no type is in the graph for this var then return Nothing.
+--
+exportVarType :: Var -> SquidM Type
+exportVarType v
+ = do 	trace	$ "*   Export.exportVarType: " % v	% "\n"
+ 
+ 	mT	<- extractType True v
+	tEx	<- case mT of
+			Nothing	-> 
+				panic stage $ "exporVarType: export of " % v % "failed\n"
+
+			Just t	
+			 -> do	t'	<- exportType t
+			 	return t'
+	return tEx
 
 
 -- | Process this type to make it an exportable format.
@@ -110,21 +136,6 @@ exportType t
 	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
 	return tTrim		
  
--- | Export the type for this variable.
---	If no type is in the graph for this var then return Nothing.
---
-exportVarType :: Var -> SquidM (Maybe Type)
-exportVarType v
- = do 	trace	$ "*   Export.exportVarType: " % v	% "\n"
- 
- 	mT	<- extractType True v
-	mTEx	<- case mT of
-			Nothing	-> return Nothing
-			Just t	
-			 -> do	t'	<- exportType t
-			 	return $ Just t'
-
-	return mTEx
 
 
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
@@ -157,7 +168,7 @@ exportInstInfo (v, ii)
 	 	return		$ (v, InstanceLambda v1 v2 mt)
 
 	InstanceLet    v1 v2 vs t
-	 -> do	Just ts 	<- liftM sequence $ mapM exportVarType vs
+	 -> do	ts 	<- mapM exportVarType vs
 
 		-- HACKS: When we take the type to use for an insantiation we want the ungeneralised
 		--        one, but the eq class will already have been updated with the generalied 
@@ -187,8 +198,8 @@ exportInstInfo (v, ii)
 	 	return		$ (v, InstanceLet v1 v2 ts_final t')
 		
 	InstanceLetRec 	vUse vDef Nothing
-	 -> do 	Just tDef	<- exportVarType vDef
-	 	return		$ (v, InstanceLetRec vUse vDef (Just tDef))
+	 -> do  tDef	<- exportVarType vDef
+	 	return	$ (v, InstanceLetRec vUse vDef (Just tDef))
 	 
 
 --------------------------------------------------------------------------------

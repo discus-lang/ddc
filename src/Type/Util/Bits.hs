@@ -52,6 +52,7 @@ module Type.Util.Bits
 
 	-- fetters
 	, makeTFetters
+	, takeTFetters
 	, addFetters
 	, addFetters_front)
 where
@@ -380,6 +381,12 @@ takeTWitness tt
 makeTFetters :: Type -> [Fetter] -> Type
 makeTFetters t []	= t
 makeTFetters t fs	= TFetters t fs
+
+-- | Take the fetters from a type
+takeTFetters :: Type -> [Fetter]
+takeTFetters (TFetters t [])	= []
+takeTFetters (TFetters t fs)	= fs
+takeTFetters t			= []
 
 -- | Add some fetters to a type.
 addFetters :: 	[Fetter] -> Type -> Type

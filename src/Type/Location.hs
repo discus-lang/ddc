@@ -464,10 +464,15 @@ dispFetterSource f ts
 	% " from the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
+	| TSV (SVSig  sp var) 	<- ts
+	= "      constraint: " % f	% "\n"
+	% " in type sig for: " % var	% "\n"
+	% "              at: " % sp	% "\n"
+
 	| FConstraint v _	<- f
 	, TSI (SICrushedFS cid f' src)	<- ts
 	= dispFetterSource f' src
 	
 	-- hrm.. this shouldn't happen
 	| otherwise
-	= panic stage $ "dispFetterSource: no match for " % ts % "\n"
+	= panic stage $ "dispFetterSource: no match for " % show ts % "\n"

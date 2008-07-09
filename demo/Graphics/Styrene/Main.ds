@@ -8,7 +8,10 @@ import Graphics.Render
 import Graphics.Shape
 
 timeStep	= 0.04
+
+worldRot :: Float %r1 :- Mutable %r1
 worldRot	= 0.0
+
 
 -- exit program after rotating the world this many radians
 worldRotMax	= pi
@@ -40,7 +43,7 @@ coma frame world@(World actors _)
 
 		renderPrims frame 
 		 [Local	[ Translate 400.0 400.0
-		 	, Rotate worldRot
+		 	, Rotate (copy worldRot)
 			, Scale 0.9 0.9
 			, drawWorld world']]
 

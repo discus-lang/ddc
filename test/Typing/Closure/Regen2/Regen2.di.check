@@ -24,21 +24,29 @@ foreign import fun1_u
         :- $c0        = i1 : %rTS0
         ,  $c1        = i1 : %rTS0
         ,  $c2        = i1 : %rTS0
+        ,  Base.Const %rTS0
+        ,  Base.Direct %rTS0
         :$ Base.Thunk;
         
 foreign import fun1_uu
         :: Base.Unit -($c0)> Base.Unit -($c1)> Base.Int %rTS0
         :- $c0        = i1 : %rTS0
         ,  $c1        = i1 : %rTS0
+        ,  Base.Direct %rTS0
+        ,  Base.Const %rTS0
         :$ Base.Thunk;
         
 foreign import fun1_uuu
         :: Base.Unit -($c0)> Base.Int %rTS0
         :- $c0        = i1 : %rTS0
+        ,  Base.Direct %rTS0
+        ,  Base.Const %rTS0
         :$ Base.Thunk;
         
 foreign import fun1_uuuu
         :: Base.Int %rTS0
+        :- Base.Direct %rTS0
+        ,  Base.Const %rTS0
         :$ Base.Data;
         
 foreign import fun1

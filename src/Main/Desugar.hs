@@ -201,7 +201,7 @@ desugarSlurpConstraints
 			$ state
 		
 	-- slurp constraints from the source 
-	let ((source', sctrs, vsBound_source), state3)
+	let ((source', sctrs, vsBoundTopLevel), state3)
 			= runState (D.slurpTreeM sTree)
 			$ state2
 
@@ -243,7 +243,7 @@ desugarSlurpConstraints
 		, constraints
 		, sigmaTable 
 		, vsTypesPlease
-		, vsBound_source)
+		, vsBoundTopLevel)
 	
 	
 -- Solve -------------------------------------------------------------------------------------------
@@ -253,6 +253,7 @@ desugarSolveConstraints
 	-> (?pathSourceBase :: FilePath)
 	-> [N.CTree]				-- type constraints
 	-> Set Var				-- the TEC vars to infer TECs for	
+	-> Set Var				-- type vars of value vars bound at top level
 	-> Map Var Var				-- sigma table
 	
 	-> IO 	( Map Var T.Type				-- inferred types
@@ -266,6 +267,7 @@ desugarSolveConstraints
 desugarSolveConstraints
 	constraints
 	vsTypesPlease
+	vsBoundTopLevel
 	sigmaTable
 
  = {-# SCC "solveSquid" #-}
@@ -279,6 +281,7 @@ desugarSolveConstraints
 			?args
 			constraints
 			sigmaTable
+			vsBoundTopLevel
 			hTrace
 
 	-- dump out the type graph
@@ -294,7 +297,10 @@ desugarSolveConstraints
 	case T.stateErrors state of
 
 	 -- no errors, carry on
-	 [] -> desugarSolveConstraints2 vsTypesPlease hTrace state
+	 [] -> desugarSolveConstraints2 
+	 		vsTypesPlease 
+			hTrace 
+			state
 
 	 -- time to die
 	 _ -> do
@@ -309,7 +315,10 @@ desugarSolveConstraints
 		panic "Core.SolveSquid" "done already"
 
 	 
-desugarSolveConstraints2 vsTypesPlease hTrace state
+desugarSolveConstraints2 
+	vsTypesPlease 
+	hTrace 
+	state
  = do	
 	when (elem Verbose ?args)
 	 $ putStr "  * Type: Exporting\n"

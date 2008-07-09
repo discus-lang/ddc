@@ -40,7 +40,31 @@ import Util
 -- stage	= "Type.Scheme"
 debug	= True
 trace s	= when debug $ traceM s
-
+{-
+defaultConstRegions 
+	:: Set Var		-- type vars of value vars defined at top level
+	-> (Var, Type) 	-- var, and its type
+	-> SquidM (Var, Type)
+	
+defaultConstRegions vsBoundTopLevel (var, t)
+ 	| Set.member var vsBoundTopLevel
+	= do	
+		let fsMore 	= 
+			[ FConstraint primConst [TVar KRegion r]
+				| r	<- Set.toList
+					$  Set.filter (\v -> Var.nameSpace v == NameRegion)
+					$  freeVars t]
+			
+		trace 	$ "*  Export.defaultConstRegions " % var % "\n"
+			% "   t      = " % t % "\n"
+			% "   fsMore = " % fsMore % "\n"
+			% "\n"
+			
+		return (var, t)
+		
+	| otherwise
+	= return (var, t)
+-}
 
 -- | Generalise a type
 --
@@ -110,10 +134,7 @@ generaliseType' varT tCore envCids
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
-	-- Check context for problems.
-	checkContext tClean
-
-	-- Mask effects and CMDL constraints on local regions.
+	-- Mask effects and Const/Mutable/Local/Direct constraints on local regions.
 	-- 	Do this before adding foralls so we don't end up with quantified regions which
 	--	aren't present in the type scheme.
 	--
@@ -125,17 +146,49 @@ generaliseType' varT tCore envCids
 		%> prettyTS tMskLocal 	% "\n\n"
 
 
+	-- If we're generalising the type of a top level binding, 
+	--	and if any of its free regions are unconstraind,
+	--	then make them constant.
+	vsBoundTop	<- gets stateVsBoundTopLevel
+	let isTopLevel	= Set.member varT vsBoundTop
+	let fsMskLocal	= takeTFetters tMskLocal
+	let rsMskLocal	= collectTClasses tMskLocal
+	
+	trace	$ "    isTopLevel   = " % isTopLevel		% "\n\n"
+
+	let fsMore
+		| isTopLevel
+		=  [ FConstraint primConst [tR]
+			| tR@(TClass KRegion cid)	
+			<- rsMskLocal
+			, notElem (FConstraint primMutable [tR]) fsMskLocal ]
+
+		++ [ FConstraint primDirect [tR]
+			| tR@(TClass KRegion cid)
+			<- rsMskLocal
+			, notElem (FConstraint primLazy [tR]) fsMskLocal ]
+	
+		| otherwise
+		= []
+		
+	let tConstify	= addFetters fsMore tMskLocal
+
+	trace	$ "    tConstify    = " % tConstify 		% "\n\n"
+
+	-- Check context for problems
+	checkContext tConstify
+
 	-- Quantify free variables.
 	let vsFree	= filter (\v -> not $ Var.nameSpace v == NameValue)
 			$ filter (\v -> not $ Var.isCtorName v)
 			$ Var.sortForallVars
-			$ Set.toList $ freeVars tMskLocal
+			$ Set.toList $ freeVars tConstify
 
 	let vksFree	= map 	 (\v -> (v, kindOfSpace $ Var.nameSpace v)) 
 			$ vsFree
 
 	trace	$ "    vksFree   = " % vksFree	% "\n\n"
-	let tScheme	= quantifyVarsT vksFree tMskLocal
+	let tScheme	= quantifyVarsT vksFree tConstify
 
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
@@ -143,6 +196,7 @@ generaliseType' varT tCore envCids
 	let vtsMore	= Map.fromList 
 			$ [(v, t)	| FMore (TVar k v) t
 					<- slurpFetters tScheme]
+	
 	
 	-- lookup :> bounds for each quantified var
 	let (vkbsFree	:: [(Var, (Kind, Maybe Type))])
@@ -152,8 +206,7 @@ generaliseType' varT tCore envCids
 				= Map.unions
 					[ Map.fromList vkbsFree
 					, stateQuantifiedVars s ] }
-		
-	
+
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"
 

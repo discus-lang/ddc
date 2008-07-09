@@ -21,12 +21,16 @@
 -- Binds
 foreign import thing1
         :: Base.Int %rTC0
+        :- Base.Const %rTC0
+        ,  Base.Direct %rTC0
         :$ Base.Data;
         
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTC0; System.Console.!Console}
         ,  $c0        = fun1 : %rTC0
+        ,  Base.Direct %rTC0
+        ,  Base.Const %rTC0
         :$ Base.Data -> Base.Data;
         
 foreign import fun1
@@ -35,6 +39,8 @@ foreign import fun1
         :- !e0        = !{Base.!Read %r1; Base.!Read %r2; Base.!Read %r0; Base.!Read %rTC0}
         ,  $c0        = fun2 : %rTC0
         ,  $c1        = ${x : %r1; fun2 : %rTC0}
+        ,  Base.Const %rTC0
+        ,  Base.Direct %rTC0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import fun2
@@ -43,6 +49,8 @@ foreign import fun2
         :- !e0        = !{Base.!Read %r2; Base.!Read %r3; Base.!Read %r1; Base.!Read %rTC0; Base.!Read %r0}
         ,  $c0        = fun3 : %rTC0
         ,  $c1        = ${fun3 : %rTC0; x : %r2; thing2 : %r0}
+        ,  Base.Const %rTC0
+        ,  Base.Direct %rTC0
         :$ Base.Data -> Base.Thunk;
         
 foreign import fun3
@@ -52,6 +60,8 @@ foreign import fun3
         ,  $c0        = ${fun1 : %rTC0; thing1 : %rTC0}
         ,  $c1        = ${fun1 : %rTC0; x : %r1; thing1 : %rTC0}
         ,  $c2        = ${fun1 : %rTC0; x : %r1; y : %r2; thing1 : %rTC0}
+        ,  Base.Const %rTC0
+        ,  Base.Direct %rTC0
         :$ Base.Data -> Base.Data -> Base.Data -> Base.Data;
         
 

@@ -1,7 +1,10 @@
 
 -- check that shape constraints aren't forcing the regions
 --	of the types they're acting on to be the same.
+
+intMutable :: Int %r1 :- Mutable %r1
 intMutable 	= 5
+
 intConst	= 5
 
 main ()
