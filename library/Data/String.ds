@@ -152,7 +152,7 @@ string_isFlat ss
 
 
 -- | Flatten a string so that is contains no SAppend constructors.
-string_flatten :: String -> String;
+string_flatten :: String -> String
 string_flatten ss
  = case ss of 
  	SAppend left right
@@ -162,7 +162,7 @@ string_flatten ss
 		dangerPack sDest ss
  		sDest
 	 
-	_ -> ss
+	_ -> copy ss
 
 
 -- | Join two strings.
