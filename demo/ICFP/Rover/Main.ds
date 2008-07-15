@@ -21,7 +21,7 @@ data Link
 	
 -- Main --------------------------------------------------------------------------------------------
 main ()
-	| argCount < 20
+	| argCount < 2
 	= putStr "usage: rover <hostname> <port>"
 	
 	| otherwise
