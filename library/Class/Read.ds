@@ -1,0 +1,18 @@
+
+
+class Read a where
+ 	read 	:: forall %r
+		.  String %r -(!Read %r)> a
+
+foreign import "atof"
+	atof :: String# {read} -> Float32#
+	
+-- BUGS: atof produces a double, not a float, but it's auto type-cast in the c code
+instance Read Float where
+	read s	= boxFloat32 (atof (dangerUnboxString s))
+		
+foreign import "atoi"
+	atoi :: String# {read} -> Int32#
+	
+instance Read Int where
+	read s	= boxInt32 (atoi (dangerUnboxString s))
