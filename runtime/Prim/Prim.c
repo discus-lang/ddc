@@ -98,6 +98,7 @@ Obj*	primStringFloat32 (Obj* x)
 
 
 
+
 // ------ Ref
 Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 {
@@ -118,3 +119,56 @@ Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 	return	_primUnit;
 }
 
+
+
+// ------ Network
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+
+Int32	primConnect	(String hostName, Int32 port)
+{
+	// resolve host name
+	struct hostent* hostInfo	
+			= gethostbyname ((const char *)hostName);
+	assert (hostInfo != 0);
+
+	// create socket
+	int sock	= socket (AF_INET, SOCK_STREAM, 0);
+	assert (sock > 0);
+	
+	// connect to server
+	struct sockaddr_in hostAddr;
+
+	hostAddr.sin_family	= hostInfo->h_addrtype;
+	memcpy 	((char *) &hostAddr.sin_addr.s_addr
+		, hostInfo ->h_addr_list[0]
+		, hostInfo ->h_length);
+	
+	hostAddr.sin_port	= htons (port);
+
+	int flag	= 1;
+	setsockopt (sock, SOL_SOCKET, TCP_NODELAY, &flag, sizeof(int));
+	
+	assert (connect ( sock
+			, (struct sockaddr *) &hostAddr
+			, sizeof (hostAddr) )
+			>= 0);
+			
+	return sock;
+}
+
+Int32	primArgCount	(Obj* unit)
+{
+	return _ddcArgCount;
+}
+
+String	primArgValue 	(Int32 ix)
+{
+	assert (ix >= 0 && ix <= _ddcArgCount);
+	return	_ddcArgValue[ix];
+}

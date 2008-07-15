@@ -1,0 +1,114 @@
+
+import Rover
+import Control
+import Scan
+
+debug_plan	= False
+
+-- | Decide what to do
+planControl :: Rover -> Control -> ()
+planControl rover control
+ = do	when debug_plan
+ 	 do  	putStr 	$ "--- PLAN -------------------------------------------------------\n"
+	
+ 	-- work out what direction the home base is in.
+	vHomeDir	= rover.homePos - rover.pos
+	dHome		= vHomeDir .magnitude
+
+	-- unit vector for the direection of the rover
+	vRoverDir :: Vec2 Float
+	vRoverDir	= (Vec2 1.0 0.0) .rotate (degToRad rover.dir)
+	
+	-- scan the area in front of us
+	scans		= map (\rOffset -> 
+					scan 	rover 
+						(vRoverDir .rotate (degToRad rOffset)))
+			$  rangeFloat -90.0  -30.0 5.0
+			++ rangeFloat -28.0  -12.0 2.0
+			++ rangeFloat -10.0   10.0 1.0
+			++ rangeFloat  12.0   28.0 2.0
+			++ rangeFloat  30.0   90.0 5.0 
+--			$ reverse (rangeFloat -30.0 30.0 5.0)
+
+	rover#scans	#= scans
+
+	scan_center	= scan rover vRoverDir
+				
+	-- rule out scans we don't have the turn budget for
+	--	but always be able to afford the one we're already on
+	scans_afford	= scan_center
+			: (filter (\s -> turnCost control s < rover.turnBudget) scans)
+				
+	-- find the scan with the least badness
+	bestScan	= fst $ minT2F $ map (\s -> (s, s.badness)) scans_afford
+
+	-- update the turn budget
+	cost		= turnCost control bestScan
+	rover.turnBudget 
+		:= (rover.turnBudget - cost + 5.0) .clamp 5.0 90.0
+
+	-- set the desired direction
+	control.dir	:= bestScan.dir
+	vControlDir	= (Vec2 1.0 0.0) .rotate (degToRad control.dir)
+
+	-- the slew between the current rover pos and the desired
+	turnSlew	= radToDeg (vControlDir .angleVV vRoverDir)
+
+ 	-- we usually want to drive as fast as we can
+	newSpeed	
+	 = match 	
+		-- if the plan we have will lead to a collision then hit the brakes
+		| bestScan.badness > 10.0
+		= CSpeedStop
+
+		-- angle badness for 90 deg turn is about 0.48
+		| bestScan.badness > 1.0
+		= CSpeedSet 10.0
+
+		| bestScan.badness > 0.5
+		= CSpeedSet 15.0
+
+		| dHome < 20.0
+	 	  && radToDeg (vHomeDir.normalised.angleVV vRoverDir) > 10.0
+		= CSpeedSet 5.0
+
+		| dHome < 10.0
+	 	  && radToDeg (vHomeDir.normalised.angleVV vRoverDir) > 20.0
+		= CSpeedSet 2.0
+
+		-- if we're turning hard slow down because we're not good at 
+		--	guessing what we might run into
+		| turnSlew > 20.0
+		  && rover.timeStamp > 10000
+		= CSpeedSet 10.0
+
+		-- looks like clear sailing
+		| otherwise
+		= CSpeedMax
+	
+	control#speed #= newSpeed
+	
+	when debug_plan
+	 do	putStr	$ "    pos:      " %% show rover.pos	% "\n"
+			% "    dir:      " %% show rover.dir	% "/" %% show rover.rotVel %% "\n"
+	 		% "    speed:    " %% show rover.speed	% "\n"
+			% "    turn:     " %% show rover.turn	% "\n"
+			% "    turnCost: " %% show cost	% "/" %% show rover.turnBudget %% "\n"
+			% "    turnSlew: " %% show turnSlew	% "\n"
+			% "    badness:  " %% show bestScan.badness % "\n"
+	 		% "    PLAN: " 	   %% show bestScan.dir % " / " % show control.speed	
+			% "\n"
+
+		map_ 	(\prob -> putStr $ "    " %% show prob % "\n") 
+			bestScan.problems
+
+ 
+	()
+
+turnCost :: Control -> Scan -> Float
+turnCost control scan 
+ = do	vSetDir		= (Vec2 1.0 0.0) .rotate (degToRad scan.dir)
+	vConDir		= (Vec2 1.0 0.0) .rotate (degToRad control.dir)
+	radToDeg (vSetDir.angleVV vConDir)
+
+

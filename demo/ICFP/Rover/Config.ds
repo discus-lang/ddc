@@ -1,0 +1,32 @@
+
+import Rover
+
+-- if something is more than this far away then completely ignore it
+configDistIgnore		= 100.0
+
+-- distance to surface before we consider something dangerous
+configDangerBoulder :: Rover -> Hazard -> Float
+configDangerBoulder rover hazard
+	= hazard.radius * 1.2 
+	+ ( (fpow rover.speed 1.3) / 10.0)
+
+configDangerCrater :: Rover -> Hazard -> Float
+configDangerCrater rover hazard
+	= hazard.radius * 1.4
+	+ ( (fpow rover.speed 1.3) / 10.0)
+
+configDangerMartian 		
+	= 10.0
+
+
+-- decide whether we think we'll hit this object on the current path
+configCollide :: Rover -> Hazard -> Float -> Bool
+configCollide rover hazard dCollide
+
+	-- try not to get within 2m of anything
+	| dCollide < 2.0		= True
+	
+	-- avoid things only 2 seconds out
+	| dCollide < 2.0 * rover.speed 	= True
+	
+	| otherwise			= False	

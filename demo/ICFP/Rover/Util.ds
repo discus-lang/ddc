@@ -1,0 +1,68 @@
+
+
+instance Show (List String) where
+ show	= showList show
+
+
+
+-- String Utils ------------------------------------------------------------------------------------		
+-- | Join a list of strings into a single string
+-- | Convert a string to a list of chars
+string_toList :: String -> [String]
+string_toList str	
+	| string_isNul str	= []
+	| otherwise		= string_char str : string_toList (string_rest str)
+
+string_joins :: [String] -> String
+string_joins strs
+ = do	len	= sum $ map string_length strs
+ 	s'	= newString len
+	
+	map_ (dangerConcat s') strs
+	(copy s')
+
+tokenise 
+	:: [String] 	-- char list
+	-> [String]	
+
+tokenise []		= []
+tokenise ss
+ = do	(toks, rest)	= span (\s -> s /= " ") ss
+ 	string_joins toks : tokenise rest
+
+
+-- List Utils --------------------------------------------------------------------------------------
+span :: (a -> Bool) -> [a] -> ([a], [a])
+span p xx
+	| []		<- xx
+	= (xx, xx)
+
+	| (x : xs)	<- xx
+	= if p x then do
+		(ys,zs) = span p xs
+		(x:ys,zs)
+	   else	([], xs)
+
+
+-- nasty comparison to get around compiler bugs
+--	this should be minumumBy (compare `on` snd)
+minT2F :: [(a, Float)] -> (a, Float)
+minT2F (x:xs)	= minT2F' x xs
+	
+minT2F' :: (a, Float) -> [(a, Float)] -> (a, Float)
+minT2F' acc 		[]		= acc
+
+minT2F' acc@(_, y)	(a@(x0, y0) : rest)
+
+	| y0 < y	= minT2F' a rest
+	| otherwise	= minT2F' acc rest
+
+
+rangeFloat :: Float -> Float -> Float -> [Float]
+rangeFloat x max step 
+ 	| x > max	= []
+	| otherwise	= x : rangeFloat (x + step) max step
+	
+ 
+ 
+ 

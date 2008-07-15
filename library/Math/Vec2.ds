@@ -9,6 +9,9 @@ data Vec2 a
 		y	:: a;
 	}
 
+instance Eq (Vec2 Float) where
+	(==) (Vec2 x1 y1) (Vec2 x2 y2)	= x1 == x2 && y1 == y2
+
 -- Operations on float vectors
 project Vec2 Float where
 	-- Update a vector.

@@ -175,12 +175,13 @@ string_join  s1 s2
 	dangerConcat s3 s2
 	s3
 
+
 -- | String equality
 primString_eq :: String -> String -> Bool
 primString_eq	s1 s2	
   = do 
- 	s1M	= string_flatten s1
-	s2M	= string_flatten s2
+ 	s1M	= string_flatten (copy s1)
+	s2M	= string_flatten (copy s2)
 	
 	case strcmpU (dangerUnboxString s1M) (dangerUnboxString s2M) `primInt32U_eq` 0# of
   		true#	-> True
@@ -190,6 +191,7 @@ primString_eq	s1 s2
 -- Instances ---------------------------------------------------------------------------------------
 instance Eq String where
 	(==) 		= primString_eq
+	(/=) s1 s2	= not (primString_eq s1 s2)
 
 instance Copy String where	
 	copy		= string_copy
@@ -197,7 +199,7 @@ instance Copy String where
 project String where
 	length x	= string_length x
 	flatten x	= string_flatten x
-	isFloat x	= string_isFlat x
+	isFlat x	= string_isFlat x
 	char x		= string_char x
 	rest x		= string_rest x
 	isNul x		= string_isNul x

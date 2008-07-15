@@ -20,7 +20,7 @@ project Frame where
 		name_flat	= name.flatten
 
 	 	ptcOpen (dangerUnboxString name_flat) sizeX' sizeY'
-	 	array	= arrayUI_new 1 (400 * 400 * 4)
+	 	array	= arrayUI_new 1 (sizeX * sizeY * 4)
 		Frame sizeX sizeY array
 
 	-- make a color from these RGB components.

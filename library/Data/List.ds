@@ -209,6 +209,14 @@ take _ []	= []
 take n (x:xs)	= x : take (n - 1) xs
 
 
+-- | Take elements from the list while the predicate matches
+takeWhile :: (a -> Bool) -> [a] -> [a]
+takeWhile _ []          =  []
+takeWhile p (x:xs) 
+            | p x       =  x : takeWhile p xs
+            | otherwise =  []
+
+
 -- | Drop the first few elements from the front of this list
 drop :: Int -> [a] -> [a];
 drop 0 xx	= xx
@@ -221,8 +229,14 @@ deleteF eqF [] y	= []
 deleteF eqF (x:xs) y	
 	|  eqF x y	= xs
 			\= x : deleteF eqF xs y
-			
-
+		
+-- | Check if this element is in the list
+elemF :: (a -> a -> Bool) -> a -> [a] -> Bool
+elemF eqF z []		= False
+elemF eqF z (x:xs)
+	| eqF z x	= True
+			\= elemF eqF z xs
+	
 -- | Find the first element in the list that matches this predicate.
 find :: (a -> Bool) -> [a] -> Maybe a;
 find f (x:xs)	
@@ -308,6 +322,10 @@ mapMaybe f (x:xs)
 	case f x of
 		Nothing -> rs
 		Just r  -> r : rs
+
+maybeToList :: Maybe a -> [a]
+maybeToList Nothing	= []
+maybeToList (Just x)	= [x]
 
 -- Ord stuff -------------------------------------------------------------------------------------
 

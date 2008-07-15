@@ -1,0 +1,134 @@
+-- A solution to the 2008 ICFP programming contest.
+--	Needs a running the contest server to connect to.
+
+import Message
+import Control
+import Update
+import Plan
+import Display
+
+import System.Network
+import System.Environment
+import Util
+
+debug_recv	= False
+
+data Link 
+	= Link { 
+		socket	:: Int;		-- socket for this connection
+		slack	:: [String]; 	-- extra tokens left over after reading last message
+	}
+	
+-- Main --------------------------------------------------------------------------------------------
+main ()
+	| argCount < 20
+	= putStr "usage: rover <hostname> <port>"
+	
+	| otherwise
+	= do
+		sock	 = boxInt32 (connect 
+					(dangerUnboxString (getArgValue 1))
+					(unboxInt32 (read (getArgValue 2))))
+		init (Link sock [])
+   	
+
+-- Receive the init message and initialise the rover
+--	If the first message isn't an init then we're screwed.
+init link
+ = case recvServer link of
+ 	msg@MsgInit{}
+	 -> do	rover 	:: Rover %r %i %s	
+	 		:- Mutable %r, Const %i, Mutable %s
+			
+	 	rover	= Rover (msg.sensorMin)
+				(msg.sensorMax)
+				(msg.speedMax)
+				(msg.turnSpeedMax)
+				(msg.turnSpeedHardMax)
+				
+		control	:: Control %r %i
+			:- Mutable %r, Const %i
+		
+		control	= Control
+			
+		coma link rover control
+
+-- Main loop
+--	Accept telemetry from server and send control messages back
+--
+coma :: Link -> Rover -> Control -> ()
+coma link rover control
+ = do	
+	res	= try (pulse link rover control)
+	          catch _ -> putStr "trouble\n"
+
+	coma link rover control
+	
+
+-- | Pulse the world
+pulse :: Link -> Rover -> Control -> ()
+pulse link rover control
+ = do	
+ 	-- receive a message from the server
+	msg	= recvServer link
+	
+	-- update rover state
+	updateRover rover msg	
+
+	-- plan what to do
+	planControl rover control
+
+	-- move towards the desired control state
+	cmd 	= controlTrack rover control
+
+	-- send the command to the server
+	sendCommand (link.socket) cmd
+
+	-- update the window
+	updateFrame rover 
+
+	()
+
+
+
+-- | Receive a message from the server
+recvServer :: Link -> MsgServer
+recvServer link
+ = do	
+	-- receive some data from the server
+	buf	:: String %r :- Mutable %r
+	buf	= newString 4096
+	msgLen	= recv 	(unboxInt32 link.socket) 
+			(unsafe_castToVoidPtr (dangerUnboxString buf)) 
+			1024# 
+			0#
+
+	-- if the message len == 0 then assume the server has died
+	when (boxInt32 msgLen == 0)
+	 throw Exception "server has died."
+
+	recvParse buf
+
+recvParse str
+ = do	
+	-- parse the message
+	msg	= try (parseMessage (copy str))
+		  catch	_	-> MsgBad "trouble";
+
+	msg
+
+	
+-- | Send a control message to the server
+sendCommand :: Int -> MsgCommand -> ()
+
+sendCommand sock (MsgCommand Nothing Nothing) 
+	= ()
+
+sendCommand sock cc
+ = do	str	= (showMsgCommand cc) .flatten
+ 	send 	(unboxInt32 sock)
+		(unsafe_castToVoidPtr (dangerUnboxString str))
+		(unboxInt32 (string_length str))
+		0#
+	()
+

@@ -1,0 +1,12 @@
+
+foreign import "_ddcArgCount"
+ argCountU :: Int32#
+ 
+argCount = boxInt32 argCountU
+ 
+ 
+foreign import "primArgValue"
+ getArgValueU :: Int32# -> String#
+
+getArgValue ix 
+ = boxString (getArgValueU (unboxInt32 ix))

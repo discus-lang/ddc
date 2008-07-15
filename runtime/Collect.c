@@ -145,10 +145,10 @@ Obj*	_evacuateObj
 	if (objType == _ObjTypeForward
 		 || !anchored)
 	{
-		if (obj < (Obj*)_heapBase) 
+		if (obj < (Obj*)_ddcHeapBase) 
 			_PANIC ("Obj %p to be evacuated lies before start of heap.\n", obj);
 
-		if (obj > (Obj*)_heapPtr)
+		if (obj > (Obj*)_ddcHeapPtr)
 			_PANIC ("Obj %p to be evacuated lies after end of heap.\n", obj);
 	}
 #endif

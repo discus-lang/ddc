@@ -1,0 +1,96 @@
+import Rover
+import Config
+import Math.Util
+
+-- Rover Display -----------------------------------------------------------------------------------
+import Graphics.Frame
+import Graphics.Render
+import Graphics.Shape
+
+winSizeX	= 500
+winSizeY	= 500
+scale		= 2.0
+
+frame :: Frame %c %m :- Mutable %m
+frame		= new&{Frame} "rover" winSizeX winSizeY
+
+updateFrame :: Rover -> ()
+updateFrame rover
+ = do	-- center point
+ 	cX	= toFloat $ winSizeX / 2
+ 	cY	= toFloat $ winSizeY / 2
+ 
+	frame.clear (color&{Frame} 0 0 0)
+ 	renderPrims frame
+		[ Translate cX cY 
+		, Scale scale (-scale)
+
+		-- the rover
+		, Local (circle_centered (Vec2 0.0 0.0) 1.0 10)
+
+		-- the circle of ignorance
+		, Local (circle_centered (Vec2 0.0 0.0) configDistIgnore 50) 
+
+		-- rover scans
+		, Local (concatMap (primScan rover) rover.scans)
+
+		-- hazards
+		, Local 
+			( Rotate    (degToRad (-rover.dir + 90.0))
+			: Translate (-rover.pos.x) (-rover.pos.y)
+			: (concat 
+				$ map (primHazard rover)
+				$ filter (\haz -> (haz.pos - rover.pos) .magnitude < configDistIgnore)
+				$ rover.martians ++ rover.terrain ))
+
+
+		]
+		
+	frame.update
+
+primHazard :: Rover -> Hazard -> [Primitive]
+primHazard rover hazard
+ = case hazard of
+ 	HazTerrain OBoulder pos radius
+	 -> [ Local (Color 120 120 120
+	 		: circle_centered pos radius 50)
+	    , Local (Color 40  40  40
+	    		: circle_centered pos 
+				(configDangerBoulder rover hazard) 50) ]
+
+ 	HazTerrain OCrater pos radius
+	 -> [ Local (Color 180 180 0
+	 		: circle_centered pos radius 50)
+	    , Local (Color 90  90 0
+	    		: circle_centered pos 
+				(configDangerCrater rover hazard) 50) ]
+
+	HazTerrain OHome pos radius
+	 -> [ Local (Color 0 255 0
+	 		: circle_centered pos radius 50) ]
+	 
+	HazMartian pos dir speed
+	 -> [ Local (Color 0 0 255
+	 		: circle_centered pos 1.0 50) 
+	    , Local (Color 0 0 128
+	    		: circle_centered pos 
+				configDangerMartian 50) ]
+	 
+	_ -> []
+
+primScan :: Rover -> Scan -> [Primitive]
+primScan rover scan
+ = do	pc	= (Vec2 0.0 0.0) 
+ 	px	= (Vec2 (configDistIgnore - 10.0) 0.0)
+			.rotate (degToRad scan.dir)
+
+	redness	| scan.badness > 1.0	= 255
+		| otherwise		= truncate (scan.badness * 255.0)
+
+ 	[Local 	[ Color redness 0 0
+		, Rotate (degToRad (-rover.dir + 90.0))
+		, Line pc px] ]
+
+
+
+

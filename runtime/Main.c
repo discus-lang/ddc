@@ -17,6 +17,10 @@ void	_ddcRuntimeInit
 		( int argc
 		, char** argv)
 {
+	// Stash our args
+	_ddcArgCount	= argc;
+	_ddcArgValue	= argv;
+
 	// Allocate profile data.
 	_ddcProfile	= _ddcProfileNew ();
 	_ddcConfigSetup ();

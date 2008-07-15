@@ -132,6 +132,9 @@ foreign import "sqrtf"
 foreign import "truncf"
  truncU	:: Float32# -> Float32#
 
+foreign import "powf"
+ fpowU	:: Float32# -> Float32# -> Float32#
+
 sin x	= boxFloat32 (sinU   (unboxFloat32 x))
 asin x	= boxFloat32 (asinU  (unboxFloat32 x))
 cos x	= boxFloat32 (cosU   (unboxFloat32 x))
@@ -151,9 +154,10 @@ foreign import "floorf"
 foreign import "fabsf"
  fabsU  :: Float32# -> Float32#
 
-log   x	= boxFloat32 (logU   (unboxFloat32 x))
-floor x	= boxFloat32 (floorU (unboxFloat32 x))
-fabs x	= boxFloat32 (fabsU  (unboxFloat32 x))
+log   x	  = boxFloat32 (logU   (unboxFloat32 x))
+floor x	  = boxFloat32 (floorU (unboxFloat32 x))
+fabs x	  = boxFloat32 (fabsU  (unboxFloat32 x))
+fpow x y  = boxFloat32 (fpowU  (unboxFloat32 x) (unboxFloat32 y))
 
 -- conversion
 foreign import "primFloat32_truncate"

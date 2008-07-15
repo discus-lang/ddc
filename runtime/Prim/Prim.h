@@ -136,10 +136,14 @@ Obj*	primError			(Obj* str)	__attribute__ ((noreturn));
 Obj*	primExit			(Obj* str)	__attribute__ ((noreturn));
 
 Obj*	primRefUpdate			(Obj* ref, Obj* x);
+Int32	primConnect			(String hostname, Int32 port);
+Int32	primArgCount			(Obj* x);
+String	primArgValue			(Int32 x);
 
 
 // -- Runtime
 Int32	primRuntime_slotUsage		(Obj* x);
+
 
 
 // -----

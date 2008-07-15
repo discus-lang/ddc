@@ -70,6 +70,12 @@ instance Show [Char] where
  showL ss	= showListL @ showL  ss
 
 
+-- Show a maybe something
+showMaybe showX xx
+ = case xx of
+ 	Just x	-> "Just " % showX x
+	Nothing	-> "Nothing"
+
 -- Show a list strictly
 --	this demands the entire list
 showList  showX xx

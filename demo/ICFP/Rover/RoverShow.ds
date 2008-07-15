@@ -1,0 +1,69 @@
+
+import Rover
+
+instance Show StateDrive where
+ show sd 
+  = case sd of
+ 	SDAccel		-> "SDAccel"
+	SDBreak		-> "SDBreak"
+	SDRoll		-> "SDRoll"
+		
+instance Show StateTurn where
+ show st 
+  = case st of
+	STHardLeft	-> "STHardLeft"
+	STLeft		-> "STLeft"
+	STStraight	-> "STStraight"
+	STRight		-> "STRight"
+	STHardRight	-> "STHardRight"
+	
+-----
+instance Show TerrainKind where
+ show tk 
+  = case tk of
+ 	OBoulder	-> "OBoulder"
+	OCrater		-> "OCrater "
+	OHome		-> "OHome"
+	OMartian	-> "OMartian"
+
+terrainKind_eq t1 t2
+ = case (t1, t2) of
+ 	(OBoulder, OBoulder)	-> True
+	(OCrater,  OCrater)	-> True
+	(OHome,    OHome)	-> True
+	(OMartian, OMartian)	-> True
+	_			-> False
+
+instance Eq TerrainKind where
+	(==) 	= terrainKind_eq
+
+
+-- Hazard
+instance Show Hazard where
+ show haz 
+  = case haz of
+ 	HazTerrain kind pos radius
+	 -> "HazTerrain" %% show kind %% parens (show pos) %% show radius
+	 
+	HazMartian pos dir speed
+	 -> "HazMartian" %% parens (show pos) %% show dir %% show speed
+	
+		
+hazard_eq :: Hazard -> Hazard -> Bool
+hazard_eq h1 h2
+	| h1.kind 	== h2.kind
+	, h1.pos  	== h2.pos
+	, h1.radius	== h2.radius
+	= True
+	
+	\= False
+	
+instance Eq Hazard where
+	(==) h1 h2	= hazard_eq h1 h2
+
+
+-- Problem
+instance Show Problem where
+ show (Problem bad haz dist)
+ 	= "Problem " %% show bad % ":" %% parens (show haz) %% " dist:" %% show dist
+

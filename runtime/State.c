@@ -12,6 +12,10 @@ bool		_ddcDumpOnPanic	= false;
 // Profiling information
 _Profile*	_ddcProfile	= 0;
 
+// A stash of the command args
+Int32	_ddcArgCount		= 0;
+String*	_ddcArgValue		= 0;
+
 // The Heap ----------------------------------------------------------------------------------------
 
 // The first object is allocated at this addr.

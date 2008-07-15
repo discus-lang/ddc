@@ -24,7 +24,7 @@ void*	_alloc		(UInt byteCount)
 {
 #if _DDC_DEBUG
 	// Avoid allocating object of a size that will mis-align the heap.
-	assert(byteCount >= 8)
+	assert(byteCount >= 8);
 	assert((byteCount % 4) == 0);
 #endif
 

@@ -79,7 +79,7 @@ instance Pretty Type PMode where
 	TVar k v	-> pprVarKind v k 
 
 	TTop k		-> k % "Top"
-	TBot k		-> k % "Bot"
+	TBot k		-> k % "_"
 
 	-- data
 	TData k v []	-> pprVarKind v k

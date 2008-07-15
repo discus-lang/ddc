@@ -1,0 +1,239 @@
+
+-- Message handling
+import Rover
+import RoverShow
+
+import Util
+import Class.Read
+
+-- Server -> Controller ----------------------------------------------------------------------------
+-- | Telemetry message
+data MsgServer
+
+	-- message didn't parse
+	= MsgBad String
+
+	-- world / rover status config 
+	| MsgInit {
+		worldSizeX		:: Float;
+		worldSizeY		:: Float;
+		timeLimit		:: Float;
+		sensorMin		:: Float;
+		sensorMax		:: Float;
+		speedMax		:: Float;
+		turnSpeedMax		:: Float;
+		turnSpeedHardMax	:: Float;
+	}
+	
+	-- sensor telemetry
+	| MsgTelem {
+		timeStamp		:: Int;
+		drive			:: StateDrive;
+		turn			:: StateTurn;
+		posX			:: Float;
+		posY			:: Float;
+		dir			:: Float;
+		speed			:: Float;
+		objects			:: [MsgObject];
+	}
+	
+	-- bounced off something
+	| MsgBounce
+	
+	-- end of run
+	| MsgEnd {
+		condition		:: EndCondition;
+	}		
+	
+-- | The reason why the run ended.
+data EndCondition
+	= EndCrater
+	| EndMartianated
+	| EndTime
+	| EndSuccess
+
+	
+-- | Info about objects in the world
+data MsgObject
+	= MsgTerrain {
+		kind			:: TerrainKind;
+		posX			:: Float;
+		posY			:: Float;
+		radius			:: Float;
+	}
+	
+	| MsgMartian {
+		posX			:: Float;
+		posY			:: Float;
+		dir			:: Float;	-- deg clockwise from x axis
+		speed			:: Float;	-- meters / sec
+	}
+
+
+-- Controller -> Server ----------------------------------------------------------------------------
+data MsgCommandDrive	= CAccel | CBreak
+data MsgCommandTurn	= CLeft  | CRight
+data MsgCommand		= MsgCommand (Maybe MsgCommandDrive) (Maybe MsgCommandTurn)
+
+instance Show MsgCommandTurn where
+ show msg
+  = case msg of
+  	CLeft		-> "CLeft"
+	CRight		-> "CRight"
+	
+				
+showMsgCommand :: MsgCommand -> String
+showMsgCommand 	(MsgCommand mDrive mTurn)
+ = do	sAcc	= case mDrive of
+			Nothing		-> ""
+ 			Just CAccel	-> "a"
+			Just CBreak	-> "b"
+
+ 	sTurn	= case mTurn of
+			Nothing		-> ""
+			Just CLeft	-> "l"
+			Just CRight	-> "r"
+			
+	sAcc % sTurn % ";"
+ 
+
+
+-- Show --------------------------------------------------------------------------------------------
+instance Show MsgServer where
+ show msg
+  = case msg of
+	MsgBad str
+	 -> "MsgBad"
+
+  	MsgInit {}
+	 -> "MsgInit\n" 
+	 %  "    worldSizeX       = " % show msg.worldSizeX		% "\n"
+	 %  "    worldSizeY       = " % show msg.worldSizeY		% "\n"
+	 %  "    timeLimit        = " % show msg.timeLimit		% "\n"
+	 %  "    sensorMin        = " % show msg.sensorMin		% "\n"
+	 %  "    sensorMax        = " % show msg.sensorMax		% "\n"
+	 %  "    speedMax         = " % show msg.speedMax		% "\n"
+	 %  "    turnSpeedMax     = " % show msg.turnSpeedMax		% "\n"
+	 %  "    turnSpeedHardMax = " % show msg.turnSpeedHardMax	% "\n"
+
+	MsgTelem {}
+	 -> "MsgTelem\n"
+	 %  "    timeStamp        = " % show msg.timeStamp		% "\n"
+	 %  "    drive            = " % show msg.drive			% "\n"
+	 %  "    turn             = " % show msg.turn			% "\n"
+	 %  "    posX             = " % show msg.posX 			% "\n"
+	 %  "    posY             = " % show msg.posY			% "\n"
+	 %  "    dir              = " % show msg.dir			% "\n"
+	 %  "    speed            = " % show msg.speed			% "\n"    
+	 % "\n"
+	 % showObjects msg.objects
+	 
+	MsgBounce {}
+	 -> "MsgBounce\n"
+	 
+	MsgEnd {}
+	 -> "MsgEnd\n"
+	 %  "    condition        = " % show msg.condition		% "\n"
+	 
+instance Show EndCondition where
+ show cc 
+  = case cc of
+  	 EndCrater	-> "EndCrater"
+	 EndMartianated	-> "EndMartianated"
+	 EndTime	-> "EndTime"
+	 EndSuccess	-> "EndSuccess"
+	 
+	 
+showObjects :: [MsgObject] -> String
+showObjects []		= "\n"
+showObjects (o : os)	= show o % "\n" % showObjects os
+
+instance Show MsgObject where
+ show msg 
+  = case msg of
+	MsgTerrain {}
+	 -> "MsgTerrain\n"
+	 %  "    kind             = " % show msg.kind			% "\n"
+	 %  "    posX             = " % show msg.posX			% "\n"
+	 %  "    posY             = " % show msg.posY			% "\n"
+	 %  "    radius           = " % show msg.radius			% "\n"
+
+	MsgMartian {}
+	 -> "MsgMartian\n"
+	 %  "    posX             = " % show msg.posX			% "\n"
+	 %  "    posY             = " % show msg.posY			% "\n"
+	 %  "    dir              = " % show msg.dir			% "\n"
+	 %  "    speed            = " % show msg.speed			% "\n"
+	 
+
+
+-- Parse -------------------------------------------------------------------------------------------
+-- Parse a message sent by the server
+parseMessage :: String -> MsgServer
+parseMessage str
+ = do	slist	= string_toList str
+	stoks	= tokenise slist
+-- 	putStr	$ show stoks % "\n"
+
+	parseMessage' str stoks
+	
+parseMessage' str []	
+	= MsgBad str
+	
+parseMessage' str (tag : fields)
+	| tag == "I"	= parseInit  fields
+	| tag == "T"	= parseTelem str fields
+	| tag == "B"	= MsgBounce
+	| tag == "C"    = parseEnd str EndCrater      fields
+	| tag == "K"	= parseEnd str EndMartianated fields
+	| tag == "S"	= parseEnd str EndSuccess     fields
+	| tag == "E"    = parseEnd str EndTime        fields
+	| otherwise	= MsgBad str
+	
+	
+parseInit (wsX : wsY : tl : sMin : sMax : spMax : tsMax : tsHMax : rest)
+ = MsgInit 	(read wsX) (read wsY) (read tl) (read sMin) 
+		(read sMax) (read spMax) (read tsMax) (read tsHMax)
+
+parseTelem str (ts : ctl : posX : posY : dir : speed : rest)
+ = do	ctl1	= string_char ctl
+ 	ctl2	= string_char (string_rest ctl)
+
+ 	sDrive	| ctl1 == "a"	= SDAccel
+		| ctl1 == "b"	= SDBreak
+		| ctl1 == "-"	= SDRoll
+	
+	sTurn	| ctl2 == "L"	= STHardLeft
+		| ctl2 == "l"	= STLeft
+		| ctl2 == "-"	= STStraight
+		| ctl2 == "r"	= STRight
+		| ctl2 == "R"	= STHardRight
+	
+	objects	= parseObjects str rest
+	
+  	MsgTelem	(read ts) sDrive sTurn (read posX)
+			(read posY) (read dir) (read speed) objects
+
+parseObjects str (semi : [])
+	| semi == ";"		= []
+	
+parseObjects str (tag : fields)
+	| tag == "b"	= parseObject str tag fields
+	| tag == "c"	= parseObject str tag fields
+	| tag == "h"	= parseObject str tag fields
+	| tag == "m"	= parseMartian str tag fields
+	
+parseObject str tag (posX : posY : radius : rest)
+ = do	kind	| tag	== "b"	= OBoulder
+ 		| tag	== "c"	= OCrater
+		| tag	== "h"	= OHome
+	
+	MsgTerrain kind (read posX) (read posY) (read radius) 
+		: parseObjects str rest
+	
+parseMartian str tag (posX : posY : dir : speed : rest)
+ =	MsgMartian (read posX) (read posY) (read dir) (read speed)
+ 		: parseObjects str rest
+		
+parseEnd str condition fields
+ = 	MsgEnd condition

@@ -1,0 +1,108 @@
+import Math.Vec2
+
+-- State of rover drive motor
+data StateDrive
+	= SDAccel
+	| SDBreak
+	| SDRoll
+
+
+-- Which way the rover is turning
+data StateTurn
+	= STHardLeft
+	| STLeft
+	| STStraight
+	| STRight
+	| STHardRight
+	
+
+-- A thing in the world
+data TerrainKind
+	= OBoulder
+	| OCrater
+	| OHome
+	| OMartian
+
+	
+-- Things we want to avoid
+data Hazard
+	= HazTerrain {
+		kind	:: TerrainKind;
+		pos	:: Vec2 Float;
+		radius	:: Float;
+	}
+
+	| HazMartian {
+		pos	:: Vec2 Float;
+		dir	:: Float;
+		speed	:: Float;	
+	}
+
+	-- an anti-hazard?
+	| HazHome {
+		.pos	:: Vec2 Float	= id (Vec2 0.0 0.0);
+		.radius	:: Float	= 5.0;
+	}
+
+
+-- | Result of a scan
+data Scan
+	= Scan {
+		dir		:: Float;		-- direction of scan
+		badness		:: Float;		-- badnes of this scan
+		angleAway	:: Float;		-- angle off our desired home vector
+		problems	:: [Problem];		-- problems we can see with this vector
+	}
+
+
+-- | A ranked problem
+data Problem
+	= Problem {
+		badness		:: Float;
+		hazard		:: Hazard;
+		distDanger	:: Float;		-- distance to interception with danger circle
+		distCollide	:: Maybe Float;		-- distance to hard collision
+		distApproach	:: Float;		-- distance of closest approach -ve on collision
+	}
+
+project Problem where
+ withBadness (Problem bad haz distDanger distCollide distApproach) bad'	
+ 	= Problem bad' haz distDanger distCollide distApproach
+
+
+-- The current best known state of the rover.
+data Rover %r %i %s
+	= Rover {
+		-- config, from the server init message.
+		sensorMin	:: Float %i;
+		sensorMax	:: Float %i;
+		speedMax	:: Float %i;
+		turnSpeedMax	:: Float %i;
+		turnSpeedHardMax:: Float %i;
+		.homePos	:: Vec2 %i (Float %i)	= id (Vec2 0.0 0.0);
+		
+		-- current state, updated by telemetry.
+		.timeStamp	:: Int %s		= 0;
+		.pos		:: Vec2 %s (Float %s)	= id (Vec2 0.0 0.0);
+		.drive		:: StateDrive %i	= id SDRoll;
+		.turn		:: StateTurn %i		= id STStraight;
+		.dir		:: Float %s		= 0.0;
+		.speed		:: Float %s		= 0.0;
+
+		-- derived parameters
+		.vFacing	:: Vec2 %s (Float %s)	= id (Vec2 0.0 0.0);
+		.rotVel		:: Float %s		= 0.0;
+		.rotAcc		:: Float %s		= 0.0;
+
+		-- the static terrain that we're aware of
+		.terrain	:: List %i (Hazard %i)	= id [];
+
+		-- the martians we can see right now
+		.martians	:: List %i (Hazard %i)	= id [];
+
+		-- the turn budget, to avoid oscillating between plans
+		.turnBudget	:: Float %s		= 90.0;
+
+		-- the current set of scans
+		. scans		:: List %i (Scan %i)	= id [];
+	}

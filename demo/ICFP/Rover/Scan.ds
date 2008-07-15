@@ -1,0 +1,267 @@
+
+import Math.Vec2
+import Math.Util
+
+import Rover
+import RoverShow
+import Config
+import Util
+
+debug_scan	= False
+
+
+-- | Scan along this ray to see if it might be a better option.
+scan :: Rover -> Vec2 Float -> Scan
+scan rover dir
+ = do	
+ 	-- the vector to home
+	vHome		= (rover.homePos - rover.pos) .normalised
+
+ 	-- assign this direction a starting goodness depending
+ 	--	the angle off the vector to home
+	angleAway	= radToDeg (acos (dir .dot vHome))
+
+	-- badness due to the angle not being right
+	badAngle	= 1.0 - cos (degToRad angleAway)
+
+	hazards		=  rover.terrain ++ [HazHome]
+
+ 	-- only worry about the closest ptoblem along a certain line
+	probs	= findProblems rover rover.pos dir 
+			rover.terrain
+--			(rover.martians ++ rover.terrain)
+
+	probs_close
+		| isNil probs	= []
+		| otherwise		
+		= [fst 	$ minT2F 
+			$ map (\prob -> (prob, prob.distDanger)) 
+				probs]
+
+
+	-- give each problem a badness
+	badTerrain	= foldl (+) 0.0 (map (\p -> p.badness) probs_close)
+	badTotal	= badTerrain + badAngle
+		
+	when debug_scan
+	 do	putStr	$ "Scan " 
+	 			%% show (radToDeg dir.angle)
+	 			%% "badness: " 	 %% show badTotal 
+	 			%% "angle_off:"  %% show angleAway 
+				%% "angle_bad:"  %% show badAngle 
+				% "\n"
+		map_ (\prob -> putStr $ "    " %% show prob % "\n") probs_close
+		putStr	$ "\n"
+
+	Scan (radToDeg dir.angle) badTotal angleAway probs_close
+	
+
+
+-- Find Problems ------------------------------------------------------------------------------------
+findProblems :: Rover -> Vec2 Float -> Vec2 Float -> [Hazard] -> [Problem]
+findProblems rover orig dir hazards
+ = do	
+ 	-- cast a ray into the world to find hazards
+	--	this gives us all hazards who's danger circles touch the ray
+	--	we'll ignore hazards when the circle is too far away
+	haz_close	= filter (\(h, d) -> d < configDistIgnore)
+			$ cast 	(hazardCircle rover)
+				rover.pos 
+				dir 
+				rover.terrain
+
+	map (\(haz, dangerDist) 
+		-> makeProblem rover orig dir haz dangerDist)
+		haz_close
+		
+
+-- | Work out some more things about a hazard we're worried about
+makeProblem :: Rover -> Vec2 Float -> Vec2 Float -> Hazard -> Float -> Problem
+makeProblem rover orig dir haz distDanger
+ = do	
+ 	-- re-cast the ray, but this time see if we'll actually collide
+	mDistCollide'	
+		= cast1 hazardCollide
+			orig dir haz
+			
+	mDistCollide
+	 = case mDistCollide' of
+	 	Nothing	-> Nothing
+		Just c	-> Just (c.clamp 0.1 1000.0)
+			
+	-- work out our closest approach to this hazard
+	--	this is negative if we'll actually collide
+
+	-- closest point on the line to the center of the hazard
+	pClose	= closestPointOnLine 
+			rover.pos 
+			(rover.pos + rover.vFacing)
+			haz.pos
+
+	distApproach 
+		= (pClose - haz.pos) .magnitude - haz.radius
+
+	-- build the actual problem
+	prob		= Problem 
+				0.0 haz 
+				(distDanger.clamp 0.1 1000.0)
+				mDistCollide 	
+				(distApproach.clamp 0.1 1000.0)
+	
+	-- determine its badness
+	badness		= scoreProblem rover prob
+	
+	prob.withBadness badness
+	
+
+-- | Wrap each of the hazards in a circle. 
+--	If our path lies out-side of the circle we'll ignore the hazard
+hazardCircle :: Rover -> Hazard -> (Vec2 Float, Float)
+hazardCircle rover hazard
+ = case hazard of
+ 	-- ignore boulders if we're passing more than 5m from them
+ 	HazTerrain OBoulder pos radius	
+		-> (pos, configDangerBoulder rover hazard)
+	
+	-- ignore craters if we're passing more than 10m from them
+	HazTerrain OCrater pos radius	
+		-> (pos, configDangerCrater rover hazard)
+
+	-- ignore martians if they're more than 100m away
+	HazMartian pos dir speed	
+		-> (pos, configDangerMartian)
+
+
+-- | The real collision point (plus a bit for extras)
+hazardCollide :: Hazard -> (Vec2 Float, Float)
+hazardCollide hazard
+ = case hazard of
+ 	HazTerrain OBoulder pos radius	-> (pos, radius + 1.0)
+	HazTerrain OCrater  pos radius	-> (pos, radius + 1.0)
+	HazMartian pos dir speed	-> (pos, 5.0)
+
+
+-- | Cast a ray through this list of objects
+--
+cast	:: (a -> (Vec2 Float, Float))	-- function to give centre and radius of each object
+	-> Vec2 Float	 		-- from this point
+	-> Vec2 Float			-- along this vector
+	-> [a]				-- objects to search
+	-> [(a, Float)]			-- objects that intersect the ray, with their distance to intercept
+
+cast fun orig dir []	= []
+cast fun orig dir (x:xs)
+ = case cast1 fun orig dir x of
+ 	Just dist	-> (x, dist) : cast fun orig dir xs
+	Nothing		-> cast fun orig dir xs
+
+
+cast1 	:: (a -> (Vec2 Float, Float))	-- fn to extract center and radius of object
+	-> Vec2 Float 			-- cast ray from this point
+	-> Vec2 Float			-- along this vector (must be a unit vector)
+	-> a				-- object to check
+	-> Maybe Float			-- Just distance to circle, if it intersects
+
+cast1 fun orig dir x
+ = do	
+ 	-- work out the center and radius for this object
+ 	(c, r)	= fun x
+ 
+ 	p	= orig + dir. muls ((c - orig) .dot dir)
+	d_cp	= (p - c)    .magnitude
+	d	= (p - orig) .magnitude - sqrt (r * r - d_cp * d_cp)
+
+--	putStr	$ "cast1 " %% parens (show orig) %% parens (show dir) %% parens (show c) %% show r % "\n"
+--		% "    d_cp = " %% show d_cp % "\n"
+
+	match 	| d_cp >= r			
+		= Nothing
+			
+		| (p - orig) .dot dir <= 0.0	
+		= Nothing
+				
+		| otherwise
+		= Just d
+
+
+
+-- Badness Scoring ---------------------------------------------------------------------------------
+-- | Assign this problem a badness score
+scoreProblem :: Rover -> Problem -> Float
+scoreProblem rover prob
+ = do	-- work out the distance to the home plate
+	dHome	= (rover.homePos - rover.pos) .magnitude
+	
+	case prob.hazard of
+		HazTerrain OBoulder _ _	-> scoreBoulder rover dHome prob
+		HazTerrain OCrater  _ _ -> scoreCrater  rover dHome prob
+		
+
+scoreBoulder :: Rover -> Float -> Problem -> Float
+scoreBoulder rover dHome prob
+ = do	badness
+  	 = match
+		-- it's too far away to care
+		| prob.distDanger > 50.0 + prob.hazard.radius
+		= 0.0
+
+		-- the danger circle is past the home plate
+		| prob.distDanger > dHome	
+		= 0.0
+
+		-- see if its in front of us
+		| Just dCollide	<- prob.distCollide
+		, configCollide rover (prob.hazard) dCollide
+		= 10.0
+
+		-- we're inside the danger circle
+		| prob.distDanger < 1.0
+		= 1.0
+			
+		| otherwise	
+		= match	| prob.distApproach > 2.0 * rover.speed	= 0.0
+			| otherwise				
+			= 1.0 / (fpow prob.distApproach 1.5)
+{-
+	putStr	$ "Score Boulder"
+		% "  badness: " 	% show badness			
+		% "  distDanger: " 	% show prob.distDanger		 
+ 		% "  distApproach: " 	% show prob.distApproach	 
+		% "  distCollide: " 	% showMaybe show prob.distCollide 
+		% "\n"
+-}
+	badness
+	
+scoreCrater :: Rover -> Float -> Problem -> Float
+scoreCrater rover dHome prob
+ = do	badness
+  	 = match-- it's too far away to care
+		| prob.distDanger > 50.0 + prob.hazard.radius
+		= 0.0
+
+		-- the danger circle is past the home plate
+		| prob.distDanger > dHome	
+		= 0.0
+
+		-- see if its in front of us
+		| Just dCollide	<- prob.distCollide
+		, configCollide rover (prob.hazard) dCollide
+		= 10.0
+
+		-- we're inside the danger dircle
+		| prob.distDanger < 1.0
+		= 1.0
+		
+		| otherwise	
+		= match	| prob.distApproach > 2.0 * rover.speed	= 0.0
+			| otherwise		
+			= 1.0 / (fpow prob.distApproach 1.5)
+		
+{-	putStr	$ "Score Crater "
+		% "  badness: " 	% show badness		
+		% "  distDanger: " 	% show prob.distDanger		
+ 		% "  distApproach: " 	% show prob.distApproach	
+		% "  distCollide: " 	% showMaybe show prob.distCollide 
+		% "\n"
+-}
+	badness

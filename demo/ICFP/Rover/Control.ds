@@ -1,0 +1,126 @@
+
+import Message
+import Math.Vec2
+import Math.Util
+
+debug_control	= False
+
+-- | Low level controller settings, 
+--	This what state we want the rover move to.
+--
+data Control %r %i
+	= Control {
+		.speed	:: ControlSpeed %i	= id CSpeedStop;
+		.dir	:: Float %r		= 0.0;
+	}
+
+data ControlSpeed
+	= CSpeedStop		-- panic braking
+	| CSpeedMax		-- drive at the maximum speed available.
+	| CSpeedSet	Float	-- drive at this specific speed.
+
+instance Show ControlSpeed where
+ show ss
+  = case ss of
+  	CSpeedStop	-> "CSpeedStop"
+	CSpeedMax	-> "CSpeedMax"
+	CSpeedSet f	-> "CSpeedSet" %% show f
+
+-- | Generate a commmand which will move the rover towards the desired control state.
+controlTrack :: Rover -> Control -> MsgCommand
+controlTrack rover control
+ = do	cmdTurn		= controlTrackDir 	rover control
+ 	cmdDrive	= controlTrackDrive	rover control
+	
+	MsgCommand cmdDrive cmdTurn
+
+
+-- Drive Control -----------------------------------------------------------------------------------
+controlTrackDrive :: Rover -> Control -> Maybe MsgCommandDrive
+
+controlTrackDrive rover control
+ = case control.speed of
+	CSpeedStop	-> Just CBreak
+ 	CSpeedMax	-> Just CAccel
+	CSpeedSet set
+	 -> do	-- work out the speed difference between current and desired
+	 	diff	= set - rover.speed
+
+		match
+		 	| diff > 0.0	= Just CAccel
+			| diff < 10.0	= Just CBreak
+			| otherwise	= Nothing
+	
+
+-- Dir Control -------------------------------------------------------------------------------------
+controlTrackDir :: Rover -> Control -> Maybe MsgCommandTurn	
+controlTrackDir rover control
+ = do	vRover		= (Vec2 1.0 0.0) .rotate (degToRad rover.dir)
+ 	vControl	= (Vec2 1.0 0.0) .rotate (degToRad control.dir)
+
+	-- work out the distance between the control and destination angles
+	rDist	= radToDeg (acos (vRover .dot vControl))
+	
+	-- det is +ve if vectors are listed in counter-clockwise order
+	det	= vControl .det vRover
+
+	-- if we're turning fast and are close to correct angle
+	--	then ease up so we don't oversteer
+	newTurn	| rDist < 2.0
+--		, fabs (rover.rotVel) > 5.0
+		= STStraight
+	
+		| rDist < 15.0 
+		= match | det > 0.0	= STRight
+			| otherwise	= STLeft
+		
+		| otherwise
+		= match | det > 0.0	= STHardRight
+			| otherwise	= STHardLeft
+		
+	cmdTurn	= controlTurn rover.turn newTurn
+
+	when debug_control
+	 do	putStr	$ "rover.dir   = " % show rover.dir		% "\n"
+			% "rover.turn  = " % show rover.turn		% "\n"
+			% "control.dir = " % show control.dir		% "\n"
+			% "rDist       = " % show rDist			% "\n"
+			% "cmdTurn     = " % showMaybe show cmdTurn	% "\n\n"
+	cmdTurn
+
+-- | Work out the turn command to get to the desired turn state
+controlTurn 
+	:: StateTurn		-- current turn state
+	-> StateTurn		-- desired turn state
+	-> Maybe MsgCommandTurn -- turn command to make it so
+	
+controlTurn cur des
+	| STHardLeft 	<- cur
+	= match | STHardLeft	<- des	= Nothing
+		| otherwise		= Just CRight
+		
+	| STLeft	<- cur
+	= match	| STHardLeft	<- des	= Just CLeft
+		| STLeft	<- des	= Nothing
+		| otherwise		= Just CRight
+		
+	| STStraight	<- cur
+	= match	| STHardLeft	<- des	= Just CLeft
+		| STLeft	<- des	= Just CLeft
+		| STStraight	<- des	= Nothing
+		| STRight	<- des	= Just CRight
+		| STHardRight	<- des	= Just CRight
+
+	| STRight	<- cur
+	= match	| STHardRight	<- des	= Just CRight
+		| STRight	<- des	= Nothing
+		| otherwise		= Just CLeft
+
+	| STHardRight	<- cur
+	= match | STHardRight	<- des	= Nothing
+		| otherwise		= Just CLeft
+		
+
+
+
+

@@ -1,0 +1,110 @@
+
+import Message
+import Rover
+import Math.Vec2
+import Math.Util
+
+-- | Update the current rover state with this telemetry message
+updateRover 
+	:: Rover -> MsgServer -> ()
+
+updateRover rover msg
+ = case msg of
+ 	MsgTelem{}
+	 -> do 	-- track what rotational velocity we're at
+	 	updateRover_rotVel rover msg
+	 
+	 	-- update all the info from the message
+	 	rover.timeStamp	:= msg.timeStamp
+	 	rover#turn	#= msg.turn
+	 	rover#drive	#= msg.drive
+	 	rover.pos.x 	:= msg.posX
+		rover.pos.y	:= msg.posY
+		rover.dir	:= msg.dir
+		rover.speed	:= msg.speed
+
+		-- add sensed objects to our list of hazards
+		terrain'	= foldr addMsgTerrain [] msg.objects -- rover.terrain msg.objects
+		rover#terrain	#= terrain'
+
+		martians'	= foldr addMsgMartian [] msg.objects
+		rover#martians	#= martians'
+
+		rover#vFacing	#= (Vec2 1.0 0.0) .rotate (degToRad rover.dir)
+
+	 	()
+
+	MsgBounce {}	-> ()
+	MsgEnd{}	-> ()
+
+	MsgBad{}	
+	 -> do	putStr "updateRover: dropping bad message\n"
+	 	()
+
+-- Add an element of terrain to the known hazards
+addMsgTerrain :: MsgObject -> [Hazard] -> [Hazard]
+addMsgTerrain (MsgTerrain OHome posX posY radius) hazards
+	= hazards
+
+addMsgTerrain (MsgTerrain kind posX posY radius) hazards
+ = do	haz	= HazTerrain kind (Vec2 posX posY) radius
+
+	if elemF (==) haz hazards
+		then hazards
+		else haz : hazards
+
+addMsgTerrain _ hazards
+	= hazards
+
+
+-- Add an element of martian to known hazards
+addMsgMartian :: MsgObject -> [Hazard] -> [Hazard]
+addMsgMartian (MsgMartian posX posY dir speed) hazards
+ = do	haz	= HazMartian (Vec2 posX posY) dir speed
+ 	haz : hazards
+	
+addMsgMartian _ hazards
+	= hazards
+
+-- work out our current angular velocity based
+-- 	on the new direction information
+updateRover_rotVel :: Rover -> MsgServer -> ()
+updateRover_rotVel rover msg@MsgTelem{}
+ = do	oldRotVel	= copy rover.rotVel
+  
+ 	mRotVel	= diffRot 
+ 			rover.dir 	rover.timeStamp
+			msg.dir		msg.timeStamp
+
+	case mRotVel of
+	 Nothing	-> ()
+	 Just rotVel	-> rover.rotVel := rotVel
+
+	
+	mRotAcc = diffRot
+			oldRotVel	rover.timeStamp
+			rover.rotVel	msg.timeStamp
+
+	case mRotAcc of
+	 Nothing	-> ()
+	 Just rotAcc	-> rover.rotAcc := rotAcc
+			
+	 
+	()
+		
+-- Take the first difference of these rotation points
+diffRot 
+	:: Float -> Int 	-- old degrees, ms 	
+	-> Float -> Int 	-- new degrees, ms
+	-> Maybe Float		-- in deg/sec
+
+diffRot r1 ts1 r2 ts2
+ = do	vDirOld		= (Vec2 1.0 0.0) .rotate (degToRad r1)
+	vDirNew		= (Vec2 1.0 0.0) .rotate (degToRad r2)
+	rDist		= radToDeg (acos (vDirOld .dot vDirNew))
+	dTime		= toFloat (ts2 - ts1) / 1000.0
+	if dTime == 0.0
+	 then Nothing
+	 else Just (rDist / dTime)
+
+
