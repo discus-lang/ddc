@@ -89,23 +89,23 @@ dangerPack sDest ss
 
 -- | Get the first character of a string as a new string
 foreign import "primString_heads"
- string_char	:: String{read} -> String;
+ primString_char	:: String{read} -> String;
  
 -- | Get the tail of a string as a new string
 foreign import "primString_tails"
- string_rest	:: String{read} -> String;
+ primString_rest	:: String{read} -> String;
 
 -- | Check whether a string is empty
 foreign import "primString_isNul"
- string_isNul	:: String{read} -> Bool;
+ primString_isNul	:: String{read} -> Bool;
 
 -- | Return the ASCII code of the first character in this string
 foreign import "primString_ord"
- string_ord	:: String{read} -> Int;
+ primString_ord		:: String{read} -> Int;
 
 -- | Copy a string
 foreign import "primString_copy"
- string_copy	:: String{read} -> String;
+ primString_copy	:: String{read} -> String;
 
 ----------------------------------------------------------------------------------------------------
 
@@ -134,7 +134,7 @@ newString length
 	
 	str
 
--- | Return the how many characters are in this string.
+-- | Return how many characters are in this string
 string_length :: String -> Int
 string_length ss
   = case ss of 
@@ -187,6 +187,63 @@ primString_eq	s1 s2
   		true#	-> True
 		false#	-> False
 
+-- | Get the first character of a string as a new string.
+-- FIXME: This should return a Char, not a String
+string_char :: String -> String
+string_char s
+ = case s of
+        SAppend left _ -> string_char left
+        _              -> primString_char s
+
+-- | Get the tail of a string as a new string.
+string_rest s
+ = case s of
+        SAppend left right ->
+            let leftRest = string_rest left
+            in  if (string_isNul leftRest)
+                    then right
+                    else SAppend leftRest right
+        _ -> primString_rest s
+
+-- | Check whether a string is empty.
+string_isNul s
+ = case s of
+        SAppend _ _ -> False
+        _           -> primString_isNul s
+
+-- | Return the ASCII code of the first character in this string
+string_ord s
+ = case s of
+        SAppend left _ -> string_ord left
+        _              -> primString_ord s
+
+-- | Copy a string, preserving its shape.
+string_copy :: String -> String
+string_copy s
+ = case s of
+        SAppend left right -> SAppend (string_copy left) (string_copy right)
+        _                  -> primString_copy s
+
+
+
+infixr 7 %
+infixr 7 %%
+
+-- | Append one string to another.
+(%) a b
+    | a.isNul = b
+    | b.isNul = a
+             \= SAppend a b
+
+-- | Append one string to another separated by a space.
+(%%) a b = a % " " % b
+
+-- | Unbox a string, flattening if necessary
+unboxString :: String -> String#
+unboxString s
+ = case s of
+        SAppend _ _ -> dangerUnboxString (string_flatten s)
+        _           -> dangerUnboxString s
 
 -- Instances ---------------------------------------------------------------------------------------
 instance Eq String where

@@ -20,14 +20,6 @@ class Show a where
 	.  a -> String %r
 	:- ConstT a
 
--- The string paste operator
-infixr 7 %;
-infixr 7 %%;
-
-(%)  a b	= SAppend a b
-(%%) a b	= a % " " % b
-
-
 -- Strict Show -------------------------------------------------------------------------------------
 -- These instances are defined here instead of in Data.* so we don't 
 --	have to worry about recursive module definitions.
