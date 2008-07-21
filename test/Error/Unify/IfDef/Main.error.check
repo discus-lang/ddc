@@ -1,7 +1,7 @@
 ./test/Error/Unify/IfDef/Main.ds:6:10
     Type mismatch during unification.
-          cannot match: Data.Bool.Bool %8
-                  with: Base.Int %3
+          cannot match: Base.Bool %8
+                  with: Base.Int32 %3
 
           object of if-then-else expression
            which must be: Bool
@@ -9,5 +9,5 @@
 
         conflicts with, 
               the use of: x
-                 at type: Base.Int %3
+                 at type: Base.Int32 %3
                       at: ./test/Error/Unify/IfDef/Main.ds:6:13

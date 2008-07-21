@@ -5,27 +5,27 @@
 -- Infix
 
 -- Data
-data Fruit %rDK15
+data Fruit %rDK3
         = Apple
         
         | Orange;
 
-data Foo %rDK16 a
+data Foo %rDK4 a
         = FooInt {
-                Base.Int %rDK16;
+                Base.Int32 %rDK4;
         }
         
         | FooFloat {
-                Base.Float %rDK16;
+                Base.Float32 %rDK4;
         }
         
         | FooFun {
                 a -> a;
         };
 
-data Bar %rDK17 a
+data Bar %rDK5 a
         = BarFoo {
-                Main.Foo %rDK17 a;
+                Main.Foo %rDK5 a;
         };
 
 
@@ -57,7 +57,7 @@ foreign import ff
         :$ Base.Data;
         
 foreign import ffun
-        :: Foo %rTS2 (Base.Int %rTS6)
+        :: Foo %rTS2 (Base.Int32 %rTS6)
         :- Base.Const %rTS6
         ,  Base.Const %rTS2
         ,  Base.Direct %rTS6
@@ -66,7 +66,7 @@ foreign import ffun
         
 foreign import succ
         :: forall %r0 %r1
-        .  Base.Int %r0 -(!e0)> Base.Int %r1
+        .  Base.Int32 %r0 -(!e0)> Base.Int32 %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         

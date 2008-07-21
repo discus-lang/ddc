@@ -291,6 +291,11 @@ instance Monad m => TransM m Top where
 		to'		<- followT table to
 		transP table	$ PExtern v' tv' to'
 		
+	PExternData v k
+	 -> do	v'		<- followV table v
+		k'		<- followK table k
+		transP table 	$ PExternData v' k'
+		
 	PData v vs cs
 	 -> do	v'		<- transZM table v
 	 	vs'		<- transZM table vs

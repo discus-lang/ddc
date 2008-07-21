@@ -142,7 +142,35 @@ pExport
 -- Parse a foreign import.
 pTopForeignImport :: Parser (Top SP)
 pTopForeignImport
- = do	tok	<- pTok K.Foreign
+ = 	-- foreign import data STRING VAR :: KIND
+  (Parsec.try $ do
+	tok	<- pTok K.Foreign
+	pTok K.Import
+	pTok K.Data
+	name	<- pString 
+
+	con	<- liftM vNameT $ pCon
+	let con2 = con { Var.info = [Var.ISeaName name] }
+
+	pTok K.HasType
+	kind	<- pKind
+			
+	return	$ PForeign (spTP tok) (OImportUnboxedData name con2 kind))
+	
+	-- foreign import data STRING VAR
+ <|> (Parsec.try $ do
+	tok	<- pTok K.Foreign
+	pTok K.Import
+	pTok K.Data
+	name	<- pString 
+
+	con	<- liftM vNameT $ pCon
+	let con2 = con { Var.info = [Var.ISeaName name] }
+
+	return	$ PForeign (spTP tok) (OImportUnboxedData name con2 KValue))
+	
+ <|> do	-- foreign import STRING var :: TYPE
+	tok	<- pTok K.Foreign
  	pTok K.Import
 
 	mExName	<-  liftM Just pString 
@@ -158,7 +186,7 @@ pTopForeignImport
 				pTypeOp)
 		<|> return Nothing
 		
-	return	$ PForeign (spTP tok) $ OImport (OExtern mExName (vNameV var) sig mOpType)
+	return	$ PForeign (spTP tok) $ OImport mExName (vNameV var) sig mOpType
 
 
 -- Infix -------------------------------------------------------------------------------------------
@@ -236,22 +264,9 @@ pTopRegion
 -- | Parse a data type definition.
 pTopData :: Parser (Top SP)
 pTopData
- = 	-- data TYPE foreign STRING
-	-- overlaps with regular data def
- 	(Parsec.try $ do
-		tok	<- pTok K.Data
- 		con	<- liftM vNameT $ pCon
-		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
-		
-		pTok K.Foreign
-		name	<- pString 
-		let con2		= con { Var.info = [Var.ISeaName name] }
-
-	  	return	$ PData (spTP tok) con2 vars [])
-
-		
+ = 
  	-- data TYPE = CTOR | .. 
-  <|> 	do	tok	<- pTok	K.Data
+  	do	tok	<- pTok	K.Data
 		con	<- liftM vNameT $ pCon
 		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
 	

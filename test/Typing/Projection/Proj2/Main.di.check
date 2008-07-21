@@ -16,14 +16,14 @@ data Body %r1
         = BodyNil
         
         | Body {
-                mass :: Base.Float %r1 ;
-                pos :: Main.Vec2 %r1 (Base.Float %r1) ;
-                vel :: Main.Vec2 %r1 (Base.Float %r1) ;
+                mass :: Base.Float32 %r1 ;
+                pos :: Main.Vec2 %r1 (Base.Float32 %r1) ;
+                vel :: Main.Vec2 %r1 (Base.Float32 %r1) ;
         }
         
         | Pillar {
-                mass :: Base.Float %r1 ;
-                pos :: Main.Vec2 %r1 (Base.Float %r1) ;
+                mass :: Base.Float32 %r1 ;
+                pos :: Main.Vec2 %r1 (Base.Float32 %r1) ;
         };
 
 
@@ -66,43 +66,43 @@ foreign import project_Vec2_ref_y
         
 foreign import project_Body_mass
         :: forall %r0
-        .  Body %r0 -(!e0)> Base.Float %r0
+        .  Body %r0 -(!e0)> Base.Float32 %r0
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import project_Body_pos
         :: forall %r0
-        .  Body %r0 -(!e0)> Vec2 %r0 (Base.Float %r0)
+        .  Body %r0 -(!e0)> Vec2 %r0 (Base.Float32 %r0)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import project_Body_vel
         :: forall %r0
-        .  Body %r0 -(!e0)> Vec2 %r0 (Base.Float %r0)
+        .  Body %r0 -(!e0)> Vec2 %r0 (Base.Float32 %r0)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import project_Body_ref_mass
         :: forall %r0
-        .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Base.Float %r0)
+        .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Base.Float32 %r0)
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import project_Body_ref_pos
         :: forall %r0
-        .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Vec2 %r0 (Base.Float %r0))
+        .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Vec2 %r0 (Base.Float32 %r0))
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import project_Body_ref_vel
         :: forall %r0
-        .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Vec2 %r0 (Base.Float %r0))
+        .  Body %r0 -(!e0)> Data.Ref.Ref %r0 (Vec2 %r0 (Base.Float32 %r0))
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import dude
         :: forall %r0
-        .  Base.Unit -(!e0)> Vec2 %r0 (Base.Float %r0)
+        .  Base.Unit -(!e0)> Vec2 %r0 (Base.Float32 %r0)
         :- !e0        = Base.!Read %r0
         ,  Base.Lazy %r0
         :$ Base.Data -> Base.Data;

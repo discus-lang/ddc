@@ -224,21 +224,17 @@ instance Rename Module where
 instance Rename (Foreign SourcePos) where
  rename ff
   = case ff of
-  	OImport f
-	 -> do	f'	<- rename f	
-	 	return	$ OImport f'
-		
-	OExport f
-	 -> do	f'	<- rename f
-	 	return	$ OExport f'
-		
-	OExtern mS v tv to 
+ 	OImport mS v tv to 
 	 -> local
 	 $  do 	v'	<- lookupV v
 	 	tv'	<- rename tv
 		to'	<- rename to
-		return	$ OExtern mS v' tv' to' 
-
+		return	$ OImport mS v' tv' to' 
+	
+	OImportUnboxedData s v k
+	 -> local
+	  $ do	v'	<- lookupN NameType v
+		return	$ OImportUnboxedData s v' k
 
 -- Classes -----------------------------------------------------------------------------------------
 -- all this stuff should really have it's own constructor
@@ -315,7 +311,7 @@ instance Rename (Exp SourcePos) where
   = case exp of
 
 	-- core
-	XConst sp c		
+	XLit sp lit		
 	 -> return exp
 
 	XVar sp v		
@@ -571,7 +567,7 @@ bindPat lazy ww
 	 	return	( WVar sp v'
 			, [v'])
  
- 	WConst sp l
+ 	WLit sp _
 	 -> do	return	(ww, [])
 	 
 	WCon sp v ps

@@ -116,10 +116,10 @@ instance Monad m => TransM m n1 n2 Bool Bool
 
 instance Monad m => TransM m n1 n2 Var.Module Var.Module
  where	transZM table xx = return xx
- 
-instance Monad m => TransM m n1 n2 Const Const
- where	transZM table xx = return xx
 
+instance Monad m => TransM m n1 n2 LiteralFmt LiteralFmt
+ where	transZM table xx = return xx
+ 
 instance Monad m => TransM m n1 n2 Kind Kind
  where	transZM table xx = return xx
 

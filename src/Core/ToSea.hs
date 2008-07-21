@@ -14,6 +14,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarPrim	as Var
 import Shared.Var		(Var, NameSpace(..))
 import Shared.Error
+import Shared.Base
 import qualified Shared.VarBind	as Var
 import qualified Shared.Unique	as Unique
 
@@ -24,6 +25,7 @@ import qualified Core.Util		as C
 import qualified Core.Util.Slurp	as C
 import qualified Core.Reconstruct	as C
 
+import qualified Type.Exp		as T
 import qualified Type.Util		as T
 
 import qualified Sea.Exp  	as E
@@ -327,12 +329,16 @@ toSeaX		xx
 	 -> return	$ E.XAtom v
 
 	-- non string constants
-	C.XLit l
-	 -> return	$ toSeaConst l
+	C.XLit litFmt@(LiteralFmt lit fmt)
+	 | dataFormatIsBoxed fmt
+	 -> panic stage $ "toSeaX[XLit]: can't convert boxed literal " % litFmt
+	 
+	 | otherwise
+	 -> return	$ E.XLit litFmt
 
 	-- string constants are always applied to regions 
-	C.XAPP (C.XLit l@C.LString{}) (C.TVar C.KRegion r)
-	 -> return	$ toSeaConst l
+	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (C.TVar C.KRegion r)
+	 -> return	$ E.XLit litFmt
 
 	-- An application to type/region/effects only
 	--	we can just discard the TRE applications and keep the value.
@@ -475,9 +481,16 @@ toSeaG	mObjV ssFront gg
 				return	( ssFront ++ ssL
 					, Nothing)
 
-			-- match against literal value
-			| C.WLit l	<- w
-			= do	var		<- newVarN NameValue
+			-- the Sea language can't match against boxed literals
+			| C.WLit litFmt@(LiteralFmt lit fmt)	<- w
+			, dataFormatIsBoxed fmt
+			= panic stage 	$ "toSeaG: can't match against boxed data: " % show fmt % "\n"
+					% "   when converting guard: " % gg
+
+			-- match against an unboxed literal value
+			| C.WLit litFmt@(LiteralFmt lit fmt)	<- w
+			, dataFormatIsUnboxed fmt
+			= do	var	<- newVarN NameValue
 
 				let compX	= if isPatConst w
 					then E.XVar var
@@ -485,7 +498,7 @@ toSeaG	mObjV ssFront gg
 
 				let ssL		= assignLastSS (E.XVar var, t') ssRHS
 				return	( []
-					, Just $ E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX (toSeaConst l))
+					, Just $ E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX (E.XLit litFmt))
 			  
 			-- match against constructor
 			| C.WCon v lvts	<- w
@@ -534,35 +547,53 @@ slurpStmtsX xx
 
 
 -- Type --------------------------------------------------------------------------------------------
+
+-- | Convert an operational type from the core to the equivalent Sea type.
 toSeaT :: C.Type	-> E.Type
 toSeaT	xx
+	-- Sanity: the type to convert must be a value type.
+--	| not $ hasValueKind xx
+--	= panic stage 
+--		$ "toSeaT: cannot convert non-value type " % xx % " to Sea type\n"
+--		% "    kind = " % T.kindOfType xx % "\n"
 
-	-- void type
+	-- the unboxed void type is represented directly.
 	| Just (v, _, _)	<- T.takeTData xx
 	, Var.TVoidU		<- Var.bind v
 	= E.TVoid
 	
-	-- some unboxed object
-	| Just (v, _, ts)	<- T.takeTData xx
-	, last (Var.name v) == '#'
-	= E.TCon v (map toSeaT $ filter (not . isREC) ts)
+	-- we know about unboxed pointers
+	| Just (v, _, [t])	<- T.takeTData xx
+	, Var.TPtrU		<- Var.bind v
+	= E.TPtr (toSeaT t)
 	
-	-- trap regions/effect/closure info trying to get into the Sea tree.
-	| isREC xx
-	= panic stage $ "toSeaT: cannot convert " % xx % " to Sea type\n"
-
-	-- some first class, boxed object	
+	-- the build-in unboxed types are represented directly.
+	| Just (v, _, ts)	<- T.takeTData xx
+	, Var.varIsUnboxedTyConData v
+	= E.TCon v (map toSeaT $ filter hasValueKind ts)
+	
+	-- some user defined unboxed type.
+	-- TODO: we just check for a '#' in the name to detect these, 
+	--	 which is pretty nasty. 
+	| Just (v, _, ts)	<- T.takeTData xx
+	, elem '#' (Var.name v)
+	= E.TCon v (map toSeaT $ filter hasValueKind ts)
+	
+	-- some first class, boxed object
 	| otherwise
 	= E.TObj
 
-	where isREC xx	
-		| Just k	<- T.kindOfType xx
-		= elem k [C.KRegion, C.KEffect, C.KClosure]
+hasValueKind :: C.Type -> Bool
+hasValueKind xx
+	| Just k	<- T.kindOfType xx
+	, not $ elem k [T.KRegion, T.KClosure, T.KEffect]
+	= True
 	
+	| otherwise
+	= False
 
 splitOpType to
-  = let
-  	opParts		= T.flattenFun to
+  = let	opParts		= T.flattenFun to
 	opParts'@(_:_)	= map toSeaT opParts
 		
 	argTypes	= init opParts'
@@ -587,29 +618,6 @@ stripValues' a
 	 
 	_ -> Just a
 	 
-
------
-toSeaConst l
- = case l of
-	C.LBool b	-> E.XLiteral (LBool	b)
-
-	C.LInt8 i	-> E.XLiteral (LInt	$ fromIntegral i)
-	C.LInt16 i	-> E.XLiteral (LInt	$ fromIntegral i)
-	C.LInt32 i	-> E.XLiteral (LInt	$ fromIntegral i)
-	C.LInt64 i	-> E.XLiteral (LInt	$ fromIntegral i)
-
-	C.LWord8 i	-> E.XLiteral (LInt	$ fromIntegral i)
-	C.LWord16 i	-> E.XLiteral (LInt	$ fromIntegral i)
-	C.LWord32 i	-> E.XLiteral (LInt	$ fromIntegral i)
-	C.LWord64 i	-> E.XLiteral (LInt	$ fromIntegral i)
-
-	C.LFloat32 f	-> E.XLiteral (LFloat	$ (fromRational . toRational) f)
-	C.LFloat64 f	-> E.XLiteral (LFloat	$ (fromRational . toRational) f)
-
-	C.LChar32 c	-> E.XLiteral (LChar	$ c)
-	C.LString s	-> E.XLiteral (LString	$ s)
-	
-
 -----
 -- assignLastSS
 --	Assign the value of the stmt(s) in this list
@@ -675,17 +683,11 @@ toSeaPrimV var
 	"primProjFieldR"	-> E.FProjFieldR
 
 	-- array	
-	"arrayUI_get"		-> E.FArrayPeek (E.TCon Var.primTInt32U [])
-	"arrayUI_set"		-> E.FArrayPoke (E.TCon Var.primTInt32U [])
+	"arrayUI_get"		-> E.FArrayPeek (E.TCon (Var.primTInt (UnboxedBits 32)) [])
+	"arrayUI_set"		-> E.FArrayPoke (E.TCon (Var.primTInt (UnboxedBits 32)) [])
 	
 	_			-> panic stage
 				$ "toSeaPrim: no match for " % var
-
-
-
-
-
-
 
 
 

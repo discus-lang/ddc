@@ -64,6 +64,9 @@ instance Pretty Top PMode where
 	 	%> (tv % "\n"
 		%  ":$ " % to % ";\n")
 
+	PExternData v k
+	 -> "extern data " % v % " :: " % k % ";\n"
+
 	PData v vs []
 	 -> "data  " % " " %!% (v:vs) % ";\n"
 
@@ -269,33 +272,6 @@ prettyExpB x
 	XAnnot{}	-> ppr x
 	XType t		-> prettyTB t
 	_		-> "(" % x % ")"
-
-
-
--- Lit ---------------------------------------------------------------------------------------------
-instance Pretty Lit PMode where
- ppr xx
-  = case xx of
-	LBool   b
-	 -> case b of
-	 	True	-> ppr "true#"
-		False	-> ppr "false#"
-
-	LInt8	i	-> i	% "#8i"
-	LInt16	i	-> i	% "#16i"
-	LInt32	i	-> i	% "#32i"
-  	LInt64	i	-> i	% "#64i"
-
-	LWord8	i	-> i	% "#8w"
-	LWord16	i	-> i	% "#16w"
-	LWord32	i	-> i	% "#32w"
-	LWord64	i	-> i	% "#64w"
-	
-	LFloat32 f	-> f	% "#32f"
-	LFloat64 f	-> f	% "#64f"
-	
-	LChar32 c	-> show c % "#"
-	LString s	-> show s % "#"
 
 
 -- Proj --------------------------------------------------------------------------------------------

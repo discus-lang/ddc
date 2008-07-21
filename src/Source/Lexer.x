@@ -17,6 +17,8 @@ import Source.Token
 import Source.TokenShow
 import Source.Error
 import Shared.Error
+import Shared.Base
+import Shared.Literal
 import Util
 import Data.Char
 import Debug.Trace
@@ -102,8 +104,8 @@ tokens :-
 
  forall			{ ptag Forall			}
 
- true\#			{ ptag (CBoolU True)		}
- false\#		{ ptag (CBoolU False)		}
+ true\#			{ ptag (mkLit (LBool True)  Unboxed) }
+ false\#		{ ptag (mkLit (LBool False) Unboxed) }
 
  \:\:			{ ptag HasType			} 
 
@@ -178,16 +180,29 @@ tokens :-
 
  $sym+  $sym*		{ ptags (\s -> Symbol s)	}
 
- \" ($printable # \")* \" 
- 			{ ptags (\s -> CString (read s))		}
+ \" ($printable # \")* \"\#		{ ptags (\s -> mkLit (LString $ read $ dropLast 1 s) Unboxed) }
+ \" ($printable # \")* \" 		{ ptags (\s -> mkLit (LString $ read s)              Boxed) }	
 
- \-?$digit+ \. $digit+	{ ptags (\s -> CFloat  $ read s)		}
+ \-?$digit+ \. $digit+ \# f $digit*	{ ptags (\s -> makeLiteralUB 'f' LFloat s) }
+ \-?$digit+ \. $digit+ \# 		{ ptags (\s -> mkLit (LFloat $ read $ dropLast 1 s) Unboxed) }
+ \-?$digit+ \. $digit+    f $digit*	{ ptags (\s -> makeLiteralB  'f' LFloat s) }
+ \-?$digit+ \. $digit+			{ ptags (\s -> mkLit (LFloat $ read s) Boxed) }
 
- \-?$digit+		{ ptags (\s -> CInt    $ read s)	 	}
- \'\\n\'		{ ptags (\s -> CChar   $ read s)  		}
- \' . \'		{ ptags (\s -> CChar   $ read s)		}
+ \-?$digit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ \-?$digit+    u $digit*		{ ptags (\s -> makeLiteralB  'u' LWord s) }
 
- .			{ ptags (\s -> Junk s)				}
+ \-?$digit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ \-?$digit+ \# 				{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
+ \-?$digit+    i $digit*		{ ptags (\s -> makeLiteralB  'i' LInt s) }
+ \-?$digit+				{ ptags (\s -> mkLit (LInt $ read s) Boxed) }
+
+ \'\\n\' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) Unboxed) }
+ \' . \' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) Unboxed) }
+
+ \'\\n\'				{ ptags (\s -> mkLit (LChar $ read s) Boxed) }
+ \' . \'				{ ptags (\s -> mkLit (LChar $ read s) Boxed) }
+
+ .					{ ptags (\s -> Junk s)			}
 
 
 { 
@@ -196,6 +211,11 @@ tokens :-
 
 stage	= "Source.Lexer"
 
+
+-- | Drop the last n characters from a string
+dropLast :: Int -> String -> String
+dropLast n str
+	= take (length str - n) str
 
 -- | Rag a generated token with its position
 ptags :: (String -> Token) -> AlexPosn -> String -> TokenP
@@ -215,6 +235,25 @@ ptag	 tok (AlexPn _ l c) s
 	, tokenLine	= l
 	, tokenColumn	= c }
 
+-- makeLiteral -------------------------------------------------------------------------------------
+makeLiteralUB :: Read a => Char -> (a -> Literal) -> String -> Token
+makeLiteralUB spec con ss
+	| (num, '#':spec':bits)	<- splitOnLeft '#' ss
+	, spec == spec'
+	= case bits of
+ 	   []	-> mkLit (con $ read num) Unboxed
+	   _	-> mkLit (con $ read num) (UnboxedBits $ read bits)
+
+makeLiteralB :: Read a => Char -> (a -> Literal) -> String -> Token
+makeLiteralB spec con ss
+ 	| (num, spec':bits)	<- splitOnLeft spec ss
+	, spec == spec'
+	= case bits of
+	   []	-> mkLit (con $ read num) Boxed
+	   _	-> mkLit (con $ read num) (BoxedBits $ read bits)
+
+mkLit :: Literal -> DataFormat -> Token
+mkLit lit fmt	= Literal $ LiteralFmt lit fmt
 
 -- scan --------------------------------------------------------------------------------------------
 -- This is the top level of the scanner

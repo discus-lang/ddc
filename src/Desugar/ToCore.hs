@@ -25,6 +25,7 @@ import Shared.Pretty
 import Shared.Error
 import qualified Shared.Exp		as S
 import qualified Shared.Literal		as S
+import qualified Shared.Base		as S
 
 
 import qualified Type.Exp		as T
@@ -113,6 +114,9 @@ toCoreP	p
 		let to'	= toCoreT to
 		
 		return	$ [C.PExtern v tv' to']
+
+	D.PExternData _ s v k
+	 -> do	return	$ [C.PExternData v k]
 
 	D.PData _ v vs ctors
 	 -> do
@@ -353,22 +357,12 @@ toCoreX xx
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 		
 	-- primitive constants
-	D.XConst (Just (T.TVar T.KValue vT, _)) 
-		cc@(S.CConst lit)
+	D.XLit (Just (T.TVar T.KValue vT, _)) litfmt
 	 -> do	
 	 	Just t		<- lookupType vT
 	 	let t_flat	= C.stripContextT $ C.flattenT t
 		
-		return		$ toCoreConst t_flat cc
-
-	D.XConst
-		(Just (T.TVar T.KValue vT, _))
-		cc@(S.CConstU lit)
-	 -> do	
-	 	Just t		<- lookupType vT
-		let t_flat	= (C.stripContextT . C.flattenT) t
-
-		return		$ toCoreConst t_flat cc
+		return		$ toCoreXLit t_flat xx
 
  
 	-- We need the last statement in a do block to be a non-binding because of an
@@ -475,147 +469,48 @@ toCoreX xx
 		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
 
 
--- Lit ---------------------------------------------------------------------------------------------
--- | Convert a source constant to core
---	We don't know what implementation type a source literal is supposed to be until 
---	we do the type checking, so we need its type to guide the conversion. 
---	eg literal 5.0 could be either Float32 or Float64
+
+-- toCoreLitX --------------------------------------------------------------------------------------
+-- | Convert a literal to core
+--	The desugared language supports boxed literals, but all literals in the core
+--	should be unboxed.
 --
---	In addition, the desugared language supports boxed and unboxed literals, but the core
---	only supports unboxed. The caller needs to handle this when using this function.
+toCoreXLit :: C.Type -> D.Exp Annot -> C.Exp
+toCoreXLit tt xLit
+ 	= toCoreXLit' (C.stripToShapeT tt) xLit
 
-toCoreLit 
-	:: C.Type 
-	-> S.Literal 
-	-> ( C.Lit	-- the converted literal
-	   , Bool)	-- whether is was boxed
+toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
 
-toCoreLit tLit lit
-	= toCoreLit' (C.stripToShapeT tLit) lit
+	-- if the literal is already unboxed then there's nothing more to do
+	| S.dataFormatIsUnboxed fmt
+	= C.XLit litfmt
 	
-toCoreLit' tLit lit
-	-- boolean
-	| S.LBool b		<- lit
-	, Just (v, _, _)	<- T.takeTData tLit
-	= case Var.bind v of
-		Var.TBoolU	-> (C.LBool b, False)
+	-- unboxed strings have kind % -> *, 
+	--	so we need to apply the region to the unboxed literal
+	--	when building the boxed version.
+	| S.LString _	<- lit
+	, S.Boxed	<- fmt
+	= let	Just (_, _, [tR@(C.TVar C.KRegion _)]) = T.takeTData tt
+		Just fmtUnboxed		= S.dataFormatUnboxedOfBoxed fmt
+	  in	C.XPrim C.MBox 
+			[ C.XType tR
+			, C.XAPP (C.XLit (S.LiteralFmt lit fmtUnboxed)) tR]
 
-	-- integers
-	| S.LInt i		<- lit
-	, Just (v, _, _)	<- T.takeTData tLit
-	= case Var.bind v of
-		Var.TInt8U	-> (C.LInt8  $ fromIntegral i, False)
-		Var.TInt16U	-> (C.LInt16 $ fromIntegral i, False)
-		Var.TInt32U	-> (C.LInt32 $ fromIntegral i, False)
-		Var.TInt64U	-> (C.LInt64 $ fromIntegral i, False)
 
-		Var.TInt8	-> (C.LInt8  $ fromIntegral i, True)
-		Var.TInt16	-> (C.LInt16 $ fromIntegral i, True)
-		Var.TInt32	-> (C.LInt32 $ fromIntegral i, True)
-		Var.TInt64	-> (C.LInt64 $ fromIntegral i, True)
+	-- the other unboxed literals have kind *, 
+	--	so we can just pass them to the the boxing primitive directly.
+	| Just (v, k, [tR@(C.TVar C.KRegion _)]) <- T.takeTData tt
+	= let	Just fmtUnboxed		= S.dataFormatUnboxedOfBoxed fmt
+	  in	C.XPrim C.MBox 
+			[ C.XType tR
+			, C.XLit $ S.LiteralFmt lit fmtUnboxed]
 		
-
-	-- floats
-	| S.LFloat f		<- lit
-	, Just (v, _, _)	<- T.takeTData tLit
-	= case Var.bind v of
-		Var.TFloat32U	-> (C.LFloat32 $ (fromRational . toRational) f, False)
-		Var.TFloat64U	-> (C.LFloat64 $ (fromRational . toRational) f, False)
-
-		Var.TFloat32	-> (C.LFloat32 $ (fromRational . toRational) f, True)
-		Var.TFloat64	-> (C.LFloat64 $ (fromRational . toRational) f, True)
-
-	-- chars
-	| S.LChar c		<- lit
-	, Just (v, _, _)	<- T.takeTData tLit
-	= case Var.bind v of
-		Var.TChar32U	-> (C.LChar32 c, False)
-		Var.TChar32	-> (C.LChar32 c, True)
-	
-	-- strings
-	| S.LString s		<- lit
-	, Just (v, _, _)	<- T.takeTData tLit
-	= case Var.bind v of
-		Var.TStringU	-> (C.LString s, False)
-		Var.TString	-> (C.LString s, True)
-
-
--- Const -------------------------------------------------------------------------------------------
--- | Convert a constant to core expression
---	All literals in the core are unboxed.
---	Perhaps literals in the desugared source should be unboxed as well.
---	TODO: merge this into toCoreLit
-toCoreConst :: C.Type -> S.Const	-> C.Exp
-toCoreConst tt const
- 	= toCoreConst' (C.stripToShapeT tt) const
-
-toCoreConst' tt const
-	-- unboxed booleans
-	| S.CConstU lit			<- const
-	, S.LBool b			<- lit
-	, Just (v, k, [])		<- T.takeTData tt
-	= case Var.bind v of
-		Var.TBoolU	-> C.XLit $ C.LBool b
-
-
-	-- unboxed integers
-	| S.CConstU lit			<- const
-	, S.LInt i			<- lit
-	, Just (v, k, [])		<- T.takeTData tt
-	= case Var.bind v of
-		Var.TInt8U	-> C.XLit $ C.LInt8  $ fromIntegral i
-		Var.TInt16U	-> C.XLit $ C.LInt16 $ fromIntegral i
-		Var.TInt32U	-> C.XLit $ C.LInt32 $ fromIntegral i
-		Var.TInt64U	-> C.XLit $ C.LInt64 $ fromIntegral i
-	
-
-	-- boxed integers
-	| S.CConst lit				<- const
-	, S.LInt i				<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
-	= case Var.bind v of
-		Var.TInt8	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt8  $ fromIntegral i]
-		Var.TInt16	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt16 $ fromIntegral i]
-		Var.TInt32	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt32 $ fromIntegral i]
-		Var.TInt64	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LInt64 $ fromIntegral i]
-
-	-- unboxed floats
-	| S.CConstU lit			<- const
-	, S.LFloat f			<- lit
-	, Just (v, k, [])		<- T.takeTData tt
-	= case Var.bind v of
-		Var.TFloat32U	-> C.XLit $ C.LFloat32 $ (fromRational . toRational) f
-		Var.TFloat64U	-> C.XLit $ C.LFloat64 $ (fromRational . toRational) f
-
-	-- boxed floats
-	| S.CConst lit				<- const
-	, S.LFloat f				<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
-	= case Var.bind v of
-		Var.TFloat32	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LFloat32 $ (fromRational . toRational) f]
-		Var.TFloat64	-> C.XPrim C.MBox [C.XType r, C.XLit $ C.LFloat64 $ (fromRational . toRational) f]
-
-	-- boxed chars
-	| S.CConst lit	<- const
-	, S.LChar s	<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
-	, Var.bind v == Var.TChar32
-	= C.XPrim C.MBox [C.XType r, C.XLit $ C.LChar32 s]
-
-	
-	-- boxed strings
-	| S.CConst lit	<- const
-	, S.LString s	<- lit
-	, Just (v, k, [r@(C.TVar C.KRegion _)])	<- T.takeTData tt
-	, Var.bind v == Var.TString
-	= C.XPrim C.MBox [C.XType r, C.XAPP (C.XLit $ C.LString s) r]
-	
-
 	| otherwise
 	= panic stage
-		$ "toCoreConst: no match\n"
-		% "   tConst = " % show tt	% "\n"
-		% "   const  = " % show const	% "\n"
+		$ "toCoreLitX: no match\n"
+		% "   tLit   = " % show tt	% "\n"
+		% "   xLit   = " % show xLit	% "\n"
+	
 
 -- VarInst -----------------------------------------------------------------------------------------
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
@@ -768,55 +663,55 @@ toCoreW :: D.Pat Annot
 		, Maybe C.Type)	-- whether to unbox the RHS, and from what region
 	
 toCoreW ww
- = case ww of
- 	D.WConLabel 
-		_ 
-		v lvs
-	 -> do 
-	 	lvts		<- mapM toCoreA_LV lvs
+	| D.WConLabel _ v lvs	<- ww
+	= do 	lvts		<- mapM toCoreA_LV lvs
 	 	return	( C.WCon v lvts
 			, Nothing)
 	 
-	-- match against boxed literal
-	D.WConst 
-		(Just	( T.TVar T.KValue vT
+	-- match against a boxed literal
+	--	All matches in the core language are against unboxed literals, 
+	--	so we need to rewrite the literal in the pattern as well as the guard expression.
+	| D.WLit (Just	( T.TVar T.KValue vT
 			, _))
-		(S.CConst lit)
-		
-	 -> do	mT		<- liftM (liftM C.stripToShapeT)
-	 			$  lookupType vT
+		litFmt@(S.LiteralFmt lit fmt) <- ww
+
+	, S.dataFormatIsBoxed fmt
+	= do	mT	<- liftM (liftM C.stripToShapeT)
+	 		$  lookupType vT
 	 
+		-- work out what region the value to match against is in
+		--	we pass this back up to toCoreG so it knows to do the unboxing.
 	 	let Just tLit		= mT
 		let Just (_, _, r : _)	= T.takeTData tLit
-	 
-		let (lit', True)	= toCoreLit tLit lit
-	 	return	( C.WLit lit'
+
+		-- get the unboxed version of this data format.
+	 	let Just fmt_unboxed	= S.dataFormatUnboxedOfBoxed fmt
+	
+	 	return	( C.WLit (S.LiteralFmt lit fmt_unboxed)
 			, Just r)
 	
 	-- match against unboxed literal
-	D.WConst 
+	--	we can do this directly.
+	| D.WLit
 		(Just 	( T.TVar T.KValue vT
 			, _ )) 
-		(S.CConstU lit)
+		litFmt@(S.LiteralFmt lit fmt)	<- ww
 
-	 -> do	mT		<- liftM (liftM C.stripToShapeT)
-	 			$  lookupType vT
-
-	 	let Just tLit		= mT
-
-		let (lit', False)	= toCoreLit tLit lit
-	 	return	( C.WLit lit'
+	, S.dataFormatIsUnboxed fmt
+	= do	return	( C.WLit litFmt
 			, Nothing)
 
-	D.WVar (Just 	(T.TVar T.KValue vT
+
+	-- match against a variable
+	| D.WVar (Just 	(T.TVar T.KValue vT
 			, _))
-		var
-	 -> do	
-	 	return	( C.WVar var
+		var		<- ww
+	= do
+		return	( C.WVar var
 			, Nothing)
 
-	 
-	_ -> panic stage
+	| otherwise
+	= panic stage
 		$ "tCoreW: no match for " % show ww % "\n"
 	 
 

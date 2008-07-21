@@ -92,7 +92,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	S.PImportModule sp ms
 	 ->	returnJ	$ D.PImport sp ms
 
-	S.PForeign sp (S.OImport (S.OExtern mName v tv to)) 
+	-- imported values 
+	S.PForeign sp (S.OImport mName v tv to)
 	 -> do	tv'	<- rewrite tv
 		let v'	= case mName of
 				Nothing		-> v
@@ -100,6 +101,11 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		
 		let to'	= maybeJust to (let Just to2 = makeOpTypeT tv' in to2)
 	 	returnJ $ D.PExtern sp v' tv' to'
+
+	-- imported unboxed types
+	S.PForeign sp (S.OImportUnboxedData name var k)
+	 -> do	let var'	= var { Var.info = Var.info var ++ [Var.ISeaName name]}
+		returnJ	$ D.PExternData sp name var' k
 
 	-- types
 	S.PTypeKind sp v k
@@ -190,9 +196,9 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	-- core language.
 	S.XNil		-> return D.XNil
 
-	S.XConst sp c
-	 -> 	return	$ D.XConst 	sp c
-
+	S.XLit sp litFmt
+	 -> return	$ D.XLit sp $ defaultLiteralFmt litFmt
+	
 	S.XVar sp v	
 	 -> 	return	$ D.XVar 	sp v
 
@@ -328,7 +334,6 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		let aaWith	= map (addWithAlt appW) aa'
 		rewriteTry sp ssMore x' aaWith
 
-
 	-- imperative sugar
 	S.XWhen	sp testX bodyX
 	 -> do	testX'	<- rewrite testX
@@ -412,7 +417,24 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		$ "rewrite[Exp]: can't rewrite " % xx % "\n\n"
 		%  show xx	% "\n"
 
-		
+
+-- Default literals to the machine type
+--	This should really look out type bindings like
+--	type Int = Int32 
+--	instead of being hard-wired like this
+defaultLiteralFmt :: LiteralFmt -> LiteralFmt
+defaultLiteralFmt litFmt@(LiteralFmt lit fmt)
+ = case (lit, fmt) of
+	(LWord _,  Boxed)	-> LiteralFmt lit (BoxedBits   32)
+	(LWord _,  Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
+	(LInt _,   Boxed)	-> LiteralFmt lit (BoxedBits   32)
+	(LInt _,   Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
+	(LFloat _, Boxed)	-> LiteralFmt lit (BoxedBits   32)
+	(LFloat _, Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
+	(LChar _,  Boxed)	-> LiteralFmt lit (BoxedBits   32)
+	(LChar _,  Unboxed)	-> LiteralFmt lit (UnboxedBits 32)
+	_			-> litFmt
+
 -- Proj ---------------------------------------------------------------------------------------------
 instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where
  rewrite pp
@@ -505,9 +527,9 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 	S.WVar sp v
 	 -> do	return	$ D.WVar sp v
 
-	S.WConst sp c
-	 -> do	return	$ D.WConst sp c
-
+	S.WLit sp litFmt
+	 -> do	return	$ D.WLit sp $ defaultLiteralFmt litFmt
+	
 	S.WCon sp v ps
 	 -> do	ps'	<- mapM rewrite ps
 	 	return	$ D.WConLabelP sp

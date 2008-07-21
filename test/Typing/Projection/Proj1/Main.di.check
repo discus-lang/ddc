@@ -22,7 +22,7 @@ import Data.Array;
 -- Binds
 foreign import dude
         :: forall %r0
-        .  Base.Unit -> Base.Int %r0
+        .  Base.Unit -> Base.Int32 %r0
         :$ Base.Data -> Base.Data;
         
 foreign import main

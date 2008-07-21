@@ -1,16 +1,14 @@
 
 module Shared.VarBind
 	( VarBind (..)
+	, takeVarBind_dataFormat
 	, incVarBind)
 where
 
+import Shared.Base
 import Shared.Pretty
 import Util
 
------------------------
--- VarCore
--- 	| These variables have special meaning to the compiler.
---
 data VarBind
 	-- binding not set
 	= XNil
@@ -24,100 +22,55 @@ data VarBind
 	| TThunk
 	
 	-- Primitive data constructors
-	| TTuple Int	-- ^ Tuple type constructor of given airity.
+	| TTuple Int
 	| TList
 	| TRef
 	
-	-- Primitive boxed types
-	| TUnit	
-	| TBool
-
-	| TWord8
-	| TWord16
-	| TWord32
-	| TWord64
-	
-	| TInt8
-	| TInt16
-	| TInt32
-	| TInt64
-
-	| TFloat32
-	| TFloat64
-
-	| TChar32
-	| TString
-	
-	-- Primitive unboxed types
+	-- Primitive data types
 	| TVoidU
 	| TPtrU
-
-	| TBoolU
-
-	| TWord8U
-	| TWord16U
-	| TWord32U
-	| TWord64U
+	| TUnit	
+	| TBool   DataFormat
+	| TWord   DataFormat
+	| TInt	  DataFormat
+	| TFloat  DataFormat
+	| TChar	  DataFormat
+	| TString DataFormat
 	
-	| TInt8U
-	| TInt16U
-	| TInt32U
-	| TInt64U
+	-- Effect constructors
+	| ESync
+	| ERead
+	| EWrite
+	| EReadT
+	| EReadH
+	| EWriteT
 	
-	| TFloat32U
-	| TFloat64U
+	-- Class constructors
+	| FConst
+	| FConstT
+	| FMutable
+	| FMutableT
+	| FLazy
+	| FLazyT
+	| FLazyH
+	| FDirect
+	| FDirectT
+	| FPure
+	| FEmpty
+	| FProj
+	| FShape  Int
 
-	| TChar32U
-
-	| TStringU
-	
-	-- Effect constructors.
-	| ESync		-- :: !
-
-	| ERead		-- :: % -> !
-	| EWrite	-- :: % -> !
-	
-	| EReadT	-- :: * -> !,	read all of object.
-	| EReadH	-- :: * -> !,	read head of object.
-
-	| EWriteT	-- :: * -> !
-	
-	-- Fetter constructors.
-	| FConst	-- :: % -> +
-	| FMutable	-- :: % -> +
-	| FLazy		-- :: % -> +
-	| FDirect	-- :: % -> +
-
-	| FConstT	-- :: * -> +
-	| FMutableT	-- :: * -> +
-	| FDirectT	-- :: * -> +
-
-	| FLazyT	-- :: * -> +
-	| FLazyH	-- :: * -> +,	head of object is in a lazy region.
-	
-	| FPure		-- :: ! -> +
-	| FEmpty	-- :: $ -> +
-	
-	| FProj		-- :: * -> * -> . -> +
-	
-	| FShape  Int	--		Shape class. Enforces args to have same structure, while leaving regions free.
-	| FUnify  Int
-	| FInject Int
-
-	-- Value variables.
+	-- Value variables
 	| VNegate
-	| VTuple Int		-- ^ Tuple data constructor of given airity.
-
-	| VUnit			-- ^ the unit value.
-
-	| VTrue	 | VFalse	-- ^ boxed boolean values.
-
-	| VSuspend Int	-- ^ Suspension function.
-	
+	| VTuple Int		
+	| VUnit
+	| VTrue	 
+	| VFalse
+	| VSuspend Int
 	| VProjField
 	| VProjFieldR
 	
-	-- For desugaring bulk collection indexing.
+	-- For desugaring bulk collection indexing
 	| VIndex 	
 	| VIndexR
 
@@ -138,31 +91,48 @@ data VarBind
 	| VWhen
 	| VUnless
 
-	| VRange	-- ^ Used by Source.Hacks to de-sugar list ranges.
+	-- For desugaring list ranges
+	| VRange	
 	| VRangeL
 	| VRangeInfL
 	
-	| VConcatMap	-- ^ Used by Source.Hacks to de-sugar list comprehensions.
+	-- For desugaring list comprehensions
+	| VConcatMap	
 	| VConcatMapL
 
-	| VBind		-- ^ monadic bind operation (>>=)
+	-- | The monadic bind
+	| VBind		
 	deriving (Eq, Show, Ord)
 
 
------
-incVarBind ::	VarBind 	-> VarBind
-incVarBind	b
- = case b of
- 	XBind s i	-> XBind s (i + 1)
-	_		-> error $ "incVarBind: cannot increment " ++ show b
-
-----
 instance Pretty VarBind PMode where
  ppr b
   = case b of
   	XBind	s i	-> ppr $ s ++ show i
 	_		-> ppr $ show b
 	
+
+
+-- | If this varBind contains an embedded DataFormat, then Just it
+takeVarBind_dataFormat :: VarBind -> Maybe DataFormat
+takeVarBind_dataFormat bind
+ = case bind of
+ 	TBool fmt	-> Just fmt
+	TWord fmt	-> Just fmt
+	TInt  fmt	-> Just fmt
+	TFloat fmt	-> Just fmt
+	TChar fmt	-> Just fmt
+	TString fmt	-> Just fmt
+	_		-> Nothing
+
+
+-- | Increment an XBind to the next one
+incVarBind :: VarBind -> VarBind
+incVarBind b
+ = case b of
+ 	XBind s i	-> XBind s (i + 1)
+	_		-> error $ "incVarBind: cannot increment " ++ show b
+
 
 
 

@@ -1,6 +1,6 @@
 ./test/Error/Unify/IfFun/Main.ds:5:10
     Type mismatch during unification.
-          cannot match: Data.Bool.Bool %4
+          cannot match: Base.Bool %4
                   with: *8 -(!10 $11)> *9
 
           object of if-then-else expression

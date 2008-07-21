@@ -25,7 +25,7 @@ data Box %r1 a b !e1 $c1
 
 -- Binds
 foreign import box
-        :: Box %r1 Base.Unit (Base.Int %rTS4) !e0 $Bot
+        :: Box %r1 Base.Unit (Base.Int32 %rTS4) !e0 $_
         :- !e0        = System.Console.!Console
         ,  Base.Mutable %r1
         ,  Base.Const %rTS4
@@ -47,7 +47,7 @@ foreign import project_Box_ref_x
         
 foreign import fun2
         :: forall %r0
-        .  Base.Unit -(!e0)> Base.Int %r0
+        .  Base.Unit -(!e0)> Base.Int32 %r0
         :- !e0        = System.Console.!Console
         :$ Base.Data -> Base.Data;
         

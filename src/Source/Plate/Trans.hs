@@ -116,10 +116,10 @@ instance Monad m => TransM m n1 n2 Bool Bool
 
 instance Monad m => TransM m n1 n2 Var.Module Var.Module
  where	transZM table xx = return xx
- 
-instance Monad m => TransM m n1 n2 Const Const
- where	transZM table xx = return xx
 
+instance Monad m => TransM m n1 n2 LiteralFmt LiteralFmt
+ where	transZM table xx = return xx
+ 
 instance Monad m => TransM m n1 n2 Kind Kind
  where	transZM table xx = return xx
 
@@ -404,18 +404,17 @@ instance (Monad m) => TransM m n1 n2 (Foreign n1) (Foreign n2)
               xx
         followZM table xx
           = case xx of
-                OImport x0
-                  -> do x0' <- transZM table x0
-                        return (OImport x0')
-                OExport x0
-                  -> do x0' <- transZM table x0
-                        return (OExport x0')
-                OExtern x0 x1 x2 x3
+                OImport x0 x1 x2 x3
                   -> do x0' <- transZM table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         x3' <- transZM table x3
-                        return (OExtern x0' x1' x2' x3')
+                        return (OImport x0' x1' x2' x3')
+                OImportUnboxedData x0 x1 x2
+                  -> do x0' <- transZM table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        return (OImportUnboxedData x0' x1' x2')
  
 instance (Monad m) => TransM m n1 n2 (InfixMode n1) (InfixMode n2)
          where
@@ -440,10 +439,10 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
         followZM table xx
           = case xx of
                 XNil -> do return (XNil)
-                XConst x0 x1
+                XLit x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
-                        return (XConst x0' x1')
+                        return (XLit x0' x1')
                 XVar x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -695,10 +694,10 @@ instance (Monad m) => TransM m n1 n2 (Pat n1) (Pat n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (WObjVar x0' x1')
-                WConst x0 x1
+                WLit x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
-                        return (WConst x0' x1')
+                        return (WLit x0' x1')
                 WCon x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

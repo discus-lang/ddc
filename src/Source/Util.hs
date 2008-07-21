@@ -48,7 +48,7 @@ takePatBoundVs w
  = case w of
  	WVar 		sp v		-> [v]
 	WObjVar		sp v		-> [v]
-	WConst		sp _		-> []
+	WLit		sp _		-> []
 	WCon		sp v ws		-> v : catMap takePatBoundVs ws
 	WConLabel 	sp v lws	-> v : catMap (takePatBoundVs . snd) lws
 	WAt		sp v w		-> v : takePatBoundVs w
@@ -92,7 +92,7 @@ sourcePosX :: Exp SourcePos -> SourcePos
 sourcePosX xx 
  = case xx of
  	XNil				-> panic stage "sourcePosX: no source pos in XNil"
-	XConst		sp c		-> sp
+	XLit		sp c		-> sp
 	XVar 		sp v		-> sp
 	XProj 		sp x j		-> sp
 	XProjT		sp t j		-> sp
@@ -129,7 +129,7 @@ sourcePosW xx
  = case xx of
  	WVar 		sp v		-> sp
 	WObjVar		sp v		-> sp
-	WConst		sp c		-> sp
+	WLit		sp c		-> sp
 	WCon		sp v ws		-> sp
 	WConLabel	sp v lws	-> sp
 	WAt		sp v p		-> sp

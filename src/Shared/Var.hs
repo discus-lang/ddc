@@ -17,6 +17,7 @@ where
 import Data.Char
 
 import Shared.Pretty
+import Shared.Literal
 import Shared.Base
 import Shared.VarBind
 import Shared.VarSpace

@@ -1,18 +1,15 @@
 
 module Sea.Exp
-(
-	Tree,
-	Top		(..),
-	DataField 	(..),
-	Stmt		(..),
-	Alt		(..),
-	Guard		(..),
-	Exp		(..),
-	Type		(..),
-	Prim		(..),
-	Var
-)
-
+	( Tree
+	, Top		(..)
+	, DataField 	(..)
+	, Stmt		(..)
+	, Alt		(..)
+	, Guard		(..)
+	, Exp		(..)
+	, Type		(..)
+	, Prim		(..)
+	, Var)
 where
 
 import Util
@@ -173,7 +170,7 @@ data Exp a
 	| XCon		Var				-- a data constructor
 	| XInt		Int				-- an integer
 	| XUnit						-- the unit data type
-	| XLiteral	Literal				-- a literal
+	| XLit		LiteralFmt			-- a literal
 	| XSuper	Var				-- name of a supercombinator
 	| XAtom		Var
 
@@ -198,16 +195,24 @@ data Exp a
 	deriving (Show, Eq)
 	
 data Type
-	= TVoid						-- ^ The void \/ non-existant object.
+	-- | The void type.
+	= TVoid
 
-	| TObj						-- ^ A boxed object.
-							
-							-- These are subtypes of TObj
-	| TThunk					-- ^ A boxed thunk.
-	| TData						-- ^ A boxed data object.
-	| TSusp						-- ^ A boxed suspension
+	-- | An unboxed pointer to something else.
+	| TPtr Type
+	
+	-- | An unboxed data object.
+	| TCon Var [Type]
 
-	| TCon Var [Type]				-- ^ An unboxed data object.
+	-- | A pointer to boxed object
+	| TObj
+	
+	-- | A pointer to a boxed object, but we know a bit more about
+	--	what that object actually is - usually because we just created it.
+	--	These are subtypes of TObj
+	| TData	
+	| TThunk		
+	| TSusp
 	deriving (Show, Eq)
 
 

@@ -103,7 +103,7 @@ instance Show a => Lint (Exp a) where
 	
 	XLambdaProj sp j xs		-> XLambdaProj sp j xs
 	
-	XConst sp c			-> XConst sp c
+	XLit sp lit			-> XLit sp lit
 
 	XVar sp v				
 	 | not $ inSpaceV [v]		-> death x "XVar - var in wrong namespace."

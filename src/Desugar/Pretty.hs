@@ -53,6 +53,11 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			%> ("\n" % ":: " % prettyTS tv	% ";\n"))
 		% "\n"
 
+	PExternData nn s v k
+	 -> annot nn
+		("extern " % v
+			%> ("\n" % "::" % k % ";\n"))
+
 	PEffect nn v k
 	 -> annot nn
 	 	("effect " % v %> " :: " % k) % ";\n"
@@ -139,7 +144,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
   = case xx of
   	XNil				-> ppr "@XNil"
 	XVoid		nn		-> annot nn (ppr "@XVoid")
-	XConst		nn c		-> annot nn (ppr c)
+	XLit		nn l		-> annot nn (ppr l)
 	XVar		nn v		-> annot nn (ppr v)
 	XVarInst 	nn v		-> annot nn ("@XVarInst " % v)
 	XProj 		nn x j		-> annot nn ("@XProj "  % prettyXB x % " " % j)
@@ -255,8 +260,8 @@ instance Pretty a PMode => Pretty (Pat (Maybe a)) PMode where
 				", " %!% (map (\(l, v') -> l % " = " % v') lvs) % 
 			"}")
 
-	WConst	nn c		
-		-> annot nn (ppr c)
+	WLit	nn l
+		-> annot nn (ppr l)
 
 
 	WVar nn v

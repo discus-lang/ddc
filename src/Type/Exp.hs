@@ -10,14 +10,6 @@ module Type.Exp
 	, TyCon		(..)
 	, TyClass	(..)
 
-	-- constructors for build in classes
-	, tcConst,	tcConstT
-	, tcMutable,	tcMutableT
-	, tcLazy, 	tcLazyH
-	, tcDirect
-	, tcPurify
-	, tcPure
-
 	, ClassId	(..)
 	, TProj		(..)
 	, Fetter  	(..)
@@ -149,8 +141,8 @@ data Type
 	---	Used in type inference stages only.
 	| TData    !Kind !Var  ![Type]		-- ^ A data type constructor. Perhaps partially applied.
 	| TFun     !Type !Type !Effect !Closure	-- ^ A function with an effect and environment. Fully applied.
-	| TClass   !Kind !ClassId			-- ^ A reference to some equivalence class.
-	| TError   !Kind ![Type]			-- ^ Classes with unification errors get their queues set to [TError].
+	| TClass   !Kind !ClassId		-- ^ A reference to some equivalence class.
+	| TError   !Kind ![Type]		-- ^ Classes with unification errors get their queues set to [TError].
 
 	| TFetter  !Fetter			-- ^ Holds a fetter, so we can put it in an equivalence class.
 						--	TODO: is this still being used??
@@ -200,22 +192,6 @@ data TyCon
 
 	deriving (Show, Eq)
 
--- Built in type constructors
-tcConst		= TyConClass TyClassConst	(KForall KRegion (KClass TyClassConst 	[TIndex 0]))
-tcConstT 	= TyConClass TyClassConstT	(KForall KValue  (KClass TyClassConstT	[TIndex 0]))
-tcMutable	= TyConClass TyClassMutable	(KForall KRegion (KClass TyClassMutable	[TIndex 0]))
-tcMutableT	= TyConClass TyClassMutableT	(KForall KValue  (KClass TyClassMutableT [TIndex 0]))
-tcLazy		= TyConClass TyClassLazy	(KForall KRegion (KClass TyClassLazy 	[TIndex 0]))
-tcLazyH		= TyConClass TyClassLazyH	(KForall KValue	 (KClass TyClassLazyH	[TIndex 0]))
-tcDirect	= TyConClass TyClassDirect	(KForall KRegion (KClass TyClassDirect	[TIndex 0]))
-
-tcPurify	= TyConClass TyClassPurify	
-			(KForall KRegion 
-				(KFun 	(KClass TyClassConst [TIndex 0])
-					(KClass TyClassPure  [TEffect primRead [TIndex 0]])))
-
-tcPure		= TyConClass TyClassPure
-			(KForall KEffect (KClass TyClassPure [TIndex 0]))
 
 -- TyClass -----------------------------------------------------------------------------------------
 -- | Type / Region / Effect classes.

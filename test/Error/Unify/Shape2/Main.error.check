@@ -1,10 +1,10 @@
 ./test/Error/Unify/Shape2/Main.ds:5:27
     Type mismatch during unification.
-          cannot match: Base.Int %3
+          cannot match: Base.Int32 %3
                   with: *77 -(!75 $74)> *76
 
               the use of: x
-                 at type: Base.Int %3
+                 at type: Base.Int32 %3
                       at: ./test/Error/Unify/Shape2/Main.ds:5:27
 
         conflicts with, 

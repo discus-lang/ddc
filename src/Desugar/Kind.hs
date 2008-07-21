@@ -239,6 +239,8 @@ slurpConstraint pp
 	        k'	= forcePrimaryRegion v k
 	    in	[Constraint (KSData sp) v k']
 
+	PExternData sp name v k
+	 -> [Constraint (KSData sp) v k]
 
 	PEffect sp v k	-> [Constraint (KSEffect sp) v k]
 	PClass sp v k	-> [Constraint (KSClass sp) v k]
@@ -253,12 +255,20 @@ defaultKind v k
 -- Make sure the kinds of data type constructors have their primary regions.
 forcePrimaryRegion :: Var -> Kind -> Kind
 forcePrimaryRegion vData k
- 	| elem vData [ primTUnit, primTObj, primTData, primTThunk]
+
+	-- unit doesn't need one
+ 	| vData == primTUnit
 	= k
 
-	| Set.member vData primTVarsUnboxed
+	-- these abstract types don't need one
+	| elem vData [primTObj, primTData, primTThunk]
 	= k
 
+	-- unboxed data types don't need one
+	| varIsUnboxedTyConData vData
+	= k
+
+	-- don't elaborate types with higher kinds
 	| KFun KRegion _	<- k
 	= k
 	

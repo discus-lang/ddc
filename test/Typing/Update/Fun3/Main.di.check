@@ -25,9 +25,9 @@ data FunBox %r1 a !e1 $c1
 
 -- Binds
 foreign import thing
-        :: Base.Int %rTC4
-        :- Base.Const %rTC4
-        ,  Base.Direct %rTC4
+        :: Base.Int32 %rTC3
+        :- Base.Const %rTC3
+        ,  Base.Direct %rTC3
         :$ Base.Data;
         
 foreign import project_FunBox_fun
@@ -44,39 +44,39 @@ foreign import project_FunBox_ref_fun
         
 foreign import oldFun
         :: forall %r0 %r1
-        .  Base.Int %r0 -(!e0)> Base.Int %r1
+        .  Base.Int32 %r0 -(!e0)> Base.Int32 %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import newFun
         :: forall %r0
-        .  Base.Int %r0 -(!e0 $c0)> Base.Int %r0
-        :- !e0        = !{Base.!Read %r0; Base.!Read %rTC4; System.Console.!Console}
-        ,  $c0        = thing : %rTC4
-        ,  Base.Const %rTC4
-        ,  Base.Direct %rTC4
+        .  Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r0
+        :- !e0        = !{Base.!Read %r0; Base.!Read %rTC3; System.Console.!Console}
+        ,  $c0        = thing : %rTC3
+        ,  Base.Const %rTC3
+        ,  Base.Direct %rTC3
         :$ Base.Data -> Base.Data;
         
 foreign import testBox2
         :: forall %r0 %r1 %r2
-        .  Base.Unit -($c0)> Data.Tuple.Tuple3 %r2 (FunBox %r0 (Base.Int %r1) !e0 $c1) (Base.Unit -(!e1 $c2)> Base.Unit) (Base.Unit -(!e2 $c3)> Base.Int %r1)
-        :- !e0        = !{Base.!Read %r1; Base.!Read %rTC4; System.Console.!Console}
+        .  Base.Unit -($c0)> Data.Tuple.Tuple3 %r2 (FunBox %r0 (Base.Int32 %r1) !e0 $c1) (Base.Unit -(!e1 $c2)> Base.Unit) (Base.Unit -(!e2 $c3)> Base.Int32 %r1)
+        :- !e0        = !{Base.!Read %r1; Base.!Read %rTC3; System.Console.!Console}
         ,  !e1        = !{Base.!Read %r0; Base.!Write %r0}
-        ,  !e2        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %rTC4; System.Console.!Console}
-        ,  $c0        = newFun : %rTC4
-        ,  $c1        = thing : %rTC4
-        ,  $c2        = ${box2 : %r0; box2 : %r1; box2 : %rTC4; newFun : %rTC4}
-        ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC4}
-        ,  Base.Direct %rTC4
-        ,  Base.Const %rTC4
+        ,  !e2        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %rTC3; System.Console.!Console}
+        ,  $c0        = newFun : %rTC3
+        ,  $c1        = thing : %rTC3
+        ,  $c2        = ${box2 : %r0; box2 : %r1; box2 : %rTC3; newFun : %rTC3}
+        ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC3}
+        ,  Base.Direct %rTC3
+        ,  Base.Const %rTC3
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data;
         
 foreign import main
         :: Base.Unit -($c0)> Base.Unit
-        :- $c0        = testBox2 : %rTC4
-        ,  Base.Const %rTC4
-        ,  Base.Direct %rTC4
+        :- $c0        = testBox2 : %rTC3
+        ,  Base.Const %rTC3
+        ,  Base.Direct %rTC3
         :$ Base.Data -> Base.Data;
         
 project Main.FunBox %_ *_ !_ $_ where

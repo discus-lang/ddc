@@ -310,8 +310,8 @@ instance Monad m => TransM m a1 a2 Exp where
 	XUnit
 	 ->	transX table 	$ XUnit
 	 
-	XLiteral l
-	 -> 	transX table 	$ XLiteral l
+	XLit l
+	 -> 	transX table 	$ XLit l
 	 
 	XSuper v
 	 -> do	v'		<- transV table v

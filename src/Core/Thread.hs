@@ -17,6 +17,7 @@ where
 import Core.Plate.Trans
 import Core.Util
 import Core.Exp
+import Type.Builtin
 
 import Type.Util
 

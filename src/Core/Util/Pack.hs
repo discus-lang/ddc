@@ -14,6 +14,7 @@ import Core.Util.Bits
 
 import Type.Util		hiding (flattenT)
 import Type.Exp
+import Type.Builtin
 
 import Shared.Error
 import Shared.VarUtil

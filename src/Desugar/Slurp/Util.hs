@@ -17,8 +17,8 @@ module Desugar.Slurp.Util
 
 	, addDataDef
 
-	, getGroundType
-	, getConstType
+--	, getGroundType
+--	, getConstType
 
 	, addDef
 	, addError 
@@ -259,82 +259,6 @@ lbindVtoT	varV
 	  	return	v
 	 
 	
-------
--- getGroundType
---	Looks up the variable assoicated with a type name.
---	All ground types must be defined in the source file eg, "data Int;"
---
-getGroundType :: String		-> CSlurpM Var
-getGroundType	 name
- = do
-	dataDefs	<- gets stateDataDefs
-
-	let vsGround	= [v 	| PData _ v _ _	<- Map.elems dataDefs
-				, Var.name v == name]
-				
-	case vsGround of 
-	 [v]	-> return v
-	 []	-> panic stage 
-	 		$ "getGroundType: no definition for " % name % " is in scope.\n"
-			% "    If you're not using the std prelude you still need to define\n"
-			% "    all the things in the Base module.\n"
-
-	 _	-> panic stage 
-	 		$ "getGroundType: multiple definitions of " % name % " in scope.\n"
-		
-
------
--- getConstType
---	Lookup the type associated with a particular constant.
---
-getConstType ::	  Const		-> CSlurpM Type
-getConstType	c
- = case c of
- 	CConst lit
-	 -> do 	var		<- getConstType' lit
-		r		<- newVarN NameRegion
-		let var'	= var { Var.info = 
-					[ Var.IValueLiteral lit ] }
-	
-		return		$ TData (KFun KRegion KValue) var' [TVar KRegion r]
-
-	-- unboxed string literals have regions annotations
-	CConstU lit@(LString{})
-	 -> do	var		<- getConstTypeU' lit
-		r		<- newVarN NameRegion
-		let var'	= var { Var.info = 
-					[ Var.IValueLiteral lit ] }
-	
-		return		$ TData (KFun KRegion KValue) var' [TVar KRegion r]
-
-
-	-- other literals ie: Ints, Floats, Chars don't have regions
- 	CConstU lit
-	 -> do 	var		<- getConstTypeU' lit
-		r		<- newVarN NameRegion
-		let var'	= var { Var.info = 
-					[ Var.IValueLiteral lit ] }
-
-		return		$ TData KValue var' []
-
-
-getConstType' lit
- = case lit of
- 	LInt	_ -> getGroundType "Int"
-	LChar	_ -> getGroundType "Char"
-	LFloat	_ -> getGroundType "Float"
-	LString	_ -> getGroundType "String"
-
-getConstTypeU' lit
- = case lit of
-	LBool	_ -> getGroundType "Bool#"
- 	LInt	_ -> getGroundType "Int32#"
-	LFloat	_ -> getGroundType "Float32#"
-	LChar	_ -> getGroundType "Char#"
-	LString	_ -> getGroundType "String#"
-
-
-
 -----
 -- addDataDef
 --	Add a DataDef to the CSlurp state

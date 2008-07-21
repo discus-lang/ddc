@@ -9,83 +9,38 @@ where
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, NameSpace(..), VarBind(..), Module(..), VarInfo)
 import Shared.VarBind
+import Shared.Base
 
 import Util
+
 import qualified Data.Set	as Set
 import Data.Set			(Set)
-			
--- Unboxed Types -----------------------------------------------------------------------------------
-primTVoidU	= primVarI NameType	"Base.Void#"	TVoidU		[Var.ISeaName "void"]
-primTPtrU	= primVarI NameType	"Base.Ptr#"	TPtrU		[Var.ISeaName "Ptr"]
 
-primTBoolU	= primVarI NameType	"Base.Bool#"	TBoolU		[Var.ISeaName "Bool"]
-
-primTWord8U	= primVarI NameType	"Base.Word8#"	TWord8U		[Var.ISeaName "Word8"]
-primTWord16U	= primVarI NameType	"Base.Word16#"	TWord16U	[Var.ISeaName "Word16"]
-primTWord32U	= primVarI NameType	"Base.Word32#"	TWord32U	[Var.ISeaName "Word32"]
-primTWord64U	= primVarI NameType	"Base.Word64#"	TWord64U	[Var.ISeaName "Word64"]
-
-primTInt8U	= primVarI NameType	"Base.Int8#"	TInt8U		[Var.ISeaName "Int8"]
-primTInt16U	= primVarI NameType	"Base.Int16#"	TInt16U		[Var.ISeaName "Int16"]
-primTInt32U	= primVarI NameType	"Base.Int32#"	TInt32U		[Var.ISeaName "Int32"]
-primTInt64U	= primVarI NameType	"Base.Int64#"	TInt64U		[Var.ISeaName "Int64"]
-
-primTFloat32U	= primVarI NameType	"Base.Float32#"	TFloat32U	[Var.ISeaName "Int32"]
-primTFloat64U	= primVarI NameType	"Base.Float64#"	TFloat64U	[Var.ISeaName "Int64"]
-
-primTChar32U	= primVarI NameType	"Base.Char32#"	TChar32U	[Var.ISeaName "Char32"]
-primTStringU	= primVarI NameType	"Base.String#"	TStringU	[Var.ISeaName "String"]
-
-primTVarsUnboxed
- = Set.fromList
- 	[ primTVoidU,	primTPtrU
-	, primTBoolU
-	, primTWord8U,	 primTWord16U,	primTWord32U,	primTWord64U
-	, primTInt8U,	 primTInt16U,	primTInt32U,	primTInt64U
-	, primTFloat32U, primTFloat64U
-	, primTChar32U
-	, primTStringU ]
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 	
-
--- Boxed Types -------------------------------------------------------------------------------------
-primTUnit	= primVar NameType	"Base.Unit"				TUnit
-
-primTBool	= primVar NameType 	"Base.Bool"				TBool
-
-primTWord	= primVar NameType	"Base.Word32"				TWord32
-primTWord8	= primVar NameType	"Base.Word8"				TWord8
-primTWord16	= primVar NameType	"Base.Word16"				TWord16
-primTWord32	= primVar NameType	"Base.Word32"				TWord32
-primTWord64	= primVar NameType	"Base.Word64"				TWord64
-
-primTInt8	= primVar NameType	"Base.Int8"				TInt8
-primTInt16	= primVar NameType	"Base.Int16"				TInt16
-primTInt32	= primVar NameType	"Base.Int32"				TInt32
-primTInt64	= primVar NameType	"Base.Int64"				TInt64
-
-primTFloat32	= primVar NameType	"Base.Float32"				TFloat32
-primTFloat64	= primVar NameType	"Base.Float64"				TFloat64
-
-primTChar32	= primVar NameType	"Base.Char32"				TChar32
-
-primTString	= primVar NameType	"Base.String"				TString
-
-primTRef	= primVar NameType	"Data.Ref.Ref"				TRef
-primTList	= primVar NameType	"Data.List.List"			TList
-primTTuple i	= primVar NameType	("Data.Tuple.Tuple" ++ show i) 		(TTuple i)	
-
--- word size hacks
---	It would be better to define this in the source file with a type alias...
-primTFloat	= primVar NameType	"Base.Float32"				TFloat32
-primTChar	= primVar NameType	"Base.Char32"				TChar32
-primTInt	= primVar NameType	"Base.Int32"				TInt32
-
-
 -- Operational Types -------------------------------------------------------------------------------
-primTObj	= primVar NameType	"Base.Obj"				TObj
-primTData	= primVar NameType	"Base.Data"				TData
-primTThunk	= primVar NameType	"Base.Thunk"				TThunk
+primTObj	= primVar 	NameType	"Base.Obj"			TObj
+primTData	= primVar 	NameType	"Base.Data"			TData
+primTThunk	= primVar	NameType	"Base.Thunk"			TThunk
+	
+			
+-- Primitive Type Variables ------------------------------------------------------------------------
+primTVoidU	= primVarI	NameType	"Base.Void#"			TVoidU		[Var.ISeaName "void"]
+primTPtrU	= primVarI	NameType	"Base.Ptr#"			TPtrU		[Var.ISeaName "Ptr"]
 
+primTUnit	= primVar	NameType	"Base.Unit"			TUnit
+
+primTBool	= primVarFmt	NameType	"Base.Bool"			TBool
+primTWord	= primVarFmt	NameType	"Base.Word"			TWord
+primTInt	= primVarFmt	NameType	"Base.Int"			TInt
+primTFloat	= primVarFmt	NameType	"Base.Float"			TFloat
+primTChar	= primVarFmt	NameType	"Base.Char"			TChar
+primTString	= primVarFmt	NameType	"Data.String.String"		TString
+
+primTRef	= primVar 	NameType	"Data.Ref.Ref"			TRef
+primTList	= primVar 	NameType	"Data.List.List"		TList
+primTTuple i	= primVar	NameType	("Data.Tuple.Tuple" ++ show i) 	(TTuple i)
 
 -- Effects -----------------------------------------------------------------------------------------
 primRead	= primVar NameEffect	"Base.Read"				ERead
@@ -164,6 +119,7 @@ primWhile	= primVar NameValue	"Control.Imperative.while"		VWhile
 
 primBind	= primVar NameValue	"Class.Monad.>>="			VBind
 
+
 -- Utils -------------------------------------------------------------------------------------------
 
 -- | Create a primitive variable
@@ -178,148 +134,236 @@ primVar space name bind
 	, Var.nameSpace		= space
 	, Var.nameModule	= ModuleAbsolute modParts }
 
+
 -- | Create a primitive variable with some extended info
 primVarI :: NameSpace -> String -> VarBind -> [VarInfo] -> Var
 primVarI space name bind info
   = (primVar space name bind) { Var.info = info }
 
+-- | Create the var for this primitive type
+primVarFmt :: NameSpace -> String -> (DataFormat -> VarBind) -> DataFormat -> Var
+primVarFmt space name mkBind fmt
+ = let	suffix = case fmt of
+			Boxed		-> ""
+			Unboxed		-> "#"
+			BoxedBits d	-> show d
+			UnboxedBits d	-> show d ++ "#"
+	
+	name_parts	= breakOns '.' name
+	Just varName	= takeLast name_parts
 
--- | If this var has a special meaning to the compiler then write it's VarBind to the common one.
-bindPrimVar :: NameSpace -> Var -> Maybe Var
-bindPrimVar n v
+   in	primVarI 
+		space 
+		(name ++ suffix) (mkBind fmt)			
+		[Var.ISeaName $ varName ++ filter (/= '#') suffix]
+
+-- | If this string has the given prefix then split it off and return the rest
+--	of the string
+splitPrefix :: Eq a => [a] -> [a] -> Maybe [a]
+splitPrefix [] xs	= Just xs
+
+splitPrefix (p:ps) (x:xs)
+	| p == x	= splitPrefix ps xs
+	| otherwise	= Nothing
+
+splitPrefix (p:ps) []	= Nothing
+
+
+-- | Check whether a var is for an unboxed type constructor
+varIsUnboxedTyConData :: Var -> Bool
+varIsUnboxedTyConData var
+	= varBindIsUnboxedTyConData (Var.bind var)
+
+varBindIsUnboxedTyConData bind
+	| Just fmt	<- takeVarBind_dataFormat bind
+	= dataFormatIsUnboxed fmt
+
+	| TVoidU	<- bind	= True
+	| TPtrU		<- bind	= True
+	
+	| otherwise		= False
+
+
+-- renamePrimVar -------------------------------------------------------------------------------------	  
+-- | If this var has a special meaning to the compiler then rewrite
+--	its VarBind to the common one
+renamePrimVar :: NameSpace -> Var -> Maybe Var
+renamePrimVar n var
+	| NameValue	<- n
+	, Just bind	<- renamePrimVar_value $ Var.name var
+	= Just var { Var.bind = bind }
+
+	| NameType	<- n
+	, Just bind	<- renamePrimVar_type  $ Var.name var
+	= Just	$ defaultTypeVar 
+		$ var { Var.bind = bind }
+
+	| NameEffect	<- n
+	, Just bind	<- renamePrimVar_effect $ Var.name var
+	= Just var { Var.bind = bind }
+
+	| NameClass	<- n
+	, Just bind	<- renamePrimVar_class $ Var.name var
+	= Just var { Var.bind = bind }
+	
+	| otherwise
+	= Nothing
+	
+
+renamePrimVar_value :: String -> Maybe VarBind
+renamePrimVar_value ss
+	| Just xx	<- splitPrefix "Tuple" ss
+	= Just (VTuple (read xx))
+	
+	| Just xx	<- splitPrefix "suspend" ss
+	= Just (VSuspend (read xx))
+	
+	| otherwise
+	= Map.lookup ss renamePrimVar_values
+	
+renamePrimVar_values
+	= Map.fromList 
+	[ ("Unit",		VUnit)
+	, ("True",		VTrue)
+	, ("False",		VFalse)
+	, ("negate",		VNegate)
+	, ("index",		VIndex)
+	, ("indexR",		VIndexR)
+	, ("primProjField",	VProjField)
+	, ("primProjFieldR",	VProjFieldR)
+	, ("Nil",		VNil)
+	, ("Cons",		VCons)
+	, ("Append",		VAppend)
+	, ("ExceptionBreak",	VExceptionBreak)
+	, ("gateLoop",		VGateLoop)
+	, ("primThrow",		VThrow)
+	, ("primTry",		VTry)
+	, ("rangeInt",		VRange)
+	, ("rangeIntL",		VRangeL)
+	, ("rangeInfIntL",	VRangeInfL)
+	, ("concatMap",		VConcatMap)
+	, ("concatMapL",	VConcatMapL)
+	, (">>=",		VBind)]
+
+	
+renamePrimVar_type :: String -> Maybe VarBind
+renamePrimVar_type ss
+	| Just xx	<- splitPrefix "Tuple" ss
+	= Just (TTuple (read xx))
+	
+	| otherwise
+	= Map.lookup ss renamePrimVar_types
+	
+-- | We manually list out all the primitive types to ensure
+--	that invalid ones are not bound.	
+renamePrimVar_types 
+	= Map.fromList
+	[ ("Obj",		TObj)
+	, ("Data",		TData)
+	, ("Thunk",		TThunk)
+
+	, ("Void#",		TVoidU)
+	, ("Ptr#",		TPtrU)
+	
+	, ("Bool",		TBool  Boxed)
+	, ("Bool#",		TBool  Unboxed)
+
+	, ("Word",		TWord Boxed)
+	, ("Word64",		TWord  (BoxedBits 64))
+	, ("Word32",		TWord  (BoxedBits 32))
+	, ("Word16",		TWord  (BoxedBits 16))
+	, ("Word8",		TWord  (BoxedBits 8))
+
+	, ("Word#",		TWord Unboxed)
+	, ("Word64#",		TWord  (UnboxedBits 64))
+	, ("Word32#",		TWord  (UnboxedBits 32))
+	, ("Word16#",		TWord  (UnboxedBits 16))
+	, ("Word8#",		TWord  (UnboxedBits 8))
+
+	, ("Int",		TInt   Boxed)
+	, ("Int64",		TInt   (BoxedBits 64))
+	, ("Int32",		TInt   (BoxedBits 32))
+	, ("Int16",		TInt   (BoxedBits 16))
+	, ("Int8",		TInt   (BoxedBits 8))
+
+	, ("Int#",		TInt   Unboxed)
+	, ("Int64#",		TInt   (UnboxedBits 64))
+	, ("Int32#",		TInt   (UnboxedBits 32))
+	, ("Int16#",		TInt   (UnboxedBits 16))
+	, ("Int8#",		TInt   (UnboxedBits 8))
+	
+	, ("Float",		TFloat Boxed)
+	, ("Float64",		TFloat (BoxedBits 64))
+	, ("Float32",		TFloat (BoxedBits 32))
+
+	, ("Float#",		TFloat Unboxed)
+	, ("Float64#",		TFloat (UnboxedBits 64))
+	, ("Float32#",		TFloat (UnboxedBits 32))
  
- | NameValue	<- n
- = case Var.name v of
-	"negate"	-> Just $ v { Var.bind = VNegate }
-	"Unit"		-> Just $ v { Var.bind = VUnit }
-	'T':'u':'p':'l':'e':xs
-			-> Just $ v { Var.bind = VTuple (read xs) }
+	, ("Char",		TChar  Boxed)
+	, ("Char32",		TChar  (BoxedBits 32))
 
-	"True"		-> Just $ v { Var.bind = VTrue }
-	"False"		-> Just $ v { Var.bind = VFalse }
+	, ("Char#",		TChar  Unboxed)
+	, ("Char32#",		TChar (UnboxedBits 32))
 	
-	's':'u':'s':'p':'e':'n':'d':xs
-			-> Just $ v { Var.bind = VSuspend (read xs) }
-
-	"index"		-> Just $ v { Var.bind = VIndex }
-	"indexR"	-> Just $ v { Var.bind = VIndexR }
-
-	"primProjField"	-> Just $ v { Var.bind = VProjField }
-	"primProjFieldR" -> Just $ v { Var.bind = VProjFieldR }
-
+	, ("String",		TString Boxed)
+	, ("String#",		TString Unboxed) 
 	
-	"Nil"		-> Just $ v { Var.bind = VNil }
-	"Cons"		-> Just $ v { Var.bind = VCons }
-	"Append"	-> Just $ v { Var.bind = VAppend }
+	, ("Unit",		TUnit)
+	, ("Ref",		TRef)
+	, ("List",		TList)]
 
-	"ExceptionBreak" -> Just $ v { Var.bind = VExceptionBreak }
-	"gateLoop"	 -> Just $ v { Var.bind = VGateLoop }
 
-	"primThrow"	-> Just $ v { Var.bind = VThrow }
-	"primTry"	-> Just $ v { Var.bind = VTry }
+defaultTypeVar :: Var -> Var
+defaultTypeVar var
+ = case Var.name var of
+	"Word"		-> primVar NameType "Base.Word32"   (TWord  $ BoxedBits 32)
+	"Int"		-> primVar NameType "Base.Int32"    (TInt   $ BoxedBits 32)
+	"Float"		-> primVar NameType "Base.Float32"  (TFloat $ BoxedBits 32)
+	"Char"		-> primVar NameType "Base.Char32"   (TChar  $ BoxedBits 32)
+
+	"Word#"		-> primVar NameType "Base.Word32#"   (TWord  $ UnboxedBits 32)
+	"Int#"		-> primVar NameType "Base.Int32#"    (TInt   $ UnboxedBits 32)
+	"Float#"	-> primVar NameType "Base.Float32#"  (TFloat $ UnboxedBits 32)
+	"Char#"		-> primVar NameType "Base.Char32#"   (TChar  $ BoxedBits   32)
+	_		-> var
+
+{-
+var_withModule :: String -> Var -> Var
+var_withModule str var
+	= var { Var.ModuleAbsolute $ breakOns '.' str }
+-}
+
+renamePrimVar_effect :: String -> Maybe VarBind
+renamePrimVar_effect ss
+ = Map.lookup ss $ Map.fromList $
+ 	[ ("Read",		ERead)
+	, ("ReadT",		EReadT)
+	, ("ReadH",		EReadH)
+	, ("Write",		EWrite)
+	, ("WriteT",		EWriteT) ]
+
+
+renamePrimVar_class :: String -> Maybe VarBind
+renamePrimVar_class ss
+	| Just xx	<- splitPrefix "Shape" ss
+	= Just (FShape (read xx))
 	
- 	"rangeInt"	-> Just $ v { Var.bind = VRange  }
-	"rangeIntL"	-> Just $ v { Var.bind = VRangeL }
-	"rangeInfIntL"	-> Just $ v { Var.bind = VRangeInfL }
-
-	"concatMap"	-> Just $ v { Var.bind = VConcatMap }
-	"concatMapL"	-> Just $ v { Var.bind = VConcatMapL }
-
-	">>="		-> Just $ v { Var.bind = VBind }
-	_		-> Nothing
-
- | NameType	<- n
- = case Var.name v of
- 	"Unit"		-> Just $ v { Var.bind = TUnit }
-	"Bool"		-> Just $ v { Var.bind = TBool 		}
-
-	-- hack these to 32 bit for now
-	"Int"		-> Just $ v { Var.bind = TInt32 	}
-	"Float"		-> Just $ v { Var.bind = TFloat32 	}
-	"Char"		-> Just $ v { Var.bind = TChar32	}
-
-	"String"	-> Just $ v { Var.bind = TString	}
-	"Ref"		-> Just $ v { Var.bind = TRef 		}
-
-	'T':'u':'p':'l':'e':xs
-			-> Just $ v { Var.bind = TTuple (read xs) }
+	| otherwise
+	= Map.lookup ss renamePrimVar_classes
 	
-	"List"		-> Just $ v { Var.bind = TList		}
-	
-	"Obj"		-> Just $ v { Var.bind = TObj 		}
-	"Data"		-> Just $ v { Var.bind = TData 		}
-	"Thunk"		-> Just $ v { Var.bind = TThunk 	}
-	
-	-- primitive types
-	"Void#"		-> Just $ v { Var.bind = TVoidU		}
-	"Ptr#"		-> Just $ v { Var.bind = TPtrU		}
-
-	"Bool#"		-> Just $ v { Var.bind = TBoolU 	}
-
-	"Word8#"	-> Just $ v { Var.bind = TWord8U	}
-	"Word16#"	-> Just $ v { Var.bind = TWord16U	}
-	"Word32#"	-> Just $ v { Var.bind = TWord32U	}
-	"Word64#"	-> Just $ v { Var.bind = TWord64U	}
-	
-	"Int8#"		-> Just $ v { Var.bind = TInt8U 	}
-	"Int16#"	-> Just $ v { Var.bind = TInt16U 	}
-	"Int32#"	-> Just $ v { Var.bind = TInt32U 	}
-	"Int64#"	-> Just $ v { Var.bind = TInt64U 	}
-
-	"Float32#"	-> Just $ v { Var.bind = TFloat32U	}
-	"Float64#"	-> Just $ v { Var.bind = TFloat64U	}
-
-	"Char32#"	-> Just $ v { Var.bind = TChar32U	}
-	"String#"	-> Just $ v { Var.bind = TStringU	}
-
-	---
-
-	_		-> Nothing
-
-	
- | NameEffect	<- n
- = case Var.name v of
- 	"Read"		-> Just $ v { Var.bind = ERead }
-	"ReadT"		-> Just $ v { Var.bind = EReadT }
-	"ReadH"		-> Just $ v { Var.bind = EReadH }
-
-
-	"Write"		-> Just $ v { Var.bind = EWrite }
-	"WriteT"	-> Just $ v { Var.bind = EWriteT }
-	_		-> Nothing
-	
- | NameClass	<- n
- = case Var.name v of
-	"ConstT"	-> Just $ v { Var.bind = FConstT }
-	"MutableT"	-> Just $ v { Var.bind = FMutableT }
-	"DirectT"	-> Just $ v { Var.bind = FDirectT }
-
-	"LazyT"		-> Just $ v { Var.bind = FLazyT }
-	"LazyH"		-> Just $ v { Var.bind = FLazyH }
-
- 	"Lazy"		-> Just $ v { Var.bind = FLazy }
-	"Const"		-> Just $ v { Var.bind = FConst }
-	"Mutable"	-> Just $ v { Var.bind = FMutable }
-	"Direct"	-> Just $ v { Var.bind = FDirect }
-	
- 	"Pure"		-> Just $ v { Var.bind = FPure }
-	"Empty"		-> Just $ v { Var.bind = FEmpty }
-
-	'S':'h':'a':'p':'e':xs
-			-> Just $ v { Var.bind = FShape (read xs) }
-
-	'U':'n':'i':'f':'y':xs
-			-> Just $ v { Var.bind = FUnify (read xs) }
-
-	'I':'n':'j':'e':'c':'t':xs
-			-> Just $ v { Var.bind = FInject (read xs) }
-
-	_		-> Nothing
-	
- | otherwise
- =	Nothing
-	
-	
-	
-	
+renamePrimVar_classes
+ 	= Map.fromList 
+ 	[ ("Const",		FConst)
+	, ("ConstT",		FConstT)
+	, ("Mutable",		FMutable)
+	, ("MutableT",		FMutableT)
+	, ("Direct",		FDirect)
+	, ("DirectT",		FDirectT)
+	, ("Lazy",		FLazy)
+	, ("LazyT",		FLazyT)
+	, ("LazyH",		FLazyH)
+	, ("Pure",		FPure)
+	, ("Empty",		FEmpty) ]
+		
 	

@@ -15,6 +15,7 @@ import Shared.Exp
 import Shared.Base
 import Shared.VarPrim
 import Shared.Var		(Var, NameSpace(..))
+import Shared.Literal
 import qualified Shared.Var	as Var
 
 import Util
@@ -64,10 +65,15 @@ elaborateData newVarN getKind
 		= newVarN n
 
 	let thing
-		-- unboxed types and TUnit don't need a primary region
-		| vData == primTUnit || Set.member vData primTVarsUnboxed
+		-- TUnit doesn't have a region
+		| vData == primTUnit 
 		= return p
 	
+		-- Unboxed types, except for String# don't have regions
+		| varIsUnboxedTyConData vData
+		, vData /= primTString Unboxed
+		= return p
+
 		-- boxed ones do
 		| otherwise
 		= do	(ctors', vksNew)	

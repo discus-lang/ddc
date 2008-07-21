@@ -78,9 +78,9 @@ pExp1'
   	do	tok	<- pTok K.Unit
 		return	$ XVar (spTP tok) (Var.primUnit)
 
-  <|>	-- CONST
-  	do	(const, sp) <- pConstSP
-		return	$ XConst sp const
+  <|>	-- lit
+  	do	(lit, sp) <- pLiteralFmtSP
+		return	$ XLit sp lit
 
   <|>	-- \. VAR EXP ..
   	-- overlaps with next lambda forms

@@ -1,64 +1,110 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+-- Wordsize Config --------------------------------------------------------------------------------
+-- | An unsigned word big enough to hold the offset from
+--	the start of the store to the last byte in it.
+--	This can be used as size_t when interfacing with C functions.
+
+-- these should really be type synonyms, but for now the rewrite is hacked 
+--	together by VarPrim.defaultTypeVar 
+foreign import data "Word32"    Word#
+foreign import data "Int32"     Int#
+foreign import data "Float32"	Float#
+foreign import data "Char32"	Char#
+
+data	Word
+data	Int
+data	Float
+data	Char
+
 -- Abstract operational types.
 data	Obj
 data	Data
 data	Thunk
 
--- Simple Data types
+-- Unboxed Data types ------------------------------------------------------------------------------
+--	Single elements of unboxed type are passed by value, so they
+--	don't need region annotations.
 --
+--	Functions which update data via a ptr like (Ptr# Word8#) will
+--	have top level !Store effects which will ensure synchronisation 
+--	when writing low level code.
 
--- These simple types are always passed by value, and cannot be 
---	updated, so they don't need region annotations.
+-- The empty type
 data	Void#
 data	Ptr# a
 
-data	Bool#
+-- | An unboxed boolean value, usually represented as a Word# at runtime.
+foreign import data "Bool"   Bool#
 
-data	Word8#
-data	Word16#
-data	Word32#
-data	Word64#
+-- unboxed, unsigned words
+foreign import data "Word64" Word64#
+foreign import data "Word32" Word32#
+foreign import data "Word16" Word16#
+foreign import data "Word8"  Word8#
 
-data	Int8#
-data	Int16#
-data 	Int32#
-data	Int64#
+-- unboxed, signed integers
+foreign import data "Int64" Int64#
+foreign import data "Int32" Int32#
+foreign import data "Int16" Int16#
+foreign import data "Int8"  Int8#
 
-data	Float32#
-data	Float64#
+-- unboxed, floating point numbers
+foreign import data "Float64" Float64#
+foreign import data "Float32" Float32#
 
-data 	Char32#
+-- unboxed, unicode point.
+foreign import data "Char32"  Char32#
 
--- Strings are represented as pointers to blocks of memory that 
---	can be updated, so they need a region.
-data	String# %r
+-- unboxed strings are pointers to null-terminated blocks of utf8 characters. 
+--	These blocks can be updated, so we give the string a region.
+foreign import data "String"  String# :: % -> *
 
+-- Boxed Data Types -------------------------------------------------------------------------------
 data	Unit	
 	= Unit
 
-data	Char 	%r
-data	Int 	%r
-data 	Float 	%r
+-- unsigned words
+data 	Word64	%r
+data	Word32	%r
+data	Word16	%r
+data 	Word8	%r
+
+-- signed integers
+data	Int64	%r
+data	Int32	%r
+data	Int16	%r
+data	Int8	%r
+
+-- floating point numbers
+data	Float64 %r
+data	Float32 %r
+
+-- boxed characters
+data	Char32	%r
+
+-- boxed strings
+-- are defined in Data.String
 
 data 	Ref %r1 a
 	= Ref { x :: a }
 
--- Region / Effect Classes
---
+-- Region Classes ----------------------------------------------------------------------------------
 class	Const		:: % -> +
 class	Mutable		:: % -> +
 class	Lazy		:: % -> +
 class	Direct		:: % -> +
 
+-- Effect Classes ----------------------------------------------------------------------------------
+class	Pure		:: ! -> +
+
+-- Value Type Classes ------------------------------------------------------------------------------
 class	ConstT		:: * -> +
 class	MutableT	:: * -> +
 class	DirectT		:: * -> +
 
 class	LazyT		:: * -> +
 class	LazyH		:: * -> +
-
-class	Pure		:: ! -> +
 
 class	Shape2		:: * -> * -> +
 class	Shape3		:: * -> * -> * -> +
@@ -67,10 +113,8 @@ class	Shape5		:: * -> * -> * -> * -> * -> +
 class	Shape6		:: * -> * -> * -> * -> * -> * -> +
 
 
--- Global Effects.
---
+-- Effects -----------------------------------------------------------------------------------------
 effect	!Sync		:: !		-- Total synchronisation.
-effect	!Alloc		:: !
 
 effect	!Read		:: % -> !	-- Read of some region.
 effect	!ReadT		:: * -> !	-- Deep read of an object.
@@ -80,6 +124,7 @@ effect	!Write		:: % -> !	-- Write to some region.
 effect	!WriteT		:: * -> !	-- Write to whole object.
 
 
+-- Projection Functions ----------------------------------------------------------------------------
 -- primProj*
 --	These functions are used by the desugarer to make default data projections.
 --

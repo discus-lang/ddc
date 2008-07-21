@@ -15,6 +15,7 @@ import Shared.Var		(Var, NameSpace(..), Module(..))
 import Shared.Pretty
 import Shared.Error
 import Shared.Literal
+import Shared.Base
 
 import Sea.Exp
 
@@ -260,7 +261,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XCon v			-> "_tag" % sV v
 	XInt i			-> ppr i
 	XUnit 			-> ppr "_primUnit"
-	XLiteral lit		-> makeLiteral lit
+	XLit lit		-> pprLiteralFmt lit
 	XTagThunk		-> ppr "_tagThunk"
 	XSuper v		-> "(void*)" % sV v
 	XNull			-> ppr "_null"
@@ -268,14 +269,14 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	-- boxing
 	XBox t x
-	 | t == TCon Var.primTBoolU []
+	 | t == TCon (Var.primTBool Unboxed) []
 	 -> "_boxEnum(" % x % ")"
 	 
 	 | otherwise
 	 -> "_box(" % t % ", " % x % ")"
 	  
 	XUnbox t x
-	 |  t == TCon Var.primTBoolU []
+	 |  t == TCon (Var.primTBool Unboxed) []
 	 -> "_unboxEnum(" % x % ")"
 	 
 	 | otherwise
@@ -310,26 +311,43 @@ instance Pretty Type PMode where
 	TVoid		-> ppr "void"
 	TObj		-> ppr "Obj*"
 
-	TCon v [t]
-	 | v == Var.primTPtrU
-	 ->  t % "*"
-	 
-	TCon v ts
-	 -> let ps	= chopOnRight '.' $ Var.name v
-	    in	ppr $ init (last ps) % " " % " " %!% ts
-	 		
+	TPtr x		-> x % "*"
+
+	TCon var []
+	 -> ppr $ getSeaName var
+		 		
 	_ -> panic stage $ "pprStr[Type]: no match for " % show xx
 
-makeLiteral lit
- = case lit of
-	LBool   b	
+getSeaName :: Var -> String
+getSeaName var
+	| [name]	<- [n | Var.ISeaName n <- Var.info var]
+	= name
+
+ 	| [var_binding]	<- [v | Var.IBoundBy v <- Var.info var]
+	, [name]	<- nub [n | Var.ISeaName n <- Var.info var_binding]
+	= name
+
+ 	| otherwise
+	= panic stage 
+		$  "getSeaName: no sea name for TCon " % var % "\n"
+		%  "  info = " % show (Var.info var) % "\n"
+	
+
+pprLiteralFmt litfmt@(LiteralFmt lit fmt)
+ = case (lit, fmt) of
+
+ 	(LBool b, Unboxed)
 	 -> case b of
 	 	True	-> ppr "true"
 		False	-> ppr "false"
-	LChar	c	-> ppr $ show c
-	LString s	-> ppr $ show s
- 	LInt	i	-> ppr i 
-	LFloat	f	-> ppr f
+
+	(LWord i,   UnboxedBits b)	-> ppr i
+	(LInt i,    UnboxedBits b)	-> ppr i
+	(LFloat f,  UnboxedBits b)	-> ppr f
+
+	(LChar c,   UnboxedBits b)	-> ppr $ show c
+	(LString s, Unboxed)		-> ppr $ show s
+	_ -> panic stage $ "pprLiteralFmt: no match for " % show litfmt
 
 
 -----

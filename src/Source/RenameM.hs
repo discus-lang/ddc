@@ -36,7 +36,7 @@ import Data.Set			(Set)
 -----
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, VarBind, NameSpace(..), (=~=), Module(..))
-import Shared.VarPrim		(bindPrimVar)
+import Shared.VarPrim		(renamePrimVar)
 import Shared.Pretty
 
 import Shared.Error
@@ -232,7 +232,7 @@ renameVarN	space var
 	% " var = " % show var % "\n"
 
 	| otherwise
-	= case bindPrimVar space var of
+	= case renamePrimVar space var of
 	 	Just var'	-> return var' { Var.nameSpace = space }
 		Nothing 	-> renameVarN' space var	
 
@@ -309,7 +309,8 @@ linkBoundVar enclosing space var
 					% "   info: " % Var.info var	% "\n"
 
 	-- try and find the binding occurance
-	let mBindingVar		= lookupBindingVar enclosing (Var.name var) spaceStack
+	let var_prim	= fromMaybe var (renamePrimVar space var)				
+	let mBindingVar	= lookupBindingVar enclosing (Var.name var_prim) spaceStack
 	case mBindingVar of
 
 	 -- found it
@@ -318,7 +319,8 @@ linkBoundVar enclosing space var
 	  $  Just 
 	    	( bindingVar
 		, var
-			{ Var.bind 	 = Var.bind 	  bindingVar
+			{ Var.name	 = Var.name       bindingVar
+			, Var.bind 	 = Var.bind 	  bindingVar
 			, Var.nameModule = Var.nameModule bindingVar
 			, Var.nameSpace  = Var.nameSpace  bindingVar 
 			, Var.info       = Var.info var ++ [Var.IBoundBy bindingVar]})

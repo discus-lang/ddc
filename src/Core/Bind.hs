@@ -14,6 +14,7 @@ import Core.Exp
 import Core.Util
 import Core.Pretty
 import Core.Reconstruct
+import Type.Builtin
 
 import Type.Util.Bits		(varOfBind)
 

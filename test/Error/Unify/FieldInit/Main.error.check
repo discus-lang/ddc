@@ -1,10 +1,10 @@
 ./test/Error/Unify/FieldInit/Main.ds:5:0
     Type mismatch during unification.
-          cannot match: Base.Int %4
+          cannot match: Base.Int32 %4
                   with: Data.String.String %48
 
           type signature for 'Main.init_Fish_Perch_speed'
-          which requires: Base.Int %4
+          which requires: Base.Int32 %4
                       at: ./test/Error/Unify/FieldInit/Main.ds:5:0
 
         conflicts with, 

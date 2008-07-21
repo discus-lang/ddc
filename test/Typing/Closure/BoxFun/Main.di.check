@@ -7,7 +7,7 @@
 -- Data
 data BoxFun2 %r1 !e0 $c0 !e1 $c1
         = BoxFun2 {
-                Base.Unit -(!e0 $c0)> Base.Unit -(!e1 $c1)> Base.Int %r1;
+                Base.Unit -(!e0 $c0)> Base.Unit -(!e1 $c1)> Base.Int32 %r1;
         };
 
 
@@ -25,13 +25,13 @@ data BoxFun2 %r1 !e0 $c0 !e1 $c1
 
 -- Binds
 foreign import x
-        :: Base.Int %rTC1
+        :: Base.Int32 %rTC1
         :- Base.Const %rTC1
         ,  Base.Direct %rTC1
         :$ Base.Data;
         
 foreign import y
-        :: Base.Int %rTC2
+        :: Base.Int32 %rTC2
         :- Base.Const %rTC2
         ,  Base.Direct %rTC2
         :$ Base.Data;
@@ -52,13 +52,13 @@ foreign import box
         
 foreign import runBoxFun2
         :: forall %r0 !e0 !e1 $c0 $c1
-        .  BoxFun2 %r0 !e1 $c0 !e0 $c1 -(!e2)> Base.Int %r0
+        .  BoxFun2 %r0 !e1 $c0 !e0 $c1 -(!e2)> Base.Int32 %r0
         :- !e2        = !{Base.!Read %r0; !e1; !e0}
         :$ Base.Data -> Base.Data;
         
 foreign import fun
         :: forall %r0
-        .  Base.Unit -(!e0 $c0)> Base.Unit -(!e1 $c1)> Base.Int %r0
+        .  Base.Unit -(!e0 $c0)> Base.Unit -(!e1 $c1)> Base.Int32 %r0
         :- !e0        = !{Base.!Read %rTC1; System.Console.!Console}
         ,  !e1        = Base.!Read %rTC2
         ,  $c0        = ${x : %rTC1; y : %rTC2}
@@ -70,7 +70,7 @@ foreign import fun
         :$ Base.Data -> Base.Thunk;
         
 foreign import runBox
-        :: Base.Unit -(!e0 $c0)> Base.Int %rTS7
+        :: Base.Unit -(!e0 $c0)> Base.Int32 %rTS7
         :- !e0        = !{Base.!Read %rTS7; Base.!Read %rTC1; System.Console.!Console; Base.!Read %rTC2}
         ,  $c0        = ${box : %rTS7; box : %rTC1; box : %rTC2}
         ,  Base.Direct %rTS7

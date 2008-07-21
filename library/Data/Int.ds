@@ -13,67 +13,67 @@ import Class.Update
 infix  5 <, <=, >=, > 
 
 foreign import "_boxInt32"
- boxInt32 	:: Int32#{read} -> Int
+ boxInt32 	:: Int32# -> Int32
 		:$ Int32# -> Obj
 
 foreign import "_unboxInt32"
- unboxInt32	:: Int {read} -> Int32#
+ unboxInt32	:: Int32{read} -> Int32#
 		:$ Obj -> Int32#
 
 -- math
 foreign import "primInt32_neg"
- primInt32_neg  :: Int{read} -> Int
+ primInt32_neg  :: Int32{read} -> Int32
 
 foreign import "primInt32_add"
- primInt32_add	:: Int{read} -> Int{read} -> Int
+ primInt32_add	:: Int32{read} -> Int32{read} -> Int32
 
 foreign import "primInt32_sub"	
- primInt32_sub	:: Int{read} -> Int{read} -> Int
+ primInt32_sub	:: Int32{read} -> Int32{read} -> Int32
 
 foreign import "primInt32_mul"	
- primInt32_mul	:: Int{read} -> Int{read} -> Int
+ primInt32_mul	:: Int32{read} -> Int32{read} -> Int32
 
 foreign import "primInt32_div"	
- primInt32_div	:: Int{read} -> Int{read} -> Int
+ primInt32_div	:: Int32{read} -> Int32{read} -> Int32
 
 foreign import "primInt32_mod"	
- primInt32_mod	:: Int{read} -> Int{read} -> Int
+ primInt32_mod	:: Int32{read} -> Int32{read} -> Int32
 
 -- comparisons
 foreign import "primInt32_eq"	
- primInt32_eq	:: Int{read} -> Int{read} -> Bool
+ primInt32_eq	:: Int32{read} -> Int32{read} -> Bool
 
 foreign import "primInt32_neq"	
- primInt32_neq	:: Int{read} -> Int{read} -> Bool
+ primInt32_neq	:: Int32{read} -> Int32{read} -> Bool
 
 foreign import "primInt32_gt"	
- primInt32_gt	:: Int{read} -> Int{read} -> Bool
+ primInt32_gt	:: Int32{read} -> Int32{read} -> Bool
 
 foreign import "primInt32_lt"	
- primInt32_lt	:: Int{read} -> Int{read} -> Bool
+ primInt32_lt	:: Int32{read} -> Int32{read} -> Bool
 
 foreign import "primInt32_ge"	
- primInt32_ge	:: Int{read} -> Int{read} -> Bool
+ primInt32_ge	:: Int32{read} -> Int32{read} -> Bool
 
 foreign import "primInt32_le"	
- primInt32_le	:: Int{read} -> Int{read} -> Bool
+ primInt32_le	:: Int32{read} -> Int32{read} -> Bool
 
 -- update
 foreign import "primInt32_update"
  primInt32_update
- 	:: Int{write} -> Int{read} -> ()
+ 	:: Int32{write} -> Int32{read} -> ()
 
-instance Copy Int where
+instance Copy Int32 where
  	copy x 		= boxInt32 (unboxInt32 x)
 
-instance Updatable Int where
+instance Updatable Int32 where
 	(:=)		= primInt32_update
 
-instance Eq Int where
+instance Eq Int32 where
 	(==)		= primInt32_eq
 	(/=)		= primInt32_neq
 
-instance Ord Int where
+instance Ord Int32 where
 	(>)		= primInt32_gt
 	(<)		= primInt32_lt
 	(>=)		= primInt32_ge
@@ -84,7 +84,7 @@ instance Ord Int where
 	 | x <= y	=  LT
 	 		\= GT
 	 
-instance Num Int where 
+instance Num Int32 where 
  	(+) 		= primInt32_add
 	(-) 		= primInt32_sub
 	(*) 		= primInt32_mul
@@ -92,27 +92,27 @@ instance Num Int where
 	mod		= primInt32_mod
 	negate		= primInt32_neg
 
-instance Accum Int where
+instance Accum Int32 where
 	(+=) a b	= primInt32_update a (primInt32_add a b)
 
 
 -----
-(<>) :: Int -> (Int -> Int) -> ()
+(<>) :: Int32 -> (Int32 -> Int32) -> ()
 (<>) x f
  = do 	x'	= f x
 	x	:= x'
 
-inc x	= x + 1
+inc x	= x + 1i
 
 
-project Int where
+project Int32 where
 	
-	min :: Int -> Int -> Int
+	min :: Int32 -> Int32 -> Int32
 	min x y
 	 = if x < y	then x
 			else y
 
-	max :: Int -> Int -> Int
+	max :: Int32 -> Int32 -> Int32
 	max x y
 	 = if x > y	then x
  			else y

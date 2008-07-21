@@ -8,7 +8,9 @@ module Source.Token
 
 where
 
+import Shared.Base
 import Shared.Pretty
+import Shared.Literal
 import Util
 
 -- | Wraps up a token with its position in the source file
@@ -68,14 +70,9 @@ data Token
 	| Con		String		-- a constructor variable
 	| Symbol	String		-- a symbol
 
-	-- Literal values ------------------------------------------------------
-	| CBoolU	Bool		-- unboxed boolean, true#, false#
-	| CInt		Int
-	| CChar		Char
-	| CFloat	Float
-	| CString	String
-	
-
+	-- Literal values
+	| Literal	LiteralFmt
+		
 	-- Weak keywords -------------------------------------------------------
 	-- They only have special meaning in particular contexts, in others contexts
 	-- they should be converted back to regular variables.

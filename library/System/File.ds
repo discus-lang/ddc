@@ -5,9 +5,8 @@ import Data.String
 import Data.Ptr
 import Control.Exception
 
--- The foreign unboxed FILE type
---	it reads 'FILE' in the C source
-data FILE# %r1	foreign "FILE"
+-- the foreign file type
+foreign import data "FILE" FILE# :: % -> *
 
 -- The effect of functions that poke the file system
 effect !File	:: !;

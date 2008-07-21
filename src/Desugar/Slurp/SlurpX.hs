@@ -10,8 +10,12 @@ import {-# SOURCE #-} Desugar.Slurp.SlurpA
 import Desugar.Slurp.Base
 
 import Type.Location
+import Type.Builtin
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
+import Shared.VarSpace
+import Shared.Base
+
 import Util	(liftM, unzip6, unzip5, takeLast, catMap)
 
 -----
@@ -179,21 +183,37 @@ slurpX	exp@(XMatch sp Nothing alts)
 
 
 -----------------------
--- Const
+-- Lit
 --
-slurpX	exp@(XConst sp c)
+slurpX	exp@(XLit sp litFmt)
  = do	
- 	tX@(TVar KValue vT)	<- newTVarDS "lit"
-	tConst			<- getConstType c
+ 	tX@(TVar KValue vT)	
+			<- newTVarDS "lit"
+
+	-- work out the type of this literal
+	let TyConData 
+		{ tyConName 	= tcVar
+		, tyConDataKind = tcKind }
+		= tyConOfLiteralFmt litFmt
+
+	-- if the literal type needs a region var then make a fresh one
+	tLit	<- case tcKind of
+			KValue 		
+			 -> 	return $ TData tcKind tcVar []
+
+			(KFun KRegion KValue)
+			 -> do	vR	<- newVarN NameRegion
+			 	return	$ TData tcKind tcVar [TVar KRegion vR]
+	
 	let qs = 
-		[ CEq (TSV $ SVLiteral sp c) tX	$ tConst]
+		[ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
 
 	wantTypeV vT
 	
 	return	( tX
 		, pure
 		, empty
-	  	, XConst (Just (tX, pure)) c
+	  	, XLit (Just (tX, pure)) litFmt
 		, qs)
 
 
@@ -281,9 +301,8 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 	wantTypeV vObj
 
 	-- The case object must be a Bool
-	boolType	<- getGroundType "Bool"
 	tR		<- newTVarR
-	let tBool	= TData (KFun KRegion KValue) boolType [tR]
+	let tBool	= TData (KFun KRegion KValue) (primTBool Boxed) [tR]
 
 	-- Slurp the THEN expression.
 	(tThen, eThen, cThen, xThen', qsThen)	

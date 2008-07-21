@@ -30,7 +30,7 @@ foreign import makeGetGet
         
 foreign import checkGetGet
         :: forall %r0 %r1 %r2 %r3
-        .  Base.Unit -> Data.Tuple.Tuple2 %r3 (Data.List.List %r2 (Data.String.String %r0)) (Data.List.List %r2 (Base.Int %r1))
+        .  Base.Unit -> Data.Tuple.Tuple2 %r3 (Data.List.List %r2 (Data.String.String %r0)) (Data.List.List %r2 (Base.Int32 %r1))
         :$ Base.Data -> Base.Data;
         
 

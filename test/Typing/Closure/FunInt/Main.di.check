@@ -7,7 +7,7 @@
 -- Data
 data FunInt %r0 %r1 !e1 $c1
         = FunInt {
-                Base.Int %r1 -(!e1 $c1)> Base.Int %r1;
+                Base.Int32 %r1 -(!e1 $c1)> Base.Int32 %r1;
         };
 
 
@@ -25,7 +25,7 @@ data FunInt %r0 %r1 !e1 $c1
 
 -- Binds
 foreign import funSucc
-        :: FunInt %rTS0 %rTS5 !e0 $Bot
+        :: FunInt %rTS0 %rTS5 !e0 $_
         :- !e0        = Base.!Read %rTS5
         ,  Base.Const %rTS5
         ,  Base.Const %rTS0
@@ -35,19 +35,19 @@ foreign import funSucc
         
 foreign import succ
         :: forall %r0 %r1
-        .  Base.Int %r0 -(!e0)> Base.Int %r1
+        .  Base.Int32 %r0 -(!e0)> Base.Int32 %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import runFun
         :: forall %r0 %r1 !e0 $c0
-        .  FunInt %r0 %r1 !e0 $c0 -> Base.Int %r1 -(!e1 $c1)> Base.Int %r1
+        .  FunInt %r0 %r1 !e0 $c0 -> Base.Int32 %r1 -(!e1 $c1)> Base.Int32 %r1
         :- !e1        = !{!e0; Base.!Read %r0}
         ,  $c1        = ${xSD0 : %r0; xSD0 : %r1; xSD0 : %r0 $> !e0; xSD0 : %r0 $> $c0}
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import succ'
-        :: Base.Int %rTS5 -(!e0 $c0)> Base.Int %rTS5
+        :: Base.Int32 %rTS5 -(!e0 $c0)> Base.Int32 %rTS5
         :- !e0        = !{Base.!Read %rTS5; Base.!Read %rTS0}
         ,  $c0        = ${funSucc : %rTS0; funSucc : %rTS5}
         ,  Base.Direct %rTS5

@@ -20,6 +20,7 @@ import Desugar.Slurp.SlurpX
 
 import Type.Util.Substitute
 import Type.Location
+import Type.Builtin
 
 -----
 stage	= "Desugar.Slurp.SlurpA"
@@ -189,18 +190,33 @@ slurpW	(WConLabel sp vCon lvs)
 		, (concat cTrees) )
 		
 
-slurpW	(WConst sp c)
+slurpW	(WLit sp litFmt)
  = do
 	tD@(TVar KValue tV)	<- newTVarDS "const"
 	tE			<- newTVarES "const"
-	tConst			<- getConstType c
+
+	-- work out the type of this literal
+	let TyConData 
+		{ tyConName 	= tcVar
+		, tyConDataKind = tcKind }
+		= tyConOfLiteralFmt litFmt
+
+	-- if the literal type needs a region var then make a fresh one
+	tLit	<- case tcKind of
+			KValue 		
+			 -> 	return $ TData tcKind tcVar []
+
+			(KFun KRegion KValue)
+			 -> do	vR	<- newVarN NameRegion
+			 	return	$ TData tcKind tcVar [TVar KRegion vR]
 
 	wantTypeV tV
 
  	return	( []
 		, tD
-		, WConst (Just (tD, tE)) c
-		, [CEq (TSV $ SVLiteralMatch sp c) tD tConst])
+		, WLit (Just (tD, tE)) litFmt
+		, [CEq (TSV $ SVLiteralMatch sp litFmt) tD tLit])
+
 
 slurpW	(WVar sp v)
  = do	Just tBound@(TVar k vT)	<- bindVtoT v

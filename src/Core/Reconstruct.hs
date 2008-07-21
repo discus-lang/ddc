@@ -37,10 +37,13 @@ import Core.Plate.FreeVars
 
 import Type.Util		hiding (flattenT, trimClosureC)
 import Type.Util.Environment
+import Type.Builtin
 
 import Shared.Pretty
 import Shared.Error
 import Shared.VarPrim
+import Shared.Literal
+import Shared.Base
 import Util.Graph.Deps
 import Util
 
@@ -183,9 +186,9 @@ reconX tt (XLAM v k x)
 --	in the literal's type scheme. String literals never appear without their region
 --	parameters in the core so this is ok.
 
-reconX tt exp@(XAPP (XLit l) (TVar KRegion r))
- = let	t	= case l of
- 			LString{}	-> makeTData primTStringU (KFun KRegion KValue) [TVar KRegion r]
+reconX tt exp@(XAPP (XLit (LiteralFmt lit fmt)) (TVar KRegion r))
+ = let	t	= case lit of
+ 			LString{}	-> makeTData (primTString Unboxed) (KFun KRegion KValue) [TVar KRegion r]
 			_		-> panic stage
 					$  "reconX/XApp: non string constant applied to region\n"
 					%  "    exp = " % exp	% "\n"
@@ -543,25 +546,9 @@ reconX tt xx@(XPrim prim xs)
 	, makeTSum KClosure $ catMaybes xsmCs)
 
 
-reconX tt xx@(XLit l)
- = let	tLit = case l of
- 			LInt8{}		-> makeTData primTInt8U	 	KValue	[]
- 			LInt16{}	-> makeTData primTInt16U 	KValue	[]
- 			LInt32{}	-> makeTData primTInt32U 	KValue	[]
- 			LInt64{}	-> makeTData primTInt64U	KValue	[]
-
- 			LWord8{}	-> makeTData primTWord8U 	KValue	[]
- 			LWord16{}	-> makeTData primTWord16U	KValue	[]
- 			LWord32{}	-> makeTData primTWord32U	KValue	[]
- 			LWord64{}	-> makeTData primTWord64U	KValue	[]
-
- 			LFloat32{}	-> makeTData primTFloat32U	KValue	[]
- 			LFloat64{}	-> makeTData primTFloat64U	KValue	[]
-
- 			LChar32{}	-> makeTData primTChar32U 	KValue	[]
-			_		-> panic stage
-					$  "reconX/XLit: no match for " % xx % "\n"
-
+reconX tt xx@(XLit litFmt)
+ = let	tcLit	= tyConOfLiteralFmt litFmt
+	tLit	= TCon tcLit
    in	( xx
 	, tLit
 	, pure
@@ -575,34 +562,16 @@ reconX tt xx
 	% "    caller = " % envCaller tt	% "\n"
 
 
--- | Convert this type to the boxed version
+-- | Convert this boxed type to the unboxed version
 reconBoxType :: Region -> Type -> Type
 reconBoxType r tt
-	| Just (v, k, _)	<- takeTData tt
+	| Just (v, k, _)		<- takeTData tt
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
+	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
 	= makeTData 
-		(reconBoxType_bind (Var.bind v)) 
+		(primVarFmt NameType baseName mkBind fmtBoxed)
 		(KFun KRegion KValue) 
 		[r]
-
-reconBoxType_bind bind
- = case bind of
-	Var.TBoolU	-> primTBool
-
- 	Var.TInt8U	-> primTInt8
- 	Var.TInt16U	-> primTInt16
- 	Var.TInt32U	-> primTInt32
- 	Var.TInt64U	-> primTInt64
-
-	Var.TWord8U	-> primTWord8
-	Var.TWord16U	-> primTWord16
-	Var.TWord32U	-> primTWord32
-	Var.TWord64U	-> primTWord64
-
-	Var.TFloat32U	-> primTFloat32
-	Var.TFloat64U	-> primTFloat64
-
-	Var.TChar32U	-> primTChar32
-	Var.TStringU	-> primTString
 
 
 -- | Convert this type to the unboxed version
@@ -611,31 +580,32 @@ reconUnboxType r1 tt
 	| Just (v, k, [r2@(TVar KRegion _)])	
 			<- takeTData tt
 	, r1 == r2
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
+	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
 	= makeTData 
-		(reconUnboxType_bind (Var.bind v)) 
+		(primVarFmt NameType baseName mkBind fmtUnboxed)
 		KValue
 		[]
 
-	
-reconUnboxType_bind bind
+
+-- | Split the VarBind for a literal into its components, 
+--	eg  TInt fmt -> ("Int", TInt, fmt)
+splitLiteralVarBind 
+	:: Var.VarBind 
+	-> ( String
+	   , DataFormat -> Var.VarBind
+	   , DataFormat)
+
+splitLiteralVarBind bind
  = case bind of
-	Var.TBool	-> primTBoolU
+ 	Var.TBool  fmt	-> ("Bool",   Var.TBool,   fmt)
+	Var.TWord  fmt	-> ("Word",   Var.TWord,   fmt)
+	Var.TInt   fmt	-> ("Int",    Var.TInt,    fmt)
+	Var.TFloat fmt	-> ("Float",  Var.TFloat,  fmt)
+	Var.TChar  fmt	-> ("Char",   Var.TChar,   fmt)
+	Var.TString fmt	-> ("String", Var.TString, fmt)
 
- 	Var.TInt8	-> primTInt8U
- 	Var.TInt16	-> primTInt16U
- 	Var.TInt32	-> primTInt32U
- 	Var.TInt64	-> primTInt64U
 
-	Var.TWord8	-> primTWord8U
-	Var.TWord16	-> primTWord16U
-	Var.TWord32	-> primTWord32U
-	Var.TWord64	-> primTWord64U
-
-	Var.TFloat32	-> primTFloat32U
-	Var.TFloat64	-> primTFloat64U
-
-	Var.TChar32	-> primTChar32U
-	
 
 -- | Reconstruct the type and effect of an operator application
 --	Not sure if doing this manually is really a good way to do it.
@@ -660,15 +630,15 @@ reconOpApp tt op xs
 	, [t1, t2]	<- map (t4_2 . reconX tt) xs
 	, isUnboxedNumericType t1
 	, t1 == t2
-	= (makeTData primTBoolU KValue [], pure)
+	= (makeTData (primTBool Unboxed) KValue [], pure)
 
 	-- boolean operators
 	| elem op [OpAnd, OpOr]
 	, [t1, t2]		<- map (t4_2 . reconX tt) xs
 	, Just (v, k, [])	<- takeTData t1
-	, v == primTBoolU
+	, v == (primTBool Unboxed)
 	, t1 == t2
-	= (makeTData primTBoolU KValue [], pure)
+	= (makeTData (primTBool Unboxed) KValue [], pure)
 	
 	| otherwise
 	= panic stage
@@ -679,10 +649,7 @@ reconOpApp tt op xs
 isUnboxedNumericType :: Type -> Bool
 isUnboxedNumericType tt
  	| Just (v, _, []) <- takeTData tt
-	, elem v 	[ primTBoolU
-			, primTInt8U, primTInt16U, primTInt32U, primTInt64U
-			, primTWord8U, primTWord16U, primTWord32U, primTWord64U
-			, primTFloat32U, primTFloat64U]
+	, isUnboxedNumericType_bind (Var.bind v)
 	= True
 
 	-- treat pointers as numeric types
@@ -692,6 +659,13 @@ isUnboxedNumericType tt
 	
 	| otherwise
 	= False
+
+isUnboxedNumericType_bind bind
+ = case bind of
+ 	Var.TWord _	-> True
+	Var.TInt _	-> True
+	Var.TFloat _	-> True
+	_		-> False
 
 
 -- | Reconstruct the result type when this list of expressions

@@ -24,24 +24,24 @@ infix  5 <, <=, >=, > ;
 -- Class dictionaries
 
 -- Class instances
-instance Class.Copy.Copy (Base.Int %rDK54) where
+instance Class.Copy.Copy (Base.Int32 %rDK42) where
 {
-        copy     = Data.Int.instance_Copy_Int_copy;
+        copy     = Data.Int.instance_Copy_Int32_copy;
 }
 
-instance Class.Update.Updatable (Base.Int %rDK55) where
+instance Class.Update.Updatable (Base.Int32 %rDK43) where
 {
         (:=)     = Data.Int.primInt32_update;
 }
 
-instance Class.Eq.Eq (Base.Int %rDK56) where
+instance Class.Eq.Eq (Base.Int32 %rDK44) where
 {
         (==)     = Data.Int.primInt32_eq;
         
         (/=)     = Data.Int.primInt32_neq;
 }
 
-instance Class.Ord.Ord (Base.Int %rDK57) where
+instance Class.Ord.Ord (Base.Int32 %rDK45) where
 {
         (>)      = Data.Int.primInt32_gt;
         
@@ -51,10 +51,10 @@ instance Class.Ord.Ord (Base.Int %rDK57) where
         
         (<=)     = Data.Int.primInt32_le;
         
-        compare  = Data.Int.instance_Ord_Int_compare;
+        compare  = Data.Int.instance_Ord_Int32_compare;
 }
 
-instance Class.Num.Num (Base.Int %rDK58) where
+instance Class.Num.Num (Base.Int32 %rDK46) where
 {
         (+)      = Data.Int.primInt32_add;
         
@@ -69,115 +69,115 @@ instance Class.Num.Num (Base.Int %rDK58) where
         negate   = Data.Int.primInt32_neg;
 }
 
-instance Class.Update.Accum (Base.Int %rDK59) where
+instance Class.Update.Accum (Base.Int32 %rDK47) where
 {
-        (+=)     = Data.Int.instance_Accum_Int_PsEq;
+        (+=)     = Data.Int.instance_Accum_Int32_PsEq;
 }
 
 
 -- Foreign imports
 foreign import "_boxInt32"
  boxInt32
-        :: Base.Int32#{read} -> Base.Int
+        :: Base.Int32# -> Base.Int32
         :$ Base.Int32# -> Base.Obj;
 
 foreign import "_unboxInt32"
  unboxInt32
-        :: Base.Int{read} -> Base.Int32#
+        :: Base.Int32{read} -> Base.Int32#
         :$ Base.Obj -> Base.Int32#;
 
 foreign import "primInt32_neg"
  primInt32_neg
-        :: Base.Int{read} -> Base.Int ;
+        :: Base.Int32{read} -> Base.Int32 ;
 
 foreign import "primInt32_add"
  primInt32_add
-        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Base.Int32 ;
 
 foreign import "primInt32_sub"
  primInt32_sub
-        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Base.Int32 ;
 
 foreign import "primInt32_mul"
  primInt32_mul
-        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Base.Int32 ;
 
 foreign import "primInt32_div"
  primInt32_div
-        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Base.Int32 ;
 
 foreign import "primInt32_mod"
  primInt32_mod
-        :: Base.Int{read} -> Base.Int{read} -> Base.Int ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Base.Int32 ;
 
 foreign import "primInt32_eq"
  primInt32_eq
-        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Data.Bool.Bool ;
 
 foreign import "primInt32_neq"
  primInt32_neq
-        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Data.Bool.Bool ;
 
 foreign import "primInt32_gt"
  primInt32_gt
-        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Data.Bool.Bool ;
 
 foreign import "primInt32_lt"
  primInt32_lt
-        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Data.Bool.Bool ;
 
 foreign import "primInt32_ge"
  primInt32_ge
-        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Data.Bool.Bool ;
 
 foreign import "primInt32_le"
  primInt32_le
-        :: Base.Int{read} -> Base.Int{read} -> Data.Bool.Bool ;
+        :: Base.Int32{read} -> Base.Int32{read} -> Data.Bool.Bool ;
 
 foreign import "primInt32_update"
  primInt32_update
-        :: Base.Int{write} -> Base.Int{read} -> Base.Unit ;
+        :: Base.Int32{write} -> Base.Int32{read} -> Base.Unit ;
 
 
 -- Binds
-foreign import instance_Copy_Int_copy
+foreign import instance_Copy_Int32_copy
         :: forall %r0 %r1
-        .  Base.Int %r1 -(!e0)> Base.Int %r0
+        .  Base.Int32 %r1 -(!e0)> Base.Int32 %r0
         :- !e0        = Base.!Read %r1
         :$ Base.Data -> Base.Data;
         
-foreign import instance_Ord_Int_compare
+foreign import instance_Ord_Int32_compare
         :: forall %r0 %r1 %r2
-        .  Base.Int %r0 -> Base.Int %r2 -(!e0 $c0)> Class.Ord.Ordering %r1
+        .  Base.Int32 %r0 -> Base.Int32 %r2 -(!e0 $c0)> Class.Ord.Ordering %r1
         :- !e0        = !{Base.!Read %r0; Base.!Read %r2}
         ,  $c0        = x : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
-foreign import instance_Accum_Int_PsEq
+foreign import instance_Accum_Int32_PsEq
         :: forall %r0 %r1
-        .  Base.Int %r0 -> Base.Int %r1 -(!e0 $c0)> Base.Unit
+        .  Base.Int32 %r0 -> Base.Int32 %r1 -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}
         ,  $c0        = a : %r0
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
-foreign import project_Int_min
+foreign import project_Int32_min
         :: forall %r0
-        .  Base.Int %r0 -> Base.Int %r0 -(!e0 $c0)> Base.Int %r0
+        .  Base.Int32 %r0 -> Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = Base.!Read %r0
         ,  $c0        = x : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
-foreign import project_Int_max
+foreign import project_Int32_max
         :: forall %r0
-        .  Base.Int %r0 -> Base.Int %r0 -(!e0 $c0)> Base.Int %r0
+        .  Base.Int32 %r0 -> Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = Base.!Read %r0
         ,  $c0        = x : %r0
         :$ Base.Data -> Base.Data -> Base.Data;
         
 foreign import (<>)
         :: forall %r0 %r1 !e0 $c0
-        .  Base.Int %r0 -> (Base.Int %r0 -(!e0 $c0)> Base.Int %r1) -(!e1 $c1)> Base.Unit
+        .  Base.Int32 %r0 -> (Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r1) -(!e1 $c1)> Base.Unit
         :- !e1        = !{!e0; Base.!Read %r0; Base.!Read %r1; Base.!Write %r0}
         ,  $c1        = x : %r0
         ,  Base.Mutable %r0
@@ -185,14 +185,14 @@ foreign import (<>)
         
 foreign import inc
         :: forall %r0 %r1
-        .  Base.Int %r0 -(!e0)> Base.Int %r1
+        .  Base.Int32 %r0 -(!e0)> Base.Int32 %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
-project Base.Int %rDK69 where
+project Base.Int32 %rDK57 where
 {
-        min      = project_Int_min;
-        max      = project_Int_max;
+        min      = project_Int32_min;
+        max      = project_Int32_max;
 }
 
 

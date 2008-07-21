@@ -85,8 +85,11 @@ slurpTopNames p
 	PImportModule{}			-> []
 	PExport{}			-> []
 
-	PForeign sp (OImport (OExtern mS v t mT))	
+	PForeign sp (OImport mS v t mT)
 	 -> [bindSeaName mS v { Var.nameSpace = NameValue }]	
+
+	PForeign sp (OImportUnboxedData s v k)
+	 -> [bindSeaName (Just s) v { Var.nameSpace = NameType}]
 
 	PData sp v vs ctors 		
 	 -> ( v { Var.nameSpace = NameType }) 

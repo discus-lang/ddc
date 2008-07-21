@@ -20,14 +20,14 @@
 
 -- Binds
 foreign import x
-        :: Base.Int %rTC0
+        :: Base.Int32 %rTC0
         :- Base.Const %rTC0
         ,  Base.Direct %rTC0
         :$ Base.Data;
         
 foreign import fun
         :: forall %r0
-        .  Base.Unit -(!e0 $c0)> Base.Int %r0
+        .  Base.Unit -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = x : %rTC0
         ,  Base.Const %rTC0
@@ -36,7 +36,7 @@ foreign import fun
         
 foreign import fun2
         :: forall %r0
-        .  Base.Unit -($c0)> Base.Unit -(!e0 $c1)> Base.Int %r0
+        .  Base.Unit -($c0)> Base.Unit -(!e0 $c1)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = fun : %rTC0
         ,  $c1        = x : %rTC0
@@ -46,7 +46,7 @@ foreign import fun2
         
 foreign import fun3
         :: forall %r0
-        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -(!e0 $c2)> Base.Int %r0
+        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -(!e0 $c2)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = fun2 : %rTC0
         ,  $c1        = fun : %rTC0
@@ -57,7 +57,7 @@ foreign import fun3
         
 foreign import fun4
         :: forall %r0
-        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Unit -(!e0 $c3)> Base.Int %r0
+        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c2)> Base.Unit -(!e0 $c3)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = fun3 : %rTC0
         ,  $c1        = fun2 : %rTC0

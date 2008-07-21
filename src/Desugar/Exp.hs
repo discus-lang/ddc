@@ -32,6 +32,7 @@ data Top a
 	-- imports
 	| PImport	a [Module]
 	| PExtern	a Var Type (Maybe Type)
+	| PExternData	a String Var Kind
 
 	-- effect / region defs
 	| PEffect	a Var Kind
@@ -76,7 +77,7 @@ data Exp a
 
 	-- Accepted by the constraint slurper.
 	| XVoid	 	a
-	| XConst 	a Const
+	| XLit 		a LiteralFmt
 	| XVar	 	a Var
 	| XProj		a (Exp a)  (Proj a)		
 	| XProjT	a Type (Proj a)		
@@ -122,7 +123,7 @@ data Guard a
 	
 data Pat a
 	= WConLabel	a Var [(Label a, Var)]
-	| WConst	a Const
+	| WLit		a LiteralFmt
 
 	-- Eliminated by Desugar.Patterns
 	| WVar		a Var

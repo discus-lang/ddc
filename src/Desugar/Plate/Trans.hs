@@ -126,8 +126,12 @@ instance Monad m => TransM m a1 a2 Top where
 							return	$ Just to'
 					_	-> return $ Nothing
 							
-
 		transP table	$ PExtern nn' v' tv' mto'
+
+	PExternData nn s v k
+	 -> do	nn'		<- transN table nn
+		v'		<- transV table v
+		transP table	$ PExternData nn' s v' k
 
 	PEffect nn v k
 	 -> do	nn'		<- transN	table nn
@@ -251,9 +255,9 @@ followX table xx
 	 -> do	nn'	<- transN  table nn
 	 	return	$ XVoid nn' 
 		
-	XConst nn c
+	XLit nn l
 	 -> do	nn'	<- transN  table nn
-	 	return	$ XConst nn' c
+	 	return	$ XLit nn' l
 		
 	XVar nn v
 	 -> do	nn'	<- transN  table nn
@@ -442,9 +446,9 @@ instance Monad m => TransM m a1 a2 Pat where
 		
 		transW table	$ WConLabel nn' v' lvs'
 		
-	WConst nn c
+	WLit nn c
 	 -> do	nn'		<- transN table nn
-	 	transW table	$ WConst nn' c
+	 	transW table	$ WLit nn' c
 
 
 	WVar nn v

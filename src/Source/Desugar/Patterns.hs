@@ -112,7 +112,7 @@ sprinkleAtsW sp ww
 	 -> do	v	<- newVarN NameValue
 	 	return	$ D.WAt nn v ww
 		
-	D.WConst nn c
+	D.WLit nn l
 	 -> do	v	<- newVarN NameValue
 	 	return	$ D.WAt nn v ww
 
@@ -139,7 +139,7 @@ sprinkleAtsW_down sp ww
  	D.WConLabel nn var lvs
 	 -> do	return	$ D.WConLabel nn var lvs
 	
-	D.WConst nn l
+	D.WLit nn l
 	 ->	return ww
 	
 	D.WVar nn v

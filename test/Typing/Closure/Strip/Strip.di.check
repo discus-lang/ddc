@@ -20,14 +20,14 @@
 
 -- Binds
 foreign import x
-        :: Base.Int %rTC0
+        :: Base.Int32 %rTC0
         :- Base.Const %rTC0
         ,  Base.Direct %rTC0
         :$ Base.Data;
         
 foreign import add1X'
         :: forall %r0
-        .  Base.Unit -(!e0 $c0)> Base.Int %r0
+        .  Base.Unit -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = !{Base.!Read %rTC0; System.Error.!Error}
         ,  $c0        = x : %rTC0
         ,  Base.Direct %rTC0
@@ -36,7 +36,7 @@ foreign import add1X'
         
 foreign import add1X
         :: forall %r0
-        .  Base.Unit -(!e0 $c0)> Base.Int %r0
+        .  Base.Unit -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = x : %rTC0
         ,  Base.Const %rTC0

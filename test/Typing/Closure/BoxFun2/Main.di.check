@@ -25,33 +25,33 @@ data FunBox %r1 a !e1 $c1
 
 -- Binds
 foreign import thing
-        :: Base.Int %rTC3
-        :- Base.Const %rTC3
-        ,  Base.Direct %rTC3
+        :: Base.Int32 %rTC2
+        :- Base.Const %rTC2
+        ,  Base.Direct %rTC2
         :$ Base.Data;
         
 foreign import box
-        :: FunBox %r1 (Base.Int %rTS6) !e0 $c0
-        :- !e0        = !{Base.!Read %rTS6; Base.!Read %rTC3; System.Console.!Console}
-        ,  $c0        = thing : %rTC3
+        :: FunBox %r1 (Base.Int32 %rTS6) !e0 $c0
+        :- !e0        = !{Base.!Read %rTS6; Base.!Read %rTC2; System.Console.!Console}
+        ,  $c0        = thing : %rTC2
         ,  Base.Mutable %r1
         ,  Base.Const %rTS6
         ,  Base.Direct %rTS6
         ,  Base.Direct %r1
-        ,  Base.Direct %rTC3
-        ,  Base.Const %rTC3
+        ,  Base.Direct %rTC2
+        ,  Base.Const %rTC2
         :$ Base.Data;
         
 foreign import gotBox
-        :: Data.Tuple.Tuple3 %rTS23 (FunBox %rTS21 (Base.Int %rTS22) !e0 $c0) (Base.Unit -(!e1 $c1)> Base.Unit) (Base.Unit -(!e2 $c2)> Base.Int %rTS22)
-        :- !e0        = !{Base.!Read %rTS22; Base.!Read %rTC3; System.Console.!Console}
+        :: Data.Tuple.Tuple3 %rTS23 (FunBox %rTS21 (Base.Int32 %rTS22) !e0 $c0) (Base.Unit -(!e1 $c1)> Base.Unit) (Base.Unit -(!e2 $c2)> Base.Int32 %rTS22)
+        :- !e0        = !{Base.!Read %rTS22; Base.!Read %rTC2; System.Console.!Console}
         ,  !e1        = !{Base.!Read %rTS21; Base.!Write %rTS21}
-        ,  !e2        = !{Base.!Read %rTS21; Base.!Read %rTS22; Base.!Read %rTC3; System.Console.!Console}
-        ,  $c0        = thing : %rTC3
-        ,  $c1        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC3; newFun : %rTC3}
-        ,  $c2        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC3}
-        ,  Base.Direct %rTC3
-        ,  Base.Const %rTC3
+        ,  !e2        = !{Base.!Read %rTS21; Base.!Read %rTS22; Base.!Read %rTC2; System.Console.!Console}
+        ,  $c0        = thing : %rTC2
+        ,  $c1        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC2; newFun : %rTC2}
+        ,  $c2        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC2}
+        ,  Base.Direct %rTC2
+        ,  Base.Const %rTC2
         ,  Base.Mutable %rTS21
         ,  Base.Const %rTS22
         ,  Base.Const %rTS23
@@ -74,45 +74,45 @@ foreign import project_FunBox_ref_fun
         
 foreign import oldFun
         :: forall %r0 %r1
-        .  Base.Int %r0 -(!e0)> Base.Int %r1
+        .  Base.Int32 %r0 -(!e0)> Base.Int32 %r1
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
 foreign import newFun
         :: forall %r0
-        .  Base.Int %r0 -(!e0 $c0)> Base.Int %r0
-        :- !e0        = !{Base.!Read %r0; Base.!Read %rTC3; System.Console.!Console}
-        ,  $c0        = thing : %rTC3
-        ,  Base.Const %rTC3
-        ,  Base.Direct %rTC3
+        .  Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r0
+        :- !e0        = !{Base.!Read %r0; Base.!Read %rTC2; System.Console.!Console}
+        ,  $c0        = thing : %rTC2
+        ,  Base.Const %rTC2
+        ,  Base.Direct %rTC2
         :$ Base.Data -> Base.Data;
         
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r1; Base.!Write %r1}
-        ,  $c0        = ${box : %r1; box : %rTS6; box : %rTC3; newFun : %rTC3}
+        ,  $c0        = ${box : %r1; box : %rTS6; box : %rTC2; newFun : %rTC2}
         ,  Base.Direct %r1
         ,  Base.Mutable %r1
         ,  Base.Direct %rTS6
         ,  Base.Const %rTS6
-        ,  Base.Direct %rTC3
-        ,  Base.Const %rTC3
+        ,  Base.Direct %rTC2
+        ,  Base.Const %rTC2
         :$ Base.Data -> Base.Data;
         
 foreign import makeBox2
         :: forall %r0 %r1 %r2
-        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c3)> Data.Tuple.Tuple3 %r2 (FunBox %r0 (Base.Int %r1) !e0 $c2) (Base.Unit -(!e1 $c4)> Base.Unit) (Base.Unit -(!e2 $c5)> Base.Int %r1)
-        :- !e0        = !{Base.!Read %r1; Base.!Read %rTC3; System.Console.!Console}
+        .  Base.Unit -($c0)> Base.Unit -($c1)> Base.Unit -($c3)> Data.Tuple.Tuple3 %r2 (FunBox %r0 (Base.Int32 %r1) !e0 $c2) (Base.Unit -(!e1 $c4)> Base.Unit) (Base.Unit -(!e2 $c5)> Base.Int32 %r1)
+        :- !e0        = !{Base.!Read %r1; Base.!Read %rTC2; System.Console.!Console}
         ,  !e1        = !{Base.!Read %r0; Base.!Write %r0}
-        ,  !e2        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %rTC3; System.Console.!Console}
-        ,  $c0        = newFun : %rTC3
-        ,  $c1        = newFun : %rTC3
-        ,  $c2        = thing : %rTC3
-        ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC3; hackBox : %r0; hackBox : %r1; hackBox : %rTC3; runBox : %r0; runBox : %r1; runBox : %rTC3}
-        ,  $c4        = ${box2 : %r0; box2 : %r1; box2 : %rTC3; newFun : %rTC3}
-        ,  $c5        = ${box2 : %r0; box2 : %r1; box2 : %rTC3}
-        ,  Base.Const %rTC3
-        ,  Base.Direct %rTC3
+        ,  !e2        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %rTC2; System.Console.!Console}
+        ,  $c0        = newFun : %rTC2
+        ,  $c1        = newFun : %rTC2
+        ,  $c2        = thing : %rTC2
+        ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC2; hackBox : %r0; hackBox : %r1; hackBox : %rTC2; runBox : %r0; runBox : %r1; runBox : %rTC2}
+        ,  $c4        = ${box2 : %r0; box2 : %r1; box2 : %rTC2; newFun : %rTC2}
+        ,  $c5        = ${box2 : %r0; box2 : %r1; box2 : %rTC2}
+        ,  Base.Const %rTC2
+        ,  Base.Direct %rTC2
         ,  Base.Mutable %r0
         :$ Base.Data -> Base.Data -> Base.Thunk;
         

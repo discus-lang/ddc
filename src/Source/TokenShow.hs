@@ -13,8 +13,10 @@ module Source.TokenShow
 
 where
 
-import Shared.Error
 import Source.Token
+import Shared.Literal
+import Shared.Pretty
+import Shared.Error
 import Util
 
 stage	= "Source.TokenShow"
@@ -32,14 +34,8 @@ showSource tok =
 	Con	str	-> str
 	Symbol	str	-> str
 
-	CBoolU  b	
-	 -> case b of
-	 	True	-> "true#"
-		False	-> "false#"
+	Literal lf	-> pprStrPlain $ ppr lf
 
-	CInt	i	-> show i
-	CFloat  f	-> show f
-	CString s	-> show s
 	Junk    s	-> "<junk " ++ s ++ ">"
 	CommentPragma s	-> s
 	tok		-> 

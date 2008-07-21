@@ -1,10 +1,10 @@
 ./test/Error/Unify/DefConst/Main.ds:6:10
     Type mismatch during unification.
-          cannot match: Base.Int %40
+          cannot match: Base.Int32 %40
                   with: Data.String.String %48
 
               the use of: fish
-                 at type: Base.Int %40
+                 at type: Base.Int32 %40
                       at: ./test/Error/Unify/DefConst/Main.ds:6:10
 
         conflicts with, 

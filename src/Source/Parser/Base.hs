@@ -14,8 +14,7 @@ module Source.Parser.Base
 	, pModuleNameQual
 	
 	-- Literal Constants
-	, pConstSP
-	, pLitSP
+	, pLiteralFmtSP
 	, pInt, pIntSP
 	, pString, pStringSP )
 where
@@ -27,6 +26,7 @@ import qualified Source.TokenShow	as K
 
 import qualified Shared.Var		as Var
 import Shared.VarSpace			(NameSpace(..))
+import Shared.Base
 
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
@@ -223,6 +223,7 @@ pSymbol	= token parseSymbol
 -- Literal Constants ------------------------------------------------------------------------------
 
 -- | Parse a boxed or unboxed constant.
+{-
 pConstSP :: Parser (Const, SP)
 pConstSP 
  = 	(Parsec.try $ do
@@ -237,43 +238,41 @@ pConstSP
   		(lit, sp)	<- pLitSP
 		return	(CConst lit, sp)
 
-
 -- | Parse an unboxed boolean token
 --	ie  true# or false#
-pUnboxedBoolSP :: Parser (Literal, SP)
+pUnboxedBoolSP :: Parser (LiteralFmt, SP)
 pUnboxedBoolSP = token parseBool
  where parseBool t
  	| K.TokenP	{ K.token = tok }	<- t
 	= case tok of
-		K.CBoolU b	-> Just (LBool   b,	spTP t)
+		K.Literal litFmt@(LiteralFmt (LBool b) Unboxed)	
+				-> Just (litFmt, spTP t)
 		_		-> Nothing
 		
 	| otherwise
 	= Nothing
-		
+-}		
 	
 -- | Parse a literal.
-pLitSP :: Parser (Literal, SP)
-pLitSP = token parseLit 
+pLiteralFmtSP :: Parser (LiteralFmt, SP)
+pLiteralFmtSP = token parseLit 
  where parseLit t
  	| K.TokenP	{ K.token = tok }	<- t
 	= case tok of
-		K.CInt    i	-> Just (LInt    i,	spTP t)
-		K.CChar	  c	-> Just (LChar   c,	spTP t)
-		K.CFloat  f	-> Just (LFloat  f,	spTP t)
-		K.CString s	-> Just (LString s,	spTP t)
-		_		-> Nothing
+		K.Literal litFmt -> Just (litFmt, spTP t)
+		_		 -> Nothing
  	
 	| otherwise
 	= Nothing
 
 
--- | Parse a single integer.
+-- | Parse a plain single integer.
 pIntSP :: Parser (Int, SP)
 pIntSP = token parseInt
  where parseInt t
- 	| K.TokenP	{ K.token = K.CInt i }	<- t
-	= Just (i, spTP t)
+ 	| K.TokenP	
+	{ K.token = K.Literal (LiteralFmt (LInt i) Boxed) }	<- t
+	= Just (fromIntegral i, spTP t)
 	
 	| otherwise
 	= Nothing
@@ -285,7 +284,8 @@ pInt	= liftM fst pIntSP
 pStringSP :: Parser (String, SP)
 pStringSP = token parseString
  where parseString t
- 	| K.TokenP	{ K.token = K.CString s } <- t
+ 	| K.TokenP	
+	{ K.token = K.Literal (LiteralFmt (LString s) Boxed) } <- t
 	= Just (s, spTP t)
 	
 	| otherwise

@@ -143,16 +143,16 @@ instance Pretty (Export a) PMode where
 instance Pretty (Foreign a) PMode where
  ppr ff
   = case ff of
-  	OImport f		-> "import " % f
-	OExport f		-> "export " % f
-	
-	OExtern mS v tv mTo
+ 	OImport mS v tv mTo
 	 -> let pName	= case mS of  { Nothing -> ppr " "; Just s  -> ppr $ show s }
 		pTo	= case mTo of { Nothing -> ppr " "; Just to -> "\n:$ " % to }
 	    in 
-		pName	% "\n " 
+		"import " 
+			% pName	% "\n " 
 			% v 	%> ("\n:: " % prettyTS tv 	% pTo)
 
+	OImportUnboxedData name var knd
+	 -> "import data" <> show name <> var <> "::" <> knd
 
 -- InfixMode ---------------------------------------------------------------------------------------
 instance Pretty (InfixMode a) PMode where
@@ -170,7 +170,7 @@ instance Pretty (Exp a) PMode where
   = case xx of
   	XNil		 -> ppr "@XNil"
 
-	XConst 	sp c	 -> ppr c
+	XLit 	sp c	 -> ppr c
 
 	XVar 	sp v	 -> ppr v
 
@@ -296,7 +296,7 @@ isEBlock x
 prettyXB xx
  = case xx of
  	XVar sp v	-> ppr v
-	XConst sp c	-> ppr c
+	XLit sp c	-> ppr c
 	XProj{}		-> ppr xx
 	e		-> "(" % e % ")"
 	
@@ -349,7 +349,7 @@ instance Pretty (Pat a) PMode where
   = case ww of
   	WVar 	sp v		-> ppr v
 	WObjVar	sp v		-> "^" % v
-	WConst 	sp c		-> ppr c
+	WLit 	sp c		-> ppr c
 	WCon 	sp v ps		-> (punc " " $ ppr v : map prettyWB ps)
 	WConLabel sp v lvs	-> v % " { " % ", " %!% map (\(l, v) -> l % " = " % v ) lvs % "}"
 	WAt 	sp v w		-> v % "@" % prettyWB w
@@ -363,7 +363,7 @@ prettyWB ww
  = case ww of
  	WVar{}			-> ppr ww
 	WObjVar{}		-> ppr ww
-	WConst{}		-> ppr ww
+	WLit{}			-> ppr ww
 	WCon 	sp v []		-> ppr ww	
 	WConLabel{}		-> ppr ww
 	WAt{}			-> ppr ww

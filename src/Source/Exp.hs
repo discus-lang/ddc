@@ -27,8 +27,8 @@ module Source.Exp
 	, module Type.Exp
 	
 	-- Re-exported from Shared.Literal
-	, Const   (..)
-	, Literal (..))
+	, Literal (..)
+	, LiteralFmt (..))
 
 where
 
@@ -115,9 +115,18 @@ data Export a
 
 -- Foreign -----------------------------------------------------------------------------------------
 data Foreign a
-	= OImport (Foreign a)
-	| OExport (Foreign a)
-	| OExtern (Maybe String) Var Type (Maybe Type)
+	-- Import a value binding
+	= OImport 
+		(Maybe String) 	-- external name
+		Var 		-- name of binding
+		Type 		-- type of binding
+		(Maybe Type)	-- operational type of binding
+		
+	-- Import an unboxed data type
+	| OImportUnboxedData
+		String		-- external name
+		Var		-- name of data type
+		Kind		-- kind of type
 	deriving (Show, Eq)
 
 
@@ -150,7 +159,7 @@ data InfixMode a
 data Exp a
 	= XNil
 
-	| XConst	a Const				-- CONST
+	| XLit		a LiteralFmt			-- LIT
 	| XVar 		a Var				-- VAR
 	| XObjField	a Var				-- _VAR.
 	| XProj		a (Exp a) (Proj a)		-- EXP . PROJ
@@ -230,7 +239,7 @@ data Guard a
 data Pat a
 	= WVar		a Var				-- ^ Plain var, always matches.		v 
 	| WObjVar	a Var				-- ^ Binds the current object.		^v
-	| WConst	a Const				-- ^ Constant pattern			5
+	| WLit		a LiteralFmt			-- ^ Match a literal value		5
 	| WCon		a Var [Pat a]			-- ^ A constructor pattern		(C p1 p2 ...)
 	| WConLabel	a Var [(Label a, Pat a)]	-- ^ A constructor with field labels.	Con { .f1 = p1, ... }
 	| WAt		a Var (Pat a)			-- ^ At expression			v\@pat

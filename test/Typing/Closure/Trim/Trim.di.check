@@ -20,14 +20,14 @@
 
 -- Binds
 foreign import thing
-        :: Base.Int %rTC0
+        :: Base.Int32 %rTC0
         :- Base.Const %rTC0
         ,  Base.Direct %rTC0
         :$ Base.Data;
         
 foreign import f
         :: forall %r0
-        .  Base.Unit -(!e0 $c0)> Base.Int %r0
+        .  Base.Unit -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = g : %rTC0
         ,  Base.Direct %rTC0
@@ -36,7 +36,7 @@ foreign import f
         
 foreign import g
         :: forall t0 %r0
-        .  t0 -(!e0 $c0)> Base.Int %r0
+        .  t0 -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = h : %rTC0
         ,  Base.Const %rTC0
@@ -45,7 +45,7 @@ foreign import g
         
 foreign import h
         :: forall t0 %r0
-        .  t0 -(!e0 $c0)> Base.Int %r0
+        .  t0 -(!e0 $c0)> Base.Int32 %r0
         :- !e0        = Base.!Read %rTC0
         ,  $c0        = i : %rTC0
         ,  Base.Direct %rTC0
@@ -54,7 +54,7 @@ foreign import h
         
 foreign import i
         :: forall t0 t1 %r0 %r1 %r2 %r3
-        .  t0 -(!e0 $c0)> Data.Tuple.Tuple2 %r1 (Base.Int %r3) (t1 -(!e1 $c1)> Base.Int %r2)
+        .  t0 -(!e0 $c0)> Data.Tuple.Tuple2 %r1 (Base.Int32 %r3) (t1 -(!e1 $c1)> Base.Int32 %r2)
         :- !e0        = !{Base.!Read %rTC0; Base.!Read %r0}
         ,  !e1        = !{Base.!Read %rTC0; Base.!Read %r0}
         ,  $c0        = thing : %rTC0

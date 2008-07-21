@@ -1,10 +1,10 @@
 ./test/Error/Unify/FunMore/Main.ds:6:10
     Type mismatch during unification.
-          cannot match: Base.Int %44
+          cannot match: Base.Int32 %44
                   with: *53 -(!57 $58)> *33
 
               the use of: f1
-                 at type: Base.Int %44
+                 at type: Base.Int32 %44
                       at: ./test/Error/Unify/FunMore/Main.ds:6:10
 
         conflicts with, 

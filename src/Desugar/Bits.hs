@@ -23,7 +23,7 @@ getAnnotX xx
  = case xx of
  	XNil				-> panic stage $ "getAnnotX: not annot in XNil"
 	XVoid 		n		-> n
-	XConst 		n c		-> n
+	XLit		n l		-> n
 	XVar 		n v		-> n
 	XProj 		n x j		-> n
 	XLambda 	n v x		-> n
@@ -41,7 +41,7 @@ getAnnotW :: Pat a -> a
 getAnnotW ww
  = case ww of
 	WConLabel	n _ _		-> n
-	WConst		n _		-> n
+	WLit		n _		-> n
 	WVar		n _		-> n
 	WAt		n _ _		-> n
 	WConLabelP	n _ _		-> n

@@ -48,6 +48,6 @@ slurp_ccIncludes (PPragma _ xx@[XVar sp v, XList _ xStrs])
 slurpConstStr :: Exp SourcePos -> Maybe String
 slurpConstStr xx
  = case xx of
-	XConst _ (CConst (LString str))	-> Just str
-	_				-> Nothing
+	XLit _ (LiteralFmt (LString str) fmt) 	-> Just str
+	_					-> Nothing
 

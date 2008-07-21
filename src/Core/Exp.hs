@@ -9,7 +9,6 @@ module Core.Exp
 	, CtorDef	(..)	-- constructor definitions
 	, ClassContext	(..)	-- type class context
 	, Exp 		(..)	-- expressions
-	, Lit		(..)	-- literal values
 	, Proj		(..)	-- projections
 	, Prim		(..)	-- primitive functions
 	, Op		(..)	-- primitive operators
@@ -23,13 +22,6 @@ module Core.Exp
 	, Type 		(..)	-- core types
 	, TyCon		(..)	-- type constructors
 	, TyClass	(..)	-- type class / witness names
-
-	-- built in tycons
-	, tcConst,	tcConstT
-	, tcMutable,	tcMutableT
-	, tcLazy, 	tcLazyH
-	, tcDirect
-	, tcPurify
 
 	, Fetter	(..)
 	, Data			-- alias of Type
@@ -48,6 +40,7 @@ import Util
 -----
 import Shared.Var (Var)
 import Shared.VarPrim
+import Shared.Literal
 import Shared.Exp
 import Type.Exp
 
@@ -63,8 +56,12 @@ type Tree	= [Top]
 data Top
 	= PNil
 	| PBind		Var Exp				-- ^ A Top level binding.
+
 	| PExtern	Var Type Type			-- ^ A function or effect imported from somewhere else.
 							-- 	name, value type, operational type
+	
+	| PExternData	Var Kind			-- ^ An unboxed data type imported from somewhere else.
+
 	| PData		Var 				--  Type name.
 			[Var] 				--  Type vars.
 			[CtorDef]			--  Constructor defs
@@ -122,7 +119,7 @@ data Exp
 	| XLocal	Var	[(Var, Type)] Exp	-- ^ Introduce a local region.
 
 	| XVar		Var	Type 			-- ^ A variable.
-	| XLit		Lit				-- ^ A literal value
+	| XLit		LiteralFmt			-- ^ A literal value
 
 	| XPrim		Prim 	[Exp]
 
@@ -163,30 +160,6 @@ data Exp
 data Proj
 	= JField  Var				-- ^ A field projection.   		(.fieldLabel)
 	| JFieldR Var				-- ^ A field reference projection.	(#fieldLabel)
-	deriving (Show, Eq)
-
-
--- Lit ---------------------------------------------------------------------------------------------
--- (unboxed) literal values
-
-data Lit
-	= LBool		Bool
-	
-	| LInt8		Integer
-	| LInt16	Integer
-	| LInt32	Integer
-	| LInt64	Integer
-	
-	| LWord8	Integer
-	| LWord16	Integer
-	| LWord32	Integer
-	| LWord64	Integer
-	
-	| LFloat32	Double
-	| LFloat64	Double
-
-	| LChar32	Char
-	| LString	String
 	deriving (Show, Eq)
 
 
@@ -268,7 +241,7 @@ data Guard
 
 data Pat
 	= WVar		Var				-- ^ Bind a variable
-	| WLit		Lit				-- ^ Match against a literal value
+	| WLit		LiteralFmt			-- ^ Match against a literal value
 	| WCon		Var	[(Label, Var, Type)]	-- ^ Match against a constructor and bind arguments.
 	deriving (Show, Eq)
 	

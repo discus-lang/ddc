@@ -117,6 +117,7 @@ slurpBoundVarsP pp
 	PNil				-> []
  	PBind   v x			-> [v]
 	PExtern v t1 t2			-> [v]
+	PExternData v k			-> [v]
 	PData 	v vs ctors		-> v : [c | CtorDef c fs <- ctors]
 	PCtor	v t1 t2			-> [v]
 

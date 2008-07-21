@@ -575,7 +575,7 @@ makeProjR_alt sp objV fieldV (CtorDef _ vCon fields)
 				[ GCase sp (WConLabel sp vCon []) ]
 				(XApp sp 	(XApp sp 	(XVar sp primProjFieldR) 
 						 		(XVar sp objV))
-						(XConst sp (CConstU (LInt ix))))
+						(XLit sp (LiteralFmt (LInt $ fromIntegral ix) (UnboxedBits 32))))
 				
 		Nothing	-> Nothing
  

@@ -2,14 +2,11 @@
 
 import	Base
 
--- The Boolean type
--- 	* The runtime system assumes that the constructors are 
---	  in this order (False first). Don't swap them around.
---
+-- | The runtime system assumes that False is first in the list of
+--	constructors, don't swap them around.
 data Bool %r1
 	= False
 	| True
-
 
 not b
  = case b of

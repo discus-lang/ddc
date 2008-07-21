@@ -67,14 +67,14 @@ instance Pretty TypeSource PMode where
 data SourceValue
 	= SVLambda	{ vsp :: SourcePos }			-- ^ Lambda expressions have function type
 	| SVApp		{ vsp :: SourcePos }			-- ^ LHS of an application must be a function
-	| SVLiteral	{ vsp :: SourcePos, vLit :: Const }	-- ^ Literal values in expressions have distinct types
+	| SVLiteral	{ vsp :: SourcePos, vLit :: LiteralFmt } -- ^ Literal values in expressions have distinct types
 	| SVDoLast	{ vsp :: SourcePos }			-- ^ Do expressions have the type of the last stmt.
 	| SVIfObj	{ vsp :: SourcePos }			-- ^ Match object of an if-expression must be Bool	
 	| SVProj	{ vsp :: SourcePos, vProj :: TProj }	-- ^ Value type constraints from field projection.
 	| SVInst	{ vsp :: SourcePos, vVar :: Var }	-- ^ Type constraint from instance of this bound variable
 
 	| SVLiteralMatch 
-			{ vsp :: SourcePos, vLit :: Const }	-- ^ Matching against a literal value.
+			{ vsp :: SourcePos, vLit :: LiteralFmt } -- ^ Matching against a literal value.
 
 	| SVMatchCtorArg 
 			{ vsp :: SourcePos } 			-- ^ Matching against a ctor gives types for its args.

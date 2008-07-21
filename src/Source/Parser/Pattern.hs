@@ -97,9 +97,9 @@ pPat1
   	do	tok	<- pTok K.Unit
 		return	$ WUnit (spTP tok)
 
-  <|>	-- const
-  	do	(const, sp)	<- pConstSP
-		return	$ WConst sp const
+  <|>	-- lit
+  	do	(lit, sp)	<- pLiteralFmtSP
+		return	$ WLit sp lit
 
   <|>	-- '_'
   	do	tok	<- pTok K.Underscore
