@@ -12,45 +12,6 @@
 
 #include <string.h>
 
-
-// Box a string by creating a new heap object
-//	and copying these chars into it.
-Obj*	_boxString (Char8* str)
-{
-	UInt	len	= strlen (str) + 1;
-
-	if (len < 8)
-		len	= 8;
-		
-	if ((len % 4) != 0)
-		len	+= 4 - (len % 4);
-
-	DataR* data	= (DataR*)_allocDataR (_tagBase, len);
-	String  x	= (String)data ->payload;
-	
-	strcpy (x, str);
-	
-	_PROFILE_BOXING (bString.count++);
-	_PROFILE_BOXING (bString.bytes += sizeof(DataR) + len);
-	
-	return (Obj*)data;
-}
-
-
-String	_unboxString (Obj* obj)
-{
-	DataR* data	= (DataR*) _force (obj);
-
-	// make sure this is an SChunk and not an SAppend.
-	assert (_TAG((Obj*)data) == 0);
-
-	String  x	= (String) data ->payload;
-	
-	_PROFILE_BOXING (bString.gets++);
-	return x;
-}
-
-
 Obj* 	_boxRef (Obj* obj_, void* field)
 {
 	_ENTER(2);

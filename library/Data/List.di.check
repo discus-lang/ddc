@@ -10,7 +10,8 @@ import {
         Data.Tuple;
         Data.Maybe;
         Data.Int;
-        System.Error;
+        Data.String;
+        Control.Exception;
 }
 
 
@@ -52,7 +53,7 @@ instance Class.Foldable.Foldable (Data.List.List %r) where
         foldr    = Data.List.instance_Foldable_List_foldr;
 }
 
-instance Class.Copy.Copy (Data.List.List %rDK157 (Base.Int32 %rDK158)) where
+instance Class.Copy.Copy (Data.List.List %rDK199 (Base.Int32 %rDK200)) where
 {
         copy     = Data.List.instance_Copy_ListInt32_copy;
 }
@@ -149,7 +150,7 @@ foreign import instance_Foldable_List_foldr
 foreign import instance_Copy_ListInt32_copy
         :: forall %r0 %r1 %r2 %r3
         .  List %r0 (Base.Int32 %r1) -(!e0)> List %r2 (Base.Int32 %r3)
-        :- !e0        = !{Base.!Read %r0; Base.!Read %r1}
+        :- !e0        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %r3; Base.!Read %r2}
         :$ Base.Data -> Base.Data;
         
 foreign import (:)
@@ -250,8 +251,8 @@ foreign import maps_
         
 foreign import mapAccumL
         :: forall t0 t1 t2 %r0 %r1 %r2 %r3 !e0 !e1 $c0 $c1
-        .  (t2 -(!e1 $c0)> t0 -(!e0 $c1)> Data.Tuple.Tuple2 %r3 t2 t1) -> t2 -($c3)> List %r2 t0 -(!e2 $c2)> Data.Tuple.Tuple2 %r0 t2 (List %r1 t1)
-        :- !e2        = !{Base.!Read %r1; Base.!Read %r2; !e1; !e0; Base.!Read %r3}
+        .  (t2 -(!e1 $c0)> t0 -(!e0 $c1)> Data.Tuple.Tuple2 %r3 t2 t1) -> t2 -($c3)> List %r0 t0 -(!e2 $c2)> Data.Tuple.Tuple2 %r1 t2 (List %r2 t1)
+        :- !e2        = !{Base.!Read %r2; Base.!Read %r0; !e1; !e0; Base.!Read %r3}
         ,  $c2        = ${f : $c0; acc : t2}
         ,  $c3        = f : $c0
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data;
@@ -330,11 +331,11 @@ foreign import take
 foreign import takeWhile
         :: forall t0 %r0 %r1 %r2 !e0 $c0
         .  (t0 -(!e0 $c0)> Data.Bool.Bool %r1) -($c2)> List %r0 t0 -(!e1 $c1)> List %r2 t0
-        :- !e1        = !{Base.!Read %r0; !e0; Base.!Read %r1; Base.!Read %rDK3}
-        ,  $c1        = ${xSD42 : $c0; Data.Bool.otherwise : %rDK3}
-        ,  $c2        = Data.Bool.otherwise : %rDK3
-        ,  Base.Direct %rDK3
-        ,  Base.Const %rDK3
+        :- !e1        = !{Base.!Read %r0; !e0; Base.!Read %r1; Base.!Read %rDK4}
+        ,  $c1        = ${xSD42 : $c0; Data.Bool.otherwise : %rDK4}
+        ,  $c2        = Data.Bool.otherwise : %rDK4
+        ,  Base.Direct %rDK4
+        ,  Base.Const %rDK4
         :$ Base.Thunk -> Base.Data -> Base.Data;
         
 foreign import drop
@@ -459,18 +460,38 @@ foreign import maybeToList
 foreign import maximumBy
         :: forall t0 %r0 %r1 !e0 !e1 $c0 $c1
         .  (t0 -(!e1 $c1)> t0 -(!e0 $c0)> Class.Ord.Ordering %r1) -> List %r0 t0 -(!e2 $c2)> t0
-        :- !e2        = !{System.Error.!Error; Base.!Read %r0; Base.!ReadT (List %r0 t0); !e1; !e0; Base.!Read %r1}
+        :- !e2        = !{Control.Exception.!Throw; Base.!Read %r0; Base.!ReadT (List %r0 t0); !e1; !e0; Base.!Read %r1}
         ,  $c2        = xSD71 : $c1
         :$ Base.Thunk -> Base.Data -> Base.Obj;
         
 foreign import minimumBy
         :: forall t0 %r0 %r1 !e0 !e1 $c0 $c1
         .  (t0 -(!e1 $c1)> t0 -(!e0 $c0)> Class.Ord.Ordering %r1) -> List %r0 t0 -(!e2 $c2)> t0
-        :- !e2        = !{System.Error.!Error; Base.!Read %r0; Base.!ReadT (List %r0 t0); !e1; !e0; Base.!Read %r1}
+        :- !e2        = !{Control.Exception.!Throw; Base.!Read %r0; Base.!ReadT (List %r0 t0); !e1; !e0; Base.!Read %r1}
         ,  $c2        = xSD75 : $c1
         :$ Base.Thunk -> Base.Data -> Base.Obj;
         
-project Data.List.List %rDK61 a where
+foreign import charListOfString
+        :: forall %r0 %r1 %r2
+        .  Base.String %r2 -(!e0)> List %r1 (Base.Char32 %r0)
+        :- !e0        = !{Base.!Read %r1; Base.!Read %r2}
+        :$ Base.Data -> Base.Data;
+        
+foreign import charListOfFlatString
+        :: forall %r0 %r1 %r2
+        .  Base.FlatString %r2 -(!e0)> List %r1 (Base.Char32 %r0)
+        :- !e0        = Base.!Read %r2
+        :$ Base.Data -> Base.Data;
+        
+foreign import charListOfFlatString'
+        :: forall %r0 %r1 %r2 %r3 %r4
+        .  Base.FlatString %r1 -> Base.Int32 %r2 -($c0)> Base.Int32 %r4 -(!e0 $c1)> List %r3 (Base.Char32 %r0)
+        :- !e0        = !{Base.!Read %r2; Base.!Read %r1; Base.!Read %r4}
+        ,  $c0        = fs : %r1
+        ,  $c1        = ${fs : %r1; ix : %r2}
+        :$ Base.Data -> Base.Data -> Base.Data -> Base.Data;
+        
+project Data.List.List %rDK103 a where
 {
         x        = project_List_x;
         xs       = project_List_xs;

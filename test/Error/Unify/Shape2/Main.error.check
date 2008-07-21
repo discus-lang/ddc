@@ -14,11 +14,11 @@
 
 ./test/Error/Unify/Shape2/Main.ds:5:10
     Type mismatch during unification.
-          cannot match: Data.String.String %42
+          cannot match: Base.String %42
                   with: *81 -(!79 $78)> *80
 
               the use of: println
-                 at type: Data.String.String %42
+                 at type: Base.String %42
                       at: ./test/Error/Unify/Shape2/Main.ds:5:10
 
         conflicts with, 

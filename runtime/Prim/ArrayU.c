@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 // Should be defined in Base/Exception.ts
-Obj*	Control_Exception_ExceptionArrayBounds (Obj* size, Obj* index);
+Obj*	Base_ExceptionArrayBounds (Obj* size, Obj* index);
 
 
 
@@ -74,7 +74,7 @@ Obj*	primArrayU_Int_get
 	// -- array bounds check
 	if (ix >= payload ->elemCount)
 		primException_throw 
-			(Control_Exception_ExceptionArrayBounds 
+			(Base_ExceptionArrayBounds 
 				( _boxInt32 (payload ->elemCount)
 				, _boxInt32 (ix)));
 	
@@ -119,7 +119,7 @@ Obj*	primArrayU_Int_set
 	// -- array bounds check
 	if (ix >= payload ->elemCount)
 		primException_throw
-			(Control_Exception_ExceptionArrayBounds
+			(Base_ExceptionArrayBounds
 				( _boxInt32 (payload ->elemCount)
 				, _boxInt32 (ix)));
 			

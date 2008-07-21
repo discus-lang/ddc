@@ -481,7 +481,13 @@ toCoreXLit tt xLit
 
 toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
 
-	-- if the literal is already unboxed then there's nothing more to do
+	-- raw unboxed strings need their region applied
+	| S.LString _	<- lit
+	, S.Unboxed	<- fmt
+	= let	Just (_, _, [tR@(C.TVar C.KRegion _)]) = T.takeTData tt
+	  in	C.XAPP (C.XLit litfmt) tR
+
+	-- other unboxed literals have kind *, so there is nothing more to do
 	| S.dataFormatIsUnboxed fmt
 	= C.XLit litfmt
 	

@@ -126,7 +126,7 @@ checkShow ()
 	print	$ "fresh " % "fried " % "fish" % "\n"
 	print	$ show [0..9] % "\n"
 
-	print	$ concats 
+	print	$ foldl (%) ""
 		$ (intersperse " " ["all", "your", "base", "belongs", "to", "us"]) ++ (["\n"])
 
 	print	"\n"

@@ -37,9 +37,9 @@ foreign import y
         :$ Base.Data;
         
 foreign import box
-        :: BoxFun2 %rTS7 !e0 $c0 !e1 $c1
-        :- !e0        = !{Base.!Read %rTC1; System.Console.!Console}
-        ,  !e1        = Base.!Read %rTC2
+        :: BoxFun2 %rTS7 !e1 $c0 !e0 $c1
+        :- !e0        = Base.!Read %rTC2
+        ,  !e1        = !{Base.!Read %rTC1; System.Console.!Console}
         ,  $c0        = ${x : %rTC1; y : %rTC2}
         ,  $c1        = y : %rTC2
         ,  Base.Const %rTS7

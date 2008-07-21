@@ -1,0 +1,17 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base
+
+-- Something of type a can be promoted to something of type b
+--	if no information is lost during the conversion.
+--
+class Promote a b where
+ promote :: a -> b
+
+foreign import "(Char32)"
+ promote_word8ToChar32 :: Word8# -> Char32#
+ 
+instance Promote Word8# Char32# where
+ promote w8 = promote_word8ToChar32 w8
+
+

@@ -11,14 +11,15 @@
 //	These will probably be the users fault
 
 // This needs to be defined Control.Exception
-Obj*	Control_Exception_ExceptionCaseNoMatch (Obj* moduleName, Obj* line, Obj* column);
+Obj*	Base_ExceptionCaseNoMatch (Obj* moduleName, Obj* line, Obj* column);
+Obj*	Data_String_boxString	  (String str);
 
 // Die due to non-matching pattern
 void	_deathCase (const char* moduleName, Int32 line, Int32 column)
 {
 	primException_throw 
-		(Control_Exception_ExceptionCaseNoMatch 
-			( _boxString 	((Char8*)moduleName)
+		(Base_ExceptionCaseNoMatch 
+			(  Data_String_boxString ((Char8*)moduleName)
 			, _boxInt32	(line)
 			, _boxInt32	(column)));
 	abort();

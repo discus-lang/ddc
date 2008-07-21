@@ -2,233 +2,86 @@
 
 import	Base
 
+import	Data.FlatString
 import	Data.Int
-import	Data.Int32U
+import	Data.Float
+import 	Data.Char
 import 	Class.Eq
 import	Class.Copy
 
-pragma	cc_includes ["string.h"]
+export type String
 
--- | A string type which supports fast append (paste)
-data	String %r1 
-	= SChunk (String# %r1)
-	| SAppend {
-		left	:: String %r1;
-		right	:: String %r1;
-	}
+export 	string_copy
+	string_eq
+	string_Int32
+	string_Float32
+	string_Char32
+	boxString
+	(%)
+	(%%)
 
-----------------------------------------------------------------------------------------------------
--- Primitive functions operating on strings
-
--- | Create a new string.
---	This creates a new heap object and copies the source string into it.
---
-foreign import "_boxString"
- boxString	:: forall %r1 %r2
- 		.  String# %r1 -(!Read %r1)> String %r2
-		:$ String# -> Obj;
-		
--- | Unboxing a string returns a pointer to a C string. 
---	
---    * The returned pointer will point inside a heap allocated object. 
---	Unless the string is anchored, this pointer will become invalid during 
---	the next GC cycle.
---
---    *	It /must/ be an SChunk, not an SAppend else badness.
---
---	The unboxed string data shares the region with the data constructor.
---
-foreign import "_unboxString"
- dangerUnboxStringChunk
- 	:: forall %r1
- 	.  String %r1 -(!Read %r1)> String# %r1
-	:$ Obj -> String#;
+project String 
+ with	{ box; isFlat; isNul; length; flatten; head }
 
 
--- | Compare two strings for equality.
-foreign import "strcmp"
- strcmpU	:: String#{read} -> String#{read} -> Int32#;
-
--- | Return the length of this string.
-foreign import "strlen"
- strlenU	:: String#{read} -> Int32#;
-
--- | Append the src string to the dest string by overwriting the dest
---	* The destination string must be large enough to hold the result, else badness.
-foreign import "strcat"
- dangerStrcatU	:: String#{write} -> String#{read} -> String#
-
--- | Write some characters into this string.
---	* number of bytes must be < length of string else badness.
-foreign import "memset"
- dangerMemsetU	
- 	:: String#{write} 	-- destination string
-	-> Int32# 		-- byte to use
-	-> Int32# 		-- number of bytes to set
-	-> String#		-- same as desination string
-
-dangerConcat s1 s2
-  = do 	dangerStrcatU (dangerUnboxStringChunk s1) (dangerUnboxStringChunk s2)
-	s1
-
--- | Pack this string into the destination
---	* the desination must be big enough else badness.
-dangerPack :: String -> String -> String
-dangerPack sDest ss
- = case ss of 
- 	SAppend left right	
-	 -> do 	dangerPack sDest left
-		dangerPack sDest right
-	 
-	_ -> dangerConcat sDest ss
+instance Eq String where
+	(==) 		= string_eq
+	(/=) s1 s2	= not (string_eq s1 s2)
 
 
-----------------------------------------------------------------------------------------------------
--- These have custom C functions in the runtime system
---
+instance Copy String where	
+	copy		= string_copy
 
--- | Get the first character of a string as a new string
-foreign import "primString_heads"
- primString_char	:: String{read} -> String;
- 
--- | Get the tail of a string as a new string
-foreign import "primString_tails"
- primString_rest	:: String{read} -> String;
+-- Conversions -------------------------------------------------------------------------------------
+foreign import "snprintf"
+	show_danger_snprintf :: String# -> Int32# -> String# -> a -> ()
 
--- | Check whether a string is empty
-foreign import "primString_isNul"
- primString_isNul	:: String{read} -> Bool;
+string_Int32 :: Int32 -> String
+string_Int32 i
+ = do	maxLen	= 20
+ 	maxLenU	= unboxInt32 maxLen
+	iU	= unboxInt32 i
 
--- | Return the ASCII code of the first character in this string
-foreign import "primString_ord"
- primString_ord		:: String{read} -> Int;
+ 	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
 
--- | Copy a string
-foreign import "primString_copy"
- primString_copy	:: String{read} -> String;
-
-----------------------------------------------------------------------------------------------------
-
--- | Create a new string with this length on the heap
-newString :: Int -> String
-newString length
- = do 
-	-- make sure to include space for the nul char on the end.
- 	len	= unboxInt32 length + 1#
-
-	-- round length up to 4 byte word boundary for the DataR object.
-	spill	= mod len 4#
-	lenS	= case spill #== 0# of
-			true#	-> len
-			false#	-> len + (4# - spill)
-
-	-- alloc the object.
-	str 	:: String %r
-	str	= primAlloc_dataR 0# lenS
- 
- 	-- grab a ptr to the raw string from the new object.
-	strU	= dangerUnboxStringChunk str
+ 	show_danger_snprintf strU maxLenU "%d"# iU
+	fs.setLengthU (stringU_length strU)
 	
-	-- set the string to all nul chars;
-	dangerMemsetU strU 0# len
+	SChunk fs
+
+
+string_Float32 :: Float32 -> String
+string_Float32 f
+ = do	maxLen	= 20
+ 	maxLenU	= unboxInt32 maxLen
+	fU	= unboxFloat32 f
 	
-	str
-
--- | Return how many characters are in this string
-string_length :: String -> Int
-string_length ss
-  = case ss of 
-	SAppend l r	-> string_length l + string_length r
-	_		-> boxInt32 (strlenU (dangerUnboxStringChunk ss))
-
-
--- | Check whether this string is flat, ie is a single SChink and contains
---	contains no SAppend constructors.
-string_isFlat :: String -> Bool
-string_isFlat ss
- = case ss of 
- 	SAppend left right 	-> False
-	_ 			-> True
-
-
--- | Flatten a string so that is contains no SAppend constructors.
-string_flatten :: String -> String
-string_flatten ss
- = case ss of 
- 	SAppend left right
-	 -> do 	len	= string_length ss
- 		sDest	= newString len
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
 	
-		dangerPack sDest ss
- 		sDest
-	 
-	_ -> copy ss
-
-
--- | Join two strings.
-string_join :: String -> String -> String
-string_join  s1 s2
- = do 	len	= string_length s1 + string_length s2
- 	s3	= newString len
+	show_danger_snprintf strU maxLenU "%f"# fU
+	fs.setLengthU (stringU_length strU)
 	
-	dangerConcat s3 s1
-	dangerConcat s3 s2
-	s3
+	SChunk fs
 
 
--- | String equality
-primString_eq :: String -> String -> Bool
-primString_eq	s1 s2	
-  = do 
- 	s1M	= string_flatten (copy s1)
-	s2M	= string_flatten (copy s2)
+string_Char32 :: Char32 -> String
+string_Char32 f
+ = do	maxLen	= 5
+ 	maxLenU	= unboxInt32 maxLen
+	cU	= unboxChar32 f
 	
-	case strcmpU (dangerUnboxStringChunk s1M) (dangerUnboxStringChunk s2M) `primInt32U_eq` 0# of
-  		true#	-> True
-		false#	-> False
-
--- | Get the first character of a string as a new string.
--- FIXME: This should return a Char, not a String
-string_char :: String -> String
-string_char s
- = case s of
-        SAppend left _ -> string_char left
-        _              -> primString_char s
-
--- | Get the tail of a string as a new string.
-string_rest :: String -> String
-string_rest s
- = case s of
-        SAppend left right ->
-            let leftRest = string_rest left
-            in  if (string_isNul leftRest)
-                    then right
-                    else SAppend leftRest right
-        _ -> primString_rest s
-
--- | Check whether a string is empty.
-string_isNul :: String -> Bool
-string_isNul s
- = case s of
-        SAppend _ _ -> False
-        _           -> primString_isNul s
-
--- | Return the ASCII code of the first character in this string
-string_ord :: String -> Int
-string_ord s
- = case s of
-        SAppend left _ -> string_ord left
-        _              -> primString_ord s
-
--- | Copy a string, preserving its shape.
-string_copy :: String -> String
-string_copy s
- = case s of
-        SAppend left right -> SAppend (string_copy left) (string_copy right)
-        _                  -> primString_copy s
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+	
+	show_danger_snprintf strU maxLenU "%c"# cU
+	fs.setLengthU (stringU_length strU)
+	
+	SChunk fs
 
 
-
+-- Append ------------------------------------------------------------------------------------------
 infixr 7 %
 infixr 7 %%
 
@@ -245,43 +98,97 @@ infixr 7 %%
 --	To see the problem, change to the alternative definition and
 --	compile library/Class/Show.ds with -O
 --	
--- (%) a b   
---    | a.isNul = b
---    | b.isNul = a
---             \= SAppend a b
-(%) a b
-	= SAppend a b
-	
+(%) a b   
+    | a.isNul = b
+    | b.isNul = a
+             \= SAppend a b
+
 
 -- | Append one string to another separated by a space.
 (%%) a b = a % " " % b
 
--- | Unbox a string, flattening if necessary
---	The String# returned is a pointer into the string object in the heap.
---	This object will move on the next GC, so don't hold onto the pointer
---	across an allocation - else badness.
---
-dangerUnboxString :: String -> String#
-dangerUnboxString s
- = case s of
-        SAppend _ _ -> dangerUnboxStringChunk (string_flatten s)
-        _           -> dangerUnboxStringChunk s
 
--- Instances ---------------------------------------------------------------------------------------
-instance Eq String where
-	(==) 		= primString_eq
-	(/=) s1 s2	= not (primString_eq s1 s2)
+-- Boxing ------------------------------------------------------------------------------------------
+-- | Box a string
+boxString :: String# -> String
+boxString strU
+	= SChunk (box&{FlatString} strU)
 
-instance Copy String where	
-	copy		= string_copy
+box	= boxString
 
-project String where
-	length x	= string_length x
-	flatten x	= string_flatten x
-	isFlat x	= string_isFlat x
-	char x		= string_char x
-	rest x		= string_rest x
-	isNul x		= string_isNul x
-	ord x		= string_ord x
+-- Simple Operations -------------------------------------------------------------------------------
+
+-- | Copy a string, preserving its shape.
+string_copy :: String -> String
+string_copy str
+ = case str of
+ 	SChunk fs	-> SChunk (copy fs)
+	SAppend l r	-> SAppend (copy l) (copy r)
 
 
+-- | Return how many characters are in this string
+length :: String -> Int
+length ss
+  = case ss of 
+	SChunk fs	-> fs.length
+	SAppend l r	-> l.length + r.length
+
+-- | Check whether this string is flat, ie is a single SChink and contains
+--	contains no SAppend constructors.
+isFlat :: String -> Bool
+isFlat ss
+ = case ss of 
+	SChunk _	-> True
+	_ 		-> False
+	
+
+-- | Check whether a string contains no characters
+isNul :: String -> Bool
+isNul ss
+ = case ss of
+ 	SChunk fs	-> ss.length == 0
+	SAppend s1 s2	-> s1.isNul && s2.isNul
+
+
+-- | Create a new, flat string which contains no SAppend constructors.
+flatten :: String -> String
+
+flatten str@(SChunk fs)
+	= str
+
+flatten ss
+ = do	len	= ss.length
+ 	fsDest	= new&{FlatString} len
+	string_flatten' fsDest ss
+	SChunk fsDest
+
+string_flatten' dest (SChunk fs)
+ = do	append&{FlatString} dest fs
+	
+string_flatten' dest (SAppend str1 str2)
+ = do	string_flatten' dest str1
+	string_flatten' dest str2
+
+
+-- | Test if two strings are equal
+--	This flattens both and uses strcmp
+string_eq :: String -> String -> Bool
+string_eq str1 str2
+ = do	
+	res	= match
+			| SChunk fs1	<- (copy str1).flatten
+			, SChunk fs2	<- (copy str2).flatten
+			= stringU_compare
+				fs1.danger_string
+				fs2.danger_string
+	
+	boxBool (res #== 0#)
+
+
+-- | Find the first character in this string
+head :: String -> Char32 
+head (SChunk fs)	= fs.index 0
+
+head (SAppend s1 s2)
+	| isNul s1	=  head s2
+			\= head s1

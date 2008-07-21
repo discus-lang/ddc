@@ -16,10 +16,14 @@ libraryOrder args
 	
 libraryModules args = 
 	[ "Base"
-	, "Data/Ref"
 	, "Base/Thunk"
+
+	, "DDC/Store"
+
+	, "Data/Ref"
 	, "Data/Function"
 	, "Data/Bool"
+
 	, "Class/Copy"
 	, "Class/Eq"
 	, "Class/Ord"
@@ -28,34 +32,46 @@ libraryModules args =
 	, "Class/Foldable"
 	, "Class/Functor"
 	, "Class/Monad"
+	, "Class/Promote"
+
 	, "Data/Ptr"
 	, "Data/Word32U"
 	, "Data/Int32U"
 	, "Data/Int"
-	, "Data/String"
 	, "Data/Float32U"
 	, "Data/Float"
-	, "Data/Tuple"
 	, "Data/Char"
+	, "Data/Tuple"
 	, "Data/Maybe"
-	, "System/Error"
-	, "System/Console"
-	, "Data/List"
 	, "Data/Either"
-	, "Data/Set"
-	, "Class/Out"
-	, "Class/Show"
+	, "Data/StringU"
+	, "Data/FlatString"
+	, "Data/String"
+
+	, "System/File"
+	, "System/Console"
+
 	, "Control/Imperative"
 	, "Control/Exception"
+
+	, "Data/List"
+	, "Data/Set"
+
+	, "Class/Out"
+	, "Class/Show"
+
 	, "Data/Array"
 	, "Data/ArrayU"
+
 	, "DDC/Runtime"
 	, "System/File"
 	, "Prelude" 
+
 	, "Math/Constants"
 	, "Math/Vec2"
 	, "Math/Vec3"
 	, "Math/Matrix33" 
+
 	, "Graphics/Primitive"
 	, "Graphics/Shape" 
 	, "Graphics/Raster/Bresenham" ]

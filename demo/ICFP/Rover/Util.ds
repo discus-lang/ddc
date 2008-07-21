@@ -7,20 +7,22 @@ instance Show (List String) where
 
 -- String Utils ------------------------------------------------------------------------------------		
 -- | Join a list of strings into a single string
--- | Convert a string to a list of chars
-string_toList :: String -> [String]
-string_toList str	
-	| string_isNul str	= []
-	| otherwise		= string_char str : string_toList (string_rest str)
 
-string_joins :: [String] -> String
-string_joins strs
- = do	len	= sum $ map string_length strs
- 	s'	= newString len
+string_join :: [String] -> String
+string_join strs
+ = do	len	= sum $ map (\s -> length&{String} s) strs
+ 	fs	= new&{FlatString} len
+	string_join' fs strs
 	
-	map_ (dangerConcat s') strs
-	(copy s')
+	fs.setLength len
+	SChunk fs
 
+string_join' fs [] = ()
+string_join' fs (SChunk x:xs)
+ = do	append&{FlatString} fs x
+ 	string_join' fs xs
+	
+	
 tokenise 
 	:: [String] 	-- char list
 	-> [String]	
@@ -28,7 +30,7 @@ tokenise
 tokenise []		= []
 tokenise ss
  = do	(toks, rest)	= span (\s -> s /= " ") ss
- 	string_joins toks : tokenise rest
+	string_join toks : tokenise rest
 
 
 -- List Utils --------------------------------------------------------------------------------------

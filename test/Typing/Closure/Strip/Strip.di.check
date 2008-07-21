@@ -28,7 +28,7 @@ foreign import x
 foreign import add1X'
         :: forall %r0
         .  Base.Unit -(!e0 $c0)> Base.Int32 %r0
-        :- !e0        = !{Base.!Read %rTC0; System.Error.!Error}
+        :- !e0        = !{Base.!Read %rTC0; Control.Exception.!Throw}
         ,  $c0        = x : %rTC0
         ,  Base.Direct %rTC0
         ,  Base.Const %rTC0
@@ -46,7 +46,7 @@ foreign import add1X
 foreign import idF
         :: forall t0 t1 !e0 $c0
         .  (t0 -(!e0 $c0)> t1) -($c1)> t0 -(!e0 $c0)> t1
-        :- !e0        :> System.Error.!Error
+        :- !e0        :> Control.Exception.!Throw
         ,  $c1        = $c0 \ f
         :$ Base.Thunk -> Base.Thunk;
         

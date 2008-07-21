@@ -22,12 +22,13 @@ data Link
 -- Main --------------------------------------------------------------------------------------------
 main ()
 	| argCount < 2
-	= putStr "usage: rover <hostname> <port>"
+	= putStr "usage: rover <hostname> <port>\n"
 	
 	| otherwise
+	, SChunk fs_arg1	<- getArgValue 1
 	= do
 		sock	 = boxInt32 (connect 
-					(dangerUnboxString (getArgValue 1))
+					(fs_arg1 .danger_string)
 					(unboxInt32 (read (getArgValue 2))))
 		init (Link sock [])
    	
@@ -96,18 +97,20 @@ recvServer :: Link -> MsgServer
 recvServer link
  = do	
 	-- receive some data from the server
-	buf	:: String %r :- Mutable %r
-	buf	= newString 4096
+	buf	:: FlatString %r :- Mutable %r
+	buf	= new&{FlatString} 4096
 	msgLen	= recv 	(unboxInt32 link.socket) 
-			(unsafe_castToVoidPtr (dangerUnboxString buf)) 
+			(unsafe_castToVoidPtr (buf.danger_string)) 
 			1024# 
 			0#
+
+	buf.setLengthU msgLen
 
 	-- if the message len == 0 then assume the server has died
 	when (boxInt32 msgLen == 0)
 	 throw Exception "server has died."
 
-	recvParse buf
+	recvParse (SChunk buf)
 
 recvParse str
  = do	
@@ -125,10 +128,10 @@ sendCommand sock (MsgCommand Nothing Nothing)
 	= ()
 
 sendCommand sock cc
- = do	str	= (showMsgCommand cc) .flatten
- 	send 	(unboxInt32 sock)
-		(unsafe_castToVoidPtr (dangerUnboxString str))
-		(unboxInt32 (string_length str))
+ | SChunk fs	<- (showMsgCommand cc) .flatten
+ = do 	send 	(unboxInt32 sock)
+		(unsafe_castToVoidPtr (fs.danger_string))
+		(unboxInt32 (fs.length))
 		0#
 	()
 

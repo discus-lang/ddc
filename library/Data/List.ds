@@ -10,8 +10,8 @@ import	Base
 	Data.Tuple
 	Data.Maybe
 	Data.Int
-	System.Error
-
+	Data.String
+	Control.Exception
 
 data	List a
 	= Nil
@@ -327,6 +327,7 @@ maybeToList :: Maybe a -> [a]
 maybeToList Nothing	= []
 maybeToList (Just x)	= [x]
 
+
 -- Ord stuff -------------------------------------------------------------------------------------
 
 -- | Extract the largest value from a list, using the provided ordering relation.
@@ -345,4 +346,30 @@ minimumBy _ []
 
 minimumBy cmp (a:as)
 	= foldl (\x y -> case cmp x y of { GT -> y; _  -> x}) a as
+
+
+
+-- String stuff ------------------------------------------------------------------------------------
+-- This should be in Data.String but we don't have a way of adding projections
+--	functions outside the module.
+
+charListOfString :: String -> [Char]
+
+charListOfString (SAppend s1 s2)
+	= charListOfString s1 ++ charListOfString s2
+
+charListOfString (SChunk fs)
+	= charListOfFlatString' fs 0 (fs.length)
+	
+
+charListOfFlatString :: FlatString -> [Char]
+charListOfFlatString fs
+ 	= charListOfFlatString' fs 0 (fs.length)
+ 
+charListOfFlatString' fs ix max
+	| ix < max	
+	= index&{FlatString} fs ix : charListOfFlatString' fs (ix + 1) max
+	
+	\= []
+	
 

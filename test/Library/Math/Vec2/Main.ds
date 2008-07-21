@@ -1,6 +1,5 @@
 
 import Math.Vec2;
-import System.Error;
 
 main ()
  = do {

@@ -2,23 +2,31 @@
 
 import	Base.Thunk
 import	Data.List
+import 	Data.FlatString
+import	Data.String
 import 	System.Console
 import	Class.Out
+
+
 
 ----------------------------------------------------------------------------------------------------
 -- The show class for converting things to string
 class Show a where 
 
- -- strict show which demands the entire structure
- show 	:: forall %r
-	.  a -(!e1)> String %r
-	:- !e1	= !{ !ReadT a }
+	 -- strict show which demands the entire structure
+	show 	:: forall %r
+		.  a -(!e1)> String %r
+		:- !e1	= !{ !ReadT a; !Read %r}
 
- -- lazy show which works for infinite structures,
- --	but requires its argument to be const
- showL	:: forall %r
-	.  a -> String %r
-	:- ConstT a
+	-- lazy show which works for infinite structures,
+	--	but requires its argument to be const
+	showL	:: forall %r
+		.  a -(!e1)> String %r
+		:- !e1	= !{ !ReadT a; !Read %r}
+		,  ConstT a
+		,  Const %r
+
+
 
 -- Strict Show -------------------------------------------------------------------------------------
 -- These instances are defined here instead of in Data.* so we don't 
@@ -29,8 +37,9 @@ instance Show Unit where
  showL ss 	= "()"
  
 instance Show Char where
- show  ss 	= "'" % stringOfChar ss % "'"
- showL ss 	= "'" % stringOfChar @ ss % "'"
+ show  ss 	= "'" % string_Char32 ss % "'"
+ showL ss 	= "'" % string_Char32 @ ss % "'"
+
 
 -- We need to copy shown strings because the returned
 --	string might have a different mutability.
@@ -39,12 +48,12 @@ instance Show String where
  showL ss	= "'" % copy @ ss % "'"
 
 instance Show Int where
- show  ss	= stringOfInt ss
- showL ss	= stringOfInt @ ss
+ show  ss	= string_Int32 ss
+ showL ss	= string_Int32 @ ss
 
 instance Show Float where
- show  ss	= stringOfFloat32 ss
- showL ss	= stringOfFloat32 @ ss
+ show  ss	= string_Float32 ss
+ showL ss	= string_Float32 @ ss
 
 instance Show Bool where
  show  True	= "True"
@@ -53,6 +62,7 @@ instance Show Bool where
  showL True	= "True"
  showL False	= "False"
  
+
 instance Show [Int] where
  show  ss	= showList  @ show  ss
  showL ss	= showListL @ showL  ss
@@ -97,53 +107,8 @@ showListL2 showX xx
  	Nil 		-> "]"
 	Cons x xs 	-> ", " % showX x % showListL2 @ showX xs
 
--- | Print a string to the console
-putStr :: String -> ()
-putStr ss = print ss
-
-
--- | Print a string to the console.
---	This will become polymorphic when type classes are finished
-print :: String -> ()
-print xx
- = case xx of 
- 	SChunk x	
-	-> primPrintStringChunk xx
-
-	SAppend s1 s2	
-	-> do 	print s1
-		print s2
-
-
--- | Print a string to the console followed by a newline.
-println :: String -> ();
-println s	= print (s % "\n");
-
-
--- | Contatenate some strings
-concats :: [String] -> String
-concats xx
- = case xx of
-	Nil		-> ""
- 	Cons x xs	-> SAppend x (concats xs)
-
-
 -- | Wrap a string in parens
 parens :: String -> String
 parens ss	= "(" % ss % ")"
 
 
--- Out ---------------------------------------------------------------------------------------------
--- We're using the Out class until dictionary passing comes online and we can
---	make 'print' polymoprhic.
-instance Out Int where
- out x	= println $ show x
-
-instance Out Float where
- out x	= println $ show x
-
-instance Out String where
- out x	= println x
-
-instance Out [Int] where
- out x	= println $ show x

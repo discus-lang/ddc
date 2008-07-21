@@ -272,6 +272,9 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 | t == TCon (Var.primTBool Unboxed) []
 	 -> "_boxEnum(" % x % ")"
 	 
+	 | t == TCon (Var.primTString Unboxed) []
+	 -> "Data_String_boxString(" % x % ")"
+	 
 	 | otherwise
 	 -> "_box(" % t % ", " % x % ")"
 	  

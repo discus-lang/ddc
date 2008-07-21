@@ -24,12 +24,7 @@ extern Obj*	_primFalse;
 // -----------------------------------------------------------------------------
 // -- Boxing.c
 // -----------------------------------------------------------------------------
-
-Obj*	_boxString	(Char8 *s);
 Obj*	_boxRef		(Obj*  obj, void* field);
-
-String	_unboxString	(Obj*	obj);
-
 
 
 // -----------------------------------------------------------------------------
@@ -114,24 +109,6 @@ Obj*	primArrayU_Int_dump 		(Obj* array_);
 Obj*	primArrayU_Int_size		(Obj* array_);
 Obj*	primArrayU_Int_fill		(Obj* array_, Obj* x_);
 
-
-Obj*	primPrintString			(Obj* s);
-
-// -- String
-Obj*	primString_eq 			(Obj* str1_, Obj* str2_);
-Obj*	primString_heads 		(Obj* str_);
-Obj*	primString_tails 		(Obj* str_);
-Obj*	primString_isNul 		(Obj* str_);
-Obj*	primString_ord			(Obj* str_);
-Obj*	primString_copy			(Obj* str_);
-
-
-
-// -----
-Obj*	primStringChar			(Obj* c);
-Obj*	primStringInt			(Obj* i);
-Obj*	primStringFloat32		(Obj* x);
-
 Obj*	primError			(Obj* str)	__attribute__ ((noreturn));
 Obj*	primExit			(Obj* str)	__attribute__ ((noreturn));
 
@@ -147,6 +124,7 @@ Int32	primRuntime_slotUsage		(Obj* x);
 // -----
 #include "Boxing.ci"
 #include "ArrayU.ci"
+#include "Store.ci"
 
 #endif
 

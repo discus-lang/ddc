@@ -17,9 +17,10 @@ project Frame where
 	new name sizeX sizeY
 	 = do	sizeX'		= unboxInt32 sizeX
 		sizeY'		= unboxInt32 sizeY
-		name_flat	= name.flatten
 
-	 	ptcOpen (dangerUnboxString name_flat) sizeX' sizeY'
+		(SChunk fs_flat) = name.flatten
+
+	 	ptcOpen (fs_flat .danger_string) sizeX' sizeY'
 	 	array	= arrayUI_new 1 (sizeX * sizeY * 4)
 		Frame sizeX sizeY array
 

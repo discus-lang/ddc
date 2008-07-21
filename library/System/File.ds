@@ -3,39 +3,19 @@
 import Base
 import Data.String
 import Data.Ptr
-import Control.Exception
 
 -- the foreign file type
-foreign import data "FILE" FILE# :: % -> *
+foreign import data "FILE" File# :: *
 
 -- The effect of functions that poke the file system
 effect !File	:: !;
 
--- fopen
-foreign import "fopen"
- fopenU ::  	String# {read} 		-- fileName 
-	-> 	String# {read}		-- mode
-	-(!e1)> Ptr# FILE#
- 	:- !e1 = !File
+-- The standard streams
+foreign import "stdout" stdout :: Ptr# File#
+foreign import "stdin"  stdin  :: Ptr# File#
+foreign import "stderr" stderr :: Ptr# File#
 
--- fread
-foreign import "fread"
- freadU :: 	String# 	{write}	-- buffer to write into 
-	-> 	Int32# 		{read}	-- size of member
-	-> 	Int32# 		{read}	-- number of members to read
-	-> 	Ptr# FILE#  	{read}	-- file to read from
-	-(!e)>	Int32#	 		-- number of members read
-	:- !e = !File
-	
--- fseek
-foreign import "fseek"
- fseekU	:: Ptr# FILE# 		{read}	-- file
-	-> 	Int32#		{read}	-- offset
-	-> 	Int32#		{read}	-- whence SEEK_SET, SEEK_END or SEEK_CUR
-	-(!e)> 	Int32#			-- 0 on success, -1 on fail and set errno
-	:- !e = !File
-
--- file position constants
+-- The position constants
 foreign import "SEEK_SET"
  file_SEEK_SET :: Int32#
 
@@ -45,11 +25,44 @@ foreign import "SEEK_CUR"
 foreign import "SEEK_END" 
  file_SEEK_END :: Int32#
 
--- ftell
+----------------------------------------------------------------------------------------------------
+foreign import "fopen"
+ fopenU ::  	String# {read} 		-- fileName 
+	-> 	String# {read}		-- mode
+	-(!e1)> Ptr# File#
+ 	:- !e1 = !File
+
+foreign import "fread"
+ freadU :: 	String# 	{write}	-- buffer to write into 
+	-> 	Int32# 		{read}	-- size of member
+	-> 	Int32# 		{read}	-- number of members to read
+	-> 	Ptr# File#  	{read}	-- file to read from
+	-(!e)>	Int32#	 		-- number of members read
+	:- !e = !File
+	
+
+
+foreign import "fseek"
+ fseekU	:: Ptr# File# 		{read}	-- file
+	-> 	Int32#		{read}	-- offset
+	-> 	Int32#		{read}	-- whence SEEK_SET, SEEK_END or SEEK_CUR
+	-(!e)> 	Int32#			-- 0 on success, -1 on fail and set errno
+	:- !e = !File
+
+
 foreign import  "ftell"
- ftellU	:: 	Ptr# FILE#	{read}	-- file
+ ftellU	:: 	Ptr# File#	{read}	-- file
 	-(!e)>	Int32#			-- position in file
 	:- !e = !File
+
+
+foreign import	"fputs"
+ fputsU ::	String#		{read}	-- string to write to file
+ 	-> 	Ptr# File#	{read} 	-- file handle
+ 	-(!e)>	Int
+	:- !e = !File
+
+
 
 --- move along, nothing to see here...
 foreign import  "(Int32)"
@@ -62,16 +75,18 @@ foreign import  "(Int32)"
 file_open 
 	:: String 		-- ^ file name
 	-> String 		-- ^ fopen mode string
-	-> Ptr# FILE#
+	-> Ptr# File#
 
 file_open name mode
- = do	name_flat	= (copy name).flatten
- 	mode_flat	= (copy mode).flatten
- 
- 	file	= fopenU (dangerUnboxString name_flat) (dangerUnboxString mode_flat)
+ | SChunk name_flat	<- (copy name).flatten
+ , SChunk mode_flat	<- (copy mode).flatten  
+ = do	
+ 	file	= fopenU (name_flat.danger_string) (mode_flat.danger_string)
 
 	case castToVoidPtr file `primPtrVoid_eq` primPtrVoid_null of
-		true#	-> throw ExceptionIO ("file_open: Can't open file " % name)
+--		true#	-> error ("file_open: Can't open file " % name)
+--		recurisve modules through Control.Exception, sigh
+
 		false#	-> ()
 		
 	file
@@ -86,17 +101,17 @@ file_length name
 	boxInt32 (ftellU file)
  
  
- -- | read the contents of the file at this path
+-- | read the contents of the file at this path
 file_read :: String -> String
 file_read name
  = do 	len	= file_length name
- 	str	= newString len
-	
+ 	fs	= new&{FlatString} len
+		
 	file	= file_open name "r+"
 	
-	freadU	(dangerUnboxString str) (unboxInt32 len) 1# file
-	str
-
+	freadU	(fs.danger_string) (unboxInt32 len) 1# file
+	fs.setLength len
+	(SChunk fs)
 
 
 

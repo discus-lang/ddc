@@ -1,0 +1,35 @@
+
+main ()
+ = do 
+	-- test appending
+ 	strApp	= "Some " % "appended " % "string.\n"
+ 	print	strApp;
+
+	-- test length
+	print	$ "length = " % show strApp.length % "\n"
+	
+	-- test flattening
+	strFlat
+		= ("Some " % "merged " % "string.\n") .flatten
+
+	print	$ strFlat
+	print	$ "strMerged isFlat  = " % show (strFlat .isFlat) % "\n"
+
+	print	$ (show $ "Some appended string.\n" == strApp.flatten) % "\n"
+	
+	-- test flattening of strings
+	str6		= ("wibble " % "wobble ") % ("wabble" % "\n")
+	str6_flat	= str6.flatten
+	print str6_flat
+
+	str7 		= ("" % "") % (("a" % "") % "b\n")
+	str7_flat	= str7.flatten
+	print str7_flat
+
+	-- test string equality
+	print $ show $ (str6 == "wibble wobble wabble\n")
+	print "\n"
+
+	-- test copy
+	str6_copy	= copy str6
+	print 	$ "copy = " % str6_copy

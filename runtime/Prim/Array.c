@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 // Should be defined in Base/Exception.ts
-extern Obj* Control_Exception_ExceptionArrayBounds (Obj* size, Obj* index);
+extern Obj* Base_ExceptionArrayBounds (Obj* size, Obj* index);
 
 // -- new
 Obj*	primArray_new_unsafe_noInit
@@ -81,7 +81,7 @@ Obj*	primArray_index
 	if (ix >= array ->arity) {
 		_LEAVE(2);
 		primException_throw
-			(Control_Exception_ExceptionArrayBounds
+			(Base_ExceptionArrayBounds
 				( _boxInt32 (array ->arity)
 				, _boxInt32 (ix) ));
 	}
@@ -107,7 +107,7 @@ Obj*	primArray_indexR
 	if (ix >= array ->arity) {
 		_LEAVE(2);
 		primException_throw
-			(Control_Exception_ExceptionArrayBounds
+			(Base_ExceptionArrayBounds
 				( _boxInt32 (array ->arity)
 				, _boxInt32 (ix) ));
 	}

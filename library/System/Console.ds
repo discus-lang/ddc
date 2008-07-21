@@ -1,50 +1,47 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 import	Base
-import	Data.String
-import	Data.Int
-import 	Data.Int32U
-import	Data.Float
-import	Data.Char
+import	Data.StringU
+import 	Data.String
+import	Data.Function
+import	System.File
 
 pragma cc_includes [ "unistd.h" ]
 
 -- an effect on stdin/stderr/stdout
 effect !Console	:: !
 
--- | Print a single string chunk
-foreign import "primPrintString"
-	primPrintStringChunk
-		:: forall %r1
-		.  String %r1 -(!e1)> Unit
-		:- !e1	= !{ !Console; !Read %r1 }
-		:$ Obj -> Obj
-
-foreign import "primStringChar"
-	stringOfChar
-		:: forall %r1 %r2
-		.  Char %r1 -(!e1)> String %r2
-		:- !e1	= !{ !Read %r1 }
-		:$ Obj -> Obj
-
-foreign import "primStringInt"
-	stringOfInt
-		:: forall %r1 %r2
-		.  Int %r1 -(!e1)> String %r2
-		:- !e1	= !{ !Read %r1 }
-		:$ Obj -> Obj
-
-foreign import "primStringFloat32"
-	stringOfFloat32	
-		:: forall %r1 %r2
-		.  Float %r1 -(!e1)> String %r2
-		:- !e1 = !{ !Read %r1 }
-		:$ Obj -> Obj
-
-
 foreign import "usleep"
-	usleep	:: forall %r1
-	 	.  Int32# -(!e1)> ()
-		:- !e1 = !{ !Console }
-		:$ Int32# -> Obj
+ usleep	:: Int32# -(!Console)> ()
+
+-- TODO: we really want a way to change the !File to a !Console effect...
+foreign import	"fputs"
+ fputsU_console 
+ 	::	String#		{read}	-- string to write to file
+ 	-> 	Ptr# File#	{read} 	-- file handle
+ 	-(!e)>	Int
+	:- !e = !Console
+
+-- | Print a string to the console
+putStr :: String -> ()
+putStr ss = print ss
+
+-- | Print a string to the console.
+--	This will become polymorphic when type classes are finished
+print :: String -> ()
+print xx
+ = case xx of 
+ 	SChunk fs@(FlatString)
+	-> do	fputsU_console (fs.danger_string) stdout
+		()
+
+	SAppend s1 s2	
+	-> do 	print s1
+		print s2
+
+
+-- | Print a string to the console followed by a newline.
+println :: String -> ();
+println s	= print (s % "\n");
+
 

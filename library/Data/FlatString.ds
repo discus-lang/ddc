@@ -1,0 +1,180 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Data.Int
+import Data.Int32U
+import Data.StringU
+import Data.Char
+import Class.Copy
+import Base
+
+export type FlatString
+export flatString_copy
+
+project FlatString 
+ with {	maxLengthU; lengthU; setLengthU; 
+ 	maxLength;  length;  setLength;
+	danger_string; 
+ 	new; box;
+	freeChars; append; index }
+	
+instance Copy FlatString where
+ copy	= flatString_copy
+
+-- Primitive Projections ---------------------------------------------------------------------------
+-- The compiler can't derive these yet.. yawn.
+
+
+-- | Get the number of chars currently in this FlatString.
+maxLengthU :: FlatString -> Int32#
+maxLengthU str@(FlatString)
+ = do	payload	= peekDataR_payload str
+	ptr	= castToPtrInt32 payload
+ 	peekPtr (castToPtrInt32 ptr)
+
+maxLength :: FlatString -> Int32
+maxLength fs = boxInt32 fs.maxLengthU
+
+
+-- | Get the maximum number of chars that can be contained by this FlatString.
+lengthU :: FlatString -> Int32#
+lengthU str@(FlatString)
+ = do	payload	= peekDataR_payload str
+	ptr	= castToPtrInt32 (plusPtr payload 4#)
+ 	peekPtr ptr
+
+length :: FlatString -> Int32
+length fs = boxInt32 fs.lengthU
+
+
+-- | Set the current length of the string
+--   TODO: don't allow this to be set over the maximum available
+setLengthU :: FlatString -> Int32# -> ()
+setLengthU 
+	str@(FlatString) len
+
+ = do	payload	= peekDataR_payload str
+ 	ptr	= castToPtrInt32 (plusPtr payload 4#)
+	pokeInt32 ptr len
+	()
+
+setLength :: FlatString -> Int32 -> ()
+setLength fs l = setLengthU fs (unboxInt32 l)
+
+
+-- | Unboxing a FlatString returns a pointer to a C string. 
+--   DANGER: This object will move on the next GC. 
+--           Don't hold onto the poitner across an allocation, else badness.
+--
+danger_string :: FlatString %r1 -> String# %r1
+danger_string str@(FlatString)
+ = do	payload	= peekDataR_payload str
+ 	ptr	= plusPtr payload 8#
+ 	castToStringU ptr
+
+
+----------------------------------------------------------------------------------------------------
+
+-- | Create a new string with this length on the heap
+new :: Int -> FlatString
+new length
+ = do 
+	-- make sure to include space for the nul char on the end.
+	len		= unboxInt32 length
+ 	len_nul		= len + 1#
+
+	-- round length up to 4 byte word boundary for the DataR object.
+	spill		= mod len_nul 4#
+	len_spilled	= case spill #== 0# of
+				true#	-> len_nul
+				false#	-> len_nul + (4# - spill)
+
+	len_payload	= 4#		-- for the maxLength field
+			+ 4#		-- for the length field
+			+ len_spilled	-- for the string chars
+
+	-- alloc the object and grab a pointer to its payload
+	str 	:: FlatString %r
+	str	= primAlloc_dataR 0# len_payload
+
+	payload	= peekDataR_payload str
+
+	-- clear out the payload
+	stringU_danger_memset (castToStringU payload) 0# len_payload
+ 
+	-- write the maxLength
+	pokeInt32 (castToPtrInt32 payload) len
+
+	-- write the length
+	pokeInt32 (castToPtrInt32 (plusPtr payload 4#)) 0#
+	
+	str
+
+
+-- | Create a new flatstring
+--	This creates a new heap object and copies the source string into it.
+--
+box :: String# %r1 -> FlatString %r2
+box strU
+ = do	-- make a new string for the destination
+ 	len	= stringU_length strU
+	str	= new&{FlatString} (boxInt32 (len + 1#))
+
+	-- copy the source into it
+	payload	= peekDataR_payload str
+	dest	= castToStringU (plusPtr payload 8#)
+	stringU_danger_strcpy dest strU
+
+	str.setLengthU len
+	str
+
+
+-- | Copy this FlatString
+flatString_copy :: FlatString %r1 -> FlatString %r2
+flatString_copy str@(FlatString)
+ = do	
+ 	len	= str.length
+	str'	= new&{FlatString} len
+
+	strU	= str .danger_string
+	strU'	= str'.danger_string
+	
+	stringU_danger_strcpy strU' strU
+	str'.setLength len
+	
+	str'
+
+
+-- | Work out how much space is left inside this FlatString
+freeChars :: FlatString -> Int32
+freeChars fs
+ = 	boxInt32 (fs.maxLengthU - fs.lengthU)
+
+
+-- | Append some data to the end of a FlatString
+append :: FlatString %r1 -> FlatString %r2 -> ()
+append fs1@(FlatString) fs2@(FlatString)
+ | fs1.freeChars >= fs2.length
+ = do
+	str1	= fs1.danger_string
+	str2	= fs2.danger_string
+
+ 	stringU_danger_concat str1 str2
+	
+	fs1.setLength (fs1.length + fs2.length)
+		
+	()
+
+
+-- | Take a character from this FlatString
+index :: FlatString -> Int32 -> Char32
+index str ix
+ | ix < str.length
+ = do	ixU	= unboxInt32 ix
+ 	payload	= peekDataR_payload str
+
+ 	ptr	= plusPtr payload (8#i32 + ixU)
+	w8	= peekPtr ptr
+	
+	boxChar32 (promote_word8ToChar32 w8)
+
+

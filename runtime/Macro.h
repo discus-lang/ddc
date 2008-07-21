@@ -5,6 +5,11 @@
 #include "Types.h"
 #include "Force.h"
 
+// Macros used in DDC.Store
+#define _PEEK(ptr)		*(ptr)
+#define	_PLUSPTR(ptr,offset)	(ptr + offset)
+
+
 // Hackery on prim structures
 static inline UInt
 	_TAG	(Obj* obj)	

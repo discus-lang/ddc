@@ -57,13 +57,13 @@ initBodies ()
 
 
 	-- make a new array of bodies.
-	body0	= array_new (length bodies) (errorNoEff @ "elem not initialised")
+	body0	= array_new (length bodies) (errorL @ "elem not initialised")
 	zipWith_ (\b i -> body0 #(i) #= b) 
 		bodies [0 .. array_size body0 - 1]
 
 
 	-- an array to hold the body positions for the next frame.
-	body1	= array_new (length bodies) (errorNoEff @ "elem not initialised")
+	body1	= array_new (length bodies) (errorL @ "elem not initialised")
 
 	map_	(\i -> body1 #(i) #= newBody (Vec2 0.0 0.0) (Vec2 0.0 0.0))
 		[0.. array_size body1 - 1]

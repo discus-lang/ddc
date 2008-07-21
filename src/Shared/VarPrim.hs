@@ -111,7 +111,7 @@ primTry		= primVarI NameValue	"Control.Exception.primTry"		VTry
 					[Var.ISeaName ("primException_try")]
 
 primExceptionBreak
-		= primVar NameValue	"Control.Exception.ExceptionBreak"	VExceptionBreak	
+		= primVar NameValue	"Base.ExceptionBreak"			VExceptionBreak	
 
 primGateLoop	= primVar NameValue	"Control.Exception.gateLoop"		VGateLoop
 

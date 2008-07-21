@@ -89,7 +89,9 @@ crushProjClass3 cidT src fProj cObj tObj
 	-- if the object type has resolved to a type constructor we should
 	--	be able to get the projection dictionary for it.
 	let res	
-		| TBot{}		<- tObj
+		-- This isn't a type constructor,
+		--	hopefully something will be unified into it later
+		| TBot{}			<- tObj
 		= do	return Nothing
 
 		-- the object is a constructor, but there's no projection dictionary for it.

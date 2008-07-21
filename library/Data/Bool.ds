@@ -8,6 +8,12 @@ data Bool %r1
 	= False
 	| True
 
+boxBool :: Bool# -> Bool
+boxBool b
+ = case b of
+ 	true#	-> True
+	false#	-> False
+
 not b
  = case b of
  	True	-> False

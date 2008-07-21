@@ -15,9 +15,7 @@ import	Data.List
 import	Data.Either
 import	Data.ArrayU
 	
-import	System.Error
 import	System.Console
-import	System.File
 
 import	Class.Copy
 import	Class.Eq

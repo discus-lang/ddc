@@ -24,11 +24,8 @@ updateRover rover msg
 		rover.speed	:= msg.speed
 
 		-- add sensed objects to our list of hazards
-		terrain'	= foldr addMsgTerrain [] msg.objects -- rover.terrain msg.objects
-		rover#terrain	#= terrain'
-
-		martians'	= foldr addMsgMartian [] msg.objects
-		rover#martians	#= martians'
+		rover#terrain	#= foldr addMsgTerrain [] msg.objects
+		rover#martians	#= foldr addMsgMartian [] msg.objects
 
 		rover#vFacing	#= (Vec2 1.0 0.0) .rotate (degToRad rover.dir)
 
@@ -40,6 +37,28 @@ updateRover rover msg
 	MsgBad{}	
 	 -> do	putStr "updateRover: dropping bad message\n"
 	 	()
+
+-- Convert a message about an object into a hazard
+{-
+msgObjectToHazard :: MsgObject -> Hazard
+
+msgObjectToHazard (MsgTerrain kind posX posY radius)
+	= HazTerrain kind (Vec2 posX posY) radius
+
+msgObjectToHazard (MsgMartian posX posY dir speed)
+	= HazMartian (Vec2 posX posY) dir speed
+		
+		
+isHazTerrain tt
+ = case tt of
+ 	HazTerrain{}	-> True
+	_		-> False
+	
+isHazMartian tt
+ = case tt of
+ 	HazMartian{}	-> True
+	_		-> False
+-}
 
 -- Add an element of terrain to the known hazards
 addMsgTerrain :: MsgObject -> [Hazard] -> [Hazard]
@@ -65,6 +84,7 @@ addMsgMartian (MsgMartian posX posY dir speed) hazards
 	
 addMsgMartian _ hazards
 	= hazards
+
 
 -- work out our current angular velocity based
 -- 	on the new direction information

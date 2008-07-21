@@ -171,10 +171,8 @@ instance Show MsgObject where
 -- Parse a message sent by the server
 parseMessage :: String -> MsgServer
 parseMessage str
- = do	slist	= string_toList str
+ = do	slist	= map string_Char32 $ charListOfString str
 	stoks	= tokenise slist
--- 	putStr	$ show stoks % "\n"
-
 	parseMessage' str stoks
 	
 parseMessage' str []	
@@ -195,9 +193,9 @@ parseInit (wsX : wsY : tl : sMin : sMax : spMax : tsMax : tsHMax : rest)
  = MsgInit 	(read wsX) (read wsY) (read tl) (read sMin) 
 		(read sMax) (read spMax) (read tsMax) (read tsHMax)
 
-parseTelem str (ts : ctl : posX : posY : dir : speed : rest)
- = do	ctl1	= string_char ctl
- 	ctl2	= string_char (string_rest ctl)
+parseTelem str (ts : ctl@(SChunk fs_ctl) : posX : posY : dir : speed : rest)
+ = do	ctl1	= string_Char32 (fs_ctl.index 0)
+ 	ctl2	= string_Char32 (fs_ctl.index 1)
 
  	sDrive	| ctl1 == "a"	= SDAccel
 		| ctl1 == "b"	= SDBreak

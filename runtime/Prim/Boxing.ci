@@ -6,6 +6,7 @@
 #include "../Object.h"
 #include "../State.h"
 
+
 // ----- Macros	
 //
 // 	 macros + token pasting == polymorphism.
@@ -50,7 +51,6 @@ static inline UInt _unboxEnum(Obj* obj)
 	Obj* data	= _force(obj);
 	return		_getObjTag(data);
 }
-
 
 
 // -----

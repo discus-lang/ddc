@@ -1,0 +1,66 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base
+
+-- Hooks onto DDC's runtime primitives.
+--	This gives direct access to the store.
+--	Sooo many ways to crash and burn
+--
+
+-- All low level operations should have this effect.
+--	But we can't mask it yet so its been left out.
+--	Make sure your stmts have enough data dependencies, else badness.
+
+
+-- DataR -------------------------------------------------------------------------------------------
+
+-- | Allocate an object in the heap to contain raw, unboxed data.
+foreign import "_allocDataR"
+ allocDataR
+ 	:: forall a
+	.  Word#		-- tag of object
+	-> Word#		-- payload size, in bytes. MUST be a multiple of 4
+	-> a
+
+-- | Get the size of this entire DataR object.
+foreign import "primStore_peekDataR_size"
+ peekDataR_size	
+ 	:: forall a. a -> Int32#
+	
+-- | Get a pointer to the payload of this DataR object.
+foreign import "primStore_peekDataR_payload"
+ peekDataR_payload
+ 	:: forall a. a -> Ptr# Word8#
+	
+
+-- Ptr ---------------------------------------------------------------------------------------------
+-- | Advances the pointer by the given offset in bytes
+foreign import "_PLUSPTR"
+ plusPtr	:: Ptr# Word8# -> Int# -> Ptr# Word8#
+
+foreign import "_PEEK"
+ peekPtr	:: forall a. Ptr# a -> a
+
+
+-- Poke --------------------------------------------------------------------------------------------
+foreign import "primStore_pokeInt32"
+ pokeInt32 	:: Ptr# Int32# -> Int32# -> Void#
+
+ 
+-- Casting -----------------------------------------------------------------------------------------
+-- These should go somewhere else
+--
+foreign import "(Word8 *)"
+ castToPtrWord8
+ 	:: forall a
+	.  Ptr# a -> Ptr# Word8#
+
+foreign import "(Char32 *)"
+ castToPtrChar32
+ 	:: forall a 
+ 	.  Ptr# a -> Ptr# Char32#
+
+foreign import "(Int32 *)"
+ castToPtrInt32
+ 	:: forall a
+	.  Ptr# a -> Ptr# Int32#
