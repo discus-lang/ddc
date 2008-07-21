@@ -39,7 +39,7 @@ foreign import "_boxString"
 --	The unboxed string data shares the region with the data constructor.
 --
 foreign import "_unboxString"
- dangerUnboxString	
+ dangerUnboxStringChunk
  	:: forall %r1
  	.  String %r1 -(!Read %r1)> String# %r1
 	:$ Obj -> String#;
@@ -68,7 +68,7 @@ foreign import "memset"
 	-> String#		-- same as desination string
 
 dangerConcat s1 s2
-  = do 	dangerStrcatU (dangerUnboxString s1) (dangerUnboxString s2)
+  = do 	dangerStrcatU (dangerUnboxStringChunk s1) (dangerUnboxStringChunk s2)
 	s1
 
 -- | Pack this string into the destination
@@ -127,7 +127,7 @@ newString length
 	str	= primAlloc_dataR 0# lenS
  
  	-- grab a ptr to the raw string from the new object.
-	strU	= dangerUnboxString str
+	strU	= dangerUnboxStringChunk str
 	
 	-- set the string to all nul chars;
 	dangerMemsetU strU 0# len
@@ -139,7 +139,7 @@ string_length :: String -> Int
 string_length ss
   = case ss of 
 	SAppend l r	-> string_length l + string_length r
-	_		-> boxInt32 (strlenU (dangerUnboxString ss))
+	_		-> boxInt32 (strlenU (dangerUnboxStringChunk ss))
 
 
 -- | Check whether this string is flat, ie is a single SChink and contains
@@ -183,7 +183,7 @@ primString_eq	s1 s2
  	s1M	= string_flatten (copy s1)
 	s2M	= string_flatten (copy s2)
 	
-	case strcmpU (dangerUnboxString s1M) (dangerUnboxString s2M) `primInt32U_eq` 0# of
+	case strcmpU (dangerUnboxStringChunk s1M) (dangerUnboxStringChunk s2M) `primInt32U_eq` 0# of
   		true#	-> True
 		false#	-> False
 
@@ -196,6 +196,7 @@ string_char s
         _              -> primString_char s
 
 -- | Get the tail of a string as a new string.
+string_rest :: String -> String
 string_rest s
  = case s of
         SAppend left right ->
@@ -206,12 +207,14 @@ string_rest s
         _ -> primString_rest s
 
 -- | Check whether a string is empty.
+string_isNul :: String -> Bool
 string_isNul s
  = case s of
         SAppend _ _ -> False
         _           -> primString_isNul s
 
 -- | Return the ASCII code of the first character in this string
+string_ord :: String -> Int
 string_ord s
  = case s of
         SAppend left _ -> string_ord left
@@ -230,20 +233,39 @@ infixr 7 %
 infixr 7 %%
 
 -- | Append one string to another.
+--   TODO:	
+--	It would be better if (%) avoided allocating an SAppend constructor
+--	when either of its arguments was empty. However, this was make (%) have
+--	a read effect, which interacts badly with the Show class because
+--	the show fn isn't supposed include an effect which reads its return
+--	string
+--
+--	This can be fixed once we can mask effects on fresh data.
+--
+--	To see the problem, change to the alternative definition and
+--	compile library/Class/Show.ds with -O
+--	
+-- (%) a b   
+--    | a.isNul = b
+--    | b.isNul = a
+--             \= SAppend a b
 (%) a b
-    | a.isNul = b
-    | b.isNul = a
-             \= SAppend a b
+	= SAppend a b
+	
 
 -- | Append one string to another separated by a space.
 (%%) a b = a % " " % b
 
 -- | Unbox a string, flattening if necessary
-unboxString :: String -> String#
-unboxString s
+--	The String# returned is a pointer into the string object in the heap.
+--	This object will move on the next GC, so don't hold onto the pointer
+--	across an allocation - else badness.
+--
+dangerUnboxString :: String -> String#
+dangerUnboxString s
  = case s of
-        SAppend _ _ -> dangerUnboxString (string_flatten s)
-        _           -> dangerUnboxString s
+        SAppend _ _ -> dangerUnboxStringChunk (string_flatten s)
+        _           -> dangerUnboxStringChunk s
 
 -- Instances ---------------------------------------------------------------------------------------
 instance Eq String where
