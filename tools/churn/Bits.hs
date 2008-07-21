@@ -22,6 +22,7 @@ import Type.Exp
 
 import Shared.VarPrim
 import Shared.Var		(NameSpace(..))
+import Shared.Base
 import qualified Shared.Var	as Var
 
 -- | return the types of the arguments of this function
@@ -53,7 +54,7 @@ makeCall 	= unflattenApps none
 none	= error "no source position"
 
 varV s		= (Var.new s) { Var.nameSpace = NameValue }
-tInt		= TData KValue primTInt [TWild KRegion]
+tInt		= TData KValue (primTInt (UnboxedBits 32)) [TWild KRegion]
 tFun t1 t2	= TFun t1 t2 ePure cEmpty
 ePure		= TBot KEffect
 cEmpty		= TBot KClosure

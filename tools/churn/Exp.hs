@@ -15,6 +15,7 @@ import Type.Exp
 
 import Shared.Var	(NameSpace(..))
 import Shared.VarPrim
+import Shared.Base
 import qualified Shared.Var	as Var
 
 import Util
@@ -70,10 +71,10 @@ genExpT_base env tt
 
 	-- literal
 	| TData (KFun KRegion KValue) v [TWild KRegion]	<- tt
-	, v == primTInt 
+	, v == (primTInt (UnboxedBits 32)) 
 	= do	burn 1
 		r	<- genInt 0 100
-		return	$ XConst none (CConst (LInt r))
+		return	$ XLit none (LiteralFmt  (LInt $ fromIntegral r) (UnboxedBits 32))
 		
 
 	-- function
@@ -193,7 +194,7 @@ genPatT tt
 			return	$ WVar none var]
 	
 	| TData (KFun KRegion KValue) v _	<- tt
-	, v == primTInt
+	, v == primTInt (UnboxedBits 32)
 	= chooseM
 		[ do	var	<- genVar NameValue
 			return	$ WVar none var]
@@ -235,7 +236,7 @@ genType genFun
 
 		| r <= 1
 		= do	burn 1
-			return $ TData (KFun KRegion KValue) primTInt  [TWild KRegion]
+			return $ TData (KFun KRegion KValue) (primTInt (UnboxedBits 32)) [TWild KRegion]
 
 		| r <= 2
 		= do	burn 1

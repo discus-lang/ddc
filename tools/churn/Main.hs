@@ -141,7 +141,7 @@ instance Size (Exp a) where
  size xx 
   = case xx of
 	XVar{}		-> 1
-	XConst{}	-> 1
+	XLit{}		-> 1
 	XApp _ x1 x2  	-> 1 + size x1 + size x2
 	XLambdaPats _ _ x	-> 1 + size x
 	XMatch _ aa	-> 1 + size aa
@@ -160,7 +160,7 @@ instance Size (Pat a) where
  size xx
   = case xx of
   	WVar _ v	-> 1
-	WConst{}	-> 1
+	WLit{}		-> 1
 	WCon {}		-> 1
 	WConLabel{}	-> 1
 	WAt _ v w	-> 1 + size w
