@@ -85,7 +85,7 @@ Thunk*	_copyThunk	(Thunk* thunk)
 	thunkC ->arity		= thunk1 ->arity;
 	thunkC ->args		= thunk1 ->args;
 
-	for (UInt i = 0; i < thunk->args; i++)
+	for (UInt i = 0; i < thunk1->args; i++)
 		thunkC ->a[i]	= thunk1 ->a[i];
 
 	_PROFILE_ALLOC (thunkCopy.count++);
