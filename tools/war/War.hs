@@ -126,7 +126,15 @@ enterDir2 path_
 		
 		?trace		$ show ll	% "\n"
 
-		let dirs	= map (\s -> path ++ s ++ "/") ll
+		-- Find any other directories and enter them after the listed ones.
+		paths		<- getDirectoryContents path
+		otherDirs	<- filterM (doesDirectoryExist . (path++))
+				$ [ p	| p@(p1:_)	<- paths
+					, p /= "." && p /= ".." && p `notElem` ll]
+
+		?trace		$ show otherDirs % "\n"
+
+		let dirs	= map (\s -> path ++ s ++ "/") $ ll ++ otherDirs
 	
 --		out	$ "* Entering " % path	% "\n"
 		mapM_ enterDir dirs
