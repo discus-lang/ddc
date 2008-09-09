@@ -1,0 +1,45 @@
+-- Imports
+
+-- Pragmas
+
+-- Infix
+
+-- Data
+
+-- Effects
+
+-- Regions
+
+-- Classes
+
+-- Class dictionaries
+
+-- Class instances
+
+-- Foreign imports
+
+-- Binds
+foreign import someBool
+        :: Data.Bool.Bool %rTS0
+        :- Base.Const %rTS0
+        ,  Base.Direct %rTS0
+        :$ Base.Data;
+        
+foreign import someList
+        :: Data.List.List %rTS1 (Base.Int32 %rTC3)
+        :- Base.Const %rTC3
+        ,  Base.Const %rTS1
+        ,  Base.Direct %rTC3
+        ,  Base.Direct %rTS1
+        :$ Base.Data;
+        
+foreign import dude
+        :: forall t0 %r0
+        .  t0 -(!e0 $c0)> Base.Int32 %r0
+        :- !e0        = Base.!Read %rTC5
+        ,  $c0        = x : %rTC5
+        ,  Base.Const %rTC5
+        ,  Base.Direct %rTC5
+        :$ Base.Thunk;
+        
+
