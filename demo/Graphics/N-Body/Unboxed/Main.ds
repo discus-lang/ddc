@@ -6,9 +6,9 @@ import Math.Vec2
 
 time_compression	= 1.0
 attract_range		= 20.0
-draw_force_step		= 2
+draw_force_step		= 1
 
-worldSize		= Vec2 500 500
+worldSize		= Vec2 400 400
 newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
 
 frameCount :: Int %r1 :- Mutable %r1

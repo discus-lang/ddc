@@ -3,6 +3,7 @@
 import Base
 import Data.String
 import Data.Ptr
+import Data.Maybe
 
 -- the foreign file type
 foreign import data "FILE" File# :: *
@@ -102,16 +103,20 @@ file_length name
  
  
 -- | read the contents of the file at this path
-file_read :: String -> String
+file_read :: String -> Maybe String
 file_read name
  = do 	len	= file_length name
  	fs	= new&{FlatString} len
 		
 	file	= file_open name "r+"
 	
-	freadU	(fs.danger_string) (unboxInt32 len) 1# file
-	fs.setLength len
-	(SChunk fs)
+	len'	= freadU (fs.danger_string) (unboxInt32 len) 1# file
 
+	if (boxInt32 len') /= 1
+	 then Nothing
+	 else do
+		fs.setLength len
+		Just (SChunk fs)
+		
 
 

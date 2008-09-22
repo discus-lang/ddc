@@ -1,6 +1,7 @@
 
 import Base;
 import System.File;
+import Data.Maybe;
 
 
 main () = topHandle prog;
@@ -10,6 +11,11 @@ name	= "test/Library/File/Main.data";
 prog ()
  = do {	print	$ "length = " % show (file_length name) % "\n";
 
-	ss	= file_read name;
-	print	$ "data = " % ss % "\n";
+	case file_read name of
+	 Nothing 
+	  -> do	"failed\n"
+		()
+
+	 Just ss
+	  -> print	$ "data = " % ss % "\n"
  };

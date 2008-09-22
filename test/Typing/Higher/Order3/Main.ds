@@ -8,9 +8,24 @@ succ x = x + 1;
 danio g	= g 5;
 
 -- perch is a third order function
-perch f = succ (f succ);
+perch f 	= succ (f succ);
 
-appDanio f = f danio;
+appDanio f 	= f danio;
+
+{-
+power h		
+ = perch (\g 
+	-> do {
+		case 0 of {
+			1	-> g;
+			2	-> h;
+			3	-> \x -> do { print "hello"; 5 };
+		} 5;
+		
+	
+	});
+-}						
+
 
 main ()
  = do {
