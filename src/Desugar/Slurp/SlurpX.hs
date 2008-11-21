@@ -68,20 +68,13 @@ slurpX	exp@(XLambda sp vBound xBody)
 
 	-- Get closure terms from unresolved projection functions
 	let tsProjTags	= collectClosureProjTags xBody'
-
 	let tsClo	= tsCloFree ++ tsProjTags
 
---	tV@(TVar k vT)	<- lbindVtoT    var
-
---	let clo	= makeTMask KClosure cBody (TTag vBound)
+	-- the constraints
 	let qs	= 
 		[ CEq (TSV $ SVLambda sp) tX	$ TFun tBound tBody eBody cX
---		, CEq (TSC $ SCLambda sp) cX	$ clo ]
 		, CEq (TSC $ SCLambda sp) cX	$ makeTSum KClosure tsClo ]
-
- 	-- makeTMask KClosure cBody (TTag vBound)]
-	
-
+ 	
 	-- If the sub expression is also a lambda
 	--	then we can pack its constraints into this branch as well.
 	--	This reduces the number of nested branches and saves indenting in the constraint file.
@@ -134,12 +127,12 @@ slurpX	exp@(XApp sp fun arg)
 	
 	let qs	= 
 		[ CEq (TSV $ SVApp sp) tFun	$ TFun tArg tX eApp empty 
-		, CEq (TSE $ SEApp sp) eX	$ makeTSum KEffect  [eFun, eArg, eApp]
-		, CEq (TSC $ SCApp sp) cX	$ makeTSum KClosure [cFun, cArg] ]
+		, CEq (TSE $ SEApp sp) eX	$ makeTSum KEffect  [eFun, eArg, eApp] ]
+--		, CEq (TSC $ SCApp sp) cX	$ makeTSum KClosure [cFun, cArg] ]
 	
 	return	( tX
 		, eX
-		, cX
+		, empty
 		, XApp (Just (tX, eX)) fun' arg'
 		, qsFun ++ qsArg ++ qs)
 
@@ -172,12 +165,12 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 		[ CEqs (TSU $ SUAltLeft sp)	(tObj : tsAltsLHS)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
 		, CEq  (TSE $ SEMatchObj sp)	eMatch	$ TEffect primReadH [tObj]
-		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) 
-		, CEq  (TSC $ SCMatch sp)	cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]
+		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) ]
+--		, CEq  (TSC $ SCMatch sp)	cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]
 
 	return	( tRHS
 		, eX
-		, cX
+		, empty
 		, XMatch (Just (tRHS, eX)) (Just obj') alts'
 		, qsMatch ++ qsObj ++ qsAlts)
 
@@ -197,13 +190,13 @@ slurpX	exp@(XMatch sp Nothing alts)
 	let matchQs	=  
 		[ CEqs (TSU $ SUAltLeft sp)	(tLHS 	: altsTP)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS	: altsTX)
-		, CEq  (TSE $ SEMatch sp)	eMatch	$ makeTSum KEffect altsEs
-		, CEq  (TSC $ SCMatch sp)	cMatch	$ makeTSum KClosure altsClos ]
+		, CEq  (TSE $ SEMatch sp)	eMatch	$ makeTSum KEffect altsEs ]
+--		, CEq  (TSC $ SCMatch sp)	cMatch	$ makeTSum KClosure altsClos ]
 		
 				  
 	return	( tRHS
 		, eMatch
-		, cMatch
+		, empty
 		, XMatch (Just (tRHS, eMatch)) Nothing alts'
 		, matchQs ++ altsQs)
 
@@ -296,15 +289,15 @@ slurpX	exp@(XDo sp stmts)
 		{ branchBind	= bindLeave
 		, branchSub	
 		   = 	[ CEq (TSV $ SVDoLast sp) tX 	$ tLast
-			, CEq (TSE $ SEDo sp)	eX 	$ makeTSum  KEffect  esStmts
-			, CEq (TSC $ SCDo sp)	cX	$ makeTMask KClosure 
-								(makeTSum KClosure csStmts) 
-								(makeTSum KClosure $ map TTag boundVs) ] 
+			, CEq (TSE $ SEDo sp)	eX 	$ makeTSum  KEffect  esStmts ]
+--			, CEq (TSC $ SCDo sp)	cX	$ makeTMask KClosure 
+--								(makeTSum KClosure csStmts) 
+--								(makeTSum KClosure $ map TTag boundVs) ] 
 		   ++ qsStmts }
 
 	return	( tX
 		, eX
-		, cX
+		, empty
 		, XDo (Just (tX, eX)) stmts'
 		, [q])
 
@@ -343,12 +336,12 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 		, CEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse])
 		
 		, CEq  (TSE $ SEIfObj sp)	eTest 	$ TEffect primReadH [tObj]
-		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest]
-		, CEq  (TSC $ SCIf sp)		cX	$ makeTSum KClosure [cObj, cThen, cElse] ]
+		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest] ]
+--		, CEq  (TSC $ SCIf sp)		cX	$ makeTSum KClosure [cObj, cThen, cElse] ]
 		
 	return	( tAlts
 		, eX
-		, cX
+		, empty
 		, XIfThenElse (Just (tAlts, eX)) xObj' xThen' xElse'
 		, qs ++ qsObj ++ qsThen ++ qsElse )
 
@@ -394,14 +387,14 @@ slurpX 	exp@(XProj sp xBody proj)
 			projT vInst tBody (TFun tBody tX eProj cProj)
 
 		, CEq	(TSE $ SEProj sp)	
-			eX $ makeTSum KEffect  [eBody, eProj]
+			eX $ makeTSum KEffect  [eBody, eProj] ]
 
-		, CEq	(TSC $ SCProj sp)	
-			cX $ makeTSum KClosure [cBody, cProj] ]
+--		, CEq	(TSC $ SCProj sp)	
+--			cX $ makeTSum KClosure [cBody, cProj] ]
 
 	return	( tX
 		, eX
-		, cX
+		, empty
 		, XProjTagged (Just (tX, eX)) vInst (TFree label cProj) xBody' proj'
 		, qsBody ++ qs )
 
@@ -412,10 +405,10 @@ slurpX	exp@(XProjT sp tDict proj)
 				JField  nn l	-> TJField  l
 				JFieldR nn l	-> TJFieldR l
 
-	let vField	= case proj of
+{-	let vField	= case proj of
 				JField  nn l	-> l
 				JFieldR nn l	-> l
-
+-}
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
@@ -441,7 +434,7 @@ slurpX	exp@(XProjT sp tDict proj)
 
 	return	( tX
 		, eX
-		, TFree vField tX
+		, empty -- TFree vField tX
 		, XProjTaggedT (Just (tX, eX)) vInst proj'
 		, qs )
 
@@ -457,16 +450,16 @@ slurpV exp@(XVar sp var) tV@(TVar k vT)
 	vTu		<- makeUseVar var vT
 	let tX		= TVar k vTu
 	let eX		= pure
-	let cX		= if Var.isCtorName var
+{-	let cX		= if Var.isCtorName var
 				then TBot KClosure
 				else TFree var tV
-
+-}
 	let qs	= 
 		[ CInst (TSV $ SVInst sp vT) vTu vT ]
 
 	return	( tX
 		, eX
-		, cX
+		, empty
 	        , XVarInst (Just (tX, eX)) var
 		, qs)
 

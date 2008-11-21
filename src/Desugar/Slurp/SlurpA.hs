@@ -52,16 +52,16 @@ slurpA	alt@(AAlt sp gs x)
 	(tX, eX, cX, x', qsX)
 			<- slurpX x
 
-	let vsBoundV	= map fst $ concat cbindssGuards
+--	let vsBoundV	= map fst $ concat cbindssGuards
 --	let tsBoundT	= map (TVar KValue) $ map snd $ concat cbindssGuards
 
 	let qs	=
 		[ CEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
-		, CEq  (TSE $ SEGuards sp) eAlt	  $ makeTSum   KEffect  (eX : esGuards)
-		, CEq  (TSC $ SCGuards sp) cAlt   $ makeTMask  KClosure 
-							(makeTSum KClosure (cX : csGuards))
-							(makeTSum KClosure 
-								$ map TTag vsBoundV) ]
+		, CEq  (TSE $ SEGuards sp) eAlt	  $ makeTSum   KEffect  (eX : esGuards) ]
+--		, CEq  (TSC $ SCGuards sp) cAlt   $ makeTMask  KClosure 
+--							(makeTSum KClosure (cX : csGuards))
+--							(makeTSum KClosure 
+--								$ map TTag vsBoundV) ]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind 
@@ -74,7 +74,7 @@ slurpA	alt@(AAlt sp gs x)
 	return	( tGuards
 		, tX
 		, eAlt
-		, cAlt
+		, empty
 		, AAlt Nothing gs' x'
 		, CBranch
 			{ branchBind	= bind
@@ -116,7 +116,7 @@ slurpG	(GExp sp w x)
 	(tX, eX, cX, x', qsX)
 		<- slurpX x
 
-	let vsBoundV	= map fst cbindsW
+--	let vsBoundV	= map fst cbindsW
 
 	-- make the effect of testing the case object
 	let effMatch
@@ -129,17 +129,17 @@ slurpG	(GExp sp w x)
 
 	let qs = 
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
-		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum KEffect (eX : effMatch)
-		, CEq	(TSC $ SCGuards sp)	cGuard	$ makeTMask 
-							KClosure 
-							cX
-							(makeTSum KClosure (map TTag vsBoundV)) ]
+		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum KEffect (eX : effMatch) ]
+--		, CEq	(TSC $ SCGuards sp)	cGuard	$ makeTMask 
+--							KClosure 
+--							cX
+--							(makeTSum KClosure (map TTag vsBoundV)) ]
 
 	-----	
 	return	( cbindsW		
 		, Nothing
 		, eGuard
-		, cGuard
+		, empty
 		, GExp Nothing w' x'
 		, qsW ++ qsX ++ qs )
 		

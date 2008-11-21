@@ -41,7 +41,7 @@ slurpS 	(SBind sp Nothing e1)
 
 	return	( tX
 		, eX
-		, cX
+		, empty
 		, SBind (Just (tX, eX)) Nothing x1'
 		, [CBranch
 			{ branchBind	= BNil
@@ -60,7 +60,7 @@ slurpS	(SBind sp (Just v) e1)
 
 	return	( tX
 		, eX
-		, cX 
+		, empty
 		, SBind (Just (tX, eX)) (Just v) x1'
 		, [CBranch
 			{ branchBind	= BLet [vBindT]
