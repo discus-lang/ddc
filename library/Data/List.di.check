@@ -135,7 +135,7 @@ foreign import instance_Foldable_List_foldl
         :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
         .  (t1 -(!e0 $c0)> t0 -(!e1 $c1)> t1) -> t1 -($c3)> List %r0 t0 -(!e2 $c2)> t1
         :- !e2        = !{Base.!Read %r0; !e0; !e1; Base.!ReadT (List %r0 t0)}
-        ,  $c2        = ${state : t1; f : $c0}
+        ,  $c2        = ${f : $c0; state : t1}
         ,  $c3        = f : $c0
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
         
@@ -143,7 +143,7 @@ foreign import instance_Foldable_List_foldr
         :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
         .  (t0 -(!e0 $c0)> t1 -(!e1 $c1)> t1) -> t1 -($c3)> List %r0 t0 -(!e2 $c2)> t1
         :- !e2        = !{Base.!Read %r0; !e0; Base.!ReadT (List %r0 t0); !e1}
-        ,  $c2        = ${state : t1; f : $c0}
+        ,  $c2        = ${f : $c0; state : t1}
         ,  $c3        = f : $c0
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Obj;
         
@@ -262,8 +262,8 @@ foreign import mapAccumL'
         .  (t0 -(!e1 $c0)> t1 -(!e0 $c1)> Data.Tuple.Tuple2 %r4 t0 t2) -> t0 -($c2)> List %r0 t1 -($c3)> List %r2 t2 -(!e2 $c4)> Data.Tuple.Tuple2 %r1 t0 (List %r3 t2)
         :- !e2        = !{Base.!Read %r2; Base.!Read %r3; Base.!Read %r0; !e1; !e0; Base.!Read %r4}
         ,  $c2        = f : $c0
-        ,  $c3        = ${acc : t0; f : $c0}
-        ,  $c4        = ${acc : t0; xSD24 : %r0; xSD24 : %r0 $> t1; f : $c0}
+        ,  $c3        = ${f : $c0; acc : t0}
+        ,  $c4        = ${xSD24 : %r0; xSD24 : %r0 $> t1; f : $c0; acc : t0}
         :$ Base.Thunk -> Base.Obj -> Base.Data -> Base.Data -> Base.Data;
         
 foreign import sum
@@ -332,7 +332,7 @@ foreign import takeWhile
         :: forall t0 %r0 %r1 %r2 !e0 $c0
         .  (t0 -(!e0 $c0)> Data.Bool.Bool %r1) -($c2)> List %r0 t0 -(!e1 $c1)> List %r2 t0
         :- !e1        = !{Base.!Read %r0; !e0; Base.!Read %r1; Base.!Read %rDK4}
-        ,  $c1        = ${xSD42 : $c0; Data.Bool.otherwise : %rDK4}
+        ,  $c1        = ${xSD42 : $c0; Data.Bool.otherwise : %rDK4; takeWhile : %rDK4}
         ,  $c2        = Data.Bool.otherwise : %rDK4
         ,  Base.Direct %rDK4
         ,  Base.Const %rDK4

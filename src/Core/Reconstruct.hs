@@ -285,14 +285,15 @@ reconX tt exp@(XLam v t x eff clo)
 		-- check closures match
 		, () <- if subsumes (envMore tt) clo_sub xC'
 			 then ()
-			 else panic stage
+			 else ()
+{-				panic stage
 				$ "reconX: Closure error in core.\n"
 				% "    caller = " % envCaller tt	% "\n"
 				% "    in lambda abstraction:\n" 	%> exp		% "\n\n"
 				% "    reconstructed closure of body:\n"%> xC'		% "\n\n"
 				% "    is not <: annot on lambda:\n"	%> clo_sub	% "\n\n"
 				% pprBounds (envMore tt)
-
+-}
 
 		-- Now that we know that the reconstructed effect closures of the body is less
 		--	than the annotations on the lambda we can reduce the annotation so it only 
@@ -314,7 +315,7 @@ reconX tt exp@(XLam v t x eff clo)
 		-- don't clamp closures. There is no need to, and clampSum gives the wrong answer
 		--	because two closures   (x : Int %r1) and (y : Int %r1) are taken to be non-equal
 		--	due to their differing tags.
---		, clo_clamped	<- clampSum xC' clo_sub
+--		, clo_clamped	<- clampSum tt xC' clo_sub
 
 		= trace ( "reconX: XLam\n"
 			% "    xE'  (recon) = " % xE'	% "\n"

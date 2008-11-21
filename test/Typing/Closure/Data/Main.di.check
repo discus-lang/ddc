@@ -67,7 +67,7 @@ foreign import runThing
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS0; Base.!Read %r1; Base.!Write %r1; System.Console.!Console}
-        ,  $c0        = ${thing : %rTS0; thing : %r1; x : %r1}
+        ,  $c0        = ${x : %r1; thing : %rTS0; thing : %r1}
         ,  Base.Direct %r1
         ,  Base.Mutable %r1
         ,  Base.Direct %rTS0

@@ -1,12 +1,12 @@
 ./test/Error/Unify/Multi/Main.ds:11:19
     Type mismatch during unification.
-          cannot match: *116 -(!131 $171)> *117
-                  with: Base.Int32 %138
+          cannot match: *118 -(!134 $174)> *119
+                  with: Base.Int32 %141
 
           function application
                       at: ./test/Error/Unify/Multi/Main.ds:11:19
 
         conflicts with, 
               the use of: (+)
-                 at type: Base.Int32 %138
+                 at type: Base.Int32 %141
                       at: ./test/Error/Unify/Multi/Main.ds:9:12

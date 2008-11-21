@@ -144,6 +144,7 @@ flatString_copy str@(FlatString)
 	str'
 
 
+
 -- | Work out how much space is left inside this FlatString
 freeChars :: FlatString -> Int32
 freeChars fs

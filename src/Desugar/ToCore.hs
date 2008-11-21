@@ -418,7 +418,7 @@ toCoreX xx
 	D.XProjTagged 
 		(Just 	( T.TVar T.KValue vT
 			, T.TVar T.KEffect vE))
-		vTag x2 j
+		vTagInst vTagClo x2 j
 	 -> do
 		x2'		<- toCoreX x2
 		j'		<- toCoreJ j
@@ -426,14 +426,14 @@ toCoreX xx
 		-- lookup the var for the projection function to use
 		projResolve	<- gets coreProjResolve
 		
-		let Just vProj	= Map.lookup vTag projResolve
+		let Just vProj	= Map.lookup vTagInst projResolve
 		
 {-		trace 	( "XProjTagged\n"
 			% "    vTag  = " % vTag		% "\n"
 			% "    vProj = " % vProj	% "\n")
 			$ return ()
 -}
-		x1'	<- toCoreVarInst vProj vTag
+		x1'	<- toCoreVarInst vProj vTagInst
 			
 		return	$ C.XApp x1' x2' T.pure
 

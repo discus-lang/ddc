@@ -89,8 +89,20 @@ data Exp a
 
 	-- Produced by the constraint slurper
 	| XLambdaTEC 	a Var (Exp a) Type Effect Closure
-	| XProjTagged	a Var (Exp a) (Proj a)
+
+	| XProjTagged	a 
+		Var 		-- the instance variable for the projection function
+				-- 	will be bound to its real type once we work it out
+
+		Closure 	-- closure term of the projection function
+				--	will be bound to the real closure once we work it out
+		(Exp a) 
+
+		(Proj a)
+
 	| XProjTaggedT  a Var (Proj a)
+
+
 	| XVarInst	a Var				-- An instance of a let bound variable
 							--	We'll need to add TREC applications to this variable
 							--	during Desugar->Core translation.

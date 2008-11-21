@@ -48,7 +48,7 @@ foreign import gotBox
         ,  !e1        = !{Base.!Read %rTS21; Base.!Write %rTS21}
         ,  !e2        = !{Base.!Read %rTS21; Base.!Read %rTS22; Base.!Read %rTC2; System.Console.!Console}
         ,  $c0        = thing : %rTC2
-        ,  $c1        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC2; newFun : %rTC2}
+        ,  $c1        = ${newFun : %rTC2; box2 : %rTS21; box2 : %rTS22; box2 : %rTC2}
         ,  $c2        = ${box2 : %rTS21; box2 : %rTS22; box2 : %rTC2}
         ,  Base.Direct %rTC2
         ,  Base.Const %rTC2
@@ -90,7 +90,7 @@ foreign import newFun
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %r1; Base.!Write %r1}
-        ,  $c0        = ${box : %r1; box : %rTS6; box : %rTC2; newFun : %rTC2}
+        ,  $c0        = ${newFun : %rTC2; box : %r1; box : %rTS6; box : %rTC2}
         ,  Base.Direct %r1
         ,  Base.Mutable %r1
         ,  Base.Direct %rTS6
@@ -108,8 +108,8 @@ foreign import makeBox2
         ,  $c0        = newFun : %rTC2
         ,  $c1        = newFun : %rTC2
         ,  $c2        = thing : %rTC2
-        ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC2; hackBox : %r0; hackBox : %r1; hackBox : %rTC2; runBox : %r0; runBox : %r1; runBox : %rTC2}
-        ,  $c4        = ${box2 : %r0; box2 : %r1; box2 : %rTC2; newFun : %rTC2}
+        ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC2; hackBox : %rTC2; hackBox : %r0; hackBox : %r1; runBox : %r0; runBox : %r1; runBox : %rTC2}
+        ,  $c4        = ${newFun : %rTC2; box2 : %r0; box2 : %r1; box2 : %rTC2}
         ,  $c5        = ${box2 : %r0; box2 : %r1; box2 : %rTC2}
         ,  Base.Const %rTC2
         ,  Base.Direct %rTC2

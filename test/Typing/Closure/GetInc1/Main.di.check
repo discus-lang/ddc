@@ -62,7 +62,7 @@ foreign import fun1
 foreign import main
         :: Base.Unit -(!e0 $c0)> Base.Unit
         :- !e0        = !{Base.!Read %rTS4; Base.!Write %rTS4; System.Console.!Console}
-        ,  $c0        = ${fun1_inc : %rTS4; fun1_get1 : %rTS4}
+        ,  $c0        = ${fun1_get1 : %rTS4; fun1_inc : %rTS4}
         ,  Base.Direct %rTS4
         ,  Base.Mutable %rTS4
         :$ Base.Data -> Base.Data;

@@ -38,7 +38,7 @@ foreign import fun1
         .  Base.Int32 %r1 -($c0)> Base.Int32 %r2 -(!e0 $c1)> Base.Int32 %r0
         :- !e0        = !{Base.!Read %r1; Base.!Read %r2; Base.!Read %r0; Base.!Read %rTC0}
         ,  $c0        = fun2 : %rTC0
-        ,  $c1        = ${x : %r1; fun2 : %rTC0}
+        ,  $c1        = ${fun2 : %rTC0; x : %r1}
         ,  Base.Const %rTC0
         ,  Base.Direct %rTC0
         :$ Base.Data -> Base.Data -> Base.Data;
@@ -57,9 +57,9 @@ foreign import fun3
         :: forall %r0 %r1 %r2 %r3
         .  Base.Int32 %r1 -($c0)> Base.Int32 %r2 -($c1)> Base.Int32 %r3 -(!e0 $c2)> Base.Int32 %r0
         :- !e0        = !{Base.!Read %r1; Base.!Read %r0; Base.!Read %r2; Base.!Read %r3; Base.!Read %rTC0}
-        ,  $c0        = ${fun1 : %rTC0; thing1 : %rTC0}
-        ,  $c1        = ${fun1 : %rTC0; x : %r1; thing1 : %rTC0}
-        ,  $c2        = ${fun1 : %rTC0; x : %r1; y : %r2; thing1 : %rTC0}
+        ,  $c0        = ${thing1 : %rTC0; fun1 : %rTC0}
+        ,  $c1        = ${thing1 : %rTC0; fun1 : %rTC0; x : %r1}
+        ,  $c2        = ${thing1 : %rTC0; fun1 : %rTC0; x : %r1; y : %r2}
         ,  Base.Const %rTC0
         ,  Base.Direct %rTC0
         :$ Base.Data -> Base.Data -> Base.Data -> Base.Data;

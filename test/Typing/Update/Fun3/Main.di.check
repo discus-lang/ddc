@@ -65,7 +65,7 @@ foreign import testBox2
         ,  !e2        = !{Base.!Read %r0; Base.!Read %r1; Base.!Read %rTC3; System.Console.!Console}
         ,  $c0        = newFun : %rTC3
         ,  $c1        = thing : %rTC3
-        ,  $c2        = ${box2 : %r0; box2 : %r1; box2 : %rTC3; newFun : %rTC3}
+        ,  $c2        = ${newFun : %rTC3; box2 : %r0; box2 : %r1; box2 : %rTC3}
         ,  $c3        = ${box2 : %r0; box2 : %r1; box2 : %rTC3}
         ,  Base.Direct %rTC3
         ,  Base.Const %rTC3

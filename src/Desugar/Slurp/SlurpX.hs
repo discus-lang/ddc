@@ -18,6 +18,10 @@ import Shared.Base
 
 import Util	(liftM, unzip6, unzip5, takeLast, catMap)
 
+import qualified Data.Set	as Set
+import qualified Data.Set	(Set)
+
+
 -----
 stage	= "Desugar.Slurp.SlurpX"
 
@@ -52,14 +56,28 @@ slurpX	exp@(XLambda sp vBound xBody)
 	(tBody, eBody, cBody, xBody', qsBody)	
 			<- slurpX xBody
 
-	-- Get the value vars free in this expression
+	-- Get the closure terms for value vars free in this expression
+	let freeVs	= Set.filter (\v ->  (Var.nameSpace v == NameValue)
+					 &&  (not $ Var.isCtorName v))
+			$ freeVars exp 
+
+	tsCloFree	<- mapM (\v -> do
+					vT	<- lbindVtoT v
+					return	$ TFree v vT)
+			$ Set.toList freeVs
+
+	-- Get closure terms from unresolved projection functions
+	let tsProjTags	= collectClosureProjTags xBody'
+
+	let tsClo	= tsCloFree ++ tsProjTags
+
 --	tV@(TVar k vT)	<- lbindVtoT    var
 
-	let clo	= makeTMask KClosure cBody (TTag vBound)
+--	let clo	= makeTMask KClosure cBody (TTag vBound)
 	let qs	= 
 		[ CEq (TSV $ SVLambda sp) tX	$ TFun tBound tBody eBody cX
-		, CEq (TSC $ SCLambda sp) cX	$ clo ]
---		, CEq (TSC $ SCLambda sp) cX2	$ clo ]
+--		, CEq (TSC $ SCLambda sp) cX	$ clo ]
+		, CEq (TSC $ SCLambda sp) cX	$ makeTSum KClosure tsClo ]
 
  	-- makeTMask KClosure cBody (TTag vBound)]
 	
@@ -89,7 +107,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 	
 	return	( tX
 		, pure
-		, cX
+		, empty
 		, XLambdaTEC (Just (tX, pure)) vBound xBody' tBound eBody cX
 		, [qs'])
 
@@ -342,9 +360,10 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 --
 slurpX 	exp@(XProj sp xBody proj)
  = do
-	let projT	= case proj of
-				JField  nn l	-> TJField  l
-				JFieldR nn l	-> TJFieldR l
+	let (projT, label)	
+		= case proj of
+			JField  nn l	-> (TJField  l, l)
+			JFieldR nn l	-> (TJFieldR l, l)
 
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
@@ -383,7 +402,7 @@ slurpX 	exp@(XProj sp xBody proj)
 	return	( tX
 		, eX
 		, cX
-		, XProjTagged (Just (tX, eX)) vInst xBody' proj'
+		, XProjTagged (Just (tX, eX)) vInst (TFree label cProj) xBody' proj'
 		, qsBody ++ qs )
 
 

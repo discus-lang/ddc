@@ -1,13 +1,13 @@
 ./test/Error/Closure/GetSet/Main.ds:28:8
     Type mismatch during unification.
-          cannot match: Base.Int32 %313
-                  with: Data.String.String %355
+          cannot match: Base.Int32 %311
+                  with: Data.String.String %353
 
               the use of: setB
-                 at type: Base.Int32 %313
+                 at type: Base.Int32 %311
                       at: ./test/Error/Closure/GetSet/Main.ds:28:8
 
         conflicts with, 
           literal value "a"
-                 of type: Data.String.String %355
+                 of type: Data.String.String %353
                       at: ./test/Error/Closure/GetSet/Main.ds:28:14

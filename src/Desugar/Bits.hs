@@ -32,7 +32,7 @@ getAnnotX xx
 	XDo		n ss		-> n
 	XIfThenElse	n e1 e2 e3	-> n
 	XLambdaTEC	n v x t eff clo	-> n
-	XProjTagged	n v x j		-> n
+	XProjTagged	n vI vC x j	-> n
 	XVarInst	n v		-> n
 	
 	

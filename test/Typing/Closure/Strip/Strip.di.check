@@ -45,9 +45,8 @@ foreign import add1X
         
 foreign import idF
         :: forall t0 t1 !e0 $c0
-        .  (t0 -(!e0 $c0)> t1) -($c1)> t0 -(!e0 $c0)> t1
+        .  (t0 -(!e0 $c0)> t1) -> t0 -(!e0 $c0)> t1
         :- !e0        :> Control.Exception.!Throw
-        ,  $c1        = $c0 \ f
         :$ Base.Thunk -> Base.Thunk;
         
 

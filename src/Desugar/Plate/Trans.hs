@@ -314,12 +314,13 @@ followX table xx
 	 	x1'	<- transZM table x1
 		return	$ XLambdaTEC nn' v' x1' t eff clo
 
-	XProjTagged nn v x j
+	XProjTagged nn vI tC x j
 	 -> do	nn'	<- transN table nn
-	 	v'	<- transV table v
+	 	vI'	<- transV table vI
+		tC'	<- transT table tC
 		x'	<- transZM table x
 		j'	<- transZM table j
-		return	$ XProjTagged nn' v' x' j'
+		return	$ XProjTagged nn' vI' tC' x' j'
 
 	XProjTaggedT nn v j
 	 -> do	nn'	<- transN table nn
