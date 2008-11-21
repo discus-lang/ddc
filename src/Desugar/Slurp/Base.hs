@@ -13,6 +13,7 @@ module Desugar.Slurp.Base
 	, module Desugar.Util
 	, module Desugar.Exp
 	, module Desugar.Plate.Trans
+	, module Desugar.Plate.FreeVars
 	
 	, module Desugar.Slurp.State
 	, module Desugar.Slurp.Util)
@@ -35,6 +36,7 @@ import Constraint.Bits
 import Desugar.Util
 import Desugar.Exp
 import Desugar.Plate.Trans
+import Desugar.Plate.FreeVars
 
 import Desugar.Slurp.State
 import Desugar.Slurp.Util

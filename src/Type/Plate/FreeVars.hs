@@ -6,19 +6,11 @@ module Type.Plate.FreeVars
 where
 
 import Shared.Error
+import Shared.FreeVars
 import Type.Exp
 
 import qualified Data.Set	as Set
 import Data.Set			(Set, (\\), empty, union, unions, fromList, singleton)
-
--- A class of things that can have their free variables collected.
-class FreeVars a where
- freeVars :: a -> Set Var
-
--- simple instances.
-instance FreeVars a => FreeVars [a] where
- freeVars xx	= unions $ map freeVars xx
-
 
 
 -- Var ---------------------------------------------------------------------------------------------
@@ -113,9 +105,17 @@ instance FreeVars Type where
 
 -- TyCon -------------------------------------------------------------------------------------------
 instance FreeVars TyCon where
+ freeVars tt
+  = case tt of
+  	TyConFun{}			-> Set.empty
+	TyConData  { tyConName }	-> Set.singleton tyConName
+	TyConClass { }			-> Set.empty
+
+{-
+instance FreeVars TyCon where
  freeVars tycon
  	= singleton $ tyConName tycon
-    
+-}  
 -- Kind --------------------------------------------------------------------------------------------
 instance FreeVars Kind where
  freeVars kk	= empty

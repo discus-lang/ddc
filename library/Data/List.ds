@@ -116,7 +116,7 @@ iterateL f a
 -- | A spine-lazy map
 mapL 	:: (a -> b) -> [a] -> [b]
 mapL f []	= []
-mapL f (x:xs)	= f x : (mapL@ f xs)
+mapL f (x:xs)	= f x : ((mapL f) @ xs)
 
 
 -- | A map with the arguments switched around

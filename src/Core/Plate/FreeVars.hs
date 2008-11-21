@@ -15,6 +15,7 @@ import Util			hiding ((\\))
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, NameSpace(..))
 import Shared.Error
+import Shared.FreeVars
 
 import Core.Exp
 import Type.Util.Bits		(varOfBind)
@@ -23,12 +24,7 @@ import Type.Pretty
 -----
 stage	= "Core.Plate.FreeVars"
 
-class FreeVars a where
- freeVars :: a -> Set Var
  
-instance FreeVars a => FreeVars [a] where
- freeVars xx	= Set.unions $ map freeVars xx
-  
 -- Exp ---------------------------------------------------------------------------------------------
 instance FreeVars Exp where
  freeVars xx
@@ -205,132 +201,5 @@ instance FreeVars Pat where
   	WLit c		-> empty
 	WCon v lts	-> Set.unions $ map (freeVars . t3_3) lts
 
-
--- Type --------------------------------------------------------------------------------------------
-instance FreeVars Type where
- freeVars tt
-  = case tt of
-	TNil		-> empty
-
- 	TForall v k t	
-	 -> unions
-	 	[ freeVars k
-		, freeVars t]
-		 \\ (Set.singleton $ varOfBind v)
-
-	TContext k t
-	 -> unions
-	 	[ freeVars k
-		, freeVars t ]
-
-	TFetters t1 fs
-	 -> unions 
-	 	[ freeVars t1
-		, freeVars fs ]
-		\\ Set.fromList [v | FWhere (TVar _ v) _ <- fs]
-		
-	TSum k ts
-	 -> unions $ map freeVars ts
-
-	TMask k t1 t2
-	 -> unions
-	 	[ freeVars t1
-		, freeVars t2 ]
-
-	TVar k v	-> Set.singleton v
-	
-	TVarMore k v t
-	 -> unions
-	 	[ Set.singleton v
-		, freeVars t]
-	
-	TCon con
-	 -> freeVars con
-	
-	TBot k		-> Set.empty
-	TTop k		-> Set.empty
-
-	TApp t1 t2
-	 -> unions
-		[ freeVars t1
-		, freeVars t2 ]
-
-	-- effect
-	TEffect v ts
-	 -> unions
-	 	[ fromList [v]
-		, unions $ map freeVars ts ]
-
-	-- closure
-	TFree v t	-> freeVars t
-	TTag v		-> Set.empty
-	
-{-	TPurify eff cls
-	 -> unions
-	 	[ freeVars eff
-		, freeVars cls ]
--}
---	TPurifyJoin ts
---	 -> unions
---	 	$ map freeVars ts
-	
-	TWitJoin ts
-	 -> unions $ map freeVars ts
-
-	_ 	-> panic stage
-		$ "freeVarsT: no match for " % show tt
-
--- TyCon -------------------------------------------------------------------------------------------
-instance FreeVars TyCon where
- freeVars tt
-  = case tt of
-  	TyConFun{}			-> Set.empty
-	TyConData  { tyConName }	-> Set.singleton tyConName
-	TyConClass { }			-> Set.empty
---	TyConPurify{}			-> Set.empty
---	TyConPureJoin{}			-> Set.empty
-	
-
--- Fetter ------------------------------------------------------------------------------------------
-instance FreeVars Fetter where
- freeVars ff
-  = case ff of
-  	FWhere (TVar k v) t	-> freeVars t \\ singleton v
-	FMore  v t		-> freeVars t
-	_	-> panic stage
-		$ "freeVars[Fetter]: no match for " % ff
-
-
--- Kind --------------------------------------------------------------------------------------------
-instance FreeVars Kind where
- freeVars kk
-  = case kk of
- 	KNil		-> Set.empty
-
-	KForall k1 k2
-	 -> unions
-	 	[ freeVars k1
-		, freeVars k2 ]
-
-	KFun k1 k2
-	 -> unions
-	 	[ freeVars k1 
-		, freeVars k2 ]
-
-
-	KValue		-> Set.empty
-	KRegion		-> Set.empty
-	KEffect		-> Set.empty
-	KClosure	-> Set.empty
-
-	KClass tc ts
-	 -> unions
-	 	[ unions $ map freeVars ts ]
-		
-	KWitJoin ks
-	 -> freeVars ks
-
-	_ 	-> panic stage
-		$ "freeVars[Kind]: no match for " % kk
 		
 		

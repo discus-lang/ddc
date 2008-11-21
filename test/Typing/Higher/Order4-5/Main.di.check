@@ -25,19 +25,50 @@ foreign import succ
         :- !e0        = Base.!Read %r0
         :$ Base.Data -> Base.Data;
         
+foreign import printSucc
+        :: forall %r0
+        .  Base.Int32 %r0 -(!e0)> Base.Int32 %r0
+        :- !e0        = !{Base.!Read %r0; System.Console.!Console}
+        :$ Base.Data -> Base.Data;
+        
+foreign import sameType
+        :: forall t0
+        .  t0 -> t0 -($c0)> t0
+        :- $c0        = x : t0
+        :$ Base.Obj -> Base.Obj -> Base.Obj;
+        
 foreign import danio
         :: forall t0 %r0 !e0 $c0
         .  (Base.Int32 %r0 -(!e0 $c0)> t0) -(!e0)> t0
         :$ Base.Thunk -> Base.Obj;
         
-foreign import perch
+foreign import danioSucc
+        :: forall %r0 %r1 %r2 !e0 $c0
+        .  (Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r1) -(!e1)> Base.Int32 %r2
+        :- !e1        = !{!e0; Base.!Read %r1}
+        :$ Base.Thunk -> Base.Data;
+        
+foreign import danioChoose
+        :: forall %r0 %r1 !e0 $c0
+        .  (Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r1) -(!e0)> Base.Int32 %r1
+        :- !e0        :> Base.!Read %r0
+        :$ Base.Thunk -> Base.Data;
+        
+foreign import danioChooseSucc
+        :: forall %r0 %r1 %r2 !e0 $c0
+        .  (Base.Int32 %r0 -(!e0 $c0)> Base.Int32 %r1) -(!e1)> Base.Int32 %r2
+        :- !e1        = !{!e0; Base.!Read %r1}
+        ,  !e0        :> Base.!Read %r0
+        :$ Base.Thunk -> Base.Data;
+        
+foreign import tetra
         :: forall %r0 %r1 %r2 %r3 !e0 !e1 $c0 $c1
         .  ((Base.Int32 %r2 -(!e1 $c0)> Base.Int32 %r3) -(!e0 $c1)> Base.Int32 %r0) -(!e2)> Base.Int32 %r1
         :- !e2        = !{!e0; Base.!Read %r0}
         ,  !e1        :> Base.!Read %r2
         :$ Base.Thunk -> Base.Data;
         
-foreign import perchP
+foreign import tetraP
         :: forall %r0 %r1 %r2 %r3 !e0 !e1 $c0 $c1
         .  ((Base.Int32 %r2 -(!e1 $c0)> Base.Int32 %r3) -(!e0 $c1)> Base.Int32 %r0) -(!e2)> Base.Int32 %r1
         :- !e2        = !{!e0; Base.!Read %r0; Base.!Read %r1; System.Console.!Console}
@@ -49,14 +80,21 @@ foreign import appDanio
         .  (((Base.Int32 %r0 -(!e1 $c0)> t1) -(!e1 $c1)> t1) -(!e0 $c2)> t0) -(!e0)> t0
         :$ Base.Thunk -> Base.Obj;
         
-foreign import tetra
+foreign import discus
+        :: forall %r0 %r1 %r2 %r3 %r4 !e0 !e1 !e2 $c0 $c1 $c2
+        .  (((Base.Int32 %r3 -(!e1 $c0)> Base.Int32 %r4) -(!e0 $c1)> Base.Int32 %r1) -(!e2 $c2)> Base.Int32 %r2) -> Base.Int32 %r0
+        :- !e2        :> !{!e0; Base.!Read %r1}
+        ,  !e1        :> Base.!Read %r3
+        :$ Base.Thunk -> Base.Data;
+        
+foreign import perch
         :: forall t0 %r0 %r1 %r2 %r3 !e0 !e1 !e2 $c0 $c1 $c2 $c3
-        .  Base.Bool %r0 -> (((Base.Int32 %r3 -(!e0 $c0)> Base.Int32 %r1) -(!e0 $c1)> Base.Int32 %r1) -(!e1 $c2)> Base.Int32 %r2) -($c4)> ((((Base.Int32 %r3 -(!e0 $c0)> Base.Int32 %r1) -(!e0 $c1)> Base.Int32 %r1) -(!e1 $c2)> Base.Int32 %r2) -(!e2 $c3)> t0) -(!e3 $c5)> t0
+        .  Base.Bool %r0 -> (((Base.Int32 %r3 -(!e0 $c2)> Base.Int32 %r1) -(!e0 $c0)> Base.Int32 %r1) -(!e1 $c1)> Base.Int32 %r2) -($c4)> ((((Base.Int32 %r3 -(!e0 $c2)> Base.Int32 %r1) -(!e0 $c0)> Base.Int32 %r1) -(!e1 $c1)> Base.Int32 %r2) -(!e2 $c3)> t0) -(!e3 $c5)> t0
         :- !e3        = !{Base.!Read %r0; !e1; !e2}
         ,  !e1        :> !{!e0; Base.!Read %r1}
         ,  !e0        :> Base.!Read %r3
         ,  $c4        = b : %r0
-        ,  $c5        = ${b : %r0; p : $c2}
+        ,  $c5        = ${b : %r0; p : $c1}
         :$ Base.Data -> Base.Thunk -> Base.Thunk -> Base.Obj;
         
 foreign import main

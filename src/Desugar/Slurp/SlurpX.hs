@@ -42,6 +42,7 @@ slurpX	exp@(XLambda sp vBound xBody)
  = do
 	tX		<- newTVarDS "" -- "lam"
 	cX		<- newTVarCS "" -- "lam"
+	cX2		<- newTVarCS "" -- "lam"
 
 	-- Create type vars for all the lambda bound vars.
 	Just tBound@(TVar _ vBoundT)	
@@ -51,9 +52,16 @@ slurpX	exp@(XLambda sp vBound xBody)
 	(tBody, eBody, cBody, xBody', qsBody)	
 			<- slurpX xBody
 
+	-- Get the value vars free in this expression
+--	tV@(TVar k vT)	<- lbindVtoT    var
+
+	let clo	= makeTMask KClosure cBody (TTag vBound)
 	let qs	= 
 		[ CEq (TSV $ SVLambda sp) tX	$ TFun tBound tBody eBody cX
-		, CEq (TSC $ SCLambda sp) cX	$ makeTMask KClosure cBody (TTag vBound)]
+		, CEq (TSC $ SCLambda sp) cX	$ clo ]
+--		, CEq (TSC $ SCLambda sp) cX2	$ clo ]
+
+ 	-- makeTMask KClosure cBody (TTag vBound)]
 	
 
 	-- If the sub expression is also a lambda

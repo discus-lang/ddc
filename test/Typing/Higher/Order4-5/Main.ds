@@ -4,28 +4,62 @@
 --	constraint are also constrained. We need the SubReplay rule for type checking the core.
 --
 
+-- succ is a first order function
 succ :: Int -> Int;
 succ x = x + 1;
 
+printSucc :: Int -> Int
+printSucc x
+ = do	putStr $ show x
+	x
+
+sameType :: a -> a -> a
+sameType x y 
+ = if True then x else y
+
+
+-- danio is a second order function
 danio g	= g 5;
 
--- perch is a third order function
-perch f = succ (f succ);
+danioSucc g = succ (g 5);
 
--- perchP is a third order function with an additional effect
-perchP f 
- = do {	n	= perch f;
+danioChoose g
+ = do	if True
+		then g
+		else (\x -> succ x)
+
+	g 5
+
+danioChooseSucc g
+ = do	if True
+		then g
+		else (\x -> succ x)
+	
+	succ (g 5)
+	
+
+-- tetra is a third order function
+tetra f = succ (f succ);
+
+-- tetraP is a third order function with an additional effect
+tetraP f 
+ = do {	n	= tetra f;
 	print 	$ show n;
 	n;
  };
 
 appDanio f = f danio;
 
+discus f 
+ = do	p' 	= if True then tetra else f
+	5
+	
+
 -- tetra is a fifth order function
-tetra b p h 
+perch b p h 
  = do { 
- 	-- force the argument 'p' to be third order by comparing it with perch.
- 	p'	= if b then perch else p;
+ 	-- force the argument 'p' to be third order by comparing it with tetra
+ 	p'	= if b then tetra else p;
 	p' danio;
 
 	-- 'h' is fourth order because we apply it to p'.
@@ -34,5 +68,5 @@ tetra b p h
 
 
 main ()
- = 	print $ show (tetra True perchP appDanio);
+ = 	print $ show (perch True tetraP appDanio);
 
