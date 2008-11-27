@@ -51,6 +51,10 @@ instance Show Int where
  show  ss	= string_Int32 ss
  showL ss	= string_Int32 @ ss
 
+instance Show Int32# where
+ show  ss	= string_Int32 (boxInt32 ss)
+ showL  ss	= string_Int32 (boxInt32 ss)
+
 instance Show Float where
  show  ss	= string_Float32 ss
  showL ss	= string_Float32 @ ss

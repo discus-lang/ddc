@@ -57,7 +57,7 @@ debug	= True
 trace s	= when debug $ traceM s
 
 -- debug the grinder
-debugG	= True
+debugG	= False
 traceG s = when debugG $ traceM s
 
 stage	= "Type.Solve"
@@ -277,7 +277,7 @@ solveCs	(c:cs)
 	CLeave vs
 	 -> do	trace	$ "\n### CLeave " % vs % "\n"
 	 	path	<- gets statePath
---		trace	$ "    path = " % path 	% "\n"
+		trace	$ "    path = " % path 	% "\n"
 
 		-- We're leaving the branch, so pop ourselves off the path.
 	 	pathLeave vs
@@ -404,7 +404,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	path			<- gets statePath
 	trace	$ "\n"
 		% "### CInst " % vUse % " <- " % vInst					% "\n"
---		% "    path          = " % path 					% "\n"
+		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	sGenDone		<- gets stateGenDone
@@ -484,23 +484,11 @@ solveCInst_let
 	c@(CInst src vUse vInst)
 	bindInst path
  = do
-	-- Load the info from the state that will help us work out
-	--	what type to use for this binding.
-	gContains	<- gets stateContains
-	gInstantiates	<- gets stateInstantiates
-
-	-- The instantiates map contains instantiatons of lambda bindings, but
-	--	restruct it to just instantiations of let bindings because that's all we
-	--	care about here.	
---	let gInstLet	= Map.map (Set.filter (\b -> b =@= BLet{})) gInstantiates
-
-	-- The branch dependency graph is the union of the contains and instantiates graph
--- 	let gDeps	=  Map.unionWith (Set.union) gContains gInstLet
 	genSusp		<- gets stateGenSusp
+	trace	$ "    genSusp       = " % genSusp			% "\n\n"
 
 	-- Work out the bindings in this ones group
 	mBindGroup	<- bindGroup vInst
-	trace	$ "    genSusp       = " % genSusp			% "\n\n"
 
 	solveCInst_find cs c bindInst path mBindGroup genSusp
 	
@@ -538,7 +526,7 @@ solveCInst_find
 	| otherwise
 	= do	
 		trace	$ ppr "=== Reorder.\n"
---			% "    queue =\n" %> (", " %!% map prettyCTreeS (c:cs)) % "\n\n"
+			% "    queue =\n" %> (", " %!% map ppr (c:cs)) % "\n\n"
 	
 		let floatBranch prev cc
 			= case cc of
@@ -555,7 +543,7 @@ solveCInst_find
 		-- Reorder the constraints so the required branch is at the front
 		let csReordered	= floatBranch [] (c:cs)
 	
---		trace	$ "    queue' =\n" %> (", " %!% map prettyCTreeS csReordered) % "\n\n"
+		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
 	
 		-- Carry on solving
 		return	csReordered
@@ -760,10 +748,9 @@ bindGroup' vBind
 	-- The dependency graph is the union of both of these.
 	let gDeps	=  Map.unionWith (Set.union) gContains gInst
 
-{-	trace	$ "    gContains:\n" 		%> prettyBranchGraph gContains		% "\n\n"
-		% "    gInst:\n"		%> prettyBranchGraph gInst		% "\n\n"		
-		% "    gDeps:\n"		%> prettyBranchGraph gDeps		% "\n\n"
--}
+	trace	$ "    gContains:\n" 		%> ppr gContains	% "\n\n"
+		% "    gInst:\n"		%> ppr gInst		% "\n\n"		
+		% "    gDeps:\n"		%> ppr gDeps		% "\n\n"
 	-- Work out all the stronly connected components (mutually recursive groups) 
 	--	reachable from the binding which needs its type generalised.
 	let sccs_all	= graphSCC gDeps bBind

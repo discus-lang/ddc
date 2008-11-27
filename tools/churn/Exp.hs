@@ -71,6 +71,13 @@ genExpT_base env tt
 
 	-- literal
 	| TData (KFun KRegion KValue) v [TWild KRegion]	<- tt
+	, v == (primTInt (BoxedBits 32)) 
+	= do	burn 1
+		r	<- genInt 0 100
+		return	$ XLit none (LiteralFmt  (LInt $ fromIntegral r) (BoxedBits 32))
+		
+
+	| TData KValue v []	<- tt
 	, v == (primTInt (UnboxedBits 32)) 
 	= do	burn 1
 		r	<- genInt 0 100
@@ -84,6 +91,9 @@ genExpT_base env tt
 		xBody	<- genExpT [(t1, v)] t2 
 		return	$  XLambdaPats none [WVar none v] xBody
 
+	-- 
+	| otherwise
+	= error $ "genExpT_base: no match for " ++ show tt
 
 -- Exp Var -----------------------------------------------------------------------------------------
 -- | Make an expression by referencing something 
@@ -194,7 +204,7 @@ genPatT tt
 			return	$ WVar none var]
 	
 	| TData (KFun KRegion KValue) v _	<- tt
-	, v == primTInt (UnboxedBits 32)
+	, v == primTInt (BoxedBits 32)
 	= chooseM
 		[ do	var	<- genVar NameValue
 			return	$ WVar none var]
@@ -236,7 +246,7 @@ genType genFun
 
 		| r <= 1
 		= do	burn 1
-			return $ TData (KFun KRegion KValue) (primTInt (UnboxedBits 32)) [TWild KRegion]
+			return $ TData (KFun KRegion KValue) (primTInt (BoxedBits 32)) [TWild KRegion]
 
 		| r <= 2
 		= do	burn 1

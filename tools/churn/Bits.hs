@@ -54,7 +54,7 @@ makeCall 	= unflattenApps none
 none	= error "no source position"
 
 varV s		= (Var.new s) { Var.nameSpace = NameValue }
-tInt		= TData KValue (primTInt (UnboxedBits 32)) [TWild KRegion]
+tInt		= TData KValue (primTInt (UnboxedBits 32)) []
 tFun t1 t2	= TFun t1 t2 ePure cEmpty
 ePure		= TBot KEffect
 cEmpty		= TBot KClosure
