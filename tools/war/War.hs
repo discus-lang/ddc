@@ -1,4 +1,4 @@
-
+{-# LANGUAGE ImplicitParams #-}
 -- This is the DDC super-mega test driver
 
 import Order
@@ -19,6 +19,7 @@ import System.Directory
 
 import Data.Char
 import Util
+import Par
 
 
 -- main --------------------------------------------------------------------------------------------
@@ -41,10 +42,15 @@ main
 	let testDirs	= concat $ [dirs | ArgTestDirs dirs <- args]
 
 	if isNil testDirs
-		then testDefault args 
-		else testSome args testDirs
+	    then do (libs,tests) <- testDefault args 
+                    runTests libs  2 False
+                    runTests tests 2 False
+	    else do tests <- testSome args testDirs
+                    runTests tests 2 False
 		
 -- do the default tests
+testDefault :: (?trace::PrettyM PMode -> IO ())
+            => [Arg] -> IO ([IO Result], [IO Result])
 testDefault args 
  = do	out	$ "\n"
 	out	$ "* Running default tests.\n"
@@ -53,12 +59,15 @@ testDefault args
 	let argsForce	= [ ArgFlagsDDC ["-l m -opt-tail-call -quiet"] ]
 	let args'	= args ++ argsForce
 
-	buildLibrary args' 
+	libs <- buildLibrary args' 
 
 	let ?args	= args'
-	enterDir "test/"
+	tests <- enterDir "test/"
+        return (libs, tests)
 
 -- do some tests
+testSome :: (?trace::PrettyM PMode -> IO ())
+         => [Arg] -> [FilePath] -> IO [IO Result]
 testSome args testDirs
  = do	out	$ "\n"
  	out	$ "* Running tests.\n"
@@ -67,11 +76,13 @@ testSome args testDirs
 	let ?args	= args ++ argsForce
 	
 	-- enter the test dirs
-	mapM_ enterDir testDirs
-	return ()
+	tests <- mapM enterDir testDirs
+	return $ concat tests
 
 
 -- Build the base library
+buildLibrary :: (?trace::PrettyM PMode -> IO ())
+             => [Arg] -> IO [IO Result]
 buildLibrary args
  = do	out	$ "* Building library.\n"
 
@@ -79,8 +90,7 @@ buildLibrary args
 	let ?args	= args ++ [ArgFlagsDDC ["-no-implicit-prelude -quiet"]]
 
 	-- build the sources
-	mapM_ testSource (libraryOrder args)
-	return ()	
+	return $ map (\arg -> testSource arg >> return (Right [])) (libraryOrder args)
 
 
 -- enterDir ----------------------------------------------------------------------------------------
@@ -89,18 +99,20 @@ buildLibrary args
 enterDir 
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyM PMode -> IO ())
-	=> FilePath -> IO ()
-
+	=> FilePath -> IO [IO Result]
 enterDir path_
 
 	-- if the path name contains -skip then skip over the whole dir
 	| isInfixOf "-skip" path_ || isInfixOf "skip-" path_
 	= do	out	$ "    " % padL 60 path_ % "(skipped)\n"
-		return ()
+		return []
 
 	| otherwise
  	= enterDir2 path_
 	
+enterDir2 :: (?args::[Arg])
+          -> (?trace::PrettyM PMode -> IO ())
+          => FilePath -> IO [IO Result]
 enterDir2 path_
  = do
 	let path
@@ -137,10 +149,10 @@ enterDir2 path_
 		let dirs	= map (\s -> path ++ s ++ "/") $ ll ++ otherDirs
 	
 --		out	$ "* Entering " % path	% "\n"
-		mapM_ enterDir dirs
+		tests <- mapM enterDir dirs
 --		out	$ "\n"		
 
-		return	()
+		return	$ concat tests
 
 	 -- Otherwise look to see what's in this dir.
 	 else do
@@ -181,13 +193,15 @@ enterDir2 path_
 --		when (null sources)
 --		 $ out	$ "* Entering " % path	% "\n"
 
-		mapM_ enterDir dirs
-		mapM_ testSource sources
+		subtests <- mapM enterDir dirs
+		let test = do
+                        mapM_ testSource sources
+                        return $ Right []
 
 --		when (null sources)
 --		 $ out	$ "\n"
 		
-	 	return	()
+	 	return	$ test : concat subtests
 
 
 	

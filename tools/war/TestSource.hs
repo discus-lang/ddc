@@ -1,3 +1,4 @@
+{-# LANGUAGE ImplicitParams, ScopedTypeVariables #-}
 
 module TestSource 
 	(testSource)
