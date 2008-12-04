@@ -25,6 +25,7 @@ data Option a
 	= ODefault	([String] -> a)
 	| OGroup	String String
 	| OFlag		a		[String] String
+	| OOpt		( String  -> a)	[String] String String
 	| OOpts		([String] -> a)	[String] String String
 	| OBlank
 
@@ -39,6 +40,11 @@ matchOption	name		options
 	 	then Just o
 		else matchOption name os
 		
+	(o@(OOpt a names use desc) : os)
+	 -> if elem name names
+	 	then Just o
+		else matchOption name os
+
 	(o@(OOpts a names use desc) : os)
 	 -> if elem name names
 	 	then Just o
@@ -119,6 +125,10 @@ munchOption options option ts
 	| OFlag a names desc	<- option
 	= Right a : munchR options ts
 	
+	| OOpt sf names use desc	<- option
+	, TString str : rest		<- ts
+	= Right (sf str) : munchR options rest
+
 	| OOpts sf names use desc	<- option
 	= let	(strToks, rest)	= span (=@= TString{}) ts
 		strs		= map (\(TString s) -> s) strToks
@@ -177,6 +187,10 @@ makeHelp indent o
 	OFlag  opt names desc
 	 -> pprStr ()
 	 $  padL indent ("    " % punc ", " names) % desc % "\n"
+
+	OOpt  optF names use desc
+	 -> pprStr ()
+	 $  padL indent ("    " % use) % desc % "\n"
 
 	OOpts  optF names use desc
 	 -> pprStr ()

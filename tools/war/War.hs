@@ -42,13 +42,14 @@ main
 --	let ?trace	= \s -> do { putStr $ pprStrPlain s; return (); }
 
 	let testDirs	= concat $ [dirs | ArgTestDirs dirs <- args]
+            nThreads	= head   $ [n    | ArgThreads  n    <- args] ++ [1]
 
 	if isNil testDirs
 	    then do (libs,tests) <- testDefault args 
                     runTests libs  1 False  -- some libs really do depend on previous ones
-                    runTests tests 2 False
+                    runTests tests nThreads False
 	    else do tests <- testSome args testDirs
-                    runTests tests 2 False
+                    runTests tests nThreads False
 		
 -- do the default tests
 testDefault :: (?trace::PrettyM PMode -> IO ())

@@ -23,6 +23,7 @@ data Arg
 	| ArgTestDirs  [String]		-- only run on these test dirs
 	| ArgTestWith  [String]		-- a set of DDC flags to test with
 	| ArgOmitX11			-- leave out support and tests requiring X11
+        | ArgThreads   Int
 	| ArgHelp
 	deriving (Show, Eq)
 
@@ -47,8 +48,13 @@ options
 			
 	, OFlag		ArgOmitX11
 			[ "-omit-x11" ]
-			"Omit support and tests requiring X11" ]
-			
+			"Omit support and tests requiring X11"
+
+        , OOpt		(ArgThreads . read)
+			[ "-j" ]
+			"-j <n threads>"
+			"Run n tests in parallel." ]
+
 parseArgs :: [String] -> ([String], [Arg])
 parseArgs args	= Options.munch options $ Options.tokenise $ catInt " " args
 
