@@ -46,13 +46,6 @@ runTests tests nThreads' keepGoing = do
       . permitN (nThreads-1) =<< getChanContents resultsChan
 
 
-    -- Print out the status of threads every now and again.
-    forkOS $ let f = do statuses <- mapM isEmptyMVar onDone
-                        putStrLn $ show (length $ filter id statuses) ++
-                                   " running threads"
-                        when (or statuses) (threadDelay 1000 >> f)
-             in f
-
     -- Print out the results of any failed tests again.
     mapM_ takeMVar onDone
     anyFailed <- fmap not $ isEmptyMVar failedMV
@@ -73,14 +66,14 @@ testRunner finished noFailures postResult tests =
     where
         runTest x = x >>= either (post False) (post True)
         post _ [] = return ()
-        post bool ((fn,_):_) = postResult fn bool
+        post bool xs = postResult (unlines $ map snd xs) bool
 
 -- Serialise the results of the tests run to stdout.
 resultsPrinter :: (FilePath -> IO ()) -> [(FilePath, Bool)] -> IO ()
 resultsPrinter reportFailure = mapM_ go
     where
-        go (x, True)  = putStrLn ("  " ++ x)
-        go (x, False) = putStrLn ("F " ++ x) >> reportFailure x
+        go (x, True)  = putStr ("" ++ x)
+        go (x, False) = putStr ("F " ++ x) >> reportFailure x
 
 
 --

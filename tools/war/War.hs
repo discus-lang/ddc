@@ -18,6 +18,8 @@ import System.Posix
 import System.Directory
 
 import Data.Char
+import Data.Either
+import Data.IORef
 import Util
 import Par
 
@@ -43,7 +45,7 @@ main
 
 	if isNil testDirs
 	    then do (libs,tests) <- testDefault args 
-                    runTests libs  2 False
+                    runTests libs  1 False  -- some libs really do depend on previous ones
                     runTests tests 2 False
 	    else do tests <- testSome args testDirs
                     runTests tests 2 False
@@ -80,6 +82,20 @@ testSome args testDirs
 	return $ concat tests
 
 
+collectOut
+	:: (?args :: [Arg])
+	-> (?trace :: PrettyM PMode -> IO ())
+	=> ((?out :: PrettyM PMode -> IO ()) => FilePath -> IO ())
+	-> FilePath
+	-> IO Result
+collectOut func path
+ = do	ref <- (newIORef [] :: IO (IORef String))
+	let ?out = \s -> modifyIORef ref (\s' -> s' ++ pprStrPlain s)
+	func path
+	output <- readIORef ref
+	return $ Right [(path, output)]
+
+
 -- Build the base library
 buildLibrary :: (?trace::PrettyM PMode -> IO ())
              => [Arg] -> IO [IO Result]
@@ -90,7 +106,7 @@ buildLibrary args
 	let ?args	= args ++ [ArgFlagsDDC ["-no-implicit-prelude -quiet"]]
 
 	-- build the sources
-	return $ map (\arg -> testSource arg >> return (Right [])) (libraryOrder args)
+	return $ map (collectOut testSource) (libraryOrder args)
 
 
 -- enterDir ----------------------------------------------------------------------------------------
@@ -195,8 +211,10 @@ enterDir2 path_
 
 		subtests <- mapM enterDir dirs
 		let test = do
-                        mapM_ testSource sources
-                        return $ Right []
+			results <- mapM (collectOut testSource) sources
+			let (ls,rs) = partitionEithers results
+			return $ if null ls then Right (concat rs)
+				   else Left []  -- TODO return errors
 
 --		when (null sources)
 --		 $ out	$ "\n"

@@ -29,6 +29,7 @@ import Util
 testSource 
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyM PMode -> IO ())
+	-> (?out :: PrettyM PMode -> IO ())
 	=> FilePath -> IO ()
 	
 testSource path
@@ -54,8 +55,6 @@ testSource path
 		then testSourceFail path pathB isMain 
 		else testSourceOK path pathB isMain)
 
-	out	$ "\n"
-
 
 -- testSourceOK ------------------------------------------------------------------------------------
 
@@ -63,6 +62,7 @@ testSource path
 testSourceOK 
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyM PMode -> IO ())
+	-> (?out :: PrettyM PMode -> IO ())
 	=> FilePath 
 	-> FilePath
 	-> Bool
@@ -75,7 +75,7 @@ testSourceOK path pathB isMain
 	case setups of
 	 -- no setups, just use default options
 	 [] -> do
-		out	$ "    " % (padL 60 path) 	
+		?out	$ "    " % (padL 60 path)
 		testSourceOK_single pathB isMain []
 		return ()
 	 
@@ -86,11 +86,10 @@ testSourceOK path pathB isMain
 -- | Test the file with just the default compile options
 testSourceOK_single pathB isMain moreDDCArgs
  = do 	-- compile the program
- 	out	$ "comp("
-
  	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
 
-	out	$ (padR 6 compileTime)
+	?out	$ "comp("
+		% (padR 6 compileTime)
 		% "s)"
 
 	-- check any .di file
@@ -100,12 +99,11 @@ testSourceOK_single pathB isMain moreDDCArgs
 	mExecTime
 	 <- if isMain 
 	     then do
-		out	$ "  exec(" 
-
 	 	-- run the produced binary
 		execTime	<- executeProg pathB
 		
-		out	$ (padR 6 execTime)
+		?out	$ "  exec("
+			% (padR 6 execTime)
 			% "s)"
 
 		-- check any stdout file
@@ -123,19 +121,17 @@ testSourceOK_single pathB isMain moreDDCArgs
 testSourceOK_comparison path pathB isMain setups@(setupBase: setupOther)
  = do 	
   	-- do the tests
- 	out	$ "  - Comparison: " % (padL 50 path) 
-
- 	out	$ "\n"
+ 	?out	$ "  - Comparison: " % (padL 50 path) % "\n"
 	
 	let argsForced	= concat $ [as | ArgFlagsDDC as <- ?args]
 
 	-- do the baseline test
-	out	$ "        baseline options: " % pprOpts (argsForced ++ setupBase) % "\n"
-	out	$ "            running test: "
+	?out	$ "        baseline options: " % pprOpts (argsForced ++ setupBase) % "\n"
+	?out	$ ppr "            running test: "
 	
 	(baseCompileTime, mBaseExecTime)
 		<- testSourceOK_single pathB isMain setupBase
-	out	$ "\n"
+	?out	$ ppr "\n"
 
 	-- do the comparison tests with the baseline
 	mapM_ (testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime) 
@@ -151,15 +147,14 @@ pprOpts ss	= ppr $ catInt " " $ ss
 testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs 
  = do	let argsForced	= concat $ [as | ArgFlagsDDC as <- ?args]
 
- 	out	$ "         comparison with: " % pprOpts (argsForced ++ moreDDCArgs) % "\n"
- 	out	$ "            running test: " 
+ 	?out	$ "         comparison with: " % pprOpts (argsForced ++ moreDDCArgs) % "\n"
+ 	?out	$ ppr "            running test: "
  
   	-- compile the program
- 	out	$ "comp("
-
  	compileTime	<- compileSourceOk pathB isMain moreDDCArgs
 
-	out	$ (padR 6 compileTime)
+	?out	$ "comp("
+		% (padR 6 compileTime)
 		% "s)"
 
 	-- check any .di file
@@ -169,12 +164,11 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 	mExecTime 
 	 <- if isMain 
 	     then do
-		out	$ "  exec(" 
-
 	 	-- run the produced binary
 		execTime	<- executeProg pathB
 		
-		out	$ (padR 6 execTime)
+		?out	$ "  exec("
+			% (padR 6 execTime)
 			% "s)"
 
 		-- check any stdout file
@@ -185,14 +179,14 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 	     else do
 	     	return $ Nothing
 
-	out	$ "\n" % replicate 70 ' '
+	?out	$ "\n" % replicate 70 ' '
 	
 
 	-- work out percent change in compile time
 	let rCompile :: Double	= fromIntegral (psecsOfClockTime compileTime) 
 				/ fromIntegral (psecsOfClockTime baseCompileTime)
 
-	out	$ " " % (padR 6 $ take 4 $ pprStrPlain $ rCompile)
+	?out	$ " " % (padR 6 $ take 4 $ pprStrPlain $ rCompile)
 
 	-- work out percentage change in exec time
 	when isMain 
@@ -202,10 +196,9 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 		let rExec :: Double	= fromIntegral (psecsOfClockTime execTime) 
 					/ fromIntegral (psecsOfClockTime baseExecTime)
 	
-		out	$ " " % (padR 6 $ take 4 $ pprStrPlain $ rExec)
+		?out	$ " " % (padR 6 $ take 4 $ pprStrPlain $ rExec)
 
 	
-	out "\n"
 	return ()
 
 
@@ -215,6 +208,7 @@ testSourceOK_compare path pathB isMain baseCompileTime mBaseExecTime moreDDCArgs
 testSourceFail
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyM PMode -> IO ())
+	-> (?out :: PrettyM PMode -> IO ())
 	=> FilePath
 	-> FilePath 
 	-> Bool
@@ -222,12 +216,12 @@ testSourceFail
 
 testSourceFail path pathB isMain
  = do 	-- do the tests
- 	out	$ "    " % (padL 50 path) 
+ 	?out	$ "    " % (padL 50 path)
 
  	compileTime	<- compileSourceFail pathB isMain
 
 	-- print the compile time
-	out	$ "comp("
+	?out	$ "comp("
 		% (padR 6 compileTime)
 		% "s)"
 	
@@ -238,7 +232,7 @@ testSourceFail path pathB isMain
 		(pathB ++ "error.diff")
 
 	-- if the diff went through this will have succeeded		
-	out	$ "  error(OK)"
+	?out	$ ppr "  error(OK)"
 	return ()
 
 
@@ -248,6 +242,7 @@ testSourceFail path pathB isMain
 compileSourceOk 
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyM PMode -> IO ())
+	-> (?out :: PrettyM PMode -> IO ())
 	=> FilePath 		-- base path
 	-> Bool 		-- whether this is a main file
 	-> [String]		-- more args to pass to ddc
@@ -280,6 +275,7 @@ compileSourceOk pathB isMain moreDDCArgs
 compileSourceFail
 	:: (?args :: [Arg])
 	-> (?trace :: PrettyM PMode -> IO ())
+	-> (?out :: PrettyM PMode -> IO ())
 	=> FilePath 		-- base path
 	-> Bool 		-- whether this is a main file
 	-> IO ClockTime		-- compile time
@@ -344,7 +340,7 @@ checkProgDI pathB
 	 		(pathB ++ "di.check")
 			(pathB ++ "di.diff")
 			
-		out	$ "  di(OK)"
+		?out	$ ppr "  di(OK)"
 
 
 -- | Check stdout (if a check file exists)
@@ -356,7 +352,7 @@ checkProgStdout pathB
 			(pathB ++ "stdout.check")
 			(pathB ++ "stdout.diff")
 			
-		out	$ "  stdout(OK)"
+		?out	$ ppr "  stdout(OK)"
 
 
 
