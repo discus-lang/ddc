@@ -85,16 +85,18 @@ testSome args testDirs
 
 collectOut
 	:: (?args :: [Arg])
-	-> (?trace :: PrettyM PMode -> IO ())
-	=> ((?out :: PrettyM PMode -> IO ()) => FilePath -> IO ())
+	=> ((?trace :: PrettyM PMode -> IO ()) ->
+            (?out   :: PrettyM PMode -> IO ()) => FilePath -> IO ())
 	-> FilePath
 	-> IO Result
 collectOut func path
- = do	ref <- (newIORef [] :: IO (IORef String))
-	let ?out = \s -> modifyIORef ref (\s' -> s' ++ pprStrPlain s)
+ = do	[traceR,outputR] <- replicateM 2 (newIORef [])
+	let ?trace = \s -> modifyIORef traceR  (++ pprStrPlain s)
+	let ?out   = \s -> modifyIORef outputR (++ pprStrPlain s)
 	func path
-	output <- readIORef ref
-	return $ Right [(path, output)]
+	trace  <- readIORef traceR
+	output <- readIORef outputR
+	return $ Result True [(path, output++"\n", trace++"\n")]
 
 
 -- Build the base library
@@ -210,17 +212,14 @@ enterDir2 path_
 --		when (null sources)
 --		 $ out	$ "* Entering " % path	% "\n"
 
+		let tests = map (collectOut testSource) sources
+
 		subtests <- mapM enterDir dirs
-		let test = do
-			results <- mapM (collectOut testSource) sources
-			let (ls,rs) = partitionEithers results
-			return $ if null ls then Right (concat rs)
-				   else Left []  -- TODO return errors
 
 --		when (null sources)
 --		 $ out	$ "\n"
 		
-	 	return	$ test : concat subtests
+	 	return	$ tests ++ concat subtests
 
 
 	

@@ -1,10 +1,16 @@
-module Par (runTests, Result) where
+module Par (runTests, Result(..), succeeded) where
 
 import Control.Concurrent
 import Control.Monad (ap, when, replicateM)
 
+import Util
+import Shared.Pretty
 
-type Result = Either [(FilePath, String)] [(FilePath, String)]
+
+data Result = Result Bool [(FilePath, String, String)]
+
+succeeded :: Result -> Bool
+succeeded (Result x _) = x
 
 --
 -- Concurrent test runners
@@ -12,7 +18,8 @@ type Result = Either [(FilePath, String)] [(FilePath, String)]
 
 -- | Runs a list of actions with a pool of n threads.
 runTests
-    :: [IO Result]
+    :: (?trace::PrettyM PMode -> IO ())
+    => [IO Result]
     -> Int     -- ^ Number of threads.
     -> Bool    -- ^ Keep going even if a test fails?
     -> IO ()
@@ -38,6 +45,13 @@ runTests tests nThreads' keepGoing = do
                    . permitN 0 =<< (getChanContents testsChan)
         return mv
 
+    -- Print out the status of threads every now and again.
+    forkOS $ let f = do statuses <- mapM isEmptyMVar onDone
+                        putStrLn $ show (length $ filter id statuses) ++
+                                   " running threads"
+                        when (or statuses) (threadDelay 10000000 >> f)
+             in f
+
     -- Run the results printer.
     resultsPrinter
         (\r -> tryPutMVar failedMV [r] >>= \x ->
@@ -57,23 +71,27 @@ runTests tests nThreads' keepGoing = do
 
 -- Executes each test from a list and posts the results for each as
 -- long as some condition holds.
-testRunner :: IO ()                        -- To be called when done.
-           -> IO Bool                      -- Check whether to keep going.
-           -> (FilePath -> Bool -> IO ())  -- Post the result of a test.
-           -> [IO Result] -> IO ()
+testRunner
+        :: IO ()                        -- To be called when done.
+        -> IO Bool                      -- Check whether to keep going.
+        -> ((FilePath,String,String) -> Bool -> IO ())  -- Post the result of a test.
+        -> [IO Result] -> IO ()
 testRunner finished noFailures postResult tests =
     guardedMapM noFailures runTest tests >> finished
     where
-        runTest x = x >>= either (post False) (post True)
-        post _ [] = return ()
-        post bool xs = postResult (unlines $ map snd xs) bool
+        runTest x = x >>= (\(Result success rs) -> post success rs)
+        post success xs = mapM_ (flip postResult success) xs
+
 
 -- Serialise the results of the tests run to stdout.
-resultsPrinter :: (FilePath -> IO ()) -> [(FilePath, Bool)] -> IO ()
+resultsPrinter :: (?trace::PrettyM PMode -> IO ())
+               => (FilePath -> IO ())
+               -> [((FilePath,String,String), Bool)]
+               -> IO ()
 resultsPrinter reportFailure = mapM_ go
     where
-        go (x, True)  = putStr ("" ++ x)
-        go (x, False) = putStr ("F " ++ x) >> reportFailure x
+        go ((_,x,t), True)  = putStr ("" ++ x) >> ?trace (ppr t)
+        go ((_,x,t), False) = putStr ("F " ++ x) >> ?trace (ppr t) >> reportFailure x
 
 
 --
