@@ -36,6 +36,10 @@ options
  			[ "-h", "-help", "--help"]
 			"Display this help"
 
+        , OFlag		ArgDebug
+                        [ "-d", "--debug" ]
+                        "Print debugging trace messages"
+
 	, OOpts		(\ss -> ArgFlagsDDC $ map ('-' :) ss)
 			[ "-ddc"]
 			"-ddc <options>"

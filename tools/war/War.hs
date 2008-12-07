@@ -38,8 +38,10 @@ main
 	 	exitFailure
 	
 	-- dodgy trace function
-	let ?trace	= \s -> return ()
---	let ?trace	= \s -> do { putStr $ pprStrPlain s; return (); }
+	let ?trace	=
+		if ArgDebug `elem` args
+		  then \s -> putStr (pprStrPlain s) >> return ()
+		  else \s -> return ()
 
 	let testDirs	= concat $ [dirs | ArgTestDirs dirs <- args]
             nThreads	= head   $ [n    | ArgThreads  n    <- args] ++ [1]
