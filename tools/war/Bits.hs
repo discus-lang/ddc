@@ -24,6 +24,7 @@ data Arg
 	| ArgTestWith  [String]		-- a set of DDC flags to test with
 	| ArgOmitX11			-- leave out support and tests requiring X11
         | ArgThreads   Int
+        | ArgKeepGoing
 	| ArgHelp
 	deriving (Show, Eq)
 
@@ -57,7 +58,11 @@ options
         , OOpt		(ArgThreads . read)
 			[ "-j" ]
 			"-j <n threads>"
-			"Run n tests in parallel." ]
+			"Run n tests in parallel."
+
+	, OFlag		ArgKeepGoing
+			[ "-k", "--keep-going" ]
+			"Keep going when an error occurs." ]
 
 parseArgs :: [String] -> ([String], [Arg])
 parseArgs args	= Options.munch options $ Options.tokenise $ catInt " " args

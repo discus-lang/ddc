@@ -46,6 +46,7 @@ main
 
 	let testDirs	= concat $ [dirs | ArgTestDirs dirs <- args]
             nThreads	= head   $ [n    | ArgThreads  n    <- args] ++ [1]
+            keepGoing	= ArgKeepGoing `elem` args
 
 	if isNil testDirs then do
 
@@ -53,14 +54,14 @@ main
 
 		-- some libs really do depend on previous ones so
 		-- compile them in one thread.
-		success <- runTests libs 1 False
+		success <- runTests libs 1 keepGoing
 
 		when success $
-			runTests tests nThreads False >> return ()
+			runTests tests nThreads keepGoing >> return ()
 
 	    else do
 		tests <- testSome args testDirs
-		runTests tests nThreads False >> return ()
+		runTests tests nThreads keepGoing >> return ()
 
 -- do the default tests
 testDefault :: (?trace::PrettyM PMode -> IO ())
