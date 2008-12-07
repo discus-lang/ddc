@@ -22,7 +22,7 @@ runTests
     => [IO Result]
     -> Int     -- ^ Number of threads.
     -> Bool    -- ^ Keep going even if a test fails?
-    -> IO ()
+    -> IO Bool -- ^ All tests succeeded?
 runTests tests nThreads' keepGoing = do
 
     let nThreads = 1 `max` nThreads'
@@ -67,6 +67,7 @@ runTests tests nThreads' keepGoing = do
         failed <- takeMVar failedMV
         putStrLn $ "\n" ++ show (length failed) ++ " test(s) failed:"
         mapM_ putStrLn failed
+    return (not anyFailed)
 
 
 -- Executes each test from a list and posts the results for each as
@@ -90,8 +91,9 @@ resultsPrinter :: (?trace::PrettyM PMode -> IO ())
                -> IO ()
 resultsPrinter reportFailure = mapM_ go
     where
-        go ((_,x,t), True)  = putStr ("" ++ x) >> ?trace (ppr t)
-        go ((_,x,t), False) = putStr ("F " ++ x) >> ?trace (ppr t) >> reportFailure x
+        go ((_,x,t), True)  = putStr (" " ++ x) >> ?trace (ppr t)
+        go ((_,x,t), False) = putStr ("F" ++ x) >> ?trace (ppr t)
+                           >> reportFailure x
 
 
 --

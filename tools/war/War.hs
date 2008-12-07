@@ -17,6 +17,7 @@ import System.IO
 import System.Posix
 import System.Directory
 
+import Control.OldException (try)
 import Data.Char
 import Data.Either
 import Data.IORef
@@ -46,13 +47,21 @@ main
 	let testDirs	= concat $ [dirs | ArgTestDirs dirs <- args]
             nThreads	= head   $ [n    | ArgThreads  n    <- args] ++ [1]
 
-	if isNil testDirs
-	    then do (libs,tests) <- testDefault args 
-                    runTests libs  1 False  -- some libs really do depend on previous ones
-                    runTests tests nThreads False
-	    else do tests <- testSome args testDirs
-                    runTests tests nThreads False
-		
+	if isNil testDirs then do
+
+		(libs,tests) <- testDefault args
+
+		-- some libs really do depend on previous ones so
+		-- compile them in one thread.
+		success <- runTests libs 1 False
+
+		when success $
+			runTests tests nThreads False >> return ()
+
+	    else do
+		tests <- testSome args testDirs
+		runTests tests nThreads False >> return ()
+
 -- do the default tests
 testDefault :: (?trace::PrettyM PMode -> IO ())
             => [Arg] -> IO ([IO Result], [IO Result])
@@ -95,10 +104,11 @@ collectOut func path
  = do	[traceR,outputR] <- replicateM 2 (newIORef [])
 	let ?trace = \s -> modifyIORef traceR  (++ pprStrPlain s)
 	let ?out   = \s -> modifyIORef outputR (++ pprStrPlain s)
-	func path
+	result <- Control.OldException.try (func path)
 	trace  <- readIORef traceR
 	output <- readIORef outputR
-	return $ Result True [(path, output++"\n", trace++"\n")]
+	return $ Result (either (const False) (const True) result)
+		 	[(path, output++"\n", trace++"\n")]
 
 
 -- Build the base library
