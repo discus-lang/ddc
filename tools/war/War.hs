@@ -17,7 +17,7 @@ import System.IO
 import System.Posix
 import System.Directory
 
-import Control.OldException (try)
+import Control.Exception (try)
 import Data.Char
 import Data.Either
 import Data.IORef
@@ -105,7 +105,7 @@ collectOut func path
  = do	[traceR,outputR] <- replicateM 2 (newIORef [])
 	let ?trace = \s -> modifyIORef traceR  (++ pprStrPlain s)
 	let ?out   = \s -> modifyIORef outputR (++ pprStrPlain s)
-	result <- Control.OldException.try (func path)
+	result <- Control.Exception.try (func path)
 	trace  <- readIORef traceR
 	output <- readIORef outputR
 	return $ Result (either (const False) (const True) result)
