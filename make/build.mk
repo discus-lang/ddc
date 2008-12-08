@@ -95,6 +95,12 @@ GCC_FLAGS           += -fPIC -D BITS=64 -m64
 BUILD_SHARED        := gcc -shared
 SHARED_SUFFIX       := so
 
+# -- FreeBSD on x86
+else ifeq "$(Target)" "freebsd-x86"
+GCC_FLAGS           += -fPIC -D BITS=32
+BUILD_SHARED        := gcc -shared
+SHARED_SUFFIX       := so 
+
 # -- Darwin on x86
 else ifeq "$(Target)" "darwin-x86"
 GCC_FLAGS           += -fPIC -D BITS=32

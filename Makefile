@@ -99,7 +99,7 @@ runtime : runtime/libddc-runtime.$(SHARED_SUFFIX) runtime/libddc-runtime.a
 .PHONY	: external
 external :
 	@echo "* Building external libraries"
-	@cd external/TinyPTC-X11-0.7.3; make CFLAGS="$(GCC_FLAGS)"
+	@cd external/TinyPTC-X11-0.7.3; $(MAKE) CFLAGS="$(GCC_FLAGS)"
 
 # -- build haddoc docs
 nodoc	= \

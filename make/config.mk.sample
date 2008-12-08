@@ -6,6 +6,7 @@ GHC            = ghc
 # TARGET: Set the target architecture
 #    linux-x86
 #    linux-x86_64
+#    freebsd-x86
 #    darwin-x86
 #    darwin-x86_64
 
