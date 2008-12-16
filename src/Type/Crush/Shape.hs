@@ -83,6 +83,19 @@ crushShape cidShape
 		% "\n"
 
 	let result
+		-- If the constrained equivalence class is of effect or closure kind
+		--	then we can just delete the constraint
+		| TClass k _ : _	<- shapeTs
+		, k == KClosure || k == KEffect
+		= do	delClass cidShape
+			return True
+
+{-		| TWild k : _		<- shapeTs
+		, k == KClosure || k == KEffect
+		= do	delClass cidShape
+			return True
+-}
+	
 		-- none of the nodes contain data constructors, so there's no template to work from
 		| Nothing	<- mTemplate
 		= return False
