@@ -25,6 +25,12 @@ class Copy2 a where
 instance Copy2 IntFun where
   copy2	= copyIntFun2
 
+instance Copy2 Int where
+  copy2 x = x
+
+f2	= FFun ((+) 1)
+top_f2 = copy2 f2
+
 
 main ()
  = do	if1	= FInt 4
@@ -32,5 +38,11 @@ main ()
 
 	if2	= FFun ((+) 1)
 	if2'	= copy2 if2
+
+	i :: Int %r1 :- Const %r1
+	i	= 5
+
+	i'	= copy2 i
+	i' := 27
 
 	()
