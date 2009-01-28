@@ -9,7 +9,7 @@ GHC_LANGUAGE	:= \
 	-XImplicitParams \
 	-XUnboxedTuples \
 	-XParallelListComp \
-	-XPatternSignatures \
+	-XScopedTypeVariables \
 	-XMultiParamTypeClasses \
 	-XFlexibleInstances \
 	-XFlexibleContexts \
@@ -18,7 +18,7 @@ GHC_LANGUAGE	:= \
 	-XKindSignatures \
 	-XUndecidableInstances \
 	-XTypeSynonymInstances \
-	-XRecordPuns
+	-XNamedFieldPuns
 
 
 # -- Warnings ----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ GCC_FLAGS	:= -std=c99 -O3 -Wundef
 
 # -- Development Compile (fastest compile)
 else ifeq "$(BuildFlavour)" "devel"
-GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -Onot
+GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -O0
 GCC_FLAGS	:= -std=c99 -O3
 
 # -- Profiling compile

@@ -28,7 +28,7 @@ data Arg
 	| ArgHelp
 	deriving (Show, Eq)
 
-instance Pretty Arg a where
+instance Pretty Arg PMode where
  ppr	= ppr . show
 
 options

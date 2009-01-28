@@ -567,19 +567,8 @@ compileExit
 
 runStage :: String -> IO a -> IO a
 runStage name stage
- =	Exception.catch stage (handleStage name)
-		
- 
-handleStage :: String -> Exception -> IO a
-handleStage name ex
- = case ex of
- 	ErrorCall string	
-	 -> do	putStr $ "DDC: error in stage " ++ name ++ "\n"
-	 	putStr $ string ++ "\n"
-		
-		error "failed."
-		
-	_ ->	throwIO ex
+ =	stage
+
 	 	 
 -----
 {-

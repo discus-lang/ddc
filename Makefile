@@ -40,7 +40,7 @@ deps : make/Makefile.deps $(runtime_dep)
 
 make/Makefile.deps : $(src_hs) src/Config/Config.hs
 	@echo "* Building dependencies"
-	@$(GHC) -isrc -M $^ -optdep-f -optdepmake/Makefile.deps $(GHC_INCDIRS)
+	@$(GHC) -isrc -M $^ -dep-makefile -optdepmake/Makefile.deps $(GHC_INCDIRS)
 	@rm -f make/Makefile.deps.bak
 	@echo
 
