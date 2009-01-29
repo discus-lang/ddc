@@ -7,6 +7,7 @@ import Churn.Bits
 
 import Source.Exp
 import Shared.Pretty
+import qualified Shared.Var	as Var
 
 import Control.Monad.State
 import System.Random
@@ -33,12 +34,14 @@ type Seed	= Int
 data GenS
 	= GenS
 	{ stateStdGen	:: StdGen
-	, stateScheme	:: Scheme }
+	, stateScheme	:: Scheme 
+	, stateVarGen	:: Int }
 
 initGenS
  	= GenS
 	{ stateStdGen	= mkStdGen 0
-	, stateScheme	= SchemeOnly allNonErrorFragments }
+	, stateScheme	= SchemeOnly allNonErrorFragments 
+	, stateVarGen	= 0 }
 
 type GenM = State GenS
 
@@ -87,8 +90,18 @@ genSplitFuel :: Int -> Int -> GenM [Int]
 genSplitFuel fuel parts
  = do	fracs	<- replicateM parts (genRandomR (1, fuel))
 	return	$ drain fuel fracs
-	
 
+-- | Generate a fresh variable.
+--	Variable is guaranteed to have a different name to the ones 
+--	returned previously.
+freshVar :: GenM Var
+freshVar
+ = do	n	<- gets stateVarGen
+	let var	= (Var.new ("v" ++ show n))
+			{ Var.nameSpace	= Var.NameValue }
+	
+	modify	$ \s -> s { stateVarGen = n + 1 }
+	return	$ var
 
 
 
