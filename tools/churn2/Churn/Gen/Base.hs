@@ -3,6 +3,7 @@ module Churn.Gen.Base
 where
 
 import Churn.Classify
+import Churn.Bits
 
 import Source.Exp
 import Shared.Pretty
@@ -31,50 +32,38 @@ type Seed	= Int
 -- | Monad to help with generating things.
 data GenS
 	= GenS
-	{ stateFuel	:: Fuel
-	, stateStdGen	:: StdGen
+	{ stateStdGen	:: StdGen
 	, stateScheme	:: Scheme }
 
-initGenS fuel
+initGenS
  	= GenS
-	{ stateFuel	= fuel
-	, stateStdGen	= mkStdGen 0
+	{ stateStdGen	= mkStdGen 0
 	, stateScheme	= SchemeOnly allNonErrorFragments }
 
 type GenM = State GenS
 
 
 -- | Run a generator deterministically.
-runGenDet :: Seed -> Fuel -> GenM a -> a
-runGenDet seed fuel fun
+runGenDet :: Seed -> GenM a -> a
+runGenDet seed fun
  = let	stdgen	= mkStdGen seed
    in	evalState 
 		fun 
-		(initGenS fuel) { stateStdGen = stdgen }
+		initGenS { stateStdGen = stdgen }
 
 
 -- | Run a generator, seeding it from IO land.
-runGen :: Fuel -> GenM a -> IO a
-runGen fuel fun
+runGen :: GenM a -> IO a
+runGen fun
  = do	stdgen	<- newStdGen
 	return	$ evalState 
 			fun
-			(initGenS fuel) { stateStdGen = stdgen }
+			initGenS { stateStdGen = stdgen }
 
 -- | Run a generator, and pretty print the result
-runGen' fuel fun
- = do	x	<- runGen fuel fun
+runGen' fun
+ = do	x	<- runGen fun
 	putStr	$ pprStrPlain x ++ "\n"
-
--- | Get the available fuel.
-getFuel :: GenM Int
-getFuel	= gets stateFuel
-
-
--- | Burn some fuel.
-burn :: Int -> GenM ()
-burn i	= modify $ \s -> s { stateFuel = stateFuel s - i }
-
 
 -- | Generate something within a certain range.
 --	Only works for basic things that are instances of Random.
@@ -93,6 +82,12 @@ genChoose	xx
 	n	<- genRandomR (0, len-1)
 	return	$ xx !! n
 
+-- | Split this amount into several random parts.
+genSplitFuel :: Int -> Int -> GenM [Int]
+genSplitFuel fuel parts
+ = do	fracs	<- replicateM parts (genRandomR (1, fuel))
+	return	$ drain fuel fracs
+	
 
 
 
