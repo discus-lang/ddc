@@ -23,18 +23,21 @@ genExp env fuel tt
 				[ genExp_if env fuel tt
 				, genExp_do env fuel tt ]
 		gen
-		
-	| tt	== tInt 
-	= genExp_LitInt	
 	
-	| tt	== tBool
-	= genExp_LitBool
+	| otherwise
+	= do	mVar	<- genEnvVarOfType env tt
+		n	<- genRandomR (0, 1 :: Int)
+		case (mVar, n) of
+		 (Nothing, _)	-> genExp_lit fuel tt
+
+		 (Just v, 0)	-> genExp_lit fuel tt
+		 (Just v, 1)	-> return (XVar tt v)
 
 
 -- | Generate a let expression
 genExp_do :: Env -> Fuel -> Type -> GenM (Exp Type)
 genExp_do env fuel tt
- = do	bindSmallness	<- genRandomR (1, 5)
+ = do	bindSmallness	<- genRandomR (1, 10)
 	bindCount	<- genRandomR (1, fuel `div` bindSmallness)
 	(fexp:fbinds)	<- genSplitFuel fuel (bindCount + 1)
 	
@@ -67,7 +70,16 @@ genExp_if env fuel tt
 	x1	<- genExp env fx1 tt
 	x2	<- genExp env fx2 tt
 	return	$ XIfThenElse tt b x1 x2
-	
+
+-- | Generate a literal value of this type.	
+genExp_lit :: Fuel -> Type -> GenM (Exp Type)
+genExp_lit fuel tt
+ 	| tt	== tInt 
+	= genExp_LitInt	
+
+	| tt	== tBool
+	= genExp_LitBool
+
 
 -- | Generate a literal integer.
 genExp_LitInt :: GenM (Exp Type)
@@ -90,14 +102,15 @@ genStmt :: Env -> (Maybe Var, Fuel) -> GenM (Env, Stmt Type)
 genStmt env (mVar, fuel) 
  = do	let tt	= tInt
 
-	exp	<- genExp env fuel tt
+	exp		<- genExp env fuel tt
 
 	case mVar of
 	 Just var 
-	   -> return	$ (env, SBindFun tt var [] exp)
+	  -> do	let env' =  envInsert var tt env
+		return	(env', SBindFun tt var [] exp)
 
 	 Nothing
-	   -> return	$ (env, SStmt tt exp)
+	   -> do return	(env, SStmt tt exp)
 	
 
 -- | If this statement binds a variable then take it

@@ -5,6 +5,7 @@ where
 import Churn.Gen
 import Churn.Type
 import Churn.Bits
+import Churn.Env
 
 import Source.Pretty
 import Shared.Pretty

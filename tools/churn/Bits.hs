@@ -1,5 +1,5 @@
 
-module Bits
+module Churn.Bits
 	( argTypesT
 	, resultTypeT
 	, isFun
@@ -51,14 +51,17 @@ isFun tt
 makeCall 	= unflattenApps none
 
 -- we don't use source positions in the Source.Exp type
-none	= error "no source position"
+none		= error "no source position"
 
-varV s		= (Var.new s) { Var.nameSpace = NameValue }
+varV s		= (Var.new s) 
+			{ Var.nameSpace = NameValue 
+			, Var.bind	= Var.XBind s 0
+			}
+
+
 tInt		= TData KValue (primTInt (UnboxedBits 32)) []
 tFun t1 t2	= TFun t1 t2 ePure cEmpty
 ePure		= TBot KEffect
 cEmpty		= TBot KClosure
-
-initEnv		= [(tFun tInt (tFun tInt tInt), varV "+")]
 
 xVar s		= XVar none (varV s)

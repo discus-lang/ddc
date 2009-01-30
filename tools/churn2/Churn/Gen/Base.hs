@@ -98,7 +98,8 @@ freshVar :: GenM Var
 freshVar
  = do	n	<- gets stateVarGen
 	let var	= (Var.new ("v" ++ show n))
-			{ Var.nameSpace	= Var.NameValue }
+			{ Var.nameSpace	= Var.NameValue 
+			, Var.bind	= Var.XBind "v" n }
 	
 	modify	$ \s -> s { stateVarGen = n + 1 }
 	return	$ var
