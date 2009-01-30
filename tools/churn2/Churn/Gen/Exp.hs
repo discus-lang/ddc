@@ -13,15 +13,20 @@ import Source.Exp
 import Type.Exp
 import Util.List
 
+import qualified Data.Map	as Map
+import Data.Map			(Map)
+
 import Control.Monad
 
 -- | Generate an expression
 genExp :: Env -> Fuel -> Type -> GenM (Exp Type)
 genExp env fuel tt
+
 	| fuel >= 4
 	= do	gen	<- genChoose 
-				[ genExp_if env fuel tt
-				, genExp_do env fuel tt ]
+				[ genExp_if  env fuel tt
+				, genExp_do  env fuel tt 
+				, genExp_app env fuel tt]
 		gen
 	
 	| otherwise
@@ -37,7 +42,7 @@ genExp env fuel tt
 -- | Generate a let expression
 genExp_do :: Env -> Fuel -> Type -> GenM (Exp Type)
 genExp_do env fuel tt
- = do	bindSmallness	<- genRandomR (1, 10)
+ = do	bindSmallness	<- genRandomR (5, 10)
 	bindCount	<- genRandomR (1, fuel `div` bindSmallness)
 	(fexp:fbinds)	<- genSplitFuel fuel (bindCount + 1)
 	
@@ -70,6 +75,37 @@ genExp_if env fuel tt
 	x1	<- genExp env fx1 tt
 	x2	<- genExp env fx2 tt
 	return	$ XIfThenElse tt b x1 x2
+
+-- | Generate an application
+--	TODO: Doesn't generate functional return values.
+genExp_app :: Env -> Fuel -> Type -> GenM (Exp Type)
+genExp_app env fuel tt
+ = do	
+	-- collect up vars for all the functions that would produce the 
+	--	appropriate type. 
+	let vtsCandidates	
+		= [ (v, t)		
+			| (v, t) <- Map.toList $ envType env
+			, resultTypeT t == tt]
+
+	-- if there is no funtion that would give us a return value of the
+	--	appropriate type then do something else instead.
+	case vtsCandidates of 
+	 []	-> genExp	   env fuel tt
+	 _	-> genExp_app_call env fuel vtsCandidates
+
+genExp_app_call env fuel vtsCandidates
+ = do	
+	-- choose one of the candidate functions to apply.
+	(v, t)	<- genChoose vtsCandidates
+	
+	-- generate argument expressions for the application.
+	let tsArgs	= argTypesT t
+	fsArgs		<- genSplitFuel fuel (length tsArgs)
+	xsArgs		<- zipWithM (genExp env) fsArgs tsArgs
+	
+	return	$ makeCall (XVar t v : xsArgs)
+
 
 -- | Generate a literal value of this type.	
 genExp_lit :: Fuel -> Type -> GenM (Exp Type)

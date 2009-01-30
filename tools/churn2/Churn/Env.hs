@@ -21,7 +21,8 @@ initEnv
  = Env { envType	= Map.fromList initEnvList }
 
 initEnvList
- = [(varV "+",	tFun tInt (tFun tInt tInt))]
+ = 	[ (varV "+",	tFun tInt (tFun tInt tInt))
+	, (varV "not",	tFun tBool tBool) ]
 
 
 -- Insert a new binding into the environment.
