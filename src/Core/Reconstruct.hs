@@ -285,6 +285,11 @@ reconX tt exp@(XLam v t x eff clo)
 				% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
 				% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
 				% "    with bounds:\n"
+				% "    t:       " %> t	 % "\n"
+				% "    env:     " %> xC  % "\n"
+				% "    fv(Env): " %> fvC % "\n"
+				% "    fv(T):   " %> fvT % "\n"  
+				
 				% pprBounds (envMore tt)
 				
 		-- check closures match

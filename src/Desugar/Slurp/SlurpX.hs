@@ -25,11 +25,9 @@ import qualified Data.Set	(Set)
 -----
 stage	= "Desugar.Slurp.SlurpX"
 
------------------------
--- slurpX
---	Slurps out type an effect constraints from an expression.
---	Annotate the expression with new type and effect variables as we go.
---
+
+-- | Slurp out type an effect constraints from an expression.
+--   Annotate the expression with new type and effect variables as we go.
 slurpX	:: Exp Annot1
 	-> CSlurpM 
 		( Type		-- type of expression.
@@ -39,9 +37,7 @@ slurpX	:: Exp Annot1
 		, [CTree])	-- constraints.
 
 
------------------------
--- Lambda	
---	
+-- Lam ------------------------------------------------------------------------
 slurpX	exp@(XLambda sp vBound xBody)
  = do
 	tX		<- newTVarDS "" -- "lam"
@@ -105,9 +101,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 		, [qs'])
 
 
------------------------
--- App
---
+-- App ------------------------------------------------------------------------
 slurpX	exp@(XApp sp fun arg)
  = do
 	tX		<- newTVarDS "" --  "app"
@@ -128,7 +122,6 @@ slurpX	exp@(XApp sp fun arg)
 	let qs	= 
 		[ CEq (TSV $ SVApp sp) tFun	$ TFun tArg tX eApp empty 
 		, CEq (TSE $ SEApp sp) eX	$ makeTSum KEffect  [eFun, eArg, eApp] ]
---		, CEq (TSC $ SCApp sp) cX	$ makeTSum KClosure [cFun, cArg] ]
 	
 	return	( tX
 		, eX
@@ -137,9 +130,7 @@ slurpX	exp@(XApp sp fun arg)
 		, qsFun ++ qsArg ++ qs)
 
 
------------------------
--- Match
---
+-- Match ----------------------------------------------------------------------
 slurpX	exp@(XMatch sp (Just obj) alts)
  = do
 	-- unification vars
@@ -155,7 +146,6 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 			<- slurpX obj
 
 	let TVar KValue vObj = tObj
-	wantTypeV vObj
 
 	-- alternatives
 	(tsAltsLHS, tsAltsRHS, esAlts, csAlts, alts', qsAlts)	
@@ -166,7 +156,8 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
 		, CEq  (TSE $ SEMatchObj sp)	eMatch	$ TEffect primReadH [tObj]
 		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) ]
---		, CEq  (TSC $ SCMatch sp)	cX	$ makeTSum KClosure ([cObj] ++ csAlts) ]
+
+	wantTypeV vObj
 
 	return	( tRHS
 		, eX
@@ -191,8 +182,6 @@ slurpX	exp@(XMatch sp Nothing alts)
 		[ CEqs (TSU $ SUAltLeft sp)	(tLHS 	: altsTP)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS	: altsTX)
 		, CEq  (TSE $ SEMatch sp)	eMatch	$ makeTSum KEffect altsEs ]
---		, CEq  (TSC $ SCMatch sp)	cMatch	$ makeTSum KClosure altsClos ]
-		
 				  
 	return	( tRHS
 		, eMatch
@@ -201,9 +190,7 @@ slurpX	exp@(XMatch sp Nothing alts)
 		, matchQs ++ altsQs)
 
 
------------------------
--- Lit
---
+-- Lit ------------------------------------------------------------------------
 slurpX	exp@(XLit sp litFmt)
  = do	
  	tX@(TVar KValue vT)	
@@ -224,11 +211,10 @@ slurpX	exp@(XLit sp litFmt)
 			 -> do	vR	<- newVarN NameRegion
 			 	return	$ TData tcKind tcVar [TVar KRegion vR]
 	
-	let qs = 
-		[ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
+	let qs = [ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
 
 	wantTypeV vT
-	
+		
 	return	( tX
 		, pure
 		, empty
@@ -236,9 +222,8 @@ slurpX	exp@(XLit sp litFmt)
 		, qs)
 
 
------------------------
--- Var
---
+
+-- Var ------------------------------------------------------------------------
 slurpX 	exp@(XVar sp var)
  = do	tV@(TVar k vT)	<- lbindVtoT    var
 	
@@ -246,9 +231,7 @@ slurpX 	exp@(XVar sp var)
 	slurpV exp tV
 
 
------------------------
--- Do
---
+-- Do -------------------------------------------------------------------------
 slurpX	exp@(XDo sp stmts)
  = do
 	tX		<- newTVarDS 	"do"
@@ -264,7 +247,6 @@ slurpX	exp@(XDo sp stmts)
 			<- liftM unzip5 $ mapM slurpS stmts
 
 	boundTVs	<- mapM getVtoT boundVs
-	wantTypeVs boundTVs
 
 	let Just tLast	= takeLast tsStmts
 	let qsStmts	= concat qssStmts
@@ -290,10 +272,9 @@ slurpX	exp@(XDo sp stmts)
 		, branchSub	
 		   = 	[ CEq (TSV $ SVDoLast sp) tX 	$ tLast
 			, CEq (TSE $ SEDo sp)	eX 	$ makeTSum  KEffect  esStmts ]
---			, CEq (TSC $ SCDo sp)	cX	$ makeTMask KClosure 
---								(makeTSum KClosure csStmts) 
---								(makeTSum KClosure $ map TTag boundVs) ] 
 		   ++ qsStmts }
+
+	wantTypeVs boundTVs
 
 	return	( tX
 		, eX
@@ -302,9 +283,7 @@ slurpX	exp@(XDo sp stmts)
 		, [q])
 
 
------------------------
--- IfThenElse
---
+-- If -------------------------------------------------------------------------
 slurpX	exp@(XIfThenElse sp xObj xThen xElse)
  = do
 	tAlts		<- newTVarDS 	"ifAlts"
@@ -317,7 +296,6 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 			<- slurpX xObj
 
 	let TVar KValue vObj = tObj
-	wantTypeV vObj
 
 	-- The case object must be a Bool
 	tR		<- newTVarR
@@ -337,7 +315,8 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 		
 		, CEq  (TSE $ SEIfObj sp)	eTest 	$ TEffect primReadH [tObj]
 		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest] ]
---		, CEq  (TSC $ SCIf sp)		cX	$ makeTSum KClosure [cObj, cThen, cElse] ]
+		
+	wantTypeV vObj
 		
 	return	( tAlts
 		, eX
@@ -346,11 +325,7 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 		, qs ++ qsObj ++ qsThen ++ qsElse )
 
 
----------------------------
--- Proj
---	x . l
---	l & x
---
+-- Proj ------------------------------------------------------------------------
 slurpX 	exp@(XProj sp xBody proj)
  = do
 	let (projT, label)	
@@ -398,11 +373,10 @@ slurpX 	exp@(XProj sp xBody proj)
 
 slurpX	exp@(XProjT sp tDict proj)
  = do	
- 	let (projT, label)	
+ 	let (projT, _)	
 		= case proj of
 			JField  nn l	-> (TJField  l, l)
 			JFieldR nn l	-> (TJFieldR l, l)
-
 
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
@@ -439,7 +413,7 @@ slurpX	exp@(XProjT sp tDict proj)
 
 	return	( tX
 		, eX
-		, empty -- TFree vField tX
+		, empty
 		, XProjTaggedT (Just (tX, eX)) vInst proj'
 		, qs )
 
@@ -447,20 +421,13 @@ slurpX x
  = panic stage $ "slurpX: cannot slurp " ++ show x
 
 
----------------------------
--- slurpV
---
+-- | Make an Inst constraint for a variable.
 slurpV exp@(XVar sp var) tV@(TVar k vT)
  = do
 	vTu		<- makeUseVar var vT
 	let tX		= TVar k vTu
 	let eX		= pure
-{-	let cX		= if Var.isCtorName var
-				then TBot KClosure
-				else TFree var tV
--}
-	let qs	= 
-		[ CInst (TSV $ SVInst sp vT) vTu vT ]
+	let qs		= [ CInst (TSV $ SVInst sp vT) vTu vT ]
 
 	return	( tX
 		, eX
