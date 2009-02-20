@@ -17,7 +17,7 @@ trace objs lights orig dir 0
 	= Color 0.0 0.0 0.0
 
 trace objs lights orig dir limit
- = do	case findNearest&{Object} objs orig dir of
+ = do	case findNearest objs orig dir of
 
  	 -- ray didn't intersect any objects
  	 Nothing		
@@ -38,7 +38,7 @@ trace objs lights orig dir limit
 		-- sum the direct lighting of this point
 		lighting 
 			= foldl (+) (Color 0.0 0.0 0.0) 
-			$ map (apply&{Light} objs pt n) lights
+			$ map (apply objs pt n) lights
 			
 		-- total incoming light is direct lighting plus reflections
 		color	= obj .color pt

@@ -61,7 +61,7 @@ makeTests1 acc a1 (a2 : as)
 	= let	k1		= actorIx a1
 		k2		= actorIx a2
 		contact		= (k1 .min k2, k1 .max k2)
-		acc'		= insertF&{Set a} acc compareIxPair contact
+		acc'		= acc.insertF  compareIxPair contact
 	  in	makeTests1 acc' a1 as
 	
 	\= makeTests1 acc a1 as

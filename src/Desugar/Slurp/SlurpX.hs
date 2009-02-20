@@ -389,9 +389,6 @@ slurpX 	exp@(XProj sp xBody proj)
 		, CEq	(TSE $ SEProj sp)	
 			eX $ makeTSum KEffect  [eBody, eProj] ]
 
---		, CEq	(TSC $ SCProj sp)	
---			cX $ makeTSum KClosure [cBody, cProj] ]
-
 	return	( tX
 		, eX
 		, empty
@@ -401,14 +398,12 @@ slurpX 	exp@(XProj sp xBody proj)
 
 slurpX	exp@(XProjT sp tDict proj)
  = do	
- 	let projT	= case proj of
-				JField  nn l	-> TJField  l
-				JFieldR nn l	-> TJFieldR l
+ 	let (projT, label)	
+		= case proj of
+			JField  nn l	-> (TJField  l, l)
+			JFieldR nn l	-> (TJFieldR l, l)
 
-{-	let vField	= case proj of
-				JField  nn l	-> l
-				JFieldR nn l	-> l
--}
+
 	-- the result of the projection
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
@@ -423,14 +418,24 @@ slurpX	exp@(XProjT sp tDict proj)
 	tInst@(TVar KValue vInst) 
 		<- newTVarD
 
+	-- effect and closure of projection function
+	--	This will turn into the effect/closure of the function that is being applied
+	--	to perform the projection - once we work out what that function is.
+	--
+	eProj	<- newTVarES	"proj"
+	cProj	<- newTVarCS	"proj"
+
 	let proj'	= transformN (\n -> Nothing) proj
 
 	let qs	 = 
-		[ CEq	   (TSV $ SVProj sp projT) 
-			tDictVar $ tDict
+		[ CProject (TSV $ SVProj sp projT) 
+			projT vInst tDictVar tX 
 
-		, CProject (TSV $ SVProj sp projT) 
-			projT vInst tDictVar tX ]
+		, CEq	   (TSV $ SVProj sp projT) 
+			tDictVar $ tDict
+			
+		]
+			
 
 	return	( tX
 		, eX

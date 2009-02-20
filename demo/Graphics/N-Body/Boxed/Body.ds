@@ -28,7 +28,7 @@ project Body where
 	-- | Calculate the force vector acting on the first body from the second.
 	force2 :: Body -> Body -> Vec2 Float
 	force2 body0 body1
-	 = forceVec&{Body}
+	 = forceVec
 	 	body0.mass body1.mass 
 		body0.pos.x body0.pos.y
 		body1.pos.x body1.pos.y
@@ -92,27 +92,27 @@ project Body where
 		$ deleteF (==) [0.. array_size body - 1] i
 
 
-	-- | Work out the force between two bodies.
-	forceVec 
-	 	:: Float -> Float 	-- mass1, mass2
-	 	-> Float -> Float 	-- position x1, y1
-		-> Float -> Float 	-- position x2, y2
-		-> Vec2 Float		-- resulting force
+-- | Work out the force between two bodies.
+forceVec 
+ 	:: Float -> Float 	-- mass1, mass2
+ 	-> Float -> Float 	-- position x1, y1
+	-> Float -> Float 	-- position x2, y2
+	-> Vec2 Float		-- resulting force
 
-	forceVec m1 m2 x1 y1 x2 y2
-	 = do  	dx	= x2 - x1
-		dy	= y2 - y1
+forceVec m1 m2 x1 y1 x2 y2
+ = do  	dx	= x2 - x1
+	dy	= y2 - y1
+	
+ 	d2	= dx * dx  +  dy * dy
+	d	= sqrt d2
+
+	attract_force	= m1 * (m2 / d2)
+	forceS		= if d < attract_range
+				then 	attract_force * (d / attract_range) 
+				   - 	(attract_force * (attract_range / d))
+				else attract_force
+
+	theta	= (Vec2 dx dy).angle
 		
-	 	d2	= dx * dx  +  dy * dy
-		d	= sqrt d2
-
-		attract_force	= m1 * (m2 / d2)
-		forceS		= if d < attract_range
-					then 	attract_force * (d / attract_range) 
-					   - 	(attract_force * (attract_range / d))
-					else attract_force
-
-		theta	= (Vec2 dx dy).angle
-		
-		Vec2 (forceS * cos theta) (forceS * sin theta)
+	Vec2 (forceS * cos theta) (forceS * sin theta)
 		
