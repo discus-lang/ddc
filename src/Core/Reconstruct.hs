@@ -258,7 +258,13 @@ reconX tt exp@(XLam v t x eff clo)
 
 		, eff'		<- packT $ substituteT (envEq tt) eff
 		, clo_sub	<- packT $ substituteT (envEq tt) clo
-
+		
+		, fvT		<- freeVars xT
+		, fvC		<- freeVars xC
+		
+		-- mask non-observable effects that are not in the
+		--	environment (closure) or type of the return value.
+		, xE_masked	<- maskReadWriteNotIn (Set.union fvT fvC) xE
 
 		-- TODO: We need to flatten the closure before trimming to make sure effect annots
 		--	on type constructors are not lost. It would be better to modify trimClosureC
@@ -267,7 +273,7 @@ reconX tt exp@(XLam v t x eff clo)
 		, xC_flat	<- flattenT xC_masked
 		, xC'		<- trimClosureC Set.empty Set.empty $ xC_flat
 
-		, xE'		<- packT xE
+		, xE'		<- packT xE_masked
 	
 		-- check effects match
 		, () <- if subsumes (envMore tt) eff' xE'
@@ -281,7 +287,6 @@ reconX tt exp@(XLam v t x eff clo)
 				% "    with bounds:\n"
 				% pprBounds (envMore tt)
 				
-
 		-- check closures match
 		, () <- if subsumes (envMore tt) clo_sub xC'
 			 then ()
@@ -318,9 +323,15 @@ reconX tt exp@(XLam v t x eff clo)
 --		, clo_clamped	<- clampSum tt xC' clo_sub
 
 		= trace ( "reconX: XLam\n"
+			% "    xT           = " % xT	% "\n"
 			% "    xE'  (recon) = " % xE'	% "\n"
 			% "    eff' (annot) = " % eff'	% "\n"
-			% "    eff_clamped  = " % eff_clamped	% "\n") $ 
+			% "    eff_clamped  = " % eff_clamped	% "\n"
+			% "    fvT          = " % fvT		% "\n"
+			% "    fvC          = " % fvC		% "\n"
+			% "    xE           = " % xE		% "\n"
+			% "    xE_masked    = " % xE_masked     % "\n"
+		   	% "    clo          = " % xC		% "\n") $
 
 		   ( XLam v t x' eff_clamped clo_sub
 		   , makeTFun t xT eff_clamped clo_sub
@@ -331,31 +342,27 @@ reconX tt exp@(XLam v t x eff clo)
 
 -- local
 -- TODO: check well foundedness of witnesses
-
+-- 	Note that for performance reasons, we don't mask effects local effects here.
+--	All the local effects from the body of a lambda abstraction are masked
+--	all at once in the rule for XLam.
+--
 reconX tt (XLocal v vs x)
  = let	(x', xT, xE, xC)	= reconX tt x
 
-   in	(if False -- Set.member v (freeVars xT) 
+	-- not sure if we should worry about regions variables escaping here.
+	-- we're not doing stack allocation, so it doesn't matter if they do.
+   in	{- (if Set.member v (freeVars xT) 
    		then panic stage 
 			( "reconX: region " % v % " is not local\n"
 			% "    caller = " % envCaller tt	% "\n"
 			% "    t      = " % xT	% "\n"
 			% "    x      = " % x'	% "\n\n")
 			id
-		else	id)
+		else	id) -}
 	 
    	( XLocal v vs x'
    	, xT
-	, makeTSum
-		KEffect
-		(map 	(\e -> case e of
-				TEffect vE [TVar KRegion r]
-				 |   elem vE [primRead, primWrite]
-				  && r == v
-				 -> TBot KEffect
-				 
-				_	-> e)
-			$ flattenTSum xE)
+	, xE
 	, xC)
 	
 -- app

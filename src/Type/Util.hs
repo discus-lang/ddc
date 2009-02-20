@@ -8,6 +8,7 @@ module Type.Util
 	, module Type.Util.Substitute
 	, module Type.Util.StripFetters
 	, module Type.Util.Unify 
+	, module Type.Util.Mask
 	, module Type.Util.Trim
 	, module Type.Util.Finalise
 	, module Type.Util.Quantify
@@ -29,6 +30,7 @@ import Type.Util.Pack
 import Type.Util.Substitute
 import Type.Util.StripFetters
 import Type.Util.Unify
+import Type.Util.Mask
 import Type.Util.Trim
 import Type.Util.Finalise
 import Type.Util.Quantify

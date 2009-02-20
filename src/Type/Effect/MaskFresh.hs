@@ -13,15 +13,15 @@
 --	Can't mask if the region is present in other args, or in 
 --		the environment of any of the functions.
 --
---		f :: forall %r2. C{%r1} D{%r2} -e> D{%r2}
+--		f :: forall %r2. C %r1 -> D %r2 -e> D{%r2}
 --	 	  :- e = {Read %r2}
 --
 
 
 module Type.Effect.MaskFresh
-	( 
+( 
 --	maskEsFreshT 
-	)
+)
 
 where
 
@@ -39,18 +39,15 @@ import Type.Plate
 import qualified Debug.Trace	as Debug
 
 -----
+-- stage	= "Type.Effect.MaskFresh"
 {-
-stage	= "Type.Effect.MaskFresh"
-debug	= True
-trace s	= when debug $ traceM s
--}
+debug		= True
+trace s		= when debug $ traceM s
 
---maskEsFreshT ::	Type -> Type
---maskEsFreshT t = t
-
-{-
+maskEsFreshT ::	Type -> Type
 maskEsFreshT	t@(TForall vks t1@(TFetters fs x@(TFun{})))
  = let
+
 	tFlat@(TFunF parts)
 			= flattenFunT x
 
@@ -147,8 +144,4 @@ maskFreshR	maskRs   r
  = case r of
  	RClass cidR	-> False
 	RVar   v	-> elem v maskRs
-	
-
-
-
--}
+-}	

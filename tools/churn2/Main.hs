@@ -6,6 +6,7 @@ import Churn.Gen
 import Churn.Type
 import Churn.Bits
 import Churn.Env
+import Churn.Chop.Exp
 
 import Source.Exp
 import Source.Pretty
@@ -28,8 +29,8 @@ data Config
 
 initConfig
 	= Config
-	{ configTmpDir		= "/tmp"
-	, configLogDir		= "/tmp" 
+	{ configTmpDir		= "tmp"
+	, configLogDir		= "tmp" 
 	, configFuel		= 100
 	, configRunLimit	= Just 1 }
 

@@ -135,7 +135,7 @@ generaliseType' varT tCore envCids
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
 	-- Mask effects and Const/Mutable/Local/Direct constraints on local regions.
-	-- 	Do this before adding foralls so we don't end up with quantified regions which
+	-- 	Do this before adding foralls so we don't end up with quantified regions that
 	--	aren't present in the type scheme.
 	--
 	let rsVisible	= visibleRsT $ flattenT tClean
