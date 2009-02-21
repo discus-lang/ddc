@@ -1,0 +1,18 @@
+
+-- The functions in if-alternatives have different effects.
+--	The core type checker must to a join on the types of the alternatives
+--	to reconstruct the type of the whole expression.
+
+fun b
+ = let	fun1 x	
+ 	 = do	putStr "dude\n"
+		5
+	
+	fun2 x = x
+	
+   in	if b then fun1 else fun2
+
+main ()
+ = do	putStr $ show $ fun True 23
+
+	
