@@ -1,0 +1,12 @@
+
+-- Check that closure terms of & projection functions
+--	aren't getting lost
+
+import Module1
+
+fun2 ()
+ = do	print $ "dude" % show (fun1&{Thing} 5)
+	()
+
+main ()	= fun2 ()
+
