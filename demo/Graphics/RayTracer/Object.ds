@@ -1,4 +1,6 @@
 
+export type Object
+
 import Color
 import Shape
 

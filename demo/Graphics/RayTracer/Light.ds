@@ -1,4 +1,6 @@
 
+export type Light
+
 import Object
 import Math.Vec3
 
@@ -41,7 +43,7 @@ apply objs pt n (LightPoint lpt color)
 	final	= (color .muls mag) .clamp 0.0 999999.0
 	
 	-- check for occluding objects between the light and the surface point
-	case findNearest objs pt dir of
+	case findNearest&{Object} objs pt dir of
 		Just (_, opt)
 		 -> if (opt - pt) .magnitude < dist
 		 	then Color 0.0 0.0 0.0

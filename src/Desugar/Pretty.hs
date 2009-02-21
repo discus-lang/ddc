@@ -182,9 +182,9 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> annot nn 
 	 	("if " % x1 % "\n" %> (" then " % x2) % "\n" %> (" else " % x3))
 
-	XProjTagged 	nn vI vC x j	-> annot nn ("@XProjTagged " % vI % " " % vC % " " % prettyXB x % " " % j)
+	XProjTagged 	nn vI tC x j	-> annot nn ("@XProjTagged " % vI % " " % tC % " " % prettyXB x % " " % j)
 
-	XProjTaggedT 	nn v j		-> annot nn ("@XProjTaggedT " % v % " " % j)
+	XProjTaggedT 	nn vI tC j	-> annot nn ("@XProjTaggedT " % vI % " " % tC % j)
 
 
 	 

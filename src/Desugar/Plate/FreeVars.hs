@@ -59,7 +59,7 @@ instance FreeVars (Exp a) where
 	XLambdaTEC	_ v x t e c	-> freeVars x \\ singleton v
 
 	XProjTagged 	_ vI vC x j		-> freeVars x
-	XProjTaggedT	_ v j			-> empty
+	XProjTaggedT	_ vI vC j		-> empty
 
 	XVarInst a v			-> singleton v
 

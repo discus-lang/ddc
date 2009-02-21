@@ -354,7 +354,6 @@ slurpX 	exp@(XProj sp xBody proj)
  	(tBody, eBody, cBody, xBody', qsBody)
 			<- slurpX xBody
 	
-
 	let proj'	= transformN (\n -> Nothing) proj
 			
 	let qs	 = 
@@ -373,7 +372,7 @@ slurpX 	exp@(XProj sp xBody proj)
 
 slurpX	exp@(XProjT sp tDict proj)
  = do	
- 	let (projT, _)	
+ 	let (projT, label)	
 		= case proj of
 			JField  nn l	-> (TJField  l, l)
 			JFieldR nn l	-> (TJFieldR l, l)
@@ -392,29 +391,24 @@ slurpX	exp@(XProjT sp tDict proj)
 	tInst@(TVar KValue vInst) 
 		<- newTVarD
 
-	-- effect and closure of projection function
-	--	This will turn into the effect/closure of the function that is being applied
-	--	to perform the projection - once we work out what that function is.
+	-- closure of projection function
+	-- 	Make a closure term out of the projection function, once we know what it is.
+	--	This means that the caller knows that the projection function is free in it.
 	--
-	eProj	<- newTVarES	"proj"
 	cProj	<- newTVarCS	"proj"
 
 	let proj'	= transformN (\n -> Nothing) proj
 
 	let qs	 = 
-		[ CProject (TSV $ SVProj sp projT) 
-			projT vInst tDictVar tX 
-
-		, CEq	   (TSV $ SVProj sp projT) 
-			tDictVar $ tDict
-			
+		[ CProject (TSV $ SVProj sp projT) projT vInst tDictVar tX 
+		, CEq	   (TSV $ SVProj sp projT) tDictVar tDict
+		, CEq      (TSV $ SVProj sp projT) cProj (TFree label tX)
 		]
-			
 
 	return	( tX
 		, eX
 		, empty
-		, XProjTaggedT (Just (tX, eX)) vInst proj'
+		, XProjTaggedT (Just (tX, eX)) vInst (TFree label cProj) proj'
 		, qs )
 
 slurpX x

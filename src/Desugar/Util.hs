@@ -97,13 +97,20 @@ bindingVarOfStmt ss
 --	TProjTagged constructors in this expression
 collectClosureProjTags :: Exp a -> [Closure]
 collectClosureProjTags exp
- = let table	= (transTableId (\x -> return x))
-		{ transX_enter = 
-			\xx -> case xx of
-				XProjTagged n vI tC x j
-		 	 	 -> do	modify $ \s -> tC : s
-					return xx
-				_ -> return xx
-		}
+ = let	takeV xx
+	 = case xx of
+		XProjTagged n vI tC x j
+	 	 -> do	modify $ \s -> tC : s
+			return xx
+			
+		XProjTaggedT n vI tC j
+		 -> do	modify $ \s -> tC : s
+			return xx
+			
+		_ -> return xx
+		
+	table	= (transTableId (\x -> return x))
+			{ transX_enter = takeV  }
+
    in	execState (transZM table exp) []
 

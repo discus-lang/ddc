@@ -100,7 +100,8 @@ data Exp a
 
 		(Proj a)
 
-	| XProjTaggedT  a Var (Proj a)
+	-- Like XProjTagged, but we don't need the expression
+	| XProjTaggedT  a Var Closure (Proj a)
 
 
 	| XVarInst	a Var				-- An instance of a let bound variable

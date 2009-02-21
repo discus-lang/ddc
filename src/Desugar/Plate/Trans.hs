@@ -322,11 +322,12 @@ followX table xx
 		j'	<- transZM table j
 		return	$ XProjTagged nn' vI' tC' x' j'
 
-	XProjTaggedT nn v j
+	XProjTaggedT nn vI tC j
 	 -> do	nn'	<- transN table nn
-	 	v'	<- transV table v
+	 	vI'	<- transV table vI
+		tC'	<- transT table tC
 		j'	<- transZM table j
-		return	$ XProjTaggedT nn' v' j'
+		return	$ XProjTaggedT nn' vI' tC' j'
 
 	XVarInst nn v
 	 -> do	nn'	<- transN table nn
