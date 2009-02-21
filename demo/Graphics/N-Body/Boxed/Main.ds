@@ -87,7 +87,7 @@ draw_force frame body x y
 	-- calculate the force vector at this point.
 	forceV	= sum&{Vec2 Float}
 		$ body .mapToList
-			(\b -> forceVec
+			(\b -> forceVec&{Body}
 					1.0 (b.mass)
 					(toFloat x) (toFloat y)
 					b.pos.x     b.pos.y)
