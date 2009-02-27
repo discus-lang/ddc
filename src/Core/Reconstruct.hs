@@ -68,7 +68,6 @@ trace ss x
 		then Debug.trace (pprStrPlain ss) x 
 		else x
 
-
 -- Tree --------------------------------------------------------------------------------------------
 reconTree'
 	:: String	-- caller name
@@ -425,10 +424,15 @@ reconX tt (XMatch [])
  	$ "reconX: XMatch has no alternatives\n"
 
 reconX tt (XMatch aa)
- = let	(aa', altTs, altEs, altCs)	= unzip4 $ map (reconA tt) aa
- 	Just atLast			= takeLast altTs
+ = let	(aa', altTs, altEs, altCs)	
+			= unzip4 $ map (reconA tt) aa
+ 	
+	-- join all the alt types to get the type for the
+	--	whole match expression.
+	Just tMatch	= joinSumTs tt altTs
+
    in	( XMatch aa'
-   	, atLast
+   	, tMatch
 	, makeTSum KEffect altEs
 	, makeTSum KClosure altCs )
 

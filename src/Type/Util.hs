@@ -13,7 +13,7 @@ module Type.Util
 	, module Type.Util.Finalise
 	, module Type.Util.Quantify
 	, module Type.Util.Flatten
-
+	, module Type.Util.JoinSum
 	, makeOpTypeT
 	, makeTVar 
 	, makeTWhere
@@ -35,7 +35,7 @@ import Type.Util.Trim
 import Type.Util.Finalise
 import Type.Util.Quantify
 import Type.Util.Flatten
-
+import Type.Util.JoinSum
 
 import Type.Exp
 import qualified Shared.Var	as Var

@@ -16,3 +16,4 @@ main ()
  = do	putStr $ show $ fun True 23
 
 	
+
