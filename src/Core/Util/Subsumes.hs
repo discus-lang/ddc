@@ -1,4 +1,8 @@
 
+-- | Checking of type subsumption.
+--	The subsumption part is only applied to the effect and closure
+--	portion of a type. We don't do subsumption on the value or region part.
+--
 module Core.Util.Subsumes
 	(subsumes)
 
@@ -35,7 +39,10 @@ trace ss x
 -- stage	= "Core.Util.Subsumes"
 
 -- | Check if t subsumes s another. t :> s
---	BUGS: assumes that effect and closures in data types are all covariant
+--	TODO: 	Assumes that effect and closures in data types are all covariant
+--		We should really carry around the data type definition with the
+--		constructors so we can can check what variance their args 
+--		actually have.
 --
 subsumes 
 	:: Map Var Type 	-- table of (v :> t) constraints
@@ -46,7 +53,8 @@ subsumes
 subsumes tableMore t s
  = let 	?t		= t
 	?s		= s
-   in	{-# SCC "subsumes" #-} subsumes1 tableMore (stripTFree t) (stripTFree s)
+   in	{-# SCC "subsumes" #-} 
+		subsumes1 tableMore (stripTFree t) (stripTFree s)
 	
 subsumes1 table t s
  = let (ans, rule)	= subsumes2 table t s
@@ -54,10 +62,13 @@ subsumes1 table t s
    		% " rule = " %> rule		% "\n"
 	 	% "    T = " %> t 		% "\n"
 		% "    S = " %> s		% "\n"
-		% "   with " %> "\n" %!% (map (\(v, t) -> v % " :> " % t) $ Map.toList table) % "\n")
+		% "   with " %> "\n" %!% (map (\(v, t) -> v % " :> " % t) 
+				$ Map.toList table) % "\n")
 		ans
 
--- make sure closure terms are trimmed before comparing them
+-- Make sure closure terms are trimmed before comparing them,
+--	not much point checking a term that'll be trimmed out later anyway.
+--	
 subsumes2 table t s
  = let trimC tt
  	| isClosure tt
@@ -82,12 +93,16 @@ subsumes3 table t s
 
 	-- load up embedded FMore constraints
 	| TFetters t' fs	<- t
-	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) -> slurpMore (v1, t2) tab) table fs
+	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) 
+				-> slurpMore (v1, t2) tab) 
+				table fs
 	  in  subsumes3 table' t' s
 	
 
 	| TFetters s' fs	<- s
-	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) -> slurpMore (v1, t2) tab) table fs
+	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) 
+				-> slurpMore (v1, t2) tab) 
+				table fs
 	  in  subsumes3 table' t s'
 
 
@@ -112,13 +127,12 @@ subsumes3 table t s
 	= (True, "SubTrans")
 
 	-- SubVar
-	-- G[t :> S] |- S <: t
+	-- ENV[t :> S] |- S <: t
 	| TVar tKind tVar	<- t
 	, Just s2		<- Map.lookup tVar table
 	, s == s2
 	= (True, "SubVar")
 	
-
 	-- SubAll
 	| TForall v1 k1 t1	<- t
 	, TForall v2 k2 t2	<- s
@@ -177,19 +191,6 @@ subsumes3 table t s
 	, subsumes1 table t1 s1
 	= (True, "SubTag - tag s")
 
-	-- SubReplay
-	-- hmm, perhaps should be using separate constraints, 
-	--	and not substituting effects and closures into types.
-	--
-	-- G[e :> E] |- (a -(e)> b)  <: (a -(E)> b)
-	--
-{-	| Just (t1, t2, tEff@(TVar KEffect vE), tClo)	<- takeTFun s
-	, Just tE		<- Map.lookup vE table
-	, subsumes1 table t (makeTFun t1 t2 tE tClo)
-	= warning stage
-		("subsumes: Used SubReplay for (" % s % ")\n")
-		(True, "SubReplay")
--}	
 	-- SubCtor
 	--	BUGS: If we knew which of these args was covar/contravar we
 	--	could do a proper subsumption, but we don't have that info here. 
@@ -206,13 +207,6 @@ subsumes3 table t s
 
 		| and $ zipWith (subsumes1 table) ts ss
 		= (True, "SubCtor")
-
-{-		= warning stage
-			( "subsumes: did a dodgy subsumption (T :> S)\n"
-			% "  T = " % t % "\n"
-			% "  S = " % s % "\n")
-			(True, "SubCtor")
--}		
 	  in	result
 			
 
@@ -222,7 +216,6 @@ subsumes3 table t s
 	-- closure constructor
 	-- 	It doesn't matter what the variable is
 	--	So long as the type is the same
-
 	| TFree tVar ts		<- t
 	, TFree sVar ss		<- s
 	, ts == ss
@@ -237,12 +230,12 @@ subsumes3 table t s
 	= (True, "SubFree - s")
 
 	
-	--
+	-- no dice.
 	| otherwise
 	= (False, "fail")
 
 
--- Add the fact that T[v1] :> t2 to the table
+-- Add the fact that T[v1] :> t2 to the table.
 --	In the case that t2 has more constraints, ie
 --	v1 :> v2 :> t3, we get a chain of constraints added to the table.
 -- ie	
@@ -251,9 +244,6 @@ subsumes3 table t s
 --
 slurpMore (v1, t2) table
  = case t2 of
---	TSum k ts
---	 -> foldl (\tab t -> slurpMore (v1, t) tab) table ts
-
  	TVarMore k v2 t3
 	 -> let	table'	= Map.insert v1 (TVar k v2) table
 	    in	slurpMore (v2, t3) table'
@@ -261,9 +251,9 @@ slurpMore (v1, t2) table
 	_ -> Map.insert v1 t2 table
 
 
-
 stripTFree tt
  = case tt of
  	TSum k ts			-> makeTSum k $ map stripTFree ts
 	TFree v t@(TVar KClosure _)	-> t
 	_				-> tt
+

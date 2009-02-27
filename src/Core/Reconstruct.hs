@@ -309,7 +309,7 @@ reconX tt exp@(XLam v t x eff clo)
 		--	contains members of the effect/closure that was reconstructed.
 		--
 		--	This is sound because we're only ever making the annotation smaller.
-		--	If we reduced the annotation too far, ie so it wasn't >= than the reconstructed
+		--	If we reduced the annotation too far, ie so it wasn't <= than the reconstructed
 		--	effect\/closure then we would get an error next type we called reconstruct.
 		--
 		--	We actually /have/ to do this clamping because when Core.Bind introduces local
