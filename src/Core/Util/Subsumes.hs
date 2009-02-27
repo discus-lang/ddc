@@ -183,13 +183,13 @@ subsumes3 table t s
 	--
 	-- G[e :> E] |- (a -(e)> b)  <: (a -(E)> b)
 	--
-	| Just (t1, t2, tEff@(TVar KEffect vE), tClo)	<- takeTFun s
+{-	| Just (t1, t2, tEff@(TVar KEffect vE), tClo)	<- takeTFun s
 	, Just tE		<- Map.lookup vE table
 	, subsumes1 table t (makeTFun t1 t2 tE tClo)
---	= warning stage
---		("subsumes: Used SubReplay for (" % s % ")\n")
-	= (True, "SubReplay")
-	
+	= warning stage
+		("subsumes: Used SubReplay for (" % s % ")\n")
+		(True, "SubReplay")
+-}	
 	-- SubCtor
 	--	BUGS: If we knew which of these args was covar/contravar we
 	--	could do a proper subsumption, but we don't have that info here. 
