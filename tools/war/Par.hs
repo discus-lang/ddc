@@ -47,8 +47,8 @@ runTests tests nThreads' keepGoing = do
 
     -- Print out the status of threads every now and again.
     forkOS $ let f = do statuses <- mapM isEmptyMVar onDone
-                        putStrLn $ show (length $ filter id statuses) ++
-                                   " running threads"
+--                      putStrLn $ show (length $ filter id statuses) ++
+ --                                  " running threads"
                         when (or statuses) (threadDelay 10000000 >> f)
              in f
 
