@@ -1,0 +1,21 @@
+
+succ :: Int -> Int
+succ x = x + 1
+
+
+chooseFive g
+ = do	x	= if True then g else succ
+	g 5
+
+chooseSuccFive g
+ = do	x	= if True then g else succ
+	succ (g 5)
+
+join b
+ = if b  
+	then chooseFive 
+	else chooseSuccFive
+ 
+main ()
+ = do	putStr $ show $ join True succ
+
