@@ -120,25 +120,12 @@ subsumes3 table t s
 	| TBot _		<- s
 	= (True, "SubBot")
 
-	-- SubTrans
+	-- SubVarTrans
+	--	This handles both SubVar and SubTrans.
 	| TVar tKind tVar 	<- t
 	, Just s2		<- Map.lookup tVar table 
 	, subsumes table s2 s
 	= (True, "SubTrans")
-
-	-- SubVar
-	-- ENV[t :> S] |- S <: t
-	| TVar tKind tVar	<- t
-	, Just s2		<- Map.lookup tVar table
-	, s == s2
-	= (True, "SubVar")
-	
-	-- SubAll
-	| TForall v1 k1 t1	<- t
-	, TForall v2 k2 t2	<- s
-	, v1 == v2
-	, k1 == k2
-	= (subsumes1 table t1 t2, "SubAll")
 
 	-- sums
 	| TSum tKind ts		<- t
