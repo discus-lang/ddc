@@ -56,7 +56,7 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
-import qualified Debug.Trace	as Debug
+import qualified Debug.Trace	
 
 
 -----
@@ -65,7 +65,7 @@ stage	= "Core.Reconstruct"
 debug	= False
 trace ss x	
 	= if debug 
-		then Debug.trace (pprStrPlain ss) x 
+		then Debug.Trace.trace (pprStrPlain ss) x 
 		else x
 
 -- Tree --------------------------------------------------------------------------------------------
@@ -866,21 +866,36 @@ applyValueT' table t1@(TFetters t1Shape fs) t2
  
 applyValueT' table t0 t3	
 	| Just (t1, t2, eff, clo)	<- takeTFun t0
-	= if subsumes (envMore table) t1 t3
-		then Just (t2, eff)
-		else freakout stage
-			( "applyValueT: Type error in value application.\n"
-			% "    called by = " % envCaller table	% "\n\n"
-			% "    can't apply argument:\n"	%> t3 % "\n\n"
-			% "    to:\n"        		%> t0 % "\n"
-			% "\n"
-			% "    as it is not <: than:\n"	%> t1 % "\n"
-			% "\n"
-			% "    with bounds: \n"
-			% ("\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) 
-				$ Map.toList (envMore table)) % "\n\n"))
-			$ Nothing
-	
+	= let	result
+			| t1 == t3
+			= Just (t2, eff)
+
+			-- We're currenly using the subsumption judgement more than we really need to.
+			
+			| subsumes (envMore table) t1 t3
+			= {- Debug.Trace.trace 
+				(pprStrPlain $ "used subsumption\n" 
+				% "t1      = " % t1 % "\n"
+				% "t3      = " % t3 % "\n"
+				% "envMore = " % envMore table % "\n\n")
+			$ -} Just (t2, eff)
+
+			| otherwise
+			= freakout stage
+				( "applyValueT: Type error in value application.\n"
+				% "    called by = " % envCaller table	% "\n\n"
+				% "    can't apply argument:\n"	%> t3 % "\n\n"
+				% "    to:\n"        		%> t0 % "\n"
+				% "\n"
+				% "    as it is not <: than:\n"	%> t1 % "\n"
+				% "\n"
+				% "    with bounds: \n"
+				% ("\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) 
+					$ Map.toList (envMore table)) % "\n\n"))
+				$ Nothing
+	  in	result	
+
+
 applyValueT' _ t1 t2
 	= freakout stage
 		( "applyValueT: No match for (t1 t2).\n"

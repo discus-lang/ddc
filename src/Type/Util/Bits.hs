@@ -290,6 +290,9 @@ takeTFun tt
 	, TCon TyConFun{}	<- fun
 	= Just (t1, t2, eff, clo)
 	
+	| TFun t1 t2 eff clo 	<- tt
+	= Just (t1, t2, eff, clo)
+
 	| otherwise
 	= Nothing
 
