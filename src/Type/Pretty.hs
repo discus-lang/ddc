@@ -140,9 +140,12 @@ prettyTRight tt
 
 
 prettyTBF t
- = case t of
- 	TFun{}		-> "(" % t % ")"
-	_ 		-> ppr t
+	| Just{}	<- takeTFun t
+	=  "(" % t % ")"
+
+	| otherwise
+	= ppr t
+
 
 prettyTB t
  = case t of
