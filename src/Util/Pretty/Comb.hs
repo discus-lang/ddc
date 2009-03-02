@@ -174,7 +174,7 @@ ifMode fun x y
 infixr 7 <>
 
 -- | An empty pretty thing.
---	We need this because "" is the same as [], and we don't want to print it as such.
+--	We need this because \"\" is the same as [], and we don't want to print it as such.
 --	sigh.. we really want a different String type here.
 pNil		= plain PNil
 

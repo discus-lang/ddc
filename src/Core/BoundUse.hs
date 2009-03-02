@@ -30,7 +30,7 @@ data Use
 	--	v1 = box v2, so long as all uses of v1 are directly inside unboxings
 	| UseUnbox	Level
 
-	-- | also add usematch
+	-- also add usematch
 	--	if all uses are case matches can also do unboxed case match
 	deriving (Eq, Show)
 

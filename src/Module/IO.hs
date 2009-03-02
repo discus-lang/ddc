@@ -36,9 +36,9 @@ normaliseFileName fileName
 
 
 -- | Break a fileName into directory, base name and extension parts.
---	muchFileName "path1/path2/path3/file1.file2.ext:
---	 => ("path1/path2/path3", "file1.file2", "ext")
 --
+-- > munchFileName "path1/path2/path3/file1.file2.ext"
+-- >  => ("path1/path2/path3", "file1.file2", "ext")
 munchFileName 
 	:: FilePath	
 	-> Maybe (FilePath, FilePath, FilePath)

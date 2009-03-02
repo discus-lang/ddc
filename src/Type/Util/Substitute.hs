@@ -32,8 +32,8 @@ type SubM	= State [(Type, Type)]
 -- | Do a loop cutting substitution on this type.
 subTT 	:: Map Type Type 	-- ^ types to substitute for.
 	-> Type 		-- ^ type to substitute into.
-	-> ( Type		-- ^ result type.
-	   , [(Type, Type)])	-- ^ list of types from the substitution that were looping
+	-> (Type, [(Type, Type)])	-- ^ result type and list of types from
+					--	the substitution that were looping
 
 subTT sub tt
  = let	(tt', loops)	= runState (subTT_cutM sub Set.empty tt) []

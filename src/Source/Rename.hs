@@ -39,9 +39,9 @@ stage		= "Source.Rename"
 
 -- Tree --------------------------------------------------------------------------------------------
 renameTrees
-	-- | the modules to rename.
-	--   the current module should be first, and all the imported ones afterwards.
 	:: [(Module, Tree SourcePos)]		
+	-- ^ the modules to rename.
+	--   the current module should be first, and all the imported ones afterwards.
 
 	-> RenameM 
 		[(Module, Tree SourcePos)]	

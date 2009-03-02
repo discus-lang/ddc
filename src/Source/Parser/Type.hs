@@ -360,7 +360,7 @@ pClosure
 
 pClosure1 :: Parser Type
 pClosure1
- =	-- ${ CLO ; .. }
+ =	-- \${ CLO ; .. }
  	do	pTok	K.Dollar
 		clos	<- pCParen $ Parsec.sepEndBy1 pClosure pSemis
 		return	$ TSum KClosure clos

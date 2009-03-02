@@ -40,8 +40,9 @@ data Class
 
 	-- | An equivalence class.
 	| Class
+		{
 		-- | A unique id for this class
-		{ classId		:: ClassId	
+		  classId		:: ClassId
 
 		-- | The kind of this class.
 		, classKind		:: Kind				

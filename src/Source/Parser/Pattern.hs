@@ -105,7 +105,7 @@ pPat1
   	do	tok	<- pTok K.Underscore
 		return	$ WWildcard (spTP tok)
 
-  <|>	-- ^VAR
+  <|>	-- \^VAR
   	do	tok	<- pTok K.Hat
 		var		<- pVar
 		return	$ WObjVar (spTP tok) (vNameV var) 

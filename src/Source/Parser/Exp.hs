@@ -332,7 +332,7 @@ pCaseAlt
 -- | Parse a match style alternative
 pMatchAlt :: Parser (Alt SP)
 pMatchAlt
- =	-- | GUARD, ... = EXP
+ =	-- \| GUARD, ... = EXP
    	do	tok	<- pTok K.Bar
 	   	guards	<- (Parsec.sepBy1 pGuard (pTok K.Comma))
 		pTok K.Equals

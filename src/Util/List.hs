@@ -257,7 +257,7 @@ splitOnLeft :: Eq a => a -> [a] -> ([a], [a])
 splitOnLeft c xx	= splitWhenLeft (== c) xx
 
 -- | Split a list on the left of all occurances of this element.
---	eg chopBefore '." "abc.def.ghi.jkl"	=> ["abc", ".def", ".ghi", ".jkl"]
+--	eg chopBefore '.' "abc.def.ghi.jkl"	=> ["abc", ".def", ".ghi", ".jkl"]
 
 chopOnLeft :: Eq a => a -> [a] -> [[a]]
 chopOnLeft c xx		= makeSplits (splitOnLeft c) xx
