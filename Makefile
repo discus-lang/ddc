@@ -109,10 +109,11 @@ nodoc	= \
 	src/Source/Type/SlurpX.hs
 
 .PHONY	: doc
-doc	: $(filter-out $(nodoc),$(src_hs))
+doc	:
 	@echo "* Building documentation"
-	@haddock -h -o doc/haddock --ignore-all-exports $^ 
-
+	@haddock -h -o doc/haddock --optghc=-isrc --ignore-all-exports \
+		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
+		$(filter-out $(nodoc),$(src_hs))
 
 # -- Testing ---------------------------------------------------------------------------------------
 
