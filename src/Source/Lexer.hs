@@ -267,13 +267,22 @@ eatComments	(t@TokenP { token = tok } : xs)
 	= eatComments $ dropWhile (\t -> not $ isToken t NewLine) xs
 
 	| CommentBlockStart	<- tok
-	= eatComments $ toTail $ dropWhile (\t -> not $ isToken t CommentBlockEnd) xs
+	= eatComments $ eatCommentBlock xs
 	
 	| otherwise
 	= t : eatComments xs
 
-toTail []	= []
-toTail (x:xs)	= xs
+eatCommentBlock :: [TokenP] -> [TokenP]
+eatCommentBlock	[]	= []
+eatCommentBlock	(t@TokenP { token = tok } : xs)
+	| CommentBlockStart	<- tok
+	= eatCommentBlock $ eatCommentBlock xs
+
+	| CommentBlockEnd	<- tok
+	= xs
+
+	| otherwise
+	= eatCommentBlock xs
 
 -- breakModules ------------------------------------------------------------------------------------
 -- | Break module qualifiers off var and con tokens
