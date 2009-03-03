@@ -1,0 +1,8 @@
+
+{- test out nested commends
+   {- this is nested {- so is this -} {- oop -} -} -}
+   
+main ()
+	= putStr "foo!"
+   
+{- another command {- with nesting -} -}
