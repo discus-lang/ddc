@@ -350,7 +350,7 @@ breakModules' t
 -- Break module qualifiers off this variable name
 breakModuleStr
 	:: String		-- ^ variable name 
-	-> ([String], String)	-- ^ qualifiers and base name
+	-> ([String], String)	--   qualifiers and base name
 
 breakModuleStr str	
 	| bits		<- breakOns '.' str
