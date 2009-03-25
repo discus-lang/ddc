@@ -74,6 +74,14 @@ joinTT env t1 t2
 	= joinTT_work env t1 t2
 
 joinTT_work env t1 t2
+	| Just (t11, t12, e1, c1)	<- takeTFun t1
+	, Just (t21, t22, e2, c2)	<- takeTFun t2
+	, t11 == t21
+	, Just tY		<- joinTT env t12 t22
+	, Just eff		<- joinTT env e1 e2
+	, Just clo		<- joinTT env c1 c2
+	= Just $ makeTFun t11 tY eff clo
+
 	| TApp tX1 tY1		<- t1
 	, TApp tX2 tY2		<- t2
 	, Just tX		<- joinTT env tX1 tX2

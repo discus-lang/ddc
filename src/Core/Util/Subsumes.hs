@@ -39,10 +39,10 @@ trace ss x
 -- stage	= "Core.Util.Subsumes"
 
 -- | Check if t subsumes s another. t :> s
---	TODO: 	Assumes that effect and closures in data types are all covariant
---		We should really carry around the data type definition with the
---		constructors so we can can check what variance their args 
---		actually have.
+--   Note that subsumption only works on the effect and closure information.
+--   We don't need to worry about the difference between co and contra variance
+--   because :> constraints are not restrictions on what value we can
+--   use as a function parameter
 --
 subsumes 
 	:: Map Var Type 	-- table of (v :> t) constraints
@@ -161,7 +161,7 @@ subsumes3 table t s
 	-- fun
  	| Just (t1, t2, tEff, tClo)	<- takeTFun t
 	, Just (s1, s2, sEff, sClo)	<- takeTFun s
-	, subsumes1 table s1 t1
+	, subsumes1 table t1 s1
 	, subsumes1 table t2 s2
 	, subsumes1 table tEff sEff
 	, subsumes1 table tClo sClo
@@ -179,10 +179,6 @@ subsumes3 table t s
 	= (True, "SubTag - tag s")
 
 	-- SubCtor
-	--	BUGS: If we knew which of these args was covar/contravar we
-	--	could do a proper subsumption, but we don't have that info here. 
-	--	Just take all the args as being covariant instead.
-	--
 	| Just (tVar, k, ts)	<- takeTData t
 	, Just (sVar, k, ss)	<- takeTData s
 	, tVar == sVar
