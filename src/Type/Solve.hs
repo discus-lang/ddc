@@ -148,8 +148,7 @@ solveCs	(c:cs)
 
 		-- Record the constraint in the solver state
 		modify $ \s -> s 
-			{ stateDefs	= Map.insert vDef t (stateDefs s)
-			, stateGenDone	= Set.insert vDef (stateGenDone s) }
+			{ stateDefs	= Map.insert vDef t (stateDefs s) }
 
 		solveNext cs
 
@@ -407,13 +406,18 @@ solveCInst 	cs c@(CInst src vUse vInst)
 		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
-	sGenDone		<- gets stateGenDone
+	sGenDone	<- gets stateGenDone
+	sDefs		<- gets stateDefs
 	let bindInst 
 		-- hmm, we're outside all branches
 		| isNil path
 		= BLet [vInst]
 
-		-- var was imported, or already generalised.
+		-- var was imported from another module
+		| Map.member vInst sDefs
+		= BLet [vInst]
+
+		-- var has already been generalised
 		| Set.member vInst sGenDone
 		= BLet [vInst]
 		
@@ -439,8 +443,9 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	 (p:_)	-> graphInstantiatesAdd p bindInst
 
 	sGenDone	<- gets stateGenDone
+	sDefs		<- gets stateDefs
 
-	solveCInst_simple cs c bindInst path sGenDone
+	solveCInst_simple cs c bindInst path sGenDone sDefs
 	
 
 -- These are the easy cases..
@@ -448,11 +453,12 @@ solveCInst 	cs c@(CInst src vUse vInst)
 solveCInst_simple 
 	cs 
 	c@(CInst src vUse vInst)
-	bindInst path sGenDone
+	bindInst path sGenDone sDefs
 
 	-- IF   the var has already been generalised/defined 
 	-- THEN then we can extract it straight from the graph.
-	| Set.member vInst sGenDone
+	|   Set.member vInst sGenDone
+	 || Map.member vInst sDefs
 	= do	
 		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
 		return	$ CGrind : (CInstLet src vUse vInst) : cs

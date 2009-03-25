@@ -113,7 +113,7 @@ data SquidS
 	--	out of that group.
 	, stateGenSusp		:: Set Var
 
-	-- | Vars of types which have already been generalised (or imported from another module)
+	-- | Vars of types which have already been generalised 
 	--	When we want to instantiate the type for one of the vars in this set then
 	--	we can just extract it from the graph, nothing more to do.
 	, stateGenDone		:: Set Var
