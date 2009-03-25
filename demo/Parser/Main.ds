@@ -31,7 +31,7 @@ runParser (Parser fun) str
 -- vs	pReturn :: a -> Parser %r !PURE (x : a) tok a
 --
 
-instance Monad (Parser tok) where
+instance Monad (Parser %r1 !e1 $c1 tok) where
 	(>>=) 		= parserBind
 	(>>)		= parserThen
 
@@ -109,6 +109,7 @@ sepBy1 pTok pSep
 
 -----
 test	= ['a', 'v', 'a', 'v', 'a', 'b']
+test2	= ['a', 'a', 'a', 'a', 'a', 'a']
 
 pTest
  =   do	_	<- sepBy1 (pChar 'a') (pChar 'v')
@@ -117,11 +118,14 @@ pTest
 
  <|> do	_	<- pChar 'z'
  	pReturn	()
+
+ <|> do	_	<- many1 (pChar 'a')
+	pReturn ()
  	
 
 	
 main ()
- = do	putStr	$ show test % "\n"
+ = do	putStr	$ show test2 % "\n"
 	result	= runParser pTest test
 	
 	putStr	$ show (isSuccess result) % "\n"
