@@ -50,6 +50,7 @@ libraryModules args =
 
 	, "System/File"
 	, "System/Console"
+	, "System/Environment"
 
 	, "Control/Imperative"
 	, "Control/Exception"

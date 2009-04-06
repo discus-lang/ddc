@@ -1,3 +1,7 @@
+{-# OPTIONS -no-implicit-prelude #-}
+import Data.Int
+import Data.Int32U
+import Data.String
 
 foreign import "_ddcArgCount"
  argCountU :: Int32#
