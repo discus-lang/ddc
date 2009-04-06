@@ -1,0 +1,72 @@
+
+-- boxed match
+test1_1 x
+ = case 0 of
+	0	-> 5
+	1	-> 6
+ 	_	-> 7
+
+test1_2 x
+ = case x of
+	'a'	-> 5
+ 	'b'	-> 6
+	_	-> 7
+
+test1_3 x
+ = case x of
+	4.5 	-> 5
+ 	6.7 	-> 6
+	_	-> 7
+{-
+test1_4 x
+ = case x of
+	"dude" 	-> 5
+	"wibble" -> 6
+	_	-> 7
+
+test1_5 x
+ = case x of	
+	"dude"	-> 5
+-}	
+
+
+-- unboxed match
+test2_1 x
+ = case 0# of
+	23#	-> 5
+	42#	-> 6 
+ 	_ 	-> 7
+
+test2_2 x
+ = case x of
+	'a'# 	-> 5
+ 	'b'# 	-> 6
+	_	-> 7
+
+test2_3 x
+ = case x of
+	4.5# 	-> 5
+ 	6.7# 	-> 6
+	_	-> 7
+
+
+
+{-
+test2 
+ = case [1, 2, 3] of
+	 [a, b, c] -> a + b + c
+-}	
+	
+main ()
+ = do	putStr $ show (test1_1 0) 	% "\n"
+	putStr $ show (test1_2 'a')	% "\n"
+	putStr $ show (test1_3 4.5) 	% "\n"
+--	putStr $ show (test1_4 "dude") 	% "\n"
+--	putStr $ show (test1_5 "dude") 	% "\n"
+
+
+	putStr $ show (test2_1 7)	% "\n"
+	putStr $ show (test2_1 'z')	% "\n"
+	putStr $ show (test2_1 10.0)	% "\n"
+	
+	
