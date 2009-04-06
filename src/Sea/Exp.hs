@@ -107,7 +107,10 @@ data Stmt a
 
 	| SMatch	[Alt a]
 
+	| SIf		(Exp a) [Stmt a]
+
 	| SSwitch	(Exp a) 	[Alt a]		-- Switch on an expression.
+	| SCaseFail		
 	deriving (Show, Eq)	
 
 
@@ -241,5 +244,7 @@ data	Prim
 	
 	| FArrayPeek Type
 	| FArrayPoke Type
+	
+	| FStrCmp
 	deriving (Show, Eq)
 

@@ -9,6 +9,8 @@ import Util
 import Shared.VarGen
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
+import Shared.Base
+import Shared.Literal
 
 import Sea.Exp
 import Sea.Pretty
@@ -96,9 +98,38 @@ flattenG
 	( ixGuard	-- index of this guard
 	 , g)		-- the guard
 
- = case g of
- 	GCase isLazy ss x1 x2
-	 -> do	let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
+	| GCase isLazy ss x1 x2@(XLit litFmt) 	<- g
+	, LiteralFmt lit fmt			<- litFmt
+	= do
+		let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
+		vGuardStart	<- newVarN_named NameLabel (lName)
+ 
+		-- decide where to go if this guard fails
+		let ssNext
+			-- if we've got another alternative after this one then go there.
+			| Just label	<- mvStartNextAlt
+			= [SGoto label]
+
+			-- otherwise die and emit a non-exhaustive case match error
+			| otherwise
+			= [SCaseFail]
+		
+		let stmts
+			| LiteralFmt (LString _) Unboxed <- litFmt
+			= ss
+			++ [ SIf (XPrim FNEq [XPrim FStrCmp [x1, x2], XInt 0])
+				 ssNext]
+					
+			| otherwise
+			= ss
+			++ [ SIf (XPrim FNEq [x1, x2]) 
+			 	 ssNext]
+
+		return stmts
+				
+ 	| GCase isLazy ss x1 x2			<- g
+	= do
+		let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
 	
 	 	vGuardStart	<- newVarN_named NameLabel (lName)
 	 	vGuardAgain	<- newVarN_named NameLabel (lName ++ "_again")
@@ -112,7 +143,7 @@ flattenG
 			-- otherwise die and emit a non-exhaustive case match error
 			| otherwise
 			= [ACaseDeath]
-		
+
 		-- decide whether we need to generate code to follow suspensions.
 		let (ssAgain, ssFollow)
 			-- if we're matching against a constructor tag 
@@ -125,7 +156,6 @@ flattenG
 			-- otherwise no
 			| otherwise
 			= ([], [])
-
 
 		-- build the expression		
 		return	$  [ SLabel vGuardStart]

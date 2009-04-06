@@ -104,6 +104,9 @@ primRangeInfL	= primVar NameValue	"Data.List.rangeInfIntL"		VRangeInfL
 primConcatMap	= primVar NameValue	"Data.List.concatMap"			VConcatMap
 primConcatMapL	= primVar NameValue	"Data.List.concatMapL"			VConcatMapL
 
+primStrCmp	= primVarI NameValue	"Data.Array.indexR"			VIndexR
+					[Var.ISeaName "primArray_indexR"]
+
 primThrow	= primVarI NameValue	"Control.Exception.primThrow"		VThrow
 					[Var.ISeaName ("primException_throw")]
 

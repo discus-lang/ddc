@@ -498,7 +498,7 @@ toSeaG	mObjV ssFront gg
 
 				let ssL		= assignLastSS (E.XVar var, t') ssRHS
 				return	( []
-					, Just $ E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX (E.XLit litFmt))
+					, Just $ E.GCase False (ssFront ++ ssL) compX (E.XLit litFmt))
 			  
 			-- match against constructor
 			| C.WCon v lvts	<- w

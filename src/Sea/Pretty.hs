@@ -126,6 +126,13 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	    % punc "\n" aa
 	    % "}"
 
+	SIf xExp ssThen
+	 -> "if (" % xExp % ") {\n"
+		%> punc "\n" ssThen
+		% "\n}\n"
+
+	SCaseFail 
+	 -> ppr "_CASEFAIL;"
 
 -- Alt ---------------------------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
@@ -240,6 +247,8 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 		FArrayPeek t	-> "_arrayPeek (" % t % ", " % x1 % ", " % x2 % ")"
 		FArrayPoke t	-> "_arrayPoke (" % t % ", " % x1 % ", " % x2 % ")"
+
+		FStrCmp		-> "strcmp (" % x1 % ", " % x2 % ")"
 
 		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
 	

@@ -218,7 +218,16 @@ instance Monad m => TransM m a1 a2 Stmt where
 	 -> do	aa'		<- mapM (transZM table) aa
 	 	transS table	$ SMatch aa'
 				
+	SIf x ssThen
+	 -> do	x'		<- transZM table x
 
+		ssThen2		<- mapM (transZM table) ssThen
+		ssThen3		<- transSS table ssThen2
+		
+		transS table	$ SIf x' ssThen3
+
+	SCaseFail
+	 ->	transS table	$ SCaseFail
 		
 -- Exp ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Exp where
@@ -377,7 +386,7 @@ instance Monad m => TransM m a1 a2 Alt where
 	 	ss2		<- mapM (transZM table) ss
 		ss3		<- transSS table ss2
 
-	 	return		$ AAlt gs' ss3
+	 	transA table	$ AAlt gs' ss3
 
 	ASwitch x ss
 	 -> do	x'		<- transZM table x

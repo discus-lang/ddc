@@ -46,6 +46,9 @@ static inline UInt
 #define _CASEDEATH \
 	default: _deathCase (__func__, 0, 0);
 
+#define _CASEFAIL \
+	_deathCase (__func__, 0, 0);
+
 // Data tags
 #define _null		0
 #define _tagThunk	0x0ffffff

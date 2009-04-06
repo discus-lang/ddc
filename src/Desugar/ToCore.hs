@@ -647,8 +647,12 @@ toCoreG :: Maybe (Var, C.Type)
 toCoreG mObj gg
 	| D.GCase _ w		<- gg
 	, Just (objV, objT)	<- mObj
-	= do	(w', _)		<- toCoreW w
-	 	return		$ C.GExp w' (C.XVar objV objT)
+	= do	(w', mustUnbox)	<- toCoreW w
+
+		let x		= C.XVar objV objT
+		case mustUnbox of
+		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XType r, C.XPrim C.MForce [x]])
+		 Nothing	-> return $ C.GExp w' x
 		
 	| D.GExp _ w x		<- gg
 	= do	(w', mustUnbox)	<- toCoreW w
