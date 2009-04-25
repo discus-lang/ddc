@@ -581,7 +581,11 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 		$ "rewrite[S.Pat]: can't rewrite " % show ww % "\n"
 		
 -- | Rewrite a source list pattern to individual constructor patterns.
-rewritePatList :: SourcePos -> [S.Pat] -> [D.Pat]
+rewritePatList 
+	:: SourcePos 
+	-> [S.Pat SourcePos] 
+	-> RewriteM (D.Pat Annot)
+	
 rewritePatList sp []
  = do	return $ D.WConLabelP sp primNil []
 
@@ -593,6 +597,7 @@ rewritePatList sp (p:ps)
 			primCons 
 			[ (D.LIndex sp 0, p')
 			, (D.LIndex sp 1, ps') ]
+			
 			
 -- Label ------------------------------------------------------------------------------------------
 instance Rewrite (S.Label SourcePos) (D.Label Annot) where
