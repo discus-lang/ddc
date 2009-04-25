@@ -501,7 +501,7 @@ instance Rewrite (S.Alt SourcePos) (D.Alt Annot) where
 	 	return	$ D.AAlt sp [] x'
 
 
--- Guard ---------------------------------------------------------------------------------------------
+-- Guard ------------------------------------------------------------------------------------------
 instance Rewrite (S.Guard SourcePos) (D.Guard Annot) where
  rewrite gg 
   = case gg of
@@ -516,11 +516,12 @@ instance Rewrite (S.Guard SourcePos) (D.Guard Annot) where
 		
 	
 
--- Pat ---------------------------------------------------------------------------------------------
-----
+-- Pat --------------------------------------------------------------------------------------------
 -- This is basic rewriting of the AST from S.Pat to D.Pat
---	all the more involved rewrites should go in Desugar.Patterns
-
+--	includings renaming things like [] to Nil.
+--	Introducing intermediate variables and the conversion to match
+--	expressions takes place in Desugar.Patterns.
+--
 instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
  rewrite ww
   = case ww of
@@ -568,19 +569,32 @@ instance Rewrite (S.Pat SourcePos) (D.Pat Annot) where
 				[ (D.LIndex sp 0, p1')
 				, (D.LIndex sp 1, p2') ]
 
+	-- [] -> Nil
 	S.WList sp []
 	 -> 	return	$ D.WConLabelP sp primNil []
 
-{-	S.WList sp ps
-	 -> do	ps'	<- mapM rewrite ps
-	 	return	$ D.WList sp ps'
--}
+	-- [a, b, c] -> Cons a (Cons b (Cons c Nil))
+	S.WList sp ps
+	 -> 	rewritePatList sp ps
+
 	_	-> panic stage	
 		$ "rewrite[S.Pat]: can't rewrite " % show ww % "\n"
 		
+-- | Rewrite a source list pattern to individual constructor patterns.
+rewritePatList :: SourcePos -> [S.Pat] -> [D.Pat]
+rewritePatList sp []
+ = do	return $ D.WConLabelP sp primNil []
+
+rewritePatList sp (p:ps)
+ = do	p'	<- rewrite p
+	ps'	<- rewritePatList sp ps
 	
-		
--- Label ---------------------------------------------------------------------------------------------
+	return	$ D.WConLabelP sp 
+			primCons 
+			[ (D.LIndex sp 0, p')
+			, (D.LIndex sp 1, ps') ]
+			
+-- Label ------------------------------------------------------------------------------------------
 instance Rewrite (S.Label SourcePos) (D.Label Annot) where
  rewrite ll
   = case ll of
@@ -588,7 +602,7 @@ instance Rewrite (S.Label SourcePos) (D.Label Annot) where
 	S.LVar sp v	-> return $ D.LVar   sp v
 
 
--- Try syntax------------------------------------------------------------------------------------------
+-- Try syntax--------------------------------------------------------------------------------------
 rewriteTry
 	:: SourcePos -> [D.Stmt Annot] -> D.Exp Annot -> [D.Alt Annot] 
 	-> RewriteM (D.Exp Annot)
@@ -605,10 +619,13 @@ rewriteTry	   sp ssMore x aa
 	let aDefault	= D.AAlt sp [] (D.XApp sp (D.XVar sp primThrow) (D.XVar sp tryCatchVA))
 
 	let exp	= D.XDo sp $
-		[ D.SBind sp (Just tryExpV) 	(D.XLambda sp d x) ]
+		[ D.SBind sp 	(Just tryExpV) 	
+				(D.XLambda sp d x) ]
 		++ ssMore ++
-		[ D.SBind sp (Just tryCatchV) 	(D.XLambda sp tryCatchVA 
-							(D.XMatch sp (Just $ D.XVar sp tryCatchVA) (aa ++ [aDefault])))
+		[ D.SBind sp 	(Just tryCatchV) 	
+				(D.XLambda sp tryCatchVA 
+					(D.XMatch sp (Just $ D.XVar sp tryCatchVA) (aa ++ [aDefault])))
+
 		, D.SBind sp Nothing 
 			$ D.XApp sp 	(D.XApp sp	(D.XVar sp primTry)
 							(D.XVar sp tryExpV))
@@ -625,7 +642,7 @@ addWithAlt	w (D.AAlt sp aa x)
 	_		-> D.AAlt sp aa (D.XDo sp [D.SBind sp Nothing x, D.SBind sp Nothing w])
 	
 
--- Monadic do syntax --------------------------------------------------------------------------------
+-- Monadic do syntax ------------------------------------------------------------------------------
 -- | Desugar monadic do notation
 rewriteDoSS :: [D.Stmt Annot] -> RewriteM [D.Stmt Annot]
 rewriteDoSS []		= return []
@@ -663,7 +680,7 @@ rewriteDoSS (s : ss)
 	
 
 
--- Type ---------------------------------------------------------------------------------------------
+-- Type -------------------------------------------------------------------------------------------
 instance Rewrite S.Type S.Type where
  rewrite tt
   = case tt of
