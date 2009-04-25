@@ -55,21 +55,21 @@ type Tree	= [Top]
 
 data Top
 	= PNil
-	| PBind		Var Exp				-- ^ A Top level binding.
+	| PBind		Var Exp			-- ^ A Top level binding.
 
-	| PExtern	Var Type Type			-- ^ A function or effect imported from somewhere else.
-							-- 	name, value type, operational type
+	| PExtern	Var Type Type		-- ^ A function or effect imported from somewhere else.
+						-- 	name, value type, operational type
 	
-	| PExternData	Var Kind			-- ^ An unboxed data type imported from somewhere else.
+	| PExternData	Var Kind		-- ^ An unboxed data type imported from somewhere else.
 
-	| PData		Var 				--  Type name.
-			[Var] 				--  Type vars.
-			[CtorDef]			--  Constructor defs
+	| PData		Var 			--  Type name.
+			[Var] 			--  Type vars.
+			[CtorDef]		--  Constructor defs
 
-	| PCtor		Var Type Type			-- ^ Constructor: ctor name, value type, operational type
+	| PCtor		Var Type Type		-- ^ Constructor: ctor name, value type, operational type
 
-	| PRegion	Var [(Var, Type)]		-- ^ A global region.
-	| PEffect	Var Kind			-- ^ A global effect.
+	| PRegion	Var [(Var, Type)]	-- ^ A global region.
+	| PEffect	Var Kind		-- ^ A global effect.
 	| PClass	Var Kind
 
 	| PClassDict	Var [Type] [ClassContext] [(Var, Type)]
@@ -91,16 +91,16 @@ data ClassContext
 -- Expressions
 
 data Exp
-	= XNothing					-- ^ Empty expression
-							-- 	In contrast to XNil, an XNothing represents some part of the
-							--	tree with is _supposed_ to be empty between stages
+	= XNothing		-- ^ Empty expression
+				-- 	In contrast to XNil, an XNothing represents some part of the
+				--	tree with is _supposed_ to be empty between stages
 
-	| XNil						-- ^ Nil expression.
-							--	XNil is used internally by compiler stages as a place holder for
-							--	information that isn't present at the moment. If Core.Lint finds
-							--	any XNil's _after_ a stage has completed then it will complain.
+	| XNil			-- ^ Nil expression.
+				--	XNil is used internally by compiler stages as a place holder for
+				--	information that isn't present at the moment. If Core.Lint finds
+				--	any XNil's _after_ a stage has completed then it will complain.
 	
-	| XAnnot [Annot] Exp				-- ^ Annotation.
+	| XAnnot [Annot] Exp	-- ^ Annotation.
 
 
 	------
@@ -148,9 +148,9 @@ data Exp
 	| XAt	 Var   Exp
 				
 	-- Used by Core.Lift
-	| XLifted Var [Var]				-- ^ Place holder for a lambda abstraction that was lifted out
-							-- 	name of lifted function. 
-							--	Name of supercombinator, vars which were free in lifted expression.
+	| XLifted Var [Var]			-- ^ Place holder for a lambda abstraction that was lifted out
+						-- 	name of lifted function. 
+						--	Name of supercombinator, vars which were free in lifted expression.
 
 	deriving (Show, Eq)
 
@@ -168,8 +168,8 @@ data Proj
 
 data Prim
 	-- laziness
-	= MSuspend	Var				-- ^ Suspend some function	function name
-	| MForce					-- ^ Force an expression	(expr list should have a single elem)
+	= MSuspend	Var			-- ^ Suspend some function	function name
+	| MForce				-- ^ Force an expression	(expr list should have a single elem)
 
 	-- a primitive operator
 	| MOp		Op
@@ -180,14 +180,14 @@ data Prim
 	
 	-- function calls
 	-- 	move this to MCall
-	| MTailCall	 				-- ^ Tailcall a super
-	| MCall						-- ^ Call a super
-	| MCallApp	Int				-- ^ Call then apply super with this airity.
-	| MApply					-- ^ Apply a thunk.
-	| MCurry	Int				-- ^ Build a thunk with this airity.
+	| MTailCall	 			-- ^ Tailcall a super
+	| MCall					-- ^ Call a super
+	| MCallApp	Int			-- ^ Call then apply super with this airity.
+	| MApply				-- ^ Apply a thunk.
+	| MCurry	Int			-- ^ Build a thunk with this airity.
 
 	-- some other named primitive function.
-	| MFun		-- Var  Type 			-- ^ Primitive operation.	opName, resultType
+	| MFun		-- Var  Type 		-- ^ Primitive operation.	opName, resultType
 	deriving (Show, Eq)
 
 
@@ -257,14 +257,14 @@ data Label
 --	TODO: A Lot of this is junk that isn't being used
 
 data Annot
-	= NString 	String				-- ^ Some string: for debugging.
-	| NType   	Type 				-- ^ Gives the type for an expression.
-	| NTypeOp	Type				-- ^ Gives the operational type for a supercombinator.
-	| NUseCount	Int				-- ^ Count of how many times this exp\/binding is used in the code.
-	| NPure						-- ^ Exp has no effects, and is pure.
-	| NBindVar	Var				-- ^ Some var which is safe to use as a binding var for this exp.
+	= NString 	String		-- ^ Some string: for debugging.
+	| NType   	Type 		-- ^ Gives the type for an expression.
+	| NTypeOp	Type		-- ^ Gives the operational type for a supercombinator.
+	| NUseCount	Int		-- ^ Count of how many times this exp\/binding is used in the code.
+	| NPure				-- ^ Exp has no effects, and is pure.
+	| NBindVar	Var		-- ^ Some var which is safe to use as a binding var for this exp.
 
-	| NFreeLevel	[(Var, Int)]			-- ^ Some free vars with binding levels.
+	| NFreeLevel	[(Var, Int)]	-- ^ Some free vars with binding levels.
 	| NVarSet	(Set Var)
 
 	-- Used in Core.Optimise.FullLaziness
