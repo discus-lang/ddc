@@ -1,6 +1,7 @@
 
--- | Examines how bound value variables are used.
-
+-- | Examines how bound value variables are used, how deep they are and whether
+--	they appear inside an unboxing. Used by the optimiser.
+--
 module Core.BoundUse
 	( Use (..), useLevel
 	, UseM
@@ -21,6 +22,8 @@ import Util
 type Level	= Int
 
 -- | Records how a bound variable was used.
+-- 	TODO: also add usematch if all uses are case matches can also do unboxed case match
+--
 data Use
 	-- | a regular use
 	= Use		Level
@@ -30,20 +33,22 @@ data Use
 	--	v1 = box v2, so long as all uses of v1 are directly inside unboxings
 	| UseUnbox	Level
 
-	-- also add usematch
-	--	if all uses are case matches can also do unboxed case match
 	deriving (Eq, Show)
 
+
+-- | Take the level from a Use.
 useLevel :: Use -> Level
 useLevel uu
  = case uu of
  	Use l		-> l
 	UseUnbox l	-> l
 
+
 instance Pretty Use PMode where
  ppr use	= ppr $ show use
 	
 
+-- Use State Monad --------------------------------------------------------------------------------
 -- | A monad for collecting uses of variables
 type UseM	= State (Map Var [Use])
 
@@ -60,19 +65,22 @@ addUse v use
 	put s'
 
 
--- tree
+---------------------------------------------------------------------------------------------------
+-- | Examine var usage in this tree.
 boundUseTree :: Tree -> UseM ()
 boundUseTree tree
 	= mapM_ (boundUseP 0) tree
 
--- top
+
+-- | Examine var usage in this top level thing.
 boundUseP :: Level -> Top -> UseM ()
 boundUseP level pp
  = case pp of
  	PBind v x	-> boundUseX level x
 	_		-> return ()
+
 	
--- exp
+-- | Examine var usage in this expression.
 boundUseX :: Level -> Exp -> UseM ()
 boundUseX level xx
  = case xx of
@@ -93,7 +101,7 @@ boundUseX level xx
 	XLit{}			-> return ()
 
 	-- a regular use of a bound variable
-	XVar v t
+	XVar v t		
 	 -> 	addUse v (Use level)
 
 	-- a use of a var directly inside an unbox
@@ -103,18 +111,23 @@ boundUseX level xx
 	XPrim p xs		-> mapM_ (boundUseX level) xs
 
 	XType{}			-> return ()
-	
--- stmt
-boundUseS :: Level -> Stmt -> UseM ()
-boundUseS level (SBind mV x)	= boundUseX level x
 
--- alt
+	
+-- | Examine var usage in this stmt.
+boundUseS :: Level -> Stmt -> UseM ()
+boundUseS level (SBind mV x)	
+	= boundUseX level x
+
+
+-- | Examine var usage in this alternative.
 boundUseA :: Level -> Alt -> UseM ()
 boundUseA level (AAlt gs x)
  = do	mapM_ (boundUseG level) gs
  	boundUseX level x
+
 	
--- guard
+-- | Examine var usave in this guard.
 boundUseG :: Level -> Guard -> UseM ()
-boundUseG level (GExp p x)	= boundUseX level x
+boundUseG level (GExp p x)	
+	= boundUseX level x
 

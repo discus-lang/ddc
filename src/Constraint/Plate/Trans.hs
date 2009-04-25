@@ -1,4 +1,5 @@
 
+-- | Transformation boiler-plate for constraints.
 module Constraint.Plate.Trans
 	( transM 
 	, Table (..))

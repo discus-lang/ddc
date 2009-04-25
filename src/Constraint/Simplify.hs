@@ -1,12 +1,16 @@
 
--- Simplification of type constraints prior to solving.
+-- | Simplification of type constraints prior to solving.
 --	The constraints returned from slurping the desugared code contain
---	a lot of intermediate bindings where the binding name isn't actually
+--	a lot of intermediate bindings where the names aren't actually
 --	needed by the Desugar -> Core transform. This is especially the case
 --	with effect and closure information.
 --
 --	Simplifying the constraints here prior to solving keeps the number
 --	of nodes in the graph down and makes life easier for Type.Util.Pack.
+--
+--	TODO: 	Not sure if we should really do this.
+--		If we had a more efficient graph representation it would be better
+--		to store individual type constructors in nodes instead of compound types.
 --
 module Constraint.Simplify
 	(simplify)
@@ -44,10 +48,13 @@ trace ss x
  	else x
 -}
 
------
+-- | Simplify some type constraints.
+--	This simplification is just simple substitution. Unification (and more simplification)
+--	is done by the constraint solver proper.
+--
 simplify 
-	:: Set Var		-- ^ don't inline these vars
-				--	these are the vars needed by the Desugar -> Core transform.
+	:: Set Var		-- ^ don't inline these vars. 
+				--	These are the ones needed by the Desugar -> Core transform.
 	-> [CTree]		-- ^ constraints to simplify
 	-> [CTree]		-- ^ simplified constraints
 	
@@ -67,7 +74,23 @@ simplify vsNeeded tree
 		% "  vsNeeded    = " % vsNeeded		% "\n"
    		% "  vsInTypes   = " % vsInTypes 	% "\n") -}
 		tree'
-		
+
+-- Inlining ---------------------------------------------------------------------------------------
+-- | State of the constraint inliner.
+data Table
+	= Table
+	{ tableNoInline		:: Set Var
+	, tableSub		:: Map Var Type }
+
+-- | Initial state of the constraint inliner.
+tableZero
+	= Table
+	{ tableNoInline		= Set.empty
+	, tableSub		= Map.empty }
+
+-- | The inliner state monad.
+type InlineM = State Table
+
 -- Walk backwards over the type constraints.
 --	We walk backwards because we don't want to risk adding information
 --	to the graph /after/ generalisations are performed.
@@ -75,24 +98,16 @@ simplify vsNeeded tree
 --	If an effect or closure constraint isn't marked as no-inlined then store
 --	it in the map. If it *is* marked as noinline then substitute into it 
 --	from the information in the map.
-data Table
-	= Table
-	{ tableNoInline		:: Set Var
-	, tableSub		:: Map Var Type }
 
-tableZero
-	= Table
-	{ tableNoInline		= Set.empty
-	, tableSub		= Map.empty }
-
-type InlineM = State Table
-
+-- | Inline simple looking constraints in this constraint tree that aren't bound
+--	by variables in the no-inline set held in the state monad.
+--
 inline :: [CTree] -> InlineM [CTree]
 inline tree
  = do	tree1	<- inlineCollect [] tree
  	inlineDump [] tree1
 
-
+-- | Collect up some constraints to inline, 
 inlineCollect :: [CTree] -> [CTree] -> InlineM [CTree]
 inlineCollect acc []
 	= return $ reverse acc
@@ -127,7 +142,12 @@ inlineCollect acc (c:cs)
 	_ ->	inlineCollect (c : acc) cs
 
 
-inlineDump :: [CTree] -> [CTree] -> InlineM [CTree]
+-- | Do the actual inlining.
+inlineDump 
+	:: [CTree] 		-- ^ acc
+	-> [CTree] 		-- ^ constraints to inline into.
+	-> InlineM [CTree]	-- ^ final constraints.
+
 inlineDump acc []
 	= return $ reverse acc
 	
@@ -146,13 +166,13 @@ inlineDump acc (c : cs)
 		
 		
 
-	
-	
 -- | Substitute into this type
+--	Substitute types for vars into this type.
+--	TODO: Doesn't this just replicate stuff in the Type modules?
+
 subFollowVT :: Map Var Type -> Type -> Type
 subFollowVT sub tt
 	= subFollowVT' sub Set.empty tt
-
 
 subFollowVT' sub block tt
  = let	down	= subFollowVT' 	sub block
@@ -240,7 +260,8 @@ collectNoInlineT' tt
 	modify $ \s -> Set.union s free_keep
 	return tt 	
 
-
+-- | Quick check if this type has a value kind, used when deciding what
+--	type constraints to inline.
 isValueType tt
  = case tt of
  	TFun{}	-> True
@@ -250,20 +271,5 @@ isValueType tt
 	 	-> True
 		
 	_	-> False
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

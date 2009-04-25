@@ -1,19 +1,14 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
------
--- Core.Block
---	Ensures that the expression in lambdas, top level bindings, and RHS of case 
---	alternatives are all XDo's
+-- | Ensures that the expression in lambdas, top level bindings, and the right of case 
+--	alternatives are all XDos.
 --
 --	This makes the Core.Snip's job easier because now it can just snip 
 --	[Stmt] -> [Stmt] without worring about introducing more XDo's to hold snipped
 --	statements.
 --
---
 module Core.Block
-(
-	blockTree
-)
+	( blockTree )
 
 where
 
@@ -25,7 +20,7 @@ import Core.Plate.Trans
 -----
 -- stage	= "Core.Block"
 
------
+-- | Introduce XDo expressions into this tree.
 blockTree :: Tree -> Tree
 blockTree tree
 	= transZ 
@@ -36,7 +31,6 @@ blockTree tree
 			, transG	= \g -> return $ blockTreeG g }
 		tree
 
------	
 blockTreeX xx
  = case xx of
 	XLAM	v k x		-> XLAM v k (blockXL x)
@@ -75,8 +69,6 @@ blockX xx
 	XTet vts x		-> blockXL xx
 	_			-> XDo [ SBind Nothing xx ]
 
-
-
 blockXL xx
  = case xx of
   	XLAM{}			-> xx
@@ -85,5 +77,3 @@ blockXL xx
 	XTet   vts x		-> XTet vts 	(blockXL x)
 	XDo{}			-> xx
 	_			-> XDo [ SBind Nothing xx ]
-
-

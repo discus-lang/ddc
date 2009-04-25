@@ -1,4 +1,5 @@
 
+-- | Bits and pieces for dealing with type constraints.
 module Constraint.Bits
 	( isCBranch
 	, takeCBindVs
@@ -19,12 +20,15 @@ import Type.Exp
 import Constraint.Exp
 
 
+-- | Check if this is a branch in the constraint tree.
+isCBranch :: CTree -> Bool
 isCBranch b
  = case b of
  	CBranch{}	-> True
 	_		-> False
 	
---
+	
+-- | Take all the variables bound by term that this constraint branch is of.
 takeCBindVs :: CBind -> [Var]
 takeCBindVs cc
  = case cc of
@@ -35,6 +39,8 @@ takeCBindVs cc
 	BLambda vs	-> vs
 	BDecon  vs	-> vs
 
+
+-- | Merge the variables in two similar CBinds into another.
 mergeCBinds :: CBind -> CBind -> CBind
 mergeCBinds (BLet    	vs1) (BLet    	vs2)	= BLet	  	(vs1 ++ vs2)
 mergeCBinds (BLetGroup  vs1) (BLetGroup vs2) 	= BLetGroup  	(vs1 ++ vs2)
@@ -42,6 +48,11 @@ mergeCBinds (BLambda 	vs1) (BLambda 	vs2)	= BLambda 	(vs1 ++ vs2)
 mergeCBinds (BDecon  	vs1) (BDecon  	vs2) 	= BDecon  	(vs1 ++ vs2)
 
 
+-- | Slurp the containment map from this tree.
+--	This is a map of all the variables bound by sub-branches in this tree.
+--
+--	TODO: A more efficient implementation, not using catMap.
+--
 slurpContains :: CTree -> Map CBind (Set CBind)
 slurpContains tree
 	= Map.fromList 
@@ -68,14 +79,3 @@ slurpContains' mParent tree@(CBranch{})
 slurpContains' mParent _
 	= []
 	
-	
-
-
-
-					
-
-
-
-
-
-

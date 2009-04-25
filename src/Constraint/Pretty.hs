@@ -1,7 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
--- | Pretty printer for type constraints.
---
+-- | Pretty printing of type constraints.
 module Constraint.Pretty
 	( )
 where
@@ -14,7 +13,7 @@ import Constraint.Exp
 import Shared.Pretty
 import Util
 
--- CTree -----------------------------------------------------------------------
+-- CTree ------------------------------------------------------------------------------------------
 instance Pretty CTree PMode where
  ppr c  
   = case c of
@@ -94,7 +93,7 @@ instance Pretty CTree PMode where
 	 
 
 
--- CBind -----------------------------------------------------------------------
+-- CBind ------------------------------------------------------------------------------------------
 instance Pretty CBind PMode where
  ppr bb	
   = case bb of

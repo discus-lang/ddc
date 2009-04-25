@@ -1,7 +1,7 @@
 
--- | Introduce XLocal constructors to bind free regions.
---	The XLocal's for a particular region are placed just before the deepest
---	XDo block that contains all the references to that region.
+-- | Introduce XLocal constructors to bind free region variables.
+--	The XLocal's for a particular variables are placed just before the deepest XDo
+--	block that contains all the references to that region.
 --
 module Core.Bind
 	( bindTree )
@@ -60,7 +60,7 @@ bindTree
 bindTree unique classMap rsGlobal tree
  = 	evalVarGen (bindM classMap rsGlobal tree) ("w" ++ unique)
 
--- | bindM 
+-- | Bind local region variables in this tree.
 bindM	:: Map Var [Var]
 	-> Set Var
 	-> Tree
@@ -83,7 +83,7 @@ bindM classMap rsGlobal tree
 	return	(tree_global ++ tree_local)
 
 
--- | Bind local regions in this top level thing
+-- | Bind local region variables in this top level thing
 bindP 	:: (?classMap :: Map Var [Var])
 	=> Set Var 			-- unbound vars which are not local to this top
 					-- and cannot be bound here
@@ -391,11 +391,13 @@ bindRegionsX rsLocal xx
    	return	xx'
 
 
--- Construct appropriate witnesses for this regions constraints
+-- | Construct appropriate witnesses for the constraints on this region variable.
 makeWitnesses
-	:: Region
-	-> Map Var [Var]
-	-> BindM [(Var, Type)]
+	:: Region		-- ^ the region variable
+	-> Map Var [Var]	-- ^ map of what region classes are supported
+	-> BindM 
+		[(Var, Type)]	-- ^ map of witness variable to a type expresison that
+				--	constructs the witness.
 
 makeWitnesses r@(TVar KRegion vR) classMap
  = do

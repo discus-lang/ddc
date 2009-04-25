@@ -1,96 +1,106 @@
-------
--- Constraint.Exp
---	Functions for source level type constraints.
---
+
+-- | The tree of type constraints.
 module	Constraint.Exp
 	( CTree(..)
 	, CBind(..) )
 	
 where
 
------
 import Type.Exp
 import Type.Location
 
 import Data.Map			(Map)
 
------------------------
--- CTree
---	Data type representing a tree of type constraints.
+
+-- CTree ------------------------------------------------------------------------------------------
+-- | The tree of type constraints.
+--	In most of these constraints, the first Type parameter should always be 
+--	a TClass or a TVar.
 --
 data	CTree
-	= -- any empty tree, used as a place holder.
+	= -- | An empty tree, used as a place holder.
 	  CTreeNil				
 
-	-- A branch representing the constraints from a block of code
-	--	in the source. If the block binds bariables (eg, a let expression)
+	-- | A branch representing the constraints from an source level expression. 
+	--	If the expression binds variables, as in a let or lambda-expression,
 	--	then these will be present in the branchBind field.
 	| CBranch  
-	  { -- vars bound by this branch.
+	  { -- | vars bound by this branch.
 	    branchBind	:: CBind		
 
-	    -- sub constraints
+	    -- | sub constraints
 	  , branchSub	:: [CTree] }		
 
 
-	-- Type definition.
-	--	These come from external type definitions and 
-	--	interfaces of imported modules.
+	-- | A complete type definition for a variable. 
+	--	Imported from a module, or via the FFI. Assumed to be correct.
 	| CDef		TypeSource Type Type	
 
-	-- A type signature from the source program.
-	--	These give us (partial) information about what this type should be.
+	-- | A type signature from the source program.
+	--	These can contain partial information about the type of bound variable.
 	| CSig		TypeSource Type Type	
 
-	-- Type equality constraint.
-	--	The LHS should be a TClass or a TVar.
+	-- | A type equality constraint.
 	| CEq		TypeSource Type Type
 
-	-- Type equality constraints, all these types are equal.
-	--	The first one should be a TVar
-	--	Saves having to write a large collection of CEq constraints.
+	-- | Some type equalities. 
+	--	All the types in the list are to be taken as equal, which saves having to write
+	--	a large number of CEq constraints. The first one should be a TVar
 	| CEqs		TypeSource [Type]
 
-	-- A class contraint between types,
-	--	eg, Unify, Shape, Inject
+	-- | A type-class constraint.
 	| CClass	TypeSource Var [Type]
 
-	-- A projection constraint
-	| CProject	TypeSource 
-			TProj 
-			Var 	-- var to tie the instantiated projection function to.
-			Type 	-- type to choose the projection dictionary
-			Type	-- type to unify the projection function with once it's resolved.
+	-- | A projection constraint.
+	| CProject	TypeSource 	--  source of the constraint.
+			TProj		--  the sort of projection.
+			Var 		--  type variable to tie to the projection function.
+			Type 		--  the type that guides what projection dictionary to use,
+					--	that is, the type of the object being projection.
+			Type		--  type to unify the type of the instance function once 
+			 		--	it has been determined.
+			
+	-- | An instantiate of a type scheme. The solver will have to wait until the scheme
+	--	is available before it can resolve this projection.
+	| CInst		TypeSource 
+				Var 	--  type var to equate with the instantiated type.
+				Var	--  type var of the scheme to instantiate.
 
-	-- Instantiate a type scheme
-	--	var of instance, var of scheme to instantiate.
-	| CInst		TypeSource Var Var
-
-	-- Generalise a type scheme
-	--	var to generalise
+	-- | Generalise a type scheme.
+	--	When we hit this one we know that all the constraints from the bound 
+	--	variable have been added to the graph and that it's now safe to generalise
+	--	its type.
 	| CGen		TypeSource Type
 
 
-	-- dictionaries
-
-	-- Carries data field definitions.
+	-- dictionaries ---------------
+	-- | Carries data field definitions.
 	--	One of these is generated for each data def in the source.
-	-- 	type name, type vars, (field name, field type)
-	| CDataFields	TypeSource Var [Var] [(Var, Type)]	
+	| CDataFields	
+		TypeSource 		--  source position
+		Var 			--  var of data constructor
+		[Var] 			--  parameter vars of constructor.
+		[(Var, Type)]		--  (field name, field type)
 
-	-- Carries a projection dictionary.
-	--	Projection type. field var, implementation var.
-	| CDictProject	TypeSource Type (Map Var Var)
+	-- | Carries a projection dictionary.
+	| CDictProject	
+		TypeSource 		--  source position
+		Type 			--  type of projection
+		(Map Var Var)		--  map of field label to name of instance function.
 
-	-- An instance for a class dictionary. eg, Num (Int (%_))
-	| CClassInst	TypeSource Var [Type]
+	-- | Says that a type class has a certain instance.
+	| CClassInst	
+		TypeSource		--  source position
+		Var 			--  var of type class
+		[Type]			--  type parameters of class
 
-
-
-	-- Gathers up effect and closure visible at top level.
+	-- | Gathers up effect and closure visible at top level.
 	--	ie, all effects caused by cafs, and all external vars used by the module.
 	--	There should be one of each of these in the constraint list generated
 	--	by Desugar.Slurp
+	--
+	--	TODO: Is this still being used?
+	--
 	| CTopEffect	Type
 	| CTopClosure	Type
 
@@ -100,45 +110,49 @@ data	CTree
 	--	Support for type based projections means we can't determine a call graph before we start
 	--	the solver. These ctors are used to help with reordering constraints on the fly.
 
-	-- Leave a branch.
-	--	The solver uses this to remind itself when all the constraints in a
-	--	branch have been added to the graph.
+	-- (used internaly to solver).
+	--	A marker to remind the solver to leave a branch because all the constraints from
+	--	it have now been added to the graph.
 	| CLeave	CBind
 
-	-- Trigger a graph grind
+	-- (used internally to solver).
+	--	A marker that triggers a grind (reduction) of the graph.
 	| CGrind
 
-	-- Extract a type and instantiate it
-	--	var of instance, var of scheme to instantiate
+	-- (used internally to solver).
+	--	A marker to remind us to instantiate a lambda-bound variabe.
 	| CInstLambda		TypeSource Var Var
+
+	-- (used internally to solver).
+	--	A marker to remind us to instantiate a let-bound variabe.
 	| CInstLet		TypeSource Var Var
+
+	-- (used internally to solver).
+	--	A marker to remind us to instantiate a letrec-bound variabe.
 	| CInstLetRec		TypeSource Var Var
 
 	deriving (Show)
 
 
--- CBind
---	Represents how a variable was bound.
-
+-- CBind ------------------------------------------------------------------------------------------
+-- | Represents bound varaibles, and how they were bound.
+--	These are attached to CBranch nodes of the constraint tree.
+--
 data	CBind
-
 	-- nothing is bound here
 	= BNil		
 	
-	-- delimits the scope of a group of mutually recursive let bindings
+	-- | Delimits the scope of a group of mutually recursive let bindings
 	| BLetGroup	[Var]
 	
-	-- a let bound variable
+	-- | Some let-bound variables.
 	| BLet		[Var]
 	
-	-- a lambda bound variable
+	-- | Some lambda-bound variables.
 	| BLambda	[Var]
 	
-	-- a decon bound variable
+	-- | Some match (deconstructor) bound variables.
 	| BDecon	[Var]
 	deriving (Show, Eq, Ord)
-
-
-
-
-
+	
+	
