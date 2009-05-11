@@ -1,0 +1,11 @@
+
+data IntFun %r1 %r2 %r3 %r4 !e1 $c1
+	= SInt (Int %r2)
+	| SFun (Int %r3 -(!e1 $c1)> Int %r4)
+	
+	
+succ x = x + 1
+
+someSucc = SFun succ
+
+someAdd  = SFun ((+) 2)
