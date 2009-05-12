@@ -1,0 +1,24 @@
+
+
+import Math.Constants
+
+main ()
+ 	= putStr $ show (area $ Square 4.0)
+
+
+class Area a where
+	area :: forall %r1. a -> Float %r1
+
+
+data Shape %r1
+	= Circle (Float %r1)
+	| Square (Float %r1)
+
+
+-- This is not actually a valid instance of Area, due to 
+--	pi being in the closure.
+instance Area (Shape %r1) where
+	area (Square r)	= r * r
+	area (Circle r) = 2.0 * pi * (fpow r 2.0)
+
+
