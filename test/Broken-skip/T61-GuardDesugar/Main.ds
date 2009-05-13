@@ -1,0 +1,9 @@
+
+
+main () = f (1, 2)
+ 
+f :: (Int, Int) -> ()
+f (a, b) | a == b	= putStr "yep"
+f (a, b)		= putStr "nope"
+
+

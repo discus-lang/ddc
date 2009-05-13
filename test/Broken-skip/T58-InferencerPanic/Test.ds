@@ -1,0 +1,7 @@
+
+example :: [()] -> [()]
+
+example a = b
+  where b = a
+
+example c = c

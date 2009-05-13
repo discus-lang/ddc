@@ -1,0 +1,10 @@
+
+
+data Rover %r %i %s
+ = Rover {
+    turnSpeedHardMax:: Float %i;
+    .homePos :: List %r (Int %r) 	= [1, 2, 3];
+    .turn    :: Bool %i 		= True;
+--  .turn    :: Bool %i 		= id True; --- adding an id makes it work
+ }
+

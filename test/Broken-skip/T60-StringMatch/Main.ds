@@ -1,0 +1,9 @@
+
+
+foo x
+ = case x of
+	"hello" 	-> 5
+	"goodbye"	-> 47
+
+main () 
+	= putStr $ show $ foo "hello"

@@ -1,0 +1,8 @@
+
+
+
+thing 	:: forall a. Ref %r1 (a -> a)
+	:- Mutable %r1
+
+thing	= Ref id
+
