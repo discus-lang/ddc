@@ -1,0 +1,9 @@
+
+
+theHead (x:xs) = x
+
+thing :: [Int]
+thing = []
+
+main ()
+ = do	putStr $ show $ theHead thing

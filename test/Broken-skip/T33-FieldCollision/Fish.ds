@@ -1,0 +1,13 @@
+
+
+data Fish %r1
+	= Fish { 
+		name 	:: String %r1; 
+		age	:: Int %r1 
+	};
+
+
+project Fish where
+	name = "fred"
+
+

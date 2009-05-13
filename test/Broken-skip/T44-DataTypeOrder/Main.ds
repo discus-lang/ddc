@@ -1,0 +1,12 @@
+
+
+data Bar a 
+  = BarFoo Foo
+
+data Foo a 
+  = FooInt Int
+
+
+main ()
+ = do	putStr "fool\n"
+
