@@ -1,0 +1,5 @@
+
+-- Generates bad core
+example = []
+  where xs = example
+        y  = xs.head

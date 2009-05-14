@@ -1,0 +1,5 @@
+
+-- fails to parse
+example = ()
+  where (Cons y ys) = []
+

@@ -1,0 +1,10 @@
+
+
+-- This doesn't parse
+
+fun ()
+ = do	when (True)
+ 	 do	Just x	= Just "wibble"
+	 	putStr x
+
+

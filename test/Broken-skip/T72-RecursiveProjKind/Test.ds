@@ -1,0 +1,6 @@
+
+
+example _ = []
+  where xs = example ()
+        y  = xs.head
+        ys = xs.tail

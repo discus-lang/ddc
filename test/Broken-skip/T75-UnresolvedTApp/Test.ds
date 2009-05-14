@@ -1,0 +1,4 @@
+
+example list 
+ = do	dummy = map id list
+	list.head
