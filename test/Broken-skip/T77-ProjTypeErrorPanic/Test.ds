@@ -1,0 +1,5 @@
+
+-- causes a panic. Should cause an error.
+example :: [()] -> ()
+example list = () : example list.tail
+
