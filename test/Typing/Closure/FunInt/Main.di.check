@@ -25,7 +25,7 @@ data FunInt %r0 %r1 !e1 $c1
 
 -- Binds
 foreign import funSucc
-        :: FunInt %rTS0 %rTS5 !e0 $_
+        :: FunInt %rTS0 %rTS5 !e0 $Bot
         :- !e0        = Base.!Read %rTS5
         ,  Base.Const %rTS5
         ,  Base.Const %rTS0
