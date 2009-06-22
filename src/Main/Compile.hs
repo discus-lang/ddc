@@ -43,10 +43,12 @@ import Main.Invoke
 import Main.Setup
 import Main.Init
 import Main.Build
+import Main.Error
 
 import qualified Config.Config		as Config
 
 import Source.Slurp			as S
+import qualified Source.Exp		as S
 
 import qualified Source.Pragma		as Pragma
 
@@ -77,11 +79,11 @@ compileFile
 	-> Module		-- module to compile, must also be in the scrape graph.
 	-> IO ()
 
-compileFile setup scrapes mod
+compileFile setup scrapes sModule
  = do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
 
 	-- Decide on module names  ---------------------------------------------
-	let Just sRoot	= Map.lookup mod scrapes
+	let Just sRoot	= Map.lookup sModule scrapes
 	let pathSource	= let Just s = M.scrapePathSource sRoot in s
 	let (fileName, fileDir, _, _)
 		= M.normaliseFileName pathSource
@@ -110,6 +112,7 @@ compileFile setup scrapes mod
 		setup
 		scrapes
 		sRoot
+		sModule
 		importDirs 
 		sSource
 
@@ -118,6 +121,7 @@ compileFile_parse
 	setup
 	scrapes
 	sRoot
+	sModule
 	importDirs
 	sSource
 
@@ -212,6 +216,22 @@ compileFile_parse
 	
 	let hRenamed	= concat 
 			$ [tree	| (mod, tree) <- modHeaderRenamedTs ]
+
+
+	-- If this module is Main.hs then check that it contains the main function.
+	--	If it doesn't and we try to proceed then we'll get a linker
+	--	failure when we try and make the binary.
+	when (sModule == ModuleAbsolute ["Main"])
+	 $ do	let moduleDefinesMainFn 
+			= any (\p -> case p of
+					S.PStmt (S.SBindFun _ v _ _)
+					 | Var.name v == "main"	-> True
+					 | otherwise		-> False)
+			$ sRenamed
+	
+		when (not $ moduleDefinesMainFn)
+		 $ exitWithUserError ?args [ErrorNoMainFunction]
+					
 			
 	-- Slurp out header information and fixity defs.
 	fixTable	<- SS.sourceSlurpFixTable
@@ -221,7 +241,6 @@ compileFile_parse
 	sDefixed	<- SS.defix
 				sRenamed
 				fixTable
-
 
 	-- Slurp out kind table
 	kindTable	<- SS.sourceKinds (sDefixed ++ hRenamed)

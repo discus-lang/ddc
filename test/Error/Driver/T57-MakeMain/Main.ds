@@ -1,0 +1,6 @@
+
+-- This file has no main function, so when we try to 
+--	make it we should get an error
+
+
+foo () = putStr "dude"

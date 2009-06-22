@@ -46,10 +46,16 @@ ddcMake verbose setup files
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive setup' roots
 
-	-- if child modules need rebuilding then parents do
-	let graph'	= foldl' invalidateParents graph 
+	-- force the root modules to be rebuilt.
+	-- 	This ensures that we can always check that the Main module contains
+	--	the main function, as this is done by the Compile.compileFile.
+	let graph2	= foldl' invalidateModule graph 
 			$ map scrapeModuleName roots
-	
+
+	-- if child modules need rebuilding then parents do
+	let graph3	= foldl' invalidateParents graph2
+			$ map scrapeModuleName roots
+
 	-- dump the scrape graph
 --	putStr	$ pprStrPlain
 --		$ (punc "\n\n" $ map show $ Map.elems graph') % "\n"
@@ -57,10 +63,10 @@ ddcMake verbose setup files
 	-- count the number of modules needing to be rebuilt
 	let buildCount	= length
 	 		$ filter scrapeNeedsRebuild 
-			$ Map.elems graph'
+			$ Map.elems graph3
 	
 	-- build the required modules
-	graph_comp	<- buildLoop setup' graph' buildCount 0 
+	graph_comp	<- buildLoop setup' graph3 buildCount 0 
 			$ map scrapeModuleName roots
 	
 	-- link the executable
@@ -184,6 +190,16 @@ invalidateParents graph mod
 	scrape'	= scrape { scrapeNeedsRebuild = rebuild }
 	
    in	Map.insert mod scrape' graph'
+
+
+-- Mark this module as needing a rebuild
+invalidateModule :: GraphScrape -> Module -> GraphScrape
+invalidateModule graph mod
+ = let	Just scrape	= Map.lookup mod graph
+	scrape'		= scrape { scrapeNeedsRebuild = True }
+   in	Map.insert mod scrape' graph
+
+
 
 -- Build ------------------------------------------------------------------------------------------
 -- | Find a module to build
