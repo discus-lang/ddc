@@ -1,4 +1,8 @@
 
+-- | A graph of scraped module information
+--	Used to work out what to build next when doing a 
+--	recursive make.
+
 module Module.GraphScrape 
 	( GraphScrape
 	, invalidateParents)
@@ -11,7 +15,6 @@ import Shared.Var		(Module)
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 import Data.List
-
 
 type GraphScrape	= Map Module Scrape
 
