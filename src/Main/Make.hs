@@ -10,6 +10,7 @@ import Main.Link
 
 import Shared.Pretty
 import Shared.Var		(Module)
+import qualified Shared.Var as	Var
 
 import Module.Scrape
 import Module.IO
@@ -49,11 +50,11 @@ ddcMake verbose setup files
 	-- force the root modules to be rebuilt.
 	-- 	This ensures that we can always check that the Main module contains
 	--	the main function, as this is done by the Compile.compileFile.
-	let graph2	= foldl' invalidateModule graph 
-			$ map scrapeModuleName roots
+--	let graph2	= foldl' invalidateModule graph 
+--			$ map scrapeModuleName roots
 
 	-- if child modules need rebuilding then parents do
-	let graph3	= foldl' invalidateParents graph2
+	let graph3	= foldl' invalidateParents graph
 			$ map scrapeModuleName roots
 
 	-- dump the scrape graph
@@ -69,15 +70,19 @@ ddcMake verbose setup files
 	graph_comp	<- buildLoop setup' graph3 buildCount 0 
 			$ map scrapeModuleName roots
 	
-	-- link the executable
-	let Just objFiles	
-		= sequence 
-		$ map scrapePathObject 
-		$ Map.elems graph_comp
-	 
-	let root1 : _	= roots
+ 	-- If one of the roots is the Main module, then link the binary.
+	let gotMain	= any (\r -> scrapeModuleName r == Var.ModuleAbsolute ["Main"])
+			$ roots
 	
-	linkFile setup (scrapeBuild root1) objFiles
+	when (gotMain)
+	 $ do	-- all the object files that need to be linked
+		let Just objFiles	
+			= sequence 
+			$ map scrapePathObject 
+			$ Map.elems graph_comp
+
+		let root1 : _	= roots
+		linkFile setup (scrapeBuild root1) objFiles
 	
 	
 	-- sweet success
@@ -191,16 +196,6 @@ invalidateParents graph mod
 	
    in	Map.insert mod scrape' graph'
 
-
--- Mark this module as needing a rebuild
-invalidateModule :: GraphScrape -> Module -> GraphScrape
-invalidateModule graph mod
- = let	Just scrape	= Map.lookup mod graph
-	scrape'		= scrape { scrapeNeedsRebuild = True }
-   in	Map.insert mod scrape' graph
-
-
-
 -- Build ------------------------------------------------------------------------------------------
 -- | Find a module to build
 data Buildable
@@ -272,16 +267,4 @@ findBuildable1 graph noChoose mod
 		= Blocked
 			
    in	result
-
-
--- Strip a module dependency graph from the scrape graph
-{-
-stripModuleDeps :: GraphScrape -> GraphModule
-stripModuleDeps graph
-	= Map.fromList
-	$ [ (scrapeModuleName s, scrapeImported s)
-		| s	<- Map.elems graph]
--}
-
-
 
