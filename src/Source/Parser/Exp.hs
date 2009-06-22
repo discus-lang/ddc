@@ -24,11 +24,43 @@ import Control.Monad
 -- | Parse an expression
 pExp :: Parser (Exp SP)
 pExp
- =   	-- application
-  	do 	exps@(x1 : _)	<- Parsec.many1 pExp2
+ = 	-- as while / when / unless are known to have two arguments
+	--	we can relax the need to wrap the second one in parens
+
+ 	-- while ( EXP ) EXP  /  while EXP1 EXP
+	do	tok	<- pTok K.While
+		exp1	<-	do	g	<- pRParen pExp
+			      		return	g
+			<|> 	pExp1
+			 
+		exp2	<- pExp
+		return	$ XWhile (spTP tok) exp1 exp2
+				
+ <|>	-- when ( EXP ) EXP  /  when EXP1 EXP
+	do	tok	<- pTok K.When
+		exp1	<-	do	g	<- pRParen pExp
+					return	g
+			<|>	pExp1
+
+		exp2	<- pExp
+		return	$ XWhen (spTP tok) exp1 exp2
+			 
+ <|>	-- unless ( EXP ) EXP  /  when EXP1 EXP
+	do	tok	<- pTok K.Unless
+		exp1	<-	do	g 	<- pRParen pExp
+					return	g
+			<|>	pExp1
+
+		exp2	<- pExp
+		return	$ XUnless (spTP tok) exp1 exp2
+
+
+  	-- application
+ <|>  	do 	exps@(x1 : _)	<- Parsec.many1 pExp2
 		case exps of
 		 [x]	-> return x
 		 _	-> return $ XDefix (spX x1) exps
+
 
 pExp2 :: Parser (Exp SP)
 pExp2	
@@ -201,35 +233,6 @@ pExp1'
   	do	tok	<- pTok K.Break					-- TODO: this could be a regular function call
 		return	$ XBreak (spTP tok)
 
-	-- as while / when / unless are known to have two arguments
-	--	we can relax the need to wrap the second one in parens
-
-  <|>	-- while ( EXP ) EXP  /  while EXP1 EXP
-  	do	tok	<- pTok K.While
-		exp1	<-	do	g	<- pRParen pExp
-			      		return	g
-			<|> 	pExp1
-			 
-		exp2	<- pExp
-		return	$ XWhile (spTP tok) exp1 exp2
-				
-  <|>	-- when ( EXP ) EXP  /  when EXP1 EXP
-  	do	tok	<- pTok K.When
-		exp1	<-	do	g	<- pRParen pExp
-					return	g
-			<|>	pExp1
-
-		exp2	<- pExp
-		return	$ XWhen (spTP tok) exp1 exp2
-			 
-  <|>	-- unless ( EXP ) EXP  /  when EXP1 EXP
-  	do	tok	<- pTok K.Unless
-		exp1	<-	do	g 	<- pRParen pExp
-					return	g
-			<|>	pExp1
-
-		exp2	<- pExp
-		return	$ XUnless (spTP tok) exp1 exp2
 
  	-- ( EXP, EXP .. )
 	-- overlaps with ( EXP )
@@ -393,19 +396,19 @@ pStmt_bind
 
 	-- PAT	<- EXPRHS
  <|>	(Parsec.try $ do	
- 		pat	<- pPat1
+ 		pat	<- pPat
 		pTok K.LeftArrow
 		exp	<- pExpRHS
 		return	$ SBindMonadic (spW pat) pat exp)
 
  <|>	-- PAT | ALT ..
  	(Parsec.try $ do
-		pat	<- pPat1
+		pat	<- pPat
 		alts	<- Parsec.many1 pMatchAlt
 		return	$ SBindPat (spW pat) pat (XMatch (spW pat) alts))
 
  <|>	-- PAT  = EXPRHS
- 	do	pat	<- pPat1
+ 	do	pat	<- pPat
 		pTok K.Equals
 		exp	<- pExpRHS
 		return	$ SBindPat (spW pat) pat exp

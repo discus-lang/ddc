@@ -49,8 +49,8 @@ takePatBoundVs w
  	WVar 		sp v		-> [v]
 	WObjVar		sp v		-> [v]
 	WLit		sp _		-> []
-	WCon		sp v ws		-> v : catMap takePatBoundVs ws
-	WConLabel 	sp v lws	-> v : catMap (takePatBoundVs . snd) lws
+	WCon		sp v ws		-> catMap takePatBoundVs ws
+	WConLabel 	sp v lws	-> catMap (takePatBoundVs . snd) lws
 	WAt		sp v w		-> v : takePatBoundVs w
 	WWildcard	sp		-> []
 	WUnit		sp		-> []
