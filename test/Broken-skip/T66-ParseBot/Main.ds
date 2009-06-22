@@ -1,0 +1,7 @@
+
+
+import Parser
+
+main ()
+ = do	thing	= pReturn 5
+	putStr "foo\n"

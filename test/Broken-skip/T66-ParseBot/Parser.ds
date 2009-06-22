@@ -1,0 +1,20 @@
+
+
+-- Parsing of token streams
+data Parser !e1 $c1 tok a 
+	= Parser ([tok] -(!e1 $c1)> Reply tok a)
+
+-- Possible parser errors
+data ParserError tok
+	= ErrorUnexpected tok		-- ^ token was unexpected.
+	| ErrorEOF			-- ^ end of string was reached.
+
+-- Parser reply
+data Reply tok a
+	= Success a [tok]		-- ^ parse succeeded, with these tokens remaining.
+	| Error (ParserError tok)	-- ^ parse failed on this token.
+
+
+pReturn x
+ = Parser (\str -> Success x str)
+
