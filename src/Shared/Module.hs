@@ -1,8 +1,0 @@
-
-module Shared.Module
-(
-)
-
-where
-
-	
