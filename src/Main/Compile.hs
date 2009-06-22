@@ -226,7 +226,9 @@ compileFile_parse
 			= any (\p -> case p of
 					S.PStmt (S.SBindFun _ v _ _)
 					 | Var.name v == "main"	-> True
-					 | otherwise		-> False)
+					 | otherwise		-> False
+					_			-> False)
+
 			$ sRenamed
 	
 		when (not $ moduleDefinesMainFn)
