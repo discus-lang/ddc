@@ -1,12 +1,12 @@
-./test/Error/Unify/FunMore/Main.ds:6:10
+./test/Error/Unify/FunMore/Test.ds:6:10
     Type mismatch during unification.
           cannot match: Base.Int32 %47
                   with: *56 -(!60 $61)> *36
 
               the use of: f1
                  at type: Base.Int32 %47
-                      at: ./test/Error/Unify/FunMore/Main.ds:6:10
+                      at: ./test/Error/Unify/FunMore/Test.ds:6:10
 
         conflicts with, 
           function application
-                      at: ./test/Error/Unify/FunMore/Main.ds:6:10
+                      at: ./test/Error/Unify/FunMore/Test.ds:6:10

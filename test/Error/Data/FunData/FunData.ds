@@ -1,0 +1,19 @@
+
+-- If an effect or closure var from a contained function isn't in the list
+--	of data params then it must be Pure / Empty
+
+data FunInt %r0 %r1
+	= FunInt (Int %r1 -> Int %r1)
+
+succ  x	= x + 1
+
+succP x
+ = do	print "dude!\n"
+ 	x + 1
+
+funInt1	= FunInt succ
+
+-- succP has a visible side effect, but FunInt requires it to be Pure
+funInt2 = FunInt succP		
+
+

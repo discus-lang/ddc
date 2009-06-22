@@ -1,4 +1,6 @@
 
+main () = ()
+
 -- Test error reporting for orphan instances.
 class Thing a where
  	thingFun :: a -> Int

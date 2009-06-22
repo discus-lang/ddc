@@ -1,4 +1,4 @@
-./test/Error/Loop/Loop1/Main.ds:32:0
+./test/Error/Loop/Loop1/Loop1.ds:32:0
     Cannot construct infinite type for 'captId'.
     via: 
         *29 = (*29 -(!96 $93)> *29) -(!96 $93)> *29 -(!96 $93)> *29

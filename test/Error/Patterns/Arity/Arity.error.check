@@ -1,16 +1,16 @@
-./test/Error/Patterns/Airity/Main.ds:20:8
+./test/Error/Patterns/Arity/Arity.ds:20:8
     Wrong number of arguments for constructor match.
-         constructor: Main.ThingC2
-          defined at: ./test/Error/Patterns/Airity/Main.ds:14:10
+         constructor: Arity.ThingC2
+          defined at: ./test/Error/Patterns/Arity/Arity.ds:14:10
                  has: 3 arguments, but has been used here with 4.
 
-./test/Error/Patterns/Airity/Main.ds:8:8
+./test/Error/Patterns/Arity/Arity.ds:8:8
     Wrong number of arguments for constructor match.
          constructor: Data.List.Nil
           defined at: ./library/Data/List.di:25:10
                  has: 0 arguments, but has been used here with 1.
 
-./test/Error/Patterns/Airity/Main.ds:7:8
+./test/Error/Patterns/Arity/Arity.ds:7:8
     Wrong number of arguments for constructor match.
          constructor: Data.List.Cons
           defined at: ./library/Data/List.di:27:10
