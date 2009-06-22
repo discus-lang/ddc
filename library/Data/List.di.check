@@ -364,7 +364,7 @@ foreign import elemF
 foreign import find
         :: forall t0 %r0 %r1 %r2 !e0 $c0
         .  (t0 -(!e0 $c0)> Data.Bool.Bool %r1) -> List %r0 t0 -(!e1 $c1)> Data.Maybe.Maybe %r2 t0
-        :- !e1        = !{!e0; Base.!Read %r1; Base.!Read %r0}
+        :- !e1        = !{Base.!Read %r0; !e0; Base.!Read %r1}
         ,  $c1        = f : $c0
         :$ Base.Thunk -> Base.Data -> Base.Data;
         

@@ -51,13 +51,13 @@ instance Eq Int32# where
 	(#==)		= primInt32U_eq
 	(#/=)		= primInt32U_neq
 
-
+{-
 instance Ord Int32# where
 	(>)		= primInt32U_gt
 	(<)		= primInt32U_lt
 	(>=)		= primInt32U_ge
 	(<=)		= primInt32U_le
-
+-}
 
 instance Num Int32# where 
  	(+) 		= primInt32U_add

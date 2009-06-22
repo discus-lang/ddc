@@ -105,7 +105,7 @@ slurpTopNames p
 	PStmt (SSig sp v t) 
 	 -> []
 	
-	PStmt (SBindFun sp v xx x)
+	PStmt (SBindFun sp v pats alts)
 	 -> [v { Var.nameSpace = NameValue }]
 
 	-- classes		

@@ -381,7 +381,7 @@ pStmt_bind
  		var	<- liftM vNameV $ pVar
 		pats	<- Parsec.many pPat1
 		alts	<- Parsec.many1 pMatchAlt
-		return	$ SBindFun (spV var) var pats (XMatch (spV var) alts))
+		return	$ SBindFun (spV var) var pats alts)
 
 	-- VAR PAT = EXPRHS
  <|>	(Parsec.try $ do	
@@ -389,7 +389,7 @@ pStmt_bind
 		pats	<- Parsec.many pPat1
 		pTok K.Equals
 		exp	<- pExpRHS
-		return	$ SBindFun (spV var) var pats exp)
+		return	$ SBindFun (spV var) var pats [ADefault (spV var) exp])
 
 	-- PAT	<- EXPRHS
  <|>	(Parsec.try $ do	

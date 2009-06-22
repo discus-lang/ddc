@@ -1,13 +1,17 @@
 
 module Desugar.Bits
-	( getAnnotX
+	( isXVar
+	, getAnnotX
 	, getAnnotW
-	, isXVar)
+	, addLambdas )
+	
 	
 where
 
-import Shared.Error
 import Desugar.Exp
+
+import Shared.Error
+import Shared.Var		(Var)
 
 stage	= "Desugar.Exp"
 
@@ -47,3 +51,13 @@ getAnnotW ww
 	WConLabelP	n _ _		-> n
 
 	
+
+-- | Add some lambdas to the front of this expression
+addLambdas 
+	:: a	 			-- ^ source position to use on new nodes
+	-> [Var]			-- ^ vars to bind with new lambdas
+	-> Exp a 			-- ^ expressio to use as the body
+	-> Exp a
+
+addLambdas sp [] x	= x
+addLambdas sp (v:vs) x	= XLambda sp v (addLambdas sp vs x)

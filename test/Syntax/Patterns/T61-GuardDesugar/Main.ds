@@ -1,0 +1,35 @@
+
+-- Check that if no alts in a particular binding match, 
+--	then binding is tried.
+
+main () 
+ = do	f (1, 1)	-- one
+	f (5, 6)	-- two
+	f (1, 2)	-- three
+	f (2, 1)	-- four
+	f (8, 9)	-- last
+
+
+f :: (Int, Int) -> ()
+f (a, b) 
+	| a == b	
+	= putStr "one\n"
+
+	| 5 <- a
+	, 6 <- b	
+	= putStr "two\n"
+
+f (x, y)
+	| x == 1
+	, y == 2
+	= putStr "three\n"
+
+f thing
+	| fst thing == 2
+	, snd thing == 1
+	= putStr "four\n"
+
+f _
+	= putStr "last\n"
+
+

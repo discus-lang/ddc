@@ -215,7 +215,9 @@ data Proj a
 data Stmt a	
 	= SSig		a Var Type
 	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
-	| SBindFun	a Var [Pat a] (Exp a)		-- ^ a function binding, with patterns for the arguments
+	
+	| SBindFun	a Var [Pat a] [Alt a]		-- ^ a guarded function binding, with patterns for the arguments. 
+
 	| SBindPat	a (Pat a) (Exp a)		-- ^ an irrefutable pattern binding
 	| SBindMonadic	a (Pat a) (Exp a)		-- ^ a monadic bind. Desugars to  (exp `bind` \var -> ...)
 	deriving (Show, Eq)

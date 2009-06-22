@@ -52,8 +52,8 @@ foreign import box
         
 foreign import runBoxFun2
         :: forall %r0 !e0 !e1 $c0 $c1
-        .  BoxFun2 %r0 !e1 $c0 !e0 $c1 -(!e2)> Base.Int32 %r0
-        :- !e2        = !{Base.!Read %r0; !e1; !e0}
+        .  BoxFun2 %r0 !e0 $c0 !e1 $c1 -(!e2)> Base.Int32 %r0
+        :- !e2        = !{Base.!Read %r0; !e0; !e1}
         :$ Base.Data -> Base.Data;
         
 foreign import fun

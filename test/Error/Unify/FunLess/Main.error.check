@@ -1,13 +1,13 @@
 ./test/Error/Unify/FunLess/Main.ds:6:15
     Type mismatch during unification.
-          cannot match: *67 -(!59 $62)> *68
-                  with: Base.Int32 %85
+          cannot match: *70 -(!62 $65)> *71
+                  with: Base.Int32 %88
 
               the use of: (+)
-                 at type: *67 -(!59 $62)> *68
+                 at type: *70 -(!62 $65)> *71
                       at: ./test/Error/Unify/FunLess/Main.ds:6:15
 
         conflicts with, 
           literal value 3i32
-                 of type: Base.Int32 %85
+                 of type: Base.Int32 %88
                       at: ./test/Error/Unify/FunLess/Main.ds:6:17

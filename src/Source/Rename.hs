@@ -181,7 +181,7 @@ instance Rename (Top SourcePos) where
 		
 		let ssF		= map (\s -> case s of 
 					SSig  sp v t		-> SSig   sp 	(fixupV v) t
-					SBindFun sp v xs x	-> SBindFun sp	(fixupV v) xs x)
+					SBindFun sp v pats alts	-> SBindFun sp	(fixupV v) pats alts)
 			$ ss
 	 
 	   	t' 	<- local
@@ -661,7 +661,7 @@ instance Rename (Stmt SourcePos) where
 	 -> do	x'	<- local $ rename x
 		return	$ SStmt sp x'		
 
-	SBindFun sp v ps x
+	SBindFun sp v ps as
 	 -> do	v'	<- lbindZ v
 
 	 	local
@@ -674,13 +674,13 @@ instance Rename (Stmt SourcePos) where
 			  []	-> return ()
 			  [v]	-> pushObjectVar v)
 
-			x'		<- rename x
-
+			as'		<- rename as
+	
 			(case objVs of
 			  []	-> return ()
 			  [v]	-> do { popObjectVar; return () })
 
-			return	$ SBindFun sp v' ps' x'
+			return	$ SBindFun sp v' ps' as'
 
 	SBindPat sp pat x
 	 -> do	(pat', _) <- bindPat True pat

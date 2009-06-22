@@ -219,7 +219,7 @@ slurpW	(WLit sp litFmt)
 
 
 slurpW	(WVar sp v)
- = do	Just tBound@(TVar k vT)	<- bindVtoT v
+ = do	tBound@(TVar k vT)	<- lbindVtoT v
  			
 	return	( [(v, vT)]
 		, tBound
@@ -243,7 +243,7 @@ slurpLV	:: Var				-- Constructor name.
 slurpLV vCon tData subInst (LIndex sp ix, v)
  = do	
 	-- create a new type var for this arg.
- 	Just (TVar KValue vT)	<- bindVtoT v
+ 	(TVar KValue vT)	<- lbindVtoT v
 
 	-- Lookup the fields for this constructor.
 	ctorFields	<- gets stateCtorFields

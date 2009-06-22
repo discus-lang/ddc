@@ -40,11 +40,13 @@ import qualified Source.Error		as S
 import qualified Desugar.Util		as D
 import qualified Desugar.Pretty		as D
 import qualified Desugar.Exp		as D
+import qualified Desugar.Bits		as D
 
 import Shared.Exp
 
 import Source.Desugar.Base
 import Source.Desugar.Patterns
+import Source.Desugar.MergeBindings
 
 import {-# SOURCE #-} Source.Desugar.ListComp
 
@@ -462,11 +464,31 @@ instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
 	S.SStmt sp x
 	 -> do	x'	<- rewrite x
 	 	return	$ D.SBind sp Nothing x'
-				
-	S.SBindFun sp v ps x
+
+
+	-- If the right is just a single expression, then we don't want
+	-- 	to wrap it in a dummy match.
+	S.SBindFun sp v [] [S.ADefault sp' x]
 	 -> do	x'	<- rewrite x
-		ps'	<- mapM rewrite ps
-	 	x2	<- makeMatchFunction sp ps' x'
+		return	$ D.SBind sp (Just v) x'
+				
+	S.SBindFun sp v ps as
+	 -> do	ps'	<- mapM rewrite ps
+		as'	<- mapM rewrite as
+
+		-- Make guards to deconstruct each of the patterns
+		(vs, mGs)	<- liftM unzip $ mapM makeGuard ps'
+		let newGs	= catMaybes mGs
+
+		-- Add those guards to each alternative
+		let asPat	= map (\a -> case a of
+						D.AAlt sp gs x -> D.AAlt sp (newGs ++ gs) x)
+				$ as'
+
+		-- Add lambdas to the front to bind each of the arguments.
+		let x2		= D.addLambdas sp vs 
+				$ D.XMatch sp Nothing asPat
+
 		return	$ D.SBind sp (Just v) x2
 
 	S.SBindPat sp pat x

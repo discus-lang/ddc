@@ -92,8 +92,10 @@ instance Pretty (Top a) PMode where
 		% "{\n"
 		%> ("\n\n" %!% 
 			(map 	(\s -> case s of 
-					SBindFun sp v xs x	-> ppr $ SBindFun sp (v { Var.nameModule = Var.ModuleNil }) xs x
-					_			-> panic stage $ "pretty[Top]: malformed PClassInst\n")
+					SBindFun sp v pats alts
+					 -> ppr $ SBindFun sp (v { Var.nameModule = Var.ModuleNil }) pats alts
+					_			
+  					 -> panic stage $ "pretty[Top]: malformed PClassInst\n")
 					
 				ss)
 			% "\n")
@@ -398,12 +400,21 @@ instance Pretty (Stmt a) PMode where
   = case xx of
 	SStmt sp  x		-> prettyX_naked x 					% ";"
 
-	SBindFun sp v [] x	
-	 -> padL 8 v % " " %>> (spaceDown x) % " = " % prettyX_naked x 	% ";"
+	SBindFun sp v [] [ADefault _ x]
+	 -> padL 8 v % " " 
+	 	%>> (spaceDown x) 
+	 	% " = " % prettyX_naked x 	
+		% ";"
 
-	SBindFun sp v ps x	
+	SBindFun sp v ps [ADefault _ x]	
 	 -> v % " " % punc " " (map prettyWB ps)
-	 %>> (spaceDown x) % "\n = " % prettyX_naked x 	% ";"
+	  	%>> (spaceDown x) % "\n = " % prettyX_naked x 	
+	  	% ";"
+
+	SBindFun sp v pats alts
+	 -> v % " " % punc " " (map prettyWB pats) % " {\n"
+	  	%> ("\n\n" %!% alts)
+	  	%  "\n}" % ";"
 	
 	SBindPat sp pat x
 	 -> pat %>> (spaceDown x) % " = " % prettyX_naked x % ";"

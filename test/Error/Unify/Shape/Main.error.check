@@ -1,13 +1,13 @@
 ./test/Error/Unify/Shape/Main.ds:7:6
     Type mismatch during unification.
-          cannot match: Base.Int32 %36
-                  with: Data.String.String %43
+          cannot match: Base.Int32 %44
+                  with: Data.String.String %50
 
               the use of: (+)
-                 at type: Base.Int32 %36
+                 at type: Base.Int32 %44
                       at: ./test/Error/Unify/Shape/Main.ds:7:6
 
         conflicts with, 
           literal value "erk"
-                 of type: Data.String.String %43
+                 of type: Data.String.String %50
                       at: ./test/Error/Unify/Shape/Main.ds:7:8
