@@ -730,6 +730,9 @@ instance Rewrite S.Type S.Type where
 	TFetters t fs
 	 -> do	t'	<- rewrite t
 	 	return	$ TFetters t' fs
+	
+	TBot k	-> return $ TBot k
+	TTop k	-> return $ TTop k
 		
 	TWild k		-> return tt
 

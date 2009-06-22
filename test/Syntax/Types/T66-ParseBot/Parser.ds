@@ -1,4 +1,7 @@
 
+-- Make sure we can handle the !Bot term in the 
+--	type for pReturn
+
 
 -- Parsing of token streams
 data Parser !e1 $c1 tok a 
@@ -14,6 +17,11 @@ data Reply tok a
 	= Success a [tok]		-- ^ parse succeeded, with these tokens remaining.
 	| Error (ParserError tok)	-- ^ parse failed on this token.
 
+
+pReturn
+	:: forall t0 t1 %r0
+	.  t0 -> Parser %r0 !Bot $c0 t1 t0
+	:- $c0        = x : t0
 
 pReturn x
  = Parser (\str -> Success x str)

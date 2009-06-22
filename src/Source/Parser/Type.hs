@@ -217,7 +217,7 @@ pType_body3
 pType_body2 :: Parser Type
 pType_body2
  =	-- CON TYPE..
- 	(Parsec.try $ do	
+	(Parsec.try $ do	
 		con	<- liftM vNameT $ pQualified pCon
  		args	<- Parsec.many pType_body1
 		return	$ TData KNil con args)
@@ -250,7 +250,17 @@ pType_body1
 		pTok K.RKet
 		
 		return	$ TVar kind var)
+		
+ <|>	-- !Bot
+	(Parsec.try $ do
+		con	<- pConOfSpaceNamed [NameEffect] "!Bot"
+		return	$ TBot KEffect)
 
+ <|>	-- $Bot
+	(Parsec.try $ do
+		con	<- pConOfSpaceNamed [NameClosure] "$Bot"
+		return	$ TBot KClosure)
+		
  <|>	-- CON
  	do	con	<- liftM vNameT $ pQualified pCon
 		return	$ TData KNil con []

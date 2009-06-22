@@ -130,18 +130,22 @@ generaliseType' varT tCore envCids
 	-- Clean empty effect and closure classes that aren't ports.
 	let tsContra	=  slurpContraClassVarsT tPlug
 	classInst	<- gets stateClassInst
-	let tClean	= reduceContextT classInst 
-			$ cleanType (Set.fromList tsContra) tPlug
+	let tClean	= cleanType (Set.fromList tsContra) tPlug
 
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
+
+
+	let tReduce	= reduceContextT classInst tClean
+	trace	$ "    tReduce\n"
+			%> ("= " % prettyTS tReduce)		% "\n\n"
 
 	-- Mask effects and Const/Mutable/Local/Direct constraints on local regions.
 	-- 	Do this before adding foralls so we don't end up with quantified regions that
 	--	aren't present in the type scheme.
 	--
-	let rsVisible	= visibleRsT $ flattenT tClean
-	let tMskLocal	= maskLocalT rsVisible tClean
+	let rsVisible	= visibleRsT $ flattenT tReduce
+	let tMskLocal	= maskLocalT rsVisible tReduce
 
 	trace	$ "    rsVisible    = " % rsVisible		% "\n\n"
 	trace	$ "    tMskLocal\n"

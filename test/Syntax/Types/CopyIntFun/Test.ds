@@ -1,0 +1,8 @@
+
+data IntFun %r1 %r2 %r3 %r4 !e1 $c1
+	= FInt (Int %r1)
+	| FFun (Int %r2 -(!e1 $c1)> Int %r3)
+
+copyIntFun xx
+ = case xx of 
+	FInt i	-> FInt (i + 0)

@@ -84,6 +84,12 @@ elaborateRsT' tt
 
 	| TWild{}	<- tt
 	= return (tt, [])
+	
+	| TTop{}	<- tt
+	= return (tt, [])
+	
+	| TBot{}	<- tt
+	= return (tt, [])
 
 	| TFun t1 t2 eff clo	<- tt
 	= do
@@ -178,6 +184,7 @@ hasKind k tt
  = case tt of
  	TVar k2 _	-> k == k2
 	TWild k2	-> k == k2
+	TBot k2		-> k == k2
 	_		-> False
 
 
