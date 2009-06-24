@@ -248,25 +248,33 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 
 		return	$ D.XDo sp ss_merged
 		
+	-- Let and where expressions are treated similarly.
+	--	They're just sugar for do expressions, and don't support mutual recursion.
 	S.XLet sp ss x
-	 -> do	ss'	<- rewrite ss
+	 -> do	ss'		<- rewrite ss
+		x'		<- rewrite x
+		let ssX		= ss' ++ [D.SBind sp Nothing x']
 	 
+		ssX_demon	<- rewriteDoSS ssX
+	
  		-- merge pattern bindings
-		let (ss_merged, errs) = mergeBindings ss'
+		let (ssX_merged, errs) = mergeBindings ssX_demon
 		mapM_ addError errs
 	 
-	 	x'	<- rewrite x
-		return	$ D.XDo sp (ss_merged ++ [D.SBind sp Nothing x'])
+		return	$ D.XDo sp ssX_merged
 
 	S.XWhere sp x ss
-	 -> do	ss'	<- rewrite ss
-	 
+	 -> do	ss'		<- mapM rewrite ss
+		x'		<- rewrite x
+	 	let ssX		= ss' ++ [D.SBind sp Nothing x']
+	
+		ssX_demon	<- rewriteDoSS ssX
+	
  		-- merge pattern bindings
-		let (ss_merged, errs) = mergeBindings ss'
+		let (ssX_merged, errs) = mergeBindings ssX_demon
 		mapM_ addError errs
 
-	 	x'	<- rewrite x
-		return	$ D.XDo	sp (ss_merged ++ [D.SBind sp Nothing x'])
+		return	$ D.XDo	sp ssX_merged
 		
 	S.XIfThenElse sp x1 x2 x3
 	 -> do	x1'	<- rewrite x1

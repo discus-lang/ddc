@@ -1,0 +1,14 @@
+
+
+main ()
+ = do	putStr $ show example1 % "\n"
+	putStr $ show example2 % "\n"
+
+example1 = x + y
+  where Cons y ys 	= [1, 2, 3]
+	x		= 5
+
+example2 
+ = let 	Cons y ys	= [1, 2, 3]
+	x		= 5
+   in	x + y

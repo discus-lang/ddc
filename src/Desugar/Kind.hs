@@ -201,10 +201,12 @@ elabRegionsP pp
 
 elabRegionsS ss
  = case ss of
-	SBind{}		-> return ss
 	SSig sp v t
 	 -> do	t'	<- elabRegionsT t
 		return	$ SSig sp v t'
+
+	_		-> return ss
+
 
 elabRegionsX xx
  = case xx of
