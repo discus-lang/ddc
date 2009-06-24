@@ -1,3 +1,4 @@
+{-# OPTIONS -O2 #-}
 
 module Shared.VarUtil
 	( VarGenM

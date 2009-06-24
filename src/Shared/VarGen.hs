@@ -1,3 +1,4 @@
+{-# OPTIONS -O2 #-}
 
 -- | A state monad to generate fresh variable names.
 module Shared.VarGen

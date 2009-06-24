@@ -4,7 +4,8 @@
 {-# OPTIONS 
 	-fno-warn-monomorphism-restriction 
 	-fno-warn-unused-binds
-	-fno-warn-incomplete-record-updates #-}
+	-fno-warn-incomplete-record-updates 
+	-O2 #-}
 
 module Source.Lexer
 	( dropStrComments

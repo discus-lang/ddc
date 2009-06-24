@@ -1,3 +1,4 @@
+{-# OPTIONS -O2 #-}
 
 module Source.Parser.Util
 	( Var		-- from Shared.Var

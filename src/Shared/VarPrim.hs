@@ -1,3 +1,5 @@
+{-# OPTIONS -O2 #-}
+
 
 -- | These are the variables that have a special meaning to the compiler.
 --	They all need to be defined in the base libraries or runtime system.

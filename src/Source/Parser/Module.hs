@@ -1,4 +1,4 @@
-{-# OPTIONS -fno-warn-unused-binds #-}
+{-# OPTIONS -fno-warn-unused-binds -O2 #-}
 
 module Source.Parser.Module
 	( parseModule

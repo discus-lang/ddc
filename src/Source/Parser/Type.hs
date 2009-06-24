@@ -1,3 +1,4 @@
+{-# OPTIONS -O2 #-}
 
 module Source.Parser.Type
 	(pKind, pType, pType_body, pType_body1, pTypeOp)

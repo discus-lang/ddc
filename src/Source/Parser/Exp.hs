@@ -1,3 +1,4 @@
+{-# OPTIONS -O2 #-}
 
 module Source.Parser.Exp
 	( pExp, pExp1, pExpRHS
