@@ -1,5 +1,0 @@
-
-{-
-import Data.Int -}
-int dummy = 0
-

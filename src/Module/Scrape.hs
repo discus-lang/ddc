@@ -270,7 +270,7 @@ checkNeedsRebuild mSource mInt mHeader mObj
 
 scrapeImports :: String -> [Module]
 scrapeImports source
-	= scrapeImports' (lines source)
+	= scrapeImports' (lines $ dropStrComments source)
 
 scrapeImports' [] = []
 

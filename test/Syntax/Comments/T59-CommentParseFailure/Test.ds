@@ -1,0 +1,10 @@
+
+-- When doing a recursive make, we just slurp the imports directly from string
+--	representation of the file instead of doing a proper parse.
+--
+--	This process didn't used to handle comments properly.
+
+{-
+import Data.Int -}
+int dummy = 0
+

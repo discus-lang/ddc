@@ -2,7 +2,7 @@
 
 module Source.Parser.Module
 	( parseModule
-	, run
+	, parseString
 	, pModule
 	, pTopImport)
 
@@ -37,7 +37,7 @@ parseModule fileName tokens
 
 -- run a single parsed on some string, 
 --	(for testing)
-run parser str
+parseString parser str
  = let 	tokens		= scan str
  	eExp		= Parsec.runParser parser () "file" tokens
    in	case eExp of

@@ -7,7 +7,10 @@
 	-fno-warn-incomplete-record-updates #-}
 
 module Source.Lexer
-	( scan, scanModuleWithOffside
+	( dropStrComments
+	, dropTokComments
+	, scan
+	, scanModuleWithOffside
 	, showSource
 	, sourceTokens 
 	, alexScanTokens)
@@ -167,7 +170,7 @@ alex_deflt :: AlexAddr
 alex_deflt = AlexA# "\x09\x01\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x0f\x00\x0f\x00\x0f\x00\x0f\x00\x0f\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x08\x01\xff\xff\xff\xff\xff\xff\xff\xff"#
 
 alex_accept = listArray (0::Int,265) [[],[],[(AlexAccSkip)],[(AlexAccSkip)],[(AlexAcc (alex_action_1))],[(AlexAcc (alex_action_2))],[(AlexAcc (alex_action_2))],[(AlexAcc (alex_action_70))],[(AlexAcc (alex_action_3))],[(AlexAcc (alex_action_80))],[(AlexAcc (alex_action_4))],[(AlexAcc (alex_action_5))],[],[],[],[],[(AlexAcc (alex_action_6))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_7))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_8))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_9))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_10))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_11))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_12))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_13))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_14))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_15))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_16))],[(AlexAcc (alex_action_18))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_27))],[(AlexAcc (alex_action_17))],[(AlexAcc (alex_action_19))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_20))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_21))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_22))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_23))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_24))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_25))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_26))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_28))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_29))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_30))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_31))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_32))],[(AlexAcc (alex_action_33))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_34))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_35))],[(AlexAcc (alex_action_36))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_37))],[(AlexAcc (alex_action_38))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_39))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_40))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_41))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_42))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_43))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_44))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_45))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_46))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_47))],[(AlexAcc (alex_action_90))],[(AlexAcc (alex_action_48))],[(AlexAcc (alex_action_78))],[(AlexAcc (alex_action_49))],[(AlexAcc (alex_action_50))],[(AlexAcc (alex_action_51))],[(AlexAcc (alex_action_52))],[(AlexAcc (alex_action_53))],[(AlexAcc (alex_action_88))],[(AlexAcc (alex_action_54))],[(AlexAcc (alex_action_74))],[(AlexAcc (alex_action_55))],[(AlexAcc (alex_action_82))],[(AlexAcc (alex_action_56))],[(AlexAcc (alex_action_93))],[(AlexAcc (alex_action_57))],[(AlexAcc (alex_action_58))],[(AlexAcc (alex_action_65))],[(AlexAcc (alex_action_59))],[(AlexAcc (alex_action_92))],[(AlexAcc (alex_action_60))],[(AlexAcc (alex_action_89))],[(AlexAcc (alex_action_61))],[(AlexAcc (alex_action_62))],[(AlexAcc (alex_action_63))],[(AlexAcc (alex_action_86))],[(AlexAcc (alex_action_64))],[(AlexAcc (alex_action_65))],[(AlexAcc (alex_action_66))],[(AlexAcc (alex_action_67))],[(AlexAcc (alex_action_68))],[(AlexAcc (alex_action_69))],[(AlexAcc (alex_action_71))],[(AlexAcc (alex_action_72))],[(AlexAcc (alex_action_73))],[(AlexAcc (alex_action_76))],[(AlexAcc (alex_action_77))],[(AlexAcc (alex_action_79))],[(AlexAcc (alex_action_94))],[(AlexAcc (alex_action_98))],[(AlexAcc (alex_action_75))],[(AlexAcc (alex_action_81))],[(AlexAcc (alex_action_83))],[(AlexAcc (alex_action_84))],[(AlexAcc (alex_action_85))],[(AlexAcc (alex_action_87))],[(AlexAcc (alex_action_91))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[(AlexAcc (alex_action_95))],[],[],[(AlexAcc (alex_action_96))],[(AlexAcc (alex_action_96))],[(AlexAcc (alex_action_96))],[(AlexAcc (alex_action_96))],[(AlexAcc (alex_action_96))],[(AlexAcc (alex_action_96))],[(AlexAcc (alex_action_97))],[(AlexAcc (alex_action_99))],[(AlexAcc (alex_action_100))],[(AlexAcc (alex_action_115))],[],[(AlexAcc (alex_action_101))],[(AlexAcc (alex_action_101))],[(AlexAcc (alex_action_102))],[(AlexAcc (alex_action_104))],[],[(AlexAcc (alex_action_110))],[(AlexAcc (alex_action_110))],[(AlexAcc (alex_action_103))],[(AlexAcc (alex_action_103))],[(AlexAcc (alex_action_105))],[(AlexAcc (alex_action_105))],[(AlexAcc (alex_action_108))],[(AlexAcc (alex_action_106))],[(AlexAcc (alex_action_106))],[(AlexAcc (alex_action_107))],[(AlexAcc (alex_action_107))],[(AlexAcc (alex_action_109))],[(AlexAcc (alex_action_109))],[(AlexAcc (alex_action_111))],[(AlexAcc (alex_action_113))],[],[],[(AlexAcc (alex_action_115))],[(AlexAcc (alex_action_112))],[(AlexAcc (alex_action_114))],[],[(AlexAcc (alex_action_115))]]
-{-# LINE 208 "src/Source/Lexer.x" #-}
+{-# LINE 212 "src/Source/Lexer.x" #-}
  
 
 ----------------------------------------------------------------------------------------------------
@@ -243,7 +246,7 @@ scanModuleWithOffside str
 scan :: String -> [TokenP]
 scan ss	
 	= breakModules 		-- detect module names, and break into projections if required
-	$ eatComments 		-- remove comments
+	$ dropTokComments 	-- remove comments
 	$ alexScanTokens ss
 
 sourceTokens ts
@@ -257,32 +260,55 @@ isTokPragma tok
 lexOffside :: String -> String
 lexOffside ss = sourceTokens $ scan ss
 
--- eatComments -------------------------------------------------------------------------------------
--- | Erase all the comments in this token stream
---	Also handles block comments.
-eatComments ::	[TokenP] -> [TokenP]
-eatComments 	[]	= []
-eatComments	(t@TokenP { token = tok } : xs)
+-- dropTokComments -------------------------------------------------------------------------------------
+-- | Drop all the comments in this token stream
+dropTokComments ::	[TokenP] -> [TokenP]
+dropTokComments 	[]	= []
+dropTokComments	(t@TokenP { token = tok } : xs)
 	| CommentLineStart	<- tok
-	= eatComments $ dropWhile (\t -> not $ isToken t NewLine) xs
+	= dropTokComments $ dropWhile (\t -> not $ isToken t NewLine) xs
 
 	| CommentBlockStart	<- tok
-	= eatComments $ eatCommentBlock xs
+	= dropTokComments $ dropTokCommentBlock xs
 	
 	| otherwise
-	= t : eatComments xs
+	= t : dropTokComments xs
 
-eatCommentBlock :: [TokenP] -> [TokenP]
-eatCommentBlock	[]	= []
-eatCommentBlock	(t@TokenP { token = tok } : xs)
+dropTokCommentBlock :: [TokenP] -> [TokenP]
+dropTokCommentBlock	[]	= []
+dropTokCommentBlock	(t@TokenP { token = tok } : xs)
 	| CommentBlockStart	<- tok
-	= eatCommentBlock $ eatCommentBlock xs
+	= dropTokCommentBlock $ dropTokCommentBlock xs
 
 	| CommentBlockEnd	<- tok
 	= xs
 
 	| otherwise
-	= eatCommentBlock xs
+	= dropTokCommentBlock xs
+
+
+-- dropStrComments --------------------------------------------------------------------------------
+-- | When parsing the module import list when doing a recursive build
+--	we want to drop comments in the source file directly.
+--	This makes the file easier to parse, but we also loose token position information, 
+--	so we don't use it when parsing the file proper.
+--
+dropStrComments :: String -> String
+dropStrComments xx
+ = case xx of
+	[]		-> []
+	('-':'-':xs)	-> dropStrComments $ dropWhile (/= '\n') xs
+	('{':'-':xs)	-> dropStrComments $ dropStrCommentBlock xs
+	(x:xs)		-> x : dropStrComments xs
+
+dropStrCommentBlock :: String -> String
+dropStrCommentBlock xx
+ = case xx of
+	[]		-> []
+	('{':'-':xs)	-> dropStrCommentBlock $ dropStrCommentBlock xs
+	('-':'}':xs)	-> xs
+	(x:xs)		-> dropStrCommentBlock xs
+ 	
 
 -- breakModules ------------------------------------------------------------------------------------
 -- | Break module qualifiers off var and con tokens

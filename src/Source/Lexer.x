@@ -6,7 +6,10 @@
 	-fno-warn-incomplete-record-updates #-}
 
 module Source.Lexer
-	( scan, scanModuleWithOffside
+	( dropStrComments
+	, dropTokComments
+	, scan
+	, scanModuleWithOffside
 	, showSource
 	, sourceTokens 
 	, alexScanTokens)
@@ -280,7 +283,7 @@ scanModuleWithOffside str
 scan :: String -> [TokenP]
 scan ss	
 	= breakModules 		-- detect module names, and break into projections if required
-	$ eatComments 		-- remove comments
+	$ dropTokComments 	-- remove comments
 	$ alexScanTokens ss
 
 sourceTokens ts
@@ -294,32 +297,55 @@ isTokPragma tok
 lexOffside :: String -> String
 lexOffside ss = sourceTokens $ scan ss
 
--- eatComments -------------------------------------------------------------------------------------
--- | Erase all the comments in this token stream
---	Also handles block comments.
-eatComments ::	[TokenP] -> [TokenP]
-eatComments 	[]	= []
-eatComments	(t@TokenP { token = tok } : xs)
+-- dropTokComments -------------------------------------------------------------------------------------
+-- | Drop all the comments in this token stream
+dropTokComments ::	[TokenP] -> [TokenP]
+dropTokComments 	[]	= []
+dropTokComments	(t@TokenP { token = tok } : xs)
 	| CommentLineStart	<- tok
-	= eatComments $ dropWhile (\t -> not $ isToken t NewLine) xs
+	= dropTokComments $ dropWhile (\t -> not $ isToken t NewLine) xs
 
 	| CommentBlockStart	<- tok
-	= eatComments $ eatCommentBlock xs
+	= dropTokComments $ dropTokCommentBlock xs
 	
 	| otherwise
-	= t : eatComments xs
+	= t : dropTokComments xs
 
-eatCommentBlock :: [TokenP] -> [TokenP]
-eatCommentBlock	[]	= []
-eatCommentBlock	(t@TokenP { token = tok } : xs)
+dropTokCommentBlock :: [TokenP] -> [TokenP]
+dropTokCommentBlock	[]	= []
+dropTokCommentBlock	(t@TokenP { token = tok } : xs)
 	| CommentBlockStart	<- tok
-	= eatCommentBlock $ eatCommentBlock xs
+	= dropTokCommentBlock $ dropTokCommentBlock xs
 
 	| CommentBlockEnd	<- tok
 	= xs
 
 	| otherwise
-	= eatCommentBlock xs
+	= dropTokCommentBlock xs
+
+
+-- dropStrComments --------------------------------------------------------------------------------
+-- | When parsing the module import list when doing a recursive build
+--	we want to drop comments in the source file directly.
+--	This makes the file easier to parse, but we also loose token position information, 
+--	so we don't use it when parsing the file proper.
+--
+dropStrComments :: String -> String
+dropStrComments xx
+ = case xx of
+	[]		-> []
+	('-':'-':xs)	-> dropStrComments $ dropWhile (/= '\n') xs
+	('{':'-':xs)	-> dropStrComments $ dropStrCommentBlock xs
+	(x:xs)		-> x : dropStrComments xs
+
+dropStrCommentBlock :: String -> String
+dropStrCommentBlock xx
+ = case xx of
+	[]		-> []
+	('{':'-':xs)	-> dropStrCommentBlock $ dropStrCommentBlock xs
+	('-':'}':xs)	-> xs
+	(x:xs)		-> dropStrCommentBlock xs
+ 	
 
 -- breakModules ------------------------------------------------------------------------------------
 -- | Break module qualifiers off var and con tokens
