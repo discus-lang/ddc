@@ -1,0 +1,5 @@
+
+-- the Sea translation doesn't handle recursive CAFS, 
+--	but give a nice error message instead of a panic
+--	because it't not really a compiler bug
+ones	= (:) @ 1 ones
