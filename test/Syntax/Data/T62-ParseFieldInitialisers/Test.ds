@@ -1,5 +1,8 @@
 
 
+-- Issue #62: Desugaring of field initilizers.
+--	We used to not handle single constructors in the initializer properly.
+--	
 data Rover %r %i %s
  = Rover {
     turnSpeedHardMax:: Float %i;

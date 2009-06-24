@@ -282,7 +282,8 @@ snipDataField moduleName sp vData vCtor field
 		, [])
 
 	-- leave vars there
- 	| Just XVar{}	<- dInit field
+ 	| Just (XVar sp v)	<- dInit field
+	, not $ Var.isCtorName v
 	= return 
 		( field
 		, [])
