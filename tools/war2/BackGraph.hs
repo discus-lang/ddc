@@ -1,5 +1,9 @@
 
-module BackGraph where
+module BackGraph 
+	( BackGraph (..)
+	, BackNode  (..)
+	, testBackGraph )
+where
 
 import qualified Data.Map as Map
 import Data.Map		(Map)

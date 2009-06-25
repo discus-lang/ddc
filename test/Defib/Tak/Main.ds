@@ -1,6 +1,8 @@
 
 -- Adapted from the nofib benchmark.
 
+where
+
 tak x y z 
  = if not(y < x) 
  	then z
@@ -9,5 +11,6 @@ tak x y z
 		 (tak (z - 1) x y);
 		 
 main ()	= print $ (show $ tak 24 16 8) % "\n";
+
 
 

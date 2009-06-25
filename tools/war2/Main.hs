@@ -16,6 +16,14 @@ import System.Exit
 import System.Time
 import Control.Monad.Reader
 
+import qualified WorkGraph	as WorkGraph
+import WorkGraph		(WorkGraph)
+
+import qualified BackGraph	as BackGraph
+import BackGraph		(BackNode(..))
+
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 	
 -- Main -------------------------------------------------------------------------------------------
 main :: IO ()
@@ -69,18 +77,27 @@ doWar
 		$ [dirs | OptTestDirs dirs <- configOptions config]
 
 	-- Get all the tests in these directories
-	tests	<- liftM concat 
-		$  mapM  getTestsInDir testDirs
+	backNodes	<- liftM concat 
+			$  mapM  getTestsInDir testDirs
 
-	results	<- mapM runTest tests
+	let workGraph	= WorkGraph.buildWorkGraphFromBackNodes
+			$ backNodes
+	
+--	liftIO $ print backNodes
+--	liftIO $ print workGraph
 
-	liftIO
-	 $ print $ catInt "\n" $ map pprResult results
+	dispatchTests workGraph
+
+--	results	<- mapM runTest tests
+
+--	liftIO
+--	 $ print $ catInt "\n" $ map pprResult results
 
 	return ()
 
+
 -- Get Tests --------------------------------------------------------------------------------------
-getTestsInDir :: DirPath -> War [TestNode]
+getTestsInDir :: DirPath -> War [(Test, BackNode Test)]
 getTestsInDir dirPath
  = do	debugLn $ "- Looking for tests in " ++ dirPath
 
@@ -89,29 +106,26 @@ getTestsInDir dirPath
 
 	let testsMainDS
 		| any (isSuffixOf "Main.ds") files
-		= let t1	= [TestBuildMain (dirPath ++ "/Main.ds")] 
-		      t2	= [TestRunBinary (dirPath ++ "/Main.bin")]
-	 	  in  [ TestNode []   t1
-		      , TestNode [t1] t2 ]
+		= let t1	= TestBuildMain (dirPath ++ "/Main.ds")
+		      t2	= TestRunBinary (dirPath ++ "/Main.bin")
+	 	  in  [ (t1, BackNode [])
+		      , (t2, BackNode [t1]) ]
 
 	return	testsMainDS
 
 
 -- DispatchTests ----------------------------------------------------------------------------------
-dispatchTests :: Set TestNode -> War ()
 
-dispatchTests inSet deferSet
-	| Set.empty testSet
+dispatchTests :: WorkGraph Test -> War ()
+
+dispatchTests graph
+	| WorkGraph.null graph
 	= return ()
 
- 	| TestNode deps test : _	<- Set.toList testSet
-	, not $ any (flip Set.member testSet) deps
+ 	| (Just test, graph')	<- WorkGraph.takeWork graph
 	= do	result	<- runTest test
-		print $ pprResult result
-
-		let testSet'	= Set.delete test testSet
-		dispatchTests 
-
+		liftIO $ putStr $ pprResult result ++ "\n"
+		dispatchTests graph'
 
 
 -- Run Test ----------------------------------------------------------------------------------------
@@ -120,4 +134,3 @@ runTest test
  = case test of
 	TestBuildMain{}	-> tryWar $ testBuildMain test
 	TestRunBinary{}	-> tryWar $ testRunBinary test
- 
