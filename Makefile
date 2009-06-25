@@ -16,7 +16,7 @@
 #       churn           -- run the churner for a while
 
 # -- build everything
-all	: src/Config/Config.hs bin/ddc bin/war runtime external
+all	: src/Config/Config.hs bin/ddc bin/war bin/war2 runtime external
 
 include make/build.mk
 include make/plate.mk
@@ -69,6 +69,12 @@ bin/ddc	: $(obj) $(GHC_INCOBJS)
 # -- build the test driver
 bin/war : tools/war/War.hs tools/war/Diff.hs tools/war/Interface.hs tools/war/Order.hs tools/war/Bits.hs tools/war/TestSource.hs tools/war/Par.hs
 	$(GHC) $(GHC_FLAGS) -fglasgow-exts -threaded -fglasgow-exts -isrc -itools/war --make tools/war/War.hs -o bin/war
+
+# -- build the test driver
+war2_hs	= $(shell find tools/war2 -name "*.hs")
+
+bin/war2 : $(war2_hs)
+	$(GHC) $(GHC_FLAGS) -fglasgow-exts -threaded -fglasgow-exts -isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
 
 # -- build the churner
 bin/churn : tools/churn/Main.hs tools/churn/Bits.hs tools/churn/Base.hs tools/churn/Exp.hs
