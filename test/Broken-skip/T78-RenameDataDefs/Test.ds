@@ -1,0 +1,7 @@
+
+
+-- This should die with a nice error.
+--	Can't use the same constructor name in a different data type.
+
+data Foo = Foo
+data Bar = Foo
