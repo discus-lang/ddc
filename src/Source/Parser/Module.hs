@@ -142,7 +142,7 @@ pExport
 -- Parse a foreign import.
 pTopForeignImport :: Parser (Top SP)
 pTopForeignImport
- = 	-- foreign import data STRING VAR :: KIND
+ = 	-- foreign import data STRING CON :: KIND
   (Parsec.try $ do
 	tok	<- pTok K.Foreign
 	pTok K.Import
@@ -157,7 +157,7 @@ pTopForeignImport
 			
 	return	$ PForeign (spTP tok) (OImportUnboxedData name con2 kind))
 	
-	-- foreign import data STRING VAR
+	-- foreign import data STRING CON
  <|> (Parsec.try $ do
 	tok	<- pTok K.Foreign
 	pTok K.Import
