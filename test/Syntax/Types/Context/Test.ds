@@ -1,0 +1,23 @@
+
+import Class.Monad
+
+-- test parsing of contexts constraints and quantifiers
+--	We can't give actual definitions for these until we finish dictionary passing
+
+foreign import "wibble"
+	foo1	:: Num a => a -> a -> Bool
+
+foreign import "wibble"
+	foo2	:: (Num a, Eq a) => a -> a -> Bool
+
+foreign import "wibble"
+	foo3	:: Num a => Eq a => a -> a -> Bool
+
+foreign import "wibble"
+	foo4	:: Num a => Eq a => Copy a => a -> a -> Bool
+
+
+
+
+
+

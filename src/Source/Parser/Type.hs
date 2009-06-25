@@ -92,12 +92,12 @@ pVar_withKind1
 			, kindOfVarSpace (Var.nameSpace var) )
 	
 
--- Parse a body type with an optional context and fetter list
+-- Parse a body type with an optional context and constraint list
 pType_bodyFetters :: Parser Type
 pType_bodyFetters
  = do	mContext	<- 
  		(Parsec.try $ do
-			fs	<- pType_context
+			fs	<- pType_someContext
 			pTok K.RightArrowEquals
 			return $ Just fs)
 	    <|>	return Nothing
@@ -114,30 +114,43 @@ pType_bodyFetters
 		[]	-> return body
 		fs	-> return $ TFetters body fs
 	
+pType_someContext :: Parser [Fetter]
+pType_someContext 
+ = 	(Parsec.try pType_hsContext)
+ <|>	pType_context
+
 	
--- Parse some fetters written as a Haskell style type context
+-- Parse some class constraints written as a Disciple context 
+--	C1 => C2 => C3 ...
 pType_context :: Parser [Fetter]
 pType_context
 	-- CONTEXT => CONTEXT ..
  = 	(Parsec.try $ do 	
- 		fs1	<- pType_context1
+ 		fs1	<- pType_classConstraint
  		pTok K.RightArrowEquals
-		fs2	<- pType_context1
-		return	$ fs1 ++ fs2)
+		fs2	<- pType_context
+		return	$ fs1 : fs2)
 
- <|>	pType_context1
+ <|>	(do	f	<- pType_classConstraint
+		return	[f])
  
 
-pType_context1
+-- Parser some class constraints written as a Haskell context
+--	(ClassConstraint ,ClassConstraint*)
+pType_hsContext :: Parser [Fetter]
+pType_hsContext
  = 	-- (CONTEXT, ..)
- 	do	cs	<- pRParen $ Parsec.sepBy1 pType_context1 (pTok K.Comma)
- 		return	(concat cs)
+ 	do	cs	<- pRParen $ Parsec.sepBy1 pType_classConstraint (pTok K.Comma)
+ 		return	cs
 
-	-- CON TYPE..  
- <|> 	do	con	<- liftM vNameW pCon
+-- Parse a single type class constraint
+--	Con Type*
+pType_classConstraint :: Parser Fetter
+pType_classConstraint
+ =	do	con	<- liftM vNameW pCon
 	 	ts	<- Parsec.many1 pType_body1
-		return	[FConstraint con ts]
-	
+		return	$ FConstraint con ts
+
 
 
 -- Parse a body type (without a forall or fetters)

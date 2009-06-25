@@ -1,8 +1,6 @@
 
 import Class.Monad
 
--- Functor -----------------------------------------------------------------------------------------
-
 instance Monad Maybe where
  	return x	= Just x
 	
@@ -31,17 +29,3 @@ thing
 instance Show (Maybe Int) where
 	show Nothing	= "Nothing"
 	show (Just x)	= "Just " % show x
-
-
-
-
--- test syntax of class contexts
---	can't actually compile this until we finish dictionary passing
-{-
-foo1	:: Num a => a -> a -> Bool
-
-foo2	:: (Num a, Eq a) => a -> a -> Bool
-
-foo3	:: Num a => Eq a => a -> a -> Bool
-
--}
