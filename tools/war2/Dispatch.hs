@@ -1,3 +1,4 @@
+{-# OPTIONS -XNoMonomorphismRestriction #-}
 
 module Dispatch 
 	( DispatchAction
@@ -15,6 +16,7 @@ import qualified Data.Set		as Set
 import Data.Set				(Set)
 
 import Control.Monad
+import Control.Monad.State
 import Control.Concurrent
 import Control.Concurrent.MVar
 import System.Exit
@@ -33,16 +35,40 @@ data DispatchConfig job result
 		, dispatchHookFinished	:: job -> result -> IO () 
 		, dispatchResultFailed	:: result -> Bool }
 
+data DispatchState job result
+	= DispatchState
+		-- what to do when a job has finished
+		{ stateHookFinished	:: job -> result -> IO ()
+
+		-- check a result to see if the job failed
+		, stateResultFailed	:: result -> Bool
+
+		-- what to do when a job is ignored because a parent failed
+		, stateHookIgnore	:: job -> IO ()
+		
+		-- the current workers
+		, stateWorkers		:: Set (Worker job result)
+		
+		-- the current work graph
+		, stateGraph		:: WorkGraph job
+		
+		-- the current preferences, we'd prefer to run these jobs,
+		--	in order, before others.
+		, statePrefs		:: [job]
+		
+		-- the jobs to ignore because their parents failed
+		, stateIgnore		:: Set job
+		
+		-- the running jobs
+		--	these remain in the graph, but we won't give them
+		--	to a second worker.
+		, stateRunning		:: Set job }
+
+
 
 -- | Carries the state of the dispatcher
-type Dispatcher job result
-	=  DispatchConfig job result
-	-> Set (Worker job result)		-- ^ current workers
-	-> WorkGraph job			-- ^ work graph
-	-> Set job				-- ^ jobs to ignore
-	-> [job]				-- ^ preferences
-	-> Set job				-- ^ running jobs
-	-> IO ()
+type Dispatcher job result a
+	=  StateT (DispatchState job result) IO a
 
 
 dispatchWork 
@@ -54,7 +80,7 @@ dispatchWork
 	-> IO ()
 
 dispatchWork 
-	dispatchConfig
+	config
 	graph
 	threads
 	action
@@ -68,69 +94,86 @@ dispatchWork
 	workers	<- liftM  Set.fromList
 		$  replicateM threads makeWorker
 
-	dispatchWork_run 
-		dispatchConfig
-		workers
-		graph
-		Set.empty
-		[]
-		Set.empty
-		
-dispatchWork_run :: Ord job => Dispatcher job result
-dispatchWork_run config workers graph tsIgnore tsPref tsRunning
+	let state
+		= DispatchState
+		{ stateHookFinished	= dispatchHookFinished config
+		, stateResultFailed	= dispatchResultFailed config
+		, stateHookIgnore	= dispatchHookIgnore   config
+		, stateWorkers		= workers
+		, stateGraph		= graph
+		, statePrefs		= []
+		, stateIgnore		= Set.empty
+		, stateRunning		= Set.empty }
+
+	execStateT dispatchWork_run state
+	return ()
 	
-	-- We've finished all the tests, 
-	--	so our work here is done.
-	| WorkGraph.null graph
-	= return ()
+		
+dispatchWork_run :: Ord job => Dispatcher job result ()
+dispatchWork_run 
+ = do	graph	<- gets stateGraph
 
-	-- Abort the run if there is any user input.
-	| otherwise
-	= do	ready	<- hReady stdin
-		if ready
-	 	 then	exitSuccess
-	 	 else	dispatchWork_send config workers graph tsIgnore tsPref tsRunning
+	let result
+		-- We've finished all the tests, so our work here is done.
+		| WorkGraph.null graph
+		= return ()
 
-dispatchWork_send :: Ord job => Dispatcher job result
-dispatchWork_send config workers graph tsIgnore tsPref tsRunning
-  = do	
+		-- Abort the run if there is any user input.
+		| otherwise
+		= do	ready	<- liftIO $ hReady stdin
+			if ready
+	 	 	 then	liftIO $ exitSuccess
+	 	 	 else	dispatchWork_send
+	result
+	
+
+dispatchWork_send :: Ord job => Dispatcher job result ()
+dispatchWork_send 
+  = do	workers		<- gets stateWorkers
+	graph		<- gets stateGraph
+	tsPref		<- gets statePrefs
+	tsRunning	<- gets stateRunning
+	tsIgnore	<- gets stateIgnore
+
 	-- look for a free worker
-	mFreeWorker	<- takeFirstFreeWorker 
-			$ Set.toList workers
+	mFreeWorker	<- liftIO $ takeFirstFreeWorker $ Set.toList workers
 	
 	let result
 		-- If there are no free workers then wait for one to finish.
 		| Nothing	<- mFreeWorker
-		= do	threadDelay 10000	-- 10ms
-			dispatchWork_recv config workers graph tsIgnore tsPref tsRunning
+		= do	liftIO $ threadDelay 10000	-- 10ms
+			dispatchWork_recv 
 
 		-- Try to find a test to send.
 		--	there is guaranteed to be a test in the graph
 		| Just worker		<- mFreeWorker
-		, mTestGraphChildren	<- WorkGraph.takeWorkPrefNot 
-						graph 
-						tsPref 
-						tsRunning
+		, mTestGraphChildren	<- WorkGraph.takeWorkPrefNot graph tsPref tsRunning
 		= case mTestGraphChildren of
 
-			Just (test, children, graph', tsPref')
+			Just (test, children, graph', tsPrefs')
 
 			 -- There's an available test, but it's in the ignore set.
 			 -- 	Skip over it and ignore all its children as well.
 			 | Set.member test tsIgnore
 			 -> do	
 				-- run the ignore hook
-				dispatchHookIgnore config test
-
-				-- Check if any worker have finished in the mean-time
-				let tsIgnore'	= Set.union tsIgnore (Set.fromList children)
-				dispatchWork_recv config workers graph' tsIgnore' tsPref' tsRunning
+				hookIgnore	<- gets stateHookIgnore 
+				liftIO $ hookIgnore test
+				
+				-- also ignore the children of this ignored test
+				modify 	$ \s -> s 
+					{ stateGraph	= graph'
+					, statePrefs	= tsPrefs'
+					, stateIgnore	= Set.union (stateIgnore s) (Set.fromList children) }
+						
+				-- Check if any worker have finished in the mean-time				
+				dispatchWork_recv 
 
 			 -- There's an available test, and its not in the ignore set,
 			 --	and we've got a free worker -- so sent it out.
 			 | otherwise
 			 -> do	
-				putMVar (workerTestVar worker) (test, children)
+				liftIO $ putMVar (workerTestVar worker) (test, children)
 
 				-- Mark the worker as currently busy
 				let workers'
@@ -139,48 +182,58 @@ dispatchWork_send config workers graph tsIgnore tsPref tsRunning
 					$ workers
 
 				-- Mark the sent test as currently running
-				let tsRunning'	= Set.insert test tsRunning
+				modify 	$ \s -> s 
+					{ stateWorkers	= workers'
+					, stateGraph	= graph'
+					, statePrefs	= tsPrefs'
+					, stateRunning	= Set.insert test tsRunning }
 
-				-- check if any workers have finished in the mean-time
-				dispatchWork_recv config workers' graph' tsIgnore tsPref' tsRunning'
-
+				-- Check if any workers have finished in the mean-time
+				dispatchWork_recv 
 
 			-- We have a free worker, and there are tests in the graph
 			--	but none of them are available to be sent at the moment.
 			--	We'll need to wait for some workers to finish what they're currently doing
 			Nothing
-			 ->	dispatchWork_recv config workers graph tsIgnore tsPref tsRunning
-
+			 ->	dispatchWork_recv 
 	result
 
-dispatchWork_recv :: Ord job => Dispatcher job result
-dispatchWork_recv config workers graph tsIgnore tsPrefs tsRunning
- = do	mWorkerResult	<- takeFirstWorkerResult 
-			$  Set.toList workers
+dispatchWork_recv :: Ord job => Dispatcher job result ()
+dispatchWork_recv
+ = do	workers		<- gets stateWorkers
+
+	mWorkerResult	<- liftIO $ takeFirstWorkerResult $ Set.toList workers
 
 	let cont
 		-- no workers have a result, wait for a bit then loop again
 		| Nothing	<- mWorkerResult
-		= do	dispatchWork_run config workers graph tsIgnore tsPrefs tsRunning
+		= do	dispatchWork_run 
 
 		-- a worker returned a result
 		| Just (worker, test, tsChildren, result)	<- mWorkerResult
-		= do
-			dispatchHookFinished config test result
-
+		= do	
+			-- run the finishing hook
+			hookFinished	<- gets stateHookFinished
+			liftIO $ hookFinished test result
+			
 			-- mark the worker as free again
-			let workers'	= Set.insert (setWorkerAsFree worker) workers	
-			let tsRunning'	= Set.delete test tsRunning
+			modify 	$ \s -> s 
+				{ stateWorkers	= Set.insert (setWorkerAsFree worker) workers	
+				, stateRunning	= Set.delete test (stateRunning s) }
 
-			if (dispatchResultFailed config result)
+			resultFailed	<- gets stateResultFailed
+			if resultFailed result
 			 then do
 				-- ignore all the children of this test
-				let tsIgnore'	= Set.union tsIgnore (Set.fromList tsChildren)
- 	 			dispatchWork_run config workers' graph tsIgnore' tsPrefs tsRunning'
+				modify 	$ \s -> s
+					{ stateIgnore = Set.union (stateIgnore s) (Set.fromList tsChildren) }
+					
+				dispatchWork_run
 
 			 else do
 				-- prefer to run the tests children
-				let tsPrefs'	= tsPrefs ++ tsChildren
-			  	dispatchWork_run config workers' graph tsIgnore tsPrefs' tsRunning'
+				modify	$ \s -> s
+					{ statePrefs	= statePrefs s ++ tsChildren }
 
+			  	dispatchWork_run 
 	cont
