@@ -13,6 +13,7 @@ import Test.RunBinary
 
 import Util			(catInt, fromMaybe, takeLast, isSuffixOf, catMaybes)
 import Util.Options
+import Util.Terminal.VT100
 
 import System.Environment
 import System.Exit
@@ -193,8 +194,14 @@ pprResult test result
  = let	sTest		= pprTest test
 	sResult		= case result of
 				Left  TestIgnore -> "ignored"
-				Left  err	 -> "failed  " ++ "(" ++ pprTestFail err ++ ")"
-				Right testWin	 -> pprTestWin testWin
+
+				Left  err	 
+				  -> setMode [Bold, Foreground Red] 
+				  ++ "failed  " ++ "(" ++ pprTestFail err ++ ")"
+				  ++ setMode [Reset]
+
+				Right testWin	 
+				  -> pprTestWinColor testWin
   in	sTest ++ sResult
 
 

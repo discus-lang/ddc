@@ -2,10 +2,12 @@
 module TestFail 
 	( TestFail (..)
 	, testFailName
-	, pprTestFail)
+	, pprTestFail
+	, pprTestFailColor)
 where
 
 import Command
+import Util.Terminal.VT100
 import Control.Monad.Error
 
 data TestFail
@@ -63,4 +65,9 @@ pprTestFail fail
 	TestFailCompile iof out err	-> "compile"
 	TestFailRun     iof out err	-> "run"
 	TestFailMissingFile path	-> "missing file " ++ show path
+
+
+pprTestFailColor :: TestFail -> String
+pprTestFailColor fail
+	= setMode [Bold, Foreground Red] ++ pprTestFail fail ++ setMode [Reset]
 
