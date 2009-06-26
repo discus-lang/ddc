@@ -64,7 +64,7 @@ type Dispatcher job result a
 
 
 dispatchWork 
-	:: Ord job 
+	:: (Show job, Ord job)
 	=> (job -> result -> IO ())	-- hook on job finished
 	-> (job -> IO ())		-- hook on job ignored
 	-> (result -> Bool)		-- decide if a result failed or not
@@ -105,9 +105,10 @@ dispatchWork
 	return ()
 	
 		
-dispatchWork_run :: Ord job => Dispatcher job result ()
+dispatchWork_run :: (Show job, Ord job) => Dispatcher job result ()
 dispatchWork_run 
- = do	graph	<- gets stateGraph
+ = do	graph		<- gets stateGraph
+	tsRunning	<- gets stateRunning
 
 	let result
 		-- We've finished all the tests, so our work here is done.
@@ -123,7 +124,7 @@ dispatchWork_run
 	result
 	
 
-dispatchWork_send :: Ord job => Dispatcher job result ()
+dispatchWork_send :: (Show job, Ord job) => Dispatcher job result ()
 dispatchWork_send 
   = do	workers		<- gets stateWorkers
 	graph		<- gets stateGraph
@@ -138,6 +139,8 @@ dispatchWork_send
 		-- If there are no free workers then wait for one to finish.
 		| Nothing	<- mFreeWorker
 		= do	liftIO $ threadDelay 10000	-- 10ms
+--			liftIO $ print graph
+		
 			dispatchWork_recv 
 
 		-- Try to find a test to send.
@@ -180,7 +183,7 @@ dispatchWork_send
 				-- Mark the sent test as currently running
 				modify 	$ \s -> s 
 					{ stateWorkers	= workers'
-					, stateGraph	= graph'
+--					, stateGraph	= graph'
 					, statePrefs	= tsPrefs'
 					, stateRunning	= Set.insert test tsRunning }
 
@@ -194,9 +197,10 @@ dispatchWork_send
 			 ->	dispatchWork_recv 
 	result
 
-dispatchWork_recv :: Ord job => Dispatcher job result ()
+dispatchWork_recv :: (Show job, Ord job) => Dispatcher job result ()
 dispatchWork_recv
  = do	workers		<- gets stateWorkers
+	graph		<- gets stateGraph
 
 	mWorkerResult	<- liftIO $ takeFirstWorkerResult $ Set.toList workers
 
@@ -215,7 +219,8 @@ dispatchWork_recv
 			-- mark the worker as free again
 			modify 	$ \s -> s 
 				{ stateWorkers	= Set.insert (setWorkerAsFree worker) workers	
-				, stateRunning	= Set.delete test (stateRunning s) }
+				, stateRunning	= Set.delete test (stateRunning s) 
+				, stateGraph	= WorkGraph.deleteRootNode test graph }
 
 			resultFailed	<- gets stateResultFailed
 			if resultFailed result

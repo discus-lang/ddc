@@ -57,6 +57,7 @@ testBuildMain test@(TestBuildMain mainDS)
 					{ testFailIOFail	= ioFail
 					, testFailOutFile	= mainCompOut
 					, testFailErrFile	= mainCompErr })
+
 	return TestWinBuildMain
 		{ testWinTime = compileTime
 		, testWinSize = 0 }

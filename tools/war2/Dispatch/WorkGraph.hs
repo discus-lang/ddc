@@ -7,6 +7,7 @@ module Dispatch.WorkGraph
 	, null
 	, lookup
 	, fromBackNodes
+	, addBackNode
 	, takeWork 
 	, takeWorkPrefNot
 	, deleteRootNode)
@@ -77,7 +78,14 @@ addBackNode
 addBackNode
 	(k, BackNode [])
 	graph@(WorkGraph rootSet map)
-	= WorkGraph (Set.insert k rootSet) map
+	= WorkGraph 
+		(Set.insert k rootSet) 
+		(Map.alter 
+			(\mNode -> case mNode of
+				Nothing		-> Just (WorkNode [] [])
+				_		-> mNode)
+			k
+			map)
 
 addBackNode
  	(k, BackNode parents) 

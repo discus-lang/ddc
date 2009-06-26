@@ -88,6 +88,9 @@ doWar
 	let workGraph	= WorkGraph.fromBackNodes
 			$ backNodes
 	
+--	liftIO 	 
+--	 $ do	writeFile "war.graph" (show workGraph)
+
 	-- Do it!
 	dispatch workGraph
 
@@ -101,7 +104,15 @@ getTestsInDir dirPath
  = do	debugLn $ "- Looking for tests in " ++ dirPath
 
 	-- See what files are there
-	files	<- lsFilesIn dirPath
+	filesAll	<- lsFilesIn dirPath
+
+	-- Dump files also end with .ds 
+	--	but we don't want to try and build them...
+	let files	= filter 
+				(\name -> (not $ isInfixOf ".dump-" name) 
+				       && (not $ isInfixOf "-skip"  name)
+				       && (not $ isInfixOf "skip-"  name))
+				filesAll
 
 	-- Build and run executables if we have a Main.ds
 	let mTestsBuild
@@ -124,13 +135,30 @@ getTestsInDir dirPath
 		| otherwise
 		= Nothing
 
-	-- Recurse into directories
-	dirs	 <- lsDirsIn dirPath
-	dirTests <- mapM getTestsInDir dirs
+	-- If there is no Main.ds then just compile every available source file
+	let mTestOther
+		= justWhen (not $ any (isSuffixOf "/Main.ds") files)
+		$ [ (TestCompile file, BackNode [])
+				| file	<- filter (isSuffixOf ".ds") files ]
 
-	-- 
-	return	$  (concat $ catMaybes [mTestsBuild, mTestStdout])
-		++ (concat $ dirTests)
+
+	let testsHere	= concat $ catMaybes [mTestsBuild, mTestStdout, mTestOther]
+
+	-- See what dirs we can recurse into
+	dirsAll		<- lsDirsIn dirPath
+	
+	-- Skip over boring dirs
+	let dirs	= filter
+				(\name -> (not $ isInfixOf "-skip" name)
+				       && (not $ isInfixOf "skip-" name))
+				dirsAll
+
+	-- Recurse into directories
+	moreTests 
+		<- liftM concat
+		$  mapM getTestsInDir dirs
+
+	return	$ testsHere ++ moreTests
 
 justWhen :: Bool -> a -> Maybe a
 justWhen True  x	= Just x
@@ -173,9 +201,13 @@ workerAction
 workerAction config vTest vResult
  = do	tid	<- myThreadId
 
+--	putStr $ "Starting worker " ++ show tid ++ "\n"
+
 	-- wait for a test to arrive
 	(test, tsChildren)	
 		<- takeMVar vTest
+
+--	putStr $ "Worker " ++ show tid ++ " running test " ++ show test ++ "\n"
 
 	-- run the test
 	result	<- runWar config (runTest test)
@@ -194,6 +226,7 @@ runTest test
  = case test of
 	TestBuildMain{}	-> testBuildMain test
 	TestRunBinary{}	-> testRunBinary test
+	TestCompile{}	-> testCompile test
 	TestDiff{}	-> return TestWinDiffOk
 
 
@@ -207,7 +240,7 @@ pprResult test result
 
 			Left  err	 
 			  -> setMode [Bold, Foreground Red] 
-			  ++ "failed  " ++ "(" ++ pprTestFail err ++ ")"
+			  ++ "failed  " -- ++ "(" ++ pprTestFail err ++ ")"
 			  ++ setMode [Reset]
 
 			Right testWin	 
