@@ -8,6 +8,7 @@ where
 
 import War
 import Test
+import TestFail
 import Command
 import Data.List
 import System.Time
@@ -31,11 +32,14 @@ testBuildMain test@(TestBuildMain mainDS)
 	let mainBase	= take (length mainDS - length ".ds") mainDS
 
 	-- where to put the compile logs
-	let mainCompOut	= mainBase ++ ".compile.out"
-	let mainCompErr	= mainBase ++ ".compile.err"
+	let mainCompOut	= mainBase ++ ".compile.stdout"
+	let mainCompErr	= mainBase ++ ".compile.stderr"
 
 	-- where to put the compiled binary
 	let mainBin	= mainBase ++ ".bin"
+	
+	-- if there is an existing binary then remove it
+	liftIOF $ removeIfExists mainBin
 
 	-- build the test
 	let cmdBuild	= "bin/ddc"
@@ -47,11 +51,10 @@ testBuildMain test@(TestBuildMain mainDS)
 	debugLn $ "  * cmd = " ++ cmdBuild
 	compileTime	
 	  <- catchTestIOF (timeIOF_ $ system $ cmdBuild)
-			(\ioFail -> TestFailInfo test
-					[ TestInfoCommand cmdBuild
-					, TestInfoIOFail  ioFail
-					, TestInfoOutFile mainCompOut
-					, TestInfoErrFile mainCompErr ])
+			(\ioFail -> TestFailCompile
+					{ testFailIOFail	= ioFail
+					, testFailOutFile	= mainCompOut
+					, testFailErrFile	= mainCompErr })
 	return compileTime
 
 

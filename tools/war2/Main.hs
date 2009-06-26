@@ -2,13 +2,15 @@
 
 import Config
 import Test
+import TestFail
 import Command
 import War
 import Timing
+import Format
 import Test.BuildMain
 import Test.RunBinary
 
-import Util
+import Util			(catInt, fromMaybe, takeLast, isSuffixOf)
 import Util.Options
 
 import System.Environment
@@ -25,6 +27,9 @@ import BackGraph		(BackNode(..))
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 	
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 -- Main -------------------------------------------------------------------------------------------
 main :: IO ()
 main 
@@ -53,12 +58,6 @@ main
 	runWar config doWar
 
 	return ()
-
-pprResult :: Either TestFail ClockTime -> String
-pprResult result
- = case result of
-	Left  err	-> show err
-	Right testTime	-> pprClockTime testTime
 
 -- Do War -----------------------------------------------------------------------------------------
 doWar :: War ()
@@ -117,15 +116,31 @@ getTestsInDir dirPath
 -- DispatchTests ----------------------------------------------------------------------------------
 
 dispatchTests :: WorkGraph Test -> War ()
-
 dispatchTests graph
+	= dispatchTests' graph Set.empty
+
+dispatchTests' graph tsIgnore
 	| WorkGraph.null graph
 	= return ()
 
- 	| (Just test, graph')	<- WorkGraph.takeWork graph
-	= do	result	<- runTest test
-		liftIO $ putStr $ pprResult result ++ "\n"
-		dispatchTests graph'
+ 	| (Just (test, children), graph')	<- WorkGraph.takeWork graph
+	= if Set.member test tsIgnore 
+
+	   -- If a test is in the ignore set then don't run it
+	   then do	
+		liftIO $ putStr $ pprResult test (Left TestIgnore) ++ "\n"
+		dispatchTests' graph' tsIgnore
+
+	   else do
+		result	<- runTest test
+		liftIO $ putStr $ pprResult test result ++ "\n"
+
+		case result of
+		 Left err	
+		  -> let tsIgnore'	= Set.union tsIgnore (Set.fromList children)
+		     in  dispatchTests' graph' tsIgnore'
+
+		 _ ->	 dispatchTests' graph' tsIgnore
 
 
 -- Run Test ----------------------------------------------------------------------------------------
@@ -134,3 +149,15 @@ runTest test
  = case test of
 	TestBuildMain{}	-> tryWar $ testBuildMain test
 	TestRunBinary{}	-> tryWar $ testRunBinary test
+
+-- Pretty -------------------------------------------------------------------------------------------
+pprResult :: Test -> Either TestFail ClockTime -> String
+pprResult test result
+ = let	sTest		= pprTest test
+	sResult		= case result of
+				Left  TestIgnore -> "ignored"
+				Left  err	 -> "failed  " ++ "(" ++ pprTestFail err ++ ")"
+				Right testTime	 -> padL formatTimeWidth (pprClockTime testTime) ++ "s"
+  in	sTest ++ sResult
+
+

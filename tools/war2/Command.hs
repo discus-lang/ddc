@@ -14,6 +14,7 @@ module Command
 	, moveIfExists
 	, copy
 	, remove
+	, removeIfExists
 	, inDir 
 	, lsFilesIn
 	, lsDirsIn
@@ -43,8 +44,9 @@ io x		= liftIO x
 type IOF a = ErrorT IOFail IO a
 
 data IOFail
-	= IOFailOther   String
-	| IOFailCommand String
+	= IOFailOther 	  	String
+	| IOFailCommand 	String
+	| IOFailRemoveNotExist	FilePath
 	deriving (Eq, Show)
 
 instance Error IOFail where
@@ -109,7 +111,17 @@ copy src dst
 -- Removing files -------------------------------------------------------------
 remove :: FilePath -> IOF ()
 remove file
-	= liftIO $ removeFile file
+ = do	exists	<- fileExists file
+	if exists
+	 then	liftIO $ removeFile file
+	 else	throwError (IOFailRemoveNotExist file)
+
+removeIfExists :: FilePath -> IOF ()
+removeIfExists file
+ = do	exists	<- fileExists file
+	if exists
+	 then	liftIO $ removeFile file
+	 else	return ()
 
 
 -- Moving around the file system ----------------------------------------------

@@ -8,6 +8,7 @@ import Control.Monad.Reader
 
 import Config
 import Test
+import TestFail
 import Command
 
 type War a	= ReaderT Config (ErrorT TestFail IO) a
@@ -46,7 +47,6 @@ tryWar warf
  = do	config	<- ask
 	result	<- liftIO (runErrorT (runReaderT warf config))
 	return result
-
 
 runWar :: Config -> War a -> IO (Either TestFail a)
 runWar config warf

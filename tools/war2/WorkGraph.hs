@@ -152,7 +152,7 @@ deleteRootNode
 takeWork 
 	:: Ord k
 	=> WorkGraph k 
-	-> (Maybe k, WorkGraph k)
+	-> (Maybe (k, [k]), WorkGraph k)
 
 takeWork graph@(WorkGraph rootSet map)
 	| Set.null rootSet
@@ -160,7 +160,8 @@ takeWork graph@(WorkGraph rootSet map)
 	= (Nothing, graph)
 	
 takeWork graph@(WorkGraph rootSet map)
-	| key : _	<- Set.toList rootSet
-	= ( Just key
+	| key : _			<- Set.toList rootSet
+	, Just (WorkNode [] ksChildren)	<- Map.lookup key map
+	= ( Just (key, ksChildren)
 	  , deleteRootNode key graph)
 
