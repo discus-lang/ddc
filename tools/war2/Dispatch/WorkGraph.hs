@@ -1,18 +1,21 @@
 -- | Work graphs
 --		
 module Dispatch.WorkGraph 
-	( WorkGraph 
+	( WorkGraph(..)
+	, WorkNode (..)
 	, empty
-	, fromBackNodes
 	, null
+	, lookup
+	, fromBackNodes
 	, takeWork 
-	, takeWorkPrefNot)
+	, takeWorkPrefNot
+	, deleteRootNode)
 where
 
 import Dispatch.BackGraph
 
-import Prelude			hiding (null)
-import Data.List 		hiding (null)
+import Prelude			hiding (null, lookup)
+import Data.List 		hiding (null, lookup)
 
 import qualified Data.Set 	as Set
 import Data.Set			(Set)
@@ -49,6 +52,12 @@ null :: WorkGraph k -> Bool
 null (WorkGraph rootSet map)
 	= Set.null rootSet && Map.null map
 	
+
+-- | Lookup a node from the graph
+lookup :: Ord k => k -> WorkGraph k -> Maybe (WorkNode k)
+lookup key (WorkGraph roots map)
+	= Map.lookup key map
+
 
 -- | Build a bidirectional work graph from a backwards one.
 fromBackNodes

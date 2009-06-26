@@ -4,6 +4,7 @@
 module Dispatch.Worker
 	( Worker (..)
 	, workerIsFree
+	, setWorkerAsFree
 	, takeFirstFreeWorker
 	, takeWorkerResult
 	, takeFirstWorkerResult )
@@ -26,6 +27,12 @@ instance Eq (Worker job result) where
 
 instance Ord (Worker job result) where
 	compare w1 w2	= compare (workerThreadId w1) (workerThreadId w2)
+
+
+-- | Set the worker as free
+setWorkerAsFree :: Worker job result -> Worker job result
+setWorkerAsFree worker
+	= worker { workerIsBusy	= False }
 
 
 -- | Check if a worker is free to have work sent to it.
