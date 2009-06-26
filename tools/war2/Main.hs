@@ -137,7 +137,7 @@ justWhen False _	= Nothing
 		
 
 -- DispatchTests ----------------------------------------------------------------------------------
-type TestWorker	= Worker (Test, [Test]) (Test, [Test], TestResult)
+type TestWorker	= Worker Test TestResult
 
 dispatchTests :: WorkGraph Test -> War ()
 dispatchTests graph
@@ -252,34 +252,25 @@ dispatchTests_recv workers graph tsIgnore tsPrefs tsRunning
 		= do	dispatchTests_cmd workers graph tsIgnore tsPrefs tsRunning
 
 		-- the worker's test failed
-		| Just (worker, (test, tsChildren, result@(Left err)))	<- mWorkerResult
+		| Just (worker, test, tsChildren, result)	<- mWorkerResult
 		= do
 			-- print the result
 			liftIO $ putStr $ pprResult test result ++ "\n"
-		
-			-- ignore all the children of this test
-			let tsIgnore'	= Set.union tsIgnore (Set.fromList tsChildren)
-   	 
+
 			-- mark the worker as free again
 			let workers'	= Set.insert (setWorkerAsFree worker) workers	
 			let tsRunning'	= Set.delete test tsRunning
 
- 	 		dispatchTests_cmd workers' graph tsIgnore' tsPrefs tsRunning'
+			case result of
+			 Left err -> do
+				-- ignore all the children of this test
+				let tsIgnore'	= Set.union tsIgnore (Set.fromList tsChildren)
+ 	 			dispatchTests_cmd workers' graph tsIgnore' tsPrefs tsRunning'
 
-		-- the worker's test succeeded
-		| Just (worker, (test, tsChildren, result@(Right _)))	<- mWorkerResult
-		= do
-			-- print the result
-			liftIO $ putStr $ pprResult test result ++ "\n"
-
-			-- prefer to run the tests children
-			let tsPrefs'	= tsPrefs ++ tsChildren
-			
-			-- mark the worker as free again
-			let workers'	= Set.insert (setWorkerAsFree worker) workers
-			let tsRunning'	= Set.delete test tsRunning
-
-		  	dispatchTests_cmd workers' graph tsIgnore tsPrefs' tsRunning'
+			 Right _ -> do
+				-- prefer to run the tests children
+				let tsPrefs'	= tsPrefs ++ tsChildren
+			  	dispatchTests_cmd workers' graph tsIgnore tsPrefs' tsRunning'
 
 	cont
 

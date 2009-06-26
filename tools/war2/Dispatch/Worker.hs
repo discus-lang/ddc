@@ -19,8 +19,8 @@ data Worker job result
 	= Worker 
 		{ workerThreadId 	:: ThreadId
 		, workerIsBusy		:: Bool
-		, workerTestVar		:: MVar job
-		, workerResultVar	:: MVar result }
+		, workerTestVar		:: MVar (job, [job])			-- job, children
+		, workerResultVar	:: MVar (job, [job], result) }		-- job, children, result
 	
 instance Eq (Worker job result) where
 	w1 == w2	= workerThreadId w1 == workerThreadId w2
@@ -71,7 +71,7 @@ takeFirstFreeWorker workers
 --	If it hasn't posted a result yet then returns Nothing.
 takeWorkerResult 
 	:: Worker job result
-	-> IO (Maybe result)
+	-> IO (Maybe (job, [job], result))
 	
 takeWorkerResult worker
  	= tryTakeMVar (workerResultVar worker)
@@ -82,6 +82,8 @@ takeFirstWorkerResult
 	:: [Worker job result] 
 	-> IO (Maybe 
 		( Worker job result
+		, job
+		, [job]
 		, result))
 
 takeFirstWorkerResult []	
@@ -90,5 +92,6 @@ takeFirstWorkerResult []
 takeFirstWorkerResult (w:ws)
  = do	mResult	<- takeWorkerResult w
 	case mResult of
-	 Nothing	-> takeFirstWorkerResult ws
-	 Just res	-> return $ Just (w, res)
+	 Nothing			-> takeFirstWorkerResult ws
+	 Just (job, children, res)	-> return $ Just (w, job, children, res)
+	
