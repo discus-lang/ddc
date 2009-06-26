@@ -74,7 +74,7 @@ bin/war : tools/war/War.hs tools/war/Diff.hs tools/war/Interface.hs tools/war/Or
 war2_hs	= $(shell find tools/war2 -name "*.hs")
 
 bin/war2 : $(war2_hs)
-	$(GHC) $(GHC_FLAGS) -fglasgow-exts -threaded -fglasgow-exts -isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
+	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts -isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
 
 # -- build the churner
 bin/churn : tools/churn/Main.hs tools/churn/Bits.hs tools/churn/Base.hs tools/churn/Exp.hs

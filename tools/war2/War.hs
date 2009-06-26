@@ -6,6 +6,9 @@ import System.Exit
 import Control.Monad.Error
 import Control.Monad.Reader
 
+import Control.Concurrent.MVar
+import Control.Concurrent
+
 import Config
 import Test
 import TestFail
@@ -52,3 +55,31 @@ runWar :: Config -> War a -> IO (Either TestFail a)
 runWar config warf
  = do	result	<- liftIO (runErrorT (runReaderT warf config))
 	return result
+
+
+runForkWar :: War a -> War a
+runForkWar action
+ = do	config		<- ask
+	var		<- liftIO $ newEmptyMVar
+	threadId	<- liftIO $ forkOS $ runForkWar_worker var config action
+
+	-- wait for the result to be written into the MVar
+	result		<- liftIO $ takeMVar var
+
+	case result of
+	 Left err	-> throwError err
+	 Right x	-> return x
+
+
+runForkWar_worker 
+	:: MVar (Either TestFail a)
+	-> Config
+	-> War  a
+	-> IO ()
+
+runForkWar_worker var config action
+ = do	result	<- runErrorT (runReaderT action config)
+	putMVar var result
+	return ()
+
+

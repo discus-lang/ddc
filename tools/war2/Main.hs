@@ -1,5 +1,4 @@
 
-
 import Config
 import Test
 import TestFail
@@ -8,17 +7,21 @@ import Command
 import War
 import Timing
 import Format
+import Dispatch
 import Test.BuildMain
 import Test.RunBinary
 
-import Util			(catInt, fromMaybe, takeLast, isSuffixOf, catMaybes)
+import Util
 import Util.Options
 import Util.Terminal.VT100
 
 import System.Environment
 import System.Exit
 import System.Time
+import System.IO
 import Control.Monad.Reader
+import Control.Concurrent
+import Control.Concurrent.MVar
 
 import qualified WorkGraph	as WorkGraph
 import WorkGraph		(WorkGraph)
@@ -61,6 +64,7 @@ main
 
 	return ()
 
+
 -- Do War -----------------------------------------------------------------------------------------
 doWar :: War ()
 doWar 
@@ -81,29 +85,17 @@ doWar
 	backNodes	<- liftM concat 
 			$  mapM  getTestsInDir testDirs
 
+	-- Build a work graph of all the tests
 	let workGraph	= WorkGraph.buildWorkGraphFromBackNodes
 			$ backNodes
 	
---	liftIO $ print backNodes
---	liftIO $ print workGraph
-
-	dispatchTests workGraph
-
---	results	<- mapM runTest tests
-
---	liftIO
---	 $ print $ catInt "\n" $ map pprResult results
+	-- Do it!
+	dispatchTests 4 workGraph
 
 	return ()
 
 
 -- Get Tests --------------------------------------------------------------------------------------
-
-justWhen :: Bool -> a -> Maybe a
-justWhen True  x	= Just x
-justWhen False _	= Nothing
-
-
 -- Look for tests in this directory
 getTestsInDir :: DirPath -> War [(Test, BackNode Test)]
 getTestsInDir dirPath
@@ -140,55 +132,226 @@ getTestsInDir dirPath
 	-- 
 	return	$  (concat $ catMaybes [mTestsBuild, mTestStdout])
 		++ (concat $ dirTests)
+
+justWhen :: Bool -> a -> Maybe a
+justWhen True  x	= Just x
+justWhen False _	= Nothing
 		
 
 -- DispatchTests ----------------------------------------------------------------------------------
-dispatchTests :: WorkGraph Test -> War ()
-dispatchTests graph
-	= dispatchTests' graph Set.empty []
 
-dispatchTests' graph tsIgnore tsPref
+dispatchTests :: Int -> WorkGraph Test -> War ()
+dispatchTests jobs graph
+ = do	masterTid	<- liftIO $ myThreadId
+	liftIO $ putStr $ "Master thread is " ++ show masterTid ++ "\n"
 
-	-- we've finished all the tests
+	-- make all the worker threads
+	let makeWorker 
+	     = do sVar	<- newEmptyMVar
+		  rVar	<- newEmptyMVar
+		  tid	<- forkOS $ workerAction sVar rVar
+		  return $ Worker tid False sVar rVar
+
+	workers	<- liftM  Set.fromList
+		$  liftIO 
+		$  replicateM jobs makeWorker
+
+	-- start the processing loop
+	dispatchTests_cmd 
+		workers 
+		graph 
+		Set.empty	-- ignore 
+		[] 		-- pref
+		Set.empty	-- running tests
+
+dispatchTests_cmd workers graph tsIgnore tsPref tsRunning
+	
+	-- We've finished all the tests, 
+	--	so our work here is done.
 	| WorkGraph.null graph
 	= return ()
 
- 	| (Just (test, children), graph', tsPref')	
-			<- WorkGraph.takeWorkPref tsPref graph
-	= if Set.member test tsIgnore 
+	-- Abort the run if there is any user input.
+	| otherwise
+	= do	ready	<- liftIO $ hReady stdin
+		if ready
+	 	 then	liftIO $ exitSuccess
+	 	 else	dispatchTests_send workers graph tsIgnore tsPref tsRunning
 
-	   -- If a test is in the ignore set then don't run it or its children
-	   then do	
-		liftIO $ putStr $ pprResult test (Left TestIgnore) ++ "\n"
-		let tsIgnore'		= Set.union tsIgnore (Set.fromList children)
-		dispatchTests' graph' tsIgnore' tsPref'
+dispatchTests_send :: Set Worker -> WorkGraph Test -> Set Test -> [Test] -> Set Test -> War ()
+dispatchTests_send workers graph tsIgnore tsPref tsRunning
+  = do	
+	-- look for a free worker
+	mFreeWorker	<- liftIO 
+			$ takeFreeWorker 
+			$ Set.toList workers
+	
+	let result
+		-- If there are no free workers then wait for one to finish.
+		| Nothing	<- mFreeWorker
+		= dispatchTests_recv workers graph tsIgnore tsPref tsRunning
 
-	   -- Run this test
-	   else do
-		testResult	<- runTest test
-		liftIO $ putStr $ pprResult test testResult ++ "\n"
+		-- Try to find a test to send.
+		--	there is guaranteed to be a test in the graph
+		| Just worker		<- mFreeWorker
+		, mTestGraphChildren	<- WorkGraph.takeWorkPrefNot 
+						graph 
+						tsPref 
+						tsRunning
+		= case mTestGraphChildren of
 
-		let result
-			-- If the test failed, then ignore its children
-			| Left err	<- testResult
-			= let tsIgnore'	= Set.union tsIgnore (Set.fromList children)
-		     	  in  dispatchTests' graph' tsIgnore' tsPref'
+			Just (test, children, graph', tsPref')
 
-			-- If the test succeeded, then prefer to run its children next time 
-		 	| Right _	<- testResult
-			= dispatchTests' graph' tsIgnore (tsPref' ++ children)
+			 -- There's an available test, but it's in the ignore set.
+			 -- 	Skip over it and ignore all its children as well.
+			 | Set.member test tsIgnore
+			 -> do	liftIO 	$ putStr 
+					$ pprResult test (Left TestIgnore) ++ "\n"
 
-		result
+				-- try and find another test.
+				let tsIgnore'	= Set.union tsIgnore (Set.fromList children)
+				dispatchTests_send workers graph' tsIgnore' tsPref' tsRunning
+
+			 -- There's an available test, and its not in the ignore set,
+			 --	and we've got a free worker -- so sent it out.
+			 | otherwise
+			 -> do	
+				liftIO $ putStr $ "sending test " ++ show test ++ "\n"
+				liftIO $ putMVar (workerTestVar worker) test
+
+				-- Mark the worker as currently busy
+				let workers'
+					= Set.insert (worker { workerIsBusy = True })
+					$ Set.delete worker 
+					$ workers
+
+				-- Mark the sent test as currently running
+				let tsRunning'	= Set.insert test tsRunning
+
+				-- try to send some more tests
+				dispatchTests_send workers' graph' tsIgnore tsPref' tsRunning'
+
+
+			-- We have a free worker, and there are tests in the graph
+			--	but none of them are available to be sent at the moment.
+			--	We'll need to wait for some workers to finish what they're currently doing
+			Nothing
+			 ->	dispatchTests_recv workers graph tsIgnore tsPref tsRunning
+
+	result
+
+dispatchTests_recv :: Set Worker -> WorkGraph Test -> Set Test -> [Test] -> Set Test -> War ()
+dispatchTests_recv workers graph tsIgnore tsPref tsRunning
+ = do	liftIO $ putStr $ "Receiving\n"
+
+	mWorkerResult	<- liftIO 
+			$  takeFirstWorkerResult 
+			$  Set.toList workers
+
+	let cont
+		-- no workers have a result, wait for a bit then try again
+		| Nothing	<- mWorkerResult
+		= do	liftIO $ threadDelay 10000000
+			dispatchTests_recv workers graph tsIgnore tsPref tsRunning
+
+		-- the worker's test failed
+		| Just (worker, (test, Left err))	<-mWorkerResult
+		= let 	-- ignore all the children of this test
+--			tsIgnore'	= Set.union tsIgnore (Set.fromList children)
+			tsIgnore'	= tsIgnore  
+   	 
+			-- mark the worker as free again
+			workers'	= workers			
+			tsRunning'	= Set.delete test tsRunning
+
+ 	 	  in  	dispatchTests_cmd workers' graph tsIgnore' tsPref tsRunning'
+
+		-- the worker's test succeeded
+		| Just (worker, (test, Right res))	<- mWorkerResult
+		= let	
+			-- prefer to run the tests children
+			workers'	= workers
+			tsRunning'	= Set.delete test tsRunning
+
+		  in	dispatchTests_cmd workers' graph tsIgnore tsPref tsRunning'
+
+	cont
+
+
+-- | If the test MVar is empty then the worker is free to have work sent to it
+workerIsFree :: Worker -> IO Bool
+workerIsFree worker
+	| workerIsBusy worker
+	= return False
+
+	| otherwise
+	= isEmptyMVar $ workerTestVar worker
+
+-- | Get the first free worker from this list
+takeFreeWorker :: [Worker] -> IO (Maybe Worker)
+takeFreeWorker workers
+ = do	free	<- mapM workerIsFree workers
+	let workFree	
+		= zipWith 
+			(\w f -> if f then (Just w) else Nothing)
+			workers
+			free
+	return	$ takeFirstJust workFree
+
+
+-- | If the result MVar is full, then the worker has finished
+takeWorkerResult :: Worker -> IO (Maybe (Test, Either TestFail TestWin))
+takeWorkerResult worker
+ 	= tryTakeMVar (workerResultVar worker)
+
+
+-- | Look for the first worker with an available result
+takeFirstWorkerResult :: [Worker] -> IO (Maybe (Worker, (Test, Either TestFail TestWin)))
+takeFirstWorkerResult []	
+ = 	return Nothing
+
+takeFirstWorkerResult (w:ws)
+ = do	mResult	<- takeWorkerResult w
+	case mResult of
+	 Nothing	-> takeFirstWorkerResult ws
+	 Just res	-> return $ Just (w, res)
+
+
+-- | The worker slave action.
+workerAction 
+	:: MVar Test 					-- ^ MVar to receive tests to run
+	-> MVar (Test, Either TestFail TestWin) 	-- ^ MVar to write results to
+	-> IO ()
+
+workerAction vTest vResult
+ = do	tid	<- myThreadId
+
+	mTest	<- tryTakeMVar vTest
+	case mTest of 
+	 Nothing	-> putStr $ "Thread " ++ show tid ++ " waiting\n"
+	 Just test	-> putStr $ "Thread " ++ show tid ++ " running " ++ show test ++ "\n"
+
+	threadDelay 1000000
+
+	workerAction vTest vResult
+
+	
+
 
 -- Run Test ----------------------------------------------------------------------------------------
+-- | Run a single test
+
+{-
 runTest :: Test -> War (Either TestFail TestWin)
 runTest test
  = case test of
 	TestBuildMain{}	-> tryWar $ testBuildMain test
 	TestRunBinary{}	-> tryWar $ testRunBinary test
 	TestDiff{}	-> return $ Right TestWinDiffOk
+-}
 
 -- Pretty -------------------------------------------------------------------------------------------
+-- | Pretty print the result of a test
 pprResult :: Test -> Either TestFail TestWin -> String
 pprResult test result
  = let	sTest		= pprTest test
