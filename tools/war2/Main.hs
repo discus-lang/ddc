@@ -135,6 +135,7 @@ justWhen False _	= Nothing
 		
 
 -- DispatchTests ----------------------------------------------------------------------------------
+type TestWorker	= Worker Test (Test, TestResult)
 
 dispatchTests :: Int -> WorkGraph Test -> War ()
 dispatchTests jobs graph
@@ -174,12 +175,12 @@ dispatchTests_cmd workers graph tsIgnore tsPref tsRunning
 	 	 then	liftIO $ exitSuccess
 	 	 else	dispatchTests_send workers graph tsIgnore tsPref tsRunning
 
-dispatchTests_send :: Set Worker -> WorkGraph Test -> Set Test -> [Test] -> Set Test -> War ()
+dispatchTests_send :: Set TestWorker -> WorkGraph Test -> Set Test -> [Test] -> Set Test -> War ()
 dispatchTests_send workers graph tsIgnore tsPref tsRunning
   = do	
 	-- look for a free worker
 	mFreeWorker	<- liftIO 
-			$ takeFreeWorker 
+			$ takeFirstFreeWorker 
 			$ Set.toList workers
 	
 	let result
@@ -236,7 +237,7 @@ dispatchTests_send workers graph tsIgnore tsPref tsRunning
 
 	result
 
-dispatchTests_recv :: Set Worker -> WorkGraph Test -> Set Test -> [Test] -> Set Test -> War ()
+dispatchTests_recv :: Set TestWorker -> WorkGraph Test -> Set Test -> [Test] -> Set Test -> War ()
 dispatchTests_recv workers graph tsIgnore tsPref tsRunning
  = do	liftIO $ putStr $ "Receiving\n"
 
@@ -274,49 +275,12 @@ dispatchTests_recv workers graph tsIgnore tsPref tsRunning
 	cont
 
 
--- | If the test MVar is empty then the worker is free to have work sent to it
-workerIsFree :: Worker -> IO Bool
-workerIsFree worker
-	| workerIsBusy worker
-	= return False
-
-	| otherwise
-	= isEmptyMVar $ workerTestVar worker
-
--- | Get the first free worker from this list
-takeFreeWorker :: [Worker] -> IO (Maybe Worker)
-takeFreeWorker workers
- = do	free	<- mapM workerIsFree workers
-	let workFree	
-		= zipWith 
-			(\w f -> if f then (Just w) else Nothing)
-			workers
-			free
-	return	$ takeFirstJust workFree
-
-
--- | If the result MVar is full, then the worker has finished
-takeWorkerResult :: Worker -> IO (Maybe (Test, Either TestFail TestWin))
-takeWorkerResult worker
- 	= tryTakeMVar (workerResultVar worker)
-
-
--- | Look for the first worker with an available result
-takeFirstWorkerResult :: [Worker] -> IO (Maybe (Worker, (Test, Either TestFail TestWin)))
-takeFirstWorkerResult []	
- = 	return Nothing
-
-takeFirstWorkerResult (w:ws)
- = do	mResult	<- takeWorkerResult w
-	case mResult of
-	 Nothing	-> takeFirstWorkerResult ws
-	 Just res	-> return $ Just (w, res)
 
 
 -- | The worker slave action.
 workerAction 
-	:: MVar Test 					-- ^ MVar to receive tests to run
-	-> MVar (Test, Either TestFail TestWin) 	-- ^ MVar to write results to
+	:: MVar Test 			-- ^ MVar to receive tests to run
+	-> MVar (Test, TestResult) 	-- ^ MVar to write results to
 	-> IO ()
 
 workerAction vTest vResult
@@ -332,8 +296,6 @@ workerAction vTest vResult
 	workerAction vTest vResult
 
 	
-
-
 -- Run Test ----------------------------------------------------------------------------------------
 -- | Run a single test
 
@@ -348,7 +310,7 @@ runTest test
 
 -- Pretty -------------------------------------------------------------------------------------------
 -- | Pretty print the result of a test
-pprResult :: Test -> Either TestFail TestWin -> String
+pprResult :: Test -> TestResult -> String
 pprResult test result
  = let	sTest		= pprTest test
 	sResult		= case result of

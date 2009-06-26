@@ -6,7 +6,7 @@ module Test.BuildMain
 	(testBuildMain)
 where
 
-import Test.TestTest
+import Test.TestResult
 import Test.TestFail
 import Test.TestWin
 import War

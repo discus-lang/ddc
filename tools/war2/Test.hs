@@ -1,6 +1,6 @@
 
 module Test 
-	( module Test.TestTest
+	( module Test.TestResult
 	, module Test.TestWin
 	, module Test.TestFail
 	, module Test.BuildMain
@@ -8,7 +8,7 @@ module Test
 	
 where
 
-import Test.TestTest
+import Test.TestResult
 import Test.TestWin
 import Test.TestFail
 import Test.BuildMain

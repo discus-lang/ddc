@@ -1,8 +1,7 @@
 
 module War where
 
-
-import Test.TestTest
+import Test.TestResult
 import Test.TestFail
 import Test.TestWin
 import Config
