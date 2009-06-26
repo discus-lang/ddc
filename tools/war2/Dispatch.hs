@@ -2,7 +2,7 @@
 module Dispatch 
 	( DispatchAction
 	, DispatchConfig(..)
-	, dispatchWork_run)
+	, dispatchWork)
 	
 where
 
@@ -14,6 +14,7 @@ import Data.Map				(Map)
 import qualified Data.Set		as Set
 import Data.Set				(Set)
 
+import Control.Monad
 import Control.Concurrent
 import Control.Concurrent.MVar
 import System.Exit
@@ -43,6 +44,38 @@ type Dispatcher job result
 	-> Set job				-- ^ running jobs
 	-> IO ()
 
+
+dispatchWork 
+	:: Ord job 
+	=> DispatchConfig job result 
+	-> WorkGraph job 
+	-> Int
+	-> DispatchAction job result
+	-> IO ()
+
+dispatchWork 
+	dispatchConfig
+	graph
+	threads
+	action
+ = do
+	let makeWorker 
+	     = do sVar	<- newEmptyMVar
+		  rVar	<- newEmptyMVar
+		  tid	<- forkOS $ action sVar rVar
+		  return $ Worker tid False sVar rVar
+
+	workers	<- liftM  Set.fromList
+		$  replicateM threads makeWorker
+
+	dispatchWork_run 
+		dispatchConfig
+		workers
+		graph
+		Set.empty
+		[]
+		Set.empty
+		
 dispatchWork_run :: Ord job => Dispatcher job result
 dispatchWork_run config workers graph tsIgnore tsPref tsRunning
 	

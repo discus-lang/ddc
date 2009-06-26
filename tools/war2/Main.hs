@@ -142,17 +142,18 @@ dispatch :: WorkGraph Test -> War ()
 dispatch graph
  = do	
 	-- make all the worker threads
-	config	<- ask
+{-	config	<- ask
 	let makeWorker 
 	     = do sVar	<- newEmptyMVar
 		  rVar	<- newEmptyMVar
 		  tid	<- forkOS $ workerAction config sVar rVar
 		  return $ Worker tid False sVar rVar
+		workers	<- liftM  Set.fromList
+			$  liftIO 
+			$  replicateM (configThreads config) makeWorker
 
+-}
 	config	<- ask
-	workers	<- liftM  Set.fromList
-		$  liftIO 
-		$  replicateM (configThreads config) makeWorker
 
 	-- start the processing loop
 	let dispatchConfig
@@ -169,14 +170,12 @@ dispatch graph
 					Left _ -> True
 					Right _ -> False }
 
-	liftIO 
-	 $ dispatchWork_run
-		dispatchConfig
-		workers 
-		graph 
-		Set.empty	-- ignore 
-		[] 		-- pref
-		Set.empty	-- running tests
+	liftIO $ dispatchWork 
+			dispatchConfig 
+			graph
+			(configThreads config)
+			(workerAction config)
+	
 
 
 -- | The worker slave action.
