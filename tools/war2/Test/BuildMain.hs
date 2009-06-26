@@ -6,11 +6,12 @@ module Test.BuildMain
 	(testBuildMain)
 where
 
+import Test.TestTest
+import Test.TestFail
+import Test.TestWin
 import War
-import Test
-import TestFail
-import TestWin
 import Command
+
 import Data.List
 import System.Time
 

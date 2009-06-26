@@ -4,8 +4,6 @@ module Dispatch
 where
 
 import Test
-import TestFail
-import TestWin
 
 import Control.Concurrent
 import Control.Concurrent.MVar

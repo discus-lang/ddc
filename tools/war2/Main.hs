@@ -1,15 +1,11 @@
 
 import Config
 import Test
-import TestFail
-import TestWin
 import Command
 import War
 import Timing
 import Format
 import Dispatch
-import Test.BuildMain
-import Test.RunBinary
 
 import Util
 import Util.Options

@@ -3,14 +3,14 @@ module Test.RunBinary
 	(testRunBinary)
 where
 
+import Test.TestTest
+import Test.TestFail
+import Test.TestWin
 import War
-import Test
-import TestFail
-import TestWin
 import Command
+
 import Data.List
 import System.Time
-
 import Control.Monad.Error
 
 testRunBinary :: Test -> War TestWin

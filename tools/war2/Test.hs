@@ -1,26 +1,18 @@
 
-module Test where
+module Test 
+	( module Test.TestTest
+	, module Test.TestWin
+	, module Test.TestFail
+	, module Test.BuildMain
+	, module Test.RunBinary)
+	
+where
 
-import Config
-import Command
-import Timing
-import Format
+import Test.TestTest
+import Test.TestWin
+import Test.TestFail
+import Test.BuildMain
+import Test.RunBinary
 
-import System.Time
-import Control.Monad.Error
-
--------------------------------------------------------------------------------
-data Test
-	= TestBuildMain FilePath
-	| TestRunBinary FilePath
-	| TestDiff      FilePath FilePath
-	deriving (Eq, Ord, Show)
-
-pprTest :: Test -> String
-pprTest test
- = case test of	
-	TestBuildMain  path		-> " * " ++ padR formatPathWidth path ++ " build "
-	TestRunBinary  path		-> " * " ++ padR formatPathWidth path ++ " run   "
-	TestDiff       template out	-> " * " ++ padR formatPathWidth out  ++ " diff  "
 
 

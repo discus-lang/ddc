@@ -1,6 +1,13 @@
 
 module War where
 
+
+import Test.TestTest
+import Test.TestFail
+import Test.TestWin
+import Config
+import Command
+
 import System.Environment
 import System.Exit
 import Control.Monad.Error
@@ -9,10 +16,6 @@ import Control.Monad.Reader
 import Control.Concurrent.MVar
 import Control.Concurrent
 
-import Config
-import Test
-import TestFail
-import Command
 
 type War a	= ReaderT Config (ErrorT TestFail IO) a
 
