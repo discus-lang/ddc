@@ -2,7 +2,6 @@
 
 module Dispatch 
 	( DispatchAction
-	, DispatchConfig(..)
 	, dispatchWork)
 	
 where
@@ -27,13 +26,6 @@ type DispatchAction job result
 	=  MVar (job, [job]) 			-- ^ MVar to receive tests to run
 	-> MVar (job, [job], result) 		-- ^ MVar to write results to
 	-> IO ()
-
-
-data DispatchConfig job result
-	= DispatchConfig 
-		{ dispatchHookIgnore	:: job -> IO ()
-		, dispatchHookFinished	:: job -> result -> IO () 
-		, dispatchResultFailed	:: result -> Bool }
 
 data DispatchState job result
 	= DispatchState
@@ -73,14 +65,18 @@ type Dispatcher job result a
 
 dispatchWork 
 	:: Ord job 
-	=> DispatchConfig job result 
+	=> (job -> result -> IO ())	-- hook on job finished
+	-> (job -> IO ())		-- hook on job ignored
+	-> (result -> Bool)		-- decide if a result failed or not
 	-> WorkGraph job 
 	-> Int
 	-> DispatchAction job result
 	-> IO ()
 
 dispatchWork 
-	config
+	hookFinish
+	hookIgnore
+	resultFailed
 	graph
 	threads
 	action
@@ -96,9 +92,9 @@ dispatchWork
 
 	let state
 		= DispatchState
-		{ stateHookFinished	= dispatchHookFinished config
-		, stateResultFailed	= dispatchResultFailed config
-		, stateHookIgnore	= dispatchHookIgnore   config
+		{ stateHookFinished	= hookFinish
+		, stateHookIgnore	= hookIgnore
+		, stateResultFailed	= resultFailed
 		, stateWorkers		= workers
 		, stateGraph		= graph
 		, statePrefs		= []

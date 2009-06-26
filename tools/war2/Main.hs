@@ -141,44 +141,31 @@ justWhen False _	= Nothing
 dispatch :: WorkGraph Test -> War ()
 dispatch graph
  = do	
-	-- make all the worker threads
-{-	config	<- ask
-	let makeWorker 
-	     = do sVar	<- newEmptyMVar
-		  rVar	<- newEmptyMVar
-		  tid	<- forkOS $ workerAction config sVar rVar
-		  return $ Worker tid False sVar rVar
-		workers	<- liftM  Set.fromList
-			$  liftIO 
-			$  replicateM (configThreads config) makeWorker
-
--}
 	config	<- ask
 
-	-- start the processing loop
-	let dispatchConfig
-		= DispatchConfig
-		  { dispatchHookIgnore
-			= \job -> putStr $ pprResult job (Left TestIgnore) ++ "\n"
+	-- Print out test results
+	let hookFinished test result
+		= putStr $ pprResult test result ++ "\n"
 
-		  , dispatchHookFinished
-			= \job result -> 
-				putStr $ pprResult job result ++ "\n" 
-			
-		  , dispatchResultFailed
-			= \result -> case result of 
-					Left _ -> True
-					Right _ -> False }
+	-- Print tests that get ignored because their parents failed
+	let hookIgnored test
+		= putStr $ pprResult test (Left TestIgnore) ++ "\n"
+		
+	-- Check if a test failed
+	let resultFailed result
+		= case result of 
+			Left _ -> True
+			Right _ -> False
 
 	liftIO $ dispatchWork 
-			dispatchConfig 
+			hookFinished
+			hookIgnored
+			resultFailed
 			graph
 			(configThreads config)
 			(workerAction config)
-	
 
-
--- | The worker slave action.
+-- | The dispatch worker action
 workerAction 
 	:: Config
 	-> DispatchAction Test TestResult
@@ -191,15 +178,10 @@ workerAction config vTest vResult
 		<- takeMVar vTest
 
 	-- run the test
---	putStr 	$  "Thread " ++ show tid ++ " runing " ++ show test ++ "\n"
 	result	<- runWar config (runTest test)
-
---	putStr 	$  "Thread " ++ show tid ++ " posting result" ++ "\n"
 
 	-- post the result back to the master
 	putMVar vResult (test, tsChildren, result)
-
---	putStr 	$  "Thread " ++ show tid ++ " post done" ++ "\n"
 	
 	-- loop it
 	workerAction config vTest vResult
@@ -219,17 +201,17 @@ runTest test
 -- | Pretty print the result of a test
 pprResult :: Test -> TestResult -> String
 pprResult test result
- = let	sTest		= pprTest test
-	sResult		= case result of
-				Left  TestIgnore -> "ignored"
+ = let	sTest	= pprTest test
+	sResult	= case result of
+			Left  TestIgnore -> "ignored"
 
-				Left  err	 
-				  -> setMode [Bold, Foreground Red] 
-				  ++ "failed  " ++ "(" ++ pprTestFail err ++ ")"
-				  ++ setMode [Reset]
+			Left  err	 
+			  -> setMode [Bold, Foreground Red] 
+			  ++ "failed  " ++ "(" ++ pprTestFail err ++ ")"
+			  ++ setMode [Reset]
 
-				Right testWin	 
-				  -> pprTestWinColor testWin
+			Right testWin	 
+			  -> pprTestWinColor testWin
   in	sTest ++ sResult
 
 
