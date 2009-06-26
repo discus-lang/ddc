@@ -2,9 +2,9 @@
 --		
 module Dispatch.WorkGraph 
 	( WorkGraph 
-	, emptyWorkGraph
-	, buildWorkGraphFromBackNodes
-	, workGraphIsEmpty
+	, empty
+	, fromBackNodes
+	, null
 	, takeWork 
 	, takeWorkPrefNot)
 where
@@ -39,24 +39,24 @@ data WorkNode k
 
 
 -- | An empty work graph with no nodes.
-emptyWorkGraph :: WorkGraph k
-emptyWorkGraph
+empty :: WorkGraph k
+empty
 	= WorkGraph Set.empty Map.empty
 
 
 -- | Check if a work graph is empty
-workGraphIsEmpty :: WorkGraph k -> Bool
-workGraphIsEmpty (WorkGraph rootSet map)
+null :: WorkGraph k -> Bool
+null (WorkGraph rootSet map)
 	= Set.null rootSet && Map.null map
 	
 
 -- | Build a bidirectional work graph from a backwards one.
-buildWorkGraphFromBackNodes
+fromBackNodes
 	:: Ord k
 	=> [(k, BackNode k)] -> WorkGraph k
 
-buildWorkGraphFromBackNodes nodes
- 	= foldr addBackNode emptyWorkGraph nodes
+fromBackNodes nodes
+ 	= foldr addBackNode empty nodes
 
 
 -- | Add all the dependencies in backwards node to a work graph.

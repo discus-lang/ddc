@@ -19,11 +19,19 @@ import Control.Monad.Reader
 import Control.Concurrent
 import Control.Concurrent.MVar
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
+import Dispatch.Worker
+
+import qualified Dispatch.BackGraph	as BackGraph
+import Dispatch.BackGraph		(BackNode(..))
+
+import qualified Dispatch.WorkGraph	as WorkGraph
+import Dispatch.WorkGraph		(WorkGraph)
+
+import qualified Data.Map		as Map
+import Data.Map				(Map)
 	
-import qualified Data.Set	as Set
-import Data.Set			(Set)
+import qualified Data.Set		as Set
+import Data.Set				(Set)
 
 -- Main -------------------------------------------------------------------------------------------
 main :: IO ()
@@ -76,7 +84,7 @@ doWar
 			$  mapM  getTestsInDir testDirs
 
 	-- Build a work graph of all the tests
-	let workGraph	= buildWorkGraphFromBackNodes
+	let workGraph	= WorkGraph.fromBackNodes
 			$ backNodes
 	
 	-- Do it!
@@ -159,7 +167,7 @@ dispatchTests_cmd workers graph tsIgnore tsPref tsRunning
 	
 	-- We've finished all the tests, 
 	--	so our work here is done.
-	| workGraphIsEmpty graph
+	| WorkGraph.null graph
 	= return ()
 
 	-- Abort the run if there is any user input.
@@ -185,7 +193,7 @@ dispatchTests_send workers graph tsIgnore tsPref tsRunning
 		-- Try to find a test to send.
 		--	there is guaranteed to be a test in the graph
 		| Just worker		<- mFreeWorker
-		, mTestGraphChildren	<- takeWorkPrefNot 
+		, mTestGraphChildren	<- WorkGraph.takeWorkPrefNot 
 						graph 
 						tsPref 
 						tsRunning
@@ -246,7 +254,7 @@ dispatchTests_recv workers graph tsIgnore tsPref tsRunning
 			dispatchTests_recv workers graph tsIgnore tsPref tsRunning
 
 		-- the worker's test failed
-		| Just (worker, (test, Left err))	<-mWorkerResult
+		| Just (worker, (test, Left err))	<- mWorkerResult
 		= let 	-- ignore all the children of this test
 --			tsIgnore'	= Set.union tsIgnore (Set.fromList children)
 			tsIgnore'	= tsIgnore  
