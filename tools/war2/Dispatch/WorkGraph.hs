@@ -1,15 +1,15 @@
 -- | Work graphs
 --		
-module WorkGraph 
+module Dispatch.WorkGraph 
 	( WorkGraph 
 	, emptyWorkGraph
 	, buildWorkGraphFromBackNodes
-	, null
+	, workGraphIsEmpty
 	, takeWork 
 	, takeWorkPrefNot)
 where
 
-import BackGraph
+import Dispatch.BackGraph
 
 import Prelude			hiding (null)
 import Data.List 		hiding (null)
@@ -45,8 +45,8 @@ emptyWorkGraph
 
 
 -- | Check if a work graph is empty
-null :: WorkGraph k -> Bool
-null (WorkGraph rootSet map)
+workGraphIsEmpty :: WorkGraph k -> Bool
+workGraphIsEmpty (WorkGraph rootSet map)
 	= Set.null rootSet && Map.null map
 	
 

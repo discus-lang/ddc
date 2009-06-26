@@ -19,12 +19,6 @@ import Control.Monad.Reader
 import Control.Concurrent
 import Control.Concurrent.MVar
 
-import qualified WorkGraph	as WorkGraph
-import WorkGraph		(WorkGraph)
-
-import qualified BackGraph	as BackGraph
-import BackGraph		(BackNode(..))
-
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 	
@@ -82,7 +76,7 @@ doWar
 			$  mapM  getTestsInDir testDirs
 
 	-- Build a work graph of all the tests
-	let workGraph	= WorkGraph.buildWorkGraphFromBackNodes
+	let workGraph	= buildWorkGraphFromBackNodes
 			$ backNodes
 	
 	-- Do it!
@@ -165,7 +159,7 @@ dispatchTests_cmd workers graph tsIgnore tsPref tsRunning
 	
 	-- We've finished all the tests, 
 	--	so our work here is done.
-	| WorkGraph.null graph
+	| workGraphIsEmpty graph
 	= return ()
 
 	-- Abort the run if there is any user input.
@@ -191,7 +185,7 @@ dispatchTests_send workers graph tsIgnore tsPref tsRunning
 		-- Try to find a test to send.
 		--	there is guaranteed to be a test in the graph
 		| Just worker		<- mFreeWorker
-		, mTestGraphChildren	<- WorkGraph.takeWorkPrefNot 
+		, mTestGraphChildren	<- takeWorkPrefNot 
 						graph 
 						tsPref 
 						tsRunning
