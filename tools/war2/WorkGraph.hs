@@ -5,7 +5,8 @@ module WorkGraph
 	, emptyWorkGraph
 	, buildWorkGraphFromBackNodes
 	, null
-	, takeWork )
+	, takeWork 
+	, takeWorkPref)
 where
 
 import BackGraph
@@ -148,7 +149,7 @@ deleteRootNode
    in	graph'		
 
 
--- | Take the ext piece of work from the graph
+-- | Take the next piece of work from the graph
 takeWork 
 	:: Ord k
 	=> WorkGraph k 
@@ -159,9 +160,47 @@ takeWork graph@(WorkGraph rootSet map)
 	, Map.null map
 	= (Nothing, graph)
 	
-takeWork graph@(WorkGraph rootSet map)
 	| key : _			<- Set.toList rootSet
 	, Just (WorkNode [] ksChildren)	<- Map.lookup key map
 	= ( Just (key, ksChildren)
 	  , deleteRootNode key graph)
+
+
+-- | Take the next piece of work from the graph,
+--	and try to choose one of these preferred keys
+takeWorkPref 
+	:: Ord k
+	=> [k]			-- prefered keys, in order
+	-> WorkGraph k
+	-> (Maybe (k, [k]), WorkGraph k, [k])
+
+takeWorkPref prefs graph@(WorkGraph rootSet map)
+
+	-- graph is empty
+	| Set.null rootSet
+	, Map.null map
+	= (Nothing, graph, prefs)
+
+	-- We got one of the pref keys, so return that 
+	| Just kPref			<- chooseFirstInList rootSet prefs
+	, Just (WorkNode [] ksChildren)	<- Map.lookup kPref map
+	= ( Just (kPref, ksChildren)
+	  , deleteRootNode kPref graph
+	  , delete kPref prefs)
+	
+	-- Either there were no prefs,
+	--	Or no prefs were roots
+	--	so just choose the next	non-pref root note.
+	| key : _			<- Set.toList rootSet
+	, Just (WorkNode [] ksChildren)	<- Map.lookup key map
+	= ( Just (key, ksChildren)
+	  , deleteRootNode key graph 
+	  , prefs)
+	
+chooseFirstInList :: Ord a => Set a -> [a] -> Maybe a
+chooseFirstInList set []	= Nothing
+chooseFirstInList set (x:xs)
+	| Set.member x set	= Just x
+	| otherwise		= chooseFirstInList set xs
+	
 

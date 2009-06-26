@@ -6,13 +6,14 @@ where
 import War
 import Test
 import TestFail
+import TestWin
 import Command
 import Data.List
 import System.Time
 
 import Control.Monad.Error
 
-testRunBinary :: Test -> War ClockTime
+testRunBinary :: Test -> War TestWin
 testRunBinary test@(TestRunBinary mainBin)
  | isSuffixOf (".bin") mainBin
  = do	debugLn	$ "* TestRunBinary " ++ mainBin
@@ -39,4 +40,5 @@ testRunBinary test@(TestRunBinary mainBin)
 						, testFailOutFile	= mainRunOut
 						, testFailErrFile	= mainRunErr })
 
-		return runTime
+		return TestWinRun
+			{ testWinTime	= runTime }

@@ -9,17 +9,20 @@ import Command
 import Control.Monad.Error
 
 data TestFail
-	
 	-- Test failed for some mysterious reason
 	= TestFailOther		String
 
 	-- Test was ignored becuase one of its parents failed
 	| TestIgnore
 
+	-- Framework problems -------------------------------------------------
 	-- A miscelaneous IO command failed.
-	--	This will be a problem with the test framework.
 	| TestFailIO		IOFail
 
+	-- Test failed because a file was missing
+	| TestFailMissingFile 	FilePath
+
+	-- Common failures ----------------------------------------------------
 	-- Compilation of a source file failed
 	| TestFailCompile
 		{ testFailIOFail	:: IOFail	-- the io action for the compilation
@@ -32,8 +35,6 @@ data TestFail
 		, testFailOutFile	:: FilePath	-- file of stdout log
 		, testFailErrFile	:: FilePath }	-- file of stderr log
 
-	-- Test failed because a file was missing
-	| TestFailMissingFile FilePath
 
 	deriving (Eq, Show)
 
@@ -56,8 +57,9 @@ testFailName fail
 pprTestFail :: TestFail -> String
 pprTestFail fail
  = case fail of
-	TestIgnore{}			-> "ignore"
 	TestFailOther str		-> "other " ++ str
+	TestIgnore{}			-> "ignore"
+	TestFailIO      iof		-> "io" ++ show iof
 	TestFailCompile iof out err	-> "compile"
 	TestFailRun     iof out err	-> "run"
 	TestFailMissingFile path	-> "missing file " ++ show path

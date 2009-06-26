@@ -13,14 +13,14 @@ import Control.Monad.Error
 data Test
 	= TestBuildMain FilePath
 	| TestRunBinary FilePath
+	| TestDiff      FilePath FilePath
 	deriving (Eq, Ord, Show)
-
 
 pprTest :: Test -> String
 pprTest test
  = case test of	
-	TestBuildMain path	-> " * " ++ padR formatPathWidth path ++ " build "
-	TestRunBinary path	-> " * " ++ padR formatPathWidth path ++ " run   "
-
+	TestBuildMain  path		-> " * " ++ padR formatPathWidth path ++ " build "
+	TestRunBinary  path		-> " * " ++ padR formatPathWidth path ++ " run   "
+	TestDiff       template out	-> " * " ++ padR formatPathWidth out  ++ " diff  "
 
 

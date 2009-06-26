@@ -1,8 +1,6 @@
 
 -- Adapted from the nofib benchmark.
 
-dude
-
 tak x y z 
  = if not(y < x) 
  	then z

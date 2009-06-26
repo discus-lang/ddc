@@ -9,12 +9,13 @@ where
 import War
 import Test
 import TestFail
+import TestWin
 import Command
 import Data.List
 import System.Time
 
 -- | Build a program starting from a Main.ds file
-testBuildMain :: Test -> War ClockTime
+testBuildMain :: Test -> War TestWin
 testBuildMain test@(TestBuildMain mainDS)
  | isSuffixOf "Main.ds" mainDS
  = do	debugLn $ "* TestBuildMain " ++ mainDS 
@@ -55,7 +56,9 @@ testBuildMain test@(TestBuildMain mainDS)
 					{ testFailIOFail	= ioFail
 					, testFailOutFile	= mainCompOut
 					, testFailErrFile	= mainCompErr })
-	return compileTime
+	return TestWinBuildMain
+		{ testWinTime = compileTime
+		, testWinSize = 0 }
 
 
 

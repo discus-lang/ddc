@@ -3,6 +3,7 @@
 import Config
 import Test
 import TestFail
+import TestWin
 import Command
 import War
 import Timing
@@ -10,7 +11,7 @@ import Format
 import Test.BuildMain
 import Test.RunBinary
 
-import Util			(catInt, fromMaybe, takeLast, isSuffixOf)
+import Util			(catInt, fromMaybe, takeLast, isSuffixOf, catMaybes)
 import Util.Options
 
 import System.Environment
@@ -96,6 +97,13 @@ doWar
 
 
 -- Get Tests --------------------------------------------------------------------------------------
+
+justWhen :: Bool -> a -> Maybe a
+justWhen True  x	= Just x
+justWhen False _	= Nothing
+
+
+-- Look for tests in this directory
 getTestsInDir :: DirPath -> War [(Test, BackNode Test)]
 getTestsInDir dirPath
  = do	debugLn $ "- Looking for tests in " ++ dirPath
@@ -103,61 +111,90 @@ getTestsInDir dirPath
 	-- See what files are there
 	files	<- lsFilesIn dirPath
 
-	let testsMainDS
-		| any (isSuffixOf "Main.ds") files
-		= let t1	= TestBuildMain (dirPath ++ "/Main.ds")
+	-- Build and run executables if we have a Main.ds
+	let mTestsBuild
+		= justWhen (any (isSuffixOf "/Main.ds") files)
+		$ let t1	= TestBuildMain (dirPath ++ "/Main.ds")
 		      t2	= TestRunBinary (dirPath ++ "/Main.bin")
 	 	  in  [ (t1, BackNode [])
 		      , (t2, BackNode [t1]) ]
 
-	return	testsMainDS
+	-- If we ran an executable, and we have a stdout check file
+	--	then check the executable's output against it
+	let mTestStdout
+		| Just [ _, (t2, _) ]	<- mTestsBuild
+		, any (isSuffixOf "/Main.stdout.check") files
+		= let t3	= TestDiff
+					(dirPath ++ "/Main.stdout.check")
+					(dirPath ++ "/Main.stdout")
+		  in Just [ (t3, BackNode [t2]) ]
+		  
+		| otherwise
+		= Nothing
 
+	-- Recurse into directories
+	dirs	 <- lsDirsIn dirPath
+	dirTests <- mapM getTestsInDir dirs
+
+	-- 
+	return	$  (concat $ catMaybes [mTestsBuild, mTestStdout])
+		++ (concat $ dirTests)
+		
 
 -- DispatchTests ----------------------------------------------------------------------------------
-
 dispatchTests :: WorkGraph Test -> War ()
 dispatchTests graph
-	= dispatchTests' graph Set.empty
+	= dispatchTests' graph Set.empty []
 
-dispatchTests' graph tsIgnore
+dispatchTests' graph tsIgnore tsPref
+
+	-- we've finished all the tests
 	| WorkGraph.null graph
 	= return ()
 
- 	| (Just (test, children), graph')	<- WorkGraph.takeWork graph
+ 	| (Just (test, children), graph', tsPref')	
+			<- WorkGraph.takeWorkPref tsPref graph
 	= if Set.member test tsIgnore 
 
-	   -- If a test is in the ignore set then don't run it
+	   -- If a test is in the ignore set then don't run it or its children
 	   then do	
 		liftIO $ putStr $ pprResult test (Left TestIgnore) ++ "\n"
-		dispatchTests' graph' tsIgnore
+		let tsIgnore'		= Set.union tsIgnore (Set.fromList children)
+		dispatchTests' graph' tsIgnore' tsPref'
 
+	   -- Run this test
 	   else do
-		result	<- runTest test
-		liftIO $ putStr $ pprResult test result ++ "\n"
+		testResult	<- runTest test
+		liftIO $ putStr $ pprResult test testResult ++ "\n"
 
-		case result of
-		 Left err	
-		  -> let tsIgnore'	= Set.union tsIgnore (Set.fromList children)
-		     in  dispatchTests' graph' tsIgnore'
+		let result
+			-- If the test failed, then ignore its children
+			| Left err	<- testResult
+			= let tsIgnore'	= Set.union tsIgnore (Set.fromList children)
+		     	  in  dispatchTests' graph' tsIgnore' tsPref'
 
-		 _ ->	 dispatchTests' graph' tsIgnore
+			-- If the test succeeded, then prefer to run its children next time 
+		 	| Right _	<- testResult
+			= dispatchTests' graph' tsIgnore (tsPref' ++ children)
 
+		result
 
 -- Run Test ----------------------------------------------------------------------------------------
-runTest :: Test -> War (Either TestFail ClockTime)
+runTest :: Test -> War (Either TestFail TestWin)
 runTest test
  = case test of
 	TestBuildMain{}	-> tryWar $ testBuildMain test
 	TestRunBinary{}	-> tryWar $ testRunBinary test
+	TestDiff{}	-> return $ Right TestWinDiffOk
 
 -- Pretty -------------------------------------------------------------------------------------------
-pprResult :: Test -> Either TestFail ClockTime -> String
+pprResult :: Test -> Either TestFail TestWin -> String
 pprResult test result
  = let	sTest		= pprTest test
 	sResult		= case result of
 				Left  TestIgnore -> "ignored"
 				Left  err	 -> "failed  " ++ "(" ++ pprTestFail err ++ ")"
-				Right testTime	 -> padL formatTimeWidth (pprClockTime testTime) ++ "s"
+				Right testWin	 -> pprTestWin testWin
   in	sTest ++ sResult
 
 
