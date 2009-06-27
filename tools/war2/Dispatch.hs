@@ -84,7 +84,7 @@ dispatchWork
 	let makeWorker 
 	     = do sVar	<- newEmptyMVar
 		  rVar	<- newEmptyMVar
-		  tid	<- forkOS $ action sVar rVar
+		  tid	<- forkIO $ action sVar rVar
 		  return $ Worker tid False sVar rVar
 
 	workers	<- liftM  Set.fromList
@@ -109,6 +109,7 @@ dispatchWork_run :: (Show job, Ord job) => Dispatcher job result ()
 dispatchWork_run 
  = do	graph		<- gets stateGraph
 	tsRunning	<- gets stateRunning
+	gotInput	<- liftIO $ hReady stdin
 
 	let result
 		-- We've finished all the tests, so our work here is done.
@@ -116,11 +117,23 @@ dispatchWork_run
 		= return ()
 
 		-- Abort the run if there is any user input.
+		| gotInput
+		= do	workers	<- gets stateWorkers
+
+			liftIO	
+			 $ do	putStr	$ "-- Interrupt. Waiting for running jobs (CTRL-C kills) ... "
+				hFlush stdout
+
+				mapM_ (killThread . workerThreadId) 
+					$ Set.toList workers
+	
+				putStr	$ "done.\n"
+
+			liftIO	$ exitSuccess
+
 		| otherwise
-		= do	ready	<- liftIO $ hReady stdin
-			if ready
-	 	 	 then	liftIO $ exitSuccess
-	 	 	 else	dispatchWork_send
+		= dispatchWork_send
+
 	result
 	
 
