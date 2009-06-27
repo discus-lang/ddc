@@ -1,0 +1,4 @@
+
+-- functions don't have projections.
+main () = show.x
+	
