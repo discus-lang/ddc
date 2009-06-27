@@ -1,5 +1,5 @@
 
-module Dispatch.BackGraph 
+module Util.Data.BackGraph 
 	( BackGraph (..)
 	, BackNode  (..)
 	, testBackGraph )

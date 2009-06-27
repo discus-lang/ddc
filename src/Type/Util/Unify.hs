@@ -3,9 +3,7 @@
 
 module Type.Util.Unify
 	( unifyT2 )
-
 where
-
 import Type.Exp
 import Type.Util.Bits
 import Type.Util.Kind

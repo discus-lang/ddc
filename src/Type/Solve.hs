@@ -38,12 +38,11 @@ import Shared.Error
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 
-import Util.Graph.Deps
 import Util
+import Util.Graph.Deps
 
-import qualified Data.Map	as Map
-import qualified Util.Map	as Map
-import Data.Map			(Map)
+import qualified Util.Data.Map	as Map
+import Util.Data.Map		(Map)
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)

@@ -23,13 +23,10 @@ import Type.Util.Cut
 import qualified Shared.Var	as Var
 import Shared.Var		(Var)
 import Shared.Error
-import Util
 
+import Util
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-		
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 		
 -----
 stage	= "Type.Extract"

@@ -1,21 +1,12 @@
 
-module Util.Monad
-(
-	module Control.Monad.State,
-
-	returnN, returnJ,
-
-	mapMuz,
-	mapMt2_1, mapMt2_2,
-	liftFieldModifier,
-	partitionM,
-	whenM
-)
-
+module Util.Control.Monad
+	( returnN, returnJ
+	, mapMuz
+	, mapMt2_1, mapMt2_2
+	, partitionM
+	, whenM )
 
 where
-
-import Control.Monad.State
 
 returnN :: Monad m => m (Maybe a)
 returnN		= return Nothing
@@ -62,7 +53,7 @@ mapMt2_2   f ((a, b):xs)
 	rest	<- mapMt2_2 f xs
 	return	$ (a, c) : rest
 
------
+{-
 liftFieldModifier 	:: ( state -> field
 	   		   , field -> state -> state )
 			-> (a -> field -> (b, field))
@@ -75,7 +66,7 @@ liftFieldModifier 	(getF, setF) func a
 	
 	modify (\s -> setF field' s)
 	return b
-	
+-}	
 
 -----
 partitionM :: Monad m =>  (a -> m Bool) -> [a] -> m ([a], [a])

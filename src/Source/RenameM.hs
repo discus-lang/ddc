@@ -27,8 +27,8 @@ where
 
 -----
 import Util
-import qualified Util.Map	as Map
-import Util.Map			(Map)
+import qualified Util.Data.Map	as Map
+import Util.Data.Map		(Map)
 
 import qualified Data.Set	as Set
 import Data.Set			(Set)

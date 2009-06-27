@@ -10,7 +10,7 @@ module Shared.Vanilla
 where
 
 -----
-import Util.Maybe
+import Util.Data.Maybe
 
 -----
 -- vanillaName

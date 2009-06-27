@@ -3,13 +3,11 @@
 module Desugar.Data 
 	(elaborateData)
 where
-
-import Type.Util.Elaborate
-import Type.Exp
-
 import Desugar.Pretty
 import Desugar.Exp
 
+import Type.Util.Elaborate
+import Type.Exp
 import Shared.Pretty
 import Shared.Exp
 import Shared.Base
@@ -19,8 +17,8 @@ import Shared.Literal
 import qualified Shared.Var	as Var
 
 import Util
+import Control.Monad.State
 import qualified Data.Set	as Set
-
 import qualified Debug.Trace
 
 -----

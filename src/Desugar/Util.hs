@@ -10,21 +10,20 @@ module Desugar.Util
 	, collectClosureProjTags)
 
 where
-
-import Util
-
 import Desugar.Exp
-import Type.Exp
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import Desugar.Plate.Trans
 
+import Type.Exp
 
+import Util
+import Data.Set			(Set)
+import Data.Map			(Map)
+import Control.Monad.State
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+
+
+-----
 unflattenApps :: a -> [Exp a] -> Exp a
 unflattenApps a (x:xs)
  = unflattenApps' a x xs

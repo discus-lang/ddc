@@ -8,7 +8,6 @@ module Type.Util.Substitute
 	, subVV
 	, subCidCid)
 where
-
 import Type.Plate.Collect
 import Type.Plate.Trans
 import Type.Util.Bits
@@ -16,14 +15,13 @@ import Type.Util.Kind
 import Type.Exp
 
 import Shared.Error
+
 import Util
-
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
+
+-----
 stage	= "Type.Util.Substitute"
 
 type SubM	= State [(Type, Type)]

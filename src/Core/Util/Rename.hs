@@ -5,18 +5,18 @@ module Core.Util.Rename
 	, RenameS(..))
 where
 
-import Util
 import Core.Exp
-
 import Core.Plate.Trans
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
 import Shared.Pretty
 import Shared.Var		(Var)
 import Shared.VarBind		(VarBind, incVarBind)
+import qualified Shared.Var	as Var
+
+import Util
+import Data.Map			(Map)
+import Control.Monad.State
+import qualified Data.Map	as Map
 
 -----
 -- Rename binders

@@ -3,14 +3,15 @@ module Type.Util.Mask
 	( maskReadWriteNotIn )
 
 where
-
 import Type.Exp
 import Type.Util.Bits
 import Shared.VarPrim
 
+import Util
 import qualified Data.Set as Set
-import Data.Set	(Set)
 
+
+-----
 -- | mask Read and Write that aren't on regions in this set.
 maskReadWriteNotIn 
 	:: Set Var -> Effect -> Effect

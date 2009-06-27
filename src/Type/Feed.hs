@@ -6,15 +6,9 @@ module Type.Feed
 	, feedFetter
 	, addFetter
 	, addFetterSource)
-
 where
-
-import Util
-
-import Shared.Error
-import qualified Shared.Var as Var
-import Shared.Var		(NameSpace (..))
-import Shared.Pretty
+import Constraint.Exp
+import Constraint.Pretty
 
 import Type.Exp
 import Type.Location
@@ -23,17 +17,15 @@ import Type.Class
 import Type.Util
 import Type.Link
 import Type.Plate.FreeVars
+import Shared.Error
+import qualified Shared.Var as Var
+import Shared.Var		(NameSpace (..))
+import Shared.Pretty
 
-import Constraint.Exp
-import Constraint.Pretty
-
+import Util
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
-
 import qualified Data.Array.IO	as Array
-
 import qualified Debug.Trace
 
 -----

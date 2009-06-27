@@ -5,14 +5,9 @@ module Type.ToCore
 	, toCoreK
 	, toCoreF)
 where
-
------
-import Util
 import Shared.Error		(panic)
 import Shared.Var		(Var)
 import Shared.VarPrim
-import Util.Pretty
-import Util.Maybe
 
 import qualified Debug.Trace	as Debug
 import qualified Shared.Var 	as Var
@@ -25,8 +20,11 @@ import qualified Type.Pretty	as T
 import qualified Core.Exp 	as C
 import qualified Core.Util	as C
 
+import Util
+import Util.Pretty
+import Util.Data.Maybe
 import qualified Data.Map	as Map
-import Data.Map			(Map)
+
 
 -----
 stage	= "Type.ToCore"

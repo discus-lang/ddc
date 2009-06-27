@@ -23,9 +23,8 @@ import Shared.Error
 import Shared.Pretty
 import qualified Shared.Var	as Var
 
-import qualified Data.Map	as Map
-import qualified Util.Map	as Map
-import Data.Map			(Map)
+import qualified Util.Data.Map	as Map
+import Util.Data.Map		(Map)
 
 import Util
 

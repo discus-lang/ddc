@@ -2,11 +2,13 @@
 module Shared.FreeVars
 	(FreeVars, freeVars)
 where
-
-import Data.Set			(Set)
-import qualified Data.Set as Set
 import Shared.Var
 
+import Util
+import qualified Data.Set as Set
+
+
+-----
 class FreeVars a where
  freeVars :: a -> Set Var
  

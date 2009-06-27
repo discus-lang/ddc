@@ -5,13 +5,15 @@ import Command
 import War
 import Timing
 import Format
-import Dispatch
 
 import Util
 import Util.Options
 import Util.Terminal.VT100
 import Util.FilePath
-
+import Util.Control.Dispatch
+import Util.Control.Dispatch.Worker
+import Util.Data.BackGraph		(BackNode(..))
+import Util.Data.WorkGraph		(WorkGraph, WorkNode(..))
 import System.Cmd
 import System.Environment
 import System.Exit
@@ -20,21 +22,11 @@ import System.IO
 import Control.Monad.Reader
 import Control.Concurrent
 import Control.Concurrent.MVar
-
-import Dispatch
-import Dispatch.Worker
-
-import qualified Dispatch.BackGraph	as BackGraph
-import Dispatch.BackGraph		(BackNode(..))
-
-import qualified Dispatch.WorkGraph	as WorkGraph
-import Dispatch.WorkGraph		(WorkGraph, WorkNode(..))
-
+import qualified Util.Data.BackGraph	as BackGraph
+import qualified Util.Data.WorkGraph	as WorkGraph
 import qualified Data.Map		as Map
-import Data.Map				(Map)
-	
 import qualified Data.Set		as Set
-import Data.Set				(Set)
+
 
 -- Main -------------------------------------------------------------------------------------------
 main :: IO ()

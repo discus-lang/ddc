@@ -11,23 +11,22 @@ import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Lift.Base
 import Core.Reconstruct
-
 import Type.Util
 
-import qualified Shared.VarUtil	as Var
-import qualified Shared.Var	as Var
 import Shared.Var		(Var, NameSpace(..))
 import Shared.Pretty
 import Util
+import qualified Shared.VarUtil	as Var
+import qualified Shared.Var	as Var
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
 import Data.Map			(Map)
-
+import Data.Set			(Set)
+import Control.Monad.State
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
+----
 debug	= False
 trace ss x	
 	= if debug

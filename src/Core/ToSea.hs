@@ -6,18 +6,6 @@ module Core.ToSea
 	, superOpTypeX)
 
 where
-
-import Util
-
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
-import Shared.Var		(Var, NameSpace(..))
-import Shared.Error
-import Shared.Base
-import qualified Shared.VarBind	as Var
-import qualified Shared.Unique	as Unique
-
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Pretty		as C
@@ -28,20 +16,27 @@ import qualified Core.Reconstruct	as C
 import qualified Type.Exp		as T
 import qualified Type.Util		as T
 
-import qualified Sea.Exp  	as E
-import qualified Sea.Util	as E
-import qualified Sea.Pretty	as E
+import qualified Sea.Exp  		as E
+import qualified Sea.Util		as E
+import qualified Sea.Pretty		as E
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
+import Shared.Var			(Var, NameSpace(..))
+import Shared.Error
+import Shared.Base
 import Shared.Pretty
 import Shared.Literal
+import qualified Shared.VarBind		as Var
+import qualified Shared.Unique		as Unique
+import qualified Shared.Var		as Var
+import qualified Shared.VarPrim		as Var
 
-import qualified		Debug.Trace
+import Util
+import Data.Map				(Map)
+import Data.Set				(Set)
+import Control.Monad.State
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
+import qualified			Debug.Trace
 
 
 -----

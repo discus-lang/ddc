@@ -15,27 +15,24 @@ import Core.Util
 import Core.Pretty
 import Core.Reconstruct
 import Type.Builtin
-
 import Type.Util.Bits		(varOfBind)
 
-import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
-
-import qualified Shared.VarBind	as Var
 import Shared.VarPrim
 import Shared.VarGen
 import Shared.Error
 import Shared.Pretty
+import qualified Shared.Var	as Var
+import qualified Shared.VarBind	as Var
 
 import Util
-
-import qualified Data.Map	as Map
 import Data.Map			(Map)
-
-import qualified Data.Set	as Set
 import Data.Set			(Set)
-
+import Control.Monad.State
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
+
 
 type   BindM	= VarGenM
 

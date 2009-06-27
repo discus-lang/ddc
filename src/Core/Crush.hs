@@ -2,18 +2,17 @@
 --	Crush together nested do blocks.
 --	Crush together nester XTaus. 
 module Core.Crush
-(
-	crushTree
-)
+	(crushTree)
 
 where
-
 import Core.Exp
 import Core.Plate.Trans
 import Core.Pretty
 
-import Util
 import Shared.Error
+
+import Util
+import Control.Monad
 
 -----
 -- stage	= "Core.Crush"

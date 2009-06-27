@@ -3,28 +3,26 @@ module Desugar.Elaborate
 	(elaborateTree)
 where
 
+import Desugar.Exp
+
 import Type.Util.Elaborate	(elaborateEffT, elaborateCloT)
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate
 import Type.Pretty
 import Type.Exp
-
-import Desugar.Exp
-
 import Shared.Var		(Var, NameSpace(..))
+import Shared.Pretty
+import Shared.Base
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
-import Shared.Pretty
-import Shared.Base
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 import Util
-
+import Data.Set			(Set)
+import Control.Monad.State
+import qualified Data.Set	as Set
 import qualified Debug.Trace
 
 debug	= False

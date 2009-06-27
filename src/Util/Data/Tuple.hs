@@ -1,15 +1,12 @@
 
-module Util.Tuple
-(
-	t5App, t5_1, t5_2, t5_3, t5_4, t5_5,
-	t4App, t4_1, t4_2, t4_3, t4_4,
-	t3App, t3_1, t3_2, t3_3,
-	t2App, t2_1, t2_2,
-)
+module Util.Data.Tuple
+	( t5App, t5_1, t5_2, t5_3, t5_4, t5_5
+	, t4App, t4_1, t4_2, t4_3, t4_4
+	, t3App, t3_1, t3_2, t3_3
+	, t2App, t2_1, t2_2 )
 
 where
 
------
 t5App	(f,   g,   h,   i,   j)   a
  =	(f a, g a, h a, i a, j a)
 

@@ -18,14 +18,11 @@ import Shared.VarPrim
 import Shared.Pretty
 import Shared.Error
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Util.Map	as Map
-import qualified Data.Set	as Set
 import Util
 import Util.Graph.Deps
-
+import Control.Monad.State
+import qualified Util.Data.Map	as Map
+import qualified Data.Set	as Set
 import qualified Debug.Trace
 
 -----

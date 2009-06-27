@@ -1,22 +1,18 @@
 
 module Util.Options
-(
-	Option(..),
-	matchOption,
-	
-	Token(..),
-	tokenise,
-
-	munch,
-	makeOptionHelp
-)
+	( Option(..)
+	, matchOption
+	, Token(..)
+	, tokenise
+	, munch
+	, makeOptionHelp)
 
 where
 
 import Util.Misc
-import Util.Either
-import Util.List
 import Util.Pretty
+import Util.Data.Either
+import Util.Data.List
 
 
 -- Data to hold an option parser

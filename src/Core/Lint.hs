@@ -14,26 +14,22 @@
 module Core.Lint
 	( lintTree )
 where
-
 import Core.Exp
 import Core.Pretty
 import Core.Util
 import Core.Util.Slurp
 import Core.Reconstruct		(reconX_type)
-
 import Type.Util
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
 
 import Shared.Error
 import Shared.Pretty
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
+import qualified Shared.Var	as Var
+import qualified Shared.VarPrim	as Var
 
 import Util
-
+import Data.Map			(Map)
+import Control.Monad.State
+import qualified Data.Map	as Map
 import qualified Debug.Trace	as Debug
 
 -----

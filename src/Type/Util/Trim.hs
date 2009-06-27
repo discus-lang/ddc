@@ -35,15 +35,13 @@ import Type.Util.Bits
 import Type.Util.Kind
 
 import Shared.Pretty
+import Shared.Var			(Var)
 import qualified Shared.Var		as Var
 import qualified Shared.VarSpace	as Var
 import qualified Shared.VarUtil		as Var
-import Shared.Var			(Var)
 
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Debug.Trace	as Debug
+import qualified Data.Set		as Set
+import qualified Debug.Trace		as Debug
 
 -----
 stage	= "Type.Util.Trim"

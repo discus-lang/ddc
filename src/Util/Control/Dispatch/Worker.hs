@@ -1,7 +1,7 @@
 
 -- | Represents a worker thread that an be given a job 
 --	to do and returns its result when done.
-module Dispatch.Worker
+module Util.Control.Dispatch.Worker
 	( Worker (..)
 	, workerIsFree
 	, setWorkerAsFree

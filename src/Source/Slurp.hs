@@ -7,7 +7,7 @@ module Source.Slurp
 where
 
 -----
-import Util.Maybe
+import Util.Data.Maybe
 import Util
 
 -----

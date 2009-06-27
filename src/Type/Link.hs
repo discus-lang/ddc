@@ -4,17 +4,16 @@ module Type.Link
 	, linkFetter )
 
 where
-
-import Util
-
-import Shared.Error
-import qualified Shared.Var as Var
-
 import Type.Util
 import Type.Exp
 import Type.Location
 import Type.State
 import Type.Class
+
+import Shared.Error
+import qualified Shared.Var as Var
+
+import Util
 
 -----
 stage	= "Type.Link"

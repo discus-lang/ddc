@@ -10,16 +10,6 @@ module Type.Util.Elaborate
 	, elaborateCloT )
 where
 
------
-import Util
-
------
-import qualified Shared.Var as Var
-import Shared.Var 	(Var, NameSpace(..))
-import Shared.VarPrim
-import Shared.Pretty
-import Shared.Error 
-
 import Type.Exp
 import Type.Pretty
 import Type.Util.Pack
@@ -27,6 +17,13 @@ import Type.Util.Bits
 import Type.Util.Kind	
 import Type.Plate.Collect
 
+import qualified Shared.Var as Var
+import Shared.Var 	(Var, NameSpace(..))
+import Shared.VarPrim
+import Shared.Pretty
+import Shared.Error 
+
+import Util
 import qualified Debug.Trace	as Debug
 
 -----

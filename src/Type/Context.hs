@@ -6,8 +6,6 @@ module Type.Context
 	, matchInstance )
 
 where
-
-------
 import Type.Exp
 import Type.Plate
 import Type.Util
@@ -17,14 +15,10 @@ import Shared.VarPrim
 import Shared.Error
 
 import Util
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import Debug.Trace
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
+
 -----
 -- stage	= "Type.Context"
 

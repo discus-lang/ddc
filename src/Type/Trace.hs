@@ -4,14 +4,6 @@ module Type.Trace
 	, traceType_shape
 	, traceCidsDown)
 where
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import Util
 import Type.Exp
 import Type.Base
 import Type.Util
@@ -24,6 +16,9 @@ import Shared.Pretty
 import Shared.Error
 import Debug.Trace
 
+import Util
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 import qualified Debug.Trace	as Trace
 
 stage	= "Type.Trace"

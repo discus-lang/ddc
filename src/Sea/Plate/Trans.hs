@@ -2,12 +2,10 @@
 
 -- Sea.Plate.Trans
 --	Transform over Sea.Exp
---	
 --
 --	* Keep the order of constructors in the transform functions the same as in Sea.Exp.
 --	  this makes it much easier to see if they're all present and accounted for.
-
-
+--
 module Sea.Plate.Trans
 	( TransTable (..)
 	, transTableId
@@ -19,9 +17,10 @@ module Sea.Plate.Trans
 	, transformSSM
 	, transformSS )
 where
+import Sea.Exp
 
 import Util
-import Sea.Exp
+import Control.Monad.State
 
 
 -----

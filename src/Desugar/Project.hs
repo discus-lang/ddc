@@ -22,28 +22,24 @@ import Desugar.Exp
 import Type.Exp
 import Type.Util
 import Type.Plate.FreeVars
-
 import Shared.Pretty
 import Shared.Exp
 import Shared.Base
 import Shared.Literal
 import Shared.VarPrim
 import Shared.Error
-
+import Shared.Var		(Var, NameSpace(..), Module)
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarSpace as Var
-import Shared.Var		(Var, NameSpace(..), Module)
 
 import Util
-import qualified Util.Map	as Map
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
 import Data.Set			(Set)
+import Util.Data.Map		(Map)
+import Control.Monad.State
+import qualified Data.Set	as Set
+import qualified Util.Data.Map	as Map
 
 -----
 stage	= "Desugar.Project"

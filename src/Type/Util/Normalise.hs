@@ -6,17 +6,12 @@ module Type.Util.Normalise
 	( normaliseT )
 
 where
-
------
-import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
-
 import Type.Exp
 import Type.Plate
+import qualified Shared.Var	as Var
+
+import Util
+import qualified Data.Map	as Map
 
 
 -----

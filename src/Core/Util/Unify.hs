@@ -3,8 +3,6 @@ module Core.Util.Unify
 	( unifyT2)
 
 where
-
-
 import Core.Exp
 import Core.Pretty
 import Core.Util.Bits
@@ -15,6 +13,7 @@ import Type.Util.Kind
 import Shared.Error
 
 import Util
+import Control.Monad
 
 -- stage	= "Core.Util.Unify"
 

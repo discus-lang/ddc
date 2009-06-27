@@ -4,26 +4,25 @@ module Core.Optimise.Simplify
 	, coreSimplifyTree )
 
 where
-
-import qualified Core.Float	as Float
-import qualified Core.Snip	as Snip
 import Core.Exp
 import Core.BoundUse
 import Core.Plate.Trans
+import qualified Core.Float	as Float
+import qualified Core.Snip	as Snip
 
 import Shared.Pretty
+import Shared.VarUtil
 import qualified Debug.Trace	as Debug
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
-import Shared.VarUtil
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 import Util
+import Data.Map			(Map)
+import Data.Set			(Set)
+import Control.Monad.State
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+
 
 -----
 {-stage		= "Core.Boxing"

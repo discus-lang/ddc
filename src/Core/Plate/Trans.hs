@@ -29,10 +29,11 @@ module Core.Plate.Trans
 
 where
 
-import Util
 import Core.Exp
 import Shared.Error
 
+import Util
+import Control.Monad.State
 
 -----
 stage	= "Core.Plate.Trans"

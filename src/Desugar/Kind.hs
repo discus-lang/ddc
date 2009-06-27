@@ -6,37 +6,31 @@ module Desugar.Kind
 
 where
 
-import qualified Type.Plate.Trans	as T
-import Type.Util.Elaborate
-import Type.Util.Kind
-import Type.Exp
-
 import Desugar.Plate.Trans
 import Desugar.Data
 import Desugar.Exp
 
+import Type.Util.Elaborate
+import Type.Util.Kind
+import Type.Exp
 import Source.Error
-
-import Shared.Var		(Var, NameSpace(..))
-import qualified Shared.Var	as Var
-import Shared.VarPrim
-
 import Shared.Pretty
 import Shared.Error
 import Shared.Base
-
-import qualified Debug.Trace
+import Shared.Var		(Var, NameSpace(..))
+import Shared.VarPrim
+import qualified Shared.Var	as Var
+import qualified Type.Plate.Trans	as T
 
 import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
 import Data.Set			(Set)
-
-import qualified Data.Foldable	as Foldable
+import Data.Map			(Map)
 import Data.Sequence		as Seq
+import Control.Monad.State
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
+import qualified Data.Foldable	as Foldable
+import qualified Debug.Trace
 
 -----
 stage	= "Desugar.Kind"

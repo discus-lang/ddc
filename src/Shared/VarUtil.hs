@@ -18,16 +18,15 @@ module Shared.VarUtil
 
 where
 
-import Data.Char	hiding (isSymbol)
-
 import qualified Shared.Var as Var
-import Shared.Var 
-	(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
-
+import Shared.Var 			(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
 import Shared.Pretty
+
 import Util
 
+import Data.Char	hiding (isSymbol)
 import qualified Data.Map	as Map
+import Control.Monad.State
 
 -----
 type VarGenM = State VarBind

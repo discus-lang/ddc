@@ -7,29 +7,26 @@ module Core.Snip
 	( Table(..)
 	, snipTree )
 where
-
-import Util
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, VarBind, NameSpace(..))
-
-import qualified Shared.VarUtil	as Var
-import Shared.VarUtil		(VarGenM, newVarN)
-import Shared.Error
-import Shared.Pretty
-
 import Core.Exp
-import qualified Core.Reconstruct	as Recon
 import Core.Pretty
 import Core.Util
 import Core.Plate.Trans
+import qualified Core.Reconstruct	as Recon
+
+import Shared.Var		(Var, VarBind, NameSpace(..))
+import Shared.VarUtil		(VarGenM, newVarN)
+import Shared.Error
+import Shared.Pretty
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+
+import Util
+import Data.Set			(Set)
+import Data.Map			(Map)
+import Control.Monad.State
 import qualified Debug.Trace	
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 stage		= "Core.Snip"
 debug 		= False

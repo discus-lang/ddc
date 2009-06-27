@@ -5,18 +5,15 @@ module Core.Float
 	, Stats(..)
 	, floatBindsTree
 	, floatBindsTreeUse)
-
 where
-
+import Type.Util
 import Core.BoundUse
-import qualified Core.Plate.Trans	as Trans
-import qualified Core.Reconstruct	as Recon
 import Core.Util
 import Core.Util.Rename
 import Core.Util.Slurp
 import Core.Exp
-
-import Type.Util
+import qualified Core.Plate.Trans	as Trans
+import qualified Core.Reconstruct	as Recon
 
 import Shared.VarPrim	
 import Shared.VarGen
@@ -24,13 +21,11 @@ import Shared.Error
 import Shared.Pretty
 
 import Util
-
-import qualified Data.Map		as Map
 import Data.Map				(Map)
-
-import qualified Data.Set		as Set
 import Data.Set				(Set)
-
+import Control.Monad.State
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 import qualified Debug.Trace		as Debug
 
 -----

@@ -175,6 +175,8 @@ cleanWar :
 		-o	-name "*.tix"   \
 		-o	-name "*.compile.stderr" \
 		-o	-name "*.compile.stdout" \
+		-o	-name "*.stdout" \
+		-o	-name "*.stderr" \
 		-follow | xargs -n 1 rm -f
 
 	@rm -f churn/scratch/*

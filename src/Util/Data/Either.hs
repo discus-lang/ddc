@@ -1,9 +1,7 @@
 
-module Util.Either 
-(
-	gatherEither,
-	catLeftOrError
-)
+module Util.Data.Either 
+	( gatherEither
+	, catLeftOrError)
 
 where
 

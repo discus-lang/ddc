@@ -11,26 +11,23 @@ module Core.Lift.Base
 	, getChopped)
 
 where
-
------
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
------
-import Util
-
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, VarBind, NameSpace(..))
-import Shared.Error
-import Shared.Pretty
-import qualified Shared.Unique	as Unique
-
 import Core.Exp
 import Core.Util
 
+import Shared.Var		(Var, VarBind, NameSpace(..))
+import Shared.Error
+import Shared.Pretty
+import qualified Shared.Var	as Var
+import qualified Shared.Unique	as Unique
+
+import Util
+import Data.Map			(Map)
+import Data.Set			(Set)
+import Control.Monad.State
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+
+-----
 stage	= "Core.Lift.Base"
 
 -----

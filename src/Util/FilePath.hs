@@ -3,7 +3,7 @@ module Util.FilePath
 	(baseNameOfPath)
 where
 
-import Util.List
+import Util.Data.List
 
 
 -- | Gives the base name of a file path

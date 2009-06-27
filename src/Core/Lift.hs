@@ -3,29 +3,24 @@ module Core.Lift
 	( lambdaLiftTree )
 
 where
-
-import Util
-import qualified Debug.Trace	as Debug
-
------
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Shared.VarPrim	as Var
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
-
------
 import Core.Exp
 import Core.Util
-
 import Core.Lift.Base
 import Core.Lift.BindTypes
 import Core.Lift.LiftLambdas
 import Core.Plate.Trans
+
+import Shared.Var		(Var, NameSpace(..))
+import qualified Shared.VarPrim	as Var
+import qualified Shared.Var	as Var
+
+import Util
+import Data.Set			(Set)
+import Data.Map			(Map)
+import Control.Monad.State
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
+import qualified Debug.Trace	as Debug
 
 -----------------------
 -- lambdaLiftTree

@@ -25,7 +25,6 @@ module Type.Util.Kind
 	, isClosure)
 
 where
-
 import Type.Pretty
 import Type.Util.Bits
 import Type.Exp

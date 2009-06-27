@@ -1,11 +1,5 @@
------
--- Util.List
---
--- Summary:
---	Random collection of list utils.
---
---
-module Util.List
+
+module Util.Data.List
 	( module Data.List
 
 	-- concat / map
@@ -76,7 +70,6 @@ module Util.List
 	, partitionFsSort)
 where
 
------
 import Data.List
 import Data.Maybe
 
@@ -570,12 +563,3 @@ partitionFsSort fs xx
  = let	(bins, floor)	= partitionFs fs xx
    in	(concat bins ++ floor)
 	
-
-
-
-
-
-
-
-
-

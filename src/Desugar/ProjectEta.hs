@@ -12,11 +12,11 @@ import Shared.VarGen
 import Shared.Exp
 import Shared.Base
 
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import Util
+import Data.Map			(Map)
+import Control.Monad
+import qualified Data.Map	as Map
+
 
 
 -- Eta expand projection functions

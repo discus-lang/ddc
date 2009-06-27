@@ -2,15 +2,6 @@
 module Core.Util.Beta
 	( betaTree )
 where
-
-import Util
-
-import Data.Map			(Map)
-import qualified Data.Map	as Map
-
-import Data.Set			(Set)
-import qualified Data.Set	as Set
-
 import Core.Exp
 import Core.Util.Bits
 import Core.Crush
@@ -18,6 +9,13 @@ import Core.Plate.Trans
 
 import Shared.VarBind
 import qualified Shared.Var	as Var
+
+import Util
+import Data.Map			(Map)
+import Data.Set			(Set)
+import Control.Monad.State
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 
 data BetaS 

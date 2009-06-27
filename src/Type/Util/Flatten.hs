@@ -3,17 +3,15 @@ module Type.Util.Flatten
 	(flattenT)
 
 where
-
 import Type.Util.Bits
 import Type.Exp
 import Type.Pretty
 
 import Shared.Error
 import Shared.Pretty
-import Debug.Trace
 
 import Util
-
+import Debug.Trace
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

@@ -1,20 +1,14 @@
 
-module Util.Maybe
-(
-	module Data.Maybe,
-	
-	maybeJust,
-	liftMaybeR,
-	makeMaybe,
-	takeFirstJust,
-	liftMaybe
-)
-
+module Util.Data.Maybe
+	( module Data.Maybe
+	, maybeJust
+	, liftMaybeR
+	, makeMaybe
+	, takeFirstJust
+	, liftMaybe )
 where
 
------
 import Data.Maybe
-
 
 -----
 makeMaybe :: Bool -> a -> Maybe a

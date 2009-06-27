@@ -1,5 +1,5 @@
 
-module Util.Map
+module Util.Data.Map
 	( module Data.Map
 	, populationCount
 	, adjustWithDefault

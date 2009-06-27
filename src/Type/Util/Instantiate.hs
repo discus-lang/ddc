@@ -4,23 +4,17 @@ module Type.Util.Instantiate
 	( instantiateT
 	, instantiateT_table )
 where
-
------
-import Util
-import qualified Debug.Trace	as Debug
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
------
-import qualified Shared.Var as Var
-import Shared.Var (Var)
-
 import Type.Exp
 import Type.Pretty
 import Type.Plate.Trans
-
 import Type.Util.Bits
+
+import Shared.Var (Var)
+import qualified Shared.Var as Var
+
+import Util
+import qualified Debug.Trace	as Debug
+import qualified Data.Map	as Map
 
 -----
 -- stage	= "Type.Instantiate"

@@ -3,20 +3,16 @@ module Type.Util.Finalise
 	, finaliseF)
 
 where
-
 import Type.Exp
 import Type.Util.Pack
 import Type.Util.Bits
 import Type.Util.Kind
 import Shared.Error
 import Shared.VarPrim
+
 import Util
-
 import qualified Shared.Var	as Var
-
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Debug.Trace	as Debug
 
 stage	= "Type.Util.Finalise"

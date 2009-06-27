@@ -1,16 +1,19 @@
 {-# OPTIONS -XNoMonomorphismRestriction #-}
 
-module Dispatch 
+module Util.Control.Dispatch 
 	( DispatchAction
 	, dispatchWork)
 	
 where
 
-import Dispatch.Worker
-import qualified Dispatch.WorkGraph	as WorkGraph
-import Dispatch.WorkGraph		(WorkGraph, WorkNode(..))
+import Util.Control.Dispatch.Worker
+
+import qualified Util.Data.WorkGraph	as WorkGraph
+import Util.Data.WorkGraph		(WorkGraph, WorkNode(..))
+
 import qualified Data.Map		as Map
 import Data.Map				(Map)
+
 import qualified Data.Set		as Set
 import Data.Set				(Set)
 
@@ -20,6 +23,7 @@ import Control.Concurrent
 import Control.Concurrent.MVar
 import System.Exit
 import System.IO
+
 
 -- | What to do for each thread.
 type DispatchAction job result

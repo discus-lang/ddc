@@ -20,6 +20,8 @@ import Util.Data.Bag		(Bag)
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 
+import Control.Monad.State
+
 -----
 class Monad m => TransM m a 
  where	transZM :: TransTable m -> a -> m a

@@ -12,7 +12,7 @@ where
 import Util
 import Type.Exp
 import Type.Plate.Trans
-
+import Control.Monad.State
 
 -----
 collectBindingVarsT :: Type -> [Var]

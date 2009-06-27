@@ -2,17 +2,16 @@
 module Type.Error
 	( Error(..) )
 where
+import Type.Location
+import Type.Exp
+import Type.Pretty
 
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
 import Shared.Pretty
 import Shared.Literal
 import Shared.Error
 import Shared.Base		(SourcePos(..))
-
-import Type.Location
-import Type.Exp
-import Type.Pretty
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
 
 import Util
 

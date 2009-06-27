@@ -20,34 +20,24 @@ module Type.State
 	, sInst
 	, sDataFields )
 where
-
------
-
-
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
 
+import Constraint.Exp
 import Type.Error
 import Type.Exp
 import Type.Base
-import Constraint.Exp
-
 import Shared.Pretty
 import Shared.Error
 import Shared.Var		(Var, VarBind, NameSpace(..))
 import qualified Shared.Var	as Var
-
 import qualified Shared.Unique	as U
 
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import System.IO
-
 import Util
+import System.IO
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+
 
 -----
 stage	= "Type.State"

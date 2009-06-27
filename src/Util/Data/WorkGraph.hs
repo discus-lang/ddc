@@ -1,6 +1,6 @@
 -- | Work graphs
 --		
-module Dispatch.WorkGraph 
+module Util.Data.WorkGraph 
 	( WorkGraph(..)
 	, WorkNode (..)
 	, empty
@@ -13,7 +13,7 @@ module Dispatch.WorkGraph
 	, deleteRootNode)
 where
 
-import Dispatch.BackGraph
+import Util.Data.BackGraph
 
 import Prelude			hiding (null, lookup)
 import Data.List 		hiding (null, lookup)
