@@ -1,2 +1,4 @@
-./test/Error/Parse/Empty/Main.ds
+ddc: ERROR
+./test/01-Error/Parse/Empty/Main.ds
     Source file is empty.
+

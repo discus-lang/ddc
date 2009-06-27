@@ -1,4 +1,5 @@
-./test/Error/Closure/LateMutable/Main.ds:25:8
+ddc: ERROR
+./test/01-Error/Closure/LateMutable/Main.ds:25:8
     The type inferencer made an incorrect assumption about the
         mutability of 'box', (and backtracking isn't implemented).
 
@@ -10,10 +11,11 @@
         but a new
               constraint: Base.Mutable %112
          from the use of: (#=)
-                      at: ./test/Error/Closure/LateMutable/Main.ds:27:16
+                      at: ./test/01-Error/Closure/LateMutable/Main.ds:27:16
 
         was discovered, which means 'tTS3' was not actually
         safe to generalise.
 
     Please add a type signature for 'box' which provides this
         mutability constraint.
+

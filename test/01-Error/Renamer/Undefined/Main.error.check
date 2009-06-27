@@ -1,5 +1,7 @@
-./test/Error/Renamer/Undefined/Main.ds:6:16
+ddc: ERROR
+./test/01-Error/Renamer/Undefined/Main.ds:6:16
      Undefined value variable 'y'.
 
-./test/Error/Renamer/Undefined/Main.ds:9:15
+./test/01-Error/Renamer/Undefined/Main.ds:9:15
      Undefined value variable 'z'.
+

@@ -1,27 +1,29 @@
-./test/Error/Defix/Assoc/Assoc.ds:7:12
+ddc: ERROR
+./test/01-Error/Defix/Assoc/Assoc.ds:7:12
     Precedence parsing error.
       Cannot have multiple, adjacent, non-associative operators of the
       same precedence in an infix expression.
 
       Offending operators: <, >
 
-./test/Error/Defix/Assoc/Assoc.ds:8:18
+./test/01-Error/Defix/Assoc/Assoc.ds:8:18
     Precedence parsing error.
       Cannot have multiple, adjacent, non-associative operators of the
       same precedence in an infix expression.
 
       Offending operators: ==, ==
 
-./test/Error/Defix/Assoc/Assoc.ds:21:17
+./test/01-Error/Defix/Assoc/Assoc.ds:21:17
     Precedence parsing error.
       Cannot have operators of same precedence but with differing
       associativities in an infix expression.
 
       Offending operators: <#, #>
 
-./test/Error/Defix/Assoc/Assoc.ds:22:16
+./test/01-Error/Defix/Assoc/Assoc.ds:22:16
     Precedence parsing error.
       Cannot have operators of same precedence but with differing
       associativities in an infix expression.
 
       Offending operators: #>, <#
+

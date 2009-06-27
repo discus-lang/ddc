@@ -1,10 +1,12 @@
-./test/Error/Purity/ConstWrite/Test.ds:16:8
+ddc: ERROR
+./test/01-Error/Purity/ConstWrite/Test.ds:16:8
     Conflicting region constraints.
               constraint: Base.Mutable %91
          from the use of: a
-                      at: ./test/Error/Purity/ConstWrite/Test.ds:16:8
+                      at: ./test/01-Error/Purity/ConstWrite/Test.ds:16:8
 
      conflicts with,
               constraint: Base.Const %91
          from the use of: a
-                      at: ./test/Error/Purity/ConstWrite/Test.ds:16:8
+                      at: ./test/01-Error/Purity/ConstWrite/Test.ds:16:8
+

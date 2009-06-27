@@ -1,8 +1,10 @@
-./test/Error/Main/Main.ds:4:0
+ddc: ERROR
+./test/01-Error/Main/Main.ds:4:0
     The type of main must be a function.
         but it was inferred to be:
             main
               :: Data.String.String %rTC0
               :- Base.Const %rTC0
               ,  Base.Direct %rTC0
+
 

@@ -42,21 +42,20 @@ testDiff' test@(TestDiff exp out)
 	-- if there is an existing diff file then remove it
 	liftIOF $ removeIfExists outDiff
 
-	-- do the diff
+	-- do the diff.
+	--	If there is a difference then diff will have a non-zero
+	--	return code, which looks like a failure to the system command.
+	--	
 	let cmd	= "diff"
 		++ " " ++ exp
 		++ " " ++ out
 		++ " > " ++ outDiff
 				
 	debugLn $ "  * cmd = " ++ cmd
-	liftIOF $ system cmd
+	_	<- tryWar $ liftIOF $ system cmd
 	
 	-- read the output file back
 	outFile	<- liftIO $ readFile outDiff
-
---	liftIO $ putStr $ "outFile = |" ++ outFile ++ "|\n"
-
-	debugLn $ ""
 
 	case outFile of
 	 []	-> return TestWinDiff

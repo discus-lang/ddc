@@ -1,10 +1,12 @@
-./test/Error/Purity/DiagnoseLoop/Test.ds:7:8
+ddc: ERROR
+./test/01-Error/Purity/DiagnoseLoop/Test.ds:7:8
     Cannot purify effect `System.Console.!Console'.
 
               the use of: print
              with effect: System.Console.!Console
-                      at: ./test/Error/Purity/DiagnoseLoop/Test.ds:7:8
+                      at: ./test/01-Error/Purity/DiagnoseLoop/Test.ds:7:8
 
      conflicts with,
               the use of: suspend1
-                      at: ./test/Error/Purity/DiagnoseLoop/Test.ds:8:13
+                      at: ./test/01-Error/Purity/DiagnoseLoop/Test.ds:8:13
+

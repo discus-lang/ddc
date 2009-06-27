@@ -1,2 +1,4 @@
-./test/Error/Grind/AmbiguousProjection/Ambig.ds:7:12
+ddc: ERROR
+./test/01-Error/Grind/AmbiguousProjection/Ambig.ds:7:12
     Ambiguous projection: .wibble
+

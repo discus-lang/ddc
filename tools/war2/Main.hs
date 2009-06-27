@@ -12,6 +12,7 @@ import Util.Options
 import Util.Terminal.VT100
 import Util.FilePath
 
+import System.Cmd
 import System.Environment
 import System.Exit
 import System.Time
@@ -74,7 +75,7 @@ doWar
   	 $ do	-- Make a dir for our temp files if need be
 		tmpExists	<- dirExists "/tmp/war"
 		when (not tmpExists)
-	 	 $ system $ "mkdir /tmp/war"
+	 	 $ Command.system $ "mkdir /tmp/war"
 
 	-- All the starting test directories
 	let testDirs
@@ -211,10 +212,6 @@ dispatch graph
  = do	
 	config	<- ask
 
-	-- Print out test results
-	let hookFinished test result
-		= putStr $ pprResult test result ++ "\n"
-
 	-- Print tests that get ignored because their parents failed
 	let hookIgnored test
 		= putStr $ pprResult test (Left TestIgnore) ++ "\n"
@@ -232,6 +229,83 @@ dispatch graph
 			graph
 			(configThreads config)
 			(workerAction config)
+
+
+-- | Called when a test has finished running
+hookFinished :: Test -> TestResult -> IO ()
+hookFinished test result
+
+	-- | If checked a file against an expected output and it was different,
+	--	then ask the user what to do about it.
+	| Left (TestFailDiff fileExp fileOut fileDiff)	<- result
+	= do	putStr 	$ pprResult test result ++ "\n"
+		putStr	$  "\n"
+			++ "-- Output Differs  ----------------------------------------------------------\n"
+			++ "   expected file: " ++ fileExp	++	"\n"
+			++ "     actual file: " ++ fileOut	++ 	"\n"
+			++ replicate 100 '-' ++ "\n"
+
+		str	<- readFile fileDiff
+		putStr	str
+
+		hookFinishedAsk test result
+
+	| otherwise
+	= do	putStr $ pprResult test result ++ "\n"
+
+
+
+hookFinishedAsk :: Test -> TestResult -> IO ()
+hookFinishedAsk 
+	test
+	res@(Left (TestFailDiff fileExp fileOut fileDiff))
+ = do	
+	putStr	$  replicate 100 '-' ++ "\n"
+		++ "    (ENTER) continue   (e) show expected    (a) show actual\n"
+		++ "    (q)     quit       (u) update accepted\n"
+		++ "\n"
+		++ "? "
+
+	hFlush stdout
+	cmd	<- hGetLine stdin
+	
+	let result
+		-- Continue	
+		| ""		<- cmd
+		= return ()
+
+		-- Quit
+		| ('q': _)	<- cmd
+		= do	exitSuccess
+
+		-- Print the expected output
+		| ('e': _)	<- cmd
+		= do	str	<- readFile fileExp
+			putStr	$  replicate 100 '-' ++ "\n"
+			putStr	str
+			hookFinishedAsk test res
+
+		-- Print the actual output
+		| ('a': _)	<- cmd
+		= do	str	<- readFile fileOut
+			putStr	$  replicate 100 '-' ++ "\n"
+			putStr	str
+			hookFinishedAsk test res
+
+		-- Update the expected output with the actual one
+		| ('u': _)	<- cmd
+		= do	System.Cmd.system 
+				$ "cp " ++ fileOut ++ " " ++ fileExp
+
+			return ()
+
+		-- Invalid
+		| otherwise
+		= do	putStr	 $ "Invalid command.\n"
+			hookFinishedAsk test res
+
+	result			
+
 
 -- | The dispatch worker action
 workerAction 

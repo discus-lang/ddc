@@ -1,13 +1,15 @@
-./test/Error/Unify/FieldInit/Test.ds:5:0
+ddc: ERROR
+./test/01-Error/Unify/FieldInit/Test.ds:5:0
     Type mismatch during unification.
           cannot match: Base.Int32 %4
                   with: Data.String.String %48
 
           type signature for 'Test.init_Fish_Perch_speed'
           which requires: Base.Int32 %4
-                      at: ./test/Error/Unify/FieldInit/Test.ds:5:0
+                      at: ./test/01-Error/Unify/FieldInit/Test.ds:5:0
 
         conflicts with, 
           literal value "fast"
                  of type: Data.String.String %48
-                      at: ./test/Error/Unify/FieldInit/Test.ds:8:42
+                      at: ./test/01-Error/Unify/FieldInit/Test.ds:8:42
+
