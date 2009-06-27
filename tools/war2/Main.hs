@@ -116,27 +116,28 @@ getTestsInDir dirPath
 
 	-- Build and run executables if we have a Main.ds
 	--	If we have an error.check file then we're expecting it to fail
+	let gotMainDS		= any (isSuffixOf "/Main.ds") files
+	let gotMainErrorCheck	= any (isSuffixOf "/Main.error.check") files
 	let mTestsBuild
-		= justWhen ( (any (isSuffixOf "/Main.ds") files)
-			  && (not $ any (isSuffixOf "/Main.error.check") files))
-
+		= justWhen (gotMainDS && not gotMainErrorCheck)
 		$ let t1	= TestBuild     (dirPath ++ "/Main.ds")
 		      t2	= TestRun	(dirPath ++ "/Main.bin")
 	 	  in  [ (t1, BackNode [])
 		      , (t2, BackNode [t1]) ]
 
 	-- If we have an error.check file then we're expecting failure
-	let mTestCompileError
-		= justWhen ( (any (isSuffixOf "/Main.ds") files)
-			  && (any (isSuffixOf "/Main.error.check") files))
-		$ let t1	= TestCompileError (dirPath ++ "/Main.ds")
+	let mTestsBuildError
+		= justWhen (gotMainDS && gotMainErrorCheck)
+		$ let t1	= TestBuildError (dirPath ++ "/Main.ds")
 		  in  [ (t1, BackNode []) ]
+
 
 	-- If we ran an executable, and we have a stdout check file
 	--	then check the executable's output against it
-	let mTestStdout
+	let gotMainStdoutCheck	= any (isSuffixOf "/Main.stdout.check") files
+	let mTestsStdout
 		| Just [ _, (t2, _) ]	<- mTestsBuild
-		, any (isSuffixOf "/Main.stdout.check") files
+		, gotMainStdoutCheck
 		= let t3	= TestDiff
 					(dirPath ++ "/Main.stdout.check")
 					(dirPath ++ "/Main.stdout")
@@ -145,19 +146,33 @@ getTestsInDir dirPath
 		| otherwise
 		= Nothing
 
-	-- If there is no Main.ds then just compile every available source file
-	let mTestOther
-		= justWhen (not $ any (isSuffixOf "/Main.ds") files)
+	-- If there is no Main.ds then expect every source file that hasn't got an 
+	--	associated error.check file to compile successfully.
+	let mTestsCompile
+		= justWhen (not $ gotMainDS)
 		$ [ (TestCompile file, BackNode [])
-				| file	<- filter (isSuffixOf ".ds") files ]
+				| file	<- filter (isSuffixOf ".ds") files 
+				, let errorCheckFile	
+					= (take (length file - length ".ds") file) ++ ".error.check"
+				, not (elem errorCheckFile files)]
 
+	-- If there is not Main.ds file then expect source files with an 
+	--	associate error.check file to fail during compilation.
+	let mTestsCompileError
+		= justWhen (not $ gotMainDS)
+		$ [ (TestCompileError file, BackNode [])
+				| file	<- filter (isSuffixOf ".ds") files 
+				, let errorCheckFile	
+					= (take (length file - length ".ds") file) ++ ".error.check"
+				, elem errorCheckFile files]
 
 	let testsHere	= concat 
 			$ catMaybes 
 				[ mTestsBuild
-				, mTestCompileError
-				, mTestStdout
-				, mTestOther]
+				, mTestsBuildError
+				, mTestsCompile
+				, mTestsCompileError 
+				, mTestsStdout ]
 
 	-- See what dirs we can recurse into
 	dirsAll		<- lsDirsIn dirPath
@@ -240,6 +255,7 @@ runTest :: Test -> War TestWin
 runTest test
  = case test of
 	TestBuild{}		-> testBuild	    test
+	TestBuildError{}	-> testBuildError   test
 	TestRun{}		-> testRun	    test
 	TestCompile{}		-> testCompile      test
 	TestCompileError{}	-> testCompileError test

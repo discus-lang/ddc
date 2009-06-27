@@ -14,6 +14,9 @@ data TestWin
 	= TestWinBuild	
 		{ testWinTime	:: ClockTime
 		, testWinSize	:: Int }
+
+	-- Build failed, as expected
+	| TestWinBuildError
 		
 	-- Compilation succeeded
 	| TestWinCompile
@@ -22,6 +25,7 @@ data TestWin
 
 	-- Compilation failed, as expected
 	| TestWinCompileError
+
 
 	-- Binary ran successfully
 	| TestWinRun
@@ -51,6 +55,9 @@ pprTestWin win
  = case win of
 	TestWinBuild time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
+	
+	TestWinBuildError
+	  -> "ok"
 
 	TestWinCompile time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"

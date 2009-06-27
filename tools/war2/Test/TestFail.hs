@@ -31,13 +31,18 @@ data TestFail
 		, testFailOutFile	:: FilePath	-- file of stdout log
 		, testFailErrFile	:: FilePath }	-- file of stderr log
 
+	-- We were expecting the build to fail, but it didn't.
+	| TestFailBuildSuccess
+		{ testFailOutFile	:: FilePath
+		, testFailErrFile	:: FilePath}
+
 	-- Compilation of a source file failed
 	| TestFailCompile
 		{ testFailIOFail	:: IOFail	-- the io action for the compilation
 		, testFailOutFile	:: FilePath	-- file of stdout log
 		, testFailErrFile	:: FilePath }	-- file of stderr log
 
-	-- We were expecting the compile to fail but it didn't.
+	-- We were expecting the compile to fail, but it didn't.
 	| TestFailCompileSuccess
 		{ testFailOutFile	:: FilePath
 		, testFailErrFile	:: FilePath}
@@ -63,8 +68,9 @@ testFailName fail
 	TestFailOther{}			-> "other"
 	TestFailIO{}			-> "io"
 	TestFailBuild{}			-> "build"
+	TestFailBuildSuccess{}		-> "build success"
 	TestFailCompile{}		-> "compile"
-	TestFailCompileSuccess{}	-> "fail"
+	TestFailCompileSuccess{}	-> "compile success"
 	TestFailRun{}			-> "run"
 	TestFailMissingFile{}		-> "missing file"
 
@@ -74,12 +80,14 @@ pprTestFail fail
  = case fail of
 	TestFailOther str		-> "other " ++ str
 	TestIgnore{}			-> "ignore"
-	TestFailIO      iof		-> "io" ++ show iof
-	TestFailBuild iof out err	-> "build"
-	TestFailCompile iof out err	-> "compile"
-	TestFailCompileSuccess out err	-> "fail"
-	TestFailRun     iof out err	-> "run"
+	TestFailIO iof			-> "io" ++ show iof
+	TestFailBuild{}			-> "build"
+	TestFailBuildSuccess{}		-> "fail"
+	TestFailCompile{}		-> "compile"
+	TestFailCompileSuccess{}	-> "fail"
+	TestFailRun{}			-> "run"
 	TestFailMissingFile path	-> "missing file " ++ show path
+
 
 pprTestFailColor :: TestFail -> String
 pprTestFailColor fail
