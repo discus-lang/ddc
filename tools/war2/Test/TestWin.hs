@@ -26,13 +26,12 @@ data TestWin
 	-- Compilation failed, as expected
 	| TestWinCompileError
 
-
 	-- Binary ran successfully
 	| TestWinRun
 		{ testWinTime	:: ClockTime }
 
 	-- File was as expected.
-	| TestWinDiffOk
+	| TestWinDiff
 	deriving (Show, Eq)
 
 
@@ -50,26 +49,22 @@ pprTestWinColor win
 
 	_ -> pprTestWin win
 
+
 pprTestWin :: TestWin -> String
 pprTestWin win
  = case win of
 	TestWinBuild time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
 	
-	TestWinBuildError
-	  -> "ok"
+	TestWinBuildError	-> "ok"
 
 	TestWinCompile time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
 
-	TestWinCompileError
-	  -> "ok"
+	TestWinCompileError	-> "ok"
+	TestWinRun time		-> "time("   ++ pprTime time ++ "s)"
+	TestWinDiff	  	-> "ok"
 
-	TestWinRun	 time		
-	  -> "time("   ++ pprTime time ++ "s)"
-
-	TestWinDiffOk
-	  -> "ok"
 
 pprTime :: ClockTime -> String
 pprTime time = padL formatTimeWidth (pprClockTime time)

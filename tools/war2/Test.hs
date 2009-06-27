@@ -7,7 +7,8 @@ module Test
 	, module Test.BuildError
 	, module Test.Compile
 	, module Test.CompileError 
-	, module Test.Run)
+	, module Test.Run
+	, module Test.Diff)
 
 	
 where
@@ -20,6 +21,6 @@ import Test.BuildError
 import Test.Compile
 import Test.CompileError
 import Test.Run
-
+import Test.Diff
 
 

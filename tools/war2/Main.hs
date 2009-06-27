@@ -259,7 +259,7 @@ runTest test
 	TestRun{}		-> testRun	    test
 	TestCompile{}		-> testCompile      test
 	TestCompileError{}	-> testCompileError test
-	TestDiff{}		-> return TestWinDiffOk
+	TestDiff{}		-> testDiff	    test
 
 
 -- Pretty -------------------------------------------------------------------------------------------

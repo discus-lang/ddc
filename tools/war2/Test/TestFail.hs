@@ -53,6 +53,11 @@ data TestFail
 		, testFailOutFile	:: FilePath	-- file of stdout log
 		, testFailErrFile	:: FilePath }	-- file of stderr log
 
+	-- Output file was different to expected
+	| TestFailDiff
+		{ testFailExpectedFile	:: FilePath	-- expected output
+		, testFailActualFile	:: FilePath	-- actual output
+		, testFailDiffFile	:: FilePath }	-- file containing differences
 
 	deriving (Eq, Show)
 
@@ -67,12 +72,13 @@ testFailName fail
 	TestIgnore{}			-> "ignore"
 	TestFailOther{}			-> "other"
 	TestFailIO{}			-> "io"
+	TestFailMissingFile{}		-> "missing file"
 	TestFailBuild{}			-> "build"
 	TestFailBuildSuccess{}		-> "build success"
 	TestFailCompile{}		-> "compile"
 	TestFailCompileSuccess{}	-> "compile success"
 	TestFailRun{}			-> "run"
-	TestFailMissingFile{}		-> "missing file"
+	TestFailDiff{}			-> "diff"
 
 
 pprTestFail :: TestFail -> String
@@ -81,12 +87,13 @@ pprTestFail fail
 	TestFailOther str		-> "other " ++ str
 	TestIgnore{}			-> "ignore"
 	TestFailIO iof			-> "io" ++ show iof
+	TestFailMissingFile path	-> "missing file " ++ show path
 	TestFailBuild{}			-> "build"
 	TestFailBuildSuccess{}		-> "fail"
 	TestFailCompile{}		-> "compile"
 	TestFailCompileSuccess{}	-> "fail"
 	TestFailRun{}			-> "run"
-	TestFailMissingFile path	-> "missing file " ++ show path
+	TestFailDiff{}			-> "diff"
 
 
 pprTestFailColor :: TestFail -> String

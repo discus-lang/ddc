@@ -17,12 +17,12 @@ type TestResult
 
 -- | The tests that we support.
 data Test
-	= TestBuild	 		FilePath
-	| TestBuildError		FilePath
-	| TestCompile  	 		FilePath
-	| TestCompileError		FilePath
-	| TestRun	 		FilePath
-	| TestDiff      		FilePath FilePath
+	= TestBuild	 	FilePath
+	| TestBuildError	FilePath
+	| TestCompile  	 	FilePath
+	| TestCompileError	FilePath
+	| TestRun	 	FilePath
+	| TestDiff      	FilePath FilePath	-- template, test output
 	deriving (Eq, Show)
 
 instance Ord Test where
@@ -42,21 +42,21 @@ testPath test
 	
 testTag test
  = case test of
-	TestBuild{}			-> "build"
-	TestBuildError{}		-> "build error"
-	TestCompile{}			-> "compile"
-	TestCompileError{}		-> "compile error"
-	TestRun{} 			-> "run"
-	TestDiff{}			-> "diff"
+	TestBuild{}		-> "build"
+	TestBuildError{}	-> "build error"
+	TestCompile{}		-> "compile"
+	TestCompileError{}	-> "compile error"
+	TestRun{} 		-> "run"
+	TestDiff{}		-> "diff"
 
 -- | Pretty print a test.
 pprTest :: Test -> String
 pprTest test
  = case test of	
-	TestBuild	    	path	-> " * " ++ padR formatPathWidth path ++ " build   "
-	TestBuildError		path	-> " * " ++ padR formatPathWidth path ++ " error   "
-	TestCompile     	path	-> " * " ++ padR formatPathWidth path ++ " compile "
-	TestCompileError	path	-> " * " ++ padR formatPathWidth path ++ " error   "
-	TestRun		    	path	-> " * " ++ padR formatPathWidth path ++ " run     "
-	TestDiff       template out	-> " * " ++ padR formatPathWidth out  ++ " diff    "
+	TestBuild	path	-> " * " ++ padR formatPathWidth path ++ " build   "
+	TestBuildError	path	-> " * " ++ padR formatPathWidth path ++ " error   "
+	TestCompile     path	-> " * " ++ padR formatPathWidth path ++ " compile "
+	TestCompileError path	-> " * " ++ padR formatPathWidth path ++ " error   "
+	TestRun		path	-> " * " ++ padR formatPathWidth path ++ " run     "
+	TestDiff template out	-> " * " ++ padR formatPathWidth out  ++ " diff    "
 
