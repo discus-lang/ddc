@@ -28,13 +28,13 @@ pprTestWinColor :: TestWin -> String
 pprTestWinColor win 
  = case win of
 	TestWinBuildMain{}
-	 -> setMode [Foreground Blue] ++ pprTestWin win ++ setMode [Reset]
+	 -> setMode [Bold, Foreground Blue] ++ pprTestWin win ++ setMode [Reset]
 
 	TestWinCompile{}
-	 -> setMode [Foreground Blue] ++ pprTestWin win ++ setMode [Reset]
+	 -> setMode [Bold, Foreground Blue] ++ pprTestWin win ++ setMode [Reset]
 	
 	TestWinRun{}
-	 -> setMode [Foreground Green] ++ pprTestWin win ++ setMode [Reset]
+	 -> setMode [Bold, Foreground Green] ++ pprTestWin win ++ setMode [Reset]
 
 	_ -> pprTestWin win
 
