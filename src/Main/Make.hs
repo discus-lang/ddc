@@ -48,12 +48,6 @@ ddcMake verbose setup files
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive setup' roots
 
-	-- force the root modules to be rebuilt.
-	-- 	This ensures that we can always check that the Main module contains
-	--	the main function, as this is done by the Compile.compileFile.
---	let graph2	= foldl' invalidateModule graph 
---			$ map scrapeModuleName roots
-
 	-- if child modules need rebuilding then parents do
 	let graph3	= foldl' invalidateParents graph
 			$ map scrapeModuleName roots
