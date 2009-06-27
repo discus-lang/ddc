@@ -115,12 +115,22 @@ getTestsInDir dirPath
 				filesAll
 
 	-- Build and run executables if we have a Main.ds
+	--	If we have an error.check file then we're expecting it to fail
 	let mTestsBuild
-		= justWhen (any (isSuffixOf "/Main.ds") files)
-		$ let t1	= TestBuildMain (dirPath ++ "/Main.ds")
-		      t2	= TestRunBinary (dirPath ++ "/Main.bin")
+		= justWhen ( (any (isSuffixOf "/Main.ds") files)
+			  && (not $ any (isSuffixOf "/Main.error.check") files))
+
+		$ let t1	= TestBuild     (dirPath ++ "/Main.ds")
+		      t2	= TestRun	(dirPath ++ "/Main.bin")
 	 	  in  [ (t1, BackNode [])
 		      , (t2, BackNode [t1]) ]
+
+	-- If we have an error.check file then we're expecting failure
+	let mTestCompileError
+		= justWhen ( (any (isSuffixOf "/Main.ds") files)
+			  && (any (isSuffixOf "/Main.error.check") files))
+		$ let t1	= TestCompileError (dirPath ++ "/Main.ds")
+		  in  [ (t1, BackNode []) ]
 
 	-- If we ran an executable, and we have a stdout check file
 	--	then check the executable's output against it
@@ -142,7 +152,12 @@ getTestsInDir dirPath
 				| file	<- filter (isSuffixOf ".ds") files ]
 
 
-	let testsHere	= concat $ catMaybes [mTestsBuild, mTestStdout, mTestOther]
+	let testsHere	= concat 
+			$ catMaybes 
+				[ mTestsBuild
+				, mTestCompileError
+				, mTestStdout
+				, mTestOther]
 
 	-- See what dirs we can recurse into
 	dirsAll		<- lsDirsIn dirPath
@@ -224,10 +239,11 @@ workerAction config vTest vResult
 runTest :: Test -> War TestWin
 runTest test
  = case test of
-	TestBuildMain{}	-> testBuildMain test
-	TestRunBinary{}	-> testRunBinary test
-	TestCompile{}	-> testCompile test
-	TestDiff{}	-> return TestWinDiffOk
+	TestBuild{}		-> testBuild	    test
+	TestRun{}		-> testRun	    test
+	TestCompile{}		-> testCompile      test
+	TestCompileError{}	-> testCompileError test
+	TestDiff{}		-> return TestWinDiffOk
 
 
 -- Pretty -------------------------------------------------------------------------------------------

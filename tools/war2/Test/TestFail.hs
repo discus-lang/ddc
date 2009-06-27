@@ -25,11 +25,22 @@ data TestFail
 	| TestFailMissingFile 	FilePath
 
 	-- Common failures ----------------------------------------------------
+	-- Build failed
+	| TestFailBuild
+		{ testFailIOFail	:: IOFail	-- the io action for the compilation
+		, testFailOutFile	:: FilePath	-- file of stdout log
+		, testFailErrFile	:: FilePath }	-- file of stderr log
+
 	-- Compilation of a source file failed
 	| TestFailCompile
 		{ testFailIOFail	:: IOFail	-- the io action for the compilation
 		, testFailOutFile	:: FilePath	-- file of stdout log
 		, testFailErrFile	:: FilePath }	-- file of stderr log
+
+	-- We were expecting the compile to fail but it didn't.
+	| TestFailCompileSuccess
+		{ testFailOutFile	:: FilePath
+		, testFailErrFile	:: FilePath}
 
 	-- Running a binary failed
 	| TestFailRun
@@ -51,7 +62,9 @@ testFailName fail
 	TestIgnore{}			-> "ignore"
 	TestFailOther{}			-> "other"
 	TestFailIO{}			-> "io"
+	TestFailBuild{}			-> "build"
 	TestFailCompile{}		-> "compile"
+	TestFailCompileSuccess{}	-> "fail"
 	TestFailRun{}			-> "run"
 	TestFailMissingFile{}		-> "missing file"
 
@@ -62,10 +75,11 @@ pprTestFail fail
 	TestFailOther str		-> "other " ++ str
 	TestIgnore{}			-> "ignore"
 	TestFailIO      iof		-> "io" ++ show iof
+	TestFailBuild iof out err	-> "build"
 	TestFailCompile iof out err	-> "compile"
+	TestFailCompileSuccess out err	-> "fail"
 	TestFailRun     iof out err	-> "run"
 	TestFailMissingFile path	-> "missing file " ++ show path
-
 
 pprTestFailColor :: TestFail -> String
 pprTestFailColor fail

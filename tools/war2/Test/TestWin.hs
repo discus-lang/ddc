@@ -9,17 +9,25 @@ import Util.Terminal.VT100
 
 -------------------------------------------------------------------------------
 data TestWin
-	= TestWinBuildMain	
+
+	-- Build succeeded
+	= TestWinBuild	
 		{ testWinTime	:: ClockTime
 		, testWinSize	:: Int }
 		
+	-- Compilation succeeded
 	| TestWinCompile
 		{ testWinTime	:: ClockTime
 		, testWinSize	:: Int }
 
+	-- Compilation failed, as expected
+	| TestWinCompileError
+
+	-- Binary ran successfully
 	| TestWinRun
 		{ testWinTime	:: ClockTime }
 
+	-- File was as expected.
 	| TestWinDiffOk
 	deriving (Show, Eq)
 
@@ -27,12 +35,12 @@ data TestWin
 pprTestWinColor :: TestWin -> String
 pprTestWinColor win 
  = case win of
-	TestWinBuildMain{}
+	TestWinBuild{}
 	 -> setMode [Bold, Foreground Blue] ++ pprTestWin win ++ setMode [Reset]
 
 	TestWinCompile{}
 	 -> setMode [Bold, Foreground Blue] ++ pprTestWin win ++ setMode [Reset]
-	
+
 	TestWinRun{}
 	 -> setMode [Bold, Foreground Green] ++ pprTestWin win ++ setMode [Reset]
 
@@ -41,11 +49,14 @@ pprTestWinColor win
 pprTestWin :: TestWin -> String
 pprTestWin win
  = case win of
-	TestWinBuildMain time size	
+	TestWinBuild time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
 
 	TestWinCompile time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
+
+	TestWinCompileError
+	  -> "ok"
 
 	TestWinRun	 time		
 	  -> "time("   ++ pprTime time ++ "s)"

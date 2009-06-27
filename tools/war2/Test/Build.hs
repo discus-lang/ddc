@@ -2,8 +2,8 @@
 -- | Handles a test that defines a Main module.
 --	We compile the module, run the test, then check it's output.
 --
-module Test.BuildMain 
-	(testBuildMain)
+module Test.Build 
+	(testBuild)
 where
 
 import Test.TestResult
@@ -16,10 +16,10 @@ import Data.List
 import System.Time
 
 -- | Build a program starting from a Main.ds file
-testBuildMain :: Test -> War TestWin
-testBuildMain test@(TestBuildMain mainDS)
+testBuild :: Test -> War TestWin
+testBuild test@(TestBuild mainDS)
  | isSuffixOf "Main.ds" mainDS
- = do	debugLn $ "* TestBuildMain " ++ mainDS 
+ = do	debugLn $ "* TestBuild " ++ mainDS 
 
 	let mainDir	= take (length mainDS - length "Main.ds") mainDS
 
@@ -53,12 +53,12 @@ testBuildMain test@(TestBuildMain mainDS)
 	debugLn $ "  * cmd = " ++ cmdBuild
 	compileTime	
 	  <- catchTestIOF (timeIOF_ $ system $ cmdBuild)
-			(\ioFail -> TestFailCompile
+			(\ioFail -> TestFailBuild
 					{ testFailIOFail	= ioFail
 					, testFailOutFile	= mainCompOut
 					, testFailErrFile	= mainCompErr })
 
-	return TestWinBuildMain
+	return TestWinBuild
 		{ testWinTime = compileTime
 		, testWinSize = 0 }
 

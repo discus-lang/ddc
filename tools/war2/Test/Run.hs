@@ -1,6 +1,6 @@
 
-module Test.RunBinary
-	(testRunBinary)
+module Test.Run
+	(testRun)
 where
 
 import Test.TestResult
@@ -13,10 +13,10 @@ import Data.List
 import System.Time
 import Control.Monad.Error
 
-testRunBinary :: Test -> War TestWin
-testRunBinary test@(TestRunBinary mainBin)
+testRun :: Test -> War TestWin
+testRun test@(TestRun mainBin)
  | isSuffixOf (".bin") mainBin
- = do	debugLn	$ "* TestRunBinary " ++ mainBin
+ = do	debugLn	$ "* TestRun " ++ mainBin
 
 	exists	<- liftIOF $ fileExists mainBin
 	if not exists
@@ -34,11 +34,12 @@ testRunBinary test@(TestRunBinary mainBin)
 		
 		debugLn $ "  * cmd = " ++ cmdRun
 		runTime
-	  	  <- catchTestIOF (timeIOF_ $ system $ cmdRun)
-				(\ioFail -> TestFailRun
-						{ testFailIOFail	= ioFail
-						, testFailOutFile	= mainRunOut
-						, testFailErrFile	= mainRunErr })
+	  	  <- catchTestIOF 
+			(timeIOF_ $ system $ cmdRun)
+			(\ioFail -> TestFailRun
+					{ testFailIOFail	= ioFail
+					, testFailOutFile	= mainRunOut
+					, testFailErrFile	= mainRunErr })
 
 		return TestWinRun
 			{ testWinTime	= runTime }

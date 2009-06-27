@@ -3,18 +3,21 @@ module Test
 	( module Test.TestResult
 	, module Test.TestWin
 	, module Test.TestFail
-	, module Test.BuildMain
-	, module Test.RunBinary
-	, module Test.Compile)
+	, module Test.Build
+	, module Test.Compile
+	, module Test.CompileError 
+	, module Test.Run)
+
 	
 where
 
 import Test.TestResult
 import Test.TestWin
 import Test.TestFail
-import Test.BuildMain
-import Test.RunBinary
+import Test.Build
 import Test.Compile
+import Test.CompileError
+import Test.Run
 
 
 

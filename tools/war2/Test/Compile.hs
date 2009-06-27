@@ -12,6 +12,7 @@ import War
 import Command
 
 import Util
+import Util.FilePath
 
 import Data.List
 import System.Time
@@ -58,15 +59,5 @@ testCompile test@(TestCompile srcDS)
 		, testWinSize = 0 }
 		
 		
-baseNameOfPath :: FilePath -> FilePath
-baseNameOfPath path
- = let	dirParts	= chopOnRight '/' path
-	dir		= concat $ init dirParts
-
- 	fileParts	= chopOnRight '.' $ last dirParts
-	file		= concat $ init fileParts
-	
-   in	dir ++ "/" ++ file
-
 
 		
