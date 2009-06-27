@@ -1,9 +1,6 @@
 
 module Module.Main
-(
-	makeMainC
-)
-
+	(makeMainC)
 where
 
 ---

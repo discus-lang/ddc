@@ -6,10 +6,11 @@ where
 import qualified Config.Config	as Config
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
-import Module.IO
 import Shared.Pretty
 import Shared.Error
+
 import Util
+import Util.System.Directory
 
 
 -- locate the path to the DDC runtime library and base libraries,
@@ -34,11 +35,11 @@ verbLocateRunLib verbose args
 
 	-- use the pathBase args and see if we can find the base library and the runtime system.
 	mPathRuntime	<- liftM (liftM fst)
-			$  findFile pathRuntime_test
+			$  findFileInDirs pathRuntime_test
 			$ "libddc-runtime." ++ Config.extSharedObject
 
 	mPathLibrary	<- liftM (liftM fst)
-			$  findFile pathLibrary_test
+			$  findFileInDirs pathLibrary_test
 			$ "Base.ds"
 	
 	-- if /runtime and /library can't be found then die with an appropriate error

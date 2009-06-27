@@ -5,33 +5,26 @@ module Main.IO
 	, chooseModuleName)
 
 where
+import Main.Setup
+import Main.Arg
 
-import qualified Shared.Var		as Var
 import Shared.Var			(Var, Module(..))
-
 import Shared.Error
 import Shared.Base
 import Shared.Pretty
-
-import Module.IO
 import qualified Module.Export		as ME
-
 import qualified Source.Slurp		as S
 import qualified Source.Exp		as S
 import qualified Source.Lexer		as S
 import qualified Source.Parser.Module	as S
 import qualified Source.Token		as Token
+import qualified Shared.Var		as Var
 
 import Util
-
-import Main.Setup
-import Main.Arg
-
+import Util.FilePath
+import Util.System.Directory
 import qualified Data.Map		as Map
-import Data.Map				(Map)
-
 import qualified Data.Set		as Set
-import Data.Set				(Set)
 
 -----
 stage	= "Main.IO"
@@ -109,7 +102,7 @@ chaseModules_build setup compileFun importDirs importsRoot importMap
 		let fileNameDS		= fileDir ++ ".ds"
 		
 		-- try and find source for this module
-		mPathDS	<- findFile importDirs fileNameDS
+		mPathDS	<- findFileInDirs importDirs fileNameDS
 		
 		case mPathDS of 
                  -- build the source file.
@@ -169,9 +162,9 @@ loadInterface
 	let fileNameO		= fileDir ++ ".o"
 	let fileNameH		= fileDir ++ ".ddc.h"
 
-	mPathDI			<- findFile importDirs fileNameDI
-	mPathO			<- findFile importDirs fileNameO
-	mPathH			<- findFile importDirs fileNameH
+	mPathDI			<- findFileInDirs importDirs fileNameDI
+	mPathO			<- findFileInDirs importDirs fileNameO
+	mPathH			<- findFileInDirs importDirs fileNameH
 	
 	let result
 		| Just (dirDI, pathDI)	<- mPathDI

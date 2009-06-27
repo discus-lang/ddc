@@ -3,36 +3,7 @@ module Main.Compile
 
 
 where
-
------
-import qualified System.IO		as System
-import qualified System.Posix		as System
-import qualified System.Cmd		as System
-import qualified System.Exit		as System
-import System.Time
-
-import qualified Control.Exception	as Exception
-
-import qualified Data.Map		as Map
-import Data.Map				(Map)
-import qualified Data.Set		as Set
-
-import GHC.IOBase
-
------
-import qualified Shared.Var		as Var
-import Shared.Var			(Module(..), NameSpace(..))
-import Shared.Error
-import Shared.Pretty
-
-import qualified Main.Arg		as Arg
 import Main.Arg 			(Arg)
-
-import qualified Module.Graph		as M
-import qualified Module.Export		as M
-import qualified Module.IO		as M
-import qualified Module.Scrape		as M
-
 import Main.IO				as SI
 import Main.Source			as SS
 import Main.Desugar
@@ -42,29 +13,41 @@ import Main.Dump			as SD
 import Main.Invoke
 import Main.Setup
 import Main.Init
-import Main.Build
+import Main.BuildFile
 import Main.Error
-
-import qualified Config.Config		as Config
+import qualified Main.Arg		as Arg
 
 import Source.Slurp			as S
+import Shared.Var			(Module(..), NameSpace(..))
+import Shared.Error
+import Shared.Pretty
+import qualified Shared.Var		as Var
+import qualified Config.Config		as Config
+import qualified Module.Graph		as M
+import qualified Module.Export		as M
+import qualified Module.Scrape		as M
 import qualified Source.Exp		as S
-
 import qualified Source.Pragma		as Pragma
-
-
+import qualified Desugar.Plate.Trans	as D
 import qualified Core.Util.Slurp	as C
 import qualified Core.Plate.FreeVars	as C
-
 import qualified Type.Plate.FreeVars	as T
-
-import qualified Desugar.Plate.Trans	as D
 import qualified Sea.Util		as E
 
-import Debug.Trace
-
 import Util
+import Util.FilePath
 import Numeric
+import Debug.Trace
+import System.Time
+import GHC.IOBase
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
+import qualified Control.Exception	as Exception
+import qualified System.IO		as System
+import qualified System.Posix		as System
+import qualified System.Cmd		as System
+import qualified System.Exit		as System
+
 
 out 	ss	= putStr $ pprStrPlain ss
 
@@ -86,7 +69,7 @@ compileFile setup scrapes sModule
 	let Just sRoot	= Map.lookup sModule scrapes
 	let pathSource	= let Just s = M.scrapePathSource sRoot in s
 	let (fileName, fileDir, _, _)
-		= M.normaliseFileName pathSource
+		= normalMunchFilePath pathSource
 
 	-- Gather up all the import dirs.
 	let importDirs	
@@ -143,7 +126,7 @@ compileFile_parse
 	let pathSource		= let Just s = M.scrapePathSource sRoot in s
 
 	let Just (fileDir, fileBase, _) 
-				= M.munchFileName pathSource
+				= munchFileName pathSource
 	let ?pathSourceBase	= fileDir ++ "/" ++ fileBase
 	
 	-- Parse imported interface files --------------------------------------

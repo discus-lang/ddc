@@ -3,7 +3,7 @@ module Main.Link
 	(linkFile)
 where
 	
-import Main.Build
+import Main.BuildFile
 import Main.Setup
 import qualified Main.Arg	as Arg
 

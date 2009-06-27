@@ -3,24 +3,22 @@ module Main
 	( main
 	, ddc )
 where
-
-import qualified Main.Arg 		as Arg
 import Main.Setup
 import Main.Compile
 import Main.Version
 import Main.Init
 import Main.Make
+import qualified Main.Arg 		as Arg
 
-import Module.IO
 import Module.Scrape
-
+import Module.ScrapeGraph
 import Shared.Pretty
 
+import Util
+import Util.FilePath
 import qualified System.IO		as System
 import qualified System
 import qualified Data.Map		as Map
-import Data.Map				(Map)
-import Util
 
 -----
 main :: IO ()
@@ -100,7 +98,7 @@ out 	ss	= putStr $ pprStrPlain ss
 ddcCompile verbose setup files
  = do 	-- use the directories containing the files to be compiled as extra import dirs
 	let takeDir path
-		= case normaliseFileName path of
+		= case normalMunchFilePath path of
 			(_, dir, _, _)	-> dir
 
 	let setup'	
@@ -111,7 +109,7 @@ ddcCompile verbose setup files
 	-- scrape the root modules
 	Just roots	
 		<- liftM sequence 
-		$  mapM (scrapeSourceFile setup') files 
+		$  mapM (scrapeSourceFile (importDirsOfSetup setup') True) files 
 
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive setup' roots

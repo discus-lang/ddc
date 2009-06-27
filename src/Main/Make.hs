@@ -2,32 +2,25 @@
 module Main.Make 
 	(ddcMake)	
 where
-
-import qualified Main.Arg as	Arg
 import Main.Setup
 import Main.Compile
 import Main.Link
 
+import Module.Scrape
+import Module.ScrapeGraph
 import Shared.Pretty
 import Shared.Var		(Module)
+import qualified Main.Arg as	Arg
 import qualified Shared.Var as	Var
 
-import Module.Scrape
-import Module.GraphScrape
-import Module.IO
-
 import Util
+import Util.FilePath
 import Util.Graph.Deps
-
 import qualified System.IO	as System
 import qualified System.Exit	as System
 import qualified System.Directory as System
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
-import Data.Set			(Set)
+import qualified Data.Map	as Map
 
 -----
 -- | Do a recursive make
@@ -35,7 +28,7 @@ ddcMake verbose setup files
  = do
 	-- use the directories containing the root files as extra import dirs
 	let takeDir path
-		= case normaliseFileName path of
+		= case normalMunchFilePath path of
 			(_, dir, _, _)	-> dir
 
 	let setup'	= setup { setupArgsBuild = Arg.ImportDirs (map takeDir files) 
@@ -43,7 +36,7 @@ ddcMake verbose setup files
 	-- scrape the root modules
 	Just roots	
 		<- liftM sequence 
-		$  mapM (scrapeSourceFile setup') files 
+		$  mapM (scrapeSourceFile (importDirsOfSetup setup') True) files 
 	
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive setup' roots
@@ -85,11 +78,11 @@ ddcMake verbose setup files
 
 buildLoop 
 	:: Setup		-- ^ compile setup
-	-> GraphScrape		-- ^ dependency graph
+	-> ScrapeGraph		-- ^ dependency graph
 	-> Int			-- ^ total modules needing to be rebuilt
 	-> Int			-- ^ ix of this module
 	-> [Module]		-- ^ root modules
-	-> IO GraphScrape
+	-> IO ScrapeGraph
 
 buildLoop setup graph buildCount buildIx roots
  	= buildLoop' 
@@ -140,7 +133,7 @@ buildLoop' setup graph buildCount buildIx roots build
 
 		-- check that the object and interface is actually there
 		let (_, fileDir, fileBase, _)
-			= normaliseFileName pathSource
+			= normalMunchFilePath pathSource
 
 		let droppedFile ext	= fileDir ++ "/" ++ fileBase ++ ext
 		let checkDropped ext 	= do
@@ -181,7 +174,7 @@ isBlocked bb	= case bb of { Blocked -> True ; _  -> False }
 
 -- | Find the next module to build
 findBuildable
-	:: GraphScrape
+	:: ScrapeGraph
 	-> Set Module
 	-> [Module] 
 	-> Buildable
@@ -203,7 +196,7 @@ findBuildable graph noChoose roots
 		
 
 findBuildable1 
-	:: GraphScrape		-- module scrape graph
+	:: ScrapeGraph		-- module scrape graph
 	-> Set Module 		-- don't choose one of these modules
 	-> Module		-- root of dependency tree
 	-> Buildable

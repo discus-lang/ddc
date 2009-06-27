@@ -3,7 +3,7 @@
 --	Build files contain extra information related to actually building the program.
 --	Eg what external libraries to link with, and what flags to pass to the C compiler and linker.
 
-module Main.Build 
+module Main.BuildFile
 	( Build(..)
 	, verbLoadBuildFile
 	, loadBuildFile

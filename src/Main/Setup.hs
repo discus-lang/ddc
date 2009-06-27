@@ -1,7 +1,8 @@
 
 module Main.Setup
 	( Setup (..)
-	, setupArgs )
+	, setupArgs 
+	, importDirsOfSetup )
 where
 
 import Main.Arg
@@ -19,3 +20,8 @@ data Setup
 
 setupArgs setup
 	= nub $ setupArgsCmd setup ++ setupArgsBuild setup
+
+importDirsOfSetup setup
+	= setupLibrary setup
+	: (concat $ [dirs | ImportDirs dirs <- setupArgs setup])
+	
