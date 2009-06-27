@@ -10,6 +10,7 @@ import Dispatch
 import Util
 import Util.Options
 import Util.Terminal.VT100
+import Util.FilePath
 
 import System.Environment
 import System.Exit
@@ -126,11 +127,14 @@ getTestsInDir dirPath
 		      , (t2, BackNode [t1]) ]
 
 	-- If we have an error.check file then we're expecting failure
+	--	Build the program, and assuming it does actually fail,
+	--	check the output against the expected.
 	let mTestsBuildError
 		= justWhen (gotMainDS && gotMainErrorCheck)
 		$ let t1	= TestBuildError (dirPath ++ "/Main.ds")
-		  in  [ (t1, BackNode []) ]
-
+		      t2	= TestDiff       (dirPath ++ "/Main.error.check") (dirPath ++ "/Main.compile.stderr")
+		  in  [ (t1, BackNode []) 
+		      , (t2, BackNode [t1]) ]
 
 	-- If we ran an executable, and we have a stdout check file
 	--	then check the executable's output against it
@@ -160,11 +164,17 @@ getTestsInDir dirPath
 	--	associate error.check file to fail during compilation.
 	let mTestsCompileError
 		= justWhen (not $ gotMainDS)
-		$ [ (TestCompileError file, BackNode [])
+		$ concat
+		$ [ let t1	= TestCompileError file
+		        t2	= TestDiff	   errorCheckFile compileStderr
+		    in	[ (t1, BackNode [])
+			, (t2, BackNode [t1]) ]
 				| file	<- filter (isSuffixOf ".ds") files 
-				, let errorCheckFile	
-					= (take (length file - length ".ds") file) ++ ".error.check"
-				, elem errorCheckFile files]
+				, let fileBase		= baseNameOfPath file
+				, let errorCheckFile	= fileBase ++ ".error.check"
+				, let compileStderr	= fileBase ++ ".compile.stderr"
+				, elem errorCheckFile files 
+		  ]
 
 	let testsHere	= concat 
 			$ catMaybes 

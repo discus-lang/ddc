@@ -173,6 +173,8 @@ cleanWar :
 		-o	-name "*.out"   \
 		-o 	-name "*.diff"  \
 		-o	-name "*.tix"   \
+		-o	-name "*.compile.stderr" \
+		-o	-name "*.compile.stdout" \
 		-follow | xargs -n 1 rm -f
 
 	@rm -f churn/scratch/*

@@ -10,13 +10,27 @@ import War
 import Command
 
 import Util.FilePath
-
 import Control.Monad.Error
-
 
 -- | Build a program starting from a Main.ds file
 testDiff :: Test -> War TestWin
 testDiff test@(TestDiff exp out)
+ = do	gotExp	<- liftIOF $ fileExists exp
+	gotOut	<- liftIOF $ fileExists out
+
+	let result
+		| not $ gotExp
+		= throwError $ TestFailMissingFile exp
+
+		| not $ gotOut
+		= throwError $ TestFailMissingFile out
+
+		| otherwise
+		= testDiff' test
+
+	result
+
+testDiff' test@(TestDiff exp out)
  = do	debugLn $ "* TestDiff " ++ exp ++ " " ++ out
 
 	-- the base name of the output file
@@ -41,6 +55,8 @@ testDiff test@(TestDiff exp out)
 	outFile	<- liftIO $ readFile outDiff
 
 --	liftIO $ putStr $ "outFile = |" ++ outFile ++ "|\n"
+
+	debugLn $ ""
 
 	case outFile of
 	 []	-> return TestWinDiff
