@@ -270,7 +270,7 @@ pType_body1
 		con	<- pConOfSpaceNamed [NameEffect] "!Bot"
 		return	$ TBot KEffect)
 
- <|>	-- $Bot
+ <|>	-- \$Bot
 	(Parsec.try $ do
 		con	<- pConOfSpaceNamed [NameClosure] "$Bot"
 		return	$ TBot KClosure)

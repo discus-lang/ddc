@@ -26,9 +26,11 @@ import System.IO
 
 
 -- | What to do for each thread.
+--	The MVars are, in order, used to receive tests to run and to
+--	write results.
 type DispatchAction job result
-	=  MVar (job, [job]) 			-- ^ MVar to receive tests to run
-	-> MVar (job, [job], result) 		-- ^ MVar to write results to
+	=  MVar (job, [job])
+	-> MVar (job, [job], result)
 	-> IO ()
 
 data DispatchState job result

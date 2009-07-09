@@ -9,11 +9,11 @@ where
 import Util.Data.List
 
 -- | Gives the base name of a file path
---   For example:   	
---	baseName "/some/dir/File"	=> "/some/dir/File"
---	baseName "/some/dir/File.o"     => "/some/dir/File"
---	baseName "/some/dir/File.o.out" => "/some/dir/File.o"
+--   For example:
 --
+-- >	baseName "/some/dir/File"	=> "/some/dir/File"
+-- >	baseName "/some/dir/File.o"     => "/some/dir/File"
+-- >	baseName "/some/dir/File.o.out" => "/some/dir/File.o"
 baseNameOfPath :: FilePath -> FilePath
 baseNameOfPath path
  = let	dirParts	= chopOnRight '/' path
