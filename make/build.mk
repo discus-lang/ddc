@@ -18,7 +18,8 @@ GHC_LANGUAGE	:= \
 	-XKindSignatures \
 	-XUndecidableInstances \
 	-XTypeSynonymInstances \
-	-XNamedFieldPuns
+	-XNamedFieldPuns \
+	-XExistentialQuantification
 
 
 # -- Warnings ----------------------------------------------------------------------------

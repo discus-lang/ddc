@@ -62,6 +62,7 @@ bin/ddc	: $(obj) $(GHC_INCOBJS)
 	@echo "* Linking $@"
 	$(GHC) $(GHC_FLAGS) -o bin/ddc \
 		-package unix -package mtl -package containers -package parsec -package regex-compat \
+		-package QuickCheck \
 		$^ 
 	@echo	
 	

@@ -1,7 +1,8 @@
 
 module Util.Data.List
 	( module Data.List
-
+	, test_UtilDataList
+	
 	-- concat / map
 	, catMap
 	, catMapM
@@ -15,8 +16,6 @@ module Util.Data.List
 	, eachAndOthers
 
 	, elemF
-	, foldlR
-	, foldlR_
 	, interslurp
 	, lookupF
 	, loopi
@@ -73,84 +72,134 @@ where
 import Data.List
 import Data.Maybe
 
+import Util.Test.Check
+
 import qualified Data.Map	as Map
 import Util.Tunnel
 
+test_UtilDataList
+ = 	[ test_rotate_inv
+	, test_eachAndOthers_total ]
+
+
+-- Simple Contractions ----------------------------------------------------------------------------
 catMap		= concatMap
-catInt s xx	= concat $ intersperse s xx
 
 catMapM :: Monad m => (a -> m [b]) -> [a] -> m [b]
 catMapM f xx
- = do
-	xxs	<- mapM f xx
+ = do	xxs	<- mapM f xx
 	return	$ concat xxs
 
+catInt s xx	= concat $ intersperse s xx
 
+
+-- walk is map with the args flipped
 walk   xx f	= map   f xx
 walkM  xx f	= mapM  f xx
 walkM_ xx f	= mapM_ f xx
  	
 
------
--- dropIx
---	Drops out element with index i from the list.
---
+-- Dropping ---------------------------------------------------------------------------------------
+-- | Drop out the element with index i from the list.
 dropIx :: Int -> [a]	-> [a]
-dropIx	 i	[]	= []
-dropIx	0	(x:xs)	= xs
-dropIx	n	(x:xs)	= x : dropIx (n-1) xs
+dropIx	i []		= []
+dropIx	0 (x:xs)	= xs
+dropIx	n (x:xs)	= x : dropIx (n-1) xs
 
 
------
--- dropWhen
---	Drops out elements of a list x, where p(x) is true.
---
+-- | Drop elements when p is true. Dual of filter.
 dropWhen :: (a -> Bool) -> [a] 		-> [a]
-dropWhen    p 		   []		= []
-dropWhen    p 		   (x:xs)
-	| p x 				= dropWhen p xs
-	| otherwise			= x : dropWhen p xs
+dropWhen p []		= []
+dropWhen p (x:xs)
+	| p x 		= dropWhen p xs
+	| otherwise	= x : dropWhen p xs
 
 
------
--- eachAndOthers 
---	Takes a list L, returns a list of pairs (x, xs) where x is an element of L
---	and xs is a list of the the other elements of L.
+-- Shuffling / Sorting ----------------------------------------------------------------------------
+-- | Rotate a list this many elements right
+--	eg rotate 1 [1, 2, 3, 4] == [2, 3, 4, 1]
+rotate :: Int -> [a] 	-> [a]
+rotate n xx 	
+ 	| n == 0	= xx
+
+ 	| n >  0	
+	, len		<- length xx
+	= take len 
+		$ drop (n `mod` len) 
+		$ cycle xx
+
+ 	| n <  0	
+	, len		<- length xx
+	= take len 
+		$ drop (length xx + (n `mod` len)) 
+		$ cycle xx
+
+-- @ We can rotate the list back, also for (abs n) > length of list
+test_rotate_inv
+	= testBool2 "rotate_inv"
+	$ \(xx :: [Int]) (n :: Int)
+	-> xx == rotate (- n) (rotate n xx)
+
+
+-- Selection --------------------------------------------------------------------------------------
+-- | Takes a list, 
+--	returns a list of pairs (x, xs) 
+--		where x is an element of the list
+--		and   xs is a list of the the other elements
 --
---	eachAndOthers [1, 2, 3, 4]
+--  eg: eachAndOthers [1, 2, 3, 4]
 --		= [(1, [2, 3, 4]), (2, [1, 3, 4]), (3, [1, 2, 4]), (4, [1, 2, 3])]
 --
---
-eachAndOthers :: [a] 		-> [(a, [a])]
-eachAndOthers	 xx		= eachAndOthers' xx []
+eachAndOthers :: [a] 	-> [(a, [a])]
+eachAndOthers	 xx		
+	= eachAndOthers' xx []
 
 eachAndOthers'	 []	prev	= []
-eachAndOthers'	 (x:xs) prev 	= (x, prev ++ xs) : eachAndOthers' xs (prev ++ [x])
+eachAndOthers'	 (x:xs) prev 	
+	= (x, prev ++ xs) : eachAndOthers' xs (prev ++ [x])
+
+-- @ The whole list is present in each output elem
+test_eachAndOthers_total
+	= testBool "eachAndOthers_total" 
+	$ \(xx :: [Int]) 
+	-> all 	(== (nub $ sort xx)) 
+		[ nub $ sort (y:ys) | (y, ys) <- eachAndOthers xx]
 
 
------
-elemF  ::	(a -> a -> Bool) ->	a -> [a]	-> Bool
-elemF		f			e    xs
+-- Generalised ------------------------------------------------------------------------------------
+-- | General elem function, using this equality test.
+elemF :: (a -> a -> Bool) -> a -> [a] -> Bool
+elemF	 f e xs
  = case find (\x -> f e x) xs of
  	Nothing	-> False
 	Just x'	-> True
 
 
------
-foldlR  :: (s -> i -> (s, o)) -> s -> [i] -> (s, [o])
-foldlR	   f s xs	 = foldlR' f s xs []
+-- | General lookup function, using this equality test
+lookupF :: (a -> a -> Bool) ->	a -> [(a, b)] 	-> Maybe b
+lookupF	f a []		= Nothing
+lookupF	f a  ((k,d):xs)
+	| f a k		= Just d
+	| otherwise	= lookupF f a xs
 
-foldlR'    f s []     ys = (s, ys)
-foldlR'	   f s (x:xs) ys = foldlR' f s' xs (y:ys)
- where
- 	(s', y)		= f s x
 
------
-foldlR_ :: (s -> i -> (s, o)) -> s -> [i] -> s
+-- | General nub function, using this equality test
+nubF ::	(a -> a -> Bool) -> [a] -> [a]
+nubF f	xx
+ 	= nubF' f xx []
+	
+nubF' f [] acc	= reverse acc
+nubF' f (x:xs) acc
+	| elemF f x acc	= nubF' f xs acc
+	| otherwise	= nubF' f xs (x:acc)
 
-foldlR_	   f s []	= s
-foldlR_	   f s (x:xs)	= foldlR_ f s' xs
- where	(s', _)		= f s x
+
+-- Repetition -------------------------------------------------------------------------------------
+-- | Repeats some stateful compuation an integral number of times then returns the final state.
+loopi :: (state -> state) -> state -> Int -> state
+loopi f	s 0	= s
+loopi f	s n	= loopi f (f s) (n-1)
+
 
 
 -----
@@ -166,42 +215,6 @@ interslurp	(a:[])		= []
 interslurp	(a:b:[])	= []
 interslurp	(a:b:xs)  	= b : interslurp xs
 
-
------
-lookupF	::      (a -> a -> Bool) ->	a -> [(a, b)] 	-> Maybe b
-lookupF		f			a    []		= Nothing
-lookupF		f			a    ((k,d):xs)
- | f a k	= Just d
- | otherwise	= lookupF f a xs
-
-
------
--- loopi
---	Repeats some stateful compuation an integral number of times.
---	Returns final state.
---
-loopi ::	(state -> state) -> state -> Int -> state
-loopi		f	s 	0	= s
-loopi		f	s	n	= loopi f (f s) (n-1)
-
-
------
-nubF ::		(a -> a -> Bool) ->	[a]		-> [a]
-nubF		f			xx
- 	= nubF' f xx []
-	
-nubF'		f []	 acc	= reverse acc
-nubF'		f (x:xs) acc
-	| elemF f x acc	= nubF' f xs acc
-	| otherwise	= nubF' f xs (x:acc)
-
-
------
-rotate :: Int -> [a] 	-> [a]
-rotate    n      xx 	
- | n == 0		= xx
- | n >  0		= take (length xx) $ drop n $ cycle xx
- | n <  0		= take (length xx) $ drop (length xx + n) $ cycle xx
 
 
 
