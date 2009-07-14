@@ -1,7 +1,8 @@
 -- | Work graphs
 --		
 module Util.Data.WorkGraph 
-	( WorkGraph(..)
+	( test_UtilDataWorkGraph
+	, WorkGraph(..)
 	, WorkNode (..)
 	, empty
 	, null
@@ -14,6 +15,7 @@ module Util.Data.WorkGraph
 where
 
 import Util.Data.BackGraph
+import Util.Test.Check
 
 import Prelude			hiding (null, lookup)
 import Data.List 		hiding (null, lookup)
@@ -24,6 +26,9 @@ import Data.Set			(Set)
 import qualified Data.Map 	as Map
 import Data.Map			(Map)
 
+test_UtilDataWorkGraph
+	= [test_fromBackNodes_coverage]
+
 -- | A bidirectional work graph.
 --	The nodes contain lists of parent jobs that have to be finished
 --	before this one can be started, as well as the children that
@@ -33,7 +38,7 @@ data WorkGraph k
 	= WorkGraph 
 		(Set k)			-- root nodes that have no parents
 		(Map k (WorkNode k))	-- the main graph
-	deriving Show
+	deriving (Eq, Show)
 
 data WorkNode k
 	= WorkNode 
@@ -67,6 +72,13 @@ fromBackNodes
 
 fromBackNodes nodes
  	= foldr addBackNode empty nodes
+
+-- @ Check we can always make the graph
+test_fromBackNodes_coverage
+	= testBool "fromBackNodes_coverage"
+	$ \((BackGraph nodes) :: BackGraph Int)
+	-> fromBackNodes (Map.toList nodes) == fromBackNodes (Map.toList nodes)
+
 
 
 -- | Add all the dependencies in backwards node to a work graph.

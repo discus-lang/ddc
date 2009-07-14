@@ -32,12 +32,13 @@ GHC_WARNINGS	:= \
 	-fwarn-duplicate-exports \
 	-fwarn-hi-shadowing \
 	-fwarn-missing-fields \
-	-fwarn-missing-methods \
 	-fwarn-overlapping-patterns \
 	-fwarn-type-defaults \
 	-fwarn-monomorphism-restriction \
-	-fwarn-unused-binds
+	-fwarn-unused-binds \
+	-fno-warn-missing-methods 		
 
+# 	-fwarn-missing-methods			# we don't usually define coarbitrary in the Arbitrary class
 #	-fwarn-unused-matches			# we should probably enable this one
 #	-fwarn-name-shadowing 			# this generates lots of warnings about shadowing
 						# a binding called 'exp'. Is this real, or broken?

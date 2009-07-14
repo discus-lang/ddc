@@ -16,6 +16,7 @@ import Shared.Pretty
 
 import Util
 import Util.FilePath
+import Util.Test.Check
 import qualified System.IO		as System
 import qualified System
 import qualified Data.Map		as Map
@@ -23,8 +24,14 @@ import qualified Data.Map		as Map
 -----
 main :: IO ()
 main	
- = do	argStrings	<- System.getArgs
- 	ddc argStrings
+ = do	args	<- System.getArgs
+ 	case args of 
+	 ["--test"]	-> runTests
+	 _		-> ddc args
+
+runTests :: IO ()
+ = do	checkTests test_Util
+
 
 ddc :: [String] -> IO ()
 ddc argStrings
