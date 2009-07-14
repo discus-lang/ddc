@@ -1,60 +1,35 @@
 
 module Util.Data.List
 	( module Data.List
+	, module Util.Data.List.Drop
+	, module Util.Data.List.Shuffle
+	, module Util.Data.List.Select
+	, module Util.Data.List.Split
 	, test_UtilDataList
-	
-	-- concat / map
-	, catMap
-	, catMapM
-	, catInt
-	
-	-- 
-	, walk, walkM, walkM_
-	
-	, dropIx
-	, dropWhen
-	, eachAndOthers
 
-	, elemF
-	, interslurp
-	, lookupF
-	, loopi
-	, nubF
-	, rotate
-	, remove
-	, sequenceF
-	, sequenceFF
-	
-
-	-- splitting
-	, splitWhenLeft, chopWhenLeft
-	, splitOnLeft, chopOnLeft
-	, splitWhenRight, chopWhenRight
-	, splitOnRight, chopOnRight
-
-	, breakOns
-	, breakWhens
-
-	, update
-	, updateF
-
+	-- contractions
+	, catMap, catMapM, catInt
 	, isNil
-	, gather
-
-	, mapT2_1, mapT2_2
-	, mapT3_1, mapT3_2, mapT3_3
+	, walk, walkM, walkM_
 
 	-- Maybified list operators
-	--	Use these to avoid nasty, impossible to find exceptions like (head [])
 	, takeInit
 	, takeLast
 	, takeHead
 	, takeTail
 	, takeMinimum
 
+	-- maybe
 	, listMaybe
 	, deadMaybe
+	
+	-- repetition
+	, loopi
 
+	-- update
+	, update
+	, updateF
+	
 	-- Map/Accumulate variations.
 	, mapAccumLM
 
@@ -62,25 +37,25 @@ module Util.Data.List
 	, mapZipped, 	mapZippedM
 	
 	-- milking
-	, milk
-	
-	-- sorting
-	, partitionFs
-	, partitionFsSort)
+	, milk)	
+
 where
 
 import Data.List
 import Data.Maybe
 
+import Util.Data.List.Drop
+import Util.Data.List.Shuffle
+import Util.Data.List.Select
+import Util.Data.List.Split
+
 import Util.Test.Check
 
-import qualified Data.Map	as Map
-import Util.Tunnel
 
 test_UtilDataList
- = 	[ test_rotate_inv
-	, test_eachAndOthers_total ]
-
+ = 	test_UtilDataListShuffle
+ ++	test_UtilDataListSelect
+ ++	test_UtilDataListSplit
 
 -- Simple Contractions ----------------------------------------------------------------------------
 catMap		= concatMap
@@ -97,321 +72,12 @@ catInt s xx	= concat $ intersperse s xx
 walk   xx f	= map   f xx
 walkM  xx f	= mapM  f xx
 walkM_ xx f	= mapM_ f xx
- 	
-
--- Dropping ---------------------------------------------------------------------------------------
--- | Drop out the element with index i from the list.
-dropIx :: Int -> [a]	-> [a]
-dropIx	i []		= []
-dropIx	0 (x:xs)	= xs
-dropIx	n (x:xs)	= x : dropIx (n-1) xs
-
-
--- | Drop elements when p is true. Dual of filter.
-dropWhen :: (a -> Bool) -> [a] 		-> [a]
-dropWhen p []		= []
-dropWhen p (x:xs)
-	| p x 		= dropWhen p xs
-	| otherwise	= x : dropWhen p xs
-
-
--- Shuffling / Sorting ----------------------------------------------------------------------------
--- | Rotate a list this many elements right
---	eg rotate 1 [1, 2, 3, 4] == [2, 3, 4, 1]
-rotate :: Int -> [a] 	-> [a]
-rotate n xx 	
- 	| n == 0	= xx
-
- 	| n >  0	
-	, len		<- length xx
-	= take len 
-		$ drop (n `mod` len) 
-		$ cycle xx
-
- 	| n <  0	
-	, len		<- length xx
-	= take len 
-		$ drop (length xx + (n `mod` len)) 
-		$ cycle xx
-
--- @ We can rotate the list back, also for (abs n) > length of list
-test_rotate_inv
-	= testBool2 "rotate_inv"
-	$ \(xx :: [Int]) (n :: Int)
-	-> xx == rotate (- n) (rotate n xx)
-
-
--- Selection --------------------------------------------------------------------------------------
--- | Takes a list, 
---	returns a list of pairs (x, xs) 
---		where x is an element of the list
---		and   xs is a list of the the other elements
---
---  eg: eachAndOthers [1, 2, 3, 4]
---		= [(1, [2, 3, 4]), (2, [1, 3, 4]), (3, [1, 2, 4]), (4, [1, 2, 3])]
---
-eachAndOthers :: [a] 	-> [(a, [a])]
-eachAndOthers	 xx		
-	= eachAndOthers' xx []
-
-eachAndOthers'	 []	prev	= []
-eachAndOthers'	 (x:xs) prev 	
-	= (x, prev ++ xs) : eachAndOthers' xs (prev ++ [x])
-
--- @ The whole list is present in each output elem
-test_eachAndOthers_total
-	= testBool "eachAndOthers_total" 
-	$ \(xx :: [Int]) 
-	-> all 	(== (nub $ sort xx)) 
-		[ nub $ sort (y:ys) | (y, ys) <- eachAndOthers xx]
-
-
--- Generalised ------------------------------------------------------------------------------------
--- | General elem function, using this equality test.
-elemF :: (a -> a -> Bool) -> a -> [a] -> Bool
-elemF	 f e xs
- = case find (\x -> f e x) xs of
- 	Nothing	-> False
-	Just x'	-> True
-
-
--- | General lookup function, using this equality test
-lookupF :: (a -> a -> Bool) ->	a -> [(a, b)] 	-> Maybe b
-lookupF	f a []		= Nothing
-lookupF	f a  ((k,d):xs)
-	| f a k		= Just d
-	| otherwise	= lookupF f a xs
-
-
--- | General nub function, using this equality test
-nubF ::	(a -> a -> Bool) -> [a] -> [a]
-nubF f	xx
- 	= nubF' f xx []
-	
-nubF' f [] acc	= reverse acc
-nubF' f (x:xs) acc
-	| elemF f x acc	= nubF' f xs acc
-	| otherwise	= nubF' f xs (x:acc)
-
-
--- Repetition -------------------------------------------------------------------------------------
--- | Repeats some stateful compuation an integral number of times then returns the final state.
-loopi :: (state -> state) -> state -> Int -> state
-loopi f	s 0	= s
-loopi f	s n	= loopi f (f s) (n-1)
-
-
-
------
--- interslurp
---	Inverse of intersperse (mostly)
---	Takes every second (internal) element of a list
---
---	interslurp [1, 2, 3, 4, 5, 6] = [2, 4]
---
-interslurp ::	[a] 		-> [a]
-interslurp   	[]		= []
-interslurp	(a:[])		= []
-interslurp	(a:b:[])	= []
-interslurp	(a:b:xs)  	= b : interslurp xs
-
-
-
-
------
-remove  :: (a -> Bool) -> [a] -> Maybe (a, [a])
-remove     f               xx = remove' f [] xx
-
-remove' :: (a -> Bool) -> [a] -> [a] 	-> Maybe (a, [a])
-remove'    f	         prev   []	= Nothing
-remove'    f     	 prev   (x:xs)  
- | f x					= Just (x, prev ++ xs)
- | otherwise				= remove' f (x:prev) xs
-
-
------
-sequenceF :: 	[(a -> a)] -> 	a 	-> a
-sequenceF	[]		a	= a
-sequenceF 	(f:fs)		a 	= sequenceF fs (f a)
-
-sequenceFF ::	a ->		[(a -> a)]	-> a
-sequenceFF	a		[]		= a
-sequenceFF	a		(f:fs)		= sequenceF fs (f a)
-
-
--- Splitting  --------------------------------------------------------------------------------------
-
-
--- Split Left --------
-
--- | Split a list on the left of the first element where this predicate matches.
-splitWhenLeft ::	(a -> Bool) -> [a]	-> ([a], [a])
-splitWhenLeft	p	xx	= splitWhenLeft' p xx []
-
-splitWhenLeft'	p []	 acc	= (acc, [])
-splitWhenLeft'	p (x:xs) acc
-	| p x			= (acc, x : xs)
-	| otherwise		= splitWhenLeft' p xs (acc ++ [x])
-
-chopWhenLeft :: (a -> Bool) -> [a] -> [[a]]
-chopWhenLeft f xx	= makeSplits (splitWhenLeft f) xx
-
--- | Split a list on the left of the first occurance of this element.
---	eg splitLeft '.' "abc.def"  => ("abc", ".def")
-
-splitOnLeft :: Eq a => a -> [a] -> ([a], [a])
-splitOnLeft c xx	= splitWhenLeft (== c) xx
-
--- | Split a list on the left of all occurances of this element.
---	eg chopBefore '.' "abc.def.ghi.jkl"	=> ["abc", ".def", ".ghi", ".jkl"]
-
-chopOnLeft :: Eq a => a -> [a] -> [[a]]
-chopOnLeft c xx		= makeSplits (splitOnLeft c) xx
-
-
--- Split Right ---------
-
--- | Split a list on the right of the first element where this predicate matches
---
-splitWhenRight ::	(a -> Bool) -> [a]	-> ([a], [a])
-splitWhenRight	p	xx		= splitWhenRight' p xx []
-
-splitWhenRight'	p	[]	acc	= (acc, [])
-splitWhenRight'	p	(x:xs)	acc
-	| p x				= (acc ++ [x], xs)
-	| otherwise			= splitWhenRight' p xs (acc ++ [x])
-
-chopWhenRight :: (a -> Bool) -> [a] -> [[a]]
-chopWhenRight f	xx	= makeSplits (splitWhenRight f) xx
-
-
--- | Split a list on the right of the first occurance of this element.
---	eg splitRight '.' "abc.def" => ("abc.", "def")
-
-splitOnRight :: Eq a => a -> [a] -> ([a], [a])
-splitOnRight c xx	= splitWhenRight (== c) xx
-
--- | Split a list on the right of all occurances of this element.
---	eg chopRight '.' "abc.def.ghi.jkl" 	=> ["abc.", "def.", "ghi.", "jkl"]
-
-chopOnRight :: Eq a => a -> [a] -> [[a]]
-chopOnRight c xx	= makeSplits (splitOnRight c) xx
-
-
------
--- Split Functions
---
-makeSplits 
-	:: ([a] -> ([a], [a])) 
-	-> ([a] -> [[a]])
-
-makeSplits splitFunc xx
-	| []	<- back
-	= [front]
-
-	| []		<- front
-	, (x:xs)	<- xx
-	= [] ++ appendFront x (makeSplits splitFunc xs)
-	
-	| otherwise
-	= front : makeSplits splitFunc back
-	
-	where 	(front, back) 		= splitFunc xx
-		appendFront z (x:xs)	= ((z : x) :xs)
-
-
-
--- | Make a breaks function from this split function
-makeBreaks
-	:: ([a] -> ([a], [a])) -> ([a] -> [[a]])
-
-makeBreaks	splitFunc xx
- = let 	parts 		= makeSplits splitFunc xx
-	firstParts'	= map init $ init parts
-   in 	firstParts' ++ [last parts]
-	
-
--- | Break a list into components, using this element as the separator.
---	The element is not returned as part of the components.
---
---	eg:  breakOns '.' "rabbit.marmot.lemur"   
---	  -> ["rabbit", "marmot", "lemur"]
---
-breakOns :: Eq a => a -> [a] -> [[a]]
-breakOns  c	= makeBreaks (splitOnRight c)
-
-
--- | Break a list into comonents, using this function to choose the separator.
---	The separator element is not returned as part of the components.
---
---	eg: breakWhens (isEven) [1, 5, 2, 5, 9, 5, 7]
---	 -> [[1, 5], [5, 9], [5, 7]]
---
-breakWhens :: (a -> Bool) -> [a] -> [[a]]
-breakWhens p	= makeBreaks (splitWhenRight p)
-
-
------
--- Update Functions
---
-update	:: Eq a 
-	=> a -> b -> [(a, b)] -> [(a, b)]
-update	key elem	[]		= []
-update  key elem 	((k, e):xs)
-	| k == key	= (k, elem) : update key elem xs
-	| otherwise	= (k, e)    : update key elem xs
-
------
-updateF :: Eq k
-	=> k -> (e -> e) -> [(k, e)] -> [(k, e)]
-updateF key f		[]		= []
-updateF key f		((k, e):xs)	
-	| k == key	= (k, f e)	: updateF key f xs
-	| otherwise	= (k, e)	: updateF key f xs
-
-
------
--- There's a Haskell function called simply 'null'
--- but simple boolean tests should probably be called isSomething
---
+ 
 isNil :: [a] 	-> Bool
-isNil    []	= True
-isNil	 xx	= False
+isNil	= null
 
 
------
--- gather
---	gather [(0, 1), (0, 2), (3, 2), (4, 5), (3, 1)] = [(0, [1, 2]), (3, [2, 1]), (4, [5])]
---
---
-gather :: Ord a => [(a, b)] -> [(a, [b])]
-gather	xx	= Map.toList m
- where
- 	m	= foldr (\(k, v) m -> 
-			 	Map.insertWith 
-					(\x xs -> x ++ xs) 
-					k [v] m) 
-			Map.empty 
-			xx
-	
-
------
-mapT2_1 = mapUpdateTl tl2_1
-
-mapT2_2 :: (b -> c) -> [(a, b)] -> [(a, c)]
-mapT2_2 f xx
- = case xx of 
- 	[]		-> []
-	((a, b):xs)	-> (a, f b) : mapT2_2 f xs
-	 
-
-mapT3_1	= mapUpdateTl tl3_1 
-mapT3_2 = mapUpdateTl tl3_2 
-mapT3_3 = mapUpdateTl tl3_3
-
-
-	
--- List Operators --------------------------------------------------------------
+-- Take versions of prelude ops -------------------------------------------------------------------
 takeInit ::	[a] -> Maybe [a]
 takeInit	xx
  = case xx of
@@ -439,7 +105,6 @@ takeTail	xx
  	[]	-> Nothing
 	_	-> Just (tail xx)
 
-
 takeMinimum 
 	:: Ord a 
 	=> [a] -> Maybe a
@@ -449,7 +114,7 @@ takeMinimum	xx
  	[]	-> Nothing
 	_	-> Just (minimum xx)
 
-	
+-- Maybe ------------------------------------------------------------------------------------------
 listMaybe :: ([a] -> b) -> [a] -> Maybe b
 listMaybe f xx
  = case xx of
@@ -460,11 +125,35 @@ deadMaybe :: Eq a => a -> (a -> b) -> a -> Maybe b
 deadMaybe dead f x
 	| x == dead	= Nothing
 	| otherwise	= Just (f x)
-	
------
--- Map/Accumulate variations.
---
 
+
+-- Repetition -------------------------------------------------------------------------------------
+-- | Repeats some stateful compuation an integral number of times then returns the final state.
+loopi :: (state -> state) -> state -> Int -> state
+loopi f	s 0	= s
+loopi f	s n	= loopi f (f s) (n-1)
+
+
+-- Update -----------------------------------------------------------------------------------------
+-- Update Functions
+--
+update	:: Eq a 
+	=> a -> b -> [(a, b)] -> [(a, b)]
+update	key elem	[]		= []
+update  key elem 	((k, e):xs)
+	| k == key	= (k, elem) : update key elem xs
+	| otherwise	= (k, e)    : update key elem xs
+
+-----
+updateF :: Eq k
+	=> k -> (e -> e) -> [(k, e)] -> [(k, e)]
+updateF key f		[]		= []
+updateF key f		((k, e):xs)	
+	| k == key	= (k, f e)	: updateF key f xs
+	| otherwise	= (k, e)	: updateF key f xs
+
+
+-- Map/Accumulate variations ----------------------------------------------------------------------
 mapAccumLM 
 	:: Monad m
 	=> (acc -> x -> m (acc, y)) -> acc -> [x] -> m (acc, [y])
@@ -480,9 +169,7 @@ mapAccumLM' f acc (x:xs) yy
  	mapAccumLM' f acc' xs (yy ++ [y])
 
 
------
--- Unzip/Map/Zip variations.
--- 
+-- Unzip/Map/Zip variations -----------------------------------------------------------------------
 mapZipped 
 	:: (a -> a2) 
 	-> (b -> b2) 
@@ -508,9 +195,7 @@ mapZippedM f g xx
 	return		$ zip as' bs'
 	
 
------
--- milking
---
+-- Milking ----------------------------------------------------------------------------------------
 milk 	:: (a -> Maybe ([b], a))	-- keep calling this function while it returns Just
 	-> a				-- start with this a.
 	-> ([b], a)			-- all the b's that were returned during the calls, and the final a.
@@ -520,59 +205,4 @@ milk' acc f x
  = case f x of
  	Nothing		-> (acc, x)
 	Just (ss, x')	-> milk' (acc ++ ss) f x'
-	
-
-
-
--- Sorting ---------------------------------------------------------------------
-
--- | Separate out this list into bins. 
---   An element goes in the bin if it matches the corresponding predicate.
-
-partitionFs :: 	[(a -> Bool)] -> [a] -> ([[a]], [a])
-partitionFs 	fs xx 
- = let	(bins, floor)	= mapAccumL (partitionFs1 fs) (replicate (length fs) []) xx
-   in	( map reverse bins
-        , catMaybes floor)
-	
--- | Place an element on the head of the bin which matches the corresponding predicate
---	If no bins match the element goes on the floor.
-
-partitionFs1 :: [(a -> Bool)] -> [[a]] -> a -> ([[a]], Maybe a)
-
-partitionFs1 fs bins x 
-	= partitionFs1' fs [] bins x
-
--- no predicates matched, drop the element on the floor
-partitionFs1'  []      binPrev []	x
-	= (binPrev, Just x)
-
--- ran out of functions before we ran out of bins
---	just say we couldn't match anything
-partitionFs1'	[]	binPrev binsRest 	x
-	= ( binPrev ++ binsRest
-	  , Just x)	
-
--- ran out of bins before we ran out of functions
---	just make a new bin and carry on
-partitionFs1'  ff  	binPrev []  	x
-	= partitionFs1' ff binPrev [[]] x
-
-partitionFs1'  (f:fs)  binPrev (bin:binRest)  x
-
-	-- predicate matched, place the element in the current bin
-	| f x
-	= ( binPrev ++ [x:bin] ++ binRest
-	  , Nothing)
-	
-	-- predicate failed, move on to the next bin.
-	| otherwise
-	= partitionFs1' fs (binPrev ++ [bin]) binRest x
-
-
--- | Do a partitionFs then concat the results together into a single list.
-partitionFsSort :: [(a -> Bool)] -> [a] -> [a]
-partitionFsSort fs xx
- = let	(bins, floor)	= partitionFs fs xx
-   in	(concat bins ++ floor)
-	
+		
