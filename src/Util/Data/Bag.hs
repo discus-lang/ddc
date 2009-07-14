@@ -1,32 +1,20 @@
-
--- Data.Bag 
---	A fast bag of unsorted things.
---
+-- |	A fast bag of unsorted things.
 --	For fast insert, union and take1
 --	For when you simply don't care about ordering.
---
-
 module Util.Data.Bag
-(
-	Bag (Nil),
-
-	empty,		
-	singleton,
-	insert,
-
-	take1,
-	mustTake1,
-
-	union,
-	unions,
-	unionList,
-	
-	map,
-	mapM,
-
-	toList,
-	fromList
-)
+	( Bag (Nil)
+	, empty
+	, singleton
+	, insert
+	, take1
+	, mustTake1
+	, union
+	, unions
+	, unionList
+	, map
+	, mapM
+	, toList
+	, fromList)
 
 where
 
@@ -40,7 +28,7 @@ data Bag a
 	| NodeL  [a]     (Bag a)	-- invariant: list is never []
 	deriving (Show)
 	
-
+	
 -- | O(1)
 empty :: 	Bag a	
 empty		= Nil
@@ -55,6 +43,7 @@ insert ::	a -> Bag a -> Bag a
 insert x bag	= Node1 x bag
 	
 
+-- | Try and take a single thing from this bag
 take1 ::	Bag a -> (Maybe a, Bag a)
 take1 bag
  = case bag of
@@ -72,6 +61,7 @@ take1 bag
 	 -> (Just x, xs `unionList` b2)
 
 
+-- | Take a single thing from this bag.
 mustTake1 ::	Bag a -> (# a, Bag a #)
 mustTake1	bag
  = case bag of
@@ -89,7 +79,7 @@ mustTake1	bag
 
 	
 -- | O(1)
-union ::	Bag a -> Bag a -> Bag a
+union :: Bag a -> Bag a -> Bag a
 union b1 b2
  	| Nil		<- b1
 	= b2
@@ -164,6 +154,5 @@ fromList xx
  = case xx of
  	[]		-> Nil
 	_		-> NodeL xx Nil
-		
 	
 	
