@@ -1,6 +1,4 @@
 
-import System.Environment
-
 -- T monads in the style of Wadler's "The Marriage of Monads and Effects"
 data T !e $c a 
 	= T (() -(!e $c)> a)
