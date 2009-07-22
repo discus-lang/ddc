@@ -374,7 +374,6 @@ void	_ddcProfileCollectorEnd ()
 
 	clock_t	pauseUser	= buf .tms_utime - _ddcProfile ->gc.timeMarkUser;
 	clock_t	pauseSystem	= buf .tms_stime - _ddcProfile ->gc.timeMarkSystem;
-	clock_t pauseTotal	= pauseUser + pauseSystem;
 	
 	_ddcProfile ->gc.timeCollectorUser	+= pauseUser;
 	_ddcProfile ->gc.timeCollectorSystem	+= pauseSystem;
