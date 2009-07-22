@@ -42,7 +42,7 @@ void	_ddcPrettySize	(char* str, Word64 x)
 	char	buf [bufLen];
 	char	out [bufLen];
 
-	snprintf (buf, bufLen, PRId64, x);
+	snprintf (buf, bufLen, "%" PRId64, x);
 
 	int	len	= strlen (buf);
 	
