@@ -66,7 +66,7 @@ GCC_FLAGS	:= -std=c99 -O3 -Wundef
 # -- Development Compile (fastest compile)
 else ifeq "$(BuildFlavour)" "devel"
 GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -O0
-GCC_FLAGS	:= -std=c99 -O3
+GCC_FLAGS	:= -std=c99 -O3 -Wall -Wextra
 
 # -- Profiling compile
 else ifeq "$(BuildFlavour)" "devel_prof"
