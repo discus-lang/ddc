@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "Collect.ci"
 #include "Alloc.ci"
@@ -48,9 +49,9 @@ void	_ddcRuntimeInit
 	if (verbose) {
 		printf ("* %s starting up...\n", _DDC_VERSION);
 		printf ("  options:\n");
-		printf ("    InitContextStackSize %lld\n", initContextStackSize);
-		printf ("    InitSlotStackSize    %lld\n", initSlotStackSize);
-		printf ("    InitHeapSize         %lld\n", initHeapSize);
+		printf ("    InitContextStackSize %" PRId64 "\n", initContextStackSize);
+		printf ("    InitSlotStackSize    %" PRId64 "\n", initSlotStackSize);
+		printf ("    InitHeapSize         %" PRId64 "\n", initHeapSize);
 		printf ("\n");
 		printf ("  * Creating stacks and heap.\n");
 	}

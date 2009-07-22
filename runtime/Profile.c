@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 _Profile*
 	_ddcProfileNew ()
@@ -41,7 +42,7 @@ void	_ddcPrettySize	(char* str, Word64 x)
 	char	buf [bufLen];
 	char	out [bufLen];
 
-	snprintf (buf, bufLen, "%lld", x);
+	snprintf (buf, bufLen, PRId64, x);
 
 	int	len	= strlen (buf);
 	
@@ -157,16 +158,16 @@ void	_ddcProfilePrintContext
 	fprintf (file, "-- Context Stack\n");
 	fprintf (file, "----------------------------------------------------------------------------\n");
 	fprintf (file, "\n");
-	fprintf (file, "  setup         count = %23lld\n", context ->setupCount);
-	fprintf (file, "  restore       count = %23lld\n", context ->restoreCount);
-	fprintf (file, "  high          water = %23lld\n", context ->highWater);
+	fprintf (file, "  setup         count = %23" PRId64 "\n", context ->setupCount);
+	fprintf (file, "  restore       count = %23" PRId64 "\n", context ->restoreCount);
+	fprintf (file, "  high          water = %23" PRId64 "\n", context ->highWater);
 	fprintf (file, "\n");
-	fprintf (file, "  trys       entered  = %23lld\n", context ->trysEntered);
-	fprintf (file, "             continue = %23lld\n", context ->trysContinue);
-	fprintf (file, "             caught   = %23lld\n", context ->trysCaught);
-	fprintf (file, "             through  = %23lld\n", context ->trysThrough);
+	fprintf (file, "  trys       entered  = %23" PRId64 "\n", context ->trysEntered);
+	fprintf (file, "             continue = %23" PRId64 "\n", context ->trysContinue);
+	fprintf (file, "             caught   = %23" PRId64 "\n", context ->trysCaught);
+	fprintf (file, "             through  = %23" PRId64 "\n", context ->trysThrough);
 	fprintf (file, "\n");
-	fprintf (file, "  throw         count = %23lld\n", context ->throwCount);
+	fprintf (file, "  throw         count = %23" PRId64 "n", context ->throwCount);
 	fprintf (file, "\n\n");
 }
 

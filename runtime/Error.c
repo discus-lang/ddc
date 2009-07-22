@@ -6,6 +6,8 @@
 #include "Collect.ci"
 #include "Alloc.ci"
 
+#include <inttypes.h>
+
 
 // User errors -------------------------------------------------------------------------------------
 //	These will probably be the users fault
@@ -36,7 +38,7 @@ void	_deathCase (const char* moduleName, Int32 line, Int32 column)
 void	_panicOutOfHeap (UInt allocCount, UInt64 heapSize)
 {
 	fprintf (stderr, "*** DDC RTS PANIC! Out of heap space.\n");
-	fprintf (stderr, "        current (full) heap size: %lld bytes\n", heapSize);
+	fprintf (stderr, "        current (full) heap size: %" PRId64 " bytes\n", heapSize);
 	fprintf (stderr, "      could not allocate another: %d bytes\n",   allocCount);
 	abort();
 }
