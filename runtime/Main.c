@@ -293,12 +293,13 @@ void	_ddcRTSHelp ()
 
 	struct { char* name; _ProfileEnable flag; } 
 	 flagNames[] = 
-	 	{ [0].name = "-profile-gc", 		[0].flag = _ProfileEnableGC
-		, [1].name = "-profile-slot",		[1].flag = _ProfileEnableSlot
-		, [2].name = "-profile-alloc",		[2].flag = _ProfileEnableAlloc
-		, [3].name = "-profile-context",	[3].flag = _ProfileEnableContext
-		, [4].name = "-profile-boxing",		[4].flag = _ProfileEnableBoxing
-		, [5].name = "-profile-apply",		[5].flag = _ProfileEnableApply };
+	 	{ { "-profile-gc",		_ProfileEnableGC }
+		, { "-profile-slot",	_ProfileEnableSlot }
+		, { "-profile-alloc",	_ProfileEnableAlloc }
+		, { "-profile-context",	_ProfileEnableContext }
+		, { "-profile-boxing",	_ProfileEnableBoxing }
+		, { "-profile-apply",	_ProfileEnableApply }
+		} ;
 		
 	printf ("    Profiling options supported by this build:\n");
 	printf ("      ");
