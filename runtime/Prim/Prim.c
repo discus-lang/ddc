@@ -3,6 +3,7 @@
 #include "../Runtime.h"
 #include "../Apply.h"
 #include "../Object.h"
+#include "../Util.h"
 
 #include "../Collect.h"
 #include "../Collect.ci"
@@ -94,7 +95,7 @@ Int32	primConnect	(String hostName, Int32 port)
 	return sock;
 }
 
-Int32	primArgCount	(Obj* unit)
+Int32	primArgCount	(Obj* UNUSED (unit))
 {
 	return _ddcArgCount;
 }

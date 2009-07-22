@@ -1,6 +1,7 @@
 
 #include "../Prim.h"
 #include "../Context.h"
+#include "../Util.h"
 
 #include "../Collect.h"
 #include "../Collect.ci"
@@ -51,7 +52,7 @@ Obj*	primControl_while
 
 
 Obj*	primControl_break 
-		( Obj*	unit)
+		( Obj*	UNUSED (unit))
 {
 	_contextBreak();
 	return _primUnit;

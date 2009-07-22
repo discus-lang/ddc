@@ -6,6 +6,7 @@
 #include "Macro.h"
 #include "Dump.h"
 #include "Error.h"
+#include "Util.h"
 
 #include <string.h>
 
@@ -47,7 +48,7 @@ void	_collectInit (UInt maxGCSlots)
 void	_collectHeap 
 		( Word8*	heapBase	// Start of the from space.
 		, Word8*	heapPtr		// Where the next object would be allocated.
-		, Word8*	heapMax 	// Last byte of the from space.
+		, Word8*	UNUSED (heapMax) 	// Last byte of the from space.
 
 		, Word8*	heapBackBase	// Start of the to space.
 		, Word8**	heapBackPtr)	// This is set to where the next object would be allocated
@@ -103,8 +104,8 @@ void	_collectHeap
 
 // Evacuate all the object which are reachable from the heap slot stack
 void	_evacuateRoots 
-		( Word8*	heapBase
-		, Word8*	heapPtr
+		( Word8*	UNUSED (heapBase)
+		, Word8*	UNUSED  (heapPtr)
 		, Word8** 	toPtr )
 {
 	// Debugging
