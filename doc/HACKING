@@ -48,14 +48,14 @@
 
   * Running tests
     
-    Use bin/war to attempt specific tests:
+    Use bin/war2 to attempt specific tests:
 
-     > bin/war test/Typing/Complexity/Complex1
+     > bin/war2 test/15-Typing/Complexity/Complex1
   
 
     Use bin/war to compare optimised and non-optimised builds:
 
-     > bin/war test/Graphics/N-Body/Unboxed -with -with O
+     > bin/war demo/Graphics/N-Body/Unboxed -with -with O
 
 
     Use bin/churn to compile random programs to look for compiler panics.
