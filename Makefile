@@ -5,14 +5,16 @@
 #	runtime		-- build the runtime system
 #	external	-- build external libraries
 #	libs		-- build base libraries
+#	doc		-- build Haddock docks
+#
+#       clean           -- clean everything
+#       cleanWar        -- clean libraries and tests, but leave the compiler build alone
+#       cleanRuntime    -- clean the runtime system
 #
 #       bin/ddc         -- build the compiler binary
 #       bin/war2        -- build the test driver
 #       bin/plate       -- build the boilerplate generator
 #
-#       clean           -- clean everything
-#       cleanWar        -- clean libraries and tests, but leave the compiler build alone
-#       cleanRuntime    -- clean the runtime system
 
 .PHONY	: all
 all 	: bin/ddc bin/war2 runtime external libs
@@ -126,6 +128,21 @@ war2_hs	= $(shell find tools/war2 -name "*.hs")
 bin/war2 : $(war2_hs)
 	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts \
 		-isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
+
+# -- Haddock docs ----------------------------------------------------------------------------------
+# -- build haddoc docs
+nodoc	= \
+	src/Source/Lexer.hs \
+	src/Util/Tunnel.hs \
+	src/Source/Type/SlurpA.hs \
+	src/Source/Type/SlurpX.hs
+
+.PHONY	: doc
+doc	:
+	@echo "* Building documentation"
+	@haddock -h -o doc/haddock --optghc=-isrc --ignore-all-exports \
+		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
+		$(filter-out $(nodoc),$(src_hs))
 
 
 # -- Cleaning --------------------------------------------------------------------------------------
