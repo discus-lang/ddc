@@ -7,6 +7,9 @@
 #	libs		-- build base libraries
 #	doc		-- build Haddock docks
 #
+#	test		-- run quick check and regression tests
+#	demo		-- run the demos
+#
 #       clean           -- clean everything
 #       cleanWar        -- clean libraries and tests, but leave the compiler build alone
 #       cleanRuntime    -- clean the runtime system
@@ -128,6 +131,26 @@ war2_hs	= $(shell find tools/war2 -name "*.hs")
 bin/war2 : $(war2_hs)
 	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts \
 		-isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
+
+
+# -- Run all avaliable tests -----------------------------------------------------------------------
+#	Not the demos, as they can open up new windows
+.PHONY	: test
+test	: bin/ddc bin/war2 library/Prelude.di
+	@echo "* Running tests ------------------------------------------------"
+	bin/ddc --test
+	@echo
+	bin/war2 test
+	@echo
+
+
+# -- Run the demos --------------------------------------------------------------------------------
+.PHONY	: demo
+demo	: bin/ddc bin/war2 library/Prelude.di
+	@echo "* Running demos ------------------------------------------------"
+	bin/war2 demo
+	@echo
+
 
 # -- Haddock docs ----------------------------------------------------------------------------------
 # -- build haddoc docs
