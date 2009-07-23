@@ -4,16 +4,13 @@
 #       deps            -- build dependencies
 #
 #       bin/ddc         -- build the compiler binary
-#       bin/war         -- build the test driver
+#       bin/war2        -- build the test driver
 #       bin/churn       -- build the test churner
 #       bin/plate       -- build the boilerplate generator
 #
 #       clean           -- clean everything
 #       cleanWar        -- clean libraries and tests, but leave the compiler build alone
 #       cleanRuntime    -- clean the runtime system
-#
-#       war             -- run the tests
-#       churn           -- run the churner for a while
 
 # -- build everything
 all	: src/Config/Config.hs bin/ddc bin/war bin/war2 runtime external
@@ -123,18 +120,6 @@ doc	:
 		$(filter-out $(nodoc),$(src_hs))
 
 # -- Testing ---------------------------------------------------------------------------------------
-
-# -- run all the tests
-.PHONY : war
-war : 
-	@echo "* Building tests"
-	@bin/war
-
-# -- run the churner for a while
-.PHONY : churn
-churn : 
-	@echo "* Churning compiler"
-	@bin/churn
 
 # -- mark up hpc (this is broken)
 .PHONY : hpcmarkup
