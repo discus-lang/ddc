@@ -14,8 +14,8 @@
 #       cleanWar        -- clean libraries and tests, but leave the compiler build alone
 #       cleanRuntime    -- clean the runtime system
 
-# -- build everything
-all	: src/Config/Config.hs bin/ddc bin/war bin/war2 runtime external
+.PHONY	: all
+all 	: bin/ddc bin/war2 runtime external libs
 
 include make/build.mk
 
@@ -30,6 +30,14 @@ src_hs_existing	=  $(shell find src -name "*.hs" -follow)
 # -- all .hs files in the src dir, including ones we need to preprocess.
 src_hs_all	+= $(src_hs_existing)
 src_hs_all	+= $(src_alex_hs)
+
+
+# -- Configuration ---------------------------------------------------------------------------------
+# -- use the $(Target) from make/config.mk to decide which ddc config file to use
+src/Config/Config.hs : src/Config/Config.hs.$(Target)
+	@echo "* Using configuration" $^
+	cp $^ $@
+	@echo
 
 
 # -- Dependencies ----------------------------------------------------------------------------------
@@ -173,6 +181,8 @@ clean  : cleanWar cleanRuntime
 		-o	-name "Makefile.deps" \
 		-follow | xargs -n 1 rm -f
 		
+	@rm -f src/Config/Config.hs
+
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak 
 
