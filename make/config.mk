@@ -9,6 +9,9 @@ TARGET         = $(TARGET_OS)-$(TARGET_CPU)
 BUILDFLAVOUR   = distro
 GHC            = ghc
 
+# This allows you to optionally override TARGET/BUILDFLAVOUR/GHC.
+-include make/config-override.deps
+
 # TARGET: Set the target architecture
 #    linux-x86
 #    linux-x86_64
