@@ -36,7 +36,7 @@ GHC_WARNINGS	:= \
 	-fwarn-type-defaults \
 	-fwarn-monomorphism-restriction \
 	-fwarn-unused-binds \
-	-fno-warn-missing-methods 		
+	-fno-warn-missing-methods
 
 # 	-fwarn-missing-methods			# we don't usually define coarbitrary in the Arbitrary class
 #	-fwarn-unused-matches			# we should probably enable this one

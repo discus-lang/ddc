@@ -2,10 +2,12 @@
 # targets:
 #       all             -- build everything
 #       deps            -- build dependencies
+#	runtime		-- build the runtime system
+#	external	-- build external libraries
+#	libs		-- build base libraries
 #
 #       bin/ddc         -- build the compiler binary
 #       bin/war2        -- build the test driver
-#       bin/churn       -- build the test churner
 #       bin/plate       -- build the boilerplate generator
 #
 #       clean           -- clean everything
@@ -13,72 +15,71 @@
 #       cleanRuntime    -- clean the runtime system
 
 # -- build everything
-all : src/Config/Config.hs bin/ddc bin/war bin/war2 runtime external
+all	: src/Config/Config.hs bin/ddc bin/war bin/war2 runtime external
 
 include make/build.mk
-include make/plate.mk
--include make/Makefile.deps
--include runtime/*.dep
 
+# -- Find Source Files ----------------------------------------------------------------------------
+# -- files needing to be processed via alex
+src_alex_x	=  $(shell find src -name "*.x" -follow)
+src_alex_hs	=  $(patsubst %.x,%.hs,$(src_alex_x))
 
-# -- Configuration ---------------------------------------------------------------------------------
-# -- use the $(Target) from make/config.mk to decide which ddc config file to use
+# -- files that are ready to compile
+src_hs_existing	=  $(shell find src -name "*.hs" -follow)
 
-src/Config/Config.hs : src/Config/Config.hs.$(Target)
-	@echo "* Using configuration" $^
-	cp $^ $@
-	@echo
+# -- all .hs files in the src dir, including ones we need to preprocess.
+src_hs_all	+= $(src_hs_existing)
+src_hs_all	+= $(src_alex_hs)
 
 
 # -- Dependencies ----------------------------------------------------------------------------------
-.PHONY : deps
-deps : make/Makefile.deps $(runtime_dep)
-	@echo
+.PHONY	: deps
+deps	: make/Makefile.deps
 
-make/Makefile.deps : $(src_hs) src/Config/Config.hs
+make/Makefile.deps : src/Config/Config.hs $(src_hs_existing) 
 	@echo "* Building dependencies"
 	@$(GHC) -isrc -M $^ -dep-makefile -optdepmake/Makefile.deps $(GHC_INCDIRS)
 	@rm -f make/Makefile.deps.bak
+	@cp make/Makefile.deps make/Makefile.deps.inc
 	@echo
 
 
-# -- Building --------------------------------------------------------------------------------------
-
+# -- Boilerplate ----------------------------------------------------------------------------------
 # -- build the boiler plate generator
 bin/plate : tools/plate/Main.hs src/Config/Config.hs
+	@echo "* Building boilerplate generator -------------------------------"
 	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^ 
 
 # -- generate boilerplate
-src/Source/Plate/Trans.hs : src/Source/Plate/Trans.hs-stub src/Source/Exp.hs bin/plate
+src/Source/Plate/Trans.hs : bin/plate src/Source/Plate/Trans.hs-stub src/Source/Exp.hs 
 	@echo "* Generating boilerplate for $@"
 	bin/plate src/Source/Exp.hs src/Source/Plate/Trans.hs-stub src/Source/Plate/Trans.hs
 	@echo
 
-# -- build the main compiler
-bin/ddc	: $(obj) $(GHC_INCOBJS)
+
+# -- Link DDC -------------------------------------------------------------------------------------
+# -- all the resulting .o files we'll get after compiling the .hs files
+src_obj		=  $(patsubst %.hs,%.o,$(src_hs_existing))
+
+bin/ddc	: make/Makefile.deps $(src_obj)
 	@echo "* Linking $@"
-	$(GHC) $(GHC_FLAGS) -o bin/ddc \
-		-package unix -package mtl -package containers -package parsec -package regex-compat \
-		-package QuickCheck \
-		$^ 
+	$(GHC) -o bin/ddc $(GHC_FLAGS) \
+		-package unix -package mtl -package containers -package parsec -package regex-compat -package QuickCheck \
+		$(src_obj)
 	@echo	
-	
 
-# -- build the test driver
-bin/war : tools/war/War.hs tools/war/Diff.hs tools/war/Interface.hs tools/war/Order.hs tools/war/Bits.hs tools/war/TestSource.hs tools/war/Par.hs
-	$(GHC) $(GHC_FLAGS) -fglasgow-exts -threaded -fglasgow-exts -isrc -itools/war --make tools/war/War.hs -o bin/war
 
-# -- build the test driver
-war2_hs	= $(shell find tools/war2 -name "*.hs")
+# -- External libraries ---------------------------------------------------------------------------
+.PHONY	: external
+external : external/TinyPTC-X11-0.7.3/xshm.o
 
-bin/war2 : $(war2_hs)
-	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts -isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
+external/TinyPTC-X11-0.7.3/xshm.o : 
+	@echo "* Building external libraries ----------------------------------"
+	cd external/TinyPTC-X11-0.7.3; $(MAKE) CFLAGS="$(GCC_FLAGS)"
+	@echo
 
-# -- build the churner
-bin/churn : tools/churn/Main.hs tools/churn/Bits.hs tools/churn/Base.hs tools/churn/Exp.hs
-	$(GHC) $(GHC_FLAGS) -fglasgow-exts -isrc -itools/churn --make tools/churn/Main.hs -o bin/churn
 
-# -- build the runtime system
+# -- Runtime system -------------------------------------------------------------------------------
 runtime_c = \
 	$(shell ls runtime/*.c) \
 	$(shell find runtime/Prim -name "*.c")
@@ -97,43 +98,33 @@ runtime/libddc-runtime.a  : $(runtime_o)
 	@echo
 
 .PHONY  : runtime
-runtime : runtime/libddc-runtime.$(SHARED_SUFFIX) runtime/libddc-runtime.a
+runtime : $(runtime_dep) runtime/libddc-runtime.$(SHARED_SUFFIX) runtime/libddc-runtime.a
 
-# -- build external libraries
-.PHONY	: external
-external :
-	@echo "* Building external libraries"
-	@cd external/TinyPTC-X11-0.7.3; $(MAKE) CFLAGS="$(GCC_FLAGS)"
 
-# -- build haddoc docs
-nodoc	= \
-	src/Source/Lexer.hs \
-	src/Util/Tunnel.hs \
-	src/Source/Type/SlurpA.hs \
-	src/Source/Type/SlurpX.hs
+# -- Base Libraries --------------------------------------------------------------------------------
+.PHONY	: libs
+libs	: library/Prelude.di
 
-.PHONY	: doc
-doc	:
-	@echo "* Building documentation"
-	@haddock -h -o doc/haddock --optghc=-isrc --ignore-all-exports \
-		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
-		$(filter-out $(nodoc),$(src_hs))
+library/Prelude.di : bin/ddc
+	@echo "* Building base libraries --------------------------------------"
+	bin/ddc -O -make library/Prelude.ds
+	@touch library/Prelude.di
+	@echo
 
-# -- Testing ---------------------------------------------------------------------------------------
 
-# -- mark up hpc (this is broken)
-.PHONY : hpcmarkup
-hpcmarkup :
-	@echo "* Marking up HPC output"
-	@hpc markup --destdir=doc/hpc ddc.tix
+# -- Test Driver -----------------------------------------------------------------------------------
+war2_hs	= $(shell find tools/war2 -name "*.hs")
 
-	
+bin/war2 : $(war2_hs)
+	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts \
+		-isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
+
+
 # -- Cleaning --------------------------------------------------------------------------------------
-
 # -- clean objects in the runtime system
 .PHONY : cleanRuntime
 cleanRuntime :
-	@echo "* Cleaning up runtime"
+	@echo "* Cleaning runtime"
 	@find runtime \
 		    	-name "*.o" \
 		-o	-name "*.dep" \
@@ -141,12 +132,12 @@ cleanRuntime :
 		-o  -name "*.dylib" \
 		-o	-name "*.a" \
 		-follow | xargs -n 1 rm -f
-	@echo		
+
 
 # -- clean up libraries and tests, but leave the compiler build alone
 .PHONY  : cleanWar
 cleanWar :
-	@echo "* Cleaning up war"
+	@echo "* Cleaning war"
 	@find library test demo \
 			-name "*.dump-*.*"  \
 		-o	-name "*.graph-*.dot" \
@@ -165,15 +156,11 @@ cleanWar :
 		-o	-name "*.stderr" \
 		-follow | xargs -n 1 rm -f
 
-	@rm -f churn/scratch/*
-	
-	@echo
-
 
 # -- clean up everything
 .PHONY : clean
 clean  : cleanWar cleanRuntime
-	@echo "* Cleaning up leftovers"
+	@echo "* Cleaning leftovers"
 	@find . \
 			-name "*.o" \
 		-o	-name "*.so" \
@@ -189,5 +176,7 @@ clean  : cleanWar cleanRuntime
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak 
 
-	@echo
 
+include make/plate.mk
+-include make/Makefile.deps.inc
+-include runtime/*.dep
