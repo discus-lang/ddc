@@ -142,7 +142,7 @@ doc	:
 	@echo "* Building documentation"
 	@haddock -h -o doc/haddock --optghc=-isrc --ignore-all-exports \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
-		$(filter-out $(nodoc),$(src_hs))
+		$(filter-out $(nodoc),$(src_hs_all))
 
 
 # -- Cleaning --------------------------------------------------------------------------------------
@@ -198,8 +198,8 @@ clean  : cleanWar cleanRuntime
 		-o	-name "Makefile.deps" \
 		-follow | xargs -n 1 rm -f
 		
+	@rm -f doc/haddock/*
 	@rm -f src/Config/Config.hs
-
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak 
 
