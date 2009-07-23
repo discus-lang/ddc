@@ -13,7 +13,7 @@
 #       cleanRuntime    -- clean the runtime system
 
 # -- build everything
-all	: src/Config/Config.hs bin/ddc bin/war bin/war2 runtime external
+all : src/Config/Config.hs bin/ddc bin/war bin/war2 runtime external
 
 include make/build.mk
 include make/plate.mk
