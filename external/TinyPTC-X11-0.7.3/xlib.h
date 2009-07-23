@@ -37,7 +37,7 @@
 #endif /* __TINYPTC_INCLUDED */
 
 #define __TINYPTC_INCLUDED
-#pragma target xlib
+//#pragma target xlib
 
 #ifdef __cplusplus
 	extern "C" {
