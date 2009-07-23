@@ -15,6 +15,7 @@ import Util.Control.Dispatch.Worker
 import Util.Data.BackGraph		(BackNode(..))
 import Util.Data.WorkGraph		(WorkGraph, WorkNode(..))
 import System.Cmd
+import System.Directory
 import System.Environment
 import System.Exit
 import System.Time
@@ -70,9 +71,11 @@ doWar
 	 	 $ Command.system $ "mkdir /tmp/war"
 
 	-- All the starting test directories
-	let testDirs
-		= concat
-		$ [dirs | OptTestDirs dirs <- configOptions config]
+	testDirs
+		<- liftIO
+		.  mapM (makeRelativeToCurrentDirectory <=< canonicalizePath)
+		.  concat
+		$  [dirs | OptTestDirs dirs <- configOptions config]
 
 	-- Get all the tests in these directories
 	backNodes	<- liftM concat 
