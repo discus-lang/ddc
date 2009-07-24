@@ -223,10 +223,21 @@ clean  : cleanWar cleanRuntime
 		
 	@rm -f doc/haddock/*
 	@rm -f src/Config/Config.hs
+	@rm -f make/Makefile.deps.inc
 	@rm -f 	bin/* \
 		make/Makefile.deps.bak 
 
 
 include make/plate.mk
--include make/Makefile.deps.inc
 -include runtime/*.dep
+
+
+# We include Makefile.deps.inc here instead of Makefile.deps directly.
+#	Stupid GNU make treats missing files as dependencies, and if they are 
+#	missing it tries to build them. This causes dependencies to be build
+#	even when we do a "make clean"
+#
+# 	This behavior is different to the documentation which says
+#	that missing -included files should be ignored.
+#
+-include make/Makefile.deps.inc
