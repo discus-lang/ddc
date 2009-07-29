@@ -96,7 +96,7 @@ doWar
 	 $ do	let Just logFail	= configLogFailed config
 		let testsFailStr
 			= concat
-			$ [ pprTest test ++ " " ++ pprTestFail fail ++ "\n"
+			$ [ " * " ++ pprTest test ++ " " ++ pprTestFail fail ++ "\n"
 				| (test, Left fail) <- Map.toList results ]
 			
 
