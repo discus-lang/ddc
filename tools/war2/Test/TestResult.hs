@@ -53,10 +53,10 @@ testTag test
 pprTest :: Test -> String
 pprTest test
  = case test of	
-	TestBuild	path	-> " * " ++ padR formatPathWidth path ++ " build   "
-	TestBuildError	path	-> " * " ++ padR formatPathWidth path ++ " error   "
-	TestCompile     path	-> " * " ++ padR formatPathWidth path ++ " compile "
-	TestCompileError path	-> " * " ++ padR formatPathWidth path ++ " error   "
-	TestRun		path	-> " * " ++ padR formatPathWidth path ++ " run     "
-	TestDiff template out	-> " * " ++ padR formatPathWidth out  ++ " diff    "
+	TestBuild	path	-> padR formatPathWidth path ++ " build   "
+	TestBuildError	path	-> padR formatPathWidth path ++ " error   "
+	TestCompile     path	-> padR formatPathWidth path ++ " compile "
+	TestCompileError path	-> padR formatPathWidth path ++ " error   "
+	TestRun		path	-> padR formatPathWidth path ++ " run     "
+	TestDiff template out	-> padR formatPathWidth out  ++ " diff    "
 

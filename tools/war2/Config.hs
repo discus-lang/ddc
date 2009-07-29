@@ -9,7 +9,8 @@ data Config
 	{ configOptions		:: [Opt] 
 	, configDebug		:: Bool
 	, configThreads		:: Int 
-	, configBatch		:: Bool } 
+	, configBatch		:: Bool 
+	, configLogFailed	:: Maybe FilePath }
 	deriving (Show, Eq)
 
 -- | Command line options
@@ -20,6 +21,7 @@ data Opt
 	| OptTestDirs  [String]		-- ^ Only run the tests in these dirs.
         | OptThreads   Int		-- ^ Use this many threads when running tests.
         | OptBatch			-- ^ Don't interactively ask what to do if a test fails.
+	| OptLogFailed String		-- ^ Log failed tests to this file
 	deriving (Show, Eq)
 
 warOptions :: [Option Opt]
@@ -47,6 +49,11 @@ warOptions
 	, OFlag		OptBatch
 			[ "-b", "--batch" ]
 			"Don't interactively ask what to do if a test fails." 
+
+	, OOpt		OptLogFailed
+			[ "--logFailed" ]
+			"--logFailed <file>"
+			"Log failed tests to this file"
 	]
 
 

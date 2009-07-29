@@ -53,7 +53,9 @@ main
 		{ configOptions		= options
 		, configDebug		= elem OptDebug options
 		, configThreads		= fromMaybe 1 (takeLast [n | OptThreads n <- options])
-		, configBatch		= elem OptBatch options }
+		, configBatch		= elem OptBatch options 
+		, configLogFailed	= takeLast [s | OptLogFailed s <- options]
+		}
 
 	runWar config doWar
 
@@ -87,31 +89,53 @@ doWar
 			$ backNodes
 	
 	-- Do it!
-	dispatch workGraph
+	results		<- dispatch workGraph
+
+	-- Write out a log of failed tests
+	when (isJust (configLogFailed config))
+	 $ do	let Just logFail	= configLogFailed config
+		let testsFailStr
+			= concat
+			$ [ pprTest test ++ " " ++ pprTestFail fail ++ "\n"
+				| (test, Left fail) <- Map.toList results ]
+			
+
+		io $ writeFile logFail testsFailStr
 
 	return ()
 
 		
 
 -- DispatchTests ----------------------------------------------------------------------------------
-dispatch :: WorkGraph Test -> War ()
+dispatch 
+	:: WorkGraph Test 		-- tests to run
+	-> War (Map Test TestResult)	-- test results
+
 dispatch graph
  = do	
+	-- get the config from the War monad
 	config	<- ask
 		
-	-- Check if a test failed
+	-- Map of test results
+	varResult	<- io $ newMVar Map.empty
+
+	-- Fn to check if a test failed
 	let resultFailed result
 		= case result of 
 			Left _ -> True
 			Right _ -> False
 
 	liftIO $ dispatchWork 
-			(hookFinished config)
+			(hookFinished config varResult)
 			(hookIgnored  config)
 			resultFailed
 			graph
 			(configThreads config)
 			(workerAction config)
+
+	-- Read back the set of failed tests
+	results	<- io $ takeMVar varResult
+	return results
 
 
 -- | Called when a test is ignored because one of its parents failed.
@@ -121,13 +145,28 @@ hookIgnored config test
 	hFlush stdout
 
 -- | Called when a test has finished running
-hookFinished :: Config -> Test -> TestResult -> IO ()
-hookFinished config test result
+hookFinished 
+	:: Config 			-- ^ war config
+	-> MVar (Map Test TestResult)	-- ^ test results
+	-> Test 			-- ^ the test that has finished
+	-> TestResult 			-- ^ result of the test
+	-> IO ()
+
+hookFinished config varResult test result
+ = do	
+	-- add the rest to the result set
+	io $ modifyMVar_ varResult (\m -> return $ Map.insert test result m)
+
+	hookFinished_ask config test result
+	
+
+hookFinished_ask config test result
 
 	-- If checked a file against an expected output and it was different,
 	--	then ask the user what to do about it.
 	| Left (TestFailDiff fileExp fileOut fileDiff)	<- result
-	= do	putStr 	$ pprResult (not $ configBatch config) test result ++ "\n"
+	= do	
+		putStr 	$ pprResult (not $ configBatch config) test result ++ "\n"
 		putStr	$  "\n"
 			++ "-- Output Differs  ----------------------------------------------------------\n"
 			++ "   expected file: " ++ fileExp	++	"\n"
@@ -140,7 +179,9 @@ hookFinished config test result
 
 		-- If we're not in batch mode, ask the user what to do about the failure.
 		when (not $ configBatch config)
-		 $ hookFinishedAsk test result
+		 $ hookFinished_askDiff test result
+
+		return ()
 
 	| otherwise
 	= do	putStr $ pprResult (not $ configBatch config) test result ++ "\n"
@@ -148,8 +189,8 @@ hookFinished config test result
 
 
 
-hookFinishedAsk :: Test -> TestResult -> IO ()
-hookFinishedAsk 
+hookFinished_askDiff :: Test -> TestResult -> IO ()
+hookFinished_askDiff 
 	test
 	res@(Left (TestFailDiff fileExp fileOut fileDiff))
  = do	
@@ -176,14 +217,14 @@ hookFinishedAsk
 		= do	str	<- readFile fileExp
 			putStr	$  replicate 100 '-' ++ "\n"
 			putStr	str
-			hookFinishedAsk test res
+			hookFinished_askDiff test res
 
 		-- Print the actual output
 		| ('a': _)	<- cmd
 		= do	str	<- readFile fileOut
 			putStr	$  replicate 100 '-' ++ "\n"
 			putStr	str
-			hookFinishedAsk test res
+			hookFinished_askDiff test res
 
 		-- Update the expected output with the actual one
 		| ('u': _)	<- cmd
@@ -195,7 +236,7 @@ hookFinishedAsk
 		-- Invalid
 		| otherwise
 		= do	putStr	 $ "Invalid command.\n"
-			hookFinishedAsk test res
+			hookFinished_askDiff test res
 
 	result			
 
@@ -243,9 +284,9 @@ pprResult color test result
 	sResult	= case result of
 			Left  TestIgnore -> "ignored"
 
-			Left  err	 
+			Left  fail
 			 | color  	-> setMode [Bold, Foreground Red] 
-			  	  		++ "failed"
+			  	  		++ pprTestFail fail
 			  	  		++ setMode [Reset]
 			 | otherwise 	-> "failed"
 				  
@@ -254,6 +295,6 @@ pprResult color test result
 			 | color	-> pprTestWinColor testWin
 			 | otherwise	-> pprTestWin      testWin
 
-  in	sTest ++ sResult
+  in	" * " ++ sTest ++ sResult
 
 

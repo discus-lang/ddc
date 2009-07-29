@@ -1,7 +1,6 @@
 
 module Test.TestFail 
 	( TestFail (..)
-	, testFailName
 	, pprTestFail
 	, pprTestFailColor)
 where
@@ -66,33 +65,18 @@ instance Error TestFail where
  strMsg s	= TestFailOther s
 
 
-testFailName :: TestFail -> String
-testFailName fail
- = case fail of
-	TestIgnore{}			-> "ignore"
-	TestFailOther{}			-> "other"
-	TestFailIO{}			-> "io"
-	TestFailMissingFile{}		-> "missing file"
-	TestFailBuild{}			-> "build"
-	TestFailBuildSuccess{}		-> "build success"
-	TestFailCompile{}		-> "compile"
-	TestFailCompileSuccess{}	-> "compile success"
-	TestFailRun{}			-> "run"
-	TestFailDiff{}			-> "diff"
-
-
 pprTestFail :: TestFail -> String
 pprTestFail fail
  = case fail of
 	TestFailOther str		-> "other " ++ str
-	TestIgnore{}			-> "ignore"
-	TestFailIO iof			-> "io" ++ show iof
-	TestFailMissingFile path	-> "missing file " ++ show path
-	TestFailBuild{}			-> "build"
-	TestFailBuildSuccess{}		-> "fail"
-	TestFailCompile{}		-> "compile"
-	TestFailCompileSuccess{}	-> "fail"
-	TestFailRun{}			-> "run"
+	TestIgnore{}			-> "ignored"
+	TestFailIO iof			-> "framework io error " ++ show iof
+	TestFailMissingFile path	-> "framework missing file " ++ show path
+	TestFailBuild{}			-> "build failed"
+	TestFailBuildSuccess{}		-> "unexpected build success"
+	TestFailCompile{}		-> "compile failed"
+	TestFailCompileSuccess{}	-> "unexpected compile success"
+	TestFailRun{}			-> "run failed"
 	TestFailDiff{}			-> "diff"
 
 
