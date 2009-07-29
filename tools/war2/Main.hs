@@ -288,8 +288,7 @@ pprResult color test result
 			 | color  	-> setMode [Bold, Foreground Red] 
 			  	  		++ pprTestFail fail
 			  	  		++ setMode [Reset]
-			 | otherwise 	-> "failed"
-				  
+			 | otherwise 	-> pprTestFail fail
 
 			Right testWin	 
 			 | color	-> pprTestWinColor testWin
