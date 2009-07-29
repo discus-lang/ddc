@@ -101,16 +101,18 @@ buildLoop' setup graph buildCount buildIx roots build
 		let pad	= length $ show buildCount
 
 		when (not $ elem Arg.Quiet $ setupArgs setup)
-		 $ putStr 	
-		 	$ pprStrPlain
-			$ "[" 
-			% padR pad (show $ buildIx + 1) 
-			% " of "
-			% padR pad (show buildCount)
-			% "]"
-			% " Compiling " 
-			% m 
-			% "\n"
+		 $ do	putStr 	
+			 	$ pprStrPlain
+				$ "[" 
+				% padR pad (show $ buildIx + 1) 
+				% " of "
+				% padR pad (show buildCount)
+				% "]"
+				% " Compiling " 
+				% m 
+				% "\n"
+
+			System.hFlush System.stdout
 
 		-- chop down the scrape graph to just the modules needed by
 		--	the one being compiled. compileFile uses this to work out
