@@ -52,7 +52,7 @@ main
 		{ configOptions		= options
 		, configDebug		= elem OptDebug options
 		, configThreads		= fromMaybe 1 (takeLast [n | OptThreads n <- options])
-		, configInteractive	= elem OptInteractive options }
+		, configBatch		= elem OptBatch options }
 
 	runWar config doWar
 
@@ -85,9 +85,6 @@ doWar
 	let workGraph	= WorkGraph.fromBackNodes
 			$ backNodes
 	
---	liftIO 	 
---	 $ do	writeFile "war.graph" (show workGraph)
-
 	-- Do it!
 	dispatch workGraph
 
@@ -206,10 +203,6 @@ dispatch :: WorkGraph Test -> War ()
 dispatch graph
  = do	
 	config	<- ask
-
-	-- Print tests that get ignored because their parents failed
-	let hookIgnored test
-		= putStr $ pprResult test (Left TestIgnore) ++ "\n"
 		
 	-- Check if a test failed
 	let resultFailed result
@@ -218,22 +211,28 @@ dispatch graph
 			Right _ -> False
 
 	liftIO $ dispatchWork 
-			hookFinished
-			hookIgnored
+			(hookFinished config)
+			(hookIgnored  config)
 			resultFailed
 			graph
 			(configThreads config)
 			(workerAction config)
 
 
--- | Called when a test has finished running
-hookFinished :: Test -> TestResult -> IO ()
-hookFinished test result
+-- | Called when a test is ignored because one of its parents failed.
+hookIgnored :: Config -> Test -> IO ()
+hookIgnored config test
+ = do 	putStr $ pprResult (not $ configBatch config) test (Left TestIgnore) ++ "\n"
+	hFlush stdout
 
-	-- | If checked a file against an expected output and it was different,
+-- | Called when a test has finished running
+hookFinished :: Config -> Test -> TestResult -> IO ()
+hookFinished config test result
+
+	-- If checked a file against an expected output and it was different,
 	--	then ask the user what to do about it.
 	| Left (TestFailDiff fileExp fileOut fileDiff)	<- result
-	= do	putStr 	$ pprResult test result ++ "\n"
+	= do	putStr 	$ pprResult (not $ configBatch config) test result ++ "\n"
 		putStr	$  "\n"
 			++ "-- Output Differs  ----------------------------------------------------------\n"
 			++ "   expected file: " ++ fileExp	++	"\n"
@@ -242,11 +241,15 @@ hookFinished test result
 
 		str	<- readFile fileDiff
 		putStr	str
+		hFlush stdout
 
-		hookFinishedAsk test result
+		-- If we're not in batch mode, ask the user what to do about the failure.
+		when (not $ configBatch config)
+		 $ hookFinishedAsk test result
 
 	| otherwise
-	= do	putStr $ pprResult test result ++ "\n"
+	= do	putStr $ pprResult (not $ configBatch config) test result ++ "\n"
+		hFlush stdout
 
 
 
@@ -310,13 +313,9 @@ workerAction
 workerAction config vTest vResult
  = do	tid	<- myThreadId
 
---	putStr $ "Starting worker " ++ show tid ++ "\n"
-
 	-- wait for a test to arrive
 	(test, tsChildren)	
 		<- takeMVar vTest
-
---	putStr $ "Worker " ++ show tid ++ " running test " ++ show test ++ "\n"
 
 	-- run the test
 	result	<- runWar config (runTest test)
@@ -343,19 +342,23 @@ runTest test
 
 -- Pretty -------------------------------------------------------------------------------------------
 -- | Pretty print the result of a test
-pprResult :: Test -> TestResult -> String
-pprResult test result
+pprResult :: Bool -> Test -> TestResult -> String
+pprResult color test result
  = let	sTest	= pprTest test
 	sResult	= case result of
 			Left  TestIgnore -> "ignored"
 
 			Left  err	 
-			  -> setMode [Bold, Foreground Red] 
-			  ++ "failed  " -- ++ "(" ++ pprTestFail err ++ ")"
-			  ++ setMode [Reset]
+			 | color  	-> setMode [Bold, Foreground Red] 
+			  	  		++ "failed"
+			  	  		++ setMode [Reset]
+			 | otherwise 	-> "failed"
+				  
 
 			Right testWin	 
-			  -> pprTestWinColor testWin
+			 | color	-> pprTestWinColor testWin
+			 | otherwise	-> pprTestWin      testWin
+
   in	sTest ++ sResult
 
 

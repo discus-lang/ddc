@@ -9,7 +9,7 @@ data Config
 	{ configOptions		:: [Opt] 
 	, configDebug		:: Bool
 	, configThreads		:: Int 
-	, configInteractive	:: Bool } 
+	, configBatch		:: Bool } 
 	deriving (Show, Eq)
 
 -- | Command line options
@@ -19,7 +19,7 @@ data Opt
 	| OptFlagsDDC  [String]		-- ^ Extra flags to pass to DDC when compiling test files.
 	| OptTestDirs  [String]		-- ^ Only run the tests in these dirs.
         | OptThreads   Int		-- ^ Use this many threads when running tests.
-        | OptInteractive		-- ^ Interactivly ask what to do when a test fails.
+        | OptBatch			-- ^ Don't interactively ask what to do if a test fails.
 	deriving (Show, Eq)
 
 warOptions :: [Option Opt]
@@ -44,9 +44,9 @@ warOptions
 			"-j <n threads>"
 			"Run n tests in parallel."
 
-	, OFlag		OptInteractive
-			[ "-i", "--interactive" ]
-			"Interactively ask what to do when a test fails." 
+	, OFlag		OptBatch
+			[ "-b", "--batch" ]
+			"Don't interactively ask what to do if a test fails." 
 	]
 
 
