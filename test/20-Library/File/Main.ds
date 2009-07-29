@@ -1,21 +1,16 @@
 
-import Base;
-import System.File;
-import Data.Maybe;
+import Base
+import System.File
+import Data.Maybe
 
+name	= "test/20-Library/File/Main.data";
 
 main () = topHandle prog;
 
-name	= "test/Library/File/Main.data";
-
 prog ()
- = do {	print	$ "length = " % show (file_length name) % "\n";
+ = do 	print	$ "length = " % show (file_length name) % "\n"
 
 	case file_read name of
-	 Nothing 
-	  -> do	"failed\n"
-		()
+	 Nothing 	-> print "failed\n"
+	 Just ss	-> print $ "data = " % ss % "\n"
 
-	 Just ss
-	  -> print	$ "data = " % ss % "\n"
- };
