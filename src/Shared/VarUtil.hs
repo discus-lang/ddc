@@ -6,6 +6,7 @@ module Shared.VarUtil
 	, newVarNS
 	, newVarNI
 
+	, varHasSymbols
 	, isSymbol
 	, isCtorName
 	, isDummy
@@ -91,17 +92,27 @@ sortForallVars	  vs
 
 -- Check whether the name of this var contains symbols that the
 --	C compiler won't like.
-isSymbol var 
- 	= not $ null $ filter isSymbolChar $ Var.name var
+varHasSymbols :: Var -> Bool
+varHasSymbols var 
+ 	= not $ null $ filter isSymbol $ Var.name var
 
-isSymbolChar c
+
+-- | Check if this char is a symbol
+--	everything except alpha, numeric, and '_' is a symbol.
+isSymbol :: Char -> Bool
+isSymbol c
 	| isAlphaNum c 	= False
 	| c == '_'	= False
 	| otherwise	= True	
 
+
+-- | Check if this var as the name of a constructor.
+--	Constructors start with an uppercase latter.
+isCtorName :: Var -> Bool
 isCtorName var 
 	= isUpper n
 	where (n:_)	= Var.name var
+
 
 -- Dummy vars introduced by the compiler won't have SourcePos's
 isDummy	   var	

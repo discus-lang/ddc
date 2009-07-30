@@ -3,7 +3,8 @@ module Util.FilePath
 	( baseNameOfPath
 	, normalMunchFilePath
 	, munchFileName
-	, chopOffExt)
+	, chopOffExt
+	, fileNameOfPath)
 where
 
 import Util.Data.List
@@ -84,3 +85,9 @@ chopOffExt fileName
  = case init (breakOns '.' fileName) of
  	[]	-> Nothing
 	xx	-> Just (catInt "." xx)
+
+
+-- | Get just the last, filename portion of this path
+fileNameOfPath :: FilePath -> FilePath
+fileNameOfPath ss	
+	= last $ breakOns '/' ss

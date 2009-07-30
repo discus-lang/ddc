@@ -270,6 +270,8 @@ runTest test
  = case test of
 	TestBuild{}		-> testBuild	    test
 	TestBuildError{}	-> testBuildError   test
+	TestShell{}		-> testShell	    test
+	TestShellError{}	-> testShellError   test
 	TestRun{}		-> testRun	    test
 	TestCompile{}		-> testCompile      test
 	TestCompileError{}	-> testCompileError test

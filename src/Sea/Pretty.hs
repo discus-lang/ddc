@@ -376,7 +376,7 @@ seaVar local v
 				 <- concat $ [Var.info bound | Var.IBoundBy bound <- Var.info v]]
 	= name
 	
-	|    Var.isSymbol v
+	| Var.varHasSymbols v
 	= seaModule (Var.nameModule v)
 	++ (if local then "_" ++ (pprStrPlain $ Var.bind v) ++ "_" else "_")
 	++ "_sym" ++ (Var.deSymString $ Var.name v)	

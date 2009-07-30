@@ -26,6 +26,13 @@ data TestWin
 	-- Compilation failed, as expected
 	| TestWinCompileError
 
+	-- Execution of shell script succeeded
+	| TestWinShell
+		{ testWinTime	:: ClockTime }
+
+	-- Execution of shell script failed, as expected
+	| TestWinShellError
+
 	-- Binary ran successfully
 	| TestWinRun
 		{ testWinTime	:: ClockTime }
@@ -57,6 +64,11 @@ pprTestWin win
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
 	
 	TestWinBuildError	-> "ok"
+
+	TestWinShell time
+	  -> "time(" ++ pprTime time ++ "s)"
+
+	TestWinShellError	-> "ok"
 
 	TestWinCompile time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"

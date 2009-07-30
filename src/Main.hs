@@ -8,11 +8,14 @@ import Main.Compile
 import Main.Version
 import Main.Init
 import Main.Make
+import Main.Error
 import qualified Main.Arg 		as Arg
 
 import Module.Scrape
 import Module.ScrapeGraph
 import Shared.Pretty
+import Shared.Error
+import qualified Shared.VarUtil		as Var
 
 import Util
 import Util.FilePath
@@ -20,7 +23,6 @@ import Util.Test.Check
 import qualified System.IO		as System
 import qualified System
 import qualified Data.Map		as Map
-
 -----
 main :: IO ()
 main	
@@ -59,13 +61,13 @@ ddc argStrings
 	 	putStr ("ddc error: bad argument '" ++ eString ++ "'\n")
 		System.exitFailure
 
-	-- find the runtime system and base library files
-	(pathRuntime, pathLibrary)
-			<- verbLocateRunLib verbose args
-			
 	-- gather up list of files to compile
 	let compileFiles	= concat [fs | Arg.Compile fs <- args]
 	let makeFiles		= concat [fs | Arg.Make    fs <- args]
+
+	-- find the runtime system and base library files
+	(pathRuntime, pathLibrary)
+			<- verbLocateRunLib verbose args
 
 	-- make the current setup
 	let args'	= args ++ [Arg.OptTailCall, Arg.LintAll]
@@ -78,6 +80,13 @@ ddc argStrings
 		, setupRecursive	= Nothing }
 		
 	let result
+		| symbols	<- (nub $ filter Var.isSymbol 
+					$ concat 
+					$ map fileNameOfPath
+					$ compileFiles ++ makeFiles) \\ ['.', '/']
+		, Just sym	<- takeHead symbols
+		= exitWithUserError args [ErrorSymbolInFileName sym]
+
 		-- don't try to plain compile and make at the same time
 		| not $ isNil compileFiles
 		, not $ isNil makeFiles

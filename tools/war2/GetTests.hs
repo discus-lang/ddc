@@ -29,11 +29,15 @@ getTestsInDir dirPath
 				filesAll
 
 	-- Build and run executables if we have a Main.ds
-	--	If we have an error.check file then we're expecting it to fail
+	-- Execute shells scripts called Main.sh
+	--	If we have an error.check file then we're expecting it to fail.
+
 	let gotMainDS		= any (isSuffixOf "/Main.ds") files
+	let gotMainSH		= any (isSuffixOf "/Main.sh") files
 	let gotMainErrorCheck	= any (isSuffixOf "/Main.error.check") files
+
 	let mTestsBuild
-		= justWhen (gotMainDS && not gotMainErrorCheck)
+		= justWhen (gotMainDS && not gotMainErrorCheck && not gotMainSH)
 		$ let t1	= TestBuild     (dirPath ++ "/Main.ds")
 		      t2	= TestRun	(dirPath ++ "/Main.bin")
 	 	  in  [ (t1, BackNode [])
@@ -43,10 +47,23 @@ getTestsInDir dirPath
 	--	Build the program, and assuming it does actually fail,
 	--	check the output against the expected.
 	let mTestsBuildError
-		= justWhen (gotMainDS && gotMainErrorCheck)
+		= justWhen (gotMainDS && gotMainErrorCheck && not gotMainSH)
 		$ let t1	= TestBuildError (dirPath ++ "/Main.ds")
 		      t2	= TestDiff       (dirPath ++ "/Main.error.check") (dirPath ++ "/Main.compile.stderr")
 		  in  [ (t1, BackNode []) 
+		      , (t2, BackNode [t1]) ]
+
+	-- | If we have a Main.sh, then run that
+	let mTestsShell
+		= justWhen (gotMainSH && not gotMainErrorCheck)
+		$ let t1	= TestShell	(dirPath ++ "/Main.sh")
+		  in  [ (t1, BackNode []) ]
+
+	let mTestsShellError
+		= justWhen (gotMainSH && gotMainErrorCheck)
+		$ let t1	= TestShellError (dirPath ++ "/Main.sh")
+		      t2	= TestDiff	 (dirPath ++ "/Main.error.check") (dirPath ++ "/Main.execute.stderr")
+		  in  [ (t1, BackNode [])
 		      , (t2, BackNode [t1]) ]
 
 	-- If we ran an executable, and we have a stdout check file
@@ -66,7 +83,7 @@ getTestsInDir dirPath
 	-- If there is no Main.ds then expect every source file that hasn't got an 
 	--	associated error.check file to compile successfully.
 	let mTestsCompile
-		= justWhen (not $ gotMainDS)
+		= justWhen (not gotMainDS && not gotMainSH)
 		$ [ (TestCompile file, BackNode [])
 				| file	<- filter (isSuffixOf ".ds") files 
 				, let errorCheckFile	
@@ -76,7 +93,7 @@ getTestsInDir dirPath
 	-- If there is not Main.ds file then expect source files with an 
 	--	associate error.check file to fail during compilation.
 	let mTestsCompileError
-		= justWhen (not $ gotMainDS)
+		= justWhen (not gotMainDS && not gotMainSH)
 		$ concat
 		$ [ let t1	= TestCompileError file
 		        t2	= TestDiff	   errorCheckFile compileStderr
@@ -92,7 +109,9 @@ getTestsInDir dirPath
 	let testsHere	= concat 
 			$ catMaybes 
 				[ mTestsBuild
+				, mTestsShell
 				, mTestsBuildError
+				, mTestsShellError
 				, mTestsCompile
 				, mTestsCompileError 
 				, mTestsStdout ]

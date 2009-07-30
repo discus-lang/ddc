@@ -35,6 +35,17 @@ data TestFail
 		{ testFailOutFile	:: FilePath
 		, testFailErrFile	:: FilePath}
 
+	-- Execution of script failed
+	| TestFailShell
+		{ testFailIOFail	:: IOFail	-- the io action for the execution
+		, testFailOutFile	:: FilePath
+		, testFailErrFile	:: FilePath }
+
+	-- Execution of script succeeded, but we were expecting failure.
+	| TestFailShellSuccess
+		{ testFailOutFile	:: FilePath
+		, testFailErrFile	:: FilePath }
+
 	-- Compilation of a source file failed
 	| TestFailCompile
 		{ testFailIOFail	:: IOFail	-- the io action for the compilation
@@ -74,6 +85,7 @@ pprTestFail fail
 	TestFailMissingFile path	-> "framework missing file " ++ show path
 	TestFailBuild{}			-> "build failed"
 	TestFailBuildSuccess{}		-> "unexpected build success"
+	TestFailShell{}			-> "script failed"
 	TestFailCompile{}		-> "compile failed"
 	TestFailCompileSuccess{}	-> "unexpected compile success"
 	TestFailRun{}			-> "run failed"
