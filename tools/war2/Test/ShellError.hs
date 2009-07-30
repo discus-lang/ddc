@@ -30,8 +30,8 @@ testShellError test@(TestShellError mainSH)
 	let mainBase	= take (length mainSH - length ".sh") mainSH
 
 	-- where to put the execute logs
-	let mainExOut	= mainBase ++ "Main.execute.stdout"
-	let mainExErr	= mainBase ++ "Main.execute.stderr"
+	let mainExOut	= mainBase ++ ".execute.stdout"
+	let mainExErr	= mainBase ++ ".execute.stderr"
 
 	curDir		<- io $ getCurrentDirectory
 
