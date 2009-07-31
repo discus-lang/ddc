@@ -73,16 +73,14 @@ ddc argStrs
 	(pathRuntime, pathLibrary)
 			<- verbLocateRunLib verbose args
 
-	-- gather up list of files to compile
-	let compileFiles	= concat [fs | Arg.Compile fs <- args]
+	-- gather up list of files to compile, build or make
+	let compileFiles	= concat [files | Arg.Compile   files	<- args]
 
-	-- Make files specified with --make
-	--	also make files with no flag, so the following works
-	--	$ ddc Main.hs -o dude
-	let makeFiles		
-		=  concat [files | Arg.Make files       <- args]
-		++ 	  [file  | Arg.InputFile file   <- args]
-
+	let buildFiles		= concat [files | Arg.Build     files	<- args]
+	
+	let makeFiles		= concat [files | Arg.Make 	files   <- args]
+				++ 	 [files | Arg.InputFile files   <- args]
+	
 	-- make the current setup
 	let args'	= args ++ [Arg.OptTailCall, Arg.LintAll]
 	let setup
@@ -110,10 +108,14 @@ ddc argStrs
 		-- do a plain compile
 		| not $ isNil compileFiles
 		= ddcCompile verbose setup compileFiles
+
+		-- do a recursive build
+		| not $ isNil buildFiles
+		= ddcMake args verbose setup False buildFiles
 		
-		-- do a recursive make
-		| not $ isNil makeFiles
-		= ddcMake verbose setup makeFiles
+		-- do a recursive build, then link executable
+		| not $ isNil makeFiles	
+		= ddcMake args verbose setup True makeFiles
 		
 		-- no input files, bail out
 		| otherwise

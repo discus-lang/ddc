@@ -1,10 +1,7 @@
 
 module Sea.Init
-(
-	initTree,
-	mainTree,
-	gotMain
-)
+	( initTree
+	, mainTree )
 
 where
 
@@ -47,11 +44,12 @@ makeInitVar (ModuleAbsolute vs)
 
 -----
 mainTree
-	:: [Module]
+	:: [Module]		-- Modules in this program
+	-> Module		-- The module holding the Disciple level main function
 	-> Tree ()
 	
-mainTree imports
- = let
+mainTree imports mainModule
+ = let	ModuleAbsolute [mainModuleName]	= mainModule
 	sLine	
 	 = unlines $
 		[ "int main (int argc, char** argv)"
@@ -63,12 +61,12 @@ mainTree imports
 	 ++ 	map (\m -> "\t" ++ "_" ++ (Var.name $ makeInitVar m) ++ "();") imports
 
 		-- call the init function for the main module.
-	 ++	[ "        _ddcInitModule_Main();"]
+	 ++	[ "        _ddcInitModule_" ++ mainModuleName ++ "();" ]
 		
 		-- catch exceptions from the main function so we can display nice 
 		--	error messages.
 	 ++ 	[ ""
-		, "        Control_Exception_topHandle(_allocThunk(Main_main, 1, 0));"
+		, "        Control_Exception_topHandle(_allocThunk(" ++ mainModuleName ++ "_main, 1, 0));"
 		, ""
 		, "        _ddcRuntimeCleanup();"
 		, "}"
@@ -77,15 +75,4 @@ mainTree imports
 
    in	[PHackery sLine]
 
-
------
-gotMain	:: Tree () -> Bool
-gotMain	   tree
- 	= or 
-	$ map (\p -> case p of
-			PSuper v _ _ _
-			 | Var.nameModule v == ModuleAbsolute ["Main"] 
-			 , Var.name v 	== "main"	-> True
-			_				-> False)
-	$ tree
 

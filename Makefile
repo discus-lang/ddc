@@ -119,7 +119,7 @@ libs	: library/Prelude.di
 
 library/Prelude.di : bin/ddc
 	@echo "* Building base libraries --------------------------------------"
-	bin/ddc -O -make library/Prelude.ds
+	bin/ddc -O -build library/Prelude.ds
 	@touch library/Prelude.di
 	@echo
 

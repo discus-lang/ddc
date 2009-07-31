@@ -9,7 +9,6 @@ module Main.Sea
 	, seaInit
 	, seaMain
 
-	, gotMain
 	, outSea)
 where
 
@@ -29,7 +28,7 @@ import Sea.Thunk		(thunkTree)
 import Sea.Force		(forceTree)
 import Sea.Slot			(slotTree)
 import Sea.Flatten		(flattenTree)
-import Sea.Init			(initTree, mainTree, gotMain)
+import Sea.Init			(initTree, mainTree)
 
 import Sea.Plate.Trans
 
@@ -294,10 +293,11 @@ makeIncludeDefTag pathThis
 --
 seaMain	:: (?args :: [Arg])
 	-> [Module]
+	-> Module
 	-> IO (Tree ())
 	
-seaMain imports
-	= return $ mainTree imports
+seaMain imports mainModule
+	= return $ mainTree imports mainModule
 	
 
 

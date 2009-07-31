@@ -1,0 +1,6 @@
+
+
+-- Make sure we can build an executable out of some source module not called "Main.ds"
+--	This contains the main function, which is all we should need
+
+main () = putStr "foo!"

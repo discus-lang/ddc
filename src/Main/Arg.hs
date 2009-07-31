@@ -24,11 +24,12 @@ data Arg
 	| Help		[String]
 	| Verbose
 	| Quiet
-	| Compile	[String]
+	| Compile	[String]	-- compile just these files, no link
+	| Build		[String]	-- recursive build
+	| Make		[String]	-- recursive build then link executable
 	| InputFile	String
 	| OutputFile	String
 	| ImportDirs	[String]
-	| Make		[String]
 	| PathBase	String
 
 	| NoImplicitPrelude
@@ -304,15 +305,20 @@ options	=
 
 	, OBlank
 	, OOpts		Compile
-			["-c",	"-compile"]
+			["-c",	"-compile", "--compile"]
 			"-c, -compile <files..>"
 			"Compile .ds to .o"
+
+	, OOpts		Build
+			["-b", "-build", "--build"]
+			"-b, -build <files.>"
+			"Recursively compile these source files."
 
 	-- allow --make for compatabilty with GHC
 	, OOpts		Make
 			["-m", "-make", "--make"]		
 			"-m, -make    <files..>"
-			"Recursively compile and link these sources (doesn't rebuild, use GNU make for that)"
+			"Recursively compile and link these sources into an executable"
 
 	, OOpt		OutputFile
 			["-o", "-output"]

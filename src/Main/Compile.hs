@@ -60,7 +60,7 @@ compileFile
 	:: Setup 		-- compile setup.
 	-> Map Module M.Scrape	-- scrape graph of all modules reachable from the root.
 	-> Module		-- module to compile, must also be in the scrape graph.
-	-> IO ()
+	-> IO Bool		-- true if the module defines the main function
 
 compileFile setup scrapes sModule
  = do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
@@ -122,6 +122,7 @@ compileFile_parse
 
 	-- extract some file names
 	let moduleName		= M.scrapeModuleName sRoot
+	let ModuleAbsolute moduleNameStr = moduleName
 
 	let pathSource		= let Just s = M.scrapePathSource sRoot in s
 
@@ -201,21 +202,18 @@ compileFile_parse
 			$ [tree	| (mod, tree) <- modHeaderRenamedTs ]
 
 
-	-- If this module is Main.hs then check that it contains the main function.
-	--	If it doesn't and we try to proceed then we'll get a linker
-	--	failure when we try and make the binary.
-	when (sModule == ModuleAbsolute ["Main"])
-	 $ do	let moduleDefinesMainFn 
+	-- If this module is Main.hs then require it to contain the main function.
+	let moduleDefinesMainFn 
 			= any (\p -> case p of
 					S.PStmt (S.SBindFun _ v _ _)
 					 | Var.name v == "main"	-> True
 					 | otherwise		-> False
 					_			-> False)
-
 			$ sRenamed
 	
-		when (not $ moduleDefinesMainFn)
-		 $ exitWithUserError ?args [ErrorNoMainFunction]
+	when (  sModule == ModuleAbsolute ["Main"]
+	    &&  (not $ moduleDefinesMainFn))
+		 $ exitWithUserError ?args [ErrorNoMainInMain]
 					
 			
 	-- Slurp out header information and fixity defs.
@@ -537,9 +535,8 @@ compileFile_parse
 
 	-- If this module binds the top level main function
 	--	then append RTS initialisation code.
-	--
-	seaSourceInit	<- if SE.gotMain eInit 
-				then do mainCode <- SE.seaMain $ map fst $ Map.toList importsExp
+	seaSourceInit	<- if moduleDefinesMainFn
+				then do mainCode <- SE.seaMain (map fst $ Map.toList importsExp) moduleName
 				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
 				
@@ -563,6 +560,9 @@ compileFile_parse
 		(setupLibrary setup)
 		importDirs
 		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
+	
+	
+	return moduleDefinesMainFn
 		
 -----
 compileExit

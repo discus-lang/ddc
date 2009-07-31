@@ -63,7 +63,10 @@ data Scrape
 	, scrapeNeedsRebuild	:: Bool
 
 	-- contents of build file for this module (if it exists)
-	, scrapeBuild		:: Maybe Build }
+	, scrapeBuild		:: Maybe Build 
+	
+	-- Defines the main function 
+	, scrapeDefinesMain	:: Bool }
 	deriving (Show)
 
 
@@ -188,7 +191,8 @@ scrapeModule'
 		, scrapeNeedsRebuild	= needsRebuild
 		, scrapeImported	= importModsPrelude
 		, scrapeArgsInline	= inlineArgs
-		, scrapeBuild		= mBuild }
+		, scrapeBuild		= mBuild 
+		, scrapeDefinesMain	= False }
 
 checkNeedsRebuild mSource mInt mHeader mObj
 	-- module not found

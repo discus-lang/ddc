@@ -5,10 +5,12 @@ where
 import Main.Setup
 import Main.Compile
 import Main.Link
+import Main.Error
 
 import Module.Scrape
 import Module.ScrapeGraph
 import Shared.Pretty
+import Shared.Error
 import Shared.Var		(Module)
 import qualified Main.Arg as	Arg
 import qualified Shared.Var as	Var
@@ -24,7 +26,7 @@ import qualified Data.Map	as Map
 
 -----
 -- | Do a recursive make
-ddcMake verbose setup files 
+ddcMake args verbose setup linkExecutable files 
  = do
 	-- use the directories containing the root files as extra import dirs
 	let takeDir path
@@ -33,10 +35,16 @@ ddcMake verbose setup files
 
 	let setup'	= setup { setupArgsBuild = Arg.ImportDirs (map takeDir files) 
 						 : setupArgsBuild setup }
-	-- scrape the root modules
-	Just roots	
+	-- Scrape the root modules.
+	Just roots_
 		<- liftM sequence 
 		$  mapM (scrapeSourceFile (importDirsOfSetup setup') True) files 
+	
+	-- Force the roots to be rebuilt. 
+	--	This ensures that we'll see the main function if it's sensibly defined in the program.
+	let roots	
+		| linkExecutable = map (\s -> s { scrapeNeedsRebuild = True }) roots_
+		| otherwise	= roots_
 	
 	-- scrape all modules reachable from the roots
 	graph		<- scrapeRecursive setup' roots
@@ -58,11 +66,14 @@ ddcMake verbose setup files
 	graph_comp	<- buildLoop setup' graph3 buildCount 0 
 			$ map scrapeModuleName roots
 	
- 	-- If one of the roots is the Main module, then link the binary.
-	let gotMain	= any (\r -> scrapeModuleName r == Var.ModuleAbsolute ["Main"])
-			$ roots
+ 	-- Check if one of the modules defines the main function
+	let gotMain	= any (\r -> scrapeDefinesMain r)
+			$ Map.elems graph_comp
 	
-	when (gotMain)
+	when (linkExecutable && not gotMain)
+	 $ exitWithUserError args [ErrorLinkExecutableWithoutMain]
+	
+	when (linkExecutable && gotMain)
 	 $ do	-- all the object files that need to be linked
 		let Just objFiles	
 			= sequence 
@@ -131,7 +142,7 @@ buildLoop' setup graph buildCount buildIx roots build
 		-- run the compiler to produce the object file
 		let Just scrape		= Map.lookup m graph_pruned
 		let Just pathSource	= scrapePathSource scrape
-		compileFile setup graph_pruned m
+		definesMain		<- compileFile setup graph_pruned m
 
 		-- check that the object and interface is actually there
 		let (_, fileDir, fileBase, _)
@@ -154,7 +165,8 @@ buildLoop' setup graph buildCount buildIx roots build
 					{ scrapeNeedsRebuild 	= False 
 					, scrapePathInterface	= Just $ droppedFile ".di"
 					, scrapePathHeader	= Just $ droppedFile ".ddc.h"
-					, scrapePathObject	= Just $ droppedFile ".o" }
+					, scrapePathObject	= Just $ droppedFile ".o" 
+					, scrapeDefinesMain	= definesMain }
 					
 		let graph'	= Map.insert m scrape' graph
 			
