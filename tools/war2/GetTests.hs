@@ -30,6 +30,7 @@ getTestsInDir config dirPath
 				       && (not $ isInfixOf "skip-"  name))
 				filesAll
 
+
 	-- Build and run executables if we have a Main.ds
 	-- Execute shells scripts called Main.sh
 	--	If we have an error.check file then we're expecting it to fail.
@@ -74,6 +75,7 @@ getTestsInDir config dirPath
 		| otherwise
 		= []
 
+
 	-- If there is no Main.ds then expect every source file that hasn't got an 
 	--	associated error.check file to compile successfully.
 	let testsCompile
@@ -83,6 +85,7 @@ getTestsInDir config dirPath
 				, let errorCheckFile	
 					= (take (length file - length ".ds") file) ++ ".error.check"
 				, not (elem errorCheckFile files)]
+
 
 	-- If there is not Main.ds file then expect source files with an 
 	--	associate error.check file to fail during compilation.
@@ -100,6 +103,7 @@ getTestsInDir config dirPath
 			, elem errorCheckFile files 
 		  ]
 
+
 	-- These tests are can be run in all ways
 	--	So run them all ways that were specified
 	let testsAllWays
@@ -112,15 +116,44 @@ getTestsInDir config dirPath
 	let testsHereExpanded
 		= expandWays (configWays config) testsAllWays
 
+
+	-- These tests can only be run in a specific way
+	let takeStdoutWayFile way file
+		| name		<- "Main.stdout.check." ++ pprWayName way
+		, isSuffixOf name file
+		= Just (TestDiff "Main.stdout" name)
+		
+		| otherwise
+		= Nothing
+	
+	let filesStdoutWayed
+		= catMaybes
+		$ [ liftM (\t -> (t, way)) $ takeStdoutWayFile way file
+		 	| file		<- filesAll
+			, way		<- configWays config ]
+
+	let testsStdoutWayed
+		| not $ null filesStdoutWayed
+		, Just (TestNode tid _)	<- takeLast testsHereExpanded
+		= concat
+		$ chainNodes 
+			[ [TestNode (file, way) [tid]]
+				| (file, way)	<- filesStdoutWayed ]
+				
+		| otherwise
+		= []
+		
 	-- Cleanup after each set of tests if asked 
 	let testsFinal
 		| configClean config
 		, Just n1	<- takeLast $ testsHereExpanded
 		= testsHereExpanded 
+--			++ testsStdoutWayed
 			++ [TestNode (TestClean dirPath, WayNil) [testIdOfNode n1]]
 
 		| otherwise
 		= testsHereExpanded
+--			++ testsStdoutWayed
 
 
 	debugLn 
