@@ -70,17 +70,12 @@ warOptions
  = 	[ ODefault	OptTestDir
  
 	, OFlag		OptHelp
- 			[ "-h", "--help"]
+ 			[ "-h", "-help", "--help"]
 			"Display this help."
 
 	, OFlag		OptDebug
-			[ "-d", "--debug"]
+			[ "-d", "-debug"]
 			"Emit debugging info for the test driver."
-
-	, OOpts		(\ss -> OptFlagsDDC $ map ('-' :) ss)
-			[ "--ddc"]
-			"--ddc <options>"
-			"Compile tests with these DDC options."
 
         , OOpt		(OptThreads . read)
 			[ "-j" ]
@@ -88,12 +83,12 @@ warOptions
 			"Run n tests in parallel."
 
 	, OFlag		OptBatch
-			[ "-b", "--batch" ]
+			[ "-b", "-batch" ]
 			"Don't interactively ask what to do if a test fails." 
 
 	, OOpt		OptLogFailed
-			[ "--logFailed" ]
-			"--logFailed <file>"
+			[ "-logFailed" ]
+			"-logFailed <file>"
 			"Log failed tests to this file."
 
 	, OOptEscape	OptCompWay
