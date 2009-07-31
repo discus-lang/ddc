@@ -7,5 +7,5 @@
 #	GHC doesn't allow module names to have symbols either,
 #	and we name the module after the file name.
 #
-bin/ddc -make ./hello-world.ds
+bin/ddc -make $1/hello-world.ds
 

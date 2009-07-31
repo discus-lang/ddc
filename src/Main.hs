@@ -66,16 +66,22 @@ ddc argStrs
 		let eArg	= head $ filter (=@= Arg.Error{}) args
 		let eString 	= case eArg of { Arg.Error x -> x; }
 
-	 	putStr ("ddc error: bad argument '" ++ eString ++ "'\n")
+	 	putStr ("ddc error: " ++ eString ++ "\n")
 		System.exitFailure
-
-	-- gather up list of files to compile
-	let compileFiles	= concat [fs | Arg.Compile fs <- args]
-	let makeFiles		= concat [fs | Arg.Make    fs <- args]
 
 	-- find the runtime system and base library files
 	(pathRuntime, pathLibrary)
 			<- verbLocateRunLib verbose args
+
+	-- gather up list of files to compile
+	let compileFiles	= concat [fs | Arg.Compile fs <- args]
+
+	-- Make files specified with --make
+	--	also make files with no flag, so the following works
+	--	$ ddc Main.hs -o dude
+	let makeFiles		
+		=  concat [files | Arg.Make files       <- args]
+		++ 	  [file  | Arg.InputFile file   <- args]
 
 	-- make the current setup
 	let args'	= args ++ [Arg.OptTailCall, Arg.LintAll]
