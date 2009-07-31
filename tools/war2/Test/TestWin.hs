@@ -65,7 +65,7 @@ pprTestWin win
 	TestWinOk		-> "ok"
 
 	TestWinBuild time size	
-	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
+	  -> "time("  ++ pprTime time ++ "s)"
 	
 	TestWinBuildError	-> "ok"
 
@@ -75,7 +75,7 @@ pprTestWin win
 	TestWinShellError	-> "ok"
 
 	TestWinCompile time size	
-	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
+	  -> "time("  ++ pprTime time ++ "s)"
 
 	TestWinCompileError	-> "ok"
 	TestWinRun time		-> "time("   ++ pprTime time ++ "s)"
