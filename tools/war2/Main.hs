@@ -6,6 +6,7 @@ import War
 import Timing
 import GetTests
 import Format
+import TestNode
 
 import Util
 import Util.Options			as Options
@@ -118,7 +119,7 @@ doWar
 
 	-- Build a work graph of all the tests
 	let workGraph	= WorkGraph.fromBackNodes
-			$ backNodes
+			$ [ (tid, BackNode deps)	| TestNode tid deps	<- backNodes]
 	
 	-- Do it!
 	results		<- dispatch workGraph
