@@ -68,7 +68,7 @@ main
 					then [("normal", [])]
 					else runWayPairs_
 
-	let ways		= [ WayOpts (compName ++ "." ++ runName) compOpts runOpts
+	let ways		= [ WayOpts (compName ++ "-" ++ runName) compOpts runOpts
 					| (compName, compOpts)	<- compWayPairs
 					, (runName,  runOpts)	<- runWayPairs ]
 
