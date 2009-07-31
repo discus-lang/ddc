@@ -43,6 +43,9 @@ data Test
 
 	-- | Diff an output file against the expected output
 	| TestDiff      	FilePath FilePath	-- template, test output
+
+	-- | Cleanup DDC generated files from this dir
+	| TestClean		FilePath
 	deriving (Eq, Show)
 
 
@@ -62,6 +65,7 @@ testPath test
 	TestCompileError path		-> path
 	TestRun 	 path		-> path
 	TestDiff	 temp out	-> out
+	TestClean	 path		-> path
 
 
 testTag test
@@ -74,6 +78,7 @@ testTag test
 	TestCompileError{}	-> "compile error"
 	TestRun{} 		-> "run"
 	TestDiff{}		-> "diff"
+	TestClean{}		-> "clean"
  
 
 -- | Pretty print a test.
@@ -88,4 +93,5 @@ pprTest test
 	TestCompileError path  -> padR formatPathWidth path ++ " error   "
 	TestRun		path 	-> padR formatPathWidth path ++ " run     "
 	TestDiff template out	-> padR formatPathWidth out  ++ " diff    "
+	TestClean	path	-> padR formatPathWidth path ++ " clean   "
 

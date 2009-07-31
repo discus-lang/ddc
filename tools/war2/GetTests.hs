@@ -139,13 +139,23 @@ getTestsInDir config dirPath
 		++ show testsHereExpanded
 		++ "\n"
 
+	-- Cleanup after each set of tests if asked 
+	let testsFinal
+		| configClean config
+		, Just (t1, back)	<- takeLast $ testsHereExpanded
+		= testsHereExpanded 
+			++ [((TestClean dirPath, WayNil), BackNode [t1])]
+
+		| otherwise
+		= testsHereExpanded
+
 	-- Recurse into directories
 	moreTests 
 		<- liftM concat
 		$  mapM (getTestsInDir config) dirs
 
 
-	return	$ testsHereExpanded ++ moreTests
+	return	$ testsFinal ++ moreTests
 
 
 type Node

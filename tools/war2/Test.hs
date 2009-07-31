@@ -10,7 +10,8 @@ module Test
 	, module Test.Compile
 	, module Test.CompileError 
 	, module Test.Run
-	, module Test.Diff)
+	, module Test.Diff
+	, module Test.Clean)
 
 	
 where
@@ -26,5 +27,5 @@ import Test.Compile
 import Test.CompileError
 import Test.Run
 import Test.Diff
-
+import Test.Clean
 

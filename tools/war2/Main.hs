@@ -86,6 +86,7 @@ main
 		, configBatch		= elem OptBatch options 
 		, configLogFailed	= takeLast [s | OptLogFailed s		<- options]
 		, configWays		= ways
+		, configClean		= elem OptClean options
 		}
 
 	-- run the main program
@@ -310,14 +311,14 @@ runTest testWay@(test, way)
 	TestCompile{}		-> testCompile      test way
 	TestCompileError{}	-> testCompileError test way
 	TestDiff{}		-> testDiff	    test way
-
+	TestClean{}		-> testClean        test way
 
 -- Pretty -------------------------------------------------------------------------------------------
 -- | Pretty print the result of a test
 pprResult :: Bool -> Test -> Way -> TestResult -> String
 pprResult color test way result
  = let	sTest	= pprTest test
-	sWay	= wayName way
+	sWay	= pprWayName way
 	sResult	= case result of
 			Left  TestIgnore -> "ignored"
 

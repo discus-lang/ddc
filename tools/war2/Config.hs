@@ -15,6 +15,12 @@ data Way
 		, wayOptsRun	:: [String] }
 	deriving (Eq, Ord, Show)
 
+pprWayName :: Way -> String
+pprWayName way
+ = case way of
+	WayNil		-> ""
+	WayOpts{}	-> wayName way
+
 
 data Config
 	= Config
@@ -36,7 +42,10 @@ data Config
 	, configLogFailed	:: Maybe FilePath 
 
 	-- What ways to compile the tests with.
-	, configWays		:: [Way] }
+	, configWays		:: [Way] 
+
+	-- Clean up ddc generated files after each test
+	, configClean		:: Bool }
 	deriving (Show, Eq)
 
 
@@ -51,6 +60,7 @@ data Opt
 	| OptLogFailed String		-- ^ Log failed tests to this file
 	| OptCompWay   [String]		-- ^ Flags to compile tests with
 	| OptRunWay    [String]		-- ^ Flags to run tests with 
+	| OptClean			-- ^ Cleanup ddc generated files after each test
 	deriving (Show, Eq)
 
 
@@ -95,5 +105,9 @@ warOptions
 			[ "+runway" ]
 			"+runway <name> <options..>"
 			"Run test binaries with these options."
+
+	, OFlag		OptClean
+			[ "-clean" ]
+			"Cleanup after each test"
 	]
 

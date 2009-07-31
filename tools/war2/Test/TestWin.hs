@@ -9,9 +9,11 @@ import Util.Terminal.VT100
 
 -------------------------------------------------------------------------------
 data TestWin
+	-- Generic Success
+	= TestWinOk
 
 	-- Build succeeded
-	= TestWinBuild	
+	| TestWinBuild	
 		{ testWinTime	:: ClockTime
 		, testWinSize	:: Int }
 
@@ -60,6 +62,8 @@ pprTestWinColor win
 pprTestWin :: TestWin -> String
 pprTestWin win
  = case win of
+	TestWinOk		-> "ok"
+
 	TestWinBuild time size	
 	  -> "time("  ++ pprTime time ++ "s)"  ++ " size(" ++ show size ++ ")"
 	
