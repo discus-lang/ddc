@@ -1,11 +1,7 @@
 
+-- | Command line option parser.
 module Util.Options
-	( Option(..)
-	, matchOption
-	, Token(..)
-	, tokenise
-	, munch
-	, makeOptionHelp)
+	( parseOptions)
 
 where
 
@@ -14,73 +10,16 @@ import Util.Pretty
 import Util.Data.Either
 import Util.Data.List
 
+import Util.Options.Token
+import Util.Options.Option
 
--- Data to hold an option parser
---	parametered by the data type that will represent them
-data Option a
-	= ODefault	([String] -> a)
-	| OGroup	String String
-	| OFlag		a		[String] String
-	| OOpt		( String  -> a)	[String] String String
-	| OOpts		([String] -> a)	[String] String String
-	| OBlank
-
-matchOption ::	String ->	[Option a]	-> Maybe (Option a)
-matchOption	name		options
- = case options of
- 	[] 
-	 -> Nothing
-
-	(o@(OFlag a names desc) : os)
-	 -> if elem name names
-	 	then Just o
-		else matchOption name os
-		
-	(o@(OOpt a names use desc) : os)
-	 -> if elem name names
-	 	then Just o
-		else matchOption name os
-
-	(o@(OOpts a names use desc) : os)
-	 -> if elem name names
-	 	then Just o
-		else matchOption name os
-		
-	(_ : os)
-	 ->	matchOption name os
+-- | Parse some options from a string
+parseOptions :: [Option a] -> [String] -> ([String], [a])
+parseOptions options strs
+	= munch options $ tokenise (catInt " " strs)
 
 
------------------------
--- Token
--- 
-data Token
-	= TString	String
-	| TOption 	String
-	deriving Show
-	
-tokenise ::	String -> [Token]
-tokenise	xx
- = case xx of
-	[]		-> []
- 	('-':xs)	-> tokOption [] xx
-	(' ':xs)	-> tokenise  xs
-	(x  :xs)	-> tokString [] xx
-	
-tokOption acc xx
- = case xx of
-	[]		-> [TOption acc]
- 	(' ':xs)	-> TOption acc : tokenise xs
-	(x:xs)		-> tokOption (acc ++ [x]) xs
-	
-tokString acc xx
- = case xx of
-	[]		-> [TString acc]
- 	(' ':xs)	-> TString acc : tokenise xs
-	(x:xs)		-> tokString (acc ++ [x]) xs
-	
--------------------------
--- munch
---
+-- | Parse some option strings
 munch :: [Option a]  -> [Token] -> ([String], [a])
 munch	 options	toks
  	= gatherEither $ munchS options toks
@@ -131,69 +70,28 @@ munchOption options option ts
 	  in	Right (sf strs) : munchR options rest
 
 
--- | Make a help page from this list of options
-makeOptionHelp 
-	:: Int 			-- indent level of descriptions
-	-> [String] 		-- tags of the sections to show
-	-> [Option a] 		-- options
-	-> String
+-- | Select the option which this string refers to
+matchOption :: String -> [Option a] -> Maybe (Option a)
+matchOption name options
+ = case options of
+ 	[] 
+	 -> Nothing
 
-makeOptionHelp indent secs os
-	= concat 
-	$ (if elem "contents" secs
-		then "\n  -- Contents --\n"
-		else "")
-	:  makeOptionHelp' indent secs False os
-
-makeOptionHelp' _ _ _ []	
-	= []
-	
-makeOptionHelp' indent secs squash (o:os)
- = case o of
-	OGroup tag name
-	 -- print a contents entry, but not the body of the section
-	 | elem "contents" secs
-	 -> "  " : makeHelp indent o : makeOptionHelp' indent secs True os
-
-	 -- print an interesting section
-	 | elem tag secs || elem "all" secs
-	 -> "\n  " : makeHelp indent o : makeOptionHelp' indent secs False os
+	(o@(OFlag a names desc) : os)
+	 -> if elem name names
+	 	then Just o
+		else matchOption name os
 		
-	 -- skip over a boring section
-	 | otherwise
-	 -> makeOptionHelp' indent secs True os
+	(o@(OOpt a names use desc) : os)
+	 -> if elem name names
+	 	then Just o
+		else matchOption name os
+
+	(o@(OOpts a names use desc) : os)
+	 -> if elem name names
+	 	then Just o
+		else matchOption name os
 		
-	_ 
-		| squash	
-		-> makeOptionHelp' indent secs squash os
-		
-		| otherwise	
-		-> makeHelp indent o
-		:  makeOptionHelp' indent secs squash os
-			
-
-makeHelp indent o
- = case o of
-	ODefault optF
-	 -> ""
-
- 	OGroup tag name	
-	 -> name ++ " (" ++ tag ++ ")\n"
-
-	OFlag  opt names desc
-	 -> pprStr ()
-	 $  padL indent ("    " % punc ", " names) % desc % "\n"
-
-	OOpt  optF names use desc
-	 -> pprStr ()
-	 $  padL indent ("    " % use) % desc % "\n"
-
-	OOpts  optF names use desc
-	 -> pprStr ()
-	 $  padL indent ("    " % use) % desc % "\n"
-	 
-	OBlank
-	 -> "\n"
-
-
+	(_ : os)
+	 ->	matchOption name os
 

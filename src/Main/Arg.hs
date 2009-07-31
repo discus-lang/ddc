@@ -13,6 +13,8 @@ import Main.Version
 import Shared.Pretty
 import Util
 import Util.Options
+import Util.Options.Option
+import Util.Options.Help
 
 -- | Holds command line arguments
 data Arg
@@ -211,13 +213,11 @@ expand		(x:xs)
 
 
 -- | Parse these arguments
-parse ::	String -> [Arg]
-parse		ss
+parse :: [String] -> [Arg]
+parse strArgs
  = let
- 	(errs, args)	= munch options $ tokenise ss
+ 	(errs, args)	= parseOptions options strArgs
 	args'		= expand args
-	
-
   in 	(map Error errs) ++ (nub args')
 	
 

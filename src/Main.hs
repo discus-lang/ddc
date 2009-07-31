@@ -23,23 +23,31 @@ import Util.Test.Check
 import qualified System.IO		as System
 import qualified System
 import qualified Data.Map		as Map
------
+
+
+-- The Disciplined Disciple Compiler
 main :: IO ()
 main	
- = do	args	<- System.getArgs
- 	case args of 
-	 ["--test"]	-> runTests
-	 _		-> ddc args
+ = do	argStrs	<- System.getArgs
 
+	-- If we have a single --test option, then override everything else
+	--	and run all our QuickCheck tests.
+ 	case argStrs of 
+	 ["--test"]	-> runTests
+	 _		-> ddc argStrs
+
+
+-- | Run all our QuickCheck tests.
 runTests :: IO ()
  = do	checkTests test_Util
 
 
+-- | Run the compiler proper.
 ddc :: [String] -> IO ()
-ddc argStrings
+ddc argStrs
  = do
 	-- check args
-	let args	= (Arg.parse $ catInt " " argStrings)
+	let args	= Arg.parse argStrs
 	let verbose	= or $ map (== Arg.Verbose) args
 
 	-- print banner if requested
@@ -108,9 +116,8 @@ ddc argStrings
 		
 	result
 
-out 	ss	= putStr $ pprStrPlain ss
 
--- | Do a plain compile	
+-- | Do a regular compile.
 ddcCompile verbose setup files
  = do 	-- use the directories containing the files to be compiled as extra import dirs
 	let takeDir path
@@ -142,7 +149,8 @@ ddcCompile verbose setup files
 	when (not $ isNil scrapeDirty)
 	 $ do 	let dirty1 : _		= scrapeDirty
 		let Just fileDirtySrc	= scrapePathSource dirty1
-	 	out	$ "ddc error: the '" % scrapeModuleName dirty1 %  "' module needs to be (re)built first.\n"
+	 	putStr 	$ pprStrPlain
+			$ "ddc error: the '" % scrapeModuleName dirty1 %  "' module needs to be (re)built first.\n"
 			% "     when compiling: " % punc " " files 	% "\n"
 			% "      module source: " % fileDirtySrc	% "\n\n"
 
@@ -158,6 +166,7 @@ ddcCompile verbose setup files
 	
 	-- sweet success
 	System.exitWith System.ExitSuccess
+
 
 compileSingle setup graph mod
  = let	Just scrape	= Map.lookup mod graph

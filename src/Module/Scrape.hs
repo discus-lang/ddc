@@ -148,7 +148,7 @@ scrapeModule'
 
 	-- Scrape the inline options from the source file
 	let options	= scrapeOptions source
-	let inlineArgs	= Arg.parse (catInt " " options)
+	let inlineArgs	= Arg.parse options
 
 	-- Scrape the imported modules from the source file
 	let importMods	= scrapeImports source
