@@ -31,35 +31,29 @@ getTestsInDir config dirPath
 				filesAll
 
 
-	-- Build and run executables if we have a Main.ds
-	-- Execute shells scripts called Main.sh
-	--	If we have an error.check file then we're expecting it to fail.
-	let gotMainDS		= any (isSuffixOf "/Main.ds") files
+	-- | If we have a Main.sh, then run that
 	let gotMainSH		= any (isSuffixOf "/Main.sh") files
 	let gotMainErrorCheck	= any (isSuffixOf "/Main.error.check") files
-
-	let testsBuild
-		= listWhen (gotMainDS && not gotMainErrorCheck && not gotMainSH)
-		$ chainTests	[ TestBuild	(dirPath ++ "/Main.ds")
-				, TestRun	(dirPath ++ "/Main.bin") ]
-
-	let testsBuildError
-		= listWhen (gotMainDS && gotMainErrorCheck && not gotMainSH)
-		$ chainTests	[ TestBuildError (dirPath ++ "/Main.ds")
-				, TestDiff	(dirPath ++ "/Main.error.check") 
-						(dirPath ++ "/Main.compile.stderr") ]
-
-	-- | If we have a Main.sh, then run that
 	let testsShell
 		= listWhen (gotMainSH && not gotMainErrorCheck)
 		$ chainTests	[ TestShell	(dirPath ++ "/Main.sh") ]
-		
+	
 	let testsShellError
 		= listWhen (gotMainSH && gotMainErrorCheck)
 		$ chainTests	[ TestShellError (dirPath ++ "/Main.sh")
 				, TestDiff	(dirPath ++ "/Main.error.check") 
 						(dirPath ++ "/Main.execute.stderr") ]
 
+
+	-- Build and run executables if we have a Main.ds
+	-- Execute shells scripts called Main.sh
+	--	If we have an error.check file then we're expecting it to fail.
+	let gotMainDS		= any (isSuffixOf "/Main.ds") files
+
+	let testsBuild
+		= listWhen (gotMainDS && not gotMainErrorCheck && not gotMainSH)
+		$ chainTests	[ TestBuild	(dirPath ++ "/Main.ds")
+				, TestRun	(dirPath ++ "/Main.bin") ]
 
 	-- If we ran an executable, and we have a stdout check file
 	--	then check the executable's output against it
@@ -74,6 +68,12 @@ getTestsInDir config dirPath
 		  
 		| otherwise
 		= []
+
+	let testsBuildError
+		= listWhen (gotMainDS && gotMainErrorCheck && not gotMainSH)
+		$ chainTests	[ TestBuildError (dirPath ++ "/Main.ds")
+				, TestDiff	(dirPath ++ "/Main.error.check") 
+						(dirPath ++ "/Main.compile.stderr") ]
 
 
 	-- If there is no Main.ds then expect every source file that hasn't got an 
