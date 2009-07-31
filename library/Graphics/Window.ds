@@ -1,0 +1,35 @@
+
+import Graphics.TinyPTC
+import Graphics.Frame
+
+data Window %r1 %r2
+	= Window {
+		name	:: String %r2;		-- flatten makes the string mutable :(
+		frame	:: Frame %r1 %r2;
+	}
+
+project Window where
+
+	-- create a new window for this frame
+	newWithFrame :: String -> Frame -> Window
+	newWithFrame name frame
+	 = do	(SChunk fs_flat) = name.flatten
+
+	 	ptcOpen (fs_flat .danger_string) 
+			(unboxInt32 frame.sizeX)
+			(unboxInt32 frame.sizeY)
+
+	 	Window name frame
+
+	-- create a new window, and a new frame
+	new :: String -> Int -> Int -> Window
+	new name sizeX sizeY
+	 = do	frame	= new&{Frame} sizeX sizeY
+		newWithFrame&{Window} name frame
+
+	-- update this window on the screen
+	update :: Window -> ()
+	update window
+	 = do 	ptcUpdate (arrayUI_getBufPtr window.frame.array)
+	 	()
+

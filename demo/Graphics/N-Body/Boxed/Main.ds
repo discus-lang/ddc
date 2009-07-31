@@ -2,29 +2,39 @@
 import Math.Vec2
 import Body
 import Graphics.Render
+import Graphics.Window
 import Data.Array
 import DDC.Runtime
 
 
 -- Main -----------------------------------------------------------------------------
 main ()
- = do 	frame	= new&{Frame} "N-Body" worldSize.x worldSize.y
+ = do 	frame	= new&{Frame} worldSize.x worldSize.y
 
-	case initBodies () of
-		Tuple2 body0 body1 -> run frame body0 body1
+	(body0, body1)	= initBodies ()
+
+	if argCount > 0
+	 then do
+		window	= newWithFrame&{Window} "N-Body" frame
+		run frame (Just window) body0 body1
+
+	 else do
+		run frame Nothing body0 body1
+		frame.putPPM
+
 
 newBody :: Vec2 Float -> Vec2 Float -> Body
 newBody pos vel		= Body 100.0 pos vel (Vec2 0.0 0.0)
 
 -- | Main loop.
-run :: 	Frame -> Array Body -> Array Body -> ()
-run 	a b c
+run :: Frame -> Maybe Window -> Array Body -> Array Body -> ()
+run frame mWindow body0 body1
 	-- bail out if we've reached the maximum frame count.
  	| frameCount_max /= 0
 	, frameCount > frameCount_max
 	= ()
 
-run	frame body0 body1	
+run frame mWindow body0 body1	
  = do	-- update all the positions
 	body1 .mapIx_	(\ix x -> x.update body0 ix)
 	body1 .map_	(\x -> x.clampPos)
@@ -35,11 +45,13 @@ run	frame body0 body1
 
 	body1 .map_	(\x -> x.draw frame)
 
-	-- flip the buffer
- 	frame.update
+	-- copy the frame to the screen
+	match 
+	 | Nothing	<- mWindow	= ()
+	 | Just window	<- mWindow	= window.update
 
 	frameCount += 1
-	run frame body1 body0;
+	run frame mWindow body1 body0;
 
 
 

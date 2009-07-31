@@ -1,6 +1,7 @@
 
 -- Draw a cute fractal that looks a bit like the inner workings of a clock.
 import Graphics.Frame
+import Graphics.Window
 import Graphics.Primitive
 import Graphics.Render
 import Graphics.Shape
@@ -11,16 +12,25 @@ time :: Float %r1 :- Mutable %r1
 time = 0.0
 
 main ()
- = do 	frame	= new&{Frame} "Clock Fractal" 600 600
-	coma frame
+ = do 	frame	= new&{Frame} 600 600
+
+	if argCount > 0
+	 then do
+		window	= newWithFrame&{Window} "Circle" frame
+		coma frame (Just window)
+
+	 else do
+		coma frame Nothing
+		frame.putPPM
+
 
 -- the main display loop
-coma :: Frame -> a
-coma frame
+coma :: Frame -> Maybe Window -> a
+coma frame mWidow
 	-- bail out eventually
 	| time > 0.050	= ()
 
-coma frame
+coma frame mWindow
  = do	-- clear the buffer
 	frame.clear (color&{Frame} 0 0 0)
 		
@@ -34,11 +44,13 @@ coma frame
 	renderPrims frame [frac]
 
 	-- copy the buffer to the screeen
-	frame.update
+	match 
+	 | Nothing	<- mWindow	= ()
+	 | Just window	<- mWindow	= window.update
 
 	-- move along
 	time += 0.001
-	coma frame
+	coma frame mWindow
 	
 	
 clockFractal :: Int -> Float -> [Primitive]

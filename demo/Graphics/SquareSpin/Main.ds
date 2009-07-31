@@ -1,29 +1,39 @@
 
 import Graphics.Render
+import Graphics.Window
 import Graphics.Shape
 
 main ()
  = topHandle simple
 
 simple ()
- = do 	frame	= new&{Frame} "Square" 600 600
-	gate (\z -> squareSpin frame 1.0)
+ = do 	frame	= new&{Frame} 600 600
 
-	
+	match
+	 | argCount > 0	
+	 = do	mWindow	= Just (newWithFrame&{Window} "SquareSpin" frame)
+		gate (\z -> squareSpin frame mWindow 1.0)
+			
+	 | otherwise	
+	 = do	gate (\z -> squareSpin frame Nothing 1.0)
+		frame.putPPM
+
 -- main loop 
-squareSpin :: Frame -> Float -> ()
-squareSpin frame rot
+squareSpin :: Frame -> Maybe Window -> Float -> ()
+squareSpin frame mWindow rot
  = do 	arrayUI_fill frame.array 0
 
 	renderPrims frame
 		$  [ Translate 300.0 300.0 ]
 		++ frac 3 rot
 
-	frame.update
-	
+	match 
+ 	 | Just window	<- mWindow	= window.update
+	 | otherwise			= ()
+
 	when (rot > 4.0) break
 
-	squareSpin frame (rot + 0.01)
+	squareSpin frame mWindow (rot + 0.01)
 
 
 -- generate the fractal

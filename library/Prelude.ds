@@ -16,6 +16,7 @@ import	Data.Either
 import	Data.ArrayU
 	
 import	System.Console
+import	System.Environment
 
 import	Class.Copy
 import	Class.Eq

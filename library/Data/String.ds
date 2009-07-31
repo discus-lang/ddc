@@ -192,3 +192,5 @@ head (SChunk fs)	= fs.index 0
 head (SAppend s1 s2)
 	| isNul s1	=  head s2
 			\= head s1
+
+

@@ -15,51 +15,56 @@ import Trace
 import Math.Vec2
 import Math.Vec3
 import Graphics.Frame
+import Graphics.Window
 
 -- Window setup
 windowSize	= Vec2 800 600
 
 main ()
- = do	-- make new window 
- 	frame	= new&{Frame} "RayTracer" windowSize.x windowSize.y
-	
-	-- render the image into the window
-	drawFrame 
-		frame 
-		(windowSize.x - 1)
-		(windowSize.y - 1)
-		0 0	
+ = do 	frame	= new&{Frame} windowSize.x windowSize.y
 
-	-- comment this back in to keep the window open after rendering
-	-- coma frame
+	match 
+	 | argCount > 0
+	 = do	window	= newWithFrame&{Window} "RayTracer" frame
+		drawFrame frame (Just window)
+			(windowSize.x - 1)
+			(windowSize.y - 1)
+			0 0	
 
--- | busy wait for esc keypress
-coma :: Frame -> ()
-coma frame
- = do	frame .update
-	coma frame
+	 | otherwise
+	 = do	drawFrame frame Nothing
+			(windowSize.x - 1)
+			(windowSize.y - 1)
+			0 0	
+		frame.putPPM
+
 	
 -- | Draw the whole scene
-drawFrame :: Frame -> Int -> Int -> Int -> Int -> ()
-drawFrame frame xMax yMax x y
+drawFrame :: Frame -> Maybe Window -> Int -> Int -> Int -> Int -> ()
+drawFrame frame mWindow xMax yMax x y
 	| y >= yMax	= ()
-	| x >= xMax	= drawFrame frame xMax yMax 0 (y+1)
+	| x >= xMax	= drawFrame frame mWindow xMax yMax 0 (y+1)
 	| otherwise
-	= do	drawPixel frame x y
-		drawFrame frame xMax yMax (x+1) y
+	= do	drawPixel frame mWindow x y
+		drawFrame frame mWindow xMax yMax (x+1) y
 		
 -- | Trace and draw a single pixel into the frame.
-drawPixel :: Frame -> Int -> Int -> ()
-drawPixel frame x y
+drawPixel :: Frame -> Maybe Window -> Int -> Int -> ()
+drawPixel frame mWindow x y
  = do	-- plot a pixel into the frame
 	color	= tracePixel x y
  	frame .point x y 
 		(colorf&{Frame} color.red color.green color.blue)
 		
 	-- only copy the frame to the screen evey ten lines
-	when (x == 0 
-	   && y `mod` 10 == 0)
-		frame .update
+	match 
+	 	| Just window	<- mWindow
+	 	, x == 0
+	 	, y `mod` 10 == 0
+	 	= window.update
+
+		| otherwise
+		= ()
 	
 tracePixel x y
  = do	x'	= toFloat x - toFloat windowSize.x / 2.0

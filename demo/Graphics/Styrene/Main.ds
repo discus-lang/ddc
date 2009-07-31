@@ -5,6 +5,7 @@ import QuadTree
 import Advance
 
 import Graphics.Render
+import Graphics.Window
 import Graphics.Shape
 
 timeStep	= 0.04
@@ -18,12 +19,20 @@ worldRotMax	= pi
 
 
 main ()
- = do	frame	= new&{Frame} "styrene" 800 800
-	coma frame worldInit
+ = do	frame	= new&{Frame}  800 800
+
+	match
+	 | argCount > 0	
+	 = do	mWindow	= Just (newWithFrame&{Window} "Styrene" frame)
+		coma frame mWindow worldInit
+			
+	 | otherwise	
+	 = do	coma frame Nothing worldInit
+		frame.putPPM
 
 
-coma :: Frame -> World -> ()
-coma frame world@(World actors _)
+coma :: Frame -> Maybe Window -> World -> ()
+coma frame mWindow world@(World actors _)
 
 	-- bail out after a number of frames
 	| worldRot >= worldRotMax
@@ -47,9 +56,12 @@ coma frame world@(World actors _)
 			, Scale 0.9 0.9
 			, drawWorld world']]
 
-	 	frame .update
-
-	 	coma frame world'
+		-- update the screen
+		match
+		 | Just window	<- mWindow	= window.update
+		 | otherwise			= ()
+	
+	 	coma frame mWindow world'
 
 -- advance the world a number of steps
 advance world force n	

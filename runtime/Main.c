@@ -19,7 +19,7 @@ void	_ddcRuntimeInit
 		, char** argv)
 {
 	// Stash our args
-	_ddcArgCount	= argc;
+	_ddcArgCount	= argc - 1;
 	_ddcArgValue	= argv;
 
 	// Allocate profile data.

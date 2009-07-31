@@ -373,3 +373,7 @@ charListOfFlatString' fs ix max
 	\= []
 	
 
+concatStrings :: [String] -> String
+concatStrings []	= ""
+concatStrings (str : rest)
+	= str % concatStrings rest
