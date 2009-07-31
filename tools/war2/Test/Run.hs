@@ -9,6 +9,7 @@ import Test.TestWin
 import War
 import Command
 import Config
+import Timing
 
 import Data.List
 import Util.Data.List
@@ -43,6 +44,6 @@ testRun test@(TestRun mainBin) way
 					{ testFailIOFail	= ioFail
 					, testFailOutFile	= mainRunOut
 					, testFailErrFile	= mainRunErr })
-
+		
 		return TestWinRun
 			{ testWinTime	= runTime }

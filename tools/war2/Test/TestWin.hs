@@ -14,7 +14,7 @@ data TestWin
 
 	-- Build succeeded
 	| TestWinBuild	
-		{ testWinTime	:: ClockTime
+		{ testWinTime	:: TimeDiff
 		, testWinSize	:: Int }
 
 	-- Build failed, as expected
@@ -22,7 +22,7 @@ data TestWin
 		
 	-- Compilation succeeded
 	| TestWinCompile
-		{ testWinTime	:: ClockTime
+		{ testWinTime	:: TimeDiff
 		, testWinSize	:: Int }
 
 	-- Compilation failed, as expected
@@ -30,14 +30,14 @@ data TestWin
 
 	-- Execution of shell script succeeded
 	| TestWinShell
-		{ testWinTime	:: ClockTime }
+		{ testWinTime	:: TimeDiff }
 
 	-- Execution of shell script failed, as expected
 	| TestWinShellError
 
 	-- Binary ran successfully
 	| TestWinRun
-		{ testWinTime	:: ClockTime }
+		{ testWinTime	:: TimeDiff }
 
 	-- File was as expected.
 	| TestWinDiff
@@ -82,6 +82,6 @@ pprTestWin win
 	TestWinDiff	  	-> "ok"
 
 
-pprTime :: ClockTime -> String
-pprTime time = padL formatTimeWidth (pprClockTime time)
+pprTime :: TimeDiff -> String
+pprTime time = padL formatTimeWidth (pprTimeDiff time)
 

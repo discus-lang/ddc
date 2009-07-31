@@ -53,7 +53,7 @@ instance Error IOFail where
  strMsg s	= IOFailOther s
 
 
-timeIOF_ :: IOF a -> IOF ClockTime
+timeIOF_ :: IOF a -> IOF TimeDiff
 timeIOF_ iof
  = do	let ioAction	= runErrorT iof 
 	(result, time)	<- liftIO $ timeIO ioAction

@@ -1,8 +1,8 @@
 {-# OPTIONS -fno-warn-missing-methods #-}
 
 module Timing 
-	( psecsOfClockTime
-	, pprClockTime
+	( pprTimeDiff
+	, timeDiffToPicoSec
 	, timeIO
 	, timeIO_)
 where
@@ -12,36 +12,42 @@ import System.Time
 import Control.Monad
 
 -- Timing ------------------------------------------------------------------------------------------
-pprClockTime (TOD sec_ psec_)
-  = let	psecs	= sec_ * 10^12 + psec_
+pprTimeDiff :: TimeDiff -> String
+pprTimeDiff timeDiff
+  = let	psecs	= timeDiffToPicoSec timeDiff
     in	show (psecs `div` 10^12) 
 		++ "." 
 		++ (take 3 $ padRc 12 '0' $ show $ psecs `mod` 10^12)
 
+
+timeDiffToPicoSec :: TimeDiff -> Integer
+timeDiffToPicoSec td
+	| 0	<- tdYear td
+	, 0	<- tdMonth td
+	= fromIntegral (tdDay  td)	* 10^12 * 60 * 60 * 24
+	+ fromIntegral (tdHour td)	* 10^12 * 60 * 60
+	+ fromIntegral (tdMin  td)	* 10^12 * 60
+	+ fromIntegral (tdSec  td) 	* 10^12
+	+ tdPicosec td
+
+ 
 padRc :: Int -> Char -> String -> String
 padRc n c str
-	= str ++ replicate (n - length str) c
-
-instance Num ClockTime where
- (TOD s1 p1) - (TOD s2 p2)	= TOD (s1 - s2) (p1 - p2)
- (TOD s1 p1) + (TOD s2 p2)	= TOD (s1 + s2) (p1 + p2)	 
+	= replicate (n - length str) c ++ str
 	
--- find the absolute number of pico secs in a clocktime
-psecsOfClockTime :: ClockTime -> Integer
-psecsOfClockTime (TOD sec psec)
-	= sec * 10^12 + psec
-
 
 -- | Time an action, returning the result along with the time it took to run.
-timeIO :: IO a -> IO (a, ClockTime)
+timeIO :: IO a -> IO (a, TimeDiff)
 timeIO action
  = do	timeStart	<- getClockTime
 	x		<- action 
 	timeEnd		<- getClockTime
 
-	return (x, timeEnd - timeStart)
+	let timeDiff	= diffClockTimes timeEnd timeStart
+
+	return (x, timeDiff)
 
 -- | Time an action, and only return the time it took to run
-timeIO_ :: IO a -> IO ClockTime
+timeIO_ :: IO a -> IO TimeDiff
 timeIO_ action
  =	liftM snd $ timeIO action
