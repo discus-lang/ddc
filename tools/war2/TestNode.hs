@@ -3,6 +3,7 @@ module TestNode
 	( TestId
 	, TestNode(..)
 	, testOfNode
+	, testIdOfNode
 	, node1
 	, expandWays
 	, chainTests
@@ -32,6 +33,9 @@ node1 test deps
 -- Get the test from this node's id.
 testOfNode :: TestNode -> Test
 testOfNode (TestNode (t, way) _)	= t
+
+testIdOfNode :: TestNode -> TestId
+testIdOfNode (TestNode tid _)		= tid
 
 
 -- | Expand these testnodes to run all these ways, in order.

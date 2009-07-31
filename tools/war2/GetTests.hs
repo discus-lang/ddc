@@ -112,22 +112,27 @@ getTestsInDir config dirPath
 	let testsHereExpanded
 		= expandWays (configWays config) testsAllWays
 
+	-- Cleanup after each set of tests if asked 
+	let testsFinal
+		| configClean config
+		, Just n1	<- takeLast $ testsHereExpanded
+		= testsHereExpanded 
+			++ [TestNode (TestClean dirPath, WayNil) [testIdOfNode n1]]
+
+		| otherwise
+		= testsHereExpanded
+
+
 	debugLn 
 		$  " Expandable tests " ++ dirPath ++ "\n"
 		++ (unlines $ map show $ testsAllWays)
 		++ " -- expanded --\n"
 		++ (unlines $ map show $ testsHereExpanded)
 		++ "\n"
+		++ " -- final -- \n"
+		++ (unlines $ map show $ testsFinal)
+		++ "\n"
 
-	-- Cleanup after each set of tests if asked 
-	let testsFinal
-		| configClean config
-		, Just n1	<- takeLast $ testsHereExpanded
-		= testsHereExpanded 
-			++ [node1 (TestClean dirPath) [testOfNode n1]]
-
-		| otherwise
-		= testsHereExpanded
 
 	-- See what dirs we can recurse into
 	dirsAll		<- lsDirsIn dirPath
