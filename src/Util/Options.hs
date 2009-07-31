@@ -37,7 +37,11 @@ munchTokens _       []			= []
 munchTokens options toks
 
 	-- An option that we recognise
-	| t@(TOption name) : ts		<- toks
+	| TOption name : ts		<- toks
+	, Just option			<- matchOption name options
+	= munchTokens_match options option ts
+
+	| TOptionEscape name : ts	<- toks
 	, Just option			<- matchOption name options
 	= munchTokens_match options option ts
 
@@ -73,6 +77,13 @@ munchTokens_match options option ts
 		strs		= map (\(TString s) -> s) strToks
 	  in	Right (sf strs) : munchTokens options rest
 
+	-- An escape option
+	--	Load up all other options until we hit the closing escape,
+	--	a new opening esape, or the end of input.
+ 	| OOptEscape ctor names use desc	<- option
+	= let 	(toks,  rest)	= span (\t -> (t =@= TString{} || t =@= TOption{})) ts
+		strs		= map stringOfToken toks
+	  in	Right (ctor strs) : munchTokens options rest
 
 
 -- | Select the option which this string refers to
@@ -82,21 +93,26 @@ matchOption name options
  	[] 
 	 -> Nothing
 
-	(o@(OFlag a names desc) : os)
+	o@(OFlag a names desc) : os
 	 -> if elem name names
 	 	then Just o
 		else matchOption name os
 		
-	(o@(OOpt a names use desc) : os)
+	o@(OOpt a names use desc) : os
 	 -> if elem name names
 	 	then Just o
 		else matchOption name os
 
-	(o@(OOpts a names use desc) : os)
+	o@(OOpts a names use desc) : os
 	 -> if elem name names
 	 	then Just o
 		else matchOption name os
 		
+	o@(OOptEscape a names use desc) : os
+	 -> if elem name names
+		then Just o
+		else matchOption name os
+
 	(_ : os)
 	 ->	matchOption name os
 

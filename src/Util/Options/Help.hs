@@ -58,17 +58,21 @@ makeHelp indent o
  	OGroup tag name	
 	 -> name ++ " (" ++ tag ++ ")\n"
 
-	OFlag  opt names desc
+	OFlag _ names desc
 	 -> pprStr ()
 	 $  padL indent ("    " % punc ", " names) % desc % "\n"
 
-	OOpt  optF names use desc
+	OOpt  _ names use desc
 	 -> pprStr ()
 	 $  padL indent ("    " % use) % desc % "\n"
 
-	OOpts  optF names use desc
+	OOpts  _ names use desc
 	 -> pprStr ()
 	 $  padL indent ("    " % use) % desc % "\n"
 	 
+	OOptEscape _ names use desc
+	 -> pprStr ()
+	 $  padL indent ("    " % use) % desc % "\n"
+	
 	OBlank
 	 -> "\n"

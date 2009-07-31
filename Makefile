@@ -126,7 +126,7 @@ library/Prelude.di : bin/ddc
 
 
 # -- Test Driver -----------------------------------------------------------------------------------
-war2_hs	= $(shell find tools/war2 -name "*.hs")
+war2_hs	= $(shell find tools/war2 -name "*.hs") $(shell find src/Util -name "*.hs")
 
 bin/war2 : $(war2_hs)
 	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts \

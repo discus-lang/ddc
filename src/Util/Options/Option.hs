@@ -41,6 +41,20 @@ data Option a
 		, optionUsage		:: String
 		, optionDescription	:: String }
 
+	-- Build a string of options, without interpreting them
+	--	eg  ddc +RTS -O2 --debug   
+	--	Loads  "-O2" "--debug" into the OptEscape constructor, 
+	--	instead of interpreting them right now.
+	--
+	| OOptEscape
+		{ optionCtorStrings	:: [String] -> a
+		, optionFlags		:: [String]
+		, optionUsage		:: String
+		, optionDescription	:: String }
+
+	| OOptEscapeClose
+		{ optionEscapeName	:: String }
+
 	-- Command line args that aren't associated with particular flags
 	--	get placed in this default constructor
 	| ODefault	

@@ -10,6 +10,7 @@ import GetTests
 import Util
 import Util.Options			as Options
 import Util.Options.Help		as Options
+import Util.Options.Token		as Options
 
 import Util.Terminal.VT100
 import Util.FilePath
@@ -39,6 +40,9 @@ main
 	args	<- getArgs
 	let (errs, options)	= parseOptions warOptions args
 	let help		= makeOptionHelp 30 ["all"] warOptions 
+
+--	print (map Options.tokenise args)
+--	print options
 
 	when (elem OptHelp options)
 	 $ do	putStr $ help ++ "\n"
