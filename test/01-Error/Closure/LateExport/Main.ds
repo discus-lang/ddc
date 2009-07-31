@@ -1,10 +1,9 @@
 
-
 succ n = n + 1
 
 main ()
  = do	ref	= Ref id
 	f	= \x -> ref.x
  	ref#x	#= succ
-	f () "oh noes"
+	putStr $ f () "oh noes"
 	
