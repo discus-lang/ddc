@@ -1,0 +1,80 @@
+instance Monad (Parser !e1 $c1 tok) where
+  return x	
+     = Parser $ \str -> Success x str
+
+  (>>=) (Parser parse1) mkParser2
+     = Parser $ \str ->
+         case parse1 str of
+  	   Success result rest	-> runParser (mkParser2 result) rest
+	   err			-> err
+
+
+foreign import instance_Monad_Parser_GtGtEq
+        :: forall t0 t1 %r0 !e0 !e1 $c0 $c1
+        .  Parser %r0 !e1 $c1 t0 t1 -($c3)> (t1 -(!e0 $c0)> Parser %r0 !e1 $c1 t0 t1) -(!e2 $c2)> Parser %r0 !e1 $c1 t0 t1
+        :- !e1        :> !{Base.!Read %r0; !e0}
+        ,  !e2        = Base.!Read %r0
+        ,  $c1        :> mkParser2 : $c0
+        ,  $c2        = ${$c1 \ ${parse1; mkParser2}; xSD1 : %r0; xSD1 : %r0 $> !e1; xSD1 : %r0 $> $c1; xSD1 : %r0 $> t0; xSD1 : %r0 $> t1}
+        ,  $c3        = $c1 \ ${parse1; mkParser2; xSD1}
+        :$ Base.Data -> Base.Thunk -> Base.Data;
+
+
+Main.instance_Monad_Parser_GtGtEq
+ =      /\  *tTS2, *tTS4, %rTS5, 
+            !eTS2, (!eTS6 :> !{!Read %rTS5; !eTS2}), 
+	    $cTS2, ($cTS1 :> mkParser2 : $cTS2) ->
+
+        \  (xSD1 :: Main.Parser %rTS5 (!eTS6 :> !{!Read %rTS5; !eTS2}) ($cTS1 :> mkParser2 : $cTS2) *tTS2 *tTS4)
+                             of ($cTS1 :> mkParser2 : $cTS2 \ ${parse1; mkParser2; xSD1}) ->
+
+        \  (mkParser2 :: *tTS4 -(!eTS2 $cTS2)> Main.Parser %rTS5 (!eTS6 :> !{!Read %rTS5; !eTS2}) ($cTS1 :> mkParser2 : $cTS2) *tTS2 *tTS4)
+                             of (!Read %rTS5)
+                                ${$cTS1 :> mkParser2 : $cTS2 \ ${parse1; mkParser2}; xSD1 : %rTS5; 
+				   xSD1 : !eTS6 :> !{!Read %rTS5; !eTS2}; 
+				   xSD1 : $cTS1 :> mkParser2 : $cTS2; xSD1 : *tTS2; xSD1 : *tTS4} ->
+
+        [** (Main.Parser %rTS5 (!eTS6 :> !{!Read %rTS5; !eTS2}) ($cTS1 :> mkParser2 : $cTS2) *tTS2 *tTS4) ]
+        do {
+                match {
+                        | Parser
+                                { .0 = parse1 :: Data.List.List %rTS5 *tTS2 -((!eTS6 :> !{!Read %rTS5; !eTS2}) ($cTS1 :> mkParser2 : $cTS2))> 
+				                       Main.Reply %rTS5 *tTS2 *tTS4 } <- do { xSD1; }
+                        = do {
+                                xCS3    = Parser *tTS2 *tTS4 %rTS5
+                                                (!eTS6 :> !{!Read %rTS5; !eTS2})
+                                                ($cTS1 :> mkParser2 : $cTS2);
+                                
+                                xCS4
+                                 =      \  (str :: Data.List.List %rTS5 *tTS2)
+                                                             of !{!eTS6 :> !{!Read %rTS5; !eTS2}; !Read %rTS5; !eTS2}
+                                                                ($cTS1 :> mkParser2 : $cTS2) ->
+                                        do {
+                                                xC10    = parse1 str;
+                                                
+                                                match {
+                                                        | Success
+                                                                { .0 = result :: *tTS4
+                                                                , .1 = rest :: Data.List.List %rTS5 *tTS2 } <- do { xC10; }
+                                                        = do {
+                                                                xCS2    = mkParser2 result;
+                                                                
+                                                                runParser *tTS2 *tTS4 %rTS5
+                                                                        (!eTS6 :> !{!Read %rTS5; !eTS2})
+                                                                        ($cTS1 :> mkParser2 : $cTS2) xCS2 rest;
+                                                        };
+                                                        
+                                                        | err <- do { xC10; }
+                                                        = do { err; };
+                                                };
+                                        };
+                                
+                                ($)
+                                        (Data.List.List %rTS5 *tTS2 -((!eTS6 :> !{!Read %rTS5; !eTS2}) ($cTS1 :> mkParser2 : $cTS2))> 
+					                                 Main.Reply %rTS5 *tTS2 *tTS4)
+                                        (Main.Parser %rTS5 (!eTS6 :> !{!Read %rTS5; !eTS2}) ($cTS1 :> mkParser2 : $cTS2) *tTS2 *tTS4)
+                                        !PURE
+                                        $EMPTY xCS3 xCS4;
+                        };
+                };
+        };
