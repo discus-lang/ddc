@@ -6,6 +6,8 @@ import Control
 import Update
 import Plan
 import Display
+import Graphics.Frame
+import Graphics.Window
 
 import System.Network
 import System.Environment
@@ -17,6 +19,12 @@ data Link
 	= Link { 
 		socket	:: Int;		-- socket for this connection
 		slack	:: [String]; 	-- extra tokens left over after reading last message
+	}
+
+data Console %r1 %r2
+	= Console {
+		frame		:: Frame %r1 %r2;
+		window		:: Maybe (Window %r1 %r2);
 	}
 	
 -- Main --------------------------------------------------------------------------------------------
@@ -30,12 +38,17 @@ main ()
 		sock	 = boxInt32 (connect 
 					(fs_arg1 .danger_string)
 					(unboxInt32 (read (getArgValue 2))))
-		init (Link sock [])
+
+		frame	= new&{Frame} winSizeX winSizeY
+		window	= Just (newWithFrame&{Window} "Rover" frame)
+		console	= Console frame window
+	
+		init (Link sock []) console
    	
 
 -- Receive the init message and initialise the rover
 --	If the first message isn't an init then we're screwed.
-init link
+init link console
  = case recvServer link of
  	msg@MsgInit{}
 	 -> do	rover 	:: Rover %r %i %s	
@@ -52,23 +65,23 @@ init link
 		
 		control	= Control
 			
-		coma link rover control
+		coma link rover control console
 
 -- Main loop
 --	Accept telemetry from server and send control messages back
 --
-coma :: Link -> Rover -> Control -> ()
-coma link rover control
+coma :: Link -> Rover -> Control -> Console -> ()
+coma link rover control console
  = do	
-	res	= try (pulse link rover control)
+	res	= try (pulse link rover control console)
 	          catch _ -> putStr "trouble\n"
 
-	coma link rover control
+	coma link rover control console
 	
 
 -- | Pulse the world
-pulse :: Link -> Rover -> Control -> ()
-pulse link rover control
+pulse :: Link -> Rover -> Control -> Console -> ()
+pulse link rover control console
  = do	
  	-- receive a message from the server
 	msg	= recvServer link
@@ -86,9 +99,12 @@ pulse link rover control
 	sendCommand (link.socket) cmd
 
 	-- update the window
-	updateFrame rover 
+	updateFrame rover console.frame
 
-	()
+	-- 
+	match
+	 | Just window	<- console.window	= window.update
+	 | otherwise				= ()
 
 
 
@@ -109,6 +125,10 @@ recvServer link
 	-- if the message len == 0 then assume the server has died
 	when (boxInt32 msgLen == 0)
 	 throw Exception "server has died."
+
+	str	= SChunk buf
+
+	putStr str
 
 	recvParse (SChunk buf)
 

@@ -11,11 +11,9 @@ winSizeX	= 500
 winSizeY	= 500
 scale		= 2.0
 
-frame :: Frame %c %m :- Mutable %m
-frame		= new&{Frame} "rover" winSizeX winSizeY
 
-updateFrame :: Rover -> ()
-updateFrame rover
+updateFrame :: Rover -> Frame -> ()
+updateFrame rover frame
  = do	-- center point
  	cX	= toFloat $ winSizeX / 2
  	cY	= toFloat $ winSizeY / 2
@@ -46,7 +44,6 @@ updateFrame rover
 
 		]
 		
-	frame.update
 
 primHazard :: Rover -> Hazard -> [Primitive]
 primHazard rover hazard

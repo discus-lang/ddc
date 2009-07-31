@@ -8,7 +8,6 @@
 #	doc		-- build Haddock docks
 #
 #	test		-- run quick check and regression tests
-#	demo		-- run the demos
 #
 #       clean           -- clean everything
 #       cleanWar        -- clean libraries and tests, but leave the compiler build alone
@@ -134,21 +133,12 @@ bin/war2 : $(war2_hs)
 
 
 # -- Run all avaliable tests -----------------------------------------------------------------------
-#	Not the demos, as they can open up new windows
 .PHONY	: test
 test	: bin/ddc bin/war2 library/Prelude.di
 	@echo "* Running tests ------------------------------------------------"
 	bin/ddc --test
 	@echo
 	bin/war2 test
-	@echo
-
-
-# -- Run the demos --------------------------------------------------------------------------------
-.PHONY	: demo
-demo	: bin/ddc bin/war2 library/Prelude.di
-	@echo "* Running demos ------------------------------------------------"
-	bin/war2 demo
 	@echo
 
 
@@ -186,7 +176,7 @@ cleanRuntime :
 .PHONY  : cleanWar
 cleanWar :
 	@echo "* Cleaning war"
-	@find library test demo \
+	@find library test \
 			-name "*.dump-*.*"  \
 		-o	-name "*.graph-*.dot" \
 		-o	-name "*.di"    \
