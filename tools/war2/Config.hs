@@ -1,7 +1,8 @@
 
 module Config where
 
-import Util.Options	as Options
+import Util.Options		as Options
+import Util.Options.Option	as Options
 import Util
 
 data Config
@@ -18,7 +19,7 @@ data Opt
 	= OptHelp			-- ^ Show command help.
 	| OptDebug			-- ^ Emit debugging info for the war test driver.
 	| OptFlagsDDC  [String]		-- ^ Extra flags to pass to DDC when compiling test files.
-	| OptTestDirs  [String]		-- ^ Only run the tests in these dirs.
+	| OptTestDir   String		-- ^ Only run the tests in these dirs.
         | OptThreads   Int		-- ^ Use this many threads when running tests.
         | OptBatch			-- ^ Don't interactively ask what to do if a test fails.
 	| OptLogFailed String		-- ^ Log failed tests to this file
@@ -26,7 +27,7 @@ data Opt
 
 warOptions :: [Option Opt]
 warOptions
- = 	[ ODefault	OptTestDirs
+ = 	[ ODefault	OptTestDir
  
 	, OFlag		OptHelp
  			[ "-h", "--help"]
@@ -56,10 +57,3 @@ warOptions
 			"Log failed tests to this file"
 	]
 
-
--- | Parse some command line options
-parseOptions :: [String] -> ([String], [Opt])
-parseOptions args
-	= Options.munch warOptions
-	$ Options.tokenise
-	$ catInt " " args

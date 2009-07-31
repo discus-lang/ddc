@@ -8,7 +8,9 @@ import Format
 import GetTests
 
 import Util
-import Util.Options
+import Util.Options			as Options
+import Util.Options.Help		as Options
+
 import Util.Terminal.VT100
 import Util.FilePath
 import Util.Control.Dispatch
@@ -35,7 +37,7 @@ main :: IO ()
 main 
  = do	-- Parse command line options, and exit if they're no good.
 	args	<- getArgs
-	let (errs, options)	= parseOptions args
+	let (errs, options)	= parseOptions warOptions args
 	let help		= makeOptionHelp 30 ["all"] warOptions 
 
 	when (elem OptHelp options)
@@ -77,8 +79,7 @@ doWar
 	testDirs
 		<- liftIO
 		.  mapM (makeRelativeToCurrentDirectory <=< canonicalizePath)
-		.  concat
-		$  [dirs | OptTestDirs dirs <- configOptions config]
+		$  [dirs | OptTestDir dirs <- configOptions config]
 
 	-- Get all the tests in these directories
 	backNodes	<- liftM concat 
