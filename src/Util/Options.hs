@@ -45,10 +45,6 @@ munchTokens options toks
 	, Just option			<- matchOption name options
 	= munchTokens_match options option ts
 
-	-- An option that isn't in out accepted options list.
-	| TOption name : ts		<- toks
-	= [Left $ "unrecognised flag: " ++ name ++ ""]
-	
 	-- Some string by itself
 	--	If we have a default option then use that
 	--	Otherwise report an error
@@ -57,6 +53,15 @@ munchTokens options toks
 		[]	-> [Left $ "unrecognised flag: " ++ s ++ ""]
 		[ctor]	-> Right (ctor s) : munchTokens options ts
 		_	-> error "Util.Options: multiple default options in list."
+
+	-- An option that isn't in out accepted options list.
+	| TOption name : ts		<- toks
+	= [Left $ "unrecognised flag: " ++ name ++ ""]
+
+	-- An option that isn't in out accepted options list.
+	| TOptionEscape name : ts		<- toks
+	= [Left $ "unrecognised flag: " ++ name ++ ""]
+
 
 
 munchTokens_match options option ts

@@ -10,6 +10,7 @@ import Test.TestFail
 import Test.TestWin
 import War
 import Command
+import Config
 
 import Data.List
 import System.Time
@@ -18,8 +19,8 @@ import System.Directory
 import Control.Monad.Error
 
 -- | Build a program starting from a Main.ds file
-testShellError :: Test -> War TestWin
-testShellError test@(TestShellError mainSH)
+testShellError :: Test -> Way -> War TestWin
+testShellError test@(TestShellError mainSH) way
  | isSuffixOf "Main.sh" mainSH
  = do	debugLn $ "* TestShellError " ++ mainSH
 

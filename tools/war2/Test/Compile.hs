@@ -10,6 +10,7 @@ import Test.TestFail
 import Test.TestWin
 import War
 import Command
+import Config
 
 import Util
 import Util.FilePath
@@ -18,8 +19,8 @@ import Data.List
 import System.Time
 
 -- | Build a program starting from a Main.ds file
-testCompile :: Test -> War TestWin
-testCompile test@(TestCompile srcDS)
+testCompile :: Test -> Way -> War TestWin
+testCompile test@(TestCompile srcDS) way
  | isSuffixOf ".ds" srcDS
  = do	debugLn $ "* TestCompile " ++ srcDS 
 
@@ -43,6 +44,7 @@ testCompile test@(TestCompile srcDS)
 	-- compile the file
 	let cmdBuild	= "bin/ddc"
 			++ " -c " ++ srcDS
+			++ " "    ++ (catInt " " $ wayOptsComp way)
 			++ " > "  ++ srcCompOut
 			++ " 2> " ++ srcCompErr
 				

@@ -8,13 +8,15 @@ import Test.TestFail
 import Test.TestWin
 import War
 import Command
+import Config
 
 import Data.List
+import Util.Data.List
 import System.Time
 import Control.Monad.Error
 
-testRun :: Test -> War TestWin
-testRun test@(TestRun mainBin)
+testRun :: Test -> Way -> War TestWin
+testRun test@(TestRun mainBin) way
  | isSuffixOf (".bin") mainBin
  = do	debugLn	$ "* TestRun " ++ mainBin
 
@@ -29,6 +31,7 @@ testRun test@(TestRun mainBin)
 
 		-- run the test
 		let cmdRun	= mainBin
+				++ " "    ++ (catInt " " $ wayOptsRun way)
 				++ " > "  ++ mainRunOut
 				++ " 2> " ++ mainRunErr
 		

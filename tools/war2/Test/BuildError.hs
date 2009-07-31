@@ -10,6 +10,7 @@ import Test.TestFail
 import Test.TestWin
 import War
 import Command
+import Config
 
 import Util
 import Util.FilePath
@@ -21,8 +22,8 @@ import Control.Monad.Error
 
 
 -- | Build a program starting from a Main.ds file
-testBuildError :: Test -> War TestWin
-testBuildError test@(TestBuildError mainDS)
+testBuildError :: Test -> Way -> War TestWin
+testBuildError test@(TestBuildError mainDS) way
  | isSuffixOf "Main.ds" mainDS
  = do	debugLn $ "* TestBuildError " ++ mainDS 
 
@@ -52,6 +53,7 @@ testBuildError test@(TestBuildError mainDS)
 	let cmdBuild	= "bin/ddc"
 			++ " -make " ++ mainDS
 			++ " -o " ++ mainBin
+			++ " " 	  ++ (catInt " " $ wayOptsComp way)
 			++ " > "  ++ mainCompOut
 			++ " 2> " ++ mainCompErr
 				

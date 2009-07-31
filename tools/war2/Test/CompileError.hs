@@ -5,6 +5,7 @@ module Test.CompileError
 	(testCompileError)
 where
 
+import Config
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
@@ -21,8 +22,8 @@ import Control.Monad.Error
 
 
 -- | Build a program starting from a Main.ds file
-testCompileError :: Test -> War TestWin
-testCompileError test@(TestCompileError srcDS)
+testCompileError :: Test -> Way -> War TestWin
+testCompileError test@(TestCompileError srcDS) way
  | isSuffixOf ".ds" srcDS
  = do	debugLn $ "* TestCompileError " ++ srcDS 
 
@@ -46,6 +47,7 @@ testCompileError test@(TestCompileError srcDS)
 	-- compile the file
 	let cmdBuild	= "bin/ddc"
 			++ " -c " ++ srcDS
+			++ " "    ++ (catInt " " $ wayOptsComp way)
 			++ " > "  ++ srcCompOut
 			++ " 2> " ++ srcCompErr
 				

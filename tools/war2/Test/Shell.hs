@@ -10,14 +10,15 @@ import Test.TestFail
 import Test.TestWin
 import War
 import Command
+import Config
 
 import Data.List
 import System.Time
 import System.Directory
 
 -- | Build a program starting from a Main.ds file
-testShell :: Test -> War TestWin
-testShell test@(TestShell mainSH)
+testShell :: Test -> Way -> War TestWin
+testShell test@(TestShell mainSH) way
  | isSuffixOf "Main.sh" mainSH
  = do	debugLn $ "* TestShell " ++ mainSH
 

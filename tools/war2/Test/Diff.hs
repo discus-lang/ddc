@@ -8,13 +8,14 @@ import Test.TestFail
 import Test.TestWin
 import War
 import Command
+import Config
 
 import Util.FilePath
 import Control.Monad.Error
 
 -- | Build a program starting from a Main.ds file
-testDiff :: Test -> War TestWin
-testDiff test@(TestDiff exp out)
+testDiff :: Test -> Way -> War TestWin
+testDiff test@(TestDiff exp out) way
  = do	gotExp	<- liftIOF $ fileExists exp
 	gotOut	<- liftIOF $ fileExists out
 

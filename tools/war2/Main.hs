@@ -4,8 +4,8 @@ import Test
 import Command
 import War
 import Timing
-import Format
 import GetTests
+import Format
 
 import Util
 import Util.Options			as Options
@@ -41,28 +41,54 @@ main
 	let (errs, options)	= parseOptions warOptions args
 	let help		= makeOptionHelp 30 ["all"] warOptions 
 
---	print (map Options.tokenise args)
---	print options
-
+	-- Print command usage if asked for
 	when (elem OptHelp options)
 	 $ do	putStr $ help ++ "\n"
 		exitSuccess
 
+	-- Print errors if there are any
 	when (not $ null errs)
 	 $ do	putStr $ (catInt "\n" errs) ++ "\n"
 		putStr $ help ++ "\n"
 		exitFailure
 
-	-- Setup config
+	-- Calculate all the ways we should run the tests
+	--	If no options are given for comp or run, then just use
+	--	a "normal" way with no options.
+	let makeWayPair (name:opts)	= (name, opts)
+	    makeWayPair way		= error $ "bad way specification " ++ catInt " " way
+
+	let compWayPairs_	= [makeWayPair opts | OptCompWay opts	<- options ]
+	    compWayPairs	= if null compWayPairs_ 
+					then [("normal", [])] 
+					else compWayPairs_
+
+	    runWayPairs_	= [makeWayPair opts | OptRunWay  opts	<- options ]
+	    runWayPairs		= if null runWayPairs_ 
+					then [("normal", [])]
+					else runWayPairs_
+
+	let ways		= [ WayOpts (compName ++ "." ++ runName) compOpts runOpts
+					| (compName, compOpts)	<- compWayPairs
+					, (runName,  runOpts)	<- runWayPairs ]
+
+	when (elem OptDebug options)
+	 $ do	putStr	$  "* Ways\n"
+			++ unlines [ show way | way <- ways ]
+			++ "\n"
+
+	-- Setup war config
 	let config
 		= Config
 		{ configOptions		= options
 		, configDebug		= elem OptDebug options
 		, configThreads		= fromMaybe 1 (takeLast [n | OptThreads n <- options])
 		, configBatch		= elem OptBatch options 
-		, configLogFailed	= takeLast [s | OptLogFailed s <- options]
+		, configLogFailed	= takeLast [s | OptLogFailed s		<- options]
+		, configWays		= ways
 		}
 
+	-- run the main program
 	runWar config doWar
 
 	return ()
@@ -87,7 +113,7 @@ doWar
 
 	-- Get all the tests in these directories
 	backNodes	<- liftM concat 
-			$  mapM  getTestsInDir testDirs
+			$  mapM  (getTestsInDir config) testDirs
 
 	-- Build a work graph of all the tests
 	let workGraph	= WorkGraph.fromBackNodes
@@ -102,7 +128,7 @@ doWar
 		let testsFailStr
 			= concat
 			$ [ " * " ++ pprTest test ++ " " ++ pprTestFail fail ++ "\n"
-				| (test, Left fail) <- Map.toList results ]
+				| ((test, way), Left fail) <- Map.toList results ]
 			
 
 		io $ writeFile logFail testsFailStr
@@ -113,8 +139,8 @@ doWar
 
 -- DispatchTests ----------------------------------------------------------------------------------
 dispatch 
-	:: WorkGraph Test 		-- tests to run
-	-> War (Map Test TestResult)	-- test results
+	:: WorkGraph (Test, Way)		-- tests to run
+	-> War (Map (Test, Way) TestResult)	-- test results
 
 dispatch graph
  = do	
@@ -144,34 +170,36 @@ dispatch graph
 
 
 -- | Called when a test is ignored because one of its parents failed.
-hookIgnored :: Config -> Test -> IO ()
-hookIgnored config test
- = do 	putStr $ pprResult (not $ configBatch config) test (Left TestIgnore) ++ "\n"
+hookIgnored :: Config -> (Test, Way) -> IO ()
+hookIgnored config (test, way)
+ = do 	putStr $ pprResult (not $ configBatch config) test way (Left TestIgnore) ++ "\n"
 	hFlush stdout
 
 -- | Called when a test has finished running
 hookFinished 
-	:: Config 			-- ^ war config
-	-> MVar (Map Test TestResult)	-- ^ test results
-	-> Test 			-- ^ the test that has finished
-	-> TestResult 			-- ^ result of the test
+	:: Config 				-- ^ war config
+	-> MVar (Map (Test, Way) TestResult)	-- ^ test results
+	-> (Test, Way) 				-- ^ the test that has finished
+	-> TestResult 				-- ^ result of the test
 	-> IO ()
 
-hookFinished config varResult test result
+hookFinished config varResult (test, way) result
  = do	
 	-- add the rest to the result set
-	io $ modifyMVar_ varResult (\m -> return $ Map.insert test result m)
+	io $ modifyMVar_ 
+		varResult 	
+		(\m -> return $ Map.insert (test, way) result m)
 
-	hookFinished_ask config test result
+	hookFinished_ask config test way result
 	
 
-hookFinished_ask config test result
+hookFinished_ask config test way result
 
 	-- If checked a file against an expected output and it was different,
 	--	then ask the user what to do about it.
 	| Left (TestFailDiff fileExp fileOut fileDiff)	<- result
 	= do	
-		putStr 	$ pprResult (not $ configBatch config) test result ++ "\n"
+		putStr 	$ pprResult (not $ configBatch config) test way result ++ "\n"
 		putStr	$  "\n"
 			++ "-- Output Differs  ----------------------------------------------------------\n"
 			++ "   expected file: " ++ fileExp	++	"\n"
@@ -189,7 +217,7 @@ hookFinished_ask config test result
 		return ()
 
 	| otherwise
-	= do	putStr $ pprResult (not $ configBatch config) test result ++ "\n"
+	= do	putStr $ pprResult (not $ configBatch config) test way result ++ "\n"
 		hFlush stdout
 
 
@@ -249,7 +277,7 @@ hookFinished_askDiff
 -- | The dispatch worker action
 workerAction 
 	:: Config
-	-> DispatchAction Test TestResult
+	-> DispatchAction (Test, Way) TestResult
 	
 workerAction config vTest vResult
  = do	tid	<- myThreadId
@@ -269,25 +297,27 @@ workerAction config vTest vResult
 	
 	
 -- Run Test ----------------------------------------------------------------------------------------
+
 -- | Run a single test
-runTest :: Test -> War TestWin
-runTest test
+runTest :: (Test, Way) -> War TestWin
+runTest testWay@(test, way)
  = case test of
-	TestBuild{}		-> testBuild	    test
-	TestBuildError{}	-> testBuildError   test
-	TestShell{}		-> testShell	    test
-	TestShellError{}	-> testShellError   test
-	TestRun{}		-> testRun	    test
-	TestCompile{}		-> testCompile      test
-	TestCompileError{}	-> testCompileError test
-	TestDiff{}		-> testDiff	    test
+	TestBuild{}		-> testBuild	    test way
+	TestBuildError{}	-> testBuildError   test way
+	TestShell{}		-> testShell	    test way
+	TestShellError{}	-> testShellError   test way
+	TestRun{}		-> testRun	    test way
+	TestCompile{}		-> testCompile      test way
+	TestCompileError{}	-> testCompileError test way
+	TestDiff{}		-> testDiff	    test way
 
 
 -- Pretty -------------------------------------------------------------------------------------------
 -- | Pretty print the result of a test
-pprResult :: Bool -> Test -> TestResult -> String
-pprResult color test result
+pprResult :: Bool -> Test -> Way -> TestResult -> String
+pprResult color test way result
  = let	sTest	= pprTest test
+	sWay	= wayName way
 	sResult	= case result of
 			Left  TestIgnore -> "ignored"
 
@@ -301,6 +331,6 @@ pprResult color test result
 			 | color	-> pprTestWinColor testWin
 			 | otherwise	-> pprTestWin      testWin
 
-  in	" * " ++ sTest ++ sResult
+  in	" * " ++ sTest ++ " " ++ Format.padR 20 sWay ++ sResult
 
 

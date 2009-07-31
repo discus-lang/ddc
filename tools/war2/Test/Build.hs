@@ -9,25 +9,30 @@ where
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
+import Util.Data.List
 import War
 import Command
+import Config
 
 import Data.List
 import System.Time
 
 -- | Build a program starting from a Main.ds file
-testBuild :: Test -> War TestWin
-testBuild test@(TestBuild mainDS)
+testBuild :: Test -> Way -> War TestWin
+testBuild test@(TestBuild mainDS) way
  | isSuffixOf "Main.ds" mainDS
  = do	debugLn $ "* TestBuild " ++ mainDS 
 
 	let mainDir	= take (length mainDS - length "Main.ds") mainDS
 
-	-- touch all the .ds files here to ensure that DDC builds them again
+	-- touch all the .ds files here, and clean up any .di  to ensure that DDC builds them again
 	liftIOF 
          $ do	files	<- lsFilesIn mainDir
 		mapM_ (\f -> system $ "touch " ++ f)
-			$ filter (isSuffixOf ".ds") files	
+			$ filter (isSuffixOf ".ds") files
+		
+		mapM_ (\f -> system $ "rm " ++ f)
+			$ filter (isSuffixOf ".di") files
 
 	-- the full path name of the test file
 	let mainDS	= mainDir ++ "Main.ds"
@@ -47,6 +52,7 @@ testBuild test@(TestBuild mainDS)
 	let cmdBuild	= "bin/ddc"
 			++ " -make " ++ mainDS
 			++ " -o " ++ mainBin
+			++ " "    ++ (catInt " " $ wayOptsComp way)
 			++ " > "  ++ mainCompOut
 			++ " 2> " ++ mainCompErr
 				

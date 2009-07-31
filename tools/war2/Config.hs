@@ -5,13 +5,38 @@ import Util.Options		as Options
 import Util.Options.Option	as Options
 import Util
 
+-- | A way to build the test
+--	This holds extra options to pass to the program.
+data Way
+	= WayNil
+	| WayOpts 
+		{ wayName	:: String 
+		, wayOptsComp	:: [String] 
+		, wayOptsRun	:: [String] }
+	deriving (Eq, Ord, Show)
+
+
 data Config
 	= Config
+
+	-- Raw options list passed to war.
 	{ configOptions		:: [Opt] 
+
+	-- Whether to emit debugging info for war.
 	, configDebug		:: Bool
+
+	-- Number of threads to use when running tests.
 	, configThreads		:: Int 
+
+	-- Whether to run in batch mode with no color and no interactive
+	--	test failure resolution.
 	, configBatch		:: Bool 
-	, configLogFailed	:: Maybe FilePath }
+
+	-- Where to write the list of failed tests to.
+	, configLogFailed	:: Maybe FilePath 
+
+	-- What ways to compile the tests with.
+	, configWays		:: [Way] }
 	deriving (Show, Eq)
 
 
@@ -24,7 +49,8 @@ data Opt
         | OptThreads   Int		-- ^ Use this many threads when running tests.
         | OptBatch			-- ^ Don't interactively ask what to do if a test fails.
 	| OptLogFailed String		-- ^ Log failed tests to this file
-	| OptWay       [String]		-- ^ Define flags to use as a DDC way
+	| OptCompWay   [String]		-- ^ Flags to compile tests with
+	| OptRunWay    [String]		-- ^ Flags to run tests with 
 	deriving (Show, Eq)
 
 
@@ -60,9 +86,14 @@ warOptions
 			"--logFailed <file>"
 			"Log failed tests to this file."
 
-	, OOptEscape	OptWay
-			[ "+WAY" ]
-			"+WAY <name> <options..>"
+	, OOptEscape	OptCompWay
+			[ "+compway" ]
+			"+compway <name> <options..>"
 			"Compile tests with these options."
+
+	, OOptEscape	OptRunWay
+			[ "+runway" ]
+			"+runway <name> <options..>"
+			"Run test binaries with these options."
 	]
 
