@@ -25,11 +25,11 @@ data Arg
 	| Verbose
 	| Quiet
 	| Compile	[String]
-	| InputFile	[String]
-	| OutputFile	[String]
+	| InputFile	String
+	| OutputFile	String
 	| ImportDirs	[String]
 	| Make		[String]
-	| PathBase	[String]
+	| PathBase	String
 
 	| NoImplicitPrelude
 
@@ -297,7 +297,7 @@ options	=
 			["-q", "-quiet"]
 			"Don't print build info to stdout."
 
-	, OOpts		PathBase
+	, OOpt		PathBase
 			["-B",  "-basedir"]
 			"-B, -basedir <path>"
 			"The base directory containing ./library and ./runtime"
@@ -305,15 +305,16 @@ options	=
 	, OBlank
 	, OOpts		Compile
 			["-c",	"-compile"]
-			"-c, -compile <file>"
+			"-c, -compile <files..>"
 			"Compile .ds to .o"
 
+	-- allow --make for compatabilty with GHC
 	, OOpts		Make
-			["-m", "-make"]
-			"-m, -make    <file>"
-			"Recursively compile and link (doesn't rebuild, use GNU make for that)"
+			["-m", "-make", "--make"]		
+			"-m, -make    <files..>"
+			"Recursively compile and link these sources (doesn't rebuild, use GNU make for that)"
 
-	, OOpts		OutputFile
+	, OOpt		OutputFile
 			["-o", "-output"]
 			"-o, -output  <file>"
 			"Redirect output to this file."
@@ -512,7 +513,6 @@ options	=
 	, OFlag		DumpSeaInit		["-dump-sea-init"]		"Insert module initialisation code."
 	, OBlank
 	]
-
 
 
 -- | Convert an arg into the pretty mode it enables

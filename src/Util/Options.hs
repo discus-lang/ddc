@@ -16,58 +16,63 @@ import Util.Options.Option
 -- | Parse some options from a string
 parseOptions :: [Option a] -> [String] -> ([String], [a])
 parseOptions options strs
-	= munch options $ tokenise (catInt " " strs)
-
+	= munch options $ catMap tokenise strs
 
 -- | Parse some option strings
-munch :: [Option a]  -> [Token] -> ([String], [a])
+munch 	:: [Option a]  		-- ^ Accepted options
+	-> [Token] 		-- ^ Tokens of input
+	-> ([String], [a])	-- ^ errors, parsed options
+
 munch	 options	toks
- 	= gatherEither $ munchS options toks
+ 	= gatherEither $ munchTokens options toks
 
+-- | Convert some tokens to options
+munchTokens 
+	:: [Option a] 		-- ^ The options we're accepting
+	-> [Token] 		-- ^ The tokens still on the input
+	-> [Either String a]	-- ^ Left holds error strings, 
+				--	Right holds parsed options
 
-munchS :: [Option a] -> [Token] -> [Either String a]
-munchS	  options	toks
- = case options of
- 	ODefault sf : _
-	 -> let	(strToks, rest)	= span (=@= TString{}) toks
-		strs		= map (\(TString s) -> s) strToks
-	    in  case strs of
-	    	 []	-> munchR options toks
-		 _	-> Right (sf strs) : munchR options rest
-	    
-	_ -> munchR options toks
+munchTokens _       []			= []
+munchTokens options toks
 
-
-munchR :: [Option a] ->	[Token] -> [Either String a]
-munchR	 options	toks
-
-	| []				<- toks
-	= []
-
+	-- An option that we recognise
 	| t@(TOption name) : ts		<- toks
 	, Just option			<- matchOption name options
-	= munchOption options option ts
+	= munchTokens_match options option ts
 
+	-- An option that isn't in out accepted options list.
 	| TOption name : ts		<- toks
-	= [Left $ "Unknown option: '" ++ name ++ "'"]
+	= [Left $ "unrecognised flag: " ++ name ++ ""]
 	
-	| TString s : _			<- toks
-	= [Left $ "Unexpected non-option: '" ++ s ++ "'"]
-	
-		
-munchOption options option ts
+	-- Some string by itself
+	--	If we have a default option then use that
+	--	Otherwise report an error
+	| TString s : ts			<- toks
+	= case [ctor | ODefault ctor <- options ] of
+		[]	-> [Left $ "unrecognised flag: " ++ s ++ ""]
+		[ctor]	-> Right (ctor s) : munchTokens options ts
+		_	-> error "Util.Options: multiple default options in list."
 
+
+munchTokens_match options option ts
+
+	-- A single flag
 	| OFlag a names desc	<- option
-	= Right a : munchR options ts
+	= Right a : munchTokens options ts
 	
+	-- An option that takes a single string.
 	| OOpt sf names use desc	<- option
 	, TString str : rest		<- ts
-	= Right (sf str) : munchR options rest
+	= Right (sf str) : munchTokens options rest
 
+	-- An option that takes several strings
+	--	Add all the strings until we reach the next option.
 	| OOpts sf names use desc	<- option
 	= let	(strToks, rest)	= span (=@= TString{}) ts
 		strs		= map (\(TString s) -> s) strToks
-	  in	Right (sf strs) : munchR options rest
+	  in	Right (sf strs) : munchTokens options rest
+
 
 
 -- | Select the option which this string refers to

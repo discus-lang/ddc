@@ -33,7 +33,7 @@ linkFile setup mBuild objects
 	-- decide on an output file name to use
 	let outFileName	
 		= case filter (\x -> x =@= Arg.OutputFile{}) (setupArgsCmd setup) of
-			[Arg.OutputFile [fileName]] 	-> fileName
+			[Arg.OutputFile fileName] 	-> fileName
 			_				-> "a.out"
 
 	-- extract extra link options from the command line args

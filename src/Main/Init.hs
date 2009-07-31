@@ -23,7 +23,7 @@ verbLocateRunLib
 verbLocateRunLib verbose args
  = do	-- this is the base of our installation
 	--	it should contain the /runtime and /library subdirs.
-	let pathBase_	= concat [dirs | Arg.PathBase dirs	<- args]
+	let pathBase_	= [dirs | Arg.PathBase dirs	<- args]
 
 	-- if no base path is specified then look in the current directory.
 	let pathBase 	= if pathBase_ == []

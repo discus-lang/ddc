@@ -44,7 +44,7 @@ data Option a
 	-- Command line args that aren't associated with particular flags
 	--	get placed in this default constructor
 	| ODefault	
-		{ optionCtorStrings	:: [String] -> a }
+		{ optionCtorString	:: String -> a }
 
 
 	-- These control how usage help is generated --------------------------
