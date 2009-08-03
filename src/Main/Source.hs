@@ -14,11 +14,6 @@ where
 import qualified Desugar.Plate.Trans		as D
 import qualified Desugar.Exp			as D
 
-import qualified Source.Token			as Token
-import qualified Source.Rename			as S
-import qualified Source.RenameM			as S
-import qualified Source.RenameM			as Rename
-
 import Source.Lexer				(scanModuleWithOffside)
 import Source.Parser.Module			(parseModule)
 import Source.Slurp				(slurpFixTable, slurpKinds)
@@ -26,8 +21,13 @@ import Source.Defix				(defixP)
 import Source.Desugar				(rewriteTree)
 import Source.Alias				(aliasTree)
 import Source.Exp
-import Source.Token
 import Source.TokenShow
+import Source.Error
+import qualified Source.Token			as Token
+import qualified Source.Rename			as S
+import qualified Source.RenameM			as S
+import qualified Source.RenameM			as Rename
+
 
 import Main.Arg
 import Main.Dump
@@ -37,6 +37,7 @@ import Shared.Var			(Var, Module)
 import Shared.Pretty
 import Shared.Error
 import Shared.Base
+import Shared.Literal
 
 import qualified Data.Map		as Map
 import Data.Map (Map)
@@ -49,6 +50,7 @@ import System.IO
 
 import Util
 
+---------------------------------------------------------------------------------------------------
 -- | Parse source code.
 parse 	:: (?args :: [Arg])
 	-> (?pathSourceBase :: FilePath)
@@ -64,23 +66,42 @@ parse	fileName
 	let (toksSource, toksPragma)
 		= scanModuleWithOffside source
 
-	dumpS DumpSourceParse "source-tokens" 
-		$ catInt " " 
-		$ map showSourceP toksSource
-		
-	-- parse the source file
-	let toksSource'	= map (tokenSetFileName fileName) toksSource
-	let sParsed	= parseModule fileName toksSource'
-	dumpST 	DumpSourceParse "source-parse" sParsed
+	dumpS DumpSourceTokens "source-tokens" 
+		$ show toksSource
 
-	return	( sParsed
-		, [str	| CommentPragma str	<- map token toksPragma ])
+	-- check for strings with tabs in them. We'll reject these.
+	let tokStringTabs
+		= filter Token.tokenPHasStringTabs toksSource
+	
+	case tokStringTabs of
+	 (t:_) -> exitWithUserError ?args [ErrorLexicalStringTabs t]	
 
-tokenSetFileName name token
- = case token of
- 	TokenP{}	-> token { Token.tokenFile = name }
-	_		-> token
+	 [] -> do
+		-- expand out \n \b and friends to their literal equivalents
+		let expandEscapes tp
+			| Token.TokenP {Token.token = t}		<- tp
+			, Token.Literal (LiteralFmt (LString s) fmt) 	<- t
+			= case Token.expandEscapedChars s of
+				Nothing	-> exitWithUserError ?args [ErrorLexicalEscape tp]
+				Just s'	-> return $ tp { Token.token = Token.Literal (LiteralFmt (LString s') fmt) }
+			
+			| otherwise
+			= return tp
 
+		toksEscape	<- mapM expandEscapes toksSource
+	
+		-- set the filename on all the tokens to the current one
+		let toksSource'	= map (Token.tokenPSetFileName fileName)    toksEscape
+
+		-- parse the source file
+		let sParsed	= parseModule fileName toksSource'
+		dumpST 	DumpSourceParse "source-parse" sParsed
+
+		return	( sParsed
+			, [str	| Token.CommentPragma str	<- map Token.token toksPragma ])
+
+
+---------------------------------------------------------------------------------------------------
 -- | Slurp out fixity table
 sourceSlurpFixTable
 	:: Tree SourcePos		-- source and header parse tree
@@ -112,6 +133,7 @@ sourceSlurpInlineVars
 			sTree
 
 
+---------------------------------------------------------------------------------------------------
 -- | Write uses of infix operatiors to preix form.
 defix	:: (?args :: [Arg])
 	-> (?pathSourceBase :: FilePath)

@@ -4,14 +4,21 @@ module Source.Token
 	( Token  (..)	-- The tokens.
 	, TokenP (..)	-- Tokens with file position info attached.
 	, prettyTokenPos
-	, takeToken)
+	, takeToken
+	, liftToken
+	, tokenPHasStringTabs
+	, tokenPSetFileName
+	, expandEscapedChar
+	, expandEscapedChars)
 
 where
 
 import Shared.Base
 import Shared.Pretty
 import Shared.Literal
+import Data.Char
 import Util
+
 
 -- | Wraps up a token with its position in the source file
 data TokenP 
@@ -28,15 +35,19 @@ data TokenP
 
 	deriving Eq
 
+
+-- | Take the token from a TokenP.
+takeToken :: TokenP -> Maybe Token
 takeToken tt
-	| TokenP { token = t }	<- tt
-	= Just t
-	
-	| otherwise
-	= Nothing
+	| TokenP { token = t }	<- tt	= Just t
+	| otherwise			= Nothing
+
+-- | Apply a token transform function to the token in a tokenp
+liftToken :: (Token -> Token) -> TokenP -> TokenP
+liftToken f tokp	= tokp { token = f (token tokp) } 
 
 
--- | just show the token instead of the whole thing
+-- | Shows the token inside a TokenP.
 instance Show TokenP where
  show tok	
    = case tok of
@@ -47,7 +58,8 @@ instance Show TokenP where
 instance Pretty TokenP PMode where
  ppr	= ppr . show 
 
--- | pretty print the position of this token
+
+-- | Pretty print the position of this token.
 prettyTokenPos :: TokenP	-> String
 prettyTokenPos tt
  = case tt of
@@ -59,6 +71,57 @@ prettyTokenPos tt
 		 ++ ":" ++ (show $ (column - 1))	-- make columns start at 0
 
 	_ -> "unknown"
+
+
+-- | Check if this token represents a String that has tabs in it.
+tokenPHasStringTabs :: TokenP -> Bool
+tokenPHasStringTabs tt
+ = case tt of
+	TokenP { token = Literal (LiteralFmt (LString str) _) }
+	 | elem '\t' str	-> True
+
+	_			-> False
+
+tokenPSetFileName :: String -> TokenP -> TokenP
+tokenPSetFileName name token
+ = case token of
+ 	TokenP{}	-> token { tokenFile = name }
+	_		-> token
+
+
+
+-- | Convert '\n \b' etc sugar to real characters
+-- expandStringEscapes :: String -> String
+expandEscapedChars :: String -> Maybe String
+expandEscapedChars str
+ = case expandEscapedChar str of
+	Nothing			-> Nothing
+	Just ([], [])		-> Just []
+
+	Just (front1, rest)		
+	 -> case expandEscapedChars rest of
+		Nothing		-> Nothing
+		Just rest'	-> Just (front1 ++ rest')
+
+
+expandEscapedChar :: String -> Maybe (String, String)
+expandEscapedChar str
+ = case str of
+	('\\': 'b'   : rest)	-> Just ([chr 0x08], rest)
+	('\\': 't'   : rest)	-> Just ([chr 0x09], rest)
+	('\\': 'n'   : rest)	-> Just ([chr 0x0a], rest)
+	('\\': 'v'   : rest)	-> Just ([chr 0x0b], rest)
+	('\\': 'f'   : rest)	-> Just ([chr 0x0c], rest)
+	('\\': 'r'   : rest)	-> Just ([chr 0x0d], rest)
+	('\\': '\\'  : rest)	-> Just ([chr 0x5c], rest)
+	('\\': '\''  : rest)	-> Just ([chr 0x27], rest)
+	('\\': '\"'  : rest)	-> Just ([chr 0x22], rest)
+	('\\': _     : rest)	-> Nothing
+
+	(x:rest)		-> Just ([x], rest) 
+
+	[]			-> Just ([], [])
+
 
 -- | Source tokens
 data Token 

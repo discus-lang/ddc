@@ -43,6 +43,8 @@ $varsym	= [\' \_]
 $sym		= [\. \! \# \$ \% \& \* \+ \/ \< \> \? \@ \^ \- \~ \\ \= \: \|]
 $var		= [$alpha $digit $varsym]
 
+@escDoubleQuote	= (\\ \")
+
 
 @moduleSpec	= ($upper [$alpha $digit]* \.)*
 @nameSpaceQual	= [\% \! \$]?
@@ -184,8 +186,10 @@ tokens :-
 
  $sym+  $sym*		{ ptags (\s -> Symbol s)	}
 
- \" ($printable # \")* \"\#		{ ptags (\s -> mkLit (LString $ read $ dropLast 1 s) Unboxed) }
- \" ($printable # \")* \" 		{ ptags (\s -> mkLit (LString $ read s)              Boxed) }	
+ 
+
+ \" (@escDoubleQuote | (. # \"))* \"\#	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 2 s)) Unboxed) }
+ \" (@escDoubleQuote | (. # \"))* \" 	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 1 s)) Boxed) }	
 
  \-?$digit+ \. $digit+ \# f $digit*	{ ptags (\s -> makeLiteralUB 'f' LFloat s) }
  \-?$digit+ \. $digit+ \# 		{ ptags (\s -> mkLit (LFloat $ read $ dropLast 1 s) Unboxed) }

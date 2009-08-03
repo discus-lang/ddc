@@ -90,6 +90,7 @@ data Arg
 	-- things that can be dumped
 	| DumpAll
 
+	| DumpSourceTokens
 	| DumpSourceParse
 	| DumpSourceDefix
 	| DumpSourceRename
@@ -473,6 +474,7 @@ options	=
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."
 	, OBlank
 
+	, OFlag		DumpSourceTokens	["-dump-source-tokens"]		"Tokenised source file."
 	, OFlag		DumpSourceParse		["-dump-source-parse"]		"Parsed source file."
 	, OFlag		DumpSourceRename	["-dump-source-rename"]		"Unique identifiers introduced for variables."
 	, OFlag		DumpSourceDefix		["-dump-source-defix"]		"Infix applications converted to prefix."

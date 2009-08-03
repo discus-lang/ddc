@@ -1,0 +1,6 @@
+
+main ()
+ = do	putStr "newline\n"
+	putStr "quote\"\n"
+	putStr "\"quotes\"\n"
+	putStr "some\tthing"
