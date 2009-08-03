@@ -1,5 +1,5 @@
 ddc: ERROR
-./test/01-Error/Loop/Loop2/Loop2.ds:4:0
+./test/01-Error/30-Typing/Loop/Loop2/Loop2.ds:4:0
     Cannot construct infinite type for 'x'.
     via: 
         *0 = Data.List.List %11 (Data.List.List %11 *0)

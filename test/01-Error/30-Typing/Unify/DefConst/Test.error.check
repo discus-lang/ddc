@@ -1,15 +1,15 @@
 ddc: ERROR
-./test/01-Error/Unify/DefConst/Test.ds:6:10
+./test/01-Error/30-Typing/Unify/DefConst/Test.ds:6:10
     Type mismatch during unification.
           cannot match: Base.Int32 %43
                   with: Data.String.String %51
 
               the use of: fish
                  at type: Base.Int32 %43
-                      at: ./test/01-Error/Unify/DefConst/Test.ds:6:10
+                      at: ./test/01-Error/30-Typing/Unify/DefConst/Test.ds:6:10
 
         conflicts with, 
           literal value "perch"
                  of type: Data.String.String %51
-                      at: ./test/01-Error/Unify/DefConst/Test.ds:6:15
+                      at: ./test/01-Error/30-Typing/Unify/DefConst/Test.ds:6:15
 

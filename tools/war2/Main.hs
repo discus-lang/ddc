@@ -231,7 +231,7 @@ hookFinished_askDiff
  = do	
 	putStr	$  replicate 100 '-' ++ "\n"
 		++ "    (ENTER) continue   (e) show expected    (a) show actual\n"
-		++ "    (q)     quit       (u) update accepted\n"
+		++ "    (q)     quit       (u) update expected\n"
 		++ "\n"
 		++ "? "
 

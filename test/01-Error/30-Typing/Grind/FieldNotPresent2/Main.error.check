@@ -1,4 +1,4 @@
 ddc: ERROR
-./test/01-Error/Grind/FieldNotPresent2/Main.ds:3:15
+./test/01-Error/30-Typing/Grind/FieldNotPresent2/Main.ds:3:15
     Type '*19 -(!20 $25)> *24' has no projections defined for it.
 

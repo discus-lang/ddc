@@ -1,15 +1,15 @@
 ddc: ERROR
-./test/01-Error/Unify/DefDef/Test.ds:8:10
+./test/01-Error/30-Typing/Unify/DefDef/Test.ds:8:10
     Type mismatch during unification.
           cannot match: Base.Int32 %59
                   with: Data.String.String %69
 
               the use of: f1
                  at type: Base.Int32 %59
-                      at: ./test/01-Error/Unify/DefDef/Test.ds:8:10
+                      at: ./test/01-Error/30-Typing/Unify/DefDef/Test.ds:8:10
 
         conflicts with, 
               the use of: f2
                  at type: Data.String.String %69
-                      at: ./test/01-Error/Unify/DefDef/Test.ds:8:14
+                      at: ./test/01-Error/30-Typing/Unify/DefDef/Test.ds:8:14
 
