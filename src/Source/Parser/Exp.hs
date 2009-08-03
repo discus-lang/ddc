@@ -2,7 +2,7 @@
 
 module Source.Parser.Exp
 	( pExp, pExp1, pExpRHS
-	, pStmt, pStmt_bind, pStmt_sig, pStmt_sigBind) 
+	, pStmt, pStmt_bind, pStmt_sig, pStmt_sigBind)
 where
 
 import Source.Exp
@@ -33,10 +33,10 @@ pExp
 		exp1	<-	do	g	<- pRParen pExp
 			      		return	g
 			<|> 	pExp1
-			 
+
 		exp2	<- pExp
 		return	$ XWhile (spTP tok) exp1 exp2
-				
+
  <|>	-- when ( EXP ) EXP  /  when EXP1 EXP
 	do	tok	<- pTok K.When
 		exp1	<-	do	g	<- pRParen pExp
@@ -45,7 +45,7 @@ pExp
 
 		exp2	<- pExp
 		return	$ XWhen (spTP tok) exp1 exp2
-			 
+
  <|>	-- unless ( EXP ) EXP  /  when EXP1 EXP
 	do	tok	<- pTok K.Unless
 		exp1	<-	do	g 	<- pRParen pExp
@@ -61,18 +61,19 @@ pExp
 		case exps of
 		 [x]	-> return x
 		 _	-> return $ XDefix (spX x1) exps
-
+  <?>   "pExp"
 
 pExp2 :: Parser (Exp SP)
-pExp2	
+pExp2
  = 	-- projections
  	-- EXP . EXP   /   EXP . (EXP)  /  EXP # EXP
- 	(Parsec.try $ do	
+ 	(Parsec.try $ do
 	 	exp	<- chainl1_either pExp1' pProj
  		return	$ stripXParens exp)
 
   <|>	do	exp	<- pExp1
 		return	exp
+  <?>   "pExp2"
 
 -- | Parse an expression that can be used in an application
 pExp1 :: Parser (Exp SP)
@@ -88,7 +89,7 @@ pExp1'
 		pTok K.And
 		t	<- pCParen pType_body
 		return	$ XProjT (spV field) t (JField (spV field) field))
- 		 
+
  	-- VAR/CON
   <|>	do	var	<- liftM vNameV (pQualified pVarCon)
 		return	$ XVar (spV var) var
@@ -96,7 +97,7 @@ pExp1'
 	-- VARFIELD					-- TODO: change this when we move to parsec
   <|>	do	var	<- liftM vNameF pVarField
 		return	$ XObjField (spV var) var
-	
+
   <|>	-- SYM
 	do	sym	<- liftM vNameV pSymbol
 		return	$ XOp (spV sym) sym
@@ -122,7 +123,7 @@ pExp1'
 		var	<- liftM vNameF pVar
 		exps	<- Parsec.many pExp1
 		return	$ XLambdaProj (spTP tok) (JField (spTP tok) var) exps)
-		
+
   <|>   -- \ case { ALT .. }
   	-- overlaps with the nexta lambda form
 	(Parsec.try $ do
@@ -140,7 +141,7 @@ pExp1'
 
   <|>	-- case EXP of { ALT .. }
   	do	tok	<- pTok K.Case
-		exp	<- pExp 
+		exp	<- pExp
 		pTok K.Of
 		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
 		return	$ XCase (spTP tok) exp alts
@@ -173,24 +174,24 @@ pExp1'
 
 	-- [ EXP .. EXP ] / [ EXP .. ]
 	-- overlaps with list comprehensions and list syntax
-  <|>	(Parsec.try $ do	
+  <|>	(Parsec.try $ do
   		tok	<- pTok K.SBra
   		exp1	<- pExp
 		pTok K.DotDot
-		
+
 		mExp2	<- 	do	pTok K.SKet
 					return Nothing
 
 			<|>	do	exp	<- pExp
 					pTok K.SKet
 					return $ Just exp
-			
+
 		-- force infinite lists to be lazy
 		let lazy
 			= case mExp2 of
 				Nothing	-> True
 				_	-> False
-											
+
 		return	$ XListRange (spTP tok) lazy exp1 mExp2)
 
   <|>	-- [ EXP | QUAL .. ]
@@ -201,7 +202,7 @@ pExp1'
 		pTok K.Bar
 		quals	<- Parsec.sepBy1 pLCQual (pTok K.Comma)
 		pTok K.SKet
-		
+
 		return	$ XListComp (spTP tok) exp quals)
 
   <|>	-- [ EXP, EXP ]
@@ -216,7 +217,7 @@ pExp1'
 		exp1	<- pExp
 		pTok K.Catch
 		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
-		
+
 		mWith	<-	do	pTok K.With
 					stmts	<- pCParen (Parsec.sepEndBy1 pStmt pSemis)
 				 	return	$ Just (XDo (spTP tok) stmts)
@@ -249,56 +250,58 @@ pExp1'
 	-- use XParens to signal to pProj via pExp2 that the expression is wrapped in parens
 	--	we need this to distinguish
 	--		exp . var		-- field projection
-	--		exp . (var)		-- index projection 
+	--		exp . (var)		-- index projection
 	--
   <|>	do 	exp	<- pRParen pExp
 		return 	$ XParens (spX exp) exp
-	
+  <?>   "pExp1'"
+
 
 -- | Parse an expression in the RHS of a binding or case/match alternative
 --	these can have where expressions on the end
 pExpRHS :: Parser (Exp SP)
 pExpRHS
- = do 	exp	<- pExp 
+ = do 	exp	<- pExp
 	mWhere	<- 	do 	tok 	<- pTok K.Where
 				stmts	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
 				return	$ Just (tok, stmts)
 		   <|>	return Nothing
-		   
+
 	case mWhere of
 		Nothing			-> return $ exp
 		Just (tok, stmts)	-> return $ XWhere (spTP tok) exp stmts
 
-	
+
 -- | Parse a projection operator
 pProj :: Parser (Exp SP -> Exp SP -> Either String (Exp SP))
-pProj 
+pProj
  = 	do	pTok K.Dot
 	 	return	(makeProjV JField JIndex)
 
  <|>	do	pTok K.Hash
  		return	(makeProjV JFieldR JIndexR)
+ <?> "pProj"
 
 makeProjV fun funIndex x y
-	| XVar sp v	<- y	
-	= Right $ XProj (spX x) (stripXParens x) 
-		$ fun 	sp 
+	| XVar sp v	<- y
+	= Right $ XProj (spX x) (stripXParens x)
+		$ fun 	sp
 			v { Var.nameSpace = NameField }
 
-	| XParens sp y'	<- y	
-	= Right $ XProj (spX x) (stripXParens x) 
-		$ funIndex 
-			sp 
+	| XParens sp y'	<- y
+	= Right $ XProj (spX x) (stripXParens x)
+		$ funIndex
+			sp
 			(stripXParens y')
-				
 
-	| otherwise		
+
+	| otherwise
 	= Left "pProj: LHS is not a field"
 
 stripXParens (XParens _ x)	= stripXParens x
 stripXParens xx			= xx
 
-		
+
 -- | Parse a list comprehension production / qualifier / guard
 pLCQual :: Parser (LCQual SP)
 pLCQual
@@ -318,16 +321,16 @@ pLCQual
 
   <|>	do	exp	<- pExp
   		return	$ LCExp exp
-	
- 
-		
+
+  <?>   "pLCQual"
+
 -- Alternatives ------------------------------------------------------------------------------------
 
 -- | Parse a case style alternative
-pCaseAlt :: Parser (Alt SP)						-- NOT finished, guards in alts | 
+pCaseAlt :: Parser (Alt SP)						-- NOT finished, guards in alts |
 pCaseAlt
  = 	-- PAT -> EXP
-   do	pat	<- pPat 
+   do	pat	<- pPat
  	pTok K.RightArrow
 	exp	<- pExpRHS
 	return	$ APat (spW pat) pat exp
@@ -348,13 +351,14 @@ pMatchAlt
 		exp	<- pExpRHS
 		return	$ ADefault (spTP tok) exp
 
+  <?>   "pMatchAlt"
 
 -- | Parse a guard
 pGuard :: Parser (Guard SP)
-pGuard	
+pGuard
  = 	-- PAT <- EXP
  	-- overlaps with EXP
-	(Parsec.try $ do 
+	(Parsec.try $ do
 		pat	<- pPat
 	 	pTok K.LeftArrow
 		exp	<- pExpRHS
@@ -363,6 +367,7 @@ pGuard
 	-- EXP
  <|>	do	exp	<- pExpRHS
  		return	$ GBool (spX exp) exp
+  <?>   "pGuard"
 
 
 -- Statements --------------------------------------------------------------------------------------
@@ -372,14 +377,16 @@ pStmt :: Parser (Stmt SP)
 pStmt
  = 	-- bindings overlap with expressions
  	(Parsec.try pStmt_sigBind)
-	
+
   <|>	do	exp	<- pExpRHS
   		return	$ SStmt (spX exp) exp
+  <?>   "pStmt"
+
 
 -- | Parse a bind (only)
 pStmt_bind :: Parser (Stmt SP)
 pStmt_bind
- = 	-- VAR PAT .. | ALT .. 
+ = 	-- VAR PAT .. | ALT ..
 	-- overlaps with regular binding
  	(Parsec.try $ do
  		var	<- liftM vNameV $ pVar
@@ -388,7 +395,7 @@ pStmt_bind
 		return	$ SBindFun (spV var) var pats alts)
 
 	-- VAR PAT = EXPRHS
- <|>	(Parsec.try $ do	
+ <|>	(Parsec.try $ do
  		var	<- liftM vNameV $ pVar
 		pats	<- Parsec.many pPat1
 		pTok K.Equals
@@ -396,7 +403,7 @@ pStmt_bind
 		return	$ SBindFun (spV var) var pats [ADefault (spV var) exp])
 
 	-- PAT	<- EXPRHS
- <|>	(Parsec.try $ do	
+ <|>	(Parsec.try $ do
  		pat	<- pPat
 		pTok K.LeftArrow
 		exp	<- pExpRHS
@@ -414,8 +421,8 @@ pStmt_bind
 		exp	<- pExpRHS
 		return	$ SBindPat (spW pat) pat exp
 
+  <?>   "pStmt_bind"
 
- 		
 
 -- | Parse a type sig (only)
 pStmt_sig :: Parser (Stmt SP)
@@ -430,4 +437,5 @@ pStmt_sigBind :: Parser (Stmt SP)
 pStmt_sigBind
  = 	(Parsec.try pStmt_sig)
   <|> 	pStmt_bind
+  <?>   "pStmt_sigBind"
 

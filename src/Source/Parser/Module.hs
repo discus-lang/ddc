@@ -35,7 +35,7 @@ parseModule fileName tokens
    		Right exp	-> exp
 		Left err	-> error $ show err
 
--- run a single parsed on some string, 
+-- run a single parsed on some string,
 --	(for testing)
 parseString parser str
  = let 	tokens		= scan str
@@ -92,9 +92,9 @@ pTopImport
 
 pModuleName :: Parser (Var.Module)
 pModuleName
- = 	
+ =
  	-- M1.M2 ..
-	(Parsec.try $ do	
+	(Parsec.try $ do
 		mod	<- pModuleNameQual
 		pTok K.Dot
 		con	<- pCon
@@ -103,17 +103,18 @@ pModuleName
  <|>	-- M1
  	do	con	<- pCon
 		return	$ Var.ModuleAbsolute [Var.name con]
+ <?> "pModuleName"
 
 -- Export -----------------------------------------------------------------------------------------
 pTopExport :: Parser (Top SP)
-pTopExport 
+pTopExport
  = do	-- export { EXPORT ; .. }
 	tok	<- pTok K.Export
 	exps	<- pCParen (Parsec.sepEndBy1 pExport pSemis)
 	return	$ PExport (spTP tok) exps
 
 pExport :: Parser (Export SP)
-pExport 
+pExport
  = do	-- var
 	var	<- liftM vNameV pVarCon
 	return	$ EValue (spV var) var
@@ -122,21 +123,23 @@ pExport
 	tok	<- pTok K.Type
 	var	<- liftM vNameT pVarCon
 	return	$ EType (spTP tok) var
-	
+
  <|> do	-- region VAR
 	tok	<- pTok K.Region
 	var	<- liftM vNameR pVar
 	return	$ ERegion (spTP tok) var
-	
+
  <|> do	-- effect VAR
 	tok	<- pTok K.Effect
 	var	<- liftM vNameE pVar
 	return	$ EEffect (spTP tok) var
-	
+
  <|> do	-- class VAR
 	tok	<- pTok K.Class
 	var	<- liftM vNameW pVar
 	return	$ EClass (spTP tok) var
+
+ <?> "pExport"
 
 -- Foreign -----------------------------------------------------------------------------------------
 -- Parse a foreign import.
@@ -147,33 +150,33 @@ pTopForeignImport
 	tok	<- pTok K.Foreign
 	pTok K.Import
 	pTok K.Data
-	name	<- pString 
+	name	<- pString
 
 	con	<- liftM vNameT $ pCon
 	let con2 = con { Var.info = [Var.ISeaName name] }
 
 	pTok K.HasType
 	kind	<- pKind
-			
+
 	return	$ PForeign (spTP tok) (OImportUnboxedData name con2 kind))
-	
+
 	-- foreign import data STRING CON
  <|> (Parsec.try $ do
 	tok	<- pTok K.Foreign
 	pTok K.Import
 	pTok K.Data
-	name	<- pString 
+	name	<- pString
 
 	con	<- liftM vNameT $ pCon
 	let con2 = con { Var.info = [Var.ISeaName name] }
 
 	return	$ PForeign (spTP tok) (OImportUnboxedData name con2 KValue))
-	
+
  <|> do	-- foreign import STRING var :: TYPE
 	tok	<- pTok K.Foreign
  	pTok K.Import
 
-	mExName	<-  liftM Just pString 
+	mExName	<-  liftM Just pString
 		<|> return Nothing
 
 	var	<- pVar
@@ -181,12 +184,14 @@ pTopForeignImport
 	pTok K.HasType
 	sig	<- pType
 
-	mOpType	<-  liftM Just 
+	mOpType	<-  liftM Just
 			(do 	pTok K.HasOpType
 				pTypeOp)
 		<|> return Nothing
-		
+
 	return	$ PForeign (spTP tok) $ OImport mExName (vNameV var) sig mOpType
+
+ <?> "pTopForeignImport"
 
 
 -- Infix -------------------------------------------------------------------------------------------
@@ -199,7 +204,7 @@ pTopInfix
 		syms	<- liftM (map vNameV) $ Parsec.sepBy1 pSymbol (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixRight prec syms
 
-	-- infixl INT SYM .. 
+	-- infixl INT SYM ..
   <|> 	do	tok	<- pTok K.InfixL
  		prec	<- pInt
 		syms	<- liftM (map vNameV) $ Parsec.sepBy1 pSymbol (pTok K.Comma)
@@ -210,27 +215,27 @@ pTopInfix
 		prec	<- pInt
 		syms	<- liftM (map vNameV) $ Parsec.sepBy1 pSymbol (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixNone prec syms
-
+  <?>   "pTopInfix"
 
 -- Type Kind ---------------------------------------------------------------------------------------
 -- | Parse a type kind signature.
 pTopTypeKind :: Parser (Top SP)
-pTopTypeKind 
+pTopTypeKind
  = 	-- type CON :: KIND
- 	Parsec.try $ do	
+ 	Parsec.try $ do
 		tok	<- pTok K.Type
 		con	<- liftM vNameT pCon
 		pTok	K.HasType
 		kind	<- pKind
 		return	$ PTypeKind (spTP tok) con kind
-		
+
 
 -- Type Synonym ------------------------------------------------------------------------------------
 -- | Parse a type synonym.
 pTopTypeSynonym :: Parser (Top SP)
 pTopTypeSynonym
  = 	-- type VAR :: TYPE
- 	Parsec.try $ do	
+ 	Parsec.try $ do
 		tok	<- pTok K.Type
 		var	<- liftM vNameT pVar
 		pTok	K.HasType
@@ -248,7 +253,7 @@ pTopEffect
 		pTok	K.HasType
 		kind	<- pKind
 		return	$ PEffect (spTP tok) (vNameE con) kind
-		
+
 
 -- Region ------------------------------------------------------------------------------------------
 -- | Parse a region definition
@@ -258,24 +263,24 @@ pTopRegion
  	do	tok	<- pTok K.Region
 		var	<- pVar
 		return	$ PRegion (spTP tok) (vNameR var)
-		
+
 
 -- Data --------------------------------------------------------------------------------------------
 -- | Parse a data type definition.
 pTopData :: Parser (Top SP)
 pTopData
- = 
- 	-- data TYPE = CTOR | .. 
+ =
+ 	-- data TYPE = CTOR | ..
   	do	tok	<- pTok	K.Data
 		con	<- liftM vNameT $ pCon
 		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
-	
+
 		ctors	<- 	(Parsec.try $ do
 					pTok K.Equals
 					ctors	<- Parsec.sepBy1 pTopData_ctor (pTok K.Bar)
 					return	ctors)
 			   <|>	return []
-	
+
 		return	$ PData (spTP tok) con vars ctors
 
 pTopData_ctor :: Parser (Var, [DataField (Exp SP) Type])
@@ -286,8 +291,8 @@ pTopData_ctor
 		con	<- liftM vNameT pCon
 		fs	<- pCParen $ Parsec.sepEndBy1 pDataField pSemis
 		return	(con, fs))
-		
- 
+
+
  	-- CON TYPES ..
  <|> 	do	con	<- liftM vNameT pCon
 		types	<- Parsec.many pType_body1
@@ -300,7 +305,8 @@ pTopData_ctor
 			, dInit		= Nothing }
 
 		return	(con, map mkPrimary types)
- 	
+ <?>    "pTopData_ctor"
+
 pDataField :: Parser (DataField (Exp SP) Type)
 pDataField
  =  	-- .VAR :: TYPE = EXP
@@ -315,9 +321,9 @@ pDataField
 			, dLabel	= Just var
 			, dType		= t
 			, dInit		= Just exp }
- 	
+
 	-- VAR :: TYPE
-  <|>	(Parsec.try $ do	
+  <|>	(Parsec.try $ do
   		var	<- liftM vNameF pVar
 	 	pTok K.HasType
 		t	<- pType_body
@@ -335,7 +341,7 @@ pDataField
 			, dType		= t
 			, dInit		= Nothing }
 
-  
+  <?>   "pDataField"
 
 -- Class -------------------------------------------------------------------------------------------
 -- | Parse a class definition.
@@ -357,12 +363,13 @@ pTopClass
 		sigs	<- pCParen $ Parsec.sepEndBy1 pTopClass_sig pSemis
 
 		return	$ PClassDict (spTP tok) con vks [] sigs
+  <?>   "pTopCLass"
 
 -- parse a var with optional kind
 pVarKind :: Parser (Var, Kind)
-pVarKind 
+pVarKind
  = 	-- (VAR :: KIND)
-	(pRParen $ do	
+	(pRParen $ do
 		var	<- liftM (vNameDefaultN NameType) pVar
 		pTok K.HasType
 		kind	<- pKind
@@ -371,7 +378,7 @@ pVarKind
 	-- VAR
  <|>	do	var	<- liftM (vNameDefaultN NameType) pVar
 		return	(var, KNil)
-
+ <?>    "pVarKind"
 
 
 
@@ -382,7 +389,7 @@ pTopClass_sig
  	pTok K.HasType
 	t	<- pType
 	return	$ (vars, t)
- 
+
 
 -- Instance ----------------------------------------------------------------------------------------
 -- | Parse a class instance.
@@ -402,7 +409,7 @@ pTopInstance
 pTopProject :: Parser (Top SP)
 pTopProject
  = 	-- project CON TYPE .. where { SIG/BIND ; .. }
- 	(Parsec.try $ do	
+ 	(Parsec.try $ do
 		tok	<- pTok K.Project
 		con	<- liftM vNameT $ pQualified pCon
 		ts	<- Parsec.many pType_body1
@@ -417,15 +424,17 @@ pTopProject
 		pTok	K.With
 		binds	<- pCParen $ Parsec.sepEndBy1 pTopProject_pun pSemis
 		return	$ PProjDict (spTP tok) (TData KNil con ts) binds
-		
+
+  <?>   "pTopProject"
+
 pTopProject_pun :: Parser (Stmt SP)
 pTopProject_pun
  = do	-- VAR
 	var	<- pVar
  	return	$ SBindFun (spV var) (vNameF var)[] [ADefault (spV var) (XVar (spV var) var)]
-	
-	
- 
+
+
+
 
 
 

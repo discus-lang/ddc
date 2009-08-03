@@ -1,0 +1,39 @@
+
+-- Need type signatures in this because dictionary passing isn't implemented yet.
+
+qsort :: [Int] -> [Int]
+qsort xi =
+    qsort' xi []
+  where
+    qsort' :: [Int] -> [Int] -> [Int]
+    qsort' :: [a] -> [a] -> [a]
+    qsort' [] y     = y
+    qsort' (x:[]) y    = x:y
+    qsort' (x:xs) y = part xs [] [x] []  
+      where
+        part [] lt eq gr = qsort' lt (eq ++ (qsort' gr y))
+        part (z:zs) lt eq gr 
+            | z > x     = part zs lt eq (z:gr) 
+            | z < x     = part zs (z:lt) eq gr 
+            | otherwise = part zs lt (z:eq) gr
+
+
+randomList :: Int -> [Int]
+randomList len = do
+    memory = 1234567
+    map (\ _ -> update memory) [1 .. len]
+  where
+    -- Really simple (and poor quality) Linear Congruent PRNG.
+    update mem = do
+        x = 1664525 * mem + 1013904223 	
+        mem := x
+        (x / 32716) `mod` 100
+
+
+
+main () = do
+    x = randomList 20
+    y = qsort x
+    println $ "Input  : " % (show x)
+    println $ "Output : " % (show y)
+

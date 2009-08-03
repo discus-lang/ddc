@@ -14,7 +14,7 @@ module Source.Parser.Base
 	, pSymbol
 	, pSemis
 	, pModuleNameQual
-	
+
 	-- Literal Constants
 	, pLiteralFmtSP
 	, pInt, pIntSP
@@ -68,7 +68,7 @@ token fun
 -- | Match a single token.
 pTok :: K.Token -> Parser K.TokenP
 pTok tok
- = token	
+ = token
 	(\t -> case t of
 		K.TokenP { K.token = tok' }
 		 | tok == tok'	-> Just t
@@ -76,7 +76,7 @@ pTok tok
 
 -- | Parse some semi colons
 pSemis :: Parser ()
-pSemis	
+pSemis
  = do	Parsec.many1 (pTok K.SemiColon)
  	return ()
 
@@ -87,32 +87,34 @@ pModuleNameQual = token parseMod
  where parseMod t
  	| K.TokenP { K.token = K.ModuleName ss } <- t
 	= return ss
-	
+
 	| otherwise
 	= Nothing
 
 pQualified :: Parser Var -> Parser Var
 pQualified parser
  = 	(Parsec.try $ do
- 		mods	<- pModuleNameQual 
+ 		mods	<- pModuleNameQual
  		pTok K.Dot
 		v	<- parser
 		return	$ v { Var.nameModule = Var.ModuleAbsolute mods })
  <|>	parser
- 
+ <?>    "pQualified"
+
 
 -- Variables ---------------------------------------------------------------------------------------
 
 -- | Parse a plain or (symbol) variable
 pVar :: Parser Var
-pVar	
- = 	pVarPlain
+pVar =
+        pVarPlain
   <|>	(Parsec.try $ pRParen pSymbol)
+  <?>   "pVar"
 
 
 -- | Parse a plain variable
 pVarPlain :: Parser Var
-pVarPlain 
+pVarPlain
  = token
 	(\t -> case t of
 		K.TokenP { K.token = K.Var name }	-> Just $ toVar t
@@ -133,7 +135,7 @@ pVarPlainNamed str
 -- | Parse a plain variable, but only from certain name spaces
 pVarPlainOfSpace :: [NameSpace] -> Parser Var
 pVarPlainOfSpace spaces
- = token	
+ = token
  	(\t -> case t of
 		K.TokenP { K.token = K.Var name }
 		 -> let	var	= toVar t
@@ -171,7 +173,7 @@ pConOfSpace spaces
 		    in	if elem (Var.nameSpace var) spaces
 		   		then Just var
 				else Nothing
-		_ -> Nothing)	
+		_ -> Nothing)
 
 -- | Parse a certain constructor in a given namespace, with a specific name
 pConOfSpaceNamed :: [NameSpace] -> String -> Parser Var
@@ -184,15 +186,15 @@ pConOfSpaceNamed spaces str
 		          && name == str
 			  then Just var
 			  else Nothing
-			 
+
 		_	-> Nothing)
 
 
 -- | Parse a variable or constructor
 pVarCon :: Parser Var
-pVarCon	= pVar <|> pCon
- 
- 
+pVarCon	= pVar <|> pCon <?> "pVarCon"
+
+
 
 -- Symbols -----------------------------------------------------------------------------------------
 -- | Parse a symbolic operator.
@@ -219,7 +221,7 @@ pSymbol	= token parseSymbol
 		_		-> Nothing
 
 	| otherwise
-	= Nothing		
+	= Nothing
 
 
 -- Literal Constants ------------------------------------------------------------------------------
@@ -227,7 +229,7 @@ pSymbol	= token parseSymbol
 -- | Parse a boxed or unboxed constant.
 {-
 pConstSP :: Parser (Const, SP)
-pConstSP 
+pConstSP
  = 	(Parsec.try $ do
  		(lit, sp)	<- pUnboxedBoolSP
 		return	(CConstU lit, sp))
@@ -247,23 +249,23 @@ pUnboxedBoolSP = token parseBool
  where parseBool t
  	| K.TokenP	{ K.token = tok }	<- t
 	= case tok of
-		K.Literal litFmt@(LiteralFmt (LBool b) Unboxed)	
+		K.Literal litFmt@(LiteralFmt (LBool b) Unboxed)
 				-> Just (litFmt, spTP t)
 		_		-> Nothing
-		
+
 	| otherwise
 	= Nothing
--}		
-	
+-}
+
 -- | Parse a literal.
 pLiteralFmtSP :: Parser (LiteralFmt, SP)
-pLiteralFmtSP = token parseLit 
+pLiteralFmtSP = token parseLit
  where parseLit t
  	| K.TokenP	{ K.token = tok }	<- t
 	= case tok of
 		K.Literal litFmt -> Just (litFmt, spTP t)
 		_		 -> Nothing
- 	
+
 	| otherwise
 	= Nothing
 
@@ -272,10 +274,10 @@ pLiteralFmtSP = token parseLit
 pIntSP :: Parser (Int, SP)
 pIntSP = token parseInt
  where parseInt t
- 	| K.TokenP	
+ 	| K.TokenP
 	{ K.token = K.Literal (LiteralFmt (LInt i) Boxed) }	<- t
 	= Just (fromIntegral i, spTP t)
-	
+
 	| otherwise
 	= Nothing
 
@@ -286,10 +288,10 @@ pInt	= liftM fst pIntSP
 pStringSP :: Parser (String, SP)
 pStringSP = token parseString
  where parseString t
- 	| K.TokenP	
+ 	| K.TokenP
 	{ K.token = K.Literal (LiteralFmt (LString s) Boxed) } <- t
 	= Just (s, spTP t)
-	
+
 	| otherwise
 	= Nothing
 

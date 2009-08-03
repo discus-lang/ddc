@@ -23,7 +23,7 @@ module Source.Parser.Util
 	-- Parsing Combinators
 	, makeParsecSourcePos
 	, chainl1_either
-	
+
 	-- Debugging
 	, traceStateS, traceState)
 
@@ -58,7 +58,7 @@ type Parser a 	= Parsec.GenParser K.TokenP () a
 -- Variable Creation -------------------------------------------------------------------------------
 
 -- | Convert a token to a variable
---	We need to undo the lexer tokens here because some of our 
+--	We need to undo the lexer tokens here because some of our
 --	"reserved symbols" alias with valid variable names.
 --
 toVar :: K.TokenP -> Var
@@ -75,14 +75,14 @@ toVar	 tok
 
 -- | String representations for these tokens.
 toVar_table :: [(K.Token, String)]
-toVar_table = 
+toVar_table =
 	[ (K.Colon,		":")
 	, (K.Star,		"*")
 	, (K.Dash,		"-")
 	, (K.At,		"@")
-	, (K.Hash,		"#") 
+	, (K.Hash,		"#")
 	, (K.ABra,		"<")
-	, (K.AKet,		">") 
+	, (K.AKet,		">")
 	, (K.ForwardSlash,	"/")
 	, (K.Plus,		"+")
 	, (K.Dot,		".")
@@ -115,10 +115,10 @@ vNameN space v
 	% "   name space was     " % Var.nameSpace v		% "\n"
 	% "   tried to set it to " % space			% "\n"
 	% "   info               " % Var.info v			% "\n"
-	
+
 	-- var already has the right namespace
 	| otherwise
-	= v 
+	= v
 
 vNameV		= vNameN NameValue
 vNameT		= vNameN NameType
@@ -182,24 +182,24 @@ makeParsecSourcePos tok
 -- Parsing combinators -----------------------------------------------------------------------------
 
 chainl1_either
-	:: Parsec.GenParser tok st a 
+	:: Parsec.GenParser tok st a
 	-> Parsec.GenParser tok st (a -> a -> (Either String a))
 	-> Parsec.GenParser tok st a
 
-chainl1_either p op    
+chainl1_either p op
  = do	x	<- p
- 	
-	let rest x 
+
+	let rest x
 	     =	(do
 			f	<- op
 			y	<- p
-		
+
 			case f x y of
 			 Left str	-> Parsec.unexpected str
 			 Right more	-> rest $ more)
 
 		<|> return x
-		 
+
 	rest x
 
 -- Debugging ---------------------------------------------------------------------------------------
@@ -207,7 +207,7 @@ chainl1_either p op
 traceStateS :: Show tok => String -> Parsec.GenParser tok st ()
 traceStateS str
  = do	state	<- Parsec.getParserState
-	Debug.Trace.trace 
+	Debug.Trace.trace
 		(  "-- state " ++ str ++ "\n"
 		++ "   input = " ++ show (take 10 $ Parsec.stateInput state) ++ "\n")
 		$ return ()

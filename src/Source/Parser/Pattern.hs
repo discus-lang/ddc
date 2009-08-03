@@ -16,10 +16,10 @@ import qualified Shared.VarPrim	as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 
-	
+
 -- Patterns ----------------------------------------------------------------------------------------
 pPat :: Parser (Pat SP)
-pPat 
+pPat
  = 	(Parsec.try $ do
  		p1	<- pPat2
 		pTok K.Colon
@@ -27,31 +27,31 @@ pPat
 		return	$ WCons (spW p1) p1 p2)
 
   <|>	pPat2
-
+  <?>   "pPat"
 
 pPat2 :: Parser (Pat SP)
-pPat2 
- = 	
+pPat2
+ =
    	-- CON { .l1 = PAT1 .. }
   	-- overlaps with CON pats..
   	(Parsec.try $ pPat_conLabel)
-	
+
 	-- CON pats..
   <|>	(do	con		<- pCon
 		pats		<- Parsec.many pPat1
 		return	$ WCon (spV con) (vNameV con) pats)
- 	
-  <|>	pPat1	
 
+  <|>	pPat1
+  <?>   "pPat2"
 
 pPat1 :: Parser (Pat SP)
-pPat1 
- =   	
+pPat1
+ =
 	-- CON { .l1 = PAT1 .. }
   	-- overlaps with CON
   	(Parsec.try $ do
 		pPat_conLabel)
- 
+
 	-- VAR @ PAT
  	-- overlaps with VAR
   <|>  	(Parsec.try $ do
@@ -72,12 +72,12 @@ pPat1
 		pTok K.Comma
 		ps		<- Parsec.sepBy1 pPat (pTok K.Comma)
 		pTok K.SKet
-		
+
 		return	$ WList (spW p1) (p1 : ps)
 
  	-- (PAT, PAT .. )
-	-- overlaps with ( PAT ) 
-  <|>  	(Parsec.try $ do	
+	-- overlaps with ( PAT )
+  <|>  	(Parsec.try $ do
 		pTok K.RBra
 		p1		<- pPat
 		pTok K.Comma
@@ -109,28 +109,28 @@ pPat1
   <|>	-- \^VAR
   	do	tok	<- pTok K.Hat
 		var		<- pVar
-		return	$ WObjVar (spTP tok) (vNameV var) 
+		return	$ WObjVar (spTP tok) (vNameV var)
 
   <|>	-- ( PAT )
   	do	pat		<- pRParen pPat
 		return	pat
-
+  <?> "pPat1"
 
  -- CON { label = PAT ... }
 pPat_conLabel :: Parser (Pat SP)
 pPat_conLabel
  = do	con		<- pCon
 	pTok K.CBra
-		
+
 	let pLabelBind = do
 		label	<- pDotLabel
 		pTok K.Equals
 		pat	<- pPat
 		return	(label, pat)
-			
+
 	labelBinds	<- Parsec.sepBy pLabelBind (pTok K.Comma)
 	pTok K.CKet
-		
+
 	return	$ WConLabel (spV con) (vNameV con) labelBinds
 
 
@@ -139,8 +139,8 @@ pDotLabel :: Parser (Label SP)
 pDotLabel
  = 	do	var	<- pVar
  		return	$ LVar (spV var) (vNameF var)
-		
+
   <|>	do	pTok K.Dot
   		(int, sp)	<- pIntSP
   		return	$ LIndex sp int
-
+  <?>   "pDotLabel"
