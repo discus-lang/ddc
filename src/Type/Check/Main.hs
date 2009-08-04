@@ -10,10 +10,8 @@ import Type.State
 import Type.Error
 import Type.Class
 import Type.Base
-
-import qualified Shared.Var	as Var
 import Shared.VarPrim
-
+import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 
 import Util
@@ -34,19 +32,15 @@ checkMain
 	 Just (vMain, vMainT)	
 	  -> do	Just tMain	<- extractType True vMainT
 	  	checkMain' vMainT tMain tMain
-	  
--- main is passed () by the runtime system at startup, 
---	so it must be a function that will accept this.
+	  	
+-- | The main function is passed () by the runtime system at startup, 
+--	so it must accept this.
 checkMain' vMainT tMain tt
  = case tt of
-	TForall b k t
-	 -> checkMain' vMainT tMain t
+	TForall b k t			-> checkMain' vMainT tMain t
+ 	TFetters t fs			-> checkMain' vMainT tMain t
 
- 	TFetters t fs
-	 -> checkMain' vMainT tMain t
-
-	TFun (TVar KValue _) _ eff clo
-	 -> return ()
+	TFun (TVar KValue _) _ eff clo	-> return ()
 
 	TFun (TData _ v1 []) _ eff clo
 	 | v1 == primTUnit
@@ -55,9 +49,4 @@ checkMain' vMainT tMain tt
 	_ -> addErrors [ErrorWrongMainType { eScheme = (vMainT, tMain) }]
 			
 isMainVar var
-	| Var.name var		== "main"
-	, Var.ModuleAbsolute ["Main"]	<- Var.nameModule var
-	= True
-	
-	| otherwise
-	= False
+	= Var.name var == "main"

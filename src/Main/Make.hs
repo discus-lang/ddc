@@ -11,7 +11,7 @@ import Module.Scrape
 import Module.ScrapeGraph
 import Shared.Pretty
 import Shared.Error
-import Shared.Var		(Module)
+import Shared.Var		(Module(..))
 import qualified Main.Arg as	Arg
 import qualified Shared.Var as	Var
 
@@ -90,7 +90,7 @@ ddcMake args verbose setup linkExecutable files
 buildLoop 
 	:: Setup		-- ^ compile setup
 	-> ScrapeGraph		-- ^ dependency graph
-	-> Int			-- ^ total modules needing to be rebuilt
+	-> Int			-- ^ total number of modules needing to be rebuilt
 	-> Int			-- ^ ix of this module
 	-> [Module]		-- ^ root modules
 	-> IO ScrapeGraph
@@ -142,7 +142,7 @@ buildLoop' setup graph buildCount buildIx roots build
 		-- run the compiler to produce the object file
 		let Just scrape		= Map.lookup m graph_pruned
 		let Just pathSource	= scrapePathSource scrape
-		definesMain		<- compileFile setup graph_pruned m
+		definesMain		<- compileFile setup graph_pruned m (shouldBlessMain roots m) 
 
 		-- check that the object and interface is actually there
 		let (_, fileDir, fileBase, _)
@@ -246,3 +246,26 @@ findBuildable1 graph noChoose mod
 			
    in	result
 
+
+-- | Decide whether to treat a 'main' function defined in this module
+--	as the program entry point.
+shouldBlessMain :: [Module] -> Module -> Bool
+shouldBlessMain roots m
+
+	-- We have Main as a root, but we're not compiling it now.
+	| elem mainModule roots
+	, m /= mainModule
+	= False
+
+	-- We have Main as a root, and we're compiling it now
+	| elem mainModule roots
+	, m == mainModule
+	= True
+	
+	-- If we don't have Main as a root, then treat all root modules as Main.
+	| otherwise
+	= True
+
+	where	mainModule = ModuleAbsolute ["Main"]
+	
+	

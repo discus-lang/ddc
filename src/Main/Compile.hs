@@ -57,12 +57,14 @@ out 	ss	= putStr $ pprStrPlain ss
 --	Returns a list of module names and the paths to their compiled object files.
 --
 compileFile 
-	:: Setup 		-- compile setup.
-	-> Map Module M.Scrape	-- scrape graph of all modules reachable from the root.
-	-> Module		-- module to compile, must also be in the scrape graph.
-	-> IO Bool		-- true if the module defines the main function
+	:: Setup 		-- ^ compile setup.
+	-> Map Module M.Scrape	-- ^ scrape graph of all modules reachable from the root.
+	-> Module		-- ^ module to compile, must also be in the scrape graph.
+	-> Bool			-- ^ whether to treat a 'main' function defined by this module
+				--	as the program entry point.
+	-> IO Bool		-- ^ true if the module defines the main function
 
-compileFile setup scrapes sModule
+compileFile setup scrapes sModule blessMain
  = do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
 
 	-- Decide on module names  ---------------------------------------------
@@ -97,6 +99,7 @@ compileFile setup scrapes sModule
 		sRoot
 		sModule
 		importDirs 
+		blessMain
 		sSource
 
 
@@ -106,6 +109,7 @@ compileFile_parse
 	sRoot
 	sModule
 	importDirs
+	blessMain
 	sSource
 
  -- Emit a nice error message if the source file is empty.
@@ -183,9 +187,6 @@ compileFile_parse
 	------------------------------------------------------------------------
 	-- Source Stages
 	------------------------------------------------------------------------
-
---	when (isJust $ setupRecursive setup)
---	 $ do	putStr $ pprStrPlain $ "ddc make: " % fileName % "\n"
 
 	when ?verbose
 	 $ do	putStr	$ "  * Source: Parse\n"
@@ -295,6 +296,7 @@ compileFile_parse
 				vsTypesPlease
 				vsBoundTopLevel
 				sigmaTable
+				blessMain
 
 	-- !! Early exit on StopType
 	when (elem Arg.StopType ?args)
@@ -535,7 +537,7 @@ compileFile_parse
 
 	-- If this module binds the top level main function
 	--	then append RTS initialisation code.
-	seaSourceInit	<- if moduleDefinesMainFn
+	seaSourceInit	<- if moduleDefinesMainFn && blessMain
 				then do mainCode <- SE.seaMain (map fst $ Map.toList importsExp) moduleName
 				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
@@ -562,7 +564,7 @@ compileFile_parse
 		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
 	
 	
-	return moduleDefinesMainFn
+	return moduleDefinesMainFn 
 		
 -----
 compileExit

@@ -251,10 +251,11 @@ desugarSlurpConstraints
 desugarSolveConstraints
 	:: (?args :: [Arg])
 	-> (?pathSourceBase :: FilePath)
-	-> [N.CTree]				-- type constraints
-	-> Set Var				-- the TEC vars to infer TECs for	
-	-> Set Var				-- type vars of value vars bound at top level
-	-> Map Var Var				-- sigma table
+	-> [N.CTree]		-- type constraints
+	-> Set Var		-- the TEC vars to infer TECs for	
+	-> Set Var		-- type vars of value vars bound at top level
+	-> Map Var Var		-- sigma table
+	-> Bool			-- whether to require the 'main' function to have () -> () type
 	
 	-> IO 	( Map Var T.Type				-- inferred types
 		, Map Var (T.InstanceInfo T.Type T.Type)	-- how each var was instantiated
@@ -269,6 +270,7 @@ desugarSolveConstraints
 	vsTypesPlease
 	vsBoundTopLevel
 	sigmaTable
+	blessMain
 
  = {-# SCC "solveSquid" #-}
    do
@@ -278,11 +280,9 @@ desugarSolveConstraints
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
 		
  	state	<- {-# SCC "solveSquid/solve" #-} T.squidSolve 
-			?args
-			constraints
-			sigmaTable
-			vsBoundTopLevel
-			hTrace
+			?args		constraints
+			sigmaTable	vsBoundTopLevel	
+			hTrace		blessMain
 
 	-- dump out the type graph
 	--	do this before bailing on errors so we can see what's gone wrong.

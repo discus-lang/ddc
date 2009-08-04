@@ -9,7 +9,7 @@ where
 
 
 formatPathWidth :: Int
-formatPathWidth	= 60
+formatPathWidth	= 70
 
 formatTimeWidth :: Int
 formatTimeWidth = 7

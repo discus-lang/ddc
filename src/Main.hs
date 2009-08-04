@@ -176,11 +176,11 @@ ddcCompile verbose setup files
 	System.exitWith System.ExitSuccess
 
 
-compileSingle setup graph mod
+compileSingle setup graph mod 
  = let	Just scrape	= Map.lookup mod graph
  	setup'		= setup { setupArgsBuild
 					=  scrapeArgsInline scrape
 					++ setupArgsBuild setup }
-   in	compileFile setup' graph mod
+   in	compileFile setup' graph mod False
 	
 

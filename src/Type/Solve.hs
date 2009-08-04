@@ -68,9 +68,12 @@ squidSolve
 	-> Map Var Var		-- ^ table of value vars to type evars.
 	-> Set Var		-- ^ type vars of value vars which are bound at top level.
 	-> Maybe Handle		-- ^ If Just, write solve trace to this handle.
+	-> Bool			-- ^ Whether to require main fns defined here to have the main type.
 	-> IO SquidS
 
-squidSolve args ctree sigmaTable vsBoundTopLevel mTrace
+squidSolve 
+	args ctree sigmaTable 
+	vsBoundTopLevel mTrace blessMain
  = do
 	state1		<- squidSInit
  	let state2	= state1
@@ -79,7 +82,7 @@ squidSolve args ctree sigmaTable vsBoundTopLevel mTrace
 			, stateVsBoundTopLevel	= vsBoundTopLevel
 			, stateArgs		= Set.fromList args }
 		
-	state'		<- execStateT (solve args ctree)
+	state'		<- execStateT (solve args ctree blessMain)
 			$ state2
 
 	return state'
@@ -88,9 +91,11 @@ squidSolve args ctree sigmaTable vsBoundTopLevel mTrace
 -----
 solve 	:: [Arg] 
 	-> [CTree]
+	-> Bool		-- ^ whether to require any 'main' functions defined in this module
+			--	to have the main type.
 	-> SquidM ()
 
-solve	args ctree	
+solve	args ctree blessMain	
  = do
 	-- Slurp out the branch containment tree
 	let treeContains	= Map.unions $ map slurpContains ctree
@@ -104,7 +109,7 @@ solve	args ctree
 		
 	-- If the main function was defined, then check it has an appropriate type.
 	errors_checkMain	<- gets stateErrors
-	when (null errors_checkMain)
+	when (null errors_checkMain && blessMain)
 		checkMain
 
 	-- Check there is an instance for each type class constraint left in the graph.

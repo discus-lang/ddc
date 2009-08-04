@@ -333,6 +333,6 @@ pprResult color test way result
 			 | color	-> pprTestWinColor testWin
 			 | otherwise	-> pprTestWin      testWin
 
-  in	" * " ++ sTest ++ " " ++ Format.padR 20 sWay ++ sResult
+  in	" * " ++ sTest ++ " " ++ Format.padR 15 sWay ++ sResult
 
 
