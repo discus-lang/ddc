@@ -1,0 +1,17 @@
+
+testPatList :: [Int] -> Int
+testPatList lst =
+    case lst of
+        [] -> 0
+        [a] -> a
+        [a, b] -> a + b
+        [a, b, c] -> a + b + c
+        _ -> 100
+	
+main () = do
+    println $ show (testPatList [])
+    println $ show (testPatList [2])
+    println $ show (testPatList [3,5])
+    println $ show (testPatList [7,11,13])
+    println $ show (testPatList [17,19,23,29])
+

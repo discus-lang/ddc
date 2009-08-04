@@ -60,20 +60,14 @@ pPat1
 		pat		<- pPat1
 		return	$ WAt (spV var) (vNameV var) pat)
 
-	-- []
-  <|>	(Parsec.try $ do
-  		tok		<- pTok K.SBra
-		pTok K.SKet
-		return	$ WCon (spTP tok) Var.primNil [])
-
-  <|>	-- [p1, p2 .. ]
-  	do	pTok K.SBra
-		p1		<- pPat
-		pTok K.Comma
-		ps		<- Parsec.sepBy1 pPat (pTok K.Comma)
+  <|>	-- [] or [x] or [p1, p2 .. ]
+  	do	tok <- pTok K.SBra
+		ps	<- Parsec.sepBy pPat (pTok K.Comma)
 		pTok K.SKet
 
-		return	$ WList (spW p1) (p1 : ps)
+		if length ps == 0
+			then return	$ WCon (spTP tok) Var.primNil []
+			else return	$ WList (spTP tok) ps
 
  	-- (PAT, PAT .. )
 	-- overlaps with ( PAT )
