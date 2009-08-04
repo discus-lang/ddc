@@ -72,6 +72,7 @@ pTop
  	-- SIG/BIND
    <|>	do	stmt	<- pStmt_sigBind
 	 	return	$ PStmt stmt
+   <?> "pTop"
 
 
 -- Pragma ------------------------------------------------------------------------------------------

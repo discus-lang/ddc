@@ -203,6 +203,7 @@ pType_body
 				return $ Just (TBot KEffect, clo, t2))
 
 		   <|>	return Nothing
+		   <?> "pType_body"
 
 		case mRest of
 			Just (eff, clo, t2)	-> return $ TFun t1 t2 eff clo
