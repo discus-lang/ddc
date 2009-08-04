@@ -10,6 +10,6 @@ foreign import "(void *)"
 foreign import "primPtrVoid_eq"
  primPtrVoid_eq :: Ptr# Void# -> Ptr# Void# -> Bool#
 
-foreign import "0"
+foreign import "((void *) 0)"
  primPtrVoid_null :: Ptr# Void# 
 
