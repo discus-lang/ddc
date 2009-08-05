@@ -2,52 +2,52 @@
 #ifndef _DDC_Types
 #define _DDC_Types
 
-#include <sys/types.h>
+#include <stdint.h>
 #include <stdbool.h>
 
 
 // Define the types that the generated C code uses.
 
 // Object tags
-typedef u_int32_t		Tag;
+typedef uint32_t		Tag;
 
 typedef void*			FunPtr;
 
 typedef bool			Bool;
 
 typedef void*	 		Word;
-typedef u_int8_t		Word8;
-typedef u_int32_t		Word32;
-typedef u_int64_t		Word64;
+typedef uint8_t		Word8;
+typedef uint32_t		Word32;
+typedef uint64_t		Word64;
 
 typedef int32_t			Int32;
 typedef int64_t			Int64;
 
 typedef unsigned int		UInt;
-typedef u_int32_t 		UInt32;
-typedef u_int64_t		UInt64;
+typedef uint32_t 		UInt32;
+typedef uint64_t		UInt64;
 
 typedef float			Float32;
 typedef double			Float64;
 
 typedef char			Char8;
-typedef u_int32_t		Char32;		
+typedef uint32_t		Char32;		
 
 typedef char*			String;
 
 // For machines with 32 bit pointers
 #if BITS == 32
 typedef int32_t			MachineInt;
-typedef u_int32_t		MachineWord;
-typedef u_int32_t		SizePtr;
-typedef u_int16_t		HalfPtr;
+typedef uint32_t		MachineWord;
+typedef uint32_t		SizePtr;
+typedef uint16_t		HalfPtr;
 
 // For machines with 64 bit pointers
 #elif BITS == 64
 typedef int64_t			MachineInt;
-typedef u_int64_t		MachineWord;
-typedef u_int64_t		SizePtr;
-typedef u_int32_t		HalfPtr;
+typedef uint64_t		MachineWord;
+typedef uint64_t		SizePtr;
+typedef uint32_t		HalfPtr;
 
 #else
 #error "BITS must be defined and must be either 32 or 64.  Set this value in make/config.mk and src/Config/Config.hs.platform for your platform."
