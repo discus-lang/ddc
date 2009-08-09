@@ -118,7 +118,7 @@ getTestsInDir config dirPath
 
 
 	-- These tests can only be run in a specific way
-	let takeStdoutWayFile way file
+{-	let takeStdoutWayFile way file
 		| name		<- "Main.stdout.check." ++ pprWayName way
 		, isSuffixOf name file
 		= Just (TestDiff "Main.stdout" name)
@@ -142,7 +142,7 @@ getTestsInDir config dirPath
 				
 		| otherwise
 		= []
-		
+-}		
 	-- Cleanup after each set of tests if asked 
 	let testsFinal
 		| configClean config

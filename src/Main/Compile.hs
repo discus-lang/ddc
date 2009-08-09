@@ -126,7 +126,6 @@ compileFile_parse
 
 	-- extract some file names
 	let moduleName		= M.scrapeModuleName sRoot
-	let ModuleAbsolute moduleNameStr = moduleName
 
 	let pathSource		= let Just s = M.scrapePathSource sRoot in s
 
