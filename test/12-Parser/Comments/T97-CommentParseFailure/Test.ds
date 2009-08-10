@@ -1,0 +1,11 @@
+
+
+{--}
+
+{-=-}
+
+{-
+-- The '=' sign butted up against the comment close token was failing.
+=-}
+
+x = "Dummy string"

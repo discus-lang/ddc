@@ -56,6 +56,10 @@ tokens :-
  \- \- \-*		{ ptag CommentLineStart		}
  \{ \-			{ ptag CommentBlockStart	}
  \- \}			{ ptag CommentBlockEnd		}
+ 
+-- This is required to fix lexing of things like "{-\n=-}".
+-- This may be working around an Alex bug.
+ \= \- \}		{ ptag CommentBlockEnd		}
 
  \{ \- \# .* \# \- \}	{ ptags CommentPragma		}
 
