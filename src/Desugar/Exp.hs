@@ -58,7 +58,7 @@ data Top a
 	| PProjDict	a Type [Stmt a]
 
 	-- sigs
-	| PSig		a Var Type
+	| PSig		a [Var] Type
 
 	-- bindings
 	| PBind 	a (Maybe Var) (Exp a)
@@ -121,7 +121,7 @@ data Stmt a
 	= SBind 	a (Maybe Var) (Exp a)
 	| SBindMonadic	a (Pat a) (Exp a)
 	| SBindPat	a (Pat a) (Exp a)
-	| SSig		a Var	Type
+	| SSig		a [Var]	Type
 	deriving (Show, Eq)
 	
 

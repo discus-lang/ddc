@@ -70,17 +70,19 @@ slurpS	(SBind sp (Just v) e1)
 				++ [ CGen (TSM $ SMGen sp v) tBind ] } ] )
 
 -- type signatures
-slurpS	stmt@(SSig sp varV t)
+slurpS	stmt@(SSig sp vs t)
  = do
- 	tX		<- lbindVtoT varV
+ 	tXs@(tX1 : _)	<- mapM lbindVtoT vs
 	
 	let qs	= 
-		[ CSig (TSV $ SVSig sp varV) tX	$ t ]
+		[ CSig (TSV $ SVSig sp varV) tX	$ t 
+			| tX   <- tXs 
+			| varV <- vs ]
 		
-	return	( tX
+	return	( tX1
 		, pure
 		, empty
-		, SSig Nothing varV t
+		, SSig Nothing vs t
 		, qs)
 
 

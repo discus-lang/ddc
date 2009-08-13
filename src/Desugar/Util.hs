@@ -5,7 +5,7 @@ module Desugar.Util
 	, bindingVarsOfStmt
 	, bindingVarsOfPat
 	, bindingVarsOfGuard
-	, takeStmtBoundV
+--	, takeStmtBoundV
 	, bindingVarOfStmt
 	, collectClosureProjTags)
 
@@ -56,7 +56,7 @@ bindingVarsOfStmt ss
 	SBind 		_ (Just v) x	-> Set.singleton v
 	SBindMonadic 	_ w x		-> bindingVarsOfPat w
 	SBindPat	_ w x		-> bindingVarsOfPat w
-	SSig		_ v t		-> Set.singleton v
+	SSig		_ vs t		-> Set.fromList vs
 
 
 -- | Determine the vars being bound by a pattern lhs
@@ -76,14 +76,13 @@ bindingVarsOfGuard gg
 	GCase 		_ w		-> bindingVarsOfPat w
 	GExp		_ w x		-> bindingVarsOfPat w
 
-
-	
+{-
 takeStmtBoundV :: Stmt a -> Maybe Var
 takeStmtBoundV ss
  = case ss of
  	SBind nn mV x	-> mV
 	SSig  nn v t	-> Just v
-
+-}
 	
 bindingVarOfStmt :: Stmt a -> Maybe Var
 bindingVarOfStmt ss

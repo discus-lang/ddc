@@ -169,10 +169,10 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		returnJ		$ D.PProjDict sp t' ss'
 		
 
-	S.PStmt (S.SSig sp v t)
+	S.PStmt (S.SSig sp vs t)
 	 -> do	t'	<- rewrite t
 
-	 	returnJ	$ D.PSig sp v t
+	 	returnJ	$ D.PSig sp vs t
 
   	S.PStmt s
 	 -> do	(D.SBind sp mV x)	<- rewrite s
@@ -465,9 +465,9 @@ instance Rewrite (S.Proj SourcePos) (D.Proj Annot) where
 instance Rewrite (S.Stmt SourcePos) (D.Stmt Annot) where
  rewrite ss
   = case ss of
-	S.SSig sp v t
+	S.SSig sp vs t
 	 -> do 	t'	<- rewrite t
-	 	return	$ D.SSig sp v t
+	 	return	$ D.SSig sp vs t
 
 	S.SStmt sp x
 	 -> do	x'	<- rewrite x

@@ -229,9 +229,9 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SBindPat nn pat x
 	 -> annot nn	(pat %>> " = " % x)	% ";"
 	
-	SSig  nn v  t	
-	 -> let v'	= v { Var.nameModule = Var.ModuleNil}
-	    in	annot nn (v' %>> " :: " % t) % ";"
+	SSig  nn vs  t	
+	 -> let vs'	= map (\v -> v { Var.nameModule = Var.ModuleNil}) vs
+	    in	annot nn (vs' %!% ", " %>> " :: " % t) % ";"
 
 
 -- Alt -------------------------------------------------------------------------

@@ -133,9 +133,9 @@ snipProjDictP moduleName classDicts (PProjDict sp t ss)
 	let (TData _ vCon _)	= t
 
 	-- See what vars are in the dict and make a map of new vars.
- 	let dictVs	= nub
-			$ catMaybes 
-			$ map takeStmtBoundV ss
+ 	let dictVs	= Set.toList
+			$ Set.unions
+			$ map bindingVarsOfStmt ss
 			
 	dictVsNew 	<- mapM (newProjFunVar sp moduleName vCon) dictVs
 	let varMap	= Map.fromList $ zip dictVs dictVsNew
@@ -236,7 +236,7 @@ snipInstBind' moduleName
 	let tInst_quant	= makeTForall_back vks_quant tInst_sub
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
-		,  [ PSig spBind vTop tInst_quant
+		,  [ PSig  spBind [vTop] tInst_quant
 		   , PBind spBind (Just vTop)  xx])
 
 
@@ -299,7 +299,7 @@ snipDataField moduleName sp vData vCtor field
 		varR	<- newVarN NameRegion
 				
 		return	( field { dInit = Just $ XVar sp var }
-			, [ PSig  sp var (TFun 	(TData KValue primTUnit []) 
+			, [ PSig  sp [var] (TFun (TData KValue primTUnit []) 
 						(dType field) 
 						(TBot KEffect) (TBot KClosure))
 			  , PBind sp (Just var) (XLambda sp varL xInit)])
@@ -372,9 +372,9 @@ snipProjDictS varMap xx
 	= ( Just $ PBind nn (Just v') x
 	  , Just $ SBind nn (Just v)  (XVar nn v'))
 	  	
-	| SSig  nn v  t		<- xx
-	, Just v'		<- Map.lookup v varMap
-	= ( Just $ PSig  nn v'  t
+	| SSig  nn vs t		<- xx
+	, Just vs'		<- sequence $ map (\v -> Map.lookup v varMap) vs
+	= ( Just $ PSig  nn vs' t
 	  , Nothing )
 
 	| otherwise
@@ -446,9 +446,9 @@ addProjDictFunsP
 	let tData	= TData (makeDataKind vsData) vData tsData
 	
 	-- See what projections have already been defined.
-	let dictVs	= nub 
-			$ catMaybes
-			$ map takeStmtBoundV ss
+	let dictVs	= Set.toList
+			$ Set.unions
+			$ map bindingVarsOfStmt ss
 	
 	-- Gather the list of all fields in the data def.
 	let dataFieldVs
@@ -491,7 +491,7 @@ makeProjFun sp tData ctors fieldV
 					, field			<- fields
 					, dLabel field == Just fieldV ]
 
-    	return	[ SSig  sp fieldV 	
+    	return	[ SSig  sp [fieldV]
 			(TFun tData resultT pure empty) 
 
 		, SBind sp (Just fieldV) 
@@ -547,7 +547,7 @@ makeProjR_fun sp tData ctors fieldV
 					$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
 					% "  tData = " % show tData			% "\n"
 
-	return	$ 	[ SSig  sp funV 	
+	return	$ 	[ SSig  sp [funV]
 				(TFun tData 	(TData 	(KFun KRegion (KFun KValue KValue))
 							primTRef 
 							[TVar KRegion rData, resultT]) 

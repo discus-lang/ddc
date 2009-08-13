@@ -40,7 +40,7 @@ takeStmtBoundVs s
 	SBindFun 	sp v ps as 	-> [v]
 	SBindPat	sp pat x	-> takePatBoundVs pat
 	SBindMonadic 	sp pat x	-> takePatBoundVs pat
-	SSig      	sp v  t		-> [v]
+	SSig      	sp vs  t	-> vs
 	
 -- | take the vars which are bound by this pattern
 takePatBoundVs :: Pat a -> [Var]

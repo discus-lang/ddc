@@ -430,7 +430,7 @@ pStmt_sig
  = do	var	<- liftM vNameV $ pVar
  	pTok K.HasType
 	typ	<- pType
-	return	$ SSig (spV var) var typ
+	return	$ SSig (spV var) [var] typ
 
 -- | Parse a signature or binding
 pStmt_sigBind :: Parser (Stmt SP)

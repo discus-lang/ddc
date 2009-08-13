@@ -239,7 +239,7 @@ slurpX	exp@(XDo sp stmts)
 	cX		<- newTVarCS	"do"
 	
 	--  Add all the bound vars to the bindMode map.
-	let boundVs	= [v | Just v <- map takeStmtBoundV stmts]
+	let boundVs	= [v | Just v <- map bindingVarOfStmt stmts]
 	boundVsT	<- mapM lbindVtoT boundVs
 	
 	-- Decend into each statement in turn.

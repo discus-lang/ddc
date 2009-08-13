@@ -213,7 +213,7 @@ data Proj a
 
 -- Statements --------------------------------------------------------------------------------------
 data Stmt a	
-	= SSig		a Var Type
+	= SSig		a [Var] Type
 	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
 	
 	| SBindFun	a Var [Pat a] [Alt a]		-- ^ a guarded function binding, with patterns for the arguments. 

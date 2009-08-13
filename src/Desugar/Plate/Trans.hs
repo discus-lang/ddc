@@ -183,11 +183,11 @@ instance Monad m => TransM m a1 a2 Top where
 		t'		<- transT table t
 		transP table	$ PProjDict nn' t' ss'	
 
-	PSig nn v t
+	PSig nn vs t
 	 -> do	nn'		<- transN	table nn
-	 	v'		<- transV	table v
+	 	vs'		<- mapM (transV	table) vs
 		t'		<- transT	table t
-		transP table	$ PSig nn' v' t'
+		transP table	$ PSig nn' vs' t'
 		 
 	PBind nn mV x
 	 -> do	nn'		<- transN  	table nn
@@ -368,11 +368,11 @@ transS_default table ss
 	
 followS table xx
   = case xx of
-	SSig nn v t
+	SSig nn vs t
 	 -> do	nn'	<- transN  table nn
-	 	v'	<- transV  table v
+	 	vs'	<- mapM (transV  table) vs
 		t'	<- transT table t
-		return	$ SSig nn' v' t'
+		return	$ SSig nn' vs' t'
 
   	SBind nn mV x
 	 -> do	nn'	<- transN  	table nn

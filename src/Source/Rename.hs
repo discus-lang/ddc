@@ -180,7 +180,7 @@ instance Rename (Top SourcePos) where
 		let fixupV v	= v 	{ Var.nameSpace 	= NameField }
 		
 		let ssF		= map (\s -> case s of 
-					SSig  sp v t		-> SSig   sp 	(fixupV v) t
+					SSig  sp vs t		-> SSig   sp 	(map fixupV vs) t
 					SBindFun sp v pats alts	-> SBindFun sp	(fixupV v) pats alts)
 			$ ss
 	 
@@ -652,10 +652,10 @@ boundByLCQual    q
 instance Rename (Stmt SourcePos) where
  rename s
   = case s of
-	SSig sp v t
-	 -> do	v'	<- lbindZ v
+	SSig sp vs t
+	 -> do	vs'	<- mapM lbindZ vs
 		t'	<- local $ rename t
-		return	$ SSig sp v' t'
+		return	$ SSig sp vs' t'
 
 	SStmt sp x
 	 -> do	x'	<- local $ rename x

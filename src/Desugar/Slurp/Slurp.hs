@@ -172,14 +172,16 @@ slurpP top@(PClassInst sp v ts context ss)
 
 	
 -- type Signatures
-slurpP	(PSig sp v tSig) 
+slurpP	(PSig sp vs tSig) 
  = do
-	tVar		<- lbindVtoT v
+	tVars		<- mapM lbindVtoT vs
 
 	let qs	= 
-		[CSig (TSV $ SVSig sp v) tVar tSig]
+		[CSig (TSV $ SVSig sp v) tVar tSig
+			| v 	<- vs
+			| tVar	<- tVars ]
 
- 	return	( PSig Nothing v tSig
+ 	return	( PSig Nothing vs tSig
 		, qs)
 
 
