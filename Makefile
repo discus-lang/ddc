@@ -12,6 +12,7 @@
 #       clean           -- clean everything
 #       cleanWar        -- clean libraries and tests, but leave the compiler build alone
 #       cleanRuntime    -- clean the runtime system
+#       cleanLibrary    -- clean out the libraries
 #
 #       bin/ddc         -- build the compiler binary
 #       bin/war2        -- build the test driver
@@ -164,6 +165,19 @@ doc	:
 cleanRuntime :
 	@echo "* Cleaning runtime"
 	@find runtime \
+		    	-name "*.o" \
+		-o	-name "*.dep" \
+		-o	-name "*.so" \
+		-o  -name "*.dylib" \
+		-o	-name "*.a" \
+		-follow | xargs -n 1 rm -f
+
+
+# -- clean objects in the runtime system
+.PHONY : cleanLibrary
+cleanLibrary :
+	@echo "* Cleaning library"
+	@find library \
 		    	-name "*.o" \
 		-o	-name "*.dep" \
 		-o	-name "*.so" \
