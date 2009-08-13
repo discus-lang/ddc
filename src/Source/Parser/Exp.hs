@@ -421,16 +421,17 @@ pStmt_bind
 		exp	<- pExpRHS
 		return	$ SBindPat (spW pat) pat exp
 
-  <?>   "pStmt_bind"
+ <?>	"pStmt_bind"
 
 
 -- | Parse a type sig (only)
 pStmt_sig :: Parser (Stmt SP)
 pStmt_sig
- = do	var	<- liftM vNameV $ pVar
- 	pTok K.HasType
+ = do	vars	<- Parsec.sepBy1 pVar (pTok K.Comma)
+	let vars' = map vNameV vars
+ 	ht	<- pTok K.HasType
 	typ	<- pType
-	return	$ SSig (spV var) [var] typ
+	return	$ SSig (spTP ht) vars' typ
 
 -- | Parse a signature or binding
 pStmt_sigBind :: Parser (Stmt SP)

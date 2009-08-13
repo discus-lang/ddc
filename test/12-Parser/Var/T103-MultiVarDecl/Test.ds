@@ -1,0 +1,16 @@
+{-      # OPTIONS -no-implicit-prelude # -}
+
+abba :: Int
+b, c :: Int
+d, e, f :: Int
+
+a = 1
+b = 2
+c = 3
+d = 4
+e = 5
+f = 6
+
+l :: [Int]
+l = [a,b,c,d,e,f]
+
