@@ -14,7 +14,8 @@
 --	constraints during generaliation on the next time around.
 -- 
 module Type.Check.SchemeDanger
-	( checkSchemeDangerCid
+	( checkSchemes
+	, checkSchemeDangerCid
 	, checkSchemeDanger)
 
 where
@@ -49,20 +50,30 @@ stage	= "Type.Check.SchemeDanger"
 checkSchemeDangerCid :: ClassId -> SquidM [Error]
 checkSchemeDangerCid cid
  = do	Just c	<- lookupClass cid
- 	checkSchemeDanger c
+ 	checkSchemeDanger [] c
  
+checkSchemes :: SquidM ()
+checkSchemes 
+ = do	trace	$ ppr $ "*    checkSchemes\n"
+	errs	<- foldClasses checkSchemeDanger []
+	addErrors errs
+	trace	$ ppr $ "*    done checking schemes\n"
+
+
 -- Check that the regions above quantified dangerous vars haven't become mutable.
-checkSchemeDanger :: Class -> SquidM [Error]
-checkSchemeDanger c
+checkSchemeDanger :: [Error] -> Class -> SquidM [Error]
+checkSchemeDanger errs c
 	| Class { classKind	= KValue 
 		, classId	= cid
 		, classType	= Just t }	<- c
 	, TForall b k x				<- t
 
-	= do	trace 	$ "*   checkReGeneralise\n"
+	= do	trace 	$ "*   checkSchemeDanger\n"
 			% "    t = " % t % "\n"
 
-		let clo	= trimClosureC Set.empty Set.empty $ TFree (Var.new "foo") x
+		let clo	= trimClosureC 
+				Set.empty Set.empty 
+			$ TFree (Var.new "foo") x
 		
 		let ds	= catMaybes
 			$ map (\d -> case d of
@@ -73,15 +84,15 @@ checkSchemeDanger c
 		trace	$ "    clo  = " % clo 	% "\n"
 			% "    ds   = " % ds	% "\n"
 			
-		errs	<- liftM catMaybes
+		moreErrs	
+			<- liftM catMaybes
 			$ mapM (checkDanger c) ds
 			
 		trace	$ "    errs  = " % errs	% "\n\n"
-			
-		return errs
+		return (errs ++ moreErrs)
 
 	| otherwise
-	= return []
+	= return errs
  	
 -- Produce an error if the region is mutable
 checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)

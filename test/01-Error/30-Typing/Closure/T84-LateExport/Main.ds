@@ -5,5 +5,5 @@ main ()
  = do	ref	= Ref id
 	f	= \x -> ref.x
  	ref#x	#= succ
-	putStr $ f () "oh noes"
+	putStr (f () "oh noes")
 	

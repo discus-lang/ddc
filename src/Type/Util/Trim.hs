@@ -54,7 +54,12 @@ trace ss x
 
 
 -- | Trim the closure portion of this type
-trimClosureT :: Set Type -> Set Type -> Type -> Type
+trimClosureT 
+	:: Set Type	-- ^ variables that are quantified in this context
+	-> Set Type	-- ^ primary region variables of this context
+	-> Type 
+	-> Type
+
 trimClosureT quant rsData tt
   = let	tt'	= packType_noLoops $ trimClosureT' quant rsData tt
     in	if tt' == tt
@@ -241,8 +246,12 @@ trimClosureC_t' tag quant rsData tt
 	 	Just (v, k, [])		-> []
 		Just (v, k, (t:ts))
 		 	| kindOfType_orDie t == KRegion
-			-> let rsData'	= Set.insert t rsData
-			   in  catMap (trimClosureC_t tag quant rsData') (t:ts)
+			-> let 	rsData'	= Set.insert t rsData
+				vs	= freeVars (t:ts)
+			   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
+				 ++ map (TDanger t) [TVar (kindOfSpace $ Var.nameSpace v) v
+							| v <- Set.toList vs 
+							, not $ Var.isCtorName v]
 		   
 			| otherwise
 			-> catMap down ts
@@ -252,8 +261,12 @@ trimClosureC_t' tag quant rsData tt
 	TData k v []	-> []
 	TData k v (t:ts)
 	 	| kindOfType_orDie t == KRegion
-		-> let rsData'	= Set.insert t rsData
-		   in  catMap (trimClosureC_t tag quant rsData') (t:ts)
+		-> let	rsData'	= Set.insert t rsData	
+			vs	= freeVars (t:ts)
+		   in 	catMap (trimClosureC_t tag quant rsData') (t:ts)
+				++ map (TDanger t) [TVar (kindOfSpace $ Var.nameSpace v) v
+							| v <- Set.toList vs 
+							, not $ Var.isCtorName v]
 		   
 		| otherwise
 		-> catMap down ts

@@ -106,7 +106,9 @@ solve	args ctree blessMain
 
 	-- Do a final grind to make sure the graph is up to date
 	solveCs [CGrind]
-		
+	
+	trace $ ppr "\n=== solve: post solve checks.\n"
+	
 	-- If the main function was defined, then check it has an appropriate type.
 	errors_checkMain	<- gets stateErrors
 	when (null errors_checkMain && blessMain)
@@ -117,22 +119,17 @@ solve	args ctree blessMain
 	when (null errors_checkInstances)
 		checkInstances
 
+	errors_checkSchemes	<- gets stateErrors
+	when (null errors_checkSchemes)
+		checkSchemes
+
 	-- Report how large the graph was
 	graph		<- gets stateGraph
 	trace	$ "=== Final graph size: " % graphClassIdGen graph % "\n"
 
 	-- Report whether there were any errors
 	errors	<- gets stateErrors
-	
-	if not $ isNil errors 
-	 then do	
-	 	trace	$ "\n=== solve: terminating with errors.\n"
-	 		% "    errors = " % errors	% "\n"
-			% "\n\n"
-
-		return ()
-
-	 else	return ()
+	trace   $ "=== Errors: " % errors % "\n"
  			
 -----
 solveCs :: [CTree] 

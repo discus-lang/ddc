@@ -128,6 +128,8 @@ makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
 makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for function"
 
 
+
+
 -- Projections -------------------------------------------------------------------------------------
 -- | Get the var from a forall binder
 varOfBind :: Bind -> Var
