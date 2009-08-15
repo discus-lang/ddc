@@ -28,6 +28,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import Shared.Var		(NameSpace(..))
 import Shared.VarPrim
+import Shared.Error
 
 import qualified Main.Arg	as Arg
 
@@ -39,7 +40,7 @@ import Data.Set			(Set)
 import Util
 
 -----
--- stage	= "Type.Scheme"
+stage	= "Type.Scheme"
 debug	= True
 trace s	= when debug $ traceM s
 {-
@@ -99,7 +100,9 @@ generaliseType' varT tCore envCids
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	let takeCid (TClass k cid) = cid
+	let takeCid (TClass k cid) 	= cid
+	    takeCid tt			= panic stage ("takeCid: no match for " % tt)
+		
 	let staticRsData 	= map takeCid $ Set.toList $ staticRsDataT	tFlat
 	let staticRsClosure 	= map takeCid $ Set.toList $ staticRsClosureT	tFlat
 
