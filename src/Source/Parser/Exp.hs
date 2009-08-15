@@ -173,23 +173,9 @@ pExp1'
 		exp3	<- pExp
 		return	$ XIfThenElse (spTP tok) exp1 exp2 exp3
 
-	-- [ EXP .. EXP ] / [ EXP .. ]
+	-- [ EXP .. EXP ] / [ EXP, EXP .. EXP ] / [ EXP .. ] etc
 	-- overlaps with list comprehensions and list syntax
-  <|>	(Parsec.try $ do
-  		tok	<- pTok K.SBra
-  		exp1	<- pExp
-		pTok K.DotDot
-
-		mExp2	<- 	do	pTok K.SKet
-					return Nothing
-
-			<|>	do	exp	<- pExp
-					pTok K.SKet
-					return $ Just exp
-
-		-- force infinite lists to be lazy
-		let lazy = not $ isJust mExp2
-		return	$ XListRange (spTP tok) lazy exp1 Nothing mExp2)
+  <|>	Parsec.try pListRange
 
   <|>	-- [ EXP | QUAL .. ]
 	-- overlaps with list syntax
@@ -252,6 +238,40 @@ pExp1'
   <|>	do 	exp	<- pRParen pExp
 		return 	$ XParens (spX exp) exp
   <?>   "pExp1'"
+
+pListRange :: Parser (Exp SP)
+pListRange
+ = do
+  	tok	<- pTok K.SBra
+  	exp1	<- pExp
+
+	(mExp2, mExp3)	<- (Parsec.try $ do	pTok K.DotDot
+						pTok K.SKet
+						return (Nothing, Nothing))
+
+        	 	<|> (Parsec.try $ do	pTok K.DotDot
+						exp	<- pExp
+						pTok K.SKet
+						return $ (Nothing, Just exp))
+
+        		<|> (Parsec.try $ do	pTok K.Comma
+	        				exp2	<- pExp
+						pTok K.DotDot
+	        				exp3	<- pExp
+						pTok K.SKet
+						return $ (Just exp2, Just exp3))
+
+			<|> (Parsec.try $ do	pTok K.Comma
+	        				exp	<- pExp
+						pTok K.DotDot
+						pTok K.SKet
+						return $ (Just exp, Nothing))
+
+			<?> "List range"
+
+	-- force infinite lists to be lazy
+	let lazy = not $ isJust mExp3
+	return	$ XListRange (spTP tok) lazy exp1 mExp2 mExp3
 
 
 -- | Parse an expression in the RHS of a binding or case/match alternative
