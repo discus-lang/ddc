@@ -5,6 +5,7 @@ module Source.Parser.Exp
 	, pStmt, pStmt_bind, pStmt_sig, pStmt_sigBind)
 where
 
+import Data.Maybe (isJust)
 import Source.Exp
 import Source.Parser.Type
 import Source.Parser.Pattern
@@ -187,11 +188,7 @@ pExp1'
 					return $ Just exp
 
 		-- force infinite lists to be lazy
-		let lazy
-			= case mExp2 of
-				Nothing	-> True
-				_	-> False
-
+		let lazy = not $ isJust mExp2
 		return	$ XListRange (spTP tok) lazy exp1 mExp2)
 
   <|>	-- [ EXP | QUAL .. ]
