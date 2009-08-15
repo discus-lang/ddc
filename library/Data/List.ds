@@ -276,6 +276,23 @@ rangeInt x y =
 		| x <= y	=  [x]
 				\= x : rangeIntDown (x - 1) y
 
+-- | Return a list of ints in this range
+rangeIntStep :: Int -> Int -> Int -> [Int]
+rangeIntStep x next y =
+	case (next > x, x < y) of
+		(True, True)	-> rangeIntStepUp x y
+		(False,  False)	-> rangeIntStepDown x y
+		_		-> []
+ where
+	step = next - x
+	rangeIntStepUp x' y'
+		| x' >= y'	= [x']
+				\= x' : rangeIntStepUp (x' + step) y'
+	rangeIntStepDown x' y'
+		| x' <= y'	= [x']
+				\= x' : rangeIntStepDown (x' + step) y'
+
+
 -- | Return a list of ints in this range (lazy spine)
 rangeIntL :: Int -> Int -> [Int];
 rangeIntL x y =
