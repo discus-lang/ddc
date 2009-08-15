@@ -1,0 +1,14 @@
+
+data Thing
+
+project Thing where
+	write x = x
+
+thing f 
+ = do	str	= "thing"
+	out	= f str
+	putStr $ write&{Thing} out
+
+main ()
+ = do	putStr "dude"
+	
