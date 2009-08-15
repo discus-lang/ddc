@@ -180,7 +180,7 @@ data Exp a
 	| XTuple	a [Exp a]
 	| XList		a [Exp a]
 
-	| XListRange	a Bool (Exp a) (Maybe (Exp a))	-- [EXP .. EXP] / [EXP .. ]
+	| XListRange	a Bool (Exp a) (Maybe (Exp a)) (Maybe (Exp a))	-- [EXP .. EXP] / [EXP, EXP .. EXP] / [EXP .. ]
 	| XListComp	a (Exp a) [LCQual a]		-- [ EXP | QUAL .. ]
 
 	| XWhile	a (Exp a) (Exp a)		-- test, body

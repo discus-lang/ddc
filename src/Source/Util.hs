@@ -116,7 +116,7 @@ sourcePosX xx
 	XWhen		sp x1 x2	-> sp
 	XUnless		sp x1 x2	-> sp
 	XBreak		sp		-> sp
-	XListRange	sp b x mx	-> sp
+	XListRange	sp b x mx1  mx2	-> sp
 	XListComp	sp x lc		-> sp
 	XTuple		sp xx		-> sp
 	XList 		sp xx		-> sp

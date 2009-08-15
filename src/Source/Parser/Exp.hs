@@ -189,7 +189,7 @@ pExp1'
 
 		-- force infinite lists to be lazy
 		let lazy = not $ isJust mExp2
-		return	$ XListRange (spTP tok) lazy exp1 mExp2)
+		return	$ XListRange (spTP tok) lazy exp1 Nothing mExp2)
 
   <|>	-- [ EXP | QUAL .. ]
 	-- overlaps with list syntax

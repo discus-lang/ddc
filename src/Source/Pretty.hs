@@ -271,9 +271,11 @@ instance Pretty (Exp a) PMode where
 	 -> ppr "break"
 	 
 	-- list range sugar
-	XListRange sp b x Nothing	-> "[" % x % "..]"
-	XListRange sp b x (Just x2)	-> "[" % x % " .. " % x2 % "]"
-		
+	XListRange sp b x Nothing Nothing	-> "[" % x % "..]"
+	XListRange sp b x Nothing (Just x2)	-> "[" % x % " .. " % x2 % "]"
+	XListRange sp b x (Just x1) Nothing	-> "[" % x % ", " % x1 % "..]"
+	XListRange sp b x (Just x1) (Just x2)	-> "[" % x % ", " % x1 % " .. " % x2 % "]"
+
 	XListComp sp x qs 		-> "[" % x % " | " % ", " %!% qs % "]"
 	
 	-- parser helpers

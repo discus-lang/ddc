@@ -522,12 +522,13 @@ instance (Monad m) => TransM m n1 n2 (Exp n1) (Exp n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (XList x0' x1')
-                XListRange x0 x1 x2 x3
+                XListRange x0 x1 x2 x3 x4
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         x3' <- transZM table x3
-                        return (XListRange x0' x1' x2' x3')
+                        x4' <- transZM table x4
+                        return (XListRange x0' x1' x2' x3' x4')
                 XListComp x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

@@ -444,10 +444,11 @@ instance Rename (Exp SourcePos) where
 	 ->	return	exp
 
 	-- list sugar
-	XListRange sp b x1 x2
+	XListRange sp b x1 x2 x3
 	 -> do	x1'	<- rename x1
 	 	x2'	<- rename x2
-		return	$ XListRange sp b x1' x2'
+	 	x3'	<- rename x3
+		return	$ XListRange sp b x1' x2' x3'
 
 	XListComp sp x qs
 	 -> local

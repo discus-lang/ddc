@@ -399,20 +399,25 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 			
 		xs'	<- mapM rewrite xs
 		return	$ makeList xs'
-	
-	S.XListRange sp True x1 (Just x2)
+
+	S.XListRange sp True x1 Nothing (Just x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
 		return	$ D.XApp sp (D.XApp sp (D.XVar sp primRangeL) x1') x2'
 
-	S.XListRange sp False x1 (Just x2)
+	S.XListRange sp False x1 Nothing (Just x2)
 	 -> do	x1'	<- rewrite x1
 	 	x2'	<- rewrite x2
 		return	$ D.XApp sp (D.XApp sp (D.XVar sp primRange) x1') x2'
 
-	S.XListRange sp True x1 Nothing
+	S.XListRange sp True x1 Nothing Nothing
 	 -> do	x1'	<- rewrite x1
 	  	return	$ D.XApp sp (D.XVar sp primRangeInfL) x1'
+
+	S.XListRange _ _ _ (Just _) _
+	 -> panic stage
+		$ "rewrite[Exp]: can't yet XListRange expression " % xx % "\n\n"
+		%  show xx	% "\n"
 
 	S.XListComp{}
 	 -> 	rewriteListComp xx
