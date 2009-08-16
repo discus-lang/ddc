@@ -268,10 +268,6 @@ reconX tt exp@(XLam v t x eff clo)
 		-- TODO: We need to flatten the closure before trimming to make sure effect annots
 		--	on type constructors are not lost. It would be better to modify trimClosureC
 		--	so it doesn't loose them, or the closure equivalence rule so it doesn't care.
-		, xC_masked	<- makeTMask KClosure xC (TTag v)
-		, xC_flat	<- flattenT xC_masked
-		, xC'		<- trimClosureC Set.empty Set.empty $ xC_flat
-
 		, xE'		<- packT xE_masked
 	
 		-- check effects match
@@ -292,10 +288,16 @@ reconX tt exp@(XLam v t x eff clo)
 				% pprBounds (envMore tt)
 				
 		-- check closures match
-		, () <- if subsumes (envMore tt) clo_sub xC'
+		-- Closures in core don't work properly yet.
+
+		, xC_masked	<- dropTFreesIn (Set.singleton v) xC
+		, xC_flat	<- flattenT xC_masked
+		, xC'		<- trimClosureC Set.empty Set.empty $ xC_flat
+
+{-		, () <- if subsumes (envMore tt) clo_sub xC'
 			 then ()
 			 else ()
-{-				panic stage
+				panic stage
 				$ "reconX: Closure error in core.\n"
 				% "    caller = " % envCaller tt	% "\n"
 				% "    in lambda abstraction:\n" 	%> exp		% "\n\n"
@@ -412,11 +414,12 @@ reconX tt (XDo ss)
    in	( XDo ss'
         , t
 	, makeTSum KEffect sEs
-	, trimClosureC Set.empty Set.empty
-		$ makeTMask 
-			KClosure
-			(makeTSum KClosure (map ((trimClosureC Set.empty Set.empty) . flattenT) sCs))
-			(makeTSum KClosure (map TTag vsBind)) )
+	, makeTSum KClosure
+		$ filter (\c -> case c of
+				  TFree v _	-> not $ elem v vsBind
+				  _		-> True)
+		$ flattenTSum 
+		$ makeTSum KClosure sCs)
    
 -- match
 reconX tt (XMatch [])
@@ -752,7 +755,9 @@ reconS tt (SBind (Just v) x)
    	, ( SBind (Just v) xAnnot
 	  , xT
 	  , xE
-	  , TMask KClosure xC (TTag v)))
+	  , dropTFreesIn
+		(Set.singleton v)
+		xC) )
 	  
 
 -- Alt ---------------------------------------------------------------------------------------------
@@ -761,22 +766,17 @@ reconA 	:: Env
 	-> (Alt, Type, Effect, Closure)
 
 reconA tt (AAlt gs x)
- = let	(tt', gecs)		= mapAccumL reconG tt gs
+ = let	(tt', gecs)		  = mapAccumL reconG tt gs
 	(gs', vssBind, gEs, gCs)= unzip4 gecs
-	(x', xT, xE, xC)	= reconX tt' x
+	(x', xT, xE, xC)	  = reconX tt' x
    in	( AAlt gs' x'
    	, xT
-	, makeTSum KEffect  (gEs ++ [xE])
-	, makeTMask 
-		KClosure
-		(makeTSum 
-			KClosure 
-			(gCs ++ [xC]))
-		(makeTSum
-			KClosure
-			(map TTag $ concat vssBind)))
-  
- 
+	, makeTSum KEffect (gEs ++ [xE])
+	, dropTFreesIn 
+		(Set.fromList $ concat vssBind) 
+		$ makeTSum KClosure (xC : gCs) )
+
+   
 -- Guards ------------------------------------------------------------------------------------------
 
 -- | running reconG also adds a types for the matched variables into the table.

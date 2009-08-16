@@ -58,7 +58,6 @@ finaliseT' bound def tt
 	    in	TFetters t' fs'
 	    
 	TSum  k ts	-> makeTSum k (map down ts)
-	TMask k t1 t2	-> makeTMask k (down t1) (down t2)
 
 	TCon{}		-> tt 
 	TVar  k v
@@ -81,7 +80,6 @@ finaliseT' bound def tt
 	TEffect v ts		-> TEffect v (map down ts)
 	TFree   v t		-> TFree v (down t)
 	TDanger t1 t2		-> TDanger (down t1) (down t2)
-	TTag{}			-> tt
 
 	TClass{}		-> tt
 	TError{}		-> tt

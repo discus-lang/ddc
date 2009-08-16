@@ -138,7 +138,6 @@ cutT cid cidsEntered tt
 	TFetters t fs		-> TFetters 	(down t) (map (cutF_follow cidsEntered) fs)
 
 	TSum  k ts		-> TSum 	k (map down ts)
-	TMask k t1 t2		-> TMask 	k (down t1) (down t2)
 	TVar{}			-> tt
 	TCon{}			-> tt
 	TTop{}			-> tt
@@ -167,8 +166,6 @@ cutT cid cidsEntered tt
 	 | otherwise
 	 -> tt
 
-
-	TTag{}			-> tt
 	TError{}		-> tt
  	
 	_ -> panic stage

@@ -179,12 +179,6 @@ followT table tt
 	 -> do	ts'	<- transZM table ts
 	 	return	$ TSum k ts'
 
-	TMask k t ts
-	 -> do	k' 	<- transZM table k
-	 	t'	<- transZM table t
-	 	ts'	<- transZM table ts
-		return	$ TMask k t' ts'
-
  	TVar k v
 	 -> do	v'	<- transZM table v
 	 	return	$ TVar k v'
@@ -235,10 +229,6 @@ followT table tt
 	 -> do	v'	<- transZM table v
 	 	t'	<- transZM table t
 		return	$ TDanger v' t'
-
-	TTag v
-	 -> do	v'	<- transZM table v
-	 	return	$ TTag v'
 
 	-- wildcards
 	TWild k

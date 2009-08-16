@@ -311,7 +311,14 @@ bindFreeVarsP
 
 addLambda :: (Var, Type) -> (Exp, Closure) -> (Exp, Closure)
 addLambda (v, t) (x, clo)
- = let	clo'	= makeTMask KClosure clo (TTag v)
+ = let	-- filter out the closure term corresponding to the var that is bound
+	--	by this lambda.
+	clo'	= makeTSum KClosure
+		$ filter (\c -> case c of
+					TFree v' _	-> v /= v
+					_		-> True)
+		$ flattenTSum clo 
+
    in	(XLam v t x (TBot KEffect) clo', clo')
 
 

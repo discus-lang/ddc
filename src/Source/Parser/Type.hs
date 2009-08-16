@@ -355,17 +355,11 @@ pEffect
 -- | Parse a closure
 pClosure :: Parser Type
 pClosure
- = 	-- CLO \ VAR
- 	(Parsec.try $ do
- 		clo1	<- pClosure1
-		pTok K.BackSlash
-		var	<- pVar
-		return	$ TMask KClosure clo1 (TTag var))
-
+ 
   	-- VAR :  CLO
   	-- VAR :  TYPE
 	-- VAR $> VAR
- <|>	(Parsec.try $ pQualified pVar >>= \var ->
+ =	(Parsec.try $ pQualified pVar >>= \var ->
 
 	  	(pTok K.Colon >>= \_ ->
 			-- VAR :  CLO

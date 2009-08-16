@@ -67,9 +67,6 @@ staticRsDataT tt
 	 | k == KEffect		-> Set.empty
 	 | k == KClosure	-> Set.unions $ map staticRsDataT ts
 
-	TMask KClosure t1 t2	-> staticRsDataT t1
-	TMask{}			-> Set.empty
-
 	-- TODO: we're assuming that all args are tangible. This isn't strictly
 	--       correct but shouldn't hurt us too much.
 	TApp{}

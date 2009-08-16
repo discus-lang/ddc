@@ -1,7 +1,7 @@
 ddc: ERROR
 ./test/01-Error/10-Renamer/Redefined/Main.ds:33:0
      Redefined value variable 'Main.force'
-      first defined at: ./library/Base/Thunk.di:85:1
+      first defined at: ./library/Base/Thunk.di:82:1
 
 ./test/01-Error/10-Renamer/Redefined/Main.ds:11:13
      Redefined value variable 'x'

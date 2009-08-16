@@ -44,8 +44,6 @@ instance FreeVars Type where
 		
 	TSum k ts	-> freeVars ts
 	 
-	TMask k t1 t2	-> union (freeVars t1) (freeVars t2)
-
 	TApp t1 t2	-> union (freeVars t1) (freeVars t2)
 	
 	TCon tycon	-> freeVars tycon
@@ -77,8 +75,6 @@ instance FreeVars Type where
 	 -> unions 
 	 	[ freeVars t1
 		, freeVars t2]
-
-	TTag v		-> empty
 
 	-- wildcards
 	TWild{}		-> empty

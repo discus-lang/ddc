@@ -1,15 +1,15 @@
 ddc: ERROR
 ./test/01-Error/30-Typing/Closure/GetSet/Test.ds:28:8
     Type mismatch during unification.
-          cannot match: Base.Int32 %318
-                  with: Data.String.String %360
+          cannot match: Base.Int32 %316
+                  with: Data.String.String %357
 
               the use of: setB
-                 at type: Base.Int32 %318
+                 at type: Base.Int32 %316
                       at: ./test/01-Error/30-Typing/Closure/GetSet/Test.ds:28:8
 
         conflicts with, 
           literal value "a"
-                 of type: Data.String.String %360
+                 of type: Data.String.String %357
                       at: ./test/01-Error/30-Typing/Closure/GetSet/Test.ds:28:14
 

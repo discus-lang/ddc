@@ -42,7 +42,6 @@ flattenT' sub block tt
 	   in	addFetters fsRest tFlat
 
 	TSum k ts	-> makeTSum  k (map down ts)
-	TMask k t1 t2	-> makeTMask k (down t1) (down t2)
 
 	TApp t1 t2	-> TApp (down t1) (down t2)
 	TCon{}		-> tt
@@ -75,7 +74,6 @@ flattenT' sub block tt
 
 	TFree v t		-> TFree v (down t)
 	TDanger t1 t2		-> TDanger (down t1) (down t2)
-	TTag v			-> TTag v
 
 	TError{}		-> tt
 

@@ -99,10 +99,6 @@ visibleRsT tt
 	TSum k ts
 	 -> Set.unions $ map visibleRsT ts
 	 
-	TMask k t1 t2
-	 -> Set.unions
-	 	[ visibleRsT t1 ]
-		
 	TVar KRegion _		-> Set.singleton tt
 	TVar{}			-> Set.empty
 

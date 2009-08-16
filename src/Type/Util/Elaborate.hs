@@ -1,8 +1,9 @@
 
--- Handles elaboration of types for the ffi.
---	Adding all the regions, effects and closures to a type by hand is boring and error prone.
---	Luckilly, for most functions this information is fairly unsurprising. Guided by some user
---	keywords, we can add this information automatically.
+-- | Elaboration of types for the ffi.
+--   When importing foreign functions, adding all the region effects and closures 
+--	annotations to a type by hand is boring and error prone. Luckily, for most 
+--	functions this information is fairly unsurprising. So we can guess most
+--	of it automatically.
 --
 module Type.Util.Elaborate
 	( elaborateRsT, elaborateRsT_quant
@@ -23,6 +24,9 @@ import Shared.VarPrim
 import Shared.Pretty
 import Shared.Error 
 
+import qualified Data.Set	as Set
+import Data.Set			(Set)
+
 import Util
 import qualified Debug.Trace	as Debug
 
@@ -35,17 +39,15 @@ trace ss xx
 	else xx
 	
 
------------------------
--- elaborateRegionsT
---	Check the kinds of data type constructors, and if they don't have enough region 
---	args then add new ones to make them the right kind.
---
+-- | Look at uses of data type constructors, and if they don't have enough
+--	region args applied then add some more so the resulting type
+--	has kind *.
 elaborateRsT_quant
 	:: Monad m
 	=> (NameSpace -> m Var)	-- ^ A compuation to generate a fresh region var
-	-> (Var -> m Kind)	-- ^ fn to get kind of type ctor
+	-> (Var -> m Kind)	-- ^ fn to get the kind of a type constructor.
 	-> Type 		-- ^ the type to elaborate
-	-> m Type
+	-> m Type		--   elaborated type.
 	
 elaborateRsT_quant newVar getKind tt
  = do	(t_elab, vks)	<- elaborateRsT newVar getKind tt
@@ -115,6 +117,7 @@ elaborateRsT' tt
 	= panic stage
 		$ "elaborateRsT': no match for " % tt % "\n\n"
 		% " tt = " % show tt % "\n"
+
 
 -- | Take some arguments from a type ctor and if needed insert fresh region vars
 --	so the reconstructed ctor with these args will have this kind.
@@ -194,7 +197,7 @@ hasKind k tt
 -- eg	   (a -> b -> c -> d)
 --
 --	=> (t1 -> t2 -($c1)> t3 -($c2)> t4)
---	    :- $c1 = $c2 \ x2
+--	    :- $c1 = { x1 : x1 }
 --	    ,  $c2 = { x1 : t1; x2 : t2 }
 
 elaborateCloT 
@@ -212,7 +215,7 @@ elaborateCloT' env tt
 	= do	(x', fs, clo)	<- elaborateCloT' env x
 		return	( TForall b k x'
 			, fs
-			, Nothing)
+			, TBot KClosure)
 			
 	-- if we see an existing set of fetters,
 	--	then drop the new ones in the same place.
@@ -225,49 +228,52 @@ elaborateCloT' env tt
 	| TVar{}		<- tt
 	= 	return	( tt
 			, []
-			, Nothing )
+			, TBot KClosure )
 	
 	-- TODO: decend into type ctors
 	| TData{}		<- tt
 	=	return	( tt
 			, []
-			, Nothing)
+			, TBot KClosure)
 
 	| TFun t1 t2 eff clo	<- tt
 	= do	
-		-- create a new var to label the arg
-		varVal		<- ?newVarN NameValue
+		-- create a new value variable as a name for the function parameter
+		varVal			<- ?newVarN NameValue
 		
-		-- elaborate the right hand arg,  carrying the new argument down into it
-		let argClo	= TFree varVal t1
-		(t2', fs, mClo)	<- elaborateCloT' (env ++ [argClo]) t2
+		-- elaborate the right hand arg, 
+		--	carrying the new parameter name down into it.
+		let argClo		= TFree varVal t1
+		(t2', fs, cloT2)	<- elaborateCloT' (env ++ [argClo]) t2
 
-		-- the closure for this function is the body minus the var for the arg
-		varC		<- ?newVarN NameClosure
-		let cloVarC	= TVar KClosure varC
+		-- make a new closure var to name the closure of this function
+		varC			<- ?newVarN NameClosure
+		let cloVarC		= TVar KClosure varC
 
-		let fNewClo	=
+		let newClo	= 
 		     case t2 of
-			-- rhs of this function is another function
-			--	set this closure to be closure of rhs without the arg bound here
-			TFun{}	-> FWhere cloVarC
-				$ TMask KClosure
-					(makeTSum KClosure [clo, fromMaybe (TBot KClosure) mClo])
-					(TTag varVal) 
+			-- if the right of the function is another function then 
+			--   the closure of _this_ one is the same as the closure
+			--   of the inner one, minus the parameter bound here.
+			TFun{}	-> dropTFreesIn (Set.singleton varVal) cloT2
 
-			-- rhs of function isn't another function
-			--	pretend that all the args are referenced here.
-			_	-> FWhere cloVarC (makeTSum KClosure env)
-
-		-- Don't add the closure variable if the fetter is just bottom.
+			-- if the right of the function isn't another function
+			--   then assume this one binds all the args.
+			_	-> makeTSum KClosure env
+		
+		-- fetter for the closure of this function
+		let fNewClo	= FWhere cloVarC newClo
+		
+		-- don't annotate the fn with a closure variable if the closure
+		--	in the constraint is just Bot.
 		let (fNew, cloAnnot)
 			= case fNewClo of 
-				FWhere _ (TBot KClosure)	-> (Nothing, 	TBot KClosure)
-				_			-> (Just fNewClo, cloVarC)
+				FWhere _ (TBot KClosure)	-> (Nothing, TBot KClosure)
+				_				-> (Just fNewClo, cloVarC)
 
 		return	( TFun t1 t2' eff cloAnnot
 			, maybeToList fNew ++ fs
-			, Just cloAnnot)
+			, newClo)
 
 
 -- | Elaborate effects in this type.

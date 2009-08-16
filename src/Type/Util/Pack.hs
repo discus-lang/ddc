@@ -200,19 +200,8 @@ packT1 ld ls tt
 	-- sums
 	TSum k ts
 	 -> do	ts'	<- liftM nub $ mapM (packT1 True ls) ts
-	 	case k of
-			KEffect			-> return $ makeTSum k ts'
-			KClosure		-> return $ makeTSum k (maskMerge ts')
-			
-	-- masks
-	-- don't substitute into the lhs of mask expression so we end up with
-	--	c2 = c3 \ x ; c3 = { x : ... }   etc
-	TMask k t1 t2
-	 -> do	t1'	<- packT1 ld ls t1
-	 	t2'	<- packT1 True ls t2
-		case t1' of
-			TMask k1 t11 t12	-> return $ makeTMask k t11 $ makeTSum KClosure [t12, t2']
-			_			-> return $ makeTMask k t1' t2'
+		return	$ makeTSum k ts'
+	
 			
 	-- try and flatten out TApps into their specific constructors
 	TApp t1 t2
@@ -242,7 +231,6 @@ packT1 ld ls tt
 		Just TSum{}	| not ld	-> return tt
 		Just TEffect{}	| not ld	-> return tt		
 		Just TFree{}	| not ld	-> return tt
-		Just TMask{}	| not ld	-> return tt
 
 		-- don't substitute for TBots or we risk loosing port vars
 		Just TBot{}			-> return tt
@@ -300,9 +288,6 @@ packT1 ld ls tt
 			TSum KClosure t2s	-> return $ makeTSum KClosure (map (TDanger t1) t2s)
 			_			-> return $ TDanger t1 t2'
 
-	-- tags
-	TTag{}	-> return tt
-	    
 	-- wildcards
 	TWild{}	-> return tt
 
@@ -316,7 +301,6 @@ packT1 ld ls tt
 		Just TSum{}	| not ld	-> return tt
 		Just TEffect{}	| not ld	-> return tt		
 		Just TFree{}	| not ld	-> return tt
-		Just TMask{}	| not ld	-> return tt
 
 		-- don't substitute for TBots or we risk loosing port vars
 		Just TBot{}			-> return tt
@@ -363,21 +347,16 @@ packTFettersLs ld ls tt
 				ls
 
 		tPacked		<- packT1 ld ls' t
-
 		fsPacked	<- mapM (packFetterLs ld ls') fs
 
-		-- erase trivial closures
-		let (tZapped, fsZapped)
-				= mapAccumL (zapCoveredTMaskF ls') tPacked fsPacked
-		
 		-- inline TBots, and fetters that are only referenced once
-		fsInlined	<- inlineFs fsZapped
+		fsInlined	<- inlineFs fsPacked
 
 		let fsSorted	= sortFs		
-				$ restrictFs tZapped
+				$ restrictFs tPacked
 				$ fsInlined
 				
-		let tFinal	= addFetters fsSorted tZapped
+		let tFinal	= addFetters fsSorted tPacked
 
 		-- bail out if we find an infinite type problem
 		tsLoops		<- get
@@ -563,95 +542,3 @@ sortFsT tt
 	_		-> tt
 
 
--- Zap Covered -------------------------------------------------------------------------------------
--- | Erase TMasks where the LHS can only ever contain the values present in the RHS
--- eg
---	  1 -(4)> 2 -(5)> 3
---        :- 4        = 5 \\ f
---        ,  5        = f :: ...
---
---	5 is not substituted by inlineFs1 because it is referenced twice.
---	However, the binding for 4 is redundant because 5 can only ever contain f.
---	
--- rewrite to:
---	  1 -> 2 -(5)> 3
---        :-  5        = f :: ...
---
-zapCoveredTMaskF 
-	:: Map Type Type 
-	-> Type 
-	-> Fetter 
-	-> (Type, Fetter)
-
-zapCoveredTMaskF ls tt ff
- = zapCoveredTMaskF' ls tt ff
-	
-zapCoveredTMaskF' ls tt ff
-	| FWhere t1 (TMask k t2 t3)	<- ff
-	, Just t2l			<- Map.lookup t2 ls
-	, coversCC t2l t3
-	, (tt', [])			<- subTT (Map.singleton t1 (TBot k)) tt
-	= ( tt'
-	  , FWhere t1 (TBot k))
-
-	| otherwise
-	= (tt, ff)
-		 
-coversCC (TFree v1 _) 	(TTag v2)	= v1 == v2
-coversCC _		_		= False
-
-
-
--- MaskMerge ---------------------------------------------------------------------------------------
--- Merges a list of mask expressions.
---	We need to do this to avoid exponential blowup of closure expressions
---	as per test/Typing/Loop/Loop1
---	
---	eg:	$c1 \ x, $c1 \ y, $c1 \ z	-> $c1 \ [x, y, z]
---
-maskMerge :: [Closure] -> [Closure]
-maskMerge cc
- = case maskMerge_run False [] cc of
- 	Nothing		-> cc
-	Just cc'	-> maskMerge cc'
-
--- we're at the end of the list, but we merged something along the way
-maskMerge_run True acc []
-	= Just (reverse acc)
-	
--- we're at the end of the list, and nothing merged
-maskMerge_run False acc []
-	= Nothing
-
-maskMerge_run hit acc (x:xs)
-	-- try and merge this element into the rest of the list
-	| Just xs'	<- maskMerge_step x xs
-	= maskMerge_run True acc xs'
-	
-	| otherwise
-	= maskMerge_run hit (x : acc) xs
-
-maskMerge_step z (x:xs)
-	-- we could merge with the current element
-	| Just x'	<- maskMerge1 z x
-	= Just (x' : xs)
-	
-	-- try and merge with later elementts
-	| Just xs'	<- maskMerge_step z xs
-	= Just (x : xs')
-
-	| otherwise
-	= Nothing
-	
-maskMerge_step z []	
-	= Nothing
-	
-maskMerge1 cc1 cc2
-	| TMask k1 c1 t1	<- cc1
-	, TMask k2 c2 t2	<- cc2
-	, k1 == k2
-	, c1 == c2
-	= Just $ makeTMask k1 c1 (makeTSum k1 [t1, t2])
-
-	| otherwise
-	= Nothing

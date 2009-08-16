@@ -40,7 +40,6 @@ instance Pretty Type PMode where
 	TContext c t	-> c % " => " % t
 	TFetters t fs	-> t % " :- " % ", " %!% fs
 	TSum k  es	-> k  % "{" % "; " %!% es % "}"
-	TMask k  t1 t2	-> prettyTB t1 % " \\ " % prettyTB t2
 
 	TApp t1 t2
 	 -> let result
@@ -100,7 +99,6 @@ instance Pretty Type PMode where
 	-- closure
 	TFree  v t	-> v % " : " % t
 	TDanger v t	-> v % " $> " % t
-	TTag v		-> ppr v
 	
 	-- wild cards
 	TWild k		-> k % "_"
@@ -153,7 +151,6 @@ prettyTB t
 	TVar k v 	-> ppr t
 	TSum{}		-> ppr t
 	TEffect v []	-> ppr t
-	TTag v		-> ppr t
 	TWild{}		-> ppr t
 	TClass{}	-> ppr t
 	TBot{}		-> ppr t

@@ -108,8 +108,6 @@ dangerT rsMutable fsClosure tt
 	TSum KClosure ts
 	 -> Set.unions $ map (dangerT rsMutable fsClosure) ts
 
-	TMask KClosure t v
-	 -> dangerT rsMutable fsClosure t
 
 	-- effects
 	TSum KEffect ts

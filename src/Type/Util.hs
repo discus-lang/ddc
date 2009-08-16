@@ -139,8 +139,6 @@ slurpVarsRD' tt
 	= slurpVarsRD' t1 ++ slurpVarsRD' t2
 
 	| TSum{}	<- tt	= []
-	| TMask{}	<- tt	= []
-
 	| TCon{}	<- tt	= []
 
 	| TVar k _	<- tt

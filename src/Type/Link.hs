@@ -100,9 +100,6 @@ linkType mParent bound tt
 	 	t2'	<- linkType mParent bound t2
 		return	$ TDanger t1' t2'
 		
-	TTag v		-> return tt
-		
-		
 	-- Don't link error types to the graph.
 	--	It's probably not going to be useful.
 	TError k t	-> return tt

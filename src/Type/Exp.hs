@@ -107,7 +107,6 @@ data Type
 	| TApp		!Type	!Type		-- ^ Type application.
 
 	| TSum		!Kind 	![Type]		-- ^ A summation, least upper bound.
-	| TMask		!Kind	!Type	!Type	-- ^ Mask out some elements from this closure.
 
 	| TCon		!TyCon			-- ^ A type constructor.
 	| TVar     	!Kind 	!Var		-- ^ A type variable.
@@ -126,9 +125,6 @@ data Type
 	| TDanger	!Type !Type		-- ^ If a region is mutable then free type variables in the 
 						--	associated type must be held monomorphic.
 	
-	| TTag		!Var			-- ^ A tag for one of these objects, used in the RHS of TMask.
-						--   TODO: this isn't actually a type. Change TMask to reflect this.
-
 	-- Type wildcards can be unified with anything of the given kind.
 	-- 	Used in the source language and type inference only.
 	| TWild		!Kind			

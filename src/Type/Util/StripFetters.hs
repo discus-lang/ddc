@@ -34,12 +34,6 @@ stripFWheresT	tt
 	    in	( TSum k ts'
 	    	, concat fss)
 
-	TMask k t1 t2
-	 -> let	(t1', fs1)	= stripFWheresT t1
-	 	(t2', fs2)	= stripFWheresT t2
-	   in	( TMask k t1' t2'
-	   	, fs1 ++ fs2 )
-
 	TApp t1 t2
 	 -> let	(t1', fs1)	= stripFWheresT t1
 	 	(t2', fs2)	= stripFWheresT t2
@@ -47,13 +41,11 @@ stripFWheresT	tt
 	    	, fs1 ++ fs2)
 		
 	TCon tc	-> (tt, [])
-	
 
  	TVar{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	TTop{}	-> (tt, [])
 	TWild{}	-> (tt, [])
-	
 
 	-- data
 	TFun t1 t2 eff clo
@@ -89,7 +81,6 @@ stripFWheresT	tt
 	    in	(TDanger t1' t2'
 	        , fs1 ++ fs2)
 
-	TTag v		-> (tt, [])
 	TClass k cid	-> (tt, [])
 
 	_ -> panic stage
@@ -124,11 +115,6 @@ stripMonoFWheresT tt
 	TSum k ts
 	 -> let	(ts', fssMono)		= unzip $ map stripMonoFWheresT ts
 	    in	(TSum k ts', concat fssMono)
-	    
-	TMask k t1 t2
-	 -> let	(t1', fsMono1)		= stripMonoFWheresT t1
-	 	(t2', fsMono2)		= stripMonoFWheresT t2
-	    in	(TMask k t1' t2', fsMono1 ++ fsMono2)
 	    
 	TVar{}	-> (tt, [])
 	TTop{}	-> (tt, [])
@@ -167,8 +153,6 @@ stripMonoFWheresT tt
 	    in	( TDanger t1' t2'
 	    	, fsMono1 ++ fsMono2)
 	    
-	TTag{}	-> (tt, [])
-	
 	TClass{} -> (tt, [])
 	TWild{}	-> (tt, [])
 

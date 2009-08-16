@@ -143,10 +143,6 @@ trimClosureC' quant rsData cc
 		$  map down
 		$  flattenTSum cc
 
-	TMask KClosure t1 t2	
-	 -> let	t1'	= down t1
-	    in	TMask KClosure t1' t2
-
 	TFetters c fs
 	 -> addFetters 
 	 	(catMaybes $ map (trimClosureC_fs quant rsData) fs) 
@@ -188,9 +184,6 @@ trimClosureC' quant rsData cc
 	 	KClosure -> TFree tag 	$ down t
 		_ 	 -> TFree tag 	$ makeTSum KClosure 
 					$ trimClosureC_t tag quant rsData t
-
-	-- hrmm. this shouln't be needed
-	TTag{}			-> cc
 
 	_ -> panic stage
 		$ "trimClosureC: no match for " % show cc
@@ -234,8 +227,6 @@ trimClosureC_t' tag quant rsData tt
 	    in	trimClosureC_t tag quant' rsData t
 	
 	TSum k ts	-> catMap down ts
-	TMask k t1 t2	-> [TMask k (makeTSum k $ down t1) t2]
-
 
 	TBot{}		-> []
 	TTop{}		-> [tt]

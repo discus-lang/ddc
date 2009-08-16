@@ -147,7 +147,6 @@ kindOfType' tt
 	-- we'll just assume kind annots on TSum and TMask are right, and save
 	--	having to check all the elements
 	| TSum  k _		<- tt	= Just k
-	| TMask k _ _		<- tt	= Just k
 
 	| TVar  k _		<- tt	= Just k
 	| TVarMore k _ _	<- tt	= Just k
@@ -177,7 +176,6 @@ kindOfType' tt
 	| TEffect{}		<- tt	= Just KEffect
 	| TFree{}		<- tt	= Just KClosure
 	| TDanger{}		<- tt	= Just KClosure
-	| TTag{}		<- tt	= Just KClosure		-- lies!
 
 	-- wildcards have kinds embedded in them
 	| TWild k		<- tt	
@@ -294,7 +292,6 @@ betaTT depth tX tt
 	TFetters t fs	-> TFetters (down t) fs
 	TApp t1 t2	-> TApp (down t1) (down t2)
 	TSum k ts	-> TSum k (map down ts)
-	TMask k t1 t2	-> TMask k (down t1) (down t2)
 	TCon{}		-> tt
 	TVar{}		-> tt
 	TVarMore{}	-> tt
@@ -308,7 +305,6 @@ betaTT depth tX tt
 	TBot{}		-> tt
 	TEffect v ts	-> TEffect v (map down ts)
 	TFree v t	-> TFree v (down t)
-	TTag{}		-> tt
 
 	TWitJoin ts	-> TWitJoin (map down ts)
 	TWild k		-> tt
@@ -329,7 +325,6 @@ isClosure tt
 	TFun{}			-> False
 
  	TSum	KClosure _	-> True
-	TMask	KClosure _ _	-> True
 	TVar	KClosure _	-> True
 	TVarMore KClosure _ _	-> True
 	TClass	KClosure _	-> True
@@ -340,6 +335,6 @@ isClosure tt
 	TWild	KClosure	-> True
 
 	TFetters t1 _		-> isClosure t1
-
 	
 	_			-> False
+

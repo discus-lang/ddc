@@ -26,10 +26,6 @@ module Type.Util.Bits
 	, makeTSum
 	, flattenTSum
 
-	-- masks
-	, makeTMask
-	, applyTMask
-
 	-- type application
 	, makeTApp
 	, makeTData
@@ -38,6 +34,9 @@ module Type.Util.Bits
 	, takeTFun
 	, makeTFuns_pureEmpty
 	, flattenFun
+
+	-- closure
+	, dropTFreesIn
 
 	-- forall
 	, makeTForall_front
@@ -174,13 +173,6 @@ crushT1 tt
 	TFree v (TSum KClosure ts)
 	 -> makeTSum KClosure $ map (TFree v) ts
 
-	TMask k1 (TMask k2 t1 t2) t3
-	 | k1 == k2
-	 -> TMask k1 t1 (TSum k1 [t2, t3])
-
-	TMask k t1 t2
-	 -> applyTMask tt
-
 	_	-> tt
 
 
@@ -203,40 +195,6 @@ flattenTSum tt
 	TSum k ts		-> catMap flattenTSum ts
 	TFree v (TBot k)	-> []
 	_			-> [tt]
-
-
--- Masks -------------------------------------------------------------------------------------------
-makeTMask :: Kind -> Type -> Type -> Type
-makeTMask k t1 t2
- = applyTMask $ case crushT t2 of
- 	TBot KClosure	-> t1
-	_		-> TMask k t1 t2
-
-
--- | Crush a TMask by discarding TFree and TEffects 
---	in the first term which are present in the second.
-applyTMask :: Type -> Type
-applyTMask tt@(TMask k t1 t2)
- = let	vsKill	= map (\t -> case t of
- 				TFree v _	-> v
-				TTag  v		-> v
-				_		-> panic stage $ "applyTMask: no match")
-		$ flattenTSum t2
-		
-	tsMasked
-		= map (\t -> case t of
-				TFree v tr	
-				 | v `elem` vsKill	-> TBot k
-				 | otherwise		-> TFree v tr
-				
-				_			-> TMask k t t2)
-				
-				
-		$ flattenTSum t1
-		
-   in	makeTSum k tsMasked
-   
-applyTMask tt	= tt
 
 
 -- Type Application --------------------------------------------------------------------------------
@@ -308,6 +266,17 @@ flattenFun xx
 	Just (t1, t2, _, _)	-> t1 : flattenFun t2
 	_			-> [xx]
 
+
+-- Closure -----------------------------------------------------------------------------------------
+
+-- | Drop TFree terms concerning value variables in this set
+dropTFreesIn :: Set Var -> Closure -> Closure
+dropTFreesIn vs clo
+ 	= makeTSum KClosure
+	$ filter (\c -> case c of
+			 TFree v _	-> not $ Set.member v vs
+			 _		-> True)
+	$ flattenTSum clo
 
 -- Forall ------------------------------------------------------------------------------------------
 -- | Add some forall bindings to the front of this type, 

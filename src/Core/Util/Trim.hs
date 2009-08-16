@@ -135,17 +135,6 @@ trimClosureC' quant rsData cc
 		$  map down
 		$  flattenTSum cc
 
-	TMask KClosure t1 t2
-	 -> let t1'	= down t1
-	 	result
-	 		| TVar k v	<- t1'
-			, Set.member v quant
-			= t1'
-			
-			| otherwise
-			= applyTMask (TMask KClosure t1' t2)
-	    in	result						
-
 	TFetters c fs
 	 -> makeTFetters
 		(down c)
@@ -180,9 +169,6 @@ trimClosureC' quant rsData cc
 		$ map (TFree tag) 
 		$ trimClosureC_t quant rsData t
 			
-	TTag   v		-> cc
-
-
 	_ -> panic stage
 		$ "trimClosureC: no match for " % show cc
 
@@ -213,7 +199,6 @@ trimClosureC_t quant rsData tt
 	    in  trimClosureC_t quant' rsData t
 
 	TSum k ts	-> catMap down ts
-	TMask k t1 t2	-> [TMask k (makeTSum k $ down t1) t2]
 	
 	TCon{}		-> []
 

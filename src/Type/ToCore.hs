@@ -100,8 +100,6 @@ toCoreT' table tt
 	
 	T.TSum k ts		-> C.TSum (toCoreK k) (map down ts)
 
-	T.TMask k t1 t2		-> C.TMask (toCoreK k) (down t1) (down t2)
-
 	-- attach :> constraints directly to variables
 	T.TVar k v		
 	 -> case Map.lookup v table of
@@ -136,7 +134,6 @@ toCoreT' table tt
 				
 				
 	T.TFree v t		-> C.TFree v (down t)
-	T.TTag v		-> C.TTag  v
 	
 	-- wildcards	
 	T.TWild k		-> C.TWild (toCoreK k)

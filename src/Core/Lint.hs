@@ -338,10 +338,6 @@ lintT tt (TApp t1 t2)
 lintT tt (TSum k ts)
  = do	mapM_ (lintT tt) ts
  
-lintT tt (TMask k t1 t2)
- = do	lintT tt t1
- 	lintT tt t2
-	
 lintT tt (TVar k v)
 
 	-- Effects, Closures, bound via a XTet
@@ -396,9 +392,6 @@ lintT tt (TEffect v ts)
 lintT tt (TFree	v t)
  = 	lintT tt t
  
-lintT tt (TTag v)
- = 	return () 
-
 -- witnesses
 -- lintT tt (TPurify eff wit)
 -- = do	lintT tt eff

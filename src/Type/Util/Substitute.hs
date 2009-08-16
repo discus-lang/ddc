@@ -86,11 +86,6 @@ subTT_cutM' sub cut tt
 	 -> do	ts'	<- mapM down ts
 	 	return	$ TSum k ts'
 		
-	TMask k t1 t2
-	 -> do	t1'	<- down t1
-	 	t2'	<- down t2
-		return	$ TMask k t1' t2'
-		
 	TApp t1 t2
 	 -> do	t1'	<- down t1
 	 	t2'	<- down t2
@@ -125,8 +120,6 @@ subTT_cutM' sub cut tt
 	 	t2'	<- down t2
 		return	$ TDanger t1' t2'
 
-	TTag{}		-> return tt
-	
 	TWild{}		-> return tt
 
 	TError{}	-> return tt

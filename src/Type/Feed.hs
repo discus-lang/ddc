@@ -146,14 +146,6 @@ feedType'	mParent t
 
 		returnJ		$ TClass k cidE
 
-	TMask k t1 t2
-	 -> do	cidE		<- allocClass k
-		Just t1'	<- feedType1 (Just cidE) t1
-		Just t2'	<- feedType1 (Just cidE) t2
-		addNode cidE	$ TMask k t1' t2'
-		
-		returnJ		$ TClass k cidE
-
 	TApp t1 t2
 	 -> do	
 		let Just k	= kindOfType t
@@ -244,12 +236,6 @@ feedType'	mParent t
 		addNode	cid	$ TFree v1 t'
 		returnJ		$ TClass KClosure cid
 
-
-	TTag v
-	 -> do	cid		<- allocClass KClosure
-		addNode cid	$ TTag v
-		returnJ		$ TClass KClosure cid
-
 	TWild kind
 	 -> do	cid		<- allocClass kind
 		addNode cid	$ TWild kind
@@ -312,9 +298,6 @@ feedType1 mParent tt
 	TFree v t
 	 -> do	Just tt'	<- feedType mParent tt
 	 	returnJ	$ tt'
-
-	TTag{}
-	 ->	returnJ	$ tt
 
 	_ 	-> feedType mParent tt
 

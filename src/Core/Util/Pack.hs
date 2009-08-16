@@ -119,35 +119,7 @@ packT1 tt
 	-- sums
 	TSum k ts
 	 -> makeTSum k $ nub $ map packT1 ts
-	 	
-	-- mask 
-	TMask k t1 t2
-	 -> let	t1'	= packT1 t1
-	 	t2'	= packT1 t2
-		
-		result
-			-- mask of bottom is just bottom
-			| TBot k1		<- t1'
-			, k == k1	
-			= TBot k1
-			
-			-- combine multiple masks
-			| TMask k1 t11 t12	<- t1'
-	 		, k == k1
-			= makeTMask k t11 (makeTSum k [t12, t2])
 
-			-- in core, all closure vars are quantified, and fully sunk
-			--	so if we can't see some tagged component, it's not there.
-			| TVar k1 v		<- t1'
-			, k == k1
-			, k == KClosure
-			= t1'
-
-			-- some other masking
-			| otherwise
-			= TMask k t1' t2'
-	   in	result
-			
 	-- vars
 	TVar k v	-> tt
 	TVarMore k v t	-> TVarMore k v (packT1 t)
@@ -213,8 +185,6 @@ packT1 tt
 			TSum KClosure ts	-> TSum KClosure (map (TFree v1) ts)
 			_			-> TFree v1 t2'
 						
-	TTag v	-> tt
-
 	TWitJoin ts
 	 -> makeTWitnessJoin (map packT1 ts)
 	
@@ -322,7 +292,6 @@ inlineTWheresMapT sub block tt
 
 	TContext l t		-> TContext l 	(down t)
 	TSum     k ts		-> TSum  k 	(map down ts)
-	TMask k t1 t2		-> TMask k 	(down t1) (down t2)
 	    
 	TVar k v	
 	 -- If this var is in our block set then we're trying to recursively
@@ -361,7 +330,6 @@ inlineTWheresMapT sub block tt
  	
 	-- closure
 	TFree v t		-> TFree v (down t)
-	TTag v			-> tt
 
 	TWild k			-> tt
 	    

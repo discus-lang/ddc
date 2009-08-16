@@ -510,13 +510,7 @@ instance Monad m => TransM m Type where
 	 -> do	ts'		<- followTs table ts
 	 	transT table	$ TSum k ts'
 	
-	TMask k t1 t2
-	 -> do	t1'		<- followT table t1
-	 	t2'		<- followT table t2
-		transT table	$ TMask k t1' t2'
-
 	TTop{}			-> transT table tt
-
 	TBot{}			-> transT table tt
 	
 	TVar k v
@@ -550,11 +544,6 @@ instance Monad m => TransM m Type where
 	    	t'		<- followT table t
 		transT table	$ TFree v' t'
 
-	TTag v
-	 -> do	v'		<- followV_free table v
-	 	transT table	$ TTag v'
-
-	
 	TWitJoin ts
 	 -> do	ts'	<- followTs table ts
 	 	return	$ TWitJoin ts'

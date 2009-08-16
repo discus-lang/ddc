@@ -144,7 +144,6 @@ instance Lint Type where
 	 | otherwise			-> TVar k (lint v)
 
 	TSum k ts			-> TSum k (lint ts)
-	TMask k t1 t2			-> TMask k (lint t1) (lint t2)
 
 	TTop k				-> TTop k
 	TBot k				-> TBot k

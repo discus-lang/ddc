@@ -146,17 +146,6 @@ subsumes3 table t s
 	, and $ map (\si -> subsumes1 table t si) ss
 	= (True, "SubSum - single sum")
 
-	-- masks
-	| TMask k t1 t2		<- t
-	, TMask k s1 s2		<- s
-	, subsumes1 table t1 s1
-	, t2 == s2
-	= (True, "SubMask")
-
-	| TMask k t1 t2		<- t
-	, subsumes1 table t1 s
-	= (True, "SubMask2")
-
 	-- SubFun
 	-- fun
  	| Just (t1, t2, tEff, tClo)	<- takeTFun t

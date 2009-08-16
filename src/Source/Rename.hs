@@ -823,15 +823,6 @@ instance Rename Type where
 	 	t2'	<- rename t2
 		return	$ TDanger t1' t2'
 	
-	TMask k t1 t2
-	 -> do	t1'	<- rename t1
-	 	t2'	<- rename t2
-		return	$ TMask k t1' t2'
-	
-	TTag v
-	 -> do	v'	<- lbindV v
-	 	return	$ TTag v'
-	
 	-- wildcards
 	TWild k
 	 -> 	return	$ TWild k

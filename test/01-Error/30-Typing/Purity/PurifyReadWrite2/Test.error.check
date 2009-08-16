@@ -5,7 +5,7 @@ ddc: ERROR
       acts on to be Const, and it cannot be Mutable at the same time.
 
               the use of: (*)
-             with effect: Base.!Read %153
+             with effect: Base.!Read %150
                       at: ./test/01-Error/30-Typing/Purity/PurifyReadWrite2/Test.ds:5:25
 
         is being purified by
@@ -13,7 +13,7 @@ ddc: ERROR
                       at: ./test/01-Error/30-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
 
         which conflicts with
-              constraint: Base.Mutable %57
+              constraint: Base.Mutable %56
          from the use of: (:=)
                       at: ./test/01-Error/30-Typing/Purity/PurifyReadWrite2/Test.ds:7:21
 
