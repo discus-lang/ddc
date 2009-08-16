@@ -9,9 +9,9 @@ where
 -- | The long name is added as a tag line to generated C files,
 --	and used in the command line interface
 ddcName		= "The Disciplined Disciple Compiler, version " ++ version
-version		= "Alpha 1"
+version		= "Alpha 1.2"
 
 -- | Maintainer contact string to put in panic messages
 maintainers	
-	=  "    http://code.google.com/p/disciple/issues\n"
-	++ "    or by emailing ddc-bugs@majestic.fastmail.fm\n"
+	=  "    http://trac.haskell.org/ddc\n"
+	++ "    or by emailing disciple-cafe@googlegroups.com\n"
