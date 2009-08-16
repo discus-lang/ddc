@@ -95,6 +95,10 @@ data VarBind
 	| VRange	
 	| VRangeL
 	| VRangeInfL
+
+	| VRangeIntStep
+	| VRangeIntStepL
+	| VRangeInfIntStepL
 	
 	-- For desugaring list comprehensions
 	| VConcatMap	

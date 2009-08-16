@@ -98,9 +98,9 @@ primAppend	= primVar NameValue	"Data.List.Append"			VAppend
 primRange	= primVar NameValue	"Data.List.rangeInt" 			VRange
 primRangeL	= primVar NameValue	"Data.List.rangeIntL"			VRangeL
 
-primRangeStep	= primVar NameValue	"Data.List.rangeIntStep" 		VRange
-primRangeStepL	= primVar NameValue	"Data.List.rangeIntStepL"		VRangeL
-primRangeInfStepL = primVar NameValue	"Data.List.rangeInfIntStepL"		VRangeInfL
+primRangeStep	= primVar NameValue	"Data.List.rangeIntStep" 		VRangeIntStep
+primRangeStepL	= primVar NameValue	"Data.List.rangeIntStepL"		VRangeIntStepL
+primRangeInfStepL = primVar NameValue	"Data.List.rangeInfIntStepL"		VRangeInfIntStepL
 
 primRangeInfL	= primVar NameValue	"Data.List.rangeInfIntL"		VRangeInfL
 primConcatMap	= primVar NameValue	"Data.List.concatMap"			VConcatMap
@@ -246,6 +246,9 @@ renamePrimVar_values
 	, ("rangeInt",		VRange)
 	, ("rangeIntL",		VRangeL)
 	, ("rangeInfIntL",	VRangeInfL)
+	, ("rangeIntStep",	VRangeIntStep)
+	, ("rangeIntStepL",	VRangeIntStepL)
+	, ("rangeInfIntStepL",	VRangeInfIntStepL)
 	, ("concatMap",		VConcatMap)
 	, ("concatMapL",	VConcatMapL)
 	, (">>=",		VBind)]
