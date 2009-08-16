@@ -6,7 +6,8 @@
 --	of it automatically.
 --
 module Type.Util.Elaborate
-	( elaborateRsT, elaborateRsT_quant
+	( elaborateRsT
+	, elaborateRsT_quant
 	, elaborateEffT
 	, elaborateCloT )
 where
@@ -39,6 +40,9 @@ trace ss xx
 	else xx
 	
 
+
+-- Elaborate Regions ------------------------------------------------------------------------------
+
 -- | Look at uses of data type constructors, and if they don't have enough
 --	region args applied then add some more so the resulting type
 --	has kind *.
@@ -62,50 +66,43 @@ elaborateRsT newVar getKind tt
 	elaborateRsT' tt
 
 elaborateRsT' tt
- 	| TForall b k x		<- tt
-	= do	(x', vks')	<- elaborateRsT' x
+ = case tt of
+	TVar{}	-> return (tt, [])
+	TWild{}	-> return (tt, [])
+	TTop{}	-> return (tt, [])
+	TBot{}	-> return (tt, [])
+
+	TForall b k x	
+	 -> do	(x', vks')	<- elaborateRsT' x
 		return	( tt
 			, vks')
 
-	| TFetters x fs		<- tt
-	= do	(x', vks')	<- elaborateRsT' x
+	TFetters x fs
+	 -> do	(x', vks')	<- elaborateRsT' x
 		return	( TFetters x' fs
 			, vks')
 
-	| TVar{}	<- tt	
-	= return (tt, [])
-
-	| TApp t1 t2 	<- tt
-	= do	(t1', vks1)	<- elaborateRsT' t1
+	TApp t1 t2 	
+	 -> do	(t1', vks1)	<- elaborateRsT' t1
 		(t2', vks2)	<- elaborateRsT' t2
 		return	( TApp t1' t2'
 			, vks1 ++ vks2)
 
-	| TWild{}	<- tt
-	= return (tt, [])
-	
-	| TTop{}	<- tt
-	= return (tt, [])
-	
-	| TBot{}	<- tt
-	= return (tt, [])
-
-	| TFun t1 t2 eff clo	<- tt
-	= do
-		(t1', vks1)	<- elaborateRsT' t1
+	TFun t1 t2 eff clo
+	 -> do	(t1', vks1)	<- elaborateRsT' t1
 		(t2', vks2)	<- elaborateRsT' t2
 		return	( TFun t1' t2' eff clo
 			, vks1 ++ vks2)
 
-	| TElaborate ee t	<- tt
-	= do	(t', vks)	<- elaborateRsT' t
+	TElaborate ee t	
+	 -> do	(t', vks)	<- elaborateRsT' t
 		return	( TElaborate ee t'
 			, vks)
 
 	-- add new regions to data type constructors to bring them up
 	--	to the right kind.
-	| TData k v ts		<- tt
-	= do	kind		<- ?getKind v
+	TData k v ts		
+	 -> do	kind		<- ?getKind v
 		let ?topType	= tt 
 		(ts2, vks2)	<- elabRs ts kind
 		(ts3, vks3)	<- liftM unzip $ mapM elaborateRsT' ts2
@@ -113,15 +110,13 @@ elaborateRsT' tt
 		return	( TData k v ts3
 			, vks2 ++ concat vks3)
 
-	| otherwise
-	= panic stage
+	_ -> panic stage
 		$ "elaborateRsT': no match for " % tt % "\n\n"
 		% " tt = " % show tt % "\n"
 
 
 -- | Take some arguments from a type ctor and if needed insert fresh region vars
 --	so the reconstructed ctor with these args will have this kind.
---
 elabRs 	:: Monad m
 	=> (?newVar  :: NameSpace -> m Var)	-- ^ fn to create new region vars
 	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
@@ -189,10 +184,10 @@ hasKind k tt
 
 
 
------------------------
--- elaborateCloT
---	Add closure annotations on function constructors, assuming 
---	that the body of the function references all it's arguments.
+-- Elaborate Closures -----------------------------------------------------------------------------
+
+-- Add closure annotations on function constructors, assuming 
+-- that the body of the function references all it's arguments.
 --
 -- eg	   (a -> b -> c -> d)
 --
@@ -211,34 +206,34 @@ elaborateCloT tt
   	return	$ addFetters fs tt'
 	
 elaborateCloT' env tt
-	| TForall b k x		<- tt
-	= do	(x', fs, clo)	<- elaborateCloT' env x
+ = case tt of
+	TForall b k x
+	 -> do	(x', fs, clo)	<- elaborateCloT' env x
 		return	( TForall b k x'
 			, fs
 			, TBot KClosure)
 			
 	-- if we see an existing set of fetters,
 	--	then drop the new ones in the same place.
-	| TFetters x fs		<- tt
-	= do	(x', fs', mClo)	<- elaborateCloT' env x
+	TFetters x fs		
+	 -> do	(x', fs', mClo)	<- elaborateCloT' env x
 		return	( TFetters x' (fs ++ fs')
 			, []
 			, mClo)
 			
-	| TVar{}		<- tt
-	= 	return	( tt
+	TVar{}
+	 -> 	return	( tt
 			, []
 			, TBot KClosure )
 	
 	-- TODO: decend into type ctors
-	| TData{}		<- tt
-	=	return	( tt
+	TData{}
+	 ->	return	( tt
 			, []
 			, TBot KClosure)
 
-	| TFun t1 t2 eff clo	<- tt
-	= do	
-		-- create a new value variable as a name for the function parameter
+	TFun t1 t2 eff clo
+	 -> do	-- create a new value variable as a name for the function parameter
 		varVal			<- ?newVarN NameValue
 		
 		-- elaborate the right hand arg, 
@@ -276,27 +271,30 @@ elaborateCloT' env tt
 			, newClo)
 
 
+-- Elaborate Effects ------------------------------------------------------------------------------
+
 -- | Elaborate effects in this type.
 elaborateEffT 
 	:: Monad m
 	=> (?newVarN :: NameSpace -> m Var)
-	-> [Var]		-- ^ region variables which were added during elaboration.
-	-> [Var]
+	-> [Var]		-- ^ constant region variables to make effects for
+	-> [Var]		-- ^ mutable  region variables to make effects for
 	-> Type			-- ^ the type to elaborate
-	-> m Type
+	-> m Type		--   the elaborated type
 	
 elaborateEffT vsRsConst vsRsMutable tt
  = do	
- 	-- make a fresh hook var.
+ 	-- make a fresh hook var
+	--	The new effect fetter constrains this var.
  	freshHookVar	<- ?newVarN NameEffect
 
-	-- see if there is already a var on the rightmost function arrow, if there isn't one
-	--	then add the freshHookVar.
+	-- see if there is already a var on the rightmost function arrow,
+	--	if there isn't one then add the freshHookVar.
  	let Just (tHooked, hookVar, hookEffs) =
 		hookEffT freshHookVar tt
   
-    	-- assume that regions added into a contra-variant branch during elaboration 
-	--	will be read by the function.
+    	-- assume that regions added into a contra-variant
+	--	branch during elaboration will be read by the function.
 	let rsContra	= slurpConRegions tHooked
 	let effsRead	= [ TEffect primRead [TVar KRegion v] 
 				| v <- (vsRsConst ++ vsRsMutable)
@@ -320,8 +318,8 @@ elaborateEffT vsRsConst vsRsMutable tt
 --		a var and return the original effect.
 --
 hookEffT  
-	:: Var 			-- The hook var to use if there isn't one already in the type.
-	-> Type 		-- The type to change.
+	:: Var 			-- ^ the hook var to use if there isn't one already in the type.
+	-> Type 		-- ^ tThe type to change.
 	-> Maybe 
 		( Type		-- Hooked type
 		, Var		-- Hook var to use.
@@ -438,3 +436,5 @@ slurpConRegionsCon tt
 
 	TVar KRegion v		-> [v]
 	TVar _ _		-> []	
+
+
