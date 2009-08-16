@@ -1,0 +1,10 @@
+
+main () = do
+	-- Trivial.
+	println $ show [ 1 .. 4 ]
+	-- Take 10 from and infinite list.
+	println $ show $ take 10 [ 0 .. ]
+	-- Count down.
+	println $ show [ 4 .. 1 ]
+	-- Sanity
+	println $ show [ 2 .. 2 ]

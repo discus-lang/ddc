@@ -1,0 +1,15 @@
+
+main () = do
+	-- Count with a step.
+	println $ show [ 2, 4 .. 10 ]
+	-- Count down with a step.
+	println $ show [ 10, 8 .. (-2) ]
+
+
+	-- Infinite count with a step.
+	println $ show $ take 10 [ 0, 3 .. ]
+	-- Infinite count down with a step.
+	println $ show $ take 10 [ 0, (-1) .. ]
+	-- GHC produces an infinite list [3, 3 ..]
+	println $ show $ take 10 [ 3, 3 .. 10 ]
+
