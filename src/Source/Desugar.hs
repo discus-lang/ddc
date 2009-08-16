@@ -414,10 +414,16 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	 -> do	x1'	<- rewrite x1
 	  	return	$ D.XApp sp (D.XVar sp primRangeInfL) x1'
 
-	S.XListRange _ _ _ (Just _) _
-	 -> panic stage
-		$ "rewrite[Exp]: can't yet XListRange expression " % xx % "\n\n"
-		%  show xx	% "\n"
+	S.XListRange sp False x1 (Just x2) (Just x3)
+	 -> do	x1'	<- rewrite x1
+		x2'	<- rewrite x2
+		x3'	<- rewrite x3
+		return	$ D.XApp sp (D.XApp sp (D.XApp sp (D.XVar sp primRangeStep) x1') x2') x3'
+
+	S.XListRange sp True x1 (Just x2) Nothing
+	 -> do	x1'	<- rewrite x1
+		x2'	<- rewrite x2
+		return	$ D.XApp sp (D.XApp sp (D.XVar sp primRangeInfStepL) x1') x2'
 
 	S.XListComp{}
 	 -> 	rewriteListComp xx

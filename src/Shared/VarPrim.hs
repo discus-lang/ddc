@@ -97,6 +97,11 @@ primCons	= primVar NameValue	"Data.List.Cons"			VCons
 primAppend	= primVar NameValue	"Data.List.Append"			VAppend	
 primRange	= primVar NameValue	"Data.List.rangeInt" 			VRange
 primRangeL	= primVar NameValue	"Data.List.rangeIntL"			VRangeL
+
+primRangeStep	= primVar NameValue	"Data.List.rangeIntStep" 		VRange
+primRangeStepL	= primVar NameValue	"Data.List.rangeIntStepL"		VRangeL
+primRangeInfStepL = primVar NameValue	"Data.List.rangeInfIntStepL"		VRangeInfL
+
 primRangeInfL	= primVar NameValue	"Data.List.rangeInfIntL"		VRangeInfL
 primConcatMap	= primVar NameValue	"Data.List.concatMap"			VConcatMap
 primConcatMapL	= primVar NameValue	"Data.List.concatMapL"			VConcatMapL

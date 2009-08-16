@@ -276,12 +276,14 @@ rangeInt x y =
 		| x <= y	=  [x]
 				\= x : rangeIntDown (x - 1) y
 
--- | Return a list of ints in this range
+-- | Return a list of ints in this range, with step size determined by the
+--   difference between the first and second element.
 rangeIntStep :: Int -> Int -> Int -> [Int]
 rangeIntStep x next y =
-	case (next > x, x < y) of
-		(True, True)	-> rangeIntStepUp x y
-		(False,  False)	-> rangeIntStepDown x y
+	case (compare x next, compare x y) of
+		(EQ, _)		-> infListIntL x
+		(LT, LT)	-> rangeIntStepUp x y
+		(GT, GT)	-> rangeIntStepDown x y
 		_		-> []
  where
 	step = next - x
@@ -294,7 +296,7 @@ rangeIntStep x next y =
 
 
 -- | Return a list of ints in this range (lazy spine)
-rangeIntL :: Int -> Int -> [Int];
+rangeIntL :: Int -> Int -> [Int]
 rangeIntL x y =
 	if x > y
 	 then rangeIntDownL x y
@@ -308,11 +310,43 @@ rangeIntL x y =
 				\= x : rangeIntDownL @ (x - 1) y
 
 
+-- | Return a list of ints in this range, with step size determined by the
+--   difference between the first and second element.
+rangeIntStepL :: Int -> Int -> Int -> [Int]
+rangeIntStepL x next y =
+	case (compare x next, compare x y) of
+		(EQ, _)		-> infListIntL x
+		(LT, LT)	-> rangeIntStepUpL x y
+		(GT,  GT)	-> rangeIntStepDownL x y
+		_		-> []
+ where
+	step = next - x
+	rangeIntStepUpL x' y'
+		| x' >= y'	= [x']
+				\= x' : rangeIntStepUpL @ (x' + step) y'
+	rangeIntStepDownL x' y'
+		| x' <= y'	= [x']
+				\= x' : rangeIntStepDownL @ (x' + step) y'
+
+
 -- | Return the infinite list of ints starting from this value (lazy spine)
 rangeInfIntL :: Int -> [Int]
 rangeInfIntL x
 	= x : rangeInfIntL @ (x + 1)
 
+rangeInfIntStepL :: Int -> Int -> [Int]
+rangeInfIntStepL x next =
+	if x == next
+         then infListIntL x
+         else rangeInfIntStepInnerL x
+ where
+	step = next - x
+	rangeInfIntStepInnerL x' = x' : rangeInfIntStepInnerL @ (x' + step)
+
+
+infListIntL :: Int -> [Int]
+infListIntL x =
+        x : infListIntL @ x
 
 -- | Concatenate all these lists together
 concat :: [[a]] -> [a]
