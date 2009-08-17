@@ -84,7 +84,11 @@ pExp1
 
 pExp1'
  =
-	-- VAR & { TYPE }								-- NOT FINISHED
+	do	tok	<- pTok K.SBra
+	  	exp	<- pListContents (spTP tok)
+        	return	$ exp
+
+  <|>	-- VAR & { TYPE }								-- NOT FINISHED
  	-- overlaps with VAR
 	(Parsec.try $ do
 		field	<- liftM vNameF (pQualified pVar)
@@ -198,28 +202,6 @@ pExp1'
 		exp	<- pExp
 		return	$ XLambdaPats (spTP tok1) pats exp
 
-  <|>	-- [ EXP .. EXP ] / [ EXP, EXP .. EXP ] / [ EXP .. ] etc
-	-- overlaps with list comprehensions and list syntax
-	Parsec.try pListRange
-
-  <|>	-- [ EXP | QUAL .. ]
-	-- overlaps with list syntax
-  	(Parsec.try $ do
-		tok	<- pTok K.SBra
-		exp	<- pExp
-		pTok K.Bar
-		quals	<- Parsec.sepBy1 pLCQual (pTok K.Comma)
-		pTok K.SKet
-
-		return	$ XListComp (spTP tok) exp quals)
-
-  <|>	-- [ EXP, EXP ]
-  	(Parsec.try $ do
-		tok	<- pTok K.SBra
-		exps	<- Parsec.sepBy pExp (pTok K.Comma)
-		pTok K.SKet
-		return	$ XList (spTP tok) exps)
-
   <|>	-- ( EXP, EXP .. )
 	-- overlaps with ( EXP )
 	(Parsec.try $ do
@@ -240,39 +222,83 @@ pExp1'
 		return 	$ XParens (spX exp) exp
   <?>   "pExp1'"
 
-pListRange :: Parser (Exp SP)
-pListRange
- = do
-  	tok	<- pTok K.SBra
-  	exp1	<- pExp
 
-	(mExp2, mExp3)	<- (Parsec.try $ do	pTok K.DotDot
-						pTok K.SKet
-						return (Nothing, Nothing))
+pListContents :: SP -> Parser (Exp SP)
+pListContents startPos =
+	-- Empty list.
+	do	pTok K.SKet
+  		return $ XList startPos []
 
-        	 	<|> (Parsec.try $ do	pTok K.DotDot
-						exp	<- pExp
-						pTok K.SKet
-						return $ (Nothing, Just exp))
+  <|>	-- Either a list, a list comprehension
+  	do	first	<- pExp
+	        exp	<- pListContentsHaveOne startPos first
+		return $ exp
 
-        		<|> (Parsec.try $ do	pTok K.Comma
-	        				exp2	<- pExp
-						pTok K.DotDot
-	        				exp3	<- pExp
-						pTok K.SKet
-						return $ (Just exp2, Just exp3))
+  <?>	"pListContents"
 
-			<|> (Parsec.try $ do	pTok K.Comma
-	        				exp	<- pExp
-						pTok K.DotDot
-						pTok K.SKet
-						return $ (Just exp, Nothing))
+pListContentsHaveOne :: SP -> Exp SP -> Parser (Exp SP)
+pListContentsHaveOne startPos first =
+	-- Single element list.
+	do	pTok K.SKet
+  		return $ XList startPos [first]
 
-			<?> "List range"
+  <|>	-- List comprehension.
+	do	pTok K.Bar
+		quals	<- Parsec.sepBy1 pLCQual (pTok K.Comma)
+		pTok K.SKet
+		return	$ XListComp startPos first quals
 
-	-- force infinite lists to be lazy
-	let lazy = not $ isJust mExp3
-	return	$ XListRange (spTP tok) lazy exp1 mExp2 mExp3
+  <|>	-- Have range expression without step.
+	do	pTok K.DotDot
+        	exp <- pListRangeOne startPos first
+                return exp
+
+  <|>	-- Have one element and Comma
+	do	pTok K.Comma
+        	second	<- pExp
+	        exp	<- pListContentsHaveTwo startPos first second
+		return exp
+
+  <?>	"pListContentsHaveOne"
+
+pListRangeOne :: SP -> Exp SP -> Parser (Exp SP)
+pListRangeOne startPos first =
+	do	pTok K.SKet
+		return $ XListRange startPos True first Nothing Nothing
+
+  <|>	do	exp <- pExp
+		pTok K.SKet
+		return $ XListRange startPos False first Nothing (Just exp)
+
+  <?>	"pListRangeOne"
+
+
+pListContentsHaveTwo :: SP -> Exp SP -> Exp SP -> Parser (Exp SP)
+pListContentsHaveTwo startPos first second =
+	do	pTok K.DotDot
+		exp <- pListRangeTwo startPos first second
+		return $ exp
+
+  <|>	do	pTok K.SKet
+		return $ XList startPos [first, second]
+
+  <|>	do	pTok K.Comma
+  		rest <- Parsec.sepBy1 pExp (pTok K.Comma)
+		pTok K.SKet
+		return $ XList startPos (first : second : rest)
+
+  <?>	"pListContentsHaveTwo"
+
+pListRangeTwo :: SP -> Exp SP -> Exp SP -> Parser (Exp SP)
+pListRangeTwo startPos first second =
+	do	pTok K.SKet
+		return $ XListRange startPos True first (Just second) Nothing
+
+  <|>	do	exp <- pExp
+		pTok K.SKet
+		return $ XListRange startPos False first (Just second) (Just exp)
+
+  <?>	"pListRangeTwo"
 
 
 -- | Parse an expression in the RHS of a binding or case/match alternative
