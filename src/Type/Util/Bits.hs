@@ -122,6 +122,8 @@ isUnboxedT t
 -- | makeTFunEC
 --	Converts a list of types:	[t1, t2, t3, t4]
 --	into a function type:		t1 -> (t2 -> (t3 -> t4))
+--	Uses the same effect and closure on every constructor
+--
 makeTFunEC ::	Effect -> Closure -> [Type]	-> Type
 makeTFunEC	eff clo (x:[])			= x
 makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
