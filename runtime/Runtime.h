@@ -1,6 +1,8 @@
-
-#ifndef _Trauma_Runtime
-#define _Trauma_Runtime
+// This is the top-level header file
+//	All C programs produced by DDC include this header.
+//
+#ifndef _DDC_Runtime
+#define _DDC_Runtime
 
 #include "Collect.h"
 #include "Alloc.h"

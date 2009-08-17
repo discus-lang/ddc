@@ -7,33 +7,37 @@
 #include <unistd.h>
 #include <inttypes.h>
 
-_Profile*
-	_ddcProfileNew ()
+// Create a fresh new profiling structure, which accumulates profiling
+//	data as the program runs.
+//
+_Profile* _ddcProfileNew ()
 {
 	_Profile *p	= malloc (sizeof (_Profile));
 	memset (p, 0, sizeof (_Profile));
 	return p;
 }
 
+// Calculate a precentage.
 float 	perc (Word64 x, Word64 a)
 {
 	return 100.0 * ((float)x / (float)a);
 }
 
+// Convert a clock_t to a floating point number of seconds.
 float	clockToFloat (clock_t c)
 {
 	return	(float)c / (float)sysconf (_SC_CLK_TCK);
 
 }
 
+// Compute the ratio between these two floats.
 float	ratioF (float x, float y)
 {
 	return	x / (x + y);
 }
 
 
-// _ddcPrettySize
-// 	Converts a Word64 to a pretty string, with groups of 3 digits
+// Convert a Word64 to a pretty string, with groups of 3 digits
 //	separated by a comma.
 //
 void	_ddcPrettySize	(char* str, Word64 x)
@@ -61,7 +65,9 @@ void	_ddcPrettySize	(char* str, Word64 x)
 }
 
 
-// ----- GC
+// Print GC ---------------------------------------------------------------------------------------
+//	Pretty print the Garbage Collector profiling info
+//
 void	_ddcProfilePrintGC
 		( FILE* 	file
 		, _ProfileGC*	gc)
@@ -118,7 +124,9 @@ void	_ddcProfilePrintGC
 }
 
 
-// ----- Slot Stack
+// Print Slot Stack -------------------------------------------------------------------------------
+//	Pretty print the Slot Stack profiling info
+//
 void	_ddcProfilePrintSlot
 		( FILE* 	file
 		, _ProfileSlot*	slot)
@@ -149,7 +157,9 @@ void	_ddcProfilePrintSlot
 }
 
 
-// ----- Context
+// Print Context Stack ----------------------------------------------------------------------------
+//	Pretty print the Context Stack profiling info
+//
 void	_ddcProfilePrintContext
 		( FILE*			file
 		, _ProfileContext*	context)
@@ -172,7 +182,12 @@ void	_ddcProfilePrintContext
 }
 
 
-// ----- Alloc
+// Print Slot Stack -------------------------------------------------------------------------------
+//	Pretty print the allocator profiling info
+
+// Pretty print the ratio between some thing that was allocated and the
+//	total allocation of the program.
+//
 void	_ddcProfilePrintAllocRatio 
 		( FILE* file
 		, char* name
@@ -226,7 +241,9 @@ void	_ddcProfilePrintAlloc
 }
 
 
-// ----- Apply
+// Print Apply ------------------------------------------------------------------------------------
+//	Pretty print profiling info about the use of general application functions
+//
 void	_ddcProfilePrintApply 
 		( FILE* 		file
 		, _ProfileApply*	apply)
@@ -283,7 +300,9 @@ void	_ddcProfilePrintApply
 }
 
 
-// ----- Boxing
+// Print Boxing -----------------------------------------------------------------------------------
+//	Pretty print profiling info about how many boxings / unboxings have been done.
+//
 void	_ddcProfilePrintBoxingRec 
 		( FILE* file
 		, char* name
@@ -323,7 +342,9 @@ void	_ddcProfilePrintBoxing
 }
 
 
-// ------ Profile
+// Print Profile ----------------------------------------------------------------------------------
+//	Pretty print all the profiling info that we have enabled.
+//
 void	_ddcProfilePrint
 		( FILE* file
 		, _Profile* p)
@@ -338,7 +359,7 @@ void	_ddcProfilePrint
 
 
 
-// ----- Timing
+// Process time delimited by the following functions are attributed to the mutator.
 void	_ddcProfileMutatorStart ()
 {
 	struct tms buf;
@@ -358,6 +379,7 @@ void	_ddcProfileMutatorEnd ()
 }
 
 
+// Process time delimited by the following functions are attributed to the collector.
 void	_ddcProfileCollectorStart ()
 {
 	struct tms buf;
@@ -378,8 +400,4 @@ void	_ddcProfileCollectorEnd ()
 	_ddcProfile ->gc.timeCollectorUser	+= pauseUser;
 	_ddcProfile ->gc.timeCollectorSystem	+= pauseSystem;
 }
-
-
-
-
 

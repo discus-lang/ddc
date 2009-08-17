@@ -1,6 +1,13 @@
+// Macros used to squash warnings from the C compiler.
+
 #ifndef _DDC_Util
 #define _DDC_Util
 
+
+// Sometimes we don't want to refer to all the parameters in a function
+//	Use this macro to mark said parameters, and squash warnings
+//	from the compilers about unused parameters.
+//
 #ifdef UNUSED
 #elif defined (__GNUC__)
 #	define UNUSED(x) UNUSED_ ## x __attribute__ ((unused))
