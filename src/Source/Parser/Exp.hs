@@ -348,25 +348,28 @@ stripXParens xx			= xx
 
 -- | Parse a list comprehension production / qualifier / guard
 pLCQual :: Parser (LCQual SP)
-pLCQual
- = 	-- PAT <- EXP
+pLCQual =
+ 	-- PAT <- EXP
  	-- overlaps with let and guard
  	(Parsec.try $ do
-		pat	<- pPat
-		pTok K.LeftArrow
+        	pat	<- pPat
+        	lazy	<- pLeftArrowIsLazy
 		exp	<- pExp
-		return	$ LCGen False pat exp)
-
-  <|>	(Parsec.try $ do
-		pat	<- pPat
-		pTok K.LeftArrowLazy
-		exp	<- pExp
-		return	$ LCGen True pat exp)
+		return	$ LCGen lazy pat exp)
 
   <|>	do	exp	<- pExp
   		return	$ LCExp exp
 
   <?>   "pLCQual"
+
+pLeftArrowIsLazy :: Parser Bool
+pLeftArrowIsLazy =
+	do	pTok K.LeftArrowLazy
+        	return True
+
+  <|>	do	pTok K.LeftArrow
+  		return False
+
 
 -- Alternatives ------------------------------------------------------------------------------------
 

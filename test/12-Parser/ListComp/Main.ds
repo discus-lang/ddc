@@ -1,0 +1,11 @@
+
+intList ::  [Int]
+intList = [ 1 .. 4 ]
+
+main () = do
+	println $ show $ [ x + 1 | x <- [ 1 .. 4 ]]
+	println $ show $ take 10 [ x + 2 | x <@- [ 0 ..  ]]
+
+	-- This should work but hits bug #105.
+	-- println $ show $ [ x + y | x <- intList, y <- intList]
+
