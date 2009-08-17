@@ -63,19 +63,19 @@ MAKE_BOXFUN (Word8,	sizeof(Word32));
 static inline
 Obj*	_boxInt32 (Int32 v)
 {
-	if (_ddcHeapPtr + 16 > _ddcHeapMax)
-		_allocCollect (16);
+	if (_ddcHeapPtr + 8 > _ddcHeapMax)
+		_allocCollect (8);
 		
 	Word32*	x	= (Word32*)_ddcHeapPtr;
-	_ddcHeapPtr 	+= 16;
+	_ddcHeapPtr 	+= 8;
 		
 	x[0]		= 0x00000013;			// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
 	x[1]		= v;
 
 	_PROFILE_ALLOC  ( dataRawSmall.count++ );
-	_PROFILE_ALLOC  ( dataRawSmall.bytes += 16 );
+	_PROFILE_ALLOC  ( dataRawSmall.bytes += 8 );
 	_PROFILE_BOXING ( bInt32.count ++); 
-	_PROFILE_BOXING ( bInt32.bytes += 16); 
+	_PROFILE_BOXING ( bInt32.bytes += 8); 
 	
 	return (Obj*)x;
 }
@@ -85,21 +85,21 @@ Obj*	_boxInt32 (Int32 v)
 static inline
 Obj*	_boxFloat32 (Float32 v)
 {	
-	if (_ddcHeapPtr + 16 > _ddcHeapMax)
-		_allocCollect (16);
+	if (_ddcHeapPtr + 8 > _ddcHeapMax)
+		_allocCollect (8);
 		
 	Word32* x	= (Word32*)_ddcHeapPtr;
-	_ddcHeapPtr	+= 16;
+	_ddcHeapPtr	+= 8;
 	
 	x[0]			= 0x00000013;		// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
 	*(Float32*)(x + 1)	= v;
 
 	_PROFILE_ALLOC  ( dataRawSmall.count++ );
-	_PROFILE_ALLOC  ( dataRawSmall.bytes += 16 );
+	_PROFILE_ALLOC  ( dataRawSmall.bytes += 8 );
 	_PROFILE_BOXING ( bFloat32.count ++); 
-	_PROFILE_BOXING ( bFloat32.bytes += 16); 
+	_PROFILE_BOXING ( bFloat32.bytes += 8); 
 
-	return (Obj*) x;
+	return (Obj*)x;
 }
 
 
@@ -117,7 +117,6 @@ Obj*	_boxEnum (Word32 tag)
 	x[1]		= 0;
 	
 	return (Obj*)x;
-
 }
 
 
@@ -136,10 +135,10 @@ Obj*	primProjFieldR (Obj* obj, Int32 ix)
 	return	_boxRef (obj, &(data ->a[ix]));
 }
 
+
 MAKE_GETFUN (Char32);
 MAKE_GETFUN (Int32);
 MAKE_GETFUN (Float32);
-
 
 
 static inline
