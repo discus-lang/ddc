@@ -259,8 +259,18 @@ pType_body1
 		return	$ TVar 	(kindOfSpace $ Var.nameSpace var)
 				var
 
-	-- (VAR :: KIND)
- <|>	(Parsec.try $ do
+ <|>	-- ()
+ 	do	pTok K.Unit
+		return	$ TData KValue (Var.primTUnit) []
+
+ <|>	-- [ TYPE , .. ]
+ 	do	ts	<- pSParen $ Parsec.sepBy1 pType_body (pTok K.Comma)
+		return	$ TData (KFun (KFun KRegion KValue) KValue)
+				Var.primTList
+				ts
+
+ <|>	-- (VAR :: KIND)
+	(Parsec.try $ do
  		pTok K.RBra
 		var	<- liftM (vNameDefaultN NameType) $ pVarPlain
 		pTok K.HasType
@@ -293,21 +303,11 @@ pType_body1
 
 		return	$ TData kind con [])
 
- <|>	-- ()
- 	do	pTok K.Unit
-		return	$ TData KValue (Var.primTUnit) []
-
  <|>	-- KIND _
  	(Parsec.try $ do
 		do	k	<- pKind1
 			pTok K.Underscore
 			return	$ TWild k)
-
- <|>	-- [ TYPE , .. ]
- 	do	ts	<- pSParen $ Parsec.sepBy1 pType_body (pTok K.Comma)
-		return	$ TData (KFun (KFun KRegion KValue) KValue)
-				Var.primTList
-				ts
 
  <|>	-- ( TYPE, TYPE .. )
  	-- overlaps with (TYPE)

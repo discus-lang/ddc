@@ -83,7 +83,8 @@ pExp1
  	return	$ stripXParens exp
 
 pExp1'
- =	-- VAR & { TYPE }								-- NOT FINISHED
+ =
+	-- VAR & { TYPE }								-- NOT FINISHED
  	-- overlaps with VAR
 	(Parsec.try $ do
 		field	<- liftM vNameF (pQualified pVar)
@@ -91,12 +92,12 @@ pExp1'
 		t	<- pCParen pType_body
 		return	$ XProjT (spV field) t (JField (spV field) field))
 
- 	-- VAR/CON
-  <|>	do	var	<- liftM vNameV (pQualified pVarCon)
+  <|>	-- VAR/CON
+	do	var	<- liftM vNameV (pQualified pVarCon)
 		return	$ XVar (spV var) var
 
-	-- VARFIELD					-- TODO: change this when we move to parsec
-  <|>	do	var	<- liftM vNameF pVarField
+  <|>	-- VARFIELD					-- TODO: change this when we move to parsec
+	do	var	<- liftM vNameF pVarField
 		return	$ XObjField (spV var) var
 
   <|>	-- SYM
@@ -116,29 +117,6 @@ pExp1'
   <|>	-- lit
   	do	(lit, sp) <- pLiteralFmtSP
 		return	$ XLit sp lit
-
-  <|>	-- \. VAR EXP ..
-  	-- overlaps with next lambda forms
-  	(Parsec.try $ do
-		tok	<- pTok K.BackSlashDot
-		var	<- liftM vNameF pVar
-		exps	<- Parsec.many pExp1
-		return	$ XLambdaProj (spTP tok) (JField (spTP tok) var) exps)
-
-  <|>   -- \ case { ALT .. }
-  	-- overlaps with the nexta lambda form
-	(Parsec.try $ do
-		tok	<- pTok K.BackSlash
-		pTok K.Case
-		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
-		return	$ XLambdaCase (spTP tok) alts)
-
-  <|>	-- \ PAT .. -> EXP
-	do	tok1	<- pTok K.BackSlash
-		pats	<- Parsec.many1 pPat1
-		pTok	<- pTok K.RightArrow
-		exp	<- pExp
-		return	$ XLambdaPats (spTP tok1) pats exp
 
   <|>	-- case EXP of { ALT .. }
   	do	tok	<- pTok K.Case
@@ -164,8 +142,8 @@ pExp1'
 		exp	<- pExp
 		return	$ XLet (spTP tok) binds exp
 
-	-- if EXP then EXP else EXP
-  <|>	do	tok	<- pTok K.If
+  <|>	-- if EXP then EXP else EXP
+	do	tok	<- pTok K.If
 		exp1	<- pExp
 		pTok K.Then
 		exp2	<- pExp
@@ -173,27 +151,13 @@ pExp1'
 		exp3	<- pExp
 		return	$ XIfThenElse (spTP tok) exp1 exp2 exp3
 
-	-- [ EXP .. EXP ] / [ EXP, EXP .. EXP ] / [ EXP .. ] etc
-	-- overlaps with list comprehensions and list syntax
-  <|>	Parsec.try pListRange
-
-  <|>	-- [ EXP | QUAL .. ]
-	-- overlaps with list syntax
+  <|>	-- \. VAR EXP ..
+  	-- overlaps with next lambda forms
   	(Parsec.try $ do
-		tok	<- pTok K.SBra
-		exp	<- pExp
-		pTok K.Bar
-		quals	<- Parsec.sepBy1 pLCQual (pTok K.Comma)
-		pTok K.SKet
-
-		return	$ XListComp (spTP tok) exp quals)
-
-  <|>	-- [ EXP, EXP ]
-  	(Parsec.try $ do
-		tok	<- pTok K.SBra
-		exps	<- Parsec.sepBy pExp (pTok K.Comma)
-		pTok K.SKet
-		return	$ XList (spTP tok) exps)
+		tok	<- pTok K.BackSlashDot
+		var	<- liftM vNameF pVar
+		exps	<- Parsec.many pExp1
+		return	$ XLambdaProj (spTP tok) (JField (spTP tok) var) exps)
 
   <|>	-- try EXP catch { ALT .. } (with { STMT; .. })
   	do	tok	<- pTok K.Try
@@ -219,9 +183,46 @@ pExp1'
 		return	$ XBreak (spTP tok)
 
 
- 	-- ( EXP, EXP .. )
+  <|>   -- \ case { ALT .. }
+  	-- overlaps with the nexta lambda form
+	(Parsec.try $ do
+		tok	<- pTok K.BackSlash
+		pTok K.Case
+		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
+		return	$ XLambdaCase (spTP tok) alts)
+
+  <|>	-- \ PAT .. -> EXP
+	do	tok1	<- pTok K.BackSlash
+		pats	<- Parsec.many1 pPat1
+		pTok	<- pTok K.RightArrow
+		exp	<- pExp
+		return	$ XLambdaPats (spTP tok1) pats exp
+
+  <|>	-- [ EXP .. EXP ] / [ EXP, EXP .. EXP ] / [ EXP .. ] etc
+	-- overlaps with list comprehensions and list syntax
+	Parsec.try pListRange
+
+  <|>	-- [ EXP | QUAL .. ]
+	-- overlaps with list syntax
+  	(Parsec.try $ do
+		tok	<- pTok K.SBra
+		exp	<- pExp
+		pTok K.Bar
+		quals	<- Parsec.sepBy1 pLCQual (pTok K.Comma)
+		pTok K.SKet
+
+		return	$ XListComp (spTP tok) exp quals)
+
+  <|>	-- [ EXP, EXP ]
+  	(Parsec.try $ do
+		tok	<- pTok K.SBra
+		exps	<- Parsec.sepBy pExp (pTok K.Comma)
+		pTok K.SKet
+		return	$ XList (spTP tok) exps)
+
+  <|>	-- ( EXP, EXP .. )
 	-- overlaps with ( EXP )
-  <|>	(Parsec.try $ do
+	(Parsec.try $ do
   		tok	<- pTok K.RBra
 		exp1	<- pExp
 		pTok K.Comma
@@ -229,13 +230,13 @@ pExp1'
 		pTok K.RKet
 		return	$ XTuple (spTP tok) (exp1 : exps))
 
-	-- ( EXP )
+  <|>	-- ( EXP )
 	-- use XParens to signal to pProj via pExp2 that the expression is wrapped in parens
 	--	we need this to distinguish
 	--		exp . var		-- field projection
 	--		exp . (var)		-- index projection
 	--
-  <|>	do 	exp	<- pRParen pExp
+	do 	exp	<- pRParen pExp
 		return 	$ XParens (spX exp) exp
   <?>   "pExp1'"
 
@@ -384,7 +385,7 @@ pGuard
 	-- EXP
  <|>	do	exp	<- pExpRHS
  		return	$ GBool (spX exp) exp
-  <?>   "pGuard"
+ <?>   "pGuard"
 
 
 -- Statements --------------------------------------------------------------------------------------

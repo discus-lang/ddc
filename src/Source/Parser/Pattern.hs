@@ -47,48 +47,7 @@ pPat2
 pPat1 :: Parser (Pat SP)
 pPat1
  =
-	-- CON { .l1 = PAT1 .. }
-  	-- overlaps with CON
-  	(Parsec.try $ do
-		pPat_conLabel)
-
-	-- VAR @ PAT
- 	-- overlaps with VAR
-  <|>  	(Parsec.try $ do
- 		var		<- pVar
-		pTok K.At
-		pat		<- pPat1
-		return	$ WAt (spV var) (vNameV var) pat)
-
-  <|>	-- [] or [x] or [p1, p2 .. ]
-  	do	tok <- pTok K.SBra
-		ps	<- Parsec.sepBy pPat (pTok K.Comma)
-		pTok K.SKet
-
-		if length ps == 0
-			then return	$ WCon (spTP tok) Var.primNil []
-			else return	$ WList (spTP tok) ps
-
- 	-- (PAT, PAT .. )
-	-- overlaps with ( PAT )
-  <|>  	(Parsec.try $ do
-		pTok K.RBra
-		p1		<- pPat
-		pTok K.Comma
-		ps		<- Parsec.sepBy1 pPat (pTok K.Comma)
-		pTok K.RKet
-
-		return	$ WTuple (spW p1) (p1 : ps))
-
-  <|> 	-- VAR
-  	do	var		<- pVar
-		return	$ WVar (spV var) (vNameV var)
-
-  <|>	-- CON
-	do	con		<- pCon
-		return	$ WCon (spV con) (vNameV con) []
-
-  <|>   -- '()'
+	-- '()'
   	do	tok	<- pTok K.Unit
 		return	$ WUnit (spTP tok)
 
@@ -104,6 +63,47 @@ pPat1
   	do	tok	<- pTok K.Hat
 		var		<- pVar
 		return	$ WObjVar (spTP tok) (vNameV var)
+
+  <|>	-- [] or [x] or [p1, p2 .. ]
+  	do	tok <- pTok K.SBra
+		ps	<- Parsec.sepBy pPat (pTok K.Comma)
+		pTok K.SKet
+
+		if length ps == 0
+			then return	$ WCon (spTP tok) Var.primNil []
+			else return	$ WList (spTP tok) ps
+
+  <|>	-- CON { .l1 = PAT1 .. }
+  	-- overlaps with CON
+  	(Parsec.try $ do
+		pPat_conLabel)
+
+  <|>	-- CON
+	do	con		<- pCon
+		return	$ WCon (spV con) (vNameV con) []
+
+  <|>  	-- VAR @ PAT
+ 	-- overlaps with VAR
+	(Parsec.try $ do
+ 		var		<- pVar
+		pTok K.At
+		pat		<- pPat1
+		return	$ WAt (spV var) (vNameV var) pat)
+
+  <|> 	-- VAR
+  	do	var		<- pVar
+		return	$ WVar (spV var) (vNameV var)
+
+  <|>  	-- (PAT, PAT .. )
+	-- overlaps with ( PAT )
+	(Parsec.try $ do
+		pTok K.RBra
+		p1		<- pPat
+		pTok K.Comma
+		ps		<- Parsec.sepBy1 pPat (pTok K.Comma)
+		pTok K.RKet
+
+		return	$ WTuple (spW p1) (p1 : ps))
 
   <|>	-- ( PAT )
   	do	pat		<- pRParen pPat
