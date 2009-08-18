@@ -170,6 +170,7 @@ cleanRuntime :
 		-o	-name "*.so" \
 		-o  -name "*.dylib" \
 		-o	-name "*.a" \
+		-o	-name "*~" \
 		-follow | xargs -n 1 rm -f
 
 
