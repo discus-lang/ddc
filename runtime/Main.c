@@ -13,7 +13,7 @@
 #include "Alloc.ci"
 
 
-// Initialise the DDC runtime system
+// Initialise the DDC runtime system.
 void	_ddcRuntimeInit 
 		( int argc
 		, char** argv)
@@ -104,7 +104,6 @@ void	_ddcRuntimeCleanup ()
 
 
 // Parse RTS options
-//	TODO:	this is pretty nasty.
 void	_ddcParseArgs
 		( int 		argc
 		, char**	argv
