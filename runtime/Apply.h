@@ -2,7 +2,7 @@
 #ifndef _Trauma_Apply
 #define _Trauma_Apply
 
-#include "Types.h"
+#include "Object.h"
 
 // Sets what apply functions we have available.
 //	After changing these you must also edit EvalGen.hs and run

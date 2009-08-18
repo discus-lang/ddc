@@ -107,11 +107,11 @@ Obj*	_boxFloat32 (Float32 v)
 static inline
 Obj*	_boxEnum (Word32 tag)
 {
-	if (_ddcHeapPtr + 16 > _ddcHeapMax)
-		_allocCollect (16);
+	if (_ddcHeapPtr + 8 > _ddcHeapMax)
+		_allocCollect (8);
 		
 	Word32* x	= (Word32*)_ddcHeapPtr;
-	_ddcHeapPtr	+= 16;
+	_ddcHeapPtr	+= 8;
 	
 	x[0]		= (tag << 8) | 0x021;		// (tag << 8) | _ObjFixedData
 	x[1]		= 0;

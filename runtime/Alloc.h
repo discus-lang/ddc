@@ -2,7 +2,7 @@
 #ifndef _DDC_Alloc
 #define _DDC_Alloc
 
-#include "Types.h"
+#include "Object.h"
 
 void	_allocInit		(UInt 	heapSize);
 void	_allocCollect		();

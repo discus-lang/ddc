@@ -1,10 +1,10 @@
 
+#include "Object.h"
 #include "Alloc.h"
 #include "Profile.h"
 #include "State.h"
 #include "Macro.h"
 #include "Collect.h"
-#include "Object.h"
 #include "Lint.h"
 #include "Error.h"
 

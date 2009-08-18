@@ -2,7 +2,7 @@
 #ifndef _DDC_Lint
 #define _DDC_Lint
 
-#include "Types.h"
+#include "Object.h"
 
 
 void	_lintHeap 

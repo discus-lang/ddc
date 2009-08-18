@@ -2,6 +2,7 @@
 #ifndef _Disciple_Context
 #define _Disciple_Context
 
+#include "Object.h"
 #include "Runtime.h"
 #include "Prim.h"
 #include "State.h"

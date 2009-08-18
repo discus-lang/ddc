@@ -43,8 +43,8 @@ void	_lintHeap
 			
 		// Check for forwards.
 		if (objType == _ObjTypeForward) 
-			_PANIC ("_lintHeap: Obj %p is a Forward can't lint a heap containing forwards.\n", obj);			
-			
+			_PANIC ("_lintHeap: Obj %p is a Forward can't lint a heap containing forwards.\n", obj);
+
 		// Check known object type.
 		if (objType == _ObjTypeUnknown) 
 		{

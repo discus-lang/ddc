@@ -1,10 +1,14 @@
 
+// Utils for determining the layout of objects in the heap.
+
 #include "Object.h"
 #include "Error.h"
 #include "Collect.h"
 
 #include "Macro.h"
 
+
+// Determine the type of this object.
 enum _ObjType
 	_objType (Obj* obj)
 {
@@ -20,6 +24,8 @@ enum _ObjType
 }
 
 
+// Determine the type of an object, knowing that it has a fixed format field layout.
+//	(ie, it's not a forwarding pointer or a DataRS)
 enum _ObjType
 	_objTypeFixed (Obj* obj)
 {
@@ -32,12 +38,12 @@ enum _ObjType
 	 case _ObjFixedDataR:	return _ObjTypeDataR;
 	 case _ObjFixedDataM:	return _ObjTypeDataM;
 	 case _ObjFixedSusp:	return _ObjTypeSusp;
-	 case _ObjFixedMapped:	return _ObjTypeMapped;
 	 default:		return _ObjTypeUnknown;
 	}
 }
 
 
+// Determine the total size of this object.
 UInt	_objSize (Obj* obj)
 {
 	switch (_objType(obj)) {
@@ -57,7 +63,8 @@ UInt	_objSize (Obj* obj)
 	_PANIC ("Can't take the size of an unknown object.\n");
 }
 
-
+// Determine whether the object is anchored and cannot
+//	be moved by the garbage collector.
 bool	_objIsAnchored (Obj* obj)
 {
 	return	(_getObjFlags (obj) & _ObjFlagAnchored) ? true : false;

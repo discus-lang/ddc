@@ -1,7 +1,7 @@
 
+#include "Object.h"
 #include "Collect.h"
 #include "Prim.h"
-#include "Object.h"
 #include "Lint.h"
 #include "Macro.h"
 #include "Dump.h"

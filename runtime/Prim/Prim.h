@@ -2,7 +2,7 @@
 #ifndef _Trauma_Prim
 #define _Trauma_Prim
 
-#include "../Types.h"
+#include "../Object.h"
 
 // -----
 // -- These will be defined by the actual user module that exports them

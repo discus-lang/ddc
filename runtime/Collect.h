@@ -2,7 +2,7 @@
 #ifndef _DDC_Collect
 #define _DDC_Collect
 
-#include "Types.h"
+#include "Object.h"
 
 void	_collectInit (UInt maxGCSlots);
 

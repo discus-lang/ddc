@@ -2,7 +2,7 @@
 #ifndef _DDC_Dump
 #define _DDC_Dump
 
-#include "Types.h"
+#include "Object.h"
 #include <stdio.h>
 
 void	_dumpPanic ();

@@ -1,7 +1,7 @@
 
 #include "Dump.h"
-#include "State.h"
 #include "Object.h"
+#include "State.h"
 #include "Collect.h"
 #include "Macro.h"
 #include "Error.ci"
@@ -95,10 +95,6 @@ void	_dumpObj	(FILE* file, Obj* obj)
 	 case _ObjTypeDataR:	_dumpDataR (file, obj);	return;
 	 case _ObjTypeDataM:	_dumpDataM (file, obj);	return;
 	 case _ObjTypeSusp:	_dumpSusp  (file, obj);	return;
-
-	 case _ObjTypeMapped:	
-	 	fprintf (file, "Mapped\n");
-		return;
 		
 	 case _ObjTypeDataRS:	_dumpDataRS (file, obj);	return;
 	}
