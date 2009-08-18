@@ -82,6 +82,7 @@ pExp1
  = do	exp	<- pExp1'
  	return	$ stripXParens exp
 
+pExp1' :: Parser (Exp SP)
 pExp1'
  =
 	do	tok	<- pTok K.SBra
@@ -157,11 +158,10 @@ pExp1'
 
   <|>	-- \. VAR EXP ..
   	-- overlaps with next lambda forms
-  	(Parsec.try $ do
-		tok	<- pTok K.BackSlashDot
+  	do	tok	<- pTok K.BackSlashDot
 		var	<- liftM vNameF pVar
 		exps	<- Parsec.many pExp1
-		return	$ XLambdaProj (spTP tok) (JField (spTP tok) var) exps)
+		return	$ XLambdaProj (spTP tok) (JField (spTP tok) var) exps
 
   <|>	-- try EXP catch { ALT .. } (with { STMT; .. })
   	do	tok	<- pTok K.Try
@@ -186,41 +186,40 @@ pExp1'
   	do	tok	<- pTok K.Break					-- TODO: this could be a regular function call
 		return	$ XBreak (spTP tok)
 
+  <|>	do	tok	<- pTok K.BackSlash
+  		exp	<- pBackslashExp (spTP tok)
+                return	$ exp
 
-  <|>   -- \ case { ALT .. }
-  	-- overlaps with the nexta lambda form
-	(Parsec.try $ do
-		tok	<- pTok K.BackSlash
-		pTok K.Case
-		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
-		return	$ XLambdaCase (spTP tok) alts)
+  <|>	-- Starts with a K.RBra.
+	do	tok	<- pTok K.RBra
+  		exp1	<- pExp
+		expr	<- pBracketExp (spTP tok) exp1
+		return 	$ expr
 
-  <|>	-- \ PAT .. -> EXP
-	do	tok1	<- pTok K.BackSlash
-		pats	<- Parsec.many1 pPat1
-		pTok	<- pTok K.RightArrow
-		exp	<- pExp
-		return	$ XLambdaPats (spTP tok1) pats exp
+  <?>   "pExp1'"
 
-  <|>	-- ( EXP, EXP .. )
-	-- overlaps with ( EXP )
-	(Parsec.try $ do
-  		tok	<- pTok K.RBra
-		exp1	<- pExp
-		pTok K.Comma
+
+pBracketExp :: SP -> Exp SP -> Parser (Exp SP)
+pBracketExp startPos exp1 =
+	do	pTok K.Comma
 		exps	<- Parsec.sepBy1 pExp (pTok K.Comma)
 		pTok K.RKet
-		return	$ XTuple (spTP tok) (exp1 : exps))
+		return	$ XTuple startPos (exp1 : exps)
 
-  <|>	-- ( EXP )
-	-- use XParens to signal to pProj via pExp2 that the expression is wrapped in parens
-	--	we need this to distinguish
-	--		exp . var		-- field projection
-	--		exp . (var)		-- index projection
-	--
-	do 	exp	<- pRParen pExp
-		return 	$ XParens (spX exp) exp
-  <?>   "pExp1'"
+  <|>	do	pTok K.RKet
+		return 	$ XParens startPos exp1
+
+
+pBackslashExp :: SP -> Parser (Exp SP)
+pBackslashExp startPos =
+	do	pTok K.Case
+		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
+		return	$ XLambdaCase startPos alts
+
+  <|>	do	pats	<- Parsec.many1 pPat1
+		pTok	<- pTok K.RightArrow
+		exp	<- pExp
+		return	$ XLambdaPats startPos pats exp
 
 
 pListContents :: SP -> Parser (Exp SP)
