@@ -4,7 +4,9 @@
 #include "Error.h"
 #include "Macro.h"
 
-// Debugging
+
+// If tracing is turned on then print the provided string to the trace file,
+//	otherwise do nothing.
 #if	_DDC_TRACE_GC
 static inline void _TRACE (const char* format, ...)
 {
@@ -24,9 +26,10 @@ static inline void _TRACE (const char* format, ...)
 
 
 // Trace through the heap looking for malformed objects or bad pointers.
+//	Panics and stops the program if it finds any problems.
 void	_lintHeap
-		( Word8* base
-		, Word8* top)
+		( Word8* base		// Base of heap.
+		, Word8* top)		// The word _after_ the last one in the last allocated object.
 		
 {
 	_TRACE("* lintHeap ------------------------------------------------------------------------- lintHeap\n");
@@ -75,7 +78,7 @@ void	_lintHeap
 
 
 // Lint all the data reachable from the GC slot stack.
-void	_lintSlotsD()
+void	_lintHeapCurrentlyReachable()
 {
 	_lintSlots 
 		( _ddcSlotBase
@@ -84,6 +87,8 @@ void	_lintSlotsD()
 		, _ddcHeapPtr);
 }
 
+
+// Lint all the data reachable from this slot stack.
 void	_lintSlots
 		( Obj** 	slotBase
 		, Obj**  	slotPtr

@@ -1,4 +1,6 @@
 
+// The Garbage Collector.
+
 #include "Object.h"
 #include "Collect.h"
 #include "Prim.h"
@@ -31,7 +33,7 @@ static inline void _TRACE (const char* format, ...)
 #endif
 
 
-// Initialise the GC stack
+// Allocate and initialise the current GC slot stack.
 void	_collectInit (UInt maxGCSlots)
 {
 	_ddcSlotBase	= malloc (sizeof (Obj*) * maxGCSlots);
@@ -124,7 +126,8 @@ void	_evacuateRoots
 
 }
 
-
+// Evacuate a single object and update the toPtr to point
+//	to the word _after_ the new copy.
 Obj*	_evacuateObj
 		( Obj*		obj
 		, Word8**	toPtr)

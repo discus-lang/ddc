@@ -154,6 +154,7 @@ Obj*	_allocDataRS	(Tag tag, UInt dataSize)
 	return (Obj*)data;
 }
 
+
 // Allocate a mixed data object.
 static inline
 Obj*	_allocDataM	

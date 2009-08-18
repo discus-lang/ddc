@@ -1,10 +1,14 @@
 
+// Various error messages that halt the program.
+//	They all have the ((noreturn)) attribute so GCC can generate
+//	better code for the enclosing function.
+
 #ifndef _DDC_Death
 #define _DDC_Death
 
 #include "Types.h"
 
-// -- Death
+
 void	_deathCase 
 		(const char* moduleName, Int32 line, Int32 column) 
 		__attribute__((noreturn));

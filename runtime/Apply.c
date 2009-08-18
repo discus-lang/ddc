@@ -1,4 +1,6 @@
 
+// Apply some more arguments to a thunk that represents a partial application.
+
 #include "Object.h"
 #include "Apply.h"
 #include "Profile.h"

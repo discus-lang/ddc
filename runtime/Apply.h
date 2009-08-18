@@ -1,6 +1,8 @@
 
-#ifndef _Trauma_Apply
-#define _Trauma_Apply
+// Apply some more arguments to a thunk that represents a partial application.
+
+#ifndef _DDC_Apply
+#define _DDC_Apply
 
 #include "Object.h"
 

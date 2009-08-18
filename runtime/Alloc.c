@@ -13,6 +13,7 @@
 
 
 // Initialise the allocation system.
+//	and allocate the heap.
 void	_allocInit	(UInt heapSize)
 {
 	_ddcHeapBase		= malloc (heapSize);
@@ -25,7 +26,7 @@ void	_allocInit	(UInt heapSize)
 }
 
 
-// Perform a garbage collection
+// Perform a garbage collection.
 void	_allocCollect	
 		(UInt byteCount)	// How much space must be left over after the collection.
 					//	If we don't get at least this much back then the RTS will panic.

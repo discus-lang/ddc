@@ -51,9 +51,6 @@ static inline UInt
 	  var = _FOLLOW(var); \
 	  goto label; 
 
-// Force loop hackery
-#define _FORCELOOP(dest,src) \
-
 // Handle a non-exhaustive case match.	  
 #define _CASEDEATH \
 	default: _deathCase (__func__, 0, 0);

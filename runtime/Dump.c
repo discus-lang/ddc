@@ -8,6 +8,7 @@
 
 
 // Dump the whole RTS state to a file.
+//	Then abort the program.
 void	_dumpPanic ()
 {
 	if (!_ddcDumpOnPanic)
@@ -214,9 +215,4 @@ void	_dumpDataM 	(FILE* file, Obj* obj)
 		
 	fprintf (file, "        }\n");
 }
-
-
-
-
-
 

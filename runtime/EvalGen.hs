@@ -11,8 +11,8 @@ maxImm		= 4
 -----
 main
  = do
-	putStr	"#ifndef _Trauma_Eval\n"
-	putStr	"#define _Trauma_Eval\n"
+	putStr	"#ifndef _DDC_Eval\n"
+	putStr	"#define _DDC_Eval\n"
 
 	putStr	"/* -----------------------------------------------------\n"
 	putStr	" *  Eval.ci\n"
