@@ -56,7 +56,7 @@ void	_lintHeap
 
 		switch (objType) {
 		 case _ObjTypeThunk:	_lintThunk (obj, base, top);	break;
-		 case _ObjTypeSusp: 	_lintSusp  (obj, base, top);	break;
+		 case _ObjTypeSuspIndir:  _lintSusp  (obj, base, top);	break;
 		 case _ObjTypeData:	_lintData  (obj, base, top);	break;
 		 case _ObjTypeDataM:	_lintDataM (obj, base, top);	break;
 		 case _ObjTypeDataR:	break;
@@ -188,7 +188,7 @@ void	_lintSusp
 {
 	_lintObjPtr (obj, base, top);
 
-	Susp* susp	= (Susp*) obj;
+	SuspIndir* susp	= (SuspIndir*) obj;
 	
 	if (_getObjTag(obj) == _tagIndir)
 	{

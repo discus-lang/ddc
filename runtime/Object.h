@@ -63,7 +63,7 @@
 //	0  0  1  0  a  0  0  1  -- Data
 //      0  0  1  1  a  0  0  1  -- DataR
 //	0  1  0  0  a  0  0  1  -- DataM
-//      0  1  0  1  a  0  0  1  -- Susp
+//      0  1  0  1  a  0  0  1  -- SuspIndir
 //      -- size --  a  0  1  1  -- DataRS	
 //	
 // 	* GC Forwarding / Broken-Heart pointers.
@@ -101,7 +101,7 @@ enum _ObjType
 	_ObjTypeData,
 	_ObjTypeDataR,
 	_ObjTypeDataM,
-	_ObjTypeSusp,
+	_ObjTypeSuspIndir,
 	_ObjTypeDataRS
 };
 
@@ -132,7 +132,7 @@ enum _ObjFixed
 	_ObjFixedData		= 0x21,
 	_ObjFixedDataR		= 0x31,
 	_ObjFixedDataM		= 0x41,
-	_ObjFixedSusp		= 0x51,
+	_ObjFixedSuspIndir	= 0x51,
 	_ObjFixedMapped		= 0x71
 };
 
@@ -172,29 +172,18 @@ typedef struct {
 } Thunk;
 
 
-// Suspensions and Forwards -----------------------------------------------------------------------
-// A suspension of a fully applied function application.
-//	This should probably be merged in to Thunk above.
+// Suspensions and Indirections -------------------------------------------------------------------
+// 	When the tag is _tagSusp  this object is a suspended function application.
+//	When the tag is _tagIndir this object is an indirection.
 //
 typedef struct {
 	Tag	tagFlags;
-	Obj*	obj;		// When representing a Susp this field points to the
-				//	thunk to be evaluated.
-				// When represending an Indir it points to the new object.
+	Obj*	obj;		// When the tag is _tagSusp this field points to the thunk to be evaluated.
+				// When the tag is _tagIndir it points to the result object.
 	UInt	arity;		// Arity of the supercombinator
 	Obj*	a[];		// Pointers to the arguments.
- } Susp;
+ } SuspIndir;
  
- 
-// A forwarding pointer. (also called an indirection)
-//	When a Susp is evaluated, it is overwritten by a Forward which points
-//	to the result object.
-//
-typedef struct {
-	Tag	tagFlags;
-	Obj*	obj;		// Pointer to the result object.
- } Forward;
-
 
 // Data Objects -----------------------------------------------------------------------------------
 

@@ -21,7 +21,7 @@ static inline UInt
 #define _TARG(thunk,i)	(((Thunk*)thunk) ->a[i])
 
 // Extract a function argument from a suspension.
-#define _SARG(susp,i)	(((Susp*)susp) ->a[i])
+#define _SARG(susp,i)	(((SuspIndir*)susp) ->a[i])
 
 // Force this object then extract a named field.
 #define _FIELD(exp,type,label)	\
@@ -37,7 +37,7 @@ static inline UInt
 #define _FORCE(v)	(_force(v))
 
 // Follow an indirection.
-#define _FOLLOW(v)	(((Susp*)v) ->obj)
+#define _FOLLOW(v)	(((SuspIndir*)v) ->obj)
 
 // These case alternatives are added to all statements that switch
 //	on the tag of a data object. If the data object is a suspension

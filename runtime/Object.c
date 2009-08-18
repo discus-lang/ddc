@@ -33,12 +33,12 @@ enum _ObjType
 	Word32	mode	= id & _MaskObjFixed;
 	
 	switch (mode) {
-	 case _ObjFixedThunk:	return _ObjTypeThunk;
-	 case _ObjFixedData:	return _ObjTypeData;
-	 case _ObjFixedDataR:	return _ObjTypeDataR;
-	 case _ObjFixedDataM:	return _ObjTypeDataM;
-	 case _ObjFixedSusp:	return _ObjTypeSusp;
-	 default:		return _ObjTypeUnknown;
+	 case _ObjFixedThunk:		return _ObjTypeThunk;
+	 case _ObjFixedData:		return _ObjTypeData;
+	 case _ObjFixedDataR:		return _ObjTypeDataR;
+	 case _ObjFixedDataM:		return _ObjTypeDataM;
+	 case _ObjFixedSuspIndir:	return _ObjTypeSuspIndir;
+	 default:			return _ObjTypeUnknown;
 	}
 }
 
@@ -47,14 +47,25 @@ enum _ObjType
 UInt	_objSize (Obj* obj)
 {
 	switch (_objType(obj)) {
-	 case _ObjTypeForward:	return sizeof (Forward);
-	 case _ObjTypeThunk:	return sizeof (Thunk) + sizeof(Obj*) * ((Thunk*)obj) ->arity;
-	 case _ObjTypeData:	return sizeof (Data)  + sizeof(Obj*) * ((Data*) obj) ->arity;
-	 case _ObjTypeDataR:	return ((DataR*)obj) ->size;
-	 case _ObjTypeDataRS:	return sizeof (DataRS) + _getObjArg(obj) * 4;
-	 case _ObjTypeDataM:	return ((DataM*)obj) ->size;
-	 case _ObjTypeSusp:	return sizeof (Susp) + sizeof(Obj*) * ((Susp*)obj) ->arity;
-	 default:		break;
+	 case _ObjTypeThunk:		
+		return sizeof (Thunk) + sizeof(Obj*) * ((Thunk*)obj) ->arity;
+
+	 case _ObjTypeData:		
+		return sizeof (Data)  + sizeof(Obj*) * ((Data*) obj) ->arity;
+
+	 case _ObjTypeDataR:		
+		return ((DataR*)obj) ->size;
+
+	 case _ObjTypeDataRS:		
+		return sizeof (DataRS) + _getObjArg(obj) * 4;
+
+	 case _ObjTypeDataM:		
+		return ((DataM*)obj) ->size;
+
+	 case _ObjTypeSuspIndir:	
+		return sizeof (SuspIndir) + sizeof(Obj*) * ((SuspIndir*)obj) ->arity;
+
+	 default:			break;
 	}
 
 	_ERROR ("Unknown object type.\n");

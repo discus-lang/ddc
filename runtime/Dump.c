@@ -94,7 +94,7 @@ void	_dumpObj	(FILE* file, Obj* obj)
 	 case _ObjTypeData:	_dumpData  (file, obj);	return;
 	 case _ObjTypeDataR:	_dumpDataR (file, obj);	return;
 	 case _ObjTypeDataM:	_dumpDataM (file, obj);	return;
-	 case _ObjTypeSusp:	_dumpSusp  (file, obj);	return;
+	 case _ObjTypeSuspIndir: _dumpSusp  (file, obj);	return;
 		
 	 case _ObjTypeDataRS:	_dumpDataRS (file, obj);	return;
 	}
@@ -132,7 +132,7 @@ void	_dumpThunk 	(FILE* file, Obj* obj)
 // Dupm a suspension
 void	_dumpSusp	(FILE* file, Obj* obj)
 {
-	Susp* susp	= (Susp*)obj;
+	SuspIndir* susp	= (SuspIndir*)obj;
 	
 	fprintf (file, "Susp    { tag     = 0x%06x (%s)\n"
 		, _getObjTag (obj)

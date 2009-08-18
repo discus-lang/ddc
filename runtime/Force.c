@@ -30,7 +30,7 @@ Obj*	_force (Obj* obj)
 		goto again;
 
 	 case _tagIndir:
-		_S(0) = ((Susp*)_S(0)) ->obj; 
+		_S(0) = ((SuspIndir*)_S(0)) ->obj; 
 		goto again;
 	}
 
@@ -51,7 +51,7 @@ Obj*	_forceStep (Obj* susp_)
 	_S(0)	= susp_;
 
 	// -----
-	Susp* susp	= (Susp*)_S(0);
+	SuspIndir* susp	= (SuspIndir*)_S(0);
 
 	Obj* obj	= 0;
 	switch (susp->arity) {
@@ -82,9 +82,9 @@ Obj*	_forceStep (Obj* susp_)
 
 
 	// Overwrite the suspension with an indirection to the result.
-	Susp* susp2	= (Susp*)_S(0);
-	susp2 ->tagFlags= (_tagIndir << 8) | _ObjFixedSusp;
-	susp2 ->obj	= obj;
+	SuspIndir* susp2	= (SuspIndir*)_S(0);
+	susp2 ->tagFlags	= (_tagIndir << 8) | _ObjFixedSuspIndir;
+	susp2 ->obj		= obj;
 	
 
 #if _DDC_DEBUG

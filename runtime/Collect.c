@@ -265,8 +265,8 @@ void	_scanSusp
 	_TRACE("--- scanSusp %p\n", obj);
 	_TRACES(_printObjP (_traceFile, obj));
 	
-	Susp*	susp	= (Susp*)obj;
-	Tag	tag	= _getObjTag (obj);
+	SuspIndir*	susp	= (SuspIndir*)obj;
+	Tag		tag	= _getObjTag (obj);
 
 	// Object is a zero airity suspension.
 	//	The function ptr for these is stored directly in the obj field
@@ -336,7 +336,7 @@ void	_scanObj
 	 // Small, raw data contains no pointers to scan.
 	 case _ObjTypeDataRS:	_TRACE("--- scanDataRS\n");	break;
 	 
-	 case _ObjTypeSusp:	_scanSusp  (obj, toPtr);	break;
+	 case _ObjTypeSuspIndir: _scanSusp  (obj, toPtr);	break;
 
 	 default:
 	 	_PANIC("Object has header\n");

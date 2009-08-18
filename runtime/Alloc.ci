@@ -187,10 +187,10 @@ Obj*	_allocSusp	(Obj* thunk, UInt args)
 	_ENTER(1);
 	_S(0)	= thunk;
 
-	UInt	size	= sizeof (Susp) + sizeof(Obj*) * args;
-	Susp*	susp	= (Susp*)_alloc (size);
+	UInt		size	= sizeof (SuspIndir) + sizeof(Obj*) * args;
+	SuspIndir*	susp	= (SuspIndir*)_alloc (size);
 
-	susp ->tagFlags	= (_tagSusp << 8) | _ObjFixedSusp;
+	susp ->tagFlags	= (_tagSusp << 8) | _ObjFixedSuspIndir;
 	susp ->obj	= _S(0);
 	susp ->arity	= args;
 
