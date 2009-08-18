@@ -1,0 +1,37 @@
+
+-- count the number of solutions to the nqueens problem.
+--	Adapted from the nofib benchmark.
+
+main ()	= print	$ (show $ nsoln 10) % "\n";
+
+safe 	:: forall %r1 %r2 %r3 %r4 %r5
+	.  Int %r1 -> Int %r2 -> List %r3 (Int %r4) -> Bool %r5
+	:- Direct %r1, Const %r1
+	,  Direct %r2, Const %r2
+	,  Direct %r3, Const %r2
+	,  Direct %r4, Const %r4
+	,  Direct %r5, Const %r5;
+
+safe x d xx
+ = case xx of {
+ 	Nil	 -> True;
+	Cons q l -> 
+		if (x /= q) && (x /= q+d) && (x /= q-d)
+		  then safe x (d+1) l
+		  else False;
+
+ };
+
+gen nq n 
+ = if n == 0	
+ 	then [[]]
+ 	else [ (q:b) | b <@- gen nq (n - 1), q <- [1..nq], safe q 1 b];
+
+
+nsoln nq
+ = do {
+	length (gen nq nq);
+ };
+
+
+
