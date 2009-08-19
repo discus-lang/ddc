@@ -60,8 +60,7 @@ pTop
    <|>  pTopExport
    <|> 	pTopForeignImport
    <|>	pTopInfix
-   <|>	pTopTypeKind
-   <|>	pTopTypeSynonym
+   <|>  pTopType
    <|>	pTopData
    <|>	pTopEffect
    <|>	pTopRegion
@@ -69,9 +68,10 @@ pTop
    <|>  pTopInstance
    <|>  pTopProject
 
- 	-- SIG/BIND
-   <|>	do	stmt	<- pStmt_sigBind
-	 	return	$ PStmt stmt
+   <|>	-- SIG/BIND
+	do	stmt	<- pStmt_sigBind
+		return	$ PStmt stmt
+
    <?> "pTop"
 
 
@@ -95,11 +95,10 @@ pModuleName :: Parser (Var.Module)
 pModuleName
  =
  	-- M1.M2 ..
-	(Parsec.try $ do
-		mod	<- pModuleNameQual
+	do	mod	<- pModuleNameQual
 		pTok K.Dot
 		con	<- pCon
-		return	$ Var.ModuleAbsolute (mod ++ [Var.name con]))
+		return	$ Var.ModuleAbsolute (mod ++ [Var.name con])
 
  <|>	-- M1
  	do	con	<- pCon
@@ -146,53 +145,45 @@ pExport
 -- Parse a foreign import.
 pTopForeignImport :: Parser (Top SP)
 pTopForeignImport
+ =	do	tok	<- pTok K.Foreign
+		pTok K.Import
+		fimp	<- pTopForeignImportNext (spTP tok)
+		return	$ fimp
+
+pTopForeignImportNext :: SP -> Parser (Top SP)
+pTopForeignImportNext startPos
  = 	-- foreign import data STRING CON :: KIND
-  (Parsec.try $ do
-	tok	<- pTok K.Foreign
-	pTok K.Import
-	pTok K.Data
-	name	<- pString
+	do	pTok K.Data
+		name	<- pString
+		con	<- liftM vNameT $ pCon
+		let con2 = con { Var.info = [Var.ISeaName name] }
+		fimp	<- pTopForeignImportEnd startPos name con2
+		return	$ fimp
 
-	con	<- liftM vNameT $ pCon
-	let con2 = con { Var.info = [Var.ISeaName name] }
+ <|>	-- foreign import STRING var :: TYPE
+	do	mExName	<-  liftM Just pString
+			<|> return Nothing
+		var	<- pVar
+		pTok K.HasType
+		sig	<- pType
 
-	pTok K.HasType
-	kind	<- pKind
+		mOpType	<-  liftM Just
+				(do 	pTok K.HasOpType
+					pTypeOp)
+			<|> return Nothing
 
-	return	$ PForeign (spTP tok) (OImportUnboxedData name con2 kind))
-
-	-- foreign import data STRING CON
- <|> (Parsec.try $ do
-	tok	<- pTok K.Foreign
-	pTok K.Import
-	pTok K.Data
-	name	<- pString
-
-	con	<- liftM vNameT $ pCon
-	let con2 = con { Var.info = [Var.ISeaName name] }
-
-	return	$ PForeign (spTP tok) (OImportUnboxedData name con2 KValue))
-
- <|> do	-- foreign import STRING var :: TYPE
-	tok	<- pTok K.Foreign
- 	pTok K.Import
-
-	mExName	<-  liftM Just pString
-		<|> return Nothing
-
-	var	<- pVar
-
-	pTok K.HasType
-	sig	<- pType
-
-	mOpType	<-  liftM Just
-			(do 	pTok K.HasOpType
-				pTypeOp)
-		<|> return Nothing
-
-	return	$ PForeign (spTP tok) $ OImport mExName (vNameV var) sig mOpType
+		return	$ PForeign startPos $ OImport mExName (vNameV var) sig mOpType
 
  <?> "pTopForeignImport"
+
+
+pTopForeignImportEnd :: SP -> String -> Var -> Parser (Top SP)
+pTopForeignImportEnd startPos name var
+ =	do	pTok K.HasType
+		kind	<- pKind
+		return	$ PForeign startPos (OImportUnboxedData name var kind)
+
+ <|>	do	return	$ PForeign startPos (OImportUnboxedData name var KValue)
 
 
 -- Infix -------------------------------------------------------------------------------------------
@@ -219,30 +210,28 @@ pTopInfix
   <?>   "pTopInfix"
 
 -- Type Kind ---------------------------------------------------------------------------------------
--- | Parse a type kind signature.
-pTopTypeKind :: Parser (Top SP)
-pTopTypeKind
- = 	-- type CON :: KIND
- 	Parsec.try $ do
-		tok	<- pTok K.Type
+-- | Parse a type kind and type synonym signatures.
+
+pTopType ::  Parser (Top SP)
+pTopType
+ =	do	tok	<- pTok K.Type
+ 		exp	<- pTopTypePlus (spTP tok)
+		return	$ exp
+
+
+pTopTypePlus :: SP -> Parser (Top SP)
+pTopTypePlus startPos
+ =	do	-- type CON :: KIND
 		con	<- liftM vNameT pCon
 		pTok	K.HasType
 		kind	<- pKind
-		return	$ PTypeKind (spTP tok) con kind
+		return	$ PTypeKind startPos con kind
 
-
--- Type Synonym ------------------------------------------------------------------------------------
--- | Parse a type synonym.
-pTopTypeSynonym :: Parser (Top SP)
-pTopTypeSynonym
- = 	-- type VAR :: TYPE
- 	Parsec.try $ do
-		tok	<- pTok K.Type
+  <|>	do	-- type VAR :: TYPE
 		var	<- liftM vNameT pVar
 		pTok	K.HasType
 		t	<- pType
-		return	$ PTypeSynonym (spTP tok) var t
-
+		return	$ PTypeSynonym startPos var t
 
 -- Effect ------------------------------------------------------------------------------------------
 -- | Parse an effect definition.
@@ -276,37 +265,38 @@ pTopData
 		con	<- liftM vNameT $ pCon
 		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
 
-		ctors	<- 	(Parsec.try $ do
-					pTok K.Equals
-					ctors	<- Parsec.sepBy1 pTopData_ctor (pTok K.Bar)
-					return	ctors)
-			   <|>	return []
+		ctors	<- 	do	pTok K.Equals
+					ctors	<- Parsec.sepBy1 pTopDataCtor (pTok K.Bar)
+					return	ctors
+				<|>	return []
 
 		return	$ PData (spTP tok) con vars ctors
 
-pTopData_ctor :: Parser (Var, [DataField (Exp SP) Type])
-pTopData_ctor
- = 	-- CON { FIELD ; .. }
-	-- overlaps with CON TYPES ..
- 	(Parsec.try $ do
-		con	<- liftM vNameT pCon
-		fs	<- pCParen $ Parsec.sepEndBy1 pDataField pSemis
-		return	(con, fs))
+pTopDataCtor :: Parser (Var, [DataField (Exp SP) Type])
+pTopDataCtor
+ = 	-- CON ...
+	do	con	<- liftM vNameT pCon
+        	rest	<- pTopDataCtorRest con
+                return	rest
 
+ <?>    "pTopDataCtor"
 
- 	-- CON TYPES ..
- <|> 	do	con	<- liftM vNameT pCon
-		types	<- Parsec.many pType_body1
+pTopDataCtorRest :: Var -> Parser (Var, [DataField (Exp SP) Type])
+pTopDataCtorRest con
+ =	-- CON { FIELD ; .. }
+ 	do	fs	<- pCParen $ Parsec.sepEndBy1 pDataField pSemis
+		return	(con, fs)
 
+  <|>	-- CON TYPES ..
+	do	types	<- Parsec.many pType_body1
 		let mkPrimary typ
 			= DataField
 			{ dPrimary	= True
 			, dLabel	= Nothing
 			, dType		= typ
 			, dInit		= Nothing }
-
 		return	(con, map mkPrimary types)
- <?>    "pTopData_ctor"
+
 
 pDataField :: Parser (DataField (Exp SP) Type)
 pDataField
@@ -323,8 +313,8 @@ pDataField
 			, dType		= t
 			, dInit		= Just exp }
 
-	-- VAR :: TYPE
-  <|>	(Parsec.try $ do
+  <|>	-- VAR :: TYPE
+	(Parsec.try $ do
   		var	<- liftM vNameF pVar
 	 	pTok K.HasType
 		t	<- pType_body
@@ -348,23 +338,25 @@ pDataField
 -- | Parse a class definition.
 pTopClass :: Parser (Top SP)
 pTopClass
- =  	-- class CON :: KIND
-	(Parsec.try $ do
-		tok	<- pTok K.Class
+ =	do 	tok	<- pTok K.Class
 	 	con	<- pCon
-		pTok K.HasType
-		kind	<- pKind
-		return	$ PClass (spTP tok) (vNameW con) kind)
+		cls	<- pTopClassMore (spTP tok) con
+                return	cls
+  <?>   "pTopCLass"
 
- <|>	-- class CON VAR.. where { SIG ; .. }
-	do	tok	<- pTok K.Class
-		con	<- liftM vNameW $ pCon
-		vks	<- Parsec.many pVarKind
+pTopClassMore :: SP -> Var -> Parser (Top SP)
+pTopClassMore startPos con
+ =	-- class CON :: KIND
+	do	pTok K.HasType
+		kind	<- pKind
+		return	$ PClass startPos (vNameW con) kind
+
+   <|>	-- class CON VAR.. where { SIG ; .. }
+	do	vks	<- Parsec.many pVarKind
 		pTok K.Where
 		sigs	<- pCParen $ Parsec.sepEndBy1 pTopClass_sig pSemis
+		return	$ PClassDict startPos (vNameW con) vks [] sigs
 
-		return	$ PClassDict (spTP tok) con vks [] sigs
-  <?>   "pTopCLass"
 
 -- parse a var with optional kind
 pVarKind :: Parser (Var, Kind)
@@ -387,7 +379,7 @@ pVarKind
 pTopClass_sig :: Parser ([Var], Type)
 pTopClass_sig
  = do	vars	<- Parsec.sepBy1 pVar (pTok K.Comma)
- 	pTok K.HasType
+	pTok K.HasType
 	t	<- pType
 	return	$ (vars, t)
 
@@ -409,24 +401,25 @@ pTopInstance
 -- | Parse a projection definition.
 pTopProject :: Parser (Top SP)
 pTopProject
- = 	-- project CON TYPE .. where { SIG/BIND ; .. }
- 	(Parsec.try $ do
-		tok	<- pTok K.Project
+ =	-- project CON TYPE .....
+	do	tok	<- pTok K.Project
 		con	<- liftM vNameT $ pQualified pCon
 		ts	<- Parsec.many pType_body1
-		pTok	K.Where
-		binds	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
-		return	$ PProjDict (spTP tok) (TData KNil con ts) binds)
-
-  	-- project CON TYPE .. with { VAR ; .. }
-  <|>	do	tok	<- pTok K.Project
-		con	<- liftM vNameT $ pQualified pCon
-		ts	<- Parsec.many pType_body1
-		pTok	K.With
-		binds	<- pCParen $ Parsec.sepEndBy1 pTopProject_pun pSemis
-		return	$ PProjDict (spTP tok) (TData KNil con ts) binds
-
+                rest	<- pTopProjectRest (spTP tok) con ts
+                return	rest
   <?>   "pTopProject"
+
+pTopProjectRest :: SP -> Var -> [Type] -> Parser (Top SP)
+pTopProjectRest startPos con ts
+ =	-- project CON TYPE .. where { SIG/BIND ; .. }
+	do	pTok	K.Where
+		binds	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
+		return	$ PProjDict startPos (TData KNil con ts) binds
+
+  <|>	-- project CON TYPE .. with { VAR ; .. }
+	do	pTok	K.With
+		binds	<- pCParen $ Parsec.sepEndBy1 pTopProject_pun pSemis
+		return	$ PProjDict startPos (TData KNil con ts) binds
 
 pTopProject_pun :: Parser (Stmt SP)
 pTopProject_pun
