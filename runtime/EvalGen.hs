@@ -45,7 +45,7 @@ main
 --
 genFunc ::	Int 	-> String
 genFunc		airity
-	= pretty
+	= pprStr ()
 	$ "typedef Obj* (*_FUNC" % airity % ") (" % ", " %!% replicate airity "Word" % ");\n"
 
 
@@ -56,10 +56,10 @@ genFunc		airity
 --	
 genEval :: 	Int -> Int -> String
 genEval		airity imm
- 	= pretty
+ 	= pprStr ()
 
 	-- prototype
-	$ "inline Obj* _eval" % airity % "_" % show imm 
+	$ "static inline Obj* _eval" % airity % "_" % show imm 
 	% " (Thunk* thunk, " 
 		% ", " %!% ["Obj* a" % i | i <- [airity - imm .. airity - 1]] 
 	% ")\n"
