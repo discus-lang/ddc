@@ -57,7 +57,7 @@ checkLists ()
 
 	checkI 5  	$ head    [5, 4, 3, 2, 1]
 	checkI 1  	$ last    [5, 4, 3, 2, 1]
-	checkI 5    	$ lengthR [1, 2, 3, 4, 5]
+	checkI 5    	$ length [1, 2, 3, 4, 5]
 	checkI 55	$ sumR    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 	checkI 5050	$ sumR	  [1..100]
 	checkI 54	$ sumR    $ tail 	[1..10]

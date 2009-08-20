@@ -63,6 +63,11 @@ foreign import	"fputs"
  	-(!e)>	Int
 	:- !e = !File
 
+foreign import "feof"
+ feofU :: Ptr# File# {read} -- file
+  -(!e)> Int32#             -- nonzero if at EOF
+  :- !e = !File
+
 
 
 --- move along, nothing to see here...
@@ -73,17 +78,22 @@ foreign import  "(Int32)"
 
 
 -- | open a file
-file_open 
+try_file_open 
 	:: String 		-- ^ file name
 	-> String 		-- ^ fopen mode string
 	-> Ptr# File#
 
-file_open name mode
+try_file_open name mode
  | SChunk name_flat	<- (copy name).flatten
  , SChunk mode_flat	<- (copy mode).flatten  
- = do	
- 	file	= fopenU (name_flat.danger_string) (mode_flat.danger_string)
+ = fopenU (name_flat.danger_string) (mode_flat.danger_string)
 
+file_open 
+	:: String 		-- ^ file name
+	-> String 		-- ^ fopen mode string
+	-> Ptr# File#
+file_open name mode = do
+	file = try_file_open name mode
 	case castToVoidPtr file `primPtrVoid_eq` primPtrVoid_null of
 --		true#	-> error ("file_open: Can't open file " % name)
 --		recurisve modules through Control.Exception, sigh
@@ -104,19 +114,20 @@ file_length name
  
 -- | read the contents of the file at this path
 file_read :: String -> Maybe String
-file_read name
- = do 	len	= file_length name
- 	fs	= new&{FlatString} len
-		
-	file	= file_open name "r+"
-	
+file_read name = do
+  file = try_file_open name "r+"
+  case castToVoidPtr file `primPtrVoid_eq` primPtrVoid_null of
+    true# -> Nothing
+    false# -> do
+	fseekU file 0# file_SEEK_END
+	len = boxInt32 (ftellU file)
+
+	fs	= new&{FlatString} len
+	fseekU file 0# file_SEEK_SET
 	len'	= freadU (fs.danger_string) (unboxInt32 len) 1# file
 
-	if (boxInt32 len') /= 1
+	if (boxInt32 len') /= 1 && boxInt32 (feofU file) /= 0
 	 then Nothing
 	 else do
 		fs.setLength len
 		Just (SChunk fs)
-		
-
-

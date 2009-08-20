@@ -4,6 +4,8 @@ import System.File
 import Data.Maybe
 
 name	= "test/20-Library/File/Main.data";
+empty	= "test/20-Library/File/Empty.data";
+nonexistant	= "test/20-Library/File/DoesNotExist.data";
 
 main () = topHandle prog;
 
@@ -14,3 +16,10 @@ prog ()
 	 Nothing 	-> print "failed\n"
 	 Just ss	-> print $ "data = " % ss % "\n"
 
+	case file_read empty of
+	 Nothing 	-> print "failed\n"
+	 Just ss	-> print $ "data = " % ss % "\n"
+
+	case file_read nonexistant of
+	 Nothing 	-> print "ok\n"
+	 Just ss	-> print "failed\n"

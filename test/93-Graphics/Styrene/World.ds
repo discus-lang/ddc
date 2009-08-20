@@ -22,7 +22,7 @@ worldInit
 
 actorArrayInit :: [Actor] -> Array Actor
 actorArrayInit actors
- = do	count	= lengthR actors
+ = do	count	= length actors
  	arrayFromList count ActorNil
 		$ map (\a -> (actorIx a, a))
 		$ zipWith actorSetIndex actors [0 .. count - 1]

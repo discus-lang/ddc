@@ -67,25 +67,11 @@ isNil Nil	= True
 isNil _		= False
 
 
--- Length ------------------------------------------------------------------------------------------
-
--- | Find the length of a list using an accumulator.
---	This uses constant stack space.
---	Unfortunately, the return value's region is mutable so it's not always useful (ticket #49)
---	
-length :: [a] -> Int;
-length xx
- = do 	count	= 0;
-	
-	maps_ xx (\x ->	count <> inc);
-	count;
-
-
--- | Find the length of a list recursively.
---	This uses stack space proportional to the length of the list :(
-lengthR :: [a] -> Int;
-lengthR []	= 0
-lengthR (x:xs)	= 1 + lengthR xs
+-- | Find the length of a list.
+length xs	= go xs 0
+  where
+    go [] n = n
+    go (x:xs) n = go xs (n+1)
 
 
 -- | Select a numbered element of a list
@@ -426,19 +412,17 @@ charListOfString (SAppend s1 s2)
 	= charListOfString s1 ++ charListOfString s2
 
 charListOfString (SChunk fs)
-	= charListOfFlatString' fs 0 (fs.length)
+	= charListOfFlatString' fs 0 (fs.length) []
 	
 
 charListOfFlatString :: FlatString -> [Char]
 charListOfFlatString fs
- 	= charListOfFlatString' fs 0 (fs.length)
+ 	= charListOfFlatString' fs 0 (fs.length) []
  
-charListOfFlatString' fs ix max
-	| ix < max	
-	= index&{FlatString} fs ix : charListOfFlatString' fs (ix + 1) max
-	
-	\= []
-	
+charListOfFlatString' :: FlatString -> Int -> Int -> [Char] -> [Char]
+charListOfFlatString' fs ix max xs
+    | ix < max = charListOfFlatString' fs ix (max - 1) (fs.index (max - 1) : xs)
+    \= xs
 
 concatStrings :: [String] -> String
 concatStrings []	= ""
