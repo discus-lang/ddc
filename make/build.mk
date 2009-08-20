@@ -68,6 +68,11 @@ else ifeq "$(BuildFlavour)" "devel"
 GHC_FLAGS	:= $(GHC_WARNINGS) $(GHC_LANGUAGE) -tmpdir /tmp -O0
 GCC_FLAGS	:= -std=c99 -O3 -Wall -Wextra
 
+# -- Debug compile
+else ifeq "$(BuildFlavour)" "devel_debug"
+GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O0
+GCC_FLAGS	:= -std=c99 -Wundef -g
+
 # -- Profiling compile
 else ifeq "$(BuildFlavour)" "devel_prof"
 GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O2 -prof 
