@@ -317,6 +317,28 @@ instance Pretty Kind PMode where
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
+	KCon con _ 	-> ppr con
+	
+-- KiCon -------------------------------------------------------------------------------------------
+instance Pretty KiCon PMode where
+ ppr con
+  = case con of
+	KiCon v		-> ppr v
+	KiConWitness	-> ppr "+"
+	KiConValue	-> ppr "*"
+	KiConRegion	-> ppr "%"
+	KiConEffect	-> ppr "!"
+	KiConClosure	-> ppr "$"
+	KiConMutable	-> ppr "Mutable"
+	KiConMutableT	-> ppr "MutableT"
+	KiConConst	-> ppr "Const"
+	KiConConstT	-> ppr "ConstT"
+	KiConLazy	-> ppr "Lazy"
+	KiConLazyH	-> ppr "LazyH"
+	KiConDirect	-> ppr "Direct"
+	KiPure		-> ppr "Pure"
+	KiEmpty		-> ppr "Empty"
+	
 
 -- InstanceInfo ------------------------------------------------------------------------------------
 instance  (Pretty param PMode)

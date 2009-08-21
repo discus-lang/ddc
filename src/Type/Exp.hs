@@ -4,6 +4,8 @@ module Type.Exp
 	( Var
 	, Bind		(..)
 
+	, KiCon		(..)
+
 	, Type		(..)
 	, Index
 
@@ -89,7 +91,57 @@ data Kind
 	-- TODO: change TClass to be a general kind constructor, and TWitJoin to be a kind sum.
 	| KClass	TyClass [Type]	-- ^ the kind of witnesses
 	| KWitJoin	[Kind]		-- ^ joining of witnesses
+
+	| KCon	  KiCon Kind
 	deriving (Show, Eq)	
+
+
+-- | Kind constructors.
+--	TODO: 	These aren't used yet
+--		Need to replace the ctors in the Kind type with references to these ones.
+data KiCon
+	-- ^ A Witness Kind Constructor / Type Class Constructor defined in the source.
+	--	These aren't interpreted in any special way by the compiler.
+	= KiCon Var
+
+	-- Built-in witness kind constructors ---------------------------------
+	--	These have special meaning to the compiler.
+	
+	-- ^ The kind of witness kinds, 
+	--	written "+" in programs, or (\Diamond in printed material)
+	--	This behaves like a super kind because there is no type-level expression
+	--	that has + as it's kind... but we still represent it as a KiCon.
+	--	Example: (Show Int) :: +
+	| KiConWitness
+
+	-- Each of these base kinds are also their own superkind.
+	-- For example: * :: *  and % :: %
+	| KiConValue			-- the kind of value types
+	| KiConRegion			-- the kind of region types
+	| KiConEffect			-- the kind of effect types
+	| KiConClosure			-- the kind of closure types
+	
+	-- | Mutability of regions.
+	| KiConMutable			-- for a single region.
+	| KiConMutableT			-- for all the regions in a type.
+
+	-- | Constancy of regions.
+	| KiConConst			-- for a single region
+	| KiConConstT			-- for all the regions in a type.
+
+	-- | Region might contain thunks.
+	| KiConLazy			-- for a single region
+	| KiConLazyH			-- for the primary region of a type.
+
+	-- | Region does not contain thunks.
+	| KiConDirect			-- for a single region.
+		
+	-- | Given effect is pure.
+	| KiPure
+	
+	-- | Given closure is empty.
+	| KiEmpty
+	deriving (Show, Eq)
 
 
 type Data	= Type
