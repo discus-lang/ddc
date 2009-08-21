@@ -161,16 +161,14 @@ pTopForeignImportNext startPos
 		return	$ fimp
 
  <|>	-- foreign import STRING var :: TYPE
-	do	mExName	<-  liftM Just pString
-			<|> return Nothing
+	do	mExName	<- Parsec.optionMaybe pString
 		var	<- pVar
 		pTok K.HasType
 		sig	<- pType
 
-		mOpType	<-  liftM Just
+		mOpType	<- Parsec.optionMaybe
 				(do 	pTok K.HasOpType
 					pTypeOp)
-			<|> return Nothing
 
 		return	$ PForeign startPos $ OImport mExName (vNameV var) sig mOpType
 

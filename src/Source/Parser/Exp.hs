@@ -169,11 +169,10 @@ pExp1'
 		pTok K.Catch
 		alts	<- pCParen (Parsec.sepEndBy1 pCaseAlt pSemis)
 
-		mWith	<-	do	pTok K.With
+		mWith	<-	Parsec.optionMaybe
+                		(do	pTok K.With
 					stmts	<- pCParen (Parsec.sepEndBy1 pStmt pSemis)
-				 	return	$ Just (XDo (spTP tok) stmts)
-
-			<|> 	return Nothing
+				 	return	$ (XDo (spTP tok) stmts))
 
 		return	$ XTry (spTP tok) exp1 alts mWith
 
@@ -305,10 +304,10 @@ pListRangeTwo startPos first second =
 pExpRHS :: Parser (Exp SP)
 pExpRHS
  = do 	exp	<- pExp
-	mWhere	<- 	do 	tok 	<- pTok K.Where
+	mWhere	<- Parsec.optionMaybe
+        		(do 	tok 	<- pTok K.Where
 				stmts	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
-				return	$ Just (tok, stmts)
-		   <|>	return Nothing
+				return	$ (tok, stmts))
 
 	case mWhere of
 		Nothing			-> return $ exp
