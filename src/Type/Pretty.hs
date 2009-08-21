@@ -304,6 +304,8 @@ instance Pretty Kind PMode where
  ppr k
   = case k of
 	KNil		-> ppr "?"
+	KCon k s	-> ppr k
+	KPi  k1 k2	-> "PI " % k1 % " " % k2
 
 	KValue		-> ppr "*"
 	KRegion		-> ppr "%"
@@ -317,14 +319,12 @@ instance Pretty Kind PMode where
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
-	KCon con _ 	-> ppr con
 	
 -- KiCon -------------------------------------------------------------------------------------------
 instance Pretty KiCon PMode where
  ppr con
   = case con of
 	KiCon v		-> ppr v
-	KiConWitness	-> ppr "+"
 	KiConValue	-> ppr "*"
 	KiConRegion	-> ppr "%"
 	KiConEffect	-> ppr "!"

@@ -4,18 +4,25 @@ module Type.Exp
 	( Var
 	, Bind		(..)
 
+	-- super kinds
+	, Super		(..)
+	, KsCon		(..)
+
+	-- kinds
+	, Kind		(..)
 	, KiCon		(..)
+	, kValue, kRegion, kEffect, kClosure
 
+	-- types
 	, Type		(..)
-	, Index
-
 	, TyCon		(..)
 	, TyClass	(..)
+
+	, Index
 
 	, ClassId	(..)
 	, TProj		(..)
 	, Fetter  	(..)
-	, Kind		(..)
 	, Elaboration	(..)
 
 	, Data
@@ -63,18 +70,44 @@ instance Ord Type where
 	% "    t2 = " % show t2 % "\n"
 
 
--- Kind --------------------------------------------------------------------------------------------
+-- Super Kinds ----------------------------------------------------------------------------------
+data Super
+	= SCon KsCon
+	| SFun Super Super
+	deriving (Show, Eq)
+
+data KsCon
+	= KsConValue
+	| KsConRegion
+	| KsConEffect
+	| KsConClosure
+	| KsConWitness
+	deriving (Show, Eq)
+
+-- Kinds ------------------------------------------------------------------------------------------
 
 -- We use de Bruijn indicies in the kinds of witness constructors.
 type Index
 	= Int
 
+-- Kinds
 data Kind
 	= KNil				-- ^ An missing / unknown kind.
 
-	-- Base kinds
-	--	Each of these base kinds is also own superkind.
-	--	Example:  * :: *
+	-- New stuff that isn't used yet --------------------------------------
+	-- | Kind constructor
+	| KCon	   KiCon Super		-- ^ TODO: not used yet
+
+	--  | Dependent kind abstraction.
+	--	Uses de Bruijn indicies in the body.
+	| KPi      Kind  Kind		-- ^ Dependend kind abstraction.
+				 	--	Uses de Bruijn indicies in the body
+
+
+	-- Old stuff that needs refactoring -----------------------------------
+	| KForall  Kind Kind		-- ^ Dependent kinds.
+	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
+
 	| KValue			-- ^ the kind of value types	   (*)
 	| KRegion			-- ^ the kind of regions	   (%)
 	| KEffect			-- ^ the kind of effects	   (!)
@@ -85,34 +118,23 @@ data Kind
 	--	Example: (Show Int) :: +
 	| KWitness			
 
-	| KForall  Kind Kind		-- ^ Dependent kinds.
-	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
-
 	-- TODO: change TClass to be a general kind constructor, and TWitJoin to be a kind sum.
 	| KClass	TyClass [Type]	-- ^ the kind of witnesses
 	| KWitJoin	[Kind]		-- ^ joining of witnesses
 
-	| KCon	  KiCon Kind
 	deriving (Show, Eq)	
 
 
 -- | Kind constructors.
 --	TODO: 	These aren't used yet
---		Need to replace the ctors in the Kind type with references to these ones.
+--		We need to replace the ctors in the Kind type with references to these ones.
 data KiCon
 	-- ^ A Witness Kind Constructor / Type Class Constructor defined in the source.
 	--	These aren't interpreted in any special way by the compiler.
 	= KiCon Var
 
 	-- Built-in witness kind constructors ---------------------------------
-	--	These have special meaning to the compiler.
-	
-	-- ^ The kind of witness kinds, 
-	--	written "+" in programs, or (\Diamond in printed material)
-	--	This behaves like a super kind because there is no type-level expression
-	--	that has + as it's kind... but we still represent it as a KiCon.
-	--	Example: (Show Int) :: +
-	| KiConWitness
+	--	These have special meaning to the compiler.	
 
 	-- Each of these base kinds are also their own superkind.
 	-- For example: * :: *  and % :: %
@@ -144,11 +166,12 @@ data KiCon
 	deriving (Show, Eq)
 
 
-type Data	= Type
-type Region	= Type
-type Effect	= Type
-type Closure	= Type
-type Witness	= Type
+-- Short names for commonly used kinds
+kValue		= KCon KiConValue   (SCon KsConValue)
+kRegion		= KCon KiConRegion  (SCon KsConRegion)
+kEffect		= KCon KiConEffect  (SCon KsConEffect)
+kClosure	= KCon KiConClosure (SCon KsConClosure)
+
 
 -- Type --------------------------------------------------------------------------------------------
 -- | This data type includes constructors for bona-fide type expressions, 
@@ -221,6 +244,13 @@ data Type
 	| TWitJoin	![Witness]
 
 	deriving (Show, Eq)
+
+
+type Data	= Type
+type Region	= Type
+type Effect	= Type
+type Closure	= Type
+type Witness	= Type
 
 
 -- Helps with defining foreign function interfaces.
