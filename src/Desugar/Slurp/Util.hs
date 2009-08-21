@@ -328,8 +328,8 @@ newTVarC	= newVarN  NameClosure	   >>= \v -> return $ TVar KClosure v
 newTVarCS s	= newVarNS NameClosure	s  >>= \v -> return $ TVar KClosure v
 
 -- fetter
-newTVarF	= newVarN  NameClass	   >>= \v -> return $ TVar KFetter v
-newTVarFS s	= newVarNS NameClass	s  >>= \v -> return $ TVar KFetter v
+newTVarF	= newVarN  NameClass	   >>= \v -> return $ TVar KWitness v
+newTVarFS s	= newVarNS NameClass	s  >>= \v -> return $ TVar KWitness v
 
 
 

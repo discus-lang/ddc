@@ -325,7 +325,7 @@ feedFetter	mParent f
 	 	return ()
 
 	FProj pj v tDict tBind
-	 -> do	cidC		<- allocClass KFetter
+	 -> do	cidC		<- allocClass KWitness
 	 	Just [tDict', tBind']	
 				<- liftM sequence
 				$  mapM (feedType (Just cidC)) [tDict, tBind]
@@ -391,7 +391,7 @@ addFetter (FConstraint vC [t1])
 addFetter f@(FConstraint v ts)
  = do 	
  	-- create a new class to hold this node
-	cidF		<- allocClass KFetter
+	cidF		<- allocClass KWitness
 	 	
 	-- add the type args to the graph
 	Just ts'	<- liftM sequence
@@ -421,7 +421,7 @@ addFetter f@(FConstraint v ts)
 addFetter f@(FProj j v1 tDict tBind)
  = do
  	-- a new class to hold this node
- 	cidF	<- allocClass KFetter
+ 	cidF	<- allocClass KWitness
 	
 	-- add the type args to the graph
  	Just [tDict', tBind']

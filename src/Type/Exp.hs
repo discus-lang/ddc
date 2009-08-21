@@ -62,26 +62,35 @@ instance Ord Type where
 
 
 -- Kind --------------------------------------------------------------------------------------------
--- de bruijn indicies
+
+-- We use de Bruijn indicies in the kinds of witness constructors.
 type Index
 	= Int
 
 data Kind
-	= KNil					-- ^ An missing / unknown kind.
+	= KNil				-- ^ An missing / unknown kind.
 
-	| KForall	!Kind 	!Kind		-- ^ Dependent kinds.
-	| KFun 		!Kind	!Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
+	-- Base kinds
+	--	Each of these base kinds is also own superkind.
+	--	Example:  * :: *
+	| KValue			-- ^ the kind of value types	   (*)
+	| KRegion			-- ^ the kind of regions	   (%)
+	| KEffect			-- ^ the kind of effects	   (!)
+	| KClosure			-- ^ the kind of closures	   ($)
 
-	| KValue				-- ^ the kind of value types
-	| KRegion				-- ^ the kind of regions
-	| KEffect				-- ^ the kind of effects
-	| KClosure				-- ^ the kind of closures
+	-- ^ The super kind of witneses  (+)  (\Diamond)
+	--	This is a real super-kind because no type-level expression has this kind.
+	--	Example: (Show Int) :: +
+	| KWitness			
 
-	| KFetter	-- ditch me
+	| KForall  Kind Kind		-- ^ Dependent kinds.
+	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
 
-	| KClass	!TyClass ![Type]	-- ^ the kind of witnesses
-	| KWitJoin	![Kind]			-- ^ joining of witnesses
+	-- TODO: change TClass to be a general kind constructor, and TWitJoin to be a kind sum.
+	| KClass	TyClass [Type]	-- ^ the kind of witnesses
+	| KWitJoin	[Kind]		-- ^ joining of witnesses
 	deriving (Show, Eq)	
+
 
 type Data	= Type
 type Region	= Type

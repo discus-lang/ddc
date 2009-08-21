@@ -72,7 +72,7 @@ kindOfSpace space
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
-	NameClass	-> KFetter
+	NameClass	-> KWitness
 	_		-> panic stage
 			$  "kindOfSpace: no match for " % show space
 

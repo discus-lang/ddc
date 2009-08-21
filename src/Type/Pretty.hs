@@ -186,7 +186,7 @@ kindOfSpace2 var space
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
-	NameClass	-> KFetter	
+	NameClass	-> KWitness
 	_		-> freakout stage
 				("kindOfSpace2: no match for " % show space % "\n"
 				% "   var = " % show var % "\n")
@@ -305,14 +305,14 @@ instance Pretty Kind PMode where
   = case k of
 	KNil		-> ppr "?"
 
-	KFun k1 k2	-> k1 % " -> " % k2
-	KForall k1 k2	-> "\\" % k1 % ". " % k2
-
 	KValue		-> ppr "*"
 	KRegion		-> ppr "%"
 	KEffect		-> ppr "!"
-	KFetter		-> ppr"+"
 	KClosure	-> ppr "$"
+	KWitness	-> ppr "+"
+
+	KFun k1 k2	-> k1 % " -> " % k2
+	KForall k1 k2	-> "\\" % k1 % ". " % k2
 
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"

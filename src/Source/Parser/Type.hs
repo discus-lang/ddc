@@ -50,7 +50,7 @@ pKind1
  		return	KClosure
 
  <|>	do	pTok K.Plus
- 		return	KFetter
+ 		return	KWitness
 
  <|>	-- ( KIND )
  	do	pRParen pKind
