@@ -663,8 +663,7 @@ instance Rename (Stmt SourcePos) where
 		return	$ SStmt sp x'		
 
 	SBindFun sp v ps as
-	 -> do	v'	<- lbindZ v
-
+	 -> do	v'	<- lbindZ_shadow v
 	 	local
 		 $ do	(ps', objVss)	<- liftM unzip
 					$  mapM (bindPat False) ps
