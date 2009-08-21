@@ -4,7 +4,7 @@ main () = do
 	println $ show [ 1 .. 4 ]
 	-- Take 10 from and infinite list.
 	println $ show $ take 10 [ 0 .. ]
-	-- Count down.
+	-- This should return an empty list.
 	println $ show [ 4 .. 1 ]
-	-- Sanity
+	-- This should produce the list [2]
 	println $ show [ 2 .. 2 ]
