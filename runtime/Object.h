@@ -9,9 +9,9 @@
 
 
 // Object Layout ----------------------------------------------------------------------------------
-// 
+//
 //	An object in the heap consists of a 32bit header word followed
-//	the payload. 
+//	the payload.
 //
 //	The header's upper 24 bits contain the tag value of the particular
 //	data constructor that created the object, and the lower 8 bits
@@ -37,15 +37,15 @@
 // The first tag value that can be used in a regular data type.
 #define _tagBase	0
 
-// Objects that are thunks, suspensions or indirections always have 
+// Objects that are thunks, suspensions or indirections always have
 // 	the following values in their tag fields. These tags are
 //	reserved and cannot be used for other objects.
-// 
+//
 #define _tagThunk	0x0ffffff
 #define _tagSusp	0x0fffffe
 #define _tagIndir	0x0fffffd
 
-// Define the tags of the False and True data constructors. 
+// Define the tags of the False and True data constructors.
 //	The RTS sometimes needs to test for these directly.
 #define _tagFalse       (_tagBase + 0)
 #define _tagTrue        (_tagBase + 1)
@@ -56,16 +56,16 @@
 //	The format field describes the format/layout of the heap object.
 //
 //  bit 7  6  5  4  3  2  1  0
-//      -- arg ---  -- obj ---
-//      X  X  X  X  X  X  0  0  -- Forward / Broken-Heart
+//	-- arg ---  -- obj ---
+//	X  X  X  X  X  X  0  0  -- Forward / Broken-Heart
 //	X  X  X  X  a  X  X  X  -- Anchor flag
 //	0  0  0  1  a  0  0  1	-- Thunk
 //	0  0  1  0  a  0  0  1  -- Data
-//      0  0  1  1  a  0  0  1  -- DataR
+//	0  0  1  1  a  0  0  1  -- DataR
 //	0  1  0  0  a  0  0  1  -- DataM
-//      0  1  0  1  a  0  0  1  -- SuspIndir
-//      -- size --  a  0  1  1  -- DataRS	
-//	
+//	0  1  0  1  a  0  0  1  -- SuspIndir
+//      -- size --  a  0  1  1  -- DataRS
+//
 // 	* GC Forwarding / Broken-Heart pointers.
 //	  During garbage collection, after the GC copies an object to the "to-space"
 //        its header in the "from-space" is overwritten with a pointer to where
@@ -107,8 +107,8 @@ enum _ObjType
 
 
 // Whether the object is:
-//	a forwarding pointer, 
-//	has a fixed format, 
+//	a forwarding pointer,
+//	has a fixed format,
 //	or is a DataRS object that has its payload size encoded in format field as well.
 //
 enum _ObjMode
@@ -183,7 +183,7 @@ typedef struct {
 	UInt	arity;		// Arity of the supercombinator
 	Obj*	a[];		// Pointers to the arguments.
  } SuspIndir;
- 
+
 
 // Data Objects -----------------------------------------------------------------------------------
 
@@ -229,27 +229,27 @@ typedef struct {
 // Header Utils -----------------------------------------------------------------------------------
 
 // Get the tag portion of this object's header word.
-static inline UInt _getObjTag	(Obj* obj) 
-{ 	
-	return obj ->tagFlags >> 8; 
+static inline UInt _getObjTag	(Obj* obj)
+{
+	return obj ->tagFlags >> 8;
 }
 
 // Get the arg portion of this object's format field.
-static inline UInt _getObjArg	(Obj* obj) 
+static inline UInt _getObjArg	(Obj* obj)
 {
-	return (obj ->tagFlags & 0x0f0) >> 4; 
+	return (obj ->tagFlags & 0x0f0) >> 4;
 }
 
 // Get this objects header word.
-static inline UInt _getObjFlags	(Obj* obj) 
-{ 	
-	return obj ->tagFlags & 0x0ff; 
+static inline UInt _getObjFlags	(Obj* obj)
+{
+	return obj ->tagFlags & 0x0ff;
 }
 
 // Get this object's header word.
-static inline UInt _getObjId	(Obj* obj) 
+static inline UInt _getObjId	(Obj* obj)
 {
-	return obj ->tagFlags & 0x0ff; 
+	return obj ->tagFlags & 0x0ff;
 }
 
 // Determine the type of this object.
@@ -266,5 +266,7 @@ UInt		_objSize 	(Obj* obj);
 //	be moved by the garbage collector.
 bool		_objIsAnchored	(Obj* obj);
 
+// Dump an object to stdout (for debugging).
+void	objDump (Obj* obj);
 
 #endif
