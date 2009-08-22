@@ -266,7 +266,10 @@ UInt		_objSize 	(Obj* obj);
 //	be moved by the garbage collector.
 bool		_objIsAnchored	(Obj* obj);
 
-// Dump an object to stdout (for debugging).
-void	objDump (Obj* obj);
+// Dump a single object to stdout (for debugging).
+void	objDump (FILE * f, Obj* obj);
+
+// Dump a graph of objects to stdout (for debugging).
+void	objDumpGraph (FILE *f, Obj* obj) ;
 
 #endif

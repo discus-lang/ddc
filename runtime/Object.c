@@ -89,88 +89,110 @@ bool	_objIsAnchored (Obj* obj)
 // Functions for debugging the runtime.
 
 static void
-hexdump (unsigned char * ptr, int len)
+hexdump (FILE *f, unsigned char * ptr, int len)
 {
+	fprintf (f, "[ ") ;
 	for (int k = 0 ; k < len ;  k++)
-		printf ("%02x ", ptr [k]) ;
+		fprintf (f, "%02x ", ptr [k]) ;
+	fprintf (f, "]\n") ;
 }
 
 static void
-chardump (unsigned char * ptr, int len)
+strdump (FILE *f, unsigned char * ptr, int len)
 {
 	putchar ('"') ;
 	for (int k = 0 ; k < len ;  k++)
 		putchar (isprint (ptr [k]) ? ptr [k] : '.') ;
-	putchar ('"') ;
+	fprintf (f, "\"\n") ;
 }
 
 static void
-innerDumpObj (int level, Obj* obj)
+innerDumpObj (FILE *f, int level, Obj* obj, bool recurse)
 {
-	char indent [2 * level + 1] ;
-	int id ;
+	int indent = 2 * level + (level == 0 ? 1 : 3) ;
+	int tag, id, size ;
 
-	memset (indent, ' ', sizeof (indent)) ;
-	indent [sizeof (indent) - 1] = 0 ;
-
-	printf ("%sObj %p (%d bytes)   tag 0x%x\n", indent, obj, _objSize (obj), _getObjTag (obj)) ;
-
+	size = _objSize (obj) ;
+	tag = _getObjTag (obj) ;
 	id = _getObjId (obj) ;
 
 	switch (id & 0xF7) {
 	 case 0x11 :
-		printf ("%s    id    : 0x%x (Thunk)\n", indent, id) ;
-		printf ("%s    func  : %p\n", indent, ((Thunk*)obj)->func) ;
-		printf ("%s    arity : %d\n", indent, ((Thunk*)obj)->arity) ;
-		printf ("%s    args  : %d\n", indent, ((Thunk*)obj)->args) ;
-		for (int k = 0 ; k < ((Thunk*)obj)->args ;  k++)
-			innerDumpObj (level + 1, ((Thunk*)obj)->a [k]) ;
+		fprintf (f, "%*cThunk @ %p (%d bytes)\n", indent, ' ', obj, size) ;
+		fprintf (f, "%*c  , tag   = 0x%06x\n", indent, ' ', tag) ;
+		fprintf (f, "%*c  , func  = %p\n", indent, ' ', ((Thunk*)obj)->func) ;
+		fprintf (f, "%*c  , arity = %d\n", indent, ' ', ((Thunk*)obj)->arity) ;
+		fprintf (f, "%*c  , args  = %d\n", indent, ' ', ((Thunk*)obj)->args) ;
+		for (int k = 0 ; k < ((Thunk*)obj)->args ;  k++) {
+			if (recurse)
+				innerDumpObj (f, level + 1, ((Thunk*)obj)->a [k], recurse) ;
+			else
+				fprintf (f, "%*c  , a [%3d] = %p\n", indent, ' ', k, ((Thunk*)obj)->a [k]) ;
+		}
+		fprintf (f, "%*c  }\n", indent, ' ') ;
 		break ;
 
 	 case 0x21 :
-		printf ("%s    id    : 0x%x (Data)\n", indent, id) ;
-		printf ("%s    arity : %d\n", indent, ((Data*)obj)->arity) ;
-		for (int k = 0 ; k < ((Data*)obj)->arity ;  k++)
-			innerDumpObj (level + 1, ((Data*)obj)->a [k]) ;
+		fprintf (f, "%*cData @ %p (%d bytes) {\n", indent, ' ', obj, size) ;
+		fprintf (f, "%*c  , tag     = 0x%06x\n", indent, ' ', tag) ;
+		fprintf (f, "%*c  , arity   = %d\n", indent, ' ', ((Data*)obj)->arity) ;
+		for (int k = 0 ; k < ((Data*)obj)->arity ;  k++) {
+			if (recurse)
+				innerDumpObj (f, level + 1, ((Data*)obj)->a [k], recurse) ;
+			else
+				fprintf (f, "%*c  , a [%3d] = %p\n", indent, ' ', k, ((Data*)obj)->a [k]) ;
+		}
+		fprintf (f, "%*c  }\n", indent, ' ') ;
 		break ;
 
 	 case 0x31 :
-		printf ("%s    id      : 0x%x (DataR)\n", indent, id) ;
-		printf ("%s    size    : %d\n", indent, ((DataR*)obj)->size) ;
-		printf ("%s    payload : ", indent) ;
-		hexdump (((DataR*)obj)->payload, ((DataR*)obj)->size - offsetof (DataR, payload)) ;
-		printf ("\n%s            : ", indent) ;
-		chardump (((DataR*)obj)->payload, ((DataR*)obj)->size - offsetof (DataR, payload)) ;
-		puts ("") ;
+		fprintf (f, "%*cDataR @ %p (%d bytes) {\n", indent, ' ', obj, size) ;
+		fprintf (f, "%*c  , tag     = 0x%06x\n", indent, ' ', tag) ;
+		fprintf (f, "%*c  , size    = %d\n", indent, ' ', ((DataR*)obj)->size) ;
+		fprintf (f, "%*c  , payload = ", indent, ' ') ;
+		hexdump (f, ((DataR*)obj)->payload, ((DataR*)obj)->size - offsetof (DataR, payload)) ;
+		fprintf (f, "%*c                  -> ", indent, ' ') ;
+		strdump (f, ((DataR*)obj)->payload, ((DataR*)obj)->size - offsetof (DataR, payload)) ;
+		fprintf (f, "%*c  }\n", indent, ' ') ;
 		break ;
 
 	 case 0x41 :
-		printf ("%s    id       : 0x%x (DataM)\n", indent, id) ;
-		printf ("%s    size     : %d\n", indent, ((DataM*)obj)->size) ;
-		printf ("%s    ptrCount : %d\n", indent, ((DataM*)obj)->ptrCount) ;
-		printf ("%s    payload  : ", indent) ;
-		hexdump (((DataM*)obj)->payload, ((DataM*)obj)->size - offsetof (DataM, payload)) ;
-		printf ("\n%s            : ", indent) ;
-		chardump (((DataM*)obj)->payload, ((DataM*)obj)->size - offsetof (DataM, payload)) ;
-		puts ("") ;
+		fprintf (f, "%*cDataM @ %p (%d bytes) {\n", indent, ' ', obj, size) ;
+		fprintf (f, "%*c  , tag      = 0x%06x\n", indent, ' ', tag) ;
+		fprintf (f, "%*c  , size     = %d\n", indent, ' ', ((DataM*)obj)->size) ;
+		fprintf (f, "%*c  , ptrCount = %d\n", indent, ' ', ((DataM*)obj)->ptrCount) ;
+		fprintf (f, "%*c  , payload  = ", indent, ' ') ;
+		hexdump (f, ((DataM*)obj)->payload, ((DataM*)obj)->size - offsetof (DataM, payload)) ;
+		fprintf (f, "%*c                  -> ", indent, ' ') ;
+		strdump (f, ((DataM*)obj)->payload, ((DataM*)obj)->size - offsetof (DataM, payload)) ;
+		fprintf (f, "%*c  }\n", indent, ' ') ;
 		break ;
 
 	 case 0x51 :
-		printf ("%s    id       : 0x%x (SuspIndir)\n", indent, id) ;
-		innerDumpObj (level + 1, ((SuspIndir*)obj)->obj) ;
-		printf ("%s    arity : %d\n", indent, ((SuspIndir*)obj)->arity) ;
+		fprintf (f, "%*cSuspIndir @ %p (%d bytes) {\n", indent, ' ', obj, size) ;
+		fprintf (f, "%*c  , tag   = 0x%06x\n", indent, ' ', tag) ;
+		innerDumpObj (f, level + 1, ((SuspIndir*)obj)->obj, recurse) ;
+		fprintf (f, "%*c    arity = %d\n", indent, ' ', ((SuspIndir*)obj)->arity) ;
 		for (int k = 0 ; k < ((SuspIndir*)obj)->arity ;  k++)
-			innerDumpObj (level + 1, ((SuspIndir*)obj)->a [k]) ;
+			innerDumpObj (f, level + 1, ((SuspIndir*)obj)->a [k], recurse) ;
+		fprintf (f, "%*c  }\n", indent, ' ') ;
 		break ;
 
 	 default :
-		printf ("%s    id  : 0x%x : ", indent, id) ;
-		hexdump ((unsigned char *) obj, _objSize (obj)) ;
-		puts ("") ;
+		fprintf (f, "%*cUnknown @ %p (%d bytes) {\n", indent, ' ', obj, size) ;
+		fprintf (f, "%*c  , tag = 0x%06x\n", indent, ' ', tag) ;
+		fprintf (f, "%*c  , id  : 0x%x : ", indent, ' ', id) ;
+		hexdump (f, (unsigned char *) obj, size) ;
+		fprintf (f, "%*c  }\n", indent, ' ') ;
 	}
 }
 
-void	objDump (Obj* obj)
+void	objDump (FILE *f, Obj* obj)
 {
-	innerDumpObj (0, obj) ;
+	innerDumpObj (f, 0, obj, false) ;
+}
+
+void	objDumpGraph (FILE *f, Obj* obj)
+{
+	innerDumpObj (f, 0, obj, true) ;
 }
