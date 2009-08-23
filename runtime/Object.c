@@ -129,8 +129,8 @@ innerDumpObj
 	tag	= _getObjTag (obj);
 	id	= _getObjId  (obj);
 
-	switch (id & 0xF7) {
-	 case 0x11 :
+	switch (id & _MaskObjAnchored) {
+	 case _ObjFixedThunk :
 		fprintf (f, "%*cThunk @ %p (%d bytes)\n", indent, ' ', obj, size);
 		fprintf (f, "%*c  , tag   = 0x%06x\n",	  indent, ' ', tag);
 		fprintf (f, "%*c  , func  = %p\n",	  indent, ' ', ((Thunk*)obj)->func);
@@ -147,7 +147,7 @@ innerDumpObj
 
 		break;
 
-	 case 0x21 :
+	 case _ObjFixedData :
 		fprintf (f, "%*cData @ %p (%d bytes) {\n", indent, ' ', obj, size);
 		fprintf (f, "%*c  , tag     = 0x%06x\n",   indent, ' ', tag);
 		fprintf (f, "%*c  , arity   = %d\n",       indent, ' ', ((Data*)obj)->arity);
@@ -162,7 +162,7 @@ innerDumpObj
 		fprintf (f, "%*c  }\n", indent, ' ') ;
 		break ;
 
-	 case 0x31 :
+	 case _ObjFixedDataR :
 		fprintf (f, "%*cDataR @ %p (%d bytes) {\n", indent, ' ', obj, size);
 		fprintf (f, "%*c  , tag     = 0x%06x\n",    indent, ' ', tag);
 		fprintf (f, "%*c  , size    = %d\n",        indent, ' ', ((DataR*)obj)->size);
@@ -179,7 +179,7 @@ innerDumpObj
 		fprintf (f, "%*c  }\n", indent, ' ') ;
 		break ;
 
-	 case 0x41 :
+	 case _ObjFixedDataM :
 		fprintf (f, "%*cDataM @ %p (%d bytes) {\n", indent, ' ', obj, size);
 		fprintf (f, "%*c  , tag      = 0x%06x\n",   indent, ' ', tag);
 		fprintf (f, "%*c  , size     = %d\n",       indent, ' ', ((DataM*)obj)->size);
@@ -197,7 +197,7 @@ innerDumpObj
 		fprintf (f, "%*c  }\n", indent, ' ');
 		break;
 
-	 case 0x51 :
+	 case _ObjFixedSuspIndir :
 		fprintf (f, "%*cSuspIndir @ %p (%d bytes) {\n", indent, ' ', obj, size);
 		fprintf (f, "%*c  , tag   = 0x%06x\n",          indent, ' ', tag);
 

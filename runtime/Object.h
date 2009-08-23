@@ -145,7 +145,7 @@ enum _ObjFlag
 	_ObjFlagAnchored	= 0x08
 };
 
-#define _MaskObjAnchored	(~_objFlagAnchored)
+#define _MaskObjAnchored	(~_ObjFlagAnchored)
 
 
 // Objects ----------------------------------------------------------------------------------------
