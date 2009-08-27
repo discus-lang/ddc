@@ -1,0 +1,9 @@
+
+-- | Defining an instance of an unknown class should
+--	give a sensible error message.
+instance Wibble a where
+ foo x = 5
+
+main () = putStr "dude"
+
+

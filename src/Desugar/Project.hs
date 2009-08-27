@@ -161,7 +161,8 @@ snipProjDictP moduleName classDicts
 			: concat pss
 	
 	| otherwise
-	= panic stage $ "snipProjDictP: Type class '" % vClass % "' is not in scope."
+	= do	addError $ ErrorUndefinedVar vClass
+		return $ [pInst]
 
 
 -- Snip field initializers
