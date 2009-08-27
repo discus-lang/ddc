@@ -40,7 +40,9 @@ planControl rover control
 			: (filter (\s -> turnCost control s < rover.turnBudget) scans)
 				
 	-- find the scan with the least badness
-	bestScan	= fst $ minT2F $ map (\s -> (s, s.badness)) scans_afford
+	bestScan	= fst 
+			$ minimumBy (compare `on` snd) 
+			$ map (\s -> (s, s.badness)) scans_afford
 
 	-- update the turn budget
 	cost		= turnCost control bestScan

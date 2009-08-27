@@ -34,7 +34,7 @@ scan rover dir
 	probs_close
 		| isNil probs	= []
 		| otherwise		
-		= [fst 	$ minT2F 
+		= [fst 	$ minimumBy (compare `on` snd) 
 			$ map (\prob -> (prob, prob.distDanger)) 
 				probs]
 

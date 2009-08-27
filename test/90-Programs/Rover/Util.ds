@@ -46,20 +46,6 @@ span p xx
 	   else	([], xs)
 
 
--- nasty comparison to get around compiler bugs
---	this should be minumumBy (compare `on` snd)
-minT2F :: [(a, Float)] -> (a, Float)
-minT2F (x:xs)	= minT2F' x xs
-	
-minT2F' :: (a, Float) -> [(a, Float)] -> (a, Float)
-minT2F' acc 		[]		= acc
-
-minT2F' acc@(_, y)	(a@(x0, y0) : rest)
-
-	| y0 < y	= minT2F' a rest
-	| otherwise	= minT2F' acc rest
-
-
 rangeFloat :: Float -> Float -> Float -> [Float]
 rangeFloat x max step 
  	| x > max	= []
