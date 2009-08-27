@@ -73,7 +73,8 @@ rewritePatA co aa
 	D.AAlt sp gs x
 	 -> do	gsAts		<- mapM (sprinkleAtsG sp) gs
 	  	let gsLift	= catMap simplifyGuard gsAts
-		return	$ D.AAlt sp gsLift x
+	  	gsDesugared <- catMapM desugarLiteralGuard gsLift
+		return	$ D.AAlt sp gsDesugared x
 
 
 -- | These variables are treated as special aliases for list functions.
@@ -208,6 +209,44 @@ collectAtNodesW ww
 	_ -> return ww
 	
 
+
+-- | Desugar guards against boxed literals into calls of (possibly user-defined) (==).
+desugarLiteralGuard :: D.Guard Annot -> RewriteM [D.Guard Annot]
+desugarLiteralGuard g
+ = case g of
+	D.GExp le (WLit ll fmt@(S.LiteralFmt _ df)) e
+	 | dataFormatIsBoxed df
+	 -> do  let equals = D.XVar le primEq
+		let true = D.WConLabel le primTrue []
+		let ($$) = D.XApp le
+		return [D.GExp le true (equals $$ D.XLit ll fmt $$ e)]
+	
+	D.GCase le (WLit ll fmt@(S.LiteralFmt _ df))
+	 | dataFormatIsBoxed df
+	 -> do	exps <- litToExp ll fmt
+		catMapM desugarLiteralGuard exps
+
+	_ -> return [g]
+
+-- | Rewrite a literal in a 'case' as an expression.
+--
+-- eg	match foo with {
+--	  || "hello"
+--
+-- =>	match foo with {
+--	  || v1
+--	  , "hello" <- v1
+--
+-- desugarLiteralGuard then finishes the job.
+--
+-- =>	match foo with {
+--	  || v1
+--	  , True <- "hello" == v1
+litToExp :: Annot -> S.LiteralFmt -> RewriteM [D.Guard Annot]
+litToExp ll fmt
+ = do	val <- newVarN NameValue
+	return [D.GCase ll (D.WVar ll val),
+	        D.GExp ll (D.WLit ll fmt) (D.XVar ll val)]
 
 -- makeMatchFunction -------------------------------------------------------------------------------
 

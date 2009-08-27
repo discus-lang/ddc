@@ -1,0 +1,18 @@
+
+
+foo x
+ = case x of
+	"hello" 	-> 5
+	"goodbye"	-> 47
+
+bar "hello" = 10
+bar "world" = 20
+
+baz x = case x of
+	Just ("foo", _) -> "bar"
+	Just (_, "bar") -> "quux"
+
+main () 
+	= do	println $ show $ foo "hello"
+		println $ show $ bar "world"
+		println $ show $ baz (Just ("foo" % "foo", "b" % "ar"))

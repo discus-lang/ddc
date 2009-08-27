@@ -106,6 +106,9 @@ data VarBind
 
 	-- | The monadic bind
 	| VBind		
+
+  -- | For desugaring literal pattern matches
+  | VEq
 	deriving (Eq, Show, Ord)
 
 

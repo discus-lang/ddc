@@ -124,6 +124,8 @@ primWhile	= primVar NameValue	"Control.Imperative.while"		VWhile
 
 primBind	= primVar NameValue	"Class.Monad.>>="			VBind
 
+primEq	= primVar NameValue	"Class.Eq.=="			VEq
+
 
 -- Utils -------------------------------------------------------------------------------------------
 
@@ -251,7 +253,8 @@ renamePrimVar_values
 	, ("rangeInfIntStepL",	VRangeInfIntStepL)
 	, ("concatMap",		VConcatMap)
 	, ("concatMapL",	VConcatMapL)
-	, (">>=",		VBind)]
+	, (">>=",		VBind)
+	, ("==",		VEq)]
 
 	
 renamePrimVar_type :: String -> Maybe VarBind
