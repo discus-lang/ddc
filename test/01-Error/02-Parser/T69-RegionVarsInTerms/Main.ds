@@ -1,0 +1,6 @@
+
+example1 :: String -> String -> String
+example1 a b = a%b
+
+
+

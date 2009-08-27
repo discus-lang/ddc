@@ -8,7 +8,7 @@ module Source.Parser.Base
 	, pCParen, pRParen, pSParen
 	, token
 	, pTok, pQualified
-	, pVar, pVarPlain, pVarPlainNamed, pVarPlainOfSpace, pVarField
+	, pVar, pOfSpace, pVarPlain, pVarPlainNamed, pVarPlainOfSpace, pVarField
 	, pCon, pConOfSpace, pConOfSpaceNamed
 	, pVarCon
 	, pSymbol
@@ -104,13 +104,32 @@ pQualified parser
 
 -- Variables ---------------------------------------------------------------------------------------
 
+-- | Parse a var from a certain namespace.
+--	If the var had a namespace qualifier in the source file then the Var.nameSpace
+--	field will already be set. If the requested namespace is different, then the parse fails.
+--
+--	If the var's namespace is NameNothing, then we it didn't have a qualifier, and we
+--	safely rename it to NameValue, NameType, NameField or NameClass
+--
+pOfSpace :: NameSpace -> Parser Var -> Parser Var
+pOfSpace spaceWant parser
+ = do	var <- parser
+	case (Var.nameSpace var, spaceWant) of
+	 (NameNothing, NameValue)	-> return var { Var.nameSpace = NameValue }
+	 (NameNothing, NameType)	-> return var { Var.nameSpace = NameType }	
+	 (NameNothing, NameClass)	-> return var { Var.nameSpace = NameClass }
+	 (NameNothing, NameField)	-> return var { Var.nameSpace = NameField}
+	 (space1,      space2)
+		| space1 == space2	-> return var
+		| otherwise		-> Parsec.unexpected (Var.name var)
+
+
 -- | Parse a plain or (symbol) variable
 pVar :: Parser Var
 pVar =
         pVarPlain
   <|>	(Parsec.try $ pRParen pSymbol)
   <?>   "pVar"
-
 
 -- | Parse a plain variable
 pVarPlain :: Parser Var

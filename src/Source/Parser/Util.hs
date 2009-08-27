@@ -12,8 +12,8 @@ module Source.Parser.Util
 	, makeVar
 
 	-- NameSpace Utils
-	, vNameN
-	, vNameV, vNameT, vNameR, vNameE, vNameC, vNameW, vNameF
+--	, vNameN
+--	, vNameV, vNameT, vNameR, vNameE, vNameC, vNameW, vNameF
 	, vNameDefaultN
 	, kindOfVarSpace
 
@@ -65,7 +65,7 @@ toVar :: K.TokenP -> Var
 toVar	 tok
  = case K.token tok of
 	K.Var    	name	-> Var.loadSpaceQualifier $ makeVar name tok
-	K.VarField	name	-> vNameF $ makeVar name tok
+	K.VarField	name	-> (makeVar name tok) { Var.nameSpace = NameField }
 	K.Con		name	-> Var.loadSpaceQualifier $ makeVar name tok
 	K.Symbol 	name	-> makeVar name tok
 	_ -> case lookup (K.token tok) toVar_table of
@@ -102,6 +102,7 @@ makeVar    name@(n:_) tok
 -- NameSpace Utils ---------------------------------------------------------------------------------
 -- | Force the namespace of this variable
 --	If it has already been set differently then panic
+{-
 vNameN :: NameSpace -> Var -> Var
 vNameN space v
 	-- var has no namespace, so give it one
@@ -128,6 +129,7 @@ vNameC		= vNameN NameClosure
 vNameW		= vNameN NameClass
 vNameF		= vNameN NameField
 
+-}
 
 -- | If the var has no namespace set, then give it this one.
 vNameDefaultN	:: NameSpace -> Var -> Var
@@ -135,7 +137,6 @@ vNameDefaultN space var
  = case Var.nameSpace var of
  	NameNothing	-> var { Var.nameSpace = space }
 	_		-> var
-
 
 -- | Decide on the kind of a type var from it's namespace
 kindOfVarSpace :: NameSpace -> Kind
@@ -145,7 +146,8 @@ kindOfVarSpace space
 	NameRegion	-> KRegion
 	NameEffect	-> KEffect
 	NameClosure	-> KClosure
-
+	NameType	-> KValue
+	_		-> panic stage $ "kindOfVarSpace: no kind for " ++ show space
 
 -- | Slurp the source position from this token.
 spTP :: K.TokenP -> SP

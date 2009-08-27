@@ -92,26 +92,26 @@ pExp1'
   <|>	-- VAR & { TYPE }								-- NOT FINISHED
  	-- overlaps with VAR
 	(Parsec.try $ do
-		field	<- liftM vNameF (pQualified pVar)
+		field	<- pOfSpace NameField $ pQualified pVar
 		pTok K.And
 		t	<- pCParen pType_body
 		return	$ XProjT (spV field) t (JField (spV field) field))
-
+			
   <|>	-- VAR/CON
-	do	var	<- liftM vNameV (pQualified pVarCon)
+	do	var	<- pOfSpace NameValue $ pQualified pVarCon
 		return	$ XVar (spV var) var
 
   <|>	-- VARFIELD					-- TODO: change this when we move to parsec
-	do	var	<- liftM vNameF pVarField
+	do	var	<- pOfSpace NameField pVarField
 		return	$ XObjField (spV var) var
 
   <|>	-- SYM
-	do	sym	<- liftM vNameV pSymbol
+	do	sym	<- pOfSpace NameValue pSymbol
 		return	$ XOp (spV sym) sym
 
   <|>	-- `VAR`
   	do	pTok K.BackTick
-		var	<- liftM vNameV (pQualified pVar)
+		var	<- pOfSpace NameValue $ pQualified pVar
 		pTok K.BackTick
 		return	$ XOp (spV var) var
 
@@ -159,7 +159,7 @@ pExp1'
   <|>	-- \. VAR EXP ..
   	-- overlaps with next lambda forms
   	do	tok	<- pTok K.BackSlashDot
-		var	<- liftM vNameF pVar
+		var	<- pOfSpace NameField pVar
 		exps	<- Parsec.many pExp1
 		return	$ XLambdaProj (spTP tok) (JField (spTP tok) var) exps
 
@@ -434,14 +434,14 @@ pStmt_bind
  = 	-- VAR PAT .. | ALT ..
 	-- overlaps with regular binding
  	(Parsec.try $ do
- 		var	<- liftM vNameV $ pVar
+ 		var	<- pOfSpace NameValue pVar
 		pats	<- Parsec.many pPat1
 		alts	<- Parsec.many1 pMatchAlt
 		return	$ SBindFun (spV var) var pats alts)
 
 	-- VAR PAT = EXPRHS
  <|>	(Parsec.try $ do
- 		var	<- liftM vNameV $ pVar
+ 		var	<- pOfSpace NameValue pVar
 		pats	<- Parsec.many pPat1
 		pTok K.Equals
 		exp	<- pExpRHS
@@ -472,11 +472,10 @@ pStmt_bind
 -- | Parse a type sig (only)
 pStmt_sig :: Parser (Stmt SP)
 pStmt_sig
- = do	vars	<- Parsec.sepBy1 pVar (pTok K.Comma)
-	let vars' = map vNameV vars
+ = do	vars	<- Parsec.sepBy1 (pOfSpace NameValue pVar) (pTok K.Comma)
  	ht	<- pTok K.HasType
 	typ	<- pType
-	return	$ SSig (spTP ht) vars' typ
+	return	$ SSig (spTP ht) vars typ
 
 -- | Parse a signature or binding
 pStmt_sigBind :: Parser (Stmt SP)

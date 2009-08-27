@@ -116,27 +116,27 @@ pTopExport
 pExport :: Parser (Export SP)
 pExport
  = do	-- var
-	var	<- liftM vNameV pVarCon
+	var	<- pOfSpace NameValue pVarCon
 	return	$ EValue (spV var) var
 
  <|> do	-- type VAR
 	tok	<- pTok K.Type
-	var	<- liftM vNameT pVarCon
+	var	<- pOfSpace NameType pVarCon
 	return	$ EType (spTP tok) var
 
  <|> do	-- region VAR
 	tok	<- pTok K.Region
-	var	<- liftM vNameR pVar
+	var	<- pOfSpace NameRegion pVar
 	return	$ ERegion (spTP tok) var
 
  <|> do	-- effect VAR
 	tok	<- pTok K.Effect
-	var	<- liftM vNameE pVar
+	var	<- pOfSpace NameEffect pVar
 	return	$ EEffect (spTP tok) var
 
  <|> do	-- class VAR
 	tok	<- pTok K.Class
-	var	<- liftM vNameW pVar
+	var	<- pOfSpace NameClass pVar
 	return	$ EClass (spTP tok) var
 
  <?> "pExport"
@@ -155,14 +155,14 @@ pTopForeignImportNext startPos
  = 	-- foreign import data STRING CON :: KIND
 	do	pTok K.Data
 		name	<- pString
-		con	<- liftM vNameT $ pCon
+		con	<- pOfSpace NameType pCon
 		let con2 = con { Var.info = [Var.ISeaName name] }
 		fimp	<- pTopForeignImportEnd startPos name con2
 		return	$ fimp
 
  <|>	-- foreign import STRING var :: TYPE
 	do	mExName	<- Parsec.optionMaybe pString
-		var	<- pVar
+		var	<- pOfSpace NameValue pVar
 		pTok K.HasType
 		sig	<- pType
 
@@ -170,7 +170,7 @@ pTopForeignImportNext startPos
 				(do 	pTok K.HasOpType
 					pTypeOp)
 
-		return	$ PForeign startPos $ OImport mExName (vNameV var) sig mOpType
+		return	$ PForeign startPos $ OImport mExName var sig mOpType
 
  <?> "pTopForeignImport"
 
@@ -191,19 +191,19 @@ pTopInfix
  = 	-- infixr INT SYM ..
  	do	tok	<- pTok K.InfixR
  		prec	<- pInt
-		syms	<- liftM (map vNameV) $ Parsec.sepBy1 pSymbol (pTok K.Comma)
+		syms	<- Parsec.sepBy1 (pOfSpace NameValue pSymbol) (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixRight prec syms
 
 	-- infixl INT SYM ..
   <|> 	do	tok	<- pTok K.InfixL
  		prec	<- pInt
-		syms	<- liftM (map vNameV) $ Parsec.sepBy1 pSymbol (pTok K.Comma)
+		syms	<- Parsec.sepBy1 (pOfSpace NameValue pSymbol) (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixLeft prec syms
 
   <|>	-- infix INT SYM ..
   	do	tok	<- pTok K.Infix
 		prec	<- pInt
-		syms	<- liftM (map vNameV) $ Parsec.sepBy1 pSymbol (pTok K.Comma)
+		syms	<- Parsec.sepBy1 (pOfSpace NameValue pSymbol) (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixNone prec syms
   <?>   "pTopInfix"
 
@@ -220,16 +220,17 @@ pTopType
 pTopTypePlus :: SP -> Parser (Top SP)
 pTopTypePlus startPos
  =	do	-- type CON :: KIND
-		con	<- liftM vNameT pCon
+		con	<- pOfSpace NameType pCon
 		pTok	K.HasType
 		kind	<- pKind
 		return	$ PTypeKind startPos con kind
 
   <|>	do	-- type VAR :: TYPE
-		var	<- liftM vNameT pVar
+		var	<- pOfSpace NameType pVar
 		pTok	K.HasType
 		t	<- pType
 		return	$ PTypeSynonym startPos var t
+
 
 -- Effect ------------------------------------------------------------------------------------------
 -- | Parse an effect definition.
@@ -237,10 +238,10 @@ pTopEffect :: Parser (Top SP)
 pTopEffect
  =	-- effect CON :: KIND
  	do	tok	<- pTok K.Effect
-		con	<- pCon
+		con	<- pOfSpace NameEffect pCon
 		pTok	K.HasType
 		kind	<- pKind
-		return	$ PEffect (spTP tok) (vNameE con) kind
+		return	$ PEffect (spTP tok) con kind
 
 
 -- Region ------------------------------------------------------------------------------------------
@@ -249,8 +250,8 @@ pTopRegion :: Parser (Top SP)
 pTopRegion
  = 	-- region var
  	do	tok	<- pTok K.Region
-		var	<- pVar
-		return	$ PRegion (spTP tok) (vNameR var)
+		var	<- pOfSpace NameRegion pVar
+		return	$ PRegion (spTP tok) var
 
 
 -- Data --------------------------------------------------------------------------------------------
@@ -260,7 +261,7 @@ pTopData
  =
  	-- data TYPE = CTOR | ..
   	do	tok	<- pTok	K.Data
-		con	<- liftM vNameT $ pCon
+		con	<- pOfSpace NameType pCon
 		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
 
 		ctors	<- 	do	pTok K.Equals
@@ -273,7 +274,7 @@ pTopData
 pTopDataCtor :: Parser (Var, [DataField (Exp SP) Type])
 pTopDataCtor
  = 	-- CON ...
-	do	con	<- liftM vNameT pCon
+	do	con	<- pOfSpace NameType pCon
         	rest	<- pTopDataCtorRest con
                 return	rest
 
@@ -300,7 +301,7 @@ pDataField :: Parser (DataField (Exp SP) Type)
 pDataField
  =  	-- .VAR :: TYPE = EXP
  	do	pTok K.Dot
-		var	<- liftM vNameF pVar
+		var	<- pOfSpace NameField pVar
 		pTok K.HasType
 		t	<- pType_body
 		pTok K.Equals
@@ -313,7 +314,7 @@ pDataField
 
   <|>	-- VAR :: TYPE
 	(Parsec.try $ do
-  		var	<- liftM vNameF pVar
+  		var	<- pOfSpace NameField pVar
 	 	pTok K.HasType
 		t	<- pType_body
 
@@ -337,7 +338,7 @@ pDataField
 pTopClass :: Parser (Top SP)
 pTopClass
  =	do 	tok	<- pTok K.Class
-	 	con	<- pCon
+	 	con	<- pOfSpace NameClass pCon
 		cls	<- pTopClassMore (spTP tok) con
                 return	cls
   <?>   "pTopCLass"
@@ -347,13 +348,13 @@ pTopClassMore startPos con
  =	-- class CON :: KIND
 	do	pTok K.HasType
 		kind	<- pKind
-		return	$ PClass startPos (vNameW con) kind
+		return	$ PClass startPos con kind
 
    <|>	-- class CON VAR.. where { SIG ; .. }
 	do	vks	<- Parsec.many pVarKind
 		pTok K.Where
 		sigs	<- pCParen $ Parsec.sepEndBy1 pTopClass_sig pSemis
-		return	$ PClassDict startPos (vNameW con) vks [] sigs
+		return	$ PClassDict startPos con vks [] sigs
 
 
 -- parse a var with optional kind
@@ -388,7 +389,7 @@ pTopInstance :: Parser (Top SP)
 pTopInstance
  = 	-- instance CON TYPE .. where { BIND ; .. }
  	do	tok	<- pTok K.Instance
-		con	<- liftM vNameW $ pQualified pCon
+		con	<- pOfSpace NameClass $ pQualified pCon
 		ts	<- Parsec.many pType_body1
 		pTok K.Where
 		binds	<- pCParen $ Parsec.sepEndBy1 pStmt_bind pSemis
@@ -401,7 +402,7 @@ pTopProject :: Parser (Top SP)
 pTopProject
  =	-- project CON TYPE .....
 	do	tok	<- pTok K.Project
-		con	<- liftM vNameT $ pQualified pCon
+		con	<- pOfSpace NameType $ pQualified pCon
 		ts	<- Parsec.many pType_body1
                 rest	<- pTopProjectRest (spTP tok) con ts
                 return	rest
@@ -422,8 +423,12 @@ pTopProjectRest startPos con ts
 pTopProject_pun :: Parser (Stmt SP)
 pTopProject_pun
  = do	-- VAR
-	var	<- pVar
- 	return	$ SBindFun (spV var) (vNameF var)[] [ADefault (spV var) (XVar (spV var) var)]
+	var		<- pOfSpace NameValue pVar
+	let varField	= var { Var.nameSpace = NameField }
+
+ 	return	$ SBindFun (spV var) varField
+			[] 
+			[ADefault (spV var) (XVar (spV var) var)]
 
 
 
