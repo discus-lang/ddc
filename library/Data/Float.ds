@@ -88,9 +88,9 @@ instance Ord Float where
 	(<=)		= primFloat32_le
 	
 	compare x y
-	 | x < y	= LT
-	 | x > y	= GT
-	 | otherwise	= EQ
+	 | x < y	=  LT
+	 | x > y	=  GT
+	 \= EQ
 
 instance Num Float where
 	(+)		= primFloat32_add

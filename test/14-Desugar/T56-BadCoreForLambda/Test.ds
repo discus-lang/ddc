@@ -1,0 +1,5 @@
+
+minT2F :: [(a, Float)] -> (a, Float)
+minT2F list	
+	= minimumBy (\x y -> compare (snd x) (snd y)) list
+	
