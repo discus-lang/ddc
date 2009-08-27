@@ -163,10 +163,13 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	-- projections
 	S.PProjDict sp t ss
 	 -> do	ss'		<- mapM rewrite ss
+		let (ss_merged, errs)
+				= mergeBindings ss'
+		mapM_ addError errs
 	 	
 		t'		<- rewrite t
 		
-		returnJ		$ D.PProjDict sp t' ss'
+		returnJ		$ D.PProjDict sp t' ss_merged
 		
 
 	S.PStmt (S.SSig sp vs t)
