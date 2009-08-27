@@ -1,0 +1,17 @@
+
+-- Test defaulting of unbound type variables in Core.Clean.
+--	Unbound type vars with no constraints are defaulted to ()
+
+-- When y is instantiated, there is nothing constraining the variable
+--	'a' in y's type to be anything in particular. When this is converted
+--	to core the type var passed to y will be out of scope.
+
+y :: 	Tuple2 Int (a -> Int);
+y	= (5, \x -> 6);
+
+fun ()	= fst y;
+
+main ()
+ = do {
+ 	print	$ show (fun ()) % "\n";
+ };
