@@ -1,4 +1,10 @@
 
+-- | The renamer renames variables so all binding and bound occurances of a variable
+--	in the same scope have the same variable ids. This lets us perform substitution
+--	later in the compiler without having to worry about scope and variable capture.
+--
+--	This module defines the renamer monad and utils for renaming individual variables.
+--
 module Source.RenameM
 	( RenameS(..)
 	, RenameM, runRename
@@ -22,30 +28,25 @@ module Source.RenameM
 	, pushN
 	, popN
 	, local)
-
 where
 
------
-import Util
-import qualified Util.Data.Map	as Map
-import Util.Data.Map		(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
------
-import qualified Shared.Var	as Var
 import Shared.Var		(Var, VarBind, NameSpace(..), (=~=), Module(..))
 import Shared.VarPrim		(renamePrimVar)
 import Shared.Pretty
-
 import Shared.Error
 import Source.Error
+import Util
+import Util.Data.Map		(Map)
+import qualified Shared.Var	as Var
+import qualified Util.Data.Map	as Map
 
+import Data.Set			(Set)
+import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
 -----
 stage = "Source.RenameM"
+
 
 -- Rename Class ------------------------------------------------------------------------------------
 -- | things that can be renamed
@@ -71,31 +72,35 @@ instance Rename a => Rename (Maybe a) where
 type	RenameM 	= State RenameS
 
 data	RenameS 
-	= RenameS 
-	{ stateTrace		:: [String]
+	= RenameS
+	{ -- | Accumulation of tracing / debugging info.
+	  stateTrace		:: [String]
+
+	  -- | Whether to generate tracing / debugging info.
 	, stateDebug		:: Bool
 
-	  -- Source level renamer errors found so far.
+	  -- | Renamer errors found so far.
 	, stateErrors		:: [Error]
 
-	  -- Fresh variable generators
+	  -- | Fresh variable generators, one for each namespace.
 	, stateGen		:: Map NameSpace  VarBind			
 
-	  -- A stack of bound variables
+	  -- | A stack of bound variables
 	  --	Each level of the stack contains all the vars bound by the same construct, 
 	  --	eg, in (\x y z -> e), the vars {x, y, z} are all at the same level.
-	  --	It's an error for multiple vars at a binding level to have the same name.
+	  --	It's an error for multiple vars at the same binding level to have the same name.
 	  --
 	, stateStack		:: Map NameSpace  [Map String  Var]	
 
-	  -- A stack holding the current object var.
-	  --	Object vars are bound with ~ and referred to with _.
-	  --	eg 
-	  --		printThing ~thing = print (_field1 % _field2)
+	  -- | A stack holding the currently opened object.
+	  --	Objects are opened with ^ and their fields are referred to with _.
+	  --	eg: printThing ^thing = print (_field1 % _field2)
 	  --
 	, stateObjectVar	:: [Var]
 	}	
 
+
+-- | Initial renamer state.
 initRenameS
 	= RenameS
 	{ stateTrace		= []
@@ -112,7 +117,7 @@ initRenameS
 				, (NameField,	Var.XBind "fR"  0) 
 				, (NameClass,	Var.XBind "aR"  0) ] 
 
-	-- Each NameSpace starts with an empty toplevel.
+	-- Each NameSpace starts with an empty top level.
 	, stateStack		= Map.fromList
 				$ zip	
 				[ NameModule
@@ -128,26 +133,30 @@ initRenameS
 	, stateObjectVar 	= []
 	}
 
+
 -- | Add an error to the renamer state
 addError :: Error -> RenameM ()
 addError err
  	= modify $ \s -> s { stateErrors = stateErrors s ++ [err] }
 
+
 -- | Add a message to the trace in the renamer state.
 traceM	::  String -> RenameM ()
 traceM ss	= modify (\s -> s { stateTrace = (stateTrace s) ++ [ss] })
 		
--- trace ss	= whenM (gets stateDebug) $ traceM $ unlines ss
-				
+						
 -- | run a renamer computation.
 runRename :: RenameM a	-> a
 runRename comp		= evalState comp initRenameS 
 	
 	
--- | Push an object varaible context.
+-- Object Opening ---------------------------------------------------------------------------------
+
+-- | Push an object variable context.
 pushObjectVar :: Var	-> RenameM ()
 pushObjectVar	v
  	= modify (\s -> s { stateObjectVar = v : stateObjectVar s })
+
 	
 -- | Pop an object variable context.
 popObjectVar  :: RenameM Var
@@ -169,46 +178,54 @@ peekObjectVar
 	  -> 	return x
 
 
+-- Binding ----------------------------------------------------------------------------------------
+
 -- | Bind name
---	Take the namespace annotation on a var and bind it into that space.
---	Creates an error if it's already bound at this level.
+--	Bind this variable into the scope associated with its namespace annotation.
+--	Causes an error if the variable is already bound at this level.
+--
 bindZ :: Var -> RenameM Var
 bindZ	 v 	= bindN (Var.nameSpace v) v
 
+-- | Bind a variable into the value namespace.
 bindV		= bindN NameValue
 	
+-- | Bind a variable into a given namespace.
 bindN :: NameSpace -> Var -> RenameM Var
 bindN	 space var
- = do	-- Grab the current var stack.
+ = do	
+	-- grab the variable stack for the current namespace.
 	Just (spaceMap:ms)
 		<- liftM (Map.lookup space)
 		$  gets stateStack
 
-	-- See if this name is already bound at this level.
+	-- ff the variable is already bound at the current level then
+	--	we have a "Redefined variable" error.
 	(case Map.lookup (Var.name var) spaceMap of
-	 	Just boundVar	
-		 -> do	modify (\s -> s { 
-		 		stateErrors = stateErrors s ++ [ErrorRedefinedVar boundVar var]})
-
-	 	Nothing
-		 -> return ())
+	 	Just boundVar	-> addError $ ErrorRedefinedVar boundVar var
+	 	Nothing		-> return ())
 		
-	-- Var isn't bound yet, proceed.
-	var'		<- renameVarN space var
+	-- rename the variable to give it a new unique id.
+	varRenamed	<- renameVarN space var
 
-	let spaceMap'	= Map.insert (Var.name var) var' spaceMap
-	
-	modify (\s -> s 
-		{ stateStack	= Map.insert space 
+	-- insert the renamed variable into the variable stack.
+	let spaceMap'	= Map.insert (Var.name var) varRenamed spaceMap
+	modify (\s -> s { 
+		stateStack	= Map.insert space 
 					(spaceMap':ms) 
 					(stateStack s)})
-	return var'
+	
+	-- return the renamed variable.
+	return varRenamed
 
 
--- | Checks whether this name is already bound at this level
+-- | Checks whether a variable is already bound at this level (in the local scope)
+--	Uses the namespace annotation on the variable.
 isBound_local :: Var -> RenameM Bool
 isBound_local var
- = do	Just (spaceMap:ms)
+ = do	
+	-- grab the var map for the variabeles namespace.
+	Just (spaceMap:ms)
 		<- liftM (Map.lookup $ Var.nameSpace var)
 		$  gets stateStack
 
@@ -217,19 +234,21 @@ isBound_local var
 		_		-> return False
 
 
--- | If this is the name of a prim var then give it the appropriate VarId
+-- Renaming Individual Vars -----------------------------------------------------------------------
+
+-- | If this is the name of a primitive var then give it the appropriate VarId
 --	otherwise give it a fresh one. Also set the namespace.
 renameVarN ::	NameSpace -> Var -> RenameM Var
 renameVarN	space var
 
-	-- If we're trying to rename the var into a different namespace
+	-- if we're trying to rename the var into a different namespace
 	--	to the one it already has then something has gone wrong.
 	| Var.nameSpace var /= NameNothing
 	, Var.nameSpace var /= space
 	= panic stage 
-	$ "renameVarN: not renaming var " % var % " from space " % Var.nameSpace var
-	% " to space " % space % "\n"
-	% " var = " % show var % "\n"
+		$ "renameVarN: not renaming var " % var % " from space " % Var.nameSpace var
+		% " to space " % space % "\n"
+		% " var = " % show var % "\n"
 
 	| otherwise
 	= case renamePrimVar space var of
@@ -238,7 +257,7 @@ renameVarN	space var
 
 renameVarN' space var
  = do	-- grab the VarId generator for this space
- 	(Just spaceGen)	<- liftM (Map.lookup space)
+ 	Just spaceGen	<- liftM (Map.lookup space)
 			$  gets stateGen
 
 	-- rename the var and set its namespace
@@ -254,24 +273,30 @@ renameVarN' space var
 	return var'
 
 
--- | Add some (already renamed) variables to the current scope.
---	
+-- | Add some already renamed variables to the current scope
+--	for this namespace.
 addN ::	NameSpace -> [Var] -> RenameM ()
 addN	space vs
- = do	-- Sanity check.
-	--	Vars added directly to the namespace should have already been renamed.
-	let vs'	= map (\v -> case Var.nameSpace v of
-				NameNothing	-> panic stage $ "addN: var " % v % " is in NameNothing.\n"
-				_		-> v)
-		$ vs
+ = do	
+	-- sanity check: variables being added tothe namespace should have already been renamed.
+	let checkVar v 
+		= case Var.nameSpace v of
+			NameNothing	-> panic stage $ "addN: var " % v % " is in NameNothing.\n"
+			_		-> v
+					
+	let vsChecked	= map checkVar vs
+				
 
+	-- grab the var map for the current namespace.
  	(Just (spaceMap:ms))
 		<- liftM (Map.lookup space)
 		$  gets stateStack
-		
-	let spaceMap'	= Map.union spaceMap 
-			$ Map.fromList 
-			$ zip (map Var.name vs') vs'
+
+	-- add he renamed variables to the current scope.
+	let spaceMap'	
+		= Map.union spaceMap 
+		$ Map.fromList 
+		$ [ (Var.name v, v) | v <- vsChecked ]
 	
 	modify $ \s -> s 
 		{ stateStack	= Map.insert space
@@ -280,6 +305,8 @@ addN	space vs
 					
 	return ()
 
+
+-- Variable Lookup --------------------------------------------------------------------------------
 
 -- | Lookup a variable name from the current scope. If it's there then
 --	rename this var after it, if not then generate an error.
@@ -300,17 +327,14 @@ linkBoundVar
 linkBoundVar enclosing space var
  = do	
  	-- grab the context stack for the appropriate namespace
-	stack		<- gets stateStack
-	let spaceStack	= case Map.lookup space stack of
-				Just s	-> s
-				Nothing	-> panic stage 
-					$ "linkBoundVar: no space stack for " % space
-					% "    var: " % var 		% "\n"
-					% "   info: " % Var.info var	% "\n"
+	Just spaceStack
+		<- liftM (Map.lookup space)
+		$  gets stateStack
 
-	-- try and find the binding occurance
+	-- try and find the binding occurance for this variable.
 	let var_prim	= fromMaybe var (renamePrimVar space var)				
 	let mBindingVar	= lookupBindingVar enclosing (Var.name var_prim) spaceStack
+
 	case mBindingVar of
 
 	 -- found it
@@ -330,13 +354,12 @@ linkBoundVar enclosing space var
 	  -> return $ Nothing
 
 
--- | lookup the binding occurance of a variable with this name in the current
---	scope or any enclosing scopes.
+-- | Try to find the binding occurance of this variable in the current scope.
 lookupBindingVar 
-	:: Bool 		-- whether to look in enclosing scopes
-	-> String 		-- the name of the variable to look for
-	-> [Map String Var] 	-- stack of renamer contexts
-	-> Maybe Var		-- the binding occurance of a variable wih the given name
+	:: Bool 		-- ^ whether to look in enclosing scopes
+	-> String 		-- ^ the name of the variable to look for
+	-> [Map String Var] 	-- ^ stack of renamer contexts
+	-> Maybe Var		-- ^ the binding occurance 
 
 lookupBindingVar enclosing s []		
 	= Nothing
@@ -355,9 +378,6 @@ lookupBindingVar enclosing s (m:ms)
 	= Nothing
 
 
-	
--- Utils -------------------------------------------------------------------------------------------
-
 -- | Try and find the binding occurance of a varwith the same name as this one
 --	If it can't be found then add an error to the renamer state and return the original var.
 
@@ -367,13 +387,10 @@ lookupN	 space var
 
 	case mVar of
 	 Nothing	
-	  -> do modify $ \s -> s { 
-	  		stateErrors 	= (stateErrors s) 
-					++ [ErrorUndefinedVar var { Var.nameSpace = space }] }
+	  -> do	addError $ ErrorUndefinedVar var { Var.nameSpace = space }
 		return var
 		
-	 Just (_, var')
-	  -> 	return var'
+	 Just (_, var')	-> return var'
 
 
 -- Lazy bind ---------------------------------------------------------------------------------------
@@ -387,6 +404,7 @@ lbindZ v	= lbindN' True (Var.nameSpace v) v
 
 lbindN space v	= lbindN' True space v
 
+
 -- | Lazy bind, shadowing any variable with the same name that is defined in an enclosing scope.
 lbindZ_shadow :: Var -> RenameM Var
 lbindZ_shadow v	= lbindN' False (Var.nameSpace v) v
@@ -394,14 +412,15 @@ lbindZ_shadow v	= lbindN' False (Var.nameSpace v) v
 lbindN_shadow :: NameSpace -> Var -> RenameM Var
 lbindN_shadow space var = lbindN' False space var
 
+
 -- | Lazy bind in this namespace
 lbindN' withEnclosing space var
  = do 	mVar	<- linkBoundVar withEnclosing space var
 	
 	let result
 
-		-- we don't do real namespacing yet, so we if we see the same var
-		--	defined in different modules we'll treat is as an error.
+		-- we don't do module local namespacing yet, so we if we see the same var
+		--	defined in a different modules we'll treat is as an error.
 		| Just (bindingVar, var')	<- mVar
 		, Var.nameModule var /= ModuleNil
 		, Var.nameModule var /= Var.nameModule var'
@@ -420,6 +439,7 @@ lbindN' withEnclosing space var
 		= bindN space var
 		
 	result
+
 
 -- | Lazy bind in the value namespace
 lbindV :: Var -> RenameM Var

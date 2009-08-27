@@ -1,5 +1,8 @@
 
--- | Apply scoping rules and add VarBinds to every variable in the program.
+-- | The renamer renames variables so all binding and bound occurances of a variable
+--	in the same scope have the same variable ids. This lets us perform substitution
+--	later in the compiler without having to worry about scope and variable capture.
+--
 module Source.Rename
 	( Rename
 	, renameTrees )
@@ -31,11 +34,11 @@ import Data.Set			(Set)
 import qualified Debug.Trace
 import Util
 
-
 -----
 stage		= "Source.Rename"
 -- debug		= True
 -- trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
+
 
 -- Tree --------------------------------------------------------------------------------------------
 renameTrees
@@ -190,6 +193,7 @@ instance Rename (Top SourcePos) where
 	
 		ss'	<- rename ssF
 		return	$ PProjDict sp t' ss'
+
 
 -- Export ------------------------------------------------------------------------------------------
 instance Rename (Export SourcePos) where
@@ -830,6 +834,7 @@ instance Rename Type where
 	TElaborate ee t
 	 -> do	t'	<- rename t
 	 	return	$ TElaborate ee t'
+
 		
 -- TyCon -------------------------------------------------------------------------------------------
 instance Rename TyCon where
@@ -841,6 +846,7 @@ instance Rename TyCon where
 	TyConData { tyConName }
 	 -> do	v	<- lookupN NameType tyConName
 	 	return	$ tc { tyConName = v }
+
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance Rename Fetter where
