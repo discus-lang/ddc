@@ -1,0 +1,141 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base
+import Data.Bool
+
+import Class.Copy
+import Class.Eq
+import Class.Num
+import Class.Ord
+import Class.Show
+import Class.Update
+import Data.String
+
+
+foreign import "_boxInt64"
+ boxInt64	:: Int64# -> Int64
+		:$ Int64# -> Obj
+
+foreign import "_unboxInt64"
+ unboxInt64	:: Int64{read} -> Int64#
+		:$ Obj -> Int64#
+
+-- math
+foreign import "primInt64_neg"
+ primInt64_neg  :: Int64{read} -> Int64
+
+foreign import "primInt64_add"
+ primInt64_add	:: Int64{read} -> Int64{read} -> Int64
+
+foreign import "primInt64_sub"
+ primInt64_sub	:: Int64{read} -> Int64{read} -> Int64
+
+foreign import "primInt64_mul"
+ primInt64_mul	:: Int64{read} -> Int64{read} -> Int64
+
+foreign import "primInt64_div"
+ primInt64_div	:: Int64{read} -> Int64{read} -> Int64
+
+foreign import "primInt64_mod"
+ primInt64_mod	:: Int64{read} -> Int64{read} -> Int64
+
+-- comparisons
+foreign import "primInt64_eq"
+ primInt64_eq	:: Int64{read} -> Int64{read} -> Bool
+
+foreign import "primInt64_neq"
+ primInt64_neq	:: Int64{read} -> Int64{read} -> Bool
+
+foreign import "primInt64_gt"
+ primInt64_gt	:: Int64{read} -> Int64{read} -> Bool
+
+foreign import "primInt64_lt"
+ primInt64_lt	:: Int64{read} -> Int64{read} -> Bool
+
+foreign import "primInt64_ge"
+ primInt64_ge	:: Int64{read} -> Int64{read} -> Bool
+
+foreign import "primInt64_le"
+ primInt64_le	:: Int64{read} -> Int64{read} -> Bool
+
+-- update
+foreign import "primInt64_update"
+ primInt64_update
+	:: Int64{write} -> Int64{read} -> ()
+
+instance Show Int64 where
+	show x = string_Int64 x
+
+instance Copy Int64 where
+	copy x		= boxInt64 (unboxInt64 x)
+
+instance Updatable Int64 where
+	(:=)		= primInt64_update
+
+instance Eq Int64 where
+	(==)		= primInt64_eq
+	(/=)		= primInt64_neq
+
+instance Ord Int64 where
+	(>)		= primInt64_gt
+	(<)		= primInt64_lt
+	(>=)		= primInt64_ge
+	(<=)		= primInt64_le
+
+	compare x y
+	 | x == y	=  EQ
+	 | x <= y	=  LT
+			\= GT
+
+instance Num Int64 where
+	(+)		= primInt64_add
+	(-)		= primInt64_sub
+	(*)		= primInt64_mul
+	(/)		= primInt64_div
+	mod		= primInt64_mod
+	negate		= primInt64_neg
+
+instance Accum Int64 where
+	(+=) a b	= primInt64_update a (primInt64_add a b)
+
+
+-----
+
+{-=(<>) :: Int64 -> (Int64 -> Int64) -> ()
+(<>) x f
+ = do	x'	= f x
+	x	:= x'
+=-}
+
+inc64 x	= x + 1i64
+
+project Int64 where
+
+	min :: Int64 -> Int64 -> Int64
+	min x y
+	 = if x < y	then x
+			else y
+
+	max :: Int64 -> Int64 -> Int64
+	max x y
+	 = if x > y	then x
+			else y
+
+
+string_Int64 :: Int64 -> String
+string_Int64 i
+ = do	maxLen	= 40
+	maxLenU	= unboxInt32 maxLen
+	iU	= unboxInt64 i
+
+	fs	= new&{FlatString} maxLen
+	strU	= fs.danger_string
+
+	-- This is no good for LP64 machines. Really need to use
+	-- PRId64 from <stdint.h).
+	show_danger_snprintf strU maxLenU "%lld"# iU
+	fs.setLengthU (stringU_length strU)
+
+	SChunk fs
+
+
