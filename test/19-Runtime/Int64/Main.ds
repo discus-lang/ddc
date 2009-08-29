@@ -1,0 +1,19 @@
+{-      # OPTIONS -no-implicit-prelude # -}
+
+import System.Console
+import Data.Int64
+
+foreign import "1"
+	unboxedOneInt64 :: Int64#
+
+main () = do
+	a = boxInt64 unboxedOneInt64
+	println $ "a = Int64 1  => " % show a
+	b = a + 1i64
+	println $ "b = a + 1    => " % show b
+	c = b + b
+	println $ "c = b + b    => " % show c
+	d = b + c
+	println $ "d = b + c    => " % show d
+	e = d * c
+	println $ "e = d * c    => " % show e

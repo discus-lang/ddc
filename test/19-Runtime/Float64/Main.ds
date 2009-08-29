@@ -1,0 +1,14 @@
+{-      # OPTIONS -no-implicit-prelude # -}
+
+import System.Console
+import Data.Float64
+
+foreign import "1.0"
+	unboxedOneFloat64 :: Float64#
+
+main () = do
+	a = boxFloat64 unboxedOneFloat64
+	println $ "a = Float64 1.0      => " % show a
+	b = a + 2.0f64
+	println $ "a + Float64 2.0      => " % show b
+	println $ "Sqrt (Float64 10.0)  => " % show (sqrt64 10.0f64)
