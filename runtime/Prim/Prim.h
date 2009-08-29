@@ -48,7 +48,26 @@ Obj*	primInt32_le			(Obj* a, Obj* b);
 Obj* 	primInt32_update		(Obj* dest_, Obj* src_);
 
 
-// -- Float
+// -- Int64
+Obj*	primInt64_neg			(Obj* x1);
+
+Obj*	primInt64_add			(Obj* x1, Obj* x2);
+Obj*	primInt64_sub			(Obj* x1, Obj* x2);
+Obj*	primInt64_mul			(Obj* x1, Obj* x2);
+Obj*	primInt64_div			(Obj* x1, Obj* x2);
+Obj*	primInt64_mod			(Obj* x1, Obj* x2);
+
+Obj*	primInt64_eq			(Obj* a, Obj* b);
+Obj*	primInt64_neq			(Obj* a, Obj* b);
+Obj*	primInt64_gt			(Obj* a, Obj* b);
+Obj*	primInt64_ge			(Obj* a, Obj* b);
+Obj*	primInt64_lt			(Obj* a, Obj* b);
+Obj*	primInt64_le			(Obj* a, Obj* b);	
+
+Obj* 	primInt64_update		(Obj* dest_, Obj* src_);
+
+
+// -- Float32
 Obj*	primFloat32_neg			(Obj* x1);
 
 Obj*	primFloat32_add			(Obj* x1, Obj* x2);
@@ -68,6 +87,27 @@ Obj*	primFloat32_toFloat 		(Obj* x1);
 
 Obj*	primFloat32_truncate		(Obj* x1);
 Obj*	primFloat32_update 		(Obj* dest_, Obj* src_);
+
+// -- Float64
+Obj*	primFloat64_neg			(Obj* x1);
+
+Obj*	primFloat64_add			(Obj* x1, Obj* x2);
+Obj*	primFloat64_sub			(Obj* x1, Obj* x2);
+Obj*	primFloat64_mul			(Obj* x1, Obj* x2);
+Obj*	primFloat64_div			(Obj* x1, Obj* x2);
+Obj*	primFloat64_mod			(Obj* x1, Obj* x2);
+
+Obj*	primFloat64_eq			(Obj* x1, Obj* x2);
+Obj*	primFloat64_neq			(Obj* x1, Obj* x2);
+Obj*	primFloat64_gt			(Obj* x1, Obj* x2);
+Obj*	primFloat64_ge			(Obj* x1, Obj* x2);
+Obj*	primFloat64_lt			(Obj* x1, Obj* x2);
+Obj*	primFloat64_le			(Obj* x1, Obj* x2);
+
+Obj*	primFloat64_toFloat 		(Obj* x1);
+
+Obj*	primFloat64_truncate		(Obj* x1);
+Obj*	primFloat64_update 		(Obj* dest_, Obj* src_);
 
 // -- Suspend
 Obj*	primSuspend0			(void* f);

@@ -58,6 +58,8 @@ static inline UInt _unboxEnum(Obj* obj)
 //
 MAKE_BOXFUN (Char32,	sizeof(Word32));
 MAKE_BOXFUN (Word8,	sizeof(Word32));
+MAKE_BOXFUN (Int64,	sizeof(Int64));
+MAKE_BOXFUN (Float64,	sizeof(Float64));
 
 // Int32
 static inline
@@ -138,7 +140,9 @@ Obj*	primProjFieldR (Obj* obj, Int32 ix)
 
 MAKE_GETFUN (Char32);
 MAKE_GETFUN (Int32);
+MAKE_GETFUN (Int64);
 MAKE_GETFUN (Float32);
+MAKE_GETFUN (Float64);
 
 
 static inline
