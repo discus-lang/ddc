@@ -1,4 +1,7 @@
 
+#include <stdint.h>
+#include <inttypes.h>
+
 #include "Prim.h"
 
 #include "../Collect.h"
@@ -72,4 +75,11 @@ Obj* primInt64_update	(Obj* dest_, Obj* src_)
 	_LEAVE(2);
 	return _primUnit;
 }	
+
+void	primInt64_to_string	(Int64 value, char * str, int slen)
+{
+	// Need to do it this way to correctly print an Int64, because
+	// we need "%lld" on 32 bit systems and "%ld" on 64 bit systems.
+	snprintf (str, slen, "%" PRId64, value);
+}
 

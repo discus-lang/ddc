@@ -121,6 +121,8 @@ project Int64 where
 	 = if x > y	then x
 			else y
 
+foreign import "primInt64_to_string"
+ primInt64_to_string :: Int64# -> String# -> Int32# -> ()
 
 string_Int64 :: Int64 -> String
 string_Int64 i
@@ -131,9 +133,8 @@ string_Int64 i
 	fs	= new&{FlatString} maxLen
 	strU	= fs.danger_string
 
-	-- This is no good for LP64 machines. Really need to use
-	-- PRId64 from <stdint.h).
-	show_danger_snprintf strU maxLenU "%lld"# iU
+	-- Safe and correct for 32 and 64 bit systems.
+	primInt64_to_string iU strU maxLenU
 	fs.setLengthU (stringU_length strU)
 
 	SChunk fs

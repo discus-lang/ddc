@@ -66,6 +66,7 @@ Obj*	primInt64_le			(Obj* a, Obj* b);
 
 Obj* 	primInt64_update		(Obj* dest_, Obj* src_);
 
+void	primInt64_to_string		(Int64 value, char * str, int slen);
 
 // -- Float32
 Obj*	primFloat32_neg			(Obj* x1);
