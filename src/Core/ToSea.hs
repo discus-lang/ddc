@@ -25,6 +25,7 @@ import Shared.Error
 import Shared.Base
 import Shared.Pretty
 import Shared.Literal
+import Shared.VarUtil			(prettyPos)
 import qualified Shared.VarBind		as Var
 import qualified Shared.Unique		as Unique
 import qualified Shared.Var		as Var
@@ -276,8 +277,11 @@ toSeaX		xx
 	   
 	C.XPrim (C.MCurry superA) xs
 	 -> do	let (C.XVar v _) : args	= stripValues xs
-		args'	<- mapM toSeaX args
-		return	$ E.XCurry v superA args'
+		if any isUnboxed args
+                 then panic stage $ "Partial application of function to unboxed args at " % prettyPos v
+                 else
+		  do	args'	<- mapM toSeaX args
+			return	$ E.XCurry v superA args'
 
 	C.XPrim (C.MFun) xs
 	 -> do	let (C.XVar v _) : args	= stripValues xs
@@ -348,8 +352,14 @@ toSeaX		xx
 		$ "toSeaX: cannot convert expression to Sea IR.\n" 
 		% "-----\n"
 		% xx					% "\n"
-	   
 
+
+isUnboxed :: C.Exp -> Bool
+isUnboxed x
+ = case x of
+	-- This may not be complete.
+	C.XLit (LiteralFmt _ fmt) -> dataFormatIsUnboxed fmt
+	_ -> False
 
 -- Stmt --------------------------------------------------------------------------------------------
 -- | Convert a statement into Sea
