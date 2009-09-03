@@ -54,16 +54,19 @@ pModule =
 -- | Parse a top level binding, only accepting a specific ordering.
 pOrderedTop :: Parser [Top SP]
 pOrderedTop
- = do	exp <- Parsec.sepEndBy pTopExport pSemis
- 	imp <- Parsec.sepEndBy pTopImport pSemis
- 	tops <- Parsec.sepEndBy pTop pSemis
-        return $ (exp ++ imp) ++ tops
+ = do	header	<- Parsec.sepEndBy pTopHeader pSemis
+	tops <- Parsec.sepEndBy pTop pSemis
+	return	$ header ++ tops
+
+pTopHeader :: Parser (Top SP)
+ =	pTopImport
+  <|>	pTopExport
+  <|>	pTopPragma
 
 pTop :: Parser (Top SP)
 pTop
  =
-	pTopPragma
-  <|>	pTopForeignImport
+	pTopForeignImport
   <|>	pTopInfix
   <|>	pTopType
   <|>	pTopData
