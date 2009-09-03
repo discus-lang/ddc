@@ -47,32 +47,37 @@ parseString parser str
 -- Module ------------------------------------------------------------------------------------------
 -- | Parse a whole module.
 pModule :: Parser [Top SP]
-pModule
- = do	tops	<- pCParen $ Parsec.sepEndBy1 pTop pSemis
+pModule =
+ do	tops	<- pCParen pOrderedTop
 	return	tops
 
--- | Parse a top level binding.
+-- | Parse a top level binding, only accepting a specific ordering.
+pOrderedTop :: Parser [Top SP]
+pOrderedTop
+ = do	exp <- Parsec.sepEndBy pTopExport pSemis
+ 	imp <- Parsec.sepEndBy pTopImport pSemis
+ 	tops <- Parsec.sepEndBy pTop pSemis
+        return $ (exp ++ imp) ++ tops
+
 pTop :: Parser (Top SP)
 pTop
  =
-        pTopPragma
-   <|>	pTopImport
-   <|>  pTopExport
-   <|> 	pTopForeignImport
-   <|>	pTopInfix
-   <|>  pTopType
-   <|>	pTopData
-   <|>	pTopEffect
-   <|>	pTopRegion
-   <|>	pTopClass
-   <|>  pTopInstance
-   <|>  pTopProject
+	pTopPragma
+  <|>	pTopForeignImport
+  <|>	pTopInfix
+  <|>	pTopType
+  <|>	pTopData
+  <|>	pTopEffect
+  <|>	pTopRegion
+  <|>	pTopClass
+  <|>	pTopInstance
+  <|>	pTopProject
 
-   <|>	-- SIG/BIND
+  <|>	-- SIG/BIND
 	do	stmt	<- pStmt_sigBind
 		return	$ PStmt stmt
 
-   <?> "pTop"
+  <?>	"pTop"
 
 
 -- Pragma ------------------------------------------------------------------------------------------
