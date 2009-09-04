@@ -1,5 +1,5 @@
 ddc: PANIC in Core.ToSea
-        Partial application of function to unboxed args at ./test/01-Error/60-ToSea/T1-CurryUnboxed/Test.ds:3:18
+        Partial application of function to unboxed args at ./test/01-Error/60-ToSea/T1-CurryUnboxed/Main.ds:3:18
         Please report this bug to the maintainers at:
             http://trac.haskell.org/ddc
             or by emailing disciple-cafe@googlegroups.com

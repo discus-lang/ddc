@@ -1,7 +1,7 @@
 
 main ()
  = do	f	= fun 2#
-	putStr	$ show $ boxInt32 (f 3#)
+	println	$ show $ boxInt32 (f 3#)
 
 fun :: Int32# -> Int32# -> Int32#
 fun x y = x + y
