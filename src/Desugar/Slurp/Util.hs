@@ -173,7 +173,7 @@ newVarN space	= newVarNS space ""
 newVarNS ::	NameSpace ->	String -> CSlurpM Var
 newVarNS	space		str	
  = do	gen		<- gets stateGen
- 	let spaceGen	= fromMaybe 	(panic stage $ "newVarNS: no space gen for " % space % "\n")
+ 	let spaceGen	= fromMaybe 	(panic stage $ "newVarNS: no space gen for " % show space % "\n")
 					(Map.lookup space gen)
 
 	let postfix	= if str == []

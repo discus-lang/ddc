@@ -153,20 +153,20 @@ instance Pretty Error PMode where
  ppr err@(ErrorUndefinedVar{})
 	= prettyPos (eUndefined err)								% "\n"
 	% "     Undefined " 
-		% (spaceName $ Var.nameSpace (eUndefined err))
+		% (shortNameOfSpace $ Var.nameSpace (eUndefined err))
 		% " variable '" % eUndefined err % "'.\n"
 
 
  ppr err@(ErrorShadowVar{})
 	= prettyPos (eShadowVar err)								% "\n"
 	% "     Shadowed TREC variable '" % eShadowVar err  
-	% "' in namespace " 		% (spaceName $ Var.nameSpace (eShadowVar err))		% ".\n"
+	% "' in namespace " 		% (shortNameOfSpace $ Var.nameSpace (eShadowVar err))	% ".\n"
 
 	
  ppr err@(ErrorRedefinedVar{})
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined "
-		% (spaceName $ Var.nameSpace (eFirstDefined err))
+		% (shortNameOfSpace $ Var.nameSpace (eFirstDefined err))
 		% " variable '"  % eRedefined err % "'\n"
 	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
 

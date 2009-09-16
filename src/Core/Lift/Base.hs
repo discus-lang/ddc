@@ -82,7 +82,7 @@ getType		v
 			
 		return t
 	
-	_ -> panic stage $ "getType: no type for " % v % " space = " % Var.nameSpace v
+	_ -> panic stage $ "getType: no type for " % v % " space = " % show (Var.nameSpace v)
 	
 
 getKind ::	Var -> LiftM Kind

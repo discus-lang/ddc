@@ -230,7 +230,7 @@ instVar var
 instVar' var space mVarId
   	| Nothing	<- mVarId
 	= freakout stage
-	  	("instVar: can't instantiate var in space " % space
+	  	("instVar: can't instantiate var in space " % show space
 	  	% " var = " % show var)
 		$ return Nothing
 		

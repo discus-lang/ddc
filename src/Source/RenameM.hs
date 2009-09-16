@@ -246,8 +246,8 @@ renameVarN	space var
 	| Var.nameSpace var /= NameNothing
 	, Var.nameSpace var /= space
 	= panic stage 
-		$ "renameVarN: not renaming var " % var % " from space " % Var.nameSpace var
-		% " to space " % space % "\n"
+		$ "renameVarN: not renaming var " % var % " from space " % show (Var.nameSpace var)
+		% " to space " % show space % "\n"
 		% " var = " % show var % "\n"
 
 	| otherwise
@@ -464,7 +464,7 @@ popN	space
 		= Map.adjust 
 			(\ss -> case ss of 
 				[] 	-> panic stage  
-					$ "popN: namespace " % space % " is empty, cannot pop."
+					$ "popN: namespace " % show space % " is empty, cannot pop."
 				(m:ms)	-> ms)
 			space
 			$ stateStack s }

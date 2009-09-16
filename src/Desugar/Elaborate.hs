@@ -19,6 +19,8 @@ import qualified Shared.VarBind	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
 
+import DDC.Base.NameSpace
+
 import Util
 import Data.Set			(Set)
 import Control.Monad.State
@@ -150,7 +152,7 @@ newVarN :: NameSpace -> ElabM Var
 newVarN space
  = do	varId@(Var.XBind p i)	<- gets stateVarGen
  
-	let name	= Var.namePrefix space ++ p ++ show i
+	let name	= charPrefixOfSpace space : p ++ show i
 	let var		= (Var.new name) 
 			{ Var.bind 	= varId
 			, Var.nameSpace = space }

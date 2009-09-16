@@ -23,7 +23,7 @@ import Shared.Base
 import Shared.Error
 import Shared.Pretty
 
-import qualified DDC.Base.NameSpace	as Var
+import DDC.Base.NameSpace		as Var
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)
@@ -48,7 +48,7 @@ newVarNS space str
  = do	bind@(Var.XBind unique n) <- gets stateVarGen
 	modify $ \s -> s { stateVarGen	= Var.XBind unique (n+1) }
 
-	let var		= (Var.new (Var.namePrefix space ++ pprStrPlain bind ++ str))
+	let var		= (Var.new (charPrefixOfSpace space : pprStrPlain bind ++ str))
 			{  Var.bind		= bind
 			,  Var.nameSpace	= space }
 	return var

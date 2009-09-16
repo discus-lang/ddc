@@ -3,11 +3,9 @@
 -- | Variable Namespaces
 module DDC.Base.NameSpace
 	( NameSpace(..)
-	, spaceName 
-	, namePrefix )
+	, shortNameOfSpace
+	, charPrefixOfSpace )
 where
-
-import Shared.Pretty
 
 -- | Possible variable namespaces.
 data NameSpace
@@ -23,16 +21,12 @@ data NameSpace
 	| NameLabel		-- ^ Sea level labels.
 	deriving (Show, Eq,  Ord)
 
-instance Pretty NameSpace PMode where
- ppr x		= ppr $ show x
- 
 
 -- | Return an english name for this namespace.
-spaceName :: NameSpace -> String
-spaceName space
+shortNameOfSpace :: NameSpace -> String
+shortNameOfSpace space
   = case space of
  	NameNothing	-> "nothing"
-
 	NameValue	-> "value"
 	NameType	-> "type"
 	NameRegion	-> "region"
@@ -46,16 +40,16 @@ spaceName space
 
 -- | Get a unique charater to use for this namespace.
 --	Used as a prefix for variable names in this namespace.
-namePrefix :: NameSpace -> String
-namePrefix space
+charPrefixOfSpace :: NameSpace -> Char
+charPrefixOfSpace space
  = case space of
- 	NameNothing	-> "z"
-	NameValue	-> "x"
-	NameType	-> "t"
-	NameRegion	-> "r"
-	NameEffect	-> "e"
-	NameClosure	-> "c"
-	NameClass	-> "w"
-	NameModule	-> "m"
-	NameField	-> "f"
-	NameLabel	-> "l"
+ 	NameNothing	-> 'z'
+	NameValue	-> 'x'
+	NameType	-> 't'
+	NameRegion	-> 'r'
+	NameEffect	-> 'e'
+	NameClosure	-> 'c'
+	NameClass	-> 'w'
+	NameModule	-> 'm'
+	NameField	-> 'f'
+	NameLabel	-> 'l'

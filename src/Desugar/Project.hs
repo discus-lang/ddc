@@ -33,7 +33,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import qualified Shared.VarUtil	as Var
 
-import qualified DDC.Base.NameSpace as Var
+import DDC.Base.NameSpace
 
 import Util
 import Data.Set			(Set)
@@ -63,7 +63,7 @@ newVarN	space
 	let varBind'	= Var.incVarBind varBind
 	modify $ \s -> s { stateVarGen = varBind' }
 
-	let var		= (Var.new $ (Var.namePrefix space ++ pprStrPlain varBind))
+	let var		= (Var.new $ (charPrefixOfSpace space : pprStrPlain varBind))
 			{ Var.bind	= varBind
 			, Var.nameSpace	= space }
 	return var
