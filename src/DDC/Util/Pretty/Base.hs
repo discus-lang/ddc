@@ -13,12 +13,10 @@ where
 class Pretty a mode | a -> mode where
  	ppr	:: a -> PrettyM mode
 
-
 -- | Holds a function that can produce some pretty things depending on 
 --	what display mode is asked for.
 data PrettyM mode
 	= PrettyM (mode -> PrettyPrim)
-
 
 -- | Pretty print myself.
 instance Pretty (PrettyM m) m where
