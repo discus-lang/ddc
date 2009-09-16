@@ -165,7 +165,8 @@ compileFile_parse
 -}
 
 	-- Parse the source file.
-	(sParsed, pragmas)	<- SS.parse pathSource sSource
+	(sParsed, pragmas)	
+			<- {-# SCC "Main.parsed" #-} SS.parse pathSource sSource
 
 	when ?verbose
 	 $ do	out	$ "  * Pragmas\n"
@@ -195,8 +196,9 @@ compileFile_parse
 	
 	-- Rename variables and add uniqueBinds.
 	((_, sRenamed) : modHeaderRenamedTs)
-			<- SS.rename
-				$ (moduleName, sParsed) : Map.toList importsExp
+			<- {-# SCC "Main.renamed" #-}
+				SS.rename
+					$ (moduleName, sParsed) : Map.toList importsExp
 	
 	let hRenamed	= concat 
 			$ [tree	| (mod, tree) <- modHeaderRenamedTs ]
@@ -234,7 +236,8 @@ compileFile_parse
 
 	-- Desugar the source language
 	(hDesugared, sDesugared)
-			<- SS.desugar
+			<- {-# SCC "Main.desugared" #-}
+			   SS.desugar
 				"SD"
 				kindTable
 				hRenamed

@@ -32,7 +32,9 @@ import Type.Location
 import Type.Pretty
 import Type.Util
 import Type.Plate.Collect
+import Type.Plate.DeepSeq
 import Type.Exp
+
 
 import Shared.Error
 import qualified Shared.Var	as Var
@@ -40,6 +42,7 @@ import qualified Shared.VarBind	as Var
 
 import Util
 import Util.Graph.Deps
+import Util.Control.DeepSeq
 
 import qualified Util.Data.Map	as Map
 import Util.Data.Map		(Map)
@@ -214,7 +217,7 @@ solveCs	(c:cs)
 	
 	CEqs src ts
 	 -> do	trace	$ "### CEqs " % ts % "\n"
-	 	feedConstraint c
+ 	 	feedConstraint c
 		solveNext cs
 
 	CClass src v ts

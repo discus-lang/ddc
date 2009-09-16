@@ -8,7 +8,7 @@ where
 
 import Type.Exp
 import Type.Location
-
+import Type.Plate.DeepSeq
 import Data.Map			(Map)
 
 
