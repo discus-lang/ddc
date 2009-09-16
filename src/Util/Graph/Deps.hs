@@ -133,8 +133,8 @@ graphSCC'
 	| otherwise
 	= let	out 		= fromMaybe Set.empty (Map.lookup x graph)
 		visited'	= Set.insert x visited
-	  in	concat	$ map (\o -> graphSCC' graph visited' (o : path) o) 
-	  		$ Set.toList out
+	  in	concatMap (\o -> graphSCC' graph visited' (o : path) o) 
+	  		  $ Set.toList out
 
 
 -- | Prune a graph to just the elements reachable from this node

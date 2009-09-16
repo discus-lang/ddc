@@ -48,7 +48,7 @@ instance Arbitrary (BackGraph Int) where
 
 	let makeNode k 	= do
 		bs	<- replicateM n (elements keys)
-		return	$ (k, BackNode (nub bs \\ [k]))
+		return	(k, BackNode (nub bs \\ [k]))
 
 	nodes		<- mapM makeNode keys
 	return	$ BackGraph $ Map.fromList nodes

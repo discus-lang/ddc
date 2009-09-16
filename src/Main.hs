@@ -39,7 +39,7 @@ main
 
 -- | Run all our QuickCheck tests.
 runTests :: IO ()
- = do	checkTests test_Util
+ =	checkTests test_Util
 
 
 -- | Run the compiler proper.
@@ -48,7 +48,7 @@ ddc argStrs
  = do
 	-- check args
 	let args	= Arg.parse argStrs
-	let verbose	= or $ map (== Arg.Verbose) args
+	let verbose	= any (== Arg.Verbose) args
 
 	-- print banner if requested
 	when verbose
@@ -56,12 +56,12 @@ ddc argStrs
 
 	-- no args, print help
 	when (args == []
-	   || (not $ null $ filter (=@= Arg.Help{}) args))
+	   || not (null $ filter (=@= Arg.Help{}) args))
 	 $ do	putStr (Arg.helpString args)
 		System.exitWith System.ExitSuccess
 
 	-- bad args, bail out
-	when (or $ map (=@= Arg.Error{}) args)
+	when (any (=@= Arg.Error{}) args)
 	 $ do
 		let eArg	= head $ filter (=@= Arg.Error{}) args
 		let eString 	= case eArg of { Arg.Error x -> x; }
@@ -92,17 +92,16 @@ ddc argStrs
 		, setupRecursive	= Nothing }
 		
 	let result
-		| symbols	<- (nub $ filter Var.isSymbol 
-					$ concat 
-					$ map fileNameOfPath
-					$ compileFiles ++ makeFiles) \\ ['.', '/']
+		| symbols	<- nub  ( filter Var.isSymbol 
+					$ concatMap fileNameOfPath
+					$ compileFiles ++ makeFiles) \\ "./"
 		, Just sym	<- takeHead symbols
 		= exitWithUserError args [ErrorSymbolInFileName sym]
 
 		-- don't try to plain compile and make at the same time
 		| not $ isNil compileFiles
 		, not $ isNil makeFiles
-		= do	putStr $ "ddc error: can't specify both -c and -make\n"
+		= do	putStr "ddc error: can't specify both -c and -make\n"
 			System.exitFailure
 
 		-- do a plain compile
@@ -119,7 +118,7 @@ ddc argStrs
 		
 		-- no input files, bail out
 		| otherwise
-		= do	putStr ("ddc error: no input files\n")
+		= do	putStr "ddc error: no input files\n"
 			System.exitFailure
 		
 	result
@@ -154,7 +153,7 @@ ddcCompile verbose setup files
 			= filter scrapeNeedsRebuild 
 			$ Map.elems graph_noRoots
 		
-	when (not $ isNil scrapeDirty)
+	unless (isNil scrapeDirty)
 	 $ do 	let dirty1 : _		= scrapeDirty
 		let Just fileDirtySrc	= scrapePathSource dirty1
 	 	putStr 	$ pprStrPlain

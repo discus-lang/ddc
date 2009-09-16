@@ -8,7 +8,6 @@ where
 
 import qualified Numeric
 
------
 indent ::	Int ->	String -> String
 indent		n	xx
  = case xx of
@@ -16,15 +15,12 @@ indent		n	xx
 	(x:xs)		-> x : indent n xs
 	[]		-> []
 
------
 showHex :: Int -> String
 showHex    x 	= Numeric.showHex x ""
 
 showHexPad :: Int -> Int -> String
 showHexPad    width  x  =
- let
- 	base	= showHex x
- in
- 	(take (width - length base) (repeat '0')) ++ base
+ let 	base	= showHex x
+ in 	replicate (width - length base) '0' ++ base
 
 

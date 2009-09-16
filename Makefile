@@ -158,6 +158,18 @@ doc	:
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(src_hs_all))
 
+# -- HLint -----------------------------------------------------------------------------------------
+.PHONY	: hlint
+hlint	: 
+	@echo "* Running HLint"
+	hlint 	\
+		-i "Use camelCase" 	\
+		-i "Use ."		\
+		-i "Use :"		\
+		-i "Use >>="		\
+		-i "Eta reduce"		\
+		src
+
 
 # -- Cleaning --------------------------------------------------------------------------------------
 # -- clean objects in the runtime system

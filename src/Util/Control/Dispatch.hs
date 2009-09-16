@@ -1,4 +1,4 @@
-{-# OPTIONS -XNoMonomorphismRestriction #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Util.Control.Dispatch 
 	( DispatchAction
@@ -127,15 +127,15 @@ dispatchWork_run
 		= do	workers	<- gets stateWorkers
 
 			liftIO	
-			 $ do	putStr	$ "-- Interrupt. Waiting for running jobs (CTRL-C kills) ... "
+			 $ do	putStr	"-- Interrupt. Waiting for running jobs (CTRL-C kills) ... "
 				hFlush stdout
 
 				mapM_ (killThread . workerThreadId) 
 					$ Set.toList workers
 	
-				putStr	$ "done.\n"
+				putStr	"done.\n"
 
-			liftIO	$ exitSuccess
+			liftIO	exitSuccess
 
 		| otherwise
 		= dispatchWork_send
@@ -196,8 +196,7 @@ dispatchWork_send
 				-- Mark the worker as currently busy
 				let workers'
 					= Set.insert (worker { workerIsBusy = True })
-					$ Set.delete worker 
-					$ workers
+					$ Set.delete worker workers
 
 				-- Mark the sent test as currently running
 				modify 	$ \s -> s 
@@ -226,7 +225,7 @@ dispatchWork_recv
 	let cont
 		-- no workers have a result, wait for a bit then loop again
 		| Nothing	<- mWorkerResult
-		= do	dispatchWork_run 
+		= dispatchWork_run 
 
 		-- a worker returned a result
 		| Just (worker, test, tsChildren, result)	<- mWorkerResult

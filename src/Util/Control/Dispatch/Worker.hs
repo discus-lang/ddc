@@ -13,6 +13,7 @@ where
 import Util
 import Control.Concurrent
 import Control.Concurrent.MVar
+import Data.Function
 
 -- | Represents the state of a worker thread as visible by the dispatcher
 data Worker job result
@@ -23,7 +24,7 @@ data Worker job result
 		, workerResultVar	:: MVar (job, [job], result) }		-- job, children, result
 	
 instance Eq (Worker job result) where
-	w1 == w2	= workerThreadId w1 == workerThreadId w2
+	(==)		= (==) `on` workerThreadId 
 
 instance Ord (Worker job result) where
 	compare w1 w2	= compare (workerThreadId w1) (workerThreadId w2)
@@ -60,7 +61,7 @@ takeFirstFreeWorker workers
  = do	free	<- mapM workerIsFree workers
 	let workFree	
 		= zipWith 
-			(\w f -> if f then (Just w) else Nothing)
+			(\w f -> if f then Just w else Nothing)
 			workers
 			free
 	return	$ takeFirstJust workFree

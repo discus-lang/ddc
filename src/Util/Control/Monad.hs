@@ -8,6 +8,8 @@ module Util.Control.Monad
 
 where
 
+import Control.Monad
+
 returnN :: Monad m => m (Maybe a)
 returnN		= return Nothing
 
@@ -79,8 +81,8 @@ partitionM f (x:xs)
 	(aa, bb)	<- partitionM f xs
 
 	if r 
-		then return $ (x : aa, 	bb)
-		else return $ (aa,   	x : bb)		
+		then return (x : aa, 	bb)
+		else return (aa,   	x : bb)		
 
 
 -----
@@ -88,8 +90,5 @@ whenM :: Monad m => m Bool -> m () -> m ()
 whenM    f op
  = do
  	b	<- f
-
-	if b 
-		then op
-		else return ()
+	when b op
 

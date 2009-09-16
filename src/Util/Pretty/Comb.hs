@@ -200,7 +200,7 @@ padL n x	= padLc n ' ' x
 -- As the mode type has no effect, so is left as tyvar, which breaks the
 --	fundep coverage condition on the instances (yay!)
 
-plain x	= PrettyM (\_ -> x)
+plain x	= PrettyM (const x)
 
 -- self
 instance Pretty (PrettyM m) m where
@@ -239,7 +239,7 @@ instance Pretty a m => Pretty [a] m where
  ppr xs
  	= PrettyM (\m -> PList 	$ map (\x -> case ppr x of
 						PrettyM fx	-> fx m)
-				$ xs)
+				  xs)
 -- tuples
 instance (Pretty a m, Pretty b m) 
 	=> Pretty (a, b) m where
@@ -310,14 +310,14 @@ reduce	state xx
 
 	PList 	zz	
 	 -> [PChar '[']
-	 ++ (concat $ intersperse (map PChar ", ") $ map (reduce state) zz) 
+	 ++ concat (intersperse (map PChar ", ") $ map (reduce state) zz) 
 	 ++ [PChar ']']
 
-	PAppend ss	-> concat $ map (reduce state) ss
+	PAppend ss	-> concatMap (reduce state) ss
 	
 	PIndent ss	
 	 ->   [ PTabAdd (stateTabWidth state)]
-	   ++ (reduce state) ss
+	   ++ reduce state ss
 	   ++ [PTabAdd (- (stateTabWidth state))]
 	 
 	PTabNext
@@ -328,7 +328,7 @@ reduce	state xx
 	
 
 -- render a pretty thing as characters.	
-spaceTab :: RenderS -> [PrettyP] -> [Char]
+spaceTab :: RenderS -> [PrettyP] -> String
 spaceTab state xx
  = case xx of
 	PNil : xs	
@@ -336,14 +336,14 @@ spaceTab state xx
 
  	PTabAdd i  :xs	
 	 -> let state'	= state
-	 		{ stateIndent	= (stateIndent state) + i }
+	 		{ stateIndent	= stateIndent state + i }
 	    in spaceTab state' xs
 				
 
 	PTabNext : xs
-	 -> let tabHere	= (stateCol state) `div` (stateTabWidth state)
-	 	tabNext	= (tabHere + 1) * (stateTabWidth state)
-		pad	= replicate (tabNext - stateCol state) $ ' '
+	 -> let tabHere	= stateCol state `div` stateTabWidth state
+	 	tabNext	= tabHere + 1 * stateTabWidth state
+		pad	= replicate (tabNext - stateCol state) ' '
 
 	 	state'	= state
 	 		{ stateCol	= tabNext }

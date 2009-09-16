@@ -130,7 +130,7 @@ addDependency
 			Nothing			-> Just (WorkNode [kParent] [])
 			Just (WorkNode ps cs)	-> Just (WorkNode (ps ++ [kParent]) cs))
 		kChild
-	$ map
+	  map
 
 
 -- | Delete a parent from a second node.

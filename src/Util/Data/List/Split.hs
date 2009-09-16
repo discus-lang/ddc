@@ -103,7 +103,7 @@ makeSplits splitFunc xx
 	= front : makeSplits splitFunc back
 	
 	where 	(front, back) 		= splitFunc xx
-		appendFront z (x:xs)	= ((z : x) :xs)
+		appendFront z (x:xs)	= (z : x) :xs
 
 
 -- | Make a breaks function from this split function
