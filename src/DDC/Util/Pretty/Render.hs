@@ -1,5 +1,5 @@
 
--- | Rendering of PrettyPrims to the console
+-- | Rendering of PrettyPrims to a string.
 module DDC.Util.Pretty.Render 
 	(render)
 where

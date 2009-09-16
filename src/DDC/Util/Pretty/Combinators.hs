@@ -1,4 +1,5 @@
 
+-- | Combinators for forming new pretty things out of old ones.
 module DDC.Util.Pretty.Combinators where
 
 import DDC.Util.Pretty.Base
