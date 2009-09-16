@@ -13,8 +13,9 @@ import Type.Location
 import Type.Builtin
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-import Shared.VarSpace
 import Shared.Base
+
+import DDC.Base.NameSpace
 
 import Util	(liftM, unzip6, unzip5, takeLast, catMap)
 

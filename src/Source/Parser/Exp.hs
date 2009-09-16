@@ -14,7 +14,8 @@ import qualified Source.Token	as K
 
 import qualified Shared.Var	as Var
 import qualified Shared.VarPrim	as Var
-import Shared.VarSpace		   (NameSpace(..))
+
+import DDC.Base.NameSpace 
 
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec

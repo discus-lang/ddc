@@ -35,9 +35,10 @@ import qualified Source.Token 	as K
 
 import qualified Shared.Var	as Var
 import Shared.Var		(Var)
-import Shared.VarSpace		(NameSpace(..))
 import Shared.Error
 import Shared.Base
+
+import DDC.Base.NameSpace
 
 import Util
 

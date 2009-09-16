@@ -32,7 +32,6 @@ import Type.Location
 import Type.Pretty
 import Type.Util
 import Type.Plate.Collect
-import Type.Plate.DeepSeq
 import Type.Exp
 
 
@@ -42,7 +41,6 @@ import qualified Shared.VarBind	as Var
 
 import Util
 import Util.Graph.Deps
-import Util.Control.DeepSeq
 
 import qualified Util.Data.Map	as Map
 import Util.Data.Map		(Map)

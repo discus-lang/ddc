@@ -7,10 +7,11 @@ import Desugar.Exp
 import Desugar.Bits
 
 import Shared.Var		(Var)
-import Shared.VarSpace
 import Shared.VarGen
 import Shared.Exp
 import Shared.Base
+
+import DDC.Base.NameSpace
 
 import Util
 import Data.Map			(Map)

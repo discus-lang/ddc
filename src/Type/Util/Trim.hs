@@ -37,8 +37,9 @@ import Type.Util.Kind
 import Shared.Pretty
 import Shared.Var			(Var)
 import qualified Shared.Var		as Var
-import qualified Shared.VarSpace	as Var
 import qualified Shared.VarUtil		as Var
+
+import qualified DDC.Base.NameSpace	as Var
 
 import qualified Data.Set		as Set
 import qualified Debug.Trace		as Debug

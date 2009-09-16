@@ -16,7 +16,8 @@ where
 import Control.Monad.State
 import qualified Shared.Var as Var
 import Shared.Var (Var, VarBind)
-import Shared.VarSpace (NameSpace)
+
+import DDC.Base.NameSpace
 
 -----
 type VarGenM 	= State VarGen

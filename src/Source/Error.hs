@@ -11,10 +11,12 @@ import Util.Pretty
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
 import Shared.VarUtil		(prettyPos, prettyPosBound)
-import Shared.VarSpace		(spaceName)
 import Shared.Error
 import Shared.Base
 import Shared.Pretty
+
+import DDC.Base.NameSpace
+
 
 import qualified Source.Token	as Token
 import qualified Source.TokenShow as Token

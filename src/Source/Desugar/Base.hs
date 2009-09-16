@@ -17,12 +17,13 @@ import Type.Exp
 import Source.Error
 
 import qualified Shared.VarBind		as Var
-import qualified Shared.VarSpace	as Var
 import qualified Shared.Var		as Var
 import Shared.Var			(Var, NameSpace(..))
 import Shared.Base
 import Shared.Error
 import Shared.Pretty
+
+import qualified DDC.Base.NameSpace	as Var
 
 import qualified Data.Map	as Map
 import Data.Map			(Map)

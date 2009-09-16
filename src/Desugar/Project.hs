@@ -32,7 +32,8 @@ import Shared.Var		(Var, NameSpace(..), Module)
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 import qualified Shared.VarUtil	as Var
-import qualified Shared.VarSpace as Var
+
+import qualified DDC.Base.NameSpace as Var
 
 import Util
 import Data.Set			(Set)

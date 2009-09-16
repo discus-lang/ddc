@@ -2,7 +2,7 @@
 
 module Shared.Var
 	( module Shared.VarBind
-	, module Shared.VarSpace
+	, module DDC.Base.NameSpace
 
 	, Var (..)
 	, new
@@ -21,8 +21,10 @@ import Shared.Pretty
 import Shared.Literal
 import Shared.Base
 import Shared.VarBind
-import Shared.VarSpace
 import Shared.Error
+
+import DDC.Base.NameSpace
+
 import Util
 
 -----

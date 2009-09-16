@@ -26,7 +26,8 @@ import qualified Constraint.Plate.Trans	as CTrans
 import Constraint.Exp
 import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
-import qualified Shared.VarSpace	as Var
+
+import qualified DDC.Base.NameSpace	as Var
 
 import Util
 
