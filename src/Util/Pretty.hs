@@ -1,12 +1,10 @@
 
 module Util.Pretty
-(
-	module Util.Pretty.Misc,
-	module Util.Pretty.Comb
-)
+	( module Util.Pretty.Misc
+	, module DDC.Util.Pretty )
 
 where
 
 import Util.Pretty.Misc
-import Util.Pretty.Comb
+import DDC.Util.Pretty
 
