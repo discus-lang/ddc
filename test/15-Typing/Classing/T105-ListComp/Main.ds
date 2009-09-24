@@ -1,0 +1,6 @@
+intList ::  [Int]
+intList = [ 1 .. 4 ]
+
+main () = do
+    println $ show $ [ x + y | x <- intList, y <- intList]
+

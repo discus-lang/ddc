@@ -52,10 +52,8 @@ rewriteListComp x
 	 -> do
 		let catMapVar	= if lazy then primConcatMapL else primConcatMap;
 
-		v	<- newVarNI NameValue [Var.ISourcePos sp]
 		lc'	<- rewriteListComp $ S.XListComp sp exp qs
 		l'	<- rewrite l
 		
 	 	return	$ D.XDo sp
-				[ D.SBind sp (Just v) (D.XLambda sp p lc')
-				, D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) (D.XVar sp v) ) l') ]
+				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) (D.XLambda sp p lc') ) l') ]
