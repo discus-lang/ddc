@@ -110,8 +110,8 @@ SHARED_SUFFIX       := so
 
 # -- Darwin on x86
 else ifeq "$(Target)" "darwin-x86"
-GCC_FLAGS           += -fPIC -D BITS=32
-BUILD_SHARED        := gcc -dynamiclib -undefined dynamic_lookup
+GCC_FLAGS           += -fPIC -D BITS=32 -m32
+BUILD_SHARED        := gcc -m32 -dynamiclib -undefined dynamic_lookup 
 SHARED_SUFFIX       := dylib
 
 # -- Darwin on x86_64

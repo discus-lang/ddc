@@ -181,7 +181,7 @@ reconX tt (XLAM v k x)
 -- APP
 
 -- handle applications to string literals directly
---	this way we don't need to invent a variable for the \/ bound region 
+--	this way we don't need to invent a variable for the forall bound region 
 --	in the literal's type scheme. String literals never appear without their region
 --	parameters in the core so this is ok.
 

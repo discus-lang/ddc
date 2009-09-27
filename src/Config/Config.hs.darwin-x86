@@ -27,6 +27,7 @@ makeSeaCompileCmd
 	=  "gcc"
 	++ " -Werror"
 	++ " -std=c99"
+	++ " -m32"
 	++ " -D BITS=32"
 
 	++ " -c " ++ pathSourceBase ++ ".ddc.c"
@@ -67,6 +68,7 @@ makeLinkCmd
 
 	= "gcc"
 	++ " -std=c99"
+	++ " -m32"
 	++ " -o " ++ outFile
 
 	++ (if elem Profile args 
