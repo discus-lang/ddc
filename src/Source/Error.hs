@@ -67,6 +67,16 @@ data Error
 		{ eFirstDefined		:: Var
 		, eRedefined		:: Var }
 
+	-- | Constructor is redefined in the same scope.
+	| ErrorRedefinedCtor	
+		{ eFirstDefined		:: Var
+		, eRedefined		:: Var }
+
+	-- | Data is redefined in the same scope.
+	| ErrorRedefinedData
+		{ eFirstDefined		:: Var
+		, eRedefined		:: Var }
+
 	-- | Can't have > 1 non-assoc op in the same string.
 	| ErrorDefixNonAssoc		[Var]
 
@@ -170,6 +180,15 @@ instance Pretty Error PMode where
 		% " variable '"  % eRedefined err % "'\n"
 	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
 
+ ppr err@(ErrorRedefinedCtor{})
+	= prettyPos (eRedefined err)								% "\n"
+	% "     Redefined constructor '"	% eRedefined err % "'\n"
+	% "      first defined at: "		% prettyPos (eFirstDefined err) 		% "\n"
+
+ ppr err@(ErrorRedefinedData{})
+	= prettyPos (eRedefined err)								% "\n"
+	% "     Redefined data type '"	% eRedefined err % "'\n"
+	% "      first defined at: "	% prettyPos (eFirstDefined err) 			% "\n"
 
  ppr (ErrorDefixNonAssoc (v:vs))
 	= prettyPos v % "\n"
