@@ -424,6 +424,7 @@ mergeClassesT :: [Type] -> SquidM Type
 mergeClassesT	 ts@(t:_)
  = do
  	let Just cids	= sequence 
+			$ filter isJust
 			$ map takeCidOfTClass ts
 
 	let Just ks	= sequence $ map kindOfType ts
