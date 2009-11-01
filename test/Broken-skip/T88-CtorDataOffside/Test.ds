@@ -1,0 +1,23 @@
+
+data Thing1 a
+       = A1 {
+              someField1 :: Int32;
+              someField2 :: Int32;
+       }
+       | B1 {
+              someField3 :: Int32;
+              someField4 :: Int32;
+       }
+
+-- The following should be accepted as equivalent to above.
+data Thing3 a
+       = A3
+		someField1 :: Int32
+		someField2 :: Int32
+
+       | B3
+		someField3 :: Int32
+		someField4 :: Int32
+
+
+main = println "Make sure this works."
