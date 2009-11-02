@@ -43,6 +43,7 @@ import qualified Util.Data.Map	as Map
 import Data.Set			(Set)
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
+import Shared.VarUtil		(isCtorName)
 
 -----
 stage = "Source.RenameM"
@@ -327,9 +328,18 @@ linkBoundVar
 linkBoundVar enclosing space var
  = do	
  	-- grab the context stack for the appropriate namespace
-	Just spaceStack
+	Just spaceStack@(spaceMap:_)
 		<- liftM (Map.lookup space)
 		$  gets stateStack
+
+	-- Check for redefined Data and Constructor names.
+	(case (isCtorName var, space, Map.lookup (Var.name var) spaceMap) of
+		(True, NameType, Just boundData)
+			->	addError $ ErrorRedefinedData boundData var
+		(True, NameValue, Just boundCtor)
+			->	addError $ ErrorRedefinedCtor boundCtor var
+		(_, _, _)
+                	-> return ())
 
 	-- try and find the binding occurance for this variable.
 	let var_prim	= fromMaybe var (renamePrimVar space var)				
