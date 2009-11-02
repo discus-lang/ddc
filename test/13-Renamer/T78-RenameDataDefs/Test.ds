@@ -1,0 +1,14 @@
+
+
+-- This should die with a nice error.
+--	Can't use the same constructor name in a different data type.
+
+data Foo = Foo
+data Bar = Foo
+
+-- Can't reuse the same constructor.
+data Baz = Baz | Baz
+
+-- Can't redefine a data type.
+data Frob = Frob1
+data Frob = Frob2

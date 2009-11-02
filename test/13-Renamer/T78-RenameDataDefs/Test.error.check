@@ -1,0 +1,13 @@
+ddc: ERROR
+./test/13-Renamer/T78-RenameDataDefs/Test.ds:7:11
+     Redefined constructor 'Test.Foo'
+      first defined at: ./test/13-Renamer/T78-RenameDataDefs/Test.ds:6:11
+
+./test/13-Renamer/T78-RenameDataDefs/Test.ds:10:17
+     Redefined constructor 'Test.Baz'
+      first defined at: ./test/13-Renamer/T78-RenameDataDefs/Test.ds:10:11
+
+./test/13-Renamer/T78-RenameDataDefs/Test.ds:14:5
+     Redefined data type 'Test.Frob'
+      first defined at: ./test/13-Renamer/T78-RenameDataDefs/Test.ds:13:5
+
