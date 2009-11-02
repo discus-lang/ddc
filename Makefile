@@ -196,6 +196,7 @@ cleanLibrary :
 		-o	-name "*.so" \
 		-o  -name "*.dylib" \
 		-o	-name "*.a" \
+		-o	-name "*.di" \
 		-follow | xargs -n 1 rm -f
 
 
