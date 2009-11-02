@@ -12,11 +12,6 @@ foreign import data "Int32"     Int#
 foreign import data "Float32"	Float#
 foreign import data "Char32"	Char#
 
-data	Word
-data	Int
-data	Float
-data	Char
-
 -- Abstract operational types.
 data	Obj
 data	Data
