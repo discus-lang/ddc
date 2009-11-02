@@ -1,8 +1,19 @@
 
 -- Checks renamer error reporting.
---	These expressions include variables that are being 
---	redefined within the same scope.
+--	These expressions include constructors, data types and variables
+--	that are being redefined within the same scope.
 --
+
+-- Can't use the same constructor name in a different data type.
+data Foo = Foo
+data Bar = Foo
+
+-- Can't reuse the same constructor.
+data Baz = Baz | Baz
+
+-- Can't redefine a data type.
+data Frob = Frob1
+data Frob = Frob2
 
 -- Redefined vars in lambda abstractions.
 --	Not strictly an error, but less-than-useful.
