@@ -1,0 +1,3 @@
+example :: (Int, Int) %r0
+        :- Mutable %r0
+example = (0,0)
