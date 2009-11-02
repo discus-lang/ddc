@@ -7,8 +7,6 @@ import Class.Num
 
 pragma	cc_includes ["string.h"]
 
-export type String#
-
 -- unboxed strings are pointers to null-terminated blocks of utf8 characters. 
 --	These blocks can be updated, so we give the string a region.
 foreign import data "String"  String# :: % -> *

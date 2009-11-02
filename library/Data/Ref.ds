@@ -13,8 +13,6 @@ foreign import "primRefUpdate"
 		:$ Obj -> Obj -> Obj;
 
 
-type Ref :: % -> * -> *
-
 -- Create a mutable reference to some object
 --	This isn't a pull-back reference of anything else.
 ref	:: forall a %r1. a -> Ref %r1 a

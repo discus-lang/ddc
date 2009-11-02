@@ -20,8 +20,6 @@
 -- when equality is an equivalence relation instead of structural
 -- equality.
 
-export	type Set
-
 import	Base
 	Class.Ord
 	Class.Num

@@ -7,7 +7,6 @@ import Data.Char
 import Class.Copy
 import Base
 
-export type FlatString
 export flatString_copy
 
 project FlatString 

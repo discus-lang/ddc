@@ -7,10 +7,6 @@
 
 -- these should really be type synonyms, but for now the rewrite is hacked 
 --	together by VarPrim.defaultTypeVar 
-foreign import data "Word32"    Word#
-foreign import data "Int32"     Int#
-foreign import data "Float32"	Float#
-foreign import data "Char32"	Char#
 
 -- Abstract operational types.
 data	Obj

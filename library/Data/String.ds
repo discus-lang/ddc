@@ -9,8 +9,6 @@ import 	Data.Char
 import 	Class.Eq
 import	Class.Copy
 
-export type String
-
 export 	string_copy
 	string_eq
 	string_Int32
