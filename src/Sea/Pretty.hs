@@ -18,6 +18,7 @@ import Shared.Literal
 import Shared.Base
 
 import Sea.Exp
+import Sea.Util
 
 stage	= "Sea.Pretty"
 
@@ -47,13 +48,17 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	  % "}\n\n\n"
 
 	-- cafs
-	PCafProto v
+	PCafProto _ t
+	 | typeIsUnboxed t
+	 -> ppr "\n"
+
+	PCafProto v _
 	 -> "extern Obj** " 	%>> "_ddcCAF_" % sV v % ";\n\n"
 
-	PCafSlot  v 
+	PCafSlot  v _
 	 -> "Obj** " 		%>> "_ddcCAF_" % sV v % " = 0;\n"
 
-	PCafInit v ss	
+	PCafInit v _ ss	
 	 -> "void " %>> "_ddcInitCAF_" % sV v %>> "()\n"
 	 % "{\n"
 	 	%> ("\n" %!% ss % "\n")
@@ -190,6 +195,13 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
   = case xx of
   	XNil			-> ppr "$XNil"
 	XVar v _		-> sVL v
+
+	XVarCAF v t
+	 |  typeIsUnboxed t
+	 -> sV v % "()"
+
+	XVarCAF v _		-> "_CAF(" % sV v % ")"
+
 	XSlot    v _ i		-> "_S(" % i % ")"
 	XSlotCAF v _		-> "_CAF(" % sV v % ")"
 

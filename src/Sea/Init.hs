@@ -11,6 +11,9 @@ import Shared.Var		(Module(..))
 
 import Sea.Exp
 import Sea.Pretty
+import Sea.Util
+
+import Debug.Trace as Debug
 
 initTree 
 	:: Module		-- name of this module
@@ -21,7 +24,7 @@ initTree moduleName cTree
  = let 	initAtomSS	= [ SAssign (XAtom v) t $ XAllocDataAnchored v 0
 				| PAtom v t	<- cTree]
 
-	initCafSS	= catMap makeInitCaf [ v | PCafSlot v <- cTree]
+	initCafSS	= catMap makeInitCaf [ v | PCafSlot v t <- cTree, not (typeIsUnboxed t) ]
 	initSS		= initAtomSS ++ initCafSS
 
 	initV		= makeInitVar moduleName

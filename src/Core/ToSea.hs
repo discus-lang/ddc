@@ -142,8 +142,8 @@ toSeaP	xx
 				++ [E.SReturn (E.XVar retV resultType)]
 		
 	   	return	$ case argNTs of
-			    	 [] ->	[ E.PCafProto	v
-					, E.PCafSlot 	v
+			    	 [] ->	[ E.PCafProto	v resultType
+					, E.PCafSlot 	v resultType
 					, E.PSuper	v [] 	resultType  ssRet]
 
 				 _ ->	[ E.PSuper 	v argNTs resultType ssRet]

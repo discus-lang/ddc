@@ -57,9 +57,9 @@ data Top a
 		[Stmt a]				--	expression
 
 	-- cafs
-	| PCafProto	Var 				-- ^ The prototype for a CAF slot index.
-	| PCafSlot	Var				-- ^ A var which holds a CAF slot index.
-	| PCafInit	Var [Stmt a]			-- ^ CAF initialisation code.
+	| PCafProto	Var Type			-- ^ The prototype for a CAF slot index.
+	| PCafSlot	Var Type			-- ^ A var which holds a CAF slot index.
+	| PCafInit	Var Type [Stmt a]		-- ^ CAF initialisation code.
 
 	-- atoms
 	| PAtomProto 	Var Type			-- ^ Atom prototype.
@@ -146,6 +146,7 @@ data Exp a
 
 	-- Var-ish things
 	| XVar		Var Type
+	| XVarCAF	Var Type
 
 	-- A slot on the GC stack.
 	--	All pointers to objects in the heap must be on the slot stack

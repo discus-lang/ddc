@@ -68,11 +68,11 @@ expandP	xx
 				, SLabel start] ++ ss2
 	 
 	 
-	PCafInit v ss
+	PCafInit v t ss
 	  -> do	let ?tailCallTargets	= []
 	  	ss1		<- mapM (transformSSM expandSS) ss
 	  	ss2		<- expandSS ss1
-		return	$ PCafInit v ss2
+		return	$ PCafInit v t ss2
 	 
 	_ -> return xx
 	

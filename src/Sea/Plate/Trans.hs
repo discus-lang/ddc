@@ -116,16 +116,16 @@ instance Monad m => TransM m a1 a2 Top where
 		transP table	$ PSuper v args t ss3
 		
 	-- cafs
-	PCafProto v	
-	 ->	transP table	$ PCafProto v
+	PCafProto v	t
+	 ->	transP table	$ PCafProto v t
 	 
-	PCafSlot v
-	 ->	transP table	$ PCafSlot v
+	PCafSlot v t
+	 ->	transP table	$ PCafSlot v t
 	 
-	PCafInit v ss
+	PCafInit v t ss
 	 -> do	ss2		<- mapM (transZM table) ss
 	 	ss3		<- transSS table ss2
-		transP table	$ PCafInit v ss3
+		transP table	$ PCafInit v t ss3
 		
 	-- atoms
 	PAtomProto v t
@@ -238,6 +238,10 @@ instance Monad m => TransM m a1 a2 Exp where
 	XVar v t
 	 -> do 	v'		<- transV table v
 		transX table	$ XVar v' t
+
+	XVarCAF v t
+	 -> do 	v'		<- transV table v
+		transX table	$ XVarCAF v' t
 
 	XSlot  v t i
 	 -> do 	v'		<- transV table v

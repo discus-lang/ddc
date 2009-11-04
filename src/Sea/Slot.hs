@@ -139,7 +139,7 @@ slotifyX x m cafVars
 	
 	| XVar v t	<- x
 	, Set.member v cafVars
-	= XSlotCAF v t
+	= XVarCAF v t
 	
 	| otherwise
 	= x
