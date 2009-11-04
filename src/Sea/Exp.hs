@@ -137,19 +137,26 @@ data Guard a
 	deriving (Show, Eq)
 	
 
+-- | Expressions 
+--	TODO: There are way to many constructors in this type.
+--	It'd be better to merge groups of similar ones, most of the application forms
+--	could be merged, while using an auxillary data type to record what sort of application it is.
 data Exp a
 	= XNil
 
+	-- Var-ish things
 	| XVar		Var
-	| XSlot		Var Int				-- a GC slot.
-							--	var: the name of the var it's currently holding
-							--	int: the index of the slot
 
-	| XSlotCAF	Var				-- a reference to a CAF object ptr on the slot stack.
+	-- A slot on the GC stack.
+	--	All pointers to objects in the heap must be on the slot stack
+	--	when we do something that might cause a garbage collection.
+	| XSlot		
+		Var 			-- the name of the var it's currently holding
+		Int			-- the index of the slot
 
-	| XSlotA	Var Int				-- a GC argument
-
-	| XGlobal	Var				-- a global variable which is not a GC slot.
+	-- a reference to a CAF object ptr.
+	--	This references a global variable refering to a CAF object.
+	| XSlotCAF	Var				
 
 
 	-- application
@@ -163,7 +170,7 @@ data Exp a
 	| XPrim		Prim [Exp a]
 
 	-- projection
-	| XArg		(Exp a) Type Int			-- argument of thunk	((type)x) ->a[i]
+	| XArg		(Exp a) Type Int		-- argument of thunk	((type)x) ->a[i]
 	| XTag		(Exp a)				-- tag of data object	((Data)x) ->tag
 	
 	| XField	(Exp a) Var Var			-- exp, type of exp, field name

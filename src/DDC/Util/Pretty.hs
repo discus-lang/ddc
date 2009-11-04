@@ -7,7 +7,6 @@ module DDC.Util.Pretty
 	, module DDC.Util.Pretty.Combinators 	
 
 	, pprStr)
-
 where
 
 import	DDC.Util.Pretty.Base

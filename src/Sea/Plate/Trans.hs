@@ -247,14 +247,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	v'		<- transV table v
 	 	transX table	$ XSlotCAF v'
 		
-	XSlotA v i
-	 -> do	v'		<- transV table v
-	 	transX table	$ XSlotA v' i
-
-	XGlobal v
-	 -> do	v'		<- transV table v
-	 	transX table	$ XGlobal v
-		
 	-- application
 	XTailCall v xs
 	 -> do	v'		<- transV table v
