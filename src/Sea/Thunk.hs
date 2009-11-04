@@ -95,10 +95,10 @@ expandS	s
 	-- However, the function exit code needs a value to (never) return,
 	--	so we'll give it XNull.
 	--	
-	| SAssign (XVar v) t x@XTailCall{}	<- s
+	| SAssign (XVar v _) t x@XTailCall{}	<- s
 	= do	callSS	<- expandTailCall x
 
-		return	$ [ SAssign (XVar v) t XNull ]
+		return	$ [ SAssign (XVar v t) t XNull ]
 			++ callSS
 
 	| SStmt x@XTailCall{}			<- s
@@ -107,11 +107,11 @@ expandS	s
 	
 
 	-- curry
-	| SAssign (XVar v) t x@(XCurry f superA args) <- s
+	| SAssign (XVar v erikd) t x@(XCurry f superA args) <- s
 	= do
 		(assSS, x')	<- expandCurry v x
 
-		return	$  [ SAssign (XVar v) t x' ]
+		return	$  [ SAssign (XVar v t) t x' ]
 			++ assSS
 	
 	-- apply / callApp
@@ -135,10 +135,10 @@ expandS	s
 
 
 	-- suspend
-	| SAssign (XVar v) t x@(XSuspend{})	<- s
+	| SAssign (XVar v _) t x@(XSuspend{})	<- s
 	= do
 		(assSS, x')	<- expandSusp v x
-		let s'		= SAssign (XVar v) t x'
+		let s'		= SAssign (XVar v t) t x'
 		return		$ s' : assSS
 		
 	| otherwise
@@ -171,13 +171,13 @@ expandTailCall
 	let Just (label, params)	
 		= lookup v ?tailCallTargets
 
-	let assignParam param@(vP, tP) arg@(XVar vA)
+	let assignParam param@(vP, tP) arg@(XVar vA _)
 		-- don't emit (v = v) assignments
 		| vP == vA
 		= Nothing
 		
 	    assignParam param@(vP, tP) arg
-	    	= Just $ SAssign (XVar vP) tP arg
+	    	= Just $ SAssign (XVar vP tP) tP arg
 				
  	return	$ 
 		-- Overwrite the parameter vars with the new args.
@@ -198,7 +198,7 @@ expandCurry
 	x@(XCurry f superA args)
  = do
 	let allocX	= XAllocThunk f superA (length args)
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v) TThunk i) TObj a)	-- type here is wrong
+	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TThunk) TThunk i) TObj a)	-- type here is wrong
 		  	$ zip args [0..]
 		
   	return	( assignSS
@@ -216,7 +216,7 @@ expandSusp
  = do
  	let allocX	= XAllocSusp f (length args)
 	
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v) TSusp i) TObj a)
+	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TSusp) TSusp i) TObj a)
 			$ zip args [0..]
 			
 	return	( assignSS
@@ -236,9 +236,9 @@ expandCallApp
 	let (callAs, appAs)
 			= splitAt superA args
 
- 	let callSS	= [ SAssign (XVar tmp) TObj (XCall  f   callAs) ]
+ 	let callSS	= [ SAssign (XVar tmp TObj) TObj (XCall  f   callAs) ]
 
-	(appSS, lastX)	<- expandApply (XApply (XVar tmp) appAs)
+	(appSS, lastX)	<- expandApply (XApply (XVar tmp TObj) appAs)
 
 	return	( callSS ++ appSS 
 		, lastX)
@@ -250,7 +250,7 @@ expandApply
 	-> ExM ([Stmt ()], Exp ())
 
 expandApply
-	x@(XApply (XVar v) xx)
+	x@(XApply (XVar v _) xx)
  = do
 	(vApp, ss)	<- expandApplyN 4 v xx []
 
@@ -289,7 +289,7 @@ expandApplyN
  		
 		let ssAcc'
 			=  ssAcc
-			++ [SAssign (XVar v) TObj (XApply (XVar thunkV) argsHere)]
+			++ [SAssign (XVar v TObj) TObj (XApply (XVar thunkV TObj) argsHere)]
 		
 		expandApplyN maxApp v argsMore ssAcc'
 

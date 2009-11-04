@@ -106,7 +106,7 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SLeave countS		-> "_LEAVE (" % countS % ");"
 
 	-- assignment
-	SAssign (XVar v) t x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
+	SAssign (XVar v _) t x2	-> (sVLn 23 v) 			% " = " % x2 % ";"
 	SAssign x1 t x2		-> (padL 23 $ pprStrPlain x1) 	% " = " % x2 % ";"
 
 	SStmt s			-> ppr s % ";"
@@ -189,9 +189,9 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
  ppr xx
   = case xx of
   	XNil			-> ppr "$XNil"
-	XVar v			-> sVL v
-	XSlot    v i		-> "_S(" % i % ")"
-	XSlotCAF v 		-> "_CAF(" % sV v % ")"
+	XVar v _		-> sVL v
+	XSlot    v _ i		-> "_S(" % i % ")"
+	XSlotCAF v _		-> "_CAF(" % sV v % ")"
 
 	-- application
 	XTailCall v args
@@ -217,7 +217,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> let i	= length args
 	    in "_suspend"	% i % " (" % ", " %!% (sV v : map ppr args) % ")"
 
-	XPrim f [(XVar ctorV), (XVar fieldV), x]
+	XPrim f [(XVar ctorV _), (XVar fieldV _), x]
 	 -> case f of
 	 	FProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 	 	FProjFieldR	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"

@@ -53,7 +53,7 @@ expandCtor v fields
 	objV		<- newVarN NameValue
 
 	-- allocation
-	let allocS 	= SAssign (XVar objV) TObj 
+	let allocS 	= SAssign (XVar objV TObj) TObj 
 			$ XAllocData v (length fields)
 
 	-- field init
@@ -65,7 +65,7 @@ expandCtor v fields
 	let argVs	= catMaybes mArgVs
 
 	-- return result
-	let retS	= SReturn $ (XVar objV) 
+	let retS	= SReturn $ (XVar objV TObj) 
 
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
 	let super	= [PSuper v argVs TObj stmts]
@@ -93,13 +93,13 @@ expandField objV ix field
 	-- Primary fields get their values from constructor arguments.
 	| dPrimary field
 	= do	argV	<- newVarN NameValue
-		return	( [SAssign (XArg (XVar objV) TData ix) (dType field) (XVar argV)]
+		return	( [SAssign (XArg (XVar objV (dType field)) TData ix) (dType field) (XVar argV (dType field))]
 			, Just (argV, TObj) )
 
 	-- Secondary fields get their values by calling the init function
 	| not $ dPrimary field
 	, Just vInit		<- dInit field
-	= 	return	( [SAssign (XArg (XVar objV) TData ix) (dType field) (XCall vInit [XUnit]) ]
+	= 	return	( [SAssign (XArg (XVar objV (dType field)) TData ix) (dType field) (XCall vInit [XUnit]) ]
 	 		, Nothing )
 
 	-- A secondary field without an initializer

@@ -145,18 +145,19 @@ data Exp a
 	= XNil
 
 	-- Var-ish things
-	| XVar		Var
+	| XVar		Var Type
 
 	-- A slot on the GC stack.
 	--	All pointers to objects in the heap must be on the slot stack
 	--	when we do something that might cause a garbage collection.
 	| XSlot		
 		Var 			-- the name of the var it's currently holding
+		Type			-- the type of the var
 		Int			-- the index of the slot
 
 	-- a reference to a CAF object ptr.
 	--	This references a global variable refering to a CAF object.
-	| XSlotCAF	Var				
+	| XSlotCAF	Var Type
 
 
 	-- application

@@ -235,17 +235,17 @@ instance Monad m => TransM m a1 a2 Exp where
  	XNil		
 	 -> 	transX table 	$ XNil
 
-	XVar v 
+	XVar v t
 	 -> do 	v'		<- transV table v
-		transX table	$ XVar v'
+		transX table	$ XVar v' t
 
-	XSlot  v i
+	XSlot  v t i
 	 -> do 	v'		<- transV table v
-		transX table	$ XSlot v' i
+		transX table	$ XSlot v' t i
 
-	XSlotCAF v
+	XSlotCAF v t
 	 -> do	v'		<- transV table v
-	 	transX table	$ XSlotCAF v'
+	 	transX table	$ XSlotCAF v' t
 		
 	-- application
 	XTailCall v xs

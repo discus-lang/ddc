@@ -91,7 +91,7 @@ sinkVar varMap v
 assignCountS ::	Stmt () -> State MapAssignCount (Stmt ())
 assignCountS	s
  = case s of
- 	SAssign (XVar v) _ _
+ 	SAssign (XVar v _) _ _
 	 -> do	modify $ accMap 1 (\x -> x + 1) v
 	 	return s
 	 
@@ -111,7 +111,7 @@ eraseTreeSS assignCount xx
  = case xx of
  	[]	-> return xx
 	
- 	s@(SAssign (XVar v1) _ (XVar v2)) : ss
+ 	s@(SAssign (XVar v1 _) _ (XVar v2 _)) : ss
 	 -> case Map.lookup v1 assignCount of
 
 	 	Nothing 	

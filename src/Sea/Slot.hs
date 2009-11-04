@@ -67,10 +67,10 @@ slotP	cafVars p
 			++ (if hasSlots			then [ SEnter	slotCount  ] 		else [])
 			++ ssArg
 			++ init ssR
-			++ (if retBoxed && hasSlots	then [ SAssign	(XVar retVar) retT x ]	else [])
+			++ (if retBoxed && hasSlots	then [ SAssign	(XVar retVar retT) retT x ]	else [])
 			++ (if hasSlots			then [ SLeave	slotCount ] 		else [])
 			++ (if retBoxed && hasSlots
-				then [ SReturn (XVar retVar) ]
+				then [ SReturn (XVar retVar retT) ]
 				else [ SReturn x ])
 
 	_ -> return p
@@ -126,20 +126,20 @@ slotAssignArg	(v, t)
 	| otherwise
 	= do
 	 	slot	<- newSlot
-		let exp	= XSlot v slot
+		let exp	= XSlot v t slot
 		addSlotMap v exp
 		
 		return	$ Just
-			$ SAssign exp t (XVar v)
+			$ SAssign exp t (XVar v t)
 		
 slotifyX x m cafVars
-	| XVar v	<- x
+	| XVar v _	<- x
 	, Just exp	<- Map.lookup v m
 	= exp
 	
-	| XVar v	<- x
+	| XVar v t	<- x
 	, Set.member v cafVars
-	= XSlotCAF v
+	= XSlotCAF v t
 	
 	| otherwise
 	= x
@@ -182,13 +182,13 @@ addSlotMap    var    x
 slotAssignS ::	Stmt () -> SlotM (Stmt ())
 slotAssignS	ss
  = case ss of
- 	SAssign (XVar v) TObj x
+ 	SAssign (XVar v t) TObj x
 	 -> do 	slotMap	<- gets stateMap
 	 
 	 	case Map.lookup v slotMap of
 		 Nothing 
 		  -> do	slot	<- newSlot
-			let exp	= XSlot v slot
+			let exp	= XSlot v t slot
 			addSlotMap v exp
 
 			return	$ SAssign exp TObj x
@@ -196,7 +196,7 @@ slotAssignS	ss
 		 Just exp
 		  ->	return	$ SAssign exp TObj x
 
-	SAssign (XVar v) t x
+	SAssign (XVar v _) t x
 	 -> do	modify (\s -> s {
 	 		stateAuto = (v, t) : stateAuto s })
 		return ss

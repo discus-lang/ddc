@@ -43,7 +43,7 @@ forceSS	ss
 forceS ::	Stmt () -> ForceM [Stmt ()]
 forceS		s
  = case s of
- 	SSwitch x@(XTag (XVar var)) aa
+ 	SSwitch x@(XTag (XVar var vt)) aa
 	 -> do
 		label	<- newVarN NameLabel
 		
@@ -52,7 +52,7 @@ forceS		s
 		-- Add the macro to force suspensions and follow indirs.
 		--
 		let aaF	=  aa
-			++ [ ACaseSusp (XVar var) label ]
+			++ [ ACaseSusp (XVar var vt) label ]
 		
 		-- If there is no default alternative then add the default one to
 		--	throw an error.

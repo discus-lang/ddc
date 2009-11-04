@@ -138,8 +138,8 @@ toSeaP	xx
 		let argNTs	= zip argNames argTypes
 
 		retV		<- newVarN NameValue
-		let ssRet	= assignLastSS (E.XVar retV, resultType) ss'
-				++ [E.SReturn (E.XVar retV)]
+		let ssRet	= assignLastSS (E.XVar retV resultType, resultType) ss'
+				++ [E.SReturn (E.XVar retV resultType)]
 		
 	   	return	$ case argNTs of
 			    	 [] ->	[ E.PCafProto	v
@@ -236,7 +236,7 @@ toSeaX	:: C.Exp -> SeaM (E.Exp ())
 toSeaX		xx
  = case xx of
 	C.XVar v t
-	 -> return $ E.XVar v
+	 -> return $ E.XVar v (toSeaT t)
 
 	-- discard left over annots
 	C.XAnnot  n x		-> toSeaX x
@@ -271,9 +271,9 @@ toSeaX		xx
 		return	$ E.XCallApp v superA args'
 
 	C.XPrim C.MApply xs
-	 -> do	let (C.XVar v _) : args	= stripValues xs
+	 -> do	let (C.XVar v t) : args	= stripValues xs
 		args'	<- mapM toSeaX args
-	    	return	$ E.XApply (E.XVar v) args'
+	    	return	$ E.XApply (E.XVar v (toSeaT t)) args'
 	   
 	C.XPrim (C.MCurry superA) xs
 	 -> do	let (C.XVar v _) : args	= stripValues xs
@@ -295,9 +295,9 @@ toSeaX		xx
 
 	-- suspend
 	C.XPrim (C.MSuspend fn)	args 
-	 -> do	let args'	= map E.XVar 
-		 		$ filter (\v -> Var.nameSpace v == NameValue) 
-				$ map (\(C.XVar v t) -> v)
+	 -> do	let args'	= map (\ (v, t) -> E.XVar v $ toSeaT t)
+		 		$ filter (\ (v, t) -> Var.nameSpace v == NameValue) 
+				$ map (\(C.XVar v t) -> (v, t))
 		 		$ args
 
 		return	$ E.XSuspend fn args'
@@ -344,9 +344,9 @@ toSeaX		xx
 	C.XAPP{}
 	 -> let
 	 	parts		= C.flattenApps xx
-		(C.XVar vF _ : _)	= parts
+		(C.XVar vF vT : _)	= parts
 		
-	    in 	return	$ E.XVar vF
+	    in 	return	$ E.XVar vF $ toSeaT vT
 	 	
 	_ -> panic stage
 		$ "toSeaX: cannot convert expression to Sea IR.\n" 
@@ -407,7 +407,7 @@ toSeaS xx
 
 		let xT		= C.reconX_type (stage ++ ".toSeaS") x
 		let t		= toSeaT xT
-		let aaL		= map (assignLastA (E.XVar v, t)) aa'
+		let aaL		= map (assignLastA (E.XVar v t, t)) aa'
 		
 		return		[E.SMatch aaL]
 
@@ -421,7 +421,7 @@ toSeaS xx
 	C.SBind (Just v) x
 	 -> do	x'		<- toSeaX $ C.slurpExpX x
 		let t		= C.reconX_type (stage ++ ".toSeaS") x
-	    	return		[E.SAssign (E.XVar v) (toSeaT t) x']
+	    	return		[E.SAssign (E.XVar v (toSeaT t)) (toSeaT t) x']
 
 	C.SBind Nothing x
 	 -> do	x'		<- toSeaX x
@@ -482,7 +482,7 @@ toSeaG	mObjV ssFront gg
 		let result
 			-- if the LHS is var we can make the last stmt of the RHS assign it.
 			| C.WVar var'	<- w
-			= do	let ssL		= assignLastSS (E.XVar var', t') ssRHS
+			= do	let ssL		= assignLastSS (E.XVar var' t', t') ssRHS
 				return	( ssFront ++ ssL
 					, Nothing)
 
@@ -498,10 +498,10 @@ toSeaG	mObjV ssFront gg
 			= do	var	<- newVarN NameValue
 
 				let compX	= if isPatConst w
-					then E.XVar var
-					else E.XTag $ E.XVar var
+					then E.XVar var t'
+					else E.XTag $ E.XVar var t'
 
-				let ssL		= assignLastSS (E.XVar var, t') ssRHS
+				let ssL		= assignLastSS (E.XVar var t', t') ssRHS
 				return	( []
 					, Just $ E.GCase False (ssFront ++ ssL) compX (E.XLit litFmt))
 			  
@@ -510,10 +510,10 @@ toSeaG	mObjV ssFront gg
 			= do	var		<- newVarN NameValue
 
 				let compX	= if isPatConst w
-					then E.XVar var
-					else E.XTag $ E.XVar var
+					then E.XVar var t'
+					else E.XTag $ E.XVar var t'
 
-				let ssL		= assignLastSS (E.XVar var, t') ssRHS
+				let ssL		= assignLastSS (E.XVar var t', t') ssRHS
 				return	( map (toSeaGL var) lvts
 					, Just $ E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX (E.XCon v))
 
@@ -539,7 +539,7 @@ isPatConst gg
 
 toSeaGL	 objV (label, var, t)
 	| C.LIndex i	<- label
-	= E.SAssign (E.XVar var) E.TObj (E.XArg (E.XVar objV) E.TData i)
+	= E.SAssign (E.XVar var (toSeaT t)) E.TObj (E.XArg (E.XVar objV (toSeaT t)) E.TData i)
 
 
 -----
