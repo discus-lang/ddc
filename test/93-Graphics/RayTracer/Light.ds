@@ -1,6 +1,4 @@
 
-export type Light
-
 import Object
 import Math.Vec3
 

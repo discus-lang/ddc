@@ -1,6 +1,4 @@
 
-export type Shape
-
 import Math.Vec3
 
 -- | A primitive shape in the scene

@@ -1,6 +1,4 @@
 
-export type Color
-
 -- | A color with RGB components
 data Color
 	= Color {
