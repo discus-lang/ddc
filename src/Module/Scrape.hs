@@ -29,6 +29,7 @@ import Data.String
 import Data.Char
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Data.Map	as Map
+import qualified System
 
 -- Scrape -----------------------------------------------------------------------------------------
 data Scrape
@@ -72,7 +73,7 @@ data Scrape
 
 -- ScrapeSource -----------------------------------------------------------------------------------
 -- Scrape this module's source file.
---	returns Nothing if the file does not exist
+--	Raises System.exitFailure if the file does not exist
 --
 scrapeSourceFile
 	:: [FilePath]		-- Directories to look for imported modules in
@@ -84,7 +85,9 @@ scrapeSourceFile
 scrapeSourceFile importDirs importPrelude pathSource
  = do	exists	<- doesFileExist pathSource
 	if not exists
-	 then return Nothing
+	 then do
+		hPutStrLn stderr $ "ddc error: File '" ++ pathSource ++ "' does not exist.\n"
+		System.exitFailure
 	 else do
 		source	<- readFile pathSource
 		scrapeSourceFile' importDirs importPrelude pathSource source
