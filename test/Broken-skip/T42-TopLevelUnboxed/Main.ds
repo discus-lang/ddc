@@ -1,6 +1,0 @@
-
-
-
-upi = 3.14159#
-
-main () = putStr $ show (boxFloat32 upi)

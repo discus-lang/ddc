@@ -1,0 +1,10 @@
+
+upi :: Float32#
+upi = 3.14159#
+
+bexp :: Float32
+bexp = 2.71828
+
+main ()
+ = do	println $ show (boxFloat32 upi)
+	println $ show bexp
