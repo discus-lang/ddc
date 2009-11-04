@@ -80,8 +80,8 @@ import Data.Set				(Set)
 -- | Convert to A-Normal form.
 coreSnip
 	:: (?args	:: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String 		-- ^ stage name
+	=> (?pathSourceBase :: FilePath)
+	=> String 		-- ^ stage name
 	-> String 		-- ^ unique
 	-> Set Var 		-- ^ vars bound at top level
 	-> Tree			-- ^ core tree
@@ -117,8 +117,8 @@ coreNormalDo stage unique tree
 -- | Resolve calls to overloaded functions.
 coreDict
 	:: (?args	:: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree 		-- ^ header tree
+	=> (?pathSourceBase :: FilePath)
+	=> Tree 		-- ^ header tree
 	-> Tree			-- ^ core tree
 	-> IO Tree
 
@@ -132,8 +132,8 @@ coreDict hTree sTree
 -- | Reconstruct and check type information.
 coreReconstruct
 	:: (?args	:: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String		-- ^ stage name
+	=> (?pathSourceBase :: FilePath)
+	=> String		-- ^ stage name
 	-> Tree			-- ^ header tree
 	-> Tree			-- ^ core tree
 	-> IO Tree
@@ -153,8 +153,8 @@ coreReconstruct name cHeader cTree
 -- | Bind local regions.
 coreBind
 	:: (?args ::	[Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String		-- ^ unique
+	=> (?pathSourceBase :: FilePath)
+	=> String		-- ^ unique
 	-> (Map Var [Var])	-- ^ map of class constraints on each region
 				--	eg (%r1, [Lazy, Const])
 	-> Set Var		-- the regions with global lifetimes which should be bound 
@@ -184,7 +184,7 @@ coreBind
 coreThread
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	-> Tree 		-- ^ header tree
+	=> Tree 		-- ^ header tree
 	-> Tree 		-- ^ core tree
 	-> IO Tree
 	
@@ -200,8 +200,8 @@ coreThread hTree cTree
 -- | Identify primitive operations.
 corePrim
 	:: (?args ::	[Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree			-- ^ core tree
+	=> (?pathSourceBase :: FilePath)
+	=> Tree			-- ^ core tree
 	-> IO Tree
 	
 corePrim cTree
@@ -213,8 +213,8 @@ corePrim cTree
 -- | Do core simplification
 coreSimplify
 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String		-- ^ unique
+	=> (?pathSourceBase :: FilePath)
+	=> String		-- ^ unique
 	-> Set Var		-- ^ vars defined at top level
 	-> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
@@ -252,8 +252,8 @@ coreSimplify unique topVars cSource cHeader
 -- Full laziness optimisation.
 coreFullLaziness
 	:: (?args ::	[Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Module		-- ^ name of current module
+	=> (?pathSourceBase :: FilePath)
+	=> Module		-- ^ name of current module
 	-> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 	-> IO Tree		
@@ -283,8 +283,8 @@ coreFullLaziness
 -- Function inlining.
 coreInline
 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree			-- ^ core tree
+	=> (?pathSourceBase :: FilePath)
+	=> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 	-> [Var]		-- ^ bindings to inline
 	-> IO Tree
@@ -309,8 +309,8 @@ coreInline
 -- | Check the tree for syntactic problems that won't be caught by type checking.
 coreLint
 	:: (?args :: 	[Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String		-- ^ stage name
+	=> (?pathSourceBase :: FilePath)
+	=> String		-- ^ stage name
 	-> Tree 		-- ^ core tree
 	-> Tree 		-- ^ header tree
 	-> IO ()
@@ -333,8 +333,8 @@ coreLint stage cTree cHeader
 -- | Lift nested functions to top level.
 coreLambdaLift
 	:: (?args :: [Arg])	
-	-> (?pathSourceBase :: FilePath)
-	-> Tree			-- ^ core tree
+	=> (?pathSourceBase :: FilePath)
+	=> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 
 	-> IO	( Tree		-- the new source tree, old binds + new binds
@@ -372,8 +372,8 @@ coreLambdaLift cSource cHeader
 -- | Convert data structure labels to offsets.
 coreLabelIndex
 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Map Var CtorDef
+	=> (?pathSourceBase :: FilePath)
+	=> Map Var CtorDef
 	-> Tree			-- source tree
 	-> IO Tree
 	
@@ -388,8 +388,8 @@ coreLabelIndex mapCtorDefs cTree
 -- | Do dependency ordering of CAFs.
 coreSequence
 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree			-- ^ core tree
+	=> (?pathSourceBase :: FilePath)
+	=> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 	-> IO Tree
 
@@ -411,8 +411,8 @@ coreSequence cSource cHeader
 -- | Identify partial applications and insert calls to explicitly create and apply thunks.
 curryCall
 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree			-- ^ core tree
+	=> (?pathSourceBase :: FilePath)
+	=> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 	-> IO (Tree, Set Var)	-- ^ transformed tree, caf vars
 
@@ -440,8 +440,8 @@ curryCall cSource cHeader
 -- | Share constant constructors of airity zero.
 coreAtomise
 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree			-- ^ core tree
+	=> (?pathSourceBase :: FilePath)
+	=> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 	-> IO Tree
 
@@ -455,8 +455,8 @@ coreAtomise cSource cHeader
 -- | Convert Core-IR to Abstract-C
 toSea
 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String		-- unique
+	=> (?pathSourceBase :: FilePath)
+	=> String		-- unique
 	-> Tree			-- ^ core tree
 	-> Tree			-- ^ header tree
 
