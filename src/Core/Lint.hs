@@ -403,9 +403,6 @@ lintT tt (TFree	v t)
 lintT tt (TWitJoin wits)
  = do	mapM_ (lintT tt) wits
 
-lintT tt (TWild k)
- =	return ()
- 
 lintT tt _
  =	return ()
 

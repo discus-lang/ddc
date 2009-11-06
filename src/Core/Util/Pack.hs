@@ -188,9 +188,6 @@ packT1 tt
 	TWitJoin ts
 	 -> makeTWitnessJoin (map packT1 ts)
 	
-	-- wildcards
-	TWild{}	-> tt
-
 	_ -> panic stage
 		$ "packT: no match for " % tt % "\n"
 		% "  tt = " % show tt % "\n"
@@ -330,10 +327,7 @@ inlineTWheresMapT sub block tt
  	
 	-- closure
 	TFree v t		-> TFree v (down t)
-
-	TWild k			-> tt
 	    
-
 
 -- | Restrict the list of FWhere fetters to ones which are 
 --	reachable from this type. Also erase x = Bot fetters.

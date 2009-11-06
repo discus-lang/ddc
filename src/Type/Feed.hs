@@ -236,11 +236,6 @@ feedType'	mParent t
 		addNode	cid	$ TFree v1 t'
 		returnJ		$ TClass KClosure cid
 
-	TWild kind
-	 -> do	cid		<- allocClass kind
-		addNode cid	$ TWild kind
-		returnJ		$ TClass kind cid
-
 	TClass k cid
 	 -> do 	cidT'		<- sinkClassId cid
 		returnJ		$ TClass k cidT'

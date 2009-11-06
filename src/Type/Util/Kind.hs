@@ -177,12 +177,8 @@ kindOfType' tt
 	| TFree{}		<- tt	= Just KClosure
 	| TDanger{}		<- tt	= Just KClosure
 
-	-- wildcards have kinds embedded in them
-	| TWild k		<- tt	
-	= Just k
 
 	-- used in type inferencer -------------------------------------------
-
 	-- TData might be partially applied
 	| TData k v ts		<- tt
 	= do	ks	<- sequence $ map kindOfType ts
@@ -310,7 +306,6 @@ betaTT depth tX tt
 	TFree v t	-> TFree v (down t)
 
 	TWitJoin ts	-> TWitJoin (map down ts)
-	TWild k		-> tt
 
 	_	-> panic stage
 		$ "betaTT: no match for " % tt
@@ -335,7 +330,6 @@ isClosure tt
 	TDanger{}		-> True
 	TTop	KClosure 	-> True
 	TBot	KClosure 	-> True
-	TWild	KClosure	-> True
 
 	TFetters t1 _		-> isClosure t1
 	

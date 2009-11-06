@@ -76,9 +76,6 @@ instance FreeVars Type where
 	 	[ freeVars t1
 		, freeVars t2]
 
-	-- wildcards
-	TWild{}		-> empty
-
 	-- used in solver
 	TClass{}	-> empty
 	TError{}	-> empty

@@ -47,7 +47,7 @@ $var		= [$alpha $digit $varsym]
 
 
 @moduleSpec	= ($upper [$alpha $digit]* \.)*
-@nameSpaceQual	= [\% \! \$]?
+@nameSpaceQual	= [\* \% \! \$]?
 
 tokens :-
  $white # \n		;

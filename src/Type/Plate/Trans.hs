@@ -230,12 +230,6 @@ followT table tt
 	 	t'	<- transZM table t
 		return	$ TDanger v' t'
 
-	-- wildcards
-	TWild k
-	 -> do	k'	<- transZM table k
-	 	return	$ TWild k'
-
-
 	-- used in solver
 	TClass k cid
 	 -> do	cid'	<- transZM table cid

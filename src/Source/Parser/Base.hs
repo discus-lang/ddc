@@ -9,7 +9,7 @@ module Source.Parser.Base
 	, token
 	, pTok, pQualified
 	, pVar, pOfSpace, pVarPlain, pVarPlainNamed, pVarPlainOfSpace, pVarField
-	, pCon, pConOfSpace, pConOfSpaceNamed
+	, pCon, pConNamed, pConOfSpace, pConOfSpaceNamed
 	, pVarCon
 	, pSymbol
 	, pSemis
@@ -182,6 +182,16 @@ pCon :: Parser Var
  	(\t -> case t of
 		K.TokenP { K.token = K.Con name }	-> Just $ toVar t
 		_					-> Nothing)
+
+-- | Parse a constructor
+pConNamed :: String -> Parser Var
+pConNamed str 
+ = token
+ 	(\t -> case t of
+		K.TokenP { K.token = K.Con name }	
+			| str == name	-> Just $ toVar t
+			| otherwise	-> Nothing
+		_			-> Nothing)
 
 -- | Parse a constructor, but only from certain name spaces
 pConOfSpace :: [NameSpace] -> Parser Var

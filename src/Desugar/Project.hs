@@ -358,7 +358,6 @@ makeTypeName tt
  	TFun t1 t2 eff clo	-> "Fun" ++ makeTypeName t1 ++ makeTypeName t2
 	TData _ v ts		-> (Var.name v) ++ (catMap makeTypeName ts)
 	TVar k v		-> ""
-	TWild k			-> ""
 
 
 -- | Snip the RHS of this statement down to a var
@@ -416,13 +415,13 @@ addProjDataP projMap p
  = case p of
 	PData sp v vs ctors
  	 -> case Map.lookup v projMap of
-		Nothing	-> [p, PProjDict sp (TData (makeDataKind vs) v (map varToTWild vs)) []]
+		Nothing	-> [p, PProjDict sp (TData (makeDataKind vs) v (map varToTBot vs)) []]
 		Just _	-> [p]
 		
 	_		-> [p]
 
-varToTWild v
-	= TWild (kindOfSpace $ Var.nameSpace v)
+varToTBot v
+	= TBot (kindOfSpace $ Var.nameSpace v)
 	
 
 -----

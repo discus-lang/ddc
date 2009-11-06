@@ -129,10 +129,6 @@ matchInstance cType cInst
 				 | kindOfType ta == Just k
 			 	 -> True
 
-				TWild k
-				 | kindOfType ta == Just k
-				 -> True
-
 				_	-> False)
 
 		$ concat $ constrs

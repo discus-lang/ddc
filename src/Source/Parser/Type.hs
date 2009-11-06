@@ -237,14 +237,7 @@ pType_body2
 -- | Parse a type that can be used as an argument to a type constructor
 pType_body1 :: Parser Type
 pType_body1
- = 	-- VAR
- 	-- If a variable had no namespace qualifier out the front the lexer will leave
-	--	it in NameNothing. In this case we know its actually a type variable, so can
-	--	set it in NameType.
- 	do	var	<- liftM (vNameDefaultN NameType) $ pVarPlain
-		return	$ TVar 	(kindOfSpace $ Var.nameSpace var) var
-
- <|>	-- ()
+ = 	-- ()
  	do	pTok K.Unit
 		return	$ TData KValue (Var.primTUnit) []
 
@@ -254,25 +247,36 @@ pType_body1
 				Var.primTList
 				ts
 
+ <|>	-- *Bot
+	(Parsec.try $ do
+		con	<- pConNamed "*Bot"
+		return	$ TBot KValue)
+
+ <|>	-- %Bot
+	(Parsec.try $ do
+		con	<- pConNamed "%Bot"
+		return	$ TBot KRegion)
+
  <|>	-- !Bot
 	(Parsec.try $ do
-		con	<- pConOfSpaceNamed [NameEffect] "!Bot"
+		con	<- pConNamed "!Bot"
 		return	$ TBot KEffect)
 
  <|>	-- \$Bot
 	(Parsec.try $ do
-		con	<- pConOfSpaceNamed [NameClosure] "$Bot"
+		con	<- pConNamed "$Bot"
 		return	$ TBot KClosure)
 
+	-- VAR
+ 	-- If a variable had no namespace qualifier out the front the lexer will leave
+	--	it in NameNothing. In this case we know its actually a type variable, so can
+	--	set it in NameType.
+ <|>	do	var	<- liftM (vNameDefaultN NameType) $ pVarPlain
+		return	$ TVar 	(kindOfSpace $ Var.nameSpace var) var
+		
  <|>	-- CON
  	do	con	<- pOfSpace NameType $ pQualified pCon
 		return	$ TData KNil con []
-
- <|>	-- KIND _
- 	(Parsec.try $ do
-		k	<- pKind1
-		pTok K.Underscore
-		return	$ TWild k)
 
  <|>	pRParen pTypeBodyInRParen
 

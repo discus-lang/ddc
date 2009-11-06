@@ -209,10 +209,6 @@ data Type
 	| TDanger	Type Type		-- ^ If a region is mutable then free type variables in the 
 						--	associated type must be held monomorphic.
 	
-	-- Type wildcards can be unified with anything of the given kind.
-	-- 	Used in the source language and type inference only.
-	| TWild		Kind			
-
 	-- Type sugar.
 	--	Used in source and desugar stages only.
 	| TElaborate	Elaboration Type

@@ -120,8 +120,6 @@ subTT_cutM' sub cut tt
 	 	t2'	<- down t2
 		return	$ TDanger t1' t2'
 
-	TWild{}		-> return tt
-
 	TError{}	-> return tt
 
 	TVar{} 		-> subTT_enter sub cut tt

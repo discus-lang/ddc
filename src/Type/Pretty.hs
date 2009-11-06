@@ -101,7 +101,7 @@ instance Pretty Type PMode where
 	TDanger v t	-> v % " $> " % t
 	
 	-- wild cards
-	TWild k		-> k % "_"
+--	TWild k		-> k % "_"
 
 	-- used in type inference
 	TClass k c
@@ -151,7 +151,6 @@ prettyTB t
 	TVar k v 	-> ppr t
 	TSum{}		-> ppr t
 	TEffect v []	-> ppr t
-	TWild{}		-> ppr t
 	TClass{}	-> ppr t
 	TBot{}		-> ppr t
 	TTop{}		-> ppr t

@@ -52,16 +52,6 @@ unifyT2 t1 t2
 	, t1 == t2
 	= Just [(t1, t2)]
 
-
-	-- wildcards
-	| TWild k		<- t1		
-	, k1 == k2
-	= Just [(t1, t2)]
-	
-	| TWild k		<- t2
-	, k1 == k2
-	= Just [(t1, t2)]
-
 	| otherwise			
 	= Nothing
 

@@ -198,8 +198,6 @@ subFollowVT' sub block tt
 	TEffect v ts		-> TEffect v (map down ts)
 	
 	TFree v t		-> TFree v (down t)
-
-	TWild{}			-> tt
 		
 
 subFollowVT_f sub block ff

@@ -63,7 +63,6 @@ instance DeepSeq Type where
 	TEffect		v ts		-> deepSeq v  $ deepSeq ts y
 	TFree		v t		-> deepSeq v  $ deepSeq t y
 	TDanger		t1 t2		-> deepSeq t1 $ deepSeq t2 y
-	TWild		k		-> deepSeq k y
 	TElaborate	k s		-> deepSeq k  $ deepSeq s y
 	TData		k v ts		-> deepSeq k  $ deepSeq v $ deepSeq ts y
 	TFun		t1 t2 eff clo	-> deepSeq t1 $ deepSeq t2 $ deepSeq eff $ deepSeq clo y

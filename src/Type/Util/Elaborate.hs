@@ -68,7 +68,6 @@ elaborateRsT newVar getKind tt
 elaborateRsT' tt
  = case tt of
 	TVar{}	-> return (tt, [])
-	TWild{}	-> return (tt, [])
 	TTop{}	-> return (tt, [])
 	TBot{}	-> return (tt, [])
 
@@ -178,7 +177,6 @@ elabRs2 args kind
 hasKind k tt
  = case tt of
  	TVar k2 _	-> k == k2
-	TWild k2	-> k == k2
 	TBot k2		-> k == k2
 	_		-> False
 

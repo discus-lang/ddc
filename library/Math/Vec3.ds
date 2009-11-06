@@ -78,9 +78,9 @@ project Vec3 Float where
 	-- | The cross product of two vectors
 	cross :: Vec3 Float -> Vec3 Float -> Vec3 Float
 	cross (Vec3 x1 y1 z1) (Vec3 x2 y2 z2)
-		= Vec3 	(y1*z2 - z1*y2)
-			(z1*x2 - x1*z2)
-			(x1*y2 - y1*x2)
+		= Vec3 	(y1 * z2 - z1 * y2)
+			(z1 * x2 - x1 * z2)
+			(x1 * y2 - y1 * x2)
 			
 
 instance Num (Vec3 Float) where

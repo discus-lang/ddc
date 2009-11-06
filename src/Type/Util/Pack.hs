@@ -288,9 +288,6 @@ packT1 ld ls tt
 			TSum KClosure t2s	-> return $ makeTSum KClosure (map (TDanger t1) t2s)
 			_			-> return $ TDanger t1 t2'
 
-	-- wildcards
-	TWild{}	-> return tt
-
 	-- solver
 	TClass k cid1
 	 -> case Map.lookup tt ls of

@@ -95,7 +95,8 @@ parse	fileName
 
 		-- parse the source file
 		let sParsed	= parseModule fileName toksSource'
-		dumpST 	DumpSourceParse "source-parse" sParsed
+		dumpS 	DumpSourceParse "source-parse" 
+			$ show sParsed
 
 		return	( sParsed
 			, [str	| Token.CommentPragma str	<- map Token.token toksPragma ])

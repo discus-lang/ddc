@@ -135,9 +135,6 @@ toCoreT' table tt
 				
 	T.TFree v t		-> C.TFree v (down t)
 	
-	-- wildcards	
-	T.TWild k		-> C.TWild (toCoreK k)
-
 	_ 	-> panic stage 
 			$ "toCoreT: failed to convert " % tt 	% "\n"
 			% "    tt = " % show tt			% "\n"

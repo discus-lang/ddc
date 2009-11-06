@@ -45,7 +45,6 @@ stripFWheresT	tt
  	TVar{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	TTop{}	-> (tt, [])
-	TWild{}	-> (tt, [])
 
 	-- data
 	TFun t1 t2 eff clo
@@ -154,7 +153,6 @@ stripMonoFWheresT tt
 	    	, fsMono1 ++ fsMono2)
 	    
 	TClass{} -> (tt, [])
-	TWild{}	-> (tt, [])
 
 	TError{} -> (tt, [])
 

@@ -86,15 +86,6 @@ unifyT2 t1 t2
 	, kindOfType t1 == kindOfType t2
 	= Just [(t1, t2)]
 
-	-- wildcards
-	| TWild k		<- t1		
-	, kindOfType t2 == Just k		
-	= Just [(t1, t2)]
-	
-	| TWild k		<- t2
-	, kindOfType t1 == Just k		
-	= Just [(t1, t2)]
-
 	| otherwise			= Nothing
 	
 
