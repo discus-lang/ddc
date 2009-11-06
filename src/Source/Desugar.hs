@@ -760,3 +760,7 @@ instance Rewrite S.Type S.Type where
 
 	TElaborate ee t	-> return tt
 
+	TApp t1 t2
+	 -> do	t1'	<- rewrite t1
+	 	t2'	<- rewrite t2
+		return	$ TApp t1' t2'
