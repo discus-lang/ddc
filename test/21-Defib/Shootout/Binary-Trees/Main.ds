@@ -31,7 +31,7 @@ depthLoop d m
  = match {
  	| d <= m
 	= do {	n	= pow 2  (m - d + (min' ()));
-		print 	$ (show (2*n)) % "\t trees of depth " % show d 
+		print 	$ (show (2 * n)) % "\t trees of depth " % show d 
 			% "\t check: " % show (sumLoop (unboxInt32 n) (unboxInt32 d) 0#) 
 			% "\n";
 			

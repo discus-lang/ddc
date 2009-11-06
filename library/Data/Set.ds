@@ -131,13 +131,13 @@ doubleR x1 (Bin _ x2 t1 (Bin _ x3 t2 t3)) t4
 	= bin x3 (bin x2 t1 t2) (bin x1 t3 t4)
 
 rotateL x l r@(Bin _ _ ly ry)
-	| size&{Set a} ly < ratio *size&{Set a} ry 
+	| size&{Set a} ly < ratio * size&{Set a} ry 
 	= singleL x l r
 
 	\= doubleL x l r
 
 rotateR x l@(Bin _ _ ly ry) r
-	| size&{Set a} ry < ratio*size&{Set a} ly 
+	| size&{Set a} ry < ratio * size&{Set a} ly 
 	= singleR x l r
 
 	\= doubleR x l r
