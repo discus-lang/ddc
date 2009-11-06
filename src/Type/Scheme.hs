@@ -2,6 +2,7 @@
 
 module Type.Scheme
 	( generaliseType 
+	, checkContext
 	, watchClass)
 where
 
