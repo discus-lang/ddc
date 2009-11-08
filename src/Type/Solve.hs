@@ -953,6 +953,10 @@ solveGrindStep
 		$  mapM crushUnifyClass active
 
 
+	errors	<- gets stateErrors
+	when (length errors > 0) $ do
+		liftIO $ exitWithUserError [] errors
+
 	-- grind those classes
 	(progressCrush, qssMore)
 		<- liftM unzip
