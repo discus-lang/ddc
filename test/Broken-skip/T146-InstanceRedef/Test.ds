@@ -1,0 +1,11 @@
+
+data Whatever = A Int | B String
+
+instance Show Whatever where
+	show (A _) = "integer"
+	show (B _) = "string"
+
+instance Show Whatever where
+	show (A x) = show x
+	show (B x) = show x
+
