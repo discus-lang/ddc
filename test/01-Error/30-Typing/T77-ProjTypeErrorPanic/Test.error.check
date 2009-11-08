@@ -1,0 +1,15 @@
+ddc: ERROR
+./test/01-Error/30-Typing/T77-ProjTypeErrorPanic/Test.ds:3:8
+    Type mismatch during unification.
+          cannot match: Base.Unit
+                  with: Data.List.List %34 *30
+
+          type signature for 'Test.example'
+          which requires: Base.Unit
+                      at: ./test/01-Error/30-Typing/T77-ProjTypeErrorPanic/Test.ds:3:8
+
+        conflicts with, 
+              the use of: (:)
+                 at type: Data.List.List %34 *30
+                      at: ./test/01-Error/30-Typing/T77-ProjTypeErrorPanic/Test.ds:4:18
+
