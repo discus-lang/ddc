@@ -1,0 +1,10 @@
+-- This is OK. Should pass.
+funT1 :: forall a b c .  a -> b -> c
+
+-- This should result in an error.
+funT2 :: forall w x w .  w -> x -> w
+
+-- This should result in an error.
+funT2 :: forall x y y .  x -> y -> y
+
+
