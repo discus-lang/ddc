@@ -58,8 +58,12 @@ data Error
 	| ErrorUndefinedVar	
 		{ eUndefined		:: Var }
 
-	-- | Binding occurance of a variable shadows some othe rone
+	-- | Binding occurance of a variable shadows another
 	| ErrorShadowVar
+		{ eShadowVar		:: Var }
+
+	-- | Occurance of a type variable in a TForall shadows another
+	| ErrorShadowForall
 		{ eShadowVar		:: Var }
 
 	-- | Variable is redefined in the same scope.
@@ -171,6 +175,12 @@ instance Pretty Error PMode where
 	= prettyPos (eShadowVar err)								% "\n"
 	% "     Shadowed TREC variable '" % eShadowVar err  
 	% "' in namespace " 		% (shortNameOfSpace $ Var.nameSpace (eShadowVar err))	% ".\n"
+
+
+ ppr err@(ErrorShadowForall{})
+	= prettyPos (eShadowVar err)								% "\n"
+	% "     Shadowed type variable '" % eShadowVar err  
+	% "' in 'forall' quantifier.\n"
 
 	
  ppr err@(ErrorRedefinedVar{})

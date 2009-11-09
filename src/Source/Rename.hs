@@ -727,9 +727,14 @@ instance Rename Type where
  rename tt
   = case tt of
 	TForall b k t
-	 -> do 	(b', t')	<- local 
-		 $  do	let (BVar v)	= b
-		 	v'	<- bindZ v
+	 -> do	let (BVar v)	= b
+		let reused	= tforallHasVarName (Var.name v) t
+		when (not $ null reused)
+		 $ modify (\s -> s {
+	  		stateErrors 	= (stateErrors s) ++ map ErrorShadowForall reused })
+
+		(b', t')	<- local 
+		 $  do	v'	<- bindZ v
 			t'	<- rename t
 			return	(BVar v', t')
 
@@ -831,6 +836,16 @@ instance Rename Type where
 	 -> do	t'	<- rename t
 	 	return	$ TElaborate ee t'
 
+
+tforallHasVarName name tt
+ = case tt of
+	TForall b k t
+         -> do	let (BVar v)	= b
+		if Var.name v == name
+		 then v : tforallHasVarName name t
+                 else tforallHasVarName name t
+	_ -> []
+ 
 		
 -- TyCon -------------------------------------------------------------------------------------------
 instance Rename TyCon where
