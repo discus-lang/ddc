@@ -1,0 +1,27 @@
+
+data Foo a
+	= Bar a
+	| Baz a
+
+instance Show (Foo Int32) where
+	show (Bar a) = string_Int32 a
+	show (Baz a) = string_Int32 a
+
+instance Show (Foo String) where
+	show (Bar a) = a
+	show (Baz a) = a
+
+type FooStr = Foo String
+type FooInt32 = Foo Int32
+
+
+int :: FooInt32
+int = Bar 1
+
+str :: FooStr
+str = Baz "Hello"
+
+main ()
+ = do	println $ show int
+	println $ show str
+ 
