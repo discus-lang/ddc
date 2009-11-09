@@ -230,16 +230,30 @@ pTopTypePlus :: SP -> Parser (Top SP)
 pTopTypePlus startPos
  =	do	-- type CON :: KIND
 		con	<- pOfSpace NameType pCon
-		pTok	K.HasType
-		kind	<- pKind
-		return	$ PTypeKind startPos con kind
+		rest	<- pTopTypePlus2 startPos con
+		return	$ rest
 
-  <|>	do	-- type VAR :: TYPE
+ <|>	do	-- type VAR ...
 		var	<- pOfSpace NameType pVar
 		pTok	K.HasType
 		t	<- pType
 		return	$ PTypeSynonym startPos var t
 
+ <?>	"pTopTypePlus"
+
+pTopTypePlus2 :: SP -> Var -> Parser (Top SP)
+pTopTypePlus2 startPos var
+ =	do	-- :: TYPE
+		pTok	K.HasType
+		kind	<- pKind
+		return	$ PTypeKind startPos var kind
+
+ <|>	do	-- = TYPE
+		pTok	K.Equals
+		t	<- pType
+		return	$ PTypeSynonym startPos var t
+
+ <?>	"pTopTypePlus2"
 
 -- Effect ------------------------------------------------------------------------------------------
 -- | Parse an effect definition.
