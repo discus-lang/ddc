@@ -71,7 +71,7 @@ bindTypesX	x
 bindTypesW ::	Pat	-> LiftM Pat
 bindTypesW	ww
  = case ww of
- 	WCon v lvts
+ 	WCon _ v lvts
 	 -> do	mapM (\(l, v, t) -> bindType v t) lvts
 	 	return ww
 		

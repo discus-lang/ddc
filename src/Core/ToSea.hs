@@ -487,13 +487,13 @@ toSeaG	mObjV ssFront gg
 					, Nothing)
 
 			-- the Sea language can't match against boxed literals
-			| C.WLit litFmt@(LiteralFmt lit fmt)	<- w
+			| C.WLit _ litFmt@(LiteralFmt lit fmt)	<- w
 			, dataFormatIsBoxed fmt
 			= panic stage 	$ "toSeaG: can't match against boxed data: " % show fmt % "\n"
 					% "   when converting guard: " % gg
 
 			-- match against an unboxed literal value
-			| C.WLit litFmt@(LiteralFmt lit fmt)	<- w
+			| C.WLit spos litFmt@(LiteralFmt lit fmt)	<- w
 			, dataFormatIsUnboxed fmt
 			= do	var	<- newVarN NameValue
 
@@ -503,10 +503,10 @@ toSeaG	mObjV ssFront gg
 
 				let ssL		= assignLastSS (E.XVar var t', t') ssRHS
 				return	( []
-					, Just $ E.GCase False (ssFront ++ ssL) compX (E.XLit litFmt))
+					, Just $ E.GCase spos False (ssFront ++ ssL) compX (E.XLit litFmt))
 			  
 			-- match against constructor
-			| C.WCon v lvts	<- w
+			| C.WCon sp v lvts	<- w
 			= do	var		<- newVarN NameValue
 
 				let compX	= if isPatConst w
@@ -515,7 +515,7 @@ toSeaG	mObjV ssFront gg
 
 				let ssL		= assignLastSS (E.XVar var t', t') ssRHS
 				return	( map (toSeaGL var) lvts
-					, Just $ E.GCase (not rhsIsDirect) (ssFront ++ ssL) compX (E.XCon v))
+					, Just $ E.GCase sp (not rhsIsDirect) (ssFront ++ ssL) compX (E.XCon v))
 
 		result
 

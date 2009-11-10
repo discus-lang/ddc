@@ -395,8 +395,8 @@ instance Monad m => TransM m a1 a2 Alt where
 	 -> do	x'		<- transZM table x
 		transA table	$ ACaseSusp x' l
 
-	ACaseDeath
-	 ->	transA table 	$ ACaseDeath	 
+	ACaseDeath sp
+	 ->	transA table 	$ ACaseDeath sp
 	 
 	ADefault ss
 	 -> do	ss2		<- mapM (transZM table) ss
@@ -407,13 +407,13 @@ instance Monad m => TransM m a1 a2 Alt where
 instance Monad m => TransM m a1 a2 Guard where
  transZM table a
   = case a of
-  	GCase b ss x1 x2
+  	GCase sp b ss x1 x2
 	 -> do	ss2		<- mapM (transZM table) ss
 		ss3		<- transSS table ss2
 
 	 	x1'		<- transZM table x1
 		x2'		<- transZM table x2
-		return		$ GCase b ss3 x1' x2'
+		return		$ GCase sp b ss3 x1' x2'
 		
 	 
 		

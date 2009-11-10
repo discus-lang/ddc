@@ -38,6 +38,7 @@ where
 import Util
 
 -----
+import Shared.Base (SourcePos(..))
 import Shared.Var (Var)
 import Shared.VarPrim
 import Shared.Literal
@@ -240,9 +241,9 @@ data Guard
 	deriving (Show, Eq)
 
 data Pat
-	= WVar		Var				-- ^ Bind a variable
-	| WLit		LiteralFmt			-- ^ Match against a literal value
-	| WCon		Var	[(Label, Var, Type)]	-- ^ Match against a constructor and bind arguments.
+	= WVar	Var					-- ^ Bind a variable
+	| WLit	SourcePos LiteralFmt			-- ^ Match against a literal value
+	| WCon	SourcePos Var [(Label, Var, Type)]	-- ^ Match against a constructor and bind arguments.
 	deriving (Show, Eq)
 	
 data Label

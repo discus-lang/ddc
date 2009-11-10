@@ -75,8 +75,7 @@ topHandle f
 		ExceptionCaseNoMatch name line column
 		 -> 	print	$ "*** DDC RTS: Non-exhaustive patterns in "
 		 		% name	
-				-- file position info is broken (ticket #119)
-				-- % ":" % show line % ":" % show column % "\n"
+				% ":" % string_Int32 line % ":" % string_Int32 column
 				% "\n\n"
 
 		ExceptionArrayBounds size ix

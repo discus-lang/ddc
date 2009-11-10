@@ -52,8 +52,8 @@ static inline UInt
 	  goto label; 
 
 // Handle a non-exhaustive case match.	  
-#define _CASEDEATH \
-	default: _deathCase (__func__, 0, 0);
+#define _CASEDEATH(file,line,col) \
+	default: _deathCase (file, line, col);
 
 // Emit a non-exaustive case match error.
 #define _CASEFAIL \

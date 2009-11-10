@@ -190,7 +190,7 @@ varsBoundByW	ww
  = case ww of
 	WVar v		-> Set.singleton v
  	WLit{}	 	-> empty
-	WCon	v fs	-> fromList $ map t3_2 fs
+	WCon sp v fs	-> fromList $ map t3_2 fs
 	
 
 -- Pat ---------------------------------------------------------------------------------------------
@@ -198,8 +198,8 @@ instance FreeVars Pat where
  freeVars pp
   = case pp of
 	WVar v		-> empty
-  	WLit c		-> empty
-	WCon v lts	-> Set.unions $ map (freeVars . t3_3) lts
+  	WLit sp c	-> empty
+	WCon sp v lts	-> Set.unions $ map (freeVars . t3_3) lts
 
 		
 		

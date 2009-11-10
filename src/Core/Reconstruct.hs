@@ -834,7 +834,7 @@ reconG tt gg@(GExp p x)
  
 slurpVarTypesW tRHS (WVar v)		= [(v, tRHS)]
 slurpVarTypesW tRHS (WLit{})		= []
-slurpVarTypesW tRHS (WCon v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
+slurpVarTypesW tRHS (WCon _ v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 
 
 

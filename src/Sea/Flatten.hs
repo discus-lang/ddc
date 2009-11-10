@@ -98,7 +98,7 @@ flattenG
 	( ixGuard	-- index of this guard
 	 , g)		-- the guard
 
-	| GCase isLazy ss x1 x2@(XLit litFmt) 	<- g
+	| GCase _ isLazy ss x1 x2@(XLit litFmt) 	<- g
 	, LiteralFmt lit fmt			<- litFmt
 	= do
 		let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
@@ -127,7 +127,7 @@ flattenG
 
 		return stmts
 				
- 	| GCase isLazy ss x1 x2			<- g
+ 	| GCase spos isLazy ss x1 x2			<- g
 	= do
 		let lName	= "a" ++ show ixAlt ++ "g" ++ show ixGuard
 	
@@ -142,7 +142,7 @@ flattenG
 
 			-- otherwise die and emit a non-exhaustive case match error
 			| otherwise
-			= [ACaseDeath]
+			= [ACaseDeath spos]
 
 		-- decide whether we need to generate code to follow suspensions.
 		let (ssAgain, ssFollow)

@@ -33,12 +33,12 @@ labelIndexW mapCtorDefs xx
 	WVar{}
 	 ->	xx
 
- 	WCon ctorName lvts	
+ 	WCon spos ctorName lvts	
 	 -> let	(ls, vs, ts)	= unzip3 lvts
 		Just ctorDef	= Map.lookup ctorName mapCtorDefs
 	 	ls'		= map (convertLabel ctorDef) ls
 		lvts'		= zip3 ls' vs ts
-	    in	WCon ctorName lvts'
+	    in	WCon spos ctorName lvts'
 	 
 	WLit{}
 	 ->	xx

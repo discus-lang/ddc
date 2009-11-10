@@ -11,6 +11,8 @@ module Shared.VarUtil
 	, isCtorName
 	, isDummy
 
+	, varPos
+
 	, prettyPos
 	, prettyPosBound
 	, sortForallVars
@@ -19,6 +21,7 @@ module Shared.VarUtil
 
 where
 
+import Shared.Base			(SourcePos(..))
 import qualified Shared.Var as Var
 import Shared.Var 			(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
 import Shared.Pretty
@@ -68,6 +71,12 @@ prettyPos var
 	$ find (=@= ISourcePos{}) 
 	$ Var.info var 
 
+varPos :: Var	-> SourcePos
+varPos var
+ = do	let Just pos	= liftM (\(ISourcePos sp) -> sp)
+			$ find (=@= ISourcePos{})
+			$ Var.info var
+	pos
 
 -- Pretty print the source position of the bounding occurance of this variable.
 prettyPosBound :: Var	-> String

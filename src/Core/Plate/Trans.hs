@@ -659,10 +659,10 @@ instance Monad m => TransM m Pat where
 	 -> do	v'		<- followV_bind table v
 	 	transW table	$ WVar v'
 
-	WLit c
-	 ->  	transW table	$ WLit c
+	WLit spos c
+	 ->  	transW table	$ WLit spos c
 	 
-	WCon v lvt
+	WCon spos v lvt
 	 -> do	v'		<- followV_free table v
 
 		let (ls, vs, ts)	= unzip3 lvt
@@ -670,7 +670,7 @@ instance Monad m => TransM m Pat where
 		ts'		<- followTs table ts
 		let lvt'	= zip3 ls vs' ts'
 
-	 	transW table	$ WCon v' lvt'
+	 	transW table	$ WCon spos v' lvt'
 
 
 -----

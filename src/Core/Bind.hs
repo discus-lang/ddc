@@ -226,12 +226,12 @@ bindW shared ww
 	 		, Set.empty
 			, Set.empty )
 
- 	WLit l
-	 -> return 	( WLit l
+ 	WLit sp l
+	 -> return 	( WLit sp l
 	 		, Set.empty
 			, Set.empty )
-	WCon v lts
-	 -> return	( WCon v lts
+	WCon sp v lts
+	 -> return	( WCon sp v lts
 	 		, Set.unions $ map (freeRegions . t3_3) lts
 			, Set.empty)
 

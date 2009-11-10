@@ -12,9 +12,10 @@ import Util
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
+import Shared.Base		(SourcePos(..))
 import qualified Shared.Var	as Var
 import Shared.Var		(VarBind(..), NameSpace(..))
-import Shared.VarUtil		(VarGenM, newVarN)
+import Shared.VarUtil		(VarGenM, newVarN, varPos)
 
 import qualified Shared.Unique	as Unique
 
@@ -59,7 +60,7 @@ forceS		s
 		--
 		let aaD	= if or $ map (=@= ADefault{}) aaF
 				then aaF
-				else aaF ++ [ACaseDeath]
+				else aaF ++ [ACaseDeath (varPos var)]
 		
 		let s'	= SSwitch x aaD
 				

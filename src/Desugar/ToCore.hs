@@ -17,6 +17,8 @@ import qualified Debug.Trace	as Debug
 import Util
 
 -----
+import Shared.Base		(SourcePos(..))
+import Shared.VarUtil		(isDummy, varPos)
 import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var 	as Var
 
@@ -673,8 +675,12 @@ toCoreW :: D.Pat Annot
 	
 toCoreW ww
 	| D.WConLabel _ v lvs	<- ww
-	= do 	lvts		<- mapM toCoreA_LV lvs
-	 	return	( C.WCon v lvts
+	= do	let vlist	= filter (not . isDummy) $ v : map snd lvs
+		let spos	= if length vlist == 0
+					then SourcePos ("?", 0, 0)
+					else varPos $ head vlist 
+		lvts		<- mapM toCoreA_LV lvs
+		return	( C.WCon spos v lvts
 			, Nothing)
 	 
 	-- match against a boxed literal
@@ -696,7 +702,7 @@ toCoreW ww
 		-- get the unboxed version of this data format.
 	 	let Just fmt_unboxed	= S.dataFormatUnboxedOfBoxed fmt
 	
-	 	return	( C.WLit (S.LiteralFmt lit fmt_unboxed)
+	 	return	( C.WLit (varPos vT) (S.LiteralFmt lit fmt_unboxed)
 			, Just r)
 	
 	-- match against unboxed literal
@@ -707,7 +713,7 @@ toCoreW ww
 		litFmt@(S.LiteralFmt lit fmt)	<- ww
 
 	, S.dataFormatIsUnboxed fmt
-	= do	return	( C.WLit litFmt
+	= do	return	( C.WLit (varPos vT) litFmt
 			, Nothing)
 
 

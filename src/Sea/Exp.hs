@@ -13,6 +13,7 @@ module Sea.Exp
 where
 
 import Util
+import Shared.Base
 import qualified Shared.Var	as Var
 import Shared.Var		(Var)
 import Shared.Exp
@@ -121,7 +122,7 @@ data Alt a
 	| ACaseSusp	(Exp a) Var			-- _CASESUSP (exp, label);
 							--	// if exp is a susp, force and jump to label
 
-	| ACaseDeath					-- _CASEDEATH;
+	| ACaseDeath 	SourcePos			-- _CASEDEATH (file, line, column);
 
 	| ADefault	[Stmt a]
 	deriving (Show, Eq)
@@ -130,6 +131,7 @@ data Alt a
 data Guard a
 	-- Run some stmts then check if two objects have the same tag
 	= GCase						-- a guard in a case expression
+			SourcePos			-- source filename, line and column
 			Bool				-- true if the case object is in a lazy region
 			[Stmt a] 			-- run these statements
 			(Exp a)				-- check if this value (the case object)

@@ -355,11 +355,11 @@ instance Pretty Pat PMode where
   = case xx of
 	WVar v		-> pv v
 
-  	WLit c		-> ppr c 
+  	WLit _ c	-> ppr c 
 
-	WCon v []	-> pv v
+	WCon _ v []	-> pv v
 
-	WCon v binds
+	WCon _ v binds
 	 -> pv v % "\n"
 	  %> ("{ " % "\n, " %!% (map prettyLVT binds))  % " }"
  

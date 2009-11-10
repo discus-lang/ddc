@@ -160,9 +160,8 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 		%  "break;\n")
 	  % "  }\n"
 
-	ACaseSusp x l		-> "  _CASESUSP (" % x % ", " % "_" % l % ");\n"
-	ACaseDeath		-> ppr "  _CASEDEATH;\n"
-
+	ACaseSusp x l				-> "  _CASESUSP (" % x % ", " % "_" % l % ");\n"
+	ACaseDeath (SourcePos (f, l, c))	-> ppr "  _CASEDEATH (\"" % f % "\", " % l % ", " % c % ");\n"
 
 	ADefault [SGoto v]
 	 -> "  default: goto " % sV v % ";\n"
@@ -178,12 +177,12 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
  ppr gg
   = case gg of
-  	GCase True ss x1 x2
+  	GCase _ True ss x1 x2
 	 -> "guard {\n"
 	 %> ("\n" %!% ss % "\n") % "}\n"
 	 %  "compareLazy " % x1 % " with " % x2 % ";\n";
 
-  	GCase False ss x1 x2
+  	GCase _ False ss x1 x2
 	 -> "guard {\n"
 	 %> ("\n" %!% ss % "\n") % "}\n"
 	 %  "compareDirect " % x1 % " with " % x2 % ";\n";

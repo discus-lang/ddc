@@ -301,10 +301,10 @@ lintW tt (WVar v)
 	tt'		<- addVT v t tt
 	return tt'
 
-lintW tt (WLit c)
+lintW tt (WLit _ c)
  = do 	return tt
  
-lintW tt (WCon v lvt)
+lintW tt (WCon _ v lvt)
  = do	tt'		<- addVTs (map (\(l, v, t) -> (v, t)) lvt) tt
  	return tt'
 
