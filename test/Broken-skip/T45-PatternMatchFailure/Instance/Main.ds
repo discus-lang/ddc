@@ -1,0 +1,8 @@
+
+data Whatever = A Int | B String
+
+instance Show Whatever where
+	show (A x) = show x
+
+main ()
+ = println $ show $ B "hello"

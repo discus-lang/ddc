@@ -1,0 +1,11 @@
+
+data Var = A Int | B String
+
+varShow :: Var -> String
+varShow v
+  | A 16 <- v = "16"
+  | B "hello" <- v = "hello"
+
+main ()
+ = do	println $ varShow $ A 16
+	println $ varShow $ A 17

@@ -1,0 +1,12 @@
+
+data Var = A Int | B String
+
+varShow :: Var -> String
+varShow v
+ = case v of
+	A 14 -> "14"
+	B "hello" -> "hello"
+
+main ()
+ = do	println $ varShow $ A 14
+	println $ varShow $ A 15
