@@ -1,0 +1,1 @@
+data Foo %r0 = Foo (Int32# %r0)
