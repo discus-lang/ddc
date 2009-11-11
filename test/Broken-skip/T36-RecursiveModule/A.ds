@@ -1,0 +1,3 @@
+import B
+
+data A = A | S | D

@@ -1,0 +1,13 @@
+-- CAF : Effect free.
+plus4 :: Int32 -> Int32
+plus4 = (+) 4
+
+-- CAF with side effect. Should not compile.
+plus4se :: Int32 -> Int32
+plus4se
+ = do	println "plus4se"
+ 	(+) 4
+
+main ()
+ = do	println $ show $ plus4 3
+	println $ show $ plus4se 3
