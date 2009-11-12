@@ -1,0 +1,7 @@
+data Foo = Bar | Baz
+
+notBar s = s /= Bar
+
+main ()
+ = do	println $ show $ notBar Bar
+ 	println $ show $ notBar Baz

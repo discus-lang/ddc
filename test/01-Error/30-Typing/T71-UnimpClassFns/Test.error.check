@@ -1,0 +1,3 @@
+ddc: ERROR
+    No instance for Class.Eq.Eq (Test.Foo %rTS4)
+
