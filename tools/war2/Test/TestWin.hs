@@ -39,6 +39,9 @@ data TestWin
 	| TestWinRun
 		{ testWinTime	:: TimeDiff }
 
+	-- Binary failed, as expected
+	| TestWinRunError
+
 	-- File was as expected.
 	| TestWinDiff
 	deriving (Show, Eq)

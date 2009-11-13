@@ -4,7 +4,7 @@ module Command
 	( io
 	, DirPath
 	, IOF
-	, IOFail
+	, IOFail(..)
 	, timeIOF_
 	, system
 	, fileExists

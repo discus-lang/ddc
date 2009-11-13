@@ -2,7 +2,8 @@
 module Test.TestResult
 	( TestResult
 	, Test(..)
-	, pprTest )
+	, pprTest 
+	, NoShow(..))
 
 where
 
@@ -10,6 +11,8 @@ import Config
 import Format
 import Test.TestFail
 import Test.TestWin
+
+import System.Exit
 
 
 
@@ -39,16 +42,28 @@ data Test
 	| TestCompileError	FilePath
 
 	-- | Run an exectuable
-	| TestRun	 	FilePath
+	| TestRun	 	
+		FilePath 			-- executable to run
+		(NoShow (ExitCode -> Bool))	-- fn to decide whether test succeeded, based on exit code.
 
 	-- | Diff an output file against the expected output
 	| TestDiff      	FilePath FilePath	-- template, test output
 
 	-- | Cleanup DDC generated files from this dir
 	| TestClean		FilePath
-	deriving (Eq, Show)
+	deriving Show
+	
+data NoShow a 
+	= NoShow a
 
+instance Show (NoShow a) where
+	show x	= "NoShow"
 
+instance Eq Test where
+ (==) t1 t2
+	=  testPath t1 == testPath t2
+	&& testTag  t1 == testTag  t2
+	
 instance Ord Test where
  compare t1 t2
 	= case compare (testPath t1) (testPath t2) of
@@ -63,7 +78,7 @@ testPath test
 	TestShellError	 path		-> path
 	TestCompile   	 path		-> path
 	TestCompileError path		-> path
-	TestRun 	 path		-> path
+	TestRun 	 path _		-> path
 	TestDiff	 temp out	-> out
 	TestClean	 path		-> path
 
@@ -90,8 +105,8 @@ pprTest test
 	TestShell       path 	-> padR formatPathWidth path ++ " shell   "
 	TestShellError  path 	-> padR formatPathWidth path ++ " error   "
 	TestCompile     path 	-> padR formatPathWidth path ++ " compile "
-	TestCompileError path  -> padR formatPathWidth path ++ " error   "
-	TestRun		path 	-> padR formatPathWidth path ++ " run     "
+	TestCompileError path   -> padR formatPathWidth path ++ " error   "
+	TestRun		path _	-> padR formatPathWidth path ++ " run     "
 	TestDiff template out	-> padR formatPathWidth out  ++ " diff    "
 	TestClean	path	-> padR formatPathWidth path ++ " clean   "
 

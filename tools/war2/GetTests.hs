@@ -7,11 +7,11 @@ import TestNode
 import Command
 import War
 
-
 import Util
 import Util.FilePath
 import Util.Data.WorkGraph		(WorkGraph, WorkNode(..))
 
+import System.Exit
 
 -- Get Tests --------------------------------------------------------------------------------------
 -- Look for tests in this directory
@@ -32,8 +32,10 @@ getTestsInDir config dirPath
 
 
 	-- | If we have a Main.sh, then run that
-	let gotMainSH		= any (isSuffixOf "/Main.sh") files
-	let gotMainErrorCheck	= any (isSuffixOf "/Main.error.check") files
+	--	If we have a Main.error.check, we're expecing the script to fail.
+	--
+	let gotMainSH		 = any (isSuffixOf "/Main.sh") files
+	let gotMainErrorCheck	 = any (isSuffixOf "/Main.error.check") files
 	let testsShell
 		= listWhen (gotMainSH && not gotMainErrorCheck)
 		$ chainTests	[ TestShell	(dirPath ++ "/Main.sh") ]
@@ -45,22 +47,42 @@ getTestsInDir config dirPath
 						(dirPath ++ "/Main.execute.stderr") ]
 
 
-	-- Build and run executables if we have a Main.ds
-	-- Execute shells scripts called Main.sh
-	--	If we have an error.check file then we're expecting it to fail.
-	let gotMainDS		= any (isSuffixOf "/Main.ds") files
+	-- Build and run executables if we have a Main.ds, but no Main.sh
+	--	If we have an error.check    file 
+	--		then we're expecting the build to fail.
+	--	If we have an runerror.check file 
+	--		then we're expecting the build to succeed, but the executable to fail at runtime.
+	--
+	let gotMainDS		 = any (isSuffixOf "/Main.ds") files
+	let gotMainRunErrorCheck = any (isSuffixOf "/Main.runerror.check") files
 
-	let testsBuild
-		= listWhen (gotMainDS && not gotMainErrorCheck && not gotMainSH)
+	let testsBuildRunSuccess
+		= listWhen (not gotMainSH && gotMainDS && not gotMainErrorCheck && not gotMainRunErrorCheck)
 		$ chainTests	[ TestBuild	(dirPath ++ "/Main.ds")
-				, TestRun	(dirPath ++ "/Main.bin") ]
+				, TestRun	(dirPath ++ "/Main.bin") 
+						(NoShow (\c -> case c of 
+							ExitSuccess   -> True
+							ExitFailure _ -> False))]
+
+	let testsBuildRunError
+		= listWhen (not gotMainSH && gotMainDS && not gotMainErrorCheck && gotMainRunErrorCheck)
+		$ chainTests	[ TestBuild	(dirPath ++ "/Main.ds")
+				, TestRun	(dirPath ++ "/Main.bin") 
+						(NoShow (\c -> case c of 
+							ExitFailure _ -> True
+							ExitSuccess   -> False))]
+
+	let testsBuildRun
+		=  testsBuildRunSuccess 
+		++ testsBuildRunError
+
 
 	-- If we ran an executable, and we have a stdout check file
 	--	then check the executable's output against it
 	let gotMainStdoutCheck	= any (isSuffixOf "/Main.stdout.check") files
 	let testsStdout
 		| gotMainStdoutCheck
-		, Just nodeLast		<- takeLast testsBuild
+		, Just nodeLast		<- takeLast testsBuildRun
 		, tLast			<- testOfNode nodeLast
 		= [node1 (TestDiff	(dirPath ++ "/Main.stdout.check")
 					(dirPath ++ "/Main.stdout"))
@@ -72,8 +94,8 @@ getTestsInDir config dirPath
 	let testsBuildError
 		= listWhen (gotMainDS && gotMainErrorCheck && not gotMainSH)
 		$ chainTests	[ TestBuildError (dirPath ++ "/Main.ds")
-				, TestDiff	(dirPath ++ "/Main.error.check") 
-						(dirPath ++ "/Main.compile.stderr") ]
+				, TestDiff 	 (dirPath ++ "/Main.error.check") 
+						 (dirPath ++ "/Main.compile.stderr") ]
 
 
 	-- If there is no Main.ds then expect every source file that hasn't got an 
@@ -108,9 +130,9 @@ getTestsInDir config dirPath
 	--	So run them all ways that were specified
 	let testsAllWays
 		= concat 
-			[ testsBuild,	testsBuildError
-			, testsShell,	testsShellError
-			, testsCompile,	testsCompileError
+			[ testsBuildRun,	testsBuildError
+			, testsShell,		testsShellError
+			, testsCompile,		testsCompileError
 			, testsStdout ]
 
 	let testsHereExpanded
