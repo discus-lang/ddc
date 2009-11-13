@@ -2,11 +2,13 @@
 module Main.Error where
 
 import Shared.Pretty
+import Shared.Var		(Module(..))
 
 data Error
 	= ErrorNoMainInMain
 	| ErrorLinkExecutableWithoutMain
 	| ErrorSymbolInFileName Char
+	| ErrorRecursiveModules String
 	deriving Show
 
 instance Pretty Error PMode where
@@ -22,5 +24,8 @@ instance Pretty Error PMode where
 	= ppr $ unlines
 	[ "    Invalid symbol " ++ show sym ++ " in source file name."]
 
+ ppr (ErrorRecursiveModules s)
+	= ppr $ unlines
+	[ "    " ++ s]
 
 

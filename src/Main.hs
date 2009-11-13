@@ -106,7 +106,7 @@ ddc argStrs
 
 		-- do a plain compile
 		| not $ isNil compileFiles
-		= ddcCompile verbose setup compileFiles
+		= ddcCompile args verbose setup compileFiles
 
 		-- do a recursive build
 		| not $ isNil buildFiles
@@ -125,7 +125,7 @@ ddc argStrs
 
 
 -- | Do a regular compile.
-ddcCompile verbose setup files
+ddcCompile args verbose setup files
  = do 	-- use the directories containing the files to be compiled as extra import dirs
 	let takeDir path
 		= case normalMunchFilePath path of
@@ -142,7 +142,7 @@ ddcCompile verbose setup files
 		$  mapM (scrapeSourceFile (importDirsOfSetup setup') True) files 
 
 	-- scrape all modules reachable from the roots
-	graph		<- scrapeRecursive setup' roots
+	graph		<- scrapeRecursive args setup' roots
 
 	-- during a plain compile, all the dependencies should already be up-to-date
 	let graph_noRoots 

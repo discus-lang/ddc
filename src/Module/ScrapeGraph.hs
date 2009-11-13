@@ -11,10 +11,13 @@ module Module.ScrapeGraph
 where
 import Module.Scrape
 
+import Control.Monad		(foldM)
+import Main.Arg
+import Main.Error
 import Main.Setup
 import Shared.Var		(Module(..))
 import Shared.Pretty
-import Shared.Error		(panic)
+import Shared.Error		(exitWithUserError)
 
 import Util
 import Data.Map			(Map)
@@ -29,11 +32,12 @@ stage = "Module.ScrapeGraph"
 
 -- | Scrape all modules transtitively imported by these ones.
 scrapeRecursive
-	:: Setup
+	:: [Arg]
+	-> Setup
 	-> [Scrape]			-- root set
-	-> IO (Map Module Scrape)	-- graph of modules reachable from, this one
+	-> IO ScrapeGraph		-- graph of modules reachable from, this one
 
-scrapeRecursive setup roots
+scrapeRecursive args setup roots
  = let	graph	= Map.fromList [ (scrapeModuleName s, s) | s <- roots]
 
 	-- each child carries the scrape of the module that imported it.
@@ -43,15 +47,21 @@ scrapeRecursive setup roots
 					| imp <- scrapeImported s])
 			roots
 
-   in 	scrapeRecursive' setup  graph msImp
+   in 	scrapeRecursive' args setup  graph msImp
 
-scrapeRecursive' setup graph []
+scrapeRecursive'
+	:: [Arg]
+	-> Setup
+	-> ScrapeGraph
+	-> [(Scrape, Module)]
+	-> IO ScrapeGraph
+scrapeRecursive' args setup graph []
 	= return graph
 	
-scrapeRecursive' setup graph ((sParent, v):vs)
+scrapeRecursive' args setup graph ((sParent, v):vs)
 	-- this module is already in the graph
 	| isJust $ Map.lookup v graph
-	= scrapeRecursive' setup graph vs
+	= scrapeRecursive' args setup graph vs
 	
 	-- scrape module and add its children
 	| otherwise
@@ -69,9 +79,8 @@ scrapeRecursive' setup graph ((sParent, v):vs)
 			exitFailure
 			
 		 Just sChild
-		  ->	scrapeRecursive' 
-				setup 
-				(scrapeGraphInsert v sChild graph)
+		  -> do graph'	<- scrapeGraphInsert args v sChild graph
+			scrapeRecursive' args setup graph'
 				( [(sChild, imp)
 					| imp <- scrapeImported sChild]
 				  ++ vs)
@@ -82,42 +91,42 @@ scrapeRecursive' setup graph ((sParent, v):vs)
 --	TODO: this'll die if there are cycles in the graph
 --	TODO: this is inefficient if the graph is lattice-like instead of a simple tree
 --
-invalidateParents :: ScrapeGraph -> Module -> ScrapeGraph
-invalidateParents graph mod
- = let	Just scrape	= Map.lookup mod graph
+invalidateParents :: [Arg] -> ScrapeGraph -> Module -> IO ScrapeGraph
+invalidateParents args graph mod
+ = do	let	Just scrape	= Map.lookup mod graph
 	
 	-- decend into all the children
-	graph'	= foldl' invalidateParents graph (scrapeImported scrape) 
+	graph'	<- foldM (invalidateParents args) graph (scrapeImported scrape) 
 
 	-- if any of the imports need rebuilding then this one does to
-	rebuild	
+	let rebuild	
 		=  (scrapeNeedsRebuild scrape)
 		|| (or 	$ map scrapeNeedsRebuild 
 			$ map (\m -> let Just sc = Map.lookup m graph' in sc)
 			$ scrapeImported scrape)
 
-	scrape'	= scrape { scrapeNeedsRebuild = rebuild }
+	let scrape'	= scrape { scrapeNeedsRebuild = rebuild }
 
-   in	scrapeGraphInsert mod scrape' graph'
+	scrapeGraphInsert args mod scrape' graph'
 
 
 -- A replacement for Map.insert for the ScrapeGraph.
 -- This replacement detectd cycles in the import graph as modules are
 -- inserted.
 --
-scrapeGraphInsert :: Module -> Scrape -> ScrapeGraph -> ScrapeGraph
-scrapeGraphInsert m s sg
+scrapeGraphInsert :: [Arg] -> Module -> Scrape -> ScrapeGraph -> IO ScrapeGraph
+scrapeGraphInsert args m s sg
  = do	case cyclicImport m s sg of
- 	 Nothing -> Map.insert m s sg
-	 Just [mc] -> panic stage $ "Module " ++ showModule mc ++ " imports itself.\n"
-	 Just c -> panic stage $ "Import graph has cycle : " ++ (showCycle c) ++ "\n"
-	where
-	 showCycle ml = intercalate " -> " (map showModule (head ml : reverse ml))
-	 showModule m
-	  = case m of
-		ModuleNil		->  "?"
-		ModuleAbsolute l	-> intercalate "." l
-		ModuleRelative l	-> "." ++ intercalate "." l
+ 	 Nothing	-> return $! Map.insert m s sg
+	 Just [mc]	-> exitWithUserError args
+			 [ ErrorRecursiveModules
+			 $ pprStrPlain
+                         $ "Module '" % mc % "' imports itself."]
+	 Just c		-> exitWithUserError args
+			 [ ErrorRecursiveModules
+			 $ pprStrPlain
+			 $ "Module import graph has cycle : "
+			 % punc " -> " (map ppr (head c : reverse c))]
 
 -- Checks to see if adding the Module to the ScrapeGraph would result in a
 -- ScrapeGraph with a cycle.
@@ -134,7 +143,9 @@ cyclicImport m s sp
 		$ scrapeImported s
      where
 	cyclicImportR mx cycle m sp
-	 = do	let imports = concat $ map scrapeImported $ catMaybes [Map.lookup m sp]
+	 = do	let imports	= concat
+				$ map scrapeImported
+                                $ catMaybes [Map.lookup m sp]
 		if elem mx imports
 		 then Just (m : cycle)
 		 else listToMaybe

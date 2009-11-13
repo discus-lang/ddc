@@ -2,6 +2,7 @@
 module Main.Make 
 	(ddcMake)	
 where
+import Main.Arg			(Arg)
 import Main.Setup
 import Main.Compile
 import Main.Link
@@ -49,10 +50,10 @@ ddcMake args verbose setup linkExecutable files
 		| otherwise	= roots_
 	
 	-- scrape all modules reachable from the roots
-	graph		<- scrapeRecursive setup' roots
+	graph		<- scrapeRecursive args setup' roots
 
 	-- if child modules need rebuilding then parents do
-	let graph3	= foldl' invalidateParents graph
+	graph3		<- foldM (invalidateParents args) graph
 			$ map scrapeModuleName roots
 
 	-- dump the scrape graph
@@ -65,7 +66,7 @@ ddcMake args verbose setup linkExecutable files
 			$ Map.elems graph3
 	
 	-- build the required modules
-	graph_comp	<- buildLoop setup' graph3 buildCount 0 
+	graph_comp	<- buildLoop args setup' graph3 buildCount 0 
 			$ map scrapeModuleName roots
 	
  	-- Check if one of the modules defines the main function
@@ -90,19 +91,20 @@ ddcMake args verbose setup linkExecutable files
 	System.exitWith System.ExitSuccess
 
 buildLoop 
-	:: Setup		-- ^ compile setup
+	:: [Arg]
+	-> Setup		-- ^ compile setup
 	-> ScrapeGraph		-- ^ dependency graph
 	-> Int			-- ^ total number of modules needing to be rebuilt
 	-> Int			-- ^ ix of this module
 	-> [Module]		-- ^ root modules
 	-> IO ScrapeGraph
 
-buildLoop setup graph buildCount buildIx roots
+buildLoop args setup graph buildCount buildIx roots
  	= buildLoop' 
-		setup graph buildCount buildIx roots 
+		args setup graph buildCount buildIx roots 
 		(findBuildable graph Set.empty roots)
 
-buildLoop' setup graph buildCount buildIx roots build
+buildLoop' args setup graph buildCount buildIx roots build
 	-- all done
 	| Clean		<- build
 	= do	return graph
@@ -170,9 +172,9 @@ buildLoop' setup graph buildCount buildIx roots build
 					, scrapePathObject	= Just $ droppedFile ".o" 
 					, scrapeDefinesMain	= definesMain }
 					
-		let graph'	= scrapeGraphInsert m scrape' graph
+		graph'		<- scrapeGraphInsert args m scrape' graph
 			
-		buildLoop setup graph' buildCount (buildIx + 1) roots
+		buildLoop args setup graph' buildCount (buildIx + 1) roots
 
 
 
