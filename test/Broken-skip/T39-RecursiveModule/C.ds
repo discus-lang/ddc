@@ -1,5 +1,5 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import B
+import A
 
-data A = A1 | A2
+data C = C1 | C2
