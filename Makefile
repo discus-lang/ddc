@@ -15,12 +15,12 @@
 #       cleanLibrary    -- clean out the libraries
 #
 #       bin/ddc         -- build the compiler binary
-#       bin/war2        -- build the test driver
+#       bin/war         -- build the test driver
 #       bin/plate       -- build the boilerplate generator
 #
 
 .PHONY	: all
-all 	: bin/ddc bin/war2 runtime external libs
+all 	: bin/ddc bin/war runtime external libs
 
 include make/build.mk
 
@@ -126,20 +126,20 @@ library/Prelude.di : bin/ddc
 
 
 # -- Test Driver -----------------------------------------------------------------------------------
-war2_hs	= $(shell find tools/war2 -name "*.hs") $(shell find src/Util -name "*.hs")
+war_hs	= $(shell find tools/war -name "*.hs") $(shell find src/Util -name "*.hs")
 
-bin/war2 : $(war2_hs)
+bin/war : $(war_hs)
 	$(GHC) $(GHC_FLAGS) -O2 -fglasgow-exts -threaded -fglasgow-exts \
-		-isrc -itools/war2 --make tools/war2/Main.hs -o bin/war2
+		-isrc -itools/war --make tools/war/Main.hs -o bin/war
 
 
 # -- Run all avaliable tests -----------------------------------------------------------------------
 .PHONY	: test
-test	: bin/ddc bin/war2 library/Prelude.di
+test	: bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests ------------------------------------------------"
 	bin/ddc --test
 	@echo
-	bin/war2 test
+	bin/war test
 	@echo
 
 
