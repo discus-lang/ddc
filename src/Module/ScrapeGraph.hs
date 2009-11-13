@@ -5,22 +5,27 @@
 
 module Module.ScrapeGraph 
 	( ScrapeGraph
+	, scrapeGraphInsert
 	, scrapeRecursive
 	, invalidateParents)
 where
 import Module.Scrape
 
 import Main.Setup
-import Shared.Var		(Module)
+import Shared.Var		(Module(..))
 import Shared.Pretty
+import Shared.Error		(panic)
 
 import Util
 import Data.Map			(Map)
 import Data.List
+import Data.Maybe		(catMaybes)
 import System.Exit
 import qualified Data.Map	as Map
 
 type ScrapeGraph	= Map Module Scrape
+
+stage = "Module.ScrapeGraph"
 
 -- | Scrape all modules transtitively imported by these ones.
 scrapeRecursive
@@ -66,7 +71,7 @@ scrapeRecursive' setup graph ((sParent, v):vs)
 		 Just sChild
 		  ->	scrapeRecursive' 
 				setup 
-				(Map.insert v sChild graph)
+				(scrapeGraphInsert v sChild graph)
 				( [(sChild, imp)
 					| imp <- scrapeImported sChild]
 				  ++ vs)
@@ -92,6 +97,47 @@ invalidateParents graph mod
 			$ scrapeImported scrape)
 
 	scrape'	= scrape { scrapeNeedsRebuild = rebuild }
-	
-   in	Map.insert mod scrape' graph'
+
+   in	scrapeGraphInsert mod scrape' graph'
+
+
+-- A replacement for Map.insert for the ScrapeGraph.
+-- This replacement detectd cycles in the import graph as modules are
+-- inserted.
+--
+scrapeGraphInsert :: Module -> Scrape -> ScrapeGraph -> ScrapeGraph
+scrapeGraphInsert m s sg
+ = do	case cyclicImport m s sg of
+ 	 Nothing -> Map.insert m s sg
+	 Just [mc] -> panic stage $ "Module " ++ showModule mc ++ " imports itself.\n"
+	 Just c -> panic stage $ "Import graph has cycle : " ++ (showCycle c) ++ "\n"
+	where
+	 showCycle ml = intercalate " -> " (map showModule (head ml : reverse ml))
+	 showModule m
+	  = case m of
+		ModuleNil		->  "?"
+		ModuleAbsolute l	-> intercalate "." l
+		ModuleRelative l	-> "." ++ intercalate "." l
+
+-- Checks to see if adding the Module to the ScrapeGraph would result in a
+-- ScrapeGraph with a cycle.
+-- If adding the Module will result in a cyclic graph then return the list
+-- of modules that constitue a cycle, otherwise return Nothing.
+--
+cyclicImport :: Module -> Scrape -> ScrapeGraph -> Maybe [Module]
+cyclicImport m s sp
+ = do	if elem m $ scrapeImported s
+	 then Just [m]
+	 else listToMaybe
+		$ catMaybes
+		$ map (\m' -> cyclicImportR m [m] m' sp)
+		$ scrapeImported s
+     where
+	cyclicImportR mx cycle m sp
+	 = do	let imports = concat $ map scrapeImported $ catMaybes [Map.lookup m sp]
+		if elem mx imports
+		 then Just (m : cycle)
+		 else listToMaybe
+			$ catMaybes
+			$ map (\m' -> cyclicImportR mx (m:cycle) m' sp) imports
 

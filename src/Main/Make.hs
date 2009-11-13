@@ -22,7 +22,9 @@ import qualified System.IO	as System
 import qualified System.Exit	as System
 import qualified System.Directory as System
 import qualified Data.Set	as Set
-import qualified Data.Map	as Map
+
+-- Map.insert is hidden. Use scrapeGraphInsert instead.
+import qualified Data.Map	as Map hiding (insert)
 
 -----
 -- | Do a recursive make
@@ -168,7 +170,7 @@ buildLoop' setup graph buildCount buildIx roots build
 					, scrapePathObject	= Just $ droppedFile ".o" 
 					, scrapeDefinesMain	= definesMain }
 					
-		let graph'	= Map.insert m scrape' graph
+		let graph'	= scrapeGraphInsert m scrape' graph
 			
 		buildLoop setup graph' buildCount (buildIx + 1) roots
 
@@ -267,5 +269,3 @@ shouldBlessMain roots m
 	= True
 
 	where	mainModule = ModuleAbsolute ["Main"]
-	
-	
