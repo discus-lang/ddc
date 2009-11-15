@@ -1,0 +1,9 @@
+ddc: ERROR
+./test/01-Error/20-Desugar/T33-FieldCollision/Main.ds:26:8
+     Projection 'name' over data type 'Animal.Animal'
+      collides with a field name at: ./test/01-Error/20-Desugar/T33-FieldCollision/Animal.di:10:16
+
+./test/01-Error/20-Desugar/T33-FieldCollision/Main.ds:17:8
+     Projection 'fishName' over data type 'Main.Fish'
+      collides with a field name at: ./test/01-Error/20-Desugar/T33-FieldCollision/Main.ds:6:16
+

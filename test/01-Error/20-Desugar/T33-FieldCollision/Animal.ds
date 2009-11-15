@@ -1,0 +1,5 @@
+data Animal
+	= Animal {
+		name	:: String;
+		age		:: Int
+	}

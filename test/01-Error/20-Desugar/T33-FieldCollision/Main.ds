@@ -1,0 +1,33 @@
+
+import Animal
+
+data Fish
+	= Fish {
+		fishName	:: String;
+		age		:: Int
+	}
+
+data Mullet
+	= Mullet {
+		name	:: String ;
+		age	:: Int
+	}
+
+-- Fish has a data field named fishName so this should cause an error.
+project Fish where
+	fishName = "fred"
+	other = 13
+
+-- Since Mullet doesn't have a data field named fishName this should be fine.
+project Mullet where
+	fishName = "mullet"
+
+-- This is another error.
+project Animal where
+	name = "bruce"
+
+
+main ()
+ = do	println $ show $ Fish "Barney" 42
+	println $ show $ Mullet "Bruce" 13
+	println $ show $ Animal "Animal" 42
