@@ -434,10 +434,7 @@ lbindN' withEnclosing space var
 		| Just (bindingVar, var')	<- mVar
 		, Var.nameModule var /= ModuleNil
 		, Var.nameModule var /= Var.nameModule var'
-		= do	addError
-				$ ErrorRedefinedVar
-					{ eFirstDefined = bindingVar
-					, eRedefined	= var }
+		= do	addError $ ErrorRedefinedVar bindingVar var
 			return var
 		
 		-- var was already bound

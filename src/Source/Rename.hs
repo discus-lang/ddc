@@ -113,9 +113,10 @@ instance Rename (Top SourcePos) where
 	 -> do	v'	<- lookupV v
 	 	return	$ PTypeKind sp v' k
 
-	PTypeSynonym sp v t		
-	 -> do 	v'	<- lookupV v
-	 	t'	<- local $ rename t
+	PTypeSynonym sp v t
+	 -> local 
+          $ do 	v'	<- lookupN NameType v
+	 	t'	<- rename t
 		return	$ PTypeSynonym sp v' t'
 
 	PData sp vData vsData ctors
