@@ -1,8 +1,12 @@
 
 -- | Elaborate data definitions.
 module Desugar.Data 
-	(elaborateData)
+	( elaborateData
+	, elaborateTypeSynonym )
 where
+
+import Shared.Error		(panic)
+
 import Desugar.Pretty
 import Desugar.Exp
 
@@ -22,6 +26,8 @@ import qualified Data.Set	as Set
 import qualified Debug.Trace
 
 -----
+stage		= "Desugar.Data"
+
 debug		= False
 trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
 
@@ -86,6 +92,25 @@ elaborateData newVarN getKind
 		$ return ()
 		
 	return p'
+
+elaborateTypeSynonym 
+	:: Monad m
+	=> (NameSpace 	-> m Var)
+	-> (Var		-> m Kind)
+	-> Top SourcePos -> m (Top SourcePos)
+
+elaborateTypeSynonym newVarN getKind 
+	p@(PTypeSynonym sp vData typ)
+ = do
+	trace 	( "elaborateTypeSynonym\n"
+		% "    in:\n" %> stripAnnot p	% "\n")
+		$ return ()
+
+	let ?newVar	= newVarN
+	let ?getKind	= getKind
+
+	panic stage "Sorry don't handle PTypeSynonym yet!\n"
+
 
 
 elaborateCtor 

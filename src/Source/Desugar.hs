@@ -113,6 +113,9 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	S.PTypeKind sp v k
 	 -> returnJ $ D.PTypeKind sp v k
 
+	S.PTypeSynonym sp v t
+	 -> returnJ	$ D.PTypeSynonym sp v t
+
 	-- data definitions
 	S.PData sp v vs ctors
 	 -> do	-- desugar field initialisation code

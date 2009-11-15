@@ -149,6 +149,11 @@ instance Monad m => TransM m a1 a2 Top where
 	 	v'		<- transV table v
 		transP table	$ PTypeKind nn' v' k
 
+	PTypeSynonym nn v t
+	 -> do	nn'		<- transN 	table nn
+	 	v'		<- transV table v
+		transP table	$ PTypeSynonym nn' v' t
+
 	PData nn v vs ctors
 	 -> do	nn'		<- transN	table nn
 	 	(v':vs')	<- mapM (transV table) (v:vs)

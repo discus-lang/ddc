@@ -71,6 +71,10 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn 
 	 	("type" <> v <> "::" <> k % ";\n\n")
 
+	PTypeSynonym nn v t
+	 -> annot nn 
+		("type " <> v <> " = " % t % ";\n\n")
+
 	PData nn v vs []
 	 -> annot nn 
 	 	("data " % " " %!% (v : vs)) % ";\n\n"

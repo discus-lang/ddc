@@ -41,6 +41,7 @@ data Top a
 	-- types
 	| PTypeKind	a Var Kind
 	| PData		a Var [Var]  [CtorDef a]
+	| PTypeSynonym	a Var Type
 
 	-- classes
 	| PClass	a Var Super

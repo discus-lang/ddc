@@ -45,7 +45,7 @@ import Desugar.Slurp.SlurpS
 
 
 -----
--- stage	= "Desugar.Slurp.Slurp"
+stage	= "Desugar.Slurp.Slurp"
 
 -- | Slurp out type constraints from this tree.
 slurpTreeM :: Tree Annot1
@@ -183,6 +183,10 @@ slurpP	(PSig sp vs tSig)
 
  	return	( PSig Nothing vs tSig
 		, qs)
+
+
+slurpP x@(PTypeSynonym sp v t)
+ = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
 
 
 -- data definitions

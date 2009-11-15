@@ -131,6 +131,10 @@ elabDataP pp
 
 		return	pp'
 		
+	PTypeSynonym{}	
+	 -> do	pp'	<- elaborateTypeSynonym newVarN getKind pp
+		return	pp'
+
 	_	-> return pp
 
 
