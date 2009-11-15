@@ -197,7 +197,7 @@ kindOfType' tt
 	= Just k
 
 	| TFetter{}		<- tt
-	= panic stage "kindOfType TFetter" -- Just KWitness
+	= Just KWitness
 
 	-- used in source / desugar -----------------------------------------
 	| TElaborate e t	<- tt
