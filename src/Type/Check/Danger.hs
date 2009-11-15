@@ -35,7 +35,7 @@ dangerousCidsT :: Type -> [ClassId]
 dangerousCidsT tt
  = let	tsDanger	= dangerT Set.empty Map.empty tt
    in	[ cid	| TClass k cid	<- Set.toList tsDanger
-	    		, elem k [KValue, KEffect, KClosure] ]
+	    		, elem k [kValue, kEffect, kClosure] ]
 	    
 
 dangerT 
@@ -64,7 +64,7 @@ dangerT rsMutable fsClosure tt
 		fsClosure'	= Map.union 
 					fsClosure 
 					(Map.fromList [(u1, u2) | FWhere u1 u2	<- fs
-								, kindOfType u1 == Just KClosure])
+								, kindOfType u1 == Just kClosure])
 
 		-- decend into type and fetters
 		t1Danger	= dangerT rsMutable' fsClosure' t1
@@ -75,7 +75,8 @@ dangerT rsMutable fsClosure tt
 	-- functions
 	TFun t1 t2 eff clo	
 	 -> let cloDanger	
-	 		| TBot KClosure	<- clo
+	 		| TBot kC <- clo
+			, kC	== kClosure
 			= Set.empty
 
 			| otherwise
@@ -105,12 +106,14 @@ dangerT rsMutable fsClosure tt
 		| otherwise
 		-> dangerT rsMutable fsClosure t2
 
-	TSum KClosure ts
+	TSum kC ts
+	 | kC	== kClosure
 	 -> Set.unions $ map (dangerT rsMutable fsClosure) ts
 
 
 	-- effects
-	TSum KEffect ts
+	TSum kE ts
+	 | kE	== kEffect
 	 -> Set.empty
 
 	TEffect{}

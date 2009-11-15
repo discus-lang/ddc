@@ -24,7 +24,7 @@ checkGraphicalDataT (TFetters t fs)
  = let	
 	-- select only the data portion of this type's FLets
  	fsData		= [ f 	| f@(FWhere t1 t2) <- fs
-	 			, kindOfType t1 == Just KValue]
+	 			, kindOfType t1 == Just kValue]
 
 	-- these are the data cids that we have FLets for
 	cidsData	= map (\(FWhere (TClass k cid) t2) -> cid) fsData

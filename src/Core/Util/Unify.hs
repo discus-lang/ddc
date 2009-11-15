@@ -82,7 +82,7 @@ unifyT2 t1 t2
 	= Just [(t1, t2)]
 	
 	| Just k1			<- kindOfType t1
-	, elem k1 [KRegion, KEffect, KClosure]
+	, elem k1 [kRegion, kEffect, kClosure]
 	, kindOfType t1 == kindOfType t2
 	= Just [(t1, t2)]
 

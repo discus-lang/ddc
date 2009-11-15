@@ -56,7 +56,8 @@ reduceContextF tShape classInstances ff
 	--	These regions are local to the function and a local region binding will be introduced
 	--	which will create the required witnesses.
 	--	
-	| FConstraint v [tR@(TVar KRegion r)]	<- ff
+	| FConstraint v [tR@(TVar kR r)]	<- ff
+	, kR	== kRegion
 	, elem v [primConst, primMutable, primMutable, primDirect]
 	, not $ Set.member tR $ visibleRsT tShape
 	= []
@@ -72,7 +73,8 @@ reduceContextF tShape classInstances ff
 
 	-- Purity constraints on bottom effects can be removed.
 	--	This doesn't give us any useful information.
-	| FConstraint v [TBot KEffect]	<- ff
+	| FConstraint v [TBot kE]	<- ff
+	, kE	== kEffect
 	, v == primPure 
 	= []
 
@@ -82,7 +84,8 @@ reduceContextF tShape classInstances ff
 	| FConstraint v [t]		<- ff
 	, v == primPure
 	= case t of
-		TSum KEffect _		-> []
+		TSum kE _		
+			| kE == kEffect	-> []
 		TEffect{}		-> []
 		_			-> [ff]
 	

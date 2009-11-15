@@ -400,7 +400,8 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 	  
 	----- unbox
 	-- remember unboxings we haven't seen before
-	| XPrim MUnbox [XType (TVar KRegion vR), XVar v2 _]	<- xBind
+	| XPrim MUnbox [XType (TVar kR vR), XVar v2 _]	<- xBind
+	, kR	== kRegion
 	, Nothing	 <- Map.lookup v2 (shareUnboxings share)
 	, Set.member vR (tableConstRegions table) -- only move pure unboxings for now
 	= let	share'		= share { shareUnboxings = Map.insert v2 (vBind, vR) (shareUnboxings share) }
@@ -408,7 +409,8 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 	  
 
 	-- replace calls to unbox with ones we've seen before
-	| XPrim MUnbox [XType (TVar KRegion vR1), XVar v2 t]	<- xBind
+	| XPrim MUnbox [XType (TVar kR vR1), XVar v2 t]	<- xBind
+	, kR	== kRegion
 	, Just (v3, vR2) <- Map.lookup v2 (shareUnboxings share)
 	, vR1 == vR2
 	= let	share'		= share { shareVarSub	= Map.insert vBind v3 (shareVarSub share) }
@@ -502,7 +504,7 @@ shouldMove' level tt mUses vBind effBind
 	--	This will change the behavior of the program that is visible to the outside world.
 
 	-- TODO: reduce this to just top-level effects
-	| effBind /= TBot KEffect 
+	| effBind /= tPure 
 	= shouldMove_fail tt mUses vBind
 		(tableStats_ ## statsNotMovedTopLevel_ <#> \x -> vBind : x)
 
@@ -545,7 +547,7 @@ reduceEffect
 	-> Effect -> Effect
 	
 reduceEffect rsConst tsConst esPure eff
- = let	eff'	= makeTSum KEffect 
+ = let	eff'	= makeTSum kEffect 
 		$ map (reduceEffect1 rsConst tsConst esPure)
 		$ flattenTSum eff
 
@@ -557,21 +559,22 @@ reduceEffect rsConst tsConst esPure eff
 reduceEffect1 rsConst tsConst esPure eff
 
 	-- reduce reads from known constant regions
-	| TEffect v [TVar KRegion r]	<- eff
+	| TEffect v [TVar kRegion r]	<- eff
 	, v == primRead
 	, Set.member r rsConst
-	= TBot KEffect
+	= tPure
 	
 	-- reduce reads from known constant types
-	| TEffect v [TVar KValue t]	<- eff
+	| TEffect v [TVar kValue t]	<- eff
 	, v == primReadT
 	, Set.member t rsConst
-	= TBot KEffect
+	= tPure
 
 	-- reduce known pure effect variables
- 	| TVar KEffect v		<- eff
+ 	| TVar kE v		<- eff
+	, kE	== kEffect
 	, Set.member v esPure
-	= TBot KEffect
+	= tPure
 
 	-- leave it 
 	| otherwise
@@ -586,17 +589,20 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KClass TyClassConst [TVar KRegion r]
+ 	KClass TyClassConst [TVar kR r]
+ 	 | kR	== kRegion
 	 -> tt { tableConstRegions 
 	 		= Set.insert r (tableConstRegions tt)}
 	
 	-- const types
-	KClass TyClassConstT [TVar KValue t]
+	KClass TyClassConstT [TVar kV t]
+	 | kV	== kValue
 	 -> tt { tableConstTypes
 	 		= Set.insert t (tableConstTypes tt)}
 
 	-- pure effects
-	KClass TyClassPure [TVar KEffect e]
+	KClass TyClassPure [TVar kE e]
+	 | kE	== kEffect
 	 -> tt { tablePureEffects
 	 		= Set.insert e (tablePureEffects tt) }
 

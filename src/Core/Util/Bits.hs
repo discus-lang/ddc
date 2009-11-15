@@ -116,7 +116,7 @@ buildApp' xx
 	| XVar v t : xs		<- xx
 	, Var.nameSpace v == NameValue
 	, Just leftX		<- buildApp' xs
-	= Just $ XApp leftX (XVar v t) (TBot KEffect)
+	= Just $ XApp leftX (XVar v t) tPure
 
 	| otherwise
 	= Nothing
@@ -163,12 +163,12 @@ splitApps ::	Exp -> [(Exp, Effect)]
 splitApps	x
  = case x of
  	XAPP e1 e2
-	 -> splitApps e1 ++ [(XType e2, pure)]
+	 -> splitApps e1 ++ [(XType e2, tPure)]
 	
 	XApp e1 e2 eff
 	 -> splitApps e1 ++ [(e2, eff)]
 		
-	_ -> [(x, pure)]
+	_ -> [(x, tPure)]
 	
 -- Lambda ------------------------------------------------------------------------------------------
 -- | Chop the outer set of lambdas off a lambda expression and return the var-scheme pairs.

@@ -185,16 +185,17 @@ reconX tt (XLAM v k x)
 --	in the literal's type scheme. String literals never appear without their region
 --	parameters in the core so this is ok.
 
-reconX tt exp@(XAPP (XLit (LiteralFmt lit fmt)) (TVar KRegion r))
- = let	t	= case lit of
- 			LString{}	-> makeTData (primTString Unboxed) (KFun KRegion KValue) [TVar KRegion r]
-			_		-> panic stage
-					$  "reconX/XApp: non string constant applied to region\n"
-					%  "    exp = " % exp	% "\n"
+reconX tt exp@(XAPP (XLit (LiteralFmt lit fmt)) (TVar k r))
+ | k == kRegion
+ = let	t = case lit of
+ 		LString{}	-> makeTData (primTString Unboxed) (KFun kRegion kValue) [TVar kRegion r]
+		_		-> panic stage
+				$  "reconX/XApp: non string constant applied to region\n"
+				%  "    exp = " % exp	% "\n"
    in	( exp
    	, t
-	, pure
-	, empty)
+	, tPure
+	, tEmpty)
 
 
 reconX tt exp@(XAPP x t)
@@ -341,7 +342,7 @@ reconX tt exp@(XLam v t x eff clo)
 
 		   ( XLam v t x' eff_clamped clo_sub
 		   , makeTFun t xT eff_clamped clo_sub
-		   , TBot KEffect
+		   , tPure
 		   , xC')
 
    in	reconX_lam
@@ -379,9 +380,9 @@ reconX tt exp@(XApp x1 x2 eff)
 	                          applyValueT tt x1t x2t
    in	case mResultTE of
    	 Just (appT, appE)
-  	  -> let x'		= XApp x1' x2' pure
-	  	 xE		= makeTSum KEffect  [x1e, x2e, appE]
-		 xC		= makeTSum KClosure [x1c, x2c]
+  	  -> let x'		= XApp x1' x2' tPure
+	  	 xE		= makeTSum kEffect  [x1e, x2e, appE]
+		 xC		= makeTSum kClosure [x1c, x2c]
 
      	     in {- trace 	("(" % x1 % " $ ..)\n"
 	     		% "    appT:\n"	%> appT	% "\n"
@@ -413,13 +414,13 @@ reconX tt (XDo ss)
 	
    in	( XDo ss'
         , t
-	, makeTSum KEffect sEs
-	, makeTSum KClosure
+	, makeTSum kEffect sEs
+	, makeTSum kClosure
 		$ filter (\c -> case c of
 				  TFree v _	-> not $ elem v vsBind
 				  _		-> True)
 		$ flattenTSum 
-		$ makeTSum KClosure sCs)
+		$ makeTSum kClosure sCs)
    
 -- match
 reconX tt (XMatch [])
@@ -436,8 +437,8 @@ reconX tt (XMatch aa)
 
    in	( XMatch aa'
    	, tMatch
-	, makeTSum KEffect altEs
-	, makeTSum KClosure altCs )
+	, makeTSum kEffect altEs
+	, makeTSum kClosure altCs )
 
 -- var
 -- TODO: check against existing annotation.
@@ -469,7 +470,7 @@ reconX tt (XVar v TNil)
 -}
 	=   ( XVar v tDrop
 	    , tDrop
-	    , TBot KEffect
+	    , tPure
 	    , TFree v t)
 	  
 	| otherwise
@@ -483,7 +484,7 @@ reconX tt (XVar v t)
  = let	t'	= inlineTWheresMapT (envEq tt) Set.empty t
    in	( XVar v t
 	, t'
-	, TBot KEffect
+	, tPure
 	, trimClosureC Set.empty Set.empty $ TFree v t)
 
 
@@ -515,7 +516,7 @@ reconX tt xx@(XPrim prim xs)
 		| MBox 		<- prim
 		, [XType r, x]	<- xs
 		= ( reconBoxType r $ t4_2 $ reconX tt x
-		  , pure)
+		  , tPure)
 		
 		-- unboxing
 		| MUnbox	<- prim
@@ -527,31 +528,31 @@ reconX tt xx@(XPrim prim xs)
 		| MForce	<- prim
 		, [Just t1]	<- txs
 		= ( t1
-		  , pure)	
+		  , tPure)	
 		
 		| MTailCall{}	<- prim
 		= ( reconApps tt xs'
-		  , pure)
+		  , tPure)
 
 		| MCall{}	<- prim
 		= ( reconApps tt xs'
-		  , pure)
+		  , tPure)
 
 		| MCallApp{}	<- prim
 		= ( reconApps tt xs'
-		  , pure)
+		  , tPure)
 
 		| MApply{}	<- prim
 		= ( reconApps tt xs'
-		  , pure)
+		  , tPure)
 
 		| MCurry{}	<- prim
 		= ( reconApps tt xs'
-		  , pure)
+		  , tPure)
 
 		| MFun{}	<- prim
 		= ( reconApps tt xs'
-		  , pure)
+		  , tPure)
 
 		| MOp op	<- prim
 		= reconOpApp tt op xs'
@@ -562,8 +563,8 @@ reconX tt xx@(XPrim prim xs)
 		
    in	( XPrim prim xs'
    	, tPrim
-   	, makeTSum KEffect  $ ePrim : catMaybes xsmEs
-	, makeTSum KClosure $ catMaybes xsmCs)
+   	, makeTSum kEffect  $ ePrim : catMaybes xsmEs
+	, makeTSum kClosure $ catMaybes xsmCs)
 
 
 reconX tt xx@(XLit litFmt)
@@ -571,8 +572,8 @@ reconX tt xx@(XLit litFmt)
 	tLit	= TCon tcLit
    in	( xx
 	, tLit
-	, pure
-	, empty)
+	, tPure
+	, tEmpty)
 
 
 -- no match
@@ -590,21 +591,21 @@ reconBoxType r tt
 	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
 	= makeTData 
 		(primVarFmt NameType baseName mkBind fmtBoxed)
-		(KFun KRegion KValue) 
+		(KFun kRegion kValue) 
 		[r]
 
 
 -- | Convert this type to the unboxed version
 reconUnboxType :: Region -> Type -> Type
 reconUnboxType r1 tt
-	| Just (v, k, [r2@(TVar KRegion _)])	
-			<- takeTData tt
+	| Just (v, k, [r2@(TVar kV _)])	<- takeTData tt
+	, kV == kRegion
 	, r1 == r2
 	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
 	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
 	= makeTData 
 		(primVarFmt NameType baseName mkBind fmtUnboxed)
-		KValue
+		kValue
 		[]
 
 
@@ -637,20 +638,20 @@ reconOpApp tt op xs
 	| op == OpNeg
 	, [t1]		<- map (t4_2 . reconX tt) xs
 	, isUnboxedNumericType t1
-	= (t1, pure)
+	= (t1, tPure)
 
 	| elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
 	, [t1, t2]	<- map (t4_2 . reconX tt) xs
 	, isUnboxedNumericType t1
 	, t1 == t2
-	= (t1, pure)
+	= (t1, tPure)
 	
 	-- comparison operators
 	| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
 	, [t1, t2]	<- map (t4_2 . reconX tt) xs
 	, isUnboxedNumericType t1
 	, t1 == t2
-	= (makeTData (primTBool Unboxed) KValue [], pure)
+	= (makeTData (primTBool Unboxed) kValue [], tPure)
 
 	-- boolean operators
 	| elem op [OpAnd, OpOr]
@@ -658,7 +659,7 @@ reconOpApp tt op xs
 	, Just (v, k, [])	<- takeTData t1
 	, v == (primTBool Unboxed)
 	, t1 == t2
-	= (makeTData (primTBool Unboxed) KValue [], pure)
+	= (makeTData (primTBool Unboxed) kValue [], tPure)
 	
 	| otherwise
 	= panic stage
@@ -771,10 +772,10 @@ reconA tt (AAlt gs x)
 	(x', xT, xE, xC)	  = reconX tt' x
    in	( AAlt gs' x'
    	, xT
-	, makeTSum KEffect (gEs ++ [xE])
+	, makeTSum kEffect (gEs ++ [xE])
 	, dropTFreesIn 
 		(Set.fromList $ concat vssBind) 
-		$ makeTSum KClosure (xC : gCs) )
+		$ makeTSum kClosure (xC : gCs) )
 
    
 -- Guards ------------------------------------------------------------------------------------------
@@ -800,21 +801,21 @@ reconG tt gg@(GExp p x)
 	effTest	
 		-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
 		| WVar{}		<- p
-		= TBot KEffect
+		= tEmpty
 
 		-- If the type of the object has no regions we assume that
 		--	it is constant, so matching against it generates no effects.
 		| Just (vD, _, [])	<- takeTData tX_shape
-		= TBot KEffect
+		= tEmpty
 
 		-- matching against some object cause a read effect on its primary region.
-		| Just (vD, _, TVar KRegion rH : _)
-					<- takeTData tX_shape
-		= TEffect primRead [TVar KRegion rH]
+		| Just (vD, _, TVar k rH : _) <- takeTData tX_shape
+		, k == kRegion	
+		= TEffect primRead [TVar kRegion rH]
 
 		-- object does not have a primary region, assume it is constant
 		| otherwise
-		= TBot KEffect
+		= tEmpty
 		
 {-		| otherwise
 		= panic stage 
@@ -829,7 +830,7 @@ reconG tt gg@(GExp p x)
    	( tt'
    	, ( GExp p x'
 	  , map fst binds
-   	  , makeTSum KEffect ([eX, effTest])
+   	  , makeTSum kEffect ([eX, effTest])
 	  , cX))
  
 slurpVarTypesW tRHS (WVar v)		= [(v, tRHS)]
@@ -837,11 +838,7 @@ slurpVarTypesW tRHS (WLit{})		= []
 slurpVarTypesW tRHS (WCon _ v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 
 
-
-
 -- Value / Type application functions ---------------------------------------------------------
-
-
 -- | Work out the result type and latent effect that will result when 
 --	an arg is applied to a function with this type.
 --
@@ -928,7 +925,7 @@ applyTypeT table (TForall (BVar v) k t1) t2
 
 applyTypeT table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
-	| k == KClosure
+	| k == kClosure
 	, subsumes (envMore table) 
 			(flattenT $ trimClosureC Set.empty Set.empty t2) 
 			(flattenT $ trimClosureC Set.empty Set.empty tB)

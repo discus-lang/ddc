@@ -190,7 +190,7 @@ pTopForeignImportEnd startPos name var
 		kind	<- pKind
 		return	$ PForeign startPos (OImportUnboxedData name var kind)
 
- <|>	do	return	$ PForeign startPos (OImportUnboxedData name var KValue)
+ <|>	do	return	$ PForeign startPos (OImportUnboxedData name var kValue)
 
 
 -- Infix -------------------------------------------------------------------------------------------

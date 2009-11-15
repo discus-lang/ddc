@@ -58,7 +58,8 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KClass TyClassDirect [TVar KRegion r]
+ 	KClass TyClassDirect [TVar kR r]
+ 	 | kR	== kRegion
 	 -> tt { tableDirectRegions 
 	 		= Set.insert r (tableDirectRegions tt)}
 
@@ -183,11 +184,9 @@ primX1 tt xx
 
 	-- direct use of unboxing function
 	| Just parts				<- flattenAppsEff xx
-	, XVar v t : psArgs@[XType tR@(TVar KRegion vR), x]
-			<- parts
-						
+	, XVar v t : psArgs@[XType tR@(TVar kR vR), x] 	<- parts
+	, kR	== kRegion			
 	, isUnboxFunctionV v
-
 	= if Set.member vR (tableDirectRegions tt) 
 		then XPrim MUnbox psArgs
 
@@ -234,7 +233,7 @@ doActions tt (Unbox:as) (x:xs)
 
  = let	tX	= Recon.reconX_type (stage ++ "doActions") x
 
- 	Just (_, _, [tR@(TVar KRegion vR)])
+ 	Just (_, _, [tR@(TVar _ vR)])
 		= takeTData tX
  		
 

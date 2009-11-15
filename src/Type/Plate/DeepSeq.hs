@@ -10,13 +10,11 @@ instance DeepSeq ClassId
 instance DeepSeq Super where
  deepSeq xx y
   = case xx of
-	SCon 		k		-> deepSeq k y
+	SProp				-> y
+	SBox 				-> y
 	SFun 		s1 s2		-> deepSeq s1 $ deepSeq s2 y
 	
-
-instance DeepSeq KsCon
-  	
-
+ 
 instance DeepSeq Kind where
  deepSeq xx y
   = case xx of
@@ -25,11 +23,6 @@ instance DeepSeq Kind where
 	KPi  		k1 k2		-> deepSeq k1 $ deepSeq k2 y	
 	KForall		k1 k2		-> deepSeq k1 $ deepSeq k2 y
 	KFun		k1 k2		-> deepSeq k1 $ deepSeq k2 y
-	KValue				-> y
-	KRegion				-> y
-	KEffect				-> y
-	KClosure			-> y
-	KWitness			-> y
 	KClass		tc ts		-> deepSeq tc $ deepSeq ts y
 	KWitJoin 	ks		-> deepSeq ks y
 

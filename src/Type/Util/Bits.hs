@@ -2,9 +2,7 @@
 -- | Bits and pieces for working with types.
 module Type.Util.Bits
 	-- simple
-	( pure
-	, empty
-	, isTApp
+	( isTApp
 	, isSomeTVar
 	, isTClass
 	, isFConstraint
@@ -76,9 +74,6 @@ stage	= "Type.Util.Bits"
 
 
 -- Simple things -----------------------------------------------------------------------------------
-pure	= TBot KEffect
-empty	= TBot KClosure
-
 isTApp tt
  = case tt of
  	TApp{}	-> True
@@ -170,8 +165,8 @@ crushT1 tt
 	TFree v (TFree v' t)	
 	 -> TFree v t
 
-	TFree v (TSum KClosure ts)
-	 -> makeTSum KClosure $ map (TFree v) ts
+	TFree v (TSum kClosure ts)
+	 -> makeTSum kClosure $ map (TFree v) ts
 
 	_	-> tt
 
@@ -243,7 +238,7 @@ makeTFuns_pureEmpty :: [Type] -> Type
 makeTFuns_pureEmpty xx
  = case xx of
  	x : []		-> x
-	x : xs		-> makeTFun x (makeTFuns_pureEmpty xs) pure empty
+	x : xs		-> makeTFun x (makeTFuns_pureEmpty xs) tPure tEmpty
 
 -- | Take a function type from a type constructor application.
 takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)
@@ -272,7 +267,7 @@ flattenFun xx
 -- | Drop TFree terms concerning value variables in this set
 dropTFreesIn :: Set Var -> Closure -> Closure
 dropTFreesIn vs clo
- 	= makeTSum KClosure
+ 	= makeTSum kClosure
 	$ filter (\c -> case c of
 			 TFree v _	-> not $ Set.member v vs
 			 _		-> True)

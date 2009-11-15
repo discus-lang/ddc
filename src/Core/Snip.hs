@@ -223,7 +223,8 @@ snipXRight table xx
 	 -> snipIt table xx
 
 	-- leave literal values
-	XAPP XLit{} (TVar KRegion _)
+	XAPP XLit{} (TVar kR _)
+	 | kR 	== kRegion
 	 -> leaveIt xx
 
 	XAPP x t

@@ -53,11 +53,11 @@ makeOpTypeT tt
 	TFetters t fs		-> makeOpTypeT t
 	TFun t1 t2 eff clo	
 	 -> case (makeOpTypeT2 t1, makeOpTypeT t2) of
-	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TBot KEffect) (TBot KClosure)
+	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TBot kEffect) (TBot kClosure)
 		_			-> Nothing
 		
 	TData{}			-> makeOpTypeData tt
-	TVar{}			-> Just $ TData KValue primTObj []
+	TVar{}			-> Just $ TData kValue primTObj []
 	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
 					("makeOpTypeT: can't make operational type from " % show tt)
@@ -66,8 +66,8 @@ makeOpTypeT2 tt
  = case tt of
  	TForall v k t		-> makeOpTypeT2 t
 	TFetters t fs		-> makeOpTypeT2 t
-	TVar{}			-> Just $ TData KValue primTObj   []
-	TFun{}			-> Just $ TData KValue primTThunk []
+	TVar{}			-> Just $ TData kValue primTObj   []
+	TFun{}			-> Just $ TData kValue primTThunk []
 	TData{}			-> makeOpTypeData tt
 	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
@@ -76,12 +76,12 @@ makeOpTypeT2 tt
 
 makeOpTypeData (TData k v ts)
 	| last (Var.name v) == '#'
-	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == KValue])) of
-		Just ts'	-> Just $ TData KValue v ts'
+	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == kValue])) of
+		Just ts'	-> Just $ TData kValue v ts'
 		_		-> Nothing
 	
 	| otherwise
-	= Just $ TData KValue primTObj []
+	= Just $ TData kValue primTObj []
 
 makeOpTypeData _	= Nothing
 
@@ -115,13 +115,13 @@ slurpVarsRD tt
 slurpVarsRD_split rs ds []	= (rs, ds)
 slurpVarsRD_split rs ds (t:ts)
  = case t of
- 	TVar   KRegion _	-> slurpVarsRD_split (t : rs) ds ts
-	TClass KRegion _	-> slurpVarsRD_split (t : rs) ds ts
+ 	TVar	k _	| k == kRegion	-> slurpVarsRD_split (t : rs) ds ts
+	TClass	k _	| k == kRegion	-> slurpVarsRD_split (t : rs) ds ts
 
- 	TVar   KValue _		-> slurpVarsRD_split rs (t : ds) ts
-	TClass KValue _		-> slurpVarsRD_split rs (t : ds) ts
+ 	TVar	k _	| k == kValue	-> slurpVarsRD_split rs (t : ds) ts
+	TClass	k _	| k == kValue	-> slurpVarsRD_split rs (t : ds) ts
 	
-	_			-> slurpVarsRD_split rs ds ts
+	_				-> slurpVarsRD_split rs ds ts
 	
 slurpVarsRD' tt
 	| TFetters t f	<- tt
@@ -142,16 +142,14 @@ slurpVarsRD' tt
 	| TCon{}	<- tt	= []
 
 	| TVar k _	<- tt
-	= case k of
-		KRegion	-> [tt]
-		KValue	-> [tt]
-		_	-> []
-
+	= if k == kRegion || k == kValue
+		then [tt]
+		else []
+		
 	| TVarMore k _ _ <- tt
-	= case k of
-		KRegion	-> [tt]
-		KValue	-> [tt]
-		_	-> []
+	= if k == kRegion || k == kValue
+		then [tt]
+		else []
 
 	| TTop{}	<- tt	= []
 	| TBot{}	<- tt	= []
@@ -166,10 +164,9 @@ slurpVarsRD' tt
 	| TFun{}	<- tt	= []
 
 	| TClass k _	<- tt
-	= case k of
-		KRegion	-> [tt]
-		KValue	-> [tt]
-		_	-> []
+	= if k == kRegion || k == kValue
+		then [tt]
+		else []
 		
 	| TError k t	<- tt	
 	= []

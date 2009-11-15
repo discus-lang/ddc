@@ -37,10 +37,11 @@ checkMain
 --	so it must accept this.
 checkMain' vMainT tMain tt
  = case tt of
-	TForall b k t			-> checkMain' vMainT tMain t
- 	TFetters t fs			-> checkMain' vMainT tMain t
+	TForall b k t		-> checkMain' vMainT tMain t
+ 	TFetters t fs		-> checkMain' vMainT tMain t
 
-	TFun (TVar KValue _) _ eff clo	-> return ()
+	TFun (TVar kV _) _ eff clo	
+	 | kV	== kValue	-> return ()
 
 	TFun (TData _ v1 []) _ eff clo
 	 | v1 == primTUnit

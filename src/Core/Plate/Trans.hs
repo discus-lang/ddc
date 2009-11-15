@@ -595,6 +595,8 @@ instance Monad m => TransM m Kind where
   = case kk of
 	KNil		-> return KNil
 
+	KCon{}		-> return kk
+
 	KFun k1 k2
 	 -> do	k1'	<- followK table k1
 	 	k2'	<- followK table k2
@@ -604,11 +606,6 @@ instance Monad m => TransM m Kind where
 	 -> do	k1'	<- followK table k1
 		k2'	<- followK table k2
 		return	$ KForall k1' k2'
-
-  	KValue 		-> return KValue
-  	KRegion 	-> return KRegion
-  	KEffect		-> return KEffect
-  	KClosure	-> return KClosure
 
 	KClass tc ts
 	 -> do	ts'	<- followTs table ts

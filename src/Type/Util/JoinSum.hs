@@ -110,13 +110,13 @@ joinTT_work env t1 t2
 	| TVar k1 v1		<- t1
 	, Just k2		<- kindOfType t2
 	, k1 == k2
-	, k1 == KEffect || k1 == KClosure
+	, k1 == kEffect || k1 == kClosure
 	= Just $ makeTSum k1 [t1, t2]
 
 	| TVarMore k1 v1 b1 <- t1
 	, Just k2		<- kindOfType t2
 	, k1 == k2
-	, k1 == KEffect || k1 == KClosure
+	, k1 == kEffect || k1 == kClosure
 	= Just $ makeTSum k1 [t1, t2]
 
 	| otherwise

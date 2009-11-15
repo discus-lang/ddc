@@ -72,11 +72,12 @@ rewriteS ss
 	
 rewriteX xx
  = case xx of
-	XTau t x	-> XTau t (rewriteX x)
-	XApp{}		-> rewriteApp xx
-	XAPP XLit{} (TVar KRegion r) -> xx
-	XAPP{}		-> rewriteApp xx
-	_		-> xx
+	XTau t x		-> XTau t (rewriteX x)
+	XApp{}			-> rewriteApp xx
+	XAPP XLit{} (TVar kR r) 
+	 | kR	== kRegion 	-> xx
+	XAPP{}			-> rewriteApp xx
+	_			-> xx
 	
 
 -- | if this function application calls an overloaded function then rewrite it 
@@ -183,8 +184,8 @@ rewriteOverApp
 		weakenInst b t1
 			| BMore v tMore	<- b
 			= case Var.nameSpace v of
-				Var.NameEffect	-> makeTSum KEffect  [tMore, t1]
-				Var.NameClosure	-> makeTSum KClosure [tMore, t1]
+				Var.NameEffect	-> makeTSum kEffect  [tMore, t1]
+				Var.NameClosure	-> makeTSum kClosure [tMore, t1]
 				
 			| otherwise
 			= t1
@@ -253,7 +254,7 @@ takeVSub xx ttSub (t1, t2)
 	--		(!Read %r, {!Read %r, !Read %r2}) being returned from the unifier.
 	--	
 	| Just k1	<- kindOfType t1
-	, elem k1 [KEffect, KClosure]
+	, elem k1 [kEffect, kClosure]
 	= Nothing
 	
 	| otherwise
@@ -404,14 +405,14 @@ matchInstance cType cInst
 
 matchTT t1 t2
 	| Just k1	<- kindOfType t1
-	, elem k1  [KEffect, KClosure, KRegion]
+	, elem k1  [kEffect, kClosure, kRegion]
 	, kindOfType t1 == kindOfType t2
 	= Just []
 
 	| Just k1	<- kindOfType t1
 	, Just k2	<- kindOfType t2
-	, resultKind k1 == KValue
-	, resultKind k2 == KValue
+	, resultKind k1 == kValue
+	, resultKind k2 == kValue
 	= unifyT2 t1 t2 
 		
 	| otherwise

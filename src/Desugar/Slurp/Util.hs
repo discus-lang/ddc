@@ -9,7 +9,7 @@ module Desugar.Slurp.Util
 	, newTVarR, newTVarRS
 	, newTVarE, newTVarES
 	, newTVarC, newTVarCS
-	, newTVarF, newTVarFS
+--	, newTVarF, newTVarFS
 	, newVarZ
 	, bindVtoT
 	, lbindVtoT
@@ -98,16 +98,16 @@ makeCtorType newVarN vData vs name fs
 	-- The objType is the type of the constructed object.
  	let objType	= TData (makeDataKind vs) vData  
 			$ map (\v -> case Var.nameSpace v of
-					NameEffect	-> TVar KEffect  v
-					NameRegion	-> TVar KRegion  v
-					NameClosure	-> TVar KClosure v
-					NameType	-> TVar KValue    v)
+					NameEffect	-> TVar kEffect  v
+					NameRegion	-> TVar kRegion  v
+					NameClosure	-> TVar kClosure v
+					NameType	-> TVar kValue    v)
 			$ vs
 
 	-- Constructors don't inspect their arguments.
 	let ?newVarN	=  newVarN
  	tCtor		<- elaborateCloT 
-			$  makeTFunEC (TBot KEffect) (TBot KClosure) (tsPrimary_elab ++ [objType])
+			$  makeTFunEC tPure tEmpty (tsPrimary_elab ++ [objType])
 
 	let vks		= map (\v -> (v, defaultKindV v)) 
 			$ Var.sortForallVars 
@@ -129,7 +129,8 @@ makeCtorType newVarN vData vs name fs
 elabBot newVarN tt
  = case tt of
  	TBot k	
-	 -> do	v	<- newVarN (spaceOfKind k)
+	 -> do	let Just nameSpace = spaceOfKind k
+		v	<- newVarN nameSpace
 	 	return	$ TVar k v
 
 	_ ->	return tt
@@ -141,11 +142,11 @@ checkTypeVar vs v
 	
 	-- effect vars not present in the data type can be made pure
 	| Var.nameSpace v == NameEffect
-	= Just $ FConstraint primPure  [TVar KEffect v]
+	= Just $ FConstraint primPure  [TVar kEffect v]
 	
 	-- closure vars not present in the data type can be made empty
 	| Var.nameSpace v == NameClosure
-	= Just $ FConstraint primEmpty [TVar KClosure v]
+	= Just $ FConstraint primEmpty [TVar kClosure v]
 	
 	| otherwise
 	= dieWithUserError
@@ -227,7 +228,7 @@ bindVtoT	varV
 		modify (\s -> s { 
 			stateVarType	= Map.insert varV varT' (stateVarType s) })
 		
-		return $ Just (TVar KValue varT')
+		return $ Just (TVar kValue varT')
 
 
 lookupVtoT ::	Var	-> CSlurpM (Maybe Var)
@@ -253,7 +254,7 @@ lbindVtoT	varV
  = do
  	mVar		<- lookupVtoT varV
 	case mVar of
-	 Just varT	-> return $ TVar KValue varT
+	 Just varT	-> return $ TVar kValue varT
 	 Nothing	
 	  -> do	Just v	<- bindVtoT varV
 	  	return	v
@@ -312,24 +313,24 @@ newVarV		= newVarN  NameValue
 newVarVS	= newVarNS NameValue
 
 -- data
-newTVarD	= newVarN  NameType	   >>= \v -> return $ TVar KValue v
-newTVarDS s	= newVarNS NameType	s  >>= \v -> return $ TVar KValue v
+newTVarD	= newVarN  NameType	   >>= \v -> return $ TVar kValue v
+newTVarDS s	= newVarNS NameType	s  >>= \v -> return $ TVar kValue v
 
 -- region
-newTVarR	= newVarN  NameRegion	   >>= \v -> return $ TVar KRegion v
-newTVarRS s	= newVarNS NameRegion	s  >>= \v -> return $ TVar KRegion v
+newTVarR	= newVarN  NameRegion	   >>= \v -> return $ TVar kRegion v
+newTVarRS s	= newVarNS NameRegion	s  >>= \v -> return $ TVar kRegion v
 
 -- effect
-newTVarE	= newVarN  NameEffect	   >>= \v -> return $ TVar KEffect v
-newTVarES s	= newVarNS NameEffect	s  >>= \v -> return $ TVar KEffect v
+newTVarE	= newVarN  NameEffect	   >>= \v -> return $ TVar kEffect v
+newTVarES s	= newVarNS NameEffect	s  >>= \v -> return $ TVar kEffect v
 
 -- closure
-newTVarC	= newVarN  NameClosure	   >>= \v -> return $ TVar KClosure v
-newTVarCS s	= newVarNS NameClosure	s  >>= \v -> return $ TVar KClosure v
+newTVarC	= newVarN  NameClosure	   >>= \v -> return $ TVar kClosure v
+newTVarCS s	= newVarNS NameClosure	s  >>= \v -> return $ TVar kClosure v
 
 -- fetter
-newTVarF	= newVarN  NameClass	   >>= \v -> return $ TVar KWitness v
-newTVarFS s	= newVarNS NameClass	s  >>= \v -> return $ TVar KWitness v
+-- newTVarF	= newVarN  NameClass	   >>= \v -> return $ TVar kWitness v
+-- newTVarFS s	= newVarNS NameClass	s  >>= \v -> return $ TVar kWitness v
 
 
 

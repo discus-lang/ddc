@@ -28,7 +28,7 @@ import qualified Data.Map	as Map
 
 type ScrapeGraph	= Map Module Scrape
 
-stage = "Module.ScrapeGraph"
+-- stage = "Module.ScrapeGraph"
 
 -- | Scrape all modules transtitively imported by these ones.
 scrapeRecursive

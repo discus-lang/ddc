@@ -34,12 +34,12 @@ diagMutConflict
 	-> SquidM Error
 	
 diagMutConflict
-	fConst	@(FConstraint v [TClass KRegion cidR])
+	fConst	@(FConstraint v [TClass kR cidR])
 	tsConst
 
 	fMutable 
 	tsMutable
-
+ | kR	== kRegion
  = do	
  	Just c@(Class { classNodes = nodes })
 		<- lookupClass cidR
@@ -225,7 +225,8 @@ traceES_nodes vC tE
 
 -- see if the effect we're looking for is inside this sum
 traceES_nodes vC tE
-	(node@(TSum KEffect es, ts) : nodes)
+	(node@(TSum kE es, ts) : nodes)
+ | kE	== kEffect
  = do	
 	tEff	<- updateVC (TEffect vC [tE])
  	es'	<- updateVC es

@@ -61,11 +61,11 @@ finaliseT' bound def tt
 
 	TCon{}		-> tt 
 	TVar  k v
-	 	| elem k [KEffect, KClosure]
+	 	| elem k [kEffect, kClosure]
 		, not $ Map.member v bound	-> TBot k
 	 
 	 	| def
-		, elem k [KValue]
+		, elem k [kValue]
 		, not $ Map.member v bound	-> TData k primTUnit []
 	 
 		| otherwise			-> tt

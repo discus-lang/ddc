@@ -81,7 +81,8 @@ loadEffAnnot
 
 loadEffAnnot ee
  = case ee of
-	TVar KEffect vE	
+	TVar kE vE	
+	 | kE == kEffect
 	 -> do	Just tE		<- lookupType vE
 {-		trace	( "*   loadEffAnnot\n"
 			% "    vE       = " % vE	% "\n"
@@ -91,8 +92,9 @@ loadEffAnnot ee
 		-}
 		return	$ flattenT $ stripContextT tE
 
- 	TBot KEffect	
-	  -> 	return	$ TBot KEffect
+ 	TBot kE
+	 | kE == kEffect
+	 -> 	return	$ tPure
 
 
 -- Load a closure annotation to attach to an XLam
@@ -102,12 +104,14 @@ loadCloAnnot
 
 loadCloAnnot cc
  = case cc of
-	TVar KClosure vC	
+	TVar kC vC	
+	 | kC == kClosure
 	 -> do	Just tC		<- lookupType vC
 	 	return 	$ trimClosureC Set.empty Set.empty 
 			$ flattenT $ stripContextT tC
 			 
-	TBot KClosure 	
-	 -> 	return	$ TBot KClosure
+	TBot kC
+	 | kC == kClosure 	
+	 -> 	return	$ tEmpty
 
 

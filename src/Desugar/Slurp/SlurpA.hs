@@ -52,16 +52,9 @@ slurpA	alt@(AAlt sp gs x)
 	(tX, eX, cX, x', qsX)
 			<- slurpX x
 
---	let vsBoundV	= map fst $ concat cbindssGuards
---	let tsBoundT	= map (TVar KValue) $ map snd $ concat cbindssGuards
-
 	let qs	=
 		[ CEqs (TSU $ SUGuards sp) (tGuards : catMaybes mtsGuards)
-		, CEq  (TSE $ SEGuards sp) eAlt	  $ makeTSum   KEffect  (eX : esGuards) ]
---		, CEq  (TSC $ SCGuards sp) cAlt   $ makeTMask  KClosure 
---							(makeTSum KClosure (cX : csGuards))
---							(makeTSum KClosure 
---								$ map TTag vsBoundV) ]
+		, CEq  (TSE $ SEGuards sp) eAlt	  $ makeTSum   kEffect  (eX : esGuards) ]
 
 	let cbindsGuards	= concat cbindssGuards
 	let bind 
@@ -74,7 +67,7 @@ slurpA	alt@(AAlt sp gs x)
 	return	( tGuards
 		, tX
 		, eAlt
-		, empty
+		, tEmpty
 		, AAlt Nothing gs' x'
 		, CBranch
 			{ branchBind	= bind
@@ -98,8 +91,8 @@ slurpG	(GCase sp w)
 
  	return	( cbindsW
 		, Just tW
-		, pure
-		, empty
+		, tPure
+		, tEmpty
 		, GCase Nothing w'
 		, qsW )
 		
@@ -116,8 +109,6 @@ slurpG	(GExp sp w x)
 	(tX, eX, cX, x', qsX)
 		<- slurpX x
 
---	let vsBoundV	= map fst cbindsW
-
 	-- make the effect of testing the case object
 	let effMatch
 		= case w of
@@ -129,17 +120,13 @@ slurpG	(GExp sp w x)
 
 	let qs = 
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
-		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum KEffect (eX : effMatch) ]
---		, CEq	(TSC $ SCGuards sp)	cGuard	$ makeTMask 
---							KClosure 
---							cX
---							(makeTSum KClosure (map TTag vsBoundV)) ]
+		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum kEffect (eX : effMatch) ]
 
 	-----	
 	return	( cbindsW		
 		, Nothing
 		, eGuard
-		, empty
+		, tEmpty
 		, GExp Nothing w' x'
 		, qsW ++ qsX ++ qs )
 		
@@ -192,8 +179,8 @@ slurpW	(WConLabel sp vCon lvs)
 
 slurpW	(WLit sp litFmt)
  = do
-	tD@(TVar KValue tV)	<- newTVarDS "const"
-	tE			<- newTVarES "const"
+	tD@(TVar _ tV)	<- newTVarDS "const"
+	tE		<- newTVarES "const"
 
 	-- work out the type of this literal
 	let TyConData 
@@ -202,13 +189,14 @@ slurpW	(WLit sp litFmt)
 		= tyConOfLiteralFmt litFmt
 
 	-- if the literal type needs a region var then make a fresh one
-	tLit	<- case tcKind of
-			KValue 		
-			 -> 	return $ TData tcKind tcVar []
+	let tLitM
+		| tcKind == kValue
+		= return $ TData tcKind tcVar []
 
-			(KFun KRegion KValue)
-			 -> do	vR	<- newVarN NameRegion
-			 	return	$ TData tcKind tcVar [TVar KRegion vR]
+		| tcKind == KFun kRegion kValue
+		= do	vR	<- newVarN NameRegion
+			return	$ TData tcKind tcVar [TVar kRegion vR]
+	tLit <- tLitM
 
 	wantTypeV tV
 
@@ -223,7 +211,7 @@ slurpW	(WVar sp v)
  			
 	return	( [(v, vT)]
 		, tBound
-		, WVar (Just (tBound, pure)) v
+		, WVar (Just (tBound, tPure)) v
 		, [])
 	
 slurpW w
@@ -243,7 +231,7 @@ slurpLV	:: Var				-- Constructor name.
 slurpLV vCon tData subInst (LIndex sp ix, v)
  = do	
 	-- create a new type var for this arg.
- 	(TVar KValue vT)	<- lbindVtoT v
+ 	(TVar _ vT)	<- lbindVtoT v
 
 	-- Lookup the fields for this constructor.
 	ctorFields	<- gets stateCtorFields
@@ -265,7 +253,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 
 		return	( (LIndex Nothing ix, v)
 			, Just (v, vT)
-			, [CEq (TSV $ SVMatchCtorArg sp) (TVar KValue vT) tField] )
+			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue vT) tField] )
 
          -- Uh oh, there's no field with this index.
 	 --	Add the error to the monad and return some dummy info so
@@ -288,7 +276,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 slurpLV vCon tData subInst (LVar sp vField, v)
  = do
  	-- Create a new type var for this arg.
- 	Just (TVar KValue vT)	<- bindVtoT v
+ 	Just (TVar _ vT)	<- bindVtoT v
  
  	-- Lookup the fields for this constructor.
  	ctorFields	<- gets stateCtorFields
@@ -311,9 +299,5 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 
  	return 	( (LVar Nothing vField, v)
  		, Just (v, vT)
-		, [CEq (TSV $ SVMatchCtorArg sp) (TVar KValue vT) tField] )
-		
-
-
-
+		, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue vT) tField] )
 

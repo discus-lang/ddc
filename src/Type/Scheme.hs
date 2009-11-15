@@ -173,13 +173,13 @@ generaliseType' varT tCore envCids
 	let fsMore
 		| isTopLevel
 		=  [ FConstraint primConst [tR]
-			| tR@(TClass KRegion cid)	
-			<- rsMskFresh
+			| tR@(TClass kR cid)	<- rsMskFresh
+			, kR	== kRegion
 			, notElem (FConstraint primMutable [tR]) fsMskFresh ]
 
 		++ [ FConstraint primDirect [tR]
-			| tR@(TClass KRegion cid)
-			<- rsMskFresh
+			| tR@(TClass kR cid) <- rsMskFresh
+			, kR	== kRegion
 			, notElem (FConstraint primLazy [tR]) fsMskFresh ]
 	
 		| otherwise
@@ -253,7 +253,7 @@ cleanType tsSave tt
 		$ catMaybes
  		$ map (\t -> case t of
 				TVar k v 
-				 	| k == KEffect || k == KClosure
+				 	| k == kEffect || k == kClosure
 					-> Just (v, (k, Nothing))
 				
 				_	-> Nothing)

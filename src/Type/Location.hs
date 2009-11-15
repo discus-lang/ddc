@@ -252,24 +252,15 @@ dispTypeSource tt ts
 	$  "dispTypeSource: no match for " % ts % "\n"
 
 
--- Some fns to make showing error messages easier
---		'of' refers to the entire effect/type of some binding
+-- A fn make showing error messages easier
 --	whereas 'at' / 'with' refers to just a small part of it.
-
-{-
-ofKind :: Type -> String
-ofKind tt
- = case kindOfType tt of
- 	KValue	-> "         of type: "
- 	KEffect	-> "       of effect: "
--}
 atKind :: Type -> String
 atKind tt
- = case kindOfType tt of
- 	Just KValue	-> "         at type: "
- 	Just KEffect	-> "     with effect: "
-
-
+	| Just k	<- kindOfType tt
+	= let result
+		| k == kValue	= "         at type: "
+		| k == kEffect	= "     with effect: "
+	  in result
 
 	
 -- | Show the source of a type error due to this reason

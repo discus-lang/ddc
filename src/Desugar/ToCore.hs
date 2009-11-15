@@ -234,7 +234,7 @@ makeCtor    objVar vData vsData (D.CtorDef _ ctorVar dataFields)
 		$ D.makeCtorType newVarN vData vsData ctorVar dataFields
 
 	let to	= T.makeTFuns_pureEmpty (replicate (length argTs + 1) 
-		$ (T.makeTData objVar C.KValue []))
+		$ (T.makeTData objVar C.kValue []))
 
 	return	$ C.PCtor ctorVar tv to
 
@@ -277,7 +277,8 @@ toCoreX xx
  = case xx of
 
 	D.XLambdaTEC 
-		_ v x (T.TVar T.KValue vTV) eff clo
+		_ v x (T.TVar kV vTV) eff clo
+	 | kV == T.kValue
 	 -> do	
 		-- Only keep effect and closure bindings which are not quantified so they don't
 		--	conflict with constraints on /\ bound vars.
@@ -327,7 +328,7 @@ toCoreX xx
 	 -> do
 	 	x1'	<- toCoreX x1
 		x2'	<- toCoreX x2
-		return	$ C.XApp x1' x2' T.pure
+		return	$ C.XApp x1' x2' T.tPure
 
 
 	-- case match on a var
@@ -359,7 +360,8 @@ toCoreX xx
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 		
 	-- primitive constants
-	D.XLit (Just (T.TVar T.KValue vT, _)) litfmt
+	D.XLit (Just (T.TVar kV vT, _)) litfmt
+	 | kV	== T.kValue
 	 -> do	
 	 	Just t		<- lookupType vT
 	 	let t_flat	= C.stripContextT $ C.flattenT t
@@ -418,9 +420,11 @@ toCoreX xx
 	
 	-- projections
 	D.XProjTagged 
-		(Just 	( T.TVar T.KValue vT
-			, T.TVar T.KEffect vE))
+		(Just 	( T.TVar kV vT
+			, T.TVar kE vE))
 		vTagInst vTagClo x2 j
+	 | kV == T.kValue
+	 , kE == T.kEffect
 	 -> do
 		x2'		<- toCoreX x2
 		j'		<- toCoreJ j
@@ -437,12 +441,14 @@ toCoreX xx
 -}
 		x1'	<- toCoreVarInst vProj vTagInst
 			
-		return	$ C.XApp x1' x2' T.pure
+		return	$ C.XApp x1' x2' T.tPure
 
 	D.XProjTaggedT
-		(Just 	( T.TVar T.KValue vT
-			, T.TVar T.KEffect vE))
+		(Just 	( T.TVar kV vT
+			, T.TVar kE vE))
 		vTagInst tTagClo j
+	 | kV == T.kValue
+	 , kE == T.kEffect
 	 -> do
 		-- lookup the var for the projection function to use
 		projResolve	<- gets coreProjResolve
@@ -460,8 +466,9 @@ toCoreX xx
 
 	-- variables
 	D.XVarInst 
-		(Just (T.TVar T.KValue vT, _))
+		(Just (T.TVar kV vT, _))
 		v
+	 | kV == T.kValue
 	 -> 	toCoreVarInst v vT
 
 	_ 
@@ -485,7 +492,7 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
 	-- raw unboxed strings need their region applied
 	| S.LString _	<- lit
 	, S.Unboxed	<- fmt
-	= let	Just (_, _, [tR@(C.TVar C.KRegion _)]) = T.takeTData tt
+	= let	Just (_, _, [tR]) = T.takeTData tt
 	  in	C.XAPP (C.XLit litfmt) tR
 
 	-- other unboxed literals have kind *, so there is nothing more to do
@@ -497,7 +504,7 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
 	--	when building the boxed version.
 	| S.LString _	<- lit
 	, S.Boxed	<- fmt
-	= let	Just (_, _, [tR@(C.TVar C.KRegion _)]) = T.takeTData tt
+	= let	Just (_, _, [tR]) = T.takeTData tt
 		Just fmtUnboxed		= S.dataFormatUnboxedOfBoxed fmt
 	  in	C.XPrim C.MBox 
 			[ C.XType tR
@@ -506,7 +513,7 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
 
 	-- the other unboxed literals have kind *, 
 	--	so we can just pass them to the the boxing primitive directly.
-	| Just (v, k, [tR@(C.TVar C.KRegion _)]) <- T.takeTData tt
+	| Just (v, k, [tR]) <- T.takeTData tt
 	= let	Just fmtUnboxed		= S.dataFormatUnboxedOfBoxed fmt
 	  in	C.XPrim C.MBox 
 			[ C.XType tR
@@ -686,9 +693,10 @@ toCoreW ww
 	-- match against a boxed literal
 	--	All matches in the core language are against unboxed literals, 
 	--	so we need to rewrite the literal in the pattern as well as the guard expression.
-	| D.WLit (Just	( T.TVar T.KValue vT
+	| D.WLit (Just	( T.TVar kV vT
 			, _))
 		litFmt@(S.LiteralFmt lit fmt) <- ww
+	, kV == T.kValue
 
 	, S.dataFormatIsBoxed fmt
 	= do	mT	<- liftM (liftM C.stripToShapeT)
@@ -708,19 +716,20 @@ toCoreW ww
 	-- match against unboxed literal
 	--	we can do this directly.
 	| D.WLit
-		(Just 	( T.TVar T.KValue vT
+		(Just 	( T.TVar kV vT
 			, _ )) 
 		litFmt@(S.LiteralFmt lit fmt)	<- ww
-
+	, kV == T.kValue
 	, S.dataFormatIsUnboxed fmt
 	= do	return	( C.WLit (varPos vT) litFmt
 			, Nothing)
 
 
 	-- match against a variable
-	| D.WVar (Just 	(T.TVar T.KValue vT
+	| D.WVar (Just 	(T.TVar kV vT
 			, _))
 		var		<- ww
+	, kV == T.kValue
 	= do
 		return	( C.WVar var
 			, Nothing)

@@ -130,32 +130,35 @@ elabRs args kind
   $ do	(args', vks)	<- elabRs2 args kind
  	return	(args', nub vks)
 
-elabRs2 [] KValue
+elabRs2 [] k
+	| k == kValue
 	= return ([], [])
 
 elabRs2 [] (KFun k1 k2)
 	-- add fresh vars at the end
-	| elem k1 [KRegion, KEffect, KClosure]
-	= do	(ts', vks')	<- elabRs2 [] k2
-		vR		<- ?newVar (spaceOfKind k1)
-		return		( TVar k1 vR : ts'
-				, (vR, k1) : vks')
+	| elem k1 [kRegion, kEffect, kClosure]
+	= do	(ts', vks')		<- elabRs2 [] k2
+		let Just nameSpace	= spaceOfKind k1
+		vR			<- ?newVar nameSpace
+		return	( TVar k1 vR : ts'
+			, (vR, k1) : vks')
 	| otherwise
 	= return ([], [])
 
 elabRs2 (t:ts) kk@(KFun k1 k2)
 
 	-- (% : _)   % -> _
-	| elem k1 [KRegion, KEffect, KClosure]
+	| elem k1 [kRegion, kEffect, kClosure]
 	, hasKind k1 t
 	= do	(ts', vks')	<- elabRs2 ts k2
 		return		( t : ts'
 				, vks')
 
 	-- (_ : _)   % -> _
-	| elem k1 [KRegion, KEffect, KClosure]
+	| elem k1 [kRegion, kEffect, kClosure]
 	, not $ hasKind k1 t
-	= do	vR		<- ?newVar (spaceOfKind k1)
+	= do	let Just nameSpace	= spaceOfKind k1
+		vR			<- ?newVar nameSpace
 
 		(tt', vksMore)	<- elabRs2 
 					(TVar k1 vR : t : ts) 
@@ -209,7 +212,7 @@ elaborateCloT' env tt
 	 -> do	(x', fs, clo)	<- elaborateCloT' env x
 		return	( TForall b k x'
 			, fs
-			, TBot KClosure)
+			, tEmpty)
 			
 	-- if we see an existing set of fetters,
 	--	then drop the new ones in the same place.
@@ -222,13 +225,13 @@ elaborateCloT' env tt
 	TVar{}
 	 -> 	return	( tt
 			, []
-			, TBot KClosure )
-	
+			, tEmpty )
+
 	-- TODO: decend into type ctors
 	TData{}
 	 ->	return	( tt
 			, []
-			, TBot KClosure)
+			, tEmpty)
 
 	TFun t1 t2 eff clo
 	 -> do	-- create a new value variable as a name for the function parameter
@@ -241,7 +244,7 @@ elaborateCloT' env tt
 
 		-- make a new closure var to name the closure of this function
 		varC			<- ?newVarN NameClosure
-		let cloVarC		= TVar KClosure varC
+		let cloVarC		= TVar kClosure varC
 
 		let newClo	= 
 		     case t2 of
@@ -252,7 +255,7 @@ elaborateCloT' env tt
 
 			-- if the right of the function isn't another function
 			--   then assume this one binds all the args.
-			_	-> makeTSum KClosure env
+			_	-> makeTSum kClosure env
 		
 		-- fetter for the closure of this function
 		let fNewClo	= FWhere cloVarC newClo
@@ -261,7 +264,7 @@ elaborateCloT' env tt
 		--	in the constraint is just Bot.
 		let (fNew, cloAnnot)
 			= case fNewClo of 
-				FWhere _ (TBot KClosure)	-> (Nothing, TBot KClosure)
+				FWhere _ (TBot kClosure)	-> (Nothing, TBot kClosure)
 				_				-> (Just fNewClo, cloVarC)
 
 		return	( TFun t1 t2' eff cloAnnot
@@ -294,11 +297,11 @@ elaborateEffT vsRsConst vsRsMutable tt
     	-- assume that regions added into a contra-variant
 	--	branch during elaboration will be read by the function.
 	let rsContra	= slurpConRegions tHooked
-	let effsRead	= [ TEffect primRead [TVar KRegion v] 
+	let effsRead	= [ TEffect primRead [TVar kRegion v] 
 				| v <- (vsRsConst ++ vsRsMutable)
 				, elem v rsContra ]
 
-	let effsWrite	= [ TEffect primWrite [TVar KRegion v] 
+	let effsWrite	= [ TEffect primWrite [TVar kRegion v] 
 				| v <- vsRsMutable
 				, elem v rsContra ]
 	
@@ -349,22 +352,22 @@ hookEffT hookVar tt
 	
 	-- There is already a var on the right most function
 	--	so we can use that as a hook var.
-	| TFun t1 t2 (TVar KEffect var) clo	<- tt
+	| TFun t1 t2 (TVar kEffect var) clo	<- tt
 	= Just	( tt
 		, var
 		, Nothing )
 	
 	-- The right-most function has no effects on it.
 	--	Add the hook var that we were given.
-	| TFun t1 t2 (TBot KEffect) clo		<- tt
-	= Just	( TFun t1 t2 (TVar KEffect hookVar) clo
+	| TFun t1 t2 (TBot kEffect) clo		<- tt
+	= Just	( TFun t1 t2 (TVar kEffect hookVar) clo
 	  	, hookVar
 		, Nothing )
 	
 	-- The right-most function has some other effect on it. 
 	--	Replace this with our hook var and return the effect.
 	| TFun t1 t2 eff clo			<- tt
-	= Just	( TFun t1 t2 (TVar KEffect hookVar) clo
+	= Just	( TFun t1 t2 (TVar kEffect hookVar) clo
 		, hookVar
 		, Just eff)
 	
@@ -388,19 +391,21 @@ addEffectsToFsT effs var tt
 	 -> TFetters t1 (addEffectsToFs var effs fs)
 	 
 	tx
-	 -> TFetters tx [FWhere (TVar KEffect var) (makeTSum KEffect effs)]
+	 -> TFetters tx [FWhere (TVar kEffect var) (makeTSum kEffect effs)]
 	 
 
 -- didn't find a fetter with this var, so add a new one
 addEffectsToFs v1 effs1 []
-	= [FWhere (TVar KEffect v1) (makeTSum KEffect effs1)]
+	= [FWhere (TVar kEffect v1) (makeTSum kEffect effs1)]
 	
 addEffectsToFs v1 effs1 (f:fs)
  = case f of
- 	FWhere (TVar KEffect v2) eff2
-	 | v1 == v2	-> FWhere (TVar KEffect v2) (makeTSum KEffect (eff2 : effs1)) : fs
+ 	FWhere (TVar k v2) eff2
+		| k == kEffect
+		, v1 == v2	
+	 	-> FWhere (TVar kEffect v2) (makeTSum kEffect (eff2 : effs1)) : fs
 	
-	_		-> f : addEffectsToFs v1 effs1 fs
+	_	-> f : addEffectsToFs v1 effs1 fs
 
 
 -- | Slurp out region variables which appear in contra-variant branches
@@ -432,7 +437,9 @@ slurpConRegionsCon tt
 	 
 	TData k v ts		-> catMap slurpConRegionsCon ts
 
-	TVar KRegion v		-> [v]
+	TVar k v		
+		| k == kRegion	-> [v]
+
 	TVar _ _		-> []	
 
 

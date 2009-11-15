@@ -247,8 +247,8 @@ purifyEffSrc :: Class -> Fetter -> ClassId -> Effect -> Maybe (Fetter, TypeSourc
 purifyEffSrc 
 	cPure@Class { classNodes = nodes }
 	fPure cidEff 
-	eff@(TClass KEffect cidE)
-
+	eff@(TClass kE cidE) 
+ | kE	== kEffect
  = let	Just src	= lookup (TFetter fPure) nodes
    in	Just 	( FConstraint primPure [eff]
 		, TSI (SICrushedFS cidEff fPure src) )
@@ -268,17 +268,20 @@ purifyEffSrc
 purifyEff :: Type -> Maybe Fetter
 purifyEff eff
 	-- read
- 	| TEffect v [tR@(TClass KRegion _)]	<- eff
-	, v == primRead
+ 	| TEffect v [tR@(TClass kR _)]	<- eff
+	, kR	== kRegion
+	, v 	== primRead
 	= Just $ FConstraint primConst [tR]
 
 	-- deep read
- 	| TEffect v [tR@(TClass KValue _)]	<- eff
-	, v == primReadT
+ 	| TEffect v [tR@(TClass kV _)]	<- eff
+	, kV	== kValue
+	, v	== primReadT
 	= Just $ FConstraint primConstT [tR]
 	
 	-- effect variable
-	| TClass KEffect cid			<- eff
+	| TClass kE cid			<- eff
+	, kE	== kEffect
 	= Just $ FConstraint primPure [eff]
 
 	| otherwise
@@ -292,7 +295,8 @@ slurpHeadR tt
  	TFetters t fs
 	 -> slurpHeadR t
 
-	TData k v (tR@(TClass KRegion _) : _)
+	TData k v (tR@(TClass kR _) : _)
+	 | kR	== kRegion
 	 -> Just tR
 	 
 	_ -> Nothing

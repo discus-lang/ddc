@@ -44,23 +44,25 @@ instance Pretty Type PMode where
 	TApp t1 t2
 	 -> let result
 	 		| Just (t1, t2, eff, clo)	<- takeTFun xx
-			= case (eff, clo) of
-			 	(TBot KEffect, 	TBot KClosure)	
-				 -> prettyTBF t1 % " -> " % prettyTRight t2
-
-				(eff,   	TBot KClosure)	
-				 -> prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
-		
-				(TBot KEffect,	clo)		
-				 -> prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
-
-				(eff,   	clo)		
-				 -> prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
+			= let str
+				| eff == tPure
+				, clo == tEmpty
+				= prettyTBF t1 % " -> " % prettyTRight t2
+				
+				| clo == tEmpty
+				= prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
+				
+				| eff == tEmpty
+				= prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
+				
+				| otherwise
+				= prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
+			   in	str
 
 			| otherwise
 			= let	pprAppLeft x 
 			 	  | isTApp x 	= ppr x
-				  | otherwise		= prettyTB x
+				  | otherwise	= prettyTB x
 
 				pprAppRight x
 				  | isSomeTVar x 
@@ -100,9 +102,6 @@ instance Pretty Type PMode where
 	TFree  v t	-> v % " : " % t
 	TDanger v t	-> v % " $> " % t
 	
-	-- wild cards
---	TWild k		-> k % "_"
-
 	-- used in type inference
 	TClass k c
 	 -> case k of	
@@ -118,15 +117,15 @@ instance Pretty Type PMode where
 	-- core stuff
 	TVarMore k v t
 	 -> ifMode (elem PrettyCoreMore)
-	 	(case k of
-		 	KValue	-> parens $ "*" % v % " :> " % t 
-			_	-> parens $ v % " :> " % t)
+	 	(if k == kValue 
+			then	parens $ "*" % v % " :> " % t 
+			else	parens $ v % " :> " % t)
 			
-		(case k of
-		 	KValue	-> "*" % v
-			_	-> ppr v)
+		(if k == kValue
+			then	"*" % v
+			else	ppr v)
 
-	TWitJoin wits		-> "wjoin {" % "; " %!% wits % "}"
+	TWitJoin wits	-> "wjoin {" % "; " %!% wits % "}"
 
 	TIndex ix
 	 -> parens $ ppr ix
@@ -181,11 +180,11 @@ pprBindKind bb k
 kindOfSpace2 :: Var -> NameSpace -> Kind
 kindOfSpace2 var space
  = case space of
- 	NameType	-> KValue
-	NameRegion	-> KRegion
-	NameEffect	-> KEffect
-	NameClosure	-> KClosure
-	NameClass	-> KWitness
+ 	NameType	-> kValue
+	NameRegion	-> kRegion
+	NameEffect	-> kEffect
+	NameClosure	-> kClosure
+	NameClass	-> panic stage "kindOfSpace NameClass"
 	_		-> freakout stage
 				("kindOfSpace2: no match for " % show space % "\n"
 				% "   var = " % show var % "\n")
@@ -305,16 +304,11 @@ instance Pretty Kind PMode where
 	KNil		-> ppr "?"
 	KCon k s	-> ppr k
 	KPi  k1 k2	-> "PI " % k1 % " " % k2
-
-	KValue		-> ppr "*"
-	KRegion		-> ppr "%"
-	KEffect		-> ppr "!"
-	KClosure	-> ppr "$"
+	KApp k1 t1	-> k1 % " " % prettyTB t1
 	KWitness	-> ppr "+"
 
-	KFun k1 k2	-> k1 % " -> " % k2
 	KForall k1 k2	-> "\\" % k1 % ". " % k2
-
+	KFun k1 k2	-> k1 % " -> " % k2
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
@@ -335,8 +329,8 @@ instance Pretty KiCon PMode where
 	KiConLazy	-> ppr "Lazy"
 	KiConLazyH	-> ppr "LazyH"
 	KiConDirect	-> ppr "Direct"
-	KiPure		-> ppr "Pure"
-	KiEmpty		-> ppr "Empty"
+	KiConPure	-> ppr "Pure"
+	KiConEmpty	-> ppr "Empty"
 	
 
 -- InstanceInfo ------------------------------------------------------------------------------------

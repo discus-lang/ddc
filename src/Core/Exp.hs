@@ -22,6 +22,7 @@ module Core.Exp
 	, Type 		(..)	-- core types
 	, TyCon		(..)	-- type constructors
 	, TyClass	(..)	-- type class / witness names
+	, tPure, tEmpty
 
 	, Fetter	(..)
 	, Data			-- alias of Type
@@ -30,7 +31,10 @@ module Core.Exp
 	, Closure
 	, Witness
 
-	, Kind		(..))	-- kind expressions
+	-- kinds
+	, Kind		(..)
+	, kValue, kRegion, kEffect, kClosure
+	)
 
 where
 

@@ -70,7 +70,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 	-- the constraints
 	let qs	= 
 		[ CEq (TSV $ SVLambda sp) tX	$ TFun tBound tBody eBody cX
-		, CEq (TSC $ SCLambda sp) cX	$ makeTSum KClosure tsClo ]
+		, CEq (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
  	
 	-- If the sub expression is also a lambda
 	--	then we can pack its constraints into this branch as well.
@@ -92,13 +92,13 @@ slurpX	exp@(XLambda sp vBound xBody)
 	-- we'll be wanting to annotate these vars with TECs when we convert to core.
 	wantTypeVs
 		$  vBoundT
-		:  [v | TVar KEffect v  <- [eBody]]
-		++ [v | TVar KClosure v <- [cX]]
+		:  [v | TVar kE v <- [eBody],	kE == kEffect]
+		++ [v | TVar kC v <- [cX],	kC == kClosure]
 	
 	return	( tX
-		, pure
-		, empty
-		, XLambdaTEC (Just (tX, pure)) vBound xBody' tBound eBody cX
+		, tPure
+		, tEmpty
+		, XLambdaTEC (Just (tX, tPure)) vBound xBody' tBound eBody cX
 		, [qs'])
 
 
@@ -109,7 +109,7 @@ slurpX	exp@(XApp sp fun arg)
 	eX		<- newTVarES "" -- "app"
 	cX		<- newTVarCS "" -- "app"
 
-	eApp@(TVar KEffect vEApp)
+	eApp@(TVar _ vEApp)
 			<- newTVarES "" -- "app"
 
 	-- function
@@ -121,12 +121,12 @@ slurpX	exp@(XApp sp fun arg)
 			<- slurpX arg
 	
 	let qs	= 
-		[ CEq (TSV $ SVApp sp) tFun	$ TFun tArg tX eApp empty 
-		, CEq (TSE $ SEApp sp) eX	$ makeTSum KEffect  [eFun, eArg, eApp] ]
+		[ CEq (TSV $ SVApp sp) tFun	$ TFun tArg tX eApp tEmpty 
+		, CEq (TSE $ SEApp sp) eX	$ makeTSum kEffect  [eFun, eArg, eApp] ]
 	
 	return	( tX
 		, eX
-		, empty
+		, tEmpty
 		, XApp (Just (tX, eX)) fun' arg'
 		, qsFun ++ qsArg ++ qs)
 
@@ -139,14 +139,14 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 	eX		<- newTVarES "mat"
 	cX		<- newTVarCS "mat"
 
-	eMatch@(TVar KEffect vEMatch)		
+	eMatch@(TVar _ vEMatch)		
 			<- newTVarES "matI"
 
 	-- object
 	(tObj, eObj, cObj, obj', qsObj)	
 			<- slurpX obj
 
-	let TVar KValue vObj = tObj
+	let TVar _ vObj = tObj
 
 	-- alternatives
 	(tsAltsLHS, tsAltsRHS, esAlts, csAlts, alts', qsAlts)	
@@ -156,13 +156,13 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 		[ CEqs (TSU $ SUAltLeft sp)	(tObj : tsAltsLHS)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
 		, CEq  (TSE $ SEMatchObj sp)	eMatch	$ TEffect primReadH [tObj]
-		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum KEffect  ([eObj, eMatch] ++ esAlts) ]
+		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
 
 	wantTypeV vObj
 
 	return	( tRHS
 		, eX
-		, empty
+		, tEmpty
 		, XMatch (Just (tRHS, eX)) (Just obj') alts'
 		, qsMatch ++ qsObj ++ qsAlts)
 
@@ -182,11 +182,11 @@ slurpX	exp@(XMatch sp Nothing alts)
 	let matchQs	=  
 		[ CEqs (TSU $ SUAltLeft sp)	(tLHS 	: altsTP)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS	: altsTX)
-		, CEq  (TSE $ SEMatch sp)	eMatch	$ makeTSum KEffect altsEs ]
+		, CEq  (TSE $ SEMatch sp)	eMatch	$ makeTSum kEffect altsEs ]
 				  
 	return	( tRHS
 		, eMatch
-		, empty
+		, tEmpty
 		, XMatch (Just (tRHS, eMatch)) Nothing alts'
 		, matchQs ++ altsQs)
 
@@ -194,8 +194,7 @@ slurpX	exp@(XMatch sp Nothing alts)
 -- Lit ------------------------------------------------------------------------
 slurpX	exp@(XLit sp litFmt)
  = do	
- 	tX@(TVar KValue vT)	
-			<- newTVarDS "lit"
+ 	tX@(TVar _ vT)	<- newTVarDS "lit"
 
 	-- work out the type of this literal
 	let TyConData 
@@ -204,22 +203,23 @@ slurpX	exp@(XLit sp litFmt)
 		= tyConOfLiteralFmt litFmt
 
 	-- if the literal type needs a region var then make a fresh one
-	tLit	<- case tcKind of
-			KValue 		
-			 -> 	return $ TData tcKind tcVar []
+	let tLitM	
+		| tcKind	== kValue
+		= return $ TData tcKind tcVar []
 
-			(KFun KRegion KValue)
-			 -> do	vR	<- newVarN NameRegion
-			 	return	$ TData tcKind tcVar [TVar KRegion vR]
+		| tcKind	== KFun kRegion kValue
+		= do	vR	<- newVarN NameRegion
+		 	return	$ TData tcKind tcVar [TVar kRegion vR]
+	tLit	<- tLitM
 	
 	let qs = [ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
 
 	wantTypeV vT
 		
 	return	( tX
-		, pure
-		, empty
-	  	, XLit (Just (tX, pure)) litFmt
+		, tPure
+		, tEmpty
+	  	, XLit (Just (tX, tPure)) litFmt
 		, qs)
 
 
@@ -272,14 +272,14 @@ slurpX	exp@(XDo sp stmts)
 		{ branchBind	= bindLeave
 		, branchSub	
 		   = 	[ CEq (TSV $ SVDoLast sp) tX 	$ tLast
-			, CEq (TSE $ SEDo sp)	eX 	$ makeTSum  KEffect  esStmts ]
+			, CEq (TSE $ SEDo sp)	eX 	$ makeTSum  kEffect  esStmts ]
 		   ++ qsStmts }
 
 	wantTypeVs boundTVs
 
 	return	( tX
 		, eX
-		, empty
+		, tEmpty
 		, XDo (Just (tX, eX)) stmts'
 		, [q])
 
@@ -296,11 +296,11 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
  	(tObj, eObj, cObj, xObj', qsObj)	
 			<- slurpX xObj
 
-	let TVar KValue vObj = tObj
+	let TVar _ vObj = tObj
 
 	-- The case object must be a Bool
 	tR		<- newTVarR
-	let tBool	= TData (KFun KRegion KValue) (primTBool Boxed) [tR]
+	let tBool	= TData (KFun kRegion kValue) (primTBool Boxed) [tR]
 
 	-- Slurp the THEN expression.
 	(tThen, eThen, cThen, xThen', qsThen)	
@@ -315,13 +315,13 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 		, CEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse])
 		
 		, CEq  (TSE $ SEIfObj sp)	eTest 	$ TEffect primReadH [tObj]
-		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum KEffect  [eObj, eThen, eElse, eTest] ]
+		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
 		
 	wantTypeV vObj
 		
 	return	( tAlts
 		, eX
-		, empty
+		, tEmpty
 		, XIfThenElse (Just (tAlts, eX)) xObj' xThen' xElse'
 		, qs ++ qsObj ++ qsThen ++ qsElse )
 
@@ -338,12 +338,10 @@ slurpX 	exp@(XProj sp xBody proj)
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
 	cX	<- newTVarCS	"proj"
-	fX	<- newTVarFS	"proj"
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar KValue vInst) 
-		<- newTVarD
+	tInst@(TVar _ vInst) <- newTVarD
 
 	-- effect and closure of projection function
 	--	This will turn into the effect/closure of the function that is being applied
@@ -362,11 +360,11 @@ slurpX 	exp@(XProj sp xBody proj)
 			projT vInst tBody (TFun tBody tX eProj cProj)
 
 		, CEq	(TSE $ SEProj sp)	
-			eX $ makeTSum KEffect  [eBody, eProj] ]
+			eX $ makeTSum kEffect  [eBody, eProj] ]
 
 	return	( tX
 		, eX
-		, empty
+		, tEmpty
 		, XProjTagged (Just (tX, eX)) vInst (TFree label cProj) xBody' proj'
 		, qsBody ++ qs )
 
@@ -382,14 +380,13 @@ slurpX	exp@(XProjT sp tDict proj)
 	tX	<- newTVarDS	"proj"
 	eX	<- newTVarES	"proj"
 	cX	<- newTVarCS	"proj"
-	fX	<- newTVarFS	"proj"
 
 	-- a var to tie the dictionary type to
 	tDictVar <- newTVarDS	"proj"
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar KValue vInst) 
+	tInst@(TVar _ vInst) 
 		<- newTVarD
 
 	-- closure of projection function
@@ -408,7 +405,7 @@ slurpX	exp@(XProjT sp tDict proj)
 
 	return	( tX
 		, eX
-		, empty
+		, tEmpty
 		, XProjTaggedT (Just (tX, eX)) vInst (TFree label cProj) proj'
 		, qs )
 
@@ -421,12 +418,12 @@ slurpV exp@(XVar sp var) tV@(TVar k vT)
  = do
 	vTu		<- makeUseVar var vT
 	let tX		= TVar k vTu
-	let eX		= pure
+	let eX		= tPure
 	let qs		= [ CInst (TSV $ SVInst sp vT) vTu vT ]
 
 	return	( tX
 		, eX
-		, empty
+		, tEmpty
 	        , XVarInst (Just (tX, eX)) var
 		, qs)
 

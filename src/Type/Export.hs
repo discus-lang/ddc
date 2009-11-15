@@ -128,10 +128,11 @@ exportType t
 		% "    tPlug:\n" 	%> prettyTS tPlug	% "\n"
 		% "    tFinal:\n"	%> prettyTS tPlug	% "\n"
 
-	let tTrim	= case kindOfType tFinal of
-				Just KClosure	-> trimClosureC Set.empty Set.empty tFinal
-				Just KValue	-> trimClosureT Set.empty Set.empty tFinal
-				Just _		-> tFinal
+	let tTrim	
+		= case kindOfType tFinal of
+			Just kC | kC == kClosure	-> trimClosureC Set.empty Set.empty tFinal
+			Just kV | kV == kValue		-> trimClosureT Set.empty Set.empty tFinal
+			Just _				-> tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
 	return tTrim		
@@ -219,8 +220,9 @@ slurpRsConstraints ccMap cls
 	 	
 slurpRsConstraints1 c
 	-- got a region class		
- 	| Class { classKind 	= KRegion 
+ 	| Class { classKind 	= kR
 		, classFetters	= fs }	<- c
+	, kR	== kRegion
 	= do
 		-- extract the vars for all the fetters acting on this class
 	 	let vars	= map (\(TFetter (FConstraint vC _)) -> vC) fs

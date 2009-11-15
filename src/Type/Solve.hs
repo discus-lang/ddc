@@ -300,7 +300,7 @@ solveCs	(c:cs)
 			(InstanceLambda vUse vInst Nothing)
 
 		solveNext
-			$ [CEq src (TVar KValue vUse) (TVar KValue vInst)]
+			$ [CEq src (TVar kValue vUse) (TVar kValue vInst)]
 			++ cs 
 
 
@@ -352,7 +352,7 @@ solveCs	(c:cs)
 
 			-- The type will be added via a new constraint
 			solveNext
-				$  [CEq src (TVar KValue vUse) tInst]
+				$  [CEq src (TVar kValue vUse) tInst]
 				++ cs
 		 Nothing
 		  ->	return True
@@ -368,7 +368,7 @@ solveCs	(c:cs)
 	 		(InstanceLetRec vUse vInst Nothing)
 
 		solveNext
-			$ [CEq src (TVar KValue vUse) (TVar KValue vInst)]
+			$ [CEq src (TVar kValue vUse) (TVar kValue vInst)]
 			++ cs
 
 	-- Some other constraint	
@@ -802,7 +802,7 @@ addSchemeToGraph
 addSchemeToGraph src vGen tScheme
  = do
 	-- call makeClass to get the classId of this var
-	cidGen		<- makeClassV src KValue vGen 
+	cidGen		<- makeClassV src kValue vGen 
 
 	-- grab the class from the graph
 	Just cls	<- lookupClass cidGen
@@ -1009,8 +1009,8 @@ grindClass2 cid c@(Class
 --	traceG	$ ppr "   - crushing effects\n"
 	progressCrushE	
 		<- case k of
-			KEffect	-> crushEffectC cid
-			_	-> return False
+			kE | kE == kEffect	-> crushEffectC cid
+			_			-> return False
 
 	-- try and crush other fetters in this class
 --	traceG	$ ppr "   - crushing type fetters\n"

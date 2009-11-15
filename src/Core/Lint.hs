@@ -138,7 +138,7 @@ lintP	tt (PBind v x)
 	
 -- TODO: check that witnesses are only of the created region
 lintP	tt (PRegion r vts)
- = do	Just tt2	<- addVK r KRegion tt
+ = do	Just tt2	<- addVK r kRegion tt
  	tt3		<- addVTs vts tt2
 	return tt3
 
@@ -242,7 +242,7 @@ lintX tt (XVar v t)
  = do	lintBoundV tt v
  
 lintX tt (XLocal v vts x)
- = do	Just tt2	<- addVK v KRegion tt
+ = do	Just tt2	<- addVK v kRegion tt
  	tt3		<- addVTs vts tt2
  	lintX tt3 x
  
@@ -423,11 +423,8 @@ lintK tt kk
 	KForall k1 k2
 	 -> do	lintK tt k1
 	 	lintK tt k2
-	
-	KValue		-> return ()
-	KRegion		-> return ()
-	KEffect		-> return ()
-	KClosure	-> return ()
+
+	KCon{}		-> return ()
 
 	KClass v ts
 	 -> do	mapM_ (lintT tt) ts

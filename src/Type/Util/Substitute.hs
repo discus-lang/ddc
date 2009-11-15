@@ -128,24 +128,26 @@ subTT_cutM' sub cut tt
 subTT_enter sub cut tt
 
 	-- see if we can substitute something
-	| Just tt'	<- Map.lookup tt sub
-	= if Set.member tt cut
-	   then case kindOfType tt of
+	| Just tt'		<- Map.lookup tt sub
+	= let res
+		| Set.member tt cut
+		, Just k	<- kindOfType tt
+		= let res2 :: SubM Type
+		      res2
 			-- Loops in effect and closure types can be cut by replacing
-			--	the looping variable with bottom.
-			Just KEffect		
-			 -> 	return	$ TBot KEffect
-		
-			Just KClosure	
-			 -> 	return	$ TBot KClosure
-		
+			--	the looping variable with bottom
+			| k == kEffect	= return tPure
+			| k == kClosure	= return tEmpty
+
 			-- Loops in other parts of the graph are errors.
-			Just _ -> do
-				modify $ \s -> (tt, tt') : s
+			| otherwise	
+			= do	modify $ \s -> (tt, tt') : s
 				return	tt
-
-	   else subTT_cutM' sub (Set.insert tt cut) tt'
-
+		  in res2
+		
+		| otherwise
+		= subTT_cutM' sub (Set.insert tt cut) tt'
+	  in	res
 
 	-- nothing can be substituted
 	| otherwise
@@ -209,7 +211,7 @@ cutSub sub
 cutF :: (Type, Type) -> SubM (Maybe (Type, Type))
 cutF (t1, t2)
 	-- If the binding var is in the rhs then we've got an infinite type error
-	| (let Just k1 = kindOfType t1 in k1) == KValue
+	| (let Just k1 = kindOfType t1 in k1) == kValue
 	= if elem t1 $ collectTClassVars t2
 		then do	modify $ \s -> (t1, t2) : s
 			return $ Nothing

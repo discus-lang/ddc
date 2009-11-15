@@ -123,8 +123,9 @@ feedType'	mParent t
 	 	--	they don't conflict with any vars already in the graph.
 		ttSub		<- liftM (Map.fromList . catMaybes)
 				$  mapM (\f -> case f of
-					FWhere t1@(TVar k v1) t2	
-					 -> do	v1'	<- newVarN (spaceOfKind k)
+					FWhere t1@(TVar k v1) t2
+					 -> do	let Just nameSpace	= spaceOfKind k
+						v1'	<- newVarN nameSpace
 					 	return	$ Just (t1, TVar k v1')
 
 					_ -> 	return	$ Nothing)
@@ -139,7 +140,7 @@ feedType'	mParent t
 
 
 	TSum k ts
-	 -> do 	cidE		<- allocClass k
+	 -> do 	cidE		<- allocClass (Just k)
 		Just es'	<- liftM sequence
 				$  mapM (feedType1 (Just cidE)) ts
 		addNode cidE 	$ TSum k es'
@@ -149,14 +150,14 @@ feedType'	mParent t
 	TApp t1 t2
 	 -> do	
 		let Just k	= kindOfType t
-	 	cidT		<- allocClass k
+	 	cidT		<- allocClass (Just k)
 	 	Just t1'	<- feedType1 (Just cidT) t1
 		Just t2'	<- feedType1 (Just cidT) t2
 		addNode cidT	$ TApp t1' t2'
 		returnJ		$ TClass k cidT
 
 	TCon tc
-	 -> do	cidT		<- allocClass (tyConKind tc)
+	 -> do	cidT		<- allocClass (Just $ tyConKind tc)
 	 	addNode cidT	$ TCon tc
 		returnJ		$ TClass (tyConKind tc) cidT
 
@@ -165,30 +166,30 @@ feedType'	mParent t
 		returnJ		$ TClass k cidT
 
 	TBot kind
-	 -> do	cid		<- allocClass kind
+	 -> do	cid		<- allocClass (Just kind)
 		addNode cid	$ TBot kind
 		returnJ		$ TClass kind cid
 
 	TTop kind
-	 -> do	cid		<- allocClass kind
+	 -> do	cid		<- allocClass (Just kind)
 		addNode cid	$ TTop kind
 		returnJ		$ TClass kind cid
 
 
 	-- data
 	TFun t1 t2 eff clo
-	 -> do	cidT		<- allocClass KValue
+	 -> do	cidT		<- allocClass (Just kValue)
 		Just t1'	<- feedType (Just cidT) t1
 		Just t2'	<- feedType (Just cidT) t2
 		Just eff'	<- feedType (Just cidT) eff
 		Just clo'	<- feedType (Just cidT) clo
 		addNode cidT	$ TFun t1' t2' eff' clo'
-		returnJ		$ TClass KValue cidT
+		returnJ		$ TClass kValue cidT
 
 		
 	TData kData v ts
 	 -> do	let Just k	= kindOfType t
-	 	cidT		<- allocClass k
+	 	cidT		<- allocClass (Just k)
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidT)) ts
 
@@ -198,19 +199,20 @@ feedType'	mParent t
 
 	-- effect
 	TEffect v ts
-	 -> do 	cidE		<- allocClass KEffect
+	 -> do 	cidE		<- allocClass (Just kEffect)
 		Just ts'	<- liftM sequence
 				$  mapM (feedType (Just cidE)) ts
 		addNode cidE 	$ TEffect v ts'
-		returnJ		$ TClass KEffect cidE
+		returnJ		$ TClass kEffect cidE
 
 	-- closure
 	-- TFree's that we get from the constraints might refer to types that are in
 	--	the defs table but not the graph. We don't want to pollute the graph
 	--	with the whole external def so trim these types down and just add the
 	--	closure information that we need.
-	TFree v1 t@(TVar KValue v2)
-	 -> do	cid		<- allocClass KClosure
+	TFree v1 t@(TVar kV v2)
+	 | kV == kValue
+	 -> do	cid		<- allocClass (Just kClosure)
 		defs		<- gets stateDefs
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
@@ -221,20 +223,20 @@ feedType'	mParent t
 			-- we use addToClass here because we don't need to register effects and 
 			--	classes for crushing in this type
 			addToClass cid ?src $ TFree v1 tDef'
-			returnJ		$ TClass KClosure cid
+			returnJ		$ TClass kClosure cid
 
 		 -- type must be in the graph
 		 Nothing
 		  -> do	t'		<- linkType mParent [] t
 			addNode	cid	$ TFree v1 t'
-			returnJ		$ TClass KClosure cid
+			returnJ		$ TClass kClosure cid
 
 	-- A non-var closure. We can get these from signatures and instantiated schemes
 	TFree v1 t
-	 -> do	cid		<- allocClass KClosure
+	 -> do	cid		<- allocClass (Just kClosure)
 		t'		<- linkType mParent [] t
 		addNode	cid	$ TFree v1 t'
-		returnJ		$ TClass KClosure cid
+		returnJ		$ TClass kClosure cid
 
 	TClass k cid
 	 -> do 	cidT'		<- sinkClassId cid
@@ -273,11 +275,11 @@ feedType1
 feedType1 mParent tt
  = case tt of
 	TTop k
-	 | elem k [KEffect, KClosure]	
+	 | elem k [kEffect, kClosure]	
 	 -> returnJ tt
 	 
 	TBot k
-	 | elem k [KEffect, KClosure]
+	 | elem k [kEffect, kClosure]
 	 -> returnJ tt
 
 	TSum k []
@@ -320,7 +322,7 @@ feedFetter	mParent f
 	 	return ()
 
 	FProj pj v tDict tBind
-	 -> do	cidC		<- allocClass KWitness
+	 -> do	cidC		<- allocClass Nothing
 	 	Just [tDict', tBind']	
 				<- liftM sequence
 				$  mapM (feedType (Just cidC)) [tDict, tBind]
@@ -386,7 +388,7 @@ addFetter (FConstraint vC [t1])
 addFetter f@(FConstraint v ts)
  = do 	
  	-- create a new class to hold this node
-	cidF		<- allocClass KWitness
+	cidF		<- allocClass Nothing
 	 	
 	-- add the type args to the graph
 	Just ts'	<- liftM sequence
@@ -416,7 +418,7 @@ addFetter f@(FConstraint v ts)
 addFetter f@(FProj j v1 tDict tBind)
  = do
  	-- a new class to hold this node
- 	cidF	<- allocClass KWitness
+ 	cidF	<- allocClass Nothing
 	
 	-- add the type args to the graph
  	Just [tDict', tBind']

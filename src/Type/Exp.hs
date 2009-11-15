@@ -6,17 +6,23 @@ module Type.Exp
 
 	-- super kinds
 	, Super		(..)
-	, KsCon		(..)
 
 	-- kinds
 	, Kind		(..)
 	, KiCon		(..)
 	, kValue, kRegion, kEffect, kClosure
+	, kMutable, kMutableT
+	, kConst,   kConstT
+	, kLazy,    kLazyH
+	, kDirect
+	, kPure
+	, kEmpty
 
 	-- types
 	, Type		(..)
 	, TyCon		(..)
 	, TyClass	(..)
+	, tPure, tEmpty
 
 	, Index
 
@@ -72,17 +78,13 @@ instance Ord Type where
 
 -- Super Kinds ----------------------------------------------------------------------------------
 data Super
-	= SCon KsCon
-	| SFun Super Super
+	= SProp			-- ^ The occurance of some type level object with this superkind
+				--	guarantees some property of the program.
+
+	| SBox			-- ^ The superkind of some other type.
+	| SFun	Kind Super	-- ^ Superkinds are indexed by kinds.
 	deriving (Show, Eq)
 
-data KsCon
-	= KsConValue
-	| KsConRegion
-	| KsConEffect
-	| KsConClosure
-	| KsConWitness
-	deriving (Show, Eq)
 
 -- Kinds ------------------------------------------------------------------------------------------
 
@@ -96,22 +98,19 @@ data Kind
 
 	-- New stuff that isn't used yet --------------------------------------
 	-- | Kind constructor
-	| KCon	   KiCon Super		-- ^ TODO: not used yet
+	| KCon	   KiCon Super		-- ^ Kind constructors
 
 	--  | Dependent kind abstraction.
 	--	Uses de Bruijn indicies in the body.
 	| KPi      Kind  Kind		-- ^ Dependend kind abstraction.
 				 	--	Uses de Bruijn indicies in the body
 
+	--  | Dependent kind application.
+	| KApp	   Kind	 Type
 
 	-- Old stuff that needs refactoring -----------------------------------
 	| KForall  Kind Kind		-- ^ Dependent kinds.
 	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
-
-	| KValue			-- ^ the kind of value types	   (*)
-	| KRegion			-- ^ the kind of regions	   (%)
-	| KEffect			-- ^ the kind of effects	   (!)
-	| KClosure			-- ^ the kind of closures	   ($)
 
 	-- ^ The super kind of witneses  (+)  (\Diamond)
 	--	This is a real super-kind because no type-level expression has this kind.
@@ -159,18 +158,32 @@ data KiCon
 	| KiConDirect			-- for a single region.
 		
 	-- | Given effect is pure.
-	| KiPure
+	| KiConPure
 	
 	-- | Given closure is empty.
-	| KiEmpty
+	| KiConEmpty
 	deriving (Show, Eq)
 
 
 -- Short names for commonly used kinds
-kValue		= KCon KiConValue   (SCon KsConValue)
-kRegion		= KCon KiConRegion  (SCon KsConRegion)
-kEffect		= KCon KiConEffect  (SCon KsConEffect)
-kClosure	= KCon KiConClosure (SCon KsConClosure)
+kValue		= KCon KiConValue	SBox
+kRegion		= KCon KiConRegion	SBox
+kEffect		= KCon KiConEffect	SBox
+kClosure	= KCon KiConClosure	SBox
+
+kMutable	= KCon KiConMutable	(SFun kRegion  SProp)
+kMutableT	= KCon KiConMutableT	(SFun kValue   SProp)
+
+kConst		= KCon KiConConst	(SFun kRegion  SProp)
+kConstT		= KCon KiConConstT	(SFun kValue   SProp)
+
+kLazy		= KCon KiConLazy	(SFun kRegion  SProp)
+kLazyH		= KCon KiConLazyH	(SFun kValue   SProp)
+
+kDirect		= KCon KiConDirect	(SFun kRegion  SProp)
+
+kPure		= KCon KiConPure	(SFun kEffect  SProp)
+kEmpty		= KCon KiConEmpty	(SFun kClosure SProp)
 
 
 -- Type --------------------------------------------------------------------------------------------
@@ -239,6 +252,8 @@ data Type
 
 	deriving (Show, Eq)
 
+tPure	= TBot kEffect
+tEmpty	= TBot kClosure
 
 type Data	= Type
 type Region	= Type

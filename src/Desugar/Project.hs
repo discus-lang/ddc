@@ -303,9 +303,9 @@ snipDataField moduleName sp vData vCtor field
 		varR	<- newVarN NameRegion
 				
 		return	( field { dInit = Just $ XVar sp var }
-			, [ PSig  sp [var] (TFun (TData KValue primTUnit []) 
+			, [ PSig  sp [var] (TFun (TData kValue primTUnit []) 
 						(dType field) 
-						(TBot KEffect) (TBot KClosure))
+						tPure tEmpty)
 			  , PBind sp (Just var) (XLambda sp varL xInit)])
 
 
@@ -495,7 +495,7 @@ makeProjFun sp tData ctors fieldV
 					, dLabel field == Just fieldV ]
 
     	return	[ SSig  sp [fieldV]
-			(TFun tData resultT pure empty) 
+			(TFun tData resultT tPure tEmpty) 
 
 		, SBind sp (Just fieldV) 
  			(XLambda sp objV 
@@ -544,18 +544,18 @@ makeProjR_fun sp tData ctors fieldV
 					, dLabel field == Just fieldV ]
 
 	let rData	= case tData of
-				TData _ vData (TVar KRegion rData : _)	
-					-> rData
+				TData _ vData (TVar kR rData : _)	
+				 | kR == kRegion -> rData
 				_ 	-> panic stage
 					$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
 					% "  tData = " % show tData			% "\n"
 
 	return	$ 	[ SSig  sp [funV]
-				(TFun tData 	(TData 	(KFun KRegion (KFun KValue KValue))
+				(TFun tData 	(TData 	(KFun kRegion (KFun kValue kValue))
 							primTRef 
-							[TVar KRegion rData, resultT]) 
-							pure
-							empty)
+							[TVar kRegion rData, resultT]) 
+							tPure
+							tEmpty)
 
 
 			, SBind sp (Just funV) 

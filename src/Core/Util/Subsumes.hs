@@ -136,13 +136,13 @@ subsumes3 table t s
 	
 	-- sum / single
 	| TSum k ts		<- t
-	, elem k [KEffect, KClosure]
+	, elem k [kEffect, kClosure]
 	, or $ map (\ti -> subsumes1 table ti s) ts
 	= (True, "SubSum - sum single")
 
 	-- single / sum
 	| TSum k ss		<- s
-	, elem k [KEffect, KClosure]
+	, elem k [kEffect, kClosure]
 	, and $ map (\si -> subsumes1 table t si) ss
 	= (True, "SubSum - single sum")
 
@@ -226,6 +226,7 @@ slurpMore (v1, t2) table
 stripTFree tt
  = case tt of
  	TSum k ts			-> makeTSum k $ map stripTFree ts
-	TFree v t@(TVar KClosure _)	-> t
+	TFree v t@(TVar k _)	
+		| k == kClosure		-> t
 	_				-> tt
 

@@ -41,7 +41,7 @@ slurpS 	(SBind sp Nothing e1)
 
 	return	( tX
 		, eX
-		, empty
+		, tEmpty
 		, SBind (Just (tX, eX)) Nothing x1'
 		, [CBranch
 			{ branchBind	= BNil
@@ -55,12 +55,9 @@ slurpS	(SBind sp (Just v) e1)
  	(tX@(TVar _ tXv), eX, cX, x1', qsX)	
 			<- slurpX e1
 
-	-- we'll be wanting the type of this binding when we convert to core
---	wantTypeV vBindT
-
 	return	( tX
 		, eX
-		, empty
+		, tEmpty
 		, SBind (Just (tX, eX)) (Just v) x1'
 		, [CBranch
 			{ branchBind	= BLet [vBindT]
@@ -80,8 +77,8 @@ slurpS	stmt@(SSig sp vs t)
 			| varV <- vs ]
 		
 	return	( tX1
-		, pure
-		, empty
+		, tPure
+		, tEmpty
 		, SSig Nothing vs t
 		, qs)
 

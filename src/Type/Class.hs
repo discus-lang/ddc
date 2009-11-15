@@ -90,17 +90,22 @@ expandGraph minFree
 
 -- | Allocate a new class in the type graph.
 allocClass 	
-	:: Kind			-- The type of the graph.
+	:: Maybe Kind			-- The type of the graph.
 	-> SquidM ClassId
 
-allocClass kind
+allocClass mKind
  = do	expandGraph	1
 
 	graph		<- gets stateGraph
 	let classIdGen	=  graphClassIdGen graph
  	let cid		= ClassId classIdGen
 
-	liftIO (writeArray (graphClass graph) cid (classInit cid kind))
+	let initial
+		= case mKind of
+			Just kind	-> classInit cid kind
+			Nothing		-> ClassNil
+
+	liftIO (writeArray (graphClass graph) cid initial)
 
 	let graph'	= graph
 			{ graphClassIdGen	= classIdGen + 1}
@@ -136,7 +141,7 @@ makeClassV tSource kind v
    	case mCid of
    	 Just cid	-> return cid
 	 Nothing 
-	  -> do	cid	<- allocClass kind
+	  -> do	cid	<- allocClass (Just kind)
 		addNameToClass cid tSource v kind
 	     	return	cid
 
@@ -161,10 +166,15 @@ makeClassName cid_
 			
 	case vars of
 	 [] 
-	  -> do	v	<- newVarN (spaceOfKind kind)
-		let tSource	= TSI $ SIClassName
-		addNameToClass cid tSource v kind
-		return	v
+	  -> case spaceOfKind $ resultKind kind of
+		Nothing	
+		 -> panic stage $ "no space for kind " % kind % "\n"
+
+		Just nameSpace
+		 -> do	v	<- newVarN nameSpace
+			let tSource	= TSI $ SIClassName
+			addNameToClass cid tSource v kind
+			return	v
 		
 	 (_:_)
 	  -> do

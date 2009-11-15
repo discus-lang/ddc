@@ -335,7 +335,7 @@ slurpDataField sp vData vCtor field
 	
 	let qs	=
 		[ CEq (TSV $ SVCtorField sp vData vCtor label) 
-			tX (TFun tInitFun tField_fresh pure empty) ]
+			tX (TFun tInitFun tField_fresh tPure tEmpty) ]
 
 	let field'	= 
 		DataField 

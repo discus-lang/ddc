@@ -48,7 +48,7 @@ unifyT2 t1 t2
 	= Just [(t1, t2)]
 
 	-- regions, effects, closures and classes always unify
-	| elem k1 [KRegion, KEffect, KClosure]
+	| elem k1 [kRegion, kEffect, kClosure]
 	, t1 == t2
 	= Just [(t1, t2)]
 

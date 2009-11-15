@@ -265,11 +265,12 @@ forcePrimaryRegion vData k
 	= k
 
 	-- don't elaborate types with higher kinds
-	| KFun KRegion _	<- k
+	| KFun kR _	<- k
+	, kR	== kRegion
 	= k
 	
 	| otherwise
-	= KFun KRegion k
+	= KFun kRegion k
 
 
 -- State -------------------------------------------------------------------------------------------

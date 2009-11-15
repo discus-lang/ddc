@@ -143,11 +143,11 @@ vNameDefaultN space var
 kindOfVarSpace :: NameSpace -> Kind
 kindOfVarSpace space
  = case space of
- 	NameNothing	-> KValue
-	NameRegion	-> KRegion
-	NameEffect	-> KEffect
-	NameClosure	-> KClosure
-	NameType	-> KValue
+ 	NameNothing	-> kValue
+	NameRegion	-> kRegion
+	NameEffect	-> kEffect
+	NameClosure	-> kClosure
+	NameType	-> kValue
 	_		-> panic stage $ "kindOfVarSpace: no kind for " ++ show space
 
 -- | Slurp the source position from this token.

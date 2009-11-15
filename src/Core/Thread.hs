@@ -144,11 +144,13 @@ rewriteWitness instMap tt
 		return $ TVar k vW
 
 	-- purity of no effects is trivial
-	| Just (TyClassPure, _, [TBot KEffect])	<- mClass
+	| Just (TyClassPure, _, [TBot kE])	<- mClass
+	, kE	== kEffect
 	= return tt
 
 	-- empty of no closure is trivial
-	| Just (TyClassEmpty, _, [TBot KClosure]) <- mClass
+	| Just (TyClassEmpty, _, [TBot kC]) <- mClass
+	, kC	== kClosure
 	= return tt
 
 	-- build a witness for purity of this effect
@@ -193,8 +195,9 @@ buildPureWitness
 	:: Effect
 	-> ThreadM Witness
 
-buildPureWitness eff@(TEffect vE [tR@(TVar KRegion vR)])
+buildPureWitness eff@(TEffect vE [tR@(TVar kR vR)])
 	| vE == primRead
+	, kR == kRegion
 	= do	
 		-- try and find a witness for constness of the region
 		Just wConst	<- lookupWitness vR TyClassConst
@@ -203,12 +206,14 @@ buildPureWitness eff@(TEffect vE [tR@(TVar KRegion vR)])
 		-- the purity witness gives us purity of read effects on that const region
 		return		$ TApp (TApp (TCon tcPurify) tR) (TVar kConst wConst)
 
-buildPureWitness eff@(TSum KEffect _)
+buildPureWitness eff@(TSum kE _)
+ | kE	== kEffect
  = do	let effs	= flattenTSum eff
  	wits		<- mapM buildPureWitness effs
 	return		$ TWitJoin wits
 
-buildPureWitness eff@(TVar KEffect vE)
+buildPureWitness eff@(TVar kE vE)
+ | kE	== kEffect
  = do	Just w	<- lookupWitness vE TyClassPure
  	return (TVar (KClass TyClassPure [eff]) w)
 
@@ -248,7 +253,7 @@ lookupWitness vRegion vClass
 pushWitnessVK :: Var -> Kind -> ThreadM ()
 pushWitnessVK vWitness k
  	| KClass vClass [TVar kV vRE]	<- k
-	, elem kV [KRegion, KEffect, KValue, KClosure]
+	, elem kV [kRegion, kEffect, kValue, kClosure]
 	= modify $ \s -> ((vClass, vRE), vWitness) : s
 	
 	| otherwise

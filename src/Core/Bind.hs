@@ -72,7 +72,7 @@ bindM classMap rsGlobal tree
 	-- add bindings for global regions
 	-- TODO: don't rebind regions already bound in the header.
 	tree_global	<- mapM (\vR -> do
-					let tR	= TVar KRegion vR
+					let tR	= TVar kRegion vR
 					ws	<- makeWitnesses tR classMap
 					return	$ PRegion vR ws)
 				(Set.toList rsGlobal)
@@ -150,10 +150,10 @@ bindX 	shared xx
 			packT
 			$ transformT
 				(\tt -> case tt of
-					  TEffect v [TVar KRegion r] 
+					  TEffect v [TVar kRegion r] 
 						|   elem v [primRead, primWrite]
 						 && Set.member r vsLocal
-						-> TBot KEffect
+						-> tPure
 				 	  _	-> tt)
 				eff
 
@@ -370,7 +370,7 @@ bindRegionsX rsLocal xx
 	rsLocalFs	
 		<- mapM 
 			(\r 
-			 -> do  let r'	= TVar KRegion r
+			 -> do  let r'	= TVar kRegion r
 				fs'	<- makeWitnesses r' ?classMap
 				return 	(r', fs'))
 		$ Set.toList rsLocal
@@ -381,7 +381,7 @@ bindRegionsX rsLocal xx
 	--	The actual order doesn't matter.
 	--
 	let xx'	= foldl
-			(\x (TVar KRegion v, fs) -> XLocal v fs x)
+			(\x (TVar _ v, fs) -> XLocal v fs x)
 			xx
 			(reverse rsLocalFs)
 			
@@ -396,7 +396,8 @@ makeWitnesses
 		[(Var, Type)]	-- ^ map of witness variable to a type expresison that
 				--	constructs the witness.
 
-makeWitnesses r@(TVar KRegion vR) classMap
+makeWitnesses r@(TVar k vR) classMap
+ | k == kRegion
  = do
 	-- lookup the constraints on this region
 	let Just vsConstraints	= Map.lookup vR classMap

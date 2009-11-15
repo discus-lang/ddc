@@ -105,7 +105,7 @@ curryX	tc xx
 	-- A zero airity super.
 	| XVar v t		<- xx
 	= if Set.member v ?superVars
-	   then	fromMaybe xx $ makeCall xx tc [] pure
+	   then	fromMaybe xx $ makeCall xx tc [] tPure
 	   else xx
 	
 	| XDo ss		<- xx
@@ -119,7 +119,8 @@ curryX	tc xx
 			
 
 	-- Application to a litera
-	| XAPP XLit{} (TVar KRegion _)	<- xx
+	| XAPP XLit{} (TVar kR _)	<- xx
+	, kR == kRegion
 	= xx
 	
 	-- Found a function application
@@ -135,7 +136,7 @@ curryX	tc xx
 							$ "curryX: malformed exp " % xx
 -}
 	  in	fromMaybe xx
-			$ makeCall xF tc args (makeTSum KEffect effs)
+			$ makeCall xF tc args (makeTSum kEffect effs)
 
 	-- uh oh..			
 	| otherwise	

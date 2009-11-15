@@ -88,7 +88,7 @@ elaborateT_fun tt
 	tt_clo		<- elaborateCloT tt_eff
 	
 	-- make a new Mutable fetter for each region that is written to
-	let fsMutable	= map (\r -> FConstraint Var.primMutable [TVar KRegion r])
+	let fsMutable	= map (\r -> FConstraint Var.primMutable [TVar kRegion r])
 			$ Set.toList rsWrite
 			
 	let tt_fs	= addFetters fsMutable tt_clo

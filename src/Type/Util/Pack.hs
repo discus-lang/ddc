@@ -47,24 +47,19 @@ trace ss x
 --
 packType_noLoops :: Type -> Type
 packType_noLoops tt
- = case liftM resultKind $ kindOfType tt of
- 	Just KValue	-> packData_noLoops  tt
- 	Just KNil	-> packData_noLoops  tt
-
-
-	Just KEffect	-> packEffect_noLoops tt
-	 
-	Just KClosure	-> packClosure_noLoops tt
-	Just KRegion	-> packRegion  tt
+	| k == kValue	= packData_noLoops tt
+	| k == kEffect	= packEffect_noLoops tt
+	| k == kClosure	= packClosure_noLoops tt
+	| k == kRegion	= packRegion tt
+	where Just k	= liftM resultKind $ kindOfType tt	
 
 packType :: Type -> (Type, [(Type, Type)])
 packType tt
- = case liftM resultKind $ kindOfType tt of
- 	Just KValue	-> packData   tt
-	Just KEffect	-> packEffect tt
-	 
-	Just KClosure	-> packClosure tt
-	Just KRegion	-> (packRegion  tt, [])
+	| k == kValue	= packData tt
+	| k == kEffect	= packEffect tt
+	| k == kClosure	= packClosure tt
+	| k == kRegion	= (packRegion  tt, [])
+	where Just k	= liftM resultKind $ kindOfType tt
 
 
 -- PackData ----------------------------------------------------------------------------------------
@@ -82,7 +77,7 @@ packData_noLoops tt
 packData :: Data -> (Data, [(Type, Type)])
 packData tt
 	| Just k		<- liftM resultKind $ kindOfType tt
-	, elem k [KValue, KNil]
+	, elem k [kValue, KNil]
 
 	, (tt_packed, tsLoop)	<- runState (packT1 False Map.empty tt) []
 	= let result
@@ -118,13 +113,11 @@ packEffect_noLoops tt
 
 packEffect :: Effect -> (Effect, [(Type, Type)])
 packEffect tt
-	| Just KEffect		<- kindOfType tt
+	| kindOfType tt	== Just kEffect
 	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
 	, tt'			<- inlineFsT $ tt_packed
 	= let result
 		| not $ null tsLoop	= (tt', tsLoop)
---		| tt == tt'		= (tt', [])
---		| otherwise		= packEffect tt'
 		| otherwise		= (tt', [])
 	  in result
 
@@ -139,13 +132,11 @@ packClosure_noLoops tt
 		$ "packClosure: got loops\n"
 		
 packClosure tt
-	| Just KClosure		<- kindOfType tt
+	| kindOfType tt == Just kClosure
 	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
  	, tt'			<- crushT $ inlineFsT $ tt_packed
 	= let result
 		| not $ null tsLoop	= (tt_packed, tsLoop)
---		| tt == tt'		= (tt', [])
---		| otherwise		= packClosure tt'
 		| otherwise		= (tt', [])
 	  in result
 
@@ -157,15 +148,11 @@ packClosure tt
 -- | Pack a region
 packRegion :: Region -> Region
 packRegion tt
-	| Just KRegion		<- kindOfType tt
+	| kindOfType tt	== Just kRegion
 	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
 	, null tsLoop
 	= tt_packed
 	
---	if tt == tt_packed
---		then tt_packed
---		else packRegion tt_packed
-
 
 -- packT1 --------------------------------------------------------------------------------------
 packT1 
@@ -261,8 +248,9 @@ packT1 ld ls tt
 		
 		let result
 			| vE == primReadH
-			, [TData k vD (TVar KRegion r : _)]	<- ts'
-			= TEffect primRead [TVar KRegion r]
+			, [TData k vD (TVar kR r : _)]	<- ts'
+			, kR	== kRegion
+			= TEffect primRead [TVar kRegion r]
 			
 			| otherwise
 			= TEffect vE ts'
@@ -274,8 +262,12 @@ packT1 ld ls tt
 	 -> do	t2'	<- packT1 ld ls t2
 	 	case t2' of
 			TFree v2 t2'			-> return $ TFree v1 t2'
-			TBot KClosure			-> return $ TBot KClosure
-			TFetters (TBot KClosure) _	-> return $ TBot KClosure
+			TBot k 
+				| k == kClosure		-> return $ TBot kClosure
+
+			TFetters (TBot k) _
+				| k == kClosure		-> return $ TBot kClosure	
+
 			TDanger t21 (TFree v t22)	-> return $ TFree v1 (TDanger t21 t22)
 			_				-> return $ TFree v1 t2'						
 
@@ -284,9 +276,15 @@ packT1 ld ls tt
 	TDanger t1 t2
 	 -> do	t2'	<- packT1 ld ls t2
 	 	case t2' of
-			TBot KClosure		-> return $ TBot KClosure
-			TSum KClosure t2s	-> return $ makeTSum KClosure (map (TDanger t1) t2s)
-			_			-> return $ TDanger t1 t2'
+			TBot k
+				| k == kClosure	
+				-> return $ TBot kClosure
+
+			TSum k t2s	
+				| k == kClosure	
+				-> return $ makeTSum kClosure (map (TDanger t1) t2s)
+
+			_	-> return $ TDanger t1 t2'
 
 	-- solver
 	TClass k cid1
@@ -307,7 +305,7 @@ packT1 ld ls tt
 		--	Only Type.Scheme follows this codepath - but we should handle this a different way
 		--	perhaps a flag to pack.
 		Just t'
-			| k == KValue		-> return t' -- packT1 ld ls t'.. detect loops
+			| k == kValue		-> return t' -- packT1 ld ls t'.. detect loops
 			| otherwise		-> return tt
 
 		Nothing				-> return tt
@@ -407,7 +405,7 @@ inlineFs fs
 
 	-- a substitutions with only data fetters.
 	let subD = Map.filterWithKey
-			(\t x -> (let Just k = kindOfType t in resultKind k) == KValue)
+			(\t x -> (let Just k = kindOfType t in resultKind k) == kValue)
 			sub
 
 	-- Don't substitute closures and effects into data, it's too hard to read.				
@@ -417,10 +415,9 @@ inlineFs fs
 	let subRHS t1 t2
 		= do	tsLoops	<- get
 			if null tsLoops
-			 then case liftM resultKind $ kindOfType t1 of
-				Just KValue	-> subTT_cutM subD (Set.singleton t1) t2
-				Just _		-> subTT_cutM sub  (Set.singleton t1) t2
-
+			 then if (liftM resultKind $ kindOfType t1) == Just kValue
+				then subTT_cutM subD (Set.singleton t1) t2
+				else subTT_cutM sub  (Set.singleton t1) t2
 			 else return t2
 				
 	-- substitute in the the RHSs
@@ -526,8 +523,8 @@ sortFs fs
 		_		-> False
 
 	([ fsData,   fsEffect, fsClosure], fsRest)	
-		= partitionFs 
-			[ isLetK KValue, 	isLetK KEffect, 	isLetK KClosure]
+		= partitionFs
+			[ isLetK kValue, isLetK kEffect, isLetK kClosure]
 			fs
 				
     in	   fsData 	++ fsEffect ++ fsClosure ++ fsRest

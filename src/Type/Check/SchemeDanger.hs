@@ -63,7 +63,7 @@ checkSchemes
 -- Check that the regions above quantified dangerous vars haven't become mutable.
 checkSchemeDanger :: [Error] -> Class -> SquidM [Error]
 checkSchemeDanger errs c
-	| Class { classKind	= KValue 
+	| Class { classKind	= kValue 
 		, classId	= cid
 		, classType	= Just t }	<- c
 	, TForall b k x				<- t
@@ -99,10 +99,11 @@ checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)
 checkDanger (Class 
 		{ classId 	= cidScheme
 		, classType 	= Just t })
-		( tRegion@(TClass KRegion cidR)
+		( tRegion@(TClass kR cidR)
 		, t2)
 
-	| TVar k varT	<- t2
+	| kR	== kRegion
+	, TVar k varT	<- t2
 	= do 	mIsMutable	<- regionIsMutable cidR
 		case mIsMutable of
 	 	 Nothing	-> return Nothing
@@ -119,7 +120,8 @@ checkDanger (Class
 					, eDangerVar		= varT }
 
 	-- var is monomorphic, ok
-	| TClass{}	<- t2
+	| kR	== kRegion
+	, TClass{}	<- t2
 	= 	return Nothing
 	
 checkDanger (Class { classType = t }) (t1, t2)

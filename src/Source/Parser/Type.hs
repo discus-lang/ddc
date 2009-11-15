@@ -38,19 +38,19 @@ pKind
 pKind1 :: Parser Kind
 pKind1
  = 	do	pTok K.Star
- 		return	KValue
+ 		return	kValue
 
  <|>	do	pTok K.Percent
- 		return	KRegion
+ 		return	kRegion
 
  <|>	do	pTok K.Bang
- 		return	KEffect
+ 		return	kEffect
 
  <|>	do	pTok K.Dollar
- 		return	KClosure
+ 		return	kClosure
 
  <|>	do	pTok K.Plus
- 		return	KWitness
+		return	KWitness
 
  <|>	-- ( KIND )
  	do	pRParen pKind
@@ -166,7 +166,7 @@ pType_body
 			(	-- TYPE -> TYPE
 				do	pTok K.RightArrow
 					t2	<- pType_body
-					return	$ (TBot KEffect, TBot KClosure, t2)
+					return	$ (tPure, tEmpty, t2)
 
 				-- TYPE -(EFF/CLO)> TYPE
 			  <|>	do	pTok K.Dash
@@ -184,7 +184,7 @@ pTypeDashRBra t1
  =	-- EFF/CLO)> TYPE
 	-- EFF)> TYPE
 	do	eff	<- pEffect
-		clo	<- Parsec.option (TBot KClosure) pClosure
+		clo	<- Parsec.option tEmpty pClosure
 		pTok K.RKet
 		pTok K.AKet
 		t2	<- pType_body
@@ -195,7 +195,7 @@ pTypeDashRBra t1
 		pTok K.RKet
 		pTok K.AKet
 		t2	<- pType_body
-		return $ (TBot KEffect, clo, t2)
+		return $ (tPure, clo, t2)
 
 
 pType_body3 :: Parser Type
@@ -239,33 +239,33 @@ pType_body1 :: Parser Type
 pType_body1
  = 	-- ()
  	do	pTok K.Unit
-		return	$ TData KValue (Var.primTUnit) []
+		return	$ TData kValue (Var.primTUnit) []
 
  <|>	-- [ TYPE , .. ]
  	do	ts	<- pSParen $ Parsec.sepBy1 pType_body (pTok K.Comma)
-		return	$ TData (KFun (KFun KRegion KValue) KValue)
+		return	$ TData (KFun (KFun kRegion kValue) kValue)
 				Var.primTList
 				ts
 
  <|>	-- *Bot
 	(Parsec.try $ do
 		con	<- pConNamed "*Bot"
-		return	$ TBot KValue)
+		return	$ TBot kValue)
 
  <|>	-- %Bot
 	(Parsec.try $ do
 		con	<- pConNamed "%Bot"
-		return	$ TBot KRegion)
+		return	$ TBot kRegion)
 
  <|>	-- !Bot
 	(Parsec.try $ do
 		con	<- pConNamed "!Bot"
-		return	$ TBot KEffect)
+		return	$ TBot kEffect)
 
  <|>	-- \$Bot
 	(Parsec.try $ do
 		con	<- pConNamed "$Bot"
-		return	$ TBot KClosure)
+		return	$ TBot kClosure)
 
 	-- VAR
  	-- If a variable had no namespace qualifier out the front the lexer will leave
@@ -306,7 +306,7 @@ pTypeBodyInRParen
 	do	ts	<- Parsec.sepBy1 pType_body (pTok K.Comma)
                 if length ts == 1
                  then return	$ head ts
-                 else return	$ TData (KFun (KFun KRegion KValue) KValue)
+                 else return	$ TData (KFun (KFun kRegion kValue) kValue)
 					(Var.primTTuple (length ts)) ts
 
 
@@ -316,16 +316,16 @@ pEffect :: Parser Type
 pEffect
  = 	-- VAR
  	do	var	<- pVarPlainOfSpace [NameEffect]
-		return $ TVar KEffect var
+		return $ TVar kEffect var
 
  <|>	-- !{ EFF; .. }
  	do	pTok	K.Bang
 		effs	<- pCParen $ Parsec.sepEndBy1 pEffect pSemis
-		return	$ TSum KEffect effs
+		return	$ TSum kEffect effs
 
  <|>	-- !SYNC
 	do	var	<- pConOfSpaceNamed [NameEffect] "SYNC"
- 		return	$ TTop KEffect
+ 		return	$ TTop kEffect
 
  <|>	-- !CON TYPE..
 	do	con	<- pOfSpace NameEffect $ pQualified pCon
@@ -360,18 +360,18 @@ pClosure
 			let varN	= vNameDefaultN NameType var
 	 		let var2N	= vNameDefaultN NameType var2
 			return	$ TDanger
-					(TVar KRegion varN)
+					(TVar kRegion varN)
 					(TVar (kindOfSpace $ Var.nameSpace var2N) var2N))
 
 
  <|>	-- \${ CLO ; .. }
  	do	pTok	K.Dollar
 		clos	<- pCParen $ Parsec.sepEndBy1 pClosure pSemis
-		return	$ TSum KClosure clos
+		return	$ TSum kClosure clos
 
  <|>	-- VAR
 	do	var	<- pVarPlainOfSpace [NameClosure]
-		return	$ TVar KClosure var
+		return	$ TVar kClosure var
  <?>    "pClosure"
 
 -- Fetter ------------------------------------------------------------------------------------------
@@ -409,7 +409,7 @@ pTypeOp
 		Parsec.option t1
                 	(do	pTok K.RightArrow
 				t2	<- pTypeOp
-				return	$ TFun t1 t2 (TBot KEffect) (TBot KClosure))
+				return	$ TFun t1 t2 tPure tEmpty)
 
  <?>    "pTypeOp"
 

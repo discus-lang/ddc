@@ -88,10 +88,10 @@ getType		v
 getKind ::	Var -> LiftM Kind
 getKind		v
  = case Var.nameSpace v of
-	NameType	-> return KValue
- 	NameRegion	-> return KRegion
-	NameEffect	-> return KEffect
-	NameClosure	-> return KClosure
+	NameType	-> return kValue
+ 	NameRegion	-> return kRegion
+	NameEffect	-> return kEffect
+	NameClosure	-> return kClosure
 
 	-- doh
 	NameClass	-> return KNil

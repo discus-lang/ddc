@@ -128,7 +128,7 @@ toCoreT' table tt
 	
 	-- closure
 	T.TFree v (T.TDanger t1 t2)
-				-> T.makeTSum C.KClosure
+				-> T.makeTSum C.kClosure
 					[ C.TFree v (down t1)
 					, C.TFree v (down t2)]
 				
@@ -150,18 +150,7 @@ toCoreTyCon tt
 
 -- Kind ---------------------------------------------------------------------------------------------
 toCoreK :: T.Kind -> C.Kind
-toCoreK k
- = case k of
-	T.KNil			-> C.KNil
-	T.KValue		-> C.KValue
-	T.KRegion		-> C.KRegion
-	T.KEffect		-> C.KEffect
-	T.KClosure		-> C.KClosure
-	T.KFun k1 k2		-> C.KFun (toCoreK k1) (toCoreK k2)
-	
-	_ -> panic stage
-		$ "toCoreK: cannot convert " % k % "\n"
-
+toCoreK k	= k
 
 -- Fetter ------------------------------------------------------------------------------------------
 toCoreF :: T.Fetter -> C.Witness

@@ -55,7 +55,8 @@ instance Pretty Top PMode where
 	 -> v % "\n"
 		% " =      " %> e  % ";\n"
 
-	PExtern v (TBot KValue) tv
+	PExtern v (TBot k) tv
+	 | k == kValue
 	 -> "extern " % v % ";\n"
 	
 	PExtern v tv to
@@ -147,8 +148,8 @@ instance Pretty Exp PMode where
 	 | prettyFoldXLAM
 	 -> let -- split off vars with simple kinds
 	 	takeLAMs acc exp@(XLAM v k x)
-	 	  | elem k [KRegion, KEffect, KClosure, KValue]	
-		  		= takeLAMs (v : acc) x
+	 	  | elem k [kRegion, kEffect, kClosure, kValue]	
+		  = takeLAMs (v : acc) x
 	 
 	 	takeLAMs acc exp
 		 = (exp, acc)
@@ -169,16 +170,23 @@ instance Pretty Exp PMode where
 		 % pEffClo % " ->\n"
 		 % x
 	 
-	 where	pEffClo	= case (eff, clo) of 
-	 			(TBot KEffect, TBot KClosure) 	-> pNil
-				(TBot KEffect, _)		
-				  -> "\n" % replicate 20 ' ' % " of " % prettyTB clo
+	 where	pEffClo	
+		 = case (eff, clo) of 
 
-				(_, TBot KClosure)		
-				  -> "\n" % replicate 20 ' ' % " of " % prettyTB eff
+	 		(eff, clo)
+			 | eff == tPure, clo == tEmpty	
+			 -> pNil
+			
+			(eff, _)
+			 | eff == tPure		
+			 -> "\n" % replicate 20 ' ' % " of " % prettyTB clo
 
-				_ -> "\n" % replicate 20 ' ' % " of " % prettyTB eff 
-				   % "\n" % replicate 20 ' ' % "    " % prettyTB clo
+			(_, clo)
+			 | clo == tEmpty		
+			  -> "\n" % replicate 20 ' ' % " of " % prettyTB eff
+
+			_ -> "\n" % replicate 20 ' ' % " of " % prettyTB eff 
+			   % "\n" % replicate 20 ' ' % "    " % prettyTB clo
 					 
 	 
 	XAPP x t

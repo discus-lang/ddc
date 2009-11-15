@@ -56,16 +56,16 @@ staticRsDataT :: Type -> Set Type
 staticRsDataT tt
  = case tt of
 	TVar k v		
-	 | k == KRegion		-> Set.singleton tt
+	 | k == kRegion		-> Set.singleton tt
 	 | otherwise		-> Set.empty
 
 	TClass k cid		
-	 | k == KRegion		-> Set.singleton tt
+	 | k == kRegion		-> Set.singleton tt
 	 | otherwise		-> Set.empty
 
 	TSum k ts
-	 | k == KEffect		-> Set.empty
-	 | k == KClosure	-> Set.unions $ map staticRsDataT ts
+	 | k == kEffect		-> Set.empty
+	 | k == kClosure	-> Set.unions $ map staticRsDataT ts
 
 	-- TODO: we're assuming that all args are tangible. This isn't strictly
 	--       correct but shouldn't hurt us too much.

@@ -130,7 +130,7 @@ extractType_fromClass final varT cid
 				{ eVar	= varT 
 				, eLoops	= tsLoops }]
 
-		return $ Just $ TError KValue [tTrace]
+		return $ Just $ TError kValue [tTrace]
 
 extractType_more final varT cid tPack
  = do	
@@ -155,9 +155,9 @@ extractType_more final varT cid tPack
 	-- first work out what effect and closure vars are in contra-variant branches
 	let contraTs	= catMaybes
 			$ map (\t -> case t of
-					TClass KEffect cid	-> Just t
-					TClass KClosure cid	-> Just t
-					_			-> Nothing)
+					TClass kE cid | kE == kEffect   -> Just t
+					TClass kC cid | kC == kClosure	-> Just t
+					_				-> Nothing)
 			$ slurpContraClassVarsT tPack
 	
 	tDeMore		<- dropFMoresT (Set.fromList contraTs) tPack
@@ -169,8 +169,8 @@ extractType_more final varT cid tPack
 	-- Trim closures
 	let tTrim	= 
 		case kindOfType tDeMore of
-			Just KClosure	-> trimClosureC Set.empty Set.empty tDeMore
-			Just _		-> trimClosureT Set.empty Set.empty tDeMore
+			Just kC | kC == kClosure	-> trimClosureC Set.empty Set.empty tDeMore
+			Just _				-> trimClosureT Set.empty Set.empty tDeMore
 
 	trace	$ " -- trimming closures\n"
 		% "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"

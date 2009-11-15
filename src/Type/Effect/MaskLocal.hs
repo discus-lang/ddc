@@ -47,7 +47,7 @@ maskLocalT tsVis tt
 maskF :: Set Type -> Fetter -> Maybe Fetter
 
 maskF	tsVis	(FWhere t1 t2)
-	| Just KEffect	<- kindOfType t1
+	| kindOfType t1 == Just kEffect
 	= Just $ FWhere t1 (maskE tsVis t2)
 
 maskF	tsVis	(FConstraint v [tR])
@@ -63,7 +63,7 @@ maskF	tsVis	f
 -- | Erase read effects to regions not in this list.
 maskE :: Set Type -> Effect -> Effect
 maskE	 tsVis	eff
-	= makeTSum KEffect 
+	= makeTSum kEffect 
 	$ catMaybes $ map (maskE' tsVis) 
 	$ flattenTSum eff 
 
@@ -99,7 +99,9 @@ visibleRsT tt
 	TSum k ts
 	 -> Set.unions $ map visibleRsT ts
 	 
-	TVar KRegion _		-> Set.singleton tt
+	TVar kR _		
+	 | kR	== kRegion	-> Set.singleton tt
+
 	TVar{}			-> Set.empty
 
 	TTop{}	-> Set.empty
@@ -127,7 +129,10 @@ visibleRsT tt
 	TFree v t		-> visibleRsT t
 	TDanger t1 t2		-> Set.union (visibleRsT t1) (visibleRsT t2)
 	 
-	TClass KRegion cid	-> Set.singleton tt
+	TClass kR cid	
+	 | kR	== kRegion	-> Set.singleton tt
+
+
 	TClass{}		-> Set.empty
 	
 	TError{}		-> Set.empty	

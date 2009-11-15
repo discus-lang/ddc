@@ -176,8 +176,8 @@ unifyClassMerge2 cidT c queue@(t:_)
 				$ effs
 
 		eff'		<- case cidsE of
-					[]	-> return (TBot KEffect)
-					_	-> return (TClass KEffect) `ap` mergeClasses cidsE
+					[]	-> return tPure
+					_	-> return (TClass kEffect) `ap` mergeClasses cidsE
 				
 
 		-- Merge closures.
@@ -190,8 +190,8 @@ unifyClassMerge2 cidT c queue@(t:_)
 				$ clos		
 		
 		clo'		<- case cidsC of
-					[]	-> return (TBot KClosure)
-					_	-> return (TClass KClosure) `ap` mergeClasses cidsC
+					[]	-> return tEmpty
+					_	-> return (TClass kClosure) `ap` mergeClasses cidsC
 					
 		return		$ TFun t1' t2' eff' clo'
 
@@ -222,12 +222,12 @@ unifyClassMerge2 cidT c queue@(t:_)
 	--	From the effect weakening rule it's always return a larger effect than needed.
 	--	Therefore, if we want to "Unify" two effects E1 and E1 it's safe to return
 	--	their l.u.b and use that inplace of both.
-	| and $ map (\t -> kindOfType_orDie t == KEffect) queue
-	= do	return	$ makeTSum KEffect queue
+	| and $ map (\t -> kindOfType_orDie t == kEffect) queue
+	= do	return	$ makeTSum kEffect queue
 
 	-- .. likewise for closures
-	| and $ map (\t -> kindOfType_orDie t == KClosure) queue
-	= do	return	$ makeTSum KClosure queue
+	| and $ map (\t -> kindOfType_orDie t == kClosure) queue
+	= do	return	$ makeTSum kClosure queue
 
 
 	-- Found a user type error in the graph

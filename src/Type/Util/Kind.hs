@@ -47,41 +47,41 @@ stage	= "Type.Util.Kind"
 defaultKindV ::	Var	-> Kind
 defaultKindV	v
  = case Var.nameSpace v of
- 	NameType	-> KValue
-	NameRegion	-> KRegion
-	NameEffect	-> KEffect
-	NameClosure	-> KClosure
+ 	NameType		-> kValue
+	NameRegion		-> kRegion
+	NameEffect		-> kEffect
+	NameClosure		-> kClosure
 	
 
 -- | Get the namespace associated with a kind.
-spaceOfKind ::	Kind -> NameSpace
+spaceOfKind ::	Kind -> Maybe NameSpace
 spaceOfKind  kind
- = case resultKind kind of
- 	KValue		-> NameType
-	KRegion		-> NameRegion
-	KEffect		-> NameEffect
-	KClosure	-> NameClosure
-	_		-> panic stage
-			$ "spaceOfKind: no space for " % kind
+	| kind == kValue	= Just NameType
+	| kind == kRegion	= Just NameRegion
+	| kind == kEffect	= Just NameEffect
+	| kind == kClosure	= Just NameClosure
+	| otherwise		= Nothing
+	
 
 -- | Get the kind associated with a namespace.
 kindOfSpace :: NameSpace -> Kind
 kindOfSpace space
  = case space of
- 	NameType	-> KValue
-	NameRegion	-> KRegion
-	NameEffect	-> KEffect
-	NameClosure	-> KClosure
-	NameClass	-> KWitness
-	_		-> panic stage
-			$  "kindOfSpace: no match for " % show space
+ 	NameType		-> kValue
+	NameRegion		-> kRegion
+	NameEffect		-> kEffect
+	NameClosure		-> kClosure
+	NameClass		-> panic stage "kindOfSpace: witness"
+	_			-> panic stage
+				$  "kindOfSpace: no match for " % show space
+
 
 -- Projections -------------------------------------------------------------------------------------
 -- | Take the kind of a tycon
 tyConKind :: TyCon -> Kind
 tyConKind tyCon
  = case tyCon of
-	TyConFun			-> KFun KValue (KFun KValue (KFun KEffect (KFun KClosure KValue)))
+	TyConFun			-> KFun kValue (KFun kValue (KFun kEffect (KFun kClosure kValue)))
 	TyConData { tyConDataKind }	-> tyConDataKind
 	TyConClass { tyConClassKind }	-> tyConClassKind	 
 
@@ -104,7 +104,7 @@ makeKFun (k : ks)	= KFun k (makeKFun ks)
 -- Make a kind from the parameters to a data type
 makeDataKind :: [Var] -> Kind
 makeDataKind vs
- 	= foldl (flip KFun) KValue 
+ 	= foldl (flip KFun) kValue 
 	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
 	$ reverse vs
 
@@ -173,9 +173,9 @@ kindOfType' tt
 	= kindOfType_freakout t1 (kindOfType t1) t2 (kindOfType t2)
 	
 	-- effect and closure constructors should always be fully applied.
-	| TEffect{}		<- tt	= Just KEffect
-	| TFree{}		<- tt	= Just KClosure
-	| TDanger{}		<- tt	= Just KClosure
+	| TEffect{}		<- tt	= Just kEffect
+	| TFree{}		<- tt	= Just kClosure
+	| TDanger{}		<- tt	= Just kClosure
 
 
 	-- used in type inferencer -------------------------------------------
@@ -188,7 +188,7 @@ kindOfType' tt
 
 	-- TFuns are always fully applied
 	| TFun{}		<- tt
-	= Just KValue
+	= Just kValue
 
 	| TClass k _		<- tt
 	= Just k
@@ -197,7 +197,7 @@ kindOfType' tt
 	= Just k
 
 	| TFetter{}		<- tt
-	= Just KWitness
+	= panic stage "kindOfType TFetter" -- Just KWitness
 
 	-- used in source / desugar -----------------------------------------
 	| TElaborate e t	<- tt
@@ -270,10 +270,7 @@ betaTK depth tX kk
  	KNil		-> kk
 	KForall k1 k2	-> KForall k1 (betaTK (depth + 1) tX k2)
 	KFun	k1 k2	-> KFun (down k1) (down k2)
-	KValue		-> kk
-	KRegion		-> kk
-	KEffect		-> kk
-	KClosure	-> kk
+	KCon{}		-> kk
 	KClass v ts	-> KClass v (map (betaTT depth tX) ts)
 	KWitJoin ks	-> kk
 
@@ -322,14 +319,14 @@ isClosure tt
 	TData{}			-> False
 	TFun{}			-> False
 
- 	TSum	KClosure _	-> True
-	TVar	KClosure _	-> True
-	TVarMore KClosure _ _	-> True
-	TClass	KClosure _	-> True
+ 	TSum	 k _		-> k == kClosure
+	TVar	 k _		-> k == kClosure
+	TVarMore k _ _		-> k == kClosure
+	TClass	 k _		-> k == kClosure
 	TFree{}			-> True
 	TDanger{}		-> True
-	TTop	KClosure 	-> True
-	TBot	KClosure 	-> True
+	TTop	k 		-> k == kClosure
+	TBot	k 		-> k == kClosure
 
 	TFetters t1 _		-> isClosure t1
 	

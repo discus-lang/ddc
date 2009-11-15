@@ -92,7 +92,8 @@ newVarN	space
 
 -- | Get the type corresponding to the type of this annotation
 lookupAnnotT :: Annot -> CoreM (Maybe C.Type)
-lookupAnnotT (Just (T.TVar T.KValue vT, _))
+lookupAnnotT (Just (T.TVar kV vT, _))
+	| kV	== T.kValue
 	= lookupType vT
 
 -- | Get the type of this variable.

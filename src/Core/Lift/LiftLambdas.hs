@@ -262,7 +262,7 @@ bindFreeVarsP
  	-- Work out the type of the expression
 	--	The effect should always be TBot because we only ever lift (value) lambda abstractions.
 	--	The closure returned from reconX will be flat, ie a TSum of all the free vars
-	let (xRecon, tRecon, TBot KEffect, cRecon) 
+	let (xRecon, tRecon, _, cRecon) 
 			= reconX' (stage ++ ".bindFreeVarsP") x
 
 	-- Bind free value vars with new value lambdas.
@@ -313,12 +313,12 @@ addLambda :: (Var, Type) -> (Exp, Closure) -> (Exp, Closure)
 addLambda (v, t) (x, clo)
  = let	-- filter out the closure term corresponding to the var that is bound
 	--	by this lambda.
-	clo'	= makeTSum KClosure
+	clo'	= makeTSum kClosure
 		$ filter (\c -> case c of
 					TFree v' _	-> v /= v
 					_		-> True)
 		$ flattenTSum clo 
 
-   in	(XLam v t x (TBot KEffect) clo', clo')
+   in	(XLam v t x tPure clo', clo')
 
 

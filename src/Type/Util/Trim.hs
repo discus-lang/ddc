@@ -83,11 +83,11 @@ trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
 trimClosureT_fs quant rsData ff
  = case ff of
  	FWhere c1 c2	
-	 |  kindOfType_orDie c2 == KClosure
+	 |  kindOfType_orDie c2 == kClosure
 	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
 
 	FMore c1 c2
-	 | kindOfType_orDie c2 == KClosure
+	 | kindOfType_orDie c2 == kClosure
 	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
 	_ -> Just ff
@@ -105,7 +105,7 @@ trimClosureC quant rsData cc
  $ trimClosureC2 quant rsData cc
 
 trimClosureC2 quant rsData cc
- | KClosure	<- kindOfType_orDie cc
+ | kindOfType_orDie cc	== kClosure
   = let cc'	= packClosure_noLoops $ trimClosureC' quant rsData cc
     in  if cc' == cc
    	 then cc'
@@ -122,25 +122,27 @@ trimClosureC' quant rsData cc
    in  case cc of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
-	TVar KClosure v
-		| Set.member cc quant 	-> TBot KClosure
+	TVar k v
+		| Set.member cc quant 	
+		-> TBot kClosure
+
 		| otherwise		
-		-> makeTSum KClosure 
+		-> makeTSum kClosure
 			$ (cc : [TDanger r cc	| r	<- Set.toList rsData
 						, r /= cc])
 
 	-- cids are never quantified so we always have to keep them.
-	TClass KClosure _	
-		-> makeTSum KClosure
+	TClass k _	
+		-> makeTSum kClosure
 			$ cc : [TDanger r cc	| r	<- Set.toList rsData
 						, r /= cc]
 
-	TBot  KClosure		-> cc
-	TTop  KClosure 		-> cc
+	TBot k	-> cc
+	TTop k	-> cc
 
 	-- Trim all the elements of a sum
-	TSum  KClosure cs	
-		-> makeTSum KClosure 
+	TSum k cs	
+		-> makeTSum kClosure 
 		$  map down
 		$  flattenTSum cc
 
@@ -156,35 +158,34 @@ trimClosureC' quant rsData cc
 
 	-- free
 	TFree v1 (TDanger t1 t2)
-	 | kindOfType_orDie t1 == KRegion
-	 , kindOfType_orDie t2 == KRegion
-	 -> makeTSum KClosure
+	 | kindOfType_orDie t1 == kRegion
+	 , kindOfType_orDie t2 == kRegion
+	 -> makeTSum kClosure
 	 	[ TFree v1 t1
 		, TFree v1 t2]
 
 	     
 	TFree tag (TDanger t1 (TDanger t2 t3))
-	 -> makeTSum KClosure
+	 -> makeTSum kClosure
 	 	[ TFree tag (TDanger t1 t2)
 		, TFree tag (TDanger t1 t3)
 		, TFree tag (TDanger t2 t3) ]
 
 	TFree tag (TDanger t1 t2)
-	 -> case kindOfType_orDie t2 of
-	 	KClosure -> TFree tag 
+	 -> if kindOfType_orDie t2 == kClosure
+		then TFree tag 
 			  $ makeTDanger tag t1 (down t2)
-
-		_	 -> makeTSum KClosure
+		else makeTSum kClosure
 			  $ map (TFree tag)
 			  $ map (makeTDanger tag t1)
 			  $ trimClosureC_t tag quant rsData t2
 
 
 	TFree tag t
-	 -> case kindOfType_orDie t of
-	 	KClosure -> TFree tag 	$ down t
-		_ 	 -> TFree tag 	$ makeTSum KClosure 
-					$ trimClosureC_t tag quant rsData t
+	 -> if kindOfType_orDie t == kClosure
+		then TFree tag 	$ down t
+		else TFree tag 	$ makeTSum kClosure 
+				$ trimClosureC_t tag quant rsData t
 
 	_ -> panic stage
 		$ "trimClosureC: no match for " % show cc
@@ -237,7 +238,7 @@ trimClosureC_t' tag quant rsData tt
 	 -> case takeTData tt of
 	 	Just (v, k, [])		-> []
 		Just (v, k, (t:ts))
-		 	| kindOfType_orDie t == KRegion
+		 	| kindOfType_orDie t == kRegion
 			-> let 	rsData'	= Set.insert t rsData
 				vs	= freeVars (t:ts)
 			   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
@@ -252,7 +253,7 @@ trimClosureC_t' tag quant rsData tt
 	
 	TData k v []	-> []
 	TData k v (t:ts)
-	 	| kindOfType_orDie t == KRegion
+	 	| kindOfType_orDie t == kRegion
 		-> let	rsData'	= Set.insert t rsData	
 			vs	= freeVars (t:ts)
 		   in 	catMap (trimClosureC_t tag quant rsData') (t:ts)
@@ -281,7 +282,7 @@ makeFreeDanger tag rsData t
 		$ Set.toList rsData
 
 makeTDanger tag r t
-	| kindOfType_orDie t == KRegion
+	| kindOfType_orDie t == kRegion
 	= TFree tag t
 	
 	| otherwise	= TDanger r t
@@ -294,18 +295,18 @@ trimClosureC_fs quant rsData ff
  	FWhere c1 c2	
 
 	 -- more closure information
-	 |  kindOfType_orDie c2 == KClosure
+	 |  kindOfType_orDie c2 == kClosure
 	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
 
 	 -- effect information might be referenced in a type constructor
-	 | kindOfType_orDie c1 == KEffect
+	 | kindOfType_orDie c1 == kEffect
 	 -> Just $ FWhere c1 c2
 
 	FMore c1 c2
-	 | kindOfType_orDie c2 == KClosure
+	 | kindOfType_orDie c2 == kClosure
 	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
-	 | kindOfType_orDie c2 == KEffect
+	 | kindOfType_orDie c2 == kEffect
 	 -> Just $ FMore c1 c2
 
 	_ -> Nothing

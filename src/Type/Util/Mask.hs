@@ -18,10 +18,10 @@ maskReadWriteNotIn
 
 maskReadWriteNotIn rsKeep eff
  = let	maskE e
-		| TEffect vE [TVar KRegion r]	<- e
+		| TEffect vE [TVar kRegion r]	<- e
 		, elem vE [primRead, primWrite]
 		, not $ Set.member r rsKeep
-		= TBot KEffect
+		= TBot kEffect
 	
 		| otherwise
 		= e
@@ -29,5 +29,5 @@ maskReadWriteNotIn rsKeep eff
 	esBits	= flattenTSum eff	
 	esBits'	= map maskE esBits
 	
-   in	makeTSum KEffect esBits'
+   in	makeTSum kEffect esBits'
 

@@ -79,8 +79,8 @@ packT1 tt
 		result
 			-- crush LazyH on the way
 	 		| tyClass == TyClassLazyH
-			, Just (vD, k, (TVar KRegion r : ts))	<- takeTData t2'
-			= TApp (TCon tcLazy) (TVar KRegion r)
+			, Just (vD, k, (TVar kRegion r : ts))	<- takeTData t2'
+			= TApp (TCon tcLazy) (TVar kRegion r)
 
 			-- crush ConstT on the way
 			| tyClass == TyClassConstT 
@@ -137,11 +137,11 @@ packT1 tt
 			-- ReadH 
 	 		| v == primReadH
 			= case takeTData t1' of
-				Just (vD, k, (TVar KRegion r : ts)) 
-					-> TEffect primRead [TVar KRegion r]
+				Just (vD, k, (TVar kRegion r : ts)) 
+					-> TEffect primRead [TVar kRegion r]
 				
 				Just (vD, k, [])
-					-> TBot KEffect
+					-> tPure
 
 				Nothing	-> TEffect v [t1']
 					
@@ -150,7 +150,7 @@ packT1 tt
 			= case takeTData t1' of
 				Just (vD, k, ts)
 				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
-				    in  makeTSum KEffect
+				    in  makeTSum kEffect
 						(  [TEffect primRead  [t]	| t <- concat tRs]
 						++ [TEffect primReadT [t]	| t <- concat tDs] )
 
@@ -161,7 +161,7 @@ packT1 tt
 			= case takeTData t1' of
 				Just (vD, k, ts)
 				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
-				    in  makeTSum KEffect
+				    in  makeTSum kEffect
 						(  [TEffect primWrite  [t]	| t <- concat tRs]
 						++ [TEffect primWriteT [t]	| t <- concat tDs] )
 
@@ -180,10 +180,10 @@ packT1 tt
 	TFree v1 t2
 	 -> let	t2'	= packT1 t2
 	    in	case t2' of
-	    		TBot KClosure		-> TBot KClosure
-			TFree v2 t2X		-> TFree v1 t2X
-			TSum KClosure ts	-> TSum KClosure (map (TFree v1) ts)
-			_			-> TFree v1 t2'
+	    		TBot k    | k == kClosure	-> tEmpty
+			TFree v2 t2X			-> TFree v1 t2X
+			TSum k ts | k == kClosure	-> TSum kClosure (map (TFree v1) ts)
+			_				-> TFree v1 t2'
 						
 	TWitJoin ts
 	 -> makeTWitnessJoin (map packT1 ts)
@@ -212,9 +212,10 @@ packK1 :: Kind -> Kind
 packK1 kk
 	-- crush LazyH on the way
 	| KClass tc [t1]	<- kk
-	, Just (vD, k, TVar KRegion r : ts)	<- takeTData t1
+	, Just (vD, k, TVar kR r : ts)	<- takeTData t1
+	, kR == kRegion
 	, tc == TyClassLazyH
-	= KClass TyClassLazy [TVar KRegion r]
+	= KClass TyClassLazy [TVar kR r]
 
 	-- crush MutableT on the way
 	| KClass tc [t1]	<- kk
@@ -238,8 +239,8 @@ packK1 kk
 	| KWitJoin ks		<- kk
 	, Just tsEffs		<- sequence $ map takeKClass_pure ks
 	, Just ksEffs		<- sequence $ map kindOfType tsEffs
-	, and $ map (== KEffect) ksEffs
-	= KClass TyClassPure [TSum KEffect tsEffs]
+	, and $ map (== kEffect) ksEffs
+	= KClass TyClassPure [TSum kEffect tsEffs]
 
 	-- pack types inside witness kinds
 	| KClass v ts	<- kk

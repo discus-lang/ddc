@@ -117,23 +117,23 @@ trimClosureC' quant rsData cc
    in case cc of
 
 	-- vars which are quantified in this closure aren't free and can be trimmed out
- 	TVar KClosure v
-	 | Set.member v quant	-> TBot KClosure
+ 	TVar _ v
+	 | Set.member v quant	-> tEmpty
 	 | otherwise		-> cc
 	 
-	TVarMore KClosure v cMore
-	 | Set.member v quant	-> TBot KClosure
-	 | otherwise		-> TVarMore KClosure v $ down cMore
+	TVarMore _ v cMore
+	 | Set.member v quant	-> tEmpty
+	 | otherwise		-> TVarMore kClosure v $ down cMore
 
 
-	TBot  KClosure		-> cc
-	TTop  KClosure 		-> cc
+	TBot  _			-> cc
+	TTop  _ 		-> cc
 
 	-- Trim all the elements of a sum
-	TSum  KClosure cs	
-		-> makeTSum KClosure 
-		$  map down
-		$  flattenTSum cc
+	TSum  _ cs	
+	 -> makeTSum kClosure 
+	 $  map down
+	 $  flattenTSum cc
 
 	TFetters c fs
 	 -> makeTFetters
@@ -146,16 +146,13 @@ trimClosureC' quant rsData cc
 	    in  trimClosureC quant' rsData t
 
 	TFree tag (TVar k v)
-		| k == KEffect
-		-> TBot KClosure
+	 | k == kEffect		-> tEmpty
 		
-		-- If this closure has no free variables
-		--	then it is closed and can safely be erased.
-		| Set.member v quant
-		-> TBot KClosure
+	 -- If this closure has no free variables
+	 --	then it is closed and can safely be erased.
+	 | Set.member v quant	-> tEmpty
 		
-	TFree tag (TBot _)
-		-> TBot KClosure
+	TFree tag (TBot _)	-> tEmpty
 		
 	-- Trim either a data or closure element of a closure
 	--	We need this dispatch because the right hand side of a 
@@ -165,7 +162,7 @@ trimClosureC' quant rsData cc
 	  -> TFree tag $ down t
 
 	  | otherwise
-	  -> makeTSum KClosure 
+	  -> makeTSum kClosure 
 		$ map (TFree tag) 
 		$ trimClosureC_t quant rsData t
 			

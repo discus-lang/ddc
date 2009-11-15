@@ -76,7 +76,7 @@ crushEffectC2 cid (Class { classType = Just eff })
 		return False
 
 	 else do
-	 	let eff'	= makeTSum KEffect effs_crushed
+	 	let eff'	= makeTSum kEffect effs_crushed
 		trace	$ "    eff' = " % eff % "\n\n"
 			
 		modifyClass cid
@@ -153,7 +153,7 @@ crushEffectT_node cid tt tNode
 			, TSI $ SICrushedE cid tt)
 			
 		| Just	(v, k, [])	<- takeTData tNode
-		= Just	( TBot KEffect
+		= Just	( tPure
 			, TSI $ SICrushedE cid tt)
 
 		| otherwise
@@ -170,7 +170,7 @@ crushEffectT_node cid tt tNode
 		esRegion	= map (\r -> TEffect primRead  [r]) rs
 		esType		= map (\d -> TEffect primReadT [d]) ds
 
-	  in 	Just 	( makeTSum KEffect $ (esRegion ++ esType)
+	  in 	Just 	( makeTSum kEffect $ (esRegion ++ esType)
 		  	, TSI $ SICrushedE cid tt)
 
 
@@ -183,7 +183,7 @@ crushEffectT_node cid tt tNode
 		esRegion	= map (\r -> TEffect primWrite  [r])   rs
 		esType	= map (\d -> TEffect primWriteT [d]) ds
 				
-	  in	Just	( makeTSum KEffect $ (esRegion ++ esType)
+	  in	Just	( makeTSum kEffect $ (esRegion ++ esType)
 	  		, TSI $ SICrushedE cid tt)
 
 	-- can't crush this one
@@ -199,7 +199,8 @@ isCrushable eff
 	 | elem v [primReadH, primReadT, primWriteT]	-> True
 	 | otherwise					-> False
 	 
-	TSum KEffect ts
+	TSum kE ts
+	 | kE == kEffect
 	 -> or $ map isCrushable ts
 	 
 	TClass{}

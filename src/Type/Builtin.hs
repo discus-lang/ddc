@@ -11,28 +11,28 @@ import Shared.Literal
 
 -- Witness / Witness Kind constructors
 --	The contstructor is overloaded to be used for both witnesses and witness kinds
-tcConst		= TyConClass TyClassConst	(KForall KRegion (KClass TyClassConst 	[TIndex 0]))
-tcConstT 	= TyConClass TyClassConstT	(KForall KValue  (KClass TyClassConstT	[TIndex 0]))
-tcMutable	= TyConClass TyClassMutable	(KForall KRegion (KClass TyClassMutable	[TIndex 0]))
-tcMutableT	= TyConClass TyClassMutableT	(KForall KValue  (KClass TyClassMutableT [TIndex 0]))
-tcLazy		= TyConClass TyClassLazy	(KForall KRegion (KClass TyClassLazy 	[TIndex 0]))
-tcLazyH		= TyConClass TyClassLazyH	(KForall KValue	 (KClass TyClassLazyH	[TIndex 0]))
-tcDirect	= TyConClass TyClassDirect	(KForall KRegion (KClass TyClassDirect	[TIndex 0]))
+tcConst		= TyConClass TyClassConst	(KForall kRegion (KClass TyClassConst 	 [TIndex 0]))
+tcConstT 	= TyConClass TyClassConstT	(KForall kValue  (KClass TyClassConstT	 [TIndex 0]))
+tcMutable	= TyConClass TyClassMutable	(KForall kRegion (KClass TyClassMutable	 [TIndex 0]))
+tcMutableT	= TyConClass TyClassMutableT	(KForall kValue  (KClass TyClassMutableT [TIndex 0]))
+tcLazy		= TyConClass TyClassLazy	(KForall kRegion (KClass TyClassLazy 	 [TIndex 0]))
+tcLazyH		= TyConClass TyClassLazyH	(KForall kValue	 (KClass TyClassLazyH	 [TIndex 0]))
+tcDirect	= TyConClass TyClassDirect	(KForall kRegion (KClass TyClassDirect	 [TIndex 0]))
 
 tcPurify	= TyConClass TyClassPurify	
-			(KForall KRegion 
+			(KForall kRegion 
 				(KFun 	(KClass TyClassConst [TIndex 0])
 					(KClass TyClassPure  [TEffect primRead [TIndex 0]])))
 
 tcPure		= TyConClass TyClassPure
-			(KForall KEffect (KClass TyClassPure [TIndex 0]))
+			(KForall kEffect (KClass TyClassPure [TIndex 0]))
 
 -- Data Type Constructors -------------------------------------------------------------------------
 tcBool :: DataFormat -> TyCon
 tcBool fmt
  = case fmt of
-	Unboxed		-> TyConData (primTBool fmt) KValue
-	Boxed		-> TyConData (primTBool fmt) (KFun KRegion KValue)
+	Unboxed		-> TyConData (primTBool fmt) kValue
+	Boxed		-> TyConData (primTBool fmt) (KFun kRegion kValue)
 
 -- Words
 --	have kind (% -> *) for the BoxedBits case 
@@ -47,16 +47,16 @@ tcChar	= tcTyDataBits primTChar
 tcTyDataBits :: (DataFormat -> Var) -> DataFormat -> TyCon
 tcTyDataBits mkVar fmt
  = case fmt of 
-	Boxed		-> TyConData (mkVar fmt) (KFun KRegion KValue)
-	BoxedBits _	-> TyConData (mkVar fmt) (KFun KRegion KValue)
-	Unboxed		-> TyConData (mkVar fmt) KValue
-	UnboxedBits _	-> TyConData (mkVar fmt) KValue
+	Boxed		-> TyConData (mkVar fmt) (KFun kRegion kValue)
+	BoxedBits _	-> TyConData (mkVar fmt) (KFun kRegion kValue)
+	Unboxed		-> TyConData (mkVar fmt) kValue
+	UnboxedBits _	-> TyConData (mkVar fmt) kValue
 	
 tcString :: DataFormat -> TyCon
 tcString fmt
  = case fmt of
-	Unboxed		-> TyConData (primTString fmt) (KFun KRegion KValue)
-	Boxed		-> TyConData (primTString fmt) (KFun KRegion KValue)
+	Unboxed		-> TyConData (primTString fmt) (KFun kRegion kValue)
+	Boxed		-> TyConData (primTString fmt) (KFun kRegion kValue)
 
 
 -- | Get the tycon used to represent some literal value

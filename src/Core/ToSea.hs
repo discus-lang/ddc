@@ -84,7 +84,8 @@ slurpWitnessKind
 slurpWitnessKind kk
  = case kk of
 	-- const regions
- 	C.KClass C.TyClassDirect [C.TVar C.KRegion r]
+ 	C.KClass C.TyClassDirect [C.TVar k r]
+ 	 | k == T.kRegion
 	 -> modify $ \s -> s { stateDirectRegions 
 		 		= Set.insert r (stateDirectRegions s) }
 
@@ -336,8 +337,9 @@ toSeaX		xx
 	 -> return	$ E.XLit litFmt
 
 	-- string constants are always applied to regions 
-	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (C.TVar C.KRegion r)
-	 -> return	$ E.XLit litFmt
+	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (C.TVar k r)
+	 | k == T.kRegion
+	 -> return $ E.XLit litFmt
 
 	-- An application to type/region/effects only
 	--	we can just discard the TRE applications and keep the value.
@@ -523,7 +525,8 @@ toSeaG	mObjV ssFront gg
 -- check if this type is in a direct region
 isDirectType :: C.Type -> SeaM Bool
 isDirectType tt
-	| Just (v, k, C.TVar C.KRegion vR : _)	<- T.takeTData tt
+	| Just (v, k, C.TVar kR vR : _)	<- T.takeTData tt
+	, kR == T.kRegion
 	= do	directRegions	<- gets stateDirectRegions
 	 	return	$ Set.member vR directRegions
 
@@ -591,7 +594,7 @@ toSeaT	xx
 hasValueKind :: C.Type -> Bool
 hasValueKind xx
 	| Just k	<- T.kindOfType xx
-	, not $ elem k [T.KRegion, T.KClosure, T.KEffect]
+	, not $ elem k [T.kRegion, T.kClosure, T.kEffect]
 	= True
 	
 	| otherwise
@@ -758,11 +761,11 @@ superOpTypePart	tt
 	-- an unboxed var of airity zero, eg Int32#
 	C.TCon (C.TyConData name kind)
 	 | T.isUnboxedT tt
-	 -> T.makeTData name C.KValue []
+	 -> T.makeTData name C.kValue []
 
 	-- a tycon of arity zero, eg Unit
 	C.TCon (C.TyConData name kind)
-	 -> T.makeTData Var.primTData C.KValue []
+	 -> T.makeTData Var.primTData C.kValue []
 
 	C.TApp{}
 	 -> let	result	
@@ -783,14 +786,16 @@ superOpTypePart	tt
 			
 			-- all function objects are considered to be 'Thunk'
 			| Just _		<- T.takeTFun tt
-			= T.makeTData Var.primTThunk C.KValue []
+			= T.makeTData Var.primTThunk C.kValue []
 			
 			| otherwise
-			= T.makeTData Var.primTObj C.KValue []
+			= T.makeTData Var.primTObj C.kValue []
 	   in result			
 
 	-- some unknown, boxed object 'Obj'
-	C.TVar C.KValue _	-> T.makeTData Var.primTObj C.KValue []
+	C.TVar k _	
+	 | k == T.kValue
+	 -> T.makeTData Var.primTObj C.kValue []
 
 	_	-> panic stage
 		$  "superOpTypePart: no match for " % show tt % "\n"

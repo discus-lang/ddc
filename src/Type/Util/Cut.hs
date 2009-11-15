@@ -151,17 +151,18 @@ cutT cid cidsEntered tt
 
 	TFree v t2@(TClass k _)
 	 |  Set.member t2 cidsEntered
-	 -> TBot KClosure
+	 -> tEmpty
 
 	TFree v t		-> TFree	v (down t)
 	TDanger t1 t2		-> TDanger	(down t1) (down t2)
 
 	TClass k cid'
-	 |  Set.member tt cidsEntered
-	 -> case k of
-	 	KEffect		-> TBot KEffect
-		KClosure	-> TBot KClosure
-		KValue		-> panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
+	 | Set.member tt cidsEntered
+	 -> let result
+	 	 | k == kEffect		= tPure
+		 | k == kClosure	= tEmpty
+		 | k == kValue		= panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
+	    in  result
 
 	 | otherwise
 	 -> tt

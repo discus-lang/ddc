@@ -137,9 +137,9 @@ loadTypeNode2 incFs cid c
 			= return fs
 	
 			| otherwise
-			= case resultKind k of
-				KValue	-> return $ FWhere (TClass k cid) tX : fs
-				_	-> return $ FMore  (TClass k cid) tX : fs
+			= if resultKind k == kValue
+				then return $ FWhere (TClass k cid) tX : fs
+				else return $ FMore  (TClass k cid) tX : fs
 		
 		result
 	
