@@ -102,6 +102,8 @@ projectTreeM moduleName headerTree tree
 			$ [(v, p)	| p@(PClassDict _ v ts cs vts)
 					<- tree ++ headerTree]
 
+	mapM (checkForRedefDataField dataMap) [p | p@(PProjDict{}) <- tree]
+
 	-- Each data type in the source file should have a projection dictionary
 	--	if none exists then make a new empty one.
 	treeProjNewDict	<- addProjDictDataTree tree
@@ -614,5 +616,36 @@ slurpProjTable tree
 	projTable	= Map.gather 
 			$ map packProjDict projDictPs
  in 	projTable
+
+
+----------------------------------------------------------------------------------------------------
+-- Check for projection names that collide with filed names of the Data
+-- definition they are projecting over. Log any that are found as errors.
+--
+checkForRedefDataField :: Map Var (Top Annot) -> Top Annot -> ProjectM ()
+checkForRedefDataField dataMap (PProjDict _ (TData _ pvar _) ss)
+ = do	let Just dname	= Map.lookup pvar dataMap
+	let dfmap	= fieldNames dname
+ 	mapM_ (checkSBindFunc dname pvar dfmap) ss
+
+checkForRedefDataField _ _ = return ()
+
+
+checkSBindFunc :: Top Annot -> Var -> Map String Var -> Stmt Annot -> ProjectM ()
+checkSBindFunc (PData _ dvar _ _) pvar dfmap (SBind _ (Just v) _)
+ = case Map.lookup (Var.name v) dfmap of
+	Nothing		-> return ()
+	Just redef	-> addError $ ErrorProjectRedefDataField redef pvar dvar
+
+checkSBindFunc _ _ _ _ = return ()
+
+
+fieldNames :: Top Annot -> Map String Var
+fieldNames (PData _ _ _ ctors)
+ = Map.fromList $ map (\ d -> (Var.name d, d))
+		$ catMaybes
+		$ map dLabel
+		$ concat
+ 		$ map (\(CtorDef _ _ dfields) -> dfields) ctors
 
 
