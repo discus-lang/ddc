@@ -161,7 +161,7 @@ pprVarKind :: Var -> Kind -> PrettyM PMode
 pprVarKind v k
  = ifMode 
  	(elem PrettyTypeKinds)
-	(if kindOfSpace2 v (Var.nameSpace v) == k
+	(if kindOfSpace (Var.nameSpace v) == Just k
 		then ppr v
 		else "(" % ppr v % " :: " % k % ")")
 
@@ -177,19 +177,14 @@ pprBindKind bb k
 -- | Get the kind associated with a namespace.
 --	This is a local local copy to avoid module recursion.
 --	Also in Type.Util.Bits
-kindOfSpace2 :: Var -> NameSpace -> Kind
-kindOfSpace2 var space
+kindOfSpace :: NameSpace -> Maybe Kind
+kindOfSpace space
  = case space of
- 	NameType	-> kValue
-	NameRegion	-> kRegion
-	NameEffect	-> kEffect
-	NameClosure	-> kClosure
-	NameClass	-> panic stage "kindOfSpace NameClass"
-	_		-> freakout stage
-				("kindOfSpace2: no match for " % show space % "\n"
-				% "   var = " % show var % "\n")
-				KNil
-
+ 	NameType	-> Just kValue
+	NameRegion	-> Just kRegion
+	NameEffect	-> Just kEffect
+	NameClosure	-> Just kClosure
+	_		-> Nothing
 
 -- | Prints a type with the fetters on their own lines
 prettyTypeSplit :: Type	-> PrettyM PMode
