@@ -75,7 +75,7 @@ data Top
 
 	| PRegion	Var [(Var, Type)]	-- ^ A global region.
 	| PEffect	Var Kind		-- ^ A global effect.
-	| PClass	Var Kind
+	| PClass	Var Super
 
 	| PClassDict	Var [Type] [ClassContext] [(Var, Type)]
 	| PClassInst	Var [Type] [ClassContext] [(Var, Exp)]

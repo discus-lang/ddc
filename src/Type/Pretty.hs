@@ -292,6 +292,15 @@ instance Pretty Fetter PMode where
 	 -> "Proj "	% pj	% " " % v1 % " " % tDict % " " % tBind
 
 
+-- Super -------------------------------------------------------------------------------------------
+instance Pretty Super PMode where
+ ppr k
+  = case k of
+	SProp		-> ppr "+"
+	SBox		-> ppr"[]"
+	SFun k1 s2	-> k1 % " -> " % s2
+
+
 -- Kind --------------------------------------------------------------------------------------------
 instance Pretty Kind PMode where
  ppr k
@@ -300,8 +309,6 @@ instance Pretty Kind PMode where
 	KCon k s	-> ppr k
 	KPi  k1 k2	-> "PI " % k1 % " " % k2
 	KApp k1 t1	-> k1 % " " % prettyTB t1
-	KWitness	-> ppr "+"
-
 	KForall k1 k2	-> "\\" % k1 % ". " % k2
 	KFun k1 k2	-> k1 % " -> " % k2
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts

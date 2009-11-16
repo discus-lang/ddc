@@ -78,11 +78,38 @@ instance Ord Type where
 
 -- Super Kinds ----------------------------------------------------------------------------------
 data Super
-	= SProp			-- ^ The occurance of some type level object with this superkind
-				--	guarantees some property of the program.
+	-- | (+)  A kind-level object with this superkind describes some property of the program.
+	---	  The occurance of some type-level object with this superkind /guarantees/ a 
+	--	  property of a program
+	--
+	--	  Example:
+	--	  'Mutable %r1' has superkind '+'
+	--		It describes a property of the program, specifically, that objects
+	--		in the region named '%r1' may be destructively updated.
+	--
+	--	  'MkConst %r1' has kind 'Const %r1' and superkind '+'
+	--		If a 'MkConst %r1' occurs in the program then this guarantees that
+	--		objects in region '%r1' will /not/ be destructively updated.
+	--
+	= SProp			
 
-	| SBox			-- ^ The superkind of some other type.
-	| SFun	Kind Super	-- ^ Superkinds are indexed by kinds.
+	-- | ([]) The superkind of some other non-property encoding kind.
+	--        Example:
+	--	    '5'   has type      'Int'
+	--	    'Int' has kind      '*'
+	--	    '*'   has superkind '[]'
+	--
+	| SBox			
+	
+	-- | Properties relate types.
+	--        Kind constructors take well-kinded types and produce properties.
+ 	-- 
+	--        Example:	
+	--        The kind-level constructor 'Mutable' has superkind % -> +,
+	--	    were '%' is a kind, but '+' and '% -> +' are superkinds.
+	--          This says that 'Mutable' encodes some property of a region.
+	--
+	| SFun	Kind Super	
 	deriving (Show, Eq)
 
 
@@ -96,7 +123,6 @@ type Index
 data Kind
 	= KNil				-- ^ An missing / unknown kind.
 
-	-- New stuff that isn't used yet --------------------------------------
 	-- | Kind constructor
 	| KCon	   KiCon Super		-- ^ Kind constructors
 
@@ -111,11 +137,6 @@ data Kind
 	-- Old stuff that needs refactoring -----------------------------------
 	| KForall  Kind Kind		-- ^ Dependent kinds.
 	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
-
-	-- ^ The super kind of witneses  (+)  (\Diamond)
-	--	This is a real super-kind because no type-level expression has this kind.
-	--	Example: (Show Int) :: +
-	| KWitness			
 
 	-- TODO: change TClass to be a general kind constructor, and TWitJoin to be a kind sum.
 	| KClass	TyClass [Type]	-- ^ the kind of witnesses

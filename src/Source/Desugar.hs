@@ -126,8 +126,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 ->	returnJ	$ D.PRegion sp v
 	 
 	-- classes
-	S.PClass sp v k
-	 ->	returnJ	$ D.PClass sp v k
+	S.PClass sp v s
+	 ->	returnJ	$ D.PClass sp v s
 
 	-- class dictionaries
  	S.PClassDict sp vC vks context sigs

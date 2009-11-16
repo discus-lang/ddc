@@ -43,7 +43,7 @@ data Top a
 	| PData		a Var [Var]  [CtorDef a]
 
 	-- classes
-	| PClass	a Var Kind
+	| PClass	a Var Super
 	| PClassDict	a Var [Type] [ClassContext] [(Var, Type)]
 
 	-- An instance for a type class.

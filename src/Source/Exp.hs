@@ -72,7 +72,7 @@ data Top a
 	| PRegion a	Var				-- Introduce a top level region.
 
 	-- Classes
-	| PClass  a	Var Kind			-- An abstract class.
+	| PClass  a	Var Super			-- An abstract class.
 
 	| PClassDict					-- A class dictionary definition.
 		a

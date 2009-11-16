@@ -149,8 +149,8 @@ toCoreP	p
 	 -> 	return	[ C.PRegion v [] ]
 
 
-	D.PClass _ v k
-	 -> 	return	[ C.PClass v (toCoreK k)]
+	D.PClass _ v s
+	 -> 	return	[ C.PClass v s]
 
 	D.PClassDict _ v cts context sigs
 	 -> do	let (vs, ts)	= unzip sigs

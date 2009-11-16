@@ -368,10 +368,10 @@ pTopClass
 
 pTopClassMore :: SP -> Var -> Parser (Top SP)
 pTopClassMore startPos con
- =	-- class CON :: KIND
+ =	-- class CON :: SUPER
 	do	pTok K.HasType
-		kind	<- pKind
-		return	$ PClass startPos con kind
+		super	<- pSuper
+		return	$ PClass startPos con super
 
    <|>	-- class CON VAR.. where { SIG ; .. }
 	do	vks	<- Parsec.many pVarKind

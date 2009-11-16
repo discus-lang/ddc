@@ -1,7 +1,9 @@
 {-# OPTIONS -O2 #-}
 
 module Source.Parser.Type
-	(pKind, pType, pType_body, pType_body1, pTypeOp)
+	( pSuper
+	, pKind
+	, pType, pType_body, pType_body1, pTypeOp)
 
 where
 
@@ -22,6 +24,21 @@ import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import Control.Monad
 import Data.Maybe
 
+-- Super -------------------------------------------------------------------------------------------
+pSuper :: Parser Super
+pSuper
+ = 	do	pTok K.Plus
+		return SProp
+
+ <|>	-- KIND -> SUPER
+	do	k1	<- pKind1
+                pTok K.RightArrow
+		s2	<- pSuper
+		return $ SFun k1 s2
+		
+ <?>    "pSuper"	
+
+
 -- Kind --------------------------------------------------------------------------------------------
 pKind :: Parser Kind
 pKind
@@ -29,9 +46,9 @@ pKind
 	do	k1	<- pKind1
 
 	        Parsec.option k1
-                	(do	pTok K.RightArrow
-				k2	<- pKind
-				return $ KFun k1 k2)
+                 $ do	pTok K.RightArrow
+			k2	<- pKind
+			return $ KFun k1 k2
 
  <?>    "pKind"
 
@@ -49,8 +66,8 @@ pKind1
  <|>	do	pTok K.Dollar
  		return	kClosure
 
- <|>	do	pTok K.Plus
-		return	KWitness
+-- <|>	do	pTok K.Plus
+--		return	KWitness
 
  <|>	-- ( KIND )
  	do	pRParen pKind

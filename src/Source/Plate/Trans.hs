@@ -123,6 +123,9 @@ instance Monad m => TransM m n1 n2 LiteralFmt LiteralFmt
 instance Monad m => TransM m n1 n2 Kind Kind
  where	transZM table xx = return xx
 
+instance Monad m => TransM m n1 n2 Super Super
+ where	transZM table xx = return xx
+
 instance Monad m => TransM m n1 n2 Char Char
  where 	transZM table xx = return xx
 

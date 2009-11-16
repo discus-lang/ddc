@@ -239,7 +239,7 @@ slurpConstraint pp
 	 -> [Constraint (KSData sp) v k]
 
 	PEffect sp v k	-> [Constraint (KSEffect sp) v k]
-	PClass sp v k	-> [Constraint (KSClass sp) v k]
+--	PClass sp v k	-> [ConstraintS (KSClass sp) v k]
 	_		-> []
 
 

@@ -196,8 +196,8 @@ kindOfType' tt
 	| TError k _		<- tt
 	= Just k
 
-	| TFetter{}		<- tt
-	= Just KWitness
+--	| TFetter{}		<- tt
+--	= Just KWitness
 
 	-- used in source / desugar -----------------------------------------
 	| TElaborate e t	<- tt
