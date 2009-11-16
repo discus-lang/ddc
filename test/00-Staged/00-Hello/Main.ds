@@ -1,0 +1,3 @@
+
+main () = putStr "Hello World"
+
