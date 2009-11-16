@@ -432,42 +432,46 @@ pStmt
 -- | Parse a bind (only)
 pStmt_bind :: Parser (Stmt SP)
 pStmt_bind
- = 	-- VAR PAT .. | ALT ..
-	-- overlaps with regular binding
- 	(Parsec.try $ do
- 		var	<- pOfSpace NameValue pVar
+ =	-- VAR ....
+	(Parsec.try $ do
+		var	<- pOfSpace NameValue pVar
 		pats	<- Parsec.many pPat1
-		alts	<- Parsec.many1 pMatchAlt
-		return	$ SBindFun (spV var) var pats alts)
+		pStmt_bindVarPat var pats)
 
-	-- VAR PAT = EXPRHS
- <|>	(Parsec.try $ do
- 		var	<- pOfSpace NameValue pVar
-		pats	<- Parsec.many pPat1
-		pTok K.Equals
-		exp	<- pExpRHS
-		return	$ SBindFun (spV var) var pats [ADefault (spV var) exp])
-
-	-- PAT	<- EXPRHS
- <|>	(Parsec.try $ do
- 		pat	<- pPat
-		pTok K.LeftArrow
-		exp	<- pExpRHS
-		return	$ SBindMonadic (spW pat) pat exp)
-
- <|>	-- PAT | ALT ..
- 	(Parsec.try $ do
-		pat	<- pPat
-		alts	<- Parsec.many1 pMatchAlt
-		return	$ SBindPat (spW pat) pat (XMatch (spW pat) alts))
-
- <|>	-- PAT  = EXPRHS
+ <|>	-- PAT  ...
  	do	pat	<- pPat
-		pTok K.Equals
+		pStmt_bindPat2 pat
+
+ <?>	"pStmt_bind"
+
+
+pStmt_bindVarPat :: Var -> [Pat SP] -> Parser (Stmt SP)
+pStmt_bindVarPat var pats
+ =	-- VAR PAT = EXPRHS
+	do	pTok K.Equals
+		exp	<- pExpRHS
+		return	$ SBindFun (spV var) var pats [ADefault (spV var) exp]
+
+ <|>	-- VAR PAT .. | ALT ..
+ 	do	alts	<- Parsec.many1 pMatchAlt
+		return	$ SBindFun (spV var) var pats alts
+
+
+pStmt_bindPat2 :: Pat SP -> Parser (Stmt SP)
+pStmt_bindPat2 pat
+ =	-- PAT  = EXPRHS
+ 	do	pTok K.Equals
 		exp	<- pExpRHS
 		return	$ SBindPat (spW pat) pat exp
 
- <?>	"pStmt_bind"
+ <|>	-- PAT	<- EXPRHS
+	do	pTok K.LeftArrow
+		exp	<- pExpRHS
+		return	$ SBindMonadic (spW pat) pat exp
+
+ <|>	-- PAT | ALT ..
+ 	do	alts	<- Parsec.many1 pMatchAlt
+		return	$ SBindPat (spW pat) pat (XMatch (spW pat) alts)
 
 
 -- | Parse a type sig (only)
