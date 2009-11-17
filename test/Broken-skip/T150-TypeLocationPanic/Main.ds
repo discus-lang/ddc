@@ -1,0 +1,13 @@
+a :: Int
+a = 0
+
+-- Make b mutable.
+b :: Int %r0
+  :- Mutable %r0
+b = 0
+
+main ()
+= do	println $ show b
+	b := 1
+	println $ show b
+	a := 1
