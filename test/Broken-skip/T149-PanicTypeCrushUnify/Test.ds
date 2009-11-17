@@ -1,0 +1,7 @@
+-- This is a variant of the solution to the Man or Boy Test.
+a :: Int -> a -> a -> a -> a -> a -> Int
+a k x1 x2 x3 x4 x5
+ = do	-- println $ "a " % show k
+	b () = do { k := k - 1 ; nk = k ; a nk b x1 x2 x3 x4 }
+	if k <= 0 then x4 () + x5 () else b ()
+
