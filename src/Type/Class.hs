@@ -218,10 +218,20 @@ addToClass2 cid src t c
 	, Just k	<- kindOfType t
 	= addToClass3 cid src t (classInit cid k)
 	
+	| ClassNil	<- c
+	, TFetter{}	<- t
+	= addToClass3 cid src t (classInit cid KNil)	
+	
 	| Class { classKind } <- c
 	, Just k	<- kindOfType t
 	, k == classKind
 	= addToClass3 cid src t c
+	
+	| otherwise
+	= panic stage 
+		$ "addToClass2 fails: " ++ show t ++ "\n"
+		++ "class = " ++ show c ++ "\n"
+	
 
 addToClass3 cid src t c@Class{}
  = do 	activateClass cid

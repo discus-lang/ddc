@@ -196,9 +196,6 @@ kindOfType' tt
 	| TError k _		<- tt
 	= Just k
 
---	| TFetter{}		<- tt
---	= Just KWitness
-
 	-- used in source / desugar -----------------------------------------
 	| TElaborate e t	<- tt
 	= kindOfType t
@@ -211,9 +208,7 @@ kindOfType' tt
 			
 	-- some of the helper constructors don't have real kinds ------------
 	| otherwise
-	= freakout stage 
-		("kindOfType: cannot get kind for " % show tt % "\n")
-		Nothing
+	= Nothing
 
 
 kindOfType_freakout t1 k1 t2 k2
