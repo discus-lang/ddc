@@ -16,6 +16,7 @@ import Util
 import System.IO
 import System.Exit
 import System.Cmd
+import System.Directory (doesDirectoryExist)
 
 -----
 stage	= "Main.Link"
@@ -57,6 +58,10 @@ linkFile setup mBuild objects
 		putStr	$ " * Invoking linker.\n"
 		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n"
 
+	isDir		<-  doesDirectoryExist outFileName
+
+	when isDir (dieWithUserError ["A directory already exists with this name: " % outFileName])
+    
 	retLink		<- system cmd
 
 	case retLink of
