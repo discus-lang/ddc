@@ -1,0 +1,19 @@
+
+-- Already accept this.
+funGood1 x
+ = 	let b () = x + 1
+	in x + b ()
+
+funGood2 x
+ = 	let	b ()	= x + 1
+		c	= 10
+	in	x + c + b ()
+
+
+-- Also need to accept this for compatibility with Haskell.
+-- Compatibility with Haskell lets use reuse tests from the Haskell
+-- test suite.
+funFixThis x
+ = do	let b () = x + 1
+	x + b ()
+

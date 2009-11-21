@@ -1,4 +1,0 @@
-
-fun x
- = do	let b () = x + 1
-	x + b ()
