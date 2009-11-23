@@ -25,6 +25,7 @@ class Show a where
 		:- !e1	= !{ !ReadT a; !Read %r}
 		,  ConstT a
 		,  Const %r
+		,  Lazy %r
 
 
 

@@ -200,7 +200,7 @@ followT table tt
 
 
 	-- data
-	TFun t1 t2 eff clo
+{-	TFun t1 t2 eff clo
 	 -> do	t1'	<- transZM table t1
 	 	t2'	<- transZM table t2
 		eff'	<- transZM table eff
@@ -211,7 +211,7 @@ followT table tt
 	 -> do	v'	<- transZM table v
 	 	ts'	<- transZM table ts
 		return	$ TData k v' ts'
-		
+-}		
 
 	-- effect
 	TEffect v ts

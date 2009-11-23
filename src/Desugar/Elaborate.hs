@@ -4,8 +4,9 @@ module Desugar.Elaborate
 where
 
 import Desugar.Exp
+import Desugar.Pretty
 
-import Type.Util.Elaborate	(elaborateEffT, elaborateCloT)
+import Type.Util.Elaborate
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate
@@ -44,24 +45,36 @@ elaborateTree unique tree
 
 elaborateP :: Top SourcePos -> ElabM (Top SourcePos)
 elaborateP pp
- = case pp of
+  = trace ("elaborateP: " % stripAnnot pp)
+  $ case pp of
 	PExtern sp v t mt
 	 -> do	t'	<- elaborateT t
 		return	$ PExtern sp v t' mt
+		
+	PSig a vs t
+	 -> do	t'	<- elaborateT t
+		return	$ PSig a vs t'
 	
 	_ -> return pp
 
 elaborateT :: Type -> ElabM Type
 elaborateT tt
- = case tt of
-	TFun{}			-> elaborateT_fun tt
-	TFetters TFun{} fs 	-> elaborateT_fun tt
+ = trace ("elaborateT: " % tt)
+ $ case tt of
+	TApp{}
+	 | Just _	<- takeTFun tt
+	 -> elaborateT_fun tt
+
+	TFetters t1 fs 	
+	 | Just _	<- takeTFun t1
+	 -> elaborateT_fun tt
 
 	_	-> return tt
 
 elaborateT_fun :: Type -> ElabM Type
-elaborateT_fun tt 
- = do	let (tt', (rsRead, rsWrite))	
+elaborateT_fun tt
+ = trace ("elaborateT_fun: " % tt)
+ $ do	let (tt', (rsRead, rsWrite))	
 			= collectRsRW tt
 
 	let free	= Set.filter (not . Var.isCtorName) $ freeVars tt'
@@ -70,15 +83,20 @@ elaborateT_fun tt
 	let (bks, _)	= slurpTForall tt'
 	let quantVs	= Set.fromList $ map (varOfBind . fst) bks
 	
+	(tt_rs, newRs)	<- elaborateRsT newVarN tt'
+	
+	trace ("tt_rs = " % tt_rs) $ do
+	
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
 	let extraQuantVKs	
 		= [(v, kindOfSpace $ Var.nameSpace v)
 			| v	<- Set.toList free
 			, not $ Set.member v quantVs]
+		++ newRs
 		
 	-- quantify free vars in the scheme		
-	let tt_quant	= makeTForall_back extraQuantVKs tt'
+	let tt_quant	= makeTForall_back extraQuantVKs tt_rs
 
 	-- add read and write effects
 	let ?newVarN	= newVarN

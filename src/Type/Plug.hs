@@ -74,9 +74,6 @@ staticRsDataT tt
 	 	Just (k, v, ts)	-> Set.unions $ map staticRsDataT ts
 		_		-> Set.empty
 
- 	TData k v ts		-> Set.unions $ map staticRsDataT ts
-
-	TFun{}			-> Set.empty
 	TFetters t fs		-> staticRsDataT t
 	TForall b k t		-> staticRsDataT t
 	
@@ -85,6 +82,7 @@ staticRsDataT tt
 	
 	TError k t		-> Set.empty
 
+	TCon{}			-> Set.empty
 	TBot{}			-> Set.empty
 
 	-- for data containing function objects
@@ -104,9 +102,14 @@ staticRsClosureT
 staticRsClosureT t
  = case t of
 	TFetters t fs		-> staticRsClosureT t
- 	TFun t1 t2 eff clo	-> staticRsDataT clo
+
+	TApp{} 
+	 | Just (t1, t2, eff, clo)	<- takeTFun t
+	 -> staticRsDataT clo
 
 	-- TODO: we're assuming that all args are tangible. This isn't strictly
 	--       correct but shoudn't hurt us too much.
-	TData k v ts		-> Set.unions $ map staticRsClosureT ts
+	 | Just (v, k, ts)		<- takeTData t
+	 -> Set.unions $ map staticRsClosureT ts
+
 	_ 			-> Set.empty

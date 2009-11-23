@@ -140,9 +140,11 @@ generaliseType' varT tCore envCids
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
 
-	let tReduce	= reduceContextT classInst tClean
+	tReduce	<- reduceContextT classInst tClean
 	trace	$ "    tReduce\n"
 			%> ("= " % prettyTS tReduce)		% "\n\n"
+
+--	trace	$ "     classInts = " % classInst		% "\n\n"
 
 	-- Mask effects and Const/Mutable/Local/Direct constraints on local regions.
 	-- 	Do this before adding foralls so we don't end up with quantified regions that

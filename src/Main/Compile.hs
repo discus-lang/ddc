@@ -48,8 +48,11 @@ import qualified System.Posix		as System
 import qualified System.Cmd		as System
 import qualified System.Exit		as System
 
+out ss		= putStr $ pprStrPlain ss
 
-out 	ss	= putStr $ pprStrPlain ss
+outVerb :: (?verbose :: Bool) => PrettyM PMode -> IO ()
+outVerb ss	= when ?verbose (putStr $ pprStrPlain ss)
+
 
 -- Compile -----------------------------------------------------------------------------------------
 -- |	Top level compilation function.
@@ -165,13 +168,13 @@ compileFile_parse
 -}
 
 	-- Parse the source file.
+	outVerb $ ppr $ "  * Source: Parse\n"
 	(sParsed, pragmas)	
 			<- {-# SCC "Main.parsed" #-} SS.parse pathSource sSource
 
-	when ?verbose
-	 $ do	out	$ "  * Pragmas\n"
-			%> punc "\n" pragmas
-			% "\n\n"
+	outVerb	$ "  * Pragmas\n"
+		%> punc "\n" pragmas
+		% "\n\n"
 
 	-- Slurp out pragmas
 	let pragmas	= Pragma.slurpPragmaTree sParsed
@@ -188,13 +191,11 @@ compileFile_parse
 	-- Source Stages
 	------------------------------------------------------------------------
 
-	when ?verbose
-	 $ do	putStr	$ "  * Source: Parse\n"
-
 	-- slurp out name of vars to inline
 	inlineVars	<- SS.sourceSlurpInlineVars sParsed
 	
 	-- Rename variables and add uniqueBinds.
+	outVerb $ ppr $ "  * Source: Rename\n"
 	((_, sRenamed) : modHeaderRenamedTs)
 			<- {-# SCC "Main.renamed" #-}
 				SS.rename
@@ -223,6 +224,7 @@ compileFile_parse
 				(sRenamed ++ hRenamed)
 	
 	-- Defix the source.
+	outVerb $ ppr $ "  * Source: Defix\n"
 	sDefixed	<- SS.defix
 				sRenamed
 				fixTable
@@ -235,6 +237,7 @@ compileFile_parse
 	sAliased	<- SS.alias sDefixed
 
 	-- Desugar the source language
+	outVerb $ ppr $ "  * Source: Desugar\n"
 	(hDesugared, sDesugared)
 			<- {-# SCC "Main.desugared" #-}
 			   SS.desugar
@@ -248,24 +251,27 @@ compileFile_parse
 	------------------------------------------------------------------------
 
 	-- Do kind inference and tag all type constructors with their kinds
+	outVerb $ ppr $ "  * Desugar: Infer Kinds\n"
 	(hKinds, sKinds, kindTable)
 		<- desugarInferKinds "DK" hDesugared sDesugared
 	
 	-- Elaborate effects and closures of types in foreign imports
+	outVerb $ ppr $ "  * Desugar: Elaborate\n"
 	(hElab, sElab)
 		<- desugarElaborate "DE" hKinds sKinds
 
 	-- Eta expand simple v1 = v2 projections
+	outVerb $ ppr $ "  * Desugar: Project Eta-Expand\n"
 	sProjectEta
 		<- desugarProjectEta "DE" sElab
 			
 	-- Snip down dictionaries and add default projections.
+	outVerb $ ppr $ "  * Desugar: Project Snip\n"
 	(dProject, projTable)	
 		<- desugarProject "SP" moduleName hElab sProjectEta
 
 	-- Slurp out type constraints.
-	when ?verbose
-	 $ do	putStr	$ "  * Desugar: Slurp\n"
+	outVerb $ ppr $ "  * Desugar: Slurp\n"
 
 	(  sTagged
 	 , sConstrs
@@ -282,8 +288,7 @@ compileFile_parse
 	when (elem Arg.StopConstraint ?args)
 		compileExit
 
-	when ?verbose
-	 $ do	putStr $ "  * Type: Solve\n"
+	outVerb $ ppr "  * Type: Solve\n"
 
 	-- Solve type constraints
 	(  typeTable
@@ -304,8 +309,7 @@ compileFile_parse
 	when (elem Arg.StopType ?args)
 		compileExit
 
-	when ?verbose
-	 $ do	putStr $ "  * Desugar: ToCore\n"
+	outVerb $ ppr $ "  * Desugar: ToCore\n"
 		
 	-- Convert source tree to core tree
 	(  cSource
@@ -337,8 +341,7 @@ compileFile_parse
 	------------------------------------------------------------------------	
 
 	-- Convert to normal form
-	when ?verbose
-	 $ do	putStr $ "  * Core: Normalise Do Exprs\n"
+	outVerb $ ppr $ "  * Core: Normalise Do Exprs\n"
 
 	cNormalise	<- SC.coreNormalDo "core-normaldo" "CN" cSource
 				

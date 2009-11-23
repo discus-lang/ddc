@@ -16,6 +16,7 @@ import qualified Shared.VarUtil	as Var
 import qualified Type.Exp	as T
 import qualified Type.Util	as T
 import qualified Type.Pretty	as T
+import qualified Type.Util.Bits	as T
 
 import qualified Core.Exp 	as C
 import qualified Core.Util	as C
@@ -110,18 +111,21 @@ toCoreT' table tt
 
 	T.TTop k		-> C.TTop (toCoreK k)
 
-	T.TApp t1 t2		-> C.TApp (down t1) (down t2)
 	T.TCon tyCon		-> C.TCon (toCoreTyCon tyCon)
 
 	-- data
-	T.TData k v ts		
+	T.TApp t1 t2
+	 | Just (v, k, ts)	<- T.takeTData tt
 	 -> let tyCon	= T.TyConData 
 		 		{ T.tyConName		= v
 				, T.tyConDataKind	= k }
-	   in  down $ T.makeTApp (T.TCon tyCon : ts)
+	    in  T.makeTApp (T.TCon tyCon : map down ts)
 
-
-	T.TFun t1 t2 eff clo	-> T.makeTFun (down t1) (down t2) (down eff) (down clo)
+	 | Just (t11, t12, eff, clo) <- T.takeTFun tt
+	 -> T.makeTFun (down t11) (down t12) (down eff) (down clo)
+	
+	 | otherwise
+	 -> C.TApp (down t1) (down t2)
 	
 	-- effect
 	T.TEffect v ts		-> C.TEffect v (map down ts)

@@ -291,7 +291,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 	let tsData	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vs
 	modify (\s -> s {
 		stateCtorType	= Map.insert cName 
-					(TData kData vData tsData)
+					(makeTData vData kData tsData)
 				$ stateCtorType s })
 
 	-- Record the fields for this constructor.
@@ -339,7 +339,7 @@ slurpDataField sp vData vCtor field
 	
 	let qs	=
 		[ CEq (TSV $ SVCtorField sp vData vCtor label) 
-			tX (TFun tInitFun tField_fresh tPure tEmpty) ]
+			tX (makeTFun tInitFun tField_fresh tPure tEmpty) ]
 
 	let field'	= 
 		DataField 

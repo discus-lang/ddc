@@ -21,7 +21,6 @@ import Data.Set			(Set)
 import Data.Array.IO
 
 
-
 -- | A Node in the type graph
 data Class 
 	
@@ -94,7 +93,6 @@ classInit cid kind
 	, classFettersMulti	= Set.empty }
 	
 		
-
 -- | The Type Graph.
 data Graph
 	= Graph { 
@@ -127,8 +125,3 @@ graphInit
 		, graphClassIdGen	= 0
 		, graphVarToClassId	= Map.empty 
 		, graphActive		= Set.empty }
-
-
-
-
-

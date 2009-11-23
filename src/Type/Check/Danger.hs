@@ -27,9 +27,10 @@ import Data.Map			(Map)
 
 -----
 stage	= "Type.Check.Danger"
--- debug	= True
--- trace s = when debug $ traceM s
-
+{-
+debug	= True
+trace s = when debug $ traceM s
+-}
 
 dangerousCidsT :: Type -> [ClassId]
 dangerousCidsT tt
@@ -46,6 +47,7 @@ dangerT
 dangerT rsMutable fsClosure tt
  = case tt of
  	TVar{}			-> Set.empty
+	TCon{}			-> Set.empty
 	TClass{}		-> Set.empty
 
 	TForall b k t		
@@ -72,8 +74,8 @@ dangerT rsMutable fsClosure tt
 	    in	t1Danger
 	    
 	    
-	-- functions
-	TFun t1 t2 eff clo	
+	TApp{}
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> let cloDanger	
 	 		| TBot kC <- clo
 			, kC	== kClosure
@@ -87,13 +89,11 @@ dangerT rsMutable fsClosure tt
 	    in	Set.unions
 			[ cloDanger ]
 
-	-- data constructors
-	TApp{}	
-	 -> case takeTData tt of
-	 	Just (v, k, ts)	-> dangerT_data rsMutable fsClosure (v, k, ts)
-		_		-> Set.empty
-
-	TData k v ts		-> dangerT_data rsMutable fsClosure (v, k, ts)
+   	 | Just (v, k, ts)		<- takeTData tt
+	 -> dangerT_data rsMutable fsClosure (v, k, ts)
+	 
+	 | otherwise
+	 -> Set.empty
 
 	-- closures
 	TFree v t
@@ -113,12 +113,9 @@ dangerT rsMutable fsClosure tt
 
 	-- effects
 	TSum kE ts
-	 | kE	== kEffect
-	 -> Set.empty
+	 | kE	== kEffect	-> Set.empty
 
-	TEffect{}
-	 -> Set.empty
-
+	TEffect{}		-> Set.empty
 
 	-- skip over errors
 	TError{}		-> Set.empty

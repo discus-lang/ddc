@@ -212,8 +212,8 @@ extractTypeC2 varT cid tFinal
 	-- Reduce context
 	classInst	<- gets stateClassInst
 
-	let tReduced	
-		= {-# SCC "extract/redude" #-}
+	tReduced	
+		<- {-# SCC "extract/redude" #-}
 		  reduceContextT classInst tFinal
 
 	trace	$ " -- reducing context\n"

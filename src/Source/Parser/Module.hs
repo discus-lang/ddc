@@ -17,6 +17,8 @@ import Source.Pretty
 import Source.Exp
 import qualified Source.Token	as K
 
+import Type.Util.Bits
+
 import Shared.Pretty
 import qualified Shared.Var	as Var
 
@@ -436,12 +438,12 @@ pTopProjectRest startPos con ts
  =	-- project CON TYPE .. where { SIG/BIND ; .. }
 	do	pTok	K.Where
 		binds	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
-		return	$ PProjDict startPos (TData KNil con ts) binds
+		return	$ PProjDict startPos (makeTData con KNil ts) binds
 
   <|>	-- project CON TYPE .. with { VAR ; .. }
 	do	pTok	K.With
 		binds	<- pCParen $ Parsec.sepEndBy1 pTopProject_pun pSemis
-		return	$ PProjDict startPos (TData KNil con ts) binds
+		return	$ PProjDict startPos (makeTData con KNil ts) binds
 
 pTopProject_pun :: Parser (Stmt SP)
 pTopProject_pun

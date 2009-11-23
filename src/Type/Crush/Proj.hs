@@ -32,15 +32,14 @@ import Data.Map			(Map)
 import Util
 
 -----
-stage	= "Type.Squid.CrushProj"
+stage	= "Type.Crush.Proj"
 debug	= False
 trace s	= when debug $ traceM s
 
------
--- |	Crush out field projections from a type equivalence class.
---	Returns: Whether we've managed to crush all the FFieldIs's out of this class.
+-- | Crush out field projections from an equivalence class.
+--   returns: Whether we've managed to crush all the FFieldIs's out of this class.
 --	
-crushProjClassT ::	ClassId	-> SquidM (Maybe [CTree])
+crushProjClassT :: ClassId -> SquidM (Maybe [CTree])
 crushProjClassT cidT
  = do	 
  	-- check for errors
@@ -62,56 +61,51 @@ crushProjClassT cidT
 	let FProj _ _ (TClass _ cidObj) _	
 			= fProj
 	
-	-- lookup the node for the object
-	Just cObj	<- lookupClass cidObj
+	-- find the class containing the tycon of the object type 
+	--	being projected.
+	mClsObj		<- classDownLeftSpine cidObj
 	
-	crushProjClass2 cidT src fProj cObj 
+	case mClsObj of
+	 Just cObj@(Class { classType = Nothing })
+	  -> return Nothing
+
+	 Just cObj@(Class { classType = Just tObj })
+	  -> crushProj_withObj cidT src fProj cObj tObj
 	
-
-crushProjClass2 cidT src fProj cObj
-	| Class { classType 	= Just tObj }<- cObj
-	= crushProjClass3 cidT src fProj cObj tObj
-
-	-- if this crush is interleaved with something that's added to this node
-	--	then we'll have to wait for it to be unified
-	| otherwise
-	= do	return Nothing
-
-	
-crushProjClass3 cidT src fProj cObj tObj
+crushProj_withObj cidT src fProj cObj tObj
  = do
+	trace	$ "    cObj type   = " % classType cObj	% "\n"
+
  	let FProj proj _ (TClass _ _) _	
 			= fProj
-
-	trace	$ "    cObj type   = " % classType cObj	% "\n"
 
 	-- load the map of projection dictionaries from the state
 	projectDicts	<- gets stateProject
 
 	-- if the object type has resolved to a type constructor we should
 	--	be able to get the projection dictionary for it.
-	let res	
+	let result
 		-- This isn't a type constructor,
 		--	hopefully something will be unified into it later
 		| TBot{}			<- tObj
 		= do	return Nothing
 
 		-- the object is a constructor, but there's no projection dictionary for it.
-		| tCon@(TData _ vCon _)	<- tObj
+		| Just (vCon, _, _)	<- takeTData tObj
 		, Nothing		<- Map.lookup vCon projectDicts
 		= do	addErrors
 			  [ErrorNoProjections
 				{ eProj		= proj
-				, eConstructor	= tCon }]
+				, eConstructor	= tObj }]
 			return Nothing
 	
 		-- yay, we've got a projection dictionary
-		| TData _ vCon _	<- tObj
+		| Just (vCon, _, _)	<- takeTData tObj
 		, Just vsDict		<- Map.lookup vCon projectDicts
-		= crushProj2 cidT src fProj cObj tObj (snd vsDict)
+		= crushProj_withDict cidT src fProj cObj tObj (snd vsDict)
 
 		-- functions don't have projections (not yet)
-		| TFun{}		<- tObj
+		| Just _		<- takeTFun tObj
 		= do	addErrors
 			 [ErrorNoProjections
 			 	{ eProj		= proj
@@ -122,16 +116,16 @@ crushProjClass3 cidT src fProj cObj tObj
 		= panic stage
 		$ "crushProjClassT: no match for " % tObj % "\n"
 		
-	res
+	result
 
 
-crushProj2 
+crushProj_withDict
 	:: ClassId -> TypeSource -> Fetter
 	-> Class   -> Type
 	-> Map Var Var 
 	-> SquidM (Maybe [CTree])
 
-crushProj2 
+crushProj_withDict
 	cid src
 	fProj@(FProj proj vInst tObj tBind)
 	cObj tObjCon vsDict
@@ -150,7 +144,7 @@ crushProj2
 
 	trace	$ "    mImpl       = " % mImpl		% "\n"
 
-	let res
+	let result
 		-- There might not be an entry in the projection dictionary for this field.
 		| Nothing	<- mImpl
 		= do	addErrors
@@ -182,7 +176,27 @@ crushProj2
 			-- We can ignore this class from now on.
 			delClass cid
 			
-			return $ Just qs
-						
-	res
+			return $ Just qs					
+	result
+
+
+-- | Walk down the left spine of this type to find the type in the bottom 
+--	left node (if there is one)
+--
+--	For example, if the graph holds a type like:
+--	   TApp (TApp (TCon tc) t1) t2
+--	
+--	Then starting from the cid of the outermost TApp, we'll walk down 
+--	the left spine until we find (TCon tc), and return that.
+--
+--	If the node at the bottom of the spine hasn't been unified, then
+--	It'll be a Nothing, so return that instead.
+--
+classDownLeftSpine :: ClassId -> SquidM (Maybe Class)
+classDownLeftSpine cid
+ = do	Just cls	<- lookupClass cid
+	case classType cls of
+	 Just (TApp (TClass _ cid1) _)	
+		-> classDownLeftSpine cid1
+	 mType	-> return $ Just cls
 

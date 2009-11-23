@@ -32,7 +32,7 @@ import Data.Set			(Set)
 import Util
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 
 -----
@@ -54,6 +54,7 @@ crushShape cidShape
 		, classSource	= srcShape }	
 			<- lookupClass cidShape
 
+	-- All the cids constrained by the Shape constraint.
 	let mergeCids	= map (\(TClass k cid) -> cid) shapeTs
 
 	trace	$ "*   Crush.crushShape " 	% cidShape 	% "\n"
@@ -62,19 +63,21 @@ crushShape cidShape
 
  	-- Make sure that all the classes to be merged are unified.
 	--	We're expecting a maximum of one constructor per class queue.
-	--
  	mapM crushUnifyClass mergeCids
  
 	-- Lookup all the nodes.
  	csMerge		<- liftM (map (\(Just c) -> c)) 
  			$  mapM lookupClass mergeCids
 
-	-- See if any of the nodes already contain data constructors.
+	-- See if any of the nodes contain information that needs
+	--	to be propagated to the others.
 	let mData	= map (\c -> case classType c of
-				Just t@(TData{})	-> Just t
-				Just t@(TFun{})		-> Just t
-				Just _			-> Nothing)
+					Just t@TApp{}	-> Just t
+					Just t@TCon{}	-> Just t
+					_		-> Nothing)
 			$ csMerge
+	
+	trace	$ "    classTypes   = " % map classType  csMerge % "\n"
 	
 	-- If we have to propagate the constraint we'll use the first constructor as a template.
 	let mTemplate	= takeFirstJust mData
@@ -129,10 +132,13 @@ crushShape2 cidShape fShape srcShape tTemplate csMerge
 	let result
 		| Just tsPushed		<- sequence mtsPushed
 		= do	
-			let takeRec tt 	= case tt of
-					 	TData _ v ts		-> ts
-						TFun t1 t2 eff clo	-> [t1, t2]
-	
+			let takeRec tt 
+				| TApp t1 t2		<- tt
+				= [t1, t2]
+				
+				| otherwise
+				= []
+					
 			let tssMerged	= map takeRec tsPushed
 	
 			let tssMergeRec	= transpose tssMerged

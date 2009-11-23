@@ -192,7 +192,7 @@ pType_body
 					return $ typ)
 
 		case mRest of
-			Just (eff, clo, t2)	-> return $ TFun t1 t2 eff clo
+			Just (eff, clo, t2)	-> return $ makeTFun t1 t2 eff clo
 			_			-> return $ t1
 
 
@@ -242,7 +242,7 @@ pType_body2
  =	-- CON TYPE..
 	do	con	<- pOfSpace NameType $ pQualified pCon
  		args	<- Parsec.many pType_body1
-		return	$ TData KNil con args
+		return	$ makeTData con KNil args
 
  <|>	do	t1	<- pType_body1
 		Parsec.option t1
@@ -256,12 +256,13 @@ pType_body1 :: Parser Type
 pType_body1
  = 	-- ()
  	do	pTok K.Unit
-		return	$ TData kValue (Var.primTUnit) []
+		return	$ makeTData (Var.primTUnit) kValue []
 
  <|>	-- [ TYPE , .. ]
  	do	ts	<- pSParen $ Parsec.sepBy1 pType_body (pTok K.Comma)
-		return	$ TData (KFun (KFun kRegion kValue) kValue)
+		return	$ makeTData 
 				Var.primTList
+				(KFun (KFun kRegion kValue) kValue)
 				ts
 
  <|>	-- *Bot
@@ -293,7 +294,7 @@ pType_body1
 		
  <|>	-- CON
  	do	con	<- pOfSpace NameType $ pQualified pCon
-		return	$ TData KNil con []
+		return	$ makeTData con KNil []
 
  <|>	pRParen pTypeBodyInRParen
 
@@ -316,15 +317,17 @@ pTypeBodyInRParen
 		pTok K.HasType
 		kind	<- pKind
 
-		return	$ TData kind con [])
+		return	$ makeTData con kind [])
 
  <|>	-- ( TYPE, TYPE .. )
 	-- ( TYPE )
 	do	ts	<- Parsec.sepBy1 pType_body (pTok K.Comma)
                 if length ts == 1
                  then return	$ head ts
-                 else return	$ TData (KFun (KFun kRegion kValue) kValue)
-					(Var.primTTuple (length ts)) ts
+                 else return	$ makeTData 
+					(Var.primTTuple (length ts))
+					(KFun (KFun kRegion kValue) kValue)
+					ts
 
 
 -- Effect ------------------------------------------------------------------------------------------
@@ -426,7 +429,7 @@ pTypeOp
 		Parsec.option t1
                 	(do	pTok K.RightArrow
 				t2	<- pTypeOp
-				return	$ TFun t1 t2 tPure tEmpty)
+				return	$ makeTFun t1 t2 tPure tEmpty)
 
  <?>    "pTypeOp"
 
@@ -435,5 +438,5 @@ pTypeOp1
  =	-- CON
 	do	con	<- pOfSpace NameType $ pQualified pCon
 		ts	<- Parsec.many pTypeOp1
-		return	$ TData KNil con ts
+		return	$ makeTData con KNil ts
 

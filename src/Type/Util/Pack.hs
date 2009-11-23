@@ -194,19 +194,8 @@ packT1 ld ls tt
 	TApp t1 t2
 	 -> do	t1'	<- packT1 ld ls t1
 	 	t2'	<- packT1 ld ls t2
-		
-		case TApp t1' t2' of
-			TApp (TApp (TApp (TApp (TCon TyConFun{}) t1) t2) eff) clo
-	 		 -> return	$ TFun t1 t2 eff clo
-	    
-			TApp (TCon (TyConData { tyConName, tyConDataKind })) t2
-			 -> return	$ TData tyConDataKind tyConName [t2]
-	
-			TApp (TData k v ts) t2
-			 -> return	$ TData k v (ts ++ [t2])
-			
-			tt'	-> return tt'
-			
+		return	$ TApp t1' t2'
+					
 	TCon{} -> return tt
 	    
 	TVar k v2
@@ -229,18 +218,6 @@ packT1 ld ls tt
 	TTop k	-> return tt
 	TBot k 	-> return tt
 		 
-	-- data
-	TData k v ts
-	 -> do	ts'	<- mapM (packT1 ld ls) ts
-	    	return	$ TData k v ts'
-
- 	TFun t1 t2 eff clo
-	 -> do	t1'	<- packT1 ld ls t1
-	 	t2'	<- packT1 ld ls t2
-		eff'	<- packT1 ld ls eff
-		clo'	<- packT1 ld ls clo
-		return	$ TFun t1' t2' eff' clo'
-
 	-- effect
 	TEffect vE ts
 	 -> do	ts'	<- mapM (packT1 ld ls) ts
@@ -248,7 +225,8 @@ packT1 ld ls tt
 		
 		let result
 			| vE == primReadH
-			, [TData k vD (TVar kR r : _)]	<- ts'
+			, [t']				<- ts
+			, Just (vD, k, (TVar kR r : _))	<- takeTData t'
 			, kR	== kRegion
 			= TEffect primRead [TVar kRegion r]
 			
@@ -305,8 +283,8 @@ packT1 ld ls tt
 		--	Only Type.Scheme follows this codepath - but we should handle this a different way
 		--	perhaps a flag to pack.
 		Just t'
-			| k == kValue		-> return t' -- packT1 ld ls t'.. detect loops
-			| otherwise		-> return tt
+			| resultKind k == kValue	-> return t' -- packT1 ld ls t'.. detect loops
+			| otherwise			-> return tt
 
 		Nothing				-> return tt
 

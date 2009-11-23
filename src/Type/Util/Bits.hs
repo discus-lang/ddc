@@ -120,7 +120,7 @@ isUnboxedT t
 --
 makeTFunEC ::	Effect -> Closure -> [Type]	-> Type
 makeTFunEC	eff clo (x:[])			= x
-makeTFunEC	eff clo (x:xs)			= TFun x (makeTFunEC eff clo xs) eff clo
+makeTFunEC	eff clo (x:xs)			= makeTFun x (makeTFunEC eff clo xs) eff clo
 makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for function"
 
 
@@ -214,9 +214,6 @@ makeTData v k ts
 takeTData :: Type -> Maybe (Var, Kind, [Type])
 takeTData tt
  = case tt of
-	TData k v ts
-		-> Just (v, k, ts)
-
  	TCon TyConData { tyConName = v, tyConDataKind = k }
 		-> Just (v, k, [])
 		
@@ -247,9 +244,6 @@ takeTFun tt
 	, TCon TyConFun{}	<- fun
 	= Just (t1, t2, eff, clo)
 	
-	| TFun t1 t2 eff clo 	<- tt
-	= Just (t1, t2, eff, clo)
-
 	| otherwise
 	= Nothing
 

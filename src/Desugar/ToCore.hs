@@ -103,8 +103,8 @@ toCoreP	:: D.Top Annot
 	-> CoreM [C.Top]
 
 toCoreP	p
--- = trace ("toCoreP")
- = case p of
+ = trace ("toCoreP " % p)
+ $ case p of
 	D.PNil
 	 ->	return []
 
@@ -273,8 +273,8 @@ toCoreS	D.SSig{}
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
--- = trace ("toCoreX: " % xx % "\n")
- = case xx of
+ = trace ("toCoreX: " % xx % "\n")
+ $ case xx of
 
 	D.XLambdaTEC 
 		_ v x (T.TVar kV vTV) eff clo

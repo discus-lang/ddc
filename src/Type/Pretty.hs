@@ -52,7 +52,7 @@ instance Pretty Type PMode where
 				| clo == tEmpty
 				= prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
 				
-				| eff == tEmpty
+				| eff == tPure
 				= prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
 				
 				| otherwise
@@ -79,20 +79,8 @@ instance Pretty Type PMode where
 
 	TVar k v	-> pprVarKind v k 
 
-	TTop k		-> k % "Top"
-	TBot k		-> k % "Bot"
-
-	-- data
-	TData k v []	-> pprVarKind v k
-	TData k v ts	-> pprVarKind v k <> " " %!% (map prettyTB ts)
-
-	TFun t1 t2 eff clo
-	 -> case (eff, clo) of
-	 	(TBot _ ,	TBot _)	-> prettyTBF t1 % " -> " % prettyTRight t2
-		(eff',		TBot _)	-> prettyTBF t1 % " -(" % eff' % ")> " % prettyTRight t2
-		(TBot _,	clo')	-> prettyTBF t1 % " -(" % clo' % ")> " % prettyTRight t2
-		(eff',		clo')	-> prettyTBF t1 % " -(" % prettyTB eff' % " " % prettyTB clo' % ")> " 
-								% prettyTRight t2
+	TTop k		-> prettyKB k % "Top"
+	TBot k		-> prettyKB k % "Bot"
 		
 	-- effect
 	TEffect    v []	-> ppr v
@@ -103,10 +91,7 @@ instance Pretty Type PMode where
 	TDanger v t	-> v % " $> " % t
 	
 	-- used in type inference
-	TClass k c
-	 -> case k of	
-	 	KFun{}	-> parens k % c
-		_	-> k % c
+	TClass k c	-> resultKind k % c
 
 	TFetter f	-> "@TFetter " % f
 	TError k t	-> "@TError" % k % " " % t
@@ -146,7 +131,6 @@ prettyTBF t
 
 prettyTB t
  = case t of
- 	TData k v []	-> ppr t
 	TVar k v 	-> ppr t
 	TSum{}		-> ppr t
 	TEffect v []	-> ppr t
@@ -185,6 +169,14 @@ kindOfSpace space
 	NameEffect	-> Just kEffect
 	NameClosure	-> Just kClosure
 	_		-> Nothing
+
+-- | Get the result of applying all the paramters to a kind.
+resultKind :: Kind -> Kind
+resultKind kk
+ = case kk of
+ 	KFun k1 k2	-> resultKind k2
+	_		-> kk
+
 
 -- | Prints a type with the fetters on their own lines
 prettyTypeSplit :: Type	-> PrettyM PMode
@@ -280,6 +272,7 @@ instance Pretty ClassId PMode where
   = case c of
   	ClassId i	-> ppr i
 
+
 -- Fetter ------------------------------------------------------------------------------------------
 instance Pretty Fetter PMode where
  ppr f
@@ -313,6 +306,15 @@ instance Pretty Kind PMode where
 	KFun k1 k2	-> k1 % " -> " % k2
   	KClass v ts	-> v % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
+
+
+-- | Pretty print a kind, wrapping funs in parens
+prettyKB :: Kind -> PrettyM PMode
+prettyKB kk
+ = case kk of
+	KFun{}		-> "(" % kk % ")"
+	KApp{}		-> "(" % kk % ")"
+	_		-> ppr kk
 
 	
 -- KiCon -------------------------------------------------------------------------------------------

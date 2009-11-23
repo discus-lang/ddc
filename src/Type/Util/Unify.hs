@@ -17,33 +17,28 @@ import Util
 --
 unifyT2 :: Type -> Type -> Maybe [(Type, Type)]
 unifyT2 t1 t2
-	-- data
-	| TData k1 v1 ts1		<- t1
-	, TData k2 v2 ts2		<- t2
-	, v1 == v2
-	, k1 == k2
-	= liftM concat 
-		$ sequence 
-		$ zipWith unifyT2 ts1 ts2
-
-	| TFun a1 b1 eff1 clo1		<- t1
-	, TFun a2 b2 eff2 clo2		<- t2
-	, Just subA			<- unifyT2 a1 a2
-	, Just subB			<- unifyT2 b1 b2
+	| TApp t11 t12		<- t1
+	, TApp t21 t22		<- t2
+	, Just subA		<- unifyT2 t11 t21
+	, Just subB		<- unifyT2 t12 t22
 	= Just (subA ++ subB)
 
-	-- vars
-	| TVar k1 v1	<- t1
-	, TVar k2 v2	<- t2
-	, k1 == k2
-	, v1 == v2	= Just []
-	
+	| TCon tc1		<- t1
+	, TCon tc2		<- t2
+	, tc1 == tc2
+	= Just []
 
-	| TVar _ v1	<- t1	
+	-- vars
+	| TVar k1 v1		<- t1
+	, TVar k2 v2		<- t2
+	, k1 == k2
+	, v1 == v2		= Just []
+	
+	| TVar _ v1		<- t1	
 	, k1 == k2	
 	= Just [(t1, t2)]
 	
-	| TVar _ v2	<- t2
+	| TVar _ v2		<- t2
 	, k1 == k2
 	= Just [(t1, t2)]
 

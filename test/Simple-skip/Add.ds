@@ -1,2 +1,22 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
+data	Int32	%r	= Int32
+
+effect	!ReadT 	:: * -> !
+class	Shape3	:: * -> * -> * -> +
+
+foreign import "primInt32_add"
+ primInt32_add	:: Int32{read} -> Int32{read} -> Int32
+
+class Num a where 
+	(+)	:: forall b c
+		.  a -> b -(!e1 $c1)> c
+		:- !e1 = !{ !ReadT a; !ReadT b }
+		,  $c1 = x : a
+		,  Shape3 a b c
+
+instance Num Int32 where
+	(+)	= primInt32_add
+
+add :: Int -> Int -> Int
 add x y	= x + y;

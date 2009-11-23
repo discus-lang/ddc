@@ -45,22 +45,6 @@ stripFWheresT	tt
  	TVar{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	TTop{}	-> (tt, [])
-
-	-- data
-	TFun t1 t2 eff clo
-	 -> let	(t1', f1)	= stripFWheresT t1 
-		(t2', f2)	= stripFWheresT t2
-		(eff', fsEff)	= stripFWheresT eff
-		(clo', fsClo)	= stripFWheresT clo
-	    in
-	    	( TFun t1' t2' eff' clo'
-		, f1 ++ f2 ++ fsEff ++ fsClo)
-		
-	TData k v ts
-	 -> let	(ts', fss)	= unzip $ map stripFWheresT ts
-	    in
-	    	( TData k v ts'
-		, concat fss)
 		
 	-- effect
 	TEffect v ts
@@ -116,6 +100,7 @@ stripMonoFWheresT tt
 	    in	(TSum k ts', concat fssMono)
 	    
 	TVar{}	-> (tt, [])
+	TCon{}	-> (tt, [])
 	TTop{}	-> (tt, [])
 	TBot{}	-> (tt, [])
 	
@@ -125,19 +110,6 @@ stripMonoFWheresT tt
 	    in	( TApp t1' t2'
 		, fsMono1 ++ fsMono2)
 	
-	TData k v ts
-	 -> let (ts', fssMono)		= unzip $ map stripMonoFWheresT ts
-	    in	(TData k v ts', concat fssMono)
-	
-	TFun t1 t2 eff clo
-	 -> let	(t1',  fsMono1)		= stripMonoFWheresT t1
-	 	(t2',  fsMono2)		= stripMonoFWheresT t2
-		(eff', fsMonoE)		= stripMonoFWheresT eff
-		(clo', fsMonoC)		= stripMonoFWheresT clo
-
-	    in	( TFun t1' t2' eff' clo'
-	    	, fsMono1 ++ fsMono2 ++ fsMonoE ++ fsMonoC)
-
 	TEffect v ts 
 	 -> let	(ts', fssMono)		= unzip $ map stripMonoFWheresT ts
 	    in	(TEffect v ts', concat fssMono)

@@ -66,7 +66,7 @@ finaliseT' bound def tt
 	 
 	 	| def
 		, elem k [kValue]
-		, not $ Map.member v bound	-> TData k primTUnit []
+		, not $ Map.member v bound	-> makeTData primTUnit k []
 	 
 		| otherwise			-> tt
 		
@@ -74,8 +74,6 @@ finaliseT' bound def tt
 	TBot{}			-> tt
 	
 	TApp t1 t2		-> TApp (down t1) (down t2)
-	TData k v ts		-> TData k v (map down ts)
-	TFun t1 t2 eff clo 	-> TFun (down t1) (down t2) (down eff) (down clo)
 	
 	TEffect v ts		-> TEffect v (map down ts)
 	TFree   v t		-> TFree v (down t)

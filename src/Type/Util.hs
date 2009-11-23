@@ -41,47 +41,75 @@ import Type.Exp
 import qualified Shared.Var	as Var
 import Shared.VarPrim
 import Shared.Error
+import Shared.Pretty
 import Util
+import qualified Debug.Trace
 
 stage	= "Type.Util"
+debug	= False
+trace ss xx
+ = if debug 
+ 	then Debug.Trace.trace (pprStrPlain ss) xx
+	else xx
 
 -- | Make an operational type.
 makeOpTypeT :: Type -> Maybe Type
 makeOpTypeT tt
- = case tt of
+ = trace ("makeOpTypeT " % show tt)
+ $ case tt of
  	TForall v k t		-> makeOpTypeT t
 	TFetters t fs		-> makeOpTypeT t
-	TFun t1 t2 eff clo	
-	 -> case (makeOpTypeT2 t1, makeOpTypeT t2) of
-	 	(Just t1', Just t2')	-> Just $ TFun t1' t2' (TBot kEffect) (TBot kClosure)
-		_			-> Nothing
-		
-	TData{}			-> makeOpTypeData tt
-	TVar{}			-> Just $ TData kValue primTObj []
+
+	TCon{}
+	 | Just (v, k, ts)		<- takeTData tt
+	 -> makeOpTypeData tt
+
+	TApp{}
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
+	 , Just t1'			<- makeOpTypeT2 t1
+	 , Just t2'			<- makeOpTypeT  t2
+	 -> Just $ makeTFun t1' t2' (TBot kEffect) (TBot kClosure)
+	 
+	 | Just (v, k, ts)		<- takeTData tt
+	 -> makeOpTypeData tt
+
+	TVar{}			-> Just $ makeTData primTObj kValue []
 	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
-					("makeOpTypeT: can't make operational type from " % show tt)
+					("makeOpTypeT: can't make operational type from " %  show tt)
 					Nothing
 makeOpTypeT2 tt
- = case tt of
+ = trace ("makeOpTypeT2 " % show tt)
+ $ case tt of
  	TForall v k t		-> makeOpTypeT2 t
 	TFetters t fs		-> makeOpTypeT2 t
-	TVar{}			-> Just $ TData kValue primTObj   []
-	TFun{}			-> Just $ TData kValue primTThunk []
-	TData{}			-> makeOpTypeData tt
+	TVar{}			-> Just $ makeTData primTObj kValue []
+
+	TCon{}
+	 | Just (v, k, ts)		<- takeTData tt
+	 -> makeOpTypeData tt
+
+	TApp{}
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
+	 -> Just $ makeTData primTThunk kValue []
+	
+	 | Just (v, k, ts)		<- takeTData tt
+	 -> makeOpTypeData tt
+
 	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
-					("makeOpType: can't make operational type from " % show tt)
+					("makeOpTypeT2: can't make operational type from " % show tt)
 					Nothing
 
-makeOpTypeData (TData k v ts)
-	| last (Var.name v) == '#'
+makeOpTypeData tt
+	| Just (v, k, ts)	<- takeTData tt
+	, last (Var.name v) == '#'
 	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == kValue])) of
-		Just ts'	-> Just $ TData kValue v ts'
+		Just ts'	-> Just $ makeTData v kValue ts'
 		_		-> Nothing
 	
-	| otherwise
-	= Just $ TData kValue primTObj []
+	| Just (v, k, ts)	<- takeTData tt
+	= Just $ makeTData primTObj kValue []
 
 makeOpTypeData _	= Nothing
 
@@ -157,11 +185,6 @@ slurpVarsRD' tt
 	| TEffect{}	<- tt	= []
 	| TFree{}	<- tt	= []
 	| TDanger{}	<- tt	= []
-
-	| TData k v ts	<- tt	
-	= catMap slurpVarsRD' ts
-
-	| TFun{}	<- tt	= []
 
 	| TClass k _	<- tt
 	= if k == kRegion || k == kValue

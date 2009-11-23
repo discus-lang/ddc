@@ -5,6 +5,7 @@ where
 import Type.Location
 import Type.Exp
 import Type.Pretty
+import Type.Util.Bits
 
 import Shared.Pretty
 import Shared.Literal
@@ -255,8 +256,9 @@ instance Pretty Error PMode where
 
  ppr err@(ErrorFieldNotPresent 
  		{ eProj		= p
-		, eConstructor	= TData k v _
+		, eConstructor	= tt@TApp{}
 		, eFields	= fields })
+	| Just (v, k, _)	<- takeTData tt
 	= (getProjSP p)							% "\n"
 	% "    Type '" % v 	% "' has no projection named '" % p	% "'\n"
 --	% "      possible fields: " % punc " " fields			% "\n"

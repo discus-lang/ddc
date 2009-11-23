@@ -31,6 +31,13 @@ import qualified Debug.Trace
 -----
 stage	= "Type.Feed"
 
+debug	= False
+trace ss xx
+ = if debug 
+ 	then Debug.Trace.trace (pprStrPlain ss) xx
+	else xx
+
+
 -- feedConstraint ----------------------------------------------------------------------------------
 -- | Add a new constraint to the type graph.
 --
@@ -38,7 +45,8 @@ feedConstraint
 	:: CTree -> SquidM ()
 	
 feedConstraint cc
- = case cc of
+ = trace ("feedConstraint " % cc)
+ $ case cc of
 	-- Equality constraints. The LHS must be a variable.
  	CEq src (TVar k v1) t2
 	 -> do
@@ -106,15 +114,10 @@ feedType
 	-> Type -> SquidM (Maybe Type)
 
 feedType mParent t
- = do	t'	<- feedType' mParent t
-{-	Debug.Trace.trace
-		(pprStr [PrettyTypeKinds]
-			$ "feedType\n"
-			% "    t  = " % t % "\n"
-			% "    t' = " % t' % "\n") 
-		$ -}
+ = trace ("feedType " % t)
+ $ do	t'	<- feedType' mParent t
 	return t'
-
+	
 feedType'	mParent t
  = case t of
 	TFetters t fs
@@ -151,8 +154,8 @@ feedType'	mParent t
 	 -> do	
 		let Just k	= kindOfType t
 	 	cidT		<- allocClass (Just k)
-	 	Just t1'	<- feedType1 (Just cidT) t1
-		Just t2'	<- feedType1 (Just cidT) t2
+	 	Just t1'	<- feedType (Just cidT) t1
+		Just t2'	<- feedType (Just cidT) t2
 		addNode cidT	$ TApp t1' t2'
 		returnJ		$ TClass k cidT
 
@@ -174,28 +177,6 @@ feedType'	mParent t
 	 -> do	cid		<- allocClass (Just kind)
 		addNode cid	$ TTop kind
 		returnJ		$ TClass kind cid
-
-
-	-- data
-	TFun t1 t2 eff clo
-	 -> do	cidT		<- allocClass (Just kValue)
-		Just t1'	<- feedType (Just cidT) t1
-		Just t2'	<- feedType (Just cidT) t2
-		Just eff'	<- feedType (Just cidT) eff
-		Just clo'	<- feedType (Just cidT) clo
-		addNode cidT	$ TFun t1' t2' eff' clo'
-		returnJ		$ TClass kValue cidT
-
-		
-	TData kData v ts
-	 -> do	let Just k	= kindOfType t
-	 	cidT		<- allocClass (Just k)
-		Just ts'	<- liftM sequence
-				$  mapM (feedType (Just cidT)) ts
-
-		addNode cidT 	$ TData kData v ts'
-
-		returnJ		$ TClass k cidT
 
 	-- effect
 	TEffect v ts

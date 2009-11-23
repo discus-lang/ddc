@@ -63,11 +63,24 @@ slurpContraClassVarsT tt
  = case tt of
 	TForall b k t		-> slurpContraClassVarsT t
 	TFetters t fs		-> slurpContraClassVarsT t
- 	TFun t1 t2 eff clo	-> collectTClassVars t1 ++ slurpContraClassVarsT t2
-	TData{}			-> []
-	TApp{}			-> []
+
+	TApp t1 t2
+	  | Just (t11, t12, eff, clo)	<- takeTFun tt
+	  -> collectTClassVars t11 ++ slurpContraClassVarsT t12
+	
+	  | Just _			<- takeTData tt
+	  -> []
+	
+	  | otherwise
+	  -> slurpContraClassVarsT t1 ++ slurpContraClassVarsT t2
+	
 	TVar{}			-> []
+	TCon{}			-> []
 	TClass{}		-> []
 	TError{}		-> []	
 	_			-> panic stage
 				$ "slurpContraClassVarsT: no match for " % tt
+
+
+
+

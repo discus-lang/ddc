@@ -73,18 +73,6 @@ linkType mParent bound tt
 	TTop k	-> return tt
 	TBot k	-> return tt
 
-	-- data
-	TFun t1 t2 eff clo
-	 -> do	t1'	<- linkType mParent bound t1
-	 	t2'	<- linkType mParent bound t2
-		eff'	<- linkType mParent bound eff
-		clo'	<- linkType mParent bound clo
-		return	$ TFun t1' t2' eff' clo'
-	
-	TData k v ts
-	 -> do	ts'	<- mapM (linkType mParent bound) ts
-	 	return	$ TData k v ts'
-
 	-- effect
 	TEffect v ts
 	 -> do	ts'	<- mapM (linkType mParent bound) ts

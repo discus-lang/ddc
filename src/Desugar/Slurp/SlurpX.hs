@@ -69,7 +69,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 
 	-- the constraints
 	let qs	= 
-		[ CEq (TSV $ SVLambda sp) tX	$ TFun tBound tBody eBody cX
+		[ CEq (TSV $ SVLambda sp) tX	$ makeTFun tBound tBody eBody cX
 		, CEq (TSC $ SCLambda sp) cX	$ makeTSum kClosure tsClo ]
  	
 	-- If the sub expression is also a lambda
@@ -121,7 +121,7 @@ slurpX	exp@(XApp sp fun arg)
 			<- slurpX arg
 	
 	let qs	= 
-		[ CEq (TSV $ SVApp sp) tFun	$ TFun tArg tX eApp tEmpty 
+		[ CEq (TSV $ SVApp sp) tFun	$ makeTFun tArg tX eApp tEmpty 
 		, CEq (TSE $ SEApp sp) eX	$ makeTSum kEffect  [eFun, eArg, eApp] ]
 	
 	return	( tX
@@ -205,11 +205,11 @@ slurpX	exp@(XLit sp litFmt)
 	-- if the literal type needs a region var then make a fresh one
 	let tLitM	
 		| tcKind	== kValue
-		= return $ TData tcKind tcVar []
+		= return $ makeTData tcVar tcKind []
 
 		| tcKind	== KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
-		 	return	$ TData tcKind tcVar [TVar kRegion vR]
+		 	return	$ makeTData tcVar tcKind [TVar kRegion vR]
 	tLit	<- tLitM
 	
 	let qs = [ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
@@ -300,7 +300,7 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 
 	-- The case object must be a Bool
 	tR		<- newTVarR
-	let tBool	= TData (KFun kRegion kValue) (primTBool Boxed) [tR]
+	let tBool	= makeTData (primTBool Boxed) (KFun kRegion kValue) [tR]
 
 	-- Slurp the THEN expression.
 	(tThen, eThen, cThen, xThen', qsThen)	
@@ -357,7 +357,7 @@ slurpX 	exp@(XProj sp xBody proj)
 			
 	let qs	 = 
 		[ CProject (TSV $ SVProj sp projT)	
-			projT vInst tBody (TFun tBody tX eProj cProj)
+			projT vInst tBody (makeTFun tBody tX eProj cProj)
 
 		, CEq	(TSE $ SEProj sp)	
 			eX $ makeTSum kEffect  [eBody, eProj] ]

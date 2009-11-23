@@ -144,14 +144,16 @@ slurpW	(WConLabel sp vCon lvs)
 	-- Lookup what data type this constructor belongs to.
 	ctorType	<- gets stateCtorType
 
-	let tData@(TData _ _ tsData)
-		= case Map.lookup vCon ctorType of
+	let tData	
+	 	= case Map.lookup vCon ctorType of
 			Nothing -> panic stage 
 				$ "slurpW: can't find type data type definition for data constructor '" 
 				% vCon % "'"
 
 			Just x	-> x
-
+	
+	let Just (_, _, tsData)
+		= takeTData tData
 
 	-- Instantiate each of the poly-vars in the data type.
 	let vsData	= map (\(TVar k v) -> v) tsData
@@ -191,11 +193,11 @@ slurpW	(WLit sp litFmt)
 	-- if the literal type needs a region var then make a fresh one
 	let tLitM
 		| tcKind == kValue
-		= return $ TData tcKind tcVar []
+		= return $ makeTData tcVar tcKind []
 
 		| tcKind == KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
-			return	$ TData tcKind tcVar [TVar kRegion vR]
+			return	$ makeTData tcVar tcKind [TVar kRegion vR]
 	tLit <- tLitM
 
 	wantTypeV tV

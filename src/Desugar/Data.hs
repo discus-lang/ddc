@@ -81,7 +81,7 @@ elaborateData newVarN getKind
 		-- boxed ones do
 		| otherwise
 		= do	(ctors', vksNew)	
-					<- liftM unzip $ mapM (elaborateCtor newVarNR getKind) ctors
+					<- liftM unzip $ mapM (elaborateCtor newVarNR) ctors
 			let vsData'	= nub $ rPrimary : vsData ++ (map fst $ concat vksNew)
 
 			return $ PData sp vData vsData' ctors'
@@ -116,23 +116,22 @@ elaborateTypeSynonym newVarN getKind
 elaborateCtor 
 	:: Monad m
 	=> (NameSpace -> m Var)		-- a fn to generate a new region var
-	-> (Var -> m Kind)		-- a fn to get the kind of a data type
 	-> (CtorDef SourcePos)
 	-> m 	( CtorDef SourcePos
 		, [(Var, Kind)] )
 
-elaborateCtor newVar getKind (CtorDef sp var fields)
+elaborateCtor newVar (CtorDef sp var fields)
  = do	(fields', vksNew)
  		<- liftM unzip 
-		$ mapM (elaborateField newVar getKind) fields
+		$ mapM (elaborateField newVar) fields
 
  	return	( CtorDef sp var fields'
 		, concat vksNew)
 
-elaborateField newVar getKind field@(DataField { dType = t })
+elaborateField newVar field@(DataField { dType = t })
  = do	
  	(t_elab, vks)	
- 		<- elaborateRsT newVar getKind t
+ 		<- elaborateRsT newVar t
 
  	return	( field { dType = t_elab }
 		, vks )

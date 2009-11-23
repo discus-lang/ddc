@@ -90,22 +90,18 @@ maskE'	tsVis eff
 visibleRsT :: Type -> Set Type
 visibleRsT tt
  = case tt of
-	TForall b k t
-	 -> visibleRsT t
-	 
-	TFetters t fs
-	 -> visibleRsT t
+	TForall b k t		-> visibleRsT t
+	TFetters t fs		-> visibleRsT t
 
-	TSum k ts
-	 -> Set.unions $ map visibleRsT ts
+	TSum k ts		-> Set.unions $ map visibleRsT ts
 	 
 	TVar kR _		
 	 | kR	== kRegion	-> Set.singleton tt
 
 	TVar{}			-> Set.empty
-
-	TTop{}	-> Set.empty
-	TBot{}	-> Set.empty
+	TCon{}			-> Set.empty
+	TTop{}			-> Set.empty
+	TBot{}			-> Set.empty
 
 	-- data
 	TApp t1 t2
@@ -113,16 +109,6 @@ visibleRsT tt
 		[ visibleRsT t1
 		, visibleRsT t2 ]
 
-	TData k v ts
-	 -> Set.unions $ map visibleRsT ts
-
- 	TFun t1 t2 eff clo	
-	 -> Set.unions
-	 	[ visibleRsT t1
-		, visibleRsT t2
-		, visibleRsT clo ]
-
-	-- 
 	TEffect{}		-> Set.empty	
 
 	-- closure
@@ -134,7 +120,6 @@ visibleRsT tt
 
 
 	TClass{}		-> Set.empty
-	
 	TError{}		-> Set.empty	
 
 	_

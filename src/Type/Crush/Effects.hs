@@ -44,7 +44,7 @@ stage	= "Type.Crush.Effect"
 
 -- Try and crush the effect in this node.
 crushEffectC 
-	:: ClassId 
+	:: ClassId	-- classid for the node containg the effect we want to crush.
 	-> SquidM Bool	-- whether we crushed something from this class
 
 crushEffectC cid
@@ -54,13 +54,16 @@ crushEffectC cid
 
 	crushEffectC2 cid c
 
+-- this class points somewhere else.
 crushEffectC2 cid (ClassForward cid')
 	= crushEffectC cid'
 
 crushEffectC2 cid (Class { classType = Just eff })
  = do
+	-- flatten the sum into its atomic effects.
 	let effs		=  flattenTSum eff
 
+	-- keep crushing until no more effects come out.
 	(effs_crushed, newNodes)
 		<- crushMilkEffects cid effs [] []
 		
@@ -68,8 +71,8 @@ crushEffectC2 cid (Class { classType = Just eff })
 	 then do	
 	 	trace	$ ppr "\n"
 		
-		-- if the class still contains effect constructors then it needs to remain
-		--	active so crushEffects gets called on the next grind
+		-- if the class still contains effect constructors then it needs
+		--	to remain active so crushEffects gets called on the next grind
 		when (isCrushable eff)
 		 $ activateClass cid
 
@@ -77,14 +80,13 @@ crushEffectC2 cid (Class { classType = Just eff })
 
 	 else do
 	 	let eff'	= makeTSum kEffect effs_crushed
-		trace	$ "    eff' = " % eff % "\n\n"
+		trace	$ "    eff'     = " % eff % "\n\n"
 			
 		modifyClass cid
 		 $ \c -> c 	{ classType  = Just eff' 
 		 		, classNodes = newNodes ++ (classNodes c) }
 		 
 		activateClass cid
-	
 		return True
 
 crushEffectC2 cid _
@@ -96,7 +98,8 @@ crushEffectC2 cid _
 crushMilkEffects
 	:: ClassId
 	-> [Effect] 
-	-> [Effect] -> [(Effect, TypeSource)]
+	-> [Effect] 
+	-> [(Effect, TypeSource)]
 	-> SquidM ([Effect], [(Effect, TypeSource)])
 	
 crushMilkEffects cid [] effAcc nodeAcc
@@ -125,23 +128,27 @@ crushEffectC_parts cid tt@(TEffect ve [TClass k cidT])
  	Just (Class { classType = mType })
 			<- lookupClass cidT
 	
-	trace	$ "    part   = " % tt 	% "\n"
-		% "    mType  = " % mType	% "\n"
+	trace	$ "    atomic eff    = " % tt 	% "\n"
+		% "    type acted on = " % mType	% "\n"
 
 	case mType of
 	 Just tNode	
 	  -> do	let mParts	= crushEffectT_node cid tt tNode
-	  	trace $ "    mParts = " % mParts % "\n\n"
+	  	trace $ "    crushed parts = " % mParts % "\n\n"
 		return	mParts
 
 	 _ -> 	return 	Nothing
 
-	
 crushEffectC_parts cid tt
 	= return Nothing
 
 
-crushEffectT_node :: ClassId -> Type -> Type -> Maybe (Effect, TypeSource)
+crushEffectT_node 
+	:: ClassId 
+	-> Type 
+	-> Type 
+	-> Maybe (Effect, TypeSource)
+
 crushEffectT_node cid tt tNode
 
 	-- Read of outer constructor of object.
@@ -160,32 +167,49 @@ crushEffectT_node cid tt tNode
 		= Nothing
 	  in	result
 
-
 	-- Read of whole object. (deep read).
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EReadT
-	, Just _ 		<- takeTData tNode
-	= let
-		(rs, ds)	= slurpVarsRD tNode
-		esRegion	= map (\r -> TEffect primRead  [r]) rs
-		esType		= map (\d -> TEffect primReadT [d]) ds
-
-	  in 	Just 	( makeTSum kEffect $ (esRegion ++ esType)
-		  	, TSI $ SICrushedE cid tt)
-
-
+	= case tNode of
+		TCon{}
+		 -> Just ( tPure
+			 , TSI $ SICrushedE cid tt)
+	
+		TBot k
+		 | k == kRegion
+		 -> Just ( TEffect primRead [t1]
+			 , TSI $ SICrushedE cid tt)
+	
+		TApp t1 t2	
+		 -> Just ( makeTSum kEffect 
+				[ TEffect primReadT [t1]
+				, TEffect primReadT [t2]] 
+		    	 , TSI $ SICrushedE cid tt)
+		
+		_ -> Nothing
+				
 	-- Write of whole object. (deep write)
 	| TEffect ve [t1]	<- tt
 	, Var.bind ve == Var.EWriteT
-	, Just _		<- takeTData tNode
-	= let	
-		(rs, ds)	= slurpVarsRD tNode
-		esRegion	= map (\r -> TEffect primWrite  [r])   rs
-		esType	= map (\d -> TEffect primWriteT [d]) ds
-				
-	  in	Just	( makeTSum kEffect $ (esRegion ++ esType)
-	  		, TSI $ SICrushedE cid tt)
+	= case tNode of
+		TBot k
+		 | k == kRegion
+		 -> Just ( TEffect primWrite [t1]
+			 , TSI $ SICrushedE cid tt)
+		
+		TCon{}
+		 -> Just ( tPure
+			 , TSI $ SICrushedE cid tt)
+			
+			
+		TApp t1 t2
+		 -> Just ( makeTSum kEffect
+				[ TEffect primWriteT [t1]
+				, TEffect primWriteT [t2]]
+			 , TSI $ SICrushedE cid tt)
 
+		_ -> Nothing
+	
 	-- can't crush this one
 	| otherwise
 	= Nothing
@@ -195,20 +219,15 @@ crushEffectT_node cid tt tNode
 isCrushable :: Effect -> Bool
 isCrushable eff
  = case eff of
- 	TEffect v _
-	 | elem v [primReadH, primReadT, primWriteT]	-> True
-	 | otherwise					-> False
+ 	TEffect v _	-> elem v [primReadH, primReadT, primWriteT]
 	 
 	TSum kE ts
-	 | kE == kEffect
+	 | kE == kEffect 
 	 -> or $ map isCrushable ts
 	 
-	TClass{}
-	 -> False
-	
-	TVar{}	-> False
-	TBot{}	-> False
-
-	_ ->  panic stage $ "isCrushable: no match for " % eff % "\n"
+	TClass{}	-> False
+	TVar{}		-> False
+	TBot{}		-> False
+	_ 		->  panic stage $ "isCrushable: no match for " % eff % "\n"
 
 

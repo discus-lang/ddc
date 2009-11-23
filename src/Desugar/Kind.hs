@@ -12,6 +12,7 @@ import Desugar.Exp
 
 import Type.Util.Elaborate
 import Type.Util.Kind
+import Type.Util.Bits
 import Type.Exp
 import Source.Error
 import Shared.Pretty
@@ -153,11 +154,11 @@ tagKindsT tt
 			Nothing	-> return $ tt
 			Just k'	-> return $ TVar k' v
 		
-	| TData k v ts	<- tt
+	| Just (v, k, ts)	<- takeTData tt
 	= do	kindMap	<- gets stateKinds
 		case Map.lookup v kindMap of
 			Nothing	-> return tt
-			Just k'	-> return $ TData k' v ts
+			Just k'	-> return $ makeTData v k' ts
 		
 	| otherwise
 	= return tt
@@ -215,7 +216,7 @@ elabRegionsX xx
 	_ ->	return xx
 
 elabRegionsT t
- = do	(t_elab, _)	<- elaborateRsT newVarN getKind t
+ = do	(t_elab, _)	<- elaborateRsT newVarN t
    	return t_elab
 
 

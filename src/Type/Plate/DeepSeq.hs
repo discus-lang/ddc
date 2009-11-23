@@ -57,8 +57,8 @@ instance DeepSeq Type where
 	TFree		v t		-> deepSeq v  $ deepSeq t y
 	TDanger		t1 t2		-> deepSeq t1 $ deepSeq t2 y
 	TElaborate	k s		-> deepSeq k  $ deepSeq s y
-	TData		k v ts		-> deepSeq k  $ deepSeq v $ deepSeq ts y
-	TFun		t1 t2 eff clo	-> deepSeq t1 $ deepSeq t2 $ deepSeq eff $ deepSeq clo y
+--	TData		k v ts		-> deepSeq k  $ deepSeq v $ deepSeq ts y
+--	TFun		t1 t2 eff clo	-> deepSeq t1 $ deepSeq t2 $ deepSeq eff $ deepSeq clo y
 	TClass		k c		-> deepSeq k  $ deepSeq c y
 	TError		k ts		-> deepSeq k  $ deepSeq ts y
 	TFetter		f		-> deepSeq f y

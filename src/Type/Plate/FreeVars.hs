@@ -54,7 +54,7 @@ instance FreeVars Type where
 	TBot k	-> empty
 
 	-- data
-	TFun t1 t2 eff clo
+{-	TFun t1 t2 eff clo
 	 -> unions
 	 	[ freeVars t1
 		, freeVars t2
@@ -63,7 +63,7 @@ instance FreeVars Type where
 
 	TData k v ts	
 	 -> union (singleton v) (freeVars ts)
-	
+-}	
 	-- effect
 	TEffect v ts
 	 -> union (singleton v) (freeVars ts)

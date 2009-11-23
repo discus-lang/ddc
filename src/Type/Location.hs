@@ -220,36 +220,40 @@ takeSourcePos ts
 	_	-> Nothing
 
 
-dispSourcePos :: TypeSource -> PrettyM PMode
+dispSourcePos :: TypeSource -> Maybe (PrettyM PMode)
 dispSourcePos ts
  = case takeSourcePos ts of
- 	Just sp	-> ppr sp
+ 	Just sp	-> Just (ppr sp)
 
 	-- this shouldn't happen
-	Nothing	-> panic stage
-		$ "dispSourcePos: no source location in " % ts
+	Nothing	
+	 -> freakout stage
+		("dispSourcePos: no source location in " % ts)
+		Nothing
+		
 
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
 
-dispTypeSource :: Type -> TypeSource -> PrettyM PMode
+dispTypeSource :: Type -> TypeSource -> Maybe (PrettyM PMode)
 dispTypeSource tt ts
 	| TSV sv	<- ts
-	= dispSourceValue tt sv
+	= Just $ dispSourceValue tt sv
 
 	| TSE se	<- ts
-	= dispSourceEffect tt se
+	= Just $ dispSourceEffect tt se
 	
 	| TSU su	<- ts
-	= dispSourceUnify tt su
+	= Just $ dispSourceUnify tt su
 
 	| TSI (SICrushedFS c f ts') <- ts
 	= dispTypeSource tt ts'
 
 	-- hrm.. this shouldn't happen
 	| otherwise
-	= panic stage
-	$  "dispTypeSource: no match for " % ts % "\n"
+	= freakout stage
+		("dispTypeSource: no match for " % ts % "\n")
+		Nothing
 
 
 -- A fn make showing error messages easier
@@ -433,7 +437,7 @@ dispSourceUnify tt sv
 --	The only possible source of these is instantiations of type schemes,
 --	or from crushing other fetters.
 --
-dispFetterSource :: Fetter -> TypeSource -> PrettyM PMode
+dispFetterSource :: Fetter -> TypeSource -> Maybe (PrettyM PMode)
 dispFetterSource f ts
 
 	-- For purity constraints, don't bother displaying the entire effect
@@ -441,22 +445,26 @@ dispFetterSource f ts
 	| FConstraint v _	<- f
 	, v == primPure
 	, TSV (SVInst sp var)	<- ts
-	= "      the use of: " % var	% "\n"
+	= Just
+	$ "      the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 	
 	| FConstraint v _	<- f
 	, TSV (SVInst sp var)	<- ts
-	= "      constraint: " % f	% "\n"
+	= Just
+	$ "      constraint: " % f	% "\n"
 	% " from the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
 	| TSV (SVInst sp var)	<- ts
-	= "      constraint: " % f 	% "\n"
+	= Just
+	$ "      constraint: " % f 	% "\n"
 	% " from the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
 	| TSV (SVSig  sp var) 	<- ts
-	= "      constraint: " % f	% "\n"
+	= Just
+	$ "      constraint: " % f	% "\n"
 	% " in type sig for: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
@@ -466,4 +474,6 @@ dispFetterSource f ts
 	
 	-- hrm.. this shouldn't happen
 	| otherwise
-	= panic stage $ "dispFetterSource: no match for " % show ts % "\n"
+	= freakout stage 
+		("dispFetterSource: no match for " % show ts % "\n")
+		Nothing

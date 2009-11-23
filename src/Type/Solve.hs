@@ -236,7 +236,8 @@ solveCs	(c:cs)
 		solveNext cs
 
 	-- Projection dictionaries
-	CDictProject src t@(TData _ v ts) vvs
+	CDictProject src t vvs
+	 | Just (v, _, ts)	<- takeTData t
 	 -> do	trace	$ "### CDictProj " % t % "\n"
 	 	modify $ \s -> s { stateProject
 	 				= Map.insert v (t, vvs) (stateProject s)}
@@ -278,7 +279,7 @@ solveCs	(c:cs)
 	CLeave vs
 	 -> do	trace	$ "\n### CLeave " % vs % "\n"
 	 	path	<- gets statePath
-		trace	$ "    path = " % path 	% "\n"
+--		trace	$ "    path = " % path 	% "\n"
 
 		-- We're leaving the branch, so pop ourselves off the path.
 	 	pathLeave vs
@@ -405,7 +406,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	path			<- gets statePath
 	trace	$ "\n"
 		% "### CInst " % vUse % " <- " % vInst					% "\n"
-		% "    path          = " % path 					% "\n"
+--		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	sGenDone	<- gets stateGenDone
@@ -534,7 +535,7 @@ solveCInst_find
 	| otherwise
 	= do	
 		trace	$ ppr "=== Reorder.\n"
-			% "    queue =\n" %> (", " %!% map ppr (c:cs)) % "\n\n"
+--			% "    queue =\n" %> (", " %!% map ppr (c:cs)) % "\n\n"
 	
 		let floatBranch prev cc
 			= case cc of
@@ -551,7 +552,7 @@ solveCInst_find
 		-- Reorder the constraints so the required branch is at the front
 		let csReordered	= floatBranch [] (c:cs)
 	
-		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
+--		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
 	
 		-- Carry on solving
 		return	csReordered
@@ -721,7 +722,7 @@ bindGroup' vBind
 	-- Grab what path we're on and follow it back up until we find the CBind that tells
 	--	us what other variables were let-bound at the same level as this one.
 	path		<- gets statePath
-	trace	$ "    path          = " % path	% "\n"
+--	trace	$ "    path          = " % path	% "\n"
 
 	let mbUseGroup	= find	(\b -> case b of
 					BLetGroup vs		-> elem vBind vs
@@ -735,7 +736,7 @@ bindGroup' vBind
 				Nothing	-> BLetGroup []
 				Just bb	-> bb
 
-	trace	$ "    bUseGroup     = " % bUseGroup			% "\n\n"
+--	trace	$ "    bUseGroup     = " % bUseGroup			% "\n\n"
 
 	-- Build the constraint dependency graph.
 	--	This is a union of the contains and instantiates map.
@@ -756,19 +757,19 @@ bindGroup' vBind
 	-- The dependency graph is the union of both of these.
 	let gDeps	=  Map.unionWith (Set.union) gContains gInst
 
-	trace	$ "    gContains:\n" 		%> ppr gContains	% "\n\n"
-		% "    gInst:\n"		%> ppr gInst		% "\n\n"		
-		% "    gDeps:\n"		%> ppr gDeps		% "\n\n"
+--	trace	$ "    gContains:\n" 		%> ppr gContains	% "\n\n"
+--		% "    gInst:\n"		%> ppr gInst		% "\n\n"		
+--		% "    gDeps:\n"		%> ppr gDeps		% "\n\n"
 	-- Work out all the stronly connected components (mutually recursive groups) 
 	--	reachable from the binding which needs its type generalised.
 	let sccs_all	= graphSCC gDeps bBind
-	trace	$ "    sccs_all    = " % sccs_all	% "\n"
+--	trace	$ "    sccs_all    = " % sccs_all	% "\n"
 	
 	-- Only keep the sccs that this binding is actually a member of.
 	--	We need to this otherwise we'll also pick up mutually recursive groups defined 
 	--	at the same level, but which vBind isn't actually a member of.
 	let sccs_member	= filter (Set.member bBind) sccs_all
-	trace	$ "    sccs_member = " % sccs_member	% "\n"
+-- 	trace	$ "    sccs_member = " % sccs_member	% "\n"
 
 	-- Pack all the individual sccs together, they're in the same binding group.
 	let scc		= Set.unions sccs_member
@@ -784,7 +785,7 @@ bindGroup' vBind
 				_	 		-> Nothing)
 		$ Set.toList scc
 
-	trace	$ "    scc_let     = " % scc_let	% "\n\n"
+--	trace	$ "    scc_let     = " % scc_let	% "\n\n"
 
 	if Set.null scc_let 
 		then return Nothing
@@ -860,7 +861,7 @@ pathLeave bind
 		| otherwise
 		= panic stage
 		 	$ "pathLeave: can't leave " % bind % "\n"
-			% "  path = " % path % "\n"
+--			% "  path = " % path % "\n"
 	res
 	
 

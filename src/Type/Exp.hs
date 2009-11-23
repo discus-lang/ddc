@@ -249,8 +249,6 @@ data Type
 
 	-- Helpers for type inference.
 	---	Used in type inference stages only.
-	| TData    Kind Var  [Type]		-- ^ A data type constructor. Perhaps partially applied.
-	| TFun     Type Type Effect Closure	-- ^ A function with an effect and environment. Fully applied.
 	| TClass   Kind ClassId			-- ^ A reference to some equivalence class.
 	| TError   Kind [Type]			-- ^ Classes with unification errors get their queues set to [TError].
 	| TFetter  Fetter			-- ^ Holds a fetter, so we can put it in an equivalence class.

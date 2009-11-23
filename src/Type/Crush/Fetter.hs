@@ -5,7 +5,6 @@ module Type.Crush.Fetter
 	, crushFetter)
 
 where
-
 import Type.Diagnose
 import Type.Feed
 import Type.Trace
@@ -17,19 +16,17 @@ import Type.Exp
 import Type.Dump
 import Type.Error
 
+import Util
 import Shared.Error
 import Shared.VarPrim
 import Shared.Var		(VarBind, NameSpace(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 
-import Util
-
-import qualified Data.Set	as Set
 import Data.Set			(Set)
-
-import qualified Data.Map	as Map
 import Data.Map			(Map)
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 
 -----
@@ -37,6 +34,7 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Fetter"
 
+-----
 crushFetterC 
 	:: ClassId 
 	-> SquidM Bool	-- whether we crushed something from this class
@@ -48,8 +46,9 @@ crushFetterC cid
 crushFetterC2 cid (ClassForward cid')
 	= crushFetterC cid'
 
+-- MPTC style fetters Shape and Proj are handled by their own modules.
 crushFetterC2 cid (ClassFetter { classFetter = f })
-	= crushFetterMulti cid f
+	= return False
 
 crushFetterC2 cid 
 	c@(Class	
@@ -60,7 +59,7 @@ crushFetterC2 cid
 	trace	$ "*   crushFetterC "	% k % cid		% "\n"
 		% "    tNode      = " % tNode			% "\n"
 		% "    fs         = " % fs			% "\n"
-		
+
 	(progresss, mfsReduced)	
 		<- liftM unzip
 		$  mapM (crushFetterSingle cid c tNode) fs
@@ -77,7 +76,8 @@ crushFetterC2 cid
 crushFetterC2 cid c
 	= return False
 
--- crushFetterSingle -------------------------------------------------------------------------------
+
+-----
 crushFetterSingle cid c tNode (TFetter f@(FConstraint vC [TClass k cidC]))
  = do	
 	cid'	<- sinkClassId cid
@@ -116,20 +116,22 @@ crushFetterSingle' cid c@Class { classNodes = nodes} tNode vC cidC f
 					, Just f)
 			
 	-- could crush this fetter
-	| Just fsBits	<- crushFetter $ FConstraint vC [tNode]
-	= do
-		trace	$ "    fsBits     = " % fsBits			% "\n"
-		
-		let ?src	= TSI $ SICrushedF cid f
-		progress	<- liftM or
-				$ mapM addFetter fsBits
-						
-		return	( progress
-			, Nothing)
-	-- can't crush
 	| otherwise
-	= 	return	( False
-			, Just f)
+	= do	mfsBits	<- crushFetter $ FConstraint vC [tNode]
+		case mfsBits of
+		 Just fsBits 
+		  -> do	trace	$ "    fsBits     = " % fsBits			% "\n"
+		
+			let ?src	= TSI $ SICrushedF cid f
+			progress	<- liftM or
+					$ mapM addFetter fsBits
+						
+			return	( progress
+				, Nothing)
+
+		 Nothing
+		  -> 	return	( False
+				, Just f)
 			
 
 -- Crush a purity fetter.
@@ -152,12 +154,12 @@ crushPure c cidEff fPure tNode
 
 	-- try and generate the additional constraints needed to purify 
 	--	each effect.
-	let mFsPureSrc	
-		= map (purifyEffSrc c fPure cidEff) 
+	mFsPureSrc	
+		<- mapM (purifyEffSrc c fPure cidEff) 
 		$ flattenTSum tNode
 
 	-- See if any of the effects couldn't be purified
-	let effsBad	
+{-	let effsBad	
 		= catMaybes
 		$ map (\(eff, mfPureSrc) 
 			-> case mfPureSrc of
@@ -166,16 +168,17 @@ crushPure c cidEff fPure tNode
 		$ zip effs mFsPureSrc
 								
 	trace	$ "    effs_bad   = " % effsBad % "\n"
-
-
+-}
+	return 	$ Left $ catMaybes mFsPureSrc
+{-
  	case effsBad of
 	  	[]		-> return $ Left  $ catMaybes mFsPureSrc
 		(effBad : _)	
 		 -> do	eff	<- makePurityError c fPure effBad
 		 	return	$ Right eff
-		
+-}		
 
-
+{-
 -- | Make an error for when the purity fetter in this class could not be satisfied.
 makePurityError :: Class -> Fetter -> Effect -> SquidM Error
 makePurityError 
@@ -200,151 +203,157 @@ makePurityError
 			, eEffectSource	= effSrc
 			, eFetter	= fPure
 			, eFetterSource	= fSrc }
-
+-}
 
 -- | Crush a non-purity fetter
 --
-crushFetter :: Fetter -> Maybe [Fetter]
-crushFetter (FConstraint vC ts)
+crushFetter :: Fetter -> SquidM (Maybe [Fetter])
+crushFetter f@(FConstraint vC ts)
 	-- lazy head
 	| vC	== primLazyH
-	, [t]		<- ts
-	, Just tR	<- slurpHeadR t
-	= Just [FConstraint primLazy [tR]]
+	, [TClass _ cid]	<- ts
+	= do	mtHead	<- headTypeDownLeftSpine cid
+		case mtHead of
+			Just t	-> return $ Just [FConstraint primLazy [t]]
+			_	-> return $ Nothing
+			
+	| vC	== primLazyH
+	, [TApp (TCon{}) tR@(TClass _ _)]	<- ts
+	= return $ Just [FConstraint primLazy [tR]]
 	
+	| vC	== primLazyH
+	, [TApp t1 t2]				<- ts
+	= crushFetter (FConstraint vC [t1])
+	
+{-				
 	-- lazy head where the ctor has no region (ie LazyH Unit)
 	| vC	== primLazyH
 	, [t]		<- ts
-	, TData k v []	<- t
+	, Just (v, k, [])	<- takeTData t
 	= Just []
-	
+-}	
 	-- deep mutability
 	| vC	 == primMutableT
 	, [t]		<- ts
-	, TData{}	<- t
-	= let	(rs, ds)	= slurpVarsRD t
-		fsRegion	= map (\r -> FConstraint primMutable  [r]) rs
-		fsData		= map (\d -> FConstraint primMutableT [d]) ds
-	  in	Just $ fsRegion ++ fsData
+	, Just _	<- takeTData t
+	= do	let (rs, ds)	= slurpVarsRD t
+		let fsRegion	= map (\r -> FConstraint primMutable  [r]) rs
+		let fsData	= map (\d -> FConstraint primMutableT [d]) ds
+	  	return	$ Just $ fsRegion ++ fsData
 	  
 	-- deep const
 	| vC	== primConstT
 	, [t]		<- ts
-	, TData{}	<- t
-	= let 	(rs, ds)	= slurpVarsRD t
-		fsRegion	= map (\r -> FConstraint primConst  [r]) rs
-		fsData		= map (\d -> FConstraint primConstT [d]) ds
-	  in	Just $ fsRegion ++ fsData
+	, Just _	<- takeTData t
+	= do	let (rs, ds)	= slurpVarsRD t
+		let fsRegion	= map (\r -> FConstraint primConst  [r]) rs
+		let fsData		= map (\d -> FConstraint primConstT [d]) ds
+	  	return	$ Just $ fsRegion ++ fsData
 	  
 	| otherwise
-	= Nothing
+	= do	trace	$ "crushFetter Nothing " % f % "\n\n"
+		return $ Nothing
 
 
 -- | Try and purify this effect, 
 --	tagging the new constraint with the appropriate typesource
-purifyEffSrc :: Class -> Fetter -> ClassId -> Effect -> Maybe (Fetter, TypeSource)
+purifyEffSrc 
+	:: Class 
+	-> Fetter 
+	-> ClassId 
+	-> Effect 
+	-> SquidM (Maybe (Fetter, TypeSource))
 
 purifyEffSrc 
 	cPure@Class { classNodes = nodes }
 	fPure cidEff 
-	eff@(TClass kE cidE) 
+	eff@(TClass kE cidE)
+	 
  | kE	== kEffect
- = let	Just src	= lookup (TFetter fPure) nodes
-   in	Just 	( FConstraint primPure [eff]
-		, TSI (SICrushedFS cidEff fPure src) )
+ = do	let (Just src)	= lookup (TFetter fPure) nodes
+   	return	$ Just 	( FConstraint primPure [eff]
+			, TSI (SICrushedFS cidEff fPure src) )
 
 purifyEffSrc
 	cPure fPure cidEff
 	eff
- = case purifyEff eff of
-	Nothing		-> Nothing
-	Just fNew	-> Just (fNew, TSI (SIPurify cidEff eff))
+ = do
+	mfNew	<- purifyEff eff
+	case mfNew of
+	 Nothing	-> return $ Nothing
+	 Just fNew	-> return $ Just (fNew, TSI (SIPurify cidEff eff))
 	
 
 -- | produce either 
 --	the fetter which purifies this effect
 --	or an error saying why it cannot be purified.
 --
-purifyEff :: Type -> Maybe Fetter
+purifyEff :: Type -> SquidM (Maybe Fetter)
 purifyEff eff
 	-- read
  	| TEffect v [tR@(TClass kR _)]	<- eff
-	, kR	== kRegion
 	, v 	== primRead
-	= Just $ FConstraint primConst [tR]
+	, kR	== kRegion
+	= return $ Just $ FConstraint primConst [tR]
 
+	-- head read
+ 	| TEffect v [tV@(TClass kV cidV)]	<- eff
+	, v 	== primReadH
+	, kV	== kValue
+	= do	mHeadType	<- headTypeDownLeftSpine cidV
+		
+		trace	$ "    purifyEff"
+			% "      eff       = " % eff		% "\n"
+			% "      mHeadType = " % mHeadType	% "\n\n"
+			
+		case mHeadType of
+		 Just tR@(TClass kR _)
+		  | kR == kRegion	-> return $ Just $ FConstraint primConst [tR]
+		 _			-> return $ Nothing
+		
 	-- deep read
  	| TEffect v [tR@(TClass kV _)]	<- eff
 	, kV	== kValue
 	, v	== primReadT
-	= Just $ FConstraint primConstT [tR]
+	= return $ Just $ FConstraint primConstT [tR]
 	
 	-- effect variable
 	| TClass kE cid			<- eff
 	, kE	== kEffect
-	= Just $ FConstraint primPure [eff]
+	= return $ Just $ FConstraint primPure [eff]
 
 	| otherwise
-	= Nothing
+	= return $ Nothing
 	
 
--- | Slurp the head region from this type, if there is one.
-slurpHeadR :: Type -> Maybe Type
-slurpHeadR tt
- = case tt of
- 	TFetters t fs
-	 -> slurpHeadR t
+-- | Walk down the left spine of this type to find the type in the bottom 
+--	left node (if there is one)
+--
+--	For example, if the graph holds a type like:
+--	   TApp (TApp (TCon tc) t1) t2
+--	
+--	Then starting from the cid of the outermost TApp, we'll walk down 
+--	the left spine until we find (TCon tc), then return t1
+--
+--	If the node at the bottom of the spine hasn't been unified, then
+--	It'll be a Nothing, so return that instead.
+--
+headTypeDownLeftSpine 
+	:: ClassId 
+	-> SquidM (Maybe Type)
+	
+headTypeDownLeftSpine cid1
+ = do	Just cls1	<- lookupClass cid1
 
-	TData k v (tR@(TClass kR _) : _)
-	 | kR	== kRegion
-	 -> Just tR
-	 
-	_ -> Nothing
+	trace 	$ "headTypeDownLeftSpine\n"
+		% "    cid1 = " % cid1			% "\n"
+		% "    type = " % classType cls1	% "\n\n"
 
+	case classType cls1 of
+	 Just (TApp (TClass _ cid11) t12)	
+	   -> do Just cls11	<- lookupClass cid11
+		 case classType cls11 of
+			Just TCon{}	-> return $ Just t12
+			_		-> headTypeDownLeftSpine cid11
 
--- crushFetterMulti --------------------------------------------------------------------------------
-
--- projections are handled by Type.Crush.Proj instead
-crushFetterMulti cid (FProj{})
-	= return False
-
-crushFetterMulti cid (FConstraint vC ts)
- = do
-{-	-- Load up the arguments for this fetter
-	let argCids		= map (\(TClass k cid) -> cid) ts
-	argTs_traced		<- mapM traceType argCids
-	let argTs_packed	= map packType argTs_traced
-
-	-- this is the fetter with its args traced
-	let fetter		= FConstraint vC argTs_packed
-
-	-- Try and reduce it
-	let fetters_reduced	= Nothing -- fetter --  reduceFetter cid fetter
-
- 	trace	$ "\n"
-		% "*   crushFetterC " 		% cid			% "\n"
-		% "    fetter           = " 	% fetter		% "\n"
---		% "    fetter_reduced   = "	% fetters_reduced	% "\n"
-
-	-- Update the graph
-	case fetters_reduced of
-
-	 -- we didn't manage to crush it
-	 Nothing
-	  -> return False
-	  
-	 -- crushed this fetter into smaller ones
-	 Just fs
-	  -> do	
-	  	-- delete and unregister the old fetter class
-	  	delClass cid
-		unregisterClass (Var.bind vC) cid
-
-		-- add the new, crushed pieces
-	  	let ?src = TSCrushed fetter
-	  	mapM (feedFetter Nothing) fs
-		return True
--}
-	return False
-
-
+	 _	-> return $ Nothing

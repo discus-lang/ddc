@@ -49,24 +49,23 @@ trace ss xx
 elaborateRsT_quant
 	:: Monad m
 	=> (NameSpace -> m Var)	-- ^ A compuation to generate a fresh region var
-	-> (Var -> m Kind)	-- ^ fn to get the kind of a type constructor.
 	-> Type 		-- ^ the type to elaborate
 	-> m Type		--   elaborated type.
 	
-elaborateRsT_quant newVar getKind tt
- = do	(t_elab, vks)	<- elaborateRsT newVar getKind tt
+elaborateRsT_quant newVar tt
+ = do	(t_elab, vks)	<- elaborateRsT newVar tt
 	let t_quant	= makeTForall_back vks t_elab
 
    	trace ("elaborateRsT: " % tt % "\n")
 		$ return t_quant
 
-elaborateRsT newVar getKind tt
+elaborateRsT newVar tt
  = do	let ?newVar	= newVar
-	let ?getKind	= getKind
 	elaborateRsT' tt
 
 elaborateRsT' tt
- = case tt of
+ = trace ("elaborateRsT' " % tt)
+ $ case tt of
 	TVar{}	-> return (tt, [])
 	TTop{}	-> return (tt, [])
 	TBot{}	-> return (tt, [])
@@ -81,44 +80,55 @@ elaborateRsT' tt
 		return	( TFetters x' fs
 			, vks')
 
-	TApp t1 t2 	
-	 -> do	(t1', vks1)	<- elaborateRsT' t1
-		(t2', vks2)	<- elaborateRsT' t2
-		return	( TApp t1' t2'
-			, vks1 ++ vks2)
+	
+	TCon{}	
+	 -- some data constructor that isn't applied to any region vars.
+   	 | Just (v, kind, ts)	<- takeTData tt
+ 	 -> elaborateRsT_data tt (v, kind, ts)
 
-	TFun t1 t2 eff clo
-	 -> do	(t1', vks1)	<- elaborateRsT' t1
-		(t2', vks2)	<- elaborateRsT' t2
-		return	( TFun t1' t2' eff clo
-			, vks1 ++ vks2)
+ 	 -- a function constructor don't need regions added.
+	 | otherwise
+	 -> return (tt, [])
+
+	TApp t1 t2 
+
+	 -- add new regions to data type constructors to bring them up
+	 --	to the right kind.
+	 | Just (v, kind, ts)	<- takeTData tt
+	 -> trace ("elaborateRsT' elaborating data " % show tt % "\n")
+	     $ elaborateRsT_data tt (v, kind, ts)	
+	
+	 | otherwise
+	 -> trace ("elaborateRsT' elaborating app " % show tt % "\n")
+	     $ do	(t1', vks1)	<- elaborateRsT' t1
+			(t2', vks2)	<- elaborateRsT' t2
+			return	( TApp t1' t2'
+				, vks1 ++ vks2)
 
 	TElaborate ee t	
 	 -> do	(t', vks)	<- elaborateRsT' t
 		return	( TElaborate ee t'
 			, vks)
 
-	-- add new regions to data type constructors to bring them up
-	--	to the right kind.
-	TData k v ts		
-	 -> do	kind		<- ?getKind v
-		let ?topType	= tt 
-		(ts2, vks2)	<- elabRs ts kind
-		(ts3, vks3)	<- liftM unzip $ mapM elaborateRsT' ts2
-		
-		return	( TData k v ts3
-			, vks2 ++ concat vks3)
+	TEffect{}	-> return (tt, [])
 
 	_ -> panic stage
 		$ "elaborateRsT': no match for " % tt % "\n\n"
 		% " tt = " % show tt % "\n"
+
+elaborateRsT_data tt (v, kind, ts)
+ = do	let ?topType	= tt 
+	(ts2, vks2)	<- elabRs ts kind
+	(ts3, vks3)	<- liftM unzip $ mapM elaborateRsT' ts2
+
+	return	( makeTData v kind ts3
+		, vks2 ++ concat vks3)
 
 
 -- | Take some arguments from a type ctor and if needed insert fresh region vars
 --	so the reconstructed ctor with these args will have this kind.
 elabRs 	:: Monad m
 	=> (?newVar  :: NameSpace -> m Var)	-- ^ fn to create new region vars
-	-> (?getKind :: Var -> m Kind)		-- ^ fn to get kind of type ctor
 	-> (?topType :: Type)			-- ^ for debugging
 	-> [Type]				-- ^ ctor args
 	-> Kind					-- ^ kind to turn the ctor into
@@ -221,19 +231,19 @@ elaborateCloT' env tt
 		return	( TFetters x' (fs ++ fs')
 			, []
 			, mClo)
+	
+	TCon{}
+	 ->	return  ( tt
+			, []
+			, tEmpty)
 			
 	TVar{}
 	 -> 	return	( tt
 			, []
 			, tEmpty )
 
-	-- TODO: decend into type ctors
-	TData{}
-	 ->	return	( tt
-			, []
-			, tEmpty)
-
-	TFun t1 t2 eff clo
+	TApp ta tb
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> do	-- create a new value variable as a name for the function parameter
 		varVal			<- ?newVarN NameValue
 		
@@ -251,7 +261,9 @@ elaborateCloT' env tt
 			-- if the right of the function is another function then 
 			--   the closure of _this_ one is the same as the closure
 			--   of the inner one, minus the parameter bound here.
-			TFun{}	-> dropTFreesIn (Set.singleton varVal) cloT2
+			TApp{}
+			 | Just _	<- takeTFun t2
+			 -> dropTFreesIn (Set.singleton varVal) cloT2
 
 			-- if the right of the function isn't another function
 			--   then assume this one binds all the args.
@@ -267,9 +279,14 @@ elaborateCloT' env tt
 				FWhere _ (TBot kClosure)	-> (Nothing, TBot kClosure)
 				_				-> (Just fNewClo, cloVarC)
 
-		return	( TFun t1 t2' eff cloAnnot
+		return	( makeTFun t1 t2' eff cloAnnot
 			, maybeToList fNew ++ fs
 			, newClo)
+
+	 | otherwise
+	 -> return 	( tt
+			, []
+			, tEmpty)
 
 
 -- Elaborate Effects ------------------------------------------------------------------------------
@@ -284,6 +301,10 @@ elaborateEffT
 	-> m Type		--   the elaborated type
 	
 elaborateEffT vsRsConst vsRsMutable tt
+ | Nothing	<- kindOfType tt
+ = panic stage "elaborateEffT: type to elaborate is not well kinded"
+
+ | otherwise
  = do	
  	-- make a fresh hook var
 	--	The new effect fetter constrains this var.
@@ -343,31 +364,32 @@ hookEffT hookVar tt
 		, mEff)
 
 	-- keep decending so long as the result type is also a function.
- 	| TFun t1 t2 eff clo	<- tt
-	, TFun{}		<- t2
-	, Just (t2', var, mEff)	<- hookEffT hookVar t2
-	= Just 	( TFun t1 t2' eff clo
+ 	| Just (t1, t2, eff, clo)	<- takeTFun tt
+	, Just _			<- takeTFun t2
+	, Just (t2', var, mEff)		<- hookEffT hookVar t2
+	= Just 	( makeTFun t1 t2' eff clo
 	  	, var
 		, mEff)
 	
 	-- There is already a var on the right most function
 	--	so we can use that as a hook var.
-	| TFun t1 t2 (TVar kEffect var) clo	<- tt
+	| Just (t1, t2, (TVar kEffect var), clo)
+						<- takeTFun tt
 	= Just	( tt
 		, var
 		, Nothing )
 	
 	-- The right-most function has no effects on it.
 	--	Add the hook var that we were given.
-	| TFun t1 t2 (TBot kEffect) clo		<- tt
-	= Just	( TFun t1 t2 (TVar kEffect hookVar) clo
+	| Just (t1, t2, TBot kEffect, clo)	<- takeTFun tt
+	= Just	( makeTFun t1 t2 (TVar kEffect hookVar) clo
 	  	, hookVar
 		, Nothing )
 	
 	-- The right-most function has some other effect on it. 
 	--	Replace this with our hook var and return the effect.
-	| TFun t1 t2 eff clo			<- tt
-	= Just	( TFun t1 t2 (TVar kEffect hookVar) clo
+	| Just (t1, t2, eff, clo)		<- takeTFun tt
+	= Just	( makeTFun t1 t2 (TVar kEffect hookVar) clo
 		, hookVar
 		, Just eff)
 	
@@ -421,21 +443,25 @@ slurpConRegionsCo tt
  	TForall b k t		-> slurpConRegionsCo t
 	TFetters t fs		-> slurpConRegionsCo t
 
-	TFun t1 t2 eff clo
+	TApp{}
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> slurpConRegionsCon t1
 	 ++ slurpConRegionsCo  t2
-
-	TData k v ts		-> catMap slurpConRegionsCo ts
+	
+	 | Just (v, k, ts)		<- takeTData tt
+	 -> catMap slurpConRegionsCo ts
 
 	TVar _ _			-> []
 	 
 slurpConRegionsCon tt
  = case tt of
- 	TFun t1 t2 eff clo
+	TApp{}
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> slurpConRegionsCon t1
 	 ++ slurpConRegionsCon t2
-	 
-	TData k v ts		-> catMap slurpConRegionsCon ts
+
+	 | Just (v, k, ts)		<- takeTData tt
+	 -> catMap slurpConRegionsCon ts
 
 	TVar k v		
 		| k == kRegion	-> [v]

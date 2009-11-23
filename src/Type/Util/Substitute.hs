@@ -95,18 +95,7 @@ subTT_cutM' sub cut tt
 		
 	TTop{}		-> return tt
 	TBot{}		-> return tt
-	
-	TData k v ts		
-	 -> do	ts'	<- mapM down ts
-	 	return	$ TData k v ts'
 		
-	TFun t1 t2 eff clo
-	 -> do	t1'	<- down t1
-	 	t2'	<- down t2
-		eff'	<- down eff
-		clo'	<- down clo
-		return	$ TFun t1' t2' eff' clo'
-	
 	TEffect v ts
 	 -> do	ts'	<- mapM down ts
 	 	return	$ TEffect v ts'

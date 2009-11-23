@@ -230,44 +230,34 @@ trimClosureC_t' tag quant rsData tt
 	
 	TSum k ts	-> catMap down ts
 
+	TCon{}		-> []
 	TBot{}		-> []
 	TTop{}		-> [tt]
 
 	-- when we enter into a data object remember that we're under its primary region.
 	TApp{}
-	 -> case takeTData tt of
-	 	Just (v, k, [])		-> []
-		Just (v, k, (t:ts))
-		 	| kindOfType_orDie t == kRegion
-			-> let 	rsData'	= Set.insert t rsData
+	 -> let result
+		 | Just (v, k, [])	<- takeTData tt 
+		 = []
+		
+		
+		 | Just (v, k, (t:ts))	<- takeTData tt
+		 = if kindOfType_orDie t == kRegion 
+		   then let 	rsData'	= Set.insert t rsData
 				vs	= freeVars (t:ts)
-			   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
+			in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
 				 ++ map (TDanger t) [TVar (kindOfSpace $ Var.nameSpace v) v
 							| v <- Set.toList vs 
 							, not $ Var.isCtorName v]
-		   
-			| otherwise
-			-> catMap down ts
-		_			-> [tt]
-	
-	
-	TData k v []	-> []
-	TData k v (t:ts)
-	 	| kindOfType_orDie t == kRegion
-		-> let	rsData'	= Set.insert t rsData	
-			vs	= freeVars (t:ts)
-		   in 	catMap (trimClosureC_t tag quant rsData') (t:ts)
-				++ map (TDanger t) [TVar (kindOfSpace $ Var.nameSpace v) v
-							| v <- Set.toList vs 
-							, not $ Var.isCtorName v]
-		   
-		| otherwise
-		-> catMap down ts
-	
-	    
-	-- Only the closure portion of a function actually holds data
-	TFun t1 t2 eff clo	-> down clo
+		   else catMap down ts
 
+		  | Just (t1, t2, eff, clo) <- takeTFun tt
+		  = down clo
+		
+		  | otherwise
+		  = []
+	    in	result
+	
 	TEffect{}		-> []
 	TFree v t		-> [trimClosureC quant rsData tt]
 

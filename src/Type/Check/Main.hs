@@ -10,6 +10,7 @@ import Type.State
 import Type.Error
 import Type.Class
 import Type.Base
+import Type.Util.Bits
 import Shared.VarPrim
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
@@ -40,13 +41,16 @@ checkMain' vMainT tMain tt
 	TForall b k t		-> checkMain' vMainT tMain t
  	TFetters t fs		-> checkMain' vMainT tMain t
 
-	TFun (TVar kV _) _ eff clo	
-	 | kV	== kValue	-> return ()
-
-	TFun (TData _ v1 []) _ eff clo
-	 | v1 == primTUnit
+	TApp{}
+	 | Just (TVar kV _, _, eff, clo)	<- takeTFun tt
+	 , kV == kValue		
 	 -> return ()
-	 
+	
+	 | Just (t1, _, eff, clo)		<- takeTFun tt
+	 , Just (v1, _, _)			<- takeTData t1
+	 , v1 == primTUnit
+	 -> return ()
+		 
 	_ -> addErrors [ErrorWrongMainType { eScheme = (vMainT, tMain) }]
 			
 isMainVar var

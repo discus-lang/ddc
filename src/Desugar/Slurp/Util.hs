@@ -96,7 +96,7 @@ makeCtorType newVarN vData vs name fs
 			$ map (checkTypeVar vs) $ Set.toList vsFree
 
 	-- The objType is the type of the constructed object.
- 	let objType	= TData (makeDataKind vs) vData  
+ 	let objType	= makeTData vData (makeDataKind vs)
 			$ map (\v -> case Var.nameSpace v of
 					NameEffect	-> TVar kEffect  v
 					NameRegion	-> TVar kRegion  v

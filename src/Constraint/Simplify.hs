@@ -181,7 +181,8 @@ subFollowVT' sub block tt
  	TForall  b k t		-> TForall	b k (down t)
 	TFetters t fs		-> TFetters	(down t) (map downF fs)
 	TSum 	k ts		-> TSum		k (map down ts)
-
+	TApp t1 t2		-> TApp		(down t1) (down t2)
+	TCon{}			-> tt
 	TVar	k v
 	 | Set.member v block	-> tt
 	 | otherwise
@@ -191,10 +192,7 @@ subFollowVT' sub block tt
 		
 	TTop{}			-> tt
 	TBot{}			-> tt
-	
-	TData k v ts		-> TData k v (map down ts)
-	TFun t1 t2 eff clo	-> TFun (down t1) (down t2) (down eff) (down clo)
-	
+		
 	TEffect v ts		-> TEffect v (map down ts)
 	
 	TFree v t		-> TFree v (down t)
@@ -260,8 +258,6 @@ collectNoInlineT' tt
 --	type constraints to inline.
 isValueType tt
  = case tt of
- 	TFun{}	-> True
-	TData{}	-> True
 	TVar _ v
 	 | Var.nameSpace v == Var.NameType
 	 	-> True

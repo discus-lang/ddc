@@ -179,17 +179,6 @@ kindOfType' tt
 
 
 	-- used in type inferencer -------------------------------------------
-	-- TData might be partially applied
-	| TData k v ts		<- tt
-	= do	ks	<- sequence $ map kindOfType ts
-		case appKinds k ks of
-		 Just k'	-> return k'
-		 _		-> kindOfType_freakouts (TVar k v) k $ zip ts ks
-
-	-- TFuns are always fully applied
-	| TFun{}		<- tt
-	= Just kValue
-
 	| TClass k _		<- tt
 	= Just k
 
@@ -220,27 +209,6 @@ kindOfType_freakout t1 k1 t2 k2
 	% "    t2  = " % t2 	% "\n"
 	% "  K[t2] = " % k2	% "\n")
 	Nothing
-
-
-kindOfType_freakouts t1 k1 tks
- = freakout stage	
-	( "takeKindOfType: kind error in type application t1 ts\n"
-	% "    t1   = " % t1 	% "\n"
-	% "  K[t1]  = " % k1	% "\n"
-	% "\n"
-	% "    tks  = " % tks 	% "\n")
-	Nothing
-
-
--- | Apply some kinds to a kind function
---	If this results in a kind error then return Nothing
-appKinds :: Kind -> [Kind] -> Maybe Kind
-appKinds k []		= Just k
-
-appKinds (KFun k1 k2) (k:ks)
-	| k1 == k	= appKinds k2 ks
-	
-appKinds  k ks		= Nothing
 
 
 -- | Get the kind of a type, or die if there is a kind error.
@@ -311,9 +279,6 @@ isClosure tt
  = case tt of
 	-- closures are always fully constructed
 	TApp{}			-> False
-	TData{}			-> False
-	TFun{}			-> False
-
  	TSum	 k _		-> k == kClosure
 	TVar	 k _		-> k == kClosure
 	TVarMore k _ _		-> k == kClosure

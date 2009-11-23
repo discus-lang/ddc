@@ -147,13 +147,6 @@ instance Lint Type where
 
 	TTop k				-> TTop k
 	TBot k				-> TBot k
-
-	-- data
-	TFun t1 t2 eff clo		-> TFun (lint t1) (lint t2) (lint eff) (lint clo)
-	
-	TData k v ts
-	 | not $ inSpaceT [v]		-> death tt "TCon - var in wrong namespace."
-	 | otherwise			-> TData k (lint v) (lint ts)
 	 	
 	-- effect
 	TEffect v ts			-> TEffect v (lint ts)

@@ -6,6 +6,7 @@ module Type.Context
 	, matchInstance )
 
 where
+import Type.State
 import Type.Exp
 import Type.Plate
 import Type.Util
@@ -27,26 +28,26 @@ import qualified Data.Map	as Map
 reduceContextT 
 	:: Map Var [Fetter]	-- (class var -> instances) for this class
 	-> Type			-- the type to reduce  
-	-> Type
+	-> SquidM Type
 	
 reduceContextT classInst tt
  = case tt of
  	TFetters tShape fs
-	 -> let	fs'	= concat
-	 		$ map (reduceContextF (flattenT tt) classInst) fs
+	 -> do	fs'	<- liftM concat
+	 		$ mapM (reduceContextF (flattenT tt) classInst) fs
 
-	    in	case fs' of
-	    		[]	-> tShape
-			_	-> TFetters tShape fs'
+	   	case fs' of
+	    		[]	-> return tShape
+			_	-> return $ TFetters tShape fs'
 			
-	_ 		-> tt
+	_ 		-> return tt
 	
 
 reduceContextF 
 	:: Type			-- the shape of the type
 	-> Map Var [Fetter]	-- (class var -> instances) for each class
 	-> Fetter		-- the constraint being used
-	-> [Fetter]		-- maybe some new constraints
+	-> SquidM [Fetter]	-- maybe some new constraints
 
 reduceContextF tShape classInstances ff
 
@@ -60,7 +61,7 @@ reduceContextF tShape classInstances ff
 	, kR	== kRegion
 	, elem v [primConst, primMutable, primMutable, primDirect]
 	, not $ Set.member tR $ visibleRsT tShape
-	= []
+	= return []
 
 	-- We can remove type class constraints when we have a matching instance in the table
 	--	These can be converted to a direct function call in the CoreIR, so we don't need to
@@ -69,14 +70,14 @@ reduceContextF tShape classInstances ff
  	| FConstraint v ts	<- ff
 	, Just instances	<- Map.lookup v classInstances
 	, Just inst'		<- find (matchInstance ff) instances
-	= []
+	= return []
 
 	-- Purity constraints on bottom effects can be removed.
 	--	This doesn't give us any useful information.
 	| FConstraint v [TBot kE]	<- ff
 	, kE	== kEffect
 	, v == primPure 
-	= []
+	= return []
 
 	-- Purity constraints on manifest effects can be discharged. 
 	--	These can be reconstructed in the CoreIR by using the Const witnesses that will have
@@ -85,23 +86,24 @@ reduceContextF tShape classInstances ff
 	, v == primPure
 	= case t of
 		TSum kE _		
-			| kE == kEffect	-> []
-		TEffect{}		-> []
-		_			-> [ff]
+			| kE == kEffect	-> return []
+		TEffect{}		-> return []
+		_			-> return [ff]
 	
 	-- These compound fetters can be converted to their crushed forms.
 	--	Although Type.Crush.Fetter also crushes fetters in the graph, if a scheme is generalised
 	--	which contains a fetter acting on a monomorphic class, and then that class is updated,
 	--	we'll get a non-crushed fetter when that scheme is re-extracted from the graph
 	| FConstraint v [t]		<- ff
-	= case crushFetter ff of
-		Nothing	-> [ff]
-		Just fs	-> fs
+	= do	mFs	<- crushFetter ff
+		case mFs of
+		 Nothing	-> return [ff]
+		 Just fs	-> return fs
 
 
 	-- have to keep this context
 	| otherwise
-	= [ff]
+	= return [ff]
 
 
 -- Checks if an class instance supports a certain type.

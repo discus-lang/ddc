@@ -736,18 +736,6 @@ rewriteDoSS (s : ss)
 instance Rewrite S.Type S.Type where
  rewrite tt
   = case tt of
-  	TVar k v			
-	 -> return tt
-
-	TFun t1 t2 eff clo
-	 -> do	t1'	<- rewrite t1
-	 	t2'	<- rewrite t2
-		return	$ TFun t1' t2' eff clo
-		
-	TData k v ts
-	 -> do	ts'	<- rewrite ts
-	 	return	$ TData k v ts'
-		
 	TForall b k t
 	 -> do	t'	<- rewrite t
 	 	return	$ TForall b k t'
@@ -755,13 +743,22 @@ instance Rewrite S.Type S.Type where
 	TFetters t fs
 	 -> do	t'	<- rewrite t
 	 	return	$ TFetters t' fs
-	
-	TBot k	-> return $ TBot k
-	TTop k	-> return $ TTop k
-		
-	TElaborate ee t	-> return tt
 
 	TApp t1 t2
 	 -> do	t1'	<- rewrite t1
 	 	t2'	<- rewrite t2
 		return	$ TApp t1' t2'
+	
+	TCon{}		-> return tt
+	TVar{}		-> return tt
+	TBot{}		-> return tt
+	TTop{}		-> return tt
+
+	TEffect v ts
+	 -> do	ts'	<- mapM rewrite ts
+		return	$ TEffect v ts'
+
+	TElaborate ee t	-> return tt
+	
+	_ -> panic stage $ "rewrite[Type]: no match for " % tt
+

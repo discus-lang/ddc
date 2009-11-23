@@ -133,7 +133,7 @@ snipProjDictTree moduleName classDicts tree
 -- Snip RHS of bindings in projection dictionaries.
 snipProjDictP moduleName classDicts (PProjDict sp t ss)
  = do
-	let (TData _ vCon _)	= t
+	let (Just (vCon, _, _))	= takeTData t
 
 	-- See what vars are in the dict and make a map of new vars.
  	let dictVs	= Set.toList
@@ -303,7 +303,7 @@ snipDataField moduleName sp vData vCtor field
 		varR	<- newVarN NameRegion
 				
 		return	( field { dInit = Just $ XVar sp var }
-			, [ PSig  sp [var] (TFun (TData kValue primTUnit []) 
+			, [ PSig  sp [var] (makeTFun (makeTData primTUnit kValue []) 
 						(dType field) 
 						tPure tEmpty)
 			  , PBind sp (Just var) (XLambda sp varL xInit)])
@@ -357,8 +357,17 @@ newInstFunVar
 makeTypeName :: Type -> String
 makeTypeName tt
  = case tt of
- 	TFun t1 t2 eff clo	-> "Fun" ++ makeTypeName t1 ++ makeTypeName t2
-	TData _ v ts		-> (Var.name v) ++ (catMap makeTypeName ts)
+	TApp{}
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
+	 -> "Fun" ++ makeTypeName t1 ++ makeTypeName t2
+	
+	 | Just (v, _, ts)		<- takeTData tt
+	 -> Var.name v ++ catMap makeTypeName ts
+
+	TCon{}
+	 | Just (v, _, ts)		<- takeTData tt
+	 -> Var.name v ++ catMap makeTypeName ts
+
 	TVar k v		-> ""
 
 
@@ -402,7 +411,15 @@ addProjDictDataTree tree
 
  	-- Slurp out all the available projection dictionaries.
 	let projMap	= Map.fromList
-			$ [(v, p)	| p@(PProjDict _ t@(TData _ v ts) ss)	<- tree]
+			$ catMaybes
+			$ map
+				(\p -> case p of
+					PProjDict _ t ss
+					 | Just (v, _, ts)	<- takeTData t
+					 -> Just (v, p)
+					
+					_ -> Nothing)
+				tree
 		
 	-- If there is no projection dictionary for a given data type
 	--	then make a new empty one. Add new dictionary straight after the data def
@@ -417,7 +434,7 @@ addProjDataP projMap p
  = case p of
 	PData sp v vs ctors
  	 -> case Map.lookup v projMap of
-		Nothing	-> [p, PProjDict sp (TData (makeDataKind vs) v (map varToTBot vs)) []]
+		Nothing	-> [p, PProjDict sp (makeTData v  (makeDataKind vs) (map varToTBot vs)) []]
 		Just _	-> [p]
 		
 	_		-> [p]
@@ -439,14 +456,15 @@ addProjDictFunsTree dataMap tree
 	
 addProjDictFunsP 
 	dataMap 
-	p@(PProjDict sp projType@(TData k v ts) ss)
+	p@(PProjDict sp projType ss)
+ | Just (v, k, ts)	<- takeTData projType
  = do
 	-- Lookup the data def for this type.
  	let (Just (PData _ vData vsData ctors))	
 		= Map.lookup v dataMap
 	
 	let tsData	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsData
-	let tData	= TData (makeDataKind vsData) vData tsData
+	let tData	= makeTData vData (makeDataKind vsData) tsData
 	
 	-- See what projections have already been defined.
 	let dictVs	= Set.toList
@@ -495,7 +513,7 @@ makeProjFun sp tData ctors fieldV
 					, dLabel field == Just fieldV ]
 
     	return	[ SSig  sp [fieldV]
-			(TFun tData resultT tPure tEmpty) 
+			(makeTFun tData resultT tPure tEmpty) 
 
 		, SBind sp (Just fieldV) 
  			(XLambda sp objV 
@@ -544,18 +562,22 @@ makeProjR_fun sp tData ctors fieldV
 					, dLabel field == Just fieldV ]
 
 	let rData	= case tData of
-				TData _ vData (TVar kR rData : _)	
-				 | kR == kRegion -> rData
+				TApp{}
+				 | Just (vData, _, (TVar kR rData : _))	<- takeTData tData
+				 , kR == kRegion 
+				 -> rData
+
 				_ 	-> panic stage
 					$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
 					% "  tData = " % show tData			% "\n"
 
 	return	$ 	[ SSig  sp [funV]
-				(TFun tData 	(TData 	(KFun kRegion (KFun kValue kValue))
+				(makeTFun tData (makeTData 
 							primTRef 
+							(KFun kRegion (KFun kValue kValue))
 							[TVar kRegion rData, resultT]) 
-							tPure
-							tEmpty)
+						tPure
+						tEmpty)
 
 
 			, SBind sp (Just funV) 
@@ -610,8 +632,10 @@ slurpProjTable tree
 			SBind _ (Just v1) (XVar     _ v2)	-> Just (v1, v2)
 			_					-> Nothing
 
-	packProjDict (PProjDict _ t@(TData _ vCon _) ss)
-		= (vCon, (t, Map.fromList $ catMaybes $ map projDictS ss))
+	packProjDict (PProjDict _ t ss)
+	 = case takeTData t of
+		Just (vCon, _, _)
+		 -> (vCon, (t, Map.fromList $ catMaybes $ map projDictS ss))
 
 	projTable	= Map.gather 
 			$ map packProjDict projDictPs
@@ -623,7 +647,8 @@ slurpProjTable tree
 -- definition they are projecting over. Log any that are found as errors.
 --
 checkForRedefDataField :: Map Var (Top Annot) -> Top Annot -> ProjectM ()
-checkForRedefDataField dataMap (PProjDict _ (TData _ pvar _) ss)
+checkForRedefDataField dataMap (PProjDict _ tt ss)
+ | Just (pvar, _, _)	<- takeTData tt
  = do	let Just dname	= Map.lookup pvar dataMap
 	let dfmap	= fieldNames dname
  	mapM_ (checkSBindFunc dname pvar dfmap) ss

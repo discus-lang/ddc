@@ -802,19 +802,6 @@ instance Rename Type where
 	TTop k 	 -> return tt
 	TBot k	 -> return tt
 
-	-- data
- 	TFun t1 t2 eff clo
-	 -> do 	t1'	<- rename t1
-		t2'	<- rename t2
-		eff'	<- rename eff
-		clo'	<- rename clo
-		return	$ TFun t1' t2' eff' clo'
-
-	TData k v ts		
-	 -> do 	v'	<- lookupN NameType v
-		ts'	<- mapM rename ts
-		return	$ TData k v' ts'
-	
 	-- effect
 	TEffect v rs
 	 -> do 	v'	<- lookupN NameEffect v
