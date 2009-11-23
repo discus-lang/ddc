@@ -140,7 +140,7 @@ generaliseType' varT tCore envCids
 			%> ("= " % prettyTS tClean)		% "\n\n"
 
 
-	tReduce	<- reduceContextT classInst tClean
+	let tReduce	= reduceContextT classInst tClean
 	trace	$ "    tReduce\n"
 			%> ("= " % prettyTS tReduce)		% "\n\n"
 

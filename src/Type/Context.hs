@@ -10,7 +10,6 @@ import Type.State
 import Type.Exp
 import Type.Plate
 import Type.Util
-import Type.Crush.Fetter	(crushFetter)
 import Type.Effect.MaskLocal	(visibleRsT)
 import Shared.VarPrim
 import Shared.Error
@@ -28,26 +27,24 @@ import qualified Data.Map	as Map
 reduceContextT 
 	:: Map Var [Fetter]	-- (class var -> instances) for this class
 	-> Type			-- the type to reduce  
-	-> SquidM Type
+	-> Type
 	
 reduceContextT classInst tt
  = case tt of
  	TFetters tShape fs
-	 -> do	fs'	<- liftM concat
-	 		$ mapM (reduceContextF (flattenT tt) classInst) fs
-
-	   	case fs' of
-	    		[]	-> return tShape
-			_	-> return $ TFetters tShape fs'
+	 -> let fs'	= catMap (reduceContextF (flattenT tt) classInst) fs
+	    in  case fs' of
+	    		[]	-> tShape
+			_	-> TFetters tShape fs'
 			
-	_ 		-> return tt
+	_ 		-> tt
 	
 
 reduceContextF 
 	:: Type			-- the shape of the type
 	-> Map Var [Fetter]	-- (class var -> instances) for each class
 	-> Fetter		-- the constraint being used
-	-> SquidM [Fetter]	-- maybe some new constraints
+	-> [Fetter]		-- maybe some new constraints
 
 reduceContextF tShape classInstances ff
 
@@ -61,7 +58,7 @@ reduceContextF tShape classInstances ff
 	, kR	== kRegion
 	, elem v [primConst, primMutable, primMutable, primDirect]
 	, not $ Set.member tR $ visibleRsT tShape
-	= return []
+	= []
 
 	-- We can remove type class constraints when we have a matching instance in the table
 	--	These can be converted to a direct function call in the CoreIR, so we don't need to
@@ -70,14 +67,14 @@ reduceContextF tShape classInstances ff
  	| FConstraint v ts	<- ff
 	, Just instances	<- Map.lookup v classInstances
 	, Just inst'		<- find (matchInstance ff) instances
-	= return []
+	= []
 
 	-- Purity constraints on bottom effects can be removed.
 	--	This doesn't give us any useful information.
 	| FConstraint v [TBot kE]	<- ff
 	, kE	== kEffect
-	, v == primPure 
-	= return []
+	, v 	== primPure 
+	= []
 
 	-- Purity constraints on manifest effects can be discharged. 
 	--	These can be reconstructed in the CoreIR by using the Const witnesses that will have
@@ -86,24 +83,69 @@ reduceContextF tShape classInstances ff
 	, v == primPure
 	= case t of
 		TSum kE _		
-			| kE == kEffect	-> return []
-		TEffect{}		-> return []
-		_			-> return [ff]
+			| kE == kEffect	-> []
+		TEffect{}		-> []
+		_			-> [ff]
 	
 	-- These compound fetters can be converted to their crushed forms.
 	--	Although Type.Crush.Fetter also crushes fetters in the graph, if a scheme is generalised
 	--	which contains a fetter acting on a monomorphic class, and then that class is updated,
 	--	we'll get a non-crushed fetter when that scheme is re-extracted from the graph
 	| FConstraint v [t]		<- ff
-	= do	mFs	<- crushFetter ff
-		case mFs of
-		 Nothing	-> return [ff]
-		 Just fs	-> return fs
+	= let	mFs	= crushFetterSingleNonPurify_directly v t
+	  in	case mFs of
+		 Nothing	-> [ff]
+		 Just fs	-> fs
 
 
 	-- have to keep this context
 	| otherwise
-	= return [ff]
+	= [ff]
+
+
+-- | Crush a non-purify directly.
+--	"directly" means that we've got the whole type at hand, and
+--	don't have to go tracing through the graph for it.
+crushFetterSingleNonPurify_directly
+	:: Var
+	-> Type
+	-> Maybe [Fetter]
+	
+crushFetterSingleNonPurify_directly vFetter tt
+
+	-- lazy head
+	| vFetter		== primLazyH
+	, TApp TCon{} tR	<- tt
+	= Just [FConstraint primLazy [tR]]
+	
+	| vFetter		== primLazyH
+	, TApp t1 t2		<- tt
+	= crushFetterSingleNonPurify_directly vFetter t1
+	
+	-- lazy head where the ctor has no region (ie LazyH Unit)
+	| vFetter		== primLazyH
+	, Just (v, k, [])	<- takeTData tt
+	= Just []
+	
+	-- deep mutability
+	| vFetter	== primMutableT
+	, Just _	<- takeTData tt
+	= let	(rs, ds)	= slurpVarsRD tt
+		fsRegion	= map (\r -> FConstraint primMutable  [r]) rs
+		fsData		= map (\d -> FConstraint primMutableT [d]) ds
+	  in	Just $ fsRegion ++ fsData
+	  
+	-- deep const
+	| vFetter	== primConstT
+	, Just _	<- takeTData tt
+	= let	(rs, ds)	= slurpVarsRD tt
+		fsRegion	= map (\r -> FConstraint primConst  [r]) rs
+		fsData		= map (\d -> FConstraint primConstT [d]) ds
+	  in	Just $ fsRegion ++ fsData
+	  
+	-- couldn't crush it
+	| otherwise
+	= Nothing
 
 
 -- Checks if an class instance supports a certain type.

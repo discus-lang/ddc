@@ -1,8 +1,7 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
 module Type.Crush.Fetter
-	( crushFetterC 
-	, crushFetter)
+	( crushFetterC )
 
 where
 import Type.Diagnose
@@ -34,15 +33,18 @@ debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Fetter"
 
------
+
+-- | Try and crush any single parameter fetters acting on this
+--	class into smaller components.
 crushFetterC 
-	:: ClassId 
-	-> SquidM Bool	-- whether we crushed something from this class
+	:: ClassId 	-- ^ cid of class
+	-> SquidM Bool	--   whether we crushed something from this class
 
 crushFetterC cid
  = do	Just c	<- lookupClass cid
  	crushFetterC2 cid c
 
+-- follow class indirections.
 crushFetterC2 cid (ClassForward cid')
 	= crushFetterC cid'
 
@@ -62,7 +64,8 @@ crushFetterC2 cid
 
 	(progresss, mfsReduced)	
 		<- liftM unzip
-		$  mapM (crushFetterSingle cid c tNode) fs
+		$  mapM (crushFetterSingle cid c tNode) 
+		$  map (\(TFetter f) -> f) fs
 
 	trace	$ "    progress   = " % progresss		% "\n\n"
 
@@ -77,23 +80,35 @@ crushFetterC2 cid c
 	= return False
 
 
------
-crushFetterSingle cid c tNode (TFetter f@(FConstraint vC [TClass k cidC]))
+
+-- | Try to crush a single parameter class constraint that is acting
+--	on this node from the type graph.
+crushFetterSingle
+	:: ClassId			-- ^ cid of the class
+	-> Class			-- ^ node from graph
+	-> Type				-- ^ the node type from the class
+	-> Fetter			-- ^ the fetter to crush
+	-> SquidM (Bool, Maybe Fetter)
+
+crushFetterSingle 
+	cid c tNode 
+	f@(FConstraint vC [tC@(TClass k cidC)])
  = do	
 	cid'	<- sinkClassId cid
  	cidC'	<- sinkClassId cidC
 	
 	when (cid' /= cidC')
 	 $ panic stage
-	 	$ "crushFetterSingle: Fetter in class " % cid % " constrains some other class " % cidC' % "\n"
+	 	$ "crushFetterSingle: Fetter in class " % cid 
+		% " constrains some other class " 	% cidC' % "\n"
 		
-	crushFetterSingle' cid c tNode vC cidC f
+	crushFetterSingle' cid c tNode vC f tC
 
-crushFetterSingle' cid c@Class { classNodes = nodes} tNode vC cidC f
+crushFetterSingle' cid c@Class { classNodes = nodes} tNode vC f tC
 
 	-- keep the original fetter when crushing purity
 	| vC	== primPure
-	= do	fEff	<- crushPure c cidC f tNode
+	= do	fEff	<- crushPure c cid f tNode
 		case fEff of
 
 			-- fetter crushed ok
@@ -115,20 +130,28 @@ crushFetterSingle' cid c@Class { classNodes = nodes} tNode vC cidC f
 				return 	( False
 					, Just f)
 			
-	-- could crush this fetter
+	-- try and crush some non-purify fetter
 	| otherwise
-	= do	mfsBits	<- crushFetter $ FConstraint vC [tNode]
+	= do	
+		-- crush some non-purify fetter
+		mfsBits	<- crushFetterSingle_fromGraph vC cid
+
+		-- the above call could return a number of simpler fetters
 		case mfsBits of
+
+		 -- we managed to crush it into something simpler
 		 Just fsBits 
 		  -> do	trace	$ "    fsBits     = " % fsBits			% "\n"
 		
+			-- add all the smaller fetters back to the graph.
 			let ?src	= TSI $ SICrushedF cid f
 			progress	<- liftM or
 					$ mapM addFetter fsBits
 						
 			return	( progress
 				, Nothing)
-
+		
+		 -- we couldn't crush the fetter yet.
 		 Nothing
 		  -> 	return	( False
 				, Just f)
@@ -205,54 +228,6 @@ makePurityError
 			, eFetterSource	= fSrc }
 -}
 
--- | Crush a non-purity fetter
---
-crushFetter :: Fetter -> SquidM (Maybe [Fetter])
-crushFetter f@(FConstraint vC ts)
-	-- lazy head
-	| vC	== primLazyH
-	, [TClass _ cid]	<- ts
-	= do	mtHead	<- headTypeDownLeftSpine cid
-		case mtHead of
-			Just t	-> return $ Just [FConstraint primLazy [t]]
-			_	-> return $ Nothing
-			
-	| vC	== primLazyH
-	, [TApp (TCon{}) tR@(TClass _ _)]	<- ts
-	= return $ Just [FConstraint primLazy [tR]]
-	
-	| vC	== primLazyH
-	, [TApp t1 t2]				<- ts
-	= crushFetter (FConstraint vC [t1])
-	
-{-				
-	-- lazy head where the ctor has no region (ie LazyH Unit)
-	| vC	== primLazyH
-	, [t]		<- ts
-	, Just (v, k, [])	<- takeTData t
-	= Just []
--}	
-	-- deep mutability
-	| vC	 == primMutableT
-	, [t]		<- ts
-	, Just _	<- takeTData t
-	= do	let (rs, ds)	= slurpVarsRD t
-		let fsRegion	= map (\r -> FConstraint primMutable  [r]) rs
-		let fsData	= map (\d -> FConstraint primMutableT [d]) ds
-	  	return	$ Just $ fsRegion ++ fsData
-	  
-	-- deep const
-	| vC	== primConstT
-	, [t]		<- ts
-	, Just _	<- takeTData t
-	= do	let (rs, ds)	= slurpVarsRD t
-		let fsRegion	= map (\r -> FConstraint primConst  [r]) rs
-		let fsData		= map (\d -> FConstraint primConstT [d]) ds
-	  	return	$ Just $ fsRegion ++ fsData
-	  
-	| otherwise
-	= do	trace	$ "crushFetter Nothing " % f % "\n\n"
-		return $ Nothing
 
 
 -- | Try and purify this effect, 
@@ -324,6 +299,25 @@ purifyEff eff
 
 	| otherwise
 	= return $ Nothing
+
+
+-- | Crush a non-purity fetter that's constraining some node in the graph.
+crushFetterSingle_fromGraph 
+	:: Var				-- var of fetter ctor
+	-> ClassId			-- cid of class being constrained.
+	-> SquidM (Maybe [Fetter])
+
+crushFetterSingle_fromGraph vFetter cid
+	-- lazy head
+	| vFetter	== primLazyH
+	= do	mtHead	<- headTypeDownLeftSpine cid
+		case mtHead of
+			Just t	-> return $ Just [FConstraint primLazy [t]]
+			_	-> return Nothing
+
+
+	| otherwise
+	= return Nothing
 	
 
 -- | Walk down the left spine of this type to find the type in the bottom 
@@ -345,7 +339,7 @@ headTypeDownLeftSpine
 headTypeDownLeftSpine cid1
  = do	Just cls1	<- lookupClass cid1
 
-	trace 	$ "headTypeDownLeftSpine\n"
+	trace 	$ "    headTypeDownLeftSpine\n"
 		% "    cid1 = " % cid1			% "\n"
 		% "    type = " % classType cls1	% "\n\n"
 
