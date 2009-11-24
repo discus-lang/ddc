@@ -220,28 +220,3 @@ extractTypeC2 varT cid tFinal
 		% "    tReduced:\n" 	%> prettyTS tReduced % "\n\n"
 
 	return	$ Just tReduced
-
-
-
-{--
-addTMores :: Type -> SquidM Type
-addTMores tt	= transformTM addTMores1 tt
-
-addTMores1 tt
-	| TVar k var	<- tt
-	= do	quantKinds	<- gets stateQuantifiedVars
-	 	var'		<- sinkVar var
-		
-		let result
-			| Just (k, Just tMore)	<- Map.lookup var' quantKinds
-			= do	tMore'	<- addTMores tMore
-			  	return	$ TFetters [FMore (TVar k var') tMore'] (TVar k var')
-
-			| otherwise
-			= return tt
-
-		result
-		 
-	| otherwise
-	= return tt
--}
