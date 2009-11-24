@@ -135,73 +135,67 @@ inventWitnessOfClass k
 -- Kind reconstruction -----------------------------------------------------------------------------
 -- | Reconstruct the kind of this type, kind checking along the way
 kindOfType :: Type -> Maybe Kind
-kindOfType tt = {-# SCC "kindOfType" #-} kindOfType' tt
+kindOfType tt 
+ = {-# SCC "kindOfType" #-} Just $ kindOfType' tt
 
 kindOfType' tt
-
-	| TForall  b t1 t2	<- tt	= kindOfType t2
-
-	| TContext t1 t2	<- tt	= kindOfType t2
-	| TFetters t1 _		<- tt	= kindOfType t1
+ = case tt of
+	TClass k _		-> k
+	TVar k _		-> k
+	TVarMore k _ _		-> k
+	TCon tyCon		-> (tyConKind tyCon)
+	TBot k			-> k
+	TTop k			-> k
 	
 	-- we'll just assume kind annots on TSum and TMask are right, and save
 	--	having to check all the elements
-	| TSum  k _		<- tt	= Just k
-
-	| TVar  k _		<- tt	= Just k
-	| TVarMore k _ _	<- tt	= Just k
-	| TCon tyCon		<- tt	= Just (tyConKind tyCon)
-	| TBot k		<- tt	= Just k
-	| TTop k		<- tt	= Just k
+	TSum  k _		-> k
 
 	-- application of KForall
-	| TApp t1 t2			<- tt
-	, Just (KForall k11 k12)	<- kindOfType t1
-	, Just k2			<- kindOfType t2
-	, k11 == k2
-	= Just (betaTK 0 t2 k12)
+	TApp t1 t2		
+	 | KForall k11 k12	<- kindOfType' t1
+	 , k2			<- kindOfType' t2
+	 , k11 == k2
+	 -> betaTK 0 t2 k12
 
 	-- application of kind function (which is a sugared KForall)
-	| TApp t1 t2			<- tt
-	, Just (KFun k11 k12)		<- kindOfType t1
-	, Just k2			<- kindOfType t2
-	, k11 == k2
-	= Just k12
+	TApp t1 t2
+	 | KFun k11 k12		<- kindOfType' t1
+	 , k2			<- kindOfType' t2
+	 , k11 == k2
+	 -> k12
+	
+	TForall  b t1 t2	-> kindOfType' t2
 
-	-- application failed.. :(
-	| TApp t1 t2			<- tt
-	= kindOfType_freakout t1 (kindOfType t1) t2 (kindOfType t2)
+	TContext t1 t2		-> kindOfType' t2
+	TFetters t1 _		-> kindOfType' t1
+	
 	
 	-- effect and closure constructors should always be fully applied.
-	| TEffect{}		<- tt	= Just kEffect
-	| TFree{}		<- tt	= Just kClosure
-	| TDanger{}		<- tt	= Just kClosure
+	TEffect{}		-> kEffect
+	TFree{}			-> kClosure
+	TDanger{}		-> kClosure
 
 
-	-- used in type inferencer -------------------------------------------
-	| TClass k _		<- tt
-	= Just k
+	-- application failed.. :(
+	TApp t1 t2
+	 -> kindOfType_freakout t1 (kindOfType t1) t2 (kindOfType t2)
 
-	| TError k _		<- tt
-	= Just k
-
-	-- used in source / desugar -----------------------------------------
-	| TElaborate e t	<- tt
-	= kindOfType t
-
+	TError k _		-> k
+	TElaborate e t		-> kindOfType' t
+	
 	-- used in core -----------------------------------------------------
 	-- The KJoins get crushed during Core.Util.Pack.packK
-	| TWitJoin ts		<- tt
-	, Just ks		<- sequence $ map kindOfType ts
-	= Just (makeKWitJoin ks)
+	TWitJoin ts
+	 | ks			<- map kindOfType' ts
+	 -> makeKWitJoin ks
 			
 	-- some of the helper constructors don't have real kinds ------------
-	| otherwise
-	= Nothing
+	_			-> panic stage $ "kindOfType bad kind for : " % tt
 
 
 kindOfType_freakout t1 k1 t2 k2
- = freakout stage	
+ = panic stage	
 	( "takeKindOfType: kind error in type application (t1 t2)\n"
 	% "    t1  = " % t1 	% "\n"
 	% "  K[t1] = " % k1	% "\n"
@@ -210,17 +204,10 @@ kindOfType_freakout t1 k1 t2 k2
 	% "  K[t2] = " % k2	% "\n")
 	Nothing
 
-
--- | Get the kind of a type, or die if there is a kind error.
---	This is harder to debug with...
 kindOfType_orDie :: Type -> Kind
 kindOfType_orDie tt
- = case kindOfType tt of
- 	Just k		-> k
-	Nothing		-> panic stage
-			$ "kindOfType: no match for " % tt % "\n"
-			%> show tt
-
+ = let  Just k	= kindOfType tt
+   in	k
 
 -- Beta --------------------------------------------------------------------------------------------
 -- de bruijn style beta evalation
