@@ -212,7 +212,7 @@ cleanWar :
 		-o	-name "*.o"     \
 		-o	-name "*.ddc.c" \
 		-o	-name "*.ddc.h" \
-		-o	-name "*.bin"   \
+		-o	-type f -name "*.bin" \
 		-o	-name "*.out"   \
 		-o 	-name "*.diff"  \
 		-o	-name "*.tix"   \
