@@ -1,0 +1,18 @@
+-- http://rosettacode.org/wiki/Jensen%27s_Device
+
+-- An mutable Int.
+i :: Int %r0 :- Mutable %r0
+i = 42 -- initial value doesn't matter
+
+sum' i lo hi term
+ = do	result = 0.0
+	i := lo
+	while (i <= hi)
+	 do	result := result + term ()
+		i := i + 1
+	result
+
+main ()
+ =	println $ show $ sum' i 1 100 (\ () -> 1.0 / toFloat i)
+
+
