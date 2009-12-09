@@ -10,8 +10,10 @@ import Shared.FreeVars
 import Type.Exp
 
 import qualified Data.Set	as Set
-import Data.Set			(Set, (\\), empty, union, unions, fromList, singleton)
+import qualified Data.Map	as Map
 
+import Data.Set			(Set, (\\), empty, union, unions, fromList, singleton)
+import Data.Map			(Map)
 
 -- Var ---------------------------------------------------------------------------------------------
 instance FreeVars Var where
@@ -41,7 +43,18 @@ instance FreeVars Type where
 	TFetters t fs
 	 -> union (freeVars fs) (freeVars t)
 	 	\\ (fromList [ v | FWhere (TVar k v) _ <- fs])
+			
+	TConstrain t (Constraints { crsEq, crsMore, crsOther })
+	 -> unions
+		[ freeVars t
+		, unions $ map freeVars $ Map.elems crsEq
+		, unions $ map freeVars $ Map.keys  crsMore
+		, unions $ map freeVars $ Map.elems crsMore
+		, freeVars $ Set.toList crsOther ]
 		
+	 	\\ (unions $ map freeVars $ Map.keys crsEq)
+	
+	
 	TSum k ts	-> freeVars ts
 	 
 	TApp t1 t2	-> union (freeVars t1) (freeVars t2)

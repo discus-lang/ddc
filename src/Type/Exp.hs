@@ -3,6 +3,7 @@
 module Type.Exp
 	( Var
 	, Bind		(..)
+	, Constraints	(..)
 
 	-- super kinds
 	, Super		(..)
@@ -47,6 +48,9 @@ import Shared.VarPrim
 import Shared.Error
 import Data.Ix
 import qualified Shared.Var	as Var
+
+import Data.Map			(Map)
+import Data.Set			(Set)
 
 -- ClassId -----------------------------------------------------------------------------------------
 --	A unique name for a particular type/region/effect equivalence class.
@@ -210,10 +214,20 @@ kEmpty		= KCon KiConEmpty	(SFun kClosure SProp)
 -- Type --------------------------------------------------------------------------------------------
 -- | This data type includes constructors for bona-fide type expressions, 
 --	as well as various helper constructors used in parsing/printing and type inference.
---
 data Bind
 	= BVar	Var				-- ^ unbounded quantification.
 	| BMore	Var Type			-- ^ bounded quantification. Type of v1 must be :> t2
+	deriving (Show, Eq)
+
+
+-- | Constraints that can act on a type.
+--	Some functions that act on types, packType in particular, want to do lots 
+--	of lookups of equality constraints. We don't want to keep them all in a big list..
+data Constraints
+	= Constraints 
+	{ crsEq		:: Map Type Type
+	, crsMore	:: Map Type Type
+	, crsOther	:: Set Fetter }
 	deriving (Show, Eq)
 
 data Type	
@@ -221,7 +235,14 @@ data Type
 
 	| TForall	Bind 	Kind	Type	-- ^ Type abstraction.
 	| TContext		Kind	Type	-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
+
+	-- constrained types.
+	--	We're currently moving the representation from TFetters to TConstrain.
+	--	TConstrain uses finite maps, not unsorted lists, so is much more efficient.
+	--
 	| TFetters	Type	[Fetter]	-- ^ Holds extra constraint information.
+	| TConstrain	Type	Constraints	-- ^ Holds extra constraint information.
+			
 	| TApp		Type	Type		-- ^ Type application.
 
 	| TSum		Kind 	[Type]		-- ^ A summation, least upper bound.
@@ -350,7 +371,7 @@ data Fetter
 			Type 	-- type of the dictionary to choose the projection from.
 			Type 	-- type to unify the projection function with, once it's resolved.
 				
-	deriving (Show, Eq)
+	deriving (Show, Eq, Ord)
 
 
 -- TProj -------------------------------------------------------------------------------------------
@@ -362,7 +383,7 @@ data TProj
 
 	| TJIndex  !Var				-- ^ Indexed field projection		(.<int>)
 	| TJIndexR !Var				-- ^ Indexed field reference projection	(#<int>)
-	deriving (Show, Eq)
+	deriving (Show, Eq, Ord)
 
 
 -- InstanceInfo ------------------------------------------------------------------------------------

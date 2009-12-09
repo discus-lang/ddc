@@ -14,11 +14,13 @@ where
 import Util
 import Type.Exp
 
-import qualified Util.Data.Bag 	as Bag
 import Util.Data.Bag		(Bag)
-
-import qualified Data.Set	as Set
 import Data.Set			(Set)
+import Data.Map			(Map)
+
+import qualified Util.Data.Bag 	as Bag
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 import Control.Monad.State
 
@@ -99,9 +101,8 @@ instance (Monad m, TransM m a, Ord a)
 		
  transZM table xx
  	= liftM Set.fromList
-	$ (transZM table)
+	$ transZM table
 	$ Set.toList xx
-
 
 instance (Monad m, TransM m a, TransM m b) 
 	 	=> TransM m (a, b) where
@@ -170,11 +171,19 @@ followT table tt
 	 	t'	<- transZM table t
 		return	$ TContext k' t'
 
-	TFetters fs t
+	TFetters t fs
 	 -> do	t'	<- transZM table t
 	 	fs'	<- transZM table fs
-		return	$ TFetters fs' t'
+		return	$ TFetters t' fs'
 
+	TConstrain t cs@Constraints { crsEq, crsMore, crsOther }
+	 -> do	t'		<- transZM table t
+		crsEq'		<- liftM Map.fromList $ transZM table $ Map.toList crsEq
+		crsMore'	<- liftM Map.fromList $ transZM table $ Map.toList crsMore
+		crsOther'	<- liftM Set.fromList $ transZM table $ Set.toList crsOther
+		
+		return	$ TConstrain t' (Constraints crsEq' crsMore' crsOther')
+	
 	TSum k ts
 	 -> do	ts'	<- transZM table ts
 	 	return	$ TSum k ts'
@@ -197,21 +206,6 @@ followT table tt
 	 
 	TBot k
 	 -> do	return	$ tt
-
-
-	-- data
-{-	TFun t1 t2 eff clo
-	 -> do	t1'	<- transZM table t1
-	 	t2'	<- transZM table t2
-		eff'	<- transZM table eff
-		clo'	<- transZM table clo
-		return	$ TFun t1' t2' eff' clo'
-
-	TData k v ts
-	 -> do	v'	<- transZM table v
-	 	ts'	<- transZM table ts
-		return	$ TData k v' ts'
--}		
 
 	-- effect
 	TEffect v ts

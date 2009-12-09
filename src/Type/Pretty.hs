@@ -17,6 +17,9 @@ import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
 import Util
 
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+
 -----
 stage	= "Type.Pretty"
 
@@ -38,7 +41,15 @@ instance Pretty Type PMode where
 	    in	"forall " % punc " " (map (uncurry pprBindKind) bks) % ". " % tBody
 
 	TContext c t	-> c % " => " % t
+
 	TFetters t fs	-> t % " :- " % ", " %!% fs
+	
+	TConstrain t (Constraints { crsEq, crsMore, crsOther })
+	 -> t % " :- " 
+		% ", " %!% [t1 % " =  " % t2 | (t1, t2) <- Map.toList crsEq ]
+		% ", " %!% [t1 % " :> " % t2 | (t1, t2) <- Map.toList crsMore ]
+		% ", " %!% Set.toList crsOther
+		
 	TSum k  es	-> k  % "{" % "; " %!% es % "}"
 
 	TApp t1 t2
