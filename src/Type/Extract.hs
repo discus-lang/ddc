@@ -104,9 +104,8 @@ extractType_fromClass final varT cid
 	--
 	trace	$ ppr " -- tracing type from the graph\n"
 
- 	tTrace	<- liftM sortFsT 	
-		$ {-# SCC "extract/trace" #-} 
-		  traceType cid
+ 	tTrace	<- {-# SCC "extract/trace" #-} 
+		   traceType cid
 
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 

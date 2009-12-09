@@ -2,8 +2,8 @@ module Type.Util.Pack
 	( packType, packType_noLoops
 	, packData, packData_noLoops
 	, packEffect, packEffect_noLoops
-	, packClosure, packClosure_noLoops
-	, sortFsT)
+	, packClosure, packClosure_noLoops)
+--	, sortFsT)
 
 where
 
@@ -36,14 +36,14 @@ trace ss x
 		else x
 -}
 
-------------------------
--- packType
---	Pack a type into the standard form.	
---
+-- | Pack a type into normal form.
 --	* Do a full substition into the data portion of types.
 --	* Erase fetters which aren't reachable from the type shape.
 --	* Substitute TPure/TEmpty and crush TSums
 --	* Erase TFrees if they contain no classids.
+--
+--   The "noloops" version panics if the constraints are recursive through the 
+--	value type portion.
 --
 packType_noLoops :: Type -> Type
 packType_noLoops tt
@@ -122,7 +122,7 @@ packEffect tt
 	  in result
 
 
--- 
+-- | Pack a closure into the standard form
 packClosure_noLoops :: Closure -> Closure
 packClosure_noLoops tt
  = case packClosure tt of
@@ -145,7 +145,8 @@ packClosure tt
 	 	$ "packClosure: not a closure\n"
 		% "  c = " % tt % "\n\n"
 
--- | Pack a region
+
+-- | Pack a region into the standard form.
 packRegion :: Region -> Region
 packRegion tt
 	| kindOfType tt	== Just kRegion
@@ -325,8 +326,7 @@ packTFettersLs ld ls tt
 		-- inline TBots, and fetters that are only referenced once
 		fsInlined	<- inlineFs fsPacked
 
-		let fsSorted	= sortFs		
-				$ restrictFs tPacked
+		let fsSorted	= restrictFs tPacked
 				$ fsInlined
 				
 		let tFinal	= addFetters fsSorted tPacked
@@ -489,7 +489,7 @@ restrictFs tt ls
 		$ ls
 
 
-
+{-
 -- Sort Fetters ------------------------------------------------------------------------------------
 -- | Sort fetters so effect and closure information comes out first in the list.
 sortFs :: [Fetter] -> [Fetter]
@@ -512,5 +512,5 @@ sortFsT tt
  = case tt of
  	TFetters t fs	-> TFetters t (sortFs fs) 
 	_		-> tt
-
+-}
 
