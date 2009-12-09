@@ -83,11 +83,11 @@ trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
 trimClosureT_fs quant rsData ff
  = case ff of
  	FWhere c1 c2	
-	 |  kindOfType_orDie c2 == kClosure
+	 |  kindOfType_orDie c1 == kClosure
 	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
 
 	FMore c1 c2
-	 | kindOfType_orDie c2 == kClosure
+	 | kindOfType_orDie c1 == kClosure
 	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
 	_ -> Just ff
@@ -105,17 +105,10 @@ trimClosureC quant rsData cc
  $ trimClosureC2 quant rsData cc
 
 trimClosureC2 quant rsData cc
- | kindOfType_orDie cc	== kClosure
   = let cc'	= packClosure_noLoops $ trimClosureC' quant rsData cc
     in  if cc' == cc
    	 then cc'
 	 else trimClosureC quant rsData cc'
-
- | otherwise
- = panic stage
- 	$ "trimClosureC: not a closure"
-	% "    cc = " % cc 
-
 
 trimClosureC' quant rsData cc
  = let down	= trimClosureC quant rsData
