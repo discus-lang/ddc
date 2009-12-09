@@ -48,7 +48,7 @@ instance Pretty Type PMode where
 	 -> t % " :- " 
 		% ", " %!% [t1 % " =  " % t2 | (t1, t2) <- Map.toList crsEq ]
 		% ", " %!% [t1 % " :> " % t2 | (t1, t2) <- Map.toList crsMore ]
-		% ", " %!% Set.toList crsOther
+		% ", " %!% crsOther
 		
 	TSum k  es	-> k  % "{" % "; " %!% es % "}"
 

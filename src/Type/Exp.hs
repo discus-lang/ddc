@@ -73,6 +73,7 @@ instance Ord Type where
  compare   (TVar _ a)   (TVar k b)		= compare a b
  compare   (TClass{})   (TVar{})		= LT
  compare   (TVar{})     (TClass{})		= GT
+
  compare   t1           t2
  	= panic "Type.Exp" 
 	$ "compare: can't compare type for ordering\n"
@@ -227,7 +228,7 @@ data Constraints
 	= Constraints 
 	{ crsEq		:: Map Type Type
 	, crsMore	:: Map Type Type
-	, crsOther	:: Set Fetter }
+	, crsOther	:: [Fetter] }
 	deriving (Show, Eq)
 
 data Type	

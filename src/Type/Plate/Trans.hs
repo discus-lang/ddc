@@ -180,7 +180,7 @@ followT table tt
 	 -> do	t'		<- transZM table t
 		crsEq'		<- liftM Map.fromList $ transZM table $ Map.toList crsEq
 		crsMore'	<- liftM Map.fromList $ transZM table $ Map.toList crsMore
-		crsOther'	<- liftM Set.fromList $ transZM table $ Set.toList crsOther
+		crsOther'	<- transZM table crsOther
 		
 		return	$ TConstrain t' (Constraints crsEq' crsMore' crsOther')
 	

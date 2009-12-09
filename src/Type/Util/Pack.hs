@@ -79,18 +79,14 @@ packData tt
 	| Just k		<- liftM resultKind $ kindOfType tt
 	, elem k [kValue, KNil]
 
-	, (tt_packed, tsLoop)	<- runState (packT1 False Map.empty tt) []
+	, (tt_packed, tsLoop)	
+		<- runState 
+			(liftM toFetterFormT $ packT1 False Map.empty $ toConstrainFormT tt) 
+			[]
 	= let result
 
 		-- if we've hit loops in the substitution then bail out early
 		| not $ null tsLoop 	= (tt_packed, tsLoop)
-			
-		-- type has stopped moving.
---		| tt_packed == tt	= (tt_packed, [])
-
-		-- keep packing
---		| otherwise		= packData tt_packed
-
 		| otherwise		= (tt_packed, [])
 	  in  result
 
@@ -114,8 +110,11 @@ packEffect_noLoops tt
 packEffect :: Effect -> (Effect, [(Type, Type)])
 packEffect tt
 	| kindOfType tt	== Just kEffect
-	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
-	, tt'			<- inlineFsT $ tt_packed
+	, (tt_packed, tsLoop)	
+		<- runState 
+			(packT1 True Map.empty $ toConstrainFormT tt) 
+			[]
+	, tt'		<- toFetterFormT $ inlineFsT $ tt_packed
 	= let result
 		| not $ null tsLoop	= (tt', tsLoop)
 		| otherwise		= (tt', [])
@@ -133,8 +132,9 @@ packClosure_noLoops tt
 		
 packClosure tt
 	| kindOfType tt == Just kClosure
-	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
- 	, tt'			<- crushT $ inlineFsT $ tt_packed
+	, (tt_packed, tsLoop)	
+		<- runState (packT1 True Map.empty $ toConstrainFormT tt) []
+ 	, tt'	<- crushT $ toFetterFormT $ inlineFsT $ tt_packed
 	= let result
 		| not $ null tsLoop	= (tt_packed, tsLoop)
 		| otherwise		= (tt', [])
@@ -150,7 +150,8 @@ packClosure tt
 packRegion :: Region -> Region
 packRegion tt
 	| kindOfType tt	== Just kRegion
-	, (tt_packed, tsLoop)	<- runState (packT1 True Map.empty tt) []
+	, (tt_packed, tsLoop)	
+		<- runState (liftM toFetterFormT $ packT1 True Map.empty $ toConstrainFormT tt) []
 	, null tsLoop
 	= tt_packed
 	
@@ -176,14 +177,14 @@ packT1 ld ls tt
 			tBody'			-> return $ TForall v1 k1 tBody'
 
 	-- keep fetters under foralls.
-	TFetters t1 fs
+	TConstrain t1 crs
 	 -> do	t1'	<- packT1 ld ls t1
 	 	case t1' of
 			TForall b k tBody	
-			 -> do	tBody'	<- packTFettersLs ld ls $ TFetters t1' fs
+			 -> do	tBody'	<- packTFettersLs ld ls $ TConstrain t1' crs
 			 	return	$ TForall b k tBody'
 
-			_	-> packTFettersLs ld ls $ TFetters t1' fs
+			_	-> packTFettersLs ld ls $ TConstrain t1' crs
 
 	-- sums
 	TSum k ts
@@ -244,7 +245,7 @@ packT1 ld ls tt
 			TBot k 
 				| k == kClosure		-> return $ TBot kClosure
 
-			TFetters (TBot k) _
+			TConstrain (TBot k) _
 				| k == kClosure		-> return $ TBot kClosure	
 
 			TDanger t21 (TFree v t22)	-> return $ TFree v1 (TDanger t21 t22)
@@ -312,33 +313,40 @@ packTFettersLs
 packTFettersLs ld ls tt
  = {-# SCC "packTFettersLs" #-}
    case tt of
-	TFetters TError{} fs
+	TConstrain TError{} _
 	 -> return tt
 
- 	TFetters t fs
-	 -> do	let ls'	= Map.union 
-	 			(Map.fromList [(t1, t2) | FWhere t1 t2 <- fs])
-				ls
+ 	TConstrain t crs@(Constraints { crsEq, crsMore, crsOther })
+	 -> do	let ls'	= Map.union crsEq ls
 
 		tPacked		<- packT1 ld ls' t
-		fsPacked	<- mapM (packFetterLs ld ls') fs
+		
+		crsEq_packed	<- liftM Map.fromList $ mapM (packFetterLsTT ld ls') $ Map.toList crsEq
+		crsOther_packed	<- mapM (packFetterLs   ld ls') crsOther
+		let crsPacked	= Constraints crsEq_packed crsMore crsOther_packed
+
 
 		-- inline TBots, and fetters that are only referenced once
-		fsInlined	<- inlineFs fsPacked
+		crsInlined	<- inlineCrs crsPacked
 
-		let fsSorted	= restrictFs tPacked
-				$ fsInlined
-				
-		let tFinal	= addFetters fsSorted tPacked
+		-- delete constraints that aren't reachable from the body of the type
+		let crsRestrict	= restrictCrs tPacked crsInlined
+			
+		-- add the restricted fetters back to the type.
+		let tFinal	= addConstraints crsRestrict tPacked
 
 		-- bail out if we find an infinite type problem
 		tsLoops		<- get
-		if   (length fsSorted < length fs)
+		if   (crsSize crsRestrict < crsSize crs)
 		  && null tsLoops 
 	    	 	then packTFettersLs ld ls tFinal
 			else return tFinal
 
 	_ -> return tt
+
+crsSize :: Constraints -> Int
+crsSize (Constraints { crsEq, crsMore, crsOther})
+	= Map.size crsEq + Map.size crsMore + length crsOther
 
 
 -- | Pack the type in the RHS of a TLet
@@ -352,39 +360,32 @@ packFetterLs
 packFetterLs ld ls ff
  = {-# SCC "packFetterLs" #-}
    case ff of
- 	FWhere t1 t2
-	 -> do	t2'	<- packT1 ld ls t2
-	 	return	$ FWhere t1 (crushT t2')
-
-	FConstraint v ts
-	 -> do	ts'	<- mapM (packT1 True ls) ts
-	 	return	$ FConstraint v ts'
+	FConstraint v crs
+	 -> do	crs'	<- mapM (packT1 True ls) crs
+	 	return	$ FConstraint v crs'
 
 	_ -> return ff
+	
+packFetterLsTT ld ls (t1, t2)
+ = do	t2'	<- packT1 ld ls t2
+	return	(t1, crushT t2')
+ 
 
 
 -- InlineFs ----------------------------------------------------------------------------------------
 -- | Inline fetters into themselves.
 --
-inlineFs :: [Fetter] -> SubM [Fetter]
-inlineFs fs
- = {-# SCC "inlineFs1" #-}
+inlineCrs :: Constraints -> SubM Constraints
+inlineCrs crs@Constraints { crsEq, crsMore, crsOther }
+ = {-# SCC "inlineCrs" #-}
    do
-   	-- build a substitution from the fetters
-	let takeSub ff
-		 = case ff of
-		 	FWhere t1 t2	-> Just (t1, t2)
---			FMore t1 t2	-> Just (t1, TSum (kindOfType t1) [t1, t2])
-			_		-> Nothing
-	
-	let sub	= Map.fromList	
-			$ catMaybes
-			$ map takeSub fs
+	-- a substitution with all constraints
+	let sub	= crsEq
 
-	-- a substitutions with only data fetters.
+	-- a substitutions with only data constraints
 	let subD = Map.filterWithKey
 			(\t x -> (let Just k = kindOfType t in resultKind k) == kValue)
-			sub
+			crsEq
 
 	-- Don't substitute closures and effects into data, it's too hard to read.				
 	--	Also bail out early if one of the substitutions hits an infinite
@@ -401,25 +402,26 @@ inlineFs fs
 	-- substitute in the the RHSs
 	let subF ff
 		= case ff of
-			FWhere  t1 t2 	 
-			 -> do	t2'	<- subRHS t1 t2
-			 	return	$ FWhere t1 t2'
-			 
-			FMore t1 t2	 
-			 -> do	t2'	<- subRHS t1 t2
-			    	return $ FMore t1 t2'
-
 			FConstraint v ts 
 			 -> do	ts'	<- mapM (subTT_cutM sub (Set.empty)) ts
 
 				return $ FConstraint v ts'
 		
 			_ -> return ff
+	
+	let subTT (t1, t2)
+		= do	t2'	<- subRHS t1 t2
+			return	$ (t1, t2')
+
 
 	-- substitute into all the fetters
-	fs'	<- mapM subF fs
-
-	return fs'
+	crsEq_sub	<- liftM Map.fromList $ mapM subTT $ Map.toList crsEq
+	crsMore_sub	<- liftM Map.fromList $ mapM subTT $ Map.toList crsMore
+	crsOther_sub	<- mapM subF crsOther
+	
+	let crs_sub	= Constraints crsEq_sub crsMore_sub crsOther_sub 
+	
+	return crs_sub
 
 
 -- | Inline Effect and Closure fetters, regardless of the number of times they are used
@@ -428,67 +430,54 @@ inlineFsT :: Type -> Type
 inlineFsT tt
  = {-# SCC "inlineFsT" #-}
    case tt of
- 	TFetters t fs
-	 -> let	sub	= Map.fromList
-			$ catMaybes
-			$ map (\f -> case f of
-					FWhere t1 t2	-> Just (t1, t2)
-					_ 		-> Nothing)
-			$ fs
-
-		fs'	= map (\f -> case f of
-					FWhere t1 t2 	
-					 -> let (t2', []) = subTT sub t2
-					    in  FWhere t1 t2'
-
-					_		-> f)
-			$ fs
-
+ 	TConstrain t crs@Constraints { crsEq, crsMore, crsOther }
+	 -> let	sub	= crsEq
+		crsEq'	= Map.mapWithKey 
+				(\t1 t2 -> let (t2', []) = subTT sub t2
+				           in  t2')
+				crsEq
+	
 		(t', []) = subTT sub t
 
-	    in	addFetters fs' t'
-
+	    in	addConstraints (Constraints crsEq' crsMore crsOther) t'
+	
 	_	-> tt	     	
 
 -- RestrictFs --------------------------------------------------------------------------------------
 -- | Restrict the list of TLet fetters to ones which are 
 --	reachable from this type. Also erase x = Bot fetters.
 --
-restrictFs :: Type -> [Fetter] -> [Fetter]
-restrictFs tt ls
- = {-# SCC "restrictFs" #-}
-   let	reachFWheresMap
- 		= Map.fromList
-		$ catMaybes
-		$ map (\f -> case f of
-			FWhere  t1 t2	-> Just (t1, Set.fromList $ collectTClassVars t2)
-			FMore t1 t2	-> Just (t1, Set.fromList $ collectTClassVars t2)
-			FProj j v t1 t2	-> Nothing
-			FConstraint{}	-> Nothing)
-		$ ls
+restrictCrs :: Type -> Constraints -> Constraints
+restrictCrs tt crs@Constraints { crsEq, crsMore, crsOther }
+ = {-# SCC "restrictCrs" #-}
+   let	reachFWheresMap	
+		= Map.unions 
+			[ Map.map (Set.fromList . collectTClassVars) crsEq
+			, Map.map (Set.fromList . collectTClassVars) crsEq ]
  
  	tsSeed		= Set.fromList 
 			$ collectTClassVars tt
 			++ concat [catMap collectTClassVars ts 
-					| FConstraint v ts	<- ls]
+					| FConstraint v ts	<- crsOther ]
 
 	tsReachable	= tsSeed `Set.union` graphReachableS reachFWheresMap tsSeed
-	 
-   in	filter (\f -> case f of
-			FWhere t1 t2
-			 | t1 == t2	-> False
-			 
-			FMore t1 t2
-			 | t1 == t2	-> False
-			
-			FMore  t (TBot _) -> False
-			 
-			FWhere t (TBot _)	-> False
-   			FWhere t _	-> Set.member t tsReachable
-			_		-> True)
-		$ ls
 
-
+	keepEq   t1  t2 | t1 == t2	= False
+	keepEq   t1 (TBot _)		= False
+	keepEq   t1 _			= Set.member t1 tsReachable
+	
+	keepMore t1  t2 | t1 == t2	= False
+	keepMore t1 (TBot _)		= False
+	keepMore _  _			= True
+	
+	crsEq_restrict		= Map.filterWithKey keepEq   crsEq
+	crsMore_restrict	= Map.filterWithKey keepMore crsMore
+	
+	crs_restrict		= Constraints crsEq_restrict crsMore_restrict crsOther
+	
+   in	crs_restrict
+	
+	
 {-
 -- Sort Fetters ------------------------------------------------------------------------------------
 -- | Sort fetters so effect and closure information comes out first in the list.

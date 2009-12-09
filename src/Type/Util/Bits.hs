@@ -51,7 +51,13 @@ module Type.Util.Bits
 	, makeTFetters
 	, takeTFetters
 	, addFetters
-	, addFetters_front)
+	, addFetters_front
+	
+	-- constraints
+	, toFetterFormT
+	, toConstrainFormT
+	, addConstraints
+	)
 where
 
 import Type.Plate
@@ -383,4 +389,83 @@ addFetters_front fsMore t
 	_ -> case fsMore of
 		[]	-> t
 		ff	-> TFetters t (nub ff)
+
+-- TFetters vs TConstrain -------------------------------------------------------------------------
+
+-- | Convert top-level occurences of TConstrain to TFetters
+toFetterFormT :: Type -> Type
+toFetterFormT tt
+ = let down = toFetterFormT 
+   in case tt of
+	TForall    b k t	-> TForall b k (down t)
+	TContext   k t		-> TContext k (down t)
+	TFetters   t fs		-> TFetters (down t) fs
+
+	TConstrain t (Constraints { crsEq, crsMore, crsOther })
+	 | Map.null crsEq 
+	 , Map.null crsMore
+	 , null crsOther
+	 -> t
+	
+	 | otherwise
+	 -> TFetters 
+		(down t)
+		(    [FWhere t1 (down t2) | (t1, t2) <- Map.toList crsEq   ]
+		  ++ [FMore  t1 (down t2) | (t1, t2) <- Map.toList crsMore ]
+		  ++ crsOther)
+			
+	TApp t1 t2		-> TApp (down t1) (down t2)
+	TFree   t1 t2		-> TFree   t1 (down t2)
+	TDanger t1 t2		-> TDanger t1 (down t2)
+
+	_			-> tt
+
+-- | Convert top-level occurences of TFetters to TConstrain
+toConstrainFormT :: Type -> Type
+toConstrainFormT tt
+ = let down = toConstrainFormT
+   in  case tt of
+	TForall    b k t	-> TForall b k (down t)
+	TContext   k t		-> TContext k (down t)
+
+	TFetters t fs
+	 -> let	crsEq		= Map.fromList [(t1, toConstrainFormT t2) | FWhere t1 t2 <- fs]
+		crsMore		= Map.fromList [(t1, toConstrainFormT t2) | FMore  t1 t2 <- fs]
+		crsOther	= filter (\f -> (not $ isFWhere f) && (not $ isFMore f)) fs
+	    in	TConstrain t (Constraints crsEq crsMore crsOther)
+	
+	TConstrain t cs		-> TConstrain (down t) cs
+	
+	TApp t1 t2		-> TApp (down t1) (down t2)
+	TFree t1 t2		-> TFree   t1 (down t2)
+	TDanger t1 t2		-> TDanger t1 (down t2)
+	
+	_			-> tt
+
+-- | Add some constraints to a type
+addConstraints :: Constraints -> Type -> Type
+addConstraints crs@(Constraints crsEq1 crsMore1 crsOther1) tt
+ = case tt of
+	TConstrain t (Constraints crsEq2 crsMore2 crsOther2)
+	 -> addConstraints' 
+		(Constraints 
+			(Map.union crsEq1   crsEq2)
+			(Map.union crsMore1 crsMore2)
+			(crsOther1 ++ crsOther2))
+		t
+			
+	_ -> addConstraints' crs tt
+	
+addConstraints' crs@(Constraints crsEq crsMore crsOther) tt
+ 	| Map.null crsEq
+	, Map.null crsMore
+	, null crsOther
+	= tt
+	
+	| otherwise
+	= TConstrain tt crs
+	
+	
+	
+	
 

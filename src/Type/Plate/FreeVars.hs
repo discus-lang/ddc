@@ -50,7 +50,7 @@ instance FreeVars Type where
 		, unions $ map freeVars $ Map.elems crsEq
 		, unions $ map freeVars $ Map.keys  crsMore
 		, unions $ map freeVars $ Map.elems crsMore
-		, freeVars $ Set.toList crsOther ]
+		, freeVars crsOther ]
 		
 	 	\\ (unions $ map freeVars $ Map.keys crsEq)
 	

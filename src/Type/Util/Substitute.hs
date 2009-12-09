@@ -16,10 +16,12 @@ import Type.Exp
 
 import Shared.Error
 
-import Util
+import Util			hiding (mapM)
+import Prelude			hiding (mapM)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
+import Data.Traversable		(mapM)
 
 -----
 stage	= "Type.Util.Substitute"
@@ -81,6 +83,13 @@ subTT_cutM' sub cut tt
 	 -> do	t'	<- down t
 		fs'	<- mapM (subTTf_cutM' sub cut) fs
 	 	return	$ TFetters t' fs'
+
+	TConstrain t crs@(Constraints crsEq crsMore crsOther)
+	 -> do	t'		<- down t
+		crsEq'		<- mapM  (subTT_cutM' sub cut) crsEq
+		crsMore'	<- mapM  (subTT_cutM' sub cut) crsMore
+		crsOther'	<- mapM  (subTTf_cutM' sub cut) crsOther
+		return	$ TConstrain t (Constraints crsEq' crsMore' crsOther')
 
 	TSum k ts
 	 -> do	ts'	<- mapM down ts
