@@ -188,7 +188,7 @@ packT1 ld ls tt
 
 	-- sums
 	TSum k ts
-	 -> do	ts'	<- liftM nub $ mapM (packT1 True ls) ts
+	 -> do	ts'	<- mapM (packT1 True ls) ts
 		return	$ makeTSum k ts'
 	
 			

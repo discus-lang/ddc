@@ -369,11 +369,11 @@ addFetters	fsMore	t
 	TFetters x fs
 	 -> case fs ++ fsMore of
 	 	[]	-> x
-		ff	-> TFetters x (nub ff)
+		ff	-> TFetters x ff
 	 
 	_ -> case fsMore of
 		[]	-> t
-		ff	-> TFetters t (nub ff)
+		ff	-> TFetters t ff
 
 addFetters_front :: [Fetter] -> Type -> Type
 addFetters_front fsMore t
@@ -384,11 +384,11 @@ addFetters_front fsMore t
  	TFetters x fs
 	 -> case fsMore ++ fs of
 	 	[]	-> x
-		ff	-> TFetters x (nub ff)
+		ff	-> TFetters x ff
 		
 	_ -> case fsMore of
 		[]	-> t
-		ff	-> TFetters t (nub ff)
+		ff	-> TFetters t ff
 
 -- TFetters vs TConstrain -------------------------------------------------------------------------
 
