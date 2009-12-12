@@ -212,7 +212,8 @@ prettyTypeFS fs
  	= "\n,  " %!% fs
 		
 prettyTS t
-	= prettyTypeSplit t 
+	= prettyTypeSplit 
+	$ toFetterFormT t 
 
 
 -- | Prints a variable with an optional kind.

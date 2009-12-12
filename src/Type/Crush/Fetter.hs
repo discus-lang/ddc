@@ -53,27 +53,37 @@ crushFetterC2 cid (ClassFetter { classFetter = f })
 	= return False
 
 crushFetterC2 cid 
-	c@(Class	
+	cls@(Class	
 		{ classKind	= k
 		, classType	= Just tNode
 		, classFetters 	= fs })
  = do	
-	trace	$ "*   crushFetterC "	% k % cid		% "\n"
-		% "    tNode      = " % tNode			% "\n"
-		% "    fs         = " % fs			% "\n"
+	trace	$ "*   crushFetterC "   % k % cid		% "\n"
+		% "    tNode        = " % tNode			% "\n"
+		% "    fs           = " % fs			% "\n"
 
-	(progresss, mfsReduced)	
-		<- liftM unzip
-		$  mapM (crushFetterSingle cid c tNode) 
+	-- try to crush each fetter in turn, into smaller bits.
+	--	crushing a particular fetter (like Pure) might also cause
+	--	the type in the node to change (such as by removing an effect term)
+	(cls', progressFetters)	
+		<- mapAccumLM crushFetterSingle cls
 		$  map (\(TFetter f) -> f) fs
+	
+	let (progresss, mfsCrushed)
+			= unzip progressFetters
 
-	trace	$ "    progress   = " % progresss		% "\n\n"
+	let fsCrushed	= catMaybes mfsCrushed
+	
+	trace	$ "    progress     = " % progresss		% "\n"
+		% "    tNode'       = " % classType cls'	% "\n"
+		% "    fsCrushed    = " % fsCrushed		% "\n\n"
 
 	-- update the class with the new fetters
-	let fsReduced	= catMaybes mfsReduced
-	modifyClass cid
-	 $ \c -> c { classFetters = map TFetter $ fsReduced }
+	updateClass cid
+	 $ cls { classFetters = map TFetter $ fsCrushed }
 		
+	-- return a bool saying whether we made any progress with crushing
+	--	fetters in this class.
 	return $ or progresss
 
 crushFetterC2 cid c
@@ -84,30 +94,105 @@ crushFetterC2 cid c
 -- | Try to crush a single parameter class constraint that is acting
 --	on this node from the type graph.
 crushFetterSingle
-	:: ClassId			-- ^ cid of the class
-	-> Class			-- ^ node from graph
-	-> Type				-- ^ the node type from the class
+	:: Class			-- ^ node from graph
 	-> Fetter			-- ^ the fetter to crush
-	-> SquidM (Bool, Maybe Fetter)
+	-> SquidM 
+		( Class			-- the updated class
+		, ( Bool		-- whether we made any progress
+		  , Maybe Fetter))	-- perhaps a new fetter to replace the original with
 
 crushFetterSingle 
-	cid c tNode 
-	f@(FConstraint vC [tC@(TClass k cidC)])
+	cls  
+	f@(FConstraint vC [tC@(TClass k cidTarget)])
  = do	
-	cid'	<- sinkClassId cid
- 	cidC'	<- sinkClassId cidC
+	-- the cid of the node that the fetter was in
+	let cidCls	= classId cls
+
+	-- A single parameter type class constraint should always constrain
+	--	the node that it's stored in.
+	cidCls'		<- sinkClassId cidCls
+ 	cidTarget'	<- sinkClassId cidTarget
 	
-	when (cid' /= cidC')
+	when (cidCls' /= cidTarget')
 	 $ panic stage
-	 	$ "crushFetterSingle: Fetter in class " % cid 
-		% " constrains some other class " 	% cidC' % "\n"
+	 	$ "crushFetterSingle: Fetter in class " % cidCls' 
+		% " constrains some other class " 	% cidTarget' % "\n"
 		
-	crushFetterSingle' cid c tNode vC f tC
+	crushFetterSingle' cidCls' cls f
 
-crushFetterSingle' cid c@Class { classNodes = nodes} tNode vC f tC
+crushFetterSingle' 
+	cid
+	cls@Class 
+		{ classType  = Just tNode
+		, classNodes = nodes } 
+	  f@(FConstraint vC [tC@(TClass k cidT)])
 
+	-- crush a purity constraint
+	| vC  == primPure
+	= do	trace	$ "    - crush pure"	% "\n"
+
+		-- flatten out the effect sum into individual atomic effects
+		let effs_atomic = flattenTSum tNode
+		trace	$ "    effs_atomic  = " % effs_atomic % "\n"
+
+		-- get the fetters of each atomic effect,
+		--	TODO: handle purification errors
+		mfsPurifiers		<- mapM purifyEffect_fromGraph effs_atomic
+		trace	$ "    mfsPurifiers = " % mfsPurifiers % "\n"
+		let Just fsPurifiers	= sequence mfsPurifiers	
+
+		-- lookup the source of the original purity constraint, 
+		--	and make the source info for constraints added due to purification.
+		let Just src		= lookup (TFetter f) nodes
+		let srcPurified		= TSI (SICrushedFS cid f src)
+		trace	$ "    srcPurified  = " % srcPurified % "\n"
+
+		-- add all the new fetters back to the graph
+		--	the addition function returns True if the fetter added was a new constraint
+		bsWasNewFetter		<- mapM (addFetterSource srcPurified) fsPurifiers
+		trace	$ "    bsWasNewFetter = " % bsWasNewFetter % "\n"
+		
+		-- we've made progress on this class if any new fetters were added
+		let madeProgress	= or bsWasNewFetter
+		return (cls, (madeProgress, Just f))
+
+
+	-- try and crush some non-purity constraint
+	| otherwise
+	= do	
+		-- crush some non-purify fetter
+		mfsBits	<- crushFetterSingle_fromGraph vC cid
+
+		-- the above call could return a number of simpler fetters
+		case mfsBits of
+
+		 -- we managed to crush it into something simpler
+		 Just fsBits 
+		  -> do	-- add all the smaller fetters back to the graph.
+			let ?src	= TSI $ SICrushedF cid f
+			progress	<- liftM or
+					$ mapM addFetter fsBits
+			
+			Just cls'	<- lookupClass cid
+						
+			return	( cls'
+				, (progress, Nothing))
+		
+		 -- we couldn't crush the fetter yet.
+		 Nothing
+		  -> 	return	( cls
+				, (False, Just f))
+
+
+	| otherwise
+	= return (cls, (False, Nothing))
+
+
+
+{-
 	-- keep the original fetter when crushing purity
 	| vC	== primPure
+	= return (False, Nothing)
 	= do	fEff	<- crushPure c cid f tNode
 		case fEff of
 
@@ -130,37 +215,13 @@ crushFetterSingle' cid c@Class { classNodes = nodes} tNode vC f tC
 				return 	( False
 					, Just f)
 			
-	-- try and crush some non-purify fetter
-	| otherwise
-	= do	
-		-- crush some non-purify fetter
-		mfsBits	<- crushFetterSingle_fromGraph vC cid
-
-		-- the above call could return a number of simpler fetters
-		case mfsBits of
-
-		 -- we managed to crush it into something simpler
-		 Just fsBits 
-		  -> do	trace	$ "    fsBits     = " % fsBits			% "\n"
-		
-			-- add all the smaller fetters back to the graph.
-			let ?src	= TSI $ SICrushedF cid f
-			progress	<- liftM or
-					$ mapM addFetter fsBits
-						
-			return	( progress
-				, Nothing)
-		
-		 -- we couldn't crush the fetter yet.
-		 Nothing
-		  -> 	return	( False
-				, Just f)
-			
+-}			
 
 -- Crush a purity fetter.
 --	This can generate an error if the effect that the fetter is acting 
 --	on cannot be purified.
 --
+{-
 crushPure 
 	:: Class 	-- ^ The class of the purify effect (for error reporting)
 	-> ClassId	-- ^ The classId of the effect being purified (for error reporting)
@@ -182,7 +243,7 @@ crushPure c cidEff fPure tNode
 		$ flattenTSum tNode
 
 	-- See if any of the effects couldn't be purified
-{-	let effsBad	
+	let effsBad	
 		= catMaybes
 		$ map (\(eff, mfPureSrc) 
 			-> case mfPureSrc of
@@ -191,17 +252,17 @@ crushPure c cidEff fPure tNode
 		$ zip effs mFsPureSrc
 								
 	trace	$ "    effs_bad   = " % effsBad % "\n"
--}
+
 	return 	$ Left $ catMaybes mFsPureSrc
-{-
+
  	case effsBad of
 	  	[]		-> return $ Left  $ catMaybes mFsPureSrc
 		(effBad : _)	
 		 -> do	eff	<- makePurityError c fPure effBad
 		 	return	$ Right eff
--}		
+		
 
-{-
+
 -- | Make an error for when the purity fetter in this class could not be satisfied.
 makePurityError :: Class -> Fetter -> Effect -> SquidM Error
 makePurityError 
@@ -226,8 +287,6 @@ makePurityError
 			, eEffectSource	= effSrc
 			, eFetter	= fPure
 			, eFetterSource	= fSrc }
--}
-
 
 
 -- | Try and purify this effect, 
@@ -259,12 +318,20 @@ purifyEffSrc
 	 Just fNew	-> return $ Just (fNew, TSI (SIPurify cidEff eff))
 	
 
--- | produce either 
+
+
+
+-}
+
+-- | Given an effect, produce either 
 --	the fetter which purifies this effect
 --	or an error saying why it cannot be purified.
 --
-purifyEff :: Type -> SquidM (Maybe Fetter)
-purifyEff eff
+purifyEffect_fromGraph
+	:: Effect 
+	-> SquidM (Maybe Fetter)
+
+purifyEffect_fromGraph eff
 	-- read
  	| TEffect v [tR@(TClass kR _)]	<- eff
 	, v 	== primRead
@@ -276,10 +343,6 @@ purifyEff eff
 	, v 	== primReadH
 	, kV	== kValue
 	= do	mHeadType	<- headTypeDownLeftSpine cidV
-		
-		trace	$ "    purifyEff"
-			% "      eff       = " % eff		% "\n"
-			% "      mHeadType = " % mHeadType	% "\n\n"
 			
 		case mHeadType of
 		 Just tR@(TClass kR _)
@@ -288,7 +351,7 @@ purifyEff eff
 		
 	-- deep read
  	| TEffect v [tR@(TClass kV _)]	<- eff
-	, kV	== kValue
+--	, kV	== kValue
 	, v	== primReadT
 	= return $ Just $ FConstraint primConstT [tR]
 	
@@ -318,36 +381,6 @@ crushFetterSingle_fromGraph vFetter cid
 
 	| otherwise
 	= return Nothing
-	
 
--- | Walk down the left spine of this type to find the type in the bottom 
---	left node (if there is one)
---
---	For example, if the graph holds a type like:
---	   TApp (TApp (TCon tc) t1) t2
---	
---	Then starting from the cid of the outermost TApp, we'll walk down 
---	the left spine until we find (TCon tc), then return t1
---
---	If the node at the bottom of the spine hasn't been unified, then
---	It'll be a Nothing, so return that instead.
---
-headTypeDownLeftSpine 
-	:: ClassId 
-	-> SquidM (Maybe Type)
-	
-headTypeDownLeftSpine cid1
- = do	Just cls1	<- lookupClass cid1
 
-	trace 	$ "    headTypeDownLeftSpine\n"
-		% "    cid1 = " % cid1			% "\n"
-		% "    type = " % classType cls1	% "\n\n"
 
-	case classType cls1 of
-	 Just (TApp (TClass _ cid11) t12)	
-	   -> do Just cls11	<- lookupClass cid11
-		 case classType cls11 of
-			Just TCon{}	-> return $ Just t12
-			_		-> headTypeDownLeftSpine cid11
-
-	 _	-> return $ Nothing

@@ -26,16 +26,14 @@ import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Array.IO	as Array
-import qualified Debug.Trace
 
 -----
 stage	= "Type.Feed"
 
-debug	= False
-trace ss xx
- = if debug 
- 	then Debug.Trace.trace (pprStrPlain ss) xx
-	else xx
+debug	= True
+trace ss
+ = when debug $ traceM ss
+
 
 
 -- feedConstraint ----------------------------------------------------------------------------------
@@ -45,8 +43,8 @@ feedConstraint
 	:: CTree -> SquidM ()
 	
 feedConstraint cc
- = trace ("feedConstraint " % cc)
- $ case cc of
+ = trace ("feedConstraint: " % cc % "\n") >>
+   case cc of
 	-- Equality constraints. The LHS must be a variable.
  	CEq src (TVar k v1) t2
 	 -> do
@@ -114,8 +112,7 @@ feedType
 	-> Type -> SquidM (Maybe Type)
 
 feedType mParent t
- = trace ("feedType " % t)
- $ do	t'	<- feedType' mParent t
+ = do	t'	<- feedType' mParent t
 	return t'
 	
 feedType'	mParent t
@@ -288,7 +285,8 @@ feedFetter
 	-> SquidM ()
 
 feedFetter	mParent f
- = case f of
+ = trace ("feedFetter " % f % "\n") >>
+   case f of
 	FWhere t1 t2
 	 -> do	Just (TClass k1 cid1)	<- feedType mParent t1
 	 	Just (TClass k2 cid2)	<- feedType mParent t2
@@ -340,26 +338,33 @@ addFetter
 -- Single parameter type class contraints are added directly to the equivalence
 --	class which they constrain.
 --
-addFetter (FConstraint vC [t1])
+addFetter f@(FConstraint vC [t])
  = do	
-	Just (TClass k cid1)	<- feedType Nothing t1
+	trace	$ "    * addFetter: " % f	% "\n\n"
+
+	-- The target type t could be a TVar or a TClass
+	--	Use feedType to make sure it's a TClass
+	Just (TClass k cid)	
+			<- feedType Nothing t
 	
 	-- add the fetter to the equivalence class
-	let f	= FConstraint vC [TClass k cid1]
+	let fNew	= FConstraint vC [TClass k cid]
 
-	Just c		<- lookupClass cid1
-	let fsThere	= map (\(TFetter f) -> f) $ classFetters c
+	-- check what fetters are already there
+	Just cls	<- lookupClass cid
+	let vfsThere	= map (\(TFetter (FConstraint v _)) -> v) 
+			$ classFetters cls
 
-	-- add the fetter even if it's already there so we get the extra classNode
- 	modifyClass cid1
-	 $ \c -> c	
-	 	{ classFetters	= nub $ (TFetter f) 		: classFetters c
-		, classNodes	= nub $ (TFetter f, ?src) 	: classNodes c }
-
-	if (elem f $ fsThere)
+	-- if the fetter to be added is already there then there's no need to add it again.
+	if (elem vC $ vfsThere)
 	 then	return False
 	 else do
-	 	activateClass cid1
+ 		modifyClass cid
+	  	 $ \c -> c	
+	 		{ classFetters	= TFetter fNew 		: classFetters c
+			, classNodes	= (TFetter fNew, ?src) 	: classNodes c }
+
+	 	activateClass cid
 		return True
 			
 	

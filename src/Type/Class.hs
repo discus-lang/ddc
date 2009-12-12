@@ -21,7 +21,9 @@ module Type.Class
 	, sinkVar
 	, updateVC
 	, kindOfCid
-	, foldClasses)
+	, foldClasses
+	, headTypeDownLeftSpine
+	, traceDownLeftSpine)
 
 where
 
@@ -530,4 +532,73 @@ foldClasses fun x
  = do  	graph		<- gets stateGraph
 	classes		<- liftIO $ getElems $ graphClass graph
 	foldM fun x classes  
+
+
+-- | Walk down the left spine of this type to find the type in the bottom 
+--	left node (if there is one)
+--
+--	For example, if the graph holds a type like:
+--	   TApp (TApp (TCon tc) t1) t2
+--	
+--	Then starting from the cid of the outermost TApp, we'll walk down 
+--	the left spine until we find (TCon tc), then return t1
+--
+--	If the node at the bottom of the spine hasn't been unified, then
+--	It'll be a Nothing, so return that instead.
+--
+headTypeDownLeftSpine 
+	:: ClassId 
+	-> SquidM (Maybe Type)
 	
+headTypeDownLeftSpine cid1
+ = do	Just cls1	<- lookupClass cid1
+
+--	trace 	$ "    headTypeDownLeftSpine\n"
+--		% "    cid1 = " % cid1			% "\n"
+--		% "    type = " % classType cls1	% "\n\n"
+
+	case classType cls1 of
+	 Just (TApp (TClass _ cid11) t12)	
+	   -> do Just cls11	<- lookupClass cid11
+		 case classType cls11 of
+			Just TCon{}	-> return $ Just t12
+			_		-> headTypeDownLeftSpine cid11
+
+	 _	-> return $ Nothing
+
+
+-- Starting an outermost application node, trace the graph and return
+--	a list of the parts being applied. Eg, tracing the following
+--	structure from the graph gives [t1, t2, t3]
+--
+--         @
+--       /   \
+--      @     t3
+--    /   \
+--   t1    t2
+--
+-- If and of the nodes have Nothing for their type, then return Nothing.
+--
+traceDownLeftSpine
+	:: ClassId
+	-> SquidM (Maybe [Type])
+	
+traceDownLeftSpine cid
+ = do	Just cls	<- lookupClass cid
+	
+	case classType cls of
+	 Just (TApp (TClass _ cid11) t12)
+	  -> do	mtsLeft		<- traceDownLeftSpine cid11
+		case mtsLeft of
+			Nothing		-> return   Nothing
+			Just tsLeft	-> return $ Just (tsLeft ++ [t12])
+		
+	 Just t@TCon{}
+	  -> return $ Just [t]
+		
+	 Just t@TBot{}
+	  -> return $ Just [TClass (classKind cls) cid]
+	
+	 Nothing -> return Nothing
+
+

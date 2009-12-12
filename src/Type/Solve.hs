@@ -57,7 +57,7 @@ debug	= True
 trace s	= when debug $ traceM s
 
 -- debug the grinder
-debugG	= False
+debugG	= True
 traceG s = when debugG $ traceM s
 
 stage	= "Type.Solve"
@@ -963,9 +963,11 @@ solveGrindStep
 		<- liftM unzip
 		$  mapM grindClass active
  	
+	traceG	$ "* progressCrush = " % progressCrush % "\n"
+
 	let qsMore	= concat qssMore
 	errs		<- gets stateErrors
-	
+		
 	traceG	$ ppr "\n"
 	let next
 		-- if we've hit any errors then bail out now

@@ -19,6 +19,7 @@ import Type.Pretty
 import Type.Plate
 import Type.Exp
 import Type.Util.Cut
+import qualified Type.Util.PackFast	as PackFast
 
 import qualified Shared.Var	as Var
 import Shared.Var		(Var)
@@ -113,12 +114,28 @@ extractType_fromClass final varT cid
 	-- Pack the type into standard form,
 	--	looking out for loops through the data portion of the graph.
 	trace	$ ppr " -- packing into standard form\n"	
-	let (tPack, tsLoops)
+{-	let (tPack, tsLoops)
 		= {-# SCC "extract/pack" #-} 
 		  packType tTrace
 
 	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
 
+	let tPackFast 	= PackFast.packType 
+			$ toConstrainFormT tTrace
+
+	trace	$ "    tPackFast:\n" 	%> prettyTS tPackFast % "\n\n"
+-}
+	let tPack	= toFetterFormT $ PackFast.packType $ toConstrainFormT tTrace
+	let tsLoops	= []
+
+	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
+	
+{-	let (tPack, tsLoops)
+		= {-# SCC "extract/pack" #-} 
+		  packType tTrace
+
+	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
+-}
 	if (isNil tsLoops)
 	 -- no graphical data, ok to continue.
 	 then extractType_more final varT cid tPack
