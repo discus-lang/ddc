@@ -22,9 +22,8 @@ class Show a where
 	--	but requires its argument to be const
 	showL	:: forall %r
 		.  a -(!e1)> String %r
-		:- !e1	= !{ !ReadT a; !Read %r}
+		:- !e1	= !{ !ReadT a; !Read %r }
 		,  ConstT a
-		,  Const %r
 		,  Lazy %r
 
 
@@ -36,10 +35,18 @@ class Show a where
 instance Show Unit where
  show  ss  	= "()"
  showL ss 	= "()"
+
+instance Show Bool where
+ show  True	= "True"
+ show  False	= "False"
+
+ showL True	= "True"
+ showL False	= "False"
  
+
 instance Show Char where
  show  ss 	= "'" % string_Char32 ss % "'"
- showL ss 	= "'" % string_Char32 @ ss % "'"
+ showL ss 	= "'" % (string_Char32 @ ss) % "'"
 
 
 -- We need to copy shown strings because the returned
@@ -60,21 +67,15 @@ instance Show Float where
  show  ss	= string_Float32 ss
  showL ss	= string_Float32 @ ss
 
-instance Show Bool where
- show  True	= "True"
- show  False	= "False"
 
- showL True	= "True"
- showL False	= "False"
  
-
 instance Show [Int] where
- show  ss	= showList  @ show  ss
+ show  ss	= showList  show  ss
  showL ss	= showListL @ showL  ss
 
 instance Show [Char] where
- show  ss	= showList  @ show   ss
- showL ss	= showListL @ showL  ss
+ show  ss	= showList  show   ss
+ showL ss	= showListL showL  ss
 
 
 -- Show a maybe something
