@@ -15,6 +15,7 @@ where
 import Type.Exp
 import Type.Pretty
 import Type.Util.Pack
+import qualified Type.Util.PackFast as PackFast
 import Type.Util.Bits
 import Type.Util.Kind	
 import Type.Plate.Collect
@@ -33,12 +34,13 @@ import qualified Debug.Trace	as Debug
 
 -----
 stage	= "Type.Util.Elaborate"
-debug	= False
+{-
+debug	= True
 trace ss xx
  = if debug 
  	then Debug.trace (pprStrPlain ss) xx
 	else xx
-	
+-}	
 
 
 -- Elaborate Regions ------------------------------------------------------------------------------
@@ -56,16 +58,16 @@ elaborateRsT_quant newVar tt
  = do	(t_elab, vks)	<- elaborateRsT newVar tt
 	let t_quant	= makeTForall_back vks t_elab
 
-   	trace ("elaborateRsT: " % tt % "\n")
-		$ return t_quant
+   --	trace ("elaborateRsT: " % tt % "\n") $ 
+	return t_quant
 
 elaborateRsT newVar tt
  = do	let ?newVar	= newVar
 	elaborateRsT' tt
 
 elaborateRsT' tt
- = trace ("elaborateRsT' " % tt)
- $ case tt of
+-- = trace ("elaborateRsT' " % tt)
+ = case tt of
 	TVar{}	-> return (tt, [])
 	TTop{}	-> return (tt, [])
 	TBot{}	-> return (tt, [])
@@ -95,15 +97,15 @@ elaborateRsT' tt
 	 -- add new regions to data type constructors to bring them up
 	 --	to the right kind.
 	 | Just (v, kind, ts)	<- takeTData tt
-	 -> trace ("elaborateRsT' elaborating data " % show tt % "\n")
-	     $ elaborateRsT_data tt (v, kind, ts)	
+	 -> -- trace ("elaborateRsT' elaborating data " % show tt % "\n")
+	     elaborateRsT_data tt (v, kind, ts)	
 	
 	 | otherwise
-	 -> trace ("elaborateRsT' elaborating app " % show tt % "\n")
-	     $ do	(t1', vks1)	<- elaborateRsT' t1
-			(t2', vks2)	<- elaborateRsT' t2
-			return	( TApp t1' t2'
-				, vks1 ++ vks2)
+	 -> -- trace ("elaborateRsT' elaborating app " % show tt % "\n")
+	     do	(t1', vks1)	<- elaborateRsT' t1
+		(t2', vks2)	<- elaborateRsT' t2
+		return	( TApp t1' t2'
+			, vks1 ++ vks2)
 
 	TElaborate ee t	
 	 -> do	(t', vks)	<- elaborateRsT' t
@@ -136,8 +138,8 @@ elabRs 	:: Monad m
 	     , [(Var, Kind)])	-- added vars
 
 elabRs args kind
-  = trace ("elabRs: " % args % " " % kind % "\n")
-  $ do	(args', vks)	<- elabRs2 args kind
+--  = trace ("elabRs: " % args % " " % kind % "\n")
+  = do	(args', vks)	<- elabRs2 args kind
  	return	(args', nub vks)
 
 elabRs2 [] k
@@ -328,10 +330,12 @@ elaborateEffT vsRsConst vsRsMutable tt
 	
 	let effs	= effsRead ++ effsWrite ++ maybeToList hookEffs
 	
-	let tFinal	= addEffectsToFsT effs hookVar tHooked
-  
- 	return $ packType_noLoops tFinal
+	let tFinal		= addEffectsToFsT effs hookVar tHooked
 
+	-- pack the type to drop out any left-over  !e1 = !Bot  constraints.
+  	let tPacked_fast	= toFetterFormT $ PackFast.packType $ toConstrainFormT tFinal
+	return $ tPacked_fast
+		
 
 -- | Find the right most function arrow in this function type and return the effect variable
 --	on it, or add this hookVar if there isn't one.

@@ -75,11 +75,14 @@ packTypeCrsSub crsEq subbed tt
 		-- Restrict equality constraints to only those that might be reachable from
 		--	the body of the type. Remember that packing is done on types
 		--	in both weak and non-weak forms, and with and without
-		--	embedded ClassIds.
+		--	embedded ClassIds. Also drop boring constraints while we're here.
 		freeClassVars	 = Set.fromList $ collectTClassVars t'
 		
 		crsEq2_restrict	 
-			= Map.filterWithKey (\k r -> Set.member k freeClassVars) crsEq2 
+			= Map.filterWithKey
+			 	(\t1 t2 ->  Set.member t1 freeClassVars
+				      && (not $ isBoringEqConstraint t1 t2))
+				crsEq2 
 			
 		-- pack equality constraints into the others.							
 		crsEq2_restrict' 
@@ -162,5 +165,19 @@ packTypeCrsSubF crsEq subbed ff
 	
 	_ -> panic stage
 		$ "packTypeF: no match for " % show ff
+
+-- | Constraining an effect or closure to bot doesn't tell us anything we didn't
+--	already know, so we can just drop it.
+isBoringEqConstraint :: Type -> Type -> Bool
+isBoringEqConstraint t1 t2
+ = case t2 of
+	(TBot k)
+	 ->  k == kEffect
+	 ||  k == kClosure
+	
+	_	-> False
+	
+	 
+
 
 	
