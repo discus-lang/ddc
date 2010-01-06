@@ -110,32 +110,16 @@ extractType_fromClass final varT cid
 
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 
-
 	-- Pack the type into standard form,
 	--	looking out for loops through the data portion of the graph.
 	trace	$ ppr " -- packing into standard form\n"	
-{-	let (tPack, tsLoops)
-		= {-# SCC "extract/pack" #-} 
-		  packType tTrace
-
-	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
-
-	let tPackFast 	= PackFast.packType 
-			$ toConstrainFormT tTrace
-
-	trace	$ "    tPackFast:\n" 	%> prettyTS tPackFast % "\n\n"
--}
 	let tPack	= toFetterFormT $ PackFast.packType $ toConstrainFormT tTrace
+
+	-- TODO: we've lost the loop detection
 	let tsLoops	= []
 
 	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
 	
-{-	let (tPack, tsLoops)
-		= {-# SCC "extract/pack" #-} 
-		  packType tTrace
-
-	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
--}
 	if (isNil tsLoops)
 	 -- no graphical data, ok to continue.
 	 then extractType_more final varT cid tPack
@@ -197,12 +181,8 @@ extractType_more final varT cid tPack
 	trace	$ " -- cutting loops\n"
 		% "    tCut:\n" 	%> prettyTS tCut % "\n\n"
 	
-	let tCutPack
-		= {-# SCC "extract/pack_cut" #-}
-		  packType_noLoops tCut
-
+	let tCutPack	= toFetterFormT $ PackFast.packType $ toConstrainFormT tCut
 	trace	$ "    tCutPack:\n"	%> prettyTS tCutPack % "\n\n"
-
 
 	extractType_final final varT cid tCutPack
 	
