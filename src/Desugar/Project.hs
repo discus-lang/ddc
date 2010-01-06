@@ -1,6 +1,5 @@
--- Desugar.Project
---	Desugar projection dictionaries.
---
+-- | Desugar projection and type class dictionaries.
+
 --	* For each data type, add a default projection dict if none exists.
 --	* Add default projections.
 --	* Snip user provided projection functions to top level.
@@ -156,8 +155,7 @@ snipProjDictP moduleName classDicts
 
 	-- lookup the class definition for this instance
 	| Just pClass	<- Map.lookup vClass classDicts
-	= do	
-		(ss', pss)	<- liftM unzip
+	= do	(ss', pss)	<- liftM unzip
 				$  mapM (snipInstBind moduleName pClass pInst) ssInst
 
 		return	$ PClassInst sp vClass ts context (ss')
@@ -182,8 +180,24 @@ snipProjDictP _ _ pp
 
 
 
--- snipInstBind ------------------------------------------------------------------------------------
--- snip RHS of bindings in type class instances
+-- | For each binding in a type class instance, rename the binding and shift it to top level.
+--   eg:
+--	class Show a where
+--	 show :: TYPE
+--
+--	instance Show Bool where
+--	 show = EXP
+--
+--   yields:
+--	class Show a where
+--	 show :: TYPE
+--
+--	instance Show Bool where
+--	 show = instance_Show_Bool
+--	
+--	instance_Show_Bool :: forall a. TYPE
+--	instance_Show_Bool =  EXP
+--		
 snipInstBind
 	:: Module
 	-> Top SourcePos		-- the class dict def of this instance
@@ -213,9 +227,23 @@ snipInstBind moduleName
 	 Nothing	
 	  -> do	addError $ ErrorNotMethodOfClass vInst vClass
 		return (sBind, [])
-		
-	 Just tInst	-> snipInstBind' moduleName pDict pInst sBind vTop tInst
+	
+	 -- instance function is not defined in the type class declaration
+	 Just tInst	
+	  -> snipInstBind' moduleName pDict pInst sBind vTop tInst
 
+
+-- Make the type signature for the instance function
+--	we also need to quantify over any free variables in the class
+--	arguments
+--
+-- eg for:
+--	instance Int %r1 where
+--	  (+) = ...
+--
+-- the type signature for for (+) is 
+--	(+) :: forall %r1 . ...
+--
 snipInstBind' moduleName 
 	pDict@(PClassDict _  vClass  tsClass ccClass vtsClass)
 	pInst@(PClassInst sp vClass' tsInst  ccInst  ssInst)
@@ -223,14 +251,6 @@ snipInstBind' moduleName
 	vTop
 	tInst
  = do
-	-- we also need to quantify over any free variables in the parameters
-	-- eg for:
-	--	instance Int %r1 where
-	--	 (+) = ...
-	--
-	-- sig for (+) is 
-	--	(+) :: forall %r1 . ...
-	--
 	let tInst_sub	= subTT_noLoops
 				(Map.fromList $ zip tsClass tsInst)
 				tInst
@@ -239,9 +259,45 @@ snipInstBind' moduleName
 	let vks_quant	= map (\v -> (v, kindOfSpace $ Var.nameSpace v)) $ Set.toList vsFree
 	let tInst_quant	= makeTForall_back vks_quant tInst_sub
 	
+	-- As we're duplicating information from the original signature
+	--	we need to rewrite the binders on FWhere fetters.
+	--	It'd probably be nicer to use exists. quantifiers for this instead...
+	tInst_fresh	<- freshenCrsEq tInst_quant
+	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
-		,  [ PSig  spBind [vTop] tInst_quant
+		,  [ PSig  spBind [vTop] tInst_fresh
 		   , PBind spBind (Just vTop)  xx])
+
+-- 
+freshenCrsEq :: Type -> ProjectM Type
+freshenCrsEq tt
+ = case tt of
+	TForall b k t	
+	 -> do	t'	<- freshenCrsEq t
+		return	$ TForall b k t'
+	
+	TFetters t fs
+	 -> do	let takeSub	ff
+		     = case ff of
+			FWhere (TVar k v) _
+			 -> do	vFresh	<- freshenV v
+				return	$  Just (TVar k v, TVar k vFresh)
+				
+			_ -> return Nothing
+			
+		vsSub	<- liftM (Map.fromList . catMaybes)
+			$ mapM takeSub fs
+			
+		return	$ subTT_all vsSub tt
+		
+	_ -> return tt
+
+freshenV :: Var -> ProjectM Var		
+freshenV v
+ = do	vNew		<- newVarN (Var.nameSpace v)
+	let vFresh	= v { Var.bind = Var.bind vNew }
+	return vFresh
+
 
 
 -- snip expressions out of data field intialisers in this ctor def
