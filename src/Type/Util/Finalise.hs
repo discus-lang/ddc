@@ -5,6 +5,7 @@ module Type.Util.Finalise
 where
 import Type.Exp
 import Type.Util.Pack
+import qualified Type.Util.PackFast	as PackFast
 import Type.Util.Bits
 import Type.Util.Kind
 import Shared.Error
@@ -27,7 +28,10 @@ finaliseT
 	-> Type
 
 finaliseT bound def tt
- = let tt'	= packType_noLoops $ finaliseT' bound def tt
+ = let tt'	= toFetterFormT
+		$ PackFast.packType 
+		$ toConstrainFormT 
+		$ finaliseT' bound def tt
    in  if tt == tt'
    	then tt
 	else finaliseT bound def tt'
