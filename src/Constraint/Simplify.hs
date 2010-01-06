@@ -20,6 +20,7 @@ where
 ----
 import Type.Plate.FreeVars
 import Type.Util.Pack
+import qualified Type.Util.PackFast	as PackFast
 import Type.Exp
 
 import qualified Constraint.Plate.Trans	as CTrans
@@ -37,6 +38,7 @@ import Control.Monad.State
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Debug.Trace		as Trace
+
 
 -----
 {-
@@ -159,7 +161,8 @@ inlineDump acc (c : cs)
 		
 	CEq sp t1@(TVar k v1) t2
 	 -> do	sub	<- gets tableSub
-		let t2'	= packType_noLoops $ subFollowVT sub t2
+--		let t2'	= packType_noLoops $ subFollowVT sub t2
+		let t2'	=  PackFast.packType $ subFollowVT sub t2
 		inlineDump (CEq sp t1 t2' : acc) cs
 		
 	_ ->	inlineDump (c : acc) cs
