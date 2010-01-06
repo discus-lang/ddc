@@ -30,7 +30,7 @@ import qualified Data.Array.IO	as Array
 -----
 stage	= "Type.Feed"
 
-debug	= True
+debug	= False
 trace ss
  = when debug $ traceM ss
 

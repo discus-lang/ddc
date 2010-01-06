@@ -30,7 +30,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarBind	as Var
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effect"
 

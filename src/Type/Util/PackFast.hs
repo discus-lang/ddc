@@ -5,6 +5,8 @@ where
 
 import Type.Exp
 import Type.Util.Bits
+-- import Type.Plate.FreeVars
+import Type.Plate.Collect
 
 import Shared.Error
 import Shared.VarPrim
@@ -59,11 +61,33 @@ packTypeCrsSub crsEq subbed tt
 	--	but we keep all the "more than" and type class constraints.
 	--
 	TConstrain t crs@(Constraints crsEq2 crsMore2 crsOther2)
-	 -> let	crsEq_all	= Map.union crsEq crsEq2
+	 -> let	
+		-- collect constraints on the way down.
+		crsEq_all	= Map.union crsEq crsEq2
+		
+		-- pack equality constraints into the body of the type.
 		t'		= packTypeCrsSub crsEq_all subbed t
+
+		-- pack equality constraints into the other sorts of constraints
 		crsMore2'	= Map.map (packTypeCrsSub  crsEq_all subbed) crsMore2
 		crsOther2'	=     map (packTypeCrsSubF crsEq_all subbed) crsOther2
-		crs'		= Constraints Map.empty crsMore2' crsOther2'
+
+		-- Restrict equality constraints to only those that might be reachable from
+		--	the body of the type. Remember that packing is done on types
+		--	in both weak and non-weak forms, and with and without
+		--	embedded ClassIds.
+		freeClassVars	 = Set.fromList $ collectTClassVars t'
+		
+		crsEq2_restrict	 
+			= Map.filterWithKey (\k r -> Set.member k freeClassVars) crsEq2 
+			
+		-- pack equality constraints into the others.							
+		crsEq2_restrict' 
+			= Map.map (packTypeCrsSub crsEq_all subbed) crsEq2_restrict
+
+		-- the final constraints
+		crs'	= Constraints crsEq2_restrict' crsMore2' crsOther2'
+
 	    in	addConstraints crs' t'
 	
 	TSum k ts

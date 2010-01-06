@@ -57,7 +57,7 @@ debug	= True
 trace s	= when debug $ traceM s
 
 -- debug the grinder
-debugG	= True
+debugG	= False
 traceG s = when debugG $ traceM s
 
 stage	= "Type.Solve"
