@@ -31,6 +31,7 @@ import Type.Plate
 import Type.Pretty
 import Type.Plate.FreeVars
 import Type.Util.Pack
+import qualified Type.Util.PackFast	as PackFast
 import Type.Util.Bits
 import Type.Util.Kind
 
@@ -46,7 +47,6 @@ import qualified Debug.Trace		as Debug
 
 -----
 stage	= "Type.Util.Trim"
-
 debug	= False
 trace ss x	
 	= if debug
@@ -62,7 +62,16 @@ trimClosureT
 	-> Type
 
 trimClosureT quant rsData tt
-  = let	tt'	= packType_noLoops $ trimClosureT' quant rsData tt
+  = let	tt_trimmed	= trimClosureT' quant rsData tt
+	
+	tt_packFast	= toFetterFormT 
+			$ PackFast.packType
+			$ toConstrainFormT tt_trimmed
+			
+	tt'		= trace ( "tt_trimmed  = " % tt_trimmed 	% "\n"
+				% "tt_packFast = " % tt_packFast	% "\n\n")
+		 		$ tt_packFast
+		
     in	if tt' == tt
     		then tt'
 		else trimClosureT quant rsData tt'
@@ -96,13 +105,13 @@ trimClosureT_fs quant rsData ff
 -- | Trim a closure down to its interesting parts
 trimClosureC :: Set Type -> Set Type -> Closure -> Closure
 trimClosureC quant rsData cc
- = let cc'	= trimClosureC2 quant rsData cc
-   in  trace 
+ = let -- cc'	= trimClosureC2 quant rsData cc
+   in  {- trace 
  	( "trimClosureC\n"	
  	% "    rsData = " % rsData	% "\n"
 	% "    cc     = " % cc		% "\n"
-	% "    cc'    = " % cc'		% "\n")
- $ trimClosureC2 quant rsData cc
+	% "    cc'    = " % cc'		% "\n") $ -}
+	trimClosureC2 quant rsData cc
 
 trimClosureC2 quant rsData cc
   = let cc'	= packClosure_noLoops $ trimClosureC' quant rsData cc
@@ -189,9 +198,9 @@ trimClosureC' quant rsData cc
 trimClosureC_t :: Var -> Set Type -> Set Type -> Type -> [Type]
 trimClosureC_t tag quant rsData tt
  = let tsBits	= trimClosureC_t' tag quant rsData tt
-   in  trace 	( "trimClosureC_t " % tt % "\n"
+   in  {- trace 	( "trimClosureC_t " % tt % "\n"
    		% "    rsData: " %> rsData	% "\n"
-   		% "    tsBits: " %> tsBits	% "\n")	$  
+   		% "    tsBits: " %> tsBits	% "\n")	$  -}
 		tsBits
  
 trimClosureC_t' tag quant rsData tt
