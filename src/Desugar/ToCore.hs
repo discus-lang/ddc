@@ -298,13 +298,13 @@ toCoreX xx
 		let fsMore	= [ f	| f@(C.FMore v t) <- argFetters ]
 		
 		let tArg	
-			= trace 
+			= {- trace 
 				( "toCoreX:\n"
 				% "    vTV     " % vTV		% "\n"
 				% "    tArg1   " % tArg1 	% "\n"
 				% "    fsWhere " % fsWhere	% "\n"
-				% "    fsMore  " % fsMore	% "\n")
-				$ C.packT
+				% "    fsMore  " % fsMore	% "\n") $ -}
+				C.packT
 				$ C.buildScheme
 					argQuant
 					(fsWhere ++ fsMore)
@@ -431,14 +431,20 @@ toCoreX xx
 
 		-- lookup the var for the projection function to use
 		projResolve	<- gets coreProjResolve
-		
-		let Just vProj	= Map.lookup vTagInst projResolve
-		
-{-		trace 	( "XProjTagged\n"
-			% "    vTag  = " % vTag		% "\n"
-			% "    vProj = " % vProj	% "\n")
+
+		trace 	( "XProjTagged\n"
+			% "    vTagInst  = " % vTagInst		% "\n")
+--			% "    vProj = " % vProj		% "\n")
 			$ return ()
--}
+		
+		let vProj
+		 	= case Map.lookup vTagInst projResolve of
+				Nothing	-> panic stage
+					$ "No projection function for " % vTagInst % "\n"
+					% " exp = " % xx % "\n\n"
+
+				Just v	-> v
+							
 		x1'	<- toCoreVarInst vProj vTagInst
 			
 		return	$ C.XApp x1' x2' T.tPure
@@ -580,12 +586,13 @@ toCoreVarInst v vT
 		--	Real witnesses will be threaded through in a later stage.
 		let ksContextC'	= map (C.substituteT tsSub) ksContextC
 
-		trace 	( "toCoreVarInst\n"
+		
+		{- trace 	( "toCoreVarInst\n"
 			% "    v           = " % v 		% "\n"
 			% "    vT          = " % vT 		% "\n"
 			% "    tScheme     = " % tScheme 	% "\n"
-			% "    ksContextC' = " % ksContextC'	% "\n")
-			$ return ()
+			% "    ksContextC' = " % ksContextC'	% "\n") 
+			$ return () -}
 
 		let tsContextC' = map C.packT
 				$ map (\k -> let Just t = T.inventWitnessOfClass k in t)
