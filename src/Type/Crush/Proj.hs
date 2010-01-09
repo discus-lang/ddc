@@ -1,5 +1,13 @@
 
--- | Resolve projection constraints
+-- | Crush put projection constraints.
+--	We need to wait until the type being projected resolves to something
+--	with an outermost constructor, lookup the type of the projection
+--	instance function and add it to the graph.
+--
+--	We also record how each projection constraint was resolved in the
+--	projection resolution table. We need this information when converting
+--	the desugared program to the core language.
+--
 module Type.Crush.Proj
 	( crushProjClassT )
 where
@@ -36,64 +44,81 @@ stage	= "Type.Crush.Proj"
 debug	= False
 trace s	= when debug $ traceM s
 
--- | Crush out field projections from an equivalence class.
---   returns: Whether we've managed to crush all the FFieldIs's out of this class.
---	
-crushProjClassT :: ClassId -> SquidM (Maybe [CTree])
+
+-- | Crush out projection constraints from an equivalence class.
+--	This function returns new constraints containing the type
+--	of the projection instance function.
+--
+crushProjClassT 
+	:: ClassId 			-- class containing constraints
+	-> SquidM (Maybe [CTree])	-- new constraints to add to the graph
+
 crushProjClassT cidT
  = do	 
- 	-- check for errors
+ 	-- Check for errors already in the graph.
+	-- 	The grinder shouldn't be calling us if there are already errors.
  	errs	<- gets stateErrors
 	when (not $ isNil errs)
 	 $ panic stage	$ "crushProjClassT: state has errors\n"
 	 		% errs
   
-	-- lookup the fetter from the node and unpack it.
+	-- Grab the projection constraint from the graph node.
  	Just cProj@(ClassFetter 
 			{ classFetter = fProj 
 			, classSource	= src })
 				<- lookupClass cidT
 
 	trace	$ "*   Proj.crushProjClassT\n"
-		% "    cidT        = " % cidT		% "\n"
-		% "    fetter      = " % fProj		% "\n"
+		% "    classId of fetter  (cidT)        = " % cidT		% "\n"
+		% "    fetter                           = " % fProj		% "\n"
 
 	let FProj _ _ (TClass _ cidObj) _	
 			= fProj
 	
-	-- find the class containing the tycon of the object type 
-	--	being projected.
+	-- The "object type" is the type we're using to determine which projection
+	--	instance function to use. Starting from the root of this type, 
+	--	walk down its left spine to see if there is a tycon at the front.
+	--	If there is, then return the classId of the node containing this 
+	--	tycon.
 	mClsObj		<- classDownLeftSpine cidObj
 	
 	case mClsObj of
+	 -- The unifier needs to unify the nodes in this class before we know
+	 --	what the object type will be.
 	 Just cObj@(Class { classType = Nothing })
-	  -> return Nothing
+	  -> do	trace $ ppr "    -- classType is Nothing. Object class not unified yet, deferring.\n\n"
+	 	return Nothing
 
+	 -- Ok, we've got an object type, carry on.
 	 Just cObj@(Class { classType = Just tObj })
 	  -> crushProj_withObj cidT src fProj cObj tObj
 	
+	
 crushProj_withObj cidT src fProj cObj tObj
  = do
-	trace	$ "    cObj type   = " % classType cObj	% "\n"
+	trace	$ "    object type (cObj)               = " % classType cObj	% "\n"
 
  	let FProj proj _ (TClass _ _) _	
 			= fProj
 
-	-- load the map of projection dictionaries from the state
+	-- Grab the map of projection dictionaries from the state
 	projectDicts	<- gets stateProject
 
-	-- if the object type has resolved to a type constructor we should
+	-- If the object type has resolved to a type constructor we should
 	--	be able to get the projection dictionary for it.
 	let result
-		-- This isn't a type constructor,
-		--	hopefully something will be unified into it later
+		-- This isn't a type constructor, hopefully something will be unified
+		--	into it later. Just return without doing anything more.
 		| TBot{}			<- tObj
-		= do	return Nothing
+		= do	trace $ ppr "    -- We don't have an object type, deferring.\n\n"
+			return Nothing
 
-		-- the object is a constructor, but there's no projection dictionary for it.
+		-- The object is a constructor, but there's no projection dictionary for it.
+		--	This is a type error.	
 		| Just (vCon, _, _)	<- takeTData tObj
 		, Nothing		<- Map.lookup vCon projectDicts
-		= do	addErrors
+		= do	trace $ ppr "    -- No projections defined for this data type, error.\n\n"
+			addErrors
 			  [ErrorNoProjections
 				{ eProj		= proj
 				, eConstructor	= tObj }]
@@ -102,16 +127,20 @@ crushProj_withObj cidT src fProj cObj tObj
 		-- yay, we've got a projection dictionary
 		| Just (vCon, _, _)	<- takeTData tObj
 		, Just vsDict		<- Map.lookup vCon projectDicts
-		= crushProj_withDict cidT src fProj cObj tObj (snd vsDict)
+		= do	trace $ ppr "    -- We've got a projection dictionary.\n"
+			crushProj_withDict cidT src fProj cObj tObj (snd vsDict)
 
-		-- functions don't have projections (not yet)
+		-- Functions don't have projections yet, there's no source syntax to define it.
+		--	We might add them later, but for now this is a type error.
 		| Just _		<- takeTFun tObj
-		= do	addErrors
+		= do	trace $ ppr $ " -- No projections are defined for function types, error.\n\n"
+			addErrors
 			 [ErrorNoProjections
 			 	{ eProj		= proj
 				, eConstructor	= tObj }]
 			return Nothing
 
+		-- not sure what went wrong here.
 		| otherwise
 		= panic stage
 		$ "crushProjClassT: no match for " % tObj % "\n"
@@ -138,15 +167,15 @@ crushProj_withDict
 	-- Try and look up the var of the implementation function.
 	--	We must use field _names_, not the Var.bind for comparison because the
 	--	renamer can't have known which type this field belongs to.
-	let mImpl	=  liftM snd
+	let mInstV	=  liftM snd
 			$  find (\(v1, _) -> Var.name v1 == projName)
 			$  Map.toList vsDict
 
-	trace	$ "    mImpl       = " % mImpl		% "\n"
+	trace	$ "    projection instance fn (mInstV)  = " % mInstV		% "\n"
 
 	let result
 		-- There might not be an entry in the projection dictionary for this field.
-		| Nothing	<- mImpl
+		| Nothing	<- mInstV
 		= do	addErrors
 		  		[ErrorFieldNotPresent
 				{ eProj		= proj
@@ -156,8 +185,10 @@ crushProj_withDict
 			return Nothing
 			
 		-- We've got the name of the projection function
-		| Just vImpl	<- mImpl
+		| Just vImpl	<- mInstV
 		= do	
+			trace	$ ppr "    -- Projection crushed ok\n"
+			
 		 	-- Lookup the type variable corresponding to it.
 			Just vImplT	<- lookupSigmaVar vImpl
 
@@ -165,13 +196,17 @@ crushProj_withDict
 			let qs	= 	[ CInst (TSI $ SICrushedFS cid fProj src) vInst vImplT
 					, CEq   (TSI $ SICrushedFS cid fProj src) (TVar kValue vInst) tBind ]
 					 
-			trace $ 	"    qs : " %> "\n" %!% qs % "\n"
+			trace 	$ "    new constraints (qs):\n"
+			 	%> "\n" %!% qs % "\n"
 
 			-- Add an entry to the projection resolution map.
 			--	This information is used in Desugar.ToCore to rewrite the projection
 			--	syntax into real function calls.
 			modify $ \s -> s { stateProjectResolve 
 						= Map.insert vInst vImpl (stateProjectResolve s) }
+
+			trace	$ "    adding entry to projection resolution table:\n"
+				%> vInst % " := " % vImpl % "\n\n"
 
 			-- We can ignore this class from now on.
 			delClass cid
