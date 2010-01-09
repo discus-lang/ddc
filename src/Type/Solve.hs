@@ -946,7 +946,8 @@ solveGrindStep
 	 -- get the set of active classes
  	active	<- liftM Set.toList $ clearActive
 	
-	traceG	$ "    active      = " % active	% "\n"
+	traceG	$  "    active classes:\n"
+		%> active	%  "\n"
 
 	-- make sure all classes are unified
 	progressUnify
@@ -963,7 +964,17 @@ solveGrindStep
 		<- liftM unzip
 		$  mapM grindClass active
  	
-	traceG	$ "* progressCrush = " % progressCrush % "\n"
+	-- split classes into the ones that made progress and the ones that
+	--	didn't. This is just for the trace stmt below.
+	let activeProgress	   = zip active progressCrush
+	let classesWithProgress	   = [cid | (cid, True)  <- activeProgress]
+	let classesWithoutProgress = [cid | (cid, False) <- activeProgress]
+	
+	traceG	$ "*    classes that made progress:\n" 
+		%> classesWithProgress % "\n"
+
+	 	% "     classes without   progress:\n" 
+		%> classesWithoutProgress % "\n"
 
 	let qsMore	= concat qssMore
 	errs		<- gets stateErrors

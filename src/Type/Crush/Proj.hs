@@ -111,6 +111,12 @@ crushProj_withObj cidT src fProj cObj tObj
 		--	into it later. Just return without doing anything more.
 		| TBot{}			<- tObj
 		= do	trace $ ppr "    -- We don't have an object type, deferring.\n\n"
+
+			-- Reactivate the class so we get called again during the next grind.
+			--	This hasn't been done automatically because we haven't
+			--	modified it yet.
+			activateClass cidT
+
 			return Nothing
 
 		-- The object is a constructor, but there's no projection dictionary for it.
