@@ -371,6 +371,11 @@ desugarSolveConstraints2
 		$ catInt "\n"
 		$ map pprStrPlain
 		$ Map.toList (T.stateVarSub state2)
+		
+	dumpS	DumpTypeSolve	"type-solve--projResolve"
+		$ catInt "\n"
+		$ map pprStrPlain
+		$ Map.toList (T.stateProjectResolve state2)
 
 	let vsFree	= Set.empty
 
