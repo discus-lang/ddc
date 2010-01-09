@@ -174,7 +174,13 @@ packTypeCrsSub' config crsEq subbed tt
 	--	doesn't matter. The variables are just for doccumentaiton anyway.
 	TFree v1 t2@(TFree _ t)
 	 -> packTypeCrsSub config crsEq subbed (TFree v1 t)
-		
+
+	TFree v1 t2@(TSum k ts)
+	 | k == kClosure
+	 -> TSum k 
+	  $ map (packTypeCrsSub config crsEq subbed)
+	  $ map (TFree v1) ts
+	
 	TFree v t
 	 -> let t'	= packTypeCrsSub config crsEq subbed t
 	    in	TFree v t'
