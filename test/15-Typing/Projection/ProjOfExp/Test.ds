@@ -1,0 +1,19 @@
+
+-- The sub projection here wasn't being resolved.
+data Vec2 a
+	= Vec2 {
+		x	:: a;
+		y	:: a;
+	}
+
+project Vec2 Float where
+	sub :: Vec2 Float -> Vec2 Float -> Vec2 Float
+	sub a b = a
+
+instance Num (Vec2 Float) where
+	(-)	= sub	&{Vec2 Float}
+
+closestPointOnLine :: Vec2 Float -> Vec2 Float -> Vec2 Float
+closestPointOnLine p1 p2
+ = do	(p2 - p1) .sub p2
+
