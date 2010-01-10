@@ -147,6 +147,7 @@ makeClassV tSource kind v
 		addNameToClass cid tSource v kind
 	     	return	cid
 
+
 -- | Return a variable to identify this class.
 --	If the class already contains variables then choose the one with the smallest display name
 --	otherwise make a new variable and use that.
@@ -158,13 +159,7 @@ makeClassName cid_
 	Just c		<- lookupClass cid
 
 	let kind	= case c of { Class { classKind = kind } -> kind }
-
-	let vars	= catMaybes
-			$ map (\t -> case t of
-					TVar k v		-> Just v
-					_			-> Nothing)
-			$ map fst
-			$ classNodes c
+	let vars	= [ v | (TVar k v, _) <- classTypeSources c ]	
 			
 	case vars of
 	 [] 
@@ -220,9 +215,9 @@ addToClass2 cid src t c
 	, Just k	<- kindOfType t
 	= addToClass3 cid src t (classInit cid k)
 	
-	| ClassNil	<- c
-	, TFetter{}	<- t
-	= addToClass3 cid src t (classInit cid KNil)	
+--	| ClassNil	<- c
+--	, TFetter{}	<- t
+--	= addToClass3 cid src t (classInit cid KNil)	
 	
 	| Class { classKind } <- c
 	, Just k	<- kindOfType t
@@ -237,9 +232,9 @@ addToClass2 cid src t c
 
 addToClass3 cid src t c@Class{}
  = do 	activateClass cid
- 	return	$ c	{ classNodes	= (t, src) : classNodes c
-			, classType	= Nothing
-		  	, classQueue	= (maybeToList $ classType c) ++ classQueue c ++ [t] }
+ 	return	$ c	{ classTypeSources	= (t, src) : classTypeSources c
+			, classType		= Nothing
+		  	, classQueue		= (maybeToList $ classType c) ++ classQueue c ++ [t] }
 
 linkVar cid tt
  = case tt of
@@ -284,7 +279,7 @@ addNameToClass2 cid src t c
 	
 addNameToClass3 cid src t c
  = do 	activateClass cid
- 	return	$ c	{ classNodes	= (t, src) : classNodes c }
+ 	return	$ c	{ classTypeSources	= (t, src) : classTypeSources c }
 
 
 -- | Lookup a class from the graph.
@@ -413,8 +408,8 @@ mergeClasses2 cids cs
 	Just cL		<- lookupClass cidL
 
 	let cL'	= cL 	
-		{ classNodes	= concat $ map classNodes cs
-		, classType	= Nothing
+		{ classTypeSources	= concat $ map classTypeSources cs
+		, classType		= Nothing
 
 		, classQueue	=  nub
 				$  catMaybes

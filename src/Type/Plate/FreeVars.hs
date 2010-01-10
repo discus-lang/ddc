@@ -92,7 +92,6 @@ instance FreeVars Type where
 	-- used in solver
 	TClass{}	-> empty
 	TError{}	-> empty
-	TFetter f	-> freeVars f
 	 
 	-- sugar
 	TElaborate ee t	-> freeVars t

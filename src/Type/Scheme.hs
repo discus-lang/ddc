@@ -310,15 +310,15 @@ watchClass src code
  
  	let res
 		| Just Class 
-			{ classType	= mType
-			, classQueue 	= queue  	
-			, classNodes	= nodes		}	<- mC
+			{ classType		= mType
+			, classQueue 		= queue  	
+			, classTypeSources	= typeSources	}	<- mC
 			
 		= trace ( "--- class " % code % "----------------------\n"
-			% "--  src   = " % src			% "\n"
-			% "--  type  = " % mType		% "\n"
-			% "--  queue = " % queue		% "\n"
-			% "--  nodes = " % (map fst nodes)	% "\n\n")
+			% "--  src   = " % src				% "\n"
+			% "--  type  = " % mType			% "\n"
+			% "--  queue = " % queue			% "\n"
+			% "--  nodes = " % (map fst typeSources)	% "\n\n")
 
 		| otherwise
 		= return ()

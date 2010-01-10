@@ -306,7 +306,8 @@ feedFetter	mParent f
 				<- liftM sequence
 				$  mapM (feedType (Just cidC)) [tDict, tBind]
 
-		addNode cidC	$ TFetter (FProj pj v tDict' tBind')
+		addFetter $ FProj pj v tDict' tBind'
+		return ()
 		
 
 
@@ -352,7 +353,7 @@ addFetter f@(FConstraint vC [t])
 
 	-- check what fetters are already there
 	Just cls	<- lookupClass cid
-	let vfsThere	= map (\(TFetter (FConstraint v _)) -> v) 
+	let vfsThere	= map (\(FConstraint v _) -> v) 
 			$ classFetters cls
 
 	-- if the fetter to be added is already there then there's no need to add it again.
@@ -361,8 +362,8 @@ addFetter f@(FConstraint vC [t])
 	 else do
  		modifyClass cid
 	  	 $ \c -> c	
-	 		{ classFetters	= TFetter fNew 		: classFetters c
-			, classNodes	= (TFetter fNew, ?src) 	: classNodes c }
+	 		{ classFetters		= fNew 		: classFetters c
+			, classFetterSources	= (fNew, ?src) 	: classFetterSources c }
 
 	 	activateClass cid
 		return True

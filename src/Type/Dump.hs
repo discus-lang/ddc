@@ -120,7 +120,7 @@ instance Pretty Class PMode where
 		% "        -- nodes\n"
 		% (punc "\n\n"
 			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t))
-			$ (classNodes c))
+			$ (classTypeSources c))
 		% "\n\n"
 	
 
@@ -150,7 +150,7 @@ forwardCids c@Class{}
 
 	fs'		<- mapM updateVC $ classFetters c
 
-	let (ts, ns)	= unzip $ classNodes c
+	let (ts, ns)	= unzip $ classTypeSources c
 	ts'		<- mapM updateVC ts
 	let nodes'	= zip ts' ns
 
@@ -162,7 +162,7 @@ forwardCids c@Class{}
 					return	$ Just typ2
 	
 	return	$ c
-		{ classId	= cid'
-		, classType	= typ' 
-		, classFetters	= fs' 
-		, classNodes	= nodes' }
+		{ classId		= cid'
+		, classType		= typ' 
+		, classFetters		= fs' 
+		, classTypeSources	= nodes' }

@@ -67,7 +67,7 @@ crushFetterC2 cid
 	--	the type in the node to change (such as by removing an effect term)
 	(cls', progressFetters)	
 		<- mapAccumLM crushFetterSingle cls
-		$  map (\(TFetter f) -> f) fs
+		$  fs
 	
 	let (progresss, mfsCrushed)
 			= unzip progressFetters
@@ -80,7 +80,7 @@ crushFetterC2 cid
 
 	-- update the class with the new fetters
 	updateClass cid
-	 $ cls { classFetters = map TFetter $ fsCrushed }
+	 $ cls { classFetters = fsCrushed }
 		
 	-- return a bool saying whether we made any progress with crushing
 	--	fetters in this class.
@@ -123,8 +123,8 @@ crushFetterSingle
 crushFetterSingle' 
 	cid
 	cls@Class 
-		{ classType  = Just tNode
-		, classNodes = nodes } 
+		{ classType  		= Just tNode
+		, classFetterSources 	= nodes } 
 	  f@(FConstraint vC [tC@(TClass k cidT)])
 
 	-- crush a purity constraint
@@ -143,7 +143,7 @@ crushFetterSingle'
 
 		-- lookup the source of the original purity constraint, 
 		--	and make the source info for constraints added due to purification.
-		let Just src		= lookup (TFetter f) nodes
+		let Just src		= lookup f nodes
 		let srcPurified		= TSI (SICrushedFS cid f src)
 		trace	$ "    srcPurified  = " % srcPurified % "\n"
 

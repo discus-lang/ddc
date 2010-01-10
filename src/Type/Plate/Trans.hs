@@ -229,10 +229,6 @@ followT table tt
 	 -> do	cid'	<- transZM table cid
 	 	return	$ TClass k cid'
 
-	TFetter f
-	 -> do	f'	<- transZM table f
-		return	$ TFetter f'
-
 	TError k t
 	 -> do	t'	<- transZM table t
 	  	return 	$ TError k t'

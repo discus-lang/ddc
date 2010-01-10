@@ -273,7 +273,6 @@ data Type
 	---	Used in type inference stages only.
 	| TClass   Kind ClassId			-- ^ A reference to some equivalence class.
 	| TError   Kind [Type]			-- ^ Classes with unification errors get their queues set to [TError].
-	| TFetter  Fetter			-- ^ Holds a fetter, so we can put it in an equivalence class.
 
 	-- A type variable with an embedded :> constraint.
 	--	Used in core only, so we can reconstruct the type of an expression

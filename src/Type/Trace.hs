@@ -95,16 +95,17 @@ loadTypeNode2 incFs cid c
 	| Class { classType = Nothing}		<- c
 	= panic stage
 		$ "loadTypeNode2: can't trace which hasn't been unified yet\n"
-		% "    cid   = " % cid		% "\n"
-		% "    queue = " % classQueue c	% "\n"
-		% "    nodes:\n" % "\n" %!% classNodes c % "\n"
+		% "    cid        = " % cid		% "\n"
+		% "    queue      = " % classQueue c	% "\n"
+		% "    typeSources:\n" % "\n" %!% classTypeSources c % "\n"
 
 	-- a regular type node
 	| Class { classType = Just tNode
 		, classKind = k } 	<- c
 	= do
 		-- make sure all the cids are canconical
-		(tRefreshed: tFs)	<- refreshCids (tNode : classFetters c)
+		tRefreshed	<- refreshCids tNode
+		tFs		<- refreshCids $ classFetters c
 
 		-- chop of fetters attached directly to the type in the node
 		let (tX, fsLocal) 	
@@ -114,7 +115,7 @@ loadTypeNode2 incFs cid c
 
 		-- single parameter constraints are stored directly in this node
 		let fsSingle	= if incFs
-					then map (\(TFetter f) -> f) tFs
+					then tFs
 					else []
 
 		-- multi parameter constraints are stored in nodes referenced by classFettersMulti

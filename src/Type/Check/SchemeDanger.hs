@@ -140,7 +140,7 @@ regionIsMutable cid
  		<- lookupClass cid
 
 	let fsMutable
-		= [ f 	| TFetter f@(FConstraint v _) <- fs
+		= [ f 	| f@(FConstraint v _) <- fs
 			, v == primMutable ]
 		
 	fsMutable'	<- mapM updateVC fsMutable

@@ -50,34 +50,41 @@ data Class
 		--	This is taken as one of the vars from the nodes list, or generated fresh if 
 		--	none exists. 
 		, className		:: Maybe Var
+
+		-- | Whether this class has been quantified
+		, classQuant		:: Bool
+
 	
+		-- Type constraints contributing to this class.
 		-- | The type of this class (if available)
 		--	If there are constraints waiting to be unified then classQueue will be 
 		--	non-empty and classType will be Nothing.
 		, classType		:: Maybe Type
 
-		-- | Whether this class has been quantified
-		, classQuant		:: Bool
-
 		-- | Type constraints waiting to be unified.
 		, classQueue		:: [Type]
-
-		-- | Single parameter type class constraints which are acting on this equivalence class.
-		--	SPTC's are stored directly in the node with they constrain.
-		, classFetters		:: [Type]
-
-		-- | Multi-parameter type class constraints acting on this equivalence class.
-		--	MPTC's are stored in their own ClassFetter nodes, and this list points to all
-		--	the MPTC's which are constraining this node.
-		, classFettersMulti	:: Set ClassId
 
 		-- | Constraints that have been added to this class, including source information.
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
-		, classNodes		:: [(Type, TypeSource)]	 }
-		
+		, classTypeSources	:: [(Type, TypeSource)]	 
 
-	deriving (Show)
+
+		-- Fetters \/ class constraints contributing to this class.
+		-- | Single parameter type class constraints which are acting on this equivalence class.
+		--	SPTC's are stored directly in the node with they constrain.
+		, classFetters		:: [Fetter]
+
+		-- | Constraints that have been added to this class, including source information.
+		--	If a type error is encountered, then this information can be used to reconstruct
+		--	/why/ this particular node has the type it does.
+		, classFetterSources	:: [(Fetter, TypeSource)]		
+
+		-- | Multi-parameter type class constraints acting on this equivalence class.
+		--	MPTC's are stored in their own ClassFetter nodes, and this list points to all
+		--	the MPTC's which are constraining this node.
+		, classFettersMulti	:: Set ClassId }
+		deriving (Show)
 
 
 classInit cid kind
@@ -85,11 +92,15 @@ classInit cid kind
 	{ classId		= cid
 	, classKind		= kind
 	, className		= Nothing
-	, classType		= Nothing
 	, classQuant		= False
+
+	, classType		= Nothing
 	, classQueue		= []
-	, classNodes		= []
+	, classTypeSources	= []
+
 	, classFetters		= []
+	, classFetterSources	= []
+
 	, classFettersMulti	= Set.empty }
 	
 		

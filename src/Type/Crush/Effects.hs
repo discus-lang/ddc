@@ -75,8 +75,8 @@ crushEffectC2 cid (Class { classType = Just eff })
 		trace	$ "    eff'     = " % eff' % "\n\n"
 			
 		modifyClass cid
-		 $ \c -> c 	{ classType  = Just eff' 
-		 		, classNodes = newNodes ++ (classNodes c) }
+		 $ \c -> c 	{ classType  	  = Just eff' 
+		 		, classTypeSources = newNodes ++ (classTypeSources c) }
 		 
 		activateClass cid
 		return True

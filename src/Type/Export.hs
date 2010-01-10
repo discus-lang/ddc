@@ -225,7 +225,7 @@ slurpRsConstraints1 c
 	, kR	== kRegion
 	= do
 		-- extract the vars for all the fetters acting on this class
-	 	let vars	= map (\(TFetter (FConstraint vC _)) -> vC) fs
+	 	let vars	= map (\(FConstraint vC _) -> vC) fs
  		
 		-- get the name of this class
 		name	<- makeClassName (classId c)
@@ -244,18 +244,18 @@ slurpRsConstraints1 c
 -- | Check for constraint errors on this region.
 checkRegionError :: Class -> SquidM (Maybe Error)
 checkRegionError c@Class 
-	{ classFetters 	= fs 
-	, classNodes	= nodes }
+	{ classFetters 		= fs 
+	, classFetterSources	= nodes }
 
 	-- found a mutability conflict.
-	| Just (TFetter fConst, tsConst)	<- find (isFConstraintNode primConst) nodes
-	, Just (TFetter fMutable, tsMutable)	<- find (isFConstraintNode primMutable) nodes
+	| Just (fConst, tsConst)	<- find (isFConstraintNode primConst) nodes
+	, Just (fMutable, tsMutable)	<- find (isFConstraintNode primMutable) nodes
 	= do	err	<- diagMutConflict fConst tsConst fMutable tsMutable
 		return	$ Just err
 	
 	-- found a direct/lazy conflict.
-	| Just (TFetter fDirect, tsDirect)	<- find (isFConstraintNode primDirect) nodes
-	, Just (TFetter fLazy, tsLazy)		<- find (isFConstraintNode primLazy) nodes
+	| Just (fDirect, tsDirect)	<- find (isFConstraintNode primDirect) nodes
+	, Just (fLazy, tsLazy)		<- find (isFConstraintNode primLazy) nodes
 	= return $ Just $ ErrorRegionConstraint
 			{ eFetter1		= fDirect
 			, eFetterSource1	= tsDirect
@@ -268,8 +268,7 @@ checkRegionError c@Class
 
 
 isFConstraintNode v1 (t, n)
-	| TFetter f		<- t
-	, FConstraint v2 _	<- f
+	| FConstraint v2 _	<- t
 	= v1 == v2
 	
 	| otherwise

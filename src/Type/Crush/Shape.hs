@@ -197,7 +197,7 @@ pushTemplate tTemplate srcShape cMerge
 	| Class { classType = Just t}		<- cMerge
 	= if isShallowConflict t tTemplate
 	   then	
-	    do	let cError	= cMerge { classNodes = (tTemplate, srcShape) : classNodes cMerge }
+	    do	let cError	= cMerge { classTypeSources = (tTemplate, srcShape) : classTypeSources cMerge }
 	 	addErrorConflict (classId cError) cError
 		return Nothing
 

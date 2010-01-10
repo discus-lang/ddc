@@ -34,8 +34,7 @@ checkInstances
 
 checkInstances1 errs cls
  	| Class { classFetters = fs }		<- cls
-	= foldM (checkFetter cls) errs 
-		$ map (\(TFetter f) -> f) fs
+	= foldM (checkFetter cls) errs fs
 	
 	| ClassFetter { classFetter = f }	<- cls
 	, FConstraint v t	<- f
@@ -100,12 +99,12 @@ takeFetterSrc cls f@(FConstraint vClass _)
  	ClassFetter { classSource = src }	
 	 -> src
 
-	Class { classNodes = nodes }
+	Class { classFetterSources = nodes }
 	 -> let Just (_, src) = find (isFNode vClass) nodes
 	    in  src
 
 
 isFNode v ff
  = case ff of
- 	(TFetter (FConstraint v' _), _) 	-> True
-	_					-> False
+ 	(FConstraint v' _, _ )	-> True
+	_			-> False

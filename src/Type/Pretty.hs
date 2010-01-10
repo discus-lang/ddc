@@ -103,8 +103,6 @@ instance Pretty Type PMode where
 	
 	-- used in type inference
 	TClass k c	-> resultKind k % c
-
-	TFetter f	-> "@TFetter " % f
 	TError k t	-> "@TError" % k % " " % t
 
 	-- type elaboration in source

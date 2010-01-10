@@ -70,8 +70,7 @@ crushUnifyClass_unify cidT c
  = do	trace	$ "*   Unify.unifyClass " % cidT % "\n"
 		% "    type         = " % classType c	% "\n"
 		% "    name         = " % className c	% "\n"
---		% "    nodes        = " % (map fst $ classNodes c) % "\n\n"
-		% "    nodes        = " % classNodes c % "\n\n"
+		% "    nodes        = " % classTypeSources c % "\n\n"
 
 	let queue_type
 		= (maybeToList $ classType c) ++ classQueue c
@@ -169,7 +168,7 @@ addErrorConflict  cid c
 	-- filter out TVars, as they don't conflict with anything
  	let tsCtorsNode
 		= filter (\(t, _) -> not $ isSomeTVar t)
-		$ classNodes c
+		$ classTypeSources c
  
 	-- gather up pairs of nodes that conflict.
  	let conflicts
@@ -189,7 +188,7 @@ addErrorConflict  cid c
 		 $ "errorConflict: Couldn't identify the error in class " 	% cid % "\n"
 		 % "   type: \n"  %> classType c 				% "\n\n"
 		 % "   queue: \n" %> classQueue c	 			% "\n\n"
-		 % "   nodes:\n"  %> ("\n" %!% classNodes c) 			% "\n\n"
+		 % "   nodes:\n"  %> ("\n" %!% classTypeSources c) 		% "\n\n"
 
 
 -- | add an error recording that these two types conflict.
@@ -223,10 +222,7 @@ isShallowConflict t1 t2
 	
 	| TVar{}	<- t1	= False
 	| TVar{}	<- t2	= False
-	
-	| TFetter{}	<- t1	= False
-	| TFetter{}	<- t2	= False
-	
+		
 	| otherwise
 	= True
 	

@@ -41,7 +41,7 @@ diagMutConflict
 	tsMutable
  | kR	== kRegion
  = do	
- 	Just c@(Class { classNodes = nodes })
+ 	Just c@(Class { classTypeSources = nodes })
 		<- lookupClass cidR
 
 	-- see if the const constraint is the result of purifying some effect.
@@ -93,8 +93,8 @@ diagMutPurifiedRead
  = do	trace	$ "*   diagMutPurifiedRead" <> cidR <> cidE <> parens effPurified % "\n"
 	
 	-- Lookup what effects were purified by this fetter
-	Just cE@(Class 	{ classNodes 	= nodes 
-			, classType 	= t})
+	Just cE@(Class 	{ classTypeSources 	= nodes 
+			, classType 		= t})
 		<- lookupClass cidE
 	
 	trace $ "    type: " % t			% "\n\n"
@@ -131,7 +131,7 @@ traceFetterSource
 	-> SquidM (Maybe TypeSource)
 	
 traceFetterSource vC cid
- = do	Just c@(Class { classNodes = nodes })	
+ = do	Just c@(Class { classFetterSources = nodes })	
  		<- lookupClass cid
  	
 	trace	$ "*   traceFetterSource" <> vC <> cid % "\n"
@@ -146,7 +146,7 @@ traceFetterSource' vC (node : nodes)
 	
 	-- fetter is the result of crushing some other fetter,
 	--	so trace that instead
-	| ( TFetter (FConstraint vC' _)
+	| ( FConstraint vC' _
 	  , TSI (SICrushedF cidF (FConstraint vC2 _)))	
 			<- node
 	, vC == vC'
@@ -161,14 +161,15 @@ traceFetterSource' vC (node : nodes)
 	= traceFetterSource vC cidE
 -}
 
-	| ( TFetter (FConstraint vC' _)
+	| ( FConstraint vC' _
 	  , TSI (SICrushedFS cid eff ts) )
 	  		<- node
 	, vC' == vC
 	= return $ Just ts
 		
 	-- found the root cause
-	| (TFetter (FConstraint vC' _), ts@(TSV sv))
+	| (FConstraint vC' _
+	  , ts@(TSV sv))
 			<- node
 	, vC == vC'
 	= return $ Just ts
@@ -194,7 +195,7 @@ traceEffectSource
 	-> SquidM (Maybe TypeSource)
 	
 traceEffectSource vE tE cid
- = do	Just c@(Class { classNodes = nodes })
+ = do	Just c@(Class { classTypeSources = nodes })
  		<- lookupClass cid
 		
 	trace 	$ "*   traceEffectSource " <> vE <> tE <> cid % "\n"
