@@ -19,7 +19,6 @@ where
 
 ----
 import Type.Plate.FreeVars
-import Type.Util.Pack
 import qualified Type.Util.PackFast	as PackFast
 import Type.Exp
 

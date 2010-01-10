@@ -13,7 +13,6 @@ import Type.Class
 import Type.Feed
 import Type.Pretty
 import Type.Location
-import Type.Util.Pack
 import Type.Check.GraphicalData
 import Type.Crush.Unify
 import Type.Plate.Collect	(collectClassIds)

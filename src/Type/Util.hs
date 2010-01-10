@@ -4,7 +4,6 @@ module Type.Util
 	, module Type.Util.Elaborate
 	, module Type.Util.Kind
 	, module Type.Util.Normalise
-	, module Type.Util.Pack
 	, module Type.Util.Substitute
 	, module Type.Util.StripFetters
 	, module Type.Util.Unify 
@@ -26,7 +25,6 @@ import Type.Util.Instantiate
 import Type.Util.Elaborate
 import Type.Util.Kind
 import Type.Util.Normalise
-import Type.Util.Pack
 import Type.Util.Substitute
 import Type.Util.StripFetters
 import Type.Util.Unify

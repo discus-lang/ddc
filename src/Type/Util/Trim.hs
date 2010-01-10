@@ -30,7 +30,6 @@ import Type.Exp
 import Type.Plate
 import Type.Pretty
 import Type.Plate.FreeVars
-import Type.Util.Pack
 import qualified Type.Util.PackFast	as PackFast
 import Type.Util.Bits
 import Type.Util.Kind
