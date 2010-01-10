@@ -431,16 +431,28 @@ toConstrainFormT tt
 	TFetters t fs
 	 -> let	crsEq		= Map.fromList [(t1, toConstrainFormT t2) | FWhere t1 t2 <- fs]
 		crsMore		= Map.fromList [(t1, toConstrainFormT t2) | FMore  t1 t2 <- fs]
-		crsOther	= filter (\f -> (not $ isFWhere f) && (not $ isFMore f)) fs
+
+		crsOther	= filter (\f -> (not $ isFWhere f) && (not $ isFMore f)) 
+				$ map toConstrainFormF fs
+
 	    in	TConstrain t (Constraints crsEq crsMore crsOther)
 	
 	TConstrain t cs		-> TConstrain (down t) cs
 	
 	TApp t1 t2		-> TApp (down t1) (down t2)
+	TSum k  ts		-> TSum k $ map toConstrainFormT ts
 	TFree t1 t2		-> TFree   t1 (down t2)
 	TDanger t1 t2		-> TDanger t1 (down t2)
 	
 	_			-> tt
+
+toConstrainFormF :: Fetter -> Fetter
+toConstrainFormF ff
+ = case ff of
+	FConstraint c ts	-> FConstraint c $ map toConstrainFormT ts
+	FWhere t1 t2		-> FWhere t1     $ toConstrainFormT t2
+	FMore  t1 t2		-> FMore  t1	 $ toConstrainFormT t2
+	FProj{}			-> ff
 
 -- | Add some constraints to a type
 addConstraints :: Constraints -> Type -> Type

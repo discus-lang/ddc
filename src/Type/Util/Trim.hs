@@ -42,6 +42,7 @@ import qualified Shared.VarUtil		as Var
 import qualified DDC.Base.NameSpace	as Var
 
 import qualified Data.Set		as Set
+import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug
 
 -----
@@ -155,6 +156,12 @@ trimClosureC' quant rsData cc
 	 	(catMaybes $ map (trimClosureC_fs quant rsData) fs) 
 	 	(down c)
 
+	TConstrain t crs@Constraints { crsEq, crsMore, crsOther }
+	 -> let	t'		= trimClosureC quant rsData t
+		crsEq'		= Map.mapWithKey (\t1 t2 -> trimClosureT quant rsData t2) crsEq
+		crsMore'	= Map.mapWithKey (\t1 t2 -> trimClosureT quant rsData t2) crsEq
+	    in	addConstraints (Constraints crsEq' crsMore' crsOther) t'
+
 	-- add quantified vars to the set
 	TForall b k t		
 	 -> let quant'	= Set.insert (TVar k (varOfBind b)) quant
@@ -190,6 +197,9 @@ trimClosureC' quant rsData cc
 		then TFree tag 	$ down t
 		else TFree tag 	$ makeTSum kClosure 
 				$ trimClosureC_t tag quant rsData t
+
+	TDanger{}
+	 -> cc
 
 	_ -> panic stage
 		$ "trimClosureC: no match for " % show cc

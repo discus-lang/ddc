@@ -185,6 +185,7 @@ kindOfType' tt
 
 	TContext t1 t2		-> kindOfType' t2
 	TFetters t1 _		-> kindOfType' t1
+	TConstrain t1 crs	-> kindOfType' t1
 	
 	
 	-- effect and closure constructors should always be fully applied.
@@ -202,7 +203,7 @@ kindOfType' tt
 	 -> makeKWitJoin ks
 			
 	-- some of the helper constructors don't have real kinds ------------
-	_			-> panic stage $ "kindOfType bad kind for : " % tt
+	_			-> panic stage $ "kindOfType bad kind for: " % tt
 
 
 kindOfType_freakout t1 t2

@@ -112,7 +112,9 @@ packTypeCrsSub' config crsEq subbed tt
 	-- the old packed handes TFetters.
 	--	we're factoring it out.
 	TFetters t fs
-	 -> panic stage "packType: doesn't handle TFetters"
+	 -> panic stage 
+  	  $  "packType: doesn't handle TFetters"
+	  %  " tt = " % tt % "\n"
 	
 	-- In a constrained type, all the equality constraints are inlined,
 	--	but we keep all the "more than" and type class constraints.
