@@ -152,6 +152,8 @@ packTypeCrsSub' config crsEq subbed tt
 
 	    in	addConstraints crs' t'
 	
+	-- TODO: I'm pretty sure this makeTSum give us at least O(n^2) complexity.
+	--	 It'd be better to accumulate a set of effects on the way down.
 	TSum k ts
 	 -> let ts'	= map (packTypeCrsSub config crsEq subbed) ts
 	    in	makeTSum k ts'
