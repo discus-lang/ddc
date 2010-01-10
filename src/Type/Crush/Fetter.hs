@@ -1,5 +1,8 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
+-- | Crushing of built-in single parameter type class (SPTC) constraints
+--	like Pure and LazyH.
+--
 module Type.Crush.Fetter
 	( crushFetterC )
 
@@ -29,7 +32,7 @@ import qualified Data.Map	as Map
 
 
 -----
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Fetter"
 
@@ -129,33 +132,7 @@ crushFetterSingle'
 
 	-- crush a purity constraint
 	| vC  == primPure
-	= do	trace	$ "    - crush pure"	% "\n"
-
-		-- flatten out the effect sum into individual atomic effects
-		let effs_atomic = flattenTSum tNode
-		trace	$ "    effs_atomic  = " % effs_atomic % "\n"
-
-		-- get the fetters of each atomic effect,
-		--	TODO: handle purification errors
-		mfsPurifiers		<- mapM purifyEffect_fromGraph effs_atomic
-		trace	$ "    mfsPurifiers = " % mfsPurifiers % "\n"
-		let Just fsPurifiers	= sequence mfsPurifiers	
-
-		-- lookup the source of the original purity constraint, 
-		--	and make the source info for constraints added due to purification.
-		let Just src		= lookup f nodes
-		let srcPurified		= TSI (SICrushedFS cid f src)
-		trace	$ "    srcPurified  = " % srcPurified % "\n"
-
-		-- add all the new fetters back to the graph
-		--	the addition function returns True if the fetter added was a new constraint
-		bsWasNewFetter		<- mapM (addFetterSource srcPurified) fsPurifiers
-		trace	$ "    bsWasNewFetter = " % bsWasNewFetter % "\n"
-		
-		-- we've made progress on this class if any new fetters were added
-		let madeProgress	= or bsWasNewFetter
-		return (cls, (madeProgress, Just f))
-
+	= crushFetterPure cid cls f	
 
 	-- try and crush some non-purity constraint
 	| otherwise
@@ -188,140 +165,89 @@ crushFetterSingle'
 	= return (cls, (False, Nothing))
 
 
+-- | Crush a purity constraint
+crushFetterPure
+	cid
+	cls@Class 
+		{ classType  		= Just tNode
+		, classFetterSources 	= nodes } 
+	  fPure@(FConstraint vC [tC@(TClass k cidT)])
+ = do	
+	trace	$ "    -- crushing purity constraint"	% "\n"
 
-{-
-	-- keep the original fetter when crushing purity
-	| vC	== primPure
-	= return (False, Nothing)
-	= do	fEff	<- crushPure c cid f tNode
-		case fEff of
+	-- flatten out the effect sum into individual atomic effects
+	let effs_atomic = flattenTSum tNode
+	trace	$ "    effs_atomic  = " % effs_atomic % "\n"
 
-			-- fetter crushed ok
-			Left fsBitsSrc
-			 -> do	trace	$ "    fsBits     = " % fsBitsSrc		% "\n"
+	-- get the fetters of each atomic effect,
+	mfsPurifiers		<- mapM purifyEffect_fromGraph effs_atomic
+	trace	$ "    mfsPurifiers = " % mfsPurifiers % "\n"
+
+	-- lookup the source of the original purity constraint, 
+	--	and make the source info for constraints added due to purification.
+	let Just fPureSrc	= lookup fPure nodes
+
+	-- see if all the atomic effects could be purifier
+	case sequence mfsPurifiers of
+	 Just fsPurifiers	
+	  -> crushFetterPure_success cid cls fPure fPureSrc fsPurifiers
+
+	 Nothing		
+	  -> crushFetterPure_failed cid cls fPure fPureSrc 
+		(zip effs_atomic mfsPurifiers)
+
+-- we have a new constraint that forces each of the atomic effects to be pure.
+crushFetterPure_success cid 
+	cls@Class 
+		{ classType  		= Just tNode
+		, classFetterSources 	= nodes } 
+	fPure@(FConstraint vC [tC@(TClass k cidT)])
+	fPureSrc
+	fsPurifiers
+ = do	
+	-- lookup the source of the original purity constraint, 
+	--	and make the source info for constraints added due to purification.
+	let srcPurified		= TSI (SICrushedFS cid fPure fPureSrc)
+	trace	$ "    srcPurified  = " % srcPurified % "\n"
+
+	-- add all the new fetters back to the graph
+	--	the addition function returns True if the fetter added was a new constraint
+	bsWasNewFetter		<- mapM (addFetterSource srcPurified) fsPurifiers
+	trace	$ "    bsWasNewFetter = " % bsWasNewFetter % "\n"
 		
-				-- record the source of the new fetter based on the old one
-				progress	<- liftM or 
-						$  mapM (\(f, src) -> addFetterSource src f) fsBitsSrc
-
-				return	( progress
-					, Just f)
-			
-			-- got a purity error
-			Right err
-			 -> do	trace	$ ppr "    ! purity error\n"
-			 
-			 	addErrors [err]
-				return 	( False
-					, Just f)
-			
--}			
-
--- Crush a purity fetter.
---	This can generate an error if the effect that the fetter is acting 
---	on cannot be purified.
---
-{-
-crushPure 
-	:: Class 	-- ^ The class of the purify effect (for error reporting)
-	-> ClassId	-- ^ The classId of the effect being purified (for error reporting)
-	-> Fetter 	-- ^ The purity fetter being crushed (for error reporting)
-	-> Effect	-- ^ The effect to purify
-
-	-> SquidM (Either [(Fetter, TypeSource)] Error)
-
-crushPure c cidEff fPure tNode
- = do
-	-- flatten out the sum into individual effects
-	let effs = flattenTSum tNode
-	trace	$ "    effs_flat  = " % effs % "\n"
-
-	-- try and generate the additional constraints needed to purify 
-	--	each effect.
-	mFsPureSrc	
-		<- mapM (purifyEffSrc c fPure cidEff) 
-		$ flattenTSum tNode
-
-	-- See if any of the effects couldn't be purified
-	let effsBad	
-		= catMaybes
-		$ map (\(eff, mfPureSrc) 
-			-> case mfPureSrc of
-				Nothing	-> Just eff
-				Just _	-> Nothing)
-		$ zip effs mFsPureSrc
-								
-	trace	$ "    effs_bad   = " % effsBad % "\n"
-
-	return 	$ Left $ catMaybes mFsPureSrc
-
- 	case effsBad of
-	  	[]		-> return $ Left  $ catMaybes mFsPureSrc
-		(effBad : _)	
-		 -> do	eff	<- makePurityError c fPure effBad
-		 	return	$ Right eff
-		
+	-- we've made progress on this class if any new fetters were added
+	let madeProgress	= or bsWasNewFetter
+	return (cls, (madeProgress, Just fPure))	
 
 
--- | Make an error for when the purity fetter in this class could not be satisfied.
-makePurityError :: Class -> Fetter -> Effect -> SquidM Error
-makePurityError 
-	c@Class	{ classNodes = nodes }
-	fPure@(FConstraint vC [TClass _ cidE])
-	effBad
- = do
-	-- lookup the type-source for the purify fetter
--- 	fSrc : _	= [tsPure	| (TFetter (FConstraint v _), tsPure)	<- nodes
---					, v == primPure ]
+-- one of the effects could not be purified
+crushFetterPure_failed cid cls fPure fPureSrc eff_mPurifiers
+ = do	trace	$ ppr "-- purification failed"
 
-	Just fSrc	<- traceFetterSource vC cidE
+	-- lookup the first effect that we couldn't make a purifier for
+	let badAtomicEff : _
+		= [ eff	| (eff, Nothing)	<- eff_mPurifiers ]
 
 	-- lookup the type-source for the conflicting effect
 	--	The nodes hold effect sums, so we need to look inside them
 	--	to find which one holds our (single) conflicting effect
-	let effSrc : _ 	= [tsEff	| (eff,  tsEff)		<- nodes
-					, elem effBad $ flattenTSum eff]
-					
-	return 	$ ErrorCannotPurify
-	   		{ eEffect	= effBad
-			, eEffectSource	= effSrc
-			, eFetter	= fPure
-			, eFetterSource	= fSrc }
+	let badAtomicEff_src : _ 	
+		= [srcEff	| (eff,  srcEff)	<- classTypeSources cls
+				, elem badAtomicEff $ flattenTSum eff]
 
+	-- build the purification error
+	let err	= ErrorCannotPurify
+			{ eEffect		= badAtomicEff
+			, eEffectSource		= badAtomicEff_src
+			, eFetter		= fPure
+			, eFetterSource		= fPureSrc }
 
--- | Try and purify this effect, 
---	tagging the new constraint with the appropriate typesource
-purifyEffSrc 
-	:: Class 
-	-> Fetter 
-	-> ClassId 
-	-> Effect 
-	-> SquidM (Maybe (Fetter, TypeSource))
+	-- add the error to the type inferencer monad.
+	addErrors [err]
 
-purifyEffSrc 
-	cPure@Class { classNodes = nodes }
-	fPure cidEff 
-	eff@(TClass kE cidE)
-	 
- | kE	== kEffect
- = do	let (Just src)	= lookup (TFetter fPure) nodes
-   	return	$ Just 	( FConstraint primPure [eff]
-			, TSI (SICrushedFS cidEff fPure src) )
+	-- report no progress, and keep the original class and fetter.
+	return (cls, (False, Just fPure))
 
-purifyEffSrc
-	cPure fPure cidEff
-	eff
- = do
-	mfNew	<- purifyEff eff
-	case mfNew of
-	 Nothing	-> return $ Nothing
-	 Just fNew	-> return $ Just (fNew, TSI (SIPurify cidEff eff))
-	
-
-
-
-
--}
 
 -- | Given an effect, produce either 
 --	the fetter which purifies this effect
@@ -350,6 +276,8 @@ purifyEffect_fromGraph eff
 		 _			-> return $ Nothing
 		
 	-- deep read
+	-- TODO: Do we realy want ReadT to be able to operate
+	--	 on types of any kind?
  	| TEffect v [tR@(TClass kV _)]	<- eff
 --	, kV	== kValue
 	, v	== primReadT
