@@ -6,10 +6,10 @@ ddc: ERROR
         we were using this type scheme:
             box
               :: forall tTS3
-              .  Main.Box %112 (Data.List.List %117 tTS3)
+              .  Main.Box %164 (Data.List.List %171 tTS3)
 
         but a new
-              constraint: Base.Mutable %112
+              constraint: Base.Mutable %164
          from the use of: (#=)
                       at: ./test/01-Error/30-Typing/Closure/LateMutable/Main.ds:27:16
 

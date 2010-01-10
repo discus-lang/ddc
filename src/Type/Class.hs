@@ -422,6 +422,9 @@ mergeClasses2 cids cs
 		, classFetters	
 			= concat $ map classFetters cs
 
+		, classFetterSources
+			= concat $ map classFetterSources cs
+
 		, classFettersMulti
 			= Set.unions $ map classFettersMulti cs  }
 

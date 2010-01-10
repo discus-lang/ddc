@@ -437,7 +437,7 @@ dispSourceUnify tt sv
 --	The only possible source of these is instantiations of type schemes,
 --	or from crushing other fetters.
 --
-dispFetterSource :: Fetter -> TypeSource -> Maybe (PrettyM PMode)
+dispFetterSource :: Fetter -> TypeSource -> PrettyM PMode
 dispFetterSource f ts
 
 	-- For purity constraints, don't bother displaying the entire effect
@@ -445,26 +445,22 @@ dispFetterSource f ts
 	| FConstraint v _	<- f
 	, v == primPure
 	, TSV (SVInst sp var)	<- ts
-	= Just
-	$ "      the use of: " % var	% "\n"
+	= "      the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 	
 	| FConstraint v _	<- f
 	, TSV (SVInst sp var)	<- ts
-	= Just
-	$ "      constraint: " % f	% "\n"
+	= "      constraint: " % f	% "\n"
 	% " from the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
 	| TSV (SVInst sp var)	<- ts
-	= Just
-	$ "      constraint: " % f 	% "\n"
+	= "      constraint: " % f 	% "\n"
 	% " from the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
 	| TSV (SVSig  sp var) 	<- ts
-	= Just
-	$ "      constraint: " % f	% "\n"
+	= "      constraint: " % f	% "\n"
 	% " in type sig for: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
@@ -474,6 +470,5 @@ dispFetterSource f ts
 	
 	-- hrm.. this shouldn't happen
 	| otherwise
-	= freakout stage 
+	= panic stage 
 		("dispFetterSource: no match for " % show ts % "\n")
-		Nothing

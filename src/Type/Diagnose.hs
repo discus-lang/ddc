@@ -131,13 +131,18 @@ traceFetterSource
 	-> SquidM (Maybe TypeSource)
 	
 traceFetterSource vC cid
- = do	Just c@(Class { classFetterSources = nodes })	
+ = do	Just c@(Class 
+		{ classFetterSources	= fetterSources
+		, classTypeSources	= typeSources })
  		<- lookupClass cid
  	
 	trace	$ "*   traceFetterSource" <> vC <> cid % "\n"
-		%> "\n" %!% nodes % "\n\n"
+		% "    fetterSources:\n"
+		%> "\n" %!% fetterSources % "\n\n"
+		% "    typeSources:\n"
+		%> "\n" %!% typeSources % "\n\n"
 	
-  	traceFetterSource' vC nodes
+  	traceFetterSource' vC fetterSources
 	
 traceFetterSource' vC []
 	= return Nothing
