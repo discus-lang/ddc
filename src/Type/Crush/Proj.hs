@@ -138,18 +138,13 @@ crushProj_withObj cidT src fProj cObj tObj
 
 		-- Functions don't have projections yet, there's no source syntax to define it.
 		--	We might add them later, but for now this is a type error.
-		| Just _		<- takeTFun tObj
-		= do	trace $ ppr $ " -- No projections are defined for function types, error.\n\n"
+		| otherwise
+		= do	trace $ ppr $ " -- No projections are defined for non-data types, error.\n\n"
 			addErrors
 			 [ErrorNoProjections
 			 	{ eProj		= proj
 				, eConstructor	= tObj }]
 			return Nothing
-
-		-- not sure what went wrong here.
-		| otherwise
-		= panic stage
-		$ "crushProjClassT: no match for " % tObj % "\n"
 		
 	result
 
