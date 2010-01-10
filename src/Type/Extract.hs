@@ -150,7 +150,6 @@ extractType_more final varT cid tPack
 	--	BUGS: must also not be in the environment.
 	
 	trace	$ ppr " -- dropping :> on non-contravariant effect and closure cids\n"
-	
 
 	-- first work out what effect and closure vars are in contra-variant branches
 	let contraTs	= catMaybes
@@ -167,19 +166,18 @@ extractType_more final varT cid tPack
 
 
 	-- Trim closures
-	let tTrim	= 
-		case kindOfType tDeMore of
-			Just kC | kC == kClosure	-> trimClosureC Set.empty Set.empty tDeMore
-			Just _				-> trimClosureT Set.empty Set.empty tDeMore
+	trace	$ ppr " -- trimming closures\n"	
+	let tTrim	
+		| isClosure tDeMore	= trimClosureC Set.empty Set.empty tDeMore
+		| otherwise		= trimClosureT Set.empty Set.empty tDeMore
 
-	trace	$ " -- trimming closures\n"
-		% "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"
+	trace	$ "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"
+	trace	$ ppr " -- done trimming\n"
 
 	-- Cut loops through :> fetters in this type
+	trace	$ ppr " -- cutting loops\n"
 	let tCut	= cutLoopsT tTrim
-
-	trace	$ " -- cutting loops\n"
-		% "    tCut:\n" 	%> prettyTS tCut % "\n\n"
+	trace	$ "    tCut:\n" 	%> prettyTS tCut % "\n\n"
 	
 	let tCutPack	= toFetterFormT $ PackFast.packType $ toConstrainFormT tCut
 	trace	$ "    tCutPack:\n"	%> prettyTS tCutPack % "\n\n"

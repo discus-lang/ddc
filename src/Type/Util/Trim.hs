@@ -61,7 +61,8 @@ trimClosureT
 	-> Type
 
 trimClosureT quant rsData tt
-  = let	tt_trimmed	= trimClosureT' quant rsData tt
+  = trace ("trimming " % tt % "\n")
+  $ let	tt_trimmed	= trimClosureT' quant rsData tt
 	
 	tt_packFast	= toFetterFormT 
 			$ PackFast.packType
@@ -104,24 +105,22 @@ trimClosureT_fs quant rsData ff
 -- | Trim a closure down to its interesting parts
 trimClosureC :: Set Type -> Set Type -> Closure -> Closure
 trimClosureC quant rsData cc
- = let -- cc'	= trimClosureC2 quant rsData cc
-   in  {- trace 
- 	( "trimClosureC\n"	
- 	% "    rsData = " % rsData	% "\n"
-	% "    cc     = " % cc		% "\n"
-	% "    cc'    = " % cc'		% "\n") $ -}
-	trimClosureC2 quant rsData cc
+ = let 	cc_trimmed	= trimClosureC' quant rsData cc
 
-trimClosureC2 quant rsData cc
-  = let cc'	= toFetterFormT 
-		$ PackFast.packType 
-		$ toConstrainFormT
-		$ trimClosureC' quant rsData cc
-
-    in  if cc' == cc
+	cc_packed	= toFetterFormT 
+			$ PackFast.packType 
+			$ toConstrainFormT
+			$ cc_trimmed
+			
+	cc'		= trace 
+ 				( "trimClosureC\n"	
+ 				% "    rsData = " % rsData	% "\n"
+				% "    cc     = " % cc		% "\n") 
+				cc_packed
+   in	if cc' == cc
    	 then cc'
 	 else trimClosureC quant rsData cc'
-
+	
 trimClosureC' quant rsData cc
  = let down	= trimClosureC quant rsData
    in  case cc of

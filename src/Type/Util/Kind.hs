@@ -37,10 +37,15 @@ import qualified Shared.Var as Var
 import Util
 
 import Main.Arg
-import qualified Debug.Trace
+import qualified Debug.Trace	as Debug
 
 -----
 stage	= "Type.Util.Kind"
+debug	= False
+trace ss x	
+	= if debug
+		then Debug.trace (pprStrPlain ss) x
+		else x
 
 
 -- Namespace things --------------------------------------------------------------------------------
@@ -136,10 +141,13 @@ inventWitnessOfClass k
 -- | Reconstruct the kind of this type, kind checking along the way
 kindOfType :: Type -> Maybe Kind
 kindOfType tt 
- = {-# SCC "kindOfType" #-} Just $ kindOfType' tt
+ = let 	kind	= kindOfType' tt
+   in	trace 	("kindOfType: " % tt 	% "\n")
+		$ Just $ kind
 
 kindOfType' tt
- = case tt of
+ = trace ("kindOfType': " % tt) $ 
+   case tt of
 	TClass k _		-> k
 	TVar k _		-> k
 	TVarMore k _ _		-> k
@@ -155,15 +163,19 @@ kindOfType' tt
 	TApp t1 t2		
 	 | KForall k11 k12	<- kindOfType' t1
 	 , k2			<- kindOfType' t2
-	 , k11 == k2
+--	 , k11 == k2
 	 -> betaTK 0 t2 k12
 
 	-- application of kind function (which is a sugared KForall)
 	TApp t1 t2
 	 | KFun k11 k12		<- kindOfType' t1
 	 , k2			<- kindOfType' t2
-	 , k11 == k2
+--	 , k11 == k2
 	 -> k12
+
+	-- application failed.. :(
+	TApp t1 t2
+	 -> kindOfType_freakout t1 t2
 	
 	TForall  b t1 t2	-> kindOfType' t2
 
@@ -175,11 +187,6 @@ kindOfType' tt
 	TEffect{}		-> kEffect
 	TFree{}			-> kClosure
 	TDanger{}		-> kClosure
-
-
-	-- application failed.. :(
-	TApp t1 t2
-	 -> kindOfType_freakout t1 (kindOfType t1) t2 (kindOfType t2)
 
 	TError k _		-> k
 	TElaborate e t		-> kindOfType' t
@@ -194,14 +201,12 @@ kindOfType' tt
 	_			-> panic stage $ "kindOfType bad kind for : " % tt
 
 
-kindOfType_freakout t1 k1 t2 k2
+kindOfType_freakout t1 t2
  = panic stage	
 	( "takeKindOfType: kind error in type application (t1 t2)\n"
 	% "    t1  = " % t1 	% "\n"
-	% "  K[t1] = " % k1	% "\n"
 	% "\n"
-	% "    t2  = " % t2 	% "\n"
-	% "  K[t2] = " % k2	% "\n")
+	% "    t2  = " % t2 	% "\n")
 	Nothing
 
 kindOfType_orDie :: Type -> Kind
@@ -215,7 +220,8 @@ kindOfType_orDie tt
 
 betaTK :: Int -> Type -> Kind -> Kind
 betaTK depth tX kk
- = let down 	= betaTK depth tX
+ = trace ("betaTK " % tX % "\n") $
+   let down 	= betaTK depth tX
    in case kk of
  	KNil		-> kk
 	KForall k1 k2	-> KForall k1 (betaTK (depth + 1) tX k2)
