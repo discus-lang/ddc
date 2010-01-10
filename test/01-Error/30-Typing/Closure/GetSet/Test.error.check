@@ -1,5 +1,5 @@
 ddc: ERROR
-Just ./test/01-Error/30-Typing/Closure/GetSet/Test.ds:28:14
+./test/01-Error/30-Typing/Closure/GetSet/Test.ds:28:14
     Type mismatch during unification.
           cannot match: Data.String.String
                   with: Base.Int32

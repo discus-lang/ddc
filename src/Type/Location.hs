@@ -220,16 +220,15 @@ takeSourcePos ts
 	_	-> Nothing
 
 
-dispSourcePos :: TypeSource -> Maybe (PrettyM PMode)
+dispSourcePos :: TypeSource -> PrettyM PMode
 dispSourcePos ts
  = case takeSourcePos ts of
- 	Just sp	-> Just (ppr sp)
+ 	Just sp	-> ppr sp
 
 	-- this shouldn't happen
 	Nothing	
-	 -> freakout stage
+	 -> panic stage
 		("dispSourcePos: no source location in " % ts)
-		Nothing
 		
 
 -- Display -----------------------------------------------------------------------------------------
