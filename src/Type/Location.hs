@@ -235,25 +235,24 @@ dispSourcePos ts
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
 
-dispTypeSource :: Type -> TypeSource -> Maybe (PrettyM PMode)
+dispTypeSource :: Type -> TypeSource -> PrettyM PMode
 dispTypeSource tt ts
 	| TSV sv	<- ts
-	= Just $ dispSourceValue tt sv
+	= dispSourceValue tt sv
 
 	| TSE se	<- ts
-	= Just $ dispSourceEffect tt se
+	= dispSourceEffect tt se
 	
 	| TSU su	<- ts
-	= Just $ dispSourceUnify tt su
+	= dispSourceUnify tt su
 
 	| TSI (SICrushedFS c f ts') <- ts
 	= dispTypeSource tt ts'
 
 	-- hrm.. this shouldn't happen
 	| otherwise
-	= freakout stage
+	= panic stage
 		("dispTypeSource: no match for " % ts % "\n")
-		Nothing
 
 
 -- A fn make showing error messages easier
@@ -262,8 +261,9 @@ atKind :: Type -> String
 atKind tt
 	| Just k	<- kindOfType tt
 	= let result
-		| k == kValue	= "         at type: "
-		| k == kEffect	= "     with effect: "
+		| resultKind k == kValue	= "         at type: "
+		| resultKind k == kEffect	= "     with effect: "
+		| otherwise	= panic stage $ "atKind " % k
 	  in result
 
 	

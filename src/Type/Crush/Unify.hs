@@ -216,9 +216,9 @@ isShallowConflict t1 t2
 	, TApp{}	<- t2	
 	= False
 	
-	| TCon{}	<- t1
-	, TCon{}	<- t2
-	= False
+	| TCon tc1	<- t1
+	, TCon tc2	<- t2
+	= not $ tc1 == tc2
 	
 	| TVar{}	<- t1	= False
 	| TVar{}	<- t2	= False
