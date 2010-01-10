@@ -114,7 +114,11 @@ trimClosureC quant rsData cc
 	trimClosureC2 quant rsData cc
 
 trimClosureC2 quant rsData cc
-  = let cc'	= packClosure_noLoops $ trimClosureC' quant rsData cc
+  = let cc'	= toFetterFormT 
+		$ PackFast.packType 
+		$ toConstrainFormT
+		$ trimClosureC' quant rsData cc
+
     in  if cc' == cc
    	 then cc'
 	 else trimClosureC quant rsData cc'

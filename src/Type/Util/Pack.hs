@@ -1,4 +1,12 @@
 module Type.Util.Pack
+	(utilPackTypeDummy)
+	
+where
+
+utilPackTypeDummy = False
+
+{-
+
 	( packType, packType_noLoops
 	, packData, packData_noLoops
 	, packEffect, packEffect_noLoops
@@ -26,7 +34,6 @@ import qualified Data.Set	as Set
 import qualified Debug.Trace
 
 -----
-stage	= "Type.Util.Pack"
 
 {-
 debug	= True
@@ -296,7 +303,8 @@ packT1 ld ls tt
 		return	$ TElaborate ee t'
 
 	_ -> panic stage
-		$ "packT1: no match for " % show tt
+		$ "packT1: no match for " % tt	% "\n\n"
+		% show tt
 		    
 
 -- Keep repacking a TFetters until the number of Fetters in it stops decreasing 
@@ -476,7 +484,7 @@ restrictCrs tt crs@Constraints { crsEq, crsMore, crsOther }
 	crs_restrict		= Constraints crsEq_restrict crsMore_restrict crsOther
 	
    in	crs_restrict
-	
+-}	
 	
 {-
 -- Sort Fetters ------------------------------------------------------------------------------------
