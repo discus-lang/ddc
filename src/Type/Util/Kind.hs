@@ -160,6 +160,8 @@ kindOfType' tt
 	TSum  k _		-> k
 
 	-- application of KForall
+	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
+	--	 rely on core lint to detect kind problems.
 	TApp t1 t2		
 	 | KForall k11 k12	<- kindOfType' t1
 	 , k2			<- kindOfType' t2
@@ -167,6 +169,8 @@ kindOfType' tt
 	 -> betaTK 0 t2 k12
 
 	-- application of kind function (which is a sugared KForall)
+	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
+	--	 rely on core lint to detect kind problems.
 	TApp t1 t2
 	 | KFun k11 k12		<- kindOfType' t1
 	 , k2			<- kindOfType' t2
