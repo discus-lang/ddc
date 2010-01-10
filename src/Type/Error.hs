@@ -256,7 +256,7 @@ instance Pretty Error PMode where
 
  ppr err@(ErrorFieldNotPresent 
  		{ eProj		= p
-		, eConstructor	= tt@TApp{}
+		, eConstructor	= tt
 		, eFields	= fields })
 	| Just (v, k, _)	<- takeTData tt
 	= (getProjSP p)							% "\n"
@@ -404,6 +404,10 @@ instance Pretty Error PMode where
 	% "        but it was inferred to be:"
 	% prettyVTS (v, scheme)
 	% "\n\n"
+
+ ppr err
+	= panic stage
+	$ "no match for " % show err
 
 -----
 prettyVTS (v, t)
