@@ -1,15 +1,15 @@
 ddc: ERROR
 ./test/01-Error/30-Typing/Unify/FunLess/Test.ds:6:15
     Type mismatch during unification.
-          cannot match: *70 -(!62 $65)> *71
-                  with: Base.Int32 %88
+          cannot match: *112 !101
+                  with: Base.Int32
 
               the use of: (+)
-                 at type: *70 -(!62 $65)> *71
+                 at type: *112 !101
                       at: ./test/01-Error/30-Typing/Unify/FunLess/Test.ds:6:15
 
         conflicts with, 
           literal value 3i32
-                 of type: Base.Int32 %88
+                 of type: Base.Int32
                       at: ./test/01-Error/30-Typing/Unify/FunLess/Test.ds:6:17
 

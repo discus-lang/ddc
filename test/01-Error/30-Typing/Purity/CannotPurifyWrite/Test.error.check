@@ -1,9 +1,9 @@
 ddc: ERROR
 ./test/01-Error/30-Typing/Purity/CannotPurifyWrite/Test.ds:5:9
-    Cannot purify effect `Base.!WriteT *33'.
+    Cannot purify effect `Base.!WriteT *54'.
 
               the use of: (:=)
-             with effect: Base.!WriteT *33
+             with effect: Base.!WriteT *54
                       at: ./test/01-Error/30-Typing/Purity/CannotPurifyWrite/Test.ds:5:9
 
      conflicts with,
