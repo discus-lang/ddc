@@ -173,9 +173,9 @@ crushEffectT_node cid tt tNode
 
 
 	-- ReadT (deep read of whole object)
-	| TEffect ve [TClass _ cidT]	<- tt
+	| TEffect ve [t1@(TClass _ cidT)]	<- tt
 	, Var.bind ve == Var.EReadT
-	= do	mtsArgs	<- traceDownLeftSpine cidT
+	= do	mtsArgs	<- traceDownLeftSpine t1
 		trace	$ "    tsArgs = " % mtsArgs 	% "\n\n"
 		
 		case mtsArgs of

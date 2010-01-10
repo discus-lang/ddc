@@ -575,25 +575,28 @@ headTypeDownLeftSpine cid1
 -- If and of the nodes have Nothing for their type, then return Nothing.
 --
 traceDownLeftSpine
-	:: ClassId
+	:: Type
 	-> SquidM (Maybe [Type])
 	
-traceDownLeftSpine cid
- = do	Just cls	<- lookupClass cid
-	
-	case classType cls of
-	 Just (TApp (TClass _ cid11) t12)
-	  -> do	mtsLeft		<- traceDownLeftSpine cid11
+traceDownLeftSpine tt
+ = case tt of
+	TClass _ cid
+	 -> do	Just cls	<- lookupClass cid
+		case classType cls of
+			Just t@TBot{}	-> return $ Just [TClass (classKind cls) cid]
+		 	Just t		-> traceDownLeftSpine t
+			Nothing		-> return $ Nothing
+			
+	TApp t11 t12
+	 -> do	mtsLeft	<- traceDownLeftSpine t11
 		case mtsLeft of
-			Nothing		-> return   Nothing
 			Just tsLeft	-> return $ Just (tsLeft ++ [t12])
+			Nothing		-> return Nothing
+			
+	TCon{}
+	 -> return $ Just [tt]
 		
-	 Just t@TCon{}
-	  -> return $ Just [t]
-		
-	 Just t@TBot{}
-	  -> return $ Just [TClass (classKind cls) cid]
-	
-	 Nothing -> return Nothing
-
+	_
+	 -> panic stage
+	 $  "traceDownLeftSpine: no match for " % tt
 
