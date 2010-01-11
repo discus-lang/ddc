@@ -79,7 +79,7 @@ cutLoopsT (TFetters tt fs)
 			$ fsLetMore
 	
 	-- cut loops in these lets
-	cidsRoot	= collectTClasses tt
+	cidsRoot	= Set.toList $ collectTClasses tt
 	fsLetMore'	= foldl' (cutLoopsF Set.empty) sub cidsRoot
 	
 	-- rebuild the type, with the new fetters
@@ -111,7 +111,8 @@ cutLoopsF cidsEntered sub cid
 		sub2		= Map.insert cid fetter' sub
 	
 	 	-- collect up remaining classIds in this type
-		cidsMore	= case fetter' of
+		cidsMore	= Set.toList
+				$ case fetter' of
 					FWhere _  t2	-> collectTClasses t2
 					FMore _ t2	-> collectTClasses t2
 	

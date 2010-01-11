@@ -58,9 +58,11 @@ stage	= "Type.Squid.Class"
 classChildren :: Class -> [ClassId]
 classChildren c
  = case c of
- 	ClassFetter { classFetter = f }	-> collectClassIds f
+ 	ClassFetter { classFetter = f }	
+	 -> Set.toList $ collectClassIds f
+
 	Class	    { classType   = mt } 
-	 -> fromMaybe [] $ liftM collectClassIds mt
+	 -> fromMaybe [] $ liftM (Set.toList . collectClassIds) mt
 
 
 -- | Increase the size of the type graph.

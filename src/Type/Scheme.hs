@@ -162,7 +162,7 @@ generaliseType' varT tCore envCids
 	vsBoundTop	<- gets stateVsBoundTopLevel
 	let isTopLevel	= Set.member varT vsBoundTop
 	let fsMskFresh	= takeTFetters tMskFresh
-	let rsMskFresh	= collectTClasses tMskFresh
+	let rsMskFresh	= Set.toList $ collectTClasses tMskFresh
 	
 	trace	$ "    isTopLevel   = " % isTopLevel		% "\n\n"
 

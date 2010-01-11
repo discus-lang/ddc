@@ -208,7 +208,7 @@ pushTemplate tTemplate srcShape cMerge
 -- | replace all the free vars in this type with new ones
 freshenType :: Type -> SquidM Type
 freshenType tt
- = do	let cidsFree	= collectClassIds tt
+ = do	let cidsFree	= Set.toList $ collectClassIds tt
  	cidsFresh	<- mapM freshenCid cidsFree
 	let sub		= Map.fromList $ zip cidsFree cidsFresh
 

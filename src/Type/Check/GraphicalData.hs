@@ -37,6 +37,7 @@ checkGraphicalDataT (TFetters t fs)
 				-> ( cid
 				   , Set.fromList 
 				   	$ filter (\c -> Set.member c cidsDataS) 
+					$ Set.toList
 					$ collectClassIds t2))
 
 			$ fsData

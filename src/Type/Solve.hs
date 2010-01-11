@@ -663,7 +663,7 @@ solveGeneralise_group src vsGen@(vGen : vsGenRest)
 
 	-- Collect up the cids free in in the environment.
 	--	These cids are fixed during the generalisation.
-	let cidsEnv	= Set.fromList $ catMap collectClassIds tsEnv
+	let cidsEnv	= Set.unions $ map collectClassIds tsEnv
 	trace	$ "    cidsEnv    = " % cidsEnv		% "\n"
 
 	-- Extract and generalise the types for all of the members of the binding group

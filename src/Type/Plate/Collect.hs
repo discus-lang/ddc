@@ -1,9 +1,8 @@
 
 -- | Utils for collecting various things from type expressions.
 module Type.Plate.Collect
-	( collectTClassVars
-	, collectVarsT
-	, collectBindingVarsT
+	( collectBindingVarsT
+	, collectTClassVars
 	, collectClassIds
 	, collectTClasses)
 where 
@@ -68,51 +67,42 @@ collectTClassVars tt
 				{ transT_enter = collect }) 
 			 tt)
 		Set.empty
-
-
------
-collectVarsT ::	Type -> [Var]
-collectVarsT t
-	= execState 
-		(transZM 
-			transTableId 
-			{ transV = \v -> do { modify (\s -> v : s); return v; } }
-			
-			t)
-		[]
  
------
+
+-- | Collect all the classids in this type.
 collectClassIds 
-	:: (TransM (State [ClassId]) a)
-	=> a -> [ClassId]
+	:: (TransM (State (Set ClassId)) a)
+	=> a 
+	-> Set ClassId
 
 collectClassIds x
  = let	collect cid 
-  	 = do	modify (\s -> cid : s)
+  	 = do	modify (Set.insert cid)
 	 	return cid
 		
    in	execState 
-   		(transZM transTableId { transCid = collect } x)
-		[]
+   		(transZM (transTableId { transCid = collect })
+			 x)
+		Set.empty
 
------
+
+-- | Collect all the TClasses in this type.
 collectTClasses
-	:: (TransM (State [Type]) a)
-	=> a -> [Type]
+	:: (TransM (State (Set Type)) a)
+	=> a 
+	-> Set Type
 	
 collectTClasses x
  = let 	collect t
   	 = case t of
 	 	TClass{}	
-		 -> do	modify (\s -> t : s)
+		 -> do	modify (Set.insert t)
 		 	return t
 			
 		_ ->	return t
 	
    in	execState
-   		(transZM transTableId { transT_enter = collect } x)
-		[]
-
-
-		
+   		(transZM (transTableId { transT_enter = collect }) 
+			 x)
+		Set.empty
 
