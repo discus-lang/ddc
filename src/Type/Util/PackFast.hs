@@ -1,6 +1,7 @@
 -- | Pack a type into standard form.
 module Type.Util.PackFast
-	(packType)
+	( packType
+	, packType_markLoops )
 where
 
 import Type.Exp
@@ -45,47 +46,50 @@ data Config
 	, configCrush		:: Bool
 	
 	-- | Whether to panic if we hit a loop through the value portion of the type graph.
-	--	If this is False then we replace the offending node by TError instead.
-	, configPanicOnLoops	:: Bool
+	, configLoopResolution	:: ConfigLoopResolution
 	}	
 	deriving (Show)
 
 
--- | Standard config for packing source types.
-config_sourceTypes
- = 	Config
-	{ configSubForEffClo	= False
-	, configCrush		= False
-	, configPanicOnLoops	= True }
-
-{-	
--- | Standard config for packing core types.
-config_coreTypes
- =	Config
-	{ configSubForEffClo	= True
-	, configCrush		= True
-	, configPanicOnLoops	= True }
--}	
+-- | Says what to do if we hit a loop in through the value portion of the type graph.
+--	Note: loops through the effect and closure portion aren't errors,
+--	      and we'll always get this with recursive functions.
+data ConfigLoopResolution
+	= ConfigLoopPanic	-- ^ throw a compiler panic.
+	| ConfigLoopTError	-- ^ leave an embedded TError in the type explaining the problem.
+	| ConfigLoopNoSub	-- ^ don't substitute into the looping variable.
+	deriving (Show)
 
 
 -- | This gets called often by the constraint solver, so needs to be reasonably efficient.
---
 --	The input type needs to be in "TConstrain" form
 --
 -- TODO: This is does a naive substitution.
 --	 It'd be better to use destructive update to implement the substitution, 
 --	 then eat up all the IORefs in a second pass.
 --
--- TODO: Either embed infinite loop errors in the type with an error node,
---	 throw an exception, or use a monad.
---
-packType 
-	:: Type 
-	-> Type
+packType :: Type -> Type
+packType tt	
+ = let	config	= Config
+		{ configSubForEffClo	= False
+		, configCrush		= False
+		, configLoopResolution	= ConfigLoopPanic }
 
-packType tt
-	= {-# SCC "packType" #-}
-	  packTypeCrsSub config_sourceTypes Map.empty Set.empty tt
+   in	packTypeCrsSub config Map.empty Set.empty tt
+
+
+-- | Pack a type into normal form. 
+--	If we find a loop through the value portion of the type graph then
+--	leave a TError explaining the problem.
+packType_markLoops :: Type -> Type
+packType_markLoops tt
+ = let	config	= Config
+		{ configSubForEffClo	= False
+		, configCrush		= False
+		, configLoopResolution	= ConfigLoopTError }
+	
+   in	packTypeCrsSub config Map.empty Set.empty tt
+
 
 -----
 packTypeCrsSub 
@@ -223,15 +227,30 @@ packTypeCrsClassVar config crsEq subbed tt k
 		then tt
 
 		-- we don't support recursive value types.
-		--	continuting the subsitution would result in an infinte type,
-		--	and we don't want that.
-		else panic stage ("packType loop through " % tt) 
+		else packTypeCrsClassVar_loop config crsEq subbed tt k
 		
 	 -- do the substitution
 	 | otherwise
 	 = case Map.lookup tt crsEq of
 		Just t		-> packTypeCrsSub config crsEq (Set.insert tt subbed) t
 		Nothing		-> tt
+
+
+-- we've found a loop through the value portion of the type graph.
+packTypeCrsClassVar_loop config crsEq subbed tt k
+ = case configLoopResolution config of
+
+	-- Uh oh, we weren't expecting any loops at the moment.
+	ConfigLoopPanic
+	 -> panic stage ("packType loop through " % tt) 
+
+	-- Just leave the variable there and don't substitute
+	ConfigLoopNoSub
+	 -> tt
+	
+	ConfigLoopTError
+	 -> panic stage ("packType TError") 
+	
 
 -----
 packTypeCrsSubF
