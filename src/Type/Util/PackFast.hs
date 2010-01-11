@@ -6,6 +6,7 @@ where
 
 import Type.Exp
 import Type.Util.Bits
+import Type.Util.Kind
 import Type.Pretty
 import Type.Plate.Collect
 
@@ -201,6 +202,8 @@ packTypeCrsSub' config crsEq subbed tt
 	TVar   k v	-> packTypeCrsClassVar config crsEq subbed tt k	
 	TClass k cid	-> packTypeCrsClassVar config crsEq subbed tt k
 
+	TError{}	-> tt
+
 	_ -> panic stage
 		$ "packType: no match for " % show tt
 
@@ -245,13 +248,21 @@ packTypeCrsClassVar_loop config crsEq subbed tt k
 	ConfigLoopPanic
 	 -> panic stage ("packType loop through " % tt) 
 
-	-- Just leave the variable there and don't substitute
+	-- Just leave the variable there and don't substitute.
 	ConfigLoopNoSub
 	 -> tt
 	
+	-- We've hit a loop, but we want to work out what constraint the loop is through.
 	ConfigLoopTError
-	 -> panic stage ("packType TError") 
-	
+	 -> let	
+		-- pack constraints into the looping variable, but just leave further
+		--	recursive occurrences unsubstituted.
+		config'	= config { configLoopResolution = ConfigLoopNoSub }
+		tLoop	= packTypeCrsSub config' crsEq Set.empty tt
+		Just k	= kindOfType tt
+
+	    in	TError k (TypeErrorLoop tt tLoop)
+		
 
 -- | Pack constraints into a fetter.
 packTypeCrsSubF

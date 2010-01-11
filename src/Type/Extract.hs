@@ -110,13 +110,16 @@ extractType_fromClass final varT cid
 
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 
-	-- Pack the type into standard form,
-	--	looking out for loops through the data portion of the graph.
+	-- Pack the type into standard form.
+	--	If we hit any loops through the value type portion of the
+	--	graph then mark then with TError constructors.
 	trace	$ ppr " -- packing into standard form\n"	
-	let tPack	= toFetterFormT $ PackFast.packType $ toConstrainFormT tTrace
+	let tPack	= toFetterFormT $ PackFast.packType_markLoops $ toConstrainFormT tTrace
 
-	-- TODO: we've lost the loop detection
-	let tsLoops	= []
+	-- Look for TErrors in the packed type
+	let tsLoops	= [ (t1, t2) 
+				| TError _ (TypeErrorLoop t1 t2) 
+				<- collectTErrors tPack ]
 
 	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
 	
@@ -126,9 +129,10 @@ extractType_fromClass final varT cid
 
 	 -- we've got graphical data, add an error to the solver state and bail out.
 	 else do
+		let tsLoop1 : _	= tsLoops
 	 	addErrors [ErrorInfiniteType 
 				{ eVar	= varT 
-				, eLoops	= tsLoops }]
+				, eLoops	= [tsLoop1] }]
 
 		return $ Just $ TError kValue (TypeErrorUnify [tTrace])
 

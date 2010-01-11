@@ -4,7 +4,8 @@ module Type.Plate.Collect
 	( collectBindingVarsT
 	, collectTClassVars
 	, collectClassIds
-	, collectTClasses)
+	, collectTClasses
+	, collectTErrors )
 where 
 
 import Util
@@ -71,7 +72,7 @@ collectTClassVars tt
 
 -- | Collect all the classids in this type.
 collectClassIds 
-	:: (TransM (State (Set ClassId)) a)
+	:: TransM (State (Set ClassId)) a
 	=> a 
 	-> Set ClassId
 
@@ -88,7 +89,7 @@ collectClassIds x
 
 -- | Collect all the TClasses in this type.
 collectTClasses
-	:: (TransM (State (Set Type)) a)
+	:: TransM (State (Set Type)) a
 	=> a 
 	-> Set Type
 	
@@ -105,4 +106,27 @@ collectTClasses x
    		(transZM (transTableId { transT_enter = collect }) 
 			 x)
 		Set.empty
+
+
+-- | Collect all the TErrors in this type
+--	We can't put them in a Set because Ord is not defined
+--	over all constructors of Type.
+collectTErrors 
+	:: TransM (State [Type]) a
+	=> a
+	-> [Type]
+	
+collectTErrors x
+ = let	collect t
+	 = case t of
+		TError{}
+		 -> do	modify (\s -> t : s)
+			return t
+		
+		_	-> return t
+		
+   in	execState
+		(transZM (transTableId { transT_enter = collect })
+			 x)
+		[]
 
