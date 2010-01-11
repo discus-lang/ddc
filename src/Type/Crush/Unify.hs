@@ -92,8 +92,8 @@ crushUnifyClass_unify cidT c
 	-- If there is nothing left in the queue, or there's only one element
 	--	then we're done. Otherwise call the reall unifier.
 	t_final	<- case queue_clean of
-			[] 	-> return		$ TBot (classKind c)
-			[t] 	-> return		$ t
+			[] 	-> return	$ TBot (classKind c)
+			[t] 	-> return	$ t
 			_  	-> crushUnifyClass_merge cidT c queue_clean
 			
   	trace	$ "    t_final      = " % t_final	% "\n\n"
@@ -186,10 +186,10 @@ addErrorConflict  cid c
 	-- sanity, check that we've actually identified the problem and added
 	--	an error to the state.
 	 _ -> panic stage
-		 $ "errorConflict: Couldn't identify the error in class " 	% cid % "\n"
-		 % "   type: \n"  %> classType c 				% "\n\n"
-		 % "   queue: \n" %> classQueue c	 			% "\n\n"
-		 % "   nodes:\n"  %> ("\n" %!% classTypeSources c) 		% "\n\n"
+		 $ "errorConflict: Couldn't identify the error in class " % cid % "\n"
+		 % "   type: \n"  %> classType c 			% "\n\n"
+		 % "   queue: \n" %> classQueue c	 		% "\n\n"
+		 % "   nodes:\n"  %> ("\n" %!% classTypeSources c) 	% "\n\n"
 
 
 -- | add an error recording that these two types conflict.
