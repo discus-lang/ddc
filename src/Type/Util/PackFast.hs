@@ -142,7 +142,7 @@ packTypeCrsSub' config crsEq subbed tt
 		--	the body of the type. Remember that packing is done on types
 		--	in both weak and non-weak forms, and with and without
 		--	embedded ClassIds. Also drop boring constraints while we're here.
-		freeClassVars	 = Set.fromList $ collectTClassVars t'
+		freeClassVars	 = collectTClassVars t'
 		
 		crsEq2_restrict	 
 			= Map.filterWithKey

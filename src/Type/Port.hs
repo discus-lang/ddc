@@ -66,7 +66,7 @@ slurpContraClassVarsT tt
 
 	TApp t1 t2
 	  | Just (t11, t12, eff, clo)	<- takeTFun tt
-	  -> collectTClassVars t11 ++ slurpContraClassVarsT t12
+	  -> (Set.toList $ collectTClassVars t11) ++ slurpContraClassVarsT t12
 	
 	  | Just _	<- takeTData tt
 	  -> []

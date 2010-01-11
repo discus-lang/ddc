@@ -101,7 +101,7 @@ dangerT rsMutable fsClosure tt
 
 	TDanger t1 t2
 	 	|  Set.member t1 rsMutable
-	 	-> Set.fromList $ collectTClassVars t2
+	 	-> collectTClassVars t2
 
 		| otherwise
 		-> dangerT rsMutable fsClosure t2
@@ -132,7 +132,7 @@ dangerT_data rsMutable fsClosure (v, k, ts)
 				_		-> False)
 			ts
 
-	= Set.unions $ map (Set.fromList . collectTClassVars) ts
+	= Set.unions $ map collectTClassVars ts
 
 	 -- check for dangerous vars in subterms
 	| otherwise

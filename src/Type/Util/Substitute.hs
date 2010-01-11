@@ -210,7 +210,7 @@ cutF :: (Type, Type) -> SubM (Maybe (Type, Type))
 cutF (t1, t2)
 	-- If the binding var is in the rhs then we've got an infinite type error
 	| (let Just k1 = kindOfType t1 in k1) == kValue
-	= if elem t1 $ collectTClassVars t2
+	= if Set.member t1 $ collectTClassVars t2
 		then do	modify $ \s -> (t1, t2) : s
 			return $ Nothing
 

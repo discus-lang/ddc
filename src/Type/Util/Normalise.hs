@@ -12,12 +12,12 @@ import qualified Shared.Var	as Var
 
 import Util
 import qualified Data.Map	as Map
-
+import qualified Data.Set	as Set
 
 -----
 normaliseT :: 	Type -> Type
 normaliseT	tt
- = let	vsBinding	= collectBindingVarsT tt
+ = let	vsBinding	= Set.toList $ collectBindingVarsT tt
  	(_, state')	= runState (mapM bindVar vsBinding) initState
 	varMap		= stateVarMap state'
 	t2		= transformV (rewriteVarV varMap) tt

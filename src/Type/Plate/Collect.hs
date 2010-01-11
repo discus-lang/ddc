@@ -1,73 +1,73 @@
 
+-- | Utils for collecting various things from type expressions.
 module Type.Plate.Collect
 	( collectTClassVars
 	, collectVarsT
 	, collectBindingVarsT
 	, collectClassIds
 	, collectTClasses)
-
-
 where 
 
 import Util
 import Type.Exp
 import Type.Plate.Trans
 import Control.Monad.State
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 
------
-collectBindingVarsT :: Type -> [Var]
+
+-- | Collect all the binding variables in foralls and where constraints.
+collectBindingVarsT :: Type -> Set Var
 collectBindingVarsT tt
-	= execState 
-		(transZM 
-			transTableId 
-				{ transT_enter	= collectBindingVarsT' 
-				, transF	= collectBindingVarsF' }
-			tt)
-		[]
+ = let	collectT tt
+  	 = case tt of
+		TForall (BVar v) k t		
+ 	 	 -> do	modify (Set.insert v)
+ 			return tt
 
-
-collectBindingVarsT' tt
- = case tt of
- 	TForall (BVar v) k t		
-	 -> do	modify (\s -> s ++ [v])
-	 	return tt
-
- 	TForall (BMore v _) k t		
-	 -> do	modify (\s -> s ++ [v])
-	 	return tt
+		TForall (BMore v _) k t		
+	 	 -> do	modify (Set.insert v)
+ 			return tt
 		
-	_ ->	return tt
-	
-collectBindingVarsF' ff
- = case ff of
- 	FWhere (TVar k v) _	
-	 -> do	modify (\s -> s ++ [v])
-	 	return ff
+		_ ->	return tt
 		
-	_ ->	return ff
+	collectF ff
+ 	 = case ff of
+		FWhere (TVar k v) _	
+	 	 -> do	modify (Set.insert v)
+ 			return ff
+		
+		_ ->	return ff	
+
+   in	execState 
+		(transZM (transTableId 
+				{ transT_enter	= collectT 
+				, transF	= collectF })
+			 tt)
+		Set.empty
 
 
-
------
-collectTClassVars :: Type -> [Type]
+-- | Collect all the TVars and TClasses present in this type, 
+--	both binding and bound occurrences.
+collectTClassVars :: Type -> Set Type
 collectTClassVars tt
- = let collect t
- 	= case t of
+ = let	collect t
+ 	 = case t of
 		TClass{}	
-		 -> do	modify (\s -> t : s)
+		 -> do	modify (Set.insert t)
 		 	return t
 			
 		TVar{}	
-		 -> do	modify (\s -> t : s)
+		 -> do	modify (Set.insert t)
 		 	return t
 			
 		_ -> 	return t
-		
-   in	execState
-   		(transZM transTableId { transT_enter = collect } tt)
-		[]
-		
-		
+				
+   in	execState 
+		(transZM (transTableId 
+				{ transT_enter = collect }) 
+			 tt)
+		Set.empty
 
 
 -----
