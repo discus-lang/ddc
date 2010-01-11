@@ -21,6 +21,7 @@ import qualified Data.Set	as Set
 
 import qualified Debug.Trace	as Debug
 
+-----
 stage	= "Type.Util.PackFast"
 debug	= False
 trace ss x	
@@ -91,12 +92,12 @@ packType_markLoops tt
    in	packTypeCrsSub config Map.empty Set.empty tt
 
 
------
+-- | Pack constraints into a type.
 packTypeCrsSub 
 	:: Config
-	-> Map Type Type		-- all the eq constraints to substitute
-	-> Set Type			-- vars of constraints already subsituted in this context
-	-> Type				-- type to pack into
+	-> Map Type Type		-- ^ all the eq constraints to substitute.
+	-> Set Type			-- ^ vars of constraints already subsituted in this context.
+	-> Type				-- ^ type to pack into.
 	-> Type
 
 packTypeCrsSub config crsEq subbed tt
@@ -203,13 +204,13 @@ packTypeCrsSub' config crsEq subbed tt
 	_ -> panic stage
 		$ "packType: no match for " % show tt
 
------
+-- | Pack constraints into a type variable.
 packTypeCrsClassVar
 	:: Config
-	-> Map Type Type
-	-> Set Type
-	-> Type
-	-> Kind
+	-> Map Type Type	-- ^ all the eq constraints to substitute
+	-> Set Type		-- ^ vars of constraints already subsituted in this context
+	-> Type			-- ^ the type variable
+	-> Kind			-- ^ kind of the type variable
 	-> Type
 
 packTypeCrsClassVar config crsEq subbed tt k
@@ -252,12 +253,12 @@ packTypeCrsClassVar_loop config crsEq subbed tt k
 	 -> panic stage ("packType TError") 
 	
 
------
+-- | Pack constraints into a fetter.
 packTypeCrsSubF
 	:: Config
-	-> Map Type Type		-- all the eq constraints to substitute
-	-> Set Type			-- vars of constraints already subsituted in this context
-	-> Fetter			-- fetter to pack into
+	-> Map Type Type	-- ^ all the eq constraints to substitute
+	-> Set Type		-- ^ vars of constraints already subsituted in this context
+	-> Fetter		-- ^ fetter to pack into
 	-> Fetter
 
 packTypeCrsSubF config crsEq subbed ff
