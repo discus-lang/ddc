@@ -155,7 +155,8 @@ crushUnifyClass_merge cidT c queue@(t:_)
 	-- if none of the previous rules matched then we've got a type error in the graph.
 	| otherwise
  	= do	addErrorConflict cidT c 
-		return (TError (kindOfType_orDie t) (classQueue c))
+		return $ TError (kindOfType_orDie t) 
+				(TypeErrorUnify $ classQueue c)
 
 
 -- | This function is called by unifyClassCheck when it finds a problem
@@ -204,7 +205,8 @@ addErrorConflict' cid c ((t1, s1), (t2, s2))
 
 	-- mark the class in the graph that contains the error.
 	updateClass cid
-		c { classType	= Just $ TError (classKind c) (classQueue c)}
+		c { classType	= Just $ TError (classKind c) 
+						(TypeErrorUnify $ classQueue c) }
 
 	return ()
 

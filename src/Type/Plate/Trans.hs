@@ -229,10 +229,9 @@ followT table tt
 	 -> do	cid'	<- transZM table cid
 	 	return	$ TClass k cid'
 
-	TError k t
-	 -> do	t'	<- transZM table t
-	  	return 	$ TError k t'
-
+	TError k ts
+	 -> do	return tt
+	
 	-- type sugar
 	TElaborate ee t
 	 -> do	t'	<- transZM table t

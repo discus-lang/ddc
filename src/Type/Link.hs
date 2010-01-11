@@ -90,8 +90,7 @@ linkType mParent bound tt
 		
 	-- Don't link error types to the graph.
 	--	It's probably not going to be useful.
-	TError k t	-> return tt
-
+	TError{}	-> return tt
 
 	TClass k cid	-> return tt
 

@@ -103,7 +103,7 @@ instance Pretty Type PMode where
 	
 	-- used in type inference
 	TClass k c	-> resultKind k % c
-	TError k t	-> "@TError" % k % " " % t
+	TError k t	-> "@TError" % k % "..."
 
 	-- type elaboration in source
 	TElaborate elab t -> prettyTB t % "{" % elab % "}"

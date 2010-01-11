@@ -271,8 +271,4 @@ isBoringEqConstraint t1 t2
 	
 	-- constraint is interesting.
 	_	-> False
-	
-	 
 
-
-	

@@ -80,8 +80,8 @@ staticRsDataT tt
 	TFree v t		-> staticRsDataT t
 	TDanger t1 t2		-> Set.unions $ map staticRsDataT [t1, t2]
 	
-	TError k t		-> Set.empty
-
+	TError{}		-> Set.empty
+	
 	TCon{}			-> Set.empty
 	TBot{}			-> Set.empty
 

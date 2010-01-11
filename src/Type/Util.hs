@@ -189,8 +189,7 @@ slurpVarsRD' tt
 		then [tt]
 		else []
 		
-	| TError k t	<- tt	
-	= []
+	| TError{}	<- tt	= []
 
 	| otherwise
 	= panic stage

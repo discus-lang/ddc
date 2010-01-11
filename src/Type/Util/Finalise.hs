@@ -73,20 +73,20 @@ finaliseT' bound def tt
 	 
 		| otherwise			-> tt
 		
-	TTop{}			-> tt
-	TBot{}			-> tt
+	TTop{}		-> tt
+	TBot{}		-> tt
 	
-	TApp t1 t2		-> TApp (down t1) (down t2)
+	TApp t1 t2	-> TApp (down t1) (down t2)
 	
-	TEffect v ts		-> TEffect v (map down ts)
-	TFree   v t		-> TFree v (down t)
-	TDanger t1 t2		-> TDanger (down t1) (down t2)
+	TEffect v ts	-> TEffect v (map down ts)
+	TFree   v t	-> TFree v (down t)
+	TDanger t1 t2	-> TDanger (down t1) (down t2)
 
-	TClass{}		-> tt
-	TError{}		-> tt
+	TClass{}	-> tt
+	TError{}	-> tt
 	
-	_	-> panic stage
-		$ "finaliseT: no match for " % tt
+	_		-> panic stage
+			$ "finaliseT: no match for " % tt
 
 finaliseF bound def ff
 	| FWhere t1@(TVar k v1) t2	<- ff

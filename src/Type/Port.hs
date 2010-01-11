@@ -61,25 +61,25 @@ letifyFs tsContra ff
 slurpContraClassVarsT :: Type -> [Type]
 slurpContraClassVarsT tt
  = case tt of
-	TForall b k t		-> slurpContraClassVarsT t
-	TFetters t fs		-> slurpContraClassVarsT t
+	TForall b k t	-> slurpContraClassVarsT t
+	TFetters t fs	-> slurpContraClassVarsT t
 
 	TApp t1 t2
 	  | Just (t11, t12, eff, clo)	<- takeTFun tt
 	  -> collectTClassVars t11 ++ slurpContraClassVarsT t12
 	
-	  | Just _			<- takeTData tt
+	  | Just _	<- takeTData tt
 	  -> []
 	
 	  | otherwise
 	  -> slurpContraClassVarsT t1 ++ slurpContraClassVarsT t2
 	
-	TVar{}			-> []
-	TCon{}			-> []
-	TClass{}		-> []
-	TError{}		-> []	
-	_			-> panic stage
-				$ "slurpContraClassVarsT: no match for " % tt
+	TVar{}		-> []
+	TCon{}		-> []
+	TClass{}	-> []
+	TError{}	-> []	
+	_		-> panic stage
+			$ "slurpContraClassVarsT: no match for " % tt
 
 
 

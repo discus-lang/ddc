@@ -31,6 +31,7 @@ module Type.Exp
 	, TProj		(..)
 	, Fetter  	(..)
 	, Elaboration	(..)
+	, TypeError	(..)
 
 	, Data
 	, Region
@@ -238,7 +239,7 @@ data Type
 	| TContext		Kind	Type	-- ^ Class abstraction. Equivalent to (forall (_ :: k). t)
 
 	-- constrained types.
-	--	We're currently moving the representation from TFetters to TConstrain.
+	--	We are currently moving the representation from TFetters to TConstrain.
 	--	TConstrain uses finite maps, not unsorted lists, so is much more efficient.
 	--
 	| TFetters	Type	[Fetter]	-- ^ Holds extra constraint information.
@@ -250,13 +251,13 @@ data Type
 
 	| TCon		TyCon			-- ^ A type constructor.
 	| TVar     	Kind 	Var		-- ^ A type variable.
+	| TIndex	Int			-- ^ A debruijn index. Used in the kinds of witness constructors.
 
 	| TTop		Kind			-- ^ Valid for Effects (!SYNC) and Closures ($OPEN) only.
 	| TBot		Kind			-- ^ Valid for Effects (!PURE) and Closures ($EMPTY)
 						--	also used in the inferencer to represent the type of an equivalence
 						--	class that has not been constrained by a constructor.
 	
-	-- Effect and closure constructors are always fully applied..
 	| TEffect	Var [Type]		-- ^ An effect constructor
 	| TFree		Var Type		-- ^ An tagged object which is free in the closure.
 						--	The tag should be a Value var.
@@ -265,32 +266,32 @@ data Type
 	| TDanger	Type Type		-- ^ If a region is mutable then free type variables in the 
 						--	associated type must be held monomorphic.
 	
-	-- Type sugar.
+	-- Type sugar. 
 	--	Used in source and desugar stages only.
 	| TElaborate	Elaboration Type
 
+
 	-- Helpers for type inference.
-	---	Used in type inference stages only.
-	| TClass   Kind ClassId			-- ^ A reference to some equivalence class.
-	| TError   Kind [Type]			-- ^ Classes with unification errors get their queues set to [TError].
+	--	Used in type inference stages only.
+	| TClass   	Kind ClassId		-- ^ A reference to some equivalence class.
+						--	Also known as a "meta" type variable.
+
+	| TError	Kind TypeError		-- ^ Represents an error in the type. 
+						--	The TypeError contains information about what went wrong.
 
 	-- A type variable with an embedded :> constraint.
-	--	Used in core only, so we can reconstruct the type of an expression
-	--	without having to see the bounds on enclosing foralls.
+	--	Used in core types only.
 	| TVarMore	Kind	Var	Type
 
-	-- A debruijn index
-	--	Used in core only, in the kinds for witness constructors.
-	| TIndex	Int
-
 	-- Witness Joining
-	--	Used in core only.
+	--	Used in core langauge only.
 	--	We could perhaps create a family of specific joining functions
 	--	instead but dealing with all the different combinations of argument
 	--	types would be too much pain..
 	| TWitJoin	[Witness]
 
 	deriving (Show, Eq)
+
 
 tPure	= TBot kEffect
 tEmpty	= TBot kClosure
@@ -302,13 +303,24 @@ type Closure	= Type
 type Witness	= Type
 
 
--- Helps with defining foreign function interfaces.
+-- | Helps with defining foreign function interfaces.
+--	Used in the TElaborate constructor of Type.
+--	Used in source and desugared types only.
 data Elaboration
-	= ElabRead					-- ^ read from some object
-	| ElabWrite					-- ^ write to some object
-	| ElabModify					-- ^ read and write some object
+	= ElabRead			-- ^ read from some object
+	| ElabWrite			-- ^ write to some object
+	| ElabModify			-- ^ read and write some object
 	deriving (Show, Eq)
 
+-- | Stores information about a type error directy in a type.
+--	Used in the TError constructor of Type.
+--	Used in during type inference only. 
+data TypeError
+	= TypeErrorUnify [Type]		-- ^ types that couldn't be unified
+	| TypeErrorLoop	 Type Type	-- ^ a recursive type equation 
+					--	(mu t1. t2), 	where t1 can appear in t2.
+					--			t1 is a TClass or a TVar.
+	deriving (Show, Eq)
 
 -- TyCon -------------------------------------------------------------------------------------------
 -- | Type constructors

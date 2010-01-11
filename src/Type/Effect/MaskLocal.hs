@@ -121,7 +121,6 @@ visibleRsT tt
 
 	TClass{}		-> Set.empty
 	TError{}		-> Set.empty	
-
 	_
 	 -> panic stage
 	 	$ "visibleRsT: no match for " % tt

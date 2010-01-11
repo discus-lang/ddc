@@ -58,7 +58,7 @@ instance DeepSeq Type where
 	TDanger		t1 t2		-> deepSeq t1 $ deepSeq t2 y
 	TElaborate	k s		-> deepSeq k  $ deepSeq s y
 	TClass		k c		-> deepSeq k  $ deepSeq c y
-	TError		k ts		-> deepSeq k  $ deepSeq ts y
+	TError		k err		-> deepSeq k y
 	TVarMore	k v t		-> deepSeq k  $ deepSeq v $ deepSeq t y
 	TIndex		i 		-> deepSeq i y
 	TWitJoin	ws		-> deepSeq ws y

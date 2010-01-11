@@ -130,7 +130,7 @@ extractType_fromClass final varT cid
 				{ eVar	= varT 
 				, eLoops	= tsLoops }]
 
-		return $ Just $ TError kValue [tTrace]
+		return $ Just $ TError kValue (TypeErrorUnify [tTrace])
 
 extractType_more final varT cid tPack
  = do	
