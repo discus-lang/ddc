@@ -1,0 +1,12 @@
+
+example = ()
+  where (Cons v1 (Cons v2  (Cons v3  (Cons v4  (Cons v5  (Cons v6  (Cons v7  (Cons v8 (Cons v9
+		 (Cons v10 (Cons v11 (Cons v12 (Cons v13 (Cons v14 (Cons v15 (Cons v16 
+		 (Cons v17 (Cons v18 (Cons v19 (Cons v20 (Cons v21 (Cons v22 (Cons v23 xs))))))))))))))))))))))) = []
+
+example2 xx
+ = case xx of
+	(Cons v1 (Cons v2  (Cons v3  (Cons v4  (Cons v5  (Cons v6  (Cons v7  (Cons v8 (Cons v9
+		 (Cons v10 (Cons v11 (Cons v12 (Cons v13 (Cons v14 (Cons v15 (Cons v16 
+		 (Cons v17 (Cons v18 (Cons v19 (Cons v20 (Cons v21 (Cons v22 (Cons v23 xs)))))))))))))))))))))))
+			-> ()
