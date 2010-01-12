@@ -8,12 +8,11 @@ where
 import Type.Solve.Grind
 import Type.Solve.BindGroup
 import Type.Solve.Generalise
+import Type.Solve.Finalise
 
 import Constraint.Bits
 import Constraint.Exp
 
-import Type.Check.Main
-import Type.Check.Instances
 import Type.Check.SchemeDanger
 
 import Type.Extract
@@ -38,7 +37,6 @@ import qualified Shared.Var	as Var
 import System.IO
 
 -----
--- debug the solver
 debug	= True
 trace s	= when debug $ traceM s
 
@@ -87,32 +85,8 @@ solve	args ctree blessMain
 	-- Feed all the constraints into the graph, generalising types when needed.
 	solveCs ctree
 
-	-- Do a final grind to make sure the graph is up to date
-	solveCs [CGrind]
-	
-	trace $ ppr "\n=== solve: post solve checks.\n"
-	
-	-- If the main function was defined, then check it has an appropriate type.
-	errors_checkMain	<- gets stateErrors
-	when (null errors_checkMain && blessMain)
-		checkMain
-
-	-- Check there is an instance for each type class constraint left in the graph.
-	errors_checkInstances	<- gets stateErrors
-	when (null errors_checkInstances)
-		checkInstances
-
-	errors_checkSchemes	<- gets stateErrors
-	when (null errors_checkSchemes)
-		checkSchemes
-
-	-- Report how large the graph was
-	graph		<- gets stateGraph
-	trace	$ "=== Final graph size: " % graphClassIdGen graph % "\n"
-
-	-- Report whether there were any errors
-	errors	<- gets stateErrors
-	trace   $ "=== Errors: " % errors % "\n"
+	-- Generalise left-over types and check for errors.
+	solveFinalise solveCs blessMain
  			
 -----
 solveCs :: [CTree] 
@@ -559,16 +533,8 @@ pathLeave BNil	= return ()
 
 pathLeave bind
  = do	path	<- gets statePath
- 	
-	let res	
-		-- When leaving a LetGroup, generalise any types that haven't already
-		--	been generalised. Especially in library code, we're not expecting to see instantiations 
-		--	of top level variables in this module - but we still need the types for the interface file.
-		| [BLetGroup vs]	<- path
-		, bind == BLetGroup vs
-		= do	solveFinalise
-			modify $ \s -> s { statePath = [] }
 
+ 	let (res :: SquidM ())
 		-- pop matching binders off the path
 		| b1 : bs		<- path
 		, bind == b1
@@ -581,38 +547,6 @@ pathLeave bind
 --			% "  path = " % path % "\n"
 	res
 	
-
-solveFinalise
- = do
-	-- Generalise left over types.
-	--	Types are only generalised before instantiations. If a function has been defined
-	--	but not instantiated here (common for libraries) then we'll need to perform the 
-	--	generalisation now so we can export its type scheme.
-	--
-	sGenSusp		<- gets stateGenSusp
-	let sGenLeftover 	= Set.toList sGenSusp
-
-	trace	$ "\n== Finalise ====================================================================\n"
-		% "     sGenLeftover   = " % sGenLeftover % "\n"
-	
-	solveCs [CGrind]
-
-	-- If grind adds errors to the state then don't do the generalisations.
-	errs	<- gotErrors
-	when (not errs)
-	 $ do 	
-	 	mapM_ (solveGeneralise (TSI $ SIGenFinal)) $ sGenLeftover
-
-		-- When generalised schemes are added back to the graph we can end up with (var = ctor)
-		--	constraints in class queues which need to be pushed into the graph by another grind.
-		--
-		solveCs [CGrind]
-		return ()
-	
-		
-	return ()
-
-
 		
 -- | Add to the who instantiates who list
 graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
