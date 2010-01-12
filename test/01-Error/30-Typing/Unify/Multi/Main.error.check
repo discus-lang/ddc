@@ -1,14 +1,14 @@
 ddc: ERROR
 ./test/01-Error/30-Typing/Unify/Multi/Main.ds:11:19
     Type mismatch during unification.
-          cannot match: *129 -(!145 $185)> *130
-                  with: Base.Int32 %152
+          cannot match: *283 $287
+                  with: *225 %226
 
           function application
                       at: ./test/01-Error/30-Typing/Unify/Multi/Main.ds:11:19
 
         conflicts with, 
               the use of: (+)
-                 at type: Base.Int32 %152
+                 at type: *225 %226
                       at: ./test/01-Error/30-Typing/Unify/Multi/Main.ds:9:12
 

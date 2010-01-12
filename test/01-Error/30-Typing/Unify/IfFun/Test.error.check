@@ -1,8 +1,8 @@
 ddc: ERROR
 ./test/01-Error/30-Typing/Unify/IfFun/Test.ds:5:10
     Type mismatch during unification.
-          cannot match: Base.Bool %4
-                  with: *8 -(!10 $11)> *9
+          cannot match: *4 %5
+                  with: *9 $16
 
           object of if-then-else expression
            which must be: Bool
