@@ -21,7 +21,7 @@ trace s	= when debug $ traceM s
 
 -----
 solveFinalise 
-	:: ([CTree] -> SquidM Bool)	-- the solveCs function from Type.Solve
+	:: ([CTree] -> SquidM ())	-- the solveCs function from Type.Solve
 	-> Bool 			-- whether to require the main function to have
 					--	the type () -> ()
 	-> SquidM ()
