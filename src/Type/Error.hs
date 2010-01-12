@@ -38,6 +38,16 @@ data Error
 
 		, eCtor2	:: Type 
 		, eTypeSource2	:: TypeSource }
+		
+	-- Kind mismatch
+	| ErrorUnifyKindMismatch
+		{ eType1	:: Type
+		, eKind1	:: Kind
+		, eTypeSource1	:: TypeSource
+		
+		, eType2	:: Type
+		, eKind2	:: Kind
+		, eTypeSource2	:: TypeSource }
 
 	-- Infinite types.
 	| ErrorInfiniteType				-- Cannot construct infinite type during packing.
@@ -176,6 +186,25 @@ instance Pretty Error PMode where
 	%> dispTypeSource t1 ts1
 	% "\n"
 	% "        conflicts with, " 					% "\n"
+	%> dispTypeSource t2 ts2
+
+ -- Kind Mismatch
+ ppr err@(ErrorUnifyKindMismatch
+		{ eKind1	= k1
+		, eType1	= t1
+		, eTypeSource1	= ts1
+		
+		, eKind2	= k2
+		, eType2	= t2
+		, eTypeSource2	= ts2 })
+	= (dispSourcePos $ selectSourceTS [ts1, ts2])			% "\n"
+	% "    Kind mismatch during unification.\n"
+	% "          cannot match: " % t1				% "\n"
+	% "                  with: " % t2				% "\n"
+	% "\n"
+	%> dispTypeSource t1 ts1
+	% "\n"
+	% "       conflicts with, "					% "\n"
 	%> dispTypeSource t2 ts2
 
  -- Infinite types.

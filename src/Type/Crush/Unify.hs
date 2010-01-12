@@ -133,6 +133,13 @@ crushUnifyClass_merge cidT c queue@(t:_)
 				TApp t1 t2 	-> Just (t1, t2)
 				_		-> Nothing)
 		$ queue
+
+	, k1s	<- map (\(Just k) -> k) $ map kindOfType t1s
+	, [_]	<- nub k1s
+	
+	, k2s	<- map (\(Just k) -> k) $ map kindOfType t2s
+	, [_]	<- nub k2s
+	
 	= do
 		let ?src	= TSNil "Type.Crush.Unify/TApp"
 		Just t1s_fed	<- liftM sequence $ mapM (feedType Nothing) t1s
@@ -214,16 +221,29 @@ addErrorConflict' cid c ((t1, s1), (t2, s2))
 -- | check whether two types conflict on their outermost constructor.
 isShallowConflict :: Type -> Type -> Bool
 isShallowConflict t1 t2
-	| TApp{}	<- t1	
-	, TApp{}	<- t2	
+	| TApp t11 t12	<- t1	
+	, TApp t21 t22	<- t2	
+	, Just k11	<- kindOfType t11
+	, Just k12	<- kindOfType t12
+	, Just k21	<- kindOfType t21
+	, Just k22	<- kindOfType t22
+	, k11 == k21
+	, k12 == k22
 	= False
 	
 	| TCon tc1	<- t1
 	, TCon tc2	<- t2
 	= not $ tc1 == tc2
 	
-	| TVar{}	<- t1	= False
-	| TVar{}	<- t2	= False
+	| TVar k1 _	<- t1	
+	, Just k2	<- kindOfType t2
+	, k1 == k2
+	= False
+
+	| TVar k2 _	<- t2
+	, Just k1	<- kindOfType t1
+	, k1 == k2
+	= False
 		
 	| otherwise
 	= True

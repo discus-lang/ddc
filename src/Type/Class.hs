@@ -216,11 +216,7 @@ addToClass2 cid src t c
 	| ClassNil	<- c
 	, Just k	<- kindOfType t
 	= addToClass3 cid src t (classInit cid k)
-	
---	| ClassNil	<- c
---	, TFetter{}	<- t
---	= addToClass3 cid src t (classInit cid KNil)	
-	
+		
 	| Class { classKind } <- c
 	, Just k	<- kindOfType t
 	, k == classKind
