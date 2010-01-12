@@ -161,14 +161,12 @@ data SourceInfer
 	= SIClassName
 
 	-- | Used to tag const constraints arrising from purification of effects.
-	| SIPurify	
+	| SIPurifier	
 		ClassId		-- the class holding that effect and purity constraint
 		Effect 		-- the effect that was purified
-
-	-- ^ The result of crushing some fetter 
-	| SICrushedF	
-		ClassId		-- the class holding the fetter that was crushed
-		Fetter		-- the fetter that was crushed
+		TypeSource	-- the source of the effect
+		Fetter		-- the original purity fetter
+		TypeSource	-- the source of this fetter
 
 	-- ^ The result of crushing some fetter, also carrying typeSource information
 	--	This is used when crushing things like Shape constraints, where the node
@@ -196,8 +194,10 @@ data SourceInfer
 
 instance Pretty SourceInfer PMode where
  ppr SIClassName		= ppr "SIClassName"
- ppr (SIPurify eff f)		= "SIPurify" <> eff <> parens f
- ppr (SICrushedF cid iF)	= "SICrushedF" <> cid <> parens iF
+
+ ppr (SIPurifier cid eff effSrc f fSrc)		
+	= "SIPurifier" <> cid <> parens eff <> parens effSrc <> parens f <> parens fSrc
+
  ppr (SICrushedFS cid iF src)	= "SICrushedFS" <> cid <> parens iF <> src
  ppr (SICrushedE cid iF)	= "SICrushedE" <> cid <> parens iF
  ppr (SIGenInst v)		= "SIGenInst " % v
@@ -214,8 +214,8 @@ takeSourcePos ts
 	TSU su	-> Just $ usp su
 	TSM sm	-> Just $ msp sm
 	
-	TSI (SICrushedFS _ _ src)
-		-> takeSourcePos src
+	TSI (SICrushedFS _ _ src)	-> takeSourcePos src
+	TSI (SIPurifier  _ _ _ _ fSrc)	-> takeSourcePos fSrc
 		
 	_	-> Nothing
 
@@ -466,8 +466,18 @@ dispFetterSource f ts
 	| FConstraint v _	<- f
 	, TSI (SICrushedFS cid f' src)	<- ts
 	= dispFetterSource f' src
+
+	| FConstraint v _				<- f
+	, TSI (SIPurifier _ eff effSrc fPure fPureSrc)	<- ts
+	= "       constraint: " % f				% "\n"
+	% "which purifies\n"
+	% dispTypeSource   eff effSrc
+	% "due to\n"
+	% dispFetterSource fPure fPureSrc
 	
 	-- hrm.. this shouldn't happen
 	| otherwise
 	= panic stage 
 		("dispFetterSource: no match for " % show ts % "\n")
+
+

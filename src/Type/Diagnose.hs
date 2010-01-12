@@ -35,45 +35,43 @@ diagMutConflict
 	
 diagMutConflict
 	fConst	@(FConstraint v [TClass kR cidR])
-	tsConst
+	srcConst
 
 	fMutable 
-	tsMutable
+	srcMutable
  | kR	== kRegion
  = do	
  	Just c@(Class { classTypeSources = nodes })
 		<- lookupClass cidR
 
-	-- see if the const constraint is the result of purifying some effect.
-	--	If so, there'll be a node who's source is a crushed purify fetter.
-	let esCrushedPure
-		= nub
-		$ [ (cidE, effPurified)
-			| TSI (SIPurify cidE effPurified)
-				<- map snd nodes ]
- 	
-	mErrPurifiedRead
-		<- case esCrushedPure of
-			(cidE, effPurified) : _	-> diagMutPurifiedRead fMutable tsMutable cidR cidE effPurified
-			_			-> return $ Nothing
-
 	let (result :: SquidM Error)
-		| Just err	<- mErrPurifiedRead
-		= return err
-		
+
+		-- see if the const constraint is the result of purifying some effect.
+		--	If so we want to record the source of the the effect and purity
+		--	constraint in the error message.
+		| TSI (SIPurifier cid eff effSrc fPure fPureSrc) : _
+			<- map snd nodes
+		= return
+		$ ErrorMutablePurifiedRead
+			{ eMutableFetter	= fMutable
+			, eMutableSource	= srcMutable 
+			, ePureFetter		= fPure
+			, ePureSource		= fPureSrc
+			, eReadEff		= eff
+			, eReadSource		= effSrc }
+
+		-- It's just a straight conflict
 		| otherwise
-		= makeSimpleConflict fMutable tsMutable fConst tsConst
+ 		= return
+		$ ErrorRegionConstraint
+			{ eFetter1		= fConst
+			, eFetterSource1	= srcConst
+			, eFetter2		= fMutable
+			, eFetterSource2	= srcMutable }
 
 	result
 
-makeSimpleConflict fConst tsConst fMutable tsMutable
-	= return
-	$ ErrorRegionConstraint
-		{ eFetter1		= fConst
-		, eFetterSource1	= tsConst
-		, eFetter2		= fMutable
-		, eFetterSource2	= tsMutable }
-
+{-	
 
 -- Diagnose a purity conflict due to mutability of a region
 --	conflicting with constness due to a read effect that was purified.
@@ -118,7 +116,7 @@ diagMutPurifiedRead
 			, eReadEff		= effPurified
 			, eReadSource		= tsRead }
 
-
+-}
 -- Trace Fetters -----------------------------------------------------------------------------------
 
 -- | Trace up the type graph to find the original source of this fetter.
@@ -148,7 +146,7 @@ traceFetterSource' vC []
 	= return Nothing
 	
 traceFetterSource' vC (node : nodes)
-	
+{-
 	-- fetter is the result of crushing some other fetter,
 	--	so trace that instead
 	| ( FConstraint vC' _
@@ -156,7 +154,7 @@ traceFetterSource' vC (node : nodes)
 			<- node
 	, vC == vC'
 	= traceFetterSource vC2 cidF
-	
+-}	
 	-- purity fetter is the result of purifying something else
 {-	| ( TFetter (FConstraint vC' _)
 	  , TSI (SIPurify cidF (TClass KEffect cidE)) )	

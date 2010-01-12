@@ -141,7 +141,7 @@ crushFetterSingle
 						--	these can constrain any class.
 
 crushFetterSingle cid k tNode ts_src
-	f_src@( f@(FConstraint vC [tC@TClass{}]), _)
+	f_src@( f@(FConstraint vC [tC@TClass{}]), fSrc)
 
 	-- crush a purity constraint
 	| vC  == primPure
@@ -159,7 +159,7 @@ crushFetterSingle cid k tNode ts_src
 		 -- we managed to crush it into something simpler
 		 Just fsBits 
 		  -> do	-- add all the smaller fetters back to the graph.
-			let src	= TSI $ SICrushedF cid f
+			let src	= TSI $ SICrushedFS cid f fSrc
 			return	$ zip fsBits (repeat src)
 		
 		 -- we couldn't crush the fetter yet.
@@ -183,7 +183,8 @@ crushFetterPure cid k tNode ts_src
 	-- see if all the atomic effects could be purifier
 	case sequence mfsPurifiers of
 	 Just fsPurifiers	
-	  -> crushFetterPure_success cid k tNode ts_src fPure_src fsPurifiers
+	  -> let eff_fPurifiers	= zip effs_atomic fsPurifiers
+	     in  crushFetterPure_success cid k tNode ts_src fPure_src eff_fPurifiers
 
 	 Nothing		
 	  -> crushFetterPure_failed cid k tNode ts_src fPure_src 
@@ -192,18 +193,30 @@ crushFetterPure cid k tNode ts_src
 -- we have a new constraint that forces each of the atomic effects to be pure.
 crushFetterPure_success cid k tNode ts_src
 	fPure_src@( fPure@(FConstraint vC [tC@TClass{}]), fPureSrc )
-	fsPurifiers
+	eff_fPurifiers
  = do	
-	-- lookup the source of the original purity constraint, 
+	-- Make the the new TypeSource info for each of the new fetters
+	let makePurifierSrc (eff, fPurifier)
+	     = let -- lookup the type-source for this effect
+		   --	The nodes hold effect sums, so we need to look inside them
+		   --	to find which one holds our (atomic) conflicting effect
+		   effSrc : _ 	
+		    = [nodeEffSrc	
+				| (nodeEff,  nodeEffSrc)	<- ts_src
+				, elem eff $ flattenTSum nodeEff]
+ 
+	
+		   src	= TSI (SIPurifier cid eff effSrc fPure fPureSrc)
+	       in  (fPurifier, src)	
+
+	let fPurifiers_src
+		= map makePurifierSrc eff_fPurifiers
+
 	--	and make the source info for constraints added due to purification.
-	let srcPurified		= TSI (SICrushedFS cid fPure fPureSrc)
-	trace	$ "    srcPurified                    = " % srcPurified % "\n"
+	trace	$ "    fPurifiers_src                  = " % fPurifiers_src % "\n"
 		
 	-- we've made progress on this class if any new fetters were added
-	let fs	= fPure_src
-		: zip fsPurifiers (repeat srcPurified)
-	
-	return fs
+	return	$ fPure_src : fPurifiers_src
 
 
 -- one of the effects could not be purified
@@ -238,9 +251,8 @@ crushFetterPure_failed cid k tNode ts_src
 	return [ fPure_src ]
 
 
--- | Given an effect, produce either 
---	the fetter which purifies this effect
---	or an error saying why it cannot be purified.
+-- | Given an effect, produce the fetter which purifies it,
+--	or Nothing if this is not possible.
 --
 purifyEffect_fromGraph
 	:: Effect 
