@@ -11,7 +11,7 @@ project Foo2 Float where
 	sub a b = a
 
 instance Num (Foo2 Float) where
-	(-)	= sub	&{Foo2 Float}
+	(-) a b	= Foo2 0.0 0.0
 
 closestPointOnLine :: Foo2 Float -> Foo2 Float -> Foo2 Float
 closestPointOnLine p1 p2
