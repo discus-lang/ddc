@@ -33,8 +33,8 @@ checkInstances
 	addErrors errs
 
 checkInstances1 errs cls
- 	| Class { classFetters = fs }		<- cls
-	= foldM (checkFetter cls) errs fs
+ 	| Class { classFetterSources = fs_src }		<- cls
+	= foldM (checkFetter cls) errs $ map fst fs_src
 	
 	| ClassFetter { classFetter = f }	<- cls
 	, FConstraint v t	<- f

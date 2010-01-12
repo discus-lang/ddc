@@ -101,10 +101,10 @@ instance Pretty Class PMode where
 			Just t	-> ":: " % prettyTS t % "\n\n")
 
 		-- class fetters
-		% (case classFetters c of
+		% (case classFetterSources c of
 			[]	-> pNil
 			_	-> "        -- fetters\n"
-				%> "\n" %!% classFetters c % "\n\n")
+				%> "\n" %!% classFetterSources c % "\n\n")
 	
 		-- multi-parameter type classes
 		% (if Set.null $ classFettersMulti c
@@ -148,7 +148,10 @@ forwardCids c@ClassFetter { classFetter = f }
 forwardCids c@Class{}
  = do	cid'		<- updateVC $ classId c
 
-	fs'		<- mapM updateVC $ classFetters c
+	fs'		<- mapM (\(f, src)
+				-> do	f'	<- updateVC f
+					return	$ (f', src))
+			$ classFetterSources c
 
 	let (ts, ns)	= unzip $ classTypeSources c
 	ts'		<- mapM updateVC ts
@@ -164,5 +167,5 @@ forwardCids c@Class{}
 	return	$ c
 		{ classId		= cid'
 		, classType		= typ' 
-		, classFetters		= fs' 
+		, classFetterSources	= fs' 
 		, classTypeSources	= nodes' }

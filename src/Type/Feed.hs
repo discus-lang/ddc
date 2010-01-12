@@ -353,8 +353,8 @@ addFetter f@(FConstraint vC [t])
 
 	-- check what fetters are already there
 	Just cls	<- lookupClass cid
-	let vfsThere	= map (\(FConstraint v _) -> v) 
-			$ classFetters cls
+	let vfsThere	= map (\(FConstraint v _, _) -> v) 
+			$ classFetterSources cls
 
 	-- if the fetter to be added is already there then there's no need to add it again.
 	if (elem vC $ vfsThere)
@@ -362,8 +362,7 @@ addFetter f@(FConstraint vC [t])
 	 else do
  		modifyClass cid
 	  	 $ \c -> c	
-	 		{ classFetters		= fNew 		: classFetters c
-			, classFetterSources	= (fNew, ?src) 	: classFetterSources c }
+	 		{ classFetterSources	= (fNew, ?src) 	: classFetterSources c }
 
 	 	activateClass cid
 		return True

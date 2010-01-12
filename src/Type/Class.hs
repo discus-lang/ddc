@@ -417,9 +417,6 @@ mergeClasses2 cids cs
 				$  concat (map classQueue cs)
 				++ concat (map (maybeToList . classType) cs)
 
-		, classFetters	
-			= concat $ map classFetters cs
-
 		, classFetterSources
 			= concat $ map classFetterSources cs
 
@@ -478,7 +475,9 @@ clearActive
 --	Also activate any MPTCs acting on it.
 activateClass :: ClassId -> SquidM ()
 activateClass cid
- = do	graph		<- gets stateGraph
+ = do	-- traceM $ "activating class " % cid % "\n"
+
+	graph		<- gets stateGraph
  	let graph'	= graph 
 			{ graphActive	= Set.insert cid (graphActive graph) }
 

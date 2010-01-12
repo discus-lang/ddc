@@ -136,11 +136,11 @@ checkDanger (Class { classType = t }) (t1, t2)
 	
 regionIsMutable :: ClassId -> SquidM (Maybe Fetter)
 regionIsMutable cid
- = do	Just (Class { classFetters = fs })	
+ = do	Just (Class { classFetterSources = fs_src })	
  		<- lookupClass cid
 
 	let fsMutable
-		= [ f 	| f@(FConstraint v _) <- fs
+		= [ f 	| (f@(FConstraint v _), _) <- fs_src
 			, v == primMutable ]
 		
 	fsMutable'	<- mapM updateVC fsMutable

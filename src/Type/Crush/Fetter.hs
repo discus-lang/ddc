@@ -32,9 +32,9 @@ import qualified Data.Map	as Map
 
 
 -----
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
-stage	= "Type.Crush.Fetter"
+-- stage	= "Type.Crush.Fetter"
 
 
 -- | Try and crush any single parameter fetters acting on this
@@ -44,52 +44,86 @@ crushFetterC
 	-> SquidM Bool	--   whether we crushed something from this class
 
 crushFetterC cid
- = do	Just c	<- lookupClass cid
- 	crushFetterC2 cid c
+ = do	Just cls <- lookupClass cid
+ 	crushFetterC' cid cls
 
 -- follow class indirections.
-crushFetterC2 cid (ClassForward cid')
-	= crushFetterC cid'
+crushFetterC' cid (ClassForward cidFwd)
+	= crushFetterC cidFwd
 
 -- MPTC style fetters Shape and Proj are handled by their own modules.
-crushFetterC2 cid (ClassFetter { classFetter = f })
+crushFetterC' cid (ClassFetter{})
 	= return False
 
-crushFetterC2 cid 
+crushFetterC' 
+	cid 
 	cls@(Class	
-		{ classKind	= k
-		, classType	= Just tNode
-		, classFetters 	= fs })
+		{ classKind		= k
+		, classType		= Just tNode_
+		, classTypeSources	= ts_src_
+		, classFetterSources 	= fs_src_ })
  = do	
+	let updateFstVC (x, src)
+	     = do 	x'	<- updateVC x
+			return (x', src)
+			
+	tNode	<- updateVC tNode_
+	ts_src	<- mapM updateFstVC ts_src_
+	fs_src	<- mapM updateFstVC fs_src_
+	
 	trace	$ "*   crushFetterC "   % k % cid			% "\n"
 		% "    node type    (tNode)           = " % tNode	% "\n"
-		% "    node fetters (fs)              = " % fs		% "\n"
+		% "    node fetters (fs_src)          = " % fs_src	% "\n"
 
-	-- try to crush each fetter in turn, into smaller bits.
-	--	crushing a particular fetter (like Pure) might also cause
-	--	the type in the node to change (such as by removing an effect term)
-	(cls', progressFetters)	
-		<- mapAccumLM crushFetterSingle cls
-		$  fs
+	-- Try to crush each fetter in turn into smaller bits.
+	-- Note that while crushing, we leave all the original fetters in the node, 
+	--	and only add the new fetters back when we're done.
+	fssCrushed
+		<- mapM (crushFetterSingle cid k tNode ts_src)
+		$  fs_src
 	
-	let (progresss, mfsCrushed)
-			= unzip progressFetters
-
-	let fsCrushed	= catMaybes mfsCrushed
+	let fsCrushed	= concat fssCrushed
 	
-	trace	$ "    progress                       = " % progresss		% "\n"
-		% "    new node type     (tNode')     = " % classType cls'	% "\n"
-		% "    new node fetters  (fsCrushed)  = " % fsCrushed		% "\n\n"
+	-- split the crushed fetters into the ones to apply to this class vs other classes
+	let (fsCrushed_thisClass, fsCrushed_others)
+		= partition (\f -> case f of
+					(FConstraint _ [TClass _ cid'], _)
+					 | cid' == cid	-> True
+					_		-> False)
+			    fsCrushed	
+	
 
-	-- update the class with the new fetters
-	updateClass cid
-	 $ cls { classFetters = fsCrushed }
+	-- Add all the new fetters back to the graph
+	let progress_thisClass
+		= or $ map (\(f, src) -> not $ elem f $ map fst fs_src) fsCrushed_thisClass
+
+	let progress_others
+		= not $ isNil fsCrushed_others
+
+	let progress
+		= progress_thisClass || progress_others
 		
+	trace	$ "    progress    ( ... _thisClass)  = " % progress_thisClass  % "\n"
+		% "    progress                       = " % progress		% "\n"
+
+		% "    new fetters       (fsCrushed):\n" 
+			%> "\n" %!% fsCrushed		% "\n"
+		% "    new fetters ( ... _thisClass):\n" 
+			%> "\n" %!% fsCrushed_thisClass	% "\n"
+		% "    new fetters ( ... _others):\n" 
+			%> "\n" %!% fsCrushed_others	% "\n\n"
+	
+	updateClass cid
+	 $ cls	{ classFetterSources	= fsCrushed_thisClass }
+	
+	-- add all the fetters back to the graph
+	mapM (\(f, src) -> addFetterSource src f) fsCrushed_others
+	
 	-- return a bool saying whether we made any progress with crushing
 	--	fetters in this class.
-	return $ or progresss
+	return $ progress_thisClass
 
-crushFetterC2 cid c
+crushFetterC' cid c
 	= return False
 
 
@@ -97,49 +131,27 @@ crushFetterC2 cid c
 -- | Try to crush a single parameter class constraint that is acting
 --	on this node from the type graph.
 crushFetterSingle
-	:: Class			-- ^ node from graph
-	-> Fetter			-- ^ the fetter to crush
+	:: ClassId 
+	-> Kind
+	-> Type
+	-> [(Type,  TypeSource)]		-- ^ the types in this node
+	-> (Fetter, TypeSource)			-- ^ the fetter to crush
 	-> SquidM 
-		( Class			-- the updated class
-		, ( Bool		-- whether we made any progress
-		  , Maybe Fetter))	-- perhaps a new fetter to replace the original with
+		[(Fetter, TypeSource)]		-- new fetters to add back to the graph.
+						--	these can constrain any class.
 
-crushFetterSingle 
-	cls  
-	f@(FConstraint vC [tC@(TClass k cidTarget)])
- = do	
-	-- the cid of the node that the fetter was in
-	let cidCls	= classId cls
-
-	-- A single parameter type class constraint should always constrain
-	--	the node that it's stored in.
-	cidCls'		<- sinkClassId cidCls
- 	cidTarget'	<- sinkClassId cidTarget
-	
-	when (cidCls' /= cidTarget')
-	 $ panic stage
-	 	$ "crushFetterSingle: Fetter in class " % cidCls' 
-		% " constrains some other class " 	% cidTarget' % "\n"
-		
-	crushFetterSingle' k cidCls' cls f
-
-crushFetterSingle' 
-	k
-	cid
-	cls@Class 
-		{ classType  		= Just tNode
-		, classFetterSources 	= nodes } 
-	  f@(FConstraint vC [tC@(TClass _ cidT)])
+crushFetterSingle cid k tNode ts_src
+	f_src@( f@(FConstraint vC [tC@TClass{}]), _)
 
 	-- crush a purity constraint
 	| vC  == primPure
-	= crushFetterPure cid cls f	
+	= crushFetterPure cid k tNode ts_src f_src	
 
 	-- try and crush some non-purity constraint
 	| otherwise
 	= do	
 		-- crush some non-purify fetter
-		mfsBits	<- crushFetterSingle_fromGraph k cid tNode vC
+		mfsBits	<- crushFetterSingle_fromGraph cid k tNode vC
 
 		-- the above call could return a number of simpler fetters
 		case mfsBits of
@@ -147,34 +159,16 @@ crushFetterSingle'
 		 -- we managed to crush it into something simpler
 		 Just fsBits 
 		  -> do	-- add all the smaller fetters back to the graph.
-			let ?src	= TSI $ SICrushedF cid f
-			trace	$ "    crushed fetters (fsBits)       = " % fsBits % "\n"
-			
-			progress	<- liftM or
-					$  mapM addFetter fsBits
-			
-			Just cls'	<- lookupClass cid
-						
-			return	( cls'
-				, (progress, Nothing))
+			let src	= TSI $ SICrushedF cid f
+			return	$ zip fsBits (repeat src)
 		
 		 -- we couldn't crush the fetter yet.
 		 Nothing
-		  -> 	return	( cls
-				, (False, Just f))
-
-
-	| otherwise
-	= return (cls, (False, Nothing))
-
+		  -> return $ [f_src]
 
 -- | Crush a purity constraint
-crushFetterPure
-	cid
-	cls@Class 
-		{ classType  		= Just tNode
-		, classFetterSources 	= nodes } 
-	  fPure@(FConstraint vC [tC@(TClass k cidT)])
+crushFetterPure cid k tNode ts_src
+	fPure_src@(FConstraint vC [tC@TClass{}], _)
  = do	
 	trace	$ "    -- crushing purity constraint"	% "\n"
 
@@ -186,45 +180,37 @@ crushFetterPure
 	mfsPurifiers		<- mapM purifyEffect_fromGraph effs_atomic
 	trace	$ "    mfsPurifiers                   = " % mfsPurifiers % "\n"
 
-	-- lookup the source of the original purity constraint, 
-	--	and make the source info for constraints added due to purification.
-	let Just fPureSrc	= lookup fPure nodes
-
 	-- see if all the atomic effects could be purifier
 	case sequence mfsPurifiers of
 	 Just fsPurifiers	
-	  -> crushFetterPure_success cid cls fPure fPureSrc fsPurifiers
+	  -> crushFetterPure_success cid k tNode ts_src fPure_src fsPurifiers
 
 	 Nothing		
-	  -> crushFetterPure_failed cid cls fPure fPureSrc 
+	  -> crushFetterPure_failed cid k tNode ts_src fPure_src 
 		(zip effs_atomic mfsPurifiers)
 
 -- we have a new constraint that forces each of the atomic effects to be pure.
-crushFetterPure_success cid 
-	cls@Class 
-		{ classType  		= Just tNode
-		, classFetterSources 	= nodes } 
-	fPure@(FConstraint vC [tC@(TClass k cidT)])
-	fPureSrc
+crushFetterPure_success cid k tNode ts_src
+	fPure_src@( fPure@(FConstraint vC [tC@TClass{}]), fPureSrc )
 	fsPurifiers
  = do	
 	-- lookup the source of the original purity constraint, 
 	--	and make the source info for constraints added due to purification.
 	let srcPurified		= TSI (SICrushedFS cid fPure fPureSrc)
 	trace	$ "    srcPurified                    = " % srcPurified % "\n"
-
-	-- add all the new fetters back to the graph
-	--	the addition function returns True if the fetter added was a new constraint
-	bsWasNewFetter		<- mapM (addFetterSource srcPurified) fsPurifiers
-	trace	$ "    bsWasNewFetter                 = " % bsWasNewFetter % "\n"
 		
 	-- we've made progress on this class if any new fetters were added
-	let madeProgress	= or bsWasNewFetter
-	return (cls, (madeProgress, Just fPure))	
+	let fs	= fPure_src
+		: zip fsPurifiers (repeat srcPurified)
+	
+	return fs
 
 
 -- one of the effects could not be purified
-crushFetterPure_failed cid cls fPure fPureSrc eff_mPurifiers
+crushFetterPure_failed cid k tNode ts_src
+	fPure_src@(fPure, fPureSrc) 
+	eff_mPurifiers
+
  = do	trace	$ ppr "-- purification failed"
 
 	-- lookup the first effect that we couldn't make a purifier for
@@ -235,7 +221,7 @@ crushFetterPure_failed cid cls fPure fPureSrc eff_mPurifiers
 	--	The nodes hold effect sums, so we need to look inside them
 	--	to find which one holds our (single) conflicting effect
 	let badAtomicEff_src : _ 	
-		= [srcEff	| (eff,  srcEff)	<- classTypeSources cls
+		= [srcEff	| (eff,  srcEff)	<- ts_src
 				, elem badAtomicEff $ flattenTSum eff]
 
 	-- build the purification error
@@ -249,7 +235,7 @@ crushFetterPure_failed cid cls fPure fPureSrc eff_mPurifiers
 	addErrors [err]
 
 	-- report no progress, and keep the original class and fetter.
-	return (cls, (False, Just fPure))
+	return [ fPure_src ]
 
 
 -- | Given an effect, produce either 
@@ -297,8 +283,8 @@ purifyEffect_fromGraph eff
 
 -- | Crush a non-purity fetter that's constraining some node in the graph.
 crushFetterSingle_fromGraph 
-	:: Kind 
-	-> ClassId			-- cid of class being constrained.
+	:: ClassId			-- cid of class being constrained.
+	-> Kind 
 	-> Type				-- the node type being constrained
 	-> Var				-- var of fetter ctor
 
@@ -306,7 +292,7 @@ crushFetterSingle_fromGraph
 					--			  new ones are added to the graph.
 		(Maybe [Fetter])	--    Nothing        then leave the original fetter in the class.
 
-crushFetterSingle_fromGraph k cid tNode vC
+crushFetterSingle_fromGraph cid k tNode vC
 	-- lazy head
 	| vC	== primLazyH
 	= do	trace $ ppr "    -- crushing LazyH\n"

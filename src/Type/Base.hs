@@ -69,12 +69,6 @@ data Class
 		--	/why/ this particular node has the type it does.
 		, classTypeSources	:: [(Type, TypeSource)]	 
 
-
-		-- Fetters \/ class constraints contributing to this class.
-		-- | Single parameter type class constraints which are acting on this equivalence class.
-		--	SPTC's are stored directly in the node with they constrain.
-		, classFetters		:: [Fetter]
-
 		-- | Constraints that have been added to this class, including source information.
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
@@ -98,7 +92,6 @@ classInit cid kind
 	, classQueue		= []
 	, classTypeSources	= []
 
-	, classFetters		= []
 	, classFetterSources	= []
 
 	, classFettersMulti	= Set.empty }

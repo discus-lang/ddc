@@ -105,7 +105,7 @@ loadTypeNode2 incFs cid c
 	= do
 		-- make sure all the cids are canconical
 		tRefreshed	<- refreshCids tNode
-		tFs		<- refreshCids $ classFetters c
+		tFs		<- refreshCids $ map fst $ classFetterSources c
 
 		-- chop of fetters attached directly to the type in the node
 		let (tX, fsLocal) 	

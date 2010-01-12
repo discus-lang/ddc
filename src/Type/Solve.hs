@@ -1015,9 +1015,9 @@ grindClass2 cid c@(ClassNil)
 	 	
 -- type nodes
 grindClass2 cid c@(Class	
-			{ classType 	= mType
-			, classKind	= k 
-			, classFetters	= fs})
+			{ classType 		= mType
+			, classKind		= k 
+			, classFetterSources	= fs_src})
  = do	
 	-- if a class contains an effect it might need to be crushed
 --	traceG	$ ppr "   - crushing effects\n"
@@ -1029,7 +1029,7 @@ grindClass2 cid c@(Class
 	-- try and crush other fetters in this class
 --	traceG	$ ppr "   - crushing type fetters\n"
 	progressCrush
-		<- case fs of
+		<- case fs_src of
 			[]	-> return False
 			_	-> crushFetterC cid
 	
