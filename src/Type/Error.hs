@@ -118,22 +118,6 @@ data Error
 		, eReadEff	:: Effect
 		, eReadSource	:: TypeSource }
 
-{-
-	| ErrorConstWrite				-- Attempted write to a const region.
-		{ eFetter	:: Fetter		--	Const fetter.
-		, eFetterSource	:: TypeSource		-- 	Source of Const fetter.
-		
-		, eEffect	:: Effect		--	Write effect.
-		, eEffectSource	:: TypeSource }		-- 	Source of Write effect.
-	
-	| ErrorPureReadWrite
-		{ eReadEff	:: Effect
-		, eReadSource	:: TypeSource
-		, ePureFetter	:: Fetter
-		, ePureSource	:: TypeSource
-		, eWriteEff	:: Effect
-		, eWriteSource	:: TypeSource }
--}
 	-- Update soundness problems.
 	| ErrorUpdateSoundness				-- Update soundness problem 
 		{ eErrVar	:: Var
@@ -349,43 +333,6 @@ instance Pretty Error PMode where
 	% "        which conflicts with\n"
 	%> dispFetterSource mut mutSource
 
-{-
- ppr err@(ErrorConstWrite 
- 		{ eEffect	= e
-		, eEffectSource	= eSource
-		, eFetter	= f
-		, eFetterSource	= fSource })
-	
-	= (dispSourcePos  eSource)					% "\n"
-	% "    Cannot write to Const region.\n"
-	% prettyETS e eSource
-	% "\n"
-	% "     conflicts with,\n"
-	% prettyFTS f fSource
--}	
-
-{-
- ppr err@(ErrorPureReadWrite
-		{ eReadEff	= r
-		, eReadSource	= rTS
-		, ePureFetter	= p
-		, ePureSource	= pTS
-		, eWriteEff	= w
-		, eWriteSource	= wTS })
-
-	= dispSourcePos wTS						% "\n"
-	% "    Cannot write to Const region.\n"
-	% "      This region is being forced Const because there is a\n"
-	% "      purity constraint on a Read effect which accesses it.\n"
-	% "\n"
-	% prettyETS w wTS
-	% "\n"
-	% "          conflicts with,\n"
-	% prettyETS r rTS
-	% "\n"
-	% "          which is being purified by,\n"
-	% prettyFTS p pTS
--}
 
  -- Update soundness problems.
  ppr err@(ErrorUpdateSoundness

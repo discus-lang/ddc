@@ -247,7 +247,7 @@ traceES_follow vC tE (node : nodes)
 	-- effect is the result of crushing some other effect
 	--	so trace this new effect instead.
 	| ( eff
-	  , TSI (SICrushedE cid2 (TEffect vC2 [tE2]) )) <- node
+	  , TSI (SICrushedES cid2 (TEffect vC2 [tE2]) _)) <- node
 	= traceEffectSource vC2 tE2 cid2
 		 
 	-- we've found the source for this single effect

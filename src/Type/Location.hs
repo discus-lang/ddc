@@ -178,9 +178,10 @@ data SourceInfer
 		TypeSource
 
 	-- ^ The result of crushing some effect
-	| SICrushedE	
+	| SICrushedES	
 		ClassId		-- the class holding the effect that was crushed
 		Effect		-- the effect that was crushed
+		TypeSource	-- the source of this effect
 
 	-- ^ A scheme that was generalised and added to the graph because its 
 	--	bound var was instantiated.
@@ -199,7 +200,7 @@ instance Pretty SourceInfer PMode where
 	= "SIPurifier" <> cid <> parens eff <> parens effSrc <> parens f <> parens fSrc
 
  ppr (SICrushedFS cid iF src)	= "SICrushedFS" <> cid <> parens iF <> src
- ppr (SICrushedE cid iF)	= "SICrushedE" <> cid <> parens iF
+ ppr (SICrushedES cid  iF src)	= "SICrushedES" <> cid <> parens iF <> src
  ppr (SIGenInst v)		= "SIGenInst " % v
  ppr SIGenFinal			= ppr "SIGenFinal"
 
@@ -247,6 +248,9 @@ dispTypeSource tt ts
 
 	| TSI (SICrushedFS c f ts') <- ts
 	= dispTypeSource tt ts'
+
+	| TSI (SICrushedES c eff effSrc) <- ts
+	= dispTypeSource eff effSrc
 
 	-- hrm.. this shouldn't happen
 	| otherwise

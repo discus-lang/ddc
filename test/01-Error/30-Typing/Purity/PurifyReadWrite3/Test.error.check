@@ -1,19 +1,17 @@
 ddc: ERROR
 ./test/01-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
-    Cannot purify Read effect on Mutable region.
-      A purity constraint on a Read effect requires the region it
-      acts on to be Const, and it cannot be Mutable at the same time.
-
+    Conflicting region constraints.
+               constraint: Base.Const %118
+        which purifies
               the use of: (+)
-             with effect: Base.!Read %72
+             with effect: Base.!ReadT *8
                       at: ./test/01-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:3:21
-
-        is being purified by
+        due to
               the use of: suspend2
                       at: ./test/01-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
 
-        which conflicts with
-              constraint: Base.Mutable %72
+     conflicts with,
+              constraint: Base.MutableT *8
          from the use of: (:=)
                       at: ./test/01-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:4:18
 
