@@ -103,8 +103,8 @@ toCoreP	:: D.Top Annot
 	-> CoreM [C.Top]
 
 toCoreP	p
- = trace ("toCoreP " % p)
- $ case p of
+ = -- trace ("toCoreP " % p) $ 
+   case p of
 	D.PNil
 	 ->	return []
 
@@ -273,8 +273,8 @@ toCoreS	D.SSig{}
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
- = trace ("toCoreX: " % xx % "\n")
- $ case xx of
+ = -- trace ("toCoreX: " % xx % "\n") $
+   case xx of
 
 	D.XLambdaTEC 
 		_ v x (T.TVar kV vTV) eff clo
@@ -598,7 +598,7 @@ toCoreVarInst v vT
 				$ map (\k -> let Just t = T.inventWitnessOfClass k in t)
 				$ ksContextC'
 
-{-		trace ("varInst: "
+		trace ("varInst: "
 			% vT 				% "\n"
 			% "    tScheme         =\n" %> tScheme 		% "\n\n"
 			% "    ksContext       = " % ksContextC		% "\n"
@@ -608,7 +608,7 @@ toCoreVarInst v vT
 			% "    tsSub           = " % tsSub 		% "\n"
 			% "    tsContestC'     = " % tsContextC' 	% "\n")
 			$ return ()
--}
+
 		let Just xResult = 
 			C.buildApp (C.XVar v tScheme : map C.XType (tsInstC_packed ++ tsContextC'))
 

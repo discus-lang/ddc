@@ -86,7 +86,7 @@ packT1 tt
 			| tyClass == TyClassConstT 
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
-			= TWitJoin 
+			= makeTWitJoin 
 			    	$ (   map (\r -> TApp (TCon tcConst)  r) rs
 				   ++ map (\d -> TApp (TCon tcConstT) d) ds)
 
@@ -94,7 +94,7 @@ packT1 tt
 			| tyClass == TyClassMutableT 
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
-			= TWitJoin 
+			= makeTWitJoin 
 			    	$ (   map (\r -> TApp (TCon tcMutable)  r) rs
 				   ++ map (\d -> TApp (TCon tcMutableT) d) ds)
 
@@ -186,7 +186,7 @@ packT1 tt
 			_				-> TFree v1 t2'
 						
 	TWitJoin ts
-	 -> makeTWitnessJoin (map packT1 ts)
+	 -> makeTWitJoin (map packT1 ts)
 	
 	_ -> panic stage
 		$ "packT: no match for " % tt % "\n"

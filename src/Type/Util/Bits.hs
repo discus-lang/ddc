@@ -43,7 +43,7 @@ module Type.Util.Bits
 	, makeKForall
 
 	-- witnesses
-	, makeTWitnessJoin
+	, makeTWitJoin
 	, makeTWitness
 	, takeTWitness
 
@@ -321,8 +321,8 @@ makeKForall (k:ks) kk	= KForall k (makeKForall ks kk)
 
 -- Witnesses ---------------------------------------------------------------------------------------
 -- | Join some witnesses together
-makeTWitnessJoin :: [Type] -> Type
-makeTWitnessJoin ts
+makeTWitJoin :: [Type] -> Type
+makeTWitJoin ts
  = case ts of
  	[t]	-> t
 	ts	-> TWitJoin ts

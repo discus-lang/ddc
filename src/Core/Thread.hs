@@ -134,6 +134,15 @@ thread_transX_enter xx
 --
 rewriteWitness :: ClassInstMap -> Type -> ThreadM Type
 rewriteWitness instMap tt
+ = case tt of
+	-- handle compound witnesses
+	TWitJoin ts
+	 -> do	ts'	<- mapM (rewriteWitness' instMap) ts
+		return	$ makeTWitJoin ts'
+
+	_	-> rewriteWitness' instMap tt
+
+rewriteWitness' instMap tt
  
 	-- Got an application of an explicit witness to some region.
 	--	Lookup the appropriate witness from the environment and use
