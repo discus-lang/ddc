@@ -169,7 +169,9 @@ solveCs	(c:cs)
 	--	These are stashed in the solver state.
 	CDataFields src v vs fs
 	 -> do	trace	$ "### DataFields " % v % " " % vs % "\n"
-		sDataFields	<##> Map.insert v (vs, fs)
+		modify $ \s -> s { 
+			stateDataFields = Map.insert v (vs, fs) (stateDataFields s) }
+
 		solveNext cs
 
 	-- A projection constraints
@@ -183,8 +185,8 @@ solveCs	(c:cs)
 	CDictProject src t vvs
 	 | Just (v, _, ts)	<- takeTData t
 	 -> do	trace	$ "### CDictProj " % t % "\n"
-	 	modify $ \s -> s { stateProject
-	 				= Map.insert v (t, vvs) (stateProject s)}
+	 	modify $ \s -> s { 
+			stateProject = Map.insert v (t, vvs) (stateProject s) }
 		solveNext cs
 
 	-- A Gen marks the end of all the constraints from a particular binding.
@@ -194,8 +196,8 @@ solveCs	(c:cs)
 	--	the fact that the var is safe to generalise in the GenSusp set.
 	CGen src t1@(TVar k v1)
 	 -> do	trace	$ "### CGen  " % prettyTS t1 %  "\n"
-	 	modify (\s -> s { stateGenSusp
-					= Set.insert v1 (stateGenSusp s) })
+	 	modify $ \s -> s { 
+			stateGenSusp = Set.insert v1 (stateGenSusp s) }
 		solveNext cs
 
 	-- Instantiate the type of some variable.
@@ -255,8 +257,10 @@ solveCs	(c:cs)
 	CInstLambda src vUse vInst
 	 -> do	trace	$ "### CInstLambda " % vUse % " " % vInst % "\n"
 
-	 	sInst <##> Map.insert vUse
-			(InstanceLambda vUse vInst Nothing)
+		modify $ \s -> s {
+			stateInst = Map.insert vUse
+					(InstanceLambda vUse vInst Nothing)
+					(stateInst s) }
 
 		solveNext
 			$ [CEq src (TVar kValue vUse) (TVar kValue vInst)]
@@ -305,8 +309,10 @@ solveCs	(c:cs)
 			(tInst, tInstVs)<- instantiateT_table instVar tScheme
 
 			-- Add information about how the scheme was instantiated
-			sInst <##> Map.insert vUse
-				(InstanceLet vInst vInst tInstVs tScheme)
+			modify $ \s -> s {
+				stateInst = Map.insert vUse
+						(InstanceLet vInst vInst tInstVs tScheme)
+						(stateInst s) }
 
 			-- The type will be added via a new constraint
 			solveNext
@@ -322,8 +328,10 @@ solveCs	(c:cs)
 	CInstLetRec src vUse vInst
 	 -> do	trace	$ "### CInstLetRec " % vUse % " " % vInst % "\n"
 
-	 	sInst <##> Map.insert vUse
-	 		(InstanceLetRec vUse vInst Nothing)
+		modify $ \s -> s {
+			stateInst = Map.insert vUse 
+					(InstanceLetRec vUse vInst Nothing)
+					(stateInst s) }
 
 		solveNext
 			$ [CEq src (TVar kValue vUse) (TVar kValue vInst)]

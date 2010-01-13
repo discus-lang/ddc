@@ -10,15 +10,8 @@ module Type.State
 	, newVarN
 	, lookupSigmaVar
 	, addErrors 
-	, gotErrors
+	, gotErrors)
 	
-	-- get/set projections.
-	, sTrace
-	, sSigmaTable
-	, sVarGen
-	, sVarSub
-	, sInst
-	, sDataFields )
 where
 import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
@@ -238,7 +231,7 @@ instVar' var space mVarId
 	= do
 		-- increment the generator and write it back into the table.
 		let varId'	= Var.incVarBind varId
-		sVarGen		<##> Map.insert space varId'
+		modify $ \s -> s { stateVarGen = Map.insert space varId' (stateVarGen s) }
 
 		-- the new variable remembers what it's an instance of..
 		let name	= pprStrPlain varId
@@ -258,7 +251,7 @@ newVarN	space
 			$  gets stateVarGen
 	
 	let varId'	= Var.incVarBind varId
-	sVarGen		<##> Map.insert space varId'
+	modify $ \s -> s { stateVarGen = Map.insert space varId' (stateVarGen s) }
 	
 	let name	= pprStrPlain varId
 	let var'	= (Var.new name)
@@ -287,16 +280,4 @@ gotErrors :: SquidM Bool
 gotErrors
  = do	errs	<- gets stateErrors
  	return	$ not $ isNil errs
-
-
--- get/set projections
-sTrace		= (stateTrace,		(\x s -> s { stateTrace		= x}))
-sSigmaTable	= (stateSigmaTable,	(\x s -> s { stateSigmaTable	= x}))
-
-sVarGen		= (stateVarGen,		(\x s -> s { stateVarGen	= x }))
-sVarSub		= (stateVarSub,		(\x s -> s { stateVarSub	= x }))
-
-sInst		= (stateInst,		(\x s -> s { stateInst		= x }))
-
-sDataFields	= (stateDataFields,	(\x s -> s { stateDataFields	= x }))
 
