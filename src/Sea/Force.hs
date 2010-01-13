@@ -1,9 +1,6 @@
 
 module Sea.Force
-(
-	forceTree
-
-)
+	(forceTree)
 
 where
 
@@ -67,13 +64,4 @@ forceS		s
 	 	return $  [gS, s']
 	 
 	_ -> return [s]
-	
-
-
-
-
-
-
-
-
 

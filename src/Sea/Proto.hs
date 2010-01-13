@@ -1,9 +1,6 @@
 
 module Sea.Proto
-(
-	addSuperProtosTree
-
-)
+	(addSuperProtosTree)
 
 where
 
@@ -26,4 +23,3 @@ addSuperProtosTree	tree
 			    
 			_ -> [p])
 	$ tree
-

@@ -1,9 +1,6 @@
 
 module Sea.Slot
-(
-	slotTree
-
-)
+	(slotTree)
 
 where
 
@@ -36,13 +33,7 @@ import Sea.Plate.Trans
 --	
 slotTree ::	Tree () -> Tree () -> Set Var -> Tree ()
 slotTree	tree	eHeader cafVars
- = let	
-{- 	cafVarsLocal	= Set.fromList [ v | PCafSlot v 	<- tree]
-	cafVarsImport	= Set.fromList [ v | PProto v [] t	<- eHeader]
-	cafVars		= cafVarsLocal `Set.union` cafVarsImport
--}
-   in	
-   	evalState (mapM (slotP cafVars) tree) 	
+ =    	evalState (mapM (slotP cafVars) tree) 	
  	$ Var.XBind Unique.seaSlot 0
 
 
@@ -171,8 +162,6 @@ addSlotMap :: Var -> Exp () -> SlotM ()
 addSlotMap    var    x
  =	modify (\s -> s { 
  		stateMap = Map.insert var x (stateMap s) })
-
-
 
 
 -----

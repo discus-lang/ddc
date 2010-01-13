@@ -1,9 +1,6 @@
 
 module Sea.Ctor
-(
-	expandCtorTree
-)
-
+	(expandCtorTree)
 where
 
 -----
@@ -107,7 +104,3 @@ expandField objV ix field
 	, Nothing	<- dInit field
 	, Just name	<- dLabel field
 	= panic stage $ "expandField: no initialization expression for non-primary field '" % name % "'"
-
-
-
-

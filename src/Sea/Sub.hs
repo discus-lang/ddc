@@ -20,9 +20,7 @@
 --
 --
 module Sea.Sub
-(
-	subTree
-)
+	(subTree)
 
 where
 
@@ -133,5 +131,4 @@ eraseTreeSS assignCount xx
 	 -> do
 		ss'		<- eraseTreeSS assignCount ss
 	 	return $ s : ss'
-
 

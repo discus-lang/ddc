@@ -8,7 +8,6 @@
 
 module Sea.Thunk
 	(thunkTree)
-
 where
 
 import Shared.Pretty
