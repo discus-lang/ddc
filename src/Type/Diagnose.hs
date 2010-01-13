@@ -1,7 +1,7 @@
 
 module Type.Diagnose 
-	( traceFetterSource
-	, traceEffectSource)
+	( -- traceFetterSource
+	  traceEffectSource)
 where
 import Type.Error
 import Type.State
@@ -19,71 +19,7 @@ trace ss
  	then traceM ss 
  	else return ()
 
-	
--- Trace Fetters -----------------------------------------------------------------------------------
--- | Trace up the type graph to find the original source of this fetter.
---	We follow the SICrushedF breadcrumbs until we find why the original,
---	compound fetter was introduced into the type graph.
---
-traceFetterSource 
-	:: Var		-- the var of the fetter we're tracing
-	-> ClassId	-- the class we're currently looking in
-	-> SquidM (Maybe TypeSource)
-	
-traceFetterSource vC cid
- = do	Just c@(Class 
-		{ classFetterSources	= fetterSources
-		, classTypeSources	= typeSources })
- 		<- lookupClass cid
- 	
-	trace	$ "*   traceFetterSource" <> vC <> cid % "\n"
-		% "    fetterSources:\n"
-		%> "\n" %!% fetterSources % "\n\n"
-		% "    typeSources:\n"
-		%> "\n" %!% typeSources % "\n\n"
-	
-  	traceFetterSource' vC fetterSources
-	
-traceFetterSource' vC []
-	= return Nothing
-	
-traceFetterSource' vC (node : nodes)
-{-
-	-- fetter is the result of crushing some other fetter,
-	--	so trace that instead
-	| ( FConstraint vC' _
-	  , TSI (SICrushedF cidF (FConstraint vC2 _)))	
-			<- node
-	, vC == vC'
-	= traceFetterSource vC2 cidF
--}	
-	-- purity fetter is the result of purifying something else
-{-	| ( TFetter (FConstraint vC' _)
-	  , TSI (SIPurify cidF (TClass KEffect cidE)) )	
-	  		<- node
-	, vC == vC'
-	, vC == primPure
-	= traceFetterSource vC cidE
--}
 
-	| ( FConstraint vC' _
-	  , TSI (SICrushedFS cid eff ts) )
-	  		<- node
-	, vC' == vC
-	= return $ Just ts
-		
-	-- found the root cause
-	| (FConstraint vC' _
-	  , ts@(TSV sv))
-			<- node
-	, vC == vC'
-	= return $ Just ts
-	
-	-- keep looking
-	| otherwise
-	= traceFetterSource' vC nodes
- 
- 
 -- Trace Effects -----------------------------------------------------------------------------------
 
 -- | Trace up the type graph to find the original source of this effect.

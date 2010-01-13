@@ -17,15 +17,9 @@ module Type.Check.SchemeDanger
 	( checkSchemes
 	, checkSchemeDangerCid
 	, checkSchemeDanger)
-
 where
-
-import Util
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
 import Shared.VarPrim
-
+import Type.Location
 import Type.Diagnose
 import Type.Exp
 import Type.Error
@@ -33,19 +27,20 @@ import Type.Util
 import Type.Plate.Collect
 import Type.State
 import Type.Class
-
 import Shared.Error
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
+import Util
 import Data.Map			(Map)
+import Data.Set			(Set)
+import qualified Shared.Var	as Var
+import qualified Shared.VarBind	as Var
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
+-----
+stage	= "Type.Check.SchemeDanger"
 debug	= False
 trace s	= when debug $ traceM s
 
-stage	= "Type.Check.SchemeDanger"
 
 checkSchemeDangerCid :: ClassId -> SquidM [Error]
 checkSchemeDangerCid cid
@@ -93,7 +88,8 @@ checkSchemeDanger errs c
 
 	| otherwise
 	= return errs
- 	
+ 
+	
 -- Produce an error if the region is mutable
 checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)
 checkDanger (Class 
@@ -104,13 +100,12 @@ checkDanger (Class
 
 	| kR	== kRegion
 	, TVar k varT	<- t2
-	= do 	mIsMutable	<- regionIsMutable cidR
-		case mIsMutable of
+	= do 	mfMutableSrc	<- lookupMutable cidR
+		case mfMutableSrc of
 	 	 Nothing	-> return Nothing
-	 	 Just fMutable
+	 	 Just (fMutable, srcMutable)
 	  	  -> do
 			varScheme	<- makeClassName cidScheme
-			Just srcMutable	<- traceFetterSource primMutable cidR
 			return	$ Just
 				$ ErrorLateConstraint
 					{ eScheme 		= (varScheme, t)
@@ -124,6 +119,7 @@ checkDanger (Class
 	, TClass{}	<- t2
 	= 	return Nothing
 	
+	
 checkDanger (Class { classType = t }) (t1, t2)
  = panic stage
 	$ "checkDanger: no match\n"
@@ -133,20 +129,23 @@ checkDanger (Class { classType = t }) (t1, t2)
 	% "\n"
 	
 	
-	
-regionIsMutable :: ClassId -> SquidM (Maybe Fetter)
-regionIsMutable cid
+-- See if there is a Mutable fetter in this class
+lookupMutable 
+	:: ClassId 
+	-> SquidM (Maybe (Fetter, TypeSource))
+
+lookupMutable cid
  = do	Just (Class { classFetterSources = fs_src })	
  		<- lookupClass cid
 
-	let fsMutable
-		= [ f 	| (f@(FConstraint v _), _) <- fs_src
+	let fs_srcs_mutable
+		= [ (f, src) 	
+			| (f@(FConstraint v _), src) <- fs_src
 			, v == primMutable ]
-		
-	fsMutable'	<- mapM updateVC fsMutable
-		
-	case fsMutable' of
-		[]	-> return $ Nothing
-		(f:_)	-> return $ Just f
-		
+				
+	case fs_srcs_mutable of
+	 []	-> return $ Nothing
+	 (f, src) : _	
+	  -> do	f'	<- updateVC f
+		return $ Just (f', src)
 
