@@ -4,7 +4,6 @@
 module Type.Crush.Effects
 	( crushEffectC )
 where
-
 import Type.Trace
 import Type.Exp
 import Type.Util
@@ -172,12 +171,12 @@ crushEffectT_node
 crushEffectT_node cid eff effSrc tNode
 
 	-- ReadH (Read of head region) where target is a type application.
-	| TEffect vE [TClass k cidTarget]	<- eff
-	, TApp{}		<- tNode
+	| TEffect vE [TClass k cidT]	<- eff
+	, TApp{}			<- tNode
 	, Var.bind vE == Var.EReadH
 	= do	
 		-- examine the type being constrained to see if we know its head region yet.
-		mHead	<- headTypeDownLeftSpine cidTarget
+		mHead	<- headTypeDownLeftSpine cidT
 
 		case mHead of
 		 	Just t  -> return $ Just
@@ -185,24 +184,20 @@ crushEffectT_node cid eff effSrc tNode
 					, TSI $ SICrushedES cid eff effSrc )
 			Nothing -> return Nothing
 			
-
 	-- ReadH (Read of head region) where target is a single constructor.
 	-- 	For an effect like  ReadH ()  we just discard the whole thing.
 	--	Such an effect can arise if we do a case match on an value of unit type.
-	| TEffect vE [TClass k cidT] <- eff
-	, TCon{}		<- tNode
+	| TEffect vE [TClass k cidT] 	<- eff
+	, TCon{}			<- tNode
 	, Var.bind vE == Var.EReadH
 	=	return	$ Just 
 			( tPure
 			, TSI $ SICrushedES cid eff effSrc)
 
-
 	-- ReadT (deep read of whole object)
-	| TEffect ve [t1@(TClass _ cidT)]	<- eff
+	| TEffect ve [t1]	<- eff
 	, Var.bind ve == Var.EReadT
 	= do	mtsArgs	<- traceDownLeftSpine t1
-		trace	$ "    tsArgs = " % mtsArgs 	% "\n\n"
-		
 		case mtsArgs of
 		 Nothing	-> return Nothing
 		 Just tsArgs
@@ -215,13 +210,7 @@ crushEffectT_node cid eff effSrc tNode
 						 | k == kEffect  -> Nothing
 						 | k == kClosure -> Nothing
 						 | k == kValue   -> Just (TEffect primReadT [t])
-						
-						 | otherwise	 
---						 -> freakout stage 
---							("crushEffectT_node: dodgy ReadT " % t % " of kind " % k % "\n"
---							% "  mtsArgs = " % mtsArgs)
-						 -> Just (TEffect primReadT [t])
-					)	
+						 | otherwise	 -> Just (TEffect primReadT [t]))	
 				$ tsArgs
 		
 			return	$ Just
@@ -231,25 +220,25 @@ crushEffectT_node cid eff effSrc tNode
 	-- WriteT (deep write to whole object)
 	| TEffect ve [t1]	<- eff
 	, Var.bind ve == Var.EWriteT
-	= return 
-	$ case tNode of
-		TBot k
-		 | k == kRegion
-		 -> Just ( TEffect primWrite [t1]
-			 , TSI $ SICrushedES cid eff effSrc)
-		
-		TCon{}
-		 -> Just ( tPure
-			 , TSI $ SICrushedES cid eff effSrc)
-			
-			
-		TApp t1 t2
-		 -> Just ( makeTSum kEffect
-				[ TEffect primWriteT [t1]
-				, TEffect primWriteT [t2]]
-			 , TSI $ SICrushedES cid eff effSrc)
+	= do	mtsArgs	<- traceDownLeftSpine t1
+		case mtsArgs of
+		 Nothing	-> return Nothing
+		 Just tsArgs
+		  -> do	let  mesBits	
+				= map (\t -> case t of
+						TCon{}		-> Nothing
+						TBot{}		-> Nothing
+						TClass k _
+						 | k == kRegion	 -> Just (TEffect primWrite  [t])
+						 | k == kEffect  -> Nothing
+						 | k == kClosure -> Nothing
+						 | k == kValue   -> Just (TEffect primWriteT [t])
+						 | otherwise	 -> Just (TEffect primWriteT [t]))	
+				$ tsArgs
 
-		_ -> Nothing
+			return	$ Just
+				( makeTSum kEffect (catMaybes mesBits)
+				, TSI $ SICrushedES cid eff effSrc)
 	
 	-- can't crush this one
 	| otherwise
