@@ -211,6 +211,7 @@ takeSourcePos ts
 	TSM sm	-> Just $ msp sm
 	
 	TSI (SICrushedFS _ _ src)	-> takeSourcePos src
+	TSI (SICrushedES _ _ src)	-> takeSourcePos src
 	TSI (SIPurifier  _ _ _ _ fSrc)	-> takeSourcePos fSrc
 		
 	_	-> Nothing
