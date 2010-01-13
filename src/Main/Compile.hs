@@ -232,10 +232,6 @@ compileFile_parse
 	-- Slurp out kind table
 	kindTable	<- SS.sourceKinds (sDefixed ++ hRenamed)
 	
-	-- Rename aliased instance functions
-	--	and change main() to ddcMain()
-	sAliased	<- SS.alias sDefixed
-
 	-- Desugar the source language
 	outVerb $ ppr $ "  * Source: Desugar\n"
 	(hDesugared, sDesugared)
@@ -244,7 +240,7 @@ compileFile_parse
 				"SD"
 				kindTable
 				hRenamed
-				sAliased
+				sDefixed
 
 	------------------------------------------------------------------------
 	-- Desugar/Type inference stages

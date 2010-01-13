@@ -6,49 +6,38 @@ module Main.Source
 	, defix
 	, rename
 	, sourceKinds
-	, desugar
-	, alias)
-
+	, desugar)
 where
-
-import qualified Desugar.Plate.Trans		as D
-import qualified Desugar.Exp			as D
-
-import Source.Lexer				(scanModuleWithOffside)
-import Source.Parser.Module			(parseModule)
-import Source.Slurp				(slurpFixTable, slurpKinds)
-import Source.Defix				(defixP)
-import Source.Desugar				(rewriteTree)
-import Source.Alias				(aliasTree)
+import Source.Lexer			(scanModuleWithOffside)
+import Source.Parser.Module		(parseModule)
+import Source.Slurp			(slurpFixTable, slurpKinds)
+import Source.Defix			(defixP)
+import Source.Desugar			(rewriteTree)
 import Source.Exp
 import Source.TokenShow
 import Source.Error
-import qualified Source.Token			as Token
-import qualified Source.Rename			as S
-import qualified Source.RenameM			as S
-import qualified Source.RenameM			as Rename
-
-
-import Main.Arg
-import Main.Dump
-
-import qualified Shared.Var		as Var
 import Shared.Var			(Var, Module)
 import Shared.Pretty
 import Shared.Error
 import Shared.Base
 import Shared.Literal
-
+import qualified Desugar.Plate.Trans	as D
+import qualified Desugar.Exp		as D
+import qualified Source.Token		as Token
+import qualified Source.Rename		as S
+import qualified Source.RenameM		as S
+import qualified Source.RenameM		as Rename
+import qualified Shared.Var		as Var
+import Main.Arg
+import Main.Dump
+import Data.Map 			(Map)
+import Data.Set				(Set)
 import qualified Data.Map		as Map
-import Data.Map (Map)
-
 import qualified Data.Set		as Set
-import Data.Set	(Set)
-
 import System.Exit
 import System.IO
-
 import Util
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Parse source code.
@@ -205,22 +194,6 @@ sourceKinds sTree
 --		(catMap (\(v, k) -> pprStr $ v %>> " :: " % k % ";\n") kinds)
 		
 	return	kinds
-
-
------------------------
--- alias
---
-alias 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree SourcePos
-	-> IO (Tree SourcePos)
-	
-alias sTree
- = do
- 	let sTree'	= aliasTree sTree
---	dumpST	DumpSourceAlias "source-alias" sTree'
-
-	return	sTree'
 	
 	
 -- | Convert from Source to Desugared IR.
@@ -251,6 +224,3 @@ desugar unique kinds hTree sTree
 	 $ exitWithUserError ?args errors
 		
 	return	(hTree', sTree')
-
-
-	
