@@ -2,73 +2,40 @@
 
 module Type.Scheme
 	( generaliseType 
-	, checkContext
-	, watchClass)
+	, checkContext )
 where
 
-import Type.Exp
-import Type.Pretty
-import Type.Plate
-import Type.Util
-import Type.Util.Environment
-import Type.Error
-
 import Type.Check.Danger
-
 import Type.Effect.MaskLocal
 import Type.Effect.MaskFresh
-
+import Type.Error
 import Type.State
-import Type.Class
 import Type.Plug		
 import Type.Port
 import Type.Context
 import Type.Util
+import Type.Exp
+import Type.Pretty
+import Type.Plate
+import Type.Util.Environment
 
+import Shared.VarPrim
+import Shared.Var		(NameSpace(..))
+import Data.Set			(Set)
+import Util
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace(..))
-import Shared.VarPrim
-
 import qualified Main.Arg	as Arg
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
-import Util
 
 -----
--- stage	= "Type.Scheme"
 debug	= True
 trace s	= when debug $ traceM s
-{-
-defaultConstRegions 
-	:: Set Var		-- type vars of value vars defined at top level
-	-> (Var, Type) 	-- var, and its type
-	-> SquidM (Var, Type)
-	
-defaultConstRegions vsBoundTopLevel (var, t)
- 	| Set.member var vsBoundTopLevel
-	= do	
-		let fsMore 	= 
-			[ FConstraint primConst [TVar KRegion r]
-				| r	<- Set.toList
-					$  Set.filter (\v -> Var.nameSpace v == NameRegion)
-					$  freeVars t]
-			
-		trace 	$ "*  Export.defaultConstRegions " % var % "\n"
-			% "   t      = " % t % "\n"
-			% "   fsMore = " % fsMore % "\n"
-			% "\n"
-			
-		return (var, t)
-		
-	| otherwise
-	= return (var, t)
--}
+
 
 -- | Generalise a type
---
 generaliseType
 	:: Var 			-- binding variable of the type being generalised
 	-> Type			-- the type to generalise
@@ -230,7 +197,6 @@ slurpFetters tt
 		_		-> []
 
 
-
 -- | Empty effect and closure eq-classes which do not appear in the environment or 
 --	a contra-variant position in the type can never be anything but _|_,
 --	so we can safely erase them now.
@@ -257,7 +223,6 @@ cleanType tsSave tt
 		
    in	finaliseT vsKeep False tt
  
-
 
 -- | After reducing the context of a type to be generalised, if certain constraints
 --	remain then this is symptomatic of problems in the source program.
@@ -294,28 +259,4 @@ checkContextF ff
 			, eFetterMaybeSrc	= Nothing } ] -- TODO: find the source
 		
 	_ -> return ()
-	
-
-
-
------
-watchClass src code
- = do	mC	<- lookupClass (ClassId code)
- 
- 	let res
-		| Just Class 
-			{ classType		= mType
-			, classQueue 		= queue  	
-			, classTypeSources	= typeSources	}	<- mC
-			
-		= trace ( "--- class " % code % "----------------------\n"
-			% "--  src   = " % src				% "\n"
-			% "--  type  = " % mType			% "\n"
-			% "--  queue = " % queue			% "\n"
-			% "--  nodes = " % (map fst typeSources)	% "\n\n")
-
-		| otherwise
-		= return ()
-	res
-
 	
