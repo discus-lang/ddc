@@ -3,22 +3,17 @@ module Type.Diagnose
 	( diagMutConflict 
 	, traceFetterSource
 	, traceEffectSource)
-	
 where
-
 import Type.Error
 import Type.State
 import Type.Base
 import Type.Class
 import Type.Location
 import Type.Exp
-
 import Shared.VarPrim
-
 import Util
 
 -----
--- stage	= "Type.Diagnose"
 debug	= True
 trace ss	
  = if debug 
@@ -71,54 +66,8 @@ diagMutConflict
 
 	result
 
-{-	
 
--- Diagnose a purity conflict due to mutability of a region
---	conflicting with constness due to a read effect that was purified.
-
-diagMutPurifiedRead
-	:: Fetter	-- the mutability constraint
-	-> TypeSource	-- the source of the mutability constraint
-	-> ClassId 	-- the class of the region that is constant
-	-> ClassId	-- the class of the effect that was purified
-	-> Effect	-- the effect that was purified
-	-> SquidM (Maybe Error)
-
-diagMutPurifiedRead 
-	fMutable tsMutable 
-	cidR cidE effPurified@(TEffect vEffect [tE@(TClass _ cidER)])
-
- = do	trace	$ "*   diagMutPurifiedRead" <> cidR <> cidE <> parens effPurified % "\n"
-	
-	-- Lookup what effects were purified by this fetter
-	Just cE@(Class 	{ classTypeSources 	= nodes 
-			, classType 		= t})
-		<- lookupClass cidE
-	
-	trace $ "    type: " % t			% "\n\n"
-	trace $ "    nodes\n" %> "\n" %!% nodes	% "\n\n"
-	
-	-- Try and find the source of the read effect which writes to cidR
-	Just tsMutable	<- traceFetterSource primMutable cidER
-	trace $ "    mutability source: " % tsMutable	% "\n\n"
-
-	Just tsPure	<- traceFetterSource primPure cidE
-	trace $ "    purity source: " % tsPure		% "\n\n"
-
-	Just tsRead	<- traceEffectSource vEffect tE cidE
-	trace $ "    read source: " % tsRead		% "\n\n"
-	
-	return $ Just ErrorMutablePurifiedRead
-			{ eMutableFetter	= fMutable
-			, eMutableSource	= tsMutable 
-			, ePureFetter		= FConstraint primPure [effPurified]
-			, ePureSource		= tsPure
-			, eReadEff		= effPurified
-			, eReadSource		= tsRead }
-
--}
 -- Trace Fetters -----------------------------------------------------------------------------------
-
 -- | Trace up the type graph to find the original source of this fetter.
 --	We follow the SICrushedF breadcrumbs until we find why the original,
 --	compound fetter was introduced into the type graph.
