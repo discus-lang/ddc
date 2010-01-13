@@ -20,7 +20,6 @@ module Type.Check.SchemeDanger
 where
 import Shared.VarPrim
 import Type.Location
-import Type.Diagnose
 import Type.Exp
 import Type.Error
 import Type.Util

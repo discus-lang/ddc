@@ -20,7 +20,6 @@ import Type.Plate.Trans
 import Type.Plate.FreeVars
 import Type.Context
 import Type.Location
-import Type.Diagnose
 
 import Data.Array.MArray
 import qualified Data.Map	as Map

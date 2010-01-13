@@ -7,7 +7,6 @@ module Type.Crush.Fetter
 	( crushFetterC )
 
 where
-import Type.Diagnose
 import Type.Feed
 import Type.Trace
 import Type.State
