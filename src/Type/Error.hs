@@ -1,4 +1,5 @@
 
+-- | Representation and display of type error messages.
 module Type.Error
 	( Error(..) )
 where
@@ -108,8 +109,6 @@ data Error
 		, eFetter2	:: Fetter
 		, eFetterSource2 :: TypeSource }
 		
-	
-
 	| ErrorMutablePurifiedRead			-- Mutable region is also constraint to be constant
 		{ eMutableFetter :: Fetter		--	due to a purified read effect.
 		, eMutableSource :: TypeSource		
@@ -162,7 +161,7 @@ instance Pretty Error PMode where
 		, eTypeSource1	= ts1
 		, eCtor2 	= t2 
 		, eTypeSource2	= ts2})
- 	= (dispSourcePos $ selectSourceTS [ts1, ts2])			% "\n"
+ 	= (dispSourcePos ts1)						% "\n"
 	% "    Type mismatch during unification.\n"
 	% "          cannot match: " % t1				% "\n"
 	% "                  with: " % t2				% "\n"
@@ -181,7 +180,7 @@ instance Pretty Error PMode where
 		, eKind2	= k2
 		, eType2	= t2
 		, eTypeSource2	= ts2 })
-	= (dispSourcePos $ selectSourceTS [ts1, ts2])			% "\n"
+	= (dispSourcePos ts1)						% "\n"
 	% "    Kind mismatch during unification.\n"
 	% "          cannot match: " % t1				% "\n"
 	% "                  with: " % t2				% "\n"
@@ -402,26 +401,8 @@ prettyValuePos var
 	$ Var.info var
 
 
------
--- selectSourceTS
---	Select from a set of possible TypeSource's
---	to find a good representative to report as the
---	main cause of an error.
---
-selectSourceTS :: [TypeSource] -> TypeSource
-selectSourceTS []
-	= panic stage 
-	$ "selectSourceTS: no suitable source pos"
-
-selectSourceTS (t : ts)
- = case t of
--- 	TSIfObj{}	-> selectSourceTS ts
-	_		-> t
-
-	 
-
-
-getVSP :: Var	-> SourcePos
+-- | Get the source position from a variable
+getVSP :: Var -> SourcePos
 getVSP	 var
  = let	Just (Var.ISourcePos pos)
 		= find ((=@=) Var.ISourcePos{})
@@ -430,10 +411,10 @@ getVSP	 var
    in	pos
  	
 
-getProjSP :: TProj	-> SourcePos
+-- | Get the source position from the variable in a TProj
+getProjSP :: TProj -> SourcePos
 getProjSP    p
  = case p of
  	TJField v	-> getVSP v
 	TJFieldR v	-> getVSP v
-
 
