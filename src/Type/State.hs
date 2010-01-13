@@ -10,27 +10,29 @@ module Type.State
 	, newVarN
 	, lookupSigmaVar
 	, addErrors 
-	, gotErrors)
-	
+	, gotErrors
+	, pathEnter
+	, pathLeave
+	, graphInstantiatesAdd )
 where
-import qualified Main.Arg	as Arg
 import Main.Arg			(Arg)
-
 import Constraint.Exp
+import Constraint.Bits
+import Constraint.Pretty
 import Type.Error
-import Type.Exp
 import Type.Base
+import Type.Exp
 import Shared.Pretty
 import Shared.Error
 import Shared.Var		(Var, VarBind, NameSpace(..))
-import qualified Shared.Var	as Var
-import qualified Shared.Unique	as U
-
 import Util
 import System.IO
+import qualified Shared.Var	as Var
+import qualified Shared.Unique	as U
+import qualified Main.Arg	as Arg
 import qualified Data.Map	as Map
+import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
-
 
 -----
 stage	= "Type.State"
@@ -280,4 +282,44 @@ gotErrors :: SquidM Bool
 gotErrors
  = do	errs	<- gets stateErrors
  	return	$ not $ isNil errs
+
+
+-- | Push a new var on the path queue.
+--	This records the fact that we've entered a branch.
+pathEnter :: CBind -> SquidM ()
+pathEnter BNil	= return ()
+pathEnter v
+ = modify (\s -> s { statePath = v : statePath s })
+
+
+-- | Pop a var off the path queue
+--	This records the fact that we've left the branch.
+pathLeave :: CBind -> SquidM ()
+pathLeave BNil	= return ()
+pathLeave bind
+ = do	path	<- gets statePath
+
+ 	let (res :: SquidM ())
+		-- pop matching binders off the path
+		| b1 : bs		<- path
+		, bind == b1
+		= modify $ \s -> s { statePath = bs }
+	
+		-- nothing matched.. :(
+		| otherwise
+		= panic stage
+		 	$ "pathLeave: can't leave " % bind % "\n"
+--			% "  path = " % path % "\n"
+	res
+		
+-- | Add to the who instantiates who list
+graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
+graphInstantiatesAdd    vBranch vInst
+ = modify (\s -> s {
+ 	stateInstantiates
+		= Map.adjustWithDefault 
+			(Set.insert vInst) 
+			Set.empty
+			vBranch
+			(stateInstantiates s) })
 

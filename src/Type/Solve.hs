@@ -1,9 +1,11 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
+-- | The top level of the constraint solver.
+--	Takes a list of constraints and adds them to the solver state.
+--
 module Type.Solve
 	( squidSolve )
 where
-
 import Type.Solve.Grind
 import Type.Solve.BindGroup
 import Type.Solve.Generalise
@@ -86,9 +88,7 @@ solveM	args ctree blessMain
 solveCs :: [CTree] 		-- ^ the constraints to add.
 	-> SquidM ()
 
-solveCs []	
- = 	return ()
-
+solveCs [] 	= return ()
 solveCs	(c:cs)
  = case c of
 
@@ -341,7 +341,12 @@ solveCs	(c:cs)
 	_ -> do
 	 	trace $ "--- Ignoring constraint " % c % "\n"
 		solveNext cs
-	 	
+
+
+-- | If the solver state does not contain errors, 
+--	then continue solving these constraints, 
+--	otherwise bail out.
+solveNext :: [CTree] -> SquidM ()
 solveNext cs
  = do 	err	<- gets stateErrors
 	if isNil err
@@ -354,18 +359,25 @@ solveNext cs
 		return ()
 
 
-
 -- Handle a CInst constraint
 --	We may or may not be able to actually instantiate the desired type right now.
 --
 --	There may be projections waiting to be resolved which require us to reorder
---	constraints, generalise and instantiate other types first.
+--	constraints, generalise and instantiate other types first. We also don't
+--	know if the variable of the type we're instantiating is let or lambda
+--	bound.
 --
---	This function diagnoses where we're at, 
---		and creates CInstGeneralise and CInstExtract which trigger the 
---		real instantiation.
+--	This function determines what's going on,
+--		reorders constraints if needed and inserts a 
+--		TInstLet, TInstLetRec or TInstLambda depending on how the var was bound.
+--
+solveCInst
+	:: [CTree]		-- ^ the constraints waiting to be solved
+	-> CTree		-- ^ the instantiation constraint we're working on.
+	-> SquidM 
+		[CTree]		-- ^ a possibly reordered list of constraints that we should
+				--	continue on solving.
 
-solveCInst :: [CTree] -> CTree -> SquidM [CTree]
 solveCInst 	cs c@(CInst src vUse vInst)
  = do
 	path			<- gets statePath
@@ -416,8 +428,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	solveCInst_simple cs c bindInst path sGenDone sDefs
 	
 
--- These are the easy cases..
-
+-- These are the easy cases...
 solveCInst_simple 
 	cs 
 	c@(CInst src vUse vInst)
@@ -450,16 +461,15 @@ solveCInst_simple
 	= solveCInst_let cs c bindInst path
 	
 
--- If we're not inside the branch defining it, it must have been defined 
---	somewhere at this level. Build dependency graph so we can work out if we're on a recursive loop.
-
+-- If we're not inside the branch defining it, it must have been defined somewhere
+--	at this level. Build dependency graph so we can work out if we're on a recursive loop.
 solveCInst_let 
 	cs 
 	c@(CInst src vUse vInst)
 	bindInst path
  = do
 	genSusp		<- gets stateGenSusp
-	trace	$ "    genSusp       = " % genSusp			% "\n\n"
+	trace	$ "    genSusp       = " % genSusp	% "\n\n"
 
 	-- Work out the bindings in this ones group
 	mBindGroup	<- bindGroup vInst
@@ -480,8 +490,6 @@ solveCInst_find
 	= do 	
 		trace	$ ppr "*   solveCInst_find: Recursive binding.\n"
 		return	$ (CInstLetRec src vUse vInst) : cs
-
-
 
 		
 	-- IF	There is a suspended generalisation
@@ -519,51 +527,6 @@ solveCInst_find
 	
 --		trace	$ "    queue' =\n" %> (", " %!% map ppr csReordered) % "\n\n"
 	
-		-- Carry on solving
+		-- continue solving
 		return	csReordered
 
-
--- | Push a new var on the path queue.
---	This records the fact that we've entered a branch.
-
-pathEnter :: CBind -> SquidM ()
-pathEnter BNil	= return ()
-pathEnter v
- = modify (\s -> s { statePath = v : statePath s })
-
-
--- | Pop a var off the path queue
---	This records the fact that we've left the branch.
-
-pathLeave :: CBind -> SquidM ()
-
--- BNil's don't get pushed onto the path
-pathLeave BNil	= return ()
-
-pathLeave bind
- = do	path	<- gets statePath
-
- 	let (res :: SquidM ())
-		-- pop matching binders off the path
-		| b1 : bs		<- path
-		, bind == b1
-		= modify $ \s -> s { statePath = bs }
-	
-		-- nothing matched.. :(
-		| otherwise
-		= panic stage
-		 	$ "pathLeave: can't leave " % bind % "\n"
---			% "  path = " % path % "\n"
-	res
-	
-		
--- | Add to the who instantiates who list
-graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
-graphInstantiatesAdd    vBranch vInst
- = modify (\s -> s {
- 	stateInstantiates
-		= Map.adjustWithDefault 
-			(Set.insert vInst) 
-			Set.empty
-			vBranch
-			(stateInstantiates s) })
