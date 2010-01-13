@@ -1,7 +1,6 @@
 
 module Type.Diagnose 
-	( diagMutConflict 
-	, traceFetterSource
+	( traceFetterSource
 	, traceEffectSource)
 where
 import Type.Error
@@ -21,52 +20,6 @@ trace ss
  	else return ()
 
 	
--- | See if we can work out a more detailed explination of why this region
---	has a mutability conflict.
-diagMutConflict
-	:: Fetter -> TypeSource 
-	-> Fetter -> TypeSource
-	-> SquidM Error
-	
-diagMutConflict
-	fConst	@(FConstraint v [TClass kR cidR])
-	srcConst
-
-	fMutable 
-	srcMutable
- | kR	== kRegion
- = do	
- 	Just c@(Class { classTypeSources = nodes })
-		<- lookupClass cidR
-
-	let (result :: SquidM Error)
-
-		-- see if the const constraint is the result of purifying some effect.
-		--	If so we want to record the source of the the effect and purity
-		--	constraint in the error message.
-		| TSI (SIPurifier cid eff effSrc fPure fPureSrc) : _
-			<- map snd nodes
-		= return
-		$ ErrorMutablePurifiedRead
-			{ eMutableFetter	= fMutable
-			, eMutableSource	= srcMutable 
-			, ePureFetter		= fPure
-			, ePureSource		= fPureSrc
-			, eReadEff		= eff
-			, eReadSource		= effSrc }
-
-		-- It's just a straight conflict
-		| otherwise
- 		= return
-		$ ErrorRegionConstraint
-			{ eFetter1		= fConst
-			, eFetterSource1	= srcConst
-			, eFetter2		= fMutable
-			, eFetterSource2	= srcMutable }
-
-	result
-
-
 -- Trace Fetters -----------------------------------------------------------------------------------
 -- | Trace up the type graph to find the original source of this fetter.
 --	We follow the SICrushedF breadcrumbs until we find why the original,
@@ -205,6 +158,3 @@ traceES_follow vC tE (node : nodes)
 	= return $ Just ts
 
  
-
-
-

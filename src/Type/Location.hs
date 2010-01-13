@@ -12,22 +12,17 @@ module Type.Location
 	, dispTypeSource
 	, dispSourceValue
 	, dispFetterSource)
-
 where
-
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Exp
-
 import Shared.Pretty
 import Shared.Base
 import Shared.Literal
 import Shared.Error
 import Shared.VarPrim
-
-import qualified Shared.Var	as Var
-
 import Util
+import qualified Shared.Var	as Var
 
 -----
 stage	= "Type.Location"

@@ -109,14 +109,6 @@ data Error
 		, eFetter2	:: Fetter
 		, eFetterSource2 :: TypeSource }
 		
-	| ErrorMutablePurifiedRead			-- Mutable region is also constraint to be constant
-		{ eMutableFetter :: Fetter		--	due to a purified read effect.
-		, eMutableSource :: TypeSource		
-		, ePureFetter	:: Fetter
-		, ePureSource	:: TypeSource
-		, eReadEff	:: Effect
-		, eReadSource	:: TypeSource }
-
 	-- Update soundness problems.
 	| ErrorUpdateSoundness				-- Update soundness problem 
 		{ eErrVar	:: Var
@@ -310,27 +302,6 @@ instance Pretty Error PMode where
 	% "\n"
 	% "     conflicts with,\n"
 	%> (dispFetterSource f2 fSource2)
-
- ppr err@(ErrorMutablePurifiedRead
-		{ eMutableFetter = mut
-		, eMutableSource = mutSource
-		, ePureFetter	 = pure
-		, ePureSource	 = pureSource
-		, eReadEff	 = eRead
-		, eReadSource	 = readSource })
-		
-	= (dispSourcePos pureSource)					% "\n"
-	% "    Cannot purify Read effect on Mutable region.\n"
-	% "      A purity constraint on a Read effect requires the region it\n"
-	% "      acts on to be Const, and it cannot be Mutable at the same time.\n"
-	% "\n"
-	%> dispTypeSource eRead readSource
-	% "\n"
-	% "        is being purified by\n"
-	%> dispFetterSource pure pureSource
-	% "\n"
-	% "        which conflicts with\n"
-	%> dispFetterSource mut mutSource
 
 
  -- Update soundness problems.

@@ -247,10 +247,14 @@ checkRegionError c@Class
 	{ classFetterSources 	= fs_src }
 
 	-- found a mutability conflict.
-	| Just (fConst, tsConst)	<- find (isFConstraintNode primConst)   fs_src
-	, Just (fMutable, tsMutable)	<- find (isFConstraintNode primMutable) fs_src
-	= do	err	<- diagMutConflict fConst tsConst fMutable tsMutable
-		return	$ Just err
+	| Just (fConst,   srcConst)	<- find (isFConstraintNode primConst)   fs_src
+	, Just (fMutable, srcMutable)	<- find (isFConstraintNode primMutable) fs_src
+	= do	
+		return 	$ Just $ ErrorRegionConstraint
+			{ eFetter1		= fConst
+			, eFetterSource1	= srcConst
+			, eFetter2		= fMutable
+			, eFetterSource2	= srcMutable }
 	
 	-- found a direct/lazy conflict.
 	| Just (fDirect, tsDirect)	<- find (isFConstraintNode primDirect)  fs_src
