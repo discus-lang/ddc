@@ -99,15 +99,12 @@ extractType_fromClass final varT cid
 	--	asssumed to be Bot.
 	--
 	--	eg  *1	:- *1 = *2 -(!5 $6)> *3
-	--		,  *2 = Int %8
-	--		,  *3 = Unit
-	--		,  !5 = Read %8
+	--		,  *2 :> Int %8
+	--		,  *3 :> Unit
+	--		,  !5 :> Read %8
 	--
 	trace	$ ppr " -- tracing type from the graph\n"
-
- 	tTrace	<- {-# SCC "extract/trace" #-} 
-		   traceType cid
-
+ 	tTrace	<- {-# SCC "extract/trace" #-} traceType cid
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 
 	-- Pack the type into standard form.

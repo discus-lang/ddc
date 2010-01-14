@@ -137,10 +137,16 @@ loadTypeNode2 incFs cid c
 			| TBot k	<- tX
 			= return fs
 	
+			| resultKind k == kClosure
+			= case trimClosureC Set.empty Set.empty tX of
+				TFree _ (TBot _)	-> return fs
+				tX_trimmed		-> return $ FMore (TClass k cid) tX_trimmed : fs
+	
+			| resultKind k == kValue
+			= 	return $ FWhere (TClass k cid) tX : fs
+			
 			| otherwise
-			= if resultKind k == kValue
-				then return $ FWhere (TClass k cid) tX : fs
-				else return $ FMore  (TClass k cid) tX : fs
+			= 	return $ FMore  (TClass k cid) tX : fs
 		
 		result
 	
