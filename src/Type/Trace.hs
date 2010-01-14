@@ -53,6 +53,10 @@ traceType cid
 
 
 -- | Make new fetters representing this node in the type graph.
+--	NOTE: Using accumulating parameters like this makes the code fairly verbose.
+--	      It might be better to use a state monad, but I'm not sure if that will
+--	      cause a performance hit...
+
 loadTypeNodes
 	:: ClassId		-- cid of body
 	-> [ClassId]		-- cids of classes reachable from body
@@ -68,13 +72,15 @@ loadTypeNodes cidBody [] fsTFree fsAccEq fsAccMore fsAccOther
 			(TClass k cidBody) 
 			(Constraints fsAccEq fsAccMore fsAccOther)
 	
-loadTypeNodes cidBody (cidReach1 : cidsReach) fsTFree fsAccEq fsAccMore fsAccOther
+loadTypeNodes cidBody (cidReach1 : cidsReach) 
+	fsTFree fsAccEq fsAccMore fsAccOther
  = do	Just clsReach1	<- lookupClass cidReach1
 	loadTypeNodes2 
 		cidBody (cidReach1 : cidsReach) 
 		fsTFree fsAccEq fsAccMore fsAccOther clsReach1
 
-loadTypeNodes2 cidBody (cidReach1 : cidsReach) fsTFree fsAccEq fsAccMore fsAccOther clsReach1
+loadTypeNodes2 cidBody (cidReach1 : cidsReach) 
+	fsTFree fsAccEq fsAccMore fsAccOther clsReach1
 
 	-- when mptc's are crushed out they are replaced by ClassNils.
 	-- we could perhaps differentiate this case and raw, never-allocated classes...
