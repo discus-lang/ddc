@@ -1,7 +1,6 @@
 
 module Type.Trace 
 	( traceType 
-	, traceType_shape
 	, traceCidsDown)
 where
 import Type.Exp
@@ -23,10 +22,7 @@ import qualified Debug.Trace	as Trace
 
 stage	= "Type.Trace"
 
------
--- traceType
---	Extract a type from the graph by tracing down from this cid
---
+-- | Extract a type node from the graph by tracing down from this cid
 traceType :: ClassId -> SquidM Type
 traceType cid
  = do 	
@@ -34,69 +30,56 @@ traceType cid
  	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
 	-- Load in the nodes for this subgraph.
-	t	<- loadType True cid cidsDown
+	t	<- loadType cid cidsDown
 	return t
 
--- Trace the shape of this type, no fetters
-traceType_shape :: ClassId -> SquidM Type
-traceType_shape cid
- = do	-- See which classes are reachable by tracing down from this one.
- 	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
-	-- Load in the nodes for this subgraph.
-	t	<- loadType False cid cidsDown
-	return t
-
--- LoadType ----------------------------------------------------------------------------------------
 -- | Extract type subgraph.
 loadType 
-	:: Bool		-- ^ whether to include fetters
-	-> ClassId 	-- ^ root node of the type
+	:: ClassId 	-- ^ root node of the type
 	-> Set ClassId 	-- ^ all the cids reachable from the root
 	-> SquidM Type
 
-loadType incFs cid cidsReachable
+loadType cid cidsReachable
  = do
 	-- Build a new let for each of the classes
-	fsLet		<- liftM concat
-			$  mapM	(loadTypeNode incFs)
-			$  Set.toList cidsReachable
+	fsLet	<- liftM concat
+		$  mapM	loadTypeNode
+		$  Set.toList cidsReachable
 
-	k		<- kindOfCid cid
-	let tTrace	= TFetters (TClass k cid) fsLet
-	return tTrace
+	k	<- kindOfCid cid
+	return	$ TFetters (TClass k cid) fsLet
 
 
 -- | Make new fetters representing this node in the type graph.
 loadTypeNode
-	:: Bool		-- ^ whether to include fetters
-	-> ClassId
+	:: ClassId
 	-> SquidM [Fetter]
 
-loadTypeNode incFs cid@(ClassId ix)
- = do	Just c		<- lookupClass cid
-	loadTypeNode2 incFs cid c
+loadTypeNode cid@(ClassId ix)
+ = do	Just c	<- lookupClass cid
+	loadTypeNode2 cid c
 
-loadTypeNode2 incFs cid c
+loadTypeNode2 cid c
 
 	-- when mptc's are crushed out they are replaced by ClassNils.
 	-- we could perhaps differentiate this case and raw, never-allocated classes...
-	| ClassNil				<- c
+	| ClassNil		<- c
 	= return []
 
-	| ClassForward cid'			<- c
-	= loadTypeNode incFs cid'
+	| ClassForward cid'	<- c
+	= loadTypeNode cid'
 
-	| ClassFetter { classFetter = f } 	<- c
+	| ClassFetter { classFetter = f } <- c
 	= do	t'	<- refreshCids f
 		return	[t']
 
 	-- If the class type is Nothing then it hasn't been unified yet..
-	| Class { classType = Nothing}		<- c
+	| Class { classType = Nothing }	  <- c
 	= panic stage
 		$ "loadTypeNode2: can't trace which hasn't been unified yet\n"
-		% "    cid        = " % cid		% "\n"
-		% "    queue      = " % classQueue c	% "\n"
+		% "    cid        = "  % cid		% "\n"
+		% "    queue      = "  % classQueue c	% "\n"
 		% "    typeSources:\n" % "\n" %!% classTypeSources c % "\n"
 
 	-- a regular type node
@@ -105,26 +88,19 @@ loadTypeNode2 incFs cid c
 	= do
 		-- make sure all the cids are canconical
 		tRefreshed	<- refreshCids tNode
-		tFs		<- refreshCids $ map fst $ classFetterSources c
+		fsSingle	<- refreshCids $ map fst $ classFetterSources c
 
 		-- chop of fetters attached directly to the type in the node
-		let (tX, fsLocal) 	
+		let (tBody, fsLocal) 	
 			= case tRefreshed of
 				TFetters t fs	-> (t, fs)
 				t		-> (t, [])
 
-		-- single parameter constraints are stored directly in this node
-		let fsSingle	= if incFs
-					then tFs
-					else []
-
 		-- multi parameter constraints are stored in nodes referenced by classFettersMulti
-		fsMulti		<- if incFs
-					then liftM concat 
-						$ mapM (loadTypeNode incFs)
-						$ Set.toList 
-						$ classFettersMulti c
-					else return []
+		fsMulti		<- liftM concat 
+					$ mapM loadTypeNode
+					$ Set.toList 
+					$ classFettersMulti c
 
 		var		<- makeClassName cid
 		quantVars	<- gets stateQuantifiedVars
@@ -132,21 +108,27 @@ loadTypeNode2 incFs cid c
 		let fs	= nub (fsLocal ++ fsSingle ++ fsMulti)
 
 		let (result :: SquidM [Fetter])
-			-- don't bother showing bottom constraints
-			--	If a constraint for a class is missing it is assumed to be bottom.
-			| TBot k	<- tX
+
+			-- We don't need to return TBot constraints.
+			--	If a variable has no constraint its already :> Bot.
+			| TBot k	<- tBody
 			= return fs
 	
+			-- Trim closures as early as possible to avoid wasing time in later stages.
 			| resultKind k == kClosure
-			= case trimClosureC Set.empty Set.empty tX of
+			= case trimClosureC Set.empty Set.empty tBody of
 				TFree _ (TBot _)	-> return fs
 				tX_trimmed		-> return $ FMore (TClass k cid) tX_trimmed : fs
 	
+			-- Use equality for type constraints.
 			| resultKind k == kValue
-			= 	return $ FWhere (TClass k cid) tX : fs
+			= return $ FWhere (TClass k cid) tBody 
+				 : fs
 			
+			-- Use :> for effect and closure constraints.
 			| otherwise
-			= 	return $ FMore  (TClass k cid) tX : fs
+			= return $ FMore  (TClass k cid) tBody 
+				 : fs
 		
 		result
 	
@@ -159,16 +141,20 @@ refreshCids xx
 				return	$ cid' }
 		xx 
 
------
--- traceCidsDown 
---	Trace out the cids reachable by tracing down from this cid.
---
+
+-- | Trace out the classes reachable from this one.
 traceCidsDown :: ClassId -> SquidM (Set ClassId)
 traceCidsDown cid
  = traceCidsDowns (Set.singleton cid) Set.empty
 
 
-traceCidsDowns :: Set ClassId -> Set ClassId -> SquidM (Set ClassId)
+-- | Trace out the classes reachable from this set.
+traceCidsDowns 
+	:: Set ClassId 			-- ^ root set
+	-> Set ClassId 			-- ^ classes already visited
+	-> SquidM
+	 	(Set ClassId)		-- ^ classes reachable from the root set
+
 traceCidsDowns toVisit visited
  = case takeHead $ Set.toList toVisit of
  	Nothing	-> return visited
@@ -180,5 +166,7 @@ traceCidsDowns toVisit visited
 		moreR		<- refreshCids $ classChildren c
 		let more	=  Set.fromList moreR
 
-		let toVisit'	= (toVisit `Set.union` more) `Set.difference` visited'
+		let toVisit'	= (toVisit `Set.union` more) 
+					`Set.difference` visited'
+
 		traceCidsDowns toVisit' visited'
