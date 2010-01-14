@@ -143,7 +143,7 @@ loadTypeNodes3 cidBody (cidReach1 : cidsReach)
 	
 	-- Trim closures as early as possible to avoid wasing time in later stages.
 	| resultKind k == kClosure
-	= case trimClosureC Set.empty Set.empty (toFetterFormT tBody) of
+	= case trimClosureC Set.empty Set.empty tBody of
 		TFree _ (TBot _)	
 		 -> loadTypeNodes cidBody cidsReach 
 			fsTFree fsAccEq fsAccMore fsAccOther

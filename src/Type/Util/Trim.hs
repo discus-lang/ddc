@@ -23,7 +23,6 @@ module Type.Util.Trim
 	, trimClosureT')
 	
 where
-
 import Util
 import Shared.Error
 import Type.Exp
@@ -84,23 +83,13 @@ trimClosureT' quant rsData tt
 	  		$ map (trimClosureT_fs quant rsData) fs
 	     in  addFetters fs' t
 
+	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
+	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt quant rsData) crsEq
+		crsMore'	= Map.mapWithKey (trimClosureT_tt quant rsData) crsMore
+		crs'		= Constraints crsEq' crsMore' crsOther
+	    in	addConstraints crs' tBody
+
 	_	-> tt
-
-	
--- | Trim the closure in this fetter.
---	where the fetter was on a type.
-trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
-trimClosureT_fs quant rsData ff
- = case ff of
- 	FWhere c1 c2	
-	 |  kindOfType_orDie c1 == kClosure
-	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
-
-	FMore c1 c2
-	 | kindOfType_orDie c1 == kClosure
-	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
-
-	_ -> Just ff
 
 
 -- | Trim a closure down to its interesting parts
@@ -229,14 +218,20 @@ trimClosureC_t' tag quant rsData tt
 	-- classids are never quantified, so we always have to keep them.
 	TClass{} 	
 		-> makeFreeDanger tag rsData tt
-		
 
 	-- Trim the fetters of this data
  	TFetters c fs
 	 -> let	fs'	= catMaybes $ map (trimClosureC_fs quant rsData) fs
 	    	cBits	= down c
 	    in	map (addFetters fs') cBits
-	    
+
+	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
+	 -> let	crsEq'		= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsEq
+		crsMore'	= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsMore
+		crs		= Constraints crsEq' crsMore' crsOther
+	    	cBits		= down tBody
+	    in	map (addConstraints crs) cBits
+			
 	-- Trim under foralls
 	TForall b k t		
 	 -> let	quant'	= Set.insert (TVar k (varOfBind b)) quant
@@ -299,7 +294,7 @@ trimClosureC_fs quant rsData ff
  	FWhere c1 c2	
 
 	 -- more closure information
-	 |  kindOfType_orDie c2 == kClosure
+	 |  kindOfType_orDie c1 == kClosure
 	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
 
 	 -- effect information might be referenced in a type constructor
@@ -307,11 +302,57 @@ trimClosureC_fs quant rsData ff
 	 -> Just $ FWhere c1 c2
 
 	FMore c1 c2
-	 | kindOfType_orDie c2 == kClosure
+	 | kindOfType_orDie c1 == kClosure
 	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
 
-	 | kindOfType_orDie c2 == kEffect
+	 | kindOfType_orDie c1 == kEffect
 	 -> Just $ FMore c1 c2
 
 	_ -> Nothing
 
+
+trimClosureC_tt 
+	:: Set Type 
+	-> Set Type 
+	-> (Type, Type)
+	-> Maybe (Type, Type)
+
+trimClosureC_tt quant rsData (c1, c2)
+ 	| kindOfType_orDie c1 == kClosure
+	= Just (c1, trimClosureC quant rsData c2)
+	
+	| kindOfType_orDie c1 == kEffect
+	= Just (c1, c2)
+	
+	| otherwise
+	= Nothing
+	
+
+-- | Trim the closure in this fetter.
+--	where the fetter was on a type.
+trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
+trimClosureT_fs quant rsData ff
+ = case ff of
+ 	FWhere c1 c2	
+	 |  kindOfType_orDie c1 == kClosure
+	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
+
+	FMore c1 c2
+	 | kindOfType_orDie c1 == kClosure
+	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
+
+	_ -> Just ff
+
+
+trimClosureT_tt 
+	:: Set Type
+	-> Set Type
+	-> Type -> Type
+	-> Type
+
+trimClosureT_tt quant rsData c1 c2
+	| kindOfType_orDie c1 == kClosure
+	= trimClosureC quant rsData c2
+	
+	| otherwise
+	= c2
