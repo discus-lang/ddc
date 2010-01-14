@@ -22,19 +22,8 @@ import qualified Debug.Trace	as Trace
 
 stage	= "Type.Trace"
 
--- | Extract a type node from the graph by tracing down from this cid
-traceType :: ClassId -> SquidM Type
-traceType cid
- = do 	
- 	-- See which classes are reachable by tracing down from this one.
- 	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
-	-- Load in the nodes for this subgraph.
-	t	<- loadType cid cidsDown
-	return t
-
-
--- | Extract subgraph from the type graph.
+-- | Extract a type node from the graph by tracing down from this cid.
 --	Along the way, we reuse TFree fetters where ever possible.
 --	Instead of returning a type like:
 --
@@ -52,64 +41,63 @@ traceType cid
 --     to build the type of *4 twice. If we had a better (and more complicated)
 --     packer we wouldn't have to do this.
 --
-loadType 
-	:: ClassId 	-- ^ root node of the type
-	-> Set ClassId 	-- ^ all the cids reachable from the root
-	-> SquidM Type
+traceType :: ClassId -> SquidM Type
+traceType cid
+ = do 	
+ 	-- See which classes are reachable by tracing down from this one.
+ 	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
 
-loadType cid cidsReachable
- = do
-	-- Build a new constraint for each of the reachable classes
-	(_, fss)	
-		<- mapAccumLM loadTypeNode [] 
-		$  Set.toList cidsReachable
-
-	let fs	= concat fss
-	k	<- kindOfCid cid
-	return	$ TFetters (TClass k cid) fs
+	-- Load in the nodes for this subgraph.
+	t	<- loadTypeNodes cid (Set.toList cidsDown) [] [] 
+	return t
 
 
 -- | Make new fetters representing this node in the type graph.
-loadTypeNode
-	:: [Fetter]		-- TFree fetters
-	-> ClassId
-	-> SquidM 
-		( [Fetter]
-		, [Fetter] )
+loadTypeNodes
+	:: ClassId		-- cid of body
+	-> [ClassId]		-- cids of classes reachable from body
+	-> [Fetter]		-- TFetters found so far
+	-> [Fetter]		-- fetter accumulator to add to body
+	-> SquidM Type
+	
+loadTypeNodes cidBody [] fsTFree fsAcc
+ = do	k	<- kindOfCid cidBody
+	return	$ TFetters (TClass k cidBody) fsAcc
+	
+loadTypeNodes cidBody (cidReach1 : cidsReach) fsTFree fsAcc
+ = do	Just clsReach1	<- lookupClass cidReach1
+	loadTypeNodes2 cidBody (cidReach1 : cidsReach) fsTFree fsAcc clsReach1
 
-loadTypeNode fsTFree cid@(ClassId ix)
- = do	Just c	<- lookupClass cid
-	loadTypeNode2 fsTFree cid c
-
-loadTypeNode2 fsTFree cid c
+loadTypeNodes2 cidBody (cidReach1 : cidsReach) fsTFree fsAcc clsReach1
 
 	-- when mptc's are crushed out they are replaced by ClassNils.
 	-- we could perhaps differentiate this case and raw, never-allocated classes...
-	| ClassNil		<- c
-	= return (fsTFree, [])
+	| ClassNil		<- clsReach1
+	= loadTypeNodes cidBody cidsReach fsTFree fsAcc
 
-	| ClassForward cid'	<- c
-	= loadTypeNode fsTFree cid'
+	| ClassForward cid'	<- clsReach1
+	= loadTypeNodes cidBody (cid' : cidsReach) fsTFree fsAcc
 
-	| ClassFetter { classFetter = f } <- c
-	= do	t'	<- refreshCids f
-		return	(fsTFree, [f])
+	-- add this fetter to the list
+	| ClassFetter { classFetter = f } <- clsReach1
+	= do	f'	<- refreshCids f
+		loadTypeNodes cidBody cidsReach fsTFree (f' : fsAcc)
 
 	-- If the class type is Nothing then it hasn't been unified yet..
-	| Class { classType = Nothing }	  <- c
+	| Class { classType = Nothing }	  <- clsReach1
 	= panic stage
 		$ "loadTypeNode2: can't trace which hasn't been unified yet\n"
-		% "    cid        = "  % cid		% "\n"
-		% "    queue      = "  % classQueue c	% "\n"
-		% "    typeSources:\n" % "\n" %!% classTypeSources c % "\n"
+		% "    cid        = "  % cidReach1					% "\n"
+		% "    queue      = "  % classQueue clsReach1			% "\n"
+		% "    typeSources:\n" % "\n" %!% classTypeSources clsReach1 	% "\n"
 
 	-- a regular type node
 	| Class { classType = Just tNode
-		, classKind = k } 	<- c
+		, classKind = k } 	<- clsReach1
 	= do
 		-- make sure all the cids are canonical
 		tRefreshed	<- refreshCids tNode
-		fsSingle	<- refreshCids $ map fst $ classFetterSources c
+		fsSingle	<- refreshCids $ map fst $ classFetterSources clsReach1
 
 		-- chop of fetters attached directly to the type in the node
 		let (tBody, fsLocal) 	
@@ -117,56 +105,57 @@ loadTypeNode2 fsTFree cid c
 				TFetters t fs	-> (t, fs)
 				t		-> (t, [])
 
-		-- multi parameter constraints are stored in nodes referenced by classFettersMulti
-		fsMulti		<- liftM (concat . (map snd))
-				$  mapM (loadTypeNode [])
-				$  Set.toList 
-				$  classFettersMulti c
-
-		var		<- makeClassName cid
+		var		<- makeClassName cidReach1
 		quantVars	<- gets stateQuantifiedVars
 	
-		let fs	= nub (fsLocal ++ fsSingle ++ fsMulti)
+		let fsHere	= nub (fsLocal ++ fsSingle)
 
-		loadTypeNode3 fsTFree cid k tBody fs
+		loadTypeNodes3 
+			cidBody 
+			(cidReach1 : (Set.toList $ classFettersMulti clsReach1) ++ cidsReach) 
+			fsTFree 
+			(fsHere ++ fsAcc) 
+			k tBody
 
-loadTypeNode3 fsTFree cid k tBody fs
+loadTypeNodes3 cidBody (cidReach1 : cidsReach) fsTFree fsAcc k tBody
 	-- We don't need to return TBot constraints.
 	--	If a variable has no constraint its already :> Bot.
 	| TBot k	<- tBody
-	= return (fsTFree, fs)
-			
+	= loadTypeNodes cidBody cidsReach fsTFree fsAcc
+	
 	-- Trim closures as early as possible to avoid wasing time in later stages.
 	| resultKind k == kClosure
 	= case trimClosureC Set.empty Set.empty tBody of
 		TFree _ (TBot _)	
-		 -> return (fsTFree, fs)
-
+		 -> loadTypeNodes cidBody cidsReach fsTFree fsAcc
+		
 		clo@TFree{}
 		 | Just (FMore t1Cache _)
 			<- find (\f -> case f of
 					FMore _ t2 -> t2 == clo
 					_	   -> False )
 				fsTFree
-		 -> return
-			( fsTFree
-			, FMore (TClass k cid) t1Cache : fs )
-			
+
+		 -> let fHere	=  FMore (TClass k cidReach1) t1Cache
+		    in  loadTypeNodes cidBody cidsReach 
+				fsTFree 
+				(fHere : fsAcc)
+					
 		tX_trimmed
-		 -> let fHere	= FMore (TClass k cid) tX_trimmed
-		    in  return 
-			  ( fHere : fsTFree
-			  , fHere : fs )
+		 -> let fHere	= FMore (TClass k cidReach1) tX_trimmed
+		    in  loadTypeNodes cidBody cidsReach 
+				(fHere : fsTFree)
+				(fHere : fsAcc)
 		
 	-- Use equality for type constraints.
 	| resultKind k == kValue
-	= return ( fsTFree
-		 , FWhere (TClass k cid) tBody : fs )
+	= let fHere	= FWhere (TClass k cidReach1) tBody
+	  in  loadTypeNodes cidBody cidsReach fsTFree (fHere : fsAcc)
 
 	-- Use :> for effect and closure constraints.
 	| otherwise
-	= return ( fsTFree
-		 , FMore  (TClass k cid) tBody : fs )
+	= let fHere	= FMore  (TClass k cidReach1) tBody
+	  in  loadTypeNodes cidBody cidsReach fsTFree (fHere : fsAcc)
 
 
 refreshCids xx
