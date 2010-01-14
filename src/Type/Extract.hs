@@ -111,7 +111,7 @@ extractType_fromClass final varT cid
 	--	If we hit any loops through the value type portion of the
 	--	graph then mark then with TError constructors.
 	trace	$ ppr " -- packing into standard form\n"	
-	let tPack	= toFetterFormT $ PackFast.packType_markLoops $ toConstrainFormT tTrace
+	let tPack	= toFetterFormT $ PackFast.packType_markLoops tTrace
 
 	-- Look for TErrors in the packed type
 	let tsLoops	= [ (t1, t2) 
