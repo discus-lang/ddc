@@ -1,29 +1,26 @@
 
--- | Flatten out match expressions.
+-- | Flatten out match expressions into sequences of statements and gotos.
 module Sea.Flatten
 	( flattenTree )
-
 where
-
-import Util
-import Shared.VarGen
+import Sea.Exp
+import Sea.Pretty
+import Sea.Plate.Trans
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
 import Shared.Base
 import Shared.Literal
-
-import Sea.Exp
-import Sea.Pretty
-import Sea.Plate.Trans
+import Shared.VarGen
+import Util
 
 -----
 type FlatM	= VarGenM
 
--- Tree --------------------------------------------------------------------------------------------
+-- | Flatten all match expressions in this tree.
 flattenTree 
-	:: String		-- unique
-	-> Tree () 
-	-> Tree ()
+	:: String		-- uniqueID
+	-> Tree () 		-- input tree
+	-> Tree ()		-- output tree with flattened match expressions.
 
 flattenTree unique tree	
  = 	evalVarGen (flattenTreeM tree) ("d" ++ unique)
@@ -33,13 +30,16 @@ flattenTreeM	tree
  	= mapM (transformSSM flattenSS) tree
 		
 flattenSS ss
- = do
- 	sss'	<- mapM flattenS ss
+ = do	sss'	<- mapM flattenS ss
 	return	$ concat sss'
 	
 
--- Stmt --------------------------------------------------------------------------------------------
-flattenS :: Stmt () -> FlatM [Stmt ()]
+-- | If this statement is a match then flatten it,
+--	otherwise return it unharmed.
+flattenS 
+	:: Stmt () 
+	-> FlatM [Stmt ()]
+
 flattenS s
  = case s of
  	SMatch aa
@@ -69,8 +69,7 @@ flattenS s
 	_ ->	return [s]
 	
 
-	
--- Alt ---------------------------------------------------------------------------------------------
+-- | Flatten a match alternative
 flattenA vMatchEnd (ixAlt, a, vStart, vExp, (mvStartNextAlt :: Maybe Var))
  = case a of
  	AAlt gs ss
@@ -90,8 +89,7 @@ flattenA vMatchEnd (ixAlt, a, vStart, vExp, (mvStartNextAlt :: Maybe Var))
 	 		++ ss	 	
 			++ [ SBlank ]
 
-
--- Guard -------------------------------------------------------------------------------------------
+-- | Flatten a guard
 flattenG 
 	ixAlt 		-- the index of the alternative that this guard is in
 	mvStartNextAlt 	-- maybe a label to jump to to get the next alternative
@@ -168,4 +166,3 @@ flattenG
 				++ aNext) ]
 			++ [ SBlank ]
 		
-

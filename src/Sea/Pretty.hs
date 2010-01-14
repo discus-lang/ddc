@@ -1,24 +1,22 @@
 {-# OPTIONS -fwarn-incomplete-patterns -O2 #-}
 
+-- | Pretty printing of Sea expressions.
 module Sea.Pretty
 	( seaVar )
 where
-import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import qualified Shared.VarPrim	as Var
-import Shared.Var		(Var, NameSpace(..), Module(..))
+import Sea.Exp
+import Sea.Util
 import Shared.Pretty
 import Shared.Error
 import Shared.Literal
 import Shared.Base
-
-import Sea.Exp
-import Sea.Util
+import Util
+import Shared.Var		(Var, NameSpace(..), Module(..))
+import Data.Map			(Map)
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import qualified Shared.VarPrim	as Var
+import qualified Data.Map	as Map
 
 stage	= "Sea.Pretty"
 

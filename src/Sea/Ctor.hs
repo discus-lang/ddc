@@ -1,20 +1,16 @@
 
+-- | Use data type declarations to make code for each of the data constructors.
 module Sea.Ctor
 	(expandCtorTree)
 where
-
------
-import Util
-
-import qualified Shared.Unique	as Unique
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-
+import Sea.Exp
 import Shared.Var		(Var, NameSpace(..))
 import Shared.VarUtil		(VarGenM, newVarN)
 import Shared.Error
-
-import Sea.Exp
+import qualified Shared.Unique	as Unique
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import Util
 
 -----
 stage	= "Sea.Ctor"
@@ -22,19 +18,15 @@ stage	= "Sea.Ctor"
 -----
 type	ExM	= VarGenM 
 
------
-expandCtorTree ::	Tree () -> Tree ()
+-- | Expand the definitions of data constructors in this tree.
+expandCtorTree :: Tree () -> Tree ()
 expandCtorTree	ts
 	= evalState (liftM concat $ mapM expandDataP ts) 
 	$ Var.XBind Unique.seaCtor 0
 	
-
------------------------
--- expandDataP
--- 	Expand data constructors.
---
-expandDataP ::	Top ()	-> ExM [Top ()]
-expandDataP	p
+-- | Expand data constructors in a top level thing.
+expandDataP :: Top ()	-> ExM [Top ()]
+expandDataP p
  = case p of
  	PData v ctors
 	 -> liftM concat 
@@ -43,6 +35,11 @@ expandDataP	p
 
 	_		-> return [p]
 	
+-- | Expand the definition of a constructor.
+expandCtor 
+	:: Var 
+	-> [DataField Var Type] 
+	-> ExM [Top ()]
 	
 expandCtor v fields
  = do
@@ -90,13 +87,17 @@ expandField objV ix field
 	-- Primary fields get their values from constructor arguments.
 	| dPrimary field
 	= do	argV	<- newVarN NameValue
-		return	( [SAssign (XArg (XVar objV (dType field)) TData ix) (dType field) (XVar argV (dType field))]
+		return	( [SAssign 	(XArg (XVar objV (dType field)) TData ix) 
+					(dType field) 
+					(XVar argV (dType field))]
 			, Just (argV, TObj) )
 
 	-- Secondary fields get their values by calling the init function
 	| not $ dPrimary field
 	, Just vInit		<- dInit field
-	= 	return	( [SAssign (XArg (XVar objV (dType field)) TData ix) (dType field) (XCall vInit [XUnit]) ]
+	= 	return	( [SAssign 	(XArg (XVar objV (dType field)) TData ix) 
+					(dType field)
+					(XCall vInit [XUnit]) ]
 	 		, Nothing )
 
 	-- A secondary field without an initializer

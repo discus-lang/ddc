@@ -1,7 +1,5 @@
------
--- Sea.Sub
---	Erases simple assignments of the form, v1 = v2 
---		and substitutes them into the subsequent code.
+-- | Erases simple assignments of the form, v1 = v2 
+--   and substitutes them into the subsequent code.
 --
 --	We can erase a v1 = v2 assignment if v1 is only ever assigned to
 --	a single time. In this case v1 is acting as a simple alias for the
@@ -21,20 +19,15 @@
 --
 module Sea.Sub
 	(subTree)
-
 where
-
 import Util
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
 import Shared.Error
-
 import Sea.Exp
 import Sea.Plate.Trans
+import Data.Map			(Map)
+import qualified Shared.Var	as Var
+import qualified Data.Map	as Map
 
-import qualified Debug.Trace	as Debug
 
 -----
 stage	= "Sea.Sub"
@@ -44,29 +37,29 @@ type MapAssignCount	= Map Var Int
 type MapAssignVar	= Map Var Var
 
 
------
-subTree	::	Tree ()	-> Tree ()
-subTree		ps
+-- | Erase simple assignments in this tree
+subTree	:: Tree ()	-> Tree ()
+subTree	ps
  =	map subTreeP ps
 
------	
-subTreeP ::	Top ()	-> Top ()
-subTreeP	p
+
+-- | Erase simple assignments in this top level thing
+subTreeP :: Top () -> Top ()
+subTreeP p
  = case p of
  	PSuper v aa t ss
 	 -> let
+		-- walk through the tree and count how many times each variable is assigned to
 	 	mapAssignCount	= execState (mapM (transformSM assignCountS) ss) 
 				$ Map.empty
 
-		-- Erase v1 = v2 statements, so long as the assign count for v1 is 1.
-		--	Also collect a map of what assignments were erased.
-		--
+		-- use the information from the previous pass to substitute for variables
+		--	that are only assigned to once.
 		(pErased, mapAssignVar)
 				= runState ( transformSSM (eraseTreeSS mapAssignCount) p)
 				$ Map.empty
 
-		-- Substitute variable aliases back into super.
-		--
+		-- Substitute variable aliases back into super body.
 		tableSub	= transTableModV mapAssignVar
 		pSubed		= transZ tableSub pErased
 
@@ -85,8 +78,13 @@ sinkVar varMap v
  	Nothing	-> return v
 	Just v'	-> sinkVar varMap v'
 
------
-assignCountS ::	Stmt () -> State MapAssignCount (Stmt ())
+
+-- | If this statement is an assignment, then remember that we've
+--	assigned to the variable on the left.
+assignCountS 
+	:: Stmt () 
+	-> State MapAssignCount (Stmt ())
+
 assignCountS	s
  = case s of
  	SAssign (XVar v _) _ _
@@ -94,8 +92,7 @@ assignCountS	s
 	 	return s
 	 
 	_ -> 	return s
-	
-	
+		
 accMap init modFun key m 
  = case Map.lookup key m of
  	Nothing	-> Map.insert key init		m
@@ -103,7 +100,10 @@ accMap init modFun key m
  	
 
 -----
-eraseTreeSS ::	MapAssignCount -> [Stmt ()] -> State MapAssignVar [Stmt ()]
+eraseTreeSS 
+	:: MapAssignCount 
+	-> [Stmt ()] 
+	-> State MapAssignVar [Stmt ()]
 
 eraseTreeSS assignCount xx
  = case xx of

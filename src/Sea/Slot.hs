@@ -1,46 +1,45 @@
 
+-- | Rewrite code so that it stores pointers to boxed objects on the GC slot stack
+--	instead of directly in C variables. We do this so that the garbage collector
+--	can work out the root set if called.
 module Sea.Slot
 	(slotTree)
-
 where
-
------
-import qualified Debug.Trace	as Debug
 import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(Var, NameSpace(..))
-
-import qualified Shared.Unique	as Unique
-
 import Shared.Error
 import Shared.VarUtil
-
 import Sea.Exp
 import Sea.Pretty
 import Sea.Util
 import Sea.Plate.Trans
+import Shared.Var		(Var, NameSpace(..))
+import Data.Map			(Map)
+import Data.Set			(Set)
+import qualified Shared.Unique	as Unique
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import qualified Debug.Trace	as Debug
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 
------
---	
-slotTree ::	Tree () -> Tree () -> Set Var -> Tree ()
-slotTree	tree	eHeader cafVars
- =    	evalState (mapM (slotP cafVars) tree) 	
+-- | Rewrite code in this tree to use the GC slot stack.
+slotTree 
+	:: Tree () 		-- ^ source tree.
+	-> Tree () 		-- ^ prototypes of imported functions.
+	-> Set Var 		-- ^ set of vars of all CAFs
+	-> Tree ()
+
+slotTree tree eHeader cafVars
+ 	= evalState (mapM (slotP cafVars) tree) 	
  	$ Var.XBind Unique.seaSlot 0
 
+-- | Rewrite code in this top level thing to use the GC slot stack.
+slotP 	:: Set Var		-- ^ set of vars of all CAFs
+	-> Top () 
+	-> VarGenM (Top ())
 
-slotP 	:: Set Var	
-	-> Top () -> VarGenM (Top ())
-
-slotP	cafVars p
+slotP cafVars p
  = case p of
  	PSuper v args retT ss
 	 -> do	(ssAuto, ssArg, ssR, slotCount)	
@@ -66,13 +65,15 @@ slotP	cafVars p
 
 	_ -> return p
 
-
-slotSS 	:: Set Var -> [(Var, Type)] -> [Stmt ()] 
+-- | Rewrite the body of a supercombinator to use the GC slot stack
+slotSS 	:: Set Var 		-- ^ set of vars of all CAFs
+	-> [(Var, Type)] 	-- ^ vars and types of the super parameters
+	-> [Stmt ()] 		-- ^ statements that form the body of the super
 	-> VarGenM 
-		( [Stmt ()]
-		, [Stmt ()]
-		, [Stmt ()]
-		, Int)
+		( [Stmt ()]	-- code that copies the super parameters into their slots.
+		, [Stmt ()]	-- code that initialises automatic variables for each local unboxed variable.
+		, [Stmt ()]	-- body of the super, rewritten to use slots.
+		, Int)		-- the number of GC slots used by this super.
 		
 slotSS cafVars args ss
  = do	
@@ -84,9 +85,7 @@ slotSS cafVars args ss
 	
 	let ssArg	= catMaybes ssArg_
 			
-	-----
 	-- Create a new GC slots for vars on the LHS of an assignment.
-	--
 	let (ss2, state1)
 		= runState 
 			(mapM (transformSM slotAssignS) ss) 
@@ -97,15 +96,15 @@ slotSS cafVars args ss
 			(\x -> slotifyX x (stateMap state1) cafVars))
 			ss2
 
-	-- Make auto's for unboxed data.
+	-- Make automatic variables for unboxed values.
 	--	In compiled tail recursive functions there may be assignments
 	--	to arguments in the parameter list. These will appear in the stateAuto 
 	--	list, but there's no need to actually make a new auto for them.
-	--
 	let ssAuto	= [ SAuto v t	| (v, t)	<- reverse
 							$ stateAuto state1
 					, not $ elem v	$ map fst args]
 
+	-- Count how many slots we've used
 	let slotCount	= Map.size (stateMap state1)
 					
 	return	(ssAuto, ssArg, ss3, slotCount)
@@ -135,11 +134,18 @@ slotifyX x m cafVars
 	| otherwise
 	= x
 
------
+
+-- SlotM ----------------------------------------------------------------------
+
+-- State monad for doing the GC slot transform.
 data SlotS
 	= SlotS
-	{ stateMap	:: Map Var (Exp ())
-	, stateSlot	:: Int 
+	{ stateMap	:: Map Var (Exp ())	-- ^ map of original variable
+						--	to the XSlot expression that represents
+						--	the GC slot it is stored in.
+
+	, stateSlot	:: Int 			-- ^ new slot number generator
+
 	, stateAuto	:: [(Var, Type)] }
 
 slotInit
@@ -148,9 +154,10 @@ slotInit
 	, stateSlot	= 0 
 	, stateAuto	= [] }
 	
- 
 type SlotM = State SlotS
 
+
+--- | Create a fresh slot number
 newSlot :: SlotM Int
 newSlot	
  = do 	slot	<- gets stateSlot
@@ -158,16 +165,17 @@ newSlot
 	return slot
 	
 
-addSlotMap :: Var -> Exp () -> SlotM ()
+-- | Add an entry to the slot map
+addSlotMap 
+	:: Var 
+	-> Exp () 
+	-> SlotM ()
 addSlotMap    var    x
  =	modify (\s -> s { 
  		stateMap = Map.insert var x (stateMap s) })
 
 
------
--- slotAssignS
---	Assign a GC slot for all variables present on the LHS of an assignment.
---
+-- | Assign a GC slot for all variables present on the LHS of an assignment.
 slotAssignS ::	Stmt () -> SlotM (Stmt ())
 slotAssignS	ss
  = case ss of
@@ -191,5 +199,4 @@ slotAssignS	ss
 		return ss
 
 	_ 	-> return ss
-
 

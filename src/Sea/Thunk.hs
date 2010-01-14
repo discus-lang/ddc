@@ -1,55 +1,34 @@
------
--- Sea.Thunk
---	
---	BUGS:	Setting the return value to XNull in expandS is a brutal hack.
---		Better to detect that nothing is ever returned, or init an
---		unused slot.
+
+-- Expand out code to call supercombinators or create partial applications are required.
+--
+-- TODO: Setting the return value to XNull in expandS is a brutal hack.
+--	 Better to detect that nothing is ever returned, or init an
+--	 unused slot.
 --
 
 module Sea.Thunk
 	(thunkTree)
 where
-
-import Shared.Pretty
-import Shared.Var		(VarBind)
-import qualified Shared.Var	as Var
-import qualified Shared.Unique	as Unique
-
 import Sea.Exp
 import Sea.Pretty
 import Sea.Util
 import Sea.Plate.Trans
-
-import qualified Data.Map	as Map
+import Shared.Pretty
+import Shared.Var		(VarBind)
 import Data.Map			(Map)
-
+import qualified Data.Map	as Map
+import qualified Shared.Var	as Var
+import qualified Shared.Unique	as Unique
 import Util
 
------
-type	ExM	= State VarBind
-initExS		= Var.XBind Unique.seaThunk 0
 
-newVar :: Maybe String -> ExM Var
-newVar mName
- = do
- 	gen		<- get
-	let gen'	= Var.incVarBind gen
-	put gen'
-	
-	let name	= fromMaybe (pprStrPlain gen) mName
-	let var		= (Var.new name) { Var.bind = gen }
-	
-	return var
-
-
------
-thunkTree 
-	:: Tree () -> Tree ()
-
+-- | Expand calls in this tree.
+thunkTree :: Tree () -> Tree ()
 thunkTree tree
  	= evalState (mapM expandP tree) initExS
 
 
+-- | Expand calls in this top level thing.
 expandP :: Top () -> ExM (Top ())
 expandP	xx 
  = case xx of
@@ -76,15 +55,13 @@ expandP	xx
 	_ -> return xx
 	
 	
------
+-- | Expand calls in the body of some super
 expandSS ss
  	= liftM concat
 	$ mapM expandS ss
 	
 expandS	s
-
 	-- tail call 
-
 	-- BRUTAL HACK:
 	-- For functions which never return, such as.
 	--	loop f = do { f (); y = loop f; };
@@ -100,6 +77,7 @@ expandS	s
 		return	$ [ SAssign (XVar v t) t XNull ]
 			++ callSS
 
+	-- tail calls
 	| SStmt x@XTailCall{}			<- s
 	= do	callSS	<- expandTailCall x
 		return	callSS
@@ -123,6 +101,7 @@ expandS	s
 			++ [ SAssign v t x' ]
 			   
 
+	-- applications
 	| SStmt x		<- s
 	,    (x =@= XCallApp{})
 	  || (x =@= XApply{})
@@ -143,7 +122,6 @@ expandS	s
 	| otherwise
 	= do	return [s]
 
-
 expandAppX x
  = case x of
  	XCallApp{}	-> expandCallApp x
@@ -160,7 +138,7 @@ expandTailCall
 		       , [(Var, Type)]))])	-- function parameters and their types
 				
 
-	-> Exp ()				-- the tail call primitive
+	=> Exp ()				-- the tail call primitive
 	-> ExM [Stmt ()]			-- statements to do the call
 	
 expandTailCall
@@ -221,8 +199,6 @@ expandSusp
 	return	( assignSS
 		, allocX)
 
-	
-   
 -----
 expandCallApp 
 	:: Exp ()
@@ -291,5 +267,26 @@ expandApplyN
 			++ [SAssign (XVar v TObj) TObj (XApply (XVar thunkV TObj) argsHere)]
 		
 		expandApplyN maxApp v argsMore ssAcc'
+
+
+-- ExM ------------------------------------------------------------------------
+type	ExM	= State VarBind
+initExS		= Var.XBind Unique.seaThunk 0
+
+-- | Create a fresh variable based on this name
+newVar 	:: Maybe String 
+	-> ExM Var
+
+newVar mName
+ = do
+ 	gen		<- get
+	let gen'	= Var.incVarBind gen
+	put gen'
+	
+	let name	= fromMaybe (pprStrPlain gen) mName
+	let var		= (Var.new name) { Var.bind = gen }
+	
+	return var
+
 
 
