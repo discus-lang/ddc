@@ -25,36 +25,46 @@ stage	= "Type.Port"
 dropFMoresT :: Set Type -> Type -> SquidM Type
 dropFMoresT tsContra tt
  = case tt of
- 	TFetters t fs
-	 -> do	fs'	<- mapM (letifyFs tsContra) fs
-	 	return	$ TFetters t fs'
+	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
+	 -> do	(crsEq', mcrsMore)	
+				<- mapAccumLM (letifyFs tsContra) crsEq 
+				$  Map.toList crsMore
+
+		let crsMore'	= Map.fromList $ catMaybes mcrsMore
+		let crs' 	= Constraints crsEq' crsMore' crsOther
+		return	$ addConstraints crs' tBody
 
 	t -> return t
-	
-letifyFs tsContra ff
- = case ff of
- 	FMore t1@(TClass k cid) t2
+
+letifyFs
+	:: Set Type				-- ^ parameter variables
+	-> Map Type Type			-- ^ equality constraint set
+	-> (Type, Type)				-- ^ more than constraint
+	-> SquidM ( Map Type Type		-- new equality constraint set
+	   	  , Maybe (Type, Type)	)	-- new more constraint (if any)
+
+letifyFs tsContra fsEq fMore
+ = case fMore of
+ 	(t1@(TClass k cid), t2)
 	 -> do	quantVars	<- gets stateQuantifiedVars
 	 	v		<- makeClassName cid
 
 		let result
 			-- can't convert vars that have been quantified.
 			| Map.member v quantVars 
-			= ff
+			= (fsEq, Just fMore)
 			
 			-- can't convert vars that appear in contra-variant positions
 			--	in the shape of the type
 			| Set.member t1 tsContra
-			= ff
+			= (fsEq, Just fMore)
 			
 			| otherwise
-			= FWhere t1 t2
+			= (Map.insert t1 t2 fsEq, Nothing)
 			
 		return result
 			
-	_ -> return ff
-
-
+	_ -> return (fsEq, Just fMore)
 
 
 ----
@@ -63,6 +73,7 @@ slurpContraClassVarsT tt
  = case tt of
 	TForall b k t	-> slurpContraClassVarsT t
 	TFetters t fs	-> slurpContraClassVarsT t
+	TConstrain t crs -> slurpContraClassVarsT t
 
 	TApp t1 t2
 	  | Just (t11, t12, eff, clo)	<- takeTFun tt
@@ -80,7 +91,4 @@ slurpContraClassVarsT tt
 	TError{}	-> []	
 	_		-> panic stage
 			$ "slurpContraClassVarsT: no match for " % tt
-
-
-
 

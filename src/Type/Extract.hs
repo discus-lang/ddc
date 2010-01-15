@@ -111,7 +111,7 @@ extractType_fromClass final varT cid
 	--	If we hit any loops through the value type portion of the
 	--	graph then mark then with TError constructors.
 	trace	$ ppr " -- packing into standard form\n"	
-	let tPack	= toFetterFormT $ PackFast.packType_markLoops tTrace
+	let tPack	= PackFast.packType_markLoops tTrace
 
 	-- Look for TErrors in the packed type
 	let tsLoops	= [ (t1, t2) 
@@ -160,7 +160,8 @@ extractType_more final varT cid tPack
 					_				-> Nothing)
 			$ slurpContraClassVarsT tPack
 	
-	tDeMore		<- dropFMoresT (Set.fromList contraTs) tPack
+	tDeMore		<- liftM toFetterFormT
+			$  dropFMoresT (Set.fromList contraTs) tPack
 	trace	$ "    contraTs = " % contraTs	% "\n"
 	trace	$ "    tDeMore\n"
 		%> prettyTS tDeMore	% "\n\n"

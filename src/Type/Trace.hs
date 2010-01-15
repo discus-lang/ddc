@@ -49,7 +49,7 @@ traceType cid
 
 	-- Load in the nodes for this subgraph.
 	t	<- loadTypeNodes cid (Set.toList cidsDown) [] Map.empty Map.empty [] 
-	return t
+	return $ toConstrainFormT t
 
 
 -- | Make new fetters representing this node in the type graph.
@@ -143,7 +143,7 @@ loadTypeNodes3 cidBody (cidReach1 : cidsReach)
 	
 	-- Trim closures as early as possible to avoid wasing time in later stages.
 	| resultKind k == kClosure
-	= case trimClosureC Set.empty Set.empty tBody of
+	= case trimClosureC Set.empty Set.empty $ toConstrainFormT tBody of
 		TFree _ (TBot _)	
 		 -> loadTypeNodes cidBody cidsReach 
 			fsTFree fsAccEq fsAccMore fsAccOther
