@@ -1,7 +1,7 @@
 
-module Type.Port
-	( dropFMoresT
-	, slurpContraClassVarsT)
+module Type.Strengthen
+	( strengthenT
+	, slurpParamClassVarsT)
 where
 
 import qualified Data.Map	as Map
@@ -22,12 +22,16 @@ import Util
 
 stage	= "Type.Port"
 
-dropFMoresT :: Set Type -> Type -> SquidM Type
-dropFMoresT tsContra tt
+strengthenT 
+	:: Set Type 		-- ^ cids and vars that appear in parameter positions
+	-> Type 		-- ^ the type to strengthen
+	-> SquidM Type		-- ^ the strengthened type
+
+strengthenT tsParam tt
  = case tt of
 	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
 	 -> do	(crsEq', mcrsMore)	
-				<- mapAccumLM (letifyFs tsContra) crsEq 
+				<- mapAccumLM (strengthenFs tsParam) crsEq 
 				$  Map.toList crsMore
 
 		let crsMore'	= Map.fromList $ catMaybes mcrsMore
@@ -36,14 +40,14 @@ dropFMoresT tsContra tt
 
 	t -> return t
 
-letifyFs
-	:: Set Type				-- ^ parameter variables
-	-> Map Type Type			-- ^ equality constraint set
-	-> (Type, Type)				-- ^ more than constraint
+strengthenFs
+	:: Set Type				-- ^ cids and vars that appear in parameter positions
+	-> Map Type Type			-- ^ equality constraints
+	-> (Type, Type)				-- ^ more than constraints
 	-> SquidM ( Map Type Type		-- new equality constraint set
 	   	  , Maybe (Type, Type)	)	-- new more constraint (if any)
 
-letifyFs tsContra fsEq fMore
+strengthenFs tsParam fsEq fMore
  = case fMore of
  	(t1@(TClass k cid), t2)
 	 -> do	quantVars	<- gets stateQuantifiedVars
@@ -56,7 +60,7 @@ letifyFs tsContra fsEq fMore
 			
 			-- can't convert vars that appear in contra-variant positions
 			--	in the shape of the type
-			| Set.member t1 tsContra
+			| Set.member t1 tsParam
 			= (fsEq, Just fMore)
 			
 			| otherwise
@@ -67,23 +71,30 @@ letifyFs tsContra fsEq fMore
 	_ -> return (fsEq, Just fMore)
 
 
-----
-slurpContraClassVarsT :: Type -> [Type]
-slurpContraClassVarsT tt
+-- | Slurp out cids and vars that appear in a parameter position in this
+--	type (on the left of an arrow)
+--
+--   BUGS: This is wrong, but we don't test for it yet.
+--	   We really need to inspect the definition of data types to determine
+--	   which positions correspond to parameters.
+--
+slurpParamClassVarsT :: Type -> [Type]
+slurpParamClassVarsT tt
  = case tt of
-	TForall b k t	-> slurpContraClassVarsT t
-	TFetters t fs	-> slurpContraClassVarsT t
-	TConstrain t crs -> slurpContraClassVarsT t
+	TForall b k t		-> slurpParamClassVarsT t
+	TFetters t fs		-> slurpParamClassVarsT t
+	TConstrain t crs 	-> slurpParamClassVarsT t
 
 	TApp t1 t2
 	  | Just (t11, t12, eff, clo)	<- takeTFun tt
-	  -> (Set.toList $ collectTClassVars t11) ++ slurpContraClassVarsT t12
+	  -> (Set.toList $ collectTClassVars t11) 
+	     ++ slurpParamClassVarsT t12
 	
 	  | Just _	<- takeTData tt
 	  -> []
 	
 	  | otherwise
-	  -> slurpContraClassVarsT t1 ++ slurpContraClassVarsT t2
+	  -> slurpParamClassVarsT t1 ++ slurpParamClassVarsT t2
 	
 	TVar{}		-> []
 	TCon{}		-> []

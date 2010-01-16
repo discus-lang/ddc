@@ -9,7 +9,7 @@ import Type.Check.GraphicalData
 import Type.Dump
 import Type.Plug
 import Type.Context
-import Type.Port
+import Type.Strengthen
 import Type.Error
 import Type.Trace
 import Type.Class
@@ -152,26 +152,28 @@ extractType_more final varT cid tPack
 	
 	trace	$ ppr " -- dropping :> on non-contravariant effect and closure cids\n"
 
-	-- first work out what effect and closure vars are in contra-variant branches
-	let contraTs	= catMaybes
+	-- first work out what effect and closure vars are are represent parameters
+	--	(are in a contravariant branch \/ to the left of a function arrow)
+	let tsParam	= catMaybes
 			$ map (\t -> case t of
 					TClass kE cid | kE == kEffect   -> Just t
 					TClass kC cid | kC == kClosure	-> Just t
 					_				-> Nothing)
-			$ slurpContraClassVarsT tPack
+			$ slurpParamClassVarsT tPack
 	
-	tDeMore		<- liftM toFetterFormT
-			$  dropFMoresT (Set.fromList contraTs) tPack
-	trace	$ "    contraTs = " % contraTs	% "\n"
-	trace	$ "    tDeMore\n"
-		%> prettyTS tDeMore	% "\n\n"
+	tStrong		<- liftM toFetterFormT
+			$  strengthenT (Set.fromList tsParam) tPack
+
+	trace	$ "    tsParam   = " % tsParam	% "\n"
+	trace	$ "    tStrong\n"
+		%> prettyTS tStrong	% "\n\n"
 
 
 	-- Trim closures
 	trace	$ ppr " -- trimming closures\n"	
 	let tTrim	
-		| isClosure tDeMore	= trimClosureC Set.empty Set.empty tDeMore
-		| otherwise		= trimClosureT Set.empty Set.empty tDeMore
+		| isClosure tStrong	= trimClosureC Set.empty Set.empty tStrong
+		| otherwise		= trimClosureT Set.empty Set.empty tStrong
 
 	trace	$ "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"
 	trace	$ ppr " -- done trimming\n"

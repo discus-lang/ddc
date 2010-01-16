@@ -11,7 +11,7 @@ import Type.Effect.MaskFresh
 import Type.Error
 import Type.State
 import Type.Plug		
-import Type.Port
+import Type.Strengthen
 import Type.Context
 import Type.Util
 import Type.Exp
@@ -93,9 +93,9 @@ generaliseType' varT tCore envCids
 		%> prettyTS tPlug 	% "\n\n"
 
 	-- Clean empty effect and closure classes that aren't ports.
-	let tsContra	=  slurpContraClassVarsT tPlug
+	let tsParam	=  slurpParamClassVarsT tPlug
 	classInst	<- gets stateClassInst
-	let tClean	= cleanType (Set.fromList tsContra) tPlug
+	let tClean	= cleanType (Set.fromList tsParam) tPlug
 
 	trace	$ "    tClean\n" 
 			%> ("= " % prettyTS tClean)		% "\n\n"
