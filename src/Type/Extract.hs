@@ -4,7 +4,6 @@ module Type.Extract
 	( extractType
 	, extractTypeCid)
 where
-
 import Type.Check.GraphicalData
 import Type.Dump
 import Type.Plug
@@ -19,13 +18,11 @@ import Type.Pretty
 import Type.Plate
 import Type.Exp
 import Type.Util.Cut
-import qualified Type.Util.PackFast	as PackFast
-
-import qualified Shared.Var	as Var
-import Shared.Var		(Var)
-import Shared.Error
-
 import Util
+import Shared.Error
+import Shared.Var		(Var)
+import qualified Shared.Var	as Var
+import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 		
@@ -34,7 +31,14 @@ stage	= "Type.Extract"
 debug	= True
 trace s	= when debug $ traceM s
 
-extractTypeCid :: Bool -> ClassId -> SquidM (Maybe Type)
+
+-- | Extract a type from the graph and pack it into standard form.
+extractTypeCid 
+	:: Bool 	-- ^ Whether to finalise the type as well.
+	-> ClassId 	-- ^ id of the clasd
+	-> SquidM 
+		(Maybe Type)
+
 extractTypeCid final cid
  = do	v	<- makeClassName cid
  	extractType final v
@@ -52,27 +56,19 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = do	
- 	trace	$ "*** Scheme.extractType " % varT % "\n"
-		% "\n"
+ = do	trace	$ "*** Scheme.extractType " % varT % "\n\n"
 
  	defs		<- gets stateDefs
-
-	let result
-		-- If this var is in the defs table then it was imported from an external
-		--	interface (or is a generated constructor function), so we can just
-		--	return it directly.
-		| Just tt	<- Map.lookup varT defs
-		= do	trace 	$ "    def: " %> prettyTS tt % "\n"
-			return $ Just tt
-		
-		-- Otherwise we'll have to trace it out from the graph.
-		| otherwise
-		= {-# SCC "extractType" #-} 
-		  extractType_findClass final varT
-
-	result
-
+	case Map.lookup varT defs of
+	 -- If this var is in the defs table then it was imported from an external
+	 --	interface (or is a generated constructor function), so we can just return it directly.
+	 Just tt
+	  -> do	trace 	$ "    def: " %> prettyTS tt % "\n"
+		return $ Just tt
+	
+	 Nothing
+	  -> {-# SCC "extractType" #-} 
+	     extractType_findClass final varT
 
 extractType_findClass final varT
  = do	
@@ -84,12 +80,9 @@ extractType_findClass final varT
 	 -- If there is no equivalence class for this var then we've been asked for 
 	 --	something that doens't exist in the graph. bad news, dude.
 	 Nothing	
-	  -> do	graph			<- gets stateGraph
-	  	freakout stage
-		 	("extractType: no classId defined for variable " % (varT, Var.bind varT)		% "\n")
--- debug		% " visible vars = " % (map (\v -> (v, Var.bind v)) $ Map.keys varToClassId)		% "\n")
-			$ return Nothing
-
+	  -> freakout stage
+		 ("extractType: no classId defined for variable " % (varT, Var.bind varT) % "\n")
+		$ return Nothing
 
 extractType_fromClass final varT cid
  = do 	
@@ -135,11 +128,8 @@ extractType_fromClass final varT cid
 
 extractType_more final varT cid tPack
  = do	
-
-	-----
-	-- More-ify fetters
-	-- 	in a type like
-	--
+	-- Strengthen more-than constraints. 
+	-- In a type like
 	--	fun 	:: ((a -(!e1)> b) -(!e2)> c)
 	--		:- !e1 :> !e2
 	--		,  !e2 :> !{ Read %r1; !e1 }
@@ -147,27 +137,24 @@ extractType_more final varT cid tPack
 	--	the constraint on !e2 is listed as :> !{ Read %r1; !e1} but it can only
 	--	ever actually be = !{ Read %r1; !e1 } because it doesn't appear in a 
 	--	contra-variant position in the shape of the type.
-	--
-	--	BUGS: must also not be in the environment.
-	
-	trace	$ ppr " -- dropping :> on non-contravariant effect and closure cids\n"
+	trace	$ ppr " -- strengthening :> constraints\n"
 
 	-- first work out what effect and closure vars are are represent parameters
 	--	(are in a contravariant branch \/ to the left of a function arrow)
-	let tsParam	= catMaybes
-			$ map (\t -> case t of
-					TClass kE cid | kE == kEffect   -> Just t
-					TClass kC cid | kC == kClosure	-> Just t
-					_				-> Nothing)
-			$ slurpParamClassVarsT tPack
+	let tsParam	
+		= catMaybes
+		$ map (\t -> case t of
+				TClass kE cid | kE == kEffect   -> Just t
+				TClass kC cid | kC == kClosure	-> Just t
+				_				-> Nothing)
+		$ slurpParamClassVarsT tPack
 	
-	tStrong		<- liftM toFetterFormT
-			$  strengthenT (Set.fromList tsParam) tPack
+	tStrong	<- liftM toFetterFormT
+		$  strengthenT (Set.fromList tsParam) tPack
 
 	trace	$ "    tsParam   = " % tsParam	% "\n"
 	trace	$ "    tStrong\n"
 		%> prettyTS tStrong	% "\n\n"
-
 
 	-- Trim closures
 	trace	$ ppr " -- trimming closures\n"	
@@ -188,7 +175,6 @@ extractType_more final varT cid tPack
 
 	extractType_final final varT cid tCutPack
 	
-
 extractType_final True varT cid tTrim
  = do	
  	-- plug classIds with vars
@@ -200,12 +186,12 @@ extractType_final True varT cid tTrim
  	let tFinal	=  finaliseT quantVars True tPlug
 	
 	trace	$ "    tFinal:\n" 	%> prettyTS tFinal	% "\n\n"
-	extractTypeC2 varT cid tFinal
+	extractType_reduce varT cid tFinal
 	
 extractType_final False varT cid tTrim
-	= extractTypeC2 varT cid tTrim
+	= extractType_reduce varT cid tTrim
 
-extractTypeC2 varT cid tFinal
+extractType_reduce varT cid tFinal
  = do	
 	-- Reduce context
 	classInst	<- gets stateClassInst
