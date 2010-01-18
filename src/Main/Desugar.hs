@@ -59,9 +59,9 @@ import System.IO			(hFlush)
 
 -- InferKinds --------------------------------------------------------------------------------------
 desugarInferKinds
-	:: (?args :: [Arg])			-- command line args
-	-> (?pathSourceBase :: FilePath)	-- base path to source file
-	-> String				-- unqiue name
+	:: (?args :: [Arg]			-- command line args
+	 ,  ?pathSourceBase :: FilePath)	-- base path to source file
+	=> String				-- unqiue name
 	-> D.Tree SourcePos			-- header tree
 	-> D.Tree SourcePos			-- source tree
 
@@ -103,9 +103,9 @@ desugarInferKinds
 
 -- Elaborate ---------------------------------------------------------------------------------------
 desugarElaborate
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String				-- ^ unique
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> String				-- ^ unique
 	-> D.Tree SourcePos			-- ^ header tree
 	-> D.Tree SourcePos			-- ^ source tree
 	-> IO	( D.Tree SourcePos
@@ -127,9 +127,9 @@ desugarElaborate unique treeHeader treeSource
 	
 -- ProjectEta --------------------------------------------------------------------------------------
 desugarProjectEta
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> String
 	-> D.Tree SourcePos
 	-> IO	(D.Tree SourcePos)
 	
@@ -144,9 +144,9 @@ desugarProjectEta unique sourceTree
 	
 -- Project -----------------------------------------------------------------------------------------
 desugarProject 
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> String
 	-> Module
 	-> D.Tree SourcePos
 	-> D.Tree SourcePos
@@ -177,9 +177,9 @@ desugarProject unique moduleName headerTree sourceTree
 	
 -- Constraints -------------------------------------------------------------------------------------
 desugarSlurpConstraints 	
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> (D.Tree SourcePos)				-- source tree
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> (D.Tree SourcePos)				-- source tree
 	-> (D.Tree SourcePos)				-- header tree
 	-> IO	( (D.Tree (Maybe (T.Type, T.Effect)))	-- source tree with type and effect annotations
 		, [N.CTree]				-- type constraints
@@ -249,9 +249,9 @@ desugarSlurpConstraints
 -- Solve -------------------------------------------------------------------------------------------
 
 desugarSolveConstraints
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> [N.CTree]		-- type constraints
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> [N.CTree]		-- type constraints
 	-> Set Var		-- the TEC vars to infer TECs for	
 	-> Set Var		-- type vars of value vars bound at top level
 	-> Map Var Var		-- sigma table
@@ -396,9 +396,9 @@ desugarSolveConstraints2
 -- ToCore ------------------------------------------------------------------------------------------
 
 desugarToCore 
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> D.Tree (Maybe (T.Type, T.Effect))		-- sourceTree
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> D.Tree (Maybe (T.Type, T.Effect))		-- sourceTree
 	-> D.Tree (Maybe (T.Type, T.Effect))		-- headerTree
 	-> Map Var Var					-- sigmaTable
 	-> Map Var T.Type				-- typeTable

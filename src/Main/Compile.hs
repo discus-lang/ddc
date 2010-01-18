@@ -39,7 +39,7 @@ import Util.FilePath
 import Numeric
 import Debug.Trace
 import System.Time
-import GHC.IOBase
+import GHC.IO
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Control.Exception	as Exception

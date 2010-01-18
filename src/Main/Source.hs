@@ -41,9 +41,9 @@ import Util
 
 ---------------------------------------------------------------------------------------------------
 -- | Parse source code.
-parse 	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> FilePath			-- path of source file
+parse 	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> FilePath			-- path of source file
 	-> String			-- source of root module
 	-> IO 	( Tree SourcePos	-- source parse tree
 		, [String])		-- pragma strings
@@ -125,9 +125,9 @@ sourceSlurpInlineVars
 
 ---------------------------------------------------------------------------------------------------
 -- | Write uses of infix operatiors to preix form.
-defix	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree	SourcePos		-- source parse tree
+defix	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Tree	SourcePos		-- source parse tree
 	-> [FixDef SourcePos]		-- fixity table
 	-> IO (Tree SourcePos)		-- defixed parse tree, will have no more XInfix nodes.
 	
@@ -156,9 +156,9 @@ defix	sParsed
 --	We do this so that the Sea name for functions like (+ / primInt32Add)
 --	which is present on foreign decls gets propagated to uses of these functions.
 --
-rename	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> 	[(Module, Tree SourcePos)]
+rename	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> 	[(Module, Tree SourcePos)]
 	-> IO 	[(Module, Tree SourcePos)]
 
 
@@ -183,9 +183,9 @@ rename	mTrees
 
 -- Slurp out the kinds for user defined classes.
 sourceKinds
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree SourcePos
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Tree SourcePos
 	-> IO [(Var, Kind)]
 	
 sourceKinds sTree
@@ -198,9 +198,9 @@ sourceKinds sTree
 	
 -- | Convert from Source to Desugared IR.
 desugar
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String			-- unique
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> String			-- unique
 	-> [(Var, Kind)]		-- kind table
 	-> Tree	SourcePos		-- header tree
 	-> Tree	SourcePos		-- source tree

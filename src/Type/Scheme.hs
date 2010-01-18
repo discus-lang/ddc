@@ -21,7 +21,6 @@ import Type.Util.Environment
 
 import Shared.VarPrim
 import Shared.Var		(NameSpace(..))
-import Data.Set			(Set)
 import Util
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var

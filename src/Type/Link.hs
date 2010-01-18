@@ -29,7 +29,7 @@ stage	= "Type.Link"
 --
 linkType 
 	:: (?src :: TypeSource)		-- source of type constraint
-	-> Maybe ClassId		-- parent class
+	=> Maybe ClassId		-- parent class
 	-> [Var]			-- vars bound by a forall in this context. Don't link these vars.
 	-> Type 
 	-> SquidM Type
@@ -101,7 +101,7 @@ linkType mParent bound tt
 -----
 linkFetter
 	:: (?src :: TypeSource)		-- source of constraint
-	-> Maybe ClassId		-- parent class
+	=> Maybe ClassId		-- parent class
 	-> [Var]			-- vars bound by a forall in this context. Don't link these vars.
 	-> Fetter 
 	-> SquidM Fetter

@@ -54,8 +54,8 @@ dictTree hTree sTree
 	
 -- | Rewrite overloaded fn applications in this statement
 rewriteS
- ::	(?typeMap 	:: Map Var Type)
- ->	(?classMap 	
+ ::	(?typeMap 	:: Map Var Type
+  ,	 ?classMap
  	 :: Map Var 			-- overloaded variable, eg (+)
 		( Witness			-- class that the var belongs to, eg (Num a)
 		, Type			-- type of this overloaded function
@@ -64,7 +64,7 @@ rewriteS
 					--	eg Int   -> Int -> Int
 					--	   Float -> Float -> Float
 
- ->	Stmt -> Stmt
+ =>	Stmt -> Stmt
  
 rewriteS ss
  = case ss of

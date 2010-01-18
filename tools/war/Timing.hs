@@ -15,19 +15,19 @@ import Control.Monad
 pprTimeDiff :: TimeDiff -> String
 pprTimeDiff timeDiff
   = let	psecs	= timeDiffToPicoSec timeDiff
-    in	show (psecs `div` 10^12) 
+    in	show (psecs `div` 10^(12::Integer)) 
 		++ "." 
-		++ (take 3 $ padRc 12 '0' $ show $ psecs `mod` 10^12)
+		++ (take 3 $ padRc 12 '0' $ show $ psecs `mod` 10^(12::Integer))
 
 
 timeDiffToPicoSec :: TimeDiff -> Integer
 timeDiffToPicoSec td
 	| 0	<- tdYear td
 	, 0	<- tdMonth td
-	= fromIntegral (tdDay  td)	* 10^12 * 60 * 60 * 24
-	+ fromIntegral (tdHour td)	* 10^12 * 60 * 60
-	+ fromIntegral (tdMin  td)	* 10^12 * 60
-	+ fromIntegral (tdSec  td) 	* 10^12
+	= fromIntegral (tdDay  td)	* 10^(12::Integer) * 60 * 60 * 24
+	+ fromIntegral (tdHour td)	* 10^(12::Integer) * 60 * 60
+	+ fromIntegral (tdMin  td)	* 10^(12::Integer) * 60
+	+ fromIntegral (tdSec  td) 	* 10^(12::Integer)
 	+ tdPicosec td
 
  

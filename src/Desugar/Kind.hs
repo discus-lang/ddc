@@ -182,7 +182,7 @@ elabRegionsP pp
 	 -> do	ts'	<- mapM elabRegionsT ts
 		let (vs, mts)	= unzip vts
 		mts'	<- mapM elabRegionsT mts
-		return	$ PClassDict sp v ts' context (zip vs mts')
+		return	$ PClassDict sp v ts' context (Util.zip vs mts')
 		
 	PClassInst sp v ts context ss
 	 -> do	ts'	<- mapM elabRegionsT ts

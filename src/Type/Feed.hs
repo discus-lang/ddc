@@ -108,7 +108,7 @@ feedConstraint cc
 --
 feedType 	
 	:: (?src :: TypeSource)
-	-> Maybe ClassId 
+	=> Maybe ClassId
 	-> Type -> SquidM (Maybe Type)
 
 feedType mParent t
@@ -247,7 +247,7 @@ feedType'	mParent t
 
 feedType1 
 	:: (?src :: TypeSource)
-	-> Maybe ClassId
+	=> Maybe ClassId
 	-> Type -> SquidM (Maybe Type)
 		
 feedType1 mParent tt
@@ -280,7 +280,7 @@ feedType1 mParent tt
 -- Fetter ------------------------------------------------------------------------------------------
 feedFetter 
 	:: (?src :: TypeSource)
-	-> Maybe ClassId
+	=> Maybe ClassId
 	-> Fetter 
 	-> SquidM ()
 
@@ -313,7 +313,7 @@ feedFetter	mParent f
 
 -----
 addNode :: (?src :: TypeSource)
-	-> ClassId
+	=> ClassId
 	-> Type
 	-> SquidM ()
 	
@@ -333,7 +333,7 @@ addFetterSource src f
 
 addFetter
 	:: (?src :: TypeSource)
-	-> Fetter
+	=> Fetter
 	-> SquidM Bool
 	
 -- Single parameter type class contraints are added directly to the equivalence

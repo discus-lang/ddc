@@ -57,7 +57,7 @@ flattenS s
 				= takeTail vsStart
  
 	 	sss'		<- mapM (flattenA vMatchEnd) 
-				$ zip5	[0..] 
+				$ zip5	([0..] :: [Integer])
 					aa 
 					vsStart 
 					vsExp 
@@ -73,7 +73,7 @@ flattenS s
 flattenA vMatchEnd (ixAlt, a, vStart, vExp, (mvStartNextAlt :: Maybe Var))
  = case a of
  	AAlt gs ss
-	 -> do	gss	<- mapM (flattenG ixAlt mvStartNextAlt) $ zip [0..] gs
+	 -> do	gss	<- mapM (flattenG ixAlt mvStartNextAlt) $ zip ([0..] :: [Integer]) gs
 	 
 	 	return	$  [ SComment ("alt" ++ show ixAlt) ]
 			++ [ SLabel vStart]

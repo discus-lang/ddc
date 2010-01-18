@@ -155,7 +155,7 @@ toSeaP	xx
 	 	let tagDefs	= map (\(v, i) -> E.PHashDef 
 			 		("_tag" ++ E.seaVar False v)
 					("(_tagBase + " ++ show i ++ ")"))
-				$ (zip (map (\(C.CtorDef v _) -> v) cs) [0..])
+				$ (zip (map (\(C.CtorDef v _) -> v) cs) ([0..]::[Integer]))
 	 
 		let structDefs	= map toSeaStruct cs
 		return		$ [dataDef] ++ tagDefs ++ structDefs
@@ -201,7 +201,7 @@ toSeaStruct (C.CtorDef name fs)
 	$ map (\(i, df) -> 
 		( fromMaybe (Var.new $ "a" ++ show i) $ C.dLabel df
 		, E.TObj )) -- toSeaT $ C.dType df ))
-	$ zip [0..] fs
+	$ zip ([0..]::[Integer]) fs
 
 
 -- Ctor --------------------------------------------------------------------------------------------

@@ -51,9 +51,9 @@ import Util
 -- seaSub
 --
 seaSub
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree ()
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Tree ()
 	-> IO (Tree ())
 	
 seaSub tree
@@ -71,9 +71,9 @@ seaSub tree
 -- expandCtor
 --
 seaCtor 
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree ()
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Tree ()
 	-> IO (Tree ())
 
 seaCtor
@@ -93,9 +93,9 @@ seaCtor
 -- expandThunking
 --
 seaThunking 
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree ()
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Tree ()
 	-> IO (Tree ())
 	
 seaThunking	 
@@ -112,9 +112,9 @@ seaThunking
 -- seaForce
 --
 seaForce 
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree ()
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Tree ()
 	-> IO (Tree ())
 	
 seaForce
@@ -131,9 +131,9 @@ seaForce
 -- seaSlot
 --
 seaSlot
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Tree ()		-- sea tree
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Tree ()		-- sea tree
 	-> Tree ()		-- sea header
 	-> Set Var		-- CAF vars
 	-> IO (Tree ())
@@ -151,9 +151,9 @@ seaSlot	eTree eHeader cafVars
 -- seaFlatten
 --
 seaFlatten
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> String
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> String
 	-> Tree ()
 	-> IO (Tree ())
 	
@@ -169,9 +169,9 @@ seaFlatten unique eTree
 -- seaInit
 --
 seaInit
-	:: (?args :: [Arg])
-	-> (?pathSourceBase :: FilePath)
-	-> Module
+	:: (?args :: [Arg]
+	 ,  ?pathSourceBase :: FilePath)
+	=> Module
 	-> (Tree ())
 	-> IO (Tree ())
 	
@@ -187,7 +187,7 @@ seaInit moduleName eTree
 --		
 outSea 
 	:: (?args :: [Arg])
-	-> Module
+	=> Module
 	-> (Tree ())		-- sea source
 	-> FilePath		-- path of the source file
 	-> [FilePath]		-- paths of the imported .h header files
@@ -292,7 +292,7 @@ makeIncludeDefTag pathThis
 -- seaMain
 --
 seaMain	:: (?args :: [Arg])
-	-> [Module]
+	=> [Module]
 	-> Module
 	-> IO (Tree ())
 	

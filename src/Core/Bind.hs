@@ -105,7 +105,7 @@ bindP	shared pp
 --	they are free in.
 --
 bindX 	:: (?classMap :: Map Var [Var])
-	-> Set Var		-- unbound variables which are non-local to this expression
+	=> Set Var		-- unbound variables which are non-local to this expression
 	-> Exp
 	-> BindM 
 		( Exp		-- the new expression
@@ -360,7 +360,7 @@ bindXDo shared xx@(XDo ss)
 
 bindRegionsX
 	:: (?classMap :: Map Var [Var])
-	-> Set Var					-- ^ regions to bind
+	=> Set Var					-- ^ regions to bind
 	-> Exp 						-- ^ expression to wrap in letregion
 	-> BindM Exp	
 	

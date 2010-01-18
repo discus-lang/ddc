@@ -46,7 +46,7 @@ trace s	x 	= if debug then Debug.trace (pprStrPlain s) x else x
 -----
 curryTree 
 	:: (?args :: [Arg])
-	-> Tree			-- ^ headerTree
+	=> Tree			-- ^ headerTree
 	-> Tree			-- ^ coreTree
 	-> Map Var Top		-- ^ supercombinators which are directly callable
 				--	(obtained via slurpSupersTree)
@@ -78,9 +78,9 @@ curryP 	p
 	
 
 -----
-curryS 	:: (?supers 	:: Map Var Top)
-	-> (?superVars 	:: Set Var)
-	-> [Var]		-- supers to tail-call when evaluating this stmt.
+curryS 	:: (?supers 	:: Map Var Top
+	 ,  ?superVars 	:: Set Var)
+	=> [Var]		-- supers to tail-call when evaluating this stmt.
 	-> Stmt -> Stmt
 
 curryS	tc s
@@ -155,7 +155,7 @@ curryG tc gg
 -----
 makeCall 
 	:: (?supers :: Map Var Top)	
-	-> Exp					-- call this function (must be an XVar)
+	=> Exp					-- call this function (must be an XVar)
 	-> [Var]				-- supers that can be tailcalled from here
 	-> [Exp] 				-- args to function
 	-> Effect 				-- effect caused by calling this function

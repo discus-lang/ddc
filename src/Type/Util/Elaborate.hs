@@ -128,10 +128,10 @@ elaborateRsT_data tt (v, kind, ts)
 
 -- | Take some arguments from a type ctor and if needed insert fresh region vars
 --	so the reconstructed ctor with these args will have this kind.
-elabRs 	:: Monad m
-	=> (?newVar  :: NameSpace -> m Var)	-- ^ fn to create new region vars
-	-> (?topType :: Type)			-- ^ for debugging
-	-> [Type]				-- ^ ctor args
+elabRs 	:: (Monad m
+	 , ?newVar  :: NameSpace -> m Var	-- fn to create new region vars
+	 , ?topType :: Type)			-- for debugging
+	=> [Type]				-- ^ ctor args
 	-> Kind					-- ^ kind to turn the ctor into
 	-> m ( [Type]		-- new ctor args
 	     , [(Var, Kind)])	-- added vars
@@ -208,9 +208,9 @@ hasKind k tt
 --	    ,  $c2 = { x1 : t1; x2 : t2 }
 
 elaborateCloT 
-	:: Monad m
-	=> (?newVarN :: NameSpace -> m Var)	-- ^ fn to use to create new vars
-	-> Type					-- ^ the type to elaborate 
+	:: (Monad m
+	 ,  ?newVarN :: NameSpace -> m Var)	-- fn to use to create new vars
+	=> Type					-- ^ the type to elaborate
 	-> m Type				-- elaborated type
 
 elaborateCloT tt
@@ -294,9 +294,9 @@ elaborateCloT' env tt
 
 -- | Elaborate effects in this type.
 elaborateEffT 
-	:: Monad m
-	=> (?newVarN :: NameSpace -> m Var)
-	-> [Var]		-- ^ constant region variables to make effects for
+	:: (Monad m
+	 ,  ?newVarN :: NameSpace -> m Var)
+	=> [Var]		-- ^ constant region variables to make effects for
 	-> [Var]		-- ^ mutable  region variables to make effects for
 	-> Type			-- ^ the type to elaborate
 	-> m Type		--   the elaborated type
