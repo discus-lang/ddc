@@ -261,25 +261,8 @@ pType_body1
 				(KFun (KFun kRegion kValue) kValue)
 				ts
 
- <|>	-- *Bot
-	(Parsec.try $ do
-		con	<- pConNamed "*Bot"
-		return	$ TBot kValue)
-
- <|>	-- %Bot
-	(Parsec.try $ do
-		con	<- pConNamed "%Bot"
-		return	$ TBot kRegion)
-
- <|>	-- !Bot
-	(Parsec.try $ do
-		con	<- pConNamed "!Bot"
-		return	$ TBot kEffect)
-
- <|>	-- \$Bot
-	(Parsec.try $ do
-		con	<- pConNamed "$Bot"
-		return	$ TBot kClosure)
+ <|>	-- *Bot / %Bot / !Bot / \$Bot
+	Parsec.try pConBottom
 
 	-- VAR
  	-- If a variable had no namespace qualifier out the front the lexer will leave
@@ -295,6 +278,21 @@ pType_body1
  <|>	pRParen pTypeBodyInRParen
 
  <?>    "pType_body1"
+
+
+pConBottom :: Parser Type
+pConBottom
+ =	do	con <-  pConNamed "*Bot"
+ 		return $ TBot kValue
+
+ <|>	do	con <-  pConNamed "%Bot"
+        	return $ TBot kRegion
+
+ <|>	do	con <-  pConNamed "!Bot"
+        	return $ TBot kEffect
+
+ <|>	do	con <-  pConNamed "$Bot"
+        	return $ TBot kClosure
 
 
 pTypeBodyInRParen :: Parser Type
