@@ -49,6 +49,7 @@ dangerT rsMutable fsClosure tt
  	TVar{}			-> Set.empty
 	TCon{}			-> Set.empty
 	TClass{}		-> Set.empty
+	TBot{}			-> Set.empty
 
 	TForall b k t		
 	 -> dangerT rsMutable fsClosure t
