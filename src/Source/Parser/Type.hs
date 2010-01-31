@@ -115,10 +115,7 @@ pVar_withKind1
 pType_bodyFetters :: Parser Type
 pType_bodyFetters
  = do	mContext	<- Parsec.optionMaybe
-			(Parsec.try $ do
-				fs	<- pType_someContext
-				pTok K.RightArrowEquals
-				return	fs)
+				(Parsec.try pType_someContext)
 
   	body		<- pType_body
 
@@ -133,24 +130,23 @@ pType_bodyFetters
 
 pType_someContext :: Parser [Fetter]
 pType_someContext
- =	pType_hsContext
- <|>	pType_context
- <?>	"pType_someContext"
+ = do	fs <- pType_hsContext
+	pTok K.RightArrowEquals
+        return fs
+
+ <|>	pType_context []
+
 
 -- Parse some class constraints written as a Disciple context
 --	C1 => C2 => C3 ...
-pType_context :: Parser [Fetter]
-pType_context
+pType_context :: [Fetter] -> Parser [Fetter]
+pType_context accum
  =	-- CONTEXT => CONTEXT ..
-	(Parsec.try $ do
- 		fs1	<- pType_classConstraint
+	do	fs	<- pType_classConstraint
  		pTok K.RightArrowEquals
-		fs2	<- pType_context
-		return	$ fs1 : fs2)
+		pType_context (fs : accum)
 
- <|>	(do	f	<- pType_classConstraint
-		return	[f])
- <?>    "pType_context"
+ <|>	return accum
 
 -- Parser some class constraints written as a Haskell context
 --	(ClassConstraint ,ClassConstraint*)
