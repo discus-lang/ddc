@@ -109,7 +109,9 @@ trimClosureC2 quant rsData cc
  | otherwise
  = panic stage
  	$ "trimClosureC: not a closure"
-	% "    cc = " % cc 
+	% "    cc = " % cc 	% "\n"
+	% show cc % "\n"
+	
 
 
 trimClosureC' quant rsData cc
@@ -140,6 +142,9 @@ trimClosureC' quant rsData cc
 		(down c)
 		(catMaybes $ map (trimClosureC_f quant rsData) fs) 
 
+	TContext fs t
+	 -> trimClosureC quant rsData t
+	
 	-- Erase the quantifier if the var is no longer free in the type
 	TForall b k t		
 	 -> let quant'	= Set.insert (varOfBind b) quant

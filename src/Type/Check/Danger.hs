@@ -73,6 +73,9 @@ dangerT rsMutable fsClosure tt
 
 	    in	t1Danger
 	    
+	TConstrain{}
+	 -> dangerT rsMutable fsClosure
+	  $ toFetterFormT tt
 	    
 	TApp{}
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt

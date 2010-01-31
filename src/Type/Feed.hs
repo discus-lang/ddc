@@ -138,6 +138,9 @@ feedType'	mParent t
 	 	t3		<- feedType mParent t2
 		return	t3
 
+	TConstrain{}
+	 -> feedType' mParent
+	 $  toFetterFormT t
 
 	TSum k ts
 	 -> do 	cidE		<- allocClass (Just k)

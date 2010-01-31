@@ -288,5 +288,6 @@ isClosure tt
 
 	TFetters t1 _		-> isClosure t1
 	TConstrain t1 _		-> isClosure t1
+	TContext   _  t1	-> isClosure t1
 	_			-> False
 
