@@ -435,7 +435,7 @@ toConstrainFormT tt
 		crsOther	= filter (\f -> (not $ isFWhere f) && (not $ isFMore f)) 
 				$ map toConstrainFormF fs
 
-	    in	TConstrain t (Constraints crsEq crsMore crsOther)
+	    in	addConstraints (Constraints crsEq crsMore crsOther) (down t)
 	
 	TConstrain t cs		-> TConstrain (down t) cs
 	

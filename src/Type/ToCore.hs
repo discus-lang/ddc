@@ -99,6 +99,9 @@ toCoreT' table tt
 
 	    in	T.makeTWhere (addContexts (map toCoreF fsRest1) t') vtsLet
 	
+	T.TConstrain t crs
+	 -> toCoreT' table $ T.toFetterFormT tt
+	
 	T.TSum k ts		-> C.TSum (toCoreK k) (map down ts)
 
 	-- attach :> constraints directly to variables

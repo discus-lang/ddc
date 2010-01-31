@@ -18,9 +18,8 @@
 --		forall a %r1. Thing a %r1 %r2	
 
 module Type.Util.Trim
-	( trimClosureT 
-	, trimClosureC
-	, trimClosureT')
+	( trimClosureT_constrainForm
+	, trimClosureC_constrainForm)
 	
 where
 import Util
@@ -54,19 +53,19 @@ trace ss x
 
 
 -- | Trim the closure portion of this type
-trimClosureT 
+trimClosureT_constrainForm
 	:: Set Type	-- ^ variables that are quantified in this context
 	-> Set Type	-- ^ primary region variables of this context
 	-> Type 
 	-> Type
 
-trimClosureT quant rsData tt
+trimClosureT_constrainForm quant rsData tt
+	= trimClosureT_start quant rsData tt
+
+trimClosureT_start quant rsData tt
   = trace ("trimming " % tt % "\n")
   $ let	tt_trimmed	= trimClosureT' quant rsData tt
-	
-	tt_packFast	= toFetterFormT 
-			$ PackFast.packType
-			$ toConstrainFormT tt_trimmed
+	tt_packFast	= PackFast.packType tt_trimmed
 			
 	tt'		= trace ( "tt_trimmed  = " % tt_trimmed 	% "\n"
 				% "tt_packFast = " % tt_packFast	% "\n\n")
@@ -74,15 +73,10 @@ trimClosureT quant rsData tt
 		
     in	if tt' == tt
     		then tt'
-		else trimClosureT quant rsData tt'
+		else trimClosureT_start quant rsData tt'
 
 trimClosureT' quant rsData tt		
  = case tt of
- 	TFetters t fs
-	  -> let fs'	= catMaybes 
-	  		$ map (trimClosureT_fs quant rsData) fs
-	     in  addFetters fs' t
-
 	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
 	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt quant rsData) crsEq
 		crsMore'	= Map.mapWithKey (trimClosureT_tt quant rsData) crsMore
@@ -93,14 +87,13 @@ trimClosureT' quant rsData tt
 
 
 -- | Trim a closure down to its interesting parts
-trimClosureC :: Set Type -> Set Type -> Closure -> Closure
-trimClosureC quant rsData cc
- = let 	cc_trimmed	= trimClosureC' quant rsData cc
+trimClosureC_constrainForm :: Set Type -> Set Type -> Closure -> Closure
+trimClosureC_constrainForm quant rsData cc
+	= trimClosureC_start quant rsData cc
 
-	cc_packed	= toFetterFormT 
-			$ PackFast.packType 
-			$ toConstrainFormT
-			$ cc_trimmed
+trimClosureC_start quant rsData cc
+ = let 	cc_trimmed	= trimClosureC' quant rsData cc
+	cc_packed	= PackFast.packType $ cc_trimmed
 			
 	cc'		= trace 
  				( "trimClosureC\n"	
@@ -109,10 +102,10 @@ trimClosureC quant rsData cc
 				cc_packed
    in	if cc' == cc
    	 then cc'
-	 else trimClosureC quant rsData cc'
+	 else trimClosureC_start quant rsData cc'
 	
 trimClosureC' quant rsData cc
- = let down	= trimClosureC quant rsData
+ = let down	= trimClosureC_start quant rsData
    in  case cc of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
@@ -140,21 +133,16 @@ trimClosureC' quant rsData cc
 		$  map down
 		$  flattenTSum cc
 
-	TFetters c fs
-	 -> addFetters 
-	 	(catMaybes $ map (trimClosureC_fs quant rsData) fs) 
-	 	(down c)
-
 	TConstrain t crs@Constraints { crsEq, crsMore, crsOther }
-	 -> let	t'		= trimClosureC quant rsData t
-		crsEq'		= Map.mapWithKey (\t1 t2 -> trimClosureT quant rsData t2) crsEq
-		crsMore'	= Map.mapWithKey (\t1 t2 -> trimClosureT quant rsData t2) crsEq
+	 -> let	t'		= trimClosureC_start quant rsData t
+		crsEq'		= Map.mapWithKey (\t1 t2 -> trimClosureT_constrainForm quant rsData t2) crsEq
+		crsMore'	= Map.mapWithKey (\t1 t2 -> trimClosureT_constrainForm quant rsData t2) crsMore
 	    in	addConstraints (Constraints crsEq' crsMore' crsOther) t'
 
 	-- add quantified vars to the set
 	TForall b k t		
 	 -> let quant'	= Set.insert (TVar k (varOfBind b)) quant
-	    in	trimClosureC quant' rsData t
+	    in	trimClosureC_start quant' rsData t
 
 	-- free
 	TFree v1 (TDanger t1 t2)
@@ -220,11 +208,6 @@ trimClosureC_t' tag quant rsData tt
 		-> makeFreeDanger tag rsData tt
 
 	-- Trim the fetters of this data
- 	TFetters c fs
-	 -> let	fs'	= catMaybes $ map (trimClosureC_fs quant rsData) fs
-	    	cBits	= down c
-	    in	map (addFetters fs') cBits
-
 	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
 	 -> let	crsEq'		= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsEq
 		crsMore'	= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsMore
@@ -268,7 +251,7 @@ trimClosureC_t' tag quant rsData tt
 	    in	result
 	
 	TEffect{}		-> []
-	TFree v t		-> [trimClosureC quant rsData tt]
+	TFree v t		-> [trimClosureC_start quant rsData tt]
 
 	_ -> panic stage
 		$ "trimClosureC_t: no match for (" % tt % ")"
@@ -288,29 +271,6 @@ makeTDanger tag r t
 
 
 -- | Trim a fetter of a closure
-trimClosureC_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
-trimClosureC_fs quant rsData ff
- = case ff of
- 	FWhere c1 c2	
-
-	 -- more closure information
-	 |  kindOfType_orDie c1 == kClosure
-	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
-
-	 -- effect information might be referenced in a type constructor
-	 | kindOfType_orDie c1 == kEffect
-	 -> Just $ FWhere c1 c2
-
-	FMore c1 c2
-	 | kindOfType_orDie c1 == kClosure
-	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
-
-	 | kindOfType_orDie c1 == kEffect
-	 -> Just $ FMore c1 c2
-
-	_ -> Nothing
-
-
 trimClosureC_tt 
 	:: Set Type 
 	-> Set Type 
@@ -319,7 +279,7 @@ trimClosureC_tt
 
 trimClosureC_tt quant rsData (c1, c2)
  	| kindOfType_orDie c1 == kClosure
-	= Just (c1, trimClosureC quant rsData c2)
+	= Just (c1, trimClosureC_start quant rsData c2)
 	
 	| kindOfType_orDie c1 == kEffect
 	= Just (c1, c2)
@@ -330,20 +290,6 @@ trimClosureC_tt quant rsData (c1, c2)
 
 -- | Trim the closure in this fetter.
 --	where the fetter was on a type.
-trimClosureT_fs :: Set Type -> Set Type -> Fetter -> Maybe Fetter
-trimClosureT_fs quant rsData ff
- = case ff of
- 	FWhere c1 c2	
-	 |  kindOfType_orDie c1 == kClosure
-	 -> Just $ FWhere c1 $ trimClosureC quant rsData c2
-
-	FMore c1 c2
-	 | kindOfType_orDie c1 == kClosure
-	 -> Just $ FMore c1 $ trimClosureC quant rsData c2
-
-	_ -> Just ff
-
-
 trimClosureT_tt 
 	:: Set Type
 	-> Set Type
@@ -352,7 +298,7 @@ trimClosureT_tt
 
 trimClosureT_tt quant rsData c1 c2
 	| kindOfType_orDie c1 == kClosure
-	= trimClosureC quant rsData c2
+	= trimClosureC_start quant rsData c2
 	
 	| otherwise
 	= c2

@@ -122,6 +122,9 @@ packTypeCrsSub' config crsEq subbed tt
   	  $  "packType: doesn't handle TFetters"
 	  %  " tt = " % tt % "\n"
 	
+	TConstrain (TForall b k t) crs
+	 -> TForall b k (addConstraints crs t)
+	
 	-- In a constrained type, all the equality constraints are inlined,
 	--	but we keep all the "more than" and type class constraints.
 	--
@@ -184,6 +187,12 @@ packTypeCrsSub' config crsEq subbed tt
 	--	doesn't matter. The variables are just for doccumentaiton anyway.
 	TFree v1 t2@(TFree _ t)
 	 -> packTypeCrsSub config crsEq subbed (TFree v1 t)
+
+	TFree v1 t2@(TConstrain t crs)
+	 -> TConstrain (TFree v1 t) crs
+
+--	TFree v1 t2@(TConstrain (TFree v2 t) crs)
+--	 -> packTypeCrsSub config crsEq subbed (TFree v1 (TConstrain t crs))
 
 	TFree v1 t2@(TSum k ts)
 	 | k == kClosure

@@ -65,8 +65,10 @@ checkSchemeDanger errs c
 	= do	trace 	$ "*   checkSchemeDanger\n"
 			% "    t = " % t % "\n"
 
-		let clo	= trimClosureC 
+		let clo	= toFetterFormT
+			$ trimClosureC_constrainForm
 				Set.empty Set.empty 
+			$ toConstrainFormT
 			$ TFree (Var.new "foo") x
 		
 		let ds	= catMaybes

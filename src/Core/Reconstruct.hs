@@ -35,7 +35,7 @@ import Core.Exp
 import Core.Util
 import Core.Plate.FreeVars
 
-import Type.Util		hiding (flattenT, trimClosureC)
+import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
 import Type.Util.Environment
 import Type.Builtin
 

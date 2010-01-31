@@ -149,8 +149,7 @@ extractType_more final varT cid tPack
 				_				-> Nothing)
 		$ slurpParamClassVarsT tPack
 	
-	tStrong	<- liftM toFetterFormT
-		$  strengthenT (Set.fromList tsParam) tPack
+	tStrong	<- strengthenT (Set.fromList tsParam) tPack
 
 	trace	$ "    tsParam   = " % tsParam	% "\n"
 	trace	$ "    tStrong\n"
@@ -159,15 +158,15 @@ extractType_more final varT cid tPack
 	-- Trim closures
 	trace	$ ppr " -- trimming closures\n"	
 	let tTrim	
-		| isClosure tStrong	= trimClosureC Set.empty Set.empty tStrong
-		| otherwise		= trimClosureT Set.empty Set.empty tStrong
+		| isClosure tStrong	= trimClosureC_constrainForm Set.empty Set.empty tStrong
+		| otherwise		= trimClosureT_constrainForm Set.empty Set.empty tStrong
 
 	trace	$ "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"
 	trace	$ ppr " -- done trimming\n"
 
 	-- Cut loops through :> fetters in this type
 	trace	$ ppr " -- cutting loops\n"
-	let tCut	= cutLoopsT tTrim
+	let tCut	= cutLoopsT $ toFetterFormT tTrim
 	trace	$ "    tCut:\n" 	%> prettyTS tCut % "\n\n"
 	
 	let tCutPack	= toFetterFormT $ PackFast.packType $ toConstrainFormT tCut

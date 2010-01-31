@@ -60,6 +60,10 @@ finaliseT' bound def tt
 		t'	= finaliseT' bound' def t
 	    in	TFetters t' fs'
 	    
+	TConstrain t crs
+	 -> finaliseT' bound def
+	 $  toFetterFormT tt
+	
 	TSum  k ts	-> makeTSum k (map down ts)
 
 	TCon{}		-> tt 

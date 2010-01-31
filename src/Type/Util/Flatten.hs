@@ -41,6 +41,10 @@ flattenT' sub block tt
 
 	   in	addFetters fsRest tFlat
 
+	TConstrain t crs
+	 -> flattenT' sub block
+	 $  toFetterFormT tt
+
 	TSum k ts	-> makeTSum  k (map down ts)
 
 	TApp t1 t2	-> TApp (down t1) (down t2)

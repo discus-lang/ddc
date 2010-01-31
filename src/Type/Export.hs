@@ -121,7 +121,7 @@ exportType t
  = do	tPlug		<- plugClassIds [] t
 
 	quantVars	<- gets stateQuantifiedVars
-	let tFinal	= finaliseT quantVars True tPlug
+	let tFinal	= toConstrainFormT $ finaliseT quantVars True tPlug
 
 	trace	$ "*   Export.exportType: final\n"
 		% "    tPlug:\n" 	%> prettyTS tPlug	% "\n"
@@ -129,12 +129,12 @@ exportType t
 
 	let tTrim	
 		= case kindOfType tFinal of
-			Just kC | kC == kClosure	-> trimClosureC Set.empty Set.empty tFinal
-			Just kV | kV == kValue		-> trimClosureT Set.empty Set.empty tFinal
+			Just kC | kC == kClosure	-> trimClosureC_constrainForm Set.empty Set.empty tFinal
+			Just kV | kV == kValue		-> trimClosureT_constrainForm Set.empty Set.empty tFinal
 			Just _				-> tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
-	return tTrim		
+	return $ toFetterFormT tTrim		
  
 
 

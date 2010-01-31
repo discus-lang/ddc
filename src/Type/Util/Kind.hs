@@ -287,6 +287,6 @@ isClosure tt
 	TBot	k 		-> k == kClosure
 
 	TFetters t1 _		-> isClosure t1
-	
+	TConstrain t1 _		-> isClosure t1
 	_			-> False
 

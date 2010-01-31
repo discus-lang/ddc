@@ -117,8 +117,9 @@ loadTypeNodes2 cidBody (cidReach1 : cidsReach)
 		-- chop of fetters attached directly to the type in the node
 		let (tBody, fsLocal) 	
 			= case toConstrainFormT tRefreshed of
-				TConstrain t crs	-> (t, crs)
-				t			-> (t, Constraints Map.empty Map.empty [])
+				TFree v (TConstrain t crs)	-> (TFree v t, crs)
+				TConstrain t crs		-> (t, crs)
+				t				-> (t, Constraints Map.empty Map.empty [])
 
 		var		<- makeClassName cidReach1
 		quantVars	<- gets stateQuantifiedVars
@@ -143,7 +144,7 @@ loadTypeNodes3 cidBody (cidReach1 : cidsReach)
 	
 	-- Trim closures as early as possible to avoid wasing time in later stages.
 	| resultKind k == kClosure
-	= case trimClosureC Set.empty Set.empty $ toConstrainFormT tBody of
+	= case trimClosureC_constrainForm Set.empty Set.empty $ toConstrainFormT tBody of
 		TFree _ (TBot _)	
 		 -> loadTypeNodes cidBody cidsReach 
 			fsTFree fsAccEq fsAccMore fsAccOther

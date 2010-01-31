@@ -137,6 +137,10 @@ cutT cid cidsEntered tt
 	-- These fetters are wrapped around a type in the RHS of our traced type
 	--	they're from type which have already been generalised
 	TFetters t fs		-> TFetters 	(down t) (map (cutF_follow cidsEntered) fs)
+	TConstrain t crs
+	 -> toConstrainFormT 
+	  $ cutT cid cidsEntered 
+	  $ toFetterFormT tt
 
 	TSum  k ts		-> TSum 	k (map down ts)
 	TVar{}			-> tt
@@ -169,7 +173,8 @@ cutT cid cidsEntered tt
 	TError{}		-> tt
  	
 	_ -> panic stage
-		$ "cutT: no match for " % tt
+		$ "cutT: no match for " % tt % "\n"
+		% show tt
 
 
 -- | Replace TClasses in the fetter which are members of the set with Bottoms
