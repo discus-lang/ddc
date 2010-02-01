@@ -18,7 +18,7 @@ import Type.Exp
 import Util
 import Data.Set			(Set)
 import Data.Map			(Map)
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

@@ -12,7 +12,7 @@ module Core.BoundUse
 where
 
 import Core.Exp
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 import Shared.Pretty

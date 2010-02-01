@@ -11,7 +11,7 @@ where
 import Util
 import Type.Exp
 import Type.Plate.Trans
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Set	as Set
 import Data.Set			(Set)
 

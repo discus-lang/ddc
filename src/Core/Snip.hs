@@ -23,7 +23,7 @@ import qualified Shared.VarUtil	as Var
 import Util
 import Data.Set			(Set)
 import Data.Map			(Map)
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Debug.Trace	
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map

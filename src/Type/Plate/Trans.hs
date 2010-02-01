@@ -22,7 +22,7 @@ import qualified Util.Data.Bag 	as Bag
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 -----
 class Monad m => TransM m a 

@@ -27,7 +27,7 @@ import Util
 import Data.Set			(Set)
 import Data.Map			(Map)
 import Data.Sequence		as Seq
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Foldable	as Foldable

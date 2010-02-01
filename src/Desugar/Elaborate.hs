@@ -24,7 +24,7 @@ import DDC.Base.NameSpace
 
 import Util
 import Data.Set			(Set)
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Set	as Set
 import qualified Debug.Trace
 

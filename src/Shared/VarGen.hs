@@ -13,7 +13,7 @@ module Shared.VarGen
 where
 
 -----
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Shared.Var as Var
 import Shared.Var (Var, VarBind)
 

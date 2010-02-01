@@ -30,7 +30,7 @@ import Util
 
 import Data.Char	hiding (isSymbol)
 import qualified Data.Map	as Map
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 -----
 type VarGenM = State VarBind

@@ -33,7 +33,7 @@ import Core.Exp
 import Shared.Error
 
 import Util
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 -----
 stage	= "Core.Plate.Trans"

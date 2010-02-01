@@ -32,7 +32,7 @@ import Util.Data.Map		(Map)
 
 import qualified Debug.Trace	as Debug
 
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 
 -----

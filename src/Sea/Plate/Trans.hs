@@ -20,7 +20,7 @@ where
 import Sea.Exp
 
 import Util
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 
 -----

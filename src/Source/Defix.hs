@@ -33,7 +33,7 @@ where
 
 -----
 import qualified Debug.Trace
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 import Util
 

@@ -16,7 +16,7 @@ import Shared.Exp
 import Type.Exp
 
 import Util
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 -----
 class Monad m => TransM m a1 a2 exp where

@@ -1,5 +1,5 @@
 module Util
-	( module Control.Monad.State
+	( module Control.Monad.State.Strict
 	, module Util.Data.Tuple
 	, module Util.Data.List
 	, module Util.Data.Maybe
@@ -12,7 +12,7 @@ module Util
 	, Set)
 where
 
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Util.Data.Tuple
 import Util.Data.List
 import Util.Data.Maybe

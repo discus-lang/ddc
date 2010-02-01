@@ -11,7 +11,7 @@ import Core.Exp
 import Util
 
 import Data.Map			(Map)
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Map	as Map
 import qualified Shared.Var	as Var
 import qualified Debug.Trace	as Debug

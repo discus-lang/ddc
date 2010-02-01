@@ -34,7 +34,7 @@ import qualified Shared.VarPrim		as Var
 import Util
 import Data.Map				(Map)
 import Data.Set				(Set)
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified			Debug.Trace
