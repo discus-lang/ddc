@@ -261,7 +261,7 @@ pType_body1
 				(KFun (KFun kRegion kValue) kValue)
 				ts
 
- <|>	-- *Bot / %Bot / !Bot / \$Bot
+ <|>	-- \*Bot / %Bot / !Bot / \$Bot
 	Parsec.try pConBottom
 
 	-- VAR

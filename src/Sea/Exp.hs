@@ -28,48 +28,61 @@ type Tree a
 	= [Top a]
 
 -- | Top level definitions.
-data Top a	
-	= PNil					-- ^ A missing thing / hole.
-						--	Used for debugging.
+data Top a
+	-- | A missing thing \/ hole (used for debugging).
+	= PNil
 
-	| PData					-- ^ Data type definition.
+	-- | Data type definition.
+	| PData
 		Var				-- 	Type constructor.
 		[(Var, [DataField Var Type])]	-- 	[(ctor name, datafields)]
 
-	| PCtor					-- ^ A constructor definition.
+	-- | A constructor definition.
+	| PCtor
 		Var 				--	construcor name
 		[Type] 				--	parameter types
 		Type				-- 	result type
 
 	-- supers
-	| PProto				-- ^ A C prototype.
+	-- ======
+
+	-- | A C prototype.
+	| PProto
 		Var 				--	variable name
 		[Type] 				--	argument types
 		Type				--	result type
 
-	| PSuper				-- ^ Code for a supercombinator
+	-- | Code for a supercombinator
+	| PSuper
 		Var				--	variable name
 		[(Var, Type)] 			--	parameter names and types
 		Type 				--	result type
 		[Stmt a]			--	statements
 
 	-- cafs
+	-- ====
+
 	| PCafProto	Var Type		-- ^ The prototype for a CAF slot index.
 	| PCafSlot	Var Type		-- ^ A var which holds a CAF slot index.
 	| PCafInit	Var Type [Stmt a]	-- ^ CAF initialisation code.
 
 	-- atoms
-	--	Atoms are constructors with arity 0, 
-	--	like True and Nil.
-	| PAtomProto 				-- ^ Atom prototype
+	-- =====
+	--	Atoms are constructors with arity 0, like True and Nil.
+
+	-- | Atom prototype
+	| PAtomProto
 		Var 				--	variable name
 		Type				--	type of atom
 
-	| PAtom	 				-- ^ Atom definition
+	-- | Atom definition
+	| PAtom
 		Var 				--	variable name
 		Type				--	type of atom
 
-	| PStruct				--  Structure definition
+
+	-- | Structure definition
+	| PStruct
 		Var				-- 	type name
 		[(Var, Type)]			-- 	(label, type)
 

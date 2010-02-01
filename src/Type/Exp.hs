@@ -155,7 +155,7 @@ data Kind
 --	TODO: 	These aren't used yet
 --		We need to replace the ctors in the Kind type with references to these ones.
 data KiCon
-	-- ^ A Witness Kind Constructor / Type Class Constructor defined in the source.
+	-- | A Witness Kind Constructor / Type Class Constructor defined in the source.
 	--	These aren't interpreted in any special way by the compiler.
 	= KiCon Var
 
@@ -164,25 +164,25 @@ data KiCon
 
 	-- Each of these base kinds are also their own superkind.
 	-- For example: * :: *  and % :: %
-	| KiConValue			-- the kind of value types
-	| KiConRegion			-- the kind of region types
-	| KiConEffect			-- the kind of effect types
-	| KiConClosure			-- the kind of closure types
+	| KiConValue			-- ^ The kind of value types.
+	| KiConRegion			-- ^ The kind of region types.
+	| KiConEffect			-- ^ The kind of effect types.
+	| KiConClosure			-- ^ The kind of closure types.
 	
-	-- | Mutability of regions.
-	| KiConMutable			-- for a single region.
-	| KiConMutableT			-- for all the regions in a type.
+	-- Mutability of regions.
+	| KiConMutable			-- ^ Mutability for a single region.
+	| KiConMutableT			-- ^ Mutability for all the regions in a type.
 
-	-- | Constancy of regions.
-	| KiConConst			-- for a single region
-	| KiConConstT			-- for all the regions in a type.
+	-- Constancy of regions.
+	| KiConConst			-- ^ Constancy for a single region
+	| KiConConstT			-- ^ Constancy for all the regions in a type.
 
-	-- | Region might contain thunks.
-	| KiConLazy			-- for a single region
-	| KiConLazyH			-- for the primary region of a type.
+	-- Region might contain thunks.
+	| KiConLazy			-- ^ Thunks for a single region
+	| KiConLazyH			-- ^ Thunks for the primary region of a type.
 
-	-- | Region does not contain thunks.
-	| KiConDirect			-- for a single region.
+	-- Region does not contain thunks.
+	| KiConDirect			-- ^ Absence of thunks for a single region.
 		
 	-- | Given effect is pure.
 	| KiConPure
@@ -259,7 +259,7 @@ data Type
 						--	class that has not been constrained by a constructor.
 	
 	| TEffect	Var [Type]		-- ^ An effect constructor
-	| TFree		Var Type		-- ^ An tagged object which is free in the closure.
+	| TFree		Var Type		-- ^ A tagged object which is free in the closure.
 						--	The tag should be a Value var.
 						--	The type parameter should be a value type, region or closure.
 
@@ -284,7 +284,7 @@ data Type
 	| TVarMore	Kind	Var	Type
 
 	-- Witness Joining
-	--	Used in core langauge only.
+	--	Used in core language only.
 	--	We could perhaps create a family of specific joining functions
 	--	instead but dealing with all the different combinations of argument
 	--	types would be too much pain..
