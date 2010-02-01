@@ -1,0 +1,15 @@
+import Data.Array
+
+data Entry k v = Entry {
+        key   :: k;
+        value :: v
+    }
+
+data Hashtable k v = Hashtable {
+        hash    :: k -> Int;
+        entries :: Array (List (Entry k v))
+    }
+
+hashtable_new :: (k -> Int) -> Int -> Hashtable k v
+hashtable_new hash capacity = Hashtable hash (new&{Array} capacity)
+
