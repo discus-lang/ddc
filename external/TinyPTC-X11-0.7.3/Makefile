@@ -89,4 +89,3 @@ clean:
 	$(RM) ptctarget.o .depend mmx.i tinyptc_wrap.[co] TinyPTC.py*
 	$(RM) _TinyPTC.so
 
-include .depend
