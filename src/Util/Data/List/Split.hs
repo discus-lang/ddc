@@ -45,10 +45,9 @@ chopOnLeft c xx		= makeSplits (splitOnLeft c) xx
 
 -- @ chopOnLeft is invertable
 test_chopOnLeft_inv
-	= testProp2 "chopOnLeft_inv"
-	$  \(n :: Int) (xx :: [Int]) 
-	->  elem n xx
-	==> xx == concat (chopOnLeft n xx)
+	= testBool "chopOnLeft_inv"
+	$  \(n :: Int) (xx :: [Int])
+	-> xx == concat (chopOnLeft (xx !! mod n (length xx)) xx)
 
 
 -- Split Right ---------
@@ -79,10 +78,9 @@ chopOnRight c xx	= makeSplits (splitOnRight c) xx
 
 -- @ chopOnRight is invertable
 test_chopOnRight_inv
-	= testProp2 "chopOnRight_inv"
+	= testBool "chopOnRight_inv"
 	$  \(n :: Int) (xx :: [Int]) 
-	->  elem n xx
-	==> xx == concat (chopOnRight n xx)
+	-> xx == concat (chopOnRight (xx !! mod n (length xx)) xx)
 	
 -----
 -- Split Functions
@@ -127,10 +125,10 @@ breakOns  c	= makeBreaks (splitOnRight c)
 
 -- @ breakOns is invertable
 test_breakOns_inv
-	= testProp2 "breakOns_inv"
+	= testBool "breakOns_inv"
 	$ \(n :: Int) (xx :: [Int])
-	->  elem n xx
-	==> xx == concat (intersperse [n] $ breakOns n xx)
+	-> xx ==	let nx = xx !! (mod n (length xx))
+			in concat (intersperse [nx] $ breakOns nx xx)
 
 
 -- | Break a list into comonents, using this function to choose the separator.
