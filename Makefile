@@ -135,7 +135,6 @@ bin/war : $(war_hs)
 .PHONY	: test
 test	: bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests ------------------------------------------------"
-	bin/ddc --test
 	@echo
 	bin/war test
 	@echo

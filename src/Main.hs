@@ -29,17 +29,7 @@ import qualified Data.Map		as Map
 main :: IO ()
 main	
  = do	argStrs	<- System.getArgs
-
-	-- If we have a single --test option, then override everything else
-	--	and run all our QuickCheck tests.
- 	case argStrs of 
-	 ["--test"]	-> runTests
-	 _		-> ddc argStrs
-
-
--- | Run all our QuickCheck tests.
-runTests :: IO ()
- =	checkTests test_Util
+	ddc argStrs
 
 
 -- | Run the compiler proper.
