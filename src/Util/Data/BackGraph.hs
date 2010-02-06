@@ -39,16 +39,24 @@ testBackGraph
 	, (9, BackNode [4]) ]
 
 
--- TODO: This generates a graph with cycles..
---	Our workgraph code doesn't handle that.
+-- Generate an arbitrary graph that is guaranteed to be acyclic.
+--
+-- Keys are strickly ordered [0..n] and all BackNodes can only link to higher
+-- numbered nodes thus guaranting no cycles. Now you may think these graphs
+-- are no longer representative of real graphs, but you'd be wrong. All we're
+-- doing here is generating a graph where the nodes are sorted in topological
+-- order. Any real acyclic graph can have its nodes reordered so that is has
+-- this property.
+--
 instance Arbitrary (BackGraph Int) where
  arbitrary 
-  = do	n :: Int	<- arbitrary
-	keys		<- replicateM n arbitrary
+  = do	rand :: Int	<- arbitrary
+  	let n		= (abs rand) `mod` 30
+	let keys	= [0 .. (n * n)]
 
 	let makeNode k 	= do
-		bs	<- replicateM n (elements keys)
-		return	(k, BackNode (nub bs \\ [k]))
+		bs	<- replicateM 8 (elements keys)
+		return	(k, BackNode $ filter (\x -> x > k) $ nub bs)
 
 	nodes		<- mapM makeNode keys
-	return	$ BackGraph $ Map.fromList nodes
+	return	$! BackGraph $ Map.fromList nodes
