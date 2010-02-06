@@ -312,6 +312,7 @@ runTest testWay@(test, way)
 	TestCompile{}		-> testCompile      test way
 	TestCompileError{}	-> testCompileError test way
 	TestDiff{}		-> testDiff	    test way
+	TestHsBuild{}		-> testHsBuild	    test way
 	TestClean{}		-> testClean        test way
 
 -- Pretty -------------------------------------------------------------------------------------------

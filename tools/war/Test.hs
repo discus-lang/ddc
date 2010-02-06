@@ -10,6 +10,7 @@ module Test
 	, module Test.Compile
 	, module Test.CompileError 
 	, module Test.Run
+	, module Test.HsBuild
 	, module Test.Diff
 	, module Test.Clean)
 
@@ -26,6 +27,7 @@ import Test.ShellError
 import Test.Compile
 import Test.CompileError
 import Test.Run
+import Test.HsBuild
 import Test.Diff
 import Test.Clean
 

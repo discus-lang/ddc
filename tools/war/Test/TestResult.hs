@@ -35,6 +35,9 @@ data Test
 	-- | Run a shell script expecting it to fail (return nonzero)
 	| TestShellError	FilePath
 
+	-- | Compile and run a haskell program
+	| TestHsBuild		FilePath
+
 	-- | Compile a Module.ds file
 	| TestCompile  	 	FilePath
 
@@ -73,6 +76,7 @@ instance Ord Test where
 testPath test
  = case test of
 	TestBuild 	 path		-> path
+	TestHsBuild 	 path		-> path
 	TestBuildError	 path		-> path
 	TestShell        path		-> path
 	TestShellError	 path		-> path
@@ -86,6 +90,7 @@ testPath test
 testTag test
  = case test of
 	TestBuild{}		-> "build"
+	TestHsBuild{}		-> "build"
 	TestBuildError{}	-> "build error"
 	TestShell{}		-> "shell"
 	TestShellError{}	-> "shell error"
@@ -100,6 +105,7 @@ testTag test
 pprTest :: Test -> String
 pprTest test
  = case test of	
+	TestHsBuild	path 	-> padR formatPathWidth path ++ " build   "
 	TestBuild	path 	-> padR formatPathWidth path ++ " build   "
 	TestBuildError	path 	-> padR formatPathWidth path ++ " error   "
 	TestShell       path 	-> padR formatPathWidth path ++ " shell   "

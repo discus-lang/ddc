@@ -205,6 +205,8 @@ cleanWar :
 	@find library test \
 			-name "*.dump-*.*"  \
 		-o	-name "*.graph-*.dot" \
+		-o	-name "*.hi"    \
+		-o	-name "build.mk" \
 		-o	-name "*.di"    \
 		-o	-name "*.gdl"   \
 		-o	-name "*.o"     \

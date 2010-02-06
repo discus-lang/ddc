@@ -31,6 +31,17 @@ getTestsInDir config dirPath
 				filesAll
 
 
+	-- | If we have a Main.hs, then compile and run that.
+	--
+	let gotMainHS		 = any (isSuffixOf "/Main.hs") files
+	let testsHaskellBuildRun
+		= listWhen gotMainHS
+		$ chainTests	[ TestHsBuild	(dirPath ++ "/Main.hs")
+				, TestRun	(dirPath ++ "/Main.bin") 
+						(NoShow (\c -> case c of 
+							ExitSuccess   -> True
+							ExitFailure _ -> False))]
+
 	-- | If we have a Main.sh, then run that
 	--	If we have a Main.error.check, we're expecing the script to fail.
 	--
@@ -133,7 +144,7 @@ getTestsInDir config dirPath
 			[ testsBuildRun,	testsBuildError
 			, testsShell,		testsShellError
 			, testsCompile,		testsCompileError
-			, testsStdout ]
+			, testsStdout,		testsHaskellBuildRun]
 
 	let testsHereExpanded
 		= expandWays (configWays config) testsAllWays
