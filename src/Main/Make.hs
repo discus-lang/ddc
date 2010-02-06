@@ -53,13 +53,8 @@ ddcMake args verbose setup linkExecutable files
 	graph		<- scrapeRecursive args setup' roots
 
 	-- if child modules need rebuilding then parents do
-	graph3		<- foldM (invalidateParents args) graph
-			$ map scrapeModuleName roots
+	let graph3 = propagateNeedsRebuild graph
 
-	-- dump the scrape graph
---	putStr	$ pprStrPlain
---		$ (punc "\n\n" $ map show $ Map.elems graph') % "\n"
-	
 	-- count the number of modules needing to be rebuilt
 	let buildCount	= length
 	 		$ filter scrapeNeedsRebuild 

@@ -7,7 +7,7 @@ module Module.ScrapeGraph
 	( ScrapeGraph
 	, scrapeGraphInsert
 	, scrapeRecursive
-	, invalidateParents)
+        , propagateNeedsRebuild)
 where
 import Module.Scrape
 
@@ -86,28 +86,45 @@ scrapeRecursive' args setup graph ((sParent, v):vs)
 				  ++ vs)
 
 
--- Invalidate parents
---	If some child module needs rebuilding then all its parents do as well.
---	TODO: this'll die if there are cycles in the graph
---	TODO: this is inefficient if the graph is lattice-like instead of a simple tree
+-- Invert the ScrapeGraph to create a dependency graph.
 --
-invalidateParents :: [Arg] -> ScrapeGraph -> Module -> IO ScrapeGraph
-invalidateParents args graph mod
- = do	let	Just scrape	= Map.lookup mod graph
-	
-	-- decend into all the children
-	graph'	<- foldM (invalidateParents args) graph (scrapeImported scrape) 
+dependencyGraph :: ScrapeGraph -> Map Module (Bool, [Module])
+dependencyGraph graph
+ = do	let x = foldl' builder Map.empty
+			$ concat
+			$ map (\ (k, v) -> map (\i -> (i, needsRebuild i, k)) (scrapeImported v))
+			$ Map.toList graph
+	x
+	where 	builder m (k, r, v) = case Map.lookup k m of
+			Nothing -> Map.insert k (r, [v]) m
+			Just _ -> Map.adjust (\(rm, vl) -> (rm || r, v : vl)) k m
+		needsRebuild k = case Map.lookup k graph of
+			Nothing -> False
+			Just v -> scrapeNeedsRebuild v
 
-	-- if any of the imports need rebuilding then this one does to
-	let rebuild	
-		=  (scrapeNeedsRebuild scrape)
-		|| (or 	$ map scrapeNeedsRebuild 
-			$ map (\m -> let Just sc = Map.lookup m graph' in sc)
-			$ scrapeImported scrape)
+-- This assumes a graph without cycles.
+--
+needsRebuild :: Bool -> Map Module (Bool, [Module]) -> [Module] -> Module -> [Module]
+needsRebuild force map accum mod
+ = do	case (force, Map.lookup mod map) of
+ 	  (_, Nothing) -> accum
+	  (True, Just (_, deps)) -> foldl' (needsRebuild True map) (deps ++ accum) deps
+	  (False, Just (True, deps)) -> foldl' (needsRebuild True map) (deps ++ accum) deps
+	  (False, Just (False, deps)) -> accum
 
-	let scrape'	= scrape { scrapeNeedsRebuild = rebuild }
+-- Take a Scrape graph walk the dependencies and set the scrapeNeedsRebuild
+-- flag as needed.
+--
+propagateNeedsRebuild :: ScrapeGraph -> ScrapeGraph
+propagateNeedsRebuild graph
+ = 	let	depGraph	= dependencyGraph graph
+		rebuilds	= nub
+ 				$ foldl' (needsRebuild False depGraph) []
+				$ map fst
+				$ Map.toList depGraph
 
-	scrapeGraphInsert args mod scrape' graph'
+	in foldl' (\ g k -> Map.adjust (\v -> v { scrapeNeedsRebuild = True }) k g) graph rebuilds
+
 
 
 -- A replacement for Map.insert for the ScrapeGraph.
