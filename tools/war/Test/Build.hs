@@ -50,6 +50,7 @@ testBuild test@(TestBuild mainDS) way
 
 	-- build the test
 	let cmdBuild	= "bin/ddc"
+			++ " +RTS -M50M -RTS"   -- Limit heap size
 			++ " -make " ++ mainDS
 			++ " -o " ++ mainBin
 			++ " "    ++ (catInt " " $ wayOptsComp way)
