@@ -1,0 +1,21 @@
+ddc: ERROR
+./test/02-Error/30-Typing/Closure/T84-LateExport/Main.ds:5:8
+    The type inferencer made an incorrect assumption about the
+        mutability of 'ref', (and backtracking isn't implemented).
+
+        we were using this type scheme:
+            ref
+              :: forall tTS4
+              .  Base.Ref %108 (tTS4 -> tTS4)
+
+        but a new
+              constraint: Base.Mutable %108
+         from the use of: (#=)
+                      at: ./test/02-Error/30-Typing/Closure/T84-LateExport/Main.ds:7:16
+
+        was discovered, which means 'tTS4' was not actually
+        safe to generalise.
+
+    Please add a type signature for 'ref' which provides this
+        mutability constraint.
+

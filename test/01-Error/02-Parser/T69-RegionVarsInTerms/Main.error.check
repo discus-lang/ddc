@@ -1,3 +1,0 @@
-ddc: "./test/01-Error/02-Parser/T69-RegionVarsInTerms/Main.ds" (line 3, column 10):
-unexpected a
-expecting pMatchAlt

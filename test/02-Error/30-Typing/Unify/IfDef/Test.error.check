@@ -1,0 +1,15 @@
+ddc: ERROR
+./test/02-Error/30-Typing/Unify/IfDef/Test.ds:6:13
+    Type mismatch during unification.
+          cannot match: Base.Int32
+                  with: Base.Bool
+
+              the use of: x
+                 at type: Base.Int32
+                      at: ./test/02-Error/30-Typing/Unify/IfDef/Test.ds:6:13
+
+        conflicts with, 
+          object of if-then-else expression
+           which must be: Bool
+                      at: ./test/02-Error/30-Typing/Unify/IfDef/Test.ds:6:10
+

@@ -1,0 +1,12 @@
+ddc: ERROR
+./test/02-Error/30-Typing/Purity/ConstWrite/Test.ds:13:18
+    Conflicting region constraints.
+              constraint: Base.Const %151
+         from the use of: addS2
+                      at: ./test/02-Error/30-Typing/Purity/ConstWrite/Test.ds:13:18
+
+     conflicts with,
+              constraint: Base.MutableT *209
+         from the use of: (:=)
+                      at: ./test/02-Error/30-Typing/Purity/ConstWrite/Test.ds:15:16
+

@@ -1,4 +1,0 @@
-ddc: ERROR
-./test/01-Error/30-Typing/Grind/FieldNotPresent/Main.ds:13:39
-    Type 'Main.Fish' has no projection named '.tastiness'
-

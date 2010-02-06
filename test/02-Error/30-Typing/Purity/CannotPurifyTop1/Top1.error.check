@@ -1,0 +1,12 @@
+ddc: ERROR
+./test/02-Error/30-Typing/Purity/CannotPurifyTop1/Top1.ds:3:15
+    Cannot purify effect `System.Console.!Console'.
+
+              the use of: print
+             with effect: System.Console.!Console
+                      at: ./test/02-Error/30-Typing/Purity/CannotPurifyTop1/Top1.ds:3:15
+
+     conflicts with,
+              the use of: mapL
+                      at: ./test/02-Error/30-Typing/Purity/CannotPurifyTop1/Top1.ds:3:10
+

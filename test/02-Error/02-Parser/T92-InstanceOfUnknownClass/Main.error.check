@@ -1,0 +1,4 @@
+ddc: ERROR
+./test/02-Error/02-Parser/T92-InstanceOfUnknownClass/Main.ds:4:9
+     Undefined class variable 'Wibble'.
+

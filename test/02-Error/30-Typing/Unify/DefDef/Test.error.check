@@ -1,0 +1,15 @@
+ddc: ERROR
+./test/02-Error/30-Typing/Unify/DefDef/Test.ds:8:14
+    Type mismatch during unification.
+          cannot match: Data.String.String
+                  with: Base.Int32
+
+              the use of: f2
+                 at type: Data.String.String
+                      at: ./test/02-Error/30-Typing/Unify/DefDef/Test.ds:8:14
+
+        conflicts with, 
+              the use of: f1
+                 at type: Base.Int32
+                      at: ./test/02-Error/30-Typing/Unify/DefDef/Test.ds:8:10
+

@@ -1,0 +1,19 @@
+ddc: ERROR
+./test/02-Error/20-Desugar/Patterns/Arity/Arity.ds:20:8
+    Wrong number of arguments for constructor match.
+         constructor: Arity.ThingC2
+          defined at: ./test/02-Error/20-Desugar/Patterns/Arity/Arity.ds:14:10
+                 has: 3 arguments, but has been used here with 4.
+
+./test/02-Error/20-Desugar/Patterns/Arity/Arity.ds:8:8
+    Wrong number of arguments for constructor match.
+         constructor: Data.List.Nil
+          defined at: ./library/Data/List.di:25:10
+                 has: 0 arguments, but has been used here with 1.
+
+./test/02-Error/20-Desugar/Patterns/Arity/Arity.ds:7:8
+    Wrong number of arguments for constructor match.
+         constructor: Data.List.Cons
+          defined at: ./library/Data/List.di:27:10
+                 has: 2 arguments, but has been used here with 3.
+
