@@ -82,7 +82,7 @@ GCC_FLAGS	:= -std=c99 -Wundef -g
 
 # -- Profiling compile
 else ifeq "$(BuildFlavour)" "devel_prof"
-GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O2 -prof 
+GHC_FLAGS	:= $(GHC_LANGUAGE) -tmpdir /tmp -O2 -prof -auto-all
 GCC_FLAGS	:= -std=c99 -Wundef -g -pg
 
 # -- For Haskell Program Coverage
