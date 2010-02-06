@@ -76,9 +76,7 @@ src_obj		=  $(patsubst %.hs,%.o,$(src_hs_existing))
 
 bin/ddc	: make/Makefile.deps $(src_obj)
 	@echo "* Linking $@"
-	$(GHC) -o bin/ddc $(GHC_FLAGS) \
-		-package unix -package mtl -package containers -package parsec -package regex-compat -package QuickCheck \
-		$(src_obj)
+	$(GHC) -o bin/ddc $(GHC_FLAGS) $(DDC_PACKAGES) $(src_obj)
 	@echo	
 
 

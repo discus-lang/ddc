@@ -21,6 +21,13 @@ GHC_LANGUAGE	:= \
 	-XNamedFieldPuns \
 	-XExistentialQuantification
 
+DDC_PACKAGES	:= \
+	-package unix \
+	-package mtl \
+	-package containers \
+	-package parsec \
+	-package regex-compat \
+	-package QuickCheck
 
 # -- Warnings ----------------------------------------------------------------------------
 # -- 	GHC warnings we compile with.
