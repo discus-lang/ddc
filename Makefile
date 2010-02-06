@@ -202,7 +202,7 @@ cleanLibrary :
 .PHONY  : cleanWar
 cleanWar :
 	@echo "* Cleaning war"
-	@find library test \
+	@find test \
 			-name "*.dump-*.*"  \
 		-o	-name "*.graph-*.dot" \
 		-o	-name "*.hi"    \
@@ -225,7 +225,7 @@ cleanWar :
 
 # -- clean up everything
 .PHONY : clean
-clean  : cleanWar cleanRuntime
+clean  : cleanWar cleanRuntime cleanLibrary
 	@echo "* Cleaning leftovers"
 	@find . \
 			-name "*.o" \
