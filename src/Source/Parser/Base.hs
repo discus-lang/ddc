@@ -94,7 +94,8 @@ pModuleNameQual = token parseMod
 
 pQualified :: Parser Var -> Parser Var
 pQualified parser
- = 	(Parsec.try $ do
+ = 	Parsec.try
+	  (do
  		mods	<- pModuleNameQual
  		pTok K.Dot
 		v	<- parser
@@ -129,7 +130,7 @@ pOfSpace spaceWant parser
 pVar :: Parser Var
 pVar =
         pVarPlain
-  <|>	(Parsec.try $ pRParen pSymbol)
+  <|>	Parsec.try (pRParen pSymbol)
   <?>   "pVar"
 
 -- | Parse a plain variable

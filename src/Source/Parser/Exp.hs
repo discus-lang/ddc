@@ -32,8 +32,7 @@ pExp
 
  	-- while ( EXP ) EXP  /  while EXP1 EXP
 	do	tok	<- pTok K.While
-		exp1	<-	do	g	<- pRParen pExp
-			      		return	g
+		exp1	<-	pRParen pExp
 			<|> 	pExp1
 
 		exp2	<- pExp
@@ -41,8 +40,7 @@ pExp
 
  <|>	-- when ( EXP ) EXP  /  when EXP1 EXP
 	do	tok	<- pTok K.When
-		exp1	<-	do	g	<- pRParen pExp
-					return	g
+		exp1	<-	pRParen pExp
 			<|>	pExp1
 
 		exp2	<- pExp
@@ -50,8 +48,7 @@ pExp
 
  <|>	-- unless ( EXP ) EXP  /  when EXP1 EXP
 	do	tok	<- pTok K.Unless
-		exp1	<-	do	g 	<- pRParen pExp
-					return	g
+		exp1	<-	pRParen pExp
 			<|>	pExp1
 
 		exp2	<- pExp
@@ -69,12 +66,12 @@ pExp2 :: Parser (Exp SP)
 pExp2
  = 	-- projections
  	-- EXP . EXP   /   EXP . (EXP)  /  EXP # EXP
- 	(Parsec.try $ do
-	 	exp	<- chainl1_either pExp1' pProj
+ 	Parsec.try
+	  (do	exp	<- chainl1_either pExp1' pProj
  		return	$ stripXParens exp)
 
-  <|>	do	exp	<- pExp1
-		return	exp
+  <|>	pExp1
+
   <?>   "pExp2"
 
 -- | Parse an expression that can be used in an application
@@ -87,13 +84,12 @@ pExp1' :: Parser (Exp SP)
 pExp1'
  =
 	do	tok	<- pTok K.SBra
-	  	exp	<- pListContents (spTP tok)
-        	return	$ exp
+		pListContents (spTP tok)
 
   <|>	-- VAR & { TYPE }								-- NOT FINISHED
  	-- overlaps with VAR
-	(Parsec.try $ do
-		field	<- pOfSpace NameField $ pQualified pVar
+	Parsec.try
+	  (do	field	<- pOfSpace NameField $ pQualified pVar
 		pTok K.And
 		t	<- pCParen pType_body
 		return	$ XProjT (spV field) t (JField (spV field) field))
@@ -118,7 +114,7 @@ pExp1'
 
   <|>	-- ()
   	do	tok	<- pTok K.Unit
-		return	$ XVar (spTP tok) (Var.primUnit)
+		return	$ XVar (spTP tok) Var.primUnit
 
   <|>	-- lit
   	do	(lit, sp) <- pLiteralFmtSP
@@ -173,7 +169,7 @@ pExp1'
 		mWith	<-	Parsec.optionMaybe
                 		(do	pTok K.With
 					stmts	<- pCParen (Parsec.sepEndBy1 pStmt pSemis)
-				 	return	$ (XDo (spTP tok) stmts))
+				 	return	$ XDo (spTP tok) stmts)
 
 		return	$ XTry (spTP tok) exp1 alts mWith
 
@@ -187,14 +183,12 @@ pExp1'
 		return	$ XBreak (spTP tok)
 
   <|>	do	tok	<- pTok K.BackSlash
-  		exp	<- pBackslashExp (spTP tok)
-                return	$ exp
+		pBackslashExp (spTP tok)
 
   <|>	-- Starts with a K.RBra.
 	do	tok	<- pTok K.RBra
   		exp1	<- pExp
-		expr	<- pBracketExp (spTP tok) exp1
-		return 	$ expr
+		pBracketExp (spTP tok) exp1
 
   <?>   "pExp1'"
 
@@ -230,8 +224,7 @@ pListContents startPos =
 
   <|>	-- Either a list, a list comprehension
   	do	first	<- pExp
-	        exp	<- pListContentsHaveOne startPos first
-		return $ exp
+		pListContentsHaveOne startPos first
 
   <?>	"pListContents"
 
@@ -249,14 +242,12 @@ pListContentsHaveOne startPos first =
 
   <|>	-- Have range expression without step.
 	do	pTok K.DotDot
-        	exp <- pListRangeOne startPos first
-                return exp
+		pListRangeOne startPos first
 
   <|>	-- Have one element and Comma
 	do	pTok K.Comma
         	second	<- pExp
-	        exp	<- pListContentsHaveTwo startPos first second
-		return exp
+		pListContentsHaveTwo startPos first second
 
   <?>	"pListContentsHaveOne"
 
@@ -275,8 +266,7 @@ pListRangeOne startPos first =
 pListContentsHaveTwo :: SP -> Exp SP -> Exp SP -> Parser (Exp SP)
 pListContentsHaveTwo startPos first second =
 	do	pTok K.DotDot
-		exp <- pListRangeTwo startPos first second
-		return $ exp
+		pListRangeTwo startPos first second
 
   <|>	do	pTok K.SKet
 		return $ XList startPos [first, second]
@@ -308,10 +298,10 @@ pExpRHS
 	mWhere	<- Parsec.optionMaybe
         		(do 	tok 	<- pTok K.Where
 				stmts	<- pCParen $ Parsec.sepEndBy1 pStmt_sigBind pSemis
-				return	$ (tok, stmts))
+				return	(tok, stmts))
 
 	case mWhere of
-		Nothing			-> return $ exp
+		Nothing			-> return exp
 		Just (tok, stmts)	-> return $ XWhere (spTP tok) exp stmts
 
 
@@ -350,9 +340,9 @@ pLCQual :: Parser (LCQual SP)
 pLCQual =
  	-- PAT <- EXP
  	-- overlaps with let and guard
- 	(Parsec.try $ do
-        	pat	<- pPat
-        	lazy	<- pLeftArrowIsLazy
+	Parsec.try
+	  (do	pat	<- pPat
+		lazy	<- pLeftArrowIsLazy
 		exp	<- pExp
 		return	$ LCGen lazy pat exp)
 
@@ -404,8 +394,8 @@ pGuard :: Parser (Guard SP)
 pGuard
  = 	-- PAT <- EXP
  	-- overlaps with EXP
-	(Parsec.try $ do
-		pat	<- pPat
+	Parsec.try
+	  (do	pat	<- pPat
 	 	pTok K.LeftArrow
 		exp	<- pExpRHS
 		return	$ GExp (spW pat) pat exp)
@@ -422,7 +412,7 @@ pGuard
 pStmt :: Parser (Stmt SP)
 pStmt
  = 	-- bindings overlap with expressions
- 	(Parsec.try pStmt_sigBind)
+ 	Parsec.try pStmt_sigBind
 
   <|>	do	exp	<- pExpRHS
   		return	$ SStmt (spX exp) exp
@@ -433,8 +423,8 @@ pStmt
 pStmt_bind :: Parser (Stmt SP)
 pStmt_bind
  =	-- VAR ....
-	(Parsec.try $ do
-		var	<- pOfSpace NameValue pVar
+	Parsec.try
+          (do	var	<- pOfSpace NameValue pVar
 		pats	<- Parsec.many pPat1
 		pStmt_bindVarPat var pats)
 
@@ -485,7 +475,7 @@ pStmt_sig
 -- | Parse a signature or binding
 pStmt_sigBind :: Parser (Stmt SP)
 pStmt_sigBind
- = 	(Parsec.try pStmt_sig)
+ = 	Parsec.try pStmt_sig
   <|> 	pStmt_bind
   <?>   "pStmt_sigBind"
 

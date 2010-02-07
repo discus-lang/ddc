@@ -70,7 +70,7 @@ pKind1
 --		return	KWitness
 
  <|>	-- ( KIND )
- 	do	pRParen pKind
+	pRParen pKind
 
  <?>    "pKind1"
 
@@ -106,8 +106,7 @@ pVar_withKind1
 				return	(var, kind)
 
 		 <|>	-- VAR
-                  	do	return (var,
-                        		kindOfVarSpace (Var.nameSpace var)))
+			return (var, kindOfVarSpace (Var.nameSpace var)))
 
  <?>    "pVar_withKind1"
 
@@ -121,8 +120,7 @@ pType_bodyFetters
 
  	mFetters	<- Parsec.optionMaybe
                 	(do	pTok K.HasConstraint
-				fetters	<- Parsec.sepBy1 pFetter (pTok K.Comma)
-				return $ fetters)
+				Parsec.sepBy1 pFetter (pTok K.Comma))
 
 	case concat $ maybeToList mContext ++ maybeToList mFetters of
 		[]	-> return body
@@ -153,8 +151,7 @@ pType_context accum
 pType_hsContext :: Parser [Fetter]
 pType_hsContext
  = 	-- (CONTEXT, ..)
- 	do	cs	<- pRParen $ Parsec.sepBy1 pType_classConstraint (pTok K.Comma)
- 		return	cs
+	pRParen $ Parsec.sepBy1 pType_classConstraint (pTok K.Comma)
 
 -- Parse a single type class constraint
 --	Con Type*
@@ -179,17 +176,16 @@ pType_body
 			(	-- TYPE -> TYPE
 				do	pTok K.RightArrow
 					t2	<- pType_body
-					return	$ (tPure, tEmpty, t2)
+					return	(tPure, tEmpty, t2)
 
 				-- TYPE -(EFF/CLO)> TYPE
 			  <|>	do	pTok K.Dash
 					pTok K.RBra
-					typ	<- pTypeDashRBra t1
-					return $ typ)
+					pTypeDashRBra t1)
 
 		case mRest of
 			Just (eff, clo, t2)	-> return $ makeTFun t1 t2 eff clo
-			_			-> return $ t1
+			_			-> return t1
 
 
 pTypeDashRBra :: Type -> Parser (Type, Type, Type)
@@ -201,14 +197,14 @@ pTypeDashRBra t1
 		pTok K.RKet
 		pTok K.AKet
 		t2	<- pType_body
-		return	$ (eff, clo, t2)
+		return	(eff, clo, t2)
 
   <|>	-- CLO)> TYPE
 	do	clo	<- pClosure
 		pTok K.RKet
 		pTok K.AKet
 		t2	<- pType_body
-		return $ (tPure, clo, t2)
+		return (tPure, clo, t2)
 
 
 pType_body3 :: Parser Type
@@ -252,7 +248,7 @@ pType_body1 :: Parser Type
 pType_body1
  = 	-- ()
  	do	pTok K.Unit
-		return	$ makeTData (Var.primTUnit) kValue []
+		return	$ makeTData Var.primTUnit kValue []
 
  <|>	-- [ TYPE , .. ]
  	do	ts	<- pSParen $ Parsec.sepBy1 pType_body (pTok K.Comma)
@@ -268,7 +264,7 @@ pType_body1
  	-- If a variable had no namespace qualifier out the front the lexer will leave
 	--	it in NameNothing. In this case we know its actually a type variable, so can
 	--	set it in NameType.
- <|>	do	var	<- liftM (vNameDefaultN NameType) $ pVarPlain
+ <|>	do	var	<- liftM (vNameDefaultN NameType) pVarPlain
 		return	$ TVar 	(kindOfSpace $ Var.nameSpace var) var
 		
  <|>	-- CON
@@ -298,16 +294,16 @@ pConBottom
 pTypeBodyInRParen :: Parser Type
 pTypeBodyInRParen
  =	-- (VAR :: KIND)
-	(Parsec.try $ do
-		var	<- pOfSpace NameType $ pVarPlain
+	Parsec.try
+	  (do	var	<- pOfSpace NameType pVarPlain
 		pTok K.HasType
 		kind	<- pKind
 
 		return	$ TVar kind var)
 
  <|>	-- (CON :: KIND)
- 	(Parsec.try $ do
-		con	<- pOfSpace NameType $ pQualified pCon
+	Parsec.try
+	  (do	con	<- pOfSpace NameType $ pQualified pCon
 		pTok K.HasType
 		kind	<- pKind
 
@@ -355,8 +351,8 @@ pClosure
   	-- VAR :  CLO
   	-- VAR :  TYPE
 	-- VAR $> VAR
- =	(Parsec.try 
-	  $ do	var	<- pQualified pVar
+ =	Parsec.try 
+	  (do	var	<- pQualified pVar
 	 
 	 	do	pTok K.Colon
 			let varN	= vNameDefaultN NameValue var

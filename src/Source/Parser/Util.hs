@@ -44,7 +44,6 @@ import Util
 
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Text.ParserCombinators.Parsec.Pos	as Parsec
-import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Text.ParserCombinators.Parsec.Error	as Parsec
 import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
 
@@ -54,7 +53,7 @@ stage	= "Source.Parser.Util"
 
 ----
 type SP		= SourcePos
-type Parser a 	= Parsec.GenParser K.TokenP () a
+type Parser 	= Parsec.GenParser K.TokenP ()
 
 -- Variable Creation -------------------------------------------------------------------------------
 
@@ -176,9 +175,9 @@ spV var
 
 makeParsecSourcePos :: K.TokenP -> Parsec.SourcePos
 makeParsecSourcePos tok
-	= (flip Parsec.setSourceColumn) (K.tokenColumn tok)
-	$ (flip Parsec.setSourceLine)   (K.tokenLine tok)
-	$ Parsec.initialPos      	(K.tokenFile tok)
+	= flip Parsec.setSourceColumn (K.tokenColumn tok)
+	$ flip Parsec.setSourceLine   (K.tokenLine tok)
+	$ Parsec.initialPos      (K.tokenFile tok)
 
 
 
@@ -199,7 +198,7 @@ chainl1_either p op
 
 			case f x y of
 			 Left str	-> Parsec.unexpected str
-			 Right more	-> rest $ more)
+			 Right more	-> rest more)
 
 		<|> return x
 

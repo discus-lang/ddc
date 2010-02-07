@@ -44,15 +44,13 @@ parseString parser str
  = let 	tokens		= scan str
  	eExp		= Parsec.runParser parser () "file" tokens
    in	case eExp of
-		Right exp	-> putStr $ (pprStrPlain exp ++ "\n\n")
+		Right exp	-> putStr (pprStrPlain exp ++ "\n\n")
 		Left err	-> error $ show err
 
 -- Module ------------------------------------------------------------------------------------------
 -- | Parse a whole module.
 pModule :: Parser [Top SP]
-pModule =
- do	tops	<- pCParen pOrderedTop
-	return	tops
+pModule = pCParen pOrderedTop
 
 -- | Parse a top level binding, only accepting a specific ordering.
 pOrderedTop :: Parser [Top SP]
@@ -158,8 +156,7 @@ pTopForeignImport :: Parser (Top SP)
 pTopForeignImport
  =	do	tok	<- pTok K.Foreign
 		pTok K.Import
-		fimp	<- pTopForeignImportNext (spTP tok)
-		return	$ fimp
+		pTopForeignImportNext (spTP tok)
 
 pTopForeignImportNext :: SP -> Parser (Top SP)
 pTopForeignImportNext startPos
@@ -168,8 +165,7 @@ pTopForeignImportNext startPos
 		name	<- pString
 		con	<- pOfSpace NameType pCon
 		let con2 = con { Var.info = [Var.ISeaName name] }
-		fimp	<- pTopForeignImportEnd startPos name con2
-		return	$ fimp
+		pTopForeignImportEnd startPos name con2
 
  <|>	-- foreign import STRING var :: TYPE
 	do	mExName	<- Parsec.optionMaybe pString
@@ -224,16 +220,14 @@ pTopInfix
 pTopType ::  Parser (Top SP)
 pTopType
  =	do	tok	<- pTok K.Type
- 		exp	<- pTopTypePlus (spTP tok)
-		return	$ exp
+		pTopTypePlus (spTP tok)
 
 
 pTopTypePlus :: SP -> Parser (Top SP)
 pTopTypePlus startPos
  =	do	-- type CON :: KIND
 		con	<- pOfSpace NameType pCon
-		rest	<- pTopTypePlus2 startPos con
-		return	$ rest
+		pTopTypePlus2 startPos con
 
  <|>	do	-- type VAR ...
 		var	<- pOfSpace NameType pVar
@@ -290,8 +284,7 @@ pTopData
 		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
 
 		ctors	<- 	do	pTok K.Equals
-					ctors	<- Parsec.sepBy1 pTopDataCtor (pTok K.Bar)
-					return	ctors
+					Parsec.sepBy1 pTopDataCtor (pTok K.Bar)
 				<|>	return []
 
 		return	$ PData (spTP tok) con vars ctors
@@ -300,8 +293,7 @@ pTopDataCtor :: Parser (Var, [DataField (Exp SP) Type])
 pTopDataCtor
  = 	-- CON ...
 	do	con	<- pOfSpace NameType pCon
-        	rest	<- pTopDataCtorRest con
-                return	rest
+		pTopDataCtorRest con
 
  <?>    "pTopDataCtor"
 
@@ -331,26 +323,26 @@ pDataField
 		t	<- pType_body
 		pTok K.Equals
 		exp	<- pExp
-		return	$ DataField
+		return	DataField
 			{ dPrimary	= False
 			, dLabel	= Just var
 			, dType		= t
 			, dInit		= Just exp }
 
   <|>	-- VAR :: TYPE
-	(Parsec.try $ do
-  		var	<- pOfSpace NameField pVar
+	Parsec.try
+	  (do	var	<- pOfSpace NameField pVar
 	 	pTok K.HasType
 		t	<- pType_body
 
-		return	$ DataField
+		return	DataField
 			{ dPrimary	= True
 			, dLabel	= Just var
 			, dType		= t
 			, dInit		= Nothing })
 
   <|>	do	t	<- pType_body
-  		return	$ DataField
+  		return	DataField
 			{ dPrimary	= True
 			, dLabel	= Nothing
 			, dType		= t
@@ -364,8 +356,8 @@ pTopClass :: Parser (Top SP)
 pTopClass
  =	do 	tok	<- pTok K.Class
 	 	con	<- pOfSpace NameClass pCon
-		cls	<- pTopClassMore (spTP tok) con
-                return	cls
+		pTopClassMore (spTP tok) con
+
   <?>   "pTopCLass"
 
 pTopClassMore :: SP -> Var -> Parser (Top SP)
@@ -386,8 +378,8 @@ pTopClassMore startPos con
 pVarKind :: Parser (Var, Kind)
 pVarKind
  = 	-- (VAR :: KIND)
-	(pRParen $ do
-		var	<- liftM (vNameDefaultN NameType) pVar
+	pRParen
+	  (do	var	<- liftM (vNameDefaultN NameType) pVar
 		pTok K.HasType
 		kind	<- pKind
 		return	(var, kind))
@@ -405,7 +397,7 @@ pTopClass_sig
  = do	vars	<- Parsec.sepBy1 pVar (pTok K.Comma)
 	pTok K.HasType
 	t	<- pType
-	return	$ (vars, t)
+	return	(vars, t)
 
 
 -- Instance ----------------------------------------------------------------------------------------
@@ -429,8 +421,8 @@ pTopProject
 	do	tok	<- pTok K.Project
 		con	<- pOfSpace NameType $ pQualified pCon
 		ts	<- Parsec.many pType_body1
-                rest	<- pTopProjectRest (spTP tok) con ts
-                return	rest
+		pTopProjectRest (spTP tok) con ts
+
   <?>   "pTopProject"
 
 pTopProjectRest :: SP -> Var -> [Type] -> Parser (Top SP)

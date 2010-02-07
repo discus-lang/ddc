@@ -26,7 +26,7 @@ pPat
 				p2	<- pPat
 				return	$ WCons (spW p1) p1 p2
 
-		  <|>	do	return	p1)
+		  <|>	return	p1)
 
   <?>   "pPat"
 
@@ -35,7 +35,7 @@ pPat2 :: Parser (Pat SP)
 pPat2
  =	-- CON { label = PAT .. }
 	-- CON pats..
-	do	con	<- pOfSpace NameValue $ pCon
+	do	con	<- pOfSpace NameValue pCon
 		(	do	lb	<- pCParen $ Parsec.sepBy pLabelBind (pTok K.Comma)
                 		return	$ WConLabel (spV con) con lb
 
@@ -71,7 +71,7 @@ pPat1
 		ps	<- Parsec.sepBy pPat (pTok K.Comma)
 		pTok K.SKet
 
-		if length ps == 0
+		if null ps
 			then return	$ WCon (spTP tok) Var.primNil []
 			else return	$ WList (spTP tok) ps
 
