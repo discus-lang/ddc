@@ -86,32 +86,6 @@ pExp1'
 	do	tok	<- pTok K.SBra
 		pListContents (spTP tok)
 
-  <|>	-- VAR & { TYPE }								-- NOT FINISHED
- 	-- overlaps with VAR
-	Parsec.try
-	  (do	field	<- pOfSpace NameField $ pQualified pVar
-		pTok K.And
-		t	<- pCParen pType_body
-		return	$ XProjT (spV field) t (JField (spV field) field))
-			
-  <|>	-- VAR/CON
-	do	var	<- pOfSpace NameValue $ pQualified pVarCon
-		return	$ XVar (spV var) var
-
-  <|>	-- VARFIELD					-- TODO: change this when we move to parsec
-	do	var	<- pOfSpace NameField pVarField
-		return	$ XObjField (spV var) var
-
-  <|>	-- SYM
-	do	sym	<- pOfSpace NameValue pSymbol
-		return	$ XOp (spV sym) sym
-
-  <|>	-- `VAR`
-  	do	pTok K.BackTick
-		var	<- pOfSpace NameValue $ pQualified pVar
-		pTok K.BackTick
-		return	$ XOp (spV var) var
-
   <|>	-- ()
   	do	tok	<- pTok K.Unit
 		return	$ XVar (spTP tok) Var.primUnit
@@ -160,6 +134,12 @@ pExp1'
 		exps	<- Parsec.many pExp1
 		return	$ XLambdaProj (spTP tok) (JField (spTP tok) var) exps
 
+  <|>	-- `VAR`
+  	do	pTok K.BackTick
+		var	<- pOfSpace NameValue $ pQualified pVar
+		pTok K.BackTick
+		return	$ XOp (spV var) var
+
   <|>	-- try EXP catch { ALT .. } (with { STMT; .. })
   	do	tok	<- pTok K.Try
 		exp1	<- pExp
@@ -184,6 +164,26 @@ pExp1'
 
   <|>	do	tok	<- pTok K.BackSlash
 		pBackslashExp (spTP tok)
+
+  <|>	-- VARFIELD					-- TODO: change this when we move to parsec
+	do	var	<- pOfSpace NameField pVarField
+		return	$ XObjField (spV var) var
+
+  <|>	-- SYM
+	do	sym	<- pOfSpace NameValue pSymbol
+		return	$ XOp (spV sym) sym
+
+  <|>	-- VAR & { TYPE }								-- NOT FINISHED
+ 	-- overlaps with VAR
+	Parsec.try
+	  (do	field	<- pOfSpace NameField $ pQualified pVar
+		pTok K.And
+		t	<- pCParen pType_body
+		return	$ XProjT (spV field) t (JField (spV field) field))
+			
+  <|>	-- VAR/CON
+	do	var	<- pOfSpace NameValue $ pQualified pVarCon
+		return	$ XVar (spV var) var
 
   <|>	-- Starts with a K.RBra.
 	do	tok	<- pTok K.RBra
