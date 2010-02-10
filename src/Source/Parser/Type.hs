@@ -257,21 +257,21 @@ pType_body1
 				(KFun (KFun kRegion kValue) kValue)
 				ts
 
- <|>	-- \*Bot / %Bot / !Bot / \$Bot
-	Parsec.try pConBottom
-
-	-- VAR
+ <|>	-- VAR
  	-- If a variable had no namespace qualifier out the front the lexer will leave
 	--	it in NameNothing. In this case we know its actually a type variable, so can
 	--	set it in NameType.
- <|>	do	var	<- liftM (vNameDefaultN NameType) pVarPlain
+	do	var	<- liftM (vNameDefaultN NameType) pVarPlain
 		return	$ TVar 	(kindOfSpace $ Var.nameSpace var) var
 		
+ <|>	pRParen pParenTypeBody
+
+ <|>	-- \*Bot / %Bot / !Bot / \$Bot
+	pConBottom
+
  <|>	-- CON
  	do	con	<- pOfSpace NameType $ pQualified pCon
 		return	$ makeTData con KNil []
-
- <|>	pRParen pTypeBodyInRParen
 
  <?>    "pType_body1"
 
@@ -291,8 +291,8 @@ pConBottom
         	return $ TBot kClosure
 
 
-pTypeBodyInRParen :: Parser Type
-pTypeBodyInRParen
+pParenTypeBody :: Parser Type
+pParenTypeBody
  =	-- (VAR :: KIND)
 	Parsec.try
 	  (do	var	<- pOfSpace NameType pVarPlain
@@ -312,12 +312,12 @@ pTypeBodyInRParen
  <|>	-- ( TYPE, TYPE .. )
 	-- ( TYPE )
 	do	ts	<- Parsec.sepBy1 pType_body (pTok K.Comma)
-                if length ts == 1
-                 then return	$ head ts
-                 else return	$ makeTData 
-					(Var.primTTuple (length ts))
-					(KFun (KFun kRegion kValue) kValue)
-					ts
+		case ts of
+                  [hts] -> return hts
+                  _ -> return	$ makeTData 
+				(Var.primTTuple (length ts))
+				(KFun (KFun kRegion kValue) kValue)
+				ts
 
 
 -- Effect ------------------------------------------------------------------------------------------
