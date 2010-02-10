@@ -22,7 +22,6 @@ module Source.Parser.Util
 
 	-- Parsing Combinators
 	, makeParsecSourcePos
-	, chainl1_either
 
 	-- Debugging
 	, traceStateS, traceState)
@@ -180,29 +179,6 @@ makeParsecSourcePos tok
 	$ Parsec.initialPos      (K.tokenFile tok)
 
 
-
--- Parsing combinators -----------------------------------------------------------------------------
-
-chainl1_either
-	:: Parsec.GenParser tok st a
-	-> Parsec.GenParser tok st (a -> a -> (Either String a))
-	-> Parsec.GenParser tok st a
-
-chainl1_either p op
- = do	x	<- p
-
-	let rest x
-	     =	(do
-			f	<- op
-			y	<- p
-
-			case f x y of
-			 Left str	-> Parsec.unexpected str
-			 Right more	-> rest more)
-
-		<|> return x
-
-	rest x
 
 -- Debugging ---------------------------------------------------------------------------------------
 

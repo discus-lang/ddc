@@ -64,13 +64,13 @@ pExp
 
 pExp2 :: Parser (Exp SP)
 pExp2
- = 	-- projections
+ =	-- projections
  	-- EXP . EXP   /   EXP . (EXP)  /  EXP # EXP
- 	Parsec.try
-	  (do	exp	<- chainl1_either pExp1' pProj
- 		return	$ stripXParens exp)
+	do	exp	<-pExp1'
+		(do	x	<- pProject exp
+        	        return	$ stripXParens x
 
-  <|>	pExp1
+		 <|> do return	$ stripXParens exp)
 
   <?>   "pExp2"
 
@@ -305,31 +305,36 @@ pExpRHS
 		Just (tok, stmts)	-> return $ XWhere (spTP tok) exp stmts
 
 
+-- Recursively apply the projection combinator
+pProject :: Exp SP -> Parser (Exp SP)
+pProject x
+ =	do	pProj2 x >>= pProject
+ <|>	return x
+
+
 -- | Parse a projection operator
-pProj :: Parser (Exp SP -> Exp SP -> Either String (Exp SP))
-pProj
+pProj2 :: Exp SP -> Parser (Exp SP)
+pProj2 x
  = 	do	pTok K.Dot
-	 	return	(makeProjV JField JIndex)
+	 	makeProjV JField JIndex x
 
  <|>	do	pTok K.Hash
- 		return	(makeProjV JFieldR JIndexR)
- <?> "pProj"
-
-makeProjV fun funIndex x y
-	| XVar sp v	<- y
-	= Right $ XProj (spX x) (stripXParens x)
-		$ fun 	sp
-			v { Var.nameSpace = NameField }
-
-	| XParens sp y'	<- y
-	= Right $ XProj (spX x) (stripXParens x)
-		$ funIndex
-			sp
-			(stripXParens y')
+ 		makeProjV JFieldR JIndexR x
 
 
-	| otherwise
-	= Left "pProj: LHS is not a field"
+makeProjV fun funIndex x
+ = do	y	<- pExp1'
+	case y of
+	  XVar sp v
+	    -> return	$ XProj (spX x) (stripXParens x)
+			$ fun sp v { Var.nameSpace = NameField }
+
+	  XParens sp y'
+            -> return	$ XProj (spX x) (stripXParens x)
+			$ funIndex sp (stripXParens y')
+
+	  _ -> Parsec.unexpected "Projection: LHS is not a field"
+
 
 stripXParens (XParens _ x)	= stripXParens x
 stripXParens xx			= xx
