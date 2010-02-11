@@ -5,16 +5,12 @@
 --
 --	This module defines the renamer monad and utils for renaming individual variables.
 --
-module Source.RenameM
+module Source.Rename.State
 	( RenameS(..)
 	, RenameM, runRename
 	, initRenameS
 	, traceM
 	, addError
-
-	, pushObjectVar
-	, popObjectVar
-	, peekObjectVar
 
 	, Rename (..)
 
@@ -25,8 +21,6 @@ module Source.RenameM
 	, lbindN,	lbindZ,		lbindV
 	, lbindN_shadow, lbindZ_shadow
 
-	, pushN
-	, popN
 	, local)
 where
 
@@ -86,7 +80,13 @@ data	RenameS
 	  -- | Fresh variable generators, one for each namespace.
 	, stateGen		:: Map NameSpace  VarBind			
 
-	  -- | A stack of bound variables
+
+	  -- | Variables defined at top level.
+	  --   It's ok to have multiple variables at top level with the same name, 
+	  ---  provided they're in different modules.
+	, stateTopLevelVars	:: Map NameSpace (Map String [(Module, Var)])
+
+	  -- | A stack of locally bound variables.
 	  --	Each level of the stack contains all the vars bound by the same construct, 
 	  --	eg, in (\x y z -> e), the vars {x, y, z} are all at the same level.
 	  --	It's an error for multiple vars at the same binding level to have the same name.
@@ -118,21 +118,25 @@ initRenameS
 				, (NameField,	Var.XBind "fR"  0) 
 				, (NameClass,	Var.XBind "aR"  0) ] 
 
-	-- Each NameSpace starts with an empty top level.
+	-- Each top-level namespaces starts out empty.
+	, stateTopLevelVars	= Map.fromList 
+				$ zip allRenamedNameSpaces
+				$ repeat Map.empty
+
+	-- No local scopes yet
 	, stateStack		= Map.fromList
-				$ zip	
-				[ NameModule
-				, NameValue
-				, NameType
-				, NameRegion
-				, NameEffect 
-				, NameClosure
-				, NameField 
-				, NameClass ]
-				(repeat [Map.empty])
+				$ zip allRenamedNameSpaces 
+				$ repeat []
 
 	, stateObjectVar 	= []
 	}
+
+allRenamedNameSpaces
+ = 	[ NameModule
+	, NameValue
+	, NameType, NameRegion, NameEffect, NameClosure
+	, NameField
+	, NameClass ]
 
 
 -- | Add an error to the renamer state
@@ -151,49 +155,36 @@ runRename :: RenameM a	-> a
 runRename comp		= evalState comp initRenameS 
 	
 	
--- Object Opening ---------------------------------------------------------------------------------
-
--- | Push an object variable context.
-pushObjectVar :: Var	-> RenameM ()
-pushObjectVar	v
- 	= modify (\s -> s { stateObjectVar = v : stateObjectVar s })
-
-	
--- | Pop an object variable context.
-popObjectVar  :: RenameM Var
-popObjectVar	
- = do 	objectVar	<- gets stateObjectVar
-	case objectVar of
-	 []	-> panic stage "popObjectVar: stack underflow\n"
-	 (x:xs)	
-	  -> do	modify (\s -> s { stateObjectVar = xs })
- 	  	return x
-
--- | Peek at the current object variable context.
-peekObjectVar :: RenameM Var
-peekObjectVar
- = do 	objectVar	<- gets stateObjectVar
- 	case objectVar of
-	 []	-> panic stage "peekObjectVar: stack underflow\n"
-	 (x:xs)
-	  -> 	return x
 
 
 -- Binding ----------------------------------------------------------------------------------------
 
--- | Bind name
---	Bind this variable into the scope associated with its namespace annotation.
+-- Top Level Scope --------------------
+-- | Bind a variable into the top-level namespace associated with its namespace annotation.
+--	It's ok to have multiple variables at top-level with the same name, provided
+--	they are in different modules.
+--
+-- bindTopLevelZ :: Var -> RenameM Var
+-- bindTopLevelZ v	= bindN (Var.nameSpace v) v
+
+-- bindTopLevelN :: NameSpace -> Var -> RenameM Var
+-- bindTopLevelN space var
+
+
+
+-- Local Scope ------------------------
+-- | Bind this variable into the local scope associated with its namespace annotation.
 --	Causes an error if the variable is already bound at this level.
 --
 bindZ :: Var -> RenameM Var
-bindZ	 v 	= bindN (Var.nameSpace v) v
+bindZ v 	= bindN (Var.nameSpace v) v
 
 -- | Bind a variable into the value namespace.
 bindV		= bindN NameValue
 	
 -- | Bind a variable into a given namespace.
 bindN :: NameSpace -> Var -> RenameM Var
-bindN	 space var
+bindN space var
  = do	
 	-- grab the variable stack for the current namespace.
 	Just (spaceMap:ms)
@@ -225,7 +216,7 @@ bindN	 space var
 isBound_local :: Var -> RenameM Bool
 isBound_local var
  = do	
-	-- grab the var map for the variabeles namespace.
+	-- grab the var map for the variables namespace.
 	Just (spaceMap:ms)
 		<- liftM (Map.lookup $ Var.nameSpace var)
 		$  gets stateStack
@@ -240,7 +231,7 @@ isBound_local var
 -- | If this is the name of a primitive var then give it the appropriate VarId
 --	otherwise give it a fresh one. Also set the namespace.
 renameVarN ::	NameSpace -> Var -> RenameM Var
-renameVarN	space var
+renameVarN space var
 
 	-- if we're trying to rename the var into a different namespace
 	--	to the one it already has then something has gone wrong.
@@ -319,11 +310,10 @@ lookupV		= lookupN NameValue
 
 -- | Link this var to the binding occurance with the same name.
 linkBoundVar 
-	:: Bool 			-- whether to look in enclosing scopes
-	-> NameSpace 			-- namespace to look in
-	-> Var 				-- a variable with the name we're looking for
-	-> RenameM 
-		(Maybe (Var, Var))	-- binding occurance, renamed var.
+	:: Bool 			-- ^ whether to look in enclosing scopes
+	-> NameSpace 			-- ^ namespace to look in
+	-> Var 				-- ^ a variable with the name we're looking for
+	-> RenameM (Maybe (Var, Var))	-- ^ binding occurance, renamed var (if found)
 
 linkBoundVar enclosing space var
  = do	
@@ -336,6 +326,7 @@ linkBoundVar enclosing space var
 	(case (isCtorName var, space, Map.lookup (Var.name var) spaceMap) of
 		(True, NameType, Just boundData)
 			->	addError $ ErrorRedefinedData boundData var
+
 		(True, NameValue, Just boundCtor)
 			->	addError $ ErrorRedefinedCtor boundCtor var
 		(_, _, _)
@@ -352,8 +343,7 @@ linkBoundVar enclosing space var
 	  -> return 
 	  $  Just 
 	    	( bindingVar
-		, var
-			{ Var.name	 = Var.name       bindingVar
+		, var	{ Var.name	 = Var.name       bindingVar
 			, Var.bind 	 = Var.bind 	  bindingVar
 			, Var.nameModule = Var.nameModule bindingVar
 			, Var.nameSpace  = Var.nameSpace  bindingVar 
@@ -454,6 +444,15 @@ lbindV 		= lbindN NameValue
 
 
 -- Scope management --------------------------------------------------------------------------------
+
+-- | Do some renaming in a local scope
+local :: RenameM a -> RenameM a
+local f
+ = do	mapM_ pushN allRenamedNameSpaces
+ 	x	<- f
+	mapM_ popN  allRenamedNameSpaces
+	return x
+
 -- | Push this space of names down to create a local scope.
 pushN :: NameSpace -> RenameM ()
 pushN space
@@ -475,16 +474,4 @@ popN	space
 				(m:ms)	-> ms)
 			space
 			$ stateStack s }
-
-
--- | Do some renaming in a local scope
-local :: RenameM a -> RenameM a
-local f
- = do	let spaces	
- 		= [NameValue, NameType, NameRegion, NameEffect, NameClosure, NameField]
- 
- 	mapM_ pushN spaces
- 	x	<- f
-	mapM_ popN  spaces
-	return x
 

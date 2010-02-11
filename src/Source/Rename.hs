@@ -3,23 +3,18 @@
 --	in the same scope have the same variable ids. This lets us perform substitution
 --	later in the compiler without having to worry about scope and variable capture.
 --
+--   At top level scope it's ok to have variables with the same names, provided
+--   we supply module ids when referencing them.
+--
 module Source.Rename
 	( Rename
 	, renameTrees )
 where
 
------
-import Shared.Error		(panic)
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace (..), Module(..))
-import Shared.VarUtil		(isCtorName)
-import Shared.Pretty
-import Shared.Base
-
+import Source.Rename.State
+import Source.Rename.Object
 import Source.Util
 import Source.Horror
-import Source.RenameM
 import Source.Slurp
 import Source.Error
 import Source.Exp
@@ -28,11 +23,18 @@ import Type.Util
 import Type.Plate.Collect
 import Type.Plate.FreeVars
 
-import qualified Data.Set	as Set
+import Shared.Error		(panic)
+import Shared.Var		(NameSpace (..), Module(..))
+import Shared.VarUtil		(isCtorName)
+import Shared.Pretty
+import Shared.Base
 import Data.Set			(Set)
-
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import qualified Data.Set	as Set
 import qualified Debug.Trace
 import Util
+
 
 -----
 stage		= "Source.Rename"
@@ -41,16 +43,16 @@ stage		= "Source.Rename"
 
 
 -- Tree --------------------------------------------------------------------------------------------
-renameTrees
-	:: [(Module, Tree SourcePos)]		
-	-- ^ the modules to rename.
-	--   the current module should be first, and all the imported ones afterwards.
 
-	-> RenameM 
-		[(Module, Tree SourcePos)]	
+-- ^ Rename the variables in some source trees.
+--	The current module should be first, then the interfaces of all the imported ones.
+renameTrees
+	:: [(Module, Tree SourcePos)]		-- ^ modules to rename		
+	-> RenameM [(Module, Tree SourcePos)]	-- ^ renamed modules
 
 renameTrees mTrees@(mTree1 : mTreeImports)
- = do
+ = local
+ $ do
 	-- bind all the top-level names.
 	--	Do the imports first so if we have name clashes at top level the vars
 	--	in the error messages will come out in the right order.

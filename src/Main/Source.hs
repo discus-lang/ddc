@@ -25,8 +25,7 @@ import qualified Desugar.Plate.Trans	as D
 import qualified Desugar.Exp		as D
 import qualified Source.Token		as Token
 import qualified Source.Rename		as S
-import qualified Source.RenameM		as S
-import qualified Source.RenameM		as Rename
+import qualified Source.Rename.State	as S
 import qualified Shared.Var		as Var
 import Main.Arg
 import Main.Dump
