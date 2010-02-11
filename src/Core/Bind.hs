@@ -17,7 +17,7 @@ import Core.Reconstruct
 import Type.Builtin
 import Type.Util.Bits		(varOfBind)
 
-import Shared.Var		(NameSpace(..))
+import Shared.Var		(NameSpace(..), Module)
 import Shared.VarPrim
 import Shared.VarGen
 import Shared.Error
@@ -48,22 +48,24 @@ trace ss xx
 
 -- | Introduce local region definitions.
 bindTree 
-	:: String			-- ^ unique prefix to use for fresh vars.
+	:: Module
+	-> String			-- ^ unique prefix to use for fresh vars.
 	-> Map Var [Var]		-- ^ a map of all the class constraints acting on a particular region.
 	-> Set Var			-- ^ the regions with global lifetime
 	-> Tree				-- ^ the core tree.
 	-> Tree			
 
-bindTree unique classMap rsGlobal tree
- = 	evalVarGen (bindM classMap rsGlobal tree) ("w" ++ unique)
+bindTree mod unique classMap rsGlobal tree
+ = 	evalVarGen (bindM mod classMap rsGlobal tree) ("w" ++ unique)
 
 -- | Bind local region variables in this tree.
-bindM	:: Map Var [Var]
+bindM	:: Module
+	-> Map Var [Var]
 	-> Set Var
 	-> Tree
 	-> BindM Tree
 	
-bindM classMap rsGlobal tree
+bindM mod classMap rsGlobal tree
  = do	let ?classMap	= classMap
 
 	-- bind regions with local scope

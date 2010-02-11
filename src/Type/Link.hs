@@ -45,6 +45,10 @@ linkType mParent bound tt
 	 	fs'	<- mapM (linkFetter mParent bound) fs
 		return	$ TFetters t' fs'
 
+	TConstrain{}
+	 -> linkType mParent bound
+	 $  toFetterFormT tt
+
 
 	TSum k es
 	 -> do	es'	<- mapM (linkType mParent bound) es

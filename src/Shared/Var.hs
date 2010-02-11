@@ -59,19 +59,21 @@ instance Eq Var where
 
 instance Ord Var where
  compare v1 v2 	
-  | otherwise	= compare (bind v1) (bind v2)
+  = case compare (bind v1) (bind v2) of
+	EQ	-> compare (nameModule v1) (nameModule v2)
+	ord	-> ord
 
 
--- Compare by name
---
+-- | Compare by name
 infix 4 =~=
 (=~=) :: Var -> Var	-> Bool
 (=~=) a b	= name a == name b
 
--- Compare by bind
---
+-- | Compare by binder
 (=^=) :: Var -> Var	-> Bool
-(=^=) a b	= bind a == bind b
+(=^=) a b	
+	=   bind a == bind b
+	&&  nameModule a == nameModule b
 
 
 -- | Slurp namespace qualifiers from the var name into 

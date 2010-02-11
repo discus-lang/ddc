@@ -1,14 +1,10 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 import	Base
+import 	Data.BoolU
 
--- | The runtime system assumes that False is first in the list of
---	constructors, don't swap them around.
-data Bool %r1
-	= False
-	| True
 
-boxBool :: Bool# -> Bool
+-- boxBool :: Bool# -> Bool
 boxBool b
  = case b of
  	true#	-> True

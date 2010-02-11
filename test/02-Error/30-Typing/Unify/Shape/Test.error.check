@@ -2,7 +2,7 @@ ddc: ERROR
 ./test/02-Error/30-Typing/Unify/Shape/Test.ds:7:6
     Type mismatch during unification.
           cannot match: Base.Int32
-                  with: Data.String.String
+                  with: Base.String
 
               the use of: (+)
                  at type: Base.Int32
@@ -10,6 +10,6 @@ ddc: ERROR
 
         conflicts with, 
           literal value "erk"
-                 of type: Data.String.String
+                 of type: Base.String
                       at: ./test/02-Error/30-Typing/Unify/Shape/Test.ds:7:8
 

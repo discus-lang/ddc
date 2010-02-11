@@ -91,7 +91,7 @@ data	RenameS
 	  --	eg, in (\x y z -> e), the vars {x, y, z} are all at the same level.
 	  --	It's an error for multiple vars at the same binding level to have the same name.
 	  --
-	, stateStack		:: Map NameSpace  [Map String  Var]	
+	, stateStack		:: Map NameSpace  [Map String Var]	
 
 	  -- | A stack holding the currently opened object.
 	  --	Objects are opened with ^ and their fields are referred to with _.

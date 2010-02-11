@@ -2,7 +2,7 @@ ddc: ERROR
 ./test/02-Error/30-Typing/Unify/FieldInit/Test.ds:5:0
     Type mismatch during unification.
           cannot match: Base.Int32
-                  with: Data.String.String
+                  with: Base.String
 
           type signature for 'Test.init_Fish_Perch_speed'
           which requires: Base.Int32
@@ -10,6 +10,6 @@ ddc: ERROR
 
         conflicts with, 
           literal value "fast"
-                 of type: Data.String.String
+                 of type: Base.String
                       at: ./test/02-Error/30-Typing/Unify/FieldInit/Test.ds:8:42
 

@@ -33,9 +33,9 @@ primTWord	= primVarFmt	NameType	"Base.Word"			TWord
 primTInt	= primVarFmt	NameType	"Base.Int"			TInt
 primTFloat	= primVarFmt	NameType	"Base.Float"			TFloat
 primTChar	= primVarFmt	NameType	"Base.Char"			TChar
-primTString	= primVarFmt	NameType	"Data.String.String"		TString
+primTString	= primVarFmt	NameType	"Base.String"			TString
 
-primTRef	= primVar 	NameType	"Data.Ref.Ref"			TRef
+primTRef	= primVar 	NameType	"Base.Ref"			TRef
 primTList	= primVar 	NameType	"Data.List.List"		TList
 primTTuple i	= primVar	NameType	("Data.Tuple.Tuple" ++ show i) 	(TTuple i)
 
@@ -87,8 +87,8 @@ primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i
 
 primNegate	= primVar NameValue	"Class.Num.negate"			VNegate
 
-primTrue	= primVar NameValue 	"Data.Bool.True"			VTrue
-primFalse	= primVar NameValue	"Data.Bool.False"			VFalse
+primTrue	= primVar NameValue 	"Base.True"				VTrue
+primFalse	= primVar NameValue	"Base.False"				VFalse
 
 primTuple i	= primVar NameValue	("Data.Tuple.Tuple" ++ show i) 		(VTuple i)
 

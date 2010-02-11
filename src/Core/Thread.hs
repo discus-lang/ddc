@@ -253,7 +253,8 @@ lookupWitness vRegion vClass
 		--
 	 	| otherwise
 	 	= freakout stage
-			("thread_transX: can't find a witness for " % vClass % " on region " % vRegion % "\n")
+			("thread_transX: can't find a witness for " % vClass % " on region " % vRegion % "\n"
+			 % "state = " % state % "\n\n")
 			$ Nothing
 
 	return mvWitness

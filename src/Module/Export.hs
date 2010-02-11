@@ -66,10 +66,11 @@ makeInterface moduleName
 	schemeTable
 	vsNoExport
  = do
-	-- To make the interfaces easier to read:
-	--	For each var in the tree, if the var was bound in the current module
-	--	then erase that module annotation.
-	let sTree'	= eraseVarModuleTree moduleName sTree
+	-- For each variable in the tree, if it is bound in the current module then erase its 
+	--	module id. This makes the interfaces easier to read, and lets as parse 
+	--	the interface files as if they were source code.
+	let sTree_erasedModules	
+			= eraseVarModuleTree moduleName sTree
 
 	-- a fn to lookup the type var for a value var
 	let getTVar 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStrPlain v)
@@ -81,17 +82,18 @@ makeInterface moduleName
 			$ Map.lookup (getTVar v) schemeTable
 
 	-- the vars of all the top level things
-	let topVars	= Set.fromList $ catMap S.slurpTopNames sTree
+	let topVars	= Set.fromList $ catMap S.slurpTopNames sTree_erasedModules
 
 	-- see if there is an explicit export list
-	let mExports	= case [exs | S.PExport _ exs <- sTree'] of
+	let mExports	= case [exs | S.PExport _ exs <- sTree_erasedModules] of
 				[]	-> Nothing
 				ee	-> Just $ Set.fromList 
-						$ map S.takeExportVar $ concat ee
+						$ map S.takeExportVar 
+						$ concat ee
 
 	-- export all the top level things
-	let interface	= exportAll getType topVars sTree' dTree cTree 
-				(shouldExport vsNoExport mExports)
+	let interface	= exportAll moduleName getType topVars sTree_erasedModules dTree cTree 
+			$ shouldExport vsNoExport mExports
 
 	return interface
 
@@ -112,14 +114,15 @@ shouldExport vsNoExport mExports v
 	= True
 	
 	| Just exports	<- mExports
-	= Set.member v exports
-	
+	= Set.member v exports 
+
 	| otherwise
 	= True
 
 -- Export all the top level things in this module
 exportAll 
-	:: (Var -> Type)	-- ^ a fn to get the type scheme of a top level binding
+	:: Module
+	-> (Var -> Type)	-- ^ a fn to get the type scheme of a top level binding
 	-> Set Var		-- ^ vars of top level bindings.
 	-> [S.Top SourcePos] 	-- ^ source tree
 	-> [D.Top SourcePos]	-- ^ desugared tree
@@ -127,7 +130,7 @@ exportAll
 	-> (Var -> Bool)	-- ^ don't export these vars
 	-> String		-- ^ the interface file
 
-exportAll getType topNames ps psDesugared_ psCore export
+exportAll moduleName getType topNames ps psDesugared_ psCore export
  = let	psDesugared	= map (D.transformN (\n -> Nothing :: Maybe ()) ) psDesugared_
    in   pprStrPlain
 	$  "-- Imports\n"
@@ -156,19 +159,23 @@ exportAll getType topNames ps psDesugared_ psCore export
 	++ "\n"
 
 	++ "-- Regions\n"
-	++ (concat [pprStrPlain p | p@S.PRegion{}		<- ps])
-	++ "\n"
+	++ (concat [exportRegion moduleName p 
+			| p@(C.PRegion r vts)		<- psCore])
+	++ "\n\n"
 	
 	++ "-- Classes\n"
-	++ (concat [pprStrPlain p | p@S.PClass{}		<- ps])
+	++ (concat [pprStrPlain p 
+			| p@S.PClass{}		<- ps])
 	++ "\n"
 	
 	++ "-- Class dictionaries\n"
-	++ (concat [pprStrPlain p | p@D.PClassDict{}		<- psDesugared])
+	++ (concat [pprStrPlain p 
+			| p@D.PClassDict{}		<- psDesugared])
 	++ "\n"
 
 	++ "-- Class instances\n"
-	++ (concat [pprStrPlain p | 	p@D.PClassInst{}	<- psDesugared])
+	++ (concat [pprStrPlain p 
+			| p@D.PClassInst{}	<- psDesugared])
 	++ "\n"
 	
 	++ "-- Foreign imports\n"
@@ -185,7 +192,7 @@ exportAll getType topNames ps psDesugared_ psCore export
 	++ "-- Binds\n"
 	++ (concat [exportForeign v (getType v) (C.superOpTypeX x)
 			| p@(C.PBind v x) <- psCore
-			, export v])		
+			, export (eraseVarModuleV moduleName v)])		
 
 --	++ "-- Projection dictionaries\n"
 	++ (concat [exportProjDict p 	| p@D.PProjDict{}		
@@ -223,9 +230,7 @@ exportForeign v tv to
 
 
 -- | export  a projection dictionary
-exportProjDict 
-	:: D.Top a -> String
-
+exportProjDict :: D.Top a -> String
 exportProjDict (D.PProjDict _ t [])
 	= []
 
@@ -237,8 +242,23 @@ exportProjDict (D.PProjDict _ t ss)
 			-> v1 %>> " = " % v2 { Var.nameModule = Var.ModuleNil } % ";") ss)
 	% "\n}\n\n"
 	
+-- | export a top level region decl
+exportRegion :: Module -> C.Top -> String
+exportRegion mod (C.PRegion r vts)
+	| Var.nameModule r == Var.ModuleNil
+	= pprStrPlain
+	$ "region " % mod % "." % r % ";" % "\n"
+{-	% (case vts of 
+		[]	-> pNil
+		_	-> " :- " % ", " %!% [t | (v, t) <- vts ])
+-}
 
-	
+	| otherwise
+	= ""
+
+--	= pprStrPlain
+--	$ "region " % Var.nameModule r % "." % r % ";"
+
 -- | erase module qualifiers from variables in this tree
 eraseVarModuleTree
 	:: Module
@@ -253,8 +273,9 @@ eraseVarModuleTree
 		}
 		tree	
 
+
 eraseVarModuleT m t
-	= T.transformV (eraseVarModuleV m) t
+ 	= T.transformV (eraseVarModuleV m) t
 
 eraseVarModuleV m v
  = if Var.nameModule v == m

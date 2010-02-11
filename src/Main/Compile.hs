@@ -349,7 +349,7 @@ compileFile_parse
 	let rsGlobal	= Set.filter (\v -> Var.nameSpace v == NameRegion) 
 			$ vsFreeTREC
 	
-	cBind		<- SC.coreBind "CB"
+	cBind		<- SC.coreBind sModule "CB"
 				vsRegionClasses
 				rsGlobal
 				cNormalise

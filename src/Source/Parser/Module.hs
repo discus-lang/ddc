@@ -269,7 +269,7 @@ pTopRegion :: Parser (Top SP)
 pTopRegion
  = 	-- region var
  	do	tok	<- pTok K.Region
-		var	<- pOfSpace NameRegion pVar
+		var	<- pQualified (pOfSpace NameRegion pVar)
 		return	$ PRegion (spTP tok) var
 
 

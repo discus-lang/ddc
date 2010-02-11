@@ -2,7 +2,7 @@ ddc: ERROR
 ./test/02-Error/30-Typing/Unify/DefConst/Test.ds:6:10
     Type mismatch during unification.
           cannot match: Base.Int32
-                  with: Data.String.String
+                  with: Base.String
 
               the use of: fish
                  at type: Base.Int32
@@ -10,6 +10,6 @@ ddc: ERROR
 
         conflicts with, 
           literal value "perch"
-                 of type: Data.String.String
+                 of type: Base.String
                       at: ./test/02-Error/30-Typing/Unify/DefConst/Test.ds:6:15
 

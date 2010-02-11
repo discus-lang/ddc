@@ -609,7 +609,9 @@ reconBoxType r tt
 	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
 	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
 	= makeTData 
-		(primVarFmt NameType baseName mkBind fmtBoxed)
+		(primVarFmt NameType 
+				(pprStrPlain (Var.nameModule v) ++ "." ++ baseName) 
+				mkBind fmtBoxed)
 		(KFun kRegion kValue) 
 		[r]
 
@@ -623,7 +625,9 @@ reconUnboxType r1 tt
 	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
 	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
 	= makeTData
-		(primVarFmt NameType baseName mkBind fmtUnboxed)
+		(primVarFmt NameType 
+				(pprStrPlain (Var.nameModule v) ++ "." ++ baseName)
+				mkBind fmtUnboxed)
 		kValue
 		[]
 
@@ -667,20 +671,17 @@ reconOpApp op xs
 		, t1 == t2
 		= (t1, tPure)
 
-		-- comparison operators
-		| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
-		, [t1, t2]	<- rxs
-		, isUnboxedNumericType t1
-		, t1 == t2
-		= (makeTData (primTBool Unboxed) kValue [], tPure)
-
-		-- boolean operators
-		| elem op [OpAnd, OpOr]
-		, [t1, t2]		<- rxs
-		, Just (v, k, [])	<- takeTData t1
-		, v == (primTBool Unboxed)
-		, t1 == t2
-		= (makeTData (primTBool Unboxed) kValue [], tPure)
+	-- boolean operators
+	| elem op [OpAnd, OpOr]
+	, [t1, t2]		<- map (t4_2 . reconX tt) xs
+	, Just (v, k, [])	<- takeTData t1
+	, v == (primTBool Unboxed)
+	, t1 == t2
+	= (makeTData (primTBool Unboxed) kValue [], tPure)
+	
+	| otherwise
+	= panic stage
+	$ "reconOpApp: no match for " % op % " " % xs % "\n"
 
 		| otherwise
 		= panic stage

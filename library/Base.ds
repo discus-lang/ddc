@@ -1,4 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
+-- Key, wired in things
+--	The compiler assumes that all this stuff is in this module.
+--	Don't change it or move it somewhere else unless you know what you're doing.
 
 -- Wordsize Config --------------------------------------------------------------------------------
 -- | An unsigned word big enough to hold the offset from
@@ -51,6 +54,12 @@ foreign import data "Char32"  Char32#
 -- Boxed Data Types -------------------------------------------------------------------------------
 data	Unit	
 	= Unit
+
+-- | The runtime system assumes that False is first in the list of
+--	constructors, don't swap them around.
+data Bool %r1
+	= False
+	| True
 
 -- unsigned words
 data 	Word64	%r	= Word64
@@ -114,7 +123,9 @@ effect	!WriteT		:: * -> !	-- Write to whole object.
 
 -- Strings -----------------------------------------------------------------------------------------
 
--- This stuff is here to break module recursion.
+-- unboxed strings are pointers to null-terminated blocks of utf8 characters. 
+--	These blocks can be updated, so we give the string a region.
+foreign import data "String"  String# :: % -> *
 
 -- | A FlatString contains a flat C string.
 --   Layout:

@@ -159,7 +159,7 @@ packTypeCrsSub' config crsEq subbed tt
 			= Map.map (packTypeCrsSub config_subEffClo crsEq_all subbed) crsEq2_restrict
 
 		-- the final constraints
-		crs'	= Constraints crsEq2_restrict' crsMore2' crsOther2'
+		crs'	= Constraints crsEq2_restrict' crsMore2' (nub crsOther2')
 
 	    in	addConstraints crs' t'
 	

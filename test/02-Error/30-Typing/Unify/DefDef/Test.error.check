@@ -1,11 +1,11 @@
 ddc: ERROR
 ./test/02-Error/30-Typing/Unify/DefDef/Test.ds:8:14
     Type mismatch during unification.
-          cannot match: Data.String.String
+          cannot match: Base.String
                   with: Base.Int32
 
               the use of: f2
-                 at type: Data.String.String
+                 at type: Base.String
                       at: ./test/02-Error/30-Typing/Unify/DefDef/Test.ds:8:14
 
         conflicts with, 

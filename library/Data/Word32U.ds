@@ -53,7 +53,7 @@ instance Eq Word32# where
 
 	(==) a b	= case primWord32U_eq a b of
 				false#	-> False
-				_	-> True
+				true#	-> True
 
 instance Ord Word32# where
 	(>)		= primWord32U_gt

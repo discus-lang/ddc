@@ -154,7 +154,8 @@ coreReconstruct name cHeader cTree
 coreBind
 	:: (?args ::	[Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> String		-- ^ unique
+	=> Module
+	-> String		-- ^ unique
 	-> (Map Var [Var])	-- ^ map of class constraints on each region
 				--	eg (%r1, [Lazy, Const])
 	-> Set Var		-- the regions with global lifetimes which should be bound 
@@ -162,13 +163,14 @@ coreBind
 	-> Tree	-> IO Tree
 	
 coreBind
+	mod
 	unique	
 	classMap
 	rsGlobal
 	cSource
  = do
  	let tree' = {-# SCC "Core.Bind" #-}
-	            bindTree unique classMap rsGlobal cSource
+	            bindTree mod unique classMap rsGlobal cSource
 	
 	dumpCT DumpCoreBind "core-bind" tree'
 

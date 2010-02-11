@@ -261,7 +261,7 @@ pType_body1
  	-- If a variable had no namespace qualifier out the front the lexer will leave
 	--	it in NameNothing. In this case we know its actually a type variable, so can
 	--	set it in NameType.
-	do	var	<- liftM (vNameDefaultN NameType) pVarPlain
+ <|>	do	var	<- liftM (vNameDefaultN NameType) $ pVarPlain
 		return	$ TVar 	(kindOfSpace $ Var.nameSpace var) var
 		
  <|>	pRParen pParenTypeBody
