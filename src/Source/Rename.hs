@@ -13,6 +13,8 @@ where
 
 import Source.Rename.State
 import Source.Rename.Object
+import Source.Rename.Binding
+
 import Source.Util
 import Source.Horror
 import Source.Slurp
