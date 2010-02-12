@@ -114,30 +114,29 @@ instance Rename (Top SourcePos) where
 
 	-- types
 	PTypeKind sp v k
-	 -> do	v'	<- lookupV v
+	 -> do	v'	<- linkV v
 	 	return	$ PTypeKind sp v' k
 
 	PTypeSynonym sp v t
 	 -> local 
-          $ do 	v'	<- lookupN NameType v
+          $ do 	v'	<- linkN NameType v
 	 	t'	<- rename t
 		return	$ PTypeSynonym sp v' t'
 
 	PData sp vData vsData ctors
 	 -> local
-	  $ do
-	 	vData'	<- lookupN NameType vData
+	  $ do	vData'	<- linkN NameType vData
 		vsData'	<- mapM bindZ vsData
 		ctors'	<- mapM (renameCtor vData' vsData') ctors
 	
 		return	$ PData sp vData' vsData' ctors' 
 	
 	PRegion sp v
-	 -> do	v'	<- lookupN NameRegion v
+	 -> do	v'	<- linkN NameRegion v
 	 	return	$ PRegion sp v'
 	
 	PEffect sp v k
-	 -> do 	v'	<- lookupN NameEffect v
+	 -> do 	v'	<- linkN NameEffect v
 		return	$ PEffect sp v' k
 
 	PStmt	s
@@ -147,7 +146,7 @@ instance Rename (Top SourcePos) where
 	
 	-- classes
 	PClass sp v k
-	 -> do 	v'	<- lookupN NameClass v
+	 -> do 	v'	<- linkN NameClass v
 	 	return	$ PClass sp v' k
 
 	PClassDict sp v vks inh sigs
@@ -205,23 +204,23 @@ instance Rename (Export SourcePos) where
  rename ex	
   = case ex of
 	EValue sp v 
-	 -> do	v'	<- lookupV v
+	 -> do	v'	<- linkV v
 		return	$ EValue sp v'
 
 	EType sp v 
-	 -> do	v'	<- lookupN NameType v
+	 -> do	v'	<- linkN NameType v
 		return	$ EType sp v'
 	
 	ERegion sp v 
-	 -> do	v'	<- lookupN NameRegion v
+	 -> do	v'	<- linkN NameRegion v
 		return	$ ERegion sp v'
 
 	EEffect sp v 
-	 -> do	v'	<- lookupN NameEffect v
+	 -> do	v'	<- linkN NameEffect v
 		return	$ EEffect sp v'
 
 	EClass sp v 
-	 -> do	v'	<- lookupN NameClass v
+	 -> do	v'	<- linkN NameClass v
 		return	$ EClass sp v'
 
 -- Module ------------------------------------------------------------------------------------------
@@ -235,14 +234,14 @@ instance Rename (Foreign SourcePos) where
   = case ff of
  	OImport mS v tv to 
 	 -> local
-	 $  do 	v'	<- lookupV v
+	 $  do 	v'	<- linkV v
 	 	tv'	<- rename tv
 		to'	<- rename to
 		return	$ OImport mS v' tv' to' 
 	
 	OImportUnboxedData s v k
 	 -> local
-	  $ do	v'	<- lookupN NameType v
+	  $ do	v'	<- linkN NameType v
 		return	$ OImportUnboxedData s v' k
 
 -- Classes -----------------------------------------------------------------------------------------
@@ -266,7 +265,7 @@ renameClassSig    (vs, t)
 renameInstInh :: (Var, [Type])	-> RenameM (Var, [Type])
 renameInstInh    (v, ts)
  = do
- 	v'	<- lookupN NameClass v
+ 	v'	<- linkN NameClass v
 	ts'	<- rename ts
 	return	(v', ts')
 		
@@ -279,7 +278,7 @@ renameCtor
 	-> RenameM (Var, [DataField (Exp SourcePos) Type])
 
 renameCtor vData vsData (v, fields)
- = do	v'	<- lookupV v
+ = do	v'	<- linkV v
 	fields'	<- mapM (renameDataField vData vsData) fields
 	return	(v', fields')
 
@@ -324,7 +323,7 @@ instance Rename (Exp SourcePos) where
 	 -> return exp
 
 	XVar sp v		
-	 -> do 	v'	<- lookupV v
+	 -> do 	v'	<- linkV v
 		return	$ XVar sp v'
 
 	XProj sp x proj
@@ -401,7 +400,7 @@ instance Rename (Exp SourcePos) where
 	 -> 	return	$ XOp sp v
 	 
 	 | otherwise
-	  -> do	v'	<- lookupV v
+	  -> do	v'	<- linkV v
 	 	return	$ XOp sp v'
 
 	XDefix sp es 
@@ -581,13 +580,13 @@ bindPat lazy ww
 	 -> do	return	(ww, [])
 	 
 	WCon sp v ps
-	 -> do	v'		<- lookupV v
+	 -> do	v'		<- linkV v
 	 	(ps', bvs)	<- liftM unzip $ mapM (bindPat lazy) ps
 		return	( WCon sp v' ps'
 			, concat bvs)
 	 
 	WConLabel sp v lvs 
-	 -> do	v'		<- lookupV v
+	 -> do	v'		<- linkV v
 
 	 	let (ls, vs)	= unzip lvs
 		ls'		<- rename ls
@@ -808,7 +807,7 @@ instance Rename Type where
 
 	-- effect
 	TEffect v rs
-	 -> do 	v'	<- lookupN NameEffect v
+	 -> do 	v'	<- linkN NameEffect v
 		rs'	<- rename rs
 		return	$ TEffect v' rs'
 		
@@ -848,7 +847,7 @@ instance Rename TyCon where
 	 -> do 	return	tc
 		
 	TyConData { tyConName }
-	 -> do	v	<- lookupN NameType tyConName
+	 -> do	v	<- linkN NameType tyConName
 	 	return	$ tc { tyConName = v }
 
 
@@ -857,7 +856,7 @@ instance Rename Fetter where
  rename f
   = case f of
 	FConstraint v ts
-	 -> do 	v'	<- lookupN NameClass v
+	 -> do 	v'	<- linkN NameClass v
 		ts'	<- rename ts
 		return	$ FConstraint v' ts'
 
