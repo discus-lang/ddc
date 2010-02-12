@@ -35,6 +35,8 @@ import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
 
+-- Variable Binding -----------------------------------------------------------
+
 -- Top Level Scope --------------------
 -- | Bind a variable into the top-level namespace associated with its namespace annotation.
 --	It's ok to have multiple variables at top-level with the same name, provided
@@ -68,7 +70,7 @@ bindTopLevelN_newName space var nameMap modVars
 	-- rename the variable to give it a unique id.
 	varRenamed	<- renameVarN space var
 	
-	-- insert the variable into the map
+	-- insert the renamed variable into the map
 	let modVars'	= (Var.nameModule var, var) : modVars
 	let nameMap'	= Map.insert (Var.name var) modVars' nameMap
 
@@ -80,8 +82,11 @@ bindTopLevelN_newName space var nameMap modVars
 	
 
 -- Local Scope ------------------------
--- | Bind this variable into the local scope associated with its namespace annotation.
---	Causes an error if the variable is already bound at this level.
+-- | Bind this variable into the current local scope associated with its namespace annotation.
+--	Also renames the variable so it has a fresh id.
+--
+--	If the variable is already bound here then add an error to the renamer
+--	state and return the original variable.
 --
 bindZ :: Var -> RenameM Var
 bindZ v 	= bindN (Var.nameSpace v) v
@@ -94,25 +99,31 @@ bindN :: NameSpace -> Var -> RenameM Var
 bindN space var
  = do	
 	-- grab the variable stack for the current namespace.
-	Just (spaceMap:ms)
+	Just (spaceMap : spacesEnclosing)
 		<- liftM (Map.lookup space)
 		$  gets stateStack
 
 	-- if the variable is already bound at the current level then
 	--	we have a "Redefined variable" error.
-	(case Map.lookup (Var.name var) spaceMap of
-	 	Just boundVar	-> addError $ ErrorRedefinedVar boundVar var
-	 	Nothing		-> return ())
+
+	-- check that there isn't already a variable with this name bound here
+	case Map.lookup (Var.name var) spaceMap of
+	 Nothing          -> bindN_newName space var spaceMap spacesEnclosing
+	 Just varExisting
+	  -> do	addError $ ErrorRedefinedVar varExisting var
+		return var
 		
+bindN_newName space var spaceMap spacesEnclosing
+ = do		
 	-- rename the variable to give it a new unique id.
 	varRenamed	<- renameVarN space var
 
 	-- insert the renamed variable into the variable stack.
 	let spaceMap'	= Map.insert (Var.name var) varRenamed spaceMap
-	modify (\s -> s { 
-		stateStack	= Map.insert space 
-					(spaceMap':ms) 
-					(stateStack s)})
+	modify	$ \s -> s 
+		{ stateStack	= Map.insert space 
+					(spaceMap' : spacesEnclosing) 
+					(stateStack s) }
 	
 	-- return the renamed variable.
 	return varRenamed
