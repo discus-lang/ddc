@@ -705,9 +705,9 @@ slurpProjTable tree
 checkForRedefDataField :: Map Var (Top Annot) -> Top Annot -> ProjectM ()
 checkForRedefDataField dataMap (PProjDict _ tt ss)
  | Just (pvar, _, _)	<- takeTData tt
- = do	let Just dname	= Map.lookup pvar dataMap
-	let dfmap	= fieldNames dname
- 	mapM_ (checkSBindFunc dname pvar dfmap) ss
+ = case Map.lookup pvar dataMap of
+ 	Nothing -> return ()
+	Just dname -> mapM_ (checkSBindFunc dname pvar (fieldNames dname)) ss
 
 checkForRedefDataField _ _ = return ()
 
