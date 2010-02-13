@@ -87,6 +87,12 @@ data Error
 		, eRedefined		:: Var
 		, eDataVar		:: Var }
 
+	-- | A projection name clashes with a field name in the same Data namespace.
+	| ErrorRedefClassInst
+		{ eClass		:: Var
+		, eFirstDefined		:: Var
+		, eRedefined		:: Var }
+
 	-- | Can't have > 1 non-assoc op in the same string.
 	| ErrorDefixNonAssoc		[Var]
 
@@ -210,6 +216,13 @@ instance Pretty Error PMode where
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Projection '"	% eFirstDefined err % "' over data type '" % eDataVar err 	% "'\n"
 	% "      collides with a field name at: "	% prettyPos (eFirstDefined err)		% "\n"
+
+ ppr err@(ErrorRedefClassInst{})
+	= prettyPos (eRedefined err)								% "\n"
+	% "     Instance '"	% Var.name (eFirstDefined err)
+	%						"' of class '" % Var.name (eClass err) 	% "'\n"
+	% "      first defined at: "	% prettyPos (eFirstDefined err) 			% "\n"
+	% "      redefined at    : "	% prettyPos (eRedefined err)				% "'\n"
 
  ppr (ErrorDefixNonAssoc (v:vs))
 	= prettyPos v % "\n"

@@ -102,6 +102,7 @@ projectTreeM moduleName headerTree tree
 					<- tree ++ headerTree]
 
 	mapM (checkForRedefDataField dataMap) [p | p@(PProjDict{}) <- tree]
+	_ <- foldM checkForRedefClassInst Map.empty [p | p@(PClassInst{}) <- tree]
 
 	-- Each data type in the source file should have a projection dictionary
 	--	if none exists then make a new empty one.
@@ -699,7 +700,7 @@ slurpProjTable tree
 
 
 ----------------------------------------------------------------------------------------------------
--- Check for projection names that collide with filed names of the Data
+-- Check for projection names that collide with field names of the Data
 -- definition they are projecting over. Log any that are found as errors.
 --
 checkForRedefDataField :: Map Var (Top Annot) -> Top Annot -> ProjectM ()
@@ -710,6 +711,18 @@ checkForRedefDataField dataMap (PProjDict _ tt ss)
 	Just dname -> mapM_ (checkSBindFunc dname pvar (fieldNames dname)) ss
 
 checkForRedefDataField _ _ = return ()
+
+
+checkForRedefClassInst :: Map String Var -> Top Annot -> ProjectM (Map String Var)
+checkForRedefClassInst map ci@(PClassInst sp v tl@(TApp (TCon tc) _ : _) _ _)
+ = do	let key = Var.name v ++ " " ++ Var.name (tyConName tc)
+	case Map.lookup key map of
+          Nothing	-> return $ Map.insert key (tyConName tc) map
+	  Just redef	->
+          	do	addError $ ErrorRedefClassInst v redef (tyConName tc)
+                	return map
+
+checkForRedefClassInst map _  = return map
 
 
 checkSBindFunc :: Top Annot -> Var -> Map String Var -> Stmt Annot -> ProjectM ()
