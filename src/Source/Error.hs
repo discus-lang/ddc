@@ -199,7 +199,7 @@ instance Pretty Error PMode where
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined "
 		% (shortNameOfSpace $ Var.nameSpace (eFirstDefined err))
-		% " variable '"  % eRedefined err % "'\n"
+		% " variable '"  % Var.name (eRedefined err) % "'\n"
 	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
 
  ppr err@(ErrorRedefinedCtor{})
