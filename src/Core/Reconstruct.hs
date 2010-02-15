@@ -68,6 +68,29 @@ trace ss x
 		then Debug.Trace.trace (pprStrPlain ss) x 
 		else x
 
+
+
+
+-- Reconstruct Monad --------------------------------------------------------------------------
+type ReconM
+	= State Env
+
+-- | Modify the state for an action, the revert to the original state.
+tempState
+	:: (Env -> Env) -> ReconM a -> ReconM a
+tempState fSt action
+ = do	st	<- get
+        modify	fSt
+	x	<- action
+	put	st
+	return	x
+
+-- | Revert to the previous state after running an action.
+keepState
+	:: ReconM a -> ReconM a
+keepState = tempState id
+
+
 -- Tree --------------------------------------------------------------------------------------------
 reconTree'
 	:: String	-- ^ caller name
@@ -92,21 +115,19 @@ reconTree table tHeader tCore
  	tt		= {-# SCC "reconTree/table"    #-} foldr (uncurry addEqVT) table topTypes
 	
 	-- reconstruct type info on each top level thing
-	tCore'		= map (reconP tt) tCore
+	tCore'		= map (\x -> evalState (reconP x) tt) tCore
 	
-      in tCore'
-	
+   in tCore'
+
 
 -- Top ---------------------------------------------------------------------------------------------
 reconP' :: String -> Top -> (Top, Type, Effect, Closure)
 reconP' caller (PBind v x)
-
- = let	(SBind (Just v') x', typ', eff', clo')
- 		= snd 
-		$ reconS emptyEnv { envCaller = Just caller } 
-		$ SBind (Just v) x
+ = let (SBind (Just v') x', typ', eff', clo')
+		= evalState	(reconS $ SBind (Just v) x)
+				(emptyEnv { envCaller = Just caller })
 		
-   in	(PBind v' x', typ', eff', clo')
+   in  (PBind v' x', typ', eff', clo')
  
 
 reconP_type :: String -> Top -> Type
@@ -114,69 +135,58 @@ reconP_type caller p
 	= t4_2 $ reconP' caller p
 
 
-reconP	:: Env 
-	-> Top 
-	-> Top
+reconP	:: Top -> ReconM Top
 
-reconP tt (PBind v x)
- = let	(x', _, _, _)	
- 		= {-# SCC "reconP/reconX" #-} reconX tt x
-   in	PBind v x'
+reconP (PBind v x)
+ = do	(x', _, _, _)	<- {-# SCC "reconP/reconX" #-} reconX x
+	return	(PBind v x')
 
-reconP tt p		= p
+reconP p	= return p
 
 
 -- Expression --------------------------------------------------------------------------------------
 reconX' :: String -> Exp -> (Exp, Type, Effect, Closure)
 reconX' caller x 
-	= reconX emptyEnv { envCaller = Just caller } x
+	= evalState (reconX x) emptyEnv { envCaller = Just caller }
 
 reconX_type :: String -> Exp -> Type
 reconX_type caller x
 	= t4_2 $ reconX' caller x
 
-reconX 	:: Env
-	-> Exp 
-	-> ( Exp
-	   , Type, Effect, Closure)
+reconX :: Exp -> ReconM (Exp, Type, Effect, Closure)
 
 -- LAM
-reconX tt xx@(XLAM b@(BMore v t1) t2 x)
- = let	tt'			= addMoreVT v t1 tt
- 	(x', xT, xE, xC)	= reconX tt' x
+reconX xx@(XLAM b@(BMore v t1) t2 x)
+ = do	(x', xT, xE, xC)	<- tempState (addMoreVT v t1) $ reconX x
+	trace	("reconX[XLAM-BMore]: (/\\ " % b % " -> ...)\n"
+		% "  xT:\n" %> xT	% "\n"
+		% "  xC:\n" %> xC	% "\n\n") $ return ()
 
-   in 
-{-   	trace 	("(/\\ " % b % " -> ...)\n"
+	return	( XLAM b t2 x'
+		, TForall b t2 xT
+		, xE
+		, xC)
+
+reconX (XLAM v k@KClass{} x)
+ = do	(x', xT, xE, xC)	<- reconX x
+	trace 	("reconX[XLAM-KClass]: (/\\ " % v % " -> ...)\n"
    		% "  xT:\n" %> xT	% "\n"
-		% "  xC:\n" %> xC	% "\n\n") $ -}
+		% "  xC:\n" %> xC	% "\n\n") $ return ()
+	return	( XLAM 	   v k x'
+		, TContext k xT
+		, xE
+		, xC)
 
-	( XLAM b t2 x'
-	, TForall b t2 xT
-	, xE	  
-	, xC)
-
-reconX tt (XLAM v k@KClass{} x)
- = let	(x', xT, xE, xC)	= reconX tt x
-   in 
-{-    trace 	("(/\\ " % v % " -> ...)\n"
+reconX (XLAM v k x)
+ = do	(x', xT, xE, xC)	<- reconX x
+	trace	("reconX[XLAM-any]: (/\\ " % v % " -> ...)\n"
    		% "  xT:\n" %> xT	% "\n"
-		% "  xC:\n" %> xC	% "\n\n") $ -}
-      	( XLAM 	   v k x'
-    	, TContext k xT 
-	, xE
-	, xC)
+		% "  xC:\n" %> xC	% "\n\n") $ return ()
 
-reconX tt (XLAM v k x)
- = let	(x', xT, xE, xC)	= reconX tt x
-   in 
-{-      trace 	("(/\\ " % v % " -> ...)\n"
-   		% "  xT:\n" %> xT	% "\n"
-		% "  xC:\n" %> xC	% "\n\n") $ -}
-
-   	( XLAM 	  v k x'
-    	, TForall v k xT 
-	, xE
-	, xC)
+   	return	( XLAM 	  v k x'
+	    	, TForall v k xT 
+		, xE
+		, xC)
  
 -- APP
 
@@ -185,33 +195,39 @@ reconX tt (XLAM v k x)
 --	in the literal's type scheme. String literals never appear without their region
 --	parameters in the core so this is ok.
 
-reconX tt exp@(XAPP (XLit (LiteralFmt lit fmt)) (TVar k r))
+reconX exp@(XAPP (XLit (LiteralFmt lit fmt)) (TVar k r))
  | k == kRegion
- = let	t = case lit of
- 		LString{}	-> makeTData (primTString Unboxed) (KFun kRegion kValue) [TVar kRegion r]
-		_		-> panic stage
-				$  "reconX/XApp: non string constant applied to region\n"
-				%  "    exp = " % exp	% "\n"
-   in	( exp
-   	, t
-	, tPure
-	, tEmpty)
+ = do	let	t = case lit of
+		     LString{}
+		      -> makeTData
+				(primTString Unboxed)
+				(KFun kRegion kValue)
+				[TVar kRegion r]
+		     _
+		      -> panic stage
+		      $  "reconX/XApp: non string constant applied to region\n"
+		      %  "    exp = " % exp	% "\n"
+	return	( exp
+	   	, t
+		, tPure
+		, tEmpty)
 
 
-reconX tt exp@(XAPP x t)
- = let	(x', tX, eX, cX)	= reconX tt x
-   in	
-   	case applyTypeT tt tX t of
-   	 Just tApp
-	  -> {- trace 	("(" % x % " @ " % t % ")\n"
-	     		% "    tApp:\n"	%> tApp		% "\n"
+reconX exp@(XAPP x t)
+ = do	tt			<- get
+	(x', tX, eX, cX)	<- reconX x
+	aT			<- applyTypeT tX t
+	case aT of
+	 Just tApp
+	  ->	trace 	("reconX[XAPP]: (" % x % " @ " % t % ")\n"
+			% "    tApp:\n"	%> tApp		% "\n"
 			% "    eX:\n" 	%> eX		% "\n"
-			% "    cX:\n"	%> cX		% "\n\n\n") $ -}
-	     	  
-		( XAPP x' t
-		, tApp
-		, eX
-		, cX)
+			% "    cX:\n"	%> cX		% "\n\n\n") $
+
+		return	( XAPP x' t
+			, tApp
+			, eX
+			, cX)
 	  
 	 _ -> panic stage
 	 	$ " reconX: Kind error in type application (x t).\n"
@@ -221,16 +237,18 @@ reconX tt exp@(XAPP x t)
 		% "   T[x]     =\n" %> tX	% "\n\n"
 
 -- Tet
-reconX tt (XTet vts x)
- = let	tt'			= foldr (uncurry addEqVT) tt vts
- 	(x', tx, xe, xc)	= reconX tt' x
-   in	( XTet   vts x'
-   	, TFetters tx 
-		[ FWhere (TVar (defaultKindV v) v) t2
+reconX (XTet vts x)
+ = do	(x', tx, xe, xc)
+		<- tempState
+			(\tt -> foldr (uncurry addEqVT) tt vts)
+			(reconX x)
+	return	( XTet   vts x'
+		, TFetters tx
+			[ FWhere (TVar (defaultKindV v) v) t2
 			| (v, t2)	<- vts]
-	, xe
-	, xc)
-   
+		, xe
+		, xc)
+
 -- xtau
 -- We can't actually check the reconstructed type against the annotation here
 --	because we can't see /\ bound TREC variables that might be bound above us.
@@ -240,112 +258,104 @@ reconX tt (XTet vts x)
 --
 -- 	The XTau types are checked by reconS instead.
 --
-reconX tt exp@(XTau tauT x)
- = let	(x', xT, xE, xC)	= reconX tt x
-   in	( XTau tauT x'
-	, xT
-	, xE
-	, xC)
+reconX exp@(XTau tauT x)
+ = do	(x', xT, xE, xC)	<- keepState $ reconX x
+	return	( XTau tauT x'
+		, xT
+		, xE
+		, xC)
 
 
 -- lam
-reconX tt exp@(XLam v t x eff clo)
+reconX exp@(XLam v t x eff clo)
  = {-# SCC "reconX/XLam" #-}
-   let	reconX_lam
- 
-	 	| tt'			<- addEqVT v t tt
-		, (x', xT, xE, xC)	<- reconX tt' x
+   do	tt			<- get
+	(x', xT, xE, xC)	<- tempState	(addEqVT v t) $ reconX x
 
-		, eff'		<- packT $ substituteT (envEq tt) eff
-		, clo_sub	<- packT $ substituteT (envEq tt) clo
+	let	eff'		= packT $ substituteT (envEq tt) eff
+		clo_sub		= packT $ substituteT (envEq tt) clo
 		
-		, fvT		<- freeVars xT
-		, fvC		<- freeVars xC
+		fvT		= freeVars xT
+		fvC		= freeVars xC
 		
 		-- mask non-observable effects that are not in the
 		--	environment (closure) or type of the return value.
-		, xE_masked	<- maskReadWriteNotIn (Set.union fvT fvC) xE
+		xE_masked	= maskReadWriteNotIn (Set.union fvT fvC) xE
 
 		-- TODO: We need to flatten the closure before trimming to make sure effect annots
 		--	on type constructors are not lost. It would be better to modify trimClosureC
-		--	so it doesn't loose them, or the closure equivalence rule so it doesn't care.
-		, xE'		<- packT xE_masked
-	
-		-- check effects match
-		, () <- if subsumes (envMore tt) eff' xE'
-			 then ()
-			 else panic stage
-				$ "reconX: Effect error in core.\n"
-				% "    caller = " % envCaller tt	% "\n"
-				% "    in lambda abstraction:\n" 	%> exp	% "\n\n"
-				% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
-				% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
-				% "    with bounds:\n"
-				% "    t:       " %> t	 % "\n"
-				% "    env:     " %> xC  % "\n"
-				% "    fv(Env): " %> fvC % "\n"
-				% "    fv(T):   " %> fvT % "\n"  
-				
-				% pprBounds (envMore tt)
-				
-		-- check closures match
-		-- Closures in core don't work properly yet.
+		--	so it doesn't lose them, or the closure equivalence rule so it doesn't care.
+		xE'	= packT xE_masked
 
-		, xC_masked	<- dropTFreesIn (Set.singleton v) xC
-		, xC_flat	<- flattenT xC_masked
-		, xC'		<- trimClosureC Set.empty Set.empty $ xC_flat
+	-- check effects match
+	() <- unless (subsumes (envMore tt) eff' xE') $
+		panic stage
+		$ "reconX: Effect error in core.\n"
+		% "    caller = " % envCaller tt	% "\n"
+		% "    in lambda abstraction:\n" 	%> exp	% "\n\n"
+		% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
+		% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
+		% "    with bounds:\n"
+		% "    t:       " %> t	 % "\n"
+		% "    env:     " %> xC  % "\n"
+		% "    fv(Env): " %> fvC % "\n"
+		% "    fv(T):   " %> fvT % "\n"
+		% pprBounds (envMore tt)
 
-{-		, () <- if subsumes (envMore tt) clo_sub xC'
-			 then ()
-			 else ()
-				panic stage
-				$ "reconX: Closure error in core.\n"
-				% "    caller = " % envCaller tt	% "\n"
-				% "    in lambda abstraction:\n" 	%> exp		% "\n\n"
-				% "    reconstructed closure of body:\n"%> xC'		% "\n\n"
-				% "    is not <: annot on lambda:\n"	%> clo_sub	% "\n\n"
-				% pprBounds (envMore tt)
+	-- check closures match
+	-- Closures in core don't work properly yet.
+	let	xC_masked	= dropTFreesIn (Set.singleton v) xC
+		xC_flat		= flattenT xC_masked
+		xC'		= trimClosureC Set.empty Set.empty $ xC_flat
+
+{-
+	() <- unless (subsumes (envMore tt) clo_sub xC') $
+		panic stage
+		$ "reconX: Closure error in core.\n"
+		% "    caller = " % envCaller tt	% "\n"
+		% "    in lambda abstraction:\n" 	%> exp		% "\n\n"
+		% "    reconstructed closure of body:\n"%> xC'		% "\n\n"
+		% "    is not <: annot on lambda:\n"	%> clo_sub	% "\n\n"
+		% pprBounds (envMore tt)
 -}
 
-		-- Now that we know that the reconstructed effect closures of the body is less
-		--	than the annotations on the lambda we can reduce the annotation so it only 
-		--	contains members of the effect/closure that was reconstructed.
-		--
-		--	This is sound because we're only ever making the annotation smaller.
-		--	If we reduced the annotation too far, ie so it wasn't <= than the reconstructed
-		--	effect\/closure then we would get an error next type we called reconstruct.
-		--
-		--	We actually /have/ to do this clamping because when Core.Bind introduces local
-		--	regions for mutually recursive functions, the left over effect annotations contain
-		--	regions which are out of scope which makes Core.Lint complain.
-		--	
-		--	Another way of looking at this is that we're doing the effect masking that Core.Bind
-		--	should have done originally.
-		--
-		, eff_clamped	<- clampSum tt xE' eff'
+	-- Now that we know that the reconstructed effect closures of the body is less
+	--	than the annotations on the lambda we can reduce the annotation so it only
+	--	contains members of the effect/closure that was reconstructed.
+	--
+	--	This is sound because we're only ever making the annotation smaller.
+	--	If we reduced the annotation too far, ie so it wasn't <= than the reconstructed
+	--	effect\/closure then we would get an error next type we called reconstruct.
+	--
+	--	We actually /have/ to do this clamping because when Core.Bind introduces local
+	--	regions for mutually recursive functions, the left over effect annotations contain
+	--	regions which are out of scope which makes Core.Lint complain.
+	--
+	--	Another way of looking at this is that we're doing the effect masking that Core.Bind
+	--	should have done originally.
+	--
+	eff_clamped	<- clampSum xE' eff'
 
-		-- don't clamp closures. There is no need to, and clampSum gives the wrong answer
-		--	because two closures   (x : Int %r1) and (y : Int %r1) are taken to be non-equal
-		--	due to their differing tags.
---		, clo_clamped	<- clampSum tt xC' clo_sub
+	-- don't clamp closures. There is no need to, and clampSum gives the wrong answer
+	--	because two closures   (x : Int %r1) and (y : Int %r1) are taken to be non-equal
+	--	due to their differing tags.
+--	clo_clamped	<- clampSum xC' clo_sub
 
-		= trace ( "reconX: XLam\n"
-			% "    xT           = " % xT	% "\n"
-			% "    xE'  (recon) = " % xE'	% "\n"
-			% "    eff' (annot) = " % eff'	% "\n"
-			% "    eff_clamped  = " % eff_clamped	% "\n"
-			% "    fvT          = " % fvT		% "\n"
-			% "    fvC          = " % fvC		% "\n"
-			% "    xE           = " % xE		% "\n"
-			% "    xE_masked    = " % xE_masked     % "\n"
-		   	% "    clo          = " % xC		% "\n") $
+	trace ( "reconX[XLam]:\n"
+		% "    xT           = " % xT	% "\n"
+		% "    xE'  (recon) = " % xE'	% "\n"
+		% "    eff' (annot) = " % eff'	% "\n"
+		% "    eff_clamped  = " % eff_clamped	% "\n"
+		% "    fvT          = " % fvT		% "\n"
+		% "    fvC          = " % fvC		% "\n"
+		% "    xE           = " % xE		% "\n"
+		% "    xE_masked    = " % xE_masked     % "\n"
+	   	% "    clo          = " % xC		% "\n") $ return ()
 
-		   ( XLam v t x' eff_clamped clo_sub
-		   , makeTFun t xT eff_clamped clo_sub
-		   , tPure
-		   , xC')
-
-   in	reconX_lam
+	return	( XLam v t x' eff_clamped clo_sub
+		, makeTFun t xT eff_clamped clo_sub
+		, tPure
+		, xC')
 
 -- local
 -- TODO: check well foundedness of witnesses
@@ -353,46 +363,44 @@ reconX tt exp@(XLam v t x eff clo)
 --	All the local effects from the body of a lambda abstraction are masked
 --	all at once in the rule for XLam.
 --
-reconX tt (XLocal v vs x)
- = let	(x', xT, xE, xC)	= reconX tt x
+reconX (XLocal v vs x)
+ = do	(x', xT, xE, xC)	<- keepState $ reconX x
 
 	-- not sure if we should worry about regions variables escaping here.
 	-- we're not doing stack allocation, so it doesn't matter if they do.
-   in	{- (if Set.member v (freeVars xT) 
-   		then panic stage 
-			( "reconX: region " % v % " is not local\n"
-			% "    caller = " % envCaller tt	% "\n"
-			% "    t      = " % xT	% "\n"
-			% "    x      = " % x'	% "\n\n")
-			id
-		else	id) -}
-	 
-   	( XLocal v vs x'
-   	, xT
-	, xE
-	, xC)
+	{-
+	when (Set.member v (freeVars xT)) $
+	  do tt	<- get
+	     panic stage
+		$ "reconX: region " % v % " is not local\n"
+		% "    caller = " % envCaller tt	% "\n"
+		% "    t      = " % xT	% "\n"
+		% "    x      = " % x'	% "\n\n"
+	-}
+	return	( XLocal v vs x'
+	   	, xT
+		, xE
+		, xC )
 	
 -- app
-reconX tt exp@(XApp x1 x2 eff)
- = let	(x1', x1t, x1e, x1c)	= reconX tt x1
-	(x2', x2t, x2e, x2c)	= reconX tt x2
-	mResultTE		= {-# SCC "reconX/applyValue" #-}
-	                          applyValueT tt x1t x2t
-   in	case mResultTE of
-   	 Just (appT, appE)
-  	  -> let x'		= XApp x1' x2' tPure
-	  	 xE		= makeTSum kEffect  [x1e, x2e, appE]
+reconX exp@(XApp x1 x2 eff)
+ = do	tt			<- get
+	(x1', x1t, x1e, x1c)	<- keepState $ reconX x1
+	(x2', x2t, x2e, x2c)	<- keepState $ reconX x2
+	mResultTE		<- {-# SCC "reconX/applyValue" #-}
+				   applyValueT x1t x2t
+	case mResultTE of
+	 Just (appT, appE)
+	  -> let x'		= XApp x1' x2' tPure
+		 xE		= makeTSum kEffect  [x1e, x2e, appE]
 		 xC		= makeTSum kClosure [x1c, x2c]
-
-     	     in {- trace 	("(" % x1 % " $ ..)\n"
+	     in
+		trace 	("reconX[XApp]: (" % x1 % " $ ..)\n"
 	     		% "    appT:\n"	%> appT	% "\n"
 			% "    xE:\n" 	%> xE	% "\n"
-			% "    xC:\n"	%> xC	% "\n\n\n") $ -}
+			% "    xC:\n"	%> xC	% "\n\n\n") $
 	     
-		     	( x'
-		        , appT
-			, xE
-			, xC)
+		return (x', appT, xE, xC)
 	       	
 	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
@@ -401,91 +409,91 @@ reconX tt exp@(XApp x1 x2 eff)
 
 		% "   T[x1]   = " %> x1t		% "\n\n"
 		% "   (flat)  = " %> flattenT x1t	% "\n\n"
-		
 
 		% "   T[x2]   = " % x2t		% "\n\n"
-   
+
 -- do
-reconX tt (XDo ss)
- = let	(_, sts)		= mapAccumL reconS tt ss
-	(ss', sTs, sEs, sCs)	= unzip4 sts
-	Just t			= takeLast sTs
-	vsBind			= catMaybes $ map takeVarOfStmt ss'
-	
-   in	( XDo ss'
-        , t
-	, makeTSum kEffect sEs
-	, makeTSum kClosure
-		$ filter (\c -> case c of
-				  TFree v _	-> not $ elem v vsBind
-				  _		-> True)
-		$ flattenTSum 
-		$ makeTSum kClosure sCs)
+reconX (XDo ss)
+ = do	tt	<- get
+	(ss', sTs, sEs, sCs)	<- fmap unzip4 $ keepState $ mapM reconS ss
+	let	Just t		= takeLast sTs
+		vsBind		= catMaybes $ map takeVarOfStmt ss'
+
+	return	( XDo ss'
+        	, t
+		, makeTSum kEffect sEs
+		, makeTSum kClosure
+			$ filter (\c -> case c of
+					  TFree v _	-> notElem v vsBind
+					  _		-> True)
+			$ flattenTSum
+			$ makeTSum kClosure sCs)
    
 -- match
-reconX tt (XMatch [])
+reconX (XMatch [])
  = panic stage
  	$ "reconX: XMatch has no alternatives\n"
 
-reconX tt (XMatch aa)
- = let	(aa', altTs, altEs, altCs)	
-			= unzip4 $ map (reconA tt) aa
- 	
-	-- join all the alt types to get the type for the
-	--	whole match expression.
-	Just tMatch	= joinSumTs tt altTs
+reconX (XMatch aa)
+ = do	tt	<- get
+	(aa', altTs, altEs, altCs)
+			<- fmap unzip4 $ mapM reconA aa
 
-   in	( XMatch aa'
-   	, tMatch
-	, makeTSum kEffect altEs
-	, makeTSum kClosure altCs )
+	-- join all the alt types to get the type for the whole match
+	--	expression.
+	let	Just tMatch	= joinSumTs tt altTs
+
+	return	( XMatch aa'
+		, tMatch
+		, makeTSum kEffect altEs
+		, makeTSum kClosure altCs)
 
 -- var
 -- TODO: check against existing annotation.
 
 
 -- var has no type annotation, so look it up from the table
-reconX tt (XVar v TNil)
-	| Just t	<- Map.lookup v (envEq tt)
-	, t'		<- inlineTWheresMapT (envEq tt) Set.empty t 
-
-	-- When we add the type to this var we need to attach any more constraints associated with it, 
-	--	else we won't be able to check expressions separate from their enclosing XLAMs 
-	--	(which carry these constraints)
-	, vsFree	<- freeVars t
-	, vtsMore	<- catMaybes
-			$  map (\u -> case Map.lookup u (envMore tt) of
-						Nothing	-> Nothing
-						Just t	-> Just (u, t))
-			$ Set.toList vsFree
-
-	, tDrop		<- makeTFetters t' 
-				[ FMore (TVar (defaultKindV v) v) t2
-					| (v, t2)	<- vtsMore]
-
-{-	= trace ( "reconX[XVar]: dropping type\n"
-		% "    var    = " %> v		% "\n"
-		% "    tDrop  = " %> tDrop	% "\n")
-	   $	
--}
-	=   ( XVar v tDrop
-	    , tDrop
-	    , tPure
-	    , TFree v t)
-	  
-	| otherwise
-	= panic stage 
-	 	$ "reconX: Variable " % v % " has no embeded type annotation and is not in the provided environment.\n"
+reconX (XVar v TNil)
+ = do	tt		<- get
+	let	tM	= Map.lookup v (envEq tt)
+	when (isNothing tM)
+	 $ panic stage
+		$ "reconX: Variable " % v % " has no embedded type annotation and "
+		% "is not in the provided environment.\n"
 		% "    caller = " % envCaller tt	% "\n"
 
-	
+	let	Just t	= Map.lookup v (envEq tt)
+		t'	= inlineTWheresMapT (envEq tt) Set.empty t
+
+		-- When we add the type to this var we need to attach any more constraints associated with it,
+		--	else we won't be able to check expressions separate from their enclosing XLAMs
+		--	(which carry these constraints)
+		vsFree	= freeVars t
+		vtsMore	= catMaybes
+			$ map (\u -> fmap ((,) u) $ Map.lookup u (envMore tt))
+			$ Set.toList vsFree
+
+		tDrop	= makeTFetters t'
+				[ FMore (TVar (defaultKindV v) v) t2
+				| (v, t2)	<- vtsMore]
+
+	trace ( "reconX[XVar]: dropping type\n"
+	      % "    var    = " %> v		% "\n"
+	      % "    tDrop  = " %> tDrop	% "\n") $ return ()
+
+	return	( XVar v tDrop
+		, tDrop
+		, tPure
+		, TFree v t)
+
 -- var has a type annotation, so use that as its type
-reconX tt (XVar v t)
- = let	t'	= inlineTWheresMapT (envEq tt) Set.empty t
-   in	( XVar v t
-	, t'
-	, tPure
-	, trimClosureC Set.empty Set.empty $ TFree v t)
+reconX (XVar v t)
+ = do	tt	<- get
+	let t'	= inlineTWheresMapT (envEq tt) Set.empty t
+	return	( XVar v t
+		, t'
+		, tPure
+		, trimClosureC Set.empty Set.empty $ TFree v t)
 
 
 -- prim
@@ -493,94 +501,105 @@ reconX tt (XVar v t)
 --		this isn't a problem at the momement because we don't check effect information
 --		after Core.Curry
 --
-reconX tt xx@(XPrim prim xs)
--- = trace ("reconX[XPrim]: " % xx % "\n")
- = let	
- 	-- some of the xs are type terms which we can't call recon on
+reconX xx@(XPrim prim xs)
+ = do	trace ("reconX[XPrim]: " % xx % "\n") $ return ()
+	tt	<- get
+	-- some of the xs are type terms which we can't call recon on
 	--	so we have to do some contortions to get the closure from the others.
-	reconMaybeX tt x
-	 = case x of
-	 	XType{}	-> (x, Nothing, Nothing, Nothing)
-		_	->
-		 let (x', typ, eff, clo)	= reconX tt x
-		 in  (x', Just typ, Just eff, Just clo)
+	let	reconMaybeX x
+		 = case x of
+		    XType{}
+		     ->	return (x, Nothing, Nothing, Nothing)
+		    _
+		     ->	do	(x', typ, eff, clo)	<- keepState $ reconX x
+				return (x', Just typ, Just eff, Just clo)
 		 
- 
-  	(xs', txs, xsmEs, xsmCs)		
- 		= unzip4 $ map (reconMaybeX tt) xs
+	(xs', txs, xsmEs, xsmCs)
+		<- fmap unzip4 $ mapM reconMaybeX xs
 
 	-- work out the result type and effect of applying the primitive operator
-	(tPrim, ePrim)	
+	let getPrimTE
 
 		-- boxing		
 		| MBox 		<- prim
 		, [XType r, x]	<- xs
-		= ( reconBoxType r $ t4_2 $ reconX tt x
-		  , tPure)
+		= do	rx	<- reconX x
+			return	( reconBoxType r $ t4_2 $ rx
+				, tPure)
 		
 		-- unboxing
 		| MUnbox	<- prim
 		, [XType r, x]	<- xs
-		= ( reconUnboxType r $ t4_2 $ reconX tt x
-		  , TEffect primRead [r])
+		= do	rx	<- reconX x
+			return	( reconUnboxType r $ t4_2 $ rx
+				, TEffect primRead [r])
 		  
 		-- forcing
 		| MForce	<- prim
 		, [Just t1]	<- txs
-		= ( t1
-		  , tPure)	
+		= do	return	( t1
+				, tPure)	
 		
 		| MTailCall{}	<- prim
-		= ( reconApps tt xs'
-		  , tPure)
+		= do	rxs'	<- reconApps xs'
+			return	( rxs'
+				, tPure)
 
 		| MCall{}	<- prim
-		= ( reconApps tt xs'
-		  , tPure)
+		= do	rxs'	<-reconApps xs'
+		  	return	( rxs'
+				, tPure)
 
 		| MCallApp{}	<- prim
-		= ( reconApps tt xs'
-		  , tPure)
+		= do	rxs'	<- reconApps xs'
+			return	( rxs'
+				, tPure)
 
 		| MApply{}	<- prim
-		= ( reconApps tt xs'
-		  , tPure)
+		= do	rxs'	<- reconApps xs'
+			return	( rxs'
+				, tPure)
 
 		| MCurry{}	<- prim
-		= ( reconApps tt xs'
-		  , tPure)
+		= do	rxs'	<- reconApps xs'
+			return	( rxs'
+				, tPure)
 
 		| MFun{}	<- prim
-		= ( reconApps tt xs'
-		  , tPure)
+		= do	rxs'	<- reconApps xs'
+			return	( rxs'
+				, tPure)
 
 		| MOp op	<- prim
-		= reconOpApp tt op xs'
+		= reconOpApp op xs'
 
 		| otherwise
 		= panic stage
 		$ "reconX/Prim: no match for " % prim <> punc " " xs % "\n"
+
+	(tPrim, ePrim)	<- getPrimTE
 		
-   in	( XPrim prim xs'
-   	, tPrim
-   	, makeTSum kEffect  $ ePrim : catMaybes xsmEs
-	, makeTSum kClosure $ catMaybes xsmCs)
+	return	( XPrim prim xs'
+		, tPrim
+		, makeTSum kEffect  $ ePrim : catMaybes xsmEs
+		, makeTSum kClosure $ catMaybes xsmCs)
 
 
-reconX tt xx@(XLit litFmt)
- = let	tcLit	= tyConOfLiteralFmt litFmt
-	tLit	= TCon tcLit
-   in	( xx
-	, tLit
-	, tPure
-	, tEmpty)
+reconX xx@(XLit litFmt)
+ = do	let	tcLit	= tyConOfLiteralFmt litFmt
+		tLit	= TCon tcLit
+	return	( xx
+		, tLit
+		, tPure
+		, tEmpty)
 
 
 -- no match
-reconX tt xx
- 	= panic stage 
- 	$ "reconX: no match for " % show xx	% "\n"
-	% "    caller = " % envCaller tt	% "\n"
+reconX xx
+ = do	tt	<- get
+	panic stage 
+	 	$ "reconX: no match for " % show xx	% "\n"
+		% "    caller = " % envCaller tt	% "\n"
 
 
 -- | Convert this boxed type to the unboxed version
@@ -603,16 +622,16 @@ reconUnboxType r1 tt
 	, r1 == r2
 	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
 	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
-	= makeTData 
+	= makeTData
 		(primVarFmt NameType baseName mkBind fmtUnboxed)
 		kValue
 		[]
 
 
--- | Split the VarBind for a literal into its components, 
+-- | Split the VarBind for a literal into its components,
 --	eg  TInt fmt -> ("Int", TInt, fmt)
-splitLiteralVarBind 
-	:: Var.VarBind 
+splitLiteralVarBind
+	:: Var.VarBind
 	-> ( String
 	   , DataFormat -> Var.VarBind
 	   , DataFormat)
@@ -628,43 +647,46 @@ splitLiteralVarBind bind
 
 
 
--- | Reconstruct the type and effect of an operator application
+-- | Reconstruct the type and effect of an operator application.
 --	Not sure if doing this manually is really a good way to do it.
 --	It'd be nice to have a more general mechanism like GHC rewrite rules..
-reconOpApp :: Env -> Op -> [Exp] -> (Type, Effect)
-reconOpApp tt op xs
+reconOpApp :: Op -> [Exp] -> ReconM (Type, Effect)
+reconOpApp op xs
+ = do	rxs <- mapM (fmap t4_2 . reconX) xs
 
-	-- arithmetic operators
-	| op == OpNeg
-	, [t1]		<- map (t4_2 . reconX tt) xs
-	, isUnboxedNumericType t1
-	= (t1, tPure)
+	let result
+		-- arithmetic operators
+		| op == OpNeg
+		, [t1]		<- rxs
+		, isUnboxedNumericType t1
+		= (t1, tPure)
 
-	| elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
-	, [t1, t2]	<- map (t4_2 . reconX tt) xs
-	, isUnboxedNumericType t1
-	, t1 == t2
-	= (t1, tPure)
-	
-	-- comparison operators
-	| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
-	, [t1, t2]	<- map (t4_2 . reconX tt) xs
-	, isUnboxedNumericType t1
-	, t1 == t2
-	= (makeTData (primTBool Unboxed) kValue [], tPure)
+		| elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
+		, [t1, t2]	<- rxs
+		, isUnboxedNumericType t1
+		, t1 == t2
+		= (t1, tPure)
 
-	-- boolean operators
-	| elem op [OpAnd, OpOr]
-	, [t1, t2]		<- map (t4_2 . reconX tt) xs
-	, Just (v, k, [])	<- takeTData t1
-	, v == (primTBool Unboxed)
-	, t1 == t2
-	= (makeTData (primTBool Unboxed) kValue [], tPure)
-	
-	| otherwise
-	= panic stage
-	$ "reconOpApp: no match for " % op % " " % xs % "\n"
+		-- comparison operators
+		| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
+		, [t1, t2]	<- rxs
+		, isUnboxedNumericType t1
+		, t1 == t2
+		= (makeTData (primTBool Unboxed) kValue [], tPure)
 
+		-- boolean operators
+		| elem op [OpAnd, OpOr]
+		, [t1, t2]		<- rxs
+		, Just (v, k, [])	<- takeTData t1
+		, v == (primTBool Unboxed)
+		, t1 == t2
+		= (makeTData (primTBool Unboxed) kValue [], tPure)
+
+		| otherwise
+		= panic stage
+		$ "reconOpApp: no match for " % op % " " % xs % "\n"
+
+	return result
 
 -- | Checks whether a type is an unboxed numeric type
 isUnboxedNumericType :: Type -> Bool
@@ -695,87 +717,88 @@ isUnboxedNumericType_bind bind
 --	eg  [x1, x2, x3, x4] =>  ((x1 x2) x3) x4
 --
 reconApps 
-	:: Env
-	-> [Exp] 
-	-> Type
+	:: [Exp] 
+	-> ReconM Type
 
-reconApps table [XType t]
- =	t
+reconApps [XType t]
+ =	return t
  
-reconApps table [x]
- = 	t4_2 $ reconX table x
+reconApps [x]
+ = 	fmap t4_2 $ reconX x
 
-reconApps table (XType t1 : XType t2 : xs)
- = let	Just t12	= applyTypeT table t1 t2
-   in	reconApps table (XType t12 : xs)
+reconApps (XType t1 : XType t2 : xs)
+ = do	table		<- get
+	Just t12	<- applyTypeT t1 t2
+	reconApps (XType t12 : xs)
  	
-reconApps table (x1 : XType t2 : xs)
- = let	t1		= t4_2 $ reconX table x1
- 	Just t12	= applyTypeT table t1 t2
-   in	reconApps table (XType t12 : xs)
+reconApps (x1 : XType t2 : xs)
+ = do	table		<- get
+	t1		<- fmap t4_2 $ keepState $ reconX x1
+	Just t12	<- applyTypeT t1 t2
+	reconApps (XType t12 : xs)
 
-reconApps table (XType t1 : x2 : xs)
- = let	t2		= t4_2 $ reconX table x2
- 	Just (t12, _)	= applyValueT table t1 t2
-   in	reconApps table (XType t12 : xs)
+reconApps (XType t1 : x2 : xs)
+ = do	table		<- get
+	t2		<- fmap t4_2 $ keepState $ reconX x2
+ 	Just (t12, _)	<- applyValueT t1 t2
+	reconApps (XType t12 : xs)
 
-reconApps table (x1 : x2 : xs)
- = let	t1		= t4_2 $ reconX table x1
-	t2		= t4_2 $ reconX table x2
- 	Just (t12, _)	= applyValueT table t1 t2
-   in	reconApps table (XType t12 : xs)
+reconApps (x1 : x2 : xs)
+ = do	table		<- get
+	t1		<- fmap t4_2 $ keepState $ reconX x1
+	t2		<- fmap t4_2 $ keepState $ reconX x2
+	Just (t12, _)	<- applyValueT t1 t2
+	reconApps (XType t12 : xs)
 
 
 -- Stmt --------------------------------------------------------------------------------------------
 
 -- | running reconS also adds a type for this binding into the table
-reconS 	:: Env 
-	-> Stmt 
-	-> (Env, (Stmt, Type, Effect, Closure))
+reconS	:: Stmt -> ReconM (Stmt, Type, Effect, Closure)
 
-reconS tt (SBind Nothing x)	
- = let	(x', xT, xE, xC)	= reconX tt x
+reconS (SBind Nothing x)	
+ = do	tt			<- get
+	(x', xT, xE, xC)	<- keepState $ reconX x
 
-	xAnnot 	| envDropStmtEff tt	= XTau xE x'
-		| otherwise		= x'
-	
-   in	( tt
-   	, ( SBind Nothing xAnnot
-	  , xT
-	  , xE
-	  , xC))
+	let xAnnot	| envDropStmtEff tt	= XTau xE x'
+			| otherwise		= x'
 
-reconS tt (SBind (Just v) x)
- = let	(x', xT, xE, xC)	= reconX tt x
-	tt'			= addEqVT v xT tt
+	return	( SBind Nothing xAnnot
+		, xT
+		, xE
+		, xC)
 
-	xAnnot	| envDropStmtEff tt	= XTau xE x'
-		| otherwise		= x'
+reconS (SBind (Just v) x)
+ = do	tt	<- get
+	(x', xT, xE, xC)	<- reconX x
+	put	$ addEqVT v xT tt
 
-   in	( tt'
-   	, ( SBind (Just v) xAnnot
-	  , xT
-	  , xE
-	  , dropTFreesIn
-		(Set.singleton v)
-		xC) )
+	let	xAnnot	| envDropStmtEff tt	= XTau xE x'
+			| otherwise		= x'
+
+	return	( SBind (Just v) xAnnot
+		, xT
+		, xE
+		, dropTFreesIn
+			(Set.singleton v)
+			xC)
 	  
 
 -- Alt ---------------------------------------------------------------------------------------------
-reconA 	:: Env 
-	-> Alt 
-	-> (Alt, Type, Effect, Closure)
+reconA 	:: Alt -> ReconM (Alt, Type, Effect, Closure)
 
-reconA tt (AAlt gs x)
- = let	(tt', gecs)		  = mapAccumL reconG tt gs
-	(gs', vssBind, gEs, gCs)= unzip4 gecs
-	(x', xT, xE, xC)	  = reconX tt' x
-   in	( AAlt gs' x'
-   	, xT
-	, makeTSum kEffect (gEs ++ [xE])
-	, dropTFreesIn 
-		(Set.fromList $ concat vssBind) 
-		$ makeTSum kClosure (xC : gCs) )
+reconA (AAlt gs x)
+ = do	tt				<- get
+	gecs				<- mapM reconG gs
+	let (gs', vssBind, gEs, gCs)	= unzip4 gecs
+	(x', xT, xE, xC)		<- reconX x
+	put tt
+	return	( AAlt gs' x'
+   		, xT
+		, makeTSum kEffect (gEs ++ [xE])
+		, dropTFreesIn
+			(Set.fromList $ concat vssBind)
+			$ makeTSum kClosure (xC : gCs))
 
    
 -- Guards ------------------------------------------------------------------------------------------
@@ -784,55 +807,51 @@ reconA tt (AAlt gs x)
 
 -- TODO: check type of pattern against type of expression
 --
-reconG	:: Env 
-	-> Guard 
-	-> ( Env
-	   , (Guard, [Var], Effect, Closure))
+reconG	:: Guard -> ReconM (Guard, [Var], Effect, Closure)
 
-reconG tt gg@(GExp p x)
- = let	
-	(x', tX, eX, cX)= reconX tt x
-	binds		= slurpVarTypesW tX p
- 	tt'		= foldr (uncurry addEqVT) tt binds
-	
-	-- Work out the effect of testing the case object.
-	tX_shape	= stripToShapeT tX
+reconG gg@(GExp p x)
+ = do	tt		<- get
+	(x', tX, eX, cX)<- reconX x
+	let	binds	= slurpVarTypesW tX p
 
-	effTest	
-		-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
-		| WVar{}		<- p
-		= tEmpty
+		-- Work out the effect of testing the case object.
+		tX_shape	= stripToShapeT tX
 
-		-- If the type of the object has no regions we assume that
-		--	it is constant, so matching against it generates no effects.
-		| Just (vD, _, [])	<- takeTData tX_shape
-		= tEmpty
+		effTest
+			-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.
+			| WVar{}		<- p
+			= tEmpty
 
-		-- matching against some object cause a read effect on its primary region.
-		| Just (vD, _, TVar k rH : _) <- takeTData tX_shape
-		, k == kRegion	
-		= TEffect primRead [TVar kRegion rH]
+			-- If the type of the object has no regions we assume that
+			--	it is constant, so matching against it generates no effects.
+			| Just (vD, _, [])	<- takeTData tX_shape
+			= tEmpty
 
-		-- object does not have a primary region, assume it is constant
-		| otherwise
-		= tEmpty
-		
-{-		| otherwise
-		= panic stage 
+			-- matching against some object cause a read effect on its primary region.
+			| Just (vD, _, TVar k rH : _) <- takeTData tX_shape
+			, k == kRegion
+			= TEffect primRead [TVar kRegion rH]
+
+			-- object does not have a primary region, assume it is constant
+			| otherwise
+			= tEmpty
+
+			| otherwise
+			= panic stage
 			$ "reconG: no match for:\n"
 			% "  p        = " % p % "\n"
 			% "  tX_shape = " % tX_shape	% "\n"
--}			
 
-   in {- trace 	( "regonG\n"
+	put	$ foldr (uncurry addEqVT) tt binds
+
+	trace 	( "reconG:\n"
 		% "    gg      = " % gg		% "\n"
-		% "    effTest = " % effTest	% "\n") $ -}
-   	( tt'
-   	, ( GExp p x'
-	  , map fst binds
-   	  , makeTSum kEffect ([eX, effTest])
-	  , cX))
- 
+		% "    effTest = " % effTest	% "\n") $ return ()
+	return	( GExp p x'
+		, map fst binds
+	   	, makeTSum kEffect ([eX, effTest])
+		, cX)
+
 slurpVarTypesW tRHS (WVar v)		= [(v, tRHS)]
 slurpVarTypesW tRHS (WLit{})		= []
 slurpVarTypesW tRHS (WCon _ v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
@@ -843,70 +862,75 @@ slurpVarTypesW tRHS (WCon _ v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 --	an arg is applied to a function with this type.
 --
 applyValueT 
-	:: Env		-- ^ table of constraints
-	-> Type 		-- ^ type of function
+	:: Type 		-- ^ type of function
 	-> Type 		-- ^ type of arg
-	-> Maybe 		
-		( Type		-- result type
-		, Effect)	-- effect caused
+	-> ReconM (Maybe 		
+			( Type		-- result type
+			, Effect))	-- effect caused
 
-applyValueT table t1 t2
- =	applyValueT' table (flattenT t1) (flattenT t2)
+applyValueT t1 t2
+ = do	table	<- get
+	applyValueT' (flattenT t1) (flattenT t2)
 
-applyValueT' table t1@(TFetters t1Shape fs) t2
- = let	([[], fsMore], [])
- 		= partitionFs [isFWhere, isFMore] fs
-	
-	table'	= foldr addMoreF table fsMore
-	
-   in	applyValueT' table' t1Shape t2
+applyValueT' t1@(TFetters t1Shape fs) t2
+ = do	table	<- get
+	let	([[], fsMore], [])
+ 			= partitionFs [isFWhere, isFMore] fs
+
+	put $ foldr addMoreF table fsMore
+	applyValueT' t1Shape t2
  
-applyValueT' table t0 t3	
-	| Just (t1, t2, eff, clo)	<- takeTFun t0
-	= let	result
-			| t1 == t3
-			= Just (t2, eff)
+applyValueT' t0 t3	
+ | Just (t1, t2, eff, clo)	<- takeTFun t0
+ = do	table	<- get
+	let	result
+		 | t1 == t3
+		 = Just (t2, eff)
 
-			-- We're currenly using the subsumption judgement more than we really need to.
-			
-			| subsumes (envMore table) t1 t3
-			= {- Debug.Trace.trace 
-				(pprStrPlain $ "used subsumption\n" 
-				% "t1      = " % t1 % "\n"
-				% "t3      = " % t3 % "\n"
-				% "envMore = " % envMore table % "\n\n")
-			$ -} Just (t2, eff)
+		 -- We're currenly using the subsumption judgement more than we really need to.
 
-			| otherwise
-			= freakout stage
-				( "applyValueT: Type error in value application.\n"
-				% "    called by = " % envCaller table	% "\n\n"
-				% "    can't apply argument:\n"	%> t3 % "\n\n"
-				% "    to:\n"        		%> t0 % "\n"
-				% "\n"
-				% "    as it is not <: than:\n"	%> t1 % "\n"
-				% "\n"
-				% "    with bounds: \n"
-				% ("\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) 
-					$ Map.toList (envMore table)) % "\n\n"))
-				$ Nothing
-	  in	result	
+		 | subsumes (envMore table) t1 t3
+		 = {- Debug.Trace.trace 
+			(pprStrPlain $ "used subsumption\n" 
+			% "t1      = " % t1 % "\n"
+			% "t3      = " % t3 % "\n"
+			% "envMore = " % envMore table % "\n\n")
+		 $ -} Just (t2, eff)
+
+		 | otherwise
+		 = freakout stage
+			( "applyValueT: Type error in value application.\n"
+			% "    called by = " % envCaller table	% "\n\n"
+			% "    can't apply argument:\n"	%> t3 % "\n\n"
+			% "    to:\n"        		%> t0 % "\n"
+			% "\n"
+			% "    as it is not <: than:\n"	%> t1 % "\n"
+			% "\n"
+			% "    with bounds: \n"
+			% ("\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) 
+			$ Map.toList (envMore table)) % "\n\n")
+			) Nothing
+	  in	return result
 
 
-applyValueT' _ t1 t2
+applyValueT' t1 t2
 	= freakout stage
 		( "applyValueT: No match for (t1 t2).\n"
 		% "    t1 = " % t1	% "\n"
 		% "    t2 = " % t2	% "\n")
-		Nothing
+		$ return Nothing
 	
 	
 -- | Apply a value argument to a forall\/context type, yielding the result type.
 --	TODO: check that the kinds\/contexts match as we apply.
 --
-applyTypeT :: Env -> Type -> Type -> Maybe Type
+applyTypeT :: Type -> Type -> ReconM (Maybe Type)
+applyTypeT t1 t2
+ = do	table	<- get
+	return $ applyTypeT' table t1 t2
 
-applyTypeT table (TForall (BVar v) k t1) t2
+applyTypeT' :: Env -> Type -> Type -> Maybe Type
+applyTypeT' table (TForall (BVar v) k t1) t2
 	| Just k == kindOfType t2
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
@@ -923,7 +947,7 @@ applyTypeT table (TForall (BVar v) k t1) t2
 		% "    expected: " % k	% "\n\n")
 		$ Nothing
 
-applyTypeT table (TForall (BMore v tB) k t1) t2
+applyTypeT' table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == kClosure
 	, subsumes (envMore table) 
@@ -949,7 +973,7 @@ applyTypeT table (TForall (BMore v tB) k t1) t2
 		$ Nothing
 	
 
-applyTypeT table t1@(TContext k11 t12) t2
+applyTypeT' table t1@(TContext k11 t12) t2
 	-- witnesses must match
 	| Just k2	<- kindOfType t2
 	, packK k11 == packK k2
@@ -967,11 +991,11 @@ applyTypeT table t1@(TContext k11 t12) t2
 		$ Nothing
 
 
-applyTypeT table (TFetters t1 fs) t
-	| Just t1'	<- applyTypeT table t1 t
+applyTypeT' table (TFetters t1 fs) t
+	| Just t1'	<- applyTypeT' table t1 t
 	= Just $ TFetters t1' fs
 	
-applyTypeT table t1 t2
+applyTypeT' table t1 t2
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
 		% "    caller = " % envCaller table	% "\n"
@@ -984,15 +1008,16 @@ applyTypeT table t1 t2
 -- | Clamp a sum by throwing out any elements of the second one that are not members of the first.
 --	Result is at least as big as t1.
 
-clampSum :: Env -> Type -> Type -> Type
-clampSum table t1 t2
+clampSum :: Type -> Type -> ReconM Type
+clampSum t1 t2
 	| kindOfType t1 == kindOfType t2
-	= let	parts2		= flattenTSum t1
-		parts_clamped	= [p	| p <- parts2
-	   				, subsumes (envMore table) t1 p]
-		Just k1		= kindOfType t1
+	= do	table	<- get
+		let	parts2		= flattenTSum t1
+			parts_clamped	= [p	| p <- parts2
+						, subsumes (envMore table) t1 p]
+			Just k1		= kindOfType t1
 
-	  in	makeTSum k1 parts_clamped
+		return $ makeTSum k1 parts_clamped
 
 
 
