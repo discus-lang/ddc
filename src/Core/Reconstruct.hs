@@ -462,7 +462,7 @@ reconX (XVar v TNil)
 		% "is not in the provided environment.\n"
 		% "    caller = " % envCaller tt	% "\n"
 
-	let	Just t	= Map.lookup v (envEq tt)
+	let	Just t	= tM
 		t'	= inlineTWheresMapT (envEq tt) Set.empty t
 
 		-- When we add the type to this var we need to attach any more constraints associated with it,
