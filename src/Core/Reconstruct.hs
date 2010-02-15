@@ -1,14 +1,14 @@
 -- Core.Reconstruct
 --
---	Reconstruct and check the type/region/effect/closure and witness information in
+-- |	Reconstruct and check the type\/region\/effect\/closure and witness information in
 --	the core IR.
 --
 -- 	The types of free variables can be supplied either as annotations on the variables themselves, 
 --	or supplied via a table. Any missing annotations are filled during checking, so expressions
 --	returned may be checked again without using the table.
 --	
---	The table also carries the name of the calling function, to print in panic messages incase
---	a type error is uncoverred.
+--	The table also carries the name of the calling function, to print in panic messages in case
+--	a type error is uncovered.
 --
 --	The prime versions of the recon* functions start with a stage name and an empty table, but are 
 --	otherwise identical to the plain versions.
@@ -70,10 +70,10 @@ trace ss x
 
 -- Tree --------------------------------------------------------------------------------------------
 reconTree'
-	:: String	-- caller name
-	-> Tree		-- header tree 
-	-> Tree 	-- core tree
-	-> Tree		-- core tree with reconstructed type information
+	:: String	-- ^ caller name
+	-> Tree		-- ^ header tree
+	-> Tree 	-- ^ core tree
+	-> Tree		-- ^ core tree with reconstructed type information
 reconTree' caller tHeader tCore
  = reconTree
  	emptyEnv { envCaller = Just caller }
@@ -81,9 +81,9 @@ reconTree' caller tHeader tCore
 
 reconTree
 	:: Env	
-	-> Tree		-- header tree 
-	-> Tree 	-- core tree
-	-> Tree		-- core tree with reconstructed type information
+	-> Tree		-- ^ header tree
+	-> Tree 	-- ^ core tree
+	-> Tree		-- ^ core tree with reconstructed type information
 	
 reconTree table tHeader tCore
  = {-# SCC "reconstructTree" #-}
@@ -509,7 +509,7 @@ reconX tt xx@(XPrim prim xs)
   	(xs', txs, xsmEs, xsmCs)		
  		= unzip4 $ map (reconMaybeX tt) xs
 
-	-- work out the result type an effect of applying the primitive operator
+	-- work out the result type and effect of applying the primitive operator
 	(tPrim, ePrim)	
 
 		-- boxing		
@@ -780,7 +780,7 @@ reconA tt (AAlt gs x)
    
 -- Guards ------------------------------------------------------------------------------------------
 
--- | running reconG also adds a types for the matched variables into the table.
+-- | running reconG also adds types for the matched variables into the table.
 
 -- TODO: check type of pattern against type of expression
 --
@@ -838,7 +838,7 @@ slurpVarTypesW tRHS (WLit{})		= []
 slurpVarTypesW tRHS (WCon _ v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 
 
--- Value / Type application functions ---------------------------------------------------------
+-- Value \/ Type application functions ---------------------------------------------------------
 -- | Work out the result type and latent effect that will result when 
 --	an arg is applied to a function with this type.
 --
@@ -901,8 +901,8 @@ applyValueT' _ t1 t2
 		Nothing
 	
 	
--- | Apply a value argument to a forall/context type, yielding the result type.
---	TODO: check that the kinds/contexts match as we apply.
+-- | Apply a value argument to a forall\/context type, yielding the result type.
+--	TODO: check that the kinds\/contexts match as we apply.
 --
 applyTypeT :: Env -> Type -> Type -> Maybe Type
 
@@ -981,8 +981,8 @@ applyTypeT table t1 t2
 
 	
 -- Clamp -------------------------------------------------------------------------------------------
--- | Clamp a sum by throwing out any elements of the second one that are not members of the first
---	result is at least as big as t1
+-- | Clamp a sum by throwing out any elements of the second one that are not members of the first.
+--	Result is at least as big as t1.
 
 clampSum :: Env -> Type -> Type -> Type
 clampSum table t1 t2
