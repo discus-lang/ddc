@@ -406,6 +406,5 @@ seaModule m
  = case m of
 	ModuleNil		-> ""
 	ModuleAbsolute ns	-> (catInt "_" $ ns)
-	_			-> panic stage $ "seaModule: no match for: " % show m
 
 

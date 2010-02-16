@@ -62,26 +62,33 @@ renameTrees mTrees@(mTree1 : mTreeImports)
 	bindTopNames mTree1
 	
 	-- now rename all the trees
-	mTrees'	<- mapM renameTree mTrees
-	return	mTrees'
+	mapM renameTree mTrees
+
 
 -- Add the top-level names from this module to the renamer state
 bindTopNames :: (Module, Tree SourcePos) -> RenameM ()
 bindTopNames (moduleName, tree)
- = do
+ = do	-- Set the current module id
+	modify $ \s -> s { stateModule = Just moduleName }
+	
  	-- Slurp out all the top-level names.	
 	let vsTop	= catMap slurpTopNames tree
 	
-	-- Add them to the rename state, along with the module name so it gets
-	--	set on linked vars. 
-	mapM_ (\v -> lbindZ v { Var.nameModule = moduleName }) vsTop
+	-- Add them to the rename state.
+	mapM_ lbindZ vsTop
 
 	return ()
 
 -- Rename a source tree in this module
 renameTree :: (Module, Tree SourcePos) -> RenameM (Module, Tree SourcePos)
 renameTree (moduleName, tree)
- = do	tree'	<- rename tree
+ = do	
+	-- Set the current module id
+	modify $ \s -> s { stateModule = Just moduleName }
+
+	-- Rename all the vars
+	tree'	<- rename tree
+
 	return	(moduleName, tree')
 	
 	
@@ -128,7 +135,6 @@ instance Rename (Top SourcePos) where
 	  $ do	vData'	<- linkN NameType vData
 		vsData'	<- mapM bindZ vsData
 		ctors'	<- mapM (renameCtor vData' vsData') ctors
-	
 		return	$ PData sp vData' vsData' ctors' 
 	
 	PRegion sp v
@@ -140,8 +146,7 @@ instance Rename (Top SourcePos) where
 		return	$ PEffect sp v' k
 
 	PStmt	s
-	 -> -- local
-	    do	s'	<- rename s
+	 -> do	s'	<- rename s
 		return	$ PStmt s'
 	
 	-- classes
@@ -150,12 +155,12 @@ instance Rename (Top SourcePos) where
 	 	return	$ PClass sp v' k
 
 	PClassDict sp v vks inh sigs
-	 -> do 	v'	<- lbindN NameClass v
+	 -> do 	v'	<- linkN NameClass v
 
 		(vs', inh', sigs')
 		 <- local
 		 $ do	let (vs, ks)	= unzip vks
-			vs'		<- mapM (lbindN NameType) vs
+			vs'		<- mapM (bindN NameType) vs
 			let vks'	= zip vs' ks
 			
 			inh'	<- mapM renameClassInh inh
@@ -166,7 +171,7 @@ instance Rename (Top SourcePos) where
 
 	PClassInst sp v ts inh stmts
 	 -> do
-	 	v'	<- lbindN NameClass v
+	 	v'	<- linkN NameClass v
 
 		(ts', inh')
 		 <- local
@@ -186,7 +191,8 @@ instance Rename (Top SourcePos) where
 		--	
 		let fixupV v	= v 	{ Var.nameSpace 	= NameField }
 		
-		let ssF		= map (\s -> case s of 
+		let ssF		
+			= map (\s -> case s of 
 					SSig  sp vs t		-> SSig   sp 	(map fixupV vs) t
 					SBindFun sp v pats alts	-> SBindFun sp	(fixupV v) pats alts)
 			$ ss
@@ -249,7 +255,7 @@ instance Rename (Foreign SourcePos) where
 --
 renameClassInh :: (Var, [Var])  -> RenameM (Var, [Var])
 renameClassInh	  (v, vs)
- = do	v'	<- lbindN NameClass v
+ = do	v'	<- linkN NameClass v
 	vs'	<- mapM (lbindN NameType) vs
 	return	(v, vs)
 
@@ -257,7 +263,7 @@ renameClassInh	  (v, vs)
 renameClassSig :: ([Var], Type) -> RenameM ([Var], Type)
 renameClassSig    (vs, t)
  = local
- $ do 	vs'	<- mapM lbindV vs
+ $ do 	vs'	<- mapM linkV vs
 	t'	<- rename t
 	return	(vs', t')
 
@@ -303,7 +309,8 @@ renameDataField vData vsData df
 	let vsBad	= Set.difference vsFree (Set.fromList vsData)
 
 	when (not $ Set.null vsBad)
-	 $ mapM_ (\v -> addError $ ErrorUndefinedVar v) $ Set.toList vsBad
+	 	$ mapM_ (\v -> addError $ ErrorUndefinedVar v) 
+		$ Set.toList vsBad
 
 	mExp'	<- rename $ dInit df
 
@@ -353,13 +360,13 @@ instance Rename (Exp SourcePos) where
 
  	XLet sp ss e	
 	 -> local
-	 $ do 	ss'	<- renameSs ss
+	  $ do 	ss'	<- renameSs ss
 		e'	<- rename e
 		return	$ XLet sp ss' e'
 		
 	XWhere sp x ss
 	 -> local
-	 $ do	ss'	<- renameSs ss
+	  $ do	ss'	<- renameSs ss
 		x'	<- rename x
 		return	$ XWhere sp x' ss'
 		
@@ -379,10 +386,11 @@ instance Rename (Exp SourcePos) where
 	-- sugar
 	XLambdaPats sp ps x
 	 -> local
-	 $ do 	(ps', _)	<- liftM unzip 
-	 			$ mapM (bindPat False) ps
+	 $ do 	(ps', _)	
+			<- liftM unzip 
+	 		$ mapM (bindPat False) ps
 
-		x'		<- rename x
+		x'	<- rename x
 		return	$ XLambdaPats sp ps' x'
 
 	XLambdaCase sp cs
@@ -462,8 +470,8 @@ instance Rename (Exp SourcePos) where
 	 -> local
 	 $ do	qs'	<- renameLCQuals qs
 
-		addN NameValue
-			$ concat $ map boundByLCQual qs'
+--		addN NameValue
+--			$ concat $ map boundByLCQual qs'
 		x'	<- rename x
 		return	$ XListComp sp x' qs'
 
@@ -648,13 +656,13 @@ renameLCQuals qq
 	 	qs'	<- renameLCQuals qs
 		return	$ LCExp x' : qs'
 		
-
+{-
 boundByLCQual :: LCQual SourcePos -> [Var]
 boundByLCQual    q
  = case q of
  	LCGen _ (WVar sp v) _	-> [v]
 	LCExp{}			-> []
-
+-}
 
 -- Stmt --------------------------------------------------------------------------------------------
 
@@ -671,7 +679,7 @@ instance Rename (Stmt SourcePos) where
 		return	$ SStmt sp x'		
 
 	SBindFun sp v ps as
-	 -> do	v'	<- lbindZ_shadow v
+	 -> do	v'	<- lbindZ v
 	 	local
 		 $ do	(ps', objVss)	<- liftM unzip
 					$  mapM (bindPat False) ps
@@ -716,7 +724,7 @@ renameSs	ss
  	let vsBound	= catMap takeStmtBoundVs ss
 
 	-- create fresh binding occurances to shadow anything with the same name bound above.
-	mapM_ (lbindN_shadow NameValue) 
+	mapM_ (lbindN NameValue) 
 		$ nub vsBound
 
 	-- Rename each statement.
@@ -744,22 +752,6 @@ instance Rename Type where
 
 		let tt'		= TForall b' k t'
 		return tt'
-{-
-		-- If a type contains an explicit forall then all free vars must be bound by it.
-		-- .. this doesn't work for class definitions.
-		-- .. perhaps we should use the renamer state to indicate whether all tyvars need
-		-- .. to be bound by the forall.
-
-		let vsFree	= Set.filter (not . Var.isCtorName)
-				$ freeVars tt'
-		
-		if Set.null vsFree
-		 then return	$ tt'
-		 else do
-		 	mapM_ 	(\v -> addError ErrorUndefinedVar { eUndefined = v })
-				$ Set.toList vsFree
-			return tt
--}
 
 	TFetters t fs
 	 -> do
@@ -767,14 +759,14 @@ instance Rename Type where
 
 	  	-- if any of the LHS vars are already bound (perhaps by a forall) at this level
 	  	--	then this is an error. Type vars aren't permitted to shadow each other.
-		isShadowed	<- mapM isBound_local bindingVars
+{-		isShadowed	<- mapM isBound_local bindingVars
 		let shadowVars	= [ v 	| (v, True) <- zip bindingVars isShadowed]
 		let shadow	=  not $ null shadowVars
 
 		when shadow
 		 $ modify (\s -> s { 
 	  		stateErrors 	= (stateErrors s) ++ map ErrorShadowVar shadowVars })
-
+-}
 		local
 		  $ do	
 		  	-- bind the vars on the LHS of let binds

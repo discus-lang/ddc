@@ -1,29 +1,16 @@
 
 -- Binding of variables into scopes
--- TODO: these functions are named confusingly
---	 reconsider bind, lookup, lbind, link etc.
---	bind = rename binding occurence
---	link = link bound occurence against binding occurence
---	simple lookup
---
---	linkbind	-
---		-- if already in scope then this is a bound occurrence
---		-- otherwise make it binding.
-
-
 module Source.Rename.Binding
-	( bindTopLevelZ, bindTopLevelN
-	, bindZ, 	bindN, 		bindV
-	, linkN,	linkZ,		linkV
-	, lbindN,	lbindZ,		lbindV
-	, lbindN_shadow, lbindZ_shadow )
+	( bindN,  bindZ,  bindV
+	, linkN,  linkZ,  linkV
+	, lbindN, lbindZ, lbindV)
 where
 
 import Source.Rename.State
-import Shared.Error
 import Source.Error
+import Shared.Error
+import Shared.Pretty
 import Shared.Var		(Var, NameSpace(..), Module(..))
-import Shared.VarPrim		(renamePrimVar)
 import Shared.VarUtil		(isCtorName)
 import qualified Shared.Var	as Var
 
@@ -33,109 +20,138 @@ import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
+import qualified Debug.Trace
+
+-----
+stage = "Source.Rename.Binding"
+debug		= False
+trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
 
 
 -- Variable Binding -----------------------------------------------------------
 
--- Top Level Scope --------------------
--- | Bind a variable into the top-level namespace associated with its namespace annotation.
---	It's ok to have multiple variables at top-level with the same name, provided
---	they are in different modules.
+-- These are all just different interfaces onto linkBindN below.
+--	Having these makes it easier to write the code in Rename.hs
+
+-- | Bind a varible into the current scope, using the given namespace.
+bindN :: NameSpace -> Var -> RenameM Var
+bindN space v 	= linkBindN space False v 
+
+-- | Bind a variable into the current scope, using the namespace already on the variable.
+bindZ :: Var -> RenameM Var
+bindZ v 	= linkBindN (Var.nameSpace v) False v
+
+-- | Bind a variable into the current scope, requiring it to be in the value namespace.
+bindV		= linkBindN NameValue False
+
+
+-- The actual work is done here in linkBindN
+
+-- | Bind this variable into the current scope associated with its namespace annotation.
+--	Also renames the variable so it has a fresh id.
 --
-bindTopLevelZ :: Var -> RenameM Var
-bindTopLevelZ v	= bindN (Var.nameSpace v) v
+linkBindN 	
+	:: NameSpace 		-- ^ The namespace to bind the variable into.
+	-> Bool 		-- ^ Whether to treat as a bound occurrence if already bound at this level.
+	-> Var 			-- ^ The variable to bind.
+	-> RenameM Var		-- ^ The renamed variable.
 
-bindTopLevelN :: NameSpace -> Var -> RenameM Var
-bindTopLevelN space var
+linkBindN space linkIfBound var
  = do	
-	-- grab the variable map for this namespace
-	Just nameMap
-		<- liftM (Map.lookup space)
-		$  gets stateTopLevelVars
-
+	-- grab the current scope for this namespace.
+	scope 	<- getCurrentScopeOfSpace space
+	
+	-- the top level and local scopes behave differently.
+	case scope of
+		ScopeTop{}	-> linkBindN_topLevel space linkIfBound var scope
+		ScopeLocal{}	-> linkBindN_local    space linkIfBound var scope
+		
+linkBindN_topLevel space linkIfBound var (ScopeTop mapModVars)
+ = do	
 	-- grab any variables with this name already bound
 	let modVars	
 	 	= fromMaybe []
-		$ Map.lookup (Var.name var) nameMap
-		
-	-- check that there isn't already a variable with this name in the same module
-	case modVars of
-	 [] -> bindTopLevelN_newName space var nameMap modVars	-- TODO: allow same name in other modules
-	 _  
-	  -> do addError $ ErrorRedefinedVar var var		-- this is wrong
-		return var
-		
-bindTopLevelN_newName space var nameMap modVars
- = do	
+		$ Map.lookup (Var.name var) mapModVars
+	
+	-- grab the id of the current module from the renamer state
+	Just moduleName	<- gets stateModule
+	
+	-- see if any vars with name are were already bound in the current module
+	let varsInSameModule
+		= [varX | (moduleX, varX) <- modVars
+			, moduleX == moduleName ]
+
+	case varsInSameModule of
+	 []		-> linkBindN_topLevel_newName      space var mapModVars modVars
+	 [varBinding]	-> linkBindN_topLevel_alreadyBound linkIfBound var varBinding
+	 _		-> panic stage 
+			$ "linkBindN_topLevel: multiple vars with the same name already bound in this module" 
+			% varsInSameModule
+
+linkBindN_topLevel_newName space var mapModVars modVars
+ = trace ("linkBindN_topLevel_newName: " % var % " " % Var.info var)
+ $ do	
 	-- rename the variable to give it a unique id.
-	varRenamed	<- renameVarN space var
+	varRenamed	<- uniquifyVarN space var
 	
-	-- insert the renamed variable into the map
-	let modVars'	= (Var.nameModule var, var) : modVars
-	let nameMap'	= Map.insert (Var.name var) modVars' nameMap
+	-- insert the renamed variable back into the current scope
+	let modVars'	= (Var.nameModule varRenamed, varRenamed) : modVars
+	let mapModVars'	= Map.insert (Var.name varRenamed) modVars' mapModVars
 
-	modify 	$ \s -> s 
-		{ stateTopLevelVars
-			 = Map.insert space nameMap' (stateTopLevelVars s) }
+	updateCurrentScopeOfSpace space (ScopeTop mapModVars')
 			
+	-- return the renamed variable
 	return varRenamed
+
+linkBindN_topLevel_alreadyBound False var varBinding
+ -- The variable is already bound, and we were told not to link against any binding occurrence
+ = do	addError $ ErrorRedefinedVar varBinding var
+	return var
 	
+linkBindN_topLevel_alreadyBound True var varBinding
+ = trace ("linkBindN_topLevel_alreadyBound: " % var % " " % Var.info var)
+ $ return $ linkBoundAgainstBinding varBinding var
 
--- Local Scope ------------------------
--- | Bind this variable into the current local scope associated with its namespace annotation.
---	Also renames the variable so it has a fresh id.
---
---	If the variable is already bound here then add an error to the renamer
---	state and return the original variable.
---
-bindZ :: Var -> RenameM Var
-bindZ v 	= bindN (Var.nameSpace v) v
+linkBindN_local space linkIfBound var (ScopeLocal mapVar)
+ -- See if there is a variable with this name already bound here
+ = case Map.lookup (Var.name var) mapVar of
+	 Nothing         -> linkBindN_local_newName      space var mapVar
+	 Just varBinding -> linkBindN_local_alreadyBound linkIfBound var varBinding
 
--- | Bind a variable into the value namespace.
-bindV		= bindN NameValue
-	
--- | Bind a variable into a given namespace.
-bindN :: NameSpace -> Var -> RenameM Var
-bindN space var
- = do	
-	-- grab the variable stack for the current namespace.
-	Just (spaceMap : spacesEnclosing)
-		<- liftM (Map.lookup space)
-		$  gets stateStack
-
-	-- if the variable is already bound at the current level then
-	--	we have a "Redefined variable" error.
-
-	-- check that there isn't already a variable with this name bound here
-	case Map.lookup (Var.name var) spaceMap of
-	 Nothing          -> bindN_newName space var spaceMap spacesEnclosing
-	 Just varExisting
-	  -> do	addError $ ErrorRedefinedVar varExisting var
-		return var
-		
-bindN_newName space var spaceMap spacesEnclosing
- = do		
+linkBindN_local_newName space var mapVar
+ = trace ("linkBindN_local_newName: " % var % " " % Var.info var)
+ $ do		
 	-- rename the variable to give it a new unique id.
-	varRenamed	<- renameVarN space var
+	varRenamed	<- uniquifyVarN space var
 
-	-- insert the renamed variable into the variable stack.
-	let spaceMap'	= Map.insert (Var.name var) varRenamed spaceMap
-	modify	$ \s -> s 
-		{ stateStack	= Map.insert space 
-					(spaceMap' : spacesEnclosing) 
-					(stateStack s) }
+	-- insert the renamed variable into the current scope
+	let mapVar'	= Map.insert (Var.name var) varRenamed mapVar
+	updateCurrentScopeOfSpace space (ScopeLocal mapVar')
 	
 	-- return the renamed variable.
 	return varRenamed
+ 
+linkBindN_local_alreadyBound False var varBinding
+ -- The variable is already bound, and we were told not to link against any binding occurrence
+ = do	addError $ ErrorRedefinedVar varBinding var
+	return var
+
+linkBindN_local_alreadyBound True  var varBinding
+ = trace ("linkBindN_local_alreadyBound: " % var % " " % Var.info var)
+ $ return $ linkBoundAgainstBinding varBinding var
 
 
--- Variable Lookup --------------------------------------------------------------------------------
+
+-- Variable Linking --------------------------------------------------------------------------------
 
 -- | Link a bound occurrence of a variable against its binding occurrence.
 --	The bound occurrence gets the same varid as the binding occurrence.
 --	If the binging occurrence can't be found then return the original
 --	variable and add an error to the renamer state.
 --
+
+-- | Link a bound variable against its binding occurrence.
+--	Using the namespace already on the variable.
 linkZ :: Var -> RenameM Var
 linkZ	v	= linkN (Var.nameSpace v) v
 
@@ -144,132 +160,106 @@ linkV :: Var -> RenameM Var
 linkV		= linkN NameValue
 
 -- | Link a bound occurrence of a variable in a given namespace.
-linkN :: NameSpace ->	Var -> RenameM Var
-linkN	 space var
- = do 	mVar	<- linkMaybeN True space var
-
-	case mVar of
-	 Nothing	
-	  -> do	addError $ ErrorUndefinedVar var { Var.nameSpace = space }
+linkN :: NameSpace -> Var -> RenameM Var
+linkN space var
+ = do	varsBinding <- findBindingVars space (Var.name var)
+	case varsBinding of
+	 [] -> do
+		addError $ ErrorUndefinedVar var { Var.nameSpace = space }
 		return var
 		
-	 Just (_, var')	-> return var'
+	 [(_, varBinding)]
+	  -> return $ linkBoundAgainstBinding varBinding var
 
 
--- | Link this var to the binding occurance with the same name.
-linkMaybeN 
-	:: Bool 			-- ^ whether to look in enclosing scopes
-	-> NameSpace 			-- ^ namespace to look in
-	-> Var 				-- ^ a variable with the name we're looking for
-	-> RenameM (Maybe (Var, Var))	-- ^ the binding occurance, renamed bound var (if found)
+linkBoundAgainstBinding :: Var -> Var -> Var
+linkBoundAgainstBinding varBinding varBound
+ = varBound	
+	{ Var.name	 = Var.name       varBinding
+	, Var.bind 	 = Var.bind 	  varBinding
+	, Var.nameModule = Var.nameModule varBinding
+	, Var.nameSpace  = Var.nameSpace  varBinding 
+	, Var.info       = Var.info varBound ++ [Var.IBoundBy varBinding]}
 
-linkMaybeN enclosing space var
- = do	
- 	-- grab the context stack for the appropriate namespace
-	Just spaceStack@(spaceMap:_)
+
+-- Finding ----------------------------------------------------------------------------------------
+-- | Try to find the binding occurrences of this variable.
+--	If multiple modules define a variable with the same name then there will be
+--	multiple binding occurrences -- which will be an error.
+findBindingVars 
+	:: NameSpace			-- ^ the namespace the var was in
+	-> String 			-- ^ the name of the variable to look for
+	-> RenameM [(Module, Var)]	-- ^ the binding occurrences
+
+
+findBindingVars space name
+ = do	Just scopes	
 		<- liftM (Map.lookup space)
-		$  gets stateStack
+		$  gets stateScopes
+		
+	findBindingVars_withScopes space name scopes
 
-	-- Check for redefined Data and Constructor names.
-	(case (isCtorName var, space, Map.lookup (Var.name var) spaceMap) of
-		(True, NameType, Just boundData)
-			->	addError $ ErrorRedefinedData boundData var
+-- Type names are being automagically renamed until we implement real type synonyms.
+findBindingVars_withScopes space name scopes
+	| NameType	<- space
+	= let again name' = findBindingVars_withScopes space name' scopes
+          in  case name of 
+		"Word"	-> again "Word32"
+		"Int"	-> again "Int32"
+		"Float"	-> again "Float32"
+		"Char"	-> again "Char32"
 
-		(True, NameValue, Just boundCtor)
-			->	addError $ ErrorRedefinedCtor boundCtor var
-		(_, _, _)
-                	-> return ())
-
-	-- try and find the binding occurance for this variable.
-	let var_prim	= fromMaybe var (renamePrimVar space var)				
-	let mBindingVar	= lookupBindingVar enclosing (Var.name var_prim) spaceStack
-
-	case mBindingVar of
-
-	 -- found it
-	 Just bindingVar	
-	  -> return 
-	  $  Just 
-	    	( bindingVar
-		, var	{ Var.name	 = Var.name       bindingVar
-			, Var.bind 	 = Var.bind 	  bindingVar
-			, Var.nameModule = Var.nameModule bindingVar
-			, Var.nameSpace  = Var.nameSpace  bindingVar 
-			, Var.info       = Var.info var ++ [Var.IBoundBy bindingVar]})
-				
-	 -- no binding occurance :(
-	 Nothing
-	  -> return $ Nothing
-
-
--- | Try to find the binding occurance of this variable in the current scope.
-lookupBindingVar 
-	:: Bool 		-- ^ whether to look in enclosing scopes
-	-> String 		-- ^ the name of the variable to look for
-	-> [Map String Var] 	-- ^ stack of renamer contexts
-	-> Maybe Var		-- ^ the binding occurance 
-
-lookupBindingVar enclosing s []		
-	= Nothing
-
-lookupBindingVar enclosing s (m:ms)	
-	-- see if it's bound in the current scope.
-	| Just v	<- Map.lookup s m 
-	= Just v
+		"Word#"	-> again "Word32#"
+		"Int#"	-> again "Int32#"
+		"Float#"-> again "Float32#"
+		"Char#"	-> again "Char32#"
 	
-	-- recurse in to enclosing scopes.
-	| enclosing
-	= lookupBindingVar enclosing s ms
-	
-	-- not found
+		_	-> findBindingVars' space name scopes
+		
 	| otherwise
-	= Nothing
+	= findBindingVars' space name scopes
+
+findBindingVars' space name (ScopeTop mapModVars : [])
+ 	= return $ fromMaybe [] (Map.lookup name mapModVars)
+
+findBindingVars' space name (ScopeLocal mapVars : scopesEnclosing)
+ = case Map.lookup name mapVars of
+
+	-- found it.
+	Just varBinding
+	 -> do	-- local vars are always in the current module
+		Just mod	<- gets stateModule
+		return		$ [(mod, varBinding)]
+		
+	-- there's no variable with this name in the current scope,
+	--	so go look in enclosing scopes.
+	Nothing
+	 -> 	findBindingVars' space name scopesEnclosing
 
 
--- Link bind ---------------------------------------------------------------------------------------
---	See if this variable name is already bound in the current scope.
---	If it's not then this one becomes the binding occurrence.
---	If it is, then link it to the binding occurrence.
+-- Combinations of Linking and Binding ------------------------------------------------------------
 
--- | Link bind, using the name and namespace of this variable
+
+-- For the current and enclosing scopes.
+-- | Link or bind a variable, using the given namespace.
+lbindN space var
+ = do	varsBinding <- findBindingVars space (Var.name var)
+	case varsBinding of
+	 [] 	-> linkBindN space False var
+		
+	 [(_, varBinding)]
+	  	-> return $ linkBoundAgainstBinding varBinding var
+
+
+-- | Link or bind a variable, using the namespace already on the variable.
 lbindZ :: Var -> RenameM Var
-lbindZ v	= lbindN' True (Var.nameSpace v) v
+lbindZ var	= lbindN (Var.nameSpace var) var
 
-lbindN space v	= lbindN' True space v
-
-
--- | Link bind, shadowing any variable with the same name that is defined in an enclosing scope.
-lbindZ_shadow :: Var -> RenameM Var
-lbindZ_shadow v	= lbindN' False (Var.nameSpace v) v
-
-lbindN_shadow :: NameSpace -> Var -> RenameM Var
-lbindN_shadow space var = lbindN' False space var
+-- | Link or bind a variable, requiring it to be in the value namespace.
+lbindV var	= lbindN NameValue var
 
 
--- | Link bind in this namespace
-lbindN' withEnclosing space var
- = do 	mVar	<- linkMaybeN withEnclosing space var
-	
-	let result
 
-		-- we don't do module local namespacing yet, so we if we see the same var
-		--	defined in a different modules we'll treat is as an error.
-		| Just (bindingVar, var')	<- mVar
-		, Var.nameModule var /= ModuleNil
-		, Var.nameModule var /= Var.nameModule var'
-		= do	addError $ ErrorRedefinedVar bindingVar var
-			return var
-		
-		-- var was already bound
-		| Just (bindingVar, var')	<- mVar
-		= return var'
-		
-		-- var wasn't bound yet
-		| otherwise
-		= bindN space var
-		
-	result
 
--- | Lazy bind in the value namespace
-lbindV :: Var -> RenameM Var
-lbindV 		= lbindN NameValue
+
+

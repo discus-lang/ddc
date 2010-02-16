@@ -12,11 +12,7 @@ module Shared.Var
 
 	, VarInfo(..)
 	, Module(..) )
-
 where
-
-import Data.Char
-
 import Shared.Pretty
 import Shared.Literal
 import Shared.Base
@@ -24,13 +20,12 @@ import Shared.VarBind
 import Shared.Error
 
 import DDC.Base.NameSpace
-
+import Data.Char
 import Util
 
------
 stage	= "Shared.Var"
 
------
+-- Variables ------------------------------------------------------------------
 data Var =
 	Var 
 	{ name		:: !String		-- ^ Name of this var.
@@ -40,7 +35,9 @@ data Var =
 	, info		:: ![VarInfo] }		-- ^ some (optional) info about this var.
 	deriving Show
 
------
+-- | Create a new variable with this name.
+--	The unique binder is set to XNil (empty).
+--
 new ::	String -> Var
 new	n	
 	= Var 
@@ -51,12 +48,12 @@ new	n
 	, info		= [] }
 
 
------
--- Comparisons
---
+-- | Comparing variables for equality
 instance Eq Var where
   (==) v1 v2	= (=^=) v1 v2
 
+
+-- | Ordering of variables
 instance Ord Var where
  compare v1 v2 	
   = case compare (bind v1) (bind v2) of
@@ -64,20 +61,21 @@ instance Ord Var where
 	ord	-> ord
 
 
--- | Compare by name
+-- | Compare variables just by their textual names
 infix 4 =~=
 (=~=) :: Var -> Var	-> Bool
 (=~=) a b	= name a == name b
 
--- | Compare by binder
+
+-- | Compare variables by their unique binder, as well as module information.
 (=^=) :: Var -> Var	-> Bool
 (=^=) a b	
 	=   bind a == bind b
 	&&  nameModule a == nameModule b
 
 
--- | Slurp namespace qualifiers from the var name into 
---	the space field.
+-- | If the name of this variable includes a namespace qualifier, then set
+--	the namespace accordingly and remove the qualifier.
 loadSpaceQualifier :: Var -> Var
 loadSpaceQualifier var
  = case takeHead (name var) of
@@ -86,18 +84,16 @@ loadSpaceQualifier var
 	Just '$'	-> var { nameSpace = NameClosure, name = tail (name var) }
 	_		-> var
 
-
--- Pretty print a variable
+-- | Pretty print a variable
 instance Pretty Var PMode where
  ppr v
   = case nameModule v of
 	ModuleNil		-> ppr $ pprVarSpaced v
 	ModuleAbsolute ns	-> 	 punc "." ((map ppr ns) ++ [pprVarSpaced v])
-	ModuleRelative ns	-> "." % punc "." ((map ppr ns) ++ [pprVarSpaced v])
  
 pprVarSpaced v
   = case nameSpace v of
-	-- if no namespace print ?? as a warning
+	-- if there is no namespace set then print ?? as a warning
 	NameNothing	-> "??" % pprVarName v
 
   	NameValue
@@ -127,9 +123,7 @@ pprVarSpaced v
 	NameEffect	-> "!" % pprVarName v
 	NameClosure	-> "$" % pprVarName v
 
-	-- Classes/witness,
-	--	Prepend a + to witness variables, these only show up in the core.
-	--	
+	-- Prepend a + to witness variables, these only show up in the core.
 	NameClass	
 	 -> let	(x:_)	= name v
 	    in	if isUpper x 
@@ -138,53 +132,55 @@ pprVarSpaced v
 
 	_ 		-> pprVarName v	 
 
+
+-- | Pretty print a variable name, including its unique binder if requested.
 pprVarName v
- = ifMode (elem PrettyUnique)	-- append unique binds if requested
+ = ifMode (elem PrettyUnique)
  	(name v % "_" % bind v)
 	(ppr $ name v)
 
 
-
------------------------
--- VarInfo
---
+-- Variable Info --------------------------------------------------------------
+-- | Extra information about a variable.
 data VarInfo
-	= ISourcePos	SourcePos		-- ^ Where this var appears in the source.
+	= ISourcePos	SourcePos	-- ^ Where this var appears in the source.
 
-	| IBoundBy	Var			-- ^ The binding occurance of this var.
-	| ISchemeVar	Var			-- ^ If this var was instantiated, the type scheme var it came from.
+	| IBoundBy	Var		-- ^ The binding occurance of this var.
+	| ISchemeVar	Var		-- ^ If this var was instantiated, the type scheme var it came from.
 
-						--  Only relavent if the var is a type var.
-	| IValueVar	Var			-- ^	The value var this type var corresponds to.
-	| IValueLiteral	Literal			-- ^	The literal value this type var represents.
-	| IParent	Var			-- ^	??
+					--  Only relavent if the var is a type var.
+	| IValueVar	Var		-- ^	The value var this type var corresponds to.
+	| IValueLiteral	Literal		-- ^	The literal value this type var represents.
+	| IParent	Var		-- ^	??
 
-	| IAlias	Var			-- ^ Indicates that this var is an alias/specialisation/instance 
-						--	of some other var.
+	| IAlias	Var		-- ^ Indicates that this var is an alias/specialisation/instance 
+					--	of some other var.
 
-	| ISeaName	String			-- ^ Variable name to use when outputting Sea code.
+	| ISeaName	String		-- ^ Variable name to use when outputting Sea code.
 
-	| IString	String			-- ^ Some string, for debugging
-
+	| IString	String		-- ^ Some string, for debugging
 	deriving (Show)
 
 
+-- | Pretty print some variable info.
 instance Pretty VarInfo PMode where
  ppr x 	= ppr $ show x
 
 
------------------------
+-- Module Identifiers ---------------------------------------------------------
 data Module
-	= ModuleNil				-- ^ No module information
-	| ModuleAbsolute [String]		-- ^ Absolute module name, of the form "M1.M2.M3 ..."
-	| ModuleRelative [String]		-- ^ A module name relative to the current one, of the form ".M1.M2.M3 ..."
+	= ModuleNil			-- ^ No module information. Sometimes this means that the
+					--   variable is in the module currently being compiled.
+	
+	| ModuleAbsolute [String]	-- ^ Absolute module name, of the form "M1.M2.M3 ..."
 	deriving (Show, Eq, Ord)
 
+
+-- | Pretty print a module id.
 instance Pretty Module PMode where
  ppr m
   = case m of
 	ModuleNil		-> ppr "@ModuleNil"
   	ModuleAbsolute vs	-> "." %!% vs
-	ModuleRelative vs	-> "." % "." %!% vs
 
 

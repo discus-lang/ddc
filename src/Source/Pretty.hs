@@ -82,8 +82,7 @@ instance Pretty (Top a) PMode where
 	 -> "class " % c % " " % (punc " " $ map pprPClass_vk vks) % " where\n"
 		% "{\n"
 	 	%> ("\n\n" %!% 
-			(map (\(vs, t) -> ", " %!% 
-				(map (\v -> v { Var.nameModule = Var.ModuleNil }) vs)
+			(map (\(vs, t) -> ", " %!% vs
 				% " :: " %> prettyTypeSplit t % ";") sigs)) % "\n"
 		% "}\n\n"
 
@@ -93,7 +92,7 @@ instance Pretty (Top a) PMode where
 		%> ("\n\n" %!% 
 			(map 	(\s -> case s of 
 					SBindFun sp v pats alts
-					 -> ppr $ SBindFun sp (v { Var.nameModule = Var.ModuleNil }) pats alts
+					 -> ppr $ SBindFun sp v pats alts
 					_			
   					 -> panic stage $ "pretty[Top]: malformed PClassInst\n")
 					

@@ -102,7 +102,8 @@ instance Accum Int32 where
  = do 	x'	= f x
 	x	:= x'
 
-inc x	= x + 1i
+inc x	= x + 1
+inc y   = 1
 
 
 project Int32 where

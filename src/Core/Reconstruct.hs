@@ -671,6 +671,21 @@ reconOpApp op xs
 		, t1 == t2
 		= (t1, tPure)
 
+		-- comparison operators
+		| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
+		, [t1, t2]	<- rxs
+		, isUnboxedNumericType t1
+		, t1 == t2
+		= (makeTData (primTBool Unboxed) kValue [], tPure)
+
+		-- boolean operators
+		| elem op [OpAnd, OpOr]
+		, [t1, t2]		<- rxs
+		, Just (v, k, [])	<- takeTData t1
+		, v == (primTBool Unboxed)
+		, t1 == t2
+		= (makeTData (primTBool Unboxed) kValue [], tPure)
+{-
 	-- boolean operators
 	| elem op [OpAnd, OpOr]
 	, [t1, t2]		<- map (t4_2 . reconX tt) xs
@@ -682,7 +697,8 @@ reconOpApp op xs
 	| otherwise
 	= panic stage
 	$ "reconOpApp: no match for " % op % " " % xs % "\n"
-
+	% "types = " % (map (t4_2 . reconX tt) xs) % "\n"
+-}
 		| otherwise
 		= panic stage
 		$ "reconOpApp: no match for " % op % " " % xs % "\n"

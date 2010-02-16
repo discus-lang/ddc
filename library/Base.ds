@@ -62,27 +62,26 @@ data Bool %r1
 	| True
 
 -- unsigned words
-data 	Word64	%r	= Word64
-data	Word32	%r	= Word32
-data	Word16	%r	= Word16
-data 	Word8	%r	= Word8
+data 	Word64	%r
+data	Word32	%r
+data	Word16	%r
+data 	Word8	%r
 
 -- signed integers
-data	Int64	%r	= Int64
-data	Int32	%r	= Int32
-data	Int16	%r	= Int16
-data	Int8	%r	= Int8
+data	Int64	%r
+data	Int32	%r
+data	Int16	%r
+data	Int8	%r
 
 -- floating point numbers
-data	Float64 %r	= Float64
-data	Float32 %r	= Float32
+data	Float64 %r
+data	Float32 %r
 
 -- boxed characters
-data	Char32	%r	= Char32
+data	Char32	%r
 
 -- boxed strings
 -- are defined in Data.String
-
 data 	Ref %r1 a
 	= Ref { x :: a }
 

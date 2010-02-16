@@ -19,10 +19,7 @@ import Shared.Error
 
 stage	= "Source.Slurp"
 
------
---- slurpFixTable
----	Strip the fixity table from some top level defs.
----
+--- | Slurp the fixity tables from this module.
 slurpFixTable 
 	:: [Top a] -> [FixDef a]
 
@@ -35,10 +32,7 @@ slurpFixTable'	 (PInfix sp mode prec syms)
 slurpFixTable'	 _			= []
 
 
------
--- slurpImportModules
---	Strips off the list of modules imported by this one.
---
+-- | Slurp out the list of modules imported by this one.
 slurpImportModules
 	:: Tree	a -> [Var.Module]
 
@@ -52,9 +46,7 @@ slurpImportModules	tops
 	$ tops
 
 
------
--- slurpKinds
---
+-- | Slurp out the kinds of things defined at top level.
 slurpKinds 
 	:: Tree a -> [(Var, Kind)]
 
@@ -66,22 +58,24 @@ slurpKinds tree
 		_			-> Nothing)
 	$ tree
 
------
--- slurpTopNames
---	Slurp out binding occurances for top level vars from this Top.
---	Recover the NameSpace as well, so we can use this fn in the renamer.
---
+
+-- | Slurp out binding occurrences of top level cars.
+--	Recover the namespace also, if we can determine it from the Top.
 slurpTopNames :: Show a => Top a -> [Var]
 slurpTopNames p
  = case p of
 	PPragma{}			-> []
 	PModule{}			-> []
 
-	PTypeKind	sp v k		-> []
- 	PTypeSynonym 	sp v t		-> [v]
+	PTypeKind	sp v k		
+	 -> [v { Var.nameSpace = NameType }]
 
-	PInfix 		sp im i vs	-> []
+ 	PTypeSynonym 	sp v t		
+	 -> [v { Var.nameSpace = NameType }]
 
+	PInfix 		sp im i vs	
+	 -> [] 
+	
 	PImportModule{}			-> []
 	PExport{}			-> []
 
@@ -102,8 +96,8 @@ slurpTopNames p
 	PRegion sp v	
 	 -> [v { Var.nameSpace = NameRegion }]
 
-	PStmt (SSig sp v t) 
-	 -> []
+	PStmt (SSig sp vs t) 
+	 -> [v { Var.nameSpace = NameValue } | v <- vs]
 	
 	PStmt (SBindFun sp v pats alts)
 	 -> [v { Var.nameSpace = NameValue }]

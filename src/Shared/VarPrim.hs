@@ -191,32 +191,17 @@ varBindIsUnboxedTyConData bind
 	| otherwise		= False
 
 
--- renamePrimVar -------------------------------------------------------------------------------------	  
--- | If this var has a special meaning to the compiler then rewrite
---	its VarBind to the common one
-renamePrimVar :: NameSpace -> Var -> Maybe Var
-renamePrimVar n var
-	| NameValue	<- n
-	, Just bind	<- renamePrimVar_value $ Var.name var
-	= Just var { Var.bind = bind }
-
-	| NameType	<- n
-	, Just bind	<- renamePrimVar_type  $ Var.name var
-	= Just	$ defaultTypeVar 
-		$ var { Var.bind = bind }
-
-	| NameEffect	<- n
-	, Just bind	<- renamePrimVar_effect $ Var.name var
-	= Just var { Var.bind = bind }
-
-	| NameClass	<- n
-	, Just bind	<- renamePrimVar_class $ Var.name var
-	= Just var { Var.bind = bind }
+-- getPrimVarBind -------------------------------------------------------------------------------------	  
+-- | If this var has a special meaning to the compiler then get its unique binder
+getPrimVarBind :: NameSpace -> Var -> Maybe VarBind
+getPrimVarBind space var
+ = case space of
+  	NameValue	-> renamePrimVar_value  $ Var.name var
+	NameType	-> renamePrimVar_type   $ Var.name var
+	NameEffect	-> renamePrimVar_effect $ Var.name var
+	NameClass	-> renamePrimVar_class  $ Var.name var
+	_		-> Nothing
 	
-	| otherwise
-	= Nothing
-	
-
 renamePrimVar_value :: String -> Maybe VarBind
 renamePrimVar_value ss
 	| Just xx	<- splitPrefix "Tuple" ss
@@ -324,7 +309,7 @@ renamePrimVar_types
 	, ("Ref",		TRef)
 	, ("List",		TList)]
 
-
+{-
 defaultTypeVar :: Var -> Var
 defaultTypeVar var
  = case Var.name var of
@@ -338,6 +323,7 @@ defaultTypeVar var
 	"Float#"	-> primVar NameType "Base.Float32#"  (TFloat $ UnboxedBits 32)
 	"Char#"		-> primVar NameType "Base.Char32#"   (TChar  $ BoxedBits   32)
 	_		-> var
+-}
 
 {-
 var_withModule :: String -> Var -> Var

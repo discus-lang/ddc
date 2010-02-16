@@ -70,7 +70,10 @@ makeInterface moduleName
 	--	module id. This makes the interfaces easier to read, and lets as parse 
 	--	the interface files as if they were source code.
 	let sTree_erasedModules	
-			= eraseVarModuleTree moduleName sTree
+			= eraseVarModuleSourceTree moduleName sTree
+
+	let dTree_erasedModules
+			= eraseVarModuleDesugaredTree moduleName dTree
 
 	-- a fn to lookup the type var for a value var
 	let getTVar 	= \v -> fromMaybe (panic stage $ "makeInterface: not found " ++ pprStrPlain v)
@@ -92,7 +95,7 @@ makeInterface moduleName
 						$ concat ee
 
 	-- export all the top level things
-	let interface	= exportAll moduleName getType topVars sTree_erasedModules dTree cTree 
+	let interface	= exportAll moduleName getType topVars sTree_erasedModules dTree_erasedModules cTree 
 			$ shouldExport vsNoExport mExports
 
 	return interface
@@ -149,7 +152,10 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	++ "\n"
 
 	++ "-- Data\n"
-	++ (concat [pprStrPlain (D.PData sp (eraseModule vData) vsData (map eraseModule_ctor ctors))
+	++ (concat [pprStrPlain (D.PData sp 
+					(eraseModule vData) 
+					(map eraseModule vsData)
+					(map eraseModule_ctor ctors))
 			| D.PData sp vData vsData ctors
 			<- psDesugared])
 	++ "\n"
@@ -170,7 +176,7 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	
 	++ "-- Class dictionaries\n"
 	++ (concat [pprStrPlain p 
-			| p@D.PClassDict{}		<- psDesugared])
+			| p@D.PClassDict{} 	<- psDesugared])
 	++ "\n"
 
 	++ "-- Class instances\n"
@@ -260,12 +266,12 @@ exportRegion mod (C.PRegion r vts)
 --	$ "region " % Var.nameModule r % "." % r % ";"
 
 -- | erase module qualifiers from variables in this tree
-eraseVarModuleTree
+eraseVarModuleSourceTree
 	:: Module
 	-> S.Tree SourcePos
 	-> S.Tree SourcePos
 	
-eraseVarModuleTree
+eraseVarModuleSourceTree
 	m tree
  =	S.trans (S.transTableId (\(x :: SourcePos) -> return x))
 		{ S.transVar	= \v -> return $ eraseVarModuleV m v 
@@ -273,6 +279,18 @@ eraseVarModuleTree
 		}
 		tree	
 
+-- | erase module qualifiers from variables in this tree
+eraseVarModuleDesugaredTree
+	:: Module
+	-> D.Tree SourcePos
+	-> D.Tree SourcePos
+	
+eraseVarModuleDesugaredTree
+	m tree
+ =	map 	(D.transZ (D.transTableId (\(x :: SourcePos) -> return x))
+			{ D.transV	= \v -> return $ eraseVarModuleV m v 
+			, D.transT	= \t -> return $ T.transformV (eraseVarModuleV m) t  })
+		tree
 
 eraseVarModuleT m t
  	= T.transformV (eraseVarModuleV m) t

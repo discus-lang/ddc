@@ -263,25 +263,25 @@ snipInstBind' moduleName
 	-- As we're duplicating information from the original signature
 	--	we need to rewrite the binders on FWhere fetters.
 	--	It'd probably be nicer to use exists. quantifiers for this instead...
-	tInst_fresh	<- freshenCrsEq tInst_quant
+	tInst_fresh	<- freshenCrsEq moduleName tInst_quant
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
 		,  [ PSig  spBind [vTop] tInst_fresh
 		   , PBind spBind (Just vTop)  xx])
 
 -- 
-freshenCrsEq :: Type -> ProjectM Type
-freshenCrsEq tt
+freshenCrsEq :: Module -> Type -> ProjectM Type
+freshenCrsEq mid tt
  = case tt of
 	TForall b k t	
-	 -> do	t'	<- freshenCrsEq t
+	 -> do	t'	<- freshenCrsEq mid t
 		return	$ TForall b k t'
 	
 	TFetters t fs
 	 -> do	let takeSub	ff
 		     = case ff of
 			FWhere (TVar k v) _
-			 -> do	vFresh	<- freshenV v
+			 -> do	vFresh	<- freshenV mid v
 				return	$  Just (TVar k v, TVar k vFresh)
 				
 			_ -> return Nothing
@@ -293,10 +293,13 @@ freshenCrsEq tt
 		
 	_ -> return tt
 
-freshenV :: Var -> ProjectM Var		
-freshenV v
+freshenV :: Module -> Var -> ProjectM Var		
+freshenV mod v
  = do	vNew		<- newVarN (Var.nameSpace v)
-	let vFresh	= v { Var.bind = Var.bind vNew }
+	let vFresh	
+		= v 	{ Var.bind 		= Var.bind vNew 
+			, Var.nameModule	= mod }
+			
 	return vFresh
 
 
