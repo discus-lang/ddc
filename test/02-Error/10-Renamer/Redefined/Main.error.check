@@ -22,3 +22,4 @@ ddc: ERROR
 ./test/02-Error/10-Renamer/Redefined/Main.ds:49:10
      Ambiguous occurrence of 'force'
       could be any of: Main.force, Base.Thunk.force
+

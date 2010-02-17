@@ -469,11 +469,7 @@ instance Rename (Exp SourcePos) where
 
 	XListComp sp x qs
 	 -> withLocalScope
-	 $ do	qs'	<- renameLCQuals qs
-
---		addN NameValue
---			$ concat $ map boundByLCQual qs'
-		x'	<- rename x
+	 $ do	(qs', x') <- renameListComp qs x
 		return	$ XListComp sp x' qs'
 
 	XTuple sp xx
@@ -486,6 +482,34 @@ instance Rename (Exp SourcePos) where
 		
 	_ -> panic stage
 		$ "rename: cannot rename " % show exp
+
+
+-- | Rename some list comprehension qualifiers.
+--   The vars bound in a qualifier are in-scope for subsequent qualifiers, 
+--   and vars bound in all qualifiers are in-scope for the final expression.
+--
+renameListComp 
+	:: [LCQual SourcePos]
+	-> Exp SourcePos 
+	-> RenameM ([LCQual SourcePos], Exp SourcePos)
+	
+renameListComp qq xx
+ = case qq of
+  	[]			
+	 -> do	xx'	<- rename xx
+		return	([], xx')
+
+	LCGen b (WVar sp v) x2 : qs
+	 -> do	x2'	<- rename x2
+		withLocalScope
+		 $ do	v'		<- bindV v
+			(qs', xx')	<- renameListComp qs xx		
+			return	(LCGen b (WVar sp v') x2' : qs', xx')
+		
+	LCExp x : qs
+	 -> do	x'		<- rename x
+	 	(qs', xx')	<- renameListComp qs xx
+		return	(LCExp x' : qs', xx')
 		
 			
 -- Projections -------------------------------------------------------------------------------------
@@ -632,25 +656,6 @@ bindPat lazy ww
 			, concat vss)
 		
 	 
--- | Rename some list comprehension qualifiers.
---   In a sequence of qualifiers, the vars bound in a qualifier are in-scope for subsequent qualifiers.
-renameLCQuals :: [LCQual SourcePos] -> RenameM [LCQual SourcePos]
-renameLCQuals qq
- = case qq of
-  	[]			
-	 -> 	return []
-
-	(LCGen b (WVar sp v) x2 : qs)
-	 -> do	x2'	<- rename x2
-		withLocalScope
-		 $ do	v'	<- bindV v
-			qs'	<- renameLCQuals qs		
-			return	$ (LCGen b (WVar sp v') x2' : qs')
-		
-	(LCExp x : qs)
-	 -> do	x'	<- rename x
-	 	qs'	<- renameLCQuals qs
-		return	$ LCExp x' : qs'
 		
 {-
 boundByLCQual :: LCQual SourcePos -> [Var]
