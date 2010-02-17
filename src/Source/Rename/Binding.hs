@@ -117,7 +117,7 @@ bindN_local_newName space var mapVar
 -- Finding ----------------------------------------------------------------------------------------
 -- | Try to find the binding occurrences of this variable.
 --	If multiple modules define a variable with the same name then there will be
---	multiple binding occurrences -- which will be an error.
+--	multiple binding occurrences.
 findBindingVars 
 	:: NameSpace		-- ^ the namespace the var was in
 	-> String 		-- ^ the name of the variable to look for
@@ -168,13 +168,46 @@ findBindingVars' space name (ScopeLocal mapVars : scopesEnclosing)
 	 -> 	findBindingVars' space name scopesEnclosing
 
 
--- Variable Linking --------------------------------------------------------------------------------
+-- Choosing ---------------------------------------------------------------------------------------
+-- | Choose which binding occurrence to use from a number of options.
+chooseBindingOccurrence
+	:: Module 		-- ^ the current module name
+	-> Var 			-- ^ the bound occurrence we're trying to find the binding occurrence for
+	-> [Var] 		-- ^ list of binding occurrences to choose from
+	-> Either Error (Maybe Var)
 
--- | Link a bound occurrence of a variable against its binding occurrence.
---	The bound occurrence gets the same varid as the binding occurrence.
---	If the binging occurrence can't be found then return the original
---	variable and add an error to the renamer state.
---
+chooseBindingOccurrence thisModule var varsBinding
+
+	-- no binding occurrences already in scope. 
+	--	This may or may not be an error depending on what we wanted it for.
+	| []	<- varsBinding
+	= Right Nothing
+	
+	-- if the bound occurrence has no explicit module name,
+	--	and there's a single binding occurrence in the current module then use that.
+	| ModuleNil	<- Var.nameModule var
+	, [varBinding]	<- filter (\v -> Var.nameModule v == thisModule) varsBinding
+	= Right (Just varBinding)
+	
+	-- if the bound occurrence has no explicit module name,
+	--	and there's a single binding occurrence from some other (any) module then use that.	
+	| ModuleNil	<- Var.nameModule var
+	, [varBinding]	<- varsBinding
+	= Right (Just varBinding)
+	
+	-- if the bound occurrence has an explicit module name,
+	--	and there's a single binding occurrence for the same name in that module then use that.
+	| ModuleAbsolute _ <- Var.nameModule var
+	, [varBinding]	<- filter (\v -> Var.nameModule v == Var.nameModule var) varsBinding
+	= Right (Just varBinding)
+
+	-- there are multiple binding occurrences of interest, 
+	--	and we have no way of knowing which one to choose.
+	| otherwise
+	= Left $ ErrorAmbiguousVar varsBinding var
+
+
+-- Variable Linking --------------------------------------------------------------------------------
 
 -- | Link a bound variable against its binding occurrence.
 --	Using the namespace already on the variable.
@@ -185,39 +218,33 @@ linkZ	v	= linkN (Var.nameSpace v) v
 linkV :: Var -> RenameM Var 
 linkV		= linkN NameValue
 
--- | Link a bound occurrence of a variable in a given namespace.
+-- | Link a bound occurrence of a variable against its binding occurrence.
+--	The bound occurrence gets the same varid as the binding occurrence.
+--	If the binging occurrence can't be found then return the original
+--	variable and add an error to the renamer state.
+--
 linkN :: NameSpace -> Var -> RenameM Var
 linkN space var
  = do	varsBinding	<- findBindingVars space (Var.name var)
-	linkN_withVarsBinding space var varsBinding
-	
-linkN_withVarsBinding space var varsBinding
+	Just thisModule	<- gets stateModule
+	let var'	= var { Var.nameSpace = space }
 
-	-- no binding occurrences, it's undefined.
-	| []		<- varsBinding
-	= do	addError $ ErrorUndefinedVar var { Var.nameSpace = space }
-		return var
+	case chooseBindingOccurrence thisModule var' varsBinding of
 
-	-- if the bound occurrence has no explicit module name,
-	--	and there's a single binding occurrence in scope then use that.
-	--	The binding occurrence could be in any module.
-	| ModuleNil	<- Var.nameModule var
-	, [varBinding]		<- varsBinding
-	= do	return $ linkBoundAgainstBinding varBinding var
+	 -- no binding occurrences already in scope, its undefined
+	 Right Nothing
+	  -> do	addError $ ErrorUndefinedVar var'
+		return var'
 	
-	-- if the bound occurrence has an explicit module name,
-	--	and there's a single binding occurrence from the same name then use that
-	| ModuleAbsolute _ <- Var.nameModule var
-	, [varBinding]	<- filter (\v -> Var.nameModule v == Var.nameModule var)
-	 		$  varsBinding
-	= do	return $ linkBoundAgainstBinding varBinding var
+	 -- found a suitable binding occurrence
+	 Right (Just varBinding)
+	  -> return $ linkBoundAgainstBinding varBinding var
 	
-	-- there are multiple binding occurrences of interest, 
-	--	and we have no way of knowing which one to choose.
-	| otherwise
-	= do	addError $ ErrorAmbiguousVar varsBinding var { Var.nameSpace = space }
-		return var
-		
+	 -- found a renamer error of some sort
+	 Left err
+	  -> do	addError err
+		return var		
+
 
 linkBoundAgainstBinding :: Var -> Var -> Var
 linkBoundAgainstBinding varBinding varBound
@@ -236,7 +263,7 @@ linkBoundAgainstBinding varBinding varBound
 --	fun []     = ...
 --      fun (x:xs) = ...
 --
--- Both occurrencene of 'fun' here are binding occurrences.
+-- Both occurrences of 'fun' here are binding occurrences.
 -- We call the first one the 'primary' binding occurrence, and all other
 --	occurrences (both bound and binding) are linked to it.
 --
@@ -254,24 +281,28 @@ lbindV_binding var	= lbindN_binding NameValue var
 --	using the given namespace
 lbindN_binding :: NameSpace -> Var -> RenameM Var
 lbindN_binding space var
-	| Var.XNil <- Var.bind var
- 	= do	Just thisModule	<- gets stateModule
-		varsBinding_thisModule
-			<- liftM (filter (\v -> Var.nameModule v == thisModule))
-			$ findBindingVars space (Var.name var)
+ -- don't rename already renamed variables
+ | Var.bind var /= Var.XNil
+ = return var
 
-		case varsBinding_thisModule of
-	 	 [] 	-> bindN space var
+ | otherwise
+ = do	Just thisModule	<- gets stateModule
+
+	varsBinding_thisModule
+		<- liftM (filter (\v -> Var.nameModule v == thisModule))
+		$ findBindingVars space (Var.name var)
+
+	case varsBinding_thisModule of
+	 [] 	-> bindN space var
 		
-	 	 [varBinding]
-	  		-> return $ linkBoundAgainstBinding varBinding var
-
-		 vs 	-> panic stage
-			$  "lbindN_binding: when linking " % var % " " % Var.info var % "\n"
-			%  "    found multiple binding occurrences: " % vs
-
-	| otherwise
-	= return var
+	 [varBinding]
+	  	-> return $ linkBoundAgainstBinding varBinding var
+		
+	 -- as we're only considering binding occurrences in the same module,
+	 --	we shouldn't see more than one...
+	 vs 	-> panic stage
+		$  "lbindN_binding: when linking " % var % " " % Var.info var % "\n"
+		%  "    found multiple binding occurrences: " % vs
 	
 	
 ---------------------------------------
@@ -281,7 +312,7 @@ lbindN_binding space var
 -- eg with:
 --	dude :: a -> b
 --
---   Variables "a" and "b" are really bound occurrences, but there is no
+--   Variables "a" and "b" should really be bound occurrences, but there is no
 --	"forall" providing a binding occurrence.
 --
 
@@ -294,27 +325,35 @@ lbindZ_bound var	= lbindN_bound (Var.nameSpace var) var
 --	requiring it to be in the value namespace.
 lbindV_bound var	= lbindN_bound NameValue var
 
-
 -- | Link or bind a binding occurrence of a variabe,
 --	using the given namespace
 lbindN_bound :: NameSpace -> Var -> RenameM Var
 lbindN_bound space var
-	| Var.XNil <- Var.bind var
- 	= do	varsBinding <- findBindingVars space (Var.name var)
-		case varsBinding of
-	 	 [] 	-> bindN space var
-		
-	 	 [varBinding]
-	  		-> return $ linkBoundAgainstBinding varBinding var
+ -- don't rename already renamed variables.
+ | Var.bind var /= Var.XNil
+ = return var
+	
+ | otherwise
+ = do	varsBinding 	<- findBindingVars space (Var.name var)
+	Just thisModule	<- gets stateModule
+	let var'	= var { Var.nameSpace = space }
+	case chooseBindingOccurrence thisModule var' varsBinding of
 
-		 vs 	-> panic stage
-			$  "lbindN_bound: when linking " % var % " " % Var.info var % "\n"
-			%  "    found multiple binding occurrences: " % vs
-
-	| otherwise
-	= return var
-
-
+	 -- no binding occurrences already in scope,
+	 -- 	so make this one the binding occurrence.
+	 Right Nothing
+	  -> bindN space var
+	
+	 -- found a suitable binding occurrence
+	 Right (Just varBinding)
+	  -> return $ linkBoundAgainstBinding varBinding var
+	
+	 -- found a renamer error of some sort
+	 Left err
+	  -> do	addError err
+		return var
+	
+	
 ---------------------------------------
 -- | This is called for each top-level variable in the program, before starting renaming proper.
 --	We do the start-up process so we can handle mutually defined bindings.
@@ -331,19 +370,30 @@ lbindZ_topLevel var
 			$ vsBinding
 			
 	let result
-		| []		<- vsBinding
+
+		-- haven't seen this name yet, so add it to the scope
+		| []		<- vsBinding_thisModule
 		= bindZ var
 
+		-- allow multiple instances of value variables at top level,
+		--	we get these due to multiple equations in a function decl.
 		| NameValue	<- Var.nameSpace var
 		, not $ Var.isCtorName var
 		= case vsBinding_thisModule of
 		   []			-> bindZ var
 		   varBinding : _	-> return $ linkBoundAgainstBinding varBinding var
 		
+		-- for non-value variables, we can't have multiple bindings
+		--	for them at top level.
 		| varBinding : _	<- vsBinding_thisModule
 		= do	addError $ ErrorRedefinedVar varBinding var
 			return var
+		
+		-- this shouldn't happen
+		| otherwise
+		= panic stage 
+			$ "lbindZ_topLevel: no match with " % var % " " % Var.info var % "\n"
+			% "    vsBinding = " % vsBinding % "\n"
 				
 	result
-
 
