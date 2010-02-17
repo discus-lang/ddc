@@ -44,8 +44,7 @@ funTE 	:: forall a %r1 !e1 !e1
 --	but this should be ok because it's in a different module.
 force	= 27
 
--- This use of force is ambiguous because it's defined
---	 in this module as well as Base.Thunk
+-- This use of force is ok ambiguous because it's defined locally in this module.
 thing	= force (1 + 2)
 
 -- This use of force is ok because the module id disambiguates it

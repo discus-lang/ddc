@@ -19,7 +19,3 @@ ddc: ERROR
      Redefined value variable 'xx'
       first defined at: ./test/02-Error/10-Renamer/Redefined/Main.ds:26:27
 
-./test/02-Error/10-Renamer/Redefined/Main.ds:49:10
-     Ambiguous occurrence of 'force'
-      could be any of: Main.force, Base.Thunk.force
-
