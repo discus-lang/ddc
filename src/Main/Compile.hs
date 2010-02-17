@@ -232,6 +232,10 @@ compileFile_parse
 	-- Slurp out kind table
 	kindTable	<- SS.sourceKinds (sDefixed ++ hRenamed)
 	
+	-- Lint check the source program before desugaring
+	(hRenamed_ok, sDefixed_ok)	
+			<- SS.lint hRenamed sDefixed
+	
 	-- Desugar the source language
 	outVerb $ ppr $ "  * Source: Desugar\n"
 	(hDesugared, sDesugared)
@@ -239,8 +243,8 @@ compileFile_parse
 			   SS.desugar
 				"SD"
 				kindTable
-				hRenamed
-				sDefixed
+				hRenamed_ok
+				sDefixed_ok
 
 	------------------------------------------------------------------------
 	-- Desugar/Type inference stages

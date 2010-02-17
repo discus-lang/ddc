@@ -6,6 +6,7 @@ module Main.Source
 	, defix
 	, rename
 	, sourceKinds
+	, lint
 	, desugar)
 where
 import Source.Lexer			(scanModuleWithOffside)
@@ -13,6 +14,7 @@ import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)
 import Source.Defix			(defixP)
 import Source.Desugar			(rewriteTree)
+import Source.Lint			(lintTree)
 import Source.Exp
 import Source.TokenShow
 import Source.Error
@@ -148,7 +150,8 @@ defix	sParsed
 	
 	return	 sDefixed
 	
-
+	
+---------------------------------------------------------------------------------------------------
 -- | Check scoping of variables and 
 -- NOTE:
 -- 	We need to rename infix defs _after_ foreign imports
@@ -193,8 +196,27 @@ sourceKinds sTree
 --		(catMap (\(v, k) -> pprStr $ v %>> " :: " % k % ";\n") kinds)
 		
 	return	kinds
+
+
+---------------------------------------------------------------------------------------------------
+-- | Lint check the source program
+lint 	:: (?args :: [Arg])
+	=> Tree SourcePos
+	-> Tree SourcePos
+	-> IO (Tree SourcePos, Tree SourcePos)
+
+lint hTree sTree
+ = do	let (hTree_ok, hErrs)	= runState (lintTree hTree) []
+	let (sTree_ok, sErrs)	= runState (lintTree sTree) []
+	
+	let errs = hErrs ++ sErrs
+	when (not $ null $ errs)
+	 $ exitWithUserError ?args errs
+	
+	return (hTree_ok, sTree_ok)
 	
 	
+---------------------------------------------------------------------------------------------------	
 -- | Convert from Source to Desugared IR.
 desugar
 	:: (?args :: [Arg]
