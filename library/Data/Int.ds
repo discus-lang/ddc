@@ -10,8 +10,6 @@ import Class.Num
 import Class.Ord
 import Class.Update
 
-infix  5 <, <=, >=, > 
-
 foreign import "_boxInt32"
  boxInt32 	:: Int32# -> Int32
 		:$ Int32# -> Obj

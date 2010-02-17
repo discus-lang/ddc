@@ -93,6 +93,11 @@ data Error
 		, eFirstDefined		:: Var
 		, eRedefined		:: Var }
 
+	-- | An ambiguous binding occurrence.
+	| ErrorAmbiguousVar
+		{ eBindingVars		:: [Var]
+		, eBoundVar		:: Var }
+
 	-- | Can't have > 1 non-assoc op in the same string.
 	| ErrorDefixNonAssoc		[Var]
 
@@ -211,6 +216,12 @@ instance Pretty Error PMode where
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined data type '"	% eRedefined err % "'\n"
 	% "      first defined at: "	% prettyPos (eFirstDefined err) 			% "\n"
+
+
+ ppr err@(ErrorAmbiguousVar{})
+	= prettyPos (eBoundVar err)								% "\n"
+	% "     Ambiguous occurrence of '" % eBoundVar err % "'\n"
+	% "      could be any of: " % ", " %!% map ppr (eBindingVars err)
 
  ppr err@(ErrorProjectRedefDataField{})
 	= prettyPos (eRedefined err)								% "\n"

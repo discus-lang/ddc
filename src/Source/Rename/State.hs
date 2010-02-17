@@ -15,12 +15,13 @@ module Source.Rename.State
 	, traceM
 	, addError
 
---	, addN
 	, getCurrentScopeOfSpace
 	, updateCurrentScopeOfSpace
-	, uniquifyVarN
+	, withLocalScope
+	, withModule
 
-	, local)
+	, uniquifyVarN)
+
 where
 
 import Shared.Var		(Var, VarBind, NameSpace(..), (=~=), Module(..))
@@ -35,11 +36,13 @@ import qualified Util.Data.Map	as Map
 
 import Data.Set			(Set)
 import qualified Data.Set	as Set
-import qualified Debug.Trace	as Debug
+import qualified Debug.Trace
 import Shared.VarUtil		(isCtorName)
 
 -----
-stage = "Source.RenameM"
+stage = "Source.Rename.State"
+-- debug		= True
+-- trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
 
 
 -- Rename Class ------------------------------------------------------------------------------------
@@ -64,7 +67,7 @@ instance Rename a => Rename (Maybe a) where
 data Scope
 	= -- | In the top level scope of the program there can be many variables with the same name.
 	  --   We use their module ids to distinguish them.
-	  ScopeTop   (Map String [(Module, Var)])
+	  ScopeTop   (Map String [Var])
 
 	  -- | A local scope within a single module.
 	  --	In the scope stack each level contains all the vars bound by the same construct, 
@@ -185,27 +188,37 @@ updateCurrentScopeOfSpace space scope'
 
 
 -- | Do some renaming in a local scope
-local :: RenameM a -> RenameM a
-local f
- = do	pushLocalScopes
- 	x	<- f
-	popLocalScopes
-	return x
+withLocalScope :: RenameM a -> RenameM a
+withLocalScope f
+ = do	-- push local scope onto stack
+	modify	$ \s -> s 
+		{ stateScopes	= Map.map (\scopes -> ScopeLocal Map.empty : scopes) 
+				$ stateScopes s }
 
--- | Create a new local scope by pushing the current ones down into the stack.
-pushLocalScopes :: RenameM ()
-pushLocalScopes
- 	= modify $ \s -> s 
-		 { stateScopes	= Map.map (\scopes -> ScopeLocal Map.empty : scopes) 
+	-- run the action
+	x	<- f
+	
+	-- pop local scope from stack
+	modify	$ \s -> s 
+		{ stateScopes	= Map.map (\(s:scopes) -> scopes)
 				$ stateScopes s }
-				
-				
--- | Pop the current scope to return to the enclosing one
-popLocalScopes :: RenameM ()
-popLocalScopes 
-	= modify $ \s -> s 
-		 { stateScopes	= Map.map (\(s:scopes) -> scopes)
-				$ stateScopes s }
+
+	return x
+	
+-- | Do some renaming in a particular module
+withModule :: Module -> RenameM a -> RenameM a
+withModule mod f
+ = do	mMod	<- gets stateModule
+	case mMod of
+	 Nothing
+	  -> do	modify $ \s -> s { stateModule = Just mod }
+		x <- f
+		modify $ \s -> s { stateModule = Nothing }
+		return x
+		
+	 Just mod'
+	  -> 	panic stage $ "withModule: module is already set to " % mod'
+	
 	
 -- Uniquifying Individual Vars -----------------------------------------------------------------------
 
@@ -264,58 +277,5 @@ uniquifyVarN' space var
 	
 	return var'
 
-{-
--- | Checks whether a variable is already bound in the u
---	Uses the namespace annotation on the variable.
-isBound_local :: Var -> RenameM Bool
-isBound_local var
- = do	
-	-- grab the current scope for the vars namespace
-	Just scope
-		<- liftM (Map.lookip 
-
-	-- grab the var map for the variables namespace.
-	Just (spaceMap:ms)
-		<- liftM (Map.lookup $ Var.nameSpace var)
-		$  gets stateStack
-
-	case Map.lookup (Var.name var) spaceMap of
- 		Just boundVar	-> return True
-		_		-> return False
--}
-
-{-
--- | Add some already renamed variables to the current scope
---	for this namespace.
-addN ::	NameSpace -> [Var] -> RenameM ()
-addN	space vs
- = do	
-	-- sanity check: variables being added tothe namespace should have already been renamed.
-	let checkVar v 
-		= case Var.nameSpace v of
-			NameNothing	-> panic stage $ "addN: var " % v % " is in NameNothing.\n"
-			_		-> v
-					
-	let vsChecked	= map checkVar vs
-				
-
-	-- grab the var map for the current namespace.
- 	(Just (spaceMap:ms))
-		<- liftM (Map.lookup space)
-		$  gets stateStack
-
-	-- add he renamed variables to the current scope.
-	let spaceMap'	
-		= Map.union spaceMap 
-		$ Map.fromList 
-		$ [ (Var.name v, v) | v <- vsChecked ]
-	
-	modify $ \s -> s 
-		{ stateStack	= Map.insert space
-					(spaceMap':ms)
-					(stateStack s) }
-					
-	return ()
--}
 
 

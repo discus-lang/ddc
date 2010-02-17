@@ -37,7 +37,6 @@ import qualified Data.Set	as Set
 import qualified Debug.Trace
 import Util
 
-
 -----
 stage		= "Source.Rename"
 -- debug		= True
@@ -46,15 +45,14 @@ stage		= "Source.Rename"
 
 -- Tree --------------------------------------------------------------------------------------------
 
--- ^ Rename the variables in some source trees.
+-- | Rename the variables in some source trees.
 --	The current module should be first, then the interfaces of all the imported ones.
 renameTrees
 	:: [(Module, Tree SourcePos)]		-- ^ modules to rename		
 	-> RenameM [(Module, Tree SourcePos)]	-- ^ renamed modules
 
 renameTrees mTrees@(mTree1 : mTreeImports)
- = local
- $ do
+ = do
 	-- bind all the top-level names.
 	--	Do the imports first so if we have name clashes at top level the vars
 	--	in the error messages will come out in the right order.
@@ -65,7 +63,7 @@ renameTrees mTrees@(mTree1 : mTreeImports)
 	mapM renameTree mTrees
 
 
--- Add the top-level names from this module to the renamer state
+-- | Add the top-level names from this module to the renamer state
 bindTopNames :: (Module, Tree SourcePos) -> RenameM ()
 bindTopNames (moduleName, tree)
  = do	-- Set the current module id
@@ -75,11 +73,12 @@ bindTopNames (moduleName, tree)
 	let vsTop	= catMap slurpTopNames tree
 	
 	-- Add them to the rename state.
-	mapM_ lbindZ vsTop
+	mapM_ lbindZ_topLevel vsTop
 
 	return ()
 
--- Rename a source tree in this module
+
+-- | Rename a source tree in this module
 renameTree :: (Module, Tree SourcePos) -> RenameM (Module, Tree SourcePos)
 renameTree (moduleName, tree)
  = do	
@@ -90,8 +89,8 @@ renameTree (moduleName, tree)
 	tree'	<- rename tree
 
 	return	(moduleName, tree')
-	
-	
+
+
 -- Top ---------------------------------------------------------------------------------------------
 instance Rename (Top SourcePos) where
  rename	top
@@ -116,7 +115,7 @@ instance Rename (Top SourcePos) where
 	 	return	$ PForeign sp f'
 
 	PInfix sp m i vs
-	 -> do 	vs'	<- mapM lbindV vs
+	 -> do 	vs'	<- mapM lbindV_bound vs
 		return	$ PInfix sp m i vs'
 
 	-- types
@@ -125,13 +124,13 @@ instance Rename (Top SourcePos) where
 	 	return	$ PTypeKind sp v' k
 
 	PTypeSynonym sp v t
-	 -> local 
+	 -> withLocalScope 
           $ do 	v'	<- linkN NameType v
 	 	t'	<- rename t
 		return	$ PTypeSynonym sp v' t'
 
 	PData sp vData vsData ctors
-	 -> local
+	 -> withLocalScope
 	  $ do	vData'	<- linkN NameType vData
 		vsData'	<- mapM bindZ vsData
 		ctors'	<- mapM (renameCtor vData' vsData') ctors
@@ -158,7 +157,7 @@ instance Rename (Top SourcePos) where
 	 -> do 	v'	<- linkN NameClass v
 
 		(vs', inh', sigs')
-		 <- local
+		 <- withLocalScope
 		 $ do	let (vs, ks)	= unzip vks
 			vs'		<- mapM (bindN NameType) vs
 			let vks'	= zip vs' ks
@@ -174,12 +173,14 @@ instance Rename (Top SourcePos) where
 	 	v'	<- linkN NameClass v
 
 		(ts', inh')
-		 <- local
+		 <- withLocalScope
 		 $ do	ts'	<- rename ts
 			inh'	<- mapM renameInstInh inh
 			return	(ts', inh')
 
-		stmts'	<- rename stmts
+		-- The names on the left of a binding in a class instance refer to the
+		-- 	variables in the class definition, which might be in a different module.
+		stmts'	<- mapM (renameStmt linkZ) stmts
 
 		return	$ PClassInst sp v' ts' inh' stmts'			
 
@@ -197,7 +198,7 @@ instance Rename (Top SourcePos) where
 					SBindFun sp v pats alts	-> SBindFun sp	(fixupV v) pats alts)
 			$ ss
 	 
-	   	t' 	<- local
+	   	t' 	<- withLocalScope
 		 	 $ do	t'	<- rename t
 				return	t'
 	
@@ -239,15 +240,15 @@ instance Rename (Foreign SourcePos) where
  rename ff
   = case ff of
  	OImport mS v tv to 
-	 -> local
-	 $  do 	v'	<- linkV v
+	 -> withLocalScope
+	 $  do 	v'	<- lbindV_binding v
 	 	tv'	<- rename tv
 		to'	<- rename to
 		return	$ OImport mS v' tv' to' 
 	
 	OImportUnboxedData s v k
-	 -> local
-	  $ do	v'	<- linkN NameType v
+	 -> withLocalScope
+	  $ do	v'	<- lbindN_binding NameType v
 		return	$ OImportUnboxedData s v' k
 
 -- Classes -----------------------------------------------------------------------------------------
@@ -256,14 +257,14 @@ instance Rename (Foreign SourcePos) where
 renameClassInh :: (Var, [Var])  -> RenameM (Var, [Var])
 renameClassInh	  (v, vs)
  = do	v'	<- linkN NameClass v
-	vs'	<- mapM (lbindN NameType) vs
+	vs'	<- mapM (lbindN_bound NameType) vs
 	return	(v, vs)
 
 
 renameClassSig :: ([Var], Type) -> RenameM ([Var], Type)
 renameClassSig    (vs, t)
- = local
- $ do 	vs'	<- mapM linkV vs
+ = withLocalScope
+ $ do 	vs'	<- mapM lbindV_binding vs
 	t'	<- rename t
 	return	(vs', t')
 
@@ -299,7 +300,7 @@ renameDataField vData vsData df
    	mLabel'	<- case dLabel df of
 			Nothing		-> return Nothing
 			Just label
-			 -> do 	label'	<- lbindN NameField label
+			 -> do 	label'	<- lbindN_binding NameField label
 				return	$ Just $ fixupV label'
 
 	tField'	<- rename $ dType df
@@ -354,18 +355,18 @@ instance Rename (Exp SourcePos) where
 		return	$ XCase sp e1' cs'
 
 	XDo sp ss 
-	 -> local
+	 -> withLocalScope
 	 $ do 	ss'	<- renameSs ss
 		return	$  XDo sp ss'
 
  	XLet sp ss e	
-	 -> local
+	 -> withLocalScope
 	  $ do 	ss'	<- renameSs ss
 		e'	<- rename e
 		return	$ XLet sp ss' e'
 		
 	XWhere sp x ss
-	 -> local
+	 -> withLocalScope
 	  $ do	ss'	<- renameSs ss
 		x'	<- rename x
 		return	$ XWhere sp x' ss'
@@ -380,12 +381,12 @@ instance Rename (Exp SourcePos) where
 	-- oop
 	XObjField sp v
 	 -> do	objV	<- peekObjectVar
-		v'	<- lbindN NameField v
+		v'	<- lbindN_binding NameField v
 		return	$ XProj sp (XVar sp objV) (JField sp v')
 		
 	-- sugar
 	XLambdaPats sp ps x
-	 -> local
+	 -> withLocalScope
 	 $ do 	(ps', _)	
 			<- liftM unzip 
 	 		$ mapM (bindPat False) ps
@@ -467,7 +468,7 @@ instance Rename (Exp SourcePos) where
 		return	$ XListRange sp b x1' x2' x3'
 
 	XListComp sp x qs
-	 -> local
+	 -> withLocalScope
 	 $ do	qs'	<- renameLCQuals qs
 
 --		addN NameValue
@@ -492,11 +493,11 @@ instance Rename (Proj SourcePos) where
  rename jj 
   = case jj of
 	JField sp v
-	 -> do	v'	<- lbindN NameField v
+	 -> do	v'	<- lbindN_binding NameField v
 		return	$ JField sp v'
 		
 	JFieldR sp v
-	 -> do	v'	<- lbindN NameField v
+	 -> do	v'	<- lbindN_binding NameField v
 	 	return	$ JFieldR sp v'
 
 	JIndex sp x
@@ -514,7 +515,7 @@ instance Rename (Alt SourcePos) where
   = case a of
 	APat sp p x2
 	 -> do	(p', x2')
-	 	 	<- local
+	 	 	<- withLocalScope
 		  	$ do	(p', [])	<- bindPat False p
 			 	x2'		<- rename x2
 				return (p', x2')
@@ -523,7 +524,7 @@ instance Rename (Alt SourcePos) where
 
 	AAlt sp gs x
 	 -> do	(gs', x')
-	 		<- local
+	 		<- withLocalScope
 			$ do	gs'	<- mapM bindGuard gs
 				x'	<- rename x
 				return	(gs', x')
@@ -542,7 +543,7 @@ instance Rename (Label SourcePos) where
   	LIndex sp i	-> return ll
 
 	LVar sp v 
-	 -> do	v'	<- lbindN NameField v
+	 -> do	v'	<- lbindN_binding NameField v
 	 	return	$  LVar sp v'
 	 
 
@@ -573,7 +574,7 @@ bindPat :: Bool			-- lazy bind
 bindPat lazy ww
  = case ww of
  	WVar sp v
-	 -> do	v'	<- if lazy 	then lbindV v
+	 -> do	v'	<- if lazy 	then lbindV_binding v
 	 				else bindV v
 
 	 	return	( WVar sp v'
@@ -631,13 +632,8 @@ bindPat lazy ww
 			, concat vss)
 		
 	 
-
------------------------
--- renameLCQuals
---	Rename some list comprehension qualifiers.
---	In a sequence of qualifiers, the vars bound in a qualifier
---	are in-scope for subsequent qualifiers.
---
+-- | Rename some list comprehension qualifiers.
+--   In a sequence of qualifiers, the vars bound in a qualifier are in-scope for subsequent qualifiers.
 renameLCQuals :: [LCQual SourcePos] -> RenameM [LCQual SourcePos]
 renameLCQuals qq
  = case qq of
@@ -646,7 +642,7 @@ renameLCQuals qq
 
 	(LCGen b (WVar sp v) x2 : qs)
 	 -> do	x2'	<- rename x2
-		local
+		withLocalScope
 		 $ do	v'	<- bindV v
 			qs'	<- renameLCQuals qs		
 			return	$ (LCGen b (WVar sp v') x2' : qs')
@@ -665,22 +661,26 @@ boundByLCQual    q
 -}
 
 -- Stmt --------------------------------------------------------------------------------------------
-
 instance Rename (Stmt SourcePos) where
- rename s
+ rename s = renameStmt lbindZ_binding s
+
+renameStmt bindLHS s
   = case s of
+
+	-- Note that we give sigs for both value and projection vars.
 	SSig sp vs t
-	 -> do	vs'	<- mapM lbindZ vs
-		t'	<- local $ rename t
+	 -> do	vs'	<- mapM bindLHS vs
+		t'	<- withLocalScope $ rename t
 		return	$ SSig sp vs' t'
 
 	SStmt sp x
-	 -> do	x'	<- local $ rename x
+	 -> do	x'	<- withLocalScope $ rename x
 		return	$ SStmt sp x'		
 
+	-- Note that we give bindings for both value and projection vars.
 	SBindFun sp v ps as
-	 -> do	v'	<- lbindZ v
-	 	local
+	 -> do	v'	<- bindLHS v
+	 	withLocalScope
 		 $ do	(ps', objVss)	<- liftM unzip
 					$  mapM (bindPat False) ps
 
@@ -709,8 +709,6 @@ instance Rename (Stmt SourcePos) where
 		return	$ SBindMonadic sp pat' x'
 
 
-		
-
 -- | Rename the variables in a list of statements
 --	When using pattern bindings, the bound variable can appear in multiple statements
 --	ie 	not True	= False
@@ -724,7 +722,7 @@ renameSs	ss
  	let vsBound	= catMap takeStmtBoundVs ss
 
 	-- create fresh binding occurances to shadow anything with the same name bound above.
-	mapM_ (lbindN NameValue) 
+	mapM_ (lbindV_binding) 
 		$ nub vsBound
 
 	-- Rename each statement.
@@ -733,7 +731,6 @@ renameSs	ss
 	return ss'
 
 		
-
 -- Type --------------------------------------------------------------------------------------------
 instance Rename Type where
  rename tt
@@ -745,7 +742,7 @@ instance Rename Type where
 		 $ modify (\s -> s {
 	  		stateErrors 	= (stateErrors s) ++ map ErrorShadowForall reused })
 
-		(b', t')	<- local 
+		(b', t')	<- withLocalScope 
 		 $  do	v'	<- bindZ v
 			t'	<- rename t
 			return	(BVar v', t')
@@ -759,7 +756,7 @@ instance Rename Type where
 
 	  	-- if any of the LHS vars are already bound (perhaps by a forall) at this level
 	  	--	then this is an error. Type vars aren't permitted to shadow each other.
-{-		isShadowed	<- mapM isBound_local bindingVars
+{-		isShadowed	<- mapM isBound_withLocalScope bindingVars
 		let shadowVars	= [ v 	| (v, True) <- zip bindingVars isShadowed]
 		let shadow	=  not $ null shadowVars
 
@@ -767,7 +764,7 @@ instance Rename Type where
 		 $ modify (\s -> s { 
 	  		stateErrors 	= (stateErrors s) ++ map ErrorShadowVar shadowVars })
 -}
-		local
+		withLocalScope
 		  $ do	
 		  	-- bind the vars on the LHS of let binds
 		  	mapM_ bindZ bindingVars
@@ -777,8 +774,8 @@ instance Rename Type where
 			return	$ TFetters t' fs'
 			 	
 	TVar k v 	
-	 -> do 	let Just nameSpace	= spaceOfKind k
-		v'	<- lbindN nameSpace v
+	 -> do 	let Just space = spaceOfKind k
+		v'	<- lbindN_bound space v
 		return	$ TVar k v'
 
 	TSum k ts
@@ -805,8 +802,8 @@ instance Rename Type where
 		
 	-- closure
 	TFree v t
-	 -> do	v'	<- lbindV v
-	 	local
+	 -> do	v'	<- lbindV_bound v
+	 	withLocalScope
 		 $  do	t'	<- rename t
 		 	return	$ TFree v' t'
 	
