@@ -1,0 +1,11 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+import Base;
+
+-- this doesn't work yet
+-- data Bool# %r1
+--	= True#
+--	| False#;
+	
+	
+
