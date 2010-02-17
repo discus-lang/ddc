@@ -48,6 +48,9 @@ force	= 27
 --	 in this module as well as Base.Thunk
 thing	= force (1 + 2)
 
+-- This use of force is ok because the module id disambiguates it
+thing2	= Base.Thunk.force (1 + 2)
+
 -- 'sin' is in the math library, but should be shadowed.
 fun4 sin 	= sin + 1;
 

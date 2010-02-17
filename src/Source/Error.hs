@@ -10,7 +10,7 @@ import Util.Pretty
 
 import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
-import Shared.VarUtil		(prettyPos, prettyPosBound)
+import Shared.VarUtil		(prettyPos, prettyPosBound, isCtorName)
 import Shared.Error
 import Shared.Base
 import Shared.Pretty
@@ -68,16 +68,6 @@ data Error
 
 	-- | Variable is redefined in the same scope.
 	| ErrorRedefinedVar	
-		{ eFirstDefined		:: Var
-		, eRedefined		:: Var }
-
-	-- | Constructor is redefined in the same scope.
-	| ErrorRedefinedCtor	
-		{ eFirstDefined		:: Var
-		, eRedefined		:: Var }
-
-	-- | Data is redefined in the same scope.
-	| ErrorRedefinedData
 		{ eFirstDefined		:: Var
 		, eRedefined		:: Var }
 
@@ -203,25 +193,28 @@ instance Pretty Error PMode where
  ppr err@(ErrorRedefinedVar{})
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined "
-		% (shortNameOfSpace $ Var.nameSpace (eFirstDefined err))
-		% " variable '"  % Var.name (eRedefined err) % "'\n"
+		% sort % " '"
+		% Var.name (eRedefined err) % "'\n"
 	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
 
- ppr err@(ErrorRedefinedCtor{})
-	= prettyPos (eRedefined err)								% "\n"
-	% "     Redefined constructor '"	% eRedefined err % "'\n"
-	% "      first defined at: "		% prettyPos (eFirstDefined err) 		% "\n"
+	where var = eFirstDefined err
+	      sort 
+		| isCtorName var
+		, Var.nameSpace var == NameValue
+		= ppr "data constructor"
 
- ppr err@(ErrorRedefinedData{})
-	= prettyPos (eRedefined err)								% "\n"
-	% "     Redefined data type '"	% eRedefined err % "'\n"
-	% "      first defined at: "	% prettyPos (eFirstDefined err) 			% "\n"
+		| isCtorName var
+		, Var.nameSpace var == NameType
+		= ppr "type constructor"
+		
+		| otherwise
+		= (shortNameOfSpace $ Var.nameSpace var) % " variable"
 
 
  ppr err@(ErrorAmbiguousVar{})
 	= prettyPos (eBoundVar err)								% "\n"
 	% "     Ambiguous occurrence of '" % eBoundVar err % "'\n"
-	% "      could be any of: " % ", " %!% map ppr (eBindingVars err)
+	% "      could be any of: " % ", " %!% map ppr (eBindingVars err)			% "\n"
 
  ppr err@(ErrorProjectRedefDataField{})
 	= prettyPos (eRedefined err)								% "\n"

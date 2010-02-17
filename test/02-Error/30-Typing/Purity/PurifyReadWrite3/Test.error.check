@@ -1,7 +1,7 @@
 ddc: ERROR
 ./test/02-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
     Conflicting region constraints.
-               constraint: Base.Const %118
+               constraint: Base.Const %117
         which purifies
               the use of: (+)
              with effect: Base.!ReadT *8

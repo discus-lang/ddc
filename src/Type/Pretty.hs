@@ -271,8 +271,8 @@ instance Pretty TyClass PMode where
 instance Pretty TProj PMode where
  ppr p
   = case p of
-  	TJField  v	-> "." % v
-	TJFieldR v	-> "#" % v
+  	TJField  v	-> "." % Var.noModule v
+	TJFieldR v	-> "#" % Var.noModule v
 	_		-> panic stage "ppr[TProj]: no match"
 
 

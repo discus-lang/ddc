@@ -1,19 +1,15 @@
 ddc: ERROR
 ./test/02-Error/10-Renamer/Redefined/Main.ds:9:11
-     Redefined constructor 'Main.Foo'
+     Redefined data constructor 'Foo'
       first defined at: ./test/02-Error/10-Renamer/Redefined/Main.ds:8:11
 
 ./test/02-Error/10-Renamer/Redefined/Main.ds:12:17
-     Redefined constructor 'Main.Baz'
+     Redefined data constructor 'Baz'
       first defined at: ./test/02-Error/10-Renamer/Redefined/Main.ds:12:11
 
 ./test/02-Error/10-Renamer/Redefined/Main.ds:16:5
-     Redefined data type 'Main.Frob'
+     Redefined type constructor 'Frob'
       first defined at: ./test/02-Error/10-Renamer/Redefined/Main.ds:15:5
-
-./test/02-Error/10-Renamer/Redefined/Main.ds:44:0
-     Redefined value variable 'force'
-      first defined at: ./library/Base/Thunk.di:83:1
 
 ./test/02-Error/10-Renamer/Redefined/Main.ds:22:13
      Redefined value variable 'x'
@@ -23,3 +19,6 @@ ddc: ERROR
      Redefined value variable 'xx'
       first defined at: ./test/02-Error/10-Renamer/Redefined/Main.ds:26:27
 
+./test/02-Error/10-Renamer/Redefined/Main.ds:49:10
+     Ambiguous occurrence of 'force'
+      could be any of: Main.force, Base.Thunk.force

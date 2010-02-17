@@ -1,6 +1,8 @@
 
 main () = ()
 
+orphanFun x	= 5
+
 -- Test error reporting for orphan instances.
 class Thing a where
  	thingFun :: a -> Int
@@ -8,6 +10,6 @@ class Thing a where
 instance Thing a where
 	thingFun x 	= x + 1
 	
-	-- this function isn't in the class definition.
+	-- this function is defined at top level but isn't in the class definition.
 	orphanFun x 	= x - 1
 	

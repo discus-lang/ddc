@@ -188,17 +188,34 @@ linkV		= linkN NameValue
 -- | Link a bound occurrence of a variable in a given namespace.
 linkN :: NameSpace -> Var -> RenameM Var
 linkN space var
- = do	varsBinding <- findBindingVars space (Var.name var)
-	case varsBinding of
-	 [] -> do
-		addError $ ErrorUndefinedVar var { Var.nameSpace = space }
-		return var
-		
-	 [varBinding]
-	  -> return $ linkBoundAgainstBinding varBinding var
+ = do	varsBinding	<- findBindingVars space (Var.name var)
+	linkN_withVarsBinding space var varsBinding
 	
-	 _ -> do
-		addError $ ErrorAmbiguousVar varsBinding var { Var.nameSpace = space }
+linkN_withVarsBinding space var varsBinding
+
+	-- no binding occurrences, it's undefined.
+	| []		<- varsBinding
+	= do	addError $ ErrorUndefinedVar var { Var.nameSpace = space }
+		return var
+
+	-- if the bound occurrence has no explicit module name,
+	--	and there's a single binding occurrence in scope then use that.
+	--	The binding occurrence could be in any module.
+	| ModuleNil	<- Var.nameModule var
+	, [varBinding]		<- varsBinding
+	= do	return $ linkBoundAgainstBinding varBinding var
+	
+	-- if the bound occurrence has an explicit module name,
+	--	and there's a single binding occurrence from the same name then use that
+	| ModuleAbsolute _ <- Var.nameModule var
+	, [varBinding]	<- filter (\v -> Var.nameModule v == Var.nameModule var)
+	 		$  varsBinding
+	= do	return $ linkBoundAgainstBinding varBinding var
+	
+	-- there are multiple binding occurrences of interest, 
+	--	and we have no way of knowing which one to choose.
+	| otherwise
+	= do	addError $ ErrorAmbiguousVar varsBinding var { Var.nameSpace = space }
 		return var
 		
 
@@ -214,8 +231,6 @@ linkBoundAgainstBinding varBinding varBound
 
 -- Combinations of Linking and Binding ------------------------------------------------------------
 
-
----------------------------------------
 -- These lbind_binding forms are used on binding occurrenes of variables.
 -- eg for:
 --	fun []     = ...

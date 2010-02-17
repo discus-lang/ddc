@@ -11,7 +11,8 @@ module Shared.Var
 	, loadSpaceQualifier
 
 	, VarInfo(..)
-	, Module(..) )
+	, Module(..) 
+	, noModule )
 where
 import Shared.Pretty
 import Shared.Literal
@@ -83,6 +84,7 @@ loadSpaceQualifier var
 	Just '!'	-> var { nameSpace = NameEffect,  name = tail (name var) }
 	Just '$'	-> var { nameSpace = NameClosure, name = tail (name var) }
 	_		-> var
+
 
 -- | Pretty print a variable
 instance Pretty Var PMode where
@@ -183,4 +185,7 @@ instance Pretty Module PMode where
 	ModuleNil		-> ppr "@ModuleNil"
   	ModuleAbsolute vs	-> "." %!% vs
 
+-- | strip off the module id from a variable
+noModule :: Var -> Var
+noModule var	= var { nameModule = ModuleNil }
 
