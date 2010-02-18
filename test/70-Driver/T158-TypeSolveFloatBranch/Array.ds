@@ -1,5 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module Data.Array
+
 export	index
 	indexR
 	array_map_
