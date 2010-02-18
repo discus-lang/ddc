@@ -422,7 +422,7 @@ instance Lint (Proj SourcePos) where
 		
 	JFieldR sp v
 	 -> do	v'	<- lint v
-		return	$ JField sp v'
+		return	$ JFieldR sp v'
 		
 	JIndex sp e
 	 -> do	e'	<- lint e
