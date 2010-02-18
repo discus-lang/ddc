@@ -1,9 +1,7 @@
 
 module Main.IO
 	( ImportDef(..)
-	, chaseModules
-	, chooseModuleName)
-
+	, chaseModules)
 where
 import Main.Setup
 import Main.Arg
@@ -86,7 +84,6 @@ chaseModules setup compileFun importDirs importsRoot importMap
 
 		 -- we haven't got an interface file, maybe we can build the source..
 		 Nothing -> chaseModules_build setup compileFun importDirs importsRoot importMap
-{-		chaseModules_die r importDirs -}
 
 chaseModules_die missingModule importDirs
  = dieWithUserError
@@ -199,42 +196,4 @@ dropPrefix [] x	= x
 dropPrefix (p:ps) x
 	| isPrefixOf p x	= drop (length p) x
 	| otherwise		= dropPrefix ps x
-	
-
-
------
--- chooseModuleName
---	Choose a name for a module based on its file path and a list
---	of import dirs.
---
---	eg, 	for file 	"library/Lib/Data/Thing.ds", imports ["library"]
---	choose module name 	"Lib.Data.Thing"
---
-chooseModuleName 
-	:: [FilePath]		-- import dirs
-	-> FilePath		-- filename of module
-	-> Maybe Module
-	
-chooseModuleName iDirs fileName
- = let	-- Break out the file name
-	Just (_, fileBase, _)	= munchFileName fileName
-   in	takeFirstJust 
-		$ map (matchName fileBase fileName) iDirs
-	
-matchName fileBase ('/':aa)	[]	= Just $ munchModule aa
-matchName fileBase (a:aa) 	(b:bb)
-	| a == b		= matchName fileBase aa bb
-	| otherwise		= Just $ ModuleAbsolute [fileBase]
-
-munchModule s					-- eg 	"Dir1/Dir2/File.ds"
- = let	
- 	sMunch		= breakOns '/' s	--	["Dir1", "Dir2", "File.ds"]
- 	dirParts	= init sMunch		--	["Dir1", "Dir2"]
-
-	Just filePart	= takeLast sMunch	--	"File.ds"
-	fileMunch	= breakOns '.' filePart	--	["File", "ds"]
-	Just file	= takeHead fileMunch	-- 	"File"
-	
-   in	ModuleAbsolute 
-   		$ dirParts ++ [file]
 	
