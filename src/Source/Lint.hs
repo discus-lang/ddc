@@ -5,7 +5,7 @@
 --	is guaranteed to save 10x the pain further down the road. Inspecting every node
 --	of the AST also gets us a deepseq.
 --
--- Everytime you fix a bug, ask whether it could have been picked up but the lint checker.
+-- Everytime you fix a bug, ask whether it should have been picked up but the lint checker.
 --
 -- All things being equal, it's better to detect errors as early as possible. 
 --	* For internal problems that are likely to be due to bugs we can just panic, but
@@ -15,7 +15,8 @@
 --	* For user-level problems we can construct an error message which relates
 --	  more closely to the program the user actualy wrote.
 --
--- Things checked for: (* marks user level problem)
+-- Things checked for: 
+--	(* marks user level problem)
 --
 -- in Vars:
 --	Missing unique binders on vars.
@@ -26,8 +27,11 @@
 --
 -- in Expressions:
 --	No bindings in let expressions.
---	No alts in case expressions.
+--	No alts  in case expressions.
 --	No stmts in do expressions.
+--	No sigs  in class definitions.
+--	No stmts in class instances.
+--	No stmts in projection dictionaries.
 --	XDefix nodes should have been resolved by the defixer.
 --	
 -- in Type Sigs:
@@ -47,7 +51,7 @@ import Type.Util
 
 import Shared.Error	(panic)
 import qualified Shared.Var	as Var	
-import Shared.Var		(NameSpace(..))
+import Shared.Var		(NameSpace(..), Module)
 import Shared.Base
 
 import Util.Generics
@@ -92,16 +96,20 @@ instance Lint (Top SourcePos) where
 	 -> return $ PPragma sp es
 
  	PModule sp ms			
- 	 -> return $ PModule sp ms		
+ 	 -> do	ms'	<- lint ms
+		return $ PModule sp ms'
 
 	PImportModule sp ms		
-	 -> return $ PImportModule sp ms
+	 -> do	ms'	<- lint ms
+		return $ PImportModule sp ms
 
-	PExport sp a
-	 -> return $ PExport sp a
+	PExport sp es
+	 -> do	es'	<- lint es
+		return $ PExport sp es'
 
 	PForeign sp f
-	 -> return $ PForeign sp f
+	 -> do	f'	<- lint f
+		return $ PForeign sp f'
 
 	PInfix sp m i vs		
 	 -> do	vs'	<- lint vs
@@ -109,17 +117,19 @@ instance Lint (Top SourcePos) where
 		
 	PTypeKind sp v k		
 	 -> do	v'	<- lint v
-		return	$ PTypeKind sp v' k
+		k'	<- lint k
+		return	$ PTypeKind sp v' k'
 		
 	PTypeSynonym sp v t		
 	 -> do	v'	<- lint v
 		t'	<- lint t
 		return	$ PTypeSynonym	sp v' t'
 	
-	PData sp v vs cs		
+	PData sp v vs ctors
 	 -> do	v'	<- lint v
 		vs'	<- lint vs
-		return	$ PData	sp v' vs' cs
+		ctors'	<- lint ctors
+		return	$ PData	sp v' vs' ctors'
 		
 	PRegion sp v
 	 -> do	v'	<- lint v
@@ -129,32 +139,50 @@ instance Lint (Top SourcePos) where
 	 -> do	v'	<- lint v
 		return	$ PEffect sp v' k
 
-	-- classes
-	PClass sp v k			
+	PClass sp v s			
 	 -> do	v'	<- lint v
-		return	$ PClass sp v' k
+		s'	<- lint s
+		return	$ PClass sp v' s'
 		
-	PClassDict sp v vs inh sigs	
-	 -> do	v'	<- lint v
-		vs'	<- lint vs
-		inh'	<- lint inh
-		sigs'	<- lint sigs
-		return	$ PClassDict sp v' vs' inh' sigs'
+	PClassDict sp v vs context sigs	
+	 | null vs	-> death xx "PClassDict - no params'"
+	 | null sigs	-> death xx "PClassDict - no sigs"
+	 | otherwise
+	 -> do	v'		<- lint v
+		vs'		<- lint vs
+		context'	<- lint context
+		sigs'		<- lint sigs
+		return		$ PClassDict sp v' vs' context' sigs'
 
-	PClassInst sp v ts inh stmts	
-	 -> do	v'	<- lint v
-	 	ts'	<- lint ts
-		inh'	<- lint inh
-		stmts'	<- lint stmts
-		return	$ PClassInst sp v' ts' inh' stmts'
+	PClassInst sp v ts context stmts	
+	 | null ts	-> death xx "PClassInst - no params"
+	 | null stmts	-> death xx "PClassInst - no stmts"
+	 | otherwise
+	 -> do	v'		<- lint v
+	 	ts'		<- lint ts
+		context'	<- lint context
+		stmts'		<- lint stmts
+		return		$ PClassInst sp v' ts' context' stmts'
 
-	PProjDict sp t ss
-	 -> do	return	$ PProjDict sp t ss
+	PProjDict sp t stmts
+	 | null stmts	-> death xx "PProjDict - no stmts"
+	 | otherwise
+	 -> do	t'		<- lint t
+		stmts'		<- lint stmts
+		return	$ PProjDict sp t' stmts'
 
 	PStmt s				
 	 -> do	s'	<- lint s
 		return	$ PStmt	s'
 	
+instance Lint (Export SourcePos) where
+ lint e	= return e
+	
+instance Lint (Foreign SourcePos) where
+ lint f = return f
+
+instance Lint (DataField (Exp SourcePos) Type) where
+ lint f = return f
 
 -- Stmt --------------------------------------------------------------------------------------------
 instance Lint (Stmt SourcePos) where
@@ -170,13 +198,20 @@ instance Lint (Stmt SourcePos) where
 		return	$ SStmt sp x'
 
 	SBindFun sp v ws as
-	 -> return	$ SBindFun sp v ws as
+	 -> do	v'	<- lint v
+		ws'	<- lint ws
+		as'	<- lint as
+		return	$ SBindFun sp v' ws' as'
 	
 	SBindPat sp w x
-	 -> return	$ SBindPat sp w x
+	 -> do	w'	<- lint w
+		x'	<- lint x
+		return	$ SBindPat sp w' x'
 	
 	SBindMonadic sp w x
-	 -> return	$ SBindMonadic sp w x	
+	 -> do	w'	<- lint w
+		x'	<- lint x
+		return	$ SBindMonadic sp w' x'
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -186,8 +221,9 @@ instance Lint (Exp SourcePos) where
 	XNil				
 	 -> return x
 
-	XLit{}
-	 -> return x
+	XLit sp litfmt
+	 -> do	litfmt'	<- lint litfmt
+		return	$ XLit sp litfmt'
 
 	XVar sp v				
 	 | not $ inSpaceV [v]	-> death x "XVar - var in wrong namespace."
@@ -195,21 +231,29 @@ instance Lint (Exp SourcePos) where
 	 -> do	v'	<- lint v
 	 	return	$ XVar sp v'
 	
-	XObjField{}
-	 -> return x
+	XObjField sp v
+	 -> do	v'	<- lint v
+		return	$ XObjField sp v'
 	
 	XProj sp e p
 	 -> do	e'	<- lint e
-		return	$ XProj sp e' p
+		p'	<- lint p
+		return	$ XProj sp e' p'
 	
-	XProjT{}
-	 -> return x
+	XProjT sp t p
+	 -> do	t'	<- lint t
+		p'	<- lint p
+		return	$ XProjT sp t' p'
+		
+	XLambdaPats sp ws e
+	 -> do	ws'	<- lint ws
+		e'	<- lint e
+		return	$ XLambdaPats sp ws' e'
 	
-	XLambdaPats{}
-	 -> return x
-	
-	XLambdaProj{}
-	 -> return x
+	XLambdaProj sp j es
+	 -> do	j'	<- lint j
+		es'	<- lint es
+		return	$ XLambdaProj sp j' es'
 
 	XLambdaCase sp aa		
 	 | isNil aa	-> death x "XCaseL - no alternatives."
@@ -224,9 +268,10 @@ instance Lint (Exp SourcePos) where
 		aa'	<- lint aa
 		return	$ XCase sp o' aa'
 
-	XMatch{}
-	 -> return x
-
+	XMatch sp as
+	 -> do	as'	<- lint as
+		return	$ XMatch sp as'
+		
 	XDo sp ss				
 	 | isNil ss	-> death x "XDo - no statements."
 	 | otherwise	
@@ -246,82 +291,217 @@ instance Lint (Exp SourcePos) where
 		e3'	<- lint e3
 		return	$ XIfThenElse sp e1' e2' e3'
 
-	XTry{}
-	 -> return x
+	XTry sp e as me
+	 -> do	e'	<- lint e
+		as'	<- lint as
+		me'	<- lint me
+		return	$ XTry sp e' as' me'
 	
-	XThrow{}
-	 -> return x
+	XThrow sp e
+	 -> do	e'	<- lint e
+		return	$ XThrow sp e'
+		
+	XWhere sp e ss
+	 -> do	e'	<- lint e
+		ss'	<- lint ss
+		return	$ XWhere sp e' ss'
+		
+	XTuple sp es
+	 -> do	es'	<- lint es
+		return	$ XTuple sp es'
 	
-	XWhere{}
-	 -> return x
+	XList sp es
+	 -> do	es'	<- lint es
+		return	$ XList sp es'
+		
+	XListRange sp b e me1 me2
+	 -> do	e'	<- lint e
+		me1'	<- lint me1
+		me2'	<- lint me2
+		return	$ XListRange sp b e' me1' me2'
 	
-	XTuple{}
-	 -> return x
+	XListComp sp e qs
+	 -> do	e'	<- lint e
+		qs'	<- lint qs
+		return	$ XListComp sp e' qs'
+		
+	XWhile sp e1 e2
+	 -> do	e1'	<- lint e1
+		e2'	<- lint e2
+		return	$ XWhile sp e1' e2'
+			
+	XWhen sp e1 e2
+	 -> do	e1'	<- lint e1
+		e2'	<- lint e2
+		return	$ XWhen sp e1' e2'
 	
-	XList{}
-	 -> return x
+	XUnless sp e1 e2
+	 -> do	e1'	<- lint e1
+		e2'	<- lint e2
+		return	$ XUnless sp e1' e2'
 	
-	XListRange{}
-	 -> return x
+	XBreak sp
+	 -> 	return	$ XBreak sp
 	
-	XListComp{}
-	 -> return x
-	
-	XWhile{}
-	 -> return x
-	
-	XWhen{}
-	 -> return x
-	
-	XUnless{}
-	 -> return x
-	
-	XBreak{}
-	 -> return x
-	
- 	XDefix{}
-  	 -> death x "XDefix - should have been eliminated by Source.Defix."
-
-	XDefixApps{}
-	 -> death x "XDefixApps - should have been eliminated by Source.DefixApps"
-	
-	XOp{}
-	 -> return x
+ 	XDefix{}	-> death x "XDefix - should have been eliminated by Source.Defix"
+	XDefixApps{}	-> death x "XDefixApps - should have been eliminated by Source.DefixApps"
+	XOp{}		-> death x "XOp -  should have been eliminated by Source.Defix"
 		
 	XApp sp e1 e2		
 	 -> do	e1'	<- lint e1
 		e2'	<- lint e2
 		return	$ XApp sp e1' e2'
 
-	XAppSusp{}
-	 -> return x
+	XAppSusp{}	-> death x "XAppSupp - should have been eliminated by Source.Defix"
+	XParens{}	-> death x "XParens - should only be used in the parser"
 
-	XParens{}
-	 -> return x
+
+-- LCQual -----------------------------------------------------------------------------------------
+instance Lint (LCQual SourcePos) where
+ lint qual
+  = case qual of
+	LCGen b w x
+	 -> do	w'	<- lint w
+		x'	<- lint x
+		return	$ LCGen b w' x'
+		
+	LCLet ss
+	 -> do	ss'	<- lint ss
+		return	$ LCLet ss
+		
+	LCExp e
+	 -> do	e'	<- lint e
+		return	$ LCExp e'
+		
+		
+-- Proj -------------------------------------------------------------------------------------------
+instance Lint (Proj SourcePos) where
+ lint proj
+  = case proj of
+	JField sp v
+	 -> do	v'	<- lint v
+		return	$ JField sp v'
+		
+	JFieldR sp v
+	 -> do	v'	<- lint v
+		return	$ JField sp v'
+		
+	JIndex sp e
+	 -> do	e'	<- lint e
+		return	$ JIndex sp e'
+		
+	JIndexR sp e
+	 -> do	e'	<- lint e
+		return	$ JIndexR sp e'
+		
+
+-- LiteralFmt -------------------------------------------------------------------------------------
+instance Lint LiteralFmt where
+ lint litfmt 
+  = return litfmt
 
 
 -- Alt --------------------------------------------------------------------------------------------
 instance Lint (Alt SourcePos) where
  lint a
   = case a of				
-	APat{}
-	 -> return a
-
-	AAlt{}
-	 -> return a
+	APat sp w e
+	 -> do	w'	<- lint w
+		e'	<- lint e
+		return	$ APat sp w' e'
+		
+	AAlt sp ws x
+	 -> do	ws'	<- lint ws
+		x'	<- lint x
+		return	$ AAlt sp ws' x'
 	
 	ADefault sp x	
 	 -> do	x'	<- lint x
 		return	$ ADefault sp x'
+	
+	
+-- Pat ---------------------------------------------------------------------------------------------	
+instance Lint (Pat SourcePos) where
+ lint ww
+  = case ww of
+	WVar sp v
+	 -> do	v'	<- lint v
+		return	$ WVar sp v'
 		
+	WObjVar sp v
+	 -> do	v'	<- lint v
+		return	$ WObjVar sp v'
+		
+	WLit sp l
+	 -> do	l'	<- lint l
+		return	$ WLit sp l'
+		
+	WCon sp v ws
+	 -> do	v'	<- lint v
+		ws'	<- lint ws
+		return	$ WCon sp v' ws'
+		
+	WConLabel sp v lws
+	 -> do	v'	<- lint v
+		lws'	<- lint lws
+		return	$ WConLabel sp v' lws'
+		
+	WAt sp v w
+	 -> do	v'	<- lint v
+		w'	<- lint w
+		return	$ WAt sp v' w'
+		
+	WWildcard sp
+	 -> 	return	$ WWildcard sp
+	
+	WUnit sp
+	 -> 	return	$ WUnit sp
+	
+	WTuple sp ws
+	 -> do	ws'	<- lint ws
+		return	$ WTuple sp ws'
+		
+	WCons sp w1 w2
+	 -> do	w1'	<- lint w1
+		w2'	<- lint w2
+		return	$ WCons sp w1' w2'
+		
+	WList a ws
+	 -> do	ws'	<- lint ws
+		return	$ WList a ws'
+		
+		
+-- Label -------------------------------------------------------------------------------------------
+instance Lint (Label SourcePos) where
+ lint l
+  = case l of
+	LIndex sp i
+	 -> 	return	$ LIndex sp i
+	
+	LVar sp v
+	 -> do	v'	<- lint v
+		return	$ LVar sp v'
+		
+	
+-- Guard -------------------------------------------------------------------------------------------
+instance Lint (Guard SourcePos) where
+ lint gg
+  = case gg of
+	GExp sp w x
+	 -> do	w'	<- lint w
+		x'	<- lint x
+		return	$ GExp sp w' x'
+		
+	GBool sp x
+	 -> do	x'	<- lint x
+		return	$ GBool sp x'
 	
 	
 -- Type --------------------------------------------------------------------------------------------
 instance Lint Type where
  lint tt
   = case tt of
-	TNil 
-	 ->	return tt
+	TNil 		-> death tt "TNil - shouldn't exist anymore"
 	
 	TForall b k t
 	 -> do	k'	<- lint k
@@ -337,11 +517,10 @@ instance Lint Type where
 	 | isNil fs	-> death tt "TFetters - list is empty"
 	 | otherwise	
 	 -> do	t'	<- lint t
-		return	$ TFetters t' fs
+		fs'	<- lint fs
+		return	$ TFetters t' fs'
 
-	TConstrain ts cs
-	 -> do	ts'	<- lint ts
-		return	$ TConstrain ts' cs
+	TConstrain ts cs -> death tt "TConstrain - shouldn't exist in source program"
 	
 	TApp t1 t2
 	 -> do	t1'	<- lint t1
@@ -404,11 +583,37 @@ instance Lint Type where
 	TVarMore{}	-> death tt "TVarMore - shouldn't exist in source program"
 	TWitJoin{}	-> death tt "TWitJoin - shouldn't exist in source program"
 	
+	
+-- Fetter -----------------------------------------------------------------------------------------
+instance Lint Fetter where
+ lint ff
+  = case ff of
+	FConstraint v ts
+	 -> do	v'	<- lint v
+		ts'	<- lint ts
+		return	$ FConstraint v' ts'
+		
+	FWhere t1 t2
+	 -> do	t1'	<- lint t1
+		t2'	<- lint t2
+		return	$ FWhere t1' t2'
+
+	FMore t1 t2
+	 -> do	t1'	<- lint t1
+		t2'	<- lint t2
+		return	$ FMore t1' t2'
+		
+	FProj{}		-> death ff "FProj - shouldn't exist in source program"
 
 -- Kind -------------------------------------------------------------------------------------------
 instance Lint Kind where
  lint k	
   = return k
+
+-- Super ------------------------------------------------------------------------------------------
+instance Lint Super where
+ lint s
+  = return s
 
 -- Var --------------------------------------------------------------------------------------------
 instance Lint Var where
@@ -424,12 +629,15 @@ instance Lint Var where
 	
 	| otherwise
 	= return v
-	
-		
+			
 -----
 inSpaceN space vs	= and $ map (\v -> Var.nameSpace v == space)  vs
 inSpaceV vs		= and $ map (\v -> Var.nameSpace v == NameValue)  vs
 -- inSpaceT vs		= and $ map (\v -> Var.nameSpace v == NameType)	  vs
 inSpaceE vs		= and $ map (\v -> Var.nameSpace v == NameEffect) vs
 
+
+-- Module -----------------------------------------------------------------------------------------
+instance Lint Module where
+ lint m	= return m
 
