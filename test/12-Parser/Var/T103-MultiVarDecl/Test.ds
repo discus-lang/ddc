@@ -1,6 +1,8 @@
 {-      # OPTIONS -no-implicit-prelude # -}
 
 abba :: Int
+abba = 5
+
 b, c :: Int
 d, e, f :: Int
 
