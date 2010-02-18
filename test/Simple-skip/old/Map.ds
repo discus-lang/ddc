@@ -1,9 +1,0 @@
-
-map2 f xx
- = case xx of { 
- 	[]		-> [];
-	x  :  xs	-> f x      :  map2 f xs;
- };
-
-
-maps2 xx f = map2 f xx;
