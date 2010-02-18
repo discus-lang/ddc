@@ -49,22 +49,35 @@ import Type.Exp
 import Type.Pretty
 import Type.Util
 
-import Shared.Error	(panic)
-import qualified Shared.Var	as Var	
-import Shared.Var		(NameSpace(..), Module)
-import Shared.Base
-
 import Util.Generics
 import Util
+import Shared.Error	(panic)
+import Shared.Var	(NameSpace(..), Module)
+import Shared.Base
+import qualified Shared.Var	as Var	
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 
 -----
 stage	= "Source.Lint"
 
-lintTree :: Tree SourcePos -> State [Error] (Tree SourcePos)
-lintTree t	= lint t
+lintTree :: Tree SourcePos -> LintM (Tree SourcePos)
+lintTree t	
+ = do	let ss	= [s	| PStmt s <- t]
+	_	<- lintStmts_sigsHaveBindings ss
+	lint t
 
+
+-- teh Monadz -------------------------------------------------------------------------------------
+type LintM = State [Error]
+
+addError :: Error -> LintM ()
+addError err
+ = modify $ \s -> s ++ [err]
+
+---------------------------------------------------------------------------------------------------
 class Lint a 
- where	lint :: a -> State [Error] a
+ where	lint :: a -> LintM a
 
 instance Lint a => Lint [a] 
  where	lint xx	= mapM lint xx
@@ -214,6 +227,28 @@ instance Lint (Stmt SourcePos) where
 		return	$ SBindMonadic sp w' x'
 
 
+-- | Check that every signature in this list of statements has an associated binding
+lintStmts_sigsHaveBindings :: [Stmt SourcePos] -> LintM [Stmt SourcePos]
+lintStmts_sigsHaveBindings ss
+ = do	let sigVars	
+		= Set.fromList 
+		$ concat
+		$ [vs	| SSig _ vs _		<- ss ]
+			
+	let bindVars	
+		= Set.fromList
+		$ [v	| SBindFun _ v _ _	<- ss ]
+	
+	let sigVars_noBind
+		= sigVars `Set.difference` bindVars
+		
+	mapM_ addError 
+		[ErrorSigLacksBinding v 
+			| v <- Set.toList sigVars_noBind]
+		
+	return ss
+	
+
 -- Exp --------------------------------------------------------------------------------------------
 instance Lint (Exp SourcePos) where
  lint x
@@ -275,13 +310,15 @@ instance Lint (Exp SourcePos) where
 	XDo sp ss				
 	 | isNil ss	-> death x "XDo - no statements."
 	 | otherwise	
-	 -> do	ss'	<- lint ss
+	 -> do	ss2	<- lintStmts_sigsHaveBindings ss
+		ss'	<- lint ss2
 		return	$ XDo sp ss'
 
 	XLet sp ss e			
 	 | isNil ss	-> death x "XLet - no bindings."
 	 | otherwise			
-	 -> do	ss'	<- lint ss
+	 -> do	ss2	<- lintStmts_sigsHaveBindings ss
+		ss'	<- lint ss2
 		e'	<- lint e
 		return	$ XLet sp ss' e'
 
@@ -303,7 +340,8 @@ instance Lint (Exp SourcePos) where
 		
 	XWhere sp e ss
 	 -> do	e'	<- lint e
-		ss'	<- lint ss
+		ss2	<- lintStmts_sigsHaveBindings ss
+		ss'	<- lint ss2
 		return	$ XWhere sp e' ss'
 		
 	XTuple sp es

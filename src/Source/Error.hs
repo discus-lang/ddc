@@ -30,6 +30,7 @@ stage	= "Source.Error"
 
 -- | All the errors that the parser and renamer can generate
 data Error
+	-- Parser Errors ------------------------------------------------------
 	-- | Nested block starts to left of enclosing one. 
 	= ErrorLayoutLeft		TokenP
 
@@ -53,14 +54,20 @@ data Error
 
 	-- | Parse error at end of input.
 	| ErrorParseEnd		
+
 	
+	-- Defixer Errors -----------------------------------------------------
+	-- | Can't have > 1 non-assoc op in the same string.
+	| ErrorDefixNonAssoc		[Var]
+
+	-- | Can't have ops of mixed assoc but same precedence in same string.
+	| ErrorDefixMixedAssoc		[Var]
+
+	
+	-- Renamer Errors -----------------------------------------------------
 	-- | Variable is undefined / out of scope.
 	| ErrorUndefinedVar	
 		{ eUndefined		:: Var }
-
-	-- | Binding occurance of a variable shadows another
-	| ErrorShadowVar
-		{ eShadowVar		:: Var }
 
 	-- | Occurance of a type variable in a TForall shadows another
 	| ErrorShadowForall
@@ -71,6 +78,19 @@ data Error
 		{ eFirstDefined		:: Var
 		, eRedefined		:: Var }
 
+
+	-- | An ambiguous binding occurrence.
+	| ErrorAmbiguousVar
+		{ eBindingVars		:: [Var]
+		, eBoundVar		:: Var }
+
+	-- Lint Errors --------------------------------------------------------
+	| ErrorSigLacksBinding
+		{ eSigVar		:: Var }
+
+	-- Desugaring Errors --------------------------------------------------
+	-- TODO: These errors emitted by the desugar stages and should
+	--	really be in a different module, or picked up in Source.Lint
 	-- | A projection name clashes with a field name in the same Data namespace.
 	| ErrorProjectRedefDataField
 		{ eFirstDefined		:: Var
@@ -83,17 +103,6 @@ data Error
 		, eFirstDefined		:: Var
 		, eRedefined		:: Var }
 
-	-- | An ambiguous binding occurrence.
-	| ErrorAmbiguousVar
-		{ eBindingVars		:: [Var]
-		, eBoundVar		:: Var }
-
-	-- | Can't have > 1 non-assoc op in the same string.
-	| ErrorDefixNonAssoc		[Var]
-
-	-- | Can't have ops of mixed assoc but same precedence in same string.
-	| ErrorDefixMixedAssoc		[Var]
-
 	-- | Bindings for the same function have different numbers of arguments
 	| ErrorBindingAirity
 		{ eVar1			:: Var
@@ -101,8 +110,6 @@ data Error
 		, eVar2			:: Var
 		, eAirity2		:: Int }
 
-	-- TODO: These errors emitted by the desugar stages and should
-	--	really be in a different module
 	| ErrorNotMethodOfClass
 		{ eInstVar		:: Var
 		, eClassVar		:: Var }
@@ -115,29 +122,26 @@ data Error
 -- | Pretty printer for error messages
 instance Pretty Error PMode where
 
+ -- Parser Errors ------------------------------------------------------
  ppr (ErrorLayoutLeft tok)
  	= ppr $ unlines
 	[ prettyTokenPos tok
 	, "    Layout error: Nested block starts to the left of the enclosing one."]
 
-		
  ppr (ErrorLayoutNoBraceMatch tok)
  	= ppr $ unlines
 	[ prettyTokenPos tok
 	, "    Layout error: Explicit close brace must match an explicit open brace."]
-
  
  ppr (ErrorLexicalStringTabs tok)
 	= ppr $ unlines
 	[ prettyTokenPos tok
 	, "    Lexer error: Literal string contains tab characters."]
 
-
  ppr (ErrorLexicalEscape tok)
 	= ppr $ unlines
 	[ prettyTokenPos tok
 	, "    Lexer error: Unhandled escape sequence." ]
-
 
  ppr (ErrorParse tok str)
  	= ppr
@@ -145,13 +149,11 @@ instance Pretty Error PMode where
 	[ prettyTokenPos tok
 	, "    Parse error: " ++ str ]
 
-
  ppr (ErrorParsePos sp str)
  	= ppr
 	$ unlines $
 	[ pprStrPlain sp
 	, "    Parse error: " ++ str ]
-
 
  ppr (ErrorParseBefore tt@(t1 : _))
 	| Just toks	<- sequence 
@@ -165,31 +167,41 @@ instance Pretty Error PMode where
 	| otherwise
 	= ppr "    Parse error at start of module"
 
-	
  ppr (ErrorParseEnd)
  	= ppr $ unlines $ 
 	[ "    Parse error at end of input.\n" ]
 
 
+ -- Defixer Errors -----------------------------------------------------
+ ppr (ErrorDefixNonAssoc (v:vs))
+	= prettyPos v % "\n"
+	% "    Precedence parsing error.\n"
+	% "      Cannot have multiple, adjacent, non-associative operators of the\n"
+	% "      same precedence in an infix expression.\n"
+	% "\n"
+	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
+
+ ppr (ErrorDefixMixedAssoc (v:vs))
+	= prettyPos v % "\n"
+	% "    Precedence parsing error.\n"
+	% "      Cannot have operators of same precedence but with differing\n"
+	% "      associativities in an infix expression.\n"
+	% "\n"
+	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
+
+
+ -- Renamer Errors ------------------------------------------------------------
  ppr err@(ErrorUndefinedVar{})
 	= prettyPos (eUndefined err)								% "\n"
 	% "     Undefined " 
 		% (shortNameOfSpace $ Var.nameSpace (eUndefined err))
 		% " variable '" % eUndefined err % "'.\n"
 
-
- ppr err@(ErrorShadowVar{})
-	= prettyPos (eShadowVar err)								% "\n"
-	% "     Shadowed TREC variable '" % eShadowVar err  
-	% "' in namespace " 		% (shortNameOfSpace $ Var.nameSpace (eShadowVar err))	% ".\n"
-
-
  ppr err@(ErrorShadowForall{})
 	= prettyPos (eShadowVar err)								% "\n"
 	% "     Shadowed type variable '" % eShadowVar err  
 	% "' in 'forall' quantifier.\n"
 
-	
  ppr err@(ErrorRedefinedVar{})
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined "
@@ -210,12 +222,20 @@ instance Pretty Error PMode where
 		| otherwise
 		= (shortNameOfSpace $ Var.nameSpace var) % " variable"
 
-
  ppr err@(ErrorAmbiguousVar{})
 	= prettyPos (eBoundVar err)								% "\n"
 	% "     Ambiguous occurrence of '" % eBoundVar err % "'\n"
 	% "      could be any of: " % ", " %!% map ppr (eBindingVars err)			% "\n"
 
+
+ -- Lint Errors ---------------------------------------------------------------
+ ppr err@(ErrorSigLacksBinding{})
+	= prettyPos (eSigVar err)								% "\n"
+	% "     Type signature for '" 	% Var.noModule (eSigVar err) 
+					% "' lacks accompanying binding."			% "\n"
+
+
+ -- Desugarer Errors ----------------------------------------------------------
  ppr err@(ErrorProjectRedefDataField{})
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Projection '"	% eFirstDefined err % "' over data type '" % eDataVar err 	% "'\n"
@@ -228,24 +248,6 @@ instance Pretty Error PMode where
 	% "      first defined at: "	% prettyPos (eFirstDefined err) 			% "\n"
 	% "      redefined at    : "	% prettyPos (eRedefined err)				% "'\n"
 
- ppr (ErrorDefixNonAssoc (v:vs))
-	= prettyPos v % "\n"
-	% "    Precedence parsing error.\n"
-	% "      Cannot have multiple, adjacent, non-associative operators of the\n"
-	% "      same precedence in an infix expression.\n"
-	% "\n"
-	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
-
-
- ppr (ErrorDefixMixedAssoc (v:vs))
-	= prettyPos v % "\n"
-	% "    Precedence parsing error.\n"
-	% "      Cannot have operators of same precedence but with differing\n"
-	% "      associativities in an infix expression.\n"
-	% "\n"
-	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
-
- 
  ppr (ErrorBindingAirity var1 airity1 var2 airity2)
  	= prettyPos var1 % "\n"
 	% "    Bindings for '" % var1 % "' have a differing number of arguments.\n"
@@ -253,12 +255,10 @@ instance Pretty Error PMode where
 	% "    binding at " % prettyPos var1 % " has " % airity1 % " arguments\n"
 	% "           but " % prettyPos var2 % " has " % airity2 % "\n"
 	
-
  ppr (ErrorNotMethodOfClass vInst vClass)
 	= prettyPos vInst % "\n"
 	% "    '" % vInst % "' is not a (visible) method of class '" % vClass % "'.\n"
 
- 
  ppr x
   	= panic stage
 	$ "ppr: no match for " % show x
