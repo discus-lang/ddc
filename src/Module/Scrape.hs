@@ -72,7 +72,8 @@ data Scrape
 
 
 -- ScrapeSource -----------------------------------------------------------------------------------
--- Scrape this module's source file.
+
+-- Find a module based on its file name and scrape it
 --	Raises System.exitFailure if the file does not exist
 --
 scrapeSourceFile
@@ -93,7 +94,8 @@ scrapeSourceFile importDirs importPrelude pathSource
 		scrapeSourceFile' importDirs importPrelude pathSource source
 		
 scrapeSourceFile' importDirs importPrelude pathSource source
- = do	-- decide on a name for this module
+ = do	
+	-- split up the path to the module
 	let (fileName, fileDir, fileBase, _)
 		= normalMunchFilePath pathSource
 
@@ -102,11 +104,18 @@ scrapeSourceFile' importDirs importPrelude pathSource source
 		= fileDir : importDirs
 
 	-- Choose a name for this module.
-	let Just moduleName	
+{-	let Just moduleName	
 		= chooseModuleName importDirs' fileName
 
+	putStr
+	 $  "moduleName " ++ show moduleName ++ "\n"
+	 ++ "importDirs " ++ show importDirs' ++ "\n"
+	 ++ "fileName   " ++ show fileName	++ "\n"
+	 
+-}
 	scrapeModule' 
-		importDirs' importPrelude moduleName 
+		Nothing
+		importDirs' importPrelude
 		Nothing fileDir fileName fileBase
 
 
@@ -121,26 +130,28 @@ scrapeModule
 	-> Module		-- The name of the module to scrape.
 	-> IO (Maybe Scrape)
 	
-scrapeModule importDirs importPrelude moduleName
+scrapeModule importDirs importPrelude moduleNameSearchedFor
  = do	-- get the base path of a module by replacing '.' by '/'
-	let ModuleAbsolute vs	= moduleName
+	let ModuleAbsolute vs	= moduleNameSearchedFor
 	let fileNameDS		= catInt "/" vs ++ ".ds"
 
 	mFileDirName	<- findFileInDirs importDirs fileNameDS
 	
 	case mFileDirName of
-	 Nothing			-> return Nothing
+	 Nothing	-> return Nothing
 	 Just (importDir, fileNameFound)	
 	  -> do	
 		let (fileName, fileDir, fileBase, _)
 			= normalMunchFilePath fileNameFound
 
 		scrapeModule' 
-			importDirs importPrelude moduleName 
+			(Just moduleNameSearchedFor)
+			importDirs importPrelude
 			(Just importDir) fileDir fileName fileBase
 
 scrapeModule' 
-	importDirs importPrelude moduleName 
+	(mModuleNameSearchedFor :: Maybe Module)
+	importDirs importPrelude
 	mImportDir fileDir fileName fileBase
  = do	
 	-- See if there is a build file
@@ -150,14 +161,42 @@ scrapeModule'
 	mBuild		<- loadBuildFile  buildFile
 
 	-- Read the file
-	source		<- readFile fileName
+	source	<- readFile fileName
 
+	let sourceLines_noComments
+		= lines $ dropStrComments source
+
+	-- Scrape the module name directly from the source
+	let mModuleScraped	
+		= scrapeModuleId sourceLines_noComments
+
+	let moduleName
+		-- Always believe the module id given in the source file.
+		| Just m	<- mModuleScraped
+		= m
+
+		-- If there is no id in the source file, but we found a specific module
+		--	in the appropriate place, then we already have the module id.
+		| Just m	<- mModuleNameSearchedFor
+		= m
+
+		-- If neither of the above apply, then derive the module id from the file name.
+		| otherwise					
+		= ModuleAbsolute [fileBase]
+
+{-
+	putStr 	$  "fileName           = " ++ show fileName 			++ "\n"
+		++ "mModuleSearchedFor = " ++ show mModuleNameSearchedFor 	++ "\n"
+		++ "mModuleScraped     = " ++ show mModuleScraped 		++ "\n"
+		++ "fileBase           = " ++ show fileBase 			++ "\n"
+		++ "chosen modulename  = " ++ show moduleName			++ "\n\n"
+-}
 	-- Scrape the inline options from the source file
 	let options	= scrapeOptions source
 	let inlineArgs	= Arg.parse options
 
 	-- Scrape the imported modules from the source file
-	let importMods	= scrapeImports source
+	let importMods	= scrapeImports sourceLines_noComments
 	
 	-- Auto-import the Prelude unless something's telling us not to
 	let importModsPrelude
@@ -227,13 +266,9 @@ checkNeedsRebuild mSource mInt mHeader mObj
 --	This needs to be fast, as we need to scrape all the source files in a project
 --	every time we do a make.
 --
-scrapeImports :: String -> [Module]
-scrapeImports source
-	= scrapeImports' (lines $ dropStrComments source)
-
-scrapeImports' [] = []
-
-scrapeImports' (l:ls)
+scrapeImports :: [String] -> [Module]
+scrapeImports [] = []
+scrapeImports (l:ls)
 	| isPrefixOf "import " l  ||
 	  isPrefixOf "import\t" l 
  	= let	
@@ -244,10 +279,10 @@ scrapeImports' (l:ls)
 		
 		(impRest, ls')	= splitWhenLeft endLine ls
 		
-	  in	scrapeImport (l : impRest) ++ scrapeImports' ls'
+	  in	scrapeImport (l : impRest) ++ scrapeImports ls'
 	
 	| otherwise
-	= scrapeImports' ls
+	= scrapeImports ls
 			
 scrapeImport ls
  = let	tokens	= fst $ scanModuleWithOffside (catInt "\n" (ls ++ ["\n"]))
@@ -259,6 +294,14 @@ scrapeImport ls
 	 Left err			-> error (show err)
 	 Right (PImportModule sp mods)	-> mods
 	
+
+-- ScrapeModuleName -------------------------------------------------------------------------------
+scrapeModuleId :: [String] -> Maybe Module
+scrapeModuleId []	= Nothing
+scrapeModuleId (l:ls)
+ = case words l of
+	 "module" : name : _	-> Just (ModuleAbsolute (breakOns '.' name))
+	 _			-> scrapeModuleId ls
 
 -- ScrapeOptions ----------------------------------------------------------------------------------
 -- | Scrape options from the source file.
