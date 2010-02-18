@@ -1,7 +1,8 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-import System.Console
+module	Class.Out
+import	Base
+	System.Console
 
 -- A class to help print things to stdout untill we have real dictionary passing working.
 class Out a where

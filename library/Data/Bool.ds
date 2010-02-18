@@ -1,7 +1,9 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module	Data.Bool
+
 import	Base
-import 	Data.BoolU
+ 	Data.BoolU
 
 
 -- boxBool :: Bool# -> Bool

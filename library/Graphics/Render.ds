@@ -1,9 +1,9 @@
 
-import Graphics.Primitive;
-import Graphics.Frame;
-import Math.Matrix33;
-
-import Data.List;
+module	Graphics.Render
+import	Graphics.Primitive
+	Graphics.Frame
+	Math.Matrix33
+	Data.List
 
 -- | render some primitives in this frame
 --   DANGER: 	Prims aren't clipped to the window. 

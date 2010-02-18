@@ -1,6 +1,8 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base;
+module	Data.BoolU
+
+import	Base
 
 -- this doesn't work yet
 -- data Bool# %r1

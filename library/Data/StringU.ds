@@ -1,9 +1,11 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-import DDC.Store
-import Class.Promote
-import Class.Num
+module	Data.StringU
+
+import	Base
+	DDC.Store
+	Class.Promote
+	Class.Num
 
 pragma	cc_includes ["string.h"]
 

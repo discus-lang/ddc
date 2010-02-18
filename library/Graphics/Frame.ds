@@ -1,6 +1,7 @@
 
+module	Graphics.Frame
 import	Graphics.TinyPTC
-import	Graphics.Raster.Bresenham
+	Graphics.Raster.Bresenham
 
 -- A frame of pixels that can be drawn on the screen.
 --	Allow the pixels to be mutable while the sizeX, sizeY is constant.

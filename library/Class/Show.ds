@@ -1,12 +1,12 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module	Class.Show
 import	Base.Thunk
-import	Data.List
-import 	Data.FlatString
-import	Data.String
-import 	System.Console
-import	Class.Out
-
+	Data.List
+ 	Data.FlatString
+	Data.String
+ 	System.Console
+	Class.Out
 
 
 ----------------------------------------------------------------------------------------------------
@@ -25,7 +25,6 @@ class Show a where
 		:- !e1	= !{ !ReadT a; !Read %r }
 		,  ConstT a
 		,  Lazy %r
-
 
 
 -- Strict Show -------------------------------------------------------------------------------------

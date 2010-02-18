@@ -1,14 +1,15 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-import Data.Bool
-import Data.Int
-import Data.Int32U
-import Data.Float32U
+module	Data.Float
 
-import Class.Eq
-import Class.Num
-import Class.Ord
+import 	Base
+ 	Data.Bool
+	Data.Int
+ 	Data.Int32U
+ 	Data.Float32U
+	Class.Eq
+	Class.Num
+	Class.Ord
 
 pragma	cc_includes ["math.h"]
 

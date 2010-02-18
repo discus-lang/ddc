@@ -1,6 +1,6 @@
 
-import Prelude
-import Math.Constants
+module	Math.Util
+import	Math.Constants
 
 radToDeg r	= (180.0 / pi) 	 	* r
 degToRad d	= (pi    / 180.0)	* d

@@ -1,14 +1,15 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-import Data.Bool
-import Data.Int32U
+module	Data.Int
 
-import Class.Copy
-import Class.Eq
-import Class.Num
-import Class.Ord
-import Class.Update
+import	Base
+	Data.Bool
+	Data.Int32U
+	Class.Copy
+	Class.Eq
+	Class.Num
+	Class.Ord
+	Class.Update
 
 foreign import "_boxInt32"
  boxInt32 	:: Int32# -> Int32

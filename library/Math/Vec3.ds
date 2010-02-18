@@ -3,8 +3,8 @@
 --	It would be nice to have vectors of arbitrary dimension, 
 --	but the 2d and 3d cases are used most often, so we use specialised versions.
 --	
-import Prelude
-import Math.Constants
+module	Math.Vec3
+import	Math.Constants
 
 -- A polymorphic vector of dimension 3
 data Vec3 a

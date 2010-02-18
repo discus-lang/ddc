@@ -1,7 +1,5 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-
 -- Hooks onto DDC's runtime primitives.
 --	This gives direct access to the store.
 --	Sooo many ways to crash and burn
@@ -10,7 +8,8 @@ import Base
 -- All low level operations should have this effect.
 --	But we can't mask it yet so its been left out.
 --	Make sure your stmts have enough data dependencies, else badness.
-
+module	DDC.Store
+import	Base
 
 -- DataR -------------------------------------------------------------------------------------------
 

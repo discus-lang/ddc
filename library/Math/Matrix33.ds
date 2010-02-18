@@ -1,6 +1,6 @@
 
-import Prelude
-import Math.Vec3
+module	Math.Matrix33
+import	Math.Vec3
 
 -- | A 3x3 matrix of floats, good for a 2D transform.
 data Matrix33

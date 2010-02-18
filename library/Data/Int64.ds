@@ -1,15 +1,16 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-import Data.Bool
+module	Data.Int64
 
-import Class.Copy
-import Class.Eq
-import Class.Num
-import Class.Ord
-import Class.Show
-import Class.Update
-import Data.String
+import	Base
+	Data.Bool
+	Class.Copy
+	Class.Eq
+	Class.Num
+	Class.Ord
+	Class.Show
+	Class.Update
+	Data.String
 
 
 foreign import "_boxInt64"

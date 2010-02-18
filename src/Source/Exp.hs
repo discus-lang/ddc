@@ -49,14 +49,17 @@ type Tree a	= [Top a]
 -- Top ---------------------------------------------------------------------------------------------
 data Top a
 	= PPragma	a [Exp a]
-	| PModule	a Module
-	| PInfix	a (InfixMode a) Int [Var]
 
-	-- Imports
+	-- Modules
+	| PModule	a Module
 	| PImportModule a [Module]
 	| PExport	a [Export a]
 
+	-- Foreign imports and exports
 	| PForeign	a (Foreign a)
+
+	-- Infix decls
+	| PInfix	a (InfixMode a) Int [Var]
 
 	-- Types
 	| PTypeSynonym	a Var Type			-- Define a type synonym.

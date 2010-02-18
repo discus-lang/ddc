@@ -298,12 +298,6 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (PModule x0' x1')
-                PInfix x0 x1 x2 x3
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        x3' <- transZM table x3
-                        return (PInfix x0' x1' x2' x3')
                 PImportModule x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
@@ -316,6 +310,12 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         return (PForeign x0' x1')
+                PInfix x0 x1 x2 x3
+                  -> do x0' <- transN table x0
+                        x1' <- transZM table x1
+                        x2' <- transZM table x2
+                        x3' <- transZM table x3
+                        return (PInfix x0' x1' x2' x3')
                 PTypeSynonym x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

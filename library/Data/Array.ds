@@ -1,14 +1,17 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module 	Data.Array 
+
 export	index
 	indexR
 	array_map_
 	array_foldl
 	
 import	Base
-import	Data.Int
-import	Data.Ref
-import	Data.List
+	Data.Int
+	Data.Ref
+	Data.List
+
 
 -- An array of boxed balues
 data Array %r1 a;

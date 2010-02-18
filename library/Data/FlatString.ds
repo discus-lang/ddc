@@ -1,13 +1,16 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Data.Int
-import Data.Int32U
-import Data.StringU
-import Data.Char
-import Class.Copy
-import Base
+module 	Data.FlatString
 
-export flatString_copy
+export	flatString_copy
+
+import 	Data.Int
+	Data.Int32U
+ 	Data.StringU
+ 	Data.Char
+ 	Class.Copy
+ 	Base
+
 
 project FlatString 
  with {	maxLengthU; lengthU; setLengthU; 

@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
+module	Class.Update
+import	Base
 
 infix  0 :=
 infix  0 +=

@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
+module	Class.Functor
+import	Base
 
 class Functor (f :: * -> *) where
 

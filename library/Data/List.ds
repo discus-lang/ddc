@@ -1,5 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module 	Data.List
+
 import	Base
 	Base.Thunk
 	Class.Functor

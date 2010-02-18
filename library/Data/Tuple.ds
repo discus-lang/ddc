@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
+module	Data.Tuple
+import	Base
 
 fst (a, b)	= a
 snd (a, b)	= b

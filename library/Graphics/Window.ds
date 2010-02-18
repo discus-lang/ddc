@@ -1,6 +1,7 @@
 
-import Graphics.TinyPTC
-import Graphics.Frame
+module	Graphics.Window
+import	Graphics.TinyPTC
+	Graphics.Frame
 
 data Window %r1 %r2
 	= Window {

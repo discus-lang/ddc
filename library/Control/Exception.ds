@@ -1,10 +1,11 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module	Control.Exception
 import	Base
-import	Data.Int
-import	Data.String
-import	System.Console
-import	Control.Imperative
+	Data.Int
+	Data.String
+	System.Console
+	Control.Imperative
 
 -- Functions which might throw a user exception have the Throw effect.
 --	Non-exhaustive pattern match, and array bounds exceptions are not included

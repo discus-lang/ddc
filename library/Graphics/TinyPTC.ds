@@ -1,4 +1,5 @@
-import Prelude;
+
+module	Graphics.TinyPTC
 
 pragma cc_includes
 	[ "external/TinyPTC-X11-0.7.3/tinyptc.h" ];

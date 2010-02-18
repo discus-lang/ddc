@@ -1,6 +1,7 @@
 
-import Prelude
-import Math.Vec2
+module	Graphics.Primitive
+import	Prelude
+	Math.Vec2
 
 -- A graphics primimitive
 data Primitive %r

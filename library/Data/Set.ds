@@ -20,12 +20,15 @@
 -- when equality is an equivalence relation instead of structural
 -- equality.
 
+module	Data.Set
+
 import	Base
 	Class.Ord
 	Class.Num
 	Data.Int
 	Data.List
-	
+
+
 -----
 -- | A set of values a
 data Set a    

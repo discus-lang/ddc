@@ -1,10 +1,12 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module	Data.ArrayU
+
 import	Base
-import	Data.Int
-import 	Data.Int32U
-import	Control.Imperative
-import	Control.Exception
+	Data.Int
+ 	Data.Int32U
+	Control.Imperative
+	Control.Exception
 
 -- An array of unboxed ints
 data ArrayU %r a

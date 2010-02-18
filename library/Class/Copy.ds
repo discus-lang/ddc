@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base;
+module	Class.Copy
+import	Base
 
 -- | A class of type which can be copied
 --	The copied object has the same structure but is in a fresh set of regions.

@@ -9,7 +9,7 @@ module Main.Source
 	, lint
 	, desugar)
 where
-import Source.Lexer			(scanModuleWithOffside)
+import Source.Lexer			(scanModuleWithOffside, scan)
 import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)
 import Source.Defix			(defixP)
@@ -56,8 +56,10 @@ parse	fileName
 	let (toksSource, toksPragma)
 		= scanModuleWithOffside source
 
-	dumpS DumpSourceTokens "source-tokens" 
-		$ show toksSource
+	let toks	= scan source
+
+	dumpS DumpSourceTokens "source-tokens-offside" 	$ show toksSource
+	dumpS DumpSourceTokens "source-tokens-raw"	$ show toks
 
 	-- check for strings with tabs in them. We'll reject these.
 	let tokStringTabs

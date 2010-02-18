@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
+module	Class.Promote
+import	Base
 
 -- Something of type a can be promoted to something of type b
 --	if no information is lost during the conversion.

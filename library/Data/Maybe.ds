@@ -1,6 +1,8 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
+module	Data.Maybe
+
+import	Base
 
 data Maybe a
 	= Just 	{ x :: a; }

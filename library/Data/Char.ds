@@ -1,7 +1,9 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
-import Data.Word32U
+module	Data.Char
+
+import	Base
+	Data.Word32U
 
 foreign import "_boxChar32"
  boxChar32	:: Char32#{read} -> Char

@@ -1,15 +1,8 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import	Base
+module	Data.String 
 
-import	Data.FlatString
-import	Data.Int
-import	Data.Float
-import 	Data.Char
-import 	Class.Eq
-import	Class.Copy
-
-export 	string_copy
+export	string_copy
 	string_eq
 	string_Int32
 	string_Float32
@@ -17,6 +10,15 @@ export 	string_copy
 	boxString
 	(%)
 	(%%)
+
+import	Base
+	Data.FlatString
+	Data.Int
+	Data.Float
+	Data.Char
+	Class.Eq
+	Class.Copy
+
 
 project String 
  with	{ box; isFlat; isNul; length; flatten; head }

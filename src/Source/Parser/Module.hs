@@ -21,6 +21,7 @@ import Type.Util.Bits
 
 import Shared.Pretty
 import qualified Shared.Var	as Var
+import Shared.Var		(Module)
 
 import DDC.Base.NameSpace
 
@@ -50,14 +51,30 @@ parseString parser str
 -- Module ------------------------------------------------------------------------------------------
 -- | Parse a whole module.
 pModule :: Parser [Top SP]
-pModule = pCParen pOrderedTop
+pModule 
+ = 	pCParen pOrderedTop
 
 -- | Parse a top level binding, only accepting a specific ordering.
 pOrderedTop :: Parser [Top SP]
 pOrderedTop
- = do	header	<- Parsec.sepEndBy pTopHeader pSemis
-	tops <- Parsec.sepEndBy pTop pSemis
-	return	$ header ++ tops
+ = do	mModule	<- Parsec.optionMaybe pModuleId
+	header	<- Parsec.sepEndBy pTopHeader pSemis
+	tops 	<- Parsec.sepEndBy pTop pSemis
+
+	return	$  maybeToList mModule 
+		++ header 
+		++ tops
+
+-- | A header with an explicit module identifier.
+pModuleId :: Parser (Top SP)
+ = do 	tok	<- pTok K.Module
+	mQual	<- Parsec.optionMaybe 
+		   (do	q	<- pModuleNameQual 
+			pTok K.Dot
+			return q)
+	con	<- pCon
+	pSemis
+	return	$ PModule (spTP tok) (Var.ModuleAbsolute (fromMaybe [] mQual ++ [Var.name con]))
 
 pTopHeader :: Parser (Top SP)
  =	pTopImport
@@ -66,8 +83,7 @@ pTopHeader :: Parser (Top SP)
 
 pTop :: Parser (Top SP)
 pTop
- =
-	pTopForeignImport
+ =	pTopForeignImport
   <|>	pTopInfix
   <|>	pTopType
   <|>	pTopData

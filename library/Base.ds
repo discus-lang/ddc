@@ -3,6 +3,8 @@
 --	The compiler assumes that all this stuff is in this module.
 --	Don't change it or move it somewhere else unless you know what you're doing.
 
+module Base
+
 -- Wordsize Config --------------------------------------------------------------------------------
 -- | An unsigned word big enough to hold the offset from
 --	the start of the store to the last byte in it.

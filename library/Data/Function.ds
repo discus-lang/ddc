@@ -1,8 +1,8 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
 -- | Simple combinators that work solely on functions
-
-import Base.Thunk
+module	Data.Function
+import	Base.Thunk
 
 -- | Identity function
 id :: a -> a

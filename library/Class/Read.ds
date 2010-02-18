@@ -1,4 +1,5 @@
 
+module	Class.Read
 
 class Read a where
  	read 	:: forall %r

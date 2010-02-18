@@ -412,7 +412,6 @@ breakModuleStr str
 	= ([], str)
 	
 
-
 -- addStarts ---------------------------------------------------------------------------------------
 -- | Add block and line start tokens to this stream.
 --	This is lifted straight from the Haskell98 report.
@@ -420,9 +419,9 @@ addStarts :: [TokenP] -> [TokenP]
 addStarts ts
  = case forward ts of
 
-	-- if the first lexeme of a module is not '{' or 'module' then start a new block
+	-- if the first lexeme of a module is not '{' then start a new block
  	(t1 : tsRest)
-	  |  not $ or $ map (isToken t1) [Module, CBra]
+	  |  not $ or $ map (isToken t1) [CBra]
 	  -> StartBlock (tokenColumn t1) : addStarts' (t1 : tsRest)
 	
 	  | otherwise

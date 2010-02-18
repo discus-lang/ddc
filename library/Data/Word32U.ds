@@ -4,9 +4,11 @@
 --	There are no actual C functions associated with these.
 --	We define them so the type inferencer has a schemes for them.
 --
-import Class.Eq
-import Class.Num
-import Class.Ord
+module	Data.Word32U
+
+import	Class.Eq
+	Class.Num
+	Class.Ord
 
 -- math
 foreign import "primWord32U_neg"

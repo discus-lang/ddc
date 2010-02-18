@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
+module	Class.Num
+import	Base
 
 infixl 8 *, / 
 infixl 7 +, - 

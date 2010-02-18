@@ -1,6 +1,6 @@
 
-import Prelude
-import Math.Constants
+module	Math.Vec2
+import	Math.Constants
 
 -- A polymorphic vector of dimension 2
 data Vec2 a

@@ -1,6 +1,7 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
-import Base
+module	Class.Foldable
+import	Base
 
 class Foldable (t :: * -> *) where
 

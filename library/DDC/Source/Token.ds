@@ -1,5 +1,6 @@
 
-import Prelude;
+module	DDC.Source.Token
+import	Prelude
 
 data Token %r1
 	= Token {

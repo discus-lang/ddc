@@ -6,8 +6,8 @@
 --	string still to accept, yielded value, parser state
 --	allow destructive update of parser state
 --		use this to keep line numbers
-
-import DDC.Source.Token;
+module	DDC.Source.Lexer
+import 	DDC.Source.Token
 
 data Match %r1 t a
 	= Accept (List %r1 t) a

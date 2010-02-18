@@ -1,8 +1,9 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+module	DDC.Runtime
 import	Base
-import	Data.Int32U
-import	System.Console
+	Data.Int32U
+	System.Console
 
 -- The effect of functions that prod the runtime system
 effect !Runtime	:: !;
@@ -17,7 +18,7 @@ foreign import "primRuntime_slotUsage"
 	
 
 -- Print a low level description of a heap object to stdout
-foreign import "primRuntime_printObj"
+foreign import "primRuntime_printObj"	
  runtime_printObj
  	:: forall a
 	. a -(!e1)> ()
