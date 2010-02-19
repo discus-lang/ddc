@@ -92,7 +92,8 @@ generaliseType' varT tCore envCids
 		%> prettyTS tPlug 	% "\n\n"
 
 	-- Clean empty effect and closure classes that aren't ports.
-	let tsParam	=  slurpParamClassVarsT tPlug
+	let tsParam	=  slurpParamClassVarsT_constrainForm
+	 		$  toConstrainFormT tPlug
 	classInst	<- gets stateClassInst
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
 

@@ -143,7 +143,7 @@ extractType_more final varT cid tPack
 				TClass kE cid | kE == kEffect   -> Just t
 				TClass kC cid | kC == kClosure	-> Just t
 				_				-> Nothing)
-		$ slurpParamClassVarsT tPack
+		$ slurpParamClassVarsT_constrainForm tPack
 	
 	tStrong	<- strengthenT (Set.fromList tsParam) tPack
 
@@ -162,10 +162,10 @@ extractType_more final varT cid tPack
 
 	-- Cut loops through :> fetters in this type
 	trace	$ ppr " -- cutting loops\n"
-	let tCut	= cutLoopsT $ toFetterFormT tTrim
+	let tCut	= cutLoopsT_constrainForm tTrim
 	trace	$ "    tCut:\n" 	%> prettyTS tCut % "\n\n"
 	
-	let tCutPack	= toFetterFormT $ PackFast.packType $ toConstrainFormT tCut
+	let tCutPack	= toFetterFormT $ PackFast.packType tCut
 	trace	$ "    tCutPack:\n"	%> prettyTS tCutPack % "\n\n"
 
 	extractType_final final varT cid tCutPack

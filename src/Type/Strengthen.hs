@@ -1,6 +1,6 @@
 
--- For :> constraints on variables that are not to the left of an arrow. 
--- For example:
+-- For :> constraints on variables that are not to the left of an arrow,
+-- eg:
 --
 --	fun :: forall !e1. a -(!e1)> b :- !e1 :> !Console
 --
@@ -21,7 +21,7 @@
 --
 module Type.Strengthen
 	( strengthenT
-	, slurpParamClassVarsT)
+	, slurpParamClassVarsT_constrainForm)
 where
 
 import qualified Data.Map	as Map
@@ -102,23 +102,23 @@ strengthenFs tsParam fsEq fMore
 --	   We really need to inspect the definition of data types to determine
 --	   which positions correspond to parameters.
 --
-slurpParamClassVarsT :: Type -> [Type]
-slurpParamClassVarsT tt
+slurpParamClassVarsT_constrainForm :: Type -> [Type]
+slurpParamClassVarsT_constrainForm tt
  = case tt of
-	TForall b k t		-> slurpParamClassVarsT t
-	TFetters t fs		-> slurpParamClassVarsT t
-	TConstrain t crs 	-> slurpParamClassVarsT t
+	TForall b k t		-> slurpParamClassVarsT_constrainForm t
+	TFetters t fs		-> panic stage $ "slurpParamClassVarsT: TFetters"
+	TConstrain t crs 	-> slurpParamClassVarsT_constrainForm t
 
 	TApp t1 t2
 	  | Just (t11, t12, eff, clo)	<- takeTFun tt
 	  -> (Set.toList $ collectTClassVars t11) 
-	     ++ slurpParamClassVarsT t12
+	     ++ slurpParamClassVarsT_constrainForm t12
 	
 	  | Just _	<- takeTData tt
 	  -> []
 	
 	  | otherwise
-	  -> slurpParamClassVarsT t1 ++ slurpParamClassVarsT t2
+	  -> slurpParamClassVarsT_constrainForm t1 ++ slurpParamClassVarsT_constrainForm t2
 	
 	TVar{}		-> []
 	TCon{}		-> []

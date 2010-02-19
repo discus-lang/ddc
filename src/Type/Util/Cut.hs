@@ -1,10 +1,5 @@
 -- | Cuts loops in types
 --
---   TODO: Remember which fetters we've entered on the way up the tree.
---         Avoid re-entering the same type more than once.
---         This'll probably make it a lot faster when there are a large number of 
---         fetters to inspect.
---
 --   For recursive functions, the type we trace from the graph will contain
 --   loops in the effect and closure portion of the graph: 
 --
@@ -15,7 +10,8 @@
 --               ,  *173       = *174 -(!178 $179)> *176
 --               ,  *174       = Data.List.List %175 *169
 --               ,  *176       = Data.List.List %177 *170
---               ,  *757       = forall x %rTS0. x -> Data.List.List %rTS0 x -($cTC29)> Data.List.List %rTS0 x :- $cTC29     = x : x
+--               ,  *757       = forall x %rTS0. x -> Data.List.List %rTS0 x -($cTC29)> Data.List.List %rTS0 x 
+--						:- $cTC29     = x : x
 --    (loop)     ,  !178       :> !{Base.!Read %175; !171; !1770; !180; !178; !1773}
 --               ,  $179       :> ${$1759; $1760; $1761; $1762}
 --               ,  $181       :> $179 \ f
@@ -37,134 +33,111 @@
 --
 --	$c1 :> $c2 \/ $c1
 --	
+--  TODO: Remember which fetters we've entered on the way up the tree.
+--        Avoid re-entering the same type more than once.
+--        This'll probably make it a lot faster when there are a large number of 
+--        fetters to inspect.
 --
 module Type.Util.Cut
-	( cutLoopsT )
-
+	( cutLoopsT_constrainForm )
 where
-
 import Type.Plate.Collect
 import Type.Pretty
 import Type.Error
 import Type.Util
 import Type.Exp
-
 import Shared.Error
 import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-import qualified Data.Set	as Set
-import Data.Set			(Set)
 import Data.List
-
-import Debug.Trace
+import Data.Set			(Set)
+import Data.Map			(Map)
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 -----
 stage	= "Type.Util.Cut"
 
--- Cut loops in this type
-cutLoopsT :: Type -> Type
-cutLoopsT (TFetters tt fs)
- = let	
-	-- split the fetters into the let/more and the rest.
-	(fsLetMore, fsOther)	
-			= partition (\f -> isFMore f || isFWhere f) fs
 
-	-- build a map of let/more fetters so we can look them up easilly.
- 	sub		= Map.fromList 
-			$ map (\f -> case f of
-					FMore t1 t2	-> (t1, f)
-					FWhere  t1 t2	-> (t1, f))
-			$ fsLetMore
-	
-	-- cut loops in these lets
+-- | Cut loops in this type
+cutLoopsT_constrainForm :: Type -> Type
+cutLoopsT_constrainForm (TConstrain tt crs)
+ = let	-- decend into the constraints from every cid in the body of the type
 	cidsRoot	= Set.toList $ collectTClasses tt
-	fsLetMore'	= foldl' (cutLoopsF Set.empty) sub cidsRoot
-	
-	-- rebuild the type, with the new fetters
-     in	TFetters tt (Map.elems fsLetMore' ++ fsOther)
+	crs'		= foldl' (cutLoops1 Set.empty) crs cidsRoot
+   in	TConstrain tt crs'
 
-cutLoopsT tt
+cutLoopsT_constrainForm tt
  	= tt
 
 
-cutLoopsF
-	:: Set Type
-	-> Map Type Fetter
-	-> Type
-	-> Map Type Fetter
-
-cutLoopsF cidsEntered sub cid
- = case Map.lookup cid sub of
-
-	-- No constructor for this cid
-	Nothing	-> sub
-
-	Just fetter
-	 -> let
-	 	-- update the map so we know we've entered this fetter
-		cidsEntered'	= Set.insert cid cidsEntered
- 
-	 	-- bottom out any back edges in the rhs type and update the map
-		fetter'		= cutF (Just cid) cidsEntered' fetter
-		sub2		= Map.insert cid fetter' sub
+-- | Cut loops in the constraint with this cid
+cutLoops1 
+	:: Set Type		-- ^ the set of cids we've entered so far
+	-> Constraints		-- ^ the current constraints
+	-> Type			-- ^ the cid of the constraint we're decending into
+	-> Constraints		-- ^ the new constraints
 	
-	 	-- collect up remaining classIds in this type
-		cidsMore	= Set.toList
-				$ case fetter' of
-					FWhere _  t2	-> collectTClasses t2
-					FMore _ t2	-> collectTClasses t2
+cutLoops1 cidsEntered crs@(Constraints crsEq crsMore crsOther) tCid
+	| Just t2	<- Map.lookup tCid crsEq
+	= cutLoops1' cidsEntered crs tCid crsEq   (\crsX -> Constraints crsX crsMore crsOther) t2
+
+	| Just t2	<- Map.lookup tCid crsMore
+	= cutLoops1' cidsEntered crs tCid crsMore (\crsX -> Constraints crsEq crsX crsOther) t2
+
+	| otherwise
+	= crs
+
 	
-		-- decend into branches
-		sub3		= foldl' (cutLoopsF cidsEntered') sub2 cidsMore
+cutLoops1' cidsEntered crs tCid crsX updateCrsX t2
+ = let
+	-- remember that we've entered this constraint
+	cidsEntered'	= Set.insert tCid cidsEntered
+		
+	-- cut cids in this constraint
+	t2'		= cutT cidsEntered' t2
+	crsX'		= Map.insert tCid t2' crsX
+	crs'		= updateCrsX crsX'
+		
+	-- decend into other constraints reachable from this type
+	cidsMore	= Set.toList $ collectTClasses t2'
+	 
+   in	foldl' (cutLoops1 cidsEntered') crs' cidsMore
 	
-	   in	sub3
 
-
--- | Replace TClasses in the type which are members of the set with Bottoms
-cutF 	:: Maybe Type -> Set Type -> Fetter -> Fetter
-cutF cid cidsEntered ff
- = case ff of
- 	FWhere  t1 t2	-> FWhere  t1 (cutT cid cidsEntered t2)
-	FMore t1 t2	-> FMore t1 (cutT cid cidsEntered t2)
-
-cutT cid cidsEntered tt	
- = let down	= cutT cid cidsEntered
+cutT cidsCut tt	
+ = let down	= cutT cidsCut
    in  case tt of
-	TForall  b k t		-> TForall	 b k (down t)
+	TForall  b k t		-> TForall b k (down t)
 
-	-- These fetters are wrapped around a type in the RHS of our traced type
-	--	they're from type which have already been generalised
-	TFetters t fs		-> TFetters 	(down t) (map (cutF_follow cidsEntered) fs)
-	TConstrain t crs
-	 -> toConstrainFormT 
-	  $ cutT cid cidsEntered 
-	  $ toFetterFormT tt
-
-	TSum  k ts		-> TSum 	k (map down ts)
+	TConstrain t (Constraints crsEq crsMore crsOther)
+	 -> let	crsEq'		= Map.map (cutT cidsCut) crsEq
+		crsMore'	= Map.map (cutT cidsCut) crsMore
+		crsOther'	= map (cutF cidsCut) crsOther
+	    in	TConstrain (down t) (Constraints crsEq' crsMore' crsOther')
+	
+	TSum  k ts		-> TSum k (map down ts)
 	TVar{}			-> tt
 	TCon{}			-> tt
 	TTop{}			-> tt
 	TBot{}			-> tt
 
-	TApp	t1 t2		-> TApp 	(down t1) (down t2)
-
-	TEffect	v ts		-> TEffect	v (map down ts)
+	TApp	t1 t2		-> TApp (down t1) (down t2)
+	TEffect	v ts		-> TEffect v (map down ts)
 
 	TFree v t2@(TClass k _)
-	 |  Set.member t2 cidsEntered
+	 |  Set.member t2 cidsCut
 	 -> tEmpty
 
-	TFree v t		-> TFree	v (down t)
-	TDanger t1 t2		-> TDanger	(down t1) (down t2)
+	TFree v t		-> TFree   v (down t)
+	TDanger t1 t2		-> TDanger (down t1) (down t2)
 
 	TClass k cid'
-	 | Set.member tt cidsEntered
+	 | Set.member tt cidsCut
 	 -> let result
-	 	 | k == kEffect		= tPure
-		 | k == kClosure	= tEmpty
-		 | k == kValue		= panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
+	 	 | k == kEffect	 = tPure
+		 | k == kClosure = tEmpty
+		 | k == kValue	 
+		 = panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
 	    in  result
 
 	 | otherwise
@@ -178,13 +151,12 @@ cutT cid cidsEntered tt
 
 
 -- | Replace TClasses in the fetter which are members of the set with Bottoms
-cutF_follow :: Set Type -> Fetter -> Fetter
-cutF_follow cidsEntered ff
- = let down	= cutT Nothing cidsEntered
+cutF :: Set Type -> Fetter -> Fetter
+cutF cidsEntered ff
+ = let down	= cutT cidsEntered
    in case ff of
- 	FConstraint 	v ts		-> FConstraint v (map down ts)
-	FWhere 		t1 t2		-> FWhere  t1  (down t2)
-	FMore		t1 t2		-> FMore t1  (down t2)
-	FProj		j v tDict tBind	-> FProj j v (down tDict) (down tBind)
-
+ 	FConstraint v ts	-> FConstraint v (map down ts)
+	FWhere t1 t2		-> FWhere t1  (down t2)
+	FMore  t1 t2		-> FMore  t1  (down t2)
+	FProj  j v tDict tBind	-> FProj  j v (down tDict) (down tBind)
 
