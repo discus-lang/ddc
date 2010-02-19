@@ -1,4 +1,24 @@
 
+-- For :> constraints on variables that are not to the left of an arrow. 
+-- For example:
+--
+--	fun :: forall !e1. a -(!e1)> b :- !e1 :> !Console
+--
+-- We can safely strengthen these to = constraints, that is:
+--
+--	fun :: a -(!e1)> b :- !e1 = !Console.
+--
+-- Later, when converting this to the core language, we can flatten the above and
+-- write just:
+--
+--	fun :: a -(!Console)> b
+--
+-- Note that the quantifier for !e1 is gone, which means we don't have to pass
+--	an effect parameter when calling this function in the core language.
+--
+-- TODO: Do the parameter var slurping in the strengthen fun directly.
+--	 Pass in quantified vars directly, and demonadify this function.
+--
 module Type.Strengthen
 	( strengthenT
 	, slurpParamClassVarsT)
@@ -20,10 +40,15 @@ import Type.Plate.Collect
 import Shared.Error
 import Util
 
+-----
 stage	= "Type.Strengthen"
 
+
+-- | Strengthen constraints that don't constrain variables in this set.
 strengthenT 
-	:: Set Type 		-- ^ cids and vars that appear in parameter positions
+	:: Set Type 		-- ^ cids and vars that appear in parameter positions, 
+				--	that is, on the left of an arrow. Constraints on
+				--	these can't be strengthened.
 	-> Type 		-- ^ the type to strengthen
 	-> SquidM Type		-- ^ the strengthened type
 
@@ -58,8 +83,7 @@ strengthenFs tsParam fsEq fMore
 			| Map.member v quantVars 
 			= (fsEq, Just fMore)
 			
-			-- can't convert vars that appear in contra-variant positions
-			--	in the shape of the type
+			-- can't convert vars that appear in parameter positions
 			| Set.member t1 tsParam
 			= (fsEq, Just fMore)
 			
