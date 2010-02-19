@@ -38,9 +38,8 @@ data Config
 	-- | Whether substitute for effect and closure equality constraints.
 	-- 	In the core types we always do this.
 	-- 	In source types we don't substitute into the body of the type, 
-	--		but we do into other constraints. 
-	--	This is always turned on when the packer enters into constraints
-	--		in a TConstrain.
+	--	but we do into other constraints. This is always turned on when the
+	--	packer enters into constraints in a TConstrain.
 	  configSubForEffClo	:: Bool
 
 	-- | Whether to crush built-in effects and type class constraints 

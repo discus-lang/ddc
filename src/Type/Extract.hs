@@ -33,11 +33,11 @@ trace s	= when debug $ traceM s
 
 
 -- | Extract a type from the graph and pack it into standard form.
+--	This is the same as extractType, but takes the cid of the type instead of its var.
 extractTypeCid 
 	:: Bool 	-- ^ Whether to finalise the type as well.
-	-> ClassId 	-- ^ id of the clasd
-	-> SquidM 
-		(Maybe Type)
+	-> ClassId 	-- ^ Id of the class containing the type to extract.
+	-> SquidM (Maybe Type)
 
 extractTypeCid final cid
  = do	v	<- makeClassName cid
@@ -47,12 +47,7 @@ extractTypeCid final cid
 -- | Extract a type from the graph and pack it into standard form.
 extractType 
 	:: Bool 	-- ^ Whether to finalise the type as well. 
-			--   After all constraints are added to the graph we can treat
-			--	empty effect and closure classes as TBot, because nothing
-			--	more can ever be added to them.
-	
 	-> Var 		-- ^ The variable of the type to extract.
-
 	-> SquidM (Maybe Type)
 
 extractType final varT
@@ -67,7 +62,7 @@ extractType final varT
 		return $ Just tt
 	
 	 Nothing
-	  -> {-# SCC "extractType" #-} 
+	  -> {-# SCC "extractType_notDef" #-} 
 	     extractType_findClass final varT
 
 extractType_findClass final varT
@@ -75,7 +70,8 @@ extractType_findClass final varT
 	-- try and find the equivalence class that corresponds to this var.
  	mCid	<- lookupVarToClassId varT
 	case mCid of
-	 Just cid	-> extractType_fromClass final varT cid
+	 Just cid	
+	  -> extractType_fromClass final varT cid
 
 	 -- If there is no equivalence class for this var then we've been asked for 
 	 --	something that doens't exist in the graph. bad news, dude.

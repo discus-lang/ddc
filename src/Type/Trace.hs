@@ -1,4 +1,10 @@
 
+-- | Extract a subgraph from the main type graph.
+--	It's called "trace" because we trace out all the nodes reachable
+--	from a given class. This just returns a list of constraints, 
+--	one for each node. Use Pack.packType to pack those constraints
+--	into a standard form type.
+--
 module Type.Trace 
 	( traceType 
 	, traceCidsDown)
@@ -22,7 +28,6 @@ import qualified Debug.Trace	as Trace
 
 stage	= "Type.Trace"
 
-
 -- | Extract a type node from the graph by tracing down from this cid.
 --	Along the way, we reuse TFree fetters where ever possible.
 --	Instead of returning a type like:
@@ -45,7 +50,7 @@ traceType :: ClassId -> SquidM Type
 traceType cid
  = do 	
  	-- See which classes are reachable by tracing down from this one.
- 	cidsDown	<- {-# SCC "trace/Down" #-} traceCidsDown cid
+ 	cidsDown <- {-# SCC "trace/Down" #-} traceCidsDown cid
 
 	-- Load in the nodes for this subgraph.
 	t	<- loadTypeNodes cid (Set.toList cidsDown) [] Map.empty Map.empty [] 

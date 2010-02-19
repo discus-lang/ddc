@@ -20,7 +20,7 @@ import Type.Plate.Collect
 import Shared.Error
 import Util
 
-stage	= "Type.Port"
+stage	= "Type.Strengthen"
 
 strengthenT 
 	:: Set Type 		-- ^ cids and vars that appear in parameter positions
