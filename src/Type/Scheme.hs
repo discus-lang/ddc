@@ -184,10 +184,15 @@ generaliseType' varT tCore envCids
 	let (vkbsFree	:: [(Var, (Kind, Maybe Type))])
 		= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
 
-	modify $ \s -> s { stateQuantifiedVars	
-				= Map.unions
-					[ Map.fromList vkbsFree
-					, stateQuantifiedVars s ] }
+	modify $ \s -> s { stateQuantifiedVarsKM	
+				= Map.union
+					(Map.fromList vkbsFree)
+					(stateQuantifiedVarsKM s)
+			
+			 , stateQuantifiedVars
+				= Set.union
+					(Set.fromList vsFree) 
+					(stateQuantifiedVars s) }
 
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"

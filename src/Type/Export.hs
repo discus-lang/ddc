@@ -63,7 +63,7 @@ squidExport
 	inst		<- exportInst
 
 	-- The port table was already plugged by Scheme.generaliseType
-	quantVars	<- gets stateQuantifiedVars
+	quantVars	<- gets stateQuantifiedVarsKM
 
 	-- Build a map of the constraints acting on each region
 	vsRegionClasses	<- exportRegionConstraints 
@@ -121,7 +121,7 @@ exportType t
  = do	tPlug		<- plugClassIds Set.empty t
 
  	quantVars	<- liftM (Set.fromList . Map.keys)
-			$  gets stateQuantifiedVars
+			$  gets stateQuantifiedVarsKM
 
 	let tFinal	= toConstrainFormT $ finaliseT quantVars True tPlug
 
@@ -186,8 +186,7 @@ exportInstInfo (v, ii)
 		let ts_hacked	= map chopForalls ts
 		
 		-- need to finalise again because quantified vars have been chopped off
- 		quantVars	<- liftM (Set.fromList . Map.keys)
-				$  gets stateQuantifiedVars
+ 		quantVars	<- gets stateQuantifiedVars
 
 		let ts_final	= map (finaliseT quantVars True) ts_hacked
 	 	t'		<- exportType t

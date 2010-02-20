@@ -113,7 +113,11 @@ data SquidS
 	--	After the solver is finished and all generalisations have been performed,
 	--	all effect and closure ports will be in this set. We can then clean out
 	--	non-ports while we extract them from the graph.
-	, stateQuantifiedVars	:: Map Var (Kind, Maybe Type)
+	, stateQuantifiedVarsKM	:: Map Var (Kind, Maybe Type)
+
+	-- | We sometimes need just a set of quantified vars, 
+	--	and maintaining this separately from the above stateQuanfiedVarsFM is faster.
+	, stateQuantifiedVars	:: Set Var
 	
 	-- | The data field definitions.
 	-- 	type name	-> (type vars, [(field name, field type)])
@@ -172,7 +176,8 @@ squidSInit
 		, stateGenDone		= Set.empty
 
 		, stateInst		= Map.empty
-		, stateQuantifiedVars	= Map.empty
+		, stateQuantifiedVarsKM	= Map.empty
+		, stateQuantifiedVars	= Set.empty
 
 		, stateDataFields	= Map.empty 
 		, stateProject		= Map.empty

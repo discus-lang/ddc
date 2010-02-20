@@ -80,7 +80,7 @@ strengthenFs tsParam fsEq fMore
 
 		let result
 			-- can't convert vars that have been quantified.
-			| Map.member v quantVars 
+			| Set.member v quantVars 
 			= (fsEq, Just fMore)
 			
 			-- can't convert vars that appear in parameter positions

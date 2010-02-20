@@ -127,7 +127,6 @@ loadTypeNodes2 cidBody (cidReach1 : cidsReach)
 				t				-> (t, Constraints Map.empty Map.empty [])
 
 		var		<- makeClassName cidReach1
-		quantVars	<- gets stateQuantifiedVars
 	
 		loadTypeNodes3 
 			cidBody 
