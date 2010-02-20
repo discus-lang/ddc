@@ -60,9 +60,9 @@ finaliseT' bound def tt
 	  
 	TConstrain t (Constraints crsEq crsMore crsOther)
 	 -> let	bound'	= Set.unions
-			   	[ bound
-			   	, Set.fromList $ [v | TVar _ v <- Map.keys crsEq ]
-			   	, Set.fromList $ [v | TVar _ v <- Map.keys crsMore ] ]
+			   	[ Set.fromList $ [v | TVar _ v <- Map.keys crsEq ]
+			   	, Set.fromList $ [v | TVar _ v <- Map.keys crsMore ] 
+				, bound ]
 			
 		crsEq'	  = Map.map (finaliseT' bound' def) crsEq
 		crsMore'  = Map.map (finaliseT' bound' def) crsMore

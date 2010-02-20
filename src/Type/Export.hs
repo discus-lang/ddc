@@ -187,7 +187,6 @@ exportInstInfo (v, ii)
 		
 		-- need to finalise again because quantified vars have been chopped off
  		quantVars	<- gets stateQuantifiedVars
-
 		let ts_final	= map (finaliseT quantVars True) ts_hacked
 	 	t'		<- exportType t
 
