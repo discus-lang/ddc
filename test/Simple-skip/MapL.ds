@@ -1,6 +1,0 @@
-
-mapL2 f xx
- = case xx of 
- 	[]		-> []
-	x  :  xs	-> (:)  (f x) (mapL2@ f xs)
- 

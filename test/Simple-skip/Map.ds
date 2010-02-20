@@ -1,9 +1,0 @@
-
-import Base
-
-map2 f xx
- = case xx of
- 	Nil		-> Nil
-	Cons x  xs	-> Cons (f x) (map2 f xs)
-
-

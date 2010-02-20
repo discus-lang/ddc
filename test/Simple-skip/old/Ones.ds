@@ -1,8 +1,0 @@
-
-{-
-ones ()	= 1 : ones @ ();
-main	= print $ showListIntL (ones ());
--}
-
-ones	= 1 : ones;
-main	= print $ showListIntL ones;
