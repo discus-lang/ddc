@@ -31,7 +31,9 @@ stripFWheresT
 
 stripFWheresT justMono	tt
  = case tt of
-	TNil	-> (TNil, [])
+	TNil	 -> (tt, [])
+
+	TError{} -> (tt, [])
 
 	TForall b k t
 	 -> let	(t', fs)	= stripFWheresT justMono t
