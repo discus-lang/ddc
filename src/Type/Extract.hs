@@ -180,8 +180,7 @@ extractType_final True varT cid tCutPack
  	quantVars	<- liftM (Set.fromList . Map.keys)
 			$  gets stateQuantifiedVars
 
- 	let tFinal	=  finaliseT quantVars True 
-			$  toFetterFormT tPlug
+ 	let tFinal	=  finaliseT quantVars True tPlug
 	
 	trace	$ "    tFinal:\n" 	%> prettyTS tFinal	% "\n\n"
 	extractType_reduce varT cid tFinal

@@ -1,21 +1,20 @@
 module Type.Util.Finalise
 	( finaliseT
 	, finaliseF)
-
 where
 import Type.Exp
-import qualified Type.Util.PackFast	as PackFast
 import Type.Util.Bits
 import Type.Util.Kind
 import Shared.Error
 import Shared.VarPrim
-
-import Util
+import qualified Type.Util.PackFast	as PackFast
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import Data.Set			(Set)
+import Util
 
+-----
 stage	= "Type.Util.Finalise"
 
 -- | After all constraints are processed, 
@@ -35,7 +34,7 @@ finaliseT bound def tt
 		$ finaliseT' bound def tt
    in  if tt == tt'
    	then tt
-	else finaliseT bound def tt'
+	else toFetterFormT $ finaliseT bound def tt'
 
 
 finaliseT' bound def tt
@@ -43,19 +42,11 @@ finaliseT' bound def tt
    in  case tt of
   	TForall b k t	
 	 -> let	bound'	= Set.insert (varOfBind b) bound
---	 		$ Map.fromList 
---			$ [(varOfBind b, (k, Nothing))]
-
 	 	t'	= finaliseT' bound' def t
 	    in	TForall b k t'
 	    
 	TFetters t fs
 	 -> let	
-{-		vksMore	= Map.fromList 
-	 		$ map (\v -> (v, (kindOfSpace $ Var.nameSpace v, Nothing)))
-	 		$ catMaybes 
-			$ map takeBindingVarF fs
--}	 
 		vksMore	= Set.fromList
 			$ catMaybes
 			$ map takeBindingVarF fs
@@ -67,27 +58,18 @@ finaliseT' bound def tt
 		t'	= finaliseT' bound' def t
 	    in	TFetters t' fs'
 	  
-{-	TConstrain t (Constraints crsEq crsMore crsOther)
-	 -> let	vksEq	= Map.fromList 
-			$ map (\(TVar k v) -> (v, (k, Nothing)))
-			$ Map.keys crsEq
-
-		vksMore	= Map.fromList
-			$ map (\(TVar k v, t2) -> (v, (k, Just t2)))
-			$ Map.toList crsMore
+	TConstrain t (Constraints crsEq crsMore crsOther)
+	 -> let	bound'	= Set.unions
+			   	[ bound
+			   	, Set.fromList $ [v | TVar _ v <- Map.keys crsEq ]
+			   	, Set.fromList $ [v | TVar _ v <- Map.keys crsMore ] ]
 			
-		bound 	= Map.unions [bound, vsMore, vksEq]
-		
-		fs'
-			
-			
-			[(v, (kindOfSpace v, Nothing))
-				| v	<- Map.keys crsEq]
--}	  
-	TConstrain t crs
-	 -> finaliseT' bound def
-	 $  toFetterFormT tt
-	
+		crsEq'	  = Map.map (finaliseT' bound' def) crsEq
+		crsMore'  = Map.map (finaliseT' bound' def) crsMore
+		crsOther' = map (finaliseF bound' def) crsOther
+		t'	  = finaliseT' bound' def t
+	    in	TConstrain t' (Constraints crsEq' crsMore' crsOther')
+		  	
 	TSum  k ts	-> makeTSum k (map down ts)
 
 	TCon{}		-> tt 
@@ -115,6 +97,7 @@ finaliseT' bound def tt
 	
 	_		-> panic stage
 			$ "finaliseT: no match for " % tt
+
 
 finaliseF 
 	:: Set Var
