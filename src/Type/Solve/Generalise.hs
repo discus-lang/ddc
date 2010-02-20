@@ -182,7 +182,7 @@ addSchemeToGraph src vGen tScheme
 	-- If this type has any FLets on it where the LHS is a (monomorphic) TClass 
 	--	then this information is shared with the graph, and shouldn't be duplicated
 	--	locally.
-	let (tScheme_stripped, _) = stripMonoFWheresT tScheme
+	let (tScheme_stripped, _) = stripFWheresT_mono tScheme
 
 	case tScheme_stripped of 
 

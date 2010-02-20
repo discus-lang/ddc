@@ -124,7 +124,7 @@ solveCs	(c:cs)
 		-- 	as we're only using information in the sig for guiding 
 		-- 	projection resolution.
 		let (t2_strip, _) 
-			= stripFWheresT t2_inst
+			= stripFWheresT_all t2_inst
 
 		trace	$ "    t2_strip:\n" %> prettyTS t2_strip % "\n\n"
 
