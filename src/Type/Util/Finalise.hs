@@ -13,17 +13,20 @@ import Shared.VarPrim
 import Util
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
-import qualified Debug.Trace	as Debug
+import qualified Data.Set	as Set
+import Data.Set			(Set)
 
 stage	= "Type.Util.Finalise"
 
--- | After all constraints are processed, unbound effect and closure vars can be
---	replaced by bottoms.
+-- | After all constraints are processed, 
+--	completely unconstrained and unquantified effect and closure vars can
+--	be replaced by bottoms, as they can never be instantiated to anything else.
+--
 finaliseT 
-	:: Map Var (Kind, Maybe Type)
-	-> Bool				-- whether to default unbound value tyvars to unit.
-	-> Type
-	-> Type
+	:: Set Var	-- ^ The variables that have been quantified anywhere so far
+	-> Bool		-- ^ whether to default unbound value tyvars to unit.
+	-> Type		-- ^ the type to finalise
+	-> Type		-- ^ finalised type
 
 finaliseT bound def tt
  = let tt'	= toFetterFormT
@@ -39,26 +42,48 @@ finaliseT' bound def tt
  = let down	= finaliseT' bound def
    in  case tt of
   	TForall b k t	
-	 -> let	bound'	= Map.union bound 
-	 		$ Map.fromList 
-			$ [(varOfBind b, (k, Nothing))]
+	 -> let	bound'	= Set.insert (varOfBind b) bound
+--	 		$ Map.fromList 
+--			$ [(varOfBind b, (k, Nothing))]
 
 	 	t'	= finaliseT' bound' def t
 	    in	TForall b k t'
 	    
 	TFetters t fs
-	 -> let	vksMore	= Map.fromList 
+	 -> let	
+{-		vksMore	= Map.fromList 
 	 		$ map (\v -> (v, (kindOfSpace $ Var.nameSpace v, Nothing)))
 	 		$ catMaybes 
 			$ map takeBindingVarF fs
-	 
+-}	 
+		vksMore	= Set.fromList
+			$ catMaybes
+			$ map takeBindingVarF fs
+	
 		-- prefer the already bound vars here
-	 	bound'	= Map.union bound vksMore
+	 	bound'	= Set.union bound vksMore
 
 	    	fs'	= map (finaliseF bound' def) fs
 		t'	= finaliseT' bound' def t
 	    in	TFetters t' fs'
-	    
+	  
+{-	TConstrain t (Constraints crsEq crsMore crsOther)
+	 -> let	vksEq	= Map.fromList 
+			$ map (\(TVar k v) -> (v, (k, Nothing)))
+			$ Map.keys crsEq
+
+		vksMore	= Map.fromList
+			$ map (\(TVar k v, t2) -> (v, (k, Just t2)))
+			$ Map.toList crsMore
+			
+		bound 	= Map.unions [bound, vsMore, vksEq]
+		
+		fs'
+			
+			
+			[(v, (kindOfSpace v, Nothing))
+				| v	<- Map.keys crsEq]
+-}	  
 	TConstrain t crs
 	 -> finaliseT' bound def
 	 $  toFetterFormT tt
@@ -68,11 +93,11 @@ finaliseT' bound def tt
 	TCon{}		-> tt 
 	TVar  k v
 	 	| elem k [kEffect, kClosure]
-		, not $ Map.member v bound	-> TBot k
+		, not $ Set.member v bound	-> TBot k
 	 
 	 	| def
 		, elem k [kValue]
-		, not $ Map.member v bound	-> makeTData primTUnit k []
+		, not $ Set.member v bound	-> makeTData primTUnit k []
 	 
 		| otherwise			-> tt
 		
@@ -91,6 +116,12 @@ finaliseT' bound def tt
 	_		-> panic stage
 			$ "finaliseT: no match for " % tt
 
+finaliseF 
+	:: Set Var
+	-> Bool
+	-> Fetter
+	-> Fetter 
+	
 finaliseF bound def ff
 	| FWhere t1 t2			<- ff
 	= FWhere t1 (down t2)

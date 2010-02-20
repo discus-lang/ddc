@@ -177,7 +177,9 @@ extractType_final True varT cid tCutPack
 	trace	$ "    tPlug:\n" 	%> prettyTS tPlug	% "\n\n"
  
 	-- close off never-quantified effect and closure vars
- 	quantVars	<- gets stateQuantifiedVars
+ 	quantVars	<- liftM (Set.fromList . Map.keys)
+			$  gets stateQuantifiedVars
+
  	let tFinal	=  finaliseT quantVars True 
 			$  toFetterFormT tPlug
 	

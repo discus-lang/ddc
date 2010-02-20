@@ -216,12 +216,12 @@ slurpFetters tt
 --	
 cleanType :: Set Type -> Type -> Type
 cleanType tsSave tt
- = let 	vsKeep	= Map.fromList
+ = let 	vsKeep	= Set.fromList
 		$ catMaybes
  		$ map (\t -> case t of
 				TVar k v 
 				 	| k == kEffect || k == kClosure
-					-> Just (v, (k, Nothing))
+					-> Just v
 				
 				_	-> Nothing)
 		$ Set.toList tsSave

@@ -120,7 +120,9 @@ exportType :: Type -> SquidM Type
 exportType t
  = do	tPlug		<- plugClassIds Set.empty t
 
-	quantVars	<- gets stateQuantifiedVars
+ 	quantVars	<- liftM (Set.fromList . Map.keys)
+			$  gets stateQuantifiedVars
+
 	let tFinal	= toConstrainFormT $ finaliseT quantVars True tPlug
 
 	trace	$ "*   Export.exportType: final\n"
@@ -184,7 +186,9 @@ exportInstInfo (v, ii)
 		let ts_hacked	= map chopForalls ts
 		
 		-- need to finalise again because quantified vars have been chopped off
-		quantVars	<- gets stateQuantifiedVars
+ 		quantVars	<- liftM (Set.fromList . Map.keys)
+				$  gets stateQuantifiedVars
+
 		let ts_final	= map (finaliseT quantVars True) ts_hacked
 	 	t'		<- exportType t
 
