@@ -34,7 +34,7 @@ finaliseT bound def tt
 		$ finaliseT' bound def tt
    in  if tt == tt'
    	then tt
-	else toFetterFormT $ finaliseT bound def tt'
+	else finaliseT bound def tt'
 
 
 finaliseT' bound def tt
