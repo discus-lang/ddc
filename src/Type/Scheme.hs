@@ -82,7 +82,12 @@ generaliseType' varT tCore envCids
 	trace	$ "    staticDanger     = " % staticDanger	% "\n"
 
 	-- These are all the cids we can't generalise
-	let staticCids		= Set.toList envCids ++ staticRsData ++ staticRsClosure ++ staticDanger
+	let staticCids		
+		= Set.unions
+			[ envCids
+			, Set.fromList staticRsData 
+			, Set.fromList staticRsClosure
+			, Set.fromList staticDanger]
 
 	-- Rewrite non-static cids to the var for their equivalence class.
 	tPlug			<- plugClassIds staticCids tCore

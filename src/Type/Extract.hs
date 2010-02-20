@@ -165,20 +165,21 @@ extractType_more final varT cid tPack
 	let tCut	= cutLoopsT_constrainForm tTrim
 	trace	$ "    tCut:\n" 	%> prettyTS tCut % "\n\n"
 	
-	let tCutPack	= toFetterFormT $ PackFast.packType tCut
+	let tCutPack	= PackFast.packType tCut
 	trace	$ "    tCutPack:\n"	%> prettyTS tCutPack % "\n\n"
 
 	extractType_final final varT cid tCutPack
 	
-extractType_final True varT cid tTrim
+extractType_final True varT cid tCutPack
  = do	
  	-- plug classIds with vars
- 	tPlug		<- plugClassIds [] tTrim
+ 	tPlug	<- plugClassIds Set.empty tCutPack
 	trace	$ "    tPlug:\n" 	%> prettyTS tPlug	% "\n\n"
  
 	-- close off never-quantified effect and closure vars
  	quantVars	<- gets stateQuantifiedVars
- 	let tFinal	=  finaliseT quantVars True tPlug
+ 	let tFinal	=  finaliseT quantVars True 
+			$  toFetterFormT tPlug
 	
 	trace	$ "    tFinal:\n" 	%> prettyTS tFinal	% "\n\n"
 	extractType_reduce varT cid tFinal

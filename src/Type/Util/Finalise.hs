@@ -19,7 +19,6 @@ stage	= "Type.Util.Finalise"
 
 -- | After all constraints are processed, unbound effect and closure vars can be
 --	replaced by bottoms.
---	
 finaliseT 
 	:: Map Var (Kind, Maybe Type)
 	-> Bool				-- whether to default unbound value tyvars to unit.
@@ -113,9 +112,3 @@ finaliseF bound def ff
 
 	where down	= finaliseT bound def
 
-
-	
-
-	
-	
-	

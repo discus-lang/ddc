@@ -118,7 +118,7 @@ exportVarType v
 --
 exportType :: Type -> SquidM Type
 exportType t
- = do	tPlug		<- plugClassIds [] t
+ = do	tPlug		<- plugClassIds Set.empty t
 
 	quantVars	<- gets stateQuantifiedVars
 	let tFinal	= toConstrainFormT $ finaliseT quantVars True tPlug
@@ -128,10 +128,10 @@ exportType t
 		% "    tFinal:\n"	%> prettyTS tPlug	% "\n"
 
 	let tTrim	
-		= case kindOfType tFinal of
-			Just kC | kC == kClosure	-> trimClosureC_constrainForm Set.empty Set.empty tFinal
-			Just kV | kV == kValue		-> trimClosureT_constrainForm Set.empty Set.empty tFinal
-			Just _				-> tFinal
+	     = case kindOfType tFinal of
+		Just kC | kC == kClosure -> trimClosureC_constrainForm Set.empty Set.empty tFinal
+		Just kV | kV == kValue	 -> trimClosureT_constrainForm Set.empty Set.empty tFinal
+		Just _			 -> tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
 	return $ toFetterFormT tTrim		
