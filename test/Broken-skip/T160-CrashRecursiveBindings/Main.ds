@@ -1,0 +1,13 @@
+
+-- Find the sum of all the even-valued terms in the Fibonacci sequence which do not exceed one million.
+-- Taken from the Haskell Wiki
+maxN	= 10000
+main ()
+ = do	println $ show solution1
+
+even x = x `mod` 2 == 0
+
+solution1 
+  = sum [ x 	| x <- takeWhile ((<=) maxN) fibs
+              		, even x]
+  where	fibs = 1 : 1 : zipWith (+) fibs (tail fibs)
