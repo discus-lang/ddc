@@ -1,0 +1,26 @@
+
+-- Find the largest palindrome made from the product of two 3-digit numbers.
+-- From the Haskell Wiki
+
+main () = println $ show $ solution1
+
+solution1 :: Int
+solution1
+ = maximumBy compare
+	[ y * z | y <- [100..999]
+		, z <- [y..999]
+		, let 	x :: Int
+			x = y * z
+			s = charListOfString $ show x
+		  in	equalsBy (==) s (reverse s) ]
+
+
+{- We don't have let qualifiers yet, or type classes
+solution1
+ = maximum 	
+	[ x 	| y <- [100..999]
+		, z <- [y..999]
+		, let x = y * z
+		, let s = show x
+		, s == reverse s ]
+-}

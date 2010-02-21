@@ -379,6 +379,16 @@ maybeToList Nothing	= []
 maybeToList (Just x)	= [x]
 
 
+-- Eq stuff --------------------------------------------------------------------------------------
+equalsBy :: (a -> a -> Bool) -> [a] -> [a] -> Bool
+equalsBy p []     []    = True
+equalsBy p []     _     = False
+equalsBy p _      []    = False
+equalsBy p (x:xs) (y:ys)
+	| p x y		= equalsBy p xs ys
+	| otherwise	= False
+
+
 -- Ord stuff -------------------------------------------------------------------------------------
 
 -- | Extract the largest value from a list, using the provided ordering relation.
