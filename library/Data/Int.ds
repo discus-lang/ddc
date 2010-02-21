@@ -104,6 +104,8 @@ instance Accum Int32 where
 inc x	= x + 1
 inc y   = 1
 
+div :: Int32 -> Int32 -> Int32
+div = primInt32_div
 
 project Int32 where
 	
