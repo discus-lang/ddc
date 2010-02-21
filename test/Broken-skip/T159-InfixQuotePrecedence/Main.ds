@@ -1,0 +1,15 @@
+
+-- Solution to the first project euler problem, from the Haskell Wiki
+--	This should print 233168
+--
+
+maxN = 1000
+main () = println $ show solution1
+
+solution1 :: Int
+solution1 = sumStep 3 last + sumStep 5 last - sumStep 15 last
+  where	sumOnetoN n = n * (n+1) `div` 2		-- the `div` should be lower precedence than the other
+						-- infix ops
+--	sumOnetoN n = (n * (n+1)) `div` 2	-- substituting this give the correct result
+	sumStep s n = s * sumOnetoN (n `div` s)
+	last        = maxN - 1
