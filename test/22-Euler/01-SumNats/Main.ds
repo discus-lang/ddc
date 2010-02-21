@@ -2,8 +2,78 @@
 -- If we list all the natural numbers below 10 that are multiples of 3 or 5, 
 -- we get 3, 5, 6 and 9. The sum of these multiples is 23.
 -- Find the sum of all the multiples of 3 or 5 below 1000.
+
+maxN	= 1000
+
 main ()
- 	= println 
-	$ show 
-	$ sum [n | n <- [0..999] 
-		 ,  (n `mod` 3 == 0) || (n `mod` 5 == 0) ] 
+ = do 	println $ show solution1
+	println $ show solution2
+	println $ show solution3
+	println $ show solution4
+	println $ show solution5
+	println $ show solution6
+
+	
+-- Using a list comprehension
+solution1 :: Int
+solution1	
+ 	= sum [n | n <- [0 .. (maxN - 1)] 
+		 , (n `mod` 3 == 0) || (n `mod` 5 == 0) ] 
+
+-- Using filter
+solution2 :: Int
+solution2 
+	= sum 
+	$ filter (\n -> (n `mod` 3 == 0) || (n `mod` 5 == 0))
+	  [0 .. maxN - 1]
+
+-- From the Haskell Wiki
+solution3 :: Int
+solution3 = sumStep 3 last + sumStep 5 last - sumStep 15 last
+  where	sumOnetoN n = (n * (n+1)) `div` 2
+	sumStep s n = s * sumOnetoN (n `div` s)
+	last        = maxN - 1
+
+
+-- Using destructive update
+solution4 :: Int
+solution4 
+ = do	total	= 0
+	i	= 0
+	while (i < maxN)
+	 do	when (i `mod` 3 == 0)
+	  	  total += i
+		
+		when ((i `mod` 5 == 0) && (not $ i `mod` 3 == 0))
+		  total += i
+		
+		i += 1
+	
+	total
+	
+	
+-- Another version of above
+solution5 :: Int
+solution5
+ = do	total	= 0
+	i	= 0
+	while (i < maxN)
+	 do	if (i `mod` 3 == 0) 
+	  	 then 	total += i
+		 else	when (i `mod` 5 == 0)
+				total += i
+			
+		i += 1
+	total
+
+
+-- Using an accumulating parameter
+solution6 :: Int
+solution6 = solution6' 0 0
+
+solution6' i total
+ 	| i >= maxN		= total
+	| i `mod` 3 == 0	= solution6' (i+1) (total + i)
+	| i `mod` 5 == 0	= solution6' (i+1) (total + i)
+	| otherwise		= solution6' (i+1) total
+
