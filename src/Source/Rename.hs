@@ -499,13 +499,13 @@ renameListComp qq xx
 	 -> do	xx'	<- rename xx
 		return	([], xx')
 
-	LCGen b (WVar sp v) x2 : qs
+	LCGen b w x2 : qs
 	 -> do	x2'	<- rename x2
 		withLocalScope
-		 $ do	v'		<- bindV v
+		 $ do	(w', [])	<- bindPat False w
 			(qs', xx')	<- renameListComp qs xx		
-			return	(LCGen b (WVar sp v') x2' : qs', xx')
-		
+			return	(LCGen b w' x2' : qs', xx')
+
 	LCExp x : qs
 	 -> do	x'		<- rename x
 	 	(qs', xx')	<- renameListComp qs xx
