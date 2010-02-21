@@ -256,8 +256,8 @@ rangeInt x y =
 	 else rangeIntUp x y
  where
 	rangeIntUp x y
-		| x >= y	=  [x]
-				\= x : rangeIntUp (x + 1) y
+		| x > y	=  []
+			\= x : rangeIntUp (x + 1) y
 
 
 -- | Return a list of ints in this range, with step size determined by the
@@ -272,10 +272,10 @@ rangeIntStep x next y =
  where
 	step = next - x
 	rangeIntStepUp x' y'
-		| x' >= y'	= [x']
+		| x' > y'	= []
 				\= x' : rangeIntStepUp (x' + step) y'
 	rangeIntStepDown x' y'
-		| x' <= y'	= [x']
+		| x' < y'	= []
 				\= x' : rangeIntStepDown (x' + step) y'
 
 
@@ -287,10 +287,10 @@ rangeIntL x y =
 	 else rangeIntUpL x y
  where
 	rangeIntUpL x y
-		| x >= y	=  [x]
+		| x > y		=  []
 				\= x : rangeIntUpL @ (x + 1) y
 	rangeIntDownL x y
-		| x <= y	=  [x]
+		| x < y		=  []
 				\= x : rangeIntDownL @ (x - 1) y
 
 
@@ -306,10 +306,10 @@ rangeIntStepL x next y =
  where
 	step = next - x
 	rangeIntStepUpL x' y'
-		| x' >= y'	= [x']
+		| x' > y'	= []
 				\= x' : rangeIntStepUpL @ (x' + step) y'
 	rangeIntStepDownL x' y'
-		| x' <= y'	= [x']
+		| x' < y'	= []
 				\= x' : rangeIntStepDownL @ (x' + step) y'
 
 
