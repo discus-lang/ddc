@@ -150,20 +150,27 @@ foreign import "logf"
  logU   :: Float32# -> Float32#
 
 foreign import "floorf"
- floorU :: Float32# -> Float32#
+ floorfU :: Float32# -> Float32#
+
+foreign import "roundf"
+ roundfU :: Float32# -> Float32#
 
 foreign import "fabsf"
  fabsU  :: Float32# -> Float32#
 
 log   x	  = boxFloat32 (logU   (unboxFloat32 x))
-floor x	  = boxFloat32 (floorU (unboxFloat32 x))
 fabs x	  = boxFloat32 (fabsU  (unboxFloat32 x))
 fpow x y  = boxFloat32 (fpowU  (unboxFloat32 x) (unboxFloat32 y))
+roundf x  = boxFloat32 (roundfU (unboxFloat32 x))
+floorf x  = boxFloat32 (floorfU (unboxFloat32 x))
 
 -- conversion
 foreign import "primFloat32_truncate"
  truncate :: Float{read} -> Int
 
+-- The Haskell versions of round and floor are also conversions.
+round x = truncate (roundf x)
+floor x = truncate (floorf x)
 
 project Float where
 	

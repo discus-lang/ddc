@@ -1,0 +1,38 @@
+
+-- Find the sum of all the even-valued terms in the Fibonacci sequence which 
+-- do not exceed one million.
+--	
+--
+maxN	= 1000000
+main ()
+ = do	println $ show $ solution1
+--	println $ show $ solution2
+
+----
+solution1 	
+	= sum $ filter even $ takeWhile (\x -> x < maxN) $ fibs
+ where	
+	fibs' :: Int -> Int -> [Int]
+	fibs' a b	= (:) (a + b) (fibs' @ b (a + b))
+
+	fibs :: [Int]
+	fibs		= 1 : 1 : fibs' 1 1
+
+	even x 		= x `mod` 2 == 0
+
+
+-----
+-- From the Haskell Wiki
+--	This give the wrong answer due to lack of precision in the float type.
+--	The result of evenFib 11 is off by 2.
+{-
+solution2 	= sumEvenFibs $ numEvenFibsLessThan maxN
+sumEvenFibs n 	= (evenFib n + evenFib (n + 1) - 2) `div` 4
+
+evenFib :: Int -> Int
+evenFib n 	
+	= round $ (fpow (2.0 + sqrt 5.0) (toFloat n)) / sqrt 5.0
+
+numEvenFibsLessThan n 
+	= floor $ (log (toFloat n - 0.5) + 0.5 * log 5.0) / log (2.0 + sqrt 5.0)
+-}
