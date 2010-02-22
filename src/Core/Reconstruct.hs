@@ -138,7 +138,14 @@ reconP_type caller p
 reconP	:: Top -> ReconM Top
 
 reconP (PBind v x)
- = do	(x', _, _, _)	<- {-# SCC "reconP/reconX" #-} reconX x
+ = do	(x', xT, xE, xC)	<- {-# SCC "reconP/reconX" #-} reconX x
+	let	xE'		= maskE xT xE xC
+	trace	("reconP: (/\\ " % v % " -> ...)\n"
+		% "  x':\n"  %> x'	% "\n"
+		% "  xT:\n"  %> xT	% "\n"
+		% "  xE:\n"  %> xE	% "\n"
+		% "  xC:\n"  %> xC	% "\n"
+		% "  xE':\n" %> xE'	% "\n\n") $ return ()
 	return	(PBind v x')
 
 reconP p	= return p
@@ -274,18 +281,7 @@ reconX exp@(XLam v t x eff clo)
 
 	let	eff'		= packT $ substituteT (envEq tt) eff
 		clo_sub		= packT $ substituteT (envEq tt) clo
-		
-		fvT		= freeVars xT
-		fvC		= freeVars xC
-		
-		-- mask non-observable effects that are not in the
-		--	environment (closure) or type of the return value.
-		xE_masked	= maskReadWriteNotIn (Set.union fvT fvC) xE
-
-		-- TODO: We need to flatten the closure before trimming to make sure effect annots
-		--	on type constructors are not lost. It would be better to modify trimClosureC
-		--	so it doesn't lose them, or the closure equivalence rule so it doesn't care.
-		xE'	= packT xE_masked
+		xE'		= maskE	xT xE xC
 
 	-- check effects match
 	() <- unless (subsumes (envMore tt) eff' xE') $
@@ -298,8 +294,6 @@ reconX exp@(XLam v t x eff clo)
 		% "    with bounds:\n"
 		% "    t:       " %> t	 % "\n"
 		% "    env:     " %> xC  % "\n"
-		% "    fv(Env): " %> fvC % "\n"
-		% "    fv(T):   " %> fvT % "\n"
 		% pprBounds (envMore tt)
 
 	-- check closures match
@@ -346,10 +340,7 @@ reconX exp@(XLam v t x eff clo)
 		% "    xE'  (recon) = " % xE'	% "\n"
 		% "    eff' (annot) = " % eff'	% "\n"
 		% "    eff_clamped  = " % eff_clamped	% "\n"
-		% "    fvT          = " % fvT		% "\n"
-		% "    fvC          = " % fvC		% "\n"
 		% "    xE           = " % xE		% "\n"
-		% "    xE_masked    = " % xE_masked     % "\n"
 	   	% "    clo          = " % xC		% "\n") $ return ()
 
 	return	( XLam v t x' eff_clamped clo_sub
@@ -1021,6 +1012,26 @@ applyTypeT' table t1 t2
 		$ Nothing
 
 	
+-- Mask effects ------------------------------------------------------------------------------------
+
+maskE	:: Type -> Effect -> Closure -> Effect
+
+maskE xT xE xC
+ = let	fvT		= freeVars xT
+	fvC		= freeVars xC
+
+	-- mask non-observable effects that are not in the
+	--	environment (closure) or type of the return value.
+	xE_masked	= maskReadWriteNotIn (Set.union fvT fvC) xE
+
+	-- TODO: We need to flatten the closure before trimming to make sure effect annots
+	--	on type constructors are not lost. It would be better to modify trimClosureC
+	--	so it doesn't lose them, or the closure equivalence rule so it doesn't care.
+	xE'		= packT xE_masked
+
+   in	xE'
+
+
 -- Clamp -------------------------------------------------------------------------------------------
 -- | Clamp a sum by throwing out any elements of the second one that are not members of the first.
 --	Result is at least as big as t1.
