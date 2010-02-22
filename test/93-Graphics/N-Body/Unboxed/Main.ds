@@ -102,7 +102,7 @@ project Body where
 		= sum&{Vec2 Float}
 		$ map (body.(i).force2)
 		$ map (index body) 
-		$ deleteF (==) [0.. array_size body - 1] i
+		$ deleteBy (==) i [0.. array_size body - 1]
 
 
 	-- | Work out the force between two bodies.

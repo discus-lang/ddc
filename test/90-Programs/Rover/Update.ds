@@ -68,7 +68,7 @@ addMsgTerrain (MsgTerrain OHome posX posY radius) hazards
 addMsgTerrain (MsgTerrain kind posX posY radius) hazards
  = do	haz	= HazTerrain kind (Vec2 posX posY) radius
 
-	if elemF (==) haz hazards
+	if elemBy (==) haz hazards
 		then hazards
 		else haz : hazards
 

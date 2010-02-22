@@ -16,7 +16,7 @@ export
 	replicate; iterateL;
 	
 	-- List Transformations 
-	map; maps; maps_; mapAccumL; mapAccumR; 
+	map; mapL; maps; maps_; mapAccumL; mapAccumR; 
 	reverse; intersperse; 
 	intercalate; partition;
 		
@@ -672,6 +672,10 @@ instance Copy (List Int) where
   	[]	-> []
 	(x:xs)	-> copy x : copy xs
 
+
+-- Lists are Bags ---------------------------------------------------------------------------------
+-- instance Bag List where
+--	size = length
 
 -- Maybe Utils ------------------------------------------------------------------------------------
 mapMaybe :: (a -> Maybe b) -> [a] -> [b]
