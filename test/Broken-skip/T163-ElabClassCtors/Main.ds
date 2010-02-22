@@ -1,0 +1,10 @@
+
+class Bag (bag :: % -> * -> *) where
+	size 	:: forall a %r1 %r2 
+		.  bag %r1 a -(!e1)> Int %r2
+		:- !e1 = !Read %r1
+
+instance Bag List where
+	size = length
+
+main ()	= println $ show $ size [1, 2, 3];
