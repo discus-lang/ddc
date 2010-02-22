@@ -104,8 +104,13 @@ instance Accum Int32 where
 inc x	= x + 1
 inc y   = 1
 
+-- integer division truncated towards negative infinity
 div :: Int32 -> Int32 -> Int32
 div = primInt32_div
+
+-- integer division truncated towards zero
+quot :: Int32 -> Int32 -> Int32
+quot = primInt32_div
 
 project Int32 where
 	
