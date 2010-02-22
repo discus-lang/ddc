@@ -234,7 +234,7 @@ buildPureWitness eff
 
 -- | Lookup a witness for a constraint on this region
 lookupWitness 
-	:: Var 		-- ^ the data/region/effect variable
+	:: Var 		-- ^ the data\/region\/effect variable
 	-> TyClass	-- ^ the witness needed
 	-> ThreadM (Maybe Var)
 	

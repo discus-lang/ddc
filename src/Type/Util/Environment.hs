@@ -18,7 +18,7 @@ import Data.Map			(Map)
 	
 -- Env -------------------------------------------------------------------------------------
 
--- | A table to carry additional information we collect when decending into the tree
+-- | A table to carry additional information we collect when descending into the tree
 --	Eq 		constraints come from type level lets, and value lambda bindings.
 --	More (:>) 	come from constraints on type lambdas bindings.
 --

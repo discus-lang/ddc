@@ -54,7 +54,7 @@ import Data.Map			(Map)
 import Data.Set			(Set)
 
 -- ClassId -----------------------------------------------------------------------------------------
---	A unique name for a particular type/region/effect equivalence class.
+--	A unique name for a particular type\/region\/effect equivalence class.
 --
 newtype ClassId	
 	= ClassId Int
@@ -68,7 +68,7 @@ instance Ix ClassId where
  
 
 -- ordering
---	so we can use types containing class / var as keys in maps
+--	so we can use types containing class \/ var as keys in maps
 instance Ord Type where
  compare   (TClass _ a)  (TClass _ b)		= compare a b
  compare   (TVar _ a)   (TVar k b)		= compare a b
@@ -127,7 +127,7 @@ type Index
 
 -- Kinds
 data Kind
-	= KNil				-- ^ An missing / unknown kind.
+	= KNil				-- ^ An missing \/ unknown kind.
 
 	-- | Kind constructor
 	| KCon	   KiCon Super		-- ^ Kind constructors
@@ -155,7 +155,7 @@ data Kind
 --	TODO: 	These aren't used yet
 --		We need to replace the ctors in the Kind type with references to these ones.
 data KiCon
-	-- | A Witness Kind Constructor / Type Class Constructor defined in the source.
+	-- | A Witness Kind Constructor \/ Type Class Constructor defined in the source.
 	--	These aren't interpreted in any special way by the compiler.
 	= KiCon Var
 
@@ -314,7 +314,7 @@ data Elaboration
 
 -- | Stores information about a type error directy in a type.
 --	Used in the TError constructor of Type.
---	Used in during type inference only. 
+--	Used during type inference only.
 data TypeError
 	= TypeErrorUnify [Type]		-- ^ types that couldn't be unified
 	| TypeErrorLoop	 Type Type	-- ^ a recursive type equation 
@@ -333,7 +333,7 @@ data TyCon
 		{ tyConName	:: !Var
 		, tyConDataKind	:: !Kind }
 
-	-- Constructs a witness to some type/region/effect/closure class.
+	-- Constructs a witness to some type\/region\/effect\/closure class.
 	| TyConClass
 		{ tyConClass	 :: !TyClass
 		, tyConClassKind :: !Kind }
@@ -342,7 +342,7 @@ data TyCon
 
 
 -- TyClass -----------------------------------------------------------------------------------------
--- | Type / Region / Effect classes.
+-- | Type \/ Region \/ Effect classes.
 --	As most of the type-level witnesses have the same names as
 --	their kind-level classes, we'll overload TyClass for both.
 --
