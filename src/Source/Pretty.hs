@@ -29,6 +29,8 @@ import Shared.Pretty
 
 import Type.Pretty
 
+import Data.Char		(isAlpha)
+
 -----
 stage	= "Source.Pretty"
 
@@ -110,7 +112,12 @@ instance Pretty (Top a) PMode where
 	PStmt s		 -> ppr s % "\n\n"
 	
 	PInfix _ mode prec syms
-	 -> mode % " " % prec % " " % ", " %!% (map Var.name syms) % " ;\n"
+	 -> mode % " " % prec % " " % ", " %!% (map infixNames syms) % " ;\n"
+
+infixNames v
+ = if isAlpha (head (Var.name v))
+	then "`" ++ Var.name v ++ "`"
+	else Var.name v
 
 pprPClass_vk :: (Var, Kind) -> PrettyM PMode
 pprPClass_vk (v, k)
