@@ -23,9 +23,19 @@
 #ifndef __PTC_XSHM_H
 #define __PTC_XSHM_H
 
+#include "config.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+
+#if  HAVE_X11_EXTENSIONS_XSHM_H
 #include <X11/extensions/XShm.h>
+#elif  HAVE_X11_EXTENSIONS_SHM_H
+#include <X11/extensions/shm.h>
+#else
+#error "Bad data in config.h."
+#endif
+
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <stdio.h>

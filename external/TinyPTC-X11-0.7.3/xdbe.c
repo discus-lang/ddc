@@ -22,9 +22,19 @@
 
 /* #includes */
 
+#include "config.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+
+#if HAVE_X11_EXTENSIONS_XDBE_H
 #include <X11/extensions/Xdbe.h>
+#elif HAVE_X11_EXTENSIONS_DBE_H
+#include <X11/extensions/dbe.h>
+#else
+#error "Bad data in config.h."
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>

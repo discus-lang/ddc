@@ -60,6 +60,12 @@ tinyptc_test : $(OTARGETS) $(COBJECTS)
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDES) -c $<
 
+$(CTARGETS): config.h
+
+config.h: configure.sh
+	sh configure.sh
+
+
 # Unfortunately makedepend doesn't work for assembly files...
 
 mmx.i: mmx.h
@@ -88,4 +94,6 @@ clean:
 	$(RM) $(EXECUTABLE) $(LIBRARY) $(OTARGETS) $(COBJECTS) $(AOBJECTS)
 	$(RM) ptctarget.o .depend mmx.i tinyptc_wrap.[co] TinyPTC.py*
 	$(RM) _TinyPTC.so
+	$(RM) config.h
+
 
