@@ -124,3 +124,4 @@ project Int32 where
 	 = if x > y	then x
  			else y
 
+infixl 7  `quot`, `div`, `mod`
