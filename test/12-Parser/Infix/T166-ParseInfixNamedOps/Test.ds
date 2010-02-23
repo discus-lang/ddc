@@ -1,0 +1,14 @@
+
+left7a a b = a
+
+left7b a b = a
+
+right6 a b = b
+
+right5 a b = b
+
+infixl	7	`left71a`, `left71b`
+
+infixr	6	`right6`
+
+infix	5	`right5`
