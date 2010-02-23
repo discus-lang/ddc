@@ -30,7 +30,7 @@ solution2
 -- From the Haskell Wiki
 solution3 :: Int
 solution3 = sumStep 3 last + sumStep 5 last - sumStep 15 last
-  where	sumOnetoN n = (n * (n+1)) `div` 2
+  where	sumOnetoN n = n * (n+1) `div` 2
 	sumStep s n = s * sumOnetoN (n `div` s)
 	last        = maxN - 1
 
