@@ -20,7 +20,9 @@
 #
 
 .PHONY	: all
-all 	: bin/ddc bin/war runtime external libs
+all 	:
+	@make deps
+	@make bin/ddc bin/war runtime external libs
 
 include make/build.mk
 
