@@ -1,0 +1,15 @@
+
+
+main ()
+ = do	println $ show $  sumOnetoN 10
+	println $ show $  sumOnetoNparen 10
+
+-- These two functions should give the same result.
+-- The parenthesized version explicitly gives what the other version
+-- should get right it the precedence rules are correct.
+
+sumOnetoN :: Int -> Int
+sumOnetoN n = n * (n+1) `div` 2
+
+sumOnetoNparen :: Int -> Int
+sumOnetoNparen n = (n * (n+1)) `div` 2
