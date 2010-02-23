@@ -214,21 +214,29 @@ pTopInfix
  = 	-- infixr INT SYM ..
  	do	tok	<- pTok K.InfixR
  		prec	<- pInt
-		syms	<- Parsec.sepBy1 (pOfSpace NameValue pSymbol) (pTok K.Comma)
+		syms	<- Parsec.sepBy1 pInfixVarOrSym (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixRight prec syms
 
 	-- infixl INT SYM ..
   <|> 	do	tok	<- pTok K.InfixL
  		prec	<- pInt
-		syms	<- Parsec.sepBy1 (pOfSpace NameValue pSymbol) (pTok K.Comma)
+		syms	<- Parsec.sepBy1 pInfixVarOrSym (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixLeft prec syms
 
   <|>	-- infix INT SYM ..
   	do	tok	<- pTok K.Infix
 		prec	<- pInt
-		syms	<- Parsec.sepBy1 (pOfSpace NameValue pSymbol) (pTok K.Comma)
+		syms	<- Parsec.sepBy1 pInfixVarOrSym (pTok K.Comma)
 		return	$ PInfix (spTP tok) InfixNone prec syms
   <?>   "pTopInfix"
+
+pInfixVarOrSym
+ = do	pTok	K.BackTick
+ 	name	<- pOfSpace NameValue pVar
+	pTok	K.BackTick
+	return	name
+
+  <|>	pOfSpace NameValue pSymbol
 
 -- Type Kind ---------------------------------------------------------------------------------------
 -- | Parse a type kind and type synonym signatures.
