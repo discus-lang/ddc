@@ -1,25 +1,31 @@
 
-# targets:
+#   (Build targets)
 #       all             -- build everything
 #       deps            -- build dependencies
+#
+#       bin/ddc         -- build the compiler binary
+#       bin/war         -- build the test driver
+#       bin/plate       -- build the boilerplate generator
 #	runtime		-- build the runtime system
 #	external	-- build external libraries
 #	libs		-- build base libraries
 #	doc		-- build Haddock docks
 #
-#	hlint		-- run hlint
-#	war		-- run quick check and regression tests
-#       logwar          -- run quick check and regression tests, 
-#                       --     in batch mode, logging failures to war.failed
+#   (Running quickcheck and regression tests)
+#	war		-- run the minimal testing required before pushing patches (interactive)
+#       logwar          -- same as above, logging failures to war.failed  (non-interative)
+#       totalwar        -- run tests in all possible ways                 (slow, interactive)
+#       totallogwar     -- same as above, logging failures to war.failed  (slow, non-interative)
 #
+#   (Running code quality tools)
+#	hlint		-- run hlint
+#
+#   (Cleaning up)
 #       clean           -- clean everything
 #       cleanWar        -- clean libraries and tests, but leave the compiler build alone
 #       cleanRuntime    -- clean the runtime system
 #       cleanLibrary    -- clean out the libraries
 #
-#       bin/ddc         -- build the compiler binary
-#       bin/war         -- build the test driver
-#       bin/plate       -- build the boilerplate generator
 #
 
 .PHONY	: all
@@ -178,14 +184,23 @@ hlint	:
 
 # Run the testsuite interactively
 .PHONY 	: war
-war : bin/war
+war : bin/ddc bin/war
 	bin/war test -j $(WARTHREADS)
 
+# Run tests in all ways interactively
+.PHONY  : totalwar
+totalwar : bin/ddc bin/war
+	bin/war test -j $(WARTHREADS) +compway normal +compway opt -O
 
-# Run the testsuite logging failed tests to war.failed
+# Run the tests,  logging failures to war.failed
 .PHONY : logwar
-logwar : bin/war
+logwar : bin/ddc bin/war
 	bin/war test -j $(WARTHREADS) -batch -logFailed "war.failed" 
+
+# Run tests in all ways interactively, logging failures to war.failed
+.PHONY  : totallogwar
+totallogwar : bin/ddc bin/war
+	bin/war test -j $(WARTHREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O 
 	
 		
 # -- Cleaning --------------------------------------------------------------------------------------
