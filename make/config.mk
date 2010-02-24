@@ -1,4 +1,5 @@
 
+# -- Autodetect the build target
 # This works for 'Linux', 'Darwin' and 'FreeBSD'.
 TARGET_OS := $(shell uname -s | tr 'A-Z' 'a-z')
 
@@ -8,11 +9,12 @@ TARGET_CPU := $(shell uname -m | sed -e "s/^i3/x/" -e "s/^i6/x/")
 TARGET         = $(TARGET_OS)-$(TARGET_CPU)
 BUILDFLAVOUR   = distro
 GHC            = ghc
+WARTHREADS     = 2
 
-# This allows you to optionally override TARGET/BUILDFLAVOUR/GHC.
+# This allows you to optionally override the above config
 -include make/config-override.deps
 
-# TARGET: Set the target architecture
+# TARGET: The following platforms should work
 #    linux-x86
 #    linux-x86_64
 #    freebsd-x86

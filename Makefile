@@ -7,7 +7,10 @@
 #	libs		-- build base libraries
 #	doc		-- build Haddock docks
 #
-#	test		-- run quick check and regression tests
+#	hlint		-- run hlint
+#	war		-- run quick check and regression tests
+#       logwar          -- run quick check and regression tests, 
+#                       --     in batch mode, logging failures to war.failed
 #
 #       clean           -- clean everything
 #       cleanWar        -- clean libraries and tests, but leave the compiler build alone
@@ -170,6 +173,21 @@ hlint	:
 		src
 
 
+# -- War ------------------------------------------------------------------------------------------
+# Running the testsuite, for the war against bugs
+
+# Run the testsuite interactively
+.PHONY 	: war
+war : bin/war
+	bin/war test -j $(WARTHREADS)
+
+
+# Run the testsuite logging failed tests to war.failed
+.PHONY : logwar
+logwar : bin/war
+	bin/war test -j $(WARTHREADS) -batch -logFailed "war.failed" 
+	
+		
 # -- Cleaning --------------------------------------------------------------------------------------
 # -- clean objects in the runtime system
 .PHONY : cleanRuntime
