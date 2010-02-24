@@ -1,4 +1,4 @@
 ddc: ERROR
-./test/02-Error/02-Parser/Empty/Main.ds
+./test/10-Driver/EmptySourceFile/Main.ds
     Source file is empty.
 

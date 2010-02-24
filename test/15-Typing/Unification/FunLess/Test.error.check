@@ -1,15 +1,15 @@
 ddc: ERROR
-./test/02-Error/30-Typing/Unify/FunLess/Test.ds:6:15
+./test/15-Typing/Unification/FunLess/Test.ds:6:15
     Type mismatch during unification.
           cannot match: *111 $98
                   with: *143 %144
 
               the use of: (+)
                  at type: *111 $98
-                      at: ./test/02-Error/30-Typing/Unify/FunLess/Test.ds:6:15
+                      at: ./test/15-Typing/Unification/FunLess/Test.ds:6:15
 
         conflicts with, 
           literal value 3i32
                  of type: *143 %144
-                      at: ./test/02-Error/30-Typing/Unify/FunLess/Test.ds:6:17
+                      at: ./test/15-Typing/Unification/FunLess/Test.ds:6:17
 

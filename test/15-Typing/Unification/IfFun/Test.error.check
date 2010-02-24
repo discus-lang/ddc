@@ -1,14 +1,14 @@
 ddc: ERROR
-./test/02-Error/30-Typing/Unify/IfFun/Test.ds:5:10
+./test/15-Typing/Unification/IfFun/Test.ds:5:10
     Type mismatch during unification.
           cannot match: *4 %5
                   with: *9 $16
 
           object of if-then-else expression
            which must be: Bool
-                      at: ./test/02-Error/30-Typing/Unify/IfFun/Test.ds:5:10
+                      at: ./test/15-Typing/Unification/IfFun/Test.ds:5:10
 
         conflicts with, 
         lambda abstraction
-                      at: ./test/02-Error/30-Typing/Unify/IfFun/Test.ds:5:14
+                      at: ./test/15-Typing/Unification/IfFun/Test.ds:5:14
 

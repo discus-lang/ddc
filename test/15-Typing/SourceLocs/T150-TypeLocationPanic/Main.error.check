@@ -1,12 +1,12 @@
 ddc: ERROR
-./test/02-Error/30-Typing/T150-TypeLocationPanic/Main.ds:13:8
+./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:8
     Conflicting region constraints.
               constraint: Base.Const %3
          from the use of: a
-                      at: ./test/02-Error/30-Typing/T150-TypeLocationPanic/Main.ds:13:8
+                      at: ./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:8
 
      conflicts with,
               constraint: Base.MutableT *247
          from the use of: (:=)
-                      at: ./test/02-Error/30-Typing/T150-TypeLocationPanic/Main.ds:13:10
+                      at: ./test/15-Typing/SourceLocs/T150-TypeLocationPanic/Main.ds:13:10
 

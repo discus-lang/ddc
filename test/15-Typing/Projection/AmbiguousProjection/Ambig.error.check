@@ -1,4 +1,4 @@
 ddc: ERROR
-./test/02-Error/30-Typing/Grind/AmbiguousProjection/Ambig.ds:7:12
+./test/15-Typing/Projection/AmbiguousProjection/Ambig.ds:7:12
     Ambiguous projection: .wibble
 

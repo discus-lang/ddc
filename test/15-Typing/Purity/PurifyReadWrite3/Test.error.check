@@ -1,17 +1,17 @@
 ddc: ERROR
-./test/02-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
+./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
     Conflicting region constraints.
                constraint: Base.Const %117
         which purifies
               the use of: (+)
              with effect: Base.!ReadT *8
-                      at: ./test/02-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:3:21
+                      at: ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:21
         due to
               the use of: suspend2
-                      at: ./test/02-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
+                      at: ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
 
      conflicts with,
               constraint: Base.MutableT *8
          from the use of: (:=)
-                      at: ./test/02-Error/30-Typing/Purity/PurifyReadWrite3/Test.ds:4:18
+                      at: ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:4:18
 

@@ -1,2 +1,2 @@
-ddc error: File 'test/70-Driver/T144-FileDoesNotExist//whatever/file_does_not_exist.ds' does not exist.
+ddc error: File 'test/10-Driver/T144-FileDoesNotExist//whatever/file_does_not_exist.ds' does not exist.
 

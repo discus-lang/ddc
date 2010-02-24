@@ -1,7 +1,7 @@
 ddc: ERROR
     No instance for Class.Functor.Functor tTS0
 
-./test/02-Error/30-Typing/Grind/T75-UnresolvedTApp/Test.ds:4:13
+./test/15-Typing/Grind/T75-UnresolvedTApp/Test.ds:4:13
     Ambiguous projection: .head
 
     No instance for Class.Functor.Functor *27

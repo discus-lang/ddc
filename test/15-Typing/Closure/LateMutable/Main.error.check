@@ -1,5 +1,5 @@
 ddc: ERROR
-./test/02-Error/30-Typing/Closure/LateMutable/Main.ds:25:8
+./test/15-Typing/Closure/LateMutable/Main.ds:25:8
     The type inferencer made an incorrect assumption about the
         mutability of 'box', (and backtracking isn't implemented).
 
@@ -11,7 +11,7 @@ ddc: ERROR
         but a new
               constraint: Base.Mutable %164
          from the use of: (#=)
-                      at: ./test/02-Error/30-Typing/Closure/LateMutable/Main.ds:27:16
+                      at: ./test/15-Typing/Closure/LateMutable/Main.ds:27:16
 
         was discovered, which means 'tTS3' was not actually
         safe to generalise.

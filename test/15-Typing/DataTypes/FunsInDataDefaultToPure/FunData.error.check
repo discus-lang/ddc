@@ -1,12 +1,12 @@
 ddc: ERROR
-./test/02-Error/30-Typing/Data/FunData/FunData.ds:17:17
+./test/15-Typing/DataTypes/FunsInDataDefaultToPure/FunData.ds:17:17
     Cannot purify effect `System.Console.!Console'.
 
               the use of: succP
              with effect: System.Console.!Console
-                      at: ./test/02-Error/30-Typing/Data/FunData/FunData.ds:17:17
+                      at: ./test/15-Typing/DataTypes/FunsInDataDefaultToPure/FunData.ds:17:17
 
      conflicts with,
               the use of: FunInt
-                      at: ./test/02-Error/30-Typing/Data/FunData/FunData.ds:17:10
+                      at: ./test/15-Typing/DataTypes/FunsInDataDefaultToPure/FunData.ds:17:10
 
