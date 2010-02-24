@@ -6,10 +6,10 @@ TARGET_OS := $(shell uname -s | tr 'A-Z' 'a-z')
 # This works for 'i386', 'i686' and 'x86_64'.
 TARGET_CPU := $(shell uname -m | sed -e "s/^i3/x/" -e "s/^i6/x/")
 
-TARGET         = $(TARGET_OS)-$(TARGET_CPU)
-BUILDFLAVOUR   = distro
-GHC            = ghc
-WARTHREADS     = 2
+TARGET		= $(TARGET_OS)-$(TARGET_CPU)
+BUILDFLAVOUR	= distro
+GHC		= ghc
+THREADS		= 2
 
 # This allows you to optionally override the above config
 -include make/config-override.deps

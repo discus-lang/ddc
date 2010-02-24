@@ -1,17 +1,20 @@
 
 #   (Build targets)
-#       all             -- build everything
-#       deps            -- build dependencies
+#       all             -- build the compiler and libs (default)
 #
+#       total           -- build the compiler, libs, docs and run all the tests in all ways (slow) 
+#       cleantotal      -- same as above, but do a full clean first (slowest) 
+#
+#       deps            -- build dependencies (should be automatic with the 'all' target)
 #       bin/ddc         -- build the compiler binary
 #       bin/war         -- build the test driver
 #       bin/plate       -- build the boilerplate generator
 #	runtime		-- build the runtime system
 #	external	-- build external libraries
 #	libs		-- build base libraries
-#	doc		-- build Haddock docks
+#	docs		-- build Haddock docks
 #
-#   (Running quickcheck and regression tests)
+#   (Running just the quickcheck and regression tests)
 #	war		-- run the minimal testing required before pushing patches (interactive)
 #       logwar          -- same as above, logging failures to war.failed  (non-interative)
 #       totalwar        -- run tests in all possible ways                 (slow, interactive)
@@ -28,12 +31,33 @@
 #
 #
 
+# -- Build the compiler and libs
 .PHONY	: all
 all 	:
-	@make deps
-	@make bin/ddc bin/war runtime external libs
+	@make allWithConfig
 
 include make/build.mk
+
+.PHONY	: allWithConfig
+allWithConfig :
+	@make deps
+	@make bin/ddc bin/war runtime external libs -j $(THREADS)
+
+
+# -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
+.PHONY  : total
+total	: 
+	@make allWithConfig
+	@make docs
+	@make totallogwar 
+
+
+# -- Same as 'total', but do a full clean first
+.PHONY  : cleantotal
+cleantotal : 
+	@make clean
+	@make total	
+
 
 # -- Find Source Files ----------------------------------------------------------------------------
 # -- files needing to be processed via alex
@@ -142,15 +166,6 @@ bin/war : $(war_hs)
 		-isrc -itools/war --make tools/war/Main.hs -o bin/war
 
 
-# -- Run all avaliable tests -----------------------------------------------------------------------
-.PHONY	: test
-test	: bin/ddc bin/war library/Prelude.di
-	@echo "* Running tests ------------------------------------------------"
-	@echo
-	bin/war test
-	@echo
-
-
 # -- Haddock docs ----------------------------------------------------------------------------------
 # -- build haddoc docs
 nodoc	= \
@@ -159,10 +174,10 @@ nodoc	= \
 	src/Source/Type/SlurpA.hs \
 	src/Source/Type/SlurpX.hs
 
-.PHONY	: doc
-doc	:
-	@echo "* Building documentation"
-	@haddock -h -o doc/haddock --optghc=-isrc --ignore-all-exports \
+.PHONY	: docs
+docs	:
+	@echo "* Building haddock documentation"
+	@haddock -w -h -o doc/haddock --optghc=-isrc --ignore-all-exports \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(src_hs_all))
 
@@ -184,24 +199,36 @@ hlint	:
 
 # Run the testsuite interactively
 .PHONY 	: war
-war : bin/ddc bin/war
-	bin/war test -j $(WARTHREADS)
+war : bin/ddc bin/war library/Prelude.di
+	@echo "* Running tests ------------------------------------------------"
+	bin/war test -j $(THREADS)
+	@echo
 
 # Run tests in all ways interactively
 .PHONY  : totalwar
-totalwar : bin/ddc bin/war
-	bin/war test -j $(WARTHREADS) +compway normal +compway opt -O
+totalwar : bin/ddc bin/war library/Prelude.di
+	@echo "* Running tests ------------------------------------------------"
+	bin/war test -j $(THREADS) +compway normal +compway opt -O
+	@echo
 
 # Run the tests,  logging failures to war.failed
 .PHONY : logwar
-logwar : bin/ddc bin/war
-	bin/war test -j $(WARTHREADS) -batch -logFailed "war.failed" 
+logwar : bin/ddc bin/war library/Prelude.di
+	@echo "* Running tests ------------------------------------------------"
+	bin/war test -j $(THREADS) -batch -logFailed "war.failed" 
+	@echo
 
 # Run tests in all ways interactively, logging failures to war.failed
 .PHONY  : totallogwar
-totallogwar : bin/ddc bin/war
-	bin/war test -j $(WARTHREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O 
-	
+totallogwar : bin/ddc bin/war library/Prelude.di
+	@echo "* Running tests ------------------------------------------------"
+	bin/war test -j $(THREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O 
+	@echo
+
+# Alias for war
+.PHONY	: test
+test	: war
+
 		
 # -- Cleaning --------------------------------------------------------------------------------------
 # -- clean objects in the runtime system
