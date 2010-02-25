@@ -8,7 +8,8 @@ module Type.Util.Environment
 	, emptyEnv
 	, addEqVT
 	, addMoreF
-	, addMoreVT)
+	, addMoreVT
+	, addWitnessConst)
 where
 
 import Type.Exp
@@ -34,6 +35,9 @@ data Env
 
 	-- type inequalities, T[v1] :> t2
 	, envMore		:: Map Var Type
+
+	-- region Const witnesses
+	, envWitnessConst	:: Map Var Var
 	
 	-- Tells Core.Reconstruct whether to drop an annotation
 	--	saying what effects each statement has (for debugging)
@@ -46,7 +50,8 @@ emptyEnv
 	= Env
 	{ envCaller		= Nothing
 	, envEq			= Map.empty
-	, envMore		= Map.empty 
+	, envMore		= Map.empty
+	, envWitnessConst	= Map.empty
 	, envDropStmtEff	= False }
 
 
@@ -65,8 +70,13 @@ addMoreVT v t tt
 	Nothing	-> tt { envMore = Map.insert v t (envMore tt) }
 	Just _	-> tt { envMore = Map.insert v t (Map.delete v (envMore tt)) }
 
-
 -- | Add a type inequality from a fetter to the environment
 addMoreF :: Fetter -> Env -> Env
 addMoreF (FMore (TVar k v) t) table	= addMoreVT v t table
 
+-- | Add a Const witness to the environment
+addWitnessConst :: Var -> Var -> Env -> Env
+addWitnessConst v w tt
+ = case Map.lookup v (envWitnessConst tt) of
+	Nothing	-> tt { envWitnessConst = Map.insert v w (envWitnessConst tt) }
+	Just _	-> tt { envWitnessConst = Map.insert v w (Map.delete v (envWitnessConst tt)) }

@@ -35,6 +35,7 @@ import Core.Exp
 import Core.Util
 import Core.Plate.FreeVars
 
+import Type.Error		(Error(..))
 import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
 import Type.Util.Environment
 import Type.Builtin
@@ -115,7 +116,7 @@ reconTree table tHeader tCore
  	tt		= {-# SCC "reconTree/table"    #-} foldr (uncurry addEqVT) table topTypes
 	
 	-- reconstruct type info on each top level thing
-	tCore'		= map (\x -> evalState (reconP x) tt) tCore
+	tCore'		= evalState (mapM reconP tCore) tt
 	
    in tCore'
 
@@ -138,15 +139,55 @@ reconP_type caller p
 reconP	:: Top -> ReconM Top
 
 reconP (PBind v x)
- = do	(x', xT, xE, xC)	<- {-# SCC "reconP/reconX" #-} reconX x
-	let	xE'		= maskE xT xE xC
-	trace	("reconP: (/\\ " % v % " -> ...)\n"
+ = do	tt			<- get
+	(x', xT, xE, xC)	<- {-# SCC "reconP/reconX" #-} reconX x
+	let	xE'		= {-# SCC "reconP/maskE" #-} maskE xT xE xC
+		xE''		= simplifyE $ maskConstRead xE'
+
+		maskConstRead :: Effect -> Effect
+		maskConstRead	e@(TBot _)	= e
+		maskConstRead	e@(TEffect v rs)
+		 | v == primRead
+		 , all isConst rs
+		 = tPure
+		maskConstRead	(TSum k es)	= TSum k (map maskConstRead es)
+		maskConstRead	e		= e
+
+		isConst (TVar k r)
+		 = (k == kRegion) && (isJust . Map.lookup r $ envWitnessConst tt)
+
+		simplifyE e@(TBot _) = e
+		simplifyE (TSum k es)
+		 | null es'		= tPure
+		 | null (drop 1 es')	= head es'
+		 | otherwise		= TSum k es'
+			where es' = filter (/= tPure) $ map simplifyE es
+		simplifyE e = e
+
+	trace	("reconP[PBind]: (/\\ " % v % " -> ...)\n"
 		% "  x':\n"  %> x'	% "\n"
 		% "  xT:\n"  %> xT	% "\n"
 		% "  xE:\n"  %> xE	% "\n"
-		% "  xC:\n"  %> xC	% "\n"
-		% "  xE':\n" %> xE'	% "\n\n") $ return ()
+		% "  xE':\n" %> xE'	% "\n"
+		% "  xE'':\n" %> xE''	% "\n"
+		% "  xC:\n"  %> xC	% "\n\n") $ return ()
+
+        unless (xE'' == tPure)
+		$ dieWithUserError [ErrorEffectfulCAF (v, xT) xE'']
+
 	return	(PBind v x')
+
+reconP p@(PRegion v wits)
+ = do	trace ("reconP[PRegion]: " % v % ": " % wits) $ return ()
+	let	constWits	= foldr f [] wits
+		f (w,k) ws	= if isConst k then w : ws else ws
+
+		isConst (TApp (TCon (TyConClass TyClassConst _)) _)
+				= True
+		isConst _	= False
+
+	mapM_ (\w -> modify (addWitnessConst v w)) (take 1 constWits)
+	return p
 
 reconP p	= return p
 
@@ -281,7 +322,7 @@ reconX exp@(XLam v t x eff clo)
 
 	let	eff'		= packT $ substituteT (envEq tt) eff
 		clo_sub		= packT $ substituteT (envEq tt) clo
-		xE'		= maskE	xT xE xC
+		xE'		= {-# SCC "reconX/maskE" #-} maskE	xT xE xC
 
 	-- check effects match
 	() <- unless (subsumes (envMore tt) eff' xE') $

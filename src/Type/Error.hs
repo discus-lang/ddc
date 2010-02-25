@@ -126,6 +126,11 @@ data Error
 	-- Main function has wrong type
 	| ErrorWrongMainType	
 		{ eScheme	:: (Var, Type) }	-- the type that was inferred for main		
+
+	-- A CAF has effects that can't be masked.
+	| ErrorEffectfulCAF
+		{ eScheme	:: (Var, Type)		-- the CAF name and type.
+		, eEffect	:: Effect }		-- the offending effect.
 		
 	deriving (Show)
 
@@ -350,6 +355,16 @@ instance Pretty Error PMode where
 	% "        but it was inferred to be:"
 	% prettyVTS (v, scheme)
 	% "\n\n"
+
+ -- A CAF has effects that can't be masked.
+ ppr err@(ErrorEffectfulCAF
+ 		{ eScheme	= (v, scheme)
+		, eEffect	= eff })
+
+	= v				% "\n"
+	% "    CAF " % v % " must be pure, but effects:\n\n"
+	%> eff
+	% "\n\n    were found.\n\n"
 
  ppr err
 	= panic stage
