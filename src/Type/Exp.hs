@@ -112,7 +112,7 @@ data Super
  	-- 
 	--        Example:	
 	--        The kind-level constructor 'Mutable' has superkind % -> +,
-	--	    were '%' is a kind, but '+' and '% -> +' are superkinds.
+	--	    where '%' is a kind, but '+' and '% -> +' are superkinds.
 	--          This says that 'Mutable' encodes some property of a region.
 	--
 	| SFun	Kind Super	
@@ -127,15 +127,15 @@ type Index
 
 -- Kinds
 data Kind
-	= KNil				-- ^ An missing \/ unknown kind.
+	= KNil				-- ^ A missing \/ unknown kind.
 
 	-- | Kind constructor
 	| KCon	   KiCon Super		-- ^ Kind constructors
 
 	--  | Dependent kind abstraction.
-	--	Uses de Bruijn indicies in the body.
-	| KPi      Kind  Kind		-- ^ Dependend kind abstraction.
-				 	--	Uses de Bruijn indicies in the body
+	--	Uses de Bruijn indices in the body.
+	| KPi      Kind  Kind		-- ^ Dependent kind abstraction.
+				 	--	Uses de Bruijn indices in the body
 
 	--  | Dependent kind application.
 	| KApp	   Kind	 Type
