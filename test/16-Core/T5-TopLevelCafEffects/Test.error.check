@@ -1,0 +1,9 @@
+ddc: ERROR
+Test.plus4se
+    CAF Test.plus4se must be pure, but effects:
+
+        System.Console.!Console
+
+    were found.
+
+
