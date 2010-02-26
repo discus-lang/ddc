@@ -1,0 +1,4 @@
+module Foo
+
+project List where
+	count = length
