@@ -2,12 +2,10 @@
 
 bin/ddc -c $1/Foo.ds || exit 1
 
-grep -v foreign $1/Foo.di > $1/Foo.stripped.di
+cmp $1/Foo.di $1/Foo.di.expected > /dev/null
 
-count=`grep -c project_ $1/Foo.stripped.di`
-if test $count -gt 1 ; then
-	echo "Error, only one projection should be exported."
+if test $? -ne 0 ; then
+	echo "Error."
 	exit 1
 	fi
 
-exit 0

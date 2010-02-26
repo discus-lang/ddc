@@ -1,4 +1,11 @@
 module Foo
 
+data Option a
+	= Some 	{ x :: a; }
+	| None
+
+data FooRef %r1 a
+	= FooRef { x :: a }
+
 project List where
 	count = length
