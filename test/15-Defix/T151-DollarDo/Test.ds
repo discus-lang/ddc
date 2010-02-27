@@ -1,9 +1,3 @@
--- http://rosettacode.org/wiki/Jensen's_Device
-
--- Basically the Ocaml version re-written in Disciple.
-
-import Data.Float64
-
 -- A mutable Int.
 i :: Int %r0 :- Mutable %r0
 i = 42 -- initial value doesn't matter
@@ -18,6 +12,4 @@ sum' i lo hi term
 	result
 
 main ()
- =	println $ show $ sum' i 1 100 (\ () -> 1.0 / toFloat64 i)
-
-
+ =	println $ show $ sum' i 1 100 (\ () -> 1.0 / toFloat i)
