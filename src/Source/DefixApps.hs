@@ -62,8 +62,12 @@ dropApps' sp acc xx
 	, Var.name v2 == "-"
 	= makeXDefixApps sp acc : x1 
 	: dropApps' sp [XVar sp Var.primNegate] xsRest
-	
-	
+
+ 	| x@(XOp sp v) : xs				<- xx
+	, Var.name v == "$"
+        , null acc
+	= dropApps' sp acc $ warning stage ("Redundant '$' operator.") xs
+
 	-- when we hit a non '@' operator, mark the parts in the accumulator
 	--	as an application and start collecting again.
  	| x@(XOp sp v) : xs				<- xx
