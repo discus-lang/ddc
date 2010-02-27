@@ -18,7 +18,7 @@ module Util.Tunnel
 
 where
 
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 type Tunnel s a	
 	= ( s -> a

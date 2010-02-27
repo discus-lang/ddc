@@ -21,7 +21,7 @@ import Shared.Literal
 import qualified Shared.Var	as Var
 
 import Util
-import Control.Monad.State
+import Control.Monad.State.Strict
 import qualified Data.Set	as Set
 import qualified Debug.Trace
 

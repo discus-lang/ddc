@@ -16,7 +16,7 @@ where
 where
 
 import Data.Generics
-import Control.Monad.State
+import Control.Monad.State.Strict
 
 -----
 walkDown	:: GenericT -> GenericT

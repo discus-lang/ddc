@@ -7,7 +7,7 @@ module Source.Rename.Object
 where
 
 import Source.Rename.State
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Shared.Error
 import Shared.Var
 

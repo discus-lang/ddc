@@ -19,7 +19,7 @@ import qualified Shared.VarPrim	as Var
 import qualified Shared.VarUtil	as Var
 
 import Util
-import Control.Monad.State
+import Control.Monad.State.Strict
 import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set
