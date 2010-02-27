@@ -17,7 +17,7 @@ import qualified Core.Reconstruct	as Recon
 
 import Shared.VarPrim	
 import Shared.VarGen
-import Shared.Error
+import Shared.Warning
 import Shared.Pretty
 
 import Util
@@ -515,8 +515,7 @@ shouldMove' level tt mUses vBind effBind
 
 	-- don't move bindings with no uses, but emit a warning
 	| Nothing	<- mUses
-	= warning stage
-		("shouldMove: binding " % vBind % " has no uses\n")
+	= warning (WarnUselessBinding vBind)
 		(shouldMove_fail tt mUses vBind
 			(tableStats_ ## statsNotMovedNoUses_ <#> \x -> vBind : x))
 		

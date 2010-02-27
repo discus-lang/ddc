@@ -1,10 +1,9 @@
 -- Error handling.
---	Provides functions for emitting panics, freakouts and warnings.
+--	Provides functions for emitting panics, and freakouts.
 --
 module Shared.Error
 	( panic
 	, freakout
-	, warning
 	, dieWithUserError
 	, exitWithUserError)
 where
@@ -45,19 +44,6 @@ freakout stage msg a
 		$ "FREAKOUT in " % stage % "\n"
 		%> (msg	% "\nPlease report this bug to the maintainers at:\n"
 			% Version.maintainers))
-		a
-
-	
--- | Something troubling has happened, but it's not likely to be terminal.
---	We'll print the message to the console to let the user know that something's up.
---
-warning 
-	:: Pretty msg PMode
-	=> String -> msg -> a -> a
-
-warning stage msg a
-	= trace	( pprStrPlain
-		$ "WARNING in " % stage % "\n" %> msg) 
 		a
 
 

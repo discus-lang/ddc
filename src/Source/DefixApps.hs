@@ -10,6 +10,7 @@ import qualified Shared.VarPrim	as Var
 import Shared.Var		(Var)
 
 import Shared.Error
+import Shared.Warning
 import Shared.Base
 import Shared.Pretty
 
@@ -66,7 +67,7 @@ dropApps' sp acc xx
  	| x@(XOp sp v) : xs				<- xx
 	, Var.name v == "$"
         , null acc
-	= dropApps' sp acc $ warning stage ("Redundant '$' operator.") xs
+	= dropApps' sp acc $ warning (WarnRedundantOp v) xs
 
 	-- when we hit a non '@' operator, mark the parts in the accumulator
 	--	as an application and start collecting again.

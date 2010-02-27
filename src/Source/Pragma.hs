@@ -13,6 +13,7 @@ import Source.Exp
 import Shared.Pretty
 import Shared.Base
 import Shared.Error
+import Shared.Warning
 import Shared.Literal
 import Util
 
@@ -29,9 +30,7 @@ slurpPragma pp@(PPragma _ (XVar sp v : _))
 	= slurp_ccIncludes pp
 
 	| otherwise
-	= warning stage 
-		("unknown pragma " % v % "\n")
-		[]
+	= warning (WarnUnknownPragma v) []
 
 slurpPragma _	= []
 	
