@@ -17,6 +17,11 @@ import Config
 import Data.List
 import System.Time
 
+-- Need these for determining pointerSize
+import Foreign.Storable		(sizeOf)
+import Foreign.Ptr			(Ptr)
+import Foreign.C.Types		(CChar)
+
 -- | Build a program starting from a Main.ds file
 testBuild :: Test -> Way -> War TestWin
 testBuild test@(TestBuild mainDS) way
@@ -50,7 +55,7 @@ testBuild test@(TestBuild mainDS) way
 
 	-- build the test
 	let cmdBuild	= "bin/ddc"
-			++ " +RTS -M50M -RTS"   -- Limit heap size
+			++ " +RTS -M" ++ heapLimit ++ " -RTS"   -- Limit heap size
 			++ " -make " ++ mainDS
 			++ " -o " ++ mainBin
 			++ " "    ++ (catInt " " $ wayOptsComp way)
@@ -70,7 +75,24 @@ testBuild test@(TestBuild mainDS) way
 		, testWinSize = 0 }
 
 
+-- | Provide a heap size limit for bin/ddc in war tests. DDC on 64 bit
+-- systems gets twice as much heap as 32 bit systems because pointers
+-- will be 64 bits and a lot of stuff in the heap will be pointers.
+--
+-- This value is kept conservatively low to act as a canary in the coal
+-- mine for regressions that suddenly start using a lot of heap space.
+--
+-- At the time this was set to 30M for 32 bit systems, compiling
+-- test/90-programs/Rover after a 'make cleanWar' was taking 24M of heap
+-- space (about 48M on 64 bit systems).
+--
+heapLimit :: String
+heapLimit
+ = case pointerSize of
+	32	-> "30M"	-- Megabytes
+	64	-> "60M"
 
 
-
+pointerSize :: Int
+pointerSize = 8 * sizeOf (undefined :: Ptr CChar)
 
