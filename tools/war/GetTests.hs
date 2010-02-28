@@ -66,6 +66,7 @@ getTestsInDir config dirPath
 	--
 	let gotMainDS		 = any (isSuffixOf "/Main.ds") files
 	let gotMainRunErrorCheck = any (isSuffixOf "/Main.runerror.check") files
+	let gotCompileWarnCheck	 = any (isSuffixOf ".warn.check") files
 
 	let testsBuildRunSuccess
 		= listWhen (not gotMainSH && gotMainDS && not gotMainErrorCheck && not gotMainRunErrorCheck)
@@ -119,6 +120,16 @@ getTestsInDir config dirPath
 					= (take (length file - length ".ds") file) ++ ".error.check"
 				, not (elem errorCheckFile files)]
 
+	let testsCompileWarn
+		= listWhen (gotCompileWarnCheck)
+		$ chainTests
+		$ concat [	[ TestCompile	file, TestDiff warnCheckFile compileStderr]
+				| file	<- filter (isSuffixOf ".ds") files
+				, let fileRoot = take (length file - length ".ds") file
+				, let warnCheckFile = fileRoot  ++ ".warn.check"
+                                , let compileStderr = fileRoot  ++ ".compile.stderr"
+				, elem warnCheckFile files]
+
 
 	-- If there is not Main.ds file then expect source files with an 
 	--	associate error.check file to fail during compilation.
@@ -144,6 +155,7 @@ getTestsInDir config dirPath
 			[ testsBuildRun,	testsBuildError
 			, testsShell,		testsShellError
 			, testsCompile,		testsCompileError
+			, testsCompileWarn
 			, testsStdout,		testsHaskellBuildRun]
 
 	let testsHereExpanded
