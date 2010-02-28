@@ -1,0 +1,3 @@
+Warning at ./test/15-Defix/T151-DollarDo/Test.ds:10:9
+     Redundant operator '$' in expression.
+
