@@ -25,6 +25,8 @@
 
 #define _XOPEN_SOURCE
 
+#include "config.h"
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <stdio.h>
@@ -32,7 +34,15 @@
 #include <limits.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+
+#if  HAVE_X11_EXTENSIONS_XSHM_H
 #include <X11/extensions/XShm.h>
+#elif  HAVE_X11_EXTENSIONS_SHM_H
+#include <X11/extensions/shm.h>
+#else
+#error "Bad data in config.h."
+#endif
+
 #include <X11/extensions/Xvlib.h>
 #include "tinyptc.h"
 
