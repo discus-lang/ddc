@@ -109,6 +109,12 @@ GCC_FLAGS           += -fPIC -D BITS=64 -m64
 BUILD_SHARED        := gcc -shared
 SHARED_SUFFIX       := so
 
+# -- Linux on ppc
+else ifeq "$(Target)" "linux-ppc"
+GCC_FLAGS           += -fPIC -D BITS=32 -m32
+BUILD_SHARED        := gcc -shared
+SHARED_SUFFIX       := so
+
 # -- FreeBSD on x86
 else ifeq "$(Target)" "freebsd-x86"
 GCC_FLAGS           += -fPIC -D BITS=32
