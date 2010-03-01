@@ -77,6 +77,26 @@ instance Show [Char] where
  showL ss	= showListL showL  ss
 
 
+
+instance Show [Bool] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss
+
+instance Show [[Int]] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss
+
+instance Show (Int, Int) where
+ show  (a,b)	= "(" % show a % ", " % show b % ")"
+ showL (a,b)	= "(" % showL a % ", " % showL b % ")"
+
+instance Show [(Int, Int)] where
+ show  ss	= showList  show  ss
+ showL ss	= showListL @ showL  ss
+
+
+
+
 -- Show a maybe something
 showMaybe showX xx
  = case xx of
