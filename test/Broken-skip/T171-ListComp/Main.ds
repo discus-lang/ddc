@@ -1,0 +1,8 @@
+
+tricky xs = [ (x, y)
+		| x	<- xs
+		, let y = x `mod` 3]
+
+main
+ = putStrLn $ show $ tricky [ 1, 2, 3 ]
+
