@@ -6,16 +6,23 @@ module Source.Desugar.ListComp
 
 where
 
+import Util
+
 import qualified Shared.Var as Var
 import Shared.Var	(NameSpace(..))
 import Shared.VarPrim
 import Shared.Base
+import Shared.Error
+import Shared.Pretty
 
 import qualified Source.Exp		as S
 import qualified Desugar.Exp		as D
 
 import Source.Desugar
 import Source.Desugar.Base
+import Source.Desugar.Patterns
+
+stage = "Source.Desugar.ListComp"
 
 -----
 -- rewriteListComp
@@ -57,3 +64,21 @@ rewriteListComp x
 		
 	 	return	$ D.XDo sp
 				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) (D.XLambda sp p lc') ) l') ]
+
+	-- [e | pattern <- l, Q]		=> 
+	S.XListComp sp exp (S.LCGen lazy pat l : qs)
+	 -> do
+		let catMapVar	= if lazy then primConcatMapL else primConcatMap
+
+		lc'	<- rewriteListComp $ S.XListComp sp exp qs
+		l'	<- rewrite l
+		pat'	<- rewrite [pat]
+		patFunc	<- makeMatchFunction sp pat' lc'
+
+	 	return	$ D.XDo sp
+				[ D.SBind sp Nothing  (D.XApp sp (D.XApp sp (D.XVar sp catMapVar) patFunc) l') ]
+
+
+	_ -> panic stage
+		$ pprStrPlain $ "rewriteListComp failed for\n    " % x % "\n"
+
