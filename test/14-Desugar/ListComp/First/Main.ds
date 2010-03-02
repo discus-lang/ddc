@@ -1,0 +1,25 @@
+
+main ()
+ = do
+	-- Output: [3.5,7.0,10.5,14.0]
+ 	println $ show [x + 2 * x + x / 2 | x <- [one,2,3,4]]
+	
+	-- Output: [3,5,7,9,6,10,14,18,9,15,21,27,12,20,28,36]
+	println $ show [ x * y | x <- [one,2,3,4], y <- [3,5,7,9]]
+
+	-- Output: [12,23,11]
+	println $ show [x | x <- [one,5,12,3,23,11,7,2], x > 10]
+
+	-- Output: [(1,2),(1,4),(1,6),(3,4),(3,6),(5,6)]
+	println $ show [(x,y) | x <- [one,3,5], y <- [2,4,6], x < y]
+
+	-- Output: [True,False,True,False,True,False,True,False,True]
+	println $ show [ odd x | x <- [one..9]]
+
+
+odd :: Int -> Bool
+odd x = x `mod` 2 == 1
+
+one :: Int
+one = 1
+

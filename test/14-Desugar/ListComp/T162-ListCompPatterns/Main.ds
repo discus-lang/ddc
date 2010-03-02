@@ -1,0 +1,23 @@
+
+firstElems :: [[a]] -> [a]
+firstElems x = [h | (h:_) <- x]
+
+
+transpose               :: [[a]] -> [[a]]
+transpose []             = []
+transpose ([]   : xss)   = transpose xss
+transpose ((x:xs) : xss) = (x : [h | (h:_) <- xss]) : transpose (xs : [ t | (_:t) <- xss])
+
+
+eachOutFront :: [a] -> [[a]]
+eachOutFront xs = [x:xs | x <- xs]
+
+
+mtx :: [[Int]]
+mtx = [[1, 2], [3, 4], [5, 6], [7 , 8]]
+
+main ()
+ = do	println $ show $ firstElems mtx
+	println $ show $ transpose mtx
+	println $ show $ eachOutFront [ 1, 2, 3 ]
+
