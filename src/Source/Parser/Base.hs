@@ -18,8 +18,13 @@ module Source.Parser.Base
 	-- Literal Constants
 	, pLiteralFmtSP
 	, pInt, pIntSP
-	, pString, pStringSP )
+	, pString, pStringSP
+
+	-- Debugging and tracing combinators.
+	, pAnything, pTrace, pShowNext )
 where
+
+import Data.List			(intercalate)
 
 import Source.Exp
 import Source.Parser.Util
@@ -34,6 +39,8 @@ import DDC.Base.NameSpace
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import Control.Monad
+
+import Debug.Trace
 
 -- Helper Parsers ----------------------------------------------------------------------------------
 -- { inside }
@@ -327,4 +334,47 @@ pStringSP = token parseString
 	= Nothing
 
 pString	= liftM fst pStringSP
+
+
+
+--------------------------------------------------------------------------------
+-- Debugging and tracing combinators.
+
+-- Grab the next token and return it as a string.
+pAnything :: Parser String
+pAnything
+ = token (\t -> Just (show t))
+
+
+-- Print the supplied string and the next token.
+pTrace :: String -> Parser ()
+pTrace s
+ = 	do	Parsec.try
+ 		  $ do	let spaces = take (20 - length s) (repeat ' ')
+			x <- pAnything
+			trace (s ++ spaces ++ ": " ++ x) $ fail ""
+
+ <|>	return ()
+
+
+-- Print out the next 'count' tokens. Do not consume input.
+pShowNext :: Int -> Parser ()
+pShowNext count
+ = Parsec.try
+	$ do	x <- grabCount count []
+		trace ("pShowNext :\n    "
+			++ (intercalate "\n    " x)
+			++ "\n\n")
+			$ return ()
+		fail ""
+		
+
+
+grabCount :: Int -> [String] -> Parser [String]
+grabCount count accum
+ = if count <= 0
+	then return $ reverse accum
+	else
+	  do	x <- pAnything
+		grabCount (count - 1) (x : accum)
 
