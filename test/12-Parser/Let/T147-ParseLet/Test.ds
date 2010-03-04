@@ -1,0 +1,25 @@
+
+-- Already accept these two.
+funGood1 w
+ = 	let a () = w + 1
+	in w + a ()
+
+funGood2 x
+ = 	let	b ()	= x + 1
+		c	= 10
+	in	x + c + b ()
+
+
+-- This is a Disciple special that is not supported in Haskell.
+funGood3 y
+ = do	d () = y + 1
+	y + d ()
+
+-- Also need to accept this for compatibility with Haskell.
+-- Compatibility with Haskell lets us reuse tests from the Haskell
+-- test suite.
+funFixThis z
+ = do	let e () = z + 1
+	let f = 13 + z
+	z + e () + f
+
