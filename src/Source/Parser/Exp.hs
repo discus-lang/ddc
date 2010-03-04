@@ -427,7 +427,17 @@ pStmt
 -- | Parse a bind (only)
 pStmt_bind :: Parser (Stmt SP)
 pStmt_bind
- =	-- VAR ....
+ =	-- LET VAR ....
+ 	do	pTok K.Let
+		pTok K.CBra
+		var	<- pOfSpace NameValue pVar
+		pats	<- Parsec.many pPat1
+		stmt	<- pStmt_bindVarPat var pats
+		pSemis
+		pTok K.CKet
+		return	stmt
+
+ <|>	-- VAR ....
 	Parsec.try
           (do	var	<- pOfSpace NameValue pVar
 		pats	<- Parsec.many pPat1
