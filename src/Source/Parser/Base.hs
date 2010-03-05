@@ -360,14 +360,14 @@ pTrace s
 -- Print out the next 'count' tokens. Do not consume input.
 pShowNext :: Int -> Parser ()
 pShowNext count
- = Parsec.try
-	$ do	x <- grabCount count []
-		trace ("pShowNext :\n    "
-			++ (intercalate "\n    " x)
-			++ "\n\n")
-			$ return ()
-		fail ""
-		
+ =	do	Parsec.try
+		 $ do	x <- grabCount count []
+			trace ("pShowNext :\n    "
+				++ (intercalate "\n    " x)
+				++ "\n\n")
+				$ fail ""
+
+ <|>	return ()
 
 
 grabCount :: Int -> [String] -> Parser [String]
