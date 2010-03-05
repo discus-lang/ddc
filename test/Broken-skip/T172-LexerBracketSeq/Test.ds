@@ -1,0 +1,10 @@
+-- This should lex and parse.
+--
+-- Currently lexer generates a sequence (ignoring other tokens) of
+-- "[ { ] }". If the closing square bracket is moved to the following
+-- line, the correct sequence of "[ { } ]".
+
+trick xs = [ (x, y)
+		| x <- xs
+		, let y = x `mod` 3 ]
+
