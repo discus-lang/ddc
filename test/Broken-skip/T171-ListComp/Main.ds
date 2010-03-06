@@ -1,8 +1,19 @@
 
 tricky xs = [ (x, y)
-		| x	<- xs
-		, let y = x `mod` 3]
+		| x <- xs
+		, let y = x `mod` 3
+		]
 
-main
- = putStrLn $ show $ tricky [ 1, 2, 3 ]
+
+thing xs = [ (x, y)
+		| z <- xs
+		, let (Just x, Just y) = z
+		]
+
+
+main ()
+ = do	println $ show $ tricky [ 1 .. 8 ]
+	println	$ show
+		$ thing
+		$ map (\ i -> (Just i, Just (i + 1))) [1 .. 4]
 
