@@ -1,0 +1,10 @@
+
+-- Spaces around '-' works correctly.
+fun1 n = n - 1
+
+-- This results in a type unification error.
+fun2 n = n-1
+
+main ()
+ = do	println $ show $ fun1 10
+ 	println $ show $ fun2 10
