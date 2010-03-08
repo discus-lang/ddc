@@ -24,7 +24,7 @@ addFive x	= x + 5
 checkArithmetic ()
  = do 	print  "-- Arithmetic.\n"
 	checkI 5  	(2 + 3)
-	checkI -3	(-5 + 2)
+	checkI (-3)	(-5 + 2)
 	print "\n"
 
 

@@ -1,9 +1,9 @@
 
 -- Test out parsing of unary negation
 main () 
- = do 	println $ (show (id -5))
+ = do 	println $ (show (id (-5)))
 
 	x = 2
 	println $ show $ x - 3
-	println $ show $ x + -3
-	println $ show $ x - -3
+	println $ show $ x + (-3)
+	println $ show $ x - (-3)

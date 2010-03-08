@@ -195,18 +195,18 @@ tokens :-
  \" (@escDoubleQuote | (. # \"))* \"\#	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 2 s)) Unboxed) }
  \" (@escDoubleQuote | (. # \"))* \" 	{ ptags (\s -> mkLit (LString $ (drop 1 $ dropLast 1 s)) Boxed) }	
 
- \-?$digit+ \. $digit+ \# f $digit*	{ ptags (\s -> makeLiteralUB 'f' LFloat s) }
- \-?$digit+ \. $digit+ \# 		{ ptags (\s -> mkLit (LFloat $ read $ dropLast 1 s) Unboxed) }
- \-?$digit+ \. $digit+    f $digit*	{ ptags (\s -> makeLiteralB  'f' LFloat s) }
- \-?$digit+ \. $digit+			{ ptags (\s -> mkLit (LFloat $ read s) Boxed) }
+ $digit+ \. $digit+ \# f $digit*	{ ptags (\s -> makeLiteralUB 'f' LFloat s) }
+ $digit+ \. $digit+ \# 			{ ptags (\s -> mkLit (LFloat $ read $ dropLast 1 s) Unboxed) }
+ $digit+ \. $digit+    f $digit*	{ ptags (\s -> makeLiteralB  'f' LFloat s) }
+ $digit+ \. $digit+			{ ptags (\s -> mkLit (LFloat $ read s) Boxed) }
 
- \-?$digit+ \# u $digit*		{ ptags (\s -> makeLiteralUB 'u' LWord s) }
- \-?$digit+    u $digit*		{ ptags (\s -> makeLiteralB  'u' LWord s) }
+ $digit+ \# u $digit*			{ ptags (\s -> makeLiteralUB 'u' LWord s) }
+ $digit+    u $digit*			{ ptags (\s -> makeLiteralB  'u' LWord s) }
 
- \-?$digit+ \# i $digit*		{ ptags (\s -> makeLiteralUB 'i' LInt s) }
- \-?$digit+ \# 				{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
- \-?$digit+    i $digit*		{ ptags (\s -> makeLiteralB  'i' LInt s) }
- \-?$digit+				{ ptags (\s -> mkLit (LInt $ read s) Boxed) }
+ $digit+ \# i $digit*			{ ptags (\s -> makeLiteralUB 'i' LInt s) }
+ $digit+ \# 				{ ptags (\s -> mkLit (LInt $ read $ dropLast 1 s) Unboxed) }
+ $digit+    i $digit*			{ ptags (\s -> makeLiteralB  'i' LInt s) }
+ $digit+				{ ptags (\s -> mkLit (LInt $ read s) Boxed) }
 
  \'\\n\' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) Unboxed) }
  \' . \' \#				{ ptags (\s -> mkLit (LChar $ read $ dropLast 1 s) Unboxed) }

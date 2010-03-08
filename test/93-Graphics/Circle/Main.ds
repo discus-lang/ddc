@@ -76,13 +76,13 @@ clockFractal n t	= circ1 : circ2 : circ3 : lines
 		[ Local (Color 128 128 (n * 50) : (circle_centered (Vec2 0.0 0.0) 1.0 50 ) ) ] ++ 
 		[ Local	(Scale (a / 2.5) (a / 2.5) : clockFractal (n - 1) t ) ]
 
-	circ1	= Local (Translate  0.0 a	: Rotate rot		: circNm1)
-	circ2 	= Local (Translate  1.0  (- b)	: Rotate (- rot)	: circNm1)
-	circ3	= Local (Translate -1.0  (- b)	: Rotate rot		: circNm1)
+	circ1	= Local (Translate   0.0  a	: Rotate rot		: circNm1)
+	circ2 	= Local (Translate   1.0  (- b)	: Rotate (- rot)	: circNm1)
+	circ3	= Local (Translate (-1.0) (- b)	: Rotate rot		: circNm1)
 
 	-- join each iteration to the origin with some lines.
 	lines	= 
-		[ Line (Vec2 0.0 0.0) (Vec2 0.0 a)
-		, Line (Vec2 0.0 0.0) (Vec2  1.0 (- b))
-		, Line (Vec2 0.0 0.0) (Vec2 -1.0 (- b)) ]
+		[ Line (Vec2 0.0 0.0) (Vec2   0.0  a)
+		, Line (Vec2 0.0 0.0) (Vec2   1.0  (- b))
+		, Line (Vec2 0.0 0.0) (Vec2 (-1.0) (- b)) ]
 		

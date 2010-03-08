@@ -21,7 +21,7 @@ main ()
 	println $ show (-y + 5.0)
 
 	-- unary minus on literal function params
-	println $ show $ negate -5 + negate -27
+	println $ show $ negate (-5) + negate (-27)
 
 	-- unary minus after a infix op
 	println $ show $ 1 + - (id 5)

@@ -4,12 +4,12 @@ import Object
 import Light
 
 -- | Position of the eye viewing the world
-eyePos	= Vec3 0.0 0.0 -500.0
+eyePos	= Vec3 0.0 0.0 (-500.0)
 
 -- | Lights in the world
 lights =
 	[ LightPoint
-		(Vec3  300.0 -300.0 -100.0)
+		(Vec3  300.0 (-300.0) (-100.0))
 		(Color 150000.0 150000.0 150000.0)
 
 	, LightAmbient
@@ -29,18 +29,18 @@ objs =
 		(constf 0.5) 
 
 	, Object 
-		(Sphere (Vec3 -180.0 0.0 0.0) 80.0)
+		(Sphere (Vec3 (-180.0) 0.0 0.0) 80.0)
 		(constf $ Color 0.1 0.1 1.0)
 		(constf 0.5) 
 
 	, Object 
-		(Sphere (Vec3 0.0 -130.0 -80.0) 30.0)
+		(Sphere (Vec3 0.0 (-130.0) (-80.0)) 30.0)
 		(constf $ Color 1.0 1.0 1.0)
 		(constf 0.8) 
 		
 	, Object 
 		(Plane 	(Vec3 0.0 100.0 0.0) 
-			(Vec3 0.0 -1.0 -0.2).normalise)
+			(Vec3 0.0 (-1.0) (-0.2)).normalise)
 		checkers
 		(constf 0.5) ]
 		

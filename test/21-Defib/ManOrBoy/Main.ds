@@ -23,8 +23,8 @@ a1 k x1 x2 x3 x4 x5
 fn n = \() -> n
 
 main ()
- = do	out0 = a0 10 (fn 1) (fn -1) (fn -1) (fn 1) (fn 0)
-	out1 = a1 10 (fn 1) (fn -1) (fn -1) (fn 1) (fn 0)
+ = do	out0 = a0 10 (fn 1) (fn (-1)) (fn (-1)) (fn 1) (fn 0)
+	out1 = a1 10 (fn 1) (fn (-1)) (fn (-1)) (fn 1) (fn 0)
         
 	println "All outputs below should be equal to -67."
 	println $ "Output 0 : " % show out0
