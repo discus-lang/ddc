@@ -58,19 +58,15 @@ import GlaExts
 -- This code is in the PUBLIC DOMAIN; you may copy it freely and use
 -- it for any purpose whatsoever.
 
-
-
-
-
-
+{-# LINE 18 "templates/wrappers.hs" #-}
 
 -- -----------------------------------------------------------------------------
 -- The input type
 
 
-type AlexInput = (AlexPosn, 	-- current position,
-		  Char,		-- previous char
-		  String)	-- current input string
+type AlexInput = (AlexPosn,     -- current position,
+                  Char,         -- previous char
+                  String)       -- current input string
 
 alexInputPrevChar :: AlexInput -> Char
 alexInputPrevChar (p,c,s) = c
@@ -78,10 +74,10 @@ alexInputPrevChar (p,c,s) = c
 alexGetChar :: AlexInput -> Maybe (Char,AlexInput)
 alexGetChar (p,c,[]) = Nothing
 alexGetChar (p,_,(c:s))  = let p' = alexMove p c in p' `seq`
-				Just (c, (p', c, s))
+                                Just (c, (p', c, s))
 
 
-{-# LINE 45 "templates/wrappers.hs" #-}
+{-# LINE 51 "templates/wrappers.hs" #-}
 
 -- -----------------------------------------------------------------------------
 -- Token positions
@@ -95,7 +91,7 @@ alexGetChar (p,_,(c:s))  = let p' = alexMove p c in p' `seq`
 
 
 data AlexPosn = AlexPn !Int !Int !Int
-	deriving (Eq,Show)
+        deriving (Eq,Show)
 
 alexStartPos :: AlexPosn
 alexStartPos = AlexPn 0 1 1
@@ -109,25 +105,27 @@ alexMove (AlexPn a l c) _    = AlexPn (a+1)  l     (c+1)
 -- -----------------------------------------------------------------------------
 -- Default monad
 
-{-# LINE 150 "templates/wrappers.hs" #-}
+{-# LINE 162 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
 -- Monad (with ByteString input)
 
-{-# LINE 233 "templates/wrappers.hs" #-}
+{-# LINE 251 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
 -- Basic wrapper
 
-{-# LINE 255 "templates/wrappers.hs" #-}
+{-# LINE 273 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
 -- Basic wrapper, ByteString version
 
-{-# LINE 277 "templates/wrappers.hs" #-}
+{-# LINE 297 "templates/wrappers.hs" #-}
+
+{-# LINE 322 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
@@ -139,18 +137,18 @@ alexMove (AlexPn a l c) _    = AlexPn (a+1)  l     (c+1)
 --alexScanTokens :: String -> [token]
 alexScanTokens str = go (alexStartPos,'\n',str)
   where go inp@(pos,_,str) =
-	  case alexScan inp 0 of
-		AlexEOF -> []
-		AlexError _ -> error "lexical error"
-		AlexSkip  inp' len     -> go inp'
-		AlexToken inp' len act -> act pos (take len str) : go inp'
+          case alexScan inp 0 of
+                AlexEOF -> []
+                AlexError _ -> error "lexical error"
+                AlexSkip  inp' len     -> go inp'
+                AlexToken inp' len act -> act pos (take len str) : go inp'
 
 
 
 -- -----------------------------------------------------------------------------
 -- Posn wrapper, ByteString version
 
-{-# LINE 309 "templates/wrappers.hs" #-}
+{-# LINE 354 "templates/wrappers.hs" #-}
 
 
 -- -----------------------------------------------------------------------------
@@ -708,9 +706,9 @@ alex_action_116 =  ptags (\s -> Junk s)
 -- -----------------------------------------------------------------------------
 -- INTERNALS and main scanner engine
 
-{-# LINE 35 "templates/GenericTemplate.hs" #-}
+{-# LINE 37 "templates/GenericTemplate.hs" #-}
 
-{-# LINE 45 "templates/GenericTemplate.hs" #-}
+{-# LINE 47 "templates/GenericTemplate.hs" #-}
 
 
 data AlexAddr = AlexA# Addr#
@@ -824,12 +822,12 @@ alex_scan_tkn user orig_input len input s last_acc =
 
 
 	let
-		base   = alexIndexInt32OffAddr alex_base s
-		(I# (ord_c)) = ord c
-		offset = (base +# ord_c)
-		check  = alexIndexInt16OffAddr alex_check offset
+		!(base) = alexIndexInt32OffAddr alex_base s
+		!((I# (ord_c))) = ord c
+		!(offset) = (base +# ord_c)
+		!(check)  = alexIndexInt16OffAddr alex_check offset
 		
-		new_s = if (offset >=# 0#) && (check ==# ord_c)
+		!(new_s) = if (offset >=# 0#) && (check ==# ord_c)
 			  then alexIndexInt16OffAddr alex_table offset
 			  else alexIndexInt16OffAddr alex_deflt s
 	in
