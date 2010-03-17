@@ -21,7 +21,7 @@ import qualified Main.Sea		as SE
 
 -- module
 import qualified Module.Export		as M
-import qualified Module.ExportNew	as MN
+-- import qualified Module.ExportNew	as MN
 import qualified Module.Scrape		as M
 
 -- source
@@ -136,7 +136,6 @@ compileFile_parse
 
 	-- extract some file names
 	let modName		= M.scrapeModuleName sRoot
-
 	let pathSource		= let Just s = M.scrapePathSource sRoot in s
 
 	let Just (fileDir, fileBase, _) 
@@ -174,14 +173,10 @@ compileFile_parse
 			importsExp)
 -}
 
-	-- Parse the source file.
+	-- Parse the source file ----------------------------------------------
 	outVerb $ ppr $ "  * Source: Parse\n"
 	(sParsed, pragmas)	
 			<- {-# SCC "Main.parsed" #-} SS.parse pathSource sSource
-
-	outVerb	$ "  * Pragmas\n"
-		%> punc "\n" pragmas
-		% "\n\n"
 
 	-- Slurp out pragmas
 	let pragmas	= Pragma.slurpPragmaTree sParsed
@@ -197,11 +192,8 @@ compileFile_parse
 	------------------------------------------------------------------------
 	-- Source Stages
 	------------------------------------------------------------------------
-
-	-- slurp out name of vars to inline
-	inlineVars	<- SS.sourceSlurpInlineVars sParsed
 	
-	-- Rename variables and add uniqueBinds.
+	-- Rename variables and add uniqueBinds -------------------------------
 	outVerb $ ppr $ "  * Source: Rename\n"
 	((_, sRenamed) : modHeaderRenamedTs)
 			<- {-# SCC "Main.renamed" #-}
@@ -230,7 +222,8 @@ compileFile_parse
 	fixTable	<- SS.sourceSlurpFixTable
 				(sRenamed ++ hRenamed)
 	
-	-- Defix the source.
+
+	-- Defix the source ---------------------------------------------------
 	outVerb $ ppr $ "  * Source: Defix\n"
 	sDefixed	<- SS.defix
 				sRenamed
@@ -239,12 +232,14 @@ compileFile_parse
 	-- Slurp out kind table
 	kindTable	<- SS.sourceKinds (sDefixed ++ hRenamed)
 	
-	-- Lint check the source program before desugaring
+	-- Lint check the source program before desugaring -------------------
+	outVerb $ ppr $ "  * Source: Lint\n"
+
 	(hRenamed_ok, sDefixed_ok)	
 			<- SS.lint hRenamed sDefixed
 	
-	-- Desugar the source language
-	outVerb $ ppr $ "  * Source: Desugar\n"
+	-- Desugar the source language ----------------------------------------
+	outVerb $ ppr $ "  * Convert to Desugared IR\n"
 	(hDesugared, sDesugared)
 			<- {-# SCC "Main.desugared" #-}
 			   SS.desugar
@@ -257,27 +252,31 @@ compileFile_parse
 	-- Desugar/Type inference stages
 	------------------------------------------------------------------------
 
-	-- Do kind inference and tag all type constructors with their kinds
-	outVerb $ ppr $ "  * Desugar: Infer Kinds\n"
+	-- Do kind inference --------------------------------------------------
+	outVerb $ ppr $ "  * Desugar: InferKinds\n"
 	(hKinds, sKinds, kindTable)
 		<- SD.desugarInferKinds "DK" hDesugared sDesugared
+
 	
-	-- Elaborate effects and closures of types in foreign imports
+	-- Elaborate effects and closures of types in foreign imports ---------
 	outVerb $ ppr $ "  * Desugar: Elaborate\n"
 	(hElab, sElab)
 		<- SD.desugarElaborate "DE" hKinds sKinds
 
-	-- Eta expand simple v1 = v2 projections
-	outVerb $ ppr $ "  * Desugar: Project Eta-Expand\n"
+
+	-- Eta expand simple v1 = v2 projections ------------------------------
+	outVerb $ ppr $ "  * Desugar: ProjectEta\n"
 	sProjectEta
 		<- SD.desugarProjectEta "DE" sElab
+
 			
-	-- Snip down dictionaries and add default projections.
-	outVerb $ ppr $ "  * Desugar: Project Snip\n"
+	-- Snip down dictionaries and add default projections -----------------
+	outVerb $ ppr $ "  * Desugar: Project\n"
 	(dProject, projTable)	
 		<- SD.desugarProject "SP" modName hElab sProjectEta
 
-	-- Slurp out type constraints.
+
+	-- Slurp out type constraints -----------------------------------------
 	outVerb $ ppr $ "  * Desugar: Slurp\n"
 
 	(  sTagged
@@ -295,17 +294,17 @@ compileFile_parse
 	when (elem Arg.StopConstraint ?args)
 		compileExit
 
+
+	-- Solve type constraints ---------------------------------------------
 	outVerb $ ppr "  * Type: Solve\n"
 
-	-- Solve type constraints
 	(  typeTable
 	 , typeInst
 	 , typeQuantVars
 	 , vsFree
 	 , vsRegionClasses 
 	 , vsProjectResolve)
-	 		<- runStage "solve"
-			$  SD.desugarSolveConstraints
+			<- SD.desugarSolveConstraints
 				sConstrs
 				vsTypesPlease
 				vsBoundTopLevel
@@ -316,12 +315,12 @@ compileFile_parse
 	when (elem Arg.StopType ?args)
 		compileExit
 
-	outVerb $ ppr $ "  * Desugar: ToCore\n"
 		
-	-- Convert source tree to core tree
+	-- Convert source tree to core tree -----------------------------------
+	outVerb $ ppr $ "  * Convert to Core IR\n"
+
 	(  cSource
-	 , cHeader )	<- runStage "core"
-	 		$  SD.desugarToCore
+	 , cHeader )	<- SD.desugarToCore
 		 		sTagged
 				hTagged
 				sigmaTable
@@ -347,14 +346,15 @@ compileFile_parse
 	-- Core stages
 	------------------------------------------------------------------------	
 
-	-- Convert to normal form
-	outVerb $ ppr $ "  * Core: Normalise Do Exprs\n"
+	-- Convert to normal form ---------------------------------------------
+	outVerb $ ppr $ "  * Core: NormalDo\n"
+	cNormalise	<- SC.coreNormalDo 
+				"core-normaldo" "CN" 
+				cSource
 
-	cNormalise	<- SC.coreNormalDo "core-normaldo" "CN" cSource
 				
-	-- Create local regions.
-	when ?verbose
-	 $ do	putStr $ "  * Core: Bind\n"
+	-- Create local regions -----------------------------------------------
+	outVerb $ ppr $ "  * Core: Bind\n"
 
 	-- these regions have global scope
 	let rsGlobal	= Set.filter (\v -> Var.nameSpace v == NameRegion) 
@@ -365,94 +365,99 @@ compileFile_parse
 				rsGlobal
 				cNormalise
 
-	-- Convert to A-normal form
+
+	-- Convert to A-normal form -------------------------------------------
+	outVerb $ ppr $ "  * Core: Snip\n"
 	cSnip		<- SC.coreSnip "core-snip" "CS" topVars cBind
 
-	-- Thread through witnesses
+
+	-- Thread through witnesses -------------------------------------------
+	outVerb $ ppr $ "  * Core: Thread\n"
 	cThread		<- SC.coreThread cHeader cSnip
 
-	-- Check type information and add annotations to each stmt.
-	when ?verbose
-	 $ do	putStr $ "  * Core: Reconstruct\n"
 
-	cReconstruct	<- runStage "reconstruct"
-			$ SC.coreReconstruct "core-reconstruct" cHeader cThread
+	-- Reconstruct and check types ----------------------------------------
+	outVerb $ ppr $ "  * Core: Reconstruct\n"
+	cReconstruct	<- SC.coreReconstruct 
+				"core-reconstruct" 
+				cHeader cThread
 
-	-- lint: 
-	when ?verbose
-	 $ do	putStr $ "  * Core: Lint\n"
 
-	SC.coreLint "core-lint-reconstruct" cReconstruct cHeader
+	-- Lint the core program ----------------------------------------------
+	outVerb $ ppr $ "  * Core: Lint\n"
+
+	SC.coreLint "core-lint-reconstruct"
+	 	cReconstruct 
+		cHeader
 	
 	
-	-- Call class instance functions and add dictionaries.
-	when ?verbose
-	 $ do	putStr $ "  * Core: Dict\n"
-
+	-- Rewrite projections to use instances from dictionaries -------------
+	outVerb $ ppr $ "  * Core: Dict\n"
 	cDict		<- SC.coreDict 
 				cHeader
 				cReconstruct
 
-	-- Identify primitive operations
+
+	-- Identify prim ops --------------------------------------------------
+	outVerb $ ppr $ "  * Core: Prim\n"
 	cPrim		<- SC.corePrim	cDict
 
-	------------------------------------------------------------------------
-	-- Core stages
-	------------------------------------------------------------------------	
 
-	when ?verbose
-	 $ do	putStr $ "  * Core: Optimise\n"
+	-- Inline functions ---------------------------------------------------
+{- 	TODO: currently broken
+	-- slurp out name of vars to inline
+	inlineVars	<- SS.sourceSlurpInlineVars sParsed
 
-	-- Inline forced inline functions
 	cInline		<- SC.coreInline
 				cPrim
 				cHeader
 				inlineVars
+-}
 
-	-- Perform simplification
-	cSimplify	<- if elem Arg.OptSimplify ?args
-				then SC.coreSimplify "CI" topVars cInline cHeader
-				else return cInline
+	-- Simplifier does various simple optimising transforms ---------------
+	outVerb $ ppr $ "  * Core: Simplify\n"
+	cSimplified	<- if elem Arg.OptSimplify ?args
+				then SC.coreSimplify "CI" topVars cPrim cHeader
+				else return cPrim
 	
 	-- Do the full laziness optimisation.
+{-	TODO: currently broken
 	cFullLaziness	<- SC.coreFullLaziness 
 				modName
 				cSimplify
 				cHeader
-
-	-- Check the program one last time
-	--	Lambda lifting doesn't currently preserve the typing.
-	cReconstruct_final	
-		<- runStage "reconstruct-final"
-		$  SC.coreReconstruct  "core-reconstruct-final" cHeader cFullLaziness
+-}
+	-- Check the program one last time ------------------------------------
+	--	Lambda lifting doesn't currently preserve the typing, 
+	--	So we can't check it again after this point
+	outVerb $ ppr $ "  * Core: Check\n"
+	cProg_checked	
+		<- SC.coreReconstruct  
+			"core-reconstruct-final" 
+			cHeader 
+			cSimplified
 
 	-- Convert to glob form.
 	-- TODO: Use Glob for all of the core stages.
-	let cgProg_prep		= C.globOfTree cReconstruct_final
+--	let cgProg_checked	= C.globOfTree cProg_checked
 	let cgHeader		= C.globOfTree cHeader
 	
 	-- Slurp out ctor defs
 	let mapCtorDefs	= Map.union
-				(C.slurpCtorDefs cReconstruct_final)
+				(C.slurpCtorDefs cProg_checked)
 				(C.slurpCtorDefs cHeader)
 			
-	-- Perform lambda lifting.
-	when ?verbose
-	 $ do	putStr $ "  * Core: Lift\n"
-
+			
+	-- Perform lambda lifting ---------------------------------------------
+	outVerb $ ppr $ "  * Core: LambdaLift\n"
 	(  cLambdaLift
 	 , vsLambda_new) <- SC.coreLambdaLift
-				cReconstruct_final
+				cProg_checked
 				cHeader
 
 
---	Can't lint the code after lifting, lifter doesn't preserve
---	kinds of witness variables.
---  	runStage "lint-lifted" 
---		$ SC.coreLint "core-lint-lifted" cLambdaLift cHeader
-
-
-	-- Convert field labels to field indicies
+	-- Convert field labels to field indicies -----------------------------
+	outVerb $ ppr $ "  * Core: LabelIndex\n"
 	cLabelIndex	<- SC.coreLabelIndex
 				mapCtorDefs
 				cLambdaLift
@@ -460,27 +465,31 @@ compileFile_parse
 	let cgProg_labelIndex	= C.globOfTree cLabelIndex
 
 				
-	-- Sequence bindings and CAFs
+	-- Sequence bindings and CAFs ------------------------------------------
+	outVerb $ ppr $ "  * Core: Sequence\n"
 	cSequence	<- SC.coreSequence	
 				cLabelIndex
 				cHeader
 					
-	-- Resolve partial applications.
+	-- Resolve partial applications ---------------------------------------
+	outVerb $ ppr $ "  * Core: Curry\n"
 	cCurry		<- SC.curryCall
 				cSequence
 				cHeader
 				cgProg_labelIndex	-- for super arities.
 				cgHeader		-- TODO: refactor to just take the globs.
 				
-	-- Rewrite so atoms are shared.
+	-- Rewrite so atoms are shared ----------------------------------------
+	outVerb $ ppr $ "  * Core: Atomise\n"
 	cAtomise	<- if elem Arg.OptAtomise ?args
 				then SC.coreAtomise cCurry cHeader
 				else return cCurry
 	
 	let cgProg_final	= C.globOfTree cAtomise
 	
-	-- Generate the module interface
-	--
+
+	-- Generate the module interface --------------------------------------
+	outVerb $ ppr $ "  * Make Interface File\n"
 	diInterface	<- M.makeInterface
 				modName
 				sRenamed
@@ -493,25 +502,23 @@ compileFile_parse
 	writeFile (?pathSourceBase ++ ".di") diInterface	
 
 	-- Make the new style module interface.
-	let Just thisScrape	
+{-	let Just thisScrape	
 			= Map.lookup modName scrapes
 
 	let diNewInterface	
 	 		= MN.makeInterface
 				thisScrape
 
---	writeFile (?pathSourceBase ++ ".di-new") 
---		$ show diNewInterface
-
+	writeFile (?pathSourceBase ++ ".di-new") 
+		$ show diNewInterface
+-}
 
 	-- !! Early exit on StopCore
 	when (elem Arg.StopCore ?args)
 		compileExit
 
-	-- Convert to Sea code.
-	-- Perform lambda lifting.
-	when ?verbose
-	 $ do	putStr $ "  * Core: ToSea\n"
+	-- Convert to Sea code ------------------------------------------------
+	outVerb $ ppr $ "  * Convert to Sea IR\n"
 
 	(eSea, eHeader)	<- SC.toSea
 				"TE"
@@ -522,40 +529,48 @@ compileFile_parse
 	-- Sea stages
 	------------------------------------------------------------------------
 		
-	-- Eliminate simple v1 = v2 statements.
+	-- Subsitute simple v1 = v2 statements ---------------------------------
+	outVerb $ ppr $ "  * Sea: Substitute\n"
 	eSub		<- SE.seaSub
 				eSea
 				
-	-- Expand out constructors.
+	-- Expand out constructors ---------------------------------------------
+	outVerb $ ppr $ "  * Sea: ExpandCtors\n"
 	eCtor		<- SE.seaCtor
 				eSub
 				
-	-- Expand out thunking.
+	-- Expand out thunking -------------------------------------------------
+	outVerb $ ppr $ "  * Sea: Thunking\n"
 	eThunking	<- SE.seaThunking
 				eCtor
 				
-	-- Add suspension forcing code.
+	-- Add suspension forcing code -----------------------------------------
+	outVerb $ ppr $ "  * Sea: Forcing\n"
 	eForce		<- SE.seaForce
 				eThunking
 				
-	-- Add GC slots and fixup calls to CAFS
+	-- Add GC slots and fixup calls to CAFS --------------------------------
+	outVerb $ ppr $ "  * Sea: Slotify\n"
 	eSlot		<- SE.seaSlot	
 				eForce
 				eHeader
 				cgHeader
 				cgProg_final
 
-	-- Flatten out match stmts.
+	-- Flatten out match stmts --------------------------------------------
+	outVerb $ ppr $ "  * Sea: Flatten\n"
 	eFlatten	<- SE.seaFlatten
 				"EF"
 				eSlot
 
-	-- Generate module initialisation functions.
+	-- Generate module initialisation functions ---------------------------
+	outVerb $ ppr $ "  * Sea: Init\n"
 	eInit		<- SE.seaInit
 				modName
 				eFlatten
 
-	-- Generate C source code
+	-- Generate C source code ---------------------------------------------
+	outVerb $ ppr $ "  * Generate C source code\n"
 	(  seaHeader
 	 , seaSource )	<- SE.outSea
 				modName
@@ -572,6 +587,8 @@ compileFile_parse
 				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
 				
+	-- Write C files ------------------------------------------------------
+	outVerb $ ppr $ "  * Write C files\n"
 	writeFile (?pathSourceBase ++ ".ddc.c") seaSourceInit
 	writeFile (?pathSourceBase ++ ".ddc.h") seaHeader
 
@@ -599,10 +616,5 @@ compileFile_parse
 -----
 compileExit
  = do 	System.exitWith System.ExitSuccess
-
-
-runStage :: String -> IO a -> IO a
-runStage name stage
- =	stage
 
 	 	 
