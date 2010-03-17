@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-unused-imports #-}
 
 -- | Wrappers for the compiler stages dealing with the Core IR
 --	These wrappers are responsible for calling the functions that actually
@@ -21,7 +22,6 @@ module Main.Core
 	, curryCall
 	, coreAtomise
 	, toSea)
-
 where
 
 -- These are all the transforms, in rough order that they are applied to the core program.
@@ -40,7 +40,7 @@ import Core.Prim			(primTree)
 import Core.Lint			(lintTree)
 import Core.Lift			(lambdaLiftTree)
 import Core.LabelIndex			(labelIndexTree)
-import Core.Curry			(curryTree, slurpSupersTree, isCafP_opType)
+import Core.Curry			(curryTree)
 import Core.ToSea			(toSeaTree)
 
 import qualified Core.Optimise.Simplify	as Simplify
@@ -61,20 +61,13 @@ import qualified Sea.Util		as E
 import Main.Arg
 import Main.Dump
 
-import qualified Shared.Var		as Var
-import Shared.Var			(Var, Module)
+import Shared.Var			(Module)
 import Shared.Error
 import Shared.Pretty
 
------
-import Util
-import Debug.Trace
-
 import qualified Data.Map		as Map
-import Data.Map				(Map)
-
 import qualified Data.Set		as Set
-import Data.Set				(Set)
+import Util
 
 
 -- | Convert to A-Normal form.
@@ -261,7 +254,7 @@ coreFullLaziness
 	-> IO Tree		
 	
 coreFullLaziness
-	moduleName
+	modName
 	cTree
 	cHeader
 
@@ -271,7 +264,7 @@ coreFullLaziness
 	dumpDot GraphApps "apps"
 		$ dotAppGraph appMap
 
-	let cTree'	= fullLazinessTree moduleName cHeader cTree
+	let cTree'	= fullLazinessTree modName cHeader cTree
 --	dumpCT DumpCoreFullLaziness "core-full-laziness" (eraseModuleTree cTree')
 	-- eraseModuleTree
 
@@ -345,8 +338,13 @@ coreLambdaLift
 	
 coreLambdaLift cSource cHeader
  = do	
+	let isPBind pp
+		= case pp of
+			PBind{}	-> True
+			_	-> False
+			
  	let (cBinds, cOther)
-			= partition ((=@=) PBind{}) cSource
+			= partition isPBind cSource
  
  	let vsBoundTop	= Set.fromList
 			$ catMap slurpBoundVarsP (cSource ++ cHeader)
@@ -414,28 +412,16 @@ coreSequence cSource cHeader
 curryCall
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-	-> IO (Tree, Set Var)	-- ^ transformed tree, caf vars
+	=> Tree				-- ^ source tree
+	-> Tree				-- ^ header tree
+	-> Glob				-- ^ source glob
+	-> Glob				-- ^ header glob
+	-> IO Tree			-- ^ transformed core tree
 
-curryCall cSource cHeader
- = do	let supers	= slurpSupersTree (cHeader ++ cSource)
-  	let cafs	= Map.filter isCafP_opType supers
-  	let cCurryCall	= curryTree cHeader cSource supers
-
+curryCall cSource cHeader cgSource cgHeader
+ = do	let cCurryCall	= curryTree cHeader cSource cgHeader cgSource
 	dumpCT DumpCoreCurry "core-curry" cCurryCall
-
-	dumpS  DumpCoreCurry "core-curry--supers"
-		("-- names of supers\n"
-		++ (catInt "\n" $ sort $ map show $ map fst $ Map.toList supers))
-	
-	dumpS  DumpCoreCurry "core-curry--cafs"
-		("-- names of supers which are also CAFs\n"
-		++ (catInt "\n" $ sort $ map show $ map fst $ Map.toList cafs))
-	
-	let cafVars	= Set.fromList $ Map.keys cafs
-	
-	return	(cCurryCall, cafVars)
+	return	cCurryCall
 
 
 					
@@ -472,9 +458,11 @@ toSea	unique cTree cHeader
 	dumpDot GraphApps "apps-final"
 		$ dotAppGraph appMap
 
-	let mapCtorDefs	= Map.union 
+{-	let mapCtorDefs	= Map.union 
 				(slurpCtorDefs cTree)
 				(slurpCtorDefs cHeader)
+-}
+	let mapCtorDefs	= Map.empty
 
 	let eTree	= toSeaTree (unique ++ "S") mapCtorDefs cTree
 	dumpET DumpSea "sea--source"

@@ -203,16 +203,16 @@ slurpP	(PData sp v vs ctors)
 	-- in the object. The constraint solver will need this to work out
 	-- the result type for projections.
 	--
-	let dataFields	= CDataFields (TSM $ SMData sp) v vs 
+{-	let dataFields	= CDataFields (TSM $ SMData sp) v vs 
 			$ catMaybes
 			$ map (\df -> case dLabel df of
 					Nothing	-> Nothing
 					Just l	-> Just (l, dType df))
 			$ concat
 			$ [fieldDefs	| CtorDef _ _ fieldDefs <- ctors]
-			
+-}			
 	return	( top'
-		, concat constrss ++ [dataFields])
+		, concat constrss ) -- ++ [dataFields])
 			
 
 -- projection dictionaries

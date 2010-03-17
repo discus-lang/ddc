@@ -17,6 +17,7 @@ import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
+import Data.Function
 
 stage	= "Sea.Pretty"
 
@@ -33,7 +34,17 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
  ppr xx
   = case xx of
 	PNil	 		-> ppr $ "$PNil\n"
-	PData v vds		-> "@Data" % sV v % vds
+
+	PData v ctors
+	 | Map.null ctors
+	 -> "data " % " " % ppr v % ";\n" 
+
+	 | otherwise
+	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
+	    in  "data" <> v <> "where\n"
+	 	% "{\n" 
+	 	%> ("\n\n" %!% ctorsList % "\n")
+		% "}\n"
 
 	-- supers
 	PProto v argTypes resultType
@@ -62,24 +73,9 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 	%> ("\n" %!% ss % "\n")
 	 % "}\n\n\n"
 	
-
-	-- constructors
-	PCtor v  argVs   resultV
-	 -> "@PCtor " % v %>> ":$ " % " -> " %!% (argVs ++ [resultV]) % ";\n"
-
-
 	-- atoms
 	PAtomProto v t	-> "extern " % t % " _atom" % sV v % ";\n"
 	PAtom v t	-> t % " _atom" % sV v % " = 0;\n" 
-
-	-- structs
-	PStruct v cs
-	 -> "struct " % "_S" % sV v % "\n"
-		% "{\n"
-		%>> "Tag " 	%>> "_tag;\n"
-		%>> "UInt "	%>> "_size;\n"
-		%> ("\n" %!% map (\(v, t) -> t % " " %>> sVL v % ";") cs) % "\n"
-		% "};\n\n"
 
 	-- Sea hackery.
 	PInclude s		-> "#include <" % s % ">\n"
@@ -89,6 +85,17 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PBlank			-> ppr "\n"
 	PHashDef s1 s2		-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
 
+
+-- CtorDef --------------------------------------------------------------------------------------------
+instance Pretty CtorDef PMode where
+ ppr xx
+  = case xx of
+  	CtorDef v t arity tag fs
+ 	 -> v 	% "\n"
+		%> 	( ":: " % ppr t % "\n"
+			% "with { ARITY  = " % arity	% "\n"
+ 			% "     , TAG    = " % tag      % "\n"
+			% "     , FIELDS = " % fs 	% "}")
 
 
 -- Stmt --------------------------------------------------------------------------------------------
@@ -267,10 +274,9 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	XArg x t i
 	 -> case t of
-	 	TData		-> "_DARG(" % x % ", " % i % ")"
-		TThunk		-> "_TARG(" % x % ", " % i % ")"
-		TSusp 	 	-> "_SARG(" % x % ", " % i % ")"
-		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
+	 	TObjData	-> "_DARG(" % x % ", " % i % ")"
+		TObjThunk	-> "_TARG(" % x % ", " % i % ")"
+		TObjSusp 	-> "_SARG(" % x % ", " % i % ")"
 
 	XField x v l		-> "_FIELD("  % x % ", " % "_S" % sV v % ", " % l % ")"
 	XFieldR x v l		-> "_FIELDR(" % x % ", " % "_S" % sV v % ", " % l % ")"
@@ -330,14 +336,11 @@ instance Pretty Type PMode where
  ppr xx
   = case xx of
 	TVoid		-> ppr "void"
-	TObj		-> ppr "Obj*"
-
+	TFun t1 t2	-> t1 <> "->" <> t2
 	TPtr x		-> x % "*"
-
-	TCon var []
-	 -> ppr $ getSeaName var
-		 		
-	_ -> panic stage $ "pprStr[Type]: no match for " % show xx
+	TCon var []	-> ppr $ getSeaName var
+	TObj		-> ppr "Obj*"
+	_ 		-> panic stage $ "pprStr[Type]: no match for " % show xx
 
 getSeaName :: Var -> String
 getSeaName var

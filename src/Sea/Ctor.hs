@@ -10,18 +10,20 @@ import Shared.Error
 import qualified Shared.Unique	as Unique
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 import Util
 
 -----
-stage	= "Sea.Ctor"
+-- stage	= "Sea.Ctor"
 
 -----
 type	ExM	= VarGenM 
 
 -- | Expand the definitions of data constructors in this tree.
 expandCtorTree :: Tree () -> Tree ()
-expandCtorTree	ts
-	= evalState (liftM concat $ mapM expandDataP ts) 
+expandCtorTree tree
+	= evalState (liftM concat $ mapM expandDataP tree) 
 	$ Var.XBind Unique.seaCtor 0
 	
 -- | Expand data constructors in a top level thing.
@@ -30,30 +32,29 @@ expandDataP p
  = case p of
  	PData v ctors
 	 -> liftM concat 
-	  $ mapM (\(v, fs) -> expandCtor v fs) 
-	  $ ctors
+	  $ mapM (\(v, ctor) -> expandCtor ctor) 
+	  $ Map.toList ctors
 
 	_		-> return [p]
 	
 -- | Expand the definition of a constructor.
 expandCtor 
-	:: Var 
-	-> [DataField Var Type] 
+	:: CtorDef
 	-> ExM [Top ()]
 	
-expandCtor v fields
+expandCtor (CtorDef vCtor tCtor arity tag fields)
  = do
 	-- var of the constructed object.
 	objV		<- newVarN NameValue
 
-	-- allocation
+	-- allocate the object
 	let allocS 	= SAssign (XVar objV TObj) TObj 
-			$ XAllocData v (length fields)
+			$ XAllocData vCtor 
+			$ arity
 
 	-- field init
 	(stmtss, mArgVs)
-		<- liftM unzip
-		$  zipWithM (expandField objV) [0..] fields
+		<- liftM unzip $ mapM (expandField objV) [0 .. arity - 1]
 
 	let fieldSs	= concat stmtss
 	let argVs	= catMaybes mArgVs
@@ -62,12 +63,12 @@ expandCtor v fields
 	let retS	= SReturn $ (XVar objV TObj) 
 
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
-	let super	= [PSuper v argVs TObj stmts]
+	let super	= [PSuper vCtor argVs TObj stmts]
 	
 	-- If this ctor has no fields, emit an atom def as well
-	let atom	= if isNil fields
-				then	[ PAtomProto v TObj
-					, PAtom      v TObj]
+	let atom	= if Map.null fields
+				then	[ PAtomProto vCtor TObj
+					, PAtom      vCtor TObj]
 				else 	[]
 	
 	return 		$ atom ++ super
@@ -76,22 +77,22 @@ expandCtor v fields
 -- | Create initialization code for this field
 expandField
 	:: Var				-- ^ var of object being constructed.
-	-> Int				-- ^ index of field.
-	-> DataField Var Type		-- ^ field to build.
+	-> Int				-- ^ index of argument.
 	-> ExM 	( [Stmt ()]		-- initialization code
 
 		, Maybe (Var, Type))	-- the arguments to the constructor
 					--	(will be Nothing if the field is secondary)
-expandField objV ix field
+expandField objV ixArg
+ = do	argV	<- newVarN NameValue
+	return	( [SAssign 	(XArg (XVar objV TObj) TObjData ixArg)
+				TObj 
+				(XVar argV TObj)]
+		, Just (argV, TObj) )
 
-	-- Primary fields get their values from constructor arguments.
-	| dPrimary field
-	= do	argV	<- newVarN NameValue
-		return	( [SAssign 	(XArg (XVar objV (dType field)) TData ix) 
-					(dType field) 
-					(XVar argV (dType field))]
-			, Just (argV, TObj) )
+--	-- Primary fields get their values from constructor arguments.
+--	| dPrimary field
 
+{-
 	-- Secondary fields get their values by calling the init function
 	| not $ dPrimary field
 	, Just vInit		<- dInit field
@@ -105,3 +106,4 @@ expandField objV ix field
 	, Nothing	<- dInit field
 	, Just name	<- dLabel field
 	= panic stage $ "expandField: no initialization expression for non-primary field '" % name % "'"
+-}

@@ -34,6 +34,8 @@ import Shared.Error
 
 import Util
 import Control.Monad.State.Strict
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 
 -----
 stage	= "Core.Plate.Trans"
@@ -70,6 +72,12 @@ instance (Monad m, TransM m a)
   transZM table xx 
    = 	mapM (transZM table) xx
 
+
+-----
+instance (Ord a, Monad m, TransM m a, TransM m b) 
+	=> TransM m (Map a b) where
+  transZM table xx
+   = liftM Map.fromList $ mapM (transZM table) $ Map.toList xx
 
 -----
 instance (Monad m, TransM m a)
@@ -273,19 +281,11 @@ followB_bind table (BMore v t)
 instance Monad m => TransM m Top where
  transZM table p
   = case p of
- 	PNil
-	 ->	transP table	$ PNil
-	 
 	PBind v x
 	 -> do	v'		<- followV table v
 		x'		<- followX table x
 		transP table	$ PBind v' x'
 		
-{-	PSuper v x
-	 -> do	v'		<- followV table v
-		x'		<- followX table x
-		transP table	$ PSuper v' x'
--}		
 	PExtern v tv to
 	 -> do	v'		<- followV table v
 	 	tv'		<- followT table tv
@@ -297,15 +297,11 @@ instance Monad m => TransM m Top where
 		k'		<- followK table k
 		transP table 	$ PExternData v' k'
 		
-	PData v vs cs
+	PData v ctors
 	 -> do	v'		<- transZM table v
-	 	vs'		<- transZM table vs
-		cs'		<- transZM table cs
-	 	transP table 	$ PData v' vs' cs'
-	 
-	PCtor{}
-	 ->	transP table p
-	 
+		ctors'		<- transZM table ctors
+	 	transP table 	$ PData v' ctors'
+	 	 
 	PRegion{}
 	 ->	transP table p
 
@@ -327,10 +323,10 @@ instance Monad m => TransM m Top where
 instance Monad m => TransM m CtorDef where
  transZM table cc
   = case cc of
-  	CtorDef v df
+  	CtorDef v t arity tag fields
 	 -> do	v'		<- followV table v
-	 	df'		<- transZM table df
-		return		$ CtorDef v' df'
+	 	t'		<- transZM table t
+		return		$ CtorDef v' t' arity tag fields
 	
 	 
 -----

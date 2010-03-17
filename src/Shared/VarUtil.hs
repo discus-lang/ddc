@@ -5,31 +5,24 @@ module Shared.VarUtil
 	, newVarN
 	, newVarNS
 	, newVarNI
-
 	, varHasSymbols
+	, takeSeaNameOfBindingVar
 	, isSymbol
 	, isCtorName
 	, isDummy
-
 	, varPos
-
 	, prettyPos
 	, prettyPosBound
 	, sortForallVars
-	
 	, deSymString)
-
 where
-
-import Shared.Base			(SourcePos(..))
-import qualified Shared.Var as Var
-import Shared.Var 			(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
 import Shared.Pretty
-
 import Util
-
-import Data.Char	hiding (isSymbol)
+import Data.Char		hiding (isSymbol)
+import Shared.Base		(SourcePos(..))
+import Shared.Var 		(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
 import qualified Data.Map	as Map
+import qualified Shared.Var 	as Var
 import Control.Monad.State.Strict
 
 -----
@@ -105,6 +98,16 @@ varHasSymbols :: Var -> Bool
 varHasSymbols var 
  	= not $ null $ filter isSymbol $ Var.name var
 
+
+-- | Get any sea name on the binding occurrence of this var.
+takeSeaNameOfBindingVar :: Var -> Maybe String
+takeSeaNameOfBindingVar var
+ = let	vBinding : _	= [ v    | Var.IBoundBy v 	<- Var.info var ]
+	seaNames	= [ name | Var.ISeaName name	<- Var.info vBinding ]
+   in	case seaNames of
+		n : _	-> Just n
+		_	-> Nothing
+		
 
 -- | Check if this char is a symbol
 --	everything except alpha, numeric, and '_' is a symbol.

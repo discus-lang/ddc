@@ -4,6 +4,7 @@ module Core.Exp
 	( Var
 	, Bind		(..)	-- binders
 	, Tree
+	, Glob		(..)	-- glob of top level things
 	, Top 		(..)	-- top level things
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
@@ -35,66 +36,125 @@ module Core.Exp
 	, Kind		(..)
 	, kValue, kRegion, kEffect, kClosure
 	)
-
 where
-
------
 import Util
-
------
 import Shared.Base (SourcePos(..))
 import Shared.Var (Var)
 import Shared.VarPrim
 import Shared.Literal
 import Shared.Exp
 import Type.Exp
-
 import Data.Set		(Set)
 
------
+
+-- Trees and Globs -----------------------------------------------------------------------------------
+-- | A flat list of Tops is the lowest common denominator for program representation.
 type Tree	= [Top]
 
 
+-- | A Glob provides a fast way to locate particular top level declarations.
+--   Note: Don't add extra fields to this type that can't be reconstructed
+-- 	   directly from a Tree. We want to be able to convert between
+--	   Glob and Tree without losing information.
+--	      
+data Glob
+	= Glob
+	{ globClass		:: Map Var Top
+	, globEffect		:: Map Var Top
+	, globRegion		:: Map Var Top
+	, globExternData	:: Map Var Top
+	, globExtern		:: Map Var Top
+
+	, globData		:: Map Var Top
+	, globDataCtors		:: Map Var CtorDef	-- ^ all data constuctors from the data decls
+
+	, globClassDict		:: Map Var Top
+	, globClassInst		:: Map Var Top
+	, globBind		:: Map Var Top
+	}
+	deriving Show
+
+
 -- Top ---------------------------------------------------------------------------------------------
--- Top level expressions
-
+-- | Top level declarations.
+--	The order of the constructors in this data type is also the standard order
+--	that should appear in dumps and interface files.
+--
 data Top
-	= PNil
-	| PBind		Var Exp			-- ^ A Top level binding.
+	= -- | An abstract type class
+	  PClass
+		{ topClassName 	:: Var
+		, topClassSuper :: Super }
 
-	| PExtern	Var Type Type		-- ^ A function or effect imported from somewhere else.
-						-- 	name, value type, operational type
+	-- | A custom global effect constructor
+	| PEffect
+		{ topEffectName :: Var
+		, topEffectKind :: Kind }
+
+	-- | A top level\/global region.
+	| PRegion
+		{ topRegionName 	:: Var 
+		, topRegionWitnesses 	:: [(Var, Type)] }
+
+	-- | An unboxed data type imported from somewhere else.
+	| PExternData
+		{ topExternDataName	:: Var
+		, topExternDataKind	:: Kind }
+
+	-- | A (value) binding imported from somewhere else.
+	| PExtern
+		{ topExternName		:: Var
+		, topExternType 	:: Type
+		, topExternOpType	:: Type	}
 	
-	| PExternData	Var Kind		-- ^ An unboxed data type imported from somewhere else.
+	-- | A data type and its constructors.
+	| PData
+		{ topDataName		:: Var
+		, topDataCtors		:: Map Var CtorDef }
 
-	| PData		Var 			--  Type name.
-			[Var] 			--  Type vars.
-			[CtorDef]		--  Constructor defs
+	-- | A (value) type class dictionary.
+	| PClassDict
+		{ topClassDictName	:: Var
+		, topClassDictParams	:: [Type]
+		, topClassDictContext	:: [ClassContext]
+		, topClassDictTypes	:: [(Var, Type)] }
 
-	| PCtor		Var Type Type		-- ^ Constructor: ctor name, value type, operational type
+	-- | A (value) type class instance.
+	| PClassInst
+		{ topClassInstName	:: Var
+		, topClassInstArgs	:: [Type]
+		, topClassInstContext	:: [ClassContext]
+		, topClassInstMethods	:: [(Var, Exp)] }
 
-	| PRegion	Var [(Var, Type)]	-- ^ A global region.
-	| PEffect	Var Kind		-- ^ A global effect.
-	| PClass	Var Super
-
-	| PClassDict	Var [Type] [ClassContext] [(Var, Type)]
-	| PClassInst	Var [Type] [ClassContext] [(Var, Exp)]
-
+	-- | A top-level binding.
+	| PBind
+		{ topBindName		:: Var
+		, topBindExp		:: Exp }	
 	deriving (Show, Eq)
 
-data CtorDef 
-	= CtorDef Var [DataField Var Type]
+
+-- | Meta-data about a constructor.
+--	Note that we need to remember the indicies of each field so we can convert
+--	pattern matches using labels to Sea form. 
+--
+data CtorDef
+	= CtorDef 
+	{ ctorDefName	:: Var 			-- ^ name of constructor
+	, ctorDefType	:: Type			-- ^ type of constructor
+	, ctorDefArity	:: Int			-- ^ arity of constructor
+	, ctorDefTag	:: Int			-- ^ tag of constructor
+	, ctorDefFields	:: Map Var Int }	-- ^ map of field names to indexes in the constructor.
 	deriving (Show, Eq)
 
+
+-- | A type class context.
 data ClassContext
 	= ClassContext Var [Var]
 	deriving (Show, Eq)
 
 
-
 -- Exp ---------------------------------------------------------------------------------------------
--- Expressions
-
+-- Core Expressions
 data Exp
 	= XNothing		-- ^ Empty expression
 				-- 	In contrast to XNil, an XNothing represents some part of the
@@ -161,7 +221,6 @@ data Exp
 
 -- Proj --------------------------------------------------------------------------------------------
 -- Field projections
-
 data Proj
 	= JField  Var				-- ^ A field projection.   		(.fieldLabel)
 	| JFieldR Var				-- ^ A field reference projection.	(#fieldLabel)
@@ -170,7 +229,6 @@ data Proj
 
 -- Prim --------------------------------------------------------------------------------------------
 -- | Primitive Functions
-
 data Prim
 	-- laziness
 	= MSuspend	Var			-- ^ Suspend some function	function name
@@ -227,7 +285,6 @@ data Op
 
 -- Stmt --------------------------------------------------------------------------------------------
 -- Statements
-
 data Stmt
 	= SBind  	(Maybe Var) Exp			-- ^ Let binding.
 	deriving (Show, Eq)
@@ -235,7 +292,6 @@ data Stmt
 
 -- Alt ---------------------------------------------------------------------------------------------
 -- Match alternatives
-
 data Alt
 	= AAlt		[Guard] Exp
 	deriving (Show, Eq)
@@ -256,11 +312,9 @@ data Label
 	deriving (Show, Eq)
 
 
-
 -- Annot -------------------------------------------------------------------------------------------
 -- Expression annotations
 --	TODO: A Lot of this is junk that isn't being used
-
 data Annot
 	= NString 	String		-- ^ Some string: for debugging.
 	| NType   	Type 		-- ^ Gives the type for an expression.

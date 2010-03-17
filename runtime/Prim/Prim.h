@@ -161,6 +161,8 @@ String	primArgValue			(Int32 x);
 
 // -- Runtime
 Int32	primRuntime_slotUsage		(Obj* x);
+Obj*	primRuntime_printObj		(Obj* x);
+
 
 // -----
 #include "Boxing.ci"

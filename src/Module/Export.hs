@@ -26,6 +26,7 @@ import qualified Core.Exp		as C
 import qualified Core.Pretty		as C
 import qualified Core.Util		as C
 import qualified Core.ToSea		as C
+import qualified Core.OpType		as C
 
 import qualified Shared.Var		as Var
 import Shared.Var			(Var, (=~=), Module)

@@ -11,14 +11,20 @@ data Tank %i %pv
 	= Tank {
 	 	id	:: Int %i;	
 		name	:: String %i;
-		.pos	:: Vec2 %pv 	= Vec2 10 20;
-		.vel	:: Vec2 %pv	= Vec2 3 4;
-		.charge	:: Int %i	= 0;
+		pos	:: Vec2 %pv;
+		vel	:: Vec2 %pv;
+		charge	:: Int %i;
 	};
+
+mkTank id name
+	= Tank id name 
+		(Vec2 10 20) 
+		(Vec2 3 4)
+		0
 
 
 main ()
- = do {	tank		= Tank 1 "Dude";
+ = do {	tank		= mkTank 1 "Dude";
 
 	oldVelX		= tank.vel.x;
 	oldVelY		= tank.vel.y;

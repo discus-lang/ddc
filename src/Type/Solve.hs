@@ -167,13 +167,13 @@ solveCs	(c:cs)
 
 	-- A map saying what fields a data constuctor has.
 	--	These are stashed in the solver state.
-	CDataFields src v vs fs
+{-	CDataFields src v vs fs
 	 -> do	trace	$ "### DataFields " % v % " " % vs % "\n"
 		modify $ \s -> s { 
 			stateDataFields = Map.insert v (vs, fs) (stateDataFields s) }
 
 		solveNext cs
-
+-}
 	-- A projection constraints
 	CProject src j vInst tDict tBind
 	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind	% "\n"

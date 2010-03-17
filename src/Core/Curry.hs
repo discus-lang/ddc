@@ -1,124 +1,110 @@
+{-# OPTIONS -fwarn-unused-imports #-}
 -- Core.Curry
 --	Works out how to perform function applications and rewrites them into
 --	super-call/curry/apply/tail-calls
 --
 module Core.Curry
-	( curryTree 
-	, slurpSupersTree 
-	, isCafP_opType )
-
+	(curryTree)
 where
-
-import qualified Main.Arg	as Arg
-import Main.Arg			(Arg)
-
 import Core.Exp
 import Core.Util
-import Core.ToSea
-import Core.Pretty
-import Core.Plate.Trans
-
+import Core.Glob
 import Type.Util
-
-import qualified Shared.Var	as Var
 import Shared.Var		(NameSpace(..))
-import qualified Shared.VarUtil	as Var
-import Shared.VarPrim
 import Shared.Error
-import Shared.Exp
 import Shared.Pretty
-
-import Util
-
-import qualified Util.Data.Map	as Map
-import Util.Data.Map		(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
+import Main.Arg			(Arg)
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import qualified Main.Arg	as Arg
 import qualified Debug.Trace	as Debug
+import Util
 
 -----
 stage		= "Core.Curry"
 debug		= False
 trace s	x 	= if debug then Debug.trace (pprStrPlain s) x else x
 
------
+
+-- | Environment for this transform
+data Env
+	= Env
+	{ envGlobHeader		:: Glob
+	, envGlobProg		:: Glob }
+
+
+-- | Work out how to perform function applications in this tree
+--	rewrite them to use the primitive application operators.
 curryTree 
 	:: (?args :: [Arg])
-	=> Tree			-- ^ headerTree
-	-> Tree			-- ^ coreTree
-	-> Map Var Top		-- ^ supercombinators which are directly callable
-				--	(obtained via slurpSupersTree)
+	=> Tree			-- ^ header tree
+	-> Tree			-- ^ source tree
+	-> Glob			-- ^ header glob
+	-> Glob			-- ^ source glob
 	-> Tree 
 
 curryTree 
 	headerTree	
 	coreTree
-	supers
+	headerGlob
+	progGlob
+ = let 	env	= Env headerGlob progGlob
+   in   map (curryP env) coreTree
 
- = let	?supers		= supers
- 	?superVars	= Set.fromList
-			$ Map.keys supers
-	 
-   in	map curryP coreTree
-
-
------
-curryP 	p
+curryP env p
  = case p of
  	PBind v x
 	 | elem Arg.OptTailCall ?args
-	 -> PBind v (curryX [v] x)
+	 -> PBind v (curryX env [v] x)
 	 
 	 | otherwise
-	 -> PBind v (curryX [] x)
+	 -> PBind v (curryX env [] x)
 	 
 	_ -> p
 	
 
------
-curryS 	:: (?supers 	:: Map Var Top
-	 ,  ?superVars 	:: Set Var)
-	=> [Var]		-- supers to tail-call when evaluating this stmt.
-	-> Stmt -> Stmt
+-- | Rewrite function applications in this statement
+curryS 	:: Env 
+	-> [Var]		-- ^ supers that can be tail-called.
+	-> Stmt 
+	-> Stmt
 
-curryS	tc s
+curryS env vsTailCall s
  = case s of
---	SComment{}	-> s
-	SBind v x	-> SBind v (curryX tc x)
-   
------
-curryX	tc xx
+	SBind v x	-> SBind v (curryX env vsTailCall x)
 
-	-- boilerplate. it would be nice to ditch some of this
-	| XLAM v k x		<- xx	= XLAM v k (curryX tc x)
-	| XLam v t x eff clo	<- xx	= XLam v t (curryX tc x) eff clo
-	| XAnnot n x		<- xx	= XAnnot n 	$ curryX tc x
-	| XTau t x		<- xx	= XTau t	$ curryX tc x
-	| XTet vts x		<- xx	= XTet 	 vts	$ curryX tc x
-	| XLocal v vs x		<- xx	= XLocal v vs	$ curryX tc x
-	| XMatch aa		<- xx	= XMatch (map (curryA tc) aa)
+   
+-- | Rewrite function applications in this expression
+curryX	env vsTailCall xx
+	-- boilerplate.
+	| XLAM v k x		<- xx	= XLAM v k (downX x)
+	| XLam v t x eff clo	<- xx	= XLam v t (downX x) eff clo
+	| XAnnot n x		<- xx	= XAnnot n 	$ downX x
+	| XTau t x		<- xx	= XTau t	$ downX x
+	| XTet vts x		<- xx	= XTet 	 vts	$ downX x
+	| XLocal v vs x		<- xx	= XLocal v vs	$ downX x
+	| XMatch aa		<- xx	= XMatch 	$ map downA aa
 	| XPrim{}		<- xx	= xx
 	| XLit{} 		<- xx	= xx
 
-	-- A zero airity super.
+	-- A zero arity super.
 	| XVar v t		<- xx
-	= if Set.member v ?superVars
-	   then	fromMaybe xx $ makeCall xx tc [] tPure
+	= if   (globDeclaresValue v $ envGlobHeader env)
+	    || (globDeclaresValue v $ envGlobProg   env) 
+	   then	fromMaybe xx $ makeCall env vsTailCall xx [] tPure
 	   else xx
 	
 	| XDo ss		<- xx
 	= let	initSS		= init ss
 		Just lastS	= takeLast ss
 				
-		initSS'		= map (curryS []) initSS
-		lastS'		= curryS tc lastS
+		initSS'		= map (curryS env []) initSS
+		lastS'		= curryS env vsTailCall lastS
 
 	  in	XDo (initSS' ++ [lastS'])
 			
 
-	-- Application to a litera
+	-- Application to a literal
 	| XAPP XLit{} (TVar kR _)	<- xx
 	, kR == kRegion
 	= xx
@@ -130,147 +116,130 @@ curryX	tc xx
 	  
 	= let	(parts, effs)	= unzip $ splitApps xx
 		(xF:args)	= parts
-{-		vF		= case xF of
-					XVar v t	 -> v
-					_		-> panic stage
-							$ "curryX: malformed exp " % xx
--}
 	  in	fromMaybe xx
-			$ makeCall xF tc args (makeTSum kEffect effs)
+			$ makeCall env vsTailCall xF args (makeTSum kEffect effs)
 
 	-- uh oh..			
 	| otherwise	
 	= panic stage
 	$ "curryX: no match for " % show xx % "\n"
 
------
-curryA tc aa
+	where 	downX	= curryX env vsTailCall
+		downA	= curryA env vsTailCall
+
+
+-- | Rewrite function applications in this alternative
+curryA env vsTailCall aa
  = case aa of
- 	AAlt gs x	-> AAlt (map (curryG tc) gs) (curryX tc x)
+ 	AAlt gs x	-> AAlt 
+				(map (curryG env vsTailCall) gs) 
+				(curryX env vsTailCall x)
 
-curryG tc gg
+
+-- | Rewrite function applicatoin in this guard
+curryG env vsTailCall gg
  = case gg of
-	GExp  w x	-> GExp w (curryX [] x)
+	GExp  w x	-> GExp w
+	 			(curryX env [] x)
 
------
-makeCall 
-	:: (?supers :: Map Var Top)	
-	=> Exp					-- call this function (must be an XVar)
-	-> [Var]				-- supers that can be tailcalled from here
-	-> [Exp] 				-- args to function
-	-> Effect 				-- effect caused by calling this function
+
+-- | Make a call to a function.
+--	We need to decide whether we have less than, enough, or more args than the super wants.
+--	If less then, 	then we make a partial application.
+--	If enough,	then we can call the super directly.
+--	If more than,	then we call the super then make a parial application for the rest.
+--
+makeCall 	
+	:: Env			
+	-> [Var]		-- ^ supers that can be tailcalled from here
+	-> Exp			-- ^ call this function (must be an XVar)
+	-> [Exp] 		-- ^ args to function
+	-> Effect 		-- ^ effect caused by calling this function
 	-> Maybe Exp
 
-makeCall xF@(XVar vF tF) tc args eff
- 
- 	-- Function is a top-level super.
-	-- 
- 	| Just p	<- Map.lookup vF ?supers
-	, typeOp	<- superOpTypeP p
-	
-	= let
-	 	callAirity	= length	
-				$ filter (\x -> x == True)
-				$ map isValueArg 
-				$ args
-
-		superAirity	= (length $ flattenFun typeOp) - 1
-	
-	  in	trace	( "* makeCall:\n"
+makeCall env vsTailCall xF@(XVar vF tF) args eff
+ = let	callArity	= length	
+			$ filter (\x -> x == True)
+			$ map isValueArg 
+			$ args
+			
+	result
+ 	 -- Function is a top-level super.
+	 | Just superArity	
+		<- takeFirstJust [ bindingArityFromGlob vF $ envGlobHeader env
+				 , bindingArityFromGlob vF $ envGlobProg   env ]
+	 = trace	( "* makeCall:\n"
 	  		% " f           = "	% vF % "\n"
-			% " callAirity  = " 	% callAirity	% "\n"
-			% " superAirity = "	% superAirity	% "\n")
-	  
-			$ makeSuperCall xF tc args eff callAirity superAirity
+			% " callArity  = " 	% callArity	% "\n"
+			% " superArity = "	% superArity	% "\n")
+			$ makeSuperCall xF vsTailCall args eff callArity superArity
+				
+	 -- Function is represented as a thunk instead of a super.
+	 | otherwise
+	 =  makeThunkCall xF args eff callArity
 	
-
-	-- Function isn't a super.. It'll be a lambda bound function, 
-	--	represented as a thunk.
-	--
-	| otherwise
-	= let
-	 	callAirity	= length	
-				$ filter (\x -> x == True)
-				$ map isValueArg 
-				$ args
+   in	result
 	
-	  in	makeThunkCall xF args eff callAirity
-	
-makeCall xF tc args eff
+makeCall env vsTailCall xF args eff
 	= panic stage
 	$ "makeCall: no match for " % xF	% "\n"
 
 
------------------------
--- makeSuperCall
---
+-- | We've got a top-level supercombinator that we can call directly.
 makeSuperCall 
-	:: Exp 		-- var of super being called.	(must be an XVar)
-	-> [Var]	-- supers that can be tail called.
-	-> [Exp] 	-- arguments to super.
-	-> Effect 	-- effect caused when evaluating super.
-	-> Int 		-- number of args in the call.
-	-> Int 		-- number of args needed by the super.
+	:: Exp 		-- ^ var of super being called.	(must be an XVar)
+	-> [Var]	-- ^ supers that can be tail called.
+	-> [Exp] 	-- ^ arguments to super.
+	-> Effect 	-- ^ effect caused when evaluating super.
+	-> Int 		-- ^ number of args in the call.
+	-> Int 		-- ^ number of args needed by the super.
 	-> Maybe Exp
 
 makeSuperCall 
 	xF@(XVar vF tF)
-	tailCallMe args eff callAirity superAirity
+	tailCallMe args eff callArity superArity
  
-	-- A reference to a CAF, with no applied arguments.
- 	| superAirity	== 0
-	, callAirity 	== 0
+	-- The values of CAFs are shared between calls to them..
+	--	The Sea stages handle initialisation of them.
+ 	| superArity	== 0
+	, callArity 	== 0
 	, not $ Var.isCtorName vF
-	= Just 	$ xF
-
-	-- Arguments applied to a CAF
---	| superAirity 	== 0
---	, callAirity	> 0
---	= Just	$ XPrim (MApply vF) args eff
+	= Just xF
 
 	-- We've got the exact number of args the super needs and we're ok
 	-- 	for a tail-call. 
-	--
- 	| callAirity == superAirity
+ 	| callArity == superArity
 	, elem vF tailCallMe
 	= Just $ XPrim MTailCall (xF : args)
 
 	-- We're not able to do a tail call, but we've still got the right number
 	--	of arguments, so we can call the super directly.
-	--
-	| callAirity == superAirity
+	| callArity == superArity
 	= Just $ XPrim MCall (xF : args)
 
 	-- We haven't got enough args to call the super yet, we'll have to build
 	--	a thunk and wait for more.
-	--
-	| callAirity <  superAirity
-	= Just $ XPrim (MCurry superAirity) (xF : args)
+	| callArity <  superArity
+	= Just $ XPrim (MCurry superArity) (xF : args)
 
 	-- We've got more args than the super will accept.
 	--	For this case to be well typed, the super must be returning a thunk.
 	--	XCallApp instructs the runtime system to call the super to get the thunk
 	--	and then apply the rest of the arguments to it.
-	--
-	| callAirity > superAirity
-	= Just $ XPrim (MCallApp superAirity) (xF : args)
+	| callArity > superArity
+	= Just $ XPrim (MCallApp superArity) (xF : args)
    	
 	
-	
------------------------
--- makeThunkCall
---
-makeThunkCall ::	Exp -> [Exp] -> Effect -> Int -> Maybe Exp
-makeThunkCall		xF 	args    eff	 callAirity
+-- | Apply a thunk to a value to get the result
+makeThunkCall :: Exp -> [Exp] -> Effect -> Int -> Maybe Exp
+makeThunkCall xF args eff callArity
 
 	-- If there were only type applications, but no values being applied, 
 	--	then the callAirity is zero and there is no associated call at Sea level.
-	--
-	| callAirity == 0
+	| callArity == 0
 	= Nothing
 	
 	-- Otherwise we have actual arguments being applied to a thunk.
-	--
 	| otherwise
 	= Just $ XPrim MApply (xF : args)
 
@@ -293,57 +262,3 @@ isValueArg xx
 	_	-> panic stage 
 			$ "isValueArg: unexpected arg in function application " % xx 
 	
-	
------
--- slurpSupersTree
---	Slurp out the list of functions which can be called directly as supers.
---
-slurpSupersTree :: Tree -> Map Var Top
-slurpSupersTree tree
- 	= Map.fromList 
- 	$ catMaybes 
-	$ map slurpTopP 
-	$ tree	 	
-
-slurpTopP p
- = case p of
- 	PBind v _	-> Just (v, p)
-	PCtor  v _ _	-> Just (v, p)
-	PExtern v tv to	-> Just (v, p)
-	_		-> Nothing
-
-
------
--- isCafP_opType
---	Inspects the operational type of a top to see if it declares a CAF.
---	Supers must be annotated with operational types.
---
---
-isCafP_opType :: Top -> Bool
-isCafP_opType p	
- = case p of
-
-	-- Treat a binding as a CAF if it has no args.
-	--
- 	PBind{}		-> length (flattenFun $ superOpTypeP p) == 1
-
-	-- Ctors are never CAFs.
-	--	eg, we want a new True object every time we call True, because it might get updated later.
-	--	The Atomise optimisation will increase sharing for Constant objects.
-	--
-	PCtor v tv to	-> False
-
-	-- Non-function unboxed data imported via a foreign import is not a CAF.
-	--	This lets us import top-level C values directly into our program.
-	--	eg foreign import extern "SEEK_SET" seek_set :: Int32#;
-	-- 
-	PExtern v tv to	
-	 -> case flattenFun to of
-		[x]		-> not $ isUnboxedT x
-		_		-> False
-	 
-	-- Nothing else is a CAF
-	_ 		-> False
-	
-	
-

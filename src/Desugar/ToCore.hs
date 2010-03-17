@@ -120,13 +120,23 @@ toCoreP	p
 	D.PExternData _ s v k
 	 -> do	return	$ [C.PExternData v k]
 
-	D.PData _ v vs ctors
+{-	D.PData _ v vs ctors
 	 -> do
 		ctors'		<- mapM toCoreCtorDef ctors
 
 		let d		= C.PData v vs ctors'
 		cs		<- mapM (makeCtor primTObj v vs) ctors
 		return (d:cs)
+-}
+	D.PData _ vData vsParam ctors
+	 -> do	ctors'		<- zipWithM 
+					(toCoreCtorDef vData vsParam) 
+					ctors
+					[0 .. length ctors]
+					
+		let vsCtors	= map C.ctorDefName ctors'
+		let mCtors	= Map.fromList $ zip vsCtors ctors'
+		return	[C.PData vData mCtors]
 
 	D.PEffect _ v k
 	 -> do
@@ -197,14 +207,36 @@ toCoreP	p
 	
 
 -- CtorDef -----------------------------------------------------------------------------------------
+
+-- | Convert a desugared data constructor definition to core form.
 toCoreCtorDef	
-	:: D.CtorDef Annot
+	:: Var			-- ^ var of data type
+	-> [Var]		-- ^ var of type params
+	-> D.CtorDef Annot
+	-> Int			-- ^ ctor tag
 	-> CoreM C.CtorDef
 		
-toCoreCtorDef	(D.CtorDef _ v fieldDefs)
- = do 	fieldDefs'	<- mapM toCoreFieldDef fieldDefs
-	return	$ C.CtorDef v fieldDefs'
+toCoreCtorDef vData vsParam (D.CtorDef _ vCtor dataFields) tag
+ = do 	tCtor	<- liftM toCoreT
+		$  D.makeCtorType newVarN vData vsParam vCtor dataFields
 
+	let fieldIndicies
+		= takeFieldIndicies dataFields
+
+	return	$ C.CtorDef vCtor tCtor (length dataFields) tag fieldIndicies
+
+
+-- | For fields with a label, 
+--	construct a map from the label var to the index of that field in the constructor.
+--
+takeFieldIndicies 
+	:: [S.DataField (D.Exp Annot) T.Type] 	-- ^ fields of a data constructor
+	-> Map Var Int
+
+takeFieldIndicies dfs
+ 	= Map.fromList [ (v, i) | (Just v, i) <- zip (map S.dLabel dfs) [0..] ]
+	
+{-
 toCoreFieldDef	df
  = do	return	$ S.DataField 
 		{ S.dPrimary	= S.dPrimary df
@@ -214,6 +246,8 @@ toCoreFieldDef	df
 		, S.dInit	= case S.dInit df of
 					Nothing			-> Nothing
 					Just (D.XVarInst _ v)	-> Just v }
+
+
 -- Make a constructor function
 makeCtor 
 	:: Var 
@@ -237,7 +271,7 @@ makeCtor    objVar vData vsData (D.CtorDef _ ctorVar dataFields)
 		$ (T.makeTData objVar C.kValue []))
 
 	return	$ C.PCtor ctorVar tv to
-
+-}
 
 -- Stmt --------------------------------------------------------------------------------------------
 -- | Statements

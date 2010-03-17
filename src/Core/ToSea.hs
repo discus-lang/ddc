@@ -1,23 +1,18 @@
+{-# OPTIONS -fwarn-unused-imports #-}
 
 -- | Convert CoreIR to Abstract-C
 module Core.ToSea
-	( toSeaTree 
-	, superOpTypeP
-	, superOpTypeX)
-
+	(toSeaTree) 
 where
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
-import qualified Core.Pretty		as C
-import qualified Core.Util		as C
-import qualified Core.Util.Slurp	as C
 import qualified Core.Reconstruct	as C
+import qualified Core.OpType		as C
 
 import qualified Type.Exp		as T
 import qualified Type.Util		as T
 
 import qualified Sea.Exp  		as E
-import qualified Sea.Util		as E
 import qualified Sea.Pretty		as E
 
 import Shared.Var			(Var, NameSpace(..))
@@ -27,30 +22,19 @@ import Shared.Pretty
 import Shared.Literal
 import Shared.VarUtil			(prettyPos)
 import qualified Shared.VarBind		as Var
-import qualified Shared.Unique		as Unique
 import qualified Shared.Var		as Var
 import qualified Shared.VarPrim		as Var
 
-import Util
-import Data.Map				(Map)
-import Data.Set				(Set)
-import Control.Monad.State.Strict
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import qualified			Debug.Trace
-
+import Data.Function
+import Util
 
 -----
 stage	= "Core.ToSea"
-{-
-debug	= True
-trace ss x	
-	= if debug 
-		then Debug.Trace.trace (pprStrPlain ss) x
-		else x
--}
 
--- State -------------------------------------------------------------------------------------------
+
+-- State ------------------------------------------------------------------------------------------
 data SeaS
 	= SeaS
 	{ -- variable name generator
@@ -92,7 +76,7 @@ slurpWitnessKind kk
 	_ -> return ()
 
 
--- Tree --------------------------------------------------------------------------------------------
+-- Tree -------------------------------------------------------------------------------------------
 toSeaTree 
 	:: String		-- unique
 	-> Map Var C.CtorDef	-- Map of Constructor Definitions.
@@ -109,7 +93,7 @@ toSeaTree unique mapCtorDefs cTree
 		, stateDirectRegions	= Set.empty }
     
     
--- Top ---------------------------------------------------------------------------------------------
+-- Top --------------------------------------------------------------------------------------------
 toSeaP :: C.Top -> SeaM [E.Top ()]
 toSeaP	xx
  = case xx of
@@ -125,7 +109,7 @@ toSeaP	xx
 	 ->	return []
 	 	 
  	C.PBind v x
-	 -> do	let to		= superOpTypeX x
+	 -> do	let to		= C.superOpTypeX x
 
 		let (argTypes, resultType)	
 				= splitOpType to
@@ -149,17 +133,25 @@ toSeaP	xx
 
 				 _ ->	[ E.PSuper 	v argNTs resultType ssRet]
 	    
-	C.PData v ts cs
-	 -> do	cs'		<- mapM toSeaCtor cs
-	 	let dataDef	= E.PData v cs'
-	 	let tagDefs	= map (\(v, i) -> E.PHashDef 
-			 		("_tag" ++ E.seaVar False v)
-					("(_tagBase + " ++ show i ++ ")"))
-				$ (zip (map (\(C.CtorDef v _) -> v) cs) ([0..]::[Integer]))
-	 
-		let structDefs	= map toSeaStruct cs
-		return		$ [dataDef] ++ tagDefs ++ structDefs
-	 
+	C.PData v ctors
+	 -> do	
+		-- Convert data type declaration
+		let ctors'	= Map.map toSeaCtorDef ctors
+	 	let dataDef	= E.PData v ctors'
+
+		-- Make #defines for data constructor tags, and
+		--	sort them so they come out in the same order in the Sea
+		--	file as in the original source file.
+		let makeTagDef ctor@C.CtorDef{} 
+				= E.PHashDef 
+			 		("_tag"         ++ E.seaVar False (C.ctorDefName ctor))
+					("(_tagBase + " ++ show (C.ctorDefTag ctor) ++ ")")
+
+		let tagDefs	= map makeTagDef 
+				$ sortBy (compare `on` C.ctorDefTag)
+				$ Map.elems ctors
+								 
+	 	return		$ dataDef : tagDefs
 	   		
 	_ ->	return []
 
@@ -191,48 +183,17 @@ splitSuper accArgs xx
 
 
 
--- CtorDef -----------------------------------------------------------------------------------------
-toSeaStruct 
+-- CtorDef ----------------------------------------------------------------------------------------
+toSeaCtorDef
 	:: C.CtorDef
-	-> E.Top ()
-
-toSeaStruct (C.CtorDef name fs)
-	= E.PStruct name
-	$ map (\(i, df) -> 
-		( fromMaybe (Var.new $ "a" ++ show i) $ C.dLabel df
-		, E.TObj )) -- toSeaT $ C.dType df ))
-	$ zip ([0..]::[Integer]) fs
-
-
--- Ctor --------------------------------------------------------------------------------------------
-toSeaCtor 
-	:: C.CtorDef
-	-> SeaM (Var, [E.DataField E.Var E.Type])
+	-> E.CtorDef 
 	
-toSeaCtor (C.CtorDef name fs)
- = do
- 	fs'	<- mapM toSeaDataField fs
-	return	$ (name, fs')
-	
-
--- DataField ---------------------------------------------------------------------------------------
-toSeaDataField
-	:: C.DataField C.Var C.Type
-	-> SeaM (E.DataField E.Var E.Type)
-	
-toSeaDataField field
- = do	mInit	<- case C.dInit field of
- 			Nothing		-> return $ Nothing
-			Just x		-> return $ Just x		
-				
-	return	E.DataField
-		{ E.dPrimary	= C.dPrimary 	field
-		, E.dLabel	= C.dLabel	field
-		, E.dType	= E.TObj
-		, E.dInit	= mInit }
+toSeaCtorDef (C.CtorDef vCtor tCtor arity tag fields)
+ = let	tCtor'	= toSeaT tCtor
+   in	E.CtorDef vCtor tCtor' arity tag fields
 
 
--- Exp ---------------------------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 toSeaX	:: C.Exp -> SeaM (E.Exp ())
 toSeaX		xx
  = case xx of
@@ -363,7 +324,8 @@ isUnboxed x
 	C.XLit (LiteralFmt _ fmt) -> dataFormatIsUnboxed fmt
 	_ -> False
 
--- Stmt --------------------------------------------------------------------------------------------
+
+-- Stmt -------------------------------------------------------------------------------------------
 -- | Convert a statement into Sea
 --
 --   In the core, the RHS of a stmt might be another do, but there won't be any value
@@ -430,7 +392,7 @@ toSeaS xx
 	    	return		[E.SStmt x']
 
 
--- Alt ---------------------------------------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 toSeaA :: (Maybe C.Exp) -> C.Alt -> SeaM (E.Alt ())
 toSeaA	   mObjV xx
  = case xx of
@@ -455,7 +417,7 @@ toSeaA	   mObjV xx
 	
 
 
--- Guard -------------------------------------------------------------------------------------------
+-- Guard ------------------------------------------------------------------------------------------
 toSeaG	:: Maybe C.Exp 		-- match object
 	-> [E.Stmt ()] 		-- stmts to add to the front of this guard.
 	-> C.Guard 
@@ -517,7 +479,11 @@ toSeaG	mObjV ssFront gg
 
 				let ssL		= assignLastSS (E.XVar var t', t') ssRHS
 				return	( map (toSeaGL var) lvts
-					, Just $ E.GCase sp (not rhsIsDirect) (ssFront ++ ssL) compX (E.XCon v))
+					, Just $ E.GCase sp 
+							(not rhsIsDirect) 
+							(ssFront ++ ssL) 
+							compX (
+							E.XCon v))
 
 		result
 
@@ -538,14 +504,17 @@ isPatConst gg
  = case gg of
  	C.WLit{}	-> True
 	_		-> False
-
+	
 
 toSeaGL	 objV (label, var, t)
 	| C.LIndex i	<- label
-	= E.SAssign (E.XVar var (toSeaT t)) E.TObj (E.XArg (E.XVar objV (toSeaT t)) E.TData i)
+	= E.SAssign 
+		(E.XVar var (toSeaT t)) 
+		E.TObj 
+		(E.XArg (E.XVar objV (toSeaT t)) E.TObjData i)
 
 
------
+-- | Decend into XLocal and XDo and slurp out the contained lists of statements.
 slurpStmtsX :: C.Exp -> [C.Stmt]
 slurpStmtsX xx
  = case xx of
@@ -554,43 +523,64 @@ slurpStmtsX xx
 	_		-> []
 
 
--- Type --------------------------------------------------------------------------------------------
-
+-- Type -------------------------------------------------------------------------------------------
 -- | Convert an operational type from the core to the equivalent Sea type.
-toSeaT :: C.Type	-> E.Type
-toSeaT	xx
-	-- Sanity: the type to convert must be a value type.
---	| not $ hasValueKind xx
---	= panic stage 
---		$ "toSeaT: cannot convert non-value type " % xx % " to Sea type\n"
---		% "    kind = " % T.kindOfType xx % "\n"
+toSeaT :: C.Type -> E.Type
+toSeaT tt
+ = case tt of
+	C.TForall _ _ t		-> toSeaT t
+	C.TContext k t		-> toSeaT t
+	C.TFetters t _		-> toSeaT t
+	C.TConstrain t _	-> toSeaT t
 
-	-- the unboxed void type is represented directly.
-	| Just (v, _, _)	<- T.takeTData xx
-	, Var.TVoidU		<- Var.bind v
-	= E.TVoid
+	C.TApp{}
+	 -> let result
+		 | Just tx		<- T.takeTData tt
+		 = toSeaT_data tx
 	
-	-- we know about unboxed pointers
-	| Just (v, _, [t])	<- T.takeTData xx
+		 | Just (t1, t2, _, _)	<- T.takeTFun tt
+		 = E.TObj
+	
+	    in result
+
+	C.TCon{}
+		| Just tx		<- T.takeTData tt
+		-> toSeaT_data tx
+	
+	C.TVar{}		-> E.TObj
+
+	_ 	-> panic stage
+		$ "toSeaT: No match for " ++ show tt ++ "\n"
+	
+
+toSeaT_data tx
+	-- the unboxed void type is represented directly.
+ 	| (v, _, _)		<- tx
+ 	, Var.TVoidU		<- Var.bind v
+	= E.TVoid
+
+ 	 -- we know about unboxed pointers
+	| (v, _, [t])		<- tx
 	, Var.TPtrU		<- Var.bind v
 	= E.TPtr (toSeaT t)
-	
-	-- the build-in unboxed types are represented directly.
-	| Just (v, _, ts)	<- T.takeTData xx
+
+	-- the built-in unboxed types are represented directly.
+	| (v, _, ts)		<- tx
 	, Var.varIsUnboxedTyConData v
 	= E.TCon v (map toSeaT $ filter hasValueKind ts)
-	
+
 	-- some user defined unboxed type.
-	-- TODO: we just check for a '#' in the name to detect these, 
-	--	 which is pretty nasty. 
-	| Just (v, _, ts)	<- T.takeTData xx
+	-- TODO: We just check for a '#' in the name to detect these, which is pretty nasty. 
+	--	 Is there a better way to detect this?
+	| (v, _, ts)		<- tx
 	, elem '#' (Var.name v)
 	= E.TCon v (map toSeaT $ filter hasValueKind ts)
-	
-	-- some first class, boxed object
+
 	| otherwise
 	= E.TObj
 
+
+-- | Check if this type has value kind
 hasValueKind :: C.Type -> Bool
 hasValueKind xx
 	| Just k	<- T.kindOfType xx
@@ -600,6 +590,9 @@ hasValueKind xx
 	| otherwise
 	= False
 
+
+-- | Split a type into its params and return parts.
+splitOpType :: T.Type -> ([E.Type], E.Type)
 splitOpType to
   = let	opParts		= T.flattenFun to
 	opParts'@(_:_)	= map toSeaT opParts
@@ -626,11 +619,8 @@ stripValues' a
 	 
 	_ -> Just a
 	 
------
--- assignLastSS
---	Assign the value of the stmt(s) in this list
---	to the provided exp.
---
+	
+-- | Assign the value of the stmt(s) in this list to the provided exp.
 assignLastSS :: (E.Exp (), E.Type) -> [E.Stmt ()] -> [E.Stmt ()]
 assignLastSS	xT    ss
  = let	Just firstSS	= takeInit ss
@@ -658,7 +648,6 @@ assignLastA xT aa
 
 
 -- | Convert a Core operator to a Sea primitive
---	We should perhaps change Sea land to use the core representation
 toSeaOp :: C.Op -> E.Prim
 toSeaOp op
  = case op of
@@ -696,107 +685,4 @@ toSeaPrimV var
 	
 	_			-> panic stage
 				$ "toSeaPrim: no match for " % var
-
-
-
--- superOpType -------------------------------------------------------------------------------------
-
--- | Work out the operational type of a supercombinator.
---	The operational type of an object different from the value type in two main respects:
---
---	1) The Sea translation doesn't care about alot of the type information present
---	   in the core types. eg boxed objects are just Obj*, and regions aren't used at all
---
---	2) Supercombinators can return function objects, with value type (a -> b), but the 
---	   sea code treats them as just vanilla boxed objects.
---
-superOpTypeP ::	 C.Top -> C.Type
-superOpTypeP	pp
- = case pp of
- 	C.PBind v x
-	 -> let	parts	= superOpType' x
-	    in	T.makeTFuns_pureEmpty parts
-
-	-- external functions and ctors carry their operational
-	--	types around with them.
-	C.PExtern v tv to	-> to
-	C.PCtor   v tv to	-> to
-
-	_ 	-> panic stage 
-		$ "superOpTypeP: no match for " % show pp % "\n"
-
-
--- | Work out the operational type of this expression
-superOpTypeX :: C.Exp -> C.Type
-superOpTypeX	xx
-	= T.makeTFuns_pureEmpty $ superOpType' xx
-
-superOpType'	xx
- = case xx of
-	-- skip over type information
-	C.XLAM    v k x	-> superOpType' x
-	C.XTet    vts x	-> superOpType' x
-
-	-- slurp off parameter types
- 	C.XLam v t x eff clo 
-	 -> superOpTypePart t :  superOpType' x
-
-	-- take the type of the body of the super from the XTau enclosing it.
-	C.XTau	t x	-> [superOpTypePart t]
-	
-	-- there's no XTau enclosing the body, so we'll have to reconstruct
-	--	the type for it manually.
-	_		-> [superOpTypePart 
-			$  C.reconX_type (stage ++ "superOpType") xx]
-			
-superOpTypePart	tt
- = case tt of
-	C.TNil			-> C.TNil
-
-	-- skip over type information
-	C.TForall v k t		-> superOpTypePart t
-	C.TContext c t		-> superOpTypePart t
-	C.TFetters t fs		-> superOpTypePart t
-
-	-- an unboxed var of airity zero, eg Int32#
-	C.TCon (C.TyConData name kind)
-	 | T.isUnboxedT tt
-	 -> T.makeTData name C.kValue []
-
-	-- a tycon of arity zero, eg Unit
-	C.TCon (C.TyConData name kind)
-	 -> T.makeTData Var.primTData C.kValue []
-
-	C.TApp{}
-	 -> let	result	
-		 	-- unboxed types are represented directly, and the Sea
-			--	code must know about them.
-	 		| Just (v, k, ts)	<- T.takeTData tt
-			, v == Var.primTPtrU	
-			= T.makeTData v k (map superOpTypePart ts)
-
-			-- an unboxed tycon of some aritity, eg String#
-			| Just (v, k, ts)	<- T.takeTData tt
-			, T.isUnboxedT tt
-			= T.makeTData v k []
-
-			-- boxed types are just 'Data'
-			| Just (v, k, ts)	<- T.takeTData tt
-			= T.makeTData Var.primTData k []
-			
-			-- all function objects are considered to be 'Thunk'
-			| Just _		<- T.takeTFun tt
-			= T.makeTData Var.primTThunk C.kValue []
-			
-			| otherwise
-			= T.makeTData Var.primTObj C.kValue []
-	   in result			
-
-	-- some unknown, boxed object 'Obj'
-	C.TVar k _	
-	 | k == T.kValue
-	 -> T.makeTData Var.primTObj C.kValue []
-
-	_	-> panic stage
-		$  "superOpTypePart: no match for " % show tt % "\n"
 

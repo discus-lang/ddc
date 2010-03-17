@@ -36,6 +36,9 @@ import qualified Main.Version	as Version
 import Main.Arg
 import Main.Dump
 
+import qualified Core.Exp	as C
+
+
 import System.Cmd
 import System.Exit
 import qualified Data.Map	as Map
@@ -135,12 +138,13 @@ seaSlot
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()		-- sea tree
 	-> Tree ()		-- sea header
-	-> Set Var		-- CAF vars
+	-> C.Glob		-- header glob, used to get arities of supers
+	-> C.Glob		-- source glob, TODO: refactor to take from Sea glob
 	-> IO (Tree ())
 	
-seaSlot	eTree eHeader cafVars
+seaSlot	eTree eHeader cgHeader cgSource
  = do
- 	let tree'	= slotTree eTree eHeader cafVars
+ 	let tree'	= slotTree eTree eHeader cgHeader cgSource
 	dumpET DumpSeaSlot "sea-slot" 
 		$ eraseAnnotsTree tree'
 	
@@ -207,18 +211,20 @@ outSea
 	let 	([ 	seaProtos, 		seaSupers
 		 , 	seaCafProtos,		seaCafSlots,		seaCafInits
 		 , 	seaAtomProtos,		seaAtoms
-		 , 	seaStructs
-		 , 	seaHashDefs ], [])
+		 ,      _seaData
+		 , 	seaHashDefs ], junk)
 
 		 = partitionFs
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
 			, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
 			, (=@=) PAtomProto{},  	(=@=) PAtom{}
-			, (=@=) PStruct{}
+			, (=@=) PData{}
 			, (=@=) PHashDef{} ]
 			eTree
-			
-	
+		
+	when (not $ null junk)
+	 $ panic "Main.Sea" $ "junk sea bits = " ++ show junk ++ "\n"
+		
 	-- Build the C header
 	let defTag	= makeIncludeDefTag pathThis
 	let seaHeader
@@ -231,7 +237,6 @@ outSea
 		++ (map PInclude extraIncludes)
 
 		++ [ PHackery "\n"]	++ seaHashDefs
-		++ [ PHackery "\n"]	++ seaStructs
 		++ [ PHackery "\n"]	++ seaAtomProtos
 		++ [ PHackery "\n"]	++ seaCafProtos
 		++ [ PHackery "\n"]	++ seaProtos

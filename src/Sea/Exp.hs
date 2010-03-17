@@ -1,27 +1,30 @@
 
 -- | Abstract C expressions.
---	TODO: 	This is mess. 
+--	TODO: 	This is a mess. 
 --		Most of these types have too many constructors that do basically
 --		the same thing. We should try and reduce the size of these types.
 module Sea.Exp
 	( Tree
 	, Top		(..)
-	, DataField 	(..)
+	, CtorDef	(..)
 	, Stmt		(..)
 	, Alt		(..)
 	, Guard		(..)
 	, Exp		(..)
 	, Type		(..)
+	, ObjType	(..)
 	, Prim		(..)
 	, Var)
 where
-
-import Util
 import Shared.Base
-import qualified Shared.Var	as Var
-import Shared.Var		(Var)
 import Shared.Exp
 import Shared.Literal
+import Shared.Var		(Var)
+import Data.Map			(Map)
+import qualified Data.Map	as Map
+import qualified Shared.Var	as Var
+import Util
+
 
 -- | A whole C program.
 type Tree a
@@ -35,17 +38,9 @@ data Top a
 	-- | Data type definition.
 	| PData
 		Var				-- 	Type constructor.
-		[(Var, [DataField Var Type])]	-- 	[(ctor name, datafields)]
+		(Map Var CtorDef)
 
-	-- | A constructor definition.
-	| PCtor
-		Var 				--	construcor name
-		[Type] 				--	parameter types
-		Type				-- 	result type
-
-	-- supers
-	-- ======
-
+	-- supers ---------------------
 	-- | A C prototype.
 	| PProto
 		Var 				--	variable name
@@ -59,17 +54,14 @@ data Top a
 		Type 				--	result type
 		[Stmt a]			--	statements
 
-	-- cafs
-	-- ====
-
+	-- cafs -----------------------
 	| PCafProto	Var Type		-- ^ The prototype for a CAF slot index.
 	| PCafSlot	Var Type		-- ^ A var which holds a CAF slot index.
 	| PCafInit	Var Type [Stmt a]	-- ^ CAF initialisation code.
 
-	-- atoms
-	-- =====
-	--	Atoms are constructors with arity 0, like True and Nil.
 
+	-- atoms ----------------------
+	--	Atoms are constructors of arity 0, like True and Nil
 	-- | Atom prototype
 	| PAtomProto
 		Var 				--	variable name
@@ -82,11 +74,12 @@ data Top a
 
 
 	-- | Structure definition
-	| PStruct
-		Var				-- 	type name
-		[(Var, Type)]			-- 	(label, type)
+--	| PStruct
+--		Var				-- 	type name
+--		[(Var, Type)]			-- 	(label, type)
 
 
+	-- hackery --------------------
 	-- various hacky things that should probably be handled in a different way.
 	| PHashDef	String String		-- evil hash-def. Used to define constructor tags.
 	| PInclude	String			-- #include <...>
@@ -96,6 +89,20 @@ data Top a
 
 	| PComment	String
 	| PBlank
+	deriving (Show, Eq)
+
+
+-- Meta-data about a constructor.
+--	Note that we need to remember the indicies of each field so we can convert
+--	pattern matches using labels to Sea form. 
+--
+data CtorDef
+	= CtorDef 
+	{ ctorDefName 	:: Var 			-- ^ name of constructor
+	, ctorDefType	:: Type			-- ^ type of constructor
+	, ctorDefArity	:: Int			-- ^ arity of constructor (number of params)
+	, ctorDefTag	:: Int			-- ^ tag of constructor   (order in original data type decl)
+	, ctorDefFields	:: Map Var Int }	-- ^ map of field names to indexes in the constructor.
 	deriving (Show, Eq)
 
 
@@ -192,7 +199,7 @@ data Exp a
 	| XPrim		Prim [Exp a]
 
 	-- projection
-	| XArg		(Exp a) Type Int	-- argument of thunk	((type)x) ->a[i]
+	| XArg		(Exp a) ObjType Int	-- of some object
 	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
 	
 	| XField	(Exp a) Var Var		-- exp, type of exp, field name
@@ -225,10 +232,18 @@ data Exp a
 	| XAllocDataAnchored	Var Int
 	
 	deriving (Show, Eq)
-	
+
+
+-- | Sea types. 
+--	By the time we've reached the Sea language we only care about operational information. 
+--	We need to distinguish between boxed and unboxed values, but not much else.
 data Type
 	-- | The void type.
 	= TVoid
+
+	-- | The function type.
+	--	These are always first order, so the first parameter will not be another TFun.
+	| TFun Type Type
 
 	-- | An unboxed pointer to something else.
 	| TPtr Type
@@ -236,18 +251,23 @@ data Type
 	-- | An unboxed data object.
 	| TCon Var [Type]
 
-	-- | A pointer to boxed object
+	-- | A pointer to some anonymous boxed object.
 	| TObj
-	
-	-- | A pointer to a boxed object, but we know a bit more about
-	--	what that object actually is - usually because we just created it.
-	--	These are subtypes of TObj
-	| TData	
-	| TThunk		
-	| TSusp
 	deriving (Show, Eq)
 
 
+-- | When we access fields in an object we need to know exactly what type
+--	we are dealing with.
+data ObjType
+	= TObjData
+	| TObjThunk
+	| TObjSusp
+	deriving (Show, Eq)
+
+
+-- | Primitive operators implemented directly in the C language or runtime system.
+--	We keep these separate from the Core Op type because the two languages
+--	might implement different operators.
 data	Prim
 	= FNeg
 	| FAdd

@@ -1,30 +1,24 @@
 
 module Core.Util.Slurp
 	( slurpTypesP
+	, maybeSlurpTypeX
  	, slurpTypeMapPs
 	, slurpSuperMapPs
 	, slurpCtorDefs 
 	, slurpExpX
 	, slurpBoundVarsP
 	, dropXTau)
-
 where
-
-import qualified Shared.Var	as Var
-
 import Core.Exp
 import Core.Util.Pack
 import Core.Util.Bits
 import Core.Pretty
-
-import Type.Util
-
 import Shared.Error
-
-import Util
-
+import Type.Util
+import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import Data.Map			(Map)
+import Util
 
 
 -----
@@ -35,7 +29,6 @@ slurpTypesP :: Top -> [(Var, Type)]
 slurpTypesP pp
  = case pp of
 	PExtern v tv to	-> [(v, tv)]
-	PCtor   v tv to	-> [(v, tv)]
 	PBind   v x
 	 -> case maybeSlurpTypeX x of
 	 	Just t	-> [(v, t)]
@@ -104,9 +97,8 @@ slurpExpX xx
 -- | Slurp out all the constructors defined in this tree
 slurpCtorDefs :: Tree -> Map Var CtorDef
 slurpCtorDefs tree
- 	= Map.fromList
-	$ [ (vCtor, c)	| PData vData vs ctors		<- tree 
-			, c@(CtorDef vCtor fields)	<- ctors ]
+ 	= Map.unions
+	$ [ topDataCtors p | p@PData{}	<- tree ]
 
 -- | Slurp out a list of vars bound by this top level thing
 slurpBoundVarsP
@@ -114,12 +106,10 @@ slurpBoundVarsP
 	
 slurpBoundVarsP pp
  = case pp of
-	PNil				-> []
  	PBind   v x			-> [v]
 	PExtern v t1 t2			-> [v]
 	PExternData v k			-> [v]
-	PData 	v vs ctors		-> v : [c | CtorDef c fs <- ctors]
-	PCtor	v t1 t2			-> [v]
+	PData{}				-> topDataName pp : Map.keys (topDataCtors pp)
 
 	PClassDict v ts contest vts	-> map fst vts
 	PClassInst{}			-> []
@@ -166,4 +156,5 @@ dropXTau xx env tt
 	-- we've hit a value, drop the annot
 	| otherwise
 	= XTau (packT $ makeTWhere tt (Map.toList env)) xx
+
 

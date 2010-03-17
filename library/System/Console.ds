@@ -31,7 +31,7 @@ putStr ss = print ss
 print :: String -> ()
 print xx
  = case xx of 
- 	SChunk fs@(FlatString)
+ 	SChunk fs@FlatString
 	-> do	fputsU_console (fs.danger_string) stdout
 		()
 

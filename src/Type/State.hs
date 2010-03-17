@@ -121,7 +121,7 @@ data SquidS
 	
 	-- | The data field definitions.
 	-- 	type name	-> (type vars, [(field name, field type)])
-	, stateDataFields	:: Map Var	([Var], [(Var, Type)]) 
+--	, stateDataFields	:: Map Var	([Var], [(Var, Type)]) 
 								
 	-- | The projection dictionaries
 	--	ctor name -> (type, field var -> implemenation var)
@@ -179,7 +179,7 @@ squidSInit
 		, stateQuantifiedVarsKM	= Map.empty
 		, stateQuantifiedVars	= Set.empty
 
-		, stateDataFields	= Map.empty 
+--		, stateDataFields	= Map.empty 
 		, stateProject		= Map.empty
 		, stateProjectResolve	= Map.empty
 		, stateClassInst	= Map.empty

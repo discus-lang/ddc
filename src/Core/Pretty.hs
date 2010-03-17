@@ -16,9 +16,11 @@ import Shared.Error
 import Shared.Pretty
 
 import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 import Util
 import Util.Pretty
+import Data.Function
 
 -----
 stage	= "Core.Pretty"
@@ -48,9 +50,6 @@ pv v
 instance Pretty Top PMode where
  ppr xx
   = case xx of
-	PNil
-	 -> ppr "@PNil"
-
 	PBind v e
 	 -> v % "\n"
 		% " =      " %> e  % ";\n"
@@ -68,18 +67,16 @@ instance Pretty Top PMode where
 	PExternData v k
 	 -> "extern data " % v % " :: " % k % ";\n"
 
-	PData v vs []
-	 -> "data  " % " " %!% (v:vs) % ";\n"
+	PData v ctors
+	 | Map.null ctors
+	 -> "data " % " " % ppr v % ";\n" 
 
-	PData v vs cs
-	 -> "data  " % " " %!% (v:vs) % "\n"  
-	 	%> ("= " % "\n\n| " %!% cs % ";\n")
-
-	PCtor v tv to
-	 -> "@PCtor  " % v % "\n"
-	 %  " =      "   
-	 	%> (tv % "\n")
-		%> (":$ " % to % ";\n")
+	 | otherwise
+	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
+	    in  "data" <> v <> "where\n"
+	 	% "{\n" 
+	 	%> ("\n\n" %!% ctorsList % "\n")
+		% "}\n"
 
 	PRegion v vts
 	 -> "region " % v %> "  with {" % "; " 
@@ -118,10 +115,13 @@ pprPClassDict_varKind tt
 instance Pretty CtorDef PMode where
  ppr xx
   = case xx of
-  	CtorDef v fs
- 	 -> v 	% "\n{\n"
-	 	%> ("\n" %!% fs) % "\n}"
-	 
+  	CtorDef v t arity tag fs
+ 	 -> v 	% "\n"
+		%> 	( ":: " % prettyTS t % "\n"
+			% "with { ARITY  = " % arity	% "\n"
+ 			% "     , TAG    = " % tag      % "\n"
+			% "     , FIELDS = " % fs 	% "}")
+		
 	 
 -- Exp ----------------------------------------------------------------------------------------------
 instance Pretty Exp PMode where

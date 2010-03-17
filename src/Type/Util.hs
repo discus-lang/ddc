@@ -19,7 +19,6 @@ module Type.Util
 	, slurpVarsRD)
 	
 where
-
 import Type.Util.Bits
 import Type.Util.Instantiate
 import Type.Util.Elaborate

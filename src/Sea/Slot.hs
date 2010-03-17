@@ -12,6 +12,9 @@ import Sea.Exp
 import Sea.Pretty
 import Sea.Util
 import Sea.Plate.Trans
+import qualified Type.Util	as T
+import qualified Core.Exp	as C
+import qualified Core.Glob	as C
 import Shared.Var		(Var, NameSpace(..))
 import Data.Map			(Map)
 import Data.Set			(Set)
@@ -27,23 +30,25 @@ import qualified Data.Map	as Map
 slotTree 
 	:: Tree () 		-- ^ source tree.
 	-> Tree () 		-- ^ prototypes of imported functions.
-	-> Set Var 		-- ^ set of vars of all CAFs
+	-> C.Glob		-- ^ header glob, used to get arities of supers.
+	-> C.Glob		-- ^ source glob, TODO: refactor this to use sea glob
 	-> Tree ()
 
-slotTree tree eHeader cafVars
- 	= evalState (mapM (slotP cafVars) tree) 	
+slotTree tree eHeader cgHeader cgSource
+ 	= evalState (mapM (slotP cgHeader cgSource) tree) 	
  	$ Var.XBind Unique.seaSlot 0
 
 -- | Rewrite code in this top level thing to use the GC slot stack.
-slotP 	:: Set Var		-- ^ set of vars of all CAFs
+slotP 	:: C.Glob		-- ^ header glob
+	-> C.Glob		-- ^ source glob
 	-> Top () 
 	-> VarGenM (Top ())
 
-slotP cafVars p
+slotP cgHeader cgSource p
  = case p of
  	PSuper v args retT ss
 	 -> do	(ssAuto, ssArg, ssR, slotCount)	
-	 		<- slotSS cafVars args ss
+	 		<- slotSS cgHeader cgSource args ss
 
 		let Just (SReturn x) = takeLast ssR
 		retVar		<- newVarN NameValue
@@ -66,7 +71,8 @@ slotP cafVars p
 	_ -> return p
 
 -- | Rewrite the body of a supercombinator to use the GC slot stack
-slotSS 	:: Set Var 		-- ^ set of vars of all CAFs
+slotSS 	:: C.Glob		-- ^ header glob
+	-> C.Glob		-- ^ source glob
 	-> [(Var, Type)] 	-- ^ vars and types of the super parameters
 	-> [Stmt ()] 		-- ^ statements that form the body of the super
 	-> VarGenM 
@@ -75,7 +81,7 @@ slotSS 	:: Set Var 		-- ^ set of vars of all CAFs
 		, [Stmt ()]	-- body of the super, rewritten to use slots.
 		, Int)		-- the number of GC slots used by this super.
 		
-slotSS cafVars args ss
+slotSS cgHeader cgSource args ss
  = do	
  	-- Place the managed args into GC slots.
 	let (ssArg_, state0)
@@ -93,7 +99,7 @@ slotSS cafVars args ss
 
 	-- Rewrite vars in expressions to their slots.
 	let ss3	= map (transformX 
-			(\x -> slotifyX x (stateMap state1) cafVars))
+			(\x -> slotifyX x (stateMap state1) cgHeader cgSource))
 			ss2
 
 	-- Make automatic variables for unboxed values.
@@ -122,21 +128,38 @@ slotAssignArg	(v, t)
 		return	$ Just
 			$ SAssign exp t (XVar v t)
 		
-slotifyX x m cafVars
+slotifyX x m cgHeader cgSource
 	| XVar v _	<- x
 	, Just exp	<- Map.lookup v m
 	= exp
 	
+	-- BUGS: unboxed top level data is not a CAF
 	| XVar v t	<- x
-	, Set.member v cafVars
+	, isCafVar cgHeader cgSource v
 	= XVarCAF v t
 	
 	| otherwise
 	= x
 
+-- | Decide whether a var is represented as a top level CAF.
+--	CAFs are bindings with arity 0, and that weren't imported with an explicit Sea name.
+--
+--	A binding with an explicit Sea name is an external constant, so we don't need
+--	to compute the value of it at module startup time (like we do with other CAFs)
+--
+isCafVar :: C.Glob -> C.Glob -> Var -> Bool
+isCafVar cgHeader cgSource v
+	| Just 0	<- C.bindingArityFromGlob v cgHeader
+	= not $ isJust $ Var.takeSeaNameOfBindingVar v
+		
+	| Just 0	<- C.bindingArityFromGlob v cgSource
+	= not $ isJust $ Var.takeSeaNameOfBindingVar v
+	
+	| otherwise
+	= False
 
--- SlotM ----------------------------------------------------------------------
 
+-- SlotM ------------------------------------------------------------------------------------------
 -- State monad for doing the GC slot transform.
 data SlotS
 	= SlotS

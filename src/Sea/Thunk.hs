@@ -175,7 +175,7 @@ expandCurry
 	x@(XCurry f superA args)
  = do
 	let allocX	= XAllocThunk f superA (length args)
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TThunk) TThunk i) TObj a)	-- type here is wrong
+	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TObj) TObjThunk i) TObj a)
 		  	$ zip args [0..]
 		
   	return	( assignSS
@@ -193,7 +193,7 @@ expandSusp
  = do
  	let allocX	= XAllocSusp f (length args)
 	
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TSusp) TSusp i) TObj a)
+	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TObj) TObjSusp i) TObj a)
 			$ zip args [0..]
 			
 	return	( assignSS

@@ -18,10 +18,10 @@ module Sea.Plate.Trans
 	, transformSS )
 where
 import Sea.Exp
-
-import Util
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 import Control.Monad.State.Strict
-
+import Util
 
 -----
 class Monad m => TransM m a1 a2 exp where
@@ -99,12 +99,8 @@ instance Monad m => TransM m a1 a2 Top where
 	PNil 
 	 ->	transP table PNil
 	
-	-- fix me
 	PData v ctors
-	 ->	transP table	$ PData v []
-
-	PCtor v ts t
-	 ->	transP table	$ PCtor v ts t
+	 -> 	transP table	$ PData v ctors
 	 
 	-- supers
 	PProto v ts t
@@ -133,11 +129,7 @@ instance Monad m => TransM m a1 a2 Top where
 	 
 	PAtom v t
 	 ->	transP table	$ PAtom v t
-	 
-	-- structures
-	PStruct v vts
-	 ->	transP table	$ PStruct v vts
-	 
+	 	 
 	-- hackery
 	PHashDef s1 s2
 	 ->	transP table	$ PHashDef s1 s2

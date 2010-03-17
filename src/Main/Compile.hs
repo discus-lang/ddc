@@ -1,52 +1,59 @@
+{-# OPTIONS -fwarn-unused-imports #-}
+
 module Main.Compile
 	( compileFile )
-
-
 where
-import Main.Arg 			(Arg)
-import Main.IO				as SI
-import Main.Source			as SS
-import Main.Desugar
-import Main.Core			as SC
-import Main.Sea				as SE
-import Main.Dump			as SD
+
+-- This is the module which ties the whole compilation pipeline together
+--	so there'll be a lot of imports...
+
+-- main stages
 import Main.Invoke
 import Main.Setup
-import Main.Init
 import Main.BuildFile
 import Main.Error
 import qualified Main.Arg		as Arg
+import qualified Main.Dump		as Dump
+import qualified Main.Source		as SS
+import qualified Main.Desugar		as SD
+import qualified Main.Core		as SC
+import qualified Main.Sea		as SE
 
-import Source.Slurp			as S
+-- module
+import qualified Module.Export		as M
+import qualified Module.ExportNew	as MN
+import qualified Module.Scrape		as M
+
+-- source
+import qualified Source.Exp		as S
+import qualified Source.Pragma		as Pragma
+
+-- desugar
+import qualified Desugar.Plate.Trans	as D
+
+-- type
+import qualified Type.Plate.FreeVars	as T
+
+-- core
+import qualified Core.Glob		as C
+import qualified Core.Util		as C
+
+-- sea
+import qualified Sea.Util		as E
+
+-- shared
 import Shared.Var			(Module(..), NameSpace(..))
 import Shared.Error
 import Shared.Pretty
 import qualified Shared.Var		as Var
-import qualified Config.Config		as Config
-import qualified Module.Graph		as M
-import qualified Module.Export		as M
-import qualified Module.Scrape		as M
-import qualified Source.Exp		as S
-import qualified Source.Pragma		as Pragma
-import qualified Desugar.Plate.Trans	as D
-import qualified Core.Util.Slurp	as C
-import qualified Core.Plate.FreeVars	as C
-import qualified Type.Plate.FreeVars	as T
-import qualified Sea.Util		as E
 
+-- haskell
 import Util
 import Util.FilePath
-import Numeric
-import Debug.Trace
-import System.Time
-import GHC.IO
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import qualified Control.Exception	as Exception
-import qualified System.IO		as System
-import qualified System.Posix		as System
-import qualified System.Cmd		as System
 import qualified System.Exit		as System
+
 
 out ss		= putStr $ pprStrPlain ss
 
@@ -128,7 +135,7 @@ compileFile_parse
 	let ?verbose		= elem Arg.Verbose ?args
 
 	-- extract some file names
-	let moduleName		= M.scrapeModuleName sRoot
+	let modName		= M.scrapeModuleName sRoot
 
 	let pathSource		= let Just s = M.scrapePathSource sRoot in s
 
@@ -150,7 +157,7 @@ compileFile_parse
 				$ mapM loadInterface 
 				$ Map.toList scrapes_noRoot
 
-	dumpST 	Arg.DumpSourceParse "source-parse--header" 
+	Dump.dumpST 	Arg.DumpSourceParse "source-parse--header" 
 		(concat $ Map.elems importsExp)
 
 
@@ -199,14 +206,14 @@ compileFile_parse
 	((_, sRenamed) : modHeaderRenamedTs)
 			<- {-# SCC "Main.renamed" #-}
 				SS.rename
-					$ (moduleName, sParsed) : Map.toList importsExp
+					$ (modName, sParsed) : Map.toList importsExp
 	
 	let hRenamed	= concat 
 			$ [tree	| (mod, tree) <- modHeaderRenamedTs ]
 
 
 	-- If this module is Main.hs then require it to contain the main function.
-	let moduleDefinesMainFn 
+	let modDefinesMainFn 
 			= any (\p -> case p of
 					S.PStmt (S.SBindFun _ v _ _)
 					 | Var.name v == "main"	-> True
@@ -215,7 +222,7 @@ compileFile_parse
 			$ sRenamed
 	
 	when (  sModule == ModuleAbsolute ["Main"]
-	    &&  (not $ moduleDefinesMainFn))
+	    &&  (not $ modDefinesMainFn))
 		 $ exitWithUserError ?args [ErrorNoMainInMain]
 					
 			
@@ -253,22 +260,22 @@ compileFile_parse
 	-- Do kind inference and tag all type constructors with their kinds
 	outVerb $ ppr $ "  * Desugar: Infer Kinds\n"
 	(hKinds, sKinds, kindTable)
-		<- desugarInferKinds "DK" hDesugared sDesugared
+		<- SD.desugarInferKinds "DK" hDesugared sDesugared
 	
 	-- Elaborate effects and closures of types in foreign imports
 	outVerb $ ppr $ "  * Desugar: Elaborate\n"
 	(hElab, sElab)
-		<- desugarElaborate "DE" hKinds sKinds
+		<- SD.desugarElaborate "DE" hKinds sKinds
 
 	-- Eta expand simple v1 = v2 projections
 	outVerb $ ppr $ "  * Desugar: Project Eta-Expand\n"
 	sProjectEta
-		<- desugarProjectEta "DE" sElab
+		<- SD.desugarProjectEta "DE" sElab
 			
 	-- Snip down dictionaries and add default projections.
 	outVerb $ ppr $ "  * Desugar: Project Snip\n"
 	(dProject, projTable)	
-		<- desugarProject "SP" moduleName hElab sProjectEta
+		<- SD.desugarProject "SP" modName hElab sProjectEta
 
 	-- Slurp out type constraints.
 	outVerb $ ppr $ "  * Desugar: Slurp\n"
@@ -278,7 +285,7 @@ compileFile_parse
 	 , sigmaTable
 	 , vsTypesPlease
 	 , vsBoundTopLevel)
-			<- desugarSlurpConstraints
+			<- SD.desugarSlurpConstraints
 				dProject
 				hElab
 
@@ -298,7 +305,7 @@ compileFile_parse
 	 , vsRegionClasses 
 	 , vsProjectResolve)
 	 		<- runStage "solve"
-			$  desugarSolveConstraints
+			$  SD.desugarSolveConstraints
 				sConstrs
 				vsTypesPlease
 				vsBoundTopLevel
@@ -314,7 +321,7 @@ compileFile_parse
 	-- Convert source tree to core tree
 	(  cSource
 	 , cHeader )	<- runStage "core"
-	 		$ desugarToCore
+	 		$  SD.desugarToCore
 		 		sTagged
 				hTagged
 				sigmaTable
@@ -396,7 +403,6 @@ compileFile_parse
 	when ?verbose
 	 $ do	putStr $ "  * Core: Optimise\n"
 
-
 	-- Inline forced inline functions
 	cInline		<- SC.coreInline
 				cPrim
@@ -410,64 +416,73 @@ compileFile_parse
 	
 	-- Do the full laziness optimisation.
 	cFullLaziness	<- SC.coreFullLaziness 
-				moduleName
+				modName
 				cSimplify
 				cHeader
 
-
 	-- Check the program one last time
 	--	Lambda lifting doesn't currently preserve the typing.
-	--
-	cReconstruct2	<- runStage "reconstruct2"
-			$  SC.coreReconstruct  "core-reconstruct2" cHeader cFullLaziness
+	cReconstruct_final	
+		<- runStage "reconstruct-final"
+		$  SC.coreReconstruct  "core-reconstruct-final" cHeader cFullLaziness
 
-
+	-- Convert to glob form.
+	-- TODO: Use Glob for all of the core stages.
+	let cgProg_prep		= C.globOfTree cReconstruct_final
+	let cgHeader		= C.globOfTree cHeader
+	
+	-- Slurp out ctor defs
+	let mapCtorDefs	= Map.union
+				(C.slurpCtorDefs cReconstruct_final)
+				(C.slurpCtorDefs cHeader)
+			
 	-- Perform lambda lifting.
 	when ?verbose
 	 $ do	putStr $ "  * Core: Lift\n"
 
 	(  cLambdaLift
 	 , vsLambda_new) <- SC.coreLambdaLift
-				cReconstruct2
+				cReconstruct_final
 				cHeader
+
 
 --	Can't lint the code after lifting, lifter doesn't preserve
 --	kinds of witness variables.
 --  	runStage "lint-lifted" 
 --		$ SC.coreLint "core-lint-lifted" cLambdaLift cHeader
 
-	
-	-- Slurp out ctor defs
-	let mapCtorDefs	= Map.union
-				(C.slurpCtorDefs cLambdaLift)
-				(C.slurpCtorDefs cHeader)
-				
+
 	-- Convert field labels to field indicies
 	cLabelIndex	<- SC.coreLabelIndex
 				mapCtorDefs
 				cLambdaLift
+
+	let cgProg_labelIndex	= C.globOfTree cLabelIndex
+
 				
 	-- Sequence bindings and CAFs
 	cSequence	<- SC.coreSequence	
 				cLabelIndex
 				cHeader
-				
-				
+					
 	-- Resolve partial applications.
-	(cCurry, cafVars)
-			<- SC.curryCall
+	cCurry		<- SC.curryCall
 				cSequence
 				cHeader
-
+				cgProg_labelIndex	-- for super arities.
+				cgHeader		-- TODO: refactor to just take the globs.
+				
 	-- Rewrite so atoms are shared.
 	cAtomise	<- if elem Arg.OptAtomise ?args
 				then SC.coreAtomise cCurry cHeader
 				else return cCurry
 	
+	let cgProg_final	= C.globOfTree cAtomise
+	
 	-- Generate the module interface
 	--
 	diInterface	<- M.makeInterface
-				moduleName
+				modName
 				sRenamed
 				dProject
 				cAtomise
@@ -476,6 +491,17 @@ compileFile_parse
 				vsLambda_new
 
 	writeFile (?pathSourceBase ++ ".di") diInterface	
+
+	-- Make the new style module interface.
+	let Just thisScrape	
+			= Map.lookup modName scrapes
+
+	let diNewInterface	
+	 		= MN.makeInterface
+				thisScrape
+
+--	writeFile (?pathSourceBase ++ ".di-new") 
+--		$ show diNewInterface
 
 
 	-- !! Early exit on StopCore
@@ -516,7 +542,8 @@ compileFile_parse
 	eSlot		<- SE.seaSlot	
 				eForce
 				eHeader
-				cafVars
+				cgHeader
+				cgProg_final
 
 	-- Flatten out match stmts.
 	eFlatten	<- SE.seaFlatten
@@ -525,13 +552,13 @@ compileFile_parse
 
 	-- Generate module initialisation functions.
 	eInit		<- SE.seaInit
-				moduleName
+				modName
 				eFlatten
 
 	-- Generate C source code
 	(  seaHeader
 	 , seaSource )	<- SE.outSea
-				moduleName
+				modName
 	 			eInit
 				pathSource
 				(map ((\(Just f) -> f) . M.scrapePathHeader) $ Map.elems scrapes_noRoot)
@@ -540,8 +567,8 @@ compileFile_parse
 
 	-- If this module binds the top level main function
 	--	then append RTS initialisation code.
-	seaSourceInit	<- if moduleDefinesMainFn && blessMain
-				then do mainCode <- SE.seaMain (map fst $ Map.toList importsExp) moduleName
+	seaSourceInit	<- if modDefinesMainFn && blessMain
+				then do mainCode <- SE.seaMain (map fst $ Map.toList importsExp) modName
 				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
 				else 	return  $ seaSource
 				
@@ -567,7 +594,7 @@ compileFile_parse
 		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
 	
 	
-	return moduleDefinesMainFn 
+	return modDefinesMainFn 
 		
 -----
 compileExit
@@ -579,10 +606,3 @@ runStage name stage
  =	stage
 
 	 	 
------
-{-
-dumpImportDef def
-	= putStr	
-	$ pprStrPlain
- 	$ "        " % (padL 30 $ pprStrPlain $ idModule def) % " " % idFilePathDI def % "\n"
--}

@@ -256,6 +256,9 @@ cleanLibrary :
 		-o  -name "*.dylib" \
 		-o	-name "*.a" \
 		-o	-name "*.di" \
+		-o	-name "*.ddc.c" \
+		-o	-name "*.ddc.h" \
+		-o	-name "*.dump-*.*"  \
 		-follow | xargs -n 1 rm -f
 
 
