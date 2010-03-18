@@ -118,11 +118,7 @@ data SquidS
 	-- | We sometimes need just a set of quantified vars, 
 	--	and maintaining this separately from the above stateQuanfiedVarsFM is faster.
 	, stateQuantifiedVars	:: Set Var
-	
-	-- | The data field definitions.
-	-- 	type name	-> (type vars, [(field name, field type)])
---	, stateDataFields	:: Map Var	([Var], [(Var, Type)]) 
-								
+									
 	-- | The projection dictionaries
 	--	ctor name -> (type, field var -> implemenation var)
 	, stateProject		:: Map Var	(Type, Map Var Var)	
