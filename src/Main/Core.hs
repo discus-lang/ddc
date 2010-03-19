@@ -73,6 +73,7 @@ import Prelude				hiding (foldr)
 import qualified Data.Sequence		as Seq
 import Data.Foldable			(foldr)
 
+
 -- | Convert to A-Normal form.
 coreSnip
 	:: (?args	:: [Arg])
@@ -124,7 +125,6 @@ coreDict hTree sTree
 	return	tree'
 
 
-
 -- | Reconstruct and check type information.
 coreReconstruct
 	:: (?args	:: [Arg])
@@ -143,7 +143,6 @@ coreReconstruct name cHeader cTree
  			   reconTree table cHeader cTree
  	dumpCT DumpCoreRecon name cTree'
 	return	cTree'
-
 
 	
 -- | Bind local regions.
@@ -177,7 +176,6 @@ coreBind
 	return tree'
 
 
-
 -- | Thread through witness variables.
 coreThread
 	:: (?args :: [Arg])
@@ -192,7 +190,6 @@ coreThread hTree cTree
  
  	dumpCT DumpCoreThread "core-thread" tree'
 	return tree'
-	
 	
 
 -- | Identify primitive operations.
@@ -277,7 +274,6 @@ coreFullLaziness
  =	return cTree
 
 
-
 -- Function inlining.
 coreInline
 	:: (?args :: [Arg])
@@ -303,7 +299,6 @@ coreInline
  =	return	cTree 
 	
 
-
 -- | Check the tree for syntactic problems that won't be caught by type checking.
 coreLint
 	:: (?args :: 	[Arg])
@@ -327,7 +322,6 @@ coreLint stage cTree cHeader
  = 	return ()
 
 
-	
 -- | Lift nested functions to top level.
 coreLambdaLift
 	:: (?args :: [Arg])	
@@ -371,7 +365,6 @@ coreLambdaLift cSource cHeader
 		, Set.fromList vsBinds_new)
 
 
-
 -- | Convert data structure labels to offsets.
 coreLabelIndex
 	:: (?args :: [Arg])
@@ -402,8 +395,7 @@ curryCall cSource cHeader cgSource cgHeader
 	dumpCT DumpCoreCurry "core-curry" cCurryCall
 	return	cCurryCall
 
-
-					
+			
 -- | Share constant constructors of airity zero.
 coreAtomise
 	:: (?args :: [Arg])
