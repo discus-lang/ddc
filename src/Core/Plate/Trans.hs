@@ -336,17 +336,9 @@ instance Monad m => TransM m Exp where
 	
 transXM2 table xx
  = case xx of
---	XNothing
---	 ->	transX table xx
-	 
 	XNil
 	 ->	transX table xx
 	 
-	XAnnot n x
-	 -> do	x'		<- followX table x
-	 	transX table	$ XAnnot n x'
-		
-
 	-- core constructs
 	XVar v t
 	 -> do	v'		<- followV_free  table v

@@ -14,7 +14,6 @@ module Core.Exp
 	, Prim		(..)	-- primitive functions
 	, Op		(..)	-- primitive operators
 	, Stmt	 	(..)	-- statements
-	, Annot 	(..)	-- expression annotations
 	, Alt 		(..)	-- case/match alternatives
 	, Guard		(..)	-- alternative guards
 	, Pat		(..)	-- guard patterns
@@ -204,19 +203,16 @@ data Exp
 	--	any XNil's _after_ a stage has completed then it will complain.
 	| XNil
 
-	-- | Annotation
-	| XAnnot [Annot] Exp
-
-	-- | A type argument
-	| XType	  Type
-
 	-- An unresolved projection. 
-	--	These are written to real function calls by Core.Dictionary
-	| XProject	Exp	Proj		
+	--	These come from the Desugared IR and are rewritten to 
+	--	real function calls by Core.Dictionary.
+	| XProject Exp Proj		
 	
-	-- Used in Core.CrushApps
+	-- Used to represent flattened value or type applications
+	-- Used in Core.Dictionary (and others?)
 	| XAppF   [Exp]
 	| XAppFP  Exp  (Maybe Effect)
+	| XType	  Type
 
 	-- Used by Desugar.ToCore
 	| XAt	 Var   Exp
@@ -228,6 +224,7 @@ data Exp
 	| XLifted Var [Var]			
 
 	deriving (Show, Eq)
+
 
 -- Proj --------------------------------------------------------------------------------------------
 -- Field projections
@@ -321,15 +318,3 @@ data Label
 	| LVar		Var				-- ^ a field name.
 	deriving (Show, Eq)
 
-
--- Annot -------------------------------------------------------------------------------------------
--- Expression annotations
---	TODO: A Lot of this is junk that isn't being used
-data Annot
-	= NString 	String		-- ^ Some string: for debugging.
-
-	-- Used in Core.Lift
-	| NType   	Type 		-- ^ Gives the type for an expression.
-
-
-	deriving (Show, Eq)

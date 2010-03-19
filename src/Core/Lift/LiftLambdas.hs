@@ -25,6 +25,7 @@ import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
 ----
+stage	= "Core.Lift.LiftLambdas"
 debug	= False
 trace ss x	
 	= if debug
@@ -32,15 +33,10 @@ trace ss x
 		else x
 		
 
------
-stage	= "Core.Lift.LiftLambdas"
-
------------------------
--- liftLambdasP
---	Lift out all lambda bindings from this super.
---	return the new super, as well as the lifted bindings as new supers.
+-- | Lift out all lambda bindings from this super.
+--   	return the new super, as well as the lifted bindings as new supers.
 --
---	XVars for the supers are left in-place of the lifted bindings.
+--   XVars for the supers are left in-place of the lifted bindings.
 --	After calling liftLambdasP we still need to go back and rewrite XVars
 --	to calls to the new supers (passing in any free variables).
 --
@@ -88,7 +84,6 @@ slurpBMore vtMore b
 	_		-> vtMore
 
 -- | Chop the inner most function from this statement
---	
 chopInnerS 
 	:: Var		-- the name of the top-level binding that this statement is a part of
 			-- used to give chopped functions nicer names
@@ -147,12 +142,9 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 	return	$ SBind (Just v) xCall
 
 	
------
--- makeSuperArg
---	When we pass args that were free in a lambda abs back to the super, 
+-- | When we pass args that were free in a lambda abs back to the super, 
 --	just pass new witness instead of their args.. we'll thread the actual
 --	witness though later on
---
 makeSuperArgK :: (Bind, Kind) -> Exp
 makeSuperArgK (b, k)
 	| KClass v ts	<- k
@@ -166,21 +158,18 @@ makeSuperArgK (b, k)
 	= XType (TVarMore k v t)
 
 
--- | Tests whether an expression is syntactically a function.
+-- | Test whether an expression is syntactically a function.
 isFunctionX :: Exp	-> Bool
 isFunctionX xx
  = case xx of
-	XAnnot 	nn x	-> isFunctionX x
 	XLAM	v t x	-> isFunctionX x
 	XAPP	x t	-> isFunctionX x
---	XTet	vts x	-> isFunctionX x
 	XTau	t x	-> isFunctionX x
 	XLam{}		-> True
 	_		-> False
 
 
--- hasEmbeddedLambdas
--- 	| Tests whether an expression contains any _embedded_ lambda abstractions,
+--  | Test whether an expression contains any _embedded_ lambda abstractions,
 --		not including the outermost set.
 --
 --	eg \x -> \y -> f x 3		-- no embedded lambdas
@@ -198,14 +187,10 @@ hasEmbeddedLambdasX xx
 	_			-> hasLambdasX xx
 		
 
------------------------
--- hasLambdasX
---	Checks whether an expression contains any (value) lambda abstractions.
---
+-- | Checks whether an expression contains any (value) lambda abstractions.
 hasLambdasX ::	Exp 	-> Bool
 hasLambdasX	x
  = case x of
-	XAnnot 	a x		-> hasLambdasX x
 	XLAM	v t x		-> hasLambdasX x
 	XAPP x t		-> hasLambdasX x
 	XTau	t x		-> hasLambdasX x
@@ -230,7 +215,6 @@ hasLambdasA	a
 
 -- | Turn this PBind into a combinator by binding its free variables as new parameters.
 --   Returns the freshly bound vars and there type/kinds to help construct calls to it
---
 bindFreeVarsP 
 	:: Map Var Type			-- table of :> constrains on type variables
 	-> Top
@@ -303,7 +287,6 @@ bindFreeVarsP
 
 -- | Add a value lambda to the outside of this expression.
 --	the effect  is set to TBot
-
 addLambda :: (Var, Type) -> (Exp, Closure) -> (Exp, Closure)
 addLambda (v, t) (x, clo)
  = let	-- filter out the closure term corresponding to the var that is bound

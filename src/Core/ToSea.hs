@@ -198,9 +198,8 @@ toSeaX		xx
 	C.XVar v t
 	 -> return $ E.XVar v (toSeaT t)
 
-	-- discard left over annots
-	C.XAnnot  n x		-> toSeaX x
-	C.XTau    t x		-> toSeaX x
+	C.XTau    t x		
+	 -> toSeaX x
 
 	-- slurp region witnesses on the way down
 	C.XLocal  v vts x	

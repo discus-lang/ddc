@@ -99,10 +99,6 @@ snipX1 :: Table -> Map Var Type -> Exp -> SnipM ([Stmt], Exp)
 snipX1	table env xx
  = trace ("snipX1: " % xx)
  $ case xx of
-	XAnnot n x
-	 -> do	(ss, x')	<- snipX1 table env x
-	 	return	(ss, XAnnot n x')
-
 	XTau t	x
 	 -> do	(ss, x')	<- snipX1 table env x
 	 	return	(ss, XTau t x')

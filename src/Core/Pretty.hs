@@ -128,9 +128,6 @@ instance Pretty Exp PMode where
 	XNil	
 	 -> ppr "@XNil"
 
-	XAnnot a e
-	 -> "[" % a % ";\n " % e % "]"
-
 	XVar v TNil
 	 -> "(" % pv v % " :: _)"
 
@@ -264,7 +261,6 @@ prettyExpB x
  = case x of
 	XVar{}		-> ppr x
 	XLit{}		-> ppr x
-	XAnnot{}	-> ppr x
 	XType t		-> prettyTB t
 	_		-> "(" % x % ")"
 
@@ -367,12 +363,5 @@ instance Pretty Label PMode where
   	LIndex	i	-> ppr i
 	LVar	v	-> ppr v
 
-
--- Annot --------------------------------------------------------------------------------------------
-instance Pretty Annot PMode where
- ppr xx
-  = case xx of
-  	NString s	-> "&NString " 	 % s
-	NType x		-> "&NType "  	 % x
 
 

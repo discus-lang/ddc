@@ -27,9 +27,6 @@ instance FreeVars Exp where
   = case xx of
 	XNil		-> empty
 	
-	XAnnot	n x	
-	 -> freeVars x
-
  	XVar	v t	
 	 -> unions
 	 	[ singleton v

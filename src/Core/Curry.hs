@@ -79,7 +79,6 @@ curryX	env vsTailCall xx
 	-- boilerplate.
 	| XLAM v k x		<- xx	= XLAM v k (downX x)
 	| XLam v t x eff clo	<- xx	= XLam v t (downX x) eff clo
-	| XAnnot n x		<- xx	= XAnnot n 	$ downX x
 	| XTau t x		<- xx	= XTau t	$ downX x
 	| XLocal v vs x		<- xx	= XLocal v vs	$ downX x
 	| XMatch aa		<- xx	= XMatch 	$ map downA aa
