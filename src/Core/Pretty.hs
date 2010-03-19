@@ -128,9 +128,6 @@ instance Pretty Exp PMode where
 	XNil	
 	 -> ppr "@XNil"
 
-	XNothing
-	 -> ppr "@XNothing"
-
 	XAnnot a e
 	 -> "[" % a % ";\n " % e % "]"
 
@@ -208,11 +205,6 @@ instance Pretty Exp PMode where
 
 	XTau t x
 	 -> "[** " % prettyTB t % " ]\n" % x
-
-	XTet vts x
-	 -> "\n" %!%
-	    (map (\(v, t) -> "let " % padL 16 (sv v) % " =  " % t % " in") vts)
-	    % "\n" % x	 
 
 	XDo [s@(SBind Nothing XVar{})]
 	 -> "do { " % s % "; }";
@@ -311,9 +303,6 @@ instance Pretty Op PMode where
 instance Pretty Stmt PMode where
  ppr xx
   = case xx of
---	SComment s
---	 -> "-- " % ppr s
-
 	SBind Nothing x
 	 -> ppr x
 

@@ -86,7 +86,6 @@ boundUseX level xx
  = case xx of
  	XLAM bind k x		-> boundUseX level x
 	XAPP x t		-> boundUseX level x
-	XTet vts x		-> boundUseX level x
 	XTau vts x		-> boundUseX level x
 	
 	XLam v t x eff clo	-> boundUseX (level + 1) x

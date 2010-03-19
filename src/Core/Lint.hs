@@ -62,11 +62,6 @@ addError    err
 addVT :: Var -> Type -> Table -> LintM Table
 addVT v t table		
  = return $ table { tableTypes = Map.insert v t (tableTypes table) }
-
-{- = case Map.lookup v (tableTypes table) of
- 	Nothing	-> 
-	Just k	-> panic stage $ "addVT: var " % v % " is already bound to " % t % "\n"
--}
 	
 addVTs vts table	= foldM (\tt (v, t) -> addVT v t tt) table vts 
 
@@ -201,11 +196,6 @@ lintX tt (XLAM v k x)
 lintX tt (XAPP x t)
  = do	lintX tt x
  	lintT tt t
-	
-lintX tt (XTet vts x)
- = do	tt'	<- addVTs vts tt
- 	mapM_ (lintT tt') $ map snd vts
- 	lintX tt' x
 	
 lintX tt (XTau t x)
  = do	lintX tt x
@@ -392,14 +382,6 @@ lintT tt (TEffect v ts)
 lintT tt (TFree	v t)
  = 	lintT tt t
  
--- witnesses
--- lintT tt (TPurify eff wit)
--- = do	lintT tt eff
--- 	lintT tt wit
-
--- lintT tt (TPurifyJoin wits)
---  = do	mapM_ (lintT tt) wits	 
-
 lintT tt (TWitJoin wits)
  = do	mapM_ (lintT tt) wits
 

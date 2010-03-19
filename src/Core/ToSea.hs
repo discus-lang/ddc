@@ -170,10 +170,7 @@ splitSuper accArgs xx
 
 	| C.XTau t x		<- xx
 	= splitSuper accArgs x
-	
-	| C.XTet vts x		<- xx
-	= 	splitSuper accArgs x
-	
+		
 	| C.XLocal v vts x	<- xx
 	= do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
 		mapM_ slurpWitnessKind ks
@@ -204,7 +201,6 @@ toSeaX		xx
 	-- discard left over annots
 	C.XAnnot  n x		-> toSeaX x
 	C.XTau    t x		-> toSeaX x
-	C.XTet    vts x		-> toSeaX x
 
 	-- slurp region witnesses on the way down
 	C.XLocal  v vts x	

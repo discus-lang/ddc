@@ -5,7 +5,6 @@ module	Core.OpType
 	, superOpTypeX )
 where
 import Core.Exp
--- import Core.Util.Slurp
 import Core.Reconstruct
 import Type.Exp
 import Type.Util
@@ -76,7 +75,6 @@ superOpType'	xx
  = case xx of
 	-- skip over type information
 	XLAM    v k x	-> superOpType' x
-	XTet    vts x	-> superOpType' x
 
 	-- slurp off parameter types
  	XLam v t x eff clo 

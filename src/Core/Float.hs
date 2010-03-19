@@ -301,10 +301,6 @@ floatBindsX level share tt xx
 	 -> let (tt', x')	= floatBindsX level share tt x
 	    in	(tt', XAPP x' t)
 
-	XTet vts x
-	 -> let (tt', x')	= floatBindsX level share tt x
-	    in  (tt', XTet vts x')
- 
 	XTau t x
 	 -> let (tt', x')	= floatBindsX level share tt x
 	    in	(tt', XTau t x')

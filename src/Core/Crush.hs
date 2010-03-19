@@ -15,9 +15,6 @@ import Util
 import Control.Monad
 
 -----
--- stage	= "Core.Crush"
-
------
 crushTree :: Tree -> Tree
 crushTree tree
 	= transformSS crushSS tree
@@ -52,10 +49,6 @@ crushX xx
 	 -> liftM (\(ss, x') -> (ss, XTau t x'))
 	 $ crushX x
 	 
-	XTet vts x
-	 -> liftM (\(ss, x') -> (ss, XTet vts x'))
-	 $ crushX x
-	 	 
 	_ 	-> Nothing
 	
 

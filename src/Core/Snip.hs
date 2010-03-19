@@ -106,16 +106,7 @@ snipX1	table env xx
 	XTau t	x
 	 -> do	(ss, x')	<- snipX1 table env x
 	 	return	(ss, XTau t x')
-
-
-	-- Decend into an XTet, remembering the bindings.
-	--	ALSO: might not need these bindings if we snip out the only bound occurance of it.
-	XTet vts x		
-	 -> do	let env'	= (Map.union (Map.fromList vts) env)
-	 	(ss, x')	<- snipX1 table env' x
-	 	return	(ss, XTet vts x')
-		
-
+	
 	-- Can't lift exprs out of the scope of binders,
 	--	there might be free variables in them that would become out of scope
 	XLAM{}			-> leaveIt xx
@@ -158,8 +149,6 @@ snipX table xx
 	XLAM{}			-> snipIt table xx
 
 	XAPP{}			-> snipXLeft table xx
-		
-	XTet{}			-> snipIt table xx
 
 	XTau t x
 	 -> do	(ss, x')	<- snipX table x

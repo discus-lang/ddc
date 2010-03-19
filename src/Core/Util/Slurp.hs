@@ -61,11 +61,6 @@ maybeSlurpTypeX	xx
 	, Just x'		<- maybeSlurpTypeX x
 	= Just $ makeTFun t x' eff clo
 	
-	| XTet vts x		<- xx
-	, Just x'		<- maybeSlurpTypeX x
-	= Just $ TFetters x' 
-			[FWhere (TVar (defaultKindV v) v) t 
-				| (v, t) <- vts ]
 	| XTau t x		<- xx
 	= Just t
 
@@ -90,7 +85,6 @@ slurpExpX ::	Exp -> Exp
 slurpExpX xx
  = case xx of
  	XLAM 	v k x	-> slurpExpX x
-	XTet 	vts x	-> slurpExpX x
 	XTau 	t x	-> slurpExpX x
 	_		-> xx
 
@@ -142,11 +136,6 @@ dropXTau xx env tt
 	, Just (_, t2, _, _)	<- takeTFun tt
 	= XLam v t (dropXTau x env t2) eff clo
 	
-	-- If we see an XTet on the way down then we won't need to give a TWhere
-	--	for that binding, it'll already be in scope.
-	| XTet vts x		<- xx
-	= XTet vts $ dropXTau x (foldr Map.delete env $ map fst vts) tt
-
 	-- there's already an XTau here,
 	--	no point adding another one, 
 	--	bail out

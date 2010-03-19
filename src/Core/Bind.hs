@@ -445,7 +445,6 @@ canBindX xx
  = case xx of
  	XLAM v t x		-> canBindX x
 	XAPP{}			-> False
-	XTet vts x		-> canBindX x
 	XTau t x		-> canBindX x
 	XLam v t x eff clo	-> canBindX x
 	XApp{}			-> False

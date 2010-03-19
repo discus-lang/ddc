@@ -25,7 +25,6 @@ stage	= "Core.Plate.FreeVars"
 instance FreeVars Exp where
  freeVars xx
   = case xx of
-	XNothing	-> empty
 	XNil		-> empty
 	
 	XAnnot	n x	
@@ -63,13 +62,6 @@ instance FreeVars Exp where
 	 -> unions
 	 	[ freeVars t
 		, freeVars x ]
-
-	XTet vts x
-	 -> unions
-	 	[ freeVars x
-		, Set.unions $ map (freeVars . snd) vts]
-		
-		\\ (Set.fromList $ map fst vts)
 
 	XLocal v vs x
 	 -> freeVars x \\ fromList [v]

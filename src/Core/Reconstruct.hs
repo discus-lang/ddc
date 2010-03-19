@@ -284,19 +284,6 @@ reconX exp@(XAPP x t)
 		% "     t      =\n" %> t		% "\n\n"
 		% "   T[x]     =\n" %> tX	% "\n\n"
 
--- Tet
-reconX (XTet vts x)
- = do	(x', tx, xe, xc)
-		<- tempState
-			(\tt -> foldr (uncurry addEqVT) tt vts)
-			(reconX x)
-	return	( XTet   vts x'
-		, TFetters tx
-			[ FWhere (TVar (defaultKindV v) v) t2
-			| (v, t2)	<- vts]
-		, xe
-		, xc)
-
 -- xtau
 -- We can't actually check the reconstructed type against the annotation here
 --	because we can't see /\ bound TREC variables that might be bound above us.
@@ -717,20 +704,7 @@ reconOpApp op xs
 		, v == (primTBool Unboxed)
 		, t1 == t2
 		= (makeTData (primTBool Unboxed) kValue [], tPure)
-{-
-	-- boolean operators
-	| elem op [OpAnd, OpOr]
-	, [t1, t2]		<- map (t4_2 . reconX tt) xs
-	, Just (v, k, [])	<- takeTData t1
-	, v == (primTBool Unboxed)
-	, t1 == t2
-	= (makeTData (primTBool Unboxed) kValue [], tPure)
-	
-	| otherwise
-	= panic stage
-	$ "reconOpApp: no match for " % op % " " % xs % "\n"
-	% "types = " % (map (t4_2 . reconX tt) xs) % "\n"
--}
+
 		| otherwise
 		= panic stage
 		$ "reconOpApp: no match for " % op % " " % xs % "\n"

@@ -6,10 +6,7 @@
 --
 module Core.Prim
 	( primTree )
-
-
 where
-
 import Core.Exp
 import Core.Util
 import qualified Core.Reconstruct	as Recon
@@ -120,10 +117,6 @@ primX tt xx
 	 -> let (tt', x')	= primX tt x
 	    in	(tt', XAPP x' t)
 
-	XTet vts x
-	 -> let (tt', x')	= primX tt x
-	    in  (tt', XTet vts x')
- 
 	XTau t x
 	 -> let (tt', x')	= primX tt x
 	    in	(tt', XTau t x')

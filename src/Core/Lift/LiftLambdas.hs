@@ -1,9 +1,7 @@
 
 module Core.Lift.LiftLambdas
 	( liftLambdasP )
-
 where
-
 import Core.Exp
 import Core.Util
 import Core.Util.Slurp
@@ -175,7 +173,7 @@ isFunctionX xx
 	XAnnot 	nn x	-> isFunctionX x
 	XLAM	v t x	-> isFunctionX x
 	XAPP	x t	-> isFunctionX x
-	XTet	vts x	-> isFunctionX x
+--	XTet	vts x	-> isFunctionX x
 	XTau	t x	-> isFunctionX x
 	XLam{}		-> True
 	_		-> False
@@ -193,7 +191,6 @@ hasEmbeddedLambdasX xx
  = case xx of
  	XLAM	v t x		-> hasEmbeddedLambdasX x
 	XAPP 	x t		-> hasEmbeddedLambdasX x
-	XTet	vts x		-> hasEmbeddedLambdasX x
 	XTau	t x		-> hasEmbeddedLambdasX x
 	XLocal	v vs x		-> hasEmbeddedLambdasX x
 	XLam	v t x eff clo	-> hasEmbeddedLambdasX x
@@ -209,10 +206,8 @@ hasLambdasX ::	Exp 	-> Bool
 hasLambdasX	x
  = case x of
 	XAnnot 	a x		-> hasLambdasX x
-
 	XLAM	v t x		-> hasLambdasX x
 	XAPP x t		-> hasLambdasX x
-	XTet	vts x		-> hasLambdasX x
 	XTau	t x		-> hasLambdasX x
 
 	XLam{}			-> True

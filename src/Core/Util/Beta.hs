@@ -24,12 +24,6 @@ data BetaS
 	, sBoundX	:: Map Var Exp }
 		
 type BetaM = State BetaS
-
-{-
-bindType :: Var -> Type -> Type -> BetaM ()
-bindType v k t
-	= modify (\s -> s { sBoundT = Map.insert v k (sBoundT s) })
--}
 	
 bindValue :: Var -> Type -> Exp -> BetaM ()
 bindValue v k x
@@ -71,12 +65,8 @@ betaXM x
 betaX :: Exp -> BetaM Exp
 
 betaX (XAPP (XLAM b t1 x) t)
- = do	-- bindType (varOfBind b) t t1
- 	return	$ x
+ = do	return	$ x
 	
-betaX (XApp (XTet vts x1) x2 eff)
- = do	return	$ XTet vts (XApp x1 x2 eff)
- 
 betaX (XApp (XLam v t x1 eff1 clo) x2 eff2)
  = do	bindValue v t x2
  	return	$ x1
@@ -103,10 +93,9 @@ betaT t
 	= 	return t
 
 
-
 -----
 -- Hacks: clean out all Tets from the tree
-
+--
 cleanTetTree  :: Tree -> Tree
 cleanTetTree tree
  = evalState
@@ -122,16 +111,6 @@ cleanTetV_bind v
  = do	modify (Set.insert v)
  	return v
 	
-{-
-cleanTetX (XTet v t x)
- = do	usedVs	<- get
- 	if Set.member v usedVs 
-	 then	return	$ XTet v t x
-	 else	return x
--}
-cleanTetX (XTet vts x)
- =	return x
-
 cleanTetX x
  =	return x
 

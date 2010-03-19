@@ -251,7 +251,6 @@ followK table k
  | decendK table	= transZM table k
  | otherwise		= return k
  
--- followVs table vs	= mapM (followV table) vs
 followV table v		= transV table v
 
 followV_free table v
@@ -337,8 +336,8 @@ instance Monad m => TransM m Exp where
 	
 transXM2 table xx
  = case xx of
-	XNothing
-	 ->	transX table xx
+--	XNothing
+--	 ->	transX table xx
 	 
 	XNil
 	 ->	transX table xx
@@ -384,16 +383,6 @@ transXM2 table xx
 	 	x'		<- followX table x
 		transX table	$ XTau t' x'
 		
-	XTet vts x
-	 -> do	let (vs, ts)	= unzip vts
-		vs'		<- mapM (followV_bind table) vs
-		ts'		<- mapM (followT table) ts
-		let vts'	= zip vs' ts'
-
-		x'		<- followX table x
-
-		transX table	$ XTet vts' x'
-
 	XDo ss
 	 -> do	ss'		<- followSs table ss
 	 	transX table	$ XDo ss'
@@ -446,9 +435,6 @@ transXM2 table xx
 	 -> do	v'		<- followV_free table v
 	 	transX table	$ XLifted v' vsFree
 		
---	_	-> panic stage
---		$  "transXM: no match for " % show xx
-
 
 -----
 instance Monad m => TransM m Prim where

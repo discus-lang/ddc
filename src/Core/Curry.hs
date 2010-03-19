@@ -81,7 +81,6 @@ curryX	env vsTailCall xx
 	| XLam v t x eff clo	<- xx	= XLam v t (downX x) eff clo
 	| XAnnot n x		<- xx	= XAnnot n 	$ downX x
 	| XTau t x		<- xx	= XTau t	$ downX x
-	| XTet vts x		<- xx	= XTet 	 vts	$ downX x
 	| XLocal v vs x		<- xx	= XLocal v vs	$ downX x
 	| XMatch aa		<- xx	= XMatch 	$ map downA aa
 	| XPrim{}		<- xx	= xx

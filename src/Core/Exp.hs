@@ -156,48 +156,63 @@ data ClassContext
 -- Exp ---------------------------------------------------------------------------------------------
 -- Core Expressions
 data Exp
-	= XNothing		-- ^ Empty expression
-				-- 	In contrast to XNil, an XNothing represents some part of the
-				--	tree with is _supposed_ to be empty between stages
+	-- Common Fragment ----------------------------------------------------
+	-- These constructors are used in all stages.
 
-	| XNil			-- ^ Nil expression.
-				--	XNil is used internally by compiler stages as a place holder for
-				--	information that isn't present at the moment. If Core.Lint finds
-				--	any XNil's _after_ a stage has completed then it will complain.
-	
-	| XAnnot [Annot] Exp	-- ^ Annotation.
+	-- | A variable with its type
+	= XVar		Var	Type
 
+	-- | A literal value
+	| XLit		LiteralFmt
 
-	------
-	-- Core Constructs
-	--
-	| XLAM		Bind 	Kind	Exp		-- ^ Type\/region\/effect\/closure abstraction.
-	| XAPP		Exp	Type			-- ^ Type\/region\/effect\/closure application.
-	| XTet		[(Var, Type)]	Exp		-- ^ A type-level let binding.
-	| XTau		Type	Exp			-- ^ A type annotation.
+	-- | Type abstraction.
+	| XLAM		Bind 	Kind	Exp
 
-	| XLam		Var	Type	Exp  Effect Closure	-- ^ Value abstraction.	
-	| XApp		Exp	Exp	Effect		-- ^ Value application.
+	-- | Type application.
+	| XAPP		Exp	Type
 
-	| XDo		[Stmt]				-- ^ Do expression.		TODO add Effect
-	| XMatch	[Alt]				-- ^ Matching of constructors and constants with effects.
-	| XLocal	Var	[(Var, Type)] Exp	-- ^ Introduce a local region.
+	-- | Value abstraction
+	| XLam		Var	Type	Exp  Effect Closure
 
-	| XVar		Var	Type 			-- ^ A variable.
-	| XLit		LiteralFmt			-- ^ A literal value
+	-- | Value application
+	| XApp		Exp	Exp	Effect
 
+	-- | Do expression, contains stmts to execute.
+	| XDo		[Stmt]
+
+	-- | Matching and branching.
+	| XMatch	[Alt]
+
+	-- | Introduce a local region (letregion)
+	| XLocal	Var	[(Var, Type)] Exp
+
+	-- | Some primitive function
 	| XPrim		Prim 	[Exp]
-	| XType	  Type
 
+	-- | A type annotation
+	| XTau		Type	Exp
+
+
+	-- Special Purpose Constructors ---------------------------------------
+	-- These are only used in specific stages.
+	-- It would be better to refactor these into a common (XAnnot a) constructor
+	-- 	and abstract over the annotation type.
+
+	-- | Nil expression.
+	--	XNil is used internally by compiler stages as a place holder for
+	--	information that isn't present at the moment. If Core.Lint finds
+	--	any XNil's _after_ a stage has completed then it will complain.
+	| XNil
+
+	-- | Annotation
+	| XAnnot [Annot] Exp
+
+	-- | A type argument
+	| XType	  Type
 
 	-- An unresolved projection. 
 	--	These are written to real function calls by Core.Dictionary
 	| XProject	Exp	Proj		
-
-	------
-	-- Intermediate construcors
-	--	These should not escape out of the modules that make use of them.
-	--
 	
 	-- Used in Core.CrushApps
 	| XAppF   [Exp]
@@ -207,9 +222,10 @@ data Exp
 	| XAt	 Var   Exp
 				
 	-- Used by Core.Lift
-	| XLifted Var [Var]			-- ^ Place holder for a lambda abstraction that was lifted out
-						-- 	name of lifted function. 
-						--	Name of supercombinator, vars which were free in lifted expression.
+	--  	Place holder for a lambda abstraction that was lifted out
+	-- 	name of lifted function. 
+	--	Name of supercombinator, vars which were free in lifted expression.
+	| XLifted Var [Var]			
 
 	deriving (Show, Eq)
 

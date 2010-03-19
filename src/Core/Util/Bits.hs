@@ -69,15 +69,10 @@ isCafP	pp
 isCafX xx
  = case xx of
 	XAnnot n x	-> isCafX x
-
  	XLAM v k x	-> isCafX x
 	XLam{}		-> False
-	
-	XTet vts x	-> isCafX x
 	XTau t x	-> isCafX x
-	
 	XLocal v vs x	-> isCafX x
-	
 	_		-> True
 
 

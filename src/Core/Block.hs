@@ -9,16 +9,12 @@
 --
 module Core.Block
 	( blockTree )
-
 where
-
-import Util
-import Shared.Error
 import Core.Exp
 import Core.Plate.Trans
+import Shared.Error
+import Util
 
------
--- stage	= "Core.Block"
 
 -- | Introduce XDo expressions into this tree.
 blockTree :: Tree -> Tree
@@ -57,7 +53,6 @@ blockXF xx
  = case xx of
  	XDo{}			-> xx
 	XTau t x		-> XTau t	$ blockXF x
-	XTet vts x		-> XTet vts	$ blockXF x
 	_			-> XDo [ SBind Nothing xx]
 
 -- | force this expression to be an XDo
@@ -66,7 +61,6 @@ blockX xx
  = case xx of
 	XDo{}			-> xx
 	XTau t x		-> blockXL xx
-	XTet vts x		-> blockXL xx
 	_			-> XDo [ SBind Nothing xx ]
 
 blockXL xx
@@ -74,6 +68,5 @@ blockXL xx
   	XLAM{}			-> xx
 	XLam{}			-> xx
 	XTau   t x		-> XTau t 	(blockXL x)
-	XTet   vts x		-> XTet vts 	(blockXL x)
 	XDo{}			-> xx
 	_			-> XDo [ SBind Nothing xx ]
