@@ -419,13 +419,7 @@ transXM2 table xx
 	 	aa'		<- followXs table aa
 		transX table	$ XPrim m' aa'
 		
-
 	-- intermediate constructors
-	XAtom	v xs
-	 -> do	v'		<- followV_free table v
-	 	xs'		<- followXs table xs
-		transX table	$ XAtom v' xs'
-
 	XProject x j
 	 -> do	x'		<- followX table x
 	 	transX table	$ XProject x' j

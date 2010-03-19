@@ -25,10 +25,7 @@ import Data.Function
 -----
 stage	= "Core.Pretty"
 
--------------------------------------------------------------------------------------------------
--- Some useful options for debugging
---
-
+-- Debugging --------------------------
 -- | Fold multiple binders into a single line.
 prettyFoldXLAM		= True
 
@@ -45,6 +42,7 @@ pv v
    in  case Var.nameSpace v of
  	Var.NameType	-> "*" % vStrip
 	_		-> ppr vStrip
+
 
 -- Top ----------------------------------------------------------------------------------------------
 instance Pretty Top PMode where
@@ -244,9 +242,6 @@ instance Pretty Exp PMode where
 
 	XProject x j
 	 -> x % j
-
-	XAtom v args
-	 -> "@XAtom "	% v % " " % args 
 
 
 	-- intermediate

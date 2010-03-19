@@ -193,7 +193,7 @@ data Exp
 
 
 	-- ditch these
-	| XAtom	    	Var	[Exp]			-- ^ Reference an Atom. 	name, type args.
+--	| XAtom	    	Var	[Exp]			-- ^ Reference an Atom. 	name, type args.
 							--	Atoms are constructors of zero arity, eg Nil, Nothing.
 
 	-- An unresolved projection. 

@@ -287,9 +287,6 @@ toSeaX		xx
 	 	return	$ E.XForce x'
 
 
-	C.XAtom v ts
-	 -> return	$ E.XAtom v
-
 	-- non string constants
 	C.XLit litFmt@(LiteralFmt lit fmt)
 	 | dataFormatIsBoxed fmt

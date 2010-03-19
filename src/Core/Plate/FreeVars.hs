@@ -1,25 +1,21 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
+-- | Take sets of free variables by core expressions.
 module Core.Plate.FreeVars
 	( freeVars
 	, varsBoundByG
 	, varsBoundByW )
-
 where
-
-import qualified Data.Set as Set
-import Data.Set			(Set, (\\), unions, fromList, empty, singleton)
-
-import Util			hiding ((\\))
-
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
-import Shared.Error
-import Shared.FreeVars
-
 import Core.Exp
 import Type.Util.Bits		(varOfBind)
 import Type.Pretty
+import Shared.Var		(Var, NameSpace(..))
+import Shared.Error
+import Shared.FreeVars
+import qualified Shared.Var	as Var
+import qualified Data.Set as Set
+import Data.Set			(Set, (\\), unions, fromList, empty, singleton)
+import Util			hiding ((\\))
 
 -----
 stage	= "Core.Plate.FreeVars"
@@ -104,13 +100,6 @@ instance FreeVars Exp where
 	
 	XProject x j
 	 ->	freeVars x
-
-
-	-- atoms
-	XAtom v xs
-	 -> unions
-	 	[ fromList [v]
-		, unions $ map freeVars xs ]
 
 	-- intermediate
 	XType t
