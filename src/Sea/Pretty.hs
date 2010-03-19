@@ -73,10 +73,6 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 	%> ("\n" %!% ss % "\n")
 	 % "}\n\n\n"
 	
-	-- atoms
-	PAtomProto v t	-> "extern " % t % " _atom" % sV v % ";\n"
-	PAtom v t	-> t % " _atom" % sV v % " = 0;\n" 
-
 	-- Sea hackery.
 	PInclude s		-> "#include <" % s % ">\n"
 	PIncludeAbs s		-> "#include \"" % s % "\"\n"

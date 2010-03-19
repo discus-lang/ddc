@@ -65,13 +65,7 @@ expandCtor (CtorDef vCtor tCtor arity tag fields)
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
 	let super	= [PSuper vCtor argVs TObj stmts]
 	
-	-- If this ctor has no fields, emit an atom def as well
-	let atom	= if Map.null fields
-				then	[ PAtomProto vCtor TObj
-					, PAtom      vCtor TObj]
-				else 	[]
-	
-	return 		$ atom ++ super
+	return 		$ super
  	
 
 -- | Create initialization code for this field

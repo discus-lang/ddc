@@ -63,14 +63,14 @@ data Top a
 	-- atoms ----------------------
 	--	Atoms are constructors of arity 0, like True and Nil
 	-- | Atom prototype
-	| PAtomProto
-		Var 				--	variable name
-		Type				--	type of atom
+--	| PAtomProto
+--		Var 				--	variable name
+--		Type				--	type of atom
 
 	-- | Atom definition
-	| PAtom
-		Var 				--	variable name
-		Type				--	type of atom
+--	| PAtom
+--		Var 				--	variable name
+--		Type				--	type of atom
 
 
 	-- | Structure definition

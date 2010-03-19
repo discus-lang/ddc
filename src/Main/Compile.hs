@@ -476,7 +476,7 @@ compileFile_parse
 	let cgProg_curry	= C.globOfTree cCurry
 
 				
-	-- Rewrite so atoms are shared ----------------------------------------
+	-- Rewrite so constant atoms are shared ------------------------------
 	outVerb $ ppr $ "  * Core: Atomise\n"
 	cgAtomise	<- if elem Arg.OptAtomise ?args
 				then SC.coreAtomise cgHeader cgProg_curry

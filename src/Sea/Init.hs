@@ -22,17 +22,10 @@ initTree
 	-> Tree ()
 
 initTree moduleName cTree
- = let 	initAtomSS	= [ SAssign (XAtom v) t $ XAllocDataAnchored v 0
-				| PAtom v t	<- cTree]
-
-	initCafSS	= catMap makeInitCaf [ v | PCafSlot v t <- cTree, not (typeIsUnboxed t) ]
-	initSS		= initAtomSS ++ initCafSS
-
+ = let 	initCafSS	= catMap makeInitCaf [ v | PCafSlot v t <- cTree, not (typeIsUnboxed t) ]
 	initV		= makeInitVar moduleName
-
 	super		= [ PProto initV [] TObj
-			  , PSuper initV [] TObj initSS ]
-
+			  , PSuper initV [] TObj initCafSS ]
    in	super ++ cTree
 
 makeInitCaf v

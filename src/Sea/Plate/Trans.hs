@@ -122,14 +122,7 @@ instance Monad m => TransM m a1 a2 Top where
 	 -> do	ss2		<- mapM (transZM table) ss
 	 	ss3		<- transSS table ss2
 		transP table	$ PCafInit v t ss3
-		
-	-- atoms
-	PAtomProto v t
-	 -> 	transP table	$ PAtomProto v t
-	 
-	PAtom v t
-	 ->	transP table	$ PAtom v t
-	 	 
+			 	 
 	-- hackery
 	PHashDef s1 s2
 	 ->	transP table	$ PHashDef s1 s2

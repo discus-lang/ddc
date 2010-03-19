@@ -1,4 +1,6 @@
+{-# OPTIONS -fwarn-unused-imports #-}
 
+-- | Wrappers for compiler stages dealing with Sea code.
 module Main.Sea
 	( seaSub
 	, seaCtor
@@ -8,19 +10,10 @@ module Main.Sea
 	, seaFlatten
 	, seaInit
 	, seaMain
-
 	, outSea)
 where
-
------
-import Shared.Var		(Module(..))
-import Shared.Error
-import Shared.Pretty
-
-import Sea.Pretty
 import Sea.Exp
 import Sea.Util
-
 import Sea.Sub			(subTree)
 import Sea.Ctor			(expandCtorTree)
 import Sea.Proto		(addSuperProtosTree)
@@ -29,30 +22,19 @@ import Sea.Force		(forceTree)
 import Sea.Slot			(slotTree)
 import Sea.Flatten		(flattenTree)
 import Sea.Init			(initTree, mainTree)
-
-import Sea.Plate.Trans
-
-import qualified Main.Version	as Version
 import Main.Arg
 import Main.Dump
-
+import Shared.Var		(Module(..))
+import Shared.Error
+import Shared.Pretty
 import qualified Core.Exp	as C
+import qualified Main.Version	as Version
 
-
-import System.Cmd
-import System.Exit
-import qualified Data.Map	as Map
-import Data.Map			(Map)
 import Data.Char
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import Util
 
-------
--- seaSub
---
+
+-- | Substitute trivial x1 = x2 bindings
 seaSub
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
@@ -69,18 +51,15 @@ seaSub tree
 	
 	return tree'
 	
-		
------------------------
--- expandCtor
---
+
+-- | Expand code for data constructors.
 seaCtor 
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
 
-seaCtor
-	eTree
+seaCtor eTree
  = do
 	let eExpanded	= addSuperProtosTree
 			$ expandCtorTree
@@ -90,19 +69,16 @@ seaCtor
 		$ eraseAnnotsTree eExpanded
 	
 	return eExpanded
-		
 
------------------------
--- expandThunking
---
+
+-- | Expand code for creating thunks
 seaThunking 
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
 	
-seaThunking	 
-	eTree
+seaThunking eTree
  = do
 	let tree'	= thunkTree eTree
 	dumpET DumpSeaThunk "sea-thunk" 
@@ -111,17 +87,14 @@ seaThunking
 	return tree'
 
 
------------------------
--- seaForce
---
+-- | Add code for forcing suspensions
 seaForce 
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
 	
-seaForce
-	eTree
+seaForce eTree
  = do
 	let tree'	= forceTree eTree
 	dumpET DumpSeaForce "sea-force" 
@@ -130,9 +103,7 @@ seaForce
  	return	tree'
 
 
------------------------
--- seaSlot
---
+-- | Store pointers on GC slot stack.
 seaSlot
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
@@ -151,9 +122,7 @@ seaSlot	eTree eHeader cgHeader cgSource
 	return	tree'
 
 
------------------------
--- seaFlatten
---
+-- | Flatten out match expressions.
 seaFlatten
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
@@ -169,9 +138,7 @@ seaFlatten unique eTree
 	return	tree'
  
 
------------------------
--- seaInit
---
+-- | Add module initialisation code
 seaInit
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
@@ -186,9 +153,8 @@ seaInit moduleName eTree
 		
 	return tree'
 	
------------------------
--- outSea
---		
+
+-- | Create C source files
 outSea 
 	:: (?args :: [Arg])
 	=> Module
@@ -210,14 +176,12 @@ outSea
 	-- Break up the sea into Header/Code parts.
 	let 	([ 	seaProtos, 		seaSupers
 		 , 	seaCafProtos,		seaCafSlots,		seaCafInits
-		 , 	seaAtomProtos,		seaAtoms
 		 ,      _seaData
 		 , 	seaHashDefs ], junk)
 
 		 = partitionFs
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
 			, (=@=) PCafProto{},	(=@=) PCafSlot{},	(=@=) PCafInit{}
-			, (=@=) PAtomProto{},  	(=@=) PAtom{}
 			, (=@=) PData{}
 			, (=@=) PHashDef{} ]
 			eTree
@@ -237,7 +201,6 @@ outSea
 		++ (map PInclude extraIncludes)
 
 		++ [ PHackery "\n"]	++ seaHashDefs
-		++ [ PHackery "\n"]	++ seaAtomProtos
 		++ [ PHackery "\n"]	++ seaCafProtos
 		++ [ PHackery "\n"]	++ seaProtos
 		++ [ PHackery "\n#endif\n\n" ]
@@ -252,7 +215,6 @@ outSea
 	let seaCode
 		=  [PHackery $ makeComments pathThis]
 		++ [seaIncSelf]
-		++ [PHackery "\n"]	++ seaAtoms
 		++ [PHackery "\n"]	++ seaCafSlots
 		++ [PHackery "\n"]	++ seaCafInits
 		++ [PHackery "\n"]	++ seaSupers
@@ -273,8 +235,6 @@ modIncludeSelf p
 modIncludes pathImports
   = map PInclude pathImports
 
---  = 	map (\p -> PInclude $ nameTItoH p) pathImports
-
 nameTItoH nameTI
  = let	parts	= chopOnRight '.' nameTI
    in   concat (init parts ++ ["ddc.h"])
@@ -291,11 +251,7 @@ makeIncludeDefTag pathThis
  	$ pathThis
 		
 	
-
-
------------------------
--- seaMain
---
+-- | Add main module entry point code.
 seaMain	:: (?args :: [Arg])
 	=> [Module]
 	-> Module
