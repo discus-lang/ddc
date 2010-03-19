@@ -385,12 +385,5 @@ instance Pretty Annot PMode where
   = case xx of
   	NString s	-> "&NString " 	 % s
 	NType x		-> "&NType "  	 % x
-	NTypeOp t	-> "&NTypeOp "	 % t
-	NUseCount i	-> "&NUseCount " % i
-	NPure		-> ppr "&Pure"
-	NBindVar v	-> "&NBindVar "	 % v
-	NLevel i	-> "&NLevel "	% i
-	NFreeLevel vs	-> "&NFreeLevel " % vs
-	NVarSet vs	-> "@NVarSet " % Set.toList vs
 
 

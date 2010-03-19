@@ -187,14 +187,8 @@ data Exp
 	| XLit		LiteralFmt			-- ^ A literal value
 
 	| XPrim		Prim 	[Exp]
-
-
 	| XType	  Type
 
-
-	-- ditch these
---	| XAtom	    	Var	[Exp]			-- ^ Reference an Atom. 	name, type args.
-							--	Atoms are constructors of zero arity, eg Nil, Nothing.
 
 	-- An unresolved projection. 
 	--	These are written to real function calls by Core.Dictionary
@@ -317,15 +311,9 @@ data Label
 --	TODO: A Lot of this is junk that isn't being used
 data Annot
 	= NString 	String		-- ^ Some string: for debugging.
+
+	-- Used in Core.Lift
 	| NType   	Type 		-- ^ Gives the type for an expression.
-	| NTypeOp	Type		-- ^ Gives the operational type for a supercombinator.
-	| NUseCount	Int		-- ^ Count of how many times this exp\/binding is used in the code.
-	| NPure				-- ^ Exp has no effects, and is pure.
-	| NBindVar	Var		-- ^ Some var which is safe to use as a binding var for this exp.
 
-	| NFreeLevel	[(Var, Int)]	-- ^ Some free vars with binding levels.
-	| NVarSet	(Set Var)
 
-	-- Used in Core.Optimise.FullLaziness
-	| NLevel	Int				
 	deriving (Show, Eq)
