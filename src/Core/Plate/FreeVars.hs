@@ -120,7 +120,6 @@ instance FreeVars Prim where
 	MCallApp  i	-> empty
 	MApply 		-> empty
 	MCurry 	 i	-> empty
-	MFun 		-> empty	
 	MOp{}		-> empty
 
 

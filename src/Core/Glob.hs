@@ -1,7 +1,8 @@
 
 -- | Utils concerning Globs.
 module Core.Glob
-	( globOfTree
+	( Glob(..)
+	, globOfTree
 	, treeOfGlob
 	, seqOfGlob
 	, globDeclaresValue 
@@ -20,6 +21,28 @@ import Data.Map			(Map)
 
 import qualified Data.Sequence	as Seq
 import Data.Sequence		(Seq, (<|), (><))
+
+
+-- | A Glob provides a fast way to locate particular top level declarations.
+--   Note: Don't add extra fields to this type that can't be reconstructed
+-- 	   directly from a Tree. We want to be able to convert between
+--	   Glob and Tree without losing information.	      
+data Glob
+	= Glob
+	{ globClass		:: Map Var Top
+	, globEffect		:: Map Var Top
+	, globRegion		:: Map Var Top
+	, globExternData	:: Map Var Top
+	, globExtern		:: Map Var Top
+
+	, globData		:: Map Var Top
+	, globDataCtors		:: Map Var CtorDef	-- ^ all data constuctors from the data decls
+
+	, globClassDict		:: Map Var Top
+	, globClassInst		:: Map Var Top
+	, globBind		:: Map Var Top
+	}
+	deriving Show
 
 
 -- | An empty Glob.

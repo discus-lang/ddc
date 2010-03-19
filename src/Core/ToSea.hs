@@ -241,11 +241,6 @@ toSeaX		xx
 		  do	args'	<- mapM toSeaX args
 			return	$ E.XCurry v superA args'
 
-	C.XPrim (C.MFun) xs
-	 -> do	let (C.XVar v _) : args	= stripValues xs
-		args'	<- mapM toSeaX args
-		return	$ E.XPrim (toSeaPrimV v) args'
-
 	C.XPrim (C.MOp op) xs
 	 -> do	let args		= stripValues xs
 		args'	<- mapM toSeaX args
@@ -663,19 +658,3 @@ toSeaOp op
 	-- boolean
 	C.OpAnd	-> E.FAnd
 	C.OpOr	-> E.FOr
-	 
-	
-
-toSeaPrimV :: C.Var -> E.Prim
-toSeaPrimV var
- = case Var.name var of
-	"primProjField"		-> E.FProjField
-	"primProjFieldR"	-> E.FProjFieldR
-
-	-- array	
-	"arrayUI_get"		-> E.FArrayPeek (E.TCon (Var.primTInt (UnboxedBits 32)) [])
-	"arrayUI_set"		-> E.FArrayPoke (E.TCon (Var.primTInt (UnboxedBits 32)) [])
-	
-	_			-> panic stage
-				$ "toSeaPrim: no match for " % var
-

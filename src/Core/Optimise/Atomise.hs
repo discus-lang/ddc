@@ -3,6 +3,7 @@ module Core.Optimise.Atomise
 	( atomiseTree )
 where
 import Core.Exp
+import Core.Glob
 import Core.Plate.Trans
 import Type.Exp
 import qualified Shared.Var		as Var

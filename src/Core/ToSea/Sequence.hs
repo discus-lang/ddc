@@ -8,6 +8,7 @@ module Core.ToSea.Sequence
 	(slurpCafInitSequence)
 where
 import Core.Exp
+import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
 import qualified Data.Map	as Map

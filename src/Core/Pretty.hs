@@ -286,7 +286,6 @@ instance Pretty Prim PMode where
 	MCallApp i	-> "prim{CallApp " % i % "}"
 	MApply		-> ppr "prim{Apply} "
 	MCurry	 i	-> "prim{Curry " % i % "}"
-	MFun 		-> ppr "prim{Fun}"
 	MOp op		-> ppr "prim{" % op % "}"
 
 

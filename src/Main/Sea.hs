@@ -27,7 +27,7 @@ import Main.Dump
 import Shared.Var		(Module(..))
 import Shared.Error
 import Shared.Pretty
-import qualified Core.Exp	as C
+import qualified Core.Glob	as C
 import qualified Main.Version	as Version
 
 import Data.Char

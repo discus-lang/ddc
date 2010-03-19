@@ -584,11 +584,6 @@ reconX xx@(XPrim prim xs)
 			return	( rxs'
 				, tPure)
 
-		| MFun{}	<- prim
-		= do	rxs'	<- reconApps xs'
-			return	( rxs'
-				, tPure)
-
 		| MOp op	<- prim
 		= reconOpApp op xs'
 

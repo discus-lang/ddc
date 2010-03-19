@@ -4,7 +4,6 @@ module Core.Exp
 	( Var
 	, Bind		(..)	-- binders
 	, Tree
-	, Glob		(..)	-- glob of top level things
 	, Top 		(..)	-- top level things
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
@@ -49,29 +48,6 @@ import Data.Set		(Set)
 -- Trees and Globs -----------------------------------------------------------------------------------
 -- | A flat list of Tops is the lowest common denominator for program representation.
 type Tree	= [Top]
-
-
--- | A Glob provides a fast way to locate particular top level declarations.
---   Note: Don't add extra fields to this type that can't be reconstructed
--- 	   directly from a Tree. We want to be able to convert between
---	   Glob and Tree without losing information.
---	      
-data Glob
-	= Glob
-	{ globClass		:: Map Var Top
-	, globEffect		:: Map Var Top
-	, globRegion		:: Map Var Top
-	, globExternData	:: Map Var Top
-	, globExtern		:: Map Var Top
-
-	, globData		:: Map Var Top
-	, globDataCtors		:: Map Var CtorDef	-- ^ all data constuctors from the data decls
-
-	, globClassDict		:: Map Var Top
-	, globClassInst		:: Map Var Top
-	, globBind		:: Map Var Top
-	}
-	deriving Show
 
 
 -- Top ---------------------------------------------------------------------------------------------
@@ -138,11 +114,12 @@ data Top
 --
 data CtorDef
 	= CtorDef 
-	{ ctorDefName	:: Var 			-- ^ name of constructor
-	, ctorDefType	:: Type			-- ^ type of constructor
-	, ctorDefArity	:: Int			-- ^ arity of constructor
-	, ctorDefTag	:: Int			-- ^ tag of constructor
-	, ctorDefFields	:: Map Var Int }	-- ^ map of field names to indexes in the constructor.
+	{ ctorDefName	:: Var 		-- ^ name of constructor
+	, ctorDefType	:: Type		-- ^ type of constructor
+	, ctorDefArity	:: Int		-- ^ arity of constructor
+	, ctorDefTag	:: Int		-- ^ tag of constructor
+	, ctorDefFields	:: Map Var Int  -- ^ map of field names to indexes in the constructor.
+	}
 	deriving (Show, Eq)
 
 
@@ -229,8 +206,8 @@ data Exp
 -- Proj --------------------------------------------------------------------------------------------
 -- Field projections
 data Proj
-	= JField  Var				-- ^ A field projection.   		(.fieldLabel)
-	| JFieldR Var				-- ^ A field reference projection.	(#fieldLabel)
+	= JField  Var			-- ^ A field projection.   		(.fieldLabel)
+	| JFieldR Var			-- ^ A field reference projection.	(#fieldLabel)
 	deriving (Show, Eq)
 
 
@@ -238,8 +215,8 @@ data Proj
 -- | Primitive Functions
 data Prim
 	-- laziness
-	= MSuspend	Var			-- ^ Suspend some function	function name
-	| MForce				-- ^ Force an expression	(expr list should have a single elem)
+	= MSuspend	Var		-- ^ Suspend some function	function name
+	| MForce			-- ^ Force an expression	(expr list should have a single elem)
 
 	-- a primitive operator
 	| MOp		Op
@@ -250,14 +227,11 @@ data Prim
 	
 	-- function calls
 	-- 	move this to MCall
-	| MTailCall	 			-- ^ Tailcall a super
-	| MCall					-- ^ Call a super
-	| MCallApp	Int			-- ^ Call then apply super with this airity.
-	| MApply				-- ^ Apply a thunk.
-	| MCurry	Int			-- ^ Build a thunk with this airity.
-
-	-- some other named primitive function.
-	| MFun		-- Var  Type 		-- ^ Primitive operation.	opName, resultType
+	| MTailCall	 		-- ^ Tailcall a super
+	| MCall				-- ^ Call a super
+	| MCallApp	Int		-- ^ Call then apply super with this airity.
+	| MApply			-- ^ Apply a thunk.
+	| MCurry	Int		-- ^ Build a thunk with this airity.
 	deriving (Show, Eq)
 
 
@@ -269,31 +243,31 @@ data Prim
 
 data Op
 	-- arithmetic
-	= OpNeg		-- negation
-	| OpAdd		-- addition
-	| OpSub		-- subtraction
-	| OpMul		-- multiplication
-	| OpDiv		-- division
-	| OpMod		-- modulus
+	= OpNeg				-- negation
+	| OpAdd				-- addition
+	| OpSub				-- subtraction
+	| OpMul				-- multiplication
+	| OpDiv				-- division
+	| OpMod				-- modulus
 
 	-- comparison
-	| OpEq		-- equality
-	| OpNeq		-- negative equality
-	| OpGt		-- greater than
-	| OpGe		-- greater than or equal
-	| OpLt		-- less than
-	| OpLe		-- less than or equal
+	| OpEq				-- equality
+	| OpNeq				-- not equality
+	| OpGt				-- greater than
+	| OpGe				-- greater than or equal
+	| OpLt				-- less than
+	| OpLe				-- less than or equal
 	
 	-- boolean
-	| OpAnd		-- and
-	| OpOr		-- or
+	| OpAnd				-- and
+	| OpOr				-- or
 	deriving (Show, Eq)
 
 
 -- Stmt --------------------------------------------------------------------------------------------
 -- Statements
 data Stmt
-	= SBind  	(Maybe Var) Exp			-- ^ Let binding.
+	= SBind  	(Maybe Var) Exp	-- ^ Let binding.
 	deriving (Show, Eq)
 
 
@@ -304,17 +278,20 @@ data Alt
 	deriving (Show, Eq)
 
 data Guard
-	= GExp		Pat	Exp			-- ^ Match against an auxilliary value.
+	= GExp		Pat	Exp	-- ^ Match against an auxilliary value.
 	deriving (Show, Eq)
 
 data Pat
-	= WVar	Var					-- ^ Bind a variable
-	| WLit	SourcePos LiteralFmt			-- ^ Match against a literal value
-	| WCon	SourcePos Var [(Label, Var, Type)]	-- ^ Match against a constructor and bind arguments.
+	= WVar	Var			-- ^ Bind a variable
+	| WLit	SourcePos LiteralFmt	-- ^ Match against a literal value
+	| WCon				--   Match against a constructor and bind arguments.
+		SourcePos 
+		Var 
+		[(Label, Var, Type)]	
 	deriving (Show, Eq)
 	
 data Label
-	= LIndex	Int				-- ^ i'th field of constructor.
-	| LVar		Var				-- ^ a field name.
+	= LIndex	Int		-- ^ i'th field of constructor.
+	| LVar		Var		-- ^ a field name.
 	deriving (Show, Eq)
 
