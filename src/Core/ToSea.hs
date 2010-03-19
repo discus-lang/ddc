@@ -28,7 +28,12 @@ import qualified Shared.VarPrim		as Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import Data.Function
-import Util
+import qualified Data.Sequence		as Seq
+import Data.Sequence			(Seq)
+
+import Data.Traversable			(mapM)
+import Util				hiding (mapM)
+import Prelude				hiding (mapM)
 
 -----
 stage	= "Core.ToSea"
@@ -39,9 +44,6 @@ data SeaS
 	= SeaS
 	{ -- variable name generator
 	  stateVarGen		:: Var.VarBind
-
-	  -- constructor definitions
-	, stateCtorDefs		:: Map Var C.CtorDef 
 
 	  -- regions known to be direct
 	, stateDirectRegions	:: Set Var }
@@ -79,22 +81,18 @@ slurpWitnessKind kk
 -- Tree -------------------------------------------------------------------------------------------
 toSeaTree 
 	:: String		-- unique
-	-> Map Var C.CtorDef	-- Map of Constructor Definitions.
-				--	Used for converting field label projections
-				--	to projections field index projections.
-	-> C.Tree
-	-> E.Tree ()
+	-> Seq C.Top
+	-> Seq (E.Top ())
 	
-toSeaTree unique mapCtorDefs cTree
+toSeaTree unique cTree
   = evalState
-  	(liftM concat $ mapM toSeaP cTree)
+  	(liftM join $ mapM toSeaP cTree)
 	SeaS 	{ stateVarGen		= Var.XBind ("x" ++ unique) 0
-		, stateCtorDefs		= mapCtorDefs 
 		, stateDirectRegions	= Set.empty }
-    
+   
     
 -- Top --------------------------------------------------------------------------------------------
-toSeaP :: C.Top -> SeaM [E.Top ()]
+toSeaP :: C.Top -> SeaM (Seq (E.Top ()))
 toSeaP	xx
  = case xx of
 	
@@ -103,10 +101,10 @@ toSeaP	xx
 	C.PRegion v vts
 	 -> do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
-	 	return	[]
+	 	return Seq.empty
 
 	C.PExtern{}
-	 ->	return []
+	 ->	return Seq.empty
 	 	 
  	C.PBind v x
 	 -> do	let to		= C.superOpTypeX x
@@ -127,11 +125,13 @@ toSeaP	xx
 				++ [E.SReturn (E.XVar retV resultType)]
 		
 	   	return	$ case argNTs of
-			    	 [] ->	[ E.PCafProto	v resultType
+			    	 [] ->	Seq.fromList
+					[ E.PCafProto	v resultType
 					, E.PCafSlot 	v resultType
 					, E.PSuper	v [] 	resultType  ssRet]
 
-				 _ ->	[ E.PSuper 	v argNTs resultType ssRet]
+				 _ ->	Seq.fromList
+				 	[E.PSuper 	v argNTs resultType ssRet]
 	    
 	C.PData v ctors
 	 -> do	
@@ -151,9 +151,10 @@ toSeaP	xx
 				$ sortBy (compare `on` C.ctorDefTag)
 				$ Map.elems ctors
 								 
-	 	return		$ dataDef : tagDefs
+	 	return		$ Seq.fromList 
+				$ dataDef : tagDefs
 	   		
-	_ ->	return []
+	_ ->	return Seq.empty
 
 
 -- | split the RHS of a supercombinator into its args and expression

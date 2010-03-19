@@ -18,7 +18,6 @@ module Main.Core
 	, coreLint
 	, coreLambdaLift
 	, coreLabelIndex
-	, coreSequence
 	, curryCall
 	, coreAtomise
 	, toSea)
@@ -51,7 +50,8 @@ import Core.Optimise.Inline		(inlineTree)
 import Core.Exp 	
 import Core.Util
 import Core.Graph
-import Core.Sequence			(slurpSuperDepsTree, dotSuperDeps, sequenceCafsTree)
+import Core.Glob
+import Core.ToSea.Sequence
 
 import qualified Type.Util.Environment	as Env
 
@@ -67,8 +67,11 @@ import Shared.Pretty
 
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import Util
-
+import Util				hiding (foldr)
+import Prelude				hiding (foldr)
+-- import Data.Sequence			(Seq)
+import qualified Data.Sequence		as Seq
+import Data.Foldable			(foldr)
 
 -- | Convert to A-Normal form.
 coreSnip
@@ -384,30 +387,6 @@ coreLabelIndex mapCtorDefs cTree
 	return	cIndex
 
 
-
--- | Do dependency ordering of CAFs.
-coreSequence
-	:: (?args :: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-	-> IO Tree
-
-coreSequence cSource cHeader
- = do	
- 	-- sequence the tree
-	tree'		<- sequenceCafsTree ?args cSource
- 	dumpCT DumpCoreSequence "core-sequence" tree'
-
-	-- emit super deps
-	let superDeps	= slurpSuperDepsTree cSource
-	let superDepsG	= dotSuperDeps superDeps
-	dumpDot GraphSuperDeps "super-deps" $ pprStrPlain superDepsG
-
-	return tree'
-
-
-
 -- | Identify partial applications and insert calls to explicitly create and apply thunks.
 curryCall
 	:: (?args :: [Arg])
@@ -441,37 +420,63 @@ coreAtomise cSource cHeader
 
 
 -- | Convert Core-IR to Abstract-C
-toSea
-	:: (?args :: [Arg])
+toSea	:: (?args	    :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String		-- unique
-	-> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-
+	-> Glob			-- ^ header glob
+	-> Glob			-- ^ source glob
 	-> IO 	( E.Tree ()	-- sea source tree
 		, E.Tree ())	-- sea header tree
 
-toSea	unique cTree cHeader
+toSea unique cgHeader cgSource
+ = do	eCafOrder	<- slurpCafInitSequence cgSource
 
+	case eCafOrder of
+	 Left vsRecursive
+	  -> exitWithUserError ?args
+	 	$ ["Values may not be mutually recursive.\n"
+		% "     offending variables: " % vsRecursive % "\n\n"]
+
+	 Right vsCafOrdering
+	  -> toSea_withCafOrdering unique cgHeader cgSource vsCafOrdering
+
+toSea_withCafOrdering unique cgHeader cgSource vsCafOrdering
  = do
-	let appMap	= slurpAppGraph    cTree cHeader
-	dumpDot GraphApps "apps-final"
-		$ dotAppGraph appMap
+	-- Partition the bindings into CAFs and non-CAFs 
+	let cgSource_binds = globBind cgSource
+	let (  cgSource_binds_cafs
+	     , cgSource_binds_nonCafs)	
+			= Map.partition isCafP cgSource_binds
+			
+	-- Order the CAFs by the given CAF initilization order.
+	let cgSource_binds_orderedCafs
+		= foldl' (\psCafs v
+			    -> let  Just pCaf	= Map.lookup v cgSource_binds_cafs
+			       in   psCafs Seq.|> pCaf)
+		   	Seq.empty
+			vsCafOrdering
+		
+	-- All the bindings with ordered CAFs out the front.
+	let cSource_binds_ordered
+		=      cgSource_binds_orderedCafs 
+		Seq.>< (Seq.fromList $ Map.elems cgSource_binds_nonCafs)
+			
+	let cSource_nobinds	
+		= seqOfGlob (cgSource { globBind = Map.empty })
 
-{-	let mapCtorDefs	= Map.union 
-				(slurpCtorDefs cTree)
-				(slurpCtorDefs cHeader)
--}
-	let mapCtorDefs	= Map.empty
+	let cSource'		
+		=      cSource_binds_ordered 
+		Seq.>< cSource_nobinds
+			
+	-- conversion
+	let eTree	= toSeaTree (unique ++ "S") cSource'
+	let eTree_list	= foldr (:) [] eTree
+	dumpET DumpSea "sea--source" $ E.eraseAnnotsTree eTree_list
 
-	let eTree	= toSeaTree (unique ++ "S") mapCtorDefs cTree
-	dumpET DumpSea "sea--source"
-		$ E.eraseAnnotsTree eTree
+	let eHeader	 = toSeaTree (unique ++ "H") $ seqOfGlob cgHeader
+	let eHeader_list = foldr (:) [] eHeader
+	dumpET DumpSea "sea--header" $ E.eraseAnnotsTree eHeader_list
 
-	let eHeader	= toSeaTree (unique ++ "H") mapCtorDefs cHeader
-	dumpET DumpSea "sea--header"
-		$ E.eraseAnnotsTree eHeader
-
- 	return (eTree, eHeader)
+ 	return (  eTree_list, eHeader_list)
 		
 

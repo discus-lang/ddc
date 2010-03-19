@@ -2,6 +2,8 @@
 -- | Utils concerning Globs.
 module Core.Glob
 	( globOfTree
+	, treeOfGlob
+	, seqOfGlob
 	, globDeclaresValue 
 	, bindingArityFromGlob 
 	, typeFromGlob )
@@ -15,6 +17,9 @@ import Type.Util
 import Data.Maybe
 import qualified Data.Map	as Map
 import Data.Map			(Map)
+
+import qualified Data.Sequence	as Seq
+import Data.Sequence		(Seq, (<|), (><))
 
 
 -- | An empty Glob.
@@ -75,6 +80,37 @@ insertTopInGlob pp glob
 
 	PBind{}	
 	 -> glob { globBind		= Map.insert (topBindName pp)	 	pp (globBind glob) }
+
+
+-- | Convert a Glob back to a Tree.
+treeOfGlob :: Glob -> Tree
+treeOfGlob glob
+ 	=  Map.elems
+	$  Map.unions
+		[ globClass  		glob 
+		, globEffect		glob
+		, globRegion		glob
+		, globExternData	glob
+		, globExtern		glob
+		, globData		glob
+		, globClassDict		glob
+		, globClassInst		glob
+		, globBind		glob ]
+
+
+-- | Convert a Glob to a sequence of tops
+seqOfGlob :: Glob -> Seq Top
+seqOfGlob glob
+	=   seqOfMap (globClass		glob)
+	><  seqOfMap (globEffect	glob)
+	><  seqOfMap (globRegion	glob)
+	><  seqOfMap (globExternData	glob)
+	><  seqOfMap (globExtern	glob)
+	><  seqOfMap (globData		glob)
+	><  seqOfMap (globClassDict	glob)
+	><  seqOfMap (globClassInst	glob)
+	><  seqOfMap (globBind		glob)
+	where seqOfMap m = Map.fold (Seq.<|) Seq.empty m
 
 
 -- | Check whether a glob has a top level decl for this value.

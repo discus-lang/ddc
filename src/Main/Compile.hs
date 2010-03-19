@@ -464,17 +464,11 @@ compileFile_parse
 
 	let cgProg_labelIndex	= C.globOfTree cLabelIndex
 
-				
-	-- Sequence bindings and CAFs ------------------------------------------
-	outVerb $ ppr $ "  * Core: Sequence\n"
-	cSequence	<- SC.coreSequence	
-				cLabelIndex
-				cHeader
-					
+									
 	-- Resolve partial applications ---------------------------------------
 	outVerb $ ppr $ "  * Core: Curry\n"
 	cCurry		<- SC.curryCall
-				cSequence
+				cLabelIndex
 				cHeader
 				cgProg_labelIndex	-- for super arities.
 				cgHeader		-- TODO: refactor to just take the globs.
@@ -522,8 +516,8 @@ compileFile_parse
 
 	(eSea, eHeader)	<- SC.toSea
 				"TE"
-				cAtomise
-				cHeader
+				cgHeader
+				cgProg_final
 				
 	------------------------------------------------------------------------
 	-- Sea stages
