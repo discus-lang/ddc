@@ -2,44 +2,41 @@
 module Core.Optimise.Atomise
 	( atomiseTree )
 where
-
-import	Core.Exp
-
-import	qualified Shared.Var		as Var
-import	qualified Shared.VarBind	as Var
+import Core.Exp
+import Core.Plate.Trans
+import Type.Exp
+import qualified Shared.Var		as Var
+import qualified Shared.VarBind	as Var
 
 import	Util
 
--- Replace constant data constructors with references to a single
+-- | Rewrite references to constant data constructors of arity 0 to
+--	use a single shared atomic value.
 atomiseTree 
-	:: Tree 	-- source tree
-	-> Tree		-- header tree
-	-> Tree
+	:: Glob 	-- header glob
+	-> Glob		-- source glob
+	-> Glob
 
 atomiseTree cSource cHeader 
  = cSource
- 
- {-
- transformX atomiseX cSource
- 
-	
-atomiseX 
-	:: Exp -> Exp
+
+{- transformX atomiseX cSource
+ 	
+atomiseX :: Exp -> Exp
 
 atomiseX xx
- 	| XPrim MCall ts@[XVar v tV, _, XType (TVar KRegion r)]	
+ 	| XPrim MCall ts@[XVar v tV, _, XType (TVar kRegion r)]	
 					<- xx
-
 	, elem (Var.bind v) atomBinds
 	, isConst r
-	= return $ XAtom v ts
+	= XAtom v ts
 
 	| XPrim MCall [XVar v tV]	<- xx
 	, Var.bind v == Var.VUnit
-	= return $ XAtom v []
+	= XAtom v []
 	 
 	| otherwise
-	= return xx
+	= xx
 
 atomBinds
 	= [Var.VNil, Var.VFalse, Var.VTrue]

@@ -472,14 +472,17 @@ compileFile_parse
 				cHeader
 				cgProg_labelIndex	-- for super arities.
 				cgHeader		-- TODO: refactor to just take the globs.
+
+	let cgProg_curry	= C.globOfTree cCurry
+
 				
 	-- Rewrite so atoms are shared ----------------------------------------
 	outVerb $ ppr $ "  * Core: Atomise\n"
-	cAtomise	<- if elem Arg.OptAtomise ?args
-				then SC.coreAtomise cCurry cHeader
-				else return cCurry
+	cgAtomise	<- if elem Arg.OptAtomise ?args
+				then SC.coreAtomise cgHeader cgProg_curry
+				else return cgProg_curry
 	
-	let cgProg_final	= C.globOfTree cAtomise
+	let cgProg_final	= cgAtomise
 	
 
 	-- Generate the module interface --------------------------------------
@@ -488,7 +491,7 @@ compileFile_parse
 				modName
 				sRenamed
 				dProject
-				cAtomise
+				(C.treeOfGlob cgProg_final)
 				sigmaTable
 				typeTable
 				vsLambda_new

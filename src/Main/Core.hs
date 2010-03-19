@@ -408,15 +408,14 @@ curryCall cSource cHeader cgSource cgHeader
 coreAtomise
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-	-> IO Tree
+	=> Glob			-- ^ header tree
+	-> Glob			-- ^ source tree
+	-> IO Glob
 
-coreAtomise cSource cHeader
- = do	let cAtomise	= atomiseTree cSource cHeader
- 	dumpCT DumpCoreAtomise "core-atomise" cAtomise
-	
-	return	cAtomise
+coreAtomise cgHeader cgSource
+ = do	let cgSource_atomised	= atomiseTree cgHeader cgSource_atomised
+ 	dumpCT DumpCoreAtomise "core-atomise" $ treeOfGlob cgSource_atomised
+	return	cgSource_atomised
 
 
 -- | Convert Core-IR to Abstract-C
