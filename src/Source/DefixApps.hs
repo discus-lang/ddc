@@ -21,7 +21,7 @@ defixApps ::	Pretty a PMode => a -> [Exp a] -> [Exp a]
 defixApps	sp xx
 	= rewriteApps $ dropApps sp xx
 
--- | Takes a list of expressions from inside an $XDefix and wraps runs of exps that
+-- Takes a list of expressions from inside an $XDefix and wraps runs of exps that
 --   lie between between (non-@) infix operators in $XDefixApps. This is the first
 --   step in defixing process.
 --
@@ -78,7 +78,7 @@ makeXDefixApps sp xx
 	_	-> XDefixApps sp xx
 
 
--- | Takes a list of expressions and converts $XDefixApp nodes into XApp nodes.
+-- Takes a list of expressions and converts $XDefixApp nodes into XApp nodes.
 --   Also converts @ operators into explicit calls to the suspend functions.
 --   eg [f, x, @, a, b, @, c, d, e]
 --	=> suspend3 (suspend2 (f x) a b) c d e
