@@ -20,7 +20,7 @@ import System.Directory
 import Text.Regex
 import Data.Char
 import Shared.Pretty					()
-import Shared.Var					(Module(..))
+import Shared.Var					(ModuleId(..))
 import qualified System
 import qualified Main.Arg				as Arg
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
@@ -30,7 +30,7 @@ import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 data Scrape
 	= Scrape
 	-- the module name, derived from its file path
-	{ scrapeModuleName	:: Module
+	{ scrapeModuleName	:: ModuleId
 
 	-- path to the source file (if found)
 	, scrapePathSource	:: Maybe FilePath
@@ -49,7 +49,7 @@ data Scrape
 	, scrapeImportDir	:: Maybe FilePath
 	
 	-- modules that this one imports, scraped from the source
-	, scrapeImported	:: [Module]
+	, scrapeImported	:: [ModuleId]
 
 	-- extra args from inline OPTIONS pragams
 	, scrapeArgsInline	:: [Arg.Arg]
@@ -122,12 +122,12 @@ scrapeModule
 	:: [FilePath]		-- Directories to look for imported modules in.
 	-> Bool			-- Whether the Prelude module is being auto imported
 				--	This can be overridden by pragmas in the source file.
-	-> Module		-- The name of the module to scrape.
+	-> ModuleId		-- The name of the module to scrape.
 	-> IO (Maybe Scrape)
 	
 scrapeModule importDirs importPrelude moduleNameSearchedFor
  = do	-- get the base path of a module by replacing '.' by '/'
-	let ModuleAbsolute vs	= moduleNameSearchedFor
+	let ModuleIdAbsolute vs	= moduleNameSearchedFor
 	let fileNameDS		= catInt "/" vs ++ ".ds"
 
 	mFileDirName	<- findFileInDirs importDirs fileNameDS
@@ -145,7 +145,7 @@ scrapeModule importDirs importPrelude moduleNameSearchedFor
 			(Just importDir) fileDir fileName fileBase
 
 scrapeModule' 
-	(mModuleNameSearchedFor :: Maybe Module)
+	(mModuleNameSearchedFor :: Maybe ModuleId)
 	importDirs importPrelude
 	mImportDir fileDir fileName fileBase
  = do	
@@ -177,7 +177,7 @@ scrapeModule'
 
 		-- If neither of the above apply, then derive the module id from the file name.
 		| otherwise					
-		= ModuleAbsolute [fileBase]
+		= ModuleIdAbsolute [fileBase]
 
 {-
 	putStr 	$  "fileName           = " ++ show fileName 			++ "\n"
@@ -197,7 +197,7 @@ scrapeModule'
 	let importModsPrelude
 		= if   importPrelude
 		    && (not $ elem Arg.NoImplicitPrelude inlineArgs)
-			then nub (importMods ++ [ModuleAbsolute ["Prelude"]])
+			then nub (importMods ++ [ModuleIdAbsolute ["Prelude"]])
 			else importMods
 			
 	-- See if there is an interface file
@@ -261,7 +261,7 @@ checkNeedsRebuild mSource mInt mHeader mObj
 --	This needs to be fast, as we need to scrape all the source files in a project
 --	every time we do a make.
 --
-scrapeImports :: [String] -> [Module]
+scrapeImports :: [String] -> [ModuleId]
 scrapeImports [] = []
 scrapeImports (l:ls)
 	| isPrefixOf "import " l  ||
@@ -291,11 +291,11 @@ scrapeImport ls
 	
 
 -- ScrapeModuleName -------------------------------------------------------------------------------
-scrapeModuleId :: [String] -> Maybe Module
+scrapeModuleId :: [String] -> Maybe ModuleId
 scrapeModuleId []	= Nothing
 scrapeModuleId (l:ls)
  = case words l of
-	 "module" : name : _	-> Just (ModuleAbsolute (breakOns '.' name))
+	 "module" : name : _	-> Just (ModuleIdAbsolute (breakOns '.' name))
 	 _			-> scrapeModuleId ls
 
 -- ScrapeOptions ----------------------------------------------------------------------------------

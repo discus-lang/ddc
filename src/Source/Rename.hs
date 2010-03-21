@@ -24,7 +24,7 @@ import Shared.Base
 import Util
 import Shared.Pretty		()
 import Shared.Error		(panic)
-import Shared.Var		(Var, NameSpace (..), Module(..))
+import Shared.Var		(Var, NameSpace (..), ModuleId(..))
 import qualified Shared.VarUtil	as Var
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
@@ -38,8 +38,8 @@ stage		= "Source.Rename"
 -- | Rename the variables in some source trees.
 --	The current module should be first, then the interfaces of all the imported ones.
 renameTrees
-	:: [(Module, Tree SourcePos)]		-- ^ modules to rename		
-	-> RenameM [(Module, Tree SourcePos)]	-- ^ renamed modules
+	:: [(ModuleId, Tree SourcePos)]		-- ^ modules to rename		
+	-> RenameM [(ModuleId, Tree SourcePos)]	-- ^ renamed modules
 
 renameTrees mTrees@(mTree1 : mTreeImports)
  = do
@@ -54,10 +54,10 @@ renameTrees mTrees@(mTree1 : mTreeImports)
 
 
 -- | Add the top-level names from this module to the renamer state
-bindTopNames :: (Module, Tree SourcePos) -> RenameM ()
+bindTopNames :: (ModuleId, Tree SourcePos) -> RenameM ()
 bindTopNames (moduleName, tree)
  = do	-- Set the current module id
-	modify $ \s -> s { stateModule = Just moduleName }
+	modify $ \s -> s { stateModuleId = Just moduleName }
 	
  	-- Slurp out all the top-level names.	
 	let vsTop	= catMap slurpTopNames tree
@@ -69,11 +69,11 @@ bindTopNames (moduleName, tree)
 
 
 -- | Rename a source tree in this module
-renameTree :: (Module, Tree SourcePos) -> RenameM (Module, Tree SourcePos)
+renameTree :: (ModuleId, Tree SourcePos) -> RenameM (ModuleId, Tree SourcePos)
 renameTree (moduleName, tree)
  = do	
 	-- Set the current module id
-	modify $ \s -> s { stateModule = Just moduleName }
+	modify $ \s -> s { stateModuleId = Just moduleName }
 
 	-- Rename all the vars
 	tree'	<- rename tree
@@ -221,7 +221,7 @@ instance Rename (Export SourcePos) where
 		return	$ EClass sp v'
 
 -- Module ------------------------------------------------------------------------------------------
-instance Rename Module where
+instance Rename ModuleId where
  rename m	= return m
  
  
@@ -285,7 +285,7 @@ renameDataField vData vsData df
   	-- field vars aren't supposed to have module qualifiers...
   	let fixupV v	
   		= v { Var.nameSpace 	= NameField
-		    , Var.nameModule 	= ModuleNil }
+		    , Var.nameModuleId 	= ModuleIdNil }
 
    	mLabel'	<- case dLabel df of
 			Nothing		-> return Nothing

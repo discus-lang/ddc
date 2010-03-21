@@ -6,7 +6,7 @@ import Shared.Pretty
 import Shared.Error
 import Util
 import Type.Exp				(Type)
-import Shared.Var			(Var, Module)
+import Shared.Var			(Var, ModuleId)
 import Shared.Base			(SourcePos)
 import Source.Pretty			()
 import Desugar.Pretty			()
@@ -32,7 +32,7 @@ stage	= "Module.Export"
 
 -- Make a .di interface file for this module.
 makeInterface 
-	:: Module		-- name of this module
+	:: ModuleId		-- name of this module
 	-> S.Tree SourcePos	-- source tree
 	-> D.Tree SourcePos	-- desugared tree
 	-> C.Tree		-- core tree
@@ -106,7 +106,7 @@ shouldExport vsNoExport mExports v
 
 -- Export all the top level things in this module
 exportAll 
-	:: Module
+	:: ModuleId
 	-> (Var -> Type)	-- ^ a fn to get the type scheme of a top level binding
 	-> Set Var		-- ^ vars of top level bindings.
 	-> [S.Top SourcePos] 	-- ^ source tree
@@ -192,7 +192,7 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 -- | Erase a the module name from this var 
 eraseModule :: Var -> Var
 eraseModule v
-	= v { Var.nameModule = Var.ModuleNil }
+	= v { Var.nameModuleId = Var.ModuleIdNil }
 
 
 eraseModule_ctor (D.CtorDef sp v fs)
@@ -210,7 +210,7 @@ exportForeign
 exportForeign v tv to
 	= pprStrPlain
 	$ "foreign import "
-	% pprStrPlain v { Var.nameModule = Var.ModuleNil }
+	% pprStrPlain v { Var.nameModuleId = Var.ModuleIdNil }
 	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTS $ T.normaliseT tv)
 		++ "\n:$ " ++ pprStrPlain to
 
@@ -227,29 +227,22 @@ exportProjDict (D.PProjDict _ t ss)
 	$ "project " % t % " where\n"
 	% "{\n"
 	%> "\n" %!% (map (\(D.SBind _ (Just v1) (D.XVar _ v2)) 
-			-> v1 %>> " = " % v2 { Var.nameModule = Var.ModuleNil } % ";") ss)
+			-> v1 %>> " = " % v2 { Var.nameModuleId = Var.ModuleIdNil } % ";") ss)
 	% "\n}\n\n"
 	
 -- | export a top level region decl
-exportRegion :: Module -> C.Top -> String
+exportRegion :: ModuleId -> C.Top -> String
 exportRegion mod (C.PRegion r vts)
-	| Var.nameModule r == Var.ModuleNil
+	| Var.nameModuleId r == Var.ModuleIdNil
 	= pprStrPlain
 	$ "region " % mod % "." % r % ";" % "\n"
-{-	% (case vts of 
-		[]	-> pNil
-		_	-> " :- " % ", " %!% [t | (v, t) <- vts ])
--}
 
 	| otherwise
 	= ""
 
---	= pprStrPlain
---	$ "region " % Var.nameModule r % "." % r % ";"
-
 -- | erase module qualifiers from variables in this tree
 eraseVarModuleSourceTree
-	:: Module
+	:: ModuleId
 	-> S.Tree SourcePos
 	-> S.Tree SourcePos
 	
@@ -263,7 +256,7 @@ eraseVarModuleSourceTree
 
 -- | erase module qualifiers from variables in this tree
 eraseVarModuleDesugaredTree
-	:: Module
+	:: ModuleId
 	-> D.Tree SourcePos
 	-> D.Tree SourcePos
 	
@@ -278,7 +271,7 @@ eraseVarModuleT m t
  	= T.transformV (eraseVarModuleV m) t
 
 eraseVarModuleV m v
- = if Var.nameModule v == m
- 	then v { Var.nameModule = Var.ModuleNil }
+ = if Var.nameModuleId v == m
+ 	then v { Var.nameModuleId = Var.ModuleIdNil }
 	else v
 

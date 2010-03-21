@@ -611,7 +611,7 @@ reconBoxType r tt
 	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
 	= makeTData 
 		(primVarFmt NameType 
-				(pprStrPlain (Var.nameModule v) ++ "." ++ baseName) 
+				(pprStrPlain (Var.nameModuleId v) ++ "." ++ baseName) 
 				mkBind fmtBoxed)
 		(KFun kRegion kValue) 
 		[r]
@@ -627,7 +627,7 @@ reconUnboxType r1 tt
 	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
 	= makeTData
 		(primVarFmt NameType 
-				(pprStrPlain (Var.nameModule v) ++ "." ++ baseName)
+				(pprStrPlain (Var.nameModuleId v) ++ "." ++ baseName)
 				mkBind fmtUnboxed)
 		kValue
 		[]

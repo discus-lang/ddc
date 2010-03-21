@@ -41,7 +41,7 @@ import qualified Core.Util		as C
 import qualified Sea.Util		as E
 
 -- shared
-import Shared.Var			(Module(..), NameSpace(..))
+import Shared.Var			(ModuleId(..), NameSpace(..))
 import Shared.Error
 import Shared.Pretty
 import qualified Shared.Var		as Var
@@ -66,12 +66,12 @@ outVerb ss	= when ?verbose (putStr $ pprStrPlain ss)
 --	Returns a list of module names and the paths to their compiled object files.
 --
 compileFile 
-	:: Setup 		-- ^ compile setup.
-	-> Map Module M.Scrape	-- ^ scrape graph of all modules reachable from the root.
-	-> Module		-- ^ module to compile, must also be in the scrape graph.
-	-> Bool			-- ^ whether to treat a 'main' function defined by this module
-				--	as the program entry point.
-	-> IO Bool		-- ^ true if the module defines the main function
+	:: Setup 			-- ^ compile setup.
+	-> Map ModuleId M.Scrape	-- ^ scrape graph of all modules reachable from the root.
+	-> ModuleId			-- ^ module to compile, must also be in the scrape graph.
+	-> Bool				-- ^ whether to treat a 'main' function defined by this module
+					--	as the program entry point.
+	-> IO Bool			-- ^ true if the module defines the main function
 
 compileFile setup scrapes sModule blessMain
  = do 	let ?verbose	= elem Arg.Verbose (setupArgsCmd setup)
@@ -212,7 +212,7 @@ compileFile_parse
 					_			-> False)
 			$ sRenamed
 	
-	when (  sModule == ModuleAbsolute ["Main"]
+	when (  sModule == ModuleIdAbsolute ["Main"]
 	    &&  (not $ modDefinesMainFn))
 		 $ exitWithUserError ?args [ErrorNoMainInMain]
 					

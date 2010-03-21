@@ -99,7 +99,7 @@ pQualified parser
  		mods	<- pModuleNameQual
  		pTok K.Dot
 		v	<- parser
-		return	$ v { Var.nameModule = Var.ModuleAbsolute mods })
+		return	$ v { Var.nameModuleId = Var.ModuleIdAbsolute mods })
  <|>	parser
  <?>    "pQualified"
 

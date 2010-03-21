@@ -27,7 +27,7 @@ import Main.Arg
 import Main.Dump
 import Shared.Error
 import Shared.Pretty
-import Shared.Var			(Var, Module)
+import Shared.Var			(Var, ModuleId)
 import Core.Block			(blockTree)
 import Core.Crush			(crushTree)
 import Core.Dictionary			(dictTree)
@@ -129,7 +129,7 @@ coreReconstruct name cHeader cTree
 coreBind
 	:: (?args ::	[Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Module
+	=> ModuleId
 	-> String		-- ^ unique
 	-> (Map Var [Var])	-- ^ map of class constraints on each region
 				--	eg (%r1, [Lazy, Const])

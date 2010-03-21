@@ -19,7 +19,7 @@ import Main.Dump
 import Util
 import Type.Exp
 import Desugar.Pretty			()
-import Shared.Var			(Var, Module)
+import Shared.Var			(Var, ModuleId)
 import Source.Lexer			(scanModuleWithOffside, scan)
 import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)
@@ -157,8 +157,8 @@ defix	sParsed
 --
 rename	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
-	=> 	[(Module, Tree SourcePos)]
-	-> IO 	[(Module, Tree SourcePos)]
+	=> 	[(ModuleId, Tree SourcePos)]
+	-> IO 	[(ModuleId, Tree SourcePos)]
 
 
 rename	mTrees

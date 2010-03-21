@@ -10,7 +10,7 @@ import Shared.Base
 import Shared.Pretty
 import Util
 import Util.System.Directory
-import Shared.Var			(Module(..))
+import Shared.Var			(ModuleId(..))
 import qualified Data.Map		as Map
 import qualified Source.Slurp		as S
 import qualified Source.Exp		as S
@@ -25,7 +25,7 @@ stage	= "Main.IO"
 data ImportDef
 	= ImportDef
 	{ -- | The module name
-	  idModule		:: Module
+	  idModule		:: ModuleId
 
 	  -- | Full path to its .di interface file.
 	, idFilePathDI		:: FilePath
@@ -40,7 +40,7 @@ data ImportDef
 	, idInterface		:: S.Tree SourcePos
 
 	  -- | Other modules imported by this one.
-	, idImportedModules	:: [Module] }
+	, idImportedModules	:: [ModuleId] }
 
 
 -- | Chase down interface files for these modules.
@@ -50,9 +50,9 @@ chaseModules
 	:: Setup				-- ^ current compile setup
 	-> (Setup -> FilePath -> IO ())		-- ^ function to compile a module.
 	-> [FilePath]				-- ^ directories to search for imports.
-	-> [Module]				-- ^ the root list of modules.
-	-> Map Module ImportDef			-- ^ the map to add module interfaces to.
-	-> IO (Map Module ImportDef)
+	-> [ModuleId]				-- ^ the root list of modules.
+	-> Map ModuleId ImportDef		-- ^ the map to add module interfaces to.
+	-> IO (Map ModuleId ImportDef)
 
 chaseModules setup compileFun importDirs importsRoot importMap
 
@@ -88,7 +88,7 @@ chaseModules_die missingModule importDirs
 chaseModules_build setup compileFun importDirs importsRoot importMap
 	
 	| (r : rs)	<- importsRoot
-	= do 	let ModuleAbsolute vs	= r
+	= do 	let ModuleIdAbsolute vs	= r
 		let fileDir		= pprStrPlain $ "/" %!% vs
 		let fileNameDS		= fileDir ++ ".ds"
 		
@@ -139,7 +139,7 @@ chaseModules_checkRecursive setup fileName
 loadInterface 
 	:: [Arg]
 	-> [FilePath]
-	-> Module
+	-> ModuleId
 	-> IO (Maybe ImportDef)
 
 loadInterface
@@ -147,7 +147,7 @@ loadInterface
 	importDirs
 	mod
  = do
- 	let ModuleAbsolute vs	= mod
+ 	let ModuleIdAbsolute vs	= mod
 	let fileDir		= pprStrPlain $ "/" %!% vs
 	let fileNameDI		= fileDir ++ ".di"
 	let fileNameO		= fileDir ++ ".o"

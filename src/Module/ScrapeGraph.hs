@@ -16,11 +16,12 @@ import Main.Setup
 import Shared.Pretty
 import Util
 import System.Exit
-import Shared.Var		(Module(..))
+import Shared.Var		(ModuleId(..))
 import Shared.Error		(exitWithUserError)
 import qualified Data.Map	as Map
 
-type ScrapeGraph	= Map Module Scrape
+type ScrapeGraph	
+	= Map ModuleId Scrape
 
 
 -- | Scrape all modules transtitively imported by these ones.
@@ -46,7 +47,7 @@ scrapeRecursive'
 	:: [Arg]
 	-> Setup
 	-> ScrapeGraph
-	-> [(Scrape, Module)]
+	-> [(Scrape, ModuleId)]
 	-> IO ScrapeGraph
 scrapeRecursive' args setup graph []
 	= return graph
@@ -81,7 +82,7 @@ scrapeRecursive' args setup graph ((sParent, v):vs)
 
 -- Invert the ScrapeGraph to create a dependency graph.
 --
-dependencyGraph :: ScrapeGraph -> Map Module (Bool, [Module])
+dependencyGraph :: ScrapeGraph -> Map ModuleId (Bool, [ModuleId])
 dependencyGraph graph
  = do	let x = foldl' builder Map.empty
 			$ concat
@@ -95,9 +96,15 @@ dependencyGraph graph
 			Nothing -> False
 			Just v -> scrapeNeedsRebuild v
 
--- This assumes a graph without cycles.
---
-needsRebuild :: Bool -> Map Module (Bool, [Module]) -> [Module] -> Module -> [Module]
+
+-- | This assumes a graph without cycles.
+needsRebuild 
+	:: Bool 
+	-> Map ModuleId (Bool, [ModuleId]) 
+	-> [ModuleId] 
+	-> ModuleId
+	-> [ModuleId]
+
 needsRebuild force map accum mod
  = do	case (force, Map.lookup mod map) of
  	  (_, Nothing) -> accum
@@ -105,9 +112,9 @@ needsRebuild force map accum mod
 	  (False, Just (True, deps)) -> foldl' (needsRebuild True map) (deps ++ accum) deps
 	  (False, Just (False, deps)) -> accum
 
--- Take a Scrape graph walk the dependencies and set the scrapeNeedsRebuild
--- flag as needed.
---
+
+-- | Take a Scrape graph walk the dependencies and set the scrapeNeedsRebuild
+--   flag as needed.
 propagateNeedsRebuild :: ScrapeGraph -> ScrapeGraph
 propagateNeedsRebuild graph
  = 	let	depGraph	= dependencyGraph graph
@@ -124,14 +131,23 @@ propagateNeedsRebuild graph
 -- This replacement detectd cycles in the import graph as modules are
 -- inserted.
 --
-scrapeGraphInsert :: [Arg] -> Module -> Scrape -> ScrapeGraph -> IO ScrapeGraph
+scrapeGraphInsert 
+	:: [Arg] 
+	-> ModuleId
+	-> Scrape 
+	-> ScrapeGraph 
+	-> IO ScrapeGraph
+
 scrapeGraphInsert args m s sg
  = do	case cyclicImport m s sg of
+
  	 Nothing	-> return $! Map.insert m s sg
+
 	 Just [mc]	-> exitWithUserError args
 			 [ ErrorRecursiveModules
 			 $ pprStrPlain
                          $ "Module '" % mc % "' imports itself."]
+
 	 Just c		-> exitWithUserError args
 			 [ ErrorRecursiveModules
 			 $ pprStrPlain
@@ -143,7 +159,7 @@ scrapeGraphInsert args m s sg
 -- If adding the Module will result in a cyclic graph then return the list
 -- of modules that constitue a cycle, otherwise return Nothing.
 --
-cyclicImport :: Module -> Scrape -> ScrapeGraph -> Maybe [Module]
+cyclicImport :: ModuleId -> Scrape -> ScrapeGraph -> Maybe [ModuleId]
 cyclicImport m s sp
  = do	if elem m $ scrapeImported s
 	 then Just [m]

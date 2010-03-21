@@ -12,7 +12,7 @@ import Shared.Literal
 import Shared.Base
 import Util
 import Data.Function
-import Shared.Var		(Module(..))
+import Shared.Var		(ModuleId(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
@@ -385,7 +385,7 @@ seaVar local v
 	= name
 	
 	| Var.varHasSymbols v
-	= seaModule (Var.nameModule v)
+	= seaModule (Var.nameModuleId v)
 	++ (if local then "_" ++ (pprStrPlain $ Var.bind v) ++ "_" else "_")
 	++ "_sym" ++ (Var.deSymString $ Var.name v)	
 
@@ -397,13 +397,13 @@ seaVar local v
 	
 	-- vars defined at top level need their module name prepended.
 	| otherwise
-	= seaModule (Var.nameModule v) ++ "_" ++ Var.name v
+	= seaModule (Var.nameModuleId v) ++ "_" ++ Var.name v
 	
 
-seaModule :: Module -> String
+seaModule :: ModuleId -> String
 seaModule m
  = case m of
-	ModuleNil		-> ""
-	ModuleAbsolute ns	-> (catInt "_" $ ns)
+	ModuleIdNil		-> ""
+	ModuleIdAbsolute ns	-> (catInt "_" $ ns)
 
 

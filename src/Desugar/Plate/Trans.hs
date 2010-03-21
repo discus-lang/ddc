@@ -8,7 +8,6 @@ module Desugar.Plate.Trans
 	, transformW
 	, transformXM
 	, transZ)
-
 where
 import Desugar.Exp
 import Shared.Exp

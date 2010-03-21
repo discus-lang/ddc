@@ -16,7 +16,7 @@ where
 import	Shared.Literal
 import	Type.Exp
 import 	Shared.Exp	(DataField)
-import	Shared.Var	(Var, Module)
+import	Shared.Var	(Var, ModuleId)
 
 
 type Tree a	= [Top a]
@@ -25,7 +25,7 @@ data Top a
 	= PNil
 
 	-- imports
-	| PImport	a [Module]
+	| PImport	a [ModuleId]
 	| PExtern	a Var Type (Maybe Type)
 	| PExternData	a String Var Kind
 

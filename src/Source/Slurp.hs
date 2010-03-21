@@ -33,7 +33,7 @@ slurpFixTable'	 _			= []
 
 -- | Slurp out the list of modules imported by this one.
 slurpImportModules
-	:: Tree	a -> [Var.Module]
+	:: Tree	a -> [Var.ModuleId]
 
 slurpImportModules	tops
 	= concat 

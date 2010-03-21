@@ -24,7 +24,7 @@ import Shared.VarPrim
 import Shared.Error
 import Util
 import DDC.Var.NameSpace
-import Shared.Var			(Var, Module)
+import Shared.Var			(Var, ModuleId)
 import qualified Data.Set		as Set
 import qualified Util.Data.Map		as Map
 import qualified Shared.Var		as Var
@@ -66,7 +66,7 @@ type	Annot		= SourcePos
 -- Project ----------------------------------------------------------------------------------------
 projectTree 
 	:: String		-- unique string
-	-> Module		-- the name of the current module
+	-> ModuleId		-- the name of the current module
 	-> Tree Annot 		-- header tree
 	-> Tree Annot 		-- source tree
 	-> (Tree Annot, [Error])
@@ -78,7 +78,7 @@ projectTree unique moduleName headerTree tree
    in	(tree', stateErrors state')
 		
 	
-projectTreeM :: Module -> Tree Annot -> Tree Annot -> ProjectM (Tree Annot)
+projectTreeM :: ModuleId -> Tree Annot -> Tree Annot -> ProjectM (Tree Annot)
 projectTreeM moduleName headerTree tree
  = do
 	-- Slurp out all the data defs
@@ -110,7 +110,7 @@ projectTreeM moduleName headerTree tree
 --	Also snip class instances while we're here.
 
 snipProjDictTree 
-	:: Module 			-- the name of the current module
+	:: ModuleId 			-- the name of the current module
 	-> Map Var (Top SourcePos)	-- class dictionary definitions
 	-> Tree SourcePos
 	-> ProjectM (Tree SourcePos)
@@ -189,7 +189,7 @@ snipProjDictP _ _ pp
 --	instance_Show_Bool =  EXP
 --		
 snipInstBind
-	:: Module
+	:: ModuleId
 	-> Top SourcePos		-- the class dict def of this instance
 	-> Top SourcePos		-- the class dict instance
 	-> Stmt SourcePos		-- the binding in this instance to snip
@@ -259,7 +259,7 @@ snipInstBind' moduleName
 		   , PBind spBind (Just vTop)  xx])
 
 -- 
-freshenCrsEq :: Module -> Type -> ProjectM Type
+freshenCrsEq :: ModuleId -> Type -> ProjectM Type
 freshenCrsEq mid tt
  = case tt of
 	TForall b k t	
@@ -282,12 +282,12 @@ freshenCrsEq mid tt
 		
 	_ -> return tt
 
-freshenV :: Module -> Var -> ProjectM Var		
+freshenV :: ModuleId -> Var -> ProjectM Var		
 freshenV mod v
  = do	vNew		<- newVarN (Var.nameSpace v)
 	let vFresh	
 		= v 	{ Var.bind 		= Var.bind vNew 
-			, Var.nameModule	= mod }
+			, Var.nameModuleId	= mod }
 			
 	return vFresh
 
@@ -295,7 +295,7 @@ freshenV mod v
 
 -- snip expressions out of data field intialisers in this ctor def
 snipCtorDef 
-	:: Module		-- the current module
+	:: ModuleId		-- the current module
 	-> a			-- annot to use on new code
 	-> Var 			-- var of data type
 	-> CtorDef a		-- ctor def to transform
@@ -314,7 +314,7 @@ snipCtorDef moduleName sp vData (CtorDef nn vCtor dataFields)
  
 -- snip expresisons out of data field initialisers
 snipDataField 
-	:: Module		-- the current module
+	:: ModuleId		-- the current module
 	-> a			-- annot to use on new code
 	-> Var			-- var of data type
 	-> Var			-- var of contructor
@@ -346,7 +346,7 @@ snipDataField moduleName sp vData vCtor field
 				++ Var.name vData  ++ "_" 
 				++ Var.name vCtor  ++ "_" 
 				++ Var.name vField
-			, Var.nameModule	= moduleName }
+			, Var.nameModuleId	= moduleName }
 
 		varL	<- newVarN NameValue
 		varR	<- newVarN NameRegion
@@ -360,10 +360,10 @@ snipDataField moduleName sp vData vCtor field
 
 -- | Create a name for a top level projection function.
 --	Add the type and projection names to the var to make the CoreIR readable.
-newProjFunVar :: SourcePos -> Module -> Var -> Var -> ProjectM Var
+newProjFunVar :: SourcePos -> ModuleId -> Var -> Var -> ProjectM Var
 newProjFunVar 
 	src
-	moduleName@(Var.ModuleAbsolute ms)
+	moduleName@(Var.ModuleIdAbsolute ms)
 	vCon vField
  = do
  	var	<- newVarN NameValue
@@ -375,15 +375,15 @@ newProjFunVar
 			++ Var.name vField 
 			
 		, Var.info = [Var.ISourcePos src ]
-		, Var.nameModule = moduleName }
+		, Var.nameModuleId = moduleName }
 
 
 -- | Create a name for a top level type class instance function
 --	Add the type class and function names to the var to make the CoreIR readable.
-newInstFunVar :: SourcePos -> Module -> Var -> [Type] -> Var -> ProjectM Var
+newInstFunVar :: SourcePos -> ModuleId -> Var -> [Type] -> Var -> ProjectM Var
 newInstFunVar 
 	src
-	moduleName@(Var.ModuleAbsolute ms)
+	moduleName@(Var.ModuleIdAbsolute ms)
 	vClass 
 	tsArgs
 	vInst
@@ -399,7 +399,7 @@ newInstFunVar
 
 		, Var.info = [Var.ISourcePos src ]
 
-		, Var.nameModule = moduleName }
+		, Var.nameModuleId = moduleName }
 
 -- | Make a printable name from a type
 --	TODO: do this more intelligently, in a way guaranteed not to clash with other types
@@ -598,7 +598,7 @@ makeProjR_fun sp tData ctors fieldV
  = do	
 	funV_		<- newVarN NameValue
 	let funV	= funV_ { Var.name = "ref_" ++ Var.name fieldV 
-				, Var.nameModule = Var.nameModule fieldV }
+				, Var.nameModuleId = Var.nameModuleId fieldV }
 		
 	objV		<- newVarN NameValue
 

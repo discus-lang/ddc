@@ -114,7 +114,7 @@ instance Monad m => TransM m n1 n2 Int Int
 instance Monad m => TransM m n1 n2 Bool Bool
  where	transZM table xx = return xx
 
-instance Monad m => TransM m n1 n2 Var.Module Var.Module
+instance Monad m => TransM m n1 n2 Var.ModuleId Var.ModuleId
  where	transZM table xx = return xx
 
 instance Monad m => TransM m n1 n2 LiteralFmt LiteralFmt

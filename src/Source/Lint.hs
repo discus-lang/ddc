@@ -50,7 +50,7 @@ import Util
 import Shared.Literal
 import Shared.Base
 import Shared.Error		(panic)
-import Shared.Var		(Var, NameSpace(..), Module)
+import Shared.Var		(Var, NameSpace(..), ModuleId)
 import qualified Shared.Var	as Var	
 import qualified Data.Set	as Set
 
@@ -667,11 +667,10 @@ instance Lint Var where
 -----
 inSpaceN space vs	= and $ map (\v -> Var.nameSpace v == space)  vs
 inSpaceV vs		= and $ map (\v -> Var.nameSpace v == NameValue)  vs
--- inSpaceT vs		= and $ map (\v -> Var.nameSpace v == NameType)	  vs
 inSpaceE vs		= and $ map (\v -> Var.nameSpace v == NameEffect) vs
 
 
 -- Module -----------------------------------------------------------------------------------------
-instance Lint Module where
+instance Lint ModuleId where
  lint m	= return m
 

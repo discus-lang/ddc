@@ -24,7 +24,7 @@ import Sea.Flatten		(flattenTree)
 import Sea.Init			(initTree, mainTree)
 import Main.Arg
 import Main.Dump
-import Shared.Var		(Module(..))
+import Shared.Var		(ModuleId(..))
 import Shared.Error
 import Shared.Pretty
 import qualified Core.Glob	as C
@@ -142,7 +142,7 @@ seaFlatten unique eTree
 seaInit
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
-	=> Module
+	=> ModuleId
 	-> (Tree ())
 	-> IO (Tree ())
 	
@@ -157,7 +157,7 @@ seaInit moduleName eTree
 -- | Create C source files
 outSea 
 	:: (?args :: [Arg])
-	=> Module
+	=> ModuleId
 	-> (Tree ())		-- sea source
 	-> FilePath		-- path of the source file
 	-> [FilePath]		-- paths of the imported .h header files
@@ -253,8 +253,8 @@ makeIncludeDefTag pathThis
 	
 -- | Add main module entry point code.
 seaMain	:: (?args :: [Arg])
-	=> [Module]
-	-> Module
+	=> [ModuleId]
+	-> ModuleId
 	-> IO (Tree ())
 	
 seaMain imports mainModule

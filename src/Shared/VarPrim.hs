@@ -6,7 +6,7 @@
 
 module Shared.VarPrim
 where
-import Shared.Var		(Var, NameSpace(..), Module(..), VarInfo)
+import Shared.Var		(Var, NameSpace(..), ModuleId(..), VarInfo)
 import Shared.VarBind
 import Shared.Base
 import Util
@@ -137,7 +137,7 @@ primVar space name bind
    in	(Var.new varName)
  	{ Var.bind		= bind
 	, Var.nameSpace		= space
-	, Var.nameModule	= ModuleAbsolute modParts }
+	, Var.nameModuleId	= ModuleIdAbsolute modParts }
 
 
 -- | Create a primitive variable with some extended info

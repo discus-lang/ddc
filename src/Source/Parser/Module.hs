@@ -66,7 +66,7 @@ pModuleId :: Parser (Top SP)
 			return q)
 	con	<- pCon
 	pSemis
-	return	$ PModule (spTP tok) (Var.ModuleAbsolute (fromMaybe [] mQual ++ [Var.name con]))
+	return	$ PModule (spTP tok) (Var.ModuleIdAbsolute (fromMaybe [] mQual ++ [Var.name con]))
 
 pTopHeader :: Parser (Top SP)
  =	pTopImport
@@ -108,18 +108,18 @@ pTopImport
 	mods	<- pCParen (Parsec.sepEndBy1 pModuleName pSemis)
 	return	$ PImportModule (spTP tok) mods
 
-pModuleName :: Parser (Var.Module)
+pModuleName :: Parser (Var.ModuleId)
 pModuleName
  =
  	-- M1.M2 ..
 	do	mod	<- pModuleNameQual
 		pTok K.Dot
 		con	<- pCon
-		return	$ Var.ModuleAbsolute (mod ++ [Var.name con])
+		return	$ Var.ModuleIdAbsolute (mod ++ [Var.name con])
 
  <|>	-- M1
  	do	con	<- pCon
-		return	$ Var.ModuleAbsolute [Var.name con]
+		return	$ Var.ModuleIdAbsolute [Var.name con]
  <?> "pModuleName"
 
 -- Export -----------------------------------------------------------------------------------------

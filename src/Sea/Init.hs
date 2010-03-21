@@ -12,12 +12,12 @@ import Sea.Pretty
 import Sea.Util
 import Util
 import qualified Shared.Var	as Var
-import Shared.Var		(Module(..))
+import Shared.Var		(ModuleId(..))
 
 
 -- | Add code that initialises this module
 initTree 
-	:: Module		-- ^ name of this module
+	:: ModuleId		-- ^ name of this module
 	-> Tree () 		-- ^ code for the module
 	-> Tree ()
 
@@ -34,18 +34,18 @@ makeInitCaf v
 	, SHackery ("     _CAF(" ++ name ++ ") = " ++ name ++ "();\n") ] 
 	where	name	= seaVar False v
 		 
-makeInitVar (ModuleAbsolute vs)
+makeInitVar (ModuleIdAbsolute vs)
 	= Var.new ("ddcInitModule_" ++ (catInt "_" vs))
 
 
 -- | Make code that initialises each module and calls the main function.
 mainTree
-	:: [Module]		-- ^ list of modules in this program
-	-> Module		-- ^ The module holding the Disciple main function
+	:: [ModuleId]		-- ^ list of modules in this program
+	-> ModuleId		-- ^ The module holding the Disciple main function
 	-> Tree ()
 	
 mainTree imports mainModule
- = let	ModuleAbsolute [mainModuleName]	= mainModule
+ = let	ModuleIdAbsolute [mainModuleName]	= mainModule
 	sLine	
 	 = unlines $
 		[ "int main (int argc, char** argv)"

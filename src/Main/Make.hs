@@ -14,7 +14,7 @@ import Util
 import Util.FilePath
 import Util.Graph.Deps
 import Main.Arg				(Arg)
-import Shared.Var			(Module(..))
+import Shared.Var			(ModuleId(..))
 import qualified Main.Arg 		as Arg
 import qualified System.IO		as System
 import qualified System.Exit		as System
@@ -88,7 +88,7 @@ buildLoop
 	-> ScrapeGraph		-- ^ dependency graph
 	-> Int			-- ^ total number of modules needing to be rebuilt
 	-> Int			-- ^ ix of this module
-	-> [Module]		-- ^ root modules
+	-> [ModuleId]		-- ^ root modules
 	-> IO ScrapeGraph
 
 buildLoop args setup graph buildCount buildIx roots
@@ -173,7 +173,7 @@ buildLoop' args setup graph buildCount buildIx roots build
 -- Build ------------------------------------------------------------------------------------------
 -- | Find a module to build
 data Buildable
-	= Build Module		-- ok to build this module now
+	= Build ModuleId	-- ok to build this module now
 	| Clean			-- there's nothing that needs doing here
 	| Blocked		-- there's something potentially buildable, but it's in the blocked set
 	deriving (Show, Eq)
@@ -185,8 +185,8 @@ isBlocked bb	= case bb of { Blocked -> True ; _  -> False }
 -- | Find the next module to build
 findBuildable
 	:: ScrapeGraph
-	-> Set Module
-	-> [Module] 
+	-> Set ModuleId
+	-> [ModuleId] 
 	-> Buildable
 
 findBuildable graph noChoose roots
@@ -207,8 +207,8 @@ findBuildable graph noChoose roots
 
 findBuildable1 
 	:: ScrapeGraph		-- module scrape graph
-	-> Set Module 		-- don't choose one of these modules
-	-> Module		-- root of dependency tree
+	-> Set ModuleId 	-- don't choose one of these modules
+	-> ModuleId		-- root of dependency tree
 	-> Buildable
 
 findBuildable1 graph noChoose mod
@@ -245,7 +245,7 @@ findBuildable1 graph noChoose mod
 
 -- | Decide whether to treat a 'main' function defined in this module
 --	as the program entry point.
-shouldBlessMain :: [Module] -> Module -> Bool
+shouldBlessMain :: [ModuleId] -> ModuleId -> Bool
 shouldBlessMain roots m
 
 	-- We have Main as a root, but we're not compiling it now.
@@ -262,4 +262,4 @@ shouldBlessMain roots m
 	| otherwise
 	= True
 
-	where	mainModule = ModuleAbsolute ["Main"]
+	where	mainModule = ModuleIdAbsolute ["Main"]

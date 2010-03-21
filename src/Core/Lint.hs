@@ -12,7 +12,7 @@
 --		* do proper scoping, not just addVT, addVK. 
 --			want withVT, withVK
 module Core.Lint
-	( lintTree )
+	(lintTree)
 where
 import Core.Exp
 import Core.Util
@@ -108,7 +108,7 @@ lintP :: Table -> Top -> LintM Table
 
 lintP	tt (PBind v x)
  	| Var.name v == "main"
-	, Var.nameModule v == Var.ModuleAbsolute ["Main"]
+	, Var.nameModuleId v == Var.ModuleIdAbsolute ["Main"]
 	= do
 		let vT	= reconX_type "Core.Lint.lintP" x
 		tt'	<- addVT v vT tt

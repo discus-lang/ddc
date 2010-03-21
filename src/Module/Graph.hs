@@ -5,16 +5,16 @@ where
 import Util
 import Shared.Pretty
 import Main.IO
-import Shared.Var			(Module(..))
+import Shared.Var			(ModuleId(..))
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
 
 dotModuleHierarchy 
-	:: Module			-- root module.
+	:: ModuleId			-- root module.
 	-> [String]			-- names of modules to recursively reject from graph.
-	-> [Module]			-- modules imported directly by the root module.
-	-> Map Module ImportDef 	-- map of recursive imports.
+	-> [ModuleId]			-- modules imported directly by the root module.
+	-> Map ModuleId ImportDef 	-- map of recursive imports.
 	-> String			-- module hierarchy graph in GraphViz format.
 
 dotModuleHierarchy
@@ -44,8 +44,8 @@ dotModuleHierarchy
  
 -----
 dotImport 
-	:: [Module]
-	-> Module -> [Module] 
+	:: [ModuleId]
+	-> ModuleId -> [ModuleId] 
 	-> String
 
 dotImport modulesCut m ms
@@ -65,9 +65,9 @@ dotImportS m ms
 
 -----
 lookupNamedModule 
-	:: [Module]
+	:: [ModuleId]
 	-> String
-	-> Maybe Module
+	-> Maybe ModuleId
 	
 lookupNamedModule ms name
 	= find (\m -> name == pprStrPlain m) ms
@@ -75,10 +75,10 @@ lookupNamedModule ms name
 
 -----
 expandImports
-	:: Map Module ImportDef
-	-> Set Module
-	-> [Module]
-	-> [Module]
+	:: Map ModuleId ImportDef
+	-> Set ModuleId
+	-> [ModuleId]
+	-> [ModuleId]
 	
 expandImports imports acc []	
 	= Set.toList acc

@@ -12,7 +12,7 @@ import Source.Error
 import Shared.Error
 import Shared.Pretty
 import Util
-import Shared.Var		(Var, NameSpace(..), Module(..))
+import Shared.Var		(Var, NameSpace(..), ModuleId(..))
 import qualified Debug.Trace
 import qualified Data.Map	as Map
 import qualified Shared.Var	as Var
@@ -55,12 +55,12 @@ bindN_topLevel space var (ScopeTop mapModVars)
 		$ Map.lookup (Var.name var) mapModVars
 	
 	-- grab the id of the current module from the renamer state
-	Just moduleName	<- gets stateModule
+	Just moduleName	<- gets stateModuleId
 	
 	-- see if any vars with name are were already bound in the current module
 	let varsInSameModule
 		= [varX | varX <- modVars
-			, Var.nameModule varX == moduleName ]
+			, Var.nameModuleId varX == moduleName ]
 
 	case varsInSameModule of
 	 [] -> bindN_topLevel_newName space var mapModVars modVars
@@ -151,7 +151,7 @@ findBindingVars' space name (ScopeLocal mapVars : scopesEnclosing)
 	-- found it.
 	Just varBinding
 	 -> do	-- local vars are always in the current module
-		Just mod	<- gets stateModule
+		Just mod	<- gets stateModuleId
 		return		$ [varBinding]
 		
 	-- there's no variable with this name in the current scope,
@@ -163,7 +163,7 @@ findBindingVars' space name (ScopeLocal mapVars : scopesEnclosing)
 -- Choosing ---------------------------------------------------------------------------------------
 -- | Choose which binding occurrence to use from a number of options.
 chooseBindingOccurrence
-	:: Module 		-- ^ the current module name
+	:: ModuleId 		-- ^ the current module name
 	-> Var 			-- ^ the bound occurrence we're trying to find the binding occurrence for
 	-> [Var] 		-- ^ list of binding occurrences to choose from
 	-> Either Error (Maybe Var)
@@ -177,20 +177,20 @@ chooseBindingOccurrence thisModule var varsBinding
 	
 	-- if the bound occurrence has no explicit module name,
 	--	and there's a single binding occurrence in the current module then use that.
-	| ModuleNil	<- Var.nameModule var
-	, [varBinding]	<- filter (\v -> Var.nameModule v == thisModule) varsBinding
+	| ModuleIdNil	<- Var.nameModuleId var
+	, [varBinding]	<- filter (\v -> Var.nameModuleId v == thisModule) varsBinding
 	= Right (Just varBinding)
 	
 	-- if the bound occurrence has no explicit module name,
 	--	and there's a single binding occurrence from some other (any) module then use that.	
-	| ModuleNil	<- Var.nameModule var
+	| ModuleIdNil	<- Var.nameModuleId var
 	, [varBinding]	<- varsBinding
 	= Right (Just varBinding)
 	
 	-- if the bound occurrence has an explicit module name,
 	--	and there's a single binding occurrence for the same name in that module then use that.
-	| ModuleAbsolute _ <- Var.nameModule var
-	, [varBinding]	<- filter (\v -> Var.nameModule v == Var.nameModule var) varsBinding
+	| ModuleIdAbsolute _ <- Var.nameModuleId var
+	, [varBinding]	<- filter (\v -> Var.nameModuleId v == Var.nameModuleId var) varsBinding
 	= Right (Just varBinding)
 
 	-- there are multiple binding occurrences of interest, 
@@ -218,7 +218,7 @@ linkV		= linkN NameValue
 linkN :: NameSpace -> Var -> RenameM Var
 linkN space var
  = do	varsBinding	<- findBindingVars space (Var.name var)
-	Just thisModule	<- gets stateModule
+	Just thisModule	<- gets stateModuleId
 	let var'	= var { Var.nameSpace = space }
 
 	case chooseBindingOccurrence thisModule var' varsBinding of
@@ -243,7 +243,7 @@ linkBoundAgainstBinding varBinding varBound
  = varBound	
 	{ Var.name	 = Var.name       varBinding
 	, Var.bind 	 = Var.bind 	  varBinding
-	, Var.nameModule = Var.nameModule varBinding
+	, Var.nameModuleId = Var.nameModuleId varBinding
 	, Var.nameSpace  = Var.nameSpace  varBinding 
 	, Var.info       = Var.info varBound ++ [Var.IBoundBy varBinding]}
 
@@ -278,10 +278,10 @@ lbindN_binding space var
  = return var
 
  | otherwise
- = do	Just thisModule	<- gets stateModule
+ = do	Just thisModule	<- gets stateModuleId
 
 	varsBinding_thisModule
-		<- liftM (filter (\v -> Var.nameModule v == thisModule))
+		<- liftM (filter (\v -> Var.nameModuleId v == thisModule))
 		$ findBindingVars space (Var.name var)
 
 	case varsBinding_thisModule of
@@ -327,7 +327,7 @@ lbindN_bound space var
 	
  | otherwise
  = do	varsBinding 	<- findBindingVars space (Var.name var)
-	Just thisModule	<- gets stateModule
+	Just thisModule	<- gets stateModuleId
 	let var'	= var { Var.nameSpace = space }
 	case chooseBindingOccurrence thisModule var' varsBinding of
 
@@ -355,10 +355,10 @@ lbindN_bound space var
 lbindZ_topLevel :: Var -> RenameM Var
 lbindZ_topLevel var
  = do	vsBinding 	<- findBindingVars (Var.nameSpace var) (Var.name var)
-	Just thisModule	<- gets stateModule
+	Just thisModule	<- gets stateModuleId
 
 	let (vsBinding_thisModule, _vsBinding_otherModules)
-			= partition (\v -> Var.nameModule v == thisModule)
+			= partition (\v -> Var.nameModuleId v == thisModule)
 			$ vsBinding
 			
 	let result

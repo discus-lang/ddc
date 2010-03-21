@@ -12,7 +12,7 @@ import Main.Dump
 import Shared.Pretty
 import Shared.Error
 import Shared.Base
-import Shared.Var			(Var, Module)
+import Shared.Var			(Var, ModuleId)
 import System.IO			(hFlush)
 import Util				hiding (null, elem)
 import qualified Data.Foldable		as Foldable
@@ -128,7 +128,7 @@ desugarProject
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> String
-	-> Module
+	-> ModuleId
 	-> D.Tree SourcePos
 	-> D.Tree SourcePos
 	-> IO	( D.Tree SourcePos

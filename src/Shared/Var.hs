@@ -7,7 +7,7 @@ module Shared.Var
 	, new
 	, loadSpaceQualifier
 	, VarInfo(..)
-	, Module(..) 
+	, ModuleId(..) 
 	, noModule )
 where
 import Shared.Pretty
@@ -26,7 +26,7 @@ stage	= "Shared.Var"
 data Var =
 	Var 
 	{ name		:: !String		-- ^ Name of this var.
-	, nameModule	:: !Module		-- ^ The module path that this var was defined in.
+	, nameModuleId	:: !ModuleId		-- ^ The module path that this var was defined in.
 	, nameSpace	:: !NameSpace		-- ^ The namespace of the variable.
 	, bind		:: !VarBind		-- ^ A unique identifier for this binding occurance.
 	, info		:: ![VarInfo] }		-- ^ some (optional) info about this var.
@@ -51,7 +51,7 @@ new ::	String -> Var
 new	n	
 	= Var 
 	{ name 		= n
-	, nameModule	= ModuleNil
+	, nameModuleId	= ModuleIdNil
 	, nameSpace	= NameNothing	
 	, bind		= XNil
 	, info		= [] }
@@ -61,14 +61,14 @@ new	n
 instance Eq Var where
   (==) v1 v2	
 	=   bind v1 == bind v2
-	&&  nameModule v1 == nameModule v2
+	&&  nameModuleId v1 == nameModuleId v2
 
 
 -- | Ordering of variables
 instance Ord Var where
  compare v1 v2 	
   = case compare (bind v1) (bind v2) of
-	EQ	-> compare (nameModule v1) (nameModule v2)
+	EQ	-> compare (nameModuleId v1) (nameModuleId v2)
 	ord	-> ord
 
 
@@ -86,9 +86,9 @@ loadSpaceQualifier var
 -- | Pretty print a variable
 instance Pretty Var PMode where
  ppr v
-  = case nameModule v of
-	ModuleNil		-> ppr $ pprVarSpaced v
-	ModuleAbsolute ns	-> 	 punc "." ((map ppr ns) ++ [pprVarSpaced v])
+  = case nameModuleId v of
+	ModuleIdNil		-> ppr $ pprVarSpaced v
+	ModuleIdAbsolute ns	-> 	 punc "." ((map ppr ns) ++ [pprVarSpaced v])
  
 pprVarSpaced v
   = case nameSpace v of
@@ -145,22 +145,22 @@ instance Pretty VarInfo PMode where
 
 
 -- Module Identifiers ----------------------------------------------------------------------------
-data Module
-	= ModuleNil			-- ^ No module information. Sometimes this means that the
+data ModuleId
+	= ModuleIdNil			-- ^ No module information. Sometimes this means that the
 					--   variable is in the module currently being compiled.
 	
-	| ModuleAbsolute [String]	-- ^ Absolute module name, of the form "M1.M2.M3 ..."
+	| ModuleIdAbsolute [String]	-- ^ Absolute module name, of the form "M1.M2.M3 ..."
 	deriving (Show, Eq, Ord)
 
 
 -- | Pretty print a module id.
-instance Pretty Module PMode where
+instance Pretty ModuleId PMode where
  ppr m
   = case m of
-	ModuleNil		-> ppr "@ModuleNil"
-  	ModuleAbsolute vs	-> "." %!% vs
+	ModuleIdNil		-> ppr "@ModuleNil"
+  	ModuleIdAbsolute vs	-> "." %!% vs
 
 -- | strip off the module id from a variable
 noModule :: Var -> Var
-noModule var	= var { nameModule = ModuleNil }
+noModule var	= var { nameModuleId = ModuleIdNil }
 

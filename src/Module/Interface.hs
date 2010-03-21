@@ -28,10 +28,10 @@ import Data.Set			(Set)
 data Interface
 	= Interface
 	{ -- | Id of the modue
-	  intModuleId		:: Module
+	  intModuleId		:: ModuleId
 		
 	  -- | Other modules imported by this one.
-	, intImportedModules	:: Set Module			
+	, intImportedModules	:: Set ModuleId
 
 	  -- | Data types
 	, intData		:: Map Var IntData

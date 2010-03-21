@@ -19,7 +19,7 @@ import Shared.Error
 import Shared.Pretty
 import Util
 import Type.Util.Bits		(varOfBind)
-import Shared.Var		(Var, NameSpace(..), Module)
+import Shared.Var		(Var, NameSpace(..), ModuleId)
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -40,7 +40,7 @@ trace ss xx
 
 -- | Introduce local region definitions.
 bindTree 
-	:: Module
+	:: ModuleId
 	-> String			-- ^ unique prefix to use for fresh vars.
 	-> Map Var [Var]		-- ^ a map of all the class constraints acting on a particular region.
 	-> Set Var			-- ^ the regions with global lifetime
@@ -51,7 +51,7 @@ bindTree mod unique classMap rsGlobal tree
  = 	evalVarGen (bindM mod classMap rsGlobal tree) ("w" ++ unique)
 
 -- | Bind local region variables in this tree.
-bindM	:: Module
+bindM	:: ModuleId
 	-> Map Var [Var]
 	-> Set Var
 	-> Tree

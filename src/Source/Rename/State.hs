@@ -22,7 +22,7 @@ where
 import Shared.Error
 import Source.Error
 import Util
-import Shared.Var		(Var, VarBind, NameSpace(..), Module(..))
+import Shared.Var		(Var, VarBind, NameSpace(..), ModuleId(..))
 import Shared.VarPrim		(getPrimVarBind)
 import qualified Shared.Var	as Var
 import qualified Util.Data.Map	as Map
@@ -80,7 +80,7 @@ data	RenameS
 
 
 	, -- | The current module id
-	  stateModule		:: Maybe Module
+	  stateModuleId		:: Maybe ModuleId
 
 	  -- | Fresh variable generators, one for each namespace.
 	, stateGen		:: Map NameSpace VarBind			
@@ -105,7 +105,7 @@ initRenameS
 	, stateDebug		= True
 	, stateErrors		= []
 
-	, stateModule		= Nothing
+	, stateModuleId		= Nothing
 
 	, stateGen		= Map.fromList
 				[ (NameModule,	Var.XBind "mR"  0)
@@ -191,14 +191,14 @@ withLocalScope f
 	return x
 	
 -- | Do some renaming in a particular module
-withModule :: Module -> RenameM a -> RenameM a
+withModule :: ModuleId -> RenameM a -> RenameM a
 withModule mod f
- = do	mMod	<- gets stateModule
+ = do	mMod	<- gets stateModuleId
 	case mMod of
 	 Nothing
-	  -> do	modify $ \s -> s { stateModule = Just mod }
+	  -> do	modify $ \s -> s { stateModuleId = Just mod }
 		x <- f
-		modify $ \s -> s { stateModule = Nothing }
+		modify $ \s -> s { stateModuleId = Nothing }
 		return x
 		
 	 Just mod'
@@ -232,11 +232,11 @@ uniquifyVarN space var
 		--	so we can set the moduleName based on that.
 		--	REFACTOR: It'd be better if getPrimVarBind gave us all the right informaiton.
 	 	Just bind	
-		 -> do	Just mod	<- gets stateModule
+		 -> do	Just mod	<- gets stateModuleId
 			return 
 		 	 $ var 	{ Var.bind		= bind
 				, Var.nameSpace		= space
-				, Var.nameModule	= mod }
+				, Var.nameModuleId	= mod }
 									
 		Nothing 	
 		 -> uniquifyVarN' space var	
@@ -247,13 +247,13 @@ uniquifyVarN' space var
 			$  gets stateGen
 
 	-- grab the id of the current module
-	Just mod	<- gets stateModule
+	Just mod	<- gets stateModuleId
 
 	-- rename the var and set its namespace
 	let var'	= var 
 			{ Var.bind 		= spaceGen 
 			, Var.nameSpace		= space 
-			, Var.nameModule	= mod }
+			, Var.nameModuleId	= mod }
 
 	-- increment the varid generator
 	let spaceGen'	= Var.incVarBind spaceGen

@@ -19,7 +19,7 @@ module Source.Exp
 	, Label		(..)
 	, LCQual	(..))
 where
-import Shared.Var 		(Var, Module)
+import Shared.Var 		(Var, ModuleId)
 import Shared.Literal
 import Shared.Exp
 import Type.Exp
@@ -34,8 +34,8 @@ data Top a
 	= PPragma	a [Exp a]
 
 	-- Modules
-	| PModule	a Module
-	| PImportModule a [Module]
+	| PModule	a ModuleId
+	| PImportModule a [ModuleId]
 	| PExport	a [Export a]
 
 	-- Foreign imports and exports

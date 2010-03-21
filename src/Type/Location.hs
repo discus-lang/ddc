@@ -298,10 +298,10 @@ dispSourceValue tt sv
 		
 	SVProj sp j
 	 -> let	cJ	= case j of
-	 			TJField v	-> TJField  v { Var.nameModule = Var.ModuleNil }
-	 			TJFieldR v	-> TJFieldR v { Var.nameModule = Var.ModuleNil }
-	 			TJIndex v	-> TJIndex  v { Var.nameModule = Var.ModuleNil }
-	 			TJIndexR v	-> TJIndexR v { Var.nameModule = Var.ModuleNil }
+	 			TJField v	-> TJField  v { Var.nameModuleId = Var.ModuleIdNil }
+	 			TJFieldR v	-> TJFieldR v { Var.nameModuleId = Var.ModuleIdNil }
+	 			TJIndex v	-> TJIndex  v { Var.nameModuleId = Var.ModuleIdNil }
+	 			TJIndexR v	-> TJIndexR v { Var.nameModuleId = Var.ModuleIdNil }
 
 	    in	   "      projection '" % cJ % "'\n"
 		%  atKind tt		% tt	% "\n"

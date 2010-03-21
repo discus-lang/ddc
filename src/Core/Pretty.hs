@@ -31,7 +31,7 @@ sb (BMore v t)	= pprStrPlain $ "(" % (pprStrPlain $ pv v) % " :> " % t % ")"
 
 -- | force display of type namespace qualifier
 pv v
- = let vStrip	= v { Var.nameModule = Var.ModuleNil }
+ = let vStrip	= v { Var.nameModuleId = Var.ModuleIdNil }
    in  case Var.nameSpace v of
  	Var.NameType	-> "*" % vStrip
 	_		-> ppr vStrip
