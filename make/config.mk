@@ -6,7 +6,7 @@ TARGET_OS := $(shell uname -s | tr 'A-Z' 'a-z')
 # This works for 'i386', 'i686', 'x86_64' and 'ppc'.
 # Currently don't support ppc64 because the only machine available to test
 # this has a 32 bit ghc6. Therefore we automatically convert ppc64 to ppc.
-TARGET_CPU := $(shell make/config.sh)
+TARGET_CPU := $(shell sh make/config.sh)
 
 TARGET		= $(TARGET_OS)-$(TARGET_CPU)
 BUILDFLAVOUR	= distro
