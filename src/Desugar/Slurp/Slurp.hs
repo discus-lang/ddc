@@ -1,11 +1,10 @@
 -- | Slurp out type constraints from the desugared IR.
 
 module Desugar.Slurp.Slurp
-	( slurpTreeM )
+	(slurpTreeM)
 where
 import Util
 import Shared.Error
-import Shared.Base
 import Shared.Exp
 import Type.Exp
 import Type.Location
@@ -17,6 +16,7 @@ import Desugar.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS
+import DDC.Base.SourcePos
 import Type.Pretty		()
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var

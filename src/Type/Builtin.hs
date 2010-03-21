@@ -4,9 +4,9 @@
 module Type.Builtin
 where
 import Type.Exp
-import Shared.Base
 import Shared.VarPrim
 import Shared.Literal
+import DDC.Base.DataFormat
 import Shared.Var		(Var)
 
 -- Witness / Witness Kind constructors

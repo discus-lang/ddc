@@ -5,9 +5,9 @@ where
 import Shared.Pretty
 import Shared.Error
 import Util
+import DDC.Base.SourcePos
 import Type.Exp				(Type)
 import Shared.Var			(Var, ModuleId)
-import Shared.Base			(SourcePos)
 import Source.Pretty			()
 import Desugar.Pretty			()
 import qualified Data.Map		as Map

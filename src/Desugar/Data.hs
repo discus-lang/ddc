@@ -8,15 +8,17 @@ import Desugar.Pretty
 import Desugar.Exp
 import Type.Util.Elaborate
 import Type.Exp
-import Shared.Pretty
 import Shared.Exp
-import Shared.Base
 import Shared.VarPrim
+import DDC.Base.SourcePos
+import DDC.Base.DataFormat
+import DDC.Main.Pretty
+import DDC.Var.NameSpace
 import Util
-import Shared.Error		(panic)
-import Shared.Var		(Var, NameSpace(..))
-import qualified Shared.Var	as Var
 import qualified Debug.Trace
+import Shared.Error		(panic)
+import Shared.Var		(Var)
+import qualified Shared.Var	as Var
 
 -----
 stage		= "Desugar.Data"

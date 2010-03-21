@@ -20,9 +20,9 @@ import Source.Exp
 import Type.Util
 import Type.Plate.FreeVars
 import Type.Exp
-import Shared.Base
 import Util
-import Shared.Pretty		()
+import DDC.Base.SourcePos
+import DDC.Main.Pretty		()
 import Shared.Error		(panic)
 import Shared.Var		(Var, NameSpace (..), ModuleId(..))
 import qualified Shared.VarUtil	as Var

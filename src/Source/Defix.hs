@@ -22,12 +22,12 @@ where
 import Control.Monad.State.Strict
 import Util
 import Shared.Error
-import Shared.Base
 import Source.Exp
 import Source.Error
 import Source.Plate.Trans
 import Source.DefixApps
 import Data.Function
+import DDC.Base.SourcePos	
 import Shared.Var		as Var
 
 -----

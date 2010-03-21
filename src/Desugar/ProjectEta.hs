@@ -1,12 +1,12 @@
 
 module Desugar.ProjectEta 
-	( projectEtaExpandTree) 
+	(projectEtaExpandTree) 
 where
 import Desugar.Exp
 import Desugar.Bits
 import Shared.VarGen
-import Shared.Base
 import Control.Monad
+import DDC.Base.SourcePos
 import Shared.Var		(Var)
 import qualified Data.Map	as Map
 import qualified Shared.Var	as Var

@@ -16,7 +16,7 @@ module Sea.Exp
 	, Prim		(..)
 	, Var)
 where
-import Shared.Base
+import DDC.Base.SourcePos
 import Shared.Literal
 import Util
 import Shared.Var		(Var)

@@ -11,12 +11,12 @@ module Shared.Var
 	, noModule )
 where
 import Shared.Pretty
-import Shared.Base
 import Shared.VarBind
 import Shared.Error
-import DDC.Var.NameSpace
 import Data.Char
 import Util
+import DDC.Var.NameSpace
+import DDC.Base.SourcePos
 
 stage	= "Shared.Var"
 

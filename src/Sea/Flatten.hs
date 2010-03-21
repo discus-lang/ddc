@@ -5,10 +5,10 @@ module Sea.Flatten
 where
 import Sea.Exp
 import Sea.Plate.Trans
-import Shared.Base
 import Shared.Literal
 import Shared.VarGen
 import Util
+import DDC.Base.DataFormat
 import Sea.Pretty		()
 import Shared.Var		(NameSpace(..))
 

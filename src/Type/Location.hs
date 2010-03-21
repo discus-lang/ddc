@@ -16,11 +16,10 @@ where
 import Type.Util.Kind
 import Type.Exp
 import Shared.Pretty
-import Shared.Base
 import Shared.Literal
 import Shared.Error
 import Shared.VarPrim
-import Util
+import DDC.Base.SourcePos
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 

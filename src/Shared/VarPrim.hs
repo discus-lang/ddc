@@ -8,8 +8,8 @@ module Shared.VarPrim
 where
 import Shared.Var		(Var, NameSpace(..), ModuleId(..), VarInfo)
 import Shared.VarBind
-import Shared.Base
 import Util
+import DDC.Base.DataFormat
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 

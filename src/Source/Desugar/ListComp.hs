@@ -4,12 +4,12 @@ module Source.Desugar.ListComp
 where
 import Util
 import Shared.VarPrim
-import Shared.Base
 import Shared.Error
 import Shared.Pretty
 import Source.Desugar
 import Source.Desugar.Base
 import Source.Desugar.Patterns
+import DDC.Base.SourcePos
 import qualified Shared.Var 		as Var
 import qualified Source.Exp		as S
 import qualified Desugar.Exp		as D

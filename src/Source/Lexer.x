@@ -20,9 +20,9 @@ import Source.Token
 import Source.TokenShow
 import Source.Error
 import Shared.Error
-import Shared.Base
 import Shared.Literal
 import Util
+import DDC.Base.DataFormat
 import Data.Char	(isUpper)
 }
 

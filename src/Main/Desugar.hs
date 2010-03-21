@@ -9,9 +9,9 @@ module Main.Desugar
 where
 import Main.Arg
 import Main.Dump
-import Shared.Pretty
 import Shared.Error
-import Shared.Base
+import DDC.Main.Pretty
+import DDC.Base.SourcePos
 import Shared.Var			(Var, ModuleId)
 import System.IO			(hFlush)
 import Util				hiding (null, elem)

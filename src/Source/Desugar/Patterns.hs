@@ -7,10 +7,11 @@ module Source.Desugar.Patterns
 where
 import Util
 import Shared.VarPrim
-import Shared.Base
 import Source.Desugar.Base
 import Source.Desugar.MergeBindings
 import Shared.Literal
+import DDC.Base.SourcePos
+import DDC.Base.DataFormat
 import Shared.Var			(Var, NameSpace(..))
 import Desugar.Exp			as D
 import Desugar.Bits			as D

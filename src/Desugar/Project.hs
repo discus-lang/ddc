@@ -16,14 +16,15 @@ import Desugar.Exp
 import Type.Exp
 import Type.Util
 import Type.Plate.FreeVars
-import Shared.Pretty
 import Shared.Exp
-import Shared.Base
 import Shared.Literal
 import Shared.VarPrim
 import Shared.Error
 import Util
 import DDC.Var.NameSpace
+import DDC.Base.SourcePos
+import DDC.Base.DataFormat
+import DDC.Main.Pretty
 import Shared.Var			(Var, ModuleId)
 import qualified Data.Set		as Set
 import qualified Util.Data.Map		as Map

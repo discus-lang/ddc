@@ -1,5 +1,5 @@
 
--- | Base types for the pretty printer library
+-- | Pretty printer library.
 module DDC.Util.Pretty 
 	( Pretty	(..)
 	, PrettyM

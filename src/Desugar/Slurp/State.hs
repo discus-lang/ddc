@@ -8,12 +8,12 @@ module	Desugar.Slurp.State
 	, initCSlurpS )
 where
 import Util
-import Shared.Pretty
 import Shared.Exp
-import Shared.Base
 import Type.Exp
 import Type.Error
 import Desugar.Exp
+import DDC.Main.Pretty
+import DDC.Base.SourcePos
 import Shared.Var		(Var, VarBind, NameSpace(..))
 import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map

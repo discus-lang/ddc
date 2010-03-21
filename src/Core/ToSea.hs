@@ -4,12 +4,13 @@ module Core.ToSea
 	(toSeaTree) 
 where
 import Shared.Error
-import Shared.Base
-import Shared.Pretty
 import Shared.Literal
 import Data.Function
+import DDC.Main.Pretty
+import DDC.Base.DataFormat
+import DDC.Var.NameSpace
 import Shared.VarUtil			(prettyPos)
-import Shared.Var			(Var, NameSpace(..))
+import Shared.Var			(Var)
 import Data.Sequence			(Seq)
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)

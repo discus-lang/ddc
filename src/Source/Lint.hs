@@ -48,7 +48,7 @@ import Type.Exp
 import Type.Util
 import Util
 import Shared.Literal
-import Shared.Base
+import DDC.Base.SourcePos
 import Shared.Error		(panic)
 import Shared.Var		(Var, NameSpace(..), ModuleId)
 import qualified Shared.Var	as Var	

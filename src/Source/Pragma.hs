@@ -7,12 +7,11 @@ module Source.Pragma
 	, slurpPragmaTree)
 where
 import Source.Exp
-import Shared.Pretty
-import Shared.Base
 import Shared.Error
 import Shared.Warning
 import Shared.Literal
-import Util
+import DDC.Main.Pretty
+import DDC.Base.SourcePos
 import Source.Pretty		()
 import qualified Shared.Var	as Var
 

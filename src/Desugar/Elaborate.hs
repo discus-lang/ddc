@@ -11,10 +11,10 @@ import Type.Plate
 import Type.Pretty
 import Type.Exp
 import Shared.Pretty
-import Shared.Base
-import DDC.Var.NameSpace
 import Control.Monad.State.Strict
 import Util
+import DDC.Var.NameSpace
+import DDC.Base.SourcePos
 import Shared.Var		(Var)
 import qualified Debug.Trace
 import qualified Data.Set	as Set

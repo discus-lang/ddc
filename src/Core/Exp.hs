@@ -20,7 +20,7 @@ import Util
 import Shared.Literal
 import Shared.Exp
 import Type.Exp
-import Shared.Base 	(SourcePos(..))
+import DDC.Base.SourcePos
 import Shared.Var 	(Var)
 
 

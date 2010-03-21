@@ -4,9 +4,7 @@ module Dot.Pretty
 where
 import Dot.Exp
 import qualified Shared.Var	as Var
-import Shared.Pretty
-import Util
-
+import DDC.Main.Pretty
 
 instance Pretty Graph PMode where
  ppr gg

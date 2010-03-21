@@ -17,10 +17,10 @@ import Source.Desugar.MergeBindings
 import Shared.VarPrim
 import Shared.Error
 import Shared.Literal
-import Shared.Base			(DataFormat(..))
 import Shared.Exp
+import DDC.Base.SourcePos
+import DDC.Base.DataFormat
 import Source.Pretty			()
-import Shared.Base			(SourcePos)
 import Shared.Var			(Var, NameSpace(..))
 import qualified Shared.Var		as Var
 import qualified Source.Exp		as S

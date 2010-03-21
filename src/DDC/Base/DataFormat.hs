@@ -1,28 +1,16 @@
 
-module Shared.Base
-	( SourcePos  (..) 
-	, DataFormat (..)
+-- | The data format of a primitive value.
+module DDC.Base.DataFormat
+	( DataFormat (..)
 	, dataFormatIsBoxed
 	, dataFormatIsUnboxed
 	, dataFormatBoxedOfUnboxed
 	, dataFormatUnboxedOfBoxed)
 where
-import Shared.Pretty
 
 
--- | A position in a source file
-data SourcePos		
-	= SourcePos 
-		( String	-- path to file
-		, Int		-- line number
-		, Int)		-- column number
-	deriving (Show, Eq)
-	
-instance Pretty SourcePos PMode where
- ppr (SourcePos (f, l, c))	= ppr $ f ++ ":" ++ show l ++ ":" ++ show (c - 1)
-
-
--- | The data format for a primitive value
+-- | The data format of a primitive value.
+--	The 'Bits' versions are used for Int32, Int64 etc.
 data DataFormat
 	= Boxed
 	| BoxedBits	Int
@@ -38,6 +26,7 @@ dataFormatIsUnboxed fmt
  	Unboxed		-> True
 	UnboxedBits _	-> True
 	_		-> False
+
 
 -- | Check whether this data format corresponds to a boxed value
 dataFormatIsBoxed :: DataFormat -> Bool
@@ -55,6 +44,7 @@ dataFormatBoxedOfUnboxed fmt
  	Unboxed			-> Just Boxed
 	UnboxedBits bits	-> Just $ BoxedBits bits
 	_			-> Nothing
+
 
 -- | Convert an unboxed data format to the boxed version
 dataFormatUnboxedOfBoxed :: DataFormat -> Maybe DataFormat

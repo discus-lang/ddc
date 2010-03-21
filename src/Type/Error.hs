@@ -10,8 +10,8 @@ import Type.Util.Bits
 import Shared.Pretty
 import Shared.Error
 import Util
+import DDC.Base.SourcePos
 import Shared.Var		(Var)
-import Shared.Base		(SourcePos(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 

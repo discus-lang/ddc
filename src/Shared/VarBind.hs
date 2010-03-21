@@ -4,7 +4,7 @@ module Shared.VarBind
 	, takeVarBind_dataFormat
 	, incVarBind)
 where
-import Shared.Base
+import DDC.Base.DataFormat
 import Shared.Pretty
 
 

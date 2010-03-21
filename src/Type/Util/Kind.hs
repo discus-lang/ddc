@@ -28,8 +28,7 @@ import Type.Pretty		()
 import Type.Util.Bits
 import Type.Exp
 import Shared.Error
-import Shared.Pretty
-import Util
+import DDC.Main.Pretty
 import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var 	as Var
 import qualified Debug.Trace	as Debug

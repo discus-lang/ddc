@@ -7,6 +7,7 @@ module DDC.Var.NameSpace
 	, charPrefixOfSpace )
 where
 
+
 -- | Possible variable namespaces.
 data NameSpace
 	= NameNothing

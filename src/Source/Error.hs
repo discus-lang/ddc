@@ -5,10 +5,10 @@ module Source.Error
 where
 import Util
 import Shared.Error
-import Shared.Base
 import Source.Token	
 import Shared.Pretty
 import DDC.Var.NameSpace
+import DDC.Base.SourcePos
 import Shared.Var			(Var)
 import Shared.VarUtil			(prettyPos, isCtorName)
 import qualified Shared.Var		as Var

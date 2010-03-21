@@ -18,8 +18,8 @@ module Shared.VarUtil
 where
 import Shared.Pretty
 import Util
+import DDC.Base.SourcePos	
 import Data.Char		hiding (isSymbol)
-import Shared.Base		(SourcePos(..))
 import Shared.Var 		(Var, VarBind, VarInfo(..), NameSpace(..))
 import qualified Data.Map	as Map
 import qualified Shared.Var 	as Var

@@ -11,9 +11,9 @@ module Source.Desugar.Base
 	, addError)
 where
 import Source.Error
-import Shared.Base
-import Shared.Pretty
 import DDC.Var.NameSpace
+import DDC.Base.SourcePos
+import DDC.Main.Pretty
 import Util
 import Shared.Var			(Var)
 import qualified Shared.VarBind		as Var

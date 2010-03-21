@@ -8,10 +8,9 @@ import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
 import Type.Exp
-import qualified Shared.Var	as Var
-import Shared.Pretty
 import Shared.Error
-import Util
+import DDC.Main.Pretty		
+import qualified Shared.Var	as Var
 
 stage = "Desugar.Pretty"
 

@@ -5,10 +5,9 @@ module Shared.Literal
 	( Literal    (..)
 	, LiteralFmt (..))
 where
-import Shared.Base
 import Shared.Error
-import Shared.Pretty
-import Util
+import DDC.Main.Pretty
+import DDC.Base.DataFormat
 
 -----
 stage	= "Shared.Literal"

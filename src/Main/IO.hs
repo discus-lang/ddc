@@ -6,10 +6,10 @@ where
 import Main.Setup
 import Main.Arg
 import Shared.Error
-import Shared.Base
-import Shared.Pretty
 import Util
 import Util.System.Directory
+import DDC.Main.Pretty
+import DDC.Base.SourcePos
 import Shared.Var			(ModuleId(..))
 import qualified Data.Map		as Map
 import qualified Source.Slurp		as S
