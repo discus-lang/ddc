@@ -27,7 +27,8 @@ import Source.Exp
 import Source.Error
 import Source.Plate.Trans
 import Source.DefixApps
-import Shared.Var		(Var, (=~=))
+import Data.Function
+import Shared.Var		as Var
 
 -----
 stage	= "Normal.Defix"
@@ -194,11 +195,11 @@ defaultFix
 --- | Get the prec / assoc for this var from the table.
 getPrec  :: [FixDef a] -> Var -> Int
 getPrec  fixTable v
-	= fst $ fromMaybe defaultFix $ lookupF (=~=) v fixTable
+	= fst $ fromMaybe defaultFix $ lookupF ((==) `on` Var.name) v fixTable
 
 getAssoc :: [FixDef a] -> Var -> InfixMode a
 getAssoc fixTable v	
 	| otherwise
-	= snd $ fromMaybe defaultFix $ lookupF (=~=) v fixTable
+	= snd $ fromMaybe defaultFix $ lookupF ((==) `on` Var.name) v fixTable
 
 

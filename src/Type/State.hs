@@ -239,8 +239,8 @@ instVar' var space mVarId
 		let name	= pprStrPlain varId
 		let var'	= (Var.new name)
 			 { Var.nameSpace		= Var.nameSpace var
-			 , Var.bind		= varId
-			 , Var.info		= [Var.IParent var] }
+			 , Var.bind		= varId }
+--			 , Var.info		= [Var.IParent var] }
 
 		return $ Just var'
 

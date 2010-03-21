@@ -3,42 +3,50 @@
 module Shared.Var
 	( module Shared.VarBind
 	, module DDC.Var.NameSpace
-
 	, Var (..)
 	, new
-	, (=~=)
-	, (=^=)
 	, loadSpaceQualifier
-
 	, VarInfo(..)
 	, Module(..) 
 	, noModule )
 where
 import Shared.Pretty
-import Shared.Literal
 import Shared.Base
 import Shared.VarBind
 import Shared.Error
-
 import DDC.Var.NameSpace
 import Data.Char
 import Util
 
 stage	= "Shared.Var"
 
--- Variables ------------------------------------------------------------------
+-- | Variables. 
+--	Both bound and binding occurrences.
+--	We also use Var for data constructor names, even though they're not really variables.
 data Var =
 	Var 
 	{ name		:: !String		-- ^ Name of this var.
 	, nameModule	:: !Module		-- ^ The module path that this var was defined in.
-	, nameSpace	:: !NameSpace
+	, nameSpace	:: !NameSpace		-- ^ The namespace of the variable.
 	, bind		:: !VarBind		-- ^ A unique identifier for this binding occurance.
 	, info		:: ![VarInfo] }		-- ^ some (optional) info about this var.
 	deriving Show
 
+
+-- | Extra information about a variable.
+--	We keep this info in a separate list as opposed to directly in the var type, 
+--	because not every var has all the info, and we want to keep the size of the 
+--	runtime object down.
+data VarInfo
+	= ISourcePos	SourcePos	-- ^ Where this var appears in the source program.
+	| IBoundBy	Var		-- ^ The binding occurance of this var.
+	| IValueVar	Var		-- ^ Type varible, then this gives the value variable.
+	| ISeaName	String		-- ^ Variable name to use when outputting Sea code.
+	deriving (Show)
+
+
 -- | Create a new variable with this name.
---	The unique binder is set to XNil (empty).
---
+--	The unique binder is set to XNil.
 new ::	String -> Var
 new	n	
 	= Var 
@@ -51,7 +59,9 @@ new	n
 
 -- | Comparing variables for equality
 instance Eq Var where
-  (==) v1 v2	= (=^=) v1 v2
+  (==) v1 v2	
+	=   bind v1 == bind v2
+	&&  nameModule v1 == nameModule v2
 
 
 -- | Ordering of variables
@@ -60,19 +70,6 @@ instance Ord Var where
   = case compare (bind v1) (bind v2) of
 	EQ	-> compare (nameModule v1) (nameModule v2)
 	ord	-> ord
-
-
--- | Compare variables just by their textual names
-infix 4 =~=
-(=~=) :: Var -> Var	-> Bool
-(=~=) a b	= name a == name b
-
-
--- | Compare variables by their unique binder, as well as module information.
-(=^=) :: Var -> Var	-> Bool
-(=^=) a b	
-	=   bind a == bind b
-	&&  nameModule a == nameModule b
 
 
 -- | If the name of this variable includes a namespace qualifier, then set
@@ -142,34 +139,12 @@ pprVarName v
 	(ppr $ name v)
 
 
--- Variable Info --------------------------------------------------------------
--- | Extra information about a variable.
-data VarInfo
-	= ISourcePos	SourcePos	-- ^ Where this var appears in the source.
-
-	| IBoundBy	Var		-- ^ The binding occurance of this var.
-	| ISchemeVar	Var		-- ^ If this var was instantiated, the type scheme var it came from.
-
-					--  Only relavent if the var is a type var.
-	| IValueVar	Var		-- ^	The value var this type var corresponds to.
-	| IValueLiteral	Literal		-- ^	The literal value this type var represents.
-	| IParent	Var		-- ^	??
-
-	| IAlias	Var		-- ^ Indicates that this var is an alias/specialisation/instance 
-					--	of some other var.
-
-	| ISeaName	String		-- ^ Variable name to use when outputting Sea code.
-
-	| IString	String		-- ^ Some string, for debugging
-	deriving (Show)
-
-
 -- | Pretty print some variable info.
 instance Pretty VarInfo PMode where
  ppr x 	= ppr $ show x
 
 
--- Module Identifiers ---------------------------------------------------------
+-- Module Identifiers ----------------------------------------------------------------------------
 data Module
 	= ModuleNil			-- ^ No module information. Sometimes this means that the
 					--   variable is in the module currently being compiled.
