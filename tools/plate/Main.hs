@@ -1,18 +1,16 @@
 
 -- | Tool to generate tree-walking boilerplate code for our expression data types.
 --	It's pretty boring to write these ourselves.
---		(and marginally less boring to write the boiler-plate generator)
-
+--	and marginally less boring to write the boiler-plate generator
+--	It might be better to move this to template Haskell, but I'm not sure
+--	whether we really want if we want to bootstrap the compiler in the future...
 
 import System.Environment
-import System.IO
-
 import Language.Haskell.Syntax
 import Language.Haskell.Parser
 import Language.Haskell.Pretty
-
-import Debug.Trace
 import Util
+
 
 -- Helpers -----------------------------------------------------------------------------------------
 ident x		= HsIdent x

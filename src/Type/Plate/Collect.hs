@@ -7,13 +7,11 @@ module Type.Plate.Collect
 	, collectTClasses
 	, collectTErrors )
 where 
-
 import Util
 import Type.Exp
 import Type.Plate.Trans
-import Control.Monad.State.Strict
+import Shared.Var
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 
 -- | Collect all the binding variables in foralls and where constraints.

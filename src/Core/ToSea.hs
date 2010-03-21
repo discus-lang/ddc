@@ -1,39 +1,33 @@
-{-# OPTIONS -fwarn-unused-imports #-}
 
 -- | Convert CoreIR to Abstract-C
 module Core.ToSea
 	(toSeaTree) 
 where
-import qualified Core.Exp 		as C
-import qualified Core.Util		as C
-import qualified Core.Reconstruct	as C
-import qualified Core.OpType		as C
-
-import qualified Type.Exp		as T
-import qualified Type.Util		as T
-
-import qualified Sea.Exp  		as E
-import qualified Sea.Pretty		as E
-
-import Shared.Var			(Var, NameSpace(..))
 import Shared.Error
 import Shared.Base
 import Shared.Pretty
 import Shared.Literal
-import Shared.VarUtil			(prettyPos)
-import qualified Shared.VarBind		as Var
-import qualified Shared.Var		as Var
-import qualified Shared.VarPrim		as Var
-
-import qualified Data.Map		as Map
-import qualified Data.Set		as Set
 import Data.Function
-import qualified Data.Sequence		as Seq
+import Shared.VarUtil			(prettyPos)
+import Shared.Var			(Var, NameSpace(..))
 import Data.Sequence			(Seq)
-
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)
 import Prelude				hiding (mapM)
+import qualified Core.Exp 		as C
+import qualified Core.Util		as C
+import qualified Core.Reconstruct	as C
+import qualified Core.OpType		as C
+import qualified Type.Exp		as T
+import qualified Type.Util		as T
+import qualified Sea.Exp  		as E
+import qualified Sea.Pretty		as E
+import qualified Shared.VarBind		as Var
+import qualified Shared.Var		as Var
+import qualified Shared.VarPrim		as Var
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
+import qualified Data.Sequence		as Seq
 
 -----
 stage	= "Core.ToSea"
@@ -64,13 +58,11 @@ newVarN		space
 
 -- | If this is a witness to constness of a region or type, or purity of an effect
 --	then slurp it into the table.
-slurpWitnessKind 
-	:: C.Kind -> SeaM ()
-
+slurpWitnessKind :: T.Kind -> SeaM ()
 slurpWitnessKind kk
  = case kk of
 	-- const regions
- 	C.KClass C.TyClassDirect [C.TVar k r]
+ 	T.KClass T.TyClassDirect [T.TVar k r]
  	 | k == T.kRegion
 	 -> modify $ \s -> s { stateDirectRegions 
 		 		= Set.insert r (stateDirectRegions s) }
@@ -158,7 +150,7 @@ toSeaP	xx
 
 
 -- | split the RHS of a supercombinator into its args and expression
-splitSuper :: [C.Var] -> C.Exp -> SeaM ([C.Var], C.Exp)
+splitSuper :: [Var] -> C.Exp -> SeaM ([Var], C.Exp)
 splitSuper accArgs xx
 
 	| C.XLam v t x eff clo	<- xx
@@ -286,7 +278,7 @@ toSeaX		xx
 	 -> return	$ E.XLit litFmt
 
 	-- string constants are always applied to regions 
-	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (C.TVar k r)
+	C.XAPP (C.XLit litFmt@(LiteralFmt l@LString{} fmt)) (T.TVar k r)
 	 | k == T.kRegion
 	 -> return $ E.XLit litFmt
 
@@ -477,9 +469,9 @@ toSeaG	mObjV ssFront gg
 
 
 -- check if this type is in a direct region
-isDirectType :: C.Type -> SeaM Bool
+isDirectType :: T.Type -> SeaM Bool
 isDirectType tt
-	| Just (v, k, C.TVar kR vR : _)	<- T.takeTData tt
+	| Just (v, k, T.TVar kR vR : _)	<- T.takeTData tt
 	, kR == T.kRegion
 	= do	directRegions	<- gets stateDirectRegions
 	 	return	$ Set.member vR directRegions
@@ -513,15 +505,15 @@ slurpStmtsX xx
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Convert an operational type from the core to the equivalent Sea type.
-toSeaT :: C.Type -> E.Type
+toSeaT :: T.Type -> E.Type
 toSeaT tt
  = case tt of
-	C.TForall _ _ t		-> toSeaT t
-	C.TContext k t		-> toSeaT t
-	C.TFetters t _		-> toSeaT t
-	C.TConstrain t _	-> toSeaT t
+	T.TForall _ _ t		-> toSeaT t
+	T.TContext k t		-> toSeaT t
+	T.TFetters t _		-> toSeaT t
+	T.TConstrain t _	-> toSeaT t
 
-	C.TApp{}
+	T.TApp{}
 	 -> let result
 		 | Just tx		<- T.takeTData tt
 		 = toSeaT_data tx
@@ -531,11 +523,11 @@ toSeaT tt
 	
 	    in result
 
-	C.TCon{}
+	T.TCon{}
 		| Just tx		<- T.takeTData tt
 		-> toSeaT_data tx
 	
-	C.TVar{}		-> E.TObj
+	T.TVar{}		-> E.TObj
 
 	_ 	-> panic stage
 		$ "toSeaT: No match for " ++ show tt ++ "\n"
@@ -569,7 +561,7 @@ toSeaT_data tx
 
 
 -- | Check if this type has value kind
-hasValueKind :: C.Type -> Bool
+hasValueKind :: T.Type -> Bool
 hasValueKind xx
 	| Just k	<- T.kindOfType xx
 	, not $ elem k [T.kRegion, T.kClosure, T.kEffect]

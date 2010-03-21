@@ -6,9 +6,6 @@ module Source.Pragma
 	( Pragma (..)
 	, slurpPragmaTree)
 where
-
-import qualified Shared.Var	as Var
-import Source.Pretty
 import Source.Exp
 import Shared.Pretty
 import Shared.Base
@@ -16,7 +13,10 @@ import Shared.Error
 import Shared.Warning
 import Shared.Literal
 import Util
+import Source.Pretty		()
+import qualified Shared.Var	as Var
 
+-----
 stage	= "Source.Pragma"
 
 data Pragma

@@ -3,27 +3,16 @@
 module Source.Error
 	( Error(..))
 where
-
------
 import Util
-import Util.Pretty
-
-import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace(..))
-import Shared.VarUtil		(prettyPos, prettyPosBound, isCtorName)
 import Shared.Error
 import Shared.Base
+import Source.Token	
 import Shared.Pretty
-
-import DDC.Base.NameSpace
-
-
-import qualified Source.Token	as Token
-import qualified Source.TokenShow as Token
-import Source.Token
-
-import Source.Exp
-import Source.Pretty
+import DDC.Var.NameSpace
+import Shared.Var			(Var)
+import Shared.VarUtil			(prettyPos, isCtorName)
+import qualified Shared.Var		as Var
+import qualified Source.TokenShow 	as Token
 
 stage	= "Source.Error"
 

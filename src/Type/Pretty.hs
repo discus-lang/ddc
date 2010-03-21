@@ -6,19 +6,15 @@ module Type.Pretty
 	, prettyVK
 	, prettyTypeSplit
 	, prettyTS)
-
 where
-
 import Type.Exp
 import Type.Util.Bits
 import Shared.Pretty
 import Shared.Error
-import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace(..))
 import Util
-
+import qualified Shared.Var	as Var
+import Shared.Var		(Var, NameSpace(..))
 import qualified Data.Map	as Map
-import qualified Data.Set	as Set
 
 -----
 stage	= "Type.Pretty"

@@ -5,30 +5,22 @@
 --
 module Core.Bind
 	( bindTree )
-
 where
-
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Exp
 import Core.Util
-import Core.Pretty
 import Core.Reconstruct
 import Type.Builtin
-import Type.Util.Bits		(varOfBind)
-
-import Shared.Var		(NameSpace(..), Module)
+import Type.Exp
 import Shared.VarPrim
 import Shared.VarGen
 import Shared.Error
 import Shared.Pretty
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-
 import Util
-import Data.Map			(Map)
-import Data.Set			(Set)
-import Control.Monad.State.Strict
+import Type.Util.Bits		(varOfBind)
+import Shared.Var		(Var, NameSpace(..), Module)
+import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
@@ -159,11 +151,6 @@ bindX 	shared xx
 				 	  _	-> tt)
 				eff
 
-{-		trace	("bindX/XLam\n"
-			% "  eff       = " % eff	% "\n"
-			% "  effMasked = " % effMasked	% "\n")
-			$ return ()
--}
 	 	return	( XLam v t x' effMasked clo
 			, addSharedVs 
 				(freeVars t)

@@ -1,8 +1,6 @@
-{-# OPTIONS -fwarn-unused-imports #-}
--- Core.Curry
---	Works out how to perform function applications and rewrites them into
---	super-call/curry/apply/tail-calls
---
+
+-- | Works out how to perform function applications and rewrites them into
+--   super-call/curry/apply/tail-calls
 module Core.Curry
 	(curryTree)
 where
@@ -10,15 +8,16 @@ import Core.Exp
 import Core.Util
 import Core.Glob
 import Type.Util
-import Shared.Var		(NameSpace(..))
+import Type.Exp
 import Shared.Error
 import Shared.Pretty
+import Util
+import Shared.Var		(Var, NameSpace(..))
 import Main.Arg			(Arg)
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Main.Arg	as Arg
 import qualified Debug.Trace	as Debug
-import Util
 
 -----
 stage		= "Core.Curry"

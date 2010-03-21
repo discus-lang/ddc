@@ -9,35 +9,30 @@ module Main.Source
 	, lint
 	, desugar)
 where
+import Source.Exp
+import Source.Error
+import Shared.Error
+import Shared.Base
+import Shared.Literal
+import Main.Arg
+import Main.Dump
+import Util
+import Type.Exp
+import Desugar.Pretty			()
+import Shared.Var			(Var, Module)
 import Source.Lexer			(scanModuleWithOffside, scan)
 import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)
 import Source.Defix			(defixP)
 import Source.Desugar			(rewriteTree)
 import Source.Lint			(lintTree)
-import Source.Exp
-import Source.TokenShow
-import Source.Error
-import Shared.Var			(Var, Module)
-import Shared.Pretty
-import Shared.Error
-import Shared.Base
-import Shared.Literal
+import qualified Data.Map		as Map
 import qualified Desugar.Plate.Trans	as D
 import qualified Desugar.Exp		as D
 import qualified Source.Token		as Token
 import qualified Source.Rename		as S
 import qualified Source.Rename.State	as S
 import qualified Shared.Var		as Var
-import Main.Arg
-import Main.Dump
-import Data.Map 			(Map)
-import Data.Set				(Set)
-import qualified Data.Map		as Map
-import qualified Data.Set		as Set
-import System.Exit
-import System.IO
-import Util
 
 
 ---------------------------------------------------------------------------------------------------

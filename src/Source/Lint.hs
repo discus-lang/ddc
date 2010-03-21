@@ -42,21 +42,17 @@
 module Source.Lint
 	(lintTree)
 where
-
 import Source.Exp
 import Source.Error
 import Type.Exp
-import Type.Pretty
 import Type.Util
-
-import Util.Generics
 import Util
-import Shared.Error	(panic)
-import Shared.Var	(NameSpace(..), Module)
+import Shared.Literal
 import Shared.Base
+import Shared.Error		(panic)
+import Shared.Var		(Var, NameSpace(..), Module)
 import qualified Shared.Var	as Var	
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 -----
 stage	= "Source.Lint"

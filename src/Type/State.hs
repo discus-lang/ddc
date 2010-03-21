@@ -15,18 +15,17 @@ module Type.State
 	, pathLeave
 	, graphInstantiatesAdd )
 where
-import Main.Arg			(Arg)
 import Constraint.Exp
-import Constraint.Bits
-import Constraint.Pretty
 import Type.Error
 import Type.Base
 import Type.Exp
 import Shared.Pretty
 import Shared.Error
-import Shared.Var		(Var, VarBind, NameSpace(..))
 import Util
 import System.IO
+import Constraint.Pretty	()
+import Main.Arg			(Arg)
+import Shared.Var		(Var, VarBind, NameSpace(..))
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as U
 import qualified Main.Arg	as Arg

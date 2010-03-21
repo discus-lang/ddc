@@ -8,13 +8,13 @@ module Source.Plate.Trans
 	
 	, Trans
 	, Trans1 )
-
 where
-
 import Util
-import qualified Shared.Var	as Var
 import Source.Exp
-import Debug.Trace
+import Type.Exp
+import Shared.Literal
+import Shared.Var		(Var)
+import qualified Shared.Var	as Var
 
 -- | The transform class.
 --	It transforms some thing 'a' into some other thing 'b'.

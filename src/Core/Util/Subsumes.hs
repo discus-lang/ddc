@@ -5,28 +5,16 @@
 --
 module Core.Util.Subsumes
 	(subsumes)
-
 where
-
-import Core.Exp
-import Core.Pretty
-import Core.Util.Bits
 import Core.Util.Trim
-
 import Type.Util.Bits
 import Type.Util.Kind
-
+import Type.Exp
+import Shared.Var		(Var)
 import Shared.Pretty
-import Shared.Error
-
 import Util
-
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import qualified Debug.Trace
 
 -----
@@ -36,7 +24,6 @@ trace ss x
 		then Debug.Trace.trace (pprStrPlain ss) x
 		else x
 
--- stage	= "Core.Util.Subsumes"
 
 -- | Check if t subsumes s another. t :> s
 --   Note that subsumption only works on the effect and closure information.

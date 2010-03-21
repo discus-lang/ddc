@@ -3,50 +3,33 @@ module Desugar.ToCore
 	( toCoreTree
 	, toCoreP
 	, toCoreX )
-
 where
-
------
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Debug.Trace	as Debug
 import Util
-
------
-import Shared.Base		(SourcePos(..))
-import Shared.VarUtil		(isDummy, varPos)
-import Shared.Var		(Var, NameSpace(..))
-import qualified Shared.Var 	as Var
-
 import Shared.VarPrim
 import Shared.Pretty
 import Shared.Error
+import Desugar.ToCore.Base
+import Desugar.ToCore.Lambda
+import Shared.Base			(SourcePos(..))
+import Shared.VarUtil			(isDummy, varPos)
+import Shared.Var			(Var, NameSpace(..))
+import Type.ToCore			(toCoreT, toCoreK)
+import Desugar.Pretty			()
+import Desugar.Project			(ProjTable)
 import qualified Shared.Exp		as S
 import qualified Shared.Literal		as S
 import qualified Shared.Base		as S
-
-
 import qualified Type.Exp		as T
-import Type.ToCore			(toCoreT, toCoreK)
 import qualified Type.Util		as T
-
 import qualified Core.Util.Pack		as C
 import qualified Core.Exp 		as C
 import qualified Core.Util		as C
-import qualified Core.Pretty		as C
-
-import Desugar.ToCore.Base
-import Desugar.ToCore.Lambda
-import qualified Desugar.Pretty		as D
-import Desugar.Project			(ProjTable)
 import qualified Desugar.Exp 		as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Desugar.Bits		as D
 import qualified Desugar.Slurp.Util	as D
+import qualified Data.Map		as Map
+import qualified Debug.Trace		as Debug
 
 -----
 stage	= "Desugar.ToCore"
@@ -120,14 +103,6 @@ toCoreP	p
 	D.PExternData _ s v k
 	 -> do	return	$ [C.PExternData v k]
 
-{-	D.PData _ v vs ctors
-	 -> do
-		ctors'		<- mapM toCoreCtorDef ctors
-
-		let d		= C.PData v vs ctors'
-		cs		<- mapM (makeCtor primTObj v vs) ctors
-		return (d:cs)
--}
 	D.PData _ vData vsParam ctors
 	 -> do	ctors'		<- zipWithM 
 					(toCoreCtorDef vData vsParam) 
@@ -207,7 +182,6 @@ toCoreP	p
 	
 
 -- CtorDef -----------------------------------------------------------------------------------------
-
 -- | Convert a desugared data constructor definition to core form.
 toCoreCtorDef	
 	:: Var			-- ^ var of data type
@@ -236,42 +210,7 @@ takeFieldIndicies
 takeFieldIndicies dfs
  	= Map.fromList [ (v, i) | (Just v, i) <- zip (map S.dLabel dfs) [0..] ]
 	
-{-
-toCoreFieldDef	df
- = do	return	$ S.DataField 
-		{ S.dPrimary	= S.dPrimary df
-		, S.dLabel	= S.dLabel   df
-		, S.dType	= toCoreT $ S.dType df
 
-		, S.dInit	= case S.dInit df of
-					Nothing			-> Nothing
-					Just (D.XVarInst _ v)	-> Just v }
-
-
--- Make a constructor function
-makeCtor 
-	:: Var 
-	-> Var 			-- data type name
-	-> [Var] 		-- data type args
-	-> D.CtorDef Annot	-- the ctor definition
-	-> CoreM C.Top
-
-makeCtor    objVar vData vsData (D.CtorDef _ ctorVar dataFields)
- = do
-	let argTs	
-		= map toCoreT
-		$ map S.dType
-		$ filter (\df -> S.dPrimary df) 
-		$ dataFields
-
-	tv	<- liftM toCoreT 
-		$ D.makeCtorType newVarN vData vsData ctorVar dataFields
-
-	let to	= T.makeTFuns_pureEmpty (replicate (length argTs + 1) 
-		$ (T.makeTData objVar C.kValue []))
-
-	return	$ C.PCtor ctorVar tv to
--}
 
 -- Stmt --------------------------------------------------------------------------------------------
 -- | Statements
@@ -325,25 +264,19 @@ toCoreX xx
 				= C.stripSchemeT tArg1
 
 		portVars	<- gets coreQuantVars
-		let fsWhere	= [ C.FWhere t1 t2	
-					| C.FWhere t1@(C.TVar _ v) t2	<- argFetters
+		let fsWhere	= [ T.FWhere t1 t2	
+					| T.FWhere t1@(T.TVar _ v) t2	<- argFetters
 					, not $ Map.member v portVars]
 
-		let fsMore	= [ f	| f@(C.FMore v t) <- argFetters ]
+		let fsMore	= [ f	| f@(T.FMore v t) <- argFetters ]
 		
 		let tArg	
-			= {- trace 
-				( "toCoreX:\n"
-				% "    vTV     " % vTV		% "\n"
-				% "    tArg1   " % tArg1 	% "\n"
-				% "    fsWhere " % fsWhere	% "\n"
-				% "    fsMore  " % fsMore	% "\n") $ -}
-				C.packT
-				$ C.buildScheme
-					argQuant
-					(fsWhere ++ fsMore)
-					[]
-					argShape
+			= C.packT
+			$ C.buildScheme
+				argQuant
+				(fsWhere ++ fsMore)
+				[]
+				argShape
 
 		-- If the effect/closures were vars then look them up from the graph
 		effAnnot	<- loadEffAnnot $ toCoreT eff
@@ -468,7 +401,6 @@ toCoreX xx
 
 		trace 	( "XProjTagged\n"
 			% "    vTagInst  = " % vTagInst		% "\n")
---			% "    vProj = " % vProj		% "\n")
 			$ return ()
 		
 		let vProj
@@ -494,11 +426,6 @@ toCoreX xx
 		projResolve	<- gets coreProjResolve
 		let Just vProj	= Map.lookup vTagInst projResolve
 		
-{-		trace 	( "XProjTaggedT\n"
-			% "    vTag  = " % vTag		% "\n"
-			% "    vProj = " % vProj	% "\n")
-			$ return ()
--}
 		x1'	<- toCoreVarInst vProj vTagInst
 		return	$ x1' 
 
@@ -523,7 +450,7 @@ toCoreX xx
 --	The desugared language supports boxed literals, but all literals in the core
 --	should be unboxed.
 --
-toCoreXLit :: C.Type -> D.Exp Annot -> C.Exp
+toCoreXLit :: T.Type -> D.Exp Annot -> C.Exp
 toCoreXLit tt xLit
  	= toCoreXLit' (C.stripToShapeT tt) xLit
 
@@ -619,15 +546,6 @@ toCoreVarInst v vT
 		-- If this function needs a witnesses we'll just make them up.
 		--	Real witnesses will be threaded through in a later stage.
 		let ksContextC'	= map (C.substituteT tsSub) ksContextC
-
-		
-		{- trace 	( "toCoreVarInst\n"
-			% "    v           = " % v 		% "\n"
-			% "    vT          = " % vT 		% "\n"
-			% "    tScheme     = " % tScheme 	% "\n"
-			% "    ksContextC' = " % ksContextC'	% "\n") 
-			$ return () -}
-
 		let tsContextC' = map C.packT
 				$ map (\k -> let Just t = T.inventWitnessOfClass k in t)
 				$ ksContextC'
@@ -675,7 +593,7 @@ toCoreJ jj
 
 -- Alt ---------------------------------------------------------------------------------------------
 -- | Case Alternatives
-toCoreA	:: Maybe (Var, C.Type)
+toCoreA	:: Maybe (Var, T.Type)
 	-> D.Alt Annot -> CoreM C.Alt
 		
 toCoreA mObj alt
@@ -690,7 +608,7 @@ toCoreA mObj alt
 	
 -- Guards ------------------------------------------------------------------------------------------
 -- | Guards
-toCoreG :: Maybe (Var, C.Type)
+toCoreG :: Maybe (Var, T.Type)
 	-> D.Guard Annot
 	-> CoreM C.Guard
 
@@ -719,7 +637,7 @@ toCoreG mObj gg
 toCoreW :: D.Pat Annot
 	-> CoreM 
 		( C.Pat
-		, Maybe C.Type)	-- whether to unbox the RHS, and from what region
+		, Maybe T.Type)	-- whether to unbox the RHS, and from what region
 	
 toCoreW ww
 	| D.WConLabel _ v lvs	<- ww

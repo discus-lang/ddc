@@ -24,32 +24,21 @@ module Type.Class
 	, foldClasses
 	, headTypeDownLeftSpine
 	, traceDownLeftSpine)
-
 where
-
 import Type.Exp
 import Type.Location
 import Type.Plate.Trans
 import Type.State
 import Type.Plate.Collect
 import Type.Util
-
 import Util
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace(..))
 import Shared.Error
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Array.IO	as Array
 import Data.Array.IO
+import Shared.Var		(Var)
+import qualified Shared.Var	as Var
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+
 
 -----
 stage	= "Type.Squid.Class"

@@ -3,17 +3,12 @@
 module Source.Parser.Pattern
 	( pPat, pPat2, pPat1
 	, pDotLabel)
-
 where
-
-
 import Source.Exp
 import Source.Parser.Base
-import qualified Source.Token	as K
-import qualified Shared.VarPrim	as Var
-
-import DDC.Base.NameSpace
-
+import DDC.Var.NameSpace
+import qualified Source.Token					as K
+import qualified Shared.VarPrim					as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 

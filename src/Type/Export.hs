@@ -2,12 +2,9 @@
 -- | Export information from the final state of the type constraint solver.
 --
 module Type.Export
-	( squidExport )
-
+	(squidExport)
 where
-
 import Type.Exp
-
 import Type.Pretty
 import Type.Error
 import Type.Base
@@ -16,26 +13,12 @@ import Type.State
 import Type.Extract
 import Type.Plug
 import Type.Util
-import Type.Plate.Trans
-import Type.Plate.FreeVars
-import Type.Context
-import Type.Location
-
-import Data.Array.MArray
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
 import Shared.VarPrim
-
 import Shared.Error
 import Util
-
-import qualified Debug.Trace
+import Shared.Var		(Var)
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 -----
 debug	= False
@@ -149,9 +132,7 @@ exportMaybeType mt
 	 	return	$ Just t'
 
 		
------
 -- | Build a map of all the instantiations
---
 exportInst :: SquidM (Map Var (InstanceInfo Type Type))
 exportInst 
  = do	inst	<- gets stateInst

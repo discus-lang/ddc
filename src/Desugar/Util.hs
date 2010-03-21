@@ -5,22 +5,16 @@ module Desugar.Util
 	, bindingVarsOfStmt
 	, bindingVarsOfPat
 	, bindingVarsOfGuard
---	, takeStmtBoundV
 	, bindingVarOfStmt
 	, collectClosureProjTags)
-
 where
 import Desugar.Exp
 import Desugar.Plate.Trans
-
 import Type.Exp
-
 import Util
-import Data.Set			(Set)
-import Data.Map			(Map)
-import Control.Monad.State.Strict
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
+import Shared.Var			(Var)
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 
 
 -----

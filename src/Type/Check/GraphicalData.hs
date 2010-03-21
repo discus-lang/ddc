@@ -1,19 +1,16 @@
 
-module Type.Check.GraphicalData where
-
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import Util.Graph.Deps		(graphReachable1_nr)
+module Type.Check.GraphicalData
+	(checkGraphicalDataT)
+where
 import Type.Exp
 import Type.Util
 import Type.Plate.Collect
+import Util.Graph.Deps		(graphReachable1_nr)
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
--- Checks whether this type is graphical in its data portion
+
+-- | Check whether this type is graphical in its data portion
 --	and hence would be inifinite if we tried to construct it into the flat form.
 --
 --	If it is graphical, returns the list of cids which are on a loop.

@@ -6,27 +6,16 @@ module Type.Crush.Unify
 	, isShallowConflict 
 	, addErrorConflict )
 where
-
 import Type.Location
 import Type.Exp
 import Type.Error
 import Type.State
 import Type.Util
 import Type.Class
-import Type.Dump
 import Type.Feed
-
 import Util
-import Shared.Var		(NameSpace(..))
 import Shared.Error
-import Data.Map			(Map)
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Shared.Var	as Var
-
-import qualified Debug.Trace	as Debug
 
 -----
 debug	= False

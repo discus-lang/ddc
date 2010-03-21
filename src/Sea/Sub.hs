@@ -24,8 +24,6 @@ import Util
 import Shared.Error
 import Sea.Exp
 import Sea.Plate.Trans
-import Data.Map			(Map)
-import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 
 

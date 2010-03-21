@@ -7,6 +7,7 @@ module Core.LabelIndex
 where
 import Core.Exp
 import Core.Plate.Trans
+import Shared.Var		(Var)
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 

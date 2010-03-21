@@ -5,7 +5,6 @@
 module Test.Build 
 	(testBuild)
 where
-
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
@@ -14,13 +13,11 @@ import War
 import Command
 import Config
 
-import Data.List
-import System.Time
-
 -- Need these for determining pointerSize
 import Foreign.Storable		(sizeOf)
-import Foreign.Ptr			(Ptr)
+import Foreign.Ptr		(Ptr)
 import Foreign.C.Types		(CChar)
+
 
 -- | Build a program starting from a Main.ds file
 testBuild :: Test -> Way -> War TestWin

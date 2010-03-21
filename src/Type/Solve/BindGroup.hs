@@ -2,15 +2,11 @@
 module Type.Solve.BindGroup
 	(bindGroup)
 where
-
 import Type.State
 import Constraint.Exp
-
 import Util
 import Util.Graph.Deps
 import Shared.Var		(Var)
-import Data.Set			(Set)
-import Data.Map			(Map)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 

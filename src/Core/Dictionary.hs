@@ -1,32 +1,21 @@
--- | Resolves calls to overloaded functions.
 
+-- | Resolve calls to overloaded functions.
 module Core.Dictionary
 	( dictTree )
-
 where
-
 import Core.Exp
-import Core.Pretty
 import Core.Util
 import Core.Plate.Trans
-import Core.Util.Unify
-import Core.Util.Strip
-import Core.Util.Substitute
-import Core.Util.Slurp
-import Core.Pretty
-
-import Type.Util		hiding (flattenT, unifyT2) 
-import Type.Pretty
-
-import qualified Debug.Trace	as Debug
+import Type.Exp
 import Shared.Error
 import Shared.Pretty
-import qualified Shared.Var	as Var
-
-import qualified Util.Data.Map	as Map
-import Util.Data.Map		(Map)
-
 import Util
+import qualified Debug.Trace	as Debug
+import qualified Shared.Var	as Var
+import qualified Util.Data.Map	as Map
+import Type.Util		hiding (flattenT, unifyT2) 
+import Shared.Var		(Var)
+
 
 -----
 stage		= "Core.Dictionary"

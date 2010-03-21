@@ -1,21 +1,16 @@
 module Main.Invoke 
-	( invokeSeaCompiler )
+	(invokeSeaCompiler)
 where
-
 import Main.Arg
-import Shared.Pretty
 import Shared.Error
 import Util
-
 import System.Cmd
 import System.Exit
-
 import qualified Config.Config	as Config
 
 -----
 stage	= "Main.Invoke"
 
------
 -- | Invoke the external C compiler to compile this source program.
 invokeSeaCompiler 
 	:: [Arg]		-- ^ ddc command line args

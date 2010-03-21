@@ -15,22 +15,17 @@ module Core.Lint
 	( lintTree )
 where
 import Core.Exp
-import Core.Pretty
 import Core.Util
-import Core.Util.Slurp
-import Core.Reconstruct		(reconX_type)
 import Type.Util
-
+import Type.Exp
 import Shared.Error
 import Shared.Pretty
+import Util
+import Shared.Var		(Var)
+import Core.Reconstruct		(reconX_type)
 import qualified Shared.Var	as Var
 import qualified Shared.VarPrim	as Var
-
-import Util
-import Data.Map			(Map)
-import Control.Monad.State.Strict
 import qualified Data.Map	as Map
-import qualified Debug.Trace	as Debug
 
 -----
 stage	= "Core.Lint"

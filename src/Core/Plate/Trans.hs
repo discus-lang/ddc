@@ -28,14 +28,12 @@ module Core.Plate.Trans
 	, transformW)
 
 where
-
 import Core.Exp
 import Shared.Error
-
 import Util
-import Control.Monad.State.Strict
+import Type.Exp
+import Shared.Var		(Var)
 import qualified Data.Map	as Map
-import Data.Map			(Map)
 
 -----
 stage	= "Core.Plate.Trans"

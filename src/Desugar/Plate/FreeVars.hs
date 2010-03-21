@@ -2,27 +2,15 @@
 
 module Desugar.Plate.FreeVars
 	(freeVars)
-
 where
-
-import qualified Data.Set as Set
-import Data.Set	(Set, (\\), unions, fromList, empty, singleton)
-
-import Util	hiding ((\\))
-
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
-import Shared.Error
 import Shared.FreeVars
-
 import Desugar.Exp
 import Desugar.Util
-import Type.Util.Bits		(varOfBind)
-import Type.Plate.FreeVars
-import Type.Pretty
-
------
--- stage	= "Desugar.Plate.FreeVars"
+import Shared.Var		(Var)
+import Type.Util.Bits		()
+import Data.Set			((\\), unions, empty, singleton)
+import Util			hiding ((\\))
+import qualified Data.Set 	as Set
 
  
 -- Exp ---------------------------------------------------------------------------------------------

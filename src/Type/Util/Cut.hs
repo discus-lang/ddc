@@ -39,18 +39,13 @@
 --        fetters to inspect.
 --
 module Type.Util.Cut
-	( cutLoopsT_constrainForm )
+	(cutLoopsT_constrainForm)
 where
 import Type.Plate.Collect
-import Type.Pretty
-import Type.Error
-import Type.Util
 import Type.Exp
 import Shared.Error
 import Util
-import Data.List
-import Data.Set			(Set)
-import Data.Map			(Map)
+import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

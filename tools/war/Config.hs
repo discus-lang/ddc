@@ -1,9 +1,6 @@
 
 module Config where
-
-import Util.Options		as Options
 import Util.Options.Option	as Options
-import Util
 
 -- | A way to build the test
 --	This holds extra options to pass to the program.

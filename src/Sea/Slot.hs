@@ -6,23 +6,15 @@ module Sea.Slot
 	(slotTree)
 where
 import Util
-import Shared.Error
 import Shared.VarUtil
 import Sea.Exp
-import Sea.Pretty
 import Sea.Util
 import Sea.Plate.Trans
-import qualified Type.Util	as T
-import qualified Core.Exp	as C
+import Shared.Var		(NameSpace(..))
 import qualified Core.Glob	as C
-import Shared.Var		(Var, NameSpace(..))
-import Data.Map			(Map)
-import Data.Set			(Set)
 import qualified Shared.Unique	as Unique
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-import qualified Debug.Trace	as Debug
-import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
 

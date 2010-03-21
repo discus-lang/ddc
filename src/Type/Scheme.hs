@@ -4,10 +4,8 @@ module Type.Scheme
 	( generaliseType 
 	, checkContext )
 where
-
 import Type.Check.Danger
 import Type.Effect.MaskLocal
-import Type.Effect.MaskFresh
 import Type.Error
 import Type.State
 import Type.Plug		
@@ -17,11 +15,9 @@ import Type.Util
 import Type.Exp
 import Type.Pretty
 import Type.Plate
-import Type.Util.Environment
-
 import Shared.VarPrim
-import Shared.Var		(NameSpace(..))
 import Util
+import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Main.Arg	as Arg
@@ -123,37 +119,32 @@ generaliseType' varT tCore envCids
 	trace	$ "    tMskLocal\n"
 		%> prettyTS tMskLocal 	% "\n\n"
 
-	let tMskFresh	= maskFreshT emptyEnv tMskLocal
-	
-	trace	$ "    tMskFresh\n"
-		%> prettyTS tMskFresh	% "\n\n"
-
 	-- If we're generalising the type of a top level binding, 
 	--	and if any of its free regions are unconstraind,
 	--	then make them constant.
 	vsBoundTop	<- gets stateVsBoundTopLevel
 	let isTopLevel	= Set.member varT vsBoundTop
-	let fsMskFresh	= takeTFetters tMskFresh
-	let rsMskFresh	= Set.toList $ collectTClasses tMskFresh
+	let fsMskLocal	= takeTFetters tMskLocal
+	let rsMskLocal	= Set.toList $ collectTClasses tMskLocal
 	
 	trace	$ "    isTopLevel   = " % isTopLevel		% "\n\n"
 
 	let fsMore
 		| isTopLevel
 		=  [ FConstraint primConst [tR]
-			| tR@(TClass kR cid)	<- rsMskFresh
+			| tR@(TClass kR cid)	<- rsMskLocal
 			, kR	== kRegion
-			, notElem (FConstraint primMutable [tR]) fsMskFresh ]
+			, notElem (FConstraint primMutable [tR]) fsMskLocal ]
 
 		++ [ FConstraint primDirect [tR]
-			| tR@(TClass kR cid) <- rsMskFresh
+			| tR@(TClass kR cid) <- rsMskLocal
 			, kR	== kRegion
-			, notElem (FConstraint primLazy [tR]) fsMskFresh ]
+			, notElem (FConstraint primLazy [tR]) fsMskLocal ]
 	
 		| otherwise
 		= []
 		
-	let tConstify	= addFetters fsMore tMskFresh
+	let tConstify	= addFetters fsMore tMskLocal
 
 	trace	$ "    tConstify    = " % tConstify 		% "\n\n"
 

@@ -4,14 +4,12 @@ module Type.Util.Finalise
 where
 import Type.Exp
 import Type.Util.Bits
-import Type.Util.Kind
 import Shared.Error
 import Shared.VarPrim
+import Shared.Var			(Var)
 import qualified Type.Util.PackFast	as PackFast
-import qualified Shared.Var	as Var
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
-import Data.Set			(Set)
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 import Util
 
 -----

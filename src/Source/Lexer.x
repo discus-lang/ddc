@@ -16,7 +16,6 @@ module Source.Lexer
 	, alexScanTokens)
 
 where
-
 import Source.Token
 import Source.TokenShow
 import Source.Error
@@ -24,9 +23,7 @@ import Shared.Error
 import Shared.Base
 import Shared.Literal
 import Util
-import Data.Char
-import Debug.Trace
-
+import Data.Char	(isUpper)
 }
 
 %wrapper "posn"

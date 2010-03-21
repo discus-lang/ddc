@@ -8,37 +8,24 @@ module Desugar.ToCore.Base
 	, newVarN
 	, lookupType
 	, lookupAnnotT)
-
 where
-
------
 import Util
-import Shared.Var			(Var, VarBind, NameSpace(..))
 import Shared.Pretty
 import Shared.Error
+import Type.Exp
+import Shared.Var			(Var, VarBind, NameSpace(..))
+import Desugar.Project			(ProjTable)
 import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
-
 import qualified Data.Map		as Map
-import Data.Map				(Map)
-
-import qualified Data.Set		as Set
-import Data.Set				(Set)
-
-import qualified Type.Exp		as T
 import qualified Type.ToCore		as T
-
-import qualified Core.Exp		as C
 import qualified Core.Util		as C
-
-import Desugar.Project			(ProjTable)
-import Debug.Trace
 
 -----
 stage	= "Desugar.ToCore.Base"
 
 -----
-type	Annot	= Maybe (T.Type, T.Effect)
+type	Annot	= Maybe (Type, Effect)
 
 -- | The state for the Desugared to Core IR transform.
 data CoreS 
@@ -47,13 +34,13 @@ data CoreS
 	  coreSigmaTable	:: Map Var Var
 
 	  -- | type var to type mapping
-	, coreMapTypes		:: Map Var T.Type
+	, coreMapTypes		:: Map Var Type
 
 	  -- | how each variable was instantiated
-	, coreMapInst		:: Map Var (T.InstanceInfo T.Type T.Type)
+	, coreMapInst		:: Map Var (InstanceInfo Type Type)
 
 	  -- | the vars that were quantified during type inference (with optional :> bound)
-	, coreQuantVars		:: Map Var (T.Kind, Maybe T.Type)
+	, coreQuantVars		:: Map Var (Kind, Maybe Type)
 
 	  -- | table of type based projections.
 	, coreProjTable		:: ProjTable
@@ -91,17 +78,17 @@ newVarN	space
 		{ Var.bind = gen, Var.nameSpace = space }
 
 -- | Get the type corresponding to the type of this annotation
-lookupAnnotT :: Annot -> CoreM (Maybe C.Type)
-lookupAnnotT (Just (T.TVar kV vT, _))
-	| kV	== T.kValue
+lookupAnnotT :: Annot -> CoreM (Maybe Type)
+lookupAnnotT (Just (TVar kV vT, _))
+	| kV	== kValue
 	= lookupType vT
 
 -- | Get the type of this variable.
-lookupType :: Var -> CoreM (Maybe C.Type)
+lookupType :: Var -> CoreM (Maybe Type)
 lookupType v
  = do	sigmaTable	<- gets coreSigmaTable
  
- 	let (res :: CoreM (Maybe C.Type))
+ 	let (res :: CoreM (Maybe Type))
 		| Var.nameSpace v /= NameValue
 		= lookupType' v
 		
@@ -127,11 +114,5 @@ lookupType' vT
 	 Just tType
 	  -> do	let cType	= T.toCoreT tType
 		let cType_flat	= C.flattenT cType
-
-{-		trace (pprStrPlain 
-			$ "    type = " % tType % "\n"
-			% "    core = " % cType % "\n")	
-			$ 
--}		
 		return $ Just cType_flat
 

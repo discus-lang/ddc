@@ -5,19 +5,12 @@ module Constraint.Bits
 	, takeCBindVs
 	, mergeCBinds
 	, slurpContains)
-
 where
-
 import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import Type.Exp
 import Constraint.Exp
+import Shared.Var		(Var)
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 
 -- | Check if this is a branch in the constraint tree.

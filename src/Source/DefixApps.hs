@@ -1,44 +1,33 @@
 
 module Source.DefixApps
 	(defixApps)
-
 where
-
-import Source.Pretty
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
-import Shared.Var		(Var)
-
 import Shared.Error
 import Shared.Warning
-import Shared.Base
 import Shared.Pretty
-
 import Source.Exp
 import Util
+import Source.Pretty		()
+import Shared.Pretty		()
+import qualified Shared.Var	as Var
+import qualified Shared.VarPrim	as Var
 
 -----
 stage	= "Source.DefixApps"
 
------------------------
--- defixApps
---	Takes the list of expressions from inside an $XDefix and 
---	builds (suspended) function applications.
---
---
+-- | Takes the list of expressions from inside an $XDefix and 
+--   builds (suspended) function applications.
 defixApps ::	Pretty a PMode => a -> [Exp a] -> [Exp a]
 defixApps	sp xx
 	= rewriteApps $ dropApps sp xx
 
------
--- dropApps
---	Takes a list of expressions from inside an $XDefix and wraps runs of exps that
---	lie between between (non-@) infix operators in $XDefixApps. This is the first
---	step in defixing process.
+-- | Takes a list of expressions from inside an $XDefix and wraps runs of exps that
+--   lie between between (non-@) infix operators in $XDefixApps. This is the first
+--   step in defixing process.
 --
---	eg  [f, x, @, a, b, +, g, y, -, h, @, 5]
+--   eg  [f, x, @, a, b, +, g, y, -, h, @, 5]
 --
---	=>  [$XDefixApps [f, x, @, a, b], +, $XDefixApps [g, y], -, XDefixApps [h, @, 5]]
+--   =>  [$XDefixApps [f, x, @, a, b], +, $XDefixApps [g, y], -, XDefixApps [h, @, 5]]
 --
 dropApps :: 	Pretty a PMode => a -> [Exp a] -> [Exp a]
 dropApps sp es	
@@ -89,16 +78,10 @@ makeXDefixApps sp xx
 	_	-> XDefixApps sp xx
 
 
------
--- rewriteApps
---	Takes a list of expressions and converts $XDefixApp nodes into XApp nodes.
---	Also converts @ operators into explicit calls to the suspend functions.
---
---	eg [f, x, @, a, b, @, c, d, e]
---
+-- | Takes a list of expressions and converts $XDefixApp nodes into XApp nodes.
+--   Also converts @ operators into explicit calls to the suspend functions.
+--   eg [f, x, @, a, b, @, c, d, e]
 --	=> suspend3 (suspend2 (f x) a b) c d e
---
---
 rewriteApps ::	[Exp a] -> [Exp a]
 rewriteApps	[]	= []
 rewriteApps	(x:xs)

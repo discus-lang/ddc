@@ -2,64 +2,40 @@
 module Desugar.Slurp.Util
 	( makeCtorType
 	, traceM
-
 	, newVarN
 	, newVarV, newVarVS
 	, newTVarD, newTVarDS
 	, newTVarR, newTVarRS
 	, newTVarE, newTVarES
 	, newTVarC, newTVarCS
---	, newTVarF, newTVarFS
 	, newVarZ
 	, bindVtoT
 	, lbindVtoT
 	, getVtoT
-
 	, addDataDef
-
---	, getGroundType
---	, getConstType
-
 	, addDef
 	, addError 
-	
 	, wantTypeV
 	, wantTypeVs )
-
 where
-
------
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import Util
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace(..), (=^=))
 import Shared.VarPrim
-import Shared.VarUtil		(prettyPos)
 import Shared.Error
-import Shared.Literal
 import Shared.Pretty
 import Shared.Exp
-
 import Type.Exp
-import Type.Pretty
 import Type.Util
 import Type.Error
 import Type.Plate
-
-import Constraint.Exp
-import Constraint.Bits
-
 import Desugar.Exp
 import Desugar.Slurp.State
+import Shared.VarUtil		(prettyPos)
+import Shared.Var		(Var, NameSpace(..))
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
-import Debug.Trace
 
 -----
 stage	= "Desugar.Slurp.Util"

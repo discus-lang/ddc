@@ -3,24 +3,17 @@
 module Desugar.Slurp.SlurpX
 	( slurpX )
 where
-
------
 import {-# SOURCE #-} Desugar.Slurp.SlurpS
 import {-# SOURCE #-} Desugar.Slurp.SlurpA
 import Desugar.Slurp.Base
-
 import Type.Location
 import Type.Builtin
+import Shared.Base
+import DDC.Var.NameSpace
+import Util			(liftM, unzip6, unzip5, takeLast, catMap)
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-import Shared.Base
-
-import DDC.Base.NameSpace
-
-import Util	(liftM, unzip6, unzip5, takeLast, catMap)
-
 import qualified Data.Set	as Set
-import qualified Data.Set	(Set)
 
 
 -----

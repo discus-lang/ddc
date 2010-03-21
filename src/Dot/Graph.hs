@@ -2,26 +2,14 @@
 module Dot.Graph
 	( dotMapVarVars
 	, expandVarNodes )
-
 where
-
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import Shared.Pretty
-import qualified Shared.Var	as Var
 import Shared.Var		(Var)
-
 import Dot.Exp
-import Dot.Pretty
-
 import Util
 
-
------
--- dotMapVarVars
---	Makes a graph from a Map of Var -> [Var]
---
+-- | Make a graph from a Map of Var -> [Var]
 dotMapVarVars 
 	:: Map Var [Var] -> Graph
 	
@@ -33,12 +21,9 @@ dotMapVarVars mm
 			
 
 
------
--- expandVarNodes
---	Looks to see what vars are refered to in the edges of a graph
+-- | Looks to see what vars are refered to in the edges of a graph
 --	and adds node definitions at the start so that each node in the
 --	output graph will be rendered with the correct var name.
---	
 expandVarNodes
 	:: Graph -> Graph
 	

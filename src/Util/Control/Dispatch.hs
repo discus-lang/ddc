@@ -3,26 +3,17 @@
 module Util.Control.Dispatch 
 	( DispatchAction
 	, dispatchWork)
-	
 where
-
 import Util.Control.Dispatch.Worker
-
-import qualified Util.Data.WorkGraph	as WorkGraph
-import Util.Data.WorkGraph		(WorkGraph, WorkNode(..))
-
-import qualified Data.Map		as Map
-import Data.Map				(Map)
-
-import qualified Data.Set		as Set
-import Data.Set				(Set)
-
 import Control.Monad
 import Control.Monad.State
 import Control.Concurrent
-import Control.Concurrent.MVar
 import System.Exit
 import System.IO
+import Data.Set				(Set)
+import Util.Data.WorkGraph		(WorkGraph)
+import qualified Util.Data.WorkGraph	as WorkGraph
+import qualified Data.Set		as Set
 
 
 -- | What to do for each thread.

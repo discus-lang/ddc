@@ -1,4 +1,5 @@
 
+-- | Desugared Source IR.
 module Desugar.Exp
 	( Tree
 	, Top		(..)
@@ -11,19 +12,13 @@ module Desugar.Exp
 	, Guard		(..)
 	, Pat		(..)
 	, Label		(..))
-
 where
-
-import	Util
-import	Shared.Var	(Var, Module)
 import	Shared.Literal
-import 	Shared.Exp	(DataField)
 import	Type.Exp
+import 	Shared.Exp	(DataField)
+import	Shared.Var	(Var, Module)
 
------
---	This is an annotated version of the subset of the source language
---	which the type inferencer deals with.
---
+
 type Tree a	= [Top a]
 
 data Top a

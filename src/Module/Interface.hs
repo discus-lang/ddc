@@ -11,16 +11,11 @@ module Module.Interface
 	, IntInfix	(..)
 	, IntBind	(..) )
 where
-
 import Shared.Base
 import Shared.Var
 import Type.Exp
-
 import qualified Source.Exp	as S
 import qualified Sea.Exp	as E
-
-import qualified Data.Map 	as Map
-import qualified Data.Set	as Set
 import Data.Map			(Map)
 import Data.Set			(Set)
 

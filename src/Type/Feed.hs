@@ -8,24 +8,17 @@ module Type.Feed
 	, addFetterSource)
 where
 import Constraint.Exp
-import Constraint.Pretty
-
 import Type.Exp
 import Type.Location
 import Type.State
 import Type.Class
 import Type.Util
 import Type.Link
-import Type.Plate.FreeVars
 import Shared.Error
-import qualified Shared.Var as Var
-import Shared.Var		(NameSpace (..))
-import Shared.Pretty
-
 import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Data.Array.IO	as Array
+import qualified Shared.Var 	as Var
 
 -----
 stage	= "Type.Feed"

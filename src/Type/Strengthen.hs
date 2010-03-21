@@ -23,15 +23,6 @@ module Type.Strengthen
 	( strengthenT
 	, slurpParamClassVarsT_constrainForm)
 where
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Shared.Var	as Var
-
 import Type.Exp
 import Type.Class
 import Type.Util
@@ -39,6 +30,8 @@ import Type.State
 import Type.Plate.Collect
 import Shared.Error
 import Util
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 -----
 stage	= "Type.Strengthen"

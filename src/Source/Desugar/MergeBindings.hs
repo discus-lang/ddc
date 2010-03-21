@@ -2,20 +2,13 @@
 module Source.Desugar.MergeBindings 
 	(mergeBindings)
 where
-
-
 import Source.Desugar.Base
-
+import Shared.Var
 import Desugar.Util			as D
 import Desugar.Bits			as D
 import Desugar.Exp			as D
-
-import qualified Source.Exp		as S
 import qualified Source.Error		as S
-import Shared.Var
-
 import qualified Data.Map		as Map
-import Data.Map				(Map)
 
 
 -- Merge -------------------------------------------------------------------------------------------

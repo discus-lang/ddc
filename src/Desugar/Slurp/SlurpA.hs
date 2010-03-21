@@ -1,26 +1,18 @@
 
 module Desugar.Slurp.SlurpA 
 	(slurpA)
-
 where
-
------
 import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace(..))
 import Shared.Exp
-
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
-
-import Type.Util.Substitute
 import Type.Location
 import Type.Builtin
+import Shared.Var		(Var, NameSpace(..))
+import qualified Data.Map	as Map
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+
 
 -----
 stage	= "Desugar.Slurp.SlurpA"

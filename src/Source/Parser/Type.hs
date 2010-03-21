@@ -4,25 +4,19 @@ module Source.Parser.Type
 	( pSuper
 	, pKind
 	, pType, pType_body, pType_body1, pTypeOp)
-
 where
-
 import Type.Util
 import Type.Exp
-
 import Source.Parser.Base
-import qualified Source.Token	as K
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
-
-import DDC.Base.NameSpace
-
+import Control.Monad
+import Data.Maybe
+import DDC.Var.NameSpace
+import qualified Source.Token					as K
+import qualified Shared.Var					as Var
+import qualified Shared.VarPrim					as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 
-import Control.Monad
-import Data.Maybe
 
 -- Super -------------------------------------------------------------------------------------------
 pSuper :: Parser Super

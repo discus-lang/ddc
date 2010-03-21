@@ -1,5 +1,5 @@
 
--- | Data type for source language.
+-- | Disciple Source Language.
 module Source.Exp
 	( Tree
 	, Top 		(..)
@@ -10,8 +10,6 @@ module Source.Exp
 	, FixDef
 	, Ctor
 	, DataDef
-
-	-- Value expressions
 	, Exp 		(..)
 	, Stmt 		(..)
 	, Proj		(..)
@@ -19,27 +17,12 @@ module Source.Exp
 	, Guard 	(..)
 	, Pat 		(..)
 	, Label		(..)
-
-	, LCQual (..)
-	, Var
-
-	-- Re-exported from Type.Exp
-	, module Type.Exp
-	
-	-- Re-exported from Shared.Literal
-	, Literal (..)
-	, LiteralFmt (..))
-
+	, LCQual	(..))
 where
-
-import qualified Shared.Var	as Var
-import Shared.Base		(SourcePos)
 import Shared.Var 		(Var, Module)
 import Shared.Literal
 import Shared.Exp
-import Type.Exp			hiding (Var)
-
-import Util
+import Type.Exp
 
 
 -- Tree --------------------------------------------------------------------------------------------

@@ -7,15 +7,9 @@ module Util.Graph.Deps
 	, graphSCC
 	, graphPrune)
 where
-
-import qualified Debug.Trace	as Debug
 import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
-import Data.Set			(Set)
+import qualified Data.Map	as Map
 
 
 

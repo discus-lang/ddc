@@ -4,18 +4,13 @@ module Sea.Ctor
 	(expandCtorTree)
 where
 import Sea.Exp
-import Shared.Var		(Var, NameSpace(..))
+import Util
+import Shared.Var		(NameSpace(..))
 import Shared.VarUtil		(VarGenM, newVarN)
-import Shared.Error
 import qualified Shared.Unique	as Unique
 import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-import Util
 
------
--- stage	= "Sea.Ctor"
 
 -----
 type	ExM	= VarGenM 

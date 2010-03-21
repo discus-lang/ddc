@@ -6,8 +6,6 @@ module Util.Options.Token
 	, stringOfToken)
 where
 
-import Util.Test.Check
-import Util.Data.List
 
 -- | Tokens for the option parser
 data Token

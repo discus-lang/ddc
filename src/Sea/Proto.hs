@@ -2,11 +2,9 @@
 -- | Add prototypes for each supercombinator.
 module Sea.Proto
 	(addSuperProtosTree)
-
 where
 import Sea.Exp
-import Sea.Util
-import Util
+
 
 -- | Add prototypes for each supercombinator in this tree.
 addSuperProtosTree 

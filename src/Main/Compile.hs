@@ -1,7 +1,6 @@
-{-# OPTIONS -fwarn-unused-imports #-}
 
 module Main.Compile
-	( compileFile )
+	(compileFile)
 where
 
 -- This is the module which ties the whole compilation pipeline together
@@ -403,30 +402,13 @@ compileFile_parse
 	cPrim		<- SC.corePrim	cDict
 
 
-	-- Inline functions ---------------------------------------------------
-{- 	TODO: currently broken
-	-- slurp out name of vars to inline
-	inlineVars	<- SS.sourceSlurpInlineVars sParsed
-
-	cInline		<- SC.coreInline
-				cPrim
-				cHeader
-				inlineVars
--}
-
 	-- Simplifier does various simple optimising transforms ---------------
 	outVerb $ ppr $ "  * Core: Simplify\n"
 	cSimplified	<- if elem Arg.OptSimplify ?args
 				then SC.coreSimplify "CI" topVars cPrim cHeader
 				else return cPrim
 	
-	-- Do the full laziness optimisation.
-{-	TODO: currently broken
-	cFullLaziness	<- SC.coreFullLaziness 
-				modName
-				cSimplify
-				cHeader
--}
+
 	-- Check the program one last time ------------------------------------
 	--	Lambda lifting doesn't currently preserve the typing, 
 	--	So we can't check it again after this point
@@ -473,17 +455,8 @@ compileFile_parse
 				cgProg_labelIndex	-- for super arities.
 				cgHeader		-- TODO: refactor to just take the globs.
 
-	let cgProg_curry	= C.globOfTree cCurry
+	let cgProg_final = C.globOfTree cCurry
 
-				
-	-- Rewrite so constant atoms are shared ------------------------------
-	outVerb $ ppr $ "  * Core: Atomise\n"
-	cgAtomise	<- if elem Arg.OptAtomise ?args
-				then SC.coreAtomise cgHeader cgProg_curry
-				else return cgProg_curry
-	
-	let cgProg_final	= cgAtomise
-	
 
 	-- Generate the module interface --------------------------------------
 	outVerb $ ppr $ "  * Make Interface File\n"

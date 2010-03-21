@@ -20,10 +20,10 @@ import Shared.Pretty
 import Util
 import Data.Char		hiding (isSymbol)
 import Shared.Base		(SourcePos(..))
-import Shared.Var 		(Var, VarBind, VarInfo(..), NameSpace(..), incVarBind)
+import Shared.Var 		(Var, VarBind, VarInfo(..), NameSpace(..))
 import qualified Data.Map	as Map
 import qualified Shared.Var 	as Var
-import Control.Monad.State.Strict
+
 
 -----
 type VarGenM = State VarBind

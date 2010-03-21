@@ -4,26 +4,19 @@ module Source.Parser.Exp
 	( pExp, pExp1, pExpRHS
 	, pStmt, pStmt_bind, pStmt_sig, pStmt_sigBind)
 where
-
-import Data.Maybe (isJust)
 import Source.Exp
 import Source.Parser.Type
 import Source.Parser.Pattern
 import Source.Parser.Base
-import qualified Source.Token	as K
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
-
-import DDC.Base.NameSpace 
-
+import DDC.Var.NameSpace
+import qualified Source.Token					as K
+import qualified Shared.Var					as Var
+import qualified Shared.VarPrim					as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 
-import Control.Monad
 
 -- Expressions -------------------------------------------------------------------------------------
-
 -- | Parse an expression
 pExp :: Parser (Exp SP)
 pExp

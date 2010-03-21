@@ -6,19 +6,14 @@ module Type.Base
 	, graphSize_init
 	, graphSize_inc)
 where
-
-import Util
 import Type.Exp
 import Type.Location
-import Type.Pretty
-
-import qualified Data.Map	as Map
-import Data.Map 		(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
+import Util
 import Data.Array.IO
+import Type.Pretty		()
+import Shared.Var		(Var)
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 
 -- | A Node in the type graph

@@ -1,5 +1,4 @@
------------------------
--- Core.Snip
+
 -- | 	Snip out function applications and compound expressions from function arguments.
 --	This needs to be run after Core.Block, which wraps the applications of interest in XDos.
 --
@@ -8,26 +7,21 @@ module Core.Snip
 	, snipTree )
 where
 import Core.Exp
-import Core.Pretty
 import Core.Util
 import Core.Plate.Trans
-import qualified Core.Reconstruct	as Recon
-
-import Shared.Var		(Var, VarBind, NameSpace(..))
-import Shared.VarUtil		(VarGenM, newVarN)
+import Type.Exp
 import Shared.Error
 import Shared.Pretty
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-
 import Util
-import Data.Set			(Set)
-import Data.Map			(Map)
-import Control.Monad.State.Strict
+import Shared.Var			(Var, NameSpace(..))
+import Shared.VarGen			(VarGenM, newVarN)
+import qualified Core.Reconstruct	as Recon
+import qualified Shared.Var		as Var
+import qualified Data.Set		as Set
+import qualified Data.Map		as Map
 import qualified Debug.Trace	
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
 
+-----
 stage		= "Core.Snip"
 debug 		= False
 trace s	x 	= if debug then Debug.Trace.trace (pprStrPlain s) x else x

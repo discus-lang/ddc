@@ -9,10 +9,8 @@ module Util.Control.Dispatch.Worker
 	, takeWorkerResult
 	, takeFirstWorkerResult )
 where
-
 import Util
 import Control.Concurrent
-import Control.Concurrent.MVar
 import Data.Function
 
 -- | Represents the state of a worker thread as visible by the dispatcher

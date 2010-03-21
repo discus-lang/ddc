@@ -8,11 +8,11 @@ module Type.Util.Normalise
 where
 import Type.Exp
 import Type.Plate
+import Shared.Var		(Var)
 import qualified Shared.Var	as Var
-
-import Util
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import Util
 
 -----
 normaliseT :: 	Type -> Type

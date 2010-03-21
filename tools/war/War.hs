@@ -1,17 +1,10 @@
 
 module War where
-
-import Test.TestResult
 import Test.TestFail
-import Test.TestWin
 import Config
 import Command
-
-import System.Environment
-import System.Exit
 import Control.Monad.Error
 import Control.Monad.Reader
-
 import Control.Concurrent.MVar
 import Control.Concurrent
 

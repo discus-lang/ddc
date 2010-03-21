@@ -3,40 +3,15 @@ module Desugar.ToCore.Lambda
 	( fillLambdas
 	, loadEffAnnot 
 	, loadCloAnnot)
-
 where
-
-import Util
-import qualified Debug.Trace	as Debug
-
-import qualified Data.Set 	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var 	as Var
-import Shared.Var		(VarBind, NameSpace(..))
-import Shared.Error
-
 import Core.Exp
 import Core.Util
-import Core.Plate.FreeVars
-
 import Desugar.ToCore.Base
+import Type.Exp
+import Shared.Var		(Var, NameSpace(..))
+import qualified Data.Set 	as Set
+import qualified Data.Map	as Map
 
-import qualified Type.ToCore	as T
-import qualified Type.Exp	as T
-import qualified Type.Util	as T
-
------
-{-
-stage 		= "Desugar.ToCore.Lambda"
-debug		= True
-trace ss x	= if debug 
-			then Debug.trace (pprStr ss) x
-			else x
--}
 
 -- | Add type lambdas and contexts to this expression, based on the provided type scheme.
 --	Used on RHS of let-bindings.
@@ -47,12 +22,7 @@ fillLambdas
 	-> CoreM Exp
 	
 fillLambdas v tScheme x
- = {-trace 
- 	("* Desugar.ToCore.fillLambdas\n"
- 	% "    v       = " % v % 	"\n"
-	% "    tScheme =\n" %> tScheme %	"\n") -}
-	(fillLambdas' Map.empty tScheme x)	
-	
+ =	fillLambdas' Map.empty tScheme x
 	
 fillLambdas' tsWhere tScheme x
  	| TForall v k tRest		<- tScheme
@@ -84,12 +54,6 @@ loadEffAnnot ee
 	TVar kE vE	
 	 | kE == kEffect
 	 -> do	Just tE		<- lookupType vE
-{-		trace	( "*   loadEffAnnot\n"
-			% "    vE       = " % vE	% "\n"
-			% "    tE       = " % tE	% "\n"
-			% "    tE_bound = " % tE_bound	% "\n"
-			% "    free = " % freeVars tE	% "\n")
-		-}
 		return	$ flattenT $ stripContextT tE
 
  	TBot kE

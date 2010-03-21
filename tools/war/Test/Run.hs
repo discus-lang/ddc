@@ -2,7 +2,6 @@
 module Test.Run
 	(testRun)
 where
-
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
@@ -10,10 +9,8 @@ import War
 import Command
 import Config
 import Timing
-
 import Data.List
 import Util.Data.List
-import System.Time
 import Control.Monad.Error
 import qualified System.Cmd	as System.Cmd
 

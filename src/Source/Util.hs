@@ -8,16 +8,13 @@ module Source.Util
 	, unflattenApps
 	, sourcePosX 
 	, sourcePosW)
-
 where
-
-import Shared.Error 		(panic)
-import qualified Shared.Var	as Var
-import Shared.Var		((=~=))
-import Shared.Base
 import Source.Exp
-
+import Shared.Error 		(panic)
+import Shared.Var		(Var)
+import Shared.Base
 import Util
+
 
 -----
 stage	= "Source.Util"
@@ -32,6 +29,7 @@ takeExportVar xx
 	EEffect _ v	-> v
 	EClass _ v	-> v
 
+
 -- | take the vars which are bound by this statement of this statement
 takeStmtBoundVs :: Stmt a -> [Var]
 takeStmtBoundVs s
@@ -41,6 +39,7 @@ takeStmtBoundVs s
 	SBindPat	sp pat x	-> takePatBoundVs pat
 	SBindMonadic 	sp pat x	-> takePatBoundVs pat
 	SSig      	sp vs  t	-> vs
+
 	
 -- | take the vars which are bound by this pattern
 takePatBoundVs :: Pat a -> [Var]
@@ -58,6 +57,7 @@ takePatBoundVs w
 	WCons		sp w1 w2	-> takePatBoundVs w1 ++ takePatBoundVs w2
 	WList		sp ws		-> catMap takePatBoundVs ws
 		
+		
 -- | Convert some function applications into a list of expressions.
 --
 -- eg	   flattenApps (XApp (XApp (XApp x1 x2) x3) x4)
@@ -68,6 +68,7 @@ flattenApps xx
  = case xx of
  	XApp sp x1 x2	-> flattenApps x1 ++ [x2]
 	_		-> [xx]
+
 
 -- | Convert a list of expressions into function applications.
 --	
@@ -122,6 +123,7 @@ sourcePosX xx
 	XList 		sp xx		-> sp
 	XWhere		sp _ _		-> sp
 	XParens		sp _		-> sp
+
 
 -- | Slurp out the source position from some pattern
 sourcePosW :: Pat SourcePos -> SourcePos

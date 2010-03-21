@@ -7,50 +7,29 @@
 module Source.Desugar
 	( rewriteTree
 	, rewrite)
-
 where
-
 import Util
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Shared.Var	as Var
-import qualified Shared.Unique	as Unique
-import qualified Shared.VarUtil	as Var
-
-import Shared.VarPrim
-import Shared.Base
-
-import Shared.Base		(SourcePos)
-import Shared.Var		(NameSpace(..))
-import Shared.Error
-import Shared.Literal
-
 import Type.Exp
-import Type.Plate.Trans
 import Type.Util			
-
-import qualified Source.Exp		as S
-import qualified Source.Util		as S
-import qualified Source.Pretty		as S
-import qualified Source.Plate.Trans	as S
-import qualified Source.Error		as S
-
-import qualified Desugar.Util		as D
-import qualified Desugar.Pretty		as D
-import qualified Desugar.Exp		as D
-import qualified Desugar.Bits		as D
-
-import Shared.Exp
-
 import Source.Desugar.Base
 import Source.Desugar.Patterns
 import Source.Desugar.MergeBindings
+import Shared.VarPrim
+import Shared.Error
+import Shared.Literal
+import Shared.Base			(DataFormat(..))
+import Shared.Exp
+import Source.Pretty			()
+import Shared.Base			(SourcePos)
+import Shared.Var			(Var, NameSpace(..))
+import qualified Shared.Var		as Var
+import qualified Source.Exp		as S
+import qualified Source.Error		as S
+import qualified Desugar.Util		as D
+import qualified Desugar.Exp		as D
+import qualified Desugar.Bits		as D
 
 import {-# SOURCE #-} Source.Desugar.ListComp
-
-import Debug.Trace
 
 -----
 stage	= "Source.Desugar"
@@ -727,13 +706,10 @@ rewriteDoSS (s : ss)
 
 	    	return	[D.SBind sp Nothing 
 				(D.XApp sp (D.XApp sp (D.XVar sp primBind) x) xRest)]
-			
-	
-	
 
 
 -- Type -------------------------------------------------------------------------------------------
-instance Rewrite S.Type S.Type where
+instance Rewrite Type Type where
  rewrite tt
   = case tt of
 	TForall b k t

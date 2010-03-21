@@ -7,17 +7,12 @@
 
 module Desugar.Project
 	( projectTree 
-
 	, ProjTable
 	, slurpProjTable )
 where
-
 import Source.Error
-
 import Desugar.Util
-import Desugar.Bits
 import Desugar.Exp
-
 import Type.Exp
 import Type.Util
 import Type.Plate.FreeVars
@@ -27,19 +22,13 @@ import Shared.Base
 import Shared.Literal
 import Shared.VarPrim
 import Shared.Error
-import Shared.Var		(Var, NameSpace(..), Module)
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-import qualified Shared.VarUtil	as Var
-
-import DDC.Base.NameSpace
-
 import Util
-import Data.Set			(Set)
-import Util.Data.Map		(Map)
-import Control.Monad.State.Strict
-import qualified Data.Set	as Set
-import qualified Util.Data.Map	as Map
+import DDC.Var.NameSpace
+import Shared.Var			(Var, Module)
+import qualified Data.Set		as Set
+import qualified Util.Data.Map		as Map
+import qualified Shared.Var		as Var
+import qualified Shared.VarUtil		as Var
 
 -----
 stage	= "Desugar.Project"

@@ -1,40 +1,25 @@
 
 module Util.Misc
-(
-	(=@=), (/@=),
-	orf,
-	(<:),
-	(<::),
-	(>::),
-	getTime,
-	toRectangular,
-	buildRun,
-	interpolate,
-	choose
-)
-
+	( (=@=)
+	, orf
+	, (<:)
+	, (<::)
+	, (>::)
+	, getTime
+	, toRectangular
+	, buildRun
+	, interpolate
+	, choose )
 where
-
 import System.Time
-import qualified Numeric
-
 import Data.IORef
-
 import GHC.Base
-import GHC.Exts
 
-import Data.Generics
 
------
--- Shallow Eq Operators
---
+-- | Compare tags of constructors in these two values
 (=@=) :: a -> a -> Bool
 (=@=) a b = getTag a ==# getTag b
 
--- (=@=) :: Data a => a -> a -> Bool
--- (=@=) x y = toConstr x == toConstr y
-
-(/@=) a b = not $ a =@= b
 
 ----
 orf :: 	a -> [a -> Bool] -> Bool
@@ -58,11 +43,8 @@ updateRefIO    ref    f =
  	a	<- readIORef ref
 	f a
 
--- (##) :: b -> (b -> c) -> c
--- (##)    a   f = f a
 
-
-----
+-- | Get time in picoseconds.
 getTime :: IO Integer
 getTime = 
  do

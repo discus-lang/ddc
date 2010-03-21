@@ -1,27 +1,15 @@
 
 module Module.Graph
-	( dotModuleHierarchy )
-
+	(dotModuleHierarchy)
 where
-
 import Util
-
-import qualified Data.Map		as Map
-import Data.Map				(Map)
-
-import qualified Data.Set		as Set
-import Data.Set				(Set)
-
-----
-import qualified Shared.Var		as Var
-import Shared.Var			(Var, Module(..))
 import Shared.Pretty
-
 import Main.IO
+import Shared.Var			(Module(..))
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 
------
--- dotModuleHierarchy
---
+
 dotModuleHierarchy 
 	:: Module			-- root module.
 	-> [String]			-- names of modules to recursively reject from graph.

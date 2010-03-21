@@ -2,36 +2,15 @@
 module Core.Optimise.Simplify
 	( Stats(..)
 	, coreSimplifyTree )
-
 where
 import Core.Exp
-import Core.BoundUse
 import Core.Plate.Trans
+import Shared.Var
+import Shared.Pretty
+import Util
 import qualified Core.Float	as Float
 import qualified Core.Snip	as Snip
 
-import Shared.Pretty
-import Shared.VarUtil
-import qualified Debug.Trace	as Debug
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-
-import Util
-import Data.Map			(Map)
-import Data.Set			(Set)
-import Control.Monad.State.Strict
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
-
-
------
-{-stage		= "Core.Boxing"
-debug		= False
-trace ss x
- = if debug 
- 	then Debug.trace (pprStr ss) x
-	else x
--}
 
 -- Stats -------------------------------------------------------------------------------------------
 -- stats about what happened during a pass of the simplifier
@@ -51,6 +30,7 @@ statsProgress stats
 	| not $ isNil $ Float.statsSharedForcings  $ statsFloat stats	= True
 	| not $ isNil $ Float.statsSharedUnboxings $ statsFloat stats	= True
 	| otherwise							= False
+
 
 instance Pretty Stats PMode where
  ppr stats
@@ -76,6 +56,7 @@ coreSimplifyTree unique topVars cTree
     in	( psSimplified
    	, statss)
 
+
 -- Keep doing passes of the core simplifier until we stop making progrees
 --	(ie, reach a fix-point)
 simplifyTree
@@ -92,6 +73,7 @@ simplifyTree cycle unique topVars accStats tree
    in	if statsProgress stats
    		then simplifyTree (cycle + 1) unique topVars (accStats ++ [stats]) tree'
 		else (tree', accStats)
+
 
 -- Do a pass of the simplifier
 simplifyPass
@@ -141,7 +123,4 @@ zapUnboxBoxX xx
 			return x
 		
 	_	-> return xx
- 
- 
- 
- 
+

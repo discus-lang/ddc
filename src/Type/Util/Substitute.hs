@@ -10,18 +10,15 @@ module Type.Util.Substitute
 where
 import Type.Plate.Collect
 import Type.Plate.Trans
-import Type.Util.Bits
 import Type.Util.Kind
 import Type.Exp
-
 import Shared.Error
-
+import Shared.Var		(Var)
+import Data.Traversable		(mapM)
 import Util			hiding (mapM)
 import Prelude			hiding (mapM)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-
-import Data.Traversable		(mapM)
 
 -----
 stage	= "Type.Util.Substitute"

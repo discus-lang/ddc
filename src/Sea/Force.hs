@@ -5,15 +5,11 @@ module Sea.Force
 	(forceTree)
 where
 import Sea.Exp
-import Sea.Pretty
 import Sea.Plate.Trans
 import Util
-import Data.Map			(Map)
-import Shared.Base		(SourcePos(..))
-import Shared.Var		(VarBind(..), NameSpace(..))
+import Shared.Var		(NameSpace(..))
 import Shared.VarUtil		(VarGenM, newVarN, varPos)
 import qualified Shared.Unique	as Unique
-import qualified Data.Map	as Map
 import qualified Shared.Var	as Var
 
 -----

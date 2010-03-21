@@ -12,8 +12,6 @@ module Source.Parser.Util
 	, makeVar
 
 	-- NameSpace Utils
---	, vNameN
---	, vNameV, vNameT, vNameR, vNameE, vNameC, vNameW, vNameF
 	, vNameDefaultN
 	, kindOfVarSpace
 
@@ -25,29 +23,21 @@ module Source.Parser.Util
 
 	-- Debugging
 	, traceStateS, traceState)
-
 where
-
+import Type.Exp
 import Source.Util
 import Source.Exp
-import qualified Source.Token 	as K
-
-import qualified Shared.Var	as Var
-import Shared.Var		(Var)
 import Shared.Error
 import Shared.Base
-
-import DDC.Base.NameSpace
-
-import Util
-
+import Shared.Var					(Var, NameSpace(..))
+import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
+import qualified Source.Token 				as K
+import qualified Shared.Var				as Var
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Text.ParserCombinators.Parsec.Pos	as Parsec
-import qualified Text.ParserCombinators.Parsec.Error	as Parsec
-import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
-
 import qualified Debug.Trace
 
+-----
 stage	= "Source.Parser.Util"
 
 ----
@@ -55,7 +45,6 @@ type SP		= SourcePos
 type Parser 	= Parsec.GenParser K.TokenP ()
 
 -- Variable Creation -------------------------------------------------------------------------------
-
 -- | Convert a token to a variable
 --	We need to undo the lexer tokens here because some of our
 --	"reserved symbols" alias with valid variable names.
@@ -98,37 +87,6 @@ makeVar    name@(n:_) tok
 	 	{ Var.info	= [ Var.ISourcePos sp ] }
 
 
--- NameSpace Utils ---------------------------------------------------------------------------------
--- | Force the namespace of this variable
---	If it has already been set differently then panic
-{-
-vNameN :: NameSpace -> Var -> Var
-vNameN space v
-	-- var has no namespace, so give it one
-	| Var.nameSpace v == NameNothing
-	= v { Var.nameSpace = space }
-
-	-- var had a different namespace, oh oh.
-	| Var.nameSpace v /= space
-	= panic stage
-	$ "vNameN: conflicting namespace for variable " % v	% "\n"
-	% "   name space was     " % Var.nameSpace v		% "\n"
-	% "   tried to set it to " % space			% "\n"
-	% "   info               " % Var.info v			% "\n"
-
-	-- var already has the right namespace
-	| otherwise
-	= v
-
-vNameV		= vNameN NameValue
-vNameT		= vNameN NameType
-vNameR		= vNameN NameRegion
-vNameE		= vNameN NameEffect
-vNameC		= vNameN NameClosure
-vNameW		= vNameN NameClass
-vNameF		= vNameN NameField
-
--}
 
 -- | If the var has no namespace set, then give it this one.
 vNameDefaultN	:: NameSpace -> Var -> Var
@@ -154,9 +112,7 @@ spTP    tok
 	= SourcePos (K.tokenFile tok, K.tokenLine tok, K.tokenColumn tok)
 
 
-
 -- Source Positions --------------------------------------------------------------------------------
-
 -- | Slurp the source position from this expression.
 spX :: Exp SP -> SP
 spX 	= sourcePosX
@@ -177,7 +133,6 @@ makeParsecSourcePos tok
 	= flip Parsec.setSourceColumn (K.tokenColumn tok)
 	$ flip Parsec.setSourceLine   (K.tokenLine tok)
 	$ Parsec.initialPos      (K.tokenFile tok)
-
 
 
 -- Debugging ---------------------------------------------------------------------------------------

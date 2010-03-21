@@ -9,25 +9,19 @@ module Core.Prim
 where
 import Core.Exp
 import Core.Util
-import qualified Core.Reconstruct	as Recon
-import Core.Plate.Trans
-
 import Type.Util
-
-import qualified Shared.Var	as Var
-import Shared.VarPrim
+import Type.Exp
+import Shared.Var
 import Shared.Pretty
-
-import Data.Map			(Map)
-import qualified Data.Map	as Map
-
-import Data.Set			(Set)
-import qualified Data.Set	as Set
-
 import Util
-
 import qualified Debug.Trace
+import qualified Core.Reconstruct	as Recon
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
+import qualified Shared.Var		as Var
 
+
+-----
 debug	= False
 trace ss x
  = if debug 

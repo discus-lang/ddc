@@ -1,25 +1,18 @@
 
 module Type.Check.Instances 
-	( checkInstances )
-	
+	(checkInstances)
 where
-
 import Type.Context
 import Type.Error
 import Type.Extract
-import Type.Dump
 import Type.Class
 import Type.State
-import Type.Base
 import Type.Exp
-
 import Shared.VarPrim
-import qualified Shared.Var	as Var
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import Util
+import qualified Shared.Var	as Var
+import qualified Data.Map	as Map
+
 
 debug		= True
 trace ss 	= if debug then traceM ss else return ()

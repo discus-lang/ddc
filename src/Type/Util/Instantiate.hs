@@ -5,19 +5,13 @@ module Type.Util.Instantiate
 	, instantiateT_table )
 where
 import Type.Exp
-import Type.Pretty
 import Type.Plate.Trans
 import Type.Util.Bits
-
-import Shared.Var (Var)
-import qualified Shared.Var as Var
-
 import Util
-import qualified Debug.Trace	as Debug
+import Type.Pretty		()
+import Shared.Var 		(Var)
 import qualified Data.Map	as Map
 
------
--- stage	= "Type.Instantiate"
 
 -- | Instantiate a type scheme using the provided gn to create
 --	the new variables.

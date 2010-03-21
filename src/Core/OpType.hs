@@ -9,10 +9,10 @@ import Core.Reconstruct
 import Type.Exp
 import Type.Util
 import Shared.Error
+import Util
+import Shared.Var		(Var)
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-import Util
 
 stage = "Core.OpType"
 

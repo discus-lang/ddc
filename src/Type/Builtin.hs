@@ -3,11 +3,11 @@
 --	These have special meaning to the compiler.
 module Type.Builtin
 where
-
 import Type.Exp
 import Shared.Base
 import Shared.VarPrim
 import Shared.Literal
+import Shared.Var		(Var)
 
 -- Witness / Witness Kind constructors
 --	The contstructor is overloaded to be used for both witnesses and witness kinds

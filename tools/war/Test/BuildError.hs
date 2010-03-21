@@ -4,20 +4,13 @@
 module Test.BuildError
 	(testBuildError)
 where
-
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
 import War
 import Command
 import Config
-
 import Util
-import Util.FilePath
-
-import Data.List
-import System.Time
-
 import Control.Monad.Error
 
 

@@ -1,23 +1,16 @@
 
 module Desugar.ProjectEta 
 	( projectEtaExpandTree) 
- where
-
+where
 import Desugar.Exp
 import Desugar.Bits
-
-import Shared.Var		(Var)
 import Shared.VarGen
-import Shared.Exp
 import Shared.Base
-
-import DDC.Base.NameSpace
-
-import Util
-import Data.Map			(Map)
 import Control.Monad
+import Shared.Var		(Var)
 import qualified Data.Map	as Map
-
+import qualified Shared.Var	as Var
+import Util
 
 
 -- Eta expand projection functions
@@ -83,7 +76,7 @@ etaExpand
 	-> VarGenM (Exp Annot)
 
 etaExpand args xx
- = do	vars		<- replicateM args (newVarN NameValue)
+ = do	vars		<- replicateM args (newVarN Var.NameValue)
 	let n		= getAnnotX xx
 	
 	let xxApp	= foldl (\x v -> XApp n x (XVar n v)) 	xx 	vars

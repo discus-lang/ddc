@@ -8,12 +8,10 @@
 --	statements.
 --
 module Core.Block
-	( blockTree )
+	(blockTree)
 where
 import Core.Exp
 import Core.Plate.Trans
-import Shared.Error
-import Util
 
 
 -- | Introduce XDo expressions into this tree.

@@ -1,21 +1,17 @@
 
 module Type.Check.Main
-	( checkMain )
-
+	(checkMain)
 where
-
 import Type.Extract
 import Type.Exp
 import Type.State
 import Type.Error
-import Type.Class
-import Type.Base
 import Type.Util.Bits
 import Shared.VarPrim
+import Util
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 
-import Util
 
 -- | If the graph contains a function called 'main' then check 
 --	that is has the appropriate type, () -> ()

@@ -13,26 +13,25 @@ module Main.Core
 	, coreThread
 	, corePrim
 	, coreSimplify
-	, coreFullLaziness
-	, coreInline
 	, coreLint
 	, coreLambdaLift
 	, coreLabelIndex
 	, curryCall
-	, coreAtomise
 	, toSea)
 where
-
--- These are all the transforms, in rough order that they are applied to the core program.
---
+import Core.Exp 	
+import Core.Util
+import Core.Glob
+import Core.ToSea.Sequence
+import Main.Arg
+import Main.Dump
+import Shared.Error
+import Shared.Pretty
+import Shared.Var			(Var, Module)
 import Core.Block			(blockTree)
-import qualified Core.Snip		as Snip
 import Core.Crush			(crushTree)
-
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconTree)
-import qualified Core.Float		as Float
-
 import Core.Bind			(bindTree)
 import Core.Thread			(threadTree)
 import Core.Prim			(primTree)
@@ -41,37 +40,18 @@ import Core.Lift			(lambdaLiftTree)
 import Core.LabelIndex			(labelIndexTree)
 import Core.Curry			(curryTree)
 import Core.ToSea			(toSeaTree)
-
-import qualified Core.Optimise.Simplify	as Simplify
-import Core.Optimise.Atomise		(atomiseTree)
-import Core.Optimise.FullLaziness	(fullLazinessTree)
-import Core.Optimise.Inline		(inlineTree)
-
-import Core.Exp 	
-import Core.Util
-import Core.Graph
-import Core.Glob
-import Core.ToSea.Sequence
-
-import qualified Type.Util.Environment	as Env
-
-import qualified Sea.Exp		as E
-import qualified Sea.Util		as E
-
-import Main.Arg
-import Main.Dump
-
-import Shared.Var			(Module)
-import Shared.Error
-import Shared.Pretty
-
-import qualified Data.Map		as Map
-import qualified Data.Set		as Set
+import Data.Foldable			(foldr)
 import Util				hiding (foldr)
 import Prelude				hiding (foldr)
--- import Data.Sequence			(Seq)
+import qualified Core.Optimise.Simplify	as Simplify
+import qualified Core.Float		as Float
+import qualified Core.Snip		as Snip
+import qualified Type.Util.Environment	as Env
+import qualified Sea.Exp		as E
+import qualified Sea.Util		as E
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
-import Data.Foldable			(foldr)
 
 
 -- | Convert to A-Normal form.
@@ -242,61 +222,6 @@ coreSimplify unique topVars cSource cHeader
 			(pprStrPlain	$ "\n" %!% statss % "\n\n")
 
 	return	cSimplify
-
-
--- Full laziness optimisation.
-coreFullLaziness
-	:: (?args ::	[Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> Module		-- ^ name of current module
-	-> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-	-> IO Tree		
-	
-coreFullLaziness
-	modName
-	cTree
-	cHeader
-
- | elem OptFullLaziness ?args
- = do
-	let appMap	= slurpAppGraph    cTree cHeader
-	dumpDot GraphApps "apps"
-		$ dotAppGraph appMap
-
-	let cTree'	= fullLazinessTree modName cHeader cTree
---	dumpCT DumpCoreFullLaziness "core-full-laziness" (eraseModuleTree cTree')
-	-- eraseModuleTree
-
-	return cTree'
-
- | otherwise
- =	return cTree
-
-
--- Function inlining.
-coreInline
-	:: (?args :: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-	-> [Var]		-- ^ bindings to inline
-	-> IO Tree
-	
-coreInline
-	cTree
-	cHeader
-	inlineVars
-
- | elem OptInline ?args
- = do	let cTree'	= inlineTree cTree cHeader inlineVars
- 	
---	dumpCT DumpCoreInline "core-inline" (eraseModuleTree cTree')
-	
-	return cTree'
-
- | otherwise
- =	return	cTree 
 	
 
 -- | Check the tree for syntactic problems that won't be caught by type checking.
@@ -396,20 +321,6 @@ curryCall cSource cHeader cgSource cgHeader
 	return	cCurryCall
 
 			
--- | Share constant constructors of airity zero.
-coreAtomise
-	:: (?args :: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> Glob			-- ^ header tree
-	-> Glob			-- ^ source tree
-	-> IO Glob
-
-coreAtomise cgHeader cgSource
- = do	let cgSource_atomised	= atomiseTree cgHeader cgSource_atomised
- 	dumpCT DumpCoreAtomise "core-atomise" $ treeOfGlob cgSource_atomised
-	return	cgSource_atomised
-
-
 -- | Convert Core-IR to Abstract-C
 toSea	:: (?args	    :: [Arg])
 	=> (?pathSourceBase :: FilePath)

@@ -8,29 +8,17 @@ module Source.Desugar.Base
 	, newVarN
 	, newVarNS
 	, newVarNI
---	, getKind
 	, addError)
-
 where
-
-import Type.Exp
 import Source.Error
-
+import Shared.Base
+import Shared.Pretty
+import DDC.Var.NameSpace
+import Util
+import Shared.Var			(Var)
 import qualified Shared.VarBind		as Var
 import qualified Shared.Var		as Var
-import Shared.Var			(Var, NameSpace(..))
-import Shared.Base
-import Shared.Error
-import Shared.Pretty
-
-import DDC.Base.NameSpace		as Var
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-import Util
 		
------
--- stage	= "Source.Desugar.Base"
 				
 -----
 type Annot	= SourcePos

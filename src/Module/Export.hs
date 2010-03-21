@@ -1,52 +1,33 @@
 
 module Module.Export
 	(makeInterface)
-
 where
-
+import Shared.Pretty
+import Shared.Error
+import Util
+import Type.Exp				(Type)
+import Shared.Var			(Var, Module)
+import Shared.Base			(SourcePos)
+import Source.Pretty			()
+import Desugar.Pretty			()
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 import qualified Source.Exp		as S
-import qualified Source.Horror		as S
-import qualified Source.Pretty		as S
 import qualified Source.Plate.Trans	as S
 import qualified Source.Slurp		as S
 import qualified Source.Util		as S
-
-import Type.Exp				(Type)
 import qualified Type.Exp		as T
 import qualified Type.Pretty		as T
 import qualified Type.Util		as T
 import qualified Type.Plate		as T
-import qualified Type.Plug		as T
-
 import qualified Desugar.Exp		as D
 import qualified Desugar.Plate.Trans	as D
-import qualified Desugar.Pretty		as D
-
 import qualified Core.Exp		as C
-import qualified Core.Pretty		as C
-import qualified Core.Util		as C
-import qualified Core.ToSea		as C
 import qualified Core.OpType		as C
-
 import qualified Shared.Var		as Var
-import Shared.Var			(Var, (=~=), Module)
-import Shared.VarPrim
-import Shared.Pretty
-import Shared.Error			(panic)
-import Shared.Base			(SourcePos)
-import Shared.Error
 
-import Util
 
-import qualified Data.Map		as Map
-import Data.Map				(Map)
-
-import qualified Data.Set		as Set
-import Data.Set				(Set)
-
-import Debug.Trace
-
---
+-----
 stage	= "Module.Export"
 
 -- Make a .di interface file for this module.
@@ -223,7 +204,7 @@ eraseModule_ctor (D.CtorDef sp v fs)
 exportForeign
 	:: Var 		-- var of the binding
 	-> Type 	-- type of the binding
-	-> C.Type 	-- operational type of the binding
+	-> Type 	-- operational type of the binding
 	-> String	-- import text
 
 exportForeign v tv to

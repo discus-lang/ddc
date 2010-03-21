@@ -23,17 +23,12 @@ import Type.Location
 import Type.Exp
 import Type.Error
 import Type.Util
-import Type.Plate.Collect
 import Type.State
 import Type.Class
 import Shared.Error
 import Util
-import Data.Map			(Map)
-import Data.Set			(Set)
 import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
 import qualified Data.Set	as Set
-import qualified Data.Map	as Map
 
 -----
 stage	= "Type.Check.SchemeDanger"

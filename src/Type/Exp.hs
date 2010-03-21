@@ -1,8 +1,7 @@
 
 -- | Type Expressions
 module Type.Exp
-	( Var
-	, Bind		(..)
+	( Bind		(..)
 	, Constraints	(..)
 
 	-- super kinds
@@ -40,18 +39,12 @@ module Type.Exp
 	, Witness
 
 	, InstanceInfo (..))
-
 where
-
 import Util
-import Shared.Var		(Var)
-import Shared.VarPrim
 import Shared.Error
 import Data.Ix
-import qualified Shared.Var	as Var
+import Shared.Var		(Var)
 
-import Data.Map			(Map)
-import Data.Set			(Set)
 
 -- ClassId -----------------------------------------------------------------------------------------
 --	A unique name for a particular type\/region\/effect equivalence class.

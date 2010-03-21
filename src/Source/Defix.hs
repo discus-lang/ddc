@@ -1,8 +1,4 @@
------
--- Source.Defix
---
--- Summary:
---	Infix expression flattener.
+-- | Infix expression flattener.
 --
 --	Uses the fixity definitions at top level to rewrite all (Infix [expr]) nodes
 --	as (App e1 e2) nodes in source tree.
@@ -16,43 +12,25 @@
 --		
 --		3) Unspecified Infix operators default to precedence 9, left associative.
 --
--- Usage:
 --	Use stripFixTable to strip the fixity table from a set of top level defs.
 --	Then use defixT or defixE (passing it the fixity table) to defix the tree.
 --	Resulting tree will have no (Infix [expr]) nodes.
 --
--- Errors:
---	deathDefixNonAssoc
---	deathDefixMixedAssoc
---
---
 module Source.Defix
 	(defixP)
-
 where
-
------
-import qualified Debug.Trace
 import Control.Monad.State.Strict
-
 import Util
-
------
-import qualified Shared.Var 	as Var
-import Shared.Var (Var, (=~=))
 import Shared.Error
 import Shared.Base
-
-import Source.Pretty
 import Source.Exp
 import Source.Error
 import Source.Plate.Trans
 import Source.DefixApps
+import Shared.Var		(Var, (=~=))
 
 -----
 stage	= "Normal.Defix"
--- trace ss x	
---	= Debug.Trace.trace (pprStr ss) x
 
 type Annot	= SourcePos
 
@@ -105,11 +83,9 @@ defixInfix	sp fixTable    es
 		Left  errs	-> Left  errs
 		Right es'	-> defixInfix sp fixTable es' 
 	
------
---- defixEs
----	Find the highest binding op, work out its precendence and 
----	call defixEsLeft / defixEsRight to turn it into an (App e1 e2) node
----
+
+--- | Find the highest binding op, work out its precendence and 
+---   call defixEsLeft / defixEsRight to turn it into an (App e1 e2) node
 defixEs :: a -> [FixDef a] -> [Exp a]	-> Either [Error] [Exp a] 
 defixEs sp fixTable es 
  = let
@@ -174,10 +150,7 @@ defixEsNone sp fixTable highPrec xx
 		% xx
 	
 		 
------
---- defixEsLeft
----	Find the left-most op with highPrec and turn it into an (App e1 e2) node.
----
+--- | Find the left-most op with highPrec and turn it into an (App e1 e2) node.
 defixEsLeft  :: a -> [FixDef a] -> Int -> [Exp a] -> [Exp a]
 defixEsLeft sp
 	fixTable
@@ -194,12 +167,9 @@ defixEsLeft sp fixTable	highPrec	p
 	= panic stage "defixEsLeft: broken input expression."
 
 
------
---- defixEsRight 
----	Find the right-most op with highPrec and turn it into an (App e1 e2) node.
----	Input expression list is reversed, so we can just can ('left' -> 'right')
----	Be careful to build the App node the right way around.
----
+--- | Find the right-most op with highPrec and turn it into an (App e1 e2) node.
+---   Input expression list is reversed, so we can just can ('left' -> 'right')
+---   Be careful to build the App node the right way around.
 defixEsRight :: a -> [FixDef a] -> Int -> [Exp a] -> [Exp a] 
 defixEsRight sp	
 	fixTable
@@ -214,19 +184,14 @@ defixEsRight sp
 
 
 
------
---- defaultFix
----	Unspecified infix operators default to the highest precedence = 10, assoc = Left.
+--- | Unspecified infix operators default to the highest precedence = 10, assoc = Left.
 ---
 defaultFix :: (Int, InfixMode a)
 defaultFix
 	= (10, InfixLeft)
 
 
------
---- getPrec / getAssoc
----	Get the prec / assoc for this var from the table.
----
+--- | Get the prec / assoc for this var from the table.
 getPrec  :: [FixDef a] -> Var -> Int
 getPrec  fixTable v
 	= fst $ fromMaybe defaultFix $ lookupF (=~=) v fixTable

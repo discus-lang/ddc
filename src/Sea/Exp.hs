@@ -17,13 +17,9 @@ module Sea.Exp
 	, Var)
 where
 import Shared.Base
-import Shared.Exp
 import Shared.Literal
-import Shared.Var		(Var)
-import Data.Map			(Map)
-import qualified Data.Map	as Map
-import qualified Shared.Var	as Var
 import Util
+import Shared.Var		(Var)
 
 
 -- | A whole C program.
@@ -58,25 +54,6 @@ data Top a
 	| PCafProto	Var Type		-- ^ The prototype for a CAF slot index.
 	| PCafSlot	Var Type		-- ^ A var which holds a CAF slot index.
 	| PCafInit	Var Type [Stmt a]	-- ^ CAF initialisation code.
-
-
-	-- atoms ----------------------
-	--	Atoms are constructors of arity 0, like True and Nil
-	-- | Atom prototype
---	| PAtomProto
---		Var 				--	variable name
---		Type				--	type of atom
-
-	-- | Atom definition
---	| PAtom
---		Var 				--	variable name
---		Type				--	type of atom
-
-
-	-- | Structure definition
---	| PStruct
---		Var				-- 	type name
---		[(Var, Type)]			-- 	(label, type)
 
 
 	-- hackery --------------------

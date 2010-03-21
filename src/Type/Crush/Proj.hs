@@ -9,35 +9,20 @@
 --	the desugared program to the core language.
 --
 module Type.Crush.Proj
-	( crushProjClassT )
+	(crushProjClassT)
 where
-
 import Type.Location
 import Type.Exp
 import Type.Util
 import Type.Error
-import Type.Plate.Trans
 import Type.Class
 import Type.State
-import Type.Scheme
-import Type.Dump
-import Type.Crush.Unify
-
 import Constraint.Exp
-import Constraint.Pretty
-
 import Shared.Error
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
-import Shared.VarPrim
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import Util
+import Shared.Var		(Var)
+import qualified Shared.Var	as Var
+import qualified Data.Map	as Map
 
 -----
 stage	= "Type.Crush.Proj"

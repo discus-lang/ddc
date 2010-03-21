@@ -10,40 +10,25 @@ module Source.Rename.State
 	, RenameS(..)
 	, RenameM, runRename
 	, Scope(..)
-
 	, initRenameS
 	, traceM
 	, addError
-
 	, getCurrentScopeOfSpace
 	, updateCurrentScopeOfSpace
 	, withLocalScope
 	, withModule
-
 	, uniquifyVarN)
-
 where
-
-import Shared.Var		(Var, VarBind, NameSpace(..), (=~=), Module(..))
-import Shared.VarPrim		(getPrimVarBind)
-import Shared.Pretty
 import Shared.Error
 import Source.Error
 import Util
-import Util.Data.Map		(Map)
+import Shared.Var		(Var, VarBind, NameSpace(..), Module(..))
+import Shared.VarPrim		(getPrimVarBind)
 import qualified Shared.Var	as Var
 import qualified Util.Data.Map	as Map
 
-import Data.Set			(Set)
-import qualified Data.Set	as Set
-import qualified Debug.Trace
-import Shared.VarUtil		(isCtorName)
-
 -----
 stage = "Source.Rename.State"
--- debug		= True
--- trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
-
 
 -- Rename Class ------------------------------------------------------------------------------------
 -- | things that can be renamed

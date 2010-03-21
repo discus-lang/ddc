@@ -33,14 +33,14 @@ import Type.Util.Finalise
 import Type.Util.Quantify
 import Type.Util.Flatten
 import Type.Util.JoinSum
-
 import Type.Exp
-import qualified Shared.Var	as Var
 import Shared.VarPrim
 import Shared.Error
 import Shared.Pretty
 import Util
+import Shared.Var		(Var)
 import qualified Debug.Trace
+import qualified Shared.Var	as Var
 
 stage	= "Type.Util"
 debug	= False

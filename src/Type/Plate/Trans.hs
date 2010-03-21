@@ -1,5 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
+-- | Generic transformations on type expressions.
 module Type.Plate.Trans
 	( TransM(..)
 	, TransTable (..)
@@ -10,19 +11,14 @@ module Type.Plate.Trans
 	, transformCid
 	, transformTM)
 where
-
 import Util
 import Type.Exp
-
+import Shared.Var		(Var)
 import Util.Data.Bag		(Bag)
-import Data.Set			(Set)
-import Data.Map			(Map)
-
 import qualified Util.Data.Bag 	as Bag
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-import Control.Monad.State.Strict
 
 -----
 class Monad m => TransM m a 

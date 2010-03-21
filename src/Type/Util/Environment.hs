@@ -11,9 +11,8 @@ module Type.Util.Environment
 	, addMoreVT
 	, addWitnessConst)
 where
-
 import Type.Exp
-
+import Shared.Var		(Var)
 import qualified Data.Map	as Map
 import Data.Map			(Map)	
 	

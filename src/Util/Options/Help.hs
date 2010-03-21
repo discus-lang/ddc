@@ -2,9 +2,7 @@
 -- | Make a usage help page from this list of options.
 module Util.Options.Help
 	( makeOptionHelp )
-
 where
-
 import Util.Options.Option
 import Util.Pretty
 

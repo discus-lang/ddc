@@ -4,23 +4,17 @@ module Core.Util.Rename
 	, renameBindersX
 	, RenameS(..))
 where
-
 import Core.Exp
 import Core.Plate.Trans
-
 import Shared.Pretty
+import Util
+import qualified Shared.Var	as Var
+import qualified Data.Map	as Map
 import Shared.Var		(Var)
 import Shared.VarBind		(VarBind, incVarBind)
-import qualified Shared.Var	as Var
 
-import Util
-import Data.Map			(Map)
-import Control.Monad.State.Strict
-import qualified Data.Map	as Map
 
------
--- Rename binders
---
+-- | Rename binders in this tree
 renameBindersTree :: Tree -> RenameM Tree
 renameBindersTree tree
  = 	transZM

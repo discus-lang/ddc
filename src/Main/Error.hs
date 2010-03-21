@@ -1,8 +1,6 @@
 
 module Main.Error where
-
 import Shared.Pretty
-import Shared.Var		(Module(..))
 
 data Error
 	= ErrorNoMainInMain

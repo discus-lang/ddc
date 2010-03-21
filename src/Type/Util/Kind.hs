@@ -23,20 +23,15 @@ module Type.Util.Kind
 	
 	-- fast kind utils
 	, isClosure)
-
 where
-import Type.Pretty
+import Type.Pretty		()
 import Type.Util.Bits
 import Type.Exp
-
-import Shared.Var		(NameSpace(..))
 import Shared.Error
 import Shared.Pretty
-import qualified Shared.Var as Var
-
 import Util
-
-import Main.Arg
+import Shared.Var		(Var, NameSpace(..))
+import qualified Shared.Var 	as Var
 import qualified Debug.Trace	as Debug
 
 -----

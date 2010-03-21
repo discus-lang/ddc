@@ -1,7 +1,7 @@
 {-# OPTIONS -O2 #-}
 
 -- | Variable Namespaces
-module DDC.Base.NameSpace
+module DDC.Var.NameSpace
 	( NameSpace(..)
 	, shortNameOfSpace
 	, charPrefixOfSpace )

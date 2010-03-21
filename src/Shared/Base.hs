@@ -7,10 +7,8 @@ module Shared.Base
 	, dataFormatBoxedOfUnboxed
 	, dataFormatUnboxedOfBoxed)
 where
-
 import Shared.Pretty
-import Shared.Error
-import Util
+
 
 -- | A position in a source file
 data SourcePos		

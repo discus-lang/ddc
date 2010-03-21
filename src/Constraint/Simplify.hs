@@ -14,40 +14,19 @@
 --
 module Constraint.Simplify
 	(simplify)
-	
 where
-
-----
 import Type.Plate.FreeVars
-import qualified Type.Util.PackFast	as PackFast
 import Type.Exp
-
-import qualified Constraint.Plate.Trans	as CTrans
 import Constraint.Exp
+import Util
+import Shared.Var			(Var)
+import qualified Constraint.Plate.Trans	as CTrans
 import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
-
-import qualified DDC.Base.NameSpace	as Var
-
-import Util
-
-import Data.Map				(Map)
-import Data.Set				(Set)
-import Control.Monad.State.Strict
+import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import qualified Debug.Trace		as Trace
 
-
------
-{-
-stage	= "Constraint.Simplify"
-debug	= True
-trace ss x
- = if debug 
- 	then Trace.trace (pprStr ss) x
- 	else x
--}
 
 -- | Simplify some type constraints.
 --	This simplification is just simple substitution. Unification (and more simplification)
@@ -160,7 +139,6 @@ inlineDump acc (c : cs)
 		
 	CEq sp t1@(TVar k v1) t2
 	 -> do	sub	<- gets tableSub
---		let t2'	= packType_noLoops $ subFollowVT sub t2
 		let t2'	=  PackFast.packType $ subFollowVT sub t2
 		inlineDump (CEq sp t1 t2' : acc) cs
 		

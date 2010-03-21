@@ -4,8 +4,6 @@ module Type.Extract
 	( extractType
 	, extractTypeCid)
 where
-import Type.Check.GraphicalData
-import Type.Dump
 import Type.Plug
 import Type.Context
 import Type.Strengthen

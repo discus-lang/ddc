@@ -1,17 +1,14 @@
 
 module GetTests where
-
 import Config
 import Test
 import TestNode
 import Command
 import War
-
 import Util
 import Util.FilePath
-import Util.Data.WorkGraph		(WorkGraph, WorkNode(..))
-
 import System.Exit
+
 
 -- Get Tests --------------------------------------------------------------------------------------
 -- Look for tests in this directory

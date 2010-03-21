@@ -43,7 +43,8 @@ GHC_WARNINGS	:= \
 	-fwarn-type-defaults \
 	-fwarn-monomorphism-restriction \
 	-fwarn-unused-binds \
-	-fno-warn-missing-methods
+	-fno-warn-missing-methods \
+	-fwarn-unused-imports
 
 # 	-fwarn-missing-methods			# we don't usually define coarbitrary in the Arbitrary class
 #	-fwarn-unused-matches			# we should probably enable this one
@@ -53,7 +54,6 @@ GHC_WARNINGS	:= \
 #	-fwarn-incomplete-patterns 		# incomplete pattern warnings are buggy in GHC
 #	-fwarn-incomplete-record-updates 	# this isn't smart enough to be useful
 #	-fwarn-orphans  			# not sure if this is a problem
-#	-fwarn-unused-imports 			# unused imports warnings are buggy in GHC
 
 #	-fwarn-missing-signatures		# I use this all the time.
 #	-fwarn-simple-patterns			# I use this all the time.

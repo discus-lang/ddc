@@ -10,14 +10,13 @@ module Core.Util.Slurp
 	, dropXTau)
 where
 import Core.Exp
+import Core.Pretty		()
 import Core.Util.Pack
-import Core.Util.Bits
-import Core.Pretty
 import Shared.Error
 import Type.Util
-import qualified Shared.Var	as Var
+import Type.Exp
+import Shared.Var		(Var)
 import qualified Data.Map	as Map
-import Data.Map			(Map)
 import Util
 
 

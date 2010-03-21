@@ -18,10 +18,8 @@ module Sea.Plate.Trans
 	, transformSS )
 where
 import Sea.Exp
-import qualified Data.Map	as Map
-import Data.Map			(Map)
 import Control.Monad.State.Strict
-import Util
+
 
 -----
 class Monad m => TransM m a1 a2 exp where
@@ -212,6 +210,7 @@ instance Monad m => TransM m a1 a2 Stmt where
 
 	SCaseFail
 	 ->	transS table	$ SCaseFail
+
 		
 -- Exp ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Exp where
@@ -388,6 +387,7 @@ instance Monad m => TransM m a1 a2 Alt where
 	 	ss3		<- transSS table ss2
 	 	transA table	$ ADefault ss3
 	
+
 -- Guard ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Guard where
  transZM table a

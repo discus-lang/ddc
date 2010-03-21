@@ -3,21 +3,10 @@
 module Desugar.Slurp.SlurpS 
 	(slurpS)
 where
-
------
-import Util
-
-import qualified Shared.Var	as Var
-import qualified Data.Set	as Set
-
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
-import Desugar.Slurp.SlurpA
-
 import Type.Location
 
------
--- stage	= "Desugar.Slurp.SlurpS"
 
 -- | Slurp the type constraints for this statement.
 slurpS 	:: Stmt Annot1

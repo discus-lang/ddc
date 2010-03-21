@@ -4,19 +4,15 @@
 module Test.Compile
 	(testCompile)
 where
-
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
 import War
 import Command
 import Config
-
 import Util
 import Util.FilePath
 
-import Data.List
-import System.Time
 
 -- | Build a program starting from a Main.ds file
 testCompile :: Test -> Way -> War TestWin

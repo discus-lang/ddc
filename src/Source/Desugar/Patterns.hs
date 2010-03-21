@@ -4,35 +4,21 @@ module Source.Desugar.Patterns
 	, makeMatchFunction
 	, makeMatchExp
 	, makeGuard)
-
 where
-
 import Util
-
-import qualified Shared.Var	as Var
-
-import Shared.Var	(Var, NameSpace(..))
 import Shared.VarPrim
 import Shared.Base
-
-import qualified Source.Exp		as S
-import qualified Source.Error		as S
-
-import Desugar.Util			as D
+import Source.Desugar.Base
+import Source.Desugar.MergeBindings
+import Shared.Literal
+import Shared.Var			(Var, NameSpace(..))
 import Desugar.Exp			as D
 import Desugar.Bits			as D
 import Desugar.Plate.Trans		as D
+import qualified Shared.Var		as Var
 
-import Source.Desugar.Base
-import Source.Desugar.MergeBindings
-
-import Data.Map				(Map)
-import qualified Data.Map 		as Map
-
--- stage	= "Source.Desugar.Patterns"
 
 -- rewritePatTree ----------------------------------------------------------------------------------
-
 rewritePatternsTreeM
 	:: D.Tree Annot 
 	-> RewriteM (D.Tree Annot)
@@ -214,14 +200,14 @@ collectAtNodesW ww
 desugarLiteralGuard :: D.Guard Annot -> RewriteM [D.Guard Annot]
 desugarLiteralGuard g
  = case g of
-	D.GExp le (WLit ll fmt@(S.LiteralFmt _ df)) e
+	D.GExp le (WLit ll fmt@(LiteralFmt _ df)) e
 	 | dataFormatIsBoxed df
 	 -> do  let equals = D.XVar le primEq
 		let true = D.WConLabel le primTrue []
 		let ($$) = D.XApp le
 		return [D.GExp le true (equals $$ D.XLit ll fmt $$ e)]
 	
-	D.GCase le (WLit ll fmt@(S.LiteralFmt _ df))
+	D.GCase le (WLit ll fmt@(LiteralFmt _ df))
 	 | dataFormatIsBoxed df
 	 -> do	exps <- litToExp ll fmt
 		catMapM desugarLiteralGuard exps
@@ -242,7 +228,7 @@ desugarLiteralGuard g
 -- =>	match foo with {
 --	  || v1
 --	  , True <- "hello" == v1
-litToExp :: Annot -> S.LiteralFmt -> RewriteM [D.Guard Annot]
+litToExp :: Annot -> LiteralFmt -> RewriteM [D.Guard Annot]
 litToExp ll fmt
  = do	val <- newVarN NameValue
 	return [D.GCase ll (D.WVar ll val),

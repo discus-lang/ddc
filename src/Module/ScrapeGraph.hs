@@ -10,25 +10,18 @@ module Module.ScrapeGraph
         , propagateNeedsRebuild)
 where
 import Module.Scrape
-
-import Control.Monad		(foldM)
 import Main.Arg
 import Main.Error
 import Main.Setup
-import Shared.Var		(Module(..))
 import Shared.Pretty
-import Shared.Error		(exitWithUserError)
-
 import Util
-import Data.Map			(Map)
-import Data.List
-import Data.Maybe		(catMaybes)
 import System.Exit
+import Shared.Var		(Module(..))
+import Shared.Error		(exitWithUserError)
 import qualified Data.Map	as Map
 
 type ScrapeGraph	= Map Module Scrape
 
--- stage = "Module.ScrapeGraph"
 
 -- | Scrape all modules transtitively imported by these ones.
 scrapeRecursive

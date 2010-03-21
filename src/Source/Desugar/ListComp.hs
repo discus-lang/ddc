@@ -1,26 +1,18 @@
 
 module Source.Desugar.ListComp
-(
-	rewriteListComp
-)
-
+	(rewriteListComp)
 where
-
 import Util
-
-import qualified Shared.Var as Var
-import Shared.Var	(NameSpace(..))
 import Shared.VarPrim
 import Shared.Base
 import Shared.Error
 import Shared.Pretty
-
-import qualified Source.Exp		as S
-import qualified Desugar.Exp		as D
-
 import Source.Desugar
 import Source.Desugar.Base
 import Source.Desugar.Patterns
+import qualified Shared.Var 		as Var
+import qualified Source.Exp		as S
+import qualified Desugar.Exp		as D
 
 stage = "Source.Desugar.ListComp"
 

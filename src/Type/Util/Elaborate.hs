@@ -11,35 +11,19 @@ module Type.Util.Elaborate
 	, elaborateEffT
 	, elaborateCloT )
 where
-
 import Type.Exp
 import Type.Pretty
-import qualified Type.Util.PackFast as PackFast
 import Type.Util.Bits
 import Type.Util.Kind	
-import Type.Plate.Collect
-
-import qualified Shared.Var as Var
-import Shared.Var 	(Var, NameSpace(..))
 import Shared.VarPrim
-import Shared.Pretty
 import Shared.Error 
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import Util
-import qualified Debug.Trace	as Debug
+import Shared.Var 			(Var, NameSpace(..))
+import qualified Data.Set		as Set
+import qualified Type.Util.PackFast 	as PackFast
 
 -----
 stage	= "Type.Util.Elaborate"
-{-
-debug	= True
-trace ss xx
- = if debug 
- 	then Debug.trace (pprStrPlain ss) xx
-	else xx
--}	
 
 
 -- Elaborate Regions ------------------------------------------------------------------------------

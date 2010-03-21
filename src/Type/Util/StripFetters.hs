@@ -5,9 +5,9 @@ module Type.Util.StripFetters
 	, stripFWheresT_mono )
 where
 import Shared.Error
-import Type.Pretty
 import Type.Exp
 import Util
+import Type.Pretty		()
 
 -----
 stage = "Type.Util.StripFetters"

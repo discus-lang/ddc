@@ -2,30 +2,17 @@
 
 -- | Crush effects into their parts.
 module Type.Crush.Effects
-	( crushEffectC )
+	(crushEffectC)
 where
-import Type.Trace
 import Type.Exp
 import Type.Util
 import Type.State
 import Type.Class
-import Type.Feed
-import Type.Pretty
 import Type.Location
-import Type.Check.GraphicalData
-import Type.Crush.Unify
-import Type.Plate.Collect	(collectClassIds)
-import Type.Plate.Trans
 import Shared.VarPrim
-import Shared.Var		(VarBind, NameSpace(..))
 import Shared.Error
 import Util
-import Data.Map			(Map)
-import Data.Set			(Set)
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
 import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
 
 -----
 debug	= False

@@ -62,20 +62,13 @@ module Type.Util.Bits
 	, addConstraints
 	)
 where
-
 import Type.Plate
 import Type.Exp
-
 import Shared.Error
-import qualified Shared.Var 	as Var
-import Shared.Var 		(Var, NameSpace(..))
-import Shared.VarPrim
-
 import Util
-
+import Shared.Var 		(Var)
+import qualified Shared.Var 	as Var
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
 
 -----

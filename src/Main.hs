@@ -9,20 +9,16 @@ import Main.Version
 import Main.Init
 import Main.Make
 import Main.Error
-import qualified Main.Arg 		as Arg
-
 import Module.Scrape
 import Module.ScrapeGraph
 import Shared.Pretty
 import Shared.Error
-import qualified Shared.VarUtil		as Var
-
 import Util
 import Util.FilePath
-import Util.Test.Check
-import qualified System.IO		as System
 import qualified System
+import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
+import qualified Main.Arg 		as Arg
 
 
 -- The Disciplined Disciple Compiler

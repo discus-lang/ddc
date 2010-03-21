@@ -2,16 +2,13 @@
 -- | Command line option parser.
 module Util.Options
 	( parseOptions)
-
 where
-
 import Util.Misc
-import Util.Pretty
 import Util.Data.Either
 import Util.Data.List
-
 import Util.Options.Token
 import Util.Options.Option
+
 
 -- | Parse some options from a string
 parseOptions :: [Option a] -> [String] -> ([String], [a])

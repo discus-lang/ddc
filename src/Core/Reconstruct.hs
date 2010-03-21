@@ -1,5 +1,4 @@
--- Core.Reconstruct
---
+
 -- |	Reconstruct and check the type\/region\/effect\/closure and witness information in
 --	the core IR.
 --
@@ -18,7 +17,6 @@
 -- 	TODO: also check witnesses and proofs of purity.
 --
 --
-
 module Core.Reconstruct
 	( reconTree, reconTree'
 	, reconP, reconP', reconP_type
@@ -30,33 +28,24 @@ module Core.Reconstruct
 	, reconBoxType
 	, reconUnboxType)
 where
-
 import Core.Exp
 import Core.Util
 import Core.Plate.FreeVars
-
-import Type.Error		(Error(..))
-import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
+import Type.Exp
 import Type.Util.Environment
 import Type.Builtin
-
 import Shared.Pretty
 import Shared.Error
 import Shared.VarPrim
 import Shared.Literal
 import Shared.Base
-import Util.Graph.Deps
 import Util
-
+import Type.Error		(Error(..))
+import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
+import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace(..))
-
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import qualified Debug.Trace	
 
 
@@ -68,9 +57,7 @@ trace ss x
 	= if debug 
 		then Debug.Trace.trace (pprStrPlain ss) x 
 		else x
-
-
-
+		
 
 -- Reconstruct Monad --------------------------------------------------------------------------
 type ReconM

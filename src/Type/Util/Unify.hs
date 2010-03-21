@@ -5,16 +5,10 @@ module Type.Util.Unify
 	( unifyT2 )
 where
 import Type.Exp
-import Type.Util.Bits
 import Type.Util.Kind
 
-import Util
 
-
--- Unify two types
---	effects regions and closures always unify
---	types unify if they have the same data structure
---
+-- | Unify two types.
 unifyT2 :: Type -> Type -> Maybe [(Type, Type)]
 unifyT2 t1 t2
 	| TApp t11 t12		<- t1

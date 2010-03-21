@@ -4,36 +4,22 @@
 --	like Pure and LazyH.
 --
 module Type.Crush.Fetter
-	( crushFetterC )
-
+	(crushFetterC)
 where
 import Type.Feed
-import Type.Trace
 import Type.State
 import Type.Util
 import Type.Class
 import Type.Location
 import Type.Exp
-import Type.Dump
 import Type.Error
-
 import Util
-import Shared.Error
 import Shared.VarPrim
-import Shared.Var		(VarBind, NameSpace(..))
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-
-import Data.Set			(Set)
-import Data.Map			(Map)
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
-
+import Shared.Var		(Var)
 
 -----
 debug	= False
 trace s	= when debug $ traceM s
--- stage	= "Type.Crush.Fetter"
 
 
 -- | Try and crush any single parameter fetters acting on this

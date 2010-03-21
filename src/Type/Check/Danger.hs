@@ -1,36 +1,18 @@
  
 module Type.Check.Danger
 	(dangerousCidsT)
-
 where
-
 import Util
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
-import Shared.VarPrim
-
 import Type.Exp
-import Type.Error
 import Type.Util
 import Type.Plate.Collect
-import Type.State
-import Type.Class
-
 import Shared.Error
-
+import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import qualified Data.Map	as Map
-import Data.Map			(Map)
 
 -----
 stage	= "Type.Check.Danger"
-{-
-debug	= True
-trace s = when debug $ traceM s
--}
 
 dangerousCidsT :: Type -> [ClassId]
 dangerousCidsT tt

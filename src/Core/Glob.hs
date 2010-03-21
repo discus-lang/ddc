@@ -16,11 +16,11 @@ import Core.Util.Slurp
 import Type.Exp
 import Type.Util
 import Data.Maybe
-import qualified Data.Map	as Map
+import Shared.Var		(Var)
 import Data.Map			(Map)
-
+import Data.Sequence		(Seq, (><))
+import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
-import Data.Sequence		(Seq, (<|), (><))
 
 
 -- | A Glob provides a fast way to locate particular top level declarations.

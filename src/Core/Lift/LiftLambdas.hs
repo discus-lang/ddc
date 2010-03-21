@@ -4,22 +4,17 @@ module Core.Lift.LiftLambdas
 where
 import Core.Exp
 import Core.Util
-import Core.Util.Slurp
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Lift.Base
 import Core.Reconstruct
 import Type.Util
-
-import Shared.Var		(Var, NameSpace(..))
+import Type.Exp
 import Shared.Pretty
 import Util
+import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.VarUtil	as Var
 import qualified Shared.Var	as Var
-
-import Data.Map			(Map)
-import Data.Set			(Set)
-import Control.Monad.State.Strict
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug

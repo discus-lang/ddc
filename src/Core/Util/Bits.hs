@@ -4,8 +4,6 @@
 --	They shouldn't depend on any other Core modules besides Exp.
 --
 module Core.Util.Bits
-
-	-- predicates
 	( isXApp
 	, isXLambda
 	, isXLAMBDA
@@ -26,25 +24,11 @@ module Core.Util.Bits
 	, chopLambdas
 	, addLAMBDAs)
 where
-
 import Core.Exp
-
-import Type.Util
-
-import Shared.Error
-import Shared.Var 		(NameSpace(..))
-import Shared.Error		(panic)
-import qualified Shared.Var as Var
-import Shared.VarPrim
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
-import Debug.Trace
+import Type.Exp
 import Util
+import Shared.Var 		(Var, NameSpace(..))
+import qualified Shared.Var 	as Var
 
 
 -- Predicates --------------------------------------------------------------------------------------

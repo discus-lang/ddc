@@ -2,22 +2,19 @@
 
 module Type.Plate.FreeVars
 	(FreeVars(..))
-
 where
-
-import Shared.Error
-import Shared.FreeVars
 import Type.Exp
-
+import Shared.FreeVars
+import Shared.Var		(Var)
+import Data.Set			((\\), empty, union, unions, fromList, singleton)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-import Data.Set			(Set, (\\), empty, union, unions, fromList, singleton)
-import Data.Map			(Map)
 
 -- Var ---------------------------------------------------------------------------------------------
 instance FreeVars Var where
  freeVars v	= singleton v
+
  
 -- Type --------------------------------------------------------------------------------------------
 instance FreeVars Type where

@@ -2,7 +2,6 @@
 module Type.Solve.Generalise 
 	(solveGeneralise)
 where
-
 import Type.Solve.BindGroup
 import Type.Plate.Collect
 import Type.State
@@ -12,13 +11,11 @@ import Type.Extract
 import Type.Util
 import Type.Location
 import Type.Exp
-
 import Constraint.Exp
 import Constraint.Bits
-
 import Util
 import Util.Graph.Deps
-import Data.Set			(Set)
+import Shared.Var		(Var)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 

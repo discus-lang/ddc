@@ -2,27 +2,24 @@
 module Main.Make 
 	(ddcMake)	
 where
-import Main.Arg			(Arg)
 import Main.Setup
 import Main.Compile
 import Main.Link
 import Main.Error
-
 import Module.Scrape
 import Module.ScrapeGraph
 import Shared.Pretty
 import Shared.Error
-import Shared.Var		(Module(..))
-import qualified Main.Arg as	Arg
-import qualified Shared.Var as	Var
-
 import Util
 import Util.FilePath
 import Util.Graph.Deps
-import qualified System.IO	as System
-import qualified System.Exit	as System
-import qualified System.Directory as System
-import qualified Data.Set	as Set
+import Main.Arg				(Arg)
+import Shared.Var			(Module(..))
+import qualified Main.Arg 		as Arg
+import qualified System.IO		as System
+import qualified System.Exit		as System
+import qualified System.Directory 	as System
+import qualified Data.Set		as Set
 
 -- Map.insert is hidden. Use scrapeGraphInsert instead.
 import qualified Data.Map	as Map hiding (insert)

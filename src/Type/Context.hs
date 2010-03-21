@@ -4,23 +4,15 @@
 module Type.Context
 	( reduceContextT 
 	, matchInstance )
-
 where
-import Type.State
 import Type.Exp
-import Type.Plate
 import Type.Util
-import Type.Effect.MaskLocal	(visibleRsT)
 import Shared.VarPrim
-import Shared.Error
-
 import Util
-import Debug.Trace
+import Shared.Var		(Var)
+import Type.Effect.MaskLocal	(visibleRsT)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
-
------
--- stage	= "Type.Context"
 
 
 -- | Reduce the context of this type using the provided map of instance definitions.

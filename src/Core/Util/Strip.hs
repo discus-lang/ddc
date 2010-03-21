@@ -7,13 +7,7 @@ module Core.Util.Strip
 	, stripContextT 
 	, slurpForallContextT )
 where
-
-import qualified Data.Map	as Map
-
-import Core.Exp
-import Core.Util.Bits
-
-import qualified Shared.Var	as Var
+import Type.Exp
 
 -----
 stripSchemeT	:: Type 

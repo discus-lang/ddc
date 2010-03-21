@@ -38,18 +38,13 @@ module Util.Data.List
 	
 	-- milking
 	, milk)	
-
 where
-
 import Data.List
-import Data.Maybe
-
 import Util.Data.List.Drop
 import Util.Data.List.Shuffle
 import Util.Data.List.Select
 import Util.Data.List.Split
 
-import Util.Test.Check
 
 
 test_UtilDataList

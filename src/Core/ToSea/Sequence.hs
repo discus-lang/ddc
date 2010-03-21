@@ -1,8 +1,9 @@
-{-# OPTIONS -fwarn-unused-imports #-}
 
 -- | Determine the depdendency order for CAFs.
 --	In the Sea code we need to initialise them in order, 
 --	as we don't support recursive ones.
+--
+--   TODO: Dont' slurp free vars if not a CAF, too slow.
 --
 module Core.ToSea.Sequence
 	(slurpCafInitSequence)
@@ -11,13 +12,13 @@ import Core.Exp
 import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
+import Util.Graph.Deps
+import Util
+import Shared.Var		(Var, NameSpace(..))
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-import Shared.Var		(NameSpace(..))
-import Util.Graph.Deps
-import Util
 
 -- | For the CAFs in a tree, give a dependency ordering suitable for initialisation.
 --	Left [Var] 	mututally recursive CAF vars (error)
@@ -58,12 +59,10 @@ sequenceCafsTree2 deps cafVars
 
   in	return $ Right initSeq
 	
--- !! TODO don't slurp free vars if not a caf -- too slow.
--- !! combine with isCafP / cafVars
-
 
 -- | Slurps out the list of value variables which are free in
 --   each top level binding in a tree.
+-- 
 slurpSuperDepsOfPBind :: Top -> [Var]
 slurpSuperDepsOfPBind pp
  = case pp of

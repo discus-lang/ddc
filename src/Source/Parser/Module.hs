@@ -5,31 +5,23 @@ module Source.Parser.Module
 	, parseString
 	, pModule
 	, pTopImport)
-
 where
-import Source.Parser.Pattern
 import Source.Parser.Exp
 import Source.Parser.Base
 import Source.Parser.Type
-
 import Source.Lexer
-import Source.Pretty
 import Source.Exp
-import qualified Source.Token	as K
-
 import Type.Util.Bits
-
+import Type.Exp
 import Shared.Pretty
-import qualified Shared.Var	as Var
-import Shared.Var		(Module)
-
-import DDC.Base.NameSpace
-
+import Util
+import DDC.Var.NameSpace
+import Source.Pretty						()
+import qualified Source.Token					as K
+import qualified Shared.Var					as Var
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
-import qualified Text.ParserCombinators.Parsec.Pos		as Parsec
 
-import Util
 
 -- | Parse a module.
 parseModule :: String -> [K.TokenP] -> [Top SP]

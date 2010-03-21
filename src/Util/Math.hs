@@ -1,15 +1,11 @@
 module Util.Math
-(
-	mread,
-	clamp0,
-	decimateR,
-	hack,
-	shuffle
-)
-
+ 	( mread
+	, clamp0
+	, decimateR
+	, hack
+	, shuffle )
 where
 
-import Numeric
 
 clamp0 :: (Num a, Ord a) =>	a -> a
 clamp0	  a

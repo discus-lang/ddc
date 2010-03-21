@@ -1,15 +1,11 @@
 
 module Core.Lift.BindTypes
-	( bindTypesTree )
-
+	(bindTypesTree)
 where
-import Util
 import Core.Exp
 import Core.Lift.Base
 import Core.Plate.Trans
 import Core.Reconstruct
-import Core.Util
-import Core.Util.Slurp
 
 
 bindTypesTree :: Tree 	-> LiftM ()

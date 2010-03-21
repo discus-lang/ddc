@@ -10,22 +10,18 @@
 module Source.TokenShow
 	( showSource 
 	, showSourceP)
-
 where
-
 import Source.Token
-import Shared.Literal
 import Shared.Pretty
 import Shared.Error
 import Util
 
+-----
 stage	= "Source.TokenShow"
 
------
--- showSource
---	Shows a token in the same format as read from the source file
---	used for error reporting.
---
+
+-- | Show a token in the same format as read from the source file
+--   used for error reporting.
 showSource tok =
  case tok of
 	ModuleName strs	-> concat $ intersperse "." strs

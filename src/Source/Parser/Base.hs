@@ -1,6 +1,5 @@
 {-# OPTIONS -O2 #-}
 
-
 module Source.Parser.Base
 	( module Source.Parser.Util
 
@@ -23,24 +22,18 @@ module Source.Parser.Base
 	-- Debugging and tracing combinators.
 	, pAnything, pTrace, pShowNext )
 where
-
-import Data.List			(intercalate)
-
-import Source.Exp
 import Source.Parser.Util
-import qualified Source.Token		as K
-import qualified Source.TokenShow	as K
-
-import qualified Shared.Var		as Var
 import Shared.Base
-
-import DDC.Base.NameSpace
-
+import Shared.Literal
+import Control.Monad
+import Debug.Trace
+import Shared.Var						(NameSpace(..))
+import Data.List						(intercalate)
+import qualified Source.Token					as K
+import qualified Source.TokenShow				as K
+import qualified Shared.Var					as Var
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
-import Control.Monad
-
-import Debug.Trace
 
 -- Helper Parsers ----------------------------------------------------------------------------------
 -- { inside }

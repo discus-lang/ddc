@@ -4,7 +4,7 @@
 --	Takes a list of constraints and adds them to the solver state.
 --
 module Type.Solve
-	( squidSolve )
+	(squidSolve)
 where
 import Type.Solve.Grind
 import Type.Solve.BindGroup
@@ -19,19 +19,14 @@ import Type.Location
 import Type.Pretty
 import Type.Util
 import Type.Exp
-
 import Constraint.Bits
 import Constraint.Exp
-
 import Shared.Error
 import Util
-import Util.Data.Map		(Map)
-import Data.Set			(Set)
 import Main.Arg			(Arg)
+import Shared.Var		(Var)
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Shared.Var	as Var
-import qualified Main.Arg	as Arg
 import System.IO
 
 -----

@@ -8,15 +8,14 @@ module Core.BoundUse
 	, boundUseTree
 	, boundUseP
 	, boundUseX)
-
 where
-
 import Core.Exp
 import Control.Monad.State.Strict
-import qualified Data.Map	as Map
-import Data.Map			(Map)
 import Shared.Pretty
 import Util
+import qualified Data.Map		as Map
+import Shared.Var			(Var)
+
 
 -- How many (value) lambdas in from top level this use was
 type Level	= Int

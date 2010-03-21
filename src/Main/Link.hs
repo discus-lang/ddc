@@ -2,21 +2,16 @@
 module Main.Link
 	(linkFile)
 where
-	
 import Main.BuildFile
 import Main.Setup
-import qualified Main.Arg	as Arg
-
-import qualified Config.Config	as Config
-
 import Shared.Error
 import Shared.Pretty
 import Util
-
-import System.IO
 import System.Exit
 import System.Cmd
-import System.Directory (doesDirectoryExist)
+import System.Directory 	(doesDirectoryExist)
+import qualified Main.Arg	as Arg
+import qualified Config.Config	as Config
 
 -----
 stage	= "Main.Link"

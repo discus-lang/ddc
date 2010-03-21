@@ -3,24 +3,18 @@ module Type.Util.PackFast
 	( packType
 	, packType_markLoops )
 where
-
 import Type.Exp
 import Type.Util.Bits
 import Type.Util.Kind
-import Type.Pretty
+import Type.Pretty		()
 import Type.Plate.Collect
-
 import Shared.Error
-import Shared.VarPrim
 import Shared.Pretty
 import Util
-
-import Data.Map			(Map)
-import Data.Set			(Set)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-
 import qualified Debug.Trace	as Debug
+
 
 -----
 stage	= "Type.Util.PackFast"

@@ -9,13 +9,12 @@ where
 import Type.Exp
 import Type.Util
 import Type.Plate
-import Type.Pretty
 import Type.State
 import Type.Class
 import Shared.Error
 import Util
+import Type.Pretty		()
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 -----
 stage	= "Type.Plug"

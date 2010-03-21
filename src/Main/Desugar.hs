@@ -6,22 +6,25 @@ module Main.Desugar
 	, desugarSlurpConstraints
 	, desugarSolveConstraints
 	, desugarToCore )
-	
 where
-
+import Main.Arg
+import Main.Dump
+import Shared.Pretty
+import Shared.Error
+import Shared.Base
+import Shared.Var			(Var, Module)
+import System.IO			(hFlush)
+import Util				hiding (null, elem)
+import qualified Data.Foldable		as Foldable
 import qualified Constraint.Simplify	as N
 import qualified Constraint.Exp		as N
-
 import qualified Core.Exp		as C
-
 import qualified Type.Export		as T
 import qualified Type.Dump		as T
 import qualified Type.Solve		as T
-import qualified Type.Class		as T
 import qualified Type.State		as T
 import qualified Type.Pretty		as T
 import qualified Type.Exp		as T
-
 import qualified Desugar.ToCore		as D
 import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D
@@ -30,32 +33,10 @@ import qualified Desugar.Project	as D
 import qualified Desugar.Kind		as D
 import qualified Desugar.Elaborate	as D
 import qualified Desugar.Plate.Trans	as D
-import qualified Desugar.Pretty		as D
 import qualified Desugar.Exp		as D
-
-import Main.Arg
-import Main.Dump
-
-import qualified Shared.Var		as Var
-import Shared.Var			(Var, Module)
-import Shared.Pretty
-import Shared.Error
-import Shared.Base
-
-import Util				hiding (null, elem)
-
 import qualified Data.Map		as Map
-import Data.Map				(Map)
-
 import qualified Data.Set		as Set
-import Data.Set				(Set)
 
-import qualified Data.Sequence		as Seq
-import Data.Sequence			(Seq)
-
-import qualified Data.Foldable		as Foldable
-
-import System.IO			(hFlush)
 
 -- InferKinds --------------------------------------------------------------------------------------
 desugarInferKinds

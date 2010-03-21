@@ -10,13 +10,12 @@ module Desugar.Plate.Trans
 	, transZ)
 
 where
-
 import Desugar.Exp
 import Shared.Exp
 import Type.Exp
-
 import Util
-import Control.Monad.State.Strict
+import Shared.Var			(Var)
+
 
 -----
 class Monad m => TransM m a1 a2 exp where

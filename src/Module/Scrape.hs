@@ -7,29 +7,24 @@ module Module.Scrape
 	, scrapeSourceFile
 	, scrapeModule)
 where
-import Main.IO
 import Main.BuildFile
-import qualified Main.Arg	as Arg
-
 import Source.Parser.Base
 import Source.Parser.Module
 import Source.Lexer
 import Source.Exp
-import Shared.Var		(Var, Module(..))
-import Shared.Pretty
-
 import Util
 import Util.FilePath
 import Util.System.Directory
 import System.IO
 import System.Directory
-import System.Exit
 import Text.Regex
-import Data.String
 import Data.Char
-import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
-import qualified Data.Map	as Map
+import Shared.Pretty					()
+import Shared.Var					(Module(..))
 import qualified System
+import qualified Main.Arg				as Arg
+import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
+
 
 -- Scrape -----------------------------------------------------------------------------------------
 data Scrape

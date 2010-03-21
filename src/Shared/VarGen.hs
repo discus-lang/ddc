@@ -9,15 +9,10 @@ module Shared.VarGen
 	, newVarsN
 	, evalVarGen
 	, uniquifyV)
-
 where
-
------
+import qualified Shared.Var 	as Var
+import Shared.Var		 (Var, VarBind, NameSpace(..))
 import Control.Monad.State.Strict
-import qualified Shared.Var as Var
-import Shared.Var (Var, VarBind)
-
-import DDC.Base.NameSpace
 
 -----
 type VarGenM 	= State VarGen

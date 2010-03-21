@@ -5,32 +5,23 @@ module Core.Util.Trim
 	, trimClosureC )
 
 where	
-
-import Core.Util.Bits
-import Core.Exp
-
 import Type.Util.Bits
 import Type.Util.Kind
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
+import Type.Exp
 import Shared.Pretty
 import Shared.Error
 import Util
-
+import Shared.Var		(Var)
 import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import qualified Debug.Trace	as Debug
 
+stage	= "Core.Util.Trim"
 debug	= False
 trace ss x	
 	= if debug
 		then Debug.trace (pprStrPlain ss) x
 		else x
 
------
-stage	= "Core.Util.Trim"
 
 -- | Trim the closure portion of this type
 trimClosureT :: Type -> Type

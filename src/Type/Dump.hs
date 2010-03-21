@@ -6,19 +6,14 @@ module Type.Dump
 	, dumpSub
 	, prettyClass)
 where
-import Type.Exp
 import Type.Pretty
-import Type.Util
 import Type.State
 import Type.Class
-
 import Shared.Pretty
-
 import Util
 import Data.Array.IO	
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-
 
 
 -- | dump the type graph

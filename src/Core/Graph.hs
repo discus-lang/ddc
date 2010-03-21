@@ -2,24 +2,18 @@
 module Core.Graph
 	( slurpAppGraph
 	, dotAppGraph)
-
 where
 import Core.Exp
 import Core.Util
-import Core.Util.Slurp
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Type.Util
-
-import Shared.Var		(NameSpace(..))
+import Type.Exp
 import Shared.Pretty
+import Util
+import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-
-import Util
-import Data.Set			(Set)
-import Data.Map			(Map)
-import Control.Monad.State.Strict
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 

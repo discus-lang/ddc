@@ -3,17 +3,11 @@ module Core.Util.Beta
 	( betaTree )
 where
 import Core.Exp
-import Core.Util.Bits
 import Core.Crush
 import Core.Plate.Trans
-
-import Shared.VarBind
-import qualified Shared.Var	as Var
-
+import Type.Exp		
 import Util
-import Data.Map			(Map)
-import Data.Set			(Set)
-import Control.Monad.State.Strict
+import Shared.Var		(Var)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

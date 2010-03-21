@@ -2,30 +2,18 @@
 module Type.Effect.MaskLocal
 	( maskLocalT 
 	, visibleRsT )
-
 where
-
------
 import Util
-
-
 import Type.Exp
-import Type.Plate
 import Type.Util
-
 import Shared.Error
 import Shared.VarPrim
-import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace (..))
-
 import qualified Data.Set	as Set
-import Data.Set			(Set)
 
 -----
 stage	= "Type.Effect.MaskLocal"
 
 -- | Mask effects on local regions.
---	
 -- 	At generalisation time, if a region is not present in the type or closure of a
 -- 	function then is local to that function and all effects involving that region 
 -- 	can be erased from the type.
@@ -81,11 +69,9 @@ maskE'	tsVis eff
 
 
 
------------------------
--- visRegions
---	Collect the list of visible regions from the type sig. 
---	We can't just call freeVarsT, because we don't want to get
---		region vars present in the effect portion of the type.
+-- | Collect the list of visible regions from the type sig. 
+--   We can't just call freeVarsT, because we don't want to get
+--   region vars present in the effect portion of the type.
 --
 visibleRsT :: Type -> Set Type
 visibleRsT tt
@@ -100,8 +86,9 @@ visibleRsT tt
 
 	TVar{}			-> Set.empty
 	TCon{}			-> Set.empty
-	TTop{}			-> Set.empty
 	TBot{}			-> Set.empty
+	TTop{}			-> Set.empty
+
 
 	-- data
 	TApp t1 t2

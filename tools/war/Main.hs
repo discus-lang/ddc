@@ -3,35 +3,25 @@ import Config
 import Test
 import Command
 import War
-import Timing
 import GetTests
 import Format
 import TestNode
-
 import Util
-import Util.Options			as Options
-import Util.Options.Help		as Options
-import Util.Options.Token		as Options
-
 import Util.Terminal.VT100
-import Util.FilePath
 import Util.Control.Dispatch
-import Util.Control.Dispatch.Worker
-import Util.Data.BackGraph		(BackNode(..))
-import Util.Data.WorkGraph		(WorkGraph, WorkNode(..))
 import System.Cmd
 import System.Directory
 import System.Environment
 import System.Exit
-import System.Time
 import System.IO
 import Control.Monad.Reader
 import Control.Concurrent
-import Control.Concurrent.MVar
-import qualified Util.Data.BackGraph	as BackGraph
+import Util.Data.BackGraph		(BackNode(..))
+import Util.Data.WorkGraph		(WorkGraph)
 import qualified Util.Data.WorkGraph	as WorkGraph
 import qualified Data.Map		as Map
-import qualified Data.Set		as Set
+import Util.Options			as Options
+import Util.Options.Help		as Options
 
 
 -- Main -------------------------------------------------------------------------------------------

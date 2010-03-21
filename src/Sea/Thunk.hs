@@ -11,15 +11,12 @@ module Sea.Thunk
 where
 import Sea.Exp
 import Sea.Pretty
-import Sea.Util
 import Sea.Plate.Trans
 import Shared.Pretty
+import Util
 import Shared.Var		(VarBind)
-import Data.Map			(Map)
-import qualified Data.Map	as Map
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as Unique
-import Util
 
 
 -- | Expand calls in this tree.

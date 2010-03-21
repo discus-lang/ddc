@@ -2,17 +2,14 @@
 module Type.Link
 	( linkType
 	, linkFetter )
-
 where
 import Type.Util
 import Type.Exp
 import Type.Location
 import Type.State
 import Type.Class
-
 import Shared.Error
-import qualified Shared.Var as Var
-
+import Shared.Var		(Var)
 import Util
 
 -----

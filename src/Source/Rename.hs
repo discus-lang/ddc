@@ -10,37 +10,27 @@ module Source.Rename
 	( Rename
 	, renameTrees )
 where
-
 import Source.Rename.State
 import Source.Rename.Object
 import Source.Rename.Binding
-
 import Source.Util
-import Source.Horror
 import Source.Slurp
 import Source.Error
 import Source.Exp
-
 import Type.Util
-import Type.Plate.Collect
 import Type.Plate.FreeVars
-
-import Shared.Error		(panic)
-import Shared.Var		(NameSpace (..), Module(..))
-import Shared.VarUtil		(isCtorName)
-import Shared.Pretty
+import Type.Exp
 import Shared.Base
-import Data.Set			(Set)
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import qualified Data.Set	as Set
-import qualified Debug.Trace
 import Util
+import Shared.Pretty		()
+import Shared.Error		(panic)
+import Shared.Var		(Var, NameSpace (..), Module(..))
+import qualified Shared.VarUtil	as Var
+import qualified Shared.Var	as Var
+import qualified Data.Set	as Set
 
 -----
 stage		= "Source.Rename"
--- debug		= True
--- trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
 
 
 -- Tree --------------------------------------------------------------------------------------------

@@ -13,7 +13,6 @@ module Type.Location
 	, dispSourceValue
 	, dispFetterSource)
 where
-import Type.Util.Bits
 import Type.Util.Kind
 import Type.Exp
 import Shared.Pretty
@@ -22,6 +21,7 @@ import Shared.Literal
 import Shared.Error
 import Shared.VarPrim
 import Util
+import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 
 -----

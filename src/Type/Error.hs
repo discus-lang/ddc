@@ -7,15 +7,13 @@ import Type.Location
 import Type.Exp
 import Type.Pretty
 import Type.Util.Bits
-
 import Shared.Pretty
-import Shared.Literal
 import Shared.Error
+import Util
+import Shared.Var		(Var)
 import Shared.Base		(SourcePos(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-
-import Util
 
 -----
 stage	= "Type.Error"

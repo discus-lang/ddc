@@ -5,11 +5,8 @@ module Util.Data.List.Select
 	, eachAndOthers
 	, gather
 	, interslurp)
-
 where
-
 import Data.List
-import Util.Tunnel
 import Util.Test.Check
 import qualified Data.Map	as Map
 

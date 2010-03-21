@@ -6,25 +6,15 @@ module Core.Util.Pack
 	, inlineTWheresT
 	, inlineTWheresMapT )
 where
-	
-import Core.Exp
-import Core.Plate.Trans
 import Core.Plate.FreeVars
-import Core.Util.Bits
-
-import Type.Util		hiding (flattenT)
 import Type.Exp
 import Type.Builtin
-
 import Shared.Error
-import Shared.VarUtil
 import Shared.VarPrim
 import Util
 import Util.Graph.Deps
-
+import Type.Util		hiding (flattenT)
 import qualified Data.Map	as Map
-import Data.Map			(Map)
-
 import qualified Data.Set	as Set
 
 -----

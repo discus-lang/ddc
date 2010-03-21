@@ -24,27 +24,16 @@
 module Type.Util.JoinSum
 	(joinSumTs)
 where
-
 import Type.Exp
-import Type.Pretty
 import Type.Util.Environment
 import Type.Util.Bits
 import Type.Util.Kind
 import Control.Monad
-import Shared.Pretty
 import Shared.Error
-
 import Util.Pretty
 
-
+-----
 stage	= "Type.Util.Join"
-{-
-debug	= True
-import qualified Debug.Trace
-trace ss xx
-	| debug		= Debug.Trace.trace (pprStrPlain ss) xx
-	| otherwise	= xx
--}
 
 
 -- Join all these types.

@@ -4,19 +4,16 @@
 module Test.ShellError
 	(testShellError)
 where
-
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
 import War
 import Command
 import Config
-
-import Data.List
-import System.Time
+import Data.List		(isSuffixOf)
 import System.Directory
-
 import Control.Monad.Error
+
 
 -- | Build a program starting from a Main.ds file
 testShellError :: Test -> Way -> War TestWin

@@ -2,11 +2,7 @@
 module Util.Data.Either 
 	( gatherEither
 	, catLeftOrError)
-
 where
-
-import Data.Either
-
 
 gatherEither ::		[Either a b]		-> ([a], [b])
 gatherEither		ee

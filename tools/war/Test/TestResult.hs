@@ -4,16 +4,11 @@ module Test.TestResult
 	, Test(..)
 	, pprTest 
 	, NoShow(..))
-
 where
-
-import Config
 import Format
 import Test.TestFail
 import Test.TestWin
-
 import System.Exit
-
 
 
 -- | A test will either fail or win.

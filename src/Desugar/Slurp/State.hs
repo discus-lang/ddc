@@ -6,49 +6,26 @@ module	Desugar.Slurp.State
 	, CSlurpM
 	, CSlurpS  (..)
 	, initCSlurpS )
-
 where
-
------
-import qualified Data.Set as Set
-import Data.Set (Set)
-
-import qualified Data.Map as Map
-import Data.Map (Map)
-
 import Util
-
------
-
-import qualified Shared.Var 	as Var
-import Shared.Var		(Var, VarBind, (=^=), NameSpace(..))
-import qualified Shared.Unique	as Unique
-
 import Shared.Pretty
 import Shared.Exp
 import Shared.Base
-import Shared.VarUtil
-import Shared.Literal
-import Shared.Error
-
 import Type.Exp
 import Type.Error
-import Type.Util
-
-import Constraint.Exp
-
 import Desugar.Exp
+import Shared.Var		(Var, VarBind, NameSpace(..))
+import qualified Data.Set 	as Set
+import qualified Data.Map 	as Map
+import qualified Shared.Var 	as Var
+import qualified Shared.Unique	as Unique
 
------
--- stage	= "Source.CSlurpM"
 
 type	Annot1	= SourcePos
 type	Annot2	= Maybe (Type, Effect)
 
 
------------------------
--- BindMode
---	Expresses how a particular variable has been bound
+-- | Expresses how a particular variable has been bound
 --	At the moment we only differentiate between BindLet vs the rest during type inference.
 --
 --	The rest might be useful for error messages, and its easy to track this
@@ -74,12 +51,8 @@ instance Pretty BindMode PMode
  	ppr xx	= ppr $ show xx
 
 
------------------------
--- CSlurpM / CSlurpS
---	State monad / state used by the constraint slurper.
-
+-- | State monad / state used by the constraint slurper.
 type	CSlurpM	= State CSlurpS
-
 data	CSlurpS =
 	CSlurpS 
      	{ stateTrace		:: [String]
@@ -109,7 +82,6 @@ data	CSlurpS =
 	
 
 initCSlurpS 	:: CSlurpS
-
 initCSlurpS 
 	= CSlurpS
 	{ stateTrace		= []
@@ -123,9 +95,6 @@ initCSlurpS
 		, (NameClosure,	Var.XBind ("c" ++ Unique.typeConstraint) 0)
 		, (NameField,	Var.XBind ("f" ++ Unique.typeConstraint) 0) 
 		, (NameClass,	Var.XBind ("w" ++ Unique.typeConstraint) 0) ]
-
-
-		
 		
 	, stateDataDefs		= Map.empty
 	, stateCtorType		= Map.empty

@@ -1,21 +1,18 @@
 
 module Type.Util.Flatten 
 	(flattenT)
-
 where
+import Type.Pretty		()
 import Type.Util.Bits
 import Type.Exp
-import Type.Pretty
-
 import Shared.Error
-import Shared.Pretty
-
 import Util
-import Debug.Trace
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
+-----
 stage	= "Type.Util.Flatten"
+
 
 -- | Flattening a type inlines all the (t1 = t2) fetters bound within in it.
 flattenT :: Type -> Type

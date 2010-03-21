@@ -1,49 +1,30 @@
 -- | Handles crushing of shape constraints.
 
 module Type.Crush.Shape
-	( crushShape )
+	(crushShape)
 where
-
-
 import Type.Feed
 import Type.Location
 import Type.Exp
-import Type.Pretty
 import Type.Util
 import Type.State
 import Type.Class
-import Type.Plate.FreeVars
 import Type.Plate.Collect
-
 import Type.Crush.Unify
-
-import Shared.Error
 import Shared.VarPrim
-import Shared.Var	(Var, NameSpace(..))
-import qualified Shared.VarBind	as Var
-import qualified Shared.Var	as Var
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import Util
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 
 -----
 debug	= False
 trace s	= when debug $ traceM s
 
------
--- crushShape
---	Try and crush the Shape constraint in this class.
---	If any of the nodes in the constraint contains a type constructor then add a similar constructor
---	to the other nodes and remove the constraint from the graph.
+-- | Try and crush the Shape constraint in this class.
+--   If any of the nodes in the constraint contains a type constructor then add a similar constructor
+--   to the other nodes and remove the constraint from the graph.
 --
---	TODO: Add more shape fetters recursively.
---
---	returns whether we managed to crush this fetter.
+--   returns whether we managed to crush this fetter.
 --
 crushShape :: ClassId -> SquidM Bool
 crushShape cidShape

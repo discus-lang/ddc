@@ -3,12 +3,10 @@
 module	Constraint.Exp
 	( CTree(..)
 	, CBind(..) )
-	
 where
-
 import Type.Exp
 import Type.Location
-import Type.Plate.DeepSeq
+import Shared.Var		(Var)
 import Data.Map			(Map)
 
 

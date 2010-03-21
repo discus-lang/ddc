@@ -5,18 +5,17 @@ module Source.Slurp
 	, slurpKinds
 	, slurpTopNames )
 where
-
------
 import Util.Data.Maybe
 import Util
+import Source.Exp
+import Shared.Error
+import Type.Util
+import Type.Exp
+import Shared.Var		(Var, NameSpace(..))
+import qualified Shared.Var	as Var
+
 
 -----
-import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace(..))
-import Source.Exp
-import Type.Util
-import Shared.Error
-
 stage	= "Source.Slurp"
 
 --- | Slurp the fixity tables from this module.

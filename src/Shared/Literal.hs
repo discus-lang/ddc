@@ -5,7 +5,6 @@ module Shared.Literal
 	( Literal    (..)
 	, LiteralFmt (..))
 where
-
 import Shared.Base
 import Shared.Error
 import Shared.Pretty
@@ -80,21 +79,3 @@ instance Pretty Literal PMode where
 	LChar   c	-> ppr $ show c
 	LString s	-> ppr $ show s
 
-
------
-{-
-data Const
-	-- boxed constants
-	= CConst	Literal		
-
-	-- unboxed constants
-	| CConstU	Literal	
-	deriving (Show, Eq)
-
------
-instance Pretty Const PMode where
- ppr c 
-  = case c of
-  	CConst  literal	-> ppr literal
-	CConstU literal	-> literal % "#"
--}

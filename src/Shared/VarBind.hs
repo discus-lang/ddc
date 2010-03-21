@@ -4,10 +4,9 @@ module Shared.VarBind
 	, takeVarBind_dataFormat
 	, incVarBind)
 where
-
 import Shared.Base
 import Shared.Pretty
-import Util
+
 
 data VarBind
 	-- binding not set

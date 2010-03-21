@@ -6,24 +6,17 @@ module Core.Float
 	, floatBindsTree
 	, floatBindsTreeUse)
 where
-import Type.Util
 import Core.BoundUse
 import Core.Util
-import Core.Util.Rename
-import Core.Util.Slurp
 import Core.Exp
-import qualified Core.Plate.Trans	as Trans
-import qualified Core.Reconstruct	as Recon
-
+import Type.Util
+import Type.Exp
 import Shared.VarPrim	
-import Shared.VarGen
 import Shared.Warning
 import Shared.Pretty
-
 import Util
-import Data.Map				(Map)
-import Data.Set				(Set)
-import Control.Monad.State.Strict
+import Shared.Var			(Var)
+import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Debug.Trace		as Debug

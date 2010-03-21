@@ -5,24 +5,18 @@ module Main.IO
 where
 import Main.Setup
 import Main.Arg
-
-import Shared.Var			(Var, Module(..))
 import Shared.Error
 import Shared.Base
 import Shared.Pretty
-import qualified Module.Export		as ME
+import Util
+import Util.System.Directory
+import Shared.Var			(Module(..))
+import qualified Data.Map		as Map
 import qualified Source.Slurp		as S
 import qualified Source.Exp		as S
 import qualified Source.Lexer		as S
 import qualified Source.Parser.Module	as S
 import qualified Source.Token		as Token
-import qualified Shared.Var		as Var
-
-import Util
-import Util.FilePath
-import Util.System.Directory
-import qualified Data.Map		as Map
-import qualified Data.Set		as Set
 
 -----
 stage	= "Main.IO"

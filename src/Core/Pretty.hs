@@ -4,23 +4,16 @@ module Core.Pretty
 	( pprStr )
 
 where
-
 import Core.Exp
 import Core.Util.Bits
-import Core.Util.Strip
 import Type.Pretty
-
-import qualified Shared.Var	as Var
-import Shared.Var (Var)
+import Type.Exp
 import Shared.Error
 import Shared.Pretty
-
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
-
 import Util
-import Util.Pretty
 import Data.Function
+import qualified Shared.Var	as Var
+import qualified Data.Map	as Map
 
 -----
 stage	= "Core.Pretty"

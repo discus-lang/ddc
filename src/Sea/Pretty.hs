@@ -2,7 +2,7 @@
 
 -- | Pretty printing of Sea expressions.
 module Sea.Pretty
-	( seaVar )
+	(seaVar)
 where
 import Sea.Exp
 import Sea.Util
@@ -11,13 +11,13 @@ import Shared.Error
 import Shared.Literal
 import Shared.Base
 import Util
-import Shared.Var		(Var, NameSpace(..), Module(..))
-import Data.Map			(Map)
+import Data.Function
+import Shared.Var		(Module(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
-import Data.Function
+
 
 stage	= "Sea.Pretty"
 

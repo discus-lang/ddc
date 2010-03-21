@@ -2,25 +2,19 @@
 module Type.Solve.Grind
 	(solveGrind)
 where
-
 import Type.Class
 import Type.State
 import Type.Exp
-import Type.Util
-
 import Type.Crush.Unify
 import Type.Crush.Fetter
 import Type.Crush.Effects
 import Type.Crush.Shape
 import Type.Crush.Proj
-
 import Constraint.Exp
 import Shared.Error
-
-import Data.Set			(Set)
+import Util
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
-import Util
 
 -----
 debug	= False

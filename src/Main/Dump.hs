@@ -6,22 +6,11 @@ module Main.Dump
 	, dumpCT
 	, dumpET
 	, dumpOpen)
-
 where
-
 import Main.Arg
-
-import qualified Source.Pretty
-
-import qualified Core.Pretty
-import qualified Core.Util
-
-import qualified Sea.Pretty
-import qualified Type.Pretty
-
-import Shared.Pretty
 import System.IO
 import Util
+import Shared.Pretty		()
 
 
 -- | Dump a source tree

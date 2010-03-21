@@ -5,11 +5,9 @@ module Desugar.Kind
 	, KindSource(..))
 
 where
-
 import Desugar.Plate.Trans
 import Desugar.Data
 import Desugar.Exp
-
 import Type.Util.Elaborate
 import Type.Util.Kind
 import Type.Util.Bits
@@ -18,30 +16,17 @@ import Source.Error
 import Shared.Pretty
 import Shared.Error
 import Shared.Base
-import Shared.Var		(Var, NameSpace(..))
 import Shared.VarPrim
-import qualified Shared.Var	as Var
-import qualified Type.Plate.Trans	as T
-
 import Util
-import Data.Set			(Set)
-import Data.Map			(Map)
-import Data.Sequence		as Seq
-import Control.Monad.State.Strict
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
-import qualified Data.Foldable	as Foldable
-import qualified Debug.Trace
+import Shared.Var			(Var, NameSpace(..))
+import Data.Sequence			as Seq
+import qualified Shared.Var		as Var
+import qualified Type.Plate.Trans	as T
+import qualified Data.Map		as Map
+import qualified Data.Foldable		as Foldable
 
 -----
 stage	= "Desugar.Kind"
-{-
-debug	= True
-trace ss xx
- = if debug 
- 	then Debug.Trace.trace (pprStrPlain ss) xx
-	else xx
--}
 
 -- Types -------------------------------------------------------------------------------------------
 -- | A Kind constraint

@@ -7,15 +7,14 @@ module Core.Plate.FreeVars
 	, varsBoundByW )
 where
 import Core.Exp
-import Type.Util.Bits		(varOfBind)
-import Type.Pretty
-import Shared.Var		(Var, NameSpace(..))
 import Shared.Error
 import Shared.FreeVars
-import qualified Shared.Var	as Var
-import qualified Data.Set as Set
-import Data.Set			(Set, (\\), unions, fromList, empty, singleton)
+import Type.Util.Bits		(varOfBind)
+import Type.Pretty		()
+import Shared.Var		(Var)
+import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))
+import qualified Data.Set 	as Set
 
 -----
 stage	= "Core.Plate.FreeVars"

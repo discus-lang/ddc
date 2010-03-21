@@ -1,9 +1,7 @@
 
--- | Type definitions for DDC core language.
+-- | Core Language IR.
 module Core.Exp
-	( Var
-	, Bind		(..)	-- binders
-	, Tree
+	( Tree
 	, Top 		(..)	-- top level things
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
@@ -16,33 +14,14 @@ module Core.Exp
 	, Alt 		(..)	-- case/match alternatives
 	, Guard		(..)	-- alternative guards
 	, Pat		(..)	-- guard patterns
-	, Label		(..)	-- labels in guards
-
-	, Type 		(..)	-- core types
-	, TyCon		(..)	-- type constructors
-	, TyClass	(..)	-- type class / witness names
-	, tPure, tEmpty
-
-	, Fetter	(..)
-	, Data			-- alias of Type
-	, Region
-	, Effect
-	, Closure
-	, Witness
-
-	-- kinds
-	, Kind		(..)
-	, kValue, kRegion, kEffect, kClosure
-	)
+	, Label		(..))	-- labels in guards
 where
 import Util
-import Shared.Base (SourcePos(..))
-import Shared.Var (Var)
-import Shared.VarPrim
 import Shared.Literal
 import Shared.Exp
 import Type.Exp
-import Data.Set		(Set)
+import Shared.Base 	(SourcePos(..))
+import Shared.Var 	(Var)
 
 
 -- Trees and Globs -----------------------------------------------------------------------------------

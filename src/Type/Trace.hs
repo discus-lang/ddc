@@ -14,18 +14,13 @@ import Type.Base
 import Type.Util
 import Type.State
 import Type.Class
-import Type.Plate.Collect
 import Type.Plate.Trans
-
-import Shared.Pretty
 import Shared.Error
-import Debug.Trace
-
 import Util
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
-import qualified Debug.Trace	as Trace
 
+-----
 stage	= "Type.Trace"
 
 -- | Extract a type node from the graph by tracing down from this cid.

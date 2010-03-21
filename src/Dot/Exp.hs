@@ -5,9 +5,6 @@ module Dot.Exp
 	, NodeId (..)
 	, Attr (..))
 where
-
-import Util
-import qualified Shared.Var	as Var
 import Shared.Var		(Var)
 
 

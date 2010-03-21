@@ -4,17 +4,15 @@
 module Test.Shell
 	(testShell)
 where
-
 import Test.TestResult
 import Test.TestFail
 import Test.TestWin
 import War
 import Command
 import Config
-
 import Data.List
-import System.Time
 import System.Directory
+
 
 -- | Build a program starting from a Main.ds file
 testShell :: Test -> Way -> War TestWin

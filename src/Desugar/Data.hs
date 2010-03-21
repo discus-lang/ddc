@@ -4,25 +4,18 @@ module Desugar.Data
 	( elaborateData
 	, elaborateTypeSynonym )
 where
-
-import Shared.Error		(panic)
-
 import Desugar.Pretty
 import Desugar.Exp
-
 import Type.Util.Elaborate
 import Type.Exp
 import Shared.Pretty
 import Shared.Exp
 import Shared.Base
 import Shared.VarPrim
-import Shared.Var		(Var, NameSpace(..))
-import Shared.Literal
-import qualified Shared.Var	as Var
-
 import Util
-import Control.Monad.State.Strict
-import qualified Data.Set	as Set
+import Shared.Error		(panic)
+import Shared.Var		(Var, NameSpace(..))
+import qualified Shared.Var	as Var
 import qualified Debug.Trace
 
 -----

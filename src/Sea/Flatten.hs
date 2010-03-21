@@ -1,17 +1,16 @@
 
 -- | Flatten out match expressions into sequences of statements and gotos.
 module Sea.Flatten
-	( flattenTree )
+	(flattenTree)
 where
 import Sea.Exp
-import Sea.Pretty
 import Sea.Plate.Trans
-import qualified Shared.Var	as Var
-import Shared.Var		(NameSpace(..))
 import Shared.Base
 import Shared.Literal
 import Shared.VarGen
 import Util
+import Sea.Pretty		()
+import Shared.Var		(NameSpace(..))
 
 -----
 type FlatM	= VarGenM

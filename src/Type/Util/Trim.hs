@@ -20,25 +20,19 @@
 module Type.Util.Trim
 	( trimClosureT_constrainForm
 	, trimClosureC_constrainForm)
-	
 where
 import Util
 import Shared.Error
 import Type.Exp
 import Type.Plate
-import Type.Pretty
-import Type.Plate.FreeVars
-import qualified Type.Util.PackFast	as PackFast
 import Type.Util.Bits
 import Type.Util.Kind
-
 import Shared.Pretty
+import Type.Pretty			()
 import Shared.Var			(Var)
+import qualified Type.Util.PackFast	as PackFast
 import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
-
-import qualified DDC.Base.NameSpace	as Var
-
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug

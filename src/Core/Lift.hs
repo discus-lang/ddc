@@ -1,30 +1,17 @@
 
 module Core.Lift
-	( lambdaLiftTree )
-
+	(lambdaLiftTree)
 where
 import Core.Exp
-import Core.Util
 import Core.Lift.Base
 import Core.Lift.BindTypes
 import Core.Lift.LiftLambdas
-import Core.Plate.Trans
-
-import Shared.Var		(Var, NameSpace(..))
-import qualified Shared.VarPrim	as Var
-import qualified Shared.Var	as Var
-
+import Type.Exp
 import Util
-import Data.Set			(Set)
-import Data.Map			(Map)
-import Control.Monad.State.Strict
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
-import qualified Debug.Trace	as Debug
+import Shared.Var		(Var)
 
------------------------
--- lambdaLiftTree
---
+
+-- | Perform lambda lifting on this tree.
 lambdaLiftTree 	
 	:: [Top]		-- ^ some bindings to lambda lift.
 	-> Map Var Type		-- ^ type map.

@@ -3,18 +3,11 @@ module Core.Util.Substitute
 	( substituteT
 	, substituteVV)
 where
-	
-
-import Core.Plate.Trans
-import Core.Exp
-
 import Util
-
-import Data.Map			(Map)
-import Control.Monad.State.Strict
+import Type.Exp
+import Core.Plate.Trans
+import Shared.Var		(Var)
 import qualified Data.Map	as Map
-import qualified Shared.Var	as Var
-import qualified Debug.Trace	as Debug
 
 -----
 substituteT 

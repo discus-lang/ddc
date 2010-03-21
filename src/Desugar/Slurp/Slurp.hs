@@ -3,45 +3,26 @@
 module Desugar.Slurp.Slurp
 	( slurpTreeM )
 where
-
------
-import Data.Map (Map)
 import Util
-
-import qualified	Debug.Trace	as Debug
-
------
 import Shared.Error
-import qualified Shared.Error	as Error
-
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-
-import qualified Data.Set	as Set
-import Data.Set			(Set)
-
 import Shared.Base
 import Shared.Exp
-
 import Type.Exp
 import Type.Location
-import Type.Pretty
 import Type.Util
 import Type.Plate
-
 import Constraint.Exp
 import Constraint.Bits
-
 import Desugar.Exp
 import Desugar.Slurp.Base
-import Desugar.Slurp.State
-import Desugar.Slurp.Util
 import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS
+import Type.Pretty		()
+import Shared.Var		(Var)
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 
 -----

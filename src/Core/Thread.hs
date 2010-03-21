@@ -11,28 +11,18 @@
 --	
 module Core.Thread 
 	(threadTree)
-	
 where
-
 import Core.Plate.Trans
-import Core.Util
 import Core.Exp
 import Type.Builtin
-
 import Type.Util
-
-import qualified Shared.Var	as Var
-import qualified Shared.VarBind	as Var
+import Type.Exp
+import Shared.Var
 import Shared.VarPrim
 import Shared.Error
 import Util
-
-import qualified Util.Data.Map	as Map
-import Util.Data.Map		(Map)
-
-import qualified Debug.Trace	as Debug
-
-import Control.Monad.State.Strict
+import qualified Shared.Var		as Var
+import qualified Util.Data.Map		as Map
 
 
 -----

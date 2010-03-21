@@ -1,35 +1,19 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
------
--- Source.Pretty
---
--- Summary:
---	Pretty printer for Source.Exp expressions.
---	Must keep output format parseable by trauma parser.
---
---
+-- | Pretty printer for Source.Exp expressions.
 module Source.Pretty
 	()
 where
-
------
 import Util
-
------
-import Util.Pretty
-
------
-import qualified Shared.Var 	as Var
-import Shared.Error
-
 import Source.Exp
 import Source.Horror
-import Source.Util
-import Shared.Pretty
-
 import Type.Pretty
-
+import Type.Exp
+import Shared.Pretty
+import Shared.Error
+import Shared.Var		(Var)
 import Data.Char		(isAlpha)
+import qualified Shared.Var 	as Var
 
 -----
 stage	= "Source.Pretty"

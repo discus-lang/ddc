@@ -10,14 +10,10 @@ module Source.Token
 	, tokenPSetFileName
 	, expandEscapedChar
 	, expandEscapedChars)
-
 where
-
-import Shared.Base
 import Shared.Pretty
 import Shared.Literal
 import Data.Char
-import Util
 
 
 -- | Wraps up a token with its position in the source file

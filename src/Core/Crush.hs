@@ -1,18 +1,11 @@
--- Core.Crush
---	Crush together nested do blocks.
+-- |	Crush together nested do blocks.
 --	Crush together nester XTaus. 
 module Core.Crush
 	(crushTree)
-
 where
 import Core.Exp
 import Core.Plate.Trans
-import Core.Pretty
-
-import Shared.Error
-
 import Util
-import Control.Monad
 
 -----
 crushTree :: Tree -> Tree

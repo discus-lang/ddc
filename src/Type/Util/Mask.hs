@@ -1,14 +1,13 @@
 
 module Type.Util.Mask
 	( maskReadWriteNotIn )
-
 where
 import Type.Exp
 import Type.Util.Bits
 import Shared.VarPrim
-
 import Util
-import qualified Data.Set as Set
+import Shared.Var		(Var)
+import qualified Data.Set 	as Set
 
 
 -----

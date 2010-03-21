@@ -7,24 +7,16 @@ module Source.Rename.Binding
 	, lbindN_bound,   lbindZ_bound,   lbindV_bound
 	, lbindZ_topLevel )
 where
-
 import Source.Rename.State
 import Source.Error
 import Shared.Error
 import Shared.Pretty
-import Shared.Var		(Var, NameSpace(..), Module(..))
-import Shared.VarUtil		(isCtorName)
-import qualified Shared.Var	as Var
-import qualified Shared.VarPrim	as Var
-import qualified Shared.VarUtil	as Var
-
 import Util
-import Control.Monad.State.Strict
-import Data.Set			(Set)
-import Data.Map			(Map)
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
+import Shared.Var		(Var, NameSpace(..), Module(..))
 import qualified Debug.Trace
+import qualified Data.Map	as Map
+import qualified Shared.Var	as Var
+import qualified Shared.VarUtil	as Var
 
 -----
 stage = "Source.Rename.Binding"

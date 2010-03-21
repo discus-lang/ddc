@@ -5,16 +5,14 @@
 --	They all need to be defined in the base libraries or runtime system.
 
 module Shared.VarPrim
-
 where
-import Shared.Var		(Var, NameSpace(..), VarBind(..), Module(..), VarInfo)
+import Shared.Var		(Var, NameSpace(..), Module(..), VarInfo)
 import Shared.VarBind
 import Shared.Base
-import qualified Shared.Var	as Var
-
 import Util
+import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
-import qualified Data.Set	as Set
+
 	
 -- Operational Types -------------------------------------------------------------------------------
 primTObj	= primVar 	NameType	"Base.Obj"			TObj
