@@ -13,11 +13,11 @@ import Type.Util.Kind
 import Type.Util.Bits
 import Type.Exp
 import Source.Error
-import Shared.Error
 import Shared.VarPrim
 import Util
-import DDC.Main.Pretty
 import DDC.Base.SourcePos
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var			(Var, NameSpace(..))
 import Data.Sequence			as Seq
 import qualified Shared.Var		as Var

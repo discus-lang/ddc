@@ -14,8 +14,8 @@ import Type.Extract
 import Type.Plug
 import Type.Util
 import Shared.VarPrim
-import Shared.Error
 import Util
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

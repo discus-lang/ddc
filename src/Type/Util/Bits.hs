@@ -62,10 +62,10 @@ module Type.Util.Bits
 	, addConstraints
 	)
 where
-import Type.Plate
-import Type.Exp
-import Shared.Error
 import Util
+import Type.Exp
+import Type.Plate.Trans
+import DDC.Main.Error
 import Shared.Var 		(Var)
 import qualified Shared.Var 	as Var
 import qualified Data.Map	as Map

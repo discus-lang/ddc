@@ -12,10 +12,10 @@ module Core.Lift.Base
 	, getChopped)
 where
 import Core.Exp
-import Shared.Error
-import Shared.Pretty
 import Util
 import Type.Exp
+import DDC.Main.Error
+import DDC.Main.Pretty
 import DDC.Var.NameSpace
 import DDC.Var.VarId
 import Shared.Var		(Var)

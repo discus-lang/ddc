@@ -11,7 +11,7 @@ import Util
 import Type.Exp	
 import Type.Util
 import Shared.VarPrim
-import Shared.Error		(panic)
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Data.Map	as Map
 

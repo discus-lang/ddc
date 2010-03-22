@@ -12,9 +12,9 @@ where
 import Core.Exp
 import Core.Pretty		()
 import Core.Util.Pack
-import Shared.Error
 import Type.Util
 import Type.Exp
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Data.Map	as Map
 import Util

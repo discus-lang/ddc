@@ -7,9 +7,9 @@ module Core.Util.Rename
 where
 import Core.Exp
 import Core.Plate.Trans
-import Shared.Pretty
 import Util
 import DDC.Var.VarId
+import DDC.Main.Pretty
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import Shared.Var		(Var)

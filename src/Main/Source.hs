@@ -11,13 +11,13 @@ module Main.Source
 where
 import Source.Exp
 import Source.Error
-import Shared.Error
 import Shared.Literal
 import Main.Dump
 import Util
 import Type.Exp
 import DDC.Base.SourcePos
 import DDC.Main.Arg
+import DDC.Main.Error
 import Desugar.Pretty			()
 import Shared.Var			(Var, ModuleId)
 import Source.Lexer			(scanModuleWithOffside, scan)

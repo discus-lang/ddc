@@ -3,14 +3,13 @@ module Main.ParseArgs
 	( parse
 	, helpString
 	, options)
-
 where
-import Shared.Pretty
 import Util
 import Util.Options
 import Util.Options.Option
 import Util.Options.Help
 import DDC.Main.Arg
+import DDC.Main.Pretty
 import DDC.Config.Version
 
 

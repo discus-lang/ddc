@@ -4,11 +4,12 @@ module Main.Link
 where
 import Main.BuildFile
 import Main.Setup
-import Shared.Error
-import Shared.Pretty
+import Main.Error
 import Util
 import System.Exit
 import System.Cmd
+import DDC.Main.Error
+import DDC.Main.Pretty
 import System.Directory 	(doesDirectoryExist)
 import qualified DDC.Main.Arg	as Arg
 import qualified Config.Config	as Config
@@ -55,8 +56,10 @@ linkFile setup mBuild objects
 
 	isDir		<-  doesDirectoryExist outFileName
 
-	when isDir (dieWithUserError ["A directory already exists with this name: " % outFileName])
-    
+	when isDir 
+	 $ exitWithUserError args
+		[ ErrorNotOverWritingDirectory outFileName ]
+		
 	retLink		<- system cmd
 
 	case retLink of

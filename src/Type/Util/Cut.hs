@@ -43,8 +43,8 @@ module Type.Util.Cut
 where
 import Type.Plate.Collect
 import Type.Exp
-import Shared.Error
 import Util
+import DDC.Main.Error
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

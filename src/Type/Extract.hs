@@ -13,11 +13,11 @@ import Type.Class
 import Type.State	
 import Type.Util
 import Type.Pretty
-import Type.Plate
 import Type.Exp
 import Type.Util.Cut
+import Type.Plate.Collect
 import Util
-import Shared.Error
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Type.Util.PackFast	as PackFast

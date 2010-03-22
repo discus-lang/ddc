@@ -27,8 +27,8 @@ where
 import Type.Exp
 import Source.Util
 import Source.Exp
-import Shared.Error
 import DDC.Base.SourcePos
+import DDC.Main.Error
 import Shared.Var					(Var, NameSpace(..))
 import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
 import qualified Source.Token 				as K

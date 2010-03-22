@@ -12,12 +12,12 @@ where
 import Module.Scrape
 import Main.Error
 import Main.Setup
-import Shared.Pretty
 import Util
 import System.Exit
 import DDC.Main.Arg
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var		(ModuleId(..))
-import Shared.Error		(exitWithUserError)
 import qualified Data.Map	as Map
 
 type ScrapeGraph	

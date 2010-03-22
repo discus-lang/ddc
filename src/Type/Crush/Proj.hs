@@ -18,8 +18,8 @@ import Type.Error
 import Type.Class
 import Type.State
 import Constraint.Exp
-import Shared.Error
 import Util
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map

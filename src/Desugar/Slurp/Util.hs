@@ -20,17 +20,18 @@ module Desugar.Slurp.Util
 where
 import Util
 import Shared.VarPrim
-import Shared.Error
-import Shared.Pretty
 import Shared.Exp
 import Type.Exp
 import Type.Util
 import Type.Error
-import Type.Plate
+import Type.Plate.Trans
+import Type.Plate.FreeVars
 import Desugar.Exp
 import Desugar.Slurp.State
 import DDC.Var.NameSpace	
 import DDC.Var.VarId
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Shared.VarUtil		(prettyPos)
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var

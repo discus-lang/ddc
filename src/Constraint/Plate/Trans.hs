@@ -7,8 +7,8 @@ where
 import Type.Exp
 import Constraint.Exp
 import Constraint.Pretty	()
-import Shared.Error
 import Util
+import DDC.Main.Error
 
 -----
 stage	= "Constraint.Plate.Trans"

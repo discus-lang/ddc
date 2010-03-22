@@ -9,10 +9,10 @@ import Core.Exp
 import Core.Util
 import Core.Plate.Trans
 import Type.Exp
-import Shared.Error
-import Shared.Pretty
 import Util
 import DDC.Var.NameSpace
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var			(Var)
 import Shared.VarGen			(VarGenM, newVarN)
 import qualified Core.Reconstruct	as Recon

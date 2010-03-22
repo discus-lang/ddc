@@ -6,8 +6,8 @@ where
 import Util
 import Type.Exp
 import Type.Util
-import Shared.Error
 import Shared.VarPrim
+import DDC.Main.Error
 import qualified Data.Set	as Set
 
 -----

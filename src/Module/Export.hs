@@ -2,10 +2,10 @@
 module Module.Export
 	(makeInterface)
 where
-import Shared.Pretty
-import Shared.Error
 import Util
 import DDC.Base.SourcePos
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Type.Exp				(Type)
 import Shared.Var			(Var, ModuleId)
 import Source.Pretty			()
@@ -19,7 +19,7 @@ import qualified Source.Util		as S
 import qualified Type.Exp		as T
 import qualified Type.Pretty		as T
 import qualified Type.Util		as T
-import qualified Type.Plate		as T
+import qualified Type.Plate.Trans	as T
 import qualified Desugar.Exp		as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Core.Exp		as C

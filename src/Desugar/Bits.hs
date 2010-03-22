@@ -4,13 +4,9 @@ module Desugar.Bits
 	, getAnnotX
 	, getAnnotW
 	, addLambdas )
-	
-	
 where
-
 import Desugar.Exp
-
-import Shared.Error
+import DDC.Main.Error
 import Shared.Var		(Var)
 
 stage	= "Desugar.Exp"

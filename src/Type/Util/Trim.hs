@@ -22,12 +22,12 @@ module Type.Util.Trim
 	, trimClosureC_constrainForm)
 where
 import Util
-import Shared.Error
 import Type.Exp
-import Type.Plate
 import Type.Util.Bits
 import Type.Util.Kind
-import Shared.Pretty
+import Type.Plate.FreeVars
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Type.Pretty			()
 import Shared.Var			(Var)
 import qualified Type.Util.PackFast	as PackFast

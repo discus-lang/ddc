@@ -7,8 +7,9 @@ module Core.Plate.FreeVars
 	, varsBoundByW )
 where
 import Core.Exp
-import Shared.Error
 import Shared.FreeVars
+import DDC.Main.Error
+import Type.Plate.FreeVars	()
 import Type.Util.Bits		(varOfBind)
 import Type.Pretty		()
 import Shared.Var		(Var)

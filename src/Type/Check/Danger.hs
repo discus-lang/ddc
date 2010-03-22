@@ -6,7 +6,7 @@ import Util
 import Type.Exp
 import Type.Util
 import Type.Plate.Collect
-import Shared.Error
+import DDC.Main.Error
 import DDC.Var.PrimId		as Var
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set

@@ -16,8 +16,8 @@ import Type.Pretty
 import Type.Util.Bits
 import Type.Util.Kind	
 import Shared.VarPrim
-import Shared.Error 
 import Util
+import DDC.Main.Error
 import Shared.Var 			(Var, NameSpace(..))
 import qualified Data.Set		as Set
 import qualified Type.Util.PackFast 	as PackFast

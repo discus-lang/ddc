@@ -27,8 +27,8 @@ where
 import Type.Pretty		()
 import Type.Util.Bits
 import Type.Exp
-import Shared.Error
 import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var 	as Var
 import qualified Debug.Trace	as Debug

@@ -12,8 +12,8 @@ import Core.Util
 import Type.Util
 import Type.Exp
 import Shared.Var
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
 import qualified Debug.Trace
 import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map

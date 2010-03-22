@@ -2,10 +2,11 @@
 module Main.Init
 	( verbLocateRunLib )
 where
-import Shared.Pretty
-import Shared.Error
+import Main.Error
 import Util
 import Util.System.Directory
+import DDC.Main.Error
+import DDC.Main.Pretty
 import DDC.Main.Arg		(Arg)
 import qualified Config.Config	as Config
 import qualified DDC.Main.Arg	as Arg
@@ -42,24 +43,13 @@ verbLocateRunLib verbose args
 	
 	-- if /runtime and /library can't be found then die with an appropriate error
 	when (isNothing mPathRuntime)
-	 $ dieWithUserError 
-	 	[ "Can't find the DDC runtime system.\n"
-		% "    Please supply a '-basedir' option to specify the directory\n"
-		% "    containing 'runtime/ddc-runtime.so'\n"
-		% "\n"
-	 	% "    tried:\n" %> ("\n" %!% pathRuntime_test) % "\n\n"
-		% "    use 'ddc -help' for more information\n"]
-
+	 $ exitWithUserError args
+		[ ErrorCantFindRuntime pathRuntime_test ]
+		
 	when (isNothing mPathLibrary)
-	 $ dieWithUserError 
-	 	[ "Can't find the DDC base library.\n"
-		% "    Please supply a '-basedir' option to specify the directory\n"
-		% "    containing 'library/Base.ds'\n"
-		% "\n"
-	 	% "    tried:\n" %> ("\n" %!% pathLibrary_test) % "\n\n"
-		% "    use 'ddc -help' for more information\n"]
-	
-	
+	 $ exitWithUserError args
+		[ ErrorCantFindLibrary pathLibrary_test ]
+			
 	let Just pathRuntime	= mPathRuntime
 	let Just pathLibrary	= mPathLibrary
 	

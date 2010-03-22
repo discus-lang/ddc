@@ -8,9 +8,9 @@ module Main.Desugar
 	, desugarToCore )
 where
 import Main.Dump
-import Shared.Error
 import DDC.Main.Pretty
 import DDC.Main.Arg
+import DDC.Main.Error
 import DDC.Base.SourcePos
 import Shared.Var			(Var, ModuleId)
 import System.IO			(hFlush)

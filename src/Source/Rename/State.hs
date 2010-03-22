@@ -19,11 +19,11 @@ module Source.Rename.State
 	, withModule
 	, uniquifyVarN)
 where
-import Shared.Error
 import Source.Error
 import Util
 import DDC.Var.NameSpace
 import DDC.Var.VarId
+import DDC.Main.Error
 import Shared.Var		(Var, ModuleId(..))
 import Shared.VarPrim		(getPrimVarBind)
 import qualified Shared.Var	as Var

@@ -9,10 +9,10 @@ import Core.Util
 import Core.Glob
 import Type.Util
 import Type.Exp
-import Shared.Error
-import Shared.Pretty
 import Util
 import DDC.Var.NameSpace
+import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var

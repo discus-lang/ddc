@@ -24,8 +24,8 @@ import Core.Util
 import Core.Glob
 import Core.ToSea.Sequence
 import Main.Dump
-import Shared.Error
-import Shared.Pretty
+import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Main.Arg
 import Shared.Var			(Var, ModuleId)
 import Core.Block			(blockTree)

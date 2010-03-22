@@ -2,11 +2,11 @@
 module Type.Util.Flatten 
 	(flattenT)
 where
-import Type.Pretty		()
 import Type.Util.Bits
 import Type.Exp
-import Shared.Error
 import Util
+import DDC.Main.Error
+import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

@@ -10,8 +10,8 @@ import Type.State
 import Type.Class
 import Type.Location
 import Shared.VarPrim
-import Shared.Error
 import Util
+import DDC.Main.Error
 import qualified DDC.Var.PrimId	as Var
 import qualified Shared.Var	as Var
 

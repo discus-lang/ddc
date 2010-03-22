@@ -14,7 +14,7 @@ import Type.Util
 import Type.Class
 import Type.Feed
 import Util
-import Shared.Error
+import DDC.Main.Error
 import qualified Data.Set	as Set
 
 -----

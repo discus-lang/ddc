@@ -8,7 +8,7 @@ import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
 import Type.Exp
-import Shared.Error
+import DDC.Main.Error
 import DDC.Main.Pretty		
 import qualified Shared.Var	as Var
 

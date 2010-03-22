@@ -4,8 +4,8 @@ module Type.Util.Finalise
 where
 import Type.Exp
 import Type.Util.Bits
-import Shared.Error
 import Shared.VarPrim
+import DDC.Main.Error
 import Shared.Var			(Var)
 import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map		as Map

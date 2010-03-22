@@ -28,8 +28,8 @@ import Type.Class
 import Type.Util
 import Type.State
 import Type.Plate.Collect
-import Shared.Error
 import Util
+import DDC.Main.Error
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

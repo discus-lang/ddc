@@ -15,11 +15,11 @@ where
 import Sea.Exp
 import Sea.Util
 import Main.Dump
-import Shared.Error
-import Shared.Pretty
 import Data.Char
 import Util
 import DDC.Main.Arg
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Sea.Sub				(subTree)
 import Sea.Ctor				(expandCtorTree)
 import Sea.Proto			(addSuperProtosTree)

@@ -18,9 +18,9 @@ import Type.Builtin
 import Type.Util
 import Type.Exp
 import Shared.Var
-import Shared.Error
 import Util
 import Shared.VarPrim
+import DDC.Main.Error
 import qualified DDC.Var.PrimId		as Var
 import qualified Shared.Var		as Var
 import qualified Util.Data.Map		as Map

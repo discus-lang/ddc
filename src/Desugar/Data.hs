@@ -12,11 +12,11 @@ import Shared.Exp
 import Shared.VarPrim
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
-import DDC.Main.Pretty
 import DDC.Var.NameSpace
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Util
 import qualified Debug.Trace
-import Shared.Error		(panic)
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 

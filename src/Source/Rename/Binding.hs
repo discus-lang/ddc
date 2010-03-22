@@ -9,9 +9,9 @@ module Source.Rename.Binding
 where
 import Source.Rename.State
 import Source.Error
-import Shared.Error
-import Shared.Pretty
 import Util
+import DDC.Main.Error
+import DDC.Main.Pretty
 import DDC.Var.NameSpace
 import DDC.Var.VarId		as Var
 import Shared.Var		(Var, ModuleId(..))

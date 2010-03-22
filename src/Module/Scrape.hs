@@ -19,7 +19,7 @@ import System.IO
 import System.Directory
 import Text.Regex
 import Data.Char
-import Shared.Pretty					()
+import DDC.Main.Pretty					()
 import Shared.Var					(ModuleId(..))
 import qualified System
 import qualified Main.ParseArgs				as Arg

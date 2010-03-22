@@ -5,8 +5,8 @@ module Shared.Literal
 	( Literal    (..)
 	, LiteralFmt (..))
 where
-import Shared.Error
 import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Base.DataFormat
 
 -----

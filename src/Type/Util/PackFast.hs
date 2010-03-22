@@ -6,11 +6,11 @@ where
 import Type.Exp
 import Type.Util.Bits
 import Type.Util.Kind
-import Type.Pretty		()
 import Type.Plate.Collect
-import Shared.Error
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
+import DDC.Main.Error
+import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug

@@ -9,8 +9,8 @@ import Source.Exp
 import Source.Horror
 import Type.Pretty
 import Type.Exp
-import Shared.Pretty
-import Shared.Error
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var		(Var)
 import Data.Char		(isAlpha)
 import qualified Shared.Var 	as Var

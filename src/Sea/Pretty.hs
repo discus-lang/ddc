@@ -6,11 +6,11 @@ module Sea.Pretty
 where
 import Sea.Exp
 import Sea.Util
-import Shared.Error
 import Shared.Literal
 import Util
 import Data.Function
 import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.SourcePos
 import Shared.Var		(ModuleId(..))

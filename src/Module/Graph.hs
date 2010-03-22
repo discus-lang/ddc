@@ -3,8 +3,8 @@ module Module.Graph
 	(dotModuleHierarchy)
 where
 import Util
-import Shared.Pretty
 import Main.IO
+import DDC.Main.Pretty
 import Shared.Var			(ModuleId(..))
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set

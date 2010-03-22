@@ -11,8 +11,8 @@ module Core.BoundUse
 where
 import Core.Exp
 import Control.Monad.State.Strict
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
 import qualified Data.Map		as Map
 import Shared.Var			(Var)
 

@@ -32,8 +32,8 @@ import Type.State
 import Type.Plate.Collect
 import Type.Util
 import Util
-import Shared.Error
 import Data.Array.IO
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map

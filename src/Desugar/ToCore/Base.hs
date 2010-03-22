@@ -10,11 +10,11 @@ module Desugar.ToCore.Base
 	, lookupAnnotT)
 where
 import Util
-import Shared.Pretty
-import Shared.Error
 import Type.Exp
 import DDC.Var.NameSpace
 import DDC.Var.VarId
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Shared.Var			(Var)
 import Desugar.Project			(ProjTable)
 import qualified Shared.Var		as Var

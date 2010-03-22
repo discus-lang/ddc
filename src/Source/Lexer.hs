@@ -20,10 +20,10 @@ where
 import Source.Token
 import Source.TokenShow
 import Source.Error
-import Shared.Error
 import Shared.Literal
 import Util
 import DDC.Base.DataFormat
+import DDC.Main.Error
 import Data.Char	(isUpper)
 
 #if __GLASGOW_HASKELL__ >= 603

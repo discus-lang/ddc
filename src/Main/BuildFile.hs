@@ -8,13 +8,13 @@ module Main.BuildFile
 	, verbLoadBuildFile
 	, loadBuildFile
 	, chopSection)
-	
 where
-
-import Shared.Error
+import DDC.Main.Error
 import System.Directory
 import Data.Char
 import Util
+
+stage	= "Main.BuildFile"
 
 data Build
 	= Build
@@ -132,7 +132,7 @@ parseSection pathBuild (s : ss)
 	  , ssRest)		
 
 	| otherwise
-	= dieWithUserError
+	= panic stage $ ppr
 		[ "Cannot parse build file " % pathBuild 	% "\n"
 		, "    unknown section header: '" % s		% "'\n"]
 

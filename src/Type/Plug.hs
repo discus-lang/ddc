@@ -8,11 +8,11 @@ module Type.Plug
 where
 import Type.Exp
 import Type.Util
-import Type.Plate
 import Type.State
 import Type.Class
-import Shared.Error
+import Type.Plate.Trans		
 import Util
+import DDC.Main.Error
 import Type.Pretty		()
 import qualified Data.Set	as Set
 

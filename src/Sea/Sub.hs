@@ -21,9 +21,9 @@ module Sea.Sub
 	(subTree)
 where
 import Util
-import Shared.Error
 import Sea.Exp
 import Sea.Plate.Trans
+import DDC.Main.Error
 import qualified Data.Map	as Map
 
 

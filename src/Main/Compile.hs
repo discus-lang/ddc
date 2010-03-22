@@ -42,8 +42,8 @@ import qualified Sea.Util		as E
 
 -- shared
 import Shared.Var			(ModuleId(..), NameSpace(..))
-import Shared.Error
-import Shared.Pretty
+import DDC.Main.Error
+import DDC.Main.Pretty
 import qualified Shared.Var		as Var
 
 -- haskell

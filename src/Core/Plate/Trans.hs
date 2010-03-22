@@ -29,9 +29,9 @@ module Core.Plate.Trans
 
 where
 import Core.Exp
-import Shared.Error
 import Util
 import Type.Exp
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Data.Map	as Map
 

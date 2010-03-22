@@ -22,9 +22,11 @@ import Type.Plate.FreeVars
 import Type.Exp
 import Util
 import DDC.Base.SourcePos
+import DDC.Main.Error
+import DDC.Var.NameSpace
+import DDC.Var.ModuleId
 import DDC.Main.Pretty		()
-import Shared.Error		(panic)
-import Shared.Var		(Var, NameSpace (..), ModuleId(..))
+import Shared.Var		(Var)
 import qualified Shared.VarUtil	as Var
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set

@@ -4,11 +4,11 @@ module Source.Error
 	( Error(..))
 where
 import Util
-import Shared.Error
 import Source.Token	
-import Shared.Pretty
 import DDC.Var.NameSpace
 import DDC.Base.SourcePos
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var			(Var)
 import Shared.VarUtil			(prettyPos, isCtorName)
 import qualified Shared.Var		as Var

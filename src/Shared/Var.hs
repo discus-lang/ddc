@@ -13,9 +13,9 @@ where
 import DDC.Var.ModuleId
 import DDC.Var.NameSpace
 import DDC.Var.VarId
-import DDC.Main.Pretty
 import DDC.Base.SourcePos
-import Shared.Error
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Data.Char
 import Util
 

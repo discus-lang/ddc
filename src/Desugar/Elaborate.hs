@@ -7,14 +7,15 @@ import Desugar.Pretty
 import Type.Util.Elaborate
 import Type.Util.Bits
 import Type.Util.Kind
-import Type.Plate
+import Type.Plate.FreeVars
+import Type.Plate.Trans
 import Type.Pretty
 import Type.Exp
-import Shared.Pretty
 import Control.Monad.State.Strict
 import Util
 import DDC.Var.NameSpace
 import DDC.Base.SourcePos
+import DDC.Main.Pretty
 import Shared.Var		(Var)
 import qualified Debug.Trace
 import qualified Data.Set	as Set

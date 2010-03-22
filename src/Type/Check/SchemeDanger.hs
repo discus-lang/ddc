@@ -25,8 +25,8 @@ import Type.Error
 import Type.Util
 import Type.State
 import Type.Class
-import Shared.Error
 import Util
+import DDC.Main.Error
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
 

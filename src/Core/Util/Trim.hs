@@ -8,9 +8,9 @@ where
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Exp
-import Shared.Pretty
-import Shared.Error
 import Util
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug

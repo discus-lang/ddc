@@ -8,10 +8,11 @@ where
 import Util.Data.Maybe
 import Util
 import Source.Exp
-import Shared.Error
 import Type.Util
 import Type.Exp
-import Shared.Var		(Var, NameSpace(..))
+import DDC.Main.Error
+import DDC.Var.NameSpace
+import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 
 

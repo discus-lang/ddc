@@ -2,7 +2,6 @@
 module Type.Solve.Finalise
 	(solveFinalise)
 where
-
 import Type.Solve.Generalise
 import Type.Check.Main
 import Type.Check.Instances

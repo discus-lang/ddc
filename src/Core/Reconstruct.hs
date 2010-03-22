@@ -34,7 +34,6 @@ import Core.Plate.FreeVars
 import Type.Exp
 import Type.Util.Environment
 import Type.Builtin
-import Shared.Error
 import Shared.VarPrim
 import Shared.Literal
 import Util
@@ -42,6 +41,7 @@ import DDC.Var.VarId
 import DDC.Var.NameSpace
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
+import DDC.Main.Error
 import Type.Error		(Error(..))
 import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
 import Shared.Var		(Var)

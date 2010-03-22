@@ -6,12 +6,12 @@ module Desugar.ToCore
 where
 import Util
 import Shared.VarPrim
-import Shared.Error
 import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.VarUtil			(isDummy, varPos)
 import Shared.Var			(Var, NameSpace(..))
 import Type.ToCore			(toCoreT, toCoreK)

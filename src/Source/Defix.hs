@@ -21,13 +21,13 @@ module Source.Defix
 where
 import Control.Monad.State.Strict
 import Util
-import Shared.Error
 import Source.Exp
 import Source.Error
 import Source.Plate.Trans
 import Source.DefixApps
 import Data.Function
-import DDC.Base.SourcePos	
+import DDC.Base.SourcePos
+import DDC.Main.Error
 import Shared.Var		as Var
 
 -----

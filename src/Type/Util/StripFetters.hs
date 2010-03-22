@@ -4,9 +4,9 @@ module Type.Util.StripFetters
 	( stripFWheresT_all
 	, stripFWheresT_mono )
 where
-import Shared.Error
 import Type.Exp
 import Util
+import DDC.Main.Error
 import Type.Pretty		()
 
 -----

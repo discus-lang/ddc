@@ -12,9 +12,9 @@ where
 import Sea.Exp
 import Sea.Pretty
 import Sea.Plate.Trans
-import Shared.Pretty
 import Util
 import DDC.Var.VarId
+import DDC.Main.Pretty
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as Unique
 

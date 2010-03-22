@@ -8,12 +8,12 @@ import Main.Link
 import Main.Error
 import Module.Scrape
 import Module.ScrapeGraph
-import Shared.Pretty
-import Shared.Error
 import Util
 import Util.FilePath
 import Util.Graph.Deps
 import DDC.Var.ModuleId
+import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Main.Arg			(Arg)
 import qualified DDC.Main.Arg 		as Arg
 import qualified System.IO		as System

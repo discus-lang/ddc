@@ -7,9 +7,9 @@ import Core.Exp
 import Core.Util
 import Core.Plate.Trans
 import Type.Exp
-import Shared.Error
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
+import DDC.Main.Error
 import qualified Debug.Trace	as Debug
 import qualified Shared.Var	as Var
 import qualified Util.Data.Map	as Map

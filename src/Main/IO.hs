@@ -4,12 +4,12 @@ module Main.IO
 	, chaseModules)
 where
 import Main.Setup
-import Shared.Error
 import Util
 import Util.System.Directory
-import DDC.Main.Pretty
 import DDC.Base.SourcePos
 import DDC.Main.Arg
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var			(ModuleId(..))
 import qualified Data.Map		as Map
 import qualified Source.Slurp		as S

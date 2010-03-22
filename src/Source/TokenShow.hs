@@ -12,9 +12,9 @@ module Source.TokenShow
 	, showSourceP)
 where
 import Source.Token
-import Shared.Pretty
-import Shared.Error
 import Util
+import DDC.Main.Error
+import DDC.Main.Pretty
 
 -----
 stage	= "Source.TokenShow"

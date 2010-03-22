@@ -4,12 +4,10 @@ module Desugar.Slurp.Slurp
 	(slurpTreeM)
 where
 import Util
-import Shared.Error
 import Shared.Exp
 import Type.Exp
 import Type.Location
 import Type.Util
-import Type.Plate
 import Constraint.Exp
 import Constraint.Bits
 import Desugar.Exp

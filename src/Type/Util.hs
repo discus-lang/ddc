@@ -35,9 +35,9 @@ import Type.Util.Flatten
 import Type.Util.JoinSum
 import Type.Exp
 import Shared.VarPrim
-import Shared.Error
-import Shared.Pretty
 import Util
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Shared.Var		(Var)
 import qualified Debug.Trace
 import qualified Shared.Var	as Var

@@ -7,10 +7,10 @@ import Type.Location
 import Type.Exp
 import Type.Pretty
 import Type.Util.Bits
-import Shared.Pretty
-import Shared.Error
 import Util
 import DDC.Base.SourcePos
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var

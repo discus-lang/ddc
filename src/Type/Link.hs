@@ -8,7 +8,7 @@ import Type.Exp
 import Type.Location
 import Type.State
 import Type.Class
-import Shared.Error
+import DDC.Main.Error
 import Shared.Var		(Var)
 import Util
 

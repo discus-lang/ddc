@@ -4,10 +4,10 @@
 --
 module Type.Util.Normalise
 	( normaliseT )
-
 where
 import Type.Exp
-import Type.Plate
+import Type.Plate.Collect
+import Type.Plate.Trans
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map

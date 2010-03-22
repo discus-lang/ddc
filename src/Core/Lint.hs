@@ -18,9 +18,9 @@ import Core.Exp
 import Core.Util
 import Type.Util
 import Type.Exp
-import Shared.Error
-import Shared.Pretty
 import Util
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Shared.Var		(Var)
 import Core.Reconstruct		(reconX_type)
 import qualified Shared.Var	as Var

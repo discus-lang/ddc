@@ -2,11 +2,11 @@
 module Source.DefixApps
 	(defixApps)
 where
-import Shared.Error
 import Shared.Warning
 import Source.Exp
 import Source.Pretty		()
 import DDC.Main.Pretty
+import DDC.Main.Error
 import qualified Shared.Var	as Var
 import qualified Shared.VarPrim	as Var
 

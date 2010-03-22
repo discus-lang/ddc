@@ -21,8 +21,8 @@ import Type.Util
 import Type.Exp
 import Constraint.Bits
 import Constraint.Exp
-import Shared.Error
 import Util
+import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import Shared.Var		(Var)
 import qualified Util.Data.Map	as Map

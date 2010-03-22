@@ -15,9 +15,9 @@ import Type.Builtin
 import Type.Exp
 import Shared.VarPrim
 import Shared.VarGen
-import Shared.Error
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Type.Util.Bits		(varOfBind)
 import Shared.Var		(Var, NameSpace(..), ModuleId)
 import qualified Shared.Var	as Var

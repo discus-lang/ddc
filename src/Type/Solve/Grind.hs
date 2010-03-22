@@ -11,8 +11,8 @@ import Type.Crush.Effects
 import Type.Crush.Shape
 import Type.Crush.Proj
 import Constraint.Exp
-import Shared.Error
 import Util
+import DDC.Main.Error
 import qualified DDC.Var.PrimId	as Var
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set

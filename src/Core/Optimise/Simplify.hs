@@ -6,8 +6,8 @@ where
 import Core.Exp
 import Core.Plate.Trans
 import Shared.Var
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
 import qualified Core.Float	as Float
 import qualified Core.Snip	as Snip
 

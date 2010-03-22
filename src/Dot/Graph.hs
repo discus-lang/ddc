@@ -4,7 +4,7 @@ module Dot.Graph
 	, expandVarNodes )
 where
 import qualified Data.Map	as Map
-import Shared.Pretty
+import DDC.Main.Pretty
 import Shared.Var		(Var)
 import Dot.Exp
 import Util

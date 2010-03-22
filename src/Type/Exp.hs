@@ -41,8 +41,8 @@ module Type.Exp
 	, InstanceInfo (..))
 where
 import Util
-import Shared.Error
 import Data.Ix
+import DDC.Main.Error
 import Shared.Var		(Var)
 
 

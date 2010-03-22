@@ -13,9 +13,9 @@ import Source.Lexer
 import Source.Exp
 import Type.Util.Bits
 import Type.Exp
-import Shared.Pretty
 import Util
 import DDC.Var.NameSpace
+import DDC.Main.Pretty
 import Source.Pretty						()
 import qualified Source.Token					as K
 import qualified Shared.Var					as Var

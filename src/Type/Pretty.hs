@@ -9,9 +9,9 @@ module Type.Pretty
 where
 import Type.Exp
 import Type.Util.Bits
-import Shared.Error
 import Util
 import DDC.Main.Pretty
+import DDC.Main.Error
 import qualified Shared.Var	as Var
 import Shared.Var		(Var, NameSpace(..))
 import qualified Data.Map	as Map

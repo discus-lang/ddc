@@ -9,8 +9,8 @@ import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Type.Util
 import Type.Exp
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
 import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var

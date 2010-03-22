@@ -11,9 +11,9 @@ module Source.Token
 	, expandEscapedChar
 	, expandEscapedChars)
 where
-import Shared.Pretty
 import Shared.Literal
 import Data.Char
+import DDC.Main.Pretty
 
 
 -- | Wraps up a token with its position in the source file

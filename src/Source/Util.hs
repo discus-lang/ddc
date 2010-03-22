@@ -10,9 +10,9 @@ module Source.Util
 	, sourcePosW)
 where
 import Source.Exp
-import DDC.Base.SourcePos
 import Util
-import Shared.Error 		(panic)
+import DDC.Base.SourcePos
+import DDC.Main.Error
 import Shared.Var		(Var)
 
 

@@ -8,10 +8,10 @@ import Core.Exp
 import Core.Util.Bits
 import Type.Pretty
 import Type.Exp
-import Shared.Error
-import Shared.Pretty
 import Util
 import Data.Function
+import DDC.Main.Error
+import DDC.Main.Pretty
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 

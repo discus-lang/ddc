@@ -11,8 +11,8 @@ import Type.Util.Bits
 import Type.Util.Kind
 import Type.Exp
 import Shared.Var		(Var)
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace

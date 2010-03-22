@@ -29,8 +29,8 @@ import Type.Util.Environment
 import Type.Util.Bits
 import Type.Util.Kind
 import Control.Monad
-import Shared.Error
 import Util.Pretty
+import DDC.Main.Error
 
 -----
 stage	= "Type.Util.Join"

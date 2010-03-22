@@ -15,11 +15,11 @@ import Source.Desugar.Base
 import Source.Desugar.Patterns
 import Source.Desugar.MergeBindings
 import Shared.VarPrim
-import Shared.Error
 import Shared.Literal
 import Shared.Exp
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
+import DDC.Main.Error
 import Source.Pretty			()
 import Shared.Var			(Var, NameSpace(..))
 import qualified Shared.Var		as Var

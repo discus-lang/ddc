@@ -10,8 +10,8 @@ import Core.Lift.Base
 import Core.Reconstruct
 import Type.Util
 import Type.Exp
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
 import Shared.Var		(Var, NameSpace(..))
 import qualified Shared.VarUtil	as Var
 import qualified Shared.Var	as Var

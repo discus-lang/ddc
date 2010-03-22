@@ -8,8 +8,8 @@ import Core.Exp
 import Core.Reconstruct
 import Type.Exp
 import Type.Util
-import Shared.Error
 import Util
+import DDC.Main.Error
 import Shared.Var		(Var)
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map

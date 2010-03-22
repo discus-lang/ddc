@@ -7,10 +7,10 @@ module Source.Pragma
 	, slurpPragmaTree)
 where
 import Source.Exp
-import Shared.Error
 import Shared.Warning
 import Shared.Literal
 import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Base.SourcePos
 import Source.Pretty		()
 import qualified Shared.Var	as Var

@@ -9,9 +9,9 @@ where
 import Type.Pretty
 import Type.State
 import Type.Class
-import Shared.Pretty
 import Util
 import Data.Array.IO	
+import DDC.Main.Pretty
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

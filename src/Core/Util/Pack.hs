@@ -9,10 +9,10 @@ where
 import Core.Plate.FreeVars
 import Type.Exp
 import Type.Builtin
-import Shared.Error
 import Shared.VarPrim
 import Util
 import Util.Graph.Deps
+import DDC.Main.Error
 import Type.Util		hiding (flattenT)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

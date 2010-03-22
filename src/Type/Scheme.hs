@@ -14,8 +14,9 @@ import Type.Context
 import Type.Util
 import Type.Exp
 import Type.Pretty
-import Type.Plate
 import Shared.VarPrim
+import Type.Plate.Collect
+import Type.Plate.FreeVars
 import Util
 import DDC.Var.NameSpace
 import Shared.Var			(Var)

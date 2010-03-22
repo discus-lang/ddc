@@ -5,11 +5,10 @@ module Source.Rename.Object
 	, popObjectVar
 	, peekObjectVar )
 where
-
 import Source.Rename.State
 import Control.Monad.State.Strict
-import Shared.Error
 import Shared.Var
+import DDC.Main.Error
 
 stage = "Source.Rename.Object"
 

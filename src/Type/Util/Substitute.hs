@@ -12,7 +12,7 @@ import Type.Plate.Collect
 import Type.Plate.Trans
 import Type.Util.Kind
 import Type.Exp
-import Shared.Error
+import DDC.Main.Error
 import Shared.Var		(Var)
 import Data.Traversable		(mapM)
 import Util			hiding (mapM)

@@ -10,7 +10,6 @@ where
 import System.IO
 import Util
 import DDC.Main.Arg
-import Shared.Pretty		()
 
 
 -- | Dump a source tree

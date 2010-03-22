@@ -18,12 +18,12 @@ import Constraint.Exp
 import Type.Error
 import Type.Base
 import Type.Exp
-import Shared.Pretty
-import Shared.Error
 import Util
 import System.IO
 import DDC.Var.NameSpace
 import DDC.Var.VarId
+import DDC.Main.Pretty
+import DDC.Main.Error
 import Constraint.Pretty	()
 import DDC.Main.Arg		(Arg)
 import Shared.Var		(Var)

@@ -10,10 +10,10 @@ import Main.Make
 import Main.Error
 import Module.Scrape
 import Module.ScrapeGraph
-import Shared.Pretty
-import Shared.Error
 import Util
 import Util.FilePath
+import DDC.Main.Pretty
+import DDC.Main.Error
 import qualified System
 import qualified Shared.VarUtil		as Var
 import qualified Main.ParseArgs		as Arg
