@@ -10,58 +10,58 @@ import DDC.Main.Pretty
 
 -- | DDC command line arguments.
 data Arg
-	= Error String			-- ^ represents some failure of options parsing
-					--	Used in Main.ParseArgs
+	= Error String			-- ^ Represents some failure of options parsing.
+					--	Used in Main.ParseArgs.
 
 	-- general args
-	| Help		[String]	-- ^ dump help screen.
-	| Verbose			-- ^ verbose compilation.
-	| Quiet				-- ^ quiet compilation.
-	| Compile	[String]	-- ^ compile just these files, no link.
-	| Build		[String]	-- ^ recursive build.
-	| Make		[String]	-- ^ recursive build then link executable.
-	| InputFile	String		-- ^ set input file.
-	| OutputFile	String		-- ^ set output file.
-	| ImportDirs	[String]	-- ^ dirs to look for imports.
-	| PathBase	String		-- ^ base path to libraries.
-	| NoImplicitPrelude		-- ^ don't implicitly import the prelude.
+	| Help		[String]	-- ^ Print help screen.
+	| Verbose			-- ^ Verbose compilation.
+	| Quiet				-- ^ Quiet compilation.
+	| Compile	[String]	-- ^ Compile just these files, no link.
+	| Build		[String]	-- ^ Recursive build.
+	| Make		[String]	-- ^ Recursive build then link executable.
+	| InputFile	String		-- ^ Set input file.
+	| OutputFile	String		-- ^ Set output file.
+	| ImportDirs	[String]	-- ^ Dirs to look for imports.
+	| PathBase	String		-- ^ Base path to libraries.
+	| NoImplicitPrelude		-- ^ Don't implicitly import the prelude.
 
 	-- lint options
-	| LintAll			-- ^ run all lint passes.
-	| LintCore			-- ^ lint the core program.
+	| LintAll			-- ^ Run all lint passes.
+	| LintCore			-- ^ Lint the core program.
 
 	-- type system options
-	| GenDangerousVars		-- ^ generalise dangrous type variables.
+	| GenDangerousVars		-- ^ Generalise dangrous type variables.
 
 	-- optimisation
-	| OptAll			-- ^ perform all optimistaions.
-	| OptSimplify			-- ^ do core simplification
-	| OptTailCall			-- ^ do tail-call optimisation
+	| OptAll			-- ^ Perform all optimistaions.
+	| OptSimplify			-- ^ Do core simplification.
+	| OptTailCall			-- ^ Do tail-call optimisation.
 
 	-- code generation
-	| Debug				-- ^ compile generated C files with GNU debugging
-	| StaticRuntime			-- ^ link against static runtime
-	| Profile			-- ^ profile generated C files
-	| ProfileRuntime		-- ^ link against profiled runtime.
+	| Debug				-- ^ Compile generated C files with GNU debugging.
+	| StaticRuntime			-- ^ Link against static runtime.
+	| Profile			-- ^ Profile generated C files.
+	| ProfileRuntime		-- ^ Link against profiled runtime.
 	
 	-- linker	
-	| Link				-- ^ perform linking
-	| LinkObj	[String]	-- ^ extra object to link with
-	| LinkLib	[String]	-- ^ extra library to link with
-	| LinkLibDir	[String]	-- ^ dir to search for extra link libraries
+	| Link				-- ^ Perform linking.
+	| LinkObj	[String]	-- ^ Extra object to link with.
+	| LinkLib	[String]	-- ^ Extra library to link with.
+	| LinkLibDir	[String]	-- ^ Dir to search for extra link libraries.
 
 	-- partial compilation
-	| StopConstraint		-- ^ stop after generating type constraints
-	| StopType			-- ^ stop after solving type constraints
-	| StopCore			-- ^ stop after producing core program
-	| StopSea			-- ^ stop after producing C program
-	| StopCompile			-- ^ stop after compiling C program, no link
+	| StopConstraint		-- ^ Stop after generating type constraints.
+	| StopType			-- ^ Stop after solving type constraints.
+	| StopCore			-- ^ Stop after producing core program.
+	| StopSea			-- ^ Stop after producing C program.
+	| StopCompile			-- ^ stop after compiling C program, no link.
 
-	| StopErrors   [FilePath]	-- ^ on error, dump error messages to the given
+	| StopErrors   [FilePath]	-- ^ On error, dump error messages to the given
 					--   file names and succeed.
 
-	| KeepCFiles			-- ^ keep intermediate .c files
-	| KeepOFiles			-- ^ keep intermediate .o files
+	| KeepCFiles			-- ^ Keep intermediate .c files.
+	| KeepOFiles			-- ^ Keep intermediate .o files.
 
 
 	-- Dump flags ---------------------------------------------------------
