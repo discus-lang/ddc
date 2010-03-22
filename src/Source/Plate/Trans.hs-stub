@@ -12,7 +12,7 @@ where
 import Util
 import Source.Exp
 import Type.Exp
-import Shared.Literal
+import DDC.Base.Literal
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 
