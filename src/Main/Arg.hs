@@ -8,8 +8,7 @@ module Main.Arg
 	, takePrettyMode)
 
 where
-
-import Main.Version
+import DDC.Config.Version
 import Shared.Pretty
 import Util
 import Util.Options

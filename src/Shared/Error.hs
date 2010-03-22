@@ -7,19 +7,16 @@ module Shared.Error
 	, dieWithUserError
 	, exitWithUserError)
 where
-
------
 import Main.Arg
-import qualified Main.Version	as Version
-
 import Shared.Pretty
 import System.Exit
 import Debug.Trace
 import Util
+import qualified DDC.Config.Version	as Version
+
 
 -- | The walls are crashing down.
 --	Print a last, dying message and bail out.
---
 panic 	:: Pretty msg PMode
 	=> String -> msg -> a
 panic  stage msg
@@ -33,7 +30,6 @@ panic  stage msg
 -- | Something bad has happened, and it's likely to be terminal.
 --	Hopefully we can contine on for a bit longer until some other error occurs
 --	that gives information about what caused this problem.
---
 freakout 
 	:: Pretty msg PMode
 	=> String -> msg -> a -> a
@@ -49,7 +45,6 @@ freakout stage msg a
 
 -- | A regular compile time error in the user program.
 --	Report the errors and bail out.
---
 dieWithUserError 
 	:: Pretty err PMode
 	=> [err] -> a
@@ -61,7 +56,6 @@ dieWithUserError  errs
 -- | A compile time error in the user program
 --	If the args have StopErrors set, then write the errors to a file, 
 --	otherwise write them to stderr
---
 exitWithUserError
 	:: Pretty a PMode
 	=> [Arg] -> [a] -> IO b

@@ -14,24 +14,23 @@ module Main.Sea
 where
 import Sea.Exp
 import Sea.Util
-import Sea.Sub			(subTree)
-import Sea.Ctor			(expandCtorTree)
-import Sea.Proto		(addSuperProtosTree)
-import Sea.Thunk		(thunkTree)
-import Sea.Force		(forceTree)
-import Sea.Slot			(slotTree)
-import Sea.Flatten		(flattenTree)
-import Sea.Init			(initTree, mainTree)
 import Main.Arg
 import Main.Dump
-import Shared.Var		(ModuleId(..))
 import Shared.Error
 import Shared.Pretty
-import qualified Core.Glob	as C
-import qualified Main.Version	as Version
-
 import Data.Char
 import Util
+import Sea.Sub				(subTree)
+import Sea.Ctor				(expandCtorTree)
+import Sea.Proto			(addSuperProtosTree)
+import Sea.Thunk			(thunkTree)
+import Sea.Force			(forceTree)
+import Sea.Slot				(slotTree)
+import Sea.Flatten			(flattenTree)
+import Sea.Init				(initTree, mainTree)
+import Shared.Var			(ModuleId(..))
+import qualified Core.Glob		as C
+import qualified DDC.Config.Version	as Version
 
 
 -- | Substitute trivial x1 = x2 bindings

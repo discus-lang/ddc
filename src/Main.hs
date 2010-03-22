@@ -5,7 +5,6 @@ module Main
 where
 import Main.Setup
 import Main.Compile
-import Main.Version
 import Main.Init
 import Main.Make
 import Main.Error
@@ -16,6 +15,7 @@ import Shared.Error
 import Util
 import Util.FilePath
 import qualified System
+import qualified DDC.Config.Version	as Version
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Main.Arg 		as Arg
@@ -38,7 +38,7 @@ ddc argStrs
 
 	-- print banner if requested
 	when verbose
-	 $	putStr	$ "* Disciplined Disciple Compiler " ++ version ++ " starting up...\n"
+	 $	putStr	$ "* Disciplined Disciple Compiler " ++ Version.version ++ " starting up...\n"
 
 	-- no args, print help
 	when (args == []
