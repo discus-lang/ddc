@@ -13,9 +13,9 @@ import Shared.Error
 import Util
 import Util.FilePath
 import Util.Graph.Deps
-import Main.Arg				(Arg)
-import Shared.Var			(ModuleId(..))
-import qualified Main.Arg 		as Arg
+import DDC.Var.ModuleId
+import DDC.Main.Arg			(Arg)
+import qualified DDC.Main.Arg 		as Arg
 import qualified System.IO		as System
 import qualified System.Exit		as System
 import qualified System.Directory 	as System

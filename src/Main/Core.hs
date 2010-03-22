@@ -23,10 +23,10 @@ import Core.Exp
 import Core.Util
 import Core.Glob
 import Core.ToSea.Sequence
-import Main.Arg
 import Main.Dump
 import Shared.Error
 import Shared.Pretty
+import DDC.Main.Arg
 import Shared.Var			(Var, ModuleId)
 import Core.Block			(blockTree)
 import Core.Crush			(crushTree)

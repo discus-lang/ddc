@@ -2,15 +2,13 @@
 module Main.Init
 	( verbLocateRunLib )
 where
-
-import qualified Config.Config	as Config
-import qualified Main.Arg	as Arg
-import Main.Arg			(Arg)
 import Shared.Pretty
 import Shared.Error
-
 import Util
 import Util.System.Directory
+import DDC.Main.Arg		(Arg)
+import qualified Config.Config	as Config
+import qualified DDC.Main.Arg	as Arg
 
 
 -- locate the path to the DDC runtime library and base libraries,

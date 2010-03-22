@@ -15,10 +15,11 @@ import Shared.Error
 import Util
 import Util.FilePath
 import qualified System
-import qualified DDC.Config.Version	as Version
 import qualified Shared.VarUtil		as Var
+import qualified Main.ParseArgs		as Arg
+import qualified DDC.Config.Version	as Version
+import qualified DDC.Main.Arg 		as Arg
 import qualified Data.Map		as Map
-import qualified Main.Arg 		as Arg
 
 
 -- The Disciplined Disciple Compiler

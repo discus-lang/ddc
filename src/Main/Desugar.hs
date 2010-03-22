@@ -7,10 +7,10 @@ module Main.Desugar
 	, desugarSolveConstraints
 	, desugarToCore )
 where
-import Main.Arg
 import Main.Dump
 import Shared.Error
 import DDC.Main.Pretty
+import DDC.Main.Arg
 import DDC.Base.SourcePos
 import Shared.Var			(Var, ModuleId)
 import System.IO			(hFlush)
@@ -201,7 +201,7 @@ desugarSlurpConstraints
 
 
 	-- dump
-	let pprMode	= catMaybes $ map takePrettyMode ?args
+	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 	dumpST	DumpDesugarSlurp "desugar-slurp" source'
 	
 	dumpS	DumpTypeConstraints "type-constraints--source"

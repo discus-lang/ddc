@@ -1,5 +1,4 @@
 -- | Type inferencer state.
-
 module Type.State
 	( SquidM
 	, SquidS (..)
@@ -23,14 +22,14 @@ import Shared.Pretty
 import Shared.Error
 import Util
 import System.IO
-import Constraint.Pretty	()
-import Main.Arg			(Arg)
 import DDC.Var.NameSpace
 import DDC.Var.VarId
+import Constraint.Pretty	()
+import DDC.Main.Arg		(Arg)
 import Shared.Var		(Var)
+import qualified DDC.Main.Arg	as Arg
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as U
-import qualified Main.Arg	as Arg
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
@@ -186,7 +185,8 @@ traceM p
 	 Nothing	-> return ()
 	 Just handle
 	  -> do 
-	  	liftIO (hPutStr handle $ indent i $ pprStr (catMaybes $ map Arg.takePrettyMode $ Set.toList args) p)
+	  	liftIO (hPutStr handle $ indent i 
+				$ pprStr (catMaybes $ map Arg.takePrettyModeOfArg $ Set.toList args) p)
 	  	liftIO (hFlush  handle)
 
 	

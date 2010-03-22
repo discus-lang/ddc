@@ -23,7 +23,7 @@ import Constraint.Bits
 import Constraint.Exp
 import Shared.Error
 import Util
-import Main.Arg			(Arg)
+import DDC.Main.Arg		(Arg)
 import Shared.Var		(Var)
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set

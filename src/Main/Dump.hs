@@ -7,15 +7,15 @@ module Main.Dump
 	, dumpET
 	, dumpOpen)
 where
-import Main.Arg
 import System.IO
 import Util
+import DDC.Main.Arg
 import Shared.Pretty		()
 
 
 -- | Dump a source tree
 dumpST flag name sourceTree
- = do	let pprMode	= catMaybes $ map takePrettyMode ?args
+ = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 
  	when (elem flag ?args)
   	 (writeFile 
@@ -46,7 +46,7 @@ dumpDot flag name str
 
 -- | Dump a core tree
 dumpCT flag name tree
- = do	let pprMode	= catMaybes $ map takePrettyMode ?args
+ = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 
  	when (elem flag ?args)
   	 (writeFile 
@@ -60,7 +60,7 @@ dumpCT flag name tree
 
 -- Dump a sea tree
 dumpET flag name tree
- = do	let pprMode	= catMaybes $ map takePrettyMode ?args
+ = do	let pprMode	= catMaybes $ map takePrettyModeOfArg ?args
 
  	when (elem flag ?args)
   	 (writeFile 

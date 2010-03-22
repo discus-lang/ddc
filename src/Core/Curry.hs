@@ -12,12 +12,13 @@ import Type.Exp
 import Shared.Error
 import Shared.Pretty
 import Util
-import Shared.Var		(Var, NameSpace(..))
-import Main.Arg			(Arg)
+import DDC.Var.NameSpace
+import DDC.Main.Arg		(Arg)
+import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
-import qualified Main.Arg	as Arg
 import qualified Debug.Trace	as Debug
+import qualified DDC.Main.Arg	as Arg
 
 -----
 stage		= "Core.Curry"

@@ -10,12 +10,12 @@ module Module.ScrapeGraph
         , propagateNeedsRebuild)
 where
 import Module.Scrape
-import Main.Arg
 import Main.Error
 import Main.Setup
 import Shared.Pretty
 import Util
 import System.Exit
+import DDC.Main.Arg
 import Shared.Var		(ModuleId(..))
 import Shared.Error		(exitWithUserError)
 import qualified Data.Map	as Map

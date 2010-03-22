@@ -1,24 +1,25 @@
--- Error handling.
---	Provides functions for emitting panics, and freakouts.
---
+
+-- | Error handling. Provides functions for emitting panics, and freakouts.
 module Shared.Error
 	( panic
 	, freakout
 	, dieWithUserError
 	, exitWithUserError)
 where
-import Main.Arg
-import Shared.Pretty
 import System.Exit
 import Debug.Trace
-import Util
+import DDC.Main.Pretty
+import DDC.Main.Arg	
 import qualified DDC.Config.Version	as Version
 
 
 -- | The walls are crashing down.
---	Print a last, dying message and bail out.
+--	Print a last, dying message and bails out.
 panic 	:: Pretty msg PMode
-	=> String -> msg -> a
+	=> String 		-- ^ name of module the panic was in.
+	-> msg 			-- ^ message to display.
+	-> a
+
 panic  stage msg
 	=  error
 		( pprStrPlain
@@ -32,7 +33,10 @@ panic  stage msg
 --	that gives information about what caused this problem.
 freakout 
 	:: Pretty msg PMode
-	=> String -> msg -> a -> a
+	=> String 		-- ^ name of module the freakout was in.
+	-> msg 			-- ^ message to display.
+	-> a 			-- ^ value to return
+	-> a
 
 freakout stage msg a
 	= trace 
@@ -47,7 +51,8 @@ freakout stage msg a
 --	Report the errors and bail out.
 dieWithUserError 
 	:: Pretty err PMode
-	=> [err] -> a
+	=> [err] 		-- ^ errors
+	-> a
 
 dieWithUserError  errs
 	= error	(pprStrPlain $ "ERROR\n" % (punc "\n" errs))
@@ -55,13 +60,15 @@ dieWithUserError  errs
 	
 -- | A compile time error in the user program
 --	If the args have StopErrors set, then write the errors to a file, 
---	otherwise write them to stderr
+--	otherwise write them to stderr.
 exitWithUserError
 	:: Pretty a PMode
-	=> [Arg] -> [a] -> IO b
+	=> [Arg] 
+	-> [a] 
+	-> IO b
 		
 exitWithUserError args errs
- = case filter (=@= StopErrors{}) args of
+ = case [e | e@StopErrors{} <- args] of
   	(StopErrors [file] : _)
 	 -> do 	writeFile file 
 			(pprStrPlain $ punc "\n" errs)
@@ -69,3 +76,5 @@ exitWithUserError args errs
 		exitWith ExitSuccess
 		
 	_ -> 	dieWithUserError errs
+
+

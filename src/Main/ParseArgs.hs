@@ -1,216 +1,17 @@
 
-module Main.Arg
-	( Arg (..)
-	, parse
-	, expand
+module Main.ParseArgs
+	( parse
 	, helpString
-	, options
-	, takePrettyMode)
+	, options)
 
 where
-import DDC.Config.Version
 import Shared.Pretty
 import Util
 import Util.Options
 import Util.Options.Option
 import Util.Options.Help
-
--- | Holds command line arguments
-data Arg
-	= Error String
-
-	-- general
-	| Help		[String]
-	| Verbose
-	| Quiet
-	| Compile	[String]	-- compile just these files, no link
-	| Build		[String]	-- recursive build
-	| Make		[String]	-- recursive build then link executable
-	| InputFile	String
-	| OutputFile	String
-	| ImportDirs	[String]
-	| PathBase	String
-
-	| NoImplicitPrelude
-
-	-- lint options
-	| LintAll
-	| LintCore
-
-	-- type system options
-	| GenDangerousVars
-
-	-- optimisation
-	| OptAll
-	| OptAtomise
-	| OptSimplify
-	| OptFullLaziness
-	| OptInline
-	| OptTailCall
-
-	-- code generation
-	| Debug
-	| StaticRuntime
-	| Profile
-	| ProfileRuntime
-	
-	-- linker
-	| Link
-	| LinkObj	[String]
-	| LinkLib	[String]
-	| LinkLibDir	[String]
-
-	-- graph
-	| GraphModules
-	| GraphModulesCut	[String]
-
-	| GraphApps
-	| GraphCalls
-	| GraphSuperDeps
-
-	-- partial compilation
-	| StopConstraint
-	| StopType
-	| StopCore
-	| StopSea
-	| StopCompile
-	| StopErrors	[String]
-
-	| KeepCFiles
-	| KeepOFiles
-
-	-- dump pretty flags
-	| DumpPrettyUnique	
-	| DumpPrettyTypeSpaces
-	| DumpPrettyTypeKinds
-	| DumpPrettyCoreTypes
-	| DumpPrettyCoreMore
-
-	-- things that can be dumped
-	| DumpAll
-
-	| DumpSourceTokens
-	| DumpSourceParse
-	| DumpSourceDefix
-	| DumpSourceRename
-
-	| DumpDesugar
-	| DumpDesugarKinds
-	| DumpDesugarElaborate
-	| DumpDesugarProject
-	| DumpDesugarSlurp
-
-	| DumpTypeConstraints
-	| DumpTypeSolve
-
-	| DumpCore
-	| DumpCoreBlock
-	| DumpCoreCrush
-	| DumpCoreSnip
-	| DumpCoreClean
-	| DumpCoreThread
-	| DumpCoreRecon
-	| DumpCoreDict
-	| DumpCoreBind
-	| DumpCorePrim
-	| DumpCoreSimplify
-	| DumpCoreFullLaziness
-	| DumpCoreInline
-	| DumpCoreLift
-	| DumpCoreLabelIndex
-	| DumpCoreSequence
-	| DumpCoreCurry
-	| DumpCoreAtomise
-
-	| DumpSea
-	| DumpSeaSub
-	| DumpSeaCtor
-	| DumpSeaThunk
-	| DumpSeaForce
-	| DumpSeaSlot
-	| DumpSeaFlatten
-	| DumpSeaInit
-
-
-	deriving (Show, Eq, Ord)
-
-
--- | Expand out all options implied by these ones.
-expand ::	[Arg] 	-> [Arg]
-expand		[]	= []
-expand		(x:xs)
- = case x of
-
-	-- general
-	Compile{}
-	 -> x : StopCompile : KeepOFiles : expand xs
-
-	Make ss
-	 -> x : expand xs
-
-	LintAll
-	 -> x : [LintCore]
-	  ++ expand xs
-
-	-- optimisations
-	OptAll
-	 -> 	[ OptAll
-	 	, OptSimplify
-		, OptTailCall ]
-	 ++ expand xs
-
-	-- partial
-	StopSea
-	 -> x : KeepCFiles : expand xs
-	 
-	StopCompile
-	 -> x : KeepOFiles : expand xs
-
-
-	DumpAll		
-	 -> x : 
-	   [ DumpSourceParse
-	   , DumpSourceDefix
-	   , DumpSourceRename
-
-	   , DumpDesugar
-	   , DumpDesugarKinds
-	   , DumpDesugarElaborate
-	   , DumpDesugarProject
-	   , DumpDesugarSlurp
-
-	   , DumpTypeConstraints
-	   , DumpTypeSolve
-
-	   , DumpCore
-	   , DumpCoreBlock
-	   , DumpCoreCrush
-	   , DumpCoreSnip
-	   , DumpCoreClean
-	   , DumpCoreThread
-	   , DumpCoreRecon
-	   , DumpCoreDict
-	   , DumpCoreBind
-	   , DumpCorePrim
-	   , DumpCoreSimplify
-	   , DumpCoreLift
-	   , DumpCoreLabelIndex
-	   , DumpCoreSequence
-	   , DumpCoreCurry
-
-	   , DumpSea 
-	   , DumpSeaSub
-	   , DumpSeaCtor
-	   , DumpSeaThunk
-	   , DumpSeaForce
-	   , DumpSeaSlot
-	   , DumpSeaFlatten
-	   , DumpSeaInit]
-
-	 ++ expand xs
-	 
-	_		
-	 -> x : expand xs
+import DDC.Main.Arg
+import DDC.Config.Version
 
 
 -- | Parse these arguments
@@ -218,7 +19,7 @@ parse :: [String] -> [Arg]
 parse strArgs
  = let
  	(errs, args)	= parseOptions options strArgs
-	args'		= expand args
+	args'		= expandArgs args
   in 	(map Error errs) ++ (nub args')
 	
 
@@ -359,9 +160,6 @@ options	=
 	, OFlag		OptAll			["-O"]				"Perform all optimizations."
 	, OFlag		OptSimplify		["-opt-simplify"]		"Do core simplification."
 	, OFlag		OptTailCall		["-opt-tail-call"]		"Perform tail call optimisation. (default)"
---	, OFlag		OptAtomise		["-opt-atomise"]		"Share constructors of zero arity."
---	, OFlag		OptFullLaziness		["-opt-full-laziness"]		"Perform full laziness optimization."
---	, OFlag		OptInline		["-opt-inline"]			"Perform inlining."
 
 	-- code generation
 	, OGroup	"code"
@@ -404,24 +202,7 @@ options	=
 			["-static-runtime"]
 			"Statically link the runtime system."
 			
-	-- graphing
-	, OGroup	"graph"
-			"Graphing."
-
-	, OFlag		GraphModules		
-			["-graph-modules"]		
-			"Produce a module hierarchy graph."
-
-	, OOpts		GraphModulesCut
-			["-graph-modules-cut"]
-			"-graph-modules-cut <modules..>"
-			"Don't include these modules or their imports."
-
-	, OFlag		GraphSuperDeps		
-			["-graph-super-deps"]		
-			"Produce a supercombinator and CAF dependency graph."
-
-	-- partial compilation
+	-- stopping after stages
 	, OGroup	"partial"
 			"Partial Compilation"
 	
@@ -501,13 +282,10 @@ options	=
 	, OFlag		DumpCoreDict		["-dump-core-dict"]		"Resolve type-class overloading of functions."
 	, OFlag		DumpCorePrim		["-dump-core-prim"]		"Identify primitive operations."
 	, OFlag		DumpCoreSimplify	["-dump-core-simplify"]		"Core simplification. (when enabled)"
---	, OFlag		DumpCoreFullLaziness	["-dump-core-full-laziness"]	"Full laziness optimisation."
---	, OFlag		DumpCoreInline		["-dump-core-inline"]		"Inlining."
 	, OFlag		DumpCoreLift		["-dump-core-lift"]		"Convert nested functions to supercombinators."
 	, OFlag		DumpCoreLabelIndex	["-dump-core-labelIndex"]	"Convert field labels to indicies."
 	, OFlag		DumpCoreSequence	["-dump-core-sequence"]		"Sequence CAFs and bindings into dependency order."
 	, OFlag		DumpCoreCurry		["-dump-core-curry"]		"Identify super calls vs curried applications."
---	, OFlag		DumpCoreAtomise		["-dump-core-atomise"]		"Share instances of zero airity data objects."
 	, OBlank
 
 	, OFlag		DumpSea			["-dump-sea"]			"Sea IR version of Core IR."
@@ -522,13 +300,3 @@ options	=
 	]
 
 
--- | Convert an arg into the pretty mode it enables
-takePrettyMode :: Arg -> Maybe PrettyMode
-takePrettyMode aa
- = case aa of
- 	DumpPrettyUnique	-> Just $ PrettyUnique
-	DumpPrettyTypeSpaces	-> Just $ PrettyTypeSpaces
-	DumpPrettyTypeKinds	-> Just $ PrettyTypeKinds
-	DumpPrettyCoreTypes	-> Just $ PrettyCoreTypes
-	DumpPrettyCoreMore	-> Just $ PrettyCoreMore
-	_			-> Nothing

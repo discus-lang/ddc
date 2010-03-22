@@ -1,11 +1,12 @@
 module Main.Invoke 
 	(invokeSeaCompiler)
 where
-import Main.Arg
 import Shared.Error
 import Util
 import System.Cmd
 import System.Exit
+import DDC.Main.Arg		(Arg)
+import qualified DDC.Main.Arg	as Arg
 import qualified Config.Config	as Config
 
 -----
@@ -37,7 +38,7 @@ invokeSeaCompiler
 			importDirs
 			extraFlags
 
- 	when (elem Verbose args)
+ 	when (elem Arg.Verbose args)
 	 $ do	putStr	$ "\n"
 	 	putStr	$ " * Invoking C compiler.\n"
 		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n"

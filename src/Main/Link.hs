@@ -10,7 +10,7 @@ import Util
 import System.Exit
 import System.Cmd
 import System.Directory 	(doesDirectoryExist)
-import qualified Main.Arg	as Arg
+import qualified DDC.Main.Arg	as Arg
 import qualified Config.Config	as Config
 
 -----

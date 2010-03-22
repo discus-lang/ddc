@@ -11,12 +11,12 @@ import Main.Invoke
 import Main.Setup
 import Main.BuildFile
 import Main.Error
-import qualified Main.Arg		as Arg
 import qualified Main.Dump		as Dump
 import qualified Main.Source		as SS
 import qualified Main.Desugar		as SD
 import qualified Main.Core		as SC
 import qualified Main.Sea		as SE
+import qualified DDC.Main.Arg		as Arg
 
 -- module
 import qualified Module.Export		as M

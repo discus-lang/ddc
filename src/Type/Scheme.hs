@@ -17,12 +17,13 @@ import Type.Pretty
 import Type.Plate
 import Shared.VarPrim
 import Util
-import Shared.Var		(Var, NameSpace(..))
-import qualified Shared.Var	as Var
-import qualified Shared.VarUtil	as Var
-import qualified Main.Arg	as Arg
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
+import DDC.Var.NameSpace
+import Shared.Var			(Var)
+import qualified Shared.Var		as Var
+import qualified Shared.VarUtil		as Var
+import qualified DDC.Main.Arg		as Arg
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 
 
 -----

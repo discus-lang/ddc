@@ -3,8 +3,7 @@
 --	Everything specific to this target should be in this file.
 --
 module Config.Config where
-
-import Main.Arg
+import DDC.Main.Arg
 
 -- The extension to use for a shared object
 extSharedObject

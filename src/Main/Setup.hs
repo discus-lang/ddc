@@ -4,8 +4,7 @@ module Main.Setup
 	, setupArgs 
 	, importDirsOfSetup )
 where
-
-import Main.Arg
+import DDC.Main.Arg
 import Util
 
 -- Compile setup 

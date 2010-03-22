@@ -22,7 +22,8 @@ import Data.Char
 import Shared.Pretty					()
 import Shared.Var					(ModuleId(..))
 import qualified System
-import qualified Main.Arg				as Arg
+import qualified Main.ParseArgs				as Arg
+import qualified DDC.Main.Arg				as Arg
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 
 
@@ -98,16 +99,6 @@ scrapeSourceFile' importDirs importPrelude pathSource source
 	let importDirs'	
 		= fileDir : importDirs
 
-	-- Choose a name for this module.
-{-	let Just moduleName	
-		= chooseModuleName importDirs' fileName
-
-	putStr
-	 $  "moduleName " ++ show moduleName ++ "\n"
-	 ++ "importDirs " ++ show importDirs' ++ "\n"
-	 ++ "fileName   " ++ show fileName	++ "\n"
-	 
--}
 	scrapeModule' 
 		Nothing
 		importDirs' importPrelude

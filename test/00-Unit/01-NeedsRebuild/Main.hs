@@ -2,7 +2,7 @@ import Data.List
 import Module.Scrape
 import Module.ScrapeGraph
 import Shared.Var		(ModuleId(..))
-import Main.Arg
+import DDC.Main.Arg
 import System.Exit		(exitFailure)
 
 import qualified Data.Map	as Map
