@@ -100,6 +100,7 @@ bin/plate : tools/plate/Main.hs src/Config/Config.hs
 
 # -- generate boilerplate
 src/Source/Plate/Trans.hs : bin/plate src/Source/Plate/Trans.hs-stub src/Source/Exp.hs 
+	@echo
 	@echo "* Generating boilerplate for $@"
 	bin/plate src/Source/Exp.hs src/Source/Plate/Trans.hs-stub src/Source/Plate/Trans.hs
 	@echo
@@ -110,9 +111,10 @@ src/Source/Plate/Trans.hs : bin/plate src/Source/Plate/Trans.hs-stub src/Source/
 src_obj		=  $(patsubst %.hs,%.o,$(src_hs_existing))
 
 bin/ddc	: make/Makefile.deps $(src_obj)
+	@echo
 	@echo "* Linking $@"
 	$(GHC) -o bin/ddc $(GHC_FLAGS) $(DDC_PACKAGES) $(src_obj)
-	@echo	
+	@echo
 
 
 # -- External libraries ---------------------------------------------------------------------------
@@ -134,6 +136,7 @@ runtime_dep	= $(patsubst %.c,%.dep,$(runtime_c))
 runtime_o	= $(patsubst %.c,%.o,$(runtime_c))
 
 runtime/libddc-runtime.$(SHARED_SUFFIX) : $(runtime_o)
+	@echo
 	@echo "* Linking $@"
 	$(BUILD_SHARED) -o $@ $^
 	@echo
