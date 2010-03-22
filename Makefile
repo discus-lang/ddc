@@ -152,12 +152,16 @@ runtime : $(runtime_dep) runtime/libddc-runtime.$(SHARED_SUFFIX) runtime/libddc-
 
 # -- Base Libraries --------------------------------------------------------------------------------
 .PHONY	: libs
-libs	: library/Prelude.di
+libs	: library/Graphics.di
 
-library/Prelude.di : bin/ddc
+library/Prelude.di library/Graphics.di : bin/ddc
 	@echo "* Building base libraries --------------------------------------"
 	bin/ddc -O -build library/Prelude.ds
 	@touch library/Prelude.di
+	
+	@echo
+	bin/ddc -O -build library/Graphics.ds
+	@touch library/Graphics.di
 	@echo
 
 

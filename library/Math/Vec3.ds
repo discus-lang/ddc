@@ -1,10 +1,15 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
 -- 3-dimensional vectors.
 --	This is much the same as Vec2.
 --	It would be nice to have vectors of arbitrary dimension, 
 --	but the 2d and 3d cases are used most often, so we use specialised versions.
 --	
 module	Math.Vec3
+import	Class.Show
+import	Data.Float
 import	Math.Constants
+
 
 -- A polymorphic vector of dimension 3
 data Vec3 a

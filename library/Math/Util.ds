@@ -1,6 +1,9 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 module	Math.Util
 import	Math.Constants
+import	Class.Num
+import	Data.Float
 
 radToDeg r	= (180.0 / pi) 	 	* r
 degToRad d	= (pi    / 180.0)	* d

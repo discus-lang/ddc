@@ -1,3 +1,4 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 module	Math.Matrix33
 import	Math.Vec3

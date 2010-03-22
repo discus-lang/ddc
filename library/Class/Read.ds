@@ -1,5 +1,7 @@
+{-# OPTIONS -no-implicit-prelude #-}
 
 module	Class.Read
+import	Data.String
 
 class Read a where
  	read 	:: forall %r
