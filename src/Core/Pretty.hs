@@ -160,7 +160,7 @@ instance Pretty Exp PMode where
 
 	 		(eff, clo)
 			 | eff == tPure, clo == tEmpty	
-			 -> pNil
+			 -> blank
 			
 			(eff, _)
 			 | eff == tPure		

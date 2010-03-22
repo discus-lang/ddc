@@ -11,14 +11,14 @@ where
 -- | Possible variable namespaces.
 data NameSpace
 	= NameNothing
-	| NameValue		-- ^ value   variables.
-	| NameType		-- ^ value   type variables.
-	| NameRegion		-- ^ region  type variables.
-	| NameEffect		-- ^ effect  type variables.
-	| NameClosure		-- ^ closure type variables.
-	| NameClass		-- ^ type class / witness kind variables.
-	| NameModule		-- ^ module names.
-	| NameField		-- ^ field names.
+	| NameValue		-- ^ Value   variables.
+	| NameType		-- ^ Value   type variables.
+	| NameRegion		-- ^ Region  type variables.
+	| NameEffect		-- ^ Effect  type variables.
+	| NameClosure		-- ^ Closure type variables.
+	| NameClass		-- ^ Type class \/ witness kind variables.
+	| NameModule		-- ^ Module identifiers.
+	| NameField		-- ^ Field names.
 	| NameLabel		-- ^ Sea level labels.
 	deriving (Show, Eq,  Ord)
 

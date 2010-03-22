@@ -1,10 +1,11 @@
 
+-- | Primitive variable identifiers.
 module DDC.Var.PrimId 
+	(PrimId	(..))
 where
 import DDC.Base.DataFormat
 
--- | Primitive variable ids
---	These names have special meaning to the compiler.
+-- | Variables with these idenfiers have special meaning to the compiler.
 data PrimId
 	-- Primitive low level types
 	= TObj

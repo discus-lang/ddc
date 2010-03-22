@@ -9,21 +9,23 @@ where
 import DDC.Util.Pretty
 
 
--- The pretty printing modes that we support
+-- | The pretty printers for most data types take can look in PMode
+--	to determine what options to use.
 type PMode	
 	= [PrettyMode]
 
 
 -- | Pretty printing options that we support.
 data PrettyMode
-	= PrettyUnique		-- ^ annotate vars with their uniqueBinds
-	| PrettyTypeSpaces	-- ^ show a '*' namespace qualifier on type variables.
-	| PrettyTypeKinds	-- ^ show kinds on type vars and constructors
-	| PrettyCoreTypes	-- ^ show type annotations on vars in core
-	| PrettyCoreMore	-- ^ show :> constraints on type vars in core
+	= PrettyUnique		-- ^ Annotate vars with their uniqueBinds.
+	| PrettyTypeSpaces	-- ^ Show a '*' namespace qualifier on type variables.
+	| PrettyTypeKinds	-- ^ Show kinds on type vars and constructors.
+	| PrettyCoreTypes	-- ^ Show type annotations on vars in core.
+	| PrettyCoreMore	-- ^ Show more-than constraints on effect vars in core.
 	deriving (Eq, Show)
 
 
 -- | Pretty print something with no fancy options.
+pprStrPlain :: Pretty a PMode => a -> String
 pprStrPlain x
  	= pprStr [] x

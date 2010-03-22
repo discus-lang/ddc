@@ -25,7 +25,7 @@ dumpGraph
 	classesU	<- mapM forwardCids classes
 	
 	return	$ "===== Equiv Clases =====================================\n"
-		% dumpGraph' pNil classesU
+		% dumpGraph' blank classesU
 		% "\n\n"
 
 dumpGraph' acc []	= acc
@@ -63,8 +63,8 @@ dumpSub
 prettyClass :: Int -> Class -> PrettyM PMode
 prettyClass ix c
  = case c of
- 	ClassNil{}	-> pNil
-	ClassForward{}	-> pNil
+ 	ClassNil{}	-> blank
+	ClassForward{}	-> blank
 	_		-> ppr c
 
 
@@ -87,7 +87,7 @@ instance Pretty Class PMode where
 		classKind c 
 			% classId c 
 			% (case className c of 
-				Nothing	-> pNil
+				Nothing	-> blank
 				Just n	-> ppr n) % "\n"
 	
 		-- class type
@@ -97,19 +97,19 @@ instance Pretty Class PMode where
 
 		-- class fetters
 		% (case classFetterSources c of
-			[]	-> pNil
+			[]	-> blank
 			_	-> "        -- fetters\n"
 				%> "\n" %!% classFetterSources c % "\n\n")
 	
 		-- multi-parameter type classes
 		% (if Set.null $ classFettersMulti c
-			then pNil
+			then blank
 			else 	   "        -- fetters multi-parameter\n"
 				 % "        " % classFettersMulti c % "\n\n")
 	
 		-- unification queue
 		% (case classQueue c of
-			[]	-> pNil
+			[]	-> blank
 			_	-> "        -- queue\n"
 				%> "\n" %!% classQueue c % "\n\n")
 		% "        -- nodes\n"

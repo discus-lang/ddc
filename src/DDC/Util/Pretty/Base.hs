@@ -9,7 +9,6 @@ where
 
 -- | Class of things that can be pretty printed in a certain mode.
 --	Client modules can decide what the possible modes are.
---
 class Pretty a mode | a -> mode where
  	ppr	:: a -> PrettyM mode
 
@@ -26,18 +25,17 @@ instance Pretty (PrettyM m) m where
 -- | PrettyPrim represents the text that can be printed to the screen,
 --	in a reasonably efficient way.
 data PrettyPrim
-	= PNil				-- an empty pretty thing (no charaters)
-	| PString String		-- a literal string
-	| PChar   Char			-- a literal character
+	= PNil				-- ^ A blank pretty thing, no characters.
+	| PString String		-- ^ A literal string.
+	| PChar   Char			-- ^ A literal character.
 
-	| PAppend [PrettyPrim]		-- print all these things one after the other
+	| PAppend [PrettyPrim]		-- ^ Print all these things one after the other.
 
-	-- Lists have their own ctor so we can print Strings of [Char]
-	-- without decoration, but other things as [ x1, x2, ... ]. 
-	-- It would be better to use a different String type...
+	-- | Lists have their own constructor so we can print Strings of [Char]
+	--   without decoration.
 	| PList   [PrettyPrim]		
 
-	-- | An indented pretty thing
+	-- | An indented pretty thing.
 	| PIndent PrettyPrim
 
 	-- | A pretty thing in a left/right justified column of the given width
@@ -45,7 +43,6 @@ data PrettyPrim
 	| PPadLeft  Int Char PrettyPrim
 	| PPadRight Int Char PrettyPrim
 	
-	-- | Indent commands
-	| PTabAdd Int			-- change the indent level by some number of chars
-	| PTabNext			-- move to the next tabstop
+	| PTabAdd Int			-- ^ Change the indent level by some number of chars.
+	| PTabNext			-- ^ Move to the next tabstop.
 	deriving (Eq, Show)

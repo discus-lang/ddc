@@ -185,7 +185,7 @@ traceM p
 	 Nothing	-> return ()
 	 Just handle
 	  -> do 
-	  	liftIO (hPutStr handle $ indent i 
+	  	liftIO (hPutStr handle $ indentSpace i 
 				$ pprStr (catMaybes $ map Arg.takePrettyModeOfArg $ Set.toList args) p)
 	  	liftIO (hFlush  handle)
 

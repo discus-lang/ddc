@@ -1,6 +1,6 @@
 
--- | Pretty printing of simple things that are always printed the same way,
---	independent of the printer mode.
+-- | Instances for simple types. 
+--	These are always printed the same way, independent of the mode.
 module DDC.Util.Pretty.Simple where
 
 import DDC.Util.Pretty.Base
@@ -12,7 +12,7 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
 
--- base types
+-- Base types -----------------------------------------------------------------
 instance Pretty () m where
  ppr ()	= ppr "()"
 
@@ -35,19 +35,21 @@ instance Pretty Double m where
  ppr x 	= plain $ PString $ show x
 
 
--- maybe
+-- Maybe ----------------------------------------------------------------------
 instance Pretty a m => Pretty (Maybe a) m where
  ppr (Just x)	= "Just " % x
  ppr Nothing	= ppr "Nothing"
 
 
--- lists
+-- List -----------------------------------------------------------------------
 instance Pretty a m => Pretty [a] m where
  ppr xs
  	= PrettyM (\m -> PList 	$ map (\x -> case ppr x of
 						PrettyM fx	-> fx m)
 				  xs)
--- tuples
+
+
+-- Tuples ---------------------------------------------------------------------
 instance (Pretty a m, Pretty b m) 
 	=> Pretty (a, b) m 
  where	ppr (a, b)	
@@ -63,7 +65,8 @@ instance (Pretty a m, Pretty b m, Pretty c m, Pretty d m)
  where	ppr (a, b, c, d) 
  	 = "(" % a % ", " % b % ", " % c % ", " % d % ")"
 
--- maps
+
+-- Maps -----------------------------------------------------------------------
 instance (Pretty a m, Pretty b m) 
 	 => Pretty (Map a b) m 
  where	ppr mm 
@@ -72,7 +75,8 @@ instance (Pretty a m, Pretty b m)
 		$ map (\(x, y) -> x % " := " % y)
 		$ Map.toList mm
  
--- sets
+
+-- Sets -----------------------------------------------------------------------
 instance (Pretty a m) 
 	 => Pretty (Set a) m 
  where	ppr ss	

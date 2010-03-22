@@ -10,12 +10,13 @@ import Data.List
 -- | Render state.
 data RenderS
 	= RenderS
-	{ stateTabWidth		:: Int		-- ^ current tab width
-	, stateIndent		:: Int		-- ^ current start of line indent
-	, stateCol		:: Int }	-- ^ current position of cursor
-
+	{ stateTabWidth		:: Int		-- ^ Current tab width.
+	, stateIndent		:: Int		-- ^ Current start of line, for indenting.
+	, stateCol		:: Int 		-- ^ Current column position of cursor
+	}
 
 -- | Initial render state.
+initRenderS :: RenderS
 initRenderS
 	= RenderS
 	{ stateTabWidth		= 8
@@ -23,7 +24,7 @@ initRenderS
 	, stateCol		= 0 }
 	
 
--- | Render a pretty prim as a string.
+-- | Render a `PrettyPrim` as a string.
 render	:: PrettyPrim -> String
 render xx	
 	= render' initRenderS xx
@@ -114,3 +115,4 @@ spaceTab state xx
 		colLen	= max csLen n
 		state'	= state { stateCol = stateCol state + colLen }
 	    in	replicate (n - length cs) c ++ cs ++ spaceTab state' xs
+

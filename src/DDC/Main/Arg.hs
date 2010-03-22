@@ -70,14 +70,14 @@ data Arg
 	--
 	
 	-- dump pretty printing options 
-	| DumpPrettyUnique	
-	| DumpPrettyTypeSpaces
-	| DumpPrettyTypeKinds
-	| DumpPrettyCoreTypes
-	| DumpPrettyCoreMore
+	| DumpPrettyUnique		-- ^ Show unique binders on variables.
+	| DumpPrettyTypeSpaces		-- ^ Use * as a namespace qualifier for type variables.
+	| DumpPrettyTypeKinds		-- ^ Show kinds of type variables.
+	| DumpPrettyCoreTypes		-- ^ Show types on variables in core program.
+	| DumpPrettyCoreMore		-- ^ Show more-than constraints on effect variables in core program.
 
 	-- dump everything
-	| DumpAll
+	| DumpAll			-- ^ Dump everything.
 
 	-- source dumps
 	| DumpSourceTokens
@@ -204,7 +204,7 @@ expandArgs (x:xs)
 	 -> x : expandArgs xs
 
 
--- | Convert an arg into the pretty mode it enables
+-- | Convert an Arg to the PrettyMode it represents (if any).
 takePrettyModeOfArg :: Arg -> Maybe PrettyMode
 takePrettyModeOfArg aa
  = case aa of

@@ -370,9 +370,9 @@ instance Pretty Error PMode where
 
 -----
 prettyVTS (v, t)
- 	= indent 12 (
+ 	= indentSpace 12 (
 		"\n" ++ (Var.name v) ++ "\n  :: "
-		++ (indent 2 $ pprStrPlain $ prettyTypeSplit $ t))
+		++ (indentSpace 2 $ pprStrPlain $ prettyTypeSplit $ t))
 
 
 -- | Pretty print the location of the value var that corresponds to this typevar.

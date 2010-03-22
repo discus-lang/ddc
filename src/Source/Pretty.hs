@@ -30,7 +30,7 @@ instance Pretty (Top a) PMode where
 	PImportModule _ xx
 	 -> "import " 
 		% "{\n"
-			%> "\n" %!% map (\x -> x % ";") xx
+			%> (punc "\n" $ map (\x -> x % ";") xx)
 		% "\n}\n\n"
 		
 	PExport _ exs
@@ -50,11 +50,11 @@ instance Pretty (Top a) PMode where
          -> "type" <> v %>> " = " % prettyTS t % ";\n"
 
 	PData _ typeName vars [] 
-	 -> "data " % " " %!% (typeName : vars) % ";\n\n"
+	 -> "data " % punc " " (typeName : vars) % ";\n\n"
 
 	PData _ typeName vars ctors
-	 -> "data " % " " %!% (typeName : vars) % "\n"
-		%> ("= "  % "\n\n| " %!% (map prettyCtor ctors) % ";")
+	 -> "data " % punc " " (typeName : vars) % "\n"
+		%> ("= "  % punc "\n\n| "(map prettyCtor ctors) % ";")
 		%  "\n\n"
 
 	PRegion _ v	 -> "region " % v % ";\n"
@@ -68,12 +68,12 @@ instance Pretty (Top a) PMode where
 	 -> "class " % c % " " % (punc " " $ map pprPClass_vk vks) % " where\n"
 		% "{\n"
 	 	%> ("\n\n" %!% 
-			(map (\(vs, t) -> ", " %!% vs
+			(map (\(vs, t) -> punc ", " vs
 				% " :: " %> prettyTypeSplit t % ";") sigs)) % "\n"
 		% "}\n\n"
 
 	PClassInst _ v ts inh ss
-	 -> "instance " % v % " " % " " %!% (map prettyTB ts) % " where\n"
+	 -> "instance " % v % " " % punc " " (map prettyTB ts) % " where\n"
 		% "{\n"
 		%> ("\n\n" %!% 
 			(map 	(\s -> case s of 
@@ -418,10 +418,10 @@ instance Pretty (Stmt a) PMode where
 
 spaceDown xx
  = case xx of
-	XLambdaCase{}	-> ppr "\n"
- 	XCase{}		-> ppr "\n"
-	XIfThenElse{}	-> ppr "\n"
-	XDo{}		-> ppr "\n"
-	_		-> pNil
+	XLambdaCase{}	-> newline
+ 	XCase{}		-> newline
+	XIfThenElse{}	-> newline
+	XDo{}		-> newline
+	_		-> blank
 
 

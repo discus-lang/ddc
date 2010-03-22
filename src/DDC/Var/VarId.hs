@@ -10,16 +10,15 @@ import DDC.Base.DataFormat
 import DDC.Main.Pretty
 
 
--- | A variable binding identifier.
---	This gives the variable its unique identity.
+-- | A variable binding identifier gives a variable its unique identity.
 data VarId
-	-- A regular user-defined var.
+	-- | A regular user-defined var.
 	= VarId     String Int
 
-	-- A primitive variable, which as special meaning to the compiler.
+	-- | A primitive variable, which as special meaning to the compiler.
 	| VarIdPrim PrimId
 
-	-- binding not set
+	-- | Variable id not set. Before being processed by the renamer most variables will have this.
 	| VarIdNil
 	deriving (Show, Eq, Ord)
 	
@@ -31,7 +30,7 @@ instance Pretty VarId PMode where
 	_		-> ppr $ show b
 	
 
--- | If this varBind contains an embedded DataFormat, then Just it
+-- | Take the embedded DataFormat from a VarId, if any.
 takeDataFormatOfVarId :: VarId -> Maybe DataFormat
 takeDataFormatOfVarId vid
  = case vid of
@@ -44,7 +43,7 @@ takeDataFormatOfVarId vid
 	_			-> Nothing
 
 
--- | Increment a regular VarId to the next one
+-- | Increment a VarId to the next one.
 incVarId :: VarId -> VarId
 incVarId b
  = case b of

@@ -1,6 +1,6 @@
 
 module Util.Pretty.Misc
-	( indent
+	( indentSpace
 	, showHex
 	, showHexPad)
 
@@ -8,11 +8,11 @@ where
 
 import qualified Numeric
 
-indent ::	Int ->	String -> String
-indent		n	xx
+indentSpace :: Int ->	String -> String
+indentSpace n xx
  = case xx of
- 	('\n':xs)	-> "\n" ++ replicate n ' ' ++ indent n xs
-	(x:xs)		-> x : indent n xs
+ 	('\n':xs)	-> "\n" ++ replicate n ' ' ++ indentSpace n xs
+	(x:xs)		-> x : indentSpace n xs
 	[]		-> []
 
 showHex :: Int -> String
