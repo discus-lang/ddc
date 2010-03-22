@@ -72,17 +72,6 @@ instance Ord Var where
 	ord	-> ord
 
 
--- | If the name of this variable includes a namespace qualifier, then set
---	the namespace accordingly and remove the qualifier.
-loadSpaceQualifier :: Var -> Var
-loadSpaceQualifier var
- = case takeHead (name var) of
-	Just '%'	-> var { nameSpace = NameRegion,  name = tail (name var) }
-	Just '!'	-> var { nameSpace = NameEffect,  name = tail (name var) }
-	Just '$'	-> var { nameSpace = NameClosure, name = tail (name var) }
-	_		-> var
-
-
 -- | Pretty print a variable
 instance Pretty Var PMode where
  ppr v
@@ -142,6 +131,17 @@ pprVarName v
 -- | Pretty print some variable info.
 instance Pretty VarInfo PMode where
  ppr x 	= ppr $ show x
+
+
+-- | If the name of this variable includes a namespace qualifier, then set
+--	the namespace accordingly and remove the qualifier.
+loadSpaceQualifier :: Var -> Var
+loadSpaceQualifier var
+ = case takeHead (name var) of
+	Just '%'	-> var { nameSpace = NameRegion,  name = tail (name var) }
+	Just '!'	-> var { nameSpace = NameEffect,  name = tail (name var) }
+	Just '$'	-> var { nameSpace = NameClosure, name = tail (name var) }
+	_		-> var
 
 
 -- Module Identifiers ----------------------------------------------------------------------------
