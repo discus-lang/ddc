@@ -9,6 +9,8 @@ module DDC.Util.Pretty.Combinators
 	, indent, (%>)
 	, shift,  (%>>)
 	, bump,   (<>)
+	, vcat
+	, vvcat
 	, padRc, padR
 	, padLc, padL 
 	, parens
@@ -114,6 +116,17 @@ bump a b = a % " " % b
 -- | Same as bump.
 (<>)	:: (Pretty [Char] m, Pretty a m, Pretty b m) => a -> b -> PrettyM m
 (<>)	= bump
+
+
+-- Concatenation --------------------------------------------------------------
+-- | Same as (punc newline)
+vcat	:: (Pretty [Char] m, Pretty a m) => [a] -> PrettyM m
+vcat	= punc newline
+
+
+-- | Same as (punc (newline % newline))
+vvcat	:: (Pretty [Char] m, Pretty a m) => [a] -> PrettyM m
+vvcat	= punc (newline % newline)
 
 
 -- Padding --------------------------------------------------------------------

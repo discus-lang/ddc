@@ -66,12 +66,12 @@ instance Pretty Top PMode where
 	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
 	    in  "data" <> v <> "where\n"
 	 	% "{\n" 
-	 	%> ("\n\n" %!% ctorsList % "\n")
+	 	%> (vvcat ctorsList % "\n")
 		% "}\n"
 
 	PRegion v vts
-	 -> "region " % v %> "  with {" % "; " 
-	 	%!% (map (\(v, t) -> pv v % " = " % t) vts)
+	 -> "region " % v %> "  with {" 
+		% punc "; " (map (\(v, t) -> pv v % " = " % t) vts)
 		% "};"
 
 	PEffect v k
@@ -149,7 +149,6 @@ instance Pretty Exp PMode where
 	 -> "/\\ (" % padL 16 (sb v) % " :: " % k % ") ->\n" % e
 
 
-
 	XLam v t x eff clo
 	 -> "\\  (" % sv v % " :: " % t % ")"
 		 % pEffClo % " ->\n"
@@ -172,8 +171,7 @@ instance Pretty Exp PMode where
 
 			_ -> "\n" % replicate 20 ' ' % " of " % prettyTB eff 
 			   % "\n" % replicate 20 ' ' % "    " % prettyTB clo
-					 
-	 
+					 	 
 	XAPP x t
 	 | spaceApp t
 	 ->  x % "\n" 
@@ -205,7 +203,7 @@ instance Pretty Exp PMode where
 
 	XMatch alts
 	 -> "match {\n"
-		%> ("\n\n" %!% alts)
+		%> vvcat alts
 		% "\n"
 		% "}"
 
@@ -316,7 +314,7 @@ instance Pretty Alt PMode where
 	 %  "= " % x % ";"
 
   	AAlt (g:gs) x
-	 -> "\n" %!% ("| " % g : map (\g -> ", " % g) gs)
+	 -> vcat ("| " % g : map (\g -> ", " % g) gs)
 	  % "\n"
 	  % "= " % x % ";"
 
@@ -354,6 +352,4 @@ instance Pretty Label PMode where
   = case xx of
   	LIndex	i	-> ppr i
 	LVar	v	-> ppr v
-
-
 
