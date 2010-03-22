@@ -61,7 +61,7 @@ warning :: Pretty msg PMode
 	-> a
 
 warning warn a
-	= trace	(pprStrPlain $ "Warning: " % warn) a
+	= trace	(pprStrPlain $ "ddc: WARNING\n" % warn) a
 
 
 -- | Compilain about a compile time error in the user program, then bail out.
