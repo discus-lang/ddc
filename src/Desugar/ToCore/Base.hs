@@ -13,7 +13,9 @@ import Util
 import Shared.Pretty
 import Shared.Error
 import Type.Exp
-import Shared.Var			(Var, VarBind, NameSpace(..))
+import DDC.Var.NameSpace
+import DDC.Var.VarId
+import Shared.Var			(Var)
 import Desugar.Project			(ProjTable)
 import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
@@ -50,7 +52,7 @@ data CoreS
 	, coreProjResolve	:: Map Var Var
 
 	  -- | variable generator for value vars.
-	, coreGenValue		:: VarBind }
+	, coreGenValue		:: VarId }
 	
 type CoreM 
 	= State CoreS
@@ -63,7 +65,7 @@ initCoreS
 	, coreQuantVars		= Map.empty
 	, coreProjTable		= Map.empty
 	, coreProjResolve	= Map.empty
-	, coreGenValue		= Var.XBind "xC" 0 }
+	, coreGenValue		= VarId "xC" 0 }
 
 
 -- | Create a fresh new variable in this namespace.
@@ -71,11 +73,12 @@ newVarN	:: NameSpace -> CoreM Var
 newVarN	space
  = do
  	gen		<- gets coreGenValue
-	let gen'	= Var.incVarBind gen
+	let gen'	= incVarId gen
 	modify (\s -> s { coreGenValue = gen' })
 	
 	return	(Var.new (pprStrPlain gen)) 
-		{ Var.bind = gen, Var.nameSpace = space }
+		{ Var.varId	 = gen
+		, Var.nameSpace	 = space }
 
 -- | Get the type corresponding to the type of this annotation
 lookupAnnotT :: Annot -> CoreM (Maybe Type)

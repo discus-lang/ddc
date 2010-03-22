@@ -28,7 +28,7 @@ slotTree
 
 slotTree tree eHeader cgHeader cgSource
  	= evalState (mapM (slotP cgHeader cgSource) tree) 	
- 	$ Var.XBind Unique.seaSlot 0
+ 	$ Var.VarId Unique.seaSlot 0
 
 -- | Rewrite code in this top level thing to use the GC slot stack.
 slotP 	:: C.Glob		-- ^ header glob

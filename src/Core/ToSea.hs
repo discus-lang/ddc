@@ -23,9 +23,9 @@ import qualified Type.Exp		as T
 import qualified Type.Util		as T
 import qualified Sea.Exp  		as E
 import qualified Sea.Pretty		as E
-import qualified Shared.VarBind		as Var
 import qualified Shared.Var		as Var
 import qualified Shared.VarPrim		as Var
+import qualified DDC.Var.PrimId		as Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
@@ -38,7 +38,7 @@ stage	= "Core.ToSea"
 data SeaS
 	= SeaS
 	{ -- variable name generator
-	  stateVarGen		:: Var.VarBind
+	  stateVarGen		:: Var.VarId
 
 	  -- regions known to be direct
 	, stateDirectRegions	:: Set Var }
@@ -48,11 +48,11 @@ type SeaM	= State SeaS
 newVarN ::	NameSpace -> SeaM Var
 newVarN		space
  = do 	varBind		<- gets stateVarGen
-	let varBind'	= Var.incVarBind varBind
+	let varBind'	= Var.incVarId varBind
 	modify (\s -> s { stateVarGen = varBind' })
 
 	let var		= (Var.new $ pprStrPlain varBind)
-			{ Var.bind	= varBind
+			{ Var.varId	= varBind
 			, Var.nameSpace	= space }
 	return var
 
@@ -80,7 +80,7 @@ toSeaTree
 toSeaTree unique cTree
   = evalState
   	(liftM join $ mapM toSeaP cTree)
-	SeaS 	{ stateVarGen		= Var.XBind ("x" ++ unique) 0
+	SeaS 	{ stateVarGen		= Var.VarId ("x" ++ unique) 0
 		, stateDirectRegions	= Set.empty }
    
     
@@ -536,24 +536,24 @@ toSeaT tt
 
 toSeaT_data tx
 	-- the unboxed void type is represented directly.
- 	| (v, _, _)		<- tx
- 	, Var.TVoidU		<- Var.bind v
+ 	| (v, _, _)			<- tx
+ 	, Var.VarIdPrim Var.TVoidU	<- Var.varId v
 	= E.TVoid
 
  	 -- we know about unboxed pointers
-	| (v, _, [t])		<- tx
-	, Var.TPtrU		<- Var.bind v
+	| (v, _, [t])			<- tx
+	, Var.VarIdPrim Var.TPtrU	<- Var.varId v
 	= E.TPtr (toSeaT t)
 
 	-- the built-in unboxed types are represented directly.
-	| (v, _, ts)		<- tx
+	| (v, _, ts)			<- tx
 	, Var.varIsUnboxedTyConData v
 	= E.TCon v (map toSeaT $ filter hasValueKind ts)
 
 	-- some user defined unboxed type.
 	-- TODO: We just check for a '#' in the name to detect these, which is pretty nasty. 
 	--	 Is there a better way to detect this?
-	| (v, _, ts)		<- tx
+	| (v, _, ts)			<- tx
 	, elem '#' (Var.name v)
 	= E.TCon v (map toSeaT $ filter hasValueKind ts)
 

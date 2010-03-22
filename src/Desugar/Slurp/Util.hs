@@ -29,8 +29,10 @@ import Type.Error
 import Type.Plate
 import Desugar.Exp
 import Desugar.Slurp.State
+import DDC.Var.NameSpace	
+import DDC.Var.VarId
 import Shared.VarUtil		(prettyPos)
-import Shared.Var		(Var, NameSpace(..))
+import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
@@ -158,10 +160,10 @@ newVarNS	space		str
 				else "" ++ str
 			
 	let var'	= (Var.new (pprStrPlain spaceGen ++ postfix))
-			{ Var.bind		= spaceGen 
+			{ Var.varId		= spaceGen 
 			, Var.nameSpace		= space }
 		
-	let spaceGen'	= Var.incVarBind spaceGen
+	let spaceGen'	= incVarId spaceGen
 		
 	modify (\s -> s { 
 		stateGen	= Map.insert space spaceGen' (stateGen s)})
@@ -222,7 +224,7 @@ getVtoT		varV
 	 Just varT	-> return varT
 	 Nothing	-> panic stage 
 	 		$ "getVtoT: no type var bound for value var '" % varV % "'.\n"
-			% "  bind = " % (show $ Var.bind varV)	% "\n"
+			% "  bind = " % (show $ Var.varId varV)	% "\n"
 			% "  info = " % (show $ Var.info varV)	% "\n"
 
 lbindVtoT ::	Var	-> CSlurpM Type

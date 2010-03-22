@@ -38,11 +38,14 @@ import Shared.Error
 import Shared.VarPrim
 import Shared.Literal
 import Util
+import DDC.Var.VarId
+import DDC.Var.NameSpace
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
 import Type.Error		(Error(..))
 import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
-import Shared.Var		(Var, NameSpace(..))
+import Shared.Var		(Var)
+import qualified DDC.Var.PrimId	as Var
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -607,7 +610,7 @@ reconX xx
 reconBoxType :: Region -> Type -> Type
 reconBoxType r tt
 	| Just (v, k, _)		<- takeTData tt
-	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.varId v)
 	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
 	= makeTData 
 		(primVarFmt NameType 
@@ -623,7 +626,7 @@ reconUnboxType r1 tt
 	| Just (v, k, [r2@(TVar kV _)])	<- takeTData tt
 	, kV == kRegion
 	, r1 == r2
-	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.bind v)
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.varId v)
 	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
 	= makeTData
 		(primVarFmt NameType 
@@ -636,13 +639,13 @@ reconUnboxType r1 tt
 -- | Split the VarBind for a literal into its components,
 --	eg  TInt fmt -> ("Int", TInt, fmt)
 splitLiteralVarBind
-	:: Var.VarBind
+	:: Var.VarId
 	-> ( String
-	   , DataFormat -> Var.VarBind
+	   , DataFormat -> Var.PrimId
 	   , DataFormat)
 
-splitLiteralVarBind bind
- = case bind of
+splitLiteralVarBind (VarIdPrim pid)
+ = case pid of
  	Var.TBool  fmt	-> ("Bool",   Var.TBool,   fmt)
 	Var.TWord  fmt	-> ("Word",   Var.TWord,   fmt)
 	Var.TInt   fmt	-> ("Int",    Var.TInt,    fmt)
@@ -693,11 +696,12 @@ reconOpApp op xs
 
 	return result
 
--- | Checks whether a type is an unboxed numeric type
+
+-- | Check whether a type is an unboxed numeric type
 isUnboxedNumericType :: Type -> Bool
 isUnboxedNumericType tt
  	| Just (v, _, []) <- takeTData tt
-	, isUnboxedNumericType_bind (Var.bind v)
+	, isUnboxedNumericType_varId (Var.varId v)
 	= True
 
 	-- treat pointers as numeric types
@@ -708,12 +712,13 @@ isUnboxedNumericType tt
 	| otherwise
 	= False
 
-isUnboxedNumericType_bind bind
- = case bind of
- 	Var.TWord _	-> True
-	Var.TInt _	-> True
-	Var.TFloat _	-> True
-	_		-> False
+isUnboxedNumericType_varId vid
+ = case vid of
+ 	Var.VarIdPrim (Var.TWord _)		-> True
+	Var.VarIdPrim (Var.TInt _)		-> True
+	Var.VarIdPrim (Var.TFloat _)		-> True
+	_					-> False
+
 
 
 -- | Reconstruct the result type when this list of expressions

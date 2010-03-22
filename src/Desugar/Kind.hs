@@ -267,12 +267,12 @@ forcePrimaryRegion vData k
 
 data SolveS
 	= StateS 
-	{ stateVarGen	:: Var.VarBind
+	{ stateVarGen	:: Var.VarId
 	, stateKinds	:: Map Var Kind  }
 
 stateInit unique
 	= StateS
-	{ stateVarGen	= Var.XBind unique 0
+	{ stateVarGen	= Var.VarId unique 0
 	, stateKinds	= Map.empty }
 	
 type SolveM = State SolveS
@@ -281,14 +281,14 @@ type SolveM = State SolveS
 -- | Create a fresh variable
 newVarN :: NameSpace -> SolveM Var
 newVarN space
- = do	varId@(Var.XBind p i)	<- gets stateVarGen
+ = do	varId@(Var.VarId p i)	<- gets stateVarGen
  
 	let name	= "r" ++ p ++ show i
 	let var		= (Var.new name) 
-			{ Var.bind 	= varId
+			{ Var.varId 	= varId
 			, Var.nameSpace = space }
 	
-	modify $ \s -> s { stateVarGen = Var.XBind p (i + 1) }
+	modify $ \s -> s { stateVarGen = Var.VarId p (i + 1) }
 	
 	return var
 

@@ -37,23 +37,23 @@ stage	= "Desugar.Project"
 -- State ------------------------------------------------------------------------------------------
 data ProjectS
 	= ProjectS
-	{ stateVarGen	:: Var.VarBind
+	{ stateVarGen	:: Var.VarId
 	, stateErrors	:: [Error] }
 	
 stateInit unique
 	= ProjectS
-	{ stateVarGen	= Var.XBind unique 0
+	{ stateVarGen	= Var.VarId unique 0
 	, stateErrors	= [] }
 	
 newVarN :: NameSpace -> ProjectM Var
 newVarN	space
  = do
  	varBind		<- gets stateVarGen
-	let varBind'	= Var.incVarBind varBind
+	let varBind'	= Var.incVarId varBind
 	modify $ \s -> s { stateVarGen = varBind' }
 
 	let var		= (Var.new $ (charPrefixOfSpace space : pprStrPlain varBind))
-			{ Var.bind	= varBind
+			{ Var.varId	= varBind
 			, Var.nameSpace	= space }
 	return var
 
@@ -287,7 +287,7 @@ freshenV :: ModuleId -> Var -> ProjectM Var
 freshenV mod v
  = do	vNew		<- newVarN (Var.nameSpace v)
 	let vFresh	
-		= v 	{ Var.bind 		= Var.bind vNew 
+		= v 	{ Var.varId		= Var.varId vNew 
 			, Var.nameModuleId	= mod }
 			
 	return vFresh

@@ -47,7 +47,7 @@ rewriteTree
 
 rewriteTree unique kindMap hTree sTree
  = let	state	= RewriteS
-		{ stateVarGen	= Var.XBind unique 0 
+		{ stateVarGen	= Var.VarId unique 0 
 		, stateErrors	= [] }
 	
 	((hTree', sTree'), state')

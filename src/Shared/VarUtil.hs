@@ -18,41 +18,43 @@ module Shared.VarUtil
 where
 import Shared.Pretty
 import Util
-import DDC.Base.SourcePos	
+import DDC.Base.SourcePos
+import DDC.Var.VarId	
 import Data.Char		hiding (isSymbol)
-import Shared.Var 		(Var, VarBind, VarInfo(..), NameSpace(..))
+import Shared.Var 		(Var, VarInfo(..), NameSpace(..))
 import qualified Data.Map	as Map
 import qualified Shared.Var 	as Var
 
 
 -----
-type VarGenM = State VarBind
+type VarGenM = State VarId
 
-newVarN ::	NameSpace -> VarGenM Var
-newVarN		space
- = do
- 	varBind		<- get
-	let varBind'	= Var.incVarBind varBind
-	put varBind'
+
+-- | Allocate a fresh variable
+newVarN :: NameSpace -> VarGenM Var
+newVarN	space
+ = do	vid		<- get
+	let vid'	= Var.incVarId vid
+	put vid'
 	
-	let var		= (Var.new $ pprStrPlain varBind)
-			{ Var.bind	= varBind
+	let var		= (Var.new $ pprStrPlain vid)
+			{ Var.varId	= vid
 			, Var.nameSpace	= space }
 	
 	return var
 
 
+-- | Allocate a fresh variable named after some string
 newVarNS ::	NameSpace -> String	-> VarGenM Var
 newVarNS	space	     str
- = do
-	var	<- newVarN space
-	return	var { Var.name = (pprStrPlain $ Var.bind var) ++ str }
+ = do	var	<- newVarN space
+	return	var { Var.name = (pprStrPlain $ Var.varId var) ++ str }
 
 
+-- | Allocate a fresh variable named after some string, with info.
 newVarNI ::	NameSpace -> [Var.VarInfo]	-> VarGenM Var
 newVarNI	space	     info
- = do
- 	var	<- newVarN space 
+ = do 	var	<- newVarN space 
 	return	var { Var.info = info }
 	
 	
@@ -70,6 +72,7 @@ varPos var
 			$ find (=@= ISourcePos{})
 			$ Var.info var
 	pos
+
 
 -- Pretty print the source position of the bounding occurance of this variable.
 prettyPosBound :: Var	-> String
@@ -92,7 +95,7 @@ sortForallVars	  vs
  	tVars ++ rVars ++ eVars ++ cVars
 
 
--- Check whether the name of this var contains symbols that the
+-- | Check whether the name of this var contains symbols that the
 --	C compiler won't like.
 varHasSymbols :: Var -> Bool
 varHasSymbols var 
@@ -126,7 +129,7 @@ isCtorName var
 	where (n:_)	= Var.name var
 
 
--- Dummy vars introduced by the compiler won't have SourcePos's
+-- | Dummy vars introduced by the compiler won't have SourcePos's
 isDummy	   var	
 	= not $ any (=@= ISourcePos{}) 		 
 	$ Var.info var	

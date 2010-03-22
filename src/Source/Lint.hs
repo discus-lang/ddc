@@ -652,7 +652,7 @@ instance Lint Super where
 -- Var --------------------------------------------------------------------------------------------
 instance Lint Var where
  lint v
- 	| Var.bind v		== Var.XNil
+ 	| Var.varId v		== Var.VarIdNil
 	= death v "Var - var's bind code is undefined."
 
 	| Var.name v == ""

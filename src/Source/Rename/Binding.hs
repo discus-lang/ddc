@@ -12,7 +12,9 @@ import Source.Error
 import Shared.Error
 import Shared.Pretty
 import Util
-import Shared.Var		(Var, NameSpace(..), ModuleId(..))
+import DDC.Var.NameSpace
+import DDC.Var.VarId		as Var
+import Shared.Var		(Var, ModuleId(..))
 import qualified Debug.Trace
 import qualified Data.Map	as Map
 import qualified Shared.Var	as Var
@@ -241,11 +243,11 @@ linkN space var
 linkBoundAgainstBinding :: Var -> Var -> Var
 linkBoundAgainstBinding varBinding varBound
  = varBound	
-	{ Var.name	 = Var.name       varBinding
-	, Var.bind 	 = Var.bind 	  varBinding
-	, Var.nameModuleId = Var.nameModuleId varBinding
-	, Var.nameSpace  = Var.nameSpace  varBinding 
-	, Var.info       = Var.info varBound ++ [Var.IBoundBy varBinding]}
+	{ Var.name		= Var.name       varBinding
+	, Var.varId		= Var.varId 	  varBinding
+	, Var.nameModuleId	= Var.nameModuleId varBinding
+	, Var.nameSpace		= Var.nameSpace  varBinding 
+	, Var.info		= Var.info varBound ++ [Var.IBoundBy varBinding]}
 
 
 -- Combinations of Linking and Binding ------------------------------------------------------------
@@ -274,7 +276,7 @@ lbindV_binding var	= lbindN_binding NameValue var
 lbindN_binding :: NameSpace -> Var -> RenameM Var
 lbindN_binding space var
  -- don't rename already renamed variables
- | Var.bind var /= Var.XNil
+ | Var.varId var /= Var.VarIdNil
  = return var
 
  | otherwise
@@ -322,7 +324,7 @@ lbindV_bound var	= lbindN_bound NameValue var
 lbindN_bound :: NameSpace -> Var -> RenameM Var
 lbindN_bound space var
  -- don't rename already renamed variables.
- | Var.bind var /= Var.XNil
+ | Var.varId var /= Var.VarIdNil
  = return var
 	
  | otherwise

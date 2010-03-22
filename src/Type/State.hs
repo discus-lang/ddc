@@ -25,7 +25,9 @@ import Util
 import System.IO
 import Constraint.Pretty	()
 import Main.Arg			(Arg)
-import Shared.Var		(Var, VarBind, NameSpace(..))
+import DDC.Var.NameSpace
+import DDC.Var.VarId
+import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as U
 import qualified Main.Arg	as Arg
@@ -64,7 +66,7 @@ data SquidS
 	, stateVsBoundTopLevel	:: Set Var
 	
 	-- | New variable generator.
-	, stateVarGen		:: Map NameSpace VarBind 
+	, stateVarGen		:: Map NameSpace VarId
 
 	-- | Variable substitution.	
 	, stateVarSub		:: Map Var	 Var 
@@ -146,35 +148,27 @@ squidSInit
    	return	SquidS
 		{ stateTrace		= Nothing
 		, stateTraceIndent	= 0
-
 		, stateArgs		= Set.empty
 		, stateSigmaTable	= Map.empty
 		, stateVsBoundTopLevel	= Set.empty
 
-		, stateVarGen		= Map.insert NameType    (Var.XBind tT 0)
-					$ Map.insert NameRegion  (Var.XBind rT 0)
-					$ Map.insert NameEffect  (Var.XBind eT 0)
-					$ Map.insert NameClosure (Var.XBind cT 0)
+		, stateVarGen		= Map.insert NameType    (Var.VarId tT 0)
+					$ Map.insert NameRegion  (Var.VarId rT 0)
+					$ Map.insert NameEffect  (Var.VarId eT 0)
+					$ Map.insert NameClosure (Var.VarId cT 0)
 					$ Map.empty 
-				
-		, stateVarSub		= Map.empty 
 
+		, stateVarSub		= Map.empty 
 		, stateGraph		= graph
-	
 		, stateDefs		= Map.empty
 		, statePath		= []
-
 		, stateContains		= Map.empty
 		, stateInstantiates	= Map.empty
-	
 		, stateGenSusp		= Set.empty
 		, stateGenDone		= Set.empty
-
 		, stateInst		= Map.empty
 		, stateQuantifiedVarsKM	= Map.empty
 		, stateQuantifiedVars	= Set.empty
-
---		, stateDataFields	= Map.empty 
 		, stateProject		= Map.empty
 		, stateProjectResolve	= Map.empty
 		, stateClassInst	= Map.empty
@@ -232,15 +226,14 @@ instVar' var space mVarId
 	| Just varId	<- mVarId
 	= do
 		-- increment the generator and write it back into the table.
-		let varId'	= Var.incVarBind varId
+		let varId'	= Var.incVarId varId
 		modify $ \s -> s { stateVarGen = Map.insert space varId' (stateVarGen s) }
 
 		-- the new variable remembers what it's an instance of..
 		let name	= pprStrPlain varId
 		let var'	= (Var.new name)
-			 { Var.nameSpace		= Var.nameSpace var
-			 , Var.bind		= varId }
---			 , Var.info		= [Var.IParent var] }
+			 { Var.nameSpace	= Var.nameSpace var
+			 , Var.varId		= varId }
 
 		return $ Just var'
 
@@ -252,13 +245,13 @@ newVarN	space
  	Just varId	<- liftM (Map.lookup space)
 			$  gets stateVarGen
 	
-	let varId'	= Var.incVarBind varId
+	let varId'	= Var.incVarId varId
 	modify $ \s -> s { stateVarGen = Map.insert space varId' (stateVarGen s) }
 	
 	let name	= pprStrPlain varId
 	let var'	= (Var.new name)
 			{ Var.nameSpace		= space 
-			, Var.bind		= varId }
+			, Var.varId		= varId }
 			
 	return var'
 

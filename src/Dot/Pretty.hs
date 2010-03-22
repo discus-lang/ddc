@@ -30,7 +30,7 @@ instance Pretty Stmt PMode where
 instance Pretty NodeId PMode where
  ppr ss
   = case ss of
-  	NVar v		-> ppr $ (Var.bind v)
+  	NVar v		-> ppr $ (Var.varId v)
 	NString s	-> ppr $ show s
 
 

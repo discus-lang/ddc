@@ -11,12 +11,12 @@ module Source.Desugar.Base
 	, addError)
 where
 import Source.Error
+import DDC.Var.VarId
 import DDC.Var.NameSpace
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import Util
 import Shared.Var			(Var)
-import qualified Shared.VarBind		as Var
 import qualified Shared.Var		as Var
 		
 				
@@ -26,18 +26,18 @@ type RewriteM	= State RewriteS
 
 data RewriteS
 	= RewriteS
-	{ stateVarGen	:: Var.VarBind
+	{ stateVarGen	:: VarId
 	, stateErrors	:: [Error] }
 
 	
 -- | Make a new variable in this namespace and name it after a string.
 newVarNS :: NameSpace -> String -> RewriteM Var
 newVarNS space str
- = do	bind@(Var.XBind unique n) <- gets stateVarGen
-	modify $ \s -> s { stateVarGen	= Var.XBind unique (n+1) }
+ = do	bind@(Var.VarId unique n) <- gets stateVarGen
+	modify $ \s -> s { stateVarGen	= Var.VarId unique (n+1) }
 
 	let var		= (Var.new (charPrefixOfSpace space : pprStrPlain bind ++ str))
-			{  Var.bind		= bind
+			{  Var.varId		= bind
 			,  Var.nameSpace	= space }
 	return var
 

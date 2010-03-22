@@ -7,6 +7,7 @@ import Type.Exp
 import Type.Util
 import Type.Plate.Collect
 import Shared.Error
+import DDC.Var.PrimId		as Var
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -41,7 +42,7 @@ dangerT rsMutable fsClosure tt
 	 ->     -- remember any regions flagged as mutable
 	    let	rsMoreMutable	= Set.fromList
 	 			$ [r	| FConstraint v [r]	<- fs
-					, Var.bind v 	== Var.FMutable ]
+					, Var.varId v 	== (Var.VarIdPrim Var.FMutable) ]
 
 		rsMutable'	= Set.union rsMutable rsMoreMutable
 

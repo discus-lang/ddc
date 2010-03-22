@@ -19,7 +19,7 @@ type	ExM	= VarGenM
 expandCtorTree :: Tree () -> Tree ()
 expandCtorTree tree
 	= evalState (liftM concat $ mapM expandDataP tree) 
-	$ Var.XBind Unique.seaCtor 0
+	$ Var.VarId Unique.seaCtor 0
 	
 -- | Expand data constructors in a top level thing.
 expandDataP :: Top ()	-> ExM [Top ()]

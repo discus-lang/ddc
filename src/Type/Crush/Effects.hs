@@ -12,6 +12,7 @@ import Type.Location
 import Shared.VarPrim
 import Shared.Error
 import Util
+import qualified DDC.Var.PrimId	as Var
 import qualified Shared.Var	as Var
 
 -----
@@ -160,7 +161,7 @@ crushEffectT_node cid eff effSrc tNode
 	-- ReadH (Read of head region) where target is a type application.
 	| TEffect vE [TClass k cidT]	<- eff
 	, TApp{}			<- tNode
-	, Var.bind vE == Var.EReadH
+	, Var.varId vE == Var.VarIdPrim Var.EReadH
 	= do	
 		-- examine the type being constrained to see if we know its head region yet.
 		mHead	<- headTypeDownLeftSpine cidT
@@ -176,14 +177,14 @@ crushEffectT_node cid eff effSrc tNode
 	--	Such an effect can arise if we do a case match on an value of unit type.
 	| TEffect vE [TClass k cidT] 	<- eff
 	, TCon{}			<- tNode
-	, Var.bind vE == Var.EReadH
+	, Var.varId vE == Var.VarIdPrim Var.EReadH
 	=	return	$ Just 
 			( tPure
 			, TSI $ SICrushedES cid eff effSrc)
 
 	-- ReadT (deep read of whole object)
 	| TEffect ve [t1]	<- eff
-	, Var.bind ve == Var.EReadT
+	, Var.varId ve == Var.VarIdPrim Var.EReadT
 	= do	mtsArgs	<- traceDownLeftSpine t1
 		case mtsArgs of
 		 Nothing	-> return Nothing
@@ -206,7 +207,7 @@ crushEffectT_node cid eff effSrc tNode
 						
 	-- WriteT (deep write to whole object)
 	| TEffect ve [t1]	<- eff
-	, Var.bind ve == Var.EWriteT
+	, Var.varId ve == Var.VarIdPrim Var.EWriteT
 	= do	mtsArgs	<- traceDownLeftSpine t1
 		case mtsArgs of
 		 Nothing	-> return Nothing

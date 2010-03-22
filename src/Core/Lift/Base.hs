@@ -1,4 +1,5 @@
 
+-- | Lambda lifter state.
 module Core.Lift.Base
 	( LiftS(..)
 	, LiftM
@@ -15,7 +16,9 @@ import Shared.Error
 import Shared.Pretty
 import Util
 import Type.Exp
-import Shared.Var		(Var, VarBind, NameSpace(..))
+import DDC.Var.NameSpace
+import DDC.Var.VarId
+import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as Unique
 import qualified Data.Map	as Map
@@ -24,10 +27,12 @@ import qualified Data.Set	as Set
 -----
 stage	= "Core.Lift.Base"
 
------
+
+-- | Lifter state
+type LiftM = State LiftS	
 data LiftS
 	= LiftS
-	{ stateVarGen		:: VarBind
+	{ stateVarGen		:: VarId
 
 	, stateTypes		:: Map Var Type
 
@@ -43,15 +48,9 @@ data LiftS
 								
 	}	
 								
-	
-	
-type LiftM
-	= State LiftS	
-
------
 initLiftS
 	= LiftS
-	{ stateVarGen		= Var.XBind ("v" ++ Unique.coreLift) 0
+	{ stateVarGen		= Var.VarId ("v" ++ Unique.coreLift) 0
 	, stateTypes		= Map.empty
 	, stateTopVars		= Set.empty
 	, stateChopped		= [] 
@@ -59,15 +58,16 @@ initLiftS
 
 
 
------
-bindType ::	Var -> Type -> LiftM ()
-bindType	v	t
+-- | Add a typed variable to the state
+bindType :: Var -> Type -> LiftM ()
+bindType v t
  	= modify (\s -> s 
 		{ stateTypes 	= Map.insert v t (stateTypes s) })
 		
 
-getType ::	Var -> LiftM Type
-getType		v
+-- | Get the type of some variable from the state.
+getType :: Var -> LiftM Type
+getType	 v
  = case Var.nameSpace v of
 	NameValue	
 	 -> do	t	<- liftM (fromMaybe TNil)
@@ -79,8 +79,9 @@ getType		v
 	_ -> panic stage $ "getType: no type for " % v % " space = " % show (Var.nameSpace v)
 	
 
-getKind ::	Var -> LiftM Kind
-getKind		v
+-- | Get the kind of some variable by examining its namespace.
+getKind :: Var -> LiftM Kind
+getKind	 v
  = case Var.nameSpace v of
 	NameType	-> return kValue
  	NameRegion	-> return kRegion
@@ -91,14 +92,14 @@ getKind		v
 	NameClass	-> return KNil
 	
 
------	
-newVar ::	NameSpace -> LiftM Var
+-- | Create a new var in a certain namespace
+newVar :: NameSpace -> LiftM Var
 newVar	space
  = do
  	gen		<- gets stateVarGen
-	let gen'	= Var.incVarBind gen
+	let gen'	= Var.incVarId gen
 	let var		= (Var.new $ pprStrPlain gen) 
-				{ Var.bind 		= gen 
+				{ Var.varId 		= gen 
 				, Var.nameSpace		= space }
 	
 	modify (\s -> s { stateVarGen = gen' })
@@ -107,14 +108,13 @@ newVar	space
 	
 	
 -----
-addChopped ::	Var -> Var -> Top -> LiftM ()
-addChopped	old    new    x
+addChopped :: Var -> Var -> Top -> LiftM ()
+addChopped old new x
  	= modify (\s -> s { stateChopped =  stateChopped s ++ [(old, new, x)]})
 
-getChopped ::	LiftM [(Var, Var, Top)]
+getChopped :: LiftM [(Var, Var, Top)]
 getChopped	
- = do
- 	cs	<- gets stateChopped
+ = do 	cs	<- gets stateChopped
 	modify (\s -> s { stateChopped = [] })
 	
 	return cs

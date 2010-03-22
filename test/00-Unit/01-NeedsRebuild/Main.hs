@@ -1,28 +1,28 @@
 import Data.List
 import Module.Scrape
 import Module.ScrapeGraph
-import Shared.Var		(Module(..))
+import Shared.Var		(ModuleId(..))
 import Main.Arg
 import System.Exit		(exitFailure)
 
 import qualified Data.Map	as Map
 
 
-genScrape :: [String] -> [[String]] -> (Module, Scrape)
+genScrape :: [String] -> [[String]] -> (ModuleId, Scrape)
 genScrape mod imports
- = (	ModuleAbsolute mod,
+ = (	ModuleIdAbsolute mod,
 	Scrape {
-		scrapeModuleName = ModuleAbsolute mod,
-		scrapePathSource = Nothing,
-		scrapePathInterface = Nothing,
-		scrapePathHeader = Nothing,
-		scrapePathObject = Nothing,
-		scrapeImportDir = Nothing,
-		scrapeImported = map ModuleAbsolute imports,
-		scrapeArgsInline = [NoImplicitPrelude],
-		scrapeNeedsRebuild = False,
-		scrapeBuild = Nothing,
-		scrapeDefinesMain = False
+		scrapeModuleName 	= ModuleIdAbsolute mod,
+		scrapePathSource 	= Nothing,
+		scrapePathInterface 	= Nothing,
+		scrapePathHeader 	= Nothing,
+		scrapePathObject 	= Nothing,
+		scrapeImportDir 	= Nothing,
+		scrapeImported 		= map ModuleIdAbsolute imports,
+		scrapeArgsInline 	= [NoImplicitPrelude],
+		scrapeNeedsRebuild 	= False,
+		scrapeBuild 		= Nothing,
+		scrapeDefinesMain 	= False
 		}
 	)
 
@@ -31,10 +31,10 @@ invalidateModules :: ScrapeGraph -> [[String]] -> ScrapeGraph
 invalidateModules graph names
  = foldl' (\ g m ->
  	Map.adjust (\s -> s { scrapeNeedsRebuild = True }) m g
- 	) graph $ map ModuleAbsolute names
+ 	) graph $ map ModuleIdAbsolute names
 
 
-needsRebuild :: ScrapeGraph -> [Module]
+needsRebuild :: ScrapeGraph -> [ModuleId]
 needsRebuild graph
  =	foldl' (\ l (m, v) -> if scrapeNeedsRebuild v then (m : l) else l) [] $ Map.toList graph
 
@@ -55,10 +55,10 @@ defaultScrapeGraph
 
 runTest :: Int -> [[String]] -> IO ()
 runTest expected mods
- = do	let graph2 = invalidateModules defaultScrapeGraph mods
-	let graph3 = propagateNeedsRebuild graph2
-	let rmods = needsRebuild graph3
-	let count = length rmods
+ = do	let graph2 	= invalidateModules defaultScrapeGraph mods
+	let graph3 	= propagateNeedsRebuild graph2
+	let rmods 	= needsRebuild graph3
+	let count 	= length rmods
 	if count == expected
 	 then return ()
          else do

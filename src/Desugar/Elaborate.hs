@@ -152,24 +152,24 @@ freeVarsR tt
 -- State -------------------------------------------------------------------------------------------
 data ElabS
 	= ElabS 
-	{ stateVarGen	:: Var.VarBind }
+	{ stateVarGen	:: Var.VarId }
 
 stateInit unique
 	= ElabS
-	{ stateVarGen	= Var.XBind unique 0 }
+	{ stateVarGen	= Var.VarId unique 0 }
 	
 type ElabM = State ElabS
 
 -- | Create a fresh variable
 newVarN :: NameSpace -> ElabM Var
 newVarN space
- = do	varId@(Var.XBind p i)	<- gets stateVarGen
+ = do	varId@(Var.VarId p i)	<- gets stateVarGen
  
 	let name	= charPrefixOfSpace space : p ++ show i
 	let var		= (Var.new name) 
-			{ Var.bind 	= varId
+			{ Var.varId 	= varId
 			, Var.nameSpace = space }
 	
-	modify $ \s -> s { stateVarGen = Var.XBind p (i + 1) }
+	modify $ \s -> s { stateVarGen = Var.VarId p (i + 1) }
 	
 	return var

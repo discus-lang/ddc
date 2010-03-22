@@ -7,8 +7,9 @@
 module Shared.VarPrim
 where
 import Shared.Var		(Var, NameSpace(..), ModuleId(..), VarInfo)
-import Shared.VarBind
 import Util
+import DDC.Var.PrimId
+import DDC.Var.VarId
 import DDC.Base.DataFormat
 import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
@@ -128,25 +129,27 @@ primEq	= primVar NameValue	"Class.Eq.=="			VEq
 -- Utils -------------------------------------------------------------------------------------------
 
 -- | Create a primitive variable
-primVar :: NameSpace -> String -> VarBind -> Var
-primVar space name bind
+primVar :: NameSpace -> String -> PrimId -> Var
+primVar space name pid
  = let	parts		= breakOns '.' name
  	Just modParts	= takeInit parts
 	Just varName	= takeLast parts
 
    in	(Var.new varName)
- 	{ Var.bind		= bind
+ 	{ Var.varId		= VarIdPrim pid
 	, Var.nameSpace		= space
 	, Var.nameModuleId	= ModuleIdAbsolute modParts }
 
 
 -- | Create a primitive variable with some extended info
-primVarI :: NameSpace -> String -> VarBind -> [VarInfo] -> Var
-primVarI space name bind info
-  = (primVar space name bind) { Var.info = info }
+primVarI :: NameSpace -> String -> PrimId -> [VarInfo] -> Var
+primVarI space name pid info
+  	= (primVar space name pid) 
+		{ Var.info = info }
+
 
 -- | Create the var for this primitive type
-primVarFmt :: NameSpace -> String -> (DataFormat -> VarBind) -> DataFormat -> Var
+primVarFmt :: NameSpace -> String -> (DataFormat -> PrimId) -> DataFormat -> Var
 primVarFmt space name mkBind fmt
  = let	suffix = case fmt of
 			Boxed		-> ""
@@ -159,7 +162,8 @@ primVarFmt space name mkBind fmt
 
    in	primVarI 
 		space 
-		(name ++ suffix) (mkBind fmt)			
+		(name ++ suffix) 
+		(mkBind fmt)			
 		[Var.ISeaName $ varName ++ filter (/= '#') suffix]
 
 -- | If this string has the given prefix then split it off and return the rest
@@ -177,39 +181,40 @@ splitPrefix (p:ps) []	= Nothing
 -- | Check whether a var is for an unboxed type constructor
 varIsUnboxedTyConData :: Var -> Bool
 varIsUnboxedTyConData var
-	= varBindIsUnboxedTyConData (Var.bind var)
+	= varBindIsUnboxedTyConData (Var.varId var)
 
-varBindIsUnboxedTyConData bind
-	| Just fmt	<- takeVarBind_dataFormat bind
+varBindIsUnboxedTyConData vid
+	| Just fmt		<- takeDataFormatOfVarId vid
 	= dataFormatIsUnboxed fmt
 
-	| TVoidU	<- bind	= True
-	| TPtrU		<- bind	= True
+	| VarIdPrim TVoidU	<- vid	= True
+	| VarIdPrim TPtrU	<- vid	= True
 	
 	| otherwise		= False
 
 
 -- getPrimVarBind -------------------------------------------------------------------------------------	  
 -- | If this var has a special meaning to the compiler then get its unique binder
-getPrimVarBind :: NameSpace -> Var -> Maybe VarBind
+getPrimVarBind :: NameSpace -> Var -> Maybe VarId
 getPrimVarBind space var
  = case space of
   	NameValue	-> renamePrimVar_value  $ Var.name var
 	NameType	-> renamePrimVar_type   $ Var.name var
-	NameEffect	-> renamePrimVar_effect $ Var.name var
-	NameClass	-> renamePrimVar_class  $ Var.name var
+	NameEffect	-> liftM VarIdPrim $ renamePrimVar_effect $ Var.name var
+	NameClass	-> liftM VarIdPrim $ renamePrimVar_class  $ Var.name var
 	_		-> Nothing
 	
-renamePrimVar_value :: String -> Maybe VarBind
+renamePrimVar_value :: String -> Maybe VarId
 renamePrimVar_value ss
 	| Just xx	<- splitPrefix "Tuple" ss
-	= Just (VTuple (read xx))
+	= Just $ VarIdPrim $ VTuple (read xx)
 	
 	| Just xx	<- splitPrefix "suspend" ss
-	= Just (VSuspend (read xx))
+	= Just $ VarIdPrim $ VSuspend (read xx)
 	
 	| otherwise
-	= Map.lookup ss renamePrimVar_values
+	= liftM VarIdPrim
+	$ Map.lookup ss renamePrimVar_values
 	
 renamePrimVar_values
 	= Map.fromList 
@@ -240,13 +245,15 @@ renamePrimVar_values
 	, ("==",		VEq)]
 
 	
-renamePrimVar_type :: String -> Maybe VarBind
+renamePrimVar_type :: String -> Maybe VarId
 renamePrimVar_type ss
 	| Just xx	<- splitPrefix "Tuple" ss
-	= Just (TTuple (read xx))
+	= Just (VarIdPrim $ TTuple $ read xx)
 	
 	| otherwise
-	= Map.lookup ss renamePrimVar_types
+	= liftM VarIdPrim 
+	$ Map.lookup ss renamePrimVar_types
+		
 	
 -- | We manually list out all the primitive types to ensure
 --	that invalid ones are not bound.	
@@ -307,29 +314,8 @@ renamePrimVar_types
 	, ("Ref",		TRef)
 	, ("List",		TList)]
 
-{-
-defaultTypeVar :: Var -> Var
-defaultTypeVar var
- = case Var.name var of
-	"Word"		-> primVar NameType "Base.Word32"   (TWord  $ BoxedBits 32)
-	"Int"		-> primVar NameType "Base.Int32"    (TInt   $ BoxedBits 32)
-	"Float"		-> primVar NameType "Base.Float32"  (TFloat $ BoxedBits 32)
-	"Char"		-> primVar NameType "Base.Char32"   (TChar  $ BoxedBits 32)
 
-	"Word#"		-> primVar NameType "Base.Word32#"   (TWord  $ UnboxedBits 32)
-	"Int#"		-> primVar NameType "Base.Int32#"    (TInt   $ UnboxedBits 32)
-	"Float#"	-> primVar NameType "Base.Float32#"  (TFloat $ UnboxedBits 32)
-	"Char#"		-> primVar NameType "Base.Char32#"   (TChar  $ BoxedBits   32)
-	_		-> var
--}
-
-{-
-var_withModule :: String -> Var -> Var
-var_withModule str var
-	= var { Var.ModuleAbsolute $ breakOns '.' str }
--}
-
-renamePrimVar_effect :: String -> Maybe VarBind
+renamePrimVar_effect :: String -> Maybe PrimId
 renamePrimVar_effect ss
  = Map.lookup ss $ Map.fromList $
  	[ ("Read",		ERead)
@@ -339,7 +325,7 @@ renamePrimVar_effect ss
 	, ("WriteT",		EWriteT) ]
 
 
-renamePrimVar_class :: String -> Maybe VarBind
+renamePrimVar_class :: String -> Maybe PrimId
 renamePrimVar_class ss
 	| Just xx	<- splitPrefix "Shape" ss
 	= Just (FShape (read xx))

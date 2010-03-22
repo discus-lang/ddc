@@ -1,7 +1,6 @@
 
 -- | 	Snip out function applications and compound expressions from function arguments.
 --	This needs to be run after Core.Block, which wraps the applications of interest in XDos.
---
 module Core.Snip
 	( Table(..)
 	, snipTree )
@@ -13,7 +12,8 @@ import Type.Exp
 import Shared.Error
 import Shared.Pretty
 import Util
-import Shared.Var			(Var, NameSpace(..))
+import DDC.Var.NameSpace
+import Shared.Var			(Var)
 import Shared.VarGen			(VarGenM, newVarN)
 import qualified Core.Reconstruct	as Recon
 import qualified Shared.Var		as Var
@@ -29,7 +29,7 @@ trace s	x 	= if debug then Debug.Trace.trace (pprStrPlain s) x else x
 -----
 type SnipM	= VarGenM
 
--- Table -------------------------------------------------------------------------------------------
+-- | Snipper environment.
 data Table
 	= Table
 	{  -- | vars of top level bindings
@@ -39,7 +39,8 @@ data Table
   	   --	  this requires that expressions have locally reconstuctable types
 	,  tablePreserveTypes	:: Bool }
 	   
------
+
+-- | Snip bindings in this tree.
 snipTree 
 	:: Table
 	-> String	-- string to use for var prefix
@@ -50,7 +51,7 @@ snipTree table varPrefix tree
  = let	transTable	= transTableId { transSS = snipStmts table }
 	tree'		= evalState
 				(mapM (transZM transTable) tree)
-				$ Var.XBind varPrefix 0
+				$ Var.VarId varPrefix 0
    in	tree'
    
 
@@ -88,7 +89,6 @@ snipStmt table xx
 
 
 -- | Enter into an expression on the RHS of a stmt.
-
 snipX1 :: Table -> Map Var Type -> Exp -> SnipM ([Stmt], Exp)
 snipX1	table env xx
  = trace ("snipX1: " % xx)
@@ -132,7 +132,6 @@ snipX1	table env xx
 
 
 -- | Snip some stuff from an expression.
-
 snipX table xx
  = trace ("snipX " % xx)
  $ case xx of
@@ -169,7 +168,6 @@ snipX table xx
 
 -- | Snip some expressions from the left hand side of a function application.
 --	On the left hand side we leave vars alone, and decend into other applications.
---
 snipXLeft :: Table -> Exp -> SnipM ([Stmt], Exp)
 snipXLeft table xx
  = case xx of
@@ -194,7 +192,6 @@ snipXLeft table xx
 
 -- | Snip some expressions from the right hand side of a function application.
 --	Right hand sides are arguments, snip function applications and anything else that looks good.
---
 snipXRight :: Table -> Exp -> SnipM ([Stmt], Exp)
 snipXRight table xx
  = case xx of
@@ -216,11 +213,10 @@ snipXRight table xx
 	_ -> snipX table xx
 
 
--- Snip some thing, creating a new statement.
+-- | Snip some thing, creating a new statement.
 --	If tablePreserve is turned on then preserve the type of the new var, 
 --	else just add a TNil. In this case we'll need to call Core.Reconstruct
 --	to fill in the type annots later on.
---
 snipIt :: Table -> Exp -> SnipM ([Stmt], Exp)
 snipIt table xx
 	| tablePreserveTypes table
@@ -234,14 +230,14 @@ snipIt table xx
 	 	return	( [SBind (Just b) xx] 
 			, XVar b TNil )
 
--- Leave some thing alone.
+
+-- | Leave some thing alone.
 leaveIt :: Exp -> SnipM ([Stmt], Exp)
 leaveIt xx	= return ([], xx)
 
 
------
--- Used by snipX/XAPP
---
+-- | Take the variable from an expression 
+--	(possibly wrapped in a type application)
 takeVar :: Exp -> Maybe Var
 takeVar	(XAPP x t)	= takeVar x
 takeVar (XVar v t)	= Just v

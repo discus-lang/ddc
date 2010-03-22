@@ -1,7 +1,7 @@
 {-# OPTIONS -O2 #-}
 
 module Shared.Var
-	( module Shared.VarBind
+	( module DDC.Var.VarId
 	, module DDC.Var.NameSpace
 	, Var (..)
 	, new
@@ -10,13 +10,13 @@ module Shared.Var
 	, ModuleId(..) 
 	, noModule )
 where
-import Shared.Pretty
-import Shared.VarBind
 import Shared.Error
+import DDC.Var.NameSpace
+import DDC.Var.VarId
+import DDC.Main.Pretty
+import DDC.Base.SourcePos
 import Data.Char
 import Util
-import DDC.Var.NameSpace
-import DDC.Base.SourcePos
 
 stage	= "Shared.Var"
 
@@ -28,7 +28,7 @@ data Var =
 	{ name		:: !String		-- ^ Name of this var.
 	, nameModuleId	:: !ModuleId		-- ^ The module path that this var was defined in.
 	, nameSpace	:: !NameSpace		-- ^ The namespace of the variable.
-	, bind		:: !VarBind		-- ^ A unique identifier for this binding occurance.
+	, varId		:: !VarId		-- ^ A unique identifier for this binding occurance.
 	, info		:: ![VarInfo] }		-- ^ some (optional) info about this var.
 	deriving Show
 
@@ -53,21 +53,21 @@ new	n
 	{ name 		= n
 	, nameModuleId	= ModuleIdNil
 	, nameSpace	= NameNothing	
-	, bind		= XNil
+	, varId		= VarIdNil
 	, info		= [] }
 
 
 -- | Comparing variables for equality
 instance Eq Var where
   (==) v1 v2	
-	=   bind v1 == bind v2
+	=   varId v1 == varId v2
 	&&  nameModuleId v1 == nameModuleId v2
 
 
 -- | Ordering of variables
 instance Ord Var where
  compare v1 v2 	
-  = case compare (bind v1) (bind v2) of
+  = case compare (varId v1) (varId v2) of
 	EQ	-> compare (nameModuleId v1) (nameModuleId v2)
 	ord	-> ord
 
@@ -135,7 +135,7 @@ pprVarSpaced v
 -- | Pretty print a variable name, including its unique binder if requested.
 pprVarName v
  = ifMode (elem PrettyUnique)
- 	(name v % "_" % bind v)
+ 	(name v % "_" % varId v)
 	(ppr $ name v)
 
 

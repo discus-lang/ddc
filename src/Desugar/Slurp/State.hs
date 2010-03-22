@@ -14,7 +14,9 @@ import Type.Error
 import Desugar.Exp
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
-import Shared.Var		(Var, VarBind, NameSpace(..))
+import DDC.Var.NameSpace
+import DDC.Var.VarId
+import Shared.Var		(Var)
 import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map
 import qualified Shared.Var 	as Var
@@ -59,7 +61,7 @@ data	CSlurpS =
 	, stateErrors		:: [Error]
 
 	-- Variable generator.
-	, stateGen		:: Map NameSpace VarBind
+	, stateGen		:: Map NameSpace VarId
 
 	, stateDataDefs		:: Map Var (Top Annot2)
 
@@ -88,13 +90,13 @@ initCSlurpS
 	, stateErrors		= []
 	, stateGen		
 	   = 	Map.fromList
-		[ (NameValue,	Var.XBind ("v" ++ Unique.typeConstraint) 0)
-		, (NameType,	Var.XBind ("t" ++ Unique.typeConstraint) 0)
-		, (NameRegion,	Var.XBind ("r" ++ Unique.typeConstraint) 0)
-		, (NameEffect,	Var.XBind ("e" ++ Unique.typeConstraint) 0) 
-		, (NameClosure,	Var.XBind ("c" ++ Unique.typeConstraint) 0)
-		, (NameField,	Var.XBind ("f" ++ Unique.typeConstraint) 0) 
-		, (NameClass,	Var.XBind ("w" ++ Unique.typeConstraint) 0) ]
+		[ (NameValue,	Var.VarId ("v" ++ Unique.typeConstraint) 0)
+		, (NameType,	Var.VarId ("t" ++ Unique.typeConstraint) 0)
+		, (NameRegion,	Var.VarId ("r" ++ Unique.typeConstraint) 0)
+		, (NameEffect,	Var.VarId ("e" ++ Unique.typeConstraint) 0) 
+		, (NameClosure,	Var.VarId ("c" ++ Unique.typeConstraint) 0)
+		, (NameField,	Var.VarId ("f" ++ Unique.typeConstraint) 0) 
+		, (NameClass,	Var.VarId ("w" ++ Unique.typeConstraint) 0) ]
 		
 	, stateDataDefs		= Map.empty
 	, stateCtorType		= Map.empty

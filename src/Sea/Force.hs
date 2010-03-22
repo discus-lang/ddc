@@ -7,7 +7,7 @@ where
 import Sea.Exp
 import Sea.Plate.Trans
 import Util
-import Shared.Var		(NameSpace(..))
+import DDC.Var.NameSpace
 import Shared.VarUtil		(VarGenM, newVarN, varPos)
 import qualified Shared.Unique	as Unique
 import qualified Shared.Var	as Var
@@ -19,7 +19,7 @@ type ForceM	= VarGenM
 forceTree ::  Tree () -> Tree ()
 forceTree tree
  	= evalState (mapM (transformSSM forceSS) tree)
-	$ Var.XBind Unique.seaForce 0
+	$ Var.VarId Unique.seaForce 0
 	
 
 forceSS :: [Stmt ()] -> ForceM [Stmt ()]

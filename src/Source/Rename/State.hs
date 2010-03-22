@@ -22,7 +22,9 @@ where
 import Shared.Error
 import Source.Error
 import Util
-import Shared.Var		(Var, VarBind, NameSpace(..), ModuleId(..))
+import DDC.Var.NameSpace
+import DDC.Var.VarId
+import Shared.Var		(Var, ModuleId(..))
 import Shared.VarPrim		(getPrimVarBind)
 import qualified Shared.Var	as Var
 import qualified Util.Data.Map	as Map
@@ -83,7 +85,7 @@ data	RenameS
 	  stateModuleId		:: Maybe ModuleId
 
 	  -- | Fresh variable generators, one for each namespace.
-	, stateGen		:: Map NameSpace VarBind			
+	, stateGen		:: Map NameSpace VarId	
 
 	  -- | The scopes for a particular namespace.
 	  --   This starts out with just a ScopeTop element for each namespace.
@@ -108,14 +110,14 @@ initRenameS
 	, stateModuleId		= Nothing
 
 	, stateGen		= Map.fromList
-				[ (NameModule,	Var.XBind "mR"  0)
-				, (NameValue,	Var.XBind "vR"  0)
-				, (NameType,	Var.XBind "tR"  0)
-				, (NameRegion,	Var.XBind "rR"  0)
-				, (NameEffect,	Var.XBind "eR"  0) 
-				, (NameClosure, Var.XBind "cR"  0)
-				, (NameField,	Var.XBind "fR"  0) 
-				, (NameClass,	Var.XBind "aR"  0) ] 
+				[ (NameModule,	Var.VarId "mR"  0)
+				, (NameValue,	Var.VarId "vR"  0)
+				, (NameType,	Var.VarId "tR"  0)
+				, (NameRegion,	Var.VarId "rR"  0)
+				, (NameEffect,	Var.VarId "eR"  0) 
+				, (NameClosure, Var.VarId "cR"  0)
+				, (NameField,	Var.VarId "fR"  0) 
+				, (NameClass,	Var.VarId "aR"  0) ] 
 
 	-- Each namespace starts out with an empty top level scope
 	, stateScopes		= Map.fromList 
@@ -234,7 +236,7 @@ uniquifyVarN space var
 	 	Just bind	
 		 -> do	Just mod	<- gets stateModuleId
 			return 
-		 	 $ var 	{ Var.bind		= bind
+		 	 $ var 	{ Var.varId		= bind
 				, Var.nameSpace		= space
 				, Var.nameModuleId	= mod }
 									
@@ -251,12 +253,12 @@ uniquifyVarN' space var
 
 	-- rename the var and set its namespace
 	let var'	= var 
-			{ Var.bind 		= spaceGen 
+			{ Var.varId		= spaceGen 
 			, Var.nameSpace		= space 
 			, Var.nameModuleId	= mod }
 
 	-- increment the varid generator
-	let spaceGen'	= Var.incVarBind spaceGen
+	let spaceGen'	= Var.incVarId spaceGen
 	modify $ \s -> s
 		{ stateGen	= Map.insert space spaceGen' (stateGen s) }
 	

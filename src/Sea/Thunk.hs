@@ -14,7 +14,7 @@ import Sea.Pretty
 import Sea.Plate.Trans
 import Shared.Pretty
 import Util
-import Shared.Var		(VarBind)
+import DDC.Var.VarId
 import qualified Shared.Var	as Var
 import qualified Shared.Unique	as Unique
 
@@ -267,21 +267,20 @@ expandApplyN
 
 
 -- ExM ------------------------------------------------------------------------
-type	ExM	= State VarBind
-initExS		= Var.XBind Unique.seaThunk 0
+type	ExM	= State VarId
+initExS		= VarId Unique.seaThunk 0
 
 -- | Create a fresh variable based on this name
 newVar 	:: Maybe String 
 	-> ExM Var
 
 newVar mName
- = do
- 	gen		<- get
-	let gen'	= Var.incVarBind gen
+ = do	gen		<- get
+	let gen'	= Var.incVarId gen
 	put gen'
 	
 	let name	= fromMaybe (pprStrPlain gen) mName
-	let var		= (Var.new name) { Var.bind = gen }
+	let var		= (Var.new name) { Var.varId = gen }
 	
 	return var
 

@@ -133,7 +133,7 @@ dotBindVar (v, (app, freeVs))
 dotBindVar_SC str colorStr v
  = pprStrPlain
 	$ "\t"
-	% quote (pprStrPlain $ Var.bind v)
+	% quote (pprStrPlain $ Var.varId v)
 	% " [ label = " % quote (pprStrPlain v ++ str) 
 	% " , color = " % colorStr 
 	% "];\n"
@@ -149,6 +149,6 @@ dotApp	v vs
 
 dotVarBind :: Var -> String
 dotVarBind    v	
-	= "\"" ++ (pprStrPlain $ Var.bind v) ++ "\""
+	= "\"" ++ (pprStrPlain $ Var.varId v) ++ "\""
 
 quote s	= "\"" ++ s ++ "\""

@@ -10,32 +10,32 @@ module Shared.VarGen
 	, evalVarGen
 	, uniquifyV)
 where
+import Shared.Var
 import qualified Shared.Var 	as Var
-import Shared.Var		 (Var, VarBind, NameSpace(..))
 import Control.Monad.State.Strict
 
 -----
 type VarGenM 	= State VarGen
-type VarGen	= Var.VarBind
+type VarGen	= Var.VarId
 
 
 -- | Create a fresh variable id
-newVarId :: State VarGen VarBind
+newVarId :: State VarGen VarId
 newVarId
- = do	Var.XBind prefix num	<- get
-	put 	$ Var.XBind prefix (num + 1)
-	return 	$ Var.XBind prefix num	
+ = do	VarId prefix num	<- get
+	put 	$ VarId prefix (num + 1)
+	return 	$ VarId prefix num	
 
 
 -- | Create a fresh variable
-newVarN :: Var.NameSpace -> State VarGen Var
+newVarN :: NameSpace -> State VarGen Var
 newVarN space
- = do	varId@ (Var.XBind prefix num)	
+ = do	vid@ (VarId prefix num)	
 		<- newVarId
 
 	let name	= prefix ++ (show num)
 	let var		= (Var.new name) 
-			{ Var.bind = varId 
+			{ Var.varId = vid
 			, Var.nameSpace = space }
 	return var
 
@@ -54,15 +54,15 @@ newVarsN space count
 
 -- | Rewrite the bind on this variable to a fresh one,
 --	keeping the rest of the info associated with the var.
-uniquifyV ::	Var	-> State VarGen Var
-uniquifyV	v
- = do	varId	<- newVarId
-	return	$ v { Var.bind = varId }
+uniquifyV :: Var -> State VarGen Var
+uniquifyV v
+ = do	vid	<- newVarId
+	return	$ v { Var.varId = vid }
 
 
 -- | Evaluate the monad, using this unique string to name vars after.
-evalVarGen ::	State VarGen a	-> String 	-> a
-evalVarGen	comp prefix	
-	= evalState comp (Var.XBind prefix 0)
+evalVarGen :: State VarGen a -> String -> a
+evalVarGen comp prefix	
+	= evalState comp (VarId prefix 0)
 	
 

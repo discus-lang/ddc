@@ -387,7 +387,7 @@ seaVar local v
 	
 	| Var.varHasSymbols v
 	= seaModule (Var.nameModuleId v)
-	++ (if local then "_" ++ (pprStrPlain $ Var.bind v) ++ "_" else "_")
+	++ (if local then "_" ++ (pprStrPlain $ Var.varId v) ++ "_" else "_")
 	++ "_sym" ++ (Var.deSymString $ Var.name v)	
 
 	-- local vars are specific to a single Sea function.

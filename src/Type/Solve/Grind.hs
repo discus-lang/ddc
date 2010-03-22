@@ -13,6 +13,7 @@ import Type.Crush.Proj
 import Constraint.Exp
 import Shared.Error
 import Util
+import qualified DDC.Var.PrimId	as Var
 import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
 
@@ -131,14 +132,12 @@ grindClass2 cid c@(Class
 			, classFetterSources	= fs_src})
  = do	
 	-- if a class contains an effect it might need to be crushed
---	traceG	$ ppr "   - crushing effects\n"
 	progressCrushE	
 		<- case k of
 			kE | kE == kEffect	-> crushEffectC cid
 			_			-> return False
 
 	-- try and crush other fetters in this class
---	traceG	$ ppr "   - crushing type fetters\n"
 	progressCrush
 		<- case fs_src of
 			[]	-> return False
@@ -151,7 +150,6 @@ grindClass2 cid c@(Class
 grindClass2 cid c@(ClassFetter { classFetter = f })
  = do
 	-- crush projection fetters
---	traceG	$ ppr "   - crushing projections\n"
 	qsMore	<- case f of
 			FProj{}	-> crushProjClassT cid
 			_	-> return Nothing
@@ -160,7 +158,6 @@ grindClass2 cid c@(ClassFetter { classFetter = f })
 		= isJust qsMore
 		
 	-- crush shape fetters
---	traceG	$ ppr "   - crushing shapes\n"
 	let isFShape b
 		= case b of
 			Var.FShape _	-> True
@@ -169,11 +166,11 @@ grindClass2 cid c@(ClassFetter { classFetter = f })
 	progressShape
 		<- case f of
 			FConstraint v _
-			 | isFShape $ Var.bind v	-> crushShape cid
-			_				-> return False
+			 | Var.VarIdPrim pid	<- Var.varId v
+			 , isFShape pid		-> crushShape cid
+			_			-> return False
 		
 	-- crush other fetters
---	traceG	$ ppr "   - crushing other fetters\n"
 	progressCrush
 		<- crushFetterC cid
 		

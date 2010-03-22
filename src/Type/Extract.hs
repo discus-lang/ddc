@@ -75,7 +75,7 @@ extractType_findClass final varT
 	 --	something that doens't exist in the graph. bad news, dude.
 	 Nothing	
 	  -> freakout stage
-		 ("extractType: no classId defined for variable " % (varT, Var.bind varT) % "\n")
+		 ("extractType: no classId defined for variable " % (varT, Var.varId varT) % "\n")
 		$ return Nothing
 
 extractType_fromClass final varT cid

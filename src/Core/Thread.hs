@@ -18,9 +18,10 @@ import Type.Builtin
 import Type.Util
 import Type.Exp
 import Shared.Var
-import Shared.VarPrim
 import Shared.Error
 import Util
+import Shared.VarPrim
+import qualified DDC.Var.PrimId		as Var
 import qualified Shared.Var		as Var
 import qualified Util.Data.Map		as Map
 
@@ -42,8 +43,8 @@ type ThreadM
 type ClassInstMap
 	= Map Var [Top]
 
---------------------------------------------------------------------------------
 
+--------------------------------------------------------------------------------
 -- | Thread witness variables in this tree
 threadTree :: Tree -> Tree -> Tree
 threadTree hTree sTree 
@@ -159,7 +160,7 @@ rewriteWitness' instMap tt
 
 	-- leave shape witnesses for Core.Reconstruct to worry about
 	| Just (TyClass vC, _, _)	<- mClass
-	, Var.FShape{}			<- Var.bind vC
+	, Var.VarIdPrim Var.FShape{}	<- Var.varId vC
 	= return tt
 
 	-- leave user type classes for Core.Dict to worry about
