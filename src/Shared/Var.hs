@@ -3,18 +3,19 @@
 module Shared.Var
 	( module DDC.Var.VarId
 	, module DDC.Var.NameSpace
-	, Var (..)
+	, module DDC.Var.ModuleId
+	, Var 		(..)
+	, VarInfo	(..)
 	, new
-	, loadSpaceQualifier
-	, VarInfo(..)
-	, ModuleId(..) 
-	, noModule )
+	, noModule	
+	, loadSpaceQualifier)
 where
-import Shared.Error
+import DDC.Var.ModuleId
 import DDC.Var.NameSpace
 import DDC.Var.VarId
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
+import Shared.Error
 import Data.Char
 import Util
 
@@ -144,23 +145,8 @@ loadSpaceQualifier var
 	_		-> var
 
 
--- Module Identifiers ----------------------------------------------------------------------------
-data ModuleId
-	= ModuleIdNil			-- ^ No module information. Sometimes this means that the
-					--   variable is in the module currently being compiled.
-	
-	| ModuleIdAbsolute [String]	-- ^ Absolute module name, of the form "M1.M2.M3 ..."
-	deriving (Show, Eq, Ord)
-
-
--- | Pretty print a module id.
-instance Pretty ModuleId PMode where
- ppr m
-  = case m of
-	ModuleIdNil		-> ppr "@ModuleNil"
-  	ModuleIdAbsolute vs	-> "." %!% vs
-
 -- | strip off the module id from a variable
 noModule :: Var -> Var
 noModule var	= var { nameModuleId = ModuleIdNil }
+
 
