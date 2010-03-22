@@ -13,7 +13,7 @@ data ModuleId
 	  ModuleIdNil
 
 	-- | Absolute module name, of the form M1.M2.M3
-	| ModuleIdAbsolute [String]
+	| ModuleId [String]
 	deriving (Show, Eq, Ord)
 
 
@@ -21,6 +21,6 @@ data ModuleId
 instance Pretty ModuleId PMode where
  ppr m
   = case m of
-	ModuleIdNil		-> ppr "@ModuleNil"
-  	ModuleIdAbsolute vs	-> "." %!% vs
+	ModuleIdNil	-> ppr "@ModuleNil"
+  	ModuleId vs	-> "." %!% vs
 

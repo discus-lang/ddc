@@ -127,7 +127,7 @@ scrapeModule
 	
 scrapeModule importDirs importPrelude moduleNameSearchedFor
  = do	-- get the base path of a module by replacing '.' by '/'
-	let ModuleIdAbsolute vs	= moduleNameSearchedFor
+	let ModuleId vs	= moduleNameSearchedFor
 	let fileNameDS		= catInt "/" vs ++ ".ds"
 
 	mFileDirName	<- findFileInDirs importDirs fileNameDS
@@ -177,7 +177,7 @@ scrapeModule'
 
 		-- If neither of the above apply, then derive the module id from the file name.
 		| otherwise					
-		= ModuleIdAbsolute [fileBase]
+		= ModuleId [fileBase]
 
 {-
 	putStr 	$  "fileName           = " ++ show fileName 			++ "\n"
@@ -197,7 +197,7 @@ scrapeModule'
 	let importModsPrelude
 		= if   importPrelude
 		    && (not $ elem Arg.NoImplicitPrelude inlineArgs)
-			then nub (importMods ++ [ModuleIdAbsolute ["Prelude"]])
+			then nub (importMods ++ [ModuleId ["Prelude"]])
 			else importMods
 			
 	-- See if there is an interface file
@@ -295,7 +295,7 @@ scrapeModuleId :: [String] -> Maybe ModuleId
 scrapeModuleId []	= Nothing
 scrapeModuleId (l:ls)
  = case words l of
-	 "module" : name : _	-> Just (ModuleIdAbsolute (breakOns '.' name))
+	 "module" : name : _	-> Just (ModuleId (breakOns '.' name))
 	 _			-> scrapeModuleId ls
 
 -- ScrapeOptions ----------------------------------------------------------------------------------

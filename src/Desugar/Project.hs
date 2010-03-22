@@ -364,7 +364,7 @@ snipDataField moduleName sp vData vCtor field
 newProjFunVar :: SourcePos -> ModuleId -> Var -> Var -> ProjectM Var
 newProjFunVar 
 	src
-	moduleName@(Var.ModuleIdAbsolute ms)
+	moduleName@(Var.ModuleId ms)
 	vCon vField
  = do
  	var	<- newVarN NameValue
@@ -384,7 +384,7 @@ newProjFunVar
 newInstFunVar :: SourcePos -> ModuleId -> Var -> [Type] -> Var -> ProjectM Var
 newInstFunVar 
 	src
-	moduleName@(Var.ModuleIdAbsolute ms)
+	moduleName@(Var.ModuleId ms)
 	vClass 
 	tsArgs
 	vInst

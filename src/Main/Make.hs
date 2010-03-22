@@ -262,4 +262,4 @@ shouldBlessMain roots m
 	| otherwise
 	= True
 
-	where	mainModule = ModuleIdAbsolute ["Main"]
+	where	mainModule = ModuleId ["Main"]

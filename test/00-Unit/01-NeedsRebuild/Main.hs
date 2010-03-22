@@ -10,15 +10,15 @@ import qualified Data.Map	as Map
 
 genScrape :: [String] -> [[String]] -> (ModuleId, Scrape)
 genScrape mod imports
- = (	ModuleIdAbsolute mod,
+ = (	ModuleId mod,
 	Scrape {
-		scrapeModuleName 	= ModuleIdAbsolute mod,
+		scrapeModuleName 	= ModuleId mod,
 		scrapePathSource 	= Nothing,
 		scrapePathInterface 	= Nothing,
 		scrapePathHeader 	= Nothing,
 		scrapePathObject 	= Nothing,
 		scrapeImportDir 	= Nothing,
-		scrapeImported 		= map ModuleIdAbsolute imports,
+		scrapeImported 		= map ModuleId imports,
 		scrapeArgsInline 	= [NoImplicitPrelude],
 		scrapeNeedsRebuild 	= False,
 		scrapeBuild 		= Nothing,
@@ -31,7 +31,7 @@ invalidateModules :: ScrapeGraph -> [[String]] -> ScrapeGraph
 invalidateModules graph names
  = foldl' (\ g m ->
  	Map.adjust (\s -> s { scrapeNeedsRebuild = True }) m g
- 	) graph $ map ModuleIdAbsolute names
+ 	) graph $ map ModuleId names
 
 
 needsRebuild :: ScrapeGraph -> [ModuleId]

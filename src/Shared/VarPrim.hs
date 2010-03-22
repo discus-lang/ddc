@@ -138,7 +138,7 @@ primVar space name pid
    in	(Var.new varName)
  	{ Var.varId		= VarIdPrim pid
 	, Var.nameSpace		= space
-	, Var.nameModuleId	= ModuleIdAbsolute modParts }
+	, Var.nameModuleId	= ModuleId modParts }
 
 
 -- | Create a primitive variable with some extended info

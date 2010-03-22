@@ -108,7 +108,7 @@ lintP :: Table -> Top -> LintM Table
 
 lintP	tt (PBind v x)
  	| Var.name v == "main"
-	, Var.nameModuleId v == Var.ModuleIdAbsolute ["Main"]
+	, Var.nameModuleId v == Var.ModuleId ["Main"]
 	= do
 		let vT	= reconX_type "Core.Lint.lintP" x
 		tt'	<- addVT v vT tt

@@ -404,7 +404,7 @@ seaVar local v
 seaModule :: ModuleId -> String
 seaModule m
  = case m of
-	ModuleIdNil		-> ""
-	ModuleIdAbsolute ns	-> (catInt "_" $ ns)
+	ModuleIdNil	-> ""
+	ModuleId ns	-> (catInt "_" $ ns)
 
 

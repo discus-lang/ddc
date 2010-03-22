@@ -191,7 +191,7 @@ chooseBindingOccurrence thisModule var varsBinding
 	
 	-- if the bound occurrence has an explicit module name,
 	--	and there's a single binding occurrence for the same name in that module then use that.
-	| ModuleIdAbsolute _ <- Var.nameModuleId var
+	| ModuleId _ <- Var.nameModuleId var
 	, [varBinding]	<- filter (\v -> Var.nameModuleId v == Var.nameModuleId var) varsBinding
 	= Right (Just varBinding)
 

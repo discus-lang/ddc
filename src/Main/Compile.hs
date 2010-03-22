@@ -212,7 +212,7 @@ compileFile_parse
 					_			-> False)
 			$ sRenamed
 	
-	when (  sModule == ModuleIdAbsolute ["Main"]
+	when (  sModule == ModuleId ["Main"]
 	    &&  (not $ modDefinesMainFn))
 		 $ exitWithUserError ?args [ErrorNoMainInMain]
 					

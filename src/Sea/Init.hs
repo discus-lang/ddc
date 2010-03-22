@@ -34,7 +34,7 @@ makeInitCaf v
 	, SHackery ("     _CAF(" ++ name ++ ") = " ++ name ++ "();\n") ] 
 	where	name	= seaVar False v
 		 
-makeInitVar (ModuleIdAbsolute vs)
+makeInitVar (ModuleId vs)
 	= Var.new ("ddcInitModule_" ++ (catInt "_" vs))
 
 
@@ -45,7 +45,7 @@ mainTree
 	-> Tree ()
 	
 mainTree imports mainModule
- = let	ModuleIdAbsolute [mainModuleName]	= mainModule
+ = let	ModuleId [mainModuleName]	= mainModule
 	sLine	
 	 = unlines $
 		[ "int main (int argc, char** argv)"

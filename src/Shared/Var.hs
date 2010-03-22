@@ -77,8 +77,8 @@ instance Ord Var where
 instance Pretty Var PMode where
  ppr v
   = case nameModuleId v of
-	ModuleIdNil		-> ppr $ pprVarSpaced v
-	ModuleIdAbsolute ns	-> 	 punc "." ((map ppr ns) ++ [pprVarSpaced v])
+	ModuleIdNil	-> ppr $ pprVarSpaced v
+	ModuleId ns	-> punc "." ((map ppr ns) ++ [pprVarSpaced v])
  
 pprVarSpaced v
   = case nameSpace v of

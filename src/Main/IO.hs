@@ -88,7 +88,7 @@ chaseModules_die missingModule importDirs
 chaseModules_build setup compileFun importDirs importsRoot importMap
 	
 	| (r : rs)	<- importsRoot
-	= do 	let ModuleIdAbsolute vs	= r
+	= do 	let ModuleId vs		= r
 		let fileDir		= pprStrPlain $ "/" %!% vs
 		let fileNameDS		= fileDir ++ ".ds"
 		
@@ -147,7 +147,7 @@ loadInterface
 	importDirs
 	mod
  = do
- 	let ModuleIdAbsolute vs	= mod
+ 	let ModuleId vs		= mod
 	let fileDir		= pprStrPlain $ "/" %!% vs
 	let fileNameDI		= fileDir ++ ".di"
 	let fileNameO		= fileDir ++ ".o"
