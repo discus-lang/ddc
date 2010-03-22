@@ -1,8 +1,11 @@
 
 -- | Top-level error handing functions.
+--	The data types that represent the errors should be defined
+--	closer to the modules that detect them, and not here.
 module DDC.Main.Error
 	( panic
 	, freakout
+	, warning
 	, dieWithUserError
 	, exitWithUserError)
 where
@@ -47,6 +50,18 @@ freakout stage msg a
 		%> (msg	% "\nPlease report this bug to the maintainers at:\n"
 			% Version.maintainers))
 		a
+
+
+-- | Something troubling has happened, but it's not likely to be terminal.
+--	We'll print the message to the console to let the user know that
+--	something's up.
+warning :: Pretty msg PMode
+	=> msg 			-- ^ Warning to display.
+	-> a 			-- ^ Value to return.
+	-> a
+
+warning warn a
+	= trace	(pprStrPlain $ "Warning: " % warn) a
 
 
 -- | Compilain about a compile time error in the user program, then bail out.

@@ -1,12 +1,8 @@
--- | Error handling.
---	Provides functions for emitting panics, freakouts and warnings.
---
+-- | Compiler Warnings.
 module Shared.Warning
-	( Warning (..)
-	, warning)
+	( Warning (..))
 where
 import Shared.Var
-import Debug.Trace
 import Util
 import DDC.Main.Pretty
 import Shared.VarUtil		(prettyPos)
@@ -17,15 +13,6 @@ data Warning
 	= WarnRedundantOp Var
 	| WarnUselessBinding Var
         | WarnUnknownPragma Var
-
-
--- | Something troubling has happened, but it's not likely to be terminal.
---	We'll print the message to the console to let the user know that something's up.
-warning :: Pretty Warning PMode
-	=> Warning -> a -> a
-
-warning warn a
-	= trace	(pprStrPlain $ "Warning at " % warn) a
 
 
 -- Pretty Printer ---------------------------------------------------------------------------------

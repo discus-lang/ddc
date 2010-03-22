@@ -15,6 +15,7 @@ import Shared.VarPrim
 import Shared.Warning
 import Shared.Pretty
 import Util
+import DDC.Main.Error
 import Shared.Var			(Var)
 import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
