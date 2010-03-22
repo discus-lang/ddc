@@ -17,7 +17,7 @@ module Sea.Exp
 	, Var)
 where
 import DDC.Base.SourcePos
-import Shared.Literal
+import DDC.Base.Literal
 import Util
 import Shared.Var		(Var)
 

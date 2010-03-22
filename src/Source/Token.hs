@@ -11,8 +11,8 @@ module Source.Token
 	, expandEscapedChar
 	, expandEscapedChars)
 where
-import Shared.Literal
 import Data.Char
+import DDC.Base.Literal
 import DDC.Main.Pretty
 
 

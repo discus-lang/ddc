@@ -1,7 +1,6 @@
-{-# OPTIONS -O2 #-}
 
-
-module Shared.Literal
+-- | Representation of literal values.
+module DDC.Base.Literal
 	( Literal    (..)
 	, LiteralFmt (..))
 where
@@ -10,19 +9,26 @@ import DDC.Main.Error
 import DDC.Base.DataFormat
 
 -----
-stage	= "Shared.Literal"
+stage	= "DDC.Base.Literal"
 
--- | A literal value	
+
+-- | A literal value.
+--	This stores literal values as we see them in the source program.
+--	We need enough numeric precison here to represent any possible
+--	value we might get in the source.
 data Literal
-	= LBool		Bool
-	| LWord		Integer
-	| LInt		Integer
-	| LFloat	Double
-	| LChar		Char
-	| LString	String	
+	= LBool		Bool		-- ^ Boolean.
+	| LWord		Integer		-- ^ An unsigned integer.
+	| LInt		Integer		-- ^ An integer.
+	| LFloat	Double		-- ^ A floating point number.
+	| LChar		Char		-- ^ A character.
+	| LString	String		-- ^ A string.
 	deriving (Show, Eq)
 
--- | A Literal value with an embeded format specifier
+
+-- | A Literal value along with a format specifier saying 
+--	whether it's boxed or not, and how wide we should
+--	take it to be.
 data LiteralFmt
 	= LiteralFmt	Literal DataFormat
 	deriving (Show, Eq)
@@ -57,7 +63,7 @@ instance Pretty LiteralFmt PMode where
 	(Boxed, 	LString s)      -> ppr $ show s
 	(Unboxed,	LString s)      -> show s % "#"
 	
-	(_, _)	-> panic stage
+	_  	-> panic stage
 		$  "showFormatLiteral: bad combination of format and literal value\n"
 		%  "    format  = " % show fmt % "\n"
 		%  "    literal = " % show lit % "\n" 
@@ -66,7 +72,6 @@ instance Pretty LiteralFmt PMode where
 instance Pretty Literal PMode where
  ppr lit 
   = case lit of
-	-- unboxed literals
 	LBool	b
 	 -> case b of
 	 	True	-> ppr "true"

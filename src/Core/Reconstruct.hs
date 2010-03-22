@@ -35,11 +35,11 @@ import Type.Exp
 import Type.Util.Environment
 import Type.Builtin
 import Shared.VarPrim
-import Shared.Literal
 import Util
 import DDC.Var.VarId
 import DDC.Var.NameSpace
 import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import Type.Error		(Error(..))

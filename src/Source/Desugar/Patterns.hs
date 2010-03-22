@@ -9,9 +9,9 @@ import Util
 import Shared.VarPrim
 import Source.Desugar.Base
 import Source.Desugar.MergeBindings
-import Shared.Literal
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
+import DDC.Base.Literal
 import Shared.Var			(Var, NameSpace(..))
 import Desugar.Exp			as D
 import Desugar.Bits			as D

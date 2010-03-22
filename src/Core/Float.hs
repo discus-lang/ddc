@@ -13,8 +13,8 @@ import Type.Util
 import Type.Exp
 import Shared.VarPrim	
 import Shared.Warning
-import Shared.Pretty
 import Util
+import DDC.Main.Pretty
 import DDC.Main.Error
 import Shared.Var			(Var)
 import qualified Core.Reconstruct	as Recon

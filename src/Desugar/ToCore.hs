@@ -10,6 +10,7 @@ import Desugar.ToCore.Base
 import Desugar.ToCore.Lambda
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import Shared.VarUtil			(isDummy, varPos)
@@ -18,7 +19,6 @@ import Type.ToCore			(toCoreT, toCoreK)
 import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified Shared.Exp		as S
-import qualified Shared.Literal		as S
 import qualified Type.Exp		as T
 import qualified Type.Util		as T
 import qualified Core.Util.Pack		as C
@@ -454,10 +454,10 @@ toCoreXLit :: T.Type -> D.Exp Annot -> C.Exp
 toCoreXLit tt xLit
  	= toCoreXLit' (C.stripToShapeT tt) xLit
 
-toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
+toCoreXLit' tt xLit@(D.XLit n litfmt@(LiteralFmt lit fmt))
 
 	-- raw unboxed strings need their region applied
-	| S.LString _	<- lit
+	| LString _	<- lit
 	, Unboxed	<- fmt
 	= let	Just (_, _, [tR]) = T.takeTData tt
 	  in	C.XAPP (C.XLit litfmt) tR
@@ -469,13 +469,13 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
 	-- unboxed strings have kind % -> *, 
 	--	so we need to apply the region to the unboxed literal
 	--	when building the boxed version.
-	| S.LString _	<- lit
+	| LString _	<- lit
 	, Boxed	<- fmt
 	= let	Just (_, _, [tR]) = T.takeTData tt
 		Just fmtUnboxed		= dataFormatUnboxedOfBoxed fmt
 	  in	C.XPrim C.MBox 
 			[ C.XType tR
-			, C.XAPP (C.XLit (S.LiteralFmt lit fmtUnboxed)) tR]
+			, C.XAPP (C.XLit (LiteralFmt lit fmtUnboxed)) tR]
 
 
 	-- the other unboxed literals have kind *, 
@@ -484,7 +484,7 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(S.LiteralFmt lit fmt))
 	= let	Just fmtUnboxed		= dataFormatUnboxedOfBoxed fmt
 	  in	C.XPrim C.MBox 
 			[ C.XType tR
-			, C.XLit $ S.LiteralFmt lit fmtUnboxed]
+			, C.XLit $ LiteralFmt lit fmtUnboxed]
 		
 	| otherwise
 	= panic stage
@@ -654,7 +654,7 @@ toCoreW ww
 	--	so we need to rewrite the literal in the pattern as well as the guard expression.
 	| D.WLit (Just	( T.TVar kV vT
 			, _))
-		litFmt@(S.LiteralFmt lit fmt) <- ww
+		litFmt@(LiteralFmt lit fmt) <- ww
 	, kV == T.kValue
 
 	, dataFormatIsBoxed fmt
@@ -669,7 +669,7 @@ toCoreW ww
 		-- get the unboxed version of this data format.
 	 	let Just fmt_unboxed	= dataFormatUnboxedOfBoxed fmt
 	
-	 	return	( C.WLit (varPos vT) (S.LiteralFmt lit fmt_unboxed)
+	 	return	( C.WLit (varPos vT) (LiteralFmt lit fmt_unboxed)
 			, Just r)
 	
 	-- match against unboxed literal
@@ -677,7 +677,7 @@ toCoreW ww
 	| D.WLit
 		(Just 	( T.TVar kV vT
 			, _ )) 
-		litFmt@(S.LiteralFmt lit fmt)	<- ww
+		litFmt@(LiteralFmt lit fmt)	<- ww
 	, kV == T.kValue
 	, dataFormatIsUnboxed fmt
 	= do	return	( C.WLit (varPos vT) litFmt

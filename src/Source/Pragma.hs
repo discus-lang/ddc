@@ -8,10 +8,10 @@ module Source.Pragma
 where
 import Source.Exp
 import Shared.Warning
-import Shared.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.SourcePos
+import DDC.Base.Literal
 import Source.Pretty		()
 import qualified Shared.Var	as Var
 

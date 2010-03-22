@@ -15,11 +15,11 @@ module Type.Location
 where
 import Type.Util.Kind
 import Type.Exp
-import Shared.Literal
 import Shared.VarPrim
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.SourcePos
+import DDC.Base.Literal
 import Shared.Var		(Var)
 import qualified Shared.Var	as Var
 

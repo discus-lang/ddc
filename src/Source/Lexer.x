@@ -19,9 +19,9 @@ where
 import Source.Token
 import Source.TokenShow
 import Source.Error
-import Shared.Literal
 import Util
 import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Error
 import Data.Char	(isUpper)
 }

@@ -23,9 +23,9 @@ module Source.Parser.Base
 	, pAnything, pTrace, pShowNext )
 where
 import Source.Parser.Util
-import Shared.Literal
 import Control.Monad
 import Debug.Trace
+import DDC.Base.Literal
 import DDC.Base.DataFormat
 import Shared.Var						(NameSpace(..))
 import Data.List						(intercalate)

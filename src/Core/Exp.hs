@@ -17,10 +17,10 @@ module Core.Exp
 	, Label		(..))	-- labels in guards
 where
 import Util
-import Shared.Literal
 import Shared.Exp
 import Type.Exp
 import DDC.Base.SourcePos
+import DDC.Base.Literal
 import Shared.Var 	(Var)
 
 

@@ -47,8 +47,8 @@ import Source.Error
 import Type.Exp
 import Type.Util
 import Util
-import Shared.Literal
 import DDC.Base.SourcePos
+import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Var.NameSpace
 import DDC.Var.ModuleId

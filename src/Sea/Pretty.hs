@@ -6,13 +6,13 @@ module Sea.Pretty
 where
 import Sea.Exp
 import Sea.Util
-import Shared.Literal
 import Util
 import Data.Function
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.SourcePos
+import DDC.Base.Literal
 import Shared.Var		(ModuleId(..))
 import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var

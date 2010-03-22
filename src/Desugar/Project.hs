@@ -17,12 +17,12 @@ import Type.Exp
 import Type.Util
 import Type.Plate.FreeVars
 import Shared.Exp
-import Shared.Literal
 import Shared.VarPrim
 import Util
 import DDC.Var.NameSpace
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import Shared.Var			(Var, ModuleId)

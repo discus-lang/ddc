@@ -7,7 +7,7 @@ where
 import qualified Data.Map	as Map
 import Type.Pretty
 import Constraint.Exp
-import Shared.Pretty
+import DDC.Main.Pretty
 
 -- CTree ------------------------------------------------------------------------------------------
 instance Pretty CTree PMode where

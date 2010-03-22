@@ -16,10 +16,10 @@ module Shared.VarUtil
 	, sortForallVars
 	, deSymString)
 where
-import Shared.Pretty
 import Util
 import DDC.Base.SourcePos
 import DDC.Var.VarId	
+import DDC.Main.Pretty
 import Data.Char		hiding (isSymbol)
 import Shared.Var 		(Var, VarInfo(..), NameSpace(..))
 import qualified Data.Map	as Map
