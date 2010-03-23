@@ -55,7 +55,8 @@ freakout stage msg a
 -- | Something troubling has happened, but it's not likely to be terminal.
 --	We'll print the message to the console to let the user know that
 --	something's up.
-warning :: Pretty msg PMode
+warning :: forall msg a
+	.  Pretty msg PMode
 	=> msg 			-- ^ Warning to display.
 	-> a 			-- ^ Value to return.
 	-> a
