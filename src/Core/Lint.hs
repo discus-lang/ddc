@@ -21,9 +21,8 @@ import Type.Exp
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty
-import Shared.Var		(Var)
+import DDC.Var
 import Core.Reconstruct		(reconX_type)
-import qualified Shared.Var	as Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
 
@@ -107,8 +106,8 @@ lintTreeM tree
 lintP :: Table -> Top -> LintM Table
 
 lintP	tt (PBind v x)
- 	| Var.name v == "main"
-	, Var.nameModuleId v == Var.ModuleId ["Main"]
+ 	| varName v == "main"
+	, varModuleId v == ModuleId ["Main"]
 	= do
 		let vT	= reconX_type "Core.Lint.lintP" x
 		tt'	<- addVT v vT tt

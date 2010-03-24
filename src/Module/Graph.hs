@@ -5,7 +5,7 @@ where
 import Util
 import Main.IO
 import DDC.Main.Pretty
-import Shared.Var			(ModuleId(..))
+import DDC.Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 

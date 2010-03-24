@@ -10,13 +10,12 @@ module Shared.VarGen
 	, evalVarGen
 	, uniquifyV)
 where
-import Shared.Var
-import qualified Shared.Var 	as Var
+import DDC.Var
 import Control.Monad.State.Strict
 
 -----
 type VarGenM 	= State VarGen
-type VarGen	= Var.VarId
+type VarGen	= VarId
 
 
 -- | Create a fresh variable id
@@ -34,20 +33,20 @@ newVarN space
 		<- newVarId
 
 	let name	= prefix ++ (show num)
-	let var		= (Var.new name) 
-			{ Var.varId = vid
-			, Var.nameSpace = space }
+	let var		= (varWithName name) 
+			{ varId 	= vid
+			, varNameSpace	= space }
 	return var
 
 -- | Create a fresh variable with the given name.
 newVarN_named :: NameSpace -> String	-> VarGenM Var
 newVarN_named space str
  = do	var	<- newVarN space
-	return	var { Var.name = Var.name var ++ "_" ++ str }
+	return	var { varName = varName var ++ "_" ++ str }
 
 
 -- | Create some new variables.
-newVarsN :: Var.NameSpace -> Int -> State VarGen [Var]
+newVarsN :: NameSpace -> Int -> State VarGen [Var]
 newVarsN space count 
  	= replicateM count (newVarN space)
 
@@ -57,7 +56,7 @@ newVarsN space count
 uniquifyV :: Var -> State VarGen Var
 uniquifyV v
  = do	vid	<- newVarId
-	return	$ v { Var.varId = vid }
+	return	$ v { varId = vid }
 
 
 -- | Evaluate the monad, using this unique string to name vars after.

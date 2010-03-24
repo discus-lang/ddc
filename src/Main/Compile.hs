@@ -41,10 +41,9 @@ import qualified Core.Util		as C
 import qualified Sea.Util		as E
 
 -- shared
-import Shared.Var			(ModuleId(..), NameSpace(..))
+import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
-import qualified Shared.Var		as Var
 
 -- haskell
 import Util
@@ -207,7 +206,7 @@ compileFile_parse
 	let modDefinesMainFn 
 			= any (\p -> case p of
 					S.PStmt (S.SBindFun _ v _ _)
-					 | Var.name v == "main"	-> True
+					 | varName v == "main"	-> True
 					 | otherwise		-> False
 					_			-> False)
 			$ sRenamed
@@ -356,7 +355,7 @@ compileFile_parse
 	outVerb $ ppr $ "  * Core: Bind\n"
 
 	-- these regions have global scope
-	let rsGlobal	= Set.filter (\v -> Var.nameSpace v == NameRegion) 
+	let rsGlobal	= Set.filter (\v -> varNameSpace v == NameRegion) 
 			$ vsFreeTREC
 	
 	cBind		<- SC.coreBind sModule "CB"

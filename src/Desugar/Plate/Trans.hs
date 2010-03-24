@@ -13,7 +13,7 @@ import Desugar.Exp
 import Shared.Exp
 import Type.Exp
 import Util
-import Shared.Var			(Var)
+import DDC.Var
 
 
 -----

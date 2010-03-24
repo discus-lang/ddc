@@ -16,9 +16,9 @@ import Type.Util
 import Type.Link
 import Util
 import DDC.Main.Error
+import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Shared.Var 	as Var
 
 -----
 stage	= "Type.Feed"
@@ -42,7 +42,7 @@ feedConstraint cc
  	CEq src (TVar k v1) t2
 	 -> do
 		-- create a new class for the LHS, with just that var in it.
-	 	cid1		<- makeClassV src (kindOfSpace $ Var.nameSpace v1) v1
+	 	cid1		<- makeClassV src (kindOfSpace $ varNameSpace v1) v1
 
 		-- feed the RHS into the graph.
 		let ?src	= src
@@ -84,7 +84,7 @@ feedConstraint cc
 	CDef src (TVar k v1) t2
 	 -> do	
 	 	-- make a new class to hold the type.
-		cid		<- makeClassV src (kindOfSpace $ Var.nameSpace v1) v1
+		cid		<- makeClassV src (kindOfSpace $ varNameSpace v1) v1
 	 
 	 	-- add type to class
 	 	addToClass cid src t2

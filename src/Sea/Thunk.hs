@@ -13,9 +13,8 @@ import Sea.Exp
 import Sea.Pretty
 import Sea.Plate.Trans
 import Util
-import DDC.Var.VarId
 import DDC.Main.Pretty
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Shared.Unique	as Unique
 
 
@@ -276,11 +275,11 @@ newVar 	:: Maybe String
 
 newVar mName
  = do	gen		<- get
-	let gen'	= Var.incVarId gen
+	let gen'	= incVarId gen
 	put gen'
 	
 	let name	= fromMaybe (pprStrPlain gen) mName
-	let var		= (Var.new name) { Var.varId = gen }
+	let var		= (varWithName name) { varId = gen }
 	
 	return var
 

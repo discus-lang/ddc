@@ -10,11 +10,10 @@ import Type.Exp
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import qualified Debug.Trace	as Debug
-import qualified Shared.Var	as Var
 import qualified Util.Data.Map	as Map
 import Type.Util		hiding (flattenT, unifyT2) 
-import Shared.Var		(Var)
 
 
 -----
@@ -172,9 +171,9 @@ rewriteOverApp
 			 
 		weakenInst b t1
 			| BMore v tMore	<- b
-			= case Var.nameSpace v of
-				Var.NameEffect	-> makeTSum kEffect  [tMore, t1]
-				Var.NameClosure	-> makeTSum kClosure [tMore, t1]
+			= case varNameSpace v of
+				NameEffect	-> makeTSum kEffect  [tMore, t1]
+				NameClosure	-> makeTSum kClosure [tMore, t1]
 				
 			| otherwise
 			= t1

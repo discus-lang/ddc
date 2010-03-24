@@ -2,8 +2,7 @@
 
 module Shared.Unique
 where
-
-import Shared.Var	(NameSpace(..))
+import DDC.Var
 
 sourceAliasX		= "xSA"
 

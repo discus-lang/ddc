@@ -12,7 +12,7 @@ module Type.Util.Environment
 	, addWitnessConst)
 where
 import Type.Exp
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Map	as Map
 import Data.Map			(Map)	
 	

@@ -13,9 +13,8 @@ import Util
 import DDC.Var.NameSpace
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import DDC.Main.Arg		(Arg)
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Debug.Trace	as Debug
 import qualified DDC.Main.Arg	as Arg
@@ -250,7 +249,7 @@ isValueArg xx
 	XLit{}			-> True
 
  	XVar v t
-	 | Var.nameSpace v	== NameValue
+	 | varNameSpace v	== NameValue
 	 -> True
 
 	XAPP x t		-> isValueArg x

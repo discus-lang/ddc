@@ -13,8 +13,7 @@ import Source.Exp
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Error
-import Shared.Var		(Var)
-
+import DDC.Var
 
 -----
 stage	= "Source.Util"

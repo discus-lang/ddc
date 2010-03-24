@@ -8,7 +8,7 @@ import Core.Lift.BindTypes
 import Core.Lift.LiftLambdas
 import Type.Exp
 import Util
-import Shared.Var		(Var)
+import DDC.Var
 
 
 -- | Perform lambda lifting on this tree.

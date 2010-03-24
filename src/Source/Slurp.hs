@@ -11,9 +11,7 @@ import Source.Exp
 import Type.Util
 import Type.Exp
 import DDC.Main.Error
-import DDC.Var.NameSpace
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 
 
 -----
@@ -34,7 +32,7 @@ slurpFixTable'	 _			= []
 
 -- | Slurp out the list of modules imported by this one.
 slurpImportModules
-	:: Tree	a -> [Var.ModuleId]
+	:: Tree	a -> [ModuleId]
 
 slurpImportModules	tops
 	= concat 
@@ -68,10 +66,10 @@ slurpTopNames p
 	PModule{}			-> []
 
 	PTypeKind	sp v k		
-	 -> [v { Var.nameSpace = NameType }]
+	 -> [v { varNameSpace = NameType }]
 
  	PTypeSynonym 	sp v t		
-	 -> [v { Var.nameSpace = NameType }]
+	 -> [v { varNameSpace = NameType }]
 
 	PInfix 		sp im i vs	
 	 -> [] 
@@ -80,35 +78,35 @@ slurpTopNames p
 	PExport{}			-> []
 
 	PForeign sp (OImport mS v t mT)
-	 -> [bindSeaName mS v { Var.nameSpace = NameValue }]	
+	 -> [bindSeaName mS v { varNameSpace = NameValue }]	
 
 	PForeign sp (OImportUnboxedData s v k)
-	 -> [bindSeaName (Just s) v { Var.nameSpace = NameType}]
+	 -> [bindSeaName (Just s) v { varNameSpace = NameType}]
 
 	PData sp v vs ctors 		
-	 -> ( v { Var.nameSpace = NameType }) 
-	 :  [ c { Var.nameSpace = NameValue} 
+	 -> ( v { varNameSpace = NameType }) 
+	 :  [ c { varNameSpace = NameValue} 
 	 	| (c, fs) <- ctors ]
 	 
 	PEffect	sp v k	
-	 -> [v { Var.nameSpace = NameEffect }]
+	 -> [v { varNameSpace = NameEffect }]
 
 	PRegion sp v	
-	 -> [v { Var.nameSpace = NameRegion }]
+	 -> [v { varNameSpace = NameRegion }]
 
 	PStmt (SSig sp vs t) 
-	 -> [v { Var.nameSpace = NameValue } | v <- vs]
+	 -> [v { varNameSpace = NameValue } | v <- vs]
 	
 	PStmt (SBindFun sp v pats alts)
-	 -> [v { Var.nameSpace = NameValue }]
+	 -> [v { varNameSpace = NameValue }]
 
 	-- classes		
 	PClass sp v k	
-	 -> [v { Var.nameSpace = NameClass}]
+	 -> [v { varNameSpace = NameClass}]
 
 	PClassDict sp vClass ps inh sigs
 	 -> vClass : 
-	  [ v { Var.nameSpace = NameValue }
+	  [ v { varNameSpace = NameValue }
 	 		| v <- catMap fst sigs ]
 		
 	PClassInst{}		
@@ -125,5 +123,5 @@ bindSeaName ::	(Maybe String) -> Var -> Var
 bindSeaName mS v
  = case mS of
 	Nothing		-> v
-	Just name	-> v { Var.info = Var.ISeaName name : Var.info v }
+	Just name	-> v { varInfo = ISeaName name : varInfo v }
 	

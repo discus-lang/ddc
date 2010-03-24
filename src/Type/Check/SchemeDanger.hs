@@ -27,7 +27,7 @@ import Type.State
 import Type.Class
 import Util
 import DDC.Main.Error
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Set	as Set
 
 -----
@@ -64,7 +64,7 @@ checkSchemeDanger errs c
 			$ trimClosureC_constrainForm
 				Set.empty Set.empty 
 			$ toConstrainFormT
-			$ TFree (Var.new "foo") x
+			$ TFree (varWithName "foo") x
 		
 		let ds	= catMaybes
 			$ map (\d -> case d of

@@ -6,12 +6,10 @@
 
 module Shared.VarPrim
 where
-import Shared.Var		(Var, NameSpace(..), ModuleId(..), VarInfo)
 import Util
+import DDC.Var
 import DDC.Var.PrimId
-import DDC.Var.VarId
 import DDC.Base.DataFormat
-import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 
 	
@@ -22,8 +20,8 @@ primTThunk	= primVar	NameType	"Base.Thunk"			TThunk
 	
 			
 -- Primitive Type Variables ------------------------------------------------------------------------
-primTVoidU	= primVarI	NameType	"Base.Void#"			TVoidU		[Var.ISeaName "void"]
-primTPtrU	= primVarI	NameType	"Base.Ptr#"			TPtrU		[Var.ISeaName "Ptr"]
+primTVoidU	= primVarI	NameType	"Base.Void#"			TVoidU		[ISeaName "void"]
+primTPtrU	= primVarI	NameType	"Base.Ptr#"			TPtrU		[ISeaName "Ptr"]
 
 primTUnit	= primVar	NameType	"Base.Unit"			TUnit
 
@@ -70,19 +68,19 @@ primEmpty	= primVar NameClass	"Base.Empty"				FEmpty
 primUnit	= primVar NameValue	"Base.Unit"				VUnit
 
 primProjField	= primVarI NameValue	"Base.primProjField"			VProjField
-					[ Var.ISeaName "primProjField"]
+					[ ISeaName "primProjField"]
 
 primProjFieldR	= primVarI NameValue	"Base.primProjFieldR"			VProjFieldR
-					[ Var.ISeaName "primProjFieldR"]
+					[ ISeaName "primProjFieldR"]
 
 primIndex	= primVarI NameValue	"Data.Array.index"			VIndex
-					[Var.ISeaName "primArray_index"]
+					[ISeaName "primArray_index"]
 					
 primIndexR	= primVarI NameValue	"Data.Array.indexR"			VIndexR
-					[Var.ISeaName "primArray_indexR"]
+					[ISeaName "primArray_indexR"]
 
 primSuspend i	= primVarI NameValue	("Base.Thunk.suspend" ++ show i) 	(VSuspend i) 
-					[Var.ISeaName ("primSuspend" ++ show i)]
+					[ISeaName ("primSuspend" ++ show i)]
 
 primNegate	= primVar NameValue	"Class.Num.negate"			VNegate
 
@@ -106,13 +104,13 @@ primConcatMap	= primVar NameValue	"Data.List.concatMap"			VConcatMap
 primConcatMapL	= primVar NameValue	"Data.List.concatMapL"			VConcatMapL
 
 primStrCmp	= primVarI NameValue	"Data.Array.indexR"			VIndexR
-					[Var.ISeaName "primArray_indexR"]
+					[ISeaName "primArray_indexR"]
 
 primThrow	= primVarI NameValue	"Control.Exception.primThrow"		VThrow
-					[Var.ISeaName ("primException_throw")]
+					[ISeaName ("primException_throw")]
 
 primTry		= primVarI NameValue	"Control.Exception.primTry"		VTry
-					[Var.ISeaName ("primException_try")]
+					[ISeaName ("primException_try")]
 
 primExceptionBreak
 		= primVar NameValue	"Base.ExceptionBreak"			VExceptionBreak	
@@ -133,19 +131,19 @@ primVar :: NameSpace -> String -> PrimId -> Var
 primVar space name pid
  = let	parts		= breakOns '.' name
  	Just modParts	= takeInit parts
-	Just varName	= takeLast parts
+	Just vName	= takeLast parts
 
-   in	(Var.new varName)
- 	{ Var.varId		= VarIdPrim pid
-	, Var.nameSpace		= space
-	, Var.nameModuleId	= ModuleId modParts }
+   in	(varWithName vName)
+ 	{ varId		= VarIdPrim pid
+	, varNameSpace	= space
+	, varModuleId	= ModuleId modParts }
 
 
 -- | Create a primitive variable with some extended info
 primVarI :: NameSpace -> String -> PrimId -> [VarInfo] -> Var
 primVarI space name pid info
   	= (primVar space name pid) 
-		{ Var.info = info }
+		{ varInfo = info }
 
 
 -- | Create the var for this primitive type
@@ -158,13 +156,13 @@ primVarFmt space name mkBind fmt
 			UnboxedBits d	-> show d ++ "#"
 	
 	name_parts	= breakOns '.' name
-	Just varName	= takeLast name_parts
+	Just vName	= takeLast name_parts
 
    in	primVarI 
 		space 
 		(name ++ suffix) 
 		(mkBind fmt)			
-		[Var.ISeaName $ varName ++ filter (/= '#') suffix]
+		[ISeaName $ vName ++ filter (/= '#') suffix]
 
 -- | If this string has the given prefix then split it off and return the rest
 --	of the string
@@ -181,7 +179,7 @@ splitPrefix (p:ps) []	= Nothing
 -- | Check whether a var is for an unboxed type constructor
 varIsUnboxedTyConData :: Var -> Bool
 varIsUnboxedTyConData var
-	= varBindIsUnboxedTyConData (Var.varId var)
+	= varBindIsUnboxedTyConData (varId var)
 
 varBindIsUnboxedTyConData vid
 	| Just fmt		<- takeDataFormatOfVarId vid
@@ -198,10 +196,10 @@ varBindIsUnboxedTyConData vid
 getPrimVarBind :: NameSpace -> Var -> Maybe VarId
 getPrimVarBind space var
  = case space of
-  	NameValue	-> renamePrimVar_value  $ Var.name var
-	NameType	-> renamePrimVar_type   $ Var.name var
-	NameEffect	-> liftM VarIdPrim $ renamePrimVar_effect $ Var.name var
-	NameClass	-> liftM VarIdPrim $ renamePrimVar_class  $ Var.name var
+  	NameValue	-> renamePrimVar_value  $ varName var
+	NameType	-> renamePrimVar_type   $ varName var
+	NameEffect	-> liftM VarIdPrim $ renamePrimVar_effect $ varName var
+	NameClass	-> liftM VarIdPrim $ renamePrimVar_class  $ varName var
 	_		-> Nothing
 	
 renamePrimVar_value :: String -> Maybe VarId

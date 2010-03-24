@@ -14,10 +14,9 @@ import Core.Util
 import Core.Plate.FreeVars
 import Util.Graph.Deps
 import Util
-import Shared.Var		(Var, NameSpace(..))
+import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 
 -- | For the CAFs in a tree, give a dependency ordering suitable for initialisation.
@@ -72,5 +71,5 @@ slurpSuperDepsOfPBind pp
 slurpDepsX xx
  	= [ v	| v <- Set.toList $ freeVars xx
 		, not $ Var.isCtorName v
-		, Var.nameSpace v == NameValue ]
+		, varNameSpace v == NameValue ]
 			

@@ -20,9 +20,8 @@ import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
+import DDC.Var
 import Source.Pretty			()
-import Shared.Var			(Var, NameSpace(..))
-import qualified Shared.Var		as Var
 import qualified Source.Exp		as S
 import qualified Source.Error		as S
 import qualified Desugar.Util		as D
@@ -47,7 +46,7 @@ rewriteTree
 
 rewriteTree unique kindMap hTree sTree
  = let	state	= RewriteS
-		{ stateVarGen	= Var.VarId unique 0 
+		{ stateVarGen	= VarId unique 0 
 		, stateErrors	= [] }
 	
 	((hTree', sTree'), state')
@@ -78,14 +77,14 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 -> do	tv'	<- rewrite tv
 		let v'	= case mName of
 				Nothing		-> v
-				Just seaName	-> v { Var.info = Var.info v ++ [Var.ISeaName seaName ]}
+				Just seaName	-> v { varInfo = varInfo v ++ [ISeaName seaName ]}
 		
 		let to'	= maybeJust to (let Just to2 = makeOpTypeT tv' in to2)
 	 	returnJ $ D.PExtern sp v' tv' to'
 
 	-- imported unboxed types
 	S.PForeign sp (S.OImportUnboxedData name var k)
-	 -> do	let var'	= var { Var.info = Var.info var ++ [Var.ISeaName name]}
+	 -> do	let var'	= var { varInfo = varInfo var ++ [ISeaName name]}
 		returnJ	$ D.PExternData sp name var' k
 
 	-- types
@@ -280,14 +279,14 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 
 	 	var_	<- newVarN NameValue
 		let var	= var_
-			{ Var.info = [Var.ISourcePos sp] }
+			{ varInfo = [ISourcePos sp] }
 		
 		return	$ D.XLambda sp var (D.XMatch sp (Just $ D.XVar sp var) alts')
 
 	S.XLambdaProj sp j xs
 	 -> do	var_	<- newVarN NameValue
 	 	let var	= var_
-			{ Var.info = [Var.ISourcePos sp] }
+			{ varInfo = [ISourcePos sp] }
 
 		j'	<- rewrite j
 		xs'	<- rewrite xs
@@ -319,8 +318,8 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		w'	<- rewrite w
 		aa'	<- rewrite aa
 
-		withV	<- newVarNI NameValue [Var.ISourcePos sp]
-		withVA	<- newVarNI NameValue [Var.ISourcePos sp]
+		withV	<- newVarNI NameValue [ISourcePos sp]
+		withVA	<- newVarNI NameValue [ISourcePos sp]
 		d	<- newVarN  NameValue
 		
 		let ssMore	= [D.SBind sp (Just withV) (D.XLambda sp d w')]
@@ -640,11 +639,11 @@ rewriteTry
 
 rewriteTry	   sp ssMore x aa
  = do
-	tryExpV		<- newVarNI NameValue [Var.ISourcePos sp]
-	tryExpVA	<- newVarNI NameValue [Var.ISourcePos sp]
+	tryExpV		<- newVarNI NameValue [ISourcePos sp]
+	tryExpVA	<- newVarNI NameValue [ISourcePos sp]
 		
-	tryCatchV	<- newVarNI NameValue [Var.ISourcePos sp]
-	tryCatchVA	<- newVarNI NameValue [Var.ISourcePos sp]
+	tryCatchV	<- newVarNI NameValue [ISourcePos sp]
+	tryCatchVA	<- newVarNI NameValue [ISourcePos sp]
 
 	d		<- newVarN  NameValue
 	let aDefault	= D.AAlt sp [] (D.XApp sp (D.XVar sp primThrow) (D.XVar sp tryCatchVA))

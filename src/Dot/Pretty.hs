@@ -3,7 +3,7 @@ module Dot.Pretty
 	()
 where
 import Dot.Exp
-import qualified Shared.Var	as Var
+import DDC.Var
 import DDC.Main.Pretty
 
 instance Pretty Graph PMode where
@@ -30,7 +30,7 @@ instance Pretty Stmt PMode where
 instance Pretty NodeId PMode where
  ppr ss
   = case ss of
-  	NVar v		-> ppr $ (Var.varId v)
+  	NVar v		-> ppr $ (varId v)
 	NString s	-> ppr $ show s
 
 

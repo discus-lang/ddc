@@ -18,9 +18,8 @@ import Shared.VarGen
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import Type.Util.Bits		(varOfBind)
-import Shared.Var		(Var, NameSpace(..), ModuleId)
-import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
@@ -445,7 +444,7 @@ canBindX xx
 
 
 addSharedV v vsShared
-	| Var.nameSpace v == NameRegion
+	| varNameSpace v == NameRegion
 	= Set.insert v vsShared
 	
 	| otherwise
@@ -453,7 +452,7 @@ addSharedV v vsShared
 
 addSharedVs vs vsShared	
  = 	Set.union
- 		(Set.filter (\v -> Var.nameSpace v == NameRegion) vs)
+ 		(Set.filter (\v -> varNameSpace v == NameRegion) vs)
 		vsShared
 
 takeStmtBoundV ss
@@ -473,4 +472,4 @@ freeRegionsS xx
 	$ freeVars xx
 
 
-vIsRegion v = Var.nameSpace v == NameRegion
+vIsRegion v = varNameSpace v == NameRegion

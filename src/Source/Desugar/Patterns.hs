@@ -12,11 +12,10 @@ import Source.Desugar.MergeBindings
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
-import Shared.Var			(Var, NameSpace(..))
+import DDC.Var
 import Desugar.Exp			as D
 import Desugar.Bits			as D
 import Desugar.Plate.Trans		as D
-import qualified Shared.Var		as Var
 
 
 -- rewritePatTree ----------------------------------------------------------------------------------
@@ -70,9 +69,9 @@ rewritePatA co aa
 --
 rewritePatVar :: Var -> Var
 rewritePatVar v
- = case Var.name v of 
- 	":"	-> primCons 	{ Var.info = Var.info v }
-	"++"	-> primAppend 	{ Var.info = Var.info v }
+ = case varName v of 
+ 	":"	-> primCons 	{ varInfo = varInfo v }
+	"++"	-> primAppend 	{ varInfo = varInfo v }
 	_	-> v
 
 -- Name intermediate pattern nodes in a guard

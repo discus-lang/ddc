@@ -10,9 +10,8 @@ import Core.Plate.Trans
 import Util
 import DDC.Var.VarId
 import DDC.Main.Pretty
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Map	as Map
-import Shared.Var		(Var)
 
 
 -- | Rename variables in this tree.
@@ -61,8 +60,8 @@ renameV_bind v
 	modify (\s -> s { sVarGen = incVarId varGen})
 
 	-- make the new var and add it to the map
-	let v'	= v 	{ Var.name = pprStrPlain varGen
-			, Var.varId = varGen }
+	let v'	= v 	{ varName = pprStrPlain varGen
+			, varId = varGen }
 
 	modify (\s -> s { sVarMap = Map.insert v v' (sVarMap s)})
 	

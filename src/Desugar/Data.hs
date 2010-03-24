@@ -12,13 +12,11 @@ import Shared.Exp
 import Shared.VarPrim
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
-import DDC.Var.NameSpace
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import Util
 import qualified Debug.Trace
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
 
 -----
 stage		= "Desugar.Data"
@@ -46,7 +44,7 @@ elaborateData newVarN getKind
 	-- work out what var to use as the primary region.
 	let takePrimary
 		| Just v	<- takeHead vsData
-		, Var.nameSpace v == NameRegion
+		, varNameSpace v == NameRegion
 		= return v
 		
 		| otherwise

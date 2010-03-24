@@ -13,7 +13,7 @@ module Type.Plate.Trans
 where
 import Util
 import Type.Exp
-import Shared.Var		(Var)
+import DDC.Var
 import Util.Data.Bag		(Bag)
 import qualified Util.Data.Bag 	as Bag
 import qualified Data.Set	as Set

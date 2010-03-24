@@ -12,8 +12,7 @@ import Type.Util.Bits
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
-import qualified Shared.Var	as Var
-import Shared.Var		(Var, NameSpace(..))
+import DDC.Var
 import qualified Data.Map	as Map
 
 -----
@@ -150,7 +149,7 @@ pprVarKind :: Var -> Kind -> PrettyM PMode
 pprVarKind v k
  = ifMode 
  	(elem PrettyTypeKinds)
-	(if kindOfSpace (Var.nameSpace v) == Just k
+	(if kindOfSpace (varNameSpace v) == Just k
 		then ppr v
 		else "(" % ppr v % " :: " % k % ")")
 
@@ -263,12 +262,13 @@ instance Pretty TyClass PMode where
 	TyClassEmpty	-> ppr "Empty"
 	TyClass var	-> ppr var
 
+
 -- TProj -------------------------------------------------------------------------------------------
 instance Pretty TProj PMode where
  ppr p
   = case p of
-  	TJField  v	-> "." % Var.noModule v
-	TJFieldR v	-> "#" % Var.noModule v
+  	TJField  v	-> "." % varWithoutModuleId v
+	TJFieldR v	-> "#" % varWithoutModuleId v
 	_		-> panic stage "ppr[TProj]: no match"
 
 

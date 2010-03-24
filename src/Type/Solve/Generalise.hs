@@ -15,7 +15,7 @@ import Constraint.Exp
 import Constraint.Bits
 import Util
 import Util.Graph.Deps
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 

@@ -8,8 +8,8 @@ import Type.Exp
 import Type.Plate.Trans
 import Type.Util.Bits
 import Util
+import DDC.Var
 import Type.Pretty		()
-import Shared.Var 		(Var)
 import qualified Data.Map	as Map
 
 

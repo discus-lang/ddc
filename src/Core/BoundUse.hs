@@ -13,8 +13,8 @@ import Core.Exp
 import Control.Monad.State.Strict
 import Util
 import DDC.Main.Pretty
+import DDC.Var
 import qualified Data.Map		as Map
-import Shared.Var			(Var)
 
 
 -- How many (value) lambdas in from top level this use was

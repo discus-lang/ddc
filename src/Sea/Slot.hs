@@ -10,10 +10,9 @@ import Shared.VarUtil
 import Sea.Exp
 import Sea.Util
 import Sea.Plate.Trans
-import Shared.Var		(NameSpace(..))
+import DDC.Var
 import qualified Core.Glob	as C
 import qualified Shared.Unique	as Unique
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 
@@ -28,7 +27,7 @@ slotTree
 
 slotTree tree eHeader cgHeader cgSource
  	= evalState (mapM (slotP cgHeader cgSource) tree) 	
- 	$ Var.VarId Unique.seaSlot 0
+ 	$ VarId Unique.seaSlot 0
 
 -- | Rewrite code in this top level thing to use the GC slot stack.
 slotP 	:: C.Glob		-- ^ header glob

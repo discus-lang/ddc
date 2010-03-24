@@ -66,8 +66,7 @@ import Util
 import Type.Exp
 import Type.Plate.Trans
 import DDC.Main.Error
-import Shared.Var 		(Var)
-import qualified Shared.Var 	as Var
+import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -112,7 +111,7 @@ isUnboxedT :: Type -> Bool
 isUnboxedT t
  = case takeTData t of
  	Just (v, _, _)
-	 | last (Var.name v) == '#'	-> True	 
+	 | last (varName v) == '#'	-> True	 
 	_				-> False
 
 -- | makeTFunEC

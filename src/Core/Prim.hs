@@ -11,14 +11,13 @@ import Core.Exp
 import Core.Util
 import Type.Util
 import Type.Exp
-import Shared.Var
 import Util
 import DDC.Main.Pretty
+import DDC.Var
 import qualified Debug.Trace
 import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import qualified Shared.Var		as Var
 
 
 -----
@@ -184,13 +183,13 @@ primX1 tt xx
 	-- look for functions in the prim table
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
-	, Just operator				<- Map.lookup (Var.name v) primFuns
+	, Just operator				<- Map.lookup (varName v) primFuns
 	= XPrim (MOp operator) psArgs
 	
 	-- look for functions who's arguments can be unboxed
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
-	, Just (operator, actions)		<- Map.lookup (Var.name v) unboxableFuns
+	, Just (operator, actions)		<- Map.lookup (varName v) unboxableFuns
 	, tResult				<- Recon.reconX_type (stage ++ ".primX") xx
 	, Just (vResult, _, tsResult)		<- takeTData tResult
 	, length psArgs == length actions
@@ -399,7 +398,7 @@ primFuns
 
 isUnboxFunctionV :: Var -> Bool
 isUnboxFunctionV v
- =  elem (Var.name v)
+ =  elem (varName v)
  	[ "unboxInt32"
 	, "unboxFloat32"
 	, "unboxInt64"
@@ -407,7 +406,7 @@ isUnboxFunctionV v
 
 isBoxFunctionV :: Var -> Bool
 isBoxFunctionV v
- = elem	(Var.name v)
+ = elem	(varName v)
  	[ "boxInt32"
 	, "boxFloat32"
 	, "boxInt64"

@@ -1,7 +1,7 @@
 import Data.List
 import Module.Scrape
 import Module.ScrapeGraph
-import Shared.Var		(ModuleId(..))
+import DDC.Var
 import DDC.Main.Arg
 import System.Exit		(exitFailure)
 

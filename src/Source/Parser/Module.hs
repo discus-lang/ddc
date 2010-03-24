@@ -14,11 +14,10 @@ import Source.Exp
 import Type.Util.Bits
 import Type.Exp
 import Util
-import DDC.Var.NameSpace
 import DDC.Main.Pretty
+import DDC.Var
 import Source.Pretty						()
 import qualified Source.Token					as K
-import qualified Shared.Var					as Var
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 
@@ -66,7 +65,7 @@ pModuleId :: Parser (Top SP)
 			return q)
 	con	<- pCon
 	pSemis
-	return	$ PModule (spTP tok) (Var.ModuleId (fromMaybe [] mQual ++ [Var.name con]))
+	return	$ PModule (spTP tok) (ModuleId (fromMaybe [] mQual ++ [varName con]))
 
 pTopHeader :: Parser (Top SP)
  =	pTopImport
@@ -108,18 +107,18 @@ pTopImport
 	mods	<- pCParen (Parsec.sepEndBy1 pModuleName pSemis)
 	return	$ PImportModule (spTP tok) mods
 
-pModuleName :: Parser (Var.ModuleId)
+pModuleName :: Parser (ModuleId)
 pModuleName
  =
  	-- M1.M2 ..
 	do	mod	<- pModuleNameQual
 		pTok K.Dot
 		con	<- pCon
-		return	$ Var.ModuleId (mod ++ [Var.name con])
+		return	$ ModuleId (mod ++ [varName con])
 
  <|>	-- M1
  	do	con	<- pCon
-		return	$ Var.ModuleId [Var.name con]
+		return	$ ModuleId [varName con]
  <?> "pModuleName"
 
 -- Export -----------------------------------------------------------------------------------------
@@ -172,7 +171,7 @@ pTopForeignImportNext startPos
 	do	pTok K.Data
 		name	<- pString
 		con	<- pOfSpace NameType pCon
-		let con2 = con { Var.info = [Var.ISeaName name] }
+		let con2 = con { varInfo = [ISeaName name] }
 		pTopForeignImportEnd startPos name con2
 
  <|>	-- foreign import STRING var :: TYPE
@@ -457,7 +456,7 @@ pTopProject_pun :: Parser (Stmt SP)
 pTopProject_pun
  = do	-- VAR
 	var		<- pOfSpace NameValue pVar
-	let varField	= var { Var.nameSpace = NameField }
+	let varField	= var { varNameSpace = NameField }
 
  	return	$ SBindFun (spV var) varField
 			[] 

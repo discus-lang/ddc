@@ -5,10 +5,9 @@ module Sea.Ctor
 where
 import Sea.Exp
 import Util
-import Shared.Var		(NameSpace(..))
+import DDC.Var
 import Shared.VarUtil		(VarGenM, newVarN)
 import qualified Shared.Unique	as Unique
-import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 
 
@@ -19,7 +18,7 @@ type	ExM	= VarGenM
 expandCtorTree :: Tree () -> Tree ()
 expandCtorTree tree
 	= evalState (liftM concat $ mapM expandDataP tree) 
-	$ Var.VarId Unique.seaCtor 0
+	$ VarId Unique.seaCtor 0
 	
 -- | Expand data constructors in a top level thing.
 expandDataP :: Top ()	-> ExM [Top ()]

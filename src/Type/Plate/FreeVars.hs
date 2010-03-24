@@ -5,7 +5,7 @@ module Type.Plate.FreeVars
 where
 import Type.Exp
 import Shared.FreeVars
-import Shared.Var		(Var)
+import DDC.Var
 import Data.Set			((\\), empty, union, unions, fromList, singleton)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map

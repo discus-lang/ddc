@@ -9,7 +9,7 @@ import Type.Error
 import Type.Util.Bits
 import Shared.VarPrim
 import Util
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Map	as Map
 
 
@@ -50,4 +50,4 @@ checkMain' vMainT tMain tt
 	_ -> addErrors [ErrorWrongMainType { eScheme = (vMainT, tMain) }]
 			
 isMainVar var
-	= Var.name var == "main"
+	= varName var == "main"

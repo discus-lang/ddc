@@ -6,7 +6,7 @@ where
 import Util
 import Type.Exp
 import Core.Plate.Trans
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Map	as Map
 
 -----

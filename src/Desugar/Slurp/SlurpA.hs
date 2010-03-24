@@ -8,9 +8,8 @@ import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Type.Location
 import Type.Builtin
-import Shared.Var		(Var, NameSpace(..))
+import DDC.Var
 import qualified Data.Map	as Map
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 
 
@@ -151,7 +150,7 @@ slurpW	(WConLabel sp vCon lvs)
 	let vsData	= map (\(TVar k v) -> v) tsData
 
 	vsInst		<- mapM newVarZ vsData
-	let tsInst	=  map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsInst
+	let tsInst	=  map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsInst
 
 
 	-- Apply the substitution to the data type.
@@ -259,7 +258,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 			, eCtorAirity		= length fields
 			, ePatternAirity	= ix + 1})
 
-		let v	= Var.new "<error>"
+		let v	= varWithName "<error>"
 
 		return	( (LVar Nothing v, v)
 			, Nothing
@@ -278,7 +277,7 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 	
 	-- Get the type for this field.
 	let tFieldCands	= [ dType f	| f	<- fields
-					, liftM Var.name (dLabel f) == Just (Var.name vField) ]
+					, liftM varName (dLabel f) == Just (varName vField) ]
 
 	let tField_	= case tFieldCands of
 				[f]	-> f

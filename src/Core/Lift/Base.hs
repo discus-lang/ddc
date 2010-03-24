@@ -16,10 +16,7 @@ import Util
 import Type.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty
-import DDC.Var.NameSpace
-import DDC.Var.VarId
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Shared.Unique	as Unique
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -50,7 +47,7 @@ data LiftS
 								
 initLiftS
 	= LiftS
-	{ stateVarGen		= Var.VarId ("v" ++ Unique.coreLift) 0
+	{ stateVarGen		= VarId ("v" ++ Unique.coreLift) 0
 	, stateTypes		= Map.empty
 	, stateTopVars		= Set.empty
 	, stateChopped		= [] 
@@ -68,7 +65,7 @@ bindType v t
 -- | Get the type of some variable from the state.
 getType :: Var -> LiftM Type
 getType	 v
- = case Var.nameSpace v of
+ = case varNameSpace v of
 	NameValue	
 	 -> do	t	<- liftM (fromMaybe TNil)
 			$  liftM (Map.lookup v)
@@ -76,13 +73,13 @@ getType	 v
 			
 		return t
 	
-	_ -> panic stage $ "getType: no type for " % v % " space = " % show (Var.nameSpace v)
+	_ -> panic stage $ "getType: no type for " % v % " space = " % show (varNameSpace v)
 	
 
 -- | Get the kind of some variable by examining its namespace.
 getKind :: Var -> LiftM Kind
 getKind	 v
- = case Var.nameSpace v of
+ = case varNameSpace v of
 	NameType	-> return kValue
  	NameRegion	-> return kRegion
 	NameEffect	-> return kEffect
@@ -97,10 +94,10 @@ newVar :: NameSpace -> LiftM Var
 newVar	space
  = do
  	gen		<- gets stateVarGen
-	let gen'	= Var.incVarId gen
-	let var		= (Var.new $ pprStrPlain gen) 
-				{ Var.varId 		= gen 
-				, Var.nameSpace		= space }
+	let gen'	= incVarId gen
+	let var		= (varWithName $ pprStrPlain gen) 
+				{ varId 		= gen 
+				, varNameSpace		= space }
 	
 	modify (\s -> s { stateVarGen = gen' })
 	

@@ -12,7 +12,7 @@ import Util
 import Data.Function
 import DDC.Main.Error
 import DDC.Main.Pretty
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Map	as Map
 
 -----
@@ -31,9 +31,9 @@ sb (BMore v t)	= pprStrPlain $ "(" % (pprStrPlain $ pv v) % " :> " % t % ")"
 
 -- | force display of type namespace qualifier
 pv v
- = let vStrip	= v { Var.nameModuleId = Var.ModuleIdNil }
-   in  case Var.nameSpace v of
- 	Var.NameType	-> "*" % vStrip
+ = let vStrip	= v { varModuleId = ModuleIdNil }
+   in  case varNameSpace v of
+ 	NameType	-> "*" % vStrip
 	_		-> ppr vStrip
 
 

@@ -2,10 +2,10 @@
 module Shared.Warning
 	( Warning (..))
 where
-import Shared.Var
 import Util
 import DDC.Main.Pretty
 import Shared.VarUtil		(prettyPos)
+import DDC.Var
 
 
 -- | Abstract description of thw warning messages that we support.
@@ -21,13 +21,13 @@ instance Pretty Warning PMode where
 
  ppr (WarnRedundantOp op)
  	= prettyPos op						% "\n"
-	% "     Redundant operator '" % name op  % "' in expression.\n"
+	% "     Redundant operator '" % varName op  % "' in expression.\n"
 
  ppr (WarnUselessBinding vBind)
 	= prettyPos vBind					% "\n"
-	% "     Binding '" % name vBind % "' has no uses.\n"
+	% "     Binding '" % varName vBind % "' has no uses.\n"
 
  ppr (WarnUnknownPragma p)
 	= prettyPos p						% "\n"
-	% "     Unknown pragma '" % name p % "\n"
+	% "     Unknown pragma '" % varName p % "\n"
 

@@ -13,13 +13,11 @@ import Type.Pretty
 import Type.Exp
 import Control.Monad.State.Strict
 import Util
-import DDC.Var.NameSpace
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Debug.Trace
 import qualified Data.Set	as Set
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
 
@@ -86,7 +84,7 @@ elaborateT_fun tt
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
 	let extraQuantVKs	
-		= [(v, kindOfSpace $ Var.nameSpace v)
+		= [(v, kindOfSpace $ varNameSpace v)
 			| v	<- Set.toList free
 			, not $ Set.member v quantVs]
 		++ newRs
@@ -147,30 +145,30 @@ collectRsRW1 tt
 	_ -> return tt
 
 freeVarsR tt
-	= Set.filter (\r -> Var.nameSpace r == NameRegion) 
+	= Set.filter (\r -> varNameSpace r == NameRegion) 
 	$ freeVars tt
 
 -- State -------------------------------------------------------------------------------------------
 data ElabS
 	= ElabS 
-	{ stateVarGen	:: Var.VarId }
+	{ stateVarGen	:: VarId }
 
 stateInit unique
 	= ElabS
-	{ stateVarGen	= Var.VarId unique 0 }
+	{ stateVarGen	= VarId unique 0 }
 	
 type ElabM = State ElabS
 
 -- | Create a fresh variable
 newVarN :: NameSpace -> ElabM Var
 newVarN space
- = do	varId@(Var.VarId p i)	<- gets stateVarGen
+ = do	vid@(VarId p i)	<- gets stateVarGen
  
 	let name	= charPrefixOfSpace space : p ++ show i
-	let var		= (Var.new name) 
-			{ Var.varId 	= varId
-			, Var.nameSpace = space }
+	let var		= (varWithName name) 
+			{ varId 	= vid
+			, varNameSpace 	= space }
 	
-	modify $ \s -> s { stateVarGen = Var.VarId p (i + 1) }
+	modify $ \s -> s { stateVarGen = VarId p (i + 1) }
 	
 	return var

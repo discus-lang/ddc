@@ -19,9 +19,8 @@ import Type.Plate.FreeVars
 import Type.Exp
 import Constraint.Exp
 import Util
-import Shared.Var			(Var)
+import DDC.Var
 import qualified Constraint.Plate.Trans	as CTrans
-import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
 import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map		as Map
@@ -104,7 +103,7 @@ inlineCollect acc (c:cs)
 		
 		let res
 			-- leave value type constraints alone
-			| Var.nameSpace v1 == Var.NameType
+			| varNameSpace v1 == NameType
 			= inlineCollect (c : acc) cs
 
 			-- can't inline this constraint, leave it alone
@@ -222,8 +221,8 @@ collectNoInlineT' tt
 	-- we're only interested in effect and closure vars here
 	let keepV v
 		| not $ Var.isCtorName v
-		,    Var.nameSpace v == Var.NameEffect
-		  || Var.nameSpace v == Var.NameClosure	
+		,    varNameSpace v == NameEffect
+		  || varNameSpace v == NameClosure	
 		= True
 	 
 		| otherwise
@@ -239,7 +238,7 @@ collectNoInlineT' tt
 isValueType tt
  = case tt of
 	TVar _ v
-	 | Var.nameSpace v == Var.NameType
+	 | varNameSpace v == NameType
 	 	-> True
 		
 	_	-> False

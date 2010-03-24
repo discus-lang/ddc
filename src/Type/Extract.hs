@@ -18,8 +18,7 @@ import Type.Util.Cut
 import Type.Plate.Collect
 import Util
 import DDC.Main.Error
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -75,7 +74,7 @@ extractType_findClass final varT
 	 --	something that doens't exist in the graph. bad news, dude.
 	 Nothing	
 	  -> freakout stage
-		 ("extractType: no classId defined for variable " % (varT, Var.varId varT) % "\n")
+		 ("extractType: no classId defined for variable " % (varT, varId varT) % "\n")
 		$ return Nothing
 
 extractType_fromClass final varT cid

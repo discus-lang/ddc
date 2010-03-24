@@ -11,8 +11,7 @@ import Type.Util
 import Type.Exp
 import Util
 import DDC.Main.Pretty
-import Shared.Var		(Var, NameSpace(..))
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -68,7 +67,7 @@ slurpS ss
 	 -> do	topVs	<- gets stateTopVs
 
 	 	let fv	= [v 	| v 	<- Set.toList $ freeVars x
-	 			, Var.nameSpace v == NameValue 
+	 			, varNameSpace v == NameValue 
 				, not $ Set.member v topVs 
 				, not $ Var.isCtorName v ]
 	 
@@ -133,7 +132,7 @@ dotBindVar (v, (app, freeVs))
 dotBindVar_SC str colorStr v
  = pprStrPlain
 	$ "\t"
-	% quote (pprStrPlain $ Var.varId v)
+	% quote (pprStrPlain $ varId v)
 	% " [ label = " % quote (pprStrPlain v ++ str) 
 	% " , color = " % colorStr 
 	% "];\n"
@@ -149,6 +148,6 @@ dotApp	v vs
 
 dotVarBind :: Var -> String
 dotVarBind    v	
-	= "\"" ++ (pprStrPlain $ Var.varId v) ++ "\""
+	= "\"" ++ (pprStrPlain $ varId v) ++ "\""
 
 quote s	= "\"" ++ s ++ "\""

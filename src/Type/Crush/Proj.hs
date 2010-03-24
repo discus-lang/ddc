@@ -20,8 +20,7 @@ import Type.State
 import Constraint.Exp
 import Util
 import DDC.Main.Error
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Map	as Map
 
 -----
@@ -147,14 +146,14 @@ crushProj_withDict
  = do
 	-- Extract the name of the projection we're looking for
  	let projName	= case proj of 
-				TJField v	-> Var.name v
-				TJFieldR v	-> "ref_" ++ Var.name v
+				TJField v	-> varName v
+				TJFieldR v	-> "ref_" ++ varName v
 
 	-- Try and look up the var of the implementation function.
 	--	We must use field _names_, not the Var.bind for comparison because the
 	--	renamer can't have known which type this field belongs to.
 	let mInstV	=  liftM snd
-			$  find (\(v1, _) -> Var.name v1 == projName)
+			$  find (\(v1, _) -> varName v1 == projName)
 			$  Map.toList vsDict
 
 	trace	$ "    projection instance fn (mInstV)  = " % mInstV		% "\n"

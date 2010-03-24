@@ -9,10 +9,10 @@ where
 import Core.Exp
 import Shared.FreeVars
 import DDC.Main.Error
+import DDC.Var
 import Type.Plate.FreeVars	()
 import Type.Util.Bits		(varOfBind)
 import Type.Pretty		()
-import Shared.Var		(Var)
 import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))
 import qualified Data.Set 	as Set

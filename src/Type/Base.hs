@@ -11,7 +11,7 @@ import Type.Location
 import Util
 import Data.Array.IO
 import Type.Pretty		()
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

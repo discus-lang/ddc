@@ -7,7 +7,7 @@ import Type.Exp
 import Shared.VarPrim
 import DDC.Base.Literal
 import DDC.Base.DataFormat
-import Shared.Var		(Var)
+import DDC.Var
 
 -- Witness / Witness Kind constructors
 --	The contstructor is overloaded to be used for both witnesses and witness kinds

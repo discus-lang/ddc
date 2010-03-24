@@ -8,10 +8,9 @@ import {-# SOURCE #-} Desugar.Slurp.SlurpA
 import Desugar.Slurp.Base
 import Type.Location
 import Type.Builtin
-import DDC.Var.NameSpace
+import DDC.Var
 import DDC.Base.DataFormat
 import Util			(liftM, unzip6, unzip5, takeLast, catMap)
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 
@@ -47,7 +46,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 			<- slurpX xBody
 
 	-- Get the closure terms for value vars free in this expression
-	let freeVs	= Set.filter (\v ->  (Var.nameSpace v == NameValue)
+	let freeVs	= Set.filter (\v ->  (varNameSpace v == NameValue)
 					 &&  (not $ Var.isCtorName v))
 			$ freeVars exp 
 
@@ -423,8 +422,8 @@ slurpV exp@(XVar sp var) tV@(TVar k vT)
 makeUseVar vInst vT
  = do 	TVar _ vTu_	<- newTVarD
 	let vTu		= vTu_  
-			{ Var.name = (Var.name vTu_)  ++ "_" ++ (Var.name vT) 
-			, Var.info = [Var.IValueVar vInst]}
+			{ varName = (varName vTu_)  ++ "_" ++ (varName vT) 
+			, varInfo = [IValueVar vInst]}
  	
 	return vTu
 

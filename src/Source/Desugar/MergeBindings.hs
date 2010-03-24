@@ -3,7 +3,7 @@ module Source.Desugar.MergeBindings
 	(mergeBindings)
 where
 import Source.Desugar.Base
-import Shared.Var
+import DDC.Var
 import Desugar.Util			as D
 import Desugar.Bits			as D
 import Desugar.Exp			as D

@@ -19,8 +19,7 @@ import Type.Plate.Collect
 import Type.Plate.FreeVars
 import Util
 import DDC.Var.NameSpace
-import Shared.Var			(Var)
-import qualified Shared.Var		as Var
+import DDC.Var
 import qualified Shared.VarUtil		as Var
 import qualified DDC.Main.Arg		as Arg
 import qualified Data.Map		as Map
@@ -154,12 +153,12 @@ generaliseType' varT tCore envCids
 	checkContext tConstify
 
 	-- Quantify free variables.
-	let vsFree	= filter (\v -> not $ Var.nameSpace v == NameValue)
+	let vsFree	= filter (\v -> not $ varNameSpace v == NameValue)
 			$ filter (\v -> not $ Var.isCtorName v)
 			$ Var.sortForallVars
 			$ Set.toList $ freeVars tConstify
 
-	let vksFree	= map 	 (\v -> (v, kindOfSpace $ Var.nameSpace v)) 
+	let vksFree	= map 	 (\v -> (v, kindOfSpace $ varNameSpace v)) 
 			$ vsFree
 
 	trace	$ "    vksFree   = " % vksFree	% "\n\n"
@@ -254,7 +253,7 @@ checkContextF ff
 		, primLazy, 	primDirect
 		, primPure,	primEmpty
 		, primLazyH ]
-	 , Var.name vClass /= "Safe"
+	 , varName vClass /= "Safe"
 	 -> addErrors
 	 	[ ErrorNoInstance
 			{ eClassVar		= vClass

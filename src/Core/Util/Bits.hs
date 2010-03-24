@@ -27,8 +27,7 @@ where
 import Core.Exp
 import Type.Exp
 import Util
-import Shared.Var 		(Var, NameSpace(..))
-import qualified Shared.Var 	as Var
+import DDC.Var
 
 
 -- Predicates --------------------------------------------------------------------------------------
@@ -92,7 +91,7 @@ buildApp' xx
 	= Just $ XAPP leftX t
 	
 	| XVar v t : xs		<- xx
-	, Var.nameSpace v == NameValue
+	, varNameSpace v == NameValue
 	, Just leftX		<- buildApp' xs
 	= Just $ XApp leftX (XVar v t) tPure
 

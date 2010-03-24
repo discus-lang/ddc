@@ -7,7 +7,7 @@ module Source.Rename.Object
 where
 import Source.Rename.State
 import Control.Monad.State.Strict
-import Shared.Var
+import DDC.Var
 import DDC.Main.Error
 
 stage = "Source.Rename.Object"

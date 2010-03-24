@@ -43,7 +43,7 @@ where
 import Util
 import Data.Ix
 import DDC.Main.Error
-import Shared.Var		(Var)
+import DDC.Var
 
 
 -- ClassId -----------------------------------------------------------------------------------------

@@ -6,7 +6,7 @@ module	Constraint.Exp
 where
 import Type.Exp
 import Type.Location
-import Shared.Var		(Var)
+import DDC.Var
 import Data.Map			(Map)
 
 

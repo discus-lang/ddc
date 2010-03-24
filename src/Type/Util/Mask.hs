@@ -6,7 +6,7 @@ import Type.Exp
 import Type.Util.Bits
 import Shared.VarPrim
 import Util
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Set 	as Set
 
 

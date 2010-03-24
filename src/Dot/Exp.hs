@@ -5,8 +5,7 @@ module Dot.Exp
 	, NodeId (..)
 	, Attr (..))
 where
-import Shared.Var		(Var)
-
+import DDC.Var
 
 data Graph
 	= Graph 	[Stmt]

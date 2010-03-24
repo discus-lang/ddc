@@ -17,7 +17,6 @@ data NameSpace
 	| NameEffect		-- ^ Effect  type variables.
 	| NameClosure		-- ^ Closure type variables.
 	| NameClass		-- ^ Type class \/ witness kind variables.
-	| NameModule		-- ^ Module identifiers.
 	| NameField		-- ^ Field names.
 	| NameLabel		-- ^ Sea level labels.
 	deriving (Show, Eq,  Ord)
@@ -34,7 +33,6 @@ shortNameOfSpace space
 	NameEffect	-> "effect"
 	NameClosure	-> "closure"
 	NameClass	-> "class"
-	NameModule	-> "module"
 	NameField	-> "field"
 	NameLabel	-> "label"
 
@@ -51,6 +49,5 @@ charPrefixOfSpace space
 	NameEffect	-> 'e'
 	NameClosure	-> 'c'
 	NameClass	-> 'w'
-	NameModule	-> 'm'
 	NameField	-> 'f'
 	NameLabel	-> 'l'

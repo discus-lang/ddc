@@ -6,7 +6,7 @@ import Type.Plate.FreeVars
 import Type.Util.Bits
 import Type.Exp
 import Util.Graph.Deps
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

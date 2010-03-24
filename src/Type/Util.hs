@@ -38,9 +38,9 @@ import Shared.VarPrim
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Debug.Trace
-import qualified Shared.Var	as Var
+
 
 stage	= "Type.Util"
 debug	= False
@@ -100,7 +100,7 @@ makeOpTypeT2 tt
 
 makeOpTypeData tt
 	| Just (v, k, ts)	<- takeTData tt
-	, last (Var.name v) == '#'
+	, last (varName v) == '#'
 	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == kValue])) of
 		Just ts'	-> Just $ makeTData v kValue ts'
 		_		-> Nothing
@@ -113,7 +113,7 @@ makeOpTypeData _	= Nothing
 
 -- | Make a TVar, using the namespace of the var to determine it's kind
 makeTVar :: Var -> Type
-makeTVar v	= TVar (kindOfSpace $ Var.nameSpace v) v
+makeTVar v	= TVar (kindOfSpace $ varNameSpace v) v
 
 
 -- | Add some where fetters to this type

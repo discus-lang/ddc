@@ -11,8 +11,7 @@ import Sea.Exp
 import Sea.Pretty
 import Sea.Util
 import Util
-import qualified Shared.Var	as Var
-import Shared.Var		(ModuleId(..))
+import DDC.Var
 
 
 -- | Add code that initialises this module
@@ -35,7 +34,7 @@ makeInitCaf v
 	where	name	= seaVar False v
 		 
 makeInitVar (ModuleId vs)
-	= Var.new ("ddcInitModule_" ++ (catInt "_" vs))
+	= varWithName ("ddcInitModule_" ++ (catInt "_" vs))
 
 
 -- | Make code that initialises each module and calls the main function.
@@ -54,7 +53,7 @@ mainTree imports mainModule
 		, "" ]
 
 		-- call all the init functions for imported modules.
-	 ++ 	map (\m -> "\t" ++ "_" ++ (Var.name $ makeInitVar m) ++ "();") imports
+	 ++ 	map (\m -> "\t" ++ "_" ++ (varName $ makeInitVar m) ++ "();") imports
 
 		-- call the init function for the main module.
 	 ++	[ "        _ddcInitModule_" ++ mainModuleName ++ "();" ]

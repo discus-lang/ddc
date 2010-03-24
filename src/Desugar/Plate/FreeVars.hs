@@ -6,8 +6,8 @@ where
 import Shared.FreeVars
 import Desugar.Exp
 import Desugar.Util
+import DDC.Var
 import Type.Plate.FreeVars	()
-import Shared.Var		(Var)
 import Type.Util.Bits		()
 import Data.Set			((\\), unions, empty, singleton)
 import Util			hiding ((\\))

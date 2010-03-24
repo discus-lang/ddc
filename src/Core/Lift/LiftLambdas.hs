@@ -12,9 +12,8 @@ import Type.Util
 import Type.Exp
 import Util
 import DDC.Main.Pretty
-import Shared.Var		(Var, NameSpace(..))
+import DDC.Var
 import qualified Shared.VarUtil	as Var
-import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
@@ -100,14 +99,14 @@ chopInnerS topName vtMore s
 
 -- | Chop out this function
 chopInnerS2 topName vtMore (SBind Nothing x)
- = do	v	<- newVar Var.NameValue
+ = do	v	<- newVar NameValue
 	chopInnerS2 topName vtMore (SBind (Just v) x)
 
 chopInnerS2 topName vtMore (SBind (Just v) x)
  = do	
 	-- make a name for the new super
-	vN		<- newVar Var.NameValue
-	let vSuper	=  vN { Var.name = (Var.name topName) ++ "_" ++ (Var.name vN) }
+	vN		<- newVar NameValue
+	let vSuper	=  vN { varName = (varName topName) ++ "_" ++ (varName vN) }
 	
 	-- remember that a new binding with this name is to be created at top level
 	modify $ \s -> s { stateTopVars	= Set.insert vSuper $ stateTopVars s }
@@ -230,7 +229,7 @@ bindFreeVarsP
 			$ Set.difference (freeVars x) vsBoundTop
 
 	let (vsFreeVal, vsFreeType)
-			= partition (\v	-> Var.nameSpace v == NameValue)
+			= partition (\v	-> varNameSpace v == NameValue)
 			$ Set.toList vsFree
 
  	-- Work out the type of the expression

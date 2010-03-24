@@ -9,7 +9,7 @@ import Type.Location
 import Type.State
 import Type.Class
 import DDC.Main.Error
-import Shared.Var		(Var)
+import DDC.Var
 import Util
 
 -----

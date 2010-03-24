@@ -13,11 +13,11 @@ module Desugar.Exp
 	, Pat		(..)
 	, Label		(..))
 where
-import	Type.Exp
-import	DDC.Base.Literal
-import	DDC.Var.ModuleId
-import 	Shared.Exp	(DataField)
-import	Shared.Var	(Var)
+import Type.Exp
+import DDC.Base.Literal
+import DDC.Var.ModuleId
+import DDC.Var
+import Shared.Exp	(DataField)
 
 
 type Tree a	= [Top a]

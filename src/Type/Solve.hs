@@ -22,9 +22,9 @@ import Type.Exp
 import Constraint.Bits
 import Constraint.Exp
 import Util
+import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
-import Shared.Var		(Var)
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
 import System.IO

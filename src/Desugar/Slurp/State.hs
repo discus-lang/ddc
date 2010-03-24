@@ -14,12 +14,9 @@ import Type.Error
 import Desugar.Exp
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
-import DDC.Var.NameSpace
-import DDC.Var.VarId
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map
-import qualified Shared.Var 	as Var
 import qualified Shared.Unique	as Unique
 
 
@@ -90,13 +87,13 @@ initCSlurpS
 	, stateErrors		= []
 	, stateGen		
 	   = 	Map.fromList
-		[ (NameValue,	Var.VarId ("v" ++ Unique.typeConstraint) 0)
-		, (NameType,	Var.VarId ("t" ++ Unique.typeConstraint) 0)
-		, (NameRegion,	Var.VarId ("r" ++ Unique.typeConstraint) 0)
-		, (NameEffect,	Var.VarId ("e" ++ Unique.typeConstraint) 0) 
-		, (NameClosure,	Var.VarId ("c" ++ Unique.typeConstraint) 0)
-		, (NameField,	Var.VarId ("f" ++ Unique.typeConstraint) 0) 
-		, (NameClass,	Var.VarId ("w" ++ Unique.typeConstraint) 0) ]
+		[ (NameValue,	VarId ("v" ++ Unique.typeConstraint) 0)
+		, (NameType,	VarId ("t" ++ Unique.typeConstraint) 0)
+		, (NameRegion,	VarId ("r" ++ Unique.typeConstraint) 0)
+		, (NameEffect,	VarId ("e" ++ Unique.typeConstraint) 0) 
+		, (NameClosure,	VarId ("c" ++ Unique.typeConstraint) 0)
+		, (NameField,	VarId ("f" ++ Unique.typeConstraint) 0) 
+		, (NameClass,	VarId ("w" ++ Unique.typeConstraint) 0) ]
 		
 	, stateDataDefs		= Map.empty
 	, stateCtorType		= Map.empty

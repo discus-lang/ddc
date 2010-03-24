@@ -6,7 +6,7 @@ import Type.Exp
 import Type.Util.Bits
 import Shared.VarPrim
 import DDC.Main.Error
-import Shared.Var			(Var)
+import DDC.Var
 import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set

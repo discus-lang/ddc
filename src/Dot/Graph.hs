@@ -5,7 +5,7 @@ module Dot.Graph
 where
 import qualified Data.Map	as Map
 import DDC.Main.Pretty
-import Shared.Var		(Var)
+import DDC.Var
 import Dot.Exp
 import Util
 

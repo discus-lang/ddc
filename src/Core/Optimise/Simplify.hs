@@ -5,9 +5,9 @@ module Core.Optimise.Simplify
 where
 import Core.Exp
 import Core.Plate.Trans
-import Shared.Var
 import Util
 import DDC.Main.Pretty
+import DDC.Var
 import qualified Core.Float	as Float
 import qualified Core.Snip	as Snip
 

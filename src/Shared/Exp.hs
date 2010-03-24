@@ -2,8 +2,8 @@
 module Shared.Exp
 	(DataField (..))
 where
-import Shared.Var
 import DDC.Main.Pretty
+import DDC.Var
 import Util
 
 

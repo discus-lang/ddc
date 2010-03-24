@@ -8,7 +8,7 @@ import Core.Exp
 import Core.Util
 import Desugar.ToCore.Base
 import Type.Exp
-import Shared.Var		(Var, NameSpace(..))
+import DDC.Var
 import qualified Data.Set 	as Set
 import qualified Data.Map	as Map
 

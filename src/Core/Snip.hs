@@ -10,13 +10,11 @@ import Core.Util
 import Core.Plate.Trans
 import Type.Exp
 import Util
-import DDC.Var.NameSpace
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var			(Var)
+import DDC.Var
 import Shared.VarGen			(VarGenM, newVarN)
 import qualified Core.Reconstruct	as Recon
-import qualified Shared.Var		as Var
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 import qualified Debug.Trace	
@@ -51,7 +49,7 @@ snipTree table varPrefix tree
  = let	transTable	= transTableId { transSS = snipStmts table }
 	tree'		= evalState
 				(mapM (transZM transTable) tree)
-				$ Var.VarId varPrefix 0
+				$ VarId varPrefix 0
    in	tree'
    
 

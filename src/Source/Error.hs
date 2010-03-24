@@ -5,13 +5,11 @@ module Source.Error
 where
 import Util
 import Source.Token	
-import DDC.Var.NameSpace
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var			(Var)
+import DDC.Var
 import Shared.VarUtil			(prettyPos, isCtorName)
-import qualified Shared.Var		as Var
 import qualified Source.TokenShow 	as Token
 
 stage	= "Source.Error"
@@ -168,7 +166,7 @@ instance Pretty Error PMode where
 	% "      Cannot have multiple, adjacent, non-associative operators of the\n"
 	% "      same precedence in an infix expression.\n"
 	% "\n"
-	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
+	% "      Offending operators: " % ", " %!% (map varName (v:vs)) % "\n"
 
  ppr (ErrorDefixMixedAssoc (v:vs))
 	= prettyPos v % "\n"
@@ -176,14 +174,14 @@ instance Pretty Error PMode where
 	% "      Cannot have operators of same precedence but with differing\n"
 	% "      associativities in an infix expression.\n"
 	% "\n"
-	% "      Offending operators: " % ", " %!% (map Var.name (v:vs)) % "\n"
+	% "      Offending operators: " % ", " %!% (map varName (v:vs)) % "\n"
 
 
  -- Renamer Errors ------------------------------------------------------------
  ppr err@(ErrorUndefinedVar{})
 	= prettyPos (eUndefined err)								% "\n"
 	% "     Undefined " 
-		% (shortNameOfSpace $ Var.nameSpace (eUndefined err))
+		% (shortNameOfSpace $ varNameSpace (eUndefined err))
 		% " variable '" % eUndefined err % "'.\n"
 
  ppr err@(ErrorShadowForall{})
@@ -195,21 +193,21 @@ instance Pretty Error PMode where
 	= prettyPos (eRedefined err)								% "\n"
 	% "     Redefined "
 		% sort % " '"
-		% Var.name (eRedefined err) % "'\n"
+		% varName (eRedefined err) % "'\n"
 	% "      first defined at: " 	% prettyPos (eFirstDefined err) 			% "\n"
 
 	where var = eFirstDefined err
 	      sort 
 		| isCtorName var
-		, Var.nameSpace var == NameValue
+		, varNameSpace var == NameValue
 		= ppr "data constructor"
 
 		| isCtorName var
-		, Var.nameSpace var == NameType
+		, varNameSpace var == NameType
 		= ppr "type constructor"
 		
 		| otherwise
-		= (shortNameOfSpace $ Var.nameSpace var) % " variable"
+		= (shortNameOfSpace $ varNameSpace var) % " variable"
 
  ppr err@(ErrorAmbiguousVar{})
 	= prettyPos (eBoundVar err)								% "\n"
@@ -220,7 +218,7 @@ instance Pretty Error PMode where
  -- Lint Errors ---------------------------------------------------------------
  ppr err@(ErrorSigLacksBinding{})
 	= prettyPos (eSigVar err)								% "\n"
-	% "     Type signature for '" 	% Var.noModule (eSigVar err) 
+	% "     Type signature for '" 	% varWithoutModuleId (eSigVar err) 
 					% "' lacks accompanying binding."			% "\n"
 
 
@@ -232,8 +230,8 @@ instance Pretty Error PMode where
 
  ppr err@(ErrorRedefClassInst{})
 	= prettyPos (eRedefined err)								% "\n"
-	% "     Instance '"	% Var.name (eFirstDefined err)
-	%						"' of class '" % Var.name (eClass err) 	% "'\n"
+	% "     Instance '"	% varName (eFirstDefined err)
+	%						"' of class '" % varName (eClass err) 	% "'\n"
 	% "      first defined at: "	% prettyPos (eFirstDefined err) 			% "\n"
 	% "      redefined at    : "	% prettyPos (eRedefined err)				% "'\n"
 

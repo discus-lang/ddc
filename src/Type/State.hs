@@ -20,15 +20,12 @@ import Type.Base
 import Type.Exp
 import Util
 import System.IO
-import DDC.Var.NameSpace
-import DDC.Var.VarId
+import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error
 import Constraint.Pretty	()
 import DDC.Main.Arg		(Arg)
-import Shared.Var		(Var)
 import qualified DDC.Main.Arg	as Arg
-import qualified Shared.Var	as Var
 import qualified Shared.Unique	as U
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
@@ -151,10 +148,10 @@ squidSInit
 		, stateSigmaTable	= Map.empty
 		, stateVsBoundTopLevel	= Set.empty
 
-		, stateVarGen		= Map.insert NameType    (Var.VarId tT 0)
-					$ Map.insert NameRegion  (Var.VarId rT 0)
-					$ Map.insert NameEffect  (Var.VarId eT 0)
-					$ Map.insert NameClosure (Var.VarId cT 0)
+		, stateVarGen		= Map.insert NameType    (VarId tT 0)
+					$ Map.insert NameRegion  (VarId rT 0)
+					$ Map.insert NameEffect  (VarId eT 0)
+					$ Map.insert NameClosure (VarId cT 0)
 					$ Map.empty 
 
 		, stateVarSub		= Map.empty 
@@ -210,7 +207,7 @@ traceIL
 -- | Instantiate a variable.
 instVar :: Var -> SquidM (Maybe Var)
 instVar var
- = do	let space	= Var.nameSpace var
+ = do	let space	= varNameSpace var
 
 	-- lookup the generator for this namespace
 	mVarId		<- liftM (Map.lookup space) $ gets stateVarGen
@@ -223,17 +220,17 @@ instVar' var space mVarId
 	  	% " var = " % show var)
 		$ return Nothing
 		
-	| Just varId	<- mVarId
+	| Just vid	<- mVarId
 	= do
 		-- increment the generator and write it back into the table.
-		let varId'	= Var.incVarId varId
-		modify $ \s -> s { stateVarGen = Map.insert space varId' (stateVarGen s) }
+		let vid'	= incVarId vid
+		modify $ \s -> s { stateVarGen = Map.insert space vid' (stateVarGen s) }
 
 		-- the new variable remembers what it's an instance of..
-		let name	= pprStrPlain varId
-		let var'	= (Var.new name)
-			 { Var.nameSpace	= Var.nameSpace var
-			 , Var.varId		= varId }
+		let name	= pprStrPlain vid
+		let var'	= (varWithName name)
+			 	{ varNameSpace	= varNameSpace var
+			 	, varId		= vid }
 
 		return $ Just var'
 
@@ -242,16 +239,16 @@ instVar' var space mVarId
 newVarN :: NameSpace ->	SquidM Var
 newVarN	space	
  = do
- 	Just varId	<- liftM (Map.lookup space)
+ 	Just vid	<- liftM (Map.lookup space)
 			$  gets stateVarGen
 	
-	let varId'	= Var.incVarId varId
-	modify $ \s -> s { stateVarGen = Map.insert space varId' (stateVarGen s) }
+	let vid'	= incVarId vid
+	modify $ \s -> s { stateVarGen = Map.insert space vid' (stateVarGen s) }
 	
-	let name	= pprStrPlain varId
-	let var'	= (Var.new name)
-			{ Var.nameSpace		= space 
-			, Var.varId		= varId }
+	let name	= pprStrPlain vid
+	let var'	= (varWithName name)
+			{ varNameSpace	= space 
+			, varId		= vid }
 			
 	return var'
 

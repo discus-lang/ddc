@@ -9,7 +9,7 @@ import Type.Exp
 import Type.Util
 import Shared.VarPrim
 import Util
-import Shared.Var		(Var)
+import DDC.Var
 import Type.Effect.MaskLocal	(visibleRsT)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map

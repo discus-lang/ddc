@@ -15,7 +15,7 @@ import Type.Exp
 import Type.Error
 import Util
 import Shared.VarPrim
-import Shared.Var		(Var)
+import DDC.Var
 
 -----
 debug	= False

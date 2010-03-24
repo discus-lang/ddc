@@ -18,8 +18,8 @@ module Sea.Exp
 where
 import DDC.Base.SourcePos
 import DDC.Base.Literal
+import DDC.Var
 import Util
-import Shared.Var		(Var)
 
 
 -- | A whole C program.

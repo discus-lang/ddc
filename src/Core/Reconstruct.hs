@@ -42,11 +42,11 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var.VarId		as Var
+import DDC.Var
 import Type.Error		(Error(..))
 import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
-import Shared.Var		(Var)
 import qualified DDC.Var.PrimId	as Var
-import qualified Shared.Var	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	
@@ -610,11 +610,11 @@ reconX xx
 reconBoxType :: Region -> Type -> Type
 reconBoxType r tt
 	| Just (v, k, _)		<- takeTData tt
-	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.varId v)
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (varId v)
 	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
 	= makeTData 
 		(primVarFmt NameType 
-				(pprStrPlain (Var.nameModuleId v) ++ "." ++ baseName) 
+				(pprStrPlain (varModuleId v) ++ "." ++ baseName) 
 				mkBind fmtBoxed)
 		(KFun kRegion kValue) 
 		[r]
@@ -626,11 +626,11 @@ reconUnboxType r1 tt
 	| Just (v, k, [r2@(TVar kV _)])	<- takeTData tt
 	, kV == kRegion
 	, r1 == r2
-	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (Var.varId v)
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (varId v)
 	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
 	= makeTData
 		(primVarFmt NameType 
-				(pprStrPlain (Var.nameModuleId v) ++ "." ++ baseName)
+				(pprStrPlain (varModuleId v) ++ "." ++ baseName)
 				mkBind fmtUnboxed)
 		kValue
 		[]
@@ -701,7 +701,7 @@ reconOpApp op xs
 isUnboxedNumericType :: Type -> Bool
 isUnboxedNumericType tt
  	| Just (v, _, []) <- takeTData tt
-	, isUnboxedNumericType_varId (Var.varId v)
+	, isUnboxedNumericType_varId (varId v)
 	= True
 
 	-- treat pointers as numeric types

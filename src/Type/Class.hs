@@ -34,8 +34,7 @@ import Type.Util
 import Util
 import Data.Array.IO
 import DDC.Main.Error
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -171,10 +170,10 @@ makeClassName cid_
 			
 classNameOrd v1 v2
 
-	| length (Var.name v1) < length (Var.name v2)
+	| length (varName v1) < length (varName v2)
 	= Prelude.LT
 	
-	| length (Var.name v1) > length (Var.name v2)
+	| length (varName v1) > length (varName v2)
 	= Prelude.GT
 	
 	| otherwise

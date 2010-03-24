@@ -9,8 +9,8 @@ import Shared.VarGen
 import Util
 import DDC.Base.DataFormat
 import DDC.Base.Literal
+import DDC.Var
 import Sea.Pretty		()
-import Shared.Var		(NameSpace(..))
 
 -----
 type FlatM	= VarGenM

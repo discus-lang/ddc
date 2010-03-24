@@ -11,9 +11,9 @@ module Module.Interface
 	, IntInfix	(..)
 	, IntBind	(..) )
 where
-import Shared.Var
 import Type.Exp
 import DDC.Base.SourcePos
+import DDC.Var
 import qualified Source.Exp	as S
 import qualified Sea.Exp	as E
 import Data.Map			(Map)

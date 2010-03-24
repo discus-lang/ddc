@@ -10,7 +10,7 @@ import Type.Exp
 import Type.Util
 import Util
 import DDC.Main.Error
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
 

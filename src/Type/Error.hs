@@ -11,8 +11,7 @@ import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Shared.VarUtil	as Var
 
 -----
@@ -371,7 +370,7 @@ instance Pretty Error PMode where
 -----
 prettyVTS (v, t)
  	= indentSpace 12 (
-		"\n" ++ (Var.name v) ++ "\n  :: "
+		"\n" ++ (varName v) ++ "\n  :: "
 		++ (indentSpace 2 $ pprStrPlain $ prettyTypeSplit $ t))
 
 
@@ -380,17 +379,17 @@ prettyValuePos :: Var -> String
 prettyValuePos var
 	= fromMaybe "?"
 	$ liftM (Var.prettyPos)
-	$ liftM (\(Var.IValueVar v) -> v)
-	$ find  (=@= Var.IValueVar{}) 
-	$ Var.info var
+	$ liftM (\(IValueVar v) -> v)
+	$ find  (=@= IValueVar{}) 
+	$ varInfo var
 
 
 -- | Get the source position from a variable
 getVSP :: Var -> SourcePos
 getVSP	 var
- = let	Just (Var.ISourcePos pos)
-		= find ((=@=) Var.ISourcePos{})
-		$ Var.info var
+ = let	Just (ISourcePos pos)
+		= find ((=@=) ISourcePos{})
+		$ varInfo var
 		
    in	pos
  	

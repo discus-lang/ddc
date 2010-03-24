@@ -8,9 +8,8 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.Literal
-import DDC.Var.NameSpace
+import DDC.Var
 import Shared.VarUtil			(prettyPos)
-import Shared.Var			(Var)
 import Data.Sequence			(Seq)
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)
@@ -23,7 +22,6 @@ import qualified Type.Exp		as T
 import qualified Type.Util		as T
 import qualified Sea.Exp  		as E
 import qualified Sea.Pretty		as E
-import qualified Shared.Var		as Var
 import qualified Shared.VarPrim		as Var
 import qualified DDC.Var.PrimId		as Var
 import qualified Data.Map		as Map
@@ -38,7 +36,7 @@ stage	= "Core.ToSea"
 data SeaS
 	= SeaS
 	{ -- variable name generator
-	  stateVarGen		:: Var.VarId
+	  stateVarGen		:: VarId
 
 	  -- regions known to be direct
 	, stateDirectRegions	:: Set Var }
@@ -48,12 +46,12 @@ type SeaM	= State SeaS
 newVarN ::	NameSpace -> SeaM Var
 newVarN		space
  = do 	varBind		<- gets stateVarGen
-	let varBind'	= Var.incVarId varBind
+	let varBind'	= incVarId varBind
 	modify (\s -> s { stateVarGen = varBind' })
 
-	let var		= (Var.new $ pprStrPlain varBind)
-			{ Var.varId	= varBind
-			, Var.nameSpace	= space }
+	let var		= (varWithName $ pprStrPlain varBind)
+			{ varId		= varBind
+			, varNameSpace	= space }
 	return var
 
 
@@ -80,7 +78,7 @@ toSeaTree
 toSeaTree unique cTree
   = evalState
   	(liftM join $ mapM toSeaP cTree)
-	SeaS 	{ stateVarGen		= Var.VarId ("x" ++ unique) 0
+	SeaS 	{ stateVarGen		= VarId ("x" ++ unique) 0
 		, stateDirectRegions	= Set.empty }
    
     
@@ -242,7 +240,7 @@ toSeaX		xx
 	-- suspend
 	C.XPrim (C.MSuspend fn)	args 
 	 -> do	let args'	= map (\ (v, t) -> E.XVar v $ toSeaT t)
-		 		$ filter (\ (v, t) -> Var.nameSpace v == NameValue) 
+		 		$ filter (\ (v, t) -> varNameSpace v == NameValue) 
 				$ map (\(C.XVar v t) -> (v, t))
 		 		$ args
 
@@ -537,12 +535,12 @@ toSeaT tt
 toSeaT_data tx
 	-- the unboxed void type is represented directly.
  	| (v, _, _)			<- tx
- 	, Var.VarIdPrim Var.TVoidU	<- Var.varId v
+ 	, VarIdPrim Var.TVoidU	<- varId v
 	= E.TVoid
 
  	 -- we know about unboxed pointers
 	| (v, _, [t])			<- tx
-	, Var.VarIdPrim Var.TPtrU	<- Var.varId v
+	, VarIdPrim Var.TPtrU	<- varId v
 	= E.TPtr (toSeaT t)
 
 	-- the built-in unboxed types are represented directly.
@@ -554,7 +552,7 @@ toSeaT_data tx
 	-- TODO: We just check for a '#' in the name to detect these, which is pretty nasty. 
 	--	 Is there a better way to detect this?
 	| (v, _, ts)			<- tx
-	, elem '#' (Var.name v)
+	, elem '#' (varName v)
 	= E.TCon v (map toSeaT $ filter hasValueKind ts)
 
 	| otherwise
@@ -592,7 +590,7 @@ stripValues args
 stripValues' a
  = case a of
 	C.XVar v t
-	 |  Var.nameSpace v /= NameValue
+	 |  varNameSpace v /= NameValue
 	 -> Nothing
 
 	C.XType _

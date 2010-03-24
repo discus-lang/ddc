@@ -23,12 +23,9 @@ import Type.Exp
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Error
-import DDC.Var.NameSpace
-import DDC.Var.ModuleId
+import DDC.Var
 import DDC.Main.Pretty		()
-import Shared.Var		(Var)
 import qualified Shared.VarUtil	as Var
-import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
 
 -----
@@ -182,7 +179,7 @@ instance Rename (Top SourcePos) where
 	 	-- The way the projection dict is parsed, the projection funtions end up in the wrong namespace, 
 		--	NameValue. Convert them to NameField vars here.
 		--	
-		let fixupV v	= v 	{ Var.nameSpace 	= NameField }
+		let fixupV v	= v 	{ varNameSpace 	= NameField }
 		
 		let ssF		
 			= map (\s -> case s of 
@@ -286,8 +283,8 @@ renameDataField vData vsData df
   = do	
   	-- field vars aren't supposed to have module qualifiers...
   	let fixupV v	
-  		= v { Var.nameSpace 	= NameField
-		    , Var.nameModuleId 	= ModuleIdNil }
+  		= v { varNameSpace 	= NameField
+		    , varModuleId 	= ModuleIdNil }
 
    	mLabel'	<- case dLabel df of
 			Nothing		-> return Nothing
@@ -397,7 +394,7 @@ instance Rename (Exp SourcePos) where
 		
 	-- defix sugar
 	XOp sp v 
-	 | Var.name v	== "@"
+	 | varName v	== "@"
 	 -> 	return	$ XOp sp v
 	 
 	 | otherwise
@@ -734,7 +731,7 @@ instance Rename Type where
   = case tt of
 	TForall b k t
 	 -> do	let (BVar v)	= b
-		let reused	= tforallHasVarName (Var.name v) t
+		let reused	= tforallHasVarName (varName v) t
 		when (not $ null reused)
 		 $ modify (\s -> s {
 	  		stateErrors 	= (stateErrors s) ++ map ErrorShadowForall reused })
@@ -819,7 +816,7 @@ tforallHasVarName name tt
  = case tt of
 	TForall b k t
          -> do	let (BVar v)	= b
-		if Var.name v == name
+		if varName v == name
 		 then v : tforallHasVarName name t
                  else tforallHasVarName name t
 	_ -> []

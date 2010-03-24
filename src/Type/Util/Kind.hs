@@ -29,8 +29,7 @@ import Type.Util.Bits
 import Type.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var		(Var, NameSpace(..))
-import qualified Shared.Var 	as Var
+import DDC.Var
 import qualified Debug.Trace	as Debug
 
 -----
@@ -45,7 +44,7 @@ trace ss x
 -- Namespace things --------------------------------------------------------------------------------
 defaultKindV ::	Var	-> Kind
 defaultKindV	v
- = case Var.nameSpace v of
+ = case varNameSpace v of
  	NameType		-> kValue
 	NameRegion		-> kRegion
 	NameEffect		-> kEffect
@@ -104,7 +103,7 @@ makeKFun (k : ks)	= KFun k (makeKFun ks)
 makeDataKind :: [Var] -> Kind
 makeDataKind vs
  	= foldl (flip KFun) kValue 
-	$ map (\v -> kindOfSpace (Var.nameSpace v)) 
+	$ map (\v -> kindOfSpace (varNameSpace v)) 
 	$ reverse vs
 
 

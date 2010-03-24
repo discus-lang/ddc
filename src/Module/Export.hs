@@ -6,8 +6,8 @@ import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import Type.Exp				(Type)
-import Shared.Var			(Var, ModuleId)
 import Source.Pretty			()
 import Desugar.Pretty			()
 import qualified Data.Map		as Map
@@ -24,7 +24,6 @@ import qualified Desugar.Exp		as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Core.Exp		as C
 import qualified Core.OpType		as C
-import qualified Shared.Var		as Var
 
 
 -----
@@ -90,12 +89,12 @@ shouldExport vsNoExport mExports v
 
 	-- force projection functions to be exported 
 	-- TODO: this is dodgey
-	| take 7 (Var.name v) == "project"
+	| take 7 (varName v) == "project"
 	= True
 
 	-- force instance functions to be exported 
 	-- TODO: this is dodgey
-	| take 8 (Var.name v) == "instance"
+	| take 8 (varName v) == "instance"
 	= True
 	
 	| Just exports	<- mExports
@@ -125,7 +124,7 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	++ "-- Pragmas\n"
 	++ (concat [pprStrPlain p 
 			| p@(S.PPragma _ (S.XVar sp v : _))	<- ps
-			, Var.name v == "LinkObjs" ])
+			, varName v == "LinkObjs" ])
 
 	++ "\n"
 
@@ -192,7 +191,7 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 -- | Erase a the module name from this var 
 eraseModule :: Var -> Var
 eraseModule v
-	= v { Var.nameModuleId = Var.ModuleIdNil }
+	= v { varModuleId = ModuleIdNil }
 
 
 eraseModule_ctor (D.CtorDef sp v fs)
@@ -210,7 +209,7 @@ exportForeign
 exportForeign v tv to
 	= pprStrPlain
 	$ "foreign import "
-	% pprStrPlain v { Var.nameModuleId = Var.ModuleIdNil }
+	% pprStrPlain v { varModuleId = ModuleIdNil }
 	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTS $ T.normaliseT tv)
 		++ "\n:$ " ++ pprStrPlain to
 
@@ -227,13 +226,13 @@ exportProjDict (D.PProjDict _ t ss)
 	$ "project " % t % " where\n"
 	% "{\n"
 	%> "\n" %!% (map (\(D.SBind _ (Just v1) (D.XVar _ v2)) 
-			-> v1 %>> " = " % v2 { Var.nameModuleId = Var.ModuleIdNil } % ";") ss)
+			-> v1 %>> " = " % v2 { varModuleId = ModuleIdNil } % ";") ss)
 	% "\n}\n\n"
 	
 -- | export a top level region decl
 exportRegion :: ModuleId -> C.Top -> String
 exportRegion mod (C.PRegion r vts)
-	| Var.nameModuleId r == Var.ModuleIdNil
+	| varModuleId r == ModuleIdNil
 	= pprStrPlain
 	$ "region " % mod % "." % r % ";" % "\n"
 
@@ -271,7 +270,7 @@ eraseVarModuleT m t
  	= T.transformV (eraseVarModuleV m) t
 
 eraseVarModuleV m v
- = if Var.nameModuleId v == m
- 	then v { Var.nameModuleId = Var.ModuleIdNil }
+ = if varModuleId v == m
+ 	then v { varModuleId = ModuleIdNil }
 	else v
 

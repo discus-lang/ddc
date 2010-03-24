@@ -18,8 +18,8 @@ import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Main.Arg
 import DDC.Main.Error
+import DDC.Var
 import Desugar.Pretty			()
-import Shared.Var			(Var, ModuleId)
 import Source.Lexer			(scanModuleWithOffside, scan)
 import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)
@@ -32,7 +32,6 @@ import qualified Desugar.Exp		as D
 import qualified Source.Token		as Token
 import qualified Source.Rename		as S
 import qualified Source.Rename.State	as S
-import qualified Shared.Var		as Var
 
 
 ---------------------------------------------------------------------------------------------------
@@ -113,7 +112,7 @@ sourceSlurpInlineVars
  	return	$ catMap
 			(\p -> case p of
  				PPragma _ [XVar sp v, XList _ xs]
-				 | Var.name v == "Inline"
+				 | varName v == "Inline"
 				 , vs		 <- map (\(XVar sp v) -> v) xs
 				 -> vs
 			 

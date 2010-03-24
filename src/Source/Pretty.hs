@@ -11,9 +11,8 @@ import Type.Pretty
 import Type.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var		(Var)
+import DDC.Var
 import Data.Char		(isAlpha)
-import qualified Shared.Var 	as Var
 
 -----
 stage	= "Source.Pretty"
@@ -99,9 +98,9 @@ instance Pretty (Top a) PMode where
 	 -> mode % " " % prec % " " % ", " %!% (map infixNames syms) % " ;\n"
 
 infixNames v
- = if isAlpha (head (Var.name v))
-	then "`" ++ Var.name v ++ "`"
-	else Var.name v
+ = if isAlpha (head (varName v))
+	then "`" ++ varName v ++ "`"
+	else varName v
 
 pprPClass_vk :: (Var, Kind) -> PrettyM PMode
 pprPClass_vk (v, k)

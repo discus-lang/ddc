@@ -8,9 +8,8 @@ import Source.Exp
 import Source.Parser.Type
 import Source.Parser.Pattern
 import Source.Parser.Base
-import DDC.Var.NameSpace
+import DDC.Var
 import qualified Source.Token					as K
-import qualified Shared.Var					as Var
 import qualified Shared.VarPrim					as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
@@ -320,7 +319,7 @@ makeProjV fun funIndex x
 	case y of
 	  XVar sp v
 	    -> return	$ XProj (spX x) (stripXParens x)
-			$ fun sp v { Var.nameSpace = NameField }
+			$ fun sp v { varNameSpace = NameField }
 
 	  XParens sp y'
             -> return	$ XProj (spX x) (stripXParens x)

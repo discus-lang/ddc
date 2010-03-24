@@ -20,8 +20,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.SourcePos
 import DDC.Base.Literal
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 
 -----
 stage	= "Type.Location"
@@ -297,10 +296,10 @@ dispSourceValue tt sv
 		
 	SVProj sp j
 	 -> let	cJ	= case j of
-	 			TJField v	-> TJField  v { Var.nameModuleId = Var.ModuleIdNil }
-	 			TJFieldR v	-> TJFieldR v { Var.nameModuleId = Var.ModuleIdNil }
-	 			TJIndex v	-> TJIndex  v { Var.nameModuleId = Var.ModuleIdNil }
-	 			TJIndexR v	-> TJIndexR v { Var.nameModuleId = Var.ModuleIdNil }
+	 			TJField v	-> TJField  v { varModuleId = ModuleIdNil }
+	 			TJFieldR v	-> TJFieldR v { varModuleId = ModuleIdNil }
+	 			TJIndex v	-> TJIndex  v { varModuleId = ModuleIdNil }
+	 			TJIndexR v	-> TJIndexR v { varModuleId = ModuleIdNil }
 
 	    in	   "      projection '" % cJ % "'\n"
 		%  atKind tt		% tt	% "\n"

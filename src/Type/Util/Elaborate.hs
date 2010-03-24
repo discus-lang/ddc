@@ -18,7 +18,7 @@ import Type.Util.Kind
 import Shared.VarPrim
 import Util
 import DDC.Main.Error
-import Shared.Var 			(Var, NameSpace(..))
+import DDC.Var
 import qualified Data.Set		as Set
 import qualified Type.Util.PackFast 	as PackFast
 

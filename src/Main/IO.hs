@@ -10,7 +10,7 @@ import DDC.Base.SourcePos
 import DDC.Main.Arg
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var			(ModuleId(..))
+import DDC.Var
 import qualified Data.Map		as Map
 import qualified Source.Slurp		as S
 import qualified Source.Exp		as S

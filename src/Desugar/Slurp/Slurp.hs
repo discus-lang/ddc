@@ -15,9 +15,8 @@ import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS
 import DDC.Base.SourcePos
+import DDC.Var
 import Type.Pretty		()
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -267,7 +266,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 
 	-- Record what data type this constructor belongs to.
 	let kData	= makeDataKind vs
-	let tsData	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vs
+	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vs
 	modify (\s -> s {
 		stateCtorType	= Map.insert cName 
 					(makeTData vData kData tsData)
@@ -352,10 +351,10 @@ freshenType
 freshenType tt
  = do	let vsFree	= freeVars tt
  	let vsFree'	= filter (\v -> (not $ Var.isCtorName v)) $ Set.toList vsFree
-	let tsFree'	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsFree'
+	let tsFree'	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsFree'
 	
 	vsFresh		<- mapM newVarZ vsFree'
-	let tsFresh	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsFresh
+	let tsFresh	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsFresh
 	
 	let sub		= Map.fromList $ zip tsFree' tsFresh
 

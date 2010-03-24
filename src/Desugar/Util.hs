@@ -12,7 +12,7 @@ import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Exp
 import Util
-import Shared.Var			(Var)
+import DDC.Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
@@ -70,13 +70,6 @@ bindingVarsOfGuard gg
 	GCase 		_ w		-> bindingVarsOfPat w
 	GExp		_ w x		-> bindingVarsOfPat w
 
-{-
-takeStmtBoundV :: Stmt a -> Maybe Var
-takeStmtBoundV ss
- = case ss of
- 	SBind nn mV x	-> mV
-	SSig  nn v t	-> Just v
--}
 	
 bindingVarOfStmt :: Stmt a -> Maybe Var
 bindingVarOfStmt ss

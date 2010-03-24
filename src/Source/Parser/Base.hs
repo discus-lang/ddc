@@ -27,11 +27,10 @@ import Control.Monad
 import Debug.Trace
 import DDC.Base.Literal
 import DDC.Base.DataFormat
-import Shared.Var						(NameSpace(..))
+import DDC.Var
 import Data.List						(intercalate)
 import qualified Source.Token					as K
 import qualified Source.TokenShow				as K
-import qualified Shared.Var					as Var
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 
@@ -99,7 +98,7 @@ pQualified parser
  		mods	<- pModuleNameQual
  		pTok K.Dot
 		v	<- parser
-		return	$ v { Var.nameModuleId = Var.ModuleId mods })
+		return	$ v { varModuleId = ModuleId mods })
  <|>	parser
  <?>    "pQualified"
 
@@ -107,7 +106,7 @@ pQualified parser
 -- Variables ---------------------------------------------------------------------------------------
 
 -- | Parse a var from a certain namespace.
---	If the var had a namespace qualifier in the source file then the Var.nameSpace
+--	If the var had a namespace qualifier in the source file then the varNameSpace
 --	field will already be set. If the requested namespace is different, then the parse fails.
 --
 --	If the var's namespace is NameNothing, then we it didn't have a qualifier, and we
@@ -116,14 +115,14 @@ pQualified parser
 pOfSpace :: NameSpace -> Parser Var -> Parser Var
 pOfSpace spaceWant parser
  = do	var <- parser
-	case (Var.nameSpace var, spaceWant) of
-	 (NameNothing, NameValue)	-> return var { Var.nameSpace = NameValue }
-	 (NameNothing, NameType)	-> return var { Var.nameSpace = NameType }	
-	 (NameNothing, NameClass)	-> return var { Var.nameSpace = NameClass }
-	 (NameNothing, NameField)	-> return var { Var.nameSpace = NameField}
+	case (varNameSpace var, spaceWant) of
+	 (NameNothing, NameValue)	-> return var { varNameSpace = NameValue }
+	 (NameNothing, NameType)	-> return var { varNameSpace = NameType }	
+	 (NameNothing, NameClass)	-> return var { varNameSpace = NameClass }
+	 (NameNothing, NameField)	-> return var { varNameSpace = NameField}
 	 (space1,      space2)
 		| space1 == space2	-> return var
-		| otherwise		-> Parsec.unexpected (Var.name var)
+		| otherwise		-> Parsec.unexpected (varName var)
 
 
 -- | Parse a plain or (symbol) variable
@@ -160,7 +159,7 @@ pVarPlainOfSpace spaces
  	(\t -> case t of
 		K.TokenP { K.token = K.Var name }
 		 -> let	var	= toVar t
-		    in	if elem (Var.nameSpace var) spaces
+		    in	if elem (varNameSpace var) spaces
 		   		then Just var
 				else Nothing
 		_ -> Nothing)
@@ -201,7 +200,7 @@ pConOfSpace spaces
  	(\t -> case t of
 		K.TokenP { K.token = K.Con name }
 		 -> let	var	= toVar t
-		    in	if elem (Var.nameSpace var) spaces
+		    in	if elem (varNameSpace var) spaces
 		   		then Just var
 				else Nothing
 		_ -> Nothing)
@@ -213,7 +212,7 @@ pConOfSpaceNamed spaces str
 	(\t -> case t of
 		K.TokenP { K.token = K.Con name }
 		 -> let var	= toVar t
-		    in	if   elem (Var.nameSpace var) spaces
+		    in	if   elem (varNameSpace var) spaces
 		          && name == str
 			  then Just var
 			  else Nothing

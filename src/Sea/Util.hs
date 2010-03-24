@@ -5,7 +5,6 @@ module Sea.Util
 	, eraseAnnots
 	, typeIsUnboxed )
 where
-
 import Sea.Exp
 import Sea.Plate.Trans
 

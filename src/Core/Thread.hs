@@ -17,12 +17,11 @@ import Core.Exp
 import Type.Builtin
 import Type.Util
 import Type.Exp
-import Shared.Var
 import Util
 import Shared.VarPrim
 import DDC.Main.Error
+import DDC.Var
 import qualified DDC.Var.PrimId		as Var
-import qualified Shared.Var		as Var
 import qualified Util.Data.Map		as Map
 
 
@@ -160,7 +159,7 @@ rewriteWitness' instMap tt
 
 	-- leave shape witnesses for Core.Reconstruct to worry about
 	| Just (TyClass vC, _, _)	<- mClass
-	, Var.VarIdPrim Var.FShape{}	<- Var.varId vC
+	, VarIdPrim Var.FShape{}	<- varId vC
 	= return tt
 
 	-- leave user type classes for Core.Dict to worry about

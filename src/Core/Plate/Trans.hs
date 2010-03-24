@@ -32,7 +32,7 @@ import Core.Exp
 import Util
 import Type.Exp
 import DDC.Main.Error
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Map	as Map
 
 -----

@@ -7,7 +7,7 @@ module Desugar.Bits
 where
 import Desugar.Exp
 import DDC.Main.Error
-import Shared.Var		(Var)
+import DDC.Var
 
 stage	= "Desugar.Exp"
 

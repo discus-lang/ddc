@@ -11,13 +11,10 @@ module Desugar.ToCore.Base
 where
 import Util
 import Type.Exp
-import DDC.Var.NameSpace
-import DDC.Var.VarId
 import DDC.Main.Error
 import DDC.Main.Pretty
-import Shared.Var			(Var)
+import DDC.Var
 import Desugar.Project			(ProjTable)
-import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Type.ToCore		as T
@@ -76,9 +73,9 @@ newVarN	space
 	let gen'	= incVarId gen
 	modify (\s -> s { coreGenValue = gen' })
 	
-	return	(Var.new (pprStrPlain gen)) 
-		{ Var.varId	 = gen
-		, Var.nameSpace	 = space }
+	return	(varWithName (pprStrPlain gen)) 
+		{ varId	 = gen
+		, varNameSpace	 = space }
 
 -- | Get the type corresponding to the type of this annotation
 lookupAnnotT :: Annot -> CoreM (Maybe Type)
@@ -92,7 +89,7 @@ lookupType v
  = do	sigmaTable	<- gets coreSigmaTable
  
  	let (res :: CoreM (Maybe Type))
-		| Var.nameSpace v /= NameValue
+		| varNameSpace v /= NameValue
 		= lookupType' v
 		
 		| Just vT 	<- Map.lookup v sigmaTable

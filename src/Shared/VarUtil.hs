@@ -18,12 +18,10 @@ module Shared.VarUtil
 where
 import Util
 import DDC.Base.SourcePos
-import DDC.Var.VarId	
+import DDC.Var
 import DDC.Main.Pretty
 import Data.Char		hiding (isSymbol)
-import Shared.Var 		(Var, VarInfo(..), NameSpace(..))
 import qualified Data.Map	as Map
-import qualified Shared.Var 	as Var
 
 
 -----
@@ -34,12 +32,12 @@ type VarGenM = State VarId
 newVarN :: NameSpace -> VarGenM Var
 newVarN	space
  = do	vid		<- get
-	let vid'	= Var.incVarId vid
+	let vid'	= incVarId vid
 	put vid'
 	
-	let var		= (Var.new $ pprStrPlain vid)
-			{ Var.varId	= vid
-			, Var.nameSpace	= space }
+	let var		= (varWithName $ pprStrPlain vid)
+			{ varId		= vid
+			, varNameSpace	= space }
 	
 	return var
 
@@ -48,14 +46,14 @@ newVarN	space
 newVarNS ::	NameSpace -> String	-> VarGenM Var
 newVarNS	space	     str
  = do	var	<- newVarN space
-	return	var { Var.name = (pprStrPlain $ Var.varId var) ++ str }
+	return	var { varName = (pprStrPlain $ varId var) ++ str }
 
 
 -- | Allocate a fresh variable named after some string, with info.
-newVarNI ::	NameSpace -> [Var.VarInfo]	-> VarGenM Var
+newVarNI ::	NameSpace -> [VarInfo]	-> VarGenM Var
 newVarNI	space	     info
  = do 	var	<- newVarN space 
-	return	var { Var.info = info }
+	return	var { varInfo = info }
 	
 	
 -- Pretty print the source position of this variable.
@@ -64,13 +62,13 @@ prettyPos var
  	= fromMaybe "?"
 	$ liftM (\(ISourcePos sp) -> pprStrPlain sp)
 	$ find (=@= ISourcePos{}) 
-	$ Var.info var 
+	$ varInfo var 
 
 varPos :: Var	-> SourcePos
 varPos var
  = do	let Just pos	= liftM (\(ISourcePos sp) -> sp)
 			$ find (=@= ISourcePos{})
-			$ Var.info var
+			$ varInfo var
 	pos
 
 
@@ -80,17 +78,17 @@ prettyPosBound var
 	= fromMaybe "?"
 	$ liftM (\(IBoundBy v) -> prettyPos v)
 	$ find (=@= IBoundBy{})
-	$ Var.info var
+	$ varInfo var
 
 
 -- Sort vars to be quantified into a standard order
 sortForallVars :: [Var] -> [Var]
 sortForallVars	  vs
  = let
- 	tVars	= filter (\v -> Var.nameSpace v == NameType)    vs
-	rVars	= filter (\v -> Var.nameSpace v == NameRegion)  vs
-	eVars	= filter (\v -> Var.nameSpace v == NameEffect)  vs
-	cVars	= filter (\v -> Var.nameSpace v == NameClosure) vs
+ 	tVars	= filter (\v -> varNameSpace v == NameType)    vs
+	rVars	= filter (\v -> varNameSpace v == NameRegion)  vs
+	eVars	= filter (\v -> varNameSpace v == NameEffect)  vs
+	cVars	= filter (\v -> varNameSpace v == NameClosure) vs
  in
  	tVars ++ rVars ++ eVars ++ cVars
 
@@ -99,14 +97,14 @@ sortForallVars	  vs
 --	C compiler won't like.
 varHasSymbols :: Var -> Bool
 varHasSymbols var 
- 	= not $ null $ filter isSymbol $ Var.name var
+ 	= not $ null $ filter isSymbol $ varName var
 
 
 -- | Get any sea name on the binding occurrence of this var.
 takeSeaNameOfBindingVar :: Var -> Maybe String
 takeSeaNameOfBindingVar var
- = let	vBinding : _	= [ v    | Var.IBoundBy v 	<- Var.info var ]
-	seaNames	= [ name | Var.ISeaName name	<- Var.info vBinding ]
+ = let	vBinding : _	= [ v    | IBoundBy v 		<- varInfo var ]
+	seaNames	= [ name | ISeaName name	<- varInfo vBinding ]
    in	case seaNames of
 		n : _	-> Just n
 		_	-> Nothing
@@ -126,13 +124,13 @@ isSymbol c
 isCtorName :: Var -> Bool
 isCtorName var 
 	= isUpper n
-	where (n:_)	= Var.name var
+	where (n:_)	= varName var
 
 
 -- | Dummy vars introduced by the compiler won't have SourcePos's
 isDummy	   var	
 	= not $ any (=@= ISourcePos{}) 		 
-	$ Var.info var	
+	$ varInfo var	
 	
 
 -- | Rewrite symbolic chars in a string 

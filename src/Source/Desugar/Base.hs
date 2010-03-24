@@ -11,13 +11,10 @@ module Source.Desugar.Base
 	, addError)
 where
 import Source.Error
-import DDC.Var.VarId
-import DDC.Var.NameSpace
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
+import DDC.Var
 import Util
-import Shared.Var			(Var)
-import qualified Shared.Var		as Var
 		
 				
 -----
@@ -33,12 +30,12 @@ data RewriteS
 -- | Make a new variable in this namespace and name it after a string.
 newVarNS :: NameSpace -> String -> RewriteM Var
 newVarNS space str
- = do	bind@(Var.VarId unique n) <- gets stateVarGen
-	modify $ \s -> s { stateVarGen	= Var.VarId unique (n+1) }
+ = do	bind@(VarId unique n) <- gets stateVarGen
+	modify $ \s -> s { stateVarGen	= VarId unique (n+1) }
 
-	let var		= (Var.new (charPrefixOfSpace space : pprStrPlain bind ++ str))
-			{  Var.varId		= bind
-			,  Var.nameSpace	= space }
+	let var		= (varWithName (charPrefixOfSpace space : pprStrPlain bind ++ str))
+			{  varId	= bind
+			,  varNameSpace	= space }
 	return var
 
 
@@ -47,10 +44,10 @@ newVarN space 	= newVarNS space ""
 
 	
 -- | Make a new variable in this namespace with some info attached to the var.
-newVarNI :: NameSpace -> [Var.VarInfo]	-> RewriteM Var
+newVarNI :: NameSpace -> [VarInfo]	-> RewriteM Var
 newVarNI space info
  = do 	var	<- newVarN space 
-	return	var { Var.info = info }
+	return	var { varInfo = info }
 
 
 -- | Get the kind for this var from the kind table.

@@ -19,16 +19,14 @@ import Type.Plate.FreeVars
 import Shared.Exp
 import Shared.VarPrim
 import Util
-import DDC.Var.NameSpace
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var			(Var, ModuleId)
+import DDC.Var
 import qualified Data.Set		as Set
 import qualified Util.Data.Map		as Map
-import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
 
 -----
@@ -37,24 +35,24 @@ stage	= "Desugar.Project"
 -- State ------------------------------------------------------------------------------------------
 data ProjectS
 	= ProjectS
-	{ stateVarGen	:: Var.VarId
+	{ stateVarGen	:: VarId
 	, stateErrors	:: [Error] }
 	
 stateInit unique
 	= ProjectS
-	{ stateVarGen	= Var.VarId unique 0
+	{ stateVarGen	= VarId unique 0
 	, stateErrors	= [] }
 	
 newVarN :: NameSpace -> ProjectM Var
 newVarN	space
  = do
  	varBind		<- gets stateVarGen
-	let varBind'	= Var.incVarId varBind
+	let varBind'	= incVarId varBind
 	modify $ \s -> s { stateVarGen = varBind' }
 
-	let var		= (Var.new $ (charPrefixOfSpace space : pprStrPlain varBind))
-			{ Var.varId	= varBind
-			, Var.nameSpace	= space }
+	let var		= (varWithName $ (charPrefixOfSpace space : pprStrPlain varBind))
+			{ varId	= varBind
+			, varNameSpace	= space }
 	return var
 
 addError :: Error -> ProjectM ()
@@ -247,7 +245,7 @@ snipInstBind' moduleName
 				tInst
 
 	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) $ freeVars tsInst
-	let vks_quant	= map (\v -> (v, kindOfSpace $ Var.nameSpace v)) $ Set.toList vsFree
+	let vks_quant	= map (\v -> (v, kindOfSpace $ varNameSpace v)) $ Set.toList vsFree
 	let tInst_quant	= makeTForall_back vks_quant tInst_sub
 	
 	-- As we're duplicating information from the original signature
@@ -285,10 +283,10 @@ freshenCrsEq mid tt
 
 freshenV :: ModuleId -> Var -> ProjectM Var		
 freshenV mod v
- = do	vNew		<- newVarN (Var.nameSpace v)
+ = do	vNew		<- newVarN (varNameSpace v)
 	let vFresh	
-		= v 	{ Var.varId		= Var.varId vNew 
-			, Var.nameModuleId	= mod }
+		= v 	{ varId		= varId vNew 
+			, varModuleId	= mod }
 			
 	return vFresh
 
@@ -343,11 +341,11 @@ snipDataField moduleName sp vData vCtor field
 	, Just vField	<- dLabel field
 	= do	var_	<- newVarN NameValue
 		let var	= var_
-			{ Var.name = "init_" 
-				++ Var.name vData  ++ "_" 
-				++ Var.name vCtor  ++ "_" 
-				++ Var.name vField
-			, Var.nameModuleId	= moduleName }
+			{ varName = "init_" 
+				++ varName vData  ++ "_" 
+				++ varName vCtor  ++ "_" 
+				++ varName vField
+			, varModuleId	= moduleName }
 
 		varL	<- newVarN NameValue
 		varR	<- newVarN NameRegion
@@ -364,19 +362,19 @@ snipDataField moduleName sp vData vCtor field
 newProjFunVar :: SourcePos -> ModuleId -> Var -> Var -> ProjectM Var
 newProjFunVar 
 	src
-	moduleName@(Var.ModuleId ms)
+	moduleName@(ModuleId ms)
 	vCon vField
  = do
  	var	<- newVarN NameValue
 	return	
-	 $ var 	{ Var.name 
+	 $ var 	{ varName 
 	 		= Var.deSymString
 			$ "project_" 
-	 		++ Var.name vCon 	++ "_" 
-			++ Var.name vField 
+	 		++ varName vCon 	++ "_" 
+			++ varName vField 
 			
-		, Var.info = [Var.ISourcePos src ]
-		, Var.nameModuleId = moduleName }
+		, varInfo 	= [ISourcePos src ]
+		, varModuleId	= moduleName }
 
 
 -- | Create a name for a top level type class instance function
@@ -384,23 +382,22 @@ newProjFunVar
 newInstFunVar :: SourcePos -> ModuleId -> Var -> [Type] -> Var -> ProjectM Var
 newInstFunVar 
 	src
-	moduleName@(Var.ModuleId ms)
+	moduleName@(ModuleId ms)
 	vClass 
 	tsArgs
 	vInst
  = do
  	var	<- newVarN NameValue
 	return	
-	 $ var 	{ Var.name 
+	 $ var 	{ varName 
 	 		= Var.deSymString
 			$ "instance_" 
-			++ Var.name vClass	 	++ "_" 
+			++ varName vClass	 	++ "_" 
 			++ catMap makeTypeName tsArgs	++ "_"
-			++ Var.name vInst
+			++ varName vInst
 
-		, Var.info = [Var.ISourcePos src ]
-
-		, Var.nameModuleId = moduleName }
+		, varInfo 	= [ISourcePos src ]
+		, varModuleId 	= moduleName }
 
 -- | Make a printable name from a type
 --	TODO: do this more intelligently, in a way guaranteed not to clash with other types
@@ -412,11 +409,11 @@ makeTypeName tt
 	 -> "Fun" ++ makeTypeName t1 ++ makeTypeName t2
 	
 	 | Just (v, _, ts)		<- takeTData tt
-	 -> Var.name v ++ catMap makeTypeName ts
+	 -> varName v ++ catMap makeTypeName ts
 
 	TCon{}
 	 | Just (v, _, ts)		<- takeTData tt
-	 -> Var.name v ++ catMap makeTypeName ts
+	 -> varName v ++ catMap makeTypeName ts
 
 	TVar k v		-> ""
 
@@ -490,7 +487,7 @@ addProjDataP projMap p
 	_		-> [p]
 
 varToTBot v
-	= TBot (kindOfSpace $ Var.nameSpace v)
+	= TBot (kindOfSpace $ varNameSpace v)
 	
 
 -----
@@ -513,7 +510,7 @@ addProjDictFunsP
  	let (Just (PData _ vData vsData ctors))	
 		= Map.lookup v dataMap
 	
-	let tsData	= map (\v -> TVar (kindOfSpace $ Var.nameSpace v) v) vsData
+	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsData
 	let tData	= makeTData vData (makeDataKind vsData) tsData
 	
 	-- See what projections have already been defined.
@@ -598,8 +595,8 @@ makeProjR_fun
 makeProjR_fun sp tData ctors fieldV
  = do	
 	funV_		<- newVarN NameValue
-	let funV	= funV_ { Var.name = "ref_" ++ Var.name fieldV 
-				, Var.nameModuleId = Var.nameModuleId fieldV }
+	let funV	= funV_ { varName 	= "ref_" ++ varName fieldV 
+				, varModuleId 	= varModuleId fieldV }
 		
 	objV		<- newVarN NameValue
 
@@ -708,7 +705,7 @@ checkForRedefDataField _ _ = return ()
 
 checkForRedefClassInst :: Map String Var -> Top Annot -> ProjectM (Map String Var)
 checkForRedefClassInst map ci@(PClassInst sp v tl@(TApp (TCon tc) _ : _) _ _)
- = do	let key = Var.name v ++ " " ++ Var.name (tyConName tc)
+ = do	let key = varName v ++ " " ++ varName (tyConName tc)
 	case Map.lookup key map of
           Nothing	-> return $ Map.insert key (tyConName tc) map
 	  Just redef	->
@@ -720,7 +717,7 @@ checkForRedefClassInst map _  = return map
 
 checkSBindFunc :: Top Annot -> Var -> Map String Var -> Stmt Annot -> ProjectM ()
 checkSBindFunc (PData _ dvar _ _) pvar dfmap (SBind _ (Just v) _)
- = case Map.lookup (Var.name v) dfmap of
+ = case Map.lookup (varName v) dfmap of
 	Nothing		-> return ()
 	Just redef	-> addError $ ErrorProjectRedefDataField redef pvar dvar
 
@@ -729,7 +726,7 @@ checkSBindFunc _ _ _ _ = return ()
 
 fieldNames :: Top Annot -> Map String Var
 fieldNames (PData _ _ _ ctors)
- = Map.fromList $ map (\ d -> (Var.name d, d))
+ = Map.fromList $ map (\ d -> (varName d, d))
 		$ catMaybes
 		$ map dLabel
 		$ concat

@@ -6,7 +6,7 @@ module Source.Parser.Pattern
 where
 import Source.Exp
 import Source.Parser.Base
-import DDC.Var.NameSpace
+import DDC.Var
 import qualified Source.Token					as K
 import qualified Shared.VarPrim					as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec

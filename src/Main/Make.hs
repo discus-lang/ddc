@@ -11,7 +11,7 @@ import Module.ScrapeGraph
 import Util
 import Util.FilePath
 import Util.Graph.Deps
-import DDC.Var.ModuleId
+import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Main.Arg			(Arg)

@@ -13,8 +13,8 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import Shared.VarUtil			(isDummy, varPos)
-import Shared.Var			(Var, NameSpace(..))
 import Type.ToCore			(toCoreT, toCoreK)
 import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)

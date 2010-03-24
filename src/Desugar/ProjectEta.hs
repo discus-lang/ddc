@@ -7,9 +7,8 @@ import Desugar.Bits
 import Shared.VarGen
 import Control.Monad
 import DDC.Base.SourcePos
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Map	as Map
-import qualified Shared.Var	as Var
 import Util
 
 
@@ -76,7 +75,7 @@ etaExpand
 	-> VarGenM (Exp Annot)
 
 etaExpand args xx
- = do	vars		<- replicateM args (newVarN Var.NameValue)
+ = do	vars		<- replicateM args (newVarN NameValue)
 	let n		= getAnnotX xx
 	
 	let xxApp	= foldl (\x v -> XApp n x (XVar n v)) 	xx 	vars

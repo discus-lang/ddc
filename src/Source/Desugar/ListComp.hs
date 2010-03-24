@@ -10,8 +10,8 @@ import Source.Desugar.Patterns
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Var
 import qualified DDC.Var.PrimId		as Var
-import qualified Shared.Var 		as Var
 import qualified Source.Exp		as S
 import qualified Desugar.Exp		as D
 
@@ -32,7 +32,7 @@ rewriteListComp x
 
 	-- [ e | True ] 		=> [e]
  	S.XListComp sp exp [S.LCExp (S.XVar _ v)]
-	 |  Var.varId v == Var.VarIdPrim Var.VTrue 	
+	 |  varId v == VarIdPrim Var.VTrue 	
 	 -> do	exp'	<- rewrite exp
 	 	return 	$ D.XApp sp (D.XApp sp (D.XVar sp primCons) exp') (D.XVar sp primNil)
 	 

@@ -10,7 +10,7 @@ import Type.Pretty
 import Type.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty		
-import qualified Shared.Var	as Var
+import DDC.Var
 
 stage = "Desugar.Pretty"
 
@@ -23,7 +23,7 @@ annot nn x
 	Just n	-> "[" % n % ": " % x % "]"
 
 pprVar_unqual var
- = ppr $ var { Var.nameModuleId = Var.ModuleIdNil }
+ = ppr $ var { varModuleId = ModuleIdNil }
 
 -- Top -------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
@@ -214,12 +214,12 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	 	(ppr x) % ";"
 
   	SBind nn (Just v) x@XLambda{}		
-	 -> let v'	= v { Var.nameModuleId = Var.ModuleIdNil}
+	 -> let v'	= v { varModuleId = ModuleIdNil}
 	    in  annot nn 
 	  	 	(v' %>> "\n =      " %> x) % ";\n"
 	 
 	SBind nn (Just v) x
-	 -> let v'	= v { Var.nameModuleId = Var.ModuleIdNil}
+	 -> let v'	= v { varModuleId = ModuleIdNil}
 	    in  annot nn
 	 	 	(v' %>> " = " % x)	% ";"
 
@@ -231,7 +231,7 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	 -> annot nn	(pat %>> " = " % x)	% ";"
 	
 	SSig  nn vs  t	
-	 -> let vs'	= map (\v -> v { Var.nameModuleId = Var.ModuleIdNil}) vs
+	 -> let vs'	= map (\v -> v { varModuleId = ModuleIdNil}) vs
 	    in	annot nn (vs' %!% ", " %>> " :: " % t) % ";"
 
 

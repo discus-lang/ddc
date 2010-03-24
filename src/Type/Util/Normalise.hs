@@ -8,8 +8,7 @@ where
 import Type.Exp
 import Type.Plate.Collect
 import Type.Plate.Trans
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import Util
@@ -28,37 +27,37 @@ type StateN	= State StateS
 
 data StateS	
 	= StateS 
-	{ stateGen		:: Map Var.NameSpace Int
+	{ stateGen		:: Map NameSpace Int
 	, stateVarMap		:: Map Var Var }
 		
 
 initState
  =	StateS
- 	{ stateGen		= Map.insert Var.NameType   0
-				$ Map.insert Var.NameRegion 0
-				$ Map.insert Var.NameEffect 0
-				$ Map.insert Var.NameClosure 0
+ 	{ stateGen		= Map.insert NameType   0
+				$ Map.insert NameRegion 0
+				$ Map.insert NameEffect 0
+				$ Map.insert NameClosure 0
 				$ Map.empty
 				
 	, stateVarMap		= Map.empty }
 	
 spacePrefix
-	= [ (Var.NameType,	"t")
-	  , (Var.NameRegion,	"r")
-	  , (Var.NameEffect,	"e") 
-	  , (Var.NameClosure,   "c") ]
+	= [ (NameType,	"t")
+	  , (NameRegion,	"r")
+	  , (NameEffect,	"e") 
+	  , (NameClosure,   "c") ]
 
 
 bindVar ::	Var ->	StateN Var
 bindVar		var	
  = do
-	let space		= Var.nameSpace var
+	let space		= varNameSpace var
 	let (Just prefix)	= lookup space spacePrefix
 
 	(Just i)	<- liftM (Map.lookup space)
 			$  gets  stateGen
 			
-	let var'	= var { Var.name = prefix ++ show i }
+	let var'	= var { varName = prefix ++ show i }
 	
 	modify (\s -> s { stateGen	= Map.insert space (i + 1) (stateGen s)
 			, stateVarMap	= Map.insert var var' 	   (stateVarMap s) })

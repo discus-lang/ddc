@@ -2,8 +2,7 @@
 module Shared.FreeVars
 	(FreeVars, freeVars)
 where
-import Shared.Var
-
+import DDC.Var
 import Util
 import qualified Data.Set as Set
 

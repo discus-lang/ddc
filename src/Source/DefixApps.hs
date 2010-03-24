@@ -7,7 +7,7 @@ import Source.Exp
 import Source.Pretty		()
 import DDC.Main.Pretty
 import DDC.Main.Error
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Shared.VarPrim	as Var
 
 -----
@@ -33,7 +33,7 @@ dropApps sp es
 	-- Check if the expression starts with a unary minus
 	--	- x + 5   parses as  (negate x) + 5
 	| XOp sp v : e2 : esRest	<- es
-	, Var.name v == "-"
+	, varName v == "-"
 	= dropApps' sp [XApp sp (XVar sp Var.primNegate) e2] esRest
 	
 	| otherwise
@@ -47,19 +47,19 @@ dropApps' sp acc xx
 	-- Chop out the unary minus if we see two ops in a row
 	--	x1 += - f x 	parses as   x1 += (- (f x))
 	| x1@(XOp sp1 v1) : x2@(XOp sp2 v2) : xsRest	<- xx
-	, Var.name v2 == "-"
+	, varName v2 == "-"
 	= makeXDefixApps sp acc : x1 
 	: dropApps' sp [XVar sp Var.primNegate] xsRest
 
  	| x@(XOp sp v) : xs				<- xx
-	, Var.name v == "$"
+	, varName v == "$"
         , null acc
 	= dropApps' sp acc $ warning (WarnRedundantOp v) xs
 
 	-- when we hit a non '@' operator, mark the parts in the accumulator
 	--	as an application and start collecting again.
  	| x@(XOp sp v) : xs				<- xx
-	, Var.name v /= "@"
+	, varName v /= "@"
 	= makeXDefixApps sp acc : x : dropApps' sp [] xs
 
 	| x : xs	<- xx
@@ -103,7 +103,7 @@ rewriteApp' sp left (x:xs)
 	
 	 -- If dropApps is working properly then we shouldn't find
 	 --	any non-@ operators at this level. 
-	 |  Var.name op /= "@"
+	 |  varName op /= "@"
  	 -> panic stage "rewriteApp: found non-@ operator."
 	 
 	 |  otherwise
@@ -112,7 +112,7 @@ rewriteApp' sp left (x:xs)
 
 		suspV		= Var.primSuspend args
 		susp		= suspV
-				{ Var.info 		= (Var.info suspV) ++ (Var.info op) }
+				{ varInfo 		= (varInfo suspV) ++ (varInfo op) }
 	 	 
 		leftApp		= unflattenApps sp left
 		app		= unflattenApps sp (XVar sp susp : leftApp : bits)

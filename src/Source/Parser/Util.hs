@@ -29,10 +29,9 @@ import Source.Util
 import Source.Exp
 import DDC.Base.SourcePos
 import DDC.Main.Error
-import Shared.Var					(Var, NameSpace(..))
+import DDC.Var
 import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
 import qualified Source.Token 				as K
-import qualified Shared.Var				as Var
 import qualified Text.ParserCombinators.Parsec.Prim	as Parsec
 import qualified Text.ParserCombinators.Parsec.Pos	as Parsec
 import qualified Debug.Trace
@@ -52,9 +51,9 @@ type Parser 	= Parsec.GenParser K.TokenP ()
 toVar :: K.TokenP -> Var
 toVar	 tok
  = case K.token tok of
-	K.Var    	name	-> Var.loadSpaceQualifier $ makeVar name tok
-	K.VarField	name	-> (makeVar name tok) { Var.nameSpace = NameField }
-	K.Con		name	-> Var.loadSpaceQualifier $ makeVar name tok
+	K.Var    	name	-> loadSpaceQualifier $ makeVar name tok
+	K.VarField	name	-> (makeVar name tok) { varNameSpace = NameField }
+	K.Con		name	-> loadSpaceQualifier $ makeVar name tok
 	K.Symbol 	name	-> makeVar name tok
 	_ -> case lookup (K.token tok) toVar_table of
 		Just name	-> makeVar name tok
@@ -83,16 +82,16 @@ toVar_table =
 makeVar :: String -> K.TokenP -> Var
 makeVar    name@(n:_) tok
  = let 	sp	= SourcePos (K.tokenFile tok, K.tokenLine tok, K.tokenColumn tok)
-   in	(Var.new name)
-	 	{ Var.info	= [ Var.ISourcePos sp ] }
+   in	(varWithName name)
+	 	{ varInfo	= [ ISourcePos sp ] }
 
 
 
 -- | If the var has no namespace set, then give it this one.
 vNameDefaultN	:: NameSpace -> Var -> Var
 vNameDefaultN space var
- = case Var.nameSpace var of
- 	NameNothing	-> var { Var.nameSpace = space }
+ = case varNameSpace var of
+ 	NameNothing	-> var { varNameSpace = space }
 	_		-> var
 
 -- | Decide on the kind of a type var from it's namespace
@@ -124,7 +123,7 @@ spW	= sourcePosW
 -- | Slurp the source position from this variable.
 spV :: Var -> SP
 spV var
- = let	[sp]	= [sp | Var.ISourcePos sp <- Var.info var]
+ = let	[sp]	= [sp | ISourcePos sp <- varInfo var]
    in	sp
 
 

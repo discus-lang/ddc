@@ -27,7 +27,7 @@ import Main.Dump
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Main.Arg
-import Shared.Var			(Var, ModuleId)
+import DDC.Var
 import Core.Block			(blockTree)
 import Core.Crush			(crushTree)
 import Core.Dictionary			(dictTree)

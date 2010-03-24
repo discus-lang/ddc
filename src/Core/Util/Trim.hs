@@ -11,7 +11,7 @@ import Type.Exp
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 

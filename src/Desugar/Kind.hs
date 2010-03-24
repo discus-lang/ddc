@@ -18,9 +18,8 @@ import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Shared.Var			(Var, NameSpace(..))
+import DDC.Var
 import Data.Sequence			as Seq
-import qualified Shared.Var		as Var
 import qualified Type.Plate.Trans	as T
 import qualified Data.Map		as Map
 import qualified Data.Foldable		as Foldable
@@ -234,7 +233,7 @@ slurpConstraint pp
 
 
 defaultKind v k
- 	| k == KNil	= kindOfSpace $ Var.nameSpace v
+ 	| k == KNil	= kindOfSpace $ varNameSpace v
 	| otherwise	= k 
 
 
@@ -267,12 +266,12 @@ forcePrimaryRegion vData k
 
 data SolveS
 	= StateS 
-	{ stateVarGen	:: Var.VarId
+	{ stateVarGen	:: VarId
 	, stateKinds	:: Map Var Kind  }
 
 stateInit unique
 	= StateS
-	{ stateVarGen	= Var.VarId unique 0
+	{ stateVarGen	= VarId unique 0
 	, stateKinds	= Map.empty }
 	
 type SolveM = State SolveS
@@ -281,16 +280,16 @@ type SolveM = State SolveS
 -- | Create a fresh variable
 newVarN :: NameSpace -> SolveM Var
 newVarN space
- = do	varId@(Var.VarId p i)	<- gets stateVarGen
+ = do	vid@(VarId p i)	<- gets stateVarGen
  
 	let name	= "r" ++ p ++ show i
-	let var		= (Var.new name) 
-			{ Var.varId 	= varId
-			, Var.nameSpace = space }
+	let var		= (varWithName name) 
+			{ varId 	= vid
+			, varNameSpace 	= space }
 	
-	modify $ \s -> s { stateVarGen = Var.VarId p (i + 1) }
+	modify $ \s -> s { stateVarGen = VarId p (i + 1) }
 	
-	return var
+	return $ var
 
 -- | Get the kind of a variable
 getKind :: Var -> SolveM Kind

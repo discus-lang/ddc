@@ -10,7 +10,7 @@ where
 import Util
 import Type.Exp
 import Type.Plate.Trans
-import Shared.Var
+import DDC.Var
 import qualified Data.Set	as Set
 
 

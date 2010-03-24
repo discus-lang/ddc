@@ -12,8 +12,8 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.SourcePos
 import DDC.Base.Literal
+import DDC.Var
 import Source.Pretty		()
-import qualified Shared.Var	as Var
 
 -----
 stage	= "Source.Pragma"
@@ -25,7 +25,7 @@ slurpPragmaTree tree
 	= concat $ map slurpPragma tree
 
 slurpPragma pp@(PPragma _ (XVar sp v : _))
-	| Var.name v == "cc_includes"
+	| varName v == "cc_includes"
 	= slurp_ccIncludes pp
 
 	| otherwise

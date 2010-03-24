@@ -3,7 +3,7 @@
 module Type.Plate.DeepSeq where
 
 import Type.Exp
-import Shared.Var	(Var)
+import DDC.Var
 import Util.Control.DeepSeq
 
 instance DeepSeq Var

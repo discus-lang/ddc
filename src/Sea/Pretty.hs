@@ -13,8 +13,7 @@ import DDC.Main.Error
 import DDC.Base.DataFormat
 import DDC.Base.SourcePos
 import DDC.Base.Literal
-import Shared.Var		(ModuleId(..))
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
@@ -341,17 +340,17 @@ instance Pretty Type PMode where
 
 getSeaName :: Var -> String
 getSeaName var
-	| [name]	<- [n | Var.ISeaName n <- Var.info var]
+	| [name]	<- [n | ISeaName n <- varInfo var]
 	= name
 
- 	| [var_binding]	<- [v | Var.IBoundBy v <- Var.info var]
-	, [name]	<- nub [n | Var.ISeaName n <- Var.info var_binding]
+ 	| [var_binding]	<- [v | IBoundBy v <- varInfo var]
+	, [name]	<- nub [n | ISeaName n <- varInfo var_binding]
 	= name
 
  	| otherwise
 	= panic stage 
 		$  "getSeaName: no sea name for TCon " % var % "\n"
-		%  "  info = " % show (Var.info var) % "\n"
+		%  "  info = " % show (varInfo var) % "\n"
 	
 
 pprLiteralFmt litfmt@(LiteralFmt lit fmt)
@@ -376,29 +375,29 @@ seaVar :: Bool -> Var -> String
 seaVar local v
 
 	-- If the variable has an explicit sea name embedded in it, then use that
-	| name : _	<- [name | Var.ISeaName name <- Var.info v]
+	| name : _	<- [name | ISeaName name <- varInfo v]
 	= name
 	
 	-- Binding occurance has an explicit Sea name, so use that.
 	--	Used for calling foreign functions.
-	| name : _	<- [name |  Var.ISeaName name
-				 <- concat $ [Var.info bound | Var.IBoundBy bound <- Var.info v]]
+	| name : _	<- [name |  ISeaName name
+				 <- concat $ [varInfo bound | IBoundBy bound <- varInfo v]]
 	= name
 	
 	| Var.varHasSymbols v
-	= seaModule (Var.nameModuleId v)
-	++ (if local then "_" ++ (pprStrPlain $ Var.varId v) ++ "_" else "_")
-	++ "_sym" ++ (Var.deSymString $ Var.name v)	
+	= seaModule (varModuleId v)
+	++ (if local then "_" ++ (pprStrPlain $ varId v) ++ "_" else "_")
+	++ "_sym" ++ (Var.deSymString $ varName v)	
 
 	-- local vars are specific to a single Sea function.
 	-- 	we need to prepend "_v" to avoid conflicts with C keywords
 	--	and builtin functions from the RTS.
 	| local
-	= "_v" ++ Var.name v
+	= "_v" ++ varName v
 	
 	-- vars defined at top level need their module name prepended.
 	| otherwise
-	= seaModule (Var.nameModuleId v) ++ "_" ++ Var.name v
+	= seaModule (varModuleId v) ++ "_" ++ varName v
 	
 
 seaModule :: ModuleId -> String

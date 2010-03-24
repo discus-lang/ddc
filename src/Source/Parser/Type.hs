@@ -10,9 +10,8 @@ import Type.Exp
 import Source.Parser.Base
 import Control.Monad
 import Data.Maybe
-import DDC.Var.NameSpace
+import DDC.Var
 import qualified Source.Token					as K
-import qualified Shared.Var					as Var
 import qualified Shared.VarPrim					as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
 import qualified Text.ParserCombinators.Parsec.Prim		as Parsec
@@ -100,7 +99,7 @@ pVar_withKind1
 				return	(var, kind)
 
 		 <|>	-- VAR
-			return (var, kindOfVarSpace (Var.nameSpace var)))
+			return (var, kindOfVarSpace (varNameSpace var)))
 
  <?>    "pVar_withKind1"
 
@@ -256,7 +255,7 @@ pType_body1
 	--	it in NameNothing. In this case we know its actually a type variable, so can
 	--	set it in NameType.
  <|>	do	var	<- liftM (vNameDefaultN NameType) $ pQualified pVarPlain
-		return	$ TVar 	(kindOfSpace $ Var.nameSpace var) var
+		return	$ TVar 	(kindOfSpace $ varNameSpace var) var
 		
  <|>	pRParen pParenTypeBody
 
@@ -365,7 +364,7 @@ pClosure
 	 		let var2N	= vNameDefaultN NameType var2
 			return	$ TDanger
 					(TVar kRegion varN)
-					(TVar (kindOfSpace $ Var.nameSpace var2N) var2N))
+					(TVar (kindOfSpace $ varNameSpace var2N) var2N))
 
 
  <|>	-- \${ CLO ; .. }
@@ -394,13 +393,13 @@ pFetter
 		-- VAR = EFFECT/CLOSURE
  		(do	pTok K.Equals
 			effClo	<- pEffect <|> pClosure
-			return	$ FWhere (TVar (kindOfSpace $ Var.nameSpace var) var)
+			return	$ FWhere (TVar (kindOfSpace $ varNameSpace var) var)
 					 effClo)
 
 		-- VAR :> EFFECT/CLOSURE
 	  <|>	(do	pTok K.IsSuptypeOf
 			effClo	<- pEffect <|> pClosure
-			return	$ FMore (TVar (kindOfSpace $ Var.nameSpace var) var)
+			return	$ FMore (TVar (kindOfSpace $ varNameSpace var) var)
 					effClo))
  <?>    "pFetter"
 

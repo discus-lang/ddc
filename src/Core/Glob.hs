@@ -16,7 +16,7 @@ import Core.Util.Slurp
 import Type.Exp
 import Type.Util
 import Data.Maybe
-import Shared.Var		(Var)
+import DDC.Var
 import Data.Map			(Map)
 import Data.Sequence		(Seq, (><))
 import qualified Data.Map	as Map

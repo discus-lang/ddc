@@ -20,6 +20,7 @@ import Util
 import DDC.Main.Arg
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import Sea.Sub				(subTree)
 import Sea.Ctor				(expandCtorTree)
 import Sea.Proto			(addSuperProtosTree)
@@ -28,7 +29,6 @@ import Sea.Force			(forceTree)
 import Sea.Slot				(slotTree)
 import Sea.Flatten			(flattenTree)
 import Sea.Init				(initTree, mainTree)
-import DDC.Var.ModuleId
 import qualified Core.Glob		as C
 import qualified DDC.Config.Version	as Version
 

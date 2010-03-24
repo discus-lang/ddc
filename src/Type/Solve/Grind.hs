@@ -13,8 +13,8 @@ import Type.Crush.Proj
 import Constraint.Exp
 import Util
 import DDC.Main.Error
+import DDC.Var
 import qualified DDC.Var.PrimId	as Var
-import qualified Shared.Var	as Var
 import qualified Data.Set	as Set
 
 -----
@@ -166,7 +166,7 @@ grindClass2 cid c@(ClassFetter { classFetter = f })
 	progressShape
 		<- case f of
 			FConstraint v _
-			 | Var.VarIdPrim pid	<- Var.varId v
+			 | VarIdPrim pid	<- varId v
 			 , isFShape pid		-> crushShape cid
 			_			-> return False
 		

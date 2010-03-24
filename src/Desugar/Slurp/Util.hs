@@ -28,13 +28,10 @@ import Type.Plate.Trans
 import Type.Plate.FreeVars
 import Desugar.Exp
 import Desugar.Slurp.State
-import DDC.Var.NameSpace	
-import DDC.Var.VarId
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Var
 import Shared.VarUtil		(prettyPos)
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -76,7 +73,7 @@ makeCtorType newVarN vData vs name fs
 
 	-- The objType is the type of the constructed object.
  	let objType	= makeTData vData (makeDataKind vs)
-			$ map (\v -> case Var.nameSpace v of
+			$ map (\v -> case varNameSpace v of
 					NameEffect	-> TVar kEffect  v
 					NameRegion	-> TVar kRegion  v
 					NameClosure	-> TVar kClosure v
@@ -120,11 +117,11 @@ checkTypeVar vs v
 	= Nothing
 	
 	-- effect vars not present in the data type can be made pure
-	| Var.nameSpace v == NameEffect
+	| varNameSpace v == NameEffect
 	= Just $ FConstraint primPure  [TVar kEffect v]
 	
 	-- closure vars not present in the data type can be made empty
-	| Var.nameSpace v == NameClosure
+	| varNameSpace v == NameClosure
 	= Just $ FConstraint primEmpty [TVar kClosure v]
 	
 	| otherwise
@@ -160,9 +157,9 @@ newVarNS	space		str
 				then []
 				else "" ++ str
 			
-	let var'	= (Var.new (pprStrPlain spaceGen ++ postfix))
-			{ Var.varId		= spaceGen 
-			, Var.nameSpace		= space }
+	let var'	= (varWithName (pprStrPlain spaceGen ++ postfix))
+			{ varId		= spaceGen 
+			, varNameSpace		= space }
 		
 	let spaceGen'	= incVarId spaceGen
 		
@@ -173,7 +170,7 @@ newVarNS	space		str
 
 
 newVarZ ::	Var	-> CSlurpM Var
-newVarZ		var	= newVarN (Var.nameSpace var) 
+newVarZ		var	= newVarN (varNameSpace var) 
 
 -----------------------
 -- bindVtoT ... 
@@ -200,8 +197,8 @@ bindVtoT	varV
 	  -> do
 		-- Make the new type var
 		varT		<- newVarN NameType 
-		let varT'	= varT 	{ Var.name	= Var.name varV
-					, Var.info	= [Var.IValueVar varV] }
+		let varT'	= varT 	{ varName	= varName varV
+					, varInfo	= [IValueVar varV] }
 		
 		-- 
 		modify (\s -> s { 
@@ -225,8 +222,8 @@ getVtoT		varV
 	 Just varT	-> return varT
 	 Nothing	-> panic stage 
 	 		$ "getVtoT: no type var bound for value var '" % varV % "'.\n"
-			% "  bind = " % (show $ Var.varId varV)	% "\n"
-			% "  info = " % (show $ Var.info varV)	% "\n"
+			% "  bind = " % (show $ varId varV)	% "\n"
+			% "  info = " % (show $ varInfo varV)	% "\n"
 
 lbindVtoT ::	Var	-> CSlurpM Type
 lbindVtoT	varV
@@ -263,18 +260,18 @@ addError err
 -----
 wantTypeV :: Var -> CSlurpM ()
 wantTypeV v
-{-	| Var.nameSpace v /= NameType
+{-	| varNameSpace v /= NameType
 	= panic stage 
-	$ "wantTypeV: variable " % v % " has namespace " % Var.nameSpace v
+	$ "wantTypeV: variable " % v % " has namespace " % varNameSpace v
 -}	
 	| otherwise
 	= modify (\s -> s { stateTypesRequest = Set.insert v (stateTypesRequest s) })
  
 wantTypeVs :: [Var] -> CSlurpM ()
 wantTypeVs vs
-{-	| badVars@(_:_)	<- [ (v, Var.nameSpace v)
+{-	| badVars@(_:_)	<- [ (v, varNameSpace v)
 				| v <- vs
-				, Var.nameSpace v /= NameType ]
+				, varNameSpace v /= NameType ]
 	= panic stage
 	$ "wantTypeVs: variables have wrong namespace: " % badVars
 -}

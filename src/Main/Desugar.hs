@@ -12,7 +12,7 @@ import DDC.Main.Pretty
 import DDC.Main.Arg
 import DDC.Main.Error
 import DDC.Base.SourcePos
-import Shared.Var			(Var, ModuleId)
+import DDC.Var
 import System.IO			(hFlush)
 import Util				hiding (null, elem)
 import qualified Data.Foldable		as Foldable

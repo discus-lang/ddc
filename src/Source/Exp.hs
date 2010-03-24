@@ -19,9 +19,8 @@ module Source.Exp
 	, Label		(..)
 	, LCQual	(..))
 where
-import DDC.Var.ModuleId
 import DDC.Base.Literal
-import Shared.Var 		(Var)
+import DDC.Var
 import Shared.Exp
 import Type.Exp
 

@@ -21,12 +21,9 @@ module Source.Rename.State
 where
 import Source.Error
 import Util
-import DDC.Var.NameSpace
-import DDC.Var.VarId
+import DDC.Var
 import DDC.Main.Error
-import Shared.Var		(Var, ModuleId(..))
 import Shared.VarPrim		(getPrimVarBind)
-import qualified Shared.Var	as Var
 import qualified Util.Data.Map	as Map
 
 -----
@@ -110,14 +107,13 @@ initRenameS
 	, stateModuleId		= Nothing
 
 	, stateGen		= Map.fromList
-				[ (NameModule,	Var.VarId "mR"  0)
-				, (NameValue,	Var.VarId "vR"  0)
-				, (NameType,	Var.VarId "tR"  0)
-				, (NameRegion,	Var.VarId "rR"  0)
-				, (NameEffect,	Var.VarId "eR"  0) 
-				, (NameClosure, Var.VarId "cR"  0)
-				, (NameField,	Var.VarId "fR"  0) 
-				, (NameClass,	Var.VarId "aR"  0) ] 
+				[ (NameValue,	VarId "vR"  0)
+				, (NameType,	VarId "tR"  0)
+				, (NameRegion,	VarId "rR"  0)
+				, (NameEffect,	VarId "eR"  0) 
+				, (NameClosure, VarId "cR"  0)
+				, (NameField,	VarId "fR"  0) 
+				, (NameClass,	VarId "aR"  0) ] 
 
 	-- Each namespace starts out with an empty top level scope
 	, stateScopes		= Map.fromList 
@@ -128,9 +124,11 @@ initRenameS
 	}
 
 allRenamedNameSpaces
- = 	[ NameModule
-	, NameValue
-	, NameType, NameRegion, NameEffect, NameClosure
+ = 	[ NameValue
+	, NameType
+	, NameRegion
+	, NameEffect
+	, NameClosure
 	, NameField
 	, NameClass ]
 
@@ -219,10 +217,10 @@ uniquifyVarN space var
 
 	-- If we're being told the the var has a different namespace to the one
 	--	it's already in then something has gone wrong in the parser or renamer.
-	| Var.nameSpace var /= NameNothing
-	, Var.nameSpace var /= space
+	| varNameSpace var /= NameNothing
+	, varNameSpace var /= space
 	= panic stage 
-		$ "renameVarN: not renaming var " % var % " from space " % show (Var.nameSpace var)
+		$ "renameVarN: not renaming var " % var % " from space " % show (varNameSpace var)
 		% " to space " % show space % "\n"
 		% " var = " % show var % "\n"
 
@@ -236,9 +234,9 @@ uniquifyVarN space var
 	 	Just bind	
 		 -> do	Just mod	<- gets stateModuleId
 			return 
-		 	 $ var 	{ Var.varId		= bind
-				, Var.nameSpace		= space
-				, Var.nameModuleId	= mod }
+		 	 $ var 	{ varId		= bind
+				, varNameSpace	= space
+				, varModuleId	= mod }
 									
 		Nothing 	
 		 -> uniquifyVarN' space var	
@@ -253,12 +251,12 @@ uniquifyVarN' space var
 
 	-- rename the var and set its namespace
 	let var'	= var 
-			{ Var.varId		= spaceGen 
-			, Var.nameSpace		= space 
-			, Var.nameModuleId	= mod }
+			{ varId		= spaceGen 
+			, varNameSpace	= space 
+			, varModuleId	= mod }
 
 	-- increment the varid generator
-	let spaceGen'	= Var.incVarId spaceGen
+	let spaceGen'	= incVarId spaceGen
 	modify $ \s -> s
 		{ stateGen	= Map.insert space spaceGen' (stateGen s) }
 	

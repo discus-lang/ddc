@@ -28,10 +28,9 @@ import Type.Util.Kind
 import Type.Plate.FreeVars
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Var
 import Type.Pretty			()
-import Shared.Var			(Var)
 import qualified Type.Util.PackFast	as PackFast
-import qualified Shared.Var		as Var
 import qualified Shared.VarUtil		as Var
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
@@ -232,7 +231,7 @@ trimClosureC_t' tag quant rsData tt
 		   then let 	rsData'	= Set.insert t rsData
 				vs	= freeVars (t:ts)
 			in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
-				 ++ map (TDanger t) [TVar (kindOfSpace $ Var.nameSpace v) v
+				 ++ map (TDanger t) [TVar (kindOfSpace $ varNameSpace v) v
 							| v <- Set.toList vs 
 							, not $ Var.isCtorName v]
 		   else catMap down ts

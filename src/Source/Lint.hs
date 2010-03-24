@@ -50,10 +50,7 @@ import Util
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Main.Error
-import DDC.Var.NameSpace
-import DDC.Var.ModuleId
-import Shared.Var		(Var)
-import qualified Shared.Var	as Var	
+import DDC.Var
 import qualified Data.Set	as Set
 
 -----
@@ -654,22 +651,22 @@ instance Lint Super where
 -- Var --------------------------------------------------------------------------------------------
 instance Lint Var where
  lint v
- 	| Var.varId v		== Var.VarIdNil
+ 	| varId v		== VarIdNil
 	= death v "Var - var's bind code is undefined."
 
-	| Var.name v == ""
+	| varName v == ""
 	= death v "Var - name is the empty string."
 
-	| Var.nameSpace v == NameNothing
+	| varNameSpace v == NameNothing
 	= death v "Var - var is in name space 'NameNothing'.\n"
 	
 	| otherwise
 	= return v
 			
 -----
-inSpaceN space vs	= and $ map (\v -> Var.nameSpace v == space)  vs
-inSpaceV vs		= and $ map (\v -> Var.nameSpace v == NameValue)  vs
-inSpaceE vs		= and $ map (\v -> Var.nameSpace v == NameEffect) vs
+inSpaceN space vs	= and $ map (\v -> varNameSpace v == space)  vs
+inSpaceV vs		= and $ map (\v -> varNameSpace v == NameValue)  vs
+inSpaceE vs		= and $ map (\v -> varNameSpace v == NameEffect) vs
 
 
 -- Module -----------------------------------------------------------------------------------------

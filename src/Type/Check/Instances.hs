@@ -10,7 +10,7 @@ import Type.State
 import Type.Exp
 import Shared.VarPrim
 import Util
-import qualified Shared.Var	as Var
+import DDC.Var
 import qualified Data.Map	as Map
 
 
@@ -62,7 +62,7 @@ checkFetter cls errs f@(FConstraint vClass tsArg)
 			, primLazy, primLazyH, primDirect]
 		= return errs
 		
-		| Var.name vClass == "Safe"
+		| varName vClass == "Safe"
 		= return errs
 
 		-- constraint has an instances, ok.

@@ -7,7 +7,7 @@ import Core.Crush
 import Core.Plate.Trans
 import Type.Exp		
 import Util
-import Shared.Var		(Var)
+import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

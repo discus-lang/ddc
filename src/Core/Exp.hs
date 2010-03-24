@@ -21,7 +21,7 @@ import Shared.Exp
 import Type.Exp
 import DDC.Base.SourcePos
 import DDC.Base.Literal
-import Shared.Var 	(Var)
+import DDC.Var
 
 
 -- Trees and Globs -----------------------------------------------------------------------------------
