@@ -20,8 +20,8 @@ data Doc str
 	
 	-- | A document node \/ section.
 	| DNode
-		String		-- ^ node name
-		(Doc str)	-- ^ node contents
+		{ docNodeName		:: String
+		, docNodeContents	:: Doc str }
 
 	-- | A compund document.
 	| DList [Doc str]
