@@ -72,6 +72,10 @@ pprDocIndentedWithNewLines tagNew dd
 	DBlank
 	 -> blank
 
+	DNode tag dd'
+	 | docIsEmpty dd'	
+	 -> tag % "."
+
 	DNode tag d@(DLeaf{})
 	 | length tag <= 6
 	 -> padL 7 (tag ++ ":") %> (" " % pprDocIndentedWithNewLines tagNew d)
@@ -87,4 +91,21 @@ pprDocIndentedWithNewLines tagNew dd
 	
 	DLeaf str
 	 -> str
+	
+	
+-- | Check if a `Doc` is just made of `DBlank`s or empty `DList`s.
+docIsEmpty :: Doc str -> Bool
+docIsEmpty d
+ = case d of
+	DBlank			-> True
+
+	DNode tag d		-> docIsEmpty d
+
+	DList []		-> True
+	DList (dd : ds)
+	 | not $ docIsEmpty dd	-> False
+	 | otherwise		-> docIsEmpty (DList ds)
+
+	DLeaf _			-> False
+	
 	
