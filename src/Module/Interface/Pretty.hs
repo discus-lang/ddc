@@ -32,6 +32,8 @@ instance Docable Type Str
 instance Docable Kind Str 
  where	doc k	= doc $ ppr k
 
+instance Docable Super Str
+ where	doc s	= doc $ ppr s
 
 instance Docable Interface Str where
  doc int
@@ -41,6 +43,9 @@ instance Docable Interface Str where
 	, dNodeIfElems "imported-modules"	$ intImportedModules int
 	, dNodeIfElems "data-types" 		$ intData int
 	, dNodeIfElems "regions" 		$ intRegion int
+	, dNodeIfElems "effects"		$ intEffect int
+	, dNodeIfElems "classes"		$ intClass  int
+	, dNodeIfElems "binds"			$ intBind   int
 	]
 
 
@@ -69,6 +74,28 @@ instance Docable IntRegion Str where
 	[ dNodeIfElems "witnesses"
 		[ DNode (varName v) (doc k)
 			| (v, k) <- Map.toList $ intRegionWitnessKinds def]]
+
 	
+instance Docable IntEffect Str where
+ doc def
+	= DNode (varName $ intEffectName def)
+	$ DList
+	[ DNode "kind"		(doc $ intEffectKind def) ]
 
 
+instance Docable IntClass Str where
+ doc def
+	= DNode (varName $ intClassName def)
+	$ DList
+	[ DNode "class"		(doc $ intClassSuper def) ]
+	
+instance Docable IntBind Str where
+ doc def
+	= DNode (varName $ intBindName def)
+	$ DList
+	[ DNode "type"		(doc $ intBindType def) ]
+	
+	
+	
+	
+	

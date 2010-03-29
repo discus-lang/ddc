@@ -281,7 +281,7 @@ compileFile_parse
 
 	(  sTagged
 	 , sConstrs
-	 , sigmaTable
+	 , mapValueToTypeVars
 	 , vsTypesPlease
 	 , vsBoundTopLevel)
 			<- SD.desugarSlurpConstraints
@@ -308,7 +308,7 @@ compileFile_parse
 				sConstrs
 				vsTypesPlease
 				vsBoundTopLevel
-				sigmaTable
+				mapValueToTypeVars
 				blessMain
 
 	-- !! Early exit on StopType
@@ -323,7 +323,7 @@ compileFile_parse
 	 , cHeader )	<- SD.desugarToCore
 		 		sTagged
 				hTagged
-				sigmaTable
+				mapValueToTypeVars
 				typeTable
 				typeInst
 				typeQuantVars
@@ -466,7 +466,7 @@ compileFile_parse
 				sRenamed
 				dProject
 				(C.treeOfGlob cgProg_final)
-				sigmaTable
+				mapValueToTypeVars
 				typeTable
 				vsLambda_new
 
@@ -479,12 +479,16 @@ compileFile_parse
 	let diNewInterface	
 	 		= MN.makeInterface
 				thisScrape
+				mapValueToTypeVars
+				typeTable
 				cgProg_final
 
 	-- put blank lines after these sections,
 	--	just to make the interface file look nicer.
 	let sNewLineTags
-		= Set.fromList ["ddc-version", "module", "imported-modules", "ctor"]
+		= Set.fromList 
+			[ "ddc-version", "module", "imported-modules"
+			, "effects", "classes", "type" ]
 	
 	when (elem Arg.DumpNewInterfaces ?args)
 	 $ do writeFile (?pathSourceBase ++ ".di-new") 
