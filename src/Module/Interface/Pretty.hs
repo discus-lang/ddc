@@ -17,6 +17,9 @@ instance Docable ModuleId Str
 instance Docable (PrettyM mode) (PrettyM mode)
  where	doc x	= DLeaf x	
 
+instance Docable (Doc Str) Str
+ where	doc x	= x
+
 instance Docable Var Str
  where	doc x	= DLeaf (ppr x)
 
@@ -33,28 +36,18 @@ instance Docable Kind Str
 instance Docable Interface Str where
  doc int
 	= DList
-	[ DNode "ddc-version" 	
-		(doc $ ppr $ Config.version)
-
-	, DNode "module"	
-		(doc $ intModuleId int) 
-
-	, DNode "imported-modules"
-		(doc $ intImportedModules int) 
-
-	, DNode "data-types"
-		(doc $ Map.elems $ intData int)
-
-	, DNode "regions"
-		(doc $ Map.elems $ intRegion int)
+	[ DNode "ddc-version" 			$ doc $ ppr $ Config.version
+	, DNode "module"			$ doc $ intModuleId int
+	, dNodeIfElems "imported-modules"	$ intImportedModules int
+	, dNodeIfElems "data-types" 		$ intData int
+	, dNodeIfElems "regions" 		$ intRegion int
 	]
 
 
 instance Docable IntData Str where
  doc idata
   	= DNode (varName $ intDataName idata)
-	$ DList
-	[ DNode "ctors"		(doc $ Map.elems $ intDataCtors idata) ]
+	$ DList [ dNodeIfElems "ctors"	$ intDataCtors idata ]
 
 	
 instance Docable IntDataCtor Str where
@@ -63,12 +56,9 @@ instance Docable IntDataCtor Str where
    	$ DList
 	[ DNode "tag" 	 	(doc $ intDataCtorTag  def)
 	, DNode "type"		(doc $ intDataCtorType def)
-
-	, if Map.null $ intDataCtorFields def
-		then DBlank
-		else (DNode "fields"	
-			$ DList [DNode (varName f) (doc i)
-				| (f, i) <- Map.toList $ intDataCtorFields def])
+	, dNodeIfElems "fields"
+		[DNode (varName f) (doc i)
+			| (f, i) <- Map.toList $ intDataCtorFields def]
 	]
 
 
@@ -76,9 +66,9 @@ instance Docable IntRegion Str where
  doc def
 	= DNode (varName $ intRegionName def)
 	$ DList
-	[ DNode "witnesses"
-		$ DList	[ DNode (varName v) (doc k)
-				| (v, k) <- Map.toList $ intRegionWitnessKinds def]]
+	[ dNodeIfElems "witnesses"
+		[ DNode (varName v) (doc k)
+			| (v, k) <- Map.toList $ intRegionWitnessKinds def]]
 	
 
 

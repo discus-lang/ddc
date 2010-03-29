@@ -1,14 +1,16 @@
 
 -- | Abstract block structured documents.
---	Whereas a str is just a flat slab of text, a `Doc` contains some
+--	Whereas a `Str` is just a flat slab of text, a `Doc` contains some
 --	internal structure that we can write to file then load back in.
 --
 module DDC.Util.Doc
 	( Doc(..)
 	, Docable(..) 
-	, pprDocIndentedWithNewLines )
+	, dNodeIfElems
+	, pprDocIndentedWithNewLines)
 where
 import DDC.Util.Pretty
+import DDC.Util.Container
 import Data.Set			(Set)
 import qualified Data.Set	as Set
 
@@ -42,9 +44,27 @@ instance Docable a str => Docable [a] str
  where	doc xx	= DList $ map doc xx
 
 
+-- | If this `Container` has elements, 
+--	then create a new `DNode` with the given tag, 
+--	otherwise `DBlank`.
+dNodeIfElems
+	:: (Container c, Docable a str)
+	=> String
+	-> c a 
+	-> Doc str
+
+dNodeIfElems tag cont
+ = if isEmpty cont
+	then DBlank
+	else (DNode tag $ doc $ elemsList cont)
+
+
+-- | Pretty print this `Doc`, 
+--	adding blank lines after tags in the given set (for niceness).
 pprDocIndentedWithNewLines
-	:: Set String			-- ^ tag of nodes to put extra new lines after
-	-> Doc (PrettyM mode) 
+	:: forall mode
+	.  Set String			-- ^ Tags of nodes to put extra new lines after.
+	-> Doc (PrettyM mode) 		-- ^ `Doc` to pretty print.
 	-> PrettyM mode
 
 pprDocIndentedWithNewLines tagNew dd
@@ -68,9 +88,3 @@ pprDocIndentedWithNewLines tagNew dd
 	DLeaf str
 	 -> str
 	
-
-
-
-
-
-
