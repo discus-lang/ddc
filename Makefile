@@ -263,6 +263,7 @@ cleanLibrary :
 		-o  -name "*.dylib" \
 		-o	-name "*.a" \
 		-o	-name "*.di" \
+		-o	-name "*.di-new" \
 		-o	-name "*.ddc.c" \
 		-o	-name "*.ddc.h" \
 		-o	-name "*.dump-*.*"  \
@@ -279,6 +280,7 @@ cleanWar :
 		-o	-name "*.hi"    \
 		-o	-name "build.mk" \
 		-o	-name "*.di"    \
+		-o	-name "*.di-new" \
 		-o	-name "*.gdl"   \
 		-o	-name "*.o"     \
 		-o	-name "*.ddc.c" \

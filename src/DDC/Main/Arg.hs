@@ -79,6 +79,8 @@ data Arg
 	-- dump everything
 	| DumpAll			-- ^ Dump everything.
 
+	| DumpNewInterfaces		-- ^ Dump the new style interface file.
+
 	-- source dumps
 	| DumpSourceTokens
 	| DumpSourceParse

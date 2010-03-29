@@ -19,8 +19,9 @@ import qualified Main.Sea		as SE
 import qualified DDC.Main.Arg		as Arg
 
 -- module
+import qualified Module.Interface.Pretty ()
 import qualified Module.Export		as M
--- import qualified Module.ExportNew	as MN
+import qualified Module.ExportNew	as MN
 import qualified Module.Scrape		as M
 
 -- source
@@ -44,6 +45,7 @@ import qualified Sea.Util		as E
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Util.Doc
 
 -- haskell
 import Util
@@ -471,16 +473,23 @@ compileFile_parse
 	writeFile (?pathSourceBase ++ ".di") diInterface	
 
 	-- Make the new style module interface.
-{-	let Just thisScrape	
+	let Just thisScrape	
 			= Map.lookup modName scrapes
 
 	let diNewInterface	
 	 		= MN.makeInterface
 				thisScrape
+				cgProg_final
 
-	writeFile (?pathSourceBase ++ ".di-new") 
-		$ show diNewInterface
--}
+	-- put blank lines after these sections,
+	--	just to make the interface file look nicer.
+	let sNewLineTags
+		= Set.fromList ["ddc-version", "module", "imported-modules", "ctor"]
+	
+	when (elem Arg.DumpNewInterfaces ?args)
+	 $ do writeFile (?pathSourceBase ++ ".di-new") 
+		$ pprStrPlain $ pprDocIndentedWithNewLines sNewLineTags $ doc diNewInterface
+
 
 	-- !! Early exit on StopCore
 	when (elem Arg.StopCore ?args)

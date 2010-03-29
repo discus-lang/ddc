@@ -242,6 +242,7 @@ options	=
 	-- dump
 	, OGroup	"dump"
 			"Dumping/Tracing."
+
 	
 	, OFlag		DumpPrettyUnique	["-dump-pretty-unique"]		"Append unique identifiers to variables."
 	, OFlag		DumpPrettyTypeSpaces	["-dump-pretty-type-spaces"]	"Show a '*' namespace qualifier on type vars."
@@ -251,6 +252,9 @@ options	=
 	, OBlank
 	
 	, OFlag 	DumpAll			["-dump"]			"Dump everything."
+	, OBlank
+
+	, OFlag		DumpNewInterfaces	["-dump-new-interfaces"]	"Dump new-format interface file."
 	, OBlank
 
 	, OFlag		DumpSourceTokens	["-dump-source-tokens"]		"Tokenised source file."

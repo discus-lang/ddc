@@ -3,6 +3,7 @@
 module DDC.Main.Pretty
 	( module DDC.Util.Pretty
 	, PMode
+	, Str
 	, PrettyMode(..)
 	, pprStrPlain )
 where
@@ -14,6 +15,8 @@ import DDC.Util.Pretty
 type PMode	
 	= [PrettyMode]
 
+-- | This is the type we usually use to represent printable text.
+type Str = PrettyM PMode
 
 -- | Pretty printing options that we support.
 data PrettyMode

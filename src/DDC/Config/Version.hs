@@ -15,7 +15,7 @@ ddcName	= "The Disciplined Disciple Compiler, version " ++ version
 
 -- | The version string.
 version :: String
-version	= "Alpha 0.1.2"
+version	= "0.1.2"
 
 
 -- | Maintainer contact string to put in panic messages.

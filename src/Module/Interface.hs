@@ -1,6 +1,7 @@
 module Module.Interface 
 	( Interface 	(..)
 	, IntData 	(..)
+	, IntDataCtor	(..)
 	, IntRegion 	(..)
 	, IntEffect	(..)
 	, IntClass	(..)
@@ -68,16 +69,25 @@ data IntData
 	= IntData
 	{ intDataName		:: Var			-- ^ Name of data type
 	, intDataSourcePos	:: SourcePos		-- ^ Where the data decl is
-	, intDataCtor		:: Map Var Type	}	-- ^ Types of data constructors
+	, intDataCtors		:: Map Var IntDataCtor} -- ^ Types of data constructors
 	deriving Show
 	
+-- | Interface to a data constructor
+data IntDataCtor
+	= IntDataCtor
+	{ intDataCtorName	:: Var			-- ^ Name of ctor.
+	, intDataCtorSourcePos	:: SourcePos		-- ^ Position in source file.
+	, intDataCtorType	:: Type			-- ^ Type of ctor.
+	, intDataCtorTag	:: Int			-- ^ Order in data decl.
+	, intDataCtorFields	:: Map Var Int }	-- ^ Map of field names to indices in the constructor.
+	deriving Show
 
 -- | Interface to a top level region
 data IntRegion
 	= IntRegion
 	{ intRegionName		:: Var			-- ^ Region variable
 	, intRegionSourcePos	:: SourcePos		-- ^ Where the region decl is
-	, intRegionClass	:: Map Var Var }	-- ^ Region class -> witness var in Core IR
+	, intRegionWitnessKinds :: Map Var Kind }	-- ^ Witness var -> witness kind.
 	deriving Show
 
 
