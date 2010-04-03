@@ -425,15 +425,14 @@ slurpClassFuns
 
 slurpClassFuns instMap pp
  = Map.fromList
- 	[ (vF, (makeTClassFromDict v ts, sig, exps))
-
-	| PClassDict v ts sigs	<- pp 
-	, (vF, sig)		<- sigs 
-	, let (Just insts)	= Map.lookup v instMap
-	, let exps		= [ (makeTClassFromDict v' ts', instV)	
-					| PClassInst v' ts' defs	<- insts
-					, (v, (XVar instV t))		<- defs
-					, v == vF		] ]
+ 	[ (vF, (makeTClassFromDict v [TVar k v | (v, k) <- vks], sig, exps))
+		| PClassDict v vks sigs	<- pp 
+		, (vF, sig)		<- sigs 
+		, let (Just insts)	= Map.lookup v instMap
+		, let exps		= [ (makeTClassFromDict v' ts', instV)	
+						| PClassInst v' ts' defs	<- insts
+						, (v, (XVar instV t))		<- defs
+						, v == vF		] ]
 
 makeTClassFromDict v ts 
  = let 	Just ks	= sequence $ map kindOfType ts

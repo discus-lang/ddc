@@ -142,9 +142,10 @@ toCoreP	p
 	 	let ts'		= map toCoreT ts
 		let sigs'	= zip vs ts'
 
-		let cts'	= map toCoreT cts
+		let vks'	= map (\(T.TVar k v) -> (v, k))
+				$ map toCoreT cts
 
-		return		$ [C.PClassDict v cts' sigs']
+		return		$ [C.PClassDict v vks' sigs']
 
 	-- type class instance
 	D.PClassInst _ vClass cts context ss

@@ -69,7 +69,7 @@ data Top
 	-- | A (value) type class dictionary.
 	| PClassDict
 		{ topClassDictName	:: Var
-		, topClassDictParams	:: [Type]
+		, topClassDictParams	:: [(Var, Kind)]
 		, topClassDictTypes	:: [(Var, Type)] }
 
 	-- | A (value) type class instance.

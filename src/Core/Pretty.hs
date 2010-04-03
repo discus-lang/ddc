@@ -2,7 +2,6 @@
 
 module Core.Pretty
 	( pprStr )
-
 where
 import Core.Exp
 import Core.Util.Bits
@@ -10,13 +9,10 @@ import Type.Pretty
 import Type.Exp
 import Util
 import Data.Function
-import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
 import qualified Data.Map	as Map
 
------
-stage	= "Core.Pretty"
 
 -- Debugging --------------------------
 -- | Fold multiple binders into a single line.
@@ -81,8 +77,8 @@ instance Pretty Top PMode where
 	 -> "class " % v % ";\n"
 
 
-	PClassDict v ts sigs
-	 -> ("class " % v <> (punc " " $ map pprPClassDict_varKind ts) <> "where\n"
+	PClassDict v vks sigs
+	 -> ("class " % v <> (punc " " $ map pprPClassDict_varKind vks) <> "where\n"
 	 	% "{\n"
 		%> (";\n\n" %!% map (\(v, sig) -> v % "\n ::     " %> sig) sigs)
 		% "\n}\n")
@@ -96,10 +92,8 @@ instance Pretty Top PMode where
 			% "\n"
 			% "}\n\n")
 
-pprPClassDict_varKind tt
- = case tt of
-	TVar k v	-> parens $ v <> "::" <> k
-	_		-> panic stage "pprPClassDict_varKind: no match\n"
+pprPClassDict_varKind (v, k)
+	= parens $ v <> "::" <> k
 
 
 -- CtorDef --------------------------------------------------------------------------------------------
