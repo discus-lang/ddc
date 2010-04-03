@@ -132,7 +132,7 @@ lintP	tt (PRegion r vts)
 	return tt3
 
 
-lintP	tt (PClassDict v ts context vts)
+lintP	tt (PClassDict v ts vts)
  = do	
  	-- v doesn't have this kind, but it'll do for now.
 	--	We're not checking kinds of class applications yet.

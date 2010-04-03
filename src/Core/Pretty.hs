@@ -81,13 +81,13 @@ instance Pretty Top PMode where
 	 -> "class " % v % ";\n"
 
 
-	PClassDict v ts context sigs
+	PClassDict v ts sigs
 	 -> ("class " % v <> (punc " " $ map pprPClassDict_varKind ts) <> "where\n"
 	 	% "{\n"
 		%> (";\n\n" %!% map (\(v, sig) -> v % "\n ::     " %> sig) sigs)
 		% "\n}\n")
 
-	PClassInst v ts context defs
+	PClassInst v ts defs
 	 -> ("instance " % v % " " % " " %!% map prettyTB ts % "\n"
 			% "{\n"
 			%> ("\n\n" %!% (map (\(v, exp) 

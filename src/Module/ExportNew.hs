@@ -63,7 +63,13 @@ makeInterface
 		= Map.map getIntClassOfCorePClass
 		$ C.globClass coreGlob
 		
-	, intClassDecl		= Map.empty
+	, intClassDecl	
+		= Map.empty
+
+{-		= Map.map getIntClassDeclOfCorePClassDict
+		$ C.globClass coreGlob
+-}	
+	
 	, intClassInst		= Map.empty
 	, intProjDict		= Map.empty
 	, intInfix		= Map.empty
@@ -125,7 +131,14 @@ getIntClassOfCorePClass pp@C.PClass{}
 	, intClassSourcePos	= undefined
 	, intClassSuper		= C.topClassSuper pp }
 
-
+{-
+getIntClassDeclOfCorePClassDict
+	:: C.Top
+	-> IntClassDecl
+	{ intClassDeclName	= C.topClassDictName pp
+	, intClassSourcePos	= undefined
+	, 
+-}
 -- | Convert a core `PBind` into an `IntBind`
 getIntBindOfCorePBind 
 	:: C.Glob 		-- ^ The core glob.

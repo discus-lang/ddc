@@ -70,14 +70,12 @@ data Top
 	| PClassDict
 		{ topClassDictName	:: Var
 		, topClassDictParams	:: [Type]
-		, topClassDictContext	:: [ClassContext]
 		, topClassDictTypes	:: [(Var, Type)] }
 
 	-- | A (value) type class instance.
 	| PClassInst
 		{ topClassInstName	:: Var
 		, topClassInstArgs	:: [Type]
-		, topClassInstContext	:: [ClassContext]
 		, topClassInstMethods	:: [(Var, Exp)] }
 
 	-- | A top-level binding.

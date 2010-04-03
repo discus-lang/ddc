@@ -114,7 +114,7 @@ data IntClassDecl
 	= IntClassDecl
 	{ intClassDeclName	:: Var			-- ^ Type class name (eg Show)
 	, intClassDeclSourcePos	:: SourcePos		-- ^ Where the type class declaration is
-	, intClassDeclTyVars	:: Map Var Kind		-- ^ Type variables and their kinds
+	, intClassDeclTyVars	:: [(Var, Kind)]	-- ^ Type variables and their kinds
 	, intClassDeclMembers	:: Map Var Type }	-- ^ Types of member functions
 	deriving Show
 	

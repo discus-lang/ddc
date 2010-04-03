@@ -36,7 +36,7 @@ slurpTypesP pp
 			% "  can't get type from this top-level thing\n"
 			% pp % "\n\n"
 
-	PClassDict v ts context sigs -> sigs
+	PClassDict v ts sigs -> sigs
 	_ -> []
 
 
@@ -95,17 +95,17 @@ slurpBoundVarsP
 	
 slurpBoundVarsP pp
  = case pp of
- 	PBind   v x			-> [v]
-	PExtern v t1 t2			-> [v]
-	PExternData v k			-> [v]
-	PData{}				-> topDataName pp : Map.keys (topDataCtors pp)
+ 	PBind   v x		-> [v]
+	PExtern v t1 t2		-> [v]
+	PExternData v k		-> [v]
+	PData{}			-> topDataName pp : Map.keys (topDataCtors pp)
 
-	PClassDict v ts contest vts	-> map fst vts
-	PClassInst{}			-> []
+	PClassDict v ts vts	-> map fst vts
+	PClassInst{}		-> []
 
-	PRegion v vts			-> v : map fst vts
-	PEffect	v k			-> [v]
-	PClass 	v k			-> [v]
+	PRegion v vts		-> v : map fst vts
+	PEffect	v k		-> [v]
+	PClass 	v k		-> [v]
 	
 
 -- | Decend into this expression and annotate the first value found with its type

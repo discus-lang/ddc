@@ -63,7 +63,7 @@ slurpClassInstMap
 
 slurpClassInstMap tree
  = 	Map.gather
- 	[ (v, p)	| p@(PClassInst v ts context defs) <- tree]
+ 	[ (v, p)	| p@(PClassInst v ts defs) <- tree]
 
 
 -- | push witnesses to properties of top-level regions.

@@ -311,9 +311,9 @@ instance Monad m => TransM m Top where
 	PClassDict{}
 	 ->	transP table p
 
-	PClassInst v ts context defs
+	PClassInst v ts defs
 	 -> do	defs'		<- transZM table defs
-	 	return		$ PClassInst v ts context defs'
+	 	return		$ PClassInst v ts defs'
 	 
 	 
 -----	

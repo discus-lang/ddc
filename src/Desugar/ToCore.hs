@@ -144,7 +144,7 @@ toCoreP	p
 
 		let cts'	= map toCoreT cts
 
-		return		$ [C.PClassDict v cts' [] sigs']
+		return		$ [C.PClassDict v cts' sigs']
 
 	-- type class instance
 	D.PClassInst _ vClass cts context ss
@@ -171,7 +171,7 @@ toCoreP	p
 		-- rewrite the context types
 		let cts'	= map toCoreT cts
 
-		return	$ [C.PClassInst vClass cts' [] ss']
+		return	$ [C.PClassInst vClass cts' ss']
 
 
 	-- projections

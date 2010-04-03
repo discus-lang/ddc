@@ -427,11 +427,11 @@ slurpClassFuns instMap pp
  = Map.fromList
  	[ (vF, (makeTClassFromDict v ts, sig, exps))
 
-	| PClassDict v ts context sigs	<- pp 
+	| PClassDict v ts sigs	<- pp 
 	, (vF, sig)		<- sigs 
 	, let (Just insts)	= Map.lookup v instMap
 	, let exps		= [ (makeTClassFromDict v' ts', instV)	
-					| PClassInst v' ts' _ defs	<- insts
+					| PClassInst v' ts' defs	<- insts
 					, (v, (XVar instV t))		<- defs
 					, v == vF		] ]
 
@@ -446,6 +446,6 @@ slurpClassInstMap
 
 slurpClassInstMap tree
  = 	Map.gather
- 	[ (v, p)	| p@(PClassInst v ts context defs) <- tree]
+ 	[ (v, p)	| p@(PClassInst v ts defs) <- tree]
 
 
