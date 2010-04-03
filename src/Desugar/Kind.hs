@@ -214,7 +214,11 @@ slurpConstraints ps
 slurpConstraint pp
  = case pp of
  	PKindSig sp v k	
- 	 -> [Constraint (KSSig sp) v k]
+ 	 | resultKind k == kEffect
+	 -> [Constraint (KSEffect sp) v k]
+	
+	 | otherwise
+	 -> [Constraint (KSSig sp) v k]
 
 	PClassDict sp v ts context vts
 	 -> map (\(TVar k v) -> Constraint (KSClass sp) v (defaultKind v k)) ts
@@ -227,9 +231,7 @@ slurpConstraint pp
 	PExternData sp name v k
 	 -> [Constraint (KSData sp) v k]
 
-	PEffect sp v k	-> [Constraint (KSEffect sp) v k]
---	PClass sp v k	-> [ConstraintS (KSClass sp) v k]
-	_		-> []
+	_	-> []
 
 
 defaultKind v k

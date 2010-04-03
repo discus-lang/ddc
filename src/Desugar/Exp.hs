@@ -47,28 +47,29 @@ data Top a
 		, topExternDataVar	:: Var
 		, topExternDataKind	:: Kind }
 
-	-- | A top level effect declaration.
-	| PEffect
+	-- | A super signature \/ abstract class constructor.
+	| PClass	
 		{ topAnnot		:: a
-		, topEffectVar		:: Var
-		, topEffectKind		:: Kind }
+		, topSuperSigVar	:: Var
+		, topSuperSigSuper	:: Super }
+
+	-- | A kind signature  \/ abstract type constructor.
+	| PKindSig
+		{ topAnnot		:: a
+		, topKindSigVar		:: Var
+		, topKindSigKind	:: Kind }
+
+	| PTypeSynonym	a Var Type
 
 	-- | A top level region declaration.
 	| PRegion
 		{ topAnnot		:: a
 		, topRegionVar		:: Var }
 
-	-- | A kind signature.
-	| PKindSig
-		{ topAnnot		:: a
-		, topTypeKindVar	:: Var
-		, topTypeKindKind	:: Kind }
 
 	| PData		a Var [Var]  [CtorDef a]
-	| PTypeSynonym	a Var Type
 
 	-- classes
-	| PClass	a Var Super
 	| PClassDict	a Var [Type] [ClassContext] [(Var, Type)]
 
 	-- An instance for a type class.

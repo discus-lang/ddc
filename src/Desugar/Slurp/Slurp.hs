@@ -38,7 +38,7 @@ slurpTreeM tree
 	-- sort the top level things so that data definitions go through before their uses.
 	let psSorted	
 		= partitionFsSort
-			[ (=@=) PRegion{}, 	(=@=) PEffect{}, 	(=@=) PData{}
+			[ (=@=) PRegion{}, 	(=@=) PData{}
 			, (=@=) PClass{},	(=@=) PClassDict{}
 			, (=@=) PImport{},	(=@=) PExtern{}
 			, (=@=) PProjDict{},	(=@=) PClassInst{}
@@ -98,9 +98,9 @@ slurpP	(PExtern sp v tv to)
 -- region/effect/class definitions
 slurpP	(PRegion sp v)
  =	return 	(PRegion Nothing v, [])
- 
-slurpP	(PEffect sp v k)
- =	return	(PEffect Nothing v k, [])
+
+slurpP	(PKindSig sp v k)
+   =	return	(PKindSig Nothing v k, [])
  
 slurpP	(PClass	sp v k)
  =	return	(PClass Nothing v k, [])

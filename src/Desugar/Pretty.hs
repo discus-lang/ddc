@@ -55,28 +55,32 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 		("extern " % v
 			%> ("\n" % "::" % k % ";\n"))
-
-	PEffect nn v k
-	 -> annot nn
-	 	("effect " % v %> " :: " % k) % ";\n"
 		
-	PRegion nn v
+	-- super sigs
+	PClass nn v k
 	 -> annot nn
-	 	("region " % v) % ";\n"
+	 	("class " % v %> " :: " % k) % ";\n"
 
-	-- types
+	-- kind sigs
 	PKindSig nn v k
 	 | resultKind k == kValue	
 	 -> annot nn ("data" <> v <> "::" <> k % ";\n\n")
 
+ 	 | resultKind k == kEffect
+  	 -> annot nn ("effect" <> v <> "::" <> k % "\n\n")
+
 	 | otherwise	
 	 -> annot nn ("type" <> v <> "::" <> k % ";\n\n")
-	 
 
+	-- types
 	PTypeSynonym nn v t
 	 -> annot nn 
 		("type " <> v <> " = " % t % ";\n\n")
 
+	PRegion nn v
+	 -> annot nn
+	 	("region " % v) % ";\n"
+	 
 	PData nn v vs []
 	 -> annot nn 
 	 	("data " % " " %!% (v : vs)) % ";\n\n"
@@ -87,11 +91,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 		%> ("= "  % "\n\n| " %!% ctors % ";")
 		% "\n\n")
 		
-	-- classes
-	PClass nn v k
-	 -> annot nn
-	 	("class " % v %> " :: " % k) % ";\n"
-
+	-- data classes
 	PClassDict nn v ts context sigs
 	 -> annot nn
 	 	("class " % pprVar_unqual v % " " % " " %!% map pprPClassDict_varKind ts % " where\n"
@@ -113,8 +113,6 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			% "{\n"
 			%> ("\n\n" %!% ss) % "\n"
 			% "}\n\n")
-
-
 
 	PSig nn v t
 	 -> annot nn

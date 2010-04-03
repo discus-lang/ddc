@@ -37,13 +37,13 @@ type Tree	= [Top]
 data Top
 	= -- | An abstract type class
 	  PClass
-		{ topClassName 	:: Var
-		, topClassSuper :: Super }
+		{ topClassName 		:: Var
+		, topClassSuper 	:: Super }
 
 	-- | A custom global effect constructor
 	| PEffect
-		{ topEffectName :: Var
-		, topEffectKind :: Kind }
+		{ topEffectName 	:: Var
+		, topEffectKind 	:: Kind }
 
 	-- | A top level\/global region.
 	| PRegion

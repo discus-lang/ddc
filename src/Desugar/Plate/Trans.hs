@@ -130,10 +130,6 @@ instance Monad m => TransM m a1 a2 Top where
 	 -> do	nn'		<- transN table nn
 		v'		<- transV table v
 		transP table	$ PExternData nn' s v' k
-
-	PEffect nn v k
-	 -> do	nn'		<- transN	table nn
-	 	transP table	$ PEffect nn' v k
 		
 	PRegion nn v
 	 -> do	nn'		<- transN	table nn

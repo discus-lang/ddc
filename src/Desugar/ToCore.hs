@@ -113,12 +113,6 @@ toCoreP	p
 		let mCtors	= Map.fromList $ zip vsCtors ctors'
 		return	[C.PData vData mCtors]
 
-	D.PEffect _ v k
-	 -> do
-		let k'	= toCoreK k
-		let p	= C.PEffect v k'
-	 	return	[p]
-
 	D.PBind nn (Just v) x
 	 -> do	Just (C.SBind (Just v) x') 
 			<- toCoreS (D.SBind nn (Just v) x)
@@ -138,7 +132,7 @@ toCoreP	p
 	 ->	return	[ C.PData   v Map.empty ]
 	
 	 | T.resultKind k == T.kEffect
-	 ->	return	[ C.PEffect v k ]
+	 ->	return	[ C.PEffect v (toCoreK k) ]
 	
 	 -- we could probably add the following, but we don't have test programs yet.
 	 | otherwise
