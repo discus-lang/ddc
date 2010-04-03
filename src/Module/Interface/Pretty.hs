@@ -41,11 +41,12 @@ instance Docable Interface Str where
 	[ DNode "ddc-version" 			$ doc $ ppr $ Config.version
 	, DNode "module"			$ doc $ intModuleId int
 	, dNodeIfElems "imported-modules"	$ intImportedModules int
-	, dNodeIfElems "data-types" 		$ intData int
-	, dNodeIfElems "regions" 		$ intRegion int
-	, dNodeIfElems "effects"		$ intEffect int
-	, dNodeIfElems "classes"		$ intClass  int
-	, dNodeIfElems "binds"			$ intBind   int
+	, dNodeIfElems "data-types" 		$ intData      int
+	, dNodeIfElems "regions" 		$ intRegion    int
+	, dNodeIfElems "effects"		$ intEffect    int
+	, dNodeIfElems "classes"		$ intClass     int
+	, dNodeIfElems "class-dicts"		$ intClassDecl int
+	, dNodeIfElems "binds"			$ intBind       int
 	]
 
 
@@ -87,8 +88,24 @@ instance Docable IntClass Str where
  doc def
 	= DNode (varName $ intClassName def)
 	$ DList
-	[ DNode "class"		(doc $ intClassSuper def) ]
+	[ DNode "super"		(doc $ intClassSuper def) ]
 	
+	
+instance Docable IntClassDecl Str where
+ doc def
+	= DNode (varName $ intClassDeclName def)
+	$ DList
+	[ dNodeIfElems "params"
+		[ DNode (varName v) (doc k)
+			| (v, k) <- intClassDeclTyVars def ]
+
+	, dNodeIfElems "members"
+		$ map docMember $ Map.toList $ intClassDeclMembers def]
+
+ 	where
+	 docMember (v, t)
+		= DNode (varName v) $ DList [ DNode "type" (doc t) ]
+
 	
 instance Docable IntBind Str where
  doc def

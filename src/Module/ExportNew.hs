@@ -19,9 +19,11 @@ import qualified Data.Map	as Map
 
 stage	= "Module.ExportNew"
 
+
 -- | Construct a module interface from all this stuff.
 --	Various pieces of information come from different analyses and stages in the compiler, 
 --	and we collect it all together here to make it easier to write out the interface file.
+--	Nothing should go into the `Interface` that doesn't need to be in the interface file.
 --	The actual pretty printing happens in Module.Interface.Pretty.
 --	
 makeInterface
@@ -64,11 +66,8 @@ makeInterface
 		$ C.globClass coreGlob
 		
 	, intClassDecl	
-		= Map.empty
-
-{-		= Map.map getIntClassDeclOfCorePClassDict
-		$ C.globClass coreGlob
--}	
+		= Map.map getIntClassDeclOfCorePClassDict
+		$ C.globClassDict coreGlob	
 	
 	, intClassInst		= Map.empty
 	, intProjDict		= Map.empty
@@ -131,14 +130,17 @@ getIntClassOfCorePClass pp@C.PClass{}
 	, intClassSourcePos	= undefined
 	, intClassSuper		= C.topClassSuper pp }
 
-{-
-getIntClassDeclOfCorePClassDict
-	:: C.Top
-	-> IntClassDecl
+
+-- | Convert a core `PClassDict` into a `ClassDecl`.
+getIntClassDeclOfCorePClassDict :: C.Top -> IntClassDecl
+getIntClassDeclOfCorePClassDict pp@C.PClassDict{}
+	= IntClassDecl
 	{ intClassDeclName	= C.topClassDictName pp
-	, intClassSourcePos	= undefined
-	, 
--}
+	, intClassDeclSourcePos	= undefined
+	, intClassDeclTyVars	= C.topClassDictParams pp
+	, intClassDeclMembers	= Map.fromList $ C.topClassDictTypes pp}
+
+
 -- | Convert a core `PBind` into an `IntBind`
 getIntBindOfCorePBind 
 	:: C.Glob 		-- ^ The core glob.
