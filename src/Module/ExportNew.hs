@@ -7,13 +7,15 @@ import Module.Scrape
 import Type.Exp
 import Type.Util.Kind
 import DDC.Var	
+import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
 import Data.Maybe
 import Data.Set			(Set)
 import Data.Map			(Map)
-import qualified Core.Glob	as C
+import qualified Desugar.Exp	as D
 import qualified Core.Exp	as C
+import qualified Core.Glob	as C
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
@@ -32,7 +34,8 @@ makeInterface
 				--	This will include vars of bindings created during lambda lifting.
 	-> Map Var Var		-- ^ Map of value to type vars.
 	-> Map Var Type		-- ^ Map of type vars to inferred source types.
-	-> C.Glob
+	-> [D.Top SourcePos]	-- ^ Desugared program tree.
+	-> C.Glob		-- ^ Core program glob.
 	-> Interface
 	
 makeInterface
@@ -40,6 +43,7 @@ makeInterface
 	vsNoExport
 	mapValueToTypeVars
 	sourceTypeTable
+	desugaredTree
 	coreGlob
 
 	= Interface
@@ -73,7 +77,12 @@ makeInterface
 		= Map.map getIntClassInstOfCorePClassInst
 		$ C.globClassInst coreGlob
 
-	, intProjDict		= Map.empty
+{-	, intProjDict		
+		= map getIntProjDictOfDesugaredPProjDict
+		$ [D.PProjDict{}	<- desugaredTree ]
+-}
+	, intProjDict 		= Map.empty
+
 	, intInfix		= Map.empty
 
 	-- Only export bindings that aren't in the vsNoExport set.
@@ -159,6 +168,19 @@ getIntClassInstOfCorePClassInst pp@C.PClassInst{}
 		= case x of
 			C.XVar v t	-> v
 			_		-> panic stage $ "PClassInst should only contain variables"
+
+
+-- | Convert a desugared `PProjDict` into an `IntProjDict`.
+--	Projection dictionaries get desugared out before reaching 
+--	the core program, so we have to get this info from the
+--	desugared tree.
+--	
+{-
+getIntProjDictOfDesugaredPProjDict :: D.Top -> IntProjDict
+getIntProjDictOfDesugaredPProjDict pp@D.PProjDict{}
+	= IntProjDict
+	{ intProjDictTypeCtor	= 
+-}
 
 -- | Convert a core `PBind` into an `IntBind`
 getIntBindOfCorePBind 

@@ -272,7 +272,7 @@ compileFile_parse
 			
 	-- Snip down dictionaries and add default projections -----------------
 	outVerb $ ppr $ "  * Desugar: Project\n"
-	(dProject, projTable)	
+	(dProg_project, projTable)	
 		<- SD.desugarProject "SP" modName hElab sProjectEta
 
 
@@ -285,7 +285,7 @@ compileFile_parse
 	 , vsTypesPlease
 	 , vsBoundTopLevel)
 			<- SD.desugarSlurpConstraints
-				dProject
+				dProg_project
 				hElab
 
 	let hTagged	= map (D.transformN (\n -> Nothing)) hElab
@@ -469,7 +469,7 @@ compileFile_parse
 	diInterface	<- M.makeInterface
 				modName
 				sRenamed
-				dProject
+				dProg_project
 				(C.treeOfGlob cgProg_final)
 				mapValueToTypeVars
 				typeTable
@@ -488,6 +488,7 @@ compileFile_parse
 				vsNoExport
 				mapValueToTypeVars
 				typeTable
+				dProg_project
 				cgProg_final
 
 	-- put blank lines after these sections,
