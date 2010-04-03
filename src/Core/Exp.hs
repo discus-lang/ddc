@@ -76,7 +76,7 @@ data Top
 	| PClassInst
 		{ topClassInstName	:: Var
 		, topClassInstArgs	:: [Type]
-		, topClassInstMethods	:: [(Var, Exp)] }
+		, topClassInstMembers	:: [(Var, Exp)] }
 
 	-- | A top-level binding.
 	| PBind

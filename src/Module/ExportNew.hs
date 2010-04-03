@@ -69,7 +69,10 @@ makeInterface
 		= Map.map getIntClassDeclOfCorePClassDict
 		$ C.globClassDict coreGlob	
 	
-	, intClassInst		= Map.empty
+	, intClassInst		
+		= Map.map getIntClassInstOfCorePClassInst
+		$ C.globClassInst coreGlob
+
 	, intProjDict		= Map.empty
 	, intInfix		= Map.empty
 
@@ -131,7 +134,7 @@ getIntClassOfCorePClass pp@C.PClass{}
 	, intClassSuper		= C.topClassSuper pp }
 
 
--- | Convert a core `PClassDict` into a `ClassDecl`.
+-- | Convert a core `PClassDict` into a `IntClassDecl`.
 getIntClassDeclOfCorePClassDict :: C.Top -> IntClassDecl
 getIntClassDeclOfCorePClassDict pp@C.PClassDict{}
 	= IntClassDecl
@@ -140,6 +143,22 @@ getIntClassDeclOfCorePClassDict pp@C.PClassDict{}
 	, intClassDeclTyVars	= C.topClassDictParams pp
 	, intClassDeclMembers	= Map.fromList $ C.topClassDictTypes pp}
 
+
+-- | Convert a core `PClassInst` to a `IntClassInst`.
+getIntClassInstOfCorePClassInst pp@C.PClassInst{}
+	= IntClassInst
+	{ intClassInstName	= C.topClassInstName pp
+	, intClassInstSourcePos	= undefined
+	, intClassInstArgs	= C.topClassInstArgs pp
+	, intClassInstMembers	
+		= Map.map takeMemberVar 
+		$ Map.fromList 
+		$ C.topClassInstMembers pp
+	}
+	where takeMemberVar x
+		= case x of
+			C.XVar v t	-> v
+			_		-> panic stage $ "PClassInst should only contain variables"
 
 -- | Convert a core `PBind` into an `IntBind`
 getIntBindOfCorePBind 

@@ -45,8 +45,9 @@ instance Docable Interface Str where
 	, dNodeIfElems "regions" 		$ intRegion    int
 	, dNodeIfElems "effects"		$ intEffect    int
 	, dNodeIfElems "classes"		$ intClass     int
-	, dNodeIfElems "class-dicts"		$ intClassDecl int
-	, dNodeIfElems "binds"			$ intBind       int
+	, dNodeIfElems "class-decls"		$ intClassDecl int
+	, dNodeIfElems "class-insts"		$ intClassInst int
+	, dNodeIfElems "binds"			$ intBind      int
 	]
 
 
@@ -106,6 +107,16 @@ instance Docable IntClassDecl Str where
 	 docMember (v, t)
 		= DNode (varName v) $ DList [ DNode "type" (doc t) ]
 
+
+instance Docable IntClassInst Str where
+ doc def
+	= DNode (varName $ intClassInstName def)
+	$ DList
+	[ dNodeIfElems "args"		$ intClassInstArgs def
+	, dNodeIfElems "members"	
+		[ DNode (varName v) (doc vInst)
+			| (v, vInst)	<- Map.toList $ intClassInstMembers def ]
+	]
 	
 instance Docable IntBind Str where
  doc def

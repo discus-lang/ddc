@@ -124,7 +124,7 @@ data IntClassInst
 	= IntClassInst
 	{ intClassInstName	:: Var			-- ^ Class name    (eg Show)
 	, intClassInstSourcePos	:: SourcePos		-- ^ Where the instance declaration is
-	, intClassInstType	:: [Type]		-- ^ Instance type (eg Int)
+	, intClassInstArgs	:: [Type]		-- ^ Instance type (eg Int)
 	, intClassInstMembers	:: Map Var Var }	-- ^ Maps class member name to the binding
 	deriving Show					--	that implements it.
 
