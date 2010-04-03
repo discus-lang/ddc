@@ -8,6 +8,7 @@ import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
 import Type.Exp
+import Type.Util.Kind
 import DDC.Main.Error
 import DDC.Main.Pretty		
 import DDC.Var
@@ -64,9 +65,13 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 	("region " % v) % ";\n"
 
 	-- types
-	PTypeKind nn v k
-	 -> annot nn 
-	 	("type" <> v <> "::" <> k % ";\n\n")
+	PKindSig nn v k
+	 | resultKind k == kValue	
+	 -> annot nn ("data" <> v <> "::" <> k % ";\n\n")
+
+	 | otherwise	
+	 -> annot nn ("type" <> v <> "::" <> k % ";\n\n")
+	 
 
 	PTypeSynonym nn v t
 	 -> annot nn 

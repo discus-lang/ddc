@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-missing-fields #-}
 -- | Slurp out type constraints from the desugared IR.
 
 module Desugar.Slurp.Slurp

@@ -88,8 +88,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 		returnJ	$ D.PExternData sp name var' k
 
 	-- types
-	S.PTypeKind sp v k
-	 -> returnJ $ D.PTypeKind sp v k
+	S.PKindSig sp v k
+	 -> returnJ $ D.PKindSig sp v k
 
 	S.PTypeSynonym sp v t
 	 -> returnJ	$ D.PTypeSynonym sp v t

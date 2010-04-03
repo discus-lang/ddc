@@ -320,11 +320,11 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                         x1' <- transZM table x1
                         x2' <- transZM table x2
                         return (PTypeSynonym x0' x1' x2')
-                PTypeKind x0 x1 x2
+                PKindSig x0 x1 x2
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1
                         x2' <- transZM table x2
-                        return (PTypeKind x0' x1' x2')
+                        return (PKindSig x0' x1' x2')
                 PData x0 x1 x2 x3
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

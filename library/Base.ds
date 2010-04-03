@@ -1,24 +1,17 @@
 {-# OPTIONS -no-implicit-prelude #-}
 -- Key, wired in things
---	The compiler assumes that all this stuff is in this module.
+--	The compiler requires that all this stuff is in this module.
 --	Don't change it or move it somewhere else unless you know what you're doing.
-
+--
 module Base
 
--- Wordsize Config --------------------------------------------------------------------------------
--- | An unsigned word big enough to hold the offset from
---	the start of the store to the last byte in it.
---	This can be used as size_t when interfacing with C functions.
-
--- these should really be type synonyms, but for now the rewrite is hacked 
---	together by VarPrim.defaultTypeVar 
-
--- Abstract operational types.
+-- Abstract operational types ---------------------------------------------------------------------
 data	Obj
 data	Data
 data	Thunk
 
--- Unboxed Data types ------------------------------------------------------------------------------
+
+-- Unboxed Data types -----------------------------------------------------------------------------
 --	Single elements of unboxed type are passed by value, so they
 --	don't need region annotations.
 --
@@ -57,46 +50,49 @@ foreign import data "Char32"  Char32#
 data	Unit	
 	= Unit
 
--- | The runtime system assumes that False is first in the list of
---	constructors, don't swap them around.
+-- | The runtime system requires that False is first in this list
+--	of constructors, so it has a tag of 0. Don't swap them around.
 data Bool %r1
 	= False
 	| True
 
 -- unsigned words
-data 	Word64	%r
-data	Word32	%r
-data	Word16	%r
-data 	Word8	%r
+data 	Word64		:: % -> *
+data	Word32		:: % -> *
+data	Word16		:: % -> *
+data 	Word8		:: % -> *
 
 -- signed integers
-data	Int64	%r
-data	Int32	%r
-data	Int16	%r
-data	Int8	%r
+data	Int64		:: % -> *
+data	Int32		:: % -> *
+data	Int16		:: % -> *
+data	Int8		:: % -> *
 
 -- floating point numbers
-data	Float64 %r
-data	Float32 %r
+data	Float64		:: % -> *
+data	Float32		:: % -> *
 
 -- boxed characters
-data	Char32	%r
+data	Char32		:: % -> *
 
 -- boxed strings
 -- are defined in Data.String
 data 	Ref %r1 a
 	= Ref { x :: a }
 
--- Region Classes ----------------------------------------------------------------------------------
+
+-- Region Classes ---------------------------------------------------------------------------------
 class	Const		:: % -> +
 class	Mutable		:: % -> +
 class	Lazy		:: % -> +
 class	Direct		:: % -> +
 
--- Effect Classes ----------------------------------------------------------------------------------
+
+-- Effect Classes ---------------------------------------------------------------------------------
 class	Pure		:: ! -> +
 
--- Value Type Classes ------------------------------------------------------------------------------
+
+-- Value Type Classes -----------------------------------------------------------------------------
 class	ConstT		:: * -> +
 class	MutableT	:: * -> +
 class	DirectT		:: * -> +
@@ -111,7 +107,7 @@ class	Shape5		:: * -> * -> * -> * -> * -> +
 class	Shape6		:: * -> * -> * -> * -> * -> * -> +
 
 
--- Effects -----------------------------------------------------------------------------------------
+-- Effects ----------------------------------------------------------------------------------------
 effect	!Sync		:: !		-- Total synchronisation.
 
 effect	!Read		:: % -> !	-- Read of some region.
@@ -122,8 +118,7 @@ effect	!Write		:: % -> !	-- Write to some region.
 effect	!WriteT		:: * -> !	-- Write to whole object.
 
 
--- Strings -----------------------------------------------------------------------------------------
-
+-- Strings ----------------------------------------------------------------------------------------
 -- unboxed strings are pointers to null-terminated blocks of utf8 characters. 
 --	These blocks can be updated, so we give the string a region.
 foreign import data "String"  String# :: % -> *
@@ -142,11 +137,11 @@ data	String %r1
 	= SChunk (FlatString %r1)
 	| SAppend (String %r1) (String %r1)
 
--- Exceptions --------------------------------------------------------------------------------------
 
+-- Exceptions -------------------------------------------------------------------------------------
 -- The Exception type carries information about what caused a particular exception.
---	All modules need to be able to create an exception,
---	but we leave the exception handling stuff in Control.Exception
+--	All modules need to be able to create an exception, but we leave the
+--	code for the top-level exeption handler in Control.Exception
 --
 data Exception
 
@@ -167,22 +162,20 @@ data Exception
 		Int		-- column number
 
 	-- | thrown when an array is accessed out of bounds:
-	--	DANGER: runtime/Prim/Array.c makes assumptions
-	--		about this constructor's type.
+	--   runtime/Prim/Array.c requires this constructor to have this specific type.
 	| ExceptionArrayBounds
 		Int		-- the actual size of the array
 		Int		-- the requested index
 
 
--- Projection Functions ----------------------------------------------------------------------------
--- primProj*
---	These functions are used by the desugarer to make default data projections.
+-- Projection Functions ---------------------------------------------------------------------------
+-- These functions are used by the desugarer to make default data projections.
 --
---	As they stand they are certainly not typesafe, and they must be passed a
---	forced object (ie, not a suspension).
+-- As they stand they are certainly not typesafe, and they must be passed a
+-- forced object (ie, not a suspension).
 --
---	The desugarer adds the required type sig and forcing constructs to ensure
---	that the resulting projection functions are sound.
+-- The desugarer adds the required type sig and forcing constructs to ensure
+-- that the resulting projection functions are sound.
 --
 foreign import "primProjField"
  primProjField	
@@ -197,50 +190,43 @@ foreign import "primProjFieldR"
 	.  a -> Int32# -(!e1)> b
 	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj
+	
 
------
--- BUGS: dodgy conversion of Int32# to Word32#
-
+-- BUGS: dodgy conversion of Int32# to Word32# here
 foreign import "_allocDataM"
  primAlloc_dataM
  	:: forall a 
-	.  Int32# -> Int32# -> Int32# -> a			-- tag, ptrCount, dataSize (in bytes).
+	.  Int32# -> Int32# -> Int32# -> a	-- tag, ptrCount, dataSize (in bytes).
 	:$ Word32# -> Word32# -> Word32# -> Data
 
------
--- primAlloc_unsafe_dataR
---	Allocate an object on the heap to contain raw (unboxed) data.
---	Data size /must/ be a multiple of 4 bytes.
 
 foreign import "_allocDataR"
  primAlloc_dataR
  	:: forall a
-	.  Int32# -> Int32# -> a				-- tag, dataSize (in bytes).
+	.  Int32# -> Int32# -> a		-- tag, dataSize (in bytes).
 	:$ Word32# -> Word32# -> Data
 
------
 foreign import "primInt32U_read"
  primInt32U_read
  	:: forall a 
-	.  a -> Int32# -> Int32#				-- obj, offset (in bytes), result.
+	.  a -> Int32# -> Int32#		-- obj, offset (in bytes), result.
 	:$ Data -> Int32# -> Int32#
 	
 foreign import "primInt32U_write"
  primInt32U_write
  	:: forall a
-	.  a -> Int32# -> Int32# -> Void#			-- obj, offset (in bytes), data.
+	.  a -> Int32# -> Int32# -> Void#	-- obj, offset (in bytes), data.
 	:$ Data -> Int32# -> Int32# -> Void#
 
------
 foreign import "primFloat32U_read"
  primFloat32U_read
  	:: forall a
-	.  a -> Int32# -> Float32#				-- obj, offset (in bytes), result.
+	.  a -> Int32# -> Float32#		-- obj, offset (in bytes), result.
 	:$ Data -> Int32# -> Float32#
 	
 foreign import "primFloat32U_write"
  primFloat32U_write
  	:: forall a
-	.  a -> Int32# -> Float32# -> Void#			-- obj, offset (in bytes), data.
+	.  a -> Int32# -> Float32# -> Void#	-- obj, offset (in bytes), data.
 	:$ Data -> Int32# -> Float32# -> Void#
 

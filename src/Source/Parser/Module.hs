@@ -257,7 +257,7 @@ pTopTypePlus2 startPos var
  =	do	-- :: TYPE
 		pTok	K.HasType
 		kind	<- pKind
-		return	$ PTypeKind startPos var kind
+		return	$ PKindSig startPos var kind
 
  <|>	do	-- = TYPE
 		pTok	K.Equals
@@ -292,17 +292,24 @@ pTopRegion
 -- | Parse a data type definition.
 pTopData :: Parser (Top SP)
 pTopData
- =
- 	-- data TYPE = CTOR | ..
+ = 	-- data TYPE = CTOR | ..
   	do	tok	<- pTok	K.Data
 		con	<- pOfSpace NameType pCon
-		vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
+		pTopData2 tok con
+
+pTopData2 tok con 
+ = 	do	pTok	K.HasType
+		kind	<- pKind
+		return	$ PKindSig (spTP tok) con kind
+		
+ <|>	do	vars	<- liftM (map (vNameDefaultN NameType)) $ Parsec.many pVar
 
 		ctors	<- 	do	pTok K.Equals
 					Parsec.sepBy1 pTopDataCtor (pTok K.Bar)
 				<|>	return []
 
 		return	$ PData (spTP tok) con vars ctors
+
 
 pTopDataCtor :: Parser (Var, [DataField (Exp SP) Type])
 pTopDataCtor

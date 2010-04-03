@@ -123,10 +123,10 @@ instance Lint (Top SourcePos) where
 	 -> do	vs'	<- lint vs
 		return $ PInfix	sp m i vs'
 		
-	PTypeKind sp v k		
+	PKindSig sp v k		
 	 -> do	v'	<- lint v
 		k'	<- lint k
-		return	$ PTypeKind sp v' k'
+		return	$ PKindSig sp v' k'
 		
 	PTypeSynonym sp v t		
 	 -> do	v'	<- lint v

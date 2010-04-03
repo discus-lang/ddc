@@ -490,10 +490,9 @@ varToTBot v
 	= TBot (kindOfSpace $ varNameSpace v)
 	
 
------
--- addProjDictFunsTree
---	Add default field projections to dictionaries for data types.
---
+-- | Add default field projections to dictionaries for data types.
+--	Abstract data types with no constructors don't have fields,
+--	so don't need default field projections.
 addProjDictFunsTree 
  :: 	Map Var (Top Annot) -> Tree Annot
  -> 	ProjectM (Tree Annot)
@@ -504,12 +503,9 @@ addProjDictFunsTree dataMap tree
 addProjDictFunsP 
 	dataMap 
 	p@(PProjDict sp projType ss)
- | Just (v, k, ts)	<- takeTData projType
- = do
-	-- Lookup the data def for this type.
- 	let (Just (PData _ vData vsData ctors))	
-		= Map.lookup v dataMap
-	
+ | Just (v, k, ts)			<- takeTData projType
+ , Just (PData _ vData vsData ctors)	<- Map.lookup v dataMap
+ = do	
 	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsData
 	let tData	= makeTData vData (makeDataKind vsData) tsData
 	

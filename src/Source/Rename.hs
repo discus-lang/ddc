@@ -108,9 +108,9 @@ instance Rename (Top SourcePos) where
 		return	$ PInfix sp m i vs'
 
 	-- types
-	PTypeKind sp v k
-	 -> do	v'	<- linkV v
-	 	return	$ PTypeKind sp v' k
+	PKindSig sp v k
+	 -> do	v'	<- linkN NameType v
+	 	return	$ PKindSig sp v' k
 
 	PTypeSynonym sp v t
 	 -> withLocalScope 

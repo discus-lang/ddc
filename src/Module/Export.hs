@@ -133,12 +133,19 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	++ "\n"
 
 	++ "-- Data\n"
+	++ (concat [pprStrPlain (D.PKindSig sp
+					(eraseModule vData)
+					k)
+			| D.PKindSig sp vData k
+			<- psDesugared])
+
 	++ (concat [pprStrPlain (D.PData sp 
 					(eraseModule vData) 
 					(map eraseModule vsData)
 					(map eraseModule_ctor ctors))
 			| D.PData sp vData vsData ctors
 			<- psDesugared])
+
 	++ "\n"
 
 	++ "-- Effects\n"

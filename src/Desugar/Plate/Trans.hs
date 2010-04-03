@@ -61,8 +61,7 @@ data TransTable m a1 a2
 	}
 
 	
-
-
+-- | Identity transform, does nothing.
 transTableId 
 	:: (a1 -> (State s) a2) 
 	-> TransTable (State s) a1 a2
@@ -103,9 +102,8 @@ transformW f xx  	= transZ ((transTableId return) { transW = \w -> return $ f w 
 
 transformXM f xx	= transZM ((transTableId return) { transX_leave = \x -> f x }) xx
 
+
 -----------------------
--- Top
---
 instance Monad m => TransM m a1 a2 Top where
  transZM table pp
   = case pp of
@@ -141,11 +139,10 @@ instance Monad m => TransM m a1 a2 Top where
 	 -> do	nn'		<- transN	table nn
 	 	transP table	$ PRegion nn' v
 
-	-- data defs
-	PTypeKind nn v k
+	PKindSig nn v k
 	 -> do	nn'		<- transN 	table nn
 	 	v'		<- transV table v
-		transP table	$ PTypeKind nn' v' k
+		transP table	$ PKindSig nn' v' k
 
 	PTypeSynonym nn v t
 	 -> do	nn'		<- transN 	table nn
@@ -158,10 +155,9 @@ instance Monad m => TransM m a1 a2 Top where
 		ctors'		<- mapM (transZM table) ctors
 		transP table	$ PData nn' v' vs' ctors'
 
-	-- classes
 	PClass nn v k
 	 -> do	nn'		<- transN 	table nn
-	 	transP table		$ PClass nn' v k
+	 	transP table	$ PClass nn' v k
 
 	PClassDict nn v ts cs sigs
 	 -> do	nn'		<- transN	table nn
@@ -179,7 +175,6 @@ instance Monad m => TransM m a1 a2 Top where
 		ts'		<- mapM (transT table) ts
 		transP table	$ PClassInst nn' v ts' cs ss'
 
-	-- projections
 	PProjDict nn t ss
 	 -> do	nn'		<- transN 	table nn
 	 	ss'		<- mapM (transZM table) ss
@@ -199,9 +194,7 @@ instance Monad m => TransM m a1 a2 Top where
 		transP table	$ PBind nn' mV' x'
 
 
------------------------
--- CtorDef
---
+-- CtorDef ----------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 CtorDef where
  transZM table xx
   = case xx of
@@ -212,9 +205,7 @@ instance Monad m => TransM m a1 a2 CtorDef where
 		return		$ CtorDef nn' v' fields'
 		
 
------------------------
--- DataField
---
+-- DataField --------------------------------------------------------------------------------------
 transDataField 
 	:: (Monad m, TransM m a1 a2 Exp)
 	=> TransTable m a1 a2
@@ -237,10 +228,7 @@ transDataField table xx
 		, dInit		= dInit' }
 
 
-
------------------------
--- Exp
---
+-- Exp --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Exp where
  transZM table xx
   = transX table table xx
@@ -340,9 +328,7 @@ followX table xx
 		return	$ XVarInst nn' v'
 		
 
------------------------
--- Proj
---
+-- Proj ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Proj where
  transZM table xx
   = case xx of
@@ -356,10 +342,8 @@ instance Monad m => TransM m a1 a2 Proj where
 	 	v'		<- transV  table v
 		transJ table	$ JFieldR nn' v'
 		
-	
------------------------
--- Stmt
---
+
+-- Stmt -------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Stmt where
  transZM table s
   = transS table table s
@@ -395,12 +379,8 @@ followS table xx
 		x'	<- transZM table x
 		return	$ SBindMonadic nn' w' x'
 				
-				
-		
-	
------------------------
--- Alt
---
+
+-- Alt --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Alt where
  transZM table xx
   = transA table table xx
@@ -418,9 +398,7 @@ followA table xx
 		return		$ AAlt nn' gs' x'
 
 
------------------------
--- Guard
---
+-- Guard ------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Guard where
  transZM table xx
   = case xx of
@@ -436,9 +414,7 @@ instance Monad m => TransM m a1 a2 Guard where
 		return		$ GExp nn' w' x'
 		
 		
------------------------
--- Pat
---
+-- Pat --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Pat where
  transZM table ww
   = case ww of
@@ -477,9 +453,7 @@ instance Monad m => TransM m a1 a2 Pat where
 		transW table	$ WConLabelP nn' v' lps'		 
 	 
 
------------------------
--- Label
---
+-- Label ------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Label where
  transZM table ll
   = case ll of

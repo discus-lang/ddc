@@ -65,13 +65,13 @@ slurpTopNames p
 	PPragma{}			-> []
 	PModule{}			-> []
 
-	PTypeKind	sp v k		
+	PKindSig sp v k		
 	 -> [v { varNameSpace = NameType }]
 
- 	PTypeSynonym 	sp v t		
+ 	PTypeSynonym  sp v t		
 	 -> [v { varNameSpace = NameType }]
 
-	PInfix 		sp im i vs	
+	PInfix sp im i vs	
 	 -> [] 
 	
 	PImportModule{}			-> []

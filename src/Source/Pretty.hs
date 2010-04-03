@@ -42,7 +42,7 @@ instance Pretty (Top a) PMode where
 	 -> "foreign " % f % ";\n\n"
 	
 	-- types
-	PTypeKind sp v k
+	PKindSig sp v k
 	 -> "type" <> v %>> " :: " % k % ";\n"
 
 	PTypeSynonym sp v t

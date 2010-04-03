@@ -46,7 +46,7 @@ data Top a
 
 	-- Types
 	| PTypeSynonym	a Var Type			-- Define a type synonym.
-	| PTypeKind	a Var Kind			-- Define the kind of a type constructor.
+	| PKindSig	a Var Kind			-- Define the kind of a type constructor.
 
 	| PData	a					-- Define an algebraic data type.
 		Var 

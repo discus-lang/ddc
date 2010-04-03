@@ -213,7 +213,7 @@ slurpConstraints ps
 	
 slurpConstraint pp
  = case pp of
- 	PTypeKind sp v k	
+ 	PKindSig sp v k	
  	 -> [Constraint (KSSig sp) v k]
 
 	PClassDict sp v ts context vts

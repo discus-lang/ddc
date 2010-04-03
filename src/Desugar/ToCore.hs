@@ -133,6 +133,9 @@ toCoreP	p
 	D.PRegion _ v 
 	 -> 	return	[ C.PRegion v [] ]
 
+	D.PKindSig _ v k
+	 | T.resultKind k == T.kValue
+	 ->	return	[ C.PData v Map.empty ]
 
 	D.PClass _ v s
 	 -> 	return	[ C.PClass v s]

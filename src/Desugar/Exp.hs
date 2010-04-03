@@ -20,22 +20,50 @@ import DDC.Var
 import Shared.Exp	(DataField)
 
 
-type Tree a	= [Top a]
+-- | A desugared program tree is a list of top level declarations.
+type Tree a	
+	= [Top a]
 
+-- | A top level declaration.
 data Top a
 	= PNil
 
-	-- imports
-	| PImport	a [ModuleId]
-	| PExtern	a Var Type (Maybe Type)
-	| PExternData	a String Var Kind
+	-- | Import modules.
+	| PImport 
+		{ topAnnot		:: a 
+		, topImportModules	:: [ModuleId] }
+		
+	-- | Import an external binding.
+	| PExtern
+		{ topAnnot		:: a
+		, topExternVar		:: Var
+		, topExternType		:: Type
+		, topExternSeaType	:: Maybe Type }
 
-	-- effect / region defs
-	| PEffect	a Var Kind
-	| PRegion	a Var
+	-- | Import an external data type.
+	| PExternData	
+		{ topAnnot		:: a
+		, topExternDataSeaName	:: String
+		, topExternDataVar	:: Var
+		, topExternDataKind	:: Kind }
 
-	-- types
-	| PTypeKind	a Var Kind
+	-- | A top level effect declaration.
+	| PEffect
+		{ topAnnot		:: a
+		, topEffectVar		:: Var
+		, topEffectKind		:: Kind }
+
+	-- | A top level region declaration.
+	| PRegion
+		{ topAnnot		:: a
+		, topRegionVar		:: Var }
+
+	-- | A kind signature.
+	| PKindSig
+		{ topAnnot		:: a
+		, topTypeKindVar	:: Var
+		, topTypeKindKind	:: Kind }
+
 	| PData		a Var [Var]  [CtorDef a]
 	| PTypeSynonym	a Var Type
 
@@ -61,13 +89,16 @@ data Top a
 	| PBind 	a (Maybe Var) (Exp a)
 	deriving (Show, Eq)
 
+
 data CtorDef a
 	= CtorDef a Var [DataField (Exp a) Type]
 	deriving (Show, Eq)
 
+
 data ClassContext 
 	= ClassContext Var [Type]
 	deriving (Show, Eq)
+
 
 data Exp a
 	= XNil
@@ -126,10 +157,12 @@ data Alt a
 	= AAlt 		a [Guard a]	(Exp a)
 	deriving (Show, Eq)
 	
+	
 data Guard a
 	= GCase		a (Pat a)
 	| GExp		a (Pat a)	(Exp a)
 	deriving (Show, Eq)
+
 	
 data Pat a
 	= WConLabel	a Var [(Label a, Var)]
@@ -140,6 +173,7 @@ data Pat a
 	| WAt		a Var (Pat a)
 	| WConLabelP	a Var [(Label a, Pat a)]
 	deriving (Show, Eq)
+
 
 data Label a
 	= LIndex	a Int
