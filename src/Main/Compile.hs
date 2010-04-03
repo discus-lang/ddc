@@ -434,7 +434,8 @@ compileFile_parse
 	-- Perform lambda lifting ---------------------------------------------
 	outVerb $ ppr $ "  * Core: LambdaLift\n"
 	(  cLambdaLift
-	 , vsLambda_new) <- SC.coreLambdaLift
+	 , vsNewLambdaLifted) 
+			<- SC.coreLambdaLift
 				cProg_checked
 				cHeader
 
@@ -460,7 +461,11 @@ compileFile_parse
 
 
 	-- Generate the module interface --------------------------------------
-	outVerb $ ppr $ "  * Make Interface File\n"
+	outVerb $ ppr $ "  * Make interface file\n"
+	
+	-- Don't export types of top level bindings that were created during lambda lifting.
+	let vsNoExport	= vsNewLambdaLifted
+
 	diInterface	<- M.makeInterface
 				modName
 				sRenamed
@@ -468,17 +473,19 @@ compileFile_parse
 				(C.treeOfGlob cgProg_final)
 				mapValueToTypeVars
 				typeTable
-				vsLambda_new
+				vsNoExport
 
 	writeFile (?pathSourceBase ++ ".di") diInterface	
 
 	-- Make the new style module interface.
+	outVerb $ ppr $ "  * Make new style interface file\n"
 	let Just thisScrape	
-			= Map.lookup modName scrapes
+		= Map.lookup modName scrapes
 
 	let diNewInterface	
 	 		= MN.makeInterface
 				thisScrape
+				vsNoExport
 				mapValueToTypeVars
 				typeTable
 				cgProg_final

@@ -89,6 +89,7 @@ instance Docable IntClass Str where
 	$ DList
 	[ DNode "class"		(doc $ intClassSuper def) ]
 	
+	
 instance Docable IntBind Str where
  doc def
 	= DNode (varName $ intBindName def)

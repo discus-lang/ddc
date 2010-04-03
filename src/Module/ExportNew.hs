@@ -7,16 +7,27 @@ import Module.Scrape
 import Type.Exp
 import Type.Util.Kind
 import DDC.Var	
+import DDC.Main.Error
+import DDC.Main.Pretty
+import Data.Maybe
+import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Core.Glob	as C
 import qualified Core.Exp	as C
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
+stage	= "Module.ExportNew"
 
-
+-- | Construct a module interface from all this stuff.
+--	Various pieces of information come from different analyses and stages in the compiler, 
+--	and we collect it all together here to make it easier to write out the interface file.
+--	The actual pretty printing happens in Module.Interface.Pretty.
+--	
 makeInterface
 	:: Scrape
+	-> Set Var		-- ^ Vars of things that that should not be exported.
+				--	This will include vars of bindings created during lambda lifting.
 	-> Map Var Var		-- ^ Map of value to type vars.
 	-> Map Var Type		-- ^ Map of type vars to inferred source types.
 	-> C.Glob
@@ -24,6 +35,7 @@ makeInterface
 	
 makeInterface
 	scrape
+	vsNoExport
 	mapValueToTypeVars
 	sourceTypeTable
 	coreGlob
@@ -56,8 +68,10 @@ makeInterface
 	, intProjDict		= Map.empty
 	, intInfix		= Map.empty
 
+	-- Only export bindings that aren't in the vsNoExport set.
 	, intBind
 	 	= Map.map (getIntBindOfCorePBind coreGlob mapValueToTypeVars sourceTypeTable)
+		$ Map.filterWithKey (\k p -> not $ Set.member k vsNoExport )
 		$ C.globBind coreGlob 
 	}
 	
@@ -114,7 +128,7 @@ getIntClassOfCorePClass pp@C.PClass{}
 
 -- | Convert a core `PBind` into an `IntBind`
 getIntBindOfCorePBind 
-	:: C.Glob 
+	:: C.Glob 		-- ^ The core glob.
 	-> Map Var Var		-- ^ Map of value vars to type vars.
 	-> Map Var Type		-- ^ Table of source types.
 	-> C.Top 
@@ -131,10 +145,17 @@ getIntBindOfCorePBind
 	, intBindSourcePos	= undefined
 	, intBindSeaName	= Nothing
 
+	-- The type table maps type vars to types, 
+	--	so we first have to lookup the type var corresponding
+	--	to the name of the binding.
 	, intBindType		
-		= let Just vT	= Map.lookup (C.topBindName pp) mapValueToTypeVars
-		      Just t	= Map.lookup vT sourceTypeTable
-		  in  t
+		= let 	v	= C.topBindName pp
+		
+			vT	= fromMaybe (panic stage $ "getIntBindOfCoreBind: no type var for " % v)
+				$ Map.lookup v mapValueToTypeVars
+
+			Just t	= Map.lookup vT sourceTypeTable
+		  in	t
 		
 	, intBindSeaType	= undefined }
 		
