@@ -136,8 +136,9 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	++ (concat [pprStrPlain (D.PKindSig sp
 					(eraseModule vData)
 					k)
-			| D.PKindSig sp vData k
-			<- psDesugared])
+			| D.PKindSig sp vData k <- psDesugared
+			, T.resultKind k == T.kValue ])
+
 
 	++ (concat [pprStrPlain (D.PData sp 
 					(eraseModule vData) 
@@ -149,7 +150,9 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	++ "\n"
 
 	++ "-- Effects\n"
-	++ (concat [pprStrPlain p | p@S.PEffect{}		<- ps])
+	++ (concat [pprStrPlain p 
+			| p@(S.PKindSig _ v k)	<- ps
+			, T.resultKind k == T.kEffect ])
 	++ "\n"
 
 	++ "-- Regions\n"

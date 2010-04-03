@@ -143,10 +143,6 @@ instance Lint (Top SourcePos) where
 	 -> do	v'	<- lint v
 		return	$ PRegion sp v'
 	
-	PEffect sp v k	
-	 -> do	v'	<- lint v
-		return	$ PEffect sp v' k
-
 	PClass sp v s			
 	 -> do	v'	<- lint v
 		s'	<- lint s

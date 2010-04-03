@@ -92,7 +92,7 @@ data Super
 	--
 	= SProp			
 
-	-- | ([]) The superkind of some other non-property encoding kind.
+	-- | ([]) The superkind of some non-property encoding kind.
 	--        Example:
 	--	    '5'   has type      'Int'
 	--	    'Int' has kind      '*'

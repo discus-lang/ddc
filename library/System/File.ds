@@ -9,7 +9,7 @@ import Data.Maybe
 foreign import data "FILE" File# :: *
 
 -- The effect of functions that poke the file system
-effect !File	:: !;
+effect !File	:: !
 
 -- The standard streams
 foreign import "stdout" stdout :: Ptr# File#

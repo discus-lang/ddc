@@ -109,7 +109,7 @@ instance Rename (Top SourcePos) where
 
 	-- types
 	PKindSig sp v k
-	 -> do	v'	<- linkN NameType v
+	 -> do	v'	<- linkZ v
 	 	return	$ PKindSig sp v' k
 
 	PTypeSynonym sp v t
@@ -129,10 +129,6 @@ instance Rename (Top SourcePos) where
 	 -> do	v'	<- linkN NameRegion v
 	 	return	$ PRegion sp v'
 	
-	PEffect sp v k
-	 -> do 	v'	<- linkN NameEffect v
-		return	$ PEffect sp v' k
-
 	PStmt	s
 	 -> do	s'	<- rename s
 		return	$ PStmt s'

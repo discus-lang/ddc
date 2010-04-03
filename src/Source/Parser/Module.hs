@@ -275,7 +275,7 @@ pTopEffect
 		con	<- pOfSpace NameEffect pCon
 		pTok	K.HasType
 		kind	<- pKind
-		return	$ PEffect (spTP tok) con kind
+		return	$ PKindSig (spTP tok) con kind
 
 
 -- Region ------------------------------------------------------------------------------------------

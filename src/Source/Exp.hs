@@ -54,7 +54,6 @@ data Top a
 		[(Var, [DataField (Exp a) Type])]
 
 	-- Effects
-	| PEffect a	Var Kind			-- Define the kind of an effect constructor.
 	| PRegion a	Var				-- Introduce a top level region.
 
 	-- Classes

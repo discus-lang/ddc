@@ -331,11 +331,6 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                         x2' <- transZM table x2
                         x3' <- transZM table x3
                         return (PData x0' x1' x2' x3')
-                PEffect x0 x1 x2
-                  -> do x0' <- transN table x0
-                        x1' <- transZM table x1
-                        x2' <- transZM table x2
-                        return (PEffect x0' x1' x2')
                 PRegion x0 x1
                   -> do x0' <- transN table x0
                         x1' <- transZM table x1

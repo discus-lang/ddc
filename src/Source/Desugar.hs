@@ -100,9 +100,6 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
 	 	returnJ	$ D.PData sp v vs ctors'
 	
-	S.PEffect sp v k
-	 ->	returnJ	$ D.PEffect sp v k
-	 
 	S.PRegion sp v
 	 ->	returnJ	$ D.PRegion sp v
 	 

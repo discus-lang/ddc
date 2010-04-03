@@ -51,8 +51,8 @@ slurpKinds
 slurpKinds tree
 	= catMaybes
 	$ map (\p -> case p of
-		PEffect sp v k		-> Just (v, k)
-		PData   sp v vs fs	-> Just (v, makeDataKind vs)
+		PKindSig sp v k		-> Just (v, k)
+		PData    sp v vs fs	-> Just (v, makeDataKind vs)
 		_			-> Nothing)
 	$ tree
 
@@ -62,20 +62,18 @@ slurpKinds tree
 slurpTopNames :: Show a => Top a -> [Var]
 slurpTopNames p
  = case p of
-	PPragma{}			-> []
-	PModule{}			-> []
+	PPragma{}		-> []
+	PModule{}		-> []
+	PInfix sp im i vs	-> [] 
+	PImportModule{}		-> []
+	PExport{}		-> []
 
 	PKindSig sp v k		
-	 -> [v { varNameSpace = NameType }]
+	 | resultKind k == kEffect	-> [v { varNameSpace = NameEffect }]
+	 | otherwise			-> [v { varNameSpace = NameType }]
 
  	PTypeSynonym  sp v t		
 	 -> [v { varNameSpace = NameType }]
-
-	PInfix sp im i vs	
-	 -> [] 
-	
-	PImportModule{}			-> []
-	PExport{}			-> []
 
 	PForeign sp (OImport mS v t mT)
 	 -> [bindSeaName mS v { varNameSpace = NameValue }]	
@@ -87,10 +85,7 @@ slurpTopNames p
 	 -> ( v { varNameSpace = NameType }) 
 	 :  [ c { varNameSpace = NameValue} 
 	 	| (c, fs) <- ctors ]
-	 
-	PEffect	sp v k	
-	 -> [v { varNameSpace = NameEffect }]
-
+	
 	PRegion sp v	
 	 -> [v { varNameSpace = NameRegion }]
 
@@ -100,7 +95,6 @@ slurpTopNames p
 	PStmt (SBindFun sp v pats alts)
 	 -> [v { varNameSpace = NameValue }]
 
-	-- classes		
 	PClass sp v k	
 	 -> [v { varNameSpace = NameClass}]
 
@@ -109,12 +103,8 @@ slurpTopNames p
 	  [ v { varNameSpace = NameValue }
 	 		| v <- catMap fst sigs ]
 		
-	PClassInst{}		
-	 -> []
-		
-	-- projections
-	PProjDict{}
-	 -> []
+	PClassInst{}		-> []
+	PProjDict{}		-> []
 		
 	_	-> panic stage
 		$  "slurpTopNames: no match for " % show p

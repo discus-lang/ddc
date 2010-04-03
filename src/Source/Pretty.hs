@@ -9,6 +9,7 @@ import Source.Exp
 import Source.Horror
 import Type.Pretty
 import Type.Exp
+import Type.Util.Kind
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
@@ -43,7 +44,14 @@ instance Pretty (Top a) PMode where
 	
 	-- types
 	PKindSig sp v k
-	 -> "type" <> v %>> " :: " % k % ";\n"
+	 | resultKind k == kValue
+	 -> "data" 	<> v %>> " :: " % k % ";\n"
+
+	 | resultKind k == kEffect
+	 -> "effect" 	<> v %>> " :: " % k % ";\n"
+	
+	 | otherwise 
+	 -> "type" 	<> v %>> " :: " % k % ";\n"
 
 	PTypeSynonym sp v t
          -> "type" <> v %>> " = " % prettyTS t % ";\n"
@@ -57,8 +65,6 @@ instance Pretty (Top a) PMode where
 		%  "\n\n"
 
 	PRegion _ v	 -> "region " % v % ";\n"
-
-	PEffect _ v k	 -> "effect " % v %>> " :: " % k % ";\n"
 
 	-- Classes
 	PClass _ v k	 -> "class " % v %>> " :: " % k % ";\n"

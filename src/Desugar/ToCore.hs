@@ -135,7 +135,16 @@ toCoreP	p
 
 	D.PKindSig _ v k
 	 | T.resultKind k == T.kValue
-	 ->	return	[ C.PData v Map.empty ]
+	 ->	return	[ C.PData   v Map.empty ]
+	
+	 | T.resultKind k == T.kEffect
+	 ->	return	[ C.PEffect v k ]
+	
+	 -- we could probably add the following, but we don't have test programs yet.
+	 | otherwise
+	 -> panic stage $ unlines
+		[ "toCoreP: Type constructors that to not have a result kind"
+		, "of either * or ! are not supported in the core langauge yet" ]
 
 	D.PClass _ v s
 	 -> 	return	[ C.PClass v s]
