@@ -86,7 +86,7 @@ projectTreeM moduleName headerTree tree
 					<- tree ++ headerTree]
 
 	let classDicts	= Map.fromList
-			$ [(v, p)	| p@(PClassDict _ v ts vts)
+			$ [(v, p)	| p@(PClassDecl _ v ts vts)
 					<- tree ++ headerTree]
 
 	mapM (checkForRedefDataField dataMap) [p | p@(PProjDict{}) <- tree]
@@ -203,7 +203,7 @@ snipInstBind moduleName
 
 -- otherwise lift it out to top level
 snipInstBind moduleName 
-	pDict@(PClassDict _  vClass  tsClass vtsClass)
+	pDict@(PClassDecl _  vClass  tsClass vtsClass)
 	pInst@(PClassInst _  _       tsInst  _)
 	sBind@(SBind sp (Just vInst) _)
  = do
@@ -234,7 +234,7 @@ snipInstBind moduleName
 --	(+) :: forall %r1 . ...
 --
 snipInstBind' moduleName 
-	pDict@(PClassDict _  vClass  tsClass vtsClass)
+	pDict@(PClassDecl _  vClass  tsClass vtsClass)
 	pInst@(PClassInst sp vClass' tsInst  ssInst)
 	sBind@(SBind spBind (Just vInst) xx)
 	vTop

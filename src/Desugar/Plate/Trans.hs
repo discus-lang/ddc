@@ -152,7 +152,7 @@ instance Monad m => TransM m a1 a2 Top where
 	 -> do	nn'		<- transN 	table nn
 	 	transP table	$ PSuperSig nn' v k
 
-	PClassDict nn v ts sigs
+	PClassDecl nn v ts sigs
 	 -> do	nn'		<- transN	table nn
 
 		let (vsSig, tsSig)	= unzip sigs
@@ -160,7 +160,7 @@ instance Monad m => TransM m a1 a2 Top where
 		let sigs'		= zip vsSig tsSig'
 		
 		ts'		<- mapM (transT table) ts
-		transP table	$ PClassDict nn' v ts' sigs'
+		transP table	$ PClassDecl nn' v ts' sigs'
 	 	
 	PClassInst nn v ts ss
 	 -> do	nn'		<- transN	table nn

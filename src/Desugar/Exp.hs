@@ -81,11 +81,11 @@ data Top a
 		, topDataCtors		:: [CtorDef a] }
 
 	-- | Data type class declaration.
-	| PClassDict	
+	| PClassDecl	
 		{ topAnnot		:: a
-		, topClassDictName	:: Var
-		, topClassDictParams	:: [Type]
-		, topClassDictMembers	:: [(Var, Type)] }
+		, topClassDeclName	:: Var
+		, topClassDeclParams	:: [Type]
+		, topClassDeclMembers	:: [(Var, Type)] }
 
 	-- | An instance for a type class.
 	| PClassInst

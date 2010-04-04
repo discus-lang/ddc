@@ -139,7 +139,7 @@ toCoreP	p
 	D.PSuperSig _ v s
 	 -> 	return	[ C.PClass v s]
 
-	D.PClassDict _ v cts sigs
+	D.PClassDecl _ v cts sigs
 	 -> do	let (vs, ts)	= unzip sigs
 	 	let ts'		= map toCoreT ts
 		let sigs'	= zip vs ts'

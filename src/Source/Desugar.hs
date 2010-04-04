@@ -119,7 +119,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	 	let sigs'	= catMap makeSigs sigs
 
-		returnJ		$ D.PClassDict sp vC tsParam sigs'
+		returnJ		$ D.PClassDecl sp vC tsParam sigs'
 
 	-- class instances
 	S.PClassInst sp vC ts _ ss

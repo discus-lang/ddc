@@ -39,7 +39,7 @@ slurpTreeM tree
 	let psSorted	
 		= partitionFsSort
 			[ (=@=) PRegion{}, 	(=@=) PData{}
-			, (=@=) PSuperSig{},	(=@=) PClassDict{}
+			, (=@=) PSuperSig{},	(=@=) PClassDecl{}
 			, (=@=) PImport{},	(=@=) PExtern{}
 			, (=@=) PProjDict{},	(=@=) PClassInst{}
 			, (=@=) PTypeSig{}
@@ -107,7 +107,7 @@ slurpP	(PSuperSig sp v k)
 
 
 -- class dictionaries
-slurpP top@(PClassDict sp vClass tsParam sigs)
+slurpP top@(PClassDecl sp vClass tsParam sigs)
  = do 	
 	-- create a signature from each of the bindings in the class definition
 	-- eg: for something like
@@ -133,7 +133,7 @@ slurpP top@(PClassDict sp vClass tsParam sigs)
 
 	qs <- mapM makeDef sigs
 
-	return	( PClassDict Nothing vClass tsParam sigs
+	return	( PClassDecl Nothing vClass tsParam sigs
 		, qs)
 			
 

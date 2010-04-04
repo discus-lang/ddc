@@ -165,9 +165,9 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 			| p@S.PClass{}		<- ps])
 	++ "\n"
 	
-	++ "-- Class dictionaries\n"
+	++ "-- Class declarations\n"
 	++ (concat [pprStrPlain p 
-			| p@D.PClassDict{} 	<- psDesugared])
+			| p@D.PClassDecl{} 	<- psDesugared])
 	++ "\n"
 
 	++ "-- Class instances\n"
