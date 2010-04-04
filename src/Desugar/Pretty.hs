@@ -92,14 +92,14 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 		% "\n\n")
 		
 	-- data classes
-	PClassDict nn v ts context sigs
+	PClassDict nn v ts sigs
 	 -> annot nn
 	 	("class " % pprVar_unqual v % " " % " " %!% map pprPClassDict_varKind ts % " where\n"
 			% "{\n"
 			%> ("\n\n" %!% map (\(v', sig) -> pprVar_unqual v' % ("\n        :: " %> prettyTS sig 	% ";")) sigs)
 			% "\n}\n")
 
-	PClassInst nn v ts context ss
+	PClassInst nn v ts ss
 	 -> annot nn 
 	 	("instance " % v % " " % " " %!% map prettyTB ts % " where\n"
 			% "{\n"

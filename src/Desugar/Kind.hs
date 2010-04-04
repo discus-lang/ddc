@@ -162,15 +162,15 @@ elabRegionsP pp
 	 -> do	t'	<- elabRegionsT t
 		return	$ PExtern sp v t' ot
 		
-	PClassDict sp v ts context vts
+	PClassDict sp v ts vts
 	 -> do	ts'	<- mapM elabRegionsT ts
 		let (vs, mts)	= unzip vts
 		mts'	<- mapM elabRegionsT mts
-		return	$ PClassDict sp v ts' context (Util.zip vs mts')
+		return	$ PClassDict sp v ts' (Util.zip vs mts')
 		
-	PClassInst sp v ts context ss
+	PClassInst sp v ts ss
 	 -> do	ts'	<- mapM elabRegionsT ts
-		return	$ PClassInst sp v ts' context ss
+		return	$ PClassInst sp v ts' ss
 	
 	PProjDict sp t ss
 	 -> do	t'	<- elabRegionsT t
@@ -220,7 +220,7 @@ slurpConstraint pp
 	 | otherwise
 	 -> [Constraint (KSSig sp) v k]
 
-	PClassDict sp v ts context vts
+	PClassDict sp v ts vts
 	 -> map (\(TVar k v) -> Constraint (KSClass sp) v (defaultKind v k)) ts
 
  	PData sp v vs ctors	

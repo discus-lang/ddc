@@ -108,7 +108,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 ->	returnJ	$ D.PClass sp v s
 
 	-- class dictionaries
- 	S.PClassDict sp vC vks context sigs
+ 	S.PClassDict sp vC vks _ sigs
 	 -> do
 	 	-- convert type param vars into actual types
 		let tsParam	= map (\(v, k) -> TVar k v) vks
@@ -119,10 +119,10 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	 	let sigs'	= catMap makeSigs sigs
 
-		returnJ		$ D.PClassDict sp vC tsParam [] sigs'
+		returnJ		$ D.PClassDict sp vC tsParam sigs'
 
 	-- class instances
-	S.PClassInst sp vC ts context ss
+	S.PClassInst sp vC ts _ ss
 	 -> do	
 		-- merge pattern bindings
 		ss'		<- mapM rewrite ss
@@ -130,13 +130,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 				= mergeBindings ss'
 		mapM_ addError errs
 
-		let context'	= map (\(v, vs) ->
-					D.ClassContext v ts)
-				$ context
-
 		ts_rewrite	<- mapM rewrite ts
-
-	 	returnJ		$ D.PClassInst sp vC ts context' ss_merged
+	 	returnJ		$ D.PClassInst sp vC ts ss_merged
 
 	-- projections
 	S.PProjDict sp t ss

@@ -45,19 +45,15 @@ data Top a
 	| PInfix	a (InfixMode a) Int [Var]
 
 	-- Types
-	| PTypeSynonym	a Var Type			-- Define a type synonym.
+	| PClass  	a Var Super			-- An abstract class.
 	| PKindSig	a Var Kind			-- Define the kind of a type constructor.
 
+	| PTypeSynonym	a Var Type			-- Define a type synonym.
+	| PRegion 	a Var				-- Introduce a top level region.
 	| PData	a					-- Define an algebraic data type.
 		Var 
 		[Var] 
 		[(Var, [DataField (Exp a) Type])]
-
-	-- Effects
-	| PRegion a	Var				-- Introduce a top level region.
-
-	-- Classes
-	| PClass  a	Var Super			-- An abstract class.
 
 	| PClassDict					-- A class dictionary definition.
 		a

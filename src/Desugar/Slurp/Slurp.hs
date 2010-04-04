@@ -107,7 +107,7 @@ slurpP	(PClass	sp v k)
 
 
 -- class dictionaries
-slurpP top@(PClassDict sp vClass tsParam context sigs)
+slurpP top@(PClassDict sp vClass tsParam sigs)
  = do 	
 	-- create a signature from each of the bindings in the class definition
 	-- eg: for something like
@@ -133,12 +133,12 @@ slurpP top@(PClassDict sp vClass tsParam context sigs)
 
 	qs <- mapM makeDef sigs
 
-	return	( PClassDict Nothing vClass tsParam context sigs
+	return	( PClassDict Nothing vClass tsParam sigs
 		, qs)
 			
 
 
-slurpP top@(PClassInst sp v ts context ss)
+slurpP top@(PClassInst sp v ts ss)
  = do	
 	-- All the RHS of the statements are vars, so we don't get any useful constraints back
 	(_, _, _, ss', _)
@@ -146,7 +146,7 @@ slurpP top@(PClassInst sp v ts context ss)
 			$  mapM slurpS ss
 
 
-	return	( PClassInst Nothing v ts context ss'
+	return	( PClassInst Nothing v ts ss'
 		, [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
 
 	

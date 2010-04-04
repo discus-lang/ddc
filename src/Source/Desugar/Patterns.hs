@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-missing-fields #-}
 module Source.Desugar.Patterns
 	( rewritePatVar
 	, rewritePatternsTreeM

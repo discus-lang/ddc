@@ -86,7 +86,7 @@ projectTreeM moduleName headerTree tree
 					<- tree ++ headerTree]
 
 	let classDicts	= Map.fromList
-			$ [(v, p)	| p@(PClassDict _ v ts cs vts)
+			$ [(v, p)	| p@(PClassDict _ v ts vts)
 					<- tree ++ headerTree]
 
 	mapM (checkForRedefDataField dataMap) [p | p@(PProjDict{}) <- tree]
@@ -140,14 +140,14 @@ snipProjDictP moduleName classDicts (PProjDict sp t ss)
 
 -- Snip RHS of bindings in type class instances.
 snipProjDictP moduleName classDicts 
-	pInst@(PClassInst sp vClass ts context ssInst)
+	pInst@(PClassInst sp vClass ts ssInst)
 
 	-- lookup the class definition for this instance
 	| Just pClass	<- Map.lookup vClass classDicts
 	= do	(ss', pss)	<- liftM unzip
 				$  mapM (snipInstBind moduleName pClass pInst) ssInst
 
-		return	$ PClassInst sp vClass ts context (ss')
+		return	$ PClassInst sp vClass ts ss'
 			: concat pss
 	
 	| otherwise
@@ -203,8 +203,8 @@ snipInstBind moduleName
 
 -- otherwise lift it out to top level
 snipInstBind moduleName 
-	pDict@(PClassDict _  vClass  tsClass _       vtsClass)
-	pInst@(PClassInst _  _       tsInst  _       _)
+	pDict@(PClassDict _  vClass  tsClass vtsClass)
+	pInst@(PClassInst _  _       tsInst  _)
 	sBind@(SBind sp (Just vInst) _)
  = do
 	-- create a new top-level variable to use for this binding
@@ -234,8 +234,8 @@ snipInstBind moduleName
 --	(+) :: forall %r1 . ...
 --
 snipInstBind' moduleName 
-	pDict@(PClassDict _  vClass  tsClass ccClass vtsClass)
-	pInst@(PClassInst sp vClass' tsInst  ccInst  ssInst)
+	pDict@(PClassDict _  vClass  tsClass vtsClass)
+	pInst@(PClassInst sp vClass' tsInst  ssInst)
 	sBind@(SBind spBind (Just vInst) xx)
 	vTop
 	tInst
@@ -700,7 +700,7 @@ checkForRedefDataField _ _ = return ()
 
 
 checkForRedefClassInst :: Map String Var -> Top Annot -> ProjectM (Map String Var)
-checkForRedefClassInst map ci@(PClassInst sp v tl@(TApp (TCon tc) _ : _) _ _)
+checkForRedefClassInst map ci@(PClassInst sp v tl@(TApp (TCon tc) _ : _) _)
  = do	let key = varName v ++ " " ++ varName (tyConName tc)
 	case Map.lookup key map of
           Nothing	-> return $ Map.insert key (tyConName tc) map

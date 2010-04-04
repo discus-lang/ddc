@@ -143,7 +143,7 @@ toCoreP	p
 	D.PClass _ v s
 	 -> 	return	[ C.PClass v s]
 
-	D.PClassDict _ v cts context sigs
+	D.PClassDict _ v cts sigs
 	 -> do	let (vs, ts)	= unzip sigs
 	 	let ts'		= map toCoreT ts
 		let sigs'	= zip vs ts'
@@ -154,7 +154,7 @@ toCoreP	p
 		return		$ [C.PClassDict v vks' sigs']
 
 	-- type class instance
-	D.PClassInst _ vClass cts context ss
+	D.PClassInst _ vClass cts ss
 	 -> do
 		-- rewrite all the bindings in this instance
 		-- The right hand side of the bindings must be a var.

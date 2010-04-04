@@ -4,7 +4,6 @@ module Desugar.Exp
 	( Tree
 	, Top		(..)
 	, CtorDef	(..)
-	, ClassContext	(..)
 	, Exp		(..)
 	, Proj		(..)
 	, Stmt		(..)
@@ -24,11 +23,11 @@ import Shared.Exp	(DataField)
 type Tree a	
 	= [Top a]
 
--- | A top level declaration.
+-- | Top level declarations.
 data Top a
 	= PNil
 
-	-- | Import modules.
+	-- | Imported modules.
 	| PImport 
 		{ topAnnot		:: a 
 		, topImportModules	:: [ModuleId] }
@@ -48,7 +47,7 @@ data Top a
 		, topExternDataKind	:: Kind }
 
 	-- | A super signature \/ abstract class constructor.
-	| PClass	
+	| PClass
 		{ topAnnot		:: a
 		, topSuperSigVar	:: Var
 		, topSuperSigSuper	:: Super }
@@ -58,46 +57,61 @@ data Top a
 		{ topAnnot		:: a
 		, topKindSigVar		:: Var
 		, topKindSigKind	:: Kind }
+		
+	-- | Type signature.
+	| PSig	{ topAnnot		:: a
+		, topTypeSigVars	:: [Var]
+		, topTypeSigType	:: Type }
 
-	| PTypeSynonym	a Var Type
+	-- | Type synonym.
+	| PTypeSynonym
+		{ topAnnot		:: a
+		, topTypeSynonymVar	:: Var
+		, topTypeSynonymType	:: Type }
 
-	-- | A top level region declaration.
+	-- | Top level region declaration.
 	| PRegion
 		{ topAnnot		:: a
 		, topRegionVar		:: Var }
 
+	-- | Algebraic data type.
+	| PData
+		{ topAnnot		:: a
+		, topDataName		:: Var
+		, topDataParams		:: [Var]
+		, topDataCtors		:: [CtorDef a] }
 
-	| PData		a Var [Var]  [CtorDef a]
+	-- | Data type class declaration.
+	| PClassDict	
+		{ topAnnot		:: a
+		, topClassDictName	:: Var
+		, topClassDictParams	:: [Type]
+		, topClassDictMembers	:: [(Var, Type)] }
 
-	-- classes
-	| PClassDict	a Var [Type] [ClassContext] [(Var, Type)]
+	-- | An instance for a type class.
+	| PClassInst
+		{ topAnnot		:: a
+		, topClassInstCtor	:: Var
+		, topClassInstArgs	:: [Type]
+		, topClassInstMembers	:: [Stmt a] }
 
-	-- An instance for a type class.
-	| PClassInst	
-		a 			
-		Var 			-- class name
-		[Type] 			-- class arguments
-		[ClassContext] 		-- class context
-		[Stmt a]		-- bindings for this instance
+	-- | Projection dictionary.
+	| PProjDict	
+		{ topAnnot		:: a
+		, topProjDictType	:: Type
+		, topProjDictMembers	:: [Stmt a] }
 
-	-- projection dictionaries
-	| PProjDict	a Type [Stmt a]
-
-	-- sigs
-	| PSig		a [Var] Type
-
-	-- bindings
-	| PBind 	a (Maybe Var) (Exp a)
+	-- | Binding
+	| PBind 
+		{ topAnnot		:: a
+		, topBindVar		:: Maybe Var
+		, topBindExp		:: Exp a }
 	deriving (Show, Eq)
 
 
+-- | A data constructor definiton
 data CtorDef a
 	= CtorDef a Var [DataField (Exp a) Type]
-	deriving (Show, Eq)
-
-
-data ClassContext 
-	= ClassContext Var [Type]
 	deriving (Show, Eq)
 
 
