@@ -25,10 +25,8 @@ type Tree a
 
 -- | Top level declarations.
 data Top a
-	= PNil
-
 	-- | Imported modules.
-	| PImport 
+	= PImport 
 		{ topAnnot		:: a 
 		, topImportModules	:: [ModuleId] }
 		
@@ -111,7 +109,10 @@ data Top a
 
 -- | A data constructor definiton
 data CtorDef a
-	= CtorDef a Var [DataField (Exp a) Type]
+	= CtorDef 
+		{ ctorDefAnnot		:: a
+		, ctorDefName		:: Var
+		, ctorDefFields		:: [DataField (Exp a) Type] }
 	deriving (Show, Eq)
 
 

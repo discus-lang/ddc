@@ -30,8 +30,6 @@ pprVar_unqual var
 instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
  ppr xx
   = case xx of
-  	PNil		-> ppr "@PNil\n"
-
 	PImport nn ms
 	 -> annot nn
 	 	("import {\n"

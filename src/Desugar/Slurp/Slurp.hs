@@ -231,12 +231,7 @@ slurpP (PBind sp mV x)
 	return	( PBind Nothing mV' x'
 		, qs )
 		
-
-slurpP top
- = 	return 	(PNil, [])
 		
-
-
 -- | Make type schemes for constructors.
 --   Slurp out constraints for data field initialisation code.	
 slurpCtorDef

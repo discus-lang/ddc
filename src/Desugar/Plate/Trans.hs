@@ -107,9 +107,6 @@ transformXM f xx	= transZM ((transTableId return) { transX_leave = \x -> f x }) 
 instance Monad m => TransM m a1 a2 Top where
  transZM table pp
   = case pp of
-  	PNil
-	 ->	transP table	$ PNil
-
 	PImport nn ms
 	 -> do 	nn'		<- transN	table nn
 	 	transP table	$ PImport nn' ms

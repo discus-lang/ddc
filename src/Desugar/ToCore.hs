@@ -86,11 +86,7 @@ toCoreP	:: D.Top Annot
 	-> CoreM [C.Top]
 
 toCoreP	p
- = -- trace ("toCoreP " % p) $ 
-   case p of
-	D.PNil
-	 ->	return []
-
+ = case p of
 	D.PExtern _ v tv (Just to)
 	 -> do
 		-- External types may contain monomorphic variables who's names have changed during 
