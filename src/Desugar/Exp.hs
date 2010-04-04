@@ -117,84 +117,160 @@ data CtorDef a
 	deriving (Show, Eq)
 
 
+-- | Expressions.
 data Exp a
 	= XNil
 
-	-- Accepted by the constraint slurper.
-	| XVoid	 	a
-	| XLit 		a LiteralFmt
-	| XVar	 	a Var
-	| XProj		a (Exp a)  (Proj a)		
-	| XProjT	a Type (Proj a)		
-	| XLambda	a Var (Exp a) 
-	| XApp		a (Exp a) (Exp a)
-	| XMatch     	a (Maybe (Exp a)) [Alt a]
-	| XDo       	a [Stmt a]
-	| XIfThenElse	a (Exp a) (Exp a) (Exp a)
+	-- The following constructors are accepted by the constraint slurper --
 
-	-- Produced by the constraint slurper
-	| XLambdaTEC 	a Var (Exp a) Type Effect Closure
+	-- | Void expression.
+	| XVoid	 	
+		{ expAnnot		:: a }
 
-	| XProjTagged	a 
-		Var 		-- the instance variable for the projection function
-				-- 	will be bound to its real type once we work it out
+	-- | Variables.
+	| XVar	{ expVarAnnot		:: a
+		, expVarName		:: Var }
 
-		Closure 	-- closure term of the projection function
-				--	will be bound to the real closure once we work it out
-		(Exp a) 
+	-- | Literal values.
+	| XLit 		
+		{ expAnnot		:: a
+		, expLitValue		:: LiteralFmt }
 
-		(Proj a)
+	-- | Projections.
+	| XProj	
+		{ expAnnot		:: a
+		, expProjExp		:: Exp a
+		, expProjProj		:: Proj a }
 
-	-- Like XProjTagged, but we don't need the expression
-	| XProjTaggedT  a Var Closure (Proj a)
+	-- | Projections with the type for the projection namespace specified.
+	| XProjT
+		{ expAnnot		:: a
+		, expProjType		:: Type 
+		, expProjProj		:: Proj a }
+
+	-- | A lambda expression.
+	| XLambda	
+		{ expAnnot		:: a
+		, expLambdaVar		:: Var
+		, expLambdaExp		:: Exp a }
+
+	-- | Function application.
+	| XApp
+		{ expAnnot		:: a
+		, expAppFunExp		:: Exp a
+		, expAppArgExp		:: Exp a }
+
+	-- | Pattern matching.
+	| XMatch
+		{ expAnnot		:: a
+		, expMatchObject	:: Maybe (Exp a)
+		, expMatchAlts		:: [Alt a] }
+
+	-- | Do expression, some statements to execute.
+	| XDo
+		{ expAnnot		:: a
+		, expDoStmts		:: [Stmt a] }
+
+	-- | if-then-else expression.
+	| XIfThenElse
+		{ expAnnot		:: a
+		, expIfDiscrim		:: Exp a
+		, expIfThen		:: Exp a
+		, expIfElse		:: Exp a }
 
 
-	| XVarInst	a Var				-- An instance of a let bound variable
-							--	We'll need to add TREC applications to this variable
-							--	during Desugar->Core translation.
+	-- The following constructors are produced by the constraint slurper --
+	--	but are not accepted by it.
+
+	-- | Lambda expression tagged with variabes that give the
+	--	type of the argument, and the effect and closure of the body.
+	| XLambdaTEC
+		{ expAnnot		:: a
+		, expLambdaVar		:: Var
+		, expLambdaExp		:: Exp a
+		, expLambdaType		:: Type
+		, expLambdaEffect	:: Effect
+		, expLambdaClosure	:: Closure }
+
+
+	-- | A projection tagged with the type and closure variables of
+	--	the as-yet unknown projection function.
+	| XProjTagged
+		{ expProjAnnot		:: a
+
+		-- | This type variable will be bound to the real type of the 
+		--	projection function once we work out what it is.
+		, expProjInstanceVar	:: Var 
+
+		-- | This closure variable will be bound to the real closure
+		--	of the projection function once we work out what it is.
+		, expProjInstanceClosure :: Closure
+		
+		, expProjExp		:: Exp a
+		, expProjProj		:: Proj a }
+
+
+	-- | Like XProjTagged, but we don't need the expression
+	| XProjTaggedT
+	 	{ expAnnot		:: a
+		, expProjInstanceVar	:: Var
+		, expProjInstanceClosure :: Closure
+		, expProjProj		:: Proj a }
+
+	-- | An instance of a let-bound variable.
+	--	We'll need to add type applications to this variable when
+	--	we convert the program to the core language.
+	| XVarInst
+		{ expAnnot		:: a
+		, expVarInstVar		:: Var }
 
 	deriving (Show, Eq)
 	
-	
+
+-- | Projections.
 data Proj a
 	= JField 	a Var
 	| JFieldR	a Var
 	deriving (Show, Eq)
 	
 
+-- | Statements.
 data Stmt a
-	= SBind 	a (Maybe Var) (Exp a)
-	| SBindMonadic	a (Pat a) (Exp a)
-	| SBindPat	a (Pat a) (Exp a)
+	= SBind 	a (Maybe Var) 	(Exp a)
+	| SBindMonadic	a (Pat a) 	(Exp a)
+	| SBindPat	a (Pat a) 	(Exp a)
 	| SSig		a [Var]	Type
 	deriving (Show, Eq)
 	
-
+	
+-- | Case alternatives.
 data Alt a
 	= AAlt 		a [Guard a]	(Exp a)
 	deriving (Show, Eq)
 	
 	
+-- | Guards for alternatives.
 data Guard a
 	= GCase		a (Pat a)
 	| GExp		a (Pat a)	(Exp a)
 	deriving (Show, Eq)
 
-	
+
+-- | Patterns.
 data Pat a
-	= WConLabel	a Var [(Label a, Var)]
+	= WConLabel	a Var		[(Label a, Var)]
 	| WLit		a LiteralFmt
 
 	-- Eliminated by Desugar.Patterns
 	| WVar		a Var
-	| WAt		a Var (Pat a)
-	| WConLabelP	a Var [(Label a, Pat a)]
+	| WAt		a Var 		(Pat a)
+	| WConLabelP	a Var 		[(Label a, Pat a)]
 	deriving (Show, Eq)
 
 
+-- | Labels for pattern matching.
 data Label a
 	= LIndex	a Int
 	| LVar		a Var
 	deriving (Show, Eq)
-
 
