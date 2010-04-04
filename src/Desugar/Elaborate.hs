@@ -45,9 +45,9 @@ elaborateP pp
 	 -> do	t'	<- elaborateT t
 		return	$ PExtern sp v t' mt
 		
-	PSig a vs t
+	PTypeSig a vs t
 	 -> do	t'	<- elaborateT t
-		return	$ PSig a vs t'
+		return	$ PTypeSig a vs t'
 	
 	_ -> return pp
 

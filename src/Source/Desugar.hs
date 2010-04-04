@@ -105,7 +105,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 
 	-- classes
 	S.PClass sp v s
-	 ->	returnJ	$ D.PClass sp v s
+	 ->	returnJ	$ D.PSuperSig sp v s
 
 	-- class dictionaries
  	S.PClassDict sp vC vks _ sigs
@@ -148,7 +148,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	S.PStmt (S.SSig sp vs t)
 	 -> do	t'	<- rewrite t
 
-	 	returnJ	$ D.PSig sp vs t
+	 	returnJ	$ D.PTypeSig sp vs t
 
   	S.PStmt s
 	 -> do	(D.SBind sp mV x)	<- rewrite s

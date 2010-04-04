@@ -115,7 +115,7 @@ toCoreP	p
 
 		return	[C.PBind v x']
 
-	D.PSig{}	-> return []
+	D.PTypeSig{}	-> return []
 	D.PImport{}	-> return []
 
 
@@ -136,7 +136,7 @@ toCoreP	p
 		[ "toCoreP: Type constructors that to not have a result kind"
 		, "of either * or ! are not supported in the core langauge yet" ]
 
-	D.PClass _ v s
+	D.PSuperSig _ v s
 	 -> 	return	[ C.PClass v s]
 
 	D.PClassDict _ v cts sigs

@@ -3,7 +3,6 @@ module Desugar.Kind
 	( inferKindsTree
 	, Constraint(..)
 	, KindSource(..))
-
 where
 import Desugar.Plate.Trans
 import Desugar.Data
@@ -176,9 +175,9 @@ elabRegionsP pp
 	 -> do	t'	<- elabRegionsT t
 		return	$ PProjDict sp t' ss
 	
-	PSig sp v t
+	PTypeSig sp v t
 	 -> do	t'	<- elabRegionsT t
-		return	$ PSig sp v t'
+		return	$ PTypeSig sp v t'
 			
 	_ ->	return pp
 

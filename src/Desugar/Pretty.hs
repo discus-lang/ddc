@@ -55,7 +55,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			%> ("\n" % "::" % k % ";\n"))
 		
 	-- super sigs
-	PClass nn v k
+	PSuperSig nn v k
 	 -> annot nn
 	 	("class " % v %> " :: " % k) % ";\n"
 
@@ -112,7 +112,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 			%> ("\n\n" %!% ss) % "\n"
 			% "}\n\n")
 
-	PSig nn v t
+	PTypeSig nn v t
 	 -> annot nn
 	 	(v %> ("\n:: " % prettyTS t))	% ";\n\n"
 

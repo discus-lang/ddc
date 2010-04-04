@@ -148,9 +148,9 @@ instance Monad m => TransM m a1 a2 Top where
 		ctors'		<- mapM (transZM table) ctors
 		transP table	$ PData nn' v' vs' ctors'
 
-	PClass nn v k
+	PSuperSig nn v k
 	 -> do	nn'		<- transN 	table nn
-	 	transP table	$ PClass nn' v k
+	 	transP table	$ PSuperSig nn' v k
 
 	PClassDict nn v ts sigs
 	 -> do	nn'		<- transN	table nn
@@ -174,11 +174,11 @@ instance Monad m => TransM m a1 a2 Top where
 		t'		<- transT table t
 		transP table	$ PProjDict nn' t' ss'	
 
-	PSig nn vs t
+	PTypeSig nn vs t
 	 -> do	nn'		<- transN	table nn
 	 	vs'		<- mapM (transV	table) vs
 		t'		<- transT	table t
-		transP table	$ PSig nn' vs' t'
+		transP table	$ PTypeSig nn' vs' t'
 		 
 	PBind nn mV x
 	 -> do	nn'		<- transN  	table nn

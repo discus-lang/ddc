@@ -39,10 +39,10 @@ slurpTreeM tree
 	let psSorted	
 		= partitionFsSort
 			[ (=@=) PRegion{}, 	(=@=) PData{}
-			, (=@=) PClass{},	(=@=) PClassDict{}
+			, (=@=) PSuperSig{},	(=@=) PClassDict{}
 			, (=@=) PImport{},	(=@=) PExtern{}
 			, (=@=) PProjDict{},	(=@=) PClassInst{}
-			, (=@=) PSig{}
+			, (=@=) PTypeSig{}
 			, (=@=) PBind{} ]
 			tree
 
@@ -102,8 +102,8 @@ slurpP	(PRegion sp v)
 slurpP	(PKindSig sp v k)
    =	return	(PKindSig Nothing v k, [])
  
-slurpP	(PClass	sp v k)
- =	return	(PClass Nothing v k, [])
+slurpP	(PSuperSig sp v k)
+ =	return	(PSuperSig Nothing v k, [])
 
 
 -- class dictionaries
@@ -151,16 +151,15 @@ slurpP top@(PClassInst sp v ts ss)
 
 	
 -- type Signatures
-slurpP	(PSig sp vs tSig) 
- = do
-	tVars		<- mapM lbindVtoT vs
+slurpP	(PTypeSig sp vs tSig) 
+ = do	tVars		<- mapM lbindVtoT vs
 
 	let qs	= 
 		[CSig (TSV $ SVSig sp v) tVar tSig
 			| v 	<- vs
 			| tVar	<- tVars ]
 
- 	return	( PSig Nothing vs tSig
+ 	return	( PTypeSig Nothing vs tSig
 		, qs)
 
 

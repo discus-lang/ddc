@@ -254,8 +254,8 @@ snipInstBind' moduleName
 	tInst_fresh	<- freshenCrsEq moduleName tInst_quant
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
-		,  [ PSig  spBind [vTop] tInst_fresh
-		   , PBind spBind (Just vTop)  xx])
+		,  [ PTypeSig spBind [vTop] tInst_fresh
+		   , PBind    spBind (Just vTop)  xx])
 
 -- 
 freshenCrsEq :: ModuleId -> Type -> ProjectM Type
@@ -351,7 +351,7 @@ snipDataField moduleName sp vData vCtor field
 		varR	<- newVarN NameRegion
 				
 		return	( field { dInit = Just $ XVar sp var }
-			, [ PSig  sp [var] (makeTFun (makeTData primTUnit kValue []) 
+			, [ PTypeSig  sp [var] (makeTFun (makeTData primTUnit kValue []) 
 						(dType field) 
 						tPure tEmpty)
 			  , PBind sp (Just var) (XLambda sp varL xInit)])
@@ -433,7 +433,7 @@ snipProjDictS varMap xx
 	  	
 	| SSig  nn vs t		<- xx
 	, Just vs'		<- sequence $ map (\v -> Map.lookup v varMap) vs
-	= ( Just $ PSig  nn vs' t
+	= ( Just $ PTypeSig  nn vs' t
 	  , Nothing )
 
 	| otherwise

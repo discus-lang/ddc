@@ -45,7 +45,7 @@ data Top a
 		, topExternDataKind	:: Kind }
 
 	-- | A super signature \/ abstract class constructor.
-	| PClass
+	| PSuperSig
 		{ topAnnot		:: a
 		, topSuperSigVar	:: Var
 		, topSuperSigSuper	:: Super }
@@ -57,7 +57,8 @@ data Top a
 		, topKindSigKind	:: Kind }
 		
 	-- | Type signature.
-	| PSig	{ topAnnot		:: a
+	| PTypeSig	
+		{ topAnnot		:: a
 		, topTypeSigVars	:: [Var]
 		, topTypeSigType	:: Type }
 
