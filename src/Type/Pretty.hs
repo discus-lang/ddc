@@ -324,26 +324,6 @@ prettyKB kk
 	_		-> ppr kk
 
 	
--- KiCon -------------------------------------------------------------------------------------------
-instance Pretty KiCon PMode where
- ppr con
-  = case con of
-	KiCon v		-> ppr v
-	KiConValue	-> ppr "*"
-	KiConRegion	-> ppr "%"
-	KiConEffect	-> ppr "!"
-	KiConClosure	-> ppr "$"
-	KiConMutable	-> ppr "Mutable"
-	KiConMutableT	-> ppr "MutableT"
-	KiConConst	-> ppr "Const"
-	KiConConstT	-> ppr "ConstT"
-	KiConLazy	-> ppr "Lazy"
-	KiConLazyH	-> ppr "LazyH"
-	KiConDirect	-> ppr "Direct"
-	KiConPure	-> ppr "Pure"
-	KiConEmpty	-> ppr "Empty"
-	
-
 -- InstanceInfo ------------------------------------------------------------------------------------
 instance  (Pretty param PMode)
 	=> Pretty (InstanceInfo param) PMode where

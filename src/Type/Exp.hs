@@ -40,6 +40,7 @@ module Type.Exp
 where
 import Util
 import DDC.Type.ClassId
+import DDC.Type.KiCon
 import DDC.Main.Error
 import DDC.Var
 
@@ -112,47 +113,6 @@ data Kind
 	deriving (Show, Eq)	
 
 
--- | Kind constructors.
---	TODO: 	These aren't used yet
---		We need to replace the ctors in the Kind type with references to these ones.
-data KiCon
-	-- | A Witness Kind Constructor \/ Type Class Constructor defined in the source.
-	--	These aren't interpreted in any special way by the compiler.
-	= KiCon Var
-
-	-- Built-in witness kind constructors ---------------------------------
-	--	These have special meaning to the compiler.	
-
-	-- Each of these base kinds are also their own superkind.
-	-- For example: * :: *  and % :: %
-	| KiConValue			-- ^ The kind of value types.
-	| KiConRegion			-- ^ The kind of region types.
-	| KiConEffect			-- ^ The kind of effect types.
-	| KiConClosure			-- ^ The kind of closure types.
-	
-	-- Mutability of regions.
-	| KiConMutable			-- ^ Mutability for a single region.
-	| KiConMutableT			-- ^ Mutability for all the regions in a type.
-
-	-- Constancy of regions.
-	| KiConConst			-- ^ Constancy for a single region
-	| KiConConstT			-- ^ Constancy for all the regions in a type.
-
-	-- Region might contain thunks.
-	| KiConLazy			-- ^ Thunks for a single region
-	| KiConLazyH			-- ^ Thunks for the primary region of a type.
-
-	-- Region does not contain thunks.
-	| KiConDirect			-- ^ Absence of thunks for a single region.
-		
-	-- | Given effect is pure.
-	| KiConPure
-	
-	-- | Given closure is empty.
-	| KiConEmpty
-	deriving (Show, Eq)
-
-
 -- Short names for commonly used kinds
 kValue		= KCon KiConValue	SBox
 kRegion		= KCon KiConRegion	SBox
@@ -160,13 +120,13 @@ kEffect		= KCon KiConEffect	SBox
 kClosure	= KCon KiConClosure	SBox
 
 kMutable	= KCon KiConMutable	(SFun kRegion  SProp)
-kMutableT	= KCon KiConMutableT	(SFun kValue   SProp)
+kMutableT	= KCon KiConDeepMutable	(SFun kValue   SProp)
 
 kConst		= KCon KiConConst	(SFun kRegion  SProp)
-kConstT		= KCon KiConConstT	(SFun kValue   SProp)
+kConstT		= KCon KiConDeepConst	(SFun kValue   SProp)
 
 kLazy		= KCon KiConLazy	(SFun kRegion  SProp)
-kLazyH		= KCon KiConLazyH	(SFun kValue   SProp)
+kLazyH		= KCon KiConHeadLazy	(SFun kValue   SProp)
 
 kDirect		= KCon KiConDirect	(SFun kRegion  SProp)
 
