@@ -151,6 +151,7 @@ instance Pretty (Foreign a) PMode where
 	OImportUnboxedData name var knd
 	 -> "import data" <> show name <> var <> "::" <> knd
 
+
 -- InfixMode ---------------------------------------------------------------------------------------
 instance Pretty (InfixMode a) PMode where
  ppr mode

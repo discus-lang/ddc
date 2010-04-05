@@ -144,8 +144,8 @@ data IntInfix
 	= IntInfix
 	{ intInfixName		:: Var			-- ^ Infix operator name.
 	, intInfixSourcePos	:: SourcePos		-- ^ Where the infix decl is.
-	, intInfixAssoc		:: S.InfixMode SourcePos -- ^ Associativity of operator.
-	, intInfixPrec		:: Int }		-- ^ Precedence of operator.
+	, intInfixMode		:: S.InfixMode SourcePos -- ^ Associativity of operator.
+	, intInfixPrecedence	:: Int }		-- ^ Precedence of operator.
 	deriving Show
 
 								

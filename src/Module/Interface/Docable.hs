@@ -8,6 +8,8 @@ import DDC.Main.Pretty
 import DDC.Var
 import DDC.Util.Doc
 import Type.Exp
+import Source.Pretty			()
+import Source.Exp			(InfixMode(..))
 import Type.Pretty			(prettyTS)
 import qualified DDC.Config.Version	as Config
 import qualified Data.Map		as Map
@@ -37,6 +39,9 @@ instance Docable Kind Str
 instance Docable Super Str
  where	doc s	= doc $ ppr s
 
+instance Docable (InfixMode a) Str
+ where	doc s	= doc $ ppr s
+
 
 instance Docable Interface Str where
  doc int
@@ -60,11 +65,10 @@ instance Docable Interface Str where
 		then DBlank
 		else DNode "data-class-instances" $ DList nodes
 
-	, dNodeIfElems "projection-dictionaries"		
-		$ intProjDict  int
 
-	, dNodeIfElems "binds"			
-		$ intBind      int
+	, dNodeIfElems "projection-dictionaries"	$ intProjDict  int
+	, dNodeIfElems "infix-declarations"		$ intInfix int
+	, dNodeIfElems "bindings"			$ intBind      int
 	]
 
 
@@ -113,7 +117,7 @@ instance Docable IntClassDecl Str where
  doc def
 	= DNode (varName $ intClassDeclName def)
 	$ DList
-	[ dNodeIfElems "params"
+	[ dNodeIfElems "parameters"
 		[ DNode (varName v) (doc k)
 			| (v, k) <- intClassDeclTyVars def ]
 
@@ -129,7 +133,7 @@ instance Docable IntClassInst Str where
  doc def
 	= DNode "instance"
 	$ DList
-	[ dNodeIfElems "args"		$ intClassInstArgs def
+	[ dNodeIfElems "arguments"	$ intClassInstArgs def
 	, dNodeIfElems "members"	
 		[ DNode (varName v) (doc vInst)
 			| (v, vInst)	<- Map.toList $ intClassInstMembers def ]
@@ -138,13 +142,21 @@ instance Docable IntClassInst Str where
 
 instance Docable IntProjDict Str where
  doc def
-	= DNode "dict"
+	= DNode "dictionary"
 	$ DList
 	[ DNode "type"			(doc $ intProjDictType def) 
 	, dNodeIfElems "members"	
 		[ DNode (varName v) (doc vImpl)
 			| (v, vImpl)	<- Map.toList $ intProjDictMembers def ] 
 	]
+
+
+instance Docable IntInfix Str where
+ doc def
+	= DNode (varName $ intInfixName def)
+	$ DList
+	[ DNode "assoc"			(doc $ intInfixMode def)
+	, DNode "prec"			(doc $ intInfixPrecedence def) ]
 
 	
 instance Docable IntBind Str where

@@ -157,6 +157,8 @@ data Foreign a
 
 
 -- | Infix associativity.
+--   NOTE: This type has only has an `a` because the boilerplate generator
+--	  assumes it does. If we fixed up the generator we could remove it.
 data InfixMode a
 
 	-- Left associative.

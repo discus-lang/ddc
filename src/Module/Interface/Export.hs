@@ -223,11 +223,19 @@ getIntProjOfDesugaredStmt
 -- | Convert a source `PInfix` to an `IntInfix`.
 addSourcePInfixToMap 
 	:: Map Var IntInfix
-	-> S.Top a 
+	-> S.Top SourcePos
 	-> Map Var IntInfix
 
-addSourcePInfixToMap
-	= undefined
+addSourcePInfixToMap m p@(S.PInfix{})
+	= Map.union m 
+	$ Map.fromList
+		[ (v, IntInfix 
+			{ intInfixName		= v
+			, intInfixSourcePos	= undefined
+			, intInfixMode		= S.topInfixMode p
+			, intInfixPrecedence	= S.topInfixPrecedence p })
+
+			| v <- S.topInfixVars p ]
 	
 
 -- | Convert a core `PBind` into an `IntBind`
