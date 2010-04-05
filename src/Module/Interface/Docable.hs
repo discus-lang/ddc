@@ -1,5 +1,6 @@
 
-module Module.Interface.Pretty
+-- | Docable instances for interface files.
+module Module.Interface.Docable
 	()
 where
 import Module.Interface
@@ -10,6 +11,7 @@ import Type.Exp
 import Type.Pretty			(prettyTS)
 import qualified DDC.Config.Version	as Config
 import qualified Data.Map		as Map
+
 
 instance Docable ModuleId Str
  where	doc x	= DLeaf (ppr x)
@@ -35,6 +37,7 @@ instance Docable Kind Str
 instance Docable Super Str
  where	doc s	= doc $ ppr s
 
+
 instance Docable Interface Str where
  doc int
 	= DList
@@ -45,10 +48,23 @@ instance Docable Interface Str where
 	, dNodeIfElems "regions" 		$ intRegion    int
 	, dNodeIfElems "effects"		$ intEffect    int
 	, dNodeIfElems "classes"		$ intClass     int
-	, dNodeIfElems "class-decls"		$ intClassDecl int
-	, dNodeIfElems "class-insts"		$ intClassInst int
-	, dNodeIfElems "proj-dicts"		$ intProjDict  int
-	, dNodeIfElems "binds"			$ intBind      int
+
+	, dNodeIfElems "data-class-declarations"	
+		$ intClassDecl int
+
+	-- data class instances
+	, let nodes	= [DNode (varName vClass) (doc insts)
+				| (vClass, insts)	
+				<- Map.toList		$ intClassInst int ]
+	  in if null nodes
+		then DBlank
+		else DNode "data-class-instances" $ DList nodes
+
+	, dNodeIfElems "projection-dictionaries"		
+		$ intProjDict  int
+
+	, dNodeIfElems "binds"			
+		$ intBind      int
 	]
 
 
@@ -111,7 +127,7 @@ instance Docable IntClassDecl Str where
 
 instance Docable IntClassInst Str where
  doc def
-	= DNode (varName $ intClassInstName def)
+	= DNode "instance"
 	$ DList
 	[ dNodeIfElems "args"		$ intClassInstArgs def
 	, dNodeIfElems "members"	
