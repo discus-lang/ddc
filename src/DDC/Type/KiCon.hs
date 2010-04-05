@@ -9,7 +9,7 @@ import DDC.Main.Pretty
 
 -- | Kind constructors.
 data KiCon
-	-- | A Kind constructor defined in the source program.
+	-- | A kind constructor defined in the source program.
 	--	These aren't interpreted in any special way by the compiler.
 	= KiCon Var
 
