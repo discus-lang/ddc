@@ -8,7 +8,6 @@ module Module.Interface
 	, IntClassDecl	(..)
 	, IntClassInst	(..)
 	, IntProjDict	(..)
-	, IntProj	(..)
 	, IntInfix	(..)
 	, IntBind	(..) )
 where
@@ -19,6 +18,7 @@ import qualified Source.Exp	as S
 import qualified Sea.Exp	as E
 import Data.Map			(Map)
 import Data.Set			(Set)
+import Data.Sequence		(Seq)
 
 
 -- | A module interface.
@@ -28,51 +28,52 @@ import Data.Set			(Set)
 --
 data Interface
 	= Interface
-	{ -- | Id of the modue
+	{ -- | Id of the modue.
 	  intModuleId		:: ModuleId
 		
 	  -- | Other modules imported by this one.
 	, intImportedModules	:: Set ModuleId
 
-	  -- | Data types
+	  -- | Data types.
 	, intData		:: Map Var IntData
 		
-	  -- | Top level region decls
+	  -- | Top level region decls.
 	, intRegion		:: Map Var IntRegion
 
-	  -- | Effect decls
+	  -- | Effect decls.
 	, intEffect		:: Map Var IntEffect
 	
-	  -- | Class decls
+	  -- | Class decls.
 	, intClass		:: Map Var IntClass
 
-	  -- | Type Class Declarations
+	  -- | Type class declarations.
 	, intClassDecl		:: Map Var IntClassDecl
 
-	  -- | Type Class Instances
-	, intClassInst		:: Map Var IntClassInst
+	  -- | Map of type class name -> instances of that type class.
+	, intClassInst		:: Map Var (Seq IntClassInst)
 
-	  -- | Projection Dictionaries
-	, intProjDict		:: Map Var IntProjDict
+	  -- | Map of type constructor name -> projection dicts concerning that outer constructor.
+	, intProjDict		:: Map Var (Seq IntProjDict)
 
-	  -- | Associativity and precedence of infix operators
+	  -- | Associativity and precedence of infix operators.
 	, intInfix		:: Map Var IntInfix
 
-	  -- | Top level value bindings
+	  -- | Top level value bindings.
 	, intBind		:: Map Var IntBind
 	}
 	deriving Show
 
 
--- | Interface to data types
+-- | Interface to data types.
 data IntData
 	= IntData
-	{ intDataName		:: Var			-- ^ Name of data type
-	, intDataSourcePos	:: SourcePos		-- ^ Where the data decl is
-	, intDataCtors		:: Map Var IntDataCtor} -- ^ Types of data constructors
+	{ intDataName		:: Var			-- ^ Name of data type.
+	, intDataSourcePos	:: SourcePos		-- ^ Where the data decl is.
+	, intDataCtors		:: Map Var IntDataCtor} -- ^ Types of data constructors.
 	deriving Show
+
 	
--- | Interface to a data constructor
+-- | Interface to a data constructor.
 data IntDataCtor
 	= IntDataCtor
 	{ intDataCtorName	:: Var			-- ^ Name of ctor.
@@ -82,86 +83,78 @@ data IntDataCtor
 	, intDataCtorFields	:: Map Var Int }	-- ^ Map of field names to indices in the constructor.
 	deriving Show
 
--- | Interface to a top level region
+
+-- | Interface to a top level region.
 data IntRegion
 	= IntRegion
-	{ intRegionName		:: Var			-- ^ Region variable
-	, intRegionSourcePos	:: SourcePos		-- ^ Where the region decl is
+	{ intRegionName		:: Var			-- ^ Region variable.
+	, intRegionSourcePos	:: SourcePos		-- ^ Where the region decl is.
 	, intRegionWitnessKinds :: Map Var Kind }	-- ^ Witness var -> witness kind.
 	deriving Show
 
 
--- | Interface to effect declaration
+-- | Interface to effect declaration.
 data IntEffect
 	= IntEffect
-	{ intEffectName		:: Var			-- ^ Effect constructor
-	, intEffectSourcePos	:: SourcePos		-- ^ Where the effect decl is
-	, intEffectKind		:: Kind	}		-- ^ Kind of effect constructor
+	{ intEffectName		:: Var			-- ^ Effect constructor.
+	, intEffectSourcePos	:: SourcePos		-- ^ Where the effect decl is.
+	, intEffectKind		:: Kind	}		-- ^ Kind of effect constructor.
 	deriving Show
 	
 
--- | Interface to abstract class declaration
+-- | Interface to abstract class declaration.
 data IntClass
 	= IntClass
-	{ intClassName		:: Var			-- ^ Class constructor
-	, intClassSourcePos	:: SourcePos		-- ^ Where the class decl is
-	, intClassSuper		:: Super }		-- ^ Superkind of class constructor
+	{ intClassName		:: Var			-- ^ Class constructor.
+	, intClassSourcePos	:: SourcePos		-- ^ Where the class decl is.
+	, intClassSuper		:: Super }		-- ^ Superkind of class constructor.
 	deriving Show
 	
 
--- | Interface to a type class	
+-- | Interface to a type class.
 data IntClassDecl
 	= IntClassDecl
-	{ intClassDeclName	:: Var			-- ^ Type class name (eg Show)
-	, intClassDeclSourcePos	:: SourcePos		-- ^ Where the type class declaration is
-	, intClassDeclTyVars	:: [(Var, Kind)]	-- ^ Type variables and their kinds
-	, intClassDeclMembers	:: Map Var Type }	-- ^ Types of member functions
+	{ intClassDeclName	:: Var			-- ^ Type class name (eg Show).
+	, intClassDeclSourcePos	:: SourcePos		-- ^ Where the type class declaration is.
+	, intClassDeclTyVars	:: [(Var, Kind)]	-- ^ Type variables and their kinds.
+	, intClassDeclMembers	:: Map Var Type }	-- ^ Types of member functions.
 	deriving Show
 	
 	
--- | Interface to a type class instance
+-- | Interface to a type class instance.
 data IntClassInst
 	= IntClassInst
 	{ intClassInstName	:: Var			-- ^ Class name    (eg Show)
-	, intClassInstSourcePos	:: SourcePos		-- ^ Where the instance declaration is
+	, intClassInstSourcePos	:: SourcePos		-- ^ Where the instance declaration is.
 	, intClassInstArgs	:: [Type]		-- ^ Instance type (eg Int)
 	, intClassInstMembers	:: Map Var Var }	-- ^ Maps class member name to the binding
 	deriving Show					--	that implements it.
 
 
--- | Interface to a projection dictionary
+-- | Interface to a projection dictionary.
 data IntProjDict
 	= IntProjDict
-	{ intProjDictTypeCtor	:: Var			-- ^ Type constructor the projections belong to
-	, intProjTypes		:: Map Var IntProj }	-- ^ Map of projection name to info about it
+	{ intProjDictType	:: Type			-- ^ Type that the projections belong to.
+	, intProjDictMembers	:: Map Var Var }	-- ^ Map of projection name to info about it.
 	deriving Show
 
 
-data IntProj
-	= IntProj
-	{ intProjName		:: Var			-- ^ Name of projection
-	, intProjSourcePos	:: SourcePos		-- ^ Where the projection was defined
-	, intProjType		:: Type			-- ^ Type of projection
-	, intProjImpl		:: Var }		-- ^ Var of binding that implements this projection
-	deriving Show
-
-
--- | Interface to an infix operator
+-- | Interface to an infix operator.
 data IntInfix
 	= IntInfix
-	{ intInfixName		:: Var			-- ^ Infix operator name
-	, intInfixSourcePos	:: SourcePos		-- ^ Where the infix decl is
-	, intInfixAssoc		:: S.InfixMode SourcePos -- ^ Associativity
-	, intInfixPrec		:: Int }		-- ^ Precedence of operator
+	{ intInfixName		:: Var			-- ^ Infix operator name.
+	, intInfixSourcePos	:: SourcePos		-- ^ Where the infix decl is.
+	, intInfixAssoc		:: S.InfixMode SourcePos -- ^ Associativity of operator.
+	, intInfixPrec		:: Int }		-- ^ Precedence of operator.
 	deriving Show
 
 								
--- | Interface to a top level binding
+-- | Interface to a top level binding.
 data IntBind
 	= IntBind
-	{ intBindName		:: Var			-- ^ Name of binding
-	, intBindSourcePos	:: Var			-- ^ Location of binding
+	{ intBindName		:: Var			-- ^ Name of binding.
+	, intBindSourcePos	:: Var			-- ^ Location of binding.
 	, intBindSeaName	:: Maybe String		-- ^ Foreign Sea Name of binding (if any)
-	, intBindType		:: Type 		-- ^ Type of binding
+	, intBindType		:: Type 		-- ^ Type of binding.
 	, intBindSeaType	:: E.Type }		-- ^ Operational type of binding.
 	deriving Show

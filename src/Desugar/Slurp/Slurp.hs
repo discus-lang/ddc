@@ -1,4 +1,5 @@
 {-# OPTIONS -fno-warn-missing-fields #-}
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 -- | Slurp out type constraints from the desugared IR.
 
 module Desugar.Slurp.Slurp
@@ -78,35 +79,42 @@ slurpTreeM tree
 	return	( tree'
 	 	, qsFinal
 		, Set.fromList vsLet)
-
-
+		
+		
+-- Top --------------------------------------------------------------------------------------------
 -- | Slurp out type constraints from a top level thing.
 slurpP 	:: Top Annot1	
 	-> CSlurpM (Top Annot2, [CTree])
 
+slurpP	(PImport sp ms)
+ =	return	( PImport Nothing ms
+		, [])
 
--- external types
 slurpP	(PExtern sp v tv to) 
  = do
 	vT		<- lbindVtoT v
 	let qs	= 
-		[CDef (TSV $ SVSigExtern sp v) vT 	tv]
+		[CDef (TSV $ SVSigExtern sp v) vT tv]
 	
 	return	( PExtern Nothing v tv to
 		, qs)
 
--- region/effect/class definitions
+slurpP 	(p@(PExternData sp seaName v k))
+ = 	return	( PExternData Nothing seaName v k
+		, [])
+
 slurpP	(PRegion sp v)
- =	return 	(PRegion Nothing v, [])
+ =	return 	( PRegion Nothing v
+		, [])
 
 slurpP	(PKindSig sp v k)
-   =	return	(PKindSig Nothing v k, [])
+   =	return	( PKindSig Nothing v k
+		, [])
  
 slurpP	(PSuperSig sp v k)
- =	return	(PSuperSig Nothing v k, [])
+ =	return	( PSuperSig Nothing v k
+		, [])
 
-
--- class dictionaries
 slurpP top@(PClassDecl sp vClass tsParam sigs)
  = do 	
 	-- create a signature from each of the bindings in the class definition
@@ -135,9 +143,7 @@ slurpP top@(PClassDecl sp vClass tsParam sigs)
 
 	return	( PClassDecl Nothing vClass tsParam sigs
 		, qs)
-			
-
-
+		
 slurpP top@(PClassInst sp v ts ss)
  = do	
 	-- All the RHS of the statements are vars, so we don't get any useful constraints back
@@ -149,8 +155,6 @@ slurpP top@(PClassInst sp v ts ss)
 	return	( PClassInst Nothing v ts ss'
 		, [ CClassInst (TSM $ SMClassInst sp v) v ts ] )
 
-	
--- type Signatures
 slurpP	(PTypeSig sp vs tSig) 
  = do	tVars		<- mapM lbindVtoT vs
 
@@ -162,12 +166,9 @@ slurpP	(PTypeSig sp vs tSig)
  	return	( PTypeSig Nothing vs tSig
 		, qs)
 
-
 slurpP x@(PTypeSynonym sp v t)
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
 
-
--- data definitions
 slurpP	(PData sp v vs ctors)
  = do
  	(ctors', constrss)
@@ -177,23 +178,9 @@ slurpP	(PData sp v vs ctors)
 	let top'	= PData Nothing v vs ctors'
 	addDataDef top'
 
-	-- Build a list of all the named fields from all the constructors
-	-- in the object. The constraint solver will need this to work out
-	-- the result type for projections.
-	--
-{-	let dataFields	= CDataFields (TSM $ SMData sp) v vs 
-			$ catMaybes
-			$ map (\df -> case dLabel df of
-					Nothing	-> Nothing
-					Just l	-> Just (l, dType df))
-			$ concat
-			$ [fieldDefs	| CtorDef _ _ fieldDefs <- ctors]
--}			
 	return	( top'
-		, concat constrss ) -- ++ [dataFields])
+		, concat constrss )
 			
-
--- projection dictionaries
 slurpP	(PProjDict sp t ss)
  = do
  	let projVars	= [ (vField, vImpl)
@@ -207,8 +194,6 @@ slurpP	(PProjDict sp t ss)
 	return	( PProjDict Nothing t ss'
 		, [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
 	
-	
--- bindings
 slurpP (PBind sp mV x)
 
  = do
@@ -229,8 +214,9 @@ slurpP (PBind sp mV x)
 	
 	return	( PBind Nothing mV' x'
 		, qs )
+				
 		
-		
+-- CtorDef ----------------------------------------------------------------------------------------
 -- | Make type schemes for constructors.
 --   Slurp out constraints for data field initialisation code.	
 slurpCtorDef
@@ -280,12 +266,11 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 					{ branchBind = BNil
 					, branchSub = concat initConstrss }]
 	
-	-----
-	
 	return	( CtorDef Nothing cName fieldDefs'
 		, constr )
  	
-	
+
+-- DataField --------------------------------------------------------------------------------------	
 slurpDataField 
 	:: SourcePos
 	-> Var 					-- Datatype name.
@@ -356,6 +341,3 @@ freshenType tt
 	let tt'		= subTT_noLoops sub tt
 	return	tt'
 						
-
-
-

@@ -37,7 +37,7 @@ project Vec2 Float where
 
 	-- | normalise a vector
 	normalised :: Vec2 Float -> Vec2 Float
-	normalised v	= v . muls (1.0 / v.magnitude) 
+	normalised v	= v .muls (1.0 / v.magnitude) 
 
 	-- | Multiply a vector by a scalar.
 	muls :: Vec2 Float -> Float -> Vec2 Float

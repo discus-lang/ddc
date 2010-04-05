@@ -11,7 +11,10 @@ module DDC.Util.Doc
 where
 import DDC.Util.Pretty
 import DDC.Util.Container
+import Data.Foldable
 import Data.Set			(Set)
+import Data.Sequence		(Seq)
+import Prelude			hiding (foldr)
 import qualified Data.Set	as Set
 
 
@@ -37,11 +40,15 @@ data Doc str
 class Docable a str | a -> str where
 	doc 	:: a -> Doc str
 
+instance Docable a str => Docable [a] str
+ where	doc xx	= DList $ map doc xx
+
+instance Docable a str => Docable (Seq a) str
+ where	doc xx	= DList $ map doc $ foldr (:) [] xx
+
 instance Docable a str => Docable (Set a) str 
  where	doc x	= DList $ map doc $ Set.toList x
 
-instance Docable a str => Docable [a] str
- where	doc xx	= DList $ map doc xx
 
 
 -- | If this `Container` has elements, 

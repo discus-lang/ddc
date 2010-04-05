@@ -17,9 +17,13 @@ import Type.Exp
 import Type.Util
 import Data.Maybe
 import DDC.Var
+import Control.Monad
 import Data.Map			(Map)
 import Data.Sequence		(Seq, (><))
+import Data.Foldable		(foldr)
+import Prelude			hiding (foldr)
 import qualified Data.Map	as Map
+import qualified Util.Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
 
@@ -36,10 +40,17 @@ data Glob
 	, globExtern		:: Map Var Top
 
 	, globData		:: Map Var Top
-	, globDataCtors		:: Map Var CtorDef	-- ^ all data constuctors from the data decls
+	
+	-- | Map of data constructor name definition,
+	--	for all data constructors from all data types.
+	, globDataCtors		:: Map Var CtorDef
 
+	-- | Data class dictionary declarations.
 	, globClassDict		:: Map Var Top
-	, globClassInst		:: Map Var Top
+		
+	-- | Map of class name -> instances for that class.
+	, globClassInst		:: Map Var (Seq Top)
+
 	, globBind		:: Map Var Top
 	}
 	deriving Show
@@ -78,38 +89,50 @@ insertTopInGlob :: Top -> Glob -> Glob
 insertTopInGlob pp glob
  = case pp of
 	PClass{}	
-	 -> glob { globClass 		= Map.insert (topClassName pp)		pp (globClass glob) }
+	 -> glob { globClass 		
+			= Map.insert (topClassName pp)		pp (globClass glob) }
 
 	PEffect{}	
-	 -> glob { globEffect 		= Map.insert (topEffectName pp)		pp (globEffect glob) }
+	 -> glob { globEffect 		
+			= Map.insert (topEffectName pp)		pp (globEffect glob) }
 
 	PRegion{}	
-	 -> glob { globRegion 		= Map.insert (topRegionName pp)		pp (globRegion glob) }
+	 -> glob { globRegion 		
+			= Map.insert (topRegionName pp)		pp (globRegion glob) }
 	
 	PExternData{}
-	 -> glob { globExternData 	= Map.insert (topExternDataName pp)	pp (globExternData glob) }
+	 -> glob { globExternData 	
+			= Map.insert (topExternDataName pp)	pp (globExternData glob) }
 	
 	PExtern{}	
-	 -> glob { globExtern 		= Map.insert (topExternName pp) 	pp (globExtern glob) }
+	 -> glob { globExtern 		
+			= Map.insert (topExternName pp) 	pp (globExtern glob) }
 
 	PData{}	
-	 -> glob { globData 		= Map.insert (topDataName pp) 		pp (globData glob) }
+	 -> glob { globData 		
+			= Map.insert (topDataName pp) 		pp (globData glob) }
 
 	PClassDict{}	
-	 -> glob { globClassDict	= Map.insert (topClassDictName pp) 	pp (globClassDict glob) }
+	 -> glob { globClassDict	
+			= Map.insert (topClassDictName pp) 	pp (globClassDict glob) }
 
 	PClassInst{}	
-	 -> glob { globClassInst	= Map.insert (topClassInstName pp) 	pp (globClassInst glob) }
+	 -> glob { globClassInst	
+			= Map.adjustWithDefault 
+				(Seq.|> pp) Seq.empty 
+				(topClassInstName pp)
+				(globClassInst glob) }
 
 	PBind{}	
-	 -> glob { globBind		= Map.insert (topBindName pp)	 	pp (globBind glob) }
+	 -> glob { globBind		
+			= Map.insert (topBindName pp)	 	pp (globBind glob) }
 
 
--- | Convert a Glob back to a Tree.
+-- | Convert a `Glob` back to a `Tree`.
 treeOfGlob :: Glob -> Tree
 treeOfGlob glob
- 	=  Map.elems
-	$  Map.unions
+ 	= (Map.elems
+		$ Map.unions
 		[ globClass  		glob 
 		, globEffect		glob
 		, globRegion		glob
@@ -117,11 +140,12 @@ treeOfGlob glob
 		, globExtern		glob
 		, globData		glob
 		, globClassDict		glob
-		, globClassInst		glob
-		, globBind		glob ]
+		, globBind		glob ])
+	++ (foldr (:) [] $ join $ Seq.fromList $ Map.elems $ globClassInst glob)
+	
 
 
--- | Convert a Glob to a sequence of tops
+-- | Convert a `Glob` to a sequence of `Top`s.
 seqOfGlob :: Glob -> Seq Top
 seqOfGlob glob
 	=   seqOfMap (globClass		glob)
@@ -131,7 +155,7 @@ seqOfGlob glob
 	><  seqOfMap (globExtern	glob)
 	><  seqOfMap (globData		glob)
 	><  seqOfMap (globClassDict	glob)
-	><  seqOfMap (globClassInst	glob)
+	><  (join $ Seq.fromList $ Map.elems $ globClassInst glob)
 	><  seqOfMap (globBind		glob)
 	where seqOfMap m = Map.fold (Seq.<|) Seq.empty m
 

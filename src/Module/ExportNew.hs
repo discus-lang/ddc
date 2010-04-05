@@ -6,18 +6,25 @@ import Module.Interface
 import Module.Scrape
 import Type.Exp
 import Type.Util.Kind
+import Type.Util.Bits
 import DDC.Var	
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
+import Control.Monad
 import Data.Maybe
+import Data.Foldable
 import Data.Set			(Set)
 import Data.Map			(Map)
+import Data.Sequence		(Seq)
+import Prelude			hiding (foldl)
 import qualified Desugar.Exp	as D
 import qualified Core.Exp	as C
 import qualified Core.Glob	as C
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
+import qualified Data.Sequence	as Seq
+import qualified Util.Data.Map	as Map
 
 stage	= "Module.ExportNew"
 
@@ -41,8 +48,8 @@ makeInterface
 makeInterface
 	scrape
 	vsNoExport
-	mapValueToTypeVars
-	sourceTypeTable
+	mpValueToTypeVars
+	mpSourceTypes
 	desugaredTree
 	coreGlob
 
@@ -74,24 +81,24 @@ makeInterface
 		$ C.globClassDict coreGlob	
 	
 	, intClassInst		
-		= Map.map getIntClassInstOfCorePClassInst
+		= Map.map (fmap getIntClassInstOfCorePClassInst)
 		$ C.globClassInst coreGlob
 
-{-	, intProjDict		
-		= map getIntProjDictOfDesugaredPProjDict
-		$ [D.PProjDict{}	<- desugaredTree ]
--}
-	, intProjDict 		= Map.empty
+	, intProjDict		
+		= foldl addDesugaredProjDictToMap Map.empty 
+		$ [p	| p@D.PProjDict{}	<- desugaredTree ]
 
 	, intInfix		= Map.empty
 
 	-- Only export bindings that aren't in the vsNoExport set.
 	, intBind
-	 	= Map.map (getIntBindOfCorePBind coreGlob mapValueToTypeVars sourceTypeTable)
+	 	= Map.map (getIntBindOfCorePBind coreGlob 
+				mpValueToTypeVars mpSourceTypes)
 		$ Map.filterWithKey (\k p -> not $ Set.member k vsNoExport )
 		$ C.globBind coreGlob 
 	}
 	
+	 
 	
 -- | Convert a core `PData` to an `IntData`.
 getIntDataOfCoreTop :: C.Top -> IntData
@@ -175,12 +182,38 @@ getIntClassInstOfCorePClassInst pp@C.PClassInst{}
 --	the core program, so we have to get this info from the
 --	desugared tree.
 --	
-{-
-getIntProjDictOfDesugaredPProjDict :: D.Top -> IntProjDict
-getIntProjDictOfDesugaredPProjDict pp@D.PProjDict{}
-	= IntProjDict
-	{ intProjDictTypeCtor	= 
--}
+addDesugaredProjDictToMap 
+	:: Map Var (Seq IntProjDict) 
+	-> D.Top a 
+	-> Map Var (Seq IntProjDict)
+	
+addDesugaredProjDictToMap 
+	mpProjDicts 
+	p@(D.PProjDict _ typ members)
+
+ = let	Just (vType, _, _)	= takeTData typ
+
+	projDict	
+		= IntProjDict
+		{ intProjDictType	= typ
+		, intProjDictMembers	= Map.fromList 
+					$ map getIntProjOfDesugaredStmt 
+					$ members 
+		}
+	
+   in	Map.adjustWithDefault
+		(Seq.|> projDict) Seq.empty
+		vType mpProjDicts
+
+
+getIntProjOfDesugaredStmt 
+	:: D.Stmt a 			-- ^ Desugared stmt
+	-> (Var, Var)
+
+getIntProjOfDesugaredStmt 
+	(D.SBind _ (Just vProj) (D.XVar _ vImpl))
+ = 	(vProj, vImpl)
+
 
 -- | Convert a core `PBind` into an `IntBind`
 getIntBindOfCorePBind 
@@ -214,8 +247,6 @@ getIntBindOfCorePBind
 		  in	t
 		
 	, intBindSeaType	= undefined }
-		
-		
 
 
 

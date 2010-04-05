@@ -47,6 +47,7 @@ instance Docable Interface Str where
 	, dNodeIfElems "classes"		$ intClass     int
 	, dNodeIfElems "class-decls"		$ intClassDecl int
 	, dNodeIfElems "class-insts"		$ intClassInst int
+	, dNodeIfElems "proj-dicts"		$ intProjDict  int
 	, dNodeIfElems "binds"			$ intBind      int
 	]
 
@@ -117,14 +118,22 @@ instance Docable IntClassInst Str where
 		[ DNode (varName v) (doc vInst)
 			| (v, vInst)	<- Map.toList $ intClassInstMembers def ]
 	]
+
+
+instance Docable IntProjDict Str where
+ doc def
+	= DNode "dict"
+	$ DList
+	[ DNode "type"			(doc $ intProjDictType def) 
+	, dNodeIfElems "members"	
+		[ DNode (varName v) (doc vImpl)
+			| (v, vImpl)	<- Map.toList $ intProjDictMembers def ] 
+	]
+
 	
 instance Docable IntBind Str where
  doc def
 	= DNode (varName $ intBindName def)
 	$ DList
 	[ DNode "type"		(doc $ intBindType def) ]
-	
-	
-	
-	
 	
