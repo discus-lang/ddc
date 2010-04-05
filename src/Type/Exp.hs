@@ -265,13 +265,13 @@ data TyCon
 
 	-- A data type constructor.
 	| TyConData
-		{ tyConName	:: !Var
-		, tyConDataKind	:: !Kind }
+		{ tyConName		:: !Var
+		, tyConDataKind		:: !Kind }
 
-	-- Constructs a witness to some type\/region\/effect\/closure class.
-	| TyConClass
-		{ tyConClass	 :: !TyClass
-		, tyConClassKind :: !Kind }
+	-- A witness type constructor.
+	| TyConWitness
+		{ tyConWitness		:: !TyClass
+		, tyConWitnessKind 	:: !Kind }
 
 	deriving (Show, Eq)
 

@@ -172,7 +172,7 @@ reconP p@(PRegion v wits)
 	let	constWits	= foldr f [] wits
 		f (w,k) ws	= if isConst k then w : ws else ws
 
-		isConst (TApp (TCon (TyConClass TyClassConst _)) _)
+		isConst (TApp (TCon (TyConWitness TyClassConst _)) _)
 				= True
 		isConst _	= False
 

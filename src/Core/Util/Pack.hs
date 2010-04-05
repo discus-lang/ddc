@@ -63,7 +63,7 @@ packT1 tt
 	   in	result
 	
 	-- Crush witnesses along the way
-	TApp t1@(TCon (TyConClass tyClass k)) t2
+	TApp t1@(TCon (TyConWitness tyClass k)) t2
 	 -> let t2'	= packT1 t2
 	 	
 		result

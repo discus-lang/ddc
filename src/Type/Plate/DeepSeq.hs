@@ -74,7 +74,7 @@ instance DeepSeq TyCon where
   = case xx of
 	TyConFun 			-> y
 	TyConData 	n k		-> deepSeq n $ deepSeq k y
-	TyConClass 	c k		-> deepSeq c $ deepSeq k y
+	TyConWitness 	c k		-> deepSeq c $ deepSeq k y
 	
 
 instance DeepSeq TyClass where

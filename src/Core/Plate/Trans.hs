@@ -528,11 +528,11 @@ instance Monad m => TransM m TyCon where
 	 -> do	name'	<- followV_free table tyConName
 	 	return	$ tt { tyConName = name' }
 
-	TyConClass { tyConClass = TyClass v }
+	TyConWitness { tyConWitness = TyClass v }
 	 -> do	v'	<- followV_free table v
-	 	return	$ tt { tyConClass = TyClass v }
+	 	return	$ tt { tyConWitness = TyClass v }
 
-	TyConClass {}
+	TyConWitness {}
 	 -> 	return tt
 
 

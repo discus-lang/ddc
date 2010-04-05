@@ -79,9 +79,14 @@ kindOfSpace space
 tyConKind :: TyCon -> Kind
 tyConKind tyCon
  = case tyCon of
-	TyConFun			-> KFun kValue (KFun kValue (KFun kEffect (KFun kClosure kValue)))
-	TyConData { tyConDataKind }	-> tyConDataKind
-	TyConClass { tyConClassKind }	-> tyConClassKind	 
+	TyConFun				
+	 -> KFun kValue (KFun kValue (KFun kEffect (KFun kClosure kValue)))
+
+	TyConData    { tyConDataKind }		
+	 -> tyConDataKind
+
+	TyConWitness { tyConWitnessKind }
+	 -> tyConWitnessKind	 
 
 
 -- Kind Functions ----------------------------------------------------------------------------------
@@ -122,7 +127,7 @@ inventWitnessOfClass (KClass v ts)
  = let 	Just ks	= sequence $ map kindOfType ts
 	kResult	= KClass v (map TIndex $ reverse [0 .. length ks - 1])
 	k	= makeKForall ks kResult
-   in	Just (makeTApp (TCon (TyConClass v k) : ts))
+   in	Just (makeTApp (TCon (TyConWitness v k) : ts))
 
 inventWitnessOfClass k
 	= freakout stage

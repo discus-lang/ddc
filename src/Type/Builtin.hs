@@ -11,20 +11,20 @@ import DDC.Var
 
 -- Witness / Witness Kind constructors
 --	The contstructor is overloaded to be used for both witnesses and witness kinds
-tcConst		= TyConClass TyClassConst	(KForall kRegion (KClass TyClassConst 	 [TIndex 0]))
-tcConstT 	= TyConClass TyClassConstT	(KForall kValue  (KClass TyClassConstT	 [TIndex 0]))
-tcMutable	= TyConClass TyClassMutable	(KForall kRegion (KClass TyClassMutable	 [TIndex 0]))
-tcMutableT	= TyConClass TyClassMutableT	(KForall kValue  (KClass TyClassMutableT [TIndex 0]))
-tcLazy		= TyConClass TyClassLazy	(KForall kRegion (KClass TyClassLazy 	 [TIndex 0]))
-tcLazyH		= TyConClass TyClassLazyH	(KForall kValue	 (KClass TyClassLazyH	 [TIndex 0]))
-tcDirect	= TyConClass TyClassDirect	(KForall kRegion (KClass TyClassDirect	 [TIndex 0]))
+tcConst		= TyConWitness TyClassConst	(KForall kRegion (KClass TyClassConst 	 [TIndex 0]))
+tcConstT 	= TyConWitness TyClassConstT	(KForall kValue  (KClass TyClassConstT	 [TIndex 0]))
+tcMutable	= TyConWitness TyClassMutable	(KForall kRegion (KClass TyClassMutable	 [TIndex 0]))
+tcMutableT	= TyConWitness TyClassMutableT	(KForall kValue  (KClass TyClassMutableT [TIndex 0]))
+tcLazy		= TyConWitness TyClassLazy	(KForall kRegion (KClass TyClassLazy 	 [TIndex 0]))
+tcLazyH		= TyConWitness TyClassLazyH	(KForall kValue	 (KClass TyClassLazyH	 [TIndex 0]))
+tcDirect	= TyConWitness TyClassDirect	(KForall kRegion (KClass TyClassDirect	 [TIndex 0]))
 
-tcPurify	= TyConClass TyClassPurify	
+tcPurify	= TyConWitness TyClassPurify	
 			(KForall kRegion 
 				(KFun 	(KClass TyClassConst [TIndex 0])
 					(KClass TyClassPure  [TEffect primRead [TIndex 0]])))
 
-tcPure		= TyConClass TyClassPure
+tcPure		= TyConWitness TyClassPure
 			(KForall kEffect (KClass TyClassPure [TIndex 0]))
 
 -- Data Type Constructors -------------------------------------------------------------------------

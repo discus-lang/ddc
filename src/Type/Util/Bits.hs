@@ -361,12 +361,12 @@ makeTWitJoin ts
 -- | Make a witness application.
 makeTWitness :: TyClass -> Kind -> [Type] -> Type
 makeTWitness v k ts
-	= makeTApp (TCon (TyConClass v k) : ts)
+	= makeTApp (TCon (TyConWitness v k) : ts)
 
 -- | Take a witness from its constructor application
 takeTWitness :: Type -> Maybe (TyClass, Kind, [Type])
 takeTWitness tt
-	| TCon (TyConClass v k)	<- tt
+	| TCon (TyConWitness v k)	<- tt
 	= Just (v, k, [])
 
 	| TApp t1 t2		<- tt

@@ -110,14 +110,10 @@ instance FreeVars TyCon where
  freeVars tt
   = case tt of
   	TyConFun{}			-> Set.empty
-	TyConData  { tyConName }	-> Set.singleton tyConName
-	TyConClass { }			-> Set.empty
+	TyConData    { tyConName }	-> Set.singleton tyConName
+	TyConWitness { }		-> Set.empty
 
-{-
-instance FreeVars TyCon where
- freeVars tycon
- 	= singleton $ tyConName tycon
--}  
+
 -- Kind --------------------------------------------------------------------------------------------
 instance FreeVars Kind where
  freeVars kk	= empty

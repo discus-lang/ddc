@@ -240,12 +240,12 @@ instance Pretty TyCon PMode where
   	TyConFun{}		-> ppr "(->)"
 
 	TyConData 
-	 { tyConName, tyConDataKind }	
-	 	-> prettyVK tyConName (tyConDataKind)
+	 { tyConName, 	tyConDataKind }	
+	 	-> prettyVK tyConName tyConDataKind
 
-	TyConClass 
-	 { tyConClass, tyConClassKind}	
-		-> prettyTyClassK tyConClass tyConClassKind
+	TyConWitness 
+	 { tyConWitness, tyConWitnessKind}	
+		-> prettyTyClassK tyConWitness tyConWitnessKind
 
 -- TyClass -----------------------------------------------------------------------------------------
 instance Pretty TyClass PMode where
