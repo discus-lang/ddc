@@ -36,9 +36,7 @@ module Type.Exp
 	, Region
 	, Effect
 	, Closure
-	, Witness
-
-	, InstanceInfo (..))
+	, Witness)
 where
 import Util
 import DDC.Type.ClassId
@@ -373,43 +371,5 @@ data TProj
 	| TJIndex  !Var				-- ^ Indexed field projection		(.<int>)
 	| TJIndexR !Var				-- ^ Indexed field reference projection	(#<int>)
 	deriving (Show, Eq, Ord)
-
-
--- InstanceInfo ------------------------------------------------------------------------------------
--- | Records information about how the type of a bound var was determined.
---	These carry information about instances of forall bound vars between the 
---	solver and Desugar.toCore so it can fill in type parameters.
---
---	InstanceInfo's are constructed by the constraint solver when that particular
---	var is encountered, so depending on how it was bound, the type of the var
---	may or may not be known.
---
---	Once solving is finished, the exporter can fill in the any missing types.
---	
---	InstanceInfo is highly polymorphic so that both Core and Type lands can fill
---	it with their own particular representations.
---
-data InstanceInfo param t
-
-	-- | An instance of a lambda bound variable
-	= InstanceLambda
-		Var 		-- the var of the use
-		Var		-- binding var
-		(Maybe t)	-- type of the bound var
-	
-	-- | A non-recursive instance of a let binding
-	| InstanceLet
-		Var		-- the var of the use
-		Var		-- the binding var
-		[param]		-- types corresponding to instantiated type vars
-		t		-- the type of the scheme that was instantiated
-
-	-- | A recursive instance of a let binding
-	| InstanceLetRec
-		Var		-- the var of the use
-		Var		-- the binding var
-		(Maybe t)	-- the type of the bound var
-
-	deriving Show
 
 

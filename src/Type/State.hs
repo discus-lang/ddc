@@ -20,6 +20,7 @@ import Type.Base
 import Type.Exp
 import Util
 import System.IO
+import DDC.Type.Solve.InstanceInfo
 import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -104,7 +105,7 @@ data SquidS
 	--	We need this to reconstruct the type applications during conversion to
 	--	the Core IR.
 	--	
-	, stateInst		:: Map Var	(InstanceInfo Var Type)			
+	, stateInst		:: Map Var (InstanceInfo Var)			
 
 	-- | Records what vars have been quantified. (with optional :> bounds)
 	--	After the solver is finished and all generalisations have been performed,

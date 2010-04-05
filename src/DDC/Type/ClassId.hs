@@ -1,5 +1,5 @@
 
--- | A unique identifier for a type equivalence class.
+-- | Unique identifiers for a type equivalence class.
 module DDC.Type.ClassId
 	(ClassId(..))
 where

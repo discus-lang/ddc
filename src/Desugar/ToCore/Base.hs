@@ -14,6 +14,7 @@ import Type.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
+import DDC.Type.Solve.InstanceInfo
 import Desugar.Project			(ProjTable)
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
@@ -36,7 +37,7 @@ data CoreS
 	, coreMapTypes		:: Map Var Type
 
 	  -- | how each variable was instantiated
-	, coreMapInst		:: Map Var (InstanceInfo Type Type)
+	, coreMapInst		:: Map Var (InstanceInfo Type)
 
 	  -- | the vars that were quantified during type inference (with optional :> bound)
 	, coreQuantVars		:: Map Var (Kind, Maybe Type)

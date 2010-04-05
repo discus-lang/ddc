@@ -15,6 +15,7 @@ import Type.Plug
 import Type.Util
 import Shared.VarPrim
 import Util
+import DDC.Type.Solve.InstanceInfo
 import DDC.Main.Error
 import DDC.Var
 import qualified Data.Map	as Map
@@ -27,12 +28,12 @@ stage	= "Type.Export"
 
 -- | Export some stuff from the constraint solver state.
 squidExport 
-	:: Set Var		-- ^ vars of the bindings we want types for.
+	:: Set Var				-- ^ vars of the bindings we want types for.
 	-> SquidM 
-		( Map Var Type				-- type schemes.
-		, Map Var (InstanceInfo Type Type)	-- how each instantiation was done.
-		, Map Var (Kind, Maybe Type)		-- which vars were quantified (with optional :> bound)
-		, Map Var [Var])			-- the constraints acting on each region.
+		( Map Var Type			-- type schemes.
+		, Map Var (InstanceInfo Type)	-- how each instantiation was done.
+		, Map Var (Kind, Maybe Type)	-- which vars were quantified (with optional :> bound)
+		, Map Var [Var])		-- the constraints acting on each region.
 
 squidExport 
 	vsTypesPlease
@@ -133,7 +134,7 @@ exportMaybeType mt
 
 		
 -- | Build a map of all the instantiations
-exportInst :: SquidM (Map Var (InstanceInfo Type Type))
+exportInst :: SquidM (Map Var (InstanceInfo Type))
 exportInst 
  = do	inst	<- gets stateInst
 	vts	<- mapM exportInstInfo
@@ -141,8 +142,8 @@ exportInst
 			
 	return	$ Map.fromList vts
 
-exportInstInfo 	:: (Var, InstanceInfo Var Type)
-		-> SquidM (Var, InstanceInfo Type Type)
+exportInstInfo 	:: (Var, InstanceInfo Var)
+		-> SquidM (Var, InstanceInfo Type)
 
 exportInstInfo (v, ii)
  = case ii of	

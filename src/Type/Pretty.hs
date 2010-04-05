@@ -10,6 +10,7 @@ where
 import Type.Exp
 import Type.Util.Bits
 import Util
+import DDC.Type.Solve.InstanceInfo
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
@@ -345,7 +346,7 @@ instance Pretty KiCon PMode where
 
 -- InstanceInfo ------------------------------------------------------------------------------------
 instance  (Pretty param PMode)
-	=> Pretty (InstanceInfo param Type) PMode where
+	=> Pretty (InstanceInfo param) PMode where
  ppr ii
   = case ii of
   	InstanceLambda v1 v2 mt
