@@ -10,7 +10,7 @@ where
 import Type.Exp
 import Type.Util.Bits
 import Util
-import DDC.Type.Solve.InstanceInfo
+import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var

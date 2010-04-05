@@ -322,13 +322,13 @@ data TyCon
 --	their kind-level classes, we'll overload TyClass for both.
 --
 data TyClass
-	-- Various built-in classes.
-	--	These have special meaning to the compiler.
-
-	-- region classes	-- type classes
-	= TyClassConst		| TyClassConstT
-	| TyClassMutable	| TyClassMutableT
-	| TyClassLazy		| TyClassLazyH
+	-- region classes
+	= TyClassConst		
+	| TyClassConstT
+	| TyClassMutable	
+	| TyClassMutableT
+	| TyClassLazy		
+	| TyClassLazyH
 	| TyClassDirect
 
 	-- purification

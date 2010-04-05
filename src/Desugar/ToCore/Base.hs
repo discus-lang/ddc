@@ -14,7 +14,7 @@ import Type.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
-import DDC.Type.Solve.InstanceInfo
+import DDC.Solve.InstanceInfo
 import Desugar.Project			(ProjTable)
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map

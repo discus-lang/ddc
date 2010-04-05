@@ -20,7 +20,7 @@ import Type.Base
 import Type.Exp
 import Util
 import System.IO
-import DDC.Type.Solve.InstanceInfo
+import DDC.Solve.InstanceInfo
 import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error

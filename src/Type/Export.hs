@@ -15,7 +15,7 @@ import Type.Plug
 import Type.Util
 import Shared.VarPrim
 import Util
-import DDC.Type.Solve.InstanceInfo
+import DDC.Solve.InstanceInfo
 import DDC.Main.Error
 import DDC.Var
 import qualified Data.Map	as Map

@@ -22,7 +22,7 @@ import Type.Exp
 import Constraint.Bits
 import Constraint.Exp
 import Util
-import DDC.Type.Solve.InstanceInfo
+import DDC.Solve.InstanceInfo
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)

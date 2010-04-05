@@ -14,23 +14,23 @@ import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
-import Shared.VarUtil				(isDummy, varPos)
-import Type.ToCore				(toCoreT, toCoreK)
-import Desugar.Pretty				()
-import Desugar.Project				(ProjTable)
-import qualified DDC.Type.Solve.InstanceInfo	as T
-import qualified Shared.Exp			as S
-import qualified Type.Exp			as T
-import qualified Type.Util			as T
-import qualified Core.Util.Pack			as C
-import qualified Core.Exp 			as C
-import qualified Core.Util			as C
-import qualified Desugar.Exp 			as D
-import qualified Desugar.Plate.Trans		as D
-import qualified Desugar.Bits			as D
-import qualified Desugar.Slurp.Util		as D
-import qualified Data.Map			as Map
-import qualified Debug.Trace			as Debug
+import Shared.VarUtil			(isDummy, varPos)
+import Type.ToCore			(toCoreT, toCoreK)
+import Desugar.Pretty			()
+import Desugar.Project			(ProjTable)
+import qualified DDC.Solve.InstanceInfo	as T
+import qualified Shared.Exp		as S
+import qualified Type.Exp		as T
+import qualified Type.Util		as T
+import qualified Core.Util.Pack		as C
+import qualified Core.Exp 		as C
+import qualified Core.Util		as C
+import qualified Desugar.Exp 		as D
+import qualified Desugar.Plate.Trans	as D
+import qualified Desugar.Bits		as D
+import qualified Desugar.Slurp.Util	as D
+import qualified Data.Map		as Map
+import qualified Debug.Trace		as Debug
 
 -----
 stage	= "Desugar.ToCore"
