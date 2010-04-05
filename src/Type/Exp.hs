@@ -41,39 +41,9 @@ module Type.Exp
 	, InstanceInfo (..))
 where
 import Util
-import Data.Ix
+import DDC.Type.ClassId
 import DDC.Main.Error
 import DDC.Var
-
-
--- ClassId -----------------------------------------------------------------------------------------
---	A unique name for a particular type\/region\/effect equivalence class.
---
-newtype ClassId	
-	= ClassId Int
-	deriving (Show, Eq, Ord)
-
-instance Ix ClassId where
- range	   (ClassId a, ClassId b) 		= map ClassId [a..b]
- index	   (ClassId a, ClassId b) (ClassId x)	= x
- inRange   (ClassId a, ClassId b) (ClassId x)	= inRange (a, b) x
- rangeSize (ClassId a, ClassId b)		= rangeSize (a, b)
- 
-
--- ordering
---	so we can use types containing class \/ var as keys in maps
-instance Ord Type where
- compare   (TClass _ a)  (TClass _ b)		= compare a b
- compare   (TVar _ a)   (TVar k b)		= compare a b
- compare   (TClass{})   (TVar{})		= LT
- compare   (TVar{})     (TClass{})		= GT
-
- compare   t1           t2
- 	= panic "Type.Exp" 
-	$ "compare: can't compare type for ordering\n"
-	% "    t1 = " % show t1	% "\n"
-	% "    t2 = " % show t2 % "\n"
-
 
 -- Super Kinds ----------------------------------------------------------------------------------
 data Super
@@ -314,6 +284,20 @@ data TypeError
 					--	(mu t1. t2), 	where t1 can appear in t2.
 					--			t1 is a TClass or a TVar.
 	deriving (Show, Eq)
+
+
+instance Ord Type where
+ compare   (TClass _ a)  (TClass _ b)		= compare a b
+ compare   (TVar _ a)   (TVar k b)		= compare a b
+ compare   (TClass{})   (TVar{})		= LT
+ compare   (TVar{})     (TClass{})		= GT
+
+ compare   t1           t2
+ 	= panic "Type.Exp" 
+	$ "compare: can't compare type for ordering\n"
+	% "    t1 = " % show t1	% "\n"
+	% "    t2 = " % show t2 % "\n"
+
 
 -- TyCon -------------------------------------------------------------------------------------------
 -- | Type constructors
