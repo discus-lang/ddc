@@ -2,9 +2,8 @@
 -- | Tool to generate tree-walking boilerplate code for our expression data types.
 --	It's pretty boring to write these ourselves.
 --	and marginally less boring to write the boiler-plate generator
---	It might be better to move this to template Haskell, but I'm not sure
---	whether we really want if we want to bootstrap the compiler in the future...
-
+--	It might be better to move this to template Haskell, but it might be easier
+--	to leave it like this for future bootstrapping.
 import System.Environment
 import Language.Haskell.Syntax
 import Language.Haskell.Parser
@@ -117,8 +116,19 @@ expandTransM (HsDataDecl src context (HsIdent con1) args decls derive)
 expandTransM _
 	= Nothing
 
+
+-- | Generate transform code for a constructor decl.
 transM_decl :: HsConDecl -> HsAlt
-transM_decl (HsConDecl src name types)
+transM_decl decl
+ = case decl of
+	HsConDecl src name types
+	 -> transM_decl' src name types
+		
+	HsRecDecl src name fsTypes
+	 -> transM_decl' src name (map snd fsTypes)
+
+	
+transM_decl' src name types
  = let	tmps		= map (\ix -> ("x" ++ show ix)) [0.. length types -1]
 	tmps'		= map (\v -> v ++ "'") tmps
 
@@ -133,7 +143,10 @@ transM_decl (HsConDecl src name types)
 		(HsUnGuardedAlt
 			$ HsDo 	(ssFollow ++ [sRet]))
 		[]
-	
+
+
+
+
 transM_stmt 
 	:: SrcLoc 
 	-> [HsBangType]		-- all type args of the ctor

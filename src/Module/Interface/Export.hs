@@ -18,6 +18,7 @@ import Data.Set			(Set)
 import Data.Map			(Map)
 import Data.Sequence		(Seq)
 import Prelude			hiding (foldl)
+import qualified Source.Exp	as S
 import qualified Desugar.Exp	as D
 import qualified Core.Exp	as C
 import qualified Core.Glob	as C
@@ -41,6 +42,7 @@ makeInterface
 				--	This will include vars of bindings created during lambda lifting.
 	-> Map Var Var		-- ^ Map of value to type vars.
 	-> Map Var Type		-- ^ Map of type vars to inferred source types.
+	-> [S.Top SourcePos]	-- ^ Source    program tree.
 	-> [D.Top SourcePos]	-- ^ Desugared program tree.
 	-> C.Glob		-- ^ Core program glob.
 	-> Interface
@@ -50,6 +52,7 @@ makeInterface
 	vsNoExport
 	mpValueToTypeVars
 	mpSourceTypes
+	sourceTree
 	desugaredTree
 	coreGlob
 
@@ -88,7 +91,9 @@ makeInterface
 		= foldl addDesugaredProjDictToMap Map.empty 
 		$ [p	| p@D.PProjDict{}	<- desugaredTree ]
 
-	, intInfix		= Map.empty
+	, intInfix
+		= foldl addSourcePInfixToMap Map.empty
+		$ [p	| p@S.PInfix{}		<- sourceTree ]
 
 	-- Only export bindings that aren't in the vsNoExport set.
 	, intBind
@@ -214,6 +219,16 @@ getIntProjOfDesugaredStmt
 	(D.SBind _ (Just vProj) (D.XVar _ vImpl))
  = 	(vProj, vImpl)
 
+
+-- | Convert a source `PInfix` to an `IntInfix`.
+addSourcePInfixToMap 
+	:: Map Var IntInfix
+	-> S.Top a 
+	-> Map Var IntInfix
+
+addSourcePInfixToMap
+	= undefined
+	
 
 -- | Convert a core `PBind` into an `IntBind`
 getIntBindOfCorePBind 

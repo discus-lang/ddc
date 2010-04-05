@@ -235,7 +235,7 @@ compileFile_parse
 	-- Lint check the source program before desugaring -------------------
 	outVerb $ ppr $ "  * Source: Lint\n"
 
-	(hRenamed_ok, sDefixed_ok)	
+	(sHeader_linted, sProg_linted)	
 			<- SS.lint hRenamed sDefixed
 	
 	-- Desugar the source language ----------------------------------------
@@ -245,8 +245,8 @@ compileFile_parse
 			   SS.desugar
 				"SD"
 				kindTable
-				hRenamed_ok
-				sDefixed_ok
+				sHeader_linted
+				sProg_linted
 
 	------------------------------------------------------------------------
 	-- Desugar/Type inference stages
@@ -488,6 +488,7 @@ compileFile_parse
 				vsNoExport
 				mapValueToTypeVars
 				typeTable
+				sProg_linted
 				dProg_project
 				cgProg_final
 

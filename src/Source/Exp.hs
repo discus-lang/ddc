@@ -8,8 +8,7 @@ module Source.Exp
 	, DataField 	(..)
 	, InfixMode 	(..)
 	, FixDef
-	, Ctor
-	, DataDef
+	, CtorDef
 	, Exp 		(..)
 	, Stmt 		(..)
 	, Proj		(..)
@@ -25,67 +24,112 @@ import Shared.Exp
 import Type.Exp
 
 
--- Tree --------------------------------------------------------------------------------------------
-type Tree a	= [Top a]
+-- | A `Tree` is a list of top level declarations.
+type Tree a	
+	= [Top a]
 
 
--- Top ---------------------------------------------------------------------------------------------
+-- | Top level declarations.
 data Top a
-	= PPragma	a [Exp a]
+	= -- | Some pragma.
+	  --	TODO: ditch this in favour of Haskell style pragmas.
+	  PPragma	
+		{ topAnnot		:: a
+		, topPragmaExps		:: [Exp a] }
 
-	-- Modules
-	| PModule	a ModuleId
-	| PImportModule a [ModuleId]
-	| PExport	a [Export a]
+	-- | Set the identifier of the current module.
+	| PModule	
+		{ topAnnot		:: a
+		, topModuleId		:: ModuleId }
+		
+	-- | Import some modules.
+	| PImportModule 
+		{ topAnnot		:: a
+		, topImportModuleIds	:: [ModuleId] }
 
-	-- Foreign imports and exports
-	| PForeign	a (Foreign a)
+	-- | Export some types or bindings.
+	| PExport
+		{ topAnnot		:: a
+		, topExports		:: [Export a] }
 
-	-- Infix decls
-	| PInfix	a (InfixMode a) Int [Var]
+	-- | Import or export some foreign stuff.
+	| PForeign
+		{ topAnnot		:: a
+		, topForeign		:: Foreign a }
 
-	-- Types
-	| PClass  	a Var Super			-- An abstract class.
-	| PKindSig	a Var Kind			-- Define the kind of a type constructor.
+	-- | Infix operator declarations.
+	| PInfix	
+		{ topAnnot		:: a
+		, topInfixMode		:: InfixMode a
+		, topInfixPrecedence	:: Int
+		, topInfixVars		:: [Var] }
 
-	| PTypeSynonym	a Var Type			-- Define a type synonym.
-	| PRegion 	a Var				-- Introduce a top level region.
-	| PData	a					-- Define an algebraic data type.
-		Var 
-		[Var] 
-		[(Var, [DataField (Exp a) Type])]
+	-- | The superkind of an abstract type class.
+	| PClass  	
+		{ topAnnot		:: a
+		, topClassVar		:: Var
+		, topClassSuper		:: Super }
 
-	| PClassDict					-- A class dictionary definition.
-		a
-		Var 					-- Class name.
-		[(Var, Kind)] 				-- Class parameters
-		[(Var, [Var])]  			-- Context.
-		[([Var], Type)]				-- Type sigs.
+	-- | The kind of an abstract type constructor.
+	| PKindSig
+		{ topAnnot		:: a
+		, topKindSigVar		:: Var
+		, topKindSigKind	:: Kind }
 
-	| PClassInst					-- A class instance.
-		a
-		Var 					-- Class name
-		[Type]					-- Instance types
-		[(Var, [Type])]				-- Context.
-		[Stmt a]				-- Instance defs
+	-- | A type synonym.
+	| PTypeSynonym
+		{ topAnnot		:: a
+		, topTypeSynonymVar	:: Var
+		, topTypeSynonymType	:: Type }
+	
+	-- | Introduce a top-level region.
+	--	TODO: allow constraints to be declared in the same place.
+	| PRegion
+		{ topAnnot		:: a
+		, topRegionVar		:: Var }
 
-	-- Projections
-	| PProjDict					-- A projection dictionary.
-		a
-		Type					-- Projection type.
-		[Stmt a]				-- Projection functions.
+	-- | An algebraic data type declaration.
+	| PData	
+		{ topAnnot		:: a
+		, topDataName		:: Var
+		, topDataParams		:: [Var]
+		, topDataCtors		:: [CtorDef a] }
+	
+	-- | A data class declaration.
+	| PClassDict
+		{ topAnnot		:: a
+		, topClassDeclName	:: Var
+		, topClassDeclParams	:: [(Var, Kind)]
+		, topClassDeclContext	:: [(Var, [Var])] 
+		, topClassDeclMembers	:: [([Var], Type)] }
+		
+	-- | A data class instance.
+	| PClassInst
+		{ topAnnot		:: a
+		, topClassInstName	:: Var
+		, topClassInstArgs	:: [Type]
+		, topClassInstContext	:: [(Var, [Type])]
+		, topClassInstStmts	:: [Stmt a] }
 
-	-- Stmts
-	| PStmt	(Stmt a)
+	-- | A projection dictionary.
+	| PProjDict
+		{ topAnnot		:: a
+		, topProjDictType	:: Type
+		, topProjDictStmts	:: [Stmt a] }
+
+	-- | A binding
+	| PStmt	
+		{ topStmt		:: Stmt a }
+		
 	deriving (Show, Eq)
 
 
 -- TODO: make these into their own data types.
 type FixDef a	= (Var, (Int, InfixMode a))
-type Ctor a	= (Var, [DataField (Exp a) Type])
-type DataDef a	= (Var, [Var], [Ctor a])
+type CtorDef a	= (Var, [DataField (Exp a) Type])
 
--- Export ------------------------------------------------------------------------------------------
+
+-- | Export declarations.
 data Export a
 	= EValue  a Var
 	| EType   a Var
@@ -94,7 +138,8 @@ data Export a
 	| EClass  a Var
 	deriving (Show, Eq)
 
--- Foreign -----------------------------------------------------------------------------------------
+
+-- | Foreign imports and exports.
 data Foreign a
 	-- Import a value binding
 	= OImport 
@@ -111,7 +156,7 @@ data Foreign a
 	deriving (Show, Eq)
 
 
--- InfixMode ---------------------------------------------------------------------------------------
+-- | Infix associativity.
 data InfixMode a
 
 	-- Left associative.
@@ -136,7 +181,7 @@ data InfixMode a
 	deriving (Show, Eq)
 
 
--- Value Expressions -------------------------------------------------------------------------------
+-- | Value expressions.
 data Exp a
 	= XNil
 
@@ -161,13 +206,14 @@ data Exp a
 	| XTuple	a [Exp a]
 	| XList		a [Exp a]
 
-	| XListRange	a Bool (Exp a) (Maybe (Exp a)) (Maybe (Exp a))	-- [EXP .. EXP] / [EXP, EXP .. EXP] / [EXP .. ]
+	| XListRange	a Bool (Exp a) (Maybe (Exp a)) (Maybe (Exp a))	
+							-- [EXP .. EXP] / [EXP, EXP .. EXP] / [EXP .. ]
 	| XListComp	a (Exp a) [LCQual a]		-- [ EXP | QUAL .. ]
 
 	| XWhile	a (Exp a) (Exp a)		-- test, body
 	| XWhen		a (Exp a) (Exp a)		-- test, body
 	| XUnless	a (Exp a) (Exp a)		-- test, body
-	| XBreak	a				--			=> throw ExceptionBreak
+	| XBreak	a				-- => throw ExceptionBreak
 
 	-- Source.Defix desuaring ---------------------
 	| XDefix	a [Exp a]			-- Some collection of apps / suspensions / infix expressions
@@ -182,7 +228,7 @@ data Exp a
 	deriving (Show, Eq)
 
 
--- Projections -------------------------------------------------------------------------------------
+-- | Projections.
 data Proj a
 	= JField	a Var				-- Field projection, 		eg exp .field1
 	| JFieldR	a Var				-- Field reference projection,	eg exp #field1
@@ -192,7 +238,7 @@ data Proj a
 	deriving (Show, Eq)
 
 
--- Statements --------------------------------------------------------------------------------------
+-- | Statements.
 data Stmt a	
 	= SSig		a [Var] Type
 	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
@@ -204,7 +250,7 @@ data Stmt a
 	deriving (Show, Eq)
 	
 
--- Alternatives / Guards / Patterns ----------------------------------------------------------------
+-- | Case and match alternatives.
 data Alt a
 	= APat		a (Pat a) (Exp a)		-- ^ Case style pattern match	p1 -> e2
 	| AAlt		a [Guard a] (Exp a)		-- ^ Match style pattern match  guards -> e2
@@ -214,11 +260,15 @@ data Alt a
 
 	deriving (Show, Eq)
 
+
+-- | Guards for alternatives.
 data Guard a
 	= GExp		a (Pat a) (Exp a)		-- ^ Match against this expression.
 	| GBool		a (Exp a)			-- ^ Test for boolean.
 	deriving (Show, Eq)
-	
+
+
+-- | Patterns.	
 data Pat a
 	= WVar		a Var				-- ^ Plain var, always matches.		v 
 	| WObjVar	a Var				-- ^ Binds the current object.		^v
@@ -234,13 +284,15 @@ data Pat a
 	| WList		a [Pat a]			-- ^ List pattern			[p1, p2, ...]
 	deriving (Show, Eq)
 
+
+-- | Laves for pattern matching.
 data Label a
 	= LIndex 	a Int				-- ^ A numerically indexed field.
 	| LVar		a Var				-- ^ A field label.
 	deriving (Show, Eq)
 
 
--- List Comprehensions -----------------------------------------------------------------------------
+-- | Qualifiers for list comprehensions.
 data LCQual a
 	= LCGen		Bool (Pat a) (Exp a)		-- ^ Generator.			p <\@- e, p <- e
 	| LCLet		(Stmt a)			-- ^ Local declaration.		Stmt can only be SBind.
