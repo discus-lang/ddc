@@ -1,4 +1,4 @@
 ddc: WARNING
-./test/15-Defix/T151-DollarDo/Test.ds:10:9
+./test/14-Desugar/15-Defix/T151-DollarDo/Test.ds:10:9
      Redundant operator '$' in expression.
 
