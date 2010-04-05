@@ -21,7 +21,7 @@ import qualified DDC.Main.Arg		as Arg
 -- module
 import qualified Module.Interface.Pretty ()
 import qualified Module.Export		as M
-import qualified Module.ExportNew	as MN
+import qualified Module.Interface.Export as MN
 import qualified Module.Scrape		as M
 
 -- source

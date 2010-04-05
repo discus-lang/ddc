@@ -1,5 +1,5 @@
 
-module Module.ExportNew
+module Module.Interface.Export
 	(makeInterface)
 where
 import Module.Interface
@@ -26,7 +26,7 @@ import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 import qualified Util.Data.Map	as Map
 
-stage	= "Module.ExportNew"
+stage	= "Module.Interface.Export"
 
 
 -- | Construct a module interface from all this stuff.
