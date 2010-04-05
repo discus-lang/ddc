@@ -70,11 +70,11 @@ dNodeIfElems tag cont
 --	adding blank lines after tags in the given set (for niceness).
 pprDocIndentedWithNewLines
 	:: forall mode
-	.  Set String			-- ^ Tags of nodes to put extra new lines after.
+	.  Int				-- ^ When >0, put newlines after nodes.
 	-> Doc (PrettyM mode) 		-- ^ `Doc` to pretty print.
 	-> PrettyM mode
 
-pprDocIndentedWithNewLines tagNew dd
+pprDocIndentedWithNewLines depth dd
  = case dd of
 	DBlank
 	 -> blank
@@ -85,16 +85,18 @@ pprDocIndentedWithNewLines tagNew dd
 
 	DNode tag d@(DLeaf{})
 	 | length tag <= 6
-	 -> padL 7 (tag ++ ":") %> (" " % pprDocIndentedWithNewLines tagNew d)
-	  % (if Set.member tag tagNew then newline else blank)
+	 -> padL 7 (tag ++ ":") %> (" " % pprDocIndentedWithNewLines (depth - 1) d)
+	  % (if depth > 0 then newline else blank)
 
 	DNode tag d
 	 -> tag % ": " % newline
-		%> pprDocIndentedWithNewLines tagNew d
-	  % (if Set.member tag tagNew then newline else blank)
+		%> pprDocIndentedWithNewLines (depth - 1) d
+	  % (if depth > 0 then newline else blank)
 
 	DList ds
-	 -> vcat $ map (pprDocIndentedWithNewLines tagNew) ds
+	 -> vcat 
+		$ map (pprDocIndentedWithNewLines depth) 
+		$ filter (not . docIsEmpty) ds
 	
 	DLeaf str
 	 -> str

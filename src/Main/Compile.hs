@@ -492,15 +492,10 @@ compileFile_parse
 				cgProg_final
 
 	-- put blank lines after these sections,
-	--	just to make the interface file look nicer.
-	let sNewLineTags
-		= Set.fromList 
-			[ "ddc-version", "module", "imported-modules"
-			, "effects", "classes", "type" ]
-	
+	--	just to make the interface file look nicer.	
 	when (elem Arg.DumpNewInterfaces ?args)
 	 $ do writeFile (?pathSourceBase ++ ".di-new") 
-		$ pprStrPlain $ pprDocIndentedWithNewLines sNewLineTags $ doc diNewInterface
+		$ pprStrPlain $ pprDocIndentedWithNewLines 2 $ doc diNewInterface
 
 
 	-- !! Early exit on StopCore
