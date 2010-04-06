@@ -12,6 +12,7 @@ module Core.Lift.Base
 	, getChopped)
 where
 import Core.Exp
+import Core.Glob
 import Util
 import Type.Exp
 import DDC.Main.Error
@@ -19,40 +20,42 @@ import DDC.Main.Pretty
 import DDC.Var
 import qualified Shared.Unique	as Unique
 import qualified Data.Map	as Map
-import qualified Data.Set	as Set
 
------
 stage	= "Core.Lift.Base"
 
 
--- | Lifter state
+-- | Lambda lifter state monad.
 type LiftM = State LiftS	
 data LiftS
 	= LiftS
-	{ stateVarGen		:: VarId
+	{  
+	-- | For generating new variable names.
+	  stateVarGen		:: VarId
 
+	-- | All types bound in the module.
 	, stateTypes		:: Map Var Type
 
-	-- | Vars defined at top level,
-	--	grows as new supers are lifted out.
-	, stateTopVars		:: Set Var			
+	-- | The glob of the header.
+	, stateHeaderGlob	:: Glob
 
+	-- | The glob of the current module. Bindings that are lifted out are added to this.
+	, stateModuleGlob	:: Glob
 
 	-- | A list of bindings chopped out on this pass
 	--	old name, new (top level) name, expression
-	--
 	, stateChopped		:: [(Var, Var, Top)] 		
 								
 	}	
 								
+-- | Initial lambda lifted state.
 initLiftS
 	= LiftS
 	{ stateVarGen		= VarId ("v" ++ Unique.coreLift) 0
 	, stateTypes		= Map.empty
-	, stateTopVars		= Set.empty
+	, stateHeaderGlob	= globEmpty
+	, stateModuleGlob	= globEmpty
 	, stateChopped		= [] 
 	}
-
 
 
 -- | Add a typed variable to the state
@@ -104,10 +107,18 @@ newVar	space
 	return	var
 	
 	
------
 addChopped :: Var -> Var -> Top -> LiftM ()
-addChopped old new x
- 	= modify (\s -> s { stateChopped =  stateChopped s ++ [(old, new, x)]})
+addChopped vOld vNew pSuper
+  = modify $ \s -> s 
+	{ stateModuleGlob	
+		= (stateModuleGlob s)
+		{ globBind = Map.insert vNew pSuper 
+				(globBind $ stateModuleGlob s) }
+
+	, stateChopped 
+		= stateChopped s ++ [(vOld, vNew, pSuper)] 
+	}
+
 
 getChopped :: LiftM [(Var, Var, Top)]
 getChopped	

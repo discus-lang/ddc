@@ -3,6 +3,7 @@ module Core.Lift.LiftLambdas
 	( liftLambdasP )
 where
 import Core.Exp
+import Core.Glob
 import Core.Util
 import Core.Plate.Trans
 import Core.Plate.FreeVars
@@ -13,7 +14,6 @@ import Type.Exp
 import Util
 import DDC.Main.Pretty
 import DDC.Var
-import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
@@ -107,9 +107,6 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 	-- make a name for the new super
 	vN		<- newVar NameValue
 	let vSuper	=  vN { varName = (varName topName) ++ "_" ++ (varName vN) }
-	
-	-- remember that a new binding with this name is to be created at top level
-	modify $ \s -> s { stateTopVars	= Set.insert vSuper $ stateTopVars s }
 
 	-- turn this binding into a super-combinator by binding its free variables as new parameters.
 	let pSuper	= PBind vSuper x
@@ -222,15 +219,20 @@ bindFreeVarsP
 	vtMore
 	(PBind vTop x)
  = do
+	-- Work out the non-top-level vars that are free in the expresison.
+	cgHeader	<- gets stateHeaderGlob
+	cgModule	<- gets stateModuleGlob 
 
-	-- Work out the vars which are free in the expression
-	vsBoundTop	<- gets stateTopVars
- 	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v)
-			$ Set.difference (freeVars x) vsBoundTop
+	let vsFree_local	
+		= filter (\v -> (not $ varIsBoundAtTopLevelInGlob cgModule v)
+			     && (not $ varIsBoundAtTopLevelInGlob cgHeader v))
+		$ filter (\v -> elem (varNameSpace v) [NameValue, NameType])
+		$ Set.toList 
+		$ freeVars x	
 
 	let (vsFreeVal, vsFreeType)
-			= partition (\v	-> varNameSpace v == NameValue)
-			$ Set.toList vsFree
+		= partition (\v	-> varNameSpace v == NameValue)
+		$ vsFree_local
 
  	-- Work out the type of the expression
 	--	The effect should always be TBot because we only ever lift (value) lambda abstractions.

@@ -13,6 +13,7 @@ import qualified Data.Map		as Map
 
 
 -- | Perform lambda lifting on this tree.
+--   TODO: This is a mess, and the closure information on the resulting bindings is wrong.
 lambdaLiftTree 	
 	:: Glob			-- ^ Header Glob,
 	-> Glob			-- ^ Module Glob.
@@ -23,14 +24,11 @@ lambdaLiftTree
 	cgHeader
 	cgModule
 
- = let	vsBoundTop
-		= Set.unions
-		[ topBoundVarsOfGlob cgHeader
-		, topBoundVarsOfGlob cgModule ]
-
-	(bindsLifted, bindsNew)
+ = let	(bindsLifted, bindsNew)
 		= evalState (lambdaLiftTreeM $ Map.elems $ globBind cgModule) 
-			$ initLiftS { stateTopVars = vsBoundTop }
+		$ initLiftS 
+			{ stateHeaderGlob	= cgHeader
+			, stateModuleGlob 	= cgModule }
 	
 	cgBindsLifted	= globOfTree bindsLifted
 	cgBindsNew	= globOfTree bindsNew
@@ -47,15 +45,6 @@ lambdaLiftTree
 		
    in	(cgModule', vsNewBinds)
 	
-
-topBoundVarsOfGlob :: Glob -> Set Var
-topBoundVarsOfGlob glob
-	= Set.unions
-		[ Set.fromList $ Map.keys $ globExternData glob
-		, Set.fromList $ Map.keys $ globExtern 	   glob
-		, Set.fromList $ Map.keys $ globData       glob 
-		, Set.fromList $ Map.keys $ globDataCtors  glob
-		, Set.fromList $ Map.keys $ globBind	   glob ]
 		
 lambdaLiftTreeM	
 	binds

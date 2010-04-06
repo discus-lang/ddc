@@ -2,13 +2,14 @@
 -- | Utils concerning Globs.
 module Core.Glob
 	( Glob(..)
+	, globEmpty
 	, globOfTree
 	, treeOfGlob
 	, seqOfGlob
-	, globDeclaresValue 
 	, bindingArityFromGlob 
 	, typeFromGlob
-	, mapBindsOfGlob )
+	, mapBindsOfGlob
+	, varIsBoundAtTopLevelInGlob )
 where
 import Core.Exp
 import Core.Reconstruct
@@ -18,6 +19,8 @@ import Type.Exp
 import Type.Util
 import Data.Maybe
 import DDC.Var
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Control.Monad
 import Data.Map			(Map)
 import Data.Sequence		(Seq, (><))
@@ -27,6 +30,7 @@ import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
+stage	= "Core.Glob"
 
 -- | A Glob provides a fast way to locate particular top level declarations.
 --   Note: Don't add extra fields to this type that can't be reconstructed
@@ -160,15 +164,6 @@ seqOfGlob glob
 	><  seqOfMap (globBind		glob)
 	where seqOfMap m = Map.fold (Seq.<|) Seq.empty m
 
-
--- | Check whether a glob has a top level decl for this value.
---	It could be imported via an extern, be a data constructor, or a value binding.
-globDeclaresValue :: Var -> Glob -> Bool
-globDeclaresValue v glob
- 	=  (Map.member v $ globExtern    glob)
-	|| (Map.member v $ globDataCtors glob)
-	|| (Map.member v $ globBind      glob)
-	
 	
 -- | If this glob has a value binding, then get its binding arity.
 --	The "binding arity" is the number of args directly accepted
@@ -214,3 +209,32 @@ typeFromGlob v glob
 mapBindsOfGlob :: (Top -> Top) -> Glob -> Glob
 mapBindsOfGlob f glob
 	= glob { globBind	= Map.map f $ globBind glob }
+
+
+
+-- | Check if a value variable is bound at top-level in this `Glob`.
+--	Since we know it is a value var we don't have to check 
+varIsBoundAtTopLevelInGlob :: Glob -> Var -> Bool
+varIsBoundAtTopLevelInGlob glob v
+ = case varNameSpace v of
+	NameValue
+	 -> or	[ Map.member v $ globExtern	glob
+		, Map.member v $ globDataCtors	glob
+		, Map.member v $ globBind	glob ]
+	
+	NameType
+	 -> or	[ Map.member v $ globExternData glob
+		, Map.member v $ globData	glob ]
+		
+	NameRegion
+	 ->	Map.member v $ globRegion	glob 
+	
+	NameEffect
+	 ->	Map.member v $ globEffect	glob
+	
+	NameClosure -> False
+			
+	_ -> panic stage 
+	   $ "varIsBoundAtTopLevelInGlob: not implemented for " % show (varNameSpace v)
+		
+

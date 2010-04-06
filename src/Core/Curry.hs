@@ -82,8 +82,8 @@ curryX	env vsTailCall xx
 
 	-- A zero arity super.
 	| XVar v t		<- xx
-	= if   (globDeclaresValue v $ envGlobHeader env)
-	    || (globDeclaresValue v $ envGlobProg   env) 
+	= if   (varIsBoundAtTopLevelInGlob (envGlobHeader env) v)
+	    || (varIsBoundAtTopLevelInGlob (envGlobProg   env) v)
 	   then	fromMaybe xx $ makeCall env vsTailCall xx [] tPure
 	   else xx
 	
