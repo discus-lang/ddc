@@ -92,7 +92,7 @@ getKind	 v
 	NameClass	-> return KNil
 	
 
--- | Create a new var in a certain namespace
+-- | Create a new var in a given namespace
 newVar :: NameSpace -> LiftM Var
 newVar	space
  = do
@@ -102,24 +102,24 @@ newVar	space
 				{ varId 		= gen 
 				, varNameSpace		= space }
 	
-	modify (\s -> s { stateVarGen = gen' })
-	
+	modify $ \s -> s { stateVarGen = gen' }
 	return	var
 	
 	
+-- | Add a freshly lifted supercombinator to the state.
 addChopped :: Var -> Var -> Top -> LiftM ()
 addChopped vOld vNew pSuper
   = modify $ \s -> s 
-	{ stateModuleGlob	
-		= (stateModuleGlob s)
-		{ globBind = Map.insert vNew pSuper 
-				(globBind $ stateModuleGlob s) }
-
+	{ stateModuleGlob
+		= let oldGlob	= stateModuleGlob s
+		  in  oldGlob { globBind = Map.insert vNew pSuper $ globBind oldGlob }
+	
 	, stateChopped 
 		= stateChopped s ++ [(vOld, vNew, pSuper)] 
 	}
 
 
+-- | Get all the supercombinators that were lifted out on this pass.
 getChopped :: LiftM [(Var, Var, Top)]
 getChopped	
  = do 	cs	<- gets stateChopped
