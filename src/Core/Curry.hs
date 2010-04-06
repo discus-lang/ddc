@@ -15,7 +15,6 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
 import qualified Data.Set	as Set
-import qualified Data.Map	as Map
 import qualified Shared.VarUtil	as Var
 import qualified Debug.Trace	as Debug
 
@@ -44,9 +43,8 @@ curryTree
 	headerGlob
 	progGlob
  = let 	env	= Env headerGlob progGlob
-   in   progGlob
-		{ globBind	= Map.map (curryP optTailCall env) 
-				$ globBind progGlob }
+   in   mapBindsOfGlob (curryP optTailCall env) progGlob
+
 
 curryP optTailCall env p
  = case p of
