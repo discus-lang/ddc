@@ -251,43 +251,26 @@ coreLint stage cTree cHeader
 coreLambdaLift
 	:: (?args :: [Arg])	
 	=> (?pathSourceBase :: FilePath)
-	=> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-
-	-> IO	( Tree		-- the new source tree, old binds + new binds
-		, Set Var)	-- the the vars of lifted bindings
+	=> Glob				-- ^ Header glob.
+	-> Glob				-- ^ Module glob.
+	-> IO	( Glob			-- transformed module glob, including new lifted bindings.
+		, Set Var)		-- the vars of the new bindings.
 	
-	
-coreLambdaLift cSource cHeader
+coreLambdaLift cgHeader cgModule
  = do	
-	let isPBind pp
-		= case pp of
-			PBind{}	-> True
-			_	-> False
-			
- 	let (cBinds, cOther)
-			= partition isPBind cSource
- 
- 	let vsBoundTop	= Set.fromList
-			$ catMap slurpBoundVarsP (cSource ++ cHeader)
- 
- 	let (cBinds_lifted, cBinds_new)
+ 	let (cgModule', vsNewLambdaLifted)
 		= lambdaLiftTree 
-			cBinds
-			Map.empty
-			vsBoundTop
+			cgHeader
+			cgModule
+						
+	dumpCT DumpCoreLift "core-lift" 		
+		$ treeOfGlob cgModule'
+
+	dumpS  DumpCoreLift "core-lift--new-bindings"	
+		$ show vsNewLambdaLifted
 			
-			
-	let cLifted	= cOther ++ cBinds_lifted ++ cBinds_new
-			
-	let vsBinds_new	= catMap slurpBoundVarsP cBinds_new
-			
-	dumpCT DumpCoreLift "core-lift" 		cLifted
-	dumpS  DumpCoreLift "core-lift--new-vars"	(show vsBinds_new)
-	dumpS  DumpCoreLift "core-lift--vsBoundTop"	(catInt "\n" $ map show $ sort $ Set.toList vsBoundTop)
-			
-	return	( cLifted
-		, Set.fromList vsBinds_new)
+	return	( cgModule'
+		, vsNewLambdaLifted)
 
 
 -- | Convert data structure labels to offsets.
