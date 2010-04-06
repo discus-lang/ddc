@@ -309,29 +309,31 @@ coreLabelIndex mapCtorDefs cTree
 curryCall
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Tree				-- ^ source tree
-	-> Tree				-- ^ header tree
-	-> Glob				-- ^ source glob
-	-> Glob				-- ^ header glob
-	-> IO Tree			-- ^ transformed core tree
+	=> Glob				-- ^ Header glob.
+	-> Glob				-- ^ Module glob.
+	-> IO Glob			-- ^ transformed core tree
 
-curryCall cSource cHeader cgSource cgHeader
- = do	let cCurryCall	= curryTree cHeader cSource cgHeader cgSource
-	dumpCT DumpCoreCurry "core-curry" cCurryCall
-	return	cCurryCall
+curryCall cgHeader cgModule
+ = do	let optTailCall	= elem OptTailCall ?args
+	let cgModule'	= curryTree optTailCall cgHeader cgModule
+
+	dumpCT DumpCoreCurry "core-curry" 
+		$ treeOfGlob cgModule'
+
+	return	cgModule'
 
 			
 -- | Convert Core-IR to Abstract-C
 toSea	:: (?args	    :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> String		-- unique
-	-> Glob			-- ^ header glob
-	-> Glob			-- ^ source glob
-	-> IO 	( E.Tree ()	-- sea source tree
-		, E.Tree ())	-- sea header tree
+	=> String			-- ^ Unique.
+	-> Glob				-- ^ Header glob.
+	-> Glob				-- ^ Module glob.
+	-> IO 	( E.Tree ()		-- sea source tree
+		, E.Tree ())		-- sea header tree
 
-toSea unique cgHeader cgSource
- = do	eCafOrder	<- slurpCafInitSequence cgSource
+toSea unique cgHeader cgModule
+ = do	eCafOrder	<- slurpCafInitSequence cgModule
 
 	case eCafOrder of
 	 Left vsRecursive
@@ -340,38 +342,38 @@ toSea unique cgHeader cgSource
 		% "     offending variables: " % vsRecursive % "\n\n"]
 
 	 Right vsCafOrdering
-	  -> toSea_withCafOrdering unique cgHeader cgSource vsCafOrdering
+	  -> toSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
 
-toSea_withCafOrdering unique cgHeader cgSource vsCafOrdering
+toSea_withCafOrdering unique cgHeader cgModule vsCafOrdering
  = do
 	-- Partition the bindings into CAFs and non-CAFs 
-	let cgSource_binds = globBind cgSource
-	let (  cgSource_binds_cafs
-	     , cgSource_binds_nonCafs)	
-			= Map.partition isCafP cgSource_binds
+	let cgModule_binds = globBind cgModule
+	let (  cgModule_binds_cafs
+	     , cgModule_binds_nonCafs)	
+			= Map.partition isCafP cgModule_binds
 			
 	-- Order the CAFs by the given CAF initilization order.
-	let cgSource_binds_orderedCafs
+	let cgModule_binds_orderedCafs
 		= foldl' (\psCafs v
-			    -> let  Just pCaf	= Map.lookup v cgSource_binds_cafs
+			    -> let  Just pCaf	= Map.lookup v cgModule_binds_cafs
 			       in   psCafs Seq.|> pCaf)
 		   	Seq.empty
 			vsCafOrdering
 		
 	-- All the bindings with ordered CAFs out the front.
-	let cSource_binds_ordered
-		=      cgSource_binds_orderedCafs 
-		Seq.>< (Seq.fromList $ Map.elems cgSource_binds_nonCafs)
+	let cModule_binds_ordered
+		=      cgModule_binds_orderedCafs 
+		Seq.>< (Seq.fromList $ Map.elems cgModule_binds_nonCafs)
 			
-	let cSource_nobinds	
-		= seqOfGlob (cgSource { globBind = Map.empty })
+	let cModule_nobinds	
+		= seqOfGlob (cgModule { globBind = Map.empty })
 
-	let cSource'		
-		=      cSource_binds_ordered 
-		Seq.>< cSource_nobinds
+	let cModule'		
+		=      cModule_binds_ordered 
+		Seq.>< cModule_nobinds
 			
 	-- conversion
-	let eTree	= toSeaTree (unique ++ "S") cSource'
+	let eTree	= toSeaTree (unique ++ "S") cModule'
 	let eTree_list	= foldr (:) [] eTree
 	dumpET DumpSea "sea--source" $ E.eraseAnnotsTree eTree_list
 

@@ -446,18 +446,16 @@ compileFile_parse
 				mapCtorDefs
 				cLambdaLift
 
-	let cgProg_labelIndex	= C.globOfTree cLabelIndex
+	let cgModule_labelIndex	= C.globOfTree cLabelIndex
 
 									
 	-- Resolve partial applications ---------------------------------------
 	outVerb $ ppr $ "  * Core: Curry\n"
-	cCurry		<- SC.curryCall
-				cLabelIndex
-				cHeader
-				cgProg_labelIndex	-- for super arities.
-				cgHeader		-- TODO: refactor to just take the globs.
+	cgCurry		<- SC.curryCall
+				cgHeader
+				cgModule_labelIndex
 
-	let cgProg_final = C.globOfTree cCurry
+	let cgModule_final = cgCurry
 
 
 	-- Generate the module interface --------------------------------------
@@ -470,7 +468,7 @@ compileFile_parse
 				modName
 				sRenamed
 				dProg_project
-				(C.treeOfGlob cgProg_final)
+				(C.treeOfGlob cgModule_final)
 				mapValueToTypeVars
 				typeTable
 				vsNoExport
@@ -490,7 +488,7 @@ compileFile_parse
 				typeTable
 				sProg_linted
 				dProg_project
-				cgProg_final
+				cgModule_final
 
 	-- put blank lines after these sections,
 	--	just to make the interface file look nicer.	
@@ -509,7 +507,7 @@ compileFile_parse
 	(eSea, eHeader)	<- SC.toSea
 				"TE"
 				cgHeader
-				cgProg_final
+				cgModule_final
 				
 	------------------------------------------------------------------------
 	-- Sea stages
@@ -541,7 +539,7 @@ compileFile_parse
 				eForce
 				eHeader
 				cgHeader
-				cgProg_final
+				cgModule_final
 
 	-- Flatten out match stmts --------------------------------------------
 	outVerb $ ppr $ "  * Sea: Flatten\n"

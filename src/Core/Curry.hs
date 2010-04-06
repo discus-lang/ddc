@@ -1,6 +1,6 @@
 
--- | Works out how to perform function applications and rewrites them into
---   super-call/curry/apply/tail-calls
+-- | Work out how to perform function applications and rewrites them into
+--   super-call/curry/apply/tail-calls.
 module Core.Curry
 	(curryTree)
 where
@@ -14,12 +14,11 @@ import DDC.Var.NameSpace
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
-import DDC.Main.Arg		(Arg)
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 import qualified Shared.VarUtil	as Var
 import qualified Debug.Trace	as Debug
-import qualified DDC.Main.Arg	as Arg
 
------
 stage		= "Core.Curry"
 debug		= False
 trace s	x 	= if debug then Debug.trace (pprStrPlain s) x else x
@@ -35,37 +34,36 @@ data Env
 -- | Work out how to perform function applications in this tree
 --	rewrite them to use the primitive application operators.
 curryTree 
-	:: (?args :: [Arg])
-	=> Tree			-- ^ header tree
-	-> Tree			-- ^ source tree
-	-> Glob			-- ^ header glob
-	-> Glob			-- ^ source glob
-	-> Tree 
+	:: Bool			-- ^ Whether to do tail-recursion optimisation.
+	-> Glob			-- ^ Header glob.
+	-> Glob			-- ^ Source glob.
+	-> Glob 
 
 curryTree 
-	headerTree	
-	coreTree
+	optTailCall
 	headerGlob
 	progGlob
  = let 	env	= Env headerGlob progGlob
-   in   map (curryP env) coreTree
+   in   progGlob
+		{ globBind	= Map.map (curryP optTailCall env) 
+				$ globBind progGlob }
 
-curryP env p
+curryP optTailCall env p
  = case p of
  	PBind v x
-	 | elem Arg.OptTailCall ?args
-	 -> PBind v (curryX env [v] x)
+	 | optTailCall
+	 -> PBind v (curryX env (Set.singleton v) x)
 	 
 	 | otherwise
-	 -> PBind v (curryX env [] x)
+	 -> PBind v (curryX env Set.empty x)
 	 
 	_ -> p
 	
 
 -- | Rewrite function applications in this statement
 curryS 	:: Env 
-	-> [Var]		-- ^ supers that can be tail-called.
-	-> Stmt 
+	-> Set Var		-- ^ Names of supers that can be tail-called in this statement.
+	-> Stmt 		-- ^ Statement to transform.
 	-> Stmt
 
 curryS env vsTailCall s
@@ -95,7 +93,7 @@ curryX	env vsTailCall xx
 	= let	initSS		= init ss
 		Just lastS	= takeLast ss
 				
-		initSS'		= map (curryS env []) initSS
+		initSS'		= map (curryS env Set.empty) initSS
 		lastS'		= curryS env vsTailCall lastS
 
 	  in	XDo (initSS' ++ [lastS'])
@@ -126,18 +124,15 @@ curryX	env vsTailCall xx
 
 
 -- | Rewrite function applications in this alternative
-curryA env vsTailCall aa
- = case aa of
- 	AAlt gs x	-> AAlt 
-				(map (curryG env vsTailCall) gs) 
-				(curryX env vsTailCall x)
+curryA env vsTailCall (AAlt gs x)
+	= AAlt 	(map (curryG env vsTailCall) gs) 
+		(curryX env vsTailCall x)
 
 
 -- | Rewrite function applicatoin in this guard
-curryG env vsTailCall gg
- = case gg of
-	GExp  w x	-> GExp w
-	 			(curryX env [] x)
+curryG env vsTailCall (GExp w x)
+	= GExp w
+	 	(curryX env Set.empty x)
 
 
 -- | Make a call to a function.
@@ -148,10 +143,10 @@ curryG env vsTailCall gg
 --
 makeCall 	
 	:: Env			
-	-> [Var]		-- ^ supers that can be tailcalled from here
-	-> Exp			-- ^ call this function (must be an XVar)
-	-> [Exp] 		-- ^ args to function
-	-> Effect 		-- ^ effect caused by calling this function
+	-> Set Var		-- ^ Names of supers that can be tailcalled from here
+	-> Exp			-- ^ Call this function (must be an XVar)
+	-> [Exp] 		-- ^ Args to function.
+	-> Effect 		-- ^ Effect caused by calling this function
 	-> Maybe Exp
 
 makeCall env vsTailCall xF@(XVar vF tF) args eff
@@ -184,12 +179,12 @@ makeCall env vsTailCall xF args eff
 
 -- | We've got a top-level supercombinator that we can call directly.
 makeSuperCall 
-	:: Exp 		-- ^ var of super being called.	(must be an XVar)
-	-> [Var]	-- ^ supers that can be tail called.
-	-> [Exp] 	-- ^ arguments to super.
-	-> Effect 	-- ^ effect caused when evaluating super.
-	-> Int 		-- ^ number of args in the call.
-	-> Int 		-- ^ number of args needed by the super.
+	:: Exp 		-- ^ Name of super being called.	(must be an XVar)
+	-> Set Var	-- ^ Supers that can be tail called.
+	-> [Exp] 	-- ^ Arguments to super.
+	-> Effect 	-- ^ Effect caused when evaluating super.
+	-> Int 		-- ^ Number of args in the call.
+	-> Int 		-- ^ Number of args needed by the super.
 	-> Maybe Exp
 
 makeSuperCall 
@@ -206,7 +201,7 @@ makeSuperCall
 	-- We've got the exact number of args the super needs and we're ok
 	-- 	for a tail-call. 
  	| callArity == superArity
-	, elem vF tailCallMe
+	, Set.member vF tailCallMe
 	= Just $ XPrim MTailCall (xF : args)
 
 	-- We're not able to do a tail call, but we've still got the right number
@@ -227,7 +222,7 @@ makeSuperCall
 	= Just $ XPrim (MCallApp superArity) (xF : args)
    	
 	
--- | Apply a thunk to a value to get the result
+-- | Apply a thunk to a value to get the result.
 makeThunkCall :: Exp -> [Exp] -> Effect -> Int -> Maybe Exp
 makeThunkCall xF args eff callArity
 
@@ -241,20 +236,19 @@ makeThunkCall xF args eff callArity
 	= Just $ XPrim MApply (xF : args)
 
 
--- | Checks if this expression represents a value
---	(instead of a type)
+-- | Checks if this expression represents a value, instead of a type.
 isValueArg :: Exp -> Bool
 isValueArg xx
  = case xx of
-	XLit{}			-> True
+	XLit{}		-> True
 
  	XVar v t
-	 | varNameSpace v	== NameValue
+	 | varNameSpace v == NameValue
 	 -> True
 
-	XAPP x t		-> isValueArg x
+	XAPP x t	-> isValueArg x
 	
-	XType{}			-> False
+	XType{}		-> False
 	
 	_	-> panic stage 
 			$ "isValueArg: unexpected arg in function application " % xx 
