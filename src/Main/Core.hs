@@ -16,7 +16,7 @@ module Main.Core
 	, coreLint
 	, coreLambdaLift
 	, coreLabelIndex
-	, curryCall
+	, coreCurryCall
 	, toSea)
 where
 import Core.Exp 	
@@ -294,26 +294,28 @@ coreLambdaLift cSource cHeader
 coreLabelIndex
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Map Var CtorDef
-	-> Tree			-- source tree
-	-> IO Tree
+	=> Glob				-- ^ Header glob.
+	-> Glob				-- ^ Module glob.
+	-> IO Glob
 	
-coreLabelIndex mapCtorDefs cTree
- = do	let cIndex	= labelIndexTree mapCtorDefs cTree
+coreLabelIndex cgHeader cgModule
+ = do	let cgModule'	= labelIndexTree cgHeader cgModule
  	
-	dumpCT DumpCoreLabelIndex "core-labelIndex" cIndex
-	return	cIndex
+	dumpCT DumpCoreLabelIndex "core-labelIndex" 
+		$ treeOfGlob cgModule'
+
+	return	cgModule'
 
 
 -- | Identify partial applications and insert calls to explicitly create and apply thunks.
-curryCall
+coreCurryCall
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> Glob				-- ^ Header glob.
 	-> Glob				-- ^ Module glob.
-	-> IO Glob			-- ^ transformed core tree
+	-> IO Glob
 
-curryCall cgHeader cgModule
+coreCurryCall cgHeader cgModule
  = do	let optTailCall	= elem OptTailCall ?args
 	let cgModule'	= curryTree optTailCall cgHeader cgModule
 

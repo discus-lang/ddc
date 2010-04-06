@@ -424,13 +424,8 @@ compileFile_parse
 	-- TODO: Use Glob for all of the core stages.
 --	let cgProg_checked	= C.globOfTree cProg_checked
 	let cgHeader		= C.globOfTree cHeader
-	
-	-- Slurp out ctor defs
-	let mapCtorDefs	= Map.union
-				(C.slurpCtorDefs cProg_checked)
-				(C.slurpCtorDefs cHeader)
-			
-			
+				
+		
 	-- Perform lambda lifting ---------------------------------------------
 	outVerb $ ppr $ "  * Core: LambdaLift\n"
 	(  cLambdaLift
@@ -439,19 +434,19 @@ compileFile_parse
 				cProg_checked
 				cHeader
 
+	let cgModule_lambdaLift	= C.globOfTree cLambdaLift
 
 	-- Convert field labels to field indicies -----------------------------
 	outVerb $ ppr $ "  * Core: LabelIndex\n"
-	cLabelIndex	<- SC.coreLabelIndex
-				mapCtorDefs
-				cLambdaLift
-
-	let cgModule_labelIndex	= C.globOfTree cLabelIndex
+	cgModule_labelIndex
+			<- SC.coreLabelIndex
+				cgHeader
+				cgModule_lambdaLift
 
 									
 	-- Resolve partial applications ---------------------------------------
 	outVerb $ ppr $ "  * Core: Curry\n"
-	cgCurry		<- SC.curryCall
+	cgCurry		<- SC.coreCurryCall
 				cgHeader
 				cgModule_labelIndex
 

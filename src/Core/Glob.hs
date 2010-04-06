@@ -7,7 +7,8 @@ module Core.Glob
 	, seqOfGlob
 	, globDeclaresValue 
 	, bindingArityFromGlob 
-	, typeFromGlob )
+	, typeFromGlob
+	, mapBindsOfGlob )
 where
 import Core.Exp
 import Core.Reconstruct
@@ -208,3 +209,8 @@ typeFromGlob v glob
 	| otherwise
 	= Nothing
 
+
+-- | Apply a function to all PBinds in a `Glob`.
+mapBindsOfGlob :: (Top -> Top) -> Glob -> Glob
+mapBindsOfGlob f glob
+	= glob { globBind	= Map.map f $ globBind glob }

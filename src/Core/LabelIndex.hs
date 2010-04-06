@@ -1,36 +1,43 @@
 
--- Convert all LVar constructor labels in patterns into their equivalent
---	LIndex labels. This makes the Core -> Sea translation easier.
---
+-- | Convert all `LVar` constructor labels in patterns into their equivalent
+--	`LIndex` labels. This makes the Core to Sea IR translation easier.
 module Core.LabelIndex
 	(labelIndexTree)
 where
 import Core.Exp
+import Core.Glob
 import Core.Plate.Trans
 import DDC.Var
+import Util.Data.Maybe
 import qualified Data.Map	as Map
-import Data.Map			(Map)
 
 
--- | Convert LVar labels to LIndex labels in a tree.
+-- | Convert `LVar` labels to `LIndex` labels in a glob.
 labelIndexTree
-	:: Map Var CtorDef	-- ^ map of data constructor names to definition
-	-> Tree	
-	-> Tree
+	:: Glob			-- ^ Header glob.
+	-> Glob			-- ^ Module glob.
+	-> Glob
 	
-labelIndexTree
-	mapCtorDef
-	tree
- = 	transformW (labelIndexW mapCtorDef) tree
+labelIndexTree cgHeader cgModule
+ = let	lookupCtorDef :: Var -> Maybe CtorDef
+	lookupCtorDef name	
+	  	= takeFirstJust
+			[ Map.lookup name (globDataCtors cgModule)
+			, Map.lookup name (globDataCtors cgHeader) ]
+
+   in	mapBindsOfGlob 
+		(transformW $ labelIndexW lookupCtorDef) 
+		cgModule
   
-labelIndexW mapCtorDefs xx
+
+labelIndexW lookupCtorDef xx
  = case xx of
 	WVar{}
 	 ->	xx
 
  	WCon sp ctorName lvts	
 	 -> let	(ls, vs, ts)	= unzip3 lvts
-		Just ctorDef	= Map.lookup ctorName mapCtorDefs
+		Just ctorDef	= lookupCtorDef ctorName
 	 	ls'		= map (convertLabel ctorDef) ls
 		lvts'		= zip3 ls' vs ts
 	    in	WCon sp ctorName lvts'
