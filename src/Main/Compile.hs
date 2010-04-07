@@ -414,14 +414,14 @@ compileFile_parse
 	--	Lambda lifting doesn't currently preserve the typing, 
 	--	So we can't check it again after this point
 	outVerb $ ppr $ "  * Core: Check\n"
-	cModule_linted	
+	cModule_checked	
 		<- SC.coreReconstruct  
 			"core-reconstruct-final" 
 			cHeader 
 			cSimplified
 
 	-- Convert to glob form.
-	let cgModule_linted	= C.globOfTree cModule_linted
+	let cgModule_checked	= C.globOfTree cModule_checked
 	let cgHeader		= C.globOfTree cHeader
 				
 		
@@ -431,7 +431,7 @@ compileFile_parse
 	 , vsNewLambdaLifted) 
 			<- SC.coreLambdaLift
 				cgHeader
-				cgModule_linted
+				cgModule_checked
 
 
 	-- Convert field labels to field indicies -----------------------------

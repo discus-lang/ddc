@@ -31,7 +31,7 @@ import DDC.Var
 import Core.Block			(blockTree)
 import Core.Crush			(crushTree)
 import Core.Dictionary			(dictTree)
-import Core.Reconstruct			(reconTree)
+import Core.Reconstruct			(reconTreeWithEnv)
 import Core.Bind			(bindTree)
 import Core.Thread			(threadTree)
 import Core.Prim			(primTree)
@@ -120,7 +120,7 @@ coreReconstruct name cHeader cTree
  		{ Env.envDropStmtEff	= False }
  
  	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
- 			   reconTree table cHeader cTree
+ 			   reconTreeWithEnv table cHeader cTree
  	dumpCT DumpCoreRecon name cTree'
 	return	cTree'
 

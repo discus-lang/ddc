@@ -1,24 +1,23 @@
 
--- |	Reconstruct and check the type\/region\/effect\/closure and witness information in
---	the core IR.
+-- | Reconstruct and check the type\/region\/effect\/closure and witness information in
+--   the core IR.
 --
--- 	The types of free variables can be supplied either as annotations on the variables themselves, 
---	or supplied via a table. Any missing annotations are filled during checking, so expressions
---	returned may be checked again without using the table.
+--   The types of free variables can be supplied either as annotations on the variables themselves, 
+--   or supplied via a table. Any missing annotations are filled during checking, so expressions
+--   returned may be checked again without using the table.
 --	
---	The table also carries the name of the calling function, to print in panic messages in case
---	a type error is uncovered.
+--   The table also carries the name of the calling function, to print in panic messages in case
+--   a type error is uncovered.
 --
---	The prime versions of the recon* functions start with a stage name and an empty table, but are 
---	otherwise identical to the plain versions.
+--   The prime versions of the recon* functions start with a stage name and an empty table, but are 
+--   otherwise identical to the plain versions.
 --
---	The recon?_type versions take a stage name and only return the value type of the expression.
+--   The recon?_type versions take a stage name and only return the value type of the expression.
+--
+--   TODO: do proper checking of witnesses.
 --	
--- 	TODO: also check witnesses and proofs of purity.
---
---
 module Core.Reconstruct
-	( reconTree, reconTree'
+	( reconTree, reconTreeWithEnv
 	, reconP, reconP', reconP_type
 	, reconX, reconX', reconX_type
 	, reconS
@@ -51,8 +50,6 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	
 
-
------
 stage	= "Core.Reconstruct"
 
 debug	= False
@@ -67,8 +64,7 @@ type ReconM
 	= State Env
 
 -- | Modify the state for an action, the revert to the original state.
-tempState
-	:: (Env -> Env) -> ReconM a -> ReconM a
+tempState :: (Env -> Env) -> ReconM a -> ReconM a
 tempState fSt action
  = do	st	<- get
         modify	fSt
@@ -77,29 +73,32 @@ tempState fSt action
 	return	x
 
 -- | Revert to the previous state after running an action.
-keepState
-	:: ReconM a -> ReconM a
+keepState :: ReconM a -> ReconM a
 keepState = tempState id
 
 
 -- Tree --------------------------------------------------------------------------------------------
-reconTree'
-	:: String	-- ^ caller name
-	-> Tree		-- ^ header tree
-	-> Tree 	-- ^ core tree
-	-> Tree		-- ^ core tree with reconstructed type information
-reconTree' caller tHeader tCore
- = reconTree
+-- | Do type reconstruction on this tree.
+reconTree
+	:: String	-- ^ Caller name to be printed in panic messages.
+	-> Tree		-- ^ Header tree.
+	-> Tree 	-- ^ Module tree.
+	-> Tree		-- ^ Module with reconstructed and checked type information.
+	
+reconTree caller tHeader tCore
+ = reconTreeWithEnv
  	emptyEnv { envCaller = Just caller }
 	tHeader tCore
 
-reconTree
+
+-- | Do type reconstruction on this tree, with the given startning environment.
+reconTreeWithEnv
 	:: Env	
 	-> Tree		-- ^ header tree
 	-> Tree 	-- ^ core tree
 	-> Tree		-- ^ core tree with reconstructed type information
 	
-reconTree table tHeader tCore
+reconTreeWithEnv table tHeader tCore
  = {-# SCC "reconstructTree" #-}
    let	-- slurp out all the stuff defined at top level
 	topTypes	= {-# SCC "reconTree/topTypes" #-} catMap slurpTypesP (tHeader ++ tCore)
@@ -1050,9 +1049,6 @@ clampSum t1 t2
 		return $ makeTSum k1 parts_clamped
 
 
-
-
 -- Bits --------------------------------------------------------------------------------------------
-
 pprBounds more
  	= "\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) $ Map.toList more) % "\n"
