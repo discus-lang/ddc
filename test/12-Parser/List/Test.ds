@@ -1,17 +1,17 @@
 
 -- Bunch of standard lists.
-empty = []
-one = [ 0 ]
-two = [ 1, 2 ]
-three = [ 1, 2, 3 ]
-four = [ 1, 2, 3, 4 ]
-five = [ 1, 2, 3, 4, 5 ]
+empty 	= []
+one 	= [ 0 ]
+two 	= [ 1, 2 ]
+three 	= [ 1, 2, 3 ]
+four 	= [ 1, 2, 3, 4 ]
+five 	= [ 1, 2, 3, 4, 5 ]
 
 
 -- Lists with a single start element.
-rangeTwo = [ 1 .. 4 ]
-rangeTwoInf = [ 1 .. ]
+rangeTwo 	= [ 1 .. 4 ]
+rangeTwoInf 	= [ 1 .. ]
 
 -- Lists with a pair of start element.
-rangeThree = [ 1, 3 .. 10 ]
-rangeThreeInf = [ 1, 3 .. ]
+rangeThree 	= [ 1, 3 .. 10 ]
+rangeThreeInf 	= [ 1, 3 .. ]

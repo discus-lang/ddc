@@ -118,9 +118,18 @@ reconTreeWithEnv table cgHeader cgCore
  	tt		= {-# SCC "reconTree/table"    #-} 
 			foldr (uncurry addEqVT) table topTypes
 	
-	-- reconstruct type info on each top level thing
-	binds'		= evalState (mapM reconP $ globBind cgCore) tt
-	cgCore'		= cgCore { globBind = binds' }
+	-- reconstruct type info on each top level thing.
+	--	We have to do the regions first so their witnesses are added to the state.
+	(pRegions', pBinds')		
+	 = evalState 
+		(do pRegions'	<- mapM reconP $ globRegion cgCore
+		    pBinds'	<- mapM reconP $ globBind   cgCore
+		    return (pRegions', pBinds'))
+		tt
+
+	cgCore'	= cgCore 
+		{ globRegion	= pRegions'
+		, globBind	= pBinds'}
 	
    in	cgCore'
 
