@@ -5,7 +5,6 @@ module	Core.OpType
 	, superOpTypeX )
 where
 import Core.Exp
-import Core.Reconstruct
 import Type.Exp
 import Type.Util
 import Util
@@ -13,6 +12,7 @@ import DDC.Main.Error
 import DDC.Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
+import {-# SOURCE #-} Core.Reconstruct
 
 stage = "Core.OpType"
 

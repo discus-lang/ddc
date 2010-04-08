@@ -12,7 +12,6 @@ module Core.Glob
 	, varIsBoundAtTopLevelInGlob )
 where
 import Core.Exp
-import Core.Reconstruct
 import Core.OpType
 import Core.Util.Slurp
 import Type.Exp
@@ -29,6 +28,8 @@ import Prelude			hiding (foldr)
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Sequence	as Seq
+import {-# SOURCE #-} Core.Reconstruct
+
 
 stage	= "Core.Glob"
 

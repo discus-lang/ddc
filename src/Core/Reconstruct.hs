@@ -15,7 +15,11 @@
 --   The recon?_type versions take a stage name and only return the value type of the expression.
 --
 --   TODO: do proper checking of witnesses.
---	
+--   TODO: this needs cleaning up and auditing against the typing rules.
+--   TODO: it would be better to store the header and module globs directly in the environment.
+--         At the moment we're just slurping out all of the top level type and stashing them
+--         in the initial environment, while using concat, which is nasty.
+--
 module Core.Reconstruct
 	( reconTree, reconTreeWithEnv
 	, reconP, reconP', reconP_type
@@ -28,13 +32,13 @@ module Core.Reconstruct
 	, reconUnboxType)
 where
 import Core.Exp
+import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
 import Type.Exp
 import Type.Util.Environment
 import Type.Builtin
 import Shared.VarPrim
-import Util
 import DDC.Var.VarId
 import DDC.Var.NameSpace
 import DDC.Base.DataFormat
@@ -43,7 +47,10 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var.VarId		as Var
 import DDC.Var
+import Data.Traversable		(mapM)
 import Type.Error		(Error(..))
+import Prelude			hiding (mapM)
+import Util			hiding (mapM)
 import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Map	as Map
@@ -81,33 +88,41 @@ keepState = tempState id
 -- | Do type reconstruction on this tree.
 reconTree
 	:: String	-- ^ Caller name to be printed in panic messages.
-	-> Tree		-- ^ Header tree.
-	-> Tree 	-- ^ Module tree.
-	-> Tree		-- ^ Module with reconstructed and checked type information.
+	-> Glob		-- ^ Header glob.
+	-> Glob 	-- ^ Module glob.
+	-> Glob		-- ^ Module with reconstructed and checked type information.
 	
-reconTree caller tHeader tCore
+reconTree caller cgHeader cgModule
  = reconTreeWithEnv
  	emptyEnv { envCaller = Just caller }
-	tHeader tCore
+	cgHeader cgModule
 
 
 -- | Do type reconstruction on this tree, with the given startning environment.
 reconTreeWithEnv
 	:: Env	
-	-> Tree		-- ^ header tree
-	-> Tree 	-- ^ core tree
-	-> Tree		-- ^ core tree with reconstructed type information
+	-> Glob		-- ^ Header glob.
+	-> Glob 	-- ^ Module glob.
+	-> Glob		-- ^ Module glob with reconstructed type information.
 	
-reconTreeWithEnv table tHeader tCore
+reconTreeWithEnv table cgHeader cgCore
  = {-# SCC "reconstructTree" #-}
-   let	-- slurp out all the stuff defined at top level
-	topTypes	= {-# SCC "reconTree/topTypes" #-} catMap slurpTypesP (tHeader ++ tCore)
- 	tt		= {-# SCC "reconTree/table"    #-} foldr (uncurry addEqVT) table topTypes
+   let	
+	-- slurp out all the stuff defined at top level
+	-- TODO: catMap is evil. 
+	--       It'd be better to store the globs directly in the environment.
+	topTypes	= {-# SCC "reconTree/topTypes" #-} 
+		   	   catMap slurpTypesP 
+			$ (treeOfGlob cgHeader) ++ (treeOfGlob cgCore)
+
+ 	tt		= {-# SCC "reconTree/table"    #-} 
+			foldr (uncurry addEqVT) table topTypes
 	
 	-- reconstruct type info on each top level thing
-	tCore'		= evalState (mapM reconP tCore) tt
+	binds'		= evalState (mapM reconP $ globBind cgCore) tt
+	cgCore'		= cgCore { globBind = binds' }
 	
-   in tCore'
+   in	cgCore'
 
 
 -- Top ---------------------------------------------------------------------------------------------

@@ -109,20 +109,22 @@ coreDict hTree sTree
 coreReconstruct
 	:: (?args	:: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> String		-- ^ stage name
-	-> Tree			-- ^ header tree
-	-> Tree			-- ^ core tree
-	-> IO Tree
+	=> String		-- ^ Stage name.
+	-> Glob			-- ^ Header module.
+	-> Glob			-- ^ Core   module.
+	-> IO Glob
 	
-coreReconstruct name cHeader cTree
- = do	let table	= 
- 		Env.emptyEnv
+coreReconstruct name cgHeader cgModule
+ = do	let table	
+		= Env.emptyEnv
  		{ Env.envDropStmtEff	= False }
  
- 	let cTree'	= {-# SCC "Core.Reconstruct" #-} 
- 			   reconTreeWithEnv table cHeader cTree
- 	dumpCT DumpCoreRecon name cTree'
-	return	cTree'
+ 	let cgModule'	= {-# SCC "Core.Reconstruct" #-} 
+ 			   reconTreeWithEnv table cgHeader cgModule
+ 	dumpCT DumpCoreRecon name 
+		$ treeOfGlob cgModule'
+
+	return	cgModule'
 
 	
 -- | Bind local regions.

@@ -330,6 +330,8 @@ compileFile_parse
 				projTable
 				vsProjectResolve
 
+	let cgHeader		= C.globOfTree cHeader
+
 	-- Slurp out the list of all the vars defined at top level.
 	let topVars	= Set.union 
 				(Set.fromList $ concat $ map C.slurpBoundVarsP cSource)
@@ -375,13 +377,15 @@ compileFile_parse
 	outVerb $ ppr $ "  * Core: Thread\n"
 	cThread		<- SC.coreThread cHeader cSnip
 
+	let cgModule_thread = C.globOfTree cThread
 
 	-- Reconstruct and check types ----------------------------------------
 	outVerb $ ppr $ "  * Core: Reconstruct\n"
-	cReconstruct	<- SC.coreReconstruct 
+	cgReconstruct	<- SC.coreReconstruct 
 				"core-reconstruct" 
-				cHeader cThread
+				cgHeader cgModule_thread
 
+	let cReconstruct = C.treeOfGlob cgReconstruct
 
 	-- Lint the core program ----------------------------------------------
 	outVerb $ ppr $ "  * Core: Lint\n"
@@ -409,21 +413,18 @@ compileFile_parse
 				then SC.coreSimplify "CI" topVars cPrim cHeader
 				else return cPrim
 	
+	let cgModule_simplified
+		= C.globOfTree cSimplified
 
 	-- Check the program one last time ------------------------------------
 	--	Lambda lifting doesn't currently preserve the typing, 
 	--	So we can't check it again after this point
 	outVerb $ ppr $ "  * Core: Check\n"
-	cModule_checked	
+	cgModule_checked	
 		<- SC.coreReconstruct  
 			"core-reconstruct-final" 
-			cHeader 
-			cSimplified
-
-	-- Convert to glob form.
-	let cgModule_checked	= C.globOfTree cModule_checked
-	let cgHeader		= C.globOfTree cHeader
-				
+			cgHeader 
+			cgModule_simplified				
 		
 	-- Perform lambda lifting ---------------------------------------------
 	outVerb $ ppr $ "  * Core: LambdaLift\n"
