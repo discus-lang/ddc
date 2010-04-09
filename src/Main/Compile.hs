@@ -186,8 +186,8 @@ compileFile_parse
 	outVerb $ ppr $ "  * Source: Rename\n"
 	((_, sRenamed) : modHeaderRenamedTs)
 			<- {-# SCC "Main.renamed" #-}
-				SS.rename
-					$ (modName, sParsed) : Map.toList importsExp
+			   SS.rename
+				$ (modName, sParsed) : Map.toList importsExp
 	
 	let hRenamed	= concat 
 			$ [tree	| (mod, tree) <- modHeaderRenamedTs ]
@@ -224,7 +224,9 @@ compileFile_parse
 	outVerb $ ppr $ "  * Source: Lint\n"
 
 	(sHeader_linted, sProg_linted)	
-			<- SS.lint hRenamed sDefixed
+			<- SS.lint 
+				hRenamed 
+				sDefixed
 	
 	-- Desugar the source language ----------------------------------------
 	outVerb $ ppr $ "  * Convert to Desugared IR\n"
@@ -243,20 +245,32 @@ compileFile_parse
 	-- Do kind inference --------------------------------------------------
 	outVerb $ ppr $ "  * Desugar: InferKinds\n"
 	(hKinds, sKinds, kindTable)
-			<- SD.desugarInferKinds "DK" hDesugared sDesugared
+			<- SD.desugarInferKinds 
+				"DK" 
+				hDesugared 
+				sDesugared
 
 	-- Elaborate effects and closures of types in foreign imports ---------
 	outVerb $ ppr $ "  * Desugar: Elaborate\n"
-	(hElab, sElab)	<- SD.desugarElaborate "DE" hKinds sKinds
+	(hElab, sElab)	<- SD.desugarElaborate 
+				"DE" 
+				hKinds 
+				sKinds
 
 	-- Eta expand simple v1 = v2 projections ------------------------------
 	outVerb $ ppr $ "  * Desugar: ProjectEta\n"
-	sProjectEta	<- SD.desugarProjectEta "DE" sElab
+	sProjectEta	<- SD.desugarProjectEta
+				"DE" 
+				sElab
 			
 	-- Snip down dictionaries and add default projections -----------------
 	outVerb $ ppr $ "  * Desugar: Project\n"
 	(dProg_project, projTable)	
-			<- SD.desugarProject "SP" modName hElab sProjectEta
+			<- SD.desugarProject
+				"SP" 
+				modName
+				hElab
+				sProjectEta
 
 	-- Slurp out type constraints -----------------------------------------
 	outVerb $ ppr $ "  * Desugar: Slurp\n"
