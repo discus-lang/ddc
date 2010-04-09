@@ -14,6 +14,7 @@ module Core.Thread
 where
 import Core.Plate.Trans
 import Core.Exp
+import Core.Glob
 import Type.Builtin
 import Type.Util
 import Type.Exp
@@ -22,48 +23,31 @@ import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Var
 import qualified DDC.Var.PrimId		as Var
-import qualified Util.Data.Map		as Map
+import qualified Data.Map		as Map
 
-
------
 stage	= "Core.Thread"
 
-
---------------------------------------------------------------------------------
 -- Maintain a map of regions, to what witnesses we have available for them.
-type ThreadS
-	= [((TyClass, Var), Var)]	-- (class name, region), witness variable
-	
-
-type ThreadM 
-	= State ThreadS
-
--- A map of the defined type class instances
-type ClassInstMap
-	= Map Var [Top]
+type ThreadS	= [((TyClass, Var), Var)]	-- (class name, region), witness variable
+type ThreadM 	= State ThreadS
 
 
---------------------------------------------------------------------------------
 -- | Thread witness variables in this tree
-threadTree :: Tree -> Tree -> Tree
-threadTree hTree sTree 
- = let	instMap	= slurpClassInstMap (sTree ++ hTree)
-   
+threadTree :: Glob -> Glob -> Glob
+threadTree cgHeader cgModule
+ = let	isUserClassName v
+		=   (Map.member v $ globClassDict cgHeader)
+		 || (Map.member v $ globClassDict cgModule)
+		
 	transTable
 		 = transTableId
 		 { transP	= thread_transP 
-		 , transX 	= thread_transX instMap 
+		 , transX 	= thread_transX isUserClassName
 		 , transX_enter	= thread_transX_enter }
 	
-   in	evalState (transZM transTable sTree) []
-
--- | Slurp out all the class instances from ths tree
-slurpClassInstMap
- ::	Tree	-> Map Var [Top]
-
-slurpClassInstMap tree
- = 	Map.gather
- 	[ (v, p)	| p@(PClassInst v ts defs) <- tree]
+   in	evalState 	
+		(mapToTopsWithExpsOfGlobM (transZM transTable) cgModule) 
+		[]
 
 
 -- | push witnesses to properties of top-level regions.
@@ -78,11 +62,11 @@ thread_transP pp
 
 
 -- | bottom-up: replace applications of static witnesses with bound witness variables.
-thread_transX :: ClassInstMap -> Exp -> ThreadM Exp
-thread_transX instMap xx
+thread_transX :: (Var -> Bool) -> Exp -> ThreadM Exp
+thread_transX isUserClassName xx
 	| XAPP x t		<- xx
 	, Just _		<- takeTWitness t
-	= do	t'	<- rewriteWitness instMap t
+	= do	t'	<- rewriteWitness isUserClassName t
 	 	return	$ XAPP x t'
 
 	-- pop lambda bound witnesses on the way back up because we're leaving their scope.
@@ -122,22 +106,26 @@ thread_transX_enter xx
 -- | If this is an explicitly constructed witness then try and replace it by
 --	a variable which binds the correct one.
 --
-rewriteWitness :: ClassInstMap -> Type -> ThreadM Type
-rewriteWitness instMap tt
+rewriteWitness 
+	:: (Var -> Bool) 
+	-> Type 
+	-> ThreadM Type
+
+rewriteWitness isUserClassName tt
  = case tt of
 	-- handle compound witnesses
 	TWitJoin ts
-	 -> do	ts'	<- mapM (rewriteWitness' instMap) ts
+	 -> do	ts'	<- mapM (rewriteWitness' isUserClassName) ts
 		return	$ makeTWitJoin ts'
 
-	_	-> rewriteWitness' instMap tt
+	_	-> rewriteWitness' isUserClassName tt
 
-rewriteWitness' instMap tt
+rewriteWitness' isUserClassName tt
  
 	-- Got an application of an explicit witness to some region.
 	--	Lookup the appropriate witness from the environment and use
 	--	that here.
-	| Just (vC, _, [TVar k vT]) 	<- mClass
+	| Just (vC, _, [TVar k vT]) 		<- mClass
 	= do	Just vW	<- lookupWitness vT vC
 		let Just k	= kindOfType tt
 		return $ TVar k vW
@@ -148,23 +136,23 @@ rewriteWitness' instMap tt
 	= return tt
 
 	-- empty of no closure is trivial
-	| Just (TyClassEmpty, _, [TBot kC]) <- mClass
+	| Just (TyClassEmpty, _, [TBot kC])	<- mClass
 	, kC	== kClosure
 	= return tt
 
 	-- build a witness for purity of this effect
-	| Just (TyClassPure, _, [eff])	<- mClass
+	| Just (TyClassPure, _, [eff])		<- mClass
 	= do	w	<- buildPureWitness eff
 		return	$ w
 
 	-- leave shape witnesses for Core.Reconstruct to worry about
-	| Just (TyClass vC, _, _)	<- mClass
-	, VarIdPrim Var.FShape{}	<- varId vC
+	| Just (TyClass vC, _, _)		<- mClass
+	, VarIdPrim Var.FShape{}		<- varId vC
 	= return tt
 
 	-- leave user type classes for Core.Dict to worry about
-	| Just (TyClass vC, _, _)	<- mClass
-	, Just _			<- Map.lookup vC instMap
+	| Just (TyClass vC, _, _)		<- mClass
+	, isUserClassName vC
 	= return tt
 
 	-- function types are always assumed to be lazy, 
@@ -248,6 +236,7 @@ lookupWitness vRegion vClass
 			$ Nothing
 
 	return mvWitness
+
 
 -- Inspect this kind. If it binds a witness then record it in the state.
 pushWitnessVK :: Var -> Kind -> ThreadM ()

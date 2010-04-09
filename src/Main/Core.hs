@@ -165,16 +165,18 @@ coreBind
 coreThread
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Tree 		-- ^ header tree
-	-> Tree 		-- ^ core tree
-	-> IO Tree
+	=> Glob 		-- ^ Header Glob.
+	-> Glob 		-- ^ Module Glob.
+	-> IO Glob
 	
-coreThread hTree cTree
- = do	let tree'	= {-# SCC "Core.Thread" #-} 
- 			  threadTree hTree cTree
+coreThread cgHeader cgModule
+ = do	let cgModule'	= {-# SCC "Core.Thread" #-} 
+ 			  threadTree cgHeader cgModule
  
- 	dumpCT DumpCoreThread "core-thread" tree'
-	return tree'
+ 	dumpCT DumpCoreThread "core-thread" 
+		$ treeOfGlob cgModule'
+
+	return cgModule'
 	
 
 -- | Identify primitive operations.

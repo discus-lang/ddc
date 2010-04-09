@@ -335,7 +335,9 @@ compileFile_parse
 	let rsGlobal	= Set.filter (\v -> varNameSpace v == NameRegion) 
 			$ vsFreeTREC
 	
-	cBind		<- SC.coreBind sModule "CB"
+	cBind		<- SC.coreBind 
+				sModule 
+				"CB"
 				vsRegionClasses
 				rsGlobal
 				cNormalise
@@ -344,21 +346,24 @@ compileFile_parse
 
 	-- Convert to A-normal form -------------------------------------------
 	outVerb $ ppr $ "  * Core: Snip\n"
-	cgModule_snip	<- SC.coreSnip "core-snip" "CS" cgHeader cgModule_bind
-
-	let cSnip	= C.treeOfGlob cgModule_snip
+	cgModule_snip	<- SC.coreSnip 
+				"core-snip" 
+				"CS" 
+				cgHeader 
+				cgModule_bind
 
 	-- Thread through witnesses -------------------------------------------
 	outVerb $ ppr $ "  * Core: Thread\n"
-	cThread		<- SC.coreThread cHeader cSnip
-
-	let cgModule_thread = C.globOfTree cThread
+	cgModule_thread	<- SC.coreThread 
+				cgHeader 
+				cgModule_snip
 
 	-- Reconstruct and check types ----------------------------------------
 	outVerb $ ppr $ "  * Core: Reconstruct\n"
 	cgReconstruct	<- SC.coreReconstruct 
 				"core-reconstruct" 
-				cgHeader cgModule_thread
+				cgHeader
+				cgModule_thread
 
 	let cReconstruct = C.treeOfGlob cgReconstruct
 
@@ -377,7 +382,8 @@ compileFile_parse
 
 	-- Identify prim ops --------------------------------------------------
 	outVerb $ ppr $ "  * Core: Prim\n"
-	cPrim		<- SC.corePrim	cDict
+	cPrim		<- SC.corePrim
+				cDict
 
 	let cgModule_prim
 		= C.globOfTree cPrim
