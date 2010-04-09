@@ -1,11 +1,9 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
--- | Ensures that the expression in lambdas, top level bindings, and the right of case 
---	alternatives are all XDos.
---
---	This makes the Core.Snip's job easier because now it can just snip 
---	[Stmt] -> [Stmt] without worring about introducing more XDo's to hold snipped
---	statements.
+-- | Ensure that the bodies of lambda abstractions, top level bindings and the right of
+--	case alternatives are `XDo`s (block of statements). This makes the snippers job
+--	easiser, becase all expressions that aren't in A-normal form are now enclosed
+--	by a list of statements (which can be added to).
 --
 module Core.Block
 	(blockTree)
@@ -17,54 +15,63 @@ import Core.Plate.Trans
 -- | Introduce XDo expressions into this tree.
 blockTree :: Tree -> Tree
 blockTree tree
-	= transZ 
-		transTableId 
-			{ transX	= \x -> return $ blockTreeX x 
-			, transA	= \a -> return $ blockTreeA a 
-			, transP	= \p -> return $ blockTreeP p 
-			, transG	= \g -> return $ blockTreeG g }
-		tree
+ = let 	table	= transTableId 
+		{ transX	= \x -> return $ blockTreeX x 
+		, transA	= \a -> return $ blockTreeA a 
+		, transP	= \p -> return $ blockTreeP p 
+		, transG	= \g -> return $ blockTreeG g }
+
+   in	transZ table tree
+
 
 blockTreeX xx
  = case xx of
-	XLAM	v k x		-> XLAM v k (blockXL x)
- 	XLam	v t x eff clo	-> XLam v t (blockXL x) eff clo
-	_			-> xx
+	XLAM v k x
+	  -> XLAM v k (blockX_lambda x)
+
+ 	XLam v t x eff clo	
+	  -> XLam v t (blockX_lambda x) eff clo
+
+	_ -> xx
+
 
 blockTreeA aa
  = case aa of
- 	AAlt gs x		-> AAlt gs  (blockXF x)
+ 	AAlt gs x	-> AAlt gs (blockX_tau x)
+
 
 blockTreeG gg
  = case gg of
- 	GExp w x		-> GExp w (blockX x)
+ 	GExp w x	-> GExp w  (blockX x)
+
 
 blockTreeP pp
  = case pp of
- 	PBind v x		-> PBind v (blockXL x)
-	_			-> pp
+ 	PBind v x	-> PBind v (blockX_lambda x)
+	_		-> pp
 
-
--- | force this expression to be an XDo
---	but allow XTau and XTet wrappers.
-blockXF xx
- = case xx of
- 	XDo{}			-> xx
-	XTau t x		-> XTau t	$ blockXF x
-	_			-> XDo [ SBind Nothing xx]
-
--- | force this expression to be an XDo
+-- | Force this expression to be an XDo
 --	but allow XTau, XTet, XLam XLAM wrappers
 blockX xx
  = case xx of
-	XDo{}			-> xx
-	XTau t x		-> blockXL xx
-	_			-> XDo [ SBind Nothing xx ]
+	XDo{}		-> xx
+	XTau t x	-> blockX_lambda xx
+	_		-> XDo [ SBind Nothing xx ]
 
-blockXL xx
+
+-- | Force this expression to be an XDo
+--	but allow XTau  wrappers.
+blockX_tau xx
  = case xx of
-  	XLAM{}			-> xx
-	XLam{}			-> xx
-	XTau   t x		-> XTau t 	(blockXL x)
-	XDo{}			-> xx
-	_			-> XDo [ SBind Nothing xx ]
+ 	XDo{}		-> xx
+	XTau t x	-> XTau t $ blockX_tau x
+	_		-> XDo [SBind Nothing xx]
+
+
+blockX_lambda xx
+ = case xx of
+  	XLAM{}		-> xx
+	XLam{}		-> xx
+	XTau   t x	-> XTau t $ blockX_lambda x
+	XDo{}		-> xx
+	_		-> XDo [SBind Nothing xx]
