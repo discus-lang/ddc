@@ -3,12 +3,13 @@ module Core.Float
 	( Table(..)
 	, tableZero
 	, Stats(..)
-	, floatBindsTree
-	, floatBindsTreeUse)
+	, floatBindsOfGlob
+	, floatBindsUseOfGlob)
 where
 import Core.BoundUse
 import Core.Util
 import Core.Exp
+import Core.Glob
 import Type.Util
 import Type.Exp
 import Shared.VarPrim	
@@ -208,38 +209,52 @@ instance Pretty Stats PMode where
 -- floatBinds -------------------------------------------------------------------------------------
 
 -- | Calculate usage information and float the binds in this tree
-floatBindsTreeUse
-	:: Tree -> (Table, Tree)
+floatBindsUseOfGlob
+	:: Glob 
+	-> (Table, Glob)
 
-floatBindsTreeUse tree
+floatBindsUseOfGlob cgModule
  = let	-- count the number of bound occurances of each variable
- 	boundUse	= execState (boundUseTree tree) Map.empty
+ 	boundUse	= execState (boundUseGlob cgModule) Map.empty
 
 	-- float bindings into their use sites
 	table		= tableZero { tableBoundUse = boundUse }
 
-   in	floatBindsTree table tree
-   
-	
+   in	floatBindsOfGlob table cgModule
 
 
 -- | Float the binds in this tree
-floatBindsTree 
-	:: Table -> Tree -> (Table, Tree)
+floatBindsOfGlob
+	:: Table 
+	-> Glob
+	-> (Table, Glob)
 
-floatBindsTree tt tree
-	= mapAccumL (floatBindsP 0 shareZero) tt tree
+floatBindsOfGlob table cgModule
+ = let	(table', vpsBind')
+		= mapAccumL (floatBindsP 0 shareZero) table 
+		$ Map.toList 
+		$ globBind cgModule
+
+   in	( table'
+	, cgModule { globBind = Map.fromList vpsBind' })
    
 
 -- Top ---------------------------------------------------------------------------------------------
-floatBindsP :: Level -> Share -> Table -> Top -> (Table, Top)
-floatBindsP level share tt pp
- = case pp of
- 	PBind v x	
-	 -> let	(tt', x')	= floatBindsX level share tt x
-	    in	(tt', PBind v x')
+floatBindsP 
+	:: Level 
+	-> Share 
+	-> Table 
+	-> (Var, Top)
+	-> (Table, (Var, Top))
 
-	_		-> (tt, pp)
+floatBindsP level share table (v1, pp)
+ = case pp of
+ 	PBind v2 x	
+	 -> let	(tt', x')	= floatBindsX level share table x
+	    in	(tt', (v1, PBind v2 x'))
+
+	_	-> (table, (v1, pp))
+	
 	
 -- Exp ---------------------------------------------------------------------------------------------
 floatBindsX :: Level -> Share -> Table -> Exp -> (Table, Exp)

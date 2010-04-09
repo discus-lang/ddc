@@ -1,13 +1,13 @@
 
 module Core.Optimise.Simplify
 	( Stats(..)
-	, coreSimplifyTree )
+	, coreSimplifyGlob )
 where
 import Core.Exp
+import Core.Glob
 import Core.Plate.Trans
 import Util
 import DDC.Main.Pretty
-import DDC.Var
 import qualified Core.Float	as Float
 import qualified Core.Snip	as Snip
 
@@ -43,65 +43,75 @@ instance Pretty Stats PMode where
 
 
 -- Simplify ----------------------------------------------------------------------------------------
-coreSimplifyTree
+coreSimplifyGlob
 	:: String		-- unique
-	-> Set Var		-- vars defined at top level
-	-> Tree			-- source tree
-	-> ( Tree		-- new after rewriting
+	-> Glob			-- Header Glob.
+	-> Glob			-- Module Glob.
+	-> ( Glob		-- new after rewriting
 	   , [Stats])		-- stats from each stage of the simplifier
 	   
-coreSimplifyTree unique topVars cTree
+coreSimplifyGlob unique cgHeader cgModule
  = let	(psSimplified, statss)	
- 			= simplifyTree 0 unique topVars [] cTree
+ 		= simplifyFix 0 unique [] cgHeader cgModule
     in	( psSimplified
    	, statss)
 
 
 -- Keep doing passes of the core simplifier until we stop making progrees
 --	(ie, reach a fix-point)
-simplifyTree
+simplifyFix
 	:: Int			-- cycle count
 	-> String 		-- unique
-	-> Set Var		-- vars defined at top level
 	-> [Stats]		-- stat accumulator
-	-> Tree			-- tree to simplify
-	-> ( Tree		-- simplified tree
+	-> Glob			-- Header Glob.
+	-> Glob			-- glob to simplify
+	-> ( Glob		-- simplified glob.
 	   , [Stats])		-- simplifier stats for each pass
 
-simplifyTree cycle unique topVars accStats tree 
- = let	(tree', stats)	= simplifyPass (unique ++ show cycle ++ "p") topVars tree
+simplifyFix cycle unique accStats cgHeader cgModule 
+ = let	(cgModule', stats)	
+		= simplifyPass 
+			(unique ++ show cycle ++ "p") 
+			cgHeader cgModule
+
    in	if statsProgress stats
-   		then simplifyTree (cycle + 1) unique topVars (accStats ++ [stats]) tree'
-		else (tree', accStats)
+   		then simplifyFix (cycle + 1) unique (accStats ++ [stats]) 
+			cgHeader cgModule'
+
+		else (cgModule', accStats)
 
 
 -- Do a pass of the simplifier
 simplifyPass
 	:: String 		-- unique
-	-> Set Var		-- vars defined at top level
-	-> Tree 		-- tree to simplify
-	-> ( Tree		-- simplified tree
+	-> Glob			-- Header glob.
+	-> Glob 		-- Module glob to simplify.
+	-> ( Glob		-- simplified glob
            , Stats)		-- simplifier stats
 
-simplifyPass unique topVars tree
- = let	(table', cFloat)	= Float.floatBindsTreeUse tree
+simplifyPass unique cgHeader cgModule
+ = let	(table', cgFloat)	= Float.floatBindsUseOfGlob cgModule
  
 	-- Zap pairs of Unbox/Box expressions
-   	(cZapped, countZapped)	= runState (transformXM zapUnboxBoxX cFloat) 0
+   	(cgZapped, countZapped)
+		= runState 
+			(mapBindsOfGlobM (transformXM zapUnboxBoxX) cgFloat)
+			0
 	
 	-- Resnip the tree to get back into a-normal form.
 	--	this breaking up of compond expressions also separates the different effects
 	--	and makes it more likely that let floating will succeed next time around.
 	
 	snipTable	= Snip.Table
-			{ Snip.tableTopVars		= topVars
+			{ Snip.tableHeaderGlob		= cgHeader
+			, Snip.tableModuleGlob		= cgModule
 			, Snip.tablePreserveTypes	= True }
 
-   	psSnipped	= Snip.snipTree snipTable ("x" ++ unique ++ "S") cZapped
+   	cgSnipped	= Snip.snipGlob snipTable ("x" ++ unique ++ "S") 
+			$ cgZapped
 	
-   in	( psSnipped
-	, Stats
-		{ statsFloat		= Float.tableStats table'
+   in	( cgSnipped
+	, Stats	{ statsFloat		= Float.tableStats table'
 		, statsReducedUnboxBox	= countZapped })
 		
 

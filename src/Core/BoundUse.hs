@@ -5,11 +5,12 @@
 module Core.BoundUse
 	( Use (..), useLevel
 	, UseM
-	, boundUseTree
+	, boundUseGlob
 	, boundUseP
 	, boundUseX)
 where
 import Core.Exp
+import Core.Glob
 import Control.Monad.State.Strict
 import Util
 import DDC.Main.Pretty
@@ -65,10 +66,10 @@ addUse v use
 
 
 ---------------------------------------------------------------------------------------------------
--- | Examine var usage in this tree.
-boundUseTree :: Tree -> UseM ()
-boundUseTree tree
-	= mapM_ (boundUseP 0) tree
+-- | Examine var usage in this glob
+boundUseGlob :: Glob -> UseM ()
+boundUseGlob cgModule
+	= mapBindsOfGlobM_(boundUseP 0) cgModule
 
 
 -- | Examine var usage in this top level thing.

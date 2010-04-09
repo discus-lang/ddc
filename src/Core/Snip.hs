@@ -3,9 +3,10 @@
 --	This needs to be run after Core.Block, which wraps the applications of interest in XDos.
 module Core.Snip
 	( Table(..)
-	, snipTree )
+	, snipGlob )
 where
 import Core.Exp
+import Core.Glob
 import Core.Util
 import Core.Plate.Trans
 import Type.Exp
@@ -15,7 +16,6 @@ import DDC.Main.Error
 import DDC.Var
 import Shared.VarGen			(VarGenM, newVarN)
 import qualified Core.Reconstruct	as Recon
-import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 import qualified Debug.Trace	
 
@@ -24,33 +24,35 @@ stage		= "Core.Snip"
 debug 		= False
 trace s	x 	= if debug then Debug.Trace.trace (pprStrPlain s) x else x
 
------
+-- Snipper Monad ----------------------------------------------------------------------------------
 type SnipM	= VarGenM
 
 -- | Snipper environment.
 data Table
 	= Table
-	{  -- | vars of top level bindings
-	   tableTopVars		:: Set Var
+	{  -- | Globs used to determine which variable are defined at top level.
+	   tableHeaderGlob	:: Glob
+	,  tableModuleGlob	:: Glob
 	
 	   -- | whether to preserve type information of snipped vars
   	   --	  this requires that expressions have locally reconstuctable types
 	,  tablePreserveTypes	:: Bool }
 	   
-
+	
+-- Snip -------------------------------------------------------------------------------------------
 -- | Snip bindings in this tree.
-snipTree 
+snipGlob
 	:: Table
 	-> String	-- string to use for var prefix
-	-> Tree 	-- core tree
-	-> Tree		-- snipped core tree
+	-> Glob 	-- ^ Glob to snip.
+	-> Glob		-- ^ Snipped Glob.
 
-snipTree table varPrefix tree
+snipGlob table varPrefix glob
  = let	transTable	= transTableId { transSS = snipStmts table }
-	tree'		= evalState
-				(mapM (transZM transTable) tree)
+	glob'		= evalState
+			 	(mapToTopsWithExpsOfGlobM (transZM transTable) glob)
 				$ VarId varPrefix 0
-   in	tree'
+   in	glob'
    
 
 -- | Keep running the snipper on these statements until nothing more will snip.
@@ -151,8 +153,12 @@ snipX table xx
 	
 	-- snip XVars if they're defined at top level
 	XVar v t
-	 | Set.member v (tableTopVars table) 	-> snipIt table xx
-	 | otherwise				-> leaveIt xx
+	 |   varIsBoundAtTopLevelInGlob (tableModuleGlob table) v
+	  || varIsBoundAtTopLevelInGlob (tableHeaderGlob table) v
+	 -> snipIt table xx
+
+	 | otherwise
+	 -> leaveIt xx
 	 
 	-- we should never see XLocals as arguments..
 	XLocal{}
@@ -205,8 +211,12 @@ snipXRight table xx
 	 -> case takeVar x of
 	 	Nothing		-> snipIt table xx
 		Just v
-		 | Set.member v (tableTopVars table)	-> snipIt  table xx
-		 | otherwise				-> leaveIt xx
+		   |   varIsBoundAtTopLevelInGlob (tableModuleGlob table) v
+		    || varIsBoundAtTopLevelInGlob (tableHeaderGlob table) v
+		   -> snipIt  table xx
+
+		 | otherwise
+		 -> leaveIt xx
 
 	_ -> snipX table xx
 

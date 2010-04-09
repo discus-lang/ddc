@@ -1,8 +1,8 @@
 {-# OPTIONS -fwarn-unused-imports #-}
 
--- | Wrappers for the compiler stages dealing with the Core IR
+-- | Wrappers for the compiler stages dealing with the Core IR.
 --	These wrappers are responsible for calling the functions that actually
---	implement the various transforms, and for dumping debugging info.
+--	implement the transforms, and for dumping debugging info.
 --
 module Main.Core
 	( coreNormalDo
@@ -44,7 +44,7 @@ import Data.Foldable			(foldr)
 import Util				hiding (foldr)
 import Prelude				hiding (foldr)
 import qualified Core.Optimise.Simplify	as Simplify
-import qualified Core.Float		as Float
+--import qualified Core.Float		as Float
 import qualified Core.Snip		as Snip
 import qualified Type.Util.Environment	as Env
 import qualified Sea.Exp		as E
@@ -60,21 +60,24 @@ coreSnip
 	=> (?pathSourceBase :: FilePath)
 	=> String 		-- ^ stage name
 	-> String 		-- ^ unique
-	-> Set Var 		-- ^ vars bound at top level
-	-> Tree			-- ^ core tree
-	-> IO Tree
+	-> Glob			-- ^ Header glob.
+	-> Glob			-- ^ Module glob.
+	-> IO Glob
 	
-coreSnip stage unique topVars tree
+coreSnip stage unique cgHeader cgModule
  = do	
 	-- snip exprs out of fn arguments
 	let snipTable	= Snip.Table
-			{ Snip.tableTopVars		= topVars
+			{ Snip.tableHeaderGlob		= cgHeader
+			, Snip.tableModuleGlob		= cgModule
 			, Snip.tablePreserveTypes	= False }
 			
-	let treeSnip	= Snip.snipTree snipTable ("x" ++ unique) tree
-	dumpCT DumpCoreSnip (stage ++ "-snip")  treeSnip
+	let cgModule'	= Snip.snipGlob snipTable ("x" ++ unique) cgModule
+
+	dumpCT DumpCoreSnip (stage ++ "-snip")  
+		$ treeOfGlob cgModule'
 	
-	return treeSnip
+	return cgModule'
 
 
 -- | Normalise use of do blocks in the code
@@ -192,24 +195,20 @@ coreSimplify
 	:: (?args :: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String		-- ^ unique
-	-> Set Var		-- ^ vars defined at top level
-	-> Tree			-- ^ core tree
-	-> Tree			-- ^ header tree
-	-> IO Tree
+	-> Glob			-- ^ Header glob.
+	-> Glob			-- ^ Source glob.
+	-> IO Glob
 	
-coreSimplify unique topVars cSource cHeader
- = do	when (elem Verbose ?args)
-	 $ do	putStr $ "  * Optimise.Simplify\n"
- 
- 	let (cSimplify, statss)
- 		= Simplify.coreSimplifyTree unique topVars cSource
+coreSimplify unique cgHeader cgModule
+ = do	let (cgModule', statss)
+ 		= Simplify.coreSimplifyGlob unique cgHeader cgModule
 
 	when (elem Verbose ?args)
 	 $ do	putStr	$ pprStrPlain	$ "\n" %!% statss % "\n\n"
 
 	-- when dumping our state, refloat let bindings so we can see 
 	--	where the simplifier gave up.
-	when (elem DumpCoreSimplify ?args)
+{-	when (elem DumpCoreSimplify ?args)
 	 $ do	let (_, cFloat)	= Float.floatBindsTreeUse cSimplify
 	 	dumpCT DumpCoreSimplify "core-simplify"  cSimplify
 		dumpCT DumpCoreSimplify "core-simplify--refloat" cFloat
@@ -222,8 +221,8 @@ coreSimplify unique topVars cSource cHeader
 
 		dumpS DumpCoreSimplify "core-simplify--stats"
 			(pprStrPlain	$ "\n" %!% statss % "\n\n")
-
-	return	cSimplify
+-}
+	return	cgModule'
 	
 
 -- | Check the tree for syntactic problems that won't be caught by type checking.

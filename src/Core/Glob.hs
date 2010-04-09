@@ -8,8 +8,11 @@ module Core.Glob
 	, seqOfGlob
 	, bindingArityFromGlob 
 	, typeFromGlob
+	, varIsBoundAtTopLevelInGlob
+	, mapToTopsWithExpsOfGlobM
 	, mapBindsOfGlob
-	, varIsBoundAtTopLevelInGlob )
+	, mapBindsOfGlobM
+	, mapBindsOfGlobM_)
 where
 import Core.Exp
 import Core.OpType
@@ -20,12 +23,15 @@ import Data.Maybe
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
-import Control.Monad
 import Data.Map			(Map)
+import Data.Set			(Set)
 import Data.Sequence		(Seq, (><))
 import Data.Foldable		(foldr)
-import Prelude			hiding (foldr)
+import Data.Traversable		(mapM)
+import Control.Monad		hiding (mapM)
+import Prelude			hiding (foldr, mapM)
 import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 import qualified Util.Data.Map	as Map
 import qualified Data.Sequence	as Seq
 import {-# SOURCE #-} Core.Reconstruct
@@ -53,6 +59,10 @@ data Glob
 
 	-- | Data class dictionary declarations.
 	, globClassDict		:: Map Var Top
+
+	-- | Set of value variables that are overloaded as they are methods
+	--	in some type class.
+	, globClassMethods 	:: Set Var
 		
 	-- | Map of class name -> instances for that class.
 	, globClassInst		:: Map Var (Seq Top)
@@ -74,6 +84,7 @@ globEmpty
 	, globData		= Map.empty
 	, globDataCtors		= Map.empty
 	, globClassDict		= Map.empty
+	, globClassMethods	= Set.empty
 	, globClassInst		= Map.empty
 	, globBind		= Map.empty }
 	
@@ -81,12 +92,25 @@ globEmpty
 -- | Convert a program Tree to a Glob.
 globOfTree :: Tree -> Glob
 globOfTree ps
- = let	globTops	= foldr insertTopInGlob globEmpty ps
+ = let	-- Add all the tops to the glob.
+	globTops	= foldr insertTopInGlob globEmpty ps
 	
+	-- Build the map of data constructors.
  	ctors		= Map.unions $ [ topDataCtors p | p@PData{} <- ps ]
 	globTops_ctors	= globTops { globDataCtors = ctors }
 
-   in	globTops_ctors
+	-- Build the set of vars defined at top level.
+	vsMethods	= Set.unions
+			$ map (Set.fromList . (map fst))
+			$ map topClassDictTypes
+			$ Map.elems 
+			$ globClassDict globTops
+			
+	globTops_classMethods
+			= globTops_ctors 
+			{ globClassMethods = vsMethods }
+
+   in	globTops_classMethods
 
 
 -- | Insert a top into a glob. 
@@ -206,13 +230,6 @@ typeFromGlob v glob
 	= Nothing
 
 
--- | Apply a function to all PBinds in a `Glob`.
-mapBindsOfGlob :: (Top -> Top) -> Glob -> Glob
-mapBindsOfGlob f glob
-	= glob { globBind	= Map.map f $ globBind glob }
-
-
-
 -- | Check if a value variable is bound at top-level in this `Glob`.
 --	Since we know it is a value var we don't have to check 
 varIsBoundAtTopLevelInGlob :: Glob -> Var -> Bool
@@ -221,7 +238,8 @@ varIsBoundAtTopLevelInGlob glob v
 	NameValue
 	 -> or	[ Map.member v $ globExtern	glob
 		, Map.member v $ globDataCtors	glob
-		, Map.member v $ globBind	glob ]
+		, Map.member v $ globBind	glob
+		, Set.member v $ globClassMethods glob ]
 	
 	NameType
 	 -> or	[ Map.member v $ globExternData glob
@@ -238,4 +256,59 @@ varIsBoundAtTopLevelInGlob glob v
 	_ -> panic stage 
 	   $ "varIsBoundAtTopLevelInGlob: not implemented for " % show (varNameSpace v)
 		
+
+-- As often want to do something to all the top level bindings in a glob,
+--	we define some useful transforms...
+
+-- | Apply a monadic computation to all the bindings in a `Glob` that contain value Exps.
+--	This is the globBinds as well as the globClassInsts
+mapToTopsWithExpsOfGlobM
+	:: Monad m
+	=> (Top -> m Top)
+	-> Glob -> m Glob
+		
+mapToTopsWithExpsOfGlobM f glob
+ = do	psBind'		<- mapM f 	 $ globBind glob
+	psClassInsts'	<- mapM (mapM f) $ globClassInst glob
+	return	$ glob 	{ globBind 	= psBind'
+			, globClassInst	= psClassInsts' }
+
+
+-- | Apply a function to all PBinds in a `Glob`.
+mapBindsOfGlob :: (Top -> Top) -> Glob -> Glob
+mapBindsOfGlob f 
+	= liftToBindsOfGlob (fmap f)
+
+
+-- | Apply a monadic computation to all the PBinds of a `Glob`.
+mapBindsOfGlobM :: Monad m => (Top -> m Top) -> Glob -> m Glob
+mapBindsOfGlobM f 
+	= liftToBindsOfGlobM (mapM f)
+
+
+-- | Apply a monadic computation to all the PBinds of a `Glob`, discarding the result.
+mapBindsOfGlobM_ :: Monad m => (Top -> m a) -> Glob -> m ()
+mapBindsOfGlobM_ f glob
+ 	= mapM_ f $ Map.elems $ globBind glob
+	
+
+-- These aren't exported, as we don't have any reason to use the 'Map' versions yet.
+-- | Apply a function to the binding map of a `Glob`.
+liftToBindsOfGlob 
+	:: (Map Var Top -> Map Var Top) 
+	-> Glob -> Glob
+
+liftToBindsOfGlob f glob
+	= glob { globBind = f (globBind glob) }
+
+
+-- | Apply a monadic computation to the binding map of a `Glob`.
+liftToBindsOfGlobM 
+	:: Monad m
+	=> (Map Var Top -> m (Map Var Top))
+	-> Glob -> m Glob
+	
+liftToBindsOfGlobM f glob
+ = do	binds'	<- f $ globBind glob
+	return	$ glob { globBind = binds' }
 

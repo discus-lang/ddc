@@ -36,7 +36,6 @@ import qualified Type.Plate.FreeVars	as T
 
 -- core
 import qualified Core.Glob		as C
-import qualified Core.Util		as C
 
 -- sea
 import qualified Sea.Util		as E
@@ -104,23 +103,13 @@ compileFile setup scrapes sModule blessMain
 	sSource		<- readFile fileName
 
 	compileFile_parse 
-		setup
-		scrapes
-		sRoot
-		sModule
-		importDirs 
-		blessMain
-		sSource
+		setup scrapes sRoot sModule
+		importDirs blessMain  sSource
 
 
 compileFile_parse
-	setup
-	scrapes
-	sRoot
-	sModule
-	importDirs
-	blessMain
-	sSource
+	setup scrapes sRoot sModule
+	importDirs blessMain sSource
 
  -- Emit a nice error message if the source file is empty.
  --	If we parse an empty file to happy it will bail with "reading EOF!" which isn't as nice.
@@ -222,7 +211,6 @@ compileFile_parse
 	fixTable	<- SS.sourceSlurpFixTable
 				(sRenamed ++ hRenamed)
 	
-
 	-- Defix the source ---------------------------------------------------
 	outVerb $ ppr $ "  * Source: Defix\n"
 	sDefixed	<- SS.defix
@@ -255,26 +243,20 @@ compileFile_parse
 	-- Do kind inference --------------------------------------------------
 	outVerb $ ppr $ "  * Desugar: InferKinds\n"
 	(hKinds, sKinds, kindTable)
-		<- SD.desugarInferKinds "DK" hDesugared sDesugared
+			<- SD.desugarInferKinds "DK" hDesugared sDesugared
 
-	
 	-- Elaborate effects and closures of types in foreign imports ---------
 	outVerb $ ppr $ "  * Desugar: Elaborate\n"
-	(hElab, sElab)
-		<- SD.desugarElaborate "DE" hKinds sKinds
-
+	(hElab, sElab)	<- SD.desugarElaborate "DE" hKinds sKinds
 
 	-- Eta expand simple v1 = v2 projections ------------------------------
 	outVerb $ ppr $ "  * Desugar: ProjectEta\n"
-	sProjectEta
-		<- SD.desugarProjectEta "DE" sElab
-
+	sProjectEta	<- SD.desugarProjectEta "DE" sElab
 			
 	-- Snip down dictionaries and add default projections -----------------
 	outVerb $ ppr $ "  * Desugar: Project\n"
 	(dProg_project, projTable)	
-		<- SD.desugarProject "SP" modName hElab sProjectEta
-
+			<- SD.desugarProject "SP" modName hElab sProjectEta
 
 	-- Slurp out type constraints -----------------------------------------
 	outVerb $ ppr $ "  * Desugar: Slurp\n"
@@ -293,7 +275,6 @@ compileFile_parse
 	-- !! Early exit on StopConstraint
 	when (elem Arg.StopConstraint ?args)
 		compileExit
-
 
 	-- Solve type constraints ---------------------------------------------
 	outVerb $ ppr "  * Type: Solve\n"
@@ -315,7 +296,6 @@ compileFile_parse
 	when (elem Arg.StopType ?args)
 		compileExit
 
-		
 	-- Convert source tree to core tree -----------------------------------
 	outVerb $ ppr $ "  * Convert to Core IR\n"
 
@@ -330,19 +310,13 @@ compileFile_parse
 				projTable
 				vsProjectResolve
 
-	let cgHeader		= C.globOfTree cHeader
-
-	-- Slurp out the list of all the vars defined at top level.
-	let topVars	= Set.union 
-				(Set.fromList $ concat $ map C.slurpBoundVarsP cSource)
-				(Set.fromList $ concat $ map C.slurpBoundVarsP cHeader)	
+	let cgHeader	= C.globOfTree cHeader
 
 	-- These are the TREC vars which are free in the type of a top level binding
 	let vsFreeTREC	= Set.unions
 			$ map (T.freeVars)
 			$ [t	| (v, t)	<- Map.toList typeTable
 				, Set.member v vsBoundTopLevel]
-
 
 	------------------------------------------------------------------------
 	-- Core stages
@@ -353,7 +327,6 @@ compileFile_parse
 	cNormalise	<- SC.coreNormalDo 
 				"core-normaldo" "CN" 
 				cSource
-
 				
 	-- Create local regions -----------------------------------------------
 	outVerb $ ppr $ "  * Core: Bind\n"
@@ -367,11 +340,13 @@ compileFile_parse
 				rsGlobal
 				cNormalise
 
+	let cgModule_bind = C.globOfTree cBind
 
 	-- Convert to A-normal form -------------------------------------------
 	outVerb $ ppr $ "  * Core: Snip\n"
-	cSnip		<- SC.coreSnip "core-snip" "CS" topVars cBind
+	cgModule_snip	<- SC.coreSnip "core-snip" "CS" cgHeader cgModule_bind
 
+	let cSnip	= C.treeOfGlob cgModule_snip
 
 	-- Thread through witnesses -------------------------------------------
 	outVerb $ ppr $ "  * Core: Thread\n"
@@ -393,40 +368,39 @@ compileFile_parse
 	SC.coreLint "core-lint-reconstruct"
 	 	cReconstruct 
 		cHeader
-	
-	
+		
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
 	cDict		<- SC.coreDict 
 				cHeader
 				cReconstruct
 
-
 	-- Identify prim ops --------------------------------------------------
 	outVerb $ ppr $ "  * Core: Prim\n"
 	cPrim		<- SC.corePrim	cDict
 
+	let cgModule_prim
+		= C.globOfTree cPrim
 
 	-- Simplifier does various simple optimising transforms ---------------
 	outVerb $ ppr $ "  * Core: Simplify\n"
-	cSimplified	<- if elem Arg.OptSimplify ?args
-				then SC.coreSimplify "CI" topVars cPrim cHeader
-				else return cPrim
+	cgModule_simplified	
+			<- if elem Arg.OptSimplify ?args
+				then SC.coreSimplify "CI" cgHeader cgModule_prim
+				else return cgModule_prim
 	
-	let cgModule_simplified
-		= C.globOfTree cSimplified
-
 	-- Check the program one last time ------------------------------------
 	--	Lambda lifting doesn't currently preserve the typing, 
-	--	So we can't check it again after this point
+	--	So we can't check it again after this point.
 	outVerb $ ppr $ "  * Core: Check\n"
 	cgModule_checked	
-		<- SC.coreReconstruct  
-			"core-reconstruct-final" 
-			cgHeader 
-			cgModule_simplified				
-		
+			<- SC.coreReconstruct  
+				"core-reconstruct-final" 
+				cgHeader 
+				cgModule_simplified				
+				
 	-- Perform lambda lifting ---------------------------------------------
+	-- TODO: Fix this so it doesn't break the type information.
 	outVerb $ ppr $ "  * Core: LambdaLift\n"
 	(  cgModule_lambdaLifted
 	 , vsNewLambdaLifted) 
@@ -434,14 +408,12 @@ compileFile_parse
 				cgHeader
 				cgModule_checked
 
-
 	-- Convert field labels to field indicies -----------------------------
 	outVerb $ ppr $ "  * Core: LabelIndex\n"
 	cgModule_labelIndex
 			<- SC.coreLabelIndex
 				cgHeader
 				cgModule_lambdaLifted
-
 									
 	-- Resolve partial applications ---------------------------------------
 	outVerb $ ppr $ "  * Core: Curry\n"
@@ -450,7 +422,6 @@ compileFile_parse
 				cgModule_labelIndex
 
 	let cgModule_final = cgCurry
-
 
 	-- Generate the module interface --------------------------------------
 	outVerb $ ppr $ "  * Make interface file\n"
@@ -484,12 +455,9 @@ compileFile_parse
 				dProg_project
 				cgModule_final
 
-	-- put blank lines after these sections,
-	--	just to make the interface file look nicer.	
 	when (elem Arg.DumpNewInterfaces ?args)
 	 $ do writeFile (?pathSourceBase ++ ".di-new") 
 		$ pprStrPlain $ pprDocIndentedWithNewLines 2 $ doc diNewInterface
-
 
 	-- !! Early exit on StopCore
 	when (elem Arg.StopCore ?args)
@@ -554,16 +522,24 @@ compileFile_parse
 				modName
 	 			eInit
 				pathSource
-				(map ((\(Just f) -> f) . M.scrapePathHeader) $ Map.elems scrapes_noRoot)
+				(map ((\(Just f) -> f) . M.scrapePathHeader) 
+					$ Map.elems scrapes_noRoot)
 				includeFilesHere
 
 
 	-- If this module binds the top level main function
 	--	then append RTS initialisation code.
-	seaSourceInit	<- if modDefinesMainFn && blessMain
-				then do mainCode <- SE.seaMain (map fst $ Map.toList importsExp) modName
-				     	return 	$ seaSource ++ (catInt "\n" $ map pprStrPlain $ E.eraseAnnotsTree mainCode)
-				else 	return  $ seaSource
+	seaSourceInit	
+		<- if modDefinesMainFn && blessMain
+			then do mainCode <- SE.seaMain 
+						(map fst $ Map.toList importsExp) 
+						modName
+
+			     	return 	$ seaSource 
+					++ (catInt "\n" $ map pprStrPlain 
+							$ E.eraseAnnotsTree mainCode)
+
+			else 	return  $ seaSource
 				
 	-- Write C files ------------------------------------------------------
 	outVerb $ ppr $ "  * Write C files\n"
@@ -587,7 +563,6 @@ compileFile_parse
 		(setupLibrary setup)
 		importDirs
 		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
-	
 	
 	return modDefinesMainFn 
 		

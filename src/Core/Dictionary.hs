@@ -29,6 +29,7 @@ dictTree
 	:: Tree
 	-> Tree 	
 	-> Tree
+	
 dictTree hTree sTree
  = let	instMap		= slurpClassInstMap 		(sTree ++ hTree)
  	classMap	= slurpClassFuns instMap 	(sTree ++ hTree)
