@@ -343,9 +343,7 @@ compileFile_parse
 				"core-normaldo"
 				"CN" 
 				cgModule
-			
-	let cModule_normal = C.treeOfGlob cgModule_normal
-				
+							
 	-- Create local regions -----------------------------------------------
 	outVerb $ ppr $ "  * Core: Bind\n"
 
@@ -353,14 +351,12 @@ compileFile_parse
 	let rsGlobal	= Set.filter (\v -> varNameSpace v == NameRegion) 
 			$ vsFreeTREC
 	
-	cBind		<- SC.coreBind 
+	cgModule_bind	<- SC.coreBind 
 				sModule 
 				"CB"
 				vsRegionClasses
 				rsGlobal
-				cModule_normal
-
-	let cgModule_bind = C.globOfTree cBind
+				cgModule_normal
 
 	-- Convert to A-normal form -------------------------------------------
 	outVerb $ ppr $ "  * Core: Snip\n"

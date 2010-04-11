@@ -4,11 +4,12 @@
 --	block that contains all the references to that region.
 --
 module Core.Bind
-	( bindTree )
+	(bindGlob)
 where
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Exp
+import Core.Glob
 import Core.Util
 import Core.Reconstruct
 import Type.Builtin
@@ -19,15 +20,13 @@ import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
-import Type.Util.Bits		(varOfBind)
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
-import qualified Debug.Trace	as Debug
+import Prelude				hiding	(mapM)
+import Type.Util.Bits			(varOfBind)
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
+import qualified Debug.Trace		as Debug
 
 
-type   BindM	= VarGenM
-
------
 stage	= "Core.Bind"
 
 debug	= False
@@ -37,40 +36,50 @@ trace ss xx
 	else xx
 
 
+type   BindM	= VarGenM
+
+
 -- | Introduce local region definitions.
-bindTree 
+bindGlob 
 	:: ModuleId
 	-> String			-- ^ unique prefix to use for fresh vars.
 	-> Map Var [Var]		-- ^ a map of all the class constraints acting on a particular region.
 	-> Set Var			-- ^ the regions with global lifetime
-	-> Tree				-- ^ the core tree.
-	-> Tree			
+	-> Glob				-- ^ the module glob
+	-> Glob			
 
-bindTree mod unique classMap rsGlobal tree
+bindGlob mod unique classMap rsGlobal tree
  = 	evalVarGen (bindM mod classMap rsGlobal tree) ("w" ++ unique)
+
 
 -- | Bind local region variables in this tree.
 bindM	:: ModuleId
 	-> Map Var [Var]
 	-> Set Var
-	-> Tree
-	-> BindM Tree
+	-> Glob
+	-> BindM Glob
 	
-bindM mod classMap rsGlobal tree
+bindM mod classMap rsGlobal glob
  = do	let ?classMap	= classMap
 
 	-- bind regions with local scope
- 	tree_local	 <- mapM (\p -> liftM fst $ bindP rsGlobal p) tree
+	let comp :: Top -> BindM Top
+	    comp p	= liftM fst $ bindP rsGlobal p
+
+	glob_local <- mapBindsOfGlobM comp glob
 
 	-- add bindings for global regions
 	-- TODO: don't rebind regions already bound in the header.
-	tree_global	<- mapM (\vR -> do
-					let tR	= TVar kRegion vR
-					ws	<- makeWitnesses tR classMap
-					return	$ PRegion vR ws)
-				(Set.toList rsGlobal)
+	psRegionsGlobal	
+		<- liftM Map.fromList
+		$  mapM (\vR -> do
+				let tR	= TVar kRegion vR
+				ws	<- makeWitnesses tR classMap
+				return	$ (vR, PRegion vR ws))
+		$ Set.toList rsGlobal
 	
-	return	(tree_global ++ tree_local)
+	return	$ glob_local
+		{ globRegion	= Map.union (globRegion glob) psRegionsGlobal }
 
 
 -- | Bind local region variables in this top level thing

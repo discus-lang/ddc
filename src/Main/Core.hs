@@ -32,7 +32,7 @@ import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconTreeWithEnv)
-import Core.Bind			(bindTree)
+import Core.Bind			(bindGlob)
 import Core.Thread			(threadTree)
 import Core.Prim			(primTree)
 import Core.Simplify			(simplifyGlob)
@@ -87,25 +87,29 @@ coreBind
 				--	eg (%r1, [Lazy, Const])
 	-> Set Var		-- the regions with global lifetimes which should be bound 
 				--	at top level.
-	-> Tree	-> IO Tree
+	-> Glob
+	-> IO Glob
 	
 coreBind
 	mod
 	unique	
 	classMap
 	rsGlobal
-	cSource
+	cgModule
  = do
- 	let tree' = {-# SCC "Core.Bind" #-}
-	            bindTree mod unique classMap rsGlobal cSource
+ 	let cgModule' 
+		= {-# SCC "Core.Bind" #-}
+	          bindGlob mod unique classMap rsGlobal cgModule
 	
-	dumpCT DumpCoreBind "core-bind" tree'
+	dumpCT DumpCoreBind "core-bind"
+		$ treeOfGlob cgModule'
 
 	dumpS  DumpCoreBind "core-bind--rsGlobal" 
 		$ catInt "\n"
-		$ map pprStrPlain $ Set.toList rsGlobal
+		$ map pprStrPlain 
+		$ Set.toList rsGlobal
 	
-	return tree'
+	return cgModule'
 
 
 -- | Convert to A-Normal form.
