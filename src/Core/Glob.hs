@@ -9,8 +9,6 @@ module Core.Glob
 	, bindingArityFromGlob 
 	, typeFromGlob
 	, varIsBoundAtTopLevelInGlob
-	, mapToTopsWithExpsOfGlobM
-	, mapToTopsWithExpsOfGlob
 	, mapBindsOfGlob
 	, mapBindsOfGlobM
 	, mapBindsOfGlobM_)
@@ -261,28 +259,6 @@ varIsBoundAtTopLevelInGlob glob v
 -- As often want to do something to all the top level bindings in a glob,
 --	we define some useful transforms...
 
--- | Apply a monadic computation to all the bindings in a `Glob` that contain value Exps.
---	This is the globBinds as well as the globClassInsts
-mapToTopsWithExpsOfGlobM
-	:: Monad m
-	=> (Top -> m Top)
-	-> Glob -> m Glob
-		
-mapToTopsWithExpsOfGlobM f glob
- = do	psBind'		<- mapM f 	 $ globBind glob
-	psClassInsts'	<- mapM (mapM f) $ globClassInst glob
-	return	$ glob 	{ globBind 	= psBind'
-			, globClassInst	= psClassInsts' }
-
--- | Apply a function to all the tops in a `Glob` that contain value Exps.
---   TODO: Normalise core program so that classInsts don't contain more exps,
---	   then this fn becomes the same as the next one
-mapToTopsWithExpsOfGlob :: (Top -> Top) -> Glob -> Glob
-mapToTopsWithExpsOfGlob f glob
- 	= glob	{ globBind	= Map.map f 		$ globBind 	glob
-		, globClassInst	= Map.map (fmap f)	$ globClassInst glob }
-
-
 -- | Apply a function to all PBinds in a `Glob`.
 mapBindsOfGlob :: (Top -> Top) -> Glob -> Glob
 mapBindsOfGlob f 
@@ -309,6 +285,7 @@ liftToBindsOfGlob
 
 liftToBindsOfGlob f glob
 	= glob { globBind = f (globBind glob) }
+
 
 -- | Apply a monadic computation to the binding map of a `Glob`.
 liftToBindsOfGlobM 

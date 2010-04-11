@@ -33,6 +33,8 @@ type Tree	= [Top]
 -- | Top level declarations.
 --	The order of the constructors in this data type is also the standard order
 --	that should appear in dumps and interface files.
+--	Note that the only declaration that contains Exps is PBind, which makes them
+--	easy to find when doing transforms.
 --
 data Top
 	= -- | An abstract type class
@@ -76,7 +78,7 @@ data Top
 	| PClassInst
 		{ topClassInstName	:: Var
 		, topClassInstArgs	:: [Type]
-		, topClassInstMembers	:: [(Var, Exp)] }
+		, topClassInstMembers	:: [(Var, Var)] }
 
 	-- | A top-level binding.
 	| PBind

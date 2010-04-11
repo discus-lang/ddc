@@ -158,12 +158,10 @@ toCoreP	p
 		--	This should be enforced by Desugar.Project.
 		let rewriteInstS s
 			| D.SBind _ (Just v1) (D.XVarInst _ v2)	<- s
-			= do	Just t2	<- lookupType v2
-				return (v1, C.XVar v2 t2)
+			= return (v1, v2)
 			
 			| D.SBind _ (Just v1) (D.XVar     _ v2) <- s
-			= do	Just t2	<- lookupType v2
-				return (v1, C.XVar v2 t2)
+			= return (v1, v2)
 			
 			| otherwise
 			= panic stage

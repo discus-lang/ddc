@@ -172,14 +172,9 @@ getIntClassInstOfCorePClassInst pp@C.PClassInst{}
 	, intClassInstSourcePos	= undefined
 	, intClassInstArgs	= C.topClassInstArgs pp
 	, intClassInstMembers	
-		= Map.map takeMemberVar 
-		$ Map.fromList 
+		= Map.fromList 
 		$ C.topClassInstMembers pp
 	}
-	where takeMemberVar x
-		= case x of
-			C.XVar v t	-> v
-			_		-> panic stage $ "PClassInst should only contain variables"
 
 
 -- | Convert a desugared `PProjDict` into an `IntProjDict`.

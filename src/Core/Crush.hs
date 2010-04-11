@@ -15,7 +15,7 @@ crushTree tree
 
 crushGlob :: Glob -> Glob
 crushGlob glob
-	= mapToTopsWithExpsOfGlob (transformSS crushSS) glob
+	= mapBindsOfGlob (transformSS crushSS) glob
 	
 crushSS :: [Stmt] -> [Stmt]
 crushSS	ss

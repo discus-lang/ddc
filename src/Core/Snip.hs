@@ -50,7 +50,7 @@ snipGlob
 snipGlob table varPrefix glob
  = let	transTable	= transTableId { transSS = snipStmts table }
 	glob'		= evalState
-			 	(mapToTopsWithExpsOfGlobM (transZM transTable) glob)
+			 	(mapBindsOfGlobM (transZM transTable) glob)
 				$ VarId varPrefix 0
    in	glob'
    

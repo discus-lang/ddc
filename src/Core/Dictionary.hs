@@ -432,7 +432,7 @@ slurpClassFuns instMap pp
 		, let (Just insts)	= Map.lookup v instMap
 		, let exps		= [ (makeTClassFromDict v' ts', instV)	
 						| PClassInst v' ts' defs	<- insts
-						, (v, (XVar instV t))		<- defs
+						, (v, instV)			<- defs
 						, v == vF		] ]
 
 makeTClassFromDict v ts 

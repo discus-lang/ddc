@@ -15,7 +15,7 @@ import Core.Plate.Trans
 
 -- | Introduce XDo expressions into this tree.
 blockGlob :: Glob -> Glob
-blockGlob = mapToTopsWithExpsOfGlob blockP
+blockGlob = mapBindsOfGlob blockP
 
 blockP p
  = let 	table	= transTableId 

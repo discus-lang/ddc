@@ -46,7 +46,7 @@ threadTree cgHeader cgModule
 		 , transX_enter	= thread_transX_enter }
 	
    in	evalState 	
-		(mapToTopsWithExpsOfGlobM (transZM transTable) cgModule) 
+		(mapBindsOfGlobM (transZM transTable) cgModule) 
 		[]
 
 
