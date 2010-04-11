@@ -35,6 +35,7 @@ import Core.Reconstruct			(reconTreeWithEnv)
 import Core.Bind			(bindTree)
 import Core.Thread			(threadTree)
 import Core.Prim			(primTree)
+import Core.Simplify			(simplifyGlob)
 import Core.Lint			(lintTree)
 import Core.Lift			(lambdaLiftTree)
 import Core.LabelIndex			(labelIndexTree)
@@ -43,8 +44,6 @@ import Core.ToSea			(toSeaTree)
 import Data.Foldable			(foldr)
 import Util				hiding (foldr)
 import Prelude				hiding (foldr)
-import qualified Core.Optimise.Simplify	as Simplify
---import qualified Core.Float		as Float
 import qualified Core.Snip		as Snip
 import qualified Type.Util.Environment	as Env
 import qualified Sea.Exp		as E
@@ -203,7 +202,7 @@ coreSimplify
 	
 coreSimplify unique cgHeader cgModule
  = do	let (cgModule', statss)
- 		= Simplify.coreSimplifyGlob unique cgHeader cgModule
+ 		= simplifyGlob unique cgHeader cgModule
 
 	when (elem Verbose ?args)
 	 $ do	putStr	$ pprStrPlain	$ "\n" %!% statss % "\n\n"

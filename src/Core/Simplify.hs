@@ -1,7 +1,7 @@
 
-module Core.Optimise.Simplify
+module Core.Simplify
 	( Stats(..)
-	, coreSimplifyGlob )
+	, simplifyGlob )
 where
 import Core.Exp
 import Core.Glob
@@ -43,14 +43,14 @@ instance Pretty Stats PMode where
 
 
 -- Simplify ----------------------------------------------------------------------------------------
-coreSimplifyGlob
+simplifyGlob
 	:: String		-- unique
 	-> Glob			-- Header Glob.
 	-> Glob			-- Module Glob.
 	-> ( Glob		-- new after rewriting
 	   , [Stats])		-- stats from each stage of the simplifier
 	   
-coreSimplifyGlob unique cgHeader cgModule
+simplifyGlob unique cgHeader cgModule
  = let	(psSimplified, statss)	
  		= simplifyFix 0 unique [] cgHeader cgModule
     in	( psSimplified
