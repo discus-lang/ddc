@@ -5,12 +5,12 @@
 --	implement the transforms, and for dumping debugging info.
 --
 module Main.Core
-	( coreNormalDo
+	( coreNormaliseDo
 	, coreSnip
-	, coreDict
-	, coreReconstruct
 	, coreBind
 	, coreThread
+	, coreReconstruct
+	, coreDict
 	, corePrim
 	, coreSimplify
 	, coreLint
@@ -28,8 +28,8 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Main.Arg
 import DDC.Var
-import Core.Block			(blockTree)
-import Core.Crush			(crushTree)
+import Core.Block			(blockGlob)
+import Core.Crush			(crushGlob)
 import Core.Dictionary			(dictTree)
 import Core.Reconstruct			(reconTreeWithEnv)
 import Core.Bind			(bindTree)
@@ -51,6 +51,61 @@ import qualified Sea.Util		as E
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
+
+
+-- | Normalise the form of Do blocks in a glob.
+coreNormaliseDo
+	:: (?args :: [Arg])
+	=> (?pathSourceBase :: FilePath)
+	=> String		-- ^ Stage Name.
+	-> String		-- ^ Unique.
+	-> Glob			-- ^ Module Glog.
+	-> IO Glob
+	
+coreNormaliseDo stage unique cgModule
+ = do	
+ 	-- ensure all exprs are wrapped in do blocks.
+ 	let cgModule_blocked	= blockGlob cgModule
+ 	dumpCT DumpCoreBlock (stage ++ "-block") 
+		$ treeOfGlob cgModule_blocked
+
+	-- crush nested do exprs
+	let cgModule_crushed	= crushGlob cgModule_blocked
+ 	dumpCT DumpCoreCrush (stage ++ "-crush") 
+		$ treeOfGlob cgModule_crushed
+
+	return	cgModule_crushed
+
+
+-- | Bind local regions.
+coreBind
+	:: (?args ::	[Arg])
+	=> (?pathSourceBase :: FilePath)
+	=> ModuleId
+	-> String		-- ^ unique
+	-> (Map Var [Var])	-- ^ map of class constraints on each region
+				--	eg (%r1, [Lazy, Const])
+	-> Set Var		-- the regions with global lifetimes which should be bound 
+				--	at top level.
+	-> Tree	-> IO Tree
+	
+coreBind
+	mod
+	unique	
+	classMap
+	rsGlobal
+	cSource
+ = do
+ 	let tree' = {-# SCC "Core.Bind" #-}
+	            bindTree mod unique classMap rsGlobal cSource
+	
+	dumpCT DumpCoreBind "core-bind" tree'
+
+	dumpS  DumpCoreBind "core-bind--rsGlobal" 
+		$ catInt "\n"
+		$ map pprStrPlain $ Set.toList rsGlobal
+	
+	return tree'
 
 
 -- | Convert to A-Normal form.
@@ -78,19 +133,6 @@ coreSnip stage unique cgHeader cgModule
 	
 	return cgModule'
 
-
--- | Normalise use of do blocks in the code
-coreNormalDo stage unique tree
- = do	
- 	-- ensure all exprs are wrapped in do blocks.
- 	let treeBlock	= blockTree tree
- 	dumpCT DumpCoreBlock (stage ++ "-block") treeBlock
-
-	-- crush nested do exprs
-	let treeCrush	= crushTree treeBlock
- 	dumpCT DumpCoreCrush (stage ++ "-crush") treeCrush
-
-	return	treeCrush
 
 
 -- | Resolve calls to overloaded functions.
@@ -129,37 +171,6 @@ coreReconstruct name cgHeader cgModule
 	return	cgModule'
 
 	
--- | Bind local regions.
-coreBind
-	:: (?args ::	[Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> ModuleId
-	-> String		-- ^ unique
-	-> (Map Var [Var])	-- ^ map of class constraints on each region
-				--	eg (%r1, [Lazy, Const])
-	-> Set Var		-- the regions with global lifetimes which should be bound 
-				--	at top level.
-	-> Tree	-> IO Tree
-	
-coreBind
-	mod
-	unique	
-	classMap
-	rsGlobal
-	cSource
- = do
- 	let tree' = {-# SCC "Core.Bind" #-}
-	            bindTree mod unique classMap rsGlobal cSource
-	
-	dumpCT DumpCoreBind "core-bind" tree'
-
-	dumpS  DumpCoreBind "core-bind--rsGlobal" 
-		$ catInt "\n"
-		$ map pprStrPlain $ Set.toList rsGlobal
-	
-	return tree'
-
-
 -- | Thread through witness variables.
 coreThread
 	:: (?args :: [Arg])

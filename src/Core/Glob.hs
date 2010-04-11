@@ -10,6 +10,7 @@ module Core.Glob
 	, typeFromGlob
 	, varIsBoundAtTopLevelInGlob
 	, mapToTopsWithExpsOfGlobM
+	, mapToTopsWithExpsOfGlob
 	, mapBindsOfGlob
 	, mapBindsOfGlobM
 	, mapBindsOfGlobM_)
@@ -273,6 +274,14 @@ mapToTopsWithExpsOfGlobM f glob
 	return	$ glob 	{ globBind 	= psBind'
 			, globClassInst	= psClassInsts' }
 
+-- | Apply a function to all the tops in a `Glob` that contain value Exps.
+--   TODO: Normalise core program so that classInsts don't contain more exps,
+--	   then this fn becomes the same as the next one
+mapToTopsWithExpsOfGlob :: (Top -> Top) -> Glob -> Glob
+mapToTopsWithExpsOfGlob f glob
+ 	= glob	{ globBind	= Map.map f 		$ globBind 	glob
+		, globClassInst	= Map.map (fmap f)	$ globClassInst glob }
+
 
 -- | Apply a function to all PBinds in a `Glob`.
 mapBindsOfGlob :: (Top -> Top) -> Glob -> Glob
@@ -300,7 +309,6 @@ liftToBindsOfGlob
 
 liftToBindsOfGlob f glob
 	= glob { globBind = f (globBind glob) }
-
 
 -- | Apply a monadic computation to the binding map of a `Glob`.
 liftToBindsOfGlobM 

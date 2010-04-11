@@ -306,6 +306,12 @@ compileFile_parse
 				mapValueToTypeVars
 				blessMain
 
+	-- These are the TREC vars which are free in the type of a top level binding
+	let vsFreeTREC	= Set.unions
+			$ map (T.freeVars)
+			$ [t	| (v, t)	<- Map.toList typeTable
+				, Set.member v vsBoundTopLevel]
+
 	-- !! Early exit on StopType
 	when (elem Arg.StopType ?args)
 		compileExit
@@ -325,12 +331,7 @@ compileFile_parse
 				vsProjectResolve
 
 	let cgHeader	= C.globOfTree cHeader
-
-	-- These are the TREC vars which are free in the type of a top level binding
-	let vsFreeTREC	= Set.unions
-			$ map (T.freeVars)
-			$ [t	| (v, t)	<- Map.toList typeTable
-				, Set.member v vsBoundTopLevel]
+	let cgModule	= C.globOfTree cSource
 
 	------------------------------------------------------------------------
 	-- Core stages
@@ -338,9 +339,12 @@ compileFile_parse
 
 	-- Convert to normal form ---------------------------------------------
 	outVerb $ ppr $ "  * Core: NormalDo\n"
-	cNormalise	<- SC.coreNormalDo 
-				"core-normaldo" "CN" 
-				cSource
+	cgModule_normal	<- SC.coreNormaliseDo 
+				"core-normaldo"
+				"CN" 
+				cgModule
+			
+	let cModule_normal = C.treeOfGlob cgModule_normal
 				
 	-- Create local regions -----------------------------------------------
 	outVerb $ ppr $ "  * Core: Bind\n"
@@ -354,7 +358,7 @@ compileFile_parse
 				"CB"
 				vsRegionClasses
 				rsGlobal
-				cNormalise
+				cModule_normal
 
 	let cgModule_bind = C.globOfTree cBind
 

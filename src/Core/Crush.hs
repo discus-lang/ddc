@@ -1,16 +1,21 @@
 -- |	Crush together nested do blocks.
 --	Crush together nester XTaus. 
 module Core.Crush
-	(crushTree)
+	( crushTree
+	, crushGlob)
 where
 import Core.Exp
+import Core.Glob
 import Core.Plate.Trans
 import Util
 
------
 crushTree :: Tree -> Tree
 crushTree tree
 	= transformSS crushSS tree
+
+crushGlob :: Glob -> Glob
+crushGlob glob
+	= mapToTopsWithExpsOfGlob (transformSS crushSS) glob
 	
 crushSS :: [Stmt] -> [Stmt]
 crushSS	ss

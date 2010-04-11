@@ -6,22 +6,25 @@
 --	by a list of statements (which can be added to).
 --
 module Core.Block
-	(blockTree)
+	(blockGlob)
 where
 import Core.Exp
+import Core.Glob
 import Core.Plate.Trans
 
 
 -- | Introduce XDo expressions into this tree.
-blockTree :: Tree -> Tree
-blockTree tree
+blockGlob :: Glob -> Glob
+blockGlob = mapToTopsWithExpsOfGlob blockP
+
+blockP p
  = let 	table	= transTableId 
 		{ transX	= \x -> return $ blockTreeX x 
 		, transA	= \a -> return $ blockTreeA a 
 		, transP	= \p -> return $ blockTreeP p 
 		, transG	= \g -> return $ blockTreeG g }
 
-   in	transZ table tree
+   in	transZ table p
 
 
 blockTreeX xx
