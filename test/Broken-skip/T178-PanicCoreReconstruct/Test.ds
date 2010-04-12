@@ -1,0 +1,6 @@
+
+connect :: String -> Int32 -> Int32
+connect hostname portnum
+  | SChunk hn <- hostname.flatten
+  = boxInt32 $ System.Network.connect hn.danger_string (unboxInt32 portnum)
+
