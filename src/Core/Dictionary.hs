@@ -1,49 +1,67 @@
 
 -- | Resolve calls to overloaded functions.
 module Core.Dictionary
-	( dictTree )
+	(dictTree)
 where
 import Core.Exp
+import Core.Glob
 import Core.Util
 import Core.Plate.Trans
 import Type.Exp
-import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+import Data.Foldable		(foldr)
+import Data.Sequence		(Seq)
 import qualified Debug.Trace	as Debug
+import qualified Data.Sequence	as Seq
 import qualified Util.Data.Map	as Map
+import Util			hiding (foldr)
 import Type.Util		hiding (flattenT, unifyT2) 
+import Prelude			hiding (foldr)
 
-
------
 stage		= "Core.Dictionary"
 debug		= False
 trace ss x	= if debug 
 			then Debug.trace (pprStrPlain ss) x
 			else x
 
-----
--- The RHS of every instance function must be the var of a top level function.
-dictTree 
-	:: Tree
-	-> Tree 	
-	-> Tree
-	
-dictTree hTree sTree
- = let	instMap		= slurpClassInstMap 		(sTree ++ hTree)
- 	classMap	= slurpClassFuns instMap 	(sTree ++ hTree)
-	typeMap		= slurpTypeMapPs		(sTree ++ hTree)
 
-	tree'		= transformS rewriteS sTree
-				where 	?typeMap	= typeMap
-					?classMap	= classMap
-   in	tree'
+-- | The RHS of every instance function must be the var of a top level function.
+dictTree 
+	:: Glob		-- ^ Header module.
+	-> Glob 	-- ^ Source module.
+	-> Glob
+	
+dictTree cgHeader cgModule
+ = let	
+	-- Build a map of class instances.
+	instMap	= Map.unionWith	(Seq.><)
+			(globClassInst cgHeader)
+			(globClassInst cgModule)
+	
+	-- Build a map of class dictionaries.			
+ 	classMap
+		= Map.union
+			(slurpClassFuns instMap $ globClassDict cgHeader)
+			(slurpClassFuns instMap $ globClassDict cgModule)
+				
+	-- | Get the type of some top-level thing
+	getType v
+		= takeFirstJust 
+		$ map (typeFromGlob v)
+		$ [cgHeader, cgModule]
+
+	cgModule' 
+		= mapBindsOfGlob (transformS rewriteS) cgModule
+		   where 	?getType	= getType
+				?classMap	= classMap
+   in	cgModule'
    	
 	
 -- | Rewrite overloaded fn applications in this statement
 rewriteS
- ::	(?typeMap 	:: Map Var Type
+ ::	(?getType	:: Var -> Maybe Type
   ,	 ?classMap
  	 :: Map Var 			-- overloaded variable, eg (+)
 		( Witness			-- class that the var belongs to, eg (Num a)
@@ -91,7 +109,7 @@ rewriteApp xx
 			tScheme	 	= foldl (\t (v, k) -> TForall (BVar v) k t) tOverScheme vksClass
 		  	tScheme_c	= addContext (KClass vClass tsClass) tScheme
 		  
-		  in 	rewriteOverApp_trace xx overV tClass tScheme_c cxInstances ?typeMap
+		  in 	rewriteOverApp_trace xx overV tClass tScheme_c cxInstances ?getType
 		
 		-- couldn't find it in the classMap, var isn't overloaded.
 		| otherwise
@@ -112,7 +130,7 @@ rewriteOverApp
 	-> Witness		-- class 		eg	Eq a
 	-> Type			-- type of sig
 	-> [(Witness, Var)]	-- instances		eg 	[(Eq Int, primIntEq), (Eq Char, primCharEq)]
-	-> Map Var Type		-- type map
+	-> (Var -> Maybe Type)	-- type map
 	-> Exp			-- rewritten expression
 
 rewriteOverApp
@@ -121,7 +139,7 @@ rewriteOverApp
 	tClass
 	tOverScheme 
 	cxInstances
-	mapTypes
+	getType
 
 	
 	| Just (classV, classKind, classParamVs)
@@ -135,7 +153,7 @@ rewriteOverApp
 	--	We now have to work out what type args to pass to the instance function.
 
 	-- Lookup the scheme for the instance function and strip out its parts
-	, Just tInstScheme	<- Map.lookup vInst mapTypes
+	, Just tInstScheme	<- getType vInst
 
 	, (bksForall, _, ksClass, tInstShape)
 			<- stripSchemeT $ packT tInstScheme					
@@ -416,9 +434,8 @@ matchTT t1 t2
 -- Slurp -------------------------------------------------------------------------------------------
 -- Slurp out a map of all overloaded functions defined in this tree.
 slurpClassFuns 
- ::	Map Var [Top]
- -> 	[Top]	
-
+ :: Map Var (Seq Top)		-- class insts.
+ -> Map Var Top
  -> Map Var 			-- name of overloaded function
  	( Witness			-- the class that this function is in
 	, Type			-- type of the overloaded function
@@ -427,11 +444,11 @@ slurpClassFuns
 slurpClassFuns instMap pp
  = Map.fromList
  	[ (vF, (makeTClassFromDict v [TVar k v | (v, k) <- vks], sig, exps))
-		| PClassDict v vks sigs	<- pp 
+		| PClassDict v vks sigs	<- Map.elems pp 
 		, (vF, sig)		<- sigs 
 		, let (Just insts)	= Map.lookup v instMap
 		, let exps		= [ (makeTClassFromDict v' ts', instV)	
-						| PClassInst v' ts' defs	<- insts
+						| PClassInst v' ts' defs	<- foldr (:) [] insts
 						, (v, instV)			<- defs
 						, v == vF		] ]
 
@@ -439,13 +456,5 @@ makeTClassFromDict v ts
  = let 	Just ks	= sequence $ map kindOfType ts
  	k 	= makeKFun (ks ++ [KClass (TyClass v) ts])
    in	makeTWitness (TyClass v) k ts
-
--- | Slurp out all the class instances from ths tree
-slurpClassInstMap
- ::	Tree	-> Map Var [Top]
-
-slurpClassInstMap tree
- = 	Map.gather
- 	[ (v, p)	| p@(PClassInst v ts defs) <- tree]
 
 

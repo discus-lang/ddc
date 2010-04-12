@@ -342,12 +342,12 @@ compileFile_parse
 	outVerb $ ppr $ "  * Core: Bind\n"
 
 	-- These are the region vars that are free in the type of a top level binding
-	let rsGlobal	= Set.unions
-			$ map (T.freeVars)
+	let rsGlobal	= Set.filter (\v -> varNameSpace v == NameRegion)
+			$ Set.unions
+			$ map T.freeVars
 			$ [t	| (v, t)	<- Map.toList typeTable
-				, varNameSpace v == NameRegion
 				, Set.member v vsBoundTopLevelTREC]
-	
+		
 	cgModule_bind	<- SC.coreBind 
 				sModule 
 				"CB"
@@ -371,12 +371,12 @@ compileFile_parse
 
 	-- Reconstruct and check types ----------------------------------------
 	outVerb $ ppr $ "  * Core: Reconstruct\n"
-	cgReconstruct	<- SC.coreReconstruct 
+	cgModule_recon	<- SC.coreReconstruct 
 				"core-reconstruct" 
 				cgHeader
 				cgModule_thread
 
-	let cReconstruct = C.treeOfGlob cgReconstruct
+	let cReconstruct = C.treeOfGlob cgModule_recon
 
 	-- Lint the core program ----------------------------------------------
 	outVerb $ ppr $ "  * Core: Lint\n"
@@ -387,9 +387,11 @@ compileFile_parse
 		
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
-	cDict		<- SC.coreDict 
-				cHeader
-				cReconstruct
+	cgModule_dict	<- SC.coreDictionary 
+				cgHeader
+				cgModule_recon
+
+	let cDict	= C.treeOfGlob cgModule_dict
 
 	-- Identify prim ops --------------------------------------------------
 	outVerb $ ppr $ "  * Core: Prim\n"

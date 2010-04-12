@@ -10,7 +10,7 @@ module Main.Core
 	, coreBind
 	, coreThread
 	, coreReconstruct
-	, coreDict
+	, coreDictionary
 	, corePrim
 	, coreSimplify
 	, coreLint
@@ -140,17 +140,20 @@ coreSnip stage unique cgHeader cgModule
 
 
 -- | Resolve calls to overloaded functions.
-coreDict
+coreDictionary
 	:: (?args	:: [Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Tree 		-- ^ header tree
-	-> Tree			-- ^ core tree
-	-> IO Tree
+	=> Glob 		-- ^ Header glob.
+	-> Glob			-- ^ Module glob.
+	-> IO Glob
 
-coreDict hTree sTree
- = do	let tree'	= dictTree hTree sTree
- 	dumpCT DumpCoreDict "core-dict" tree'
-	return	tree'
+coreDictionary cgHeader cgModule
+ = do	let cgModule'	= dictTree cgHeader cgModule
+
+ 	dumpCT DumpCoreDict "core-dict"
+		$ treeOfGlob cgModule'
+
+	return	cgModule'
 
 
 -- | Reconstruct and check type information.
@@ -158,8 +161,8 @@ coreReconstruct
 	:: (?args	:: [Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String		-- ^ Stage name.
-	-> Glob			-- ^ Header module.
-	-> Glob			-- ^ Core   module.
+	-> Glob			-- ^ Header glob.
+	-> Glob			-- ^ Module glob.
 	-> IO Glob
 	
 coreReconstruct name cgHeader cgModule
