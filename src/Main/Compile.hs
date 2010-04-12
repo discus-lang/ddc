@@ -279,7 +279,7 @@ compileFile_parse
 	 , sConstrs
 	 , mapValueToTypeVars
 	 , vsTypesPlease
-	 , vsBoundTopLevel)
+	 , vsBoundTopLevelTREC)
 			<- SD.desugarSlurpConstraints
 				dProg_project
 				hElab
@@ -302,15 +302,9 @@ compileFile_parse
 			<- SD.desugarSolveConstraints
 				sConstrs
 				vsTypesPlease
-				vsBoundTopLevel
+				vsBoundTopLevelTREC
 				mapValueToTypeVars
 				blessMain
-
-	-- These are the TREC vars which are free in the type of a top level binding
-	let vsFreeTREC	= Set.unions
-			$ map (T.freeVars)
-			$ [t	| (v, t)	<- Map.toList typeTable
-				, Set.member v vsBoundTopLevel]
 
 	-- !! Early exit on StopType
 	when (elem Arg.StopType ?args)
@@ -347,9 +341,12 @@ compileFile_parse
 	-- Create local regions -----------------------------------------------
 	outVerb $ ppr $ "  * Core: Bind\n"
 
-	-- these regions have global scope
-	let rsGlobal	= Set.filter (\v -> varNameSpace v == NameRegion) 
-			$ vsFreeTREC
+	-- These are the region vars that are free in the type of a top level binding
+	let rsGlobal	= Set.unions
+			$ map (T.freeVars)
+			$ [t	| (v, t)	<- Map.toList typeTable
+				, varNameSpace v == NameRegion
+				, Set.member v vsBoundTopLevelTREC]
 	
 	cgModule_bind	<- SC.coreBind 
 				sModule 
