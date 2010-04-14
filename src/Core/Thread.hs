@@ -35,30 +35,35 @@ type ThreadM 	= State ThreadS
 -- | Thread witness variables in this tree
 threadTree :: Glob -> Glob -> Glob
 threadTree cgHeader cgModule
- = let	isUserClassName v
+	= evalState (threadGlobM cgHeader cgModule) []
+	
+
+threadGlobM :: Glob -> Glob -> ThreadM Glob
+threadGlobM cgHeader cgModule
+ = do	
+	-- Add all the top level region witnesses to the state.
+	mapM_ 	(\(PRegion r vts) -> mapM addRegionWitness vts) 
+		$ Map.elems 
+		$ globRegion cgModule
+	
+	-- Thread witnesses through top level bindings.	
+	let isUserClassName v
 		=   (Map.member v $ globClassDict cgHeader)
 		 || (Map.member v $ globClassDict cgModule)
 		
-	transTable
+	let transTable
 		 = transTableId
-		 { transP	= thread_transP 
-		 , transX 	= thread_transX isUserClassName
+		 { transX 	= thread_transX isUserClassName
 		 , transX_enter	= thread_transX_enter }
-	
-   in	evalState 	
-		(mapBindsOfGlobM (transZM transTable) cgModule) 
-		[]
+
+	mapBindsOfGlobM (transZM transTable) cgModule
 
 
--- | push witnesses to properties of top-level regions.
-thread_transP :: Top -> ThreadM Top
-thread_transP pp
- = case pp of
- 	PRegion r vts
-	 -> do	mapM_ (\(v, t) -> let Just k = kindOfType t in pushWitnessVK v k) vts
-	 	return pp
-
-	_ -> return pp
+addRegionWitness :: (Var, Type) -> ThreadM ()
+addRegionWitness (v, t)
+ = do	let Just k	= kindOfType t
+	pushWitnessVK v k
+	return ()
 
 
 -- | bottom-up: replace applications of static witnesses with bound witness variables.
