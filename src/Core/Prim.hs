@@ -5,9 +5,10 @@
 --	Direct regions don't need to be forced before being unboxed.
 --
 module Core.Prim
-	( primTree )
+	(primGlob)
 where
 import Core.Exp
+import Core.Glob
 import Core.Util
 import Type.Util
 import Type.Exp
@@ -19,16 +20,14 @@ import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
+stage	= "Core.Prim"
 
------
 debug	= False
 trace ss x
  = if debug 
  	then Debug.Trace.trace (pprStrPlain ss) x
   	else x
 
------
-stage	= "Core.Prim"
 
 -- Table -------------------------------------------------------------------------------------------
 data Table
@@ -59,9 +58,9 @@ slurpWitnessKind tt kk
 
 -- Identify primitive operations
 --	Tree should be in snipped form
-primTree :: Tree -> Tree
-primTree tree
-	= snd $ mapAccumL primP tableZero tree
+primGlob :: Glob -> Glob
+primGlob glob
+ 	= mapBindsOfGlob (snd . (primP tableZero)) glob
 
 -- top
 primP :: Table -> Top -> (Table, Top)

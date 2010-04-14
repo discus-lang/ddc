@@ -391,15 +391,11 @@ compileFile_parse
 				cgHeader
 				cgModule_recon
 
-	let cDict	= C.treeOfGlob cgModule_dict
-
 	-- Identify prim ops --------------------------------------------------
 	outVerb $ ppr $ "  * Core: Prim\n"
-	cPrim		<- SC.corePrim
-				cDict
-
-	let cgModule_prim
-		= C.globOfTree cPrim
+	cgModule_prim	<- SC.corePrim
+				cgHeader
+				cgModule_dict
 
 	-- Simplifier does various simple optimising transforms ---------------
 	outVerb $ ppr $ "  * Core: Simplify\n"

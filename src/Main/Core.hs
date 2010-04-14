@@ -34,7 +34,7 @@ import Core.Dictionary			(dictGlob)
 import Core.Reconstruct			(reconTreeWithEnv)
 import Core.Bind			(bindGlob)
 import Core.Thread			(threadGlob)
-import Core.Prim			(primTree)
+import Core.Prim			(primGlob)
 import Core.Simplify			(simplifyGlob)
 import Core.Lint			(lintTree)
 import Core.Lift			(lambdaLiftGlob)
@@ -200,13 +200,17 @@ coreThread cgHeader cgModule
 corePrim
 	:: (?args ::	[Arg])
 	=> (?pathSourceBase :: FilePath)
-	=> Tree			-- ^ core tree
-	-> IO Tree
+	=> Glob			-- ^ Header glob.
+	-> Glob			-- ^ Module glob.
+	-> IO Glob
 	
-corePrim cTree
- = do	let cTree'	= primTree cTree
- 	dumpCT DumpCorePrim "core-prim" cTree'
-	return cTree'
+corePrim cgHeader cgModule
+ = do	let cgModule'	= primGlob cgModule
+
+ 	dumpCT DumpCorePrim "core-prim" 
+		$ treeOfGlob cgModule'
+
+	return cgModule'
 
 
 -- | Do core simplification
@@ -215,7 +219,7 @@ coreSimplify
 	=> (?pathSourceBase :: FilePath)
 	=> String		-- ^ unique
 	-> Glob			-- ^ Header glob.
-	-> Glob			-- ^ Source glob.
+	-> Glob			-- ^ Module glob.
 	-> IO Glob
 	
 coreSimplify unique cgHeader cgModule
