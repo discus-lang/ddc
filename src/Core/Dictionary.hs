@@ -1,7 +1,7 @@
 
 -- | Resolve calls to overloaded functions.
 module Core.Dictionary
-	(dictTree)
+	(dictGlob)
 where
 import Core.Exp
 import Core.Glob
@@ -28,12 +28,12 @@ trace ss x	= if debug
 
 
 -- | The RHS of every instance function must be the var of a top level function.
-dictTree 
+dictGlob 
 	:: Glob		-- ^ Header module.
 	-> Glob 	-- ^ Source module.
 	-> Glob
 	
-dictTree cgHeader cgModule
+dictGlob cgHeader cgModule
  = let	
 	-- Build a map of class instances.
 	instMap	= Map.unionWith	(Seq.><)

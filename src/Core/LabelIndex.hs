@@ -2,7 +2,7 @@
 -- | Convert all `LVar` constructor labels in patterns into their equivalent
 --	`LIndex` labels. This makes the Core to Sea IR translation easier.
 module Core.LabelIndex
-	(labelIndexTree)
+	(labelIndexGlob)
 where
 import Core.Exp
 import Core.Glob
@@ -13,12 +13,12 @@ import qualified Data.Map	as Map
 
 
 -- | Convert `LVar` labels to `LIndex` labels in a glob.
-labelIndexTree
+labelIndexGlob
 	:: Glob			-- ^ Header glob.
 	-> Glob			-- ^ Module glob.
 	-> Glob
 	
-labelIndexTree cgHeader cgModule
+labelIndexGlob cgHeader cgModule
  = let	lookupCtorDef :: Var -> Maybe CtorDef
 	lookupCtorDef name	
 	  	= takeFirstJust

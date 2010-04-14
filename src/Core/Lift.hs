@@ -1,6 +1,6 @@
 
 module Core.Lift
-	(lambdaLiftTree)
+	(lambdaLiftGlob)
 where
 import Core.Glob
 import Core.Lift.Base
@@ -14,13 +14,13 @@ import qualified Data.Map		as Map
 
 -- | Perform lambda lifting on this tree.
 --   TODO: This is a mess, and the closure information on the resulting bindings is wrong.
-lambdaLiftTree 	
+lambdaLiftGlob 	
 	:: Glob			-- ^ Header Glob,
 	-> Glob			-- ^ Module Glob.
 	-> ( Glob		--   transformed module glob, including new lifted bindings.
 	   , Set Var)		--   the vars of the new bindings.
 	
-lambdaLiftTree
+lambdaLiftGlob
 	cgHeader
 	cgModule
 

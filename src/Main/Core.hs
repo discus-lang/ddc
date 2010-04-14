@@ -30,16 +30,16 @@ import DDC.Main.Arg
 import DDC.Var
 import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)
-import Core.Dictionary			(dictTree)
+import Core.Dictionary			(dictGlob)
 import Core.Reconstruct			(reconTreeWithEnv)
 import Core.Bind			(bindGlob)
-import Core.Thread			(threadTree)
+import Core.Thread			(threadGlob)
 import Core.Prim			(primTree)
 import Core.Simplify			(simplifyGlob)
 import Core.Lint			(lintTree)
-import Core.Lift			(lambdaLiftTree)
-import Core.LabelIndex			(labelIndexTree)
-import Core.Curry			(curryTree)
+import Core.Lift			(lambdaLiftGlob)
+import Core.LabelIndex			(labelIndexGlob)
+import Core.Curry			(curryGlob)
 import Core.ToSea			(toSeaTree)
 import Data.Foldable			(foldr)
 import Util				hiding (foldr)
@@ -148,7 +148,7 @@ coreDictionary
 	-> IO Glob
 
 coreDictionary cgHeader cgModule
- = do	let cgModule'	= dictTree cgHeader cgModule
+ = do	let cgModule'	= dictGlob cgHeader cgModule
 
  	dumpCT DumpCoreDict "core-dict"
 		$ treeOfGlob cgModule'
@@ -188,7 +188,7 @@ coreThread
 	
 coreThread cgHeader cgModule
  = do	let cgModule'	= {-# SCC "Core.Thread" #-} 
- 			  threadTree cgHeader cgModule
+ 			  threadGlob cgHeader cgModule
  
  	dumpCT DumpCoreThread "core-thread" 
 		$ treeOfGlob cgModule'
@@ -279,7 +279,7 @@ coreLambdaLift
 coreLambdaLift cgHeader cgModule
  = do	
  	let (cgModule', vsNewLambdaLifted)
-		= lambdaLiftTree 
+		= lambdaLiftGlob 
 			cgHeader
 			cgModule
 						
@@ -302,7 +302,7 @@ coreLabelIndex
 	-> IO Glob
 	
 coreLabelIndex cgHeader cgModule
- = do	let cgModule'	= labelIndexTree cgHeader cgModule
+ = do	let cgModule'	= labelIndexGlob cgHeader cgModule
  	
 	dumpCT DumpCoreLabelIndex "core-labelIndex" 
 		$ treeOfGlob cgModule'
@@ -320,7 +320,7 @@ coreCurryCall
 
 coreCurryCall cgHeader cgModule
  = do	let optTailCall	= elem OptTailCall ?args
-	let cgModule'	= curryTree optTailCall cgHeader cgModule
+	let cgModule'	= curryGlob optTailCall cgHeader cgModule
 
 	dumpCT DumpCoreCurry "core-curry" 
 		$ treeOfGlob cgModule'

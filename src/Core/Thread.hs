@@ -10,7 +10,7 @@
 --	program.
 --	
 module Core.Thread 
-	(threadTree)
+	(threadGlob)
 where
 import Core.Plate.Trans
 import Core.Exp
@@ -33,8 +33,12 @@ type ThreadM 	= State ThreadS
 
 
 -- | Thread witness variables in this tree
-threadTree :: Glob -> Glob -> Glob
-threadTree cgHeader cgModule
+threadGlob 
+	:: Glob		-- ^ Header glob
+	-> Glob		-- ^ Module glob
+	-> Glob
+
+threadGlob cgHeader cgModule
 	= evalState (threadGlobM cgHeader cgModule) []
 	
 

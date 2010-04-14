@@ -2,7 +2,7 @@
 -- | Work out how to perform function applications and rewrites them into
 --   super-call/curry/apply/tail-calls.
 module Core.Curry
-	(curryTree)
+	(curryGlob)
 where
 import Core.Exp
 import Core.Util
@@ -32,13 +32,13 @@ data Env
 
 -- | Work out how to perform function applications in this tree
 --	rewrite them to use the primitive application operators.
-curryTree 
+curryGlob
 	:: Bool			-- ^ Whether to do tail-recursion optimisation.
 	-> Glob			-- ^ Header glob.
 	-> Glob			-- ^ Source glob.
 	-> Glob 
 
-curryTree 
+curryGlob 
 	optTailCall
 	headerGlob
 	progGlob
