@@ -375,15 +375,6 @@ compileFile_parse
 				"core-reconstruct" 
 				cgHeader
 				cgModule_thread
-
-	let cReconstruct = C.treeOfGlob cgModule_recon
-
-	-- Lint the core program ----------------------------------------------
-	outVerb $ ppr $ "  * Core: Lint\n"
-
-	SC.coreLint "core-lint-reconstruct"
-	 	cReconstruct 
-		cHeader
 		
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"

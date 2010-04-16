@@ -19,7 +19,6 @@ module Main.Core
 	, coreCurryCall
 	, toSea)
 where
-import Core.Exp 	
 import Core.Util
 import Core.Glob
 import Core.ToSea.Sequence
@@ -36,7 +35,7 @@ import Core.Bind			(bindGlob)
 import Core.Thread			(threadGlob)
 import Core.Prim			(primGlob)
 import Core.Simplify			(simplifyGlob)
-import Core.Lint			(lintTree)
+import Core.Lint			(lintGlob)
 import Core.Lift			(lambdaLiftGlob)
 import Core.LabelIndex			(labelIndexGlob)
 import Core.Curry			(curryGlob)
@@ -253,20 +252,17 @@ coreLint
 	:: (?args :: 	[Arg])
 	=> (?pathSourceBase :: FilePath)
 	=> String		-- ^ stage name
-	-> Tree 		-- ^ core tree
-	-> Tree 		-- ^ header tree
+	-> Glob 		-- ^ core tree
+	-> Glob 		-- ^ header tree
 	-> IO ()
 	
-coreLint stage cTree cHeader
+coreLint stage cgHeader cgModule
  | elem LintCore ?args
- = do	let errs	= lintTree (cHeader ++ cTree)
-
-	case errs of 
-	 []	-> return ()
-	 errs	
-	  ->	panic stage
-	  		$ catInt "\n" errs
-	
+ = do	
+	lintGlob cgHeader
+	 `seq` lintGlob cgModule
+	 `seq` return ()
+		
  | otherwise
  = 	return ()
 
