@@ -55,13 +55,13 @@ Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 
 
 // ------ Network
+#include <sys/types.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 
 Int32	primConnect	(String hostName, Int32 port)
 {

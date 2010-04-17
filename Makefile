@@ -34,29 +34,29 @@
 # -- Build the compiler and libs
 .PHONY	: all
 all 	:
-	@make allWithConfig
+	@$(MAKE) allWithConfig
 
 include make/build.mk
 
 .PHONY	: allWithConfig
 allWithConfig :
-	@make deps
-	@make bin/ddc bin/war runtime external libs -j $(THREADS)
+	@$(MAKE) deps
+	@$(MAKE) bin/ddc bin/war runtime external libs -j $(THREADS)
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
 .PHONY  : total
 total	: 
-	@make allWithConfig
-	@make docs
-	@make totallogwar 
+	@$(MAKE) allWithConfig
+	@$(MAKE) docs
+	@$(MAKE) totallogwar 
 
 
 # -- Same as 'total', but do a full clean first
 .PHONY  : cleantotal
 cleantotal : 
-	@make clean
-	@make total	
+	@$(MAKE) clean
+	@$(MAKE) total	
 
 
 # -- Find Source Files ----------------------------------------------------------------------------
