@@ -42,12 +42,24 @@ Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 	_S(1)	= x_;
 	
 	// unboxing.
-	DataM* 	ref		= (DataM*) _force(_S(0));
-	Obj***	payload		= (Obj***)ref ->payload;
+	DataM* refDataM;
+	Data* refData;
+	int objType = _objType(_S(0));
+	switch (objType) {
+	 case _ObjTypeDataM:
+		refDataM = (DataM*) _force(_S(0));
+		Obj***  payload	= (Obj***)refDataM ->payload;
+		*payload[1]	= _S(1);
+		break;
+	 case _ObjTypeData:
+		refData = (Data*) _force(_S(0));
+		refData->a[0] = _S(1);
+		break;
+	 default:
+		_PANIC("Updating Ref with unknown internal object type");
+		break;
+	}
 
-	// update the field.
-	*payload[1]		= _S(1);
-	
 	_LEAVE(2);
 	return	_primUnit;
 }
