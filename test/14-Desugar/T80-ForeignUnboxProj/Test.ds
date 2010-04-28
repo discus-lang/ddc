@@ -1,0 +1,12 @@
+
+project Int32# where
+	succ x = x + 1#
+	pred x = x - 1#
+
+ten :: Int32#
+ten = 10#
+
+main ()
+ = do	println $ "ten      : " % show ten
+	println $ "ten.pred : " % show ten.pred
+	println $ "ten.succ : " % show ten.succ
