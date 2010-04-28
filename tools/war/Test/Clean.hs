@@ -15,14 +15,15 @@ testClean test@(TestClean path) way
  = do	debugLn	$ "* TestClean " ++ path
 
 	io $ System.Cmd.system
-		$ "rm -f" 
-		++ " " ++ path ++ "/*.di"
-		++ " " ++ path ++ "/*.o"
-		++ " " ++ path ++ "/*.dump-*"
-		++ " " ++ path ++ "/*.ddc.*"
-		++ " " ++ path ++ "/*.bin"
-		++ " " ++ path ++ "/*.diff"
-		++ " " ++ path ++ "/*.stdout"
-		++ " " ++ path ++ "/*.stderr"
+		$ "find " ++ path ++ " -type f "
+		++ " -name *.di"
+		++ " -o -name *.o"
+		++ " -o -name *.dump-*"
+		++ " -o -name *.ddc.*"
+		++ " -o -name *.bin"
+		++ " -o -name *.diff"
+		++ " -o -name *.stdout"
+		++ " -o -name *.stderr"
+		++ " -exec rm -f {} \\;"
 
 	return TestWinOk
