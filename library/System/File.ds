@@ -70,12 +70,16 @@ foreign import "feof"
 
 
 
---- move along, nothing to see here...
+-- Don't use this for casting pointers as its guaranteed to be
+-- wrong for 64 bit systems (from Captain Obvious).
+
 foreign import  "(Int32)"
  unsafe_castToInt32U 
  	:: forall a
 	.  a -> Int32#;
 
+--------------------------------------------------------------------------------
+-- Function that can actually be used in Disciple programs.
 
 -- | open a file
 try_file_open 
