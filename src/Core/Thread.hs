@@ -1,4 +1,3 @@
-
 -- | Thread witness variables through the program to replace statically constructed
 --	witnesses in type applications.
 --
@@ -25,11 +24,7 @@ import DDC.Var
 import qualified DDC.Var.PrimId		as Var
 import qualified Data.Map		as Map
 
-stage	= "Core.Thread"
-
--- Maintain a map of regions, to what witnesses we have available for them.
-type ThreadS	= [((TyConWitness, Var), Var)]	-- (class name, region), witness variable
-type ThreadM 	= State ThreadS
+stage		= "Core.Thread"
 
 -- | Thread witness variables in this tree
 threadGlob 
@@ -39,7 +34,7 @@ threadGlob
 
 threadGlob cgHeader cgModule
 	= evalState (threadGlobM cgHeader cgModule) []
-	
+		
 
 threadGlobM :: Glob -> Glob -> ThreadM Glob
 threadGlobM cgHeader cgModule
@@ -48,15 +43,10 @@ threadGlobM cgHeader cgModule
 	mapM_ 	(\(PRegion r vts) -> mapM addRegionWitness vts) 
 		$ Map.elems 
 		$ globRegion cgModule
-	
-	-- Thread witnesses through top level bindings.	
-	let isUserClassName v
-		=   (Map.member v $ globClassDict cgHeader)
-		 || (Map.member v $ globClassDict cgModule)
-		
+			
 	let transTable
 		 = transTableId
-		 { transX 	= thread_transX isUserClassName
+		 { transX 	= thread_transX
 		 , transX_enter	= thread_transX_enter }
 
 	mapBindsOfGlobM (transZM transTable) cgModule
@@ -70,11 +60,11 @@ addRegionWitness (v, t)
 
 
 -- | bottom-up: replace applications of static witnesses with bound witness variables.
-thread_transX :: (Var -> Bool) -> Exp -> ThreadM Exp
-thread_transX isUserClassName xx
+thread_transX :: Exp -> ThreadM Exp
+thread_transX xx
 	| XAPP x t		<- xx
 	, Just _		<- takeTWitness t
-	= do	t'	<- rewriteWitness isUserClassName t
+	= do	t'	<- rewriteWitness t
 	 	return	$ XAPP x t'
 
 	-- pop lambda bound witnesses on the way back up because we're leaving their scope.
@@ -115,27 +105,27 @@ thread_transX_enter xx
 --	a variable which binds the correct one.
 --
 rewriteWitness 
-	:: (Var -> Bool) 
-	-> Type 
+	:: Type 
 	-> ThreadM Type
 
-rewriteWitness isUserClassName tt
+rewriteWitness tt
  = case tt of
 	-- handle compound witnesses
 	TWitJoin ts
-	 -> do	ts'	<- mapM (rewriteWitness' isUserClassName) ts
+	 -> do	ts'	<- mapM rewriteWitness' ts
 		return	$ makeTWitJoin ts'
 
-	_	-> rewriteWitness' isUserClassName tt
+	_	-> rewriteWitness' tt
 
-rewriteWitness' isUserClassName tt
+rewriteWitness' tt
  
 	-- Got an application of an explicit witness to some region.
 	--	Lookup the appropriate witness from the environment and use
 	--	that here.
-	| Just (vC, _, [TVar k vT]) 		<- mClass
-	= do	Just vW	<- lookupWitness vT vC
-		let Just k	= kindOfType tt
+	| Just (tcWitness, _, [TVar k vT]) 		<- mClass
+	= do	let Just kcWitness	= takeKiConOfTyConWitness tcWitness
+		Just vW			<- lookupWitness kcWitness vT
+		let Just k		= kindOfType tt
 		return $ TVar k vW
 
 	-- purity of no effects is trivial
@@ -194,65 +184,44 @@ buildPureWitness eff@(TEffect vE [tR@(TVar kR vR)])
 	, kR == kRegion
 	= do	
 		-- try and find a witness for constness of the region
-		Just wConst	<- lookupWitness vR TyConWitnessMkConst
-		let  kConst	= KApps kConst [tR]
+		Just wConst	<- lookupWitness KiConConst vR
+		let  k		= KApps kConst [tR]
 
 		-- the purity witness gives us purity of read effects on that const region
-		return		$ TApp (TApp tMkPurify tR) (TVar kConst wConst)
+		return		$ TApp (TApp tMkPurify tR) (TVar k wConst)
 
 buildPureWitness eff@(TSum kE _)
- | kE	== kEffect
- = do	let effs	= flattenTSum eff
- 	wits		<- mapM buildPureWitness effs
-	return		$ TWitJoin wits
+ 	| kE	== kEffect
+ 	= do	let effs	= flattenTSum eff
+ 		wits		<- mapM buildPureWitness effs
+		return		$ TWitJoin wits
 
 buildPureWitness eff@(TVar kE vE)
- | kE	== kEffect
- = do	Just w	<- lookupWitness vE TyConWitnessMkPure
- 	return (TVar (KApps kPure [eff]) w)
+ 	| kE	== kEffect
+ 	= do	Just w	<- lookupWitness KiConPure vE
+ 		return (TVar (KApps kPure [eff]) w)
 
 buildPureWitness eff
  = panic stage
  	$ "buildPureWitness: Cannot build a witness for purity of " % eff % "\n"
 
 
+-- State ------------------------------------------------------------------------------------------
+-- Stack of what witneses are currently in scope.
+type ThreadS	
+	= [ ( (KiCon, Var) 	-- witness kind constructor, TREC var
+	    , Var)]		-- type vars that binds the corresponding witness.
 
--- | Lookup a witness for a constraint on this region
-lookupWitness 
-	:: Var 		-- ^ the data\/region\/effect variable
-	-> TyConWitness	-- ^ the witness needed
-	-> ThreadM (Maybe Var)
-	
-lookupWitness vRegion tcWitness
- = do
- 	state	<- get
-	
-	let mvWitness
-		-- we've got a witness for this class in the table.
-		| Just vWitness	<- lookup (tcWitness, vRegion) state
-		= Just vWitness
-
-		-- uh oh, we don't have a witness for this one.
-		-- Print an error instead of panicing so we can still drop the file for -dump-core-thread
-		--	Core.Reconstruct will catch this problem in a subsequent stage.
-		--
-	 	| otherwise
-	 	= freakout stage
-			("thread_transX: can't find a witness for " % tcWitness % " on region " % vRegion % "\n"
-			 % "state = " % state % "\n\n")
-			$ Nothing
-
-	return mvWitness
+-- Rewriter monad.
+type ThreadM 	= State ThreadS
 
 
--- Inspect this kind. If it binds a witness then record it in the state.
+-- Inspect this kind. If it binds a witness then push it onto the stack.
 pushWitnessVK :: Var -> Kind -> ThreadM ()
 pushWitnessVK vWitness k
- 	| KApps (KCon kcClass _) [TVar kV vRE]	<- k
+ 	| KApps (KCon kcWitness _) [TVar kV vT]	<- k
 	, elem kV [kRegion, kEffect, kValue, kClosure]
-	= let 	Just tcWitness	= takeTyConWitnessOfKiCon kcClass
-	  in	modify $ \s -> ((tcWitness, vRE), vWitness) : s
-	
+	= modify $ \s -> ((kcWitness, vT), vWitness) : s
 	| otherwise
 	= return ()
 
@@ -260,22 +229,44 @@ pushWitnessVK vWitness k
 -- Inspect this kind. If it binds a witness then pop it from the stack.
 popWitnessVK :: Var -> Kind -> ThreadM ()
 popWitnessVK vWitness k
-	| KApps (KCon kcClass _) [TVar kV vRE]	<- k
+	| KApps (KCon kcWitness _) [TVar kV vRE]	<- k
 	= do
 		state	<- get
-		let Just tcWitness	= takeTyConWitnessOfKiCon kcClass
-
 		let (xx	:: ThreadM ())
 			| (c : cs)			<- state
-			, c == ((tcWitness, vRE), vWitness)
+			, c == ((kcWitness, vRE), vWitness)
 			= put cs
 			
 			| otherwise
 			= panic stage
-			$ "popWitnessVK: witness to be popped does not match.\n"
-			
+			$ "popWitnessVK: witness to be popped does not match.\n"			
 		xx
 
 	| otherwise
 	= return ()
+
+
+-- | Try to find a witness of the given kind in the current environment.
+lookupWitness 
+	:: KiCon
+	-> Var 	
+	-> ThreadM (Maybe Var)
+	
+lookupWitness kCon vArg
+ = do	state	<- get
+	let mvWitness
+		-- we've got a witness for this class in the table.
+		| Just vWitness	<- lookup (kCon, vArg) state
+		= Just vWitness
+
+		-- uh oh, we don't have a witness for this one.
+		-- Print an error instead of panicing so we can still drop the file for	-dump-core-thread
+		-- Core.Reconstruct will catch this problem in a subsequent stage.
+	 	| otherwise
+	 	= freakout stage
+			("thread_transX: can't find a witness of kind " % kCon % "\n"
+			 % "state = " % state % "\n\n")
+			$ Nothing
+
+	return mvWitness
 	

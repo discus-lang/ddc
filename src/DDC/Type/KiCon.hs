@@ -38,4 +38,4 @@ data KiCon
 	
 	-- | Given closure is empty.
 	| KiConEmpty
-	deriving (Show, Eq)
+	deriving (Show, Eq, Ord)

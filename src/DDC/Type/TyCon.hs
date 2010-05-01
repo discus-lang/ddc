@@ -3,7 +3,8 @@
 module DDC.Type.TyCon
 	( TyCon		(..)
 	, TyConWitness	(..)
-	, takeTyConWitnessOfKiCon )
+	, takeTyConWitnessOfKiCon
+	, takeKiConOfTyConWitness)
 where
 import DDC.Var
 import DDC.Type.KiCon
@@ -52,21 +53,38 @@ data TyConWitness
 	deriving (Show, Eq)
 
 
--- | For a given witness kind constructor, take the type constructor that
---	makes witnesses of that kind.
+-- | For a given witness kind constructor, 
+--	take the associated witness type constructor.
 takeTyConWitnessOfKiCon :: KiCon -> Maybe TyConWitness
 takeTyConWitnessOfKiCon kiCon
  = case kiCon of
-	KiConVar var		-> Just $ TyConWitnessMkVar var
-	KiConConst 		-> Just TyConWitnessMkConst
-	KiConDeepConst		-> Just TyConWitnessMkDeepConst
-	KiConMutable		-> Just TyConWitnessMkMutable
-	KiConDeepMutable	-> Just TyConWitnessMkDeepMutable
-	KiConLazy		-> Just TyConWitnessMkLazy
-	KiConHeadLazy		-> Just TyConWitnessMkHeadLazy
-	KiConDirect		-> Just TyConWitnessMkDirect
-	KiConPure		-> Just TyConWitnessMkPure
-	KiConEmpty		-> Just TyConWitnessMkEmpty
-	_			-> Nothing
+	KiConVar v			-> Just $ TyConWitnessMkVar v
+	KiConConst 			-> Just TyConWitnessMkConst
+	KiConDeepConst			-> Just TyConWitnessMkDeepConst
+	KiConMutable			-> Just TyConWitnessMkMutable
+	KiConDeepMutable		-> Just TyConWitnessMkDeepMutable
+	KiConLazy			-> Just TyConWitnessMkLazy
+	KiConHeadLazy			-> Just TyConWitnessMkHeadLazy
+	KiConDirect			-> Just TyConWitnessMkDirect
+	KiConPure			-> Just TyConWitnessMkPure
+	KiConEmpty			-> Just TyConWitnessMkEmpty
+	_				-> Nothing
 
 
+-- | For a given witness type constructor, 
+--	take the associated witness kind constructor.
+takeKiConOfTyConWitness :: TyConWitness -> Maybe KiCon
+takeKiConOfTyConWitness tyCon
+ = case tyCon of
+	TyConWitnessMkVar v		-> Just $ KiConVar v
+	TyConWitnessMkConst		-> Just $ KiConConst
+	TyConWitnessMkDeepConst		-> Just $ KiConDeepConst
+	TyConWitnessMkMutable		-> Just $ KiConMutable
+	TyConWitnessMkDeepMutable	-> Just $ KiConDeepMutable
+	TyConWitnessMkLazy		-> Just $ KiConLazy
+	TyConWitnessMkHeadLazy		-> Just $ KiConHeadLazy
+	TyConWitnessMkDirect		-> Just $ KiConDirect
+	TyConWitnessMkPure		-> Just $ KiConPure
+	TyConWitnessMkEmpty		-> Just $ KiConEmpty
+	_				-> Nothing
+	
