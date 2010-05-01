@@ -26,6 +26,7 @@ module Core.Util.Bits
 where
 import Core.Exp
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Var
 

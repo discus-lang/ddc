@@ -25,6 +25,7 @@ module Type.Util.JoinSum
 	(joinSumTs)
 where
 import Type.Exp
+import Type.Builtin
 import Type.Util.Environment
 import Type.Util.Bits
 import Type.Util.Kind

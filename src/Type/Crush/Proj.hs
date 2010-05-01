@@ -13,6 +13,7 @@ module Type.Crush.Proj
 where
 import Type.Location
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Type.Error
 import Type.Class

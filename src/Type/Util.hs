@@ -34,6 +34,7 @@ import Type.Util.Quantify
 import Type.Util.Flatten
 import Type.Util.JoinSum
 import Type.Exp
+import Type.Builtin
 import Shared.VarPrim
 import Util
 import DDC.Main.Error

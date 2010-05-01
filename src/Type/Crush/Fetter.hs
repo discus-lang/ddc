@@ -12,6 +12,7 @@ import Type.Util
 import Type.Class
 import Type.Location
 import Type.Exp
+import Type.Builtin
 import Type.Error
 import Util
 import Shared.VarPrim

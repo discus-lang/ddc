@@ -6,6 +6,7 @@ module Type.Context
 	, matchInstance )
 where
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Shared.VarPrim
 import Util
@@ -159,7 +160,7 @@ matchInstance cType cInst
 	, length ts1 == length ts2
 
 	-- all the type arguments of the class must unify
-	, Just constrs		<- sequence $ zipWith unifyT2 ts1 ts2
+	, Just constrs		<- sequence $ zipWith unifyTypes ts1 ts2
 
 	-- any extra constraint from the unification must have 
 	--	a var or wildcard for the RHS
@@ -175,3 +176,9 @@ matchInstance cType cInst
 
 	| otherwise
 	= False
+
+
+
+
+
+

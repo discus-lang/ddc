@@ -11,6 +11,7 @@ import Type.Plate.FreeVars
 import Type.Plate.Trans
 import Type.Pretty
 import Type.Exp
+import Type.Builtin
 import Control.Monad.State.Strict
 import Util
 import DDC.Base.SourcePos

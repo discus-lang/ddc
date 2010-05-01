@@ -5,6 +5,7 @@ module Type.Effect.MaskLocal
 where
 import Util
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error

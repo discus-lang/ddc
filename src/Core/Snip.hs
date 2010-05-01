@@ -10,6 +10,7 @@ import Core.Glob
 import Core.Util
 import Core.Plate.Trans
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error

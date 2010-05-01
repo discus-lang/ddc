@@ -13,6 +13,7 @@ import Source.Lexer
 import Source.Exp
 import Type.Util.Bits
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Main.Pretty
 import DDC.Var

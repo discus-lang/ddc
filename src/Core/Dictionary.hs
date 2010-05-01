@@ -3,29 +3,32 @@
 module Core.Dictionary
 	(dictGlob)
 where
-import Core.Exp
+import Core.Dictionary.InfoOverloaded
+import Core.Dictionary.Env
 import Core.Glob
-import Core.Util
+import Core.Exp
+import Core.Util.Bits
 import Core.Plate.Trans
 import Type.Exp
-import DDC.Main.Pretty
-import DDC.Main.Error
+import Type.Util.Bits
+import Type.Util.Kind
+import Type.Util.Unify
+import Type.Util.Flatten
+import Type.Util.Substitute
+import Util
 import DDC.Var
-import Data.Foldable		(foldr)
-import Data.Sequence		(Seq)
-import qualified Debug.Trace	as Debug
+import DDC.Main.Error
+import DDC.Main.Pretty
 import qualified Data.Sequence	as Seq
-import qualified Util.Data.Map	as Map
-import Util			hiding (foldr)
-import Type.Util		hiding (flattenT, unifyT2) 
-import Prelude			hiding (foldr)
+import qualified Data.Map	as Map
+import qualified Data.Foldable
+import qualified Debug.Trace
 
 stage		= "Core.Dictionary"
 debug		= False
 trace ss x	= if debug 
-			then Debug.trace (pprStrPlain ss) x
+			then Debug.Trace.trace (pprStrPlain ss) x
 			else x
-
 
 -- | The RHS of every instance function must be the var of a top level function.
 dictGlob 
@@ -34,427 +37,310 @@ dictGlob
 	-> Glob
 	
 dictGlob cgHeader cgModule
- = let	
-	-- Build a map of class instances.
-	instMap	= Map.unionWith	(Seq.><)
-			(globClassInst cgHeader)
-			(globClassInst cgModule)
-	
-	-- Build a map of class dictionaries.			
- 	classMap
-		= Map.union
-			(slurpClassFuns instMap $ globClassDict cgHeader)
-			(slurpClassFuns instMap $ globClassDict cgModule)
-				
-	-- | Get the type of some top-level thing
-	getType v
-		= takeFirstJust 
-		$ map (typeFromGlob v)
-		$ [cgHeader, cgModule]
+ = let	env	= Env
+		{ envHeaderGlob	= cgHeader
+		, envModuleGlob	= cgModule }
 
-	cgModule' 
-		= mapBindsOfGlob (transformS rewriteS) cgModule
-		   where 	?getType	= getType
-				?classMap	= classMap
-   in	cgModule'
+   in	mapBindsOfGlob 
+		(transformS (rewriteS env)) 
+		cgModule
    	
 	
--- | Rewrite overloaded fn applications in this statement
-rewriteS
- ::	(?getType	:: Var -> Maybe Type
-  ,	 ?classMap
- 	 :: Map Var 			-- overloaded variable, eg (+)
-		( Witness			-- class that the var belongs to, eg (Num a)
-		, Type			-- type of this overloaded function
-					--	eg Num a => a -> a -> a
-		, [(Witness, Var)]))	-- the possible instances for this function
-					--	eg Int   -> Int -> Int
-					--	   Float -> Float -> Float
-
- =>	Stmt -> Stmt
- 
-rewriteS ss
+-- | Rewrite applcations of overloaded functions in this statement.
+rewriteS :: Env -> Stmt -> Stmt
+rewriteS env ss
  = case ss of
- 	SBind mV x	-> SBind mV $ rewriteX x
-	
-rewriteX xx
+ 	SBind mV x		-> SBind mV $ rewriteX env x
+
+
+-- Look for applications that might be of overloaded functions.	
+rewriteX :: Env -> Exp -> Exp
+rewriteX env xx
  = case xx of
-	XTau t x		-> XTau t (rewriteX x)
-	XApp{}			-> rewriteApp xx
-	XAPP XLit{} (TVar kR r) 
-	 | kR	== kRegion 	-> xx
-	XAPP{}			-> rewriteApp xx
+	XTau t x		-> XTau t (rewriteX env x)
+
+	-- Value applications might be of overloaded functions.
+	XApp{}			-> rewriteAppX env xx
+
+	-- Literals aren't overloaded functions.
+	XAPP XLit{} _		-> xx
+
+	-- Type applications might be of overloaded functions.
+	XAPP{}			-> rewriteAppX env xx
+
 	_			-> xx
 	
 
--- | if this function application calls an overloaded function then rewrite it 
---	to be a call to the appropriate instance.
-rewriteApp xx
- = let	
- 	-- flatten the application to extract the var of the function being applied.
- 	xParts				= flattenAppsE xx
-	(XAppFP (XVar overV _) _ : _)	= xParts
-
- 	result
-		-- see if the var is in the classMap, if it is then it is overloaded.
-		| Just	( tClass
-			, tOverScheme
-			, cxInstances)	
-				<- Map.lookup overV ?classMap
-
-		, Just (vClass, kClass, tsClass)	
-				<- takeTWitness tClass
-		
-		= let	vksClass 	= map (\(TVar k v) -> (v, k)) tsClass
-			tScheme	 	= foldl (\t (v, k) -> TForall (BVar v) k t) tOverScheme vksClass
-		  	tScheme_c	= addContext (KClass vClass tsClass) tScheme
-		  
-		  in 	rewriteOverApp_trace xx overV tClass tScheme_c cxInstances ?getType
-		
-		-- couldn't find it in the classMap, var isn't overloaded.
-		| otherwise
-		= xx
+-- | If this appliction is of an overloaded function then rewrite the application
+--	so it applies the appropritate instance function directly.
+--
+--   The expression to rewrite must be some application of a value variable.
+--
+rewriteAppX :: Env -> Exp -> Exp
+rewriteAppX env xx
+ 	-- Flatten the application expression so we can get at the var of 
+	--	the function being applied.
+	| (XAppFP (XVar vOverloaded tOverloaded) _ : xsArgs)	<- flattenAppsE xx
 	
-   in	result
+	-- See if the var being applied is defined in one of the type class
+	--	declarations. If it is then we have to rewrite the application.
+	, Just	infoOverloaded	<- lookupOverloadedVar env vOverloaded
+	= let	
+		-- Get the forall bound vars that are out the front of the type scheme
+		--	for the overloaded variable.
+		(bksDecl, _tBodyDecl)	= slurpTForall $ infoOverloadedType infoOverloaded
+		vsDeclQuantVars		= map (varOfBind . fst) bksDecl
 
-addContext c tt
- = case tt of
- 	TForall b k t	-> TForall b k (addContext c t)
-	_		-> TContext c tt
-
--- rewriteOverApp ----------------------------------------------------------------------------------	
--- | Rewrite an overloaded application to call the appropriate instance.
-rewriteOverApp
-	:: Exp			-- function application to rewrite
-	-> Var			-- var of overloaded function
-	-> Witness		-- class 		eg	Eq a
-	-> Type			-- type of sig
-	-> [(Witness, Var)]	-- instances		eg 	[(Eq Int, primIntEq), (Eq Char, primCharEq)]
-	-> (Var -> Maybe Type)	-- type map
-	-> Exp			-- rewritten expression
-
-rewriteOverApp
-	xx 
-	overV 
-	tClass
-	tOverScheme 
-	cxInstances
-	getType
-
-	
-	| Just (classV, classKind, classParamVs)
-			<- takeTWitness tClass
-
-	-- first work out what instance function to use
-	, (cClassInst, tOverShapeI, Just vInst)
-			<- determineInstance xx overV tClass tOverScheme cxInstances 
-
-	-- Ok, we know what types the overloaded function was called at, and what instance to use.
-	--	We now have to work out what type args to pass to the instance function.
-
-	-- Lookup the scheme for the instance function and strip out its parts
-	, Just tInstScheme	<- getType vInst
-
-	, (bksForall, _, ksClass, tInstShape)
-			<- stripSchemeT $ packT tInstScheme					
-
-	, tOverShapeI_flat	<- flattenT tOverShapeI
-	
-	= trace (pprStrPlain
-		$ "    tInstScheme      = " %> tInstScheme 	% "\n\n"
-		% "    tInstShape       = " %> tInstShape 	% "\n\n"
-		% "    tOverShapeI_flat = " %> tOverShapeI_flat	% "\n\n")
-	$ let
-		-- Match up the type args in the type of the call and the real instance function.
-		ttSub	= fromMaybe
-				(panic stage $ "rewriteOverApp: cannot unify types.\n\n"
-				% "    tInstShape       = " %> tInstShape  % "\n\n"
-				% "    tOverShapeI_flat = " %> tOverShapeI_flat % "\n")
-				$ unifyT2 tInstShape tOverShapeI_flat
-
-		
-		vtSub	= mapMaybe (takeVSub xx ttSub) ttSub
-
-		-- Work out the type args to pass to the instance function.
-		getInstType (b, k)
-		 = trace ("getInstType " % b <> k)
-		 $ case lookup (varOfBind b) vtSub of
-		 	Just t'	-> weakenInst b t'
-
-			-- if the instance is recursive then vtSub will be empty and we can just
-			--	pass the vars back to ourselves.
-			Nothing	
-			 -> case b of
-			 	BVar v		-> TVar k v
-				BMore v t	-> TVarMore k v t -- (substituteT (Map.fromList vtSub) t)
-			 
-		weakenInst b t1
-			| BMore v tMore	<- b
-			= case varNameSpace v of
-				NameEffect	-> makeTSum kEffect  [tMore, t1]
-				NameClosure	-> makeTSum kClosure [tMore, t1]
+		-- Get the type arguments from the application. 
+		--	There should be the same number of type args as quantified
+		--	variables in the type scheme of the overloaded variable.
+		tsUseTypeArgs
+			= [ t	| XAppFP (XType t) Nothing	
+				<- take (length vsDeclQuantVars) xsArgs]
 				
-			| otherwise
-			= t1
+		-- Next comes witness arguments.
+		--	These should get subsumed into the above when we refactor
+		--	TContext to TForall
+		tsUseTypeArgsWitness
+			= [t	| XAppFP (XType t) Nothing
+				<- drop (length vsDeclQuantVars) xsArgs]
 			
-		tsInstArgs	
-		 	= trace (pprStrPlain $ "    vtSub:\n" %> vtSub % "\n")
-		 	$ map getInstType bksForall
+		-- Last come the the value argments.
+		xsValueArgs
+			= drop (length tsUseTypeArgs + length tsUseTypeArgsWitness) xsArgs 
+			
+		-- Build a map of how each of the quantified type variables is instantiated.
+		vtsInstantiations
+			= Map.fromList $ zip vsDeclQuantVars tsUseTypeArgs
+			
+		-- Get the parameter list of parameter types that matching instances should have.
+		Just (tsInstanceArgs :: [Type])
+			= sequence
+			$ map (\v -> Map.lookup v vtsInstantiations)
+			$ map fst
+			$ infoOverloadedClassParams infoOverloaded
 
-		-- Work out the witnesses we need to pass to the instance function
-		ksClassArgs		= map (\c -> substituteT (Map.fromList vtSub) c) ksClass
-		Just tsWitnesses	= sequence $ map inventWitnessOfClass ksClassArgs
+		-- Try and find matching instances.
+		psMatchingInstances
+			= Data.Foldable.toList 
+			$ Seq.filter
+				(\p@PClassInst{}
+				  -> instanceMatchesArgs 
+					( infoOverloadedClassName infoOverloaded
+					, tsInstanceArgs)
+					( topClassInstName p
+					, topClassInstArgs p))
+				$ infoInstances infoOverloaded
 
-		-- Have a look at the original application 
-		--	split off the type/class args and keep the value args.
-		(XAppFP (XVar _ _) _ : xsArgs)	
-				= flattenAppsE xx
-	
-		(vtsForallO, _, csClassO, _)
-				= stripSchemeT tOverScheme
-	
-		(_, xsArgsVal)	= splitAt 
-					(length vtsForallO + length csClassO)
-					 xsArgs
-	
-		-- Construct the new call.
-		xxParts' :: [Exp]
-	  	xxParts'
-			= ((XAppFP (XVar vInst tInstScheme) Nothing)			-- the function var
-				:  (map (\t -> XAppFP (XType t) Nothing) tsInstArgs)	-- type args to instance fn
-				++ (map (\t -> XAppFP (XType t) Nothing) tsWitnesses)	-- class args to instance fn
-				++ xsArgsVal)						-- value args
+	  in case psMatchingInstances of
+		[]	-> panic stage
+			$  vcat [ ppr "Cannot find matching instance for overloaded application."
+				, ppr xx ]
 
-	  	xx'	= unflattenAppsE xxParts'
+		x:y:_ 	-> panic stage
+			$ vcat	[ ppr "Overlapping instances."
+				, ppr $ "with expression: " 	% xx
+				, ppr $ "instances:\n"		%> psMatchingInstances ]
+					
+		[p]	-> rewriteAppX_withInstance env xx 
+				vOverloaded tOverloaded
+				tsUseTypeArgs tsUseTypeArgsWitness
+				xsValueArgs
+				infoOverloaded p
 
-   	in trace
-		(pprStrPlain
-			$ "rewriteOverApp/leave\n"
-			% "  tInstScheme        = \n" %> tInstScheme	% "\n\n"
-			% "  vtSub              = " % vtSub		% "\n\n"
-			% "  tsInstArgs         = " % tsInstArgs	% "\n\n"
-			% "  xx'                =\n" %> xx'		% "\n\n")
-		$ xx'
-
-	-- couldn't find the instance for this function			
-	| (cClassInst, tOverShapeI, Nothing)
-    		<- determineInstance xx overV tClass tOverScheme cxInstances
-	= panic stage 
-		$ "rewriteOverApp: no instance for " % cClassInst % "\n"
-		% "  in " % xx % "\n"
-
-
--- Make sure we have a type parameter for all free vars in the instance.
--- If this fails then the type params passed to the overloaded fn weren't specific enough
---	to determine the type we need to call the instance fn at.
-takeVSub xx ttSub (t1, t2)
- 	| TVar k1 v1		<- t1
-	= Just (v1, t2)
-
-	| TVarMore k1 v1 tMore	<- t1
-	= Just (v1, t2)
-	
-	-- DOH:	Unifying the shape of the type from the class definition doesn't work
-	--	properly when it's a H.O function with effect/clo vars in multiple places.
-	--
-	--	In the Parsec demo we end up with things like
-	--		(!Read %r, {!Read %r, !Read %r2}) being returned from the unifier.
-	--	
-	| Just k1	<- kindOfType t1
-	, elem k1 [kEffect, kClosure]
-	= Nothing
-	
+	-- It's just regular, non-overload application, so leave it alone.
 	| otherwise
-	= panic stage 
-		$ "rewriteOverApp: cannot determine type params for instance function.\n"
-		% "  (maybe a problem with shape constraint resolution?)\n"
-		% "  when rewriting:\n" 
-			%> xx	% "\n\n"
-		% "  t1 = " % t1	% "\n"
-		% "  t2 = " % t2	% "\n"
-		% "\n"
-		% "  ttSub:\n" % punc "\n" ttSub	% "\n"
+	= xx
 
-
-rewriteOverApp_trace
-	xx overV cClass tOverScheme cxInstances mapTypes
- =  trace
-	(pprStrPlain
-		$ "* rewriteOverApp_trace/enter\n"
-
-		% "    function application to rewrite (xx)\n"
-			%> (" = " % xx		% "\n\n")
-
-		% "    overloaded var (overV)\n"		
-			%> (" = " % overV	% "\n\n")
-
-		% "    type class of overloaded var (cClass)\n"
-			%> (" = " % cClass	% "\n\n")
-
-		% "    scheme of overloaded var (tOverScheme)\n"
-			%> (" = " % tOverScheme	% "\n\n")
-
-		% "    possible instance for this var (cxInstance)\n"
-			%> (punc "\n" cxInstances	% "\n\n"))
 		
-	$ rewriteOverApp xx overV cClass tOverScheme cxInstances mapTypes
-
-
--- determineInstance -------------------------------------------------------------------------------
--- | Determine which instance to use for this application of an
---	overloaded function.
-determineInstance
-	:: Exp			-- ^ fn application being rewritten
-	-> Var			-- ^ var of overloaded
-	-> Witness		-- ^ type class of the overloaded
-	-> Type			-- ^ scheme of overloaded
-	-> [(Witness, Var)]	-- ^ possible instances for this fn
-
-	-> ( Witness		-- the instance we need
-	   , Type		-- shape of overloaded scheme, once the type args have been applied to it.
-	   , Maybe Var)		-- var of the instance function (if found)
-		
-determineInstance 
-	xx 		
-	overV 		
-	tClass
-	overScheme	
-	cvInstances	
-
- | Just (vClass, kClass, tsClassParams)
- 	<- takeTWitness tClass
- = let
- 	-- See how many foralls there are on the front of the overloaded scheme.
-	(vtsForall, _, _, tOverShape)
-			= stripSchemeT (flattenT overScheme)
-
-	vsForall	= map fst vtsForall
-	vsForall_count	= length vsForall
-
-	-- Split out enough args to saturate all the foralls.
-	(_ : xsArgs)	= flattenAppsE xx
-	(xsArgsQuant, _)
-			= splitAt vsForall_count xsArgs
-
-	tsArgsQuant	= map (\(XAppFP (XType t) _) -> t) xsArgsQuant
+-- Ok, so we know what instance we're supposed to be using.
+--	We now have to determine what type arguments we need to pass to the instance
+--	function, so we can construct the call.
+rewriteAppX_withInstance env xxUse
+	vUse tUse
+	tsUseTypeArgsPoly tsUseTypeArgsWitness
+	xsValueArgs
+	infoOverloaded p@PClassInst{}
 	
-	-- Substitute the bound types into the context
-	tsSubst		= Map.fromList 
-			$ zip 	(map varOfBind vsForall) 
-				tsArgsQuant
-				
-	tsClassParams'	= map (substituteT tsSubst) tsClassParams
-	cClassInst	= makeTWitness vClass kClass (map stripToShapeT tsClassParams')
+ = seq (traceIt xxInst) xxInst
+ where
+	-- Instantiate the type of the overloaded var with its type arguments.
+	--	This gives us the type that the overloaded var is being used at.
+	tFlatScheme	= flattenT $ infoOverloadedType infoOverloaded
+	tUseBody	= either panicInstantiate 
+				id 
+				(instantiateT tFlatScheme (tsUseTypeArgsPoly ++ tsUseTypeArgsWitness))
 
-	-- Lookup the instance fn
-	mInstV		= lookupF matchInstance cClassInst cvInstances
+	-- Get the type of the instance.
+	Just vInst	= lookup vUse (topClassInstMembers p)
+	Just tInstScheme = liftM flattenT $ takeFirstJust $ map (typeFromGlob vInst) $ envGlobs env
+	tInstBody	= stripToBodyT $ tInstScheme
+			
+	-- Unify the body of the overloaded use with the body of the overloaded definition.
+	-- This gives us the type args we need to pass to the body.
+	sub		= fromMaybe panicUnify
+			$ unifyTypes tInstBody tUseBody
 
-	-- Also apply types to the shape of the overloaded fn to get the 
-	--	shape of the instance.
-	tOverShapeI	= substituteT tsSubst tOverShape
+	-- BUGS: We're discarding constraints between effect and closure sums here...
+	subArgs		= [(v1, t2)	| (TVar _ v1, t2)	<- sub]
 
- in	trace
- 		(pprStrPlain
-			$ "* determineInstance\n"
-			% "    subst these type args into the class context (tsSubst)\n"
-				%> ("  = " % tsSubst % "\n\n")
+	-- Look at the quantifiers on the front of the scheme for the instance
+	(vksQuant, _)	= slurpQuantVarsT tInstScheme
+	tsInstTypeArgsPoly		
+			= map	(\(v, k) -> fromMaybe (TVar k v) $ lookup v subArgs) 
+				vksQuant
 
-			% "    the context after substitution (cClassInst)\n"
-				%> (" = "  % cClassInst	% "\n\n")
+	-- Instantate the scheme with the type args we have so far, 
+	--	and look at the resulting type to determine what witnesses we have to pass.
+	--	We can just use fabricate witnesses for now. Core.Thread will add the real ones later.
+	Right tInstPoly			= instantiateT tInstScheme tsInstTypeArgsPoly
+	(ksContext, _)			= slurpContextT  tInstPoly
+	Just tsInstTypeArgsWitness 	= sequence $ map inventWitnessOfClass ksContext
 
-			% "    the available instances (cvInstances)\n"
-				%> (punc "\n" cvInstances % "\n\n")
-
-			% "    var of the instance fn to use (mInstV)\n"
-				%> (" = "  % mInstV	% "\n\n")
-
-			% "    shape of the overloaded fn (tOverShape)\n"
-				%> (" = "  % tOverShape % "\n\n")
-
-			% "    shape of the overloaded fn at this instance (tOverShapeI)\n"
-				%> (" = "  % tOverShapeI % "\n\n"))
-
-		$ (cClassInst, tOverShapeI, mInstV)
+	xxInst		= unflattenAppsE 
+			$ XAppFP (XVar vInst tInstScheme) Nothing
+			:  [XAppFP (XType t) Nothing	 | t <- tsInstTypeArgsPoly]
+			++ [XAppFP (XType t) Nothing	 | t <- tsInstTypeArgsWitness]
+			++ xsValueArgs
 
 
--- Checks if an class instance supports a certain type.
---	The class instance has to be more polymorphic than the type we want to support.
-matchInstance 
-	:: Type 	-- the instance we want to support
-	-> Type		-- a type from the instance definition
+	-- If there are type errors or missing fns in the core code then plenty
+	-- of things can go wrong with the above. Keep the panic messages here to avoid
+	-- cluttering the main code.
+	panicInstantiate (t1, t2)
+ 	 = panic stage $ vcat 	
+	 	[ ppr "rewriteAppX_withInstance: instantiation failed"
+		, "    type:                 " % tFlatScheme
+		, "    tsUseTypeArgsPoly:    " % tsUseTypeArgsPoly
+		, "    tsUseTypeArgsWitness: " % tsUseTypeArgsWitness
+		, blank
+		, ppr "  Cannot instantiate t1 with t2"
+ 		, "    t1:         " % t1
+ 		, "    t2:         " % t2
+		, "    kind of t2: " % kindOfType t2
+		, blank]
+
+	panicUnify 
+	 = panic stage $ vcat
+		[ ppr "rewriteAppX_withInstance: unification failed"
+		, "    t1:         " % tInstBody
+		, "    t2:         " % tUseBody]
+
+	traceIt x
+	 = trace
+	    ("Resolving overloaded application:\n" 
+	    %> vcat	
+		[ ppr xxUse
+		, blank
+		, ppr p
+		, blank
+		, "tUseBody              = " % tUseBody
+		, blank
+		, "tInstScheme           = " % tInstScheme
+		, "tInstBody             = " % tInstBody
+		, blank
+		, "sub                   = " % sub
+		, blank
+		, "subArgs               = " % subArgs
+		, "vksQuant              = " % vksQuant
+		, "ksContext             = " % ksContext
+		, "tsInstTypeArgsPoly    = " % tsInstTypeArgsPoly
+		, "tsInstTypeArgsWitness = " % tsInstTypeArgsWitness
+		, blank
+		, "xxInst                = " % xxInst]) x
+
+
+
+-- | Check if a type class instance matches some name and args.
+--   eg:  for name 'Show' and args '[Int %r1]'
+--
+--        instance Show (Int %r5) where ...        matches
+--   but: instance Show (Char %r6) where ..        does not.
+--
+instanceMatchesArgs 
+	:: (Var, [Type])	-- Name and args of the instance we're looking for.
+	-> (Var, [Type])	-- Name and args of a possible instance.
 	-> Bool
 
-matchInstance cType cInst
-	| Just (v1, _, ts1)	<- takeTWitness cInst
-	, Just (v2, _, ts2)	<- takeTWitness cType
+instanceMatchesArgs  
+	(vMatch, tsMatch)
+	(vInst,  tsInst)
 
-	-- check the class is the same
-	, v1 == v2
-	, length ts1 == length ts2
+ 	=  (vMatch                 == vInst)
+	&& (length tsMatch         == length tsInst)
+	&& (map kindOfType tsMatch == map kindOfType tsInst)
+	&& (and $ zipWith typesMatch tsMatch tsInst)
 
-	-- all the type arguments of the class must unify
-	, Just constrs		<- sequence $ zipWith matchTT ts1 ts2
+typesMatch t1 t2 	
+ = case unifyTypes t1 t2 of 
+	 Nothing	-> False
+	 Just constrs	-> and $ map subMatches constrs
 
-	-- any extra constraint from the unification must have 
-	--	a var or wildcard for the RHS
-	, and 	$ map (\(ta, tb) -> case ta of
-				TVar  k v
-				 | kindOfType tb == Just k
-			 	 -> True
-
-				_	-> False)
-
-		$ concat $ constrs
-	= True
-
+subMatches (t1, t2)
+	| TVar k _	<- t1
+	= Just k == kindOfType t2
+	
+	| TVar k _	<- t2
+	= Just k == kindOfType t1
+	
 	| otherwise
 	= False
+	
 
-matchTT t1 t2
-	| Just k1	<- kindOfType t1
-	, elem k1  [kEffect, kClosure, kRegion]
-	, kindOfType t1 == kindOfType t2
-	= Just []
+-- | Instantiate a type with a list of type arguments.
+--   BUGS: we should do the kind check, but some of the type info
+--	   in our core programs is wrong, so we're ignoring it for now.
+instantiateT :: Type -> [Type] -> Either (Type, Type) Type
+instantiateT tt ts
+	= instantiateT' Map.empty tt ts
+	
+instantiateT' sub t1 []	
+	= Right (subTT_noLoops sub t1)
 
-	| Just k1	<- kindOfType t1
-	, Just k2	<- kindOfType t2
-	, resultKind k1 == kValue
-	, resultKind k2 == kValue
-	= unifyT2 t1 t2 
-		
+instantiateT' sub t1 (t2 : ts)
+	| TForall (BVar v) k11 t12	<- t1
+	, Just k2			<- kindOfType t2
+--	, subTTK_noLoops sub k11 == k2								-- BUGS!!!! 
+	, t11 <- TVar k11 v
+	= if t11 /= t2
+		then instantiateT' (Map.insert (TVar k11 v) t2 sub) t12 ts
+		else instantiateT' sub t12 ts
+	
+	| TContext k11 t12		<- t1
+	, Just k2			<- kindOfType t2
+--	, subTTK_noLoops sub k11 == k2								-- BUGS!!!
+	= instantiateT' sub t12 ts
+	
 	| otherwise
-	= panic stage
-		$ "matchTT: no match for\n"
-		% "    t1 = " % t1	% "\n"
-		% "    t2 = " % t2	% "\n"
+	= Left (subTT_noLoops sub t1, t2)
+	
+
 		
+	
+	
+-- | Slurp the list of quantified variables, and requires witnesses
+--	from the front of a type scheme.
+slurpQuantVarsT :: Type  -> ([(Var, Kind)], Type)
+slurpQuantVarsT tt
+	= slurpQuantVarsT' tt []
 		
-
-
--- Slurp -------------------------------------------------------------------------------------------
--- Slurp out a map of all overloaded functions defined in this tree.
-slurpClassFuns 
- :: Map Var (Seq Top)		-- class insts.
- -> Map Var Top
- -> Map Var 			-- name of overloaded function
- 	( Witness			-- the class that this function is in
-	, Type			-- type of the overloaded function
-	, [(Witness, Var)])	-- instances
-
-slurpClassFuns instMap pp
- = Map.fromList
- 	[ (vF, (makeTClassFromDict v [TVar k v | (v, k) <- vks], sig, exps))
-		| PClassDict v vks sigs	<- Map.elems pp 
-		, (vF, sig)		<- sigs 
-		, let (Just insts)	= Map.lookup v instMap
-		, let exps		= [ (makeTClassFromDict v' ts', instV)	
-						| PClassInst v' ts' defs	<- foldr (:) [] insts
-						, (v, instV)			<- defs
-						, v == vF		] ]
-
-makeTClassFromDict v ts 
- = let 	Just ks	= sequence $ map kindOfType ts
- 	k 	= makeKFun (ks ++ [KClass (TyClass v) ts])
-   in	makeTWitness (TyClass v) k ts
+slurpQuantVarsT' tt vsQuant
+ = case tt of
+	TForall (BVar v1) k1 t2
+	 -> slurpQuantVarsT' t2 (vsQuant ++ [(v1, k1)])
+	
+	_ -> (vsQuant, tt)
+	
+	
+slurpContextT :: Type -> ([Kind], Type)
+slurpContextT tt
+	= slurpContextT' tt []
+	
+slurpContextT' tt ksContext
+ = case tt of
+	TContext k1 t2
+	 -> slurpContextT' t2 (ksContext ++ [k1])
+	
+	_ -> (ksContext, tt)
 
 

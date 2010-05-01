@@ -23,6 +23,7 @@ module Type.Util.Trim
 where
 import Util
 import Type.Exp
+import Type.Builtin
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate.FreeVars

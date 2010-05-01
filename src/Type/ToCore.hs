@@ -9,15 +9,14 @@ module Type.ToCore
 where
 import Util
 import Type.Exp	
+import Type.Builtin
 import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Var
 import qualified Data.Map	as Map
 
------
-stage	= "Type.ToCore"
-
+stage		= "Type.ToCore"
 
 -- Bind -------------------------------------------------------------------------------------------
 toCoreB :: Bind -> Bind
@@ -136,6 +135,7 @@ toCoreT' table tt
 	_ 	-> panic stage 
 			$ "toCoreT: failed to convert " % tt 	% "\n"
 			% "    tt = " % show tt			% "\n"
+
 	
 -- TyCon -------------------------------------------------------------------------------------------
 toCoreTyCon :: TyCon -> TyCon
@@ -146,19 +146,21 @@ toCoreTyCon tt
 	TyConData v k
 	 -> TyConData v (toCoreK k)
 
+
 -- Kind ---------------------------------------------------------------------------------------------
 toCoreK :: Kind -> Kind
 toCoreK k	= k
+
 
 -- Fetter ------------------------------------------------------------------------------------------
 toCoreF :: Fetter -> Witness
 toCoreF	f
  = case f of
-
-	-- TODO: don't assume there are no kind problems in the constraint
 	FConstraint v ts		
-	 -> let	ts'	= map toCoreT ts
-		Just t	= inventWitnessOfClass (KClass (tyClassOfVar v) ts')
+	 -> let	ts'		= map toCoreT ts
+		Just ks		= sequence $ map kindOfType ts'
+		kClass		= makeKindOfTypeClass v ks
+		Just t		= inventWitnessOfClass (KApps kClass ts')
 	    in	t
 	    
 	_ -> panic stage
@@ -166,24 +168,37 @@ toCoreF	f
 		% "    f = " % show f % "\n"
 
 
--- Detect type classes which have a special meaning to the compiler.
-tyClassOfVar :: Var -> TyClass
-tyClassOfVar v
- = case Map.lookup v tyClassPrim of
- 	Just tc	-> tc
-	_	-> TyClass v
+-- | Make the kind of some type class constraint.
+makeKindOfTypeClass 
+	:: Var 		-- ^ Name of type class.
+	-> [Kind] 	-- ^ Kinds of arguments to type class.
+	-> Kind
+	
+makeKindOfTypeClass vClass ksArgs
+	
+	-- Detect type classes that have a special meaning to the compiler.
+	| Just kClass	<- Map.lookup vClass primClassKinds
+	= kClass
 
-tyClassPrim
+	-- If its some user defined class then base the superkind on the
+	--	kinds of the class arguments.
+	| otherwise
+	= let super	= unflattenSuper ksArgs SProp
+	  in  KCon (KiConVar vClass) super
+
+
+
+primClassKinds
  = Map.fromList
- 	[ (primConst, 		TyClassConst)
- 	, (primConstT,		TyClassConstT)
-	, (primMutable,		TyClassMutable)
-	, (primMutableT,	TyClassMutableT)
-	, (primLazy,		TyClassLazy)
-	, (primLazyH,		TyClassLazyH)
-	, (primDirect,		TyClassDirect)
-	, (primPure,		TyClassPure) 
-	, (primEmpty,		TyClassEmpty) ]
+ 	[ (primConst, 		kConst)
+ 	, (primConstT,		kDeepConst)
+	, (primMutable,		kMutable)
+	, (primMutableT,	kDeepMutable)
+	, (primLazy,		kLazy)
+	, (primLazyH,		kHeadLazy)
+	, (primDirect,		kDirect)
+	, (primPure,		kPure) 
+	, (primEmpty,		kEmpty) ]
 
 
 addContexts :: [Witness] -> Type -> Type
@@ -193,8 +208,3 @@ addContexts (f:fs) t
 	= TContext k (addContexts fs t)
 		
    
-
-
-
-
-

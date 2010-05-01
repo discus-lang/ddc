@@ -528,9 +528,9 @@ instance Monad m => TransM m TyCon where
 	 -> do	name'	<- followV_free table tyConName
 	 	return	$ tt { tyConName = name' }
 
-	TyConWitness { tyConWitness = TyClass v }
+	TyConWitness { tyConWitness = TyConWitnessMkVar v }
 	 -> do	v'	<- followV_free table v
-	 	return	$ tt { tyConWitness = TyClass v }
+	 	return	$ tt { tyConWitness = TyConWitnessMkVar v }
 
 	TyConWitness {}
 	 -> 	return tt
@@ -572,9 +572,10 @@ instance Monad m => TransM m Kind where
 		k2'	<- followK table k2
 		return	$ KForall k1' k2'
 
-	KClass tc ts
-	 -> do	ts'	<- followTs table ts
-		return	$ KClass tc ts'
+	KApps k ts
+	 -> do	k'	<- followK table k
+		ts'	<- followTs table ts
+		return	$ KApps k' ts'
 
 	KWitJoin ks
 	 -> do	ks'	<- mapM (followK table) ks

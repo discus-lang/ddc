@@ -12,6 +12,7 @@ import Core.Exp
 import Core.Glob
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Shared.VarPrim	
 import Shared.Warning
 import Util
@@ -593,25 +594,30 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KClass TyClassConst [TVar kR r]
- 	 | kR	== kRegion
+ 	KApps k [TVar kR r]
+ 	 | k    == kConst
+	 , kR	== kRegion
 	 -> tt { tableConstRegions 
 	 		= Set.insert r (tableConstRegions tt)}
 	
 	-- const types
-	KClass TyClassConstT [TVar kV t]
-	 | kV	== kValue
+	KApps k [TVar kV t]
+	 | k	== kDeepConst
+	 , kV	== kValue
 	 -> tt { tableConstTypes
 	 		= Set.insert t (tableConstTypes tt)}
 
 	-- pure effects
-	KClass TyClassPure [TVar kE e]
-	 | kE	== kEffect
+	KApps k [TVar kE e]
+	 | k	== kPure
+	 , kE	== kEffect
 	 -> tt { tablePureEffects
 	 		= Set.insert e (tablePureEffects tt) }
 
 	-- not an interesting kind
 	_	-> tt
+
+
 
 
 

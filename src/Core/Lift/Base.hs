@@ -15,6 +15,7 @@ import Core.Exp
 import Core.Glob
 import Util
 import Type.Exp
+import Type.Builtin
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var

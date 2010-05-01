@@ -11,6 +11,7 @@ module Desugar.ToCore.Base
 where
 import Util
 import Type.Exp
+import Type.Builtin
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
@@ -21,8 +22,7 @@ import qualified Data.Map		as Map
 import qualified Type.ToCore		as T
 import qualified Core.Util		as C
 
------
-stage	= "Desugar.ToCore.Base"
+stage		= "Desugar.ToCore.Base"
 
 -----
 type	Annot	= Maybe (Type, Effect)
@@ -88,7 +88,6 @@ lookupAnnotT (Just (TVar kV vT, _))
 lookupType :: Var -> CoreM (Maybe Type)
 lookupType v
  = do	sigmaTable	<- gets coreSigmaTable
- 
  	let (res :: CoreM (Maybe Type))
 		| varNameSpace v /= NameValue
 		= lookupType' v
@@ -113,7 +112,8 @@ lookupType' vT
 		  $ return Nothing
 
 	 Just tType
-	  -> do	let cType	= T.toCoreT tType
+	  -> do	
+		let cType	= T.toCoreT tType
 		let cType_flat	= C.flattenT cType
 		return $ Just cType_flat
 

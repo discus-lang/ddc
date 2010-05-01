@@ -10,6 +10,7 @@ module Type.Trace
 	, traceCidsDown)
 where
 import Type.Exp
+import Type.Builtin
 import Type.Base
 import Type.Util
 import Type.State

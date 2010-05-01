@@ -6,6 +6,7 @@ module	Core.OpType
 where
 import Core.Exp
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Util
 import DDC.Main.Error

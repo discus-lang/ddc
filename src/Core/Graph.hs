@@ -9,6 +9,7 @@ import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Main.Pretty
 import DDC.Var

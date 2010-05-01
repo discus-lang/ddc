@@ -78,7 +78,7 @@ desugarInferKinds
 
 	when (not $ null errors)
 	 $ exitWithUserError ?args errors
-				
+					
 	return	( treeHeader'
 		, treeSource'
 		, kindMap)
@@ -419,6 +419,6 @@ desugarToCore
 	dumpCT DumpCore "core-source" cSource
 	dumpCT DumpCore "core-header" cHeader
 
-	
-	return 	( cSource
+
+	return	( cSource
 		, cHeader )

@@ -7,6 +7,7 @@ import Core.Exp
 import Core.Util.Bits
 import Type.Pretty
 import Type.Exp
+import Type.Builtin
 import Util
 import Data.Function
 import DDC.Main.Pretty

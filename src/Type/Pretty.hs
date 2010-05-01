@@ -3,13 +3,13 @@
 -- | Pretty printer for type expressions.
 module Type.Pretty
 	( prettyTB
-	, prettyVK
 	, prettyTypeSplit
 	, prettyTS)
 where
 import Type.Exp
 import Type.Util.Bits
 import Util
+import Type.Builtin
 import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -210,18 +210,6 @@ prettyTS t
 	$ toFetterFormT t 
 
 
--- | Prints a variable with an optional kind.
-prettyVK :: Var -> Kind -> PrettyM PMode
-prettyVK v k
- = ifMode (elem PrettyTypeKinds)
- 	(parens $ v % " :: " % k)
-	(ppr v)
-
-prettyTyClassK :: TyClass -> Kind -> PrettyM PMode
-prettyTyClassK tc k
- = ifMode (elem PrettyTypeKinds)
- 	(parens $ ppr tc % " :: " % k)
-	(ppr tc)
 
 -- Elaboration -------------------------------------------------------------------------------------
 instance Pretty Elaboration PMode where
@@ -231,37 +219,6 @@ instance Pretty Elaboration PMode where
 	ElabWrite	-> ppr "write"
 	ElabModify	-> ppr "modify"
 	
-
-
--- TyCon -------------------------------------------------------------------------------------------
-instance Pretty TyCon PMode where
- ppr p
-  = case p of
-  	TyConFun{}		-> ppr "(->)"
-
-	TyConData 
-	 { tyConName, 	tyConDataKind }	
-	 	-> prettyVK tyConName tyConDataKind
-
-	TyConWitness 
-	 { tyConWitness, tyConWitnessKind}	
-		-> prettyTyClassK tyConWitness tyConWitnessKind
-
--- TyClass -----------------------------------------------------------------------------------------
-instance Pretty TyClass PMode where
- ppr cc
-  = case cc of
-  	TyClassConst	-> ppr "Const"
-	TyClassConstT	-> ppr "ConstT"
-	TyClassMutable	-> ppr "Mutable"
-	TyClassMutableT	-> ppr "MutableT"
-	TyClassLazy	-> ppr "Lazy"
-	TyClassLazyH	-> ppr "LazyH"
-	TyClassDirect	-> ppr "Direct"
-	TyClassPurify	-> ppr "Purify"
-	TyClassPure	-> ppr "Pure"
-	TyClassEmpty	-> ppr "Empty"
-	TyClass var	-> ppr var
 
 
 -- TProj -------------------------------------------------------------------------------------------
@@ -311,7 +268,7 @@ instance Pretty Kind PMode where
 	KApp k1 t1	-> k1 % " " % prettyTB t1
 	KForall k1 k2	-> "\\" % k1 % ". " % k2
 	KFun k1 k2	-> k1 % " -> " % k2
-  	KClass v ts	-> v % " " % " " %!% map prettyTB ts
+  	KApps k ts	-> k % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
 
@@ -346,4 +303,61 @@ instance  (Pretty param PMode)
 	 -> "InstanceLetRec "	% v1 % " " % v2 % " " % mt
 
 
+-- TyCon ------------------------------------------------------------------------------------------
+instance Pretty TyCon PMode where
+ ppr p
+  = case p of
+  	TyConFun{}		
+	 -> ppr "(->)"
+
+	TyConData { tyConName, tyConDataKind }	
+	  -> ifMode (elem PrettyTypeKinds)
+ 		(parens $ tyConName 
+			% " :: " 
+			% tyConDataKind)
+		(ppr tyConName)
+
+	TyConWitness { tyConWitness, tyConWitnessKind}	
+	 -> ifMode (elem PrettyTypeKinds)
+ 		(parens $ ppr tyConWitness 
+			% " :: " 
+			% tyConWitnessKind)
+		(ppr tyConWitness)
+
+
+-- TyConWitness -----------------------------------------------------------------------------------
+instance Pretty TyConWitness PMode where
+ ppr cc
+  = case cc of
+	TyConWitnessMkVar var		-> "Mk" % var
+  	TyConWitnessMkConst		-> ppr "MkConst"
+	TyConWitnessMkDeepConst		-> ppr "MkDeepConst"
+	TyConWitnessMkMutable		-> ppr "MkMutable"
+	TyConWitnessMkDeepMutable	-> ppr "MkDeepMutable"
+	TyConWitnessMkLazy		-> ppr "MkLazy"
+	TyConWitnessMkHeadLazy		-> ppr "MkHeadLazy"
+	TyConWitnessMkDirect		-> ppr "MkDirect"
+	TyConWitnessMkPurify		-> ppr "MkPurify"
+	TyConWitnessMkPure		-> ppr "MkPure"
+	TyConWitnessMkEmpty		-> ppr "MkEmpty"
+
+
+-- KiCon ------------------------------------------------------------------------------------------
+instance Pretty KiCon PMode where
+ ppr con
+  = case con of
+	KiConVar v			-> ppr v
+	KiConValue			-> ppr "*"
+	KiConRegion			-> ppr "%"
+	KiConEffect			-> ppr "!"
+	KiConClosure			-> ppr "$"
+	KiConMutable			-> ppr "Mutable"
+	KiConDeepMutable		-> ppr "DeepMutable"
+	KiConConst			-> ppr "Const"
+	KiConDeepConst			-> ppr "DeepConst"
+	KiConLazy			-> ppr "Lazy"
+	KiConHeadLazy			-> ppr "HeadLazy"
+	KiConDirect			-> ppr "Direct"
+	KiConPure			-> ppr "Pure"
+	KiConEmpty			-> ppr "Empty"
 

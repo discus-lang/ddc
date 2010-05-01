@@ -9,6 +9,7 @@ import Core.Util
 import Core.Glob
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Var.NameSpace
 import DDC.Main.Pretty

@@ -10,6 +10,7 @@ import Core.Util.Trim
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Main.Pretty
 import DDC.Var

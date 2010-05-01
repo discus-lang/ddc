@@ -19,6 +19,7 @@ import qualified Core.Util		as C
 import qualified Core.Reconstruct	as C
 import qualified Core.OpType		as C
 import qualified Type.Exp		as T
+import qualified Type.Builtin		as T
 import qualified Type.Util		as T
 import qualified Sea.Exp  		as E
 import qualified Sea.Pretty		as E
@@ -61,8 +62,9 @@ slurpWitnessKind :: T.Kind -> SeaM ()
 slurpWitnessKind kk
  = case kk of
 	-- const regions
- 	T.KClass T.TyClassDirect [T.TVar k r]
- 	 | k == T.kRegion
+ 	T.KApps k [T.TVar kR r]
+ 	 | k	== T.kConst
+         , kR 	== T.kRegion
 	 -> modify $ \s -> s { stateDirectRegions 
 		 		= Set.insert r (stateDirectRegions s) }
 

@@ -3,6 +3,7 @@ module Type.Util.Substitute
 	( subTT
 	, subTT_cutM
 	, subTT_noLoops
+	, subTTK_noLoops
 	, subTT_all
 	, SubM
 	, subVV
@@ -12,6 +13,7 @@ import Type.Plate.Collect
 import Type.Plate.Trans
 import Type.Util.Kind
 import Type.Exp
+import Type.Builtin
 import DDC.Main.Error
 import DDC.Var
 import Data.Traversable		(mapM)
@@ -54,6 +56,23 @@ subTT_noLoops sub tt
 			% "  tt            = " % tt		% "\n\n"
 			% "  loops through = " % loops		% "\n"
 
+-- | Substitute type for types in some kind.
+--	Cut loop cutting substition on this type.
+--	panic if there are any loops through the data portion.
+subTTK_noLoops
+	:: Map Type Type
+	-> Kind
+	-> Kind
+
+subTTK_noLoops sub kk
+ = let	(kk', loops)	= runState (subTTK_cutM sub Set.empty kk) []
+   in	if null loops
+   		then kk'
+		else panic stage
+			$ "subTTK_noLoops: found loops through data portion of type\n"
+			% "  kk            = " % kk		% "\n\n"
+			% "  loops through = " % loops		% "\n"
+
 	
 -- | Do a loop cutting substitution on this type.
 --	If we find any loops through the data potion of this type then
@@ -70,11 +89,18 @@ subTT_cutM sub cut tt
  	subTT_cutM' sub' cut tt
 	
 subTT_cutM' sub cut tt
- = let down	= subTT_cutM' sub cut
+ = let 	down	= subTT_cutM' sub cut
+	downK	= subTTK_cutM sub cut
    in case tt of
  	TForall v k t		
 	 -> do	t'	<- down t
-	 	return	$ TForall v k t'
+		k'	<- downK k
+	 	return	$ TForall v k' t'
+
+	TContext k t
+	 -> do	t'	<- down t
+		k'	<- downK k
+		return	$ TContext k' t'
 
 	TFetters t fs
 	 -> do	t'	<- down t
@@ -119,6 +145,44 @@ subTT_cutM' sub cut tt
 
 	TVar{} 		-> subTT_enter sub cut tt
 	TClass{}	-> subTT_enter sub cut tt
+
+subTTK_cutM sub cut kk
+ = let	downT	= subTT_cutM sub cut
+	downK	= subTTK_cutM sub cut
+
+   in case kk of
+	KCon{}		
+	 -> 	return kk
+
+	KPi k1 k2	
+	 -> do	k1'	<- downK k1
+		k2'	<- downK k2
+		return	$ KPi k1' k2'
+
+	KApp k1 t2
+	 -> do	k1'	<- downK k1
+		t2'	<- downT t2
+		return	$ KApp k1' t2'
+		
+	KForall k1 k2
+	 -> do	k1'	<- downK k1
+		k2'	<- downK k2
+		return	$ KForall k1' k2'
+
+	KFun k1 k2
+	 -> do	k1'	<- downK k1
+		k2'	<- downK k2
+		return	$ KFun k1' k2'
+
+	KApps k ts
+	 -> do	k'	<- downK k
+		ts'	<- mapM downT ts
+		return	$ KApps k' ts'
+	
+	KWitJoin ks
+	 -> do	ks'	<- mapM downK ks
+		return	$ KWitJoin ks'
+		
 	
 subTT_enter sub cut tt
 

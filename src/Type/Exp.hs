@@ -1,7 +1,11 @@
 
 -- | Type Expressions
 module Type.Exp
-	( Bind		(..)
+	( module DDC.Type.ClassId
+	, module DDC.Type.KiCon
+	, module DDC.Type.TyCon
+	
+	, Bind		(..)
 	, Constraints	(..)
 
 	-- super kinds
@@ -9,24 +13,12 @@ module Type.Exp
 
 	-- kinds
 	, Kind		(..)
-	, KiCon		(..)
-	, kValue, kRegion, kEffect, kClosure
-	, kMutable, kMutableT
-	, kConst,   kConstT
-	, kLazy,    kLazyH
-	, kDirect
-	, kPure
-	, kEmpty
 
 	-- types
 	, Type		(..)
-	, TyCon		(..)
-	, TyClass	(..)
-	, tPure, tEmpty
 
 	, Index
 
-	, ClassId	(..)
 	, TProj		(..)
 	, Fetter  	(..)
 	, Elaboration	(..)
@@ -41,8 +33,10 @@ where
 import Util
 import DDC.Type.ClassId
 import DDC.Type.KiCon
+import DDC.Type.TyCon
 import DDC.Main.Error
 import DDC.Var
+
 
 -- Super Kinds ----------------------------------------------------------------------------------
 data Super
@@ -89,49 +83,36 @@ type Index
 
 -- Kinds
 data Kind
-	= KNil				-- ^ A missing \/ unknown kind.
+	=
+	  -- | A missing kind annot.
+	  --	TODO: Remove this if it's not being used.
+	  KNil
 
 	-- | Kind constructor
-	| KCon	   KiCon Super		-- ^ Kind constructors
+	| KCon	   KiCon Super
 
-	--  | Dependent kind abstraction.
-	--	Uses de Bruijn indices in the body.
-	| KPi      Kind  Kind		-- ^ Dependent kind abstraction.
-				 	--	Uses de Bruijn indices in the body
+	--  | Dependent kind abstraction. 
+	--	Types in the body can use de Bruijn indices (TIndex)
+	--	to refer to the parameter.
+	| KPi      Kind  Kind
 
 	--  | Dependent kind application.
 	| KApp	   Kind	 Type
 
-	-- Old stuff that needs refactoring -----------------------------------
-	| KForall  Kind Kind		-- ^ Dependent kinds.
-	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
 
-	-- TODO: change TClass to be a general kind constructor, and TWitJoin to be a kind sum.
-	| KClass	TyClass [Type]	-- ^ the kind of witnesses
-	| KWitJoin	[Kind]		-- ^ joining of witnesses
+	-- Old stuff that needs refactoring -----------------------------------
+	| KForall  Kind Kind		-- ^ Dependent kinds. Same as KPi above. 
+					--	Should rename all uses of KForall to KPi
+	
+	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
+					--	Should rename all uses of KFun to KPi
+
+	| KApps    Kind [Type]		-- ^ Flat dependent kind application.
+					--	Should use KApp instead.
+	
+	| KWitJoin	[Kind]		-- ^ Joining of witnesses
 
 	deriving (Show, Eq)	
-
-
--- Short names for commonly used kinds
-kValue		= KCon KiConValue	SBox
-kRegion		= KCon KiConRegion	SBox
-kEffect		= KCon KiConEffect	SBox
-kClosure	= KCon KiConClosure	SBox
-
-kMutable	= KCon KiConMutable	(SFun kRegion  SProp)
-kMutableT	= KCon KiConDeepMutable	(SFun kValue   SProp)
-
-kConst		= KCon KiConConst	(SFun kRegion  SProp)
-kConstT		= KCon KiConDeepConst	(SFun kValue   SProp)
-
-kLazy		= KCon KiConLazy	(SFun kRegion  SProp)
-kLazyH		= KCon KiConHeadLazy	(SFun kValue   SProp)
-
-kDirect		= KCon KiConDirect	(SFun kRegion  SProp)
-
-kPure		= KCon KiConPure	(SFun kEffect  SProp)
-kEmpty		= KCon KiConEmpty	(SFun kClosure SProp)
 
 
 -- Type --------------------------------------------------------------------------------------------
@@ -213,10 +194,6 @@ data Type
 
 	deriving (Show, Eq)
 
-
-tPure	= TBot kEffect
-tEmpty	= TBot kClosure
-
 type Data	= Type
 type Region	= Type
 type Effect	= Type
@@ -255,52 +232,6 @@ instance Ord Type where
 	$ "compare: can't compare type for ordering\n"
 	% "    t1 = " % show t1	% "\n"
 	% "    t2 = " % show t2 % "\n"
-
-
--- TyCon -------------------------------------------------------------------------------------------
--- | Type constructors
-data TyCon
-	-- Function type constructor.
-	= TyConFun
-
-	-- A data type constructor.
-	| TyConData
-		{ tyConName		:: !Var
-		, tyConDataKind		:: !Kind }
-
-	-- A witness type constructor.
-	| TyConWitness
-		{ tyConWitness		:: !TyClass
-		, tyConWitnessKind 	:: !Kind }
-
-	deriving (Show, Eq)
-
-
--- TyClass -----------------------------------------------------------------------------------------
--- | Type \/ Region \/ Effect classes.
---	As most of the type-level witnesses have the same names as
---	their kind-level classes, we'll overload TyClass for both.
---
-data TyClass
-	-- region classes
-	= TyClassConst		
-	| TyClassConstT
-	| TyClassMutable	
-	| TyClassMutableT
-	| TyClassLazy		
-	| TyClassLazyH
-	| TyClassDirect
-
-	-- purification
-	| TyClassPurify		-- witness
-	| TyClassPure		-- class
-
-	-- empty closures
-	| TyClassEmpty
-
-	-- Some user defined class
-	| TyClass Var
-	deriving (Show, Eq)
 
 
 -- Fetter ------------------------------------------------------------------------------------------

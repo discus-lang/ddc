@@ -15,7 +15,8 @@ module DDC.Util.Pretty.Combinators
 	, padLc, padL 
 	, parens
 	, braces
-	, ifMode)
+	, ifMode
+	, pprIf)
 where
 import DDC.Util.Pretty.Base
 
@@ -181,4 +182,14 @@ ifMode fun x y
 		-> PrettyM (\m -> if fun m 
 					then fa m
 					else fb m)
+
+-- | Print some thing if True, otherwise blank.
+pprIf 	:: forall a m
+	.  Pretty a m
+	=> Bool -> a -> PrettyM m
+
+pprIf b x
+	| b		= ppr x
+	| otherwise	= blank
+
 

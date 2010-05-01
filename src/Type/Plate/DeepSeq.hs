@@ -25,14 +25,14 @@ instance DeepSeq Kind where
 	KPi  		k1 k2		-> deepSeq k1 $ deepSeq k2 y	
 	KForall		k1 k2		-> deepSeq k1 $ deepSeq k2 y
 	KFun		k1 k2		-> deepSeq k1 $ deepSeq k2 y
-	KClass		tc ts		-> deepSeq tc $ deepSeq ts y
+	KApps		k ts		-> deepSeq k  $ deepSeq ts y
 	KWitJoin 	ks		-> deepSeq ks y
 
 
 instance DeepSeq KiCon where
  deepSeq xx y
   = case xx of
-	KiCon 		v		-> deepSeq v y
+	KiConVar 	v		-> deepSeq v y
 	_				-> y
 
 instance DeepSeq Bind where
@@ -77,10 +77,10 @@ instance DeepSeq TyCon where
 	TyConWitness 	c k		-> deepSeq c $ deepSeq k y
 	
 
-instance DeepSeq TyClass where
+instance DeepSeq TyConWitness where
  deepSeq xx y
   = case xx of
-	TyClass 	v		-> deepSeq v y
+	TyConWitnessMkVar v		-> deepSeq v y
 	_				-> y
 
 

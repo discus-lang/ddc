@@ -4,6 +4,7 @@ module Type.Check.Main
 where
 import Type.Extract
 import Type.Exp
+import Type.Builtin
 import Type.State
 import Type.Error
 import Type.Util.Bits

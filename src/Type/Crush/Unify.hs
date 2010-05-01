@@ -8,6 +8,7 @@ module Type.Crush.Unify
 where
 import Type.Location
 import Type.Exp
+import Type.Builtin
 import Type.Error
 import Type.State
 import Type.Util

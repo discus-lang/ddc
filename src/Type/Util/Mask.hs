@@ -3,6 +3,7 @@ module Type.Util.Mask
 	( maskReadWriteNotIn )
 where
 import Type.Exp
+import Type.Builtin
 import Type.Util.Bits
 import Shared.VarPrim
 import Util

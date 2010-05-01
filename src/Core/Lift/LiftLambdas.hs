@@ -11,6 +11,7 @@ import Core.Lift.Base
 import Core.Reconstruct
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Main.Pretty
 import DDC.Var
@@ -138,7 +139,7 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 --	witness though later on
 makeSuperArgK :: (Bind, Kind) -> Exp
 makeSuperArgK (b, k)
-	| KClass v ts	<- k
+	| KApps{}	<- k
 	, Just t	<- inventWitnessOfClass k
 	= XType t
 	

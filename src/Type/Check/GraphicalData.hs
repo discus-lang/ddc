@@ -3,6 +3,7 @@ module Type.Check.GraphicalData
 	(checkGraphicalDataT)
 where
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Type.Plate.Collect
 import Util.Graph.Deps		(graphReachable1_nr)

@@ -5,6 +5,7 @@ where
 import Type.Class
 import Type.State
 import Type.Exp
+import Type.Builtin
 import Type.Crush.Unify
 import Type.Crush.Fetter
 import Type.Crush.Effects

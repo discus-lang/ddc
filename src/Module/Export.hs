@@ -17,6 +17,7 @@ import qualified Source.Plate.Trans	as S
 import qualified Source.Slurp		as S
 import qualified Source.Util		as S
 import qualified Type.Exp		as T
+import qualified Type.Builtin		as T
 import qualified Type.Pretty		as T
 import qualified Type.Util		as T
 import qualified Type.Plate.Trans	as T

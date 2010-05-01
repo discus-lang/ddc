@@ -8,8 +8,12 @@ import DDC.Util.Pretty.Combinators
 
 import Data.Map			(Map)
 import Data.Set			(Set)
+import Data.Sequence		(Seq)
+import Data.Foldable		(foldr)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import Prelude			hiding (foldr)
+
 
 
 -- Base types -----------------------------------------------------------------
@@ -48,6 +52,10 @@ instance Pretty a m => Pretty [a] m where
 						PrettyM fx	-> fx m)
 				  xs)
 
+-- Sequence -------------------------------------------------------------------
+instance Pretty a m => Pretty (Seq a) m where
+ ppr xs	= ppr 
+	$ foldr (:) [] xs
 
 -- Tuples ---------------------------------------------------------------------
 instance (Pretty a m, Pretty b m) 

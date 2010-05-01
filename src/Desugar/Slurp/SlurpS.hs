@@ -6,6 +6,7 @@ where
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Type.Location
+import Type.Builtin
 
 
 -- | Slurp the type constraints for this statement.

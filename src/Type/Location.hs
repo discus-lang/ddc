@@ -15,6 +15,7 @@ module Type.Location
 where
 import Type.Util.Kind
 import Type.Exp
+import Type.Builtin
 import Shared.VarPrim
 import DDC.Main.Pretty
 import DDC.Main.Error

@@ -1,17 +1,8 @@
 
 module Desugar.Slurp.SlurpA
-(
-	slurpA
-)
-
+	(slurpA)
 where
-
 import Desugar.Slurp.Base
-
-
--- slurpA 	:: Alt Annot1
---	-> CSlurpM (Type, Var, Var, [Var], Alt Annot2, CTree)
-
 
 slurpA	:: Alt Annot1	
 	-> CSlurpM 

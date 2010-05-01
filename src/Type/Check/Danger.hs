@@ -4,6 +4,7 @@ module Type.Check.Danger
 where
 import Util
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Type.Plate.Collect
 import DDC.Main.Error

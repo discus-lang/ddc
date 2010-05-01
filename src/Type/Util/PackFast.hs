@@ -4,6 +4,7 @@ module Type.Util.PackFast
 	, packType_markLoops )
 where
 import Type.Exp
+import Type.Builtin
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate.Collect

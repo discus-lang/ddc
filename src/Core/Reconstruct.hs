@@ -195,7 +195,7 @@ reconP p@(PRegion v wits)
 	let	constWits	= foldr f [] wits
 		f (w,k) ws	= if isConst k then w : ws else ws
 
-		isConst (TApp (TCon (TyConWitness TyClassConst _)) _)
+		isConst (TApp (TCon (TyConWitness TyConWitnessMkConst _)) _)
 				= True
 		isConst _	= False
 
@@ -228,7 +228,7 @@ reconX xx@(XLAM b@(BMore v t1) t2 x)
 		, xE
 		, xC)
 
-reconX (XLAM v k@KClass{} x)
+reconX (XLAM v k@KApps{} x)
  = do	(x', xT, xE, xC)	<- reconX x
 	trace 	("reconX[XLAM-KClass]: (/\\ " % v % " -> ...)\n"
    		% "  xT:\n" %> xT	% "\n"
@@ -848,7 +848,7 @@ reconG gg@(GExp p x)
 	let	binds	= slurpVarTypesW tX p
 
 		-- Work out the effect of testing the case object.
-		tX_shape	= stripToShapeT tX
+		tX_shape	= stripToBodyT tX
 
 		effTest
 			-- If the LHS of the guard is just a var then there is no 'match' per se, and no effects.

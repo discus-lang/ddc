@@ -9,6 +9,7 @@ import Source.Exp
 import Source.Horror
 import Type.Pretty
 import Type.Exp
+import Type.Builtin
 import Type.Util.Kind
 import DDC.Main.Pretty
 import DDC.Main.Error

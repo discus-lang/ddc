@@ -13,6 +13,7 @@ import Type.Strengthen
 import Type.Context
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Type.Pretty
 import Shared.VarPrim
 import Type.Plate.Collect

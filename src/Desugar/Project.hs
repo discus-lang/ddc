@@ -14,6 +14,7 @@ import Source.Error
 import Desugar.Util
 import Desugar.Exp
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Type.Plate.FreeVars
 import Shared.Exp

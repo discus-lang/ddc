@@ -11,6 +11,7 @@ import Type.Util.Elaborate
 import Type.Util.Kind
 import Type.Util.Bits
 import Type.Exp
+import Type.Builtin
 import Source.Error
 import Shared.VarPrim
 import Util

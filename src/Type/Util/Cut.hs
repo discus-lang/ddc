@@ -43,6 +43,7 @@ module Type.Util.Cut
 where
 import Type.Plate.Collect
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Main.Error
 import Type.Pretty		()

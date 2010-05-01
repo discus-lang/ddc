@@ -21,6 +21,7 @@ where
 import Shared.VarPrim
 import Type.Location
 import Type.Exp
+import Type.Builtin
 import Type.Error
 import Type.Util
 import Type.State

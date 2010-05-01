@@ -19,6 +19,7 @@ import Type.Location
 import Type.Pretty
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Constraint.Bits
 import Constraint.Exp
 import Util

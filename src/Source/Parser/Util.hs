@@ -25,6 +25,7 @@ module Source.Parser.Util
 	, traceStateS, traceState)
 where
 import Type.Exp
+import Type.Builtin
 import Source.Util
 import Source.Exp
 import DDC.Base.SourcePos

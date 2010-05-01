@@ -28,9 +28,8 @@ import qualified Data.Map		as Map
 stage	= "Core.Thread"
 
 -- Maintain a map of regions, to what witnesses we have available for them.
-type ThreadS	= [((TyClass, Var), Var)]	-- (class name, region), witness variable
+type ThreadS	= [((TyConWitness, Var), Var)]	-- (class name, region), witness variable
 type ThreadM 	= State ThreadS
-
 
 -- | Thread witness variables in this tree
 threadGlob 
@@ -140,37 +139,36 @@ rewriteWitness' isUserClassName tt
 		return $ TVar k vW
 
 	-- purity of no effects is trivial
-	| Just (TyClassPure, _, [TBot kE])	<- mClass
+	| Just (TyConWitnessMkPure, _, [TBot kE])	<- mClass
 	, kE	== kEffect
 	= return tt
 
 	-- empty of no closure is trivial
-	| Just (TyClassEmpty, _, [TBot kC])	<- mClass
+	| Just (TyConWitnessMkEmpty, _, [TBot kC]) 	<- mClass
 	, kC	== kClosure
 	= return tt
 
 	-- build a witness for purity of this effect
-	| Just (TyClassPure, _, [eff])		<- mClass
+	| Just (TyConWitnessMkPure, _, [eff])		<- mClass
 	= do	w	<- buildPureWitness eff
 		return	$ w
 
 	-- leave shape witnesses for Core.Reconstruct to worry about
-	| Just (TyClass vC, _, _)		<- mClass
-	, VarIdPrim Var.FShape{}		<- varId vC
+	| Just (TyConWitnessMkVar vC, _, _)		<- mClass
+	, VarIdPrim Var.FShape{}			<- varId vC
 	= return tt
 
 	-- leave user type classes for Core.Dict to worry about
-	| Just (TyClass vC, _, _)		<- mClass
-	, isUserClassName vC
+	| Just (TyConWitnessMkVar vC, _, _)		<- mClass
 	= return tt
 
 	-- function types are always assumed to be lazy, 
 	--	Lazy witnesses on them are trivially satisfied.
-	| Just (TyClassLazyH, _, [t1])		<- mClass
+	| Just (TyConWitnessMkHeadLazy, _, [t1])		<- mClass
 	, isJust (takeTFun t1)
 	= return tt
 
-	| Just (TyClassLazyH, _, [TFetters t1 _]) <- mClass
+	| Just (TyConWitnessMkHeadLazy, _, [TFetters t1 _]) <- mClass
 	, isJust (takeTFun t1)
 	= return tt
 	
@@ -196,11 +194,11 @@ buildPureWitness eff@(TEffect vE [tR@(TVar kR vR)])
 	, kR == kRegion
 	= do	
 		-- try and find a witness for constness of the region
-		Just wConst	<- lookupWitness vR TyClassConst
-		let  kConst	= KClass TyClassConst [tR]
+		Just wConst	<- lookupWitness vR TyConWitnessMkConst
+		let  kConst	= KApps kConst [tR]
 
 		-- the purity witness gives us purity of read effects on that const region
-		return		$ TApp (TApp (TCon tcPurify) tR) (TVar kConst wConst)
+		return		$ TApp (TApp tMkPurify tR) (TVar kConst wConst)
 
 buildPureWitness eff@(TSum kE _)
  | kE	== kEffect
@@ -210,8 +208,8 @@ buildPureWitness eff@(TSum kE _)
 
 buildPureWitness eff@(TVar kE vE)
  | kE	== kEffect
- = do	Just w	<- lookupWitness vE TyClassPure
- 	return (TVar (KClass TyClassPure [eff]) w)
+ = do	Just w	<- lookupWitness vE TyConWitnessMkPure
+ 	return (TVar (KApps kPure [eff]) w)
 
 buildPureWitness eff
  = panic stage
@@ -222,16 +220,16 @@ buildPureWitness eff
 -- | Lookup a witness for a constraint on this region
 lookupWitness 
 	:: Var 		-- ^ the data\/region\/effect variable
-	-> TyClass	-- ^ the witness needed
+	-> TyConWitness	-- ^ the witness needed
 	-> ThreadM (Maybe Var)
 	
-lookupWitness vRegion vClass
+lookupWitness vRegion tcWitness
  = do
  	state	<- get
 	
 	let mvWitness
 		-- we've got a witness for this class in the table.
-		| Just vWitness	<- lookup (vClass, vRegion) state
+		| Just vWitness	<- lookup (tcWitness, vRegion) state
 		= Just vWitness
 
 		-- uh oh, we don't have a witness for this one.
@@ -240,7 +238,7 @@ lookupWitness vRegion vClass
 		--
 	 	| otherwise
 	 	= freakout stage
-			("thread_transX: can't find a witness for " % vClass % " on region " % vRegion % "\n"
+			("thread_transX: can't find a witness for " % tcWitness % " on region " % vRegion % "\n"
 			 % "state = " % state % "\n\n")
 			$ Nothing
 
@@ -250,9 +248,10 @@ lookupWitness vRegion vClass
 -- Inspect this kind. If it binds a witness then record it in the state.
 pushWitnessVK :: Var -> Kind -> ThreadM ()
 pushWitnessVK vWitness k
- 	| KClass vClass [TVar kV vRE]	<- k
+ 	| KApps (KCon kcClass _) [TVar kV vRE]	<- k
 	, elem kV [kRegion, kEffect, kValue, kClosure]
-	= modify $ \s -> ((vClass, vRE), vWitness) : s
+	= let 	Just tcWitness	= takeTyConWitnessOfKiCon kcClass
+	  in	modify $ \s -> ((tcWitness, vRE), vWitness) : s
 	
 	| otherwise
 	= return ()
@@ -261,13 +260,14 @@ pushWitnessVK vWitness k
 -- Inspect this kind. If it binds a witness then pop it from the stack.
 popWitnessVK :: Var -> Kind -> ThreadM ()
 popWitnessVK vWitness k
-	| KClass vClass [TVar kV vRE]	<- k
+	| KApps (KCon kcClass _) [TVar kV vRE]	<- k
 	= do
 		state	<- get
+		let Just tcWitness	= takeTyConWitnessOfKiCon kcClass
 
 		let (xx	:: ThreadM ())
 			| (c : cs)			<- state
-			, c == ((vClass, vRE), vWitness)
+			, c == ((tcWitness, vRE), vWitness)
 			= put cs
 			
 			| otherwise

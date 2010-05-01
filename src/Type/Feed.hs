@@ -9,6 +9,7 @@ module Type.Feed
 where
 import Constraint.Exp
 import Type.Exp
+import Type.Builtin
 import Type.Location
 import Type.State
 import Type.Class

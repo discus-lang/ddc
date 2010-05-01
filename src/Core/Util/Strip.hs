@@ -3,7 +3,6 @@ module Core.Util.Strip
 	( stripSchemeT
 	, buildScheme
 	, slurpForallsT 
-	, stripToShapeT 
 	, stripContextT 
 	, slurpForallContextT )
 where
@@ -95,20 +94,6 @@ slurpForallContextT tt
 
 	_		
 	 -> ([], [])
-
-
------
--- stripToShapeT
---	Strip off TForalls, TLets and TContext of a type to get
---	the underlying shape.
---
-stripToShapeT :: Type -> Type
-stripToShapeT tt
- = case tt of
- 	TForall  v k t		-> stripToShapeT t
-	TFetters t fs		-> stripToShapeT t
-	TContext c t		-> stripToShapeT t
-	_			-> tt
 
 
 -- | strip context off the front of this type

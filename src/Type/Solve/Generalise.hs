@@ -11,6 +11,7 @@ import Type.Extract
 import Type.Util
 import Type.Location
 import Type.Exp
+import Type.Builtin
 import Constraint.Exp
 import Constraint.Bits
 import Util

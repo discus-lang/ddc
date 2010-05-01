@@ -8,6 +8,7 @@ import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
 import Type.Exp
+import Type.Builtin
 import Type.Util.Kind
 import DDC.Main.Error
 import DDC.Main.Pretty		

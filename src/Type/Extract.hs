@@ -14,6 +14,7 @@ import Type.State
 import Type.Util
 import Type.Pretty
 import Type.Exp
+import Type.Builtin
 import Type.Util.Cut
 import Type.Plate.Collect
 import Util

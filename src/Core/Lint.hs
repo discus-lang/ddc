@@ -10,18 +10,14 @@ module Core.Lint
 	, checkType
 	, Env	(..))
 where
--- import Core.Exp
 import Core.Glob
--- import Core.Util
--- import Type.Util
 import Type.Exp
+import Type.Builtin
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
 import Data.List
 import Type.Pretty		()
--- import Core.Reconstruct		(reconX_type)
--- import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
@@ -34,65 +30,8 @@ lintGlob
 
 lintGlob glob = ()
 
-{-
-
- =	map pprStrPlain $ reverse $ execState (lintGlobM tree) []
-
-
-lintGlobM :: Tree -> LintM ()
-lintGlobM tree
- = do
- 	-- load the type of top level things into the type map
-	let topTypes	= catMap slurpTypesP tree
- 	tt		<- addVTs topTypes tableInit 
- 
- 	-- check each top level thing
-	_		<- foldM lintP tt tree
-
-   	return ()
-  
-
--- Top --------------------------------------------------------------------------------------------
-lintP :: Table -> Top -> LintM Table
-lintP	tt (PBind v x)
- 	| varName v == "main"
-	, varModuleId v == ModuleId ["Main"]
-	= do
-		let vT	= reconX_type "Core.Lint.lintP" x
-		tt'	<- addVT v vT tt
-		lintX tt' x
-
-		-- When the top level binding is the main function then check that all
-		--	its witnesses are available, and that it has the appropriate 
-		--	type () -> ()
-		lintMainType tt vT
-		return tt'
-		
-	| otherwise
-	= do	let vT	=  reconX_type "Core.Lint.lintP" x
-		tt'	<- addVT v vT tt
-	 	lintX tt' x
-	 	return tt'
-	
--- TODO: check that witnesses are only of the created region
-lintP	tt (PRegion r vts)
- = do	Just tt2	<- addVK r kRegion tt
- 	tt3		<- addVTs vts tt2
-	return tt3
-
-
-lintP	tt (PClassDict v ts vts)
- = do	
- 	-- v doesn't have this kind, but it'll do for now.
-	--	We're not checking kinds of class applications yet.
-	
--- 	Just tt'	<- addVK v (KClass v ts) tt
-	return	tt
-
-
-lintP	tt _		
- =	return tt
-
+{- 
+FIXME
 
 -- | Check the type of the main function.
 --	
@@ -135,117 +74,7 @@ lintX xx tt
 	 `seq` lintT env t
 	 `seq` ()
 		
-
-
-lintX :: Table -> Exp -> LintM ()
-lintX tt (XLAM v k x)	
- = do	lintK tt k
-
- 	Just tt'	<- addVK (varOfBind v) k tt
- 	lintX tt' x
-	return ()
-	
-lintX tt (XAPP x t)
- = do	lintX tt x
- 	lintT tt t
-	
-lintX tt (XTau t x)
- = do	lintX tt x
- 	lintT tt t
- 
-lintX tt (XLam v t x eff clo)
- = do	lintT tt t
- 	lintT tt eff
-	lintT tt clo
-
-	tt'	<- addVT v t tt
- 	lintX tt' x
- 
-lintX tt (XApp x1 x2  eff)
- = do	lintX tt x1
- 	lintX tt x2
-	lintT tt eff
-	
-lintX tt (XDo ss)
- = do	foldM_ lintS tt ss
- 
-lintX tt (XMatch aa)
- = do	foldM_ lintA tt aa
- 
-lintX tt (XLit{})
- = do	return ()
- 
-lintX tt (XVar v TNil)
- = do	addError $ "Variable " % v % " has no type annotation.\n"
- 	lintBoundV tt v
-	
- 
-lintX tt (XVar v t)
- = do	lintBoundV tt v
- 
-lintX tt (XLocal v vts x)
- = do	Just tt2	<- addVK v kRegion tt
- 	tt3		<- addVTs vts tt2
- 	lintX tt3 x
- 
-lintX tt (XPrim p xs)
- = do	mapM_ (lintX tt) xs
- 
-lintX tt (XType t)
- = do	lintT tt t
-
-lintX tt xx
- = panic stage $ "lintX: no match for " % xx
-
-
-
--- Stmt -------------------------------------------------------------------------------------------
--- Lint for Stmts
-lintS tt (SBind Nothing x)
- = do	lintX tt x
- 	return tt
- 
-lintS tt (SBind (Just v) x)
- = do	let xT	= reconX_type "Core.Lint.lintS" x
- 	tt'	<- addVT v xT tt
- 	lintX tt' x
-	return tt'
-	
-	
--- Alt --------------------------------------------------------------------------------------------
--- | Lint for Alts
-lintA :: Table -> Alt -> LintM Table
-lintA tt (AAlt gs x)
- = do	tt2		<- foldM lintG tt gs
- 	lintX tt2 x
-	return tt2
-
-
--- Guard ------------------------------------------------------------------------------------------
--- | Lint for Guards
-lintG :: Table -> Guard -> LintM Table
-lintG tt (GExp w x)
- = do	tt2		<- lintW tt w
- 	lintX tt2 x
-	return tt2
-
-
--- Pat --------------------------------------------------------------------------------------------	
--- | Lint for Patterns
-lintW :: Table -> Pat -> LintM Table
-lintW tt (WVar v)
- = do	let Just t	=  Map.lookup v (tableTypes tt)
-	tt'		<- addVT v t tt
-	return tt'
-
-lintW tt (WLit _ c)
- = do 	return tt
- 
-lintW tt (WCon _ v lvt)
- = do	tt'		<- addVTs (map (\(l, v, t) -> (v, t)) lvt) tt
- 	return tt'
 -}
-
 -- Type -------------------------------------------------------------------------------------------
 -- | Check a type expression, returning its kind.
 --	This does a complete check of the entire structure, so is not fast.
@@ -295,7 +124,7 @@ checkType tt stack env
 	 -> case checkType t1 stack env of
 		KPi k11 k12
 		 | k11 == checkType t2 stack env 
-		 -> 	checkKind k12 stack env
+		 -> 	 checkKind k12 stack env
 		 `seq`	k12
 		
 		 | otherwise
@@ -363,7 +192,6 @@ checkType tt stack env
 	TBot k	
 	  -> 	checkKind k stack env
 	  `seq`	k
-	
 {-						
 	
 	TEffect v ts
@@ -422,36 +250,40 @@ checkKind
 			--	referenced by the De'Bruijn type indicies in
 			--	the types of witness constructors.
 	-> Env
-	-> ()
+	-> Super
 	
 
 checkKind kk stack env
  = case kk of
  	KNil	-> panic stage $ "lintK: found a KNil"
 
-	KFun k1 k2	
+	KCon kiCon super
+	 -> 	lintKiCon kiCon
+	 `seq`	lintSuper super
+	 `seq`	super
+	
+	KPi k1 k2
 	 ->	checkKind k1 stack env
 	 `seq`	checkKind k2 stack env
-	 `seq`	()
+	 
+	KApp k1 t1
+	 | KPi k11 k12	<- k1
+	 , checkType t1 stack env == k1
+	 -> 	checkKind k12 stack env
 	
-	KForall k1 k2
-	 ->	checkKind k1 stack env
-	 `seq`	checkKind k2 stack env
-	 `seq`	()
-	
-	KCon{}	
-	 ->	()
 
-	KClass tyClass ts
-	 ->	lintList (\t -> checkType t stack) ts env
-	 `seq`	()
+	-- Old stuff ------------------
+	KApps k ts		-> error "KApps needs to die"
+	KForall k1 k2		-> error "KForall needs to die"
+	KFun k1 k2		-> error "KFun needs to die"
+	KWitJoin ks		-> error "KWitJoin needs to die"
 	
-	KWitJoin ks
-	 -> 	lintList (\k -> checkKind k stack) ks env
-	 `seq`	()
-	
-	_ -> ()
-	
+
+lintSuper :: Super -> ()
+lintSuper ss	= undefined			
+
+lintKiCon 	= undefined
+
 
 -- Var --------------------------------------------------------------------------------------------
 -- | Lint a bound value variable.
@@ -529,9 +361,8 @@ withKind v k env fun
  = let	addVK Nothing	= Just k
 	addVK Just{}	= panic stage $ "withVarKind: kind for " % v % " already present"
    in	fun $ env { envKinds = Map.alter addVK v (envKinds env) }
+
 {-
-
-
 -- | Get a kind from the environment.
 getKind :: Var -> Env -> Kind
 getKind v env	

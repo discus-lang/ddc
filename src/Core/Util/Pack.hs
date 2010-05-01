@@ -63,32 +63,30 @@ packT1 tt
 	   in	result
 	
 	-- Crush witnesses along the way
-	TApp t1@(TCon (TyConWitness tyClass k)) t2
+	TApp t1@(TCon (TyConWitness tyCon k)) t2
 	 -> let t2'	= packT1 t2
 	 	
 		result
 			-- crush LazyH on the way
-	 		| tyClass == TyClassLazyH
+	 		| tyCon == TyConWitnessMkHeadLazy
 			, Just (vD, k, (TVar kRegion r : ts))	<- takeTData t2'
-			= TApp (TCon tcLazy) (TVar kRegion r)
+			= TApp tMkLazy (TVar kRegion r)
 
 			-- crush ConstT on the way
-			| tyClass == TyClassConstT 
+			| tyCon == TyConWitnessMkDeepConst 
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
 			= makeTWitJoin 
-			    	$ (   map (\r -> TApp (TCon tcConst)  r) rs
-				   ++ map (\d -> TApp (TCon tcConstT) d) ds)
+			    	$ (   map (\r -> TApp tMkConst     r) rs
+				   ++ map (\d -> TApp tMkDeepConst d) ds)
 
 			-- crush MutableT on the way
-			| tyClass == TyClassMutableT 
+			| tyCon == TyConWitnessMkDeepMutable
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
 			= makeTWitJoin 
-			    	$ (   map (\r -> TApp (TCon tcMutable)  r) rs
-				   ++ map (\d -> TApp (TCon tcMutableT) d) ds)
-
-
+			    	$ (   map (\r -> TApp tMkMutable     r) rs
+				   ++ map (\d -> TApp tMkDeepMutable d) ds)
 
 			| otherwise
 			= TApp t1 t2'
@@ -200,41 +198,41 @@ packK kk
 -- | Do one round of packing on this kind
 packK1 :: Kind -> Kind
 packK1 kk
-	-- crush LazyH on the way
-	| KClass tc [t1]	<- kk
+	-- crush HeadLazy on the way
+	| KApps kc [t1]	<- kk
 	, Just (vD, k, TVar kR r : ts)	<- takeTData t1
 	, kR == kRegion
-	, tc == TyClassLazyH
-	= KClass TyClassLazy [TVar kR r]
+	, kc == kHeadLazy
+	= KApps kLazy [TVar kR r]
 
-	-- crush MutableT on the way
-	| KClass tc [t1]	<- kk
+	-- crush DeepMutable on the way
+	| KApps kc [t1]	<- kk
 	, Just _		<- takeTData t1
-	, tc == TyClassMutableT
+	, kc == kDeepMutable
 	, (rs, ds)		<- slurpVarsRD t1
 	= makeKWitJoin 
-		$  map (\r -> KClass TyClassMutable  [r]) rs
-		++ map (\d -> KClass TyClassMutableT [d]) ds
+		$  map (\r -> KApps kMutable     [r]) rs
+		++ map (\d -> KApps kDeepMutable [d]) ds
 	
-	-- crush ConstT on the way
-	| KClass tc [t1]	<- kk
+	-- crush DeepConst on the way
+	| KApps kc [t1]	<- kk
 	, Just _		<- takeTData t1
-	, tc == TyClassConstT
+	, kc == kDeepConst
 	, (rs, ds)		<- slurpVarsRD t1
 	= makeKWitJoin 
-		$  map (\r -> KClass TyClassConst  [r]) rs
-		++ map (\d -> KClass TyClassConstT [d]) ds
+		$  map (\r -> KApps kConst     [r]) rs
+		++ map (\d -> KApps kDeepConst [d]) ds
 
 	-- Join purification witness kinds
 	| KWitJoin ks		<- kk
 	, Just tsEffs		<- sequence $ map takeKClass_pure ks
 	, Just ksEffs		<- sequence $ map kindOfType tsEffs
 	, and $ map (== kEffect) ksEffs
-	= KClass TyClassPure [TSum kEffect tsEffs]
+	= KApps kPure [TSum kEffect tsEffs]
 
 	-- pack types inside witness kinds
-	| KClass v ts	<- kk
-	= KClass v (map packT1 ts)
+	| KApps kc ts	<- kk
+	= KApps kc (map packT1 ts)
 	    
 	| otherwise
 	= kk
@@ -244,7 +242,8 @@ packK1 kk
 takeKClass_pure :: Kind -> Maybe Type
 takeKClass_pure kk
  = case kk of
- 	KClass TyClassPure [t]	-> Just t
+ 	KApps k [t]
+	 | k == kPure		-> Just t
 	_ 			-> Nothing
 	
 

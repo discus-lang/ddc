@@ -7,6 +7,7 @@ module Source.Parser.Type
 where
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Source.Parser.Base
 import Control.Monad
 import Data.Maybe

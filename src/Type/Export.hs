@@ -5,6 +5,7 @@ module Type.Export
 	(squidExport)
 where
 import Type.Exp
+import Type.Builtin
 import Type.Pretty
 import Type.Error
 import Type.Base

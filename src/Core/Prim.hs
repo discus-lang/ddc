@@ -12,6 +12,7 @@ import Core.Glob
 import Core.Util
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import Util
 import DDC.Main.Pretty
 import DDC.Var
@@ -47,8 +48,9 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KClass TyClassDirect [TVar kR r]
- 	 | kR	== kRegion
+ 	KApps k [TVar kR r]
+	 | k    == kDirect
+	 , kR	== kRegion
 	 -> tt { tableDirectRegions 
 	 		= Set.insert r (tableDirectRegions tt)}
 

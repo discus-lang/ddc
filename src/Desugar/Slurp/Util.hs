@@ -22,6 +22,7 @@ import Util
 import Shared.VarPrim
 import Shared.Exp
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Type.Error
 import Type.Plate.Trans

@@ -10,6 +10,7 @@ import Util
 import Source.Exp
 import Type.Util
 import Type.Exp
+import Type.Builtin
 import DDC.Main.Error
 import DDC.Var
 

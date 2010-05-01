@@ -21,6 +21,7 @@ import Desugar.Project			(ProjTable)
 import qualified DDC.Solve.InstanceInfo	as T
 import qualified Shared.Exp		as S
 import qualified Type.Exp		as T
+import qualified Type.Builtin		as T
 import qualified Type.Util		as T
 import qualified Core.Util.Pack		as C
 import qualified Core.Exp 		as C
@@ -33,12 +34,9 @@ import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug
 
 -----
-stage	= "Desugar.ToCore"
-debug	= False
-trace ss x	
-	= if debug 
-		then Debug.trace (pprStrPlain ss) x
-		else x
+stage		= "Desugar.ToCore"
+debug		= False
+trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 -- Tree --------------------------------------------------------------------------------------------
 toCoreTree
@@ -87,6 +85,14 @@ toCoreP	:: D.Top Annot
 	-> CoreM [C.Top]
 
 toCoreP	p
+ = do	p'	<- toCoreP' p
+   	trace	(vcat 	[ ppr "Core.Desugar -------" 
+			, ppr p
+			, ppr "--------------------"
+			, ppr p' ])
+		$ return p'
+
+toCoreP' p
  = case p of
 	D.PExtern _ v tv (Just to)
 	 -> do
@@ -230,14 +236,17 @@ toCoreS (D.SBind _ (Just v) x)
 	-- lookup the generalised type of this binding.
 	Just tScheme	<- lookupType v
 
+	trace	("toCoreS" <> v)		$ return ()
+	trace	("toCoreS" <> show tScheme)	$ return ()
+
  	-- convert the RHS to core.
-	xCore		<- toCoreX x
+	xCore	<- toCoreX x
 
 	-- Add type lambdas and contexts
-	xLam		<- fillLambdas v tScheme xCore
+	xLam	<- fillLambdas v tScheme xCore
 
-	returnJ 	$ C.SBind (Just v) 
-			$ C.dropXTau xLam Map.empty tScheme
+	returnJ $ C.SBind (Just v) 
+		$ C.dropXTau xLam Map.empty tScheme
 
 
 toCoreS	D.SSig{}
@@ -248,7 +257,7 @@ toCoreS	D.SSig{}
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
- = -- trace ("toCoreX: " % xx % "\n") $
+ = trace ("toCoreX: " % xx % "\n") $
    case xx of
 
 	D.XLambdaTEC 
@@ -454,7 +463,7 @@ toCoreX xx
 --
 toCoreXLit :: T.Type -> D.Exp Annot -> C.Exp
 toCoreXLit tt xLit
- 	= toCoreXLit' (C.stripToShapeT tt) xLit
+ 	= toCoreXLit' (T.stripToBodyT tt) xLit
 
 toCoreXLit' tt xLit@(D.XLit n litfmt@(LiteralFmt lit fmt))
 
@@ -660,7 +669,7 @@ toCoreW ww
 	, kV == T.kValue
 
 	, dataFormatIsBoxed fmt
-	= do	mT	<- liftM (liftM C.stripToShapeT)
+	= do	mT	<- liftM (liftM T.stripToBodyT)
 	 		$  lookupType vT
 	 
 		-- work out what region the value to match against is in

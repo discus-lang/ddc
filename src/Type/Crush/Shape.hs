@@ -6,6 +6,7 @@ where
 import Type.Feed
 import Type.Location
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Type.State
 import Type.Class

@@ -256,11 +256,10 @@ instance Monad m => TransM m TyCon where
 	 -> do	v'	<- transZM table tyConName
 	 	return	$ tt { tyConName = v' }
 	
-	TyConWitness 
-		{ tyConWitness = TyClass v }
+	TyConWitness 	{ tyConWitness = TyConWitnessMkVar v }
 	 -> do	v'	<- transZM table v
 
-	 	return	$ tt { tyConWitness = TyClass v' }
+	 	return	$ tt { tyConWitness = TyConWitnessMkVar v' }
 
 	TyConWitness {}
 	 -> 	return tt

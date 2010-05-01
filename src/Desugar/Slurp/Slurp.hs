@@ -8,6 +8,7 @@ where
 import Util
 import Shared.Exp
 import Type.Exp
+import Type.Builtin
 import Type.Location
 import Type.Util
 import Constraint.Exp

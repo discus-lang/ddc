@@ -14,6 +14,7 @@ module Type.Util.Kind
 
 	-- kind functions
 	, makeKFun
+	, takeKApps
 	, resultKind
 	, makeDataKind
 
@@ -25,6 +26,7 @@ module Type.Util.Kind
 	, isClosure)
 where
 import Type.Pretty		()
+import Type.Builtin
 import Type.Util.Bits
 import Type.Exp
 import DDC.Main.Pretty
@@ -103,6 +105,13 @@ makeKFun :: [Kind] -> Kind
 makeKFun [k]		= k
 makeKFun (k : ks)	= KFun k (makeKFun ks)
 
+-- | Flatten out a kind application into its parts
+takeKApps :: Kind -> Maybe (Kind, [Type])
+takeKApps kk
+ = case kk of
+	KApp k1 t2	-> Just (k1, [t2])
+	KApps k1 ts	-> Just (k1, ts)
+	_		-> Nothing
 
 -- Make a kind from the parameters to a data type
 makeDataKind :: [Var] -> Kind
@@ -120,14 +129,22 @@ makeKWitJoin ts
  	[t]	-> t
 	ts	-> KWitJoin ts
 
--- | Invent an explicit witness needed to satisfy a certain constraint
---	This is used in Desugar.ToCore when we don't know how to properly construct our witnesses yet.
+-- | Invent a place-holder witness that satisfies a type class constraint.
+--	This is used in Desugar.ToCore when we don't know how to properly construct the
+--	real witnesses yet.
 inventWitnessOfClass :: Kind -> Maybe Type
-inventWitnessOfClass (KClass v ts)
- = let 	Just ks	= sequence $ map kindOfType ts
-	kResult	= KClass v (map TIndex $ reverse [0 .. length ks - 1])
-	k	= makeKForall ks kResult
-   in	Just (makeTApp (TCon (TyConWitness v k) : ts))
+inventWitnessOfClass (KApps k@(KCon kiCon s) ts)
+	| Just tcWitness	<- takeTyConWitnessOfKiCon kiCon
+	= let 	-- Get the kinds of the type arguments.
+		Just ks	= sequence $ map kindOfType ts
+
+		-- The resulting kind guarantees the constraint.
+		kResult	= KApps k (map TIndex $ reverse [0 .. length ks - 1])
+		k'	= makeKForall ks kResult
+		tyCon	= TyConWitness tcWitness k'
+
+   	   in	trace ("invent " % ks)
+			$ Just $ makeTApp (TCon tyCon : ts)
 
 inventWitnessOfClass k
 	= freakout stage
@@ -156,6 +173,16 @@ kindOfType' tt
 	-- we'll just assume kind annots on TSum and TMask are right, and save
 	--	having to check all the elements
 	TSum  k _		-> k
+
+	-- application of KForall
+	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
+	--	 rely on core lint to detect kind problems.
+	TApp t1 t2		
+	 | KPi k11 k12		<- kindOfType' t1
+	 , k2			<- kindOfType' t2
+--	 , k11 == k2
+	 -> betaTK 0 t2 k12
+
 
 	-- application of KForall
 	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
@@ -206,10 +233,12 @@ kindOfType' tt
 
 kindOfType_freakout t1 t2
  = panic stage	
-	( "takeKindOfType: kind error in type application (t1 t2)\n"
-	% "    t1  = " % t1 	% "\n"
+	( "kindOfType: kind error in type application (t1 t2)\n"
+	% "    t1  = " % t1 		% "\n"
+	% "          " % show t1	% "\n"
 	% "\n"
-	% "    t2  = " % t2 	% "\n")
+	% "    t2  = " % t2 		% "\n"
+	% "          " % show t2	% "\n")
 	Nothing
 
 kindOfType_orDie :: Type -> Kind
@@ -230,7 +259,7 @@ betaTK depth tX kk
 	KForall k1 k2	-> KForall k1 (betaTK (depth + 1) tX k2)
 	KFun	k1 k2	-> KFun (down k1) (down k2)
 	KCon{}		-> kk
-	KClass v ts	-> KClass v (map (betaTT depth tX) ts)
+	KApps k ts	-> KApps k (map (betaTT depth tX) ts)
 	KWitJoin ks	-> kk
 
 	_	-> panic stage

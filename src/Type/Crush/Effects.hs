@@ -5,6 +5,7 @@ module Type.Crush.Effects
 	(crushEffectC)
 where
 import Type.Exp
+import Type.Builtin
 import Type.Util
 import Type.State
 import Type.Class

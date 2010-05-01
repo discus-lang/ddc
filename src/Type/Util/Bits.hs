@@ -29,6 +29,8 @@ module Type.Util.Bits
 
 	-- type application
 	, makeTApp
+	, takeTApps
+
 	, makeTData
 	, takeTData
 	, makeTFun
@@ -60,11 +62,21 @@ module Type.Util.Bits
 	, toFetterFormT
 	, toConstrainFormT
 	, addConstraints
+	
+	-- contexts
+	, addContext
+	
+	-- supertypes
+	, unflattenSuper
+	
+	-- stripping
+	, stripToBodyT
 	)
 where
 import Util
 import Type.Exp
 import Type.Plate.Trans
+import Type.Builtin
 import DDC.Main.Error
 import DDC.Var
 import qualified Data.Map	as Map
@@ -239,6 +251,13 @@ makeTApp' xx
  	x : []		-> x
 	x1 : xs		-> TApp (makeTApp' xs) x1
 	
+-- | Flatten a type application into its parts
+takeTApps :: Type -> [Type]
+takeTApps tt
+ = case tt of
+	TApp t1 t2	-> t1 : takeTApps t2
+	_		-> [tt]
+
 
 -- | Make a data type
 makeTData :: Var -> Kind -> [Type] -> Type
@@ -359,12 +378,13 @@ makeTWitJoin ts
 
 
 -- | Make a witness application.
-makeTWitness :: TyClass -> Kind -> [Type] -> Type
-makeTWitness v k ts
-	= makeTApp (TCon (TyConWitness v k) : ts)
+makeTWitness :: TyConWitness -> Kind -> [Type] -> Type
+makeTWitness con k ts
+	= makeTApp (TCon (TyConWitness con k) : ts)
 
--- | Take a witness from its constructor application
-takeTWitness :: Type -> Maybe (TyClass, Kind, [Type])
+-- | Take a witness from its constructor application.
+--	Returns the witness constructor and its kind, along with the type args.
+takeTWitness :: Type -> Maybe (TyConWitness, Kind, [Type])
 takeTWitness tt
 	| TCon (TyConWitness v k)	<- tt
 	= Just (v, k, [])
@@ -508,6 +528,25 @@ addConstraints' crs@(Constraints crsEq crsMore crsOther) tt
 	= TConstrain tt crs
 	
 	
-	
+-- | Add a new type class context to a type,
+--	pushing it under any enclosing foralls.
+addContext :: Kind -> Type -> Type
+addContext c tt
+ = case tt of
+ 	TForall b k t	-> TForall b k (addContext c t)
+	_		-> TContext c tt
+
+-- | Create a superkind.
+unflattenSuper :: [Kind] -> Super -> Super
+unflattenSuper [] 	s	= s
+unflattenSuper (k:ks) 	s	= SFun k (unflattenSuper ks s)
 	
 
+-- | Strip off TForalls, TFetters and TContext of a type to get the body of the type.
+stripToBodyT :: Type -> Type
+stripToBodyT tt
+ = case tt of
+ 	TForall  v k t		-> stripToBodyT t
+	TFetters t fs		-> stripToBodyT t
+	TContext c t		-> stripToBodyT t
+	_			-> tt

@@ -23,14 +23,12 @@ import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
 import Data.Map			(Map)
-import Data.Set			(Set)
 import Data.Sequence		(Seq, (><))
 import Data.Foldable		(foldr)
 import Data.Traversable		(mapM)
 import Control.Monad		hiding (mapM)
 import Prelude			hiding (foldr, mapM)
 import qualified Data.Map	as Map
-import qualified Data.Set	as Set
 import qualified Util.Data.Map	as Map
 import qualified Data.Sequence	as Seq
 import {-# SOURCE #-} Core.Reconstruct
@@ -59,10 +57,10 @@ data Glob
 	-- | Data class dictionary declarations.
 	, globClassDict		:: Map Var Top
 
-	-- | Set of value variables that are overloaded as they are methods
-	--	in some type class.
-	, globClassMethods 	:: Set Var
-		
+	-- | Map of overloaded variables to the type class they are in.
+	--	Maps value variables (like show) to class names (like Show).
+	, globClassMethods 	:: Map Var Var
+
 	-- | Map of class name -> instances for that class.
 	, globClassInst		:: Map Var (Seq Top)
 
@@ -83,7 +81,7 @@ globEmpty
 	, globData		= Map.empty
 	, globDataCtors		= Map.empty
 	, globClassDict		= Map.empty
-	, globClassMethods	= Set.empty
+	, globClassMethods	= Map.empty
 	, globClassInst		= Map.empty
 	, globBind		= Map.empty }
 	
@@ -98,13 +96,14 @@ globOfTree ps
  	ctors		= Map.unions $ [ topDataCtors p | p@PData{} <- ps ]
 	globTops_ctors	= globTops { globDataCtors = ctors }
 
-	-- Build the set of vars defined at top level.
-	vsMethods	= Set.unions
-			$ map (Set.fromList . (map fst))
-			$ map topClassDictTypes
-			$ Map.elems 
-			$ globClassDict globTops
-			
+	-- Build the map of overloaded vars to the names of the classes 
+	--	they are defined in.
+	vsMethods	= Map.unions
+			$ map Map.fromList
+			[ map 	(\(vMethod, tMethod) -> (vMethod, vClass)) vtMethods
+				| PClassDict vClass _ vtMethods
+				<- Map.elems $ globClassDict globTops ]
+							
 	globTops_classMethods
 			= globTops_ctors 
 			{ globClassMethods = vsMethods }
@@ -238,7 +237,7 @@ varIsBoundAtTopLevelInGlob glob v
 	 -> or	[ Map.member v $ globExtern	glob
 		, Map.member v $ globDataCtors	glob
 		, Map.member v $ globBind	glob
-		, Set.member v $ globClassMethods glob ]
+		, Map.member v $ globClassMethods glob ]
 	
 	NameType
 	 -> or	[ Map.member v $ globExternData glob
