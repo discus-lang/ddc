@@ -63,7 +63,7 @@ slurpWitnessKind kk
  = case kk of
 	-- const regions
  	T.KApps k [T.TVar kR r]
- 	 | k	== T.kConst
+ 	 | k	== T.kDirect
          , kR 	== T.kRegion
 	 -> modify $ \s -> s { stateDirectRegions 
 		 		= Set.insert r (stateDirectRegions s) }
