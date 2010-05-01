@@ -222,16 +222,34 @@ data TypeError
 
 
 instance Ord Type where
- compare   (TClass _ a)  (TClass _ b)		= compare a b
- compare   (TVar _ a)   (TVar k b)		= compare a b
- compare   (TClass{})   (TVar{})		= LT
- compare   (TVar{})     (TClass{})		= GT
+ compare t1 t2
+	| TClass _ a	<- t1
+	, TClass _ b	<- t2
+	= compare a b
+	
+	| Just v1	<- takeVar t1
+	, Just v2	<- takeVar t2
+	= compare v1 v2
+	
+	| Just v1	<- takeVar t1
+	, TClass{}	<- t2
+	= GT
+	
+	| TClass{}	<- t1
+	, Just v2	<- takeVar t2
+	= LT
 
- compare   t1           t2
+	| otherwise
  	= panic "Type.Exp" 
 	$ "compare: can't compare type for ordering\n"
 	% "    t1 = " % show t1	% "\n"
 	% "    t2 = " % show t2 % "\n"
+
+takeVar tt
+ = case tt of
+	TVar _ v	-> Just v
+	TVarMore _ v _	-> Just v
+	_		-> Nothing
 
 
 -- Fetter ------------------------------------------------------------------------------------------

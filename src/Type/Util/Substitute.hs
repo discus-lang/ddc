@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Type.Util.Substitute
 	( subTT
@@ -144,15 +145,18 @@ subTT_cutM' sub cut tt
 	TError{}	-> return tt
 
 	TVar{} 		-> subTT_enter sub cut tt
+	TVarMore{}	-> subTT_enter sub cut tt
 	TClass{}	-> subTT_enter sub cut tt
+
+	_ -> panic stage $ "subTT_cutM': no match for " % tt
 
 subTTK_cutM sub cut kk
  = let	downT	= subTT_cutM sub cut
 	downK	= subTTK_cutM sub cut
 
    in case kk of
-	KCon{}		
-	 -> 	return kk
+	KNil	-> return kk
+	KCon{}	-> return kk
 
 	KPi k1 k2	
 	 -> do	k1'	<- downK k1
