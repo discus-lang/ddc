@@ -116,17 +116,19 @@ rewriteAppX env xx
 		-- Get the parameter list of parameter types that matching instances should have.
 		Just (tsInstanceArgs :: [Type])
 			= sequence
+			$ map (liftM flattenT)
 			$ map (\v -> Map.lookup v vtsInstantiations)
 			$ map fst
 			$ infoOverloadedClassParams infoOverloaded
 
 		-- Try and find matching instances.
+		vClass	= infoOverloadedClassName infoOverloaded
 		psMatchingInstances
 			= Data.Foldable.toList 
 			$ Seq.filter
 				(\p@PClassInst{}
 				  -> instanceMatchesArgs 
-					( infoOverloadedClassName infoOverloaded
+					( vClass
 					, tsInstanceArgs)
 					( topClassInstName p
 					, topClassInstArgs p))
@@ -135,7 +137,9 @@ rewriteAppX env xx
 	  in case psMatchingInstances of
 		[]	-> panic stage
 			$  vcat [ ppr "Cannot find matching instance for overloaded application."
-				, ppr xx ]
+				, ppr $ "with expression: "     % xx 
+				, ppr $ "class name:      "     % vClass
+				, ppr $ "class type args: "	% tsInstanceArgs ]
 
 		x:y:_ 	-> panic stage
 			$ vcat	[ ppr "Overlapping instances."
@@ -223,6 +227,8 @@ rewriteAppX_withInstance env xxUse
 	panicUnify 
 	 = panic stage $ vcat
 		[ ppr "rewriteAppX_withInstance: unification failed"
+		, "    when rewriting expression:\n" %> xxUse
+		, blank
 		, "    t1:         " % tInstBody
 		, "    t2:         " % tUseBody]
 

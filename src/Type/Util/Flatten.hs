@@ -58,6 +58,15 @@ flattenT' sub block tt
 	 	Just t	-> flattenT' sub (Set.insert tt block) t
 		Nothing	-> tt
 
+	TVarMore{}
+	 | Set.member tt block
+	 -> tt 
+
+	 | otherwise
+	 -> case Map.lookup tt sub of
+	 	Just t	-> flattenT' sub (Set.insert tt block) t
+		Nothing	-> tt
+
 	TClass{}
 	 | Set.member tt block
 	 -> tt
@@ -77,6 +86,6 @@ flattenT' sub block tt
 
 	TError{}		-> tt
 
-	_			-> panic stage 
-				$ "flattenT: no match for " % tt
+	_	-> panic stage 
+		$ "flattenT: no match for " % tt
 
