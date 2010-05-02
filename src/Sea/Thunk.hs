@@ -80,13 +80,20 @@ expandS	s
 	
 
 	-- curry
-	| SAssign (XVar v erikd) t x@(XCurry f superA args) <- s
+	| SAssign (XVar v _) t x@XCurry{}	<- s
 	= do
 		(assSS, x')	<- expandCurry v x
 
 		return	$  [ SAssign (XVar v t) t x' ]
 			++ assSS
-	
+
+	| SStmt x@XCurry{}			<- s
+	=	-- We have a curried function as a statement. Since the curried
+		-- function isn't assigned to a variable it can't be used.
+		-- Therefore, we can just drop it.
+		return []
+
+
 	-- apply / callApp
 	| SAssign v t x		<- s
 	,    (x =@= XCallApp{})
