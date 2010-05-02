@@ -88,30 +88,22 @@ data Kind
 	  --	TODO: Remove this if it's not being used.
 	  KNil
 
-	-- | Kind constructor
+	-- | Kind constructor.
 	| KCon	   KiCon Super
 
-	--  | Dependent kind abstraction. 
-	--	Types in the body can use de Bruijn indices (TIndex)
-	--	to refer to the parameter.
-	| KPi      Kind  Kind
+	--  | Dependent kind abstraction. Equivalent to (PI k1. k2)
+	--    The body can contain de Bruijn indices (TIndex) that
+	--    refer to the bound parameter type.
+	| KFun     Kind  Kind
 
 	--  | Dependent kind application.
 	| KApp	   Kind	 Type
 
-
 	-- Old stuff that needs refactoring -----------------------------------
-	| KForall  Kind Kind		-- ^ Dependent kinds. Same as KPi above. 
-					--	Should rename all uses of KForall to KPi
-	
-	| KFun     Kind Kind		-- ^ Function kinds. Equivalent to (forall (_ :: k). k)
-					--	Should rename all uses of KFun to KPi
-
 	| KApps    Kind [Type]		-- ^ Flat dependent kind application.
 					--	Should use KApp instead.
 	
 	| KWitJoin	[Kind]		-- ^ Joining of witnesses
-
 	deriving (Show, Eq)	
 
 

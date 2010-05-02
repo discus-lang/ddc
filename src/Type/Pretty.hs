@@ -264,11 +264,9 @@ instance Pretty Kind PMode where
   = case k of
 	KNil		-> ppr "?"
 	KCon k s	-> ppr k
-	KPi  k1 k2	-> "PI " % k1 % " " % k2
-	KApp k1 t1	-> k1 % " " % prettyTB t1
-	KForall k1 k2	-> "\\" % k1 % ". " % k2
 	KFun k1 k2	-> k1 % " -> " % k2
-  	KApps k ts	-> k % " " % " " %!% map prettyTB ts
+	KApp k1 t1	-> k1 % " " % prettyTB t1
+  	KApps k ts	-> k  % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
 

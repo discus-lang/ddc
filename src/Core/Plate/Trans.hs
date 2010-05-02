@@ -567,10 +567,10 @@ instance Monad m => TransM m Kind where
 	 	k2'	<- followK table k2
 		return	$ KFun k1' k2'
 
-	KForall k1 k2
+	KApp k1 t2
 	 -> do	k1'	<- followK table k1
-		k2'	<- followK table k2
-		return	$ KForall k1' k2'
+		t2'	<- followT table t2
+		return	$ KApp k1' t2'
 
 	KApps k ts
 	 -> do	k'	<- followK table k
@@ -580,9 +580,6 @@ instance Monad m => TransM m Kind where
 	KWitJoin ks
 	 -> do	ks'	<- mapM (followK table) ks
 	 	return	$ KWitJoin ks'
-
-	_	-> panic stage
-		$ "transZM[Kind]: no match for " % show kk
 
 -----
 instance Monad m => TransM m Stmt where

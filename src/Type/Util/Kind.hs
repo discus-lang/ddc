@@ -140,7 +140,7 @@ inventWitnessOfClass (KApps k@(KCon kiCon s) ts)
 
 		-- The resulting kind guarantees the constraint.
 		kResult	= KApps k (map TIndex $ reverse [0 .. length ks - 1])
-		k'	= makeKForall ks kResult
+		k'	= makeKFuns ks kResult
 		tyCon	= TyConWitness tcWitness k'
 
    	   in	trace ("invent " % ks)
@@ -174,33 +174,14 @@ kindOfType' tt
 	--	having to check all the elements
 	TSum  k _		-> k
 
-	-- application of KForall
+	-- application of KFun
 	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
 	--	 rely on core lint to detect kind problems.
 	TApp t1 t2		
-	 | KPi k11 k12		<- kindOfType' t1
-	 , k2			<- kindOfType' t2
---	 , k11 == k2
-	 -> betaTK 0 t2 k12
-
-
-	-- application of KForall
-	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
-	--	 rely on core lint to detect kind problems.
-	TApp t1 t2		
-	 | KForall k11 k12	<- kindOfType' t1
-	 , k2			<- kindOfType' t2
---	 , k11 == k2
-	 -> betaTK 0 t2 k12
-
-	-- application of kind function (which is a sugared KForall)
-	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
-	--	 rely on core lint to detect kind problems.
-	TApp t1 t2
 	 | KFun k11 k12		<- kindOfType' t1
 	 , k2			<- kindOfType' t2
 --	 , k11 == k2
-	 -> k12
+	 -> betaTK 0 t2 k12
 
 	-- application failed.. :(
 	TApp t1 t2
@@ -253,11 +234,9 @@ kindOfType_orDie tt
 betaTK :: Int -> Type -> Kind -> Kind
 betaTK depth tX kk
  = trace ("betaTK " % tX % "\n") $
-   let down 	= betaTK depth tX
-   in case kk of
+   case kk of
  	KNil		-> kk
-	KForall k1 k2	-> KForall k1 (betaTK (depth + 1) tX k2)
-	KFun	k1 k2	-> KFun (down k1) (down k2)
+	KFun k1 k2	-> KFun k1 (betaTK (depth + 1) tX k2)
 	KCon{}		-> kk
 	KApps k ts	-> KApps k (map (betaTT depth tX) ts)
 	KWitJoin ks	-> kk

@@ -46,33 +46,33 @@ kEmpty		= KCon KiConEmpty
 
 -- Witness Type Constructors ----------------------------------------------------------------------
 tMkConst	= TCon $ TyConWitness TyConWitnessMkConst	
-		$ KPi kRegion (KApps kConst		[TIndex 0])
+		$ KFun kRegion (KApps kConst		[TIndex 0])
 
 tMkDeepConst 	= TCon $ TyConWitness TyConWitnessMkDeepConst
-		$ KPi kValue  (KApps kDeepConst		[TIndex 0])
+		$ KFun kValue  (KApps kDeepConst	[TIndex 0])
 
 tMkMutable	= TCon $ TyConWitness TyConWitnessMkMutable
-	 	$ KPi kRegion (KApps kMutable		[TIndex 0])
+	 	$ KFun kRegion (KApps kMutable		[TIndex 0])
 
 tMkDeepMutable	= TCon $ TyConWitness TyConWitnessMkDeepMutable
- 		$ KPi kValue  (KApps kDeepMutable	[TIndex 0])
+ 		$ KFun kValue  (KApps kDeepMutable	[TIndex 0])
 
 tMkLazy		= TCon $ TyConWitness TyConWitnessMkLazy
-		$ KPi kRegion (KApps kLazy		[TIndex 0])
+		$ KFun kRegion (KApps kLazy		[TIndex 0])
 
 tMkHeadLazy	= TCon $ TyConWitness TyConWitnessMkHeadLazy
-		$ KPi kValue  (KApps kHeadLazy		[TIndex 0])
+		$ KFun kValue  (KApps kHeadLazy		[TIndex 0])
 
 tMkDirect	= TCon $ TyConWitness TyConWitnessMkDirect
-		$ KPi kRegion (KApps kDirect		[TIndex 0])
+		$ KFun kRegion (KApps kDirect		[TIndex 0])
 
 tMkPurify	= TCon $ TyConWitness TyConWitnessMkPurify	
-		$ KPi kRegion 
-			(KFun 	(KApps kConst [TIndex 0])
-				(KApps kPure  [TEffect primRead [TIndex 0]]))
+		$ KFun kRegion 
+			(KFun 	(KApps kConst [TIndex 1])
+				(KApps kPure  [TEffect primRead [TIndex 1]]))
 
 tMkPure		= TCon $ TyConWitness TyConWitnessMkPure
-		$ KPi kEffect (KApps kPure             [TIndex 0])
+		$ KFun kEffect (KApps kPure [TIndex 0])
 
 
 -- Type Constructors -------------------------------------------------------------------------

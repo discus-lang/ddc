@@ -122,7 +122,7 @@ checkType tt stack env
 	
 	TApp t1 t2
 	 -> case checkType t1 stack env of
-		KPi k11 k12
+		KFun k11 k12
 		 | k11 == checkType t2 stack env 
 		 -> 	 checkKind k12 stack env
 		 `seq`	k12
@@ -145,7 +145,7 @@ checkType tt stack env
 	TCon tyCon
 	 -> case tyCon of
 		TyConFun 	
-		 -> KPi kValue kValue
+		 -> KFun kValue kValue
 
 		TyConData v k	
 		 -> 	checkKind k stack env
@@ -262,20 +262,18 @@ checkKind kk stack env
 	 `seq`	lintSuper super
 	 `seq`	super
 	
-	KPi k1 k2
+	KFun k1 k2
 	 ->	checkKind k1 stack env
 	 `seq`	checkKind k2 stack env
 	 
 	KApp k1 t1
-	 | KPi k11 k12	<- k1
+	 | KFun k11 k12	<- k1
 	 , checkType t1 stack env == k1
 	 -> 	checkKind k12 stack env
 	
 
 	-- Old stuff ------------------
 	KApps k ts		-> error "KApps needs to die"
-	KForall k1 k2		-> error "KForall needs to die"
-	KFun k1 k2		-> error "KFun needs to die"
 	KWitJoin ks		-> error "KWitJoin needs to die"
 	
 

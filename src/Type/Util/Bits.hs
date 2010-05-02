@@ -45,7 +45,7 @@ module Type.Util.Bits
 	, makeTForall_front
 	, makeTForall_back
 	, slurpTForall
-	, makeKForall
+	, makeKFuns
 
 	-- witnesses
 	, makeTWitJoin
@@ -362,10 +362,10 @@ slurpTForall tt
 	_ -> ([], tt)
 
 
--- | make a chain of KForalls
-makeKForall :: [Kind] -> Kind -> Kind
-makeKForall [] kk	= kk
-makeKForall (k:ks) kk	= KForall k (makeKForall ks kk)
+-- | make a chain of KFuns
+makeKFuns :: [Kind] -> Kind -> Kind
+makeKFuns [] kk	= kk
+makeKFuns (k:ks) kk	= KFun k (makeKFuns ks kk)
 
 
 -- Witnesses ---------------------------------------------------------------------------------------

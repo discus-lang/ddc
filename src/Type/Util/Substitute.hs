@@ -156,28 +156,19 @@ subTTK_cutM sub cut kk
 
    in case kk of
 	KNil	-> return kk
+
 	KCon{}	-> return kk
-
-	KPi k1 k2	
-	 -> do	k1'	<- downK k1
-		k2'	<- downK k2
-		return	$ KPi k1' k2'
-
-	KApp k1 t2
-	 -> do	k1'	<- downK k1
-		t2'	<- downT t2
-		return	$ KApp k1' t2'
-		
-	KForall k1 k2
-	 -> do	k1'	<- downK k1
-		k2'	<- downK k2
-		return	$ KForall k1' k2'
 
 	KFun k1 k2
 	 -> do	k1'	<- downK k1
 		k2'	<- downK k2
 		return	$ KFun k1' k2'
 
+	KApp k1 t2
+	 -> do	k1'	<- downK k1
+		t2'	<- downT t2
+		return	$ KApp k1' t2'
+		
 	KApps k ts
 	 -> do	k'	<- downK k
 		ts'	<- mapM downT ts
