@@ -320,16 +320,16 @@ data Env
 	= Env
 	{ -- | Whether the thing we're checking is supposed to be closed.
 	  envClosed		:: Bool
+{-
+	  --  The header glob, for getting top-level types and kinds.
+	, envHeaderGlob		:: Glob
 
-	  -- | The header glob, for getting top-level types and kinds.
---	, envHeaderGlob		:: Glob
+	  --  The core glob, for getting top-level types and kinds.
+	, envModuleGlob		:: Glob
 
-	  -- | The core glob, for getting top-level types and kinds.
---	, envModuleGlob		:: Glob
-
-	  -- | Types of value variables that are in scope at the current point.
---	, envTypes		:: Map Var Type
-
+	  --  Types of value variables that are in scope at the current point.
+	, envTypes		:: Map Var Type
+-}
 	  -- | Kinds of type variables that are in scope at the current point.
 	, envKinds		:: Map Var Kind }
 {-
