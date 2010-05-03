@@ -111,10 +111,11 @@ packT1 tt
 	-- vars
 	TVar k v	-> tt
 	TVarMore k v t	-> TVarMore k v (packT1 t)
+	TIndex{}	-> tt
 
 	TCon{}		-> tt
-	TBot k		-> tt
-	TTop k 		-> tt
+	TBot{}		-> tt
+	TTop{} 		-> tt
 	 
 	-- effect
 	-- crush compound effects along the way
@@ -199,40 +200,40 @@ packK kk
 packK1 :: Kind -> Kind
 packK1 kk
 	-- crush HeadLazy on the way
-	| KApps kc [t1]	<- kk
+	| KApp kc t1	<- kk
 	, Just (vD, k, TVar kR r : ts)	<- takeTData t1
 	, kR == kRegion
 	, kc == kHeadLazy
-	= KApps kLazy [TVar kR r]
+	= KApp kLazy (TVar kR r)
 
 	-- crush DeepMutable on the way
-	| KApps kc [t1]	<- kk
+	| KApp kc t1	<- kk
 	, Just _		<- takeTData t1
 	, kc == kDeepMutable
 	, (rs, ds)		<- slurpVarsRD t1
 	= makeKWitJoin 
-		$  map (\r -> KApps kMutable     [r]) rs
-		++ map (\d -> KApps kDeepMutable [d]) ds
+		$  map (\r -> KApp kMutable     r) rs
+		++ map (\d -> KApp kDeepMutable d) ds
 	
 	-- crush DeepConst on the way
-	| KApps kc [t1]	<- kk
+	| KApp kc t1	<- kk
 	, Just _		<- takeTData t1
 	, kc == kDeepConst
 	, (rs, ds)		<- slurpVarsRD t1
 	= makeKWitJoin 
-		$  map (\r -> KApps kConst     [r]) rs
-		++ map (\d -> KApps kDeepConst [d]) ds
+		$  map (\r -> KApp kConst     r) rs
+		++ map (\d -> KApp kDeepConst d) ds
 
 	-- Join purification witness kinds
 	| KWitJoin ks		<- kk
 	, Just tsEffs		<- sequence $ map takeKClass_pure ks
 	, Just ksEffs		<- sequence $ map kindOfType tsEffs
 	, and $ map (== kEffect) ksEffs
-	= KApps kPure [TSum kEffect tsEffs]
+	= KApp kPure (TSum kEffect tsEffs)
 
 	-- pack types inside witness kinds
-	| KApps kc ts	<- kk
-	= KApps kc (map packT1 ts)
+	| KApp kc t	<- kk
+	= KApp kc (packT t)
 	    
 	| otherwise
 	= kk
@@ -242,7 +243,7 @@ packK1 kk
 takeKClass_pure :: Kind -> Maybe Type
 takeKClass_pure kk
  = case kk of
- 	KApps k [t]
+ 	KApp k t
 	 | k == kPure		-> Just t
 	_ 			-> Nothing
 	

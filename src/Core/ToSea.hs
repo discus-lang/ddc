@@ -62,7 +62,7 @@ slurpWitnessKind :: T.Kind -> SeaM ()
 slurpWitnessKind kk
  = case kk of
 	-- const regions
- 	T.KApps k [T.TVar kR r]
+ 	T.KApp k (T.TVar kR r)
  	 | k	== T.kDirect
          , kR 	== T.kRegion
 	 -> modify $ \s -> s { stateDirectRegions 

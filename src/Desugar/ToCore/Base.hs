@@ -21,8 +21,11 @@ import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Type.ToCore		as T
 import qualified Core.Util		as C
+import qualified Debug.Trace
 
 stage		= "Desugar.ToCore.Base"
+debug		= False
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -----
 type	Annot	= Maybe (Type, Effect)
@@ -115,5 +118,11 @@ lookupType' vT
 	  -> do	
 		let cType	= T.toCoreT tType
 		let cType_flat	= C.flattenT cType
-		return $ Just cType_flat
+		return	$ trace (vcat	
+				[ ppr "lookupType"
+				, ppr "    source type:\n" 	%> tType
+				, ppr "    core type:\n"	%> cType
+				, ppr "    flat core type:\n" 	%> cType_flat
+				, blank])
+			$ Just cType_flat
 

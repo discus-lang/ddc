@@ -594,21 +594,21 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KApps k [TVar kR r]
+ 	KApp k (TVar kR r)
  	 | k    == kConst
 	 , kR	== kRegion
 	 -> tt { tableConstRegions 
 	 		= Set.insert r (tableConstRegions tt)}
 	
 	-- const types
-	KApps k [TVar kV t]
+	KApp k (TVar kV t)
 	 | k	== kDeepConst
 	 , kV	== kValue
 	 -> tt { tableConstTypes
 	 		= Set.insert t (tableConstTypes tt)}
 
 	-- pure effects
-	KApps k [TVar kE e]
+	KApp k (TVar kE e)
 	 | k	== kPure
 	 , kE	== kEffect
 	 -> tt { tablePureEffects

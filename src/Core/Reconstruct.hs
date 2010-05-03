@@ -47,8 +47,10 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var.VarId		as Var
 import DDC.Var
+import DDC.Util.Doc
 import Data.Traversable		(mapM)
 import Type.Error		(Error(..))
+import Type.Docable		()
 import Prelude			hiding (mapM)
 import Util			hiding (mapM)
 import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
@@ -228,7 +230,7 @@ reconX xx@(XLAM b@(BMore v t1) t2 x)
 		, xE
 		, xC)
 
-reconX (XLAM v k@KApps{} x)
+reconX (XLAM v k@KApp{} x)
  = do	(x', xT, xE, xC)	<- reconX x
 	trace 	("reconX[XLAM-KClass]: (/\\ " % v % " -> ...)\n"
    		% "  xT:\n" %> xT	% "\n"
@@ -292,10 +294,11 @@ reconX exp@(XAPP x t)
 	  
 	 _ -> panic stage
 	 	$ " reconX: Kind error in type application (x t).\n"
-		% "     caller = "  % envCaller tt	% "\n"
-		% "     x      =\n" %> x		% "\n\n"
-		% "     t      =\n" %> t		% "\n\n"
-		% "   T[x]     =\n" %> tX	% "\n\n"
+		% "     caller = "	% envCaller tt	% "\n"
+		% "     x      =\n"	%> x		% "\n\n"
+		% "-- type ------\n" 	
+		%	(pprDocIndentedWithNewLines 0 $ doc t)	% "\n\n"
+		% "   T[x]     =\n"	%> tX	% "\n\n"
 
 -- xtau
 -- We can't actually check the reconstructed type against the annotation here

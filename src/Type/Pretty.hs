@@ -14,9 +14,10 @@ import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+-- import Data.Set			(Set)
 import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
------
 stage	= "Type.Pretty"
 
 -- Bind -------------------------------------------------------------------------------------------
@@ -28,29 +29,41 @@ instance Pretty Bind PMode where
 
 -- Type --------------------------------------------------------------------------------------------
 instance Pretty Type PMode where
- ppr xx
-  = case xx of
+ ppr tt = pprTypeQuant Set.empty tt
+
+
+-- | When pretty printing type we don't want to show module identifiers on quantified vars. 
+--	We keep a set of which vars are quantified as we decend into the type.
+--	TODO: handling of quant vars not done yet.
+pprTypeQuant :: Set Var -> Type -> Str
+pprTypeQuant vsQuant tt
+ = let down = pprTypeQuant vsQuant 
+   in  case tt of
  	TNil		-> ppr "@TNil"
 
 	TForall b k t	
-	 -> let	(bks, tBody) = slurpTForall xx
-	    in	"forall " % punc " " (map (uncurry pprBindKind) bks) % ". " % tBody
+	 -> let	(bks, tBody) 	= slurpTForall tt
+		vsQuant'	= Set.insert (varOfBind b) vsQuant
+	    in	"forall " 
+			% punc " " (map (uncurry pprBindKind) bks) 
+			% ". " 
+			% pprTypeQuant vsQuant' tBody
 
-	TContext c t	-> c % " => " % t
+	TContext c t	-> c % " => " % down t
 
-	TFetters t fs	-> t % " :- " % ", " %!% fs
+	TFetters t fs	-> down t % " :- " % ", " %!% fs
 	
 	TConstrain t (Constraints { crsEq, crsMore, crsOther })
-	 -> t % " :- " 
-		% ", " %!% [t1 % " =  " % t2 | (t1, t2) <- Map.toList crsEq ]
-		% ", " %!% [t1 % " :> " % t2 | (t1, t2) <- Map.toList crsMore ]
+	 -> down t % " :- " 
+		% ", " %!% [down t1 % " =  " % down t2 | (t1, t2) <- Map.toList crsEq ]
+		% ", " %!% [down t1 % " :> " % down t2 | (t1, t2) <- Map.toList crsMore ]
 		% ", " %!% crsOther
 		
-	TSum k  es	-> k  % "{" % "; " %!% es % "}"
+	TSum k  es	-> k  % "{" % "; " %!% map down es % "}"
 
 	TApp t1 t2
 	 -> let result
-	 		| Just (t1, t2, eff, clo)	<- takeTFun xx
+	 		| Just (t1, t2, eff, clo)	<- takeTFun tt
 			= let str
 				| eff == tPure
 				, clo == tEmpty
@@ -117,8 +130,8 @@ instance Pretty Type PMode where
 
 	TWitJoin wits	-> "wjoin {" % "; " %!% wits % "}"
 
-	TIndex ix
-	 -> parens $ ppr ix
+	TIndex k ix
+	 -> ppr (resultKind k) % ix
 
 prettyTRight tt
  = case tt of
@@ -159,8 +172,8 @@ pprVarKind v k
 pprBindKind :: Bind -> Kind -> PrettyM PMode
 pprBindKind bb k
  = case bb of
- 	BVar v		-> pprVarKind v k
-	BMore v t	-> pprVarKind v k % " :> " % t
+ 	BVar v		-> pprVarKind (varWithoutModuleId v) k
+	BMore v t	-> pprVarKind (varWithoutModuleId v) k % " :> " % t
 	
 
 -- | Get the kind associated with a namespace.
@@ -266,7 +279,6 @@ instance Pretty Kind PMode where
 	KCon k s	-> ppr k
 	KFun k1 k2	-> k1 % " -> " % k2
 	KApp k1 t1	-> k1 % " " % prettyTB t1
-  	KApps k ts	-> k  % " " % " " %!% map prettyTB ts
 	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
 
 
@@ -327,7 +339,7 @@ instance Pretty TyCon PMode where
 instance Pretty TyConWitness PMode where
  ppr cc
   = case cc of
-	TyConWitnessMkVar var		-> "Mk" % var
+	TyConWitnessMkVar var		-> varModuleId var % "." % "Mk" % varName var
   	TyConWitnessMkConst		-> ppr "MkConst"
 	TyConWitnessMkDeepConst		-> ppr "MkDeepConst"
 	TyConWitnessMkMutable		-> ppr "MkMutable"

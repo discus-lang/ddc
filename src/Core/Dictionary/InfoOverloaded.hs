@@ -8,6 +8,7 @@ import Core.Exp
 import Core.Glob
 import Type.Exp
 import Type.Util.Bits
+import Type.Util.Kind
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -79,8 +80,9 @@ lookupOverloadedVar env vOverloaded
 		--	eg: for "show" need to add the "forall a. Show a =>" part to its type.
 		--	TODO: It'd be better to do this during desugaring instead.
 		super	 = unflattenSuper (map snd $ topClassDictParams pClassDict) SProp
-		kContext = KApps (KCon (KiConVar vClass) super)
-					[TVar k v | (v, k) <- topClassDictParams pClassDict ]
+		kContext = makeKApps 
+				(KCon (KiConVar vClass) super)
+				[TVar k v | (v, k) <- topClassDictParams pClassDict ]
 			 		
 		tOverloaded_withContext
 			= makeTForall_front 

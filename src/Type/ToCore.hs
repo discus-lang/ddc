@@ -13,10 +13,14 @@ import Type.Builtin
 import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error
+import DDC.Main.Pretty
 import DDC.Var
 import qualified Data.Map	as Map
+import qualified Debug.Trace
 
 stage		= "Type.ToCore"
+debug		= False
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- Bind -------------------------------------------------------------------------------------------
 toCoreB :: Bind -> Bind
@@ -153,15 +157,19 @@ toCoreK k	= k
 
 
 -- Fetter ------------------------------------------------------------------------------------------
-toCoreF :: Fetter -> Witness
+toCoreF :: Fetter -> Kind
 toCoreF	f
  = case f of
-	FConstraint v ts		
-	 -> let	ts'		= map toCoreT ts
-		Just ks		= sequence $ map kindOfType ts'
-		kClass		= makeKindOfTypeClass v ks
-		Just t		= inventWitnessOfClass (KApps kClass ts')
-	    in	t
+	FConstraint v tsArg		
+	 -> let	tsArg'		= map toCoreT tsArg
+		Just ksArg	= sequence $ map kindOfType tsArg
+		kClass		= makeKindOfTypeClass v ksArg
+		kWitness	= makeKApps kClass tsArg'
+	    in	trace (vcat
+			[ ppr "toCoreF"
+			, "    fetter: " % f
+			, "    kind:   " % kWitness]) 
+			kWitness
 	    
 	_ -> panic stage
 		$ "toCoreF: cannot convert " % f % "\n"
@@ -201,10 +209,5 @@ primClassKinds
 	, (primEmpty,		kEmpty) ]
 
 
-addContexts :: [Witness] -> Type -> Type
-addContexts []	   t	= t
-addContexts (f:fs) t	
-	| Just k	<- kindOfType f
-	= TContext k (addContexts fs t)
 		
    

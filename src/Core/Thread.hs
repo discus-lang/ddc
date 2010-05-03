@@ -185,7 +185,7 @@ buildPureWitness eff@(TEffect vE [tR@(TVar kR vR)])
 	= do	
 		-- try and find a witness for constness of the region
 		Just wConst	<- lookupWitness KiConConst vR
-		let  k		= KApps kConst [tR]
+		let  k		= KApp kConst tR
 
 		-- the purity witness gives us purity of read effects on that const region
 		return		$ TApp (TApp tMkPurify tR) (TVar k wConst)
@@ -199,7 +199,7 @@ buildPureWitness eff@(TSum kE _)
 buildPureWitness eff@(TVar kE vE)
  	| kE	== kEffect
  	= do	Just w	<- lookupWitness KiConPure vE
- 		return (TVar (KApps kPure [eff]) w)
+ 		return (TVar (KApp kPure eff) w)
 
 buildPureWitness eff
  = panic stage
@@ -219,7 +219,7 @@ type ThreadM 	= State ThreadS
 -- Inspect this kind. If it binds a witness then push it onto the stack.
 pushWitnessVK :: Var -> Kind -> ThreadM ()
 pushWitnessVK vWitness k
- 	| KApps (KCon kcWitness _) [TVar kV vT]	<- k
+ 	| KApp (KCon kcWitness _) (TVar kV vT)	<- k
 	, elem kV [kRegion, kEffect, kValue, kClosure]
 	= modify $ \s -> ((kcWitness, vT), vWitness) : s
 	| otherwise
@@ -229,7 +229,7 @@ pushWitnessVK vWitness k
 -- Inspect this kind. If it binds a witness then pop it from the stack.
 popWitnessVK :: Var -> Kind -> ThreadM ()
 popWitnessVK vWitness k
-	| KApps (KCon kcWitness _) [TVar kV vRE]	<- k
+	| KApp (KCon kcWitness _) (TVar kV vRE) <- k
 	= do
 		state	<- get
 		let (xx	:: ThreadM ())

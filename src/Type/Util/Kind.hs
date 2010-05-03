@@ -14,6 +14,7 @@ module Type.Util.Kind
 
 	-- kind functions
 	, makeKFun
+	, makeKApps
 	, takeKApps
 	, resultKind
 	, makeDataKind
@@ -32,16 +33,8 @@ import Type.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
-import qualified Debug.Trace	as Debug
 
------
-stage	= "Type.Util.Kind"
-debug	= False
-trace ss x	
-	= if debug
-		then Debug.trace (pprStrPlain ss) x
-		else x
-
+stage		= "Type.Util.Kind"
 
 -- Namespace things --------------------------------------------------------------------------------
 defaultKindV ::	Var	-> Kind
@@ -105,13 +98,29 @@ makeKFun :: [Kind] -> Kind
 makeKFun [k]		= k
 makeKFun (k : ks)	= KFun k (makeKFun ks)
 
--- | Flatten out a kind application into its parts
+
+-- | Flatten out a dependent kind application into its parts.
 takeKApps :: Kind -> Maybe (Kind, [Type])
 takeKApps kk
  = case kk of
-	KApp k1 t2	-> Just (k1, [t2])
-	KApps k1 ts	-> Just (k1, ts)
-	_		-> Nothing
+	KCon{} -> Just (kk, [])
+
+	KApp k1 t2
+	  -> let Just (k1', ts)	= takeKApps k1
+	     in	 Just (k1', ts ++ [t2])
+	
+	_ -> Nothing
+
+
+-- | Make a dependent kind application from a list of types.
+makeKApps :: Kind -> [Type] -> Kind
+makeKApps k []	= k
+makeKApps k ts	= makeKApps' k $ reverse ts
+
+makeKApps' k tt
+ = case tt of
+	t : []	-> KApp k t
+	t : ts	-> KApp (makeKApps' k ts) t 
 
 -- Make a kind from the parameters to a data type
 makeDataKind :: [Var] -> Kind
@@ -129,22 +138,25 @@ makeKWitJoin ts
  	[t]	-> t
 	ts	-> KWitJoin ts
 
+
 -- | Invent a place-holder witness that satisfies a type class constraint.
 --	This is used in Desugar.ToCore when we don't know how to properly construct the
 --	real witnesses yet.
 inventWitnessOfClass :: Kind -> Maybe Type
-inventWitnessOfClass (KApps k@(KCon kiCon s) ts)
-	| Just tcWitness	<- takeTyConWitnessOfKiCon kiCon
+inventWitnessOfClass k
+	| Just (KCon kiCon s, ts)	<- takeKApps k
+	, Just tcWitness		<- takeTyConWitnessOfKiCon kiCon
 	= let 	-- Get the kinds of the type arguments.
-		Just ks	= sequence $ map kindOfType ts
+		Just ks = sequence $ map kindOfType ts
 
 		-- The resulting kind guarantees the constraint.
-		kResult	= KApps k (map TIndex $ reverse [0 .. length ks - 1])
+		kResult	= makeKApps (KCon kiCon s) (zipWith TIndex ks $ reverse [0 .. length ks - 1])
 		k'	= makeKFuns ks kResult
 		tyCon	= TyConWitness tcWitness k'
 
-   	   in	trace ("invent " % ks)
-			$ Just $ makeTApp (TCon tyCon : ts)
+		witness	= makeTApp (TCon tyCon : ts)
+
+   	   in	Just witness
 
 inventWitnessOfClass k
 	= freakout stage
@@ -153,47 +165,38 @@ inventWitnessOfClass k
 
 
 -- Kind reconstruction -----------------------------------------------------------------------------
--- | Reconstruct the kind of this type, kind checking along the way
+-- | Determine the kind of a type.
+--   Kinds are often cached in nodes of the type, so we don't have to
+--   inspect a whole type to determine its kind. This makes things faster,
+--   but isn't a full check. 
+--
+--   TODO: add checkedKindOfType to do the checks as well.
+--
 kindOfType :: Type -> Maybe Kind
 kindOfType tt 
  = let 	kind	= kindOfType' tt
-   in	trace 	("kindOfType: " % tt 	% "\n")
-		$ Just $ kind
+   in	Just $ kind
 
 kindOfType' tt
- = trace ("kindOfType': " % tt) $ 
-   case tt of
+ = case tt of
 	TClass k _		-> k
 	TVar k _		-> k
 	TVarMore k _ _		-> k
+	TIndex k _		-> k
 	TCon tyCon		-> (tyConKind tyCon)
 	TBot k			-> k
 	TTop k			-> k
-	
-	-- we'll just assume kind annots on TSum and TMask are right, and save
-	--	having to check all the elements
 	TSum  k _		-> k
 
-	-- application of KFun
-	-- TODO: we're not checking the kinds match up atm, it's too much of a perf hit.
-	--	 rely on core lint to detect kind problems.
 	TApp t1 t2		
 	 | KFun k11 k12		<- kindOfType' t1
-	 , k2			<- kindOfType' t2
---	 , k11 == k2
 	 -> betaTK 0 t2 k12
-
-	-- application failed.. :(
-	TApp t1 t2
-	 -> kindOfType_freakout t1 t2
 	
 	TForall  b t1 t2	-> kindOfType' t2
-
 	TContext t1 t2		-> kindOfType' t2
 	TFetters t1 _		-> kindOfType' t1
 	TConstrain t1 crs	-> kindOfType' t1
-	
-	
+		
 	-- effect and closure constructors should always be fully applied.
 	TEffect{}		-> kEffect
 	TFree{}			-> kClosure
@@ -212,16 +215,6 @@ kindOfType' tt
 	_			-> panic stage $ "kindOfType bad kind for: " % tt
 
 
-kindOfType_freakout t1 t2
- = panic stage	
-	( "kindOfType: kind error in type application (t1 t2)\n"
-	% "    t1  = " % t1 		% "\n"
-	% "          " % show t1	% "\n"
-	% "\n"
-	% "    t2  = " % t2 		% "\n"
-	% "          " % show t2	% "\n")
-	Nothing
-
 kindOfType_orDie :: Type -> Kind
 kindOfType_orDie tt
  = let  Just k	= kindOfType tt
@@ -233,16 +226,12 @@ kindOfType_orDie tt
 
 betaTK :: Int -> Type -> Kind -> Kind
 betaTK depth tX kk
- = trace ("betaTK " % tX % "\n") $
-   case kk of
+ = case kk of
  	KNil		-> kk
-	KFun k1 k2	-> KFun k1 (betaTK (depth + 1) tX k2)
 	KCon{}		-> kk
-	KApps k ts	-> KApps k (map (betaTT depth tX) ts)
-	KWitJoin ks	-> kk
-
-	_	-> panic stage
-		$ "betaTK: no match for " % kk
+	KFun k1 k2	-> KFun k1 (betaTK (depth + 1) tX k2)
+	KApp k t	-> KApp (betaTK depth tX k) (betaTT depth tX t)
+	KWitJoin ks	-> KWitJoin $ map (betaTK depth tX) ks
 		
 	
 betaTT :: Int -> Type -> Type -> Type
@@ -259,9 +248,8 @@ betaTT depth tX tt
 	TVar{}		-> tt
 	TVarMore{}	-> tt
 
-	TIndex ix
-	 | ix == depth	-> tX
-	 | ix > depth	-> TIndex (ix - 1)
+	TIndex k ix
+	 | ix == depth	-> down tX
 	 | otherwise	-> tt
 	 	
 	TTop{}		-> tt

@@ -44,7 +44,7 @@ slurpTypesP pp
 --	without having to do a full type reconstruction.
 maybeSlurpTypeX :: Exp -> Maybe Type
 maybeSlurpTypeX	xx
-	| XLAM v k@(KApps{}) x	<- xx
+	| XLAM v k@(KApp{}) x	<- xx
 	, Just x'		<- maybeSlurpTypeX x
 	= Just $ TContext k x'
 

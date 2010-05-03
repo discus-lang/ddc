@@ -487,14 +487,17 @@ instance Monad m => TransM m Type where
 	 	t'		<- followT table t
 		transT table	$ TVarMore k v' t'
 
+	TIndex{}
+	 ->	transT table	$ tt
+
 	TApp t1 t2
 	 -> do	t1'		<- followT table t1
 		t2'		<- followT table t2
-		return		$ TApp t1' t2'
+		transT table	$ TApp t1' t2'
 	
 	TCon tyCon
 	 -> do	tyCon'		<- transZM table tyCon
-	 	return		$ TCon tyCon'
+	 	transT table	$ TCon tyCon'
 
 	-- effect
 	TEffect v ts
@@ -571,11 +574,6 @@ instance Monad m => TransM m Kind where
 	 -> do	k1'	<- followK table k1
 		t2'	<- followT table t2
 		return	$ KApp k1' t2'
-
-	KApps k ts
-	 -> do	k'	<- followK table k
-		ts'	<- followTs table ts
-		return	$ KApps k' ts'
 
 	KWitJoin ks
 	 -> do	ks'	<- mapM (followK table) ks

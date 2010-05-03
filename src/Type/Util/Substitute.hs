@@ -168,12 +168,7 @@ subTTK_cutM sub cut kk
 	 -> do	k1'	<- downK k1
 		t2'	<- downT t2
 		return	$ KApp k1' t2'
-		
-	KApps k ts
-	 -> do	k'	<- downK k
-		ts'	<- mapM downT ts
-		return	$ KApps k' ts'
-	
+			
 	KWitJoin ks
 	 -> do	ks'	<- mapM downK ks
 		return	$ KWitJoin ks'

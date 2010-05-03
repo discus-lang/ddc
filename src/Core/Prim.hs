@@ -48,7 +48,7 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KApps k [TVar kR r]
+ 	KApp k (TVar kR r)
 	 | k    == kDirect
 	 , kR	== kRegion
 	 -> tt { tableDirectRegions 

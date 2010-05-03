@@ -139,7 +139,7 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 --	witness though later on
 makeSuperArgK :: (Bind, Kind) -> Exp
 makeSuperArgK (b, k)
-	| KApps{}	<- k
+	| KApp{}	<- k
 	, Just t	<- inventWitnessOfClass k
 	= XType t
 	

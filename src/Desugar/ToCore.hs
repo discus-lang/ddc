@@ -33,7 +33,6 @@ import qualified Desugar.Slurp.Util	as D
 import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug
 
------
 stage		= "Desugar.ToCore"
 debug		= False
 trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
@@ -84,15 +83,7 @@ toCoreTreeM tree
 toCoreP	:: D.Top Annot	
 	-> CoreM [C.Top]
 
-toCoreP	p
- = do	p'	<- toCoreP' p
-   	trace	(vcat 	[ ppr "Core.Desugar -------" 
-			, ppr p
-			, ppr "--------------------"
-			, ppr p' ])
-		$ return p'
-
-toCoreP' p
+toCoreP p
  = case p of
 	D.PExtern _ v tv (Just to)
 	 -> do
@@ -235,9 +226,6 @@ toCoreS (D.SBind _ (Just v) x)
  = do	
 	-- lookup the generalised type of this binding.
 	Just tScheme	<- lookupType v
-
-	trace	("toCoreS" <> v)		$ return ()
-	trace	("toCoreS" <> show tScheme)	$ return ()
 
  	-- convert the RHS to core.
 	xCore	<- toCoreX x

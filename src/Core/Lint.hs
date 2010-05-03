@@ -176,7 +176,7 @@ checkType tt stack env
 			% "    kind on annot: " % k % "\n"
 			% "    does not match environment: " % k % "\n"
 		 
-	TIndex i
+	TIndex _ i
 	 -> let	getTypeIx 0 (x:xs)	= x
 		getTypeIx n (x:xs)	= getTypeIx (n-1) xs
 		getTypeIx _ []		
@@ -273,7 +273,6 @@ checkKind kk stack env
 	
 
 	-- Old stuff ------------------
-	KApps k ts		-> error "KApps needs to die"
 	KWitJoin ks		-> error "KWitJoin needs to die"
 	
 

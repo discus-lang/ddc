@@ -65,6 +65,7 @@ module Type.Util.Bits
 	
 	-- contexts
 	, addContext
+	, addContexts
 	
 	-- supertypes
 	, unflattenSuper
@@ -535,6 +536,12 @@ addContext c tt
  = case tt of
  	TForall b k t	-> TForall b k (addContext c t)
 	_		-> TContext c tt
+
+addContexts :: [Kind] -> Type -> Type
+addContexts []	   t	= t
+addContexts (k:ks) t	
+	= TContext k (addContexts ks t)
+
 
 -- | Create a superkind.
 unflattenSuper :: [Kind] -> Super -> Super
