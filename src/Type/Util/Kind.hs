@@ -33,6 +33,7 @@ import Type.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+import Data.List
 
 stage		= "Type.Util.Kind"
 
@@ -133,7 +134,7 @@ makeDataKind vs
 -- | Join some kind classes
 makeKSum :: [Kind] -> Kind
 makeKSum ts
- = case ts of
+ = case nub ts of
  	[t]	-> t
 	ts	-> KSum ts
 
