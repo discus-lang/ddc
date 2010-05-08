@@ -20,7 +20,7 @@ data Reply tok a
 
 pReturn
 	:: forall t0 t1 %r0
-	.  t0 -> Parser %r0 !Bot $c0 t1 t0
+	.  t0 -> Parser %r0 !{} $c0 t1 t0
 	:- $c0        = x : t0
 
 pReturn x
