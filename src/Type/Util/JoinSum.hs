@@ -33,16 +33,13 @@ import Control.Monad
 import Util.Pretty
 import DDC.Main.Error
 
------
 stage	= "Type.Util.Join"
-
 
 -- Join all these types.
 --	The value and region portions must be the same.
 --	The effect and closure portions are summed.
 joinSumTs :: Env -> [Type] -> Maybe Type
 joinSumTs env tt@(t:ts)
--- 	= trace (ppr tt) 
 	= foldM (joinTT env) t ts
 
 
@@ -102,10 +99,21 @@ joinTT_work env t1 t2
 	, k1 == kEffect || k1 == kClosure
 	= Just $ makeTSum k1 [t1, t2]
 
+	| TSum k1 ts1		<- t1
+	, Just k2 		<- kindOfType t2
+	, k1 == k2
+	, k1 == kEffect || k1 == kClosure
+	= Just $ makeTSum k1 (t2 : ts1)
+
+	| TSum k2 ts2		<- t2
+	, Just k1		<- kindOfType t1
+	, k1 == k2
+	, k2 == kEffect || k2 == kClosure
+	= Just $ makeTSum k2 (t2 : ts2)
+	
 	| otherwise
 	= panic stage 
 		(	"joinTT: cannot join\n"
---		%>	"env: " % env 	% "\n"
 		%> 	"t1:  " % t1 	% "\n"
 		%> 	"t2:  " % t2)
 		
