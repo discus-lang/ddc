@@ -23,6 +23,7 @@ prettyFoldXLAM		= True
 -------------------------------------------------------------------------------------------------
 sv v		= pprStrPlain $ pv v
 
+sb (BNil)	= "_"
 sb (BVar v)	= pprStrPlain $ pv v
 sb (BMore v t)	= pprStrPlain $ "(" % (pprStrPlain $ pv v) % " :> " % t % ")"
 

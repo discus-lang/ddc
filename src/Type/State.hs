@@ -278,7 +278,7 @@ gotErrors
 -- | Push a new var on the path queue.
 --	This records the fact that we've entered a branch.
 pathEnter :: CBind -> SquidM ()
-pathEnter BNil	= return ()
+pathEnter BNothing	= return ()
 pathEnter v
  = modify (\s -> s { statePath = v : statePath s })
 
@@ -286,7 +286,7 @@ pathEnter v
 -- | Pop a var off the path queue
 --	This records the fact that we've left the branch.
 pathLeave :: CBind -> SquidM ()
-pathLeave BNil	= return ()
+pathLeave BNothing	= return ()
 pathLeave bind
  = do	path	<- gets statePath
 

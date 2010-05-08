@@ -264,7 +264,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 		++ case concat initConstrss of
 			[]	-> []
 			_	-> [CBranch 
-					{ branchBind = BNil
+					{ branchBind = BNothing
 					, branchSub = concat initConstrss }]
 	
 	return	( CtorDef Nothing cName fieldDefs'

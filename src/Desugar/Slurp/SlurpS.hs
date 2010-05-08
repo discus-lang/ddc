@@ -34,7 +34,7 @@ slurpS 	(SBind sp Nothing e1)
 		, tEmpty
 		, SBind (Just (tX, eX)) Nothing x1'
 		, [CBranch
-			{ branchBind	= BNil
+			{ branchBind	= BNothing
 			, branchSub	= qs ++ qsX }])
 
 -- regular bindings

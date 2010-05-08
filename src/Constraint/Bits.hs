@@ -25,7 +25,7 @@ isCBranch b
 takeCBindVs :: CBind -> [Var]
 takeCBindVs cc
  = case cc of
-	BNil		-> []
+	BNothing	-> []
 	BLet    vs	-> vs
  	BLetGroup  vs	-> vs
 
@@ -57,7 +57,7 @@ slurpContains tree
 slurpContains' :: Maybe CBind -> CTree -> [ (CBind, CBind) ]
 slurpContains' mParent tree@(CBranch{})
 
-	| BNil			<- boundVsT 
+	| BNothing		<- boundVsT 
 	= catMap (slurpContains' mParent) (branchSub tree)
 
  	| Nothing		<- mParent

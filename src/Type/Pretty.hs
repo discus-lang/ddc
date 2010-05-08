@@ -24,6 +24,7 @@ stage	= "Type.Pretty"
 instance Pretty Bind PMode where
  ppr xx
   = case xx of
+	BNil		-> ppr "_"
   	BVar v		-> ppr v
 	BMore v t	-> "(" % v % " :> " % t % ")"
 
@@ -41,15 +42,17 @@ pprTypeQuant vsQuant tt
    in  case tt of
  	TNil		-> ppr "@TNil"
 
+	TForall BNil k t 
+	 -> k % " => " % down t
+
 	TForall b k t	
-	 -> let	(bks, tBody) 	= slurpTForall tt
-		vsQuant'	= Set.insert (varOfBind b) vsQuant
+	 -> let	(bks, tBody) 	= slurpVarTForall tt
+		Just v		= takeVarOfBind b
+		vsQuant'	= Set.insert v vsQuant
 	    in	"forall " 
 			% punc " " (map (uncurry pprBindKind) bks) 
 			% ". " 
 			% pprTypeQuant vsQuant' tBody
-
-	TContext c t	-> c % " => " % down t
 
 	TFetters t fs	-> down t % " :- " % ", " %!% fs
 	
@@ -165,6 +168,7 @@ pprVarKind v k
 pprBindKind :: Bind -> Kind -> PrettyM PMode
 pprBindKind bb k
  = case bb of
+	BNil		-> "_ :: " % k
  	BVar v		-> pprVarKind (varWithoutModuleId v) k
 	BMore v t	-> pprVarKind (varWithoutModuleId v) k % " :> " % t
 	
@@ -193,8 +197,9 @@ resultKind kk
 prettyTypeSplit :: Type	-> PrettyM PMode
 prettyTypeSplit	   tt
  = case tt of
+	TForall BNil _ _	-> prettyTypeSplit2 tt
  	TForall b k t
-	 -> let (bks, tBody)	= slurpTForall tt
+	 -> let (bks, tBody)	= slurpVarTForall tt
 	    in	"forall " % punc " " (map (uncurry pprBindKind) bks) % "\n"
 	    		% ".  " % prettyTypeSplit2 tBody
 	 

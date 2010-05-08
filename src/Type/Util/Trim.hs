@@ -132,7 +132,8 @@ trimClosureC' quant rsData cc
 
 	-- add quantified vars to the set
 	TForall b k t		
-	 -> let quant'	= Set.insert (TVar k (varOfBind b)) quant
+	 -> let Just v	= takeVarOfBind b
+		quant'	= Set.insert (TVar k v) quant
 	    in	trimClosureC_start quant' rsData t
 
 	-- free
@@ -208,7 +209,8 @@ trimClosureC_t' tag quant rsData tt
 			
 	-- Trim under foralls
 	TForall b k t		
-	 -> let	quant'	= Set.insert (TVar k (varOfBind b)) quant
+	 -> let	Just v	= takeVarOfBind b
+		quant'	= Set.insert (TVar k v) quant
 	    in	trimClosureC_t tag quant' rsData t
 	
 	TSum k ts	-> catMap down ts

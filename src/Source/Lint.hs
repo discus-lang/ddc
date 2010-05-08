@@ -536,11 +536,6 @@ instance Lint Type where
 	 -> do	k'	<- lint k
 		t'	<- lint t
 		return	$ TForall b k' t'
-
-	TContext k t
-	 -> do	k'	<- lint k
-		t'	<- lint t
-		return	$ TContext k' t'
 		
 	TFetters t fs
 	 | isNil fs	-> death tt "TFetters - list is empty"

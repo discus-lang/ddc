@@ -69,7 +69,8 @@ thread_transX xx
 
 	-- pop lambda bound witnesses on the way back up because we're leaving their scope.
 	| XLAM b k x		<- xx
-	= do	popWitnessVK (varOfBind b) k
+	= do	let Just v	= takeVarOfBind b
+		popWitnessVK v k
 	 	return	xx
 
 	-- pop locally bound witnesses on the way back up because we're leaving their scope.
@@ -88,7 +89,8 @@ thread_transX_enter :: Exp -> ThreadM Exp
 thread_transX_enter xx
  = case xx of
  	XLAM b k x
-	 -> do	pushWitnessVK (varOfBind b) k
+	 -> do	let Just v	= takeVarOfBind b
+		pushWitnessVK v k
 	 	return	xx
 
 	XLocal r vts x

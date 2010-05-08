@@ -46,7 +46,7 @@ maybeSlurpTypeX :: Exp -> Maybe Type
 maybeSlurpTypeX	xx
 	| XLAM v k@(KApp{}) x	<- xx
 	, Just x'		<- maybeSlurpTypeX x
-	= Just $ TContext k x'
+	= Just $ TForall BNil k x'
 
  	| XLAM v k x		<- xx
 	, Just x'		<- maybeSlurpTypeX x
@@ -119,13 +119,13 @@ dropXTau xx env tt
 
 	-- decend into XLAMs
 	| XLAM v t x		<- xx
+	, TForall BNil k1 t2	<- tt
+	= XLAM v t $ dropXTau x env t2
+
+	| XLAM v t x		<- xx
 	, TForall v t1 t2	<- tt
 	= XLAM v t $ dropXTau x env t2
-	
-	| XLAM v t x		<- xx
-	, TContext t1 t2	<- tt
-	= XLAM v t $ dropXTau x env t2
-	
+		
 	-- decend into XLams
 	| XLam v t x eff clo	<- xx
 	, Just (_, t2, _, _)	<- takeTFun tt

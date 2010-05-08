@@ -21,11 +21,10 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
 import Prelude				hiding	(mapM)
-import Type.Util.Bits			(varOfBind)
+import Type.Util.Bits			(takeVarOfBind)
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Debug.Trace		as Debug
-
 
 stage	= "Core.Bind"
 
@@ -118,7 +117,7 @@ bindX 	shared xx
  = case xx of
 	XLAM b k x	
 	 -> do	-- check for regions bound by lambdas
-		let v		= varOfBind b
+		let Just v	= takeVarOfBind b
 
 		-- mark regions in kinds as shared because they are not local
 		--	to the body of the lambda expression 

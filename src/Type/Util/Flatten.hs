@@ -26,8 +26,6 @@ flattenT' sub block tt
 
 	TForall b k t	-> TForall b k (down t)
 
-	TContext k t	-> TContext k (down t)
-
 	TFetters t fs
 	 -> let (fsWhere, fsRest)
 	 		= partition isFWhere fs

@@ -34,7 +34,8 @@ linkType
 linkType mParent bound tt
  = case tt of
 	TForall b k t
-	 -> do	t'	<- linkType mParent (varOfBind b : bound) t
+	 -> do	let Just v	= takeVarOfBind b
+		t'	<- linkType mParent (v : bound) t
 	 	return	$ TForall b k t'
 		
 	TFetters t fs

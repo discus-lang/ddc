@@ -26,15 +26,15 @@ fillLambdas v tScheme x
  =	fillLambdas' Map.empty tScheme x
 	
 fillLambdas' tsWhere tScheme x
- 	| TForall v k tRest		<- tScheme
-	= do	x'	<- fillLambdas' tsWhere tRest x
-		return	$ XLAM v k x'
-	
 	-- Give this witness a new name so we can refer to it later on.
-	| TContext c tRest		<- tScheme
+	| TForall BNil k tRest		<- tScheme
 	= do	x'	<- fillLambdas' tsWhere tRest x
 		v'	<- newVarN NameClass
-		return	$ XLAM (BVar v') c x'
+		return	$ XLAM (BVar v') k x'
+
+ 	| TForall b k tRest		<- tScheme
+	= do	x'	<- fillLambdas' tsWhere tRest x
+		return	$ XLAM b k x'
 
 	| TFetters tRest fs		<- tScheme
 	= do	let tsWhere'	= Map.union tsWhere (Map.fromList [(v, t) | FWhere v t <- fs])

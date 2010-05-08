@@ -261,6 +261,8 @@ followV_bind table v
  	v2	<- transV	table v1
 	return v2
 
+followB_bind table BNil
+ =	return BNil
 
 followB_bind table (BVar v)
  = do	v1	<- transV_bind  table v
@@ -460,11 +462,6 @@ instance Monad m => TransM m Type where
 	 	t2'		<- followT table t2
 	 	transT table	$ TForall b' k1' t2'
 
-	TContext k t
-	 -> do	t'		<- followT table t
-		k'		<- transZM table k
-	 	transT table	$ TContext k' t'
- 	
 	TFetters t1 fs
 	 -> do	t1'		<- followT table t1
 		fs'		<- mapM (followF table) fs

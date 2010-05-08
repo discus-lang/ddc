@@ -256,7 +256,7 @@ slurpX	exp@(XDo sp stmts)
 
 	let vsBind	= catMap letBindsC qsStmts
 	let bindLeave	= case vsBind of
-				[]	-> BNil
+				[]	-> BNothing
 				_	-> BLetGroup vsBind
 			
 	-- The type for this expression is the type of the last statement.

@@ -39,7 +39,8 @@ finaliseT' bound def tt
  = let down	= finaliseT' bound def
    in  case tt of
   	TForall b k t	
-	 -> let	bound'	= Set.insert (varOfBind b) bound
+	 -> let	Just v	= takeVarOfBind b
+		bound'	= Set.insert v bound
 	 	t'	= finaliseT' bound' def t
 	    in	TForall b k t'
 	    

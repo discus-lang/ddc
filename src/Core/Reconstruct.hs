@@ -236,7 +236,7 @@ reconX (XLAM v k@KApp{} x)
    		% "  xT:\n" %> xT	% "\n"
 		% "  xC:\n" %> xC	% "\n\n") $ return ()
 	return	( XLAM 	   v k x'
-		, TContext k xT
+		, TForall BNil k xT
 		, xE
 		, xC)
 
@@ -966,6 +966,25 @@ applyTypeT t1 t2
 	return $ applyTypeT' table t1 t2
 
 applyTypeT' :: Env -> Type -> Type -> Maybe Type
+
+applyTypeT' table t1@(TForall BNil k11 t12) t2
+	-- witnesses must match
+	| Just k2	<- kindOfType t2
+	, packK k11 == packK k2
+	= Just t12
+
+	-- kinds don't match
+	| Just k2	<- kindOfType t2
+	= freakout stage
+		( "applyTypeT: Kind error in type application.\n"
+		% "    caller = " % envCaller table	% "\n"
+		% "    can't apply\n"	%> t2		% "\n\n"
+		% "    to\n"		%> t1		% "\n\n"
+		% "    k11\n"		%> (packK k11)	% "\n\n"
+		% "    K[t2]\n"		%> (packK k2)	% "\n\n")
+		$ Nothing
+
+
 applyTypeT' table (TForall (BVar v) k t1) t2
 	| Just k == kindOfType t2
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
@@ -1009,22 +1028,6 @@ applyTypeT' table (TForall (BMore v tB) k t1) t2
 		$ Nothing
 	
 
-applyTypeT' table t1@(TContext k11 t12) t2
-	-- witnesses must match
-	| Just k2	<- kindOfType t2
-	, packK k11 == packK k2
-	= Just t12
-
-	-- kinds don't match
-	| Just k2	<- kindOfType t2
-	= freakout stage
-		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % envCaller table	% "\n"
-		% "    can't apply\n"	%> t2		% "\n\n"
-		% "    to\n"		%> t1		% "\n\n"
-		% "    k11\n"		%> (packK k11)	% "\n\n"
-		% "    K[t2]\n"		%> (packK k2)	% "\n\n")
-		$ Nothing
 
 
 applyTypeT' table (TFetters t1 fs) t

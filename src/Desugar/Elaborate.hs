@@ -75,8 +75,10 @@ elaborateT_fun tt
 	let free	= Set.filter (not . Var.isCtorName) $ freeVars tt'
 	
 	-- see what vars are already quantified in this scheme
-	let (bks, _)	= slurpTForall tt'
-	let quantVs	= Set.fromList $ map (varOfBind . fst) bks
+	let (bks, _)		= slurpVarTForall tt'
+	let Just quantVs	= liftM Set.fromList 
+				$ sequence
+				$ map (takeVarOfBind . fst) bks
 	
 	(tt_rs, newRs)	<- elaborateRsT newVarN tt'
 	

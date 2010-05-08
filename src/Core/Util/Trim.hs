@@ -131,12 +131,14 @@ trimClosureC' quant rsData cc
 		(down c)
 		(catMaybes $ map (trimClosureC_f quant rsData) fs) 
 
-	TContext fs t
-	 -> trimClosureC quant rsData t
 	
 	-- Erase the quantifier if the var is no longer free in the type
+	TForall BNil k t
+	 -> trimClosureC quant rsData t
+
 	TForall b k t		
-	 -> let quant'	= Set.insert (varOfBind b) quant
+	 -> let Just v	= takeVarOfBind b
+		quant'	= Set.insert v quant
 	    in  trimClosureC quant' rsData t
 
 	TFree tag (TVar k v)
@@ -185,8 +187,12 @@ trimClosureC_t quant rsData tt
 	    		$ down c
 
 	-- Trim under foralls
+	TForall BNil k t
+	 -> down t
+	
 	TForall b k t		
-	 -> let quant'	= Set.insert (varOfBind b) quant
+	 -> let Just v	= takeVarOfBind b
+		quant'	= Set.insert v quant
 	    in  trimClosureC_t quant' rsData t
 
 	TSum k ts	-> catMap down ts
@@ -216,10 +222,6 @@ trimClosureC_t quant rsData tt
 	TEffect{}	-> []
 	TFree v t	-> [trimClosureC quant rsData tt]
 	 	 
-	-- Don't care about contexts
-	TContext t1 t2
-	 -> down t2
-
 	_ -> panic stage
 		$ "trimClosureC_t: no match for (" % tt % ")"
 

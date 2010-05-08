@@ -245,8 +245,8 @@ toCoreS	D.SSig{}
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
- = trace ("toCoreX: " % xx % "\n") $
-   case xx of
+{- = trace ("toCoreX: " % xx % "\n") $ -}
+ =  case xx of
 
 	D.XLambdaTEC 
 		_ v x (T.TVar kV vTV) eff clo
@@ -398,10 +398,10 @@ toCoreX xx
 		-- lookup the var for the projection function to use
 		projResolve	<- gets coreProjResolve
 
-		trace 	( "XProjTagged\n"
+{-		trace 	( "XProjTagged\n"
 			% "    vTagInst  = " % vTagInst		% "\n")
 			$ return ()
-		
+-}		
 		let vProj
 		 	= case Map.lookup vTagInst projResolve of
 				Nothing	-> panic stage
@@ -540,7 +540,10 @@ toCoreVarInst v vT
 			
 		-- Work out what types belong to each quantified var in the type
 		--	being instantiated.			
-		let tsSub	= Map.fromList $ zip (map (T.varOfBind . fst) btsForall) tsInstC_packed
+		let Just vsSub	= sequence $ map (T.takeVarOfBind . fst) btsForall
+
+		let tsSub	= Map.fromList 
+				$ zip vsSub tsInstC_packed
 
 		-- If this function needs a witnesses we'll just make them up.
 		--	Real witnesses will be threaded through in a later stage.

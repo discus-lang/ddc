@@ -16,7 +16,7 @@ module Type.Util.Bits
 	, takeValueArityOfType
 	
 	-- projections
-	, varOfBind
+	, takeVarOfBind
 	, takeBindingVarF
 	, takeCidOfTClass
 	
@@ -44,7 +44,7 @@ module Type.Util.Bits
 	-- forall
 	, makeTForall_front
 	, makeTForall_back
-	, slurpTForall
+	, slurpVarTForall
 	, makeKFuns
 
 	-- witnesses
@@ -146,7 +146,6 @@ takeValueArityOfType tt
  = case tt of
 	TNil		-> Nothing
 	TForall	b k t	-> takeValueArityOfType t
-	TContext k t	-> takeValueArityOfType t
 	TFetters t fs	-> takeValueArityOfType t
 	TConstrain t cs	-> takeValueArityOfType t
 
@@ -173,11 +172,13 @@ takeValueArityOfType tt
 
 -- Projections -------------------------------------------------------------------------------------
 -- | Get the var from a forall binder
-varOfBind :: Bind -> Var
-varOfBind bb
+takeVarOfBind :: Bind -> (Maybe Var)
+takeVarOfBind bb
  = case bb of
- 	BVar v		-> v
-	BMore v t	-> v
+	BNil		-> Nothing
+ 	BVar v		-> Just v
+	BMore v t	-> Just v
+
 
 takeCidOfTClass :: Type -> Maybe ClassId
 takeCidOfTClass (TClass k cid)	= Just cid
@@ -346,12 +347,16 @@ makeTForall_back vks tt
 	= TForall (BVar v) k (makeTForall_back vksRest tt)
 
 
--- | Slurp forall bindings from this type
-slurpTForall :: Type -> ([(Bind, Kind)], Type)
-slurpTForall tt
+-- | Slurp forall bindings that bind vars from this type
+slurpVarTForall :: Type -> ([(Bind, Kind)], Type)
+slurpVarTForall tt
  = case tt of
- 	TForall b k t	
-	 -> let	(bksRest, tRest)	= slurpTForall t
+ 	TForall b@BVar{} k t	
+	 -> let	(bksRest, tRest)	= slurpVarTForall t
+	    in	( (b, k) : bksRest, tRest)
+
+ 	TForall b@BMore{} k t	
+	 -> let	(bksRest, tRest)	= slurpVarTForall t
 	    in	( (b, k) : bksRest, tRest)
 	    
 	_ -> ([], tt)
@@ -435,7 +440,6 @@ toFetterFormT tt
  = let down = toFetterFormT 
    in case tt of
 	TForall    b k t	-> TForall b k (down t)
-	TContext   k t		-> TContext k (down t)
 	TFetters   t fs		-> TFetters (down t) fs
 
 	TConstrain t (Constraints { crsEq, crsMore, crsOther })
@@ -463,7 +467,6 @@ toConstrainFormT tt
  = let down = toConstrainFormT
    in  case tt of
 	TForall    b k t	-> TForall b k (down t)
-	TContext   k t		-> TContext k (down t)
 
 	TFetters t fs
 	 -> let	crsEq		= Map.fromList [(t1, toConstrainFormT t2) | FWhere t1 t2 <- fs]
@@ -518,15 +521,16 @@ addConstraints' crs@(Constraints crsEq crsMore crsOther) tt
 -- | Add a new type class context to a type,
 --	pushing it under any enclosing foralls.
 addContext :: Kind -> Type -> Type
-addContext c tt
+addContext k tt
  = case tt of
- 	TForall b k t	-> TForall b k (addContext c t)
-	_		-> TContext c tt
+ 	TForall b@BVar{}  k t	-> TForall b k (addContext k t)
+ 	TForall b@BMore{} k t	-> TForall b k (addContext k t)
+	_			-> TForall BNil k tt
 
 addContexts :: [Kind] -> Type -> Type
 addContexts []	   t	= t
 addContexts (k:ks) t	
-	= TContext k (addContexts ks t)
+	= TForall BNil k (addContexts ks t)
 
 
 -- | Create a superkind.
@@ -541,5 +545,4 @@ stripToBodyT tt
  = case tt of
  	TForall  v k t		-> stripToBodyT t
 	TFetters t fs		-> stripToBodyT t
-	TContext c t		-> stripToBodyT t
 	_			-> tt

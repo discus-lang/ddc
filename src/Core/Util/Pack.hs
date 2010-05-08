@@ -35,14 +35,16 @@ packT1 :: Type -> Type
 packT1 tt 
  = case tt of
 	-- push foralls under closure tags
+	TForall BNil k1 t2
+	 -> TForall BNil (packK k1) (packT1 t2)
+
+
 	TForall v1 k1 tBody
 	 -> case packT1 tBody of
 	 	TFree v2 t2	-> TFree v2 (TForall v1 k1 t2)
 		tBody'		-> TForall v1 k1 tBody'
 		
 	 
-	TContext k1 t2
-	 -> TContext (packK k1) (packT1 t2)
 
 	TFetters t1 fs
 	 -> let t1'	= packT1 t1
@@ -277,8 +279,6 @@ inlineTWheresMapT sub block tt
 
 	    in	makeTFetters tFlat fsMore
 
-
-	TContext l t		-> TContext l 	(down t)
 	TSum     k ts		-> TSum  k 	(map down ts)
 	    
 	TVar k v	

@@ -88,8 +88,8 @@ rewriteAppX env xx
 	= let	
 		-- Get the forall bound vars that are out the front of the type scheme
 		--	for the overloaded variable.
-		(bksDecl, _tBodyDecl)	= slurpTForall $ infoOverloadedType infoOverloaded
-		vsDeclQuantVars		= map (varOfBind . fst) bksDecl
+		(bksDecl, _tBodyDecl)	= slurpVarTForall $ infoOverloadedType infoOverloaded
+		Just vsDeclQuantVars	= sequence $ map (takeVarOfBind . fst) bksDecl
 
 		-- Get the type arguments from the application. 
 		--	There should be the same number of type args as quantified
@@ -312,7 +312,7 @@ instantiateT' sub t1 (t2 : ts)
 		then instantiateT' (Map.insert (TVar k11 v) t2 sub) t12 ts
 		else instantiateT' sub t12 ts
 	
-	| TContext k11 t12		<- t1
+	| TForall BNil k11 t12		<- t1
 	, Just k2			<- kindOfType t2
 --	, subTTK_noLoops sub k11 == k2								-- BUGS!!!
 	= instantiateT' sub t12 ts
@@ -344,7 +344,7 @@ slurpContextT tt
 	
 slurpContextT' tt ksContext
  = case tt of
-	TContext k1 t2
+	TForall BNil k1 t2
 	 -> slurpContextT' t2 (ksContext ++ [k1])
 	
 	_ -> (ksContext, tt)

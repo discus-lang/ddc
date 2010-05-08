@@ -20,6 +20,14 @@ stripSchemeT tt
  
 stripSchemeT' forallVTs fsAcc classes tt
  = case tt of
+	TForall BNil k tRest
+	 -> stripSchemeT' 
+	 		forallVTs 
+			fsAcc 
+			(classes ++ [k])
+			tRest
+	
+
  	TForall v t tRest 
 	 -> stripSchemeT' 
 	 		(forallVTs ++ [(v, t)]) 
@@ -34,13 +42,6 @@ stripSchemeT' forallVTs fsAcc classes tt
 			classes 
 			tRest
 
-	TContext  c tRest		
-	 -> stripSchemeT' 
-	 		forallVTs 
-			fsAcc 
-			(classes ++ [c])
-			tRest
-
 	_ ->    ( forallVTs
 	     	, fsAcc
 		, classes
@@ -51,13 +52,15 @@ stripSchemeT' forallVTs fsAcc classes tt
 -----
 buildScheme ::	[(Bind, Kind)] -> [Fetter] -> [Kind] -> Type -> Type
 buildScheme	forallVTs bindVTs classes shape
- = let	tC	= foldl (\s c	   -> TContext c s)  shape	$ reverse classes
+ = let	tC	= foldl (\s k	   -> TForall BNil k s)  shape	
+		$ reverse classes
 
 	tL	= case bindVTs of
 			[]	-> tC
 			_	-> TFetters tC bindVTs
 
- 	tF	= foldl (\s (v, t) -> TForall v t s) tL 	$ reverse forallVTs
+ 	tF	= foldl (\s (v, t) -> TForall v t s) tL 	
+		$ reverse forallVTs
 
    in	tF
 
@@ -74,6 +77,11 @@ slurpForallsT tt
 slurpForallContextT :: Type -> ([Type], [Kind])
 slurpForallContextT tt
  = case tt of
+	TForall BNil k1 t2	
+	 -> let (vs, ks) = slurpForallContextT t2
+	    in	( vs
+	        , k1 : ks)
+
  	TForall b k t2	
 	 -> let	tBind	= case b of
 	 			BVar v 		-> TVar k v
@@ -84,10 +92,6 @@ slurpForallContextT tt
 	    in	( tBind : vs
 	    	, ks)
 
-	TContext k1 t2	
-	 -> let (vs, ks) = slurpForallContextT t2
-	    in	( vs
-	        , k1 : ks)
 
 	TFetters t1 fs
 	 -> slurpForallContextT t1
@@ -100,7 +104,7 @@ slurpForallContextT tt
 stripContextT :: Type -> Type
 stripContextT tt
  = case tt of
- 	TContext c t		-> stripContextT t
+ 	TForall BNil k t	-> stripContextT t
 	TFetters t fs		-> TFetters (stripContextT t) fs
 	_			-> tt
 

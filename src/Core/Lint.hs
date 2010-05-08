@@ -106,10 +106,6 @@ checkType tt stack env
 		   	withBound v t1 env' 	$!
 		   	checkType t2 (k1 : stack)
 	
-	TContext k1 t2
-	 ->	checkKind k1 stack env
-	 `seq`	KFun k1 (checkType t2 stack env)
-
 	-- TODO: Add fetters to environment.
 	TFetters t1 fs
 	 ->	lintList lintF fs env

@@ -50,7 +50,7 @@ slurpA	alt@(AAlt sp gs x)
 	let cbindsGuards	= concat cbindssGuards
 	let bind 
 		| []	<- cbindsGuards
-		= BNil
+		= BNothing
 		
 		| otherwise
 		= BDecon [vDeconT | (vDeconV, vDeconT) <- cbindsGuards]

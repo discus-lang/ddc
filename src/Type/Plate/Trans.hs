@@ -131,6 +131,8 @@ instance Monad m => TransM m ClassId
 instance Monad m => TransM m Bind where
  transZM table tt
   = case tt of
+	BNil ->	return BNil
+
   	BVar v
 	 -> do	v'	<- transZM table v
 	 	return	$ BVar v'
@@ -161,11 +163,6 @@ followT table tt
 	 	k'	<- transZM table k
 	 	t'	<- transZM table t
 		return	$ TForall b' k' t'
-
-	TContext k t
-	 -> do	k'	<- transZM table k
-	 	t'	<- transZM table t
-		return	$ TContext k' t'
 
 	TFetters t fs
 	 -> do	t'	<- transZM table t

@@ -41,13 +41,16 @@ instantiateT_table
 
 instantiateT_table instF tt
  = case tt of
+	TForall BNil _ _
+	 ->	return (tt, [])
+	
  	TForall b k tBody
 	 -> do	-- split of the quantifier so we can instantiate all the vars at once
-	 	let (bks, tBody) = slurpTForall tt
+	 	let (bks, tBody) = slurpVarTForall tt
 	 
 		-- build a table mapping each of the forall bound variables
 		--	to a new instance variable.
-	 	let  vs		= map (varOfBind . fst) bks
+	 	let  Just vs	= sequence $ map (takeVarOfBind . fst) bks
 	 	Just vsI	<- liftM sequence $ mapM instF vs
 		let table	= Map.fromList $ zip vs vsI
 				

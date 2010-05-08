@@ -93,7 +93,7 @@ instance Pretty CTree PMode where
 instance Pretty CBind PMode where
  ppr bb	
   = case bb of
-	BNil		-> ppr "@BNil"
+	BNothing	-> ppr "@BNothing"
   	BLet 	v	-> "@BLet "		% v
 	BLetGroup vs	-> "@BLetGroup "	% vs
 	BLambda	v 	-> "@BLambda "		% v

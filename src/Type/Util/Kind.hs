@@ -193,7 +193,6 @@ kindOfType' tt
 	 -> betaTK 0 t2 k12
 	
 	TForall  b t1 t2	-> kindOfType' t2
-	TContext t1 t2		-> kindOfType' t2
 	TFetters t1 _		-> kindOfType' t1
 	TConstrain t1 crs	-> kindOfType' t1
 		
@@ -234,7 +233,6 @@ betaTT depth tX tt
    in  case tt of
    	TNil		-> tt
 	TForall b k t	-> TForall b k (down t)
-	TContext k t	-> TContext k (down t)
 	TFetters t fs	-> TFetters (down t) fs
 	TApp t1 t2	-> TApp (down t1) (down t2)
 	TSum k ts	-> TSum k (map down ts)
@@ -269,6 +267,6 @@ isClosure tt
 	TDanger{}		-> True
 	TFetters t1 _		-> isClosure t1
 	TConstrain t1 _		-> isClosure t1
-	TContext   _  t1	-> isClosure t1
+	TForall _ _ t1		-> isClosure t1
 	_			-> False
 

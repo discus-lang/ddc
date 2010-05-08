@@ -95,7 +95,6 @@ superOpTypePart	tt
 
 	-- skip over type information
 	TForall v k t		-> superOpTypePart t
-	TContext c t		-> superOpTypePart t
 	TFetters t fs		-> superOpTypePart t
 
 	-- an unboxed var of airity zero, eg Int32#

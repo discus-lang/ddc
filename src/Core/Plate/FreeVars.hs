@@ -11,7 +11,7 @@ import Shared.FreeVars
 import DDC.Main.Error
 import DDC.Var
 import Type.Plate.FreeVars	()
-import Type.Util.Bits		(varOfBind)
+import Type.Util.Bits		(takeVarOfBind)
 import Type.Pretty		()
 import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))
@@ -32,11 +32,12 @@ instance FreeVars Exp where
 	 	[ singleton v
 		, freeVars t ]
 
-	XLAM v k e
-	 -> unions 
-	 	[ freeVars k
-		, freeVars e ]
-		\\ Set.singleton (varOfBind v)
+	XLAM b k e
+	 -> let Just v	= takeVarOfBind b
+	    in  unions 
+	 		[ freeVars k
+			, freeVars e ]
+			\\ Set.singleton v
 
 	XAPP x t
 	 -> unions

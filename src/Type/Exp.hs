@@ -98,11 +98,8 @@ data Type
 	-- | Type application.
 	| TApp		Type	Type
 
-	-- | Quantification
-	--   TODO: Refactor TContext into TForall, using a new `Bind` constructor BNil.
-	--         TContext is equivalent to (forall (_ :: k). t)
+	-- | Quantification.
 	| TForall	Bind 	Kind	Type
-	| TContext		Kind	Type
 
 	-- Constrained types.
 	-- TODO: We are currently moving the representation from TFetters to TConstrain.
@@ -140,8 +137,11 @@ data Type
 --	as well as various helper constructors used in parsing/printing and type inference.
 data Bind
 
+	-- | No binding.
+	= BNil
+
 	-- | Unbounded quantification.
-	= BVar	Var
+	| BVar	Var
 	
 	-- | Bounded quantification. Type of bound variable is :> t2.
 	| BMore	Var Type

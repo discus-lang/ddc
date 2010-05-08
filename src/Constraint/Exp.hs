@@ -138,7 +138,7 @@ data	CTree
 --
 data	CBind
 	-- nothing is bound here
-	= BNil		
+	= BNothing
 	
 	-- | Delimits the scope of a group of mutually recursive let bindings
 	| BLetGroup	[Var]

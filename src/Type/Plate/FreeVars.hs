@@ -23,6 +23,11 @@ instance FreeVars Type where
 	TNil
 	 -> empty
 
+	TForall BNil k t
+	 -> unions
+		[ freeVars k
+		, freeVars t ]
+
 	TForall (BVar v) k t
 	 -> (unions 
 	 	[ freeVars k
@@ -34,9 +39,6 @@ instance FreeVars Type where
 		, freeVars k
 		, freeVars t2])	\\ singleton v
 	 
-	TContext k t
-	 -> union (freeVars k) (freeVars t)
-
 	TFetters t fs
 	 -> union (freeVars fs) (freeVars t)
 	 	\\ (fromList [ v | FWhere (TVar k v) _ <- fs])

@@ -98,11 +98,6 @@ subTT_cutM' sub cut tt
 		k'	<- downK k
 	 	return	$ TForall v k' t'
 
-	TContext k t
-	 -> do	t'	<- down t
-		k'	<- downK k
-		return	$ TContext k' t'
-
 	TFetters t fs
 	 -> do	t'	<- down t
 		fs'	<- mapM (subTTf_cutM' sub cut) fs
