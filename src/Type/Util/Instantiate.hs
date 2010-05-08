@@ -14,7 +14,10 @@ import qualified Data.Map	as Map
 
 
 -- | Instantiate a type scheme using the provided gn to create
---	the new variables.
+--   the new variables.
+--   TODO: Make this a a pure function, and require the caller to supply enough
+--	   fresh varaibles to perform the instantiation.
+--         Instantiation should be just type-type application.	
 instantiateT 
 	:: Monad m
 	=> (Var -> m (Maybe Var))

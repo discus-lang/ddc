@@ -8,7 +8,6 @@ module Type.Exp
 	, Kind		(..)
 	, Type		(..)
 	, Bind		(..)
-	, Index
 	, Constraints	(..)
 	, TProj		(..)
 	, Fetter  	(..)
@@ -33,10 +32,12 @@ import DDC.Var
 data Super
 	-- | (+) "prop" Properties. 
 	--   The occurrence of a type level witness who's superkind has this as the result,
-	--   guarantees some property of a program. eg: MkConst %r1 :: Const %r1 :: +
+	--   guarantees some property of a program. 
+	--   eg: MkConst %r1 :: Const %r1 :: +
 	= SProp			
 
-	-- | ([]) "box" The super-kind of some non-property encoding kind. eg: 5 :: Int :: * :: []
+	-- | ([]) "box" The super-kind of some non-property encoding kind. 
+	--   eg: 5 :: Int :: * :: []
 	| SBox			
 	
 	-- | Super-Kind functions.
@@ -46,10 +47,8 @@ data Super
 
 -- Kinds ------------------------------------------------------------------------------------------
 data Kind
-	=
-	  -- | A missing kind annot.
-	  --	TODO: Remove this if it's not being used.
-	  KNil
+	-- | Missing or as-yet-unknown kind information.
+	= KNil
 
 	-- | Kind constructor.
 	| KCon	   KiCon Super
@@ -62,13 +61,15 @@ data Kind
 	| KApp	   Kind	 Type
 
 	-- Old stuff that needs refactoring -----------------------------------
+	-- Factor this out. If we move to represent TWitJoin as TSum then that's 
+	-- already got the kind encoded in it and we won't need this constructor.
 	| KWitJoin	[Kind]		-- ^ Joining of witnesses
 	deriving (Show, Eq)	
 
 
 -- Type --------------------------------------------------------------------------------------------
 data Type	
-	-- | Missing type information. Filled in by Core.Reconstruct.
+	-- | Missing or as-yet-unknown type information. 
 	= TNil
 
 	-- | Quantification
@@ -121,6 +122,7 @@ data Type
 	| TError	Kind TypeError
 
 	-- Helpers used in source and desugarer only ----------------
+	-- Refactor this to be application of a special constructor.
 	| TElaborate	Elaboration Type
 
 
@@ -135,9 +137,14 @@ data Type
 
   	-- Witness Joining.
 	-- Used in core language only.
-	-- We could perhaps create a family of specific joining functions
-	-- instead but dealing with all the different combinations of argument
-	-- types would be too much pain..
+	
+	-- TODO: Refactor this to use TSum.
+	--       ie, represent  MkPureJoin e1 e2 w1 w2
+        --
+	--      w1 :: Pure e1   w2 :: Pure e2
+	--     ------------------------------
+	--      (w1 \/ w2) :: Pure (e1 \/ e2)
+	-- 
 	| TWitJoin	[Witness]
 
 	deriving (Show, Eq)
@@ -150,10 +157,6 @@ data Bind
 	| BMore	Var Type			-- ^ bounded quantification. Type of v1 must be :> t2
 	deriving (Show, Eq)
 
--- We use de Bruijn indicies in the kinds of witness constructors.
--- TODO: remove this synonym. We don't use it outside this module.
-type Index
-	= Int
 
 -- | Constraints that can act on a type.
 --	Some functions that act on types, packType in particular, want to do lots 
