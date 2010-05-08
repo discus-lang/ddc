@@ -99,9 +99,6 @@ instance FreeVars Type where
 	 	[ Set.singleton v
 		, freeVars t]
 	
-	TWitJoin ts
-	 -> unions $ map freeVars ts
-
 	TIndex{}	-> empty
 	
 

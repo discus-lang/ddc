@@ -610,7 +610,6 @@ instance Lint Type where
 	TClass{}	-> death tt "TClass - shouldn't exist in source program"
 	TError{}	-> death tt "TError - shouldn't exist in source program"
 	TVarMore{}	-> death tt "TVarMore - shouldn't exist in source program"
-	TWitJoin{}	-> death tt "TWitJoin - shouldn't exist in source program"
 	
 	
 -- Fetter -----------------------------------------------------------------------------------------

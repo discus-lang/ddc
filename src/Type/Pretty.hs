@@ -128,8 +128,6 @@ pprTypeQuant vsQuant tt
 			then	"*" % v
 			else	ppr v)
 
-	TWitJoin wits	-> "wjoin {" % "; " %!% wits % "}"
-
 	TIndex k ix
 	 -> ppr (resultKind k) % ix
 
@@ -279,7 +277,9 @@ instance Pretty Kind PMode where
 	KCon k s	-> ppr k
 	KFun k1 k2	-> k1 % " -> " % k2
 	KApp k1 t1	-> k1 % " " % prettyTB t1
-	KWitJoin ks	-> "join " % "{" % punc "; " ks % "}"
+
+	KSum [k]	-> ppr k
+	KSum ks		-> "+" % (braces $ punc ", " ks)
 
 
 -- | Pretty print a kind, wrapping funs in parens

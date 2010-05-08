@@ -31,8 +31,8 @@ instance Docable Kind Str where
 		[ DNode "k1" $ doc k1
 		, DNode "t2" $ doc t2 ]
 		
-	KWitJoin ks
-	 -> DNode "KWitJoin"
+	KSum ks
+	 -> DNode "KSum"
 	  $ DList $ map doc ks
 	
 	

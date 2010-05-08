@@ -24,8 +24,8 @@ instance DeepSeq Kind where
 	KCon 		c  s		-> deepSeq c  $! deepSeq s  y
 	KFun		k1 k2		-> deepSeq k1 $! deepSeq k2 y
 	KApp		k1 t2		-> deepSeq k1 $! deepSeq t2 y
-	KWitJoin 	ks		-> deepSeq ks y
-
+	KSum		ks		-> deepSeq ks y
+	
 
 instance DeepSeq KiCon where
  deepSeq xx y
@@ -61,7 +61,6 @@ instance DeepSeq Type where
 	TError		k err		-> deepSeq k y
 	TVarMore	k v t		-> deepSeq k  $! deepSeq v $! deepSeq t y
 	TIndex		k i 		-> deepSeq k  $! deepSeq i y
-	TWitJoin	ws		-> deepSeq ws y
 
 
 instance DeepSeq Elaboration

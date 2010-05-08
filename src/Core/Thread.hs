@@ -111,9 +111,9 @@ rewriteWitness
 rewriteWitness tt
  = case tt of
 	-- handle compound witnesses
-	TWitJoin ts
+	TSum k@(KSum{}) ts
 	 -> do	ts'	<- mapM rewriteWitness' ts
-		return	$ makeTWitJoin ts'
+		return	$ TSum k ts'
 
 	_	-> rewriteWitness' tt
 
@@ -193,8 +193,9 @@ buildPureWitness eff@(TEffect vE [tR@(TVar kR vR)])
 buildPureWitness eff@(TSum kE _)
  	| kE	== kEffect
  	= do	let effs	= flattenTSum eff
- 		wits		<- mapM buildPureWitness effs
-		return		$ TWitJoin wits
+ 		ts		<- mapM buildPureWitness effs
+		let Just ks	= sequence $ map kindOfType ts
+		return		$ makeTSum (makeKSum ks) ts
 
 buildPureWitness eff@(TVar kE vE)
  	| kE	== kEffect

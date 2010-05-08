@@ -169,9 +169,9 @@ subTTK_cutM sub cut kk
 		t2'	<- downT t2
 		return	$ KApp k1' t2'
 			
-	KWitJoin ks
+	KSum ks
 	 -> do	ks'	<- mapM downK ks
-		return	$ KWitJoin ks'
+		return	$ KSum ks'
 		
 	
 subTT_enter sub cut tt

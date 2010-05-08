@@ -9,12 +9,12 @@ module Type.Util.Kind
 	, tyConKind
 
 	-- witnesses
-	, makeKWitJoin
 	, inventWitnessOfClass
 
 	-- kind functions
 	, makeKFun
 	, makeKApps
+	, makeKSum
 	, takeKApps
 	, resultKind
 	, makeDataKind
@@ -130,14 +130,15 @@ makeDataKind vs
 	$ reverse vs
 
 
--- Witnesses ---------------------------------------------------------------------------------------
 -- | Join some kind classes
-makeKWitJoin :: [Kind] -> Kind
-makeKWitJoin ts
+makeKSum :: [Kind] -> Kind
+makeKSum ts
  = case ts of
  	[t]	-> t
-	ts	-> KWitJoin ts
+	ts	-> KSum ts
 
+
+-- Witnesses ---------------------------------------------------------------------------------------
 
 -- | Invent a place-holder witness that satisfies a type class constraint.
 --	This is used in Desugar.ToCore when we don't know how to properly construct the
@@ -204,13 +205,7 @@ kindOfType' tt
 
 	TError k _		-> k
 	TElaborate e t		-> kindOfType' t
-	
-	-- used in core -----------------------------------------------------
-	-- The KJoins get crushed during Core.Util.Pack.packK
-	TWitJoin ts
-	 | ks			<- map kindOfType' ts
-	 -> makeKWitJoin ks
-			
+				
 	-- some of the helper constructors don't have real kinds ------------
 	_			-> panic stage $ "kindOfType bad kind for: " % tt
 
@@ -231,7 +226,7 @@ betaTK depth tX kk
 	KCon{}		-> kk
 	KFun k1 k2	-> KFun k1 (betaTK (depth + 1) tX k2)
 	KApp k t	-> KApp (betaTK depth tX k) (betaTT depth tX t)
-	KWitJoin ks	-> KWitJoin $ map (betaTK depth tX) ks
+	KSum ks		-> KSum $ map (betaTK depth tX) ks
 		
 	
 betaTT :: Int -> Type -> Type -> Type
@@ -256,8 +251,6 @@ betaTT depth tX tt
 	TBot{}		-> tt
 	TEffect v ts	-> TEffect v (map down ts)
 	TFree v t	-> TFree v (down t)
-
-	TWitJoin ts	-> TWitJoin (map down ts)
 
 	_	-> panic stage
 		$ "betaTT: no match for " % tt

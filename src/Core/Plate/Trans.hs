@@ -512,11 +512,6 @@ instance Monad m => TransM m Type where
 	    	t'		<- followT table t
 		transT table	$ TFree v' t'
 
-	TWitJoin ts
-	 -> do	ts'	<- followTs table ts
-	 	return	$ TWitJoin ts'
-
-
 	_ 	-> panic stage
 		$  "transZM[Type]: no match for " % show tt
 
@@ -575,9 +570,9 @@ instance Monad m => TransM m Kind where
 		t2'	<- followT table t2
 		return	$ KApp k1' t2'
 
-	KWitJoin ks
+	KSum ks
 	 -> do	ks'	<- mapM (followK table) ks
-	 	return	$ KWitJoin ks'
+	 	return	$ KSum ks'
 
 -----
 instance Monad m => TransM m Stmt where

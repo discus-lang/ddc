@@ -48,7 +48,6 @@ module Type.Util.Bits
 	, makeKFuns
 
 	-- witnesses
-	, makeTWitJoin
 	, makeTWitness
 	, takeTWitness
 
@@ -172,7 +171,6 @@ takeValueArityOfType tt
 	TClass{}	-> Just 0
 	TError{}	-> Nothing
 	TVarMore{}	-> Just 0
-	TWitJoin{}	-> Nothing
 	
 
 -- Projections -------------------------------------------------------------------------------------
@@ -370,14 +368,6 @@ makeKFuns (k:ks) kk	= KFun k (makeKFuns ks kk)
 
 
 -- Witnesses ---------------------------------------------------------------------------------------
--- | Join some witnesses together
-makeTWitJoin :: [Type] -> Type
-makeTWitJoin ts
- = case ts of
- 	[t]	-> t
-	ts	-> TWitJoin ts
-
-
 -- | Make a witness application.
 makeTWitness :: TyConWitness -> Kind -> [Type] -> Type
 makeTWitness con k ts

@@ -271,9 +271,10 @@ checkKind kk stack env
 	 , checkType t1 stack env == k1
 	 -> 	checkKind k12 stack env
 	
-
-	-- Old stuff ------------------
-	KWitJoin ks		-> error "KWitJoin needs to die"
+	KSum []	-> SProp
+	KSum (k:ks)
+	 -> 	checkKind k stack env
+	 `seq`	checkKind (KSum ks) stack env
 	
 
 lintSuper :: Super -> ()

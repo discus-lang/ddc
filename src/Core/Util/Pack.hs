@@ -17,9 +17,7 @@ import Type.Util		hiding (flattenT)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
------
 stage	= "Core.Util.Pack"
-
 
 -- | Pack a type into standard form.
 packT :: Type -> Type
@@ -76,18 +74,25 @@ packT1 tt
 			| tyCon == TyConWitnessMkDeepConst 
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
-			= makeTWitJoin 
-			    	$ (   map (\r -> TApp tMkConst     r) rs
-				   ++ map (\d -> TApp tMkDeepConst d) ds)
+			= let 	ts       =  map (\r -> TApp tMkConst     r) rs
+				         ++ map (\d -> TApp tMkDeepConst d) ds
 
+				Just ks  =  sequence $ map kindOfType ts
+			      
+			  in 	makeTSum (KSum ks) ts
+			
 			-- crush MutableT on the way
 			| tyCon == TyConWitnessMkDeepMutable
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
-			= makeTWitJoin 
-			    	$ (   map (\r -> TApp tMkMutable     r) rs
-				   ++ map (\d -> TApp tMkDeepMutable d) ds)
-
+			= let	ts	=  map (\r -> TApp tMkMutable     r) rs
+				   	++ map (\d -> TApp tMkDeepMutable d) ds
+				
+				Just ks	= sequence $ map kindOfType ts
+				
+			  in	makeTSum (KSum ks) ts
+			
+			-- leave it alone.
 			| otherwise
 			= TApp t1 t2'
 	    in	result
@@ -173,9 +178,7 @@ packT1 tt
 			TFree v2 t2X			-> TFree v1 t2X
 			TSum k ts | k == kClosure	-> TSum kClosure (map (TFree v1) ts)
 			_				-> TFree v1 t2'
-						
-	TWitJoin ts
-	 -> makeTWitJoin (map packT1 ts)
+
 	
 	_ -> panic stage
 		$ "packT: no match for " % tt % "\n"
@@ -211,21 +214,21 @@ packK1 kk
 	, Just _		<- takeTData t1
 	, kc == kDeepMutable
 	, (rs, ds)		<- slurpVarsRD t1
-	= makeKWitJoin 
-		$  map (\r -> KApp kMutable     r) rs
+	= makeKSum
+	 	$  map (\r -> KApp kMutable     r) rs
 		++ map (\d -> KApp kDeepMutable d) ds
-	
+				
 	-- crush DeepConst on the way
 	| KApp kc t1	<- kk
 	, Just _		<- takeTData t1
 	, kc == kDeepConst
 	, (rs, ds)		<- slurpVarsRD t1
-	= makeKWitJoin 
+	= makeKSum
 		$  map (\r -> KApp kConst     r) rs
 		++ map (\d -> KApp kDeepConst d) ds
 
 	-- Join purification witness kinds
-	| KWitJoin ks		<- kk
+	| KSum ks		<- kk
 	, Just tsEffs		<- sequence $ map takeKClass_pure ks
 	, Just ksEffs		<- sequence $ map kindOfType tsEffs
 	, and $ map (== kEffect) ksEffs

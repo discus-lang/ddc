@@ -239,10 +239,6 @@ followT table tt
 		t'	<- transZM table t
 		return	$ TVarMore k' v' t'
 
-	TWitJoin ts
-	 -> do	ts'	<- transZM table ts
-	 	return	$ TWitJoin ts'
-
 	TIndex{}	-> return tt
 				
 -- TyCon -------------------------------------------------------------------------------------------
