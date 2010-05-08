@@ -51,9 +51,6 @@ joinTT :: Env -> Type -> Type -> Maybe Type
 -- Flip the args around to put the easy-to-unify argument first.
 --	this means that the code for joinTT_work can get by with less cases.
 joinTT env t1 t2
-	| TBot{}		<- t2
-	= joinTT_work env t2 t1
-
 	| TVar{}		<- t2
 	= joinTT_work env t2 t1
 
@@ -92,10 +89,6 @@ joinTT_work env t1 t2
 	, TCon c2		<- t2
 	, c1 == c2	
 	= Just $ TCon c1
-
-	| TBot k1		<- t1
-	, Just k2		<- kindOfType t2
-	= Just $ TBot k1
 
 	| TVar k1 v1		<- t1
 	, Just k2		<- kindOfType t2

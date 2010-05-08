@@ -120,9 +120,6 @@ trimClosureC' quant rsData cc
 	 | otherwise		-> TVarMore kClosure v $ down cMore
 
 
-	TBot  _			-> cc
-	TTop  _ 		-> cc
-
 	-- Trim all the elements of a sum
 	TSum  _ cs	
 	 -> makeTSum kClosure 
@@ -149,7 +146,7 @@ trimClosureC' quant rsData cc
 	 --	then it is closed and can safely be erased.
 	 | Set.member v quant	-> tEmpty
 		
-	TFree tag (TBot _)	-> tEmpty
+	TFree tag (TSum _ [])	-> tEmpty
 		
 	-- Trim either a data or closure element of a closure
 	--	We need this dispatch because the right hand side of a 
@@ -195,9 +192,6 @@ trimClosureC_t quant rsData tt
 	TSum k ts	-> catMap down ts
 	
 	TCon{}		-> []
-
-	TBot{}		-> []
-	TTop{}		-> [tt]
 
 	-- TODO: We don't know if which of these type are actually tangible data, so we have
 	--       to assume they all are. If a type is only used as the parameter/return of a

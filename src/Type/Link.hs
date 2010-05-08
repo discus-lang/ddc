@@ -70,10 +70,6 @@ linkType mParent bound tt
 		 Just cid
 		  -> do	return	$ TClass k cid
 
-	-- top/bot
-	TTop k	-> return tt
-	TBot k	-> return tt
-
 	-- effect
 	TEffect v ts
 	 -> do	ts'	<- mapM (linkType mParent bound) ts

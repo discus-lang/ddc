@@ -169,9 +169,6 @@ subFollowVT' sub block tt
 	 	Nothing		-> tt
 		Just t'		-> subFollowVT' sub (Set.insert v block) t'
 		
-	TTop{}			-> tt
-	TBot{}			-> tt
-		
 	TEffect v ts		-> TEffect v (map down ts)
 	
 	TFree v t		-> TFree v (down t)

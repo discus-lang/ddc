@@ -64,7 +64,7 @@ reduceContextF tShape classInstances ff
 
 	-- Purity constraints on bottom effects can be removed.
 	--	This doesn't give us any useful information.
-	| FConstraint v [TBot kE]	<- ff
+	| FConstraint v [TSum kE []]	<- ff
 	, kE	== kEffect
 	, v 	== primPure 
 	= []

@@ -575,14 +575,6 @@ instance Lint Type where
 		return	$ TVar k' v'
 
 	TIndex{}	-> death tt "TIndex - shouldn't exist in source program"
-
-	TTop k		
-	 -> do	k'	<- lint k
-		return	$ TTop k'
-
-	TBot k		
-	 -> do	k'	<- lint k
-		return	$ TBot k'
 	 	
 	-- effect
 	TEffect v ts

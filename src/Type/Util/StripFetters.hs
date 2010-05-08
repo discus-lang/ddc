@@ -71,8 +71,6 @@ stripFWheresT justMono	tt
 	TCon tc	-> (tt, [])
 
  	TVar{}	-> (tt, [])
-	TBot{}	-> (tt, [])
-	TTop{}	-> (tt, [])
 		
 	-- effect
 	TEffect v ts

@@ -474,10 +474,7 @@ instance Monad m => TransM m Type where
 	TSum k ts
 	 -> do	ts'		<- followTs table ts
 	 	transT table	$ TSum k ts'
-	
-	TTop{}			-> transT table tt
-	TBot{}			-> transT table tt
-	
+		
 	TVar k v
 	 -> do	v'		<- followV_free table v
 	 	transT table	$ TVar k v'

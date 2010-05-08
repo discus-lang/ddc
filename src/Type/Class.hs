@@ -400,8 +400,8 @@ mergeClasses2 cids cs
 		, classQueue	=  nub
 				$  catMaybes
 				$  map (\t -> case t of
-						TBot _	-> Nothing
-						_	-> Just t)
+						TSum _ []	-> Nothing
+						_		-> Just t)
 				$  concat (map classQueue cs)
 				++ concat (map (maybeToList . classType) cs)
 
@@ -571,9 +571,9 @@ traceDownLeftSpine tt
 	TClass _ cid
 	 -> do	Just cls	<- lookupClass cid
 		case classType cls of
-			Just t@TBot{}	-> return $ Just [TClass (classKind cls) cid]
-		 	Just t		-> traceDownLeftSpine t
-			Nothing		-> return $ Nothing
+			Just t@(TSum _ [])	-> return $ Just [TClass (classKind cls) cid]
+		 	Just t			-> traceDownLeftSpine t
+			Nothing			-> return $ Nothing
 			
 	TApp t11 t12
 	 -> do	mtsLeft	<- traceDownLeftSpine t11

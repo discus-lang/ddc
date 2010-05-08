@@ -21,14 +21,11 @@ import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
------
 stage	= "Type.Feed"
 
 debug	= False
 trace ss
  = when debug $ traceM ss
-
-
 
 -- feedConstraint ----------------------------------------------------------------------------------
 -- | Add a new constraint to the type graph.
@@ -162,15 +159,6 @@ feedType'	mParent t
 	 -> do 	cidT		<- makeClassV ?src k v 
 		returnJ		$ TClass k cidT
 
-	TBot kind
-	 -> do	cid		<- allocClass (Just kind)
-		addNode cid	$ TBot kind
-		returnJ		$ TClass kind cid
-
-	TTop kind
-	 -> do	cid		<- allocClass (Just kind)
-		addNode cid	$ TTop kind
-		returnJ		$ TClass kind cid
 
 	-- effect
 	TEffect v ts
@@ -253,14 +241,6 @@ feedType1
 		
 feedType1 mParent tt
  = case tt of
-	TTop k
-	 | elem k [kEffect, kClosure]	
-	 -> returnJ tt
-	 
-	TBot k
-	 | elem k [kEffect, kClosure]
-	 -> returnJ tt
-
 	TSum k []
 	 ->	returnJ tt
  

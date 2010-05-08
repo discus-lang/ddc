@@ -98,9 +98,6 @@ pprTypeQuant vsQuant tt
 	TCon tycon	-> ppr tycon
 
 	TVar k v	-> pprVarKind v k 
-
-	TTop k		-> prettyKB k % "Top"
-	TBot k		-> prettyKB k % "Bot"
 		
 	-- effect
 	TEffect    v []	-> ppr v
@@ -151,8 +148,6 @@ prettyTB t
 	TSum{}		-> ppr t
 	TEffect v []	-> ppr t
 	TClass{}	-> ppr t
-	TBot{}		-> ppr t
-	TTop{}		-> ppr t
 	TCon{}		-> ppr t
 	_		-> "(" % t % ")"
 
@@ -280,15 +275,6 @@ instance Pretty Kind PMode where
 
 	KSum [k]	-> ppr k
 	KSum ks		-> "+" % (braces $ punc ", " ks)
-
-
--- | Pretty print a kind, wrapping funs in parens
-prettyKB :: Kind -> PrettyM PMode
-prettyKB kk
- = case kk of
-	KFun{}		-> "(" % kk % ")"
-	KApp{}		-> "(" % kk % ")"
-	_		-> ppr kk
 
 	
 -- InstanceInfo ------------------------------------------------------------------------------------

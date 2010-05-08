@@ -75,8 +75,9 @@ tMkPure		= TCon $ TyConWitness TyConWitnessMkPure
 
 
 -- Type Constructors -------------------------------------------------------------------------
-tPure	= TBot kEffect
-tEmpty	= TBot kClosure
+tBot k	= TSum k	[]
+tPure	= TSum kEffect  []
+tEmpty	= TSum kClosure []
 
 
 -- | Get the type constructor for a bool of this format.

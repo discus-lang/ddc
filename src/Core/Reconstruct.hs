@@ -160,7 +160,7 @@ reconP (PBind v x)
 		xE''		= simplifyE $ maskConstRead xE'
 
 		maskConstRead :: Effect -> Effect
-		maskConstRead	e@(TBot _)	= e
+		maskConstRead	e@(TSum _ [])	= e
 		maskConstRead	e@(TEffect v rs)
 		 | v == primRead
 		 , all isConst rs
@@ -171,7 +171,7 @@ reconP (PBind v x)
 		isConst (TVar k r)
 		 = (k == kRegion) && (isJust . Map.lookup r $ envWitnessConst tt)
 
-		simplifyE e@(TBot _) = e
+		simplifyE e@(TSum _ []) = e
 		simplifyE (TSum k es)
 		 | null es'		= tPure
 		 | null (drop 1 es')	= head es'

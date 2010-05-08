@@ -162,8 +162,6 @@ takeValueArityOfType tt
 	TCon{}		-> Just 0
 	TVar{}		-> Just 0
 	TIndex{}	-> Nothing
-	TTop{}		-> Nothing
-	TBot{}		-> Nothing
 	TEffect{}	-> Nothing
 	TFree{}		-> Nothing
 	TDanger{}	-> Nothing
@@ -225,7 +223,6 @@ crushT1 tt
 makeTSum :: Kind -> [Type] -> Type
 makeTSum k ts
  = case nub $ catMap flattenTSum ts of
- 	[]	-> TBot k
 	[t']	-> t'
 	ts'	-> TSum k ts'
 
@@ -233,9 +230,8 @@ makeTSum k ts
 flattenTSum :: Type -> [Type]
 flattenTSum tt
  = case tt of
-	TBot k			-> []
 	TSum k ts		-> catMap flattenTSum ts
-	TFree v (TBot k)	-> []
+	TFree v (TSum k [])	-> []
 	_			-> [tt]
 
 

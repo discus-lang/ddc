@@ -129,12 +129,12 @@ rewriteWitness' tt
 		return $ TVar k vW
 
 	-- purity of no effects is trivial
-	| Just (TyConWitnessMkPure, _, [TBot kE])	<- mClass
+	| Just (TyConWitnessMkPure, _, [TSum kE []])	<- mClass
 	, kE	== kEffect
 	= return tt
 
 	-- empty of no closure is trivial
-	| Just (TyConWitnessMkEmpty, _, [TBot kC]) 	<- mClass
+	| Just (TyConWitnessMkEmpty, _, [TSum kC []]) 	<- mClass
 	, kC	== kClosure
 	= return tt
 

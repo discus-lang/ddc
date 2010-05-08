@@ -66,7 +66,7 @@ makeOpTypeT tt
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 , Just t1'			<- makeOpTypeT2 t1
 	 , Just t2'			<- makeOpTypeT  t2
-	 -> Just $ makeTFun t1' t2' (TBot kEffect) (TBot kClosure)
+	 -> Just $ makeTFun t1' t2' tPure tEmpty
 	 
 	 | Just (v, k, ts)		<- takeTData tt
 	 -> makeOpTypeData tt
@@ -176,9 +176,6 @@ slurpVarsRD' tt
 	= if k == kRegion || k == kValue
 		then [tt]
 		else []
-
-	| TTop{}	<- tt	= []
-	| TBot{}	<- tt	= []
 
 	| TEffect{}	<- tt	= []
 	| TFree{}	<- tt	= []

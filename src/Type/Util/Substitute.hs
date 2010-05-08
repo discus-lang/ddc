@@ -125,10 +125,7 @@ subTT_cutM' sub cut tt
 		return	$ TApp t1' t2'
 		
 	TCon{}		-> return tt
-		
-	TTop{}		-> return tt
-	TBot{}		-> return tt
-		
+				
 	TEffect v ts
 	 -> do	ts'	<- mapM down ts
 	 	return	$ TEffect v ts'

@@ -51,8 +51,6 @@ instance DeepSeq Type where
 	TSum		k ts		-> deepSeq k  $! deepSeq ts y
 	TCon		c		-> deepSeq c y
 	TVar		k v		-> deepSeq k  $! deepSeq v y
-	TTop		k		-> deepSeq k y
-	TBot		k		-> deepSeq k y
 	TEffect		v ts		-> deepSeq v  $! deepSeq ts y
 	TFree		v t		-> deepSeq v  $! deepSeq t y
 	TDanger		t1 t2		-> deepSeq t1 $! deepSeq t2 y

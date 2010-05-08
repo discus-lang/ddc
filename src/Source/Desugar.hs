@@ -718,8 +718,8 @@ instance Rewrite Type Type where
 	
 	TCon{}		-> return tt
 	TVar{}		-> return tt
-	TBot{}		-> return tt
-	TTop{}		-> return tt
+
+	TSum _ []	-> return tt
 
 	TEffect v ts
 	 -> do	ts'	<- mapM rewrite ts

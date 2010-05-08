@@ -94,7 +94,7 @@ crushProj_withObj cidT src fProj cObj tObj
 	let result
 		-- This isn't a type constructor, hopefully something will be unified
 		--	into it later. Just return without doing anything more.
-		| TBot{}			<- tObj
+		| TSum _ []			<- tObj
 		= do	trace $ ppr "    -- We don't have an object type, deferring.\n\n"
 
 			-- Reactivate the class so we get called again during the next grind.

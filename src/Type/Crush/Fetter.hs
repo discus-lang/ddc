@@ -311,7 +311,7 @@ crushFetterSingle_fromGraph cid k tNode vC
 		 TCon{}	-> return $ Just []
 
 		 -- Constraining a closure or effect to be mutable doesn't mean anything useful
-		 TBot k
+		 TSum k []
 		  | k == kRegion	-> return $ Just [ FConstraint primConst [TClass k cid] ]
 		  | k == kClosure	-> return $ Just []
 		  | k == kEffect	-> return $ Just []
@@ -331,7 +331,7 @@ crushFetterSingle_fromGraph cid k tNode vC
 		 TCon{} -> return $ Just []
 
 		 -- Constraining a closure or effect to be mutable doesn't mean anything useful.
-		 TBot k
+		 TSum k []
 		  | k == kRegion	-> return $ Just [ FConstraint primMutable [TClass k cid] ]
 		  | k == kClosure	-> return $ Just []
 		  | k == kEffect	-> return $ Just []

@@ -87,9 +87,6 @@ visibleRsT tt
 
 	TVar{}			-> Set.empty
 	TCon{}			-> Set.empty
-	TBot{}			-> Set.empty
-	TTop{}			-> Set.empty
-
 
 	-- data
 	TApp t1 t2

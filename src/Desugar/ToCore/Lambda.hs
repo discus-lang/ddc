@@ -57,7 +57,7 @@ loadEffAnnot ee
 	 -> do	Just tE		<- lookupType vE
 		return	$ flattenT $ stripContextT tE
 
- 	TBot kE
+ 	TSum kE []
 	 | kE == kEffect
 	 -> 	return	$ tPure
 
@@ -75,7 +75,7 @@ loadCloAnnot cc
 	 	return 	$ trimClosureC Set.empty Set.empty 
 			$ flattenT $ stripContextT tC
 			 
-	TBot kC
+	TSum kC []
 	 | kC == kClosure 	
 	 -> 	return	$ tEmpty
 

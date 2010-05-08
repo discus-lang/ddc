@@ -90,10 +90,6 @@ data Type
 	-- | A type constructor.
 	| TCon		TyCon
 
-	-- | TODO: Ditch TBot and refactor TTop into TCon.
-	| TBot		Kind
-	| TTop		Kind
-
 	-- | A type summation \/ least upper bound.
 	--   Used for joining effect, closure, and witness types.
 	--   If there are no elements in the list this means "bottom"

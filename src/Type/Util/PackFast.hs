@@ -169,8 +169,6 @@ packTypeCrsSub' config crsEq subbed tt
 	    in	TApp t1' t2'
 	
 	TCon{}	-> tt
-	TBot{}	-> tt
-	TTop{}	-> tt
 	
 	TEffect v ts
 	 -> let ts'	= map (packTypeCrsSub config crsEq subbed) ts
@@ -295,12 +293,12 @@ packTypeCrsSubF config crsEq subbed ff
 isBoringEqConstraint :: Type -> Type -> Bool
 isBoringEqConstraint t1 t2
  = case t2 of
-	TBot k
+	TSum k []
 	 ->  k == kEffect
 	 ||  k == kClosure
 	
 	-- types in TFrees can be rewritten to TBot by the closure trimmer.
-	TFree _ (TBot k)
+	TFree _ (TSum k [])
 	 -> k == kClosure
 	
 	-- constraint is interesting.

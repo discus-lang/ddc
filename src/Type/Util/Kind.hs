@@ -186,8 +186,6 @@ kindOfType' tt
 	TVarMore k _ _		-> k
 	TIndex k _		-> k
 	TCon tyCon		-> (tyConKind tyCon)
-	TBot k			-> k
-	TTop k			-> k
 	TSum  k _		-> k
 
 	TApp t1 t2		
@@ -248,8 +246,6 @@ betaTT depth tX tt
 	 | ix == depth	-> down tX
 	 | otherwise	-> tt
 	 	
-	TTop{}		-> tt
-	TBot{}		-> tt
 	TEffect v ts	-> TEffect v (map down ts)
 	TFree v t	-> TFree v (down t)
 
@@ -271,9 +267,6 @@ isClosure tt
 	TClass	 k _		-> k == kClosure
 	TFree{}			-> True
 	TDanger{}		-> True
-	TTop	k 		-> k == kClosure
-	TBot	k 		-> k == kClosure
-
 	TFetters t1 _		-> isClosure t1
 	TConstrain t1 _		-> isClosure t1
 	TContext   _  t1	-> isClosure t1

@@ -105,7 +105,7 @@ makeCtorType newVarN vData vs name fs
 -- | Replace bottoms in this type with fresh variables.
 elabBot newVarN tt
  = case tt of
- 	TBot k	
+ 	TSum k []
 	 -> do	let Just nameSpace = spaceOfKind k
 		v	<- newVarN nameSpace
 	 	return	$ TVar k v

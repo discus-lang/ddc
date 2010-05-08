@@ -17,7 +17,6 @@ import DDC.Main.Error
 import Type.Pretty		()
 import qualified Data.Set	as Set
 
------
 stage	= "Type.Plug"
 
 -- | For classIds in this type that are not present in the environment set,
@@ -85,7 +84,6 @@ staticRsDataT tt
 	TError{}		-> Set.empty
 	
 	TCon{}			-> Set.empty
-	TBot{}			-> Set.empty
 
 	-- for data containing function objects
 	TEffect{}		-> Set.empty

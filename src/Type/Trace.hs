@@ -138,14 +138,14 @@ loadTypeNodes3 cidBody (cidReach1 : cidsReach)
 
 	-- We don't need to return TBot constraints.
 	--	If a variable has no constraint its already :> Bot.
-	| TBot k	<- tBody
+	| TSum k []	<- tBody
 	= loadTypeNodes cidBody cidsReach 
 		fsTFree fsAccEq fsAccMore fsAccOther
 	
 	-- Trim closures as early as possible to avoid wasing time in later stages.
 	| resultKind k == kClosure
 	= case trimClosureC_constrainForm Set.empty Set.empty $ toConstrainFormT tBody of
-		TFree _ (TBot _)	
+		TFree _ (TSum _ [])	
 		 -> loadTypeNodes cidBody cidsReach 
 			fsTFree fsAccEq fsAccMore fsAccOther
 		

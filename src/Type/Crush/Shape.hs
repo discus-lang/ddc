@@ -162,7 +162,7 @@ pushTemplate tTemplate srcShape cMerge
 
 	-- if this class does not have a constructor then we 
 	--	can push the template into it.
-	| Class { classType = Just (TBot k) }	<- cMerge
+	| Class { classType = Just (TSum k []) }	<- cMerge
 	= do	
 		tPush	<- freshenType tTemplate
 		trace 	$ "  - merge class\n"
@@ -204,7 +204,7 @@ freshenCid cid
  	cid'	<- allocClass (Just k)
 	updateClass cid'
 		(classInit cid' k)
-			{ classType = Just (TBot k) }
+			{ classType = Just (tBot k) }
 
 	return	cid'
  

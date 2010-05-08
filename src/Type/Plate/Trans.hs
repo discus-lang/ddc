@@ -197,12 +197,6 @@ followT table tt
 	 -> do	tycon'	<- transZM table tycon
 	 	return	$ TCon tycon'
 
-	TTop k
-	 -> do	return	$ tt
-	 
-	TBot k
-	 -> do	return	$ tt
-
 	-- effect
 	TEffect v ts
 	 -> do	v'	<- transZM table v

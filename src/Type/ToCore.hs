@@ -103,10 +103,6 @@ toCoreT' table tt
 	 	Nothing		-> TVar     (toCoreK k) v 
 		Just tMore	-> TVarMore (toCoreK k) v (toCoreT' (Map.delete v table) tMore)
 
-	TBot k		-> TBot (toCoreK k)
-
-	TTop k		-> TTop (toCoreK k)
-
 	TCon tyCon	-> TCon (toCoreTyCon tyCon)
 
 	-- data

@@ -185,13 +185,6 @@ checkType tt stack env
 			
 	    in	getTypeIx i stack
 
-	TTop k	
-	  -> 	checkKind k stack env 
-	  `seq` k
-
-	TBot k	
-	  -> 	checkKind k stack env
-	  `seq`	k
 {-						
 	
 	TEffect v ts

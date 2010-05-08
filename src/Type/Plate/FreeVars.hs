@@ -60,20 +60,6 @@ instance FreeVars Type where
 	
  	TVar k v	-> singleton v
 
-	TTop k	-> empty
-	TBot k	-> empty
-
-	-- data
-{-	TFun t1 t2 eff clo
-	 -> unions
-	 	[ freeVars t1
-		, freeVars t2
-		, freeVars eff
-		, freeVars clo ]
-
-	TData k v ts	
-	 -> union (singleton v) (freeVars ts)
--}	
 	-- effect
 	TEffect v ts
 	 -> union (singleton v) (freeVars ts)

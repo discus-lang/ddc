@@ -781,9 +781,6 @@ instance Rename Type where
 	 -> do	tc'	<- rename tc
 	 	return	$ TCon tc'
 
-	TTop k 	 -> return tt
-	TBot k	 -> return tt
-
 	-- effect
 	TEffect v rs
 	 -> do 	v'	<- linkN NameEffect v

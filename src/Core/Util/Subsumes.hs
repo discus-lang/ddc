@@ -98,15 +98,6 @@ subsumes3 table t s
 	| t == s
 	= (True, "SubRefl")
 
-	-- SubTop
-	-- top subsumes everything
-	| TTop _		<- t
-	= (True, "SubTop")
-
-	-- SubBot
-	-- anything subsumes bottom
-	| TBot _		<- s
-	= (True, "SubBot")
 
 	-- SubVarTrans
 	--	This handles both SubVar and SubTrans.

@@ -72,9 +72,9 @@ crushUnifyClass_unify cidT c
 	let queue_clean	
 		= filter 
 			(\x -> case x of
-				TVar{}	-> False
-				TBot{}	-> False
-				_	-> True)
+				TVar{}		-> False
+				TSum _ []	-> False
+				_		-> True)
 			((maybeToList $ classType c) ++ classQueue c)
 
 	trace	$ "    queue_clean  = " % show queue_clean % "\n"
@@ -82,7 +82,7 @@ crushUnifyClass_unify cidT c
 	-- If there is nothing left in the queue, or there's only one element
 	--	then we're done. Otherwise call the reall unifier.
 	t_final	<- case queue_clean of
-			[] 	-> return	$ TBot (classKind c)
+			[] 	-> return	$ tBot (classKind c)
 			[t] 	-> return	$ t
 			_  	-> crushUnifyClass_merge cidT c queue_clean
 			

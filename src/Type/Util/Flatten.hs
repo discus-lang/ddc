@@ -76,9 +76,6 @@ flattenT' sub block tt
 	 	Just t	-> flattenT' sub (Set.insert tt block) t
 		Nothing	-> tt
 
-	TTop{}			-> tt
-	TBot{}			-> tt
-
 	TEffect v ts		-> TEffect v (map down ts)
 
 	TFree v t		-> TFree v (down t)

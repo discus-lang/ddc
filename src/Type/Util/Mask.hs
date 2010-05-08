@@ -21,7 +21,7 @@ maskReadWriteNotIn rsKeep eff
 		| TEffect vE [TVar kRegion r]	<- e
 		, elem vE [primRead, primWrite]
 		, not $ Set.member r rsKeep
-		= TBot kEffect
+		= tPure
 	
 		| otherwise
 		= e

@@ -119,8 +119,6 @@ packT1 tt
 	TIndex{}	-> tt
 
 	TCon{}		-> tt
-	TBot{}		-> tt
-	TTop{} 		-> tt
 	 
 	-- effect
 	-- crush compound effects along the way
@@ -174,7 +172,6 @@ packT1 tt
 	TFree v1 t2
 	 -> let	t2'	= packT1 t2
 	    in	case t2' of
-	    		TBot k    | k == kClosure	-> tEmpty
 			TFree v2 t2X			-> TFree v1 t2X
 			TSum k ts | k == kClosure	-> TSum kClosure (map (TFree v1) ts)
 			_				-> TFree v1 t2'
@@ -310,8 +307,6 @@ inlineTWheresMapT sub block tt
 	 	Just t	-> inlineTWheresMapT sub (Set.insert v block) t
 		_	-> tt
 		
-    	TTop{}			-> tt
-	TBot{}			-> tt
     	TCon{}			-> tt
     
 	TApp t1 t2		-> TApp (down t1) (down t2)

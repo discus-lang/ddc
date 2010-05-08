@@ -42,7 +42,7 @@ instance Pretty Top PMode where
 	 -> v % "\n"
 		% " =      " %> e  % ";\n"
 
-	PExtern v (TBot k) tv
+	PExtern v (TSum k []) tv
 	 | k == kValue
 	 -> "extern " % v % ";\n"
 	

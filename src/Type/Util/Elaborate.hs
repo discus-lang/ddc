@@ -52,9 +52,9 @@ elaborateRsT newVar tt
 elaborateRsT' tt
 -- = trace ("elaborateRsT' " % tt)
  = case tt of
-	TVar{}	-> return (tt, [])
-	TTop{}	-> return (tt, [])
-	TBot{}	-> return (tt, [])
+	TVar{}	  -> return (tt, [])
+
+	TSum _ [] -> return (tt, [])
 
 	TForall b k x	
 	 -> do	(x', vks')	<- elaborateRsT' x
@@ -176,7 +176,7 @@ elabRs2 args kind
 hasKind k tt
  = case tt of
  	TVar k2 _	-> k == k2
-	TBot k2		-> k == k2
+	TSum k2 _	-> k == k2
 	_		-> False
 
 
@@ -262,7 +262,7 @@ elaborateCloT' env tt
 		--	in the constraint is just Bot.
 		let (fNew, cloAnnot)
 			= case fNewClo of 
-				FWhere _ (TBot kClosure)	-> (Nothing, TBot kClosure)
+				FWhere _ (TSum kClosure [])	-> (Nothing, TSum kClosure [])
 				_				-> (Just fNewClo, cloVarC)
 
 		return	( makeTFun t1 t2' eff cloAnnot
@@ -369,7 +369,7 @@ hookEffT hookVar tt
 	
 	-- The right-most function has no effects on it.
 	--	Add the hook var that we were given.
-	| Just (t1, t2, TBot kEffect, clo)	<- takeTFun tt
+	| Just (t1, t2, TSum kEffect [], clo)	<- takeTFun tt
 	= Just	( makeTFun t1 t2 (TVar kEffect hookVar) clo
 	  	, hookVar
 		, Nothing )

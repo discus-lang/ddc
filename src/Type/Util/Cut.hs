@@ -114,8 +114,6 @@ cutT cidsCut tt
 	TSum  k ts		-> TSum k (map down ts)
 	TVar{}			-> tt
 	TCon{}			-> tt
-	TTop{}			-> tt
-	TBot{}			-> tt
 
 	TApp	t1 t2		-> TApp (down t1) (down t2)
 	TEffect	v ts		-> TEffect v (map down ts)

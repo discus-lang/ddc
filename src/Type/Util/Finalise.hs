@@ -13,7 +13,6 @@ import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import Util
 
------
 stage	= "Type.Util.Finalise"
 
 -- | After all constraints are processed, 
@@ -74,17 +73,14 @@ finaliseT' bound def tt
 	TCon{}		-> tt 
 	TVar  k v
 	 	| elem k [kEffect, kClosure]
-		, not $ Set.member v bound	-> TBot k
+		, not $ Set.member v bound	-> tBot k
 	 
 	 	| def
 		, elem k [kValue]
 		, not $ Set.member v bound	-> makeTData primTUnit k []
 	 
 		| otherwise			-> tt
-		
-	TTop{}		-> tt
-	TBot{}		-> tt
-	
+			
 	TApp t1 t2	-> TApp (down t1) (down t2)
 	
 	TEffect v ts	-> TEffect v (map down ts)

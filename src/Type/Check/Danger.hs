@@ -33,7 +33,6 @@ dangerT rsMutable fsClosure tt
  	TVar{}			-> Set.empty
 	TCon{}			-> Set.empty
 	TClass{}		-> Set.empty
-	TBot{}			-> Set.empty
 
 	TForall b k t		
 	 -> dangerT rsMutable fsClosure t
@@ -65,7 +64,7 @@ dangerT rsMutable fsClosure tt
 	TApp{}
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> let cloDanger	
-	 		| TBot kC <- clo
+	 		| TSum kC [] <- clo
 			, kC	== kClosure
 			= Set.empty
 

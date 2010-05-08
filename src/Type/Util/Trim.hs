@@ -105,7 +105,7 @@ trimClosureC' quant rsData cc
 	--	and not part of the closure
 	TVar k v
 		| Set.member cc quant 	
-		-> TBot kClosure
+		-> tEmpty
 
 		| otherwise		
 		-> makeTSum kClosure
@@ -117,9 +117,6 @@ trimClosureC' quant rsData cc
 		-> makeTSum kClosure
 			$ cc : [TDanger r cc	| r	<- Set.toList rsData
 						, r /= cc]
-
-	TBot k	-> cc
-	TTop k	-> cc
 
 	-- Trim all the elements of a sum
 	TSum k cs	
@@ -217,8 +214,6 @@ trimClosureC_t' tag quant rsData tt
 	TSum k ts	-> catMap down ts
 
 	TCon{}		-> []
-	TBot{}		-> []
-	TTop{}		-> [tt]
 
 	-- when we enter into a data object remember that we're under its primary region.
 	TApp{}

@@ -16,7 +16,6 @@ import DDC.Main.Error
 import DDC.Var
 import qualified DDC.Var.PrimId	as Var
 
------
 debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effect"
@@ -193,7 +192,7 @@ crushEffectT_node cid eff effSrc tNode
 		  -> do	let  mesBits	
 				= map (\t -> case t of
 						TCon{}		-> Nothing
-						TBot{}		-> Nothing
+						TSum _ []	-> Nothing
 						TClass k _
 						 | k == kRegion	 -> Just (TEffect primRead  [t])
 						 | k == kEffect  -> Nothing
@@ -216,7 +215,7 @@ crushEffectT_node cid eff effSrc tNode
 		  -> do	let  mesBits	
 				= map (\t -> case t of
 						TCon{}		-> Nothing
-						TBot{}		-> Nothing
+						TSum _ []	-> Nothing
 						TClass k _
 						 | k == kRegion	 -> Just (TEffect primWrite  [t])
 						 | k == kEffect  -> Nothing
@@ -246,7 +245,6 @@ isCrushable eff
 	 
 	TClass{}	-> False
 	TVar{}		-> False
-	TBot{}		-> False
 	_ 		->  panic stage $ "isCrushable: no match for " % eff % "\n"
 
 

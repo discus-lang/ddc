@@ -30,7 +30,6 @@ import qualified Data.Set		as Set
 import qualified Util.Data.Map		as Map
 import qualified Shared.VarUtil		as Var
 
------
 stage	= "Desugar.Project"
 
 -- State ------------------------------------------------------------------------------------------
@@ -488,7 +487,7 @@ addProjDataP projMap p
 	_		-> [p]
 
 varToTBot v
-	= TBot (kindOfSpace $ varNameSpace v)
+	= tBot (kindOfSpace $ varNameSpace v) 
 	
 
 -- | Add default field projections to dictionaries for data types.

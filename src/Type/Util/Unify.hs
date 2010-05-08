@@ -34,11 +34,6 @@ unifyTypes t1 t2
 	, TFree{}		<- t2
 	= Just [(t1, t2)]
 
-	| TBot k1		<- t1
-	, TBot k2		<- t2
-	, k1 == k2
-	= Just []
-
 	-- We need to factor this one out.
 	| TEffect{}		<- t1
 	, TEffect{}		<- t2
@@ -73,17 +68,6 @@ unifyTypes t1 t2
 	, kindOfType t1 == Just k2
 	= Just [(t1, t2)]
 
-
-
-	-- force something to be bot
-	| TBot k1		<- t1
-	, Just k1 == kindOfType t2
-	= Just [(t1, t2)]
-
-	| TBot k2		<- t2
-	, kindOfType t1 == Just k2
-	= Just [(t1, t2)]
-	
 
 	| otherwise	
 	= Nothing		

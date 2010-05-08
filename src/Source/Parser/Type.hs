@@ -272,17 +272,21 @@ pType_body1
 
 pConBottom :: Parser Type
 pConBottom
- =	do	con <-  pConNamed "*Bot"
- 		return $ TBot kValue
+ =	do	pTok	K.Star
+		pCParen $ return []
+		return	$ tBot kValue
 
- <|>	do	con <-  pConNamed "%Bot"
-        	return $ TBot kRegion
+ <|>	do	pTok	K.Percent
+		pCParen $ return []
+        	return $ tBot kRegion
 
- <|>	do	con <-  pConNamed "!Bot"
-        	return $ TBot kEffect
+ <|>	do	pTok	K.Bang
+		pCParen $ return []
+        	return $ tBot kEffect
 
- <|>	do	con <-  pConNamed "$Bot"
-        	return $ TBot kClosure
+ <|>	do	pTok	K.Dollar
+		pCParen $ return []
+        	return $ tBot kClosure
 
 
 pParenTypeBody :: Parser Type
@@ -327,10 +331,10 @@ pEffect
 		effs	<- pCParen $ Parsec.sepEndBy1 pEffect pSemis
 		return	$ TSum kEffect effs
 
- <|>	-- !SYNC
+{- <|>	-- !SYNC
 	do	var	<- pConOfSpaceNamed [NameEffect] "SYNC"
  		return	$ TTop kEffect
-
+-}
  <|>	-- !CON TYPE..
 	do	con	<- pOfSpace NameEffect $ pQualified pCon
  		ts	<- Parsec.many pType_body1
