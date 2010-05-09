@@ -570,15 +570,7 @@ instance Lint Type where
 		return	$ TVar k' v'
 
 	TIndex{}	-> death tt "TIndex - shouldn't exist in source program"
-	 	
-	-- effect
-	TEffect v ts
- 	 | not $ inSpaceE [v]	-> death tt "TEffect - var in wrong namespace"
-	 | otherwise
-	 -> do	v'	<- lint v
-		ts'	<- lint ts
-		return	$ TEffect v' ts'
-			
+	 				
 	-- closure
 	TFree v t
 	 -> do	v'	<- lint v
@@ -648,7 +640,6 @@ instance Lint Var where
 -----
 inSpaceN space vs	= and $ map (\v -> varNameSpace v == space)  vs
 inSpaceV vs		= and $ map (\v -> varNameSpace v == NameValue)  vs
-inSpaceE vs		= and $ map (\v -> varNameSpace v == NameEffect) vs
 
 
 -- Module -----------------------------------------------------------------------------------------

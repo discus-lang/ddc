@@ -18,7 +18,6 @@ import Util
 import Shared.VarPrim
 import DDC.Var
 
------
 debug	= False
 trace s	= when debug $ traceM s
 
@@ -246,14 +245,14 @@ purifyEffect_fromGraph
 
 purifyEffect_fromGraph eff
 	-- read
- 	| TEffect v [tR@(TClass kR _)]	<- eff
-	, v 	== primRead
+ 	| TApp tE tR@(TClass kR _)	<- eff
+	, tE	== tRead
 	, kR	== kRegion
 	= return $ Just $ FConstraint primConst [tR]
 
 	-- head read
- 	| TEffect v [tV@(TClass kV cidV)]	<- eff
-	, v 	== primReadH
+ 	| TApp tE tR@(TClass kV cidV)	<- eff
+	, tE 	== tHeadRead
 	, kV	== kValue
 	= do	mHeadType	<- headTypeDownLeftSpine cidV
 			
@@ -265,9 +264,9 @@ purifyEffect_fromGraph eff
 	-- deep read
 	-- TODO: Do we realy want ReadT to be able to operate
 	--	 on types of any kind?
- 	| TEffect v [tR@(TClass kV _)]	<- eff
+ 	| TApp tE tR@(TClass kV _)	<- eff
 --	, kV	== kValue
-	, v	== primReadT
+	, tE	== tDeepRead
 	= return $ Just $ FConstraint primConstT [tR]
 	
 	-- effect variable

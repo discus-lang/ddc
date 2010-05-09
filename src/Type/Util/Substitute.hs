@@ -121,10 +121,6 @@ subTT_cutM' sub cut tt
 		
 	TCon{}		-> return tt
 				
-	TEffect v ts
-	 -> do	ts'	<- mapM down ts
-	 	return	$ TEffect v ts'
-
 	TFree v t
 	 -> do	t'	<- down t
 	 	return	$ TFree v t'

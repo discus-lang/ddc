@@ -30,13 +30,13 @@ import DDC.Var
 
 -- Super-Kinds ----------------------------------------------------------------------------------
 data Super
-	-- | (+) "prop" Properties. 
+	-- | (+) Prop. Properties. 
 	--   The occurrence of a type level witness who's superkind has this as the result,
 	--   guarantees some property of a program. 
 	--   eg: MkConst %r1 :: Const %r1 :: +
 	= SProp			
 
-	-- | ([]) "box" The super-kind of some non-property encoding kind. 
+	-- | ([]) Box. The super-kind of some non-property encoding kind. 
 	--   eg: 5 :: Int :: * :: []
 	| SBox			
 	
@@ -53,11 +53,11 @@ data Kind
 	-- | Kind constructor.
 	| KCon	KiCon	Super
 
-	--  | Dependent kind abstraction. Equivalent to (PI k1. k2)
-	--    The body can contain de Bruijn indices (TIndex) that refer to the parameter type.
+	-- | Dependent kind abstraction. Equivalent to (PI k1. k2)
+	--   The body can contain de Bruijn indices (TIndex) that refer to the parameter type.
 	| KFun	Kind	Kind
 
-	--  | Dependent kind application.
+	-- | Dependent kind application.
 	| KApp	Kind	Type
 
 	-- | Sum of witness kinds. This always has superkind (+).
@@ -123,7 +123,7 @@ data Type
 
 
 	-- Old stuff that needs factoring out.
-	| TEffect	Var [Type]		-- ^ An effect constructor
+	-- Refactor to push the var into a TyCon
 	| TFree		Var Type		-- ^ A tagged object which is free in the closure.
 						--	The tag should be a Value var.
 						--	The type parameter should be a value type, region or closure.

@@ -16,7 +16,6 @@ import Type.Builtin
 import Type.Pretty
 import Type.Util.Bits
 import Type.Util.Kind	
-import Shared.VarPrim
 import Util
 import DDC.Main.Error
 import DDC.Var
@@ -95,8 +94,6 @@ elaborateRsT' tt
 	 -> do	(t', vks)	<- elaborateRsT' t
 		return	( TElaborate ee t'
 			, vks)
-
-	TEffect{}	-> return (tt, [])
 
 	_ -> panic stage
 		$ "elaborateRsT': no match for " % tt % "\n\n"
@@ -304,17 +301,17 @@ elaborateEffT vsRsConst vsRsMutable tt
     	-- assume that regions added into a contra-variant
 	--	branch during elaboration will be read by the function.
 	let rsContra	= slurpConRegions tHooked
-	let effsRead	= [ TEffect primRead [TVar kRegion v] 
+	let effsRead	= [ TApp tRead (TVar kRegion v)
 				| v <- (vsRsConst ++ vsRsMutable)
 				, elem v rsContra ]
 
-	let effsWrite	= [ TEffect primWrite [TVar kRegion v] 
+	let effsWrite	= [ TApp tWrite (TVar kRegion v)
 				| v <- vsRsMutable
 				, elem v rsContra ]
 	
 	let effs	= effsRead ++ effsWrite ++ maybeToList hookEffs
 	
-	let tFinal		= addEffectsToFsT effs hookVar tHooked
+	let tFinal	= addEffectsToFsT effs hookVar tHooked
 
 	-- pack the type to drop out any left-over  !e1 = !Bot  constraints.
   	let tPacked_fast	= toFetterFormT $ PackFast.packType $ toConstrainFormT tFinal

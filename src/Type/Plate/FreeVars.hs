@@ -62,10 +62,6 @@ instance FreeVars Type where
 	
  	TVar k v	-> singleton v
 
-	-- effect
-	TEffect v ts
-	 -> union (singleton v) (freeVars ts)
-	 
 	-- closure
 	TFree v t	-> freeVars t
 
@@ -96,6 +92,12 @@ instance FreeVars TyCon where
   = case tt of
   	TyConFun{}			-> Set.empty
 	TyConData    { tyConName }	-> Set.singleton tyConName
+
+	TyConEffect (TyConEffectTop v) _ 
+	 -> Set.singleton v
+	
+	TyConEffect{}			-> Set.empty
+
 	TyConWitness { }		-> Set.empty
 
 

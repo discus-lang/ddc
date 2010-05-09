@@ -161,10 +161,10 @@ reconP (PBind v x)
 
 		maskConstRead :: Effect -> Effect
 		maskConstRead	e@(TSum _ [])	= e
-		maskConstRead	e@(TEffect v rs)
-		 | v == primRead
-		 , all isConst rs
-		 = tPure
+		maskConstRead	e@(TApp t1 tR)
+			| t1 == tRead
+			, isConst tR
+			= tPure
 		maskConstRead	(TSum k es)	= TSum k (map maskConstRead es)
 		maskConstRead	e		= e
 
@@ -567,7 +567,7 @@ reconX xx@(XPrim prim xs)
 		, [XType r, x]	<- xs
 		= do	rx	<- reconX x
 			return	( reconUnboxType r $ t4_2 $ rx
-				, TEffect primRead [r])
+				, TApp tRead r)
 		  
 		-- forcing
 		| MForce	<- prim
@@ -866,7 +866,7 @@ reconG gg@(GExp p x)
 			-- matching against some object cause a read effect on its primary region.
 			| Just (vD, _, TVar k rH : _) <- takeTData tX_shape
 			, k == kRegion
-			= TEffect primRead [TVar kRegion rH]
+			= TApp tRead (TVar kRegion rH)
 
 			-- object does not have a primary region, assume it is constant
 			| otherwise

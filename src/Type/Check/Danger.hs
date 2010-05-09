@@ -102,8 +102,6 @@ dangerT rsMutable fsClosure tt
 	TSum kE ts
 	 | kE	== kEffect	-> Set.empty
 
-	TEffect{}		-> Set.empty
-
 	-- skip over errors
 	TError{}		-> Set.empty
 	 

@@ -241,7 +241,6 @@ trimClosureC_t' tag quant rsData tt
 		  = []
 	    in	result
 	
-	TEffect{}		-> []
 	TFree v t		-> [trimClosureC_start quant rsData tt]
 
 	_ -> panic stage

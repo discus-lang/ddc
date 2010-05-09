@@ -81,6 +81,9 @@ tyConKind tyCon
 	TyConData    { tyConDataKind }		
 	 -> tyConDataKind
 
+	TyConEffect { tyConEffectKind }
+	 -> tyConEffectKind
+
 	TyConWitness { tyConWitnessKind }
 	 -> tyConWitnessKind	 
 
@@ -197,7 +200,6 @@ kindOfType' tt
 	TConstrain t1 crs	-> kindOfType' t1
 		
 	-- effect and closure constructors should always be fully applied.
-	TEffect{}		-> kEffect
 	TFree{}			-> kClosure
 	TDanger{}		-> kClosure
 
@@ -244,7 +246,6 @@ betaTT depth tX tt
 	 | ix == depth	-> down tX
 	 | otherwise	-> tt
 	 	
-	TEffect v ts	-> TEffect v (map down ts)
 	TFree v t	-> TFree v (down t)
 
 	_	-> panic stage

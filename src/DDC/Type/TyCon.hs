@@ -2,6 +2,7 @@
 -- | Type constructors.
 module DDC.Type.TyCon
 	( TyCon		(..)
+	, TyConEffect   (..)
 	, TyConWitness	(..)
 	, takeTyConWitnessOfKiCon
 	, takeKiConOfTyConWitness)
@@ -21,6 +22,11 @@ data TyCon
 		{ tyConName		:: !Var
 		, tyConDataKind		:: !Kind }
 
+	-- An effect type constructor.
+	| TyConEffect
+		{ tyConEffect		:: !TyConEffect
+		, tyConEffectKind	:: !Kind }
+
 	-- A witness type constructor.
 	| TyConWitness
 		{ tyConWitness		:: !TyConWitness
@@ -29,15 +35,28 @@ data TyCon
 	deriving (Show, Eq)
 
 
+-- | Effect type constructors.
+data TyConEffect
+	-- | Some user defined top-level effect.
+	= TyConEffectTop Var
+	
+	-- Baked in effect constructors.
+	| TyConEffectRead
+	| TyConEffectHeadRead
+	| TyConEffectDeepRead
+	| TyConEffectWrite
+	| TyConEffectDeepWrite
+	deriving (Show, Eq)
+
+
 -- | Witness type constructors.
 data TyConWitness
-	= 
 	-- | Make a witness of some user-defined data type class.
 	--   This is used in an intermediate stage in the core language, before we've
 	--   introduced dictionary parameters.
 	--   The var is the name of the class, like Eq, and the constructor is pretty
 	--   printed like MkEq.
-	  TyConWitnessMkVar Var		
+	= TyConWitnessMkVar Var		
 		
 	-- Baked in witness constructors.
 	| TyConWitnessMkConst		

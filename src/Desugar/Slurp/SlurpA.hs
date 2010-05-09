@@ -107,7 +107,7 @@ slurpG	(GExp sp w x)
 			WVar{}	-> []
 
 			-- otherwise we need to read the primary region
-			_	-> [TEffect primReadH [tX]]
+			_	-> [TApp tHeadRead tX]
 
 	let qs = 
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 

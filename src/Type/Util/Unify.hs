@@ -33,11 +33,6 @@ unifyTypes t1 t2
 	| TFree{}		<- t1
 	, TFree{}		<- t2
 	= Just [(t1, t2)]
-
-	-- We need to factor this one out.
-	| TEffect{}		<- t1
-	, TEffect{}		<- t2
-	= Just [(t1, t2)]
 	
 	-- same variable.
 	| TVar k1 v1		<- t1

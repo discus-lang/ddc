@@ -151,8 +151,8 @@ bindX 	shared xx
 			packT
 			$ transformT
 				(\tt -> case tt of
-					  TEffect v [TVar kRegion r] 
-						|   elem v [primRead, primWrite]
+					  TApp t1 (TVar kRegion r)
+						|   elem t1 [tRead, tWrite]
 						 && Set.member r vsLocal
 						-> tPure
 				 	  _	-> tt)

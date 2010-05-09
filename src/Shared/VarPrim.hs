@@ -36,14 +36,6 @@ primTRef	= primVar 	NameType	"Base.Ref"			TRef
 primTList	= primVar 	NameType	"Data.List.List"		TList
 primTTuple i	= primVar	NameType	("Data.Tuple.Tuple" ++ show i) 	(TTuple i)
 
--- Effects -----------------------------------------------------------------------------------------
-primRead	= primVar NameEffect	"Base.Read"				ERead
-primReadT	= primVar NameEffect	"Base.ReadT"				EReadT
-primReadH	= primVar NameEffect	"Base.ReadH"				EReadH
-
-primWrite	= primVar NameEffect	"Base.Write"				EWrite
-primWriteT	= primVar NameEffect	"Base.WriteT"				EWriteT
-
 
 -- Classes -----------------------------------------------------------------------------------------
 primFShape i	= primVar NameClass	("Base.Shape" ++ show i)		(FShape  i)
@@ -198,7 +190,6 @@ getPrimVarBind space var
  = case space of
   	NameValue	-> renamePrimVar_value  $ varName var
 	NameType	-> renamePrimVar_type   $ varName var
-	NameEffect	-> liftM VarIdPrim $ renamePrimVar_effect $ varName var
 	NameClass	-> liftM VarIdPrim $ renamePrimVar_class  $ varName var
 	_		-> Nothing
 	
@@ -312,15 +303,6 @@ renamePrimVar_types
 	, ("Ref",		TRef)
 	, ("List",		TList)]
 
-
-renamePrimVar_effect :: String -> Maybe PrimId
-renamePrimVar_effect ss
- = Map.lookup ss $ Map.fromList $
- 	[ ("Read",		ERead)
-	, ("ReadT",		EReadT)
-	, ("ReadH",		EReadH)
-	, ("Write",		EWrite)
-	, ("WriteT",		EWriteT) ]
 
 
 renamePrimVar_class :: String -> Maybe PrimId

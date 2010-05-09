@@ -721,10 +721,6 @@ instance Rewrite Type Type where
 
 	TSum _ []	-> return tt
 
-	TEffect v ts
-	 -> do	ts'	<- mapM rewrite ts
-		return	$ TEffect v ts'
-
 	TElaborate ee t	-> return tt
 	
 	_ -> panic stage $ "rewrite[Type]: no match for " % tt

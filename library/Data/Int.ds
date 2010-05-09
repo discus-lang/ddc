@@ -82,7 +82,7 @@ instance Ord Int32 where
 	 | x == y	=  EQ
 	 | x <= y	=  LT
 	 		\= GT
-	 
+
 instance Num Int32 where 
  	(+) 		= primInt32_add
 	(-) 		= primInt32_sub
@@ -90,6 +90,7 @@ instance Num Int32 where
 	(/) 		= primInt32_div
 	mod		= primInt32_mod
 	negate		= primInt32_neg
+
 
 instance Accum Int32 where
 	(+=) a b	= primInt32_update a (primInt32_add a b)
@@ -101,8 +102,6 @@ instance Accum Int32 where
  = do 	x'	= f x
 	x	:= x'
 
-inc x	= x + 1
-inc y   = 1
 
 -- integer division truncated towards negative infinity
 div :: Int32 -> Int32 -> Int32
@@ -125,3 +124,4 @@ project Int32 where
  			else y
 
 infixl 7  `quot`, `div`, `mod`
+

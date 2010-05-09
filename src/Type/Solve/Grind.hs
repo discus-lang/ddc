@@ -135,7 +135,7 @@ grindClass2 cid c@(Class
 	-- if a class contains an effect it might need to be crushed
 	progressCrushE	
 		<- case k of
-			kE | kE == kEffect	-> crushEffectC cid
+			kE | kE == kEffect	-> crushEffectInClass cid
 			_			-> return False
 
 	-- try and crush other fetters in this class

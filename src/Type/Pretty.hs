@@ -102,10 +102,6 @@ pprTypeQuant vsQuant tt
 
 	TVar k v	-> pprVarKind v k 
 		
-	-- effect
-	TEffect    v []	-> ppr v
-	TEffect    v ts	-> v % " " % " " %!% map prettyTB ts
-
 	-- closure
 	TFree  v t	-> v % " : " % t
 	TDanger v t	-> v % " $> " % t
@@ -149,7 +145,6 @@ prettyTB t
  = case t of
 	TVar k v 	-> ppr t
 	TSum{}		-> ppr t
-	TEffect v []	-> ppr t
 	TClass{}	-> ppr t
 	TCon{}		-> ppr t
 	_		-> "(" % t % ")"
@@ -317,6 +312,13 @@ instance Pretty TyCon PMode where
 			% " :: " 
 			% tyConDataKind)
 		(ppr tyConName)
+	
+	TyConEffect { tyConEffect, tyConEffectKind }
+	  -> ifMode (elem PrettyTypeKinds)
+ 		(parens $ tyConEffect 
+			% " :: " 
+			% tyConEffectKind)
+		(ppr tyConEffect)
 
 	TyConWitness { tyConWitness, tyConWitnessKind}	
 	 -> ifMode (elem PrettyTypeKinds)
@@ -324,6 +326,18 @@ instance Pretty TyCon PMode where
 			% " :: " 
 			% tyConWitnessKind)
 		(ppr tyConWitness)
+
+
+-- TyConEffect ------------------------------------------------------------------------------------
+instance Pretty TyConEffect PMode where
+ ppr cc
+  = case cc of
+	TyConEffectTop var		-> ppr var
+	TyConEffectRead			-> ppr "!Read"
+	TyConEffectHeadRead		-> ppr "!ReadH"
+	TyConEffectDeepRead		-> ppr "!ReadT"
+	TyConEffectWrite		-> ppr "!Write"
+	TyConEffectDeepWrite		-> ppr "!WriteT"
 
 
 -- TyConWitness -----------------------------------------------------------------------------------

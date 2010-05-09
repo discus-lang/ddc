@@ -59,8 +59,8 @@ maskE	 tsVis	eff
 	
 maskE'	tsVis eff
 
-	| TEffect v [tR]	<- eff
-	, elem v [primRead, primWrite]
+	| TApp t1 tR	<- eff
+	, elem t1 [tRead, tWrite]
 	, isTClass tR || isSomeTVar tR
 	, not $ Set.member tR tsVis
 	= Nothing
@@ -88,13 +88,14 @@ visibleRsT tt
 	TVar{}			-> Set.empty
 	TCon{}			-> Set.empty
 
+	TApp (TCon (TyConEffect{})) t2
+	 -> Set.empty
+
 	-- data
 	TApp t1 t2
 	 -> Set.unions
 		[ visibleRsT t1
 		, visibleRsT t2 ]
-
-	TEffect{}		-> Set.empty	
 
 	-- closure
 	TFree v t		-> visibleRsT t

@@ -84,9 +84,6 @@ staticRsDataT tt
 	TError{}		-> Set.empty
 	
 	TCon{}			-> Set.empty
-
-	-- for data containing function objects
-	TEffect{}		-> Set.empty
 	
 	_ 	-> panic stage
 		$ "staticRsDataT: " ++ show tt

@@ -118,10 +118,7 @@ toCoreT' table tt
 	
 	 | otherwise
 	 -> TApp (down t1) (down t2)
-	
-	-- effect
-	TEffect v ts		-> TEffect v (map down ts)
-	
+		
 	-- closure
 	TFree v (TDanger t1 t2)
 		-> makeTSum kClosure
@@ -146,6 +143,9 @@ toCoreTyCon tt
 	TyConData v k
 	 -> TyConData v (toCoreK k)
 
+	TyConEffect tc k
+	 -> TyConEffect tc (toCoreK k)
+	
 
 -- Kind ---------------------------------------------------------------------------------------------
 toCoreK :: Kind -> Kind

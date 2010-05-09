@@ -780,12 +780,6 @@ instance Rename Type where
 	TCon tc
 	 -> do	tc'	<- rename tc
 	 	return	$ TCon tc'
-
-	-- effect
-	TEffect v rs
-	 -> do 	v'	<- linkN NameEffect v
-		rs'	<- rename rs
-		return	$ TEffect v' rs'
 		
 	-- closure
 	TFree v t
@@ -826,6 +820,14 @@ instance Rename TyCon where
 	 -> do	v	<- linkN NameType tyConName
 	 	return	$ tc { tyConName = v }
 
+	TyConEffect { tyConEffect = tce }
+	 -> case tce of
+		TyConEffectTop v
+		 -> do	v'	<- linkN NameEffect v
+			return	$ tc { tyConEffect = TyConEffectTop v' }
+			
+		_ -> return tc
+		
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance Rename Fetter where

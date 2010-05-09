@@ -27,15 +27,7 @@ data PrimId
 	| TFloat  DataFormat
 	| TChar	  DataFormat
 	| TString DataFormat
-	
-	-- Effect constructors
-	| ESync
-	| ERead
-	| EWrite
-	| EReadT
-	| EReadH
-	| EWriteT
-	
+		
 	-- Class constructors
 	| FConst
 	| FConstT

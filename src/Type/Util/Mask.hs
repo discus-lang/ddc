@@ -5,7 +5,6 @@ where
 import Type.Exp
 import Type.Builtin
 import Type.Util.Bits
-import Shared.VarPrim
 import Util
 import DDC.Var
 import qualified Data.Set 	as Set
@@ -18,8 +17,8 @@ maskReadWriteNotIn
 
 maskReadWriteNotIn rsKeep eff
  = let	maskE e
-		| TEffect vE [TVar kRegion r]	<- e
-		, elem vE [primRead, primWrite]
+		| TApp t1 (TVar kRegion r)	<- e
+		, elem t1 [tRead, tWrite]
 		, not $ Set.member r rsKeep
 		= tPure
 	

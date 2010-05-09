@@ -9,7 +9,6 @@ where
 import Core.Plate.FreeVars
 import Type.Exp
 import Type.Builtin
-import Shared.VarPrim
 import Util
 import Util.Graph.Deps
 import DDC.Main.Error
@@ -61,19 +60,64 @@ packT1 tt
 			= makeTFetters t1' fs'
 			
 	   in	result
+
+	-- Crush effects along the way
+	TApp t1@(TCon (TyConEffect tyCon k)) t2
+	 -> let t2'	= packT1 t2
+	 
+	 	result
+			-- Head Read
+	 		| TyConEffectHeadRead	<- tyCon
+			= case takeTData t2' of
+				Just (vD, k, (TVar kRegion r : ts)) 
+					-> TApp tRead (TVar kRegion r)
+				
+				Just (vD, k, [])
+					-> tPure
+
+				Nothing	-> TApp t1 t2'
+									
+			-- Deep Read
+			| TyConEffectDeepRead	<- tyCon
+			= case takeTData t2' of
+				Just (vD, k, ts)
+				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
+				    in  makeTSum kEffect
+						(  [TApp tRead t	| t <- concat tRs]
+						++ [TApp tDeepRead t	| t <- concat tDs] )
+
+				Nothing	-> TApp t1 t2'
+				
+			-- Deep Write
+			| TyConEffectDeepWrite <- tyCon
+			= case takeTData t2' of
+				Just (vD, k, ts)
+				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
+				    in  makeTSum kEffect
+						(  [TApp tWrite t	| t <- concat tRs]
+						++ [TApp tDeepWrite t	| t <- concat tDs] )
+
+				Nothing	-> TApp t1 t2'
+	
+			-- some other effect
+			| otherwise
+			= TApp t1 t2'
+
+	    in	result
+	    
 	
 	-- Crush witnesses along the way
 	TApp t1@(TCon (TyConWitness tyCon k)) t2
 	 -> let t2'	= packT1 t2
 	 	
 		result
-			-- crush LazyH on the way
-	 		| tyCon == TyConWitnessMkHeadLazy
+			-- HeadLazy
+	 		| TyConWitnessMkHeadLazy <- tyCon
 			, Just (vD, k, (TVar kRegion r : ts))	<- takeTData t2'
 			= TApp tMkLazy (TVar kRegion r)
 
-			-- crush ConstT on the way
-			| tyCon == TyConWitnessMkDeepConst 
+			-- DeepConst
+			| TyConWitnessMkDeepConst <- tyCon
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
 			= let 	ts       =  map (\r -> TApp tMkConst     r) rs
@@ -83,8 +127,8 @@ packT1 tt
 			      
 			  in 	makeTSum (KSum ks) ts
 			
-			-- crush MutableT on the way
-			| tyCon == TyConWitnessMkDeepMutable
+			-- DeepMutable
+			| TyConWitnessMkDeepMutable <- tyCon
 			, Just _		<- takeTData t2'
 			, (rs, ds)		<- slurpVarsRD t2'
 			= let	ts	=  map (\r -> TApp tMkMutable     r) rs
@@ -122,53 +166,6 @@ packT1 tt
 
 	TCon{}		-> tt
 	 
-	-- effect
-	-- crush compound effects along the way
-	TEffect v [t1]
-	 -> let t1'	= packT1 t1
-	 
-	 	result
-			-- ReadH 
-	 		| v == primReadH
-			= case takeTData t1' of
-				Just (vD, k, (TVar kRegion r : ts)) 
-					-> TEffect primRead [TVar kRegion r]
-				
-				Just (vD, k, [])
-					-> tPure
-
-				Nothing	-> TEffect v [t1']
-					
-			-- ReadT
-			| v == primReadT
-			= case takeTData t1' of
-				Just (vD, k, ts)
-				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
-				    in  makeTSum kEffect
-						(  [TEffect primRead  [t]	| t <- concat tRs]
-						++ [TEffect primReadT [t]	| t <- concat tDs] )
-
-				Nothing	-> TEffect v [t1']
-				
-			-- WriteT
-			| v == primWriteT
-			= case takeTData t1' of
-				Just (vD, k, ts)
-				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
-				    in  makeTSum kEffect
-						(  [TEffect primWrite  [t]	| t <- concat tRs]
-						++ [TEffect primWriteT [t]	| t <- concat tDs] )
-
-				Nothing	-> TEffect v [t1']
-	
-			-- some other effect
-			| otherwise
-			= TEffect v [t1']
-
-	    in	result
-	    
-	TEffect v ts
-	 -> TEffect v (map packT1 ts)
 	    
 	-- closure
 	TFree v1 t2
@@ -310,9 +307,6 @@ inlineTWheresMapT sub block tt
     	TCon{}			-> tt
     
 	TApp t1 t2		-> TApp (down t1) (down t2)
-
-	-- effect
-	TEffect  v ts		-> TEffect v (map down ts)
  	
 	-- closure
 	TFree v t		-> TFree v (down t)

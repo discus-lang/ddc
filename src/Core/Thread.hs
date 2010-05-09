@@ -18,7 +18,6 @@ import Type.Builtin
 import Type.Util
 import Type.Exp
 import Util
-import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Var
 import qualified DDC.Var.PrimId		as Var
@@ -181,8 +180,8 @@ buildPureWitness
 	:: Effect
 	-> ThreadM Witness
 
-buildPureWitness eff@(TEffect vE [tR@(TVar kR vR)])
-	| vE == primRead
+buildPureWitness eff@(TApp t1 tR@(TVar kR vR))
+	| t1 == tRead
 	, kR == kRegion
 	= do	
 		-- try and find a witness for constness of the region

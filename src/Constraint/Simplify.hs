@@ -168,9 +168,7 @@ subFollowVT' sub block tt
 	 -> case Map.lookup v sub of
 	 	Nothing		-> tt
 		Just t'		-> subFollowVT' sub (Set.insert v block) t'
-		
-	TEffect v ts		-> TEffect v (map down ts)
-	
+			
 	TFree v t		-> TFree v (down t)
 		
 

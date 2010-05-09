@@ -161,7 +161,6 @@ takeValueArityOfType tt
 	TCon{}		-> Just 0
 	TVar{}		-> Just 0
 	TIndex{}	-> Nothing
-	TEffect{}	-> Nothing
 	TFree{}		-> Nothing
 	TDanger{}	-> Nothing
 	TElaborate{}	-> Nothing

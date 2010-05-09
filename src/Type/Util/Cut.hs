@@ -116,7 +116,6 @@ cutT cidsCut tt
 	TCon{}			-> tt
 
 	TApp	t1 t2		-> TApp (down t1) (down t2)
-	TEffect	v ts		-> TEffect v (map down ts)
 
 	TFree v t2@(TClass k _)
 	 |  Set.member t2 cidsCut

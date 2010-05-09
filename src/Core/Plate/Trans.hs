@@ -493,12 +493,6 @@ instance Monad m => TransM m Type where
 	 -> do	tyCon'		<- transZM table tyCon
 	 	transT table	$ TCon tyCon'
 
-	-- effect
-	TEffect v ts
-	 -> do	v'		<- followV_free  table v
-	 	ts'		<- followTs table ts
-		transT table	$ TEffect v' ts'
-
 
 	-- closure
 	TFree v t
@@ -519,6 +513,13 @@ instance Monad m => TransM m TyCon where
 	TyConData { tyConName }
 	 -> do	name'	<- followV_free table tyConName
 	 	return	$ tt { tyConName = name' }
+
+	TyConEffect { tyConEffect = TyConEffectTop v }
+	 -> do	v'	<- followV_free table v
+		return	$ tt { tyConEffect = TyConEffectTop v }
+
+	TyConEffect {}
+	 ->	return tt
 
 	TyConWitness { tyConWitness = TyConWitnessMkVar v }
 	 -> do	v'	<- followV_free table v

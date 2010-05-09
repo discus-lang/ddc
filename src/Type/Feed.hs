@@ -3,6 +3,7 @@
 module Type.Feed
 	( feedConstraint
 	, feedType 
+	, feedTypeWithSource
 	, feedFetter
 	, addFetter
 	, addFetterSource)
@@ -96,7 +97,18 @@ feedConstraint cc
 -- feedType --------------------------------------------------------------------------------------------
 -- | Add a type to the type graph.
 --	This always creates a new class and returns a classid.
---
+
+feedTypeWithSource
+	:: TypeSource
+	-> Maybe ClassId
+	-> Type
+	-> SquidM (Maybe Type)
+
+feedTypeWithSource src mParent tt
+ = let ?src	= src
+   in	feedType mParent tt
+
+
 feedType 	
 	:: (?src :: TypeSource)
 	=> Maybe ClassId
@@ -159,14 +171,6 @@ feedType'	mParent t
 	 -> do 	cidT		<- makeClassV ?src k v 
 		returnJ		$ TClass k cidT
 
-
-	-- effect
-	TEffect v ts
-	 -> do 	cidE		<- allocClass (Just kEffect)
-		Just ts'	<- liftM sequence
-				$  mapM (feedType (Just cidE)) ts
-		addNode cidE 	$ TEffect v ts'
-		returnJ		$ TClass kEffect cidE
 
 	-- closure
 	-- TFree's that we get from the constraints might refer to types that are in
@@ -243,13 +247,7 @@ feedType1 mParent tt
  = case tt of
 	TSum k []
 	 ->	returnJ tt
- 
- 	-- effects
- 	TEffect v ts
-	 -> do	Just ts' <- liftM sequence
-	 		 $  mapM (feedType mParent) ts
-	 	returnJ	$ TEffect v ts'
-		
+ 		
 	-- closures
 	TFree v t
 	 -> do	Just tt'	<- feedType mParent tt

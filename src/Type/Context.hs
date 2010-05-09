@@ -76,9 +76,9 @@ reduceContextF tShape classInstances ff
 	, v == primPure
 	= case t of
 		TSum kE _		
-			| kE == kEffect	-> []
-		TEffect{}		-> []
-		_			-> [ff]
+			| kE == kEffect		-> []
+		TApp (TCon TyConEffect{}) _	-> []
+		_				-> [ff]
 	
 	-- These compound fetters can be converted to their crushed forms.
 	--	Although Type.Crush.Fetter also crushes fetters in the graph, if a scheme is generalised

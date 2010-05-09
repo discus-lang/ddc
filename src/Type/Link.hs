@@ -71,10 +71,6 @@ linkType mParent bound tt
 		 Just cid
 		  -> do	return	$ TClass k cid
 
-	-- effect
-	TEffect v ts
-	 -> do	ts'	<- mapM (linkType mParent bound) ts
-	 	return	$ TEffect v ts'
 
 	-- closure
 	TFree v t

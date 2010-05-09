@@ -177,7 +177,6 @@ slurpVarsRD' tt
 		then [tt]
 		else []
 
-	| TEffect{}	<- tt	= []
 	| TFree{}	<- tt	= []
 	| TDanger{}	<- tt	= []
 

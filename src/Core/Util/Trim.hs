@@ -219,7 +219,6 @@ trimClosureC_t quant rsData tt
 			$ "trimClosureC_t: no match for (" % tt % ")"
 	   in result
 
-	TEffect{}	-> []
 	TFree v t	-> [trimClosureC quant rsData tt]
 	 	 
 	_ -> panic stage

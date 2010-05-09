@@ -72,12 +72,6 @@ stripFWheresT justMono	tt
 
  	TVar{}	-> (tt, [])
 		
-	-- effect
-	TEffect v ts
-	 -> let	(ts', fss)	= unzip $ map (stripFWheresT justMono) ts
-	    in	( TEffect v ts'
-	    	, concat fss)
-
 	-- closure
 	TFree v t
 	 -> let	(t', fs)	= stripFWheresT justMono t

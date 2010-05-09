@@ -8,6 +8,7 @@ import DDC.Base.Literal
 import DDC.Base.DataFormat
 import DDC.Var
 
+
 -- Kind Constructors ------------------------------------------------------------------------------
 -- Atomic kind constructors.
 kValue		= KCon KiConValue	SBox
@@ -43,7 +44,30 @@ kPure		= KCon KiConPure
 kEmpty		= KCon KiConEmpty
 		$ SFun kClosure SProp
 
--- Witness Type Constructors ----------------------------------------------------------------------
+-- Type Constructors -------------------------------------------------------------------------
+tBot k		= TSum k	[]
+tPure		= TSum kEffect  []
+tEmpty		= TSum kClosure []
+
+
+-- Effect Type Constructors
+tRead		= TCon $ TyConEffect TyConEffectRead
+		$ KFun kRegion kEffect
+
+tDeepRead	= TCon $ TyConEffect TyConEffectDeepRead
+		$ KFun kValue kEffect
+
+tHeadRead	= TCon $ TyConEffect TyConEffectHeadRead
+		$ KFun kValue kEffect
+
+tWrite		= TCon $ TyConEffect TyConEffectWrite
+		$ KFun kRegion kEffect
+
+tDeepWrite	= TCon $ TyConEffect TyConEffectDeepWrite
+		$ KFun kValue kEffect
+
+
+-- Witness Type Constructors 
 tMkConst	= TCon $ TyConWitness TyConWitnessMkConst	
 		$ KFun kRegion (KApp kConst		(TIndex kRegion 0))
 
@@ -68,16 +92,11 @@ tMkDirect	= TCon $ TyConWitness TyConWitnessMkDirect
 tMkPurify	= TCon $ TyConWitness TyConWitnessMkPurify	
 		$ KFun kRegion 
 			(KFun 	(KApp kConst (TIndex kRegion 1))
-				(KApp kPure  (TEffect primRead [TIndex kRegion 1])))
+				(KApp kPure  (TApp tRead (TIndex kRegion 1))))
 
 tMkPure		= TCon $ TyConWitness TyConWitnessMkPure
 		$ KFun kEffect (KApp kPure (TIndex kEffect 0))
 
-
--- Type Constructors -------------------------------------------------------------------------
-tBot k	= TSum k	[]
-tPure	= TSum kEffect  []
-tEmpty	= TSum kClosure []
 
 
 -- | Get the type constructor for a bool of this format.

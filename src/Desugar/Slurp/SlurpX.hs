@@ -147,7 +147,7 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 	let qsMatch	= 
 		[ CEqs (TSU $ SUAltLeft sp)	(tObj : tsAltsLHS)
 		, CEqs (TSU $ SUAltRight sp)	(tRHS : tsAltsRHS)
-		, CEq  (TSE $ SEMatchObj sp)	eMatch	$ TEffect primReadH [tObj]
+		, CEq  (TSE $ SEMatchObj sp)	eMatch	$ TApp tHeadRead tObj
 		, CEq  (TSE $ SEMatch sp) 	eX	$ makeTSum kEffect  ([eObj, eMatch] ++ esAlts) ]
 
 	wantTypeV vObj
@@ -306,7 +306,7 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
 		[ CEq  (TSV $ SVIfObj sp)	tObj	$ tBool
 		, CEqs (TSU $ SUIfAlt sp)	(tAlts	: [tThen, tElse])
 		
-		, CEq  (TSE $ SEIfObj sp)	eTest 	$ TEffect primReadH [tObj]
+		, CEq  (TSE $ SEIfObj sp)	eTest 	$ TApp tHeadRead tObj
 		, CEq  (TSE $ SEIf sp)		eX	$ makeTSum kEffect  [eObj, eThen, eElse, eTest] ]
 		
 	wantTypeV vObj

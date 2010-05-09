@@ -13,7 +13,6 @@ import Core.Glob
 import Type.Util
 import Type.Exp
 import Type.Builtin
-import Shared.VarPrim	
 import Shared.Warning
 import Util
 import DDC.Main.Pretty
@@ -564,14 +563,14 @@ reduceEffect rsConst tsConst esPure eff
 reduceEffect1 rsConst tsConst esPure eff
 
 	-- reduce reads from known constant regions
-	| TEffect v [TVar kRegion r]	<- eff
-	, v == primRead
+	| TApp t1 (TVar kRegion r)	<- eff
+	, t1 == tRead
 	, Set.member r rsConst
 	= tPure
 	
 	-- reduce reads from known constant types
-	| TEffect v [TVar kValue t]	<- eff
-	, v == primReadT
+	| TApp t1 (TVar kValue t)	<- eff
+	, t1 == tDeepRead
 	, Set.member t rsConst
 	= tPure
 

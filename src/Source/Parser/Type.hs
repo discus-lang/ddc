@@ -60,9 +60,6 @@ pKind1
  <|>	do	pTok K.Dollar
  		return	kClosure
 
--- <|>	do	pTok K.Plus
---		return	KWitness
-
  <|>	-- ( KIND )
 	pRParen pKind
 
@@ -226,10 +223,10 @@ pType_body3
 pType_body2 :: Parser Type
 pType_body2
  =	-- CON TYPE..
-	do	con	<- pOfSpace NameType $ pQualified pCon
+	do	t1	<- pTyCon
  		args	<- Parsec.many pType_body1
-		return	$ makeTData con KNil args
-
+		return	$ makeTApp (t1:args)
+		
  <|>	do	t1	<- pType_body1
 		Parsec.option t1
 			(do	ts	<- Parsec.many1 pType_body1
@@ -264,8 +261,8 @@ pType_body1
 	pConBottom
 
  <|>	-- CON
- 	do	con	<- pOfSpace NameType $ pQualified pCon
-		return	$ makeTData con KNil []
+ 	do	con	<- pTyCon
+		return	$ con
 
  <?>    "pType_body1"
 
@@ -287,6 +284,23 @@ pConBottom
  <|>	do	pTok	K.Dollar
 		pCParen $ return []
         	return $ tBot kClosure
+
+
+pTyCon :: Parser Type
+pTyCon 	
+ = do	con	<- pQualified pCon
+	case varNameSpace con of
+		NameEffect 	-> pTyCon_effect con
+		_		-> return $ TCon (TyConData con kValue)
+		
+pTyCon_effect con
+ = case varName con of
+	"Read"		-> return tRead
+	"ReadH"		-> return tHeadRead
+	"ReadT"		-> return tDeepRead
+	"Write"		-> return tWrite
+	"WriteT"	-> return tDeepWrite
+	_		-> return $ TCon (TyConEffect (TyConEffectTop con) kEffect)
 
 
 pParenTypeBody :: Parser Type
@@ -331,14 +345,11 @@ pEffect
 		effs	<- pCParen $ Parsec.sepEndBy1 pEffect pSemis
 		return	$ TSum kEffect effs
 
-{- <|>	-- !SYNC
-	do	var	<- pConOfSpaceNamed [NameEffect] "SYNC"
- 		return	$ TTop kEffect
--}
  <|>	-- !CON TYPE..
-	do	con	<- pOfSpace NameEffect $ pQualified pCon
+	do	t1	<- pTyCon
  		ts	<- Parsec.many pType_body1
-		return	$ TEffect con ts
+		return	$ makeTApp (t1:ts)
+
  <?>    "pEfect"
 
 
@@ -381,6 +392,7 @@ pClosure
 	do	var	<- pVarPlainOfSpace [NameClosure]
 		return	$ TVar kClosure var
  <?>    "pClosure"
+
 
 -- Fetter ------------------------------------------------------------------------------------------
 -- | Parse a fetter

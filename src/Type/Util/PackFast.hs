@@ -169,11 +169,7 @@ packTypeCrsSub' config crsEq subbed tt
 	    in	TApp t1' t2'
 	
 	TCon{}	-> tt
-	
-	TEffect v ts
-	 -> let ts'	= map (packTypeCrsSub config crsEq subbed) ts
-	    in	TEffect v ts'
-	
+		
 	-- for a closure like  v1 : v2 : TYPE, 
 	--	the type is really a part of v1. The fact that it also came from v2
 	--	doesn't matter. The variables are just for doccumentaiton anyway.
