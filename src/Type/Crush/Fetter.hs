@@ -6,20 +6,20 @@
 module Type.Crush.Fetter
 	(crushFetterC)
 where
-import Type.Feed
+-- import Type.Feed
 import Type.State
-import Type.Util
-import Type.Class
-import Type.Location
 import Type.Exp
-import Type.Builtin
-import Type.Error
-import Util
-import Shared.VarPrim
-import DDC.Var
+-- import Type.Util
+-- import Type.Class
+-- import Type.Location
+-- import Type.Builtin
+-- import Type.Error
+-- import Util
+-- import Shared.VarPrim
+-- import DDC.Var
 
-debug	= False
-trace s	= when debug $ traceM s
+-- debug	= False
+-- trace s	= when debug $ traceM s
 
 
 -- | Try and crush any single parameter fetters acting on this
@@ -28,6 +28,9 @@ crushFetterC
 	:: ClassId 	-- ^ cid of class
 	-> SquidM Bool	--   whether we crushed something from this class
 
+crushFetterC cid = return False
+
+{-
 crushFetterC cid
  = do	Just cls <- lookupClass cid
  	crushFetterC' cid cls
@@ -244,6 +247,24 @@ purifyEffect_fromGraph
 	-> SquidM (Maybe Fetter)
 
 purifyEffect_fromGraph eff
+ = case eff of
+	TApp tE@(TClass _ cid) tArg
+	 -> do	Just cls	<- lookupClass cid
+		case classType cls of
+		 Just tE'	-> purifyEffect_fromGraph' (TApp tE' tArg)
+		 Nothing	-> return Nothing
+
+	TApp tE tArg
+	 -> purifyEffect_fromGraph' eff
+		
+	-- effect variable
+	TClass kE cid
+	 | kE	== kEffect
+	 -> return $ Just $ FConstraint primPure [eff]
+
+	_ -> return Nothing
+	
+purifyEffect_fromGraph' eff
 	-- read
  	| TApp tE tR@(TClass kR _)	<- eff
 	, tE	== tRead
@@ -269,10 +290,6 @@ purifyEffect_fromGraph eff
 	, tE	== tDeepRead
 	= return $ Just $ FConstraint primConstT [tR]
 	
-	-- effect variable
-	| TClass kE cid			<- eff
-	, kE	== kEffect
-	= return $ Just $ FConstraint primPure [eff]
 
 	| otherwise
 	= return $ Nothing
@@ -343,4 +360,4 @@ crushFetterSingle_fromGraph cid k tNode vC
 	= return Nothing
 
 
-
+-}

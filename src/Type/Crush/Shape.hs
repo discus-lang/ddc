@@ -7,17 +7,14 @@ import Type.Feed
 import Type.Location
 import Type.Exp
 import Type.Builtin
-import Type.Util
 import Type.State
 import Type.Class
-import Type.Plate.Collect
 import Type.Crush.Unify
 import Shared.VarPrim
 import Util
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
------
 debug	= False
 trace s	= when debug $ traceM s
 
@@ -54,8 +51,8 @@ crushShape cidShape
 	-- See if any of the nodes contain information that needs
 	--	to be propagated to the others.
 	let mData	= map (\c -> case classType c of
-					Just t@TApp{}	-> Just t
-					Just t@TCon{}	-> Just t
+					Just t@NApp{}	-> Just t
+					Just t@NCon{}	-> Just t
 					_		-> Nothing)
 			$ csMerge
 	
@@ -94,7 +91,7 @@ crushShape2
 	:: ClassId		-- the classId of the fetter being crushed
 	-> Fetter		-- the shape fetter being crushed
 	-> TypeSource		-- the source of the shape fetter
-	-> Type			-- the template type"
+	-> Node			-- the template type"
 	-> [Class]		-- the classes being merged
 	-> SquidM ()
 
@@ -115,14 +112,13 @@ crushShape2 cidShape fShape srcShape tTemplate csMerge
 		| Just tsPushed		<- sequence mtsPushed
 		= do	
 			let takeRec tt 
-				| TApp t1 t2		<- tt
+				| NApp t1 t2		<- tt
 				= [t1, t2]
 				
 				| otherwise
 				= []
 					
 			let tssMerged	= map takeRec tsPushed
-	
 			let tssMergeRec	= transpose tssMerged
 		
 			trace	( "    tssMergeRec = " % tssMergeRec		% "\n")
@@ -140,35 +136,36 @@ crushShape2 cidShape fShape srcShape tTemplate csMerge
 
 	result
 
-addShapeFetter :: TypeSource -> [Type] -> SquidM ()
-addShapeFetter src ts@(t1 : _)
+addShapeFetter :: TypeSource -> [ClassId] -> SquidM ()
+addShapeFetter src cids@(cid1 : _)
+ = do	kind	<- kindOfCid cid1
 
 	-- shape fetters don't constrain regions.
- 	| kindOfType_orDie t1 == kRegion
-	= return ()
-	
-	| otherwise
-	= do	addFetterSource src (FConstraint (primFShape (length ts)) ts)
+	if kind == kRegion
+	 then	return ()
+	 else do
+		let ts	= zipWith TClass (repeat kind) cids
+		addFetter src (FConstraint (primFShape (length ts)) ts)
 		return ()
 
 -- | Add a template type to a class.
 pushTemplate 
-	:: Type			-- the template type
+	:: Node			-- the template type
 	-> TypeSource		-- the source of the shape fetter doing the pushing
 	-> Class		-- the class to push the template into.
-	-> SquidM (Maybe Type)
+	-> SquidM (Maybe Node)
 	
 pushTemplate tTemplate srcShape cMerge
 
 	-- if this class does not have a constructor then we 
 	--	can push the template into it.
-	| Class { classType = Just (TSum k []) }	<- cMerge
+	| Class { classType = Just NBot }	<- cMerge
 	= do	
-		tPush	<- freshenType tTemplate
+		tPush	<- freshenNode tTemplate
 		trace 	$ "  - merge class\n"
 			% "    tPush = " % tPush	% "\n"		
 
-		addToClass (classId cMerge) srcShape tPush
+		addToClass (classId cMerge) srcShape (classKind cMerge) tPush
 		return $ Just tPush		
 
 	-- If adding the template will result in a type error then add the error to
@@ -184,17 +181,16 @@ pushTemplate tTemplate srcShape cMerge
 		return Nothing
 
 	   else return (Just t)
-	
- 	
-	
+
+
 -- | replace all the free vars in this type with new ones
-freshenType :: Type -> SquidM Type
-freshenType tt
- = do	let cidsFree	= Set.toList $ collectClassIds tt
+freshenNode :: Node -> SquidM Node
+freshenNode node
+ = do	let cidsFree	= Set.toList $ cidsOfNode node
  	cidsFresh	<- mapM freshenCid cidsFree
 	let sub		= Map.fromList $ zip cidsFree cidsFresh
+	return	$ subNodeCidCid sub node
 
-	return	$ subCidCid sub tt
 
 freshenCid :: ClassId -> SquidM ClassId
 freshenCid cid
@@ -204,7 +200,7 @@ freshenCid cid
  	cid'	<- allocClass (Just k)
 	updateClass cid'
 		(classInit cid' k)
-			{ classType = Just (tBot k) }
+			{ classType = Just NBot }
 
 	return	cid'
  

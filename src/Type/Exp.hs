@@ -81,7 +81,7 @@ data Type
 	-- | A type variable.
 	| TVar     	Kind 	Var
 
-	-- A type variable with an embedded :> constraint. Used in core types only.
+	-- | A type variable with an embedded :> constraint. Used in core types only.
 	| TVarMore	Kind 	Var	Type
 	
 	-- | A de Bruijn index. Used in the the kinds of witness constructors only.
@@ -109,6 +109,8 @@ data Type
 			
 	
 	-- Helpers used in the solver only --------------------------
+	-- These shouldn't show up in the source or core lanugage.
+	
 	-- | A meta type variable. 
 	--   A reference to some equivalence class in the type graph.
 	| TClass   	Kind ClassId
@@ -117,19 +119,24 @@ data Type
 	--   The TypeError says what went wrong.
 	| TError	Kind TypeError
 
-	-- Helpers used in source and desugarer only ----------------
+
+	-- Old stuff that needs factoring out. --------------------------
 	-- TODO: Refactor this to be application of a special constructor.
 	| TElaborate	Elaboration Type
 
+	-- A tagged object which is free in the closure.
+	-- The tag should be a Value var.
+	-- The type parameter should be a value type, region or closure.
+	-- TODO: Refactor this into the application of a special type constructor.
+	--       Store the tag var in the constructor. 
+	--       (Free var) :: * -> $	
+	| TFree		Var Type
 
-	-- Old stuff that needs factoring out.
-	-- Refactor to push the var into a TyCon
-	| TFree		Var Type		-- ^ A tagged object which is free in the closure.
-						--	The tag should be a Value var.
-						--	The type parameter should be a value type, region or closure.
-
-	| TDanger	Type Type		-- ^ If a region is mutable then free type variables in the 
-						--	associated type must be held monomorphic.
+	-- ^ If a region is mutable then free type variables in the 
+	--	associated type must be held monomorphic.
+	-- TODO: Refactor this into the application of a type constructor.
+	--       Danger :: % -> * -> $
+	| TDanger	Type Type		
 	deriving (Show, Eq)
 
 
@@ -148,6 +155,16 @@ data Bind
 	deriving (Show, Eq)
 
 
+-- | Stores information about a type error directy in a type.
+--	Used in the TError constructor of Type.
+--	Used during type inference only.
+data TypeError
+	= TypeErrorUnify [Type]		-- ^ types that couldn't be unified
+	| TypeErrorLoop	 Type Type	-- ^ a recursive type equation 
+					--	(mu t1. t2), 	where t1 can appear in t2.
+					--			t1 is a TClass or a TVar.
+	deriving (Show, Eq)
+
 -- | Helps with defining foreign function interfaces.
 --	Used in the TElaborate constructor of Type.
 --	Used in source and desugared types only.
@@ -158,15 +175,6 @@ data Elaboration
 	deriving (Show, Eq)
 
 
--- | Stores information about a type error directy in a type.
---	Used in the TError constructor of Type.
---	Used during type inference only.
-data TypeError
-	= TypeErrorUnify [Type]		-- ^ types that couldn't be unified
-	| TypeErrorLoop	 Type Type	-- ^ a recursive type equation 
-					--	(mu t1. t2), 	where t1 can appear in t2.
-					--			t1 is a TClass or a TVar.
-	deriving (Show, Eq)
 
 
 instance Ord Type where
@@ -214,6 +222,8 @@ data Constraints
 
 -- | A Fetter is a piece of type information which isn't part of the type's shape.
 --   TODO: Refactor to only contain FConstraint and FProj. The others are in the Constraints type.
+--         Do we really want to keep FWhere and FMore for the solver? 
+--         If so use Bind for the lhs and merge them together, also for TypeError above.
 data Fetter
 	= FConstraint	Var	[Type]		-- ^ Constraint between types.
 	| FWhere	Type	Type		-- ^ Equality of types, t1 must be TVar or TClass
@@ -229,7 +239,7 @@ data Fetter
 
 
 -- | Represents field and field reference projections.
---   TODO: Check is this only used in the inferencer?
+--   TODO: Check is this only used in the solver?
 data TProj
 	= TJField  !Var				-- ^ A field projection.   		(.fieldLabel)
 	| TJFieldR !Var				-- ^ A field reference projection.	(#fieldLabel)

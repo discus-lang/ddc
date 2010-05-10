@@ -6,14 +6,14 @@ module Type.Crush.Unify
 	, isShallowConflict 
 	, addErrorConflict )
 where
-import Type.Location
+-- import Type.Location
 import Type.Exp
-import Type.Builtin
-import Type.Error
+-- import Type.Builtin
+-- import Type.Error
 import Type.State
-import Type.Util
+-- import Type.Util
 import Type.Class
-import Type.Feed
+-- import Type.Feed
 import Util
 import DDC.Main.Error
 import qualified Data.Set	as Set
@@ -72,8 +72,8 @@ crushUnifyClass_unify cidT c
 	let queue_clean	
 		= filter 
 			(\x -> case x of
-				TVar{}		-> False
-				TSum _ []	-> False
+				NVar{}		-> False
+				NBot		-> False
 				_		-> True)
 			((maybeToList $ classType c) ++ classQueue c)
 
@@ -82,7 +82,7 @@ crushUnifyClass_unify cidT c
 	-- If there is nothing left in the queue, or there's only one element
 	--	then we're done. Otherwise call the reall unifier.
 	t_final	<- case queue_clean of
-			[] 	-> return	$ tBot (classKind c)
+			[] 	-> return	$ NBot
 			[t] 	-> return	$ t
 			_  	-> crushUnifyClass_merge cidT c queue_clean
 			
@@ -103,58 +103,38 @@ crushUnifyClass_unify cidT c
 --	this does the actual unification.
 crushUnifyClass_merge cidT c queue@(t:_)
 	
-	-- class ids
-	| TClass k _	<- t
-	= do
-		let cids	=  map (\(TClass k cid) -> cid) queue
-		cid		<- mergeClasses cids
-		return	$ TClass k cid
-
 	-- all constructors in the queue have to be the same
-	| TCon{}	<- t 
+	| NCon{}	<- t 
 	, all (== t) (tail queue)
 	= 	return t
 
 	-- unify the left and right of type applications.
-	| TApp t1 t2	<- t
-	, Just (t1s, t2s)
+	| NApp{}	<- t
+	, Just (cid1s, cid2s)
 		<- liftM unzip $ sequence
 		$ map (\x -> case x of
-				TApp t1 t2 	-> Just (t1, t2)
+				NApp cid1 cid2 	-> Just (cid1, cid2)
 				_		-> Nothing)
 		$ queue
-
-	, k1s	<- map (\(Just k) -> k) $ map kindOfType t1s
-	, [_]	<- nub k1s
-	
-	, k2s	<- map (\(Just k) -> k) $ map kindOfType t2s
-	, [_]	<- nub k2s
 	
 	= do
-		let ?src	= TSNil "Type.Crush.Unify/TApp"
-		Just t1s_fed	<- liftM sequence $ mapM (feedType Nothing) t1s
-		Just t2s_fed 	<- liftM sequence $ mapM (feedType Nothing) t2s
-
-		t1' <- mergeClassesT t1s_fed
-		t2' <- mergeClassesT t2s_fed
-		
-		return	$ TApp t1' t2'
+		cid1' <- mergeClasses cid1s
+		cid2' <- mergeClasses cid2s
+		return	$ NApp cid1' cid2'
 
 	-- From the effect weakening rule it's always return a larger effect than needed.
 	-- Therefore, to "unify" two effects we want take their l.u.b and use that in place of both.
-	| and $ map (\t -> kindOfType_orDie t == kEffect) queue
-	= do	return	$ makeTSum kEffect queue
-
-	-- .. likewise for closures
-	| and $ map (\t -> kindOfType_orDie t == kClosure) queue
-	= do	return	$ makeTSum kClosure queue
+	| NSum{}	<- t
+	= panic stage $ "crushUnifyClass_merge: makeNSum\n"
+	--	return	$ makeNSum queue
 
 	-- if none of the previous rules matched then we've got a type error in the graph.
 	| otherwise
- 	= do	addErrorConflict cidT c 
+ 	= panic stage $ "crushUnifyClass_merge: type error\n"
+{-		addErrorConflict cidT c 
 		return $ TError (kindOfType_orDie t) 
 				(TypeErrorUnify $ classQueue c)
-
+-}
 
 -- | This function is called by unifyClassCheck when it finds a problem
 -- 	in the graph. We diagnose the problem, add an error message to 
@@ -165,7 +145,7 @@ addErrorConflict  cid c
  = do	
 	-- filter out TVars, as they don't conflict with anything
  	let tsCtorsNode
-		= filter (\(t, _) -> not $ isSomeTVar t)
+		= filter (\(t, _) -> not $ isNVar t)
 		$ classTypeSources c
  
 	-- gather up pairs of nodes that conflict.
@@ -191,9 +171,9 @@ addErrorConflict  cid c
 
 -- | add an error recording that these two types conflict.
 addErrorConflict' cid c ((t1, s1), (t2, s2))
- = do	
+ = panic stage $ "addErrorConflict'"
 	-- add an error to the error list.
-	addErrors 
+{-	addErrors 
 		[ ErrorUnifyCtorMismatch 
 			{ eCtor1	= t1
 			, eTypeSource1	= s1
@@ -202,37 +182,26 @@ addErrorConflict' cid c ((t1, s1), (t2, s2))
 
 	-- mark the class in the graph that contains the error.
 	updateClass cid
-		c { classType	= Just $ TError (classKind c) 
-						(TypeErrorUnify $ classQueue c) }
+		c { classType	= Just $ NError }
 
 	return ()
-
+-}
 
 -- | check whether two types conflict on their outermost constructor.
-isShallowConflict :: Type -> Type -> Bool
+isShallowConflict :: Node -> Node -> Bool
 isShallowConflict t1 t2
-	| TApp t11 t12	<- t1	
-	, TApp t21 t22	<- t2	
-	, Just k11	<- kindOfType t11
-	, Just k12	<- kindOfType t12
-	, Just k21	<- kindOfType t21
-	, Just k22	<- kindOfType t22
-	, k11 == k21
-	, k12 == k22
+	| NApp{}	<- t1	
+	, NApp{}	<- t2	
 	= False
 	
-	| TCon tc1	<- t1
-	, TCon tc2	<- t2
+	| NCon tc1	<- t1
+	, NCon tc2	<- t2
 	= not $ tc1 == tc2
 	
-	| TVar k1 _	<- t1	
-	, Just k2	<- kindOfType t2
-	, k1 == k2
+	| NVar{}	<- t1	
 	= False
 
-	| TVar k2 _	<- t2
-	, Just k1	<- kindOfType t1
-	, k1 == k2
+	| NVar{}	<- t2
 	= False
 		
 	| otherwise

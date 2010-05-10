@@ -18,7 +18,8 @@ export
 	-- List Transformations 
 	map; mapL; maps; maps_; mapAccumL; mapAccumR; 
 	reverse; intersperse; 
-	intercalate; partition;
+	intercalate; 
+	--partition;
 		
 	-- Folds 
 	foldl1; foldr1; 
@@ -258,6 +259,7 @@ intercalate xs xss = concat (intersperse xs xss)
 --   the pair of lists of elements which do and do not satisfy the
 --   predicate, respectively; i.e.,
 -- > partition p xs == (filter p xs, filter (\x -> not $ p x) xs)
+{-
 partition  :: (a -> Bool) -> [a] -> ([a],[a])
 partition p xs = foldr (select p) ([],[]) xs
  where
@@ -265,7 +267,7 @@ partition p xs = foldr (select p) ([],[]) xs
 	select p x (ts,fs) 
 		| p x       = (x:ts,fs)
 		| otherwise = (ts, x:fs)
-
+-}
 
 -- Folding ----------------------------------------------------------------------------------------
 instance Foldable (List %r) where

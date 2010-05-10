@@ -7,7 +7,8 @@
 --
 module Type.Trace 
 	( traceType 
-	, traceCidsDown)
+	, traceCidsDown
+	, lookupTypeOfCid )
 where
 import Type.Exp
 import Type.Builtin
@@ -112,17 +113,21 @@ loadTypeNodes2 cidBody (cidReach1 : cidsReach)
 		, classKind = k } 	<- clsReach1
 	= do
 		-- make sure all the cids are canonical
-		tRefreshed	<- refreshCids tNode
+		Just tNode	<- lookupTypeOfCid cidReach1
 		fsSingle	<- refreshCids $ map fst $ classFetterSources clsReach1
 
-		-- chop of fetters attached directly to the type in the node
+		-- Chop of fetters attached directly to the type in the node.
+		-- 	Schemes in NScheme nodes may contain fetters, eg with:
+		-- 	NScheme (forall r1. Int r1 -> () :- Mutable r1)
+		--	The Mutable r1 is attached directly because is doesn't reference
+		--	any classes in the rest of the graph.
 		let (tBody, fsLocal) 	
-			= case toConstrainFormT tRefreshed of
+			= case toConstrainFormT tNode of
 				TFree v (TConstrain t crs)	-> (TFree v t, crs)
 				TConstrain t crs		-> (t, crs)
 				t				-> (t, Constraints Map.empty Map.empty [])
 
-		var		<- makeClassName cidReach1
+		var	<- makeClassName cidReach1
 	
 		loadTypeNodes3 
 			cidBody 
@@ -226,4 +231,54 @@ traceCidsDowns toVisit visited
 					`Set.difference` visited'
 
 		traceCidsDowns toVisit' visited'
+
+
+-- | Lookup the real type of a class.
+--	If the type hasn't been unified yet, or if this isn't a regular equivalance
+--	class then `Error`.
+lookupTypeOfCid
+	:: ClassId 		-- ^ Id of of the class of interest.
+	-> SquidM (Maybe Type)	-- ^ Type of the node.
+
+lookupTypeOfCid cid
+ = do	Just cls	<- lookupClass cid
+	case cls of
+	 Class 	{ classType 	= Just node 
+		, classKind	= kind }
+	  	-> lookupTypeOfCid' cid cls kind node 
+	
+	 _ 	-> return Nothing
+	
+lookupTypeOfCid' cid cls kind node
+ = case node of
+ 	NBot	
+ 	 -> 	return $ Just $ TSum kind []
+	
+	NVar v	
+	 -> 	return $ Just $ TVar kind v
+	
+	NCon tc	
+	 -> 	return $ Just $ TCon tc
+	
+	NApp cid1' cid2'
+	 -> do	cid1		<- sinkClassId cid1'
+		cid2		<- sinkClassId cid2'
+		Just cls1	<- lookupClass cid1
+		Just cls2	<- lookupClass cid2
+		let t1		= TClass (classKind cls1) cid1
+		let t2		= TClass (classKind cls2) cid2
+		return $ Just $ TApp t1 t2
+		
+	NSum cids'
+	 -> do	cids		<- mapM sinkClassId $ Set.toList cids'
+		Just clss	<- liftM sequence $ mapM lookupClass cids
+		let kinds	= map classKind clss
+		let ts		= zipWith TClass kinds cids
+		return $ Just $ TSum kind ts
+		
+	NFree v t'
+	 -> do	t		<- refreshCids t'
+		return $ Just $ TFree v t
+		
+
 

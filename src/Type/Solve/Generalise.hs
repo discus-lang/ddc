@@ -172,7 +172,7 @@ addSchemeToGraph
 addSchemeToGraph src vGen tScheme
  = do
 	-- call makeClass to get the classId of this var
-	cidGen		<- makeClassV src kValue vGen 
+	cidGen		<- makeClassFromVar src kValue vGen 
 
 	-- grab the class from the graph
 	Just cls	<- lookupClass cidGen
@@ -189,5 +189,5 @@ addSchemeToGraph src vGen tScheme
 
 	 -- Update the class
 	 _		-> updateClass cidGen	
-				cls { classType = Just tScheme_stripped }
+				cls { classType = Just $ NScheme tScheme_stripped }
 

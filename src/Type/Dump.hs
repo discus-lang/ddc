@@ -6,9 +6,10 @@ module Type.Dump
 	, dumpSub
 	, prettyClass)
 where
-import Type.Pretty
+-- import Type.Pretty
 import Type.State
 import Type.Class
+-- import DDC.Solve.Node
 import Util
 import Data.Array.IO	
 import DDC.Main.Pretty
@@ -93,7 +94,7 @@ instance Pretty Class PMode where
 		-- class type
 		%> (case classType c of
 			Nothing	-> ppr "-- no type --\n"
-			Just t	-> ":: " % prettyTS t % "\n\n")
+			Just t	-> ":: " % ppr t % "\n\n")
 
 		-- class fetters
 		% (case classFetterSources c of
@@ -114,7 +115,7 @@ instance Pretty Class PMode where
 				%> "\n" %!% classQueue c % "\n\n")
 		% "        -- nodes\n"
 		% (punc "\n\n"
-			$ map (\(t, i) -> "        " %> (i % "\n" % prettyTS t))
+			$ map (\(t, i) -> "        " %> (i % "\n" % ppr t))
 			$ (classTypeSources c))
 		% "\n\n"
 	
@@ -141,7 +142,8 @@ forwardCids c@ClassFetter { classFetter = f }
 		, classFetter	= fetter' }
 
 forwardCids c@Class{}
- = do	cid'		<- updateVC $ classId c
+ = do	return c
+{-	cid'		<- updateVC $ classId c
 
 	fs'		<- mapM (\(f, src)
 				-> do	f'	<- updateVC f
@@ -152,7 +154,6 @@ forwardCids c@Class{}
 	ts'		<- mapM updateVC ts
 	let nodes'	= zip ts' ns
 
-	
 	typ'		<- case classType c of
 				Nothing	-> return Nothing
 				Just t	-> do
@@ -164,3 +165,4 @@ forwardCids c@Class{}
 		, classType		= typ' 
 		, classFetterSources	= fs' 
 		, classTypeSources	= nodes' }
+-}

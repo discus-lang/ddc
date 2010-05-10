@@ -6,7 +6,7 @@ module Type.Class
 	, expandGraph
 	, allocClass
 	, delClass
-	, makeClassV
+	, makeClassFromVar
 	, addToClass
 	, lookupClass
 	, updateClass
@@ -22,8 +22,8 @@ module Type.Class
 	, updateVC
 	, kindOfCid
 	, foldClasses
-	, headTypeDownLeftSpine
-	, traceDownLeftSpine)
+	, headCidDownLeftSpine)
+--	, traceDownLeftSpine)
 where
 import Type.Exp
 import Type.Location
@@ -50,7 +50,7 @@ classChildren c
 	 -> Set.toList $ collectClassIds f
 
 	Class	    { classType   = mt } 
-	 -> fromMaybe [] $ liftM (Set.toList . collectClassIds) mt
+	 -> fromMaybe [] $ liftM (Set.toList . cidsOfNode) mt
 
 
 -- | Increase the size of the type graph.
@@ -121,20 +121,19 @@ delClass cid
 	
 -- | If there is already a class for this variable then return that
 --		otherwise make a new one containing this var.
-makeClassV	
+makeClassFromVar
 	:: TypeSource		-- ^ Source of the constraint containing the variable.
 	-> Kind			-- ^ Kind of this variable.
 	-> Var			-- ^ The variable.
 	-> SquidM ClassId
 		
-makeClassV tSource kind v
- = do	mCid		<- lookupVarToClassId v
-
+makeClassFromVar tSource kind var
+ = do	mCid		<- lookupVarToClassId var
    	case mCid of
    	 Just cid	-> return cid
 	 Nothing 
 	  -> do	cid	<- allocClass (Just kind)
-		addNameToClass cid tSource v kind
+		addNameToClass cid tSource var kind
 	     	return	cid
 
 
@@ -149,7 +148,7 @@ makeClassName cid_
 	Just c		<- lookupClass cid
 
 	let kind	= case c of { Class { classKind = kind } -> kind }
-	let vars	= [ v | (TVar k v, _) <- classTypeSources c ]	
+	let vars	= [ v | (NVar v, _) <- classTypeSources c ]	
 			
 	case vars of
 	 [] 
@@ -185,37 +184,29 @@ classNameOrd v1 v2
 addToClass 
 	:: ClassId		-- ^ id of class to update
 	-> TypeSource		-- ^ source of constraint
-	-> Type			-- ^ constraint
+	-> Kind			-- ^ kind of the constraint
+	-> Node			-- ^ constraint
 	-> SquidM ()
 
-addToClass cid_ src t
+addToClass cid_ src kind node
  = do	graph		<- gets stateGraph
  	cid		<- sinkClassId cid_
 
- 	c		<- liftIO (readArray (graphClass graph) cid)
-	c'		<- addToClass2 cid src t c
-	liftIO (writeArray (graphClass graph) cid c')
+ 	cls		<- liftIO (readArray (graphClass graph) cid)
+	cls'		<- addToClass2 cid src kind node cls
+	liftIO (writeArray (graphClass graph) cid cls')
 
-	linkVar cid t
-
+	linkVar cid node
 	return ()
 
-addToClass2 cid src t c
-	| ClassNil	<- c
-	, Just k	<- kindOfType t
-	= addToClass3 cid src t (classInit cid k)
+addToClass2 cid src kind node cls
+	| ClassNil	<- cls
+	= addToClass3 cid src node (classInit cid kind)
 		
-	| Class { classKind } <- c
-	, Just k	<- kindOfType t
-	, k == classKind
-	= addToClass3 cid src t c
-	
 	| otherwise
-	= panic stage 
-		$ "addToClass2 fails: " ++ show t ++ "\n"
-		++ "class = " ++ show c ++ "\n"
+	= addToClass3 cid src node cls
 	
-
+	
 addToClass3 cid src t c@Class{}
  = do 	activateClass cid
  	return	$ c	{ classTypeSources	= (t, src) : classTypeSources c
@@ -224,7 +215,7 @@ addToClass3 cid src t c@Class{}
 
 linkVar cid tt
  = case tt of
- 	TVar k v
+ 	NVar v
 	 -> do	graph	<- gets stateGraph
 		let graph'	
 			= graph 
@@ -243,29 +234,28 @@ addNameToClass
 	-> Kind
 	-> SquidM ()
 
-addNameToClass cid_ src v k
- = do	let t	= TVar k v
+addNameToClass cid_ src v kind
+ = do	let node	= NVar v
  	graph	<- gets stateGraph
  	cid	<- sinkClassId cid_
-
- 	c	<- liftIO (readArray (graphClass graph) cid)
-	c'	<- addNameToClass2 cid src t c
-	liftIO (writeArray (graphClass graph) cid c')
-	linkVar cid t
+ 	cls	<- liftIO (readArray (graphClass graph) cid)
+	cls'	<- addNameToClass2 cid src node kind cls
+	liftIO (writeArray (graphClass graph) cid cls')
+	linkVar cid node
 	return ()
 
-addNameToClass2 cid src t c
- = case c of
+addNameToClass2 cid src node kind cls
+ = case cls of
  	ClassNil	
-	 -> let Just k	= kindOfType t
-	    in  addNameToClass3 cid src t (classInit cid k)
+	 -> addNameToClass3 cid src node (classInit cid kind)
 
 	Class{}		
-	 -> addNameToClass3 cid src t c
+	 -> addNameToClass3 cid src node cls
 	
-addNameToClass3 cid src t c
+addNameToClass3 cid src node cls
  = do 	activateClass cid
- 	return	$ c	{ classTypeSources	= (t, src) : classTypeSources c }
+ 	return	$ cls
+		{ classTypeSources = (node, src) : classTypeSources cls }
 
 
 -- | Lookup a class from the graph.
@@ -359,6 +349,7 @@ lookupVarToClassId v
 	  -> do	cid'	<- sinkClassId cid
 	  	return	$ Just cid'
 	 
+	
 -- Merge ------------------------------------------------------------------------------------------	 
 -- | Merge two classes by concatenating their queue and node list
 --	The one with the lowesed classId gets all the constraints and the others 
@@ -397,11 +388,12 @@ mergeClasses2 cids cs
 		{ classTypeSources	= concat $ map classTypeSources cs
 		, classType		= Nothing
 
+		-- Throw out bottom elements while we're here.
 		, classQueue	=  nub
 				$  catMaybes
 				$  map (\t -> case t of
-						TSum _ []	-> Nothing
-						_		-> Just t)
+						NBot{}	-> Nothing
+						_	-> Just t)
 				$  concat (map classQueue cs)
 				++ concat (map (maybeToList . classType) cs)
 
@@ -521,19 +513,19 @@ foldClasses fun x
 --	left node (if there is one)
 --
 --	For example, if the graph holds a type like:
---	   TApp (TApp (TCon tc) t1) t2
+--	   NApp (NApp (NCon tc) cid1) cid2
 --	
---	Then starting from the cid of the outermost TApp, we'll walk down 
---	the left spine until we find (TCon tc), then return t1
+--	Then starting from the cid of the outermost NApp, we'll walk down 
+--	the left spine until we find (TCon tc), then return cid2
 --
 --	If the node at the bottom of the spine hasn't been unified, then
 --	It'll be a Nothing, so return that instead.
 --
-headTypeDownLeftSpine 
+headCidDownLeftSpine 
 	:: ClassId 
-	-> SquidM (Maybe Type)
+	-> SquidM (Maybe ClassId)
 	
-headTypeDownLeftSpine cid1
+headCidDownLeftSpine cid1
  = do	Just cls1	<- lookupClass cid1
 
 --	trace 	$ "    headTypeDownLeftSpine\n"
@@ -541,11 +533,11 @@ headTypeDownLeftSpine cid1
 --		% "    type = " % classType cls1	% "\n\n"
 
 	case classType cls1 of
-	 Just (TApp (TClass _ cid11) t12)	
+	 Just (NApp cid11 cid12)	
 	   -> do Just cls11	<- lookupClass cid11
 		 case classType cls11 of
-			Just TCon{}	-> return $ Just t12
-			_		-> headTypeDownLeftSpine cid11
+			Just NCon{}	-> return $ Just cid12
+			_		-> headCidDownLeftSpine cid11
 
 	 _	-> return $ Nothing
 
@@ -562,16 +554,17 @@ headTypeDownLeftSpine cid1
 --
 -- If and of the nodes have Nothing for their type, then return Nothing.
 --
+{-
 traceDownLeftSpine
 	:: Type
-	-> SquidM (Maybe [Type])
+	-> SquidM (Maybe [Node])
 	
 traceDownLeftSpine tt
  = case tt of
 	TClass _ cid
 	 -> do	Just cls	<- lookupClass cid
 		case classType cls of
-			Just t@(TSum _ [])	-> return $ Just [TClass (classKind cls) cid]
+			Just t@(NSum _ [])	-> return $ Just [TClass (classKind cls) cid]
 		 	Just t			-> traceDownLeftSpine t
 			Nothing			-> return $ Nothing
 			
@@ -587,4 +580,4 @@ traceDownLeftSpine tt
 	_
 	 -> panic stage
 	 $  "traceDownLeftSpine: no match for " % tt
-
+-}

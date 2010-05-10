@@ -26,6 +26,7 @@ import Type.Error
 import Type.Util
 import Type.State
 import Type.Class
+import Type.Trace
 import Util
 import DDC.Main.Error
 import DDC.Var
@@ -55,8 +56,8 @@ checkSchemeDanger :: [Error] -> Class -> SquidM [Error]
 checkSchemeDanger errs c
 	| Class { classKind	= kValue 
 		, classId	= cid
-		, classType	= Just t }	<- c
-	, TForall b k x				<- t
+		, classType	= Just node }	<- c
+	, NScheme t 				<- node
 
 	= do	trace 	$ "*   checkSchemeDanger\n"
 			% "    t = " % t % "\n"
@@ -65,7 +66,7 @@ checkSchemeDanger errs c
 			$ trimClosureC_constrainForm
 				Set.empty Set.empty 
 			$ toConstrainFormT
-			$ TFree (varWithName "foo") x
+			$ TFree (varWithName "foo") t
 		
 		let ds	= catMaybes
 			$ map (\d -> case d of
@@ -91,7 +92,7 @@ checkSchemeDanger errs c
 checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)
 checkDanger (Class 
 		{ classId 	= cidScheme
-		, classType 	= Just t })
+		, classType 	= Just node })
 		( tRegion@(TClass kR cidR)
 		, t2)
 
@@ -103,9 +104,10 @@ checkDanger (Class
 	 	 Just (fMutable, srcMutable)
 	  	  -> do
 			varScheme	<- makeClassName cidScheme
+			Just tNode	<- lookupTypeOfCid cidScheme
 			return	$ Just
 				$ ErrorLateConstraint
-					{ eScheme 		= (varScheme, t)
+					{ eScheme 		= (varScheme, tNode)
 					, eMutableRegion	= tRegion
 					, eMutableFetter	= fMutable
 					, eMutableSrc		= srcMutable

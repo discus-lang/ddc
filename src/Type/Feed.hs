@@ -3,10 +3,8 @@
 module Type.Feed
 	( feedConstraint
 	, feedType 
-	, feedTypeWithSource
 	, feedFetter
-	, addFetter
-	, addFetterSource)
+	, addFetter)
 where
 import Constraint.Exp
 import Type.Exp
@@ -18,7 +16,6 @@ import Type.Util
 import Type.Link
 import Util
 import DDC.Main.Error
-import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -29,11 +26,8 @@ trace ss
  = when debug $ traceM ss
 
 -- feedConstraint ----------------------------------------------------------------------------------
--- | Add a new constraint to the type graph.
---
-feedConstraint 
-	:: CTree -> SquidM ()
-	
+-- | Add a constraint to the type graph.
+feedConstraint :: CTree -> SquidM ()
 feedConstraint cc
  = trace ("feedConstraint: " % cc % "\n") >>
    case cc of
@@ -41,22 +35,17 @@ feedConstraint cc
  	CEq src (TVar k v1) t2
 	 -> do
 		-- create a new class for the LHS, with just that var in it.
-	 	cid1		<- makeClassV src (kindOfSpace $ varNameSpace v1) v1
+	 	cid1	<- makeClassFromVar src k v1
 
 		-- feed the RHS into the graph.
-		let ?src	= src
-		Just (TClass _ cid2)
-			<- feedType Nothing t2
+		cid2	<- feedType src t2
 
 		-- merge left and right hand sides.
 		mergeClasses [cid1, cid2]
 		return ()
 
 	CEqs src ts
-	 -> do	let ?src	= src
-	 	Just ts'	<- liftM sequence
-				$  mapM (feedType Nothing) ts
-		let cids	= map (\(TClass k cid) -> cid) ts'
+	 -> do	cids		<- mapM (feedType src) ts
 		mergeClasses cids
 		return ()
 
@@ -68,58 +57,35 @@ feedConstraint cc
 
 	-- Class constraints
 	CClass src vC ts
-	 -> do	let ?src	= src
-		addFetter (FConstraint vC ts)
+	 -> do	addFetter src (FConstraint vC ts)
 		return ()
 
 	-- Projection constraints.
 	CProject src j v1 tDict tBind
-	 -> do	let ?src	= src
-		addFetter (FProj j v1 tDict tBind)
+	 -> do	addFetter src (FProj j v1 tDict tBind)
 		return ()		
 				
-
 	-- Type definitions, eg data constructors, external functions.
+	--	These get added to the defs table by the main solver,
+	--	and shouldn't appear in the graph.
 	CDef src (TVar k v1) t2
-	 -> do	
-	 	-- make a new class to hold the type.
-		cid		<- makeClassV src (kindOfSpace $ varNameSpace v1) v1
-	 
-	 	-- add type to class
-	 	addToClass cid src t2
-		
-		return ()
-
+	 -> 	panic stage 
+		 $ "feedConstraint: not feeding def " % cc % "\n"
 
 	_ -> 	panic stage
 		 $ "feedConstraint: can't feed " % cc % "\n"
 
+
 -- feedType --------------------------------------------------------------------------------------------
 -- | Add a type to the type graph.
---	This always creates a new class and returns a classid.
-
-feedTypeWithSource
-	:: TypeSource
-	-> Maybe ClassId
-	-> Type
-	-> SquidM (Maybe Type)
-
-feedTypeWithSource src mParent tt
- = let ?src	= src
-   in	feedType mParent tt
-
-
+--	The type is converted to the node form on the way in.
 feedType 	
-	:: (?src :: TypeSource)
-	=> Maybe ClassId
-	-> Type -> SquidM (Maybe Type)
+	:: TypeSource
+	-> Type 
+	-> SquidM ClassId
 
-feedType mParent t
- = do	t'	<- feedType' mParent t
-	return t'
-	
-feedType'	mParent t
- = case t of
+feedType src tt
+ = case tt of
 	TFetters t fs
 	 -> do	
 	 	-- Rename the vars on the LHS of FLet bindings to make sure
@@ -137,40 +103,47 @@ feedType'	mParent t
 		let fs2		= subTT_all ttSub fs
 		let t2		= subTT_all ttSub t
 				
-		mapM_ (feedFetter mParent) fs2
-	 	t3		<- feedType mParent t2
+		mapM_ (feedFetter src) fs2
+	 	t3		<- feedType src t2
 		return	t3
 
 	TConstrain{}
-	 -> feedType' mParent
-	 $  toFetterFormT t
+	 -> feedType src
+	 $  toFetterFormT tt
 
 	TSum k ts
-	 -> do 	cidE		<- allocClass (Just k)
-		Just es'	<- liftM sequence
-				$  mapM (feedType1 (Just cidE)) ts
-		addNode cidE 	$ TSum k es'
+	 -> do 	cidT		<- allocClass (Just k)
+		cids		<- mapM (feedType src) ts
 
-		returnJ		$ TClass k cidE
+		addNode cidT src k 
+			$ NSum (Set.fromList cids)
+
+		return cidT
 
 	TApp t1 t2
 	 -> do	
-		let Just k	= kindOfType t
+		let Just k	= kindOfType tt
 	 	cidT		<- allocClass (Just k)
-	 	Just t1'	<- feedType (Just cidT) t1
-		Just t2'	<- feedType (Just cidT) t2
-		addNode cidT	$ TApp t1' t2'
-		returnJ		$ TClass k cidT
+	 	cid1		<- feedType src t1
+		cid2		<- feedType src t2
+
+		addNode cidT src k	
+			$ NApp cid1 cid2
+
+		return cidT
 
 	TCon tc
-	 -> do	cidT		<- allocClass (Just $ tyConKind tc)
-	 	addNode cidT	$ TCon tc
-		returnJ		$ TClass (tyConKind tc) cidT
+	 -> do	let k		= tyConKind tc
+		cidT		<- allocClass (Just k)
+
+	 	addNode cidT src k	
+			$ NCon tc
+
+		return cidT
 
  	TVar k v 
-	 -> do 	cidT		<- makeClassV ?src k v 
-		returnJ		$ TClass k cidT
-
+	 -> do 	cidT		<- makeClassFromVar src k v 
+		return cidT
 
 	-- closure
 	-- TFree's that we get from the constraints might refer to types that are in
@@ -189,143 +162,111 @@ feedType'	mParent t
 					$ toConstrainFormT
 					$ flattenT tDef
 
-		  	tDef'		<- linkType mParent [] tDef_trim
+		  	tDef'		<- linkType [] src tDef_trim
 
 			-- we use addToClass here because we don't need to register effects and 
 			--	classes for crushing in this type
-			addToClass cid ?src $ TFree v1 tDef'
-			returnJ		$ TClass kClosure cid
+			addToClass cid src kClosure 
+				$ NFree v1 tDef'
+
+			return cid
 
 		 -- type must be in the graph
 		 Nothing
-		  -> do	t'		<- linkType mParent [] t
-			addNode	cid	$ TFree v1 t'
-			returnJ		$ TClass kClosure cid
+		  -> do	t'		<- linkType [] src t
+
+			addNode	cid src	kClosure
+				$ NFree v1 t'
+
+			return cid
 
 	-- A non-var closure. We can get these from signatures and instantiated schemes
 	TFree v1 t
 	 -> do	cid		<- allocClass (Just kClosure)
-		t'		<- linkType mParent [] t
-		addNode	cid	$ TFree v1 t'
-		returnJ		$ TClass kClosure cid
+		t'		<- linkType [] src t
+
+		addNode	cid src kClosure	
+			$ NFree v1 t'
+
+		return cid
 
 	TClass k cid
 	 -> do 	cidT'		<- sinkClassId cid
-		returnJ		$ TClass k cidT'
+		return cidT'
 		
-	_  ->	freakout stage
-			( "feedType: cannot feed this type into the graph.\n"
-			% "   type    = " % t 		% "\n"
-			% "           = " % show t	% "\n"
-			% "   source  = " % ?src 	% "\n"
-			% "   mParent = " % mParent	% "\n")
-			$ return Nothing
+	_  -> panic stage
+		( "feedType: cannot feed this type into the graph.\n"
+		% "   type    = " % tt 		% "\n"
+		% "   source  = " % src 	% "\n")
 
------
--- feedType1
---	Feed a type into a type graph.
---	If the type is an Effect or Closure constructor then don't create a new class.
---	This is used to reduce the number of classes in the graph.
---
---	The constructors in sums from constraints such as: 
---		$e1 = ${!C a b, !D c d}
---	aren't points where unification can happen, so there is no reason to give them 
---	their own equivalence clases. 
---
---	This is unlike the effects from data or function constructors, ie.
---		t1  = a -(!e1 $c1)> b
---	here, t1 might be unified with another type, causing !e1 and $c1 to be unified 
---	also - so they need their own classes.
---
 
-feedType1 
-	:: (?src :: TypeSource)
-	=> Maybe ClassId
-	-> Type -> SquidM (Maybe Type)
-		
-feedType1 mParent tt
- = case tt of
-	TSum k []
-	 ->	returnJ tt
- 		
-	-- closures
-	TFree v t
-	 -> do	Just tt'	<- feedType mParent tt
-	 	returnJ	$ tt'
-
-	_ 	-> feedType mParent tt
+-- | Add a node to the type graph, and activate the corresponding class.
+addNode :: ClassId
+	-> TypeSource
+	-> Kind
+	-> Node
+	-> SquidM ()
+	
+addNode cid src kind node
+ = do	addToClass cid src kind node
+	activateClass cid
 
 
 -- Fetter ------------------------------------------------------------------------------------------
 feedFetter 
-	:: (?src :: TypeSource)
-	=> Maybe ClassId
+	:: TypeSource
 	-> Fetter 
 	-> SquidM ()
 
-feedFetter	mParent f
+feedFetter src f
  = trace ("feedFetter " % f % "\n") >>
    case f of
 	FWhere t1 t2
-	 -> do	Just (TClass k1 cid1)	<- feedType mParent t1
-	 	Just (TClass k2 cid2)	<- feedType mParent t2
+	 -> do	cid1	<- feedType src t1
+	 	cid2	<- feedType src t2
 		mergeClasses [cid1, cid2]
 		return ()
 
 	FMore t1 t2	
-	 -> 	feedFetter mParent (FWhere t1 t2)
+	 -> 	feedFetter src (FWhere t1 t2)
 
 	FConstraint v ts
-	 -> do	addFetter f
+	 -> do	addFetter src f
 	 	return ()
 
 	FProj pj v tDict tBind
-	 -> do	cidC		<- allocClass Nothing
-	 	Just [tDict', tBind']	
-				<- liftM sequence
-				$  mapM (feedType (Just cidC)) [tDict, tBind]
+	 -> do	cidC	<- allocClass Nothing
 
-		addFetter $ FProj pj v tDict' tBind'
+	 	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]
+		let Just kDict	= kindOfType tDict
+		let Just kBind	= kindOfType tBind
+
+		addFetter src 
+		 $ FProj pj v 
+			(TClass kDict cidDict')
+			(TClass kBind cidBind')
+
 		return ()
 		
 
-
------
-addNode :: (?src :: TypeSource)
-	=> ClassId
-	-> Type
-	-> SquidM ()
-	
-addNode    cidT	t
- = do	addToClass cidT	?src t
-	activateClass cidT
-
-
-
 -- addFetter ---------------------------------------------------------------------------------------
 -- | Add a new fetter constraint to the graph
-addFetterSource :: TypeSource -> Fetter -> SquidM Bool
-addFetterSource src f 
-	= let 	?src	= src
-	  in	addFetter f
-
-
 addFetter
-	:: (?src :: TypeSource)
-	=> Fetter
+	:: TypeSource
+	-> Fetter
 	-> SquidM Bool
 	
 -- Single parameter type class contraints are added directly to the equivalence
 --	class which they constrain.
 --
-addFetter f@(FConstraint vC [t])
+addFetter src f@(FConstraint vC [t])
  = do	
 	trace	$ "    * addFetter: " % f	% "\n\n"
 
 	-- The target type t could be a TVar or a TClass
 	--	Use feedType to make sure it's a TClass
-	Just (TClass k cid)	
-			<- feedType Nothing t
+	cid		<- feedType src t
+	let Just k	= kindOfType t
 	
 	-- add the fetter to the equivalence class
 	let fNew	= FConstraint vC [TClass k cid]
@@ -340,8 +281,7 @@ addFetter f@(FConstraint vC [t])
 	 then	return False
 	 else do
  		modifyClass cid
-	  	 $ \c -> c	
-	 		{ classFetterSources	= (fNew, ?src) 	: classFetterSources c }
+	  	 $ \c -> c { classFetterSources	= (fNew, src) 	: classFetterSources c }
 
 	 	activateClass cid
 		return True
@@ -350,15 +290,16 @@ addFetter f@(FConstraint vC [t])
 -- Multi parameter type class constraints are added as ClassFetter nodes in the graph 
 --	and the equivalence classes which they constraint hold ClassIds which point to them.
 --
-addFetter f@(FConstraint v ts)
+addFetter src f@(FConstraint v ts)
  = do 	
  	-- create a new class to hold this node
 	cidF		<- allocClass Nothing
 	 	
 	-- add the type args to the graph
-	Just ts'	<- liftM sequence
-			$  mapM (feedType (Just cidF)) ts
-
+	cids		<- mapM (feedType src) ts
+	let Just kinds	= sequence $ map kindOfType ts
+	let ts'		= zipWith TClass kinds cids
+	
 	-- add the fetter to the graph
 	let f	= FConstraint v ts'
 
@@ -366,7 +307,7 @@ addFetter f@(FConstraint v ts)
 	 $ \c -> ClassFetter
 	 	{ classId	= cidF
 		, classFetter	= f 
-		, classSource	= ?src }
+		, classSource	= src }
 
 	activateClass cidF
 
@@ -380,33 +321,33 @@ addFetter f@(FConstraint v ts)
 
 	return True
 
-addFetter f@(FProj j v1 tDict tBind)
+addFetter src f@(FProj j v1 tDict tBind)
  = do
  	-- a new class to hold this node
  	cidF	<- allocClass Nothing
 	
 	-- add the type args to the graph
- 	Just [tDict', tBind']
-		<- liftM sequence
-		$  mapM (feedType (Just cidF)) [tDict, tBind]
+ 	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]
+	let Just kDict	= kindOfType tDict
+	let Just kBind	= kindOfType tBind
 
 	-- add the fetter to the graph
-	let f	= FProj j v1 tDict' tBind'
+	let f	= FProj j v1 
+			(TClass kDict cidDict')
+			(TClass kBind cidBind')
 	
 	modifyClass cidF
 	 $ \c -> ClassFetter
 	 	{ classId	= cidF
 		, classFetter	= f 
-		, classSource	= ?src }
+		, classSource	= src }
 		
 	activateClass cidF
 	
 	-- add a reference to the constraint to all those classes it is acting on
-	let cids	= map (\(TClass k cid) -> cid) [tDict', tBind']
-
 	mapM	(\cid -> modifyClass cid
 			$ \c -> c { classFettersMulti = Set.insert cidF (classFettersMulti c) })
-		cids
+		[cidDict', cidBind']
 			
 	return True
 	

@@ -18,6 +18,7 @@ import Type.Util
 import Type.Error
 import Type.Class
 import Type.State
+import Type.Trace
 import Constraint.Exp
 import Util
 import DDC.Main.Error
@@ -75,8 +76,9 @@ crushProjClassT cidT
 	 	return Nothing
 
 	 -- Ok, we've got an object type, carry on.
-	 Just cObj@(Class { classType = Just tObj })
-	  -> crushProj_withObj cidT src fProj cObj tObj
+	 Just cObj@(Class { classType = Just nObj })
+	  -> do	Just tObj	<- lookupTypeOfCid cidObj
+		crushProj_withObj cidT src fProj cObj tObj
 	
 	
 crushProj_withObj cidT src fProj cObj tObj
@@ -217,7 +219,7 @@ classDownLeftSpine :: ClassId -> SquidM (Maybe Class)
 classDownLeftSpine cid
  = do	Just cls	<- lookupClass cid
 	case classType cls of
-	 Just (TApp (TClass _ cid1) _)	
+	 Just (NApp cid1 _)	
 		-> classDownLeftSpine cid1
 	 mType	-> return $ Just cls
 

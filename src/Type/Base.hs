@@ -1,6 +1,7 @@
 
 module Type.Base
-	( Class (..),	classInit
+	( module DDC.Solve.Node
+	, Class (..),	classInit
 	, Graph (..),	graphInit
 	
 	, graphSize_init
@@ -12,8 +13,10 @@ import Util
 import Data.Array.IO
 import Type.Pretty		()
 import DDC.Var
+import DDC.Solve.Node
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+
 
 
 -- | A Node in the type graph
@@ -49,20 +52,19 @@ data Class
 		-- | Whether this class has been quantified
 		, classQuant		:: Bool
 
-	
 		-- Type constraints contributing to this class.
 		-- | The type of this class (if available)
 		--	If there are constraints waiting to be unified then classQueue will be 
 		--	non-empty and classType will be Nothing.
-		, classType		:: Maybe Type
+		, classType		:: Maybe Node
 
 		-- | Type constraints waiting to be unified.
-		, classQueue		:: [Type]
+		, classQueue		:: [Node]
 
 		-- | Constraints that have been added to this class, including source information.
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
-		, classTypeSources	:: [(Type, TypeSource)]	 
+		, classTypeSources	:: [(Node, TypeSource)]	 
 
 		-- | Constraints that have been added to this class, including source information.
 		--	If a type error is encountered, then this information can be used to reconstruct
