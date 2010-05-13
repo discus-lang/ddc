@@ -113,10 +113,12 @@ slurpParamClassVarsT_constrainForm tt
 	  | otherwise
 	  -> slurpParamClassVarsT_constrainForm t1 ++ slurpParamClassVarsT_constrainForm t2
 	
+	
+	TSum _ ts	-> concat $ map slurpParamClassVarsT_constrainForm ts
 	TVar{}		-> []
 	TCon{}		-> []
 	TClass{}	-> []
 	TError{}	-> []	
 	_		-> panic stage
-			$ "slurpContraClassVarsT: no match for " % tt
+			$ "slurpParamClassVarsT: no match for " % tt
 

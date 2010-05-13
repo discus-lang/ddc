@@ -1,10 +1,20 @@
 
+-- | Node types are the simple type constraints that are stored directly in graph equivalence
+--   classes. The children of a Node type are always cids. This is opposed to regular 
+--   Types who's children can be more types.
+--
+--  HISTORY: We use to just have regular types in the graph, but its too fiddly to deal
+--           with the possibility of children being either cids or more types. It's a lot
+--           less buggy to keep the graph in this simpler form.
+--
 module DDC.Solve.Node
 	( Node		(..)
 	, isNVar
+	, isNBot
 	, subNodeCidCid
 	, cidsOfNode
-	
+
+	, nBot
 	, nRead
 	, nDeepRead
 	, nHeadRead
@@ -26,11 +36,8 @@ import qualified Data.Map	as Map
 
 
 -- | A node type.
---	These are the simple type constraints stored directly in the graph nodes.
---	We keep them separate from Type.Exp because all of their components need to be ClassIds.
 data Node
-	= NBot	
-	| NVar		Var
+	= NVar		Var
 	| NCon		TyCon
 	| NApp		ClassId	ClassId
 	| NSum		(Set ClassId)
@@ -39,12 +46,14 @@ data Node
 	--	We want to keep them in the graph because closure terms in other types
 	--	may be refering to them, and they may still contain unquantified cids.
 	| NScheme 	Type
-	
-	-- | Errors
-	| NError
 
-	-- Closure constructor. TODO: factor this into NApp.
+	-- A closure constructor. 
+	-- TODO: I'm not sure if we want to convert the right of this to node form
+	--       as well. We'd need a TyCon for the (NFree v) part first though	
 	| NFree		Var Type
+	
+	-- | Used when the node has been involved in a type error.
+	| NError
 	deriving (Show, Eq)
 
 
@@ -55,11 +64,19 @@ isNVar nn
 	NVar{}	-> True
 	_	-> False
 
+
+-- | Check if a node is represents bottom.
+isNBot :: Node -> Bool
+isNBot nn 
+ = case nn of
+	NSum ss		-> Set.null ss
+	_		-> False
+
+
 -- | Get the set of all ClassIds in a node.
 cidsOfNode :: Node -> Set ClassId
 cidsOfNode nn
  = case nn of
-	NBot{}		-> Set.empty
 	NVar{}		-> Set.empty
 	NCon{}		-> Set.empty
 	NApp c1 c2	-> Set.fromList [c1, c2]
@@ -73,7 +90,6 @@ cidsOfNode nn
 subNodeCidCid :: Map ClassId ClassId -> Node -> Node
 subNodeCidCid sub nn
  = case nn of
-	NBot		-> nn
 	NVar{}		-> nn
 	NCon{}		-> nn
 
@@ -101,8 +117,10 @@ instance Pretty Node PMode where
 		NFree v t	-> "NFree " % v % " :: " % t
 		_		-> ppr $ show nn
 
-	
--- | Effect type constructors (in node form)
+
+-- | Builtin type constructors (in node form)
+nBot		= NSum Set.empty
+
 nRead		= NCon $ TyConEffect TyConEffectRead
 		$ KFun kRegion kEffect
 
@@ -117,6 +135,3 @@ nWrite		= NCon $ TyConEffect TyConEffectWrite
 
 nDeepWrite	= NCon $ TyConEffect TyConEffectDeepWrite
 		$ KFun kValue kEffect
-
-
-

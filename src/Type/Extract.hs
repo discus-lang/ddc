@@ -8,7 +8,6 @@ import Type.Plug
 import Type.Context
 import Type.Strengthen
 import Type.Error
-import Type.Trace
 import Type.Class
 import Type.State	
 import Type.Util
@@ -18,6 +17,7 @@ import Type.Builtin
 import Type.Util.Cut
 import Type.Plate.Collect
 import Util
+import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Var
 import qualified Type.Util.PackFast	as PackFast
@@ -91,7 +91,7 @@ extractType_fromClass final varT cid
 	--		,  !5 :> Read %8
 	--
 	trace	$ ppr " -- tracing type from the graph\n"
- 	tTrace	<- {-# SCC "extract/trace" #-} traceType cid
+ 	tTrace	<- {-# SCC "extract/trace" #-} traceTypeAsSquid cid
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 
 	-- Pack the type into standard form.
@@ -156,7 +156,6 @@ extractType_more final varT cid tPack
 		| otherwise		= trimClosureT_constrainForm Set.empty Set.empty tStrong
 
 	trace	$ "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"
-	trace	$ ppr " -- done trimming\n"
 
 	-- Cut loops through :> fetters in this type
 	trace	$ ppr " -- cutting loops\n"
@@ -171,6 +170,7 @@ extractType_more final varT cid tPack
 extractType_final True varT cid tCutPack
  = do	
  	-- plug classIds with vars
+	trace	$ ppr " -- plugging classids\n"
  	tPlug	<- plugClassIds Set.empty tCutPack
 	trace	$ "    tPlug:\n" 	%> prettyTS tPlug	% "\n\n"
  

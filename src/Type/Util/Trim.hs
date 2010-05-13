@@ -77,6 +77,9 @@ trimClosureT' quant rsData tt
 		crs'		= Constraints crsEq' crsMore' crsOther
 	    in	addConstraints crs' tBody
 
+	TFree{} 
+	 -> trimClosureC_constrainForm quant rsData tt
+
 	_	-> tt
 
 

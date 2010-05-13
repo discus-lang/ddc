@@ -2,7 +2,8 @@
 -- | Bits and pieces for working with types.
 module Type.Util.Bits
 	-- simple
-	( isTApp
+	( isTBot
+	, isTApp
 	, isSomeTVar
 	, isTClass
 	, isFConstraint
@@ -87,10 +88,15 @@ stage	= "Type.Util.Bits"
 
 
 -- Simple things -----------------------------------------------------------------------------------
+isTBot tt
+ = case tt of
+	TSum _ []	-> True
+	_		-> False
+
 isTApp tt
  = case tt of
- 	TApp{}	-> True
-	_	-> False
+ 	TApp{}		-> True
+	_		-> False
 
 isSomeTVar tt
  = case tt of

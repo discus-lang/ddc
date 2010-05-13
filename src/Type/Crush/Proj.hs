@@ -18,10 +18,10 @@ import Type.Util
 import Type.Error
 import Type.Class
 import Type.State
-import Type.Trace
 import Constraint.Exp
 import Util
 import DDC.Main.Error
+import DDC.Solve.Trace
 import DDC.Var
 import qualified Data.Map	as Map
 
@@ -77,7 +77,7 @@ crushProjClassT cidT
 
 	 -- Ok, we've got an object type, carry on.
 	 Just cObj@(Class { classType = Just nObj })
-	  -> do	Just tObj	<- lookupTypeOfCid cidObj
+	  -> do	Just tObj	<- lookupTypeOfCidAsSquid cidObj
 		crushProj_withObj cidT src fProj cObj tObj
 	
 	

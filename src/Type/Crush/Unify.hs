@@ -71,10 +71,7 @@ crushUnifyClass_unify cidT c
 	--	contribute to the constructor
 	let queue_clean	
 		= filter 
-			(\x -> case x of
-				NVar{}		-> False
-				NBot		-> False
-				_		-> True)
+			(\x -> not (isNVar x || isNBot x))
 			((maybeToList $ classType c) ++ classQueue c)
 
 	trace	$ "    queue_clean  = " % show queue_clean % "\n"
@@ -82,7 +79,7 @@ crushUnifyClass_unify cidT c
 	-- If there is nothing left in the queue, or there's only one element
 	--	then we're done. Otherwise call the reall unifier.
 	t_final	<- case queue_clean of
-			[] 	-> return	$ NBot
+			[] 	-> return	$ nBot
 			[t] 	-> return	$ t
 			_  	-> crushUnifyClass_merge cidT c queue_clean
 			
@@ -125,12 +122,17 @@ crushUnifyClass_merge cidT c queue@(t:_)
 	-- From the effect weakening rule it's always return a larger effect than needed.
 	-- Therefore, to "unify" two effects we want take their l.u.b and use that in place of both.
 	| NSum{}	<- t
-	= panic stage $ "crushUnifyClass_merge: makeNSum\n"
+	= panic stage $ vcat 
+		[ ppr "crushUnifyClass_merge: makeNSum\n"
+		, ppr queue]
+		
 	--	return	$ makeNSum queue
 
 	-- if none of the previous rules matched then we've got a type error in the graph.
 	| otherwise
- 	= panic stage $ "crushUnifyClass_merge: type error\n"
+ 	= panic stage $ vcat
+		[ ppr "crushUnifyClass_merge: type error\n"
+		, ppr queue ]
 {-		addErrorConflict cidT c 
 		return $ TError (kindOfType_orDie t) 
 				(TypeErrorUnify $ classQueue c)

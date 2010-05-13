@@ -390,10 +390,7 @@ mergeClasses2 cids cs
 
 		-- Throw out bottom elements while we're here.
 		, classQueue	=  nub
-				$  catMaybes
-				$  map (\t -> case t of
-						NBot{}	-> Nothing
-						_	-> Just t)
+				$  filter (not . isNBot)
 				$  concat (map classQueue cs)
 				++ concat (map (maybeToList . classType) cs)
 

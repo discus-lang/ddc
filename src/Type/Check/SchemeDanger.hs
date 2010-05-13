@@ -26,8 +26,8 @@ import Type.Error
 import Type.Util
 import Type.State
 import Type.Class
-import Type.Trace
 import Util
+import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Var
 import qualified Data.Set	as Set
@@ -104,7 +104,7 @@ checkDanger (Class
 	 	 Just (fMutable, srcMutable)
 	  	  -> do
 			varScheme	<- makeClassName cidScheme
-			Just tNode	<- lookupTypeOfCid cidScheme
+			Just tNode	<- lookupTypeOfCidAsSquid cidScheme
 			return	$ Just
 				$ ErrorLateConstraint
 					{ eScheme 		= (varScheme, tNode)
