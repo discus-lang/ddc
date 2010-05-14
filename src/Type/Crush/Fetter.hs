@@ -4,73 +4,107 @@
 --	like Pure and LazyH.
 --
 module Type.Crush.Fetter
-	(crushFetterC)
+	(crushFetterInClass)
 where
--- import Type.Feed
 import Type.State
 import Type.Exp
+import Type.Class
+import Type.Location
+import DDC.Main.Pretty
+import Control.Monad
+
+-- import Type.Feed
 -- import Type.Util
--- import Type.Class
--- import Type.Location
 -- import Type.Builtin
 -- import Type.Error
 -- import Util
 -- import Shared.VarPrim
 -- import DDC.Var
 
--- debug	= False
--- trace s	= when debug $ traceM s
+debug	= True
+trace s	= when debug $ traceM s
 
 
 -- | Try and crush any single parameter fetters acting on this
 --	class into smaller components.
-crushFetterC 
+crushFetterInClass
 	:: ClassId 	-- ^ cid of class
 	-> SquidM Bool	--   whether we crushed something from this class
 
-crushFetterC cid = return False
-
-{-
-crushFetterC cid
+crushFetterInClass cid
  = do	Just cls <- lookupClass cid
- 	crushFetterC' cid cls
+ 	crushFetterWithClass cid cls
 
--- follow class indirections.
-crushFetterC' cid (ClassForward cidFwd)
-	= crushFetterC cidFwd
-
--- MPTC style fetters Shape and Proj are handled by their own modules.
-crushFetterC' cid (ClassFetter{})
+crushFetterWithClass cid ClassNil
 	= return False
 
-crushFetterC' 
-	cid 
-	cls@(Class	
-		{ classKind		= k
-		, classType		= Just tNode_
-		, classTypeSources	= ts_src_
-		, classFetterSources 	= fs_src_ })
- = do	
-	let updateFstVC (x, src)
-	     = do 	x'	<- updateVC x
-			return (x', src)
-			
-	tNode	<- updateVC tNode_
-	ts_src	<- mapM updateFstVC ts_src_
-	fs_src	<- mapM updateFstVC fs_src_
-	
-	trace	$ "*   crushFetterC "   % k % cid			% "\n"
-		% "    node type    (tNode)           = " % tNode	% "\n"
-		% "    node fetters (fs_src)          = " % fs_src	% "\n"
+-- follow class indirections.
+crushFetterWithClass cid (ClassForward cid')
+	= crushFetterInClass cid'
 
-	-- Try to crush each fetter in turn into smaller bits.
-	-- Note that while crushing, we leave all the original fetters in the node, 
-	--	and only add the new fetters back when we're done.
-	fssCrushed
-		<- mapM (crushFetterSingle cid k tNode ts_src)
-		$  fs_src
+-- MPTC style fetters Shape and Proj are handled by their own modules.
+crushFetterWithClass cid ClassFetter{}
+	= return False
+
+crushFetterWithClass cid 
+	Class { classType = Nothing }
+	= return False
+
+crushFetterWithClass cid 
+	cls@(Class	
+		{ classKind		= kind
+		, classType		= Just nNode'
+		, classTypeSources	= tsSrc'
+		, classFetterSources 	= fsSrc' })
+ = do	
+	nNode	<- sinkCidsInNode	    nNode'
+	tsSrc	<- mapM sinkCidsInNodeFst   tsSrc'
+	fsSrc	<- mapM sinkCidsInFetterFst fsSrc'
+
+	trace	$ "--  crushFetterInClass "	%  cid		% "\n"
+		% "    node           = "	%  nNode	% "\n"
+		% "    fetters:\n" 		%> fsSrc	% "\n"
+
+	-- Try to crush each fetter into smaller pieces.
+	-- While crushing, we leave all the original fetters in the class, and only add
+	-- the new fetters back when we're done. The fetters in the returned list could
+	-- refer to other classes as well as this one.
+	fsCrushed 
+		<- liftM concat
+		$  mapM (crushFetterSingle cid kind nNode tsSrc) fsSrc
 	
-	let fsCrushed	= concat fssCrushed
+	trace	$ "    crushed fetters:\n"	%> fsCrushed	% "\n"
+
+	return False
+
+
+-- | Try to crush a fetter from a class into smaller pieces.
+--	All parameters should have their cids canonicalised.
+crushFetterSingle
+	:: ClassId				-- ^ The cid of the class this fetter is from.
+	-> Kind					-- ^ The kind of the class.
+	-> Node					-- ^ The node type in the class.
+	-> [(Node, TypeSource)]			-- ^ Node constraints contributing to the class.
+	-> (Fetter, TypeSource)			-- ^ The fetter to crush
+	-> SquidM [(Fetter, TypeSource)]	-- ^ Crushed pieces, or a list just containing
+						--   the original fetter if it won't crush.
+	
+crushFetterSingle cid kind node tsSrc (fetter, srcFetter)
+ = do	return [(fetter, srcFetter)]
+
+
+
+
+sinkCidsInNodeFst (nn, x)
+ = do	nn'	<- sinkCidsInNode nn
+	return	$ (nn', x)
+
+sinkCidsInFetterFst (ff, x)
+ = do	ff'	<- sinkCidsInFetter ff
+	return	$ (ff', x)
+
+
+{-
 	
 	-- split the crushed fetters into the ones to apply to this class vs other classes
 	let (fsCrushed_thisClass, fsCrushed_others)

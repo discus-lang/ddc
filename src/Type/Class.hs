@@ -13,7 +13,7 @@ module Type.Class
 	, modifyClass
 	, mergeClasses
 	, mergeClassesT
-	, sinkClassId
+
 	, lookupVarToClassId
 	, makeClassName
 	, clearActive
@@ -22,7 +22,14 @@ module Type.Class
 	, updateVC
 	, kindOfCid
 	, foldClasses
-	, headCidDownLeftSpine)
+	, headCidDownLeftSpine
+
+	-- * Sinking
+	, sinkClassId
+	, sinkCidsInNode
+	, sinkCidsInType
+	, sinkCidsInFetter)
+
 --	, traceDownLeftSpine)
 where
 import Type.Exp
@@ -32,9 +39,10 @@ import Type.State
 import Type.Plate.Collect
 import Type.Util
 import Util
-import Data.Array.IO
 import DDC.Main.Error
+import DDC.Solve.Sink
 import DDC.Var
+import Data.Array.IO
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -319,24 +327,6 @@ addClassForwards cidL_ cids_
 	return ()
 	
 	
-
--- | Convert this cid to canconical form.
-{-# INLINE sinkClassId #-}
-sinkClassId ::	ClassId -> SquidM ClassId
-sinkClassId  cid	
- = do	graph		<- gets stateGraph
- 	let classes	=  graphClass graph
-	sinkClassId' classes cid
-	
-sinkClassId' classes cid
- = do	mClass	<- liftIO (readArray classes cid)
- 	case mClass of
-		ClassForward cid'	-> sinkClassId' classes cid'
-		ClassNil{}		-> return cid
-		ClassFetter{}		-> return cid
-		Class{}			-> return cid
-		
-
 -- | Lookup the variable name of this class.
 lookupVarToClassId :: 	Var -> SquidM (Maybe ClassId)
 lookupVarToClassId v
@@ -578,3 +568,47 @@ traceDownLeftSpine tt
 	 -> panic stage
 	 $  "traceDownLeftSpine: no match for " % tt
 -}
+
+
+-- Sinking ----------------------------------------------------------------------------------------
+-- | Convert this cid to canconical form.
+{-# INLINE sinkClassId #-}
+sinkClassId ::	ClassId -> SquidM ClassId
+sinkClassId  cid	
+ = do	graph		<- gets stateGraph
+ 	let classes	=  graphClass graph
+	sinkClassId' classes cid
+	
+sinkClassId' classes cid
+ = do	mClass	<- liftIO (readArray classes cid)
+ 	case mClass of
+		ClassForward cid'	-> sinkClassId' classes cid'
+		ClassNil{}		-> return cid
+		ClassFetter{}		-> return cid
+		Class{}			-> return cid
+
+
+-- | Convert the cids in this node type to canonical form.
+sinkCidsInNode :: Node -> SquidM Node
+sinkCidsInNode nn
+ = do	graph		<- gets stateGraph
+	let classes	= graphClass graph
+	liftIO $ sinkCidsInNodeIO classes nn
+
+
+-- | Convert the cids in this type to canonical form.
+sinkCidsInType :: Type -> SquidM Type
+sinkCidsInType tt
+ = do	graph		<- gets stateGraph
+	let classes	= graphClass graph
+	liftIO $ sinkCidsInTypeIO classes tt
+
+
+-- | Convert the cids in this type to canonical form.
+sinkCidsInFetter :: Fetter -> SquidM Fetter
+sinkCidsInFetter ff
+ = do	graph		<- gets stateGraph
+	let classes	= graphClass graph
+	liftIO $ sinkCidsInFetterIO classes ff
+	
+

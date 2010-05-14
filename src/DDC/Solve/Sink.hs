@@ -10,6 +10,7 @@
 --
 module DDC.Solve.Sink
 	( sinkCidIO
+	, sinkCidsInNodeIO
 	, sinkCidsInKindIO
 	, sinkCidsInTypeIO 
 	, sinkCidsInFetterIO)
@@ -18,6 +19,7 @@ import Type.Exp
 import Type.Base
 import Data.Array.IO
 import Control.Monad
+import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
 
@@ -36,6 +38,40 @@ sinkCidIO classes cid'
 		 ClassNil{}		-> return cid
 		 ClassFetter{}		-> return cid
 		 Class{}		-> return cid
+
+
+-- | Canonicalise the cids in a node type.
+sinkCidsInNodeIO
+	:: IOArray ClassId Class
+	-> Node
+	-> IO Node
+	
+sinkCidsInNodeIO classes nn
+ = case nn of
+	NVar{}		-> return nn
+	NCon{}		-> return nn
+
+	NApp cid1 cid2
+	 -> do	cid1'	<- sinkCidIO classes cid1
+		cid2'	<- sinkCidIO classes cid2
+		return	$ NApp cid1' cid2'
+
+	NSum cids
+	 -> do	cids'	<- liftM Set.fromList 
+			$  mapM (sinkCidIO classes) 
+			$  Set.toList cids
+			
+		return	$ NSum cids'
+		
+	NScheme t
+	 -> do	t'	<- sinkCidsInTypeIO classes t
+		return	$ NScheme t'
+		
+	NFree v t
+	 -> do	t'	<- sinkCidsInTypeIO classes t
+		return	$ NFree v t'
+		
+	NError{}	-> return nn
 
 
 -- | Canonicalise the cids in a kind.

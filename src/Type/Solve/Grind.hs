@@ -142,7 +142,7 @@ grindClass2 cid c@(Class
 	progressCrush
 		<- case fs_src of
 			[]	-> return False
-			_	-> crushFetterC cid
+			_	-> crushFetterInClass cid
 	
 	return	( progressCrushE || progressCrush
 		, [])
@@ -173,7 +173,7 @@ grindClass2 cid c@(ClassFetter { classFetter = f })
 		
 	-- crush other fetters
 	progressCrush
-		<- crushFetterC cid
+		<- crushFetterInClass cid
 		
 	return	( progressProj || progressShape || progressCrush
 		, fromMaybe [] qsMore )
