@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 -- | Node types are the simple type constraints that are stored directly in graph equivalence
 --   classes. The children of a Node type are always cids. This is opposed to regular 

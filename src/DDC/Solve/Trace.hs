@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 -- | Extract a subgraph from the main type graph.
 --   It's called "trace" because we trace out all the nodes reachable from a given
@@ -48,6 +49,8 @@ import Type.Util
 import Type.Plate.Collect
 import DDC.Solve.Node
 import DDC.Solve.Sink
+import DDC.Main.Error
+import DDC.Main.Pretty
 import Data.Array.IO
 import Data.Foldable
 import Data.List
@@ -60,9 +63,9 @@ import qualified Data.Sequence	as Seq
 import qualified Type.State	as S
 import Control.Monad.State	hiding (mapM_)
 import Prelude			hiding (mapM_)
--- import qualified Type.Base	as S
 
--- stage	= "Type.Trace"
+stage	= "DDC.Solve.Trace"
+
 
 -- Squid Monad Versions --------------------------------------------------------------------------
 -- | Extract a type node from the graph by tracing down from this cid (in the Squid monad)
@@ -74,9 +77,8 @@ lookupTypeOfCidAsSquid :: ClassId -> S.SquidM (Maybe Type)
 lookupTypeOfCidAsSquid cid
 	= runTraceAsSquid (lookupTypeOfCid cid)
 
+
 -- Trace ------------------------------------------------------------------------------------------
-
-
 -- | Extract a type node from the graph by tracing down from this cid.
 --   TODO: Store SPTCs in a map, instead of sequence. Just use the sequence for MPTCs. 
 --         This would save having to nub them when we're constructing the final type.
@@ -100,13 +102,11 @@ traceType cid
 	let tt		= TConstrain 
 				(TClass k cid) 
 				(Constraints crsEq crsMore' $ nub $ toList crsOther)
-			
-	-- TODO: Add class constraints, but make sure we don't add them multiple times.	
-			
-	-- TODO: Not all the schemes are in the ConstrainForm yet.
+						
 	return	$ toConstrainFormT tt
 
 
+-- | Recursively add type constraints starting from this classid to the trace state.
 traceFromCid :: ClassId -> TraceM ()
 traceFromCid cid
  = do	cidsVisited	<- gets stateCidsVisited
@@ -124,7 +124,14 @@ traceFromCid' cid
 
 	case cls of
 
-	 -- TODO: handle MPTC and constraints in the class.
+	 -- A deleted class.
+	 ClassNil 
+	  -> return ()
+
+	 -- A forward reference.
+	 ClassForward cid'
+	  -> 	traceFromCid cid'
+
 	 -- A regular class.
 	 Class	{ classType 	= Just node
 		, classKind 	= kind }
@@ -136,7 +143,10 @@ traceFromCid' cid
 		addType (TClass kind cid) t
 		
 		-- Add the SPTCs directly in thie class.
-		addCrsOther	$ Seq.fromList $ map fst $ classFetterSources cls
+		crsOther	<- mapM sinkCidsInFetter
+				$  map fst $ classFetterSources cls
+
+		addCrsOther	$ Seq.fromList crsOther
 
 		-- Decend into other classes reachable from this one.
 		-- TODO: The collectClassIds uses the boilerplate library and is probably v.slow
@@ -144,12 +154,28 @@ traceFromCid' cid
 						(classFettersMulti cls)
 
 		mapM_ traceFromCid $ Set.toList cids
+
+	 -- At tracing time all queues should be unified, so the classType field should never be Nothing.
+	 Class	{ classType	= Nothing }
+	  -> panic stage 
+		$ "traceFromCid': the queue " % cid % " hasn't been unified."
+
+	 -- A class holding a multi-param type constraint.
+	 ClassFetter
+		{ classFetter	= fetter }
+
+	  -> do	-- Add the fetter to the state
+		fetter'		<- sinkCidsInFetter fetter
+		addCrsOther	$ Seq.singleton fetter'
 		
-	  -- 
-	 _ -> return ()
+		-- Decend into other classes reachable from this one.
+		-- TODO: The collectClassIds uses the boilerplate library and is probably v.slow
+		let cids	= collectClassIds fetter'
+		mapM_ traceFromCid $ Set.toList cids
 
 
--- | Break up a type constraint and add its parts to the state.
+
+-- | Break up a type constraint into parts and add them to the trace state.
 addType :: Type -> Type -> TraceM ()
 addType t1 t2
  = do	
@@ -193,30 +219,46 @@ splitTConstrain tt
 
 
 -- | Simplify a map of more constraints.
---	TODO: 	Have to split TConstrain the trimmed closure types again.
---		Split tracer part into a seprate function.
--- TODO: Trim closures, but don't trim the same closure more than once if it appears
---       multiple times in the traced type. Ie, do the reusing of TFree outlined above.
-
+--   The types of functions with arity > 1 tended to have repeated closure terms.
+--   We don't want to trim these terms multiple times, of have duplicated information
+--   in the returned type, so we make subsequent identical closure constraints
+--   previous ones in the returned type.
 simplifyCrsMore 
 	:: Map Type Type 
 	-> Map Type Type
 
 simplifyCrsMore crs
-	= Map.mapMaybe simplifyCrsMore1 crs
+	= Map.fromList
+	$ simplifyCrsMore' [] [] 
+	$ Map.toList crs
 
-simplifyCrsMore1 t2
- = case t2 of
-	TFree{}	
-	 -> let t'	= trimClosureT_constrainForm Set.empty Set.empty t2
-	    in	if isTBot t' then Nothing else Just t'
+simplifyCrsMore' crsFree crsAcc []
+	= crsAcc
 	
-	_	-> Just t2
+simplifyCrsMore' crsFree crsAcc (c@(t1, t2):cs)
+	| TFree{}	<- t2
+	= case lookup t2 crsFree of
+
+	    -- If we've already trimmed this closure then just reuse that.
+	    Just t1'	-> simplifyCrsMore' crsFree ((t1, t1') : crsAcc) cs
+
+	    -- We haven't seen this closure term before.
+	    Nothing 
+	     -> let t2'	= trimClosureT_constrainForm Set.empty Set.empty t2
+		    c'	= (t1, t2')
+
+		-- The closure might have been trimmed to bottom, 
+		--	if so we don't want to include a constraint for it.
+	    	in if isTBot t2'
+			then simplifyCrsMore' crsFree              crsAcc        cs
+			else simplifyCrsMore' ((t2, t1) : crsFree) (c' : crsAcc) cs
+	
+	-- Some non-closure constraint.
+	| otherwise
+	= simplifyCrsMore' crsFree (c : crsAcc) cs
 	
 
-
-
--- | Lookup the type of a class.
+-- | Lookup the type of a class, converting types from node form to regular form.
 --	If the type hasn't been unified yet, or if this isn't a regular equivalance
 --	class then `Nothing`. The children of the nodes returned may be simple types
 --	like TCon tBot, but not other types. 
@@ -312,6 +354,13 @@ sinkCidsInType :: Type -> TraceM Type
 sinkCidsInType tt
  = do	classes	<- gets stateClasses	
 	liftIO (sinkCidsInTypeIO classes tt)		
+
+
+-- | Convert cids in a type to canonical form.
+sinkCidsInFetter :: Fetter -> TraceM Fetter
+sinkCidsInFetter tt
+ = do	classes	<- gets stateClasses	
+	liftIO (sinkCidsInFetterIO classes tt)		
 
 
 -- Monad ------------------------------------------------------------------------------------------

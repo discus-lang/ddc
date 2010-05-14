@@ -11,7 +11,8 @@
 module DDC.Solve.Sink
 	( sinkCidIO
 	, sinkCidsInKindIO
-	, sinkCidsInTypeIO )
+	, sinkCidsInTypeIO 
+	, sinkCidsInFetterIO)
 where
 import Type.Exp
 import Type.Base
@@ -73,7 +74,10 @@ sinkCidsInTypeIO
 
 sinkCidsInTypeIO classes tt'
  = goT tt'
- where	goB bb
+ where	goF ff 
+ 	 = sinkCidsInFetterIO classes ff
+
+	goB bb
 	 = case bb of
 		BNil		-> return bb
 		BVar{}		-> return bb
@@ -93,27 +97,6 @@ sinkCidsInTypeIO classes tt'
 		crsOther'	<- mapM goF $ crsOther crs
 		return 		$ Constraints crsEq' crsMore' crsOther'
 
-	goF ff
-	 = case ff of
-		FConstraint v ts	
-		 -> do	ts'	<- mapM goT ts
-			return	$ FConstraint v ts'
-			
-		FWhere t1 t2
-		 -> do	t1'	<- goT t1
-			t2'	<- goT t2
-			return	$ FWhere t1' t2'
-			
-		FMore t1 t2
-		 -> do	t1'	<- goT t1
-			t2'	<- goT t2
-			return	$ FMore t1' t2'
-			
-		FProj j v t1 t2
-		 -> do	t1'	<- goT t1
-			t2'	<- goT t2
-			return	$ FProj j v t1' t2'
-			
 	goT tt
 	 = case tt of
 		TNil		-> return tt
@@ -173,3 +156,37 @@ sinkCidsInTypeIO classes tt'
 		 -> do	t1'	<- goT t1
 			t2'	<- goT t2
 			return	$ TDanger t1' t2'
+
+
+-- | Canonicalise the cids in a fetter.
+sinkCidsInFetterIO 
+	:: IOArray ClassId Class	-- ^ The type graph.
+	-> Fetter			-- ^ The type to refresh.
+	-> IO Fetter			-- ^ Same type with all cids in canonical form.
+
+sinkCidsInFetterIO classes tt'
+ = goF tt'
+ where	goT t
+	 = sinkCidsInTypeIO classes t
+	
+	goF ff
+	 = case ff of
+		FConstraint v ts	
+		 -> do	ts'	<- mapM goT ts
+			return	$ FConstraint v ts'
+			
+		FWhere t1 t2
+		 -> do	t1'	<- goT t1
+			t2'	<- goT t2
+			return	$ FWhere t1' t2'
+			
+		FMore t1 t2
+		 -> do	t1'	<- goT t1
+			t2'	<- goT t2
+			return	$ FMore t1' t2'
+			
+		FProj j v t1 t2
+		 -> do	t1'	<- goT t1
+			t2'	<- goT t2
+			return	$ FProj j v t1' t2'
+			

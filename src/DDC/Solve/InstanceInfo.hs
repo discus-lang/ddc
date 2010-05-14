@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 -- | Records information aboud how the type scheme of a bound variable was instantiated.
 module DDC.Solve.InstanceInfo
