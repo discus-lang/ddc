@@ -3,8 +3,7 @@
 module Type.Dump
 	( dumpGraph
 	, dumpInst
-	, dumpSub
-	, prettyClass)
+	, dumpSub)
 where
 import Type.State
 import Type.Class
@@ -30,10 +29,9 @@ dumpGraph
 dumpGraph' acc []	= acc
 dumpGraph' acc (c:cs)
  = case c of
- 	ClassNil{}	-> dumpGraph' acc cs
-	ClassForward{}	-> dumpGraph' acc cs
-	_		-> dumpGraph' (acc % c) cs
-	
+	ClassUnallocated	-> dumpGraph' acc cs
+	_			-> dumpGraph' (acc % c) cs
+		
 
 -- | dump scheme instantiations
 dumpInst :: 	SquidM String
@@ -60,27 +58,23 @@ dumpSub
 		% "\n\n"
 
 
-prettyClass :: Int -> Class -> PrettyM PMode
-prettyClass ix c
- = case c of
- 	ClassNil{}	-> blank
-	ClassForward{}	-> blank
-	_		-> ppr c
-
-
 -- | pretty print an equivalence class
 instance Pretty Class PMode where
  ppr c 
   = case c of
-	ClassNil{}	-> ppr "ClassNil{}"
+	ClassUnallocated
+	 -> ppr "ClassUnallocated"
 
-	ClassForward c
-	 -> ". ClassForward ==> " % c % "\n\n"
-
+	ClassForward cid cid'
+	 -> cid % " ==> " % cid' % "\n"
+	
 	ClassFetter { classFetter = f }
 	 	-> "+" % classId c % "\n"
 		%  "        " % f % "\n"
 		%  "\n\n"
+
+	ClassFetterDeleted cls'
+	 -> "DELETED " % cls'
 
  	Class{}
 	 ->  	-- class id / name / kind 
@@ -108,10 +102,12 @@ instance Pretty Class PMode where
 			[]	-> blank
 			_	-> "        -- queue\n"
 				%> "\n" %!% classQueue c % "\n\n")
+	
+		-- node types contributing to this class
 		% "        -- nodes\n"
 		% (punc "\n\n"
-			$ map (\(t, i) -> "        " %> (i % "\n" % ppr t))
-			$ (classTypeSources c))
+			$ map (\(t, i) -> "        " %> (t % "\n" % i))
+			$ classTypeSources c)
 		% "\n\n"
 	
 
@@ -123,21 +119,21 @@ prettyVMap 	m
 
 -- Rewrite this class so all its classIds are in canconical form.
 forwardCids :: Class -> SquidM Class
-forwardCids c@ClassForward{}	
-	= return c
+forwardCids cls
+ = case cls of
+	ClassUnallocated{}	-> return cls
+	ClassForward{}		-> return cls
+	ClassFetterDeleted{}	-> return cls
 
-forwardCids c@ClassNil{}		
-	= return c
+	ClassFetter { classFetter = f }
+	 -> do	fetter'		<- updateVC f
+		return	$ cls
+			{ classFetter	= fetter' }
 
-forwardCids c@ClassFetter { classFetter = f }
- = do	cid'		<- updateVC $ classId  c
- 	fetter'		<- updateVC f
-	return	$ c 
-		{ classId	= cid'
-		, classFetter	= fetter' }
+	Class{}
+	 -> do	return	cls
 
-forwardCids c@Class{}
- = do	return c
+
 {-	cid'		<- updateVC $ classId c
 
 	fs'		<- mapM (\(f, src)

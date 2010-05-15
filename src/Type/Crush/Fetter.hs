@@ -11,16 +11,10 @@ import Type.Exp
 import Type.Class
 import Type.Location
 import DDC.Main.Pretty
+import DDC.Main.Error
 import Control.Monad
 
--- import Type.Feed
--- import Type.Util
--- import Type.Builtin
--- import Type.Error
--- import Util
--- import Shared.VarPrim
--- import DDC.Var
-
+stage	= "Type.Crush.Fetter"
 debug	= True
 trace s	= when debug $ traceM s
 
@@ -37,16 +31,16 @@ crushFetterInClass cid
 
 crushFetterWithClass cid cls
  = case cls of
-	ClassNil
-	 -> return False
-
+	ClassUnallocated 
+	 -> panic stage $ "crushFetterWithClass: ClassUnallocated"
+	
 	-- Follow indirections.
-	ClassForward cid'
+	ClassForward cid cid'
 	 -> crushFetterInClass cid'
 
 	-- MPTC style fetters Shape and Proj are handled by their own modules.
-	ClassFetter{}
-	 -> return False
+	ClassFetterDeleted{}	-> return False
+	ClassFetter{}		-> return False
 
 	-- Class hasn't been unified yet.
 	Class 	{ classType = Nothing }

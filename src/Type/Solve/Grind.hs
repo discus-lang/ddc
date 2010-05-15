@@ -18,22 +18,23 @@ import DDC.Var
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set
 
------
 debug	= False
+stage	= "Type.Solve.Grind"
 trace s = when debug $ traceM s
 
 -- | Perform unification, resolve projections and grind out any available effects 
 --	or fetters in the graph.
 --
 --	solveGrind may not be able to completely grind out all constraints because
---	the crushing of projections may require the projection function to be instantiated, 
---	triggering generalisation and requiring another grind.
+--	the crushing of projections may require the projection function to be
+--	instantiated, triggering generalisation and requiring another grind.
 --
---	If solveGrind returns no constraints, the grind succeeded and no crushable constructors
---	remain in the graph.
+--	If solveGrind returns no constraints, the grind succeeded and no crushable
+--	constructors remain in the graph.
 --
---	If solveGrind returns constraints, then they need to be processed before continuing the grind.
---	In this case the last constraint in the list will be another CGrind.
+--	If solveGrind returns constraints, then they need to be processed before
+--	continuing the grind. In this case the last constraint in the list will
+--	be another CGrind.
 --
 solveGrind 
 	:: SquidM [CTree]
@@ -54,19 +55,18 @@ solveGrind
 			
 solveGrindStep 
  = do	trace	$ "\n"
- 		% "*   solveGrindStep\n"
+ 		% "--  solveGrindStep\n"
 
 	 -- get the set of active classes
  	active	<- liftM Set.toList $ clearActive
 	
-	trace	$  "    active classes:\n"
+	trace	$ "    active classes:\n"
 		%> active	%  "\n"
 
 	-- make sure all classes are unified
 	progressUnify
 		<- liftM or
 		$  mapM crushUnifyClass active
-
 
 	errors	<- gets stateErrors
 	when (length errors > 0) $ do
@@ -83,10 +83,10 @@ solveGrindStep
 	let classesWithProgress	   = [cid | (cid, True)  <- activeProgress]
 	let classesWithoutProgress = [cid | (cid, False) <- activeProgress]
 	
-	trace	$ "*    classes that made progress:\n" 
+	trace	$ "    classes that made progress:\n" 
 		%> classesWithProgress % "\n"
 
-	 	% "     classes without   progress:\n" 
+	 	% "    classes without progress:\n" 
 		%> classesWithoutProgress % "\n"
 
 	let qsMore	= concat qssMore
@@ -120,11 +120,14 @@ grindClass cid
  = do	Just c	<- lookupClass cid
 	grindClass2 cid c
 
-grindClass2 cid c@(ClassForward cid')
-	= grindClass cid'
+grindClass2 cid c@ClassUnallocated{}
+	= panic stage
+	$ "grind2: ClassUnallocated{} " % cid
+
+grindClass2 cid c@(ClassForward _ cid')
+	= panic stage
+	$ "grind2: the cids to grind should already be canonicalised."
 	
-grindClass2 cid c@(ClassNil)
-	= return (False, [])
 	 	
 -- type nodes
 grindClass2 cid c@(Class	
@@ -148,6 +151,9 @@ grindClass2 cid c@(Class
 		, [])
 	
 -- fetter nodes
+grindClass2 cid c@ClassFetterDeleted{}
+	= return (False, [])
+
 grindClass2 cid c@(ClassFetter { classFetter = f })
  = do
 	-- crush projection fetters

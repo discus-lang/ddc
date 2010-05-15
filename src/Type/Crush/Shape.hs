@@ -198,10 +198,10 @@ freshenCid cid
  = do	Just Class { classKind = k }	
  		<- lookupClass cid
  
- 	cid'	<- allocClass (Just k)
+ 	cid'	<- allocClass k
 	updateClass cid'
 		(classInit cid' k)
-			{ classType = Just nBot }
+		{ classType = Just nBot }
 
 	return	cid'
  

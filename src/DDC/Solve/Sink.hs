@@ -17,11 +17,13 @@ module DDC.Solve.Sink
 where
 import Type.Exp
 import Type.Base
+import DDC.Main.Error
 import Data.Array.IO
 import Control.Monad
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
+stage = "DDC.Solve.Sink"
 
 -- | Canonicalise a single cid.
 sinkCidIO 
@@ -34,9 +36,10 @@ sinkCidIO classes cid'
  where	go cid
 	 = do	cls		<- readArray classes cid
 		case cls of
-		 ClassForward cid'	-> go cid'
-		 ClassNil{}		-> return cid
+		 ClassUnallocated{}	-> panic stage "sinkCidIO: unallocated cass"
+		 ClassForward _ cid'	-> go cid'
 		 ClassFetter{}		-> return cid
+		 ClassFetterDeleted{}	-> return cid
 		 Class{}		-> return cid
 
 

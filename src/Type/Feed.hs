@@ -113,11 +113,12 @@ feedType src tt
 
 	TSum k ts
 	 | []	<- ts
-	 -> do	cidT		<- allocClass (Just k)
+	 -> do	cidT		<- allocClass k
+		addNode cidT src k $ NBot
 		return cidT
 
 	 | otherwise
-	 -> do 	cidT		<- allocClass (Just k)
+	 -> do 	cidT		<- allocClass k
 		cids		<- mapM (feedType src) ts
 		addNode cidT src k 
 			$ NSum (Set.fromList cids)
@@ -127,7 +128,7 @@ feedType src tt
 	TApp t1 t2
 	 -> do	
 		let Just k	= kindOfType tt
-	 	cidT		<- allocClass (Just k)
+	 	cidT		<- allocClass k
 	 	cid1		<- feedType src t1
 		cid2		<- feedType src t2
 
@@ -138,9 +139,9 @@ feedType src tt
 
 	TCon tc
 	 -> do	let k		= tyConKind tc
-		cidT		<- allocClass (Just k)
+		cidT		<- allocClass k
 
-	 	addNode cidT src k	
+	 	addNode cidT src k 
 			$ NCon tc
 
 		return cidT
@@ -156,7 +157,7 @@ feedType src tt
 	--	closure information that we need.
 	TFree v1 t@(TVar kV v2)
 	 | kV == kValue
-	 -> do	cid		<- allocClass (Just kClosure)
+	 -> do	cid		<- allocClass kClosure
 		defs		<- gets stateDefs
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
@@ -186,7 +187,7 @@ feedType src tt
 
 	-- A non-var closure. We can get these from signatures and instantiated schemes
 	TFree v1 t
-	 -> do	cid		<- allocClass (Just kClosure)
+	 -> do	cid		<- allocClass kClosure
 		t'		<- linkType [] src t
 
 		addNode	cid src kClosure	
@@ -239,9 +240,7 @@ feedFetter src f
 	 	return ()
 
 	FProj pj v tDict tBind
-	 -> do	cidC	<- allocClass Nothing
-
-	 	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]
+	 -> do 	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]
 		let Just kDict	= kindOfType tDict
 		let Just kBind	= kindOfType tBind
 
@@ -297,7 +296,7 @@ addFetter src f@(FConstraint vC [t])
 addFetter src f@(FConstraint v ts)
  = do 	
  	-- create a new class to hold this node
-	cidF		<- allocClass Nothing
+	cidF		<- allocClass KNil
 	 	
 	-- add the type args to the graph
 	cids		<- mapM (feedType src) ts
@@ -328,7 +327,7 @@ addFetter src f@(FConstraint v ts)
 addFetter src f@(FProj j v1 tDict tBind)
  = do
  	-- a new class to hold this node
- 	cidF	<- allocClass Nothing
+ 	cidF	<- allocClass KNil
 	
 	-- add the type args to the graph
  	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]

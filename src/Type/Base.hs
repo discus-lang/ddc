@@ -4,8 +4,7 @@ module Type.Base
 	, Class (..),	classInit
 	, Graph (..),	graphInit
 	
-	, graphSize_init
-	, graphSize_inc)
+	, graphSize_init)
 where
 import Type.Exp
 import Type.Location
@@ -23,17 +22,22 @@ import qualified Data.Set	as Set
 data Class 
 	
 	-- | An unallocated class
-	= ClassNil						
+	= ClassUnallocated						
 
 	-- | Reference to another class.
 	--	A Forward is to the resulting class when classes are merged.
-	| ClassForward ClassId					
+	| ClassForward 
+		{ classId		:: !ClassId
+		, classIdFwd		:: !ClassId }
 
 	-- | Some auxilliary constraint between classes.
 	| ClassFetter
 		{ classId		:: ClassId
 		, classFetter		:: Fetter 
 		, classSource		:: TypeSource }
+
+	-- | A deleted fetter
+	| ClassFetterDeleted Class
 
 	-- | An equivalence class.
 	| Class
@@ -112,15 +116,15 @@ data Graph
 					
 
 -- | Initial size of the graph.
-graphSize_init	= (5000 :: Int)
+graphSize_init	= (1000 :: Int)
 
--- | Size to increase the graph by when it fills up.
-graphSize_inc	= (5000 :: Int)
 
 graphInit :: IO Graph
 graphInit
  = do
-	class1		<- newArray (ClassId 0, ClassId graphSize_init) ClassNil
+	class1		<- newArray 
+				(ClassId 0, ClassId graphSize_init) 
+				ClassUnallocated
  	return	Graph
 		{ graphClass		= class1
 		, graphClassIdGen	= 0

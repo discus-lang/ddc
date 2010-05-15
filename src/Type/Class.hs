@@ -75,11 +75,12 @@ expandGraph minFree
 	if curIx + minFree <= curMax
 	 then return ()
 	 else do 
-	 	let newMax	= curMax + graphSize_inc
+	 	let newMax	= curMax * 2
 
 		elems		<- liftIO (getElems (graphClass graph))
-		newClass	<- liftIO (newListArray (ClassId 0, ClassId newMax)
-						(elems ++ replicate graphSize_inc ClassNil))
+		newClass	<- liftIO 
+					(newListArray (ClassId 0, ClassId newMax)
+					(elems ++ replicate curMax ClassUnallocated))
 
 		let graph'	= graph
 				{ graphClass	= newClass }
@@ -91,41 +92,39 @@ expandGraph minFree
 
 -- | Allocate a new class in the type graph.
 allocClass 	
-	:: Maybe Kind			-- The type of the graph.
+	:: Kind			-- The kind of the class.
 	-> SquidM ClassId
 
-allocClass mKind
+allocClass kind
  = do	expandGraph	1
 
 	graph		<- gets stateGraph
 	let classIdGen	=  graphClassIdGen graph
  	let cid		= ClassId classIdGen
 
-	let initial
-		= case mKind of
-			Just kind	-> classInit cid kind
-			Nothing		-> ClassNil
-
-	liftIO (writeArray (graphClass graph) cid initial)
+	liftIO 	$ writeArray (graphClass graph) cid
+		$ classInit cid kind
 
 	let graph'	= graph
 			{ graphClassIdGen	= classIdGen + 1}
 
 	modify (\s -> s { stateGraph		= graph' })
-	
 	return cid
 
 
 -- | Delete a class by setting it to Nil.
---	Note: 	This class *cannot* be re-used because it may have been deleted due to a MPTC
---		being crushed out. Other nodes will still refer to this one, and Type.Trace 
---		treats the ClassNil as generating no constraints.
---
+--   Note: This class *cannot* be re-used because it may have been deleted due to a MPTC
+--	   being crushed out. Other nodes will still refer to this one, and Type.Trace 
+--	   treats the ClassFetterDeleted as generating no constraints.
 delClass :: ClassId -> SquidM ()
 delClass cid
- = do	Just c		<- lookupClass cid
-	updateClass cid ClassNil
-	return ()	
+ = do	Just cls	<- lookupClass cid
+	case cls of
+	 ClassFetter{}	
+	  -> do	updateClass cid (ClassFetterDeleted cls)
+		return ()
+		
+	 _ ->	panic stage $ "delClass: class " % cid % " to be deleted is not a ClassFetter{}"
 	
 	
 -- | If there is already a class for this variable then return that
@@ -141,7 +140,7 @@ makeClassFromVar tSource kind var
    	case mCid of
    	 Just cid	-> return cid
 	 Nothing 
-	  -> do	cid	<- allocClass (Just kind)
+	  -> do	cid	<- allocClass kind
 		addNameToClass cid tSource var kind
 	     	return	cid
 
@@ -197,30 +196,28 @@ addToClass
 	-> Node			-- ^ constraint
 	-> SquidM ()
 
-addToClass cid_ src kind node
+addToClass cid src kind node
  = do	graph		<- gets stateGraph
- 	cid		<- sinkClassId cid_
+	addToClass2 cid src kind node graph
 
- 	cls		<- liftIO (readArray (graphClass graph) cid)
-	cls'		<- addToClass2 cid src kind node cls
-	liftIO (writeArray (graphClass graph) cid cls')
+addToClass2 cid' src kind node graph
+ = go cid'
+ where	go cid
+	 = do	cls	<- liftIO (readArray (graphClass graph) cid)
+		case cls of
+		 ClassForward _ cid'' 	-> go cid''
+		 ClassUnallocated	-> update cid (classInit cid kind)
+		 Class{}		-> update cid cls
+		 	
+	update cid cls@Class{}
+	 = do	liftIO 	$ writeArray (graphClass graph) cid 
+			$ cls 	{ classType		= Nothing
+				, classQueue		= node : (maybeToList $ classType cls) ++ classQueue cls
+				, classTypeSources	= (node, src) : classTypeSources cls }
+			
+		activateClass cid
+		linkVar cid node
 
-	linkVar cid node
-	return ()
-
-addToClass2 cid src kind node cls
-	| ClassNil	<- cls
-	= addToClass3 cid src node (classInit cid kind)
-		
-	| otherwise
-	= addToClass3 cid src node cls
-	
-	
-addToClass3 cid src t c@Class{}
- = do 	activateClass cid
- 	return	$ c	{ classTypeSources	= (t, src) : classTypeSources c
-			, classType		= Nothing
-		  	, classQueue		= (maybeToList $ classType c) ++ classQueue c ++ [t] }
 
 linkVar cid tt
  = case tt of
@@ -255,7 +252,7 @@ addNameToClass cid_ src v kind
 
 addNameToClass2 cid src node kind cls
  = case cls of
- 	ClassNil	
+ 	ClassUnallocated
 	 -> addNameToClass3 cid src node (classInit cid kind)
 
 	Class{}		
@@ -322,7 +319,7 @@ addClassForwards cidL_ cids_
 	-- add a substitution for each elem of cids.
 	graph		<- gets stateGraph
 
-	mapM_		(\x -> liftIO (writeArray (graphClass graph) x (ClassForward cidL))) 
+	mapM_		(\x -> liftIO (writeArray (graphClass graph) x (ClassForward x cidL))) 
 			cids
 	
 	return ()
@@ -552,9 +549,10 @@ sinkClassId  cid
 sinkClassId' classes cid
  = do	mClass	<- liftIO (readArray classes cid)
  	case mClass of
-		ClassForward cid'	-> sinkClassId' classes cid'
-		ClassNil{}		-> return cid
+		ClassForward _ cid'	-> sinkClassId' classes cid'
+		ClassUnallocated{}	-> panic stage $ "sinkClassId': class is unallocated"
 		ClassFetter{}		-> return cid
+		ClassFetterDeleted{}	-> return cid
 		Class{}			-> return cid
 
 

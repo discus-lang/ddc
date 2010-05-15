@@ -61,10 +61,10 @@ foreign import "primInt32_le"
 foreign import "primInt32_update"
  primInt32_update
  	:: Int32{write} -> Int32{read} -> ()
-
+{-
 instance Copy Int32 where
  	copy x 		= boxInt32 (unboxInt32 x)
-
+-}
 instance Updatable Int32 where
 	(:=)		= primInt32_update
 
@@ -91,12 +91,13 @@ instance Num Int32 where
 	mod		= primInt32_mod
 	negate		= primInt32_neg
 
-
+{-
 instance Accum Int32 where
 	(+=) a b	= primInt32_update a (primInt32_add a b)
 
 
 -----
+
 (<>) :: Int32 -> (Int32 -> Int32) -> ()
 (<>) x f
  = do 	x'	= f x
@@ -124,4 +125,4 @@ project Int32 where
  			else y
 
 infixl 7  `quot`, `div`, `mod`
-
+-}

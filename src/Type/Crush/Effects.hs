@@ -38,28 +38,31 @@ crushEffectInClass
 	-> SquidM Bool		-- ^ Whether we crushed something from this class.
 
 crushEffectInClass cid
- = do	Just cls	<- lookupClass cid
+ = do	trace		$ "--  crushEffectInClass " % cid % "\n"
+	Just cls	<- lookupClass cid
 	crushEffectWithClass cid cls
 	
 crushEffectWithClass cid cls
  = case cls of
-	ClassNil
-	 -> return False
-	
-	-- Follow indirections.
-	ClassForward cid'
-	 -> crushEffectInClass cid'
-	
+
 	-- This isn't an effect class.
 	-- The grinder shouldn't be calling us here.
+	ClassUnallocated
+	 -> panic stage $ "crushEffectWithClass: ClassUnallocated " % cid
+
+	ClassFetterDeleted{}
+	 -> panic stage $ "crushEffectWithClass: ClassFetterDeleted " % cid 
+
 	ClassFetter{}
-	 -> panic stage
-		$ "crushEffectWithClass: Class " % cid 
-		% " is a ClassFetter{}, and doesn't contain an effect."
+	 -> panic stage $ "crushEffectWithClass: ClassFetter " % cid
+	
+	-- Follow indirections.
+	ClassForward _ cid'
+	 -> crushEffectInClass cid'
 		
 	-- Class hasn't been unified yet.
 	Class	{ classType = Nothing }
-	 -> return False
+	 -> crushMaybeLater cid
 	
 	-- A class containing an application.
 	Class	{ classKind = kind
@@ -70,8 +73,7 @@ crushEffectWithClass cid cls
 		Just clsArg	<- lookupClass cidArg
 		
 		trace	$ vcat
-			[ "--  crushEffectInClass "	% cid
-			, "    node             = "	% nApp 
+			[ "    node             = "	% nApp 
 			, "    clsCon.classType = "	% classType clsCon
 			, "    clsArg.classType = "	% classType clsArg
 			, blank ]
@@ -88,37 +90,19 @@ crushEffectWithClass cid cls
 			| Just nCon@NCon{} <- classType clsCon
 			, Nothing	   <- classType clsArg
 			, elem nCon [nHeadRead, nDeepRead, nDeepWrite]
-			= do	activateClass cid
-				trace	$ ppr "    * reactivating class\n"
-				return False
+			= crushMaybeLater cid
 				
 			-- Either the constructor or arg hasn't been unified yet.
 			| otherwise
-			= do	trace	$ ppr "\n\n"
-				return False
+			= crushMaybeLater cid
 			
 		result
 		
 	-- Some other class
 	Class	{ classType = Just _ }
-	 -> return False
+	 -> crushNever cid
 	
 
-
-data CrushResult
-	= CrushNot
-	| CrushGone
-	| CrushBits [ClassId] TypeSource
-	deriving Show
-
-instance Pretty CrushResult PMode where
- ppr xx	
-  = case xx of
-	CrushNot		-> ppr "CrushNot"
-	CrushGone		-> ppr "CrushGone"
-	CrushBits cids src	-> "CrushBits" <> cids <> src
-
-	
 -- | Try and crush an effect application.
 --   The classTypes in all the provided classes have been unified, so are Justs.
 crushEffectApp
@@ -126,9 +110,7 @@ crushEffectApp
 	-> Class		-- ^ Class containing the application.
 	-> Class		-- ^ Class containing the constructor.
 	-> Class		-- ^ Class containign the argument.
-	-> SquidM Bool
-				-- ^ Just the crushed parts of this effect, or Nothing
-				--   if it couldn't be crushed.
+	-> SquidM Bool		-- ^ Whether we made any progress.
 
 crushEffectApp cid 
 	cls	@Class { classType = Just nApp' }
@@ -158,13 +140,12 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	| elem nCon [nHeadRead, nDeepRead, nDeepWrite]
 	, NCon{}	<- nArg
 	= do	Just srcApp	<- lookupSourceOfNode nApp cls
-		crushEffectUpdate cid CrushGone
+		crushBottom cid
 	
-	-- HeadRead
+	-- HeadRead ---------------------------------------
 	| nCon		== nHeadRead
 	, NApp{}	<- nArg
-	= do	
-		-- Start from the class holding the argument, 
+	= do	-- Start from the class holding the argument, 
 		--	and walk down its left spine to get its head region, if any.
 		mHead	<- headClassDownLeftSpine (classId clsArg)
 		case mHead of
@@ -172,48 +153,82 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 		  -> do	cidEff'	<- feedType (TSI $ SICrushedES cid nApp srcApp) 
 				$  makeTApp [tRead, TClass (classKind clsHead) (classId clsHead)]
 
-			crushEffectUpdate cid 
-				(CrushBits [cidEff']
-					   (TSI $ SICrushedES cid nApp srcApp))
-			
-		 Nothing	-> return False
-			
+			crushUpdate cid 
+				[cidEff']
+				(TSI $ SICrushedES cid nApp srcApp)
+
+		 Nothing	-> crushMaybeLater cid
+
+	| nCon		== nHeadRead
+	= crushMaybeLater cid
+
+
+
+								
 	| otherwise
-	= return False
+	= crushNever cid
 
 
-crushEffectUpdate
-	:: ClassId
-	-> CrushResult
-	-> SquidM Bool
+-- | Class is not yet crushable, nor will it ever be.
+--   Maybe the class actually contains some already atomic effect like Read or Write.
+crushNever :: ClassId -> SquidM Bool
+crushNever cid
+ = do	trace	$ ppr "  * never crushable\n\n"
+	return False
+
+
+-- | The effect in this class was completely crushed out.
+--   Maybe it was a (HeadRead ()), which has no effect.
+--   We can set this class to bottom, but still need to retain it in the graph
+--   because other classes may be holding references to it. 
+--   We don't use crushUpdate here because that function also requires a TypeSource.
+crushBottom :: ClassId -> SquidM Bool
+crushBottom cid
+ = do	trace	$ ppr "  * delete\n\n"
+	modifyClass cid $ \c -> c
+		{ classType		= Just $ NSum Set.empty
+		, classTypeSources	= [] }
+
+	return False
+
+
+-- | We haven't made any progress this time around, but the same class might
+--   be crushable when some other class changes. Maybe some other class needs
+--   to be unified to give us an outer type constructor, or something.
+--
+--   TODO: Could use activation queues here to speed the grinder up.
+--
+crushMaybeLater :: ClassId -> SquidM Bool
+crushMaybeLater cid
+ = do	trace	$ ppr "  * maybe later\n\n"
+	activateClass cid
+	return False
 	
-crushEffectUpdate cid result
- = do	trace	$ "    crushed effects:\n" %> result % "\n\n"
-	case result of
-	 CrushNot	-> return False
 
-	 CrushGone	
-	  -> do	modifyClass cid $ \c -> c
-			{ classType		= Just $ NSum Set.empty
-			, classTypeSources	= [] }
+-- | Class is crushable, and here are cids holding the new effects, 
+---  along with a TypeSource recording what was crushed.
+crushUpdate :: ClassId -> [ClassId] -> TypeSource -> SquidM Bool
+crushUpdate cid cids' src'
+ = do	trace	$ "  * update\n"
+		% "    crushed effects:\n" %> cids' <> src' % "\n\n"
+
+	case cids' of
+	 [] ->	panic stage "crushEffectUpdate: List is empty. Caller should have returned False."
+
+	 -- If there's only one new class id then we can just fwd the original class to it.
+	 [cid']	
+	  -> do	modifyClass cid $ \c -> ClassForward cid cid'
 		return True
-		
 
-	 CrushBits cids src
-	  -> case cids of
-		[] ->	panic stage "crushEffectUpdate: List is empty. Caller should have returned False."
-
-		[cid']	
-		 -> do	modifyClass cid $ \c -> ClassForward cid'
-			return True
-
-		_ -> do
-			let node	= NSum $ Set.fromList cids
-			modifyClass cid $ \c -> c
-				{ classType		= Just node
-				, classTypeSources	= [(node, src)] }
-			return True
-			
+         -- Crushing the orignal effect gave us a number of pieces,
+	 -- so we join them together in an effect sum.
+	 _ -> do
+		let node	= NSum $ Set.fromList cids'
+		modifyClass cid $ \c -> c
+			{ classType		= Just node
+			, classTypeSources	= [(node, src')] }
+		return True
+					
 
 -- | Get the source of some effect, given the class that contains it.
 --	The cids in the provided effect must be in canonical form, 
@@ -226,35 +241,14 @@ lookupSourceOfNode
 
 lookupSourceOfNode nEff cls
  = do	tsSrcs	<- mapM sinkCidsInNodeFst $ classTypeSources cls
+	return 	$ listToMaybe
+		$ [nodeSrc	| (nodeEff,  nodeSrc)	<- tsSrcs
+				, nodeEff == nEff]
 
-	-- lookup the source of this effect
-	--	The nodes hold effect sums, so we need to look inside them
-	--	to find which one holds our (atomic) conflicting effect
-	let srcs
-	     = [nodeSrc	| (nodeEff,  nodeSrc)	<- tsSrcs
-			, nodeEff == nEff]
-
-	return $ listToMaybe srcs
 	
 {-
 crushEffect cid cls nApp nAppSrc nEff nArg cidArg
 
-	-- HeadRead
-	| nEff		== tHeadRead
-	, NApp{}	<- nArg
-	= do	
-		-- Start from the class holding the argument, 
-		--	and walk down its left spine to get its head region, if any.
-		mHead	<- headCidDownLeftSpine cidArg
-		
-		case mHead of
-		 Just cidR	-> return $ Just
-					( TApp tRead (TClass kRegion cidR)
-					, TSI $ SICrushedES cid nApp nAppSrc )
-			
-		 Nothing	-> return Nothing
-			
-		
 	-- DeepRead
 	| nEff			== nDeepRead
 	, NApp cid1 cid2	<- nArg
@@ -307,51 +301,6 @@ crushEffect cid cls nApp nAppSrc nEff nArg cidArg
 			activateClass cid
 
 		return Nothing
-	
-
-	
-	
--- | Checks whether this effect might ever need to be crushed
-isCrushable :: Effect -> Bool
-isCrushable eff
- = case eff of
-	TApp tE _
-	 -> elem tE [tHeadRead, tDeepRead, tDeepWrite]
-	 
-	TSum kE ts
-	 | kE == kEffect 
-	 -> or $ map isCrushable ts
-	 
-	TClass{}	-> False
-	TVar{}		-> False
-	TCon{}		-> False
-	_ 		->  panic stage $ "isCrushable: no match for " % eff % "\n"
-
-
--- We've crushed the effect. Now update the class.
-crushEffectWithClass_update cid cls Nothing
- = 	return False
-
-	
-crushEffectWithClass_update cid cls (Just (eff', src'))
- = do	trace	$ vcat
-		[ "    effCrushed      = "	% eff'
-		, "    srcCrushed      = "	% src'
-		, newline ]
-
-	-- Add the new effect to the graph.
-	Just tt'	<- feedType src' Nothing eff'
-
-	-- Update the original class to point to our new effect.
-	modifyClass cid
-	 $ \c -> c 	{ classType  	   = Just eff' 
-		 	, classTypeSources = (eff', src') : classTypeSources c }
-
-	-- If the crushed effect still contains crushable components then activate ourselves
-	--	again so we get called on the next pass
-	when (isCrushable eff') $ activateClass cid
-
-	return True
 
 -}
 

@@ -43,7 +43,6 @@ module DDC.Solve.Trace
 	, lookupTypeOfCid, 	lookupTypeOfCidAsSquid)
 where
 import Type.Exp
-import Type.Base		(Class(..))
 import Type.Builtin
 import Type.Util
 import Type.Plate.Collect
@@ -54,6 +53,8 @@ import DDC.Main.Pretty
 import Data.Array.IO
 import Data.Foldable
 import Data.List
+import Type.Dump		()
+import Type.Base		(Class(..))
 import Data.Sequence		(Seq)
 import Data.Set			(Set)
 import Data.Map			(Map)
@@ -124,12 +125,12 @@ traceFromCid' cid
 
 	case cls of
 
-	 -- A deleted class.
-	 ClassNil 
-	  -> return ()
+	 -- uh oh, an unallocated part of the graph.
+	 ClassUnallocated
+	  -> 	panic stage $ "traceFromCid': class " % cid % " isn't allocated."
 
 	 -- A forward reference.
-	 ClassForward cid'
+	 ClassForward _ cid'
 	  -> 	traceFromCid cid'
 
 	 -- A regular class.
@@ -158,7 +159,12 @@ traceFromCid' cid
 	 -- At tracing time all queues should be unified, so the classType field should never be Nothing.
 	 Class	{ classType	= Nothing }
 	  -> panic stage 
-		$ "traceFromCid': the queue " % cid % " hasn't been unified."
+		$ "traceFromCid': the queue " % cid % " hasn't been unified.\n"
+		% cls
+
+	 -- A deleted class.
+	 ClassFetterDeleted _
+	  -> return ()
 
 	 -- A class holding a multi-param type constraint.
 	 ClassFetter

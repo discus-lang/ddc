@@ -26,7 +26,6 @@ trace s	= when debug $ traceM s
 
 -- | Unify the elements in an equivalences classes queue.
 --   If there are any errors then these are added to the SquidM monad.
---
 crushUnifyClass 
 	:: ClassId	
 	-> SquidM Bool	-- whether this class was unified
@@ -37,7 +36,7 @@ crushUnifyClass	cidT
 
 	
 -- | check whether the work has alreay been done
-crushUnifyClass_cls cidT (ClassForward cid')
+crushUnifyClass_cls cidT (ClassForward _ cid')
 	= crushUnifyClass cid'
 
 crushUnifyClass_cls cidT c@Class{}
