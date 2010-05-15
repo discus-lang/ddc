@@ -48,6 +48,7 @@ sinkCidsInNodeIO
 	
 sinkCidsInNodeIO classes nn
  = case nn of
+	NBot{}		-> return nn
 	NVar{}		-> return nn
 	NCon{}		-> return nn
 

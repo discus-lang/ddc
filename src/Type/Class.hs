@@ -22,13 +22,14 @@ module Type.Class
 	, updateVC
 	, kindOfCid
 	, foldClasses
-	, headCidDownLeftSpine
 
 	-- * Sinking
 	, sinkClassId
 	, sinkCidsInNode
 	, sinkCidsInType
-	, sinkCidsInFetter)
+	, sinkCidsInFetter
+	, sinkCidsInNodeFst
+	, sinkCidsInFetterFst)
 
 --	, traceDownLeftSpine)
 where
@@ -496,37 +497,6 @@ foldClasses fun x
 	foldM fun x classes  
 
 
--- | Walk down the left spine of this type to find the type in the bottom 
---	left node (if there is one)
---
---	For example, if the graph holds a type like:
---	   NApp (NApp (NCon tc) cid1) cid2
---	
---	Then starting from the cid of the outermost NApp, we'll walk down 
---	the left spine until we find (TCon tc), then return cid2
---
---	If the node at the bottom of the spine hasn't been unified, then
---	It'll be a Nothing, so return that instead.
---
-headCidDownLeftSpine 
-	:: ClassId 
-	-> SquidM (Maybe ClassId)
-	
-headCidDownLeftSpine cid1
- = do	Just cls1	<- lookupClass cid1
-
---	trace 	$ "    headTypeDownLeftSpine\n"
---		% "    cid1 = " % cid1			% "\n"
---		% "    type = " % classType cls1	% "\n\n"
-
-	case classType cls1 of
-	 Just (NApp cid11 cid12)	
-	   -> do Just cls11	<- lookupClass cid11
-		 case classType cls11 of
-			Just NCon{}	-> return $ Just cid12
-			_		-> headCidDownLeftSpine cid11
-
-	 _	-> return $ Nothing
 
 
 -- Starting an outermost application node, trace the graph and return
@@ -610,5 +580,22 @@ sinkCidsInFetter ff
  = do	graph		<- gets stateGraph
 	let classes	= graphClass graph
 	liftIO $ sinkCidsInFetterIO classes ff
-	
+
+
+-- | Convert the cids in the first element of this tuple to canonical form.
+--	Good for the classTypeSources field of a class.
+sinkCidsInNodeFst :: (Node, a) -> SquidM (Node, a)	
+sinkCidsInNodeFst (nn, x)
+ = do	nn'	<- sinkCidsInNode nn
+	return	$ (nn', x)
+
+
+-- | Convert the cids in the first element of this tuple to canonical form.
+--	Good for the classFetterSource field of a class.
+sinkCidsInFetterFst :: (Fetter, a) -> SquidM (Fetter, a)
+sinkCidsInFetterFst (ff, x)
+ = do	ff'	<- sinkCidsInFetter ff
+	return	$ (ff', x)
+
+
 

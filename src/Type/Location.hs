@@ -17,6 +17,7 @@ import Type.Util.Kind
 import Type.Exp
 import Type.Builtin
 import Shared.VarPrim
+import DDC.Solve.Node
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.SourcePos
@@ -174,7 +175,7 @@ data SourceInfer
 	-- ^ The result of crushing some effect
 	| SICrushedES	
 		ClassId		-- the class holding the effect that was crushed
-		Effect		-- the effect that was crushed
+		Node		-- the effect that was crushed
 		TypeSource	-- the source of this effect
 
 	-- ^ A scheme that was generalised and added to the graph because its 
@@ -244,8 +245,8 @@ dispTypeSource tt ts
 	| TSI (SICrushedFS c f ts') <- ts
 	= dispTypeSource tt ts'
 
-	| TSI (SICrushedES c eff effSrc) <- ts
-	= dispTypeSource eff effSrc
+--	| TSI (SICrushedES c eff effSrc) <- ts
+--	= dispTypeSource eff effSrc
 
 	-- hrm.. this shouldn't happen
 	| otherwise

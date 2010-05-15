@@ -38,7 +38,8 @@ import qualified Data.Map	as Map
 
 -- | A node type.
 data Node
-	= NVar		Var
+	= NBot
+	| NVar		Var
 	| NCon		TyCon
 	| NApp		ClassId	ClassId
 	| NSum		(Set ClassId)
@@ -70,6 +71,7 @@ isNVar nn
 isNBot :: Node -> Bool
 isNBot nn 
  = case nn of
+	NBot		-> True
 	NSum ss		-> Set.null ss
 	_		-> False
 
@@ -78,6 +80,7 @@ isNBot nn
 cidsOfNode :: Node -> Set ClassId
 cidsOfNode nn
  = case nn of
+	NBot		-> Set.empty
 	NVar{}		-> Set.empty
 	NCon{}		-> Set.empty
 	NApp c1 c2	-> Set.fromList [c1, c2]
@@ -91,6 +94,7 @@ cidsOfNode nn
 subNodeCidCid :: Map ClassId ClassId -> Node -> Node
 subNodeCidCid sub nn
  = case nn of
+	NBot{}		-> nn
 	NVar{}		-> nn
 	NCon{}		-> nn
 
@@ -112,15 +116,19 @@ subNodeCidCid sub nn
 
 	
 instance Pretty Node PMode where
-	ppr nn
-	 = case nn of
-		NScheme t	-> "NScheme " % t
-		NFree v t	-> "NFree " % v % " :: " % t
-		_		-> ppr $ show nn
+ ppr nn
+  = case nn of
+	NBot		-> ppr "NBot"
+	NVar v		-> ppr v
+	NCon tc		-> ppr tc
+	NApp cid1 cid2	-> parens $ cid1 <> cid2
+	NScheme t	-> "NScheme " % t
+	NFree v t	-> "NFree " % v % " :: " % t
+	_		-> ppr $ show nn
 
 
 -- | Builtin type constructors (in node form)
-nBot		= NSum Set.empty
+nBot		= NBot
 
 nRead		= NCon $ TyConEffect TyConEffectRead
 		$ KFun kRegion kEffect

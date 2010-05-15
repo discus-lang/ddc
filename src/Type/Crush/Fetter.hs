@@ -28,54 +28,54 @@ trace s	= when debug $ traceM s
 -- | Try and crush any single parameter fetters acting on this
 --	class into smaller components.
 crushFetterInClass
-	:: ClassId 	-- ^ cid of class
-	-> SquidM Bool	--   whether we crushed something from this class
+	:: ClassId 	-- ^ cid of class containing the fetters to crush.
+	-> SquidM Bool	-- ^ Whether we crushed something from this class.
 
 crushFetterInClass cid
  = do	Just cls <- lookupClass cid
  	crushFetterWithClass cid cls
 
-crushFetterWithClass cid ClassNil
-	= return False
+crushFetterWithClass cid cls
+ = case cls of
+	ClassNil
+	 -> return False
 
--- follow class indirections.
-crushFetterWithClass cid (ClassForward cid')
-	= crushFetterInClass cid'
+	-- Follow indirections.
+	ClassForward cid'
+	 -> crushFetterInClass cid'
 
--- MPTC style fetters Shape and Proj are handled by their own modules.
-crushFetterWithClass cid ClassFetter{}
-	= return False
+	-- MPTC style fetters Shape and Proj are handled by their own modules.
+	ClassFetter{}
+	 -> return False
 
-crushFetterWithClass cid 
-	Class { classType = Nothing }
-	= return False
+	-- Class hasn't been unified yet.
+	Class 	{ classType = Nothing }
+	 -> return False
 
-crushFetterWithClass cid 
-	cls@(Class	
-		{ classKind		= kind
+	Class	{ classKind		= kind
 		, classType		= Just nNode'
 		, classTypeSources	= tsSrc'
-		, classFetterSources 	= fsSrc' })
- = do	
-	nNode	<- sinkCidsInNode	    nNode'
-	tsSrc	<- mapM sinkCidsInNodeFst   tsSrc'
-	fsSrc	<- mapM sinkCidsInFetterFst fsSrc'
+		, classFetterSources 	= fsSrc' }
+	 -> do	
+		nNode	<- sinkCidsInNode	    nNode'
+		tsSrc	<- mapM sinkCidsInNodeFst   tsSrc'
+		fsSrc	<- mapM sinkCidsInFetterFst fsSrc'
 
-	trace	$ "--  crushFetterInClass "	%  cid		% "\n"
-		% "    node           = "	%  nNode	% "\n"
-		% "    fetters:\n" 		%> fsSrc	% "\n"
+		trace	$ "--  crushFetterInClass "	%  cid		% "\n"
+			% "    node           = "	%  nNode	% "\n"
+			% "    fetters:\n" 		%> fsSrc	% "\n"
 
-	-- Try to crush each fetter into smaller pieces.
-	-- While crushing, we leave all the original fetters in the class, and only add
-	-- the new fetters back when we're done. The fetters in the returned list could
-	-- refer to other classes as well as this one.
-	fsCrushed 
-		<- liftM concat
-		$  mapM (crushFetterSingle cid kind nNode tsSrc) fsSrc
+		-- Try to crush each fetter into smaller pieces.
+		-- While crushing, we leave all the original fetters in the class, and only add
+		-- the new fetters back when we're done. The fetters in the returned list could
+		-- refer to other classes as well as this one.
+		fsCrushed 
+			<- liftM concat
+			$  mapM (crushFetterSingle cid kind nNode tsSrc) fsSrc
 	
-	trace	$ "    crushed fetters:\n"	%> fsCrushed	% "\n"
+		trace	$ "    crushed fetters:\n"	%> fsCrushed	% "\n"
 
-	return False
+		return False
 
 
 -- | Try to crush a fetter from a class into smaller pieces.
@@ -93,15 +93,6 @@ crushFetterSingle cid kind node tsSrc (fetter, srcFetter)
  = do	return [(fetter, srcFetter)]
 
 
-
-
-sinkCidsInNodeFst (nn, x)
- = do	nn'	<- sinkCidsInNode nn
-	return	$ (nn', x)
-
-sinkCidsInFetterFst (ff, x)
- = do	ff'	<- sinkCidsInFetter ff
-	return	$ (ff', x)
 
 
 {-

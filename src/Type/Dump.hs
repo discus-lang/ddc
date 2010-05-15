@@ -6,10 +6,8 @@ module Type.Dump
 	, dumpSub
 	, prettyClass)
 where
--- import Type.Pretty
 import Type.State
 import Type.Class
--- import DDC.Solve.Node
 import Util
 import Data.Array.IO	
 import DDC.Main.Pretty
@@ -37,7 +35,6 @@ dumpGraph' acc (c:cs)
 	_		-> dumpGraph' (acc % c) cs
 	
 
-		
 -- | dump scheme instantiations
 dumpInst :: 	SquidM String
 dumpInst
@@ -47,6 +44,7 @@ dumpInst
 		$ "===== Instantiations ========================================\n"
 		% prettyVMap mInst
 		% "\n\n"
+
 
 -- | dump variable substitution
 dumpSub :: SquidM String
@@ -60,6 +58,7 @@ dumpSub
 		$ "===== Var Sub ===============================================\n"
 		% prettyVMap mVarSub
 		% "\n\n"
+
 
 prettyClass :: Int -> Class -> PrettyM PMode
 prettyClass ix c
@@ -85,16 +84,12 @@ instance Pretty Class PMode where
 
  	Class{}
 	 ->  	-- class id / name / kind 
-		classKind c 
-			% classId c 
-			% (case className c of 
-				Nothing	-> blank
-				Just n	-> ppr n) % "\n"
-	
+	    	classId c
+		% " :: " % classKind c % "\n"
 		-- class type
 		%> (case classType c of
 			Nothing	-> ppr "-- no type --\n"
-			Just t	-> ":: " % ppr t % "\n\n")
+			Just t	-> ppr t % "\n\n")
 
 		-- class fetters
 		% (case classFetterSources c of

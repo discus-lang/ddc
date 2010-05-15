@@ -277,6 +277,9 @@ lookupTypeOfCid cid
 	
 lookupTypeOfCidWithClass cid cls kind node
  = case node of
+	NBot
+	 ->	return $ Just $ TSum kind []
+
 	NVar v	
 	 -> 	return $ Just $ TVar kind v
 	

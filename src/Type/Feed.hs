@@ -112,9 +112,13 @@ feedType src tt
 	 $  toFetterFormT tt
 
 	TSum k ts
+	 | []	<- ts
+	 -> do	cidT		<- allocClass (Just k)
+		return cidT
+
+	 | otherwise
 	 -> do 	cidT		<- allocClass (Just k)
 		cids		<- mapM (feedType src) ts
-
 		addNode cidT src k 
 			$ NSum (Set.fromList cids)
 
