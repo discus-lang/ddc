@@ -122,12 +122,12 @@ bump a b = a % " " % b
 -- Concatenation --------------------------------------------------------------
 -- | Same as (punc newline)
 vcat	:: (Pretty [Char] m, Pretty a m) => [a] -> PrettyM m
-vcat	= punc newline
+vcat ps	= punc newline ps % newline
 
 
 -- | Same as (punc (newline % newline))
 vvcat	:: (Pretty [Char] m, Pretty a m) => [a] -> PrettyM m
-vvcat	= punc (newline % newline)
+vvcat ps = punc (newline % newline) ps % newline
 
 
 -- Padding --------------------------------------------------------------------

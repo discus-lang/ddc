@@ -495,48 +495,6 @@ foldClasses fun x
 
 
 
-
--- Starting an outermost application node, trace the graph and return
---	a list of the parts being applied. Eg, tracing the following
---	structure from the graph gives [t1, t2, t3]
---
---         @
---       /   \
---      @     t3
---    /   \
---   t1    t2
---
--- If and of the nodes have Nothing for their type, then return Nothing.
---
-{-
-traceDownLeftSpine
-	:: Type
-	-> SquidM (Maybe [Node])
-	
-traceDownLeftSpine tt
- = case tt of
-	TClass _ cid
-	 -> do	Just cls	<- lookupClass cid
-		case classType cls of
-			Just t@(NSum _ [])	-> return $ Just [TClass (classKind cls) cid]
-		 	Just t			-> traceDownLeftSpine t
-			Nothing			-> return $ Nothing
-			
-	TApp t11 t12
-	 -> do	mtsLeft	<- traceDownLeftSpine t11
-		case mtsLeft of
-			Just tsLeft	-> return $ Just (tsLeft ++ [t12])
-			Nothing		-> return Nothing
-			
-	TCon{}
-	 -> return $ Just [tt]
-		
-	_
-	 -> panic stage
-	 $  "traceDownLeftSpine: no match for " % tt
--}
-
-
 -- Sinking ----------------------------------------------------------------------------------------
 -- | Convert this cid to canconical form.
 {-# INLINE sinkClassId #-}

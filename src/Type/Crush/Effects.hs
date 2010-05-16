@@ -18,7 +18,7 @@ import Control.Monad
 import Data.Maybe
 import qualified Data.Set	as Set
 
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effects"
 
@@ -75,8 +75,7 @@ crushEffectWithClass cid cls
 		trace	$ vcat
 			[ "    node             = "	% nApp 
 			, "    clsCon.classType = "	% classType clsCon
-			, "    clsArg.classType = "	% classType clsArg
-			, blank ]
+			, "    clsArg.classType = "	% classType clsArg ]
 
 		let result
 			-- We've got enough information to try and crush the effect.
@@ -84,14 +83,6 @@ crushEffectWithClass cid cls
 			, Just _	<- classType clsArg
 			= crushEffectApp cid cls clsCon clsArg
 			
-			-- Can't crush this effect yet, but it looks like we would be able to
-			-- if the argument was unified. Reactivate this class so we get called
-			-- again on the next crushing pass.
-			| Just nCon@NCon{} <- classType clsCon
-			, Nothing	   <- classType clsArg
-			, elem nCon [nHeadRead, nDeepRead, nDeepWrite]
-			= crushMaybeLater cid
-				
 			-- Either the constructor or arg hasn't been unified yet.
 			| otherwise
 			= crushMaybeLater cid
@@ -126,8 +117,7 @@ crushEffectApp cid
 	 	[ ppr "  * crushEffectApp..."
 		, "    nApp             = " % nApp
 		, "    nCon             = " % nCon
-		, "    nArg             = " % nArg 
-		, blank ]
+		, "    nArg             = " % nArg ]
 		
 	crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 
@@ -162,15 +152,76 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	| nCon		== nHeadRead
 	= crushMaybeLater cid
 
+	-- DeepRead ---------------------------------------
+	| nCon		== nDeepRead
+	, NApp{}	<- nArg
+	= do	mApps	<- walkDownLeftSpine (classId clsArg)
+	
+		trace	$ vcat
+			[ ppr "  * DeepRead"
+			, "    mApps            = " % mApps ]
 
+		let readIt (cid', k)
+			| k == kRegion	= Just $ TApp tRead	(TClass k cid')
+			| k == kValue	= Just $ TApp tDeepRead (TClass k cid')
+			| otherwise	= Nothing
+		
+		case mApps of
+		 Just (cidCon : cidArgs)
+		  -> do	ksArgs	<- mapM kindOfCid cidArgs
+			let cidksArgs	= zip cidArgs ksArgs
+			let effs'	= mapMaybe readIt cidksArgs
+			let src		= TSI $ SICrushedES cid nApp srcApp
+			trace	$ vcat
+				[ "    cidksArgs        = " % cidksArgs
+				, "    effs'            = " % effs']
+			
+			cidsEff' <- mapM (feedType src) effs'			
+			crushUpdate cid cidsEff' src
+			
+		 Nothing	
+		  ->	crushMaybeLater cid
+			
+	-- DeepWrite --------------------------------------
+	| nCon		== nDeepWrite
+	, NApp{}	<- nArg
+	= do	mApps	<- walkDownLeftSpine (classId clsArg)
+	
+		trace	$ vcat
+			[ ppr "  * DeepWrite"
+			, "    mApps            = " % mApps ]
 
-								
+		let writeIt (cid', k)
+			| k == kRegion	= Just $ TApp tWrite	(TClass k cid')
+			| k == kValue	= Just $ TApp tDeepWrite (TClass k cid')
+			| otherwise	= Nothing
+		
+		case mApps of
+		 Just (cidCon : cidArgs)
+		  -> do	ksArgs	<- mapM kindOfCid cidArgs
+			let cidksArgs	= zip cidArgs ksArgs
+			let effs'	= mapMaybe writeIt cidksArgs
+			let src		= TSI $ SICrushedES cid nApp srcApp
+			trace	$ vcat
+				[ "    cidksArgs        = " % cidksArgs
+				, "    effs'            = " % effs']
+			
+			cidsEff' <- mapM (feedType src) effs'			
+			crushUpdate cid cidsEff' src
+			
+		 Nothing	
+		  ->	crushMaybeLater cid
+			
+	| nCon		== nDeepWrite
+	= crushMaybeLater cid
+
+	-- Other effects can never be crushed.			
 	| otherwise
 	= crushNever cid
 
 
 -- | Class is not yet crushable, nor will it ever be.
---   Maybe the class actually contains some already atomic effect like Read or Write.
+--   Maybe the class contains some already atomic effect, like Read or Write.
 crushNever :: ClassId -> SquidM Bool
 crushNever cid
  = do	trace	$ ppr "  * never crushable\n\n"
@@ -186,7 +237,7 @@ crushBottom :: ClassId -> SquidM Bool
 crushBottom cid
  = do	trace	$ ppr "  * delete\n\n"
 	modifyClass cid $ \c -> c
-		{ classType		= Just $ NSum Set.empty
+		{ classType		= Just NBot
 		, classTypeSources	= [] }
 
 	return False
@@ -194,7 +245,7 @@ crushBottom cid
 
 -- | We haven't made any progress this time around, but the same class might
 --   be crushable when some other class changes. Maybe some other class needs
---   to be unified to give us an outer type constructor, or something.
+--   to be unified to give us an outer type constructor.
 --
 --   TODO: Could use activation queues here to speed the grinder up.
 --
@@ -213,15 +264,15 @@ crushUpdate cid cids' src'
 		% "    crushed effects:\n" %> cids' <> src' % "\n\n"
 
 	case cids' of
-	 [] ->	panic stage "crushEffectUpdate: List is empty. Caller should have returned False."
+	 [] ->	panic stage "crushEffectUpdate: List is empty. Should have called crushBottom."
 
-	 -- If there's only one new class id then we can just fwd the original class to it.
+	 -- If there's only one new cid then we can just fwd the original class to it.
 	 [cid']	
 	  -> do	modifyClass cid $ \c -> ClassForward cid cid'
 		return True
 
          -- Crushing the orignal effect gave us a number of pieces,
-	 -- so we join them together in an effect sum.
+	 -- so we join them together into an effect sum.
 	 _ -> do
 		let node	= NSum $ Set.fromList cids'
 		modifyClass cid $ \c -> c

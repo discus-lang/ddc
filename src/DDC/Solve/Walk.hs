@@ -1,12 +1,18 @@
 
 -- | Walking over the type graph to find various things.
 module DDC.Solve.Walk
-	(headClassDownLeftSpine)
+	( headClassDownLeftSpine
+	, walkDownLeftSpine )
 where
 import Type.Exp
 import Type.Base
 import Type.State
 import Type.Class
+import DDC.Main.Error
+import DDC.Main.Pretty
+
+stage	= "DDC.Solve.Walk"
+
 
 -- | Walk down the left spine of this type to find the type in the bottom
 --   left node (if there is one)
@@ -38,3 +44,39 @@ headClassDownLeftSpine cid1
 			_	-> headClassDownLeftSpine cid11
 
 	 _	-> return $ Nothing
+
+
+-- | Starting an outermost application node, trace the graph and return
+--	a list of the parts being applied. Eg, tracing the following
+--	structure from the graph gives [t1, t2, t3]
+--
+--         @
+--       /   \
+--      @     t3
+--    /   \
+--   t1    t2
+--
+-- If and of the nodes have Nothing for their type, then return Nothing.
+--
+walkDownLeftSpine
+	:: ClassId
+	-> SquidM (Maybe [ClassId])
+	
+walkDownLeftSpine cid
+ = do	Just cls <- lookupClass cid
+	case classType cls of
+	 Just (NApp cid11 cid12)
+	  -> do	mtsLeft	<- walkDownLeftSpine cid11
+		case mtsLeft of
+			Just cidsLeft	-> return $ Just (cidsLeft ++ [cid12])
+			Nothing		-> return Nothing
+			
+	 Just NCon{}
+	  -> 	return	$ Just [cid]
+	
+	 Just NBot{}
+	  ->	return	$ Just [cid]
+	
+	 _ 	-> panic stage
+		$  "walkDownLeftSpine : no match for " % classType cls
+
