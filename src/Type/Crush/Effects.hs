@@ -1,6 +1,6 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
--- | Crush effects into their parts.
+-- | Crush\/simplify compound effects into their parts.
 module Type.Crush.Effects
 	(crushEffectInClass)
 where
@@ -21,7 +21,6 @@ import qualified Data.Set	as Set
 debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effects"
-
 
 -- Try and crush the effect in this node into a simpler form.
 --
@@ -295,63 +294,3 @@ lookupSourceOfNode nEff cls
 	return 	$ listToMaybe
 		$ [nodeSrc	| (nodeEff,  nodeSrc)	<- tsSrcs
 				, nodeEff == nEff]
-
-	
-{-
-crushEffect cid cls nApp nAppSrc nEff nArg cidArg
-
-	-- DeepRead
-	| nEff			== nDeepRead
-	, NApp cid1 cid2	<- nArg
-	= do	
-		let readIt (k, cid)
-			| k == kRegion	= Just $ TApp tRead 	 (TClass k cid)
-			| k == kValue	= Just $ TApp tDeepRead (TClass k cid)
-			| k == kClosure	= Nothing
-			| k == kEffect	= Nothing
-			
-			-- TODO: tDeepRead doesn't really have this kind.
-			| otherwise	= Just $ TApp tDeepRead (TClass k cid)
-					
-		Just k1		<- kindOfCid cid1
-		Just k2		<- kindOfCid cid2
-		let bits	= catMaybes $ map readIt [(k1, cid1), (k2, cid2)]
-		
-		return	$ Just
-			( makeTSum kEffect bits
-			, TSI $ SICrushedES cid nApp nAppSrc )
-
-
-	-- DeepWrite
-	| nEff			== nDeepWrite
-	, TApp cid1 cid2	<- nArg
-	= do	
-		let writeIt (k, cid)
-			| k == kRegion	= Just $ TApp tWrite 	  (TClass k cid)
-			| k == kValue	= Just $ TApp tDeepWrite (TClass k cid)
-			| k == kClosure	= Nothing
-			| k == kEffect	= Nothing
-			
-			-- TODO: tDeepWrite doesn't really have this kind.
-			| otherwise	= Just $ TApp tDeepWrite (TClass k cid)
-
-		Just k1		<- kindOfCid cid1
-		Just k2		<- kindOfCid cid2
-		let bits	= catMaybes $ map writeIt [(k1, cid1), (k2, cid2)]
-			
-		return	$ Just
-			( makeTSum kEffect bits
-			, TSI $ SICrushedES cid nApp nAppSrc )
-	
-	
-	| otherwise
-	= do	
-		-- Effect is still crushable.
-		when (elem nEff [nHeadRead, nDeepRead, nDeepWrite])
-		 $ do	trace $ ppr "reactivating\n"
-			activateClass cid
-
-		return Nothing
-
--}
-

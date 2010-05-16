@@ -184,33 +184,46 @@ traceFromCid' cid
 -- | Break up a type constraint into parts and add them to the trace state.
 addType :: Type -> Type -> TraceM ()
 addType t1 t2
- = do	
-	-- If the type we took from the class was a type scheme, then it may have an outer
-	-- TConstrain node. We break these constraints off and return them as part of the
-	-- traced type, to reduce possible duplication.
-	let (t', crsEq', crsMore', crsOther')	
-		= splitTConstrain t2
-		
-	-- Build the constraint for this class.
-	--	If it's of value kind then use an eq constraint,
-	--	otherwise it's a more constraint.
-	let Just kind 
-		= kindOfType t1
 
-	let crsEqHere	
-		= if (not $ isTBot t') && resultKind kind == kValue
-			then Map.singleton t1 t'
-			else Map.empty
+	-- If the scheme in a TFree has an outer TConstrain we can split those constraints off.
+	| TFree v t21	<- t2
+	= do	let (t21', crsEq', crsMore', crsOther')	
+			= splitTConstrain t21
+			
+		let t2'	= TFree v t21'
+			
+		addCrsEq 	crsEq'
+		addCrsMore 	(Map.union (Map.singleton t1 t2') crsMore')
+		addCrsOther	crsOther'
+
+	| otherwise
+	= do	
+		-- If the type we took from the class was a type scheme, then it may have an outer
+		-- TConstrain node. We break these constraints off and return them as part of the
+		-- traced type, to reduce possible duplication.
+		let (t', crsEq', crsMore', crsOther')	
+			= splitTConstrain t2
+		
+		-- Build the constraint for this class.
+		--	If it's of value kind then use an eq constraint,
+		--	otherwise it's a more constraint.
+		let Just kind 
+			= kindOfType t1
+
+		let crsEqHere	
+			= if (not $ isTBot t') && resultKind kind == kValue
+				then Map.singleton t1 t'
+				else Map.empty
 					
-	let crsMoreHere	
-		= if (not $ isTBot t') && (not $ resultKind kind == kValue)
-			then Map.singleton t1 t'
-			else Map.empty
+		let crsMoreHere	
+		 	= if (not $ isTBot t') && (not $ resultKind kind == kValue)
+				then Map.singleton t1 t'
+				else Map.empty
 				
-	-- Add the constraints to the state.
-	addCrsEq 	(Map.union crsEq'    crsEqHere)
-	addCrsMore 	(Map.union crsMore'  crsMoreHere)
-	addCrsOther	crsOther'
+		-- Add the constraints to the state.
+		addCrsEq 	(Map.union crsEq'    crsEqHere)
+		addCrsMore 	(Map.union crsMore'  crsMoreHere)
+		addCrsOther	crsOther'
 				
 
 		
