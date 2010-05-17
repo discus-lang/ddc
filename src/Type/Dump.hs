@@ -96,13 +96,7 @@ instance Pretty Class PMode where
 			then blank
 			else 	   "        -- fetters multi-parameter\n"
 				 % "        " % classFettersMulti c % "\n\n")
-	
-		-- unification queue
-		% (case classQueue c of
-			[]	-> blank
-			_	-> "        -- queue\n"
-				%> "\n" %!% classQueue c % "\n\n")
-	
+		
 		-- node types contributing to this class
 		% "        -- nodes\n"
 		% (punc "\n\n"

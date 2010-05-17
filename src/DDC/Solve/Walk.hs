@@ -9,10 +9,6 @@ import Type.Exp
 import Type.Base
 import Type.State
 import Type.Class
-import DDC.Main.Error
-import DDC.Main.Pretty
-
-stage	= "DDC.Solve.Walk"
 
 
 -- | Walk down the left spine of this type to find the type in the bottom
@@ -78,8 +74,7 @@ takeAppsDownLeftSpine cid
 	 Just NBot{}
 	  ->	return	$ Just [cid]
 	
-	 _ 	-> panic stage
-		$  "walkDownLeftSpine : no match for " % classType cls
+	 _ -> 	return Nothing
 
 
 -- | Walk down the left spine of this type to find the type in the bottom 

@@ -56,14 +56,13 @@ data Class
 		-- | Whether this class has been quantified
 		, classQuant		:: Bool
 
-		-- Type constraints contributing to this class.
-		-- | The type of this class (if available)
-		--	If there are constraints waiting to be unified then classQueue will be 
-		--	non-empty and classType will be Nothing.
-		, classType		:: Maybe Node
+		-- Type constraints contributing to this class ------------------------------------
 
-		-- | Type constraints waiting to be unified.
-		, classQueue		:: [Node]
+		-- | The type of this class (if available).
+		--	If any constraints were recently added to this class then this will be Nothing, 
+		--	and the unifier will have to work out what type to used based on the
+		--	classTypeSources field.
+		, classType		:: Maybe Node
 
 		-- | Constraints that have been added to this class, including source information.
 		--	If a type error is encountered, then this information can be used to reconstruct
@@ -88,13 +87,9 @@ classInit cid kind
 	, classKind		= kind
 	, className		= Nothing
 	, classQuant		= False
-
 	, classType		= Nothing
-	, classQueue		= []
 	, classTypeSources	= []
-
 	, classFetterSources	= []
-
 	, classFettersMulti	= Set.empty }
 	
 		

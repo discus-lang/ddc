@@ -212,7 +212,6 @@ addToClass2 cid' src kind node graph
 	update cid cls@Class{}
 	 = do	liftIO 	$ writeArray (graphClass graph) cid 
 			$ cls 	{ classType		= Nothing
-				, classQueue		= node : (maybeToList $ classType cls) ++ classQueue cls
 				, classTypeSources	= (node, src) : classTypeSources cls }
 			
 		activateClass cid
@@ -373,20 +372,10 @@ mergeClasses2 cids cs
 	Just cL		<- lookupClass cidL
 
 	let cL'	= cL 	
-		{ classTypeSources	= concat $ map classTypeSources cs
-		, classType		= Nothing
-
-		-- Throw out bottom elements while we're here.
-		, classQueue	=  nub
-				$  filter (not . isNBot)
-				$  concat (map classQueue cs)
-				++ concat (map (maybeToList . classType) cs)
-
-		, classFetterSources
-			= concat $ map classFetterSources cs
-
-		, classFettersMulti
-			= Set.unions $ map classFettersMulti cs  }
+		{ classType		= Nothing
+		, classTypeSources	= concatMap classTypeSources cs
+		, classFetterSources	= concatMap classFetterSources cs
+		, classFettersMulti	= Set.unions $ map classFettersMulti cs  }
 
 	updateClass cidL cL'
 	activateClass cidL

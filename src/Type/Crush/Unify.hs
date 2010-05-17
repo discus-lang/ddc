@@ -39,8 +39,7 @@ crushUnifyInClass cid
 	
 	 Class{}
 		-- class is already unified
-		| []		<- classQueue cls
-		, Just t	<- classType cls
+		| Just t	<- classType cls
 		-> return False
 	
 		-- do some unification
@@ -57,68 +56,63 @@ crushUnifyInClass_unify cid cls@Class{}
 		% "    name         = " % className cls	% "\n"
 		% "    nodes        = " % classTypeSources cls % "\n\n"
 
-	let queue_type
-		= (maybeToList $ classType cls) ++ classQueue cls
+	-- Disregard vars and bottoms as they don't contribute real type constraints.
+	-- TODO: perhaps better to store these separtely so we don't have to keep
+	--	 filtering them out.
+	let queue
+		= filter (\(n, src) -> not (isNVar n || isNBot n))
+		$ classTypeSources cls
 
-	trace	$ "    queue_type   = " % show queue_type % "\n"
-
- 	-- crush out nested unifiers and filter out vars and bottoms as they don't 
-	--	contribute to the constructor
-	let queue_clean	
-		= filter 
-			(\x -> not (isNVar x || isNBot x))
-			((maybeToList $ classType cls) ++ classQueue cls)
-
-	trace	$ "    queue_clean  = " % show queue_clean % "\n"
+	trace	$ "    queue       = " % show queue % "\n"
 
 	-- If there is nothing left in the queue, or there's only one element
-	--	then we're done. Otherwise call the reall unifier.
-	t_final	<- case queue_clean of
-			[] 	-> return	$ nBot
-			[t] 	-> return	$ t
-			_  	-> crushUnifyInClass_merge cid cls queue_clean
+	--	then we're done. Otherwise call the real unifier.
+	node_final <- case queue of
+			[] 		-> return	$ nBot
+			[(n, _)] 	-> return	$ n
+			_  		-> crushUnifyInClass_merge cid cls queue
 			
-  	trace	$ "    t_final      = " % t_final	% "\n\n"
+  	trace	$ "    node_final    = " % node_final	% "\n\n"
 
 	-- Update the class with the new type
   	updateClass cid cls 
-		{ classType 	= Just t_final
-		, classQueue	= [] }
+		{ classType 	= Just node_final }
 
 	-- Wake up any MPTCs acting on this class
-	mapM activateClass $ Set.toList $ classFettersMulti cls
+	mapM activateClass 
+		$ Set.toList 
+		$ classFettersMulti cls
 
 	return True
 
 				
 -- | merge a list of types, adding new constraints to the graph if needed.
 --	this does the actual unification.
-crushUnifyInClass_merge cid cls@Class{} queue@(t:_)
+crushUnifyInClass_merge cid cls@Class{} queue@((n1, _):_)
 	
 	-- all constructors in the queue have to be the same
-	| NCon{}	<- t 
-	, all (== t) (tail queue)
-	= 	return t
+	| NCon{}	<- n1 
+	, all (\x -> fst x == n1) (tail queue)
+	= 	return n1
 
 	-- unify the left and right of type applications.
-	| NApp{}	<- t
+	| NApp{}	<- n1
 	, Just (cid1s, cid2s)
 		<- liftM unzip $ sequence
-		$ map (\x -> case x of
+		$ map (\(n, _) -> case n of
 				NApp cid1 cid2 	-> Just (cid1, cid2)
 				_		-> Nothing)
-		$ queue
-	
+		$ queue	
 	= do
 		cid1' <- mergeClasses cid1s
 		cid2' <- mergeClasses cid2s
 		return	$ NApp cid1' cid2'
 
-
 	-- For effects and closures, if all of the nodes to be unified are already sums
 	-- then we can just make a new one containing all the cids
 	| classKind cls == kEffect || classKind cls == kClosure
-	, Just cids	<- liftM Set.unions $ sequence $ map takeNSum queue
+	, Just cids	<- liftM Set.unions $ sequence 
+			$  map (takeNSum . fst) queue
 	= 	return	$ NSum cids
 
 	-- If the above doesn't work we have to split out the non-sums into their own classes.
@@ -147,12 +141,12 @@ crushUnifyInClass_merge cid cls@Class{} queue@(t:_)
 -- 	the SquidM monad and mark the class as containing an error.
 --
 addErrorConflict :: ClassId -> Class -> SquidM ()
-addErrorConflict  cid c
+addErrorConflict  cid cls
  = do	
 	-- filter out TVars, as they don't conflict with anything
  	let tsCtorsNode
 		= filter (\(t, _) -> not $ isNVar t)
-		$ classTypeSources c
+		$ classTypeSources cls
  
 	-- gather up pairs of nodes that conflict.
  	let conflicts
@@ -164,15 +158,14 @@ addErrorConflict  cid c
 	-- We could perhaps do some more involved analysis, 
 	--	but just report the first pair of conflicts.
 	case takeHead conflicts of
-	 Just conf	-> addErrorConflict' cid c conf
+	 Just conf	-> addErrorConflict' cid cls conf
 
 	-- sanity, check that we've actually identified the problem and added
 	--	an error to the state.
 	 _ -> panic stage
 		 $ "errorConflict: Couldn't identify the error in class " % cid % "\n"
-		 % "   type: \n"  %> classType c 			% "\n\n"
-		 % "   queue: \n" %> classQueue c	 		% "\n\n"
-		 % "   nodes:\n"  %> ("\n" %!% classTypeSources c) 	% "\n\n"
+		 % "   type: \n"  %> classType cls 			% "\n\n"
+		 % "   nodes:\n"  %> ("\n" %!% classTypeSources cls) 	% "\n\n"
 
 
 -- | add an error recording that these two types conflict.
