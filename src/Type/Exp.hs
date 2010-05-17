@@ -74,6 +74,9 @@ type Effect	= Type
 type Closure	= Type
 type Witness	= Type
 
+-- | Each of the constructors has enough information so that its kind can be 
+--   determined efficiently. For some this means putting the kind directly
+--   in the constructor.
 data Type	
 	-- | Missing or as-yet-unknown type information. 
 	= TNil
@@ -230,6 +233,8 @@ data Fetter
 	| FMore		Type	Type		-- ^ t1 :> t2
 
 	-- | projections
+	--   TODO: refactor this into a special constructor, and make FConstraint
+	--	   above take that constructor instead of a plain var.
 	| FProj		TProj	
 			Var 	-- var to tie the instantiated projection function to.
 			Type 	-- type of the dictionary to choose the projection from.

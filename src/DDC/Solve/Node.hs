@@ -51,20 +51,20 @@ import qualified Data.Map	as Map
 -- | A node type.
 data Node
 	= NBot
-	| NVar		Var
-	| NCon		TyCon
-	| NApp		ClassId	ClassId
-	| NSum		(Set ClassId)
+	| NVar		!Var
+	| NCon		!TyCon
+	| NApp		!ClassId !ClassId
+	| NSum		!(Set ClassId)
 
 	-- | Finished type schemes are added back to the type graph.
 	--	We want to keep them in the graph because closure terms in other types
 	--	may be refering to them, and they may still contain unquantified cids.
-	| NScheme 	Type
+	| NScheme 	!Type
 
 	-- A closure constructor. 
 	-- TODO: I'm not sure if we want to convert the right of this to node form
-	--       as well. We'd need a TyCon for the (NFree v) part first though	
-	| NFree		Var Type
+	--       as well. We'd need a TyCon for the (NFree v) part first though.
+	| NFree		!Var !Type
 	
 	-- | Used when the node has been involved in a type error.
 	| NError
