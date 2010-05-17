@@ -19,8 +19,7 @@ import qualified Data.Set	as Set
 -- import Type.Util
 -- import Type.Feed
 
-
-debug	= True
+debug	= False
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
@@ -109,22 +108,14 @@ crushUnifyInClass_merge cid cls@Class{} queue@((n1, _):_)
 		return	$ NApp cid1' cid2'
 
 	-- For effects and closures, if all of the nodes to be unified are already sums
-	-- then we can just make a new one containing all the cids
+	-- then we can just make a new one containing all the cids. Otherwise, we have to
+	-- split out the non-sums into their own classes.
 	| classKind cls == kEffect || classKind cls == kClosure
-	, Just cids	<- liftM Set.unions $ sequence 
-			$  map (takeNSum . fst) queue
-	= 	return	$ NSum cids
-
-	-- If the above doesn't work we have to split out the non-sums into their own classes.
-	| classKind cls == kEffect || classKind cls == kClosure
---	= do	let (nSums, nOthers) = partition isNSum queue
-		
+	= do	let (ncSums, ncOthers) = partition (isNSum . fst) queue
+		let Just cidsSums =  liftM Set.unions   $ sequence $ map (takeNSum . fst) $ ncSums
+		cidsOthers	  <- liftM Set.fromList $ mapM (pushIntoNewClass (classKind cls)) ncOthers
+		return	$ makeNSum $ Set.union cidsSums cidsOthers
 	
-	 = do panic stage $ vcat 
-		[ ppr "crushUnifyClass_merge: makeNSum\n"
-		, ppr queue]
-		
-	--	return	$ makeNSum queue
 
 	-- if none of the previous rules matched then we've got a type error in the graph.
 	| otherwise
@@ -135,6 +126,13 @@ crushUnifyInClass_merge cid cls@Class{} queue@((n1, _):_)
 		return $ TError (kindOfType_orDie t) 
 				(TypeErrorUnify $ classQueue c)
 -}
+
+pushIntoNewClass kind (node, src)
+ = do	cid	<- allocClass kind 
+	addToClass cid src kind node
+	return cid
+	
+
 
 -- | This function is called by unifyClassCheck when it finds a problem
 -- 	in the graph. We diagnose the problem, add an error message to 

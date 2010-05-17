@@ -30,8 +30,6 @@ module Type.Class
 	, sinkCidsInFetter
 	, sinkCidsInNodeFst
 	, sinkCidsInFetterFst)
-
---	, traceDownLeftSpine)
 where
 import Type.Exp
 import Type.Location
@@ -47,8 +45,6 @@ import Data.Array.IO
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
-
------
 stage	= "Type.Squid.Class"
 
 -- | Return the cids of all the children of this class.

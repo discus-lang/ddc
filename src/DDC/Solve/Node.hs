@@ -15,6 +15,9 @@ module DDC.Solve.Node
 	, isNVar
 	, isNBot
 	, isNSum
+
+	-- * (de)Construction
+	, makeNSum
 	, takeNSum
 
 	-- * Substitution.
@@ -85,6 +88,17 @@ isNBot nn
 	NSum ss		-> Set.null ss
 	_		-> False
 
+-- | Check whether a node is an NSum.
+isNSum :: Node -> Bool
+isNSum nn	= isJust $ takeNSum nn
+
+
+-- (de)Construction -------------------------------------------------------------------------------
+-- | Make a new NSum containing these cids, or a NBot if the set is empty.
+makeNSum :: Set ClassId -> Node
+makeNSum cids
+	| Set.null cids	= NBot
+	| otherwise	= NSum cids
 
 -- | Take the cids from an NSum.
 takeNSum :: Node -> Maybe (Set ClassId)
@@ -93,11 +107,7 @@ takeNSum nn
 	NSum cids	-> Just cids
 	_		-> Nothing
 	
--- | Check whether a node is an NSum.
-isNSum :: Node -> Bool
-isNSum nn	= isJust $ takeNSum nn
-
-
+	
 -- Substitution -----------------------------------------------------------------------------------
 -- | Substitute cids for cids in some node
 subNodeCidCid :: Map ClassId ClassId -> Node -> Node
