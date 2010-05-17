@@ -42,7 +42,7 @@ crushShape cidShape
 
  	-- Make sure that all the classes to be merged are unified.
 	--	We're expecting a maximum of one constructor per class queue.
- 	mapM crushUnifyClass mergeCids
+ 	mapM crushUnifyInClass mergeCids
  
 	-- Lookup all the nodes.
  	csMerge		<- liftM (map (\(Just c) -> c)) 

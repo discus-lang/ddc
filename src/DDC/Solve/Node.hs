@@ -10,11 +10,20 @@
 --
 module DDC.Solve.Node
 	( Node		(..)
+
+	-- * Simple checks.
 	, isNVar
 	, isNBot
-	, subNodeCidCid
-	, cidsOfNode
+	, isNSum
+	, takeNSum
 
+	-- * Substitution.
+	, subNodeCidCid
+
+	-- * Extraction.
+	, cidsOfNode
+	
+	-- * Builtin nodes.
 	, nBot
 	, nRead
 	, nDeepRead
@@ -59,6 +68,7 @@ data Node
 	deriving (Show, Eq)
 
 
+-- Simple Checks ----------------------------------------------------------------------------------
 -- | Check if a node is an NVar.
 isNVar :: Node -> Bool
 isNVar nn
@@ -76,20 +86,19 @@ isNBot nn
 	_		-> False
 
 
--- | Get the set of all ClassIds in a node.
-cidsOfNode :: Node -> Set ClassId
-cidsOfNode nn
+-- | Take the cids from an NSum.
+takeNSum :: Node -> Maybe (Set ClassId)
+takeNSum nn
  = case nn of
-	NBot		-> Set.empty
-	NVar{}		-> Set.empty
-	NCon{}		-> Set.empty
-	NApp c1 c2	-> Set.fromList [c1, c2]
-	NSum cs		-> cs
-	NError{}	-> Set.empty
-	NScheme t	-> collectClassIds t
-	NFree v t	-> collectClassIds t
+	NSum cids	-> Just cids
+	_		-> Nothing
+	
+-- | Check whether a node is an NSum.
+isNSum :: Node -> Bool
+isNSum nn	= isJust $ takeNSum nn
 
 
+-- Substitution -----------------------------------------------------------------------------------
 -- | Substitute cids for cids in some node
 subNodeCidCid :: Map ClassId ClassId -> Node -> Node
 subNodeCidCid sub nn
@@ -114,20 +123,22 @@ subNodeCidCid sub nn
 	 -> NFree v $ subCidCid sub t
 
 
-	
-instance Pretty Node PMode where
- ppr nn
-  = case nn of
-	NBot		-> ppr "NBot"
-	NVar v		-> ppr v
-	NCon tc		-> ppr tc
-	NApp cid1 cid2	-> parens $ cid1 <> cid2
-	NScheme t	-> "NScheme " % t
-	NFree v t	-> "NFree " % v % " :: " % t
-	_		-> ppr $ show nn
+-- Extraction -------------------------------------------------------------------------------------
+-- | Get the set of all ClassIds in a node.
+cidsOfNode :: Node -> Set ClassId
+cidsOfNode nn
+ = case nn of
+	NBot		-> Set.empty
+	NVar{}		-> Set.empty
+	NCon{}		-> Set.empty
+	NApp c1 c2	-> Set.fromList [c1, c2]
+	NSum cs		-> cs
+	NError{}	-> Set.empty
+	NScheme t	-> collectClassIds t
+	NFree v t	-> collectClassIds t
 
 
--- | Builtin type constructors (in node form)
+-- Builtins ---------------------------------------------------------------------------------------
 nBot		= NBot
 
 nRead		= NCon $ TyConEffect TyConEffectRead
@@ -144,3 +155,17 @@ nWrite		= NCon $ TyConEffect TyConEffectWrite
 
 nDeepWrite	= NCon $ TyConEffect TyConEffectDeepWrite
 		$ KFun kValue kEffect
+
+
+-- Instances --------------------------------------------------------------------------------------
+instance Pretty Node PMode where
+ ppr nn
+  = case nn of
+	NBot		-> ppr "NBot"
+	NVar v		-> ppr v
+	NCon tc		-> ppr tc
+	NApp cid1 cid2	-> parens $ cid1 <> cid2
+	NScheme t	-> "NScheme " % t
+	NFree v t	-> "NFree " % v % " :: " % t
+	_		-> ppr $ show nn
+

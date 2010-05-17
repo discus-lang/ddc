@@ -1,8 +1,9 @@
 
 -- | Walking over the type graph to find various things.
 module DDC.Solve.Walk
-	( headClassDownLeftSpine
-	, walkDownLeftSpine )
+	( takeHeadDownLeftSpine
+	, takeAppsDownLeftSpine
+	, getClassDownLeftSpine)
 where
 import Type.Exp
 import Type.Base
@@ -26,11 +27,11 @@ stage	= "DDC.Solve.Walk"
 --   If the node at the bottom of the spine hasn't been unified, then it'll
 --   be a Nothing, so return that instead.
 --
-headClassDownLeftSpine 
+takeHeadDownLeftSpine 
 	:: ClassId 
 	-> SquidM (Maybe Class)
 	
-headClassDownLeftSpine cid1
+takeHeadDownLeftSpine cid1
  = do	Just cls1	<- lookupClass cid1
 
 	case classType cls1 of
@@ -41,7 +42,7 @@ headClassDownLeftSpine cid1
 			 -> do	Just cls12	<- lookupClass cid12
 				return $ Just cls12
 				
-			_	-> headClassDownLeftSpine cid11
+			_	-> takeHeadDownLeftSpine cid11
 
 	 _	-> return $ Nothing
 
@@ -58,15 +59,15 @@ headClassDownLeftSpine cid1
 --
 -- If and of the nodes have Nothing for their type, then return Nothing.
 --
-walkDownLeftSpine
+takeAppsDownLeftSpine
 	:: ClassId
 	-> SquidM (Maybe [ClassId])
 	
-walkDownLeftSpine cid
+takeAppsDownLeftSpine cid
  = do	Just cls <- lookupClass cid
 	case classType cls of
 	 Just (NApp cid11 cid12)
-	  -> do	mtsLeft	<- walkDownLeftSpine cid11
+	  -> do	mtsLeft	<- takeAppsDownLeftSpine cid11
 		case mtsLeft of
 			Just cidsLeft	-> return $ Just (cidsLeft ++ [cid12])
 			Nothing		-> return Nothing
@@ -80,3 +81,24 @@ walkDownLeftSpine cid
 	 _ 	-> panic stage
 		$  "walkDownLeftSpine : no match for " % classType cls
 
+
+-- | Walk down the left spine of this type to find the type in the bottom 
+--	left node (if there is one)
+--
+--	For example, if the graph holds a type like:
+--	   TApp (TApp (TCon tc) t1) t2
+--	
+--	Then starting from the cid of the outermost TApp, we'll walk down 
+--	the left spine until we find (TCon tc), and return that.
+--
+--	If the node at the bottom of the spine hasn't been unified, then
+--	It'll be a Nothing, so return that instead.
+--
+getClassDownLeftSpine :: ClassId -> SquidM Class
+getClassDownLeftSpine cid
+ = do	Just cls	<- lookupClass cid
+	case classType cls of
+	 Just (NApp cid1 _)	
+		-> getClassDownLeftSpine cid1
+
+	 mType	-> return cls

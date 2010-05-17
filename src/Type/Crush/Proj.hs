@@ -9,7 +9,7 @@
 --	the desugared program to the core language.
 --
 module Type.Crush.Proj
-	(crushProjClassT)
+	(crushProjInClass)
 where
 import Type.Location
 import Type.Exp
@@ -20,13 +20,11 @@ import Type.Class
 import Type.State
 import Constraint.Exp
 import Util
-import DDC.Main.Error
 import DDC.Solve.Trace
+import DDC.Solve.Walk
 import DDC.Var
 import qualified Data.Map	as Map
 
------
-stage	= "Type.Crush.Proj"
 debug	= False
 trace s	= when debug $ traceM s
 
@@ -35,106 +33,91 @@ trace s	= when debug $ traceM s
 --	This function returns new constraints containing the type
 --	of the projection instance function.
 --
-crushProjClassT 
-	:: ClassId 			-- class containing constraints
-	-> SquidM (Maybe [CTree])	-- new constraints to add to the graph
+crushProjInClass
+	:: ClassId 			-- ^ Class containing the projection constraint to crush.
+	-> SquidM (Maybe [CTree])	-- ^ New constraints to add to the graph.
 
-crushProjClassT cidT
- = do	 
- 	-- Check for errors already in the graph.
-	-- 	The grinder shouldn't be calling us if there are already errors.
- 	errs	<- gets stateErrors
-	when (not $ isNil errs)
-	 $ panic stage	$ "crushProjClassT: state has errors\n"
-	 		% errs
-  
-	-- Grab the projection constraint from the graph node.
- 	Just cProj@(ClassFetter 
-			{ classFetter = fProj 
-			, classSource	= src })
-				<- lookupClass cidT
+crushProjInClass cid
+ = do	-- Grab the projection constraint from the graph node.
+ 	Just clsProj	<- lookupClass cid
+	
+	let ClassFetter 
+	 	{ classFetter	= fProj@(FProj _ _ (TClass _ cidObjRoot) _)
+		, classSource	= src }	
+			= clsProj
 
-	trace	$ "*   Proj.crushProjClassT\n"
-		% "    classId of fetter  (cidT)        = " % cidT		% "\n"
+	trace	$ "--  crushProjInClass\n"
+		% "    classId of fetter  (cidT)        = " % cid		% "\n"
 		% "    fetter                           = " % fProj		% "\n"
-
-	let FProj _ _ (TClass _ cidObj) _	
-			= fProj
 	
 	-- The "object type" is the type we're using to determine which projection
 	--	instance function to use. Starting from the root of this type, 
 	--	walk down its left spine to see if there is a tycon at the front.
 	--	If there is, then return the classId of the node containing this 
 	--	tycon.
-	mClsObj		<- classDownLeftSpine cidObj
+	clsObj <- getClassDownLeftSpine cidObjRoot
 	
-	case mClsObj of
+	case clsObj of
 	 -- The unifier needs to unify the nodes in this class before we know
 	 --	what the object type will be.
-	 Just cObj@(Class { classType = Nothing })
-	  -> do	trace $ ppr "    -- classType is Nothing. Object class not unified yet, deferring.\n\n"
+	 Class { classType = Nothing }
+	  -> do	trace $ ppr "  * Object class not unified yet, deferring.\n\n"
 	 	return Nothing
 
 	 -- Ok, we've got an object type, carry on.
-	 Just cObj@(Class { classType = Just nObj })
-	  -> do	Just tObj	<- lookupTypeOfCidAsSquid cidObj
-		crushProj_withObj cidT src fProj cObj tObj
+	 Class { classType = Just nObj }
+	  -> do	Just tObj	<- lookupTypeOfCidAsSquid (classId clsObj)
+		trace	$ "    object type (tObj)               = " % tObj	% "\n"
+
+		-- Grab the map of projection dictionaries from the state
+		projectDicts	<- gets stateProject
+
+		crushProj_withObj cid src fProj clsObj tObj projectDicts
+
 	
+crushProj_withObj cid src 
+	fProj@(FProj proj _ _ _) 
+	cObj tObj
+	projectDicts
+
+	-- This isn't a type constructor, hopefully something will be unified
+	--	into it later. Just return without doing anything more.
+	| TSum _ []			<- tObj
+	= do	trace $ ppr "  * We don't have an object type, deferring.\n\n"
+
+		-- Reactivate the class so we get called again during the next grind.
+		--	This hasn't been done automatically because we haven't
+		--	modified it yet.
+		activateClass cid
+		return Nothing
+
+	-- The object is a constructor, but there's no projection dictionary for it.
+	--	This is a type error.	
+	| Just (vCon, _, _)	<- takeTData tObj
+	, Nothing		<- Map.lookup vCon projectDicts
+	= do	trace $ ppr "  * No projections defined for this data type, error.\n\n"
+		addErrors
+		  [ErrorNoProjections
+			{ eProj		= proj
+			, eConstructor	= tObj }]
+		return Nothing
 	
-crushProj_withObj cidT src fProj cObj tObj
- = do
-	trace	$ "    object type (cObj)               = " % classType cObj	% "\n"
+	-- yay, we've got a projection dictionary
+	| Just (vCon, _, _)	<- takeTData tObj
+	, Just vsDict		<- Map.lookup vCon projectDicts
+	= do	trace $ ppr "  * We've got a projection dictionary.\n"
+		crushProj_withDict cid src fProj cObj tObj (snd vsDict)
 
- 	let FProj proj _ (TClass _ _) _	
-			= fProj
-
-	-- Grab the map of projection dictionaries from the state
-	projectDicts	<- gets stateProject
-
-	-- If the object type has resolved to a type constructor we should
-	--	be able to get the projection dictionary for it.
-	let result
-		-- This isn't a type constructor, hopefully something will be unified
-		--	into it later. Just return without doing anything more.
-		| TSum _ []			<- tObj
-		= do	trace $ ppr "    -- We don't have an object type, deferring.\n\n"
-
-			-- Reactivate the class so we get called again during the next grind.
-			--	This hasn't been done automatically because we haven't
-			--	modified it yet.
-			activateClass cidT
-
-			return Nothing
-
-		-- The object is a constructor, but there's no projection dictionary for it.
-		--	This is a type error.	
-		| Just (vCon, _, _)	<- takeTData tObj
-		, Nothing		<- Map.lookup vCon projectDicts
-		= do	trace $ ppr "    -- No projections defined for this data type, error.\n\n"
-			addErrors
-			  [ErrorNoProjections
-				{ eProj		= proj
-				, eConstructor	= tObj }]
-			return Nothing
-	
-		-- yay, we've got a projection dictionary
-		| Just (vCon, _, _)	<- takeTData tObj
-		, Just vsDict		<- Map.lookup vCon projectDicts
-		= do	trace $ ppr "    -- We've got a projection dictionary.\n"
-			crushProj_withDict cidT src fProj cObj tObj (snd vsDict)
-
-		-- Functions don't have projections yet, there's no source syntax to define it.
-		--	We might add them later, but for now this is a type error.
-		| otherwise
-		= do	trace $ ppr $ " -- No projections are defined for non-data types, error.\n\n"
-			addErrors
-			 [ErrorNoProjections
-			 	{ eProj		= proj
-				, eConstructor	= tObj }]
-			return Nothing
+	-- Functions don't have projections yet, there's no source syntax to define it.
+	--	We might add them later, but for now this is a type error.
+	| otherwise
+	= do	trace $ ppr "  * No projections are defined for non-data types, error.\n\n"
+		addErrors
+		 [ErrorNoProjections
+		 	{ eProj		= proj
+			, eConstructor	= tObj }]
+		return Nothing
 		
-	result
-
 
 crushProj_withDict
 	:: ClassId -> TypeSource -> Fetter
@@ -175,7 +158,7 @@ crushProj_withDict
 		-- We've got the name of the projection function
 		| Just vImpl	<- mInstV
 		= do	
-			trace	$ ppr "    -- Projection crushed ok\n"
+			trace	$ ppr "  * Projection crushed ok\n"
 			
 		 	-- Lookup the type variable corresponding to it.
 			Just vImplT	<- lookupSigmaVar vImpl
@@ -193,7 +176,7 @@ crushProj_withDict
 			modify $ \s -> s { stateProjectResolve 
 						= Map.insert vInst vImpl (stateProjectResolve s) }
 
-			trace	$ "    adding entry to projection resolution table:\n"
+			trace	$ "  * adding entry to projection resolution table:\n"
 				%> vInst % " := " % vImpl % "\n\n"
 
 			-- We can ignore this class from now on.
@@ -203,23 +186,4 @@ crushProj_withDict
 	result
 
 
--- | Walk down the left spine of this type to find the type in the bottom 
---	left node (if there is one)
---
---	For example, if the graph holds a type like:
---	   TApp (TApp (TCon tc) t1) t2
---	
---	Then starting from the cid of the outermost TApp, we'll walk down 
---	the left spine until we find (TCon tc), and return that.
---
---	If the node at the bottom of the spine hasn't been unified, then
---	It'll be a Nothing, so return that instead.
---
-classDownLeftSpine :: ClassId -> SquidM (Maybe Class)
-classDownLeftSpine cid
- = do	Just cls	<- lookupClass cid
-	case classType cls of
-	 Just (NApp cid1 _)	
-		-> classDownLeftSpine cid1
-	 mType	-> return $ Just cls
 

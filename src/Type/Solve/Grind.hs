@@ -66,7 +66,7 @@ solveGrindStep
 	-- make sure all classes are unified
 	progressUnify
 		<- liftM or
-		$  mapM crushUnifyClass active
+		$  mapM crushUnifyInClass active
 
 	errors	<- gets stateErrors
 	when (length errors > 0) $ do
@@ -158,7 +158,7 @@ grindClass2 cid c@(ClassFetter { classFetter = f })
  = do
 	-- crush projection fetters
 	qsMore	<- case f of
-			FProj{}	-> crushProjClassT cid
+			FProj{}	-> crushProjInClass cid
 			_	-> return Nothing
 			
 	let progressProj

@@ -39,8 +39,10 @@
 --   packer we wouldn't have to do this.
 --
 module DDC.Solve.Trace 
-	( traceType,		traceTypeAsSquid
-	, lookupTypeOfCid, 	lookupTypeOfCidAsSquid)
+	( traceType
+	, traceTypeAsSquid
+	, lookupTypeOfCid
+	, lookupTypeOfCidAsSquid)
 where
 import Type.Exp
 import Type.Builtin

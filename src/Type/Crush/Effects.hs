@@ -136,7 +136,7 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	, NApp{}	<- nArg
 	= do	-- Start from the class holding the argument, 
 		--	and walk down its left spine to get its head region, if any.
-		mHead	<- headClassDownLeftSpine (classId clsArg)
+		mHead	<- takeHeadDownLeftSpine (classId clsArg)
 		case mHead of
 		 Just clsHead
 		  -> do	cidEff'	<- feedType (TSI $ SICrushedES cid nApp srcApp) 
@@ -154,7 +154,7 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	-- DeepRead ---------------------------------------
 	| nCon		== nDeepRead
 	, NApp{}	<- nArg
-	= do	mApps	<- walkDownLeftSpine (classId clsArg)
+	= do	mApps	<- takeAppsDownLeftSpine (classId clsArg)
 	
 		trace	$ vcat
 			[ ppr "  * DeepRead"
@@ -184,7 +184,7 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	-- DeepWrite --------------------------------------
 	| nCon		== nDeepWrite
 	, NApp{}	<- nArg
-	= do	mApps	<- walkDownLeftSpine (classId clsArg)
+	= do	mApps	<- takeAppsDownLeftSpine (classId clsArg)
 	
 		trace	$ vcat
 			[ ppr "  * DeepWrite"

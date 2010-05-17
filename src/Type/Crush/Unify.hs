@@ -2,76 +2,72 @@
 
 -- | Unify multiple types in an equivalence class.
 module Type.Crush.Unify
-	( crushUnifyClass 
+	( crushUnifyInClass
 	, isShallowConflict 
 	, addErrorConflict )
 where
--- import Type.Location
 import Type.Exp
--- import Type.Builtin
--- import Type.Error
+import Type.Builtin
 import Type.State
--- import Type.Util
 import Type.Class
--- import Type.Feed
 import Util
 import DDC.Main.Error
 import qualified Data.Set	as Set
+-- import Type.Location
+-- import Type.Builtin
+-- import Type.Error
+-- import Type.Util
+-- import Type.Feed
 
------
-debug	= False
+
+debug	= True
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
 
 -- | Unify the elements in an equivalences classes queue.
 --   If there are any errors then these are added to the SquidM monad.
-crushUnifyClass 
+crushUnifyInClass 
 	:: ClassId	
 	-> SquidM Bool	-- whether this class was unified
 
-crushUnifyClass	cidT
- = do	Just c	<- lookupClass cidT
-	crushUnifyClass_cls cidT c
-
+crushUnifyInClass cid
+ = do	Just cls	<- lookupClass cid
+	case cls of
+	 ClassForward _ cid'
+	  -> crushUnifyInClass cid'
 	
--- | check whether the work has alreay been done
-crushUnifyClass_cls cidT (ClassForward _ cid')
-	= crushUnifyClass cid'
-
-crushUnifyClass_cls cidT c@Class{}
-
-	-- class is already unified
-	| []		<- classQueue c 
-	, Just t	<- classType c
-	= return False
+	 Class{}
+		-- class is already unified
+		| []		<- classQueue cls
+		, Just t	<- classType cls
+		-> return False
 	
-	-- do some unification
-	| otherwise
-	= crushUnifyClass_unify cidT c
+		-- do some unification
+		| otherwise
+		-> crushUnifyInClass_unify cid cls
 
-crushUnifyClass_cls cidT c
-	= return False
+	 _ -> return False	
 	
 	
 -- | sort through the ctors in the queue, and update the class.
-crushUnifyClass_unify cidT c
- = do	trace	$ "*   Unify.unifyClass " % cidT % "\n"
-		% "    type         = " % classType c	% "\n"
-		% "    name         = " % className c	% "\n"
-		% "    nodes        = " % classTypeSources c % "\n\n"
+crushUnifyInClass_unify cid cls@Class{}
+ = do	trace	$ "--  unifyClass " % cid % "\n"
+		% "    type         = " % classType cls	% "\n"
+		% "    name         = " % className cls	% "\n"
+		% "    nodes        = " % classTypeSources cls % "\n\n"
 
 	let queue_type
-		= (maybeToList $ classType c) ++ classQueue c
+		= (maybeToList $ classType cls) ++ classQueue cls
 
-	trace	$ "    queue+type   = " % show queue_type % "\n"
+	trace	$ "    queue_type   = " % show queue_type % "\n"
 
  	-- crush out nested unifiers and filter out vars and bottoms as they don't 
 	--	contribute to the constructor
 	let queue_clean	
 		= filter 
 			(\x -> not (isNVar x || isNBot x))
-			((maybeToList $ classType c) ++ classQueue c)
+			((maybeToList $ classType cls) ++ classQueue cls)
 
 	trace	$ "    queue_clean  = " % show queue_clean % "\n"
 
@@ -80,24 +76,24 @@ crushUnifyClass_unify cidT c
 	t_final	<- case queue_clean of
 			[] 	-> return	$ nBot
 			[t] 	-> return	$ t
-			_  	-> crushUnifyClass_merge cidT c queue_clean
+			_  	-> crushUnifyInClass_merge cid cls queue_clean
 			
   	trace	$ "    t_final      = " % t_final	% "\n\n"
 
 	-- Update the class with the new type
-  	updateClass cidT c 
+  	updateClass cid cls 
 		{ classType 	= Just t_final
 		, classQueue	= [] }
 
 	-- Wake up any MPTCs acting on this class
-	mapM activateClass $ Set.toList $ classFettersMulti c
+	mapM activateClass $ Set.toList $ classFettersMulti cls
 
 	return True
 
 				
 -- | merge a list of types, adding new constraints to the graph if needed.
 --	this does the actual unification.
-crushUnifyClass_merge cidT c queue@(t:_)
+crushUnifyInClass_merge cid cls@Class{} queue@(t:_)
 	
 	-- all constructors in the queue have to be the same
 	| NCon{}	<- t 
@@ -118,10 +114,19 @@ crushUnifyClass_merge cidT c queue@(t:_)
 		cid2' <- mergeClasses cid2s
 		return	$ NApp cid1' cid2'
 
-	-- From the effect weakening rule it's always return a larger effect than needed.
-	-- Therefore, to "unify" two effects we want take their l.u.b and use that in place of both.
-	| NSum{}	<- t
-	= panic stage $ vcat 
+
+	-- For effects and closures, if all of the nodes to be unified are already sums
+	-- then we can just make a new one containing all the cids
+	| classKind cls == kEffect || classKind cls == kClosure
+	, Just cids	<- liftM Set.unions $ sequence $ map takeNSum queue
+	= 	return	$ NSum cids
+
+	-- If the above doesn't work we have to split out the non-sums into their own classes.
+	| classKind cls == kEffect || classKind cls == kClosure
+--	= do	let (nSums, nOthers) = partition isNSum queue
+		
+	
+	 = do panic stage $ vcat 
 		[ ppr "crushUnifyClass_merge: makeNSum\n"
 		, ppr queue]
 		
@@ -129,9 +134,9 @@ crushUnifyClass_merge cidT c queue@(t:_)
 
 	-- if none of the previous rules matched then we've got a type error in the graph.
 	| otherwise
- 	= panic stage $ vcat
-		[ ppr "crushUnifyClass_merge: type error\n"
-		, ppr queue ]
+ 	= do	panic stage $ vcat
+			[ ppr "crushUnifyClass_merge: type error\n"
+			, ppr queue ]
 {-		addErrorConflict cidT c 
 		return $ TError (kindOfType_orDie t) 
 				(TypeErrorUnify $ classQueue c)
