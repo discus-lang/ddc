@@ -5,12 +5,25 @@ module Type.Util.Unify
 	(unifyTypes)
 where
 import Type.Exp
+import Type.Builtin
 import Type.Util.Kind
 
 -- | Unify two types, if possible,
 --	returning a list of type constriants arising due to the unification.
 unifyTypes :: Type -> Type -> Maybe [(Type, Type)]
 unifyTypes t1 t2
+
+	-- Effects always unify. 
+	-- Just return a constraint for these.
+	| kindOfType t1 == Just kEffect
+	, kindOfType t2 == Just kEffect
+	= Just [(t1, t2)]
+
+	-- Closures always unify. 
+	-- Just return a constraint for these.
+	| kindOfType t1 == Just kClosure
+	, kindOfType t2 == Just kClosure
+	= Just [(t1, t2)]
 
 	-- applications.
 	| TApp t11 t12		<- t1

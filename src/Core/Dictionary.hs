@@ -229,8 +229,8 @@ rewriteAppX_withInstance env xxUse
 		[ ppr "rewriteAppX_withInstance: unification failed"
 		, "    when rewriting expression:\n" %> xxUse
 		, blank
-		, "    t1:         " % tInstBody
-		, "    t2:         " % tUseBody]
+		, "    tInstBody:  " % tInstBody
+		, "    tUseBody:   " % tUseBody]
 
 	traceIt x
 	 = trace

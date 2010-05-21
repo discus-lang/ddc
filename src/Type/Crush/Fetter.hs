@@ -199,6 +199,7 @@ getPurifier cid cls nodeEff fetter srcFetter
 		
 	 _ ->	return $ Right Nothing
 		
+
 getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 	-- Read is purified by Const
 	| classType clsCon == Just nRead

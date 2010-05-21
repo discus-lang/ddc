@@ -23,8 +23,11 @@ module Type.Util.Kind
 	, kindOfType
 	, kindOfType_orDie
 	
-	-- fast kind utils
-	, isClosure)
+	-- fast tests
+	, isClosure
+	, isEffect
+	, isClosureKind
+	, isEffectKind)
 where
 import Type.Pretty		()
 import Type.Builtin
@@ -254,20 +257,60 @@ betaTT depth tX tt
 
 -- Fast kind utils ---------------------------------------------------------------------------------
 
--- Used in Core.Subsumes
+-- | Fast test whether a type is a closure.
 isClosure :: Type -> Bool
+{-# INLINE isClosure #-}
 isClosure tt
  = case tt of
-	-- closures are always fully constructed
-	TApp{}			-> False
- 	TSum	 k _		-> k == kClosure
-	TVar	 k _		-> k == kClosure
-	TVarMore k _ _		-> k == kClosure
-	TClass	 k _		-> k == kClosure
+	TApp{}
+	  |  Just k <- kindOfType tt
+	  -> isClosureKind k
+	
+ 	TSum	 k _		-> isClosureKind k
+	TVar	 k _		-> isClosureKind k
+	TVarMore k _ _		-> isClosureKind k
+	TClass	 k _		-> isClosureKind k
 	TFree{}			-> True
 	TDanger{}		-> True
 	TFetters t1 _		-> isClosure t1
 	TConstrain t1 _		-> isClosure t1
 	TForall _ _ t1		-> isClosure t1
+	_			-> False
+
+
+-- | Fast test whether a type is an effect.
+isEffect :: Type -> Bool
+{-# INLINE isEffect #-}
+isEffect tt
+ = case tt of
+	TApp{}	
+	  |  Just k <- kindOfType tt
+	  -> isEffectKind k
+	
+	TSum k _		-> isEffectKind k
+	TVar k _		-> isEffectKind k
+	TVarMore k _ _		-> isEffectKind k
+	TClass   k _ 		-> isEffectKind k
+	TFetters t1 _		-> isEffect t1
+	TConstrain t1 _		-> isEffect t1
+	TForall _ _ t1		-> isEffect t1
+	_			-> False
+
+
+-- | Fast test whether an kind is the effect kind
+isEffectKind :: Kind -> Bool
+{-# INLINE isEffectKind #-}
+isEffectKind kk
+ = case kk of
+	KCon KiConEffect _	-> True
+	_			-> False
+
+
+-- | Fast test whether a kind is the closure kind.
+isClosureKind :: Kind -> Bool
+{-# INLINE isClosureKind #-}
+isClosureKind kk
+ = case kk of
+	KCon KiConClosure _	-> True
 	_			-> False
 
