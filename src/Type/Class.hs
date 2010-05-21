@@ -22,6 +22,7 @@ module Type.Class
 	, updateVC
 	, kindOfCid
 	, foldClasses
+	, lookupSourceOfNode
 
 	-- * Sinking
 	, sinkClassId
@@ -478,6 +479,21 @@ foldClasses fun x
 	classes		<- liftIO $ getElems $ graphClass graph
 	foldM fun x classes  
 
+
+-- | Get the source of some effect, given the class that contains it.
+--	The cids in the provided effect must be in canonical form, 
+--	but the cids in the class don't need to be.
+--	If there are multiple sources in the class then just take the first one.
+lookupSourceOfNode
+	:: Node
+	-> Class 
+	-> SquidM (Maybe TypeSource)
+
+lookupSourceOfNode nEff cls
+ = do	tsSrcs	<- mapM sinkCidsInNodeFst $ classTypeSources cls
+	return 	$ listToMaybe
+		$ [nodeSrc	| (nodeEff,  nodeSrc)	<- tsSrcs
+				, nodeEff == nEff]
 
 
 -- Sinking ----------------------------------------------------------------------------------------

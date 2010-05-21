@@ -5,11 +5,10 @@ import	Base
 
 -- | A class of type which can be copied
 --	The copied object has the same structure but is in a fresh set of regions.
-
 class Copy a where
  copy	:: forall b
 	.  a -(!e1)> b
 	:- Shape2 a b
-	,  !e1 = !{ !ReadT a; !ReadT b }
+	,  !e1 = !ReadT a 
 
  

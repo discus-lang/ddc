@@ -104,7 +104,6 @@ thread_transX_enter xx
 
 -- | If this is an explicitly constructed witness then try and replace it by
 --	a variable which binds the correct one.
---
 rewriteWitness 
 	:: Type 
 	-> ThreadM Type
@@ -166,7 +165,7 @@ rewriteWitness' tt
 	-- some other witness we don't handle
 	| Just (vC, _, ts)		<- mClass
 	= panic stage
-		("thread_transX: can't find a witness for " % tt % "\n")
+		("thread_transX: can't find a witness for " % mClass % "\n")
 
 	-- some other type
 	| otherwise

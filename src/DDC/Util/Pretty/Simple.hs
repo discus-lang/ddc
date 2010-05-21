@@ -45,6 +45,12 @@ instance Pretty a m => Pretty (Maybe a) m where
  ppr Nothing	= ppr "Nothing"
 
 
+-- Either ---------------------------------------------------------------------
+instance (Pretty a m, Pretty b m) => Pretty (Either a b) m where
+ ppr (Left x)	= "Left " % x
+ ppr (Right x)	= "Right " % x
+
+
 -- List -----------------------------------------------------------------------
 instance Pretty a m => Pretty [a] m where
  ppr xs
@@ -52,10 +58,12 @@ instance Pretty a m => Pretty [a] m where
 						PrettyM fx	-> fx m)
 				  xs)
 
+
 -- Sequence -------------------------------------------------------------------
 instance Pretty a m => Pretty (Seq a) m where
  ppr xs	= ppr 
 	$ foldr (:) [] xs
+
 
 -- Tuples ---------------------------------------------------------------------
 instance (Pretty a m, Pretty b m) 
