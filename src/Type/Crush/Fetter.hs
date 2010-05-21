@@ -10,9 +10,13 @@ import Type.State
 import Type.Exp
 import Type.Class
 import Type.Location
+import Type.Feed
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Solve.Walk
+import Shared.VarPrim
 import Control.Monad
+import Util
 
 stage	= "Type.Crush.Fetter"
 debug	= True
@@ -63,116 +67,71 @@ crushFetterWithClass cid cls
 		-- While crushing, we leave all the original fetters in the class, and only add
 		-- the new fetters back when we're done. The fetters in the returned list could
 		-- refer to other classes as well as this one.
-		fsCrushed 
-			<- liftM concat
-			$  mapM (crushFetterSingle cid kind nNode tsSrc) fsSrc
-	
-		trace	$ "    crushed fetters:\n"	%> fsCrushed	% "\n"
+		mfsCrushed 	<- mapM (crushFetterSingle cid kind nNode tsSrc) fsSrc
+		let progress	= or $ map isJust mfsCrushed
+		
+		-- For each fetter, it crushed we get Just and a new list of fetters.
+		-- If it didn't crush we get a Nothing, so we want to keep the original.
+		let fsCrushed	= concat
+				$ zipWith (\fsOrig fsCrush -> fromMaybe [fsOrig] fsCrush)
+					fsSrc
+					mfsCrushed
+						
+		trace	$ "    crushed fetters:\n"	%> fsCrushed	% "\n\n"
 
-		return False
+		-- Clear out the original fetters from the class.
+		updateClass cid $ cls { classFetterSources	= [] }
+	
+		-- Add all the fetters back to the graph
+		-- TODO: only count progress when we've add a fetter that wasn't there before.
+		--       If we report progress the grinder will call us again on the same class.
+		--	 Is this actually what we want?
+		mapM (\(f, src) -> addFetter src f) fsCrushed
+
+		return progress
 
 
 -- | Try to crush a fetter from a class into smaller pieces.
 --	All parameters should have their cids canonicalised.
 crushFetterSingle
 	:: ClassId				-- ^ The cid of the class this fetter is from.
-	-> Kind					-- ^ The kind of the class.
+	-> Kind				 	-- ^ The kind of the class.
 	-> Node					-- ^ The node type in the class.
 	-> [(Node, TypeSource)]			-- ^ Node constraints contributing to the class.
 	-> (Fetter, TypeSource)			-- ^ The fetter to crush
-	-> SquidM [(Fetter, TypeSource)]	-- ^ Crushed pieces, or a list just containing
-						--   the original fetter if it won't crush.
+	-> SquidM 
+		(Maybe [(Fetter, TypeSource)])	-- ^ If crushable then the new pieces, or `Nothing`
+						--   if the original fetter is not crushable yet.
 	
-crushFetterSingle cid kind node tsSrc (fetter, srcFetter)
- = do	return [(fetter, srcFetter)]
+crushFetterSingle cid kind node nsSrc 
+	(fetter@(FConstraint vFetter tsFetter), srcFetter)
+
+	-- HeadLazy
+	| vFetter == primLazyH
+	= do	trace	$ ppr "  * crushing LazyH\n"
+		mclsHead <- takeHeadDownLeftSpine cid
+		case mclsHead of
+			Just clsHead	
+			 -> do	let tHead	= TClass (classKind clsHead) (classId clsHead)
+				let src		= TSI $ SICrushedFS cid fetter srcFetter
+				return $ Just [(FConstraint primLazy [tHead], src)]
+			
+			_ -> return Nothing
+
+	-- Pure
+	| vFetter == primPure
+	= do	trace	$ vcat
+			[ ppr "  * crushing Pure"
+			, "    tsFetter = " % tsFetter]
+		return Nothing
+		
 
 
+	| otherwise
+	= return Nothing
 
 
 {-
-	
-	-- split the crushed fetters into the ones to apply to this class vs other classes
-	let (fsCrushed_thisClass, fsCrushed_others)
-		= partition (\f -> case f of
-					(FConstraint _ [TClass _ cid'], _)
-					 | cid' == cid	-> True
-					_		-> False)
-			    fsCrushed	
-	
-
-	-- Add all the new fetters back to the graph
-	let progress_thisClass
-		= or $ map (\(f, src) -> not $ elem f $ map fst fs_src) fsCrushed_thisClass
-
-	let progress_others
-		= not $ isNil fsCrushed_others
-
-	let progress
-		= progress_thisClass || progress_others
-		
-	trace	$ "    progress    ( ... _thisClass)  = " % progress_thisClass  % "\n"
-		% "    progress                       = " % progress		% "\n"
-
-		% "    new fetters       (fsCrushed):\n" 
-			%> "\n" %!% fsCrushed		% "\n"
-		% "    new fetters ( ... _thisClass):\n" 
-			%> "\n" %!% fsCrushed_thisClass	% "\n"
-		% "    new fetters ( ... _others):\n" 
-			%> "\n" %!% fsCrushed_others	% "\n\n"
-	
-	updateClass cid
-	 $ cls	{ classFetterSources	= fsCrushed_thisClass }
-	
-	-- add all the fetters back to the graph
-	mapM (\(f, src) -> addFetterSource src f) fsCrushed_others
-	
-	-- return a bool saying whether we made any progress with crushing
-	--	fetters in this class.
-	return $ progress_thisClass
-
-crushFetterC' cid c
-	= return False
-
-
-
--- | Try to crush a single parameter class constraint that is acting
---	on this node from the type graph.
-crushFetterSingle
-	:: ClassId 
-	-> Kind
-	-> Type
-	-> [(Type,  TypeSource)]		-- ^ the types in this node
-	-> (Fetter, TypeSource)			-- ^ the fetter to crush
-	-> SquidM 
-		[(Fetter, TypeSource)]		-- new fetters to add back to the graph.
-						--	these can constrain any class.
-
-crushFetterSingle cid k tNode ts_src
-	f_src@( f@(FConstraint vC [tC@TClass{}]), fSrc)
-
-	-- crush a purity constraint
-	| vC  == primPure
-	= crushFetterPure cid k tNode ts_src f_src	
-
-	-- try and crush some non-purity constraint
-	| otherwise
-	= do	
-		-- crush some non-purify fetter
-		mfsBits	<- crushFetterSingle_fromGraph cid k tNode vC
-
-		-- the above call could return a number of simpler fetters
-		case mfsBits of
-
-		 -- we managed to crush it into something simpler
-		 Just fsBits 
-		  -> do	-- add all the smaller fetters back to the graph.
-			let src	= TSI $ SICrushedFS cid f fSrc
-			return	$ zip fsBits (repeat src)
-		
-		 -- we couldn't crush the fetter yet.
-		 Nothing
-		  -> return $ [f_src]
-
 -- | Crush a purity constraint
 crushFetterPure cid k tNode ts_src
 	fPure_src@(FConstraint vC [tC@TClass{}], _)
