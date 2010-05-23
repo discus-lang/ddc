@@ -13,9 +13,9 @@ import Data.Array.IO
 import Type.Pretty		()
 import DDC.Var
 import DDC.Solve.Node
+import Data.Sequence		(Seq)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-
 
 
 -- | A Node in the type graph
@@ -69,10 +69,11 @@ data Class
 		--	/why/ this particular node has the type it does.
 		, classTypeSources	:: [(Node, TypeSource)]	 
 
-		-- | Constraints that have been added to this class, including source information.
+		-- | Single parameter type class constraints on this equivalence class.
+		--	Maps var on constraint (like Eq) to the source of the constraint.
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
-		, classFetterSources	:: [(Fetter, TypeSource)]		
+		, classFetters		:: Map Var (Seq TypeSource)
 
 		-- | Multi-parameter type class constraints acting on this equivalence class.
 		--	MPTC's are stored in their own ClassFetter nodes, and this list points to all
@@ -89,7 +90,7 @@ classInit cid kind
 	, classQuant		= False
 	, classType		= Nothing
 	, classTypeSources	= []
-	, classFetterSources	= []
+	, classFetters		= Map.empty
 	, classFettersMulti	= Set.empty }
 	
 		

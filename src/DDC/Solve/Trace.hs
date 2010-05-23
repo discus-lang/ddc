@@ -87,8 +87,10 @@ lookupTypeOfCidAsSquid cid
 --         This would save having to nub them when we're constructing the final type.
 --	
 traceType :: ClassId -> TraceM Type
-traceType cid
- = do	-- Load all the reachable constraints into the state
+traceType cid'
+ = do	cid		<- sinkCid cid'
+
+	-- Load all the reachable constraints into the state
 	traceFromCid cid
 	
 	-- Get constraints out of the state
@@ -146,9 +148,9 @@ traceFromCid' cid
 		addType (TClass kind cid) t
 		
 		-- Add the SPTCs directly in thie class.
-		crsOther	<- mapM sinkCidsInFetter
-				$  map fst $ classFetterSources cls
-
+		let crsOther	= [FConstraint v [TClass kind cid] 
+					| v <- Map.keys $ classFetters cls]
+		
 		addCrsOther	$ Seq.fromList crsOther
 
 		-- Decend into other classes reachable from this one.

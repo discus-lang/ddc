@@ -45,6 +45,7 @@ import DDC.Var
 import Data.Array.IO
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Sequence	as Seq
 
 stage	= "Type.Squid.Class"
 
@@ -371,7 +372,7 @@ mergeClasses2 cids cs
 	let cL'	= cL 	
 		{ classType		= Nothing
 		, classTypeSources	= concatMap classTypeSources cs
-		, classFetterSources	= concatMap classFetterSources cs
+		, classFetters		= Map.unionsWith (Seq.><) $ map classFetters cs
 		, classFettersMulti	= Set.unions $ map classFettersMulti cs  }
 
 	updateClass cidL cL'

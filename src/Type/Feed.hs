@@ -18,6 +18,7 @@ import Util
 import DDC.Main.Error
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Sequence	as Seq
 
 stage	= "Type.Feed"
 
@@ -261,38 +262,36 @@ addFetter
 	
 -- Single parameter type class contraints are added directly to the equivalence
 --	class which they constrain.
---
-addFetter src f@(FConstraint vC [t])
+addFetter src f@(FConstraint vFetter [t])
  = do	
 	trace	$ "    * addFetter: " % f	% "\n\n"
 
 	-- The target type t could be a TVar or a TClass
 	--	Use feedType to make sure it's a TClass
 	cid		<- feedType src t
-	let Just k	= kindOfType t
 	
-	-- add the fetter to the equivalence class
-	let fNew	= FConstraint vC [TClass k cid]
-
 	-- check what fetters are already there
 	Just cls	<- lookupClass cid
-	let vfsThere	= map (\(FConstraint v _, _) -> v) 
-			$ classFetterSources cls
+	
+	case Map.lookup vFetter (classFetters cls) of
 
-	-- if the fetter to be added is already there then there's no need to add it again.
-	if (elem vC $ vfsThere)
-	 then	return False
-	 else do
- 		modifyClass cid
-	  	 $ \c -> c { classFetterSources	= (fNew, src) 	: classFetterSources c }
-
-	 	activateClass cid
+	 -- We already had a fetter of this sort on the class, but we add 
+	 -- the source info anyway to help with error reporting.
+	 Just srcs	
+	  -> do	modifyClass cid $ \c -> c {
+			classFetters = Map.insertWith (Seq.><) vFetter (Seq.singleton src) (classFetters c) }
+		return False
+		
+	 -- This is a new fetter. 
+	 Nothing
+	  -> do	modifyClass cid $ \c -> c {
+			classFetters = Map.singleton vFetter (Seq.singleton src) }
+		activateClass cid
 		return True
-			
+							
 	
 -- Multi parameter type class constraints are added as ClassFetter nodes in the graph 
 --	and the equivalence classes which they constraint hold ClassIds which point to them.
---
 addFetter src f@(FConstraint v ts)
  = do 	
  	-- create a new class to hold this node

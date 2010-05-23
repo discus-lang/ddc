@@ -12,6 +12,7 @@ import Shared.VarPrim
 import Util
 import DDC.Var
 import qualified Data.Map	as Map
+import qualified Data.Sequence	as Seq
 
 
 debug		= True
@@ -26,8 +27,10 @@ checkInstances
 	addErrors errs
 
 checkInstances1 errs cls
- 	| Class { classFetterSources = fs_src }		<- cls
-	= foldM (checkFetter cls) errs $ map fst fs_src
+ 	| Class {}		<- cls
+	= foldM (checkFetter cls) errs 
+		$ [FConstraint vFetter [TClass (classKind cls) (classId cls)]
+			| vFetter <- Map.keys $ classFetters cls]
 	
 	| ClassFetter { classFetter = f }	<- cls
 	, FConstraint v t	<- f
@@ -92,12 +95,9 @@ takeFetterSrc cls f@(FConstraint vClass _)
  	ClassFetter { classSource = src }	
 	 -> src
 
-	Class { classFetterSources = nodes }
-	 -> let Just (_, src) = find (isFNode vClass) nodes
+	Class { classFetters = fetters }
+	 -> let Just (src Seq.:< _)	
+			= liftM Seq.viewl
+			$ Map.lookup vClass fetters
 	    in  src
 
-
-isFNode v ff
- = case ff of
- 	(FConstraint v' _, _ )	-> True
-	_			-> False

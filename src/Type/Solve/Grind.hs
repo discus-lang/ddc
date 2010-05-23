@@ -17,6 +17,7 @@ import DDC.Main.Error
 import DDC.Var
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 debug	= False
 stage	= "Type.Solve.Grind"
@@ -131,9 +132,9 @@ grindClass2 cid c@(ClassForward _ cid')
 	 	
 -- type nodes
 grindClass2 cid c@(Class	
-			{ classType 		= mType
-			, classKind		= k 
-			, classFetterSources	= fs_src})
+			{ classType 	= mType
+			, classKind	= k 
+			, classFetters	= fsSrcs})
  = do	
 	-- if a class contains an effect it might need to be crushed
 	progressCrushE	
@@ -143,10 +144,10 @@ grindClass2 cid c@(Class
 
 	-- try and crush other fetters in this class
 	progressCrush
-		<- case fs_src of
-			[]	-> return False
-			_	-> crushFetterInClass cid
-	
+		<- if Map.null fsSrcs
+			then return False
+			else crushFetterInClass cid
+			
 	return	( progressCrushE || progressCrush
 		, [])
 	

@@ -20,6 +20,8 @@ import Shared.VarPrim
 import Control.Monad
 import Util
 import qualified Data.Set	as Set
+import qualified Data.Map	as Map
+import qualified Data.Sequence	as Seq
 
 stage	= "Type.Crush.Fetter"
 debug	= True
@@ -55,22 +57,25 @@ crushFetterWithClass cid cls
 	Class	{ classKind		= kind
 		, classType		= Just nNode'
 		, classTypeSources	= tsSrc'
-		, classFetterSources 	= fsSrc' }
+		, classFetters		= fetterSrcs }
 	 -> do	
 		nNode	<- sinkCidsInNode	    nNode'
 		tsSrc	<- mapM sinkCidsInNodeFst   tsSrc'
-		fsSrc	<- mapM sinkCidsInFetterFst fsSrc'
+
+		let fsSrc	
+			= [(FConstraint v [TClass kind cid], src)
+				| (v, srcs)		<- Map.toList fetterSrcs
+				, let src Seq.:< _	= Seq.viewl srcs]
 
 		trace	$ "--  crushFetterInClass "	%  cid		% "\n"
 			% "    node           = "	%  nNode	% "\n"
-			% "    fetters:\n" 		%> fsSrc	% "\n"
+			% "    fetters:\n" 		%> fetterSrcs	% "\n"
 
 		-- Try to crush each fetter into smaller pieces.
 		-- While crushing, we leave all the original fetters in the class, and only add
 		-- the new fetters back when we're done. The fetters in the returned list could
 		-- refer to other classes as well as this one.
 		mfsCrushed 	<- mapM (crushFetterSingle cid cls nNode) fsSrc
-		let progress	= or $ map isJust mfsCrushed
 		
 		-- For each fetter, it crushed we get Just and a new list of fetters.
 		-- If it didn't crush we get a Nothing, so we want to keep the original.
@@ -79,18 +84,19 @@ crushFetterWithClass cid cls
 					fsSrc
 					mfsCrushed
 						
-		when progress
-		 $ trace $ "    crushed fetters:\n"	%> vcat fsCrushed 
-			 % newline
+		trace 	$ "    crushed fetters:\n"	%> vcat fsCrushed 
+			% newline
 
 		-- Clear out the original fetters from the class.
-		updateClass cid $ cls { classFetterSources	= [] }
+		updateClass cid $ cls { classFetters	= Map.empty }
 	
 		-- Add all the fetters back to the graph
+		-- Only activate the constrained class when we added a fetter that wasn't already there, 
+		-- otherwise we'll try to crush the same class on every grind.
 		-- TODO: only count progress when we've add a fetter that wasn't there before.
 		--       If we report progress the grinder will call us again on the same class.
 		--	 Is this actually what we want?
-		mapM (\(f, src) -> addFetter src f) fsCrushed
+		progress	<- liftM or $ mapM (\(f, src) -> addFetter src f) fsCrushed
 
 		return progress
 
@@ -101,13 +107,13 @@ crushFetterSingle
 	:: ClassId				-- ^ The cid of the class this fetter is from.
 	-> Class				-- ^ The class containing the fetter.
 	-> Node					-- ^ The node type of the class.
-	-> (Fetter, TypeSource)			-- ^ The fetter to crush
+	-> (Fetter, TypeSource)			-- ^ The var and source of the fetter to crush.
 	-> SquidM 
 		(Maybe [(Fetter, TypeSource)])	-- ^ If crushable then the new pieces, or `Nothing`
 						--   if the original fetter is not crushable yet.
 	
-crushFetterSingle cid cls node
-	fsrc@(fetter@(FConstraint vFetter tsFetter), srcFetter)
+crushFetterSingle cid cls node 
+	fsrc@(fetter@(FConstraint vFetter _), srcFetter)
 
 	-- HeadLazy
 	| vFetter == primLazyH
@@ -128,9 +134,8 @@ crushFetterSingle cid cls node
 	-- Pure
 	| vFetter == primPure
 	= do	trace	$ vcat
-			[ ppr "  * crushing Pure"
-			, "    tsFetter       = " % tsFetter]
-
+			[ ppr "  * crushing Pure" ]
+			
 		case node of
 
 		 -- Apply the same constraint to all the cids in a sum.

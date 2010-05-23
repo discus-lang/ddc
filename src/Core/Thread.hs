@@ -265,7 +265,7 @@ lookupWitness kCon vArg
 		-- Core.Reconstruct will catch this problem in a subsequent stage.
 	 	| otherwise
 	 	= freakout stage
-			("thread_transX: can't find a witness of kind " % kCon % "\n"
+			("thread_transX: can't find a witness of kind " % kCon <> vArg % "\n"
 			 % "state = " % state % "\n\n")
 			$ Nothing
 

@@ -21,6 +21,7 @@ import DDC.Main.Error
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Sequence	as Seq
 
 -----
 debug	= False
@@ -204,13 +205,13 @@ slurpRsConstraints ccMap cls
 	 	
 slurpRsConstraints1 c
 	-- got a region class		
- 	| Class { classKind 		= kR
-		, classFetterSources	= fs_src }	<- c
+ 	| Class { classKind 	= kR
+		, classFetters	= fsSrcs }	<- c
 	, kR	== kRegion
 	= do
 		-- extract the vars for all the fetters acting on this class
-	 	let vars	= map (\(FConstraint vC _, _) -> vC) fs_src
- 		
+	 	let vars	= Map.keys fsSrcs
+		
 		-- get the name of this class
 		name	<- makeClassName (classId c)
 
@@ -227,38 +228,35 @@ slurpRsConstraints1 c
 
 -- | Check for constraint errors on this region.
 checkRegionError :: Class -> SquidM (Maybe Error)
-checkRegionError c@Class 
-	{ classFetterSources 	= fs_src }
+checkRegionError cls@Class { classFetters = fsSrcs }
 
 	-- found a mutability conflict.
-	| Just (fConst,   srcConst)	<- find (isFConstraintNode primConst)   fs_src
-	, Just (fMutable, srcMutable)	<- find (isFConstraintNode primMutable) fs_src
-	= do	
-		return 	$ Just $ ErrorRegionConstraint
-			{ eFetter1		= fConst
+	| Just srcsConst	<- Map.lookup primConst   fsSrcs
+	, Just srcsMutable	<- Map.lookup primMutable fsSrcs
+	= let	srcConst   Seq.:< _	= Seq.viewl srcsConst
+		srcMutable Seq.:< _	= Seq.viewl srcsMutable
+		t			= TClass (classKind cls) (classId cls)
+		
+	  in	return 	$ Just $ ErrorRegionConstraint
+			{ eFetter1		= FConstraint primConst [t]
 			, eFetterSource1	= srcConst
-			, eFetter2		= fMutable
+			, eFetter2		= FConstraint primMutable [t]
 			, eFetterSource2	= srcMutable }
 	
 	-- found a direct/lazy conflict.
-	| Just (fDirect, tsDirect)	<- find (isFConstraintNode primDirect)  fs_src
-	, Just (fLazy, tsLazy)		<- find (isFConstraintNode primLazy)    fs_src
-	= return $ Just $ ErrorRegionConstraint
-			{ eFetter1		= fDirect
-			, eFetterSource1	= tsDirect
-			, eFetter2		= fLazy
-			, eFetterSource2	= tsLazy }
+	| Just srcsDirect	<- Map.lookup primDirect fsSrcs
+	, Just srcsLazy		<- Map.lookup primLazy   fsSrcs
+	= let	srcDirect Seq.:< _	= Seq.viewl srcsDirect
+		srcLazy   Seq.:< _	= Seq.viewl srcsLazy
+		t			= TClass (classKind cls) (classId cls)
+	
+	  in	return $ Just $ ErrorRegionConstraint
+			{ eFetter1		= FConstraint primDirect [t]
+			, eFetterSource1	= srcDirect
+			, eFetter2		= FConstraint primLazy [t]
+			, eFetterSource2	= srcLazy }
 		
 	-- no problems.
 	| otherwise
 	= return $ Nothing
-
-
-isFConstraintNode v1 (t, n)
-	| FConstraint v2 _	<- t
-	= v1 == v2
-	
-	| otherwise
-	= False
-
 

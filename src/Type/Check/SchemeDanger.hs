@@ -31,6 +31,8 @@ import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Var
 import qualified Data.Set	as Set
+import qualified Data.Map	as Map
+import qualified Data.Sequence	as Seq
 
 -----
 stage	= "Type.Check.SchemeDanger"
@@ -134,17 +136,16 @@ lookupMutable
 	-> SquidM (Maybe (Fetter, TypeSource))
 
 lookupMutable cid
- = do	Just (Class { classFetterSources = fs_src })	
- 		<- lookupClass cid
-
-	let fs_srcs_mutable
-		= [ (f, src) 	
-			| (f@(FConstraint v _), src) <- fs_src
-			, v == primMutable ]
-				
-	case fs_srcs_mutable of
-	 []	-> return $ Nothing
-	 (f, src) : _	
-	  -> do	f'	<- updateVC f
-		return $ Just (f', src)
+ = do	Just cls  	<- lookupClass cid
+	let fetters	=  classFetters cls
+	
+	case Map.lookup primMutable fetters of
+	 Just srcs	
+	  -> do	let (src Seq.:< _) = Seq.viewl srcs
+		return $ Just 
+			( FConstraint primMutable [TClass (classKind cls) cid]
+			, src)
+		
+	 Nothing
+	  ->	return Nothing
 

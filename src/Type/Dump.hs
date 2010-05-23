@@ -86,10 +86,10 @@ instance Pretty Class PMode where
 			Just t	-> ppr t % "\n\n")
 
 		-- class fetters
-		% (case classFetterSources c of
+		% (case Map.toList $ classFetters c of
 			[]	-> blank
 			_	-> "        -- fetters\n"
-				%> "\n" %!% classFetterSources c % "\n\n")
+				%> "\n" %!% (Map.toList $ classFetters c) % "\n\n")
 	
 		-- multi-parameter type classes
 		% (if Set.null $ classFettersMulti c
