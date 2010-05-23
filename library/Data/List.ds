@@ -27,10 +27,10 @@ export
 	-- Special Folds 
 	concat; concatL; concatMap; concatMapL;
 	sum; sumR; 
-	product;
+--	product;
 	and; or; 
 	any; all;
-	maximumBy; minimumBy;
+--	maximumBy; minimumBy;
 	
 	-- Unfolding 
 	unfoldr;
@@ -67,7 +67,7 @@ export
 	concatStrings;
 	
 	-- Int Utils ------------------
-	pow;
+--	pow;
 }
 	
 import	Base
@@ -358,27 +358,27 @@ sumR xx
 
 
 -- | Multiply all the elements of this int list together
-product :: [Int] -> Int;
-product xs 
-	= foldl (*) 1 xs
+-- product :: [Int] -> Int;
+-- product xs 
+--	= foldl (*) 1 xs
 
 
 -- | Extract the largest value from a list, using the provided ordering relation.
-maximumBy :: (a -> a -> Ordering) -> [a] -> a
-maximumBy _ []
-	= error "List.maximumBy: empty list"
+-- maximumBy :: (a -> a -> Ordering) -> [a] -> a
+-- maximumBy _ []
+--	= error "List.maximumBy: empty list"
 
-maximumBy cmp (a:as)
-	= foldl (\x y -> case cmp x y of { GT -> x; _  -> y}) a as
+-- maximumBy cmp (a:as)
+--	= foldl (\x y -> case cmp x y of { GT -> x; _  -> y}) a as
 
 
 -- | Extract the smallest value from a list, using the provided ordering relation.
-minimumBy :: (a -> a -> Ordering) -> [a] -> a
-minimumBy _ []		
-	= error "List.minimumBy: empty list"
+-- minimumBy :: (a -> a -> Ordering) -> [a] -> a
+-- minimumBy _ []		
+--	= error "List.minimumBy: empty list"
 
-minimumBy cmp (a:as)
-	= foldl (\x y -> case cmp x y of { GT -> y; _  -> x}) a as
+-- minimumBy cmp (a:as)
+--	= foldl (\x y -> case cmp x y of { GT -> y; _  -> x}) a as
 
 
 -- Unfolding --------------------------------------------------------------------------------------
@@ -722,7 +722,7 @@ concatStrings (str : rest)
 
 -- Int Utils --------------------------------------------------------------------------------------
 -- | Raise this int to a power.
-pow :: Int -> Int -> Int;
-pow x n		= product $ replicate n x
+-- pow :: Int -> Int -> Int;
+-- pow x n		= product $ replicate n x
 
 

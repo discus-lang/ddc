@@ -18,11 +18,11 @@ module Type.Class
 	, clearActive
 	, activateClass
 	, sinkVar
---	, updateVC
 	, kindOfCid
 	, foldClasses
 	, lookupSourceOfNode
 	, deleteSingleFetter
+	, takeTClassOfClass
 
 	-- * Sinking
 	, sinkClassId
@@ -34,7 +34,6 @@ module Type.Class
 where
 import Type.Exp
 import Type.Location
---import Type.Plate.Trans
 import Type.State
 import Type.Plate.Collect
 import Type.Util
@@ -468,6 +467,13 @@ deleteSingleFetter cid v
 	let cls'	= cls { classFetters = Map.delete v (classFetters cls) }
 	updateClass cid cls'
 	
+
+-- | Turn a Class into a TClass with the same kind and cid
+takeTClassOfClass :: Class -> Maybe Type
+takeTClassOfClass cls
+ = case cls of
+	Class{}	-> Just $ TClass (classKind cls) (classId cls)
+	_	-> Nothing
 
 	
 -- Sinking ----------------------------------------------------------------------------------------

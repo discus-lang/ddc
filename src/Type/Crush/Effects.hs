@@ -18,7 +18,7 @@ import Control.Monad
 import Data.Maybe
 import qualified Data.Set	as Set
 
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effects"
 
@@ -154,32 +154,30 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	-- DeepRead ---------------------------------------
 	| nCon		== nDeepRead
 	, NApp{}	<- nArg
-	= do	mApps	<- takeAppsDownLeftSpine (classId clsArg)
+	= do	mCidsApps <- takeAppsDownLeftSpine (classId clsArg)
+		mClsApps  <- case mCidsApps of
+				Nothing		-> return Nothing
+				Just cids	-> liftM sequence $ mapM lookupClass cids
 	
-		trace	$ vcat
-			[ ppr "  * DeepRead"
-			, "    mApps            = " % mApps ]
-
-		let readIt (cid', k)
-			| k == kRegion	= Just $ TApp tRead	(TClass k cid')
-			| k == kValue	= Just $ TApp tDeepRead (TClass k cid')
-			| otherwise	= Nothing
+		let readIt cls
+			| classKind cls == kRegion	= Just $ TApp tRead	tClass
+			| classKind cls == kValue	= Just $ TApp tDeepRead	tClass
+			| otherwise			= Nothing
+			where Just tClass = takeTClassOfClass cls
 		
-		case mApps of
-		 Just (cidCon : cidArgs)
-		  -> do	ksArgs	<- mapM kindOfCid cidArgs
-			let cidksArgs	= zip cidArgs ksArgs
-			let effs'	= mapMaybe readIt cidksArgs
+		-- If the effect uses an abstract constructor like (ReadT (t a)) then we can't
+		-- crush it yet. We can't build (ReadT t) because t has the wrong kind, and we
+		-- can't crush to simply (ReadT a) because t might expand to something like
+		-- (List %r1), and we'll loose the effect on %r1.1
+		case mClsApps of
+		 Just (clsCon : clsArgs)
+		  | Just NCon{}	<- classType clsCon
+		  -> do	let effs'	= mapMaybe readIt clsArgs
 			let src		= TSI $ SICrushedES cid nApp srcApp
-			trace	$ vcat
-				[ "    cidksArgs        = " % cidksArgs
-				, "    effs'            = " % effs']
-			
 			cidsEff' <- mapM (feedType src) effs'			
 			crushUpdate cid cidsEff' src
 			
-		 Nothing	
-		  ->	crushMaybeLater cid
+		 _ ->	crushMaybeLater cid
 	
 	| nCon		== nDeepRead
 	= crushMaybeLater cid
@@ -187,27 +185,22 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	-- DeepWrite --------------------------------------
 	| nCon		== nDeepWrite
 	, NApp{}	<- nArg
-	= do	mApps	<- takeAppsDownLeftSpine (classId clsArg)
+	= do	mCidsApps <- takeAppsDownLeftSpine (classId clsArg)
+		mClsApps  <- case mCidsApps of
+				Nothing		-> return Nothing
+				Just cids	-> liftM sequence $ mapM lookupClass cids
 	
-		trace	$ vcat
-			[ ppr "  * DeepWrite"
-			, "    mApps            = " % mApps ]
+		let writeIt cls
+			| classKind cls == kRegion	= Just $ TApp tWrite	 tClass
+			| classKind cls	== kValue	= Just $ TApp tDeepWrite tClass
+			| otherwise			= Nothing
+			where Just tClass = takeTClassOfClass cls
 
-		let writeIt (cid', k)
-			| k == kRegion	= Just $ TApp tWrite	(TClass k cid')
-			| k == kValue	= Just $ TApp tDeepWrite (TClass k cid')
-			| otherwise	= Nothing
-		
-		case mApps of
-		 Just (cidCon : cidArgs)
-		  -> do	ksArgs	<- mapM kindOfCid cidArgs
-			let cidksArgs	= zip cidArgs ksArgs
-			let effs'	= mapMaybe writeIt cidksArgs
+		case mClsApps of
+		 Just (clsCon : clsArgs)
+		  | Just NCon{} <- classType clsCon
+		  -> do	let effs'	= mapMaybe writeIt clsArgs
 			let src		= TSI $ SICrushedES cid nApp srcApp
-			trace	$ vcat
-				[ "    cidksArgs        = " % cidksArgs
-				, "    effs'            = " % effs']
-			
 			cidsEff' <- mapM (feedType src) effs'			
 			crushUpdate cid cidsEff' src
 			
