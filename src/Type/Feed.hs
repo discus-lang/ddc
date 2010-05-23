@@ -280,7 +280,8 @@ addFetter src f@(FConstraint vFetter [t])
 	 -- the source info anyway to help with error reporting.
 	 Just srcs	
 	  -> do	modifyClass cid $ \c -> c {
-			classFetters = Map.insertWith (Seq.><) vFetter (Seq.singleton src) (classFetters c) }
+			classFetters = Map.insertWith (Seq.><) vFetter 
+					(Seq.singleton src) (classFetters c) }
 		return False
 		
 	 -- This is a new fetter. 

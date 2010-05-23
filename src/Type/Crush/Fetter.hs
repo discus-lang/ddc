@@ -16,6 +16,7 @@ import Type.Util.Bits
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk
+import Data.Maybe
 import Shared.VarPrim
 import Control.Monad
 import qualified Data.Set	as Set
@@ -77,7 +78,7 @@ crushFetterWithClass cid cls
 		progress	<- liftM or
 				$ mapM (crushFetterSingle cid cls nNode) fsSrc
 		
-		return progress
+		return False
 
 -- | Try to crush a fetter from a class into smaller pieces.
 --	All parameters should have their cids canonicalised.
@@ -108,8 +109,50 @@ crushFetterSingle cid cls node
 			_ -> return False
 
 	-- DeepConst
+	| vFetter == primConstT
+	= do	trace	$ ppr "  * crushing ConstT\n"
+		mApps	<- takeAppsDownLeftSpine cid
+	
+		let constIt (cid', k)
+			| k == kRegion	= Just $ FConstraint primConst  [TClass k cid']
+			| k == kValue	= Just $ FConstraint primConstT [TClass k cid']
+			| otherwise	= Nothing
+	
+		case mApps of
+		 Just (cidCon : cidArgs)
+		  -> do	ksArgs		<- mapM kindOfCid cidArgs
+			let cidksArgs	= zip cidArgs ksArgs
+			let fs		= mapMaybe constIt cidksArgs
+			let src		= TSI $ SICrushedFS cid fetter srcFetter
+			zipWithM addFetter (repeat src) fs
+			return False
+			
+		 Nothing	
+		  -> return False
+		
 	
 	-- DeepMutable
+	| vFetter == primMutableT
+	= do	trace	$ ppr "  * crushing MutableT\n"
+		mApps	<- takeAppsDownLeftSpine cid
+	
+		let mutableIt (cid', k)
+			| k == kRegion	= Just $ FConstraint primMutable  [TClass k cid']
+			| k == kValue	= Just $ FConstraint primMutableT [TClass k cid']
+			| otherwise	= Nothing
+	
+		case mApps of
+		 Just (cidCon : cidArgs)
+		  -> do	ksArgs		<- mapM kindOfCid cidArgs
+			let cidksArgs	= zip cidArgs ksArgs
+			let fs		= mapMaybe mutableIt cidksArgs
+			let src		= TSI $ SICrushedFS cid fetter srcFetter
+			zipWithM addFetter (repeat src) fs
+			return False
+			
+		 Nothing	
+		  -> return False
+
 
 	-- Pure
 	| vFetter == primPure
@@ -221,72 +264,3 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 		, eFetter		= fetter
 		, eFetterSource		= srcFetter }
 
-
-
-
-{-
-
--- | Crush a non-purity fetter that's constraining some node in the graph.
-crushFetterSingle_fromGraph 
-	:: ClassId			-- cid of class being constrained.
-	-> Kind 
-	-> Type				-- the node type being constrained
-	-> Var				-- var of fetter ctor
-
-	-> SquidM 			-- if Just [Fetters] then the original fetter is removed and these
-					--			  new ones are added to the graph.
-		(Maybe [Fetter])	--    Nothing        then leave the original fetter in the class.
-
-crushFetterSingle_fromGraph cid k tNode vC
-	-- lazy head
-	| vC	== primLazyH
-	= do	trace $ ppr "    -- crushing LazyH\n"
-		mtHead	<- headTypeDownLeftSpine cid
-		case mtHead of
-			Just t	-> return $ Just [FConstraint primLazy [t]]
-			_	-> return Nothing
-
-	-- deep constancy
-	| vC	== primConstT
-	= do	trace $ ppr "    -- crushing deep constancy\n"
-		case tNode of
-		 TApp t1 t2
-		  -> return 
-		  $  Just [ FConstraint primConstT [t1]
-			  , FConstraint primConstT [t2] ]
-
-		 TCon{}	-> return $ Just []
-
-		 -- Constraining a closure or effect to be mutable doesn't mean anything useful
-		 TSum k []
-		  | k == kRegion	-> return $ Just [ FConstraint primConst [TClass k cid] ]
-		  | k == kClosure	-> return $ Just []
-		  | k == kEffect	-> return $ Just []
-		  | otherwise		-> return   Nothing
-
-		 _ 	-> return $ Nothing
-
-	-- deep mutability
-	| vC	== primMutableT
-	= do	trace $ ppr "    -- crushing MutableT\n"
-		case tNode of
-		 TApp t1 t2
-		  -> return
-		  $  Just [ FConstraint primMutableT [t1]
-			  , FConstraint primMutableT [t2] ]
-			
-		 TCon{} -> return $ Just []
-
-		 -- Constraining a closure or effect to be mutable doesn't mean anything useful.
-		 TSum k []
-		  | k == kRegion	-> return $ Just [ FConstraint primMutable [TClass k cid] ]
-		  | k == kClosure	-> return $ Just []
-		  | k == kEffect	-> return $ Just []
-		  | otherwise		-> return   Nothing
-		
-		 _ 	-> return Nothing
-	
-
-	| otherwise
-	= return Nothing
--}
