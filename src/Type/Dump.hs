@@ -6,7 +6,6 @@ module Type.Dump
 	, dumpSub)
 where
 import Type.State
-import Type.Class
 import Util
 import Data.Array.IO	
 import DDC.Main.Pretty
@@ -111,7 +110,7 @@ prettyVMap 	m
 	$ Map.toList m
 	
 
--- Rewrite this class so all its classIds are in canconical form.
+-- TODO: Rewrite this class so all its classIds are in canconical form.
 forwardCids :: Class -> SquidM Class
 forwardCids cls
  = case cls of
@@ -119,35 +118,9 @@ forwardCids cls
 	ClassForward{}		-> return cls
 	ClassFetterDeleted{}	-> return cls
 
-	ClassFetter { classFetter = f }
-	 -> do	fetter'		<- updateVC f
-		return	$ cls
-			{ classFetter	= fetter' }
+	ClassFetter { classFetter = fetter }
+	 -> do	return	$ cls
+			{ classFetter	= fetter }
 
 	Class{}
 	 -> do	return	cls
-
-
-{-	cid'		<- updateVC $ classId c
-
-	fs'		<- mapM (\(f, src)
-				-> do	f'	<- updateVC f
-					return	$ (f', src))
-			$ classFetterSources c
-
-	let (ts, ns)	= unzip $ classTypeSources c
-	ts'		<- mapM updateVC ts
-	let nodes'	= zip ts' ns
-
-	typ'		<- case classType c of
-				Nothing	-> return Nothing
-				Just t	-> do
-					typ2	<- updateVC t
-					return	$ Just typ2
-	
-	return	$ c
-		{ classId		= cid'
-		, classType		= typ' 
-		, classFetterSources	= fs' 
-		, classTypeSources	= nodes' }
--}

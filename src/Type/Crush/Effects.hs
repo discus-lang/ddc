@@ -180,6 +180,9 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 			
 		 Nothing	
 		  ->	crushMaybeLater cid
+	
+	| nCon		== nDeepRead
+	= crushMaybeLater cid
 			
 	-- DeepWrite --------------------------------------
 	| nCon		== nDeepWrite

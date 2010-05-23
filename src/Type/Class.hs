@@ -12,17 +12,17 @@ module Type.Class
 	, updateClass
 	, modifyClass
 	, mergeClasses
-	, mergeClassesT
 
 	, lookupVarToClassId
 	, makeClassName
 	, clearActive
 	, activateClass
 	, sinkVar
-	, updateVC
+--	, updateVC
 	, kindOfCid
 	, foldClasses
 	, lookupSourceOfNode
+	, deleteSingleFetter
 
 	-- * Sinking
 	, sinkClassId
@@ -34,7 +34,7 @@ module Type.Class
 where
 import Type.Exp
 import Type.Location
-import Type.Plate.Trans
+--import Type.Plate.Trans
 import Type.State
 import Type.Plate.Collect
 import Type.Util
@@ -47,6 +47,8 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq
 
+debug	= False
+trace s	= when debug $ traceM s
 stage	= "Type.Squid.Class"
 
 -- | Return the cids of all the children of this class.
@@ -368,6 +370,10 @@ mergeClasses2 cids cs
  = do	-- The class with the lowest cid gets all the items.
 	let Just cidL	= takeMinimum cids
 	Just cL		<- lookupClass cidL
+	
+	trace 	$ "-- mergeClasses\n"
+		% "    cidL = " % cidL % "\n"
+		% "    cids = " % cids % "\n"
 
 	let cL'	= cL 	
 		{ classType		= Nothing
@@ -384,43 +390,21 @@ mergeClasses2 cids cs
 	
   	return	$ cidL
 		
-		
--- | Merge these classes.
---	args must all be TClasses
-mergeClassesT :: [Type] -> SquidM Type
-mergeClassesT	 ts@(t:_)
- = do
- 	let Just cids	= sequence 
-			$ filter isJust
-			$ map takeCidOfTClass ts
-
-	let Just ks	= sequence $ map kindOfType ts
-
-	case nub ks of
-	 [k] ->	do	
-		cid'	<- mergeClasses cids
-		return	$ TClass k cid'
-	
-	 _ 	-> panic stage
-		$ "mergeClassesT: " % ks % "\n"
-
 
 -- | Clear the set of active classes.
 clearActive ::	SquidM (Set ClassId)
 clearActive
- = do	graph		<- gets stateGraph 
+ = do	graph	<- gets stateGraph 
 	
-	active'		<- liftM Set.fromList
-			$  mapM sinkClassId 
-			$  Set.toList
-			$  graphActive graph
+	active'	<- liftM Set.fromList
+		$  mapM sinkClassId 
+		$  Set.toList
+		$  graphActive graph
 	
-	let graph'	= graph 
-			{ graphActive = Set.empty }
+	let graph'	= graph { graphActive = Set.empty }
 	
-	modify (\s -> s { stateGraph	= graph' })
-			
-	return		active'
+	modify $ \s -> s { stateGraph	= graph' }			
+	return	active'
 
 
 -- | Activate a class, tagging it for inspection by the unifier \/ crusher.
@@ -430,10 +414,10 @@ activateClass cid
  = do	-- traceM $ "activating class " % cid % "\n"
 
 	graph		<- gets stateGraph
- 	let graph'	= graph 
-			{ graphActive	= Set.insert cid (graphActive graph) }
+ 	let graph'	= graph { graphActive	= Set.insert cid (graphActive graph) }
 
-	modify (\s -> s { stateGraph = graph' })
+	modify $ \s -> s { 
+		stateGraph = graph' }
 
 	Just c		<- lookupClass cid
 	(case c of
@@ -441,30 +425,6 @@ activateClass cid
 		 	-> mapM_ activateClass $ Set.toList cidsMulti
 		_	-> return ())
 		
-
--- Lookup the canconical name for this var.
-sinkVar :: Var -> SquidM Var
-sinkVar	var
- = do	mCid	<- lookupVarToClassId var
-	let result
-		| Nothing	<- mCid
-		= return var
-
-		| Just cid	<- mCid
-		= do		
-			var'		<- makeClassName cid 	
-			return	$ var'
-	
-	result
-
--- rewrite all vars and cids in this thing to canconial form.
-updateVC :: TransM SquidM a => a -> SquidM a
-updateVC  z	
- = transZM 
- 	transTableId
-	 	{ transV	= sinkVar
-		, transCid	= sinkClassId }
-	z
 
 -- lookup the kind of the class corresponding to this var.
 kindOfCid :: ClassId -> SquidM Kind
@@ -497,7 +457,30 @@ lookupSourceOfNode nEff cls
 				, nodeEff == nEff]
 
 
+-- | Delete a SPTC Fetter from a class.
+deleteSingleFetter
+	:: ClassId 
+	-> Var
+	-> SquidM ()
+	
+deleteSingleFetter cid v
+ = do	Just cls	<- lookupClass cid
+	let cls'	= cls { classFetters = Map.delete v (classFetters cls) }
+	updateClass cid cls'
+	
+
+	
 -- Sinking ----------------------------------------------------------------------------------------
+
+-- | Convert a var to canonical form
+sinkVar :: Var -> SquidM Var
+sinkVar	var
+ = do	mCid	<- lookupVarToClassId var
+	case mCid of
+	 Nothing	-> return var
+	 Just cid	-> makeClassName cid
+		
+
 -- | Convert this cid to canconical form.
 {-# INLINE sinkClassId #-}
 sinkClassId ::	ClassId -> SquidM ClassId

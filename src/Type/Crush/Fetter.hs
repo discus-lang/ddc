@@ -18,7 +18,6 @@ import DDC.Main.Error
 import DDC.Solve.Walk
 import Shared.VarPrim
 import Control.Monad
-import Util
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
@@ -75,31 +74,10 @@ crushFetterWithClass cid cls
 		-- While crushing, we leave all the original fetters in the class, and only add
 		-- the new fetters back when we're done. The fetters in the returned list could
 		-- refer to other classes as well as this one.
-		mfsCrushed 	<- mapM (crushFetterSingle cid cls nNode) fsSrc
+		progress	<- liftM or
+				$ mapM (crushFetterSingle cid cls nNode) fsSrc
 		
-		-- For each fetter, it crushed we get Just and a new list of fetters.
-		-- If it didn't crush we get a Nothing, so we want to keep the original.
-		let fsCrushed	= concat
-				$ zipWith (\fsOrig fsCrush -> fromMaybe [fsOrig] fsCrush)
-					fsSrc
-					mfsCrushed
-						
-		trace 	$ "    crushed fetters:\n"	%> vcat fsCrushed 
-			% newline
-
-		-- Clear out the original fetters from the class.
-		updateClass cid $ cls { classFetters	= Map.empty }
-	
-		-- Add all the fetters back to the graph
-		-- Only activate the constrained class when we added a fetter that wasn't already there, 
-		-- otherwise we'll try to crush the same class on every grind.
-		-- TODO: only count progress when we've add a fetter that wasn't there before.
-		--       If we report progress the grinder will call us again on the same class.
-		--	 Is this actually what we want?
-		progress	<- liftM or $ mapM (\(f, src) -> addFetter src f) fsCrushed
-
 		return progress
-
 
 -- | Try to crush a fetter from a class into smaller pieces.
 --	All parameters should have their cids canonicalised.
@@ -108,9 +86,7 @@ crushFetterSingle
 	-> Class				-- ^ The class containing the fetter.
 	-> Node					-- ^ The node type of the class.
 	-> (Fetter, TypeSource)			-- ^ The var and source of the fetter to crush.
-	-> SquidM 
-		(Maybe [(Fetter, TypeSource)])	-- ^ If crushable then the new pieces, or `Nothing`
-						--   if the original fetter is not crushable yet.
+	-> SquidM Bool				-- ^ Whether we made progress.
 	
 crushFetterSingle cid cls node 
 	fsrc@(fetter@(FConstraint vFetter _), srcFetter)
@@ -121,11 +97,15 @@ crushFetterSingle cid cls node
 		mclsHead <- takeHeadDownLeftSpine cid
 		case mclsHead of
 			Just clsHead	
-			 -> do	let tHead	= TClass (classKind clsHead) (classId clsHead)
+			 -> do	deleteSingleFetter cid vFetter
+
 				let src		= TSI $ SICrushedFS cid fetter srcFetter
-				return $ Just [(FConstraint primLazy [tHead], src)]
-			
-			_ -> return Nothing
+				let tHead	= TClass (classKind clsHead) (classId clsHead)
+				let headFetter	= FConstraint primLazy [tHead]
+				addFetter src headFetter
+				return True
+				
+			_ -> return False
 
 	-- DeepConst
 	
@@ -134,7 +114,8 @@ crushFetterSingle cid cls node
 	-- Pure
 	| vFetter == primPure
 	= do	trace	$ vcat
-			[ ppr "  * crushing Pure" ]
+			[ ppr "  * crushing Pure" 
+			, "    node    = " % node ]
 			
 		case node of
 
@@ -143,9 +124,13 @@ crushFetterSingle cid cls node
 		  -> do	let cidsList	= Set.toList cids
 			ks		<- mapM kindOfCid cidsList
 			let ts		= zipWith TClass ks cidsList
-			return	$ Just  
-				$ zip 	[FConstraint primPure [t] | t <- ts]
-					(repeat $ TSI $ SICrushedFS cid fetter srcFetter)
+			zipWithM addFetter
+				(repeat $ TSI $ SICrushedFS cid fetter srcFetter)
+				[FConstraint primPure [t] | t <- ts]
+
+			trace $ "  * Sum " % ts % "\n"
+
+			return True
 
 		 -- When crushing purity fetters we must leave the original constraint in the graph.
 		 NApp{}
@@ -154,18 +139,19 @@ crushFetterSingle cid cls node
 			case ePurifier of
 			 Left err 
 			  -> do	addErrors [err]
-				return $ Just [fsrc]
+				return False
 			
-			 Right (Just fsrcPurifier)
-			  -> 	return $ Just [fsrc, fsrcPurifier]
+			 Right (Just (fPurifier, srcPurifier))
+			  -> do	addFetter srcPurifier fPurifier
+				return True
 							
 			 Right Nothing
-			  -> 	return $ Just [fsrc]
+			  -> 	return False
 			
-		 _ -> return Nothing
+		 _ -> return False
 
 	| otherwise
-	= return Nothing
+	= return False
 
 
 -- | Get the fetter we need to add to the graph to ensure that the effect

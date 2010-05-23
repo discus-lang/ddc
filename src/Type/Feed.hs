@@ -14,6 +14,7 @@ import Type.State
 import Type.Class
 import Type.Util
 import Type.Link
+import Type.Dump		()
 import Util
 import DDC.Main.Error
 import qualified Data.Map	as Map
@@ -22,7 +23,7 @@ import qualified Data.Sequence	as Seq
 
 stage	= "Type.Feed"
 
-debug	= False
+debug	= True
 trace ss
  = when debug $ traceM ss
 
@@ -264,14 +265,14 @@ addFetter
 --	class which they constrain.
 addFetter src f@(FConstraint vFetter [t])
  = do	
-	trace	$ "    * addFetter: " % f	% "\n\n"
+	trace	$ "    * addFetter: " % f	% "\n"
 
 	-- The target type t could be a TVar or a TClass
 	--	Use feedType to make sure it's a TClass
 	cid		<- feedType src t
 	
 	-- check what fetters are already there
-	Just cls	<- lookupClass cid
+	Just cls@Class{} <- lookupClass cid
 	
 	case Map.lookup vFetter (classFetters cls) of
 
