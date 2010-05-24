@@ -12,6 +12,10 @@ export	getArgs
 	argCount
 	getArgValue
 
+
+effect !Environment :: !
+
+
 foreign import "_ddcArgCount"
  argCountU :: Int32#
  
@@ -33,7 +37,7 @@ foreign import "(void *)"
  	:: String# -> Ptr# Void#
 
 
-getEnv :: String -> Maybe String
+getEnv :: String -(!e1)>  Maybe String :- !e1 = !Environment
 getEnv name
  | SChunk flat_name	<- (copy name).flatten
  = do	s = getEnvU flat_name.danger_string
@@ -41,10 +45,10 @@ getEnv name
          false# -> Just (SChunk (box&{FlatString} s))
          true# -> Nothing
 
-getArgs :: Unit -> [String]
+getArgs :: Unit -(!e1)> [String] :- !e1 = !Environment
 getArgs ()
  = map getArgValue [ 1 .. argCount ]
 
-getProgName :: Unit -> String
+getProgName :: Unit -(!e1)> String :- !e1 = !Environment
 getProgName ()
  = getArgValue 0
