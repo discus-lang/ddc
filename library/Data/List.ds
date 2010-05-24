@@ -67,7 +67,7 @@ export
 	concatStrings;
 	
 	-- Int Utils ------------------
---	pow;
+	pow;
 }
 	
 import	Base
@@ -722,7 +722,7 @@ concatStrings (str : rest)
 
 -- Int Utils --------------------------------------------------------------------------------------
 -- | Raise this int to a power.
--- pow :: Int -> Int -> Int;
--- pow x n		= product $ replicate n x
+pow :: Int -> Int -> Int;
+pow x n		= product $ replicate n x
 
 
