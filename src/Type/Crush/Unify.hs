@@ -3,21 +3,19 @@
 -- | Unify multiple types in an equivalence class.
 module Type.Crush.Unify
 	( crushUnifyInClass
-	, isShallowConflict 
+	, isShallowConflict
 	, addErrorConflict )
 where
 import Type.Exp
 import Type.Builtin
 import Type.State
 import Type.Class
+import Type.Error
+import DDC.Solve.Trace
 import Util
 import DDC.Main.Error
 import qualified Data.Set	as Set
--- import Type.Location
--- import Type.Builtin
--- import Type.Error
--- import Type.Util
--- import Type.Feed
+
 
 debug	= False
 stage	= "Type.Crush.Unify"
@@ -119,13 +117,9 @@ crushUnifyInClass_merge cid cls@Class{} queue@((n1, _):_)
 
 	-- if none of the previous rules matched then we've got a type error in the graph.
 	| otherwise
- 	= do	panic stage $ vcat
-			[ ppr "crushUnifyClass_merge: type error\n"
-			, ppr queue ]
-{-		addErrorConflict cidT c 
-		return $ TError (kindOfType_orDie t) 
-				(TypeErrorUnify $ classQueue c)
--}
+ 	= do	addErrorConflict cid cls
+		return NError
+
 
 pushIntoNewClass kind (node, src)
  = do	cid	<- allocClass kind 
@@ -167,22 +161,25 @@ addErrorConflict  cid cls
 
 
 -- | add an error recording that these two types conflict.
-addErrorConflict' cid c ((t1, s1), (t2, s2))
- = panic stage $ "addErrorConflict'"
+addErrorConflict' cid cls ((node1, src1), (node2, src2))
+ = do	type1	<- getTypeOfNodeAsSquid (classKind cls) node1
+	type2	<- getTypeOfNodeAsSquid (classKind cls) node2
+	
 	-- add an error to the error list.
-{-	addErrors 
+	addErrors 
 		[ ErrorUnifyCtorMismatch 
-			{ eCtor1	= t1
-			, eTypeSource1	= s1
-			, eCtor2	= t2
-			, eTypeSource2	= s2}]
+			{ eCtor1	= type1
+			, eTypeSource1	= src1
+			, eCtor2	= type2
+			, eTypeSource2	= src2}]
 
 	-- mark the class in the graph that contains the error.
 	updateClass cid
-		c { classType	= Just $ NError }
+		cls { classType	= Just $ NError }
 
 	return ()
--}
+
+
 
 -- | check whether two types conflict on their outermost constructor.
 isShallowConflict :: Node -> Node -> Bool
@@ -203,5 +200,5 @@ isShallowConflict t1 t2
 		
 	| otherwise
 	= True
-	
+
 	

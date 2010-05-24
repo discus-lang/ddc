@@ -6,12 +6,12 @@ ddc: ERROR
         we were using this type scheme:
             ref
               :: forall tTS4
-              .  Base.Ref %108 (tTS4 -> tTS4)
+              .  Base.Ref %118 (tTS4 -> tTS4)
 
         but a new
-              constraint: Base.Mutable %108
-         from the use of: (#=)
-                      at: ./test/15-Typing/Closure/T84-LateExport/Main.ds:7:16
+              constraint: Base.Mutable %118
+         from the use of: f
+                      at: ./test/15-Typing/Closure/T84-LateExport/Main.ds:8:16
 
         was discovered, which means 'tTS4' was not actually
         safe to generalise.

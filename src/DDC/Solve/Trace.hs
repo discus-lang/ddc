@@ -43,7 +43,8 @@ module DDC.Solve.Trace
 	( traceType
 	, traceTypeAsSquid
 	, lookupTypeOfCid
-	, lookupTypeOfCidAsSquid)
+	, lookupTypeOfCidAsSquid
+	, getTypeOfNodeAsSquid)
 where
 import Type.Exp
 import Type.Builtin
@@ -80,6 +81,10 @@ traceTypeAsSquid cid
 lookupTypeOfCidAsSquid :: ClassId -> S.SquidM (Maybe Type)
 lookupTypeOfCidAsSquid cid
 	= runTraceAsSquid (lookupTypeOfCid cid)
+
+getTypeOfNodeAsSquid :: Kind -> Node -> S.SquidM Type
+getTypeOfNodeAsSquid kind node
+	= runTraceAsSquid (getTypeOfNode kind node)
 
 
 -- Trace ------------------------------------------------------------------------------------------
@@ -142,7 +147,7 @@ traceFromCid' cid
 	 Class	{ classType 	= Just node
 		, classKind 	= kind }
 	  -> do	
-		Just t'		<- lookupTypeOfCidWithClass cid cls kind node
+		t'		<- getTypeOfNode kind node
 		let t		= toConstrainFormT t'
 
 		-- Split up the info from this type and add it to the state
@@ -295,41 +300,48 @@ lookupTypeOfCid cid
 	case cls of
 	 Class 	{ classType 	= Just node 
 		, classKind	= kind }
-	  	-> lookupTypeOfCidWithClass cid cls kind node 
+	  	-> liftM Just $ getTypeOfNode kind node 
 	
 	 _ 	-> return Nothing
 	
-lookupTypeOfCidWithClass cid cls kind node
+
+-- | Get the `Type` corresponding to a `Node.
+getTypeOfNode 
+	:: Kind 		-- ^ The kind of the node.
+	-> Node 		-- ^ The node to convert.
+	-> TraceM Type
+
+getTypeOfNode kind node
  = case node of
 	NBot
-	 ->	return $ Just $ TSum kind []
+	 ->	return $ TSum kind []
 
 	NVar v	
-	 -> 	return $ Just $ TVar kind v
+	 -> 	return $ TVar kind v
 	
 	NCon tc	
-	 -> 	return $ Just $ TCon tc
+	 -> 	return $ TCon tc
 	
 	NApp cid1 cid2
 	 -> do	t1	<- loadSimpleType cid1
 		t2	<- loadSimpleType cid2
-		return $ Just $ TApp t1 t2
+		return $ TApp t1 t2
 			
 	NSum cids
 	 -> do	ts	<- mapM loadSimpleType $ Set.toList cids
-		return $ Just $ TSum kind ts
+		return $ TSum kind ts
 		
 	NScheme t
 	 -> do	t'	<- sinkCidsInType t
-		return $ Just $ t'
+		return $ t'
 	
 	-- TODO: Get the real error here.	
 	NError
-	 -> 	return $ Just $ TError kind $ TypeErrorUnify []
+	 -> 	return $ TError kind TypeError
 		
 	NFree v t
 	 -> do	t'	<- sinkCidsInType t
-		return $ Just $ TFree v t'
+		return $ TFree v t'
 		
 
 -- | If this class contains a simple type like TCon or tBot, then return that, 

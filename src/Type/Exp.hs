@@ -162,7 +162,7 @@ data Bind
 --	Used in the TError constructor of Type.
 --	Used during type inference only.
 data TypeError
-	= TypeErrorUnify [Type]		-- ^ types that couldn't be unified
+	= TypeError			-- ^ types that couldn't be unified, or some other problem.
 	| TypeErrorLoop	 Type Type	-- ^ a recursive type equation 
 					--	(mu t1. t2), 	where t1 can appear in t2.
 					--			t1 is a TClass or a TVar.
