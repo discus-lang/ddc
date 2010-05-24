@@ -1,15 +1,15 @@
 ddc: ERROR
-./test/15-Typing/Unification/DefDef/Test.ds:8:14
+./test/15-Typing/Unification/DefDef/Test.ds:8:10
     Type mismatch during unification.
-          cannot match: Base.String
-                  with: Base.Int32
+          cannot match: Base.Int32
+                  with: Base.String
 
-              the use of: f2
-                 at type: Base.String
-                      at: ./test/15-Typing/Unification/DefDef/Test.ds:8:14
-
-        conflicts with, 
               the use of: f1
                  at type: Base.Int32
                       at: ./test/15-Typing/Unification/DefDef/Test.ds:8:10
+
+        conflicts with, 
+              the use of: f2
+                 at type: Base.String
+                      at: ./test/15-Typing/Unification/DefDef/Test.ds:8:14
 

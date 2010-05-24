@@ -1,10 +1,10 @@
 ddc: ERROR
 ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
     Conflicting region constraints.
-               constraint: Base.Const %117
+               constraint: Base.ConstT *8
         which purifies
               the use of: (+)
-             with effect: Base.!ReadT *8
+             with effect: !ReadT *8
                       at: ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:21
         due to
               the use of: suspend2

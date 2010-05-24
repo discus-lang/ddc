@@ -1,17 +1,12 @@
 ddc: ERROR
-./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:23
+./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:8
     Conflicting region constraints.
-               constraint: Base.Const %100
-        which purifies
-              the use of: succ
-             with effect: Base.!Read %132
-                      at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:18
-        due to
-              the use of: suspend1
-                      at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:9:23
+              constraint: Base.Const %106
+         from the use of: x
+                      at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:8
 
      conflicts with,
-              constraint: Base.MutableT *162
+              constraint: Base.MutableT *173
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:16
 

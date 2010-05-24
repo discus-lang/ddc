@@ -1,12 +1,12 @@
 ddc: ERROR
-./test/15-Typing/Purity/ConstWrite/Test.ds:13:18
+./test/15-Typing/Purity/ConstWrite/Test.ds:16:8
     Conflicting region constraints.
-              constraint: Base.Const %151
-         from the use of: addS2
-                      at: ./test/15-Typing/Purity/ConstWrite/Test.ds:13:18
+              constraint: Base.Const %155
+         from the use of: a
+                      at: ./test/15-Typing/Purity/ConstWrite/Test.ds:16:8
 
      conflicts with,
-              constraint: Base.MutableT *209
-         from the use of: (:=)
-                      at: ./test/15-Typing/Purity/ConstWrite/Test.ds:15:16
+              constraint: Base.Mutable %155
+         from the use of: a
+                      at: ./test/15-Typing/Purity/ConstWrite/Test.ds:16:8
 

@@ -1,15 +1,15 @@
 ddc: ERROR
 ./test/15-Typing/Unification/FunLess/Test.ds:6:15
     Type mismatch during unification.
-          cannot match: *111 $98
-                  with: *143 %144
+          cannot match: *125 !113
+                  with: Base.Int32
 
               the use of: (+)
-                 at type: *111 $98
+                 at type: *125 !113
                       at: ./test/15-Typing/Unification/FunLess/Test.ds:6:15
 
         conflicts with, 
           literal value 3i32
-                 of type: *143 %144
+                 of type: Base.Int32
                       at: ./test/15-Typing/Unification/FunLess/Test.ds:6:17
 
