@@ -19,7 +19,7 @@ import qualified Data.Set	as Set
 -- import Type.Util
 -- import Type.Feed
 
-debug	= True
+debug	= False
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 

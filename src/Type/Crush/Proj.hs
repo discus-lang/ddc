@@ -26,7 +26,7 @@ import DDC.Solve.Walk
 import DDC.Var
 import qualified Data.Map	as Map
 
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 
 

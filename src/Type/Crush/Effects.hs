@@ -204,8 +204,7 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 			cidsEff' <- mapM (feedType src) effs'			
 			crushUpdate cid cidsEff' src
 			
-		 Nothing	
-		  ->	crushMaybeLater cid
+		 _ ->	crushMaybeLater cid
 			
 	| nCon		== nDeepWrite
 	= crushMaybeLater cid

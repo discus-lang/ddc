@@ -24,7 +24,7 @@ import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
 stage	= "Type.Crush.Fetter"
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 
 -- | Try and crush any single parameter fetters acting on this
