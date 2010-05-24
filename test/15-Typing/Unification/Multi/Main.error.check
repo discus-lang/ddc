@@ -4,10 +4,8 @@ ddc: ERROR
           cannot match: % -> *
                   with: $ -> *
 
-
 ./test/15-Typing/Unification/Multi/Main.ds:9:12
     Kind mismatch during unification.
           cannot match: %
                   with: $
-
 
