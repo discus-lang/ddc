@@ -18,6 +18,7 @@ import Type.Util
 import Type.Error
 import Type.Class
 import Type.State
+import Type.Dump		()
 import Constraint.Exp
 import Util
 import DDC.Solve.Trace
@@ -25,7 +26,7 @@ import DDC.Solve.Walk
 import DDC.Var
 import qualified Data.Map	as Map
 
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 
 
@@ -61,7 +62,11 @@ crushProjInClass cid
 	 -- The unifier needs to unify the nodes in this class before we know
 	 --	what the object type will be.
 	 Class { classType = Nothing }
-	  -> do	trace $ ppr "  * Object class not unified yet, deferring.\n\n"
+	  -> do	trace 	$ ppr "  * Object class not unified yet, deferring.\n"
+			% clsObj % "\n\n"
+
+		-- Reactivate the class so we get called again during the next grind.
+		activateClass cid
 	 	return Nothing
 
 	 -- Ok, we've got an object type, carry on.
@@ -86,8 +91,6 @@ crushProj_withObj cid src
 	= do	trace $ ppr "  * We don't have an object type, deferring.\n\n"
 
 		-- Reactivate the class so we get called again during the next grind.
-		--	This hasn't been done automatically because we haven't
-		--	modified it yet.
 		activateClass cid
 		return Nothing
 

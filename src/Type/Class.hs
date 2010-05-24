@@ -37,6 +37,7 @@ import Type.Location
 import Type.State
 import Type.Plate.Collect
 import Type.Util
+import Type.Dump		()
 import Util
 import DDC.Main.Error
 import DDC.Solve.Sink
@@ -215,6 +216,7 @@ addToClass2 cid' src kind node graph
 			
 		activateClass cid
 		linkVar cid node
+		
 
 
 linkVar cid tt
@@ -364,6 +366,7 @@ mergeClasses cids_
 			$ "mergeClasses: classes have differing kinds\n"
 			% "    cids = " % cids 	% "\n"
 			% "    ks   = " % ks	% "\n"
+			% "    cs\n"	% vcat cs
 	
 mergeClasses2 cids cs
  = do	-- The class with the lowest cid gets all the items.

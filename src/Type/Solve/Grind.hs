@@ -19,7 +19,7 @@ import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-debug	= False
+debug	= True
 stage	= "Type.Solve.Grind"
 trace s = when debug $ traceM s
 
@@ -66,8 +66,7 @@ solveGrindStep
 
 	-- make sure all classes are unified
 	progressUnify
-		<- liftM or
-		$  mapM crushUnifyInClass active
+		<- mapM crushUnifyInClass active
 
 	errors	<- gets stateErrors
 	when (length errors > 0) $ do
@@ -80,15 +79,17 @@ solveGrindStep
  	
 	-- split classes into the ones that made progress and the ones that
 	--	didn't. This is just for the trace stmt below.
+	let activeUnify		   = zip active progressUnify
 	let activeProgress	   = zip active progressCrush
-	let classesWithProgress	   = [cid | (cid, True)  <- activeProgress]
-	let classesWithoutProgress = [cid | (cid, False) <- activeProgress]
+	let classesWithProgress	   = [cid | (cid, True)  <- activeUnify ++ activeProgress]
+	let classesWithoutProgress = [cid | (cid, False) <- activeUnify ++ activeProgress]
 	
 	trace	$ "    classes that made progress:\n" 
 		%> classesWithProgress % "\n"
 
 	 	% "    classes without progress:\n" 
 		%> classesWithoutProgress % "\n"
+
 
 	let qsMore	= concat qssMore
 	errs		<- gets stateErrors
@@ -106,7 +107,7 @@ solveGrindStep
 		= return (qsMore ++ [CGrind])
 		
 		-- if we've made progress then keep going.
-		| progressUnify || or progressCrush
+		| or progressUnify || or progressCrush
 		= solveGrindStep 
 		
 		-- no progress, all done.
