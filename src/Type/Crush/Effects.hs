@@ -18,7 +18,7 @@ import Control.Monad
 import Data.Maybe
 import qualified Data.Set	as Set
 
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effects"
 
@@ -166,9 +166,9 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 			where Just tClass = takeTClassOfClass cls
 		
 		-- If the effect uses an abstract constructor like (ReadT (t a)) then we can't
-		-- crush it yet. We can't build (ReadT t) because t has the wrong kind, and we
-		-- can't crush to simply (ReadT a) because t might expand to something like
-		-- (List %r1), and we'll loose the effect on %r1.1
+		-- crush it yet. We can't build (ReadT t) because t has the wrong kind. We also
+		-- can't crush to (ReadT a) because if t turns into to something like (List %r1),
+		-- then we'll loose the effect on %r1.
 		case mClsApps of
 		 Just (clsCon : clsArgs)
 		  | Just NCon{}	<- classType clsCon

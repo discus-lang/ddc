@@ -287,7 +287,9 @@ addFetter src f@(FConstraint vFetter [t])
 	 -- This is a new fetter. 
 	 Nothing
 	  -> do	modifyClass cid $ \c -> c {
-			classFetters = Map.singleton vFetter (Seq.singleton src) }
+			classFetters = Map.insertWith (Seq.><) vFetter 
+					(Seq.singleton src) (classFetters c) }
+		
 		activateClass cid
 		return True
 							

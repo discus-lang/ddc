@@ -9,8 +9,8 @@
 --            ,  *1 = Int32 %r1
 --            ,  *2 = (->) *1 
 --            ...
---	      ,  $2 :> x : *4
---	      ,  !3 :> {!5, !6}
+--            ,  $2 :> x : *4
+--            ,  !3 :> {!5, !6}
 --   @
 --
 --   Use Type.Pack to pack these constraints into a normal form type. We separate
@@ -22,12 +22,13 @@
 --   Instead of returning a type like:
 --
 --   @
---	  *1 :- ... 
---	     , $2 :> x : *4
---	     , $3 :> x : *4
---
+--        *1 :- ...
+--           , $2 :> x : *4
+--           , $3 :> x : *4
 --   @
+--
 --	It's better to use:
+--
 --   @
 --	  *1 :- ... 
 --	     , $2 :> x : *4
@@ -392,10 +393,10 @@ sinkCidsInFetter tt
 -- Monad ------------------------------------------------------------------------------------------
 -- | The state of the tracer.
 data TraceS
-	= TraceS
+	= TraceS {
 
 	-- | The type graph.
-	{ stateClasses		:: IOArray ClassId Class
+	  stateClasses		:: IOArray ClassId Class
 
 	-- | Cids that we've already visited.
 	, stateCidsVisited	:: Set ClassId

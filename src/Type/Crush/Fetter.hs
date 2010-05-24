@@ -72,9 +72,6 @@ crushFetterWithClass cid cls
 			% "    fetters:\n" 		%> fetterSrcs	% "\n"
 
 		-- Try to crush each fetter into smaller pieces.
-		-- While crushing, we leave all the original fetters in the class, and only add
-		-- the new fetters back when we're done. The fetters in the returned list could
-		-- refer to other classes as well as this one.
 		progress	<- liftM or
 				$ mapM (crushFetterSingle cid cls nNode) fsSrc
 		
@@ -94,8 +91,7 @@ crushFetterSingle cid cls node
 
 	-- HeadLazy
 	| vFetter == primLazyH
-	= do	trace	$ ppr "  * crushing LazyH\n"
-		mclsHead <- takeHeadDownLeftSpine cid
+	= do	mclsHead <- takeHeadDownLeftSpine cid
 		case mclsHead of
 			Just clsHead	
 			 -> do	deleteSingleFetter cid vFetter
@@ -104,6 +100,11 @@ crushFetterSingle cid cls node
 				let tHead	= TClass (classKind clsHead) (classId clsHead)
 				let headFetter	= FConstraint primLazy [tHead]
 				addFetter src headFetter
+
+				trace	$ vcat
+					[ ppr "  * crushing LazyH\n"
+					, "    headFetter = " % headFetter ]
+				
 				return True
 				
 			_ -> return False
@@ -219,7 +220,6 @@ getPurifier cid cls nodeEff fetter srcFetter
 		Just clsArgs	<- liftM sequence $ mapM lookupClass cidArgs
 		let tsArgs	= [TClass (classKind c) (classId c) | c <- clsArgs]
 		
-
 		Just srcEff	 <- lookupSourceOfNode nodeEff cls
 		let ePurifier	=  getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 		
@@ -257,6 +257,7 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 	, [_]	<- clsArgs
 	= Right Nothing 
 	
+	-- This effect can't be purified.
 	| Just nCon@(NCon tc)	<- classType clsCon
 	= Left 	$ ErrorCannotPurify
 		{ eEffect		= makeTApp (TCon tc : tsArgs)
