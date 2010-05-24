@@ -1,29 +1,25 @@
 ddc: ERROR
+./test/15-Typing/Unification/Shape2/Main.ds:5:10
+    Kind mismatch during unification.
+          cannot match: % -> *
+                  with: $ -> *
+
+
+./test/15-Typing/Unification/Shape2/Main.ds:5:10
+    Kind mismatch during unification.
+          cannot match: %
+                  with: $
+
+
 ./test/15-Typing/Unification/Shape2/Main.ds:5:25
-    Type mismatch during unification.
-          cannot match: *119 $120
-                  with: *66 %59
+    Kind mismatch during unification.
+          cannot match: $ -> *
+                  with: % -> *
 
-              the use of: (-)
-                 at type: *119 $120
-                      at: ./test/15-Typing/Unification/Shape2/Main.ds:5:25
 
-        conflicts with, 
-              the use of: println
-                 at type: *66 %59
-                      at: ./test/15-Typing/Unification/Shape2/Main.ds:5:10
+./test/15-Typing/Unification/Shape2/Main.ds:5:25
+    Kind mismatch during unification.
+          cannot match: $
+                  with: %
 
-./test/15-Typing/Unification/Shape2/Main.ds:5:27
-    Type mismatch during unification.
-          cannot match: *148 %4
-                  with: *117 $118
-
-              the use of: x
-                 at type: *148 %4
-                      at: ./test/15-Typing/Unification/Shape2/Main.ds:5:27
-
-        conflicts with, 
-              the use of: (-)
-                 at type: *117 $118
-                      at: ./test/15-Typing/Unification/Shape2/Main.ds:5:25
 

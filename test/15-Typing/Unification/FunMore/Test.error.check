@@ -1,14 +1,13 @@
 ddc: ERROR
 ./test/15-Typing/Unification/FunMore/Test.ds:6:10
-    Type mismatch during unification.
-          cannot match: *76 %77
-                  with: *96 $101
+    Kind mismatch during unification.
+          cannot match: % -> *
+                  with: $ -> *
 
-              the use of: f1
-                 at type: *76 %77
-                      at: ./test/15-Typing/Unification/FunMore/Test.ds:6:10
 
-        conflicts with, 
-          function application
-                      at: ./test/15-Typing/Unification/FunMore/Test.ds:6:10
+./test/15-Typing/Unification/FunMore/Test.ds:6:10
+    Kind mismatch during unification.
+          cannot match: %
+                  with: $
+
 

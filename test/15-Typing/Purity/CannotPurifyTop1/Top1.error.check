@@ -3,7 +3,7 @@ ddc: ERROR
     Cannot purify effect `System.Console.!Console'.
 
               the use of: print
-             with effect: System.Console.!Console
+                 of type: System.Console.!Console
                       at: ./test/15-Typing/Purity/CannotPurifyTop1/Top1.ds:3:15
 
      conflicts with,

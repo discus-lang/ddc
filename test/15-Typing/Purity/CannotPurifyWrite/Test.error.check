@@ -3,7 +3,7 @@ ddc: ERROR
     Cannot purify effect `!WriteT *16'.
 
               the use of: (:=)
-             with effect: !WriteT *16
+                 of type: !WriteT *16
                       at: ./test/15-Typing/Purity/CannotPurifyWrite/Test.ds:5:9
 
      conflicts with,

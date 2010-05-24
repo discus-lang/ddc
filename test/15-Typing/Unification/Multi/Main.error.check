@@ -1,14 +1,13 @@
 ddc: ERROR
-./test/15-Typing/Unification/Multi/Main.ds:11:19
-    Type mismatch during unification.
-          cannot match: *283 $287
-                  with: *225 %226
+./test/15-Typing/Unification/Multi/Main.ds:9:12
+    Kind mismatch during unification.
+          cannot match: % -> *
+                  with: $ -> *
 
-          function application
-                      at: ./test/15-Typing/Unification/Multi/Main.ds:11:19
 
-        conflicts with, 
-              the use of: (+)
-                 at type: *225 %226
-                      at: ./test/15-Typing/Unification/Multi/Main.ds:9:12
+./test/15-Typing/Unification/Multi/Main.ds:9:12
+    Kind mismatch during unification.
+          cannot match: %
+                  with: $
+
 

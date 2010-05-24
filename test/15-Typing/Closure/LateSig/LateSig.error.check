@@ -5,7 +5,7 @@ ddc: ERROR
                   with: Base.Char32
 
               the use of: box
-                 at type: Base.Int32
+                 of type: Base.Int32
                       at: ./test/15-Typing/Closure/LateSig/LateSig.ds:15:8
 
         conflicts with, 

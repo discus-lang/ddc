@@ -46,7 +46,11 @@ data Class
 		  classId		:: ClassId
 
 		-- | The kind of this class.
-		, classKind		:: Kind				
+		, classKind		:: Kind	
+		
+		-- | Why this class was allocated. 
+		--   This can be used as an overall source of the classTypeSources list is empty.
+		, classSource		:: TypeSource			
 
 		-- | A (non-unique) name for this class.
 		--	This is taken as one of the vars from the nodes list, or generated fresh if 
@@ -82,10 +86,11 @@ data Class
 		deriving (Show)
 
 
-classInit cid kind
+classInit cid kind src
 	= Class
 	{ classId		= cid
 	, classKind		= kind
+	, classSource		= src
 	, className		= Nothing
 	, classQuant		= False
 	, classType		= Nothing

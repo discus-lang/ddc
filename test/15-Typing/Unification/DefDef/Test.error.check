@@ -5,11 +5,11 @@ ddc: ERROR
                   with: Base.String
 
               the use of: f1
-                 at type: Base.Int32
+                 of type: Base.Int32
                       at: ./test/15-Typing/Unification/DefDef/Test.ds:8:10
 
         conflicts with, 
               the use of: f2
-                 at type: Base.String
+                 of type: Base.String
                       at: ./test/15-Typing/Unification/DefDef/Test.ds:8:14
 

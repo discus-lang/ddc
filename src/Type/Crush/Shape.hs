@@ -162,7 +162,7 @@ pushTemplate tTemplate srcShape cMerge
 	| Class { classType = Just node }	<- cMerge
 	, isNBot node
 	= do	
-		tPush	<- freshenNode tTemplate
+		tPush	<- freshenNode srcShape tTemplate
 		trace 	$ "  - merge class\n"
 			% "    tPush = " % tPush	% "\n"		
 
@@ -185,22 +185,22 @@ pushTemplate tTemplate srcShape cMerge
 
 
 -- | replace all the free vars in this type with new ones
-freshenNode :: Node -> SquidM Node
-freshenNode node
+freshenNode :: TypeSource -> Node -> SquidM Node
+freshenNode src node
  = do	let cidsFree	= Set.toList $ cidsOfNode node
- 	cidsFresh	<- mapM freshenCid cidsFree
+ 	cidsFresh	<- mapM (freshenCid src) cidsFree
 	let sub		= Map.fromList $ zip cidsFree cidsFresh
 	return	$ subNodeCidCid sub node
 
 
-freshenCid :: ClassId -> SquidM ClassId
-freshenCid cid
+freshenCid :: TypeSource -> ClassId -> SquidM ClassId
+freshenCid src cid
  = do	Just Class { classKind = k }	
  		<- lookupClass cid
  
- 	cid'	<- allocClass k
+ 	cid'	<- allocClass src k
 	updateClass cid'
-		(classInit cid' k)
+		(classInit cid' k src)
 		{ classType = Just nBot }
 
 	return	cid'

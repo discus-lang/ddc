@@ -13,9 +13,7 @@ module Type.Location
 	, dispSourceValue
 	, dispFetterSource)
 where
-import Type.Util.Kind
 import Type.Exp
-import Type.Builtin
 import Shared.VarPrim
 import DDC.Solve.Node
 import DDC.Main.Pretty
@@ -231,7 +229,7 @@ dispSourcePos ts
 -- Display -----------------------------------------------------------------------------------------
 -- | These are the long versions of source locations that are placed in error messages
 
-dispTypeSource :: Type -> TypeSource -> PrettyM PMode
+dispTypeSource :: Pretty tt PMode => tt -> TypeSource -> PrettyM PMode
 dispTypeSource tt ts
 	| TSV sv	<- ts
 	= dispSourceValue tt sv
@@ -245,15 +243,15 @@ dispTypeSource tt ts
 	| TSI (SICrushedFS c f ts') <- ts
 	= dispTypeSource tt ts'
 
---	| TSI (SICrushedES c eff effSrc) <- ts
---	= dispTypeSource eff effSrc
+	| TSI (SICrushedES c eff effSrc) <- ts
+	= dispTypeSource eff effSrc
 
 	-- hrm.. this shouldn't happen
 	| otherwise
 	= panic stage
 		("dispTypeSource: no match for " % ts % "\n")
 
-
+{-
 -- A fn make showing error messages easier
 --	whereas 'at' / 'with' refers to just a small part of it.
 atKind :: Type -> String
@@ -264,10 +262,10 @@ atKind tt
 		| resultKind k == kEffect	= "     with effect: "
 		| otherwise	= panic stage $ "atKind " % k
 	  in result
-
+-}
 	
 -- | Show the source of a type error due to this reason
-dispSourceValue :: Type -> SourceValue -> PrettyM PMode
+dispSourceValue :: Pretty tt PMode => tt -> SourceValue -> PrettyM PMode
 dispSourceValue tt sv
  = case sv of
 	SVLambda sp 	
@@ -303,13 +301,13 @@ dispSourceValue tt sv
 	 			TJIndex v	-> TJIndex  v { varModuleId = ModuleIdNil }
 	 			TJIndexR v	-> TJIndexR v { varModuleId = ModuleIdNil }
 
-	    in	   "      projection '" % cJ % "'\n"
-		%  atKind tt		% tt	% "\n"
+	    in	   "      projection '" % cJ 	% "'\n"
+		%  "         of type: "	% tt	% "\n"
 		%  "              at: " % sp	% "\n"
 	
 	SVInst sp var
 		-> "      the use of: " % var 	% "\n"
-		%  atKind tt 		% tt	% "\n"
+		%  "         of type: "	% tt	% "\n"
 		%  "              at: " % sp	% "\n"
 		
 	SVLiteralMatch sp lit

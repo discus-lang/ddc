@@ -4,7 +4,7 @@ ddc: ERROR
                constraint: Base.ConstT *8
         which purifies
               the use of: (+)
-             with effect: !ReadT *8
+                 of type: !ReadT *8
                       at: ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:21
         due to
               the use of: suspend2

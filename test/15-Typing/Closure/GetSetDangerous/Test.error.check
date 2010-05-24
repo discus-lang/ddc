@@ -5,7 +5,7 @@ ddc: ERROR
                   with: Base.String
 
               the use of: setB
-                 at type: Base.Int32
+                 of type: Base.Int32
                       at: ./test/15-Typing/Closure/GetSetDangerous/Test.ds:28:8
 
         conflicts with, 

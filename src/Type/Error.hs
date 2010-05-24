@@ -39,11 +39,8 @@ data Error
 		
 	-- Kind mismatch
 	| ErrorUnifyKindMismatch
-		{ eType1	:: Type
-		, eKind1	:: Kind
+		{ eKind1	:: Kind
 		, eTypeSource1	:: TypeSource
-		
-		, eType2	:: Type
 		, eKind2	:: Kind
 		, eTypeSource2	:: TypeSource }
 
@@ -168,22 +165,20 @@ instance Pretty Error PMode where
  -- Kind Mismatch
  ppr err@(ErrorUnifyKindMismatch
 		{ eKind1	= k1
-		, eType1	= t1
 		, eTypeSource1	= ts1
 		
 		, eKind2	= k2
-		, eType2	= t2
 		, eTypeSource2	= ts2 })
 	= (dispSourcePos ts1)						% "\n"
 	% "    Kind mismatch during unification.\n"
-	% "          cannot match: " % t1				% "\n"
-	% "                  with: " % t2				% "\n"
-	% "\n"
-	%> dispTypeSource t1 ts1
+	% "          cannot match: " % k1				% "\n"
+	% "                  with: " % k2				% "\n"
+{-	% "\n"
+	%> dispKindSource k1 ts1
 	% "\n"
 	% "       conflicts with, "					% "\n"
-	%> dispTypeSource t2 ts2
-
+	%> dispKindSource k2 ts2
+-}
  -- Infinite types.
  ppr err@(ErrorInfiniteType
  		{ eVar		= var 

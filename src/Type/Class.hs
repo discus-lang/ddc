@@ -37,6 +37,7 @@ import Type.Location
 import Type.State
 import Type.Plate.Collect
 import Type.Util
+import Type.Error
 import Type.Dump		()
 import Util
 import DDC.Main.Error
@@ -92,10 +93,11 @@ expandGraph minFree
 
 -- | Allocate a new class in the type graph.
 allocClass 	
-	:: Kind			-- The kind of the class.
+	:: TypeSource
+	-> Kind			-- The kind of the class.
 	-> SquidM ClassId
 
-allocClass kind
+allocClass src kind
  = do	expandGraph	1
 
 	graph		<- gets stateGraph
@@ -103,7 +105,7 @@ allocClass kind
  	let cid		= ClassId classIdGen
 
 	liftIO 	$ writeArray (graphClass graph) cid
-		$ classInit cid kind
+		$ classInit cid kind src
 
 	let graph'	= graph
 			{ graphClassIdGen	= classIdGen + 1}
@@ -135,13 +137,13 @@ makeClassFromVar
 	-> Var			-- ^ The variable.
 	-> SquidM ClassId
 		
-makeClassFromVar tSource kind var
+makeClassFromVar src kind var
  = do	mCid		<- lookupVarToClassId var
    	case mCid of
    	 Just cid	-> return cid
 	 Nothing 
-	  -> do	cid	<- allocClass kind
-		addNameToClass cid tSource var kind
+	  -> do	cid	<- allocClass src kind
+		addNameToClass cid src var kind
 	     	return	cid
 
 
@@ -206,7 +208,7 @@ addToClass2 cid' src kind node graph
 	 = do	cls	<- liftIO (readArray (graphClass graph) cid)
 		case cls of
 		 ClassForward _ cid'' 	-> go cid''
-		 ClassUnallocated	-> update cid (classInit cid kind)
+		 ClassUnallocated	-> update cid (classInit cid kind src)
 		 Class{}		-> update cid cls
 		 	
 	update cid cls@Class{}
@@ -253,7 +255,7 @@ addNameToClass cid_ src v kind
 addNameToClass2 cid src node kind cls
  = case cls of
  	ClassUnallocated
-	 -> addNameToClass3 cid src node (classInit cid kind)
+	 -> addNameToClass3 cid src node (classInit cid kind src)
 
 	Class{}		
 	 -> addNameToClass3 cid src node cls
@@ -361,12 +363,9 @@ mergeClasses cids_
 	let ks	= map (\c@Class { classKind } -> classKind) cs
 	
 	case nub ks of
-	 [k]	-> mergeClasses2 cids cs 
-	 _	-> panic stage
-			$ "mergeClasses: classes have differing kinds\n"
-			% "    cids = " % cids 	% "\n"
-			% "    ks   = " % ks	% "\n"
-			% "    cs\n"	% vcat cs
+	 [k]		-> mergeClasses2 cids cs 
+	 (k1:k2:_)	-> mergeClasses_kindMismatch cids cs k1 k2
+	
 	
 mergeClasses2 cids cs
  = do	-- The class with the lowest cid gets all the items.
@@ -391,7 +390,25 @@ mergeClasses2 cids cs
 	addClassForwards cidL cidsH
 	
   	return	$ cidL
+
+mergeClasses_kindMismatch cids@(cid1:_) clss k1 k2
+ = do	let Just cls1	= find (\c -> classKind c == k1) clss
+	let Just cls2	= find (\c -> classKind c == k2) clss
 		
+	addErrors [ErrorUnifyKindMismatch
+			{ eKind1	= k1
+			, eTypeSource1	= classSource cls1
+			, eKind2	= k2
+			, eTypeSource2	= classSource cls2 }]
+			
+	return cid1
+			
+{-
+let ((node1, src1)
+	panic stage
+	$ "mergeClasses_kindMismatch\n"
+	% "    cs\n"	% vcat cs
+-}	
 
 -- | Clear the set of active classes.
 clearActive ::	SquidM (Set ClassId)

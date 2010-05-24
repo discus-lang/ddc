@@ -5,7 +5,7 @@ ddc: ERROR
                   with: Base.String
 
               the use of: (+)
-                 at type: Base.Int32
+                 of type: Base.Int32
                       at: ./test/15-Typing/Unification/Shape/Test.ds:7:6
 
         conflicts with, 

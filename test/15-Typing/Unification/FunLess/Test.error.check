@@ -5,7 +5,7 @@ ddc: ERROR
                   with: Base.Int32
 
               the use of: (+)
-                 at type: *125 !113
+                 of type: *125 !113
                       at: ./test/15-Typing/Unification/FunLess/Test.ds:6:15
 
         conflicts with, 

@@ -122,7 +122,7 @@ crushUnifyInClass_merge cid cls@Class{} queue@((n1, _):_)
 
 
 pushIntoNewClass kind (node, src)
- = do	cid	<- allocClass kind 
+ = do	cid	<- allocClass src kind 
 	addToClass cid src kind node
 	return cid
 	
