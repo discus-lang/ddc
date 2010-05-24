@@ -2,6 +2,13 @@
 import Data.Int
 import Data.Int32U
 import Data.String
+import Data.StringU
+import Data.FlatString
+import Data.List
+
+export	getArgs
+	getProgName
+        getEnv
 
 foreign import "_ddcArgCount"
  argCountU :: Int32#
@@ -14,3 +21,28 @@ foreign import "primArgValue"
 
 getArgValue ix 
  = boxString (getArgValueU (unboxInt32 ix))
+
+
+foreign import "getenv"
+ getEnvU :: String# -> String#
+
+foreign import "(void *)"
+ castStringToVoidPtr
+ 	:: String# -> Ptr# Void#
+
+
+getEnv :: String -> Maybe String
+getEnv name
+ | SChunk flat_name	<- (copy name).flatten
+ = do	s = getEnvU flat_name.danger_string
+	case primPtrVoid_eq (castStringToVoidPtr s) primPtrVoid_null of
+         false# -> Just (SChunk (box&{FlatString} s))
+         true# -> Nothing
+
+getArgs :: Unit -> [String]
+getArgs ()
+ = map getArgValue [ 1 .. argCount ]
+
+getProgName :: Unit -> String
+getProgName ()
+ = getArgValue 0
