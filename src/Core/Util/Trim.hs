@@ -206,6 +206,9 @@ trimClosureC_t quant rsData tt
 	--
 	TApp{}
 	 -> let result
+			| isEffect tt
+			= []
+
 			| Just (v, k, ts)	<- takeTData tt
 			= catMap down ts
 			
