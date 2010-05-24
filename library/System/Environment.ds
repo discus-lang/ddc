@@ -8,7 +8,8 @@ import Data.List
 
 export	getArgs
 	getProgName
-        getEnv
+	getEnv
+	argCount
 
 foreign import "_ddcArgCount"
  argCountU :: Int32#
