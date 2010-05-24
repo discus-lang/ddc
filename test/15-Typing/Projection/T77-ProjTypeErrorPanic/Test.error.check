@@ -1,15 +1,15 @@
 ddc: ERROR
-./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:3:8
+./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
     Type mismatch during unification.
-          cannot match: Base.Unit
-                  with: *56 *40
+          cannot match: *52 *40
+                  with: Base.Unit
 
+              the use of: (:)
+                 at type: *52 *40
+                      at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
+
+        conflicts with, 
           type signature for 'Test.example'
           which requires: Base.Unit
                       at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:3:8
-
-        conflicts with, 
-              the use of: (:)
-                 at type: *56 *40
-                      at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
 

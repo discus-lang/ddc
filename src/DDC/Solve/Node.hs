@@ -12,8 +12,10 @@ module DDC.Solve.Node
 	( Node		(..)
 
 	-- * Simple checks.
-	, isNVar
 	, isNBot
+	, isNVar
+	, isNCon
+	, isNApp
 	, isNSum
 
 	-- * (de)Construction
@@ -72,14 +74,6 @@ data Node
 
 
 -- Simple Checks ----------------------------------------------------------------------------------
--- | Check if a node is an NVar.
-isNVar :: Node -> Bool
-isNVar nn
- = case nn of
-	NVar{}	-> True
-	_	-> False
-
-
 -- | Check if a node is represents bottom.
 isNBot :: Node -> Bool
 isNBot nn 
@@ -87,6 +81,28 @@ isNBot nn
 	NBot		-> True
 	NSum ss		-> Set.null ss
 	_		-> False
+
+-- | Check if a node is an NVar.
+isNVar :: Node -> Bool
+isNVar nn
+ = case nn of
+	NVar{}	-> True
+	_	-> False
+
+-- | Check if a node is an NCon
+isNCon :: Node -> Bool
+isNCon nn
+ = case nn of
+	NCon{}	-> True
+	_	-> False
+
+-- | Check if a node is an NApp
+isNApp :: Node -> Bool
+isNApp nn
+ = case nn of
+	NApp{}	-> True
+	_	-> False
+
 
 -- | Check whether a node is an NSum.
 isNSum :: Node -> Bool

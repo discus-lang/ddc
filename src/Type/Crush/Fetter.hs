@@ -24,7 +24,7 @@ import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
 stage	= "Type.Crush.Fetter"
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 
 -- | Try and crush any single parameter fetters acting on this
@@ -89,7 +89,7 @@ crushFetterSingle
 crushFetterSingle cid cls node 
 	fsrc@(fetter@(FConstraint vFetter _), srcFetter)
 
-	-- HeadLazy
+	-- HeadLazy ---------------------------------------
 	| vFetter == primLazyH
 	= do	mclsHead <- takeHeadDownLeftSpine cid
 		case mclsHead of
@@ -109,7 +109,7 @@ crushFetterSingle cid cls node
 				
 			_ -> return False
 
-	-- DeepConst
+	-- DeepConst --------------------------------------
 	| vFetter == primConstT
 	= do	trace	$ ppr "  * crushing ConstT\n"
 		mApps	<- takeAppsDownLeftSpine cid
@@ -132,7 +132,7 @@ crushFetterSingle cid cls node
 		  -> return False
 		
 	
-	-- DeepMutable
+	-- DeepMutable ------------------------------------
 	| vFetter == primMutableT
 	= do	trace	$ ppr "  * crushing MutableT\n"
 		mApps	<- takeAppsDownLeftSpine cid
@@ -155,47 +155,45 @@ crushFetterSingle cid cls node
 		  -> return False
 
 
-	-- Pure
+	-- Pure -------------------------------------------
+	-- Apply the same constraint to all the cids in a sum.
 	| vFetter == primPure
-	= do	trace	$ vcat
-			[ ppr "  * crushing Pure" 
-			, "    node    = " % node ]
-			
-		case node of
+	, NSum cids	<- node
+	= do	let cidsList	= Set.toList cids
+		ks		<- mapM kindOfCid cidsList
+		let ts		= zipWith TClass ks cidsList
+		zipWithM addFetter
+			(repeat $ TSI $ SICrushedFS cid fetter srcFetter)
+			[FConstraint primPure [t] | t <- ts]
 
-		 -- Apply the same constraint to all the cids in a sum.
-		 NSum cids
-		  -> do	let cidsList	= Set.toList cids
-			ks		<- mapM kindOfCid cidsList
-			let ts		= zipWith TClass ks cidsList
-			zipWithM addFetter
-				(repeat $ TSI $ SICrushedFS cid fetter srcFetter)
-				[FConstraint primPure [t] | t <- ts]
+		trace $ "  * Sum " % ts % "\n"
 
-			trace $ "  * Sum " % ts % "\n"
+		return True
 
+	 -- When crushing purity fetters we must leave the original constraint in the graph.
+	| vFetter == primPure
+	, isNApp node || isNCon node
+	= do	-- Get the fetter that purifies this one, if any.
+		ePurifier 	<- getPurifier cid cls node fetter srcFetter
+		case ePurifier of
+		 Left err 
+		  -> do	addErrors [err]
+			return False
+		
+		 Right (Just (fPurifier, srcPurifier))
+		  -> do	addFetter srcPurifier fPurifier
 			return True
-
-		 -- When crushing purity fetters we must leave the original constraint in the graph.
-		 NApp{}
-		  -> do	-- Get the fetter that purifies this one, if any.
-			ePurifier 	<- getPurifier cid cls node fetter srcFetter
-			case ePurifier of
-			 Left err 
-			  -> do	addErrors [err]
-				return False
-			
-			 Right (Just (fPurifier, srcPurifier))
-			  -> do	addFetter srcPurifier fPurifier
-				return True
 							
-			 Right Nothing
-			  -> 	return False
+		 Right Nothing
+		  -> 	return False
 			
-		 _ -> return False
+	| vFetter == primPure
+	= return False
 
+	-- Some other Fetter ------------------------------
 	| otherwise
 	= return False
+
 
 
 -- | Get the fetter we need to add to the graph to ensure that the effect
