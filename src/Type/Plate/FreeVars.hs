@@ -73,10 +73,7 @@ instance FreeVars Type where
 	-- used in solver
 	TClass{}	-> empty
 	TError{}	-> empty
-	 
-	-- sugar
-	TElaborate ee t	-> freeVars t
-	
+	 	
 	-- core stuff
 	TVarMore k v t
 	 -> unions
@@ -97,9 +94,8 @@ instance FreeVars TyCon where
 	 -> Set.singleton v
 	
 	TyConEffect{}			-> Set.empty
-
-	TyConWitness { }		-> Set.empty
-
+	TyConWitness{}			-> Set.empty
+	TyConElaborate{}		-> Set.empty
 
 -- Kind --------------------------------------------------------------------------------------------
 instance FreeVars Kind where

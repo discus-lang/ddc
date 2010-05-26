@@ -90,6 +90,8 @@ tyConKind tyCon
 	TyConWitness { tyConWitnessKind }
 	 -> tyConWitnessKind	 
 
+	TyConElaborate { tyConElaborateKind }
+	 -> tyConElaborateKind
 
 -- Kind Functions ----------------------------------------------------------------------------------
 -- | Get the result of applying all the paramters to a kind.
@@ -207,7 +209,6 @@ kindOfType' tt
 	TDanger{}		-> kClosure
 
 	TError k _		-> k
-	TElaborate e t		-> kindOfType' t
 				
 	-- some of the helper constructors don't have real kinds ------------
 	_			-> panic stage $ "kindOfType bad kind for: " % tt

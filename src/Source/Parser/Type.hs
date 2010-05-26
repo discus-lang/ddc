@@ -203,17 +203,17 @@ pType_body3
  = pType_body2 >>= \t ->
 
 	-- TYPE {read}
- 	(do	elab	<- pCParen
+ 	(do	tElab	<- pCParen
 		    $	(do	pVarPlainNamed "read"
-				return ElabRead)
+				return tElaborateRead)
 
 		    <|>	(do	pVarPlainNamed "write"
-				return ElabWrite)
+				return tElaborateWrite)
 
 		    <|>	(do	pVarPlainNamed "modify"
-				return ElabModify)
+				return tElaborateModify)
 
-		return	$ TElaborate elab t)
+		return	$ TApp tElab t)
 
 	-- TYPE
    <|>		return	t

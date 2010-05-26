@@ -582,10 +582,6 @@ instance Lint Type where
 		t2'	<- lint t2
 		return	$ TDanger t1' t2'
 	
-	TElaborate e t
-	 -> do	t'	<- lint t
-		return	$ TElaborate e t'
-	
 	TClass{}	-> death tt "TClass - shouldn't exist in source program"
 	TError{}	-> death tt "TError - shouldn't exist in source program"
 	TVarMore{}	-> death tt "TVarMore - shouldn't exist in source program"

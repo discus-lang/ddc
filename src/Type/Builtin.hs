@@ -96,7 +96,16 @@ tMkPurify	= TCon $ TyConWitness TyConWitnessMkPurify
 
 tMkPure		= TCon $ TyConWitness TyConWitnessMkPure
 		$ KFun kEffect (KApp kPure (TIndex kEffect 0))
+		
+-- Elaboration constructors
+tElaborateRead  = TCon $ TyConElaborate TyConElaborateRead
+		$ KFun kValue kValue
 
+tElaborateWrite	= TCon $ TyConElaborate TyConElaborateWrite
+		$ KFun kValue kValue
+
+tElaborateModify = TCon $ TyConElaborate TyConElaborateModify
+		$ KFun kValue kValue
 
 
 -- | Get the type constructor for a bool of this format.

@@ -125,25 +125,24 @@ collectRsRW tt
 
 collectRsRW1 tt
  = case tt of
-	TElaborate ElabRead t
+	TApp (TCon (TyConElaborate TyConElaborateRead _)) t2
 	 -> do	modify $ \(rd, wr) -> 
-			( Set.union rd $ freeVarsR t
+			( Set.union rd $ freeVarsR t2
 			, wr)
-		return t
+		return t2
 		
-	TElaborate ElabWrite t
+	TApp (TCon (TyConElaborate TyConElaborateWrite _)) t2
 	 -> do	modify $ \(rd, wr) -> 
 			( rd
-			, Set.union wr $ freeVarsR t)
-		return t
+			, Set.union wr $ freeVarsR t2)
+		return t2
 		
-	TElaborate ElabModify t
+	TApp (TCon (TyConElaborate TyConElaborateModify _)) t2
 	 -> do	modify $ \(rd, wr) -> 
-			let free = freeVarsR t 
+			let free = freeVarsR t2 
 			in ( Set.union rd free
 		   	   , Set.union wr free)
-		return t
-	
+		return t2
 		
 	_ -> return tt
 

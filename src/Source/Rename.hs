@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns #-}
 
 -- | The renamer renames variables so all binding and bound occurances of a variable
 --	in the same scope have the same variable ids. This lets us perform substitution
@@ -28,9 +29,7 @@ import DDC.Main.Pretty		()
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 
------
 stage		= "Source.Rename"
-
 
 -- Tree --------------------------------------------------------------------------------------------
 
@@ -39,6 +38,9 @@ stage		= "Source.Rename"
 renameTrees
 	:: [(ModuleId, Tree SourcePos)]		-- ^ modules to rename		
 	-> RenameM [(ModuleId, Tree SourcePos)]	-- ^ renamed modules
+
+renameTrees []
+	= panic stage "no trees"
 
 renameTrees mTrees@(mTree1 : mTreeImports)
  = do
@@ -180,7 +182,8 @@ instance Rename (Top SourcePos) where
 		let ssF		
 			= map (\s -> case s of 
 					SSig  sp vs t		-> SSig   sp 	(map fixupV vs) t
-					SBindFun sp v pats alts	-> SBindFun sp	(fixupV v) pats alts)
+					SBindFun sp v pats alts	-> SBindFun sp	(fixupV v) pats alts
+					_			-> panic stage "rename[Top]: no match")
 			$ ss
 	 
 	   	t' 	<- withLocalScope
@@ -214,6 +217,7 @@ instance Rename (Export SourcePos) where
 	EClass sp v 
 	 -> do	v'	<- linkN NameClass v
 		return	$ EClass sp v'
+
 
 -- Module ------------------------------------------------------------------------------------------
 instance Rename ModuleId where
@@ -472,7 +476,6 @@ instance Rename (Exp SourcePos) where
 -- | Rename some list comprehension qualifiers.
 --   The vars bound in a qualifier are in-scope for subsequent qualifiers, 
 --   and vars bound in all qualifiers are in-scope for the final expression.
---
 renameListComp 
 	:: [LCQual SourcePos]
 	-> Exp SourcePos 
@@ -495,8 +498,11 @@ renameListComp qq xx
 	 -> do	x'		<- rename x
 	 	(qs', xx')	<- renameListComp qs xx
 		return	(LCExp x' : qs', xx')
+
+	LCLet{} : _
+	 -> panic stage "renameListComp: LCLet not finished"
+
 		
-			
 -- Projections -------------------------------------------------------------------------------------
 instance Rename (Proj SourcePos) where
  rename jj 
@@ -555,7 +561,6 @@ instance Rename (Label SourcePos) where
 	 -> do	v'	<- lbindN_binding NameField v
 	 	return	$  LVar sp v'
 	 
-
 
 -- Patterns ----------------------------------------------------------------------------------------
 
@@ -639,17 +644,8 @@ bindPat lazy ww
 	 -> do	(xs', vss)	<- liftM unzip $ mapM (bindPat lazy) xs
 	 	return	( WList sp xs'
 			, concat vss)
-		
-	 
-		
-{-
-boundByLCQual :: LCQual SourcePos -> [Var]
-boundByLCQual    q
- = case q of
- 	LCGen _ (WVar sp v) _	-> [v]
-	LCExp{}			-> []
--}
 
+	 
 -- Stmt --------------------------------------------------------------------------------------------
 instance Rename (Stmt SourcePos) where
  rename s = renameStmt lbindZ_binding s
@@ -674,17 +670,17 @@ renameStmt bindLHS s
 		 $ do	(ps', objVss)	<- liftM unzip
 					$  mapM (bindPat False) ps
 
-			let objVs	= concat objVss
+			let mObjVs	= listToMaybe $ concat objVss
 
-			(case objVs of
-			  []	-> return ()
-			  [v]	-> pushObjectVar v)
+			(case mObjVs of
+			  Nothing	-> return ()
+			  Just v	-> pushObjectVar v)
 
 			as'		<- rename as
 	
-			(case objVs of
-			  []	-> return ()
-			  [v]	-> do { popObjectVar; return () })
+			(case mObjVs of
+			  Nothing	-> return ()
+			  Just v	-> do { popObjectVar; return () })
 
 			return	$ SBindFun sp v' ps' as'
 
@@ -704,7 +700,7 @@ renameStmt bindLHS s
 --	ie 	not True	= False
 --		not False	= True
 --
---	BUGS: make it an error for non-consecutive bindings to bind the same variable.
+--	TODO: make it an error for non-consecutive bindings to bind the same variable.
 ---
 renameSs ::	[Stmt SourcePos] -> RenameM [Stmt SourcePos]
 renameSs	ss
@@ -744,16 +740,6 @@ instance Rename Type where
 	 -> do
 	 	let bindingVars	=  catMaybes $ map takeBindingVarF fs
 
-	  	-- if any of the LHS vars are already bound (perhaps by a forall) at this level
-	  	--	then this is an error. Type vars aren't permitted to shadow each other.
-{-		isShadowed	<- mapM isBound_withLocalScope bindingVars
-		let shadowVars	= [ v 	| (v, True) <- zip bindingVars isShadowed]
-		let shadow	=  not $ null shadowVars
-
-		when shadow
-		 $ modify (\s -> s { 
-	  		stateErrors 	= (stateErrors s) ++ map ErrorShadowVar shadowVars })
--}
 		withLocalScope
 		  $ do	
 		  	-- bind the vars on the LHS of let binds
@@ -792,12 +778,8 @@ instance Rename Type where
 	 -> do	t1'	<- rename t1
 	 	t2'	<- rename t2
 		return	$ TDanger t1' t2'
-	
-	-- 
-	TElaborate ee t
-	 -> do	t'	<- rename t
-	 	return	$ TElaborate ee t'
 
+	_ -> panic stage "rename[Type]: no match"
 
 tforallHasVarName name tt
  = case tt of
@@ -828,6 +810,11 @@ instance Rename TyCon where
 			
 		_ -> return tc
 		
+	TyConWitness{}
+	 -> panic stage "rename[TyCon]: witness constructors don't appear in source types"
+	
+	TyConElaborate{}
+	 -> return tc
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance Rename Fetter where
@@ -843,3 +830,10 @@ instance Rename Fetter where
 		t2'	<- rename t2
 		return	$ FWhere t1' t2'
 
+	FMore t1 t2
+	 -> do	t1'	<- rename t1
+		t2'	<- rename t2
+		return	$ FMore t1' t2'
+		
+	FProj{}
+	 -> panic stage "rename[Fetter]: FProj doesn't appear in source types"

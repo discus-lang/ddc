@@ -64,39 +64,40 @@ pprTypeQuant vsQuant tt
 		
 	TSum k  es	-> k  % "{" % "; " %!% map down es % "}"
 
+	-- type elaboration in source
+	TApp (TCon (TyConElaborate elab kind)) t
+	 -> prettyTB t % "{" % elab % "}"
+
 	TApp t1 t2
-	 -> let result
-	 		| Just (t1, t2, eff, clo)	<- takeTFun tt
-			= let str
-				| eff == tPure
-				, clo == tEmpty
-				= prettyTBF t1 % " -> " % prettyTRight t2
+ 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
+	 -> let str
+	 	 | eff == tPure
+		 , clo == tEmpty
+		 = prettyTBF t1 % " -> " % prettyTRight t2
 				
-				| clo == tEmpty
-				= prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
+		 | clo == tEmpty
+		 = prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
 				
-				| eff == tPure
-				= prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
+		 | eff == tPure
+		 = prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
 				
-				| otherwise
-				= prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
-			   in	str
+		 | otherwise
+		 = prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
+	    in str
 
-			| otherwise
-			= let	pprAppLeft x 
-			 	  | isTApp x 	= ppr x
-				  | otherwise	= prettyTB x
+	 | otherwise
+	 -> let	pprAppLeft x 
+	 	  | isTApp x 	= ppr x
+		  | otherwise	= prettyTB x
 
-				pprAppRight x
-				  | isSomeTVar x 
-				  = ppr x
+		pprAppRight x
+		  | isSomeTVar x 
+		  = ppr x
 
-				  | otherwise		
-				  = prettyTB x
+		  | otherwise		
+		  = prettyTB x
 
-			 in	pprAppLeft t1 % " " % pprAppRight t2
-	   in result
-
+	    in  pprAppLeft t1 % " " % pprAppRight t2
 
 	TCon tycon	-> ppr tycon
 
@@ -110,8 +111,6 @@ pprTypeQuant vsQuant tt
 	TClass k c	-> resultKind k % c
 	TError k t	-> "@TError" % k % "..."
 
-	-- type elaboration in source
-	TElaborate elab t -> prettyTB t % "{" % elab % "}"
 
 	-- core stuff
 	TVarMore k v t
@@ -216,17 +215,6 @@ prettyTS t
 	$ toFetterFormT t 
 
 
-
--- Elaboration -------------------------------------------------------------------------------------
-instance Pretty Elaboration PMode where
- ppr ee
-  = case ee of
-	ElabRead	-> ppr "read"
-	ElabWrite	-> ppr "write"
-	ElabModify	-> ppr "modify"
-	
-
-
 -- TProj -------------------------------------------------------------------------------------------
 instance Pretty TProj PMode where
  ppr p
@@ -327,6 +315,13 @@ instance Pretty TyCon PMode where
 			% tyConWitnessKind)
 		(ppr tyConWitness)
 
+	TyConElaborate { tyConElaborate, tyConElaborateKind}	
+	 -> ifMode (elem PrettyTypeKinds)
+ 		(parens $ ppr tyConElaborate 
+			% " :: " 
+			% tyConElaborateKind)
+		(ppr tyConElaborate)
+
 
 -- TyConEffect ------------------------------------------------------------------------------------
 instance Pretty TyConEffect PMode where
@@ -355,6 +350,15 @@ instance Pretty TyConWitness PMode where
 	TyConWitnessMkPurify		-> ppr "MkPurify"
 	TyConWitnessMkPure		-> ppr "MkPure"
 	TyConWitnessMkEmpty		-> ppr "MkEmpty"
+
+
+-- TyConElaborate --------------------------------------------------------------------------------
+instance Pretty TyConElaborate PMode where
+ ppr cc 
+  = case cc of
+	TyConElaborateRead		-> ppr "read"
+	TyConElaborateWrite		-> ppr "write"
+	TyConElaborateModify		-> ppr "modify"
 
 
 -- KiCon ------------------------------------------------------------------------------------------

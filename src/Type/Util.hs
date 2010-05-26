@@ -59,20 +59,23 @@ makeOpTypeT tt
 	TFetters t fs		-> makeOpTypeT t
 
 	TCon{}
-	 | Just (v, k, ts)		<- takeTData tt
+	 | Just (v, k, ts)	<- takeTData tt
 	 -> makeOpTypeData tt
 
+	TApp (TCon TyConElaborate{}) t2
+	 -> makeOpTypeT t2
+
 	TApp{}
-	 | Just (t1, t2, eff, clo)	<- takeTFun tt
-	 , Just t1'			<- makeOpTypeT2 t1
-	 , Just t2'			<- makeOpTypeT  t2
+	 | Just (t1, t2, eff, clo) <- takeTFun tt
+	 , Just t1'		<- makeOpTypeT2 t1
+	 , Just t2'		<- makeOpTypeT  t2
 	 -> Just $ makeTFun t1' t2' tPure tEmpty
 	 
-	 | Just (v, k, ts)		<- takeTData tt
+	 | Just (v, k, ts)	<- takeTData tt
 	 -> makeOpTypeData tt
 
 	TVar{}			-> Just $ makeTData primTObj kValue []
-	TElaborate ee t		-> makeOpTypeT t
+
 	_			-> freakout stage
 					("makeOpTypeT: can't make operational type from " %  show tt)
 					Nothing
@@ -84,17 +87,19 @@ makeOpTypeT2 tt
 	TVar{}			-> Just $ makeTData primTObj kValue []
 
 	TCon{}
-	 | Just (v, k, ts)		<- takeTData tt
+	 | Just (v, k, ts)	<- takeTData tt
 	 -> makeOpTypeData tt
+
+	TApp (TCon TyConElaborate{}) t2
+	 -> makeOpTypeT t2
 
 	TApp{}
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> Just $ makeTData primTThunk kValue []
 	
-	 | Just (v, k, ts)		<- takeTData tt
+	 | Just (v, k, ts)	<- takeTData tt
 	 -> makeOpTypeData tt
 
-	TElaborate ee t		-> makeOpTypeT t
 	_			-> freakout stage
 					("makeOpTypeT2: can't make operational type from " % show tt)
 					Nothing

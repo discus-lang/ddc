@@ -507,8 +507,7 @@ instance Monad m => TransM m Type where
 instance Monad m => TransM m TyCon where
  transZM table tt
   = case tt of
-  	TyConFun{}
-	 -> 	return	$ tt
+  	TyConFun{}		-> return tt
 	 
 	TyConData { tyConName }
 	 -> do	name'	<- followV_free table tyConName
@@ -518,15 +517,14 @@ instance Monad m => TransM m TyCon where
 	 -> do	v'	<- followV_free table v
 		return	$ tt { tyConEffect = TyConEffectTop v }
 
-	TyConEffect {}
-	 ->	return tt
+	TyConEffect{}		-> return tt
 
 	TyConWitness { tyConWitness = TyConWitnessMkVar v }
 	 -> do	v'	<- followV_free table v
 	 	return	$ tt { tyConWitness = TyConWitnessMkVar v }
 
-	TyConWitness {}
-	 -> 	return tt
+	TyConWitness{}		-> return tt
+	TyConElaborate{}	-> return tt
 
 
 -- Fetter ------------------------------------------------------------------------------------------

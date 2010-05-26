@@ -183,11 +183,7 @@ sinkCidsInTypeIO classes tt'
 		TError k err
 		 -> do	k'	<- sinkCidsInKindIO classes k
 			return	$ TError k' err
-			
-		TElaborate elab t
-		 -> do	t'	<- goT t
-			return	$ TElaborate elab t'
-			
+						
 		TFree v t
 		 -> do	t'	<- goT t
 			return	$ TFree v t'

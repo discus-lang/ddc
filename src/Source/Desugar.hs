@@ -720,8 +720,6 @@ instance Rewrite Type Type where
 	TVar{}		-> return tt
 
 	TSum _ []	-> return tt
-
-	TElaborate ee t	-> return tt
 	
 	_ -> panic stage $ "rewrite[Type]: no match for " % tt
 

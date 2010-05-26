@@ -213,11 +213,6 @@ followT table tt
 	TError k ts
 	 -> do	return tt
 	
-	-- type sugar
-	TElaborate ee t
-	 -> do	t'	<- transZM table t
-	 	return	$ TElaborate ee t'
-		
 	TVarMore k v t
 	 -> do	k'	<- transZM table k
 	 	v'	<- transZM table v
@@ -230,8 +225,7 @@ followT table tt
 instance Monad m => TransM m TyCon where
  transZM table tt
   = case tt of
-  	TyConFun{}
-	 -> do	return tt
+  	TyConFun{}		-> return tt
 		
 	TyConData { tyConName }
 	 -> do	v'	<- transZM table tyConName
@@ -241,15 +235,14 @@ instance Monad m => TransM m TyCon where
 	 -> do	v'	<- transZM table v
 		return	$ tt { tyConEffect = TyConEffectTop v' }
 	
-	TyConEffect{}
-	 ->	 return tt
+	TyConEffect{}		-> return tt
 		
 	TyConWitness 	{ tyConWitness = TyConWitnessMkVar v }
 	 -> do	v'	<- transZM table v
 	 	return	$ tt { tyConWitness = TyConWitnessMkVar v' }
 
-	TyConWitness {}
-	 -> 	return tt
+	TyConWitness {}		-> return tt
+	TyConElaborate{}	-> return tt
 
 	
 -- TProj -------------------------------------------------------------------------------------------

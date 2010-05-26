@@ -1,9 +1,10 @@
 
 -- | Type constructors.
 module DDC.Type.TyCon
-	( TyCon		(..)
-	, TyConEffect   (..)
-	, TyConWitness	(..)
+	( TyCon		 (..)
+	, TyConEffect    (..)
+	, TyConWitness 	 (..)
+	, TyConElaborate (..)
 	, takeTyConWitnessOfKiCon
 	, takeKiConOfTyConWitness)
 where
@@ -32,9 +33,16 @@ data TyCon
 		{ tyConWitness		:: !TyConWitness
 		, tyConWitnessKind 	:: !Kind }
 
+	-- An elaboration of some other type. 
+	-- These are desugared in Type.Util.Elaborate
+	| TyConElaborate
+		{ tyConElaborate	:: !TyConElaborate
+		, tyConElaborateKind	:: !Kind }
+
 	deriving (Show, Eq)
 
 
+-- TyConEffect ------------------------------------------------------------------------------------
 -- | Effect type constructors.
 data TyConEffect
 	-- | Some user defined top-level effect.
@@ -49,6 +57,7 @@ data TyConEffect
 	deriving (Show, Eq)
 
 
+-- TyConWitness -----------------------------------------------------------------------------------
 -- | Witness type constructors.
 data TyConWitness
 	-- | Make a witness of some user-defined data type class.
@@ -106,4 +115,14 @@ takeKiConOfTyConWitness tyCon
 	TyConWitnessMkPure		-> Just $ KiConPure
 	TyConWitnessMkEmpty		-> Just $ KiConEmpty
 	_				-> Nothing
-	
+
+
+-- TyConElaborate ---------------------------------------------------------------------------------	
+-- | Helps with defining foreign function interfaces.
+--	Used in source types only. 
+--	Desuared before type inference.
+data TyConElaborate
+	= TyConElaborateRead		-- ^ Read from a type.
+	| TyConElaborateWrite		-- ^ Write to a type.
+	| TyConElaborateModify		-- ^ Read and write to a type.
+	deriving (Show, Eq)

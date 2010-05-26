@@ -22,9 +22,7 @@ import DDC.Var
 import qualified Data.Set		as Set
 import qualified Type.Util.PackFast 	as PackFast
 
------
 stage	= "Type.Util.Elaborate"
-
 
 -- Elaborate Regions ------------------------------------------------------------------------------
 
@@ -65,7 +63,6 @@ elaborateRsT' tt
 		return	( TFetters x' fs
 			, vks')
 
-	
 	TCon{}	
 	 -- some data constructor that isn't applied to any region vars.
    	 | Just (v, kind, ts)	<- takeTData tt
@@ -76,6 +73,10 @@ elaborateRsT' tt
 	 -> return (tt, [])
 
 	TApp t1 t2 
+	 | TCon (TyConElaborate elab _) <- t1
+	 -> do	(t2', vks)	<- elaborateRsT' t2
+		return	( TApp t1 t2'
+			, vks)
 
 	 -- add new regions to data type constructors to bring them up
 	 --	to the right kind.
@@ -90,10 +91,6 @@ elaborateRsT' tt
 		return	( TApp t1' t2'
 			, vks1 ++ vks2)
 
-	TElaborate ee t	
-	 -> do	(t', vks)	<- elaborateRsT' t
-		return	( TElaborate ee t'
-			, vks)
 
 	_ -> panic stage
 		$ "elaborateRsT': no match for " % tt % "\n\n"

@@ -11,7 +11,6 @@ module Type.Exp
 	, Constraints	(..)
 	, TProj		(..)
 	, Fetter  	(..)
-	, Elaboration	(..)
 	, TypeError	(..)
 
 	, Data
@@ -124,9 +123,6 @@ data Type
 
 
 	-- Old stuff that needs factoring out. --------------------------
-	-- TODO: Refactor this to be application of a special constructor.
-	| TElaborate	Elaboration Type
-
 	-- A tagged object which is free in the closure.
 	-- The tag should be a Value var.
 	-- The type parameter should be a value type, region or closure.
@@ -167,17 +163,6 @@ data TypeError
 					--	(mu t1. t2), 	where t1 can appear in t2.
 					--			t1 is a TClass or a TVar.
 	deriving (Show, Eq)
-
--- | Helps with defining foreign function interfaces.
---	Used in the TElaborate constructor of Type.
---	Used in source and desugared types only.
-data Elaboration
-	= ElabRead			-- ^ read from some object
-	| ElabWrite			-- ^ write to some object
-	| ElabModify			-- ^ read and write some object
-	deriving (Show, Eq)
-
-
 
 
 instance Ord Type where
@@ -236,9 +221,9 @@ data Fetter
 	--   TODO: refactor this into a special constructor, and make FConstraint
 	--	   above take that constructor instead of a plain var.
 	| FProj		TProj	
-			Var 	-- var to tie the instantiated projection function to.
-			Type 	-- type of the dictionary to choose the projection from.
-			Type 	-- type to unify the projection function with, once it's resolved.
+			Var 			-- var to tie the instantiated projection function to.
+			Type 			-- type of the dictionary to choose the projection from.
+			Type 			-- type to unify the projection function with, once it's resolved.
 				
 	deriving (Show, Eq, Ord)
 
@@ -252,5 +237,4 @@ data TProj
 	| TJIndex  !Var				-- ^ Indexed field projection		(.<int>)
 	| TJIndexR !Var				-- ^ Indexed field reference projection	(#<int>)
 	deriving (Show, Eq, Ord)
-
 

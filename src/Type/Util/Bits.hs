@@ -169,7 +169,6 @@ takeValueArityOfType tt
 	TIndex{}	-> Nothing
 	TFree{}		-> Nothing
 	TDanger{}	-> Nothing
-	TElaborate{}	-> Nothing
 	TClass{}	-> Just 0
 	TError{}	-> Nothing
 	TVarMore{}	-> Just 0
