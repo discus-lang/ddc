@@ -39,12 +39,11 @@ packT1 tt
 
 
 	TForall v1 k1 tBody
-	 -> case packT1 tBody of
-	 	TFree v2 t2	-> TFree v2 (TForall v1 k1 t2)
-		tBody'		-> TForall v1 k1 tBody'
+	 -> let tBody'	= packT1 tBody
+	    in	case takeTFree tBody' of
+	 	 Just (v2, t2)	-> makeTFree v2 (TForall v1 k1 t2)
+		 _		-> TForall v1 k1 tBody'
 		
-	 
-
 	TFetters t1 fs
 	 -> let t1'	= packT1 t1
 	 	fs'	= restrictBinds t1' fs
@@ -143,6 +142,21 @@ packT1 tt
 			= TApp t1 t2'
 	    in	result
 	
+	TApp{}
+	 | Just (v1, t2)	<- takeTFree tt
+	 , t2'			<- packT1 t2
+	 -> let	result
+		 | Just (v2, t2X)	<- takeTFree t2'
+		 = makeTFree v1 t2X
+		
+		 | TSum k ts		<- t2'
+		 , k == kClosure
+		 = TSum kClosure (map (makeTFree v1) ts)
+		
+		 | otherwise	
+		 = makeTFree v1 t2'
+		
+	   in result
 
 	TApp t1 t2
 	 -> let	t1'	= packT1 t1
@@ -165,16 +179,6 @@ packT1 tt
 	TIndex{}	-> tt
 
 	TCon{}		-> tt
-	 
-	    
-	-- closure
-	TFree v1 t2
-	 -> let	t2'	= packT1 t2
-	    in	case t2' of
-			TFree v2 t2X			-> TFree v1 t2X
-			TSum k ts | k == kClosure	-> TSum kClosure (map (TFree v1) ts)
-			_				-> TFree v1 t2'
-
 	
 	_ -> panic stage
 		$ "packT: no match for " % tt % "\n"
@@ -307,10 +311,7 @@ inlineTWheresMapT sub block tt
     	TCon{}			-> tt
     
 	TApp t1 t2		-> TApp (down t1) (down t2)
- 	
-	-- closure
-	TFree v t		-> TFree v (down t)
-	    
+ 		    
 
 -- | Restrict the list of FWhere fetters to ones which are 
 --	reachable from this type. Also erase x = Bot fetters.

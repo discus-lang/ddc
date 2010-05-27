@@ -189,8 +189,6 @@ followT table tt
  	TVar k v	-> liftM2 TVar    (return k) (transZM table v)
 	TApp t1 t2	-> liftM2 TApp    (transZM table t1) (transZM table t2)
 	TCon tycon	-> liftM  TCon    (transZM table tycon)
-	TFree v t	-> liftM2 TFree   (transZM table v) (transZM table t)
-	TDanger v t	-> liftM2 TDanger (transZM table v) (transZM table t)
 	TClass k cid	-> liftM2 TClass  (return k)  (transZM table cid)
 	TError k ts	-> return tt
 	TVarMore k v t	-> liftM3 TVarMore (transZM table k) (transZM table v) (transZM table t)
@@ -212,6 +210,12 @@ instance Monad m => TransM m TyCon where
 		return	$ tt { tyConEffect = TyConEffectTop v' }
 	
 	TyConEffect{}		-> return tt
+
+	TyConClosure (TyConClosureFree v) kind
+	 -> do	v'	<- transZM table v
+		return	$ TyConClosure (TyConClosureFree v) kind
+		
+	TyConClosure{}		-> return tt
 		
 	TyConWitness 	{ tyConWitness = TyConWitnessMkVar v }
 	 -> do	v'	<- transZM table v

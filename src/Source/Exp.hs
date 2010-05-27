@@ -202,16 +202,12 @@ data Exp a
 	| XIfThenElse	a (Exp a) (Exp a) (Exp a)	-- if EXP1 then EXP2 else EXP3
 	| XTry		a (Exp a) [Alt a] (Maybe (Exp a)) -- try EXP catch { ALTS } (with EXP)
 	| XThrow	a (Exp a)	
-
-	| XWhere	a (Exp a) [Stmt a]		-- EXP where { STMTS }
-
+	| XWhere	a (Exp a) [Stmt a]		-- EXP where { STMTS 
 	| XTuple	a [Exp a]
 	| XList		a [Exp a]
-
 	| XListRange	a Bool (Exp a) (Maybe (Exp a)) (Maybe (Exp a))	
 							-- [EXP .. EXP] / [EXP, EXP .. EXP] / [EXP .. ]
 	| XListComp	a (Exp a) [LCQual a]		-- [ EXP | QUAL .. ]
-
 	| XWhile	a (Exp a) (Exp a)		-- test, body
 	| XWhen		a (Exp a) (Exp a)		-- test, body
 	| XUnless	a (Exp a) (Exp a)		-- test, body
@@ -244,9 +240,7 @@ data Proj a
 data Stmt a	
 	= SSig		a [Var] Type
 	| SStmt		a (Exp a)			-- ^ a statement (with no arguments)
-	
 	| SBindFun	a Var [Pat a] [Alt a]		-- ^ a guarded function binding, with patterns for the arguments. 
-
 	| SBindPat	a (Pat a) (Exp a)		-- ^ an irrefutable pattern binding
 	| SBindMonadic	a (Pat a) (Exp a)		-- ^ a monadic bind. Desugars to  (exp `bind` \var -> ...)
 	deriving (Show, Eq)
@@ -256,7 +250,6 @@ data Stmt a
 data Alt a
 	= APat		a (Pat a) (Exp a)		-- ^ Case style pattern match	p1 -> e2
 	| AAlt		a [Guard a] (Exp a)		-- ^ Match style pattern match  guards -> e2
-
 	| ADefault	a (Exp a)			-- ^ Default alternative. 
 							--	There should only be one of these per set of alts.
 

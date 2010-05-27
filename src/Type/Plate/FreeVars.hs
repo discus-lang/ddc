@@ -62,14 +62,6 @@ instance FreeVars Type where
 	
  	TVar k v	-> singleton v
 
-	-- closure
-	TFree v t	-> freeVars t
-
-	TDanger t1 t2	
-	 -> unions 
-	 	[ freeVars t1
-		, freeVars t2]
-
 	-- used in solver
 	TClass{}	-> empty
 	TError{}	-> empty
@@ -94,6 +86,10 @@ instance FreeVars TyCon where
 	 -> Set.singleton v
 	
 	TyConEffect{}			-> Set.empty
+
+	-- BUGS: Do we really want to ignore the attached var?
+	TyConClosure{}			-> Set.empty
+
 	TyConWitness{}			-> Set.empty
 	TyConElaborate{}		-> Set.empty
 

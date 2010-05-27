@@ -569,19 +569,7 @@ instance Lint Type where
 		v'	<- lint v
 		return	$ TVar k' v'
 
-	TIndex{}	-> death tt "TIndex - shouldn't exist in source program"
-	 				
-	-- closure
-	TFree v t
-	 -> do	v'	<- lint v
-		t'	<- lint t
-		return	$ TFree v' t'
-		
-	TDanger t1 t2
-	 -> do	t1'	<- lint t1
-		t2'	<- lint t2
-		return	$ TDanger t1' t2'
-	
+	TIndex{}	-> death tt "TIndex - shouldn't exist in source program"	
 	TClass{}	-> death tt "TClass - shouldn't exist in source program"
 	TError{}	-> death tt "TError - shouldn't exist in source program"
 	TVarMore{}	-> death tt "TVarMore - shouldn't exist in source program"

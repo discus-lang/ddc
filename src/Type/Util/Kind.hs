@@ -24,10 +24,9 @@ module Type.Util.Kind
 	, kindOfType_orDie
 	
 	-- fast tests
-	, isClosure
-	, isEffect
-	, isClosureKind
-	, isEffectKind)
+	, isRegion, 	isRegionKind
+	, isEffect,	isEffectKind
+	, isClosure,	isClosureKind)
 where
 import Type.Pretty		()
 import Type.Builtin
@@ -86,6 +85,9 @@ tyConKind tyCon
 
 	TyConEffect { tyConEffectKind }
 	 -> tyConEffectKind
+
+	TyConClosure { tyConClosureKind }
+	 -> tyConClosureKind
 
 	TyConWitness { tyConWitnessKind }
 	 -> tyConWitnessKind	 
@@ -204,12 +206,8 @@ kindOfType' tt
 	TFetters t1 _		-> kindOfType' t1
 	TConstrain t1 crs	-> kindOfType' t1
 		
-	-- effect and closure constructors should always be fully applied.
-	TFree{}			-> kClosure
-	TDanger{}		-> kClosure
-
 	TError k _		-> k
-				
+		
 	-- some of the helper constructors don't have real kinds ------------
 	_			-> panic stage $ "kindOfType bad kind for: " % tt
 
@@ -250,13 +248,20 @@ betaTT depth tX tt
 	 | ix == depth	-> down tX
 	 | otherwise	-> tt
 	 	
-	TFree v t	-> TFree v (down t)
-
-	_	-> panic stage
-		$ "betaTT: no match for " % tt
+	_		-> panic stage
+			$ "betaTT: no match for " % tt
 
 
 -- Fast kind utils ---------------------------------------------------------------------------------
+
+-- | Fast test whether a type is a region
+isRegion :: Type -> Bool
+{-# INLINE isRegion #-}
+isRegion tt
+ = case tt of
+	TVar k _		-> isRegionKind k
+	_			-> False
+
 
 -- | Fast test whether a type is a closure.
 isClosure :: Type -> Bool
@@ -271,8 +276,6 @@ isClosure tt
 	TVar	 k _		-> isClosureKind k
 	TVarMore k _ _		-> isClosureKind k
 	TClass	 k _		-> isClosureKind k
-	TFree{}			-> True
-	TDanger{}		-> True
 	TFetters t1 _		-> isClosure t1
 	TConstrain t1 _		-> isClosure t1
 	TForall _ _ t1		-> isClosure t1
@@ -295,6 +298,15 @@ isEffect tt
 	TFetters t1 _		-> isEffect t1
 	TConstrain t1 _		-> isEffect t1
 	TForall _ _ t1		-> isEffect t1
+	_			-> False
+
+
+-- | Fast test whether a kind is the region kind
+isRegionKind :: Kind -> Bool
+{-# INLINE isRegionKind #-}
+isRegionKind kk
+ = case kk of
+	KCon KiConRegion _	-> True
 	_			-> False
 
 

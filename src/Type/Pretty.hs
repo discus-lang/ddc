@@ -68,6 +68,12 @@ pprTypeQuant vsQuant tt
 	TApp (TCon (TyConElaborate elab kind)) t
 	 -> prettyTB t % "{" % elab % "}"
 
+	TApp (TCon (TyConClosure (TyConClosureFree v) _)) t
+	 -> v % " : " % t
+
+	TApp (TApp (TCon (TyConClosure TyConClosureDanger _)) v) t
+	 -> v % " $> " % t
+
 	TApp t1 t2
  	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> let str
@@ -103,9 +109,6 @@ pprTypeQuant vsQuant tt
 
 	TVar k v	-> pprVarKind v k 
 		
-	-- closure
-	TFree  v t	-> v % " : " % t
-	TDanger v t	-> v % " $> " % t
 	
 	-- used in type inference
 	TClass k c	-> resultKind k % c
@@ -308,6 +311,13 @@ instance Pretty TyCon PMode where
 			% tyConEffectKind)
 		(ppr tyConEffect)
 
+	TyConClosure { tyConClosure, tyConClosureKind }
+	  -> ifMode (elem PrettyTypeKinds)
+ 		(parens $ tyConClosure
+			% " :: " 
+			% tyConClosureKind)
+		(ppr tyConClosure)
+
 	TyConWitness { tyConWitness, tyConWitnessKind}	
 	 -> ifMode (elem PrettyTypeKinds)
  		(parens $ ppr tyConWitness 
@@ -333,6 +343,14 @@ instance Pretty TyConEffect PMode where
 	TyConEffectDeepRead		-> ppr "!ReadT"
 	TyConEffectWrite		-> ppr "!Write"
 	TyConEffectDeepWrite		-> ppr "!WriteT"
+
+
+-- TyConClosure -----------------------------------------------------------------------------------
+instance Pretty TyConClosure PMode where
+ ppr cc
+  = case cc of
+	TyConClosureFree var		-> ppr "$Free_" % var
+	TyConClosureDanger		-> ppr "$Danger"
 
 
 -- TyConWitness -----------------------------------------------------------------------------------

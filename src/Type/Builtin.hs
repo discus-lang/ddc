@@ -50,7 +50,7 @@ tPure		= TSum kEffect  []
 tEmpty		= TSum kClosure []
 
 
--- Effect Type Constructors
+-- Effect type constructors
 tRead		= TCon $ TyConEffect TyConEffectRead
 		$ KFun kRegion kEffect
 
@@ -67,7 +67,15 @@ tDeepWrite	= TCon $ TyConEffect TyConEffectDeepWrite
 		$ KFun kValue kEffect
 
 
--- Witness Type Constructors 
+-- Closure type constructors
+tFree v		= TCon $ TyConClosure (TyConClosureFree v) 
+		$ KFun kValue kClosure
+		
+tDanger 	= TCon $ TyConClosure TyConClosureDanger
+		$ KFun kRegion (KFun kValue kClosure)
+
+
+-- Witness type constructors 
 tMkConst	= TCon $ TyConWitness TyConWitnessMkConst	
 		$ KFun kRegion (KApp kConst		(TIndex kRegion 0))
 

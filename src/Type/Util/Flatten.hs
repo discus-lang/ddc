@@ -74,9 +74,6 @@ flattenT' sub block tt
 	 	Just t	-> flattenT' sub (Set.insert tt block) t
 		Nothing	-> tt
 
-	TFree v t		-> TFree v (down t)
-	TDanger t1 t2		-> TDanger (down t1) (down t2)
-
 	TError{}		-> tt
 
 	_	-> panic stage 

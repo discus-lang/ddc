@@ -83,12 +83,6 @@ data Type
 	-- | A type variable.
 	| TVar     	Kind 	Var
 
-	-- | A type variable with an embedded :> constraint. Used in core types only.
-	| TVarMore	Kind 	Var	Type
-	
-	-- | A de Bruijn index. Used in the the kinds of witness constructors only.
-	| TIndex	Kind	Int
-
 	-- | A type constructor.
 	| TCon		TyCon
 
@@ -109,40 +103,30 @@ data Type
 	| TFetters	Type	[Fetter]	-- ^ Holds extra constraint information.
 	| TConstrain	Type	Constraints	-- ^ Holds extra constraint information.
 			
+
+	-- Special Purpose Constructors -------------------
+
+	-- | Used in the kinds of witness constructors only.
+	--   A de Bruijn index.
+	| TIndex	Kind	Int
 	
-	-- Helpers used in the solver only --------------------------
-	-- These shouldn't show up in the source or core lanugage.
-	
-	-- | A meta type variable. 
+	-- | Used in core types only. 
+	--   A type variable with an embedded :> constraint.
+	| TVarMore	Kind 	Var	Type
+		
+	-- | Used in the solver only.
 	--   A reference to some equivalence class in the type graph.
-	| TClass   	Kind ClassId
+	--   Also known as a "meta" type variable.
+	| TClass   	Kind 	ClassId
 
-	-- | Represents an error in the type.
-	--   The TypeError says what went wrong.
-	| TError	Kind TypeError
-
-
-	-- Old stuff that needs factoring out. --------------------------
-	-- A tagged object which is free in the closure.
-	-- The tag should be a Value var.
-	-- The type parameter should be a value type, region or closure.
-	-- TODO: Refactor this into the application of a special type constructor.
-	--       Store the tag var in the constructor. 
-	--       (Free var) :: * -> $	
-	| TFree		Var Type
-
-	-- ^ If a region is mutable then free type variables in the 
-	--	associated type must be held monomorphic.
-	-- TODO: Refactor this into the application of a type constructor.
-	--       Danger :: % -> * -> $
-	| TDanger	Type Type		
+	-- | Used in the solver only.
+	--   Represents an error in the type.
+	| TError	Kind	TypeError
 	deriving (Show, Eq)
 
 
--- | This data type includes constructors for bona-fide type expressions, 
---	as well as various helper constructors used in parsing/printing and type inference.
+-- | A binder.
 data Bind
-
 	-- | No binding.
 	= BNil
 
@@ -151,6 +135,16 @@ data Bind
 	
 	-- | Bounded quantification. Type of bound variable is :> t2.
 	| BMore	Var Type
+	deriving (Show, Eq)
+
+
+-- | A bound occurrence of a variable.
+--   TODO: Use this to merge TVar, TVarMore, TIndex and TClass into TVar.
+data Bound
+	= UVar	 Var
+	| UMore	 Var Type
+	| UIndex Int
+	| UClass ClassId
 	deriving (Show, Eq)
 
 

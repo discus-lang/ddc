@@ -192,6 +192,12 @@ chooseBindingOccurrence thisModule var varsBinding
 	, [varBinding]	<- filter (\v -> varModuleId v == varModuleId var) varsBinding
 	= Right (Just varBinding)
 
+	-- The the bound occurrence has an expicit module name,
+	--	but we can't find the binding occurrence for it.
+	| ModuleId _ <- varModuleId var
+	, []		<- filter (\v -> varModuleId v == varModuleId var) varsBinding
+	= Right Nothing
+
 	-- there are multiple binding occurrences of interest, 
 	--	and we have no way of knowing which one to choose.
 	| otherwise

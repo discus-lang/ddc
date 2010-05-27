@@ -367,18 +367,18 @@ pClosure
 			let varN	= vNameDefaultN NameValue var
 			-- VAR :  CLO
 			do	clo	<- pClosure
-				return $ TFree varN clo
+				return $ makeTFree varN clo
 
 		  	-- VAR :  TYPE
 		   	 <|> do	typ	<- pType
- 				return	$ TFree varN typ
+ 				return	$ makeTFree varN typ
 
 		-- VAR $> CLO
 	  	 <|> do	pTok K.HoldsMono
 			var2	<- pVarPlain
 			let varN	= vNameDefaultN NameType var
 	 		let var2N	= vNameDefaultN NameType var2
-			return	$ TDanger
+			return	$ makeTDanger
 					(TVar kRegion varN)
 					(TVar (kindOfSpace $ varNameSpace var2N) var2N))
 

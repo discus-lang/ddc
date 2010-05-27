@@ -758,6 +758,15 @@ instance Rename Type where
 	 -> do	ts'	<- rename ts
 	 	return	$ TSum k ts'
 
+	-- closure
+	TApp{}
+	 | Just (v, t)	<- takeTFree tt
+	 -> do	v'	<- lbindV_bound v
+	 	withLocalScope
+		 $  do	t'	<- rename t
+		 	return	$ makeTFree v' t'
+
+
 	TApp t1 t2
 	 -> do	t1'	<- rename t1
 	 	t2'	<- rename t2
@@ -766,19 +775,7 @@ instance Rename Type where
 	TCon tc
 	 -> do	tc'	<- rename tc
 	 	return	$ TCon tc'
-		
-	-- closure
-	TFree v t
-	 -> do	v'	<- lbindV_bound v
-	 	withLocalScope
-		 $  do	t'	<- rename t
-		 	return	$ TFree v' t'
-	
-	TDanger t1 t2
-	 -> do	t1'	<- rename t1
-	 	t2'	<- rename t2
-		return	$ TDanger t1' t2'
-
+			
 	_ -> panic stage "rename[Type]: no match"
 
 tforallHasVarName name tt
@@ -809,6 +806,11 @@ instance Rename TyCon where
 			return	$ tc { tyConEffect = TyConEffectTop v' }
 			
 		_ -> return tc
+	
+	-- We don't have to handle the var in TFree, 
+	-- that's done directly in rename[Type].
+	TyConClosure{}
+	 -> return tc
 		
 	TyConWitness{}
 	 -> panic stage "rename[TyCon]: witness constructors don't appear in source types"

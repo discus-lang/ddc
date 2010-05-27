@@ -35,7 +35,6 @@ type Tree	= [Top]
 --	that should appear in dumps and interface files.
 --	Note that the only declaration that contains Exps is PBind, which makes them
 --	easy to find when doing transforms.
---
 data Top
 	= -- | An abstract type class
 	  PClass
@@ -90,7 +89,6 @@ data Top
 -- | Meta-data about a constructor.
 --	Note that we need to remember the indicies of each field so we can convert
 --	pattern matches using labels to Sea form. 
---
 data CtorDef
 	= CtorDef 
 	{ ctorDefName	:: Var 		-- ^ name of constructor

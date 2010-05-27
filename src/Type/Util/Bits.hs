@@ -38,7 +38,11 @@ module Type.Util.Bits
 	, takeTFun
 	, makeTFuns_pureEmpty
 	, flattenFun
-
+	, makeTFree
+	, takeTFree
+	, makeTDanger
+	, takeTDanger
+	
 	-- closure
 	, dropTFreesIn
 
@@ -167,8 +171,6 @@ takeValueArityOfType tt
 	TCon{}		-> Just 0
 	TVar{}		-> Just 0
 	TIndex{}	-> Nothing
-	TFree{}		-> Nothing
-	TDanger{}	-> Nothing
 	TClass{}	-> Just 0
 	TError{}	-> Nothing
 	TVarMore{}	-> Just 0
@@ -212,12 +214,15 @@ crushT1 tt
  	TSum k ts			
 	 -> makeTSum k 		$ flattenTSum tt
 
-	TFree v (TFree v' t)	
-	 -> TFree v t
-
-	TFree v (TSum kClosure ts)
-	 -> makeTSum kClosure $ map (TFree v) ts
-
+	TApp{}
+	 | Just (v,  t2)	<- takeTFree tt
+	 , Just (v', t)		<- takeTFree t2
+	 -> makeTFree v t
+	
+	 | Just (v, t2)		<- takeTFree tt
+	 , TSum k ts		<- t2
+	 -> makeTSum k $ map (makeTFree v) ts
+	
 	_	-> tt
 
 
@@ -236,7 +241,11 @@ flattenTSum :: Type -> [Type]
 flattenTSum tt
  = case tt of
 	TSum k ts		-> catMap flattenTSum ts
-	TFree v (TSum k [])	-> []
+
+	TApp{}
+	 | Just (v, TSum k [])	<- takeTFree tt
+	 -> []
+	
 	_			-> [tt]
 
 
@@ -302,7 +311,6 @@ takeTFun tt
 	| otherwise
 	= Nothing
 
-
 -- | Flatten a function type into parts
 flattenFun :: Type -> [Type]
 flattenFun xx
@@ -311,15 +319,44 @@ flattenFun xx
 	_			-> [xx]
 
 
+-- | Take an application of the $Free closure constructor.
+takeTFree :: Type -> Maybe (Var, Type)
+takeTFree tt
+ = case tt of
+	TApp (TCon (TyConClosure (TyConClosureFree v) kind)) t2
+	   -> Just (v, t2)
+	
+	_  -> Nothing
+
+-- | Make an application of the $Free closure constructor.
+makeTFree :: Var -> Type -> Type
+makeTFree var tt
+	= TApp (tFree var) tt
+
+
+-- | Make an application of the $Danger closure constructor.
+makeTDanger :: Type -> Type -> Type
+makeTDanger t1 t2
+ 	= TApp (TApp tDanger t1) t2
+
+-- | Take an application of the $Danger closure constructor.
+takeTDanger :: Type -> Maybe (Type, Type)
+takeTDanger tt 
+ = case tt of
+	TApp (TApp (TCon (TyConClosure TyConClosureDanger _)) t2) t3
+	 -> Just (t2, t3)
+	
+	_   -> Nothing
+
 -- Closure -----------------------------------------------------------------------------------------
 
 -- | Drop TFree terms concerning value variables in this set
 dropTFreesIn :: Set Var -> Closure -> Closure
 dropTFreesIn vs clo
  	= makeTSum kClosure
-	$ filter (\c -> case c of
-			 TFree v _	-> not $ Set.member v vs
-			 _		-> True)
+	$ filter (\c -> case takeTFree c of
+			 Just (v, _)	-> not $ Set.member v vs
+			 Nothing	-> True)
 	$ flattenTSum clo
 
 -- Forall ------------------------------------------------------------------------------------------
@@ -460,10 +497,8 @@ toFetterFormT tt
 		  ++ crsOther)
 			
 	TApp t1 t2		-> TApp (down t1) (down t2)
-	TFree   t1 t2		-> TFree   t1 (down t2)
-	TDanger t1 t2		-> TDanger t1 (down t2)
-
 	_			-> tt
+
 
 -- | Convert top-level occurences of TFetters to TConstrain
 toConstrainFormT :: Type -> Type
@@ -485,9 +520,6 @@ toConstrainFormT tt
 	
 	TApp t1 t2		-> TApp (down t1) (down t2)
 	TSum k  ts		-> TSum k $ map toConstrainFormT ts
-	TFree t1 t2		-> TFree   t1 (down t2)
-	TDanger t1 t2		-> TDanger t1 (down t2)
-	
 	_			-> tt
 
 toConstrainFormF :: Fetter -> Fetter

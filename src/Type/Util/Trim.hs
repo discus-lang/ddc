@@ -37,13 +37,9 @@ import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug
 
------
-stage	= "Type.Util.Trim"
-debug	= False
-trace ss x	
-	= if debug
-		then Debug.trace (pprStrPlain ss) x
-		else x
+stage		= "Type.Util.Trim"
+debug		= False
+trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 
 -- | Trim the closure portion of this type
@@ -77,7 +73,8 @@ trimClosureT' quant rsData tt
 		crs'		= Constraints crsEq' crsMore' crsOther
 	    in	addConstraints crs' tBody
 
-	TFree{} 
+	TApp{}
+	 | Just _	<- takeTFree tt
 	 -> trimClosureC_constrainForm quant rsData tt
 
 	_	-> tt
@@ -112,14 +109,16 @@ trimClosureC' quant rsData cc
 
 		| otherwise		
 		-> makeTSum kClosure
-			$ (cc : [TDanger r cc	| r	<- Set.toList rsData
-						, r /= cc])
+			$ (cc : [makeTDanger r cc	
+					| r	<- Set.toList rsData
+					, r /= cc])
 
 	-- cids are never quantified so we always have to keep them.
 	TClass k _	
 		-> makeTSum kClosure
-			$ cc : [TDanger r cc	| r	<- Set.toList rsData
-						, r /= cc]
+			$ cc : [makeTDanger r cc	
+					| r	<- Set.toList rsData
+					, r /= cc]
 
 	-- Trim all the elements of a sum
 	TSum k cs	
@@ -140,39 +139,44 @@ trimClosureC' quant rsData cc
 	    in	trimClosureC_start quant' rsData t
 
 	-- free
-	TFree v1 (TDanger t1 t2)
-	 | kindOfType_orDie t1 == kRegion
-	 , kindOfType_orDie t2 == kRegion
+	TApp{}
+	 | Just (tag, t1)	<- takeTFree   cc
+	 , Just (t11, t12)	<- takeTDanger t1
+	 , isRegion t11
+	 , isRegion t12
+	 -> makeTSum kClosure 
+		[ makeTFree tag t11
+		, makeTFree tag t12 ]
+	
+	 -- Free tag (TDanger t11 (TDanger t121 t122)) 
+	 --	=> ${tag : t11 $> t121;  tag : t11 $: t122;  tag : t121 $> t122}
+	 | Just (tag, t1)	<- takeTFree cc
+	 , Just (t11, t12)	<- takeTDanger t1
+	 , Just (t121, t122)	<- takeTDanger t12
 	 -> makeTSum kClosure
-	 	[ TFree v1 t1
-		, TFree v1 t2]
+	 	[ makeTFree tag (makeTDanger t11  t121)
+		, makeTFree tag (makeTDanger t11  t122)
+		, makeTFree tag (makeTDanger t121 t122) ]
 
-	     
-	TFree tag (TDanger t1 (TDanger t2 t3))
-	 -> makeTSum kClosure
-	 	[ TFree tag (TDanger t1 t2)
-		, TFree tag (TDanger t1 t3)
-		, TFree tag (TDanger t2 t3) ]
-
-	TFree tag (TDanger t1 t2)
-	 -> if kindOfType_orDie t2 == kClosure
-		then TFree tag 
-			  $ makeTDanger tag t1 (down t2)
+	 | Just (tag, t1)	<- takeTFree cc
+	 , Just (t11, t12)	<- takeTDanger t1
+	 -> if isClosure t12
+		then makeTFree tag 
+			  $ makeTDangerIfRegion tag t11 (down t12)
 		else makeTSum kClosure
-			  $ map (TFree tag)
-			  $ map (makeTDanger tag t1)
-			  $ trimClosureC_t tag quant rsData t2
+			  $ map (makeTFree tag)
+			  $ map (makeTDangerIfRegion tag t11)
+			  $ trimClosureC_t tag quant rsData t12
 
+	 | Just (tag, t)	<- takeTFree cc
+	 -> if isClosure t
+		then makeTFree tag $ down t
+		else makeTFree tag $ makeTSum kClosure 
+				   $ trimClosureC_t tag quant rsData t
 
-	TFree tag t
-	 -> if kindOfType_orDie t == kClosure
-		then TFree tag 	$ down t
-		else TFree tag 	$ makeTSum kClosure 
-				$ trimClosureC_t tag quant rsData t
-
-	TDanger{}
+	 | Just _		<- takeTDanger cc
 	 -> cc
-
+	
 	_ -> panic stage
 		$ "trimClosureC: no match for " % show cc
 
@@ -222,30 +226,29 @@ trimClosureC_t' tag quant rsData tt
 
 	-- when we enter into a data object remember that we're under its primary region.
 	TApp{}
-	 -> let result
-		 | Just (v, k, [])	<- takeTData tt 
-		 = []
+	 | Just (v, k, [])	<- takeTData tt 
+	 -> []
 		
-		
-		 | Just (v, k, (t:ts))	<- takeTData tt
-		 = if kindOfType_orDie t == kRegion 
-		   then let 	rsData'	= Set.insert t rsData
-				vs	= freeVars (t:ts)
-			in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
-				 ++ map (TDanger t) [TVar (kindOfSpace $ varNameSpace v) v
-							| v <- Set.toList vs 
-							, not $ Var.isCtorName v]
-		   else catMap down ts
+	 | Just (v, k, (t:ts))	<- takeTData tt
+	 -> if kindOfType_orDie t == kRegion 
+	     then let 	rsData'	= Set.insert t rsData
+			vs	= freeVars (t:ts)
+	    	   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
+			  ++ map (makeTDanger t) 
+				[TVar (kindOfSpace $ varNameSpace v) v
+					| v <- Set.toList vs 
+					, not $ Var.isCtorName v]
+	     else catMap down ts
 
-		  | Just (t1, t2, eff, clo) <- takeTFun tt
-		  = down clo
+	 | Just (t1, t2, eff, clo) <- takeTFun tt
+	 -> down clo
+
+	 | Just (v, t)	<- takeTFree tt
+	 -> [trimClosureC_start quant rsData tt]
 		
-		  | otherwise
-		  = []
-	    in	result
+	 | otherwise
+	 -> []
 	
-	TFree v t		-> [trimClosureC_start quant rsData tt]
-
 	_ -> panic stage
 		$ "trimClosureC_t: no match for (" % tt % ")"
 
@@ -253,14 +256,15 @@ makeFreeDanger tag rsData t
 	| Set.null rsData	= [t]
 
 	| otherwise		
-	= map (\r -> makeTDanger tag r t) 
-		$ Set.toList rsData
+	= map (\r -> makeTDangerIfRegion tag r t) 
+	$ Set.toList rsData
 
-makeTDanger tag r t
+makeTDangerIfRegion tag r t
 	| kindOfType_orDie t == kRegion
-	= TFree tag t
+	= makeTFree tag t
 	
-	| otherwise	= TDanger r t
+	| otherwise	
+	= makeTDanger r t
 
 
 -- | Trim a fetter of a closure

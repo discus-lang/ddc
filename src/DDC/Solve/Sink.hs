@@ -183,15 +183,6 @@ sinkCidsInTypeIO classes tt'
 		TError k err
 		 -> do	k'	<- sinkCidsInKindIO classes k
 			return	$ TError k' err
-						
-		TFree v t
-		 -> do	t'	<- goT t
-			return	$ TFree v t'
-			
-		TDanger t1 t2
-		 -> do	t1'	<- goT t1
-			t2'	<- goT t2
-			return	$ TDanger t1' t2'
 
 
 -- | Canonicalise the cids in a fetter.

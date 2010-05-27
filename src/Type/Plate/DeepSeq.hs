@@ -50,8 +50,6 @@ instance DeepSeq Type where
 	TSum		k ts		-> deepSeq k  $! deepSeq ts y
 	TCon		c		-> deepSeq c y
 	TVar		k v		-> deepSeq k  $! deepSeq v y
-	TFree		v t		-> deepSeq v  $! deepSeq t y
-	TDanger		t1 t2		-> deepSeq t1 $! deepSeq t2 y
 	TClass		k c		-> deepSeq k  $! deepSeq c y
 	TError		k err		-> deepSeq k y
 	TVarMore	k v t		-> deepSeq k  $! deepSeq v $! deepSeq t y

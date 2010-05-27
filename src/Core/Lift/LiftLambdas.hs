@@ -289,8 +289,8 @@ addLambda (v, t) (x, clo)
  = let	-- filter out the closure term corresponding to the var that is bound
 	--	by this lambda.
 	clo'	= makeTSum kClosure
-		$ filter (\c -> case c of
-					TFree v' _	-> v /= v
+		$ filter (\c -> case takeTFree c of
+					Just (v', _)	-> v /= v
 					_		-> True)
 		$ flattenTSum clo 
 

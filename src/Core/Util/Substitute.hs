@@ -57,9 +57,5 @@ subVVinT sub tt
 	, Just v2		<- Map.lookup v1 sub
 	= TVar k v2
 	
-	| TFree v1 t		<- tt
-	, Just v2		<- Map.lookup v1 sub
-	= TFree v2 t
-
 	| otherwise
 	= tt

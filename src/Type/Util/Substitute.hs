@@ -23,7 +23,6 @@ import Prelude			hiding (mapM)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
------
 stage	= "Type.Util.Substitute"
 
 type SubM	= State [(Type, Type)]
@@ -121,15 +120,6 @@ subTT_cutM' sub cut tt
 		
 	TCon{}		-> return tt
 				
-	TFree v t
-	 -> do	t'	<- down t
-	 	return	$ TFree v t'
-
-	TDanger t1 t2
-	 -> do	t1' 	<- down t1
-	 	t2'	<- down t2
-		return	$ TDanger t1' t2'
-
 	TError{}	-> return tt
 
 	TVar{} 		-> subTT_enter sub cut tt

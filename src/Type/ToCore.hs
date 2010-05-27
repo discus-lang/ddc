@@ -116,19 +116,15 @@ toCoreT' table tt
 	 | Just (t11, t12, eff, clo) <- takeTFun tt
 	 -> makeTFun (down t11) (down t12) (down eff) (down clo)
 	
+	 | Just (v,   t21)	<- takeTFree tt
+	 , Just (t211, t212)	<- takeTDanger t2
+	 -> makeTSum kClosure
+	 	[ makeTFree v (down t211)
+		, makeTFree v (down t212) ]
+	
 	 | otherwise
 	 -> TApp (down t1) (down t2)
-		
-	-- closure
-	TFree v (TDanger t1 t2)
-		-> makeTSum kClosure
-			[ TFree v (down t1)
-			, TFree v (down t2)]
-				
-				
-	TFree v t
-		-> TFree v (down t)
-	
+			
 	_ 	-> panic stage 
 			$ "toCoreT: failed to convert " % tt 	% "\n"
 			% "    tt = " % show tt			% "\n"
@@ -145,6 +141,9 @@ toCoreTyCon tt
 
 	TyConEffect tc k
 	 -> TyConEffect tc (toCoreK k)
+	
+	TyConClosure tc k
+	 -> TyConClosure tc (toCoreK k)
 	
 
 -- Kind ---------------------------------------------------------------------------------------------

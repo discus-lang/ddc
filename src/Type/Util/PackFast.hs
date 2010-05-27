@@ -16,14 +16,9 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
-
------
 stage	= "Type.Util.PackFast"
 debug	= False
-trace ss x	
-	= if debug
-		then Debug.trace (pprStrPlain ss) x
-		else x
+trace ss x = if debug then Debug.trace (pprStrPlain ss) x else x
 
 
 -- | Controls how the type is packed.
@@ -162,6 +157,25 @@ packTypeCrsSub' config crsEq subbed tt
 	TSum k ts
 	 -> let ts'	= map (packTypeCrsSub config crsEq subbed) ts
 	    in	makeTSum k ts'
+
+
+	TApp{}
+	 -- for a closure like  v1 : v2 : TYPE, 
+	 --	the type is really a part of v1. The fact that it also came from v2
+	 --	doesn't matter. The variables are just for doccumentaiton anyway.
+	 | Just (v1, t1)	<- takeTFree tt
+	 , Just (_,  t2)	<- takeTFree t1
+	 -> packTypeCrsSub config crsEq subbed (makeTFree v1 t2)
+
+	 | Just (v1, t1)	<- takeTFree tt
+	 , TConstrain t crs	<- t1
+	 -> TConstrain (makeTFree v1 t) crs
+	
+	 | Just (v1, t1)	<- takeTFree tt
+	 , TSum k ts		<- t1
+	 , k == kClosure
+	 -> TSum k $ map (packTypeCrsSub config crsEq subbed)
+	 	   $ map (makeTFree v1) ts
 	
 	TApp t1 t2
 	 -> let	t1'	= packTypeCrsSub config crsEq subbed t1
@@ -169,33 +183,7 @@ packTypeCrsSub' config crsEq subbed tt
 	    in	TApp t1' t2'
 	
 	TCon{}	-> tt
-		
-	-- for a closure like  v1 : v2 : TYPE, 
-	--	the type is really a part of v1. The fact that it also came from v2
-	--	doesn't matter. The variables are just for doccumentaiton anyway.
-	TFree v1 t2@(TFree _ t)
-	 -> packTypeCrsSub config crsEq subbed (TFree v1 t)
-
-	TFree v1 t2@(TConstrain t crs)
-	 -> TConstrain (TFree v1 t) crs
-
---	TFree v1 t2@(TConstrain (TFree v2 t) crs)
---	 -> packTypeCrsSub config crsEq subbed (TFree v1 (TConstrain t crs))
-
-	TFree v1 t2@(TSum k ts)
-	 | k == kClosure
-	 -> TSum k 
-	  $ map (packTypeCrsSub config crsEq subbed)
-	  $ map (TFree v1) ts
-	
-	TFree v t
-	 -> let t'	= packTypeCrsSub config crsEq subbed t
-	    in	TFree v t'
-	
-	TDanger t1 t2
-	 -> let t2'	= packTypeCrsSub config crsEq subbed t2
-	    in	TDanger t1 t2'
-	
+				
 	TVar   k v	-> packTypeCrsClassVar config crsEq subbed tt k	
 	TClass k cid	-> packTypeCrsClassVar config crsEq subbed tt k
 
@@ -294,9 +282,10 @@ isBoringEqConstraint t1 t2
 	 ||  k == kClosure
 	
 	-- types in TFrees can be rewritten to TBot by the closure trimmer.
-	TFree _ (TSum k [])
+	TApp{}
+	 | Just (v, TSum k [])	<- takeTFree t2
 	 -> k == kClosure
-	
+		
 	-- constraint is interesting.
 	_	-> False
 

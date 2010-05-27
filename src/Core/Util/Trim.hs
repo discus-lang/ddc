@@ -16,12 +16,9 @@ import DDC.Var
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
-stage	= "Core.Util.Trim"
-debug	= False
-trace ss x	
-	= if debug
-		then Debug.trace (pprStrPlain ss) x
-		else x
+stage		= "Core.Util.Trim"
+debug		= False
+trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 
 -- | Trim the closure portion of this type
@@ -141,27 +138,27 @@ trimClosureC' quant rsData cc
 		quant'	= Set.insert v quant
 	    in  trimClosureC quant' rsData t
 
-	TFree tag (TVar k v)
-	 | k == kEffect		-> tEmpty
-		
+	TApp t1 t2
+
 	 -- If this closure has no free variables
 	 --	then it is closed and can safely be erased.
-	 | Set.member v quant	-> tEmpty
-		
-	TFree tag (TSum _ [])	-> tEmpty
-		
-	-- Trim either a data or closure element of a closure
-	--	We need this dispatch because the right hand side of a 
-	--	TFree can be either data or more closure
-	TFree tag t
-	  | isClosure t
-	  -> TFree tag $ down t
+	 | Just (tag, TVar k v)		<- takeTFree cc
+	 , k == kEffect	|| Set.member v quant	
+	 -> tEmpty
 
-	  | otherwise
-	  -> makeTSum kClosure 
-		$ map (TFree tag) 
-		$ trimClosureC_t quant rsData t
-			
+	 | Just (tag, TSum _ [])	<- takeTFree cc
+	 -> tEmpty
+	
+	 -- Trim either a data or closure element of a closure
+	 --	We need this dispatch because the right hand side of a 
+	 --	TFree can be either data or more closure
+	 | Just (tag, t)		<- takeTFree cc
+	 -> if isClosure t
+		then makeTFree tag $ down t
+		else makeTSum kClosure 
+			$ map (makeTFree tag) 
+			$ trimClosureC_t quant rsData t
+				
 	_ -> panic stage
 		$ "trimClosureC: no match for " % show cc
 
@@ -205,25 +202,20 @@ trimClosureC_t quant rsData tt
 	--       leave it in. (it's always safe to _increase_ the closure)
 	--
 	TApp{}
-	 -> let result
-			| isEffect tt
-			= []
+	 | isEffect tt
+	 -> []
 
-			| Just (v, k, ts)	<- takeTData tt
-			= catMap down ts
+	 | Just (v, k, ts)	<- takeTData tt
+	 -> catMap down ts
 			
-			-- An object of type (t1 -($c1)> t2) does not contain a value of 
-			-- either type t1 or t2.  nly the closure portion of a function actually holds data.
-			| Just (t1, t2, eff, clo) <- takeTFun tt
-			= down clo
-			
-			| otherwise
-			= panic stage
-			$ "trimClosureC_t: no match for (" % tt % ")"
-	   in result
-
-	TFree v t	-> [trimClosureC quant rsData tt]
-	 	 
+	 -- An object of type (t1 -($c1)> t2) does not contain a value of 
+	 -- either type t1 or t2.  nly the closure portion of a function actually holds data.
+	 | Just (t1, t2, eff, clo) <- takeTFun tt
+	 -> down clo
+	
+	 | Just (v, t)		<- takeTFree tt
+	 -> [trimClosureC quant rsData tt]
+	
 	_ -> panic stage
 		$ "trimClosureC_t: no match for (" % tt % ")"
 

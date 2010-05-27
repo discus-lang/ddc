@@ -72,18 +72,6 @@ stripFWheresT justMono	tt
 
  	TVar{}	-> (tt, [])
 		
-	-- closure
-	TFree v t
-	 -> let	(t', fs)	= stripFWheresT justMono t
-	    in	( TFree v t'
-	    	, fs)
-
-	TDanger t1 t2
-	 -> let (t1', fs1)	= stripFWheresT justMono t1
-	  	(t2', fs2)	= stripFWheresT justMono t2
-	    in	( TDanger t1' t2'
-	        , fs1 ++ fs2)
-
 	TClass k cid	-> (tt, [])
 
 	_ -> panic stage

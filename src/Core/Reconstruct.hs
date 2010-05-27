@@ -458,8 +458,8 @@ reconX (XDo ss)
         	, t
 		, makeTSum kEffect sEs
 		, makeTSum kClosure
-			$ filter (\c -> case c of
-					  TFree v _	-> notElem v vsBind
+			$ filter (\c -> case takeTFree c of
+					  Just (v, _)	-> notElem v vsBind
 					  _		-> True)
 			$ flattenTSum
 			$ makeTSum kClosure sCs)
@@ -519,7 +519,7 @@ reconX (XVar v TNil)
 	return	( XVar v tDrop
 		, tDrop
 		, tPure
-		, TFree v t)
+		, makeTFree v t)
 
 -- var has a type annotation, so use that as its type
 reconX (XVar v t)
@@ -528,7 +528,7 @@ reconX (XVar v t)
 	return	( XVar v t
 		, t'
 		, tPure
-		, trimClosureC Set.empty Set.empty $ TFree v t)
+		, trimClosureC Set.empty Set.empty $ makeTFree v t)
 
 
 -- prim

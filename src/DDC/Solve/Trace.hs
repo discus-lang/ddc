@@ -196,11 +196,11 @@ addType :: Type -> Type -> TraceM ()
 addType t1 t2
 
 	-- If the scheme in a TFree has an outer TConstrain we can split those constraints off.
-	| TFree v t21	<- t2
+	| Just (v, t21)	<- takeTFree t2
 	= do	let (t21', crsEq', crsMore', crsOther')	
 			= splitTConstrain t21
 			
-		let t2'	= TFree v t21'
+		let t2'	= makeTFree v t21'
 			
 		addCrsEq 	crsEq'
 		addCrsMore 	(Map.union (Map.singleton t1 t2') crsMore')
@@ -265,7 +265,7 @@ simplifyCrsMore' crsFree crsAcc []
 	= crsAcc
 	
 simplifyCrsMore' crsFree crsAcc (c@(t1, t2):cs)
-	| TFree{}	<- t2
+	| Just _	<- takeTFree t2
 	= case lookup t2 crsFree of
 
 	    -- If we've already trimmed this closure then just reuse that.
@@ -341,7 +341,7 @@ getTypeOfNode kind node
 		
 	NFree v t
 	 -> do	t'	<- sinkCidsInType t
-		return $ TFree v t'
+		return $ makeTFree v t'
 		
 
 -- | If this class contains a simple type like TCon or tBot, then return that, 

@@ -69,18 +69,21 @@ staticRsDataT tt
 	-- TODO: we're taking all args to be material, 
 	--	which is a safe overapproximation. 
 	TApp{}
-	 -> case takeTData tt of
-	 	Just (k, v, ts)	-> Set.unions $ map staticRsDataT ts
-		_		-> Set.empty
+	 | Just (k, v, ts)	<- takeTData tt
+	 -> Set.unions $ map staticRsDataT ts
+	 
+	 | Just (v, t)		<- takeTFree tt
+	 -> staticRsDataT t
+	
+	 | Just (t1, t2)	<- takeTDanger tt
+	 -> Set.unions $ map staticRsDataT [t1, t2]
+	
+	 | otherwise		-> Set.empty
 
 	TFetters t fs		-> staticRsDataT t
 	TConstrain t crs	-> staticRsDataT t
 	
-	TForall b k t		-> staticRsDataT t
-	
-	TFree v t		-> staticRsDataT t
-	TDanger t1 t2		-> Set.unions $ map staticRsDataT [t1, t2]
-	
+	TForall b k t		-> staticRsDataT t	
 	TError{}		-> Set.empty
 	
 	TCon{}			-> Set.empty
@@ -92,21 +95,29 @@ staticRsDataT tt
 -- Region cids that are free in the closure of the outer-most function
 --	constructor(s) are being shared with the caller. These functions
 --	did not allocate those regions, so they be can't generalised here.
-staticRsClosureT
-	:: Type -> Set Type
-
-staticRsClosureT t
- = case t of
+staticRsClosureT :: Type -> Set Type
+staticRsClosureT tt
+ = case tt of
 	TFetters t fs		-> staticRsClosureT t
 	TConstrain t crs	-> staticRsClosureT t
 
 	TApp{} 
-	 | Just (t1, t2, eff, clo)	<- takeTFun t
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> staticRsDataT clo
 
-	-- TODO: we're taking all args to be material, 
-	--	which is a safe over approximation.
-	 | Just (v, k, ts)		<- takeTData t
+	 | Just (v, t2)			<- takeTFree tt
+	 -> staticRsDataT t2
+	
+	 | Just (t1, t2)		<- takeTDanger tt
+	 -> Set.unions $ map staticRsDataT [t1, t2]
+
+	 -- TODO: we're taking all args to be material, 
+	 --	which is a safe over approximation.
+	 | Just (v, k, ts)		<- takeTData tt
+	 -> Set.unions $ map staticRsClosureT ts
+
+	TSum k ts
+	 | k == kClosure
 	 -> Set.unions $ map staticRsClosureT ts
 
 	_ 	-> Set.empty

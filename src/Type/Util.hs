@@ -182,9 +182,6 @@ slurpVarsRD' tt
 		then [tt]
 		else []
 
-	| TFree{}	<- tt	= []
-	| TDanger{}	<- tt	= []
-
 	| TClass k _	<- tt
 	= if k == kRegion || k == kValue
 		then [tt]

@@ -37,15 +37,6 @@ unifyTypes t1 t2
 	, TCon tc2		<- t2
 	, tc1 == tc2
 	= Just []
-
-	-- special constructors
-	| TDanger{}		<- t1
-	, TDanger{}		<- t2
-	= Just [(t1, t2)]
-	
-	| TFree{}		<- t1
-	, TFree{}		<- t2
-	= Just [(t1, t2)]
 	
 	-- same variable.
 	| TVar k1 v1		<- t1

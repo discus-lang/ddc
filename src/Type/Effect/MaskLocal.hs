@@ -11,7 +11,6 @@ import Shared.VarPrim
 import DDC.Main.Error
 import qualified Data.Set	as Set
 
------
 stage	= "Type.Effect.MaskLocal"
 
 -- | Mask effects on local regions.
@@ -96,10 +95,6 @@ visibleRsT tt
 	 -> Set.unions
 		[ visibleRsT t1
 		, visibleRsT t2 ]
-
-	-- closure
-	TFree v t		-> visibleRsT t
-	TDanger t1 t2		-> Set.union (visibleRsT t1) (visibleRsT t2)
 	 
 	TClass kR cid	
 	 | kR	== kRegion	-> Set.singleton tt

@@ -68,11 +68,15 @@ checkSchemeDanger errs c
 			$ trimClosureC_constrainForm
 				Set.empty Set.empty 
 			$ toConstrainFormT
-			$ TFree (varWithName "foo") t
+			$ makeTFree (varWithName "foo") t
 		
 		let ds	= catMaybes
 			$ map (\d -> case d of
-					TFree _ (TDanger t1 t2)	-> Just (t1, t2)
+					TApp{}
+					 | Just (_, t2)		<- takeTFree d
+					 , Just (t11, t12)	<- takeTDanger t2
+					 -> Just (t11, t12)
+					
 					_			-> Nothing)
 			$ flattenTSum clo
 		

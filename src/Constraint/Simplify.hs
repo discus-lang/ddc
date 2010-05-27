@@ -157,10 +157,10 @@ subFollowVT' sub block tt
  = let	down	= subFollowVT' 	sub block
 	downF	= subFollowVT_f sub block
    in case tt of
- 	TForall  b k t		-> TForall	b k (down t)
-	TFetters t fs		-> TFetters	(down t) (map downF fs)
-	TSum 	k ts		-> TSum		k (map down ts)
-	TApp t1 t2		-> TApp		(down t1) (down t2)
+ 	TForall  b k t		-> TForall b k (down t)
+	TFetters t fs		-> TFetters (down t) (map downF fs)
+	TSum 	k ts		-> TSum	k (map down ts)
+	TApp t1 t2		-> TApp	(down t1) (down t2)
 	TCon{}			-> tt
 	TVar	k v
 	 | Set.member v block	-> tt
@@ -168,8 +168,6 @@ subFollowVT' sub block tt
 	 -> case Map.lookup v sub of
 	 	Nothing		-> tt
 		Just t'		-> subFollowVT' sub (Set.insert v block) t'
-			
-	TFree v t		-> TFree v (down t)
 		
 
 subFollowVT_f sub block ff

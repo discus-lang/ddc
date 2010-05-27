@@ -26,11 +26,8 @@ import qualified DDC.Main.Arg		as Arg
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
-
------
 debug	= True
 trace s	= when debug $ traceM s
-
 
 -- | Generalise a type
 generaliseType

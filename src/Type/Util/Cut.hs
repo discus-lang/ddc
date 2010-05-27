@@ -44,6 +44,7 @@ where
 import Type.Plate.Collect
 import Type.Exp
 import Type.Builtin
+import Type.Util.Bits
 import Util
 import DDC.Main.Error
 import Type.Pretty		()
@@ -115,14 +116,15 @@ cutT cidsCut tt
 	TVar{}			-> tt
 	TCon{}			-> tt
 
-	TApp	t1 t2		-> TApp (down t1) (down t2)
-
-	TFree v t2@(TClass k _)
-	 |  Set.member t2 cidsCut
+	TApp{}
+	 | Just (v, t2@(TClass k _))	<- takeTFree tt
+	 ,  Set.member t2 cidsCut
 	 -> tEmpty
 
-	TFree v t		-> TFree   v (down t)
-	TDanger t1 t2		-> TDanger (down t1) (down t2)
+	TApp	t1 t2		
+	 -> TApp (down t1) (down t2)
+
+
 
 	TClass k cid'
 	 | Set.member tt cidsCut

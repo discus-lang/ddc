@@ -18,12 +18,8 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace
 
------
-debug	= False
-trace ss x	
- 	= if debug 
-		then Debug.Trace.trace (pprStrPlain ss) x
-		else x
+debug		= False
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 
 -- | Check if t subsumes s another. t :> s
@@ -93,7 +89,6 @@ subsumes3 table t s
 				table fs
 	  in  subsumes3 table' t s'
 
-
 	-- SubRefl
 	| t == s
 	= (True, "SubRefl")
@@ -135,17 +130,6 @@ subsumes3 table t s
 	, subsumes1 table tClo sClo
 	= (True, "SubFun")
 
-	-- SubTag
-	| TFree _ t1			<- t
-	, s1				<- s
-	, subsumes1 table t1 s1
-	= (True, "SubTag - tag t")
-	
-	| t1				<- t
-	, TFree _ s1			<- s
-	, subsumes1 table t1 s1
-	= (True, "SubTag - tag s")
-
 	-- SubCtor
 	| Just (tVar, k, ts)	<- takeTData t
 	, Just (sVar, k, ss)	<- takeTData s
@@ -160,26 +144,10 @@ subsumes3 table t s
 		= (True, "SubCtor")
 	  in	result
 			
-
-	-- This is really Eq
-	--	T <: T
-	
-	-- closure constructor
-	-- 	It doesn't matter what the variable is
-	--	So long as the type is the same
-	| TFree tVar ts		<- t
-	, TFree sVar ss		<- s
-	, ts == ss
-	= (True, "SubFree - both")
-	
-	| TFree tVar ts		<- t
-	, ts == s
-	= (True, "SubFree - t")
-
-	| TFree tVar ss		<- s
-	, t == ss
-	= (True, "SubFree - s")
-
+	-- Ignore vars when comparing closures
+	| Just (_, t')		<- takeTFree t
+	, Just (_, s')		<- takeTFree s
+	= subsumes3 table t' s'
 	
 	-- no dice.
 	| otherwise
@@ -201,11 +169,13 @@ slurpMore (v1, t2) table
 	    
 	_ -> Map.insert v1 t2 table
 
-
 stripTFree tt
  = case tt of
  	TSum k ts			-> makeTSum k $ map stripTFree ts
-	TFree v t@(TVar k _)	
-		| k == kClosure		-> t
+
+	TApp{}
+	 | Just (v, t@(TVar k _))	<- takeTFree tt
+	 , k == kClosure	-> t
+	
 	_				-> tt
 

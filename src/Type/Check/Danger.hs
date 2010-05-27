@@ -13,7 +13,6 @@ import DDC.Var.PrimId		as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
------
 stage	= "Type.Check.Danger"
 
 dangerousCidsT :: Type -> [ClassId]
@@ -78,20 +77,17 @@ dangerT rsMutable fsClosure tt
 
    	 | Just (v, k, ts)		<- takeTData tt
 	 -> dangerT_data rsMutable fsClosure (v, k, ts)
+
+	 | Just (v, t)		<- takeTFree tt
+	 -> dangerT rsMutable fsClosure t
 	 
+	 | Just (t1, t2)	<- takeTDanger tt
+	 -> if Set.member t1 rsMutable
+		then collectTClassVars t2
+		else dangerT rsMutable fsClosure t2
+	
 	 | otherwise
 	 -> Set.empty
-
-	-- closures
-	TFree v t
-	 -> dangerT rsMutable fsClosure t
-
-	TDanger t1 t2
-	 	|  Set.member t1 rsMutable
-	 	-> collectTClassVars t2
-
-		| otherwise
-		-> dangerT rsMutable fsClosure t2
 
 	TSum kC ts
 	 | kC	== kClosure

@@ -127,38 +127,14 @@ feedType src tt
 
 		return cidT
 
-	TApp t1 t2
-	 -> do	
-		let Just k	= kindOfType tt
-	 	cidT		<- allocClass src k
-	 	cid1		<- feedType src t1
-		cid2		<- feedType src t2
-
-		addNode cidT src k	
-			$ NApp cid1 cid2
-
-		return cidT
-
-	TCon tc
-	 -> do	let k		= tyConKind tc
-		cidT		<- allocClass src k
-
-	 	addNode cidT src k 
-			$ NCon tc
-
-		return cidT
-
- 	TVar k v 
-	 -> do 	cidT		<- makeClassFromVar src k v 
-		return cidT
-
 	-- closure
 	-- TFree's that we get from the constraints might refer to types that are in
 	--	the defs table but not the graph. We don't want to pollute the graph
 	--	with the whole external def so trim these types down and just add the
 	--	closure information that we need.
-	TFree v1 t@(TVar kV v2)
-	 | kV == kValue
+	TApp{}
+	 | Just (v1, t@(TVar kV v2))	<- takeTFree tt
+	 , kV == kValue
 	 -> do	cid		<- allocClass src kClosure
 		defs		<- gets stateDefs
 		case Map.lookup v2 defs of
@@ -188,7 +164,8 @@ feedType src tt
 			return cid
 
 	-- A non-var closure. We can get these from signatures and instantiated schemes
-	TFree v1 t
+	TApp{}
+	 | Just (v1, t)		<- takeTFree tt
 	 -> do	cid		<- allocClass src kClosure
 		t'		<- linkType [] src t
 
@@ -196,6 +173,32 @@ feedType src tt
 			$ NFree v1 t'
 
 		return cid
+
+	TApp t1 t2
+	 -> do	
+		let Just k	= kindOfType tt
+	 	cidT		<- allocClass src k
+	 	cid1		<- feedType src t1
+		cid2		<- feedType src t2
+
+		addNode cidT src k	
+			$ NApp cid1 cid2
+
+		return cidT
+
+	TCon tc
+	 -> do	let k		= tyConKind tc
+		cidT		<- allocClass src k
+
+	 	addNode cidT src k 
+			$ NCon tc
+
+		return cidT
+
+ 	TVar k v 
+	 -> do 	cidT		<- makeClassFromVar src k v 
+		return cidT
+
 
 	TClass k cid
 	 -> do 	cidT'		<- sinkClassId cid

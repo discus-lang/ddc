@@ -493,13 +493,6 @@ instance Monad m => TransM m Type where
 	 -> do	tyCon'		<- transZM table tyCon
 	 	transT table	$ TCon tyCon'
 
-
-	-- closure
-	TFree v t
-	 -> do	v'		<- followV_free table v
-	    	t'		<- followT table t
-		transT table	$ TFree v' t'
-
 	_ 	-> panic stage
 		$  "transZM[Type]: no match for " % show tt
 
@@ -518,6 +511,9 @@ instance Monad m => TransM m TyCon where
 		return	$ tt { tyConEffect = TyConEffectTop v }
 
 	TyConEffect{}		-> return tt
+
+	-- BUGS: do we really want to ignore the tag var?
+	TyConClosure{}		-> return tt
 
 	TyConWitness { tyConWitness = TyConWitnessMkVar v }
 	 -> do	v'	<- followV_free table v

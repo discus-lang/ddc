@@ -3,6 +3,7 @@
 module DDC.Type.TyCon
 	( TyCon		 (..)
 	, TyConEffect    (..)
+	, TyConClosure   (..)
 	, TyConWitness 	 (..)
 	, TyConElaborate (..)
 	, takeTyConWitnessOfKiCon
@@ -13,28 +14,33 @@ import DDC.Type.KiCon
 import {-# SOURCE #-} Type.Exp
 
 
--- | Type constructors
+-- | Type constructors.
 data TyCon
-	-- Function type constructor.
+	-- | Function type constructor.
 	= TyConFun
 
-	-- A data type constructor.
+	-- | A data type constructor.
 	| TyConData
 		{ tyConName		:: !Var
 		, tyConDataKind		:: !Kind }
 
-	-- An effect type constructor.
+	-- | An effect type constructor.
 	| TyConEffect
 		{ tyConEffect		:: !TyConEffect
 		, tyConEffectKind	:: !Kind }
+		
+	-- | A closure type constructor.
+	| TyConClosure
+		{ tyConClosure		:: !TyConClosure
+		, tyConClosureKind	:: !Kind }
 
-	-- A witness type constructor.
+	-- | A witness type constructor.
 	| TyConWitness
 		{ tyConWitness		:: !TyConWitness
 		, tyConWitnessKind 	:: !Kind }
 
-	-- An elaboration of some other type. 
-	-- These are desugared in Type.Util.Elaborate
+	-- | An elaboration of some other type. 
+	--   These are desugared in Type.Util.Elaborate
 	| TyConElaborate
 		{ tyConElaborate	:: !TyConElaborate
 		, tyConElaborateKind	:: !Kind }
@@ -57,6 +63,19 @@ data TyConEffect
 	deriving (Show, Eq)
 
 
+-- TyConClosure -----------------------------------------------------------------------------------
+-- | Closure type constructors.
+--   These aren't defined by the user, they're all builtin.
+data TyConClosure
+
+	-- | Lift a type to a closure term. This constructor also contains a tag variable, 
+	--   which must be in the value namespace.
+	= TyConClosureFree Var
+
+	| TyConClosureDanger
+	deriving (Show, Eq)
+	
+
 -- TyConWitness -----------------------------------------------------------------------------------
 -- | Witness type constructors.
 data TyConWitness
@@ -67,7 +86,7 @@ data TyConWitness
 	--   printed like MkEq.
 	= TyConWitnessMkVar Var		
 		
-	-- Baked in witness constructors.
+	-- Builtin witness constructors.
 	| TyConWitnessMkConst		
 	| TyConWitnessMkDeepConst
 	| TyConWitnessMkMutable	

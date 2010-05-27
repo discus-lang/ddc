@@ -229,7 +229,7 @@ elaborateCloT' env tt
 		
 		-- elaborate the right hand arg, 
 		--	carrying the new parameter name down into it.
-		let argClo		= TFree varVal t1
+		let argClo		= makeTFree varVal t1
 		(t2', fs, cloT2)	<- elaborateCloT' (env ++ [argClo]) t2
 
 		-- make a new closure var to name the closure of this function

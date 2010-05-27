@@ -63,15 +63,6 @@ linkType bound src tt
 			
 		 Just cid
 		  -> do	return	$ TClass k cid
-
-	TFree v t
-	 -> do	t'	<- linkType bound src t
-	 	return	$ TFree v t'
-		
-	TDanger t1 t2
-	 -> do	t1'	<- linkType bound src t1
-	 	t2'	<- linkType bound src t2
-		return	$ TDanger t1' t2'
 		
 	-- don't link error types to the graph.
 	TError{}	-> return tt
