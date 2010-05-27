@@ -53,7 +53,7 @@ trimClosureT_constrainForm quant rsData tt
 	= trimClosureT_start quant rsData tt
 
 trimClosureT_start quant rsData tt
-  = trace ("trimming " % tt % "\n")
+  = trace ("trimClosureT " % tt % "\n")
   $ let	tt_trimmed	= trimClosureT' quant rsData tt
 	tt_packFast	= PackFast.packType tt_trimmed
 			
@@ -91,8 +91,9 @@ trimClosureC_start quant rsData cc
 			
 	cc'		= trace 
  				( "trimClosureC\n"	
- 				% "    rsData = " % rsData	% "\n"
-				% "    cc     = " % cc		% "\n") 
+ 				% "    rsData   = " % rsData		% "\n"
+				% "    closure  = " % cc		% "\n"
+				% "    trimmed  = " % cc_trimmed	% "\n")
 				cc_packed
    in	if cc' == cc
    	 then cc'
@@ -130,7 +131,7 @@ trimClosureC' quant rsData cc
 	 -> let	t'		= trimClosureC_start quant rsData t
 		crsEq'		= Map.mapWithKey (\t1 t2 -> trimClosureT_constrainForm quant rsData t2) crsEq
 		crsMore'	= Map.mapWithKey (\t1 t2 -> trimClosureT_constrainForm quant rsData t2) crsMore
-	    in	addConstraints (Constraints crsEq' crsMore' crsOther) t'
+	    in	addConstraints (Constraints crsEq' crsMore' []) t'
 
 	-- add quantified vars to the set
 	TForall b k t		
