@@ -173,7 +173,7 @@ slurpW	(WLit sp litFmt)
 	tE			<- newTVarES "const"
 
 	-- work out the type of this literal
-	let TyConData 
+	let Just TyConData 
 		{ tyConName 	= tcVar
 		, tyConDataKind = tcKind }
 		= tyConOfLiteralFmt litFmt

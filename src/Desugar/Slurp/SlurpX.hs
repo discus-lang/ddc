@@ -185,7 +185,7 @@ slurpX	exp@(XLit sp litFmt)
  	tX@(TVar _ (UVar vT))	<- newTVarDS "lit"
 
 	-- work out the type of this literal
-	let TyConData 
+	let Just TyConData 
 		{ tyConName 	= tcVar
 		, tyConDataKind = tcKind }
 		= tyConOfLiteralFmt litFmt
