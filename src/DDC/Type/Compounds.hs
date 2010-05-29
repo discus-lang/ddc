@@ -87,6 +87,7 @@ makeTFun :: Type -> Type -> Effect -> Closure -> Type
 makeTFun t1 t2 eff clo
 	= TApp (TApp (TApp (TApp (TCon TyConFun) t1) t2) eff) clo
 
+
 -- | Convert a list of types:	@[t1, t2, t3, t4]@
 --   into a function type:      @t1 -> (t2 -> (t3 -> t4))@,
 --   using the given effect and closure to annotate every function constructor.
@@ -102,8 +103,8 @@ makeTFunsEC _   _   []		= panic stage $ "makeTFunEC: empty list"
 -- | Like `makeTFunsEC` but each function constructor is given a pure effect
 --   and an empty closure.
 makeTFunsPureEmpty :: [Type] -> Type
-makeTFunsPureEmpty []	= panic stage $ "makeTFunsPureEmpty: empty list"
-makeTFunsPureEmpty xx	= makeTFunsEC tPure tEmpty xx
+makeTFunsPureEmpty []		= panic stage $ "makeTFunsPureEmpty: empty list"
+makeTFunsPureEmpty xx		= makeTFunsEC tPure tEmpty xx
 
 
 -- | Take the arguments of a function type.
@@ -159,16 +160,10 @@ makeTSum k ts
 
 
 -- | Crush nested TSums into their components.
---   TODO don't be messin' with TFree along the way.
 flattenTSum :: Type -> [Type]
 flattenTSum tt
  = case tt of
 	TSum _ ts		-> catMap flattenTSum ts
-
-	TApp{}
-	 | Just (_, TSum _ [])	<- takeTFree tt
-	 -> []
-	
 	_			-> [tt]
 
 
