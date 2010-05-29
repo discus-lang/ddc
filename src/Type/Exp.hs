@@ -27,19 +27,17 @@ import DDC.Main.Error
 import DDC.Var
 
 
--- Super-Kinds ----------------------------------------------------------------------------------
+-- Superkinds -------------------------------------------------------------------------------------
 data Super
-	-- | (+) Prop. Properties. 
-	--   The occurrence of a type level witness who's superkind has this as the result,
-	--   guarantees some property of a program. 
+	-- | (+) Prop. The superkind of witness types.
 	--   eg: MkConst %r1 :: Const %r1 :: +
 	= SProp			
 
-	-- | ([]) Box. The super-kind of some non-property encoding kind. 
+	-- | ([]) Box. The superkind of non-witness types.
 	--   eg: 5 :: Int :: * :: []
 	| SBox			
 	
-	-- | Super-Kind functions.
+	-- | Superkind functions.
 	| SFun	Kind	Super	
 	deriving (Show, Eq)
 
@@ -49,11 +47,12 @@ data Kind
 	-- | Missing or as-yet-unknown kind information.
 	= KNil
 
-	-- | Kind constructor.
+	-- | A kind constructor.
 	| KCon	KiCon	Super
 
-	-- | Dependent kind abstraction. Equivalent to (PI k1. k2)
-	--   The body can contain de Bruijn indices (TIndex) that refer to the parameter type.
+	-- | Dependent kind abstraction. Equivalent to (PI (a : k1). k2).
+	--   We use the de Bruijn representation for these, so the body uses TIndex to 
+	--   refer to the parameter type, instead of named variables.
 	| KFun	Kind	Kind
 
 	-- | Dependent kind application.
