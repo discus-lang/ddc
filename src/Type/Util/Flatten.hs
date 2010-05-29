@@ -5,6 +5,7 @@ where
 import Type.Util.Bits
 import Util
 import DDC.Type.Exp
+import DDC.Type.Predicates
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

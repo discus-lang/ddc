@@ -12,8 +12,7 @@ import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Main.Pretty
-import DDC.Type.Exp	
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Debug.Trace

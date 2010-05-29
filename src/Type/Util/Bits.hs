@@ -2,16 +2,7 @@
 -- | Bits and pieces for working with types.
 module Type.Util.Bits
 	-- simple
-	( isTBot
-	, isTApp
-	, isSomeTVar
-	, isTClass
-	, isFConstraint
-	, isFWhere
-	, isFMore
-	
-	, isUnboxedT
-	, makeTFunEC
+	( makeTFunEC
 
 	-- arity
 	, takeValueArityOfType
@@ -92,49 +83,7 @@ stage	= "Type.Util.Bits"
 
 
 -- Simple things -----------------------------------------------------------------------------------
-isTBot tt
- = case tt of
-	TSum _ []	-> True
-	_		-> False
 
-isTApp tt
- = case tt of
- 	TApp{}		-> True
-	_		-> False
-
-isSomeTVar tt
- = case tt of
- 	TVar _ UVar{}	-> True
-	TVar _ UMore{}	-> True
-	_		-> False
-
-isTClass tt
- = case tt of
- 	TVar _ UClass{}	-> True
-	_		-> False
-
-isFConstraint ff
- = case ff of
- 	FConstraint v ts -> True
-	_		 -> False
-
-isFWhere ff
- = case ff of
- 	FWhere{}	-> True
-	_ 		-> False
-
-isFMore ff
- = case ff of
- 	FMore{}		-> True
-	_ 		-> False
-
--- | Check if a type represents some unboxed value
-isUnboxedT :: Type -> Bool
-isUnboxedT t
- = case takeTData t of
- 	Just (v, _, _)
-	 | last (varName v) == '#'	-> True	 
-	_				-> False
 
 -- | makeTFunEC
 --	Converts a list of types:	[t1, t2, t3, t4]
@@ -518,6 +467,19 @@ toConstrainFormT tt
 	TApp t1 t2		-> TApp (down t1) (down t2)
 	TSum k  ts		-> TSum k $ map toConstrainFormT ts
 	_			-> tt
+
+ where
+	isFWhere ff
+ 	 = case ff of
+ 		FWhere{}	-> True
+		_ 		-> False
+
+	isFMore :: Fetter -> Bool
+	isFMore ff
+ 	 = case ff of
+ 		FMore{}		-> True
+		_ 		-> False
+
 
 toConstrainFormF :: Fetter -> Fetter
 toConstrainFormF ff
