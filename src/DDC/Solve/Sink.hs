@@ -15,9 +15,9 @@ module DDC.Solve.Sink
 	, sinkCidsInTypeIO 
 	, sinkCidsInFetterIO)
 where
-import Type.Exp
 import Type.Base
 import DDC.Main.Error
+import DDC.Type
 import Data.Array.IO
 import Control.Monad
 import qualified Data.Set	as Set
@@ -140,19 +140,20 @@ sinkCidsInTypeIO classes tt'
 	goT tt
 	 = case tt of
 		TNil		-> return tt
-		TVar{}		-> return tt
-		TIndex{}	-> return tt
-		TCon{}		-> return tt
 
-		TClass k cid
+		TVar k (UClass cid)
 		 -> do	k'	<- sinkCidsInKindIO classes k
 			cid'	<- sinkCidIO classes cid
-			return	$ TClass k' cid'
+			return	$ TVar k' (UClass cid')
 
-		TVarMore k v t
+		TVar k (UMore v t)
 		 -> do	k'	<- sinkCidsInKindIO classes k
 			t'	<- goT t
-			return	$ TVarMore k' v t'
+			return	$ TVar k' (UMore v t')
+
+		TVar{}		-> return tt
+
+		TCon{}		-> return tt
 			
 		TSum k ts
 		 -> do	k'	<- sinkCidsInKindIO classes k

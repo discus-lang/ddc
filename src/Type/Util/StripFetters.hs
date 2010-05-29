@@ -4,13 +4,12 @@ module Type.Util.StripFetters
 	( stripFWheresT_all
 	, stripFWheresT_mono )
 where
-import Type.Exp
 import Util
+import DDC.Type.Exp
 import DDC.Main.Error
 import Type.Pretty		()
 
------
-stage = "Type.Util.StripFetters"
+stage	= "Type.Util.StripFetters"
 
 -- | Strip all fetters from this type
 stripFWheresT_all  :: Type -> (Type, [Fetter])
@@ -39,6 +38,8 @@ stripFWheresT justMono	tt
 	 -> let	(t', fs)	= stripFWheresT justMono t
 	    in	( TForall b k t'
 	    	, fs)
+
+	TConstrain{} -> panic stage $ "stripFWheresT: TConstrain"
 
 	TFetters t fs
 	 -- Just take the monomorphic FWheres
@@ -72,10 +73,6 @@ stripFWheresT justMono	tt
 
  	TVar{}	-> (tt, [])
 		
-	TClass k cid	-> (tt, [])
-
-	_ -> panic stage
-		$ "stripFWheresT: no match for " % tt % "\n"
 
 isFWhere ff
  = case ff of
@@ -84,7 +81,7 @@ isFWhere ff
 
 isMonoFWhere ff
  = case ff of
-	FWhere TClass{} _	-> True
-	_			-> False
+	FWhere (TVar _ UClass{}) _	-> True
+	_				-> False
 
 

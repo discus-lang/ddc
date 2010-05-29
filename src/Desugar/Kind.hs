@@ -10,21 +10,19 @@ import Desugar.Exp
 import Type.Util.Elaborate
 import Type.Util.Kind
 import Type.Util.Bits
-import Type.Exp
-import Type.Builtin
 import Source.Error
 import Shared.VarPrim
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import Data.Sequence			as Seq
 import qualified Type.Plate.Trans	as T
 import qualified Data.Map		as Map
 import qualified Data.Foldable		as Foldable
 
------
 stage	= "Desugar.Kind"
 
 -- Types -------------------------------------------------------------------------------------------
@@ -132,11 +130,11 @@ tagKindsTree pp
 		
 tagKindsT :: Type -> SolveM Type
 tagKindsT tt
- 	| TVar k v	<- tt
+ 	| TVar k (UVar v)	<- tt
 	= do	kindMap	<- gets stateKinds 
 		case Map.lookup v kindMap of
 			Nothing	-> return $ tt
-			Just k'	-> return $ TVar k' v
+			Just k'	-> return $ TVar k' $ UVar v
 		
 	| Just (v, k, ts)	<- takeTData tt
 	= do	kindMap	<- gets stateKinds
@@ -221,7 +219,7 @@ slurpConstraint pp
 	 -> [Constraint (KSSig sp) v k]
 
 	PClassDecl sp v ts vts
-	 -> map (\(TVar k v) -> Constraint (KSClass sp) v (defaultKind v k)) ts
+	 -> map (\(TVar k (UVar v)) -> Constraint (KSClass sp) v (defaultKind v k)) ts
 
  	PData sp v vs ctors	
 	 -> let	k	= makeDataKind vs

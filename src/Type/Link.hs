@@ -4,11 +4,11 @@ module Type.Link
 	, linkFetter )
 where
 import Type.Util
-import Type.Exp
 import Type.Location
 import Type.State
 import Type.Class
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import Util
 
@@ -52,23 +52,24 @@ linkType bound src tt
 	TCon{} 
 	 -> return tt
 
- 	TVar k v
+ 	TVar k (UVar v)
 	 | elem v bound	-> return tt
 	 | otherwise
 	 -> do	mCid	<- lookupVarToClassId v
 	 	case mCid of
 		 Nothing 
 		  -> do	cid	<- makeClassFromVar src k v
-			return	$ TClass k cid
+			return	$ TVar k $ UClass cid
 			
 		 Just cid
-		  -> do	return	$ TClass k cid
+		  -> do	return	$ TVar k $ UClass cid
 		
 	-- don't link error types to the graph.
 	TError{}	-> return tt
 
 	-- cids are already linked.
-	TClass k cid	-> return tt
+	TVar k (UClass cid)
+		-> return tt
 
 	_ 	-> panic stage
 		$ "linkType: cannot link " % tt

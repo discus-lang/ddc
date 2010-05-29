@@ -10,12 +10,11 @@ module Desugar.ToCore.Base
 	, lookupAnnotT)
 where
 import Util
-import Type.Exp
-import Type.Builtin
 import DDC.Main.Error
 import DDC.Main.Pretty
-import DDC.Var
 import DDC.Solve.InstanceInfo
+import DDC.Type
+import DDC.Var
 import Desugar.Project			(ProjTable)
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
@@ -83,7 +82,7 @@ newVarN	space
 
 -- | Get the type corresponding to the type of this annotation
 lookupAnnotT :: Annot -> CoreM (Maybe Type)
-lookupAnnotT (Just (TVar kV vT, _))
+lookupAnnotT (Just (TVar kV (UVar vT), _))
 	| kV	== kValue
 	= lookupType vT
 

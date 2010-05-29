@@ -22,13 +22,13 @@ module Type.Util.Trim
 	, trimClosureC_constrainForm)
 where
 import Util
-import Type.Exp
-import Type.Builtin
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate.FreeVars
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import Type.Pretty			()
 import qualified Type.Util.PackFast	as PackFast
@@ -104,7 +104,7 @@ trimClosureC' quant rsData cc
    in  case cc of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
-	TVar k v
+	TVar k (UVar v)
 		| Set.member cc quant 	
 		-> tEmpty
 
@@ -115,7 +115,7 @@ trimClosureC' quant rsData cc
 					, r /= cc])
 
 	-- cids are never quantified so we always have to keep them.
-	TClass k _	
+	TVar k (UClass _)
 		-> makeTSum kClosure
 			$ cc : [makeTDanger r cc	
 					| r	<- Set.toList rsData
@@ -136,7 +136,7 @@ trimClosureC' quant rsData cc
 	-- add quantified vars to the set
 	TForall b k t		
 	 -> let Just v	= takeVarOfBind b
-		quant'	= Set.insert (TVar k v) quant
+		quant'	= Set.insert (TVar k (UVar v)) quant
 	    in	trimClosureC_start quant' rsData t
 
 	-- free
@@ -197,14 +197,14 @@ trimClosureC_t' tag quant rsData tt
    in  case tt of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
-	TVar k v
+	TVar k (UVar v)
 		| Set.member tt quant	-> []
 		
 		| otherwise		
 		-> makeFreeDanger tag rsData tt
 
 	-- classids are never quantified, so we always have to keep them.
-	TClass{} 	
+	TVar k UClass{} 	
 		-> makeFreeDanger tag rsData tt
 
 	-- Trim the fetters of this data
@@ -218,7 +218,7 @@ trimClosureC_t' tag quant rsData tt
 	-- Trim under foralls
 	TForall b k t		
 	 -> let	Just v	= takeVarOfBind b
-		quant'	= Set.insert (TVar k v) quant
+		quant'	= Set.insert (TVar k (UVar v)) quant
 	    in	trimClosureC_t tag quant' rsData t
 	
 	TSum k ts	-> catMap down ts
@@ -236,7 +236,7 @@ trimClosureC_t' tag quant rsData tt
 			vs	= freeVars (t:ts)
 	    	   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
 			  ++ map (makeTDanger t) 
-				[TVar (kindOfSpace $ varNameSpace v) v
+				[TVar (kindOfSpace $ varNameSpace v) (UVar v)
 					| v <- Set.toList vs 
 					, not $ Var.isCtorName v]
 	     else catMap down ts

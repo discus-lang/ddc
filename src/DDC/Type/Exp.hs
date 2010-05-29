@@ -1,13 +1,14 @@
 
 -- | Type Expressions
-module Type.Exp
-	( module DDC.Type.ClassId
-	, module DDC.Type.KiCon
-	, module DDC.Type.TyCon
+module DDC.Type.Exp
+	( module DDC.Type.Exp.ClassId
+	, module DDC.Type.Exp.KiCon
+	, module DDC.Type.Exp.TyCon
 	, Super		(..)
 	, Kind		(..)
 	, Type		(..)
 	, Bind		(..)
+	, Bound		(..)
 	, Constraints	(..)
 	, TProj		(..)
 	, Fetter  	(..)
@@ -19,13 +20,13 @@ module Type.Exp
 	, Closure
 	, Witness)
 where
-import Util
-import DDC.Type.ClassId
-import DDC.Type.KiCon
-import DDC.Type.TyCon
 import DDC.Main.Error
+import DDC.Main.Pretty
+import DDC.Type.Exp.ClassId
+import DDC.Type.Exp.KiCon
+import DDC.Type.Exp.TyCon
 import DDC.Var
-
+import Data.Map		(Map)
 
 -- Superkinds -------------------------------------------------------------------------------------
 data Super
@@ -79,8 +80,8 @@ data Type
 	-- | Missing or as-yet-unknown type information. 
 	= TNil
 
-	-- | A type variable.
-	| TVar     	Kind 	Var
+	-- | A bound occurrence of a variable.
+	| TVar     	Kind 	Bound
 
 	-- | A type constructor.
 	| TCon		TyCon
@@ -99,32 +100,16 @@ data Type
 	-- Constrained types.
 	-- TODO: We are currently moving the representation from TFetters to TConstrain.
 	-- TConstrain uses finite maps, not unsorted lists, so is much more efficient.
-	| TFetters	Type	[Fetter]	-- ^ Holds extra constraint information.
-	| TConstrain	Type	Constraints	-- ^ Holds extra constraint information.
+	| TFetters	Type	[Fetter]
+	| TConstrain	Type	Constraints
 			
-
-	-- Special Purpose Constructors -------------------
-
-	-- | Used in the kinds of witness constructors only.
-	--   A de Bruijn index.
-	| TIndex	Kind	Int
-	
-	-- | Used in core types only. 
-	--   A type variable with an embedded :> constraint.
-	| TVarMore	Kind 	Var	Type
-		
-	-- | Used in the solver only.
-	--   A reference to some equivalence class in the type graph.
-	--   Also known as a "meta" type variable.
-	| TClass   	Kind 	ClassId
-
 	-- | Used in the solver only.
 	--   Represents an error in the type.
 	| TError	Kind	TypeError
 	deriving (Show, Eq)
 
 
--- | A binder.
+-- | A binding occurrence of a variable.
 data Bind
 	-- | No binding.
 	= BNil
@@ -138,59 +123,25 @@ data Bind
 
 
 -- | A bound occurrence of a variable.
---   TODO: Use this to merge TVar, TVarMore, TIndex and TClass into TVar.
+--	These can have several forms depending on where we're using them.
 data Bound
-	= UVar	 Var
-	| UMore	 Var Type
-	| UIndex Int
-	| UClass ClassId
+	-- | A regular variable.
+	= UVar		Var
+
+	-- | Used in core types only. 
+	--   A type variable with an embedded :> constraint.
+	| UMore		Var Type
+
+	-- | Used in the kinds of witness constructors only.
+	--   A de Bruijn index.
+	| UIndex 	Int
+
+	-- | Used in the solver only.
+	--   A reference to some equivalence class in the type graph.
+	--   Also known as a "meta" type variable.
+	| UClass 	ClassId
 	deriving (Show, Eq)
 
-
--- | Stores information about a type error directy in a type.
---	Used in the TError constructor of Type.
---	Used during type inference only.
-data TypeError
-	= TypeError			-- ^ types that couldn't be unified, or some other problem.
-	| TypeErrorLoop	 Type Type	-- ^ a recursive type equation 
-					--	(mu t1. t2), 	where t1 can appear in t2.
-					--			t1 is a TClass or a TVar.
-	deriving (Show, Eq)
-
-
-instance Ord Type where
- compare t1 t2
-	| TClass _ a	<- t1
-	, TClass _ b	<- t2
-	= compare a b
-	
-	| Just v1	<- takeVar t1
-	, Just v2	<- takeVar t2
-	= compare v1 v2
-	
-	| Just v1	<- takeVar t1
-	, TClass{}	<- t2
-	= GT
-	
-	| TClass{}	<- t1
-	, Just v2	<- takeVar t2
-	= LT
-
-	| otherwise
- 	= panic "Type.Exp" 
-	$ "compare: can't compare type for ordering\n"
-	% "    t1 = " % show t1	% "\n"
-	% "    t2 = " % show t2 % "\n"
-
-
-takeVar tt
- = case tt of
-	TVar _ v	-> Just v
-	TVarMore _ v _	-> Just v
-	_		-> Nothing
-
-
--- Constraints ------------------------------------------------------------------------------------
 
 -- | Constraints that can be applied to a type.
 data Constraints
@@ -201,33 +152,112 @@ data Constraints
 	deriving (Show, Eq)
 
 
+-- | Stores information about a type error directy in a type.
+--	Used in the TError constructor of Type.
+--	Used during type inference only.
+data TypeError
+
+	-- | General type error. Probably something couldn't be unified.
+	= TypeError
+
+	-- | A recursive type. 
+	--   (mu t1. t2), where t1 can appear in t2, and t1 is a TVar
+	| TypeErrorLoop	 Type Type	
+	deriving (Show, Eq)
+
+
 -- | A Fetter is a piece of type information which isn't part of the type's shape.
 --   TODO: Refactor to only contain FConstraint and FProj. The others are in the Constraints type.
 --         Do we really want to keep FWhere and FMore for the solver? 
 --         If so use Bind for the lhs and merge them together, also for TypeError above.
 data Fetter
-	= FConstraint	Var	[Type]		-- ^ Constraint between types.
-	| FWhere	Type	Type		-- ^ Equality of types, t1 must be TVar or TClass
-	| FMore		Type	Type		-- ^ t1 :> t2
 
-	-- | projections
+	-- | A type class constraint.
+	= FConstraint	Var	[Type]
+
+	-- | Equality of types. t1 must be a TVar or TClass.
+	| FWhere	Type	Type
+
+	-- | t1 :> t2. t1 must be a TVar or TClass.
+	| FMore		Type	Type
+
+	-- | A projection constraint.
 	--   TODO: refactor this into a special constructor, and make FConstraint
 	--	   above take that constructor instead of a plain var.
 	| FProj		TProj	
-			Var 			-- var to tie the instantiated projection function to.
-			Type 			-- type of the dictionary to choose the projection from.
-			Type 			-- type to unify the projection function with, once it's resolved.
+			Var 	-- var to tie the instantiated projection function to.
+			Type 	-- type of the dictionary to choose the projection from.
+			Type 	-- type to unify the projection function with, once it's resolved.
 				
 	deriving (Show, Eq, Ord)
 
 
 -- | Represents field and field reference projections.
---   TODO: Check is this only used in the solver?
+--	TODO: merge this into the new FProj constructor.
 data TProj
-	= TJField  !Var				-- ^ A field projection.   		(.fieldLabel)
-	| TJFieldR !Var				-- ^ A field reference projection.	(#fieldLabel)
+	-- | A field projection.   		(.fieldLabel)
+	= TJField  !Var
 
-	| TJIndex  !Var				-- ^ Indexed field projection		(.<int>)
-	| TJIndexR !Var				-- ^ Indexed field reference projection	(#<int>)
+	-- | A field reference projection.	(#fieldLabel)
+	| TJFieldR !Var
+
+	-- | Indexed field projection		(.<int>)
+	| TJIndex  !Var
+
+	-- | Indexed field reference projection	(#<int>)
+	| TJIndexR !Var
 	deriving (Show, Eq, Ord)
+	
+	
+-- Instances --------------------------------------------------------------------------------------
+instance Ord Type where
+ compare t1 t2
+	| TVar _ b1	<- t1
+	, TVar _ b2	<- t2
+	= compare b1 b2
+	
+	| otherwise
+ 	= panic "Type.Exp" 
+	$ "compare: can't compare type for ordering\n"
+	% "    t1 = " % show t1	% "\n"
+	% "    t2 = " % show t2 % "\n"
+
+
+instance Ord Bound where
+ compare b1 b2
+	| UClass cid1	<- b1
+	, UClass cid2	<- b2
+	= compare cid1 cid2
+	
+	| Just v1	<- takeVarOfBound b1
+	, Just v2	<- takeVarOfBound b2
+	= compare v1 v2
+
+	| Just o1	<- takeOrdOfBound b1
+	, Just o2	<- takeOrdOfBound b2
+	= compare o1 o2
+
+	| otherwise
+ 	= panic "Type.Exp" 
+	$ "compare: can't bound type for ordering\n"
+	% "    t1 = " % show b1	% "\n"
+	% "    t2 = " % show b2 % "\n"
+ 
+
+takeOrdOfBound :: Bound -> Maybe Int
+takeOrdOfBound bb
+ = case bb of
+	UClass{}	-> Just 0
+	UVar{}		-> Just 1
+	UMore{}		-> Just 2
+	_		-> Nothing
+
+
+takeVarOfBound :: Bound -> Maybe Var
+takeVarOfBound bb
+ = case bb of
+	UVar v		-> Just v
+	UMore v _	-> Just v
+	_		-> Nothing
+
 

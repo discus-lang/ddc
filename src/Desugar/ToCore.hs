@@ -20,9 +20,8 @@ import Type.Util.Flatten		(flattenT)
 import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified DDC.Solve.InstanceInfo	as T
+import qualified DDC.Type		as T
 import qualified Shared.Exp		as S
-import qualified Type.Exp		as T
-import qualified Type.Builtin		as T
 import qualified Type.Util		as T
 import qualified Core.Util.Pack		as C
 import qualified Core.Exp 		as C
@@ -143,7 +142,7 @@ toCoreP p
 	 	let ts'		= map toCoreT ts
 		let sigs'	= zip vs ts'
 
-		let vks'	= map (\(T.TVar k v) -> (v, k))
+		let vks'	= map (\(T.TVar k (T.UVar v)) -> (v, k))
 				$ map toCoreT cts
 
 		return		$ [C.PClassDict v vks' sigs']
@@ -250,7 +249,7 @@ toCoreX xx
  =  case xx of
 
 	D.XLambdaTEC 
-		_ v x (T.TVar kV vTV) eff clo
+		_ v x (T.TVar kV (T.UVar vTV)) eff clo
 	 | kV == T.kValue
 	 -> do	
 		-- Only keep effect and closure bindings which are not quantified so they don't
@@ -265,7 +264,7 @@ toCoreX xx
 
 		portVars	<- gets coreQuantVars
 		let fsWhere	= [ T.FWhere t1 t2	
-					| T.FWhere t1@(T.TVar _ v) t2	<- argFetters
+					| T.FWhere t1@(T.TVar _ (T.UVar v)) t2	<- argFetters
 					, not $ Map.member v portVars]
 
 		let fsMore	= [ f	| f@(T.FMore v t) <- argFetters ]
@@ -327,7 +326,7 @@ toCoreX xx
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 		
 	-- primitive constants
-	D.XLit (Just (T.TVar kV vT, _)) litfmt
+	D.XLit (Just (T.TVar kV (T.UVar vT), _)) litfmt
 	 | kV	== T.kValue
 	 -> do	
 	 	Just t		<- lookupType vT
@@ -433,7 +432,7 @@ toCoreX xx
 
 	-- variables
 	D.XVarInst 
-		(Just (T.TVar kV vT, _))
+		(Just (T.TVar kV (T.UVar vT), _))
 		v
 	 | kV == T.kValue
 	 -> 	toCoreVarInst v vT
@@ -655,7 +654,7 @@ toCoreW ww
 	-- match against a boxed literal
 	--	All matches in the core language are against unboxed literals, 
 	--	so we need to rewrite the literal in the pattern as well as the guard expression.
-	| D.WLit (Just	( T.TVar kV vT
+	| D.WLit (Just	( T.TVar kV (T.UVar vT)
 			, _))
 		litFmt@(LiteralFmt lit fmt) <- ww
 	, kV == T.kValue
@@ -678,7 +677,7 @@ toCoreW ww
 	-- match against unboxed literal
 	--	we can do this directly.
 	| D.WLit
-		(Just 	( T.TVar kV vT
+		(Just 	( T.TVar kV (T.UVar vT)
 			, _ )) 
 		litFmt@(LiteralFmt lit fmt)	<- ww
 	, kV == T.kValue

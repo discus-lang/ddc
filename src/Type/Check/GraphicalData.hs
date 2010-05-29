@@ -2,10 +2,10 @@
 module Type.Check.GraphicalData
 	(checkGraphicalDataT)
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Type.Plate.Collect
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import Util.Graph.Deps		(graphReachable1_nr)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -25,13 +25,13 @@ checkGraphicalDataT (TFetters t fs)
 	 			, kindOfType t1 == Just kValue]
 
 	-- these are the data cids that we have FLets for
-	cidsData	= map (\(FWhere (TClass k cid) t2) -> cid) fsData
+	cidsData	= map (\(FWhere (TVar k (UClass cid)) t2) -> cid) fsData
 	cidsDataS	= Set.fromList cidsData
 
 	-- build a map of what cids are reachable from what lets in a single step
 	ccData		= Map.fromList
 
-			$ map (\(FWhere t1@(TClass k cid) t2)
+			$ map (\(FWhere t1@(TVar k (UClass cid)) t2)
 				-> ( cid
 				   , Set.fromList 
 				   	$ filter (\c -> Set.member c cidsDataS) 

@@ -6,16 +6,14 @@ module Type.Crush.Unify
 	, isShallowConflict
 	, addErrorConflict )
 where
-import Type.Exp
-import Type.Builtin
 import Type.State
 import Type.Class
 import Type.Error
 import DDC.Solve.Trace
+import DDC.Type
 import Util
 import DDC.Main.Error
 import qualified Data.Set	as Set
-
 
 debug	= False
 stage	= "Type.Crush.Unify"

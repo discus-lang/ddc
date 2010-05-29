@@ -5,9 +5,9 @@
 module Type.Util.Normalise
 	( normaliseT )
 where
-import Type.Exp
 import Type.Plate.Collect
 import Type.Plate.Trans
+import DDC.Type.Exp
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

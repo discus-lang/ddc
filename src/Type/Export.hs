@@ -4,8 +4,6 @@
 module Type.Export
 	(squidExport)
 where
-import Type.Exp
-import Type.Builtin
 import Type.Pretty
 import Type.Error
 import Type.Base
@@ -18,12 +16,12 @@ import Shared.VarPrim
 import Util
 import DDC.Solve.InstanceInfo
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq
 
------
 debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Export"
@@ -235,7 +233,7 @@ checkRegionError cls@Class { classFetters = fsSrcs }
 	, Just srcsMutable	<- Map.lookup primMutable fsSrcs
 	= let	srcConst   Seq.:< _	= Seq.viewl srcsConst
 		srcMutable Seq.:< _	= Seq.viewl srcsMutable
-		t			= TClass (classKind cls) (classId cls)
+		t			= TVar (classKind cls) $ UClass (classId cls)
 		
 	  in	return 	$ Just $ ErrorRegionConstraint
 			{ eFetter1		= FConstraint primConst [t]
@@ -248,7 +246,7 @@ checkRegionError cls@Class { classFetters = fsSrcs }
 	, Just srcsLazy		<- Map.lookup primLazy   fsSrcs
 	= let	srcDirect Seq.:< _	= Seq.viewl srcsDirect
 		srcLazy   Seq.:< _	= Seq.viewl srcsLazy
-		t			= TClass (classKind cls) (classId cls)
+		t			= TVar (classKind cls) $ UClass (classId cls)
 	
 	  in	return $ Just $ ErrorRegionConstraint
 			{ eFetter1		= FConstraint primDirect [t]

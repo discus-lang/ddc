@@ -4,11 +4,10 @@ module Type.Effect.MaskLocal
 	, visibleRsT )
 where
 import Util
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error
+import DDC.Type
 import qualified Data.Set	as Set
 
 stage	= "Type.Effect.MaskLocal"
@@ -80,11 +79,12 @@ visibleRsT tt
 	TFetters t fs		-> visibleRsT t
 
 	TSum k ts		-> Set.unions $ map visibleRsT ts
-	 
-	TVar kR _		
-	 | kR	== kRegion	-> Set.singleton tt
 
+	TVar k _
+	 | k == kRegion		-> Set.singleton tt
+	
 	TVar{}			-> Set.empty
+
 	TCon{}			-> Set.empty
 
 	TApp (TCon (TyConEffect{})) t2
@@ -96,11 +96,6 @@ visibleRsT tt
 		[ visibleRsT t1
 		, visibleRsT t2 ]
 	 
-	TClass kR cid	
-	 | kR	== kRegion	-> Set.singleton tt
-
-
-	TClass{}		-> Set.empty
 	TError{}		-> Set.empty	
 	_
 	 -> panic stage

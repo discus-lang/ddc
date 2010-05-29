@@ -20,19 +20,19 @@ import Source.Error
 import Source.Exp
 import Type.Util
 import Type.Plate.FreeVars
-import Type.Exp
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Var
+import DDC.Type
 import DDC.Main.Pretty		()
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 
 stage		= "Source.Rename"
 
--- Tree --------------------------------------------------------------------------------------------
 
+-- Tree --------------------------------------------------------------------------------------------
 -- | Rename the variables in some source trees.
 --	The current module should be first, then the interfaces of all the imported ones.
 renameTrees
@@ -749,10 +749,10 @@ instance Rename Type where
 			t'	<- rename t
 			return	$ TFetters t' fs'
 			 	
-	TVar k v 	
+	TVar k (UVar v)
 	 -> do 	let Just space = spaceOfKind k
 		v'	<- lbindN_bound space v
-		return	$ TVar k v'
+		return	$ TVar k (UVar v')
 
 	TSum k ts
 	 -> do	ts'	<- rename ts

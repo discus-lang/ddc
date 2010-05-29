@@ -8,8 +8,8 @@ module Type.Plate.Collect
 	, collectTErrors )
 where 
 import Util
-import Type.Exp
 import Type.Plate.Trans
+import DDC.Type.Exp
 import DDC.Var
 import qualified Data.Set	as Set
 
@@ -31,7 +31,7 @@ collectBindingVarsT tt
 		
 	collectF ff
  	 = case ff of
-		FWhere (TVar k v) _	
+		FWhere (TVar k (UVar v)) _	
 	 	 -> do	modify (Set.insert v)
  			return ff
 		
@@ -51,11 +51,11 @@ collectTClassVars :: Type -> Set Type
 collectTClassVars tt
  = let	collect t
  	 = case t of
-		TClass{}	
+		TVar _ (UClass{})
 		 -> do	modify (Set.insert t)
 		 	return t
 			
-		TVar{}	
+		TVar _ (UVar{})
 		 -> do	modify (Set.insert t)
 		 	return t
 			
@@ -94,7 +94,7 @@ collectTClasses
 collectTClasses x
  = let 	collect t
   	 = case t of
-	 	TClass{}	
+	 	TVar _ UClass{}	
 		 -> do	modify (Set.insert t)
 		 	return t
 			

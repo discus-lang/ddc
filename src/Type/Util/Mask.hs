@@ -2,11 +2,11 @@
 module Type.Util.Mask
 	( maskReadWriteNotIn )
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util.Bits
 import Util
 import DDC.Var
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import qualified Data.Set 	as Set
 
 
@@ -17,7 +17,7 @@ maskReadWriteNotIn
 
 maskReadWriteNotIn rsKeep eff
  = let	maskE e
-		| TApp t1 (TVar kRegion r)	<- e
+		| TApp t1 (TVar kRegion (UVar r))	<- e
 		, elem t1 [tRead, tWrite]
 		, not $ Set.member r rsKeep
 		= tPure

@@ -2,7 +2,7 @@
 -- | DeepSeq on Type expressions.
 module Type.Plate.DeepSeq where
 
-import Type.Exp
+import DDC.Type.Exp
 import DDC.Var
 import Util.Control.DeepSeq
 
@@ -50,10 +50,16 @@ instance DeepSeq Type where
 	TSum		k ts		-> deepSeq k  $! deepSeq ts y
 	TCon		c		-> deepSeq c y
 	TVar		k v		-> deepSeq k  $! deepSeq v y
-	TClass		k c		-> deepSeq k  $! deepSeq c y
 	TError		k err		-> deepSeq k y
-	TVarMore	k v t		-> deepSeq k  $! deepSeq v $! deepSeq t y
-	TIndex		k i 		-> deepSeq k  $! deepSeq i y
+	
+
+instance DeepSeq Bound where
+ deepSeq uu y
+  = case uu of
+	UVar		v		-> deepSeq v y
+	UMore		v t		-> deepSeq v $! deepSeq t y
+	UIndex		i		-> deepSeq i y
+	UClass		c		-> deepSeq c y
 
 
 instance DeepSeq TyCon where

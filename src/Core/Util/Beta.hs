@@ -5,8 +5,8 @@ where
 import Core.Exp
 import Core.Crush
 import Core.Plate.Trans
-import Type.Exp		
 import Util
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -77,7 +77,7 @@ betaX x
 
 betaT :: Type -> BetaM Type
 betaT t
- 	| TVar k v	<- t
+ 	| TVar k (UVar v) <- t
  	= do	boundT	<- gets sBoundT
 		case Map.lookup v boundT of
 		 Nothing	-> return t

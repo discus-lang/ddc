@@ -1,4 +1,4 @@
-module Type.Exp
+module DDC.Type.Exp
 	(Kind)
 where
 

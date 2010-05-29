@@ -24,12 +24,11 @@ module Source.Parser.Util
 	-- Debugging
 	, traceStateS, traceState)
 where
-import Type.Exp
-import Type.Builtin
 import Source.Util
 import Source.Exp
 import DDC.Base.SourcePos
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import Text.ParserCombinators.Parsec.Prim		( (<|>), (<?>) )
 import qualified Source.Token 				as K

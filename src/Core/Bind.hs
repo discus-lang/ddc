@@ -12,13 +12,12 @@ import Core.Exp
 import Core.Glob
 import Core.Util
 import Core.Reconstruct
-import Type.Builtin
-import Type.Exp
 import Shared.VarPrim
 import Shared.VarGen
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import Prelude				hiding	(mapM)
 import Type.Util.Bits			(takeVarOfBind)
@@ -72,7 +71,7 @@ bindM mod classMap rsGlobal glob
 	psRegionsGlobal	
 		<- liftM Map.fromList
 		$  mapM (\vR -> do
-				let tR	= TVar kRegion vR
+				let tR	= TVar kRegion $ UVar vR
 				ws	<- makeWitnesses tR classMap
 				return	$ (vR, PRegion vR ws))
 		$ Set.toList rsGlobal
@@ -151,7 +150,7 @@ bindX 	shared xx
 			packT
 			$ transformT
 				(\tt -> case tt of
-					  TApp t1 (TVar kRegion r)
+					  TApp t1 (TVar kRegion (UVar r))
 						|   elem t1 [tRead, tWrite]
 						 && Set.member r vsLocal
 						-> tPure
@@ -366,7 +365,7 @@ bindRegionsX rsLocal xx
 	rsLocalFs	
 		<- mapM 
 			(\r 
-			 -> do  let r'	= TVar kRegion r
+			 -> do  let r'	= TVar kRegion $ UVar r
 				fs'	<- makeWitnesses r' ?classMap
 				return 	(r', fs'))
 		$ Set.toList rsLocal
@@ -377,7 +376,7 @@ bindRegionsX rsLocal xx
 	--	The actual order doesn't matter.
 	--
 	let xx'	= foldl
-			(\x (TVar _ v, fs) -> XLocal v fs x)
+			(\x (TVar _ (UVar v), fs) -> XLocal v fs x)
 			xx
 			(reverse rsLocalFs)
 			
@@ -392,7 +391,7 @@ makeWitnesses
 		[(Var, Type)]	-- ^ map of witness variable to a type expresison that
 				--	constructs the witness.
 
-makeWitnesses r@(TVar k vR) classMap
+makeWitnesses r@(TVar k (UVar vR)) classMap
  | k == kRegion
  = do
 	-- lookup the constraints on this region

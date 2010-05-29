@@ -30,8 +30,8 @@ module Core.Plate.Trans
 where
 import Core.Exp
 import Util
-import Type.Exp
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 
@@ -472,16 +472,16 @@ instance Monad m => TransM m Type where
 	 -> do	ts'		<- followTs table ts
 	 	transT table	$ TSum k ts'
 		
-	TVar k v
+	TVar k (UVar v)
 	 -> do	v'		<- followV_free table v
-	 	transT table	$ TVar k v'
+	 	transT table	$ TVar k (UVar v')
 
-	TVarMore k v t
+	TVar k (UMore v t)
 	 -> do	v'		<- followV_free table v
 	 	t'		<- followT table t
-		transT table	$ TVarMore k v' t'
+		transT table	$ TVar k $ UMore v' t'
 
-	TIndex{}
+	TVar k UIndex{}
 	 ->	transT table	$ tt
 
 	TApp t1 t2
@@ -527,15 +527,15 @@ instance Monad m => TransM m TyCon where
 instance Monad m => TransM m Fetter where
  transZM table ff
   = case ff of
-  	FWhere (TVar k v) t
+  	FWhere (TVar k (UVar v)) t
 	 -> do	v'	<- followV_bind table v
 	 	t'	<- followT table t
-		return	$ FWhere (TVar k v') t'
+		return	$ FWhere (TVar k $ UVar v') t'
 		
-	FMore (TVar k v) t
+	FMore (TVar k (UVar v)) t
 	 -> do	v'	<- followV_bind table v
 	 	t'	<- followT table t
-		return	$ FMore (TVar k v') t'
+		return	$ FMore (TVar k $ UVar v') t'
 
 	_	-> panic stage
 		$ "transZM[Fetter]: no match for " % show ff

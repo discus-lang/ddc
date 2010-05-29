@@ -7,8 +7,6 @@ module Type.Feed
 	, addFetter)
 where
 import Constraint.Exp
-import Type.Exp
-import Type.Builtin
 import Type.Location
 import Type.State
 import Type.Class
@@ -17,6 +15,7 @@ import Type.Link
 import Type.Dump		()
 import Util
 import DDC.Main.Error
+import DDC.Type
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq
@@ -34,7 +33,7 @@ feedConstraint cc
  = trace ("feedConstraint: " % cc % "\n") >>
    case cc of
 	-- Equality constraints. The LHS must be a variable.
- 	CEq src (TVar k v1) t2
+ 	CEq src (TVar k (UVar v1)) t2
 	 -> do
 		-- create a new class for the LHS, with just that var in it.
 	 	cid1	<- makeClassFromVar src k v1
@@ -97,7 +96,7 @@ feedType src tt
 					FWhere t1@(TVar k v1) t2
 					 -> do	let Just nameSpace	= spaceOfKind k
 						v1'	<- newVarN nameSpace
-					 	return	$ Just (t1, TVar k v1')
+					 	return	$ Just (t1, TVar k (UVar v1'))
 
 					_ -> 	return	$ Nothing)
 				$ fs
@@ -133,7 +132,7 @@ feedType src tt
 	--	with the whole external def so trim these types down and just add the
 	--	closure information that we need.
 	TApp{}
-	 | Just (v1, t@(TVar kV v2))	<- takeTFree tt
+	 | Just (v1, t@(TVar kV (UVar v2)))	<- takeTFree tt
 	 , kV == kValue
 	 -> do	cid		<- allocClass src kClosure
 		defs		<- gets stateDefs
@@ -195,12 +194,12 @@ feedType src tt
 
 		return cidT
 
- 	TVar k v 
+ 	TVar k (UVar v)
 	 -> do 	cidT		<- makeClassFromVar src k v 
 		return cidT
 
 
-	TClass k cid
+	TVar k (UClass cid)
 	 -> do 	cidT'		<- sinkClassId cid
 		return cidT'
 		
@@ -251,8 +250,8 @@ feedFetter src f
 
 		addFetter src 
 		 $ FProj pj v 
-			(TClass kDict cidDict')
-			(TClass kBind cidBind')
+			(TVar kDict $ UClass cidDict')
+			(TVar kBind $ UClass cidBind')
 
 		return ()
 		
@@ -307,7 +306,7 @@ addFetter src f@(FConstraint v ts)
 	-- add the type args to the graph
 	cids		<- mapM (feedType src) ts
 	let Just kinds	= sequence $ map kindOfType ts
-	let ts'		= zipWith TClass kinds cids
+	let ts'		= zipWith (\k c -> TVar k $ UClass c) kinds cids
 	
 	-- add the fetter to the graph
 	let f	= FConstraint v ts'
@@ -321,7 +320,7 @@ addFetter src f@(FConstraint v ts)
 	activateClass cidF
 
 	-- work out what cids this constraint is acting on
-	let cids	= map (\(TClass k cid) -> cid) ts'
+	let cids	= map (\(TVar k (UClass cid)) -> cid) ts'
 	
 	-- add a reference to this constraint to all those classes
 	mapM	(\cid -> modifyClass cid
@@ -342,8 +341,8 @@ addFetter src f@(FProj j v1 tDict tBind)
 
 	-- add the fetter to the graph
 	let f	= FProj j v1 
-			(TClass kDict cidDict')
-			(TClass kBind cidBind')
+			(TVar kDict $ UClass cidDict')
+			(TVar kBind $ UClass cidBind')
 	
 	modifyClass cidF
 	 $ \c -> ClassFetter

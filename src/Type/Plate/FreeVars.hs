@@ -3,7 +3,7 @@
 module Type.Plate.FreeVars
 	(FreeVars(..))
 where
-import Type.Exp
+import DDC.Type.Exp
 import Shared.FreeVars
 import DDC.Var
 import Data.Set			((\\), empty, union, unions, fromList, singleton)
@@ -20,8 +20,7 @@ instance FreeVars Var where
 instance FreeVars Type where
  freeVars tt
   = case tt of
-	TNil
-	 -> empty
+	TNil		-> empty
 
 	TForall BNil k t
 	 -> unions
@@ -41,7 +40,7 @@ instance FreeVars Type where
 	 
 	TFetters t fs
 	 -> union (freeVars fs) (freeVars t)
-	 	\\ (fromList [ v | FWhere (TVar k v) _ <- fs])
+	 	\\ (fromList [ v | FWhere (TVar k (UVar v)) _ <- fs])
 			
 	TConstrain t (Constraints { crsEq, crsMore, crsOther })
 	 -> unions
@@ -55,24 +54,18 @@ instance FreeVars Type where
 	
 	
 	TSum k ts	-> freeVars ts
-	 
 	TApp t1 t2	-> union (freeVars t1) (freeVars t2)
-	
 	TCon tycon	-> freeVars tycon
-	
- 	TVar k v	-> singleton v
+ 	TVar k (UVar v)	-> singleton v
 
-	-- used in solver
-	TClass{}	-> empty
-	TError{}	-> empty
-	 	
-	-- core stuff
-	TVarMore k v t
+	TVar k (UMore v t)
 	 -> unions
 	 	[ Set.singleton v
 		, freeVars t]
 	
-	TIndex{}	-> empty
+	TVar{}		-> empty
+
+	TError{}	-> empty
 	
 
 -- TyCon -------------------------------------------------------------------------------------------
@@ -105,7 +98,7 @@ instance FreeVars Fetter where
 	FConstraint v ts	
 	 -> union (singleton v) (freeVars ts)
 
-	FWhere (TVar k v) t2
+	FWhere (TVar k (UVar v)) t2
 	 -> freeVars t2
 	 	\\ singleton v
 

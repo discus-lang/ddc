@@ -23,19 +23,17 @@ module Type.Strengthen
 	( strengthenT
 	, slurpParamClassVarsT_constrainForm)
 where
-import Type.Exp
 import Type.Class
 import Type.Util
 import Type.State
 import Type.Plate.Collect
 import Util
 import DDC.Main.Error
+import DDC.Type.Exp
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
------
 stage	= "Type.Strengthen"
-
 
 -- | Strengthen constraints that don't constrain variables in this set.
 strengthenT 
@@ -67,7 +65,7 @@ strengthenFs
 
 strengthenFs tsParam fsEq fMore
  = case fMore of
- 	(t1@(TClass k cid), t2)
+ 	(t1@(TVar k (UClass cid)), t2)
 	 -> do	quantVars	<- gets stateQuantifiedVars
 	 	v		<- makeClassName cid
 
@@ -117,7 +115,6 @@ slurpParamClassVarsT_constrainForm tt
 	TSum _ ts	-> concat $ map slurpParamClassVarsT_constrainForm ts
 	TVar{}		-> []
 	TCon{}		-> []
-	TClass{}	-> []
 	TError{}	-> []	
 	_		-> panic stage
 			$ "slurpParamClassVarsT: no match for " % tt

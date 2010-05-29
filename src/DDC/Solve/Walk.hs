@@ -5,11 +5,10 @@ module DDC.Solve.Walk
 	, takeAppsDownLeftSpine
 	, getClassDownLeftSpine)
 where
-import Type.Exp
 import Type.Base
 import Type.State
 import Type.Class
-
+import DDC.Type
 
 -- | Walk down the left spine of this type to find the type in the bottom
 --   left node (if there is one)

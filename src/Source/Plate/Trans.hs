@@ -11,8 +11,8 @@ module Source.Plate.Trans
 where
 import Util
 import Source.Exp
-import Type.Exp
 import DDC.Base.Literal
+import DDC.Type
 import DDC.Var
 
 -- | The transform class.

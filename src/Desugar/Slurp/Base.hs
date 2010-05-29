@@ -1,8 +1,8 @@
 
 module Desugar.Slurp.Base
 	( module DDC.Main.Error
+	, module DDC.Type
 	, module Shared.VarPrim
-	, module Type.Exp
 	, module Type.Util
 	, module Type.Error
 	, module Constraint.Exp
@@ -15,7 +15,6 @@ module Desugar.Slurp.Base
 	, module Desugar.Slurp.Util)
 where
 import Shared.VarPrim
-import Type.Exp
 import Type.Util
 import Type.Error
 import Constraint.Exp
@@ -27,6 +26,6 @@ import Desugar.Plate.FreeVars
 import Desugar.Slurp.State
 import Desugar.Slurp.Util
 import DDC.Main.Error
-
+import DDC.Type
 
 

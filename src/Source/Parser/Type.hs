@@ -6,11 +6,10 @@ module Source.Parser.Type
 	, pType, pType_body, pType_body1, pTypeOp)
 where
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Source.Parser.Base
 import Control.Monad
 import Data.Maybe
+import DDC.Type
 import DDC.Var
 import qualified Source.Token					as K
 import qualified Shared.VarPrim					as Var
@@ -253,7 +252,7 @@ pType_body1
 	--	it in NameNothing. In this case we know its actually a type variable, so can
 	--	set it in NameType.
  <|>	do	var	<- liftM (vNameDefaultN NameType) $ pQualified pVarPlain
-		return	$ TVar 	(kindOfSpace $ varNameSpace var) var
+		return	$ TVar 	(kindOfSpace $ varNameSpace var) $ UVar var
 		
  <|>	pRParen pParenTypeBody
 
@@ -311,7 +310,7 @@ pParenTypeBody
 		pTok K.HasType
 		kind	<- pKind
 
-		return	$ TVar kind var)
+		return	$ TVar kind $ UVar var)
 
  <|>	-- (CON :: KIND)
 	Parsec.try
@@ -338,7 +337,7 @@ pEffect :: Parser Type
 pEffect
  = 	-- VAR
  	do	var	<- pVarPlainOfSpace [NameEffect]
-		return $ TVar kEffect var
+		return $ TVar kEffect $ UVar var
 
  <|>	-- !{ EFF; .. }
  	do	pTok	K.Bang
@@ -379,8 +378,8 @@ pClosure
 			let varN	= vNameDefaultN NameType var
 	 		let var2N	= vNameDefaultN NameType var2
 			return	$ makeTDanger
-					(TVar kRegion varN)
-					(TVar (kindOfSpace $ varNameSpace var2N) var2N))
+					(TVar kRegion $ UVar varN)
+					(TVar (kindOfSpace $ varNameSpace var2N) $ UVar var2N))
 
 
  <|>	-- \${ CLO ; .. }
@@ -390,7 +389,7 @@ pClosure
 
  <|>	-- VAR
 	do	var	<- pVarPlainOfSpace [NameClosure]
-		return	$ TVar kClosure var
+		return	$ TVar kClosure $ UVar var
  <?>    "pClosure"
 
 
@@ -410,13 +409,13 @@ pFetter
 		-- VAR = EFFECT/CLOSURE
  		(do	pTok K.Equals
 			effClo	<- pEffect <|> pClosure
-			return	$ FWhere (TVar (kindOfSpace $ varNameSpace var) var)
+			return	$ FWhere (TVar (kindOfSpace $ varNameSpace var) $ UVar var)
 					 effClo)
 
 		-- VAR :> EFFECT/CLOSURE
 	  <|>	(do	pTok K.IsSuptypeOf
 			effClo	<- pEffect <|> pClosure
-			return	$ FMore (TVar (kindOfSpace $ varNameSpace var) var)
+			return	$ FMore (TVar (kindOfSpace $ varNameSpace var) $ UVar var)
 					effClo))
  <?>    "pFetter"
 

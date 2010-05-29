@@ -10,24 +10,19 @@ import Type.Util.Kind
 import Type.Plate.FreeVars
 import Type.Plate.Trans
 import Type.Pretty
-import Type.Exp
-import Type.Builtin
 import Control.Monad.State.Strict
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import qualified Debug.Trace
 import qualified Data.Set	as Set
 import qualified Shared.VarUtil	as Var
 import qualified Shared.VarPrim	as Var
 
------
-debug	= False
-trace ss xx
- = if debug 
- 	then Debug.Trace.trace (pprStrPlain ss) xx
-	else xx
+debug		= False
+trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 
 -----
 elaborateTree 
@@ -103,7 +98,7 @@ elaborateT_fun tt
 	tt_clo		<- elaborateCloT tt_eff
 	
 	-- make a new Mutable fetter for each region that is written to
-	let fsMutable	= map (\r -> FConstraint Var.primMutable [TVar kRegion r])
+	let fsMutable	= map (\r -> FConstraint Var.primMutable [TVar kRegion $ UVar r])
 			$ Set.toList rsWrite
 			
 	let tt_fs	= addFetters fsMutable tt_clo

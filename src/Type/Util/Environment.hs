@@ -11,7 +11,7 @@ module Type.Util.Environment
 	, addMoreVT
 	, addWitnessConst)
 where
-import Type.Exp
+import DDC.Type.Exp
 import DDC.Var
 import qualified Data.Map	as Map
 import Data.Map			(Map)	
@@ -71,7 +71,7 @@ addMoreVT v t tt
 
 -- | Add a type inequality from a fetter to the environment
 addMoreF :: Fetter -> Env -> Env
-addMoreF (FMore (TVar k v) t) table	= addMoreVT v t table
+addMoreF (FMore (TVar k (UVar v)) t) table	= addMoreVT v t table
 
 -- | Add a Const witness to the environment
 addWitnessConst :: Var -> Var -> Env -> Env

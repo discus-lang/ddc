@@ -14,7 +14,7 @@ module Type.Plate.Trans
 	, transformTM)
 where
 import Util
-import Type.Exp
+import DDC.Type.Exp
 import DDC.Var
 import Util.Data.Bag		(Bag)
 import qualified Util.Data.Bag 	as Bag
@@ -186,15 +186,22 @@ followT table tt
 		return	$ TConstrain t' (Constraints crsEq' crsMore' crsOther')
 	
 	TSum k ts	-> liftM2 TSum    (return k) (transZM table ts)
- 	TVar k v	-> liftM2 TVar    (return k) (transZM table v)
+ 	TVar k u	-> liftM2 TVar    (return k) (transZM table u)
 	TApp t1 t2	-> liftM2 TApp    (transZM table t1) (transZM table t2)
 	TCon tycon	-> liftM  TCon    (transZM table tycon)
-	TClass k cid	-> liftM2 TClass  (return k)  (transZM table cid)
 	TError k ts	-> return tt
-	TVarMore k v t	-> liftM3 TVarMore (transZM table k) (transZM table v) (transZM table t)
-	TIndex{}	-> return tt
 
-		
+
+-- Bound -------------------------------------------------------------------------------------------
+instance Monad m => TransM m Bound where
+ transZM table uu
+  = case uu of
+ 	UVar v		-> liftM  UVar	(transZM table v)
+	UMore v t	-> liftM2 UMore	(transZM table v) (transZM table t)
+	UIndex{}	-> return uu
+	UClass cid	-> liftM  UClass (transZM table cid)
+
+
 -- TyCon -------------------------------------------------------------------------------------------
 instance Monad m => TransM m TyCon where
  transZM table tt

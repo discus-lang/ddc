@@ -13,9 +13,9 @@ where
 import Type.Plate.Collect
 import Type.Plate.Trans
 import Type.Util.Kind
-import Type.Exp
-import Type.Builtin
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import Data.Traversable		(mapM)
 import Util			hiding (mapM)
@@ -123,8 +123,6 @@ subTT_cutM' sub cut tt
 	TError{}	-> return tt
 
 	TVar{} 		-> subTT_enter sub cut tt
-	TVarMore{}	-> subTT_enter sub cut tt
-	TClass{}	-> subTT_enter sub cut tt
 
 	_ -> panic stage $ "subTT_cutM': no match for " % tt
 
@@ -214,12 +212,7 @@ subTT_all sub tt
 			 -> case Map.lookup t sub of
 				Just t'	-> t'
 				Nothing	-> t
-					
-			TClass{} 
-			 -> case Map.lookup t sub of
-			 	Just t'	-> t'
-				Nothing	-> t
-				
+									
 			_	-> t)
 	$ tt
 

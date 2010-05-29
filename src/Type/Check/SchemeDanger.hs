@@ -20,8 +20,6 @@ module Type.Check.SchemeDanger
 where
 import Shared.VarPrim
 import Type.Location
-import Type.Exp
-import Type.Builtin
 import Type.Error
 import Type.Util
 import Type.State
@@ -29,12 +27,13 @@ import Type.Class
 import Util
 import DDC.Solve.Trace
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
------
 stage	= "Type.Check.SchemeDanger"
 debug	= False
 trace s	= when debug $ traceM s
@@ -99,11 +98,11 @@ checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)
 checkDanger (Class 
 		{ classId 	= cidScheme
 		, classType 	= Just node })
-		( tRegion@(TClass kR cidR)
+		( tRegion@(TVar kR (UClass cidR))
 		, t2)
 
-	| kR	== kRegion
-	, TVar k varT	<- t2
+	| kR == kRegion
+	, TVar k (UVar varT)	<- t2
 	= do 	mfMutableSrc	<- lookupMutable cidR
 		case mfMutableSrc of
 	 	 Nothing	-> return Nothing
@@ -121,7 +120,7 @@ checkDanger (Class
 
 	-- var is monomorphic, ok
 	| kR	== kRegion
-	, TClass{}	<- t2
+	, TVar _ UClass{}	<- t2
 	= 	return Nothing
 	
 	
@@ -147,7 +146,7 @@ lookupMutable cid
 	 Just srcs	
 	  -> do	let (src Seq.:< _) = Seq.viewl srcs
 		return $ Just 
-			( FConstraint primMutable [TClass (classKind cls) cid]
+			( FConstraint primMutable [TVar (classKind cls) $ UClass cid]
 			, src)
 		
 	 Nothing

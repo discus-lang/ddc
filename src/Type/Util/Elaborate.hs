@@ -11,13 +11,13 @@ module Type.Util.Elaborate
 	, elaborateEffT
 	, elaborateCloT )
 where
-import Type.Exp
-import Type.Builtin
 import Type.Pretty
 import Type.Util.Bits
 import Type.Util.Kind	
 import Util
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Data.Set		as Set
 import qualified Type.Util.PackFast 	as PackFast
@@ -130,7 +130,7 @@ elabRs2 [] (KFun k1 k2)
 	= do	(ts', vks')		<- elabRs2 [] k2
 		let Just nameSpace	= spaceOfKind k1
 		vR			<- ?newVar nameSpace
-		return	( TVar k1 vR : ts'
+		return	( TVar k1 (UVar vR) : ts'
 			, (vR, k1) : vks')
 	| otherwise
 	= return ([], [])
@@ -151,7 +151,7 @@ elabRs2 (t:ts) kk@(KFun k1 k2)
 		vR			<- ?newVar nameSpace
 
 		(tt', vksMore)	<- elabRs2 
-					(TVar k1 vR : t : ts) 
+					(TVar k1 (UVar vR) : t : ts) 
 					kk
 		return		( tt'
 				, (vR, k1) : vksMore)
@@ -234,7 +234,7 @@ elaborateCloT' env tt
 
 		-- make a new closure var to name the closure of this function
 		varC			<- ?newVarN NameClosure
-		let cloVarC		= TVar kClosure varC
+		let cloVarC		= TVar kClosure (UVar varC)
 
 		let newClo	= 
 		     case t2 of
@@ -298,11 +298,11 @@ elaborateEffT vsRsConst vsRsMutable tt
     	-- assume that regions added into a contra-variant
 	--	branch during elaboration will be read by the function.
 	let rsContra	= slurpConRegions tHooked
-	let effsRead	= [ TApp tRead (TVar kRegion v)
+	let effsRead	= [ TApp tRead (TVar kRegion $ UVar v)
 				| v <- (vsRsConst ++ vsRsMutable)
 				, elem v rsContra ]
 
-	let effsWrite	= [ TApp tWrite (TVar kRegion v)
+	let effsWrite	= [ TApp tWrite (TVar kRegion $ UVar v)
 				| v <- vsRsMutable
 				, elem v rsContra ]
 	
@@ -355,7 +355,7 @@ hookEffT hookVar tt
 	
 	-- There is already a var on the right most function
 	--	so we can use that as a hook var.
-	| Just (t1, t2, (TVar kEffect var), clo)
+	| Just (t1, t2, (TVar kEffect (UVar var)), clo)
 						<- takeTFun tt
 	= Just	( tt
 		, var
@@ -364,14 +364,14 @@ hookEffT hookVar tt
 	-- The right-most function has no effects on it.
 	--	Add the hook var that we were given.
 	| Just (t1, t2, TSum kEffect [], clo)	<- takeTFun tt
-	= Just	( makeTFun t1 t2 (TVar kEffect hookVar) clo
+	= Just	( makeTFun t1 t2 (TVar kEffect $ UVar hookVar) clo
 	  	, hookVar
 		, Nothing )
 	
 	-- The right-most function has some other effect on it. 
 	--	Replace this with our hook var and return the effect.
 	| Just (t1, t2, eff, clo)		<- takeTFun tt
-	= Just	( makeTFun t1 t2 (TVar kEffect hookVar) clo
+	= Just	( makeTFun t1 t2 (TVar kEffect $ UVar hookVar) clo
 		, hookVar
 		, Just eff)
 	
@@ -395,19 +395,19 @@ addEffectsToFsT effs var tt
 	 -> TFetters t1 (addEffectsToFs var effs fs)
 	 
 	tx
-	 -> TFetters tx [FWhere (TVar kEffect var) (makeTSum kEffect effs)]
+	 -> TFetters tx [FWhere (TVar kEffect $ UVar var) (makeTSum kEffect effs)]
 	 
 
 -- didn't find a fetter with this var, so add a new one
 addEffectsToFs v1 effs1 []
-	= [FWhere (TVar kEffect v1) (makeTSum kEffect effs1)]
+	= [FWhere (TVar kEffect $ UVar v1) (makeTSum kEffect effs1)]
 	
 addEffectsToFs v1 effs1 (f:fs)
  = case f of
- 	FWhere (TVar k v2) eff2
+ 	FWhere (TVar k (UVar v2)) eff2
 		| k == kEffect
 		, v1 == v2	
-	 	-> FWhere (TVar kEffect v2) (makeTSum kEffect (eff2 : effs1)) : fs
+	 	-> FWhere (TVar kEffect $ UVar v2) (makeTSum kEffect (eff2 : effs1)) : fs
 	
 	_	-> f : addEffectsToFs v1 effs1 fs
 
@@ -445,7 +445,7 @@ slurpConRegionsCon tt
 	 | Just (v, k, ts)		<- takeTData tt
 	 -> catMap slurpConRegionsCon ts
 
-	TVar k v		
+	TVar k (UVar v)
 		| k == kRegion	-> [v]
 
 	TVar _ _		-> []	

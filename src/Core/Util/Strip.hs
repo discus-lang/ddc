@@ -6,9 +6,8 @@ module Core.Util.Strip
 	, stripContextT 
 	, slurpForallContextT )
 where
-import Type.Exp
+import DDC.Type
 
------
 stripSchemeT	:: Type 
 		-> 	( [(Bind, Kind)]
 			, [Fetter]
@@ -84,8 +83,8 @@ slurpForallContextT tt
 
  	TForall b k t2	
 	 -> let	tBind	= case b of
-	 			BVar v 		-> TVar k v
-				BMore v t	-> TVarMore k v t
+	 			BVar v 		-> TVar k $ UVar v
+				BMore v t	-> TVar k $ UMore v t
 				
 		(vs, ks) = slurpForallContextT t2
 		

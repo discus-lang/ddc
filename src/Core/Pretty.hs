@@ -6,11 +6,10 @@ where
 import Core.Exp
 import Core.Util.Bits
 import Type.Pretty
-import Type.Exp
-import Type.Builtin
 import Util
 import Data.Function
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 
@@ -240,7 +239,6 @@ instance Pretty Exp PMode where
 spaceApp xx
  = case xx of
 	TVar{}			-> False
-	TVarMore{}		-> False
 	_			-> True
 
 

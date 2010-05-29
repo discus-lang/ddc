@@ -8,17 +8,14 @@ import Core.Util
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Util
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-
------
 data GraphS
 	= GraphS
 	{ stateTopVs	:: Set Var

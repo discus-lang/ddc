@@ -7,17 +7,13 @@ import {-# SOURCE #-} Desugar.Slurp.SlurpS
 import {-# SOURCE #-} Desugar.Slurp.SlurpA
 import Desugar.Slurp.Base
 import Type.Location
-import Type.Builtin
 import DDC.Var
 import DDC.Base.DataFormat
 import Util			(liftM, unzip6, unzip5, takeLast, catMap)
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
 
-
------
 stage	= "Desugar.Slurp.SlurpX"
-
 
 -- | Slurp out type an effect constraints from an expression.
 --   Annotate the expression with new type and effect variables as we go.
@@ -38,7 +34,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 	cX2		<- newTVarCS "" -- "lam"
 
 	-- Create type vars for all the lambda bound vars.
-	Just tBound@(TVar _ vBoundT)	
+	Just tBound@(TVar _ (UVar vBoundT))
 			<- bindVtoT vBound
 	
 	-- Slurp the body.
@@ -84,8 +80,8 @@ slurpX	exp@(XLambda sp vBound xBody)
 	-- we'll be wanting to annotate these vars with TECs when we convert to core.
 	wantTypeVs
 		$  vBoundT
-		:  [v | TVar kE v <- [eBody],	kE == kEffect]
-		++ [v | TVar kC v <- [cX],	kC == kClosure]
+		:  [v | TVar kE (UVar v) <- [eBody],	kE == kEffect]
+		++ [v | TVar kC (UVar v) <- [cX],	kC == kClosure]
 	
 	return	( tX
 		, tPure
@@ -131,14 +127,14 @@ slurpX	exp@(XMatch sp (Just obj) alts)
 	eX		<- newTVarES "mat"
 	cX		<- newTVarCS "mat"
 
-	eMatch@(TVar _ vEMatch)		
+	eMatch@(TVar _ (UVar vEMatch))
 			<- newTVarES "matI"
 
 	-- object
 	(tObj, eObj, cObj, obj', qsObj)	
 			<- slurpX obj
 
-	let TVar _ vObj = tObj
+	let TVar _ (UVar vObj) = tObj
 
 	-- alternatives
 	(tsAltsLHS, tsAltsRHS, esAlts, csAlts, alts', qsAlts)	
@@ -186,7 +182,7 @@ slurpX	exp@(XMatch sp Nothing alts)
 -- Lit ------------------------------------------------------------------------
 slurpX	exp@(XLit sp litFmt)
  = do	
- 	tX@(TVar _ vT)	<- newTVarDS "lit"
+ 	tX@(TVar _ (UVar vT))	<- newTVarDS "lit"
 
 	-- work out the type of this literal
 	let TyConData 
@@ -201,7 +197,7 @@ slurpX	exp@(XLit sp litFmt)
 
 		| tcKind	== KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
-		 	return	$ makeTData tcVar tcKind [TVar kRegion vR]
+		 	return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
 	tLit	<- tLitM
 	
 	let qs = [ CEq (TSV $ SVLiteral sp litFmt) tX tLit]
@@ -218,7 +214,8 @@ slurpX	exp@(XLit sp litFmt)
 
 -- Var ------------------------------------------------------------------------
 slurpX 	exp@(XVar sp var)
- = do	tV@(TVar k vT)	<- lbindVtoT    var
+ = do	tV@(TVar k (UVar vT))	
+		<- lbindVtoT    var
 	
 	wantTypeV vT
 	slurpV exp tV
@@ -288,7 +285,7 @@ slurpX	exp@(XIfThenElse sp xObj xThen xElse)
  	(tObj, eObj, cObj, xObj', qsObj)	
 			<- slurpX xObj
 
-	let TVar _ vObj = tObj
+	let TVar _ (UVar vObj) = tObj
 
 	-- The case object must be a Bool
 	tR		<- newTVarR
@@ -333,7 +330,7 @@ slurpX 	exp@(XProj sp xBody proj)
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar _ vInst) <- newTVarD
+	tInst@(TVar _ (UVar vInst)) <- newTVarD
 
 	-- effect and closure of projection function
 	--	This will turn into the effect/closure of the function that is being applied
@@ -378,8 +375,7 @@ slurpX	exp@(XProjT sp tDict proj)
 
 	-- instance var for projection function.
 	--	When we work out what the projection function is it'll be instantiated and bound to this var.
-	tInst@(TVar _ vInst) 
-		<- newTVarD
+	tInst@(TVar _ (UVar vInst)) <- newTVarD
 
 	-- closure of projection function
 	-- 	Make a closure term out of the projection function, once we know what it is.
@@ -406,10 +402,10 @@ slurpX x
 
 
 -- | Make an Inst constraint for a variable.
-slurpV exp@(XVar sp var) tV@(TVar k vT)
+slurpV exp@(XVar sp var) tV@(TVar k (UVar vT))
  = do
 	vTu		<- makeUseVar var vT
-	let tX		= TVar k vTu
+	let tX		= TVar k $ UVar vTu
 	let eX		= tPure
 	let qs		= [ CInst (TSV $ SVInst sp vT) vTu vT ]
 
@@ -420,7 +416,7 @@ slurpV exp@(XVar sp var) tV@(TVar k vT)
 		, qs)
 
 makeUseVar vInst vT
- = do 	TVar _ vTu_	<- newTVarD
+ = do 	TVar _ (UVar vTu_) <- newTVarD
 	let vTu		= vTu_  
 			{ varName = (varName vTu_)  ++ "_" ++ (varName vT) 
 			, varInfo = [IValueVar vInst]}

@@ -42,18 +42,16 @@ module Type.Util.Cut
 	(cutLoopsT_constrainForm)
 where
 import Type.Plate.Collect
-import Type.Exp
-import Type.Builtin
 import Type.Util.Bits
 import Util
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
------
 stage	= "Type.Util.Cut"
-
 
 -- | Cut loops in this type
 cutLoopsT_constrainForm :: Type -> Type
@@ -113,11 +111,10 @@ cutT cidsCut tt
 	    in	TConstrain (down t) (Constraints crsEq' crsMore' crsOther')
 	
 	TSum  k ts		-> TSum k (map down ts)
-	TVar{}			-> tt
 	TCon{}			-> tt
 
 	TApp{}
-	 | Just (v, t2@(TClass k _))	<- takeTFree tt
+	 | Just (v, t2@(TVar k (UClass _)))	<- takeTFree tt
 	 ,  Set.member t2 cidsCut
 	 -> tEmpty
 
@@ -125,8 +122,7 @@ cutT cidsCut tt
 	 -> TApp (down t1) (down t2)
 
 
-
-	TClass k cid'
+	TVar k (UClass cid')
 	 | Set.member tt cidsCut
 	 -> let result
 	 	 | k == kEffect	 = tPure
@@ -137,6 +133,8 @@ cutT cidsCut tt
 
 	 | otherwise
 	 -> tt
+
+	TVar{}			-> tt
 
 	TError{}		-> tt
  	

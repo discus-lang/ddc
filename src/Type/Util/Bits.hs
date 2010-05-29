@@ -79,10 +79,10 @@ module Type.Util.Bits
 	)
 where
 import Util
-import Type.Exp
 import Type.Plate.Trans
-import Type.Builtin
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -104,13 +104,13 @@ isTApp tt
 
 isSomeTVar tt
  = case tt of
- 	TVar{}		-> True
-	TVarMore{}	-> True
+ 	TVar _ UVar{}	-> True
+	TVar _ UMore{}	-> True
 	_		-> False
 
 isTClass tt
  = case tt of
- 	TClass{}	-> True
+ 	TVar _ UClass{}	-> True
 	_		-> False
 
 isFConstraint ff
@@ -170,10 +170,7 @@ takeValueArityOfType tt
 	TSum{}		-> Nothing
 	TCon{}		-> Just 0
 	TVar{}		-> Just 0
-	TIndex{}	-> Nothing
-	TClass{}	-> Just 0
 	TError{}	-> Nothing
-	TVarMore{}	-> Just 0
 	
 
 -- Projections -------------------------------------------------------------------------------------
@@ -187,16 +184,16 @@ takeVarOfBind bb
 
 
 takeCidOfTClass :: Type -> Maybe ClassId
-takeCidOfTClass (TClass k cid)	= Just cid
-takeCidOfTClass _		= Nothing
+takeCidOfTClass (TVar k (UClass cid))	= Just cid
+takeCidOfTClass _			= Nothing
 
 
 -- | Take the binding var from FLet's 
 takeBindingVarF :: Fetter -> Maybe Var
 takeBindingVarF ff
  = case ff of
- 	FWhere (TVar k v) t2	-> Just v
-	_			-> Nothing
+ 	FWhere (TVar k (UVar v)) t2	-> Just v
+	_				-> Nothing
 
 
 -- Crushing ----------------------------------------------------------------------------------------

@@ -3,14 +3,14 @@ module Type.Util.PackFast
 	( packType
 	, packType_markLoops )
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate.Collect
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -99,6 +99,7 @@ packTypeCrsSub config crsEq subbed tt
 
 packTypeCrsSub' config crsEq subbed tt
  = case tt of
+	TNil -> panic stage $ "packType: no match for TNil"
 
 	-- decend into foralls
 	TForall v k t
@@ -182,15 +183,10 @@ packTypeCrsSub' config crsEq subbed tt
 		t2'	= packTypeCrsSub config crsEq subbed t2
 	    in	TApp t1' t2'
 	
-	TCon{}	-> tt
-				
+	TCon{}		-> tt
 	TVar   k v	-> packTypeCrsClassVar config crsEq subbed tt k	
-	TClass k cid	-> packTypeCrsClassVar config crsEq subbed tt k
-
 	TError{}	-> tt
 
-	_ -> panic stage
-		$ "packType: no match for " % show tt
 
 -- | Pack constraints into a type variable.
 packTypeCrsClassVar

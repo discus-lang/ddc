@@ -6,14 +6,14 @@ module Type.Plug
 	, staticRsDataT
 	, staticRsClosureT)	
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Type.State
 import Type.Class
 import Type.Plate.Trans		
 import Util
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import Type.Pretty		()
 import qualified Data.Set	as Set
 
@@ -37,14 +37,14 @@ plugClassIds env xx
 
 plugT env t
  = case t of
-	TClass k cid
+	TVar k (UClass cid)
 	 | Set.member cid env	
 	 -> 	return t
 
 	 | otherwise
 	 -> do	var	<- makeClassName cid
 		Just c	<- lookupClass cid
-	 	return	$ TVar (classKind c) var
+	 	return	$ TVar (classKind c) $ UVar var
 		
 	_ -> 	return t
 	
@@ -55,10 +55,6 @@ staticRsDataT :: Type -> Set Type
 staticRsDataT tt
  = case tt of
 	TVar k v		
-	 | k == kRegion		-> Set.singleton tt
-	 | otherwise		-> Set.empty
-
-	TClass k cid		
 	 | k == kRegion		-> Set.singleton tt
 	 | otherwise		-> Set.empty
 

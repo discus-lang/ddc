@@ -12,23 +12,20 @@ import Type.Class
 import Type.State	
 import Type.Util
 import Type.Pretty
-import Type.Exp
-import Type.Builtin
 import Type.Util.Cut
 import Type.Plate.Collect
 import Util
 import DDC.Solve.Trace
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 		
------
 stage	= "Type.Extract"
 debug	= True
 trace s	= when debug $ traceM s
-
 
 -- | Extract a type from the graph and pack it into standard form.
 --	This is the same as extractType, but takes the cid of the type instead of its var.
@@ -138,8 +135,8 @@ extractType_more final varT cid tPack
 	let tsParam	
 		= catMaybes
 		$ map (\t -> case t of
-				TClass kE cid | kE == kEffect   -> Just t
-				TClass kC cid | kC == kClosure	-> Just t
+				TVar kE (UClass cid) | kE == kEffect   -> Just t
+				TVar kC (UClass cid) | kC == kClosure	-> Just t
 				_				-> Nothing)
 		$ slurpParamClassVarsT_constrainForm tPack
 	

@@ -10,14 +10,13 @@ module Desugar.Util
 where
 import Desugar.Exp
 import Desugar.Plate.Trans
-import Type.Exp
 import Util
+import DDC.Type
 import DDC.Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
 
------
 unflattenApps :: a -> [Exp a] -> Exp a
 unflattenApps a (x:xs)
  = unflattenApps' a x xs

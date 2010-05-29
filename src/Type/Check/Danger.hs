@@ -3,12 +3,12 @@ module Type.Check.Danger
 	(dangerousCidsT)
 where
 import Util
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Type.Plate.Collect
 import DDC.Main.Error
 import DDC.Var
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var.PrimId		as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -18,10 +18,9 @@ stage	= "Type.Check.Danger"
 dangerousCidsT :: Type -> [ClassId]
 dangerousCidsT tt
  = let	tsDanger	= dangerT Set.empty Map.empty tt
-   in	[ cid	| TClass k cid	<- Set.toList tsDanger
+   in	[ cid	| TVar k (UClass cid)	<- Set.toList tsDanger
 	    		, elem k [kValue, kEffect, kClosure] ]
 	    
-
 dangerT 
 	:: Set Type
 	-> Map Type Type
@@ -31,7 +30,6 @@ dangerT rsMutable fsClosure tt
  = case tt of
  	TVar{}			-> Set.empty
 	TCon{}			-> Set.empty
-	TClass{}		-> Set.empty
 
 	TForall b k t		
 	 -> dangerT rsMutable fsClosure t
@@ -109,7 +107,6 @@ dangerT_data rsMutable fsClosure (v, k, ts)
 	-- if this ctor has any mutable regions then all vars from this point down are dangerous
  	| or $ map 	(\t -> case t of 
  				TVar{}		-> Set.member t rsMutable
-				TClass{}	-> Set.member t rsMutable
 				_		-> False)
 			ts
 

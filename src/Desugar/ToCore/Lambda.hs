@@ -7,8 +7,7 @@ where
 import Core.Exp
 import Core.Util
 import Desugar.ToCore.Base
-import Type.Exp
-import Type.Builtin
+import DDC.Type
 import DDC.Var
 import qualified Data.Set 	as Set
 import qualified Data.Map	as Map
@@ -52,7 +51,7 @@ loadEffAnnot
 
 loadEffAnnot ee
  = case ee of
-	TVar kE vE	
+	TVar kE (UVar vE)
 	 | kE == kEffect
 	 -> do	Just tE		<- lookupType vE
 		return	$ flattenT $ stripContextT tE
@@ -69,7 +68,7 @@ loadCloAnnot
 
 loadCloAnnot cc
  = case cc of
-	TVar kC vC	
+	TVar kC (UVar vC)
 	 | kC == kClosure
 	 -> do	Just tC		<- lookupType vC
 	 	return 	$ trimClosureC Set.empty Set.empty 

@@ -2,11 +2,11 @@ module Type.Util.Finalise
 	( finaliseT
 	, finaliseF)
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util.Bits
 import Shared.VarPrim
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map		as Map
@@ -38,6 +38,9 @@ finaliseT bound def tt
 finaliseT' bound def tt
  = let down	= finaliseT' bound def
    in  case tt of
+	TNil	-> panic stage $ "finaliseT: no match for TNil"
+
+
   	TForall b k t	
 	 -> let	Just v	= takeVarOfBind b
 		bound'	= Set.insert v bound
@@ -59,8 +62,8 @@ finaliseT' bound def tt
 	  
 	TConstrain t (Constraints crsEq crsMore crsOther)
 	 -> let	bound'	= Set.unions
-			   	[ Set.fromList $ [v | TVar _ v <- Map.keys crsEq ]
-			   	, Set.fromList $ [v | TVar _ v <- Map.keys crsMore ] 
+			   	[ Set.fromList $ [v | TVar _ (UVar v) <- Map.keys crsEq ]
+			   	, Set.fromList $ [v | TVar _ (UVar v) <- Map.keys crsMore ] 
 				, bound ]
 			
 		crsEq'	  = Map.map (finaliseT' bound' def) crsEq
@@ -72,7 +75,7 @@ finaliseT' bound def tt
 	TSum  k ts	-> makeTSum k (map down ts)
 
 	TCon{}		-> tt 
-	TVar  k v
+	TVar k (UVar v)
 	 	| elem k [kEffect, kClosure]
 		, not $ Set.member v bound	-> tBot k
 	 
@@ -81,14 +84,11 @@ finaliseT' bound def tt
 		, not $ Set.member v bound	-> makeTData primTUnit k []
 	 
 		| otherwise			-> tt
-			
+
+	TVar{}		-> tt
 	TApp t1 t2	-> TApp (down t1) (down t2)
-	
-	TClass{}	-> tt
 	TError{}	-> tt
 	
-	_		-> panic stage
-			$ "finaliseT: no match for " % tt
 
 
 finaliseF 

@@ -4,8 +4,6 @@ module Type.Solve.Grind
 where
 import Type.Class
 import Type.State
-import Type.Exp
-import Type.Builtin
 import Type.Crush.Unify
 import Type.Crush.Fetter
 import Type.Crush.Effects
@@ -14,6 +12,8 @@ import Type.Crush.Proj
 import Constraint.Exp
 import Util
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set

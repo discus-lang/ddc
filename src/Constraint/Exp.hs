@@ -4,8 +4,8 @@ module	Constraint.Exp
 	( CTree(..)
 	, CBind(..) )
 where
-import Type.Exp
 import Type.Location
+import DDC.Type
 import DDC.Var
 import Data.Map			(Map)
 

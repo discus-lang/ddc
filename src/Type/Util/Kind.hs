@@ -29,11 +29,11 @@ module Type.Util.Kind
 	, isClosure,	isClosureKind)
 where
 import Type.Pretty		()
-import Type.Builtin
 import Type.Util.Bits
-import Type.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import Data.List
 
@@ -162,7 +162,11 @@ inventWitnessOfClass k
 		Just ks = sequence $ map kindOfType ts
 
 		-- The resulting kind guarantees the constraint.
-		kResult	= makeKApps (KCon kiCon s) (zipWith TIndex ks $ reverse [0 .. length ks - 1])
+		kResult	= makeKApps (KCon kiCon s) 
+				(zipWith (\k i -> TVar k (UIndex i)) 
+					ks 
+					(reverse [0 .. length ks - 1]))
+					
 		k'	= makeKFuns ks kResult
 		tyCon	= TyConWitness tcWitness k'
 
@@ -191,10 +195,8 @@ kindOfType tt
 
 kindOfType' tt
  = case tt of
-	TClass k _		-> k
+	TNil{}			-> panic stage $ "kindOfType: no kind for TNil"
 	TVar k _		-> k
-	TVarMore k _ _		-> k
-	TIndex k _		-> k
 	TCon tyCon		-> (tyConKind tyCon)
 	TSum  k _		-> k
 
@@ -205,12 +207,8 @@ kindOfType' tt
 	TForall  b t1 t2	-> kindOfType' t2
 	TFetters t1 _		-> kindOfType' t1
 	TConstrain t1 crs	-> kindOfType' t1
-		
 	TError k _		-> k
 		
-	-- some of the helper constructors don't have real kinds ------------
-	_			-> panic stage $ "kindOfType bad kind for: " % tt
-
 
 kindOfType_orDie :: Type -> Kind
 kindOfType_orDie tt
@@ -241,12 +239,12 @@ betaTT depth tX tt
 	TApp t1 t2	-> TApp (down t1) (down t2)
 	TSum k ts	-> TSum k (map down ts)
 	TCon{}		-> tt
-	TVar{}		-> tt
-	TVarMore{}	-> tt
 
-	TIndex k ix
+	TVar k (UIndex ix)
 	 | ix == depth	-> down tX
 	 | otherwise	-> tt
+
+	TVar{}		-> tt
 	 	
 	_		-> panic stage
 			$ "betaTT: no match for " % tt
@@ -274,8 +272,6 @@ isClosure tt
 	
  	TSum	 k _		-> isClosureKind k
 	TVar	 k _		-> isClosureKind k
-	TVarMore k _ _		-> isClosureKind k
-	TClass	 k _		-> isClosureKind k
 	TFetters t1 _		-> isClosure t1
 	TConstrain t1 _		-> isClosure t1
 	TForall _ _ t1		-> isClosure t1
@@ -293,8 +289,6 @@ isEffect tt
 	
 	TSum k _		-> isEffectKind k
 	TVar k _		-> isEffectKind k
-	TVarMore k _ _		-> isEffectKind k
-	TClass   k _ 		-> isEffectKind k
 	TFetters t1 _		-> isEffect t1
 	TConstrain t1 _		-> isEffect t1
 	TForall _ _ t1		-> isEffect t1

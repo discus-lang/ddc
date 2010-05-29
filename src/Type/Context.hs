@@ -5,11 +5,11 @@ module Type.Context
 	( reduceContextT 
 	, matchInstance )
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Shared.VarPrim
 import Util
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import Type.Effect.MaskLocal	(visibleRsT)
 import qualified Data.Set	as Set
@@ -47,7 +47,7 @@ reduceContextF tShape classInstances ff
 	--	These regions are local to the function and a local region binding will be introduced
 	--	which will create the required witnesses.
 	--	
-	| FConstraint v [tR@(TVar kR r)]	<- ff
+	| FConstraint v [tR@(TVar kR (UVar r))]	<- ff
 	, kR	== kRegion
 	, elem v [primConst, primMutable, primMutable, primDirect]
 	, not $ Set.member tR $ visibleRsT tShape

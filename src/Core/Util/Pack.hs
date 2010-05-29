@@ -7,11 +7,10 @@ module Core.Util.Pack
 	, inlineTWheresMapT )
 where
 import Core.Plate.FreeVars
-import Type.Exp
-import Type.Builtin
 import Util
 import Util.Graph.Deps
 import DDC.Main.Error
+import DDC.Type
 import Type.Util		hiding (flattenT)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -174,11 +173,11 @@ packT1 tt
 	 -> makeTSum k $ nub $ map packT1 ts
 
 	-- vars
-	TVar k v	-> tt
-	TVarMore k v t	-> TVarMore k v (packT1 t)
-	TIndex{}	-> tt
+	TVar k (UVar v)		-> tt
+	TVar k (UMore v t)	-> TVar k $ UMore v (packT1 t)
+	TVar _ UIndex{}		-> tt
 
-	TCon{}		-> tt
+	TCon{}			-> tt
 	
 	_ -> panic stage
 		$ "packT: no match for " % tt % "\n"
@@ -269,7 +268,7 @@ inlineTWheresMapT sub block tt
 	 		= partitionFs [isFWhere, isFMore] fs
 		
 		sub'	= Map.union 
-				(Map.fromList [(v, t) | FWhere (TVar _ v) t <- fsWhere])
+				(Map.fromList [(v, t) | FWhere (TVar _ (UVar v)) t <- fsWhere])
 				sub
 				
 				
@@ -282,7 +281,7 @@ inlineTWheresMapT sub block tt
 
 	TSum     k ts		-> TSum  k 	(map down ts)
 	    
-	TVar k v	
+	TVar k (UVar v)
 	 -- If this var is in our block set then we're trying to recursively
 	 --	substitute for it.. bail out now or we'll loop forever.
 	 |  Set.member v block
@@ -295,7 +294,7 @@ inlineTWheresMapT sub block tt
 	 	Just t	-> inlineTWheresMapT sub (Set.insert v block) t
 		_	-> tt
 
-	TVarMore k v tMore
+	TVar k (UMore v tMore)
 	 -- If this var is in our block set then we're trying to recursively
 	 --	substitute for it.. bail out now or we'll loop forever.
 	 |  Set.member v block
@@ -320,8 +319,8 @@ restrictBinds :: Type -> [Fetter] -> [Fetter]
 restrictBinds tt ls
  = let	splitFetter ff
   	 = case ff of
-	 	FWhere (TVar k v) t	-> (v, t)
-		FMore  (TVar k v) t	-> (v, t)
+	 	FWhere (TVar k (UVar v)) t	-> (v, t)
+		FMore  (TVar k (UVar v)) t	-> (v, t)
 
  	reachFLetsMap
  		= Map.fromList
@@ -334,8 +333,8 @@ restrictBinds tt ls
 	
 	varOfFetter f
 	 = case f of
-		FWhere (TVar k v) _	-> v
-		FMore  (TVar k v) _	-> v
+		FWhere (TVar k (UVar v)) _	-> v
+		FMore  (TVar k (UVar v)) _	-> v
 	 
    in	filter	(\f -> Set.member (varOfFetter f) vsReachable)
    		ls

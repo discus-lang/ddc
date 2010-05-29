@@ -7,8 +7,6 @@ module Desugar.Slurp.Slurp
 where
 import Util
 import Shared.Exp
-import Type.Exp
-import Type.Builtin
 import Type.Location
 import Type.Util
 import Constraint.Exp
@@ -25,7 +23,6 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
 
------
 stage	= "Desugar.Slurp.Slurp"
 
 -- | Slurp out type constraints from this tree.
@@ -132,7 +129,7 @@ slurpP top@(PClassDecl sp vClass tsParam sigs)
 	     	= do 	vT		<- lbindVtoT vSig
 
 			-- add a forall for each of the parameters of the type class
-	     		let vksParam	= map (\(TVar k v) -> (v, k)) tsParam
+	     		let vksParam	= map (\(TVar k (UVar v)) -> (v, k)) tsParam
 
 			-- add the enclosing class constraint
 			let tSig'	= makeTForall_front vksParam
@@ -230,7 +227,7 @@ slurpCtorDef
 
 slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
  = do
-	Just (TVar _ cNameT)	
+	Just (TVar _ (UVar cNameT))
 			<- bindVtoT cName
 
 	-- Slurp the initialization code from the data fields.
@@ -248,7 +245,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 
 	-- Record what data type this constructor belongs to.
 	let kData	= makeDataKind vs
-	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vs
+	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vs
 	modify (\s -> s {
 		stateCtorType	= Map.insert cName 
 					(makeTData vData kData tsData)
@@ -260,7 +257,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 				$ stateCtorFields s })
 
 	let constr = 
-		   [ CDef (TSV $ SVCtorDef sp vData cName) (TVar kData cNameT) ctorType ]
+		   [ CDef (TSV $ SVCtorDef sp vData cName) (TVar kData $ UVar cNameT) ctorType ]
 		++ case concat initConstrss of
 			[]	-> []
 			_	-> [CBranch 
@@ -332,10 +329,10 @@ freshenType
 freshenType tt
  = do	let vsFree	= freeVars tt
  	let vsFree'	= filter (\v -> (not $ Var.isCtorName v)) $ Set.toList vsFree
-	let tsFree'	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsFree'
+	let tsFree'	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsFree'
 	
 	vsFresh		<- mapM newVarZ vsFree'
-	let tsFresh	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsFresh
+	let tsFresh	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsFresh
 	
 	let sub		= Map.fromList $ zip tsFree' tsFresh
 

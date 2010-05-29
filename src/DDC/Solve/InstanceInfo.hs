@@ -5,7 +5,7 @@ module DDC.Solve.InstanceInfo
 	(InstanceInfo(..))
 where
 import DDC.Var
-import Type.Exp
+import DDC.Type
 
 -- An `InstanceInfo` carries information about how the type scheme of 
 --	a bound variable was instantiated, from the solver to the desugarer. 

@@ -12,13 +12,13 @@ import Type.Plug
 import Type.Strengthen
 import Type.Context
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Type.Pretty
 import Shared.VarPrim
 import Type.Plate.Collect
 import Type.Plate.FreeVars
 import Util
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var.NameSpace
 import DDC.Var
 import qualified Shared.VarUtil		as Var
@@ -59,8 +59,8 @@ generaliseType' varT tCore envCids
 	-- 	Can't generalise regions in non-functions.
 	--	... some data object is in the same region every time you use it.
 	--
-	let staticRsData 	= [cid | TClass k cid <- Set.toList $ staticRsDataT    tFlat ]
-	let staticRsClosure 	= [cid | TClass k cid <- Set.toList $ staticRsClosureT tFlat ]
+	let staticRsData 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsDataT    tFlat ]
+	let staticRsClosure 	= [cid | TVar k (UClass cid) <- Set.toList $ staticRsClosureT tFlat ]
 
 	trace	$ "    staticRsData     = " % staticRsData	% "\n"
 		% "    staticRsClosure  = " % staticRsClosure	% "\n"
@@ -131,12 +131,12 @@ generaliseType' varT tCore envCids
 	let fsMore
 		| isTopLevel
 		=  [ FConstraint primConst [tR]
-			| tR@(TClass kR cid)	<- rsMskLocal
+			| tR@(TVar kR (UClass cid))	<- rsMskLocal
 			, kR	== kRegion
 			, notElem (FConstraint primMutable [tR]) fsMskLocal ]
 
 		++ [ FConstraint primDirect [tR]
-			| tR@(TClass kR cid) <- rsMskLocal
+			| tR@(TVar kR (UClass cid)) <- rsMskLocal
 			, kR	== kRegion
 			, notElem (FConstraint primLazy [tR]) fsMskLocal ]
 	
@@ -166,7 +166,7 @@ generaliseType' varT tCore envCids
 	--	we can use this information later to clean out non-port effect and closure vars
 	--	once the solver is done.
 	let vtsMore	= Map.fromList 
-			$ [(v, t)	| FMore (TVar k v) t
+			$ [(v, t)	| FMore (TVar k (UVar v)) t
 					<- slurpFetters tScheme]
 	
 	
@@ -214,7 +214,7 @@ cleanType tsSave tt
  = let 	vsKeep	= Set.fromList
 		$ catMaybes
  		$ map (\t -> case t of
-				TVar k v 
+				TVar k (UVar v)
 				 	| k == kEffect || k == kClosure
 					-> Just v
 				

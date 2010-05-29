@@ -1,7 +1,6 @@
 
-module Type.Docable
-where
-import Type.Exp
+module Type.Docable where
+import DDC.Type
 import DDC.Util.Doc
 import DDC.Main.Pretty
 import Type.Pretty		()
@@ -58,11 +57,11 @@ instance Docable TyCon Str where
 instance Docable Type Str where
  doc tt 
   = case tt of
-	TVar k v
+	TVar k u
 	 -> DNode "TVar"
 	 $  DList
 		[ DNode "kind" $ doc k
-		, DNode "var"  $ (DLeaf $ ppr v) ]
+		, DNode "var"  $ doc u ]
 
 	TCon tyCon
 	 -> DNode "TCon" $ doc tyCon
@@ -75,5 +74,11 @@ instance Docable Type Str where
 		
 
 	_ -> DLeaf (ppr tt)
+
+	
+instance Docable Bound Str where
+ doc uu
+  = case uu of
+	UVar v	-> DLeaf $ ppr v
 	
 	

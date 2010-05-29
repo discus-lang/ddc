@@ -13,8 +13,6 @@ where
 import Source.Error
 import Desugar.Util
 import Desugar.Exp
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Type.Plate.FreeVars
 import Shared.Exp
@@ -25,6 +23,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Data.Set		as Set
 import qualified Util.Data.Map		as Map
@@ -268,9 +267,9 @@ freshenCrsEq mid tt
 	TFetters t fs
 	 -> do	let takeSub	ff
 		     = case ff of
-			FWhere (TVar k v) _
+			FWhere (TVar k (UVar v)) _
 			 -> do	vFresh	<- freshenV mid v
-				return	$  Just (TVar k v, TVar k vFresh)
+				return	$  Just (TVar k $ UVar v, TVar k $ UVar vFresh)
 				
 			_ -> return Nothing
 			
@@ -506,7 +505,7 @@ addProjDictFunsP
  | Just (v, k, ts)			<- takeTData projType
  , Just (PData _ vData vsData ctors)	<- Map.lookup v dataMap
  = do	
-	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsData
+	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsData
 	let tData	= makeTData vData (makeDataKind vsData) tsData
 	
 	-- See what projections have already been defined.

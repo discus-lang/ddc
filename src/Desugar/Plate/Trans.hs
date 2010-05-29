@@ -11,8 +11,8 @@ module Desugar.Plate.Trans
 where
 import Desugar.Exp
 import Shared.Exp
-import Type.Exp
 import Util
+import DDC.Type
 import DDC.Var
 
 

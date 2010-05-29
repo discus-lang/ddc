@@ -6,8 +6,6 @@ where
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Type.Location
-import Type.Builtin
-
 
 -- | Slurp the type constraints for this statement.
 slurpS 	:: Stmt Annot1
@@ -40,9 +38,9 @@ slurpS 	(SBind sp Nothing e1)
 -- regular bindings
 slurpS	(SBind sp (Just v) e1)
  = do
-	tBind@(TVar _ vBindT)	<- lbindVtoT v
+	tBind@(TVar _ (UVar vBindT))	<- lbindVtoT v
 	
- 	(tX@(TVar _ tXv), eX, cX, x1', qsX)	
+ 	(tX@(TVar _ (UVar tXv)), eX, cX, x1', qsX)	
 			<- slurpX e1
 
 	return	( tX

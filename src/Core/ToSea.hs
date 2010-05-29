@@ -18,8 +18,7 @@ import qualified Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Core.Reconstruct	as C
 import qualified Core.OpType		as C
-import qualified Type.Exp		as T
-import qualified Type.Builtin		as T
+import qualified DDC.Type		as T
 import qualified Type.Util		as T
 import qualified Sea.Exp  		as E
 import qualified Sea.Pretty		as E
@@ -29,7 +28,6 @@ import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Data.Sequence		as Seq
 
------
 stage	= "Core.ToSea"
 
 
@@ -62,7 +60,7 @@ slurpWitnessKind :: T.Kind -> SeaM ()
 slurpWitnessKind kk
  = case kk of
 	-- const regions
- 	T.KApp k (T.TVar kR r)
+ 	T.KApp k (T.TVar kR (T.UVar r))
  	 | k	== T.kDirect
          , kR 	== T.kRegion
 	 -> modify $ \s -> s { stateDirectRegions 
@@ -472,7 +470,7 @@ toSeaG	mObjV ssFront gg
 -- check if this type is in a direct region
 isDirectType :: T.Type -> SeaM Bool
 isDirectType tt
-	| Just (v, k, T.TVar kR vR : _)	<- T.takeTData tt
+	| Just (v, k, T.TVar kR (T.UVar vR) : _)	<- T.takeTData tt
 	, kR == T.kRegion
 	= do	directRegions	<- gets stateDirectRegions
 	 	return	$ Set.member vR directRegions

@@ -7,13 +7,10 @@ import Shared.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Type.Location
-import Type.Builtin
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Shared.VarUtil	as Var
 
-
------
 stage	= "Desugar.Slurp.SlurpA"
 
 -- Alt ---------------------------------------------------------------------------------------------
@@ -147,10 +144,10 @@ slurpW	(WConLabel sp vCon lvs)
 		= takeTData tData
 
 	-- Instantiate each of the poly-vars in the data type.
-	let vsData	= map (\(TVar k v) -> v) tsData
+	let vsData	= map (\(TVar k (UVar v)) -> v) tsData
 
 	vsInst		<- mapM newVarZ vsData
-	let tsInst	=  map (\v -> TVar (kindOfSpace $ varNameSpace v) v) vsInst
+	let tsInst	=  map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsInst
 
 
 	-- Apply the substitution to the data type.
@@ -172,8 +169,8 @@ slurpW	(WConLabel sp vCon lvs)
 
 slurpW	(WLit sp litFmt)
  = do
-	tD@(TVar _ tV)	<- newTVarDS "const"
-	tE		<- newTVarES "const"
+	tD@(TVar _ (UVar tV))	<- newTVarDS "const"
+	tE			<- newTVarES "const"
 
 	-- work out the type of this literal
 	let TyConData 
@@ -188,7 +185,7 @@ slurpW	(WLit sp litFmt)
 
 		| tcKind == KFun kRegion kValue
 		= do	vR	<- newVarN NameRegion
-			return	$ makeTData tcVar tcKind [TVar kRegion vR]
+			return	$ makeTData tcVar tcKind [TVar kRegion $ UVar vR]
 	tLit <- tLitM
 
 	wantTypeV tV
@@ -200,7 +197,7 @@ slurpW	(WLit sp litFmt)
 
 
 slurpW	(WVar sp v)
- = do	tBound@(TVar k vT)	<- lbindVtoT v
+ = do	tBound@(TVar k (UVar vT))	<- lbindVtoT v
  			
 	return	( [(v, vT)]
 		, tBound
@@ -224,7 +221,7 @@ slurpLV	:: Var				-- Constructor name.
 slurpLV vCon tData subInst (LIndex sp ix, v)
  = do	
 	-- create a new type var for this arg.
- 	(TVar _ vT)	<- lbindVtoT v
+ 	(TVar _ (UVar vT))	<- lbindVtoT v
 
 	-- Lookup the fields for this constructor.
 	ctorFields	<- gets stateCtorFields
@@ -246,7 +243,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 
 		return	( (LIndex Nothing ix, v)
 			, Just (v, vT)
-			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue vT) tField] )
+			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField] )
 
          -- Uh oh, there's no field with this index.
 	 --	Add the error to the monad and return some dummy info so
@@ -269,7 +266,7 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 slurpLV vCon tData subInst (LVar sp vField, v)
  = do
  	-- Create a new type var for this arg.
- 	Just (TVar _ vT)	<- bindVtoT v
+ 	Just (TVar _ (UVar vT))	<- bindVtoT v
  
  	-- Lookup the fields for this constructor.
  	ctorFields	<- gets stateCtorFields
@@ -292,5 +289,5 @@ slurpLV vCon tData subInst (LVar sp vField, v)
 
  	return 	( (LVar Nothing vField, v)
  		, Just (v, vT)
-		, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue vT) tField] )
+		, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField] )
 

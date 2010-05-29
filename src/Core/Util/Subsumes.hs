@@ -9,10 +9,9 @@ where
 import Core.Util.Trim
 import Type.Util.Bits
 import Type.Util.Kind
-import Type.Exp
-import Type.Builtin
 import Util
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -66,25 +65,25 @@ subsumes2 table t s
 subsumes3 table t s
 
 	-- load up embedded TVarMore constraints
-	| TVarMore tKind tVar tMore <- t
+	| TVar tKind (UMore tVar tMore) <- t
 	= let table'	= slurpMore (tVar, tMore) table
-	  in  (subsumes1 table' (TVar tKind tVar) s, "load VarMore")
+	  in  (subsumes1 table' (TVar tKind $ UVar tVar) s, "load VarMore")
 
-	| TVarMore sKind sVar sMore <- s
+	| TVar sKind (UMore sVar sMore) <- s
 	= let table'	= slurpMore (sVar, sMore) table
-	  in  (subsumes1 table' t (TVar sKind sVar), "load VarMore")
+	  in  (subsumes1 table' t (TVar sKind $ UVar sVar), "load VarMore")
 
 
 	-- load up embedded FMore constraints
 	| TFetters t' fs	<- t
-	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) 
+	= let table'	= foldl (\tab (FMore (TVar _ (UVar v1)) t2) 
 				-> slurpMore (v1, t2) tab) 
 				table fs
 	  in  subsumes3 table' t' s
 	
 
 	| TFetters s' fs	<- s
-	= let table'	= foldl (\tab (FMore (TVar _ v1) t2) 
+	= let table'	= foldl (\tab (FMore (TVar _ (UVar v1)) t2) 
 				-> slurpMore (v1, t2) tab) 
 				table fs
 	  in  subsumes3 table' t s'
@@ -96,7 +95,7 @@ subsumes3 table t s
 
 	-- SubVarTrans
 	--	This handles both SubVar and SubTrans.
-	| TVar tKind tVar 	<- t
+	| TVar tKind (UVar tVar) <- t
 	, Just s2		<- Map.lookup tVar table 
 	, subsumes table s2 s
 	= (True, "SubTrans")
@@ -163,8 +162,8 @@ subsumes3 table t s
 --
 slurpMore (v1, t2) table
  = case t2 of
- 	TVarMore k v2 t3
-	 -> let	table'	= Map.insert v1 (TVar k v2) table
+ 	TVar k (UMore v2 t3)
+	 -> let	table'	= Map.insert v1 (TVar k $ UVar v2) table
 	    in	slurpMore (v2, t3) table'
 	    
 	_ -> Map.insert v1 t2 table

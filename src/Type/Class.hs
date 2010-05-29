@@ -32,7 +32,6 @@ module Type.Class
 	, sinkCidsInNodeFst
 	, sinkCidsInFetterFst)
 where
-import Type.Exp
 import Type.Location
 import Type.State
 import Type.Plate.Collect
@@ -42,6 +41,7 @@ import Type.Dump		()
 import Util
 import DDC.Main.Error
 import DDC.Solve.Sink
+import DDC.Type.Exp
 import DDC.Var
 import Data.Array.IO
 import qualified Data.Map	as Map
@@ -492,7 +492,7 @@ deleteSingleFetter cid v
 takeTClassOfClass :: Class -> Maybe Type
 takeTClassOfClass cls
  = case cls of
-	Class{}	-> Just $ TClass (classKind cls) (classId cls)
+	Class{}	-> Just $ TVar (classKind cls) $ UClass (classId cls)
 	_	-> Nothing
 
 	

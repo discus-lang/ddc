@@ -44,16 +44,15 @@ module Source.Lint
 where
 import Source.Exp
 import Source.Error
-import Type.Exp
 import Type.Util
 import Util
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Data.Set	as Set
 
------
 stage	= "Source.Lint"
 
 lintTree :: Tree SourcePos -> LintM (Tree SourcePos)
@@ -559,7 +558,7 @@ instance Lint Type where
 	TCon{}
 	 -> return tt
 
-  	TVar k v
+  	TVar k (UVar v)
 	 | let Just space = spaceOfKind k
 	   in  not $ inSpaceN space [v]	
 	 -> death tt "TVar - var in wrong namespace."
@@ -567,13 +566,11 @@ instance Lint Type where
 	 | otherwise		
 	 -> do	k'	<- lint k
 		v'	<- lint v
-		return	$ TVar k' v'
+		return	$ TVar k' (UVar v')
 
-	TIndex{}	-> death tt "TIndex - shouldn't exist in source program"	
-	TClass{}	-> death tt "TClass - shouldn't exist in source program"
+	TVar{}		-> death tt "TVar form - shouldn't exist in source program"
 	TError{}	-> death tt "TError - shouldn't exist in source program"
-	TVarMore{}	-> death tt "TVarMore - shouldn't exist in source program"
-	
+
 	
 -- Fetter -----------------------------------------------------------------------------------------
 instance Lint Fetter where

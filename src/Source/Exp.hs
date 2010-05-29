@@ -19,10 +19,9 @@ module Source.Exp
 	, LCQual	(..))
 where
 import DDC.Base.Literal
+import DDC.Type
 import DDC.Var
 import Shared.Exp
-import Type.Exp
-
 
 -- | A `Tree` is a list of top level declarations.
 type Tree a	

@@ -13,8 +13,8 @@ import Core.Exp
 import Core.Pretty		()
 import Core.Util.Pack
 import Type.Util
-import Type.Exp
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 import Util
@@ -115,7 +115,8 @@ dropXTau :: Exp -> Map Var Type -> Type -> Exp
 dropXTau xx env tt
 	-- load up bindings into the environment
 	| TFetters t fs		<- tt
-	= dropXTau xx (Map.union (Map.fromList [(v, t) | FWhere (TVar _ v) t <- fs]) env) t
+	= dropXTau xx (Map.union (Map.fromList [(v, t)
+	 		| FWhere (TVar _ (UVar v)) t <- fs]) env) t
 
 	-- decend into XLAMs
 	| XLAM v t x		<- xx

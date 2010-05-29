@@ -11,10 +11,9 @@ module Core.Lint
 	, Env	(..))
 where
 import Core.Glob
-import Type.Exp
-import Type.Builtin
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import Data.List
 import Type.Pretty		()
@@ -151,7 +150,7 @@ checkType tt stack env
 		 -> 	checkKind k stack env
 		 `seq`	k
 		
-	TVar k v
+	TVar k (UVar v)
 	 ->    checkKind k stack env
 	 `seq` case Map.lookup v (envKinds env) of
 		Nothing	
@@ -172,7 +171,7 @@ checkType tt stack env
 			% "    kind on annot: " % k % "\n"
 			% "    does not match environment: " % k % "\n"
 		 
-	TIndex _ i
+	TVar _ (UIndex i)
 	 -> let	getTypeIx 0 (x:xs)	= x
 		getTypeIx n (x:xs)	= getTypeIx (n-1) xs
 		getTypeIx _ []		

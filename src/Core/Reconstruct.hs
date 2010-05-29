@@ -35,16 +35,13 @@ import Core.Exp
 import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
-import Type.Exp
 import Type.Util.Environment
-import Type.Builtin
 import Shared.VarPrim
-import DDC.Var.VarId
-import DDC.Var.NameSpace
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var.VarId		as Var
 import DDC.Var
 import DDC.Util.Doc
@@ -168,7 +165,7 @@ reconP (PBind v x)
 		maskConstRead	(TSum k es)	= TSum k (map maskConstRead es)
 		maskConstRead	e		= e
 
-		isConst (TVar k r)
+		isConst (TVar k (UVar r))
 		 = (k == kRegion) && (isJust . Map.lookup r $ envWitnessConst tt)
 
 		simplifyE e@(TSum _ []) = e
@@ -509,7 +506,7 @@ reconX (XVar v TNil)
 			$ Set.toList vsFree
 
 		tDrop	= makeTFetters t'
-				[ FMore (TVar (defaultKindV v) v) t2
+				[ FMore (TVar (defaultKindV v) $ UVar v) t2
 				| (v, t2)	<- vtsMore]
 
 	trace ( "reconX[XVar]: dropping type\n"

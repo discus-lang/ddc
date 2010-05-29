@@ -7,11 +7,10 @@ module Core.Util.Trim
 where	
 import Type.Util.Bits
 import Type.Util.Kind
-import Type.Exp
-import Type.Builtin
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
@@ -108,13 +107,13 @@ trimClosureC' quant rsData cc
    in case cc of
 
 	-- vars which are quantified in this closure aren't free and can be trimmed out
- 	TVar _ v
+ 	TVar _ (UVar v)
 	 | Set.member v quant	-> tEmpty
 	 | otherwise		-> cc
 	 
-	TVarMore _ v cMore
+	TVar _ (UMore v cMore)
 	 | Set.member v quant	-> tEmpty
-	 | otherwise		-> TVarMore kClosure v $ down cMore
+	 | otherwise		-> TVar kClosure $ UMore v $ down cMore
 
 
 	-- Trim all the elements of a sum
@@ -142,7 +141,7 @@ trimClosureC' quant rsData cc
 
 	 -- If this closure has no free variables
 	 --	then it is closed and can safely be erased.
-	 | Just (tag, TVar k v)		<- takeTFree cc
+	 | Just (tag, TVar k (UVar v))		<- takeTFree cc
 	 , k == kEffect	|| Set.member v quant	
 	 -> tEmpty
 
@@ -168,14 +167,9 @@ trimClosureC_t :: Set Var -> Set Var -> Type -> [Type]
 trimClosureC_t quant rsData tt
  = let down = trimClosureC_t quant rsData
    in  case tt of
-	TVar k v	
+	TVar k (UVar v)
 		| Set.member v quant	-> []
 		| otherwise		-> [tt]
-
-	TVarMore k v t
-		| Set.member v quant	-> []
-		| otherwise		-> [tt]
-
 
 	-- Trim the fetters of this data
 	-- BUGS: we sometimes get fetters relating to :> constraints on effects, but we shouldn't

@@ -9,16 +9,16 @@ import Core.Glob
 import Core.Exp
 import Core.Util.Bits
 import Core.Plate.Trans
-import Type.Exp
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Util.Unify
 import Type.Util.Flatten
 import Type.Util.Substitute
 import Util
-import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type
+import DDC.Var
 import qualified Data.Sequence	as Seq
 import qualified Data.Map	as Map
 import qualified Data.Foldable
@@ -80,7 +80,8 @@ rewriteAppX :: Env -> Exp -> Exp
 rewriteAppX env xx
  	-- Flatten the application expression so we can get at the var of 
 	--	the function being applied.
-	| (XAppFP (XVar vOverloaded tOverloaded) _ : xsArgs)	<- flattenAppsE xx
+	| (XAppFP (XVar vOverloaded tOverloaded) _ : xsArgs)
+		<- flattenAppsE xx
 	
 	-- See if the var being applied is defined in one of the type class
 	--	declarations. If it is then we have to rewrite the application.
@@ -186,12 +187,12 @@ rewriteAppX_withInstance env xxUse
 			$ unifyTypes tInstBody tUseBody
 
 	-- BUGS: We're discarding constraints between effect and closure sums here...
-	subArgs		= [(v1, t2)	| (TVar _ v1, t2)	<- sub]
+	subArgs		= [(v1, t2)	| (TVar _ (UVar v1), t2)	<- sub]
 
 	-- Look at the quantifiers on the front of the scheme for the instance
 	(vksQuant, _)	= slurpQuantVarsT tInstScheme
 	tsInstTypeArgsPoly		
-			= map	(\(v, k) -> fromMaybe (TVar k v) $ lookup v subArgs) 
+			= map	(\(v, k) -> fromMaybe (TVar k $ UVar v) $ lookup v subArgs) 
 				vksQuant
 
 	-- Instantate the scheme with the type args we have so far, 
@@ -307,9 +308,9 @@ instantiateT' sub t1 (t2 : ts)
 	| TForall (BVar v) k11 t12	<- t1
 	, Just k2			<- kindOfType t2
 --	, subTTK_noLoops sub k11 == k2								-- BUGS!!!! 
-	, t11 <- TVar k11 v
+	, t11 <- TVar k11 $ UVar v
 	= if t11 /= t2
-		then instantiateT' (Map.insert (TVar k11 v) t2 sub) t12 ts
+		then instantiateT' (Map.insert (TVar k11 $ UVar v) t2 sub) t12 ts
 		else instantiateT' sub t12 ts
 	
 	| TForall BNil k11 t12		<- t1

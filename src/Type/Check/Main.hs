@@ -3,14 +3,14 @@ module Type.Check.Main
 	(checkMain)
 where
 import Type.Extract
-import Type.Exp
-import Type.Builtin
 import Type.State
 import Type.Error
 import Type.Util.Bits
 import Shared.VarPrim
 import Util
 import DDC.Var
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import qualified Data.Map	as Map
 
 

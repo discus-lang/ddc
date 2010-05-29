@@ -7,13 +7,12 @@ import Type.Error
 import Type.Extract
 import Type.Class
 import Type.State
-import Type.Exp
 import Shared.VarPrim
 import Util
 import DDC.Var
+import DDC.Type.Exp
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
-
 
 debug		= True
 trace ss 	= if debug then traceM ss else return ()
@@ -29,7 +28,7 @@ checkInstances
 checkInstances1 errs cls
  	| Class {}		<- cls
 	= foldM (checkFetter cls) errs 
-		$ [FConstraint vFetter [TClass (classKind cls) (classId cls)]
+		$ [FConstraint vFetter [TVar (classKind cls) $ UClass (classId cls)]
 			| vFetter <- Map.keys $ classFetters cls]
 	
 	| ClassFetter { classFetter = f }	<- cls
@@ -41,7 +40,7 @@ checkInstances1 errs cls
 	
 checkFetter cls errs f@(FConstraint vClass tsArg)
  = do	trace	$ "*   checkFetter: checking " % f % "\n"
-	let cidsArg	= map (\(TClass k cid) -> cid) tsArg
+	let cidsArg	= map (\(TVar k (UClass cid)) -> cid) tsArg
 	
 	-- extract the types for the constraint params
 	Just tsArg_ex	<- liftM sequence

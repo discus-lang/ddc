@@ -9,11 +9,11 @@ module	Desugar.Slurp.State
 where
 import Util
 import Shared.Exp
-import Type.Exp
 import Type.Error
 import Desugar.Exp
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
+import DDC.Type
 import DDC.Var
 import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map

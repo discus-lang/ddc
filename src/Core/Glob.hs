@@ -16,12 +16,12 @@ where
 import Core.Exp
 import Core.OpType
 import Core.Util.Slurp
-import Type.Exp
 import Type.Util
 import Data.Maybe
-import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type
+import DDC.Var
 import Data.Map			(Map)
 import Data.Sequence		(Seq, (><))
 import Data.Foldable		(foldr)

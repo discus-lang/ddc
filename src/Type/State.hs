@@ -17,10 +17,10 @@ where
 import Constraint.Exp
 import Type.Error
 import Type.Base
-import Type.Exp
 import Util
 import System.IO
 import DDC.Solve.InstanceInfo
+import DDC.Type.Exp
 import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error

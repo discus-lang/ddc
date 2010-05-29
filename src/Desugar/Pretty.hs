@@ -7,18 +7,16 @@ where
 import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
-import Type.Exp
-import Type.Builtin
 import Type.Util.Kind
 import DDC.Main.Error
 import DDC.Main.Pretty		
+import DDC.Type
 import DDC.Var
 
 stage = "Desugar.Pretty"
 
 stripAnnot xx	= transformN (\n -> Nothing :: Maybe ()) xx
 
------
 annot nn x
  = case nn of
  	Nothing	-> x
@@ -127,7 +125,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 pprPClassDict_varKind tt
  = case tt of
-	TVar k v	-> parens $ v <> "::" <> k
+	TVar k (UVar v)	-> parens $ v <> "::" <> k
 	_		-> panic stage "pprPClassDict_varKind: no match\n"
 
 -- CtorDef ---------------------------------------------------------------------

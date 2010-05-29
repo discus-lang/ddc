@@ -46,14 +46,13 @@ module DDC.Solve.Trace
 	, lookupTypeOfCidAsSquid
 	, getTypeOfNodeAsSquid)
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Type.Plate.Collect
 import DDC.Solve.Node
 import DDC.Solve.Sink
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type
 import Data.Array.IO
 import Data.Foldable
 import Data.List
@@ -68,8 +67,11 @@ import qualified Data.Sequence	as Seq
 import qualified Type.State	as S
 import Control.Monad.State	hiding (mapM_)
 import Prelude			hiding (mapM_)
+import qualified Debug.Trace	
 
-stage	= "DDC.Solve.Trace"
+stage		= "DDC.Solve.Trace"
+debug		= False
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 
 -- Squid Monad Versions --------------------------------------------------------------------------
@@ -111,7 +113,7 @@ traceType cid'
 	Just t		<- lookupTypeOfCid cid
 	let Just k	= kindOfType t
 	let tt		= TConstrain 
-				(TClass k cid) 
+				(TVar k $ UClass cid) 
 				(Constraints crsEq crsMore' $ nub $ toList crsOther)
 						
 	return	$ toConstrainFormT tt
@@ -151,10 +153,10 @@ traceFromCid' cid
 		let t		= toConstrainFormT t'
 
 		-- Split up the info from this type and add it to the state
-		addType (TClass kind cid) t
+		addType (TVar kind $ UClass cid) t
 		
 		-- Add the SPTCs directly in thie class.
-		let crsOther	= [FConstraint v [TClass kind cid] 
+		let crsOther	= [FConstraint v [TVar kind $ UClass cid] 
 					| v <- Map.keys $ classFetters cls]
 		
 		addCrsOther	$ Seq.fromList crsOther
@@ -163,6 +165,8 @@ traceFromCid' cid
 		-- TODO: The collectClassIds uses the boilerplate library and is probably v.slow
 		let cids	= Set.union 	(collectClassIds t) 
 						(classFettersMulti cls)
+
+		trace (vcat [ "t = " % t, "cids = " % cids]) $ return ()
 
 		mapM_ traceFromCid $ Set.toList cids
 
@@ -317,7 +321,7 @@ getTypeOfNode kind node
 	 ->	return $ TSum kind []
 
 	NVar v	
-	 -> 	return $ TVar kind v
+	 -> 	return $ TVar kind $ UVar v
 	
 	NCon tc	
 	 -> 	return $ TCon tc
@@ -368,9 +372,9 @@ loadSimpleType cid
 	if (kind /= kEffect && kind /= kClosure)
 	 then case classType cls of
 		Just (NCon tc)	-> return $ TCon tc
-		_		-> return $ TClass kind cid'
+		_		-> return $ TVar kind $ UClass cid'
 
-	 else	return	$ TClass kind cid'
+	 else	return	$ TVar kind $ UClass cid'
 
 
 -- | Get a class from the graph.

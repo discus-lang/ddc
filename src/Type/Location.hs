@@ -13,13 +13,13 @@ module Type.Location
 	, dispSourceValue
 	, dispFetterSource)
 where
-import Type.Exp
 import Shared.VarPrim
 import DDC.Solve.Node
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.SourcePos
 import DDC.Base.Literal
+import DDC.Type
 import DDC.Var
 
 -----

@@ -5,11 +5,10 @@ module	Core.OpType
 	, superOpTypeX )
 where
 import Core.Exp
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Util
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map

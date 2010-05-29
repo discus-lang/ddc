@@ -8,12 +8,12 @@ module Type.ToCore
 	, toCoreF)
 where
 import Util
-import Type.Exp	
-import Type.Builtin
 import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type.Exp	
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Debug.Trace
@@ -50,7 +50,7 @@ toCoreT' table tt
 			= let	
 				(fsMore, fsRest) = partition isFMore fs
 				vtsMore		 = Map.fromList
-							[(v, t)	| FMore (TVar _ v) t <- fsMore]
+							[(v, t)	| FMore (TVar _ (UVar v)) t <- fsMore]
 
 				makeBK b
 				 = let	Just v	= takeVarOfBind b
@@ -82,10 +82,10 @@ toCoreT' table tt
 	 		= partitionFs [isFWhere, isFMore] fs
 				
 		vtsLet	= [ (v, toCoreT t) 	
-					| FWhere (TVar k v) t	<- fsLet]
+					| FWhere (TVar k (UVar v)) t	<- fsLet]
 
 		vtsMore	= Map.fromList
-			$ [ (v, t)	| FMore  (TVar _ v) t	<- fsMore]
+			$ [ (v, t)	| FMore  (TVar _ (UVar v)) t	<- fsMore]
 
 		table'	= Map.union table vtsMore
 		t'	= toCoreT' table' t
@@ -98,10 +98,10 @@ toCoreT' table tt
 	TSum k ts		-> TSum (toCoreK k) (map down ts)
 
 	-- attach :> constraints directly to variables
-	TVar k v		
+	TVar k (UVar v)		
 	 -> case Map.lookup v table of
-	 	Nothing		-> TVar     (toCoreK k) v 
-		Just tMore	-> TVarMore (toCoreK k) v (toCoreT' (Map.delete v table) tMore)
+	 	Nothing		-> TVar (toCoreK k) $ UVar v
+		Just tMore	-> TVar (toCoreK k) $ UMore v (toCoreT' (Map.delete v table) tMore)
 
 	TCon tyCon	-> TCon (toCoreTyCon tyCon)
 

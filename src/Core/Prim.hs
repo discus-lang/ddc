@@ -11,10 +11,9 @@ import Core.Exp
 import Core.Glob
 import Core.Util
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Util
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import qualified Debug.Trace
 import qualified Core.Reconstruct	as Recon
@@ -48,7 +47,7 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KApp k (TVar kR r)
+ 	KApp k (TVar kR (UVar r))
 	 | k    == kDirect
 	 , kR	== kRegion
 	 -> tt { tableDirectRegions 
@@ -171,7 +170,7 @@ primX1 tt xx
 
 	-- direct use of unboxing function
 	| Just parts				<- flattenAppsEff xx
-	, XVar v t : psArgs@[XType tR@(TVar kR vR), x] 	<- parts
+	, XVar v t : psArgs@[XType tR@(TVar kR (UVar vR)), x] 	<- parts
 	, kR	== kRegion			
 	, isUnboxFunctionV v
 	= if Set.member vR (tableDirectRegions tt) 
@@ -220,7 +219,7 @@ doActions tt (Unbox:as) (x:xs)
 
  = let	tX	= Recon.reconX_type (stage ++ "doActions") x
 
- 	Just (_, _, [tR@(TVar _ vR)])
+ 	Just (_, _, [tR@(TVar _ (UVar vR))])
 		= takeTData tX
  		
 

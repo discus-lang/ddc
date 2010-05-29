@@ -36,12 +36,11 @@ module DDC.Solve.Node
 	, nWrite
 	, nDeepWrite)
 where
-import Type.Exp
-import Type.Builtin
 import Type.Plate.Collect
 import Type.Util
-import DDC.Var
 import DDC.Main.Pretty
+import DDC.Var
+import DDC.Type
 import Data.Maybe
 import Type.Pretty		()
 import Data.Set			(Set)

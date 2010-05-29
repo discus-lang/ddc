@@ -4,8 +4,8 @@ module Type.Util.Quantify
 where
 import Type.Plate.FreeVars
 import Type.Util.Bits
-import Type.Exp
 import Util.Graph.Deps
+import DDC.Type.Exp
 import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
@@ -35,7 +35,7 @@ quantifyVarsT vks tt@(TFetters t fs)
 			$ concat
 			$ [zip (repeat v1) [filter (\v -> not $ Var.isCtorName v) 
 						$ Set.toList $ freeVars ts]
-				| FMore (TVar k v1) ts
+				| FMore (TVar k (UVar v1)) ts
 				<- fs]
 
 	-- sequence the vars according to the dependency map

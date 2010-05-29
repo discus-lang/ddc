@@ -6,15 +6,13 @@ module Type.Pretty
 	, prettyTypeSplit
 	, prettyTS)
 where
-import Type.Exp
 import Type.Util.Bits
 import Util
-import Type.Builtin
 import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
--- import Data.Set			(Set)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -107,16 +105,12 @@ pprTypeQuant vsQuant tt
 
 	TCon tycon	-> ppr tycon
 
-	TVar k v	-> pprVarKind v k 
-		
-	
-	-- used in type inference
-	TClass k c	-> resultKind k % c
-	TError k t	-> "@TError" % k % "..."
 
+	TVar k (UVar v)	   -> pprVarKind v k 
+	TVar k (UClass c)  -> resultKind k % c
+	TVar k (UIndex ix) -> resultKind k % ix
 
-	-- core stuff
-	TVarMore k v t
+	TVar k (UMore v t)
 	 -> ifMode (elem PrettyCoreMore)
 	 	(if k == kValue 
 			then	parens $ "*" % v % " :> " % t 
@@ -126,8 +120,8 @@ pprTypeQuant vsQuant tt
 			then	"*" % v
 			else	ppr v)
 
-	TIndex k ix
-	 -> ppr (resultKind k) % ix
+	TError k t	-> "@TError" % k % "..."
+
 
 prettyTRight tt
  = case tt of
@@ -145,9 +139,8 @@ prettyTBF t
 
 prettyTB t
  = case t of
-	TVar k v 	-> ppr t
+	TVar{}	 	-> ppr t
 	TSum{}		-> ppr t
-	TClass{}	-> ppr t
 	TCon{}		-> ppr t
 	_		-> "(" % t % ")"
 

@@ -11,8 +11,8 @@ module Module.Interface
 	, IntInfix	(..)
 	, IntBind	(..) )
 where
-import Type.Exp
 import DDC.Base.SourcePos
+import DDC.Type
 import DDC.Var
 import qualified Source.Exp	as S
 import qualified Sea.Exp	as E

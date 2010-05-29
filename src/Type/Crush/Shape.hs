@@ -5,12 +5,11 @@ module Type.Crush.Shape
 where
 import Type.Feed
 import Type.Location
-import Type.Exp
-import Type.Builtin
 import Type.State
 import Type.Class
 import Type.Crush.Unify
 import Shared.VarPrim
+import DDC.Type
 import Util
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
@@ -34,7 +33,7 @@ crushShape cidShape
 			<- lookupClass cidShape
 
 	-- All the cids constrained by the Shape constraint.
-	let mergeCids	= map (\(TClass k cid) -> cid) shapeTs
+	let mergeCids	= map (\(TVar k (UClass cid)) -> cid) shapeTs
 
 	trace	$ "*   Crush.crushShape " 	% cidShape 	% "\n"
 		% "    fetter      = "	 	% fShape	% "\n"
@@ -67,7 +66,7 @@ crushShape cidShape
 	let result
 		-- If the constrained equivalence class is of effect or closure kind
 		--	then we can just delete the constraint
-		| TClass k _ : _	<- shapeTs
+		| TVar k (UClass _) : _	<- shapeTs
 		, k == kClosure || k == kEffect
 		= do	delClass cidShape
 			return True
@@ -144,7 +143,7 @@ addShapeFetter src cids@(cid1 : _)
 	if kind == kRegion
 	 then	return ()
 	 else do
-		let ts	= zipWith TClass (repeat kind) cids
+		let ts	= zipWith (\k c -> TVar k (UClass c)) (repeat kind) cids
 		addFetter src (FConstraint (primFShape (length ts)) ts)
 		return ()
 

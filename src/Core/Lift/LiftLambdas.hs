@@ -10,23 +10,17 @@ import Core.Plate.FreeVars
 import Core.Lift.Base
 import Core.Reconstruct
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Util
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
-----
-stage	= "Core.Lift.LiftLambdas"
-debug	= False
-trace ss x	
-	= if debug
-		then Debug.trace (pprStrPlain ss) x
-		else x
-		
+stage		= "Core.Lift.LiftLambdas"
+debug		= False
+trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 -- | Lift out all lambda bindings from this super.
 --   	return the new super, as well as the lifted bindings as new supers.
@@ -144,10 +138,10 @@ makeSuperArgK (b, k)
 	= XType t
 	
 	| BVar v	<- b
-	= XType (TVar k v)
+	= XType (TVar k $ UVar v)
 	
 	| BMore v t	<- b
-	= XType (TVarMore k v t)
+	= XType (TVar k $ UMore v t)
 
 
 -- | Test whether an expression is syntactically a function.

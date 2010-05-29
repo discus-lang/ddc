@@ -14,11 +14,10 @@ where
 import Core.Plate.Trans
 import Core.Exp
 import Core.Glob
-import Type.Builtin
 import Type.Util
-import Type.Exp
 import Util
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified DDC.Var.PrimId		as Var
 import qualified Data.Map		as Map
@@ -122,11 +121,11 @@ rewriteWitness' tt
 	-- Got an application of an explicit witness to some region.
 	--	Lookup the appropriate witness from the environment and use
 	--	that here.
-	| Just (tcWitness, _, [TVar k vT]) 		<- mClass
+	| Just (tcWitness, _, [TVar k (UVar vT)]) 	<- mClass
 	= do	let Just kcWitness	= takeKiConOfTyConWitness tcWitness
 		Just vW			<- lookupWitness kcWitness vT
 		let Just k		= kindOfType tt
-		return $ TVar k vW
+		return $ TVar k $ UVar vW
 
 	-- purity of no effects is trivial
 	| Just (TyConWitnessMkPure, _, [TSum kE []])	<- mClass
@@ -179,7 +178,7 @@ buildPureWitness
 	:: Effect
 	-> ThreadM Witness
 
-buildPureWitness eff@(TApp t1 tR@(TVar kR vR))
+buildPureWitness eff@(TApp t1 tR@(TVar kR (UVar vR)))
 	| t1 == tRead
 	, kR == kRegion
 	= do	
@@ -188,7 +187,7 @@ buildPureWitness eff@(TApp t1 tR@(TVar kR vR))
 		let  k		= KApp kConst tR
 
 		-- the purity witness gives us purity of read effects on that const region
-		return		$ TApp (TApp tMkPurify tR) (TVar k wConst)
+		return		$ TApp (TApp tMkPurify tR) (TVar k $ UVar wConst)
 
 buildPureWitness eff@(TSum kE _)
  	| kE	== kEffect
@@ -197,10 +196,10 @@ buildPureWitness eff@(TSum kE _)
 		let Just ks	= sequence $ map kindOfType ts
 		return		$ makeTSum (makeKSum ks) ts
 
-buildPureWitness eff@(TVar kE vE)
+buildPureWitness eff@(TVar kE (UVar vE))
  	| kE	== kEffect
  	= do	Just w	<- lookupWitness KiConPure vE
- 		return (TVar (KApp kPure eff) w)
+ 		return (TVar (KApp kPure eff) $ UVar w)
 
 buildPureWitness eff
  = panic stage
@@ -220,7 +219,7 @@ type ThreadM 	= State ThreadS
 -- Inspect this kind. If it binds a witness then push it onto the stack.
 pushWitnessVK :: Var -> Kind -> ThreadM ()
 pushWitnessVK vWitness k
- 	| KApp (KCon kcWitness _) (TVar kV vT)	<- k
+ 	| KApp (KCon kcWitness _) (TVar kV (UVar vT))	<- k
 	, elem kV [kRegion, kEffect, kValue, kClosure]
 	= modify $ \s -> ((kcWitness, vT), vWitness) : s
 	| otherwise
@@ -230,7 +229,7 @@ pushWitnessVK vWitness k
 -- Inspect this kind. If it binds a witness then pop it from the stack.
 popWitnessVK :: Var -> Kind -> ThreadM ()
 popWitnessVK vWitness k
-	| KApp (KCon kcWitness _) (TVar kV vRE) <- k
+	| KApp (KCon kcWitness _) (TVar kV (UVar vRE)) <- k
 	= do
 		state	<- get
 		let (xx	:: ThreadM ())

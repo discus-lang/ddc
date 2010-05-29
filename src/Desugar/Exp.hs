@@ -12,8 +12,8 @@ module Desugar.Exp
 	, Pat		(..)
 	, Label		(..))
 where
-import Type.Exp
 import DDC.Base.Literal
+import DDC.Type
 import DDC.Var.ModuleId
 import DDC.Var
 import Shared.Exp	(DataField)

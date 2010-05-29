@@ -4,17 +4,16 @@ module Type.Error
 	( Error(..) )
 where
 import Type.Location
-import Type.Exp
 import Type.Pretty
 import Type.Util.Bits
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Shared.VarUtil	as Var
 
------
 stage	= "Type.Error"
 
 -----

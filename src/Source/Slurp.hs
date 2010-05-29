@@ -9,13 +9,10 @@ import Util.Data.Maybe
 import Util
 import Source.Exp
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 
-
------
 stage	= "Source.Slurp"
 
 --- | Slurp the fixity tables from this module.

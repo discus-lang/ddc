@@ -4,10 +4,10 @@ module Module.Interface.Export
 where
 import Module.Interface
 import Module.Scrape
-import Type.Exp
 import Type.Util.Kind
 import Type.Util.Bits
-import DDC.Var	
+import DDC.Var
+import DDC.Type
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty

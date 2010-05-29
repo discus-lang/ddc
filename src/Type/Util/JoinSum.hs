@@ -24,14 +24,14 @@
 module Type.Util.JoinSum
 	(joinSumTs)
 where
-import Type.Exp
-import Type.Builtin
 import Type.Util.Environment
 import Type.Util.Bits
 import Type.Util.Kind
 import Control.Monad
 import Util.Pretty
 import DDC.Main.Error
+import DDC.Type.Exp
+import DDC.Type.Builtin
 
 stage	= "Type.Util.Join"
 
@@ -49,9 +49,6 @@ joinTT :: Env -> Type -> Type -> Maybe Type
 --	this means that the code for joinTT_work can get by with less cases.
 joinTT env t1 t2
 	| TVar{}		<- t2
-	= joinTT_work env t2 t1
-
-	| TVarMore{}		<- t2
 	= joinTT_work env t2 t1
 
 	| otherwise
@@ -72,15 +69,15 @@ joinTT_work env t1 t2
 	, Just tY		<- joinTT env tY1 tY2
 	= Just $ TApp tX tY
 
-	| TVar k1 v1		<- t1
-	, TVar k2 v2		<- t2
+	| TVar k1 (UVar v1)		<- t1
+	, TVar k2 (UVar v2)		<- t2
 	, v1 == v2	
-	= Just $ TVar k1 v1
+	= Just $ TVar k1 $ UVar v1
 
-	| TVarMore k1 v1 b1	<- t1
-	, TVarMore k2 v2 b2	<- t2
+	| TVar k1 (UMore v1 b1)	<- t1
+	, TVar k2 (UMore v2 b2)	<- t2
 	, v1 == v2
-	= Just $ TVarMore k1 v1 b1
+	= Just $ TVar k1 $ UMore v1 b1
 
 	| TCon c1		<- t1
 	, TCon c2		<- t2
@@ -93,7 +90,7 @@ joinTT_work env t1 t2
 	, k1 == kEffect || k1 == kClosure
 	= Just $ makeTSum k1 [t1, t2]
 
-	| TVarMore k1 v1 b1 <- t1
+	| TVar k1 (UMore v1 b1) <- t1
 	, Just k2		<- kindOfType t2
 	, k1 == k2
 	, k1 == kEffect || k1 == kClosure

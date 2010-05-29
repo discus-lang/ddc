@@ -3,16 +3,11 @@ module Type.Util.Flatten
 	(flattenT)
 where
 import Type.Util.Bits
-import Type.Exp
 import Util
-import DDC.Main.Error
+import DDC.Type.Exp
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-
------
-stage	= "Type.Util.Flatten"
-
 
 -- | Flattening a type inlines all the (t1 = t2) fetters bound within in it.
 flattenT :: Type -> Type
@@ -23,7 +18,9 @@ flattenT' sub block tt
  = let down	= flattenT' sub block
    in  case tt of
    	TNil		-> TNil
-
+	TSum k ts	-> makeTSum  k (map down ts)
+	TApp t1 t2	-> TApp (down t1) (down t2)
+	TCon{}		-> tt
 	TForall b k t	-> TForall b k (down t)
 
 	TFetters t fs
@@ -42,11 +39,6 @@ flattenT' sub block tt
 	 -> flattenT' sub block
 	 $  toFetterFormT tt
 
-	TSum k ts	-> makeTSum  k (map down ts)
-
-	TApp t1 t2	-> TApp (down t1) (down t2)
-	TCon{}		-> tt
-
 	TVar{}
 	 | Set.member tt block
 	 -> tt
@@ -56,26 +48,4 @@ flattenT' sub block tt
 	 	Just t	-> flattenT' sub (Set.insert tt block) t
 		Nothing	-> tt
 
-	TVarMore{}
-	 | Set.member tt block
-	 -> tt 
-
-	 | otherwise
-	 -> case Map.lookup tt sub of
-	 	Just t	-> flattenT' sub (Set.insert tt block) t
-		Nothing	-> tt
-
-	TClass{}
-	 | Set.member tt block
-	 -> tt
-
-	 | otherwise
-	 -> case Map.lookup tt sub of
-	 	Just t	-> flattenT' sub (Set.insert tt block) t
-		Nothing	-> tt
-
-	TError{}		-> tt
-
-	_	-> panic stage 
-		$ "flattenT: no match for " % tt
-
+	TError{}	-> tt

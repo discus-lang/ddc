@@ -6,12 +6,12 @@ where
 import Core.Dictionary.Env
 import Core.Exp
 import Core.Glob
-import Type.Exp
 import Type.Util.Bits
 import Type.Util.Kind
-import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type.Exp
+import DDC.Var
 import Util
 import Data.Sequence		(Seq)
 import qualified Data.Sequence	as Seq
@@ -82,7 +82,7 @@ lookupOverloadedVar env vOverloaded
 		super	 = unflattenSuper (map snd $ topClassDictParams pClassDict) SProp
 		kContext = makeKApps 
 				(KCon (KiConVar vClass) super)
-				[TVar k v | (v, k) <- topClassDictParams pClassDict ]
+				[TVar k $ UVar v | (v, k) <- topClassDictParams pClassDict ]
 			 		
 		tOverloaded_withContext
 			= makeTForall_front 

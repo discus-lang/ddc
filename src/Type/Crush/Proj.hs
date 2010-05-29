@@ -12,8 +12,6 @@ module Type.Crush.Proj
 	(crushProjInClass)
 where
 import Type.Location
-import Type.Exp
-import Type.Builtin
 import Type.Util
 import Type.Error
 import Type.Class
@@ -23,6 +21,8 @@ import Constraint.Exp
 import Util
 import DDC.Solve.Trace
 import DDC.Solve.Walk
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Data.Map	as Map
 
@@ -43,7 +43,7 @@ crushProjInClass cid
  	Just clsProj	<- lookupClass cid
 	
 	let ClassFetter 
-	 	{ classFetter	= fProj@(FProj _ _ (TClass _ cidObjRoot) _)
+	 	{ classFetter	= fProj@(FProj _ _ (TVar _ (UClass cidObjRoot)) _)
 		, classSource	= src }	
 			= clsProj
 
@@ -168,7 +168,7 @@ crushProj_withDict
 
 			-- Build the new constraints
 			let qs	= 	[ CInst (TSI $ SICrushedFS cid fProj src) vInst vImplT
-					, CEq   (TSI $ SICrushedFS cid fProj src) (TVar kValue vInst) tBind ]
+					, CEq   (TSI $ SICrushedFS cid fProj src) (TVar kValue $ UVar vInst) tBind ]
 					 
 			trace 	$ "    new constraints (qs):\n"
 			 	%> "\n" %!% qs % "\n"

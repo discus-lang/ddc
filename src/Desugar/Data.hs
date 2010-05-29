@@ -7,20 +7,18 @@ where
 import Desugar.Pretty
 import Desugar.Exp
 import Type.Util.Elaborate
-import Type.Exp
 import Shared.Exp
 import Shared.VarPrim
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import Util
 import qualified Debug.Trace
 
------
 stage		= "Desugar.Data"
-
 debug		= False
 trace s xx	= if debug then Debug.Trace.trace (pprStrPlain s) xx else xx
 

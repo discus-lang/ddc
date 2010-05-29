@@ -11,25 +11,20 @@ import Core.Util
 import Core.Exp
 import Core.Glob
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Shared.Warning
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Debug.Trace		as Debug
 
------
-stage	= "Core.Float"
-debug	= False
-trace ss x
- = if debug 
- 	then Debug.trace (pprStrPlain (stage % ":" % ss)) x
-	else x
+stage		= "Core.Float"
+debug		= False
+trace ss x	= if debug then Debug.trace (pprStrPlain (stage % ":" % ss)) x else x
 
 
 -- Table -------------------------------------------------------------------------------------------
@@ -405,7 +400,7 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 	  
 	----- unbox
 	-- remember unboxings we haven't seen before
-	| XPrim MUnbox [XType (TVar kR vR), XVar v2 _]	<- xBind
+	| XPrim MUnbox [XType (TVar kR (UVar vR)), XVar v2 _]	<- xBind
 	, kR	== kRegion
 	, Nothing	 <- Map.lookup v2 (shareUnboxings share)
 	, Set.member vR (tableConstRegions table) -- only move pure unboxings for now
@@ -414,7 +409,7 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 	  
 
 	-- replace calls to unbox with ones we've seen before
-	| XPrim MUnbox [XType (TVar kR vR1), XVar v2 t]	<- xBind
+	| XPrim MUnbox [XType (TVar kR (UVar vR1)), XVar v2 t]	<- xBind
 	, kR	== kRegion
 	, Just (v3, vR2) <- Map.lookup v2 (shareUnboxings share)
 	, vR1 == vR2
@@ -563,19 +558,19 @@ reduceEffect rsConst tsConst esPure eff
 reduceEffect1 rsConst tsConst esPure eff
 
 	-- reduce reads from known constant regions
-	| TApp t1 (TVar kRegion r)	<- eff
+	| TApp t1 (TVar kRegion (UVar r))	<- eff
 	, t1 == tRead
 	, Set.member r rsConst
 	= tPure
 	
 	-- reduce reads from known constant types
-	| TApp t1 (TVar kValue t)	<- eff
+	| TApp t1 (TVar kValue (UVar t))	<- eff
 	, t1 == tDeepRead
 	, Set.member t rsConst
 	= tPure
 
 	-- reduce known pure effect variables
- 	| TVar kE v		<- eff
+ 	| TVar kE (UVar v)			<- eff
 	, kE	== kEffect
 	, Set.member v esPure
 	= tPure
@@ -593,21 +588,21 @@ slurpWitnessKind
 slurpWitnessKind tt kk
  = case kk of
 	-- const regions
- 	KApp k (TVar kR r)
+ 	KApp k (TVar kR (UVar r))
  	 | k    == kConst
 	 , kR	== kRegion
 	 -> tt { tableConstRegions 
 	 		= Set.insert r (tableConstRegions tt)}
 	
 	-- const types
-	KApp k (TVar kV t)
+	KApp k (TVar kV (UVar t))
 	 | k	== kDeepConst
 	 , kV	== kValue
 	 -> tt { tableConstTypes
 	 		= Set.insert t (tableConstTypes tt)}
 
 	-- pure effects
-	KApp k (TVar kE e)
+	KApp k (TVar kE (UVar e))
 	 | k	== kPure
 	 , kE	== kEffect
 	 -> tt { tablePureEffects

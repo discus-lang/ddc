@@ -18,9 +18,9 @@ module Core.Exp
 where
 import Util
 import Shared.Exp
-import Type.Exp
 import DDC.Base.SourcePos
 import DDC.Base.Literal
+import DDC.Type.Exp
 import DDC.Var
 
 

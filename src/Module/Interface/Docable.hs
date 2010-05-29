@@ -5,9 +5,9 @@ module Module.Interface.Docable
 where
 import Module.Interface
 import DDC.Main.Pretty
+import DDC.Type
 import DDC.Var
 import DDC.Util.Doc
-import Type.Exp
 import Source.Pretty			()
 import Source.Exp			(InfixMode(..))
 import Type.Pretty			(prettyTS)

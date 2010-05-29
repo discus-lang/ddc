@@ -9,7 +9,6 @@ module Source.Desugar
 	, rewrite)
 where
 import Util
-import Type.Exp
 import Type.Util			
 import Source.Desugar.Base
 import Source.Desugar.Patterns
@@ -20,6 +19,7 @@ import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
+import DDC.Type
 import DDC.Var
 import Source.Pretty			()
 import qualified Source.Exp		as S
@@ -30,7 +30,6 @@ import qualified Desugar.Bits		as D
 
 import {-# SOURCE #-} Source.Desugar.ListComp
 
------
 stage	= "Source.Desugar"
 
 -----
@@ -111,7 +110,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
  	S.PClassDict sp vC vks _ sigs
 	 -> do
 	 	-- convert type param vars into actual types
-		let tsParam	= map (\(v, k) -> TVar k v) vks
+		let tsParam	= map (\(v, k) -> TVar k $ UVar v) vks
 
 	 	-- For each member function in this class, quantify the class
 		--	params and add the constraints.

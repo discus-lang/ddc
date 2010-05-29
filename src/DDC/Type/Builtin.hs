@@ -1,11 +1,11 @@
 
 -- | Short names for built-in types and kinds.
-module Type.Builtin 
+module DDC.Type.Builtin 
 where
-import Type.Exp
 import Shared.VarPrim
 import DDC.Base.Literal
 import DDC.Base.DataFormat
+import DDC.Type.Exp
 import DDC.Var
 
 
@@ -77,33 +77,33 @@ tDanger 	= TCon $ TyConClosure TyConClosureDanger
 
 -- Witness type constructors 
 tMkConst	= TCon $ TyConWitness TyConWitnessMkConst	
-		$ KFun kRegion (KApp kConst		(TIndex kRegion 0))
+		$ KFun kRegion (KApp kConst		(TVar kRegion $ UIndex 0))
 
 tMkDeepConst 	= TCon $ TyConWitness TyConWitnessMkDeepConst
-		$ KFun kValue  (KApp kDeepConst		(TIndex kRegion 0))
+		$ KFun kValue  (KApp kDeepConst		(TVar kRegion $ UIndex 0))
 
 tMkMutable	= TCon $ TyConWitness TyConWitnessMkMutable
-	 	$ KFun kRegion (KApp kMutable		(TIndex kRegion 0))
+	 	$ KFun kRegion (KApp kMutable		(TVar kRegion $ UIndex 0))
 
 tMkDeepMutable	= TCon $ TyConWitness TyConWitnessMkDeepMutable
- 		$ KFun kValue  (KApp kDeepMutable	(TIndex kRegion 0))
+ 		$ KFun kValue  (KApp kDeepMutable	(TVar kRegion $ UIndex 0))
 
 tMkLazy		= TCon $ TyConWitness TyConWitnessMkLazy
-		$ KFun kRegion (KApp kLazy		(TIndex kRegion 0))
+		$ KFun kRegion (KApp kLazy		(TVar kRegion $ UIndex 0))
 
 tMkHeadLazy	= TCon $ TyConWitness TyConWitnessMkHeadLazy
-		$ KFun kValue  (KApp kHeadLazy		(TIndex kRegion 0))
+		$ KFun kValue  (KApp kHeadLazy		(TVar kRegion $ UIndex 0))
 
 tMkDirect	= TCon $ TyConWitness TyConWitnessMkDirect
-		$ KFun kRegion (KApp kDirect		(TIndex kRegion 0))
+		$ KFun kRegion (KApp kDirect		(TVar kRegion $ UIndex 0))
 
 tMkPurify	= TCon $ TyConWitness TyConWitnessMkPurify	
 		$ KFun kRegion 
-			(KFun 	(KApp kConst (TIndex kRegion 1))
-				(KApp kPure  (TApp tRead (TIndex kRegion 1))))
+			(KFun 	(KApp kConst (TVar kRegion $ UIndex 1))
+				(KApp kPure  (TApp tRead (TVar kRegion $ UIndex 1))))
 
 tMkPure		= TCon $ TyConWitness TyConWitnessMkPure
-		$ KFun kEffect (KApp kPure (TIndex kEffect 0))
+		$ KFun kEffect (KApp kPure (TVar kEffect $ UIndex 0))
 		
 -- Elaboration constructors
 tElaborateRead  = TCon $ TyConElaborate TyConElaborateRead

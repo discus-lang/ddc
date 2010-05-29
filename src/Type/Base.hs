@@ -6,12 +6,12 @@ module Type.Base
 	
 	, graphSize_init)
 where
-import Type.Exp
 import Type.Location
 import Util
 import Data.Array.IO
 import Type.Pretty		()
 import DDC.Var
+import DDC.Type.Exp
 import DDC.Solve.Node
 import Data.Sequence		(Seq)
 import qualified Data.Map	as Map

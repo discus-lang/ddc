@@ -16,6 +16,7 @@ import DDC.Var
 import System.IO			(hFlush)
 import Util				hiding (null, elem)
 import qualified DDC.Solve.InstanceInfo	as T
+import qualified DDC.Type		as T
 import qualified Data.Foldable		as Foldable
 import qualified Constraint.Simplify	as N
 import qualified Constraint.Exp		as N
@@ -25,7 +26,6 @@ import qualified Type.Dump		as T
 import qualified Type.Solve		as T
 import qualified Type.State		as T
 import qualified Type.Pretty		as T
-import qualified Type.Exp		as T
 import qualified Desugar.ToCore		as D
 import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D

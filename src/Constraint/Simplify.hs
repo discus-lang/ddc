@@ -16,9 +16,9 @@ module Constraint.Simplify
 	(simplify)
 where
 import Type.Plate.FreeVars
-import Type.Exp
 import Constraint.Exp
 import Util
+import DDC.Type
 import DDC.Var
 import qualified Constraint.Plate.Trans	as CTrans
 import qualified Shared.VarUtil		as Var
@@ -97,7 +97,7 @@ inlineCollect acc (c:cs)
 	 -> do	cc'	<- inlineCollect [] cc
 		inlineCollect (CBranch bind cc' : acc) cs
 		
-	CEq sp t1@(TVar k v1) t2
+	CEq sp t1@(TVar k (UVar v1)) t2
 	 -> do	noInline	<- gets tableNoInline
 	 	sub		<- gets tableSub 
 		
@@ -162,7 +162,7 @@ subFollowVT' sub block tt
 	TSum 	k ts		-> TSum	k (map down ts)
 	TApp t1 t2		-> TApp	(down t1) (down t2)
 	TCon{}			-> tt
-	TVar	k v
+	TVar	k (UVar v)
 	 | Set.member v block	-> tt
 	 | otherwise
 	 -> case Map.lookup v sub of
@@ -230,7 +230,7 @@ collectNoInlineT' tt
 --	type constraints to inline.
 isValueType tt
  = case tt of
-	TVar _ v
+	TVar _ (UVar v)
 	 | varNameSpace v == NameType
 	 	-> True
 		

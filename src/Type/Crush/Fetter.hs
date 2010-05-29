@@ -6,16 +6,16 @@ module Type.Crush.Fetter
 	(crushFetterInClass)
 where
 import Type.State
-import Type.Exp
 import Type.Class
 import Type.Location
 import Type.Feed
 import Type.Error
-import Type.Builtin
 import Type.Util.Bits
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import Data.Maybe
 import Shared.VarPrim
 import Control.Monad
@@ -63,7 +63,7 @@ crushFetterWithClass cid cls
 		tsSrc	<- mapM sinkCidsInNodeFst   tsSrc'
 
 		let fsSrc	
-			= [(FConstraint v [TClass kind cid], src)
+			= [(FConstraint v [TVar kind $ UClass cid], src)
 				| (v, srcs)		<- Map.toList fetterSrcs
 				, let src Seq.:< _	= Seq.viewl srcs]
 
@@ -97,7 +97,7 @@ crushFetterSingle cid cls node
 			 -> do	deleteSingleFetter cid vFetter
 
 				let src		= TSI $ SICrushedFS cid fetter srcFetter
-				let tHead	= TClass (classKind clsHead) (classId clsHead)
+				let tHead	= TVar (classKind clsHead) $ UClass (classId clsHead)
 				let headFetter	= FConstraint primLazy [tHead]
 				addFetter src headFetter
 
@@ -115,8 +115,8 @@ crushFetterSingle cid cls node
 		mApps	<- takeAppsDownLeftSpine cid
 	
 		let constIt (cid', k)
-			| k == kRegion	= Just $ FConstraint primConst  [TClass k cid']
-			| k == kValue	= Just $ FConstraint primConstT [TClass k cid']
+			| k == kRegion	= Just $ FConstraint primConst  [TVar k $ UClass cid']
+			| k == kValue	= Just $ FConstraint primConstT [TVar k $ UClass cid']
 			| otherwise	= Nothing
 	
 		case mApps of
@@ -138,8 +138,8 @@ crushFetterSingle cid cls node
 		mApps	<- takeAppsDownLeftSpine cid
 	
 		let mutableIt (cid', k)
-			| k == kRegion	= Just $ FConstraint primMutable  [TClass k cid']
-			| k == kValue	= Just $ FConstraint primMutableT [TClass k cid']
+			| k == kRegion	= Just $ FConstraint primMutable  [TVar k $ UClass cid']
+			| k == kValue	= Just $ FConstraint primMutableT [TVar k $ UClass cid']
 			| otherwise	= Nothing
 	
 		case mApps of
@@ -161,7 +161,7 @@ crushFetterSingle cid cls node
 	, NSum cids	<- node
 	= do	let cidsList	= Set.toList cids
 		ks		<- mapM kindOfCid cidsList
-		let ts		= zipWith TClass ks cidsList
+		let ts		= zipWith (\k c -> TVar k (UClass c)) ks cidsList
 		zipWithM addFetter
 			(repeat $ TSI $ SICrushedFS cid fetter srcFetter)
 			[FConstraint primPure [t] | t <- ts]
@@ -216,7 +216,7 @@ getPurifier cid cls nodeEff fetter srcFetter
 	 Just (cidCon : cidArgs)
 	  -> do	Just clsCon	<- lookupClass cidCon
 		Just clsArgs	<- liftM sequence $ mapM lookupClass cidArgs
-		let tsArgs	= [TClass (classKind c) (classId c) | c <- clsArgs]
+		let tsArgs	= [TVar (classKind c) $ UClass (classId c) | c <- clsArgs]
 		
 		Just srcEff	 <- lookupSourceOfNode nodeEff cls
 		let ePurifier	=  getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff

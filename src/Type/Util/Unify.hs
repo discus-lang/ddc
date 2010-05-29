@@ -4,8 +4,8 @@
 module Type.Util.Unify
 	(unifyTypes)
 where
-import Type.Exp
-import Type.Builtin
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import Type.Util.Kind
 
 -- | Unify two types, if possible,

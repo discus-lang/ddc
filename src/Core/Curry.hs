@@ -8,13 +8,12 @@ import Core.Exp
 import Core.Util
 import Core.Glob
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Util
 import DDC.Var.NameSpace
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+import DDC.Type
 import qualified Data.Set	as Set
 import qualified Shared.VarUtil	as Var
 import qualified Debug.Trace	as Debug

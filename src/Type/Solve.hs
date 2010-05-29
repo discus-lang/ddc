@@ -18,15 +18,15 @@ import Type.Feed
 import Type.Location
 import Type.Pretty
 import Type.Util
-import Type.Exp
-import Type.Builtin
 import Constraint.Bits
 import Constraint.Exp
 import Util
-import DDC.Solve.InstanceInfo
-import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
+import DDC.Solve.InstanceInfo
+import DDC.Type.Exp
+import DDC.Type.Builtin
+import DDC.Var
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
 import System.IO
@@ -97,7 +97,7 @@ solveCs	(c:cs)
 	-- A type definition from some interface file.
 	--	These are 'finished', which means they're guaranteed not to
 	--	contain monomorphic type vars or meta-type variables (TClasses)
-	CDef src t1@(TVar k vDef) t
+	CDef src t1@(TVar k (UVar vDef)) t
  	 -> do	
 --	 	trace	$ "### Def  " % vDef %> ("\n:: " % prettyTypeSplit t) % "\n\n"
 
@@ -191,7 +191,7 @@ solveCs	(c:cs)
 	--	We don't do this straight away though, incase we find out more about monomorphic
 	--	tyvars that might cause some projections to be resolved. Instead, we record
 	--	the fact that the var is safe to generalise in the GenSusp set.
-	CGen src t1@(TVar k v1)
+	CGen src t1@(TVar k (UVar v1))
 	 -> do	trace	$ "### CGen  " % prettyTS t1 %  "\n"
 	 	modify $ \s -> s { 
 			stateGenSusp = Set.insert v1 (stateGenSusp s) }
@@ -260,7 +260,7 @@ solveCs	(c:cs)
 					(stateInst s) }
 
 		solveNext
-			$ [CEq src (TVar kValue vUse) (TVar kValue vInst)]
+			$ [CEq src (TVar kValue (UVar vUse)) (TVar kValue (UVar vInst))]
 			++ cs 
 
 	-- Instantiate a type from a let binding.
@@ -313,7 +313,7 @@ solveCs	(c:cs)
 
 			-- The type will be added via a new constraint
 			solveNext
-				$  [CEq src (TVar kValue vUse) tInst]
+				$  [CEq src (TVar kValue $ UVar vUse) tInst]
 				++ cs
 		 Nothing
 		  ->	return ()
@@ -331,7 +331,7 @@ solveCs	(c:cs)
 					(stateInst s) }
 
 		solveNext
-			$ [CEq src (TVar kValue vUse) (TVar kValue vInst)]
+			$ [CEq src (TVar kValue $ UVar vUse) (TVar kValue $ UVar vInst)]
 			++ cs
 
 	-- Some other constraint	

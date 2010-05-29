@@ -4,10 +4,10 @@ module Constraint.Plate.Trans
 	( transM 
 	, Table (..))
 where
-import Type.Exp
 import Constraint.Exp
 import Constraint.Pretty	()
 import Util
+import DDC.Type.Exp
 import DDC.Main.Error
 
 -----

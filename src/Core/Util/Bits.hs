@@ -25,10 +25,9 @@ module Core.Util.Bits
 	, addLAMBDAs)
 where
 import Core.Exp
-import Type.Exp
-import Type.Builtin
-import Util
+import DDC.Type
 import DDC.Var
+import Util
 
 
 -- Predicates --------------------------------------------------------------------------------------

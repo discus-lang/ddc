@@ -10,20 +10,18 @@ import Type.Scheme
 import Type.Extract
 import Type.Util
 import Type.Location
-import Type.Exp
-import Type.Builtin
 import Constraint.Exp
 import Constraint.Bits
 import Util
 import Util.Graph.Deps
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
------
 debug	= True
 trace s	= when debug $ traceM s
-
 
 -- | Extract and generalise the binding group containing this variable, and return
 --	the type scheme for this variable.
@@ -185,7 +183,8 @@ addSchemeToGraph src vGen tScheme
 	case tScheme_stripped of 
 
 	 -- If the scheme is just a classId we don't need to do anything
-	 TClass{}	-> return ()
+	 TVar _ UClass{}
+		-> return ()
 
 	 -- Update the class
 	 _		-> updateClass cidGen	

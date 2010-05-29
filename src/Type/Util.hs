@@ -33,12 +33,12 @@ import Type.Util.Finalise
 import Type.Util.Quantify
 import Type.Util.Flatten
 import Type.Util.JoinSum
-import Type.Exp
-import Type.Builtin
 import Shared.VarPrim
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import DDC.Var
 import qualified Debug.Trace
 
@@ -119,7 +119,7 @@ makeOpTypeData _	= Nothing
 
 -- | Make a TVar, using the namespace of the var to determine it's kind
 makeTVar :: Var -> Type
-makeTVar v	= TVar (kindOfSpace $ varNameSpace v) v
+makeTVar v	= TVar (kindOfSpace $ varNameSpace v) (UVar v)
 
 
 -- | Add some where fetters to this type
@@ -127,7 +127,7 @@ makeTWhere ::	Type	-> [(Var, Type)] -> Type
 makeTWhere	t []	= t
 makeTWhere	t vts	
 	= TFetters t 
-	$ [ FWhere (TVar (defaultKindV v) v) t'
+	$ [ FWhere (TVar (defaultKindV v) $ UVar v) t'
 		| (v, t')	<- vts ]
 
 
@@ -147,11 +147,7 @@ slurpVarsRD_split rs ds []	= (rs, ds)
 slurpVarsRD_split rs ds (t:ts)
  = case t of
  	TVar	k _	| k == kRegion	-> slurpVarsRD_split (t : rs) ds ts
-	TClass	k _	| k == kRegion	-> slurpVarsRD_split (t : rs) ds ts
-
- 	TVar	k _	| k == kValue	-> slurpVarsRD_split rs (t : ds) ts
-	TClass	k _	| k == kValue	-> slurpVarsRD_split rs (t : ds) ts
-	
+ 	TVar	k _	| k == kValue	-> slurpVarsRD_split rs (t : ds) ts	
 	_				-> slurpVarsRD_split rs ds ts
 	
 slurpVarsRD' tt
@@ -176,17 +172,7 @@ slurpVarsRD' tt
 	= if k == kRegion || k == kValue
 		then [tt]
 		else []
-		
-	| TVarMore k _ _ <- tt
-	= if k == kRegion || k == kValue
-		then [tt]
-		else []
-
-	| TClass k _	<- tt
-	= if k == kRegion || k == kValue
-		then [tt]
-		else []
-		
+				
 	| TError{}	<- tt	= []
 
 	| otherwise

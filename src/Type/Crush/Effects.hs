@@ -4,8 +4,6 @@
 module Type.Crush.Effects
 	(crushEffectInClass)
 where
-import Type.Exp
-import Type.Builtin
 import Type.Location
 import Type.Class
 import Type.State
@@ -14,6 +12,8 @@ import Type.Feed
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk
+import DDC.Type.Exp
+import DDC.Type.Builtin
 import Control.Monad
 import Data.Maybe
 import qualified Data.Set	as Set
@@ -140,7 +140,7 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 		case mHead of
 		 Just clsHead
 		  -> do	cidEff'	<- feedType (TSI $ SICrushedES cid nApp srcApp) 
-				$  makeTApp [tRead, TClass (classKind clsHead) (classId clsHead)]
+				$  makeTApp [tRead, TVar (classKind clsHead) $ UClass (classId clsHead)]
 
 			crushUpdate cid 
 				[cidEff']

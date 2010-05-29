@@ -4,12 +4,11 @@ module Core.Util.Substitute
 	, substituteVV)
 where
 import Util
-import Type.Exp
 import Core.Plate.Trans
 import DDC.Var
+import DDC.Type
 import qualified Data.Map	as Map
 
------
 substituteT 
 	:: (TransM (State ()) a)
 	=> Map Var Type
@@ -23,12 +22,12 @@ substituteT sub tt
 	tt
 
 subTT sub tt
- 	| TVar k v		<- tt
+ 	| TVar k (UVar v)	<- tt
 	, Just t'		<- Map.lookup v sub	
 	= substituteT (Map.delete v sub) t'
 
-	| TVarMore k v tMore	<- tt
-	, Just t'		<- Map.lookup v sub	
+	| TVar k (UMore v tMore) <- tt
+	, Just t'		 <- Map.lookup v sub	
 	= substituteT (Map.delete v sub) t'
 
 	| otherwise					
@@ -49,13 +48,13 @@ substituteVV sub xx
 
 subVVinT :: Map Var Var -> Type -> Type
 subVVinT sub tt
-	| TVar k v1		<- tt
+	| TVar k (UVar v1)	<- tt
 	, Just v2		<- Map.lookup v1 sub 
-	= TVar k v2
+	= TVar k $ UVar v2
 
-	| TVarMore k v1 tMore	<- tt
-	, Just v2		<- Map.lookup v1 sub
-	= TVar k v2
+	| TVar k (UMore v1 tMore) <- tt
+	, Just v2		  <- Map.lookup v1 sub
+	= TVar k $ UVar v2
 	
 	| otherwise
 	= tt
