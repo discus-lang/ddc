@@ -167,6 +167,10 @@ trimClosureC_t :: Set Var -> Set Var -> Type -> [Type]
 trimClosureC_t quant rsData tt
  = let down = trimClosureC_t quant rsData
    in  case tt of
+	TVar k (UMore v _)
+		| Set.member v quant	-> []
+		| otherwise		-> [tt]
+
 	TVar k (UVar v)
 		| Set.member v quant	-> []
 		| otherwise		-> [tt]

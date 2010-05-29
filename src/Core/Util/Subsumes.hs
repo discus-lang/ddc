@@ -174,7 +174,7 @@ stripTFree tt
 
 	TApp{}
 	 | Just (v, t@(TVar k _))	<- takeTFree tt
-	 , k == kClosure	-> t
+	 , k == kClosure		-> t
 	
 	_				-> tt
 
