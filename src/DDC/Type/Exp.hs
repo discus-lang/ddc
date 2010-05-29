@@ -30,15 +30,15 @@ import Data.Map		(Map)
 
 -- Superkinds -------------------------------------------------------------------------------------
 data Super
-	-- | (+) Prop. The superkind of witness types.
-	--   eg: MkConst %r1 :: Const %r1 :: +
+	-- | @(+)@ Prop. The superkind of witness types.
+	--   eg: @MkConst %r1 :: Const %r1 :: +@
 	= SProp			
 
-	-- | ([]) Box. The superkind of non-witness types.
-	--   eg: 5 :: Int :: * :: []
+	-- | @([])@ Box. The superkind of non-witness types.
+	--   eg: @5 :: Int :: * :: []@
 	| SBox			
 	
-	-- | Superkind functions.
+	-- | Superkind functions. The left is always a (non-super) kind.
 	| SFun	Kind	Super	
 	deriving (Show, Eq)
 
@@ -51,16 +51,16 @@ data Kind
 	-- | A kind constructor.
 	| KCon	KiCon	Super
 
-	-- | Dependent kind abstraction. Equivalent to (PI (a : k1). k2).
-	--   We use the de Bruijn representation for these, so the body uses TIndex to 
+	-- | Dependent kind abstraction. Equivalent to @(PI (a : k1). k2)@.
+	--   We use the de Bruijn representation for these, so the body uses `TIndex` to 
 	--   refer to the parameter type, instead of named variables.
 	| KFun	Kind	Kind
 
 	-- | Dependent kind application.
 	| KApp	Kind	Type
 
-	-- | Sum of witness kinds. This always has superkind (+).
-	--   Used for joining witness kinds, like +{ Const %r1; DeepConst a }
+	-- | Sum of witness kinds. This always has superkind @(+)@.
+	--   Used for joining witness kinds, like `+{ Const %r1; DeepConst a }`
 	| KSum	[Kind]
 	deriving (Show, Eq)	
 
@@ -88,18 +88,18 @@ data Type
 
 	-- | A type summation \/ least upper bound.
 	--   Used for joining effect, closure, and witness types.
-	--   If there are no elements in the list this means "bottom"
+	--   If there are no elements in the list this means 'bottom'.
 	| TSum		Kind 	[Type]
 
 	-- | Type application.
 	| TApp		Type	Type
 
-	-- | Quantification.
+	-- | Universal quantification.
 	| TForall	Bind 	Kind	Type
 
-	-- Constrained types.
-	-- TODO: We are currently moving the representation from TFetters to TConstrain.
-	-- TConstrain uses finite maps, not unsorted lists, so is much more efficient.
+	-- | Constrained types.
+	--   TODO: We are currently moving the representation from `TFetters` to `TConstrain`.
+	--   `TConstrain` uses finite maps, not unsorted lists, so is much more efficient.
 	| TFetters	Type	[Fetter]
 	| TConstrain	Type	Constraints
 			
@@ -117,7 +117,7 @@ data Bind
 	-- | Unbounded quantification.
 	| BVar	Var
 	
-	-- | Bounded quantification. Type of bound variable is :> t2.
+	-- | Bounded quantification. Type of bound variable must be more-than the given constraint.
 	| BMore	Var Type
 	deriving (Show, Eq)
 
@@ -129,7 +129,8 @@ data Bound
 	= UVar		Var
 
 	-- | Used in core types only. 
-	--   A type variable with an embedded :> constraint.
+	--   A type variable with an embedded more-than constraint. 
+	--   It will have been bound by a `BMore` in an enclosing scope.
 	| UMore		Var Type
 
 	-- | Used in the kinds of witness constructors only.
@@ -138,12 +139,12 @@ data Bound
 
 	-- | Used in the solver only.
 	--   A reference to some equivalence class in the type graph.
-	--   Also known as a "meta" type variable.
+	--   Also known as a meta type variable.
 	| UClass 	ClassId
 	deriving (Show, Eq)
 
 
--- | Constraints that can be applied to a type.
+-- | Constraints used in the `TConstrain` constructor of `Type`.
 data Constraints
 	= Constraints 
 	{ crsEq		:: Map Type Type
@@ -153,7 +154,7 @@ data Constraints
 
 
 -- | Stores information about a type error directy in a type.
---	Used in the TError constructor of Type.
+--	Used in the `TError` constructor of `Type`.
 --	Used during type inference only.
 data TypeError
 
@@ -161,24 +162,24 @@ data TypeError
 	= TypeError
 
 	-- | A recursive type. 
-	--   (mu t1. t2), where t1 can appear in t2, and t1 is a TVar
+	--   Equivalent to @(MU a. t2)@, where a can appear in t2.
+	--   Recursive value types are treated as errors, as we can't represent
+	--   them in the core language.
 	| TypeErrorLoop	 Type Type	
 	deriving (Show, Eq)
 
 
 -- | A Fetter is a piece of type information which isn't part of the type's shape.
---   TODO: Refactor to only contain FConstraint and FProj. The others are in the Constraints type.
---         Do we really want to keep FWhere and FMore for the solver? 
---         If so use Bind for the lhs and merge them together, also for TypeError above.
+--   TODO: Refactor to only contain FConstraint 
 data Fetter
 
 	-- | A type class constraint.
 	= FConstraint	Var	[Type]
 
-	-- | Equality of types. t1 must be a TVar or TClass.
+	-- | t1 is equal to t2, and must be represented as a TVar or TClass.
 	| FWhere	Type	Type
 
-	-- | t1 :> t2. t1 must be a TVar or TClass.
+	-- | t1 is more than t2, and must be represented as a TVar or TClass.
 	| FMore		Type	Type
 
 	-- | A projection constraint.
@@ -195,16 +196,16 @@ data Fetter
 -- | Represents field and field reference projections.
 --	TODO: merge this into the new FProj constructor.
 data TProj
-	-- | A field projection.   		(.fieldLabel)
+	-- | A field projection. @foo.fieldLabel@
 	= TJField  !Var
 
-	-- | A field reference projection.	(#fieldLabel)
+	-- | A field reference projection. @foo.#fieldLabel@
 	| TJFieldR !Var
 
-	-- | Indexed field projection		(.<int>)
+	-- | Indexed field projection. @foo.INT@
 	| TJIndex  !Var
 
-	-- | Indexed field reference projection	(#<int>)
+	-- | Indexed field reference projection	@foo.#INT@
 	| TJIndexR !Var
 	deriving (Show, Eq, Ord)
 	
@@ -244,20 +245,21 @@ instance Ord Bound where
 	% "    t2 = " % show b2 % "\n"
  
 
-takeOrdOfBound :: Bound -> Maybe Int
-takeOrdOfBound bb
- = case bb of
-	UClass{}	-> Just 0
-	UVar{}		-> Just 1
-	UMore{}		-> Just 2
-	_		-> Nothing
+	-- Define these locally to break import loops.
+	where
+	 takeOrdOfBound :: Bound -> Maybe Int
+	 takeOrdOfBound bb
+ 	  = case bb of
+		UClass{}	-> Just 0
+		UVar{}		-> Just 1
+		UMore{}		-> Just 2
+		_		-> Nothing
 
-
-takeVarOfBound :: Bound -> Maybe Var
-takeVarOfBound bb
- = case bb of
-	UVar v		-> Just v
-	UMore v _	-> Just v
-	_		-> Nothing
+	 takeVarOfBound :: Bound -> Maybe Var
+	 takeVarOfBound bb
+ 	  = case bb of
+		UVar v		-> Just v
+		UMore v _	-> Just v
+		_		-> Nothing
 
 
