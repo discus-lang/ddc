@@ -39,6 +39,7 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 import DDC.Var
 import qualified Debug.Trace
 

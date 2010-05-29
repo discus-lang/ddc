@@ -2,10 +2,7 @@
 -- | Bits and pieces for working with types.
 module Type.Util.Bits
 	-- simple
-	( makeTFunEC
-
-	-- arity
-	, takeValueArityOfType
+	( takeValueArityOfType
 	
 	-- projections
 	, takeVarOfBind
@@ -25,9 +22,6 @@ module Type.Util.Bits
 
 	, makeTData
 	, takeTData
-	, makeTFun
-	, takeTFun
-	, makeTFuns_pureEmpty
 	, flattenFun
 	, makeTFree
 	, takeTFree
@@ -74,26 +68,12 @@ import Type.Plate.Trans
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
------
 stage	= "Type.Util.Bits"
-
-
--- Simple things -----------------------------------------------------------------------------------
-
-
--- | makeTFunEC
---	Converts a list of types:	[t1, t2, t3, t4]
---	into a function type:		t1 -> (t2 -> (t3 -> t4))
---	Uses the same effect and closure on every constructor
---
-makeTFunEC ::	Effect -> Closure -> [Type]	-> Type
-makeTFunEC	eff clo (x:[])			= x
-makeTFunEC	eff clo (x:xs)			= makeTFun x (makeTFunEC eff clo xs) eff clo
-makeTFunEC	_   _   []			= panic stage $ "makeTFunEC: not enough args for function"
 
 
 -- Arity ------------------------------------------------------------------------------------------
@@ -235,27 +215,6 @@ takeTData tt
 	_ -> Nothing
 
 
--- | Make a single function type
-makeTFun :: Type -> Type -> Effect -> Closure -> Type
-makeTFun t1 t2 eff clo
-	= TApp (TApp (TApp (TApp (TCon TyConFun) t1) t2) eff) clo
-
--- | Make a chained function type with pure effects and empty closures
-makeTFuns_pureEmpty :: [Type] -> Type
-makeTFuns_pureEmpty xx
- = case xx of
- 	x : []		-> x
-	x : xs		-> makeTFun x (makeTFuns_pureEmpty xs) tPure tEmpty
-
--- | Take a function type from a type constructor application.
-takeTFun :: Type -> Maybe (Type, Type, Effect, Closure)
-takeTFun tt
- 	| TApp (TApp (TApp (TApp fun t1) t2) eff) clo	<- tt
-	, TCon TyConFun{}	<- fun
-	= Just (t1, t2, eff, clo)
-	
-	| otherwise
-	= Nothing
 
 -- | Flatten a function type into parts
 flattenFun :: Type -> [Type]

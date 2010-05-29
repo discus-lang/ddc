@@ -14,6 +14,7 @@ import Util
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 import Type.Pretty		()
 import qualified Data.Set	as Set
 

@@ -56,7 +56,7 @@ superOpTypeP	pp
  = case pp of
  	PBind v x
 	 -> let	parts	= superOpType' x
-	    in	makeTFuns_pureEmpty parts
+	    in	makeTFunsPureEmpty parts
 
 	-- external functions and ctors carry their operational
 	--	types around with them.
@@ -69,7 +69,7 @@ superOpTypeP	pp
 -- | Work out the operational type of this expression
 superOpTypeX :: Exp -> Type
 superOpTypeX xx
-	= makeTFuns_pureEmpty $ superOpType' xx
+	= makeTFunsPureEmpty $ superOpType' xx
 
 superOpType'	xx
  = case xx of

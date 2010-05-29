@@ -32,6 +32,7 @@ import Util.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 
 stage	= "Type.Util.Join"
 

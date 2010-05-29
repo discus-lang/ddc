@@ -29,7 +29,7 @@ import Type.State
 import Type.Plate.Collect
 import Util
 import DDC.Main.Error
-import DDC.Type.Exp
+import DDC.Type
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

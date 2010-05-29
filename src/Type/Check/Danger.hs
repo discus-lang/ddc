@@ -7,8 +7,7 @@ import Type.Util
 import Type.Plate.Collect
 import DDC.Main.Error
 import DDC.Var
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var.PrimId		as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map

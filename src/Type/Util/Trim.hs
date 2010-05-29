@@ -29,6 +29,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 import DDC.Var
 import Type.Pretty			()
 import qualified Type.Util.PackFast	as PackFast

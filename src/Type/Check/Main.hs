@@ -9,8 +9,7 @@ import Type.Util.Bits
 import Shared.VarPrim
 import Util
 import DDC.Var
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import qualified Data.Map	as Map
 
 
