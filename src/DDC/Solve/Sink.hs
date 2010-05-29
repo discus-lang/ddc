@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Functions to sink classids, by themselves or within types and kinds.
 --	Sinking is an easier word for canonicalisation.
@@ -37,7 +37,7 @@ sinkCidIO classes cid'
 	 = do	cls		<- readArray classes cid
 		case cls of
 		 ClassUnallocated{}	-> panic stage "sinkCidIO: unallocated cass"
-		 ClassForward _ cid'	-> go cid'
+		 ClassForward _ cid''	-> go cid''
 		 ClassFetter{}		-> return cid
 		 ClassFetterDeleted{}	-> return cid
 		 Class{}		-> return cid
@@ -179,7 +179,7 @@ sinkCidsInTypeIO classes tt'
 		TConstrain t crs
 		 -> do	t'	<- goT t
 			crs'	<- goCRS crs
-			return	$ TConstrain t crs
+			return	$ TConstrain t' crs'
 	
 		TError k err
 		 -> do	k'	<- sinkCidsInKindIO classes k

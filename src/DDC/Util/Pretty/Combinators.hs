@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Combinators for forming new pretty things out of old ones.
 module DDC.Util.Pretty.Combinators 
@@ -64,8 +65,8 @@ paste a b
 -- Punc -----------------------------------------------------------------------
 -- | Punctuate a pretty thing between others.
 punc	:: (Pretty a m, Pretty b m) => a -> [b] -> PrettyM m
-punc p []		= blank
-punc p (x : [])		= ppr x
+punc _ []		= blank
+punc _ (x : [])		= ppr x
 punc p (x1 : x2 : xs)	= x1 % p % punc p (x2 : xs)
 
 

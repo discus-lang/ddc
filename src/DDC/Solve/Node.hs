@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Node types are the simple type constraints that are stored directly in graph equivalence
 --   classes. The children of a Node type are always cids. This is opposed to regular 
@@ -160,7 +160,7 @@ cidsOfNode nn
 	NSum cs		-> cs
 	NError{}	-> Set.empty
 	NScheme t	-> collectClassIds t
-	NFree v t	-> collectClassIds t
+	NFree _ t	-> collectClassIds t
 
 
 -- Builtins ---------------------------------------------------------------------------------------

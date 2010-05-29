@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -O2 #-}
 
 -- | Variables, both bound and binding occurrences.
@@ -72,7 +73,7 @@ instance Ord Var where
  compare v1 v2 	
   = case compare (varId v1) (varId v2) of
 	EQ	-> compare (varModuleId v1) (varModuleId v2)
-	ord	-> ord
+	ord'	-> ord'
 
 
 -- | Pretty print a variable.

@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Abstract block structured documents.
 --	Whereas a `Str` is just a flat slab of text, a `Doc` contains some
@@ -104,15 +105,15 @@ pprDocIndentedWithNewLines depth dd
 	
 -- | Check if a `Doc` is just made of `DBlank`s or empty `DList`s.
 docIsEmpty :: Doc str -> Bool
-docIsEmpty d
- = case d of
+docIsEmpty dd
+ = case dd of
 	DBlank			-> True
 
-	DNode tag d		-> docIsEmpty d
+	DNode _ d		-> docIsEmpty d
 
 	DList []		-> True
-	DList (dd : ds)
-	 | not $ docIsEmpty dd	-> False
+	DList (dd' : ds)
+	 | not $ docIsEmpty dd'	-> False
 	 | otherwise		-> docIsEmpty (DList ds)
 
 	DLeaf _			-> False

@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Unique identifiers for a type equivalence class.
 module DDC.Type.Exp.ClassId
@@ -14,7 +15,7 @@ newtype ClassId
 
 instance Ix ClassId where
  range	   (ClassId a, ClassId b) 		= map ClassId [a..b]
- index	   (ClassId a, ClassId b) (ClassId x)	= x
+ index	   (ClassId _, ClassId _) (ClassId x)	= x
  inRange   (ClassId a, ClassId b) (ClassId x)	= inRange (a, b) x
  rangeSize (ClassId a, ClassId b)		= rangeSize (a, b)
  

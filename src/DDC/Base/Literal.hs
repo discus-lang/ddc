@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Representation of literal values.
 module DDC.Base.Literal
@@ -8,9 +9,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
 
------
 stage	= "DDC.Base.Literal"
-
 
 -- | A literal value.
 --	This stores literal values as we see them in the source program.
@@ -58,7 +57,7 @@ instance Pretty LiteralFmt PMode where
 	(Boxed, 	LChar c)        -> ppr $ show c
 	(BoxedBits b,	LChar c)        -> c % "c" % show b
 	(Unboxed,       LChar c)        -> ppr $ show c % "#"
-	(UnboxedBits b,	LChar c)        -> show c % "#"
+	(UnboxedBits _,	LChar c)        -> show c % "#"
 
 	(Boxed, 	LString s)      -> ppr $ show s
 	(Unboxed,	LString s)      -> show s % "#"

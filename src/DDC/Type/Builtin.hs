@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Short names for built-in types and kinds.
 module DDC.Type.Builtin 
@@ -7,6 +8,7 @@ import DDC.Base.Literal
 import DDC.Base.DataFormat
 import DDC.Type.Exp
 import DDC.Var
+import Control.Monad
 
 
 -- Kind Constructors ------------------------------------------------------------------------------
@@ -117,13 +119,15 @@ tElaborateModify = TCon $ TyConElaborate TyConElaborateModify
 
 
 -- | Get the type constructor for a bool of this format.
-tcBool :: DataFormat -> TyCon
+--	The format needs to be `Unboxed` or `Boxed`.
+tcBool :: DataFormat -> Maybe TyCon
 tcBool fmt
  = case fmt of
-	Unboxed		-> TyConData (primTBool fmt) kValue
-	Boxed		-> TyConData (primTBool fmt) (KFun kRegion kValue)
-
-
+	Unboxed		-> Just $ TyConData (primTBool fmt) kValue
+	Boxed		-> Just $ TyConData (primTBool fmt) (KFun kRegion kValue)
+	_		-> Nothing
+	
+	
 -- | Get the type constructor of a word of this format.
 tcWord  :: DataFormat -> TyCon
 tcWord 	= tcTyDataBits primTWord
@@ -155,40 +159,40 @@ tcTyDataBits mkVar fmt
 	
 
 -- | Get the type constructor of a string of this format.
-tcString :: DataFormat -> TyCon
+tcString :: DataFormat -> Maybe TyCon
 tcString fmt
  = case fmt of
-	Unboxed		-> TyConData (primTString fmt) (KFun kRegion kValue)
-	Boxed		-> TyConData (primTString fmt) (KFun kRegion kValue)
-
+	Unboxed		-> Just $ TyConData (primTString fmt) (KFun kRegion kValue)
+	Boxed		-> Just $ TyConData (primTString fmt) (KFun kRegion kValue)
+	_		-> Nothing
 
 -- | Get the type constructor used to represent some literal value
-tyConOfLiteralFmt :: LiteralFmt -> TyCon
+tyConOfLiteralFmt :: LiteralFmt -> Maybe TyCon
 tyConOfLiteralFmt (LiteralFmt lit fmt)
  = case (lit, fmt) of
- 	(LBool _, 	fmt)	-> tcBool fmt
-	(LWord _, 	fmt)	-> tcWord fmt
-	(LInt _,	fmt)	-> tcInt  fmt
-	(LFloat _,	fmt)	-> tcFloat fmt
-	(LChar _,	fmt)	-> tcChar fmt
-	(LString _,	fmt)	-> tcString fmt
+ 	(LBool _, 	fmt')	-> tcBool   fmt'
+	(LWord _, 	fmt')	-> Just $ tcWord   fmt'
+	(LInt _,	fmt')	-> Just $ tcInt    fmt'
+	(LFloat _,	fmt')	-> Just $ tcFloat  fmt'
+	(LChar _,	fmt')	-> Just $ tcChar   fmt'
+	(LString _,	fmt')	-> tcString fmt'
 
 
 -- | Get the type associated with a literal value.
-typeOfLiteral :: LiteralFmt -> Type
+typeOfLiteral :: LiteralFmt -> Maybe Type
 typeOfLiteral litfmt
-	= TCon (tyconOfLiteral litfmt)
+	= liftM TCon (tyconOfLiteral litfmt)
 
 
 -- | Get the type constructor associated with a literal value.
-tyconOfLiteral :: LiteralFmt -> TyCon
+tyconOfLiteral :: LiteralFmt -> Maybe TyCon
 tyconOfLiteral (LiteralFmt lit fmt)
  = case lit of
 	LBool _		-> tcBool   fmt
-	LWord _		-> tcWord   fmt
-	LInt _		-> tcInt    fmt
-	LFloat _	-> tcFloat  fmt
-	LChar _		-> tcChar   fmt
+	LWord _		-> Just $ tcWord   fmt
+	LInt _		-> Just $ tcInt    fmt
+	LFloat _	-> Just $ tcFloat  fmt
+	LChar _		-> Just $ tcChar   fmt
 	LString _	-> tcString fmt
 
 

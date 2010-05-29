@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | DDC command line arguments.
 module DDC.Main.Arg
@@ -137,7 +138,7 @@ expandArgs (x:xs)
 	Compile{}
 	 -> x : StopCompile : KeepOFiles : expandArgs xs
 
-	Make ss
+	Make{}
 	 -> x : expandArgs xs
 
 	LintAll

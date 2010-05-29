@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Extract a subgraph from the main type graph.
 --   It's called "trace" because we trace out all the nodes reachable from a given
@@ -265,7 +265,7 @@ simplifyCrsMore crs
 	$ simplifyCrsMore' [] [] 
 	$ Map.toList crs
 
-simplifyCrsMore' crsFree crsAcc []
+simplifyCrsMore' _ crsAcc []
 	= crsAcc
 	
 simplifyCrsMore' crsFree crsAcc (c@(t1, t2):cs)

@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Walking over the type graph to find various things.
 module DDC.Solve.Walk
@@ -95,4 +96,4 @@ getClassDownLeftSpine cid
 	 Just (NApp cid1 _)	
 		-> getClassDownLeftSpine cid1
 
-	 mType	-> return cls
+	 _	-> return cls

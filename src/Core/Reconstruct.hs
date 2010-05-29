@@ -613,8 +613,8 @@ reconX xx@(XPrim prim xs)
 
 
 reconX xx@(XLit litFmt)
- = do	let	tcLit	= tyConOfLiteralFmt litFmt
-		tLit	= TCon tcLit
+ = do	let	Just tcLit	= tyConOfLiteralFmt litFmt
+		tLit		= TCon tcLit
 	return	( xx
 		, tLit
 		, tPure

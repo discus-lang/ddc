@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Construction and destruction of common compound things.
 --	Also known as 'smart' constructors and destructors.
@@ -35,7 +35,7 @@ makeTFunsPureEmpty xx	= makeTFunsEC tPure tEmpty xx
 --  The given list of types must be non-empty, else `panic`.
 --
 makeTFunsEC :: Effect -> Closure -> [Type] -> Type
-makeTFunsEC eff clo (x:[])	= x
+makeTFunsEC _   _   (x:[])	= x
 makeTFunsEC eff clo (x:xs)	= makeTFun x (makeTFunsEC eff clo xs) eff clo
 makeTFunsEC _   _   []		= panic stage $ "makeTFunEC: empty list"
 

@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Rendering of PrettyPrims to a string.
 module DDC.Util.Pretty.Render 
@@ -40,7 +41,7 @@ reduce	state xx
 	PNil			-> [PNil]
  	PString	s		-> map PChar s
 	PChar c			-> [PChar c]
-	PList   zz@(PChar c:xs)	-> zz
+	PList   zz@(PChar{} : _)-> zz
 
 	PList 	zz	
 	 -> [PChar '[']
@@ -55,6 +56,7 @@ reduce	state xx
 	   ++ [PTabAdd (- (stateTabWidth state))]
 	 
 	PTabNext		-> [PTabNext]
+	PTabAdd{}		-> [xx]
 	PPadLeft  n c p		-> [PPadLeft n c  (PAppend $ reduce state p)]
 	PPadRight n c p		-> [PPadRight n c (PAppend $ reduce state p)]
 	
@@ -99,8 +101,8 @@ spaceTab state xx
 	 		{ stateCol	= stateCol state + 1 }
 	    in  x : spaceTab state' xs
 
-	PAppend xx : xs
-	 -> spaceTab state (xx ++ xs)
+	PAppend x : xs
+	 -> spaceTab state (x ++ xs)
 
 	PPadLeft n c p : xs
 	 -> let cs	= spaceTab state [p]
@@ -116,3 +118,4 @@ spaceTab state xx
 		state'	= state { stateCol = stateCol state + colLen }
 	    in	replicate (n - length cs) c ++ cs ++ spaceTab state' xs
 
+	_ -> error "DDC.Util.Pretty.Render.spaceTab: no match. Should have been elimiated by reduce fn."
