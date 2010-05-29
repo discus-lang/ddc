@@ -6,7 +6,6 @@ module Type.Plug
 	, staticRsDataT
 	, staticRsClosureT)	
 where
-import Type.Util
 import Type.State
 import Type.Class
 import Type.Plate.Trans		

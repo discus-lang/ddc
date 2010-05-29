@@ -5,7 +5,6 @@ module Type.Error
 where
 import Type.Location
 import Type.Pretty
-import Type.Util.Bits
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty

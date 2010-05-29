@@ -9,7 +9,6 @@ import Desugar.Data
 import Desugar.Exp
 import Type.Util.Elaborate
 import Type.Util.Kind
-import Type.Util.Bits
 import Source.Error
 import Shared.VarPrim
 import Util

@@ -16,7 +16,6 @@ where
 import Core.Exp
 import Core.OpType
 import Core.Util.Slurp
-import Type.Util
 import Data.Maybe
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -195,11 +194,11 @@ bindingArityFromGlob :: Var -> Glob -> Maybe Int
 bindingArityFromGlob v glob
 	| Just pp@PExtern{}	<- Map.lookup v (globExtern glob)
 	= let	tOperational	= topExternOpType pp
-	  in	Just $ (length $ flattenFun tOperational) - 1
+	  in	Just $ (length $ flattenTFuns tOperational) - 1
 
 	| Just pp@PBind{}	<- Map.lookup v (globBind glob)
 	= let	tOperational	= superOpTypeX $ topBindExp pp
-	  in 	Just $ (length $ flattenFun tOperational) - 1
+	  in 	Just $ (length $ flattenTFuns tOperational) - 1
 
 	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
 	= Just $ ctorDefArity ctor

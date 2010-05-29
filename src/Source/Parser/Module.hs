@@ -11,7 +11,6 @@ import Source.Parser.Base
 import Source.Parser.Type
 import Source.Lexer
 import Source.Exp
-import Type.Util.Bits
 import Util
 import DDC.Main.Pretty
 import DDC.Type

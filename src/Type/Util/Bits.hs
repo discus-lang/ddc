@@ -5,28 +5,12 @@ module Type.Util.Bits
 	( takeValueArityOfType
 	
 	-- projections
-	, takeVarOfBind
 	, takeBindingVarF
-	, takeCidOfTClass
 	
 	-- crushing
 	, crushT
 
 	-- sums
-	, makeTSum
-	, flattenTSum
-
-	-- type application
-	, makeTApp
-	, takeTApps
-
-	, makeTData
-	, takeTData
-	, flattenFun
-	, makeTFree
-	, takeTFree
-	, makeTDanger
-	, takeTDanger
 	
 	-- closure
 	, dropTFreesIn
@@ -65,15 +49,12 @@ module Type.Util.Bits
 where
 import Util
 import Type.Plate.Trans
-import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-
-stage	= "Type.Util.Bits"
 
 
 -- Arity ------------------------------------------------------------------------------------------
@@ -101,21 +82,6 @@ takeValueArityOfType tt
 	TVar{}		-> Just 0
 	TError{}	-> Nothing
 	
-
--- Projections -------------------------------------------------------------------------------------
--- | Get the var from a forall binder
-takeVarOfBind :: Bind -> (Maybe Var)
-takeVarOfBind bb
- = case bb of
-	BNil		-> Nothing
- 	BVar v		-> Just v
-	BMore v t	-> Just v
-
-
-takeCidOfTClass :: Type -> Maybe ClassId
-takeCidOfTClass (TVar k (UClass cid))	= Just cid
-takeCidOfTClass _			= Nothing
-
 
 -- | Take the binding var from FLet's 
 takeBindingVarF :: Fetter -> Maybe Var
@@ -150,110 +116,6 @@ crushT1 tt
 	 -> makeTSum k $ map (makeTFree v) ts
 	
 	_	-> tt
-
-
--- Sums --------------------------------------------------------------------------------------------
--- | Make a new sum from a list of type, crushing the list and substituting
---	TPure\/TEmpty if there is nothing to sum. If there only one thing
---	after crushing then return that thing instead of a sum.
-makeTSum :: Kind -> [Type] -> Type
-makeTSum k ts
- = case nub $ catMap flattenTSum ts of
-	[t']	-> t'
-	ts'	-> TSum k ts'
-
--- | Crush nested TSums into their components.
-flattenTSum :: Type -> [Type]
-flattenTSum tt
- = case tt of
-	TSum k ts		-> catMap flattenTSum ts
-
-	TApp{}
-	 | Just (v, TSum k [])	<- takeTFree tt
-	 -> []
-	
-	_			-> [tt]
-
-
--- Type Application --------------------------------------------------------------------------------
--- | Make a type application
-makeTApp :: [Type] -> Type
-makeTApp ts = makeTApp' $ reverse ts
-
-makeTApp' xx
- = case xx of
-	[]		-> panic stage $ "makeTApp': empty list"
- 	x : []		-> x
-	x1 : xs		-> TApp (makeTApp' xs) x1
-	
--- | Flatten a type application into its parts
-takeTApps :: Type -> [Type]
-takeTApps tt
- = case tt of
-	TApp t1 t2	-> t1 : takeTApps t2
-	_		-> [tt]
-
-
--- | Make a data type
-makeTData :: Var -> Kind -> [Type] -> Type
-makeTData v k ts
- = makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k } : ts )
-
-	
--- | Take a data type from a data type constructor application.
-takeTData :: Type -> Maybe (Var, Kind, [Type])
-takeTData tt
- = case tt of
- 	TCon TyConData { tyConName = v, tyConDataKind = k }
-		-> Just (v, k, [])
-		
-	TApp t1 t2
-	 -> case takeTData t1 of
-	 	Just (v, k, ts)	-> Just (v, k, ts ++ [t2])
-		Nothing		-> Nothing
-		
-	_ -> Nothing
-
-
-
--- | Flatten a function type into parts
-flattenFun :: Type -> [Type]
-flattenFun xx
- = case takeTFun xx of
-	Just (t1, t2, _, _)	-> t1 : flattenFun t2
-	_			-> [xx]
-
-
--- | Take an application of the $Free closure constructor.
-takeTFree :: Type -> Maybe (Var, Type)
-takeTFree tt
- = case tt of
-	TApp (TCon (TyConClosure (TyConClosureFree v) kind)) t2
-	   -> Just (v, t2)
-	
-	_  -> Nothing
-
--- | Make an application of the $Free closure constructor.
-makeTFree :: Var -> Type -> Type
-makeTFree var tt
-	= TApp (tFree var) tt
-
-
--- | Make an application of the $Danger closure constructor.
-makeTDanger :: Type -> Type -> Type
-makeTDanger t1 t2
- 	= TApp (TApp tDanger t1) t2
-
--- | Take an application of the $Danger closure constructor.
-takeTDanger :: Type -> Maybe (Type, Type)
-takeTDanger tt 
- = case tt of
-	TApp (TApp (TCon (TyConClosure TyConClosureDanger _)) t2) t3
-	 -> Just (t2, t3)
-	
-	_   -> Nothing
-
--- Closure -----------------------------------------------------------------------------------------
 
 -- | Drop TFree terms concerning value variables in this set
 dropTFreesIn :: Set Var -> Closure -> Closure

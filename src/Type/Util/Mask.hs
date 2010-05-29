@@ -2,15 +2,13 @@
 module Type.Util.Mask
 	( maskReadWriteNotIn )
 where
-import Type.Util.Bits
 import Util
 import DDC.Var
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 import qualified Data.Set 	as Set
 
-
------
 -- | mask Read and Write that aren't on regions in this set.
 maskReadWriteNotIn 
 	:: Set Var -> Effect -> Effect

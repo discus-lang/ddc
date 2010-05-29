@@ -7,7 +7,6 @@ where
 import Core.Exp
 import Core.Util
 import Core.Glob
-import Type.Util
 import Util
 import DDC.Var.NameSpace
 import DDC.Main.Pretty

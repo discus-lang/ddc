@@ -24,8 +24,7 @@ import Util
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import DDC.Solve.InstanceInfo
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set

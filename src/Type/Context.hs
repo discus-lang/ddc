@@ -8,8 +8,7 @@ where
 import Type.Util
 import Shared.VarPrim
 import Util
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var
 import Type.Effect.MaskLocal	(visibleRsT)
 import qualified Data.Set	as Set

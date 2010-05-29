@@ -7,6 +7,7 @@ import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 import DDC.Var
 import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map		as Map

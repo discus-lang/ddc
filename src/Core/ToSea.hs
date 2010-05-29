@@ -572,7 +572,7 @@ hasValueKind xx
 -- | Split a type into its params and return parts.
 splitOpType :: T.Type -> ([E.Type], E.Type)
 splitOpType to
-  = let	opParts		= T.flattenFun to
+  = let	opParts		= T.flattenTFuns to
 	opParts'@(_:_)	= map toSeaT opParts
 		
 	argTypes	= init opParts'

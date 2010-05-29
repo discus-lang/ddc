@@ -9,6 +9,7 @@ import Type.Util.Bits
 import Util
 import DDC.Var
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import Type.Pretty		()
 import qualified Data.Map	as Map
 

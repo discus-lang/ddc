@@ -5,7 +5,6 @@ module	Core.OpType
 	, superOpTypeX )
 where
 import Core.Exp
-import Type.Util
 import Util
 import DDC.Main.Error
 import DDC.Type
@@ -22,12 +21,12 @@ slurpSuperAritiesP :: Top -> Map Var Int
 slurpSuperAritiesP pp
  = case pp of
 	PExtern v tv tOperational
-	 -> let arity	= (length $ flattenFun tOperational) - 1
+	 -> let arity	= (length $ flattenTFuns tOperational) - 1
 	    in	Map.singleton v arity
 
 	PBind   v x
 	 -> let	tOperational	= superOpTypeX x
-		arity		= (length $ flattenFun tOperational) - 1
+		arity		= (length $ flattenTFuns tOperational) - 1
 	    in  Map.singleton v arity
 
 	PData{}

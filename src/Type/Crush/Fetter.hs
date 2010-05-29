@@ -10,12 +10,10 @@ import Type.Class
 import Type.Location
 import Type.Feed
 import Type.Error
-import Type.Util.Bits
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import Data.Maybe
 import Shared.VarPrim
 import Control.Monad

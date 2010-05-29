@@ -15,8 +15,8 @@ module DDC.Type.Predicates
 	, isUnboxedT)
 where
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import DDC.Var
-import Type.Util.Bits
 
 -- Directly on the Type ---------------------------------------------------------------------------
 isTBot :: Type -> Bool

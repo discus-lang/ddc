@@ -27,8 +27,7 @@ import Type.Class
 import Util
 import DDC.Solve.Trace
 import DDC.Main.Error
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map

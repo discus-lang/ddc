@@ -12,7 +12,6 @@ module Type.Crush.Proj
 	(crushProjInClass)
 where
 import Type.Location
-import Type.Util
 import Type.Error
 import Type.Class
 import Type.State
@@ -21,8 +20,7 @@ import Constraint.Exp
 import Util
 import DDC.Solve.Trace
 import DDC.Solve.Walk
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 

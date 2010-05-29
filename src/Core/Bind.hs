@@ -20,7 +20,6 @@ import DDC.Main.Error
 import DDC.Type
 import DDC.Var
 import Prelude				hiding	(mapM)
-import Type.Util.Bits			(takeVarOfBind)
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Debug.Trace		as Debug

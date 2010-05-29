@@ -42,11 +42,11 @@ module Type.Util.Cut
 	(cutLoopsT_constrainForm)
 where
 import Type.Plate.Collect
-import Type.Util.Bits
 import Util
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Compounds
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

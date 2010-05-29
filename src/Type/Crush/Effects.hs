@@ -7,13 +7,11 @@ where
 import Type.Location
 import Type.Class
 import Type.State
-import Type.Util
 import Type.Feed
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import Control.Monad
 import Data.Maybe
 import qualified Data.Set	as Set

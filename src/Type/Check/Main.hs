@@ -5,7 +5,6 @@ where
 import Type.Extract
 import Type.State
 import Type.Error
-import Type.Util.Bits
 import Shared.VarPrim
 import Util
 import DDC.Var
