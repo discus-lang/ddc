@@ -19,12 +19,12 @@ import Source.Slurp
 import Source.Error
 import Source.Exp
 import Type.Util
-import Type.Plate.FreeVars
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Var
 import DDC.Type
+import DDC.Util.FreeVars
 import DDC.Main.Pretty		()
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set

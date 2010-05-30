@@ -1,9 +1,8 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Generic transformations on type expressions.
 --   This isn't particuarly fast. Depending on what you're doing, it may be better to write
 --   traversal code specific to the transform you're implementing.
-module Type.Plate.Trans
+module DDC.Type.Transform
 	( TransM	(..)
 	, TransTable	(..)
 	, transTableId
@@ -13,13 +12,13 @@ module Type.Plate.Trans
 	, transformCid
 	, transformTM)
 where
-import Util
 import DDC.Type.Exp
 import DDC.Var
 import Util.Data.Bag		(Bag)
 import qualified Util.Data.Bag 	as Bag
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
+import Util
 
 
 -- | Monadic transforms.
@@ -178,7 +177,7 @@ followT table tt
 	TForall b k t	-> liftM3 TForall (transZM table b) (transZM table k) (transZM table t)
 	TFetters t fs	-> liftM2 TFetters (transZM table t) (transZM table fs)
 
-	TConstrain t cs@Constraints { crsEq, crsMore, crsOther }
+	TConstrain t Constraints { crsEq, crsMore, crsOther }
 	 -> do	t'		<- transZM table t
 		crsEq'		<- liftM Map.fromList $ transZM table $ Map.toList crsEq
 		crsMore'	<- liftM Map.fromList $ transZM table $ Map.toList crsMore
@@ -189,7 +188,7 @@ followT table tt
  	TVar k u	-> liftM2 TVar    (return k) (transZM table u)
 	TApp t1 t2	-> liftM2 TApp    (transZM table t1) (transZM table t2)
 	TCon tycon	-> liftM  TCon    (transZM table tycon)
-	TError k ts	-> return tt
+	TError _ _	-> return tt
 
 
 -- Bound -------------------------------------------------------------------------------------------
@@ -220,7 +219,7 @@ instance Monad m => TransM m TyCon where
 
 	TyConClosure (TyConClosureFree v) kind
 	 -> do	v'	<- transZM table v
-		return	$ TyConClosure (TyConClosureFree v) kind
+		return	$ TyConClosure (TyConClosureFree v') kind
 		
 	TyConClosure{}		-> return tt
 		

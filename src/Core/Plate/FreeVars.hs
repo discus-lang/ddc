@@ -7,11 +7,10 @@ module Core.Plate.FreeVars
 	, varsBoundByW )
 where
 import Core.Exp
-import Shared.FreeVars
 import DDC.Main.Error
 import DDC.Var
 import DDC.Type
-import Type.Plate.FreeVars	()
+import DDC.Util.FreeVars
 import Type.Pretty		()
 import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))

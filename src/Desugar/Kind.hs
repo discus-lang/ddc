@@ -18,7 +18,7 @@ import DDC.Main.Error
 import DDC.Type
 import DDC.Var
 import Data.Sequence			as Seq
-import qualified Type.Plate.Trans	as T
+import qualified DDC.Type.Transform	as T
 import qualified Data.Map		as Map
 import qualified Data.Foldable		as Foldable
 

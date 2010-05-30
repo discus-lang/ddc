@@ -23,14 +23,14 @@ import Shared.VarPrim
 import Shared.Exp
 import Type.Util
 import Type.Error
-import Type.Plate.Trans
-import Type.Plate.FreeVars
 import Desugar.Exp
 import Desugar.Slurp.State
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
+import DDC.Type.Transform
 import DDC.Var
+import DDC.Util.FreeVars
 import Shared.VarUtil		(prettyPos)
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map

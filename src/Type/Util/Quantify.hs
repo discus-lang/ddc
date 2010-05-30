@@ -2,11 +2,12 @@
 module Type.Util.Quantify
 	(quantifyVarsT)
 where
-import Type.Plate.FreeVars
 import Util.Graph.Deps
 import DDC.Type.Exp
 import DDC.Type.Compounds
+import DDC.Type.FreeVars	()
 import DDC.Var
+import DDC.Util.FreeVars
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

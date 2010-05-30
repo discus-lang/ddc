@@ -17,9 +17,9 @@ import qualified Source.Plate.Trans	as S
 import qualified Source.Slurp		as S
 import qualified Source.Util		as S
 import qualified DDC.Type		as T
+import qualified DDC.Type.Transform	as T
 import qualified Type.Pretty		as T
 import qualified Type.Util		as T
-import qualified Type.Plate.Trans	as T
 import qualified Desugar.Exp		as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Core.Exp		as C

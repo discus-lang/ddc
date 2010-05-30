@@ -4,11 +4,11 @@ module Type.Util.Instantiate
 	( instantiateT
 	, instantiateT_table )
 where
-import Type.Plate.Trans
 import Util
 import DDC.Var
 import DDC.Type.Exp
 import DDC.Type.Compounds
+import DDC.Type.Transform
 import Type.Pretty		()
 import qualified Data.Map	as Map
 

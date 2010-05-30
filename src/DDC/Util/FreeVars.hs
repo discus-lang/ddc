@@ -1,13 +1,11 @@
 
-module Shared.FreeVars
+module DDC.Util.FreeVars
 	(FreeVars, freeVars)
 where
 import DDC.Var
 import Util
 import qualified Data.Set as Set
 
-
------
 class FreeVars a where
  freeVars :: a -> Set Var
  

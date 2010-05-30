@@ -11,11 +11,11 @@ module Type.Util.Substitute
 	, subCidCid)
 where
 import Type.Plate.Collect
-import Type.Plate.Trans
 import Type.Util.Kind
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Transform
 import DDC.Var
 import Data.Traversable		(mapM)
 import Util			hiding (mapM)

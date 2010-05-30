@@ -16,7 +16,6 @@
 --
 --	reduce to
 --		forall a %r1. Thing a %r1 %r2	
-
 module Type.Util.Trim
 	( trimClosureT_constrainForm
 	, trimClosureC_constrainForm)
@@ -24,13 +23,14 @@ where
 import Util
 import Type.Util.Bits
 import Type.Util.Kind
-import Type.Plate.FreeVars
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Var
+import DDC.Util.FreeVars
+import DDC.Type.FreeVars		()
 import Type.Pretty			()
 import qualified Type.Util.PackFast	as PackFast
 import qualified Shared.VarUtil		as Var

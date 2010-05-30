@@ -15,11 +15,11 @@ import Type.Util
 import Type.Pretty
 import Shared.VarPrim
 import Type.Plate.Collect
-import Type.Plate.FreeVars
 import Util
 import DDC.Type
 import DDC.Var.NameSpace
 import DDC.Var
+import DDC.Util.FreeVars
 import qualified Shared.VarUtil		as Var
 import qualified DDC.Main.Arg		as Arg
 import qualified Data.Map		as Map

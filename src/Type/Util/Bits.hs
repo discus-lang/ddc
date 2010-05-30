@@ -32,10 +32,10 @@ module Type.Util.Bits
 	)
 where
 import Util
-import Type.Plate.Trans
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.Transform
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

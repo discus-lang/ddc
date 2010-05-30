@@ -6,15 +6,15 @@ import Desugar.Exp
 import Desugar.Pretty
 import Type.Util.Elaborate
 import Type.Util.Kind
-import Type.Plate.FreeVars
-import Type.Plate.Trans
 import Type.Pretty
 import Control.Monad.State.Strict
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Type
+import DDC.Type.Transform
 import DDC.Var
+import DDC.Util.FreeVars
 import qualified Debug.Trace
 import qualified Data.Set	as Set
 import qualified Shared.VarUtil	as Var

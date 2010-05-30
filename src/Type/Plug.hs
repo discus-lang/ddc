@@ -8,12 +8,10 @@ module Type.Plug
 where
 import Type.State
 import Type.Class
-import Type.Plate.Trans		
 import Util
 import DDC.Main.Error
-import DDC.Type.Exp
-import DDC.Type.Builtin
-import DDC.Type.Compounds
+import DDC.Type
+import DDC.Type.Transform
 import Type.Pretty		()
 import qualified Data.Set	as Set
 

@@ -15,11 +15,11 @@
 module Constraint.Simplify
 	(simplify)
 where
-import Type.Plate.FreeVars
 import Constraint.Exp
 import Util
 import DDC.Type
 import DDC.Var
+import DDC.Util.FreeVars
 import qualified Constraint.Plate.Trans	as CTrans
 import qualified Shared.VarUtil		as Var
 import qualified Type.Util.PackFast	as PackFast

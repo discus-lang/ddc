@@ -31,9 +31,6 @@ import qualified Source.Pragma		as Pragma
 -- desugar
 import qualified Desugar.Plate.Trans	as D
 
--- type
-import qualified Type.Plate.FreeVars	as T
-
 -- core
 import qualified Core.Glob		as C
 
@@ -45,6 +42,7 @@ import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Util.Doc
+import DDC.Util.FreeVars
 
 -- haskell
 import Util
@@ -344,7 +342,7 @@ compileFile_parse
 	-- These are the region vars that are free in the type of a top level binding
 	let rsGlobal	= Set.filter (\v -> varNameSpace v == NameRegion)
 			$ Set.unions
-			$ map T.freeVars
+			$ map freeVars
 			$ [t	| (v, t)	<- Map.toList typeTable
 				, Set.member v vsBoundTopLevelTREC]
 		

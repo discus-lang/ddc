@@ -8,8 +8,8 @@ module Type.Plate.Collect
 	, collectTErrors )
 where 
 import Util
-import Type.Plate.Trans
-import DDC.Type.Exp
+import DDC.Type
+import DDC.Type.Transform
 import DDC.Var
 import qualified Data.Set	as Set
 

@@ -14,7 +14,6 @@ import Source.Error
 import Desugar.Util
 import Desugar.Exp
 import Type.Util
-import Type.Plate.FreeVars
 import Shared.Exp
 import Shared.VarPrim
 import Util
@@ -25,6 +24,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var
+import DDC.Util.FreeVars
 import qualified Data.Set		as Set
 import qualified Util.Data.Map		as Map
 import qualified Shared.VarUtil		as Var
