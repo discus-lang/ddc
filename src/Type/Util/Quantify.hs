@@ -3,9 +3,9 @@ module Type.Util.Quantify
 	(quantifyVarsT)
 where
 import Type.Plate.FreeVars
-import Type.Util.Bits
 import Util.Graph.Deps
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import DDC.Var
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map

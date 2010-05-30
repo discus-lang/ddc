@@ -89,7 +89,7 @@ rewriteAppX env xx
 	= let	
 		-- Get the forall bound vars that are out the front of the type scheme
 		--	for the overloaded variable.
-		(bksDecl, _tBodyDecl)	= slurpVarTForall $ infoOverloadedType infoOverloaded
+		(bksDecl, _tBodyDecl)	= takeTForall $ infoOverloadedType infoOverloaded
 		Just vsDeclQuantVars	= sequence $ map (takeVarOfBind . fst) bksDecl
 
 		-- Get the type arguments from the application. 

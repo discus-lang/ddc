@@ -5,7 +5,6 @@ where
 import Desugar.Exp
 import Desugar.Pretty
 import Type.Util.Elaborate
-import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate.FreeVars
 import Type.Plate.Trans
@@ -70,7 +69,7 @@ elaborateT_fun tt
 	let free	= Set.filter (not . Var.isCtorName) $ freeVars tt'
 	
 	-- see what vars are already quantified in this scheme
-	let (bks, _)		= slurpVarTForall tt'
+	let (bks, _)		= takeTForall tt'
 	let Just quantVs	= liftM Set.fromList 
 				$ sequence
 				$ map (takeVarOfBind . fst) bks

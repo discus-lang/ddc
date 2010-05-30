@@ -44,7 +44,7 @@ pprTypeQuant vsQuant tt
 	 -> k % " => " % down t
 
 	TForall b k t	
-	 -> let	(bks, tBody) 	= slurpVarTForall tt
+	 -> let	(bks, tBody) 	= takeTForall tt
 		Just v		= takeVarOfBind b
 		vsQuant'	= Set.insert v vsQuant
 	    in	"forall " 
@@ -189,7 +189,7 @@ prettyTypeSplit	   tt
  = case tt of
 	TForall BNil _ _	-> prettyTypeSplit2 tt
  	TForall b k t
-	 -> let (bks, tBody)	= slurpVarTForall tt
+	 -> let (bks, tBody)	= takeTForall tt
 	    in	"forall " % punc " " (map (uncurry pprBindKind) bks) % "\n"
 	    		% ".  " % prettyTypeSplit2 tBody
 	 

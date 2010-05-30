@@ -28,11 +28,26 @@ module DDC.Type.Compounds
   	, makeTSum
 	, flattenTSum
 	
+	  -- * Witnesses
+	, makeTWitness
+	, takeTWitness	
+	
 	  -- * Closures
  	, makeTFree
 	, takeTFree
 	, makeTDanger
-	, takeTDanger)
+	, takeTDanger
+	
+	  -- * Fetters
+	, makeTFetters
+	, takeTFetters
+	, addFetters
+	
+	 -- * Quantification
+	, makeTForall_front
+	, makeTForall_back
+	, takeTForall
+	)
 where
 import DDC.Main.Error
 import DDC.Type.Exp
@@ -69,7 +84,7 @@ makeTApp ts = makeTApp' $ reverse ts
 makeTApp' xx
  = case xx of
 	[]		-> panic stage $ "makeTApp': empty list"
- 	x : []		-> x
+ 	x  : []		-> x
 	x1 : xs		-> TApp (makeTApp' xs) x1
 	
 	
@@ -118,7 +133,8 @@ takeTFun tt
 	= Nothing
 
 
--- | Flatten a function type into its argument and return type.
+-- | Flatten a function type into its arguments and return type.
+--   The last element of the list is the return type.	
 flattenTFuns :: Type -> [Type]
 flattenTFuns xx
  = case takeTFun xx of
@@ -149,9 +165,9 @@ takeTData tt
 
 
 -- Sums -------------------------------------------------------------------------------------------
--- | Make a new sum from a list of type, crushing the list and substituting
---	TPure\/TEmpty if there is nothing to sum. If there only one thing
---	after crushing then return that thing instead of a sum.
+-- | Make a new sum from a list of types.
+--	If the list contains further sums then the elements are unpacked into the result.
+--	If there is only one element in the list then return that element instead of making a sum.
 makeTSum :: Kind -> [Type] -> Type
 makeTSum k ts
  = case nub $ catMap flattenTSum ts of
@@ -159,12 +175,35 @@ makeTSum k ts
 	ts'	-> TSum k ts'
 
 
--- | Crush nested TSums into their components.
+-- | Flatten a sum into its components. If the sum contains further nested
+--   sums then these are also flattened.
 flattenTSum :: Type -> [Type]
 flattenTSum tt
  = case tt of
 	TSum _ ts		-> catMap flattenTSum ts
 	_			-> [tt]
+
+
+-- Witnesses --------------------------------------------------------------------------------------
+-- | Make a witness application.
+makeTWitness :: TyConWitness -> Kind -> [Type] -> Type
+makeTWitness con k ts
+	= makeTApp (TCon (TyConWitness con k) : ts)
+
+
+-- | Take a witness from its constructor application.
+--	Returns the witness constructor and its kind, along with the type args.
+takeTWitness :: Type -> Maybe (TyConWitness, Kind, [Type])
+takeTWitness tt
+	| TCon (TyConWitness v k) <- tt
+	= Just (v, k, [])
+
+	| TApp t1 t2		<- tt
+	, Just (v, k, ts)	<- takeTWitness t1
+	= Just (v, k, ts ++ [t2])
+	
+	| otherwise
+	= Nothing
 
 
 -- Closures ---------------------------------------------------------------------------------------
@@ -198,3 +237,72 @@ takeTDanger tt
 	 -> Just (t2, t3)
 	
 	_   -> Nothing
+
+
+-- Fetters -----------------------------------------------------------------------------------------	
+-- | Wrap a type with some fetters
+makeTFetters :: Type -> [Fetter] -> Type
+makeTFetters t []	= t
+makeTFetters t fs	= TFetters t fs
+
+
+-- | Take the fetters from a type
+takeTFetters :: Type -> [Fetter]
+takeTFetters (TFetters _ [])	= []
+takeTFetters (TFetters _ fs)	= fs
+takeTFetters _			= []
+
+
+-- | Add some fetters to a type.
+addFetters :: 	[Fetter] -> Type -> Type
+addFetters	fsMore	t
+ = case t of
+	TForall v k x
+	 -> TForall v k (addFetters fsMore x)
+
+	TFetters x fs
+	 -> case fs ++ fsMore of
+	 	[]	-> x
+		ff	-> TFetters x ff
+	 
+	_ -> case fsMore of
+		[]	-> t
+		ff	-> TFetters t ff
+
+-- Quantification ---------------------------------------------------------------------------------
+-- | Add some forall bindings to the front of this type.
+makeTForall_front :: [(Var, Kind)] -> Type -> Type
+makeTForall_front vks tt
+ = makeTForall_front' (reverse vks) tt
+ 
+makeTForall_front' vks tt
+ = case vks of
+	[]		-> tt
+	(v, k) : rest	-> makeTForall_front' rest (TForall (BVar v) k tt)
+
+
+-- | Add some forall bindings to this type, placing them after others already there.
+makeTForall_back :: [(Var, Kind)] -> Type -> Type
+makeTForall_back [] tt			= tt
+makeTForall_back vks@((v, k) : vksRest) tt
+ = case tt of
+	TForall b k' t
+	  -> TForall b k' (makeTForall_back vks t)
+	
+	_ -> TForall (BVar v) k (makeTForall_back vksRest tt)
+
+
+-- | Slurp outer forall bindings that bind vars from this type,
+--   not including contexts that have their `Bind` set to `BNil`.
+takeTForall :: Type -> ([(Bind, Kind)], Type)
+takeTForall tt
+ = case tt of
+ 	TForall b@BVar{} k t	
+	 -> let	(bksRest, tRest)	= takeTForall t
+	    in	( (b, k) : bksRest, tRest)
+
+ 	TForall b@BMore{} k t	
+	 -> let	(bksRest, tRest)	= takeTForall t
+	    in	( (b, k) : bksRest, tRest)
+	    
+	_ -> ([], tt)

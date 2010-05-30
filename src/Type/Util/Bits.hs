@@ -10,26 +10,10 @@ module Type.Util.Bits
 	-- crushing
 	, crushT
 
-	-- sums
-	
 	-- closure
 	, dropTFreesIn
 
-	-- forall
-	, makeTForall_front
-	, makeTForall_back
-	, slurpVarTForall
 	, makeKFuns
-
-	-- witnesses
-	, makeTWitness
-	, takeTWitness
-
-	-- fetters
-	, makeTFetters
-	, takeTFetters
-	, addFetters
-	, addFetters_front
 	
 	-- constraints
 	, toFetterFormT
@@ -58,7 +42,6 @@ import qualified Data.Set	as Set
 
 
 -- Arity ------------------------------------------------------------------------------------------
-
 -- | Take the arity of a type, ie how many arguments we can apply to it.
 --	If the type is not a value type this returns Nothing
 takeValueArityOfType :: Type -> Maybe Int
@@ -126,122 +109,13 @@ dropTFreesIn vs clo
 			 Nothing	-> True)
 	$ flattenTSum clo
 
--- Forall ------------------------------------------------------------------------------------------
--- | Add some forall bindings to the front of this type, 
---	new quantified vars go at front of list.
-makeTForall_front :: [(Var, Kind)] -> Type -> Type
-makeTForall_front vks tt
- = makeTForall_front' (reverse vks) tt
- 
-makeTForall_front' vks tt
-	| []		<- vks
-	= tt
-
-	| (v, k) : rest	<- vks
-	= makeTForall_front' rest (TForall (BVar v) k tt)
-
-
--- | Add some forall bindings to the front of this type,
---	new quantified vars go at back of list.
-makeTForall_back :: [(Var, Kind)] -> Type -> Type
-makeTForall_back vks tt
-	| []			<- vks
-	= tt
-	
-	| TForall b k t		<- tt
-	= TForall b k (makeTForall_back vks t)
-	
-	| (v, k) : vksRest	<- vks
-	= TForall (BVar v) k (makeTForall_back vksRest tt)
-
-
--- | Slurp forall bindings that bind vars from this type
-slurpVarTForall :: Type -> ([(Bind, Kind)], Type)
-slurpVarTForall tt
- = case tt of
- 	TForall b@BVar{} k t	
-	 -> let	(bksRest, tRest)	= slurpVarTForall t
-	    in	( (b, k) : bksRest, tRest)
-
- 	TForall b@BMore{} k t	
-	 -> let	(bksRest, tRest)	= slurpVarTForall t
-	    in	( (b, k) : bksRest, tRest)
-	    
-	_ -> ([], tt)
-
-
 -- | make a chain of KFuns
 makeKFuns :: [Kind] -> Kind -> Kind
 makeKFuns [] kk	= kk
 makeKFuns (k:ks) kk	= KFun k (makeKFuns ks kk)
 
 
--- Witnesses ---------------------------------------------------------------------------------------
--- | Make a witness application.
-makeTWitness :: TyConWitness -> Kind -> [Type] -> Type
-makeTWitness con k ts
-	= makeTApp (TCon (TyConWitness con k) : ts)
-
--- | Take a witness from its constructor application.
---	Returns the witness constructor and its kind, along with the type args.
-takeTWitness :: Type -> Maybe (TyConWitness, Kind, [Type])
-takeTWitness tt
-	| TCon (TyConWitness v k)	<- tt
-	= Just (v, k, [])
-
-	| TApp t1 t2		<- tt
-	, Just (v, k, ts)	<- takeTWitness t1
-	= Just (v, k, ts ++ [t2])
-	
-	| otherwise
-	= Nothing
-
-
--- Fetters -----------------------------------------------------------------------------------------	
--- | Wrap a type with some fetters
-makeTFetters :: Type -> [Fetter] -> Type
-makeTFetters t []	= t
-makeTFetters t fs	= TFetters t fs
-
--- | Take the fetters from a type
-takeTFetters :: Type -> [Fetter]
-takeTFetters (TFetters t [])	= []
-takeTFetters (TFetters t fs)	= fs
-takeTFetters t			= []
-
--- | Add some fetters to a type.
-addFetters :: 	[Fetter] -> Type -> Type
-addFetters	fsMore	t
- = case t of
-	TForall v k x
-	 -> TForall v k (addFetters fsMore x)
-
-	TFetters x fs
-	 -> case fs ++ fsMore of
-	 	[]	-> x
-		ff	-> TFetters x ff
-	 
-	_ -> case fsMore of
-		[]	-> t
-		ff	-> TFetters t ff
-
-addFetters_front :: [Fetter] -> Type -> Type
-addFetters_front fsMore t
- = case t of
-	TForall v k x
-	 -> TForall v k (addFetters_front fsMore x)
-
- 	TFetters x fs
-	 -> case fsMore ++ fs of
-	 	[]	-> x
-		ff	-> TFetters x ff
-		
-	_ -> case fsMore of
-		[]	-> t
-		ff	-> TFetters t ff
-
 -- TFetters vs TConstrain -------------------------------------------------------------------------
-
 -- | Convert top-level occurences of TConstrain to TFetters
 toFetterFormT :: Type -> Type
 toFetterFormT tt

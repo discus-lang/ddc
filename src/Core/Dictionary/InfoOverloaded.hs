@@ -10,7 +10,7 @@ import Type.Util.Bits
 import Type.Util.Kind
 import DDC.Main.Error
 import DDC.Main.Pretty
-import DDC.Type.Exp
+import DDC.Type
 import DDC.Var
 import Util
 import Data.Sequence		(Seq)

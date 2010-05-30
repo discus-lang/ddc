@@ -5,7 +5,6 @@ module Type.Util.Instantiate
 	, instantiateT_table )
 where
 import Type.Plate.Trans
-import Type.Util.Bits
 import Util
 import DDC.Var
 import DDC.Type.Exp
@@ -47,7 +46,7 @@ instantiateT_table instF tt
 	
  	TForall b k tBody
 	 -> do	-- split of the quantifier so we can instantiate all the vars at once
-	 	let (bks, tBody) = slurpVarTForall tt
+	 	let (bks, tBody) = takeTForall tt
 	 
 		-- build a table mapping each of the forall bound variables
 		--	to a new instance variable.

@@ -3,9 +3,7 @@
 module Core.Util.Trim
 	( trimClosureT
 	, trimClosureC )
-
 where	
-import Type.Util.Bits
 import Type.Util.Kind
 import Util
 import DDC.Main.Pretty

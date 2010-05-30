@@ -87,7 +87,7 @@ makeCtorType newVarN vData vs name fs
 			$ Var.sortForallVars 
 			$ Set.toList (Set.union vsFree (Set.fromList vs))
 
-	let tQuant	= makeTForall_back vks (addFetters_front fsField tCtor)
+	let tQuant	= makeTForall_back vks (addFetters fsField tCtor)
 
 	return 	$ {- trace (pprStrPlain
 			$ "makeCtorType\n"

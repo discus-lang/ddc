@@ -133,7 +133,7 @@ slurpP top@(PClassDecl sp vClass tsParam sigs)
 
 			-- add the enclosing class constraint
 			let tSig'	= makeTForall_front vksParam
-					$ addFetters_front [FConstraint vClass tsParam] tSig
+					$ addFetters [FConstraint vClass tsParam] tSig
 
 			return $ CDef 	(TSV $ SVSigClass sp vClass) vT tSig'
 

@@ -17,8 +17,7 @@ import Shared.VarPrim
 import Type.Plate.Collect
 import Type.Plate.FreeVars
 import Util
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var.NameSpace
 import DDC.Var
 import qualified Shared.VarUtil		as Var

@@ -45,7 +45,7 @@ toCoreT' table tt
 	-- Add :> constraints on type variables directly to the quantifer.
 	TForall b k tQuant
 	 -> let result
-	 		| (bks, TFetters tBody fs)	<- slurpVarTForall tt
+	 		| (bks, TFetters tBody fs)	<- takeTForall tt
 			= let	
 				(fsMore, fsRest) = partition isFMore fs
 				vtsMore		 = Map.fromList
@@ -67,7 +67,7 @@ toCoreT' table tt
 			   		(toCoreT' table' $ TFetters tBody fsRest)
 					(reverse bks')
 
-			| (bks, tBody)		<- slurpVarTForall tt
+			| (bks, tBody)		<- takeTForall tt
 			= foldl (\t (b, k) -> TForall (toCoreB b) (toCoreK k) t)
 				(toCoreT' table tBody)
 				(reverse bks)
