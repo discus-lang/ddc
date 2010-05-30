@@ -11,7 +11,7 @@ ddc: ERROR
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
 
      conflicts with,
-              constraint: Base.MutableT *284
+              constraint: Base.MutableT *285
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:7:21
 
