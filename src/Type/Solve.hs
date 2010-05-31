@@ -101,8 +101,8 @@ solveCs	(c:cs)
 --	 	trace	$ "### Def  " % vDef %> ("\n:: " % prettyTypeSplit t) % "\n\n"
 
 		-- Record the constraint in the solver state
-		modify $ \s -> s 
-			{ stateDefs	= Map.insert vDef t (stateDefs s) }
+		stateDefs `modifyRef` \defs -> 
+			Map.insert vDef t defs
 
 		solveNext cs
 
@@ -258,7 +258,7 @@ solveCs	(c:cs)
 	CInstLet src vUse vInst
 	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
 
-		defs		<- gets stateDefs
+		defs		<- getsRef stateDefs
 		genDone		<- gets stateGenDone
 
 		let getScheme
@@ -367,14 +367,14 @@ solveCInst
 
 solveCInst 	cs c@(CInst src vUse vInst)
  = do
-	path			<- gets statePath
+	path	<- getsRef statePath
 	trace	$ "\n"
 		% "### CInst " % vUse % " <- " % vInst					% "\n"
 --		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
 	sGenDone	<- gets stateGenDone
-	sDefs		<- gets stateDefs
+	sDefs		<- getsRef stateDefs
 	let bindInst 
 		-- hmm, we're outside all branches
 		| isNil path
@@ -410,7 +410,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	 (p:_)	-> graphInstantiatesAdd p bindInst
 
 	sGenDone	<- gets stateGenDone
-	sDefs		<- gets stateDefs
+	sDefs		<- getsRef stateDefs
 
 	solveCInst_simple cs c bindInst path sGenDone sDefs
 	

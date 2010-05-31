@@ -69,7 +69,7 @@ data SquidS
 	, stateVarGen		:: IORef (Map NameSpace VarId)
 
 	-- | Variable substitution.	
-	, stateVarSub		:: Map Var Var 
+	, stateVarSub		:: IORef (Map Var Var)
 
 	-- | The type graph
 	, stateGraph		:: IORef Graph
@@ -78,12 +78,12 @@ data SquidS
 	--	Most of these won't be used in any particular program and we don't want to pollute
 	--	the type graph with this information, nor have to extract them back from the graph
 	--	when it's time to export types to the Desugar->Core transform.
-	, stateDefs		:: Map Var Type
+	, stateDefs		:: IORef (Map Var Type)
 
 	-- | The current path we've taken though the branches.
 	--	This tells us what branch we're currently in, and by tracing
 	--	through the path we can work out how a particular variable was bound.
-	, statePath		:: [ CBind ]
+	, statePath		:: IORef [CBind]
 
 	-- | Which branches contain \/ instantiate other branches.
 	--	This is used to work out what bindings are part of recursive groups, 
@@ -150,10 +150,14 @@ squidSInit
 			$ Map.empty 
 			
 	refVarGen	<- liftIO $ newIORef varGen
+	refVarSub	<- liftIO $ newIORef Map.empty
 
 	graph		<- graphInit
    	refGraph	<- liftIO $ newIORef graph
    
+	refDefs		<- liftIO $ newIORef Map.empty
+	refPath		<- liftIO $ newIORef []
+
    	return	SquidS
 		{ stateTrace		= Nothing
 		, stateTraceIndent	= 0
@@ -161,10 +165,10 @@ squidSInit
 		, stateSigmaTable	= Map.empty
 		, stateVsBoundTopLevel	= Set.empty
 		, stateVarGen		= refVarGen
-		, stateVarSub		= Map.empty 
+		, stateVarSub		= refVarSub
 		, stateGraph		= refGraph
-		, stateDefs		= Map.empty
-		, statePath		= []
+		, stateDefs		= refDefs
+		, statePath		= refPath
 		, stateContains		= Map.empty
 		, stateInstantiates	= Map.empty
 		, stateGenSusp		= Set.empty
@@ -302,8 +306,8 @@ gotErrors
 --	This records the fact that we've entered a branch.
 pathEnter :: CBind -> SquidM ()
 pathEnter BNothing	= return ()
-pathEnter v
- = modify (\s -> s { statePath = v : statePath s })
+pathEnter v	
+	= statePath `modifyRef` \path -> v : path 
 
 
 -- | Pop a var off the path queue
@@ -311,20 +315,15 @@ pathEnter v
 pathLeave :: CBind -> SquidM ()
 pathLeave BNothing	= return ()
 pathLeave bind
- = do	path	<- gets statePath
-
- 	let (res :: SquidM ())
-		-- pop matching binders off the path
-		| b1 : bs		<- path
-		, bind == b1
-		= modify $ \s -> s { statePath = bs }
+  = statePath `modifyRef` \path ->
+	case path of
+	  	-- pop matching binders off the path
+		b1 : bs
+		 | bind == b1	-> bs
 	
 		-- nothing matched.. :(
-		| otherwise
-		= panic stage
-		 	$ "pathLeave: can't leave " % bind % "\n"
---			% "  path = " % path % "\n"
-	res
+		_ -> panic stage $ "pathLeave: can't leave " % bind % "\n"
+
 		
 -- | Add to the who instantiates who list
 graphInstantiatesAdd :: CBind -> CBind -> SquidM ()

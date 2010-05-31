@@ -48,7 +48,7 @@ extractType
 extractType final varT
  = do	-- trace	$ "*** Scheme.extractType " % varT % "\n\n"
 
- 	defs		<- gets stateDefs
+ 	defs		<- getsRef stateDefs
 	case Map.lookup varT defs of
 	 -- If this var is in the defs table then it was imported from an external
 	 --	interface (or is a generated constructor function), so we can just return it directly.

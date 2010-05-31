@@ -135,7 +135,7 @@ feedType src tt
 	 | Just (v1, t@(TVar kV (UVar v2)))	<- takeTFree tt
 	 , kV == kValue
 	 -> do	cid		<- allocClass src kClosure
-		defs		<- gets stateDefs
+		defs		<- getsRef stateDefs
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
 		 Just tDef

@@ -39,7 +39,7 @@ bindGroup' vBind
 
 	-- Grab what path we're on and follow it back up until we find the CBind that tells
 	--	us what other variables were let-bound at the same level as this one.
-	path		<- gets statePath
+	path		<- getsRef statePath
 --	trace	$ "    path          = " % path	% "\n"
 
 	let mbUseGroup	= find	(\b -> case b of

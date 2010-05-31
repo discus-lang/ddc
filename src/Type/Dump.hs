@@ -46,9 +46,7 @@ dumpInst
 -- | dump variable substitution
 dumpSub :: SquidM String
 dumpSub
- = do
-	-- VarSub
-	mVarSub		<- gets stateVarSub
+ = do	mVarSub		<- getsRef stateVarSub
 		
 	-----
 	return 	$ pprStrPlain

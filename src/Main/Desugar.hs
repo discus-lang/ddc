@@ -351,11 +351,12 @@ desugarSolveConstraints2
 		$ map pprStrPlain
 		$ Map.toList vsRegionClasses
 
+	varSub	<- readIORef (T.stateVarSub state2)
 	dumpS	DumpTypeSolve	"type-solve--varSub"
 		$ catInt "\n"
 		$ map pprStrPlain
-		$ Map.toList (T.stateVarSub state2)
-		
+		$ Map.toList varSub
+
 	dumpS	DumpTypeSolve	"type-solve--projResolve"
 		$ catInt "\n"
 		$ map pprStrPlain
