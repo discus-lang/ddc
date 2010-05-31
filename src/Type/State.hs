@@ -45,9 +45,9 @@ type SquidM	= StateT SquidS IO
 data SquidS 
 	= SquidS
 	{ 
+	-- Constantish stuff -----------------------------
 	-- | Where to write the trace of what the solver's doing.
 	  stateTrace		:: Maybe Handle			
-	, stateTraceIndent	:: Int
 
 	-- | Errors encountered whilst solving the constraints.
 	, stateErrors		:: [Error]
@@ -58,6 +58,10 @@ data SquidS
 
 	-- | The args from the command line
 	, stateArgs		:: Set Arg	
+
+        -- Mutable stuff ----------------------------------
+	-- | Current indent level for the trace
+	, stateTraceIndent	:: IORef Int
 
 	-- | Map of value variables to type variables.
 	, stateSigmaTable	:: IORef (Map Var Var)
@@ -149,6 +153,7 @@ squidSInit
 			$ Map.insert NameClosure (VarId cT 0)
 			$ Map.empty 
 
+	refTraceIndent	<- liftIO $ newIORef 0
 	refSigmaTable	<- liftIO $ newIORef Map.empty
 	refVsBoundTop	<- liftIO $ newIORef Set.empty
 	refVarGen	<- liftIO $ newIORef varGen
@@ -172,10 +177,10 @@ squidSInit
 
    	return	SquidS
 		{ stateTrace		= Nothing
-		, stateTraceIndent	= 0
 		, stateErrors		= []
 		, stateStop		= False 
 		, stateArgs		= Set.empty
+		, stateTraceIndent	= refTraceIndent
 		, stateSigmaTable	= refSigmaTable
 		, stateVsBoundTopLevel	= refVsBoundTop
 		, stateVarGen		= refVarGen
@@ -217,7 +222,7 @@ modifyRef getRef fn
 traceM :: PrettyM PMode -> SquidM ()
 traceM p
  = do	mHandle	<- gets stateTrace
-	i	<- gets stateTraceIndent
+	i	<- getsRef stateTraceIndent
 	args	<- gets stateArgs
  	case mHandle of
 	 Nothing	-> return ()
@@ -237,13 +242,11 @@ traceI fun
 	return x
 
 traceIE :: SquidM ()
-traceIE
- = modify (\s -> s { stateTraceIndent = stateTraceIndent s + 4 })
+traceIE	= stateTraceIndent `modifyRef` \i -> i + 4
  
 traceIL :: SquidM ()
-traceIL
- = modify (\s -> s { stateTraceIndent = stateTraceIndent s - 4 })
- 
+traceIL	= stateTraceIndent `modifyRef` \i -> i - 4
+
  
 -- | Instantiate a variable.
 instVar :: Var -> SquidM (Maybe Var)
