@@ -68,9 +68,8 @@ solveGeneralise_group
 	
 solveGeneralise_group src vsGen@(vGen : vsGenRest)
  = do
-	genSusp		<- gets stateGenSusp
+	genSusp		<- getsRef stateGenSusp
 	trace	$ "    genSusp    = " % genSusp	% "\n"
-
 
 	-- We first need to work out the types for all the free variables in the bind group.
 	--	This can't be done statically before type inference starts because we wont know what
@@ -83,7 +82,7 @@ solveGeneralise_group src vsGen@(vGen : vsGenRest)
 	
 	-- First use the contains map to work out all the constraint branches contained
 	--	within the ones that define the binding froup.
-	gContains	<- gets stateContains
+	gContains	<- getsRef stateContains
 
 	-- start the search at the outermost branch for each of the bindings
 	let bsRoots	= map Set.singleton
@@ -100,7 +99,7 @@ solveGeneralise_group src vsGen@(vGen : vsGenRest)
 	let vsBound	= catMap takeCBindVs bsContained
 	
 	-- Now collect up all the variables that were instantiated by the bind group
-	gInstantiates	<- gets stateInstantiates
+	gInstantiates	<- getsRef stateInstantiates
 	let bsInst	= Set.toList
 			$ Set.unions
 			$ map (\b -> fromMaybe Set.empty $ Map.lookup b gInstantiates)
@@ -153,10 +152,9 @@ solveGeneralise_single src cidsFixed vGen
 	addSchemeToGraph src vGen tScheme
 
 	-- Record that this type has been generalised, and delete the suspended generalisation
-	modify (\s -> s 
-		{ stateGenDone	= Set.insert vGen (stateGenDone s) 
-		, stateGenSusp	= Set.delete vGen (stateGenSusp s) })
-
+	stateGenDone `modifyRef` Set.insert vGen
+	stateGenSusp `modifyRef` Set.delete vGen
+	
 	return tScheme
 
 

@@ -16,7 +16,7 @@ import qualified Data.Map	as Map
 --	that is has the appropriate type, () -> ()
 checkMain :: SquidM ()
 checkMain
- = do	sigmaTable	<- gets stateSigmaTable
+ = do	sigmaTable	<- getsRef stateSigmaTable
  
 	-- try and find an entry for the main variable in the sigma table
 	--	this will tell us if we've seen the binding for it or not

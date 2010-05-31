@@ -4,6 +4,7 @@ module Type.State
 	, SquidS (..)
 	, squidSInit
 	, getsRef
+	, writesRef
 	, modifyRef
 	, module Type.Base
 	, traceM, traceI, traceIE, traceIL
@@ -59,11 +60,11 @@ data SquidS
 	, stateArgs		:: Set Arg	
 
 	-- | Map of value variables to type variables.
-	, stateSigmaTable	:: Map Var Var
+	, stateSigmaTable	:: IORef (Map Var Var)
 
 	-- | Type vars of value vars bound at top level.
 	--	Free regions in the types of top level bindings default to be constant.
-	, stateVsBoundTopLevel	:: Set Var
+	, stateVsBoundTopLevel	:: IORef (Set Var)
 	
 	-- | New variable generator.
 	, stateVarGen		:: IORef (Map NameSpace VarId)
@@ -89,26 +90,25 @@ data SquidS
 	--	This is used to work out what bindings are part of recursive groups, 
 	--	and to determine the type environment for a particular branch when it's 
 	--	time to generalise it.
-	, stateContains		:: Map CBind	(Set CBind)
-	, stateInstantiates	:: Map CBind 	(Set CBind)
+	, stateContains		:: IORef (Map CBind (Set CBind))
+	, stateInstantiates	:: IORef (Map CBind (Set CBind))
 
 	-- | Vars of types which are waiting to be generalised.
 	--	We've seen a CGen telling us that all the constraints for the type are in 
 	--	the graph, but we haven't done the generalisation yet. If this binding is
 	--	part of a recursive group then it won't be safe to generalise it until we're
 	--	out of that group.
-	, stateGenSusp		:: Set Var
+	, stateGenSusp		:: IORef (Set Var)
 
 	-- | Vars of types which have already been generalised 
 	--	When we want to instantiate the type for one of the vars in this set then
 	--	we can just extract it from the graph, nothing more to do.
-	, stateGenDone		:: Set Var
+	, stateGenDone		:: IORef (Set Var)
 
 	-- | Records how each scheme was instantiated.
 	--	We need this to reconstruct the type applications during conversion to
 	--	the Core IR.
-	--	
-	, stateInst		:: Map Var (InstanceInfo Var)			
+	, stateInst		:: IORef (Map Var (InstanceInfo Var))
 
 	-- | Records what vars have been quantified. (with optional :> bounds)
 	--	After the solver is finished and all generalisations have been performed,
@@ -148,7 +148,9 @@ squidSInit
 			$ Map.insert NameEffect  (VarId eT 0)
 			$ Map.insert NameClosure (VarId cT 0)
 			$ Map.empty 
-			
+
+	refSigmaTable	<- liftIO $ newIORef Map.empty
+	refVsBoundTop	<- liftIO $ newIORef Set.empty
 	refVarGen	<- liftIO $ newIORef varGen
 	refVarSub	<- liftIO $ newIORef Map.empty
 
@@ -157,23 +159,28 @@ squidSInit
    
 	refDefs		<- liftIO $ newIORef Map.empty
 	refPath		<- liftIO $ newIORef []
+	refContains	<- liftIO $ newIORef Map.empty
+	refInstantiates	<- liftIO $ newIORef Map.empty
+	refGenSusp	<- liftIO $ newIORef Set.empty
+	refGenDone	<- liftIO $ newIORef Set.empty
+	refGenInst	<- liftIO $ newIORef Map.empty
 
    	return	SquidS
 		{ stateTrace		= Nothing
 		, stateTraceIndent	= 0
 		, stateArgs		= Set.empty
-		, stateSigmaTable	= Map.empty
-		, stateVsBoundTopLevel	= Set.empty
+		, stateSigmaTable	= refSigmaTable
+		, stateVsBoundTopLevel	= refVsBoundTop
 		, stateVarGen		= refVarGen
 		, stateVarSub		= refVarSub
 		, stateGraph		= refGraph
 		, stateDefs		= refDefs
 		, statePath		= refPath
-		, stateContains		= Map.empty
-		, stateInstantiates	= Map.empty
-		, stateGenSusp		= Set.empty
-		, stateGenDone		= Set.empty
-		, stateInst		= Map.empty
+		, stateContains		= refContains
+		, stateInstantiates	= refInstantiates
+		, stateGenSusp		= refGenSusp
+		, stateGenDone		= refGenDone
+		, stateInst		= refGenInst
 		, stateQuantifiedVarsKM	= Map.empty
 		, stateQuantifiedVars	= Set.empty
 		, stateProject		= Map.empty
@@ -187,6 +194,12 @@ getsRef :: (SquidS -> IORef a) -> SquidM a
 getsRef getRef
  = do	ref	<- gets getRef
 	liftIO	$ readIORef ref
+
+writesRef :: (SquidS -> IORef a) -> a -> SquidM ()
+{-# INLINE writesRef #-}
+writesRef getRef x
+ = do	ref	<- gets getRef
+	liftIO	$ writeIORef ref x
 
 modifyRef :: (SquidS -> IORef a) -> (a -> a) -> SquidM ()
 {-# INLINE modifyRef #-}
@@ -285,7 +298,7 @@ newVarN	space
 lookupSigmaVar :: Var -> SquidM (Maybe Var)
 lookupSigmaVar	v
  	= liftM (Map.lookup v)
-	$ gets stateSigmaTable
+	$ getsRef stateSigmaTable
 	
 	
 -- | Add some errors to the monad.
@@ -328,11 +341,10 @@ pathLeave bind
 -- | Add to the who instantiates who list
 graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
 graphInstantiatesAdd    vBranch vInst
- = modify (\s -> s {
- 	stateInstantiates
-		= Map.adjustWithDefault 
-			(Set.insert vInst) 
-			Set.empty
-			vBranch
-			(stateInstantiates s) })
+ = stateInstantiates `modifyRef` \instantiates -> 
+	Map.adjustWithDefault 
+		(Set.insert vInst) 
+		Set.empty
+		vBranch
+		instantiates
 

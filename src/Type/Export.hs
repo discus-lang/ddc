@@ -136,9 +136,8 @@ exportMaybeType mt
 -- | Build a map of all the instantiations
 exportInst :: SquidM (Map Var (InstanceInfo Type))
 exportInst 
- = do	inst	<- gets stateInst
-	vts	<- mapM exportInstInfo
-		$  Map.toList inst
+ = do	inst	<- getsRef stateInst
+	vts	<- mapM exportInstInfo $ Map.toList inst
 			
 	return	$ Map.fromList vts
 

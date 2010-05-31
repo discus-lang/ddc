@@ -29,6 +29,7 @@ import DDC.Var
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
 import System.IO
+import Data.IORef
 
 -----
 debug	= True
@@ -50,10 +51,12 @@ squidSolve args ctree sigmaTable vsBoundTopLevel mTrace blessMain
  = do
 	-- initialise the solver state
 	stateInit	<- squidSInit
+
+	writeIORef (stateSigmaTable stateInit) sigmaTable
+	writeIORef (stateVsBoundTopLevel stateInit) vsBoundTopLevel
+
  	let state	= stateInit
 			{ stateTrace		= mTrace
-			, stateSigmaTable	= sigmaTable 
-			, stateVsBoundTopLevel	= vsBoundTopLevel
 			, stateArgs		= Set.fromList args }
 		
 	-- run the main solver.
@@ -70,8 +73,7 @@ solveM	args ctree blessMain
  = do
 	-- Slurp out the branch containment tree
 	--	we use this to help determine which bindings are recursive.
-	let treeContains	= Map.unions $ map slurpContains ctree
-	modify (\s -> s { stateContains = treeContains })
+	stateContains `writesRef` (Map.unions $ map slurpContains ctree)
 
 	-- Feed all the constraints into the graph, generalising types when needed.
 	solveCs ctree
@@ -183,8 +185,7 @@ solveCs	(c:cs)
 	--	the fact that the var is safe to generalise in the GenSusp set.
 	CGen src t1@(TVar k (UVar v1))
 	 -> do	trace	$ "### CGen  " % prettyTS t1 %  "\n"
-	 	modify $ \s -> s { 
-			stateGenSusp = Set.insert v1 (stateGenSusp s) }
+		stateGenSusp `modifyRef` Set.insert v1
 		solveNext cs
 
 	-- Instantiate the type of some variable.
@@ -244,10 +245,8 @@ solveCs	(c:cs)
 	CInstLambda src vUse vInst
 	 -> do	trace	$ "### CInstLambda " % vUse % " " % vInst % "\n"
 
-		modify $ \s -> s {
-			stateInst = Map.insert vUse
-					(InstanceLambda vUse vInst Nothing)
-					(stateInst s) }
+		stateInst `modifyRef` 
+			Map.insert vUse	(InstanceLambda vUse vInst Nothing)
 
 		solveNext
 			$ [CEq src (TVar kValue (UVar vUse)) (TVar kValue (UVar vInst))]
@@ -259,7 +258,7 @@ solveCs	(c:cs)
 	 -> do	trace	$ "### CInstLet " % vUse % " " % vInst	% "\n"
 
 		defs		<- getsRef stateDefs
-		genDone		<- gets stateGenDone
+		genDone		<- getsRef stateGenDone
 
 		let getScheme
 			-- The scheme is in our table of external definitions
@@ -296,10 +295,8 @@ solveCs	(c:cs)
 			(tInst, tInstVs)<- instantiateT_table instVar tScheme
 
 			-- Add information about how the scheme was instantiated
-			modify $ \s -> s {
-				stateInst = Map.insert vUse
-						(InstanceLet vInst vInst tInstVs tScheme)
-						(stateInst s) }
+			stateInst `modifyRef`
+				Map.insert vUse (InstanceLet vInst vInst tInstVs tScheme)
 
 			-- The type will be added via a new constraint
 			solveNext
@@ -315,10 +312,8 @@ solveCs	(c:cs)
 	CInstLetRec src vUse vInst
 	 -> do	trace	$ "### CInstLetRec " % vUse % " " % vInst % "\n"
 
-		modify $ \s -> s {
-			stateInst = Map.insert vUse 
-					(InstanceLetRec vUse vInst Nothing)
-					(stateInst s) }
+		stateInst `modifyRef` 
+			Map.insert vUse (InstanceLetRec vUse vInst Nothing)
 
 		solveNext
 			$ [CEq src (TVar kValue $ UVar vUse) (TVar kValue $ UVar vInst)]
@@ -373,7 +368,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 --		% "    path          = " % path 					% "\n"
 
 	-- Look at our current path to see what branch we want to instantiate was defined.
-	sGenDone	<- gets stateGenDone
+	sGenDone	<- getsRef stateGenDone
 	sDefs		<- getsRef stateDefs
 	let bindInst 
 		-- hmm, we're outside all branches
@@ -409,7 +404,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	 []	-> return ()
 	 (p:_)	-> graphInstantiatesAdd p bindInst
 
-	sGenDone	<- gets stateGenDone
+	sGenDone	<- getsRef stateGenDone
 	sDefs		<- getsRef stateDefs
 
 	solveCInst_simple cs c bindInst path sGenDone sDefs
@@ -455,7 +450,7 @@ solveCInst_let
 	c@(CInst src vUse vInst)
 	bindInst path
  = do
-	genSusp		<- gets stateGenSusp
+	genSusp		<- getsRef stateGenSusp
 	trace	$ "    genSusp       = " % genSusp	% "\n\n"
 
 	-- Work out the bindings in this ones group

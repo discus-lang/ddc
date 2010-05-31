@@ -120,7 +120,7 @@ generaliseType' varT tCore envCids
 	-- If we're generalising the type of a top level binding, 
 	--	and if any of its free regions are unconstraind,
 	--	then make them constant.
-	vsBoundTop	<- gets stateVsBoundTopLevel
+	vsBoundTop	<- getsRef stateVsBoundTopLevel
 	let isTopLevel	= Set.member varT vsBoundTop
 	let fsMskLocal	= takeTFetters tMskLocal
 	let rsMskLocal	= Set.toList $ collectTClasses tMskLocal

@@ -36,7 +36,7 @@ dumpGraph' acc (c:cs)
 dumpInst :: 	SquidM String
 dumpInst
  = do 	-- Instantiations
-	mInst		<- gets stateInst
+	mInst		<- getsRef stateInst
 	return	$ pprStrPlain
 		$ "===== Instantiations ========================================\n"
 		% prettyVMap mInst

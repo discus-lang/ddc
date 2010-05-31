@@ -32,7 +32,7 @@ solveFinalise solveCs blessMain
 	--	but not instantiated here (common for libraries) then we'll need to perform the 
 	--	generalisation now so we can export its type scheme.
 	--
-	sGenSusp		<- gets stateGenSusp
+	sGenSusp		<- getsRef stateGenSusp
 	let sGenLeftover 	= Set.toList sGenSusp
 
 	trace	$ "\n== Finalise ====================================================================\n"

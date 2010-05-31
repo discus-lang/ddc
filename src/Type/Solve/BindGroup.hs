@@ -61,14 +61,14 @@ bindGroup' vBind
 
 	-- Lookup the branch containment graph and prune it down to just those branches
 	--	reachable from the let group containing the binding to generalise.
-	gContains_	<- gets stateContains
+	gContains_	<- getsRef stateContains
 	let gContains	= graphPrune gContains_ bUseGroup
 	let sContains	= Set.unions (Map.keysSet gContains : Map.elems gContains)
 
 	-- Lookup the branch instantiation graph and prune it down to just those members
 	--	that are present in the containment graph. 
 	--	Also restrict it to just instantiations of let bindings. 
-	gInst1		<- gets stateInstantiates
+	gInst1		<- getsRef stateInstantiates
 	let gInst2	= Map.filterWithKey (\k a -> Set.member k sContains) gInst1
 	let gInst	= Map.map (Set.filter (\b -> b =@= BLet{})) gInst2
 
