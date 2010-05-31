@@ -112,7 +112,7 @@ traceType cid'
 	-- The final type
 	Just t		<- lookupTypeOfCid cid
 	let Just k	= kindOfType t
-	let tt		= TConstrain 
+	let tt		= makeTConstrain 
 				(TVar k $ UClass cid) 
 				(Constraints crsEq crsMore' $ nub $ toList crsOther)
 						

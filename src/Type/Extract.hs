@@ -91,7 +91,13 @@ extractType_fromClass final varT cid
  	tTrace	<- {-# SCC "extract/trace" #-} traceTypeAsSquid cid
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 
-	-- Pack the type into standard form.
+	case tTrace of
+	 TVar{}	-> extractType_final final varT cid tTrace
+	 _	-> extractType_pack  final varT cid tTrace
+	
+	
+extractType_pack final varT cid tTrace
+ = do	-- Pack the type into standard form.
 	--	If we hit any loops through the value type portion of the
 	--	graph then mark then with TError constructors.
 	trace	$ ppr " -- packing into standard form\n"	

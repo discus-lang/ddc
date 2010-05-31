@@ -42,6 +42,9 @@ module DDC.Type.Compounds
 	, takeTFetters
 	, addFetters
 	
+	  -- * Constraints
+	, makeTConstrain
+	
 	 -- * Quantification
 	, makeTForall_front
 	, makeTForall_back
@@ -54,6 +57,7 @@ import DDC.Type.Builtin
 import DDC.Var
 import Data.List
 import Util
+import qualified Data.Map	as Map
 
 stage	= "DDC.Type.Compounds"
 
@@ -267,6 +271,16 @@ addFetters	fsMore	t
 	_ -> case fsMore of
 		[]	-> t
 		ff	-> TFetters t ff
+
+-- Constraints ------------------------------------------------------------------------------------
+-- | If the given constraints are non empty then add a TConstrain to the type, 
+--   otherwise return the original type.
+makeTConstrain :: Type -> Constraints -> Type
+makeTConstrain tt crs
+ = if not (Map.null $ crsEq crs) || not (Map.null $ crsMore crs) || not (null $ crsOther crs)
+    	then TConstrain tt crs
+	else tt
+
 
 -- Quantification ---------------------------------------------------------------------------------
 -- | Add some forall bindings to the front of this type.
