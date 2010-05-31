@@ -179,11 +179,13 @@ squidSInit
 		, stateStop		= False }
 
 getsRef :: (SquidS -> IORef a) -> SquidM a
+{-# INLINE getsRef #-}
 getsRef getRef
  = do	ref	<- gets getRef
 	liftIO	$ readIORef ref
 
 modifyRef :: (SquidS -> IORef a) -> (a -> a) -> SquidM ()
+{-# INLINE modifyRef #-}
 modifyRef getRef fn
  = do	ref	<- gets getRef
 	liftIO	$ modifyIORef ref fn
