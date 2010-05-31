@@ -17,7 +17,7 @@ import qualified Data.Set	as Set
 dumpGraph ::	SquidM (PrettyM PMode)
 dumpGraph
  = do
-	school		<- gets stateGraph
+	school		<- getsRef stateGraph
 	classes		<- liftIO (getElems $ graphClass school)
 	classesU	<- mapM forwardCids classes
 	

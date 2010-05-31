@@ -70,7 +70,7 @@ solveFinalise solveCs blessMain
 		checkSchemes
 
 	-- Report how large the graph was
-	graph		<- gets stateGraph
+	graph		<- getsRef stateGraph
 	trace	$ "=== Final graph size: " % graphClassIdGen graph % "\n"
 
 	-- Report whether there were any errors

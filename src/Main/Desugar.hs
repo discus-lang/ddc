@@ -13,6 +13,7 @@ import DDC.Main.Arg
 import DDC.Main.Error
 import DDC.Base.SourcePos
 import DDC.Var
+import Data.IORef
 import System.IO			(hFlush)
 import Util				hiding (null, elem)
 import qualified DDC.Solve.InstanceInfo	as T
@@ -319,9 +320,10 @@ desugarSolveConstraints2
 
 	-- report some state
 	when (elem Verbose ?args)
-	 $ do	putStr 	$ pprStrPlain
+	 $ do	graph	<- readIORef (T.stateGraph state)
+		putStr 	$ pprStrPlain
 	 		$ "    - graph size: " 
-	 		% T.graphClassIdGen (T.stateGraph state2) % "\n"
+	 		% T.graphClassIdGen graph % "\n"
 
 	when (elem Verbose ?args)
 	 $ putStr "  * Type: Dumping final state\n"

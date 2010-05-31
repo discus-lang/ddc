@@ -46,14 +46,14 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = do	trace	$ "*** Scheme.extractType " % varT % "\n\n"
+ = do	-- trace	$ "*** Scheme.extractType " % varT % "\n\n"
 
  	defs		<- gets stateDefs
 	case Map.lookup varT defs of
 	 -- If this var is in the defs table then it was imported from an external
 	 --	interface (or is a generated constructor function), so we can just return it directly.
 	 Just tt
-	  -> do	trace 	$ "    def: " %> prettyTS tt % "\n"
+	  -> do	-- trace 	$ "    def: " %> prettyTS tt % "\n"
 		return $ Just tt
 	
 	 Nothing

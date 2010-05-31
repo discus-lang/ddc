@@ -450,7 +450,7 @@ addCrsOther crs
 -- | Run a trace computation as a squid computation.
 runTraceAsSquid :: TraceM a -> S.SquidM a
 runTraceAsSquid comp
- = do	graph		<- gets S.stateGraph
+ = do	graph		<- S.getsRef S.stateGraph
 	let classes	=  S.graphClass graph
 
 	let state	= TraceS

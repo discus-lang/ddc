@@ -3,6 +3,8 @@ module Type.State
 	( SquidM
 	, SquidS (..)
 	, squidSInit
+	, getsRef
+	, modifyRef
 	, module Type.Base
 	, traceM, traceI, traceIE, traceIL
 	, instVar
@@ -31,6 +33,7 @@ import qualified Shared.Unique	as U
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
+import Data.IORef
 
 -----
 stage	= "Type.State"
@@ -63,13 +66,13 @@ data SquidS
 	, stateVsBoundTopLevel	:: Set Var
 	
 	-- | New variable generator.
-	, stateVarGen		:: Map NameSpace VarId
+	, stateVarGen		:: IORef (Map NameSpace VarId)
 
 	-- | Variable substitution.	
-	, stateVarSub		:: Map Var	 Var 
+	, stateVarSub		:: Map Var Var 
 
 	-- | The type graph
-	, stateGraph		:: Graph
+	, stateGraph		:: IORef Graph
 
 	-- | Type definitons from CDef constraints.
 	--	Most of these won't be used in any particular program and we don't want to pollute
@@ -140,7 +143,16 @@ squidSInit
 	let Just eT	= lookup NameEffect	U.typeSolve
 	let Just cT 	= lookup NameClosure	U.typeSolve
    
-   	graph		<- graphInit
+	let varGen	= Map.insert NameType    (VarId tT 0)
+			$ Map.insert NameRegion  (VarId rT 0)
+			$ Map.insert NameEffect  (VarId eT 0)
+			$ Map.insert NameClosure (VarId cT 0)
+			$ Map.empty 
+			
+	refVarGen	<- liftIO $ newIORef varGen
+
+	graph		<- graphInit
+   	refGraph	<- liftIO $ newIORef graph
    
    	return	SquidS
 		{ stateTrace		= Nothing
@@ -148,15 +160,9 @@ squidSInit
 		, stateArgs		= Set.empty
 		, stateSigmaTable	= Map.empty
 		, stateVsBoundTopLevel	= Set.empty
-
-		, stateVarGen		= Map.insert NameType    (VarId tT 0)
-					$ Map.insert NameRegion  (VarId rT 0)
-					$ Map.insert NameEffect  (VarId eT 0)
-					$ Map.insert NameClosure (VarId cT 0)
-					$ Map.empty 
-
+		, stateVarGen		= refVarGen
 		, stateVarSub		= Map.empty 
-		, stateGraph		= graph
+		, stateGraph		= refGraph
 		, stateDefs		= Map.empty
 		, statePath		= []
 		, stateContains		= Map.empty
@@ -171,6 +177,16 @@ squidSInit
 		, stateClassInst	= Map.empty
 		, stateErrors		= []
 		, stateStop		= False }
+
+getsRef :: (SquidS -> IORef a) -> SquidM a
+getsRef getRef
+ = do	ref	<- gets getRef
+	liftIO	$ readIORef ref
+
+modifyRef :: (SquidS -> IORef a) -> (a -> a) -> SquidM ()
+modifyRef getRef fn
+ = do	ref	<- gets getRef
+	liftIO	$ modifyIORef ref fn
 
 
 -- | Add some stuff to the inferencer trace.
@@ -211,7 +227,8 @@ instVar var
  = do	let space	= varNameSpace var
 
 	-- lookup the generator for this namespace
-	mVarId		<- liftM (Map.lookup space) $ gets stateVarGen
+	varGen		<- getsRef stateVarGen
+	let mVarId	= Map.lookup space varGen
 	instVar' var space mVarId
 
 instVar' var space mVarId
@@ -225,7 +242,9 @@ instVar' var space mVarId
 	= do
 		-- increment the generator and write it back into the table.
 		let vid'	= incVarId vid
-		modify $ \s -> s { stateVarGen = Map.insert space vid' (stateVarGen s) }
+
+		stateVarGen `modifyRef`
+			\varGen -> Map.insert space vid' varGen
 
 		-- the new variable remembers what it's an instance of..
 		let name	= pprStrPlain vid
@@ -234,17 +253,19 @@ instVar' var space mVarId
 			 	, varId		= vid }
 
 		return $ Just var'
-
+	
 
 -- | Make a new variable in this namespace
 newVarN :: NameSpace ->	SquidM Var
 newVarN	space	
  = do
  	Just vid	<- liftM (Map.lookup space)
-			$  gets stateVarGen
+			$  getsRef stateVarGen
 	
 	let vid'	= incVarId vid
-	modify $ \s -> s { stateVarGen = Map.insert space vid' (stateVarGen s) }
+
+	stateVarGen `modifyRef` \varGen -> 
+		Map.insert space vid' varGen
 	
 	let name	= pprStrPlain vid
 	let var'	= (varWithName name)

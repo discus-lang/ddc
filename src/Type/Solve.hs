@@ -161,15 +161,6 @@ solveCs	(c:cs)
 	 	feedConstraint c
 		solveNext cs
 
-	-- A map saying what fields a data constuctor has.
-	--	These are stashed in the solver state.
-{-	CDataFields src v vs fs
-	 -> do	trace	$ "### DataFields " % v % " " % vs % "\n"
-		modify $ \s -> s { 
-			stateDataFields = Map.insert v (vs, fs) (stateDataFields s) }
-
-		solveNext cs
--}
 	-- A projection constraints
 	CProject src j vInst tDict tBind
 	 -> do	trace	$ "### CProject " % j % " " % vInst % " " % tDict % " " % tBind	% "\n"
@@ -180,7 +171,7 @@ solveCs	(c:cs)
 	--	These are stashed in the solver state.
 	CDictProject src t vvs
 	 | Just (v, _, ts)	<- takeTData t
-	 -> do	trace	$ "### CDictProj " % t % "\n"
+	 -> do	-- trace $ "### CDictProj " % t % "\n"
 	 	modify $ \s -> s { 
 			stateProject = Map.insert v (t, vvs) (stateProject s) }
 		solveNext cs
@@ -210,7 +201,7 @@ solveCs	(c:cs)
 	--	These are stashed in the solver state. We'll use them later to 
 	--	discharge type class constraints in generalised type schemes.
 	CClassInst src v ts
-	 -> do	trace	$ "### CClassInst " % v % " " % ts % "\n"
+	 -> do	-- trace	$ "### CClassInst " % v % " " % ts % "\n"
 	 	modify $ \s -> s { 
 			stateClassInst = Map.alter
 				(\mis -> case mis of

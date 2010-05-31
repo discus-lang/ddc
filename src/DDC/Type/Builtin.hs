@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
 -- | Short names for built-in types and kinds.
 module DDC.Type.Builtin 
 where

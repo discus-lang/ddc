@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
 -- | Construction and destruction of common compound things.
 --	Also known as 'smart' constructors and destructors.
 module DDC.Type.Compounds

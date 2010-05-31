@@ -69,7 +69,7 @@ expandGraph
 	-> SquidM ()
 
 expandGraph minFree
- = do	graph			<- gets stateGraph
+ = do	graph			<- getsRef stateGraph
  	ClassId curMax		<- liftM snd $ liftIO $ getBounds (graphClass graph)
 	let curIx		= graphClassIdGen graph
 	
@@ -83,10 +83,9 @@ expandGraph minFree
 					(newListArray (ClassId 0, ClassId newMax)
 					(elems ++ replicate curMax ClassUnallocated))
 
-		let graph'	= graph
-				{ graphClass	= newClass }
+		stateGraph `modifyRef` \graph -> 
+			graph { graphClass = newClass }
 
-		modify (\s -> s { stateGraph = graph' })
 		return ()
  	
 
@@ -100,17 +99,16 @@ allocClass
 allocClass src kind
  = do	expandGraph	1
 
-	graph		<- gets stateGraph
+	graph		<- getsRef stateGraph
 	let classIdGen	=  graphClassIdGen graph
  	let cid		= ClassId classIdGen
 
 	liftIO 	$ writeArray (graphClass graph) cid
 		$ classInit cid kind src
 
-	let graph'	= graph
-			{ graphClassIdGen	= classIdGen + 1}
+	stateGraph `modifyRef` \graph2 -> 
+	 	graph2 { graphClassIdGen	= classIdGen + 1}
 
-	modify (\s -> s { stateGraph		= graph' })
 	return cid
 
 
@@ -199,7 +197,7 @@ addToClass
 	-> SquidM ()
 
 addToClass cid src kind node
- = do	graph		<- gets stateGraph
+ = do	graph		<- getsRef stateGraph
 	addToClass2 cid src kind node graph
 
 addToClass2 cid' src kind node graph
@@ -224,11 +222,10 @@ addToClass2 cid' src kind node graph
 linkVar cid tt
  = case tt of
  	NVar v
-	 -> do	graph	<- gets stateGraph
-		let graph'	
-			= graph 
-			{ graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
-		modify $ \s -> s { stateGraph = graph' }
+	 -> do	stateGraph `modifyRef` \graph -> 
+			graph { graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
+
+		
 
 	_ -> return ()
 
@@ -244,7 +241,7 @@ addNameToClass
 
 addNameToClass cid_ src v kind
  = do	let node	= NVar v
- 	graph	<- gets stateGraph
+ 	graph	<- getsRef stateGraph
  	cid	<- sinkClassId cid_
  	cls	<- liftIO (readArray (graphClass graph) cid)
 	cls'	<- addNameToClass2 cid src node kind cls
@@ -273,7 +270,7 @@ lookupClass
 
 lookupClass cid_ 
  = do	cid	<- sinkClassId cid_
-	graph	<- gets stateGraph
+	graph	<- getsRef stateGraph
 	c	<- liftIO (readArray (graphClass graph) cid)
 	return $ Just c
 
@@ -287,7 +284,7 @@ updateClass
 
 updateClass cid_ c
  = do	cid		<- sinkClassId cid_
- 	graph		<- gets stateGraph
+ 	graph		<- getsRef stateGraph
 	liftIO (writeArray (graphClass graph) cid c)
 	return ()
 
@@ -300,7 +297,7 @@ modifyClass
 	
 modifyClass cid_ f
  = do	cid	<- sinkClassId cid_
- 	graph	<- gets stateGraph
+ 	graph	<- getsRef stateGraph
 	c	<- liftIO (readArray (graphClass graph) cid)
 	liftIO (writeArray (graphClass graph) cid (f c))
 	return ()
@@ -319,7 +316,7 @@ addClassForwards cidL_ cids_
 	cids		<- mapM (\cid -> sinkClassId cid) cids_
 
 	-- add a substitution for each elem of cids.
-	graph		<- gets stateGraph
+	graph		<- getsRef stateGraph
 
 	mapM_		(\x -> liftIO (writeArray (graphClass graph) x (ClassForward x cidL))) 
 			cids
@@ -330,7 +327,7 @@ addClassForwards cidL_ cids_
 -- | Lookup the variable name of this class.
 lookupVarToClassId :: 	Var -> SquidM (Maybe ClassId)
 lookupVarToClassId v
- = do	graph		<- gets stateGraph
+ = do	graph		<- getsRef stateGraph
  	let vMap	= graphVarToClassId graph
 
 	case Map.lookup v vMap of
@@ -413,16 +410,16 @@ let ((node1, src1)
 -- | Clear the set of active classes.
 clearActive ::	SquidM (Set ClassId)
 clearActive
- = do	graph	<- gets stateGraph 
+ = do	graph	<- getsRef stateGraph 
 	
 	active'	<- liftM Set.fromList
 		$  mapM sinkClassId 
 		$  Set.toList
 		$  graphActive graph
 	
-	let graph'	= graph { graphActive = Set.empty }
-	
-	modify $ \s -> s { stateGraph	= graph' }			
+	stateGraph `modifyRef` \graph ->
+		graph { graphActive = Set.empty }
+
 	return	active'
 
 
@@ -432,12 +429,9 @@ activateClass :: ClassId -> SquidM ()
 activateClass cid
  = do	-- traceM $ "activating class " % cid % "\n"
 
-	graph		<- gets stateGraph
- 	let graph'	= graph { graphActive	= Set.insert cid (graphActive graph) }
-
-	modify $ \s -> s { 
-		stateGraph = graph' }
-
+	stateGraph `modifyRef` \graph -> 
+		graph { graphActive = Set.insert cid (graphActive graph) }
+		
 	Just c		<- lookupClass cid
 	(case c of
 		Class { classFettersMulti = cidsMulti}
@@ -455,7 +449,7 @@ kindOfCid cid
 -- Fold a function through all the classes in the type graph.
 foldClasses :: (a -> Class -> SquidM a) -> a -> SquidM a
 foldClasses fun x
- = do  	graph		<- gets stateGraph
+ = do  	graph		<- getsRef stateGraph
 	classes		<- liftIO $ getElems $ graphClass graph
 	foldM fun x classes  
 
@@ -511,7 +505,7 @@ sinkVar	var
 {-# INLINE sinkClassId #-}
 sinkClassId ::	ClassId -> SquidM ClassId
 sinkClassId  cid	
- = do	graph		<- gets stateGraph
+ = do	graph		<- getsRef stateGraph
  	let classes	=  graphClass graph
 	sinkClassId' classes cid
 	
@@ -528,7 +522,7 @@ sinkClassId' classes cid
 -- | Convert the cids in this node type to canonical form.
 sinkCidsInNode :: Node -> SquidM Node
 sinkCidsInNode nn
- = do	graph		<- gets stateGraph
+ = do	graph		<- getsRef stateGraph
 	let classes	= graphClass graph
 	liftIO $ sinkCidsInNodeIO classes nn
 
@@ -536,7 +530,7 @@ sinkCidsInNode nn
 -- | Convert the cids in this type to canonical form.
 sinkCidsInType :: Type -> SquidM Type
 sinkCidsInType tt
- = do	graph		<- gets stateGraph
+ = do	graph		<- getsRef stateGraph
 	let classes	= graphClass graph
 	liftIO $ sinkCidsInTypeIO classes tt
 
@@ -544,7 +538,7 @@ sinkCidsInType tt
 -- | Convert the cids in this type to canonical form.
 sinkCidsInFetter :: Fetter -> SquidM Fetter
 sinkCidsInFetter ff
- = do	graph		<- gets stateGraph
+ = do	graph		<- getsRef stateGraph
 	let classes	= graphClass graph
 	liftIO $ sinkCidsInFetterIO classes ff
 
