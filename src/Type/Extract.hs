@@ -46,9 +46,7 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = do	-- trace	$ "*** Scheme.extractType " % varT % "\n\n"
-
- 	defs		<- getsRef stateDefs
+ = do	defs		<- getsRef stateDefs
 	case Map.lookup varT defs of
 	 -- If this var is in the defs table then it was imported from an external
 	 --	interface (or is a generated constructor function), so we can just return it directly.
@@ -57,8 +55,8 @@ extractType final varT
 		return $ Just tt
 	
 	 Nothing
-	  -> {-# SCC "extractType_notDef" #-} 
-	     extractType_findClass final varT
+	  -> do	trace	$ "--  Scheme.extractType " % varT % " ----------\n"
+	     	{-# SCC "extractType_notDef" #-} extractType_findClass final varT
 
 extractType_findClass final varT
  = do	
@@ -91,9 +89,20 @@ extractType_fromClass final varT cid
  	tTrace	<- {-# SCC "extract/trace" #-} traceTypeAsSquid cid
 	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
 
+
+	-- For simple vars, applying the packer and flattener etc won't do anything,
+	-- so skip all that stuff to avoid spamming the trace logs.
 	case tTrace of
-	 TVar{}	-> extractType_final final varT cid tTrace
-	 _	-> extractType_pack  final varT cid tTrace
+	 TVar{}	
+	   -> extractType_final final varT cid tTrace
+
+         -- common case for regions like  %1 :- Const %1
+	 TConstrain TVar{} crs
+	   | Map.null (crsEq crs)
+	   , Map.null (crsMore crs)
+	   -> extractType_final final varT cid tTrace
+
+	 _ -> extractType_pack  final varT cid tTrace
 	
 	
 extractType_pack final varT cid tTrace
