@@ -174,8 +174,7 @@ solveCs	(c:cs)
 	CDictProject src t vvs
 	 | Just (v, _, ts)	<- takeTData t
 	 -> do	-- trace $ "### CDictProj " % t % "\n"
-	 	modify $ \s -> s { 
-			stateProject = Map.insert v (t, vvs) (stateProject s) }
+		stateProject `modifyRef` Map.insert v (t, vvs)
 		solveNext cs
 
 	-- A Gen marks the end of all the constraints from a particular binding.
@@ -203,12 +202,12 @@ solveCs	(c:cs)
 	--	discharge type class constraints in generalised type schemes.
 	CClassInst src v ts
 	 -> do	-- trace	$ "### CClassInst " % v % " " % ts % "\n"
-	 	modify $ \s -> s { 
-			stateClassInst = Map.alter
+		stateClassInst `modifyRef`
+			Map.alter
 				(\mis -> case mis of
 					Nothing	-> Just [FConstraint v ts]
 					Just is	-> Just (FConstraint v ts : is)) 
-				v (stateClassInst s) }
+				v
 		solveNext cs
 	
 	

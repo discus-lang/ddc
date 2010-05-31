@@ -114,25 +114,25 @@ data SquidS
 	--	After the solver is finished and all generalisations have been performed,
 	--	all effect and closure ports will be in this set. We can then clean out
 	--	non-ports while we extract them from the graph.
-	, stateQuantifiedVarsKM	:: Map Var (Kind, Maybe Type)
+	, stateQuantifiedVarsKM	:: IORef (Map Var (Kind, Maybe Type))
 
 	-- | We sometimes need just a set of quantified vars, 
 	--	and maintaining this separately from the above stateQuanfiedVarsFM is faster.
-	, stateQuantifiedVars	:: Set Var
+	, stateQuantifiedVars	:: IORef (Set Var)
 									
 	-- | The projection dictionaries
 	--	ctor name -> (type, field var -> implemenation var)
-	, stateProject		:: Map Var	(Type, Map Var Var)	
+	, stateProject		:: IORef (Map Var (Type, Map Var Var))
 	
 	-- | When projections are resolved, Crush.Proj adds an entry to this table mapping the tag
 	--	var in the constraint to the instantiation var. We need this in Desugar.ToCore to rewrite
 	--	projections to the appropriate function call.
-	, stateProjectResolve	:: Map Var Var
+	, stateProjectResolve	:: IORef (Map Var Var)
 									
 	-- | Instances for type classses
 	--	class name -> instances for this class.
 	--   eg Num	   -> [Num (Int %_), Num (Int32# %_)]
-	, stateClassInst	:: Map Var 	[Fetter] }
+	, stateClassInst	:: IORef (Map Var [Fetter]) }
 
 
 -- | build an initial solver state
@@ -164,10 +164,17 @@ squidSInit
 	refGenSusp	<- liftIO $ newIORef Set.empty
 	refGenDone	<- liftIO $ newIORef Set.empty
 	refGenInst	<- liftIO $ newIORef Map.empty
+	refQuantVsKM	<- liftIO $ newIORef Map.empty
+	refQuantVs	<- liftIO $ newIORef Set.empty
+	refProject	<- liftIO $ newIORef Map.empty
+	refProjResolve	<- liftIO $ newIORef Map.empty
+	refClassInst	<- liftIO $ newIORef Map.empty
 
    	return	SquidS
 		{ stateTrace		= Nothing
 		, stateTraceIndent	= 0
+		, stateErrors		= []
+		, stateStop		= False 
 		, stateArgs		= Set.empty
 		, stateSigmaTable	= refSigmaTable
 		, stateVsBoundTopLevel	= refVsBoundTop
@@ -181,13 +188,11 @@ squidSInit
 		, stateGenSusp		= refGenSusp
 		, stateGenDone		= refGenDone
 		, stateInst		= refGenInst
-		, stateQuantifiedVarsKM	= Map.empty
-		, stateQuantifiedVars	= Set.empty
-		, stateProject		= Map.empty
-		, stateProjectResolve	= Map.empty
-		, stateClassInst	= Map.empty
-		, stateErrors		= []
-		, stateStop		= False }
+		, stateQuantifiedVarsKM	= refQuantVsKM
+		, stateQuantifiedVars	= refQuantVs
+		, stateProject		= refProject
+		, stateProjectResolve	= refProjResolve
+		, stateClassInst	= refClassInst }
 
 getsRef :: (SquidS -> IORef a) -> SquidM a
 {-# INLINE getsRef #-}

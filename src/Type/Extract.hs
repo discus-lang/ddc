@@ -172,7 +172,7 @@ extractType_final True varT cid tCutPack
 	trace	$ "    tPlug:\n" 	%> prettyTS tPlug	% "\n\n"
  
 	-- close off never-quantified effect and closure vars
- 	quantVars	<- gets stateQuantifiedVars
+ 	quantVars	<- getsRef stateQuantifiedVars
  	let tFinal	=  finaliseT quantVars True tPlug
 	
 	trace	$ "    tFinal:\n" 	%> prettyTS tFinal	% "\n\n"
@@ -184,7 +184,7 @@ extractType_final False varT cid tTrim
 extractType_reduce varT cid tFinal
  = do	
 	-- Reduce context
-	classInst	<- gets stateClassInst
+	classInst	<- getsRef stateClassInst
 
 	let tReduced	
 		= {-# SCC "extract/redude" #-}

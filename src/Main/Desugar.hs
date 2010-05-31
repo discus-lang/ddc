@@ -357,10 +357,11 @@ desugarSolveConstraints2
 		$ map pprStrPlain
 		$ Map.toList varSub
 
+	projRes <- readIORef (T.stateProjectResolve state2)
 	dumpS	DumpTypeSolve	"type-solve--projResolve"
 		$ catInt "\n"
 		$ map pprStrPlain
-		$ Map.toList (T.stateProjectResolve state2)
+		$ Map.toList projRes
 
 	let vsFree	= Set.empty
 
@@ -374,7 +375,7 @@ desugarSolveConstraints2
 		, quantVars
 		, vsFree
 		, vsRegionClasses
-		, T.stateProjectResolve state2)
+		, projRes)
 
 
 

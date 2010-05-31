@@ -73,7 +73,7 @@ crushProjInClass cid
 		trace	$ "    object type (tObj)               = " % tObj	% "\n"
 
 		-- Grab the map of projection dictionaries from the state
-		projectDicts	<- gets stateProject
+		projectDicts	<- getsRef stateProject
 
 		crushProj_withObj cid src fProj clsObj tObj projectDicts
 
@@ -174,8 +174,7 @@ crushProj_withDict
 			-- Add an entry to the projection resolution map.
 			--	This information is used in Desugar.ToCore to rewrite the projection
 			--	syntax into real function calls.
-			modify $ \s -> s { stateProjectResolve 
-						= Map.insert vInst vImpl (stateProjectResolve s) }
+			stateProjectResolve `modifyRef` Map.insert vInst vImpl
 
 			trace	$ "  * adding entry to projection resolution table:\n"
 				%> vInst % " := " % vImpl % "\n\n"

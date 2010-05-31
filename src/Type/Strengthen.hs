@@ -66,7 +66,7 @@ strengthenFs
 strengthenFs tsParam fsEq fMore
  = case fMore of
  	(t1@(TVar k (UClass cid)), t2)
-	 -> do	quantVars	<- gets stateQuantifiedVars
+	 -> do	quantVars	<- getsRef stateQuantifiedVars
 	 	v		<- makeClassName cid
 
 		let result

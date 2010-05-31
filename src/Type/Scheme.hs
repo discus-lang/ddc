@@ -93,7 +93,7 @@ generaliseType' varT tCore envCids
 	-- Clean empty effect and closure classes that aren't ports.
 	let tsParam	=  slurpParamClassVarsT_constrainForm
 	 		$  toConstrainFormT tPlug
-	classInst	<- gets stateClassInst
+	classInst	<- getsRef stateClassInst
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
 
 	trace	$ "    tClean\n" 
@@ -173,15 +173,8 @@ generaliseType' varT tCore envCids
 	let (vkbsFree	:: [(Var, (Kind, Maybe Type))])
 		= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
 
-	modify $ \s -> s { stateQuantifiedVarsKM	
-				= Map.union
-					(Map.fromList vkbsFree)
-					(stateQuantifiedVarsKM s)
-			
-			 , stateQuantifiedVars
-				= Set.union
-					(Set.fromList vsFree) 
-					(stateQuantifiedVars s) }
+	stateQuantifiedVarsKM 	`modifyRef` Map.union (Map.fromList vkbsFree)
+	stateQuantifiedVars	`modifyRef` Set.union (Set.fromList vsFree) 
 
 	trace	$ "    tScheme\n"
 		%> prettyTS tScheme 	% "\n\n"
