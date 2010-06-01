@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Type.Quantify
 	(quantifyVarsT_constrainForm)
 where
@@ -36,8 +36,8 @@ import qualified Data.Set	as Set
 --	@!e2@ and @!e3@ need to have been substituted when the argument
 --	for @!e1@ is applied.
 --
-quantifyVarsT_constrainForm :: [(Var, Kind)] -> Type -> Type
-quantifyVarsT_constrainForm vks tt@(TConstrain t crs)
+quantifyVarsT :: [(Var, Kind)] -> Type -> Type
+quantifyVarsT vks tt@(TFetters t fs)
  = let
 	-- fn to get the vars we want to quantify from a list of types.
 	vsQuants ts	= filter (not . Var.isCtorName)
@@ -47,8 +47,8 @@ quantifyVarsT_constrainForm vks tt@(TConstrain t crs)
 	-- build a map of which vars need to come before others
  	deps		= Map.fromListWith (++) 
 			$ concat
-			$ [zip (repeat v1) [vsQuants t2]
-				| (TVar k (UVar v1), t2) <- Map.toList $ crsMore crs]
+			$ [zip (repeat v1) [vsQuants ts]
+				| FMore (TVar k (UVar v1)) ts <- fs]
 
 	-- sequence the vars according to the dependency map
 	vsSequence	= graphSequence deps Set.empty (map fst vks)
