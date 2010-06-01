@@ -44,6 +44,9 @@ module DDC.Type.Compounds
 	
 	  -- * Constraints
 	, makeTConstrain
+	, toConstrainFormT
+	, toFetterFormT
+	, addConstraints
 	
 	 -- * Quantification
 	, makeTForall_front
@@ -282,6 +285,102 @@ makeTConstrain tt crs
 	else tt
 
 
+-- | Add some constraints to a type
+addConstraints :: Constraints -> Type -> Type
+addConstraints crs@(Constraints crsEq1 crsMore1 crsOther1) tt
+ = case tt of
+	TConstrain t (Constraints crsEq2 crsMore2 crsOther2)
+	 -> addConstraints' 
+		(Constraints 
+			(Map.union crsEq1   crsEq2)
+			(Map.union crsMore1 crsMore2)
+			(crsOther1 ++ crsOther2))
+		t
+			
+	_ -> addConstraints' crs tt
+	
+addConstraints' crs@(Constraints crsEq crsMore crsOther) tt
+ 	| Map.null crsEq
+	, Map.null crsMore
+	, null crsOther
+	= tt
+	
+	| otherwise
+	= TConstrain tt crs
+
+
+-- TODO: This is temporary while we're refactoring TFetters to TConstrain
+-- | Convert top-level occurences of TConstrain to TFetters
+toFetterFormT :: Type -> Type
+toFetterFormT tt
+ = let down = toFetterFormT 
+   in case tt of
+	TForall    b k t	-> TForall b k (down t)
+	TFetters   t fs		-> TFetters (down t) fs
+
+	TConstrain t (Constraints { crsEq, crsMore, crsOther })
+	 | Map.null crsEq 
+	 , Map.null crsMore
+	 , null crsOther
+	 -> t
+	
+	 | otherwise
+	 -> TFetters 
+		(down t)
+		(    [FWhere t1 (down t2) | (t1, t2) <- Map.toList crsEq   ]
+		  ++ [FMore  t1 (down t2) | (t1, t2) <- Map.toList crsMore ]
+		  ++ crsOther)
+			
+	TApp t1 t2		-> TApp (down t1) (down t2)
+	_			-> tt
+
+
+-- TODO: This is temporary while we're refactoring TFetters to TConstrain
+-- | Convert top-level occurences of TFetters to TConstrain
+toConstrainFormT :: Type -> Type
+toConstrainFormT tt
+ = let down = toConstrainFormT
+   in  case tt of
+	TForall    b k t	-> TForall b k (down t)
+
+	TFetters t fs
+	 -> let	crsEq		= Map.fromList [(t1, toConstrainFormT t2) | FWhere t1 t2 <- fs]
+		crsMore		= Map.fromList [(t1, toConstrainFormT t2) | FMore  t1 t2 <- fs]
+
+		crsOther	= filter (\f -> (not $ isFWhere f) && (not $ isFMore f)) 
+				$ map toConstrainFormF fs
+
+	    in	addConstraints (Constraints crsEq crsMore crsOther) (down t)
+	
+	TConstrain t cs		-> TConstrain (down t) cs
+	
+	TApp t1 t2		-> TApp (down t1) (down t2)
+	TSum k  ts		-> TSum k $ map toConstrainFormT ts
+	_			-> tt
+
+ where
+	-- break recursive imports with DDC.Type.Predicates
+	isFWhere ff
+ 	 = case ff of
+ 		FWhere{}	-> True
+		_ 		-> False
+
+	-- break recursive imports with DDC.Type.Predicates
+	isFMore :: Fetter -> Bool
+	isFMore ff
+ 	 = case ff of
+ 		FMore{}		-> True
+		_ 		-> False
+
+        toConstrainFormF :: Fetter -> Fetter
+        toConstrainFormF ff
+         = case ff of
+		FConstraint c ts	-> FConstraint c $ map toConstrainFormT ts
+		FWhere t1 t2		-> FWhere t1     $ toConstrainFormT t2
+		FMore  t1 t2		-> FMore  t1	 $ toConstrainFormT t2
+		FProj{}			-> ff
+
+
 -- Quantification ---------------------------------------------------------------------------------
 -- | Add some forall bindings to the front of this type.
 makeTForall_front :: [(Var, Kind)] -> Type -> Type
@@ -319,3 +418,5 @@ takeTForall tt
 	    in	( (b, k) : bksRest, tRest)
 	    
 	_ -> ([], tt)
+
+

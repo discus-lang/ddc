@@ -24,7 +24,6 @@ module Type.Strengthen
 	, slurpParamClassVarsT_constrainForm)
 where
 import Type.Class
-import Type.Util
 import Type.State
 import Type.Plate.Collect
 import Util

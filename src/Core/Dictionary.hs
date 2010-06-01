@@ -12,7 +12,6 @@ import Core.Plate.Trans
 import Type.Util.Bits
 import Type.Util.Kind
 import Type.Util.Unify
-import Type.Util.Flatten
 import Type.Util.Substitute
 import Util
 import DDC.Main.Error

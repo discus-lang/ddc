@@ -16,7 +16,6 @@ import DDC.Main.Error
 import DDC.Var
 import Shared.VarUtil			(isDummy, varPos)
 import Type.ToCore			(toCoreT, toCoreK)
-import Type.Util.Flatten		(flattenT)
 import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified DDC.Solve.InstanceInfo	as T
@@ -529,7 +528,7 @@ toCoreVarInst v vT
 	 T.InstanceLet vUse vBind tsInst _
 	  -> do	
 		-- Convert the type arguments to core.
-		let tsInstC	= map (flattenT . toCoreT) tsInst
+		let tsInstC	= map (T.flattenT . toCoreT) tsInst
 			
 		-- If the function being instantiated needs some context then there'll be a 
 		--	separate witness for it... therefore we can safely erase contexts on

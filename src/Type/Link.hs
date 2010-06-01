@@ -3,7 +3,6 @@ module Type.Link
 	( linkType
 	, linkFetter )
 where
-import Type.Util
 import Type.Location
 import Type.State
 import Type.Class

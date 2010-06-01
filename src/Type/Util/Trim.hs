@@ -21,7 +21,6 @@ module Type.Util.Trim
 	, trimClosureC_constrainForm)
 where
 import Util
-import Type.Util.Bits
 import Type.Util.Kind
 import DDC.Main.Pretty
 import DDC.Main.Error

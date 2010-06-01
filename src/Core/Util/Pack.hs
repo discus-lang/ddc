@@ -9,9 +9,9 @@ where
 import Core.Plate.FreeVars
 import Util
 import Util.Graph.Deps
+import Type.Util
 import DDC.Main.Error
-import DDC.Type
-import Type.Util		hiding (flattenT)
+import DDC.Type			hiding (flattenT)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

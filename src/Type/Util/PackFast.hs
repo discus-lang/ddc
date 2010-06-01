@@ -3,7 +3,6 @@ module Type.Util.PackFast
 	( packType
 	, packType_markLoops )
 where
-import Type.Util.Bits
 import Type.Util.Kind
 import Type.Plate.Collect
 import Util

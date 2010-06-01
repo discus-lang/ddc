@@ -41,7 +41,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
-import DDC.Type
+import DDC.Type			hiding (flattenT)
 import DDC.Var.VarId		as Var
 import DDC.Var
 import DDC.Util.Doc
@@ -50,7 +50,7 @@ import Type.Error		(Error(..))
 import Type.Docable		()
 import Prelude			hiding (mapM)
 import Util			hiding (mapM)
-import Type.Util		hiding (flattenT, trimClosureC_constrainForm)
+import Type.Util		hiding (trimClosureC_constrainForm)
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

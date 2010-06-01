@@ -7,7 +7,7 @@ where
 import Core.Exp
 import Core.Util
 import Desugar.ToCore.Base
-import DDC.Type
+import DDC.Type			hiding (flattenT)
 import DDC.Var
 import qualified Data.Set 	as Set
 import qualified Data.Map	as Map

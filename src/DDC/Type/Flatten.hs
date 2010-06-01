@@ -1,17 +1,21 @@
-
-module Type.Util.Flatten 
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+module DDC.Type.Flatten
 	(flattenT)
 where
-import Type.Util.Bits
-import Util
+import DDC.Main.Error
+import DDC.Main.Pretty
 import DDC.Type.Exp
 import DDC.Type.Predicates
 import DDC.Type.Compounds
-import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import Data.List
 
--- | Flattening a type inlines all the (t1 = t2) fetters bound within in it.
+stage	= "DDC.Type.Flatten"
+
+-- | Flatten a type by inlinine all the equality constraints in it.
+--   We keep track of the constraints substituted on the way down the tree, 
+--   and panic if they are found to be recursive.
 flattenT :: Type -> Type
 flattenT tt
  = flattenT' Map.empty Set.empty tt
@@ -27,23 +31,21 @@ flattenT' sub block tt
 
 	TFetters t fs
 	 -> let (fsWhere, fsRest)
-	 		= partition isFWhere fs
+			= partition isFWhere fs
 
-		sub'	= Map.union 
+		sub'	= Map.union sub
 				(Map.fromList $ map (\(FWhere t1 t2) -> (t1, t2)) fsWhere)
-				sub
 
 		tFlat	= flattenT' sub' block t
-
 	   in	addFetters fsRest tFlat
 
-	TConstrain t crs
+	TConstrain{}
 	 -> flattenT' sub block
 	 $  toFetterFormT tt
 
 	TVar{}
 	 | Set.member tt block
-	 -> tt
+	 -> panic stage $ "flattenT: recursive substitution through " % show tt
 
 	 | otherwise
 	 -> case Map.lookup tt sub of

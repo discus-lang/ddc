@@ -6,7 +6,6 @@ module Type.Pretty
 	, prettyTypeSplit
 	, prettyTS)
 where
-import Type.Util.Bits
 import Util
 import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
