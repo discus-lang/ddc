@@ -203,30 +203,30 @@ kindOfType tt
 betaTK :: Int -> Type -> Kind -> Kind
 betaTK depth tX kk
  = case kk of
- 	KNil		-> kk
-	KCon{}		-> kk
-	KFun k1 k2	-> KFun k1 (betaTK (depth + 1) tX k2)
-	KApp k t	-> KApp (betaTK depth tX k) (betaTT depth tX t)
-	KSum ks		-> KSum $ map (betaTK depth tX) ks
+ 	KNil			-> kk
+	KCon{}			-> kk
+	KFun k1 k2		-> KFun k1 (betaTK (depth + 1) tX k2)
+	KApp k t		-> KApp (betaTK depth tX k) (betaTT depth tX t)
+	KSum ks			-> KSum $ map (betaTK depth tX) ks
 		
 	
 betaTT :: Int -> Type -> Type -> Type
 betaTT depth tX tt
  = let down	= betaTT depth tX
    in  case tt of
-   	TNil		-> tt
-	TForall b k t	-> TForall b k (down t)
-	TFetters t fs	-> TFetters (down t) fs
-	TApp t1 t2	-> TApp (down t1) (down t2)
-	TSum k ts	-> TSum k (map down ts)
-	TCon{}		-> tt
+   	TNil			-> tt
+	TForall b k t		-> TForall b k (down t)
+	TFetters t fs		-> TFetters (down t) fs
+	TApp t1 t2		-> TApp (down t1) (down t2)
+	TSum k ts		-> TSum k (map down ts)
+	TCon{}			-> tt
 
 	TVar _ (UIndex ix)
-	 | ix == depth	-> down tX
-	 | otherwise	-> tt
+	 | ix == depth		-> down tX
+	 | otherwise		-> tt
 
-	TVar{}		-> tt
+	TVar{}			-> tt
 	 	
-	_		-> panic stage
-			$ "betaTT: no match for " % show tt
+	_			-> panic stage
+				$ "betaTT: no match for " % show tt
 
