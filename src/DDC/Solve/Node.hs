@@ -36,7 +36,6 @@ module DDC.Solve.Node
 	, nWrite
 	, nDeepWrite)
 where
-import Type.Util
 import DDC.Main.Pretty
 import DDC.Var
 import DDC.Type
@@ -139,12 +138,12 @@ subNodeCidCid sub nn
 	 -> NSum $ Set.map (\cid -> fromMaybe cid (Map.lookup cid sub)) cids
 	
 	NScheme t
-	 -> NScheme $ subCidCid sub t
+	 -> NScheme $ subCidCid_everywhere sub t
 	
 	NError{}	-> nn
 	
 	NFree v t	
-	 -> NFree v $ subCidCid sub t
+	 -> NFree v $ subCidCid_everywhere sub t
 
 
 -- Extraction -------------------------------------------------------------------------------------

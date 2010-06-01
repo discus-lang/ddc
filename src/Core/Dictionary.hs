@@ -11,7 +11,6 @@ import Core.Util.Bits
 import Core.Plate.Trans
 import Type.Util.Bits
 import Type.Util.Unify
-import Type.Util.Substitute
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty

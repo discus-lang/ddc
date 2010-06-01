@@ -101,8 +101,8 @@ feedType src tt
 					_ -> 	return	$ Nothing)
 				$ fs
 
-		let fs2		= subTT_all ttSub fs
-		let t2		= subTT_all ttSub t
+		let fs2		= subTT_everywhere ttSub fs
+		let t2		= subTT_everywhere ttSub t
 				
 		mapM_ (feedFetter src) fs2
 	 	t3		<- feedType src t2

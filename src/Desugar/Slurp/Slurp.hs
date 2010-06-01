@@ -8,7 +8,6 @@ where
 import Util
 import Shared.Exp
 import Type.Location
-import Type.Util
 import Constraint.Exp
 import Constraint.Bits
 import Desugar.Exp

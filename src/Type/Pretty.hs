@@ -6,14 +6,18 @@ module Type.Pretty
 	, prettyTypeSplit
 	, prettyTS)
 where
-import Util
 import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
 import DDC.Main.Error
-import DDC.Type
+import DDC.Type.Exp
+import DDC.Type.Builtin
+import DDC.Type.Compounds
+import DDC.Type.Predicates
+import DDC.Type.Kind
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import Util
 
 stage	= "Type.Pretty"
 

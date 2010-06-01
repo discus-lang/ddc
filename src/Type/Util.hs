@@ -3,7 +3,6 @@ module Type.Util
 	, module Type.Util.Instantiate
 	, module Type.Util.Elaborate
 	, module Type.Util.Normalise
-	, module Type.Util.Substitute
 	, module Type.Util.StripFetters
 	, module Type.Util.Unify 
 	, module Type.Util.Mask
@@ -21,7 +20,6 @@ import Type.Util.Bits
 import Type.Util.Instantiate
 import Type.Util.Elaborate
 import Type.Util.Normalise
-import Type.Util.Substitute
 import Type.Util.StripFetters
 import Type.Util.Unify
 import Type.Util.Mask

@@ -13,7 +13,6 @@ where
 import Source.Error
 import Desugar.Util
 import Desugar.Exp
-import Type.Util
 import Shared.Exp
 import Shared.VarPrim
 import Util
@@ -276,7 +275,7 @@ freshenCrsEq mid tt
 		vsSub	<- liftM (Map.fromList . catMaybes)
 			$ mapM takeSub fs
 			
-		return	$ subTT_all vsSub tt
+		return	$ subTT_everywhere vsSub tt
 		
 	_ -> return tt
 

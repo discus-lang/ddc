@@ -7,7 +7,7 @@ module Type.Plate.Collect
 	, collectTErrors )
 where 
 import Util
-import DDC.Type
+import DDC.Type.Exp
 import DDC.Type.Transform
 import DDC.Var
 import qualified Data.Set	as Set
