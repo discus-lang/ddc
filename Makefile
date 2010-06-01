@@ -184,7 +184,7 @@ nodoc	= \
 .PHONY	: docs
 docs	:
 	@echo "* Building haddock documentation"
-	@haddock -w -h -o doc/haddock --optghc=-isrc --ignore-all-exports \
+	@haddock -w -h -o doc/haddock --optghc=-isrc \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(src_hs_all))
 
