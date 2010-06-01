@@ -31,7 +31,6 @@ import qualified Data.Set	as Set
 import System.IO
 import Data.IORef
 
------
 debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Solve"

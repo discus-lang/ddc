@@ -163,7 +163,7 @@ traceFromCid' cid
 
 		-- Decend into other classes reachable from this one.
 		-- TODO: The collectClassIds uses the boilerplate library and is probably v.slow
-		let cids	= Set.union 	(collectClassIds t) 
+		let cids	= Set.union 	(freeCidsT t) 
 						(classFettersMulti cls)
 
 		trace (vcat [ "t = " % t, "cids = " % cids]) $ return ()
