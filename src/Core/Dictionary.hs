@@ -10,7 +10,6 @@ import Core.Exp
 import Core.Util.Bits
 import Core.Plate.Trans
 import Type.Util.Bits
-import Type.Util.Kind
 import Type.Util.Unify
 import Type.Util.Substitute
 import Util

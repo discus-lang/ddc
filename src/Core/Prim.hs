@@ -10,7 +10,6 @@ where
 import Core.Exp
 import Core.Glob
 import Core.Util
-import Type.Util
 import Util
 import DDC.Main.Pretty
 import DDC.Type

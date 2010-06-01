@@ -12,8 +12,6 @@ module Type.Util.Bits
 
 	-- closure
 	, dropTFreesIn
-
-	, makeKFuns
 		
 	-- contexts
 	, addContext
@@ -103,13 +101,6 @@ dropTFreesIn vs clo
 			 Nothing	-> True)
 	$ flattenTSum clo
 
--- | make a chain of KFuns
-makeKFuns :: [Kind] -> Kind -> Kind
-makeKFuns [] kk	= kk
-makeKFuns (k:ks) kk	= KFun k (makeKFuns ks kk)
-
-
-	
 	
 -- | Add a new type class context to a type,
 --	pushing it under any enclosing foralls.

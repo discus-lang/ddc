@@ -13,12 +13,12 @@ module Type.Util.Elaborate
 where
 import Type.Pretty
 import Type.Util.Bits
-import Type.Util.Kind	
 import Util
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.Kind
 import DDC.Var
 import qualified Data.Set		as Set
 import qualified Type.Util.PackFast 	as PackFast

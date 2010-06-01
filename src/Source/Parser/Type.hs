@@ -5,7 +5,6 @@ module Source.Parser.Type
 	, pKind
 	, pType, pType_body, pType_body1, pTypeOp)
 where
-import Type.Util
 import Source.Parser.Base
 import Control.Monad
 import Data.Maybe
@@ -224,12 +223,12 @@ pType_body2
  =	-- CON TYPE..
 	do	t1	<- pTyCon
  		args	<- Parsec.many pType_body1
-		return	$ makeTApp (t1:args)
+		return	$ makeTApp t1 args
 		
  <|>	do	t1	<- pType_body1
 		Parsec.option t1
 			(do	ts	<- Parsec.many1 pType_body1
-				return	$ makeTApp (t1:ts))
+				return	$ makeTApp t1 ts)
 
  <?>    "pType_body2"
 
@@ -252,7 +251,7 @@ pType_body1
 	--	it in NameNothing. In this case we know its actually a type variable, so can
 	--	set it in NameType.
  <|>	do	var	<- liftM (vNameDefaultN NameType) $ pQualified pVarPlain
-		return	$ TVar 	(kindOfSpace $ varNameSpace var) $ UVar var
+		return	$ TVar 	(let Just k = kindOfSpace $ varNameSpace var in k) $ UVar var
 		
  <|>	pRParen pParenTypeBody
 
@@ -347,7 +346,7 @@ pEffect
  <|>	-- !CON TYPE..
 	do	t1	<- pTyCon
  		ts	<- Parsec.many pType_body1
-		return	$ makeTApp (t1:ts)
+		return	$ makeTApp t1 ts
 
  <?>    "pEfect"
 
@@ -379,7 +378,7 @@ pClosure
 	 		let var2N	= vNameDefaultN NameType var2
 			return	$ makeTDanger
 					(TVar kRegion $ UVar varN)
-					(TVar (kindOfSpace $ varNameSpace var2N) $ UVar var2N))
+					(TVar (let Just k = kindOfSpace $ varNameSpace var2N in k) $ UVar var2N))
 
 
  <|>	-- \${ CLO ; .. }
@@ -409,13 +408,13 @@ pFetter
 		-- VAR = EFFECT/CLOSURE
  		(do	pTok K.Equals
 			effClo	<- pEffect <|> pClosure
-			return	$ FWhere (TVar (kindOfSpace $ varNameSpace var) $ UVar var)
+			return	$ FWhere (TVar (let Just k = kindOfSpace $ varNameSpace var in k) $ UVar var)
 					 effClo)
 
 		-- VAR :> EFFECT/CLOSURE
 	  <|>	(do	pTok K.IsSuptypeOf
 			effClo	<- pEffect <|> pClosure
-			return	$ FMore (TVar (kindOfSpace $ varNameSpace var) $ UVar var)
+			return	$ FMore (TVar (let Just k = kindOfSpace $ varNameSpace var in k) $ UVar var)
 					effClo))
  <?>    "pFetter"
 

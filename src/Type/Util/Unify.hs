@@ -6,7 +6,7 @@ module Type.Util.Unify
 where
 import DDC.Type.Exp
 import DDC.Type.Builtin
-import Type.Util.Kind
+import DDC.Type.Kind
 
 -- | Unify two types, if possible,
 --	returning a list of type constriants arising due to the unification.

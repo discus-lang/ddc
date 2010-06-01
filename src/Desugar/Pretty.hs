@@ -7,7 +7,6 @@ where
 import Desugar.Exp
 import Desugar.Plate.Trans
 import Type.Pretty
-import Type.Util.Kind
 import DDC.Main.Error
 import DDC.Main.Pretty		
 import DDC.Type

@@ -83,7 +83,7 @@ makeCtorType newVarN vData vs name fs
  	tCtor		<- elaborateCloT 
 			$  makeTFunsPureEmpty (tsPrimary_elab ++ [objType])
 
-	let vks		= map (\v -> (v, defaultKindV v)) 
+	let vks		= map (\v -> (v, let Just k = defaultKindOfVar v in k)) 
 			$ Var.sortForallVars 
 			$ Set.toList (Set.union vsFree (Set.fromList vs))
 

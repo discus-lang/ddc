@@ -3,7 +3,6 @@ module Type.Util.PackFast
 	( packType
 	, packType_markLoops )
 where
-import Type.Util.Kind
 import Type.Plate.Collect
 import Util
 import DDC.Main.Pretty
@@ -11,6 +10,7 @@ import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.Kind
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

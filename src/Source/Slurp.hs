@@ -8,7 +8,6 @@ where
 import Util.Data.Maybe
 import Util
 import Source.Exp
-import Type.Util
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var

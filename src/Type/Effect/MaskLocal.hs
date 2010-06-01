@@ -4,10 +4,10 @@ module Type.Effect.MaskLocal
 	, visibleRsT )
 where
 import Util
-import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Type
+import Type.Pretty		()
 import qualified Data.Set	as Set
 
 stage	= "Type.Effect.MaskLocal"

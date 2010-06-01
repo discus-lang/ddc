@@ -44,7 +44,6 @@ module Source.Lint
 where
 import Source.Exp
 import Source.Error
-import Type.Util
 import Util
 import DDC.Base.SourcePos
 import DDC.Base.Literal

@@ -4,7 +4,6 @@ module Module.Interface.Export
 where
 import Module.Interface
 import Module.Scrape
-import Type.Util.Kind
 import DDC.Var
 import DDC.Type
 import DDC.Base.SourcePos

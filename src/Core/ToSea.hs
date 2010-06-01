@@ -19,7 +19,6 @@ import qualified Core.Util		as C
 import qualified Core.Reconstruct	as C
 import qualified Core.OpType		as C
 import qualified DDC.Type		as T
-import qualified Type.Util		as T
 import qualified Sea.Exp  		as E
 import qualified Sea.Pretty		as E
 import qualified Shared.VarPrim		as Var

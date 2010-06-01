@@ -110,7 +110,7 @@ toCoreT' table tt
 	 -> let tyCon	= TyConData 
 		 		{ tyConName		= v
 				, tyConDataKind	= k }
-	    in  makeTApp (TCon tyCon : map down ts)
+	    in  makeTApp (TCon tyCon) (map down ts)
 
 	 | Just (t11, t12, eff, clo) <- takeTFun tt
 	 -> makeTFun (down t11) (down t12) (down eff) (down clo)

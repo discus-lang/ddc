@@ -4,12 +4,12 @@ module Core.Util.Trim
 	( trimClosureT
 	, trimClosureC )
 where	
-import Type.Util.Kind
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var
+import Type.Pretty		()
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 

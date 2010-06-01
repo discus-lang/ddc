@@ -21,12 +21,12 @@ module Type.Util.Trim
 	, trimClosureC_constrainForm)
 where
 import Util
-import Type.Util.Kind
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.Kind
 import DDC.Var
 import DDC.Util.FreeVars
 import DDC.Type.FreeVars		()
@@ -236,9 +236,10 @@ trimClosureC_t' tag quant rsData tt
 			vs	= freeVars (t:ts)
 	    	   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
 			  ++ map (makeTDanger t) 
-				[TVar (kindOfSpace $ varNameSpace v) (UVar v)
+				[TVar k (UVar v)
 					| v <- Set.toList vs 
-					, not $ Var.isCtorName v]
+					, not $ Var.isCtorName v
+					, let Just k = kindOfSpace $ varNameSpace v]
 	     else catMap down ts
 
 	 | Just (t1, t2, eff, clo) <- takeTFun tt

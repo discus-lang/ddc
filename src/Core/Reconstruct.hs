@@ -506,8 +506,9 @@ reconX (XVar v TNil)
 			$ Set.toList vsFree
 
 		tDrop	= makeTFetters t'
-				[ FMore (TVar (defaultKindV v) $ UVar v) t2
-				| (v, t2)	<- vtsMore]
+				[ FMore (TVar k $ UVar v) t2
+					| (v, t2)	<- vtsMore
+					, let Just k	= defaultKindOfVar v]
 
 	trace ( "reconX[XVar]: dropping type\n"
 	      % "    var    = " %> v		% "\n"

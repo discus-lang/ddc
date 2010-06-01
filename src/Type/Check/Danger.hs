@@ -3,8 +3,8 @@ module Type.Check.Danger
 	(dangerousCidsT)
 where
 import Util
-import Type.Util
 import Type.Plate.Collect
+import Type.Pretty		()
 import DDC.Main.Error
 import DDC.Var
 import DDC.Type

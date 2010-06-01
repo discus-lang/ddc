@@ -34,14 +34,12 @@ module Type.Class
 where
 import Type.Location
 import Type.State
-import Type.Util
 import Type.Error
 import Type.Dump		()
 import Util
 import DDC.Main.Error
 import DDC.Solve.Sink
-import DDC.Type.Exp
-import DDC.Type.FreeCids
+import DDC.Type
 import DDC.Var
 import Data.Array.IO
 import qualified Data.Map	as Map

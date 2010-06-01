@@ -8,7 +8,6 @@ import Desugar.Plate.Trans
 import Desugar.Data
 import Desugar.Exp
 import Type.Util.Elaborate
-import Type.Util.Kind
 import Source.Error
 import Shared.VarPrim
 import Util
@@ -232,7 +231,10 @@ slurpConstraint pp
 
 
 defaultKind v k
- 	| k == KNil	= kindOfSpace $ varNameSpace v
+ 	| k == KNil	
+	= let Just k' = kindOfSpace $ varNameSpace v
+	  in  k'
+
 	| otherwise	= k 
 
 

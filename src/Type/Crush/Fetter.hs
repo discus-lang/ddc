@@ -236,7 +236,7 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 	, [_]	<- clsArgs
 	= Right $ Just 	
 		( FConstraint primConst tsArgs
-		, TSI $ SIPurifier cid (makeTApp (tRead:tsArgs)) srcEff 
+		, TSI $ SIPurifier cid (makeTApp tRead tsArgs) srcEff 
 				fetter srcFetter)
 
 	-- DeepRead is purified by DeepConst
@@ -244,7 +244,7 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 	, [_]	<- clsArgs
 	= Right $ Just 
 		( FConstraint primConstT tsArgs
-		, TSI $ SIPurifier cid (makeTApp (tDeepRead:tsArgs)) srcEff 
+		, TSI $ SIPurifier cid (makeTApp tDeepRead tsArgs) srcEff 
 				fetter srcFetter)
 	
 	-- We don't have a HeadConst fetter, but as all HeadReads are guaranteed to be
@@ -256,7 +256,7 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 	-- This effect can't be purified.
 	| Just nCon@(NCon tc)	<- classType clsCon
 	= Left 	$ ErrorCannotPurify
-		{ eEffect		= makeTApp (TCon tc : tsArgs)
+		{ eEffect		= makeTApp (TCon tc) tsArgs
 		, eEffectSource		= srcEff
 		, eFetter		= fetter
 		, eFetterSource		= srcFetter }

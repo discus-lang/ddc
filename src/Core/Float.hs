@@ -10,7 +10,6 @@ import Core.BoundUse
 import Core.Util
 import Core.Exp
 import Core.Glob
-import Type.Util
 import Shared.Warning
 import Util
 import DDC.Main.Pretty

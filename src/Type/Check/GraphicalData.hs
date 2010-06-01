@@ -2,7 +2,6 @@
 module Type.Check.GraphicalData
 	(checkGraphicalDataT)
 where
-import Type.Util
 import DDC.Type
 import Util.Graph.Deps		(graphReachable1_nr)
 import qualified Data.Set	as Set

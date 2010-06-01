@@ -162,25 +162,6 @@ pprBindKind bb k
 	BMore v t	-> pprVarKind (varWithoutModuleId v) k % " :> " % t
 	
 
--- | Get the kind associated with a namespace.
---	This is a local local copy to avoid module recursion.
---	Also in Type.Util.Bits
-kindOfSpace :: NameSpace -> Maybe Kind
-kindOfSpace space
- = case space of
- 	NameType	-> Just kValue
-	NameRegion	-> Just kRegion
-	NameEffect	-> Just kEffect
-	NameClosure	-> Just kClosure
-	_		-> Nothing
-
--- | Get the result of applying all the paramters to a kind.
-resultKind :: Kind -> Kind
-resultKind kk
- = case kk of
- 	KFun k1 k2	-> resultKind k2
-	_		-> kk
-
 
 -- | Prints a type with the fetters on their own lines
 prettyTypeSplit :: Type	-> PrettyM PMode

@@ -5,6 +5,8 @@ module DDC.Type
 	, module DDC.Type.Builtin
 	, module DDC.Type.Predicates
 	, module DDC.Type.Compounds
+	, module DDC.Type.Kind
+	, module DDC.Type.Witness
 	, module DDC.Type.FreeVars
 	, module DDC.Type.FreeCids
 	, module DDC.Type.Flatten)
@@ -13,6 +15,8 @@ import DDC.Type.Exp
 import DDC.Type.Builtin 
 import DDC.Type.Predicates
 import DDC.Type.Compounds
+import DDC.Type.Kind
+import DDC.Type.Witness
 import DDC.Type.FreeVars()
 import DDC.Type.FreeCids
 import DDC.Type.Flatten

@@ -5,7 +5,6 @@ where
 import Desugar.Exp
 import Desugar.Pretty
 import Type.Util.Elaborate
-import Type.Util.Kind
 import Type.Pretty
 import Control.Monad.State.Strict
 import Util
@@ -81,9 +80,10 @@ elaborateT_fun tt
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
 	let extraQuantVKs	
-		= [(v, kindOfSpace $ varNameSpace v)
+		= [(v, k)
 			| v	<- Set.toList free
-			, not $ Set.member v quantVs]
+			, not $ Set.member v quantVs
+			, let Just k	= kindOfSpace $ varNameSpace v]
 		++ newRs
 		
 	-- quantify free vars in the scheme		

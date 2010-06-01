@@ -14,7 +14,6 @@ where
 import Core.Plate.Trans
 import Core.Exp
 import Core.Glob
-import Type.Util
 import Util
 import DDC.Main.Error
 import DDC.Type

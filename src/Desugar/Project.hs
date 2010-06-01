@@ -244,7 +244,7 @@ snipInstBind' moduleName
 				tInst
 
 	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) $ freeVars tsInst
-	let vks_quant	= map (\v -> (v, kindOfSpace $ varNameSpace v)) $ Set.toList vsFree
+	let vks_quant	= map (\v -> (v, let Just k = kindOfSpace $ varNameSpace v in k)) $ Set.toList vsFree
 	let tInst_quant	= makeTForall_back vks_quant tInst_sub
 	
 	-- As we're duplicating information from the original signature
@@ -486,7 +486,7 @@ addProjDataP projMap p
 	_		-> [p]
 
 varToTBot v
-	= tBot (kindOfSpace $ varNameSpace v) 
+	= tBot (let Just k = kindOfSpace $ varNameSpace v in k) 
 	
 
 -- | Add default field projections to dictionaries for data types.
@@ -505,7 +505,7 @@ addProjDictFunsP
  | Just (v, k, ts)			<- takeTData projType
  , Just (PData _ vData vsData ctors)	<- Map.lookup v dataMap
  = do	
-	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsData
+	let tsData	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsData
 	let tData	= makeTData vData (makeDataKind vsData) tsData
 	
 	-- See what projections have already been defined.

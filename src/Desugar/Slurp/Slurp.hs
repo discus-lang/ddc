@@ -245,7 +245,7 @@ slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
 
 	-- Record what data type this constructor belongs to.
 	let kData	= makeDataKind vs
-	let tsData	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vs
+	let tsData	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vs
 	modify (\s -> s {
 		stateCtorType	= Map.insert cName 
 					(makeTData vData kData tsData)
@@ -329,10 +329,10 @@ freshenType
 freshenType tt
  = do	let vsFree	= freeVars tt
  	let vsFree'	= filter (\v -> (not $ Var.isCtorName v)) $ Set.toList vsFree
-	let tsFree'	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsFree'
+	let tsFree'	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsFree'
 	
 	vsFresh		<- mapM newVarZ vsFree'
-	let tsFresh	= map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsFresh
+	let tsFresh	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsFresh
 	
 	let sub		= Map.fromList $ zip tsFree' tsFresh
 

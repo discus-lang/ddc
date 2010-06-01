@@ -8,7 +8,6 @@ import Util
 import Source.Exp
 import Source.Horror
 import Type.Pretty
-import Type.Util.Kind
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type

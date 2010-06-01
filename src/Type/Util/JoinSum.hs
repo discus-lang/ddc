@@ -25,13 +25,14 @@ module Type.Util.JoinSum
 	(joinSumTs)
 where
 import Type.Util.Environment
-import Type.Util.Kind
 import Control.Monad
 import Util.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.Kind
+import Type.Pretty		()
 
 stage	= "Type.Util.Join"
 

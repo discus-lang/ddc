@@ -2,24 +2,32 @@
 -- | Construction and destruction of common compound things.
 --	Also known as 'smart' constructors and destructors.
 module DDC.Type.Compounds
-	( -- * Binds
-	  takeVarOfBind
+	( -- * Kinds
+	  makeKFuns
+	, takeKApps
+	, makeKApps
+	, makeKSum
+	, makeDataKind
+	, resultKind
+
+	  -- * Binds
+	, takeVarOfBind
 
 	  -- * Varish things
 	, takeTClass
 
-	  -- * General type application
+	  -- * Application
 	, makeTApp
 	, takeTApps
 	
-	  -- * Function types.
+	  -- * Functions
 	, makeTFun
 	, makeTFunsPureEmpty
 	, makeTFunsEC
 	, takeTFun
 	, flattenTFuns
 	
-	  -- * Data types
+	  -- * Data.
 	, makeTData
 	, takeTData
 	
@@ -57,12 +65,69 @@ where
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
+import DDC.Type.Kind
 import DDC.Var
 import Data.List
 import Util
 import qualified Data.Map	as Map
 
 stage	= "DDC.Type.Compounds"
+
+-- Kinds ------------------------------------------------------------------------------------------
+-- | Make a kind function.
+makeKFuns :: [Kind] -> Kind -> Kind
+makeKFuns [] kk	= kk
+makeKFuns (k:ks) kk	= KFun k (makeKFuns ks kk)
+
+
+-- | Make a dependent kind application from a list of types.
+makeKApps :: Kind -> [Type] -> Kind
+makeKApps k []	= k
+makeKApps k ts	= makeKApps' k $ reverse ts
+
+makeKApps' k tt
+ = case tt of
+	[]	-> panic stage "makeKApps: this never happens :P"
+	t : []	-> KApp k t
+	t : ts	-> KApp (makeKApps' k ts) t 
+
+
+-- | Flatten out a dependent kind application into its parts.
+takeKApps :: Kind -> Maybe (Kind, [Type])
+takeKApps kk
+ = case kk of
+	KCon{} -> Just (kk, [])
+
+	KApp k1 t2
+	  -> let Just (k1', ts)	= takeKApps k1
+	     in	 Just (k1', ts ++ [t2])
+	
+	_ -> Nothing
+
+
+-- | Join some kind classes
+makeKSum :: [Kind] -> Kind
+makeKSum ts
+ = case nub ts of
+ 	[t]	-> t
+	ts'	-> KSum ts'
+
+
+-- Make a kind from the parameters to a data type
+makeDataKind :: [Var] -> Kind
+makeDataKind vs
+ 	= foldl (flip KFun) kValue 
+	$ map (\v -> let Just k = kindOfSpace (varNameSpace v) in k) 
+	$ reverse vs
+
+
+-- | Get the result of applying all the paramters to a kind.
+resultKind :: Kind -> Kind
+resultKind kk
+ = case kk of
+ 	KFun _ k2	-> resultKind k2
+	_		-> kk
+
 
 -- Binds ------------------------------------------------------------------------------------------
 -- | Get the `Var` from a `Bind`, if any.
@@ -83,13 +148,13 @@ takeTClass _				= Nothing
 
 -- General Type Application -----------------------------------------------------------------------
 -- | Make a type application. 
---   The first element in the list is the constructor and the rest are its arguments.
-makeTApp :: [Type] -> Type
-makeTApp ts = makeTApp' $ reverse ts
+makeTApp :: Type -> [Type] -> Type
+makeTApp t []	= t
+makeTApp t ts 	= makeTApp' $ reverse (t : ts)
 
 makeTApp' xx
  = case xx of
-	[]		-> panic stage $ "makeTApp': empty list"
+	[]		-> panic stage $ "makeTApp': this never happens :P"
  	x  : []		-> x
 	x1 : xs		-> TApp (makeTApp' xs) x1
 	
@@ -152,7 +217,7 @@ flattenTFuns xx
 -- | Make a data type given the var and kind of its constructor, and its arguments.
 makeTData :: Var -> Kind -> [Type] -> Type
 makeTData v k ts
- 	= makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k } : ts )
+ 	= makeTApp (TCon TyConData { tyConName = v, tyConDataKind = k }) ts
 
 	
 -- | Take a data type from an application.
@@ -194,7 +259,7 @@ flattenTSum tt
 -- | Make a witness application.
 makeTWitness :: TyConWitness -> Kind -> [Type] -> Type
 makeTWitness con k ts
-	= makeTApp (TCon (TyConWitness con k) : ts)
+	= makeTApp (TCon (TyConWitness con k)) ts
 
 
 -- | Take a witness from its constructor application.

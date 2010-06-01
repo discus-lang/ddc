@@ -147,7 +147,7 @@ slurpW	(WConLabel sp vCon lvs)
 	let vsData	= map (\(TVar k (UVar v)) -> v) tsData
 
 	vsInst		<- mapM newVarZ vsData
-	let tsInst	=  map (\v -> TVar (kindOfSpace $ varNameSpace v) $ UVar v) vsInst
+	let tsInst	=  map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsInst
 
 
 	-- Apply the substitution to the data type.

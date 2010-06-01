@@ -2,7 +2,6 @@ module Type.Util
 	( module Type.Util.Bits
 	, module Type.Util.Instantiate
 	, module Type.Util.Elaborate
-	, module Type.Util.Kind
 	, module Type.Util.Normalise
 	, module Type.Util.Substitute
 	, module Type.Util.StripFetters
@@ -21,7 +20,6 @@ where
 import Type.Util.Bits
 import Type.Util.Instantiate
 import Type.Util.Elaborate
-import Type.Util.Kind
 import Type.Util.Normalise
 import Type.Util.Substitute
 import Type.Util.StripFetters
@@ -38,6 +36,7 @@ import DDC.Main.Pretty
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.Kind
 import DDC.Var
 import qualified Debug.Trace
 
@@ -118,7 +117,9 @@ makeOpTypeData _	= Nothing
 
 -- | Make a TVar, using the namespace of the var to determine it's kind
 makeTVar :: Var -> Type
-makeTVar v	= TVar (kindOfSpace $ varNameSpace v) (UVar v)
+makeTVar v	
+ = let Just k	= defaultKindOfVar v
+   in	TVar k (UVar v)
 
 
 -- | Add some where fetters to this type
@@ -126,8 +127,9 @@ makeTWhere ::	Type	-> [(Var, Type)] -> Type
 makeTWhere	t []	= t
 makeTWhere	t vts	
 	= TFetters t 
-	$ [ FWhere (TVar (defaultKindV v) $ UVar v) t'
-		| (v, t')	<- vts ]
+	$ [ FWhere (TVar k $ UVar v) t'
+		| (v, t')	<- vts
+		, let Just k	= defaultKindOfVar v ]
 
 
 -- Slurping ----------------------------------------------------------------------------------------

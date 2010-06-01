@@ -155,7 +155,7 @@ generaliseType' varT tCore envCids
 			$ Var.sortForallVars
 			$ Set.toList $ freeVars tConstify
 
-	let vksFree	= map 	 (\v -> (v, kindOfSpace $ varNameSpace v)) 
+	let vksFree	= map 	 (\v -> (v, let Just k = kindOfSpace $ varNameSpace v in k)) 
 			$ vsFree
 
 	trace	$ "    vksFree   = " % vksFree	% "\n\n"

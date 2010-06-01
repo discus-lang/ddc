@@ -138,7 +138,7 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 		case mHead of
 		 Just clsHead
 		  -> do	cidEff'	<- feedType (TSI $ SICrushedES cid nApp srcApp) 
-				$  makeTApp [tRead, TVar (classKind clsHead) $ UClass (classId clsHead)]
+				$  makeTApp tRead [TVar (classKind clsHead) $ UClass (classId clsHead)]
 
 			crushUpdate cid 
 				[cidEff']
