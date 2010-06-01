@@ -36,7 +36,6 @@ module DDC.Solve.Node
 	, nWrite
 	, nDeepWrite)
 where
-import Type.Plate.Collect
 import Type.Util
 import DDC.Main.Pretty
 import DDC.Var
@@ -159,8 +158,8 @@ cidsOfNode nn
 	NApp c1 c2	-> Set.fromList [c1, c2]
 	NSum cs		-> cs
 	NError{}	-> Set.empty
-	NScheme t	-> collectClassIds t
-	NFree _ t	-> collectClassIds t
+	NScheme t	-> freeCids t
+	NFree _ t	-> freeCids t
 
 
 -- Builtins ---------------------------------------------------------------------------------------

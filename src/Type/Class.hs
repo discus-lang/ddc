@@ -34,7 +34,6 @@ module Type.Class
 where
 import Type.Location
 import Type.State
-import Type.Plate.Collect
 import Type.Util
 import Type.Error
 import Type.Dump		()
@@ -42,6 +41,7 @@ import Util
 import DDC.Main.Error
 import DDC.Solve.Sink
 import DDC.Type.Exp
+import DDC.Type.FreeCids
 import DDC.Var
 import Data.Array.IO
 import qualified Data.Map	as Map
@@ -57,7 +57,7 @@ classChildren :: Class -> [ClassId]
 classChildren c
  = case c of
  	ClassFetter { classFetter = f }	
-	 -> Set.toList $ collectClassIds f
+	 -> Set.toList $ freeCids f
 
 	Class	    { classType   = mt } 
 	 -> fromMaybe [] $ liftM (Set.toList . cidsOfNode) mt

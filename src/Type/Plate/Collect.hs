@@ -3,7 +3,6 @@
 module Type.Plate.Collect
 	( collectBindingVarsT
 	, collectTClassVars
-	, collectClassIds
 	, collectTClasses
 	, collectTErrors )
 where 
@@ -67,23 +66,6 @@ collectTClassVars tt
 			 tt)
 		Set.empty
  
-
--- | Collect all the classids in this type.
-collectClassIds 
-	:: TransM (State (Set ClassId)) a
-	=> a 
-	-> Set ClassId
-
-collectClassIds x
- = let	collect cid 
-  	 = do	modify (Set.insert cid)
-	 	return cid
-		
-   in	execState 
-   		(transZM (transTableId { transCid = collect })
-			 x)
-		Set.empty
-
 
 -- | Collect all the TClasses in this type.
 collectTClasses

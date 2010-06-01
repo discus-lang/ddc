@@ -3,7 +3,6 @@ module Type.Solve.Generalise
 	(solveGeneralise)
 where
 import Type.Solve.BindGroup
-import Type.Plate.Collect
 import Type.State
 import Type.Class
 import Type.Scheme
@@ -14,8 +13,7 @@ import Constraint.Exp
 import Constraint.Bits
 import Util
 import Util.Graph.Deps
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import DDC.Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -126,7 +124,7 @@ solveGeneralise_group src vsGen@(vGen : vsGenRest)
 
 	-- Collect up the cids free in in the environment.
 	--	These cids are fixed during the generalisation.
-	let cidsEnv	= Set.unions $ map collectClassIds tsEnv
+	let cidsEnv	= Set.unions $ map freeCids tsEnv
 	trace	$ "    cidsEnv    = " % cidsEnv		% "\n"
 
 	-- Extract and generalise the types for all of the members of the binding group

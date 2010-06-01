@@ -3,9 +3,7 @@ module Type.Check.GraphicalData
 	(checkGraphicalDataT)
 where
 import Type.Util
-import Type.Plate.Collect
-import DDC.Type.Exp
-import DDC.Type.Builtin
+import DDC.Type
 import Util.Graph.Deps		(graphReachable1_nr)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -36,7 +34,7 @@ checkGraphicalDataT (TFetters t fs)
 				   , Set.fromList 
 				   	$ filter (\c -> Set.member c cidsDataS) 
 					$ Set.toList
-					$ collectClassIds t2))
+					$ freeCids t2))
 
 			$ fsData
 

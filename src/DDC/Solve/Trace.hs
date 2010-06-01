@@ -47,7 +47,6 @@ module DDC.Solve.Trace
 	, getTypeOfNodeAsSquid)
 where
 import Type.Util
-import Type.Plate.Collect
 import DDC.Solve.Node
 import DDC.Solve.Sink
 import DDC.Main.Error
@@ -162,9 +161,7 @@ traceFromCid' cid
 		addCrsOther	$ Seq.fromList crsOther
 
 		-- Decend into other classes reachable from this one.
-		-- TODO: The collectClassIds uses the boilerplate library and is probably v.slow
-		let cids	= Set.union 	(freeCidsT t) 
-						(classFettersMulti cls)
+		let cids	= Set.union (freeCids t) (classFettersMulti cls)
 
 		trace (vcat [ "t = " % t, "cids = " % cids]) $ return ()
 
@@ -189,8 +186,7 @@ traceFromCid' cid
 		addCrsOther	$ Seq.singleton fetter'
 		
 		-- Decend into other classes reachable from this one.
-		-- TODO: The collectClassIds uses the boilerplate library and is probably v.slow
-		let cids	= collectClassIds fetter'
+		let cids	= freeCids fetter'
 		mapM_ traceFromCid $ Set.toList cids
 
 
