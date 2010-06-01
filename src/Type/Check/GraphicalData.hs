@@ -13,7 +13,6 @@ import qualified Data.Map	as Map
 --	and hence would be inifinite if we tried to construct it into the flat form.
 --
 --	If it is graphical, returns the list of cids which are on a loop.
---
 checkGraphicalDataT :: Type -> [ClassId]
 
 checkGraphicalDataT (TFetters t fs)
@@ -28,14 +27,8 @@ checkGraphicalDataT (TFetters t fs)
 
 	-- build a map of what cids are reachable from what lets in a single step
 	ccData		= Map.fromList
-
 			$ map (\(FWhere t1@(TVar k (UClass cid)) t2)
-				-> ( cid
-				   , Set.fromList 
-				   	$ filter (\c -> Set.member c cidsDataS) 
-					$ Set.toList
-					$ freeCids t2))
-
+				-> (cid, Set.filter (\c -> Set.member c cidsDataS) $ freeCids t2))
 			$ fsData
 
 	-- expand the reachability map to the list of all the cids reachable in however many steps
@@ -49,4 +42,4 @@ checkGraphicalDataT (TFetters t fs)
   in	loopCids
 	
 checkGraphicalDataT t
- = []
+ 	= []
