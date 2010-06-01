@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Utilities concerning witness types.
 module DDC.Type.Witness
-	(inventWitnessOfClass)
+	(inventWitnessOfKind)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -11,12 +11,11 @@ import DDC.Type.Kind
 
 stage = "DDC.Type.Witness"
 
-
--- | Invent a place-holder witness that satisfies a type class constraint.
+-- | Invent a place-holder witness of a given kind.
 --	This is used in Desugar.ToCore when we don't know how to properly construct the
 --	real witnesses yet.
-inventWitnessOfClass :: Kind -> Maybe Type
-inventWitnessOfClass k
+inventWitnessOfKind :: Kind -> Maybe Type
+inventWitnessOfKind k
 	| Just (KCon kiCon s, ts)	<- takeKApps k
 	, Just tcWitness		<- takeTyConWitnessOfKiCon kiCon
 	= let 	-- Get the kinds of the type arguments.

@@ -548,7 +548,7 @@ toCoreVarInst v vT
 		--	Real witnesses will be threaded through in a later stage.
 		let ksContextC'	= map (C.substituteT tsSub) ksContextC
 		let tsContextC' = map C.packT
-				$ map (\k -> let Just t = T.inventWitnessOfClass k in t)
+				$ map (\k -> let Just t = T.inventWitnessOfKind k in t)
 				$ ksContextC'
 
 		trace ("varInst: "
@@ -574,7 +574,7 @@ toCoreVarInst v vT
 		let tSchemeC			= toCoreT tSchemeT
 		let (tsReplay, ksContext)	= C.slurpForallContextT tSchemeC
 
-		let tsContext	= map (\k -> let Just t = T.inventWitnessOfClass k in t)
+		let tsContext	= map (\k -> let Just t = T.inventWitnessOfKind k in t)
 				$ ksContext
 
 		let Just xResult =

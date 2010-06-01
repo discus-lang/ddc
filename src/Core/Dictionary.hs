@@ -197,7 +197,7 @@ rewriteAppX_withInstance env xxUse
 	--	We can just use fabricate witnesses for now. Core.Thread will add the real ones later.
 	Right tInstPoly			= instantiateT tInstScheme tsInstTypeArgsPoly
 	(ksContext, _)			= slurpContextT  tInstPoly
-	Just tsInstTypeArgsWitness 	= sequence $ map inventWitnessOfClass ksContext
+	Just tsInstTypeArgsWitness 	= sequence $ map inventWitnessOfKind ksContext
 
 	xxInst		= unflattenAppsE 
 			$ XAppFP (XVar vInst tInstScheme) Nothing
