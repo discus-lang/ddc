@@ -8,7 +8,6 @@ module Type.Util
 	, module Type.Util.Mask
 	, module Type.Util.Trim
 	, module Type.Util.Finalise
-	, module Type.Util.Quantify
 	, module Type.Util.JoinSum
 	, makeOpTypeT
 	, makeTVar 
@@ -25,7 +24,6 @@ import Type.Util.Unify
 import Type.Util.Mask
 import Type.Util.Trim
 import Type.Util.Finalise
-import Type.Util.Quantify
 import Type.Util.JoinSum
 import Shared.VarPrim
 import Util
