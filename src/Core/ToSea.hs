@@ -89,7 +89,7 @@ toSeaP	xx
 	-- region
 	--	slurp witnesses on the way down
 	C.PRegion v vts
-	 -> do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
+	 -> do	let ks	= map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
 	 	return Seq.empty
 
@@ -162,7 +162,7 @@ splitSuper accArgs xx
 	= splitSuper accArgs x
 		
 	| C.XLocal v vts x	<- xx
-	= do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
+	= do	let ks	= map (T.kindOfType . snd) vts
 		mapM_ slurpWitnessKind ks
 		splitSuper accArgs x
 	
@@ -193,7 +193,7 @@ toSeaX		xx
 
 	-- slurp region witnesses on the way down
 	C.XLocal  v vts x	
-	 -> do	let Just ks	= sequence $ map (T.kindOfType . snd) vts
+	 -> do	let ks	= map (T.kindOfType . snd) vts
 	 	mapM_ slurpWitnessKind ks
 	 	toSeaX x
 
@@ -560,7 +560,7 @@ toSeaT_data tx
 -- | Check if this type has value kind
 hasValueKind :: T.Type -> Bool
 hasValueKind xx
-	| Just k	<- T.kindOfType xx
+	| k	<- T.kindOfType xx
 	, not $ elem k [T.kRegion, T.kClosure, T.kEffect]
 	= True
 	

@@ -231,7 +231,7 @@ trimClosureC_t' tag quant rsData tt
 	 -> []
 		
 	 | Just (v, k, (t:ts))	<- takeTData tt
-	 -> if kindOfType_orDie t == kRegion 
+	 -> if isRegion t
 	     then let 	rsData'	= Set.insert t rsData
 			vs	= freeVars (t:ts)
 	    	   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
@@ -262,11 +262,8 @@ makeFreeDanger tag rsData t
 	$ Set.toList rsData
 
 makeTDangerIfRegion tag r t
-	| kindOfType_orDie t == kRegion
-	= makeTFree tag t
-	
-	| otherwise	
-	= makeTDanger r t
+	| isRegion t	= makeTFree tag t
+	| otherwise	= makeTDanger r t
 
 
 -- | Trim a fetter of a closure
@@ -277,10 +274,10 @@ trimClosureC_tt
 	-> Maybe (Type, Type)
 
 trimClosureC_tt quant rsData (c1, c2)
- 	| kindOfType_orDie c1 == kClosure
+ 	| isClosure c1
 	= Just (c1, trimClosureC_start quant rsData c2)
 	
-	| kindOfType_orDie c1 == kEffect
+	| isEffect c1
 	= Just (c1, c2)
 	
 	| otherwise
@@ -296,7 +293,7 @@ trimClosureT_tt
 	-> Type
 
 trimClosureT_tt quant rsData c1 c2
-	| kindOfType_orDie c1 == kClosure
+	| isClosure c1
 	= trimClosureC_start quant rsData c2
 	
 	| otherwise

@@ -105,7 +105,7 @@ makeOpTypeT2 tt
 makeOpTypeData tt
 	| Just (v, k, ts)	<- takeTData tt
 	, last (varName v) == '#'
-	= case (sequence $ (map makeOpTypeT [t | t <- ts, kindOfType_orDie t == kValue])) of
+	= case (sequence $ (map makeOpTypeT [t | t <- ts, isValueType t])) of
 		Just ts'	-> Just $ makeTData v kValue ts'
 		_		-> Nothing
 	

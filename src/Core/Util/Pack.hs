@@ -121,8 +121,7 @@ packT1 tt
 			= let 	ts       =  map (\r -> TApp tMkConst     r) rs
 				         ++ map (\d -> TApp tMkDeepConst d) ds
 
-				Just ks  =  sequence $ map kindOfType ts
-			      
+				ks 	=  map kindOfType ts
 			  in 	makeTSum (KSum ks) ts
 			
 			-- DeepMutable
@@ -132,8 +131,7 @@ packT1 tt
 			= let	ts	=  map (\r -> TApp tMkMutable     r) rs
 				   	++ map (\d -> TApp tMkDeepMutable d) ds
 				
-				Just ks	= sequence $ map kindOfType ts
-				
+				ks 	= map kindOfType ts
 			  in	makeTSum (KSum ks) ts
 			
 			-- leave it alone.
@@ -229,7 +227,7 @@ packK1 kk
 	-- Join purification witness kinds
 	| KSum ks		<- kk
 	, Just tsEffs		<- sequence $ map takeKClass_pure ks
-	, Just ksEffs		<- sequence $ map kindOfType tsEffs
+	, ksEffs		<- map kindOfType tsEffs
 	, and $ map (== kEffect) ksEffs
 	= KApp kPure (TSum kEffect tsEffs)
 

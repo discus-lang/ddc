@@ -263,7 +263,7 @@ floatBindsX level share tt xx
 
 	-- check for constant regions on the way down
 	XLocal v vts x
-	 -> let Just ks	= sequence $ map (kindOfType . snd) vts
+	 -> let ks	= map (kindOfType . snd) vts
 	 	tt2	= foldl' slurpWitnessKind tt ks
 		
 		(tt3, x')	= floatBindsX level share tt2 x

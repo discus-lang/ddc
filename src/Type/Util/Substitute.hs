@@ -157,7 +157,7 @@ subTT_enter sub cut tt
 	| Just tt'		<- Map.lookup tt sub
 	= let res
 		| Set.member tt cut
-		, Just k	<- kindOfType tt
+		, k	<- kindOfType tt
 		= let res2 :: SubM Type
 		      res2
 			-- Loops in effect and closure types can be cut by replacing
@@ -232,7 +232,7 @@ cutSub sub
 cutF :: (Type, Type) -> SubM (Maybe (Type, Type))
 cutF (t1, t2)
 	-- If the binding var is in the rhs then we've got an infinite type error
-	| (let Just k1 = kindOfType t1 in k1) == kValue
+	| isValueType t1
 	= if Set.member t1 $ collectTClassVars t2
 		then do	modify $ \s -> (t1, t2) : s
 			return $ Nothing

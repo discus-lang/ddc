@@ -156,7 +156,7 @@ toCoreF	f
  = case f of
 	FConstraint v tsArg		
 	 -> let	tsArg'		= map toCoreT tsArg
-		Just ksArg	= sequence $ map kindOfType tsArg
+		ksArg		= map kindOfType tsArg
 		kClass		= makeKindOfTypeClass v ksArg
 		kWitness	= makeKApps kClass tsArg'
 	    in	trace (vcat

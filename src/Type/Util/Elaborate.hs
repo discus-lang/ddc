@@ -282,10 +282,6 @@ elaborateEffT
 	-> m Type		--   the elaborated type
 	
 elaborateEffT vsRsConst vsRsMutable tt
- | Nothing	<- kindOfType tt
- = panic stage "elaborateEffT: type to elaborate is not well kinded"
-
- | otherwise
  = do	
  	-- make a fresh hook var
 	--	The new effect fetter constrains this var.

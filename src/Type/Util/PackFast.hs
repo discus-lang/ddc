@@ -240,7 +240,7 @@ packTypeCrsClassVar_loop config crsEq subbed tt k
 		--	recursive occurrences unsubstituted.
 		config'	= config { configLoopResolution = ConfigLoopNoSub }
 		tLoop	= packTypeCrsSub config' crsEq Set.empty tt
-		Just k	= kindOfType tt
+		k	= kindOfType tt
 
 	    in	TError k (TypeErrorLoop tt tLoop)
 		

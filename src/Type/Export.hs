@@ -113,11 +113,11 @@ exportType t
 		% "    tPlug:\n" 	%> prettyTS tPlug	% "\n"
 		% "    tFinal:\n"	%> prettyTS tPlug	% "\n"
 
-	let tTrim	
-	     = case kindOfType tFinal of
-		Just kC | kC == kClosure -> trimClosureC_constrainForm Set.empty Set.empty tFinal
-		Just kV | kV == kValue	 -> trimClosureT_constrainForm Set.empty Set.empty tFinal
-		Just _			 -> tFinal
+	let kind	= kindOfType tFinal
+	let tTrim
+		| isClosureKind kind	= trimClosureC_constrainForm Set.empty Set.empty tFinal
+		| isValueKind   kind 	= trimClosureT_constrainForm Set.empty Set.empty tFinal
+		| otherwise		= tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
 	return $ toFetterFormT tTrim		

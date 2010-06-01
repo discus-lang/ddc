@@ -34,7 +34,7 @@ maskLocalT tsVis tt
 maskF :: Set Type -> Fetter -> Maybe Fetter
 
 maskF	tsVis	(FWhere t1 t2)
-	| kindOfType t1 == Just kEffect
+	| isEffect t1
 	= Just $ FWhere t1 (maskE tsVis t2)
 
 maskF	tsVis	(FConstraint v [tR])

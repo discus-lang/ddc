@@ -164,9 +164,9 @@ feedType src tt
 
 	-- A non-var closure. We can get these from signatures and instantiated schemes
 	TApp{}
-	 | Just (v1, t)		<- takeTFree tt
-	 -> do	cid		<- allocClass src kClosure
-		t'		<- linkType [] src t
+	 | Just (v1, t)	<- takeTFree tt
+	 -> do	cid	<- allocClass src kClosure
+		t'	<- linkType [] src t
 
 		addNode	cid src kClosure	
 			$ NFree v1 t'
@@ -175,10 +175,10 @@ feedType src tt
 
 	TApp t1 t2
 	 -> do	
-		let Just k	= kindOfType tt
-	 	cidT		<- allocClass src k
-	 	cid1		<- feedType src t1
-		cid2		<- feedType src t2
+		let k	= kindOfType tt
+	 	cidT	<- allocClass src k
+	 	cid1	<- feedType src t1
+		cid2	<- feedType src t2
 
 		addNode cidT src k	
 			$ NApp cid1 cid2
@@ -245,8 +245,8 @@ feedFetter src f
 
 	FProj pj v tDict tBind
 	 -> do 	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]
-		let Just kDict	= kindOfType tDict
-		let Just kBind	= kindOfType tBind
+		let kDict	= kindOfType tDict
+		let kBind	= kindOfType tBind
 
 		addFetter src 
 		 $ FProj pj v 
@@ -305,7 +305,7 @@ addFetter src f@(FConstraint v ts)
 	 	
 	-- add the type args to the graph
 	cids		<- mapM (feedType src) ts
-	let Just kinds	= sequence $ map kindOfType ts
+	let kinds	= map kindOfType ts
 	let ts'		= zipWith (\k c -> TVar k $ UClass c) kinds cids
 	
 	-- add the fetter to the graph
@@ -336,8 +336,8 @@ addFetter src f@(FProj j v1 tDict tBind)
 	
 	-- add the type args to the graph
  	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]
-	let Just kDict	= kindOfType tDict
-	let Just kBind	= kindOfType tBind
+	let kDict	= kindOfType tDict
+	let kBind	= kindOfType tBind
 
 	-- add the fetter to the graph
 	let f	= FProj j v1 

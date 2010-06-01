@@ -283,10 +283,10 @@ typesMatch t1 t2
 
 subMatches (t1, t2)
 	| TVar k _	<- t1
-	= Just k == kindOfType t2
+	= k == kindOfType t2
 	
 	| TVar k _	<- t2
-	= Just k == kindOfType t1
+	= k == kindOfType t1
 	
 	| otherwise
 	= False
@@ -304,7 +304,7 @@ instantiateT' sub t1 []
 
 instantiateT' sub t1 (t2 : ts)
 	| TForall (BVar v) k11 t12	<- t1
-	, Just k2			<- kindOfType t2
+	, k2				<- kindOfType t2
 --	, subTTK_noLoops sub k11 == k2								-- BUGS!!!! 
 	, t11 <- TVar k11 $ UVar v
 	= if t11 /= t2
@@ -312,7 +312,7 @@ instantiateT' sub t1 (t2 : ts)
 		else instantiateT' sub t12 ts
 	
 	| TForall BNil k11 t12		<- t1
-	, Just k2			<- kindOfType t2
+	, k2				<- kindOfType t2
 --	, subTTK_noLoops sub k11 == k2								-- BUGS!!!
 	= instantiateT' sub t12 ts
 	

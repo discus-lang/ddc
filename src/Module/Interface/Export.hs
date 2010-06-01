@@ -131,7 +131,7 @@ getIntRegionOfCorePRegion pp@C.PRegion{}
 	, intRegionSourcePos 	= undefined
 	, intRegionWitnessKinds	
 		= Map.fromList
-		$ [(v, let Just k = kindOfType t in k)
+		$ [(v, kindOfType t)
 			| (v, t) <- C.topRegionWitnesses pp] }
 
 

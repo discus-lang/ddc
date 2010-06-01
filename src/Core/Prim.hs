@@ -85,7 +85,7 @@ primX tt xx
 
 	-- check for direct regions on the way down
 	XLocal v vts x
-	 -> let Just ks	= sequence $ map (kindOfType . snd) vts
+	 -> let	ks	=  map (kindOfType . snd) vts
 	 	tt2	= foldl' slurpWitnessKind tt ks
 		
 		(tt3, x')	= primX tt2 x

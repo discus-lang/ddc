@@ -20,7 +20,7 @@ inventWitnessOfClass k
 	| Just (KCon kiCon s, ts)	<- takeKApps k
 	, Just tcWitness		<- takeTyConWitnessOfKiCon kiCon
 	= let 	-- Get the kinds of the type arguments.
-		Just ks = sequence $ map kindOfType ts
+		ks 	= map kindOfType ts
 
 		-- The resulting kind guarantees the constraint.
 		kResult	= makeKApps (KCon kiCon s) 

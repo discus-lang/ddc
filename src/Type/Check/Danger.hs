@@ -46,7 +46,7 @@ dangerT rsMutable fsClosure tt
 		fsClosure'	= Map.union 
 					fsClosure 
 					(Map.fromList [(u1, u2) | FWhere u1 u2	<- fs
-								, kindOfType u1 == Just kClosure])
+								, kindOfType u1 == kClosure])
 
 		-- decend into type and fetters
 		t1Danger	= dangerT rsMutable' fsClosure' t1

@@ -51,7 +51,7 @@ threadGlobM cgHeader cgModule
 
 addRegionWitness :: (Var, Type) -> ThreadM ()
 addRegionWitness (v, t)
- = do	let Just k	= kindOfType t
+ = do	let k	= kindOfType t
 	pushWitnessVK v k
 	return ()
 
@@ -73,7 +73,7 @@ thread_transX xx
 	-- pop locally bound witnesses on the way back up because we're leaving their scope.
 	| XLocal r vts x	<- xx
 	= do	mapM_ (\(v, k) -> popWitnessVK v k)
-	 		[ (v, let Just k = kindOfType t in k)	
+	 		[ (v, kindOfType t)	
 				| (v, t) <- reverse vts]
 		
 	 	return xx
@@ -92,7 +92,7 @@ thread_transX_enter xx
 
 	XLocal r vts x
 	 -> do	mapM_ (\(v, k) -> pushWitnessVK v k)
-	 		[ (v, let Just k = kindOfType t in k)	
+	 		[ (v, kindOfType t)	
 				| (v, t) <- vts]
 
  		return xx
@@ -123,7 +123,7 @@ rewriteWitness' tt
 	| Just (tcWitness, _, [TVar k (UVar vT)]) 	<- mClass
 	= do	let Just kcWitness	= takeKiConOfTyConWitness tcWitness
 		Just vW			<- lookupWitness kcWitness vT
-		let Just k		= kindOfType tt
+		let k			= kindOfType tt
 		return $ TVar k $ UVar vW
 
 	-- purity of no effects is trivial
@@ -192,7 +192,7 @@ buildPureWitness eff@(TSum kE _)
  	| kE	== kEffect
  	= do	let effs	= flattenTSum eff
  		ts		<- mapM buildPureWitness effs
-		let Just ks	= sequence $ map kindOfType ts
+		let ks		= map kindOfType ts
 		return		$ makeTSum (makeKSum ks) ts
 
 buildPureWitness eff@(TVar kE (UVar vE))

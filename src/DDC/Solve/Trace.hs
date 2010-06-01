@@ -110,7 +110,7 @@ traceType cid'
 	
 	-- The final type
 	Just t		<- lookupTypeOfCid cid
-	let Just k	= kindOfType t
+	let k		= kindOfType t
 	let tt		= makeTConstrain 
 				(TVar k $ UClass cid) 
 				(Constraints crsEq crsMore' $ nub $ toList crsOther)
@@ -217,8 +217,7 @@ addType t1 t2
 		-- Build the constraint for this class.
 		--	If it's of value kind then use an eq constraint,
 		--	otherwise it's a more constraint.
-		let Just kind 
-			= kindOfType t1
+		let kind = kindOfType t1
 
 		let crsEqHere	
 			= if (not $ isTBot t') && resultKind kind == kValue

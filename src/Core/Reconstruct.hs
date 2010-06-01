@@ -967,12 +967,12 @@ applyTypeT' :: Env -> Type -> Type -> Maybe Type
 
 applyTypeT' table t1@(TForall BNil k11 t12) t2
 	-- witnesses must match
-	| Just k2	<- kindOfType t2
+	| k2	<- kindOfType t2
 	, packK k11 == packK k2
 	= Just t12
 
 	-- kinds don't match
-	| Just k2	<- kindOfType t2
+	| k2	<- kindOfType t2
 	= freakout stage
 		( "applyTypeT: Kind error in type application.\n"
 		% "    caller = " % envCaller table	% "\n"
@@ -984,7 +984,7 @@ applyTypeT' table t1@(TForall BNil k11 t12) t2
 
 
 applyTypeT' table (TForall (BVar v) k t1) t2
-	| Just k == kindOfType t2
+	| k == kindOfType t2
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 	| otherwise
@@ -1072,7 +1072,7 @@ clampSum t1 t2
 		let	parts2		= flattenTSum t1
 			parts_clamped	= [p	| p <- parts2
 						, subsumes (envMore table) t1 p]
-			Just k1		= kindOfType t1
+			k1		= kindOfType t1
 
 		return $ makeTSum k1 parts_clamped
 

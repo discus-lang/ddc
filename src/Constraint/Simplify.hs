@@ -202,7 +202,7 @@ collectNoInline bb
 
 collectNoInlineT :: Type -> State (Set Var) Type
 collectNoInlineT tt
-	| isValueType tt
+	| isValueTypeFromVar tt
 	= collectNoInlineT' tt
 	
 	| otherwise
@@ -228,7 +228,7 @@ collectNoInlineT' tt
 
 -- | Quick check if this type has a value kind, used when deciding what
 --	type constraints to inline.
-isValueType tt
+isValueTypeFromVar tt
  = case tt of
 	TVar _ (UVar v)
 	 | varNameSpace v == NameType
