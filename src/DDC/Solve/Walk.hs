@@ -15,10 +15,10 @@ import DDC.Type
 --   left node (if there is one)
 --
 --   For example, suppose the graph holds a type like:
---	NApp (NApp (NCon tc) cid1) cid2
+--	@NApp (NApp (NCon tc) cid1) cid2@
 --	
---   Then starting from the cid of the outermost NApp, we'll walk down the
---   left spine until we find (TCon tc), then return cid2.
+--   Then starting from the cid of the outermost `NApp`, we'll walk down the
+--   left spine until we find @(TCon tc)@, then return @cid2@.
 --
 --   If the node at the bottom of the spine hasn't been unified, then it'll
 --   be a Nothing, so return that instead.
@@ -45,15 +45,17 @@ takeHeadDownLeftSpine cid1
 
 -- | Starting an outermost application node, trace the graph and return
 --	a list of the parts being applied. Eg, tracing the following
---	structure from the graph gives [t1, t2, t3]
+--	structure from the graph gives @[t1, t2, t3]@.
 --
---         @
---       /   \
---      @     t3
---    /   \
---   t1    t2
+--  @
+--         app
+--        /   \\
+--      app     t3
+--     /   \\
+--    t1    t2
+--  @
 --
--- If and of the nodes have Nothing for their type, then return Nothing.
+-- If and of the nodes have `Nothing` for their type, then return `Nothing`.
 --
 takeAppsDownLeftSpine
 	:: ClassId
@@ -81,13 +83,13 @@ takeAppsDownLeftSpine cid
 --	left node (if there is one)
 --
 --	For example, if the graph holds a type like:
---	   TApp (TApp (TCon tc) t1) t2
+--	   @TApp (TApp (TCon tc) t1) t2@
 --	
---	Then starting from the cid of the outermost TApp, we'll walk down 
---	the left spine until we find (TCon tc), and return that.
+--	Then starting from the cid of the outermost `TApp`, we'll walk down 
+--	the left spine until we find @(TCon tc)@, and return that.
 --
 --	If the node at the bottom of the spine hasn't been unified, then
---	It'll be a Nothing, so return that instead.
+--	It'll be a `Nothing`, so return that instead.
 --
 getClassDownLeftSpine :: ClassId -> SquidM Class
 getClassDownLeftSpine cid
