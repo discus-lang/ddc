@@ -3,7 +3,6 @@ module Type.Util
 	, module Type.Util.Instantiate
 	, module Type.Util.Elaborate
 	, module Type.Util.Normalise
-	, module Type.Util.StripFetters
 	, module Type.Util.Mask
 	, module Type.Util.Trim
 	, makeOpTypeT
@@ -16,7 +15,6 @@ import Type.Util.Bits
 import Type.Util.Instantiate
 import Type.Util.Elaborate
 import Type.Util.Normalise
-import Type.Util.StripFetters
 import Type.Util.Mask
 import Type.Util.Trim
 import Shared.VarPrim

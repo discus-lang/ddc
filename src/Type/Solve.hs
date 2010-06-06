@@ -25,6 +25,7 @@ import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import DDC.Solve.InstanceInfo
 import DDC.Type
+import DDC.Type.StripFetters
 import DDC.Var
 import qualified Util.Data.Map	as Map
 import qualified Data.Set	as Set
@@ -120,8 +121,10 @@ solveCs	(c:cs)
 		-- Strip fetters off the sig before adding it to the graph
 		-- 	as we're only using information in the sig for guiding 
 		-- 	projection resolution.
-		let (t2_strip, _) 
-			= stripFWheresT_all t2_inst
+		let t2_strip
+			= toFetterFormT
+			$ stripFWheresT_all 
+			$ toConstrainFormT t2_inst
 
 		trace	$ "    t2_strip:\n" %> prettyTS t2_strip % "\n\n"
 

@@ -7,13 +7,13 @@ import Type.State
 import Type.Class
 import Type.Scheme
 import Type.Extract
-import Type.Util
 import Type.Location
 import Constraint.Exp
 import Constraint.Bits
 import Util
 import Util.Graph.Deps
 import DDC.Type
+import DDC.Type.StripFetters
 import DDC.Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -160,9 +160,7 @@ solveGeneralise_single src cidsFixed vGen
 --	This is different from a Type.Feed.feedType because most of the type can be stored in a single
 --	node in the graph instead of being distributed throughout.
 --
-addSchemeToGraph
-	:: TypeSource -> Var -> Type -> SquidM ()
-	
+addSchemeToGraph :: TypeSource -> Var -> Type -> SquidM ()
 addSchemeToGraph src vGen tScheme
  = do
 	-- call makeClass to get the classId of this var
@@ -174,7 +172,10 @@ addSchemeToGraph src vGen tScheme
 	-- If this type has any FLets on it where the LHS is a (monomorphic) TClass 
 	--	then this information is shared with the graph, and shouldn't be duplicated
 	--	locally.
-	let (tScheme_stripped, _) = stripFWheresT_mono tScheme
+	let tScheme_stripped
+		= toFetterFormT
+		$ stripFWheresT_mono 
+		$ toConstrainFormT tScheme
 
 	case tScheme_stripped of 
 
