@@ -1,9 +1,9 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Type environment.
 --	Used in Core.Reconstruct and Type.Kind.
 --	Not used during type inference, we use the type graph for that.
 --
-module Type.Util.Environment
+module DDC.Type.Environment
 	( Env(..)
 	, emptyEnv
 	, addEqVT
@@ -17,7 +17,6 @@ import qualified Data.Map	as Map
 import Data.Map			(Map)	
 	
 -- Env -------------------------------------------------------------------------------------
-
 -- | A table to carry additional information we collect when descending into the tree
 --	Eq 		constraints come from type level lets, and value lambda bindings.
 --	More (:>) 	come from constraints on type lambdas bindings.
@@ -69,9 +68,13 @@ addMoreVT v t tt
 	Nothing	-> tt { envMore = Map.insert v t (envMore tt) }
 	Just _	-> tt { envMore = Map.insert v t (Map.delete v (envMore tt)) }
 
+
 -- | Add a type inequality from a fetter to the environment
 addMoreF :: Fetter -> Env -> Env
-addMoreF (FMore (TVar k (UVar v)) t) table	= addMoreVT v t table
+addMoreF ff table
+ = case ff of
+	FMore (TVar _ (UVar v)) t	-> addMoreVT v t table
+	_				-> table
 
 -- | Add a Const witness to the environment
 addWitnessConst :: Var -> Var -> Env -> Env

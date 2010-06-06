@@ -35,13 +35,13 @@ import Core.Exp
 import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
-import Type.Util.Environment
 import Shared.VarPrim
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
+import DDC.Type.Environment
 import DDC.Var.VarId		as Var
 import DDC.Var
 import DDC.Util.Doc

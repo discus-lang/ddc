@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
 module DDC.Type
 	( module DDC.Type.Exp
 	, module DDC.Type.Builtin
@@ -15,7 +14,8 @@ module DDC.Type
 	, module DDC.Type.Quantify
 	, module DDC.Type.Finalise
 	, module DDC.Type.CutLoops
-	, module DDC.Type.Unify)
+	, module DDC.Type.Unify
+	, module DDC.Type.JoinSum)
 where
 import DDC.Type.Exp
 import DDC.Type.Builtin 
@@ -32,3 +32,4 @@ import DDC.Type.Quantify
 import DDC.Type.Finalise
 import DDC.Type.CutLoops
 import DDC.Type.Unify
+import DDC.Type.JoinSum

@@ -1,5 +1,5 @@
-
--- Joining the manifest effect and closure portions of a type.
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+-- | Joining the manifest effect and closure portions of a type.
 --	Used when we choose between two functions of differing effects
 --	eg: if .. then putStr else id
 --
@@ -10,38 +10,41 @@
 --	not appear in a contra-variant branch, we don't end up
 --	trying to join two types like:
 --
--- t1:	(a -(!e1)>   b) -> c	:- !e1 :> !EFF2
--- t2:	(a -(!EFF1)  b) -> c	
+-- @
+-- 	t1:	(a -(!e1)>   b) -> c	:- !e1 :> !EFF2
+-- 	t2:	(a -(!EFF1)  b) -> c	
 --
+-- @
 -- To join the contra-variant effects we would have to change the constraint:
 --
--- t1 `joinMax` t2
---	= (a -(!e1)> b) -> c	:- !e1 :> !EFF1 \/ !EFF2
---	
+-- @
+-- 	t1 `joinMax` t2
+--		= (a -(!e1)> b) -> c	:- !e1 :> !EFF1 \/ !EFF2
+-- @	
+-- 
 -- That would mean we'd have to extend the !e1 constraint in the 
 --	environment, which is a hassle.
 --
-module Type.Util.JoinSum
+module DDC.Type.JoinSum
 	(joinSumTs)
 where
-import Type.Util.Environment
-import Control.Monad
-import Util.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
-import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
+import DDC.Type.Environment
 import Type.Pretty		()
+import DDC.Main.Pretty
+import Control.Monad
 
-stage	= "Type.Util.Join"
+stage	= "DDC.Type.JoinSum"
 
--- Join all these types.
+-- | Join all these types.
 --	The value and region portions must be the same.
 --	The effect and closure portions are summed.
 joinSumTs :: Env -> [Type] -> Maybe Type
-joinSumTs env tt@(t:ts)
-	= foldM (joinTT env) t ts
+joinSumTs _   []	= Nothing
+joinSumTs env (t:ts)	= foldM (joinTT env) t ts
 
 
 joinTT :: Env -> Type -> Type -> Maybe Type
@@ -56,8 +59,8 @@ joinTT env t1 t2
 	= joinTT_work env t1 t2
 
 joinTT_work env t1 t2
-	| Just (t11, t12, e1, c1)	<- takeTFun t1
-	, Just (t21, t22, e2, c2)	<- takeTFun t2
+	| Just (t11, t12, e1, c1) <- takeTFun t1
+	, Just (t21, t22, e2, c2) <- takeTFun t2
 	, t11 == t21
 	, Just tY		<- joinTT env t12 t22
 	, Just eff		<- joinTT env e1 e2
@@ -71,12 +74,12 @@ joinTT_work env t1 t2
 	= Just $ TApp tX tY
 
 	| TVar k1 (UVar v1)		<- t1
-	, TVar k2 (UVar v2)		<- t2
+	, TVar _ (UVar v2)		<- t2
 	, v1 == v2	
 	= Just $ TVar k1 $ UVar v1
 
 	| TVar k1 (UMore v1 b1)	<- t1
-	, TVar k2 (UMore v2 b2)	<- t2
+	, TVar _  (UMore v2 _)	<- t2
 	, v1 == v2
 	= Just $ TVar k1 $ UMore v1 b1
 
@@ -85,34 +88,35 @@ joinTT_work env t1 t2
 	, c1 == c2	
 	= Just $ TCon c1
 
-	| TVar k1 v1		<- t1
+	| TVar k1 _		<- t1
 	, k2			<- kindOfType t2
-	, k1 == k2
-	, k1 == kEffect || k1 == kClosure
+	, isEffClo k1 k2	
 	= Just $ makeTSum k1 [t1, t2]
 
-	| TVar k1 (UMore v1 b1) <- t1
+	| TVar k1 (UMore _ _) <- t1
 	, k2			<- kindOfType t2
-	, k1 == k2
-	, k1 == kEffect || k1 == kClosure
+	, isEffClo k1 k2
 	= Just $ makeTSum k1 [t1, t2]
 
 	| TSum k1 ts1		<- t1
 	, k2 			<- kindOfType t2
-	, k1 == k2
-	, k1 == kEffect || k1 == kClosure
+	, isEffClo k1 k2
 	= Just $ makeTSum k1 (t2 : ts1)
 
 	| TSum k2 ts2		<- t2
 	, k1			<- kindOfType t1
-	, k1 == k2
-	, k2 == kEffect || k2 == kClosure
+	, isEffClo k1 k2
 	= Just $ makeTSum k2 (t2 : ts2)
 	
 	| otherwise
 	= panic stage 
-		(	"joinTT: cannot join\n"
-		%> 	"t1:  " % t1 	% "\n"
-		%> 	"t2:  " % t2)
-		
-	
+	$ vcat	[ ppr "joinTT: cannot join\n"
+		, "t1:  " % t1 	% "\n"
+		, "t2:  " % t2 ]
+
+
+isEffClo k1 k2
+	=  (isEffectKind  k1 && isEffectKind  k2) 
+	|| (isClosureKind k1 && isClosureKind k2)
+
+

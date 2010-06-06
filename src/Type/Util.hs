@@ -6,7 +6,6 @@ module Type.Util
 	, module Type.Util.StripFetters
 	, module Type.Util.Mask
 	, module Type.Util.Trim
-	, module Type.Util.JoinSum
 	, makeOpTypeT
 	, makeTVar 
 	, makeTWhere
@@ -20,7 +19,6 @@ import Type.Util.Normalise
 import Type.Util.StripFetters
 import Type.Util.Mask
 import Type.Util.Trim
-import Type.Util.JoinSum
 import Shared.VarPrim
 import Util
 import DDC.Main.Error
