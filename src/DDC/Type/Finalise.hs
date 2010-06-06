@@ -1,7 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Type.Finalise
-	( finaliseT
-	, finaliseF)
+	( finaliseT_constrainForm)
 where
 import Shared.VarPrim
 import DDC.Main.Error
@@ -21,16 +20,14 @@ stage	= "Type.Util.Finalise"
 --	Optionally, replace unconstrained and unquantified value type variables with
 --	the unit type constructor.
 --
-finaliseT 
+finaliseT_constrainForm
 	:: Set Var	-- ^ The variables that have been quantified so far.
 	-> Bool		-- ^ Whether to also replace unconstrained value type variables with `Unit`.
 	-> Type		-- ^ The type to finalise
 	-> Type		-- ^ finalised type
 
-finaliseT bound def tt
- 	= toFetterFormT
-	$ finaliseT' bound def
-	$ toConstrainFormT tt
+finaliseT_constrainForm bound def tt
+	= finaliseT' bound def tt
 
 finaliseT' bound def tt
  = let down	= finaliseT' bound def
@@ -106,7 +103,7 @@ finaliseF
 	-> Fetter	-- ^ The finalised fetter.
 	
 finaliseF bound def ff
- = let	down	= finaliseT bound def
+ = let	down	= finaliseT' bound def
    in case ff of
 	FWhere t1 t2		-> FWhere t1 (down t2)
 	FMore  t1 t2		-> FMore  t1 (down t2)

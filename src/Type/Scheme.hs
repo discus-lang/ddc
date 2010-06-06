@@ -214,7 +214,9 @@ cleanType tsSave tt
 				_	-> Nothing)
 		$ Set.toList tsSave
 		
-   in	finaliseT vsKeep False tt
+   in	toFetterFormT
+		$ finaliseT_constrainForm vsKeep False 
+		$ toConstrainFormT tt
  
 
 -- | After reducing the context of a type to be generalised, if certain constraints
