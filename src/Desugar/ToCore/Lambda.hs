@@ -7,7 +7,7 @@ where
 import Core.Exp
 import Core.Util
 import Desugar.ToCore.Base
-import DDC.Type			hiding (flattenT)
+import DDC.Type
 import DDC.Var
 import qualified Data.Set 	as Set
 import qualified Data.Map	as Map
@@ -72,7 +72,7 @@ loadCloAnnot cc
 	 | kC == kClosure
 	 -> do	Just tC		<- lookupType vC
 	 	return 	$ trimClosureC Set.empty Set.empty 
-			$ flattenT $ stripContextT tC
+			$ flattenT_constrainForm $ stripContextT tC
 			 
 	TSum kC []
 	 | kC == kClosure 	

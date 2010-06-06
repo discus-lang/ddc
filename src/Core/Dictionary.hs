@@ -114,7 +114,7 @@ rewriteAppX env xx
 		-- Get the parameter list of parameter types that matching instances should have.
 		Just (tsInstanceArgs :: [Type])
 			= sequence
-			$ map (liftM flattenT)
+			$ map (liftM (flattenT_constrainForm . toConstrainFormT))
 			$ map (\v -> Map.lookup v vtsInstantiations)
 			$ map fst
 			$ infoOverloadedClassParams infoOverloaded
@@ -168,14 +168,16 @@ rewriteAppX_withInstance env xxUse
  where
 	-- Instantiate the type of the overloaded var with its type arguments.
 	--	This gives us the type that the overloaded var is being used at.
-	tFlatScheme	= flattenT $ infoOverloadedType infoOverloaded
+	tFlatScheme	= flattenT_constrainForm $ toConstrainFormT 
+			$ infoOverloadedType infoOverloaded
 	tUseBody	= either panicInstantiate 
 				id 
 				(instantiateT tFlatScheme (tsUseTypeArgsPoly ++ tsUseTypeArgsWitness))
 
 	-- Get the type of the instance.
 	Just vInst	= lookup vUse (topClassInstMembers p)
-	Just tInstScheme = liftM flattenT $ takeFirstJust $ map (typeFromGlob vInst) $ envGlobs env
+	Just tInstScheme = liftM (flattenT_constrainForm . toConstrainFormT) 
+			$ takeFirstJust $ map (typeFromGlob vInst) $ envGlobs env
 	tInstBody	= stripToBodyT $ tInstScheme
 			
 	-- Unify the body of the overloaded use with the body of the overloaded definition.

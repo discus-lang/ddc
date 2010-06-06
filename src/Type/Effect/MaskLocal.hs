@@ -76,7 +76,7 @@ visibleRsT :: Type -> Set Type
 visibleRsT tt
  = case tt of
 	TForall b k t		-> visibleRsT t
-	TFetters t fs		-> visibleRsT t
+	TConstrain t crs	-> visibleRsT t
 
 	TSum k ts		-> Set.unions $ map visibleRsT ts
 

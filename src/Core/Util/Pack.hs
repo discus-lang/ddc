@@ -11,7 +11,7 @@ import Util
 import Util.Graph.Deps
 import Type.Util
 import DDC.Main.Error
-import DDC.Type			hiding (flattenT)
+import DDC.Type
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

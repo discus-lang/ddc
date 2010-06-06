@@ -528,7 +528,7 @@ toCoreVarInst v vT
 	 T.InstanceLet vUse vBind tsInst _
 	  -> do	
 		-- Convert the type arguments to core.
-		let tsInstC	= map (T.flattenT . toCoreT) tsInst
+		let tsInstC	= map (T.flattenT_constrainForm . T.toConstrainFormT . toCoreT) tsInst
 			
 		-- If the function being instantiated needs some context then there'll be a 
 		--	separate witness for it... therefore we can safely erase contexts on

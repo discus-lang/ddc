@@ -49,7 +49,9 @@ generaliseType' varT tCore envCids
 		% "\n"
 
 	-- flatten out the scheme so its easier for staticRs.. to deal with
-	let tFlat	= flattenT tCore
+	let tFlat	= toFetterFormT
+			$ flattenT_constrainForm $ toConstrainFormT tCore
+
 	trace	$ "    tFlat\n"
 		%> prettyTS tFlat	% "\n\n"
 
@@ -109,7 +111,9 @@ generaliseType' varT tCore envCids
 	-- 	Do this before adding foralls so we don't end up with quantified regions that
 	--	aren't present in the type scheme.
 	--
-	let rsVisible	= visibleRsT $ flattenT tReduce
+	let rsVisible	= visibleRsT 
+			$ flattenT_constrainForm $ toConstrainFormT tReduce
+
 	let tMskLocal	= maskLocalT rsVisible tReduce
 
 	trace	$ "    rsVisible    = " % rsVisible		% "\n\n"

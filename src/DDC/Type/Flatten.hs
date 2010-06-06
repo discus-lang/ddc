@@ -1,48 +1,39 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Type.Flatten
-	(flattenT)
+	(flattenT_constrainForm)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type.Exp
-import DDC.Type.Predicates
 import DDC.Type.Compounds
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import Data.List
 
 stage	= "DDC.Type.Flatten"
 
 -- | Flatten a type by inlinine all the equality constraints in it.
 --   We keep track of the constraints substituted on the way down the tree, 
 --   and panic if they are found to be recursive.
-flattenT :: Type -> Type
-flattenT tt
+flattenT_constrainForm :: Type -> Type
+flattenT_constrainForm tt
  = flattenT' Map.empty Set.empty tt
 
 flattenT' sub block tt
  = let down	= flattenT' sub block
    in  case tt of
    	TNil		-> TNil
+	TFetters{}	-> panic stage "flattenT: no match for TFetters"
+
 	TSum k ts	-> makeTSum  k (map down ts)
 	TApp t1 t2	-> TApp (down t1) (down t2)
 	TCon{}		-> tt
 	TForall b k t	-> TForall b k (down t)
 
-	TFetters t fs
-	 -> let (fsWhere, fsRest)
-			= partition isFWhere fs
-
-		sub'	= Map.union sub
-				(Map.fromList $ map (\(FWhere t1 t2) -> (t1, t2)) fsWhere)
-
+	TConstrain t crs
+	 -> let sub'	= Map.union sub (crsEq crs)
 		tFlat	= flattenT' sub' block t
-	   in	addFetters fsRest tFlat
-
-	TConstrain{}
-	 -> flattenT' sub block
-	 $  toFetterFormT tt
-
+	    in	makeTConstrain tFlat (Constraints Map.empty (crsMore crs) (crsOther crs))
+	
 	TVar{}
 	 | Set.member tt block
 	 -> panic stage $ "flattenT: recursive substitution through " % show tt

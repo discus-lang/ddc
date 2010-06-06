@@ -41,7 +41,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
-import DDC.Type			hiding (flattenT)
+import DDC.Type
 import DDC.Var.VarId		as Var
 import DDC.Var
 import DDC.Util.Doc
