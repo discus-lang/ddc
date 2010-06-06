@@ -15,7 +15,8 @@ module DDC.Type
 	, module DDC.Type.Finalise
 	, module DDC.Type.CutLoops
 	, module DDC.Type.Unify
-	, module DDC.Type.JoinSum)
+	, module DDC.Type.JoinSum
+	, module DDC.Type.StripFetters)
 where
 import DDC.Type.Exp
 import DDC.Type.Builtin 
@@ -33,3 +34,4 @@ import DDC.Type.Finalise
 import DDC.Type.CutLoops
 import DDC.Type.Unify
 import DDC.Type.JoinSum
+import DDC.Type.StripFetters
