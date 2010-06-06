@@ -158,7 +158,9 @@ generaliseType' varT tCore envCids
 			$ vsFree
 
 	trace	$ "    vksFree   = " % vksFree	% "\n\n"
-	let tScheme	= quantifyVarsT vksFree tConstify
+	let tScheme	= toFetterFormT
+			$ quantifyVarsT_constrainForm vksFree 
+			$ toConstrainFormT tConstify
 
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
