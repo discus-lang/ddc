@@ -13,6 +13,8 @@ import DDC.Var
 import Type.Effect.MaskLocal	(visibleRsT)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
+import qualified Data.Foldable	as Foldable
+import qualified Data.Sequence	as Seq
 
 
 -- | Reduce the context of this type using the provided map of instance definitions.
@@ -160,7 +162,9 @@ matchInstance cType cInst
 	, length ts1 == length ts2
 
 	-- all the type arguments of the class must unify
-	, Just constrs		<- sequence $ zipWith unifyTypes ts1 ts2
+	, Just constrs		<- liftM Seq.fromList
+				$ sequence 
+				$ zipWith unifyTT ts1 ts2
 
 	-- any extra constraint from the unification must have 
 	--	a var or wildcard for the RHS
@@ -171,7 +175,7 @@ matchInstance cType cInst
 
 				_	-> False)
 
-		$ concat $ constrs
+		$ Foldable.toList $ join $ constrs
 	= True
 
 	| otherwise

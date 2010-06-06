@@ -4,7 +4,6 @@ module Type.Util
 	, module Type.Util.Elaborate
 	, module Type.Util.Normalise
 	, module Type.Util.StripFetters
-	, module Type.Util.Unify 
 	, module Type.Util.Mask
 	, module Type.Util.Trim
 	, module Type.Util.JoinSum
@@ -19,7 +18,6 @@ import Type.Util.Instantiate
 import Type.Util.Elaborate
 import Type.Util.Normalise
 import Type.Util.StripFetters
-import Type.Util.Unify
 import Type.Util.Mask
 import Type.Util.Trim
 import Type.Util.JoinSum

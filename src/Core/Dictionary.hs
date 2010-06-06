@@ -10,15 +10,14 @@ import Core.Exp
 import Core.Util.Bits
 import Core.Plate.Trans
 import Type.Util.Bits
-import Type.Util.Unify
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
 import DDC.Var
-import qualified Data.Sequence	as Seq
-import qualified Data.Map	as Map
-import qualified Data.Foldable
+import qualified Data.Sequence		as Seq
+import qualified Data.Map		as Map
+import qualified Data.Foldable		as Foldable
 import qualified Debug.Trace
 
 stage		= "Core.Dictionary"
@@ -122,7 +121,7 @@ rewriteAppX env xx
 		-- Try and find matching instances.
 		vClass	= infoOverloadedClassName infoOverloaded
 		psMatchingInstances
-			= Data.Foldable.toList 
+			= Foldable.toList 
 			$ Seq.filter
 				(\p@PClassInst{}
 				  -> instanceMatchesArgs 
@@ -183,7 +182,8 @@ rewriteAppX_withInstance env xxUse
 	-- Unify the body of the overloaded use with the body of the overloaded definition.
 	-- This gives us the type args we need to pass to the body.
 	sub		= fromMaybe panicUnify
-			$ unifyTypes tInstBody tUseBody
+			$ liftM Foldable.toList
+			$ unifyTT tInstBody tUseBody
 
 	-- BUGS: We're discarding constraints between effect and closure sums here...
 	subArgs		= [(v1, t2)	| (TVar _ (UVar v1), t2)	<- sub]
@@ -278,9 +278,9 @@ instanceMatchesArgs
 	&& (and $ zipWith typesMatch tsMatch tsInst)
 
 typesMatch t1 t2 	
- = case unifyTypes t1 t2 of 
+ = case unifyTT t1 t2 of 
 	 Nothing	-> False
-	 Just constrs	-> and $ map subMatches constrs
+	 Just constrs	-> Foldable.and $ fmap subMatches constrs
 
 subMatches (t1, t2)
 	| TVar k _	<- t1

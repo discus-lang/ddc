@@ -14,7 +14,8 @@ module DDC.Type
 	, module DDC.Type.Substitute
 	, module DDC.Type.Quantify
 	, module DDC.Type.Finalise
-	, module DDC.Type.CutLoops)
+	, module DDC.Type.CutLoops
+	, module DDC.Type.Unify)
 where
 import DDC.Type.Exp
 import DDC.Type.Builtin 
@@ -30,3 +31,4 @@ import DDC.Type.Substitute
 import DDC.Type.Quantify
 import DDC.Type.Finalise
 import DDC.Type.CutLoops
+import DDC.Type.Unify
