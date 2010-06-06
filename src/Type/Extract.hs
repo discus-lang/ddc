@@ -12,7 +12,6 @@ import Type.Class
 import Type.State	
 import Type.Util
 import Type.Pretty
-import Type.Util.Cut
 import Type.Plate.Collect
 import Util
 import DDC.Solve.Trace

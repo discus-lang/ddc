@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Cuts loops in types
 --
 --   For recursive functions, the type we trace from the graph will contain
@@ -33,31 +34,31 @@
 --
 --	$c1 :> $c2 \/ $c1
 --	
---  TODO: Remember which fetters we've entered on the way up the tree.
---        Avoid re-entering the same type more than once.
---        This'll probably make it a lot faster when there are a large number of 
---        fetters to inspect.
+--  TODO: This is at least O(n^2) work. 
+--        We should be smarter about computing the reachability graph.
 --
-module Type.Util.Cut
+module DDC.Type.CutLoops
 	(cutLoopsT_constrainForm)
 where
-import Type.Plate.Collect
-import Util
 import DDC.Main.Error
+import DDC.Main.Pretty
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
+import DDC.Type.FreeTClasses
+import Data.List
 import Type.Pretty		()
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import Data.Set			(Set)
 
-stage	= "Type.Util.Cut"
+stage	= "DDC.Type.CutLoops"
 
 -- | Cut loops in this type
 cutLoopsT_constrainForm :: Type -> Type
 cutLoopsT_constrainForm (TConstrain tt crs)
  = let	-- decend into the constraints from every cid in the body of the type
-	cidsRoot	= Set.toList $ collectTClasses tt
+	cidsRoot	= Set.toList $ freeTClasses tt
 	crs'		= foldl' (cutLoops1 Set.empty) crs cidsRoot
    in	TConstrain tt crs'
 
@@ -67,23 +68,23 @@ cutLoopsT_constrainForm tt
 
 -- | Cut loops in the constraint with this cid
 cutLoops1 
-	:: Set Type		-- ^ the set of cids we've entered so far
-	-> Constraints		-- ^ the current constraints
-	-> Type			-- ^ the cid of the constraint we're decending into
-	-> Constraints		-- ^ the new constraints
+	:: Set Type		-- ^ Set of cids we've entered so far
+	-> Constraints		-- ^ The current constraints
+	-> Type			-- ^ Cid of the constraint we're decending into
+	-> Constraints		-- ^ The new constraints
 	
 cutLoops1 cidsEntered crs@(Constraints crsEq crsMore crsOther) tCid
 	| Just t2	<- Map.lookup tCid crsEq
-	= cutLoops1' cidsEntered crs tCid crsEq   (\crsX -> Constraints crsX crsMore crsOther) t2
+	= cutLoops1' cidsEntered tCid crsEq   (\crsX -> Constraints crsX crsMore crsOther) t2
 
 	| Just t2	<- Map.lookup tCid crsMore
-	= cutLoops1' cidsEntered crs tCid crsMore (\crsX -> Constraints crsEq crsX crsOther) t2
+	= cutLoops1' cidsEntered tCid crsMore (\crsX -> Constraints crsEq crsX crsOther) t2
 
 	| otherwise
 	= crs
 
 	
-cutLoops1' cidsEntered crs tCid crsX updateCrsX t2
+cutLoops1' cidsEntered tCid crsX updateCrsX t2
  = let
 	-- remember that we've entered this constraint
 	cidsEntered'	= Set.insert tCid cidsEntered
@@ -94,7 +95,7 @@ cutLoops1' cidsEntered crs tCid crsX updateCrsX t2
 	crs'		= updateCrsX crsX'
 		
 	-- decend into other constraints reachable from this type
-	cidsMore	= Set.toList $ collectTClasses t2'
+	cidsMore	= Set.toList $ freeTClasses t2'
 	 
    in	foldl' (cutLoops1 cidsEntered') crs' cidsMore
 	
@@ -114,20 +115,19 @@ cutT cidsCut tt
 	TCon{}			-> tt
 
 	TApp{}
-	 | Just (v, t2@(TVar k (UClass _)))	<- takeTFree tt
+	 | Just (_, t2@(TVar _ (UClass _)))	<- takeTFree tt
 	 ,  Set.member t2 cidsCut
 	 -> tEmpty
 
-	TApp	t1 t2		
-	 -> TApp (down t1) (down t2)
-
+	TApp	t1 t2		-> TApp (down t1) (down t2)
 
 	TVar k (UClass cid')
 	 | Set.member tt cidsCut
 	 -> let result
 	 	 | k == kEffect	 = tPure
 		 | k == kClosure = tEmpty
-		 | k == kValue	 
+
+		 | otherwise
 		 = panic stage $ "cutT: uncaught loop through class " % cid' % "\n"
 	    in  result
 
