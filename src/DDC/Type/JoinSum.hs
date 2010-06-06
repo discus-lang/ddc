@@ -1,29 +1,31 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 -- | Joining the manifest effect and closure portions of a type.
 --	Used when we choose between two functions of differing effects
---	eg: if .. then putStr else id
+--	eg: @if .. then putStr else id@
 --
--- The value and region portions of the types must be the same,
---	but we can sum the effect and closure portions.
+--   The value and region portions of the types must be the same,
+--   but we can sum the effect and closure portions.
 --	
--- Note that because we only strengthen constraints who's var does
---	not appear in a contra-variant branch, we don't end up
---	trying to join two types like:
+--   Note that because we only strengthen constraints who's var does
+--   not appear in a parameter type branch, we don't end up
+--   trying to join two types like:
 --
 -- @
--- 	t1:	(a -(!e1)>   b) -> c	:- !e1 :> !EFF2
--- 	t2:	(a -(!EFF1)  b) -> c	
---
+-- 	t1: (a -(!e1)>   b) -> c :- !e1 :> !EFF2
+--	t2: (a -(!EFF1)  b) -> c	
 -- @
--- To join the contra-variant effects we would have to change the constraint:
+--  
+-- To join effects in parameters we would have to change the constraint:
 --
 -- @
 -- 	t1 `joinMax` t2
---		= (a -(!e1)> b) -> c	:- !e1 :> !EFF1 \/ !EFF2
+--	  = (a -(!e1)> b) -> c 
+--	  :- !e1 :> !EFF1 \/ !EFF2
 -- @	
 -- 
--- That would mean we'd have to extend the !e1 constraint in the 
---	environment, which is a hassle.
+--   That would mean we'd have to extend the !e1 constraint in the 
+--	environment. This would be a hassle, so we don't do it.
 --
 module DDC.Type.JoinSum
 	(joinSumTs)

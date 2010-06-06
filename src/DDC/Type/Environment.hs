@@ -1,7 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
--- | Type environment.
---	Used in Core.Reconstruct and Type.Kind.
---	Not used during type inference, we use the type graph for that.
+-- | Type environment utilities.
 --
 module DDC.Type.Environment
 	( Env(..)
@@ -42,7 +40,7 @@ data Env
 	, envDropStmtEff	:: Bool }
 	
 
--- | An empty environment
+-- | An empty environment.
 emptyEnv :: Env
 emptyEnv
 	= Env
@@ -53,7 +51,7 @@ emptyEnv
 	, envDropStmtEff	= False }
 
 
--- | Add a type binding to the environment
+-- | Add a type binding to the environment.
 addEqVT :: Var -> Type -> Env -> Env
 addEqVT v t tt
  = case Map.lookup v (envEq tt) of
@@ -61,7 +59,7 @@ addEqVT v t tt
 	Just _	-> tt { envEq = Map.insert v t (Map.delete v (envEq tt)) }
 
 
--- | Add a type inequality to the environment
+-- | Add a type inequality to the environment.
 addMoreVT :: Var -> Type -> Env -> Env
 addMoreVT v t tt
  = case Map.lookup v (envMore tt) of
@@ -69,14 +67,14 @@ addMoreVT v t tt
 	Just _	-> tt { envMore = Map.insert v t (Map.delete v (envMore tt)) }
 
 
--- | Add a type inequality from a fetter to the environment
+-- | Add a type inequality from a fetter to the environment.
 addMoreF :: Fetter -> Env -> Env
 addMoreF ff table
  = case ff of
 	FMore (TVar _ (UVar v)) t	-> addMoreVT v t table
 	_				-> table
 
--- | Add a Const witness to the environment
+-- | Add a Const witness to the environment.
 addWitnessConst :: Var -> Var -> Env -> Env
 addWitnessConst v w tt
  = case Map.lookup v (envWitnessConst tt) of

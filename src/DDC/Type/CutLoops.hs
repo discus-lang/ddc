@@ -6,6 +6,7 @@
 --
 --   eg: for the map we have
 --
+-- @
 --    *166       :- *166       = *168 -(!180 $181)> *173
 --               ,  *168       = *169 -(!171 $172)> *170
 --               ,  *173       = *174 -(!178 $179)> *176
@@ -20,20 +21,23 @@
 --               ,  $1760      :> Data.List.(:) : *757
 --               ,  $1761      :> f : *168
 --    (loop)     ,  $1762      :> Data.List.map : *166
+-- @
 --
 --   We need to break these loops before packing the type into normal form, otherwise
 --   the pack process will loop forever. (we can't construct an infinite type)
 --
---   For :> constraints on effect and closure classes, we start at the top-most cid
+--   For @:>@ constraints on effect and closure classes, we start at the top-most cid
 --   and trace through the type, masking classes as we and looking for references to cids
---   which have already been marked. Looping effect and closure classes can be replaced by Bot,
+--   which have already been marked. Looping effect and closure classes can be replaced by bottom,
 --   and looping data cids create 'cannot construct infinite type' errors.
 --
---   It's ok to replace looping effect and closure cids with TBot because $c1 :> $c1 is always
+--   It's ok to replace looping effect and closure cids with bottom because @$c1 :> $c1@ is always
 --   trivially satisfied.
 --
+-- @
 --	$c1 :> $c2 \/ $c1
---	
+-- @
+-- 	
 --  TODO: This is at least O(n^2) work. 
 --        We should be smarter about computing the reachability graph.
 --
