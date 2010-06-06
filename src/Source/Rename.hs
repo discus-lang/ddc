@@ -18,7 +18,6 @@ import Source.Util
 import Source.Slurp
 import Source.Error
 import Source.Exp
-import Type.Util
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Error

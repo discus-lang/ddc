@@ -11,7 +11,8 @@ module DDC.Type
 	, module DDC.Type.FreeCids
 	, module DDC.Type.Flatten
 	, module DDC.Type.Substitute
-	, module DDC.Type.Quantify)
+	, module DDC.Type.Quantify
+	, module DDC.Type.Finalise)
 where
 import DDC.Type.Exp
 import DDC.Type.Builtin 
@@ -24,3 +25,4 @@ import DDC.Type.FreeCids
 import DDC.Type.Flatten
 import DDC.Type.Substitute
 import DDC.Type.Quantify
+import DDC.Type.Finalise

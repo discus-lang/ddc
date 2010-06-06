@@ -49,6 +49,7 @@ module DDC.Type.Compounds
 	, makeTFetters
 	, takeTFetters
 	, addFetters
+	, takeBindingVarF
 	
 	  -- * Constraints
 	, makeTConstrain
@@ -339,6 +340,16 @@ addFetters	fsMore	t
 	_ -> case fsMore of
 		[]	-> t
 		ff	-> TFetters t ff
+
+
+-- | Take the binding var from a `FWhere`, if any.
+takeBindingVarF :: Fetter -> Maybe Var
+takeBindingVarF ff
+ = case ff of
+ 	FWhere (TVar _ (UVar  v))   _	-> Just v
+ 	FWhere (TVar _ (UMore v _)) _	-> Just v
+	_				-> Nothing
+
 
 -- Constraints ------------------------------------------------------------------------------------
 -- | If the given constraints are non empty then add a TConstrain to the type, 

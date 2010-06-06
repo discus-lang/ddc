@@ -11,7 +11,6 @@ import Type.State
 import Type.Plug		
 import Type.Strengthen
 import Type.Context
-import Type.Util
 import Type.Pretty
 import Shared.VarPrim
 import Type.Plate.Collect

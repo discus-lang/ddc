@@ -3,10 +3,7 @@
 module Type.Util.Bits
 	-- simple
 	( takeValueArityOfType
-	
-	-- projections
-	, takeBindingVarF
-	
+		
 	-- crushing
 	, crushT
 
@@ -57,14 +54,6 @@ takeValueArityOfType tt
 	TVar{}		-> Just 0
 	TError{}	-> Nothing
 	
-
--- | Take the binding var from FLet's 
-takeBindingVarF :: Fetter -> Maybe Var
-takeBindingVarF ff
- = case ff of
- 	FWhere (TVar k (UVar v)) t2	-> Just v
-	_				-> Nothing
-
 
 -- Crushing ----------------------------------------------------------------------------------------
 -- | do some simple packing
