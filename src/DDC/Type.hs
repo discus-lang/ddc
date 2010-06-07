@@ -7,8 +7,7 @@ module DDC.Type
 	, module DDC.Type.Kind
 	, module DDC.Type.Witness
 	, module DDC.Type.FreeVars
-	, module DDC.Type.FreeCids
-	, module DDC.Type.FreeTClasses
+	, module DDC.Type.FreeTVars
 	, module DDC.Type.Flatten
 	, module DDC.Type.Substitute
 	, module DDC.Type.Quantify
@@ -27,8 +26,7 @@ import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.Witness
 import DDC.Type.FreeVars()
-import DDC.Type.FreeCids
-import DDC.Type.FreeTClasses
+import DDC.Type.FreeTVars
 import DDC.Type.Flatten
 import DDC.Type.Substitute
 import DDC.Type.Quantify

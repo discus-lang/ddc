@@ -25,7 +25,6 @@ module Type.Strengthen
 where
 import Type.Class
 import Type.State
-import Type.Plate.Collect
 import Util
 import DDC.Main.Error
 import DDC.Type
@@ -101,7 +100,7 @@ slurpParamClassVarsT_constrainForm tt
 
 	TApp t1 t2
 	  | Just (t11, t12, eff, clo)	<- takeTFun tt
-	  -> (Set.toList $ collectTClassVars t11) 
+	  -> (Set.toList $ freeTClassVars t11) 
 	     ++ slurpParamClassVarsT_constrainForm t12
 	
 	  | Just _	<- takeTData tt

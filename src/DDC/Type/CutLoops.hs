@@ -43,7 +43,7 @@ import DDC.Main.Pretty
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
-import DDC.Type.FreeTClasses
+import DDC.Type.FreeTVars
 import Data.List
 import Type.Pretty		()
 import qualified Data.Map	as Map

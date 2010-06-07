@@ -3,6 +3,7 @@
 module Type.Plate.Collect
 	( collectBindingVarsT
 	, collectTClassVars
+	, collectTClasses
 	, collectTErrors )
 where 
 import Util
@@ -65,6 +66,27 @@ collectTClassVars tt
 			 tt)
 		Set.empty
  
+
+-- | Collect all the TClasses in this type.
+collectTClasses
+	:: TransM (State (Set Type)) a
+	=> a 
+	-> Set Type
+	
+collectTClasses x
+ = let 	collect t
+  	 = case t of
+	 	TVar _ UClass{}	
+		 -> do	modify (Set.insert t)
+		 	return t
+			
+		_ ->	return t
+	
+   in	execState
+   		(transZM (transTableId { transT_enter = collect }) 
+			 x)
+		Set.empty
+
 
 -- | Collect all the TErrors in this type
 --	We can't put them in a Set because Ord is not defined

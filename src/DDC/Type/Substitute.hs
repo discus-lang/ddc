@@ -7,13 +7,13 @@ module DDC.Type.Substitute
 	, subVV_everywhere
 	, subCidCid_everywhere)
 where
-import Type.Plate.Collect
 import Type.Pretty		()
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Transform
 import DDC.Type.Kind
+import DDC.Type.FreeTVars
 import DDC.Var
 import Data.Traversable		(mapM)
 import Util			hiding (mapM)
@@ -155,7 +155,7 @@ cutF :: (Type, Type) -> SubM (Maybe (Type, Type))
 cutF (t1, t2)
 	-- If the binding var is in the rhs then we've got an infinite type error
 	| isValueType t1
-	= if Set.member t1 $ collectTClassVars t2
+	= if Set.member t1 $ freeTClassVars t2
 		then do	modify $ \s -> (t1, t2) : s
 			return $ Nothing
 

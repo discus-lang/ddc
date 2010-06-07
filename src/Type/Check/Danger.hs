@@ -3,7 +3,6 @@ module Type.Check.Danger
 	(dangerousCidsT)
 where
 import Util
-import Type.Plate.Collect
 import Type.Pretty		()
 import DDC.Main.Error
 import DDC.Var
@@ -80,7 +79,7 @@ dangerT rsMutable fsClosure tt
 	 
 	 | Just (t1, t2)	<- takeTDanger tt
 	 -> if Set.member t1 rsMutable
-		then collectTClassVars t2
+		then freeTClassVars t2
 		else dangerT rsMutable fsClosure t2
 	
 	 | otherwise
@@ -109,7 +108,7 @@ dangerT_data rsMutable fsClosure (v, k, ts)
 				_		-> False)
 			ts
 
-	= Set.unions $ map collectTClassVars ts
+	= Set.unions $ map freeTClassVars ts
 
 	 -- check for dangerous vars in subterms
 	| otherwise
