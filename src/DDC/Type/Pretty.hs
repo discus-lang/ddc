@@ -1,10 +1,8 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Pretty printer for type expressions.
-module Type.Pretty
-	( prettyTB
-	, prettyTypeSplit
-	, prettyTS)
+module DDC.Type.Pretty
+	( prettyTypeParens
+	, prettyTypeSplit)
 where
 import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
@@ -19,7 +17,7 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import Util
 
-stage	= "Type.Pretty"
+stage	= "DDC.Type.Pretty"
 
 -- Bind -------------------------------------------------------------------------------------------
 instance Pretty Bind PMode where
@@ -33,10 +31,9 @@ instance Pretty Bind PMode where
 instance Pretty Type PMode where
  ppr tt = pprTypeQuant Set.empty tt
 
-
--- | When pretty printing type we don't want to show module identifiers on quantified vars. 
---	We keep a set of which vars are quantified as we decend into the type.
---	TODO: handling of quant vars not done yet.
+-- | When pretty printing type we don't want to show module identifiers on locally quantified vars. 
+--   We keep a set of which vars are quantified as we decend into the type.
+--   TODO: the handling of quant vars not done yet.
 pprTypeQuant :: Set Var -> Type -> Str
 pprTypeQuant vsQuant tt
  = let down = pprTypeQuant vsQuant 
@@ -46,7 +43,7 @@ pprTypeQuant vsQuant tt
 	TForall BNil k t 
 	 -> k % " => " % down t
 
-	TForall b k t	
+	TForall b _ _	
 	 -> let	(bks, tBody) 	= takeTForall tt
 		Just v		= takeVarOfBind b
 		vsQuant'	= Set.insert v vsQuant
@@ -69,9 +66,9 @@ pprTypeQuant vsQuant tt
 		
 	TSum k  es	-> k  % "{" % "; " %!% map down es % "}"
 
-	-- type elaboration in source
-	TApp (TCon (TyConElaborate elab kind)) t
-	 -> prettyTB t % "{" % elab % "}"
+	-- type elaboration in source types
+	TApp (TCon (TyConElaborate elab _)) t
+	 -> prettyTypeParens t % "{" % elab % "}"
 
 	TApp (TCon (TyConClosure (TyConClosureFree v) _)) t
 	 -> v % " : " % t
@@ -80,38 +77,37 @@ pprTypeQuant vsQuant tt
 	 -> v % " $> " % t
 
 	TApp t1 t2
- 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
+ 	 | Just (t1', t2', eff, clo)	<- takeTFun tt
 	 -> let str
 	 	 | eff == tPure
 		 , clo == tEmpty
-		 = prettyTBF t1 % " -> " % prettyTRight t2
+		 = prettyTypeLeft t1' % " -> " % prettyTypeRight t2'
 				
 		 | clo == tEmpty
-		 = prettyTBF t1 % " -(" % eff % ")> " % prettyTRight t2
+		 = prettyTypeLeft t1' % " -(" % eff % ")> " % prettyTypeRight t2'
 				
 		 | eff == tPure
-		 = prettyTBF t1 % " -(" % clo % ")> " % prettyTRight t2
+		 = prettyTypeLeft t1' % " -(" % clo % ")> " % prettyTypeRight t2'
 				
 		 | otherwise
-		 = prettyTBF t1 % " -(" % prettyTB eff % " " % prettyTB clo % ")> " % prettyTRight t2
+		 = prettyTypeLeft t1' % " -(" % prettyTypeParens eff % " " % prettyTypeParens clo % ")> " % prettyTypeRight t2'
 	    in str
 
 	 | otherwise
 	 -> let	pprAppLeft x 
 	 	  | isTApp x 	= ppr x
-		  | otherwise	= prettyTB x
+		  | otherwise	= prettyTypeParens x
 
 		pprAppRight x
 		  | isSomeTVar x 
 		  = ppr x
 
 		  | otherwise		
-		  = prettyTB x
+		  = prettyTypeParens x
 
 	    in  pprAppLeft t1 % " " % pprAppRight t2
 
 	TCon tycon	-> ppr tycon
-
 
 	TVar k (UVar v)	   -> pprVarKind v k 
 	TVar k (UClass c)  -> resultKind k % c
@@ -127,16 +123,18 @@ pprTypeQuant vsQuant tt
 			then	"*" % v
 			else	ppr v)
 
-	TError k t	-> "@TError" % k % "..."
+	TError k _	-> "@TError" % k % "..."
 
 
-prettyTRight tt
+-- | Pretty print a type that appears on the right of a function arrow.
+prettyTypeRight tt
  = case tt of
  	TFetters{}	-> "(" % tt % ")"
 	_		-> ppr tt
 
 
-prettyTBF t
+-- | Pretty print a type that appears on the left of a function arrow.
+prettyTypeLeft t
 	| Just{}	<- takeTFun t
 	=  "(" % t % ")"
 
@@ -144,14 +142,7 @@ prettyTBF t
 	= ppr t
 
 
-prettyTB t
- = case t of
-	TVar{}	 	-> ppr t
-	TSum{}		-> ppr t
-	TCon{}		-> ppr t
-	_		-> "(" % t % ")"
-
-
+-- | Pretty print a variable with its kind.
 pprVarKind :: Var -> Kind -> PrettyM PMode
 pprVarKind v k
  = ifMode 
@@ -162,6 +153,8 @@ pprVarKind v k
 
 	(ppr v)
 
+
+-- | Pretty print a binder with its kind.
 pprBindKind :: Bind -> Kind -> PrettyM PMode
 pprBindKind bb k
  = case bb of
@@ -170,14 +163,22 @@ pprBindKind bb k
 	BMore v t	-> pprVarKind (varWithoutModuleId v) k % " :> " % t
 	
 
+-- | Pretty print a type, wrapping it in parens if it's not some atomic thing like a `TVar` or `TSum`.
+prettyTypeParens :: Type -> Str
+prettyTypeParens t
+ = case t of
+	TVar{}	 	-> ppr t
+	TSum{}		-> ppr t
+	TCon{}		-> ppr t
+	_		-> "(" % t % ")"
 
--- | Prints a type with the fetters on their own lines
+-- | Pretty print a type with the fetters on their own lines.
 prettyTypeSplit :: Type	-> PrettyM PMode
 prettyTypeSplit	   tt
  = case tt of
 	TForall BNil _ _	-> prettyTypeSplit_crs tt
 
- 	TForall b k t
+ 	TForall{}
 	 -> let (bks, tBody)	= takeTForall tt
 	    in	"forall " 
 			% punc " " (map (uncurry pprBindKind) bks) % "\n"
@@ -206,10 +207,6 @@ prettyTypeSplit_crs xx
 	 % punc (ppr "\n,  ") fs
 
 	_ -> ppr xx
-	 	
-prettyTS t
-	= prettyTypeSplit 
-	$ toFetterFormT t 
 
 
 -- TProj -------------------------------------------------------------------------------------------
@@ -232,7 +229,7 @@ instance Pretty ClassId PMode where
 instance Pretty Fetter PMode where
  ppr f
   = case f of
-  	FConstraint	c ts	-> c  % " " % " " %!% map prettyTB ts
+  	FConstraint	c ts	-> c  % " " % " " %!% map prettyTypeParens ts
 	FWhere		t1 t2	-> padL 10 t1 % " = "	% t2
 	FMore		t1 t2	-> padL 10 t1 % " :> " % t2
 
@@ -251,12 +248,12 @@ instance Pretty Super PMode where
 
 -- Kind --------------------------------------------------------------------------------------------
 instance Pretty Kind PMode where
- ppr k
-  = case k of
+ ppr kk
+  = case kk of
 	KNil		-> ppr "?"
-	KCon k s	-> ppr k
+	KCon k _	-> ppr k
 	KFun k1 k2	-> k1 % " -> " % k2
-	KApp k1 t1	-> k1 % " " % prettyTB t1
+	KApp k1 t1	-> k1 % " " % prettyTypeParens t1
 
 	KSum [k]	-> ppr k
 	KSum ks		-> "+" % (braces $ punc ", " ks)
@@ -277,7 +274,7 @@ instance  (Pretty param PMode)
 		% "    type parameters:\n"
 			%> ("\n" %!% ts) % "\n\n"
 		% "    scheme:\n"
-			%>  (prettyTS t)
+			%>  (prettyTypeSplit t)
 		% "\n\n"
 
 	InstanceLetRec v1 v2 mt

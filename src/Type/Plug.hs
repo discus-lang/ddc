@@ -12,7 +12,6 @@ import Util
 import DDC.Main.Error
 import DDC.Type
 import DDC.Type.Transform
-import Type.Pretty		()
 import qualified Data.Set	as Set
 
 stage	= "Type.Plug"

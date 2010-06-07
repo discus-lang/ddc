@@ -35,7 +35,7 @@ import DDC.Type.Kind
 import DDC.Var
 import DDC.Util.FreeVars
 import DDC.Type.FreeVars		()
-import Type.Pretty			()
+import DDC.Type.Pretty			()
 import Data.Maybe
 import Data.Set				(Set)
 import qualified Type.Util.PackFast	as PackFast

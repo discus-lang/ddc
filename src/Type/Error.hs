@@ -4,7 +4,6 @@ module Type.Error
 	( Error(..) )
 where
 import Type.Location
-import Type.Pretty
 import Util
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
@@ -237,13 +236,13 @@ instance Pretty Error PMode where
 		, eTypeArgs	= ts
 		, eFetterMaybeSrc = Just src })
 	= dispSourcePos src % "\n"
-	% "    No instance for " % v % " " % punc " " (map prettyTB ts) % "\n"
+	% "    No instance for " % v % " " % punc " " (map prettyTypeParens ts) % "\n"
 
  ppr err@(ErrorNoInstance
  		{ eClassVar	= v
 		, eTypeArgs	= ts
 		, eFetterMaybeSrc = Nothing })
-	= "    No instance for " % v % " " % punc " " (map prettyTB ts) % "\n"
+	= "    No instance for " % v % " " % punc " " (map prettyTypeParens ts) % "\n"
 	
  -- Field projection problems.
  ppr err@(ErrorNoProjections

@@ -1,11 +1,10 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
 module Core.Pretty
-	( pprStr )
+	(pprStr)
 where
 import Core.Exp
 import Core.Util.Bits
-import Type.Pretty
 import Util
 import Data.Function
 import DDC.Main.Pretty
@@ -85,7 +84,7 @@ instance Pretty Top PMode where
 		% "\n}\n")
 
 	PClassInst v ts defs
-	 -> ("instance " % v % " " % " " %!% map prettyTB ts % "\n"
+	 -> ("instance " % v % " " % " " %!% map prettyTypeParens ts % "\n"
 			% "{\n"
 			%> ("\n\n" %!% (map (\(v, exp) 
 						-> v % "\n" 
@@ -103,7 +102,7 @@ instance Pretty CtorDef PMode where
   = case xx of
   	CtorDef v t arity tag fs
  	 -> v 	% "\n"
-		%> 	( ":: " % prettyTS t % "\n"
+		%> 	( ":: " % prettyTypeSplit t % "\n"
 			% "with { ARITY  = " % arity	% "\n"
  			% "     , TAG    = " % tag      % "\n"
 			% "     , FIELDS = " % fs 	% "}")
@@ -158,22 +157,22 @@ instance Pretty Exp PMode where
 			
 			(eff, _)
 			 | eff == tPure		
-			 -> "\n" % replicate 20 ' ' % " of " % prettyTB clo
+			 -> "\n" % replicate 20 ' ' % " of " % prettyTypeParens clo
 
 			(_, clo)
 			 | clo == tEmpty		
-			  -> "\n" % replicate 20 ' ' % " of " % prettyTB eff
+			  -> "\n" % replicate 20 ' ' % " of " % prettyTypeParens eff
 
-			_ -> "\n" % replicate 20 ' ' % " of " % prettyTB eff 
-			   % "\n" % replicate 20 ' ' % "    " % prettyTB clo
+			_ -> "\n" % replicate 20 ' ' % " of " % prettyTypeParens eff 
+			   % "\n" % replicate 20 ' ' % "    " % prettyTypeParens clo
 					 	 
 	XAPP x t
 	 | spaceApp t
 	 ->  x % "\n" 
-	 	%> prettyTB t
+	 	%> prettyTypeParens t
 
 	 | otherwise
-	 ->  x % " " % prettyTB t
+	 ->  x % " " % prettyTypeParens t
 
 	XApp e1 e2 eff
 	 -> let	pprAppLeft x 
@@ -187,7 +186,7 @@ instance Pretty Exp PMode where
 	    in	pprAppLeft e1 % pprAppRight e2
 
 	XTau t x
-	 -> "[** " % prettyTB t % " ]\n" % x
+	 -> "[** " % prettyTypeParens t % " ]\n" % x
 
 	XDo [s@(SBind Nothing XVar{})]
 	 -> "do { " % s % "; }";
@@ -246,7 +245,7 @@ prettyExpB x
  = case x of
 	XVar{}		-> ppr x
 	XLit{}		-> ppr x
-	XType t		-> prettyTB t
+	XType t		-> prettyTypeParens t
 	_		-> "(" % x % ")"
 
 

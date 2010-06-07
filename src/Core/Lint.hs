@@ -16,7 +16,6 @@ import DDC.Main.Pretty
 import DDC.Type
 import DDC.Var
 import Data.List
-import Type.Pretty		()
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 

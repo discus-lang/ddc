@@ -7,7 +7,6 @@ module DDC.Type.Substitute
 	, subVV_everywhere
 	, subCidCid_everywhere)
 where
-import Type.Pretty		()
 import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
@@ -15,6 +14,7 @@ import DDC.Type.Transform
 import DDC.Type.Kind
 import DDC.Type.FreeTVars
 import DDC.Var
+import DDC.Type.Pretty		()
 import Data.Traversable		(mapM)
 import Util			hiding (mapM)
 import Prelude			hiding (mapM)

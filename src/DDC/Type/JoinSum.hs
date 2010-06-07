@@ -33,7 +33,7 @@ import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.Environment
-import Type.Pretty		()
+import DDC.Type.Pretty		()
 import DDC.Main.Pretty
 import Control.Monad
 

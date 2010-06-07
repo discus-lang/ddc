@@ -10,7 +10,6 @@ import Type.Strengthen
 import Type.Error
 import Type.Class
 import Type.State	
-import Type.Pretty
 import Type.Plate.Collect
 import Util
 import DDC.Solve.Trace
@@ -85,7 +84,7 @@ extractType_fromClass final varT cid
 	--
 	trace	$ ppr " -- tracing type from the graph\n"
  	tTrace	<- {-# SCC "extract/trace" #-} traceTypeAsSquid cid
-	trace	$ "    tTrace:\n" 	%> prettyTS tTrace	% "\n\n"
+	trace	$ "    tTrace:\n" 	%> prettyTypeSplit tTrace	% "\n\n"
 
 
 	-- For simple vars, applying the packer and flattener etc won't do anything,
@@ -115,7 +114,7 @@ extractType_pack final varT cid tTrace
 				| TError _ (TypeErrorLoop t1 t2) 
 				<- collectTErrors tPack ]
 
-	trace	$ "    tPack:\n" 	%> prettyTS tPack % "\n\n"
+	trace	$ "    tPack:\n" 	%> prettyTypeSplit tPack % "\n\n"
 	
 	if (isNil tsLoops)
 	 -- no graphical data, ok to continue.
@@ -157,7 +156,7 @@ extractType_more final varT cid tPack
 
 	trace	$ "    tsParam   = " % tsParam	% "\n"
 	trace	$ "    tStrong\n"
-		%> prettyTS tStrong	% "\n\n"
+		%> prettyTypeSplit tStrong	% "\n\n"
 
 	-- Trim closures
 	trace	$ ppr " -- trimming closures\n"	
@@ -165,15 +164,15 @@ extractType_more final varT cid tPack
 		| isClosure tStrong	= trimClosureC_constrainForm Set.empty Set.empty tStrong
 		| otherwise		= trimClosureT_constrainForm Set.empty Set.empty tStrong
 
-	trace	$ "    tTrim:\n" 	%> prettyTS tTrim % "\n\n"
+	trace	$ "    tTrim:\n" 	%> prettyTypeSplit tTrim % "\n\n"
 
 	-- Cut loops through :> fetters in this type
 	trace	$ ppr " -- cutting loops\n"
 	let tCut	= cutLoopsT_constrainForm tTrim
-	trace	$ "    tCut:\n" 	%> prettyTS tCut % "\n\n"
+	trace	$ "    tCut:\n" 	%> prettyTypeSplit tCut % "\n\n"
 	
 	let tCutPack	= PackFast.packType tCut
-	trace	$ "    tCutPack:\n"	%> prettyTS tCutPack % "\n\n"
+	trace	$ "    tCutPack:\n"	%> prettyTypeSplit tCutPack % "\n\n"
 
 	extractType_final final varT cid tCutPack
 	
@@ -182,7 +181,7 @@ extractType_final True varT cid tCutPack
  	-- plug classIds with vars
 	trace	$ ppr " -- plugging classids\n"
  	tPlug	<- plugClassIds Set.empty tCutPack
-	trace	$ "    tPlug:\n" 	%> prettyTS tPlug	% "\n\n"
+	trace	$ "    tPlug:\n" 	%> prettyTypeSplit tPlug	% "\n\n"
  
 	-- close off never-quantified effect and closure vars
  	quantVars	<- getsRef stateQuantifiedVars
@@ -190,7 +189,7 @@ extractType_final True varT cid tCutPack
 			$ finaliseT_constrainForm quantVars True
 			$ toConstrainFormT tPlug
 	
-	trace	$ "    tFinal:\n" 	%> prettyTS tFinal	% "\n\n"
+	trace	$ "    tFinal:\n" 	%> prettyTypeSplit tFinal	% "\n\n"
 	extractType_reduce varT cid tFinal
 	
 extractType_final False varT cid tTrim
@@ -206,6 +205,6 @@ extractType_reduce varT cid tFinal
 		  reduceContextT classInst tFinal
 
 	trace	$ " -- reducing context\n"
-		% "    tReduced:\n" 	%> prettyTS tReduced % "\n\n"
+		% "    tReduced:\n" 	%> prettyTypeSplit tReduced % "\n\n"
 
 	return	$ Just tReduced

@@ -3,7 +3,6 @@ module Type.Docable where
 import DDC.Type
 import DDC.Util.Doc
 import DDC.Main.Pretty
-import Type.Pretty		()
 
 
 instance Docable Kind Str where

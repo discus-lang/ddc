@@ -10,7 +10,6 @@ import DDC.Var
 import DDC.Util.Doc
 import Source.Pretty			()
 import Source.Exp			(InfixMode(..))
-import Type.Pretty			(prettyTS)
 import qualified DDC.Config.Version	as Config
 import qualified Data.Map		as Map
 
@@ -31,7 +30,7 @@ instance Docable Int Str
  where	doc i 	= DLeaf (ppr i)
 
 instance Docable Type Str 
- where	doc t	= doc $ prettyTS $ t
+ where	doc t	= doc $ prettyTypeSplit $ t
 
 instance Docable Kind Str 
  where	doc k	= doc $ ppr k

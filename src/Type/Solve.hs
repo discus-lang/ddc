@@ -16,7 +16,6 @@ import Type.State
 import Type.Class
 import Type.Feed
 import Type.Location
-import Type.Pretty
 import Type.Util
 import Constraint.Bits
 import Constraint.Exp
@@ -110,7 +109,7 @@ solveCs	(c:cs)
 	-- A type signagure
 	CSig src t1 t2
 	 -> do	trace	$ "### CSig  " % t1 % "\n"
-	 		% "    t2:\n" %> prettyTS t2 % "\n\n"
+	 		% "    t2:\n" %> prettyTypeSplit t2 % "\n\n"
 
 		-- The signature itself is a type scheme, but we want to
 		--	add a fresh version to the graph so that it unifies
@@ -125,7 +124,7 @@ solveCs	(c:cs)
 			$ stripFWheresT_all 
 			$ toConstrainFormT t2_inst
 
-		trace	$ "    t2_strip:\n" %> prettyTS t2_strip % "\n\n"
+		trace	$ "    t2_strip:\n" %> prettyTypeSplit t2_strip % "\n\n"
 
 		-- Add the constraints to the graph and continue solving.
 		feedConstraint (CSig src t1 t2_strip)
@@ -147,7 +146,7 @@ solveCs	(c:cs)
 
 	-- A single equality constraint
 	CEq src t1 t2
- 	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTS t2 % "\n"
+ 	 -> do	trace	$ "### CEq  " % padL 20 t1 % " = " %> prettyTypeSplit t2 % "\n"
 		feedConstraint c
 		solveNext cs
 	
@@ -184,7 +183,7 @@ solveCs	(c:cs)
 	--	tyvars that might cause some projections to be resolved. Instead, we record
 	--	the fact that the var is safe to generalise in the GenSusp set.
 	CGen src t1@(TVar k (UVar v1))
-	 -> do	trace	$ "### CGen  " % prettyTS t1 %  "\n"
+	 -> do	trace	$ "### CGen  " % prettyTypeSplit t1 %  "\n"
 		stateGenSusp `modifyRef` Set.insert v1
 		solveNext cs
 

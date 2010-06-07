@@ -4,7 +4,6 @@
 module Type.Export
 	(squidExport)
 where
-import Type.Pretty
 import Type.Error
 import Type.Base
 import Type.Class
@@ -111,8 +110,8 @@ exportType t
 			$ toConstrainFormT tPlug
 
 	trace	$ "*   Export.exportType: final\n"
-		% "    tPlug:\n" 	%> prettyTS tPlug	% "\n"
-		% "    tFinal:\n"	%> prettyTS tPlug	% "\n"
+		% "    tPlug:\n" 	%> prettyTypeSplit tPlug	% "\n"
+		% "    tFinal:\n"	%> prettyTypeSplit tPlug	% "\n"
 
 	let kind	= kindOfType tFinal
 	let tTrim
@@ -120,7 +119,7 @@ exportType t
 		| isValueKind   kind 	= trimClosureT_constrainForm Set.empty Set.empty tFinal
 		| otherwise		= tFinal
 				
-	trace	$ "    tTrim:\n"	%> prettyTS tTrim	% "\n\n"
+	trace	$ "    tTrim:\n"	%> prettyTypeSplit tTrim	% "\n\n"
 	return $ toFetterFormT tTrim		
  
 
@@ -178,8 +177,8 @@ exportInstInfo (v, ii)
 			% "    tt = " % ii % "\n"
 			% "    ts:\n" 		%> "\n" %!% ts		% "\n\n"
 			% "    ts_final\n"	%> "\n" %!% ts_final	% "\n\n"
-			% "    t:\n"		%> prettyTS t		% "\n\n"
-			% "    t':\n"		%> prettyTS t'		% "\n\n"
+			% "    t:\n"		%> prettyTypeSplit t		% "\n\n"
+			% "    t':\n"		%> prettyTypeSplit t'		% "\n\n"
 
 	 	return		$ (v, InstanceLet v1 v2 ts_final t')
 		

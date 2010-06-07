@@ -9,10 +9,10 @@ where
 import Type.Location
 import Util
 import Data.Array.IO
-import Type.Pretty		()
 import DDC.Var
 import DDC.Type.Exp
 import DDC.Solve.Node
+import DDC.Type.Pretty		()
 import Data.Sequence		(Seq)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

@@ -40,7 +40,6 @@ import DDC.Main.Pretty
 import DDC.Var
 import DDC.Type
 import Data.Maybe
-import Type.Pretty		()
 import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set

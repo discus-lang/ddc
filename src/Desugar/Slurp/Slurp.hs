@@ -1,7 +1,6 @@
 {-# OPTIONS -fno-warn-missing-fields #-}
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 -- | Slurp out type constraints from the desugared IR.
-
 module Desugar.Slurp.Slurp
 	(slurpTreeM)
 where
@@ -16,7 +15,7 @@ import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS
 import DDC.Base.SourcePos
 import DDC.Var
-import Type.Pretty		()
+import DDC.Type			()
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

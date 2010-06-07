@@ -6,7 +6,6 @@ module Desugar.Pretty
 where
 import Desugar.Exp
 import Desugar.Plate.Trans
-import Type.Pretty
 import DDC.Main.Error
 import DDC.Main.Pretty		
 import DDC.Type
@@ -37,14 +36,14 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PExtern nn v tv (Just to)
 	 -> annot nn 
 	 	("extern " % v	
-			%> ("\n" % ":: " % prettyTS tv	% "\n"
-				 % ":$ " % to		% ";\n"))
+			%> ("\n" % ":: " % prettyTypeSplit tv	% "\n"
+				 % ":$ " % to			% ";\n"))
 		% "\n"
 
 	PExtern nn v tv Nothing
 	 -> annot nn 
 	 	("extern " % v	
-			%> ("\n" % ":: " % prettyTS tv	% ";\n"))
+			%> ("\n" % ":: " % prettyTypeSplit tv	% ";\n"))
 		% "\n"
 
 	PExternData nn s v k
@@ -92,12 +91,13 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 	 	("class " % pprVar_unqual v % " " % " " %!% map pprPClassDict_varKind ts % " where\n"
 			% "{\n"
-			%> ("\n\n" %!% map (\(v', sig) -> pprVar_unqual v' % ("\n        :: " %> prettyTS sig 	% ";")) sigs)
+			%> ("\n\n" %!% map (\(v', sig) -> pprVar_unqual v' 
+					% ("\n        :: " %> prettyTypeSplit sig 	% ";")) sigs)
 			% "\n}\n")
 
 	PClassInst nn v ts ss
 	 -> annot nn 
-	 	("instance " % v % " " % " " %!% map prettyTB ts % " where\n"
+	 	("instance " % v % " " % " " %!% map prettyTypeParens ts % " where\n"
 			% "{\n"
 			%> ("\n\n" %!% ss) % "\n"
 			% "}\n\n")
@@ -112,7 +112,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	PTypeSig nn v t
 	 -> annot nn
-	 	(v %> ("\n:: " % prettyTS t))	% ";\n\n"
+	 	(v %> ("\n:: " % prettyTypeSplit t))	% ";\n\n"
 
 	PBind nn (Just v) x
 	 -> annot nn 
@@ -148,7 +148,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XVar		nn v		-> annot nn (ppr v)
 	XVarInst 	nn v		-> annot nn ("@XVarInst " % v)
 	XProj 		nn x j		-> annot nn ("@XProj "  % prettyXB x % " " % j)
-	XProjT		nn t j		-> annot nn ("@XProjT " % prettyTB t % " " % j)
+	XProjT		nn t j		-> annot nn ("@XProjT " % prettyTypeParens t % " " % j)
 	XLambda    	nn v x 		-> annot nn ("\\" % v  % " ->\n" % x)
 	XLambdaTEC 	nn v x t eff clo -> annot nn ("\\" % v  % " (" % eff % " " % clo % ") :: " % t % " ->\n" % x)
 

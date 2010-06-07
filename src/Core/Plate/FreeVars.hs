@@ -11,7 +11,6 @@ import DDC.Main.Error
 import DDC.Var
 import DDC.Type
 import DDC.Util.FreeVars
-import Type.Pretty		()
 import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))
 import qualified Data.Set 	as Set

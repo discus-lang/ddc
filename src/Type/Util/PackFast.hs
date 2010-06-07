@@ -10,8 +10,8 @@ import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.FreeTVars
+import DDC.Type.Pretty		()
 import Data.List
-import Type.Pretty		()
 import Data.Map			(Map)
 import Data.Set			(Set)
 import qualified Data.Map	as Map

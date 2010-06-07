@@ -18,7 +18,6 @@ import qualified Source.Slurp		as S
 import qualified Source.Util		as S
 import qualified DDC.Type		as T
 import qualified DDC.Type.Transform	as T
-import qualified Type.Pretty		as T
 import qualified Type.Util		as T
 import qualified Desugar.Exp		as D
 import qualified Desugar.Plate.Trans	as D
@@ -220,7 +219,7 @@ exportForeign v tv to
 	= pprStrPlain
 	$ "foreign import "
 	% pprStrPlain v { varModuleId = ModuleIdNil }
-	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTS $ T.normaliseT tv)
+	%>	(  "\n:: " ++ (pprStrPlain $ T.prettyTypeSplit $ T.normaliseT tv)
 		++ "\n:$ " ++ pprStrPlain to
 
 		++ ";\n\n")

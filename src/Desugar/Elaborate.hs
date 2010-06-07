@@ -3,7 +3,6 @@ module Desugar.Elaborate
 	(elaborateTree)
 where
 import Desugar.Exp
-import Type.Pretty
 import Control.Monad.State.Strict
 import Util
 import DDC.Base.SourcePos
@@ -107,7 +106,7 @@ elaborateT_fun tt
 		, "   free = " % free
 		, " tt_eff = " % tt_eff
 		, " tt_clo = " % tt_clo
-		, "    tt':\n" %> prettyTS tt_fs
+		, "    tt':\n" %> prettyTypeSplit tt_fs
 		, blank])
 		$ return tt_fs
 

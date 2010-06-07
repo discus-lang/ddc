@@ -5,9 +5,9 @@ module Constraint.Pretty
 	( )
 where
 import qualified Data.Map	as Map
-import Type.Pretty
 import Constraint.Exp
 import DDC.Main.Pretty
+import DDC.Type
 
 -- CTree ------------------------------------------------------------------------------------------
 instance Pretty CTree PMode where

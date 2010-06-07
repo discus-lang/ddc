@@ -7,7 +7,6 @@ where
 import Util
 import Source.Exp
 import Source.Horror
-import Type.Pretty
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
@@ -53,7 +52,7 @@ instance Pretty (Top a) PMode where
 	 -> "type" 	<> v %>> " :: " % k % ";\n"
 
 	PTypeSynonym sp v t
-         -> "type" <> v %>> " = " % prettyTS t % ";\n"
+         -> "type" <> v %>> " = " % prettyTypeSplit t % ";\n"
 
 	PData _ typeName vars [] 
 	 -> "data " % punc " " (typeName : vars) % ";\n\n"
@@ -77,7 +76,7 @@ instance Pretty (Top a) PMode where
 		% "}\n\n"
 
 	PClassInst _ v ts inh ss
-	 -> "instance " % v % " " % punc " " (map prettyTB ts) % " where\n"
+	 -> "instance " % v % " " % punc " " (map prettyTypeParens ts) % " where\n"
 		% "{\n"
 		%> ("\n\n" %!% 
 			(map 	(\s -> case s of 
@@ -145,7 +144,7 @@ instance Pretty (Foreign a) PMode where
 	    in 
 		"import " 
 			% pName	% "\n " 
-			% v 	%> ("\n:: " % prettyTS tv 	% pTo)
+			% v 	%> ("\n:: " % prettyTypeSplit tv 	% pTo)
 
 	OImportUnboxedData name var knd
 	 -> "import data" <> show name <> var <> "::" <> knd
@@ -172,7 +171,7 @@ instance Pretty (Exp a) PMode where
 	XVar 	sp v	 -> ppr v
 
 	XProj 	sp x p	 -> prettyXB x % p
-	XProjT 	sp t p	 -> "@XProjT " % prettyTB t % " " % p
+	XProjT 	sp t p	 -> "@XProjT " % prettyTypeParens t % " " % p
 
 	XLet 	sp ss e
 	 -> "let {\n" 

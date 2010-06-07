@@ -26,7 +26,6 @@ import qualified Type.Export		as T
 import qualified Type.Dump		as T
 import qualified Type.Solve		as T
 import qualified Type.State		as T
-import qualified Type.Pretty		as T
 import qualified Desugar.ToCore		as D
 import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D
@@ -332,7 +331,7 @@ desugarSolveConstraints2
 	dumpS	DumpTypeSolve  "type-solve--types"
 		$ catInt "\n\n"
 		$ map pprStrPlain
-		$ map (\(v, t) -> v % " ::\n" %> T.prettyTS t)
+		$ map (\(v, t) -> v % " ::\n" %> T.prettyTypeSplit t)
 		$ Map.toList typeTable
 
 	dumpS 	DumpTypeSolve   "type-solve--inst" 

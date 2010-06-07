@@ -11,7 +11,6 @@ import Type.State
 import Type.Plug		
 import Type.Strengthen
 import Type.Context
-import Type.Pretty
 import Shared.VarPrim
 import Util
 import DDC.Type
@@ -42,7 +41,7 @@ generaliseType' varT tCore envCids
 	trace	$ "*** Scheme.generaliseType " % varT % "\n"
 		% "\n"
 		% "    tCore\n"
-		%> prettyTS tCore	% "\n\n"
+		%> prettyTypeSplit tCore	% "\n\n"
 
 		% "    envCids          = " % envCids		% "\n"
 		% "\n"
@@ -52,7 +51,7 @@ generaliseType' varT tCore envCids
 			$ flattenT_constrainForm $ toConstrainFormT tCore
 
 	trace	$ "    tFlat\n"
-		%> prettyTS tFlat	% "\n\n"
+		%> prettyTypeSplit tFlat	% "\n\n"
 
 	-- Work out which cids can't be generalised in this type.
 	-- 	Can't generalise regions in non-functions.
@@ -88,7 +87,7 @@ generaliseType' varT tCore envCids
 
 	trace	$ "    staticCids       = " % staticCids	% "\n\n"
 		% "    tPlug\n"
-		%> prettyTS tPlug 	% "\n\n"
+		%> prettyTypeSplit tPlug 	% "\n\n"
 
 	-- Clean empty effect and closure classes that aren't ports.
 	let tsParam	=  slurpParamClassVarsT_constrainForm
@@ -97,12 +96,12 @@ generaliseType' varT tCore envCids
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
 
 	trace	$ "    tClean\n" 
-			%> ("= " % prettyTS tClean)		% "\n\n"
+			%> ("= " % prettyTypeSplit tClean)		% "\n\n"
 
 
 	let tReduce	= reduceContextT classInst tClean
 	trace	$ "    tReduce\n"
-			%> ("= " % prettyTS tReduce)		% "\n\n"
+			%> ("= " % prettyTypeSplit tReduce)		% "\n\n"
 
 --	trace	$ "     classInts = " % classInst		% "\n\n"
 
@@ -117,7 +116,7 @@ generaliseType' varT tCore envCids
 
 	trace	$ "    rsVisible    = " % rsVisible		% "\n\n"
 	trace	$ "    tMskLocal\n"
-		%> prettyTS tMskLocal 	% "\n\n"
+		%> prettyTypeSplit tMskLocal 	% "\n\n"
 
 	-- If we're generalising the type of a top level binding, 
 	--	and if any of its free regions are unconstraind,
@@ -181,7 +180,7 @@ generaliseType' varT tCore envCids
 	stateQuantifiedVars	`modifyRef` Set.union (Set.fromList vsFree) 
 
 	trace	$ "    tScheme\n"
-		%> prettyTS tScheme 	% "\n\n"
+		%> prettyTypeSplit tScheme 	% "\n\n"
 
 	return	tScheme
 
