@@ -22,7 +22,6 @@ import DDC.Var
 import DDC.Util.FreeVars
 import qualified Constraint.Plate.Trans	as CTrans
 import qualified Shared.VarUtil		as Var
-import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
@@ -138,7 +137,7 @@ inlineDump acc (c : cs)
 		
 	CEq sp t1@(TVar k v1) t2
 	 -> do	sub	<- gets tableSub
-		let t2'	=  PackFast.packType $ subFollowVT sub t2
+		let t2'	=  packType $ subFollowVT sub t2
 		inlineDump (CEq sp t1 t2' : acc) cs
 		
 	_ ->	inlineDump (c : acc) cs

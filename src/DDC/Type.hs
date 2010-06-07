@@ -18,6 +18,7 @@ module DDC.Type
 	, module DDC.Type.JoinSum
 	, module DDC.Type.StripFetters
 	, module DDC.Type.Elaborate
+	, module DDC.Type.Pack
 	, module DDC.Type.Trim)
 where
 import DDC.Type.Exp
@@ -38,4 +39,7 @@ import DDC.Type.Unify
 import DDC.Type.JoinSum
 import DDC.Type.StripFetters
 import DDC.Type.Elaborate
+import DDC.Type.Pack
 import DDC.Type.Trim
+
+

@@ -1,5 +1,6 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Pack a type into standard form.
-module Type.Util.PackFast
+module DDC.Type.Pack
 	( packType
 	, packType_markLoops )
 where
@@ -18,10 +19,9 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
-stage	= "Type.Util.PackFast"
+stage	= "DDC.Type.Pack"
 debug	= False
 trace ss x = if debug then Debug.trace (pprStrPlain ss) x else x
-
 
 -- | Controls how the type is packed.
 data Config
@@ -55,7 +55,6 @@ data ConfigLoopResolution
 
 
 -- | This gets called often by the constraint solver, so needs to be reasonably efficient.
---	The input type needs to be in "TConstrain" form
 --
 -- TODO: This is does a naive substitution.
 --	 It'd be better to use destructive update to implement the substitution, 
@@ -71,9 +70,9 @@ packType tt
    in	packTypeCrsSub config Map.empty Set.empty tt
 
 
--- | Pack a type into normal form. 
+-- | Pack a type into standard form. 
 --	If we find a loop through the value portion of the type graph then
---	leave a TError explaining the problem.
+--	leave a `TError` explaining the problem.
 packType_markLoops :: Type -> Type
 packType_markLoops tt
  = let	config	= Config
@@ -109,7 +108,7 @@ packTypeCrsSub' config crsEq subbed tt
 	
 	-- the old packed handes TFetters.
 	--	we're factoring it out.
-	TFetters t fs
+	TFetters{}
 	 -> panic stage 
   	  $  "packType: doesn't handle TFetters"
 	  %  " tt = " % tt % "\n"
@@ -120,7 +119,7 @@ packTypeCrsSub' config crsEq subbed tt
 	-- In a constrained type, all the equality constraints are inlined,
 	--	but we keep all the "more than" and type class constraints.
 	--
-	TConstrain t crs@(Constraints crsEq2 crsMore2 crsOther2)
+	TConstrain t (Constraints crsEq2 crsMore2 crsOther2)
 	 -> let	
 		-- collect constraints on the way down.
 		crsEq_all	= Map.union crsEq crsEq2
@@ -186,7 +185,7 @@ packTypeCrsSub' config crsEq subbed tt
 	    in	TApp t1' t2'
 	
 	TCon{}		-> tt
-	TVar   k v	-> packTypeCrsClassVar config crsEq subbed tt k	
+	TVar   k _	-> packTypeCrsClassVar config crsEq subbed tt k	
 	TError{}	-> tt
 
 
@@ -224,7 +223,7 @@ packTypeCrsClassVar config crsEq subbed tt k
 
 
 -- we've found a loop through the value portion of the type graph.
-packTypeCrsClassVar_loop config crsEq subbed tt k
+packTypeCrsClassVar_loop config crsEq _ tt _
  = case configLoopResolution config of
 
 	-- Uh oh, we weren't expecting any loops at the moment.
@@ -273,7 +272,7 @@ packTypeCrsSubF config crsEq subbed ff
 -- | Constraining an effect or closure to bot doesn't tell us anything we didn't
 --	already know, so we can just drop it.
 isBoringEqConstraint :: Type -> Type -> Bool
-isBoringEqConstraint t1 t2
+isBoringEqConstraint _ t2
  = case t2 of
 	TSum k []
 	 ->  k == kEffect
@@ -281,8 +280,8 @@ isBoringEqConstraint t1 t2
 	
 	-- types in TFrees can be rewritten to TBot by the closure trimmer.
 	TApp{}
-	 | Just (v, TSum k [])	<- takeTFree t2
-	 -> k == kClosure
+	 | Just (_, TSum k [])	<- takeTFree t2
+	 -> isClosureKind k
 		
 	-- constraint is interesting.
 	_	-> False

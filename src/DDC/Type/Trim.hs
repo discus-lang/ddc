@@ -32,13 +32,13 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
+import DDC.Type.Pack
 import DDC.Var
 import DDC.Util.FreeVars
 import DDC.Type.FreeVars		()
 import DDC.Type.Pretty			()
 import Data.Maybe
 import Data.Set				(Set)
-import qualified Type.Util.PackFast	as PackFast
 import qualified Shared.VarUtil		as Var
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
@@ -62,7 +62,7 @@ trimClosureT_constrainForm quant rsData tt
 trimClosureT_start quant rsData tt
   = trace ("trimClosureT " % tt % "\n")
   $ let	tt_trimmed	= trimClosureT' quant rsData tt
-	tt_packFast	= PackFast.packType tt_trimmed
+	tt_packFast	= packType tt_trimmed
 			
 	tt'		= trace ( "tt_trimmed  = " % tt_trimmed 	% "\n"
 				% "tt_packFast = " % tt_packFast	% "\n\n")
@@ -94,7 +94,7 @@ trimClosureC_constrainForm quant rsData cc
 
 trimClosureC_start quant rsData cc
  = let 	cc_trimmed	= trimClosureC' quant rsData cc
-	cc_packed	= PackFast.packType $ cc_trimmed
+	cc_packed	= packType $ cc_trimmed
 		
 	cc'		= trace 
  				( "trimClosureC\n"	

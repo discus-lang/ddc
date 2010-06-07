@@ -16,7 +16,6 @@ import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var
-import qualified Type.Util.PackFast	as PackFast
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 		
@@ -107,7 +106,7 @@ extractType_pack final varT cid tTrace
 	--	If we hit any loops through the value type portion of the
 	--	graph then mark then with TError constructors.
 	trace	$ ppr " -- packing into standard form\n"	
-	let tPack	= PackFast.packType_markLoops tTrace
+	let tPack	= packType_markLoops tTrace
 
 	-- Look for TErrors in the packed type
 	let tsLoops	= [ (t1, t2) 
@@ -171,7 +170,7 @@ extractType_more final varT cid tPack
 	let tCut	= cutLoopsT_constrainForm tTrim
 	trace	$ "    tCut:\n" 	%> prettyTypeSplit tCut % "\n\n"
 	
-	let tCutPack	= PackFast.packType tCut
+	let tCutPack	= packType tCut
 	trace	$ "    tCutPack:\n"	%> prettyTypeSplit tCutPack % "\n\n"
 
 	extractType_final final varT cid tCutPack

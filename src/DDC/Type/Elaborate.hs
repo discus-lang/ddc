@@ -21,10 +21,10 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
+import DDC.Type.Pack
 import DDC.Var
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
-import qualified Type.Util.PackFast 	as PackFast
 
 stage	= "Type.Util.Elaborate"
 
@@ -312,7 +312,7 @@ elaborateEffT vsRsConst vsRsMutable tt
 	let tFinal	= addEffectsToFsT effs hookVar tHooked
 
 	-- pack the type to drop out any left-over  !e1 = !Bot  constraints.
-  	let tPacked_fast	= toFetterFormT $ PackFast.packType $ toConstrainFormT tFinal
+  	let tPacked_fast	= toFetterFormT $ packType $ toConstrainFormT tFinal
 	return $ tPacked_fast
 		
 
