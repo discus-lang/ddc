@@ -4,14 +4,14 @@ ddc: ERROR
                constraint: Base.Const %75
         which purifies
               the use of: (*)
-                 of type: (224 225)
+                 of type: (226 227)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:25
         due to
               the use of: mapL
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
 
      conflicts with,
-              constraint: Base.MutableT *285
+              constraint: Base.MutableT *286
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:7:21
 

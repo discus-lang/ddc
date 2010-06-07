@@ -4,5 +4,5 @@ ddc: ERROR
 ./test/15-Typing/Grind/T75-UnresolvedTApp/Test.ds:4:13
     Ambiguous projection: .head
 
-    No instance for Class.Functor.Functor *32
+    No instance for Class.Functor.Functor *35
 
