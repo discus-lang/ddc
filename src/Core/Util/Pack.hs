@@ -1,9 +1,7 @@
 
 module Core.Util.Pack
 	( packT 
-	, packK
-	, inlineTWheresT
-	, inlineTWheresMapT )
+	, packK)
 where
 import Core.Plate.FreeVars
 import Util
@@ -239,68 +237,6 @@ takeKClass_pure kk
 	 | k == kPure		-> Just t
 	_ 			-> Nothing
 	
-
--- Inline ------------------------------------------------------------------------------------------
--- | Inline all TLet expressions in this type.
-inlineTWheresT :: Type -> Type
-inlineTWheresT tt
- = inlineTWheresMapT Map.empty Set.empty tt
-
-inlineTWheresMapT sub block tt
- = let down	= inlineTWheresMapT sub block
-   in  case tt of
- 	TNil			-> tt
-	
-	TForall v k t		-> TForall v k (down t)
-	    
-	TFetters t1 fs
-	 -> let	([fsWhere, fsMore], [])
-	 		= partitionFs [isFWhere, isFMore] fs
-		
-		sub'	= Map.union 
-				(Map.fromList [(v, t) | FWhere (TVar _ (UVar v)) t <- fsWhere])
-				sub
-				
-				
-	    	tFlat	= inlineTWheresMapT 
-				sub'
-				block
-				t1
-
-	    in	makeTFetters tFlat fsMore
-
-	TSum     k ts		-> TSum  k 	(map down ts)
-	    
-	TVar k (UVar v)
-	 -- If this var is in our block set then we're trying to recursively
-	 --	substitute for it.. bail out now or we'll loop forever.
-	 |  Set.member v block
-	 -> tt
-
-	 -- Lookup the var and add it to the block list so we can detect loops
-	 --	in the type.
-	 | otherwise
-	 -> case Map.lookup v sub of
-	 	Just t	-> inlineTWheresMapT sub (Set.insert v block) t
-		_	-> tt
-
-	TVar k (UMore v tMore)
-	 -- If this var is in our block set then we're trying to recursively
-	 --	substitute for it.. bail out now or we'll loop forever.
-	 |  Set.member v block
-	 -> tt
-
-	 -- Lookup the var and add it to the block list so we can detect loops
-	 --	in the type.
-	 | otherwise
-	 -> case Map.lookup v sub of
-	 	Just t	-> inlineTWheresMapT sub (Set.insert v block) t
-		_	-> tt
-		
-    	TCon{}			-> tt
-    
-	TApp t1 t2		-> TApp (down t1) (down t2)
- 		    
 
 -- | Restrict the list of FWhere fetters to ones which are 
 --	reachable from this type. Also erase x = Bot fetters.

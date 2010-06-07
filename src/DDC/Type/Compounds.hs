@@ -57,6 +57,7 @@ module DDC.Type.Compounds
 	, toFetterFormT
 	, addConstraints
 	, addConstraintsEq
+	, addConstraintsEqVT
 	, addConstraintsMore
 	, addConstraintsOther
 	, pushConstraints
@@ -396,6 +397,16 @@ addConstraints' crs@(Constraints crsEq crsMore crsOther) tt
 addConstraintsEq :: Map Type Type -> Type -> Type
 addConstraintsEq crs tt
 	= addConstraints (Constraints crs Map.empty []) tt
+
+
+-- | Add some eq constaints to a type
+addConstraintsEqVT :: Map Var Type -> Type -> Type
+addConstraintsEqVT crs tt
+ = let 	crs'	= Map.fromList
+		$ [(TVar (kindOfType t) (UVar v), t) 
+			| (v, t) <- Map.toList crs]
+
+   in	addConstraintsEq crs' tt
 
 
 -- | Add some more-than constaints to a type

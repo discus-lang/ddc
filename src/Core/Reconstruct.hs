@@ -497,7 +497,10 @@ reconX (XVar v TNil)
 		% "    caller = " % envCaller tt	% "\n"
 
 	let	Just t	= tM
-		t'	= inlineTWheresMapT (envEq tt) Set.empty t
+		t'	= toFetterFormT
+			$ flattenT_constrainForm 
+			$ addConstraintsEqVT (envEq tt) 
+			$ toConstrainFormT t
 
 		-- When we add the type to this var we need to attach any more constraints associated with it,
 		--	else we won't be able to check expressions separate from their enclosing XLAMs
@@ -524,7 +527,12 @@ reconX (XVar v TNil)
 -- var has a type annotation, so use that as its type
 reconX (XVar v t)
  = do	tt	<- get
-	let t'	= inlineTWheresMapT (envEq tt) Set.empty t
+
+	let t'	= toFetterFormT
+		$ flattenT_constrainForm 
+		$ addConstraintsEqVT (envEq tt) 
+		$ toConstrainFormT t
+
 	return	( XVar v t
 		, t'
 		, tPure
