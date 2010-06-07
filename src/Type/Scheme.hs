@@ -13,7 +13,6 @@ import Type.Strengthen
 import Type.Context
 import Type.Pretty
 import Shared.VarPrim
-import Type.Plate.Collect
 import Util
 import DDC.Type
 import DDC.Var.NameSpace
@@ -126,7 +125,7 @@ generaliseType' varT tCore envCids
 	vsBoundTop	<- getsRef stateVsBoundTopLevel
 	let isTopLevel	= Set.member varT vsBoundTop
 	let fsMskLocal	= takeTFetters tMskLocal
-	let rsMskLocal	= Set.toList $ collectTClasses tMskLocal
+	let rsMskLocal	= Set.toList $ freeTClasses tMskLocal
 	
 	trace	$ "    isTopLevel   = " % isTopLevel		% "\n\n"
 

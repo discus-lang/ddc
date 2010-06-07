@@ -2,8 +2,6 @@
 -- | Utils for collecting various things from type expressions.
 module Type.Plate.Collect
 	( collectBindingVarsT
-	, collectTClassVars
-	, collectTClasses
 	, collectTErrors )
 where 
 import Util
@@ -41,50 +39,6 @@ collectBindingVarsT tt
 				{ transT_enter	= collectT 
 				, transF	= collectF })
 			 tt)
-		Set.empty
-
-
--- | Collect all the TVars and TClasses present in this type, 
---	both binding and bound occurrences.
-collectTClassVars :: Type -> Set Type
-collectTClassVars tt
- = let	collect t
- 	 = case t of
-		TVar _ (UClass{})
-		 -> do	modify (Set.insert t)
-		 	return t
-			
-		TVar _ (UVar{})
-		 -> do	modify (Set.insert t)
-		 	return t
-			
-		_ -> 	return t
-				
-   in	execState 
-		(transZM (transTableId 
-				{ transT_enter = collect }) 
-			 tt)
-		Set.empty
- 
-
--- | Collect all the TClasses in this type.
-collectTClasses
-	:: TransM (State (Set Type)) a
-	=> a 
-	-> Set Type
-	
-collectTClasses x
- = let 	collect t
-  	 = case t of
-	 	TVar _ UClass{}	
-		 -> do	modify (Set.insert t)
-		 	return t
-			
-		_ ->	return t
-	
-   in	execState
-   		(transZM (transTableId { transT_enter = collect }) 
-			 x)
 		Set.empty
 
 
