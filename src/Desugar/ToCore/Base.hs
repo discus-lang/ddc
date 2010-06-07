@@ -19,7 +19,6 @@ import Desugar.Project			(ProjTable)
 import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Type.ToCore		as T
-import qualified Core.Util		as C
 import qualified Debug.Trace
 
 stage		= "Desugar.ToCore.Base"
@@ -116,7 +115,7 @@ lookupType' vT
 	 Just tType
 	  -> do	
 		let cType	= T.toCoreT tType
-		let cType_flat	= C.flattenT cType
+		let cType_flat	= toFetterFormT $ flattenT_constrainForm $ toConstrainFormT cType
 		return	$ trace (vcat	
 				[ ppr "lookupType"
 				, ppr "    source type:\n" 	%> tType

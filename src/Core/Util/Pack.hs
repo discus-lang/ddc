@@ -2,7 +2,6 @@
 module Core.Util.Pack
 	( packT 
 	, packK
-	, flattenT 
 	, inlineTWheresT
 	, inlineTWheresMapT )
 where
@@ -20,13 +19,6 @@ stage	= "Core.Util.Pack"
 -- | Pack a type into standard form.
 packT :: Type -> Type
 packT tt	= {-# SCC "packT" #-} packT1 tt
-
--- | Flatten a type so that all where bindings are inlined
-flattenT :: Type -> Type
-flattenT tt
- = {-# SCC "flattenT" #-}
-    packT $ inlineTWheresT tt
-
  
 -- | Do one round of packing
 packT1 :: Type -> Type

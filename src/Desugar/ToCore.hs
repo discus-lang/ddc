@@ -329,7 +329,10 @@ toCoreX xx
 	 | kV	== T.kValue
 	 -> do	
 	 	Just t		<- lookupType vT
-	 	let t_flat	= C.stripContextT $ C.flattenT t
+	 	let t_flat	= C.stripContextT 
+				$ T.toFetterFormT
+				$ T.flattenT_constrainForm
+				$ T.toConstrainFormT t
 		
 		return		$ toCoreXLit t_flat xx
 
@@ -701,12 +704,12 @@ toCoreW ww
 
 toCoreA_LV (D.LIndex nn i, v)
  = do	Just t		<- lookupType v
- 	let t_flat	=  (C.stripContextT . C.flattenT) t
+ 	let t_flat	=  (C.stripContextT . T.toFetterFormT . T.flattenT_constrainForm . T.toConstrainFormT) t
 	return	(C.LIndex i, v, t_flat)
 
 toCoreA_LV (D.LVar nn vField, v)
  = do	Just t		<- lookupType v
- 	let t_flat	= (C.stripContextT . C.flattenT) t
+ 	let t_flat	= (C.stripContextT . T.toFetterFormT . T.flattenT_constrainForm . T.toConstrainFormT) t
  	return	(C.LVar vField, v, t_flat)
 
 

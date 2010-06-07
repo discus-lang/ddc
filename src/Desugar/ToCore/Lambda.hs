@@ -54,7 +54,9 @@ loadEffAnnot ee
 	TVar kE (UVar vE)
 	 | kE == kEffect
 	 -> do	Just tE		<- lookupType vE
-		return	$ flattenT $ stripContextT tE
+		return	$ toFetterFormT
+			$ flattenT_constrainForm 
+			$ toConstrainFormT $ stripContextT tE
 
  	TSum kE []
 	 | kE == kEffect

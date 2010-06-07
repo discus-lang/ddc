@@ -56,13 +56,9 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	
 
-stage	= "Core.Reconstruct"
-
-debug	= False
-trace ss x	
-	= if debug 
-		then Debug.Trace.trace (pprStrPlain ss) x 
-		else x
+stage		= "Core.Reconstruct"
+debug		= False
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 		
 
 -- Reconstruct Monad --------------------------------------------------------------------------
@@ -322,7 +318,7 @@ reconX exp@(XLam v t x eff clo)
 
 	let	eff'		= packT $ substituteT (envEq tt) eff
 		clo_sub		= packT $ substituteT (envEq tt) clo
-		xE'		= {-# SCC "reconX/maskE" #-} maskE	xT xE xC
+		xE'		= {-# SCC "reconX/maskE" #-} maskE xT xE xC
 
 	-- check effects match
 	() <- unless (subsumes (envMore tt) eff' xE') $
@@ -331,6 +327,7 @@ reconX exp@(XLam v t x eff clo)
 		% "    caller = " % envCaller tt	% "\n"
 		% "    in lambda abstraction:\n" 	%> exp	% "\n\n"
 		% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
+		% "    resulting from masking:\n" 	%> xE	% "\n\n"
 		% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
 		% "    with bounds:\n"
 		% "    t:       " %> t	 % "\n"
@@ -340,10 +337,13 @@ reconX exp@(XLam v t x eff clo)
 	-- check closures match
 	-- Closures in core don't work properly yet.
 	let	xC_masked	= dropTFreesIn (Set.singleton v) xC
-		xC_flat		= flattenT xC_masked
+
+		xC_flat		= flattenT_constrainForm 
+				$ toConstrainFormT xC_masked
+
 		xC'		= toFetterFormT 
 				$ trimClosureC_constrainForm Set.empty Set.empty 
-				$ toConstrainFormT xC_flat
+				$ xC_flat
 
 {-
 	() <- unless (subsumes (envMore tt) clo_sub xC') $
@@ -442,7 +442,7 @@ reconX exp@(XApp x1 x2 eff)
 		% "    x2:\n" %> x2	% "\n\n"
 
 		% "   T[x1]   = " %> x1t		% "\n\n"
-		% "   (flat)  = " %> flattenT x1t	% "\n\n"
+		% "   (flat)  = " %> (flattenT_constrainForm $ toConstrainFormT x1t) % "\n\n"
 
 		% "   T[x2]   = " % x2t		% "\n\n"
 
@@ -909,7 +909,9 @@ applyValueT
 
 applyValueT t1 t2
  = do	table	<- get
-	applyValueT' (flattenT t1) (flattenT t2)
+	applyValueT' 
+		(packT $ toFetterFormT $ flattenT_constrainForm $ toConstrainFormT t1) 
+		(packT $ toFetterFormT $ flattenT_constrainForm $ toConstrainFormT t2)
 
 applyValueT' t1@(TFetters t1Shape fs) t2
  = do	table	<- get
@@ -1009,8 +1011,8 @@ applyTypeT' table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == kClosure
 	, subsumes (envMore table) 
-			(flattenT $ trimClosureC_constrainForm Set.empty Set.empty t2) 
-			(flattenT $ trimClosureC_constrainForm Set.empty Set.empty tB)
+			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty t2) 
+			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty tB)
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 	-- check that the constraint is satisfied
@@ -1047,23 +1049,17 @@ applyTypeT' table t1 t2
 
 	
 -- Mask effects ------------------------------------------------------------------------------------
-
+-- | Mask non-observable effects that are not in the
+--	environment (closure) or type of the return value.
 maskE	:: Type -> Effect -> Closure -> Effect
-
 maskE xT xE xC
  = let	fvT		= freeVars xT
 	fvC		= freeVars xC
 
-	-- mask non-observable effects that are not in the
-	--	environment (closure) or type of the return value.
-	xE_masked	= maskReadWriteNotIn (Set.union fvT fvC) xE
+	xE_masked	= maskReadWriteNotIn (Set.union fvT fvC) 
+			$ packT xE
 
-	-- TODO: We need to flatten the closure before trimming to make sure effect annots
-	--	on type constructors are not lost. It would be better to modify trimClosureC
-	--	so it doesn't lose them, or the closure equivalence rule so it doesn't care.
-	xE'		= packT xE_masked
-
-   in	xE'
+   in	xE_masked
 
 
 -- Clamp -------------------------------------------------------------------------------------------
