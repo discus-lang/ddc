@@ -6,7 +6,6 @@ module Desugar.Data
 where
 import Desugar.Pretty
 import Desugar.Exp
-import Type.Util.Elaborate
 import Shared.Exp
 import Shared.VarPrim
 import DDC.Base.SourcePos
@@ -121,8 +120,11 @@ elaborateCtor newVar (CtorDef sp var fields)
 
 elaborateField newVar field@(DataField { dType = t })
  = do	
- 	(t_elab, vks)	
- 		<- elaborateRsT newVar t
+ 	(t_elab', vks)	
+		<- elaborateRsT_constrainForm newVar 
+		$ toConstrainFormT t
+	
+	let t_elab	= toFetterFormT t_elab'
 
  	return	( field { dType = t_elab }
 		, vks )

@@ -1,7 +1,6 @@
 module Type.Util
 	( module Type.Util.Bits
 	, module Type.Util.Instantiate
-	, module Type.Util.Elaborate
 	, module Type.Util.Normalise
 	, module Type.Util.Mask
 	, module Type.Util.Trim
@@ -13,7 +12,6 @@ module Type.Util
 where
 import Type.Util.Bits
 import Type.Util.Instantiate
-import Type.Util.Elaborate
 import Type.Util.Normalise
 import Type.Util.Mask
 import Type.Util.Trim
@@ -27,7 +25,6 @@ import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Var
 import qualified Debug.Trace
-
 
 stage	= "Type.Util"
 debug	= False

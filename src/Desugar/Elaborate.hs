@@ -3,8 +3,6 @@ module Desugar.Elaborate
 	(elaborateTree)
 where
 import Desugar.Exp
-import Desugar.Pretty
-import Type.Util.Elaborate
 import Type.Pretty
 import Control.Monad.State.Strict
 import Util
@@ -22,7 +20,6 @@ import qualified Shared.VarPrim	as Var
 debug		= False
 trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 
------
 elaborateTree 
 	:: String		-- unique
 	-> Tree SourcePos 
@@ -33,8 +30,7 @@ elaborateTree unique tree
 
 elaborateP :: Top SourcePos -> ElabM (Top SourcePos)
 elaborateP pp
-  = trace ("elaborateP: " % stripAnnot pp)
-  $ case pp of
+  = case pp of
 	PExtern sp v t mt
 	 -> do	t'	<- elaborateT t
 		return	$ PExtern sp v t' mt
@@ -47,8 +43,7 @@ elaborateP pp
 
 elaborateT :: Type -> ElabM Type
 elaborateT tt
- = trace ("elaborateT: " % tt)
- $ case tt of
+ = case tt of
 	TApp{}
 	 | Just _	<- takeTFun tt
 	 -> elaborateT_fun tt
@@ -61,8 +56,7 @@ elaborateT tt
 
 elaborateT_fun :: Type -> ElabM Type
 elaborateT_fun tt
- = trace ("elaborateT_fun: " % tt)
- $ do	let (tt', (rsRead, rsWrite))	
+ = do	let (tt', (rsRead, rsWrite))	
 			= collectRsRW tt
 
 	let free	= Set.filter (not . Var.isCtorName) $ freeVars tt'
@@ -73,10 +67,9 @@ elaborateT_fun tt
 				$ sequence
 				$ map (takeVarOfBind . fst) bks
 	
-	(tt_rs, newRs)	<- elaborateRsT newVarN tt'
-	
-	trace ("tt_rs = " % tt_rs) $ do
-	
+	(tt_rs, newRs)		<- elaborateRsT_constrainForm newVarN 
+				$  toConstrainFormT tt'
+			
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
 	let extraQuantVKs	
@@ -91,23 +84,31 @@ elaborateT_fun tt
 
 	-- add read and write effects
 	let ?newVarN	= newVarN
-	tt_eff		<- elaborateEffT (Set.toList rsRead) (Set.toList rsWrite) tt_quant
+	tt_eff		<- elaborateEffT_constrainForm 
+				(Set.toList rsRead) (Set.toList rsWrite) 
+				tt_quant
 
 	-- add closures
-	tt_clo		<- elaborateCloT tt_eff
+	tt_clo		<- elaborateCloT_constrainForm  
+			$  toConstrainFormT tt_eff
+			
 	
 	-- make a new Mutable fetter for each region that is written to
 	let fsMutable	= map (\r -> FConstraint Var.primMutable [TVar kRegion $ UVar r])
 			$ Set.toList rsWrite
 			
-	let tt_fs	= addFetters fsMutable tt_clo
+	let tt_fs	= pushConstraintsOther fsMutable tt_clo
 	
-	trace 	( "elaborateT\n"
-		% "     tt = " % tt 			% "\n"
-		% "   read = " % rsRead 		% "\n"
-		% "  write = " % rsWrite	 	% "\n"
-		% "   free = " % free			% "\n"
-		% "    tt':\n" %> prettyTS tt_fs	% "\n")
+	trace (vcat
+	 	[ ppr "elaborateT"
+		, "     tt = " % tt
+		, "   read = " % rsRead
+		, "  write = " % rsWrite
+		, "   free = " % free
+		, " tt_eff = " % tt_eff
+		, " tt_clo = " % tt_clo
+		, "    tt':\n" %> prettyTS tt_fs
+		, blank])
 		$ return tt_fs
 
 -- Collect the regions which are read/written in this type and short out the

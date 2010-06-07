@@ -7,7 +7,6 @@ where
 import Desugar.Plate.Trans
 import Desugar.Data
 import Desugar.Exp
-import Type.Util.Elaborate
 import Source.Error
 import Shared.VarPrim
 import Util
@@ -196,8 +195,10 @@ elabRegionsX xx
 	_ ->	return xx
 
 elabRegionsT t
- = do	(t_elab, _)	<- elaborateRsT newVarN t
-   	return t_elab
+ = do	(t_elab, _)	<- elaborateRsT_constrainForm newVarN 
+			$  toConstrainFormT t
+
+   	return $ toFetterFormT t_elab
 
 
 -- Slurp -------------------------------------------------------------------------------------------

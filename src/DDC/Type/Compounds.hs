@@ -56,6 +56,13 @@ module DDC.Type.Compounds
 	, toConstrainFormT
 	, toFetterFormT
 	, addConstraints
+	, addConstraintsEq
+	, addConstraintsMore
+	, addConstraintsOther
+	, pushConstraints
+	, pushConstraintsEq
+	, pushConstraintsMore
+	, pushConstraintsOther
 	
 	 -- * Quantification
 	, makeTForall_front
@@ -383,6 +390,52 @@ addConstraints' crs@(Constraints crsEq crsMore crsOther) tt
 	
 	| otherwise
 	= TConstrain tt crs
+
+
+-- | Add some eq constaints to a type
+addConstraintsEq :: Map Type Type -> Type -> Type
+addConstraintsEq crs tt
+	= addConstraints (Constraints crs Map.empty []) tt
+
+
+-- | Add some more-than constaints to a type
+addConstraintsMore :: Map Type Type -> Type -> Type
+addConstraintsMore crs tt
+	= addConstraints (Constraints Map.empty crs []) tt
+	
+	
+-- | Add some other constaints to a type
+addConstraintsOther :: [Fetter] -> Type -> Type
+addConstraintsOther crs tt
+	= addConstraints (Constraints Map.empty Map.empty crs) tt
+
+
+-- | Add come constraints to a type, pushing them under any enclosing foralls.
+pushConstraints :: Constraints -> Type -> Type
+pushConstraints crs tt
+ = case tt of
+	TForall v k t	-> TForall v k (pushConstraints crs t)
+	_		-> addConstraints crs tt
+
+
+-- | Push some eq constaints into a type.
+pushConstraintsEq :: Map Type Type -> Type -> Type
+pushConstraintsEq crs tt
+	= pushConstraints (Constraints crs Map.empty []) tt
+
+
+-- | Add some more-than constaints to a type
+pushConstraintsMore :: Map Type Type -> Type -> Type
+pushConstraintsMore crs tt
+	= pushConstraints (Constraints Map.empty crs []) tt
+	
+	
+-- | Add some other constaints to a type
+pushConstraintsOther :: [Fetter] -> Type -> Type
+pushConstraintsOther crs tt
+	= pushConstraints (Constraints Map.empty Map.empty crs) tt
+	
+
 
 
 -- TODO: This is temporary while we're refactoring TFetters to TConstrain

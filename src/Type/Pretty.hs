@@ -58,7 +58,11 @@ pprTypeQuant vsQuant tt
 	TFetters t fs	-> down t % " :- " % ", " %!% fs
 	
 	TConstrain t (Constraints { crsEq, crsMore, crsOther })
-	 -> down t % " :- " 
+	 -> let down' x = case x of
+				TForall{}	-> parens $ ppr x
+				_		-> ppr x
+
+	    in down' t % " :- " 
 		% ", " %!% [down t1 % " =  " % down t2 | (t1, t2) <- Map.toList crsEq ]
 		% ", " %!% [down t1 % " :> " % down t2 | (t1, t2) <- Map.toList crsMore ]
 		% ", " %!% crsOther
@@ -171,25 +175,38 @@ pprBindKind bb k
 prettyTypeSplit :: Type	-> PrettyM PMode
 prettyTypeSplit	   tt
  = case tt of
-	TForall BNil _ _	-> prettyTypeSplit2 tt
+	TForall BNil _ _	-> prettyTypeSplit_crs tt
+
  	TForall b k t
 	 -> let (bks, tBody)	= takeTForall tt
-	    in	"forall " % punc " " (map (uncurry pprBindKind) bks) % "\n"
-	    		% ".  " % prettyTypeSplit2 tBody
+	    in	"forall " 
+			% punc " " (map (uncurry pprBindKind) bks) % "\n"
+	    		% ".  " % prettyTypeSplit_crs tBody
 	 
-	t -> prettyTypeSplit2 t
-	 
-prettyTypeSplit2 x
- = case x of
- 	TFetters t fs
-	 -> t 	% "\n"
-	 % ":- " % prettyTypeFS fs
-	
-	_ -> ppr x
-	 
-prettyTypeFS fs
- 	= "\n,  " %!% fs
+	t -> prettyTypeSplit_crs t
+
+prettyTypeSplit_crs xx
+ = let down x = case x of
+			TForall{}	-> parens $ ppr x
+			TConstrain{}	-> parens $ ppr x
+			TFetters{}	-> parens $ ppr x
+			_		-> ppr x
+   in case xx of
+	TConstrain t crs
+	 -> down t % "\n"
+	 % ":- "
+	 % (vcat
+		[ vcat [t1 %> " =  " % t2 | (t1, t2) <- Map.toList $ crsEq crs]
+		, vcat [t1 %> " :> " % t2 | (t1, t2) <- Map.toList $ crsMore crs]
+		, vcat $ map ppr $ crsOther crs])
 		
+ 	TFetters t fs
+	 -> down t 	% "\n" 
+	 % ":- " 
+	 % punc (ppr "\n,  ") fs
+
+	_ -> ppr xx
+	 	
 prettyTS t
 	= prettyTypeSplit 
 	$ toFetterFormT t 

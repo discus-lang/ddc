@@ -21,7 +21,6 @@ where
 import Util
 import Shared.VarPrim
 import Shared.Exp
-import Type.Util
 import Type.Error
 import Desugar.Exp
 import Desugar.Slurp.State
@@ -80,7 +79,8 @@ makeCtorType newVarN vData vs name fs
 
 	-- Constructors don't inspect their arguments.
 	let ?newVarN	=  newVarN
- 	tCtor		<- elaborateCloT 
+ 	tCtor		<- liftM toFetterFormT
+			$  elaborateCloT_constrainForm
 			$  makeTFunsPureEmpty (tsPrimary_elab ++ [objType])
 
 	let vks		= map (\v -> (v, let Just k = defaultKindOfVar v in k)) 

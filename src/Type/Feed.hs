@@ -204,8 +204,8 @@ feedType src tt
 		
 	_  -> panic stage
 		( "feedType: cannot feed this type into the graph.\n"
-		% "   type    = " % tt 		% "\n"
-		% "   source  = " % src 	% "\n")
+		% "   type        = " % tt 	% "\n"
+		% "   source      = " % src 	% "\n")
 
 
 -- | Add a node to the type graph, and activate the corresponding class.
