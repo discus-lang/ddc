@@ -50,7 +50,7 @@ import Type.Error		(Error(..))
 import Type.Docable		()
 import Prelude			hiding (mapM)
 import Util			hiding (mapM)
-import Type.Util		hiding (trimClosureC_constrainForm)
+import Type.Util
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -341,7 +341,9 @@ reconX exp@(XLam v t x eff clo)
 	-- Closures in core don't work properly yet.
 	let	xC_masked	= dropTFreesIn (Set.singleton v) xC
 		xC_flat		= flattenT xC_masked
-		xC'		= trimClosureC Set.empty Set.empty $ xC_flat
+		xC'		= toFetterFormT 
+				$ trimClosureC_constrainForm Set.empty Set.empty 
+				$ toConstrainFormT xC_flat
 
 {-
 	() <- unless (subsumes (envMore tt) clo_sub xC') $
@@ -526,7 +528,10 @@ reconX (XVar v t)
 	return	( XVar v t
 		, t'
 		, tPure
-		, trimClosureC Set.empty Set.empty $ makeTFree v t)
+		, toFetterFormT
+			$ trimClosureC_constrainForm Set.empty Set.empty 
+			$ toConstrainFormT 
+			$ makeTFree v t)
 
 
 -- prim
@@ -1004,8 +1009,8 @@ applyTypeT' table (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == kClosure
 	, subsumes (envMore table) 
-			(flattenT $ trimClosureC Set.empty Set.empty t2) 
-			(flattenT $ trimClosureC Set.empty Set.empty tB)
+			(flattenT $ trimClosureC_constrainForm Set.empty Set.empty t2) 
+			(flattenT $ trimClosureC_constrainForm Set.empty Set.empty tB)
 	= Just (substituteT (Map.insert v t2 Map.empty) t1)
 
 	-- check that the constraint is satisfied

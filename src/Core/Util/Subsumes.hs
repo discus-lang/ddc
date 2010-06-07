@@ -6,7 +6,7 @@
 module Core.Util.Subsumes
 	(subsumes)
 where
-import Core.Util.Trim
+import Type.Util.Trim
 import Util
 import DDC.Main.Pretty
 import DDC.Type
@@ -53,7 +53,9 @@ subsumes1 table t s
 subsumes2 table t s
  = let trimC tt
  	| isClosure tt
-	= trimClosureC Set.empty Set.empty tt
+	= toFetterFormT
+	$ trimClosureC_constrainForm Set.empty Set.empty 
+	$ toConstrainFormT tt
 
 	| otherwise			
 	= tt

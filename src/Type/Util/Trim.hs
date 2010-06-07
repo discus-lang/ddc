@@ -104,23 +104,16 @@ trimClosureC' quant rsData cc
    in  case cc of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
-	TVar k (UVar v)
-		| Set.member cc quant 	
+	TVar{}
+		| Set.member cc quant 
 		-> tEmpty
 
 		| otherwise		
 		-> makeTSum kClosure
-			$ (cc : [makeTDanger r cc	
-					| r	<- Set.toList rsData
-					, r /= cc])
-
-	-- cids are never quantified so we always have to keep them.
-	TVar k (UClass _)
-		-> makeTSum kClosure
-			$ cc : [makeTDanger r cc	
-					| r	<- Set.toList rsData
-					, r /= cc]
-
+		$ (cc : [makeTDanger r cc	
+				| r	<- Set.toList rsData
+				, r /= cc])
+	
 	-- Trim all the elements of a sum
 	TSum k cs	
 		-> makeTSum kClosure 
@@ -197,15 +190,9 @@ trimClosureC_t' tag quant rsData tt
    in  case tt of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
-	TVar k (UVar v)
+	TVar{}
 		| Set.member tt quant	-> []
-		
-		| otherwise		
-		-> makeFreeDanger tag rsData tt
-
-	-- classids are never quantified, so we always have to keep them.
-	TVar k UClass{} 	
-		-> makeFreeDanger tag rsData tt
+		| otherwise		-> makeFreeDanger tag rsData tt
 
 	-- Trim the fetters of this data
 	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
@@ -216,6 +203,9 @@ trimClosureC_t' tag quant rsData tt
 	    in	map (addConstraints crs) cBits
 			
 	-- Trim under foralls
+	TForall BNil k t
+	 -> trimClosureC_t tag quant rsData t
+
 	TForall b k t		
 	 -> let	Just v	= takeVarOfBind b
 		quant'	= Set.insert (TVar k (UVar v)) quant
