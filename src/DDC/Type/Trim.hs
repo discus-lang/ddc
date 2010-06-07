@@ -1,23 +1,26 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
--- | Trimming of closures
---	Inferred closure tend to contain a lot of information that isn't useful to the solver
---	or core IR. We can trim out a lot of this superfulous stuff.
+-- | Trimming of closures.
 --
---	We're only interested in data contructors.
+--   Inferred closure terms tend to contain a lot of information that isn't useful to the inferencer,
+--   or core language transforms. We trim most of it out to save time in later stages, and make the 
+--   code easier to read.
 --
---	We only need the closure part of functions:
---		ie   @a -(%e1 $c1)> b@
---		only the @$c1@ part can contain data.
+--   For example, in a function type like @a -(%e1 $c1)> b@ only the @$c1@ part can manifest
+--   region variables that we have to worry about during generalisation etc.
 --
---	Note: trimming under foralls, must retain quantification of some vars.
+--   NOTE: when trimming under foralls, we must retain the quantification of manifest variables.
+--         For example, the following:
 --
 --   @
---		forall a %r1. a -($c1)> b
---		:- $c1 = Thing a %r1 %r2
+--	forall a %r1. a -($c1)> b
+--	:- $c1 = Thing a %r1 %r2
 --   @
 --
---	reduces to
---		@forall a %r1. Thing a %r1 %r2@
+--   is trimmed to:
+--
+--   @	forall a %r1. Thing a %r1 %r2@
+--
+--   The variable @%r1@ was quantified in the original, so must also be quantified in the result.
 --
 module DDC.Type.Trim
 	( trimClosureT_constrainForm
@@ -46,10 +49,10 @@ debug		= False
 trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 
--- | Trim the closure portion of this type
+-- | Trim the closure portion of this type.
 trimClosureT_constrainForm
-	:: Set Type	-- ^ variables that are quantified in this context
-	-> Set Type	-- ^ primary region variables of this context
+	:: Set Type	-- ^ Variables that are quantified in this context.
+	-> Set Type	-- ^ Primary region variables in this context.
 	-> Type 
 	-> Type
 
@@ -84,7 +87,7 @@ trimClosureT' quant rsData tt
 	_	-> tt
 
 
--- | Trim a closure down to its interesting parts
+-- | Trim a closure down to its interesting parts.
 trimClosureC_constrainForm :: Set Type -> Set Type -> Closure -> Closure
 trimClosureC_constrainForm quant rsData cc
 	= trimClosureC_start quant rsData cc

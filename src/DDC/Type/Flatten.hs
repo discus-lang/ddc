@@ -11,9 +11,9 @@ import qualified Data.Set	as Set
 
 stage	= "DDC.Type.Flatten"
 
--- | Flatten a type by inlinine all the equality constraints in it.
+-- | Flatten a type by inlining all the equality constraints in it.
 --   We keep track of the constraints substituted on the way down the tree, 
---   and panic if they are found to be recursive.
+--   and panic if any are found to be recursive.
 flattenT_constrainForm :: Type -> Type
 flattenT_constrainForm tt
  = flattenT' Map.empty Set.empty tt

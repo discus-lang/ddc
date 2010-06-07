@@ -1,31 +1,29 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Joining the manifest effect and closure portions of a type.
---	Used when we choose between two functions of differing effects
---	eg: @if .. then putStr else id@
+--   This is used when we choose between two functions of differing effects, 
+--   for example, in @if .. then putStr else id@. Although the value and region
+--   portions of both types must be the same, we can sum the effect and closure
+--   portions to mirror what happens during source-level type inference.
 --
---   The value and region portions of the types must be the same,
---   but we can sum the effect and closure portions.
---	
---   Note that because we only strengthen constraints who's var does
---   not appear in a parameter type branch, we don't end up
---   trying to join two types like:
+--   NOTE: because we only strengthen constraints who's var does
+--   not appear as a parameter, we don't end up trying to join two types like:
 --
--- @
+--   @
 -- 	t1: (a -(!e1)>   b) -> c :- !e1 :> !EFF2
 --	t2: (a -(!EFF1)  b) -> c	
--- @
+--   @
 --  
--- To join effects in parameters we would have to change the constraint:
+--   To join effects in parameters we would have to use something like:
 --
--- @
+--   @
 -- 	t1 `joinMax` t2
 --	  = (a -(!e1)> b) -> c 
 --	  :- !e1 :> !EFF1 \/ !EFF2
--- @	
+--   @	
 -- 
---   That would mean we'd have to extend the !e1 constraint in the 
---	environment. This would be a hassle, so we don't do it.
+--   This would mean we'd have to extend the !e1 constraint in the 
+--   environment, but it's not needed at the moment.
 --
 module DDC.Type.JoinSum
 	(joinSumTs)

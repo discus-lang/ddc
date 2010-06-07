@@ -14,12 +14,12 @@ import qualified Data.Map	as Map
 
 stage	= "DDC.Type.StripFetters"
 
--- | Strip all fetters from this type
+-- | Strip all fetters from this type, returning just the body.
 stripFWheresT_all  :: Type -> Type
 stripFWheresT_all  = stripFWheresT False
 
 
--- | Strip just the monomorphic FWhere fetters (ones with cids as the RHS) 
+-- | Strip the monomorphic FWhere fetters (the ones with cids as the RHS) 
 --	leaving the others still attached.
 stripFWheresT_mono :: Type -> Type
 stripFWheresT_mono = stripFWheresT True

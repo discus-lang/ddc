@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
--- | Unification of types.
 module DDC.Type.Unify
 	(unifyTT)
 where

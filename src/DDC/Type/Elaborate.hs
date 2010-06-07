@@ -1,12 +1,13 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
--- | Elaboration of types for the ffi.
+-- | Elaboration of types.
+-- 
 --   When importing foreign functions, adding all the region effects and closures 
---	annotations to a type by hand is boring and error prone. Luckily, for most 
---	functions this information is fairly unsurprising. So we can guess most
---	of it automatically.
---
+--	annotations to a type by hand is boring and error prone. However, for most 
+--	functions this information is fairly unsurprising, so we can fill in most of
+--	it automatically.
+
 module DDC.Type.Elaborate
 	( elaborateRsT_constrainForm
 	, elaborateRsT_quant_constrainForm
@@ -36,8 +37,6 @@ elaborateCloT_constrainForm	 = elaborateCloT
 -- | Look at uses of data type constructors, and if they don't have enough
 --	region args applied then add some more so the resulting type
 --	has kind *.
-
-
 elaborateRsT_quant
 	:: Monad m
 	=> (NameSpace -> m Var)	-- ^ A compuation to generate a fresh region var

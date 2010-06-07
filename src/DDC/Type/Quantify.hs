@@ -1,4 +1,28 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+-- | Add forall quantifiers for the free variables in a type. 
+--   We use more-than bounded quantification if there are corresponding
+--   constraints present in the type.
+-- 
+--   NOTE: When adding more-than constraints we need to be careful about the order else
+--   variables won't be in scope during type application in the core.
+--   For example, with:
+--
+--   @
+--	f :: forall !e2 !e3 !e1
+--	  .  ...
+--	  :-  !e1 :> !{!e2; !e3 }
+--   @
+--
+--   Translating this to the core form gives:
+--
+--   @
+--	f :: forall !e2 !e3 (!e1 :> !{!e2 ; !e3}). ...
+--	                             ^^^^^^^^^^^
+--   @
+--
+--   Note that @!e2@ and @!e3@ need to have been substituted when the argument
+--   for @!e1@ is applied.
+-- 
 module DDC.Type.Quantify
 	(quantifyVarsT_constrainForm)
 where
@@ -12,30 +36,7 @@ import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
--- | Add forall quantifiers for the free variables in a type, 
---   using more-than bounded quantification if there are corresponding
---   constraints in the type.
--- 
---   When adding more-than constraints we need to be careful about the order else
---   variables won't be in scope during type application in the core.
---   For example, with:
---
--- @
---	f :: forall !e2 !e3 !e1
---	  .  ...
---	  :-  !e1 :> !{!e2; !e3 }
--- @
---
--- translated to core..
---
--- @
---	f :: forall !e2 !e3 (!e1 :> !{!e2 ; !e3}). ...
---	                             ^^^^^^^^^^^
--- @
---
---	@!e2@ and @!e3@ need to have been substituted when the argument
---	for @!e1@ is applied.
---
+-- | Add forall quantifiers to the front of a type.
 quantifyVarsT_constrainForm :: [(Var, Kind)] -> Type -> Type
 quantifyVarsT_constrainForm vks tt@(TConstrain _ crs)
  = let

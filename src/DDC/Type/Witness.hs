@@ -1,5 +1,4 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
--- | Utilities concerning witness types.
 module DDC.Type.Witness
 	(inventWitnessOfKind)
 where
