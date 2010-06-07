@@ -6,7 +6,6 @@
 module Core.Util.Subsumes
 	(subsumes)
 where
-import Type.Util.Trim
 import Util
 import DDC.Main.Pretty
 import DDC.Type

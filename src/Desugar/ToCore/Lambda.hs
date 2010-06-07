@@ -7,7 +7,6 @@ where
 import Core.Exp
 import Core.Util
 import Desugar.ToCore.Base
-import Type.Util.Trim
 import DDC.Type
 import DDC.Var
 import qualified Data.Set 	as Set

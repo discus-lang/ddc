@@ -10,7 +10,6 @@ import Constraint.Exp
 import Type.Location
 import Type.State
 import Type.Class
-import Type.Util
 import Type.Link
 import Type.Dump		()
 import Util

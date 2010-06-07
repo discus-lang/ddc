@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Trimming of closures
 --	Inferred closure tend to contain a lot of information that isn't useful to the solver
 --	or core IR. We can trim out a lot of this superfulous stuff.
@@ -6,21 +6,23 @@
 --	We're only interested in data contructors.
 --
 --	We only need the closure part of functions:
---		ie   a -(%e1 $c1)> b
---		only the $c1 part can contain data.
+--		ie   @a -(%e1 $c1)> b@
+--		only the @$c1@ part can contain data.
 --
 --	Note: trimming under foralls, must retain quantification of some vars.
 --
+--   @
 --		forall a %r1. a -($c1)> b
 --		:- $c1 = Thing a %r1 %r2
+--   @
 --
---	reduce to
---		forall a %r1. Thing a %r1 %r2	
-module Type.Util.Trim
+--	reduces to
+--		@forall a %r1. Thing a %r1 %r2@
+--
+module DDC.Type.Trim
 	( trimClosureT_constrainForm
 	, trimClosureC_constrainForm)
 where
-import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
@@ -31,6 +33,8 @@ import DDC.Var
 import DDC.Util.FreeVars
 import DDC.Type.FreeVars		()
 import Type.Pretty			()
+import Data.Maybe
+import Data.Set				(Set)
 import qualified Type.Util.PackFast	as PackFast
 import qualified Shared.VarUtil		as Var
 import qualified Data.Set		as Set
@@ -67,7 +71,7 @@ trimClosureT_start quant rsData tt
 
 trimClosureT' quant rsData tt		
  = case tt of
-	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
+	TConstrain tBody (Constraints crsEq crsMore crsOther)
 	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt quant rsData) crsEq
 		crsMore'	= Map.mapWithKey (trimClosureT_tt quant rsData) crsMore
 		crs'		= Constraints crsEq' crsMore' crsOther
@@ -88,7 +92,7 @@ trimClosureC_constrainForm quant rsData cc
 trimClosureC_start quant rsData cc
  = let 	cc_trimmed	= trimClosureC' quant rsData cc
 	cc_packed	= PackFast.packType $ cc_trimmed
-			
+		
 	cc'		= trace 
  				( "trimClosureC\n"	
  				% "    rsData   = " % rsData		% "\n"
@@ -115,15 +119,15 @@ trimClosureC' quant rsData cc
 				, r /= cc])
 	
 	-- Trim all the elements of a sum
-	TSum k cs	
+	TSum{}
 		-> makeTSum kClosure 
 		$  map down
 		$  flattenTSum cc
 
-	TConstrain t crs@Constraints { crsEq, crsMore, crsOther }
+	TConstrain t Constraints { crsEq, crsMore }
 	 -> let	t'		= trimClosureC_start quant rsData t
-		crsEq'		= Map.mapWithKey (\t1 t2 -> trimClosureT_constrainForm quant rsData t2) crsEq
-		crsMore'	= Map.mapWithKey (\t1 t2 -> trimClosureT_constrainForm quant rsData t2) crsMore
+		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT_constrainForm quant rsData t2) crsEq
+		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT_constrainForm quant rsData t2) crsMore
 	    in	addConstraints (Constraints crsEq' crsMore' []) t'
 
 	-- add quantified vars to the set
@@ -179,13 +183,6 @@ trimClosureC' quant rsData cc
 -- | Trim a value type element of a closure.
 trimClosureC_t :: Var -> Set Type -> Set Type -> Type -> [Type]
 trimClosureC_t tag quant rsData tt
- = let tsBits	= trimClosureC_t' tag quant rsData tt
-   in  {- trace 	( "trimClosureC_t " % tt % "\n"
-   		% "    rsData: " %> rsData	% "\n"
-   		% "    tsBits: " %> tsBits	% "\n")	$  -}
-		tsBits
- 
-trimClosureC_t' tag quant rsData tt
  = let down	= trimClosureC_t tag quant rsData
    in  case tt of
 	-- if some var has been quantified by a forall then it's not free
@@ -195,7 +192,7 @@ trimClosureC_t' tag quant rsData tt
 		| otherwise		-> makeFreeDanger tag rsData tt
 
 	-- Trim the fetters of this data
-	TConstrain tBody crs@(Constraints crsEq crsMore crsOther)
+	TConstrain tBody (Constraints crsEq crsMore crsOther)
 	 -> let	crsEq'		= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsEq
 		crsMore'	= Map.fromList $ mapMaybe (trimClosureC_tt quant rsData) $ Map.toList crsMore
 		crs		= Constraints crsEq' crsMore' crsOther
@@ -203,7 +200,7 @@ trimClosureC_t' tag quant rsData tt
 	    in	map (addConstraints crs) cBits
 			
 	-- Trim under foralls
-	TForall BNil k t
+	TForall BNil _ t
 	 -> trimClosureC_t tag quant rsData t
 
 	TForall b k t		
@@ -211,31 +208,31 @@ trimClosureC_t' tag quant rsData tt
 		quant'	= Set.insert (TVar k (UVar v)) quant
 	    in	trimClosureC_t tag quant' rsData t
 	
-	TSum k ts	-> catMap down ts
+	TSum _ ts	-> concatMap down ts
 
 	TCon{}		-> []
 
 	-- when we enter into a data object remember that we're under its primary region.
 	TApp{}
-	 | Just (v, k, [])	<- takeTData tt 
+	 | Just (_, _, [])	<- takeTData tt 
 	 -> []
 		
-	 | Just (v, k, (t:ts))	<- takeTData tt
+	 | Just (_, _, (t:ts))	<- takeTData tt
 	 -> if isRegion t
 	     then let 	rsData'	= Set.insert t rsData
 			vs	= freeVars (t:ts)
-	    	   in  	catMap (trimClosureC_t tag quant rsData') (t:ts)
+	    	   in  	concatMap (trimClosureC_t tag quant rsData') (t:ts)
 			  ++ map (makeTDanger t) 
 				[TVar k (UVar v)
 					| v <- Set.toList vs 
 					, not $ Var.isCtorName v
 					, let Just k = kindOfSpace $ varNameSpace v]
-	     else catMap down ts
+	     else concatMap down ts
 
-	 | Just (t1, t2, eff, clo) <- takeTFun tt
+	 | Just (_, _, _, clo) <- takeTFun tt
 	 -> down clo
 
-	 | Just (v, t)	<- takeTFree tt
+	 | Just (_, _)		<- takeTFree tt
 	 -> [trimClosureC_start quant rsData tt]
 		
 	 | otherwise

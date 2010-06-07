@@ -10,7 +10,6 @@ import Type.Strengthen
 import Type.Error
 import Type.Class
 import Type.State	
-import Type.Util
 import Type.Pretty
 import Type.Plate.Collect
 import Util

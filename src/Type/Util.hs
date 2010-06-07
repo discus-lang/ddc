@@ -3,7 +3,6 @@ module Type.Util
 	, module Type.Util.Instantiate
 	, module Type.Util.Normalise
 	, module Type.Util.Mask
-	, module Type.Util.Trim
 	, makeOpTypeT
 	, makeTVar 
 	, makeTWhere
@@ -14,7 +13,6 @@ import Type.Util.Bits
 import Type.Util.Instantiate
 import Type.Util.Normalise
 import Type.Util.Mask
-import Type.Util.Trim
 import Shared.VarPrim
 import Util
 import DDC.Main.Error

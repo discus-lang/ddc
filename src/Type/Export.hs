@@ -11,7 +11,6 @@ import Type.Class
 import Type.State
 import Type.Extract
 import Type.Plug
-import Type.Util
 import Shared.VarPrim
 import Util
 import DDC.Solve.InstanceInfo

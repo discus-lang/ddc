@@ -46,7 +46,6 @@ module DDC.Solve.Trace
 	, lookupTypeOfCidAsSquid
 	, getTypeOfNodeAsSquid)
 where
-import Type.Util
 import DDC.Solve.Node
 import DDC.Solve.Sink
 import DDC.Main.Error
