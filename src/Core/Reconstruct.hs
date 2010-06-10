@@ -35,6 +35,7 @@ import Core.Exp
 import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
+import Core.Reconstruct.Apply
 import Shared.VarPrim
 import DDC.Base.DataFormat
 import DDC.Base.Literal
@@ -272,7 +273,7 @@ reconX exp@(XAPP (XLit (LiteralFmt lit fmt)) (TVar k r))
 reconX exp@(XAPP x t)
  = do	tt			<- get
 	(x', tX, eX, cX)	<- reconX x
-	aT			<- applyTypeT tX t
+	let aT			=  applyTypeT tt tX t
 	case aT of
 	 Just tApp
 	  ->	trace 	("reconX[XAPP]: (" % x % " @ " % t % ")\n"
@@ -421,8 +422,7 @@ reconX exp@(XApp x1 x2 eff)
  = do	tt			<- get
 	(x1', x1t, x1e, x1c)	<- keepState $ reconX x1
 	(x2', x2t, x2e, x2c)	<- keepState $ reconX x2
-	mResultTE		<- {-# SCC "reconX/applyValue" #-}
-				   applyValueT x1t x2t
+	let mResultTE		=  applyValueT tt x1t x2t
 	case mResultTE of
 	 Just (appT, appE)
 	  -> let x'		= XApp x1' x2' tPure
@@ -775,26 +775,26 @@ reconApps [x]
 
 reconApps (XType t1 : XType t2 : xs)
  = do	table		<- get
-	Just t12	<- applyTypeT t1 t2
+	let Just t12	=  applyTypeT table t1 t2
 	reconApps (XType t12 : xs)
  	
 reconApps (x1 : XType t2 : xs)
  = do	table		<- get
 	t1		<- fmap t4_2 $ keepState $ reconX x1
-	Just t12	<- applyTypeT t1 t2
+	let Just t12	= applyTypeT table t1 t2
 	reconApps (XType t12 : xs)
 
 reconApps (XType t1 : x2 : xs)
- = do	table		<- get
-	t2		<- fmap t4_2 $ keepState $ reconX x2
- 	Just (t12, _)	<- applyValueT t1 t2
+ = do	table			<- get
+	t2			<- fmap t4_2 $ keepState $ reconX x2
+ 	let Just (t12, _)	= applyValueT table t1 t2
 	reconApps (XType t12 : xs)
 
 reconApps (x1 : x2 : xs)
- = do	table		<- get
-	t1		<- fmap t4_2 $ keepState $ reconX x1
-	t2		<- fmap t4_2 $ keepState $ reconX x2
-	Just (t12, _)	<- applyValueT t1 t2
+ = do	table			<- get
+	t1			<- fmap t4_2 $ keepState $ reconX x1
+	t2			<- fmap t4_2 $ keepState $ reconX x2
+	let Just (t12, _)	= applyValueT table t1 t2
 	reconApps (XType t12 : xs)
 
 
@@ -904,156 +904,6 @@ slurpVarTypesW tRHS (WLit{})		= []
 slurpVarTypesW tRHS (WCon _ v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
 
 
--- Value \/ Type application functions ---------------------------------------------------------
--- | Work out the result type and latent effect that will result when 
---	an arg is applied to a function with this type.
---
-applyValueT 
-	:: Type 		-- ^ type of function
-	-> Type 		-- ^ type of arg
-	-> ReconM (Maybe 		
-			( Type		-- result type
-			, Effect))	-- effect caused
-
-applyValueT t1 t2
- = do	table	<- get
-	applyValueT' 
-		(packT $ toFetterFormT $ flattenT_constrainForm $ toConstrainFormT t1) 
-		(packT $ toFetterFormT $ flattenT_constrainForm $ toConstrainFormT t2)
-
-applyValueT' t1@(TFetters t1Shape fs) t2
- = do	table	<- get
-	let	([[], fsMore], [])
- 			= partitionFs [isFWhere, isFMore] fs
-
-	put $ foldr addMoreF table fsMore
-	applyValueT' t1Shape t2
- 
-applyValueT' t0 t3	
- | Just (t1, t2, eff, clo)	<- takeTFun t0
- = do	table	<- get
-	let	result
-		 | t1 == t3
-		 = Just (t2, eff)
-
-		 -- We're currenly using the subsumption judgement more than we really need to.
-
-		 | subsumes (envMore table) t1 t3
-		 = {- Debug.Trace.trace 
-			(pprStrPlain $ "used subsumption\n" 
-			% "t1      = " % t1 % "\n"
-			% "t3      = " % t3 % "\n"
-			% "envMore = " % envMore table % "\n\n")
-		 $ -} Just (t2, eff)
-
-		 | otherwise
-		 = freakout stage
-			( "applyValueT: Type error in value application.\n"
-			% "    called by = " % envCaller table	% "\n\n"
-			% "    can't apply argument:\n"	%> t3 % "\n\n"
-			% "    to:\n"        		%> t0 % "\n"
-			% "\n"
-			% "    as it is not <: than:\n"	%> t1 % "\n"
-			% "\n"
-			% "    with bounds: \n"
-			% ("\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) 
-			$ Map.toList (envMore table)) % "\n\n")
-			) Nothing
-	  in	return result
-
-
-applyValueT' t1 t2
-	= freakout stage
-		( "applyValueT: No match for (t1 t2).\n"
-		% "    t1 = " % t1	% "\n"
-		% "    t2 = " % t2	% "\n")
-		$ return Nothing
-	
-	
--- | Apply a value argument to a forall\/context type, yielding the result type.
---	TODO: check that the kinds\/contexts match as we apply.
---
-applyTypeT :: Type -> Type -> ReconM (Maybe Type)
-applyTypeT t1 t2
- = do	table	<- get
-	return $ applyTypeT' table t1 t2
-
-applyTypeT' :: Env -> Type -> Type -> Maybe Type
-
-applyTypeT' table t1@(TForall BNil k11 t12) t2
-	-- witnesses must match
-	| k2	<- kindOfType t2
-	, packK k11 == packK k2
-	= Just t12
-
-	-- kinds don't match
-	| k2	<- kindOfType t2
-	= freakout stage
-		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % envCaller table	% "\n"
-		% "    can't apply\n"	%> t2		% "\n\n"
-		% "    to\n"		%> t1		% "\n\n"
-		% "    k11\n"		%> (packK k11)	% "\n\n"
-		% "    K[t2]\n"		%> (packK k2)	% "\n\n")
-		$ Nothing
-
-
-applyTypeT' table (TForall (BVar v) k t1) t2
-	| k == kindOfType t2
-	= Just (substituteT (Map.insert v t2 Map.empty) t1)
-
-	| otherwise
-	= freakout stage
-		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % envCaller table	% "\n"
-		% "    in application:\n"
-			%> "(\\/ " % parens (v % " :: " % k) % " -> ...)" <> parens t2 %"\n"
-		% "\n"
-		% "        type: " % t2		% "\n"
-		% "    has kind: " % kindOfType t2 	% "\n\n"
-		
-		% "    expected: " % k	% "\n\n")
-		$ Nothing
-
-applyTypeT' table (TForall (BMore v tB) k t1) t2
-	-- if the constraint is a closure then trim it first
-	| k == kClosure
-	, subsumes (envMore table) 
-			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty t2) 
-			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty tB)
-	= Just (substituteT (Map.insert v t2 Map.empty) t1)
-
-	-- check that the constraint is satisfied
-	| subsumes (envMore table) t2 tB
-	= Just (substituteT (Map.insert v t2 Map.empty) t1)
-	
-	| otherwise
-	= freakout stage
-		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % envCaller table % "\n"
-		% "    in application: (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")" % "\n"
-		% "\n"
-		% "        type: "  % t2 % "\n"
-		% "\n"
-		% "    is not :> " % tB % "\n"
-		% "\n")
-
-		$ Nothing
-	
-
-
-
-applyTypeT' table (TFetters t1 fs) t
-	| Just t1'	<- applyTypeT' table t1 t
-	= Just $ TFetters t1' fs
-	
-applyTypeT' table t1 t2
-	= freakout stage
-		( "applyTypeT: Kind error in type application.\n"
-		% "    caller = " % envCaller table	% "\n"
-		% "    can't apply\n"		%> t2	% "\n\n"
-		% "    to\n"			%> t1	% "\n\n")
-		$ Nothing
 
 	
 -- Mask effects ------------------------------------------------------------------------------------

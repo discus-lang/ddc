@@ -399,7 +399,8 @@ addConstraintsEq crs tt
 	= addConstraints (Constraints crs Map.empty []) tt
 
 
--- | Add some eq constaints to a type
+-- | Add some eq constaints to a type.
+---- GAH: Calling kindOfType here is really slow. Bad idea to call this fn.
 addConstraintsEqVT :: Map Var Type -> Type -> Type
 addConstraintsEqVT crs tt
  = let 	crs'	= Map.fromList
