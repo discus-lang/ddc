@@ -30,7 +30,7 @@ import DDC.Var
 import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)
 import Core.Dictionary			(dictGlob)
-import Core.Reconstruct			(reconTreeWithEnv)
+import Core.Reconstruct			(reconTree)
 import Core.Bind			(bindGlob)
 import Core.Thread			(threadGlob)
 import Core.Prim			(primGlob)
@@ -44,7 +44,6 @@ import Data.Foldable			(foldr)
 import Util				hiding (foldr)
 import Prelude				hiding (foldr)
 import qualified Core.Snip		as Snip
-import qualified DDC.Type.Environment	as Env
 import qualified Sea.Exp		as E
 import qualified Sea.Util		as E
 import qualified Data.Map		as Map
@@ -165,12 +164,8 @@ coreReconstruct
 	-> IO Glob
 	
 coreReconstruct name cgHeader cgModule
- = do	let table	
-		= Env.emptyEnv
- 		{ Env.envDropStmtEff	= False }
- 
- 	let cgModule'	= {-# SCC "Core.Reconstruct" #-} 
- 			   reconTreeWithEnv table cgHeader cgModule
+ = do	let cgModule'	= {-# SCC "Core.Reconstruct" #-} 
+ 			   reconTree "coreReconstruct" cgHeader cgModule
  	dumpCT DumpCoreRecon name 
 		$ treeOfGlob cgModule'
 

@@ -7,12 +7,17 @@ import Util
 import Core.Plate.Trans
 import DDC.Var
 import DDC.Type
+import DDC.Main.Error
 import qualified Data.Map	as Map
 
+stage	= "Core.Util.Substitute"
+
+-- | Substitute types for variables in some thing.
 substituteT 
 	:: (TransM (State ()) a)
-	=> Map Var Type
-	-> a -> a
+	=> (Var -> Maybe Type)
+	-> a 
+	-> a
 	
 substituteT sub tt
  = {-# SCC "substituteT" #-} 
@@ -23,15 +28,29 @@ substituteT sub tt
 
 subTT sub tt
  	| TVar k (UVar v)	<- tt
-	, Just t'		<- Map.lookup v sub	
-	= substituteT (Map.delete v sub) t'
+	, Just t'		<- sub v
+	= substituteT (block v sub) t'
 
 	| TVar k (UMore v tMore) <- tt
-	, Just t'		 <- Map.lookup v sub	
-	= substituteT (Map.delete v sub) t'
+	, Just t'		 <- sub	v
+	= substituteT (block v sub) t'
 
 	| otherwise					
 	= tt
+
+
+block :: Var -> (Var -> Maybe Type) -> Var -> Maybe Type
+block v1 f v2
+{-	| v1 == v2
+--	, Just t@(TVar _ (UVar v3)) <- f v1
+--	, v3 == v1
+	= Just t
+-}
+	| v1 == v2
+	= panic stage $ "Core.Util.Substitute: got loops though " % v1
+	
+	| otherwise
+	= f v2
 
 
 -- substitute variables for variables

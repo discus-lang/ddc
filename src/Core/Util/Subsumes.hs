@@ -10,7 +10,6 @@ import Util
 import DDC.Main.Pretty
 import DDC.Type
 import DDC.Var
-import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace
 
@@ -25,7 +24,7 @@ trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 --   use as a function parameter
 --
 subsumes 
-	:: Map Var Type 	-- table of (v :> t) constraints
+	:: (Var -> Maybe Type) 	-- mapping of (v :> t) constraints
 	-> Type 
 	-> Type 
 	-> Bool
@@ -34,16 +33,16 @@ subsumes tableMore t s
  = let 	?t		= t
 	?s		= s
    in	{-# SCC "subsumes" #-} 
-		subsumes1 tableMore (stripTFree t) (stripTFree s)
+	subsumes1 tableMore (stripTFree t) (stripTFree s)
 	
 subsumes1 table t s
  = let (ans, rule)	= subsumes2 table t s
    in  trace 	("subsumes (T :> S) |- " % ans	% "\n"
    		% " rule = " %> rule		% "\n"
 	 	% "    T = " %> t 		% "\n"
-		% "    S = " %> s		% "\n"
-		% "   with " %> "\n" %!% (map (\(v, t) -> v % " :> " % t) 
-				$ Map.toList table) % "\n")
+		% "    S = " %> s		% "\n")
+--		% "   with " %> "\n" %!% (map (\(v, t) -> v % " :> " % t) 
+--				$ Map.toList table) % "\n")
 		ans
 
 -- Make sure closure terms are trimmed before comparing them,
@@ -95,7 +94,7 @@ subsumes3 table t s
 	-- SubVarTrans
 	--	This handles both SubVar and SubTrans.
 	| TVar tKind (UVar tVar) <- t
-	, Just s2		<- Map.lookup tVar table 
+	, Just s2		<- table tVar 
 	, subsumes table s2 s
 	= (True, "SubTrans")
 
@@ -162,10 +161,14 @@ subsumes3 table t s
 slurpMore (v1, t2) table
  = case t2 of
  	TVar k (UMore v2 t3)
-	 -> let	table'	= Map.insert v1 (TVar k $ UVar v2) table
+	 -> let	table'	= addSub v1 (TVar k $ UVar v2) table
 	    in	slurpMore (v2, t3) table'
 	    
-	_ -> Map.insert v1 t2 table
+	_ -> addSub v1 t2 table
+
+addSub v1 t1 fn v
+	| v == v1	= Just t1
+	| otherwise	= fn v
 
 stripTFree tt
  = case tt of

@@ -32,7 +32,6 @@ import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Kind
-import DDC.Type.Environment
 import DDC.Type.Pretty		()
 import DDC.Main.Pretty
 import Control.Monad
@@ -42,35 +41,35 @@ stage	= "DDC.Type.JoinSum"
 -- | Join all these types.
 --	The value and region portions must be the same.
 --	The effect and closure portions are summed.
-joinSumTs :: Env -> [Type] -> Maybe Type
-joinSumTs _   []	= Nothing
-joinSumTs env (t:ts)	= foldM (joinTT env) t ts
+joinSumTs :: [Type] -> Maybe Type
+joinSumTs []	= Nothing
+joinSumTs (t:ts)	= foldM joinTT t ts
 
 
-joinTT :: Env -> Type -> Type -> Maybe Type
+joinTT :: Type -> Type -> Maybe Type
 
 -- Flip the args around to put the easy-to-unify argument first.
 --	this means that the code for joinTT_work can get by with less cases.
-joinTT env t1 t2
+joinTT t1 t2
 	| TVar{}		<- t2
-	= joinTT_work env t2 t1
+	= joinTT_work t2 t1
 
 	| otherwise
-	= joinTT_work env t1 t2
+	= joinTT_work t1 t2
 
-joinTT_work env t1 t2
+joinTT_work t1 t2
 	| Just (t11, t12, e1, c1) <- takeTFun t1
 	, Just (t21, t22, e2, c2) <- takeTFun t2
 	, t11 == t21
-	, Just tY		<- joinTT env t12 t22
-	, Just eff		<- joinTT env e1 e2
-	, Just clo		<- joinTT env c1 c2
+	, Just tY		<- joinTT t12 t22
+	, Just eff		<- joinTT e1 e2
+	, Just clo		<- joinTT c1 c2
 	= Just $ makeTFun t11 tY eff clo
 
 	| TApp tX1 tY1		<- t1
 	, TApp tX2 tY2		<- t2
-	, Just tX		<- joinTT env tX1 tX2
-	, Just tY		<- joinTT env tY1 tY2
+	, Just tX		<- joinTT tX1 tX2
+	, Just tY		<- joinTT tY1 tY2
 	= Just $ TApp tX tY
 
 	| TVar k1 (UVar v1)		<- t1

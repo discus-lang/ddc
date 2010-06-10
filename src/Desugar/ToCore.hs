@@ -549,7 +549,7 @@ toCoreVarInst v vT
 
 		-- If this function needs a witnesses we'll just make them up.
 		--	Real witnesses will be threaded through in a later stage.
-		let ksContextC'	= map (C.substituteT tsSub) ksContextC
+		let ksContextC'	= map (C.substituteT (flip Map.lookup tsSub)) ksContextC
 		let tsContextC' = map C.packT
 				$ map (\k -> let Just t = T.inventWitnessOfKind k in t)
 				$ ksContextC'

@@ -462,6 +462,13 @@ instance Monad m => TransM m Type where
 	 	t2'		<- followT table t2
 	 	transT table	$ TForall b' k1' t2'
 
+	TConstrain t Constraints { crsEq, crsMore, crsOther }
+	 -> do	t'		<- transZM table t
+		crsEq'		<- liftM Map.fromList $ transZM table $ Map.toList crsEq
+		crsMore'	<- liftM Map.fromList $ transZM table $ Map.toList crsMore
+		crsOther'	<- transZM table crsOther
+		return	$ TConstrain t' (Constraints crsEq' crsMore' crsOther')
+
 	TFetters t1 fs
 	 -> do	t1'		<- followT table t1
 		fs'		<- mapM (followF table) fs

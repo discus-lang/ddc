@@ -3,11 +3,10 @@ module Core.Reconstruct.Apply
 	, applyTypeT)
 where
 import Core.Util
+import Core.Reconstruct.Environment
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
-import DDC.Type.Environment
-import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import Util
 
@@ -40,20 +39,20 @@ applyValueT' env t0 t3
 	 = Just (t2, eff)
 
 	 -- We're currenly using the subsumption judgement more than we really need to.
-	 | subsumes (envMore env) t1 t3
+	 | subsumes ((flip lookupMoreVT) env) t1 t3
 	 = Just (t2, eff)
 
 	 | otherwise
 	 = freakout stage
 	   (vcat [ ppr "applyValueT: Type error in value application."
-		 , "    called by = " 		% envCaller env
+		 , "    called by = " 		% getEnvCaller env
 		 , "    can't apply argument:\n"	%> t3
 		 , "    to:\n"        		%> t0
 		 , blank
 		 , "    as it is not <: than:\n"	%> t1
 		 , blank
-		 , ppr "    with bounds:"
-		 , vcat $ ["    " % v % " :> " % b | (v, b) <- Map.toList $ envMore env]])
+		 , ppr "    with bounds:"])
+--		 , vcat $ ["    " % v % " :> " % b | (v, b) <- Map.toList $ envMore env]])
 		 Nothing
 
   in	result
@@ -81,7 +80,7 @@ applyTypeT env t1@(TForall BNil k11 t12) t2
 	| k2	<- kindOfType t2
 	= freakout stage
 	  (vcat	[ ppr "applyTypeT: Kind error in type application."
-		, "    caller = " 	% envCaller env
+		, "    caller = " 	% getEnvCaller env
 		, "    can't apply\n"	%> t2
 		, "    to\n"		%> t1
 		, "    k11\n"		%> packK k11
@@ -90,12 +89,12 @@ applyTypeT env t1@(TForall BNil k11 t12) t2
 
 applyTypeT env (TForall (BVar v) k t1) t2
 	| k == kindOfType t2
-	= Just (substituteT (Map.insert v t2 Map.empty) t1)
+	= Just (substituteT (subSingleton v t2)	t1)
 
 	| otherwise
 	= freakout stage
 	  (vcat	[ ppr "applyTypeT: Kind error in type application."
-		, "    caller = " 	% envCaller env
+		, "    caller = " 	% getEnvCaller env
 		, ppr "    in application:\n"
 		, "(\\/ " % parens (v % " :: " % k) % " -> ...)" <> parens t2 %"\n"
 		, blank
@@ -107,24 +106,24 @@ applyTypeT env (TForall (BVar v) k t1) t2
 applyTypeT env (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == kClosure
-	, subsumes (envMore env) 
+	, subsumes (flip lookupMoreVT env)
 			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty t2) 
 			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty tB)
-	= Just (substituteT (Map.insert v t2 Map.empty) t1)
+	= Just (substituteT (subSingleton v t2) t1)
 
 	-- check that the constraint is satisfied
-	| subsumes (envMore env) t2 tB
-	= Just (substituteT (Map.insert v t2 Map.empty) t1)
+	| subsumes (flip lookupMoreVT env) t2 tB
+	= Just (substituteT (subSingleton v t2) t1)
 	
 	| otherwise
 	= freakout stage
 	  (vcat	[ ppr "applyTypeT: Kind error in type application.\n"
-		, "    caller = " % envCaller env
+		, "    caller = "	% getEnvCaller env
 		, "    in application: (\\/ " % v % " :> (" % tB % ") " % k % " -> ...)" % " (" % t2 % ")"
 		, blank
-		, "        type: "  % t2
+		, "        type: " 	% t2
 		, blank
-	 	, "    is not :> " % tB])
+	 	, "    is not :> "	% tB])
 		Nothing
 	
 applyTypeT env (TFetters t1 fs) t
@@ -134,9 +133,19 @@ applyTypeT env (TFetters t1 fs) t
 applyTypeT env t1 t2
 	= freakout stage
 	  (vcat	[ ppr "applyTypeT: Kind error in type application.\n"
-		, "    caller = " % envCaller env
+		, "    caller = " 	% getEnvCaller env
 		, "    can't apply\n"	%> t2
 		, "    to\n"		%> t1])
 		Nothing
 
 
+subSingleton v t v'
+	| TVar _ (UVar v3)	<- t
+	, v == v3	= Nothing
+
+	| TVar _ (UMore v3 _)	<- t
+	, v == v3	= Nothing
+	
+	| v == v'	= Just t
+	| otherwise	= Nothing
+	

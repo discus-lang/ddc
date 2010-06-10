@@ -36,13 +36,13 @@ import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
 import Core.Reconstruct.Apply
+import Core.Reconstruct.Environment
 import Shared.VarPrim
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
-import DDC.Type.Environment
 import DDC.Var.VarId		as Var
 import DDC.Var
 import DDC.Util.Doc
@@ -53,7 +53,6 @@ import Prelude			hiding (mapM)
 import Util			hiding (mapM)
 import Type.Util
 import qualified DDC.Var.PrimId	as Var
-import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Debug.Trace	
 
@@ -90,7 +89,7 @@ reconTree
 	
 reconTree caller cgHeader cgModule
  = reconTreeWithEnv
- 	emptyEnv { envCaller = Just caller }
+ 	(initEnv (Just caller) cgHeader cgModule)
 	cgHeader cgModule
 
 
@@ -101,19 +100,9 @@ reconTreeWithEnv
 	-> Glob 	-- ^ Module glob.
 	-> Glob		-- ^ Module glob with reconstructed type information.
 	
-reconTreeWithEnv table cgHeader cgCore
+reconTreeWithEnv env cgHeader cgCore
  = {-# SCC "reconstructTree" #-}
    let	
-	-- slurp out all the stuff defined at top level
-	-- TODO: catMap is evil. 
-	--       It'd be better to store the globs directly in the environment.
-	topTypes	= {-# SCC "reconTree/topTypes" #-} 
-		   	   catMap slurpTypesP 
-			$ (treeOfGlob cgHeader) ++ (treeOfGlob cgCore)
-
- 	tt		= {-# SCC "reconTree/table"    #-} 
-			foldr (uncurry addEqVT) table topTypes
-	
 	-- reconstruct type info on each top level thing.
 	--	We have to do the regions first so their witnesses are added to the state.
 	(pRegions', pBinds')		
@@ -121,7 +110,7 @@ reconTreeWithEnv table cgHeader cgCore
 		(do pRegions'	<- mapM reconP $ globRegion cgCore
 		    pBinds'	<- mapM reconP $ globBind   cgCore
 		    return (pRegions', pBinds'))
-		tt
+		env
 
 	cgCore'	= cgCore 
 		{ globRegion	= pRegions'
@@ -133,9 +122,12 @@ reconTreeWithEnv table cgHeader cgCore
 -- Top ---------------------------------------------------------------------------------------------
 reconP' :: String -> Top -> (Top, Type, Effect, Closure)
 reconP' caller (PBind v x)
- = let (SBind (Just v') x', typ', eff', clo')
-		= evalState	(reconS $ SBind (Just v) x)
-				(emptyEnv { envCaller = Just caller })
+ = let	env	= initEnv (Just caller) globEmpty globEmpty
+
+	(SBind (Just v') x', typ', eff', clo')
+		= evalState
+			(reconS $ SBind (Just v) x)
+			env
 		
    in  (PBind v' x', typ', eff', clo')
  
@@ -163,7 +155,7 @@ reconP (PBind v x)
 		maskConstRead	e		= e
 
 		isConst (TVar k (UVar r))
-		 = (k == kRegion) && (isJust . Map.lookup r $ envWitnessConst tt)
+		 = (k == kRegion) && (isJust $ lookupWitnessConst r tt)
 
 		simplifyE e@(TSum _ []) = e
 		simplifyE (TSum k es)
@@ -204,7 +196,8 @@ reconP p	= return p
 -- Expression --------------------------------------------------------------------------------------
 reconX' :: String -> Exp -> (Exp, Type, Effect, Closure)
 reconX' caller x 
-	= evalState (reconX x) emptyEnv { envCaller = Just caller }
+ = let	env	= initEnv (Just caller) globEmpty globEmpty
+   in	evalState (reconX x) env
 
 reconX_type :: String -> Exp -> Type
 reconX_type caller x
@@ -288,8 +281,8 @@ reconX exp@(XAPP x t)
 	  
 	 _ -> panic stage
 	 	$ " reconX: Kind error in type application (x t).\n"
-		% "     caller = "	% envCaller tt	% "\n"
-		% "     x      =\n"	%> x		% "\n\n"
+		% "     caller = "	% getEnvCaller tt	% "\n"
+		% "     x      =\n"	%> x			% "\n\n"
 		% "-- type ------\n" 	
 		%	(pprDocIndentedWithNewLines 0 $ doc t)	% "\n\n"
 		% "   T[x]     =\n"	%> tX	% "\n\n"
@@ -315,25 +308,23 @@ reconX exp@(XTau tauT x)
 reconX exp@(XLam v t x eff clo)
  = {-# SCC "reconX/XLam" #-}
    do	tt			<- get
-	(x', xT, xE, xC)	<- tempState	(addEqVT v t) $ reconX x
+	(x', xT, xE, xC)	<- tempState (addEqVT v t) $ reconX x
 
-	let	eff'		= packT $ substituteT (envEq tt) eff
-		clo_sub		= packT $ substituteT (envEq tt) clo
+	let	eff'		= packT $ substituteT ((flip lookupEqVT) tt) eff
+		clo_sub		= packT $ substituteT ((flip lookupEqVT) tt) clo
 		xE'		= {-# SCC "reconX/maskE" #-} maskE xT xE xC
 
 	-- check effects match
-	() <- unless (subsumes (envMore tt) eff' xE') $
+	() <- unless (subsumes ((flip lookupMoreVT) tt) eff' xE') $
 		panic stage
 		$ "reconX: Effect error in core.\n"
-		% "    caller = " % envCaller tt	% "\n"
+		% "    caller = " 			% getEnvCaller tt	% "\n"
 		% "    in lambda abstraction:\n" 	%> exp	% "\n\n"
 		% "    reconstructed effect of body:\n" %> xE'	% "\n\n"
 		% "    resulting from masking:\n" 	%> xE	% "\n\n"
 		% "    is not <: annot on lambda:\n"	%> eff'	% "\n\n"
 		% "    with bounds:\n"
 		% "    t:       " %> t	 % "\n"
-		% "    env:     " %> xC  % "\n"
-		% pprBounds (envMore tt)
 
 	-- check closures match
 	-- Closures in core don't work properly yet.
@@ -469,13 +460,12 @@ reconX (XMatch [])
  	$ "reconX: XMatch has no alternatives\n"
 
 reconX (XMatch aa)
- = do	tt	<- get
-	(aa', altTs, altEs, altCs)
-			<- fmap unzip4 $ mapM reconA aa
+ = do	(aa', altTs, altEs, altCs)
+		<- fmap unzip4 $ mapM reconA aa
 
 	-- join all the alt types to get the type for the whole match
 	--	expression.
-	let	Just tMatch	= joinSumTs tt altTs
+	let	Just tMatch	= joinSumTs altTs
 
 	return	( XMatch aa'
 		, tMatch
@@ -489,17 +479,17 @@ reconX (XMatch aa)
 -- var has no type annotation, so look it up from the table
 reconX (XVar v TNil)
  = do	tt		<- get
-	let	tM	= Map.lookup v (envEq tt)
+	let	tM	= lookupEqVT v tt
 	when (isNothing tM)
 	 $ panic stage
 		$ "reconX: Variable " % v % " has no embedded type annotation and "
 		% "is not in the provided environment.\n"
-		% "    caller = " % envCaller tt	% "\n"
+		% "    caller = " % getEnvCaller tt	% "\n"
 
 	let	Just t	= tM
 		t'	= toFetterFormT
 			$ flattenT_constrainForm 
-			$ addConstraintsEqVT (envEq tt) 
+			$ substituteT ((flip lookupEqVT) tt)
 			$ toConstrainFormT t
 
 		-- When we add the type to this var we need to attach any more constraints associated with it,
@@ -507,7 +497,7 @@ reconX (XVar v TNil)
 		--	(which carry these constraints)
 		vsFree	= freeVars t
 		vtsMore	= catMaybes
-			$ map (\u -> fmap ((,) u) $ Map.lookup u (envMore tt))
+			$ map (\u -> fmap ((,) u) $ lookupMoreVT u tt)
 			$ Set.toList vsFree
 
 		tDrop	= makeTFetters t'
@@ -530,7 +520,7 @@ reconX (XVar v t)
 
 	let t'	= toFetterFormT
 		$ flattenT_constrainForm 
-		$ addConstraintsEqVT (envEq tt) 
+		$ substituteT ((flip lookupEqVT) tt)
 		$ toConstrainFormT t
 
 	return	( XVar v t
@@ -640,7 +630,7 @@ reconX xx
  = do	tt	<- get
 	panic stage 
 	 	$ "reconX: no match for " % show xx	% "\n"
-		% "    caller = " % envCaller tt	% "\n"
+		% "    caller = " % getEnvCaller tt	% "\n"
 
 
 -- | Convert this boxed type to the unboxed version
@@ -807,10 +797,7 @@ reconS (SBind Nothing x)
  = do	tt			<- get
 	(x', xT, xE, xC)	<- keepState $ reconX x
 
-	let xAnnot	| envDropStmtEff tt	= XTau xE x'
-			| otherwise		= x'
-
-	return	( SBind Nothing xAnnot
+	return	( SBind Nothing x'
 		, xT
 		, xE
 		, xC)
@@ -820,10 +807,7 @@ reconS (SBind (Just v) x)
 	(x', xT, xE, xC)	<- reconX x
 	put	$ addEqVT v xT tt
 
-	let	xAnnot	| envDropStmtEff tt	= XTau xE x'
-			| otherwise		= x'
-
-	return	( SBind (Just v) xAnnot
+	return	( SBind (Just v) x'
 		, xT
 		, xE
 		, dropTFreesIn
@@ -930,12 +914,13 @@ clampSum t1 t2
 	= do	table	<- get
 		let	parts2		= flattenTSum t1
 			parts_clamped	= [p	| p <- parts2
-						, subsumes (envMore table) t1 p]
+						, subsumes ((flip lookupMoreVT) table) t1 p]
 			k1		= kindOfType t1
 
 		return $ makeTSum k1 parts_clamped
 
 
 -- Bits --------------------------------------------------------------------------------------------
-pprBounds more
+{-pprBounds more
  	= "\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) $ Map.toList more) % "\n"
+-}

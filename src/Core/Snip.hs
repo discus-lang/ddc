@@ -112,22 +112,22 @@ snipX1	table env xx
 
 
 	-- Snip compound exprs from the arguments of applications.
-	XApp x1 x2 eff		-> snipXLeft table (substituteT env xx)
+	XApp x1 x2 eff		-> snipXLeft table (substituteT (flip Map.lookup env) xx)
 
 	XAPP (XVar v t1) t2	-> leaveIt xx
 
 	XAPP x t	
-	 -> do	(ss, x')	<- snipX table (substituteT env x)
+	 -> do	(ss, x')	<- snipX table (substituteT (flip Map.lookup env) x)
 	 	return		(ss, XAPP x' t)
 	
 	XPrim p xs
 	 -> do	(ss, xs') 	<- liftM unzip 
-	 			$  mapM (snipXRight table) (substituteT env xs)
+	 			$  mapM (snipXRight table) (substituteT (flip Map.lookup env) xs)
 
 	 	return (concat ss, XPrim p xs')
 
 	XProject x j
-	 -> do	(ss', x')	<- snipXRight table (substituteT env x)
+	 -> do	(ss', x')	<- snipXRight table (substituteT (flip Map.lookup env) x)
 	 	return	(ss', XProject x' j)
 
 
