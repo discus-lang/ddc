@@ -4,7 +4,6 @@ module DDC.Core.Exp
 	( module DDC.Core.Exp.Prim
 	, Tree
 	, Top 		(..)	-- top level things
-	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
 	, Exp 		(..)	-- expressions
 	, Stmt	 	(..)	-- statements
@@ -13,13 +12,12 @@ module DDC.Core.Exp
 	, Pat		(..)	-- guard patterns
 	, Label		(..))	-- labels in guards
 where
-import Util
-import Shared.Exp
 import DDC.Core.Exp.Prim
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Type.Exp
 import DDC.Var
+import Data.Map		(Map)
 
 
 -- Tree -------------------------------------------------------------------------------------------

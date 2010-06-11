@@ -588,16 +588,3 @@ instance Monad m => TransM m Pat where
 
 	 	transW table	$ WCon spos v' lvt'
 
-
------
-instance Monad m => TransM m (DataField Var Type) where 
- transZM table field
-  = do	label'		<- transZM table $ dLabel field
- 	t'		<- transZM table $ dType  field
-	init'		<- transZM table $ dInit  field
-	return	field 
-		{ dLabel	= label'
-		, dType		= t'
-		, dInit		= init' }
-		
- 	
