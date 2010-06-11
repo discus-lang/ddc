@@ -25,7 +25,7 @@ import DDC.Type.Exp
 import DDC.Var
 
 
--- Trees and Globs -----------------------------------------------------------------------------------
+-- Tree -------------------------------------------------------------------------------------------
 -- | A flat list of top-level things is the lowest common denominator for program representation.
 type Tree	= [Top]
 
@@ -37,7 +37,7 @@ type Tree	= [Top]
 --	Note that the only declaration that contains Exps is PBind, which makes them
 --	easy to find when doing transforms.
 data Top
-	= -- | An abstract type class
+	= -- | An abstract type class.
 	  PClass
 		{ topClassName 		:: Var
 		, topClassSuper 	:: Super }
@@ -88,15 +88,15 @@ data Top
 
 
 -- | Meta-data about a constructor.
---	Note that we need to remember the indicies of each field so we can convert
+--	We need to remember the indices of each field so we can convert
 --	pattern matches using labels to Sea form. 
 data CtorDef
 	= CtorDef 
-	{ ctorDefName	:: Var 		-- ^ name of constructor
-	, ctorDefType	:: Type		-- ^ type of constructor
-	, ctorDefArity	:: Int		-- ^ arity of constructor
-	, ctorDefTag	:: Int		-- ^ tag of constructor
-	, ctorDefFields	:: Map Var Int  -- ^ map of field names to indexes in the constructor.
+	{ ctorDefName	:: Var 		-- ^ Name of constructor.
+	, ctorDefType	:: Type		-- ^ Type of constructor.
+	, ctorDefArity	:: Int		-- ^ Arity of constructor.
+	, ctorDefTag	:: Int		-- ^ Tag of constructor.
+	, ctorDefFields	:: Map Var Int  -- ^ Map of field names to indices in the constructor.
 	}
 	deriving (Show, Eq)
 
@@ -104,13 +104,13 @@ data CtorDef
 -- Exp ---------------------------------------------------------------------------------------------
 -- Core Expressions
 data Exp
-	-- Common Fragment ----------------------------------------------------
-	-- These constructors are used in all stages.
+	-- | A place holder for a missing expresion, used during debugging.
+	= XNil
 
-	-- | A variable with its type
-	= XVar		Var	Type
+	-- | A variable with its type.
+	| XVar		Var	Type
 
-	-- | A literal value
+	-- | A literal value.
 	| XLit		LiteralFmt
 
 	-- | Type abstraction.
@@ -119,10 +119,10 @@ data Exp
 	-- | Type application.
 	| XAPP		Exp	Type
 
-	-- | Value abstraction
+	-- | Value abstraction.
 	| XLam		Var	Type	Exp  Effect Closure
 
-	-- | Value application
+	-- | Value application.
 	| XApp		Exp	Exp	Effect
 
 	-- | Do expression, contains stmts to execute.
@@ -134,12 +134,12 @@ data Exp
 	-- | Introduce a local region (letregion)
 	| XLocal	Var	[(Var, Type)] Exp
 
-	-- | Some primitive function.
+	-- | Call some primitive function.
 	--   We don't use general function application for these as they must
 	--   always be fully applied.
 	| XPrim		Prim 	[Exp]
 
-	-- | A type annotation
+	-- | A type annotation.
 	| XTau		Type	Exp
 
 
@@ -148,69 +148,82 @@ data Exp
 	-- It would be better to refactor these into a common (XAnnot a) constructor
 	-- 	and abstract over the annotation type.
 
-	-- | Nil expression.
-	--	XNil is used internally by compiler stages as a place holder for
-	--	information that isn't present at the moment. If Core.Lint finds
-	--	any XNil's _after_ a stage has completed then it will complain.
-	| XNil
 
 	-- An unresolved projection. 
 	--	These come from the Desugared IR and are rewritten to 
 	--	real function calls by Core.Dictionary.
+	-- TODO: refactor into a primop.
 	| XProject Exp Proj		
 	
 	-- Used to represent flattened value or type applications
 	-- Used in Core.Dictionary (and others?)
+	-- TODO: Ditch these.
 	| XAppF   [Exp]
 	| XAppFP  Exp  (Maybe Effect)
 	| XType	  Type
 
 	-- Used by Desugar.ToCore
+	-- TODO: Refactor into an annotation.
 	| XAt	 Var   Exp
 				
 	-- Used by Core.Lift
 	--  	Place holder for a lambda abstraction that was lifted out
 	-- 	name of lifted function. 
 	--	Name of supercombinator, vars which were free in lifted expression.
-	| XLifted Var [Var]			
-
+	-- TODO: Refactor this into a primcall.
+	| XLifted Var [Var]
 	deriving (Show, Eq)
 
 
 -- Proj --------------------------------------------------------------------------------------------
--- Field projections
+-- | Field projections.
+--   TODO: turn this into a primop, and ditch XProject in Core.Exp.
 data Proj
-	= JField  Var			-- ^ A field projection.   		(.fieldLabel)
-	| JFieldR Var			-- ^ A field reference projection.	(#fieldLabel)
+	-- | A field projection (.fieldLabel)
+	= JField  Var
+
+	-- | A field reference projection. (#fieldLabel)
+	| JFieldR Var
 	deriving (Show, Eq)
 
 
 -- Stmt --------------------------------------------------------------------------------------------
--- Statements
+-- | A statement or binding.
 data Stmt
-	= SBind  	(Maybe Var) Exp	-- ^ Let binding.
+	= SBind  	(Maybe Var) Exp
 	deriving (Show, Eq)
 
 
 -- Alt ---------------------------------------------------------------------------------------------
--- Match alternatives
+-- | A pattern alternative.
 data Alt
 	= AAlt		[Guard] Exp
 	deriving (Show, Eq)
 
+-- | A pattern guard.
 data Guard
-	= GExp		Pat	Exp	-- ^ Match against an auxilliary value.
+	= GExp		Pat	Exp
 	deriving (Show, Eq)
 
+-- | A pattern.
 data Pat
-	= WVar	Var			-- ^ Bind a variable
-	| WLit	SourcePos LiteralFmt	-- ^ Match against a literal value
-	| WCon				--   Match against a constructor and bind arguments.
-		SourcePos 
-		Var 
-		[(Label, Var, Type)]	
+	-- | Bind a variable.
+	= WVar	Var
+
+	-- | Match against a literal value.
+	| WLit	SourcePos LiteralFmt
+
+	-- | Match against a constructor and bind its arguments.
+	--   Not all the arguments need to be bound.
+	| WCon	SourcePos 
+		Var 			-- constructor name
+		[(Label, Var, Type)]	-- arguments.
 	deriving (Show, Eq)
-	
+
+
+-- | A field label.
+--   TODO: ditch the var constructor.
+--   We should just do the var to index rewrite during conversion to core.
 data Label
 	= LIndex	Int		-- ^ i'th field of constructor.
 	| LVar		Var		-- ^ a field name.
