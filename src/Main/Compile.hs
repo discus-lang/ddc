@@ -373,7 +373,16 @@ compileFile_parse
 				"core-reconstruct" 
 				cgHeader
 				cgModule_thread
-		
+	
+	-- After reconstruction the program has enough embedded info to pass
+	-- the type checker, so do that. This panics if there is any lint.
+	outVerb $ ppr $ "  * Core: Lint (initial)\n"
+	SC.coreLint 
+		"core-lint"
+		cgHeader
+		cgModule_recon
+		`seq` return ()
+	
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
 	cgModule_dict	<- SC.coreDictionary 
@@ -394,14 +403,14 @@ compileFile_parse
 				else return cgModule_prim
 	
 	-- Check the program one last time ------------------------------------
-	--	Lambda lifting doesn't currently preserve the typing, 
-	--	So we can't check it again after this point.
-	outVerb $ ppr $ "  * Core: Check\n"
-	cgModule_checked	
-			<- SC.coreReconstruct  
-				"core-reconstruct-final" 
-				cgHeader 
-				cgModule_simplified				
+	--	Lambda lifting doesn't currently preserve the typing, so we can't
+	--	check it again after this point. This panics if there is any lint.
+	outVerb $ ppr $ "  * Core: Lint (final)\n"
+	SC.coreLint
+		"core-lint-final" 
+		cgHeader 
+		cgModule_simplified
+		`seq` return ()
 				
 	-- Perform lambda lifting ---------------------------------------------
 	-- TODO: Fix this so it doesn't break the type information.
@@ -410,7 +419,7 @@ compileFile_parse
 	 , vsNewLambdaLifted) 
 			<- SC.coreLambdaLift
 				cgHeader
-				cgModule_checked
+				cgModule_simplified
 
 	-- Convert field labels to field indicies -----------------------------
 	outVerb $ ppr $ "  * Core: LabelIndex\n"

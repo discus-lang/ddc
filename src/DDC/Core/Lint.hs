@@ -1,11 +1,14 @@
 
--- | Check for lint in the core program.
+-- | Check for type errors or other problems in a core program, and `panic`
+--   if we find and. Also do a deepseq along the way. This module should
+--   perform any possible internal consitency check we can think of on the 
+--   core program.
+--
 --   TODO: Do full type checking.
---         Make Core.Reconstruct add type annots, but Core.Lint just check them.
 --	   Check syntactic soundness of witnesses.
 --	   Check for type vars that are out of scope
 --
-module Core.Lint
+module DDC.Core.Lint
 	( lintGlob
 	, checkType
 	, Env	(..))

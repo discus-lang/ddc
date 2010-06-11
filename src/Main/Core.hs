@@ -26,6 +26,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Main.Arg
 import DDC.Core.Glob
+import DDC.Core.Lint			(lintGlob)
 import DDC.Var
 import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)
@@ -35,7 +36,6 @@ import Core.Bind			(bindGlob)
 import Core.Thread			(threadGlob)
 import Core.Prim			(primGlob)
 import Core.Simplify			(simplifyGlob)
-import Core.Lint			(lintGlob)
 import Core.Lift			(lambdaLiftGlob)
 import Core.LabelIndex			(labelIndexGlob)
 import Core.Curry			(curryGlob)
