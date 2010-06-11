@@ -5,13 +5,13 @@ module Core.Snip
 	( Table(..)
 	, snipGlob )
 where
-import Core.Exp
-import Core.Glob
 import Core.Util
 import Core.Plate.Trans
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
 import Shared.VarGen			(VarGenM, newVarN)
@@ -19,7 +19,6 @@ import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Debug.Trace	
 
------
 stage		= "Core.Snip"
 debug 		= False
 trace s	x 	= if debug then Debug.Trace.trace (pprStrPlain s) x else x

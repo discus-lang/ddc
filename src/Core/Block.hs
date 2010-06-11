@@ -8,9 +8,9 @@
 module Core.Block
 	(blockGlob)
 where
-import Core.Exp
-import Core.Glob
 import Core.Plate.Trans
+import DDC.Core.Exp
+import DDC.Core.Glob
 
 
 -- | Introduce XDo expressions into this tree.

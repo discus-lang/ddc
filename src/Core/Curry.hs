@@ -4,15 +4,15 @@
 module Core.Curry
 	(curryGlob)
 where
-import Core.Exp
 import Core.Util
-import Core.Glob
 import Util
 import DDC.Var.NameSpace
 import DDC.Main.Pretty
 import DDC.Main.Error
-import DDC.Var
 import DDC.Type
+import DDC.Core.Exp
+import DDC.Core.Glob
+import DDC.Var
 import qualified Data.Set	as Set
 import qualified Shared.VarUtil	as Var
 import qualified Debug.Trace	as Debug

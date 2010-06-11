@@ -1,15 +1,13 @@
 
 -- | Core Language IR.
-module Core.Exp
-	( Tree
+module DDC.Core.Exp
+	( module DDC.Core.Exp.Prim
+	, Tree
 	, Top 		(..)	-- top level things
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
 	, Exp 		(..)	-- expressions
 	, Proj		(..)	-- projections
-	, Prim		(..)	-- primitive functions
-	, PrimCall	(..)	-- primitive function call related things
-	, PrimOp	(..)	-- primitive operators
 	, Stmt	 	(..)	-- statements
 	, Alt 		(..)	-- case/match alternatives
 	, Guard		(..)	-- alternative guards

@@ -8,12 +8,12 @@ module Core.Float
 where
 import Core.BoundUse
 import Core.Util
-import Core.Exp
-import Core.Glob
 import Shared.Warning
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
 import qualified Core.Reconstruct	as Recon

@@ -5,14 +5,14 @@ module Core.Dictionary
 where
 import Core.Dictionary.InfoOverloaded
 import Core.Dictionary.Env
-import Core.Glob
-import Core.Exp
 import Core.Util.Bits
 import Core.Plate.Trans
 import Type.Util.Bits
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.Glob
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Data.Sequence		as Seq

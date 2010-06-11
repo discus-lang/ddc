@@ -21,7 +21,7 @@ import qualified DDC.Type.Transform	as T
 import qualified Type.Util		as T
 import qualified Desugar.Exp		as D
 import qualified Desugar.Plate.Trans	as D
-import qualified Core.Exp		as C
+import qualified DDC.Core.Exp		as C
 import qualified Core.OpType		as C
 
 

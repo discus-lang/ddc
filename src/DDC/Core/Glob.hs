@@ -1,6 +1,6 @@
 
 -- | Utils concerning Globs.
-module Core.Glob
+module DDC.Core.Glob
 	( Glob(..)
 	, globEmpty
 	, globOfTree
@@ -13,12 +13,12 @@ module Core.Glob
 	, mapBindsOfGlobM
 	, mapBindsOfGlobM_)
 where
-import Core.Exp
 import Core.OpType
 import Core.Util.Slurp
 import Data.Maybe
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import Data.Map			(Map)

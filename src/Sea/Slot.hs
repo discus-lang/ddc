@@ -11,7 +11,7 @@ import Sea.Exp
 import Sea.Util
 import Sea.Plate.Trans
 import DDC.Var
-import qualified Core.Glob	as C
+import qualified DDC.Core.Glob	as C
 import qualified Shared.Unique	as Unique
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map

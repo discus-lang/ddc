@@ -20,12 +20,12 @@ module Main.Core
 	, toSea)
 where
 import Core.Util
-import Core.Glob
 import Core.ToSea.Sequence
 import Main.Dump
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Main.Arg
+import DDC.Core.Glob
 import DDC.Var
 import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)

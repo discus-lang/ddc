@@ -5,11 +5,10 @@ module Core.Util.Rename
 	, renameBindersX
 	, RenameS(..))
 where
-import Core.Exp
 import Core.Plate.Trans
 import Util
-import DDC.Var.VarId
 import DDC.Main.Pretty
+import DDC.Core.Exp
 import DDC.Var
 import qualified Data.Map	as Map
 

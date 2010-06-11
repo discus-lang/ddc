@@ -14,11 +14,11 @@ import Data.Sequence			(Seq)
 import Data.Traversable			(mapM)
 import Util				hiding (mapM)
 import Prelude				hiding (mapM)
-import qualified Core.Exp 		as C
+import qualified DDC.Core.Exp 		as C
+import qualified DDC.Type		as T
 import qualified Core.Util		as C
 import qualified Core.Reconstruct	as C
 import qualified Core.OpType		as C
-import qualified DDC.Type		as T
 import qualified Sea.Exp  		as E
 import qualified Sea.Pretty		as E
 import qualified Shared.VarPrim		as Var

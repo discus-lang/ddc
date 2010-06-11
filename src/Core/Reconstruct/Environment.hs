@@ -8,9 +8,9 @@ module Core.Reconstruct.Environment
 	, addEqVT,		lookupEqVT
 	, addMoreVT, addMoreF,	lookupMoreVT)
 where
-import Core.Glob
-import DDC.Var
+import DDC.Core.Glob
 import DDC.Type
+import DDC.Var
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 import Util.Data.Maybe

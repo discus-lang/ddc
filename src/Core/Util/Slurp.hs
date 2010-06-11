@@ -9,11 +9,11 @@ module Core.Util.Slurp
 	, slurpBoundVarsP
 	, dropXTau)
 where
-import Core.Exp
 import Core.Pretty		()
 import Core.Util.Pack
 import Type.Util
 import DDC.Main.Error
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map

@@ -4,9 +4,9 @@ module Core.Crush
 	( crushTree
 	, crushGlob)
 where
-import Core.Exp
-import Core.Glob
 import Core.Plate.Trans
+import DDC.Core.Exp
+import DDC.Core.Glob
 import Util
 
 crushTree :: Tree -> Tree

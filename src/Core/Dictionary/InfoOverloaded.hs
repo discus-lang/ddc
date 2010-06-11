@@ -4,11 +4,11 @@ module Core.Dictionary.InfoOverloaded
 	, lookupOverloadedVar )
 where
 import Core.Dictionary.Env
-import Core.Exp
-import Core.Glob
 import Type.Util.Bits
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
 import Util

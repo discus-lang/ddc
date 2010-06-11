@@ -4,9 +4,9 @@
 module Core.LabelIndex
 	(labelIndexGlob)
 where
-import Core.Exp
-import Core.Glob
 import Core.Plate.Trans
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Var
 import Util.Data.Maybe
 import qualified Data.Map	as Map

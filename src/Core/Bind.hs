@@ -8,8 +8,6 @@ module Core.Bind
 where
 import Core.Plate.Trans
 import Core.Plate.FreeVars
-import Core.Exp
-import Core.Glob
 import Core.Util
 import Core.Reconstruct
 import Shared.VarPrim
@@ -17,6 +15,8 @@ import Shared.VarGen
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
 import Prelude				hiding	(mapM)

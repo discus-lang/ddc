@@ -32,7 +32,7 @@ import qualified Source.Pragma		as Pragma
 import qualified Desugar.Plate.Trans	as D
 
 -- core
-import qualified Core.Glob		as C
+import qualified DDC.Core.Glob		as C
 
 -- sea
 import qualified Sea.Util		as E

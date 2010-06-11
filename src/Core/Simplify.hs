@@ -3,11 +3,11 @@ module Core.Simplify
 	( Stats(..)
 	, simplifyGlob )
 where
-import Core.Exp
-import Core.Glob
 import Core.Plate.Trans
-import Util
 import DDC.Main.Pretty
+import DDC.Core.Exp
+import DDC.Core.Glob
+import Util
 import qualified Core.Float	as Float
 import qualified Core.Snip	as Snip
 

@@ -2,8 +2,6 @@
 module Core.Lift.LiftLambdas
 	( liftLambdasP )
 where
-import Core.Exp
-import Core.Glob
 import Core.Util
 import Core.Plate.Trans
 import Core.Plate.FreeVars
@@ -11,6 +9,8 @@ import Core.Lift.Base
 import Core.Reconstruct
 import Util
 import DDC.Main.Pretty
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map

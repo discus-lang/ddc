@@ -2,10 +2,10 @@
 module Core.Util.Beta
 	( betaTree )
 where
-import Core.Exp
 import Core.Crush
 import Core.Plate.Trans
 import Util
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map

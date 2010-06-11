@@ -18,8 +18,8 @@ import Data.Sequence		(Seq)
 import Prelude			hiding (foldl)
 import qualified Source.Exp	as S
 import qualified Desugar.Exp	as D
-import qualified Core.Exp	as C
-import qualified Core.Glob	as C
+import qualified DDC.Core.Exp	as C
+import qualified DDC.Core.Glob	as C
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq

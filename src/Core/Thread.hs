@@ -12,12 +12,12 @@ module Core.Thread
 	(threadGlob)
 where
 import Core.Plate.Trans
-import Core.Exp
-import Core.Glob
-import Util
 import DDC.Main.Error
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
+import Util
 import qualified DDC.Var.PrimId		as Var
 import qualified Data.Map		as Map
 

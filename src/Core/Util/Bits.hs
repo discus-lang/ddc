@@ -24,7 +24,7 @@ module Core.Util.Bits
 	, chopLambdas
 	, addLAMBDAs)
 where
-import Core.Exp
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import Util

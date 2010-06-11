@@ -31,8 +31,6 @@ module Core.Reconstruct
 	, reconBoxType
 	, reconUnboxType)
 where
-import Core.Exp
-import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
 import Core.Reconstruct.Apply
@@ -42,6 +40,8 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var.VarId		as Var
 import DDC.Var

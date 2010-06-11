@@ -4,9 +4,9 @@ module Desugar.ToCore.Lambda
 	, loadEffAnnot 
 	, loadCloAnnot)
 where
-import Core.Exp
 import Core.Util
 import Desugar.ToCore.Base
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Data.Set 	as Set

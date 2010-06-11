@@ -3,11 +3,11 @@
 module Core.Pretty
 	(pprStr)
 where
-import Core.Exp
 import Core.Util.Bits
 import Util
 import Data.Function
 import DDC.Main.Pretty
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map

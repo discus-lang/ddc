@@ -21,7 +21,7 @@ import qualified DDC.Type		as T
 import qualified Data.Foldable		as Foldable
 import qualified Constraint.Simplify	as N
 import qualified Constraint.Exp		as N
-import qualified Core.Exp		as C
+import qualified DDC.Core.Exp		as C
 import qualified Type.Export		as T
 import qualified Type.Dump		as T
 import qualified Type.Solve		as T

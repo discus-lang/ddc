@@ -10,9 +10,9 @@ module Core.Lint
 	, checkType
 	, Env	(..))
 where
-import Core.Glob
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
 import Data.List

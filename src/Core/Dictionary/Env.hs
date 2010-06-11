@@ -3,7 +3,7 @@ module Core.Dictionary.Env
 	( Env(..)
 	, envGlobs)
 where
-import Core.Glob
+import DDC.Core.Glob
 
 data Env
 	= Env 

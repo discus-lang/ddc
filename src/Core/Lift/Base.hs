@@ -11,13 +11,13 @@ module Core.Lift.Base
 	, addChopped
 	, getChopped)
 where
-import Core.Exp
-import Core.Glob
-import Util
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
+import Util
 import qualified Shared.Unique	as Unique
 import qualified Data.Map	as Map
 

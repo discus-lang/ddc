@@ -6,10 +6,10 @@ module Core.Plate.FreeVars
 	, varsBoundByG
 	, varsBoundByW )
 where
-import Core.Exp
 import DDC.Main.Error
-import DDC.Var
+import DDC.Core.Exp
 import DDC.Type
+import DDC.Var
 import DDC.Util.FreeVars
 import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))

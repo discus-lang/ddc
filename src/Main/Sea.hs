@@ -29,7 +29,7 @@ import Sea.Force			(forceTree)
 import Sea.Slot				(slotTree)
 import Sea.Flatten			(flattenTree)
 import Sea.Init				(initTree, mainTree)
-import qualified Core.Glob		as C
+import qualified DDC.Core.Glob		as C
 import qualified DDC.Config.Version	as Version
 
 

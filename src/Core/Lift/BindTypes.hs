@@ -2,10 +2,10 @@
 module Core.Lift.BindTypes
 	(bindTypesTree)
 where
-import Core.Exp
 import Core.Lift.Base
 import Core.Plate.Trans
 import Core.Reconstruct
+import DDC.Core.Exp
 
 
 bindTypesTree :: Tree 	-> LiftM ()

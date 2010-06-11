@@ -2,12 +2,12 @@
 module Core.Lift
 	(lambdaLiftGlob)
 where
-import Core.Glob
 import Core.Lift.Base
 import Core.Lift.BindTypes
 import Core.Lift.LiftLambdas
-import Util
+import DDC.Core.Glob
 import DDC.Var
+import Util
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 

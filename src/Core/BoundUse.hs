@@ -9,12 +9,12 @@ module Core.BoundUse
 	, boundUseP
 	, boundUseX)
 where
-import Core.Exp
-import Core.Glob
+import DDC.Main.Pretty
+import DDC.Core.Exp
+import DDC.Core.Glob
+import DDC.Var
 import Control.Monad.State.Strict
 import Util
-import DDC.Main.Pretty
-import DDC.Var
 import qualified Data.Map		as Map
 
 

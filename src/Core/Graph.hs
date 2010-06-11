@@ -3,12 +3,12 @@ module Core.Graph
 	( slurpAppGraph
 	, dotAppGraph)
 where
-import Core.Exp
 import Core.Util
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Util
 import DDC.Main.Pretty
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Shared.VarUtil	as Var

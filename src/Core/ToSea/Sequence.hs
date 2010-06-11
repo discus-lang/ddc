@@ -8,12 +8,12 @@
 module Core.ToSea.Sequence
 	(slurpCafInitSequence)
 where
-import Core.Exp
-import Core.Glob
 import Core.Util
 import Core.Plate.FreeVars
 import Util.Graph.Deps
 import Util
+import DDC.Core.Exp
+import DDC.Core.Glob
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

@@ -4,9 +4,9 @@ module	Core.OpType
 	, superOpTypeP
 	, superOpTypeX )
 where
-import Core.Exp
 import Util
 import DDC.Main.Error
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Shared.VarPrim	as Var

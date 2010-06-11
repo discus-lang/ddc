@@ -26,17 +26,15 @@ module Core.Plate.Trans
 	, transformA
 	
 	, transformW)
-
 where
-import Core.Exp
-import Util
 import DDC.Main.Error
+import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
+import Util
 import qualified Data.Map	as Map
 
------
-stage	= "Core.Plate.Trans"
+stage = "Core.Plate.Trans"
 
 -----
 dropStateM ::	State s b -> b
