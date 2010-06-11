@@ -1,5 +1,5 @@
 
--- | Core Language IR.
+-- | Core Language.
 module DDC.Core.Exp
 	( module DDC.Core.Exp.Prim
 	, Tree
@@ -7,7 +7,6 @@ module DDC.Core.Exp
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
 	, Exp 		(..)	-- expressions
-	, Proj		(..)	-- projections
 	, Stmt	 	(..)	-- statements
 	, Alt 		(..)	-- case/match alternatives
 	, Guard		(..)	-- alternative guards
@@ -146,13 +145,6 @@ data Exp
 	-- It would be better to refactor these into a common (XAnnot a) constructor
 	-- 	and abstract over the annotation type.
 
-
-	-- An unresolved projection. 
-	--	These come from the Desugared IR and are rewritten to 
-	--	real function calls by Core.Dictionary.
-	-- TODO: refactor into a primop.
-	| XProject Exp Proj		
-	
 	-- Used to represent flattened value or type applications
 	-- Used in Core.Dictionary (and others?)
 	-- TODO: Ditch these.
@@ -170,18 +162,6 @@ data Exp
 	--	Name of supercombinator, vars which were free in lifted expression.
 	-- TODO: Refactor this into a primcall.
 	| XLifted Var [Var]
-	deriving (Show, Eq)
-
-
--- Proj --------------------------------------------------------------------------------------------
--- | Field projections.
---   TODO: turn this into a primop, and ditch XProject in Core.Exp.
-data Proj
-	-- | A field projection (.fieldLabel)
-	= JField  Var
-
-	-- | A field reference projection. (#fieldLabel)
-	| JFieldR Var
 	deriving (Show, Eq)
 
 

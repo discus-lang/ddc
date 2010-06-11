@@ -214,10 +214,6 @@ instance Pretty Exp PMode where
 	XPrim m args
 	 -> m % " " %> (" " %!% map prettyExpB args)
 
-	XProject x j
-	 -> x % j
-
-
 	-- intermediate
 	XAppF xs
 	 -> "@XAppF " % xs
@@ -249,12 +245,6 @@ prettyExpB x
 	_		-> "(" % x % ")"
 
 
--- Proj --------------------------------------------------------------------------------------------
-instance Pretty Proj PMode where
- ppr xx
-  = case xx of
-  	JField v	-> "." % v
-	JFieldR v	-> "#" % v
 
 
 -- Prim --------------------------------------------------------------------------------------------

@@ -84,9 +84,6 @@ instance FreeVars Exp where
 	 	[ freeVars m
 		, unions $ map freeVars xs ]
 	
-	XProject x j
-	 ->	freeVars x
-
 	-- intermediate
 	XType t
 	 -> freeVars t

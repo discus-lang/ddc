@@ -398,11 +398,6 @@ transXM2 table xx
 	 	aa'		<- followXs table aa
 		transX table	$ XPrim m' aa'
 		
-	-- intermediate constructors
-	XProject x j
-	 -> do	x'		<- followX table x
-	 	transX table	$ XProject x' j
-
 	XAppF xs
 	 -> do	xs'		<- followXs table xs
 	 	transX table	$ XAppF xs'
@@ -426,7 +421,6 @@ transXM2 table xx
 	 	transX table	$ XLifted v' vsFree
 		
 
------
 instance Monad m => TransM m Prim where
  transZM table tt
   = case tt of
@@ -439,8 +433,8 @@ instance Monad m => TransM m Prim where
 	MUnbox		-> transM table tt
 	MOp op 		-> transM table tt
 	MCall{}		-> transM table tt
+
 		
------
 instance Monad m => TransM m Type where
  transZM table tt
   = case tt of

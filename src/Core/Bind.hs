@@ -446,7 +446,6 @@ canBindX xx
 	XVar{}			-> False
 	XLocal v ls x		-> canBindX x
 	XPrim{}			-> False
-	XProject{}		-> False	
 
 
 addSharedV v vsShared

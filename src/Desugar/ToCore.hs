@@ -395,7 +395,7 @@ toCoreX xx
 	 , kE == T.kEffect
 	 -> do
 		x2'		<- toCoreX x2
-		j'		<- toCoreJ j
+--		j'		<- toCoreJ j
 
 		-- lookup the var for the projection function to use
 		projResolve	<- gets coreProjResolve
@@ -585,15 +585,6 @@ toCoreVarInst v vT
 
 		return $ xResult
 			 
-
--- Proj --------------------------------------------------------------------------------------------
--- | Field porjections
-toCoreJ :: D.Proj Annot -> CoreM C.Proj
-toCoreJ jj
- = case jj of
-	D.JField _ v	-> return $ C.JField v 	
-	D.JFieldR _ v	-> return $ C.JFieldR v
-
 
 -- Alt ---------------------------------------------------------------------------------------------
 -- | Case Alternatives

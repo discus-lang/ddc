@@ -125,10 +125,6 @@ snipX1	table env xx
 
 	 	return (concat ss, XPrim p xs')
 
-	XProject x j
-	 -> do	(ss', x')	<- snipXRight table (substituteT (flip Map.lookup env) x)
-	 	return	(ss', XProject x' j)
-
 
 -- | Snip some stuff from an expression.
 snipX table xx
@@ -163,11 +159,9 @@ snipX table xx
 	XLocal{}
 	 -> panic stage	$ "snipDownX: unexpected XLocal\n"
 	 
-	XPrim{}			-> snipIt table xx
-	XProject{}		-> snipIt table xx
-	
+	XPrim{}			-> snipIt table xx	
 	XType{}			-> leaveIt xx
-	
+
 
 -- | Snip some expressions from the left hand side of a function application.
 --	On the left hand side we leave vars alone, and decend into other applications.
