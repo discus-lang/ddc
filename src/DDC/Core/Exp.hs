@@ -152,12 +152,6 @@ data Exp
 	| XAppFP  Exp  (Maybe Effect)
 	| XType	  Type
 
-	-- Used by Core.Lift
-	--  	Place holder for a lambda abstraction that was lifted out
-	-- 	name of lifted function. 
-	--	Name of supercombinator, vars which were free in lifted expression.
-	-- TODO: Refactor this into a primcall.
-	| XLifted Var [Var]
 	deriving (Show, Eq)
 
 

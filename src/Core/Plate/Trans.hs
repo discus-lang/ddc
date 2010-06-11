@@ -410,11 +410,7 @@ transXM2 table xx
 	XType t 
 	 -> do	t'		<- followT table t
 	 	transX table	$ XType t'
-				
-	XLifted v vsFree
-	 -> do	v'		<- followV_free table v
-	 	transX table	$ XLifted v' vsFree
-		
+						
 
 instance Monad m => TransM m Prim where
  transZM table tt

@@ -75,9 +75,6 @@ instance FreeVars Exp where
 		
 	XLit{}
 	 -> empty
-
-	XLifted v vsFree
-	 -> fromList vsFree
 	
 	XPrim m xs
 	 -> unions

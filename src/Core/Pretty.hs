@@ -224,9 +224,6 @@ instance Pretty Exp PMode where
 	XType t
 	 -> ppr t
 
-	XLifted vLifted vsFree
-	 -> "@XLifted " % vLifted % " " % vsFree
-
 
 spaceApp xx
  = case xx of
