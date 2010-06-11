@@ -221,9 +221,6 @@ instance Pretty Exp PMode where
 	XAppFP x eff
 	 -> "@XAppFP " % x % " " % eff
 
-	XAt v x
-	 -> "@XAt " % v % " " % x
-
 	XType t
 	 -> ppr t
 

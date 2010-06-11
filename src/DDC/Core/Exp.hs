@@ -152,10 +152,6 @@ data Exp
 	| XAppFP  Exp  (Maybe Effect)
 	| XType	  Type
 
-	-- Used by Desugar.ToCore
-	-- TODO: Refactor into an annotation.
-	| XAt	 Var   Exp
-				
 	-- Used by Core.Lift
 	--  	Place holder for a lambda abstraction that was lifted out
 	-- 	name of lifted function. 
