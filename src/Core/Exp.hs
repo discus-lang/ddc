@@ -5,7 +5,6 @@ module Core.Exp
 	, Top 		(..)	-- top level things
 	, DataField 	(..)	-- data fields
 	, CtorDef	(..)	-- constructor definitions
-	, ClassContext	(..)	-- type class context
 	, Exp 		(..)	-- expressions
 	, Proj		(..)	-- projections
 	, Prim		(..)	-- primitive functions
@@ -99,12 +98,6 @@ data CtorDef
 	, ctorDefTag	:: Int		-- ^ tag of constructor
 	, ctorDefFields	:: Map Var Int  -- ^ map of field names to indexes in the constructor.
 	}
-	deriving (Show, Eq)
-
-
--- | A type class context.
-data ClassContext
-	= ClassContext Var [Var]
 	deriving (Show, Eq)
 
 
