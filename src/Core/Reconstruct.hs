@@ -22,12 +22,8 @@
 --
 module Core.Reconstruct
 	( reconTree, reconTreeWithEnv
-	, reconP, reconP', reconP_type
-	, reconX, reconX', reconX_type
-	, reconS
-	, reconA
-	, reconG
-
+	, reconP', reconP_type
+	, reconX', reconX_type
 	, reconBoxType
 	, reconUnboxType)
 where
@@ -138,7 +134,6 @@ reconP_type caller p
 
 
 reconP	:: Top -> ReconM Top
-
 reconP (PBind v x)
  = do	tt			<- get
 	(x', xT, xE, xC)	<- {-# SCC "reconP/reconX" #-} reconX x
@@ -208,10 +203,6 @@ reconX :: Exp -> ReconM (Exp, Type, Effect, Closure)
 -- LAM
 reconX xx@(XLAM b@(BMore v t1) t2 x)
  = do	(x', xT, xE, xC)	<- tempState (addMoreVT v t1) $ reconX x
-	trace	("reconX[XLAM-BMore]: (/\\ " % b % " -> ...)\n"
-		% "  xT:\n" %> xT	% "\n"
-		% "  xC:\n" %> xC	% "\n\n") $ return ()
-
 	return	( XLAM b t2 x'
 		, TForall b t2 xT
 		, xE
@@ -219,9 +210,6 @@ reconX xx@(XLAM b@(BMore v t1) t2 x)
 
 reconX (XLAM v k@KApp{} x)
  = do	(x', xT, xE, xC)	<- reconX x
-	trace 	("reconX[XLAM-KClass]: (/\\ " % v % " -> ...)\n"
-   		% "  xT:\n" %> xT	% "\n"
-		% "  xC:\n" %> xC	% "\n\n") $ return ()
 	return	( XLAM 	   v k x'
 		, TForall BNil k xT
 		, xE
@@ -229,17 +217,11 @@ reconX (XLAM v k@KApp{} x)
 
 reconX (XLAM v k x)
  = do	(x', xT, xE, xC)	<- reconX x
-	trace	("reconX[XLAM-any]: (/\\ " % v % " -> ...)\n"
-   		% "  xT:\n" %> xT	% "\n"
-		% "  xC:\n" %> xC	% "\n\n") $ return ()
-
    	return	( XLAM 	  v k x'
 	    	, TForall v k xT 
 		, xE
 		, xC)
  
--- APP
-
 -- handle applications to string literals directly
 --	this way we don't need to invent a variable for the forall bound region 
 --	in the literal's type scheme. String literals never appear without their region
@@ -269,12 +251,7 @@ reconX exp@(XAPP x t)
 	let aT			=  applyTypeT tt tX t
 	case aT of
 	 Just tApp
-	  ->	trace 	("reconX[XAPP]: (" % x % " @ " % t % ")\n"
-			% "    tApp:\n"	%> tApp		% "\n"
-			% "    eX:\n" 	%> eX		% "\n"
-			% "    cX:\n"	%> cX		% "\n\n\n") $
-
-		return	( XAPP x' t
+	  ->	return	( XAPP x' t
 			, tApp
 			, eX
 			, cX)
@@ -370,14 +347,6 @@ reconX exp@(XLam v t x eff clo)
 	--	due to their differing tags.
 --	clo_clamped	<- clampSum xC' clo_sub
 
-	trace ( "reconX[XLam]:\n"
-		% "    xT           = " % xT	% "\n"
-		% "    xE'  (recon) = " % xE'	% "\n"
-		% "    eff' (annot) = " % eff'	% "\n"
-		% "    eff_clamped  = " % eff_clamped	% "\n"
-		% "    xE           = " % xE		% "\n"
-	   	% "    clo          = " % xC		% "\n") $ return ()
-
 	return	( XLam v t x' eff_clamped clo_sub
 		, makeTFun t xT eff_clamped clo_sub
 		, tPure
@@ -389,20 +358,11 @@ reconX exp@(XLam v t x eff clo)
 --	All the local effects from the body of a lambda abstraction are masked
 --	all at once in the rule for XLam.
 --
+-- not sure if we should worry about regions variables escaping here.
+-- we're not doing stack allocation, so it doesn't matter if they do.
+
 reconX (XLocal v vs x)
  = do	(x', xT, xE, xC)	<- keepState $ reconX x
-
-	-- not sure if we should worry about regions variables escaping here.
-	-- we're not doing stack allocation, so it doesn't matter if they do.
-	{-
-	when (Set.member v (freeVars xT)) $
-	  do tt	<- get
-	     panic stage
-		$ "reconX: region " % v % " is not local\n"
-		% "    caller = " % envCaller tt	% "\n"
-		% "    t      = " % xT	% "\n"
-		% "    x      = " % x'	% "\n\n"
-	-}
 	return	( XLocal v vs x'
 	   	, xT
 		, xE
@@ -419,13 +379,7 @@ reconX exp@(XApp x1 x2 eff)
 	  -> let x'		= XApp x1' x2' tPure
 		 xE		= makeTSum kEffect  [x1e, x2e, appE]
 		 xC		= makeTSum kClosure [x1c, x2c]
-	     in
-		trace 	("reconX[XApp]: (" % x1 % " $ ..)\n"
-	     		% "    appT:\n"	%> appT	% "\n"
-			% "    xE:\n" 	%> xE	% "\n"
-			% "    xC:\n"	%> xC	% "\n\n\n") $
-	     
-		return (x', appT, xE, xC)
+	     in	return (x', appT, xE, xC)
 	       	
 	 _ -> panic stage	
 	 	$ "reconX: Type error in value application (x1 x2).\n"
@@ -472,10 +426,7 @@ reconX (XMatch aa)
 		, makeTSum kEffect altEs
 		, makeTSum kClosure altCs)
 
--- var
 -- TODO: check against existing annotation.
-
-
 -- var has no type annotation, so look it up from the table
 reconX (XVar v TNil)
  = do	tt		<- get
@@ -504,10 +455,6 @@ reconX (XVar v TNil)
 				[ FMore (TVar k $ UVar v) t2
 					| (v, t2)	<- vtsMore
 					, let Just k	= defaultKindOfVar v]
-
-	trace ( "reconX[XVar]: dropping type\n"
-	      % "    var    = " %> v		% "\n"
-	      % "    tDrop  = " %> tDrop	% "\n") $ return ()
 
 	return	( XVar v tDrop
 		, tDrop
@@ -792,7 +739,6 @@ reconApps (x1 : x2 : xs)
 
 -- | running reconS also adds a type for this binding into the table
 reconS	:: Stmt -> ReconM (Stmt, Type, Effect, Closure)
-
 reconS (SBind Nothing x)	
  = do	tt			<- get
 	(x', xT, xE, xC)	<- keepState $ reconX x
@@ -817,7 +763,6 @@ reconS (SBind (Just v) x)
 
 -- Alt ---------------------------------------------------------------------------------------------
 reconA 	:: Alt -> ReconM (Alt, Type, Effect, Closure)
-
 reconA (AAlt gs x)
  = do	tt				<- get
 	gecs				<- mapM reconG gs
@@ -837,9 +782,7 @@ reconA (AAlt gs x)
 -- | running reconG also adds types for the matched variables into the table.
 
 -- TODO: check type of pattern against type of expression
---
 reconG	:: Guard -> ReconM (Guard, [Var], Effect, Closure)
-
 reconG gg@(GExp p x)
  = do	tt		<- get
 	(x', tX, eX, cX)<- reconX x
@@ -875,9 +818,6 @@ reconG gg@(GExp p x)
 
 	put	$ foldr (uncurry addEqVT) tt binds
 
-	trace 	( "reconG:\n"
-		% "    gg      = " % gg		% "\n"
-		% "    effTest = " % effTest	% "\n") $ return ()
 	return	( GExp p x'
 		, map fst binds
 	   	, makeTSum kEffect ([eX, effTest])
@@ -886,8 +826,6 @@ reconG gg@(GExp p x)
 slurpVarTypesW tRHS (WVar v)		= [(v, tRHS)]
 slurpVarTypesW tRHS (WLit{})		= []
 slurpVarTypesW tRHS (WCon _ v lvt)	= map (\(l, v, t)	-> (v, t)) lvt
-
-
 
 	
 -- Mask effects ------------------------------------------------------------------------------------
@@ -907,7 +845,6 @@ maskE xT xE xC
 -- Clamp -------------------------------------------------------------------------------------------
 -- | Clamp a sum by throwing out any elements of the second one that are not members of the first.
 --	Result is at least as big as t1.
-
 clampSum :: Type -> Type -> ReconM Type
 clampSum t1 t2
 	| kindOfType t1 == kindOfType t2
@@ -919,8 +856,3 @@ clampSum t1 t2
 
 		return $ makeTSum k1 parts_clamped
 
-
--- Bits --------------------------------------------------------------------------------------------
-{-pprBounds more
- 	= "\n" %!% (map (\(v, b) -> "        " % v % " :> " % b) $ Map.toList more) % "\n"
--}
