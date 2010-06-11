@@ -107,17 +107,13 @@ boundByS	x
 instance FreeVars Prim where
  freeVars m
   = case m of
-
 	MSuspend v	-> singleton v
 	MForce 		-> empty
 	MBox		-> empty
 	MUnbox	 	-> empty
-	MTailCall 	-> empty
-	MCall 	 	-> empty
-	MCallApp  i	-> empty
-	MApply 		-> empty
-	MCurry 	 i	-> empty
+	MCall{}		-> empty
 	MOp{}		-> empty
+
 
 
 -- Stmt --------------------------------------------------------------------------------------------

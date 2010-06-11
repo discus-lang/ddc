@@ -265,16 +265,23 @@ instance Pretty Prim PMode where
 	MForce 		-> ppr "prim{Force}"
 	MBox		-> ppr "prim{Box}"
 	MUnbox		-> ppr "prim{Unbox}"
-	MTailCall  	-> ppr "prim{TailCall}"	
-	MCall		-> ppr "prim{Call}"
-	MCallApp i	-> "prim{CallApp " % i % "}"
-	MApply		-> ppr "prim{Apply} "
-	MCurry	 i	-> "prim{Curry " % i % "}"
 	MOp op		-> ppr "prim{" % op % "}"
+	MCall call	-> ppr call
 
 
--- Op ---------------------------------------------------------------------------------------------
-instance Pretty Op PMode where
+-- PrimCall ----------------------------------------------------------------------------------------
+instance Pretty PrimCall PMode where
+ ppr xx
+  = case xx of
+	PrimCallTail  		-> ppr "prim{TailCall}"	
+	PrimCallSuper		-> ppr "prim{SuperCall}"
+	PrimCallSuperApply i	-> "prim{SuperApply " % i % "}"
+	PrimCallApply		-> ppr "prim{Apply} "
+	PrimCallCurry i		-> "prim{Curry " % i % "}"
+	
+
+-- PrimOp ------------------------------------------------------------------------------------------
+instance Pretty PrimOp PMode where
  ppr xx	= ppr $ show xx
 
 

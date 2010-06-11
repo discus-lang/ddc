@@ -439,15 +439,8 @@ instance Monad m => TransM m Prim where
 	MForce		-> transM table tt
 	MBox 		-> transM table	tt
 	MUnbox		-> transM table tt
-	
-	MTailCall 	-> transM table tt
-
-	MCall		-> transM table tt
-	MCallApp i	-> transM table tt
-	MApply		-> transM table tt
-	MCurry i	-> transM table tt
 	MOp op 		-> transM table tt
-		
+	MCall{}		-> transM table tt
 		
 -----
 instance Monad m => TransM m Type where

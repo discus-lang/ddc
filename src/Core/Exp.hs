@@ -9,7 +9,8 @@ module Core.Exp
 	, Exp 		(..)	-- expressions
 	, Proj		(..)	-- projections
 	, Prim		(..)	-- primitive functions
-	, Op		(..)	-- primitive operators
+	, PrimCall	(..)	-- primitive function call related things
+	, PrimOp	(..)	-- primitive operators
 	, Stmt	 	(..)	-- statements
 	, Alt 		(..)	-- case/match alternatives
 	, Guard		(..)	-- alternative guards
@@ -18,6 +19,7 @@ module Core.Exp
 where
 import Util
 import Shared.Exp
+import DDC.Core.Exp.Prim
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Type.Exp
@@ -25,7 +27,7 @@ import DDC.Var
 
 
 -- Trees and Globs -----------------------------------------------------------------------------------
--- | A flat list of Tops is the lowest common denominator for program representation.
+-- | A flat list of top-level things is the lowest common denominator for program representation.
 type Tree	= [Top]
 
 
@@ -139,7 +141,9 @@ data Exp
 	-- | Introduce a local region (letregion)
 	| XLocal	Var	[(Var, Type)] Exp
 
-	-- | Some primitive function
+	-- | Some primitive function.
+	--   We don't use general function application for these as they must
+	--   always be fully applied.
 	| XPrim		Prim 	[Exp]
 
 	-- | A type annotation
@@ -185,59 +189,6 @@ data Exp
 data Proj
 	= JField  Var			-- ^ A field projection.   		(.fieldLabel)
 	| JFieldR Var			-- ^ A field reference projection.	(#fieldLabel)
-	deriving (Show, Eq)
-
-
--- Prim --------------------------------------------------------------------------------------------
--- | Primitive Functions
-data Prim
-	-- laziness
-	= MSuspend	Var		-- ^ Suspend some function	function name
-	| MForce			-- ^ Force an expression	(expr list should have a single elem)
-
-	-- a primitive operator
-	| MOp		Op
-
-	-- boxing and unboxing
-	| MBox
-	| MUnbox
-	
-	-- function calls
-	-- 	move this to MCall
-	| MTailCall	 		-- ^ Tailcall a super
-	| MCall				-- ^ Call a super
-	| MCallApp	Int		-- ^ Call then apply super with this airity.
-	| MApply			-- ^ Apply a thunk.
-	| MCurry	Int		-- ^ Build a thunk with this airity.
-	deriving (Show, Eq)
-
-
--- Op ----------------------------------------------------------------------------------------------
--- | Primitive operators
---	We might do without this if we had a general expression rewrite system in place.
---	Then again, the fact that these operators are polymorphic makes it easy to write
---	compiler code that works with every primitive type..
-
-data Op
-	-- arithmetic
-	= OpNeg				-- negation
-	| OpAdd				-- addition
-	| OpSub				-- subtraction
-	| OpMul				-- multiplication
-	| OpDiv				-- division
-	| OpMod				-- modulus
-
-	-- comparison
-	| OpEq				-- equality
-	| OpNeq				-- not equality
-	| OpGt				-- greater than
-	| OpGe				-- greater than or equal
-	| OpLt				-- less than
-	| OpLe				-- less than or equal
-	
-	-- boolean
-	| OpAnd				-- and
-	| OpOr				-- or
 	deriving (Show, Eq)
 
 

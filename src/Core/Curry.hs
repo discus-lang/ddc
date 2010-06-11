@@ -199,24 +199,24 @@ makeSuperCall
 	-- 	for a tail-call. 
  	| callArity == superArity
 	, Set.member vF tailCallMe
-	= Just $ XPrim MTailCall (xF : args)
+	= Just $ XPrim (MCall PrimCallTail) (xF : args)
 
 	-- We're not able to do a tail call, but we've still got the right number
 	--	of arguments, so we can call the super directly.
 	| callArity == superArity
-	= Just $ XPrim MCall (xF : args)
+	= Just $ XPrim (MCall PrimCallSuper) (xF : args)
 
 	-- We haven't got enough args to call the super yet, we'll have to build
 	--	a thunk and wait for more.
 	| callArity <  superArity
-	= Just $ XPrim (MCurry superArity) (xF : args)
+	= Just $ XPrim (MCall $ PrimCallCurry superArity) (xF : args)
 
 	-- We've got more args than the super will accept.
 	--	For this case to be well typed, the super must be returning a thunk.
 	--	XCallApp instructs the runtime system to call the super to get the thunk
 	--	and then apply the rest of the arguments to it.
 	| callArity > superArity
-	= Just $ XPrim (MCallApp superArity) (xF : args)
+	= Just $ XPrim (MCall $ PrimCallSuperApply superArity) (xF : args)
    	
 	
 -- | Apply a thunk to a value to get the result.
@@ -230,7 +230,7 @@ makeThunkCall xF args eff callArity
 	
 	-- Otherwise we have actual arguments being applied to a thunk.
 	| otherwise
-	= Just $ XPrim MApply (xF : args)
+	= Just $ XPrim (MCall $ PrimCallApply) (xF : args)
 
 
 -- | Checks if this expression represents a value, instead of a type.

@@ -279,7 +279,7 @@ opD3U2	= [Discard, Discard, Discard, Unbox, Unbox]
 
 
 -- functions who's arguments can be unboxed
-unboxableFuns :: Map String (Op, [Action])
+unboxableFuns :: Map String (PrimOp, [Action])
 unboxableFuns
  = Map.fromList
 
@@ -345,7 +345,7 @@ unboxableFuns
 	
 
 -- primitive functions
-primFuns :: Map String Op
+primFuns :: Map String PrimOp
 primFuns 
  = Map.fromList
 

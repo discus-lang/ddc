@@ -576,27 +576,27 @@ reconX xx@(XPrim prim xs)
 		= do	return	( t1
 				, tPure)	
 		
-		| MTailCall{}	<- prim
+		| MCall PrimCallTail{}	<- prim
 		= do	rxs'	<- reconApps xs'
 			return	( rxs'
 				, tPure)
 
-		| MCall{}	<- prim
+		| MCall PrimCallSuper{}	<- prim
 		= do	rxs'	<-reconApps xs'
 		  	return	( rxs'
 				, tPure)
 
-		| MCallApp{}	<- prim
+		| MCall PrimCallSuperApply{}	<- prim
 		= do	rxs'	<- reconApps xs'
 			return	( rxs'
 				, tPure)
 
-		| MApply{}	<- prim
+		| MCall PrimCallApply{}	<- prim
 		= do	rxs'	<- reconApps xs'
 			return	( rxs'
 				, tPure)
 
-		| MCurry{}	<- prim
+		| MCall PrimCallCurry{}	<- prim
 		= do	rxs'	<- reconApps xs'
 			return	( rxs'
 				, tPure)
@@ -685,7 +685,7 @@ splitLiteralVarBind (VarIdPrim pid)
 -- | Reconstruct the type and effect of an operator application.
 --	Not sure if doing this manually is really a good way to do it.
 --	It'd be nice to have a more general mechanism like GHC rewrite rules..
-reconOpApp :: Op -> [Exp] -> ReconM (Type, Effect)
+reconOpApp :: PrimOp -> [Exp] -> ReconM (Type, Effect)
 reconOpApp op xs
  = do	rxs <- mapM (fmap t4_2 . reconX) xs
 

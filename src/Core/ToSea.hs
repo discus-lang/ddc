@@ -203,27 +203,27 @@ toSeaX		xx
 	 	toSeaX x
 
 	-- function calls
-	C.XPrim C.MTailCall xs
+	C.XPrim (C.MCall C.PrimCallTail) xs
 	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 		return	$ E.XTailCall v args'
 
-	C.XPrim C.MCall xs
+	C.XPrim (C.MCall C.PrimCallSuper) xs
 	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 	    	return	$ E.XCall v args'
 
-	C.XPrim (C.MCallApp superA) xs
+	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) xs
 	 -> do	let (C.XVar v _) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 		return	$ E.XCallApp v superA args'
 
-	C.XPrim C.MApply xs
+	C.XPrim (C.MCall C.PrimCallApply) xs
 	 -> do	let (C.XVar v t) : args	= stripValues xs
 		args'	<- mapM toSeaX args
 	    	return	$ E.XApply (E.XVar v (toSeaT t)) args'
 	   
-	C.XPrim (C.MCurry superA) xs
+	C.XPrim (C.MCall (C.PrimCallCurry superA)) xs
 	 -> do	let (C.XVar v _) : args	= stripValues xs
 		if any isUnboxed args
                  then panic stage $ "Partial application of function to unboxed args at " % prettyPos v
@@ -625,7 +625,7 @@ assignLastA xT aa
 
 
 -- | Convert a Core operator to a Sea primitive
-toSeaOp :: C.Op -> E.Prim
+toSeaOp :: C.PrimOp -> E.Prim
 toSeaOp op
  = case op of
 	-- arithmetic
