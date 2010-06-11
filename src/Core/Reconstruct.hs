@@ -544,7 +544,7 @@ reconX xx@(XPrim prim xs)
 	--	so we have to do some contortions to get the closure from the others.
 	let	reconMaybeX x
 		 = case x of
-		    XType{}
+		    XPrimType{}
 		     ->	return (x, Nothing, Nothing, Nothing)
 		    _
 		     ->	do	(x', typ, eff, clo)	<- keepState $ reconX x
@@ -558,14 +558,14 @@ reconX xx@(XPrim prim xs)
 
 		-- boxing		
 		| MBox 		<- prim
-		, [XType r, x]	<- xs
+		, [XPrimType r, x]	<- xs
 		= do	rx	<- reconX x
 			return	( reconBoxType r $ t4_2 $ rx
 				, tPure)
 		
 		-- unboxing
 		| MUnbox	<- prim
-		, [XType r, x]	<- xs
+		, [XPrimType r, x]	<- xs
 		= do	rx	<- reconX x
 			return	( reconUnboxType r $ t4_2 $ rx
 				, TApp tRead r)
@@ -757,35 +757,35 @@ reconApps
 	:: [Exp] 
 	-> ReconM Type
 
-reconApps [XType t]
+reconApps [XPrimType t]
  =	return t
  
 reconApps [x]
  = 	fmap t4_2 $ reconX x
 
-reconApps (XType t1 : XType t2 : xs)
+reconApps (XPrimType t1 : XPrimType t2 : xs)
  = do	table		<- get
 	let Just t12	=  applyTypeT table t1 t2
-	reconApps (XType t12 : xs)
+	reconApps (XPrimType t12 : xs)
  	
-reconApps (x1 : XType t2 : xs)
+reconApps (x1 : XPrimType t2 : xs)
  = do	table		<- get
 	t1		<- fmap t4_2 $ keepState $ reconX x1
 	let Just t12	= applyTypeT table t1 t2
-	reconApps (XType t12 : xs)
+	reconApps (XPrimType t12 : xs)
 
-reconApps (XType t1 : x2 : xs)
- = do	table			<- get
-	t2			<- fmap t4_2 $ keepState $ reconX x2
- 	let Just (t12, _)	= applyValueT table t1 t2
-	reconApps (XType t12 : xs)
+reconApps (XPrimType t1 : x2 : xs)
+ = do	table		<- get
+	t2		<- fmap t4_2 $ keepState $ reconX x2
+ 	let Just (t12, _) = applyValueT table t1 t2
+	reconApps (XPrimType t12 : xs)
 
 reconApps (x1 : x2 : xs)
- = do	table			<- get
-	t1			<- fmap t4_2 $ keepState $ reconX x1
-	t2			<- fmap t4_2 $ keepState $ reconX x2
-	let Just (t12, _)	= applyValueT table t1 t2
-	reconApps (XType t12 : xs)
+ = do	table		<- get
+	t1		<- fmap t4_2 $ keepState $ reconX x1
+	t2		<- fmap t4_2 $ keepState $ reconX x2
+	let Just (t12, _) = applyValueT table t1 t2
+	reconApps (XPrimType t12 : xs)
 
 
 -- Stmt --------------------------------------------------------------------------------------------

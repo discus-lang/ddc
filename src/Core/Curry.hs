@@ -106,7 +106,7 @@ curryX	env vsTailCall xx
 	| (xx =@= XAPP{})
 	  || (xx =@= XApp{})
 	  
-	= let	(parts, effs)	= unzip $ splitApps xx
+	= let	(parts, effs)	= unzip $ splitAppsUsingPrimType xx
 		(xF:args)	= parts
 	  in	fromMaybe xx
 			$ makeCall env vsTailCall xF args (makeTSum kEffect effs)
@@ -245,7 +245,7 @@ isValueArg xx
 
 	XAPP x t	-> isValueArg x
 	
-	XType{}		-> False
+	XPrimType{}	-> False
 	
 	_	-> panic stage 
 			$ "isValueArg: unexpected arg in function application " % xx 

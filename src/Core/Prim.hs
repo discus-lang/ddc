@@ -122,8 +122,9 @@ primX tt xx
 	 -> let (tt', xs')	= mapAccumL primX tt xs
 	    in	(tt', XPrim p xs')
 
+	XPrimType{}		-> (tt, xx)
+
 	XLit{}			-> (tt, xx)
-	XType{}			-> (tt, xx)
 
 
 primA :: Table -> Alt -> (Table, Alt)
@@ -169,14 +170,14 @@ primX1 tt xx
 
 	-- direct use of unboxing function
 	| Just parts				<- flattenAppsEff xx
-	, XVar v t : psArgs@[XType tR@(TVar kR (UVar vR)), x] 	<- parts
+	, XVar v t : psArgs@[XPrimType tR@(TVar kR (UVar vR)), x] 	<- parts
 	, kR	== kRegion			
 	, isUnboxFunctionV v
 	= if Set.member vR (tableDirectRegions tt) 
 		then XPrim MUnbox psArgs
 
 		-- have to force non-direct objects before unboxing them
-		else XPrim MUnbox [XType tR, XPrim MForce [x]]
+		else XPrim MUnbox [XPrimType tR, XPrim MForce [x]]
 
 
 	-- look for functions in the prim table
@@ -201,7 +202,7 @@ primX1 tt xx
 		psArgs'	= doActions tt actions psArgs
 		
 		-- generate the primitive 
-	   in	XPrim MBox (map XType tsResult ++ [XPrim (MOp operator) psArgs'])
+	   in	XPrim MBox (map XPrimType tsResult ++ [XPrim (MOp operator) psArgs'])
 	
 	| otherwise		
 	= xx
@@ -223,11 +224,11 @@ doActions tt (Unbox:as) (x:xs)
  		
 
 	x'	| Set.member vR (tableDirectRegions tt) 
-		= XPrim MUnbox [XType tR, x] 
+		= XPrim MUnbox [XPrimType tR, x] 
 			: doActions tt as xs
 		
 		| otherwise
-		= XPrim MUnbox [XType tR, XPrim MForce [x]] 
+		= XPrim MUnbox [XPrimType tR, XPrim MForce [x]] 
 			: doActions tt as xs
 
    in	trace	( "doActions: Unbox\n"
@@ -242,20 +243,10 @@ doActions _ _ xs
 flattenAppsEff :: Exp -> Maybe [Exp]
 flattenAppsEff xx
  = case xx of
- 	XApp{}	-> Just $ flattenAppsEff' xx
-	XAPP{}	-> Just $ flattenAppsEff' xx
+ 	XApp{}	-> Just $ map fst $ splitAppsUsingPrimType xx
+	XAPP{}	-> Just $ map fst $ splitAppsUsingPrimType xx
 	_	-> Nothing
 
-flattenAppsEff' xx
- = let	bits	= flattenAppsE xx
- 	
-	(parts, _)
-		= unzip
-		$ map (\p -> case p of
-				XAppFP x mEff	-> (x, mEff))
-		$ bits
-    in	parts
-	
 
 -- whether to ignore or unbox the argument
 data Action

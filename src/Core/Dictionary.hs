@@ -76,7 +76,7 @@ rewriteAppX :: Env -> Exp -> Exp
 rewriteAppX env xx
  	-- Flatten the application expression so we can get at the var of 
 	--	the function being applied.
-	| (XAppFP (XVar vOverloaded tOverloaded) _ : xsArgs)
+	| (Left (XVar vOverloaded tOverloaded, _) : xsArgs)
 		<- flattenAppsE xx
 	
 	-- See if the var being applied is defined in one of the type class
@@ -92,15 +92,13 @@ rewriteAppX env xx
 		--	There should be the same number of type args as quantified
 		--	variables in the type scheme of the overloaded variable.
 		tsUseTypeArgs
-			= [ t	| XAppFP (XType t) Nothing	
-				<- take (length vsDeclQuantVars) xsArgs]
+			= [ t	| Right t <- take (length vsDeclQuantVars) xsArgs]
 				
 		-- Next comes witness arguments.
 		--	These should get subsumed into the above when we refactor
 		--	TContext to TForall
 		tsUseTypeArgsWitness
-			= [t	| XAppFP (XType t) Nothing
-				<- drop (length vsDeclQuantVars) xsArgs]
+			= [t	| Right t <- drop (length vsDeclQuantVars) xsArgs]
 			
 		-- Last come the the value argments.
 		xsValueArgs
@@ -202,9 +200,9 @@ rewriteAppX_withInstance env xxUse
 	Just tsInstTypeArgsWitness 	= sequence $ map inventWitnessOfKind ksContext
 
 	xxInst		= unflattenAppsE 
-			$ XAppFP (XVar vInst tInstScheme) Nothing
-			:  [XAppFP (XType t) Nothing	 | t <- tsInstTypeArgsPoly]
-			++ [XAppFP (XType t) Nothing	 | t <- tsInstTypeArgsWitness]
+			$  Left (XVar vInst tInstScheme, Nothing)
+			:  [Right t	| t <- tsInstTypeArgsPoly]
+			++ [Right t	| t <- tsInstTypeArgsWitness]
 			++ xsValueArgs
 
 

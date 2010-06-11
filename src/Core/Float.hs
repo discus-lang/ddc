@@ -318,8 +318,9 @@ floatBindsX level share tt xx
 	 -> let (tt', xs')	= mapAccumL (floatBindsX level share) tt xs
 	    in	(tt', XPrim p xs')
 
+	XPrimType{}			-> (tt, xx)
+
 	XLit{}			-> (tt, xx)
-	XType{}			-> (tt, xx)
 
 
 -- Alt ---------------------------------------------------------------------------------------------
@@ -399,7 +400,7 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 	  
 	----- unbox
 	-- remember unboxings we haven't seen before
-	| XPrim MUnbox [XType (TVar kR (UVar vR)), XVar v2 _]	<- xBind
+	| XPrim MUnbox [XPrimType (TVar kR (UVar vR)), XVar v2 _]	<- xBind
 	, kR	== kRegion
 	, Nothing	 <- Map.lookup v2 (shareUnboxings share)
 	, Set.member vR (tableConstRegions table) -- only move pure unboxings for now
@@ -408,7 +409,7 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 	  
 
 	-- replace calls to unbox with ones we've seen before
-	| XPrim MUnbox [XType (TVar kR (UVar vR1)), XVar v2 t]	<- xBind
+	| XPrim MUnbox [XPrimType (TVar kR (UVar vR1)), XVar v2 t]	<- xBind
 	, kR	== kRegion
 	, Just (v3, vR2) <- Map.lookup v2 (shareUnboxings share)
 	, vR1 == vR2

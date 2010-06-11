@@ -253,7 +253,7 @@ toSeaX		xx
 		return	$ E.XBox (toSeaT t) x'
 
 	-- the unboxing function is named after the result type
-	C.XPrim C.MUnbox [C.XType r, x]
+	C.XPrim C.MUnbox [C.XPrimType r, x]
 	 -> do	let tResult	= C.reconUnboxType r 
 	 			$ C.reconX_type (stage ++ "toSeaX") x
 
@@ -285,7 +285,7 @@ toSeaX		xx
 	C.XAPP{}
 	 -> let
 	 	parts		= C.flattenApps xx
-		(C.XVar vF vT : _)	= parts
+		(Left (C.XVar vF vT) : _)	= parts
 		
 	    in 	return	$ E.XVar vF $ toSeaT vT
 	 	
@@ -591,7 +591,7 @@ stripValues' a
 	 |  varNameSpace v /= NameValue
 	 -> Nothing
 
-	C.XType _
+	C.XPrimType _
 	 -> Nothing
 	 
 	_ -> Just a

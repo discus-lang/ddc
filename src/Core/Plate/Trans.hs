@@ -397,20 +397,11 @@ transXM2 table xx
 	 -> do	m'		<- transZM table m
 	 	aa'		<- followXs table aa
 		transX table	$ XPrim m' aa'
+
+	XPrimType t
+	 -> do	t'		<- transZM table t
+		transX table	$ XPrimType t'
 		
-	XAppF xs
-	 -> do	xs'		<- followXs table xs
-	 	transX table	$ XAppF xs'
-		
-	XAppFP x eff
-	 -> do	x'		<- followX   table x
-		eff'		<- followT table eff
-		transX table	$ XAppFP x' eff'
-	
-	XType t 
-	 -> do	t'		<- followT table t
-	 	transX table	$ XType t'
-						
 
 instance Monad m => TransM m Prim where
  transZM table tt

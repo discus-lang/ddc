@@ -19,6 +19,7 @@ module Core.Util.Bits
 	, flattenAppsE
 	, unflattenAppsE
 	, splitApps
+	, splitAppsUsingPrimType
 
 	-- lambda		
 	, chopLambdas
@@ -67,30 +68,30 @@ takeVarOfStmt ss
 
 -- Application -------------------------------------------------------------------------------------
 -- | Flatten an expression application into a list
-flattenApps :: Exp -> [Exp]
+flattenApps :: Exp -> [Either Exp Type]
 flattenApps xx
-	| XAPP e1 e2	<- xx
-	= flattenApps e1 ++ [XType e2]
+	| XAPP x t	<- xx
+	= flattenApps x ++ [Right t]
 
 	| otherwise
-	= [xx]
+	= [Left xx]
 
 -- | Create an application from a list of expressions
 --	buildApp [x1, x2, x3] => (x1 x2) x3
-buildApp :: [Exp] -> Maybe Exp
+buildApp :: [Either Exp Type] -> Maybe Exp
 buildApp xx
 	= buildApp'
 	$ reverse xx
 
 buildApp' xx
-	| x : []		<- xx
+	| Left x : []		<- xx
 	= Just x
 	
-	| XType t : xs		<- xx
+	| Right t : xs		<- xx
 	, Just leftX		<- buildApp' xs
 	= Just $ XAPP leftX t
 	
-	| XVar v t : xs		<- xx
+	| Left (XVar v t) : xs	<- xx
 	, varNameSpace v == NameValue
 	, Just leftX		<- buildApp' xs
 	= Just $ XApp leftX (XVar v t) tPure
@@ -98,54 +99,66 @@ buildApp' xx
 	| otherwise
 	= Nothing
 
--- | Flatten type and value applications, recording which ones we have by XAppFP nodes.
-flattenAppsE ::	Exp -> [Exp]
+-- | Flatten type and value applications.
+--   For value applications we get the expression and effect cause by that application.
+--   For type  applications we just get the type.
+flattenAppsE ::	Exp -> [Either (Exp, Maybe Effect) Type]
 flattenAppsE x
-	
 	| XApp e1 e2 eff	<- x
-	= flattenAppsE e1 ++ [XAppFP e2 (Just eff)]
+	= flattenAppsE e1 ++ [Left (e2, Just eff)]
 
-	| XAPP  e1 e2		<- x
-	= flattenAppsE e1 ++ [XAppFP (XType e2) Nothing]
+	| XAPP  x t		<- x
+	= flattenAppsE x ++ [Right t]
 
-	
 	| otherwise
-	= [XAppFP x Nothing]
+	= [Left (x, Nothing)]
+	
 	
 -- | Build some type/value applications
-unflattenAppsE :: [Exp]	-> Exp
+unflattenAppsE :: [Either (Exp, Maybe Effect) Type] -> Exp
 unflattenAppsE	xx
 	
-	| x1:x2:xs			<- xx
-	, XAppFP e1 Nothing		<- x1
-	, XAppFP e2 (Just eff2)		<- x2
-	
+	| x1:x2:xs		<- xx
+	, Left (e1, Nothing)	<- x1
+	, Left (e2, Just eff2)	<- x2
 	= unflattenAppsE 
-		$ [XAppFP (XApp e1 e2 eff2) Nothing] ++ xs
+	$ [Left (XApp e1 e2 eff2, Nothing)] ++ xs
 	
-	| x1:x2:xs			<- xx
-	, XAppFP e1           Nothing	<- x1
-	, XAppFP (XType e2) Nothing	<- x2
-	
+	| x1:x2:xs		<- xx
+	, Left  (e1, Nothing)	<- x1
+	, Right e2		<- x2
 	= unflattenAppsE 
-		$ [XAppFP (XAPP e1 e2) Nothing] ++ xs
+	$ [Left (XAPP e1 e2, Nothing)] ++ xs
 	
-	| x1:[]				<- xx
-	, XAppFP e1 Nothing		<- x1
+	| x1:[]			<- xx
+	, Left (e1, Nothing)	<- x1
 	= e1
 
 
 -- | Split out args and effects produced at each application
-splitApps ::	Exp -> [(Exp, Effect)]
-splitApps	x
- = case x of
+splitApps :: Exp -> [(Either Exp Type, Effect)]
+splitApps xx
+ = case xx of
  	XAPP e1 e2
-	 -> splitApps e1 ++ [(XType e2, tPure)]
+	 -> splitApps e1 ++ [(Right e2, tPure)]
 	
 	XApp e1 e2 eff
-	 -> splitApps e1 ++ [(e2, eff)]
+	 -> splitApps e1 ++ [(Left e2, eff)]
 		
-	_ -> [(x, tPure)]
+	_ -> [(Left xx, tPure)]
+	
+-- hacks
+splitAppsUsingPrimType :: Exp -> [(Exp, Effect)]
+splitAppsUsingPrimType xx
+ = case xx of
+ 	XAPP e1 e2
+	 -> splitAppsUsingPrimType e1 ++ [(XPrimType e2, tPure)]
+	
+	XApp e1 e2 eff
+	 -> splitAppsUsingPrimType e1 ++ [(e2, eff)]
+		
+	_ -> [(xx, tPure)]
+	
 	
 -- Lambda ------------------------------------------------------------------------------------------
 -- | Chop the outer set of lambdas off a lambda expression and return the var-scheme pairs.

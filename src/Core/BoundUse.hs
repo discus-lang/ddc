@@ -108,8 +108,7 @@ boundUseX level xx
 	 -> 	addUse v (UseUnbox level)
 	
 	XPrim p xs		-> mapM_ (boundUseX level) xs
-
-	XType{}			-> return ()
+	XPrimType{}		-> return ()
 
 	
 -- | Examine var usage in this stmt.

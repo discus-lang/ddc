@@ -107,7 +107,6 @@ snipX1	table env xx
 	XMatch{}		-> leaveIt xx
 	XLit{}			-> leaveIt xx
 	XVar{}			-> leaveIt xx
-	XType t			-> leaveIt xx
 
 
 	-- Snip compound exprs from the arguments of applications.
@@ -124,6 +123,8 @@ snipX1	table env xx
 	 			$  mapM (snipXRight table) (substituteT (flip Map.lookup env) xs)
 
 	 	return (concat ss, XPrim p xs')
+
+	XPrimType t		-> leaveIt xx
 
 
 -- | Snip some stuff from an expression.
@@ -160,7 +161,7 @@ snipX table xx
 	 -> panic stage	$ "snipDownX: unexpected XLocal\n"
 	 
 	XPrim{}			-> snipIt table xx	
-	XType{}			-> leaveIt xx
+	XPrimType{}		-> leaveIt xx
 
 
 -- | Snip some expressions from the left hand side of a function application.

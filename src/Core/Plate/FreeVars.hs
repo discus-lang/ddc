@@ -6,7 +6,6 @@ module Core.Plate.FreeVars
 	, varsBoundByG
 	, varsBoundByW )
 where
-import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
@@ -15,7 +14,6 @@ import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))
 import qualified Data.Set 	as Set
 
-stage	= "Core.Plate.FreeVars"
  
 -- Exp ---------------------------------------------------------------------------------------------
 instance FreeVars Exp where
@@ -80,13 +78,9 @@ instance FreeVars Exp where
 	 -> unions
 	 	[ freeVars m
 		, unions $ map freeVars xs ]
-	
-	-- intermediate
-	XType t
-	 -> freeVars t
 
-	_ 	-> panic stage
-		$ "freeVarsX: no match for " % show xx
+	XPrimType t
+	 -> freeVars t
 
 
 boundByS ::	Stmt	-> Set Var

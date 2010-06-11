@@ -119,10 +119,10 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 		$ return ()
 		
 	-- build the call to the new super
-	let typeArgs	= map makeSuperArgK freeVKs
-	let valueArgs	= [XVar v t | (v, t) <- freeVTs]
+	let typeArgs	= map (Right . makeSuperArgK) freeVKs
+	let valueArgs	= [Left (XVar v t) | (v, t) <- freeVTs]
 
-	let Just xCall	= buildApp (XVar vSuper tSuper : typeArgs ++ valueArgs)
+	let Just xCall	= buildApp (Left (XVar vSuper tSuper) : typeArgs ++ valueArgs)
 
 	return	$ SBind (Just v) xCall
 
@@ -130,17 +130,17 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 -- | When we pass args that were free in a lambda abs back to the super, 
 --	just pass new witness instead of their args.. we'll thread the actual
 --	witness though later on
-makeSuperArgK :: (Bind, Kind) -> Exp
+makeSuperArgK :: (Bind, Kind) -> Type
 makeSuperArgK (b, k)
 	| KApp{}	<- k
 	, Just t	<- inventWitnessOfKind k
-	= XType t
+	= t
 	
 	| BVar v	<- b
-	= XType (TVar k $ UVar v)
+	= TVar k $ UVar v
 	
 	| BMore v t	<- b
-	= XType (TVar k $ UMore v t)
+	= TVar k $ UMore v t
 
 
 -- | Test whether an expression is syntactically a function.

@@ -136,22 +136,12 @@ data Exp
 	--   always be fully applied.
 	| XPrim		Prim 	[Exp]
 
+	-- | Hacks, used in the exp list in an XPrim only.
+	--   TODO: Refactor XPrim into real applications.
+	| XPrimType	Type
+
 	-- | A type annotation.
 	| XTau		Type	Exp
-
-
-	-- Special Purpose Constructors ---------------------------------------
-	-- These are only used in specific stages.
-	-- It would be better to refactor these into a common (XAnnot a) constructor
-	-- 	and abstract over the annotation type.
-
-	-- Used to represent flattened value or type applications
-	-- Used in Core.Dictionary (and others?)
-	-- TODO: Ditch these.
-	| XAppF   [Exp]
-	| XAppFP  Exp  (Maybe Effect)
-	| XType	  Type
-
 	deriving (Show, Eq)
 
 

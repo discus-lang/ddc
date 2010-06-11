@@ -475,7 +475,7 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(LiteralFmt lit fmt))
 	= let	Just (_, _, [tR]) = T.takeTData tt
 		Just fmtUnboxed		= dataFormatUnboxedOfBoxed fmt
 	  in	C.XPrim C.MBox 
-			[ C.XType tR
+			[ C.XPrimType tR
 			, C.XAPP (C.XLit (LiteralFmt lit fmtUnboxed)) tR]
 
 
@@ -484,7 +484,7 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(LiteralFmt lit fmt))
 	| Just (v, k, [tR]) <- T.takeTData tt
 	= let	Just fmtUnboxed		= dataFormatUnboxedOfBoxed fmt
 	  in	C.XPrim C.MBox 
-			[ C.XType tR
+			[ C.XPrimType tR
 			, C.XLit $ LiteralFmt lit fmtUnboxed]
 		
 	| otherwise
@@ -566,7 +566,7 @@ toCoreVarInst v vT
 			$ return ()
 
 		let Just xResult = 
-			C.buildApp (C.XVar v tScheme : map C.XType (tsInstC_packed ++ tsContextC'))
+			C.buildApp (Left (C.XVar v tScheme) : map Right (tsInstC_packed ++ tsContextC'))
 
 		return	$ xResult
 
@@ -581,7 +581,7 @@ toCoreVarInst v vT
 				$ ksContext
 
 		let Just xResult =
-			C.buildApp (C.XVar v tSchemeC : map C.XType (tsReplay ++ tsContext))
+			C.buildApp (Left (C.XVar v tSchemeC) : map Right (tsReplay ++ tsContext))
 
 		return $ xResult
 			 
@@ -614,7 +614,7 @@ toCoreG mObj gg
 
 		let x		= C.XVar objV objT
 		case mustUnbox of
-		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XType r, C.XPrim C.MForce [x]])
+		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XPrimType r, C.XPrim C.MForce [x]])
 		 Nothing	-> return $ C.GExp w' x
 		
 	| D.GExp _ w x		<- gg
@@ -623,7 +623,7 @@ toCoreG mObj gg
 		
 		-- All literal matching in core is unboxed, so we must unbox the match object if need be.
 		case mustUnbox of
-		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XType r, C.XPrim C.MForce [x']])
+		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XPrimType r, C.XPrim C.MForce [x']])
 		 Nothing	-> return $ C.GExp w' x'
 
 

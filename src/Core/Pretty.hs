@@ -209,20 +209,11 @@ instance Pretty Exp PMode where
 	 	%!% (map (\(v, t) -> pv v % " = " % t) vts)
 		% "} in\n" % x
 	 
-
-	-- prim
 	XPrim m args
 	 -> m % " " %> (" " %!% map prettyExpB args)
 
-	-- intermediate
-	XAppF xs
-	 -> "@XAppF " % xs
-	
-	XAppFP x eff
-	 -> "@XAppFP " % x % " " % eff
-
-	XType t
-	 -> ppr t
+	XPrimType t
+	 -> parens $ ppr t
 
 
 spaceApp xx
@@ -235,7 +226,6 @@ prettyExpB x
  = case x of
 	XVar{}		-> ppr x
 	XLit{}		-> ppr x
-	XType t		-> prettyTypeParens t
 	_		-> "(" % x % ")"
 
 
