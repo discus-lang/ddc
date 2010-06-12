@@ -26,7 +26,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Main.Arg
 import DDC.Core.Glob
-import DDC.Core.Lint			(lintGlob)
+import DDC.Core.Lint			(checkGlobs)
 import DDC.Var
 import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)
@@ -252,15 +252,9 @@ coreLint
 	-> IO ()
 	
 coreLint stage cgHeader cgModule
- | elem LintCore ?args
- = do	
-	lintGlob cgHeader
-	 `seq` lintGlob cgModule
-	 `seq` return ()
+ =	checkGlobs cgHeader cgModule 
+		`seq` return ()
 		
- | otherwise
- = 	return ()
-
 
 -- | Lift nested functions to top level.
 coreLambdaLift

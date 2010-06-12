@@ -381,7 +381,6 @@ compileFile_parse
 		"core-lint"
 		cgHeader
 		cgModule_recon
-		`seq` return ()
 	
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
@@ -410,7 +409,6 @@ compileFile_parse
 		"core-lint-final" 
 		cgHeader 
 		cgModule_simplified
-		`seq` return ()
 				
 	-- Perform lambda lifting ---------------------------------------------
 	-- TODO: Fix this so it doesn't break the type information.

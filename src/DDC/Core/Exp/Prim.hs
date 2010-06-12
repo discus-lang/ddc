@@ -4,19 +4,14 @@ module DDC.Core.Exp.Prim
 	, PrimCall	(..)
 	, PrimOp	(..))
 where
-import DDC.Var
 
 -- | Primitive functions.
 --   These are polymorphic primitives that we deal with directly in the core language.
 --   Exposing these makes it easier to perform rewrites. If we had a proper rule rewriting
 --   system we could handle them more generally.
 data Prim
-	-- | Suspend a function with this name.
-	--   TODO: Why does this take a var? The var should be the argument.
-	= MSuspend	Var
-
 	-- | Force the outer constructor of an expression.
-	| MForce
+	= MForce
 
 	-- | Box some value.
 	| MBox

@@ -237,14 +237,14 @@ toSeaX		xx
 		return	$ E.XPrim (toSeaOp op) args'
 
 	-- suspend
-	C.XPrim (C.MSuspend fn)	args 
+{-	C.XPrim (C.MSuspend fn)	args 
 	 -> do	let args'	= map (\ (v, t) -> E.XVar v $ toSeaT t)
 		 		$ filter (\ (v, t) -> varNameSpace v == NameValue) 
 				$ map (\(C.XVar v t) -> (v, t))
 		 		$ args
 
 		return	$ E.XSuspend fn args'
-
+-}
 	-- boxing
 	C.XPrim C.MBox [_, x]
 	 -> do	let t	= C.reconX_type (stage ++ "toSeaX") x

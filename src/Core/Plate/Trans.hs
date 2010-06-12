@@ -406,10 +406,6 @@ transXM2 table xx
 instance Monad m => TransM m Prim where
  transZM table tt
   = case tt of
-  	MSuspend v
-	 -> do	v'		<- followV_free table v
-	 	transM table	$ MSuspend v'
-		
 	MForce		-> transM table tt
 	MBox 		-> transM table	tt
 	MUnbox		-> transM table tt

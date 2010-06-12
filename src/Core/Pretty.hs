@@ -235,7 +235,6 @@ prettyExpB x
 instance Pretty Prim PMode where
  ppr xx 
   = case xx of
-  	MSuspend v	-> "prim{Suspend} " 	% v
 	MForce 		-> ppr "prim{Force}"
 	MBox		-> ppr "prim{Box}"
 	MUnbox		-> ppr "prim{Unbox}"
