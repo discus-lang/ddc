@@ -11,7 +11,7 @@
 --
 module DDC.Core.Lint
 	( checkGlobs
-	, checkExp
+	, checkExp, checkExp'
 	, checkType
 	, checkKind
 	, Env	(..))
@@ -33,8 +33,11 @@ import Data.List
 import Data.Maybe
 import Core.Util		(maybeSlurpTypeX)
 import Data.Map			(Map)
+import Data.Sequence		(Seq)
+import qualified Data.Sequence	as Seq
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+import qualified Data.Foldable	as Foldable
 import qualified Debug.Trace
 
 stage		= "DDC.Core.Lint"
@@ -66,6 +69,19 @@ checkBind env pp
 -- | Check an expression, returning its type.
 checkExp :: Exp -> Env -> (Type, Effect, Closure)
 checkExp xx env
+ = let	result@(t, effs, mclo)	= checkExp' xx env
+   in	( t
+	, makeTSum kEffect $ Foldable.toList effs
+	, makeTSum kClosure  [makeTFree v t | (v, t) <- Map.toList mclo])
+
+checkExp' 
+	:: Exp			-- expression to check
+	-> Env			-- environment
+	-> ( Type		-- type of expression
+	   , Seq Effect		-- effect of expression
+	   , Map Var Type)	-- closure of expression,
+
+checkExp' xx env
  = let	result@(t, eff, clo)	= checkExp_trace xx env
    in	trace (vcat 
 		[ ppr $ (replicate 70 '-' ++ " checkExp")
@@ -73,9 +89,10 @@ checkExp xx env
 		, blank
 		, "type:   " 	% t, 	blank
 		, "effect: "	% eff,	blank
-		, "closure:\n"	%> vcat (map ppr $ flattenTSum clo)])
+		, "closure:\n"	%> vcat (map ppr $ Map.toList clo)])
 		result
-			
+
+checkExp_trace :: Exp -> Env -> (Type, Seq Effect, Map Var Type)		
 checkExp_trace xx env
  = case xx of
 	XNil	-> panic stage "checkExp: XNil"
@@ -88,28 +105,32 @@ checkExp_trace xx env
 		% v <> (show $ varNameSpace v)
 	
 	 -- TODO: the type should have value kind.
+	 -- TODO: make a version of the trimmer that doesn't need the initial sets.
 	 | otherwise
 	 -> checkType' t [] env 
-	 `seq` ( t
-	       , tPure
-	       , trimClosureC_constrainForm Set.empty Set.empty
-			$ makeTFree v $ toConstrainFormT t)
-	-- TODO: make a version of the trimmer that doesn't need the initial sets.
+	 `seq` let clo	= trimClosureC_constrainForm Set.empty Set.empty 
+				$ makeTFree v 
+				$ toConstrainFormT t
+		   clo' 
+			| isTBot clo	= Map.empty
+			| Just (v, t)	<- takeTFree clo
+			= Map.singleton v t
+	       in ( t, Seq.singleton tPure, clo')
 
 	-- Type abstraction
 	XLAM BNil k x
 	 -> checkKind k env 
-	 `seq` checkExp x env
+	 `seq` checkExp' x env
 	
 	XLAM (BVar v) k x
 	 -> checkKind k env
-	 `seq` withKind v k env (checkExp x)
+	 `seq` withKind v k env (checkExp' x)
 
 	-- Type application
 	-- TODO: BAD! don't use substitute here. 
 	--       better to propagate a list of constraints back up the tree.
 	XAPP x t2
-	 | (t1, eff, clo)	<- checkExp x env
+	 | (t1, eff, clo)	<- checkExp' x env
 	 , k2			<- checkType t2 env
 	 -> case t1 of
 		TForall BNil k11 t12
@@ -118,15 +139,15 @@ checkExp_trace xx env
 		TForall (BVar v) k11 t12
 		 | k11 == k2	
 		 -> ( substituteT (subSingleton v t2) t12
-		    , substituteT (subSingleton v t2) eff
-		    , substituteT (subSingleton v t2) clo)
+		    , fmap (substituteT (subSingleton v t2)) eff
+		    , fmap (substituteT (subSingleton v t2)) clo)
 		
 		-- TODO: check more-than constraint
 		TForall (BMore v t11) k11 t12
 		 | k11 == k2
 		 -> ( substituteT (subSingleton v t2) t12
-		    , substituteT (subSingleton v t2) eff
-		    , substituteT (subSingleton v t2) clo)
+		    , fmap (substituteT (subSingleton v t2)) eff
+		    , fmap (substituteT (subSingleton v t2)) clo)
 		
 
 	-- Value abstraction
@@ -143,12 +164,14 @@ checkExp_trace xx env
 	 ->    checkType t1 env
 	 `seq` checkType eff env
 	 `seq` checkType clo env 
-	 `seq` let (t2, eff', clo')	= withType  v1 t1 env (checkExp x2)
-	       in  if      eff /= eff'	then panic stage $ "effect mismatch"
-	           else if clo /= clo'	then panic stage $ "closure mismatch"
+	 `seq` let (t2, eff2, clo2)	= withType  v1 t1 env (checkExp' x2)
+		   eff'			= Seq.singleton eff
+		   clo'			= slurpClosureToMap clo
+	       in  if      eff' /= eff2	then panic stage $ "effect mismatch"
+	           else if clo' /= clo2	then panic stage $ "closure mismatch"
 		   else ( makeTFun t1 t2 eff clo
-		        , eff
-		        , clo)
+		        , eff2
+		        , clo2)
 
 	-- TODO: Carry a sequence of effects, and a map of closures back up the tree.
 	--	 When we hit a lambda we can then flatten the effects.
@@ -160,14 +183,14 @@ checkExp_trace xx env
 	-- TODO: BAD! don't keep summing the same effect and closures, this calls nub.
 	--       better to return a sequence on effects and only flatten them when we have to.
 	XApp x1 x2
-	 | (t1, eff1, clo1)	<- checkExp x1 env
-	 , (t2, eff2, clo2)	<- checkExp x2 env
+	 | (t1, eff1, clo1)	<- checkExp' x1 env
+	 , (t2, eff2, clo2)	<- checkExp' x2 env
 	 -> case takeTFun t1 of
 		Just (t11, t12, eff3, _)
 		 | t11 == t2
 		 -> ( t12
-		    , makeTSum kEffect  [eff1, eff2, eff3]
-		    , makeTSum kClosure [clo1, clo2])
+		    , eff1 Seq.>< eff2 Seq.>< Seq.singleton eff3
+		    , Map.union clo1 clo2)
 		
 		_ -> panic stage $ vcat
 			[ ppr "Type error in application."
@@ -187,7 +210,7 @@ checkExp_trace xx env
 	-- Type annotation
 	XTau t x
 	 ->    checkType t env
-	 `seq` let result@(t', _, _)	= checkExp x env
+	 `seq` let result@(t', _, _)	= checkExp' x env
 	       in if t == t'		then result
 		  else panic stage $ vcat
 			[ ppr "Type error in type annotation.", blank
@@ -203,51 +226,51 @@ checkExp_trace xx env
 
 -- Statements -------------------------------------------------------------------------------------
 -- | Check a list of (possibly recursive) statements.
-checkStmts :: [Stmt] -> Env -> (Type, Effect, Closure)
+checkStmts :: [Stmt] -> Env -> (Type, Seq Effect, Map Var Closure)
 
 -- TODO: need to recursively add types to environment.
 checkStmts ss env
-	= checkStmts' env ss [] []
+	= checkStmts' env ss Seq.empty Map.empty
 
 checkStmts' _ [] _ _
  	= panic stage
 	$ "checkStmts': no statements"
 	
 checkStmts' env (SBind _ x : []) effAcc cloAcc
- = let	(t, eff, clo)	= checkExp x env
+ = let	(t, eff, clo)	= checkExp' x env
    in	( t
-	, makeTSum kEffect  (eff : effAcc)
-	, makeTSum kClosure (clo : cloAcc))
+	, effAcc Seq.>< eff 
+	, Map.union clo cloAcc)
 	
 -- types for all bindings must already be in environment.
 checkStmts' env (SBind Nothing x : ss) effAcc cloAcc 
- = let	(_, eff, clo)	= checkExp x env
-   in 	checkStmts' env ss (eff : effAcc) (clo : cloAcc)
+ = let	(_, eff, clo)	= checkExp' x env
+   in 	checkStmts' env ss (effAcc Seq.>< eff) (Map.union clo cloAcc)
 
 -- TODO: check type against on already in environment.
 checkStmts' env (SBind (Just v) x : ss) effAcc cloAcc
- = let	(_, eff, clo)	= checkExp x env
-   in	checkStmts' env ss (eff : effAcc) (clo : cloAcc)
+ = let	(_, eff, clo)	= checkExp' x env
+   in	checkStmts' env ss (effAcc Seq.>< eff) (Map.union clo cloAcc)
 
 
 -- Alternatives -----------------------------------------------------------------------------------
 -- | Check a list of match alternatives.
 -- TODO: handle guards.
 -- TODO: add effect from the match.
-checkAlts :: [Alt] -> Env -> (Type, Effect, Closure)
+checkAlts :: [Alt] -> Env -> (Type, Seq Effect, Map Var Closure)
 checkAlts as env
-	= checkAlts' env as [] [] []
+	= checkAlts' env as [] Seq.empty Map.empty
 
 checkAlts' env [] types effAcc cloAcc
  = 	( fromMaybe 
 		(panic stage $ "checkAlts: can't join types")
 		(joinSumTs types)
-	, makeTSum kEffect  effAcc
-	, makeTSum kClosure cloAcc)
+	, effAcc
+	, cloAcc)
 
 checkAlts' env (AAlt gs x : as) types effAcc cloAcc
- = let	(t, eff, clo)	= checkExp x env
-   in	checkAlts' env as (t : types) (eff : effAcc) (clo : cloAcc)
+ = let	(t, eff, clo)	= checkExp' x env
+   in	checkAlts' env as (t : types) (eff Seq.>< effAcc) (Map.union clo cloAcc)
 
 
 -- Type -------------------------------------------------------------------------------------------

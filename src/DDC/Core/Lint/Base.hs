@@ -2,10 +2,14 @@
 module DDC.Core.Lint.Base
 	( lintList
 	, checkList
-	, subSingleton)
+	, subSingleton
+	, slurpClosureToMap)
 where 
 import DDC.Type
+import DDC.Var
 import DDC.Core.Lint.Env
+import qualified Data.Map	as Map
+import Data.Map			(Map)
 
 
 -- | Check for lint in some list of things.
@@ -34,3 +38,11 @@ subSingleton v t v'
 	
 	| v == v'	= Just t
 	| otherwise	= Nothing
+
+
+slurpClosureToMap :: Closure -> Map Var Type
+slurpClosureToMap clo
+ 	| isTBot clo	= Map.empty
+	
+	| Just (v, t)	<- takeTFree clo
+	= Map.singleton v t

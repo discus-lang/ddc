@@ -9,25 +9,28 @@ import DDC.Core.Lint.Env
 import DDC.Type
 import DDC.Var
 import DDC.Base.DataFormat
+import Data.Sequence		(Seq)
+import Data.Map			(Map)
 import qualified DDC.Var.VarId	as Var
 import qualified DDC.Var.PrimId	as Var
 import {-# SOURCE #-} DDC.Core.Lint
+import qualified Data.Sequence	as Seq
 
 
 -- | Check an application of a primitive operator.
-checkPrim :: Prim -> [Exp] -> Env -> (Type, Effect, Closure)
+checkPrim :: Prim -> [Exp] -> Env -> (Type, Seq Effect, Map Var Closure)
 checkPrim pp xs env
  = case (pp, xs) of
 	(MBox,   [XPrimType r, x])
-	 -> let (t, eff, clo)	= checkExp x env
+	 -> let (t, eff, clo)	= checkExp' x env
 	    in	( boxedVersionOfUnboxedType r t
 		, eff
 		, clo)
 		
 	(MUnbox, [XPrimType r, x])
-	 -> let	(t, eff, clo)	= checkExp x env
+	 -> let	(t, eff, clo)	= checkExp' x env
 	    in	( unboxedVersionOfBoxedType r t
-		, makeTSum kEffect [eff, TApp tRead r]
+		, eff Seq.|> TApp tRead r
 		, clo)
 
 
