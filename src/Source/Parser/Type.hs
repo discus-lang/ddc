@@ -369,7 +369,7 @@ pClosure
 
 		  	-- VAR :  TYPE
 		   	 <|> do	typ	<- pType
- 				return	$ makeTFree varN typ
+ 				return	$ TApp (tFreeType varN) typ
 
 		-- VAR $> CLO
 	  	 <|> do	pTok K.HoldsMono

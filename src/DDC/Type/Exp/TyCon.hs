@@ -69,10 +69,16 @@ data TyConEffect
 --   These aren't defined by the user, they're all builtin.
 data TyConClosure
 
-	-- | Lift a type to a closure term. This constructor also contains a tag variable, 
-	--   which must be in the value namespace.
-	= TyConClosureFree Var
+	-- | Lift a value type or region to a closure term. 
+	= TyConClosureFreeType   Var
 
+	-- | Lift a region to a closure term. 
+	--   This also contains a tag variable which must be in the value namespace.
+	| TyConClosureFreeRegion Var
+
+	-- | Tag a closure with a variable.
+	| TyConClosureFree Var
+	
 	| TyConClosureDanger
 	deriving (Show, Eq)
 	

@@ -217,6 +217,14 @@ instance Monad m => TransM m TyCon where
 	
 	TyConEffect{}		-> return tt
 
+	TyConClosure (TyConClosureFreeType v) kind
+	 -> do	v'	<- transZM table v
+		return	$ TyConClosure (TyConClosureFreeType v') kind
+
+	TyConClosure (TyConClosureFreeRegion v) kind
+	 -> do	v'	<- transZM table v
+		return	$ TyConClosure (TyConClosureFreeRegion v') kind
+
 	TyConClosure (TyConClosureFree v) kind
 	 -> do	v'	<- transZM table v
 		return	$ TyConClosure (TyConClosureFree v') kind

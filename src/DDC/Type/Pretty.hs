@@ -2,7 +2,9 @@
 -- | Pretty printer for type expressions.
 module DDC.Type.Pretty
 	( prettyTypeParens
-	, prettyTypeSplit)
+	, prettyTypeSplit
+	, prettyType
+	, prettyKind)
 where
 import DDC.Solve.InstanceInfo
 import DDC.Main.Pretty
@@ -28,6 +30,9 @@ instance Pretty Bind PMode where
 	BMore v t	-> "(" % v % " :> " % t % ")"
 
 -- Type --------------------------------------------------------------------------------------------
+prettyType :: Type -> Str
+prettyType = ppr
+
 instance Pretty Type PMode where
  ppr tt = pprTypeQuant Set.empty tt
 
@@ -71,6 +76,12 @@ pprTypeQuant vsQuant tt
 	 -> prettyTypeParens t % "{" % elab % "}"
 
 	TApp (TCon (TyConClosure (TyConClosureFree v) _)) t
+	 -> v % " : " % t
+
+	TApp (TCon (TyConClosure (TyConClosureFreeType v) _)) t
+	 -> v % " : " % t
+
+	TApp (TCon (TyConClosure (TyConClosureFreeRegion v) _)) t
 	 -> v % " : " % t
 
 	TApp (TApp (TCon (TyConClosure TyConClosureDanger _)) v) t
@@ -247,6 +258,9 @@ instance Pretty Super PMode where
 
 
 -- Kind --------------------------------------------------------------------------------------------
+prettyKind :: Kind -> Str
+prettyKind = ppr
+
 instance Pretty Kind PMode where
  ppr kk
   = case kk of
@@ -340,7 +354,9 @@ instance Pretty TyConEffect PMode where
 instance Pretty TyConClosure PMode where
  ppr cc
   = case cc of
-	TyConClosureFree var		-> ppr "$Free_" % var
+	TyConClosureFree var		-> ppr "$FreeClosure_" % var
+	TyConClosureFreeType var	-> ppr "$FreeType_" % var
+	TyConClosureFreeRegion var	-> ppr "$FreeRegion_" % var
 	TyConClosureDanger		-> ppr "$Danger"
 
 

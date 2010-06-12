@@ -70,7 +70,13 @@ tDeepWrite	= TCon $ TyConEffect TyConEffectDeepWrite
 
 -- Closure type constructors
 tFree v		= TCon $ TyConClosure (TyConClosureFree v) 
+		$ KFun kClosure kClosure
+
+tFreeType v	= TCon $ TyConClosure (TyConClosureFreeType v) 
 		$ KFun kValue kClosure
+
+tFreeRegion v	= TCon $ TyConClosure (TyConClosureFreeRegion v) 
+		$ KFun kRegion kClosure
 		
 tDanger 	= TCon $ TyConClosure TyConClosureDanger
 		$ KFun kRegion (KFun kValue kClosure)

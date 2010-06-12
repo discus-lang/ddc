@@ -24,6 +24,7 @@ import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Var
+import {-# SOURCE #-} DDC.Type.Pretty
 
 stage		= "DDC.Type.Kind"
 
@@ -190,7 +191,13 @@ kindOfType tt
 	 | KFun _ k12		<- kindOfType t1
 	 -> betaTK 0 t2 k12
 
-	TApp{}			-> panic stage $ "kindOfType: cannot apply " ++ show tt
+	TApp t1	_	
+	 -> panic stage 
+		$ vcat 	[ ppr "kindOfType: Kind error in type application"
+			, "type:    " 	% prettyType t1
+			, "of kind: " 	% prettyKind (kindOfType t1)
+			, ppr "is not a function"
+			, "when determining the kind of: " % prettyType tt ]
 	
 	TForall  _ _ t2		-> kindOfType t2
 	TFetters   t1 _		-> kindOfType t1

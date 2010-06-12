@@ -291,16 +291,49 @@ takeTWitness tt
 takeTFree :: Type -> Maybe (Var, Type)
 takeTFree tt
  = case tt of
+	TApp (TCon (TyConClosure (TyConClosureFreeType v) _)) t2
+	   -> Just (v, t2)
+
+	TApp (TCon (TyConClosure (TyConClosureFreeRegion v) _)) t2
+	   -> Just (v, t2)
+
 	TApp (TCon (TyConClosure (TyConClosureFree v) _)) t2
 	   -> Just (v, t2)
 	
 	_  -> Nothing
 
 
--- | Make an application of the $Free closure constructor.
-makeTFree :: Var -> Type -> Type
-makeTFree var tt
-	= TApp (tFree var) tt
+-- | Make an application of one of the $Free closure constructors.
+--	The constructor depends on the kind of the type being used,
+--	but it's usually straight-forward to determine.
+--
+--  NOTE: we can't just call `kindOfType` here because the parser calls this
+--        before kind inference, and we won't know the real kinds of all 
+--        the type variabes yet.
+--
+makeTFree :: Var -> Type -> Closure
+makeTFree v tt
+ = case tt of
+	TVar k _ 	-> makeTFreeWithKind k v tt
+	TSum k _	-> makeTFreeWithKind k v tt
+	
+	-- Closure constructors always return closures
+	TApp (TCon TyConClosure{}) _	-> makeTFreeWithKind kClosure v tt
+	
+	TApp{}		-> makeTFreeWithKind kValue v tt
+	TForall{}	-> makeTFreeWithKind kValue v tt
+	TFetters{}	-> makeTFreeWithKind kValue v tt
+	TConstrain{}	-> makeTFreeWithKind kValue v tt
+	TCon{}		-> makeTFreeWithKind kValue v tt
+	_		-> panic stage ("makeTFree: not sure what you mean " % show tt)
+	
+makeTFreeWithKind :: Kind -> Var -> Type -> Closure
+makeTFreeWithKind k v tt
+	| isClosureKind k	= TApp (tFree       v) tt
+	| isValueKind   k	= TApp (tFreeType   v) tt
+	| isRegionKind  k	= TApp (tFreeRegion v) tt
+	| otherwise		
+	= panic stage ("makeTFree: not a region, value or closure type " % ppr (show tt))
 
 
 -- | Make an application of the $Danger closure constructor.
