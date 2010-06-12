@@ -309,10 +309,10 @@ floatBindsX level share tt xx
 	    in	(tt', XTau t x')
 
 
-	XApp x1 x2 eff
+	XApp x1 x2
 	 -> let (tt2, x1')	= floatBindsX level share tt  x1
 	        (tt3, x2')	= floatBindsX level share tt2 x2
-	    in	(tt3, XApp x1' x2' eff)
+	    in	(tt3, XApp x1' x2')
 
 	XPrim p xs
 	 -> let (tt', xs')	= mapAccumL (floatBindsX level share) tt xs

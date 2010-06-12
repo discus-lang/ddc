@@ -118,7 +118,7 @@ data Exp
 	| XLam		Var	Type	Exp  Effect Closure
 
 	-- | Value application.
-	| XApp		Exp	Exp	Effect
+	| XApp		Exp	Exp
 
 	-- | Do expression, contains stmts to execute.
 	| XDo		[Stmt]

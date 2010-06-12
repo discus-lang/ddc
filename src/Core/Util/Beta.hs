@@ -61,7 +61,7 @@ betaX :: Exp -> BetaM Exp
 betaX (XAPP (XLAM b t1 x) t)
  = do	return	$ x
 	
-betaX (XApp (XLam v t x1 eff1 clo) x2 eff2)
+betaX (XApp (XLam v t x1 eff1 clo) x2)
  = do	bindValue v t x2
  	return	$ x1
 

@@ -14,19 +14,27 @@ module DDC.Core.Lint
 	, checkList
 	, Env	(..))
 where
+import Shared.VarPrim
 import Core.Util		(maybeSlurpTypeX)
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Base.Literal
+import DDC.Base.DataFormat
 import DDC.Core.Glob
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import Data.List
 import Data.Maybe
-import qualified Data.Map	as Map
 import Data.Map			(Map)
+import qualified DDC.Var.VarId	as Var
+import qualified DDC.Var.PrimId	as Var
+import qualified Data.Map	as Map
+import qualified Debug.Trace
 
-stage	= "Core.Lint"
+stage		= "Core.Lint"
+debug		= True
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- Glob -------------------------------------------------------------------------------------------
 checkGlobs :: Glob -> Glob -> ()
@@ -51,6 +59,15 @@ checkBind env pp
 -- | Check an expression, returning its type.
 checkExp :: Exp -> Env -> (Type, Effect, Closure)
 checkExp xx env
+ = let	result@(t, eff, clo)	= checkExp_trace xx env
+   in	trace (vcat 
+		[ "exp = " 	% xx
+		, "type:    " 	% t
+		, "eff:     "	% eff
+		, "clo:     "   % clo])
+		result
+			
+checkExp_trace xx env
  = case xx of
 	XNil	-> panic stage "checkExp: XNil"
 	
@@ -92,6 +109,11 @@ checkExp xx env
 	           else if clo /= clo'	then panic stage $ "closure mismatch"
 		   else (t, eff, clo)
 
+	-- Value application
+--	XApp x1 x2 eff
+	
+
+
 	-- Do expression
 	XDo ss		-> checkStmts ss env
 
@@ -99,7 +121,7 @@ checkExp xx env
 	XMatch aa	-> checkAlts  aa env
 
 	-- Primitive operator.
---	XPrim  prim xs	-> checkPrim prim xs
+	XPrim  prim xs	-> checkPrim prim xs env
 
 	-- Type annotation
 	XTau t x
@@ -108,9 +130,10 @@ checkExp xx env
 	       in if t /= t'		then panic stage $ "type mismatch in xtau"
 		  else result
 		
-
 	_ -> panic stage 
-		$ "checkExp: no match for " <> xx
+		$ vcat 	[ "checkExp: no match for " <> xx
+			, ppr $ show xx]
+		
 
 
 -- Statements -------------------------------------------------------------------------------------
@@ -145,6 +168,7 @@ checkStmts' env (SBind (Just v) x : ss) effAcc cloAcc
 -- Alternatives -----------------------------------------------------------------------------------
 -- | Check a list of match alternatives.
 -- TODO: handle guards.
+-- TODO: add effect from the match.
 checkAlts :: [Alt] -> Env -> (Type, Effect, Closure)
 checkAlts as env
 	= checkAlts' env as [] [] []
@@ -160,13 +184,71 @@ checkAlts' env (AAlt gs x : as) types effAcc cloAcc
  = let	(t, eff, clo)	= checkExp x env
    in	checkAlts' env as (t : types) (eff : effAcc) (clo : cloAcc)
 
--- Prim -------------------------------------------------------------------------------------------
--- | Check an application of a primitive operator
-{-
-checkPrim :: Prim -> [Exp] -> (Type, Effect, Closure)
-checkPrim pp xs
--}
 
+-- Prim -------------------------------------------------------------------------------------------
+-- | Check an application of a primitive operator.
+checkPrim :: Prim -> [Exp] -> Env -> (Type, Effect, Closure)
+checkPrim pp xs env
+ = case (pp, xs) of
+	(MBox,   [XPrimType r, x])
+	 -> let (t, eff, clo)	= checkExp x env
+	    in	( boxedVersionOfUnboxedType r t
+		, eff
+		, clo)
+		
+	(MUnbox, [XPrimType r, x])
+	 -> let	(t, eff, clo)	= checkExp x env
+	    in	( unboxedVersionOfBoxedType r t
+		, makeTSum kEffect [eff, TApp tRead r]
+		, clo)
+
+
+-- | Convert this boxed type to the unboxed version.
+boxedVersionOfUnboxedType :: Region -> Type -> Type
+boxedVersionOfUnboxedType r tt
+	| Just (v, k, _)		<- takeTData tt
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (varId v)
+	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
+	= makeTData 
+		(primVarFmt NameType 
+				(pprStrPlain (varModuleId v) ++ "." ++ baseName) 
+				mkBind fmtBoxed)
+		(KFun kRegion kValue) 
+		[r]
+
+
+-- | Convert this unboxed type to the boxed version.
+unboxedVersionOfBoxedType :: Region -> Type -> Type
+unboxedVersionOfBoxedType r1 tt
+	| Just (v, k, [r2@(TVar kV _)])	<- takeTData tt
+	, kV == kRegion
+	, r1 == r2
+	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (varId v)
+	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
+	= makeTData
+		(primVarFmt NameType 
+				(pprStrPlain (varModuleId v) ++ "." ++ baseName)
+				mkBind fmtUnboxed)
+		kValue
+		[]
+
+
+-- | Split the VarBind for a literal into its components,
+--	eg  TInt fmt -> ("Int", TInt, fmt)
+splitLiteralVarBind
+	:: Var.VarId
+	-> ( String
+	   , DataFormat -> Var.PrimId
+	   , DataFormat)
+
+splitLiteralVarBind (VarIdPrim pid)
+ = case pid of
+ 	Var.TBool  fmt	-> ("Bool",   Var.TBool,   fmt)
+	Var.TWord  fmt	-> ("Word",   Var.TWord,   fmt)
+	Var.TInt   fmt	-> ("Int",    Var.TInt,    fmt)
+	Var.TFloat fmt	-> ("Float",  Var.TFloat,  fmt)
+	Var.TChar  fmt	-> ("Char",   Var.TChar,   fmt)
+	Var.TString fmt	-> ("String", Var.TString, fmt)
 
 
 

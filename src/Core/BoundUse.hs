@@ -90,7 +90,7 @@ boundUseX level xx
 	
 	XLam v t x eff clo	-> boundUseX (level + 1) x
 
-	XApp x1 x2 eff		
+	XApp x1 x2
 	 -> do	boundUseX level x1
 	 	boundUseX level x2
 		

@@ -369,14 +369,14 @@ reconX (XLocal v vs x)
 		, xC )
 	
 -- app
-reconX exp@(XApp x1 x2 eff)
+reconX exp@(XApp x1 x2)
  = do	tt			<- get
 	(x1', x1t, x1e, x1c)	<- keepState $ reconX x1
 	(x2', x2t, x2e, x2c)	<- keepState $ reconX x2
 	let mResultTE		=  applyValueT tt x1t x2t
 	case mResultTE of
 	 Just (appT, appE)
-	  -> let x'		= XApp x1' x2' tPure
+	  -> let x'		= XApp x1' x2'
 		 xE		= makeTSum kEffect  [x1e, x2e, appE]
 		 xC		= makeTSum kClosure [x1c, x2c]
 	     in	return (x', appT, xE, xC)

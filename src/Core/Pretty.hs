@@ -174,7 +174,7 @@ instance Pretty Exp PMode where
 	 | otherwise
 	 ->  x % " " % prettyTypeParens t
 
-	XApp e1 e2 eff
+	XApp e1 e2
 	 -> let	pprAppLeft x 
 	 	  | x =@= XVar{} || isXApp x	= ppr x
 		  | otherwise			= "(" % x % ")"

@@ -83,7 +83,7 @@ curryX	env vsTailCall xx
 	| XVar v t		<- xx
 	= if   (varIsBoundAtTopLevelInGlob (envGlobHeader env) v)
 	    || (varIsBoundAtTopLevelInGlob (envGlobProg   env) v)
-	   then	fromMaybe xx $ makeCall env vsTailCall xx [] tPure
+	   then	fromMaybe xx $ makeCall env vsTailCall xx []
 	   else xx
 	
 	| XDo ss		<- xx
@@ -106,10 +106,9 @@ curryX	env vsTailCall xx
 	| (xx =@= XAPP{})
 	  || (xx =@= XApp{})
 	  
-	= let	(parts, effs)	= unzip $ splitAppsUsingPrimType xx
+	= let	parts		= splitAppsUsingPrimType xx
 		(xF:args)	= parts
-	  in	fromMaybe xx
-			$ makeCall env vsTailCall xF args (makeTSum kEffect effs)
+	  in	fromMaybe xx	$ makeCall env vsTailCall xF args
 
 	-- uh oh..			
 	| otherwise	
@@ -143,10 +142,9 @@ makeCall
 	-> Set Var		-- ^ Names of supers that can be tailcalled from here
 	-> Exp			-- ^ Call this function (must be an XVar)
 	-> [Exp] 		-- ^ Args to function.
-	-> Effect 		-- ^ Effect caused by calling this function
 	-> Maybe Exp
 
-makeCall env vsTailCall xF@(XVar vF tF) args eff
+makeCall env vsTailCall xF@(XVar vF tF) args
  = let	callArity	= length	
 			$ filter (\x -> x == True)
 			$ map isValueArg 
@@ -161,15 +159,15 @@ makeCall env vsTailCall xF@(XVar vF tF) args eff
 	  		% " f           = "	% vF % "\n"
 			% " callArity  = " 	% callArity	% "\n"
 			% " superArity = "	% superArity	% "\n")
-			$ makeSuperCall xF vsTailCall args eff callArity superArity
+			$ makeSuperCall xF vsTailCall args callArity superArity
 				
 	 -- Function is represented as a thunk instead of a super.
 	 | otherwise
-	 =  makeThunkCall xF args eff callArity
+	 =  makeThunkCall xF args callArity
 	
    in	result
 	
-makeCall env vsTailCall xF args eff
+makeCall env vsTailCall xF args
 	= panic stage
 	$ "makeCall: no match for " % xF	% "\n"
 
@@ -179,14 +177,13 @@ makeSuperCall
 	:: Exp 		-- ^ Name of super being called.	(must be an XVar)
 	-> Set Var	-- ^ Supers that can be tail called.
 	-> [Exp] 	-- ^ Arguments to super.
-	-> Effect 	-- ^ Effect caused when evaluating super.
 	-> Int 		-- ^ Number of args in the call.
 	-> Int 		-- ^ Number of args needed by the super.
 	-> Maybe Exp
 
 makeSuperCall 
 	xF@(XVar vF tF)
-	tailCallMe args eff callArity superArity
+	tailCallMe args callArity superArity
  
 	-- The values of CAFs are shared between calls to them..
 	--	The Sea stages handle initialisation of them.
@@ -220,8 +217,8 @@ makeSuperCall
    	
 	
 -- | Apply a thunk to a value to get the result.
-makeThunkCall :: Exp -> [Exp] -> Effect -> Int -> Maybe Exp
-makeThunkCall xF args eff callArity
+makeThunkCall :: Exp -> [Exp]  -> Int -> Maybe Exp
+makeThunkCall xF args callArity
 
 	-- If there were only type applications, but no values being applied, 
 	--	then the callAirity is zero and there is no associated call at Sea level.

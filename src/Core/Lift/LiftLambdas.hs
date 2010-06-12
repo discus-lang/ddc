@@ -181,7 +181,7 @@ hasLambdasX	x
 	XTau	t x		-> hasLambdasX x
 
 	XLam{}			-> True
-	XApp x1 x2 eff		-> hasLambdasX x1 || hasLambdasX x2
+	XApp x1 x2		-> hasLambdasX x1 || hasLambdasX x2
 	XDo ss			-> or $ map hasLambdasS ss
 	XMatch aa		-> or $ map hasLambdasA aa
 	

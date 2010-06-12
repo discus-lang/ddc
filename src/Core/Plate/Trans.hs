@@ -362,11 +362,10 @@ transXM2 table xx
 	 	c'		<- followT table c
 		transX table	$ XAPP x' c'
 		
-	XApp x1 x2 eff
+	XApp x1 x2
 	 -> do	x1'		<- followX table x1
 	 	x2'		<- followX table x2
-		eff'		<- followT table eff
-		transX table	$ XApp x1' x2' eff'
+		transX table	$ XApp x1' x2'
 
 	XTau t x
 	 -> do	t'		<- followT table t

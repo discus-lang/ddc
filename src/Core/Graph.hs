@@ -1,9 +1,10 @@
 
+
+-- This is ancient junk, needs to be removed.
 module Core.Graph
 	( slurpAppGraph
 	, dotAppGraph)
 where
-import Core.Util
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Util
@@ -92,12 +93,7 @@ appModeX	xx
 	_		-> AppOther
 	
 
-appModeX_app xx
- = let	effs	= [eff | (x, eff) <- splitApps xx]
-  	effs'	= flattenTSum  $ TSum kEffect effs
-   in	case effs' of
-   		[]	-> AppPure
-		_	-> AppEffect (makeTSum kEffect effs')
+appModeX_app xx		= AppPure
 
 
 dotAppGraph ::	Map Var (App, [Var])	-> String

@@ -44,11 +44,10 @@ instance FreeVars Exp where
 		, freeVars e ]
 		\\ fromList [v]
 
-	XApp x1 x2 eff
+	XApp x1 x2
 	 -> unions
 	 	[ freeVars x1
-		, freeVars x2 
-		, freeVars eff ]
+		, freeVars x2 ]
 
 	XTau t x
 	 -> unions

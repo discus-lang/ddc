@@ -94,7 +94,7 @@ buildApp' xx
 	| Left (XVar v t) : xs	<- xx
 	, varNameSpace v == NameValue
 	, Just leftX		<- buildApp' xs
-	= Just $ XApp leftX (XVar v t) tPure
+	= Just $ XApp leftX (XVar v t)
 
 	| otherwise
 	= Nothing
@@ -102,62 +102,62 @@ buildApp' xx
 -- | Flatten type and value applications.
 --   For value applications we get the expression and effect cause by that application.
 --   For type  applications we just get the type.
-flattenAppsE ::	Exp -> [Either (Exp, Maybe Effect) Type]
+flattenAppsE ::	Exp -> [Either Exp Type]
 flattenAppsE x
-	| XApp e1 e2 eff	<- x
-	= flattenAppsE e1 ++ [Left (e2, Just eff)]
+	| XApp e1 e2	<- x
+	= flattenAppsE e1 ++ [Left e2]
 
 	| XAPP  x t		<- x
 	= flattenAppsE x ++ [Right t]
 
 	| otherwise
-	= [Left (x, Nothing)]
+	= [Left x]
 	
 	
 -- | Build some type/value applications
-unflattenAppsE :: [Either (Exp, Maybe Effect) Type] -> Exp
+unflattenAppsE :: [Either Exp Type] -> Exp
 unflattenAppsE	xx
 	
-	| x1:x2:xs		<- xx
-	, Left (e1, Nothing)	<- x1
-	, Left (e2, Just eff2)	<- x2
+	| x1:x2:xs	<- xx
+	, Left e1	<- x1
+	, Left e2	<- x2
 	= unflattenAppsE 
-	$ [Left (XApp e1 e2 eff2, Nothing)] ++ xs
+	$ [Left $ XApp e1 e2] ++ xs
 	
-	| x1:x2:xs		<- xx
-	, Left  (e1, Nothing)	<- x1
-	, Right e2		<- x2
+	| x1:x2:xs	<- xx
+	, Left  e1	<- x1
+	, Right e2	<- x2
 	= unflattenAppsE 
-	$ [Left (XAPP e1 e2, Nothing)] ++ xs
+	$ [Left $ XAPP e1 e2] ++ xs
 	
-	| x1:[]			<- xx
-	, Left (e1, Nothing)	<- x1
+	| x1:[]		<- xx
+	, Left e1	<- x1
 	= e1
 
 
 -- | Split out args and effects produced at each application
-splitApps :: Exp -> [(Either Exp Type, Effect)]
+splitApps :: Exp -> [Either Exp Type]
 splitApps xx
  = case xx of
  	XAPP e1 e2
-	 -> splitApps e1 ++ [(Right e2, tPure)]
+	 -> splitApps e1 ++ [Right e2]
 	
-	XApp e1 e2 eff
-	 -> splitApps e1 ++ [(Left e2, eff)]
+	XApp e1 e2 
+	 -> splitApps e1 ++ [Left e2]
 		
-	_ -> [(Left xx, tPure)]
+	_ -> [Left xx]
 	
 -- hacks
-splitAppsUsingPrimType :: Exp -> [(Exp, Effect)]
+splitAppsUsingPrimType :: Exp -> [Exp]
 splitAppsUsingPrimType xx
  = case xx of
  	XAPP e1 e2
-	 -> splitAppsUsingPrimType e1 ++ [(XPrimType e2, tPure)]
+	 -> splitAppsUsingPrimType e1 ++ [XPrimType e2]
 	
-	XApp e1 e2 eff
-	 -> splitAppsUsingPrimType e1 ++ [(e2, eff)]
+	XApp e1 e2
+	 -> splitAppsUsingPrimType e1 ++ [e2]
 		
-	_ -> [(xx, tPure)]
+	_ -> [xx]
 	
 	
 -- Lambda ------------------------------------------------------------------------------------------

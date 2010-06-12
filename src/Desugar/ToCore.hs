@@ -293,7 +293,7 @@ toCoreX xx
 	 -> do
 	 	x1'	<- toCoreX x1
 		x2'	<- toCoreX x2
-		return	$ C.XApp x1' x2' T.tPure
+		return	$ C.XApp x1' x2'
 
 
 	-- case match on a var
@@ -395,15 +395,10 @@ toCoreX xx
 	 , kE == T.kEffect
 	 -> do
 		x2'		<- toCoreX x2
---		j'		<- toCoreJ j
-
+		
 		-- lookup the var for the projection function to use
 		projResolve	<- gets coreProjResolve
 
-{-		trace 	( "XProjTagged\n"
-			% "    vTagInst  = " % vTagInst		% "\n")
-			$ return ()
--}		
 		let vProj
 		 	= case Map.lookup vTagInst projResolve of
 				Nothing	-> panic stage
@@ -414,7 +409,7 @@ toCoreX xx
 							
 		x1'	<- toCoreVarInst vProj vTagInst
 			
-		return	$ C.XApp x1' x2' T.tPure
+		return	$ C.XApp x1' x2'
 
 	D.XProjTaggedT
 		(Just 	( T.TVar kV vT
