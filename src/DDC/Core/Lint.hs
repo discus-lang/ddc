@@ -16,10 +16,11 @@ module DDC.Core.Lint
 	, checkKind
 	, Env	(..))
 where
+import Core.Util.Substitute
+import Shared.VarPrim
 import DDC.Core.Lint.Prim
 import DDC.Core.Lint.Env
 import DDC.Core.Lint.Base
-import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Base.Literal
@@ -33,9 +34,10 @@ import Data.Maybe
 import Core.Util		(maybeSlurpTypeX)
 import Data.Map			(Map)
 import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 import qualified Debug.Trace
 
-stage		= "Core.Lint"
+stage		= "DDC.Core.Lint"
 debug		= True
 trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
@@ -43,7 +45,8 @@ trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 checkGlobs :: Glob -> Glob -> ()
 checkGlobs cgHeader cgCore 
 	= ()
-{-	= checkList (checkBind (envInit cgHeader cgCore))
+{-
+	= checkList (checkBind (envInit cgHeader cgCore))
 	$ Map.elems
 	$ globBind cgCore
 -}
@@ -65,10 +68,12 @@ checkExp :: Exp -> Env -> (Type, Effect, Closure)
 checkExp xx env
  = let	result@(t, eff, clo)	= checkExp_trace xx env
    in	trace (vcat 
-		[ "exp = " 	% xx
-		, "type:    " 	% t
-		, "eff:     "	% eff
-		, "clo:     "   % clo])
+		[ ppr $ (replicate 70 '-' ++ " checkExp")
+		, ppr xx
+		, blank
+		, "type:   " 	% t, 	blank
+		, "effect: "	% eff,	blank
+		, "closure:\n"	%> vcat (map ppr $ flattenTSum clo)])
 		result
 			
 checkExp_trace xx env
@@ -82,9 +87,14 @@ checkExp_trace xx env
 		$ "checkExp: invalid namespace for variable " 
 		% v <> (show $ varNameSpace v)
 	
+	 -- TODO: the type should have value kind.
 	 | otherwise
 	 -> checkType' t [] env 
-	 `seq` (t, tPure, tEmpty)
+	 `seq` ( t
+	       , tPure
+	       , trimClosureC_constrainForm Set.empty Set.empty
+			$ makeTFree v $ toConstrainFormT t)
+	-- TODO: make a version of the trimmer that doesn't need the initial sets.
 
 	-- Type abstraction
 	XLAM BNil k x
@@ -95,28 +105,75 @@ checkExp_trace xx env
 	 -> checkKind k env
 	 `seq` withKind v k env (checkExp x)
 
+	-- Type application
+	-- TODO: BAD! don't use substitute here. 
+	--       better to propagate a list of constraints back up the tree.
+	XAPP x t2
+	 | (t1, eff, clo)	<- checkExp x env
+	 , k2			<- checkType t2 env
+	 -> case t1 of
+		TForall BNil k11 t12
+		 | k11 == k2	-> (t1, eff, clo)
+		
+		TForall (BVar v) k11 t12
+		 | k11 == k2	
+		 -> ( substituteT (subSingleton v t2) t12
+		    , substituteT (subSingleton v t2) eff
+		    , substituteT (subSingleton v t2) clo)
+		
+		-- TODO: check more-than constraint
+		TForall (BMore v t11) k11 t12
+		 | k11 == k2
+		 -> ( substituteT (subSingleton v t2) t12
+		    , substituteT (subSingleton v t2) eff
+		    , substituteT (subSingleton v t2) clo)
+		
+
 	-- Value abstraction
-	-- TODO check effect and closure annots
-	XLam v t x eff clo
-	 | varNameSpace v /= NameValue
+	-- TODO: check effect and closure annots
+	XLam v1 t1 x2 eff clo
+	 | varNameSpace v1 /= NameValue
 	 -> panic stage
 		$ "checkExp invalid namespace for variable "
-		% v <> (show $ varNameSpace v)
+		% v1 <> (show $ varNameSpace v1)
 		
+	 -- TODO: check kinds of these types
+	 --	  use function checkTypeHasKind
 	 | otherwise
-	 ->    checkType t env
+	 ->    checkType t1 env
 	 `seq` checkType eff env
 	 `seq` checkType clo env 
-	 `seq` let (t', eff', clo')	= withType  v t env (checkExp x)
-	       in  if      t   /= t'	then panic stage $ "type mismatch"      --- WRONG
-		   else if eff /= eff'	then panic stage $ "effect mismatch"
+	 `seq` let (t2, eff', clo')	= withType  v1 t1 env (checkExp x2)
+	       in  if      eff /= eff'	then panic stage $ "effect mismatch"
 	           else if clo /= clo'	then panic stage $ "closure mismatch"
-		   else (t, eff, clo)
+		   else ( makeTFun t1 t2 eff clo
+		        , eff
+		        , clo)
+
+	-- TODO: Carry a sequence of effects, and a map of closures back up the tree.
+	--	 When we hit a lambda we can then flatten the effects.
+	--	 For closures, we can delete the bound variable from the map then pass
+	--	 it back up. Only put trimmed closures in the map.
 
 	-- Value application
---	XApp x1 x2 eff
-	
-
+	-- TODO: why is it ok to discard the third closure?
+	-- TODO: BAD! don't keep summing the same effect and closures, this calls nub.
+	--       better to return a sequence on effects and only flatten them when we have to.
+	XApp x1 x2
+	 | (t1, eff1, clo1)	<- checkExp x1 env
+	 , (t2, eff2, clo2)	<- checkExp x2 env
+	 -> case takeTFun t1 of
+		Just (t11, t12, eff3, _)
+		 | t11 == t2
+		 -> ( t12
+		    , makeTSum kEffect  [eff1, eff2, eff3]
+		    , makeTSum kClosure [clo1, clo2])
+		
+		_ -> panic stage $ vcat
+			[ ppr "Type error in application."
+			, "           type: " % t1
+			, " does not match: " % t2
+			, " in application: " % xx]
 
 	-- Do expression
 	XDo ss		-> checkStmts ss env
@@ -131,8 +188,12 @@ checkExp_trace xx env
 	XTau t x
 	 ->    checkType t env
 	 `seq` let result@(t', _, _)	= checkExp x env
-	       in if t /= t'		then panic stage $ "type mismatch in xtau"
-		  else result
+	       in if t == t'		then result
+		  else panic stage $ vcat
+			[ ppr "Type error in type annotation.", blank
+			, "  Reconstructed type:\n"		%> t', blank
+			, "  does not match annotation:\n"	%> t,  blank
+			, "  on expression:\n"			%> xx]
 		
 	_ -> panic stage 
 		$ vcat 	[ "checkExp: no match for " <> xx

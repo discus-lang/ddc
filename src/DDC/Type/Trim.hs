@@ -179,7 +179,7 @@ trimClosureC' quant rsData cc
 	 -> cc
 	
 	_ -> panic stage
-		$ "trimClosureC: no match for " % show cc
+		$ "trimClosureC: no match for " % cc
 
 
 
