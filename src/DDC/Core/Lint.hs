@@ -11,11 +11,15 @@
 --
 module DDC.Core.Lint
 	( checkGlobs
-	, checkList
+	, checkExp
+	, checkType
+	, checkKind
 	, Env	(..))
 where
+import DDC.Core.Lint.Prim
+import DDC.Core.Lint.Env
+import DDC.Core.Lint.Base
 import Shared.VarPrim
-import Core.Util		(maybeSlurpTypeX)
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Base.Literal
@@ -26,9 +30,8 @@ import DDC.Type
 import DDC.Var
 import Data.List
 import Data.Maybe
+import Core.Util		(maybeSlurpTypeX)
 import Data.Map			(Map)
-import qualified DDC.Var.VarId	as Var
-import qualified DDC.Var.PrimId	as Var
 import qualified Data.Map	as Map
 import qualified Debug.Trace
 
@@ -44,6 +47,7 @@ checkGlobs cgHeader cgCore
 	$ Map.elems
 	$ globBind cgCore
 -}
+
 -- Top --------------------------------------------------------------------------------------------
 checkBind :: Env -> Top -> ()
 checkBind env pp
@@ -185,73 +189,6 @@ checkAlts' env (AAlt gs x : as) types effAcc cloAcc
    in	checkAlts' env as (t : types) (eff : effAcc) (clo : cloAcc)
 
 
--- Prim -------------------------------------------------------------------------------------------
--- | Check an application of a primitive operator.
-checkPrim :: Prim -> [Exp] -> Env -> (Type, Effect, Closure)
-checkPrim pp xs env
- = case (pp, xs) of
-	(MBox,   [XPrimType r, x])
-	 -> let (t, eff, clo)	= checkExp x env
-	    in	( boxedVersionOfUnboxedType r t
-		, eff
-		, clo)
-		
-	(MUnbox, [XPrimType r, x])
-	 -> let	(t, eff, clo)	= checkExp x env
-	    in	( unboxedVersionOfBoxedType r t
-		, makeTSum kEffect [eff, TApp tRead r]
-		, clo)
-
-
--- | Convert this boxed type to the unboxed version.
-boxedVersionOfUnboxedType :: Region -> Type -> Type
-boxedVersionOfUnboxedType r tt
-	| Just (v, k, _)		<- takeTData tt
-	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (varId v)
-	, Just fmtBoxed			<- dataFormatBoxedOfUnboxed fmt
-	= makeTData 
-		(primVarFmt NameType 
-				(pprStrPlain (varModuleId v) ++ "." ++ baseName) 
-				mkBind fmtBoxed)
-		(KFun kRegion kValue) 
-		[r]
-
-
--- | Convert this unboxed type to the boxed version.
-unboxedVersionOfBoxedType :: Region -> Type -> Type
-unboxedVersionOfBoxedType r1 tt
-	| Just (v, k, [r2@(TVar kV _)])	<- takeTData tt
-	, kV == kRegion
-	, r1 == r2
-	, (baseName, mkBind, fmt)	<- splitLiteralVarBind (varId v)
-	, Just fmtUnboxed		<- dataFormatUnboxedOfBoxed fmt
-	= makeTData
-		(primVarFmt NameType 
-				(pprStrPlain (varModuleId v) ++ "." ++ baseName)
-				mkBind fmtUnboxed)
-		kValue
-		[]
-
-
--- | Split the VarBind for a literal into its components,
---	eg  TInt fmt -> ("Int", TInt, fmt)
-splitLiteralVarBind
-	:: Var.VarId
-	-> ( String
-	   , DataFormat -> Var.PrimId
-	   , DataFormat)
-
-splitLiteralVarBind (VarIdPrim pid)
- = case pid of
- 	Var.TBool  fmt	-> ("Bool",   Var.TBool,   fmt)
-	Var.TWord  fmt	-> ("Word",   Var.TWord,   fmt)
-	Var.TInt   fmt	-> ("Int",    Var.TInt,    fmt)
-	Var.TFloat fmt	-> ("Float",  Var.TFloat,  fmt)
-	Var.TChar  fmt	-> ("Char",   Var.TChar,   fmt)
-	Var.TString fmt	-> ("String", Var.TString, fmt)
-
-
-
 -- Type -------------------------------------------------------------------------------------------
 checkType :: Type -> Env -> Kind
 checkType tt env 
@@ -371,9 +308,7 @@ lintCRS :: Constraints -> Env -> ()
 lintCRS crs env	= ()
 
 
-
 -- Kind -------------------------------------------------------------------------------------------
-
 -- | Check a kind, returning its superkind.
 checkKind :: Kind -> Env -> Super
 checkKind kk env
@@ -422,8 +357,15 @@ checkAtomicKind kk
 	KCon KiConEffect  SBox	-> ()
 	KCon KiConClosure SBox	-> ()
 	_ -> panic stage $ "Kind " % kk % " is not atomic."	
-	
 
+
+-- | Check a kind constructor, 
+checkKiCon :: KiCon -> ()
+checkKiCon kc
+ = kc `seq` ()
+
+
+-- Super ------------------------------------------------------------------------------------------
 -- | Check a superkind.
 checkSuper :: Super -> ()
 checkSuper ss
@@ -434,92 +376,9 @@ checkSuper ss
 	 -> 	checkSuper super
 	 `seq`	checkAtomicKind  k
 	
--- | Check a kind constructor, 
-checkKiCon :: KiCon -> ()
-checkKiCon kc
- = kc `seq` ()
-
-
--- Utils ------------------------------------------------------------------------------------------
--- | Check for lint in some list of things.
-lintList ::  (a -> Env -> b) -> [a] -> Env -> ()
-lintList lintFun xx env
- = case xx of
-	[]		-> ()
-	(x:xs)		
-		->    lintFun  x env
-		`seq` lintList lintFun xs env
-		`seq` ()
-
-checkList :: (a -> ()) -> [a] -> ()
-checkList f xx
- = case xx of
-	[]	-> ()
-	x : xs	-> f x `seq` checkList f xs `seq` ()
-
-
--- Env --------------------------------------------------------------------------------------------
--- | A table of type and kind bindings.
-data Env
-
-	= Env
-	{ -- | Whether the thing we're checking is supposed to be closed.
-	  envClosed		:: Bool
-
-	  --  The header glob, for getting top-level types and kinds.
-	, envHeaderGlob		:: Glob
-
-	  --  The core glob, for getting top-level types and kinds.
-	, envModuleGlob		:: Glob
-
-	  --  Types of value variables that are in scope at the current point.
-	, envTypes		:: Map Var Type
-
-	  -- | Kinds of type variables that are in scope at the current point.
-	, envKinds		:: Map Var Kind }
-
-envInit	cgHeader cgModule
-	= Env
-	{ envClosed		= False
-	, envHeaderGlob		= cgHeader
-	, envModuleGlob		= cgModule
-	, envTypes		= Map.empty
-	, envKinds		= Map.empty }
-
-
--- | Run a lint computation with an extra type in the environment.
-withType :: Var -> Type -> Env -> (Env -> a) -> a
-withType v t env fun
- = let	addVT Nothing	= Just t
-	addVT Just{}	= panic stage $ "withVarType: type for " % v % " already present"
-   in	fun $ env { envTypes = Map.alter addVT v (envTypes env) }
-
-
-withBound :: Var -> Type -> Env -> (Env -> a) -> a
-withBound = error "no withBound"
-
--- | Run a lint computation with an extra kind in the environment.
-withKind :: Var -> Kind -> Env -> (Env -> a) -> a
-withKind v k env fun
- = let	addVK Nothing	= Just k
-	addVK Just{}	= panic stage $ "withVarKind: kind for " % v % " already present"
-   in	fun $ env { envKinds = Map.alter addVK v (envKinds env) }
 
 
 {-
--- | Get a kind from the environment.
-getKind :: Var -> Env -> Kind
-getKind v env	
-  = case Map.lookup v (envKinds env) of
-	Nothing	-> panic stage $ "getKind: not in scope " % v
-	Just k	-> k
-
-
-when :: Bool -> () -> ()
-when b x
- = case b of
-	True	-> x
-	False	-> ()
 -- Var --------------------------------------------------------------------------------------------
 -- | Lint a bound value variable.
 
@@ -563,5 +422,4 @@ lintMainType table tt
 			$ "Main function does not have type () -> ().\n"
 			% "    T[main] = " % tt	% "\n"
 		return ()
-
 -}
