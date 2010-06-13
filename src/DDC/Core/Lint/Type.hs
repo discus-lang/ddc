@@ -14,125 +14,112 @@ import qualified Data.Map	as Map
 stage	= "DDC.Core.Lint.Type"	
 
 -- Type -------------------------------------------------------------------------------------------
-checkTypeI :: Int -> Type -> Env -> Kind
-checkTypeI n tt env 
-	= checkType' n tt [] env 
-
 -- | Check a type expression, returning its kind.
 --	This does a complete check of the entire structure, so is not fast.
 --	If you just want to quickly get the kind of a type then use kindOfType instead.
 --
-checkType' 
+checkTypeI
 	:: Int		-- Indent level, for debugging. 
 	-> Type 	-- Type to check.
-	-> [Type] 	-- Stack of types bound via (kind type) application 
-			--	referenced by the De'Bruijn type indicies in
-			--	the types of witness constructors.
 	-> Env 		-- Type and Kind Environment.
 	-> Kind
 
-checkType' n tt stack env
+checkTypeI n tt env
  = if debugType
     then let !kind
 		= trace (setColumn (n*indenting) % vcat
 			[ ppr (replicate 70 '-') <> "Type" <> n
 			, ppr tt ])
-		$ checkType_trace n tt stack env
+		$ checkType_trace n tt env
 	 in trace 
 		(setColumn (n*indenting) % vcat 
 		[ "kind:   " 	% kind
 		, ppr tt
 		, "--" <> "Type" <> n <> ppr (replicate 70 '-')])
 		kind
-   else	checkType_trace n tt stack env
+   else	checkType_trace n tt env
 
 
 -- NOTE: All kinds returned by this function must be checked by checkKind at some point.
-checkType_trace m tt stack env
+checkType_trace :: Int -> Type -> Env -> Kind
+checkType_trace m tt env
  = let n	= m + 1
    in case tt of
-	TNil	-> panic stage $ "TNil should not appear in core types.\n"
+	TNil	
+	 -> panic stage $ "TNil should not appear in core types.\n"
 	
 	TForall b k1 t2
 	 -> case b of
 		BNil	
-		 ->	checkKind' n k1 stack env	
-		 `seq`	checkType' n t2 stack env
+		 ->	checkKindI n k1 env	
+		 `seq`	checkTypeI n t2 env
 		
 		BVar v	
-		 -> 	checkKind' n k1 stack env
+		 -> 	checkKindI n k1 env
 		 `seq`	withKind v k1 env	$!
-			checkType' n t2 stack
+			checkTypeI n t2
 			
 		BMore v t1
-		 -> 	checkKind' n k1 stack env
+		 -> 	checkKindI n k1 env
 		 `seq`	withKind  v k1 env 	$! \env'  ->
 		   	withBound v t1 env' 	$!
-		   	checkType' n t2 stack
+		   	checkTypeI n t2
 	
 	-- TODO: Add fetters to environment.
 	TFetters t1 fs
 	 ->	lintList lintF fs env
-	 `seq`	checkType' n t1 stack env
+	 `seq`	checkTypeI n t1 env
 	
 	-- TODO: Add constraints to environment.
 	TConstrain t1 crs
 	 ->	lintCRS crs env
-	 `seq`	checkType' n t1 stack env
+	 `seq`	checkTypeI n t1 env
 	
-	-- TODO: Just use one panic case here.
+	-- TODO: We want a faster way of doing the substitution in
+	--       in the kind/type application.
 	TApp t1 t2
-	 -> case checkType' n t1 stack env of
-		KFun k11 k12
-		 | k11 == checkType' n t2 stack env 
-		 -> 	  checkKind' n k12 stack env
-		 `seq`	k12
+	 -> let k2	= checkTypeI n t2 env
+	    in case checkTypeI n t1 env of
+		k1@(KFun k11 k12)
+		 | k11 == k2	-> uncheckedApplyKT k1 t2
 		
-		 | otherwise
-		 -> panic stage 
-		 $ vcat	[ ppr "Kind error in type application."
-			, ppr "    kind:           whatever" -- checkType' n' t2 stack env	
-			, "    does not match: " % k11 
-			, "    in type:        " % tt ]
-
 		k1 -> panic stage
 		 $ vcat [ ppr "Kind error in type application."
-			, "    cannot apply type: " % t2
-			, "    to type:           " % t1
-			, "    which has kind:    " % k1]
+			, "Cannot apply type:\n" 	%> t2
+			, "of kind:\n"			%> k2
+			, "to type:\n" 			%> t1
+			, "of kind:\n" 			%> k1]
 		
-				
+	-- TODO: nub is horrible.
 	TSum k ts
-	 -> 	checkKind' n k stack env
-	 `seq`	case nub $ (k : map (\t -> checkType' n t stack env) ts) of
+	 -> 	checkKindI n k  env
+	 `seq`	case nub $ (k : map (\t -> checkTypeI n t env) ts) of
 		 [k']	-> k'
 		 _	-> panic stage
 			$  "Kind error in type sum."
 			%  "   type:           " % tt
 	
+	-- Type constructors.
 	TCon tc
 	 -> let k	= tyConKind tc
-	    in	checkKind' n k stack env 
+	    in	checkKindI n k env 
 		 `seq` k
 		
+	-- Type variables.
 	TVar _ (UMore{})	-> panic stage $ ppr "checkType: TVar UMore not finished"
 	TVar _ (UClass{})	-> panic stage $ ppr "checkType: TVar UClass not finished"
 	
-			
 	TVar k (UVar v)
-	 ->    checkKind' n k stack env
+	 ->    checkKindI n k env
 	 `seq` case Map.lookup v (envKinds env) of
 		Nothing	
 		 | envClosed env
-		 -> panic stage
+		 -> panic stage	
 			$ "Type variable " % v % " is out of scope.\n"
 			
-		 | otherwise
-		 -> k
+		 | otherwise		-> k
 
-		Just k'
-		 | k == k'	
-		 -> k
+		Just k'	 | k == k'	-> k
 
 		 | otherwise	
 		 -> panic stage
@@ -144,17 +131,6 @@ checkType_trace m tt stack env
 	TVar k (UIndex i)
 	 -> k
 	
-{-	 -> let	getTypeIx 0 (x:_)	= x
-		getTypeIx z (_:xs)	= getTypeIx (z-1) xs
-		getTypeIx _ []		
-			= panic stage $ vcat
-			[ ppr "Debruijn index in type is not bound"
-			, "For index:\n" 	%> i
-			, "stack was:\n" 	%> stack]
-			
-	    in	getTypeIx i stack
--}
-
 	TError{}
 	 -> panic stage $ ppr "checkType: no match for TError"
 
@@ -169,39 +145,25 @@ lintCRS _ _	= ()
 
 -- Kind -------------------------------------------------------------------------------------------
 -- | Check a kind, returning its superkind.
+-- TODO: do the superkind applications.
 checkKindI :: Int -> Kind -> Env -> Super
 checkKindI n kk env
-	= checkKind' n kk [] env
-
-
--- TODO: do the superkind applications.
-checkKind' 
-	:: Int
-	-> Kind 	-- Kind to check.
-	-> [Type] 	-- Stack of type bound by (kind type) application
-			-- 	These are referenced by the De'Bruijn type indicies in
-			--	the types of witness constructors.
-	-> Env
-	-> Super
-
-checkKind' n kk stack env
  = if debugKind
     then let !super
 		= trace (setColumn (n*indenting) % vcat
 			[ ppr (replicate 70 '-') <> "Kind" <> n
-			, ppr kk 
-			, "stack = " % stack])
-		$ checkKind_trace n kk stack env
+			, ppr kk])
+		$ checkKind_trace n kk env
 	 in trace 
 		(setColumn (n*indenting) % vcat 
 		[ "super:   " 	% super
 		, ppr kk
 		, "--" <> "Kind" <> n <> ppr (replicate 70 '-')])
 		super
-   else	checkKind_trace n kk stack env
+   else	checkKind_trace n kk env
 
 
-checkKind_trace m kk stack env
+checkKind_trace m kk env
  = let n	= m + 1
    in case kk of
  	KNil	-> panic stage $ "checkKind: found a KNil"
@@ -212,12 +174,12 @@ checkKind_trace m kk stack env
 	 `seq`	super
 	
 	KFun k1 k2
-	 ->	checkKind' n k1 stack env
-	 `seq`	checkKind' n k2 stack env
+	 ->	checkKindI n k1 env
+	 `seq`	checkKindI n k2 env
 	 
 	KApp k1 t1
-	 | SFun k11 w	<- checkKind' n k1 stack env 
-	 , checkType' n t1 stack env == k11
+	 | SFun k11 w	<- checkKindI n k1 env 
+	 , checkTypeI n t1 env == k11
 	 -> checkSuper w `seq` w
 
  	 | otherwise
@@ -229,8 +191,8 @@ checkKind_trace m kk stack env
 	
 	KSum []	-> SProp
 	KSum (k:ks)
-	 -> 	checkKind' n k stack env
-	 `seq`	checkKind' n (KSum ks) stack env
+	 -> 	checkKindI n k env
+	 `seq`	checkKindI n (KSum ks) env
 	
 	
 -- | Check that a kind is an atomic kind.
@@ -260,6 +222,6 @@ checkSuper ss
 	SFun k super
 	 -> 	checkSuper super
 	 `seq`	checkAtomicKind  k
-	
+
 
 

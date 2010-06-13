@@ -16,6 +16,7 @@ import DDC.Var
 import Data.Maybe
 import Data.Map			(Map)
 import Data.Sequence		(Seq)
+import qualified Shared.VarUtil	as Var
 import qualified Data.Sequence	as Seq
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
@@ -82,10 +83,14 @@ checkExp_trace m xx env
 	 `seq` let !clo	= trimClosureC_constrainForm Set.empty Set.empty 
 				$ makeTFree v 
 				$ toConstrainFormT t
-		   clo' 
-			| isTBot clo				= Map.empty
-			| Just (v', t')	<- takeTFree clo	= Map.singleton v' t'
-			| otherwise = panic stage "checkExp[XVar]: no match"
+
+		   -- TODO: we're ignoring closure terms due to constructors
+		   --       of arity zero, like True :: Bool %r1.
+		   --       Is is good enough to say this is ok because the region is always constant?
+		   clo' | isTBot clo			  = Map.empty
+			| Var.isCtorName v		  = Map.empty
+			| Just (v', t')	<- takeTFree clo  = Map.singleton v' t'
+			| otherwise 			  = panic stage "checkExp[XVar]: no match"
 			
 	       in ( t, Seq.singleton tPure, clo')
 
@@ -105,8 +110,9 @@ checkExp_trace m xx env
 	 | (t1, eff, clo)	<- checkExp' n x env
 	 , k2			<- checkTypeI n t2 env
 	 -> case t1 of
-		TForall BNil k11 _
-		 | k11 == k2	-> (t1, eff, clo)
+		TForall BNil k11 t12
+		 | k11 == k2	
+		 -> (t12, eff, clo)
 		
 		TForall (BVar v) k11 t12
 		 | k11 == k2	
@@ -122,10 +128,11 @@ checkExp_trace m xx env
 		    , fmap (substituteT (subSingleton v t2)) clo)
 		
 		_ -> panic stage $ vcat
-			[ ppr "Type error in application."
-			, "Cannot apply:   " % t2
-			, "to expression:  " % x
-			, "in applicatoin: " % xx]
+			[ ppr "Type error in (value/type) application."
+			, "Cannot apply type:\n" %> t2,	blank
+			, "of kind:\n"		 %> k2, blank
+			, "to expression:\n" 	 %> x,	blank
+			, "with type:\n"	 %> t1,	blank]
 			
 
 	-- Value abstraction

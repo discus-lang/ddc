@@ -17,7 +17,9 @@ module DDC.Type.Kind
 	, tyConKind
 
 	-- * Kind reconstruction
-	, kindOfType)
+	, kindOfType
+	, applyKT
+	, uncheckedApplyKT)
 where
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -176,9 +178,9 @@ tyConKind tyCon
 
 
 -- Kind reconstruction ----------------------------------------------------------------------------
--- | Determine the kind of a type.
---   Panics on malformed types.
---
+-- | Quickly determine the kind of a type.
+--   This does not real checking, so will not catch all errors involving malformed types.
+--   If you want that then use the "DDC.Core.Lint" modules.
 kindOfType :: Type -> Kind
 kindOfType tt
  = case tt of
@@ -186,44 +188,71 @@ kindOfType tt
 	TVar k _		-> k
 	TCon tyCon		-> (tyConKind tyCon)
 	TSum  k _		-> k
-
-	TApp t1 t2		
-	 | KFun _ k12		<- kindOfType t1
-	 -> betaTK 0 t2 k12
-
-	TApp t1	_	
-	 -> panic stage 
-		$ vcat 	[ ppr "kindOfType: Kind error in type application"
-			, "type:    " 	% prettyType t1
-			, "of kind: " 	% prettyKind (kindOfType t1)
-			, ppr "is not a function"
-			, "when determining the kind of: " % prettyType tt ]
-	
+	TApp t1 t2		-> uncheckedApplyKT (kindOfType t1) t2	
 	TForall  _ _ t2		-> kindOfType t2
 	TFetters   t1 _		-> kindOfType t1
 	TConstrain t1 _		-> kindOfType t1
 	TError k _		-> k
-		
+	
 
--- de bruijn style beta evalation
---	used to handle substitution arrising from application of KForall's in kindOfType.
-betaTK :: Int -> Type -> Kind -> Kind
-betaTK depth tX kk
+
+-- Kind/Type application --------------------------------------------------------------------------
+-- | Apply a type to a kind, yielding a new kind.
+--   This performs a de Bruijn beta reduction, substituting types for indices.
+applyKT :: Kind -> Type -> Kind
+applyKT k1 t2
+	= applyKT_check False k1 t2
+
+
+-- | Like `applyKT` but don't check that the argument has the right kind, which is a bit faster.
+uncheckedApplyKT :: Kind -> Type -> Kind
+uncheckedApplyKT k1 t2
+	= applyKT_check False k1 t2
+	
+		
+applyKT_check :: Bool -> Kind -> Type -> Kind
+applyKT_check check k1 t2
+ = case k1 of
+	KFun k11 k12
+	 | not check
+	 -> applyKT' 0 k12 t2
+
+	 | otherwise
+	 -> let k2	= kindOfType t2
+	    in  if k2 == k11 
+		then   applyKT' 0 k12 t2
+		else panic stage $ vcat
+		 [ ppr "Kind error in (kind/type) application."
+		 , "Type:\n"			%> prettyType t2
+		 , "of kind:\n"			%> prettyKind k2
+		 , "does not match:\n"		%> prettyKind k11
+		 , "in application:\n"		%> prettyKind (KApp k1 t2)]
+	        
+
+	_ -> panic stage 
+	   $ vcat 
+		[ ppr "Kind error in (kind/type) application."
+		, "kind:"			% prettyKind k1
+		, ppr "is not a kind function."
+		, ppr "in application:\n"	%> prettyKind (KApp k1 t2)]
+
+applyKT' depth kk tX
  = case kk of
  	KNil			-> kk
 	KCon{}			-> kk
-	KFun k1 k2		-> KFun k1 (betaTK (depth + 1) tX k2)
-	KApp k t		-> KApp (betaTK depth tX k) (betaTT depth tX t)
-	KSum ks			-> KSum $ map (betaTK depth tX) ks
+	KFun k1 k2		-> KFun k1 (applyKT' (depth + 1) k2 tX)
+	KApp k t		-> KApp (applyKT' depth k tX) (applyKT_type depth tX t)
+	KSum ks			-> KSum $ map (flip (applyKT' depth) tX) ks
 		
-	
-betaTT :: Int -> Type -> Type -> Type
-betaTT depth tX tt
- = let down	= betaTT depth tX
+
+applyKT_type :: Int -> Type -> Type -> Type
+applyKT_type depth tX tt
+ = let down	= applyKT_type depth tX
    in  case tt of
    	TNil			-> tt
 	TForall b k t		-> TForall b k (down t)
-	TFetters t fs		-> TFetters (down t) fs
+	TFetters t fs		-> TFetters    (down t) fs
+	TConstrain t crs	-> TConstrain  (down t) crs
 	TApp t1 t2		-> TApp (down t1) (down t2)
 	TSum k ts		-> TSum k (map down ts)
 	TCon{}			-> tt
@@ -233,7 +262,5 @@ betaTT depth tX tt
 	 | otherwise		-> tt
 
 	TVar{}			-> tt
-	 	
-	_			-> panic stage
-				$ "betaTT: no match for " % show tt
+	TError{}		-> tt
 
