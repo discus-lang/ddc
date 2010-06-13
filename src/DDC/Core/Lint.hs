@@ -32,6 +32,7 @@ import DDC.Type
 import DDC.Var
 import Data.List
 import Data.Maybe
+import Control.Monad
 import Core.Util		(maybeSlurpTypeX)
 import Data.Map			(Map)
 import Data.Sequence		(Seq)
@@ -174,25 +175,33 @@ checkExp_trace xx env
 	 `seq` checkType effAnn env
 	 `seq` checkType cloAnn env 
 	 `seq` let !(t2, eff2, clo2)	= withType  v1 t1 env (checkExp' x2)
-		   !effAnn'		= Seq.singleton effAnn
+
+		   -- The effect returned from checkExp' will tend to contain a lot
+		   -- of bottoms and repeated terms it. These get discarded by makeTSum.
+		   !eff2'		= makeTSum kEffect $ Foldable.toList eff2
+		   !effAnn'		= effAnn
+		
+		   -- The closure annotation on the abstraction is the closure of the body
+		   -- minus the variable that is bound at this point.
+		   !clo2_cut		= Map.delete v1 clo2
 		   !cloAnn'		= slurpClosureToMap cloAnn
 
-	       in  if effAnn' /= eff2	
+	       in  if effAnn' /= eff2'	
 			then panic stage $ vcat
 				[ ppr "Effect mismatch in lambda abstraction."
-				, "Effect of body:\n" 			 %> eff2,    blank
-				, "does not match effect annotation:\n"  %> effAnn', blank
-				, "in expression:\n"			 %> xx,      blank]
+				, "Effect of body:\n" 			%> eff2',   blank
+				, "does not match effect annotation:\n"	%> effAnn', blank
+				, "in expression:\n"			%> xx,      blank]
 
-	           else if cloAnn' /= clo2	
+	           else if cloAnn' /= clo2_cut	
 			then panic stage $ vcat
 				[ ppr "Closure mismatch in lambda abstraction."
-				, "Closure of body:\n"		 	 %> clo2,    blank
-				, "does not match closure annotation:\n" %> cloAnn', blank
-				, "in expression:\n"			 %> xx,	     blank]
+				, "Closure of abstraction:\n"	 	%> clo2_cut, blank
+				, "does not match annotation:\n" 	%> cloAnn',  blank
+				, "in expression:\n"			%> xx,	      blank]
 
 		   else ( makeTFun t1 t2 effAnn cloAnn
-		        , eff2
+		        , Seq.singleton eff2'
 		        , clo2)
 
 	-- TODO: Carry a sequence of effects, and a map of closures back up the tree.
@@ -226,6 +235,13 @@ checkExp_trace xx env
 	-- Match expression
 	XMatch aa	-> checkAlts  aa env
 
+	-- Local region binding.
+	-- TODO: check r not free in type.
+	-- TODO: mask effects on r.
+	XLocal r ws x
+	 -> let !(t1, eff, clo)	= checkExp' x env
+	    in	(t1, eff, clo)
+
 	-- Primitive operator.
 	XPrim  prim xs	-> checkPrim prim xs env
 
@@ -241,8 +257,9 @@ checkExp_trace xx env
 			, "  on expression:\n"			%> xx]
 		
 	_ -> panic stage 
-		$ vcat 	[ "checkExp: no match for " <> xx
-			, ppr $ show xx]
+		$ vcat 	[ ppr "checkExp: no match for:"
+		  	, ppr xx]
+			-- , ppr $ show xx]
 		
 
 
@@ -290,9 +307,42 @@ checkAlts' _ [] types effAcc cloAcc
 	, effAcc
 	, cloAcc)
 
-checkAlts' env (AAlt _ x : as) types effAcc cloAcc
- = let	(t, eff, clo)	= checkExp' x env
-   in	checkAlts' env as (t : types) (eff Seq.>< effAcc) (Map.union clo cloAcc)
+checkAlts' env (AAlt gs x : as) types effAcc cloAcc
+ = let	
+	-- Check the guards. 
+	-- The variables bound by the patterns are in scope in successive guards,
+	-- as well as in the right (body) of the alternative.
+	(env', effsGuard, closGuard)
+		= checkGuards gs env
+	
+	(tBody, effBody, cloBody)
+		= checkExp' x env'
+
+   in	checkAlts' env as 
+		(tBody : types)
+		(effsGuard Seq.>< effAcc Seq.>< effBody)
+		(Map.unions [cloBody, cloAcc, closGuard])
+
+
+-- Guards -----------------------------------------------------------------------------------------
+-- | Check some pattern guards.
+--   The variables bound by the pattern are in scope in successive guards.
+checkGuards :: [Guard] -> Env -> (Env, Seq Effect, Map Var Closure)
+checkGuards gs env
+	= checkGuards' gs env Seq.empty Map.empty
+	
+checkGuards' [] env effAcc cloAcc
+	= (env, effAcc, cloAcc)
+
+checkGuards' (GExp pat x : rest) env effAcc cloAcc
+ = let	(tExp, effExp, cloExp)	= checkExp' x env
+	
+	-- TODO: check against type of pattern,
+	--	 and add the vars to the environment.
+	
+   in	checkGuards' rest env 
+		(effExp Seq.>< effAcc)
+		(Map.union cloExp cloAcc)
 
 
 -- Type -------------------------------------------------------------------------------------------
