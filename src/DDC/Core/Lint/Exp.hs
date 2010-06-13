@@ -90,9 +90,16 @@ checkExp_trace m xx env
 		   clo' | isTBot clo			  = Map.empty
 			| Var.isCtorName v		  = Map.empty
 			| Just (v', t')	<- takeTFree clo  = Map.singleton v' t'
-			| otherwise 			  = panic stage "checkExp[XVar]: no match"
+			| otherwise			  = Map.singleton v clo		  
 			
 	       in ( t, Seq.singleton tPure, clo')
+
+	-- Literal values
+	XLit litFmt
+	 -> let	Just tcLit	= tyConOfLiteralFmt litFmt
+	    in	( TCon tcLit
+		, Seq.singleton tPure
+		, Map.empty)
 
 	-- Type abstraction
 	XLAM BNil k x
