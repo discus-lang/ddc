@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+-- {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-unused-binds -fno-warn-unused-imports #-}
 
 -- | Check for type errors or other problems in a core program, and `panic`
@@ -47,13 +47,11 @@ trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- Glob -------------------------------------------------------------------------------------------
 checkGlobs :: Glob -> Glob -> ()
-checkGlobs _ _ -- cgHeader cgCore 
-	= ()
-{-
+checkGlobs cgHeader cgCore 	
 	= checkList (checkBind (envInit cgHeader cgCore))
 	$ Map.elems
 	$ globBind cgCore
--}
+
 
 -- Top --------------------------------------------------------------------------------------------
 checkBind :: Env -> Top -> ()
@@ -71,7 +69,9 @@ checkBind env pp
 -- | Check an expression, returning its type.
 checkExp :: Exp -> Env -> (Type, Effect, Closure)
 checkExp xx env
- = let	result@(t, effs, mclo)	= checkExp' xx env
+ = let	-- NOTE: This binding must be strict because of the way checkBind discards
+	--	 the result of checkExp above.
+	!(t, effs, mclo)	= checkExp' xx env
    in	( t
 	, makeTSum kEffect $ Foldable.toList effs
 	, makeTSum kClosure  [makeTFree v t' | (v, t') <- Map.toList mclo])
@@ -84,7 +84,7 @@ checkExp'
 	   , Map Var Type)	-- closure of expression,
 
 checkExp' xx env
- = let	result@(t, eff, clo)	= checkExp_trace xx env
+ = let	!result@(t, eff, clo)	= checkExp_trace xx env
    in	trace (vcat 
 		[ ppr $ (replicate 70 '-' ++ " checkExp")
 		, ppr xx
@@ -110,7 +110,7 @@ checkExp_trace xx env
 	 -- TODO: make a version of the trimmer that doesn't need the initial sets.
 	 | otherwise
 	 -> checkType' t [] env 
-	 `seq` let clo	= trimClosureC_constrainForm Set.empty Set.empty 
+	 `seq` let !clo	= trimClosureC_constrainForm Set.empty Set.empty 
 				$ makeTFree v 
 				$ toConstrainFormT t
 		   clo' 
@@ -161,7 +161,7 @@ checkExp_trace xx env
 
 	-- Value abstraction
 	-- TODO: check effect and closure annots
-	XLam v1 t1 x2 eff clo
+	XLam v1 t1 x2 effAnn cloAnn
 	 | varNameSpace v1 /= NameValue
 	 -> panic stage
 		$ "checkExp invalid namespace for variable "
@@ -171,14 +171,27 @@ checkExp_trace xx env
 	 --	  use function checkTypeHasKind
 	 | otherwise
 	 ->    checkType t1 env
-	 `seq` checkType eff env
-	 `seq` checkType clo env 
-	 `seq` let (t2, eff2, clo2)	= withType  v1 t1 env (checkExp' x2)
-		   eff'			= Seq.singleton eff
-		   clo'			= slurpClosureToMap clo
-	       in  if      eff' /= eff2	then panic stage $ "effect mismatch"
-	           else if clo' /= clo2	then panic stage $ "closure mismatch"
-		   else ( makeTFun t1 t2 eff clo
+	 `seq` checkType effAnn env
+	 `seq` checkType cloAnn env 
+	 `seq` let !(t2, eff2, clo2)	= withType  v1 t1 env (checkExp' x2)
+		   !effAnn'		= Seq.singleton effAnn
+		   !cloAnn'		= slurpClosureToMap cloAnn
+
+	       in  if effAnn' /= eff2	
+			then panic stage $ vcat
+				[ ppr "Effect mismatch in lambda abstraction."
+				, "Effect of body:\n" 			 %> eff2,    blank
+				, "does not match effect annotation:\n"  %> effAnn', blank
+				, "in expression:\n"			 %> xx,      blank]
+
+	           else if cloAnn' /= clo2	
+			then panic stage $ vcat
+				[ ppr "Closure mismatch in lambda abstraction."
+				, "Closure of body:\n"		 	 %> clo2,    blank
+				, "does not match closure annotation:\n" %> cloAnn', blank
+				, "in expression:\n"			 %> xx,	     blank]
+
+		   else ( makeTFun t1 t2 effAnn cloAnn
 		        , eff2
 		        , clo2)
 
@@ -196,7 +209,7 @@ checkExp_trace xx env
 	 , (t2, eff2, clo2)	<- checkExp' x2 env
 	 -> case takeTFun t1 of
 		Just (t11, t12, eff3, _)
-		 | t11 == t2
+		 | t11 == t2					-- TODO: use equiv
 		 -> ( t12
 		    , eff1 Seq.>< eff2 Seq.>< Seq.singleton eff3
 		    , Map.union clo1 clo2)
@@ -219,8 +232,8 @@ checkExp_trace xx env
 	-- Type annotation
 	XTau t x
 	 ->    checkType t env
-	 `seq` let result@(t', _, _)	= checkExp' x env
-	       in if t == t'		then result
+	 `seq` let !result@(t', _, _)	= checkExp' x env
+	       in if t == t'		then result		-- TODO: use equiv
 		  else panic stage $ vcat
 			[ ppr "Type error in type annotation.", blank
 			, "  Reconstructed type:\n"		%> t', blank
@@ -306,8 +319,10 @@ checkType' tt stack env
 	
 	TForall b k1 t2
 	 -> case b of
-		BNil		-> panic stage $ ppr "checkType: TForall BNil not finished"
-
+		BNil	
+		 ->	checkKind' k1 stack env	
+		 `seq`	checkType' t2 (k1 : stack) env
+		
 		BVar v	
 		 -> 	checkKind' k1 stack env
 		 `seq`	withKind v k1 env	$!
@@ -441,9 +456,9 @@ checkKind' kk stack env
 	 `seq`	checkKind' k2 stack env
 	 
 	KApp k1 t1
-	 | KFun _ k12	<- k1
-	 , checkType' t1 stack env == k1
-	 -> 	checkKind' k12 stack env
+	 | SFun k11 w	<- checkKind' k1 stack env 
+	 , checkType' t1 stack env == k11
+	 -> checkSuper w `seq` w
 
  	 | otherwise
  	 -> panic stage $ vcat

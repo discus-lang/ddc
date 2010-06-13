@@ -29,7 +29,7 @@ checkList :: (a -> ()) -> [a] -> ()
 checkList f xx
  = case xx of
 	[]	-> ()
-	x : xs	-> f x `seq` checkList f xs `seq` ()
+	x : xs	-> f x `seq` checkList f xs
 
 
 subSingleton v t v'
