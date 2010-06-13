@@ -333,7 +333,8 @@ makeTFreeWithKind k v tt
 	| isValueKind   k	= TApp (tFreeType   v) tt
 	| isRegionKind  k	= TApp (tFreeRegion v) tt
 	| otherwise		
-	= panic stage ("makeTFree: not a region, value or closure type " % ppr (show tt))
+	= freakout stage ("makeTFree: not a region, value or closure type " % ppr (show tt))
+	$ TApp (tFreeType v) tt
 
 
 -- | Make an application of the $Danger closure constructor.
