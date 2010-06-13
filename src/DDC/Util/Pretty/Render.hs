@@ -54,6 +54,8 @@ reduce	state xx
 	 ->   [ PTabAdd (stateTabWidth state)]
 	   ++ reduce state ss
 	   ++ [PTabAdd (- (stateTabWidth state))]
+	
+	PSetColumn{}		-> [xx]
 	 
 	PTabNext		-> [PTabNext]
 	PTabAdd{}		-> [xx]
@@ -118,4 +120,17 @@ spaceTab state xx
 		state'	= state { stateCol = stateCol state + colLen }
 	    in	replicate (n - length cs) c ++ cs ++ spaceTab state' xs
 
+	PSetColumn i : xs
+	 -> let	col	= stateIndent state
+		state'	= state { stateIndent = i }
+		pad	= if i > col
+			   then replicate (i - col) ' '
+			   else ""
+		
+	    in	pad ++ spaceTab state' xs
+
 	_ -> error "DDC.Util.Pretty.Render.spaceTab: no match. Should have been elimiated by reduce fn."
+	
+	
+	
+	

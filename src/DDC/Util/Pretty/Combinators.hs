@@ -16,6 +16,7 @@ module DDC.Util.Pretty.Combinators
 	, padLc, padL 
 	, parens
 	, braces
+	, setColumn
 	, ifMode
 	, pprIf)
 where
@@ -166,6 +167,12 @@ parens a	= "(" % a % ")"
 braces :: (Pretty [Char] m, Pretty a m) => a -> PrettyM m
 braces a	= "{" % a % "}"
 
+
+-- Set starting state ---------------------------------------------------------
+-- | Set the starting column.
+setColumn :: Int -> PrettyM m
+setColumn i
+ = PrettyM $ \_ -> PSetColumn i
 
 -- IfMode ---------------------------------------------------------------------
 -- | Choose a pretty thing based on the mode.

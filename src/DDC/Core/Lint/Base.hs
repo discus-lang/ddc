@@ -1,6 +1,11 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Core.Lint.Base
-	( lintList
+	( debugExp
+	, debugType
+	, debugKind
+	, indenting
+	, trace
+	, lintList
 	, checkList
 	, subSingleton
 	, slurpClosureToMap)
@@ -10,10 +15,17 @@ import DDC.Main.Pretty
 import DDC.Type
 import DDC.Var
 import DDC.Core.Lint.Env
+import qualified Debug.Trace
 import qualified Data.Map	as Map
 import Data.Map			(Map)
 
-stage	= "DDC.Core.Lint.Base"
+stage		= "DDC.Core.Lint.Base"
+
+debugExp	= True
+debugType	= True
+debugKind	= True
+indenting	= (2 :: Int)
+trace ss x	= Debug.Trace.trace (pprStrPlain ss) x
 
 -- | Check for lint in some list of things.
 lintList ::  (a -> Env -> b) -> [a] -> Env -> ()

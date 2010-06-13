@@ -14,24 +14,24 @@ import Data.Sequence		(Seq)
 import Data.Map			(Map)
 import qualified DDC.Var.VarId	as Var
 import qualified DDC.Var.PrimId	as Var
-import {-# SOURCE #-} DDC.Core.Lint
+import {-# SOURCE #-} DDC.Core.Lint.Exp
 import qualified Data.Sequence	as Seq
 
 stage	= "DDC.Core.Lint.Prim"
 
 -- | Check an application of a primitive operator.
-checkPrim :: Prim -> [Exp] -> Env -> (Type, Seq Effect, Map Var Closure)
-checkPrim pp xs env
+checkPrim :: Int -> Prim -> [Exp] -> Env -> (Type, Seq Effect, Map Var Closure)
+checkPrim n pp xs env
  = case (pp, xs) of
 	(MBox,   [XPrimType r, x])
-	 -> let (t, eff, clo)	= checkExp' x env
+	 -> let (t, eff, clo)	= checkExp' (n+1) x env
 		Just t'		= boxedVersionOfUnboxedType r t
 	    in	( t'
 		, eff
 		, clo)
 		
 	(MUnbox, [XPrimType r, x])
-	 -> let	(t, eff, clo)	= checkExp' x env
+	 -> let	(t, eff, clo)	= checkExp' (n+1) x env
 		Just t'		= unboxedVersionOfBoxedType r t
 	    in	( t'
 		, eff Seq.|> TApp tRead r

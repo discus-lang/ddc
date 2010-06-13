@@ -39,6 +39,9 @@ data PrettyPrim
 	-- | An indented pretty thing.
 	| PIndent PrettyPrim
 
+	-- | Set the starting column
+	| PSetColumn Int
+
 	-- | A pretty thing in a left/right justified column of the given width
 	--	with empty space padded with a char.
 	| PPadLeft  Int Char PrettyPrim
