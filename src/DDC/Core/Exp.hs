@@ -130,8 +130,7 @@ data Exp
 	| XLocal	Var	[(Var, Type)] Exp
 
 	-- | Call some primitive function.
-	--   We don't use general function application for these as they must
-	--   always be fully applied.
+	--   TODO: Dump the Exp list and just use regular applicaton.
 	| XPrim		Prim 	[Exp]
 
 	-- | Hacks, used in the exp list in an XPrim only.

@@ -197,6 +197,7 @@ prettyTypeSplit	   tt
 	 
 	t -> prettyTypeSplit_crs t
 
+prettyTypeSplit_crs :: Type -> Str
 prettyTypeSplit_crs xx
  = let down x = case x of
 			TForall{}	-> parens $ ppr x
@@ -207,10 +208,10 @@ prettyTypeSplit_crs xx
 	TConstrain t crs
 	 -> down t % "\n"
 	 % ":- "
-	 % (vcat
-		[ vcat [t1 %> " =  " % t2 | (t1, t2) <- Map.toList $ crsEq crs]
-		, vcat [t1 %> " :> " % t2 | (t1, t2) <- Map.toList $ crsMore crs]
-		, vcat $ map ppr $ crsOther crs])
+	 % (punc (ppr "\n,  ") $ 
+		(  [t1 %> " =  " % t2	| (t1, t2) <- Map.toList $ crsEq crs]
+		++ [t1 %> " :> " % t2	| (t1, t2) <- Map.toList $ crsMore crs]
+		++ [ppr f 		| f        <- crsOther crs]))
 		
  	TFetters t fs
 	 -> down t 	% "\n" 

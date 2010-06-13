@@ -318,6 +318,7 @@ checkType' tt stack env
 	 ->	lintCRS crs env
 	 `seq`	checkType' t1 stack env
 	
+	-- TODO: Just use one panic case here.
 	TApp t1 t2
 	 -> case checkType' t1 stack env of
 		KFun k11 k12
