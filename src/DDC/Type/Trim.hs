@@ -49,6 +49,7 @@ debug		= False
 trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 
+-- Type -------------------------------------------------------------------------------------------
 -- | Trim the closure portion of this type.
 trimClosureT_constrainForm
 	:: Set Type	-- ^ Variables that are quantified in this context.
@@ -87,6 +88,7 @@ trimClosureT' quant rsData tt
 	_	-> tt
 
 
+-- Closure ----------------------------------------------------------------------------------------
 -- | Trim a closure down to its interesting parts.
 trimClosureC_constrainForm :: Set Type -> Set Type -> Closure -> Closure
 trimClosureC_constrainForm quant rsData cc
@@ -221,7 +223,9 @@ trimClosureC_t tag quant rsData tt
 	 -> []
 		
 	 | Just (_, _, (t:ts))	<- takeTData tt
-	 -> if isRegion t
+	 -> 
+	    -- If the primary region is mutable then all the variables under it are dangerous.
+	    if isRegion t
 	     then let 	rsData'	= Set.insert t rsData
 			vs	= freeVars (t:ts)
 	    	   in  	concatMap (trimClosureC_t tag quant rsData') (t:ts)
@@ -244,18 +248,8 @@ trimClosureC_t tag quant rsData tt
 	_ -> panic stage
 		$ "trimClosureC_t: no match for (" % tt % ")"
 
-makeFreeDanger tag rsData t
-	| Set.null rsData	= [t]
 
-	| otherwise		
-	= map (\r -> makeTDangerIfRegion tag r t) 
-	$ Set.toList rsData
-
-makeTDangerIfRegion tag r t
-	| isRegion t	= makeTFree tag t
-	| otherwise	= makeTDanger r t
-
-
+-- Fetter -----------------------------------------------------------------------------------------
 -- | Trim a fetter of a closure
 trimClosureC_tt 
 	:: Set Type 
@@ -288,3 +282,16 @@ trimClosureT_tt quant rsData c1 c2
 	
 	| otherwise
 	= c2
+
+
+
+makeFreeDanger tag rsData t
+	| Set.null rsData	= [t]
+
+	| otherwise		
+	= map (\r -> makeTDangerIfRegion tag r t) 
+	$ Set.toList rsData
+
+makeTDangerIfRegion tag r t
+	| isRegion t	= makeTFree tag t
+	| otherwise	= makeTDanger r t

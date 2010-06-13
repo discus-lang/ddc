@@ -115,11 +115,22 @@ toCoreT' table tt
 	 | Just (t11, t12, eff, clo) <- takeTFun tt
 	 -> makeTFun (down t11) (down t12) (down eff) (down clo)
 	
+
+	 -- We don't need TDanger types in the core language, 
+	 -- but we still need to remember value types or regions that are a part of the closure.
+	 -- 
+	 -- NOTE: Effect variables can be dangerous, so we can get terms like  x : %r1 $> !e1
+	 --       from the inferencer, but we can't form a term like (x : !e1) in the core 
+	 --       language because there isn't a corresponding TFree constructor of kind (! -> $).
+	 -- 
+	 -- v : t211 $> t212
 	 | Just (v,   t21)	<- takeTFree tt
 	 , Just (t211, t212)	<- takeTDanger t2
+	 , k211			<- kindOfType t211
+	 , k212			<- kindOfType t212
 	 -> makeTSum kClosure
-	 	[ makeTFree v (down t211)
-		, makeTFree v (down t212) ]
+	 	[ if hasKindTRC t211 then makeTFree v (down t211) else tBot kClosure
+		, if hasKindTRC t212 then makeTFree v (down t212) else tBot kClosure]
 	
 	 | otherwise
 	 -> TApp (down t1) (down t2)
@@ -127,6 +138,12 @@ toCoreT' table tt
 	_ 	-> panic stage 
 			$ "toCoreT: failed to convert " % tt 	% "\n"
 			% "    tt = " % show tt			% "\n"
+
+hasKindTRC :: Type -> Bool
+hasKindTRC tt
+ = let	k	= kindOfType tt
+   in	isRegionKind k || isValueKind k || isClosureKind k
+
 
 	
 -- TyCon -------------------------------------------------------------------------------------------
