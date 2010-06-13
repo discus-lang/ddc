@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Core Language.
 module DDC.Core.Exp
 	( module DDC.Core.Exp.Prim

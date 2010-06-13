@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Utils concerning Globs.
 module DDC.Core.Glob
 	( Glob(..)
@@ -99,7 +99,7 @@ globOfTree ps
 	--	they are defined in.
 	vsMethods	= Map.unions
 			$ map Map.fromList
-			[ map 	(\(vMethod, tMethod) -> (vMethod, vClass)) vtMethods
+			[ map 	(\(vMethod, _) -> (vMethod, vClass)) vtMethods
 				| PClassDict vClass _ vtMethods
 				<- Map.elems $ globClassDict globTops ]
 							

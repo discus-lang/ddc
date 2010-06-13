@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-unused-binds -fno-warn-unused-imports #-}
 
 -- | Check for type errors or other problems in a core program, and `panic`
@@ -46,7 +47,7 @@ trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- Glob -------------------------------------------------------------------------------------------
 checkGlobs :: Glob -> Glob -> ()
-checkGlobs cgHeader cgCore 
+checkGlobs _ _ -- cgHeader cgCore 
 	= ()
 {-
 	= checkList (checkBind (envInit cgHeader cgCore))
@@ -64,6 +65,7 @@ checkBind env pp
 	  	`seq` withType v t env (checkExp x)
 		`seq` ()
 
+	_ -> panic stage $ "checkBind: no match"
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Check an expression, returning its type.
@@ -72,7 +74,7 @@ checkExp xx env
  = let	result@(t, effs, mclo)	= checkExp' xx env
    in	( t
 	, makeTSum kEffect $ Foldable.toList effs
-	, makeTSum kClosure  [makeTFree v t | (v, t) <- Map.toList mclo])
+	, makeTSum kClosure  [makeTFree v t' | (v, t') <- Map.toList mclo])
 
 checkExp' 
 	:: Exp			-- expression to check
@@ -112,9 +114,10 @@ checkExp_trace xx env
 				$ makeTFree v 
 				$ toConstrainFormT t
 		   clo' 
-			| isTBot clo	= Map.empty
-			| Just (v, t)	<- takeTFree clo
-			= Map.singleton v t
+			| isTBot clo				= Map.empty
+			| Just (v', t')	<- takeTFree clo	= Map.singleton v' t'
+			| otherwise = panic stage "checkExp[XVar]: no match"
+			
 	       in ( t, Seq.singleton tPure, clo')
 
 	-- Type abstraction
@@ -133,7 +136,7 @@ checkExp_trace xx env
 	 | (t1, eff, clo)	<- checkExp' x env
 	 , k2			<- checkType t2 env
 	 -> case t1 of
-		TForall BNil k11 t12
+		TForall BNil k11 _
 		 | k11 == k2	-> (t1, eff, clo)
 		
 		TForall (BVar v) k11 t12
@@ -143,12 +146,18 @@ checkExp_trace xx env
 		    , fmap (substituteT (subSingleton v t2)) clo)
 		
 		-- TODO: check more-than constraint
-		TForall (BMore v t11) k11 t12
+		TForall (BMore v _) k11 t12
 		 | k11 == k2
 		 -> ( substituteT (subSingleton v t2) t12
 		    , fmap (substituteT (subSingleton v t2)) eff
 		    , fmap (substituteT (subSingleton v t2)) clo)
 		
+		_ -> panic stage $ vcat
+			[ ppr "Type error in application."
+			, "Cannot apply:   " % t2
+			, "to expression:  " % x
+			, "in applicatoin: " % xx]
+			
 
 	-- Value abstraction
 	-- TODO: check effect and closure annots
@@ -248,7 +257,7 @@ checkStmts' env (SBind Nothing x : ss) effAcc cloAcc
    in 	checkStmts' env ss (effAcc Seq.>< eff) (Map.union clo cloAcc)
 
 -- TODO: check type against on already in environment.
-checkStmts' env (SBind (Just v) x : ss) effAcc cloAcc
+checkStmts' env (SBind (Just _) x : ss) effAcc cloAcc
  = let	(_, eff, clo)	= checkExp' x env
    in	checkStmts' env ss (effAcc Seq.>< eff) (Map.union clo cloAcc)
 
@@ -261,14 +270,14 @@ checkAlts :: [Alt] -> Env -> (Type, Seq Effect, Map Var Closure)
 checkAlts as env
 	= checkAlts' env as [] Seq.empty Map.empty
 
-checkAlts' env [] types effAcc cloAcc
+checkAlts' _ [] types effAcc cloAcc
  = 	( fromMaybe 
 		(panic stage $ "checkAlts: can't join types")
 		(joinSumTs types)
 	, effAcc
 	, cloAcc)
 
-checkAlts' env (AAlt gs x : as) types effAcc cloAcc
+checkAlts' env (AAlt _ x : as) types effAcc cloAcc
  = let	(t, eff, clo)	= checkExp' x env
    in	checkAlts' env as (t : types) (eff Seq.>< effAcc) (Map.union clo cloAcc)
 
@@ -297,6 +306,8 @@ checkType' tt stack env
 	
 	TForall b k1 t2
 	 -> case b of
+		BNil		-> panic stage $ ppr "checkType: TForall BNil not finished"
+
 		BVar v	
 		 -> 	checkKind' k1 stack env
 		 `seq`	withKind v k1 env	$!
@@ -352,6 +363,10 @@ checkType' tt stack env
 	 -> let k	= tyConKind tc
 	    in	checkKind' k stack env 
 		 `seq` k
+		
+	TVar _ (UMore{})	-> panic stage $ ppr "checkType: TVar UMore not finished"
+	TVar _ (UClass{})	-> panic stage $ ppr "checkType: TVar UClass not finished"
+	
 			
 	TVar k (UVar v)
 	 ->    checkKind' k stack env
@@ -375,8 +390,8 @@ checkType' tt stack env
 			% "    does not match environment: " % k % "\n"
 		 
 	TVar _ (UIndex i)
-	 -> let	getTypeIx 0 (x:xs)	= x
-		getTypeIx n (x:xs)	= getTypeIx (n-1) xs
+	 -> let	getTypeIx 0 (x:_)	= x
+		getTypeIx n (_:xs)	= getTypeIx (n-1) xs
 		getTypeIx _ []		
 			= panic stage
 			$ "Debruijn index in type is not bound"
@@ -384,13 +399,16 @@ checkType' tt stack env
 	    in	getTypeIx i stack
 
 
+	TError{}
+	 -> panic stage $ ppr "checkType: no match for TError"
+
 -- | Lint a Fetter (unfinished)
 lintF :: Fetter -> Env -> ()
-lintF f env	= ()
+lintF _ _	= ()
 
 -- | Lint some constraints (unfinished)
 lintCRS :: Constraints -> Env -> ()
-lintCRS crs env	= ()
+lintCRS _ _	= ()
 
 
 -- Kind -------------------------------------------------------------------------------------------
@@ -423,9 +441,16 @@ checkKind' kk stack env
 	 `seq`	checkKind' k2 stack env
 	 
 	KApp k1 t1
-	 | KFun k11 k12	<- k1
+	 | KFun _ k12	<- k1
 	 , checkType' t1 stack env == k1
 	 -> 	checkKind' k12 stack env
+
+ 	 | otherwise
+ 	 -> panic stage $ vcat
+		[ ppr "Error in type/kind application"
+		, "Cannot apply type: " % t1
+		, "to kind:           " % k1
+		, "in kind:           " % kk]
 	
 	KSum []	-> SProp
 	KSum (k:ks)
