@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Core.Lint.Exp
 	( checkExp
 	, checkExp')	-- used by DDC.Core.Lint.Prim
@@ -160,15 +160,17 @@ checkExp_trace m xx env
 
 		   -- The effect returned from checkExp' will tend to contain a lot
 		   -- of bottoms and repeated terms it. These get discarded by makeTSum.
-		   !eff2'		= makeTSum kEffect $ Foldable.toList eff2
-		   !effAnn'		= effAnn
+		   !eff2'	= crushT $ makeTSum kEffect $ Foldable.toList eff2
+		   !effAnn'	= crushT $ effAnn
+		   !effEquiv	= equivTT effAnn' eff2'
 		
 		   -- The closure annotation on the abstraction is the closure of the body
 		   -- minus the variable that is bound at this point.
-		   !clo2_cut		= Map.delete v1 clo2
-		   !cloAnn'		= slurpClosureToMap cloAnn
+		   !clo2_cut	= Map.delete v1 clo2
+		   !cloAnn'	= slurpClosureToMap cloAnn
 
-	       in  if effAnn' /= eff2'	
+
+	       in  if not $ isEquiv effEquiv	
 			then panic stage $ vcat
 				[ ppr "Effect mismatch in lambda abstraction."
 				, "Effect of body:\n" 			%> eff2',   blank
@@ -220,7 +222,7 @@ checkExp_trace m xx env
 	-- Local region binding.
 	-- TODO: check r not free in type.
 	-- TODO: mask effects on r.
-	XLocal r ws x
+	XLocal _ _ x
 	 -> let !(t1, eff, clo)	= checkExp' n x env
 	    in	(t1, eff, clo)
 
@@ -251,7 +253,13 @@ checkStmts :: Int -> [Stmt] -> Env -> (Type, Seq Effect, Map Var Closure)
 
 -- TODO: need to recursively add types to environment.
 checkStmts n ss env
-	= checkStmts' n env ss Seq.empty Map.empty
+ = let	(t, eff, clo)	= checkStmts' n env ss Seq.empty Map.empty
+
+	-- Delete closure terms due to variables bound by the statements.
+	vsBound		= [v | SBind (Just v) _ <- ss ]
+  	clo'		= foldr Map.delete clo vsBound
+
+   in	(t, eff, clo')
 
 checkStmts' _ _ [] _ _
  	= panic stage
@@ -316,7 +324,7 @@ checkGuards n gs env
 checkGuards' _ [] env effAcc cloAcc
 	= (env, effAcc, cloAcc)
 
-checkGuards' n (GExp pat x : rest) env effAcc cloAcc
+checkGuards' n (GExp _ x : rest) env effAcc cloAcc
  = let	(_, effExp, cloExp)	= checkExp' (n + 1) x env
 	
 	-- TODO: check against type of pattern,

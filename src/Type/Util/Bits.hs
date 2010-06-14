@@ -4,9 +4,6 @@ module Type.Util.Bits
 	-- simple
 	( takeValueArityOfType
 		
-	-- crushing
-	, crushT
-
 	-- closure
 	, dropTFreesIn
 		
@@ -25,7 +22,6 @@ import Util
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
-import DDC.Type.Transform
 import DDC.Var
 import qualified Data.Set	as Set
 
@@ -54,32 +50,6 @@ takeValueArityOfType tt
 	TVar{}		-> Just 0
 	TError{}	-> Nothing
 	
-
--- Crushing ----------------------------------------------------------------------------------------
--- | do some simple packing
-crushT :: Type -> Type
-crushT t
- = let	t'	= transformT crushT1 t
-   in	if t == t'
-   	 then	t
-	 else 	crushT t'
-
-crushT1 :: Type -> Type
-crushT1 tt
- = case tt of
- 	TSum k ts			
-	 -> makeTSum k 		$ flattenTSum tt
-
-	TApp{}
-	 | Just (v,  t2)	<- takeTFree tt
-	 , Just (v', t)		<- takeTFree t2
-	 -> makeTFree v t
-	
-	 | Just (v, t2)		<- takeTFree tt
-	 , TSum k ts		<- t2
-	 -> makeTSum k $ map (makeTFree v) ts
-	
-	_	-> tt
 
 -- | Drop TFree terms concerning value variables in this set
 dropTFreesIn :: Set Var -> Closure -> Closure
