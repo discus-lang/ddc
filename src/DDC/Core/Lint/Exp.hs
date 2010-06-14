@@ -4,6 +4,7 @@ module DDC.Core.Lint.Exp
 	, checkExp')	-- used by DDC.Core.Lint.Prim
 where
 import Core.Util.Substitute
+-- import Core.Util.Slurp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Exp
@@ -143,7 +144,6 @@ checkExp_trace m xx env
 			
 
 	-- Value abstraction
-	-- TODO: check effect and closure annots
 	XLam v1 t1 x2 effAnn cloAnn
 	 | varNameSpace v1 /= NameValue
 	 -> panic stage
@@ -185,8 +185,8 @@ checkExp_trace m xx env
 				, "in expression:\n"			%> xx,	      blank]
 
 		   else ( makeTFun t1 t2 effAnn cloAnn
-		        , Seq.singleton eff2'
-		        , clo2)
+		        , Seq.singleton tPure
+		        , clo2_cut)
 
 	-- TODO: Carry a sequence of effects, and a map of closures back up the tree.
 	--	 When we hit a lambda we can then flatten the effects.
@@ -284,8 +284,6 @@ checkStmts' n env (SBind (Just _) x : ss) effAcc cloAcc
 
 -- Alternatives -----------------------------------------------------------------------------------
 -- | Check a list of match alternatives.
--- TODO: handle guards.
--- TODO: add effect from the match.
 checkAlts :: Int -> [Alt] -> Env -> (Type, Seq Effect, Map Var Closure)
 checkAlts n as env
 	= checkAlts' n env as [] Seq.empty Map.empty
@@ -298,39 +296,80 @@ checkAlts' _ _ [] types effAcc cloAcc
 	, cloAcc)
 
 checkAlts' n env (AAlt gs x : as) types effAcc cloAcc
- = let	
-	-- Check the guards. 
-	-- The variables bound by the patterns are in scope in successive guards,
-	-- as well as in the right (body) of the alternative.
-	(env', effsGuard, closGuard)
-		= checkGuards n gs env
+ = let	(tBody, effGuards, cloGuards)
+		= checkGuards n gs x env
 	
-	(tBody, effBody, cloBody)
-		= checkExp' (n+1) x env'
-
    in	checkAlts' n env as 
 		(tBody : types)
-		(effsGuard Seq.>< effAcc Seq.>< effBody)
-		(Map.unions [cloBody, cloAcc, closGuard])
+		(effGuards Seq.>< effAcc)
+		(Map.union cloGuards cloAcc)
 
 
 -- Guards -----------------------------------------------------------------------------------------
 -- | Check some pattern guards.
 --   The variables bound by the pattern are in scope in successive guards.
-checkGuards :: Int -> [Guard] -> Env -> (Env, Seq Effect, Map Var Closure)
-checkGuards n gs env
-	= checkGuards' n gs env Seq.empty Map.empty
+checkGuards :: Int -> [Guard] -> Exp -> Env -> (Type, Seq Effect, Map Var Closure)
+checkGuards n [] xBody env
+	= checkExp' (n+1) xBody env
 	
-checkGuards' _ [] env effAcc cloAcc
-	= (env, effAcc, cloAcc)
+checkGuards n (GExp (WVar v) x : rest) xBody env
+ = let	(tExp, effExp, cloExp)	
+		= checkExp' (n+1) x env
 
-checkGuards' n (GExp _ x : rest) env effAcc cloAcc
- = let	(_, effExp, cloExp)	= checkExp' (n + 1) x env
+	(tRest, effRest, cloRest)
+		= withType v tExp env
+		$ checkGuards n rest xBody
 	
-	-- TODO: check against type of pattern,
-	--	 and add the vars to the environment.
+	eff'	= effExp Seq.>< effRest
+	clo'	= Map.delete v $ Map.union cloExp cloRest
+		
+   in	(tRest, eff', clo')
+
+-- TODO: Check the the expression has the type of the literal.
+checkGuards n (GExp (WLit _ _) x : rest) xBody env
+ = let	(tExp, effExp, cloExp)
+		= checkExp' (n+1) x env
+
+	(tRest, effRest, cloRest)
+		= checkGuards n rest xBody env
+
+	effMatch = effectOfMatchAgainst tExp
+		
+	eff'	= effExp Seq.>< Seq.singleton effMatch Seq.>< effRest
+	clo'	= Map.union cloExp cloRest
 	
-   in	checkGuards' n rest env 
-		(effExp Seq.>< effAcc)
-		(Map.union cloExp cloAcc)
+   in	(tRest, eff', clo')
+
+-- TODO: check against type of the pattern.
+checkGuards n (GExp (WCon _ _vCon lvts) x : rest) xBody env
+ = let	(tExp, effExp, cloExp)	
+		= checkExp' (n+1) x env
+
+	-- TODO: add vars bound by pattern to environment.
+	(tRest, effRest, cloRest)
+		= checkGuards n rest xBody env
+
+	effMatch = effectOfMatchAgainst tExp
+	eff'	= effExp Seq.>< Seq.singleton effMatch Seq.>< effRest
+
+	-- Delete closure terms due to vars bound by the pattern.
+	vsBound	= [v | (_, v, _) <- lvts]
+	clo	= Map.union cloExp cloRest
+	clo'	= foldr Map.delete clo vsBound
+
+   in	(tRest, eff', clo')
+
+
+-- | Get the effect resulting from a pattern match against a value of this type.
+effectOfMatchAgainst :: Type -> Effect
+effectOfMatchAgainst tt
+ = case takeTData tt of
+	Just (_, _, (tR@(TVar kR _) : _))
+	 | isRegionKind kR
+	 -> TApp tRead tR
+	
+	Just (_, _, [])
+	  -> tPure
+	
+	_ -> tPure
 

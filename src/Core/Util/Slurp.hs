@@ -7,6 +7,7 @@ module Core.Util.Slurp
 	, slurpCtorDefs 
 	, slurpExpX
 	, slurpBoundVarsP
+	, slurpBoundVarsW
 	, dropXTau)
 where
 import Core.Pretty		()
@@ -90,9 +91,7 @@ slurpCtorDefs tree
 	$ [ topDataCtors p | p@PData{}	<- tree ]
 
 -- | Slurp out a list of vars bound by this top level thing
-slurpBoundVarsP
-	:: Top -> [Var]
-	
+slurpBoundVarsP :: Top -> [Var]
 slurpBoundVarsP pp
  = case pp of
  	PBind   v x		-> [v]
@@ -107,6 +106,15 @@ slurpBoundVarsP pp
 	PEffect	v k		-> [v]
 	PClass 	v k		-> [v]
 	
+
+-- | Slurp out the list of vars bound by a pattern.
+slurpBoundVarsW :: Pat -> [Var]
+slurpBoundVarsW ww
+ = case ww of
+	WVar v		-> [v]
+	WLit{}		-> []
+	WCon _ _ lvts	-> [v | (_, v, _) <- lvts]
+
 
 -- | Decend into this expression and annotate the first value found with its type
 --	doing this makes it possible to slurpType this expression

@@ -22,8 +22,8 @@ import Data.Map			(Map)
 stage		= "DDC.Core.Lint.Base"
 
 debugExp	= True
-debugType	= True
-debugKind	= True
+debugType	= False
+debugKind	= False
 indenting	= (2 :: Int)
 trace ss x	= Debug.Trace.trace (pprStrPlain ss) x
 

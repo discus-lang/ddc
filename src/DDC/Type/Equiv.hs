@@ -16,6 +16,7 @@ module DDC.Type.Equiv
 	, equivTT)
 where
 import DDC.Type.Exp
+import DDC.Type.Kind
 import DDC.Type.Pretty		()
 
 
@@ -39,7 +40,8 @@ joinEquiv e1 e2
 
 
 -- equivTT ----------------------------------------------------------------------------------------
--- | Check if two types are equivalent
+-- | Check if two types are equivalent 
+--   TODO: use equivKK instead of equality via kindOfType, too slow and maybe wrong with types in kinds.
 equivTT :: Type -> Type -> Equiv
 equivTT	t1 t2
 	| TNil		<- t1
@@ -56,6 +58,33 @@ equivTT	t1 t2
 	, tc1 == tc2
 	= IsEquiv
 
+	-- Sum --------------------------------------------
+
+	-- Two empty sums are always taken to be equivalent, 
+	-- 	and we assume the kind annotations are the same.
+	| TSum k1 []	<- t1
+	, TSum k2 []	<- t2
+	, k1 == k2		
+	= IsEquiv
+
+	| TSum k1 ts1	<- t1
+	, TSum k2 ts2	<- t2
+	, k1 == k2
+	, or $ map (isEquiv . equivTT t1) ts2
+	, or $ map (isEquiv . equivTT t2) ts1
+	= IsEquiv
+
+	| TSum k1 ts1	<- t1
+	, kindOfType t2 == k1
+	, or $ map (isEquiv . equivTT t2) ts1
+	= IsEquiv
+	
+	| TSum k2 ts2	<- t2
+	, kindOfType t1 == k2
+	, or $ map (isEquiv . equivTT t1) ts2
+	= IsEquiv
+
+	-- App --------------------------------------------
 	| TApp t11 t12	<- t1
 	, TApp t21 t22	<- t2
 	= joinEquiv (equivTT t11 t21) (equivTT t12 t22)

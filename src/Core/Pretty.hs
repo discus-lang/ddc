@@ -287,7 +287,7 @@ instance Pretty Alt PMode where
 	 %  "= " % x % ";"
 
   	AAlt (g:gs) x
-	 -> vcat ("| " % g : map (\g -> ", " % g) gs)
+	 -> "| " % g % (punc (ppr ",  ") $ map ppr gs)
 	  % "\n"
 	  % "= " % x % ";"
 
@@ -308,7 +308,7 @@ instance Pretty Pat PMode where
 
   	WLit _ c	-> ppr c 
 
-	WCon _ v []	-> pv v
+	WCon _ v []	-> pv v % "{}"
 
 	WCon _ v binds
 	 -> pv v % "\n"

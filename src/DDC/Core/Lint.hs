@@ -51,12 +51,10 @@ stage		= "DDC.Core.Lint"
 -- Glob -------------------------------------------------------------------------------------------
 checkGlobs :: Glob -> Glob -> ()
 checkGlobs cgHeader cgCore 	
-	= ()
-{-
 	= checkList (checkBind (envInit cgHeader cgCore))
 	$ Map.elems
 	$ globBind cgCore
--}
+
 
 -- Top --------------------------------------------------------------------------------------------
 checkBind :: Env -> Top -> ()
