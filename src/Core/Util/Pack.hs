@@ -69,7 +69,7 @@ packT1 tt
 			| TyConEffectDeepRead	<- tyCon
 			= case takeTData t2' of
 				Just (vD, k, ts)
-				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
+				 -> let (tRs, tDs) = unzip $ map slurpTVarsRD ts
 				    in  makeTSum kEffect
 						(  [TApp tRead t	| t <- concat tRs]
 						++ [TApp tDeepRead t	| t <- concat tDs] )
@@ -80,7 +80,7 @@ packT1 tt
 			| TyConEffectDeepWrite <- tyCon
 			= case takeTData t2' of
 				Just (vD, k, ts)
-				 -> let (tRs, tDs) = unzip $ map slurpVarsRD ts
+				 -> let (tRs, tDs) = unzip $ map slurpTVarsRD ts
 				    in  makeTSum kEffect
 						(  [TApp tWrite t	| t <- concat tRs]
 						++ [TApp tDeepWrite t	| t <- concat tDs] )
@@ -107,7 +107,7 @@ packT1 tt
 			-- DeepConst
 			| TyConWitnessMkDeepConst <- tyCon
 			, Just _		<- takeTData t2'
-			, (rs, ds)		<- slurpVarsRD t2'
+			, (rs, ds)		<- slurpTVarsRD t2'
 			= let 	ts       =  map (\r -> TApp tMkConst     r) rs
 				         ++ map (\d -> TApp tMkDeepConst d) ds
 
@@ -117,7 +117,7 @@ packT1 tt
 			-- DeepMutable
 			| TyConWitnessMkDeepMutable <- tyCon
 			, Just _		<- takeTData t2'
-			, (rs, ds)		<- slurpVarsRD t2'
+			, (rs, ds)		<- slurpTVarsRD t2'
 			= let	ts	=  map (\r -> TApp tMkMutable     r) rs
 				   	++ map (\d -> TApp tMkDeepMutable d) ds
 				
@@ -200,7 +200,7 @@ packK1 kk
 	| KApp kc t1	<- kk
 	, Just _		<- takeTData t1
 	, kc == kDeepMutable
-	, (rs, ds)		<- slurpVarsRD t1
+	, (rs, ds)		<- slurpTVarsRD t1
 	= makeKSum
 	 	$  map (\r -> KApp kMutable     r) rs
 		++ map (\d -> KApp kDeepMutable d) ds
@@ -209,7 +209,7 @@ packK1 kk
 	| KApp kc t1	<- kk
 	, Just _		<- takeTData t1
 	, kc == kDeepConst
-	, (rs, ds)		<- slurpVarsRD t1
+	, (rs, ds)		<- slurpTVarsRD t1
 	= makeKSum
 		$  map (\r -> KApp kConst     r) rs
 		++ map (\d -> KApp kDeepConst d) ds

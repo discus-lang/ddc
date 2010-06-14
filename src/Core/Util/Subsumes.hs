@@ -10,7 +10,6 @@ import Util
 import DDC.Main.Pretty
 import DDC.Type
 import DDC.Var
-import qualified Data.Set	as Set
 import qualified Debug.Trace
 
 debug		= False
@@ -52,7 +51,7 @@ subsumes2 table t s
  = let trimC tt
  	| isClosure tt
 	= toFetterFormT
-	$ trimClosureC_constrainForm Set.empty Set.empty 
+	$ trimClosureC_constrainForm
 	$ toConstrainFormT tt
 
 	| otherwise			

@@ -115,7 +115,7 @@ exportType t
 
 	let kind	= kindOfType tFinal
 	let tTrim
-		| isClosureKind kind	= trimClosureC_constrainForm Set.empty Set.empty tFinal
+		| isClosureKind kind	= trimClosureC_constrainForm tFinal
 		| isValueKind   kind 	= trimClosureT_constrainForm Set.empty Set.empty tFinal
 		| otherwise		= tFinal
 				

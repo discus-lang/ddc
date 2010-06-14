@@ -101,6 +101,7 @@ reduceContextF tShape classInstances ff
 -- | Crush a non-purify directly.
 --	"directly" means that we've got the whole type at hand, and
 --	don't have to go tracing through the graph for it.
+-- 	TODO: This replicates stuff in DDC.Type.Crush.
 crushFetterSingleNonPurify_directly
 	:: Var
 	-> Type
@@ -125,7 +126,7 @@ crushFetterSingleNonPurify_directly vFetter tt
 	-- deep mutability
 	| vFetter	== primMutableT
 	, Just _	<- takeTData tt
-	= let	(rs, ds)	= slurpVarsRD tt
+	= let	(rs, ds)	= slurpTVarsRD tt
 		fsRegion	= map (\r -> FConstraint primMutable  [r]) rs
 		fsData		= map (\d -> FConstraint primMutableT [d]) ds
 	  in	Just $ fsRegion ++ fsData
@@ -133,7 +134,7 @@ crushFetterSingleNonPurify_directly vFetter tt
 	-- deep const
 	| vFetter	== primConstT
 	, Just _	<- takeTData tt
-	= let	(rs, ds)	= slurpVarsRD tt
+	= let	(rs, ds)	= slurpTVarsRD tt
 		fsRegion	= map (\r -> FConstraint primConst  [r]) rs
 		fsData		= map (\d -> FConstraint primConstT [d]) ds
 	  in	Just $ fsRegion ++ fsData

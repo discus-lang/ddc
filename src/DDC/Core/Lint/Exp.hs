@@ -20,7 +20,6 @@ import Data.Sequence		(Seq)
 import qualified Shared.VarUtil	as Var
 import qualified Data.Sequence	as Seq
 import qualified Data.Map	as Map
-import qualified Data.Set	as Set
 import qualified Data.Foldable	as Foldable
 
 stage	= "DDC.Core.Lint.Exp"
@@ -81,7 +80,7 @@ checkExp_trace m xx env
 	 -- TODO: make a version of the trimmer that doesn't need the initial sets.
 	 | otherwise
 	 -> checkTypeI n t env 
-	 `seq` let !clo	= trimClosureC_constrainForm Set.empty Set.empty 
+	 `seq` let !clo	= trimClosureC_constrainForm
 				$ makeTFree v 
 				$ toConstrainFormT t
 
@@ -116,27 +115,27 @@ checkExp_trace m xx env
 	--       better to propagate a list of constraints back up the tree.
 	XAPP x t2
 	 | (t1, eff, clo)	<- checkExp' n x env
-	 , k2			<- checkTypeI n t2 env
+	 , k2			<- crushK $ checkTypeI n t2 env
 	 -> case t1 of
 		TForall BNil k11 t12
-		 | k11 == k2	
+		 | isEquiv $ equivKK (crushK k11) k2	
 		 -> (t12, eff, clo)
 		
 		TForall (BVar v) k11 t12
-		 | k11 == k2	
+		 | isEquiv $ equivKK (crushK k11) k2	
 		 -> ( substituteT (subSingleton v t2) t12
 		    , fmap (substituteT (subSingleton v t2)) eff
 		    , fmap (substituteT (subSingleton v t2)) clo)
 		
 		-- TODO: check more-than constraint
 		TForall (BMore v _) k11 t12
-		 | k11 == k2
+		 | isEquiv $ equivKK (crushK k11) k2
 		 -> ( substituteT (subSingleton v t2) t12
 		    , fmap (substituteT (subSingleton v t2)) eff
 		    , fmap (substituteT (subSingleton v t2)) clo)
 		
 		_ -> panic stage $ vcat
-			[ ppr "Type error in (value/type) application."
+			[ ppr "Type mismatch in (value/type) application."
 			, "Cannot apply type:\n" %> t2,	blank
 			, "of kind:\n"		 %> k2, blank
 			, "to expression:\n" 	 %> x,	blank
@@ -202,7 +201,7 @@ checkExp_trace m xx env
 	 , (t2, eff2, clo2)	<- checkExp' n x2 env
 	 -> case takeTFun t1 of
 		Just (t11, t12, eff3, _)
-		 | t11 == t2					-- TODO: use equiv
+		 | isEquiv $ equivTT t11 t2
 		 -> ( t12
 		    , eff1 Seq.>< eff2 Seq.>< Seq.singleton eff3
 		    , Map.union clo1 clo2)
@@ -230,14 +229,14 @@ checkExp_trace m xx env
 	XPrim  prim xs	-> checkPrim n prim xs env
 
 	-- Type annotation
-	XTau t x
-	 ->    checkTypeI n t env
-	 `seq` let !result@(t', _, _)	= checkExp' n x env
-	       in if t == t'		then result		-- TODO: use equiv
+	XTau tAnnot x
+	 ->    checkTypeI n tAnnot env
+	 `seq` let !result@(tExp, _, _)	= checkExp' n x env
+	       in if isEquiv $ equivTT tAnnot tExp then result
 		  else panic stage $ vcat
 			[ ppr "Type error in type annotation.", blank
-			, "  Reconstructed type:\n"		%> t', blank
-			, "  does not match annotation:\n"	%> t,  blank
+			, "  Reconstructed type:\n"		%> tExp,    blank
+			, "  does not match annotation:\n"	%> tAnnot,  blank
 			, "  on expression:\n"			%> xx]
 		
 	_ -> panic stage 

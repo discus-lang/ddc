@@ -311,7 +311,7 @@ reconX exp@(XLam v t x eff clo)
 				$ toConstrainFormT xC_masked
 
 		xC'		= toFetterFormT 
-				$ trimClosureC_constrainForm Set.empty Set.empty 
+				$ trimClosureC_constrainForm
 				$ xC_flat
 
 {-
@@ -474,7 +474,7 @@ reconX (XVar v t)
 		, t'
 		, tPure
 		, toFetterFormT
-			$ trimClosureC_constrainForm Set.empty Set.empty 
+			$ trimClosureC_constrainForm
 			$ toConstrainFormT 
 			$ makeTFree v t)
 

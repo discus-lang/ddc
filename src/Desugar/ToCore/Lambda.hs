@@ -9,7 +9,6 @@ import Desugar.ToCore.Base
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
-import qualified Data.Set 	as Set
 import qualified Data.Map	as Map
 
 
@@ -73,7 +72,7 @@ loadCloAnnot cc
 	TVar kC (UVar vC)
 	 | kC == kClosure
 	 -> do	Just tC		<- lookupType vC
-	 	return 	$ trimClosureC_constrainForm Set.empty Set.empty 
+	 	return 	$ trimClosureC_constrainForm
 			$ flattenT_constrainForm 
 			$ stripContextT tC
 			 

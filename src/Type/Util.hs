@@ -6,7 +6,7 @@ module Type.Util
 	, makeOpTypeT
 	, makeTVar 
 	, makeTWhere
-	, slurpVarsRD)
+	, slurpTVarsRD)
 	
 where
 import Type.Util.Bits
@@ -118,36 +118,36 @@ makeTWhere	t vts
 -- Slurping ----------------------------------------------------------------------------------------
 -- | Slurp out the region and data vars present in this type
 --	Used for crushing ReadT, ConstT and friends
-slurpVarsRD
+slurpTVarsRD
 	:: Type 
 	-> ( [Region]	-- region vars and cids
 	   , [Data])	-- data vars and cids
 
-slurpVarsRD tt
- 	= slurpVarsRD_split [] [] 
-	$ slurpVarsRD' tt
+slurpTVarsRD tt
+ 	= slurpTVarsRD_split [] [] 
+	$ slurpTVarsRD' tt
 
-slurpVarsRD_split rs ds []	= (rs, ds)
-slurpVarsRD_split rs ds (t:ts)
+slurpTVarsRD_split rs ds []	= (rs, ds)
+slurpTVarsRD_split rs ds (t:ts)
  = case t of
- 	TVar	k _	| k == kRegion	-> slurpVarsRD_split (t : rs) ds ts
- 	TVar	k _	| k == kValue	-> slurpVarsRD_split rs (t : ds) ts	
-	_				-> slurpVarsRD_split rs ds ts
+ 	TVar	k _	| k == kRegion	-> slurpTVarsRD_split (t : rs) ds ts
+ 	TVar	k _	| k == kValue	-> slurpTVarsRD_split rs (t : ds) ts	
+	_				-> slurpTVarsRD_split rs ds ts
 	
-slurpVarsRD' tt
+slurpTVarsRD' tt
 	| TFetters t f	<- tt
-	= slurpVarsRD' t
+	= slurpTVarsRD' t
 
 	| TApp{}	<- tt
 	, Just (v, k, ts)	<- takeTData tt
-	= catMap slurpVarsRD' ts
+	= catMap slurpTVarsRD' ts
 	
 	| TApp{}	<- tt
 	, Just _		<- takeTFun tt
 	= []
 	
 	| TApp t1 t2	<- tt
-	= slurpVarsRD' t1 ++ slurpVarsRD' t2
+	= slurpTVarsRD' t1 ++ slurpTVarsRD' t2
 
 	| TSum{}	<- tt	= []
 	| TCon{}	<- tt	= []

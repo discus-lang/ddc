@@ -28,7 +28,6 @@ import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var
-import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 
@@ -63,7 +62,6 @@ checkSchemeDanger errs c
 
 		let clo	= toFetterFormT
 			$ trimClosureC_constrainForm
-				Set.empty Set.empty 
 			$ toConstrainFormT
 			$ makeTFree (varWithName "foo") t
 		

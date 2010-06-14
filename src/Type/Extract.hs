@@ -160,7 +160,7 @@ extractType_more final varT cid tPack
 	-- Trim closures
 	trace	$ ppr " -- trimming closures\n"	
 	let tTrim	
-		| isClosure tStrong	= trimClosureC_constrainForm Set.empty Set.empty tStrong
+		| isClosure tStrong	= trimClosureC_constrainForm tStrong
 		| otherwise		= trimClosureT_constrainForm Set.empty Set.empty tStrong
 
 	trace	$ "    tTrim:\n" 	%> prettyTypeSplit tTrim % "\n\n"

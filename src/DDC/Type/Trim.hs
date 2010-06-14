@@ -83,19 +83,19 @@ trimClosureT' quant rsData tt
 
 	TApp{}
 	 | Just _	<- takeTFree tt
-	 -> trimClosureC_constrainForm quant rsData tt
+	 -> trimClosureC' quant rsData tt
 
 	_	-> tt
 
 
 -- Closure ----------------------------------------------------------------------------------------
 -- | Trim a closure down to its interesting parts.
-trimClosureC_constrainForm :: Set Type -> Set Type -> Closure -> Closure
-trimClosureC_constrainForm quant rsData cc
-	= trimClosureC_start quant rsData cc
+trimClosureC_constrainForm :: Closure -> Closure
+trimClosureC_constrainForm cc
+	= trimClosureC' Set.empty Set.empty cc
 
-trimClosureC_start quant rsData cc
- = let 	cc_trimmed	= trimClosureC' quant rsData cc
+trimClosureC' quant rsData cc
+ = let 	cc_trimmed	= trimClosureC_trace quant rsData cc
 	cc_packed	= packType $ cc_trimmed
 		
 	cc'		= trace 
@@ -106,10 +106,10 @@ trimClosureC_start quant rsData cc
 				cc_packed
    in	if cc' == cc
    	 then cc'
-	 else trimClosureC_start quant rsData cc'
+	 else trimClosureC' quant rsData cc'
 	
-trimClosureC' quant rsData cc
- = let down	= trimClosureC_start quant rsData
+trimClosureC_trace quant rsData cc
+ = let down	= trimClosureC' quant rsData
    in  case cc of
 	-- if some var has been quantified by a forall then it's not free
 	--	and not part of the closure
@@ -130,7 +130,7 @@ trimClosureC' quant rsData cc
 		$  flattenTSum cc
 
 	TConstrain t Constraints { crsEq, crsMore }
-	 -> let	t'		= trimClosureC_start quant rsData t
+	 -> let	t'		= trimClosureC' quant rsData t
 		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT_constrainForm quant rsData t2) crsEq
 		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT_constrainForm quant rsData t2) crsMore
 	    in	addConstraints (Constraints crsEq' crsMore' []) t'
@@ -139,7 +139,7 @@ trimClosureC' quant rsData cc
 	TForall b k t		
 	 -> let Just v	= takeVarOfBind b
 		quant'	= Set.insert (TVar k (UVar v)) quant
-	    in	trimClosureC_start quant' rsData t
+	    in	trimClosureC' quant' rsData t
 
 	-- free
 	TApp{}
@@ -240,7 +240,7 @@ trimClosureC_t tag quant rsData tt
 	 -> down clo
 
 	 | Just (_, _)		<- takeTFree tt
-	 -> [trimClosureC_start quant rsData tt]
+	 -> [trimClosureC' quant rsData tt]
 		
 	 | otherwise
 	 -> []
@@ -259,7 +259,7 @@ trimClosureC_tt
 
 trimClosureC_tt quant rsData (c1, c2)
  	| isClosure c1
-	= Just (c1, trimClosureC_start quant rsData c2)
+	= Just (c1, trimClosureC' quant rsData c2)
 	
 	| isEffect c1
 	= Just (c1, c2)
@@ -278,7 +278,7 @@ trimClosureT_tt
 
 trimClosureT_tt quant rsData c1 c2
 	| isClosure c1
-	= trimClosureC_start quant rsData c2
+	= trimClosureC' quant rsData c2
 	
 	| otherwise
 	= c2

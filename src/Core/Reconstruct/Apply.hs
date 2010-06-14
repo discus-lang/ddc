@@ -7,7 +7,6 @@ import Core.Reconstruct.Environment
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
-import qualified Data.Set	as Set
 import Util
 
 stage	= "Core.Reconstruct.Apply"
@@ -107,8 +106,8 @@ applyTypeT env (TForall (BMore v tB) k t1) t2
 	-- if the constraint is a closure then trim it first
 	| k == kClosure
 	, subsumes (flip lookupMoreVT env)
-			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty t2) 
-			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm Set.empty Set.empty tB)
+			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm t2) 
+			(packT $ flattenT_constrainForm $ trimClosureC_constrainForm tB)
 	= Just (substituteT (subSingleton v t2) t1)
 
 	-- check that the constraint is satisfied

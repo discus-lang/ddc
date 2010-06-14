@@ -1,14 +1,17 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Crush compound effects and fetters into their components.
 module DDC.Type.Crush
-	(crushT)
+	( crushT
+	, crushK)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Builtin
 import DDC.Type.Kind
+import Type.Util	(slurpTVarsRD)
 
 
+-- | Crush effects and constraints in a type.
 crushT :: Type -> Type
 crushT tt
  = case tt of
@@ -46,3 +49,31 @@ crushT tt
 	TConstrain t crs
 	 -> TConstrain (crushT t) crs
 	
+
+-- | Crush effects and constraints in a kind.
+crushK :: Kind -> Kind
+crushK kk
+ = case kk of
+	KNil{}		-> kk
+	KCon{}		-> kk
+
+	KFun k1 k2
+	 -> KFun (crushK k1) (crushK k2)
+	
+	-- Deep Mutable
+	KApp kc t2
+	 | kc == kDeepMutable
+	 , Just _		<- takeTData t2
+	 , (tsRegion, tsData)	<- slurpTVarsRD t2
+	 -> makeKSum 
+		$  map (KApp kMutable)     tsRegion
+		++ map (KApp kDeepMutable) tsData
+	
+	KApp k1 t2
+	 -> KApp (crushK k1) (crushT t2)
+	
+	KSum ks
+	 -> makeKSum $ map crushK ks
+
+
+
