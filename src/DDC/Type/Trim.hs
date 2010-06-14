@@ -51,18 +51,13 @@ trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Trim the closure portion of this type.
-trimClosureT_constrainForm
-	:: Set Type	-- ^ Variables that are quantified in this context.
-	-> Set Type	-- ^ Primary region variables in this context.
-	-> Type 
-	-> Type
+trimClosureT_constrainForm :: Type -> Type
+trimClosureT_constrainForm tt
+	= trimClosureT' Set.empty Set.empty tt
 
-trimClosureT_constrainForm quant rsData tt
-	= trimClosureT_start quant rsData tt
-
-trimClosureT_start quant rsData tt
+trimClosureT' quant rsData tt
   = trace ("trimClosureT " % tt % "\n")
-  $ let	tt_trimmed	= trimClosureT' quant rsData tt
+  $ let	tt_trimmed	= trimClosureT_trace quant rsData tt
 	tt_packFast	= packType tt_trimmed
 			
 	tt'		= trace ( "tt_trimmed  = " % tt_trimmed 	% "\n"
@@ -71,9 +66,9 @@ trimClosureT_start quant rsData tt
 		
     in	if tt' == tt
     		then tt'
-		else trimClosureT_start quant rsData tt'
+		else trimClosureT' quant rsData tt'
 
-trimClosureT' quant rsData tt		
+trimClosureT_trace quant rsData tt		
  = case tt of
 	TConstrain tBody (Constraints crsEq crsMore crsOther)
 	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt quant rsData) crsEq
@@ -131,8 +126,8 @@ trimClosureC_trace quant rsData cc
 
 	TConstrain t Constraints { crsEq, crsMore }
 	 -> let	t'		= trimClosureC' quant rsData t
-		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT_constrainForm quant rsData t2) crsEq
-		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT_constrainForm quant rsData t2) crsMore
+		crsEq'		= Map.mapWithKey (\_ t2 -> trimClosureT' quant rsData t2) crsEq
+		crsMore'	= Map.mapWithKey (\_ t2 -> trimClosureT' quant rsData t2) crsMore
 	    in	addConstraints (Constraints crsEq' crsMore' []) t'
 
 	-- add quantified vars to the set

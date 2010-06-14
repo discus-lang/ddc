@@ -139,7 +139,7 @@ feedType src tt
 		 -- type that we're refering to is in the defs table
 		 Just tDef
 		  -> do	let tDef_trim	= toFetterFormT 
-					$ trimClosureT_constrainForm Set.empty Set.empty 
+					$ trimClosureT_constrainForm 
 					$ flattenT_constrainForm $ toConstrainFormT tDef
 
 		  	tDef'		<- linkType [] src tDef_trim

@@ -116,7 +116,7 @@ exportType t
 	let kind	= kindOfType tFinal
 	let tTrim
 		| isClosureKind kind	= trimClosureC_constrainForm tFinal
-		| isValueKind   kind 	= trimClosureT_constrainForm Set.empty Set.empty tFinal
+		| isValueKind   kind 	= trimClosureT_constrainForm tFinal
 		| otherwise		= tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTypeSplit tTrim	% "\n\n"
