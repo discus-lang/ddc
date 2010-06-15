@@ -232,10 +232,13 @@ checkExp_trace m xx env
 	XTau tAnnot x
 	 ->    checkTypeI n tAnnot env
 	 `seq` let !result@(tExp, _, _)	= checkExp' n x env
-	       in if isEquiv $ equivTT tAnnot tExp then result
+		   tExp'		= trimClosureT_constrainForm 
+					$ toConstrainFormT tExp
+
+	       in if isEquiv $ equivTT tAnnot tExp' then result
 		  else panic stage $ vcat
 			[ ppr "Type error in type annotation.", blank
-			, "  Reconstructed type:\n"		%> tExp,    blank
+			, "  Reconstructed type:\n"		%> tExp',   blank
 			, "  does not match annotation:\n"	%> tAnnot,  blank
 			, "  on expression:\n"			%> xx]
 		
