@@ -59,6 +59,22 @@ cleantotal :
 	@$(MAKE) total	
 
 
+# -- What to do during the nightly builds
+.PHONY  : nightly
+nightly :
+	@date
+	@echo
+	@echo "                              DDC Nightly build"
+	@echo "------------------------------------------------------------------------------------"
+	@$(MAKE) --version
+	@echo
+	@$(GHC) --version
+	@echo
+	@gcc --version
+	@echo "------------------------------------------------------------------------------------"
+	@$(MAKE) cleantotal
+		
+
 # -- Find Source Files ----------------------------------------------------------------------------
 # -- files needing to be processed via alex
 src_alex_x	=  $(shell find src -name "*.x" -follow)
@@ -95,7 +111,7 @@ make/Makefile.deps : src/Config/Config.hs $(src_hs_existing)
 # -- Boilerplate ----------------------------------------------------------------------------------
 # -- build the boiler plate generator
 bin/plate : tools/plate/Main.hs src/Config/Config.hs
-	@echo "* Building boilerplate generator -------------------------------"
+	@echo "* Building boilerplate generator ---------------------------------------------------"
 	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^ 
 
 # -- generate boilerplate
@@ -122,7 +138,7 @@ bin/ddc	: make/Makefile.deps $(src_obj)
 external : external/TinyPTC-X11-0.7.3/xshm.o
 
 external/TinyPTC-X11-0.7.3/xshm.o : 
-	@echo "* Building external libraries ----------------------------------"
+	@echo "* Building external libraries ------------------------------------------------------"
 	cd external/TinyPTC-X11-0.7.3; $(MAKE) CFLAGS="$(GCC_FLAGS)"
 	@echo
 
@@ -155,7 +171,7 @@ runtime : $(runtime_dep) runtime/libddc-runtime.$(SHARED_SUFFIX) runtime/libddc-
 libs	: library/Graphics.di
 
 library/Prelude.di library/Graphics.di : bin/ddc
-	@echo "* Building base libraries --------------------------------------"
+	@echo "* Building base libraries ----------------------------------------------------------"
 	bin/ddc -O -build library/Prelude.ds
 	@touch library/Prelude.di
 	
@@ -207,28 +223,28 @@ hlint	:
 # Run the testsuite interactively
 .PHONY 	: war
 war : bin/ddc bin/war library/Prelude.di
-	@echo "* Running tests ------------------------------------------------"
+	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS)
 	@echo
 
 # Run tests in all ways interactively
 .PHONY  : totalwar
 totalwar : bin/ddc bin/war library/Prelude.di
-	@echo "* Running tests ------------------------------------------------"
+	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) +compway normal +compway opt -O
 	@echo
 
 # Run the tests,  logging failures to war.failed
 .PHONY : logwar
 logwar : bin/ddc bin/war library/Prelude.di
-	@echo "* Running tests ------------------------------------------------"
+	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) -batch -logFailed "war.failed" 
 	@echo
 
 # Run tests in all ways interactively, logging failures to war.failed
 .PHONY  : totallogwar
 totallogwar : bin/ddc bin/war library/Prelude.di
-	@echo "* Running tests ------------------------------------------------"
+	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O 
 	@echo
 
