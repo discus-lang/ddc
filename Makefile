@@ -131,7 +131,7 @@ src_obj		=  $(patsubst %.hs,%.o,$(src_hs_existing))
 
 bin/ddc	: make/Makefile.deps $(src_obj)
 	@echo
-	@echo "* Linking $@"
+	@echo "* Linking ddc ---------------------------------------------------------------------"
 	$(GHC) -o bin/ddc $(GHC_FLAGS) $(DDC_PACKAGES) $(src_obj)
 	@echo
 
@@ -202,10 +202,11 @@ nodoc	= \
 
 .PHONY	: docs
 docs	:
-	@echo "* Building haddock documentation"
+	@echo "* Building haddock documentation ---------------------------------------------------"
 	@haddock -w -h -o doc/haddock --optghc=-isrc \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
 		$(filter-out $(nodoc),$(src_hs_all))
+	@echo
 
 # -- HLint -----------------------------------------------------------------------------------------
 .PHONY	: hlint
