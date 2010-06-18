@@ -1,0 +1,17 @@
+
+-- Factorial by back patching
+-- From Relational Semantics for Effect-Based Program Transformations: Higher Order Store.
+--      Benton, Kennedy, Beringer, Hofmann. PPDP 2009.
+--
+
+r :: Ref %r1 a :- Mutable %r1
+r =  Ref (\x -> 0)
+
+fac 
+ = do	r #= \x -> if x == 0 
+			then 1
+			else x * (r.x) (x - 1)
+	r.x
+
+
+main = putStr $ show $ fac 5
