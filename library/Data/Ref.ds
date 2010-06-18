@@ -21,6 +21,9 @@ ref	:: forall a %r1. a -> Ref %r1 a
 ref x 	= Ref x
 
 
+-- Read a reference.
+readRef	:: forall a %r1. Ref %r1 a -> a
+readRef ref = ref.x
 
 
  

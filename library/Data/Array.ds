@@ -4,101 +4,124 @@ module 	Data.Array
 
 export	index
 	indexR
-	array_map_
-	array_foldl
 	
 import	Base
 	Data.Int
 	Data.Ref
 	Data.List
 
+project Array a 
+ with {	new; size; index; index;
+	fromList; toList; 
+	mapWithIndex_;
+	mapToList;
+	updateWith }
 
--- An array of boxed balues
+
+-- An array of boxed values
 data Array %r1 a;
 
-
+-- Primitives -------------------------------------------------------------------------------------
 -- Create a new array and point all the cells to this initial object.
 foreign import "primArray_new"
- array_new  	:: forall a %r1 %r2
-	 	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
-		:- !e1 = !{ !Read %r1 }
-		,  $c1 = size : Int %r1
-		,  Mutable %r2
+ new  	:: forall a %r1 %r2
+ 	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
+	:- !e1 = !{ !Read %r1 }
+	,  $c1 = size : Int %r1
+	,  Mutable %r2
+
 
 -- Return the number of elements in an array
 foreign import "primArray_size"
- array_size	:: forall a %r1 %r2
-		.  Array %r1 a -(!e1)> Int %r2
-		:- !e1 = !{ !Read %r1 }
+ size	:: forall a %r1 %r2
+	.  Array %r1 a -(!e1)> Int %r2
+	:- !e1 = !{ !Read %r1 }
+
  
 -- Return the element at this index
 --	the array.(i) syntax is desugared into this.
 foreign import "primArray_index"
- index		:: forall a %r1 %r2 
-	 	.  Array %r1 a -> Int %r2 -(!e1)> a
-		:- !e1 = !{ !Read %r1; !Read %r2 }
+ index	:: forall a %r1 %r2 
+	.  Array %r1 a -> Int %r2 -(!e1)> a
+	:- !e1 = !{ !Read %r1; !Read %r2 }
+
  	
 -- Return a reference to this index. 
 --	If this reference is updated then that cell in the array is pointed to the new object.
---	the array#(i) syntax is desuated into this
+--	the array#(i) syntax is desugared into this
 foreign import "primArray_indexR"
- indexR		:: forall a %r1 %r2 
-	 	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
-		:- !e1 = !{ !Read %r1; !Read %r2 }
-		,  $c1 = a : Array %r1 a
+ indexR	:: forall a %r1 %r2 
+	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
+	:- !e1 = !{ !Read %r1; !Read %r2 }
+	,  $c1 = a : Array %r1 a
 
 
-project Array a where
-	new		= array_new
-	size		= array_size
-
-	map_      arr f	= array_map_ f arr
-	mapIx_    arr f	= mapIx_     f arr
-	mapToList arr f = mapToList  f arr
-
-	updateWith arr f = updateWith f arr
-
-
+-- Instances --------------------------------------------------------------------------------------
 instance Functor Array where
-	map_		= array_map_
+ map_ f array
+  = map2_ f array 0 array.size
+  where 
+	map2_ f array ix max
+	 | ix >= max	= ()
+	 \= do	f array.(ix)
+		map2_ f array (ix + 1) max
 
 
 instance Foldable Array where
-	foldl		= array_foldl
+ foldl f acc array 
+  = foldl' f acc array 0 (array .size)
+  where	
+	foldl' f acc array ix max
+	 | ix >= max
+	 = acc
+	
+	 \= foldl' f (f acc array.(ix)) array (ix + 1) max
 
 
+-- Conversion -------------------------------------------------------------------------------------
+-- | Create an array from a list.
+fromList :: [a] -> Array a
+fromList xx = go 0 xx
+ where	len	= length xx
+	arr 	= new len 0
+
+	go ix []
+	 | ix == len	
+	 = arr
+	
+	go ix (x:xs)  
+	 = do	arr#(ix)  #= x
+		go (ix + 1) xs
 
 
--- Apply a function to all the elements of an array, ignoring the result
-array_map_ :: (a -> b) -> Array a -> ()
-array_map_ f array
-	= array_map2_ f array 0 (array .size)
+-- | Convert an array to a list.
+-- TODO: this uses O(n) stack space.
+toList :: Array a -> [a]
+toList arr = go 0
+ where	go ix 
+ 	 | ix == arr.size	= []
+ 	 | otherwise		= arr.(ix) : go (ix + 1)
 
-array_map2_ f array ix max
-	| ix >= max	= ()
 
-	\= do	f array.(ix)
-		array_map2_ f array (ix + 1) max
-
-		
+-- Mapping ----------------------------------------------------------------------------------------		
 -- Map a  function across all the elements of an array
 --	with the array index, ignoring the result
-mapIx_ :: (Int -> a -> b) -> Array a -> ()
-mapIx_ f array
-	= mapIx2_ f array 0 (array .size)
+mapWithIndex_ :: (Int -> a -> b) -> Array a -> ()
+mapWithIndex_ f array
+ = go 0
+ where	len	= array.size
 	
-mapIx2_ f array ix max
-	| ix >= max	= ()
-	
-	\= do	f ix array.(ix)
-		mapIx2_ f array (ix + 1) max
+	go ix 
+	 | ix >= len	= ()
+	 \= do	f ix array.(ix)
+		go (ix + 1)
 
 
 -- Map a function across all the elements of an array, 
 --	returning a list
 mapToList :: (a -> b) -> Array a -> [b]
 mapToList  f array 
-	= mapToList' f array 0 (array .size)
+ = mapToList' f array 0 (array .size)
 
 mapToList' f array i max
 	| i >= max	
@@ -107,23 +130,12 @@ mapToList' f array i max
 	\= f (array .(i)) : mapToList' f array (i + 1) max
 	
 
--- pre-order fold
-array_foldl :: (a -> b -> a) -> a -> Array b -> a
-array_foldl f acc array 
- 	= array_foldl' f acc array 0 (array .size)
-	
-array_foldl' f acc array ix max
-	| ix >= max
-	= acc
-	
-	\= array_foldl' f (f acc array.(ix)) array (ix + 1) max
-
-
+-- Updating ---------------------------------------------------------------------------------------
 -- update all the elements of an array with this function
 --	the array cells are pointed to the new objects
 updateWith :: (a -> a) -> Array a -> ()
 updateWith fun array
- = do	max	= array_size array
+ = do	max	= size array
  	updateWith' fun array 0 max
 	
 updateWith' fun array ix max
