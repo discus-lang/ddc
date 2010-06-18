@@ -106,8 +106,8 @@ toList arr = go 0
 -- Mapping ----------------------------------------------------------------------------------------		
 -- Map a  function across all the elements of an array
 --	with the array index, ignoring the result
-mapWithIndex_ :: (Int -> a -> b) -> Array a -> ()
-mapWithIndex_ f array
+mapWithIndex_ :: Array a -> (Int -> a -> b) -> ()
+mapWithIndex_ array f
  = go 0
  where	len	= array.size
 	
@@ -119,8 +119,8 @@ mapWithIndex_ f array
 
 -- Map a function across all the elements of an array, 
 --	returning a list
-mapToList :: (a -> b) -> Array a -> [b]
-mapToList  f array 
+mapToList :: Array a -> (a -> b) -> [b]
+mapToList  array f
  = mapToList' f array 0 (array .size)
 
 mapToList' f array i max
