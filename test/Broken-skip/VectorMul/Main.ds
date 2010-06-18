@@ -1,0 +1,68 @@
+
+-- Optimised Vector Multiplication.
+-- From Relational Semantics for Effect-Based Program Transformations: Higher Order Store.
+--      Benton, Kennedy, Beringer, Hofmann. PPDP 2009.
+--
+
+v, w	:: Ref (Array Int)
+v 	= ref $ fromList&{Array a} [0]
+w 	= ref $ fromList&{Array a} [0]
+
+prog 	:: Ref (() -> ())
+prog	= ref $ \() -> ()
+
+result	:: Ref Int
+result	= ref 0
+	
+comp	:: (() -> ()) -> ()
+comp g	
+ = do	f	=  readRef prog
+	prog	#= \x -> g (f x) 
+	
+template :: (Int -> Int -> () -> ())	
+template elem m
+ = \() -> result #= (readRef result) + elem * (readRef w).(m)
+
+-- Constifier in Type.Scheme is introducing more Const constraints than it needs here.
+preeval ()
+ = do	n	= (readRef v).size
+	
+	counter :: Int %r1 :- Mutable r1
+	counter	= 0
+	
+	prog	#= (\() -> result #= 0)
+	loop counter n
+
+
+next	:: Int -> Int -> () -> ()
+next counter n
+ = loop (counter + 1) n
+
+loop	:: Int -> Int -> () -> ()
+loop counter n
+ = if counter == n 
+   then (readRef prog) 
+   else do
+	elem = (readRef v).(counter)
+	if elem == 0 
+	 then next counter n
+	 else do
+		comp (template elem counter)
+		next counter n
+
+apply 	:: (() -> a) -> List Int -> Int
+apply p x
+ = do	w #= fromList&{Array a} x
+	p ()
+	readRef result
+
+{-
+mul :: [Int] -> [Int] -> [Int]
+mul vval wvals
+ = do	v	#= fromList&{Array a} vval
+	p	= preeval ()
+	map (apply p) wvals
+-}
+
+main ()
+ = 	putStr $ show (readRef v).toList
