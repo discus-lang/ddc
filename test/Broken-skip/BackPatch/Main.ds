@@ -4,8 +4,8 @@
 --      Benton, Kennedy, Beringer, Hofmann. PPDP 2009.
 --
 
-r :: Ref %r1 a :- Mutable %r1
-r =  Ref (\x -> 0)
+r :: Ref (Int -> Int)
+r =  ref (\x -> 0)
 
 fac 
  = do	r #= \x -> if x == 0 
