@@ -7,15 +7,14 @@ where
 --	so there'll be a lot of imports...
 
 -- main stages
-import Main.Invoke
 import Main.Setup
-import Main.BuildFile
 import Main.Error
+import Main.Util
+import Main.Sea
 import qualified Main.Dump		as Dump
 import qualified Main.Source		as SS
 import qualified Main.Desugar		as SD
 import qualified Main.Core		as SC
-import qualified Main.Sea		as SE
 import qualified DDC.Main.Arg		as Arg
 
 -- module
@@ -34,9 +33,6 @@ import qualified Desugar.Plate.Trans	as D
 -- core
 import qualified DDC.Core.Glob		as C
 
--- sea
-import qualified Sea.Util		as E
-
 -- shared
 import DDC.Var
 import DDC.Main.Error
@@ -49,14 +45,9 @@ import Util
 import Util.FilePath
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import qualified System.Exit		as System
 
 
 out ss		= putStr $ pprStrPlain ss
-
-outVerb :: (?verbose :: Bool) => PrettyM PMode -> IO ()
-outVerb ss	= when ?verbose (putStr $ pprStrPlain ss)
-
 
 -- Compile -----------------------------------------------------------------------------------------
 -- |	Top level compilation function.
@@ -117,18 +108,7 @@ compileFile_parse
    	[pathSource % "\n    Source file is empty.\n"]
 
  | otherwise
- = if elem Arg.ViaLLVM $ setupArgs setup
-	then compileViaLLVM setup scrapes sRoot sModule importDirs blessMain sSource
-	else compileViaSea setup scrapes sRoot sModule importDirs blessMain sSource
-
-compileViaLLVM setup scrapes sRoot sModule importDirs blessMain sSource
- = error "Compiling via LLVM not supported yet."
-
-compileViaSea
-	setup scrapes sRoot sModule
-	importDirs blessMain sSource
- = do
-	let ?args		= setupArgs setup
+ = do	let ?args		= setupArgs setup
 	let ?verbose		= elem Arg.Verbose ?args
 
 	-- extract some file names
@@ -177,14 +157,6 @@ compileViaSea
 
 	-- Slurp out pragmas
 	let pragmas	= Pragma.slurpPragmaTree sParsed
-
-	-- Chase down extra C header files to include into source via pragmas.
-	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
-	
-	when ?verbose
-	 $ do	mapM_ (\path -> putStr $ pprStrPlain $ "  - included file   " % path % "\n")
-	 		$ includeFilesHere
-	 	
 
 	------------------------------------------------------------------------
 	-- Source Stages
@@ -484,111 +456,19 @@ compileViaSea
 	when (elem Arg.StopCore ?args)
 		compileExit
 
-	-- Convert to Sea code ------------------------------------------------
-	outVerb $ ppr $ "  * Convert to Sea IR\n"
-
-	(eSea, eHeader)	<- SC.toSea
-				"TE"
-				cgHeader
-				cgModule_final
-				
-	------------------------------------------------------------------------
-	-- Sea stages
-	------------------------------------------------------------------------
-		
-	-- Subsitute simple v1 = v2 statements ---------------------------------
-	outVerb $ ppr $ "  * Sea: Substitute\n"
-	eSub		<- SE.seaSub
-				eSea
-				
-	-- Expand out constructors ---------------------------------------------
-	outVerb $ ppr $ "  * Sea: ExpandCtors\n"
-	eCtor		<- SE.seaCtor
-				eSub
-				
-	-- Expand out thunking -------------------------------------------------
-	outVerb $ ppr $ "  * Sea: Thunking\n"
-	eThunking	<- SE.seaThunking
-				eCtor
-				
-	-- Add suspension forcing code -----------------------------------------
-	outVerb $ ppr $ "  * Sea: Forcing\n"
-	eForce		<- SE.seaForce
-				eThunking
-				
-	-- Add GC slots and fixup calls to CAFS --------------------------------
-	outVerb $ ppr $ "  * Sea: Slotify\n"
-	eSlot		<- SE.seaSlot	
-				eForce
-				eHeader
-				cgHeader
-				cgModule_final
-
-	-- Flatten out match stmts --------------------------------------------
-	outVerb $ ppr $ "  * Sea: Flatten\n"
-	eFlatten	<- SE.seaFlatten
-				"EF"
-				eSlot
-
-	-- Generate module initialisation functions ---------------------------
-	outVerb $ ppr $ "  * Sea: Init\n"
-	eInit		<- SE.seaInit
-				modName
-				eFlatten
-
-	-- Generate C source code ---------------------------------------------
-	outVerb $ ppr $ "  * Generate C source code\n"
-	(  seaHeader
-	 , seaSource )	<- SE.outSea
-				modName
-	 			eInit
-				pathSource
-				(map ((\(Just f) -> f) . M.scrapePathHeader) 
-					$ Map.elems scrapes_noRoot)
-				includeFilesHere
+	if elem Arg.ViaLLVM ?args
+	  then compileViaLLVM
+		setup modName pathSource cgHeader cgModule_final importDirs importsExp
+		modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
+	  else compileViaSea
+		setup modName pathSource cgHeader cgModule_final importDirs importsExp
+		modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
 
 
-	-- If this module binds the top level main function
-	--	then append RTS initialisation code.
-	seaSourceInit	
-		<- if modDefinesMainFn && blessMain
-			then do mainCode <- SE.seaMain 
-						(map fst $ Map.toList importsExp) 
-						modName
 
-			     	return 	$ seaSource 
-					++ (catInt "\n" $ map pprStrPlain 
-							$ E.eraseAnnotsTree mainCode)
-
-			else 	return  $ seaSource
-				
-	-- Write C files ------------------------------------------------------
-	outVerb $ ppr $ "  * Write C files\n"
-	writeFile (?pathSourceBase ++ ".ddc.c") seaSourceInit
-	writeFile (?pathSourceBase ++ ".ddc.h") seaHeader
+compileViaLLVM
+	setup cgHeader cgModule_final importDirs importsExp modDefinesMainFn
+	modName pathSource pragmas sRoot scrapes_noRoot blessMain
+ = error "Compiling via LLVM not supported yet."
 
 
-	------------------------------------------------------------------------
-	-- Invoke external compiler / linker
-	------------------------------------------------------------------------
-
-	-- !! Early exit on StopSea
-	when (elem Arg.StopSea ?args)
-		compileExit	
-	
-	-- Invoke GCC to compile C source.
-	invokeSeaCompiler
-		?args
-		?pathSourceBase
-		(setupRuntime setup)
-		(setupLibrary setup)
-		importDirs
-		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
-	
-	return modDefinesMainFn 
-		
------
-compileExit
- = do 	System.exitWith System.ExitSuccess
-
-	 	 

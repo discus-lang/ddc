@@ -2,25 +2,33 @@
 
 -- | Wrappers for compiler stages dealing with Sea code.
 module Main.Sea
-	( seaSub
-	, seaCtor
-	, seaThunking
-	, seaForce
-	, seaSlot
-	, seaFlatten
-	, seaInit
-	, seaMain
-	, outSea)
+	(compileViaSea)
 where
-import Sea.Exp
-import Sea.Util
+
+-- main stages
+import Main.Setup
+import Main.Invoke
+import Main.BuildFile
 import Main.Dump
-import Data.Char
-import Util
-import DDC.Main.Arg
+import Main.Util
+
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+
+import qualified Source.Pragma		as Pragma
+import qualified Module.Scrape		as M
+import qualified DDC.Main.Arg		as Arg
+import qualified Main.Core		as SC
+import qualified DDC.Core.Glob		as C
+import qualified DDC.Config.Version	as Version
+
+-- sea
+import qualified Sea.Util		as E
+
+import Sea.Exp
+import Sea.Util
+
 import Sea.Sub				(subTree)
 import Sea.Ctor				(expandCtorTree)
 import Sea.Proto			(addSuperProtosTree)
@@ -29,13 +37,150 @@ import Sea.Force			(forceTree)
 import Sea.Slot				(slotTree)
 import Sea.Flatten			(flattenTree)
 import Sea.Init				(initTree, mainTree)
-import qualified DDC.Core.Glob		as C
-import qualified DDC.Config.Version	as Version
+
+import Util
+
+-- haskell
+import Data.Char
+import qualified Data.Map		as Map
 
 
+compileViaSea
+	:: (?verbose :: Bool, ?pathSourceBase :: FilePath)
+	=> Setup			-- ^ Compile setup.
+	-> ModuleId			-- ^ Module to compile, must also be in the scrape graph.
+	-> FilePath			-- ^ FilePath of source file.
+	-> C.Glob			-- ^ Glob of headers.
+	-> C.Glob			-- ^ Glob of module itself.
+	-> [FilePath]			-- ^ C import directories.
+	-> Map ModuleId [a]		-- ^ Module import map.
+	-> Bool				-- ^ Module defines 'main' function.
+	-> [Pragma.Pragma]		-- ^ Compiler pragmas.
+	-> M.Scrape			-- ^ ScrapeGraph of this Module.
+	-> Map ModuleId M.Scrape	-- ^ Scrape graph of all modules reachable from the root.
+	-> Bool				-- ^ Whether to treat a 'main' function defined by this module
+					--	as the program entry point.
+	-> IO Bool
+
+compileViaSea
+	setup modName pathSource cgHeader cgModule importDirs importsExp
+	modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
+ = do
+	let ?args		= setupArgs setup
+
+	-- Chase down extra C header files to include into source -------------
+	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
+	
+	when (elem Arg.Verbose ?args)
+	 $ do	mapM_ (\path -> putStr $ pprStrPlain $ "  - included file   " % path % "\n")
+	 		$ includeFilesHere
+
+	-- Convert to Sea code ------------------------------------------------
+	outVerb $ ppr $ "  * Convert to Sea IR\n"
+
+	(eSea, eHeader)	<- SC.toSea
+				"TE"
+				cgHeader
+				cgModule
+				
+	------------------------------------------------------------------------
+	-- Sea stages
+	------------------------------------------------------------------------
+		
+	-- Subsitute simple v1 = v2 statements ---------------------------------
+	outVerb $ ppr $ "  * Sea: Substitute\n"
+	eSub		<- seaSub
+				eSea
+				
+	-- Expand out constructors ---------------------------------------------
+	outVerb $ ppr $ "  * Sea: ExpandCtors\n"
+	eCtor		<- seaCtor
+				eSub
+				
+	-- Expand out thunking -------------------------------------------------
+	outVerb $ ppr $ "  * Sea: Thunking\n"
+	eThunking	<- seaThunking
+				eCtor
+				
+	-- Add suspension forcing code -----------------------------------------
+	outVerb $ ppr $ "  * Sea: Forcing\n"
+	eForce		<- seaForce
+				eThunking
+				
+	-- Add GC slots and fixup calls to CAFS --------------------------------
+	outVerb $ ppr $ "  * Sea: Slotify\n"
+	eSlot		<- seaSlot	
+				eForce
+				eHeader
+				cgHeader
+				cgModule
+
+	-- Flatten out match stmts --------------------------------------------
+	outVerb $ ppr $ "  * Sea: Flatten\n"
+	eFlatten	<- seaFlatten
+				"EF"
+				eSlot
+
+	-- Generate module initialisation functions ---------------------------
+	outVerb $ ppr $ "  * Sea: Init\n"
+	eInit		<- seaInit
+				modName
+				eFlatten
+
+	-- Generate C source code ---------------------------------------------
+	outVerb $ ppr $ "  * Generate C source code\n"
+	(  seaHeader
+	 , seaSource )	<- outSea
+				modName
+	 			eInit
+				pathSource
+				(map ((\(Just f) -> f) . M.scrapePathHeader) 
+					$ Map.elems scrapes_noRoot)
+				includeFilesHere
+
+
+	-- If this module binds the top level main function
+	--	then append RTS initialisation code.
+	seaSourceInit	
+		<- if modDefinesMainFn && blessMain
+			then do mainCode <- seaMain 
+						(map fst $ Map.toList importsExp) 
+						modName
+
+				return 	$ seaSource 
+					++ (catInt "\n" $ map pprStrPlain 
+							$ E.eraseAnnotsTree mainCode)
+
+			else 	return  $ seaSource
+				
+	-- Write C files ------------------------------------------------------
+	outVerb $ ppr $ "  * Write C files\n"
+	writeFile (?pathSourceBase ++ ".ddc.c") seaSourceInit
+	writeFile (?pathSourceBase ++ ".ddc.h") seaHeader
+
+
+	------------------------------------------------------------------------
+	-- Invoke external compiler / linker
+	------------------------------------------------------------------------
+
+	-- !! Early exit on StopSea
+	when (elem Arg.StopSea ?args)
+		compileExit
+	
+	-- Invoke GCC to compile C source.
+	invokeSeaCompiler
+		?args
+		?pathSourceBase
+		(setupRuntime setup)
+		(setupLibrary setup)
+		importDirs
+		(fromMaybe [] $ liftM buildExtraCCFlags (M.scrapeBuild sRoot))
+	
+	return modDefinesMainFn 
+		
 -- | Substitute trivial x1 = x2 bindings
 seaSub
-	:: (?args :: [Arg]
+	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
@@ -45,7 +190,7 @@ seaSub tree
  	let tree'
 		= subTree tree
 		
-	dumpET DumpSeaSub "sea-sub" 
+	dumpET Arg.DumpSeaSub "sea-sub" 
 		$ eraseAnnotsTree tree'
 	
 	return tree'
@@ -53,7 +198,7 @@ seaSub tree
 
 -- | Expand code for data constructors.
 seaCtor 
-	:: (?args :: [Arg]
+	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
@@ -64,7 +209,7 @@ seaCtor eTree
 			$ expandCtorTree
 			$ eTree
 	
-	dumpET DumpSeaCtor "sea-ctor" 
+	dumpET Arg.DumpSeaCtor "sea-ctor" 
 		$ eraseAnnotsTree eExpanded
 	
 	return eExpanded
@@ -72,7 +217,7 @@ seaCtor eTree
 
 -- | Expand code for creating thunks
 seaThunking 
-	:: (?args :: [Arg]
+	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
@@ -80,7 +225,7 @@ seaThunking
 seaThunking eTree
  = do
 	let tree'	= thunkTree eTree
-	dumpET DumpSeaThunk "sea-thunk" 
+	dumpET Arg.DumpSeaThunk "sea-thunk" 
 		$ eraseAnnotsTree tree'
 	
 	return tree'
@@ -88,7 +233,7 @@ seaThunking eTree
 
 -- | Add code for forcing suspensions
 seaForce 
-	:: (?args :: [Arg]
+	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()
 	-> IO (Tree ())
@@ -96,7 +241,7 @@ seaForce
 seaForce eTree
  = do
 	let tree'	= forceTree eTree
-	dumpET DumpSeaForce "sea-force" 
+	dumpET Arg.DumpSeaForce "sea-force" 
 		$ eraseAnnotsTree tree'
 
  	return	tree'
@@ -104,7 +249,7 @@ seaForce eTree
 
 -- | Store pointers on GC slot stack.
 seaSlot
-	:: (?args :: [Arg]
+	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> Tree ()		-- sea tree
 	-> Tree ()		-- sea header
@@ -115,7 +260,7 @@ seaSlot
 seaSlot	eTree eHeader cgHeader cgSource
  = do
  	let tree'	= slotTree eTree eHeader cgHeader cgSource
-	dumpET DumpSeaSlot "sea-slot" 
+	dumpET Arg.DumpSeaSlot "sea-slot" 
 		$ eraseAnnotsTree tree'
 	
 	return	tree'
@@ -123,7 +268,7 @@ seaSlot	eTree eHeader cgHeader cgSource
 
 -- | Flatten out match expressions.
 seaFlatten
-	:: (?args :: [Arg]
+	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> String
 	-> Tree ()
@@ -131,7 +276,7 @@ seaFlatten
 	
 seaFlatten unique eTree
  = do	let tree'	= flattenTree unique eTree
-	dumpET DumpSeaFlatten "sea-flatten" 
+	dumpET Arg.DumpSeaFlatten "sea-flatten" 
 		$ eraseAnnotsTree tree'
 	
 	return	tree'
@@ -139,7 +284,7 @@ seaFlatten unique eTree
 
 -- | Add module initialisation code
 seaInit
-	:: (?args :: [Arg]
+	:: (?args :: [Arg.Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> ModuleId
 	-> (Tree ())
@@ -147,7 +292,7 @@ seaInit
 	
 seaInit moduleName eTree
  = do 	let tree'	= initTree moduleName eTree
- 	dumpET DumpSeaInit "sea-init"
+ 	dumpET Arg.DumpSeaInit "sea-init"
 		$ eraseAnnotsTree tree'
 		
 	return tree'
@@ -155,7 +300,7 @@ seaInit moduleName eTree
 
 -- | Create C source files
 outSea 
-	:: (?args :: [Arg])
+	:: (?args :: [Arg.Arg])
 	=> ModuleId
 	-> (Tree ())		-- sea source
 	-> FilePath		-- path of the source file
@@ -251,7 +396,7 @@ makeIncludeDefTag pathThis
 		
 	
 -- | Add main module entry point code.
-seaMain	:: (?args :: [Arg])
+seaMain	:: (?args :: [Arg.Arg])
 	=> [ModuleId]
 	-> ModuleId
 	-> IO (Tree ())
