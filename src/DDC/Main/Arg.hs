@@ -44,7 +44,8 @@ data Arg
 	| StaticRuntime			-- ^ Link against static runtime.
 	| Profile			-- ^ Profile generated C files.
 	| ProfileRuntime		-- ^ Link against profiled runtime.
-	
+	| ViaLLVM			-- ^ Use the LLVM backend.
+
 	-- linker	
 	| Link				-- ^ Perform linking.
 	| LinkObj	[String]	-- ^ Extra object to link with.

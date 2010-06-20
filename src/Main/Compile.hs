@@ -117,6 +117,16 @@ compileFile_parse
    	[pathSource % "\n    Source file is empty.\n"]
 
  | otherwise
+ = if elem Arg.ViaLLVM $ setupArgs setup
+	then compileViaLLVM setup scrapes sRoot sModule importDirs blessMain sSource
+	else compileViaSea setup scrapes sRoot sModule importDirs blessMain sSource
+
+compileViaLLVM setup scrapes sRoot sModule importDirs blessMain sSource
+ = error "Compiling via LLVM not supported yet."
+
+compileViaSea
+	setup scrapes sRoot sModule
+	importDirs blessMain sSource
  = do
 	let ?args		= setupArgs setup
 	let ?verbose		= elem Arg.Verbose ?args
