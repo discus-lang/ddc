@@ -11,6 +11,7 @@ import Main.Setup
 import Main.Error
 import Main.Util
 import Main.Sea
+import Main.LLVM
 import qualified Main.Dump		as Dump
 import qualified Main.Source		as SS
 import qualified Main.Desugar		as SD
@@ -463,12 +464,4 @@ compileFile_parse
 	  else compileViaSea
 		setup modName pathSource cgHeader cgModule_final importDirs importsExp
 		modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
-
-
-
-compileViaLLVM
-	setup cgHeader cgModule_final importDirs importsExp modDefinesMainFn
-	modName pathSource pragmas sRoot scrapes_noRoot blessMain
- = error "Compiling via LLVM not supported yet."
-
 
