@@ -1,4 +1,4 @@
-module Main.Invoke 
+module Sea.Invoke 
 	(invokeSeaCompiler)
 where
 import Util

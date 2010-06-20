@@ -7,7 +7,6 @@ where
 
 -- main stages
 import Main.Setup
-import Main.Invoke
 import Main.BuildFile
 import Main.Dump
 import Main.Util
@@ -28,6 +27,7 @@ import qualified Sea.Util		as E
 
 import Sea.Exp
 import Sea.Util
+import Sea.Invoke
 
 import Sea.Sub				(subTree)
 import Sea.Ctor				(expandCtorTree)
