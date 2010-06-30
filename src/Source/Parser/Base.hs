@@ -8,6 +8,7 @@ module Source.Parser.Base
 	, token
 	, pTok, pQualified
 	, pVar, pOfSpace, pVarPlain, pVarPlainNamed, pVarPlainOfSpace, pVarField
+	, pVarSpaceHasType
 	, pCon, pConNamed, pConOfSpace, pConOfSpaceNamed
 	, pVarCon
 	, pSymbol
@@ -163,6 +164,15 @@ pVarPlainOfSpace spaces
 		   		then Just var
 				else Nothing
 		_ -> Nothing)
+
+
+-- | Parse a var from a certain namespace followed by a HasType token.
+pVarSpaceHasType :: NameSpace -> Parser Var
+pVarSpaceHasType spaceWant
+ = Parsec.try
+	(do	var	<- pOfSpace spaceWant pVar
+		pTok	K.HasType
+		return	var)
 
 
 -- | Parse a object field name

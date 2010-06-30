@@ -351,16 +351,14 @@ pDataField
 			, dInit		= Just exp }
 
   <|>	-- VAR :: TYPE
-	Parsec.try
-	  (do	var	<- pOfSpace NameField pVar
-	 	pTok K.HasType
+	do	var	<- pVarSpaceHasType NameField
 		t	<- pType_body
 
 		return	DataField
 			{ dPrimary	= True
 			, dLabel	= Just var
 			, dType		= t
-			, dInit		= Nothing })
+			, dInit		= Nothing }
 
   <|>	do	t	<- pType_body
   		return	DataField
