@@ -457,6 +457,8 @@ compileFile_parse
 	when (elem Arg.StopCore ?args)
 		compileExit
 
+	-- TODO : Put the parameters into a struct and call compileViaX with just
+	-- a single parameter.
 	if elem Arg.ViaLLVM ?args
 	  then compileViaLLVM
 		setup modName pathSource cgHeader cgModule_final importDirs importsExp
