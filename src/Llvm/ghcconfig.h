@@ -1,0 +1,2 @@
+#define GHCCONFIG_H
+
