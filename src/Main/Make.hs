@@ -149,7 +149,7 @@ buildLoop' args setup graph buildCount buildIx roots build
 			let file	= droppedFile ext
 			exists		<- System.doesFileExist file
 			when (not exists)
-			 $ do	putStr $ "ddc error: no " ++ ext ++ " file was produced by compiler."
+			 $ do	putStrLn $ "ddc error: no " ++ ext ++ " file was produced by compiler."
 				System.exitFailure
 
 		checkDropped ".o"

@@ -11,7 +11,7 @@ import Main.Setup
 import Main.Error
 import Main.Util
 import Main.Sea
-import Main.LLVM
+import Main.Llvm
 import qualified Main.Dump		as Dump
 import qualified Main.Source		as SS
 import qualified Main.Desugar		as SD
@@ -460,7 +460,7 @@ compileFile_parse
 	-- TODO : Put the parameters into a struct and call compileViaX with just
 	-- a single parameter.
 	if elem Arg.ViaLLVM ?args
-	  then compileViaLLVM
+	  then compileViaLlvm
 		setup modName pathSource cgHeader cgModule_final importDirs importsExp
 		modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
 	  else compileViaSea
