@@ -10,7 +10,7 @@ import qualified DDC.Main.Arg	as Arg
 import qualified Config.Config	as Config
 
 -----
-stage	= "Main.Invoke"
+stage	= "Sea.Invoke"
 
 -- | Invoke the external C compiler to compile this source program.
 invokeSeaCompiler 
