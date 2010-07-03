@@ -1,8 +1,10 @@
 module Llvm.Invoke
-	(invokeLlvmCompiler
-        ,invokeLlvmAssembler
-	)
+	( invokeLlvmCompiler
+	, invokeLlvmAssembler )
 where
+
+import Main.Util
+
 import Util
 import System.Cmd
 import System.Exit
@@ -17,25 +19,23 @@ stage	= "Llvm.Invoke"
 -- | Invoke the external LLVM compiler to compile this LLVM Intermediate
 --	Representation source program into native assembler.
 invokeLlvmCompiler
-	:: [Arg]		-- ^ ddc command line args
-	-> FilePath		-- ^ base path of source file
+	:: (?verbose :: Bool)
+	=> FilePath		-- ^ base path of source file
 	-> [String]		-- ^ extra flags to compile with (from build files)
 	-> IO ()
 
 invokeLlvmCompiler
-	args
 	pathSourceBase
 	extraFlags
  = do
- 	-- let cmd = Config.makeLlvmCompileCmd 
+ 	-- let cmd = Config.makeLlvmCompileCmd
 	let cmd	=  "llc-2.7 "
 		++ pathSourceBase ++ ".ddc.ll"
 		++ " -o " ++ pathSourceBase ++ ".ddc.s"
 
-	when (elem Arg.Verbose args)
-	 $ do	putStr	$ "\n"
-	 	putStr	$ " * Invoking IR compiler.\n"
-		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n"
+	outVerb $ ppr $ "\n"
+		% "  * Invoking IR compiler.\n"
+		% "    - command = \"" % cmd % "\"\n"
 
 	retCompile	<- system cmd
 
@@ -44,32 +44,30 @@ invokeLlvmCompiler
 	 ExitFailure _
 	  -> panic stage
 	  	$ "invokeLlvmCompiler: compilation of IR file failed.\n"
-		% "    pathC = " % pathSourceBase % ".ddc.ll" % "\n"
+		% "    path = " % pathSourceBase % ".ddc.ll" % "\n"
 
 
 
 -- | Invoke the external assembler to compile this native assembler
 --	source program into a native object file.
 invokeLlvmAssembler
-	:: [Arg]		-- ^ ddc command line args
-	-> FilePath		-- ^ base path of source file
+	:: (?verbose :: Bool)
+	=> FilePath		-- ^ base path of source file
 	-> [String]		-- ^ extra flags to compile with (from build files)
 	-> IO ()
 
 invokeLlvmAssembler
-	args
 	pathSourceBase
 	extraFlags
  = do
- 	-- let cmd = Config.makeLlvmAssembleCmd 
+ 	-- let cmd = Config.makeLlvmAssembleCmd
 	let cmd	=  "as "
 		++ pathSourceBase ++ ".ddc.s"
 		++ " -o " ++ pathSourceBase ++ ".o"
 
-	when (elem Arg.Verbose args)
-	 $ do	putStr	$ "\n"
-	 	putStr	$ " * Invoking assembler.\n"
-		putStr	$ "   - command      = \"" ++ cmd ++ "\"\n"
+	outVerb $ ppr $ "\n"
+		% "  * Invoking assembler.\n"
+		% "    - command = \"" % cmd % "\"\n"
 
 	retCompile	<- system cmd
 
@@ -78,4 +76,4 @@ invokeLlvmAssembler
 	 ExitFailure _
 	  -> panic stage
 	  	$ "invokeLlvmAssembler: compilation of ASM file failed.\n"
-		% "    pathC = " % pathSourceBase % ".s" % "\n"
+		% "    path = " % pathSourceBase % ".s" % "\n"

@@ -47,10 +47,8 @@ compileViaLlvm
 	let outfile = ?pathSourceBase ++ ".ddc.ll"
 	writeFile outfile $ ppLlvmModule $ ddcModule ?pathSourceBase
 
-	invokeLlvmCompiler ?args ?pathSourceBase []
-	invokeLlvmAssembler ?args ?pathSourceBase []
-
-	putStrLn $ "modDefinesMainFn : " ++ (show modDefinesMainFn)
+	invokeLlvmCompiler ?pathSourceBase []
+	invokeLlvmAssembler ?pathSourceBase []
 
 	return modDefinesMainFn
 
