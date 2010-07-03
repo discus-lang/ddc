@@ -2,7 +2,8 @@
 
 -- | Wrappers for compiler stages dealing with Sea code.
 module Main.Sea
-	(compileViaSea)
+	( compileViaSea
+	, makeSeaHeader )
 where
 
 -- main stages
@@ -334,24 +335,8 @@ outSea
 	 $ panic "Main.Sea" $ "junk sea bits = " ++ show junk ++ "\n"
 		
 	-- Build the C header
-	let defTag	= makeIncludeDefTag pathThis
-	let seaHeader
-		=  [ PHackery $ makeComments pathThis
-		   , PHackery ("#ifndef _inc" ++ defTag ++ "\n")
-		   , PHackery ("#define _inc" ++ defTag ++ "\n\n") 
-		   , PInclude "runtime/Runtime.h"
-		   , PInclude "runtime/Prim.h" ]
-		++ modIncludes pathImports
-		++ (map PInclude extraIncludes)
-
-		++ [ PHackery "\n"]	++ seaHashDefs
-		++ [ PHackery "\n"]	++ seaCafProtos
-		++ [ PHackery "\n"]	++ seaProtos
-		++ [ PHackery "\n#endif\n\n" ]
-
-	let seaHeaderS	
-		= catMap pprStrPlain 
-			$ eraseAnnotsTree seaHeader
+	let seaHeaderS
+		= makeSeaHeader eTree pathThis pathImports extraIncludes
 
 	-- Build the C code
 	let seaIncSelf	= modIncludeSelf pathThis
@@ -393,8 +378,33 @@ makeComments pathThis
 makeIncludeDefTag pathThis
  = filter (\c -> isAlpha c || isDigit c)
  	$ pathThis
-		
-	
+
+
+-- | Create the C header file for this module.
+makeSeaHeader :: (Tree ()) -> String -> [String] -> [String] -> String
+makeSeaHeader eTree pathThis pathImports extraIncludes
+ = do		-- Break up the sea into Header/Code parts.
+	let 	([ seaProtos, seaCafProtos, seaHashDefs ], junk)
+		 = partitionFs
+			[ (=@=) PProto{}, (=@=) PCafProto{}, (=@=) PHashDef{} ]
+			eTree
+	let defTag	= makeIncludeDefTag pathThis
+	let hdr =	[ PHackery $ makeComments pathThis
+			, PHackery ("#ifndef _inc" ++ defTag ++ "\n")
+			, PHackery ("#define _inc" ++ defTag ++ "\n\n") 
+			, PInclude "runtime/Runtime.h"
+			, PInclude "runtime/Prim.h" ]
+
+		++ modIncludes pathImports
+		++ (map PInclude extraIncludes)
+
+		++ [ PHackery "\n"]	++ seaHashDefs
+		++ [ PHackery "\n"]	++ seaCafProtos
+		++ [ PHackery "\n"]	++ seaProtos
+		++ [ PHackery "\n#endif\n\n" ]
+	catMap pprStrPlain $ eraseAnnotsTree hdr
+
+
 -- | Add main module entry point code.
 seaMain	:: (?args :: [Arg.Arg])
 	=> [ModuleId]
