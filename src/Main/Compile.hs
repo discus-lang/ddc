@@ -457,13 +457,77 @@ compileFile_parse
 	when (elem Arg.StopCore ?args)
 		compileExit
 
+
+
+	-- Chase down extra C header files to include into source -------------
+	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
+	
+	when (elem Arg.Verbose ?args)
+	 $ do	mapM_ (\path -> putStr $ pprStrPlain $ "  - included file   " % path % "\n")
+	 		$ includeFilesHere
+
+	let cgModule	= cgModule_final
+
+	-- Convert to Sea code ------------------------------------------------
+	outVerb $ ppr $ "  * Convert to Sea IR\n"
+
+	(eSea, eHeader)	<- SC.toSea
+				"TE"
+				cgHeader
+				cgModule
+
+	------------------------------------------------------------------------
+	-- Sea stages
+	------------------------------------------------------------------------
+		
+	-- Subsitute simple v1 = v2 statements ---------------------------------
+	outVerb $ ppr $ "  * Sea: Substitute\n"
+	eSub		<- seaSub
+				eSea
+				
+
+	-- Expand out constructors ---------------------------------------------
+	outVerb $ ppr $ "  * Sea: ExpandCtors\n"
+	eCtor		<- seaCtor
+				eSub
+				
+	-- Expand out thunking -------------------------------------------------
+	outVerb $ ppr $ "  * Sea: Thunking\n"
+	eThunking	<- seaThunking
+				eCtor
+				
+	-- Add suspension forcing code -----------------------------------------
+	outVerb $ ppr $ "  * Sea: Forcing\n"
+	eForce		<- seaForce
+				eThunking
+				
+	-- Add GC slots and fixup calls to CAFS --------------------------------
+	outVerb $ ppr $ "  * Sea: Slotify\n"
+	eSlot		<- seaSlot	
+				eForce
+				eHeader
+				cgHeader
+				cgModule
+
+	-- Flatten out match stmts --------------------------------------------
+	outVerb $ ppr $ "  * Sea: Flatten\n"
+	eFlatten	<- seaFlatten
+				"EF"
+				eSlot
+
+	-- Generate module initialisation functions ---------------------------
+	outVerb $ ppr $ "  * Sea: Init\n"
+	eInit		<- seaInit
+				modName
+				eFlatten
+
 	-- TODO : Put the parameters into a struct and call compileViaX with just
 	-- a single parameter.
 	if elem Arg.ViaLLVM ?args
 	  then compileViaLlvm
-		setup modName pathSource cgHeader cgModule_final importDirs importsExp
-		modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
+		setup modName eInit pathSource importDirs includeFilesHere importsExp
+		modDefinesMainFn sRoot scrapes_noRoot blessMain
 	  else compileViaSea
-		setup modName pathSource cgHeader cgModule_final importDirs importsExp
-		modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
+		setup modName eInit pathSource importDirs includeFilesHere importsExp
+		modDefinesMainFn sRoot scrapes_noRoot blessMain
 

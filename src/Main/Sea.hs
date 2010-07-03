@@ -3,6 +3,15 @@
 -- | Wrappers for compiler stages dealing with Sea code.
 module Main.Sea
 	( compileViaSea
+
+	, seaSub
+	, seaCtor
+	, seaThunking
+	, seaForce
+	, seaSlot
+	, seaFlatten
+	, seaInit
+
 	, makeSeaHeader )
 where
 
@@ -16,10 +25,8 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
 
-import qualified Source.Pragma		as Pragma
 import qualified Module.Scrape		as M
 import qualified DDC.Main.Arg		as Arg
-import qualified Main.Core		as SC
 import qualified DDC.Core.Glob		as C
 import qualified DDC.Config.Version	as Version
 
@@ -50,13 +57,12 @@ compileViaSea
 	:: (?verbose :: Bool, ?pathSourceBase :: FilePath)
 	=> Setup			-- ^ Compile setup.
 	-> ModuleId			-- ^ Module to compile, must also be in the scrape graph.
+	-> Tree ()			-- ^ The Tree for the module.
 	-> FilePath			-- ^ FilePath of source file.
-	-> C.Glob			-- ^ Glob of headers.
-	-> C.Glob			-- ^ Glob of module itself.
 	-> [FilePath]			-- ^ C import directories.
+	-> [FilePath]			-- ^ C include files.
 	-> Map ModuleId [a]		-- ^ Module import map.
 	-> Bool				-- ^ Module defines 'main' function.
-	-> [Pragma.Pragma]		-- ^ Compiler pragmas.
 	-> M.Scrape			-- ^ ScrapeGraph of this Module.
 	-> Map ModuleId M.Scrape	-- ^ Scrape graph of all modules reachable from the root.
 	-> Bool				-- ^ Whether to treat a 'main' function defined by this module
@@ -64,69 +70,10 @@ compileViaSea
 	-> IO Bool
 
 compileViaSea
-	setup modName pathSource cgHeader cgModule importDirs importsExp
-	modDefinesMainFn pragmas sRoot scrapes_noRoot blessMain
+	setup modName eInit pathSource importDirs includeFilesHere importsExp
+	modDefinesMainFn sRoot scrapes_noRoot blessMain
  = do
 	let ?args		= setupArgs setup
-
-	-- Chase down extra C header files to include into source -------------
-	let includeFilesHere	= [ str | Pragma.PragmaCCInclude str <- pragmas]
-	
-	when (elem Arg.Verbose ?args)
-	 $ do	mapM_ (\path -> putStr $ pprStrPlain $ "  - included file   " % path % "\n")
-	 		$ includeFilesHere
-
-	-- Convert to Sea code ------------------------------------------------
-	outVerb $ ppr $ "  * Convert to Sea IR\n"
-
-	(eSea, eHeader)	<- SC.toSea
-				"TE"
-				cgHeader
-				cgModule
-				
-	------------------------------------------------------------------------
-	-- Sea stages
-	------------------------------------------------------------------------
-		
-	-- Subsitute simple v1 = v2 statements ---------------------------------
-	outVerb $ ppr $ "  * Sea: Substitute\n"
-	eSub		<- seaSub
-				eSea
-				
-	-- Expand out constructors ---------------------------------------------
-	outVerb $ ppr $ "  * Sea: ExpandCtors\n"
-	eCtor		<- seaCtor
-				eSub
-				
-	-- Expand out thunking -------------------------------------------------
-	outVerb $ ppr $ "  * Sea: Thunking\n"
-	eThunking	<- seaThunking
-				eCtor
-				
-	-- Add suspension forcing code -----------------------------------------
-	outVerb $ ppr $ "  * Sea: Forcing\n"
-	eForce		<- seaForce
-				eThunking
-				
-	-- Add GC slots and fixup calls to CAFS --------------------------------
-	outVerb $ ppr $ "  * Sea: Slotify\n"
-	eSlot		<- seaSlot	
-				eForce
-				eHeader
-				cgHeader
-				cgModule
-
-	-- Flatten out match stmts --------------------------------------------
-	outVerb $ ppr $ "  * Sea: Flatten\n"
-	eFlatten	<- seaFlatten
-				"EF"
-				eSlot
-
-	-- Generate module initialisation functions ---------------------------
-	outVerb $ ppr $ "  * Sea: Init\n"
-	eInit		<- seaInit
-				modName
-				eFlatten
 
 	-- Generate C source code ---------------------------------------------
 	outVerb $ ppr $ "  * Generate C source code\n"
