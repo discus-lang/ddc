@@ -86,10 +86,13 @@ data LlvmVar
   | LMNLocalVar LMString LlvmType
   -- | A constant variable
   | LMLitVar LlvmLit
+  -- | Define a named struct.
+  | LMStructDef LMString [LlvmType]
   deriving (Eq)
 
 instance Show LlvmVar where
   show (LMLitVar x) = show x
+  show (LMStructDef n e) = "%struct." ++ n ++ " = type { " ++ commaCat e ++ " }"
   show (x         ) = show (getVarType x) ++ " " ++ getName x
 
 

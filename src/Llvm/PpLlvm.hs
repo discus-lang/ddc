@@ -81,6 +81,11 @@ ppLlvmGlobal (var@(LMGlobalVar _ _ link x a c), dat) =
 
     in ppAssignment var $ texts link <+> const' <+> rhs <> sect <> align
 
+ppLlvmGlobal (st@LMStructDef{}, Nothing) = show st
+
+ppLlvmGlobal (st@LMStructDef{}, Just _) =
+    error $ "Struct definition with an initializer: " ++ show st
+
 ppLlvmGlobal oth = error $ "Non Global var ppr as global! " ++ show oth
 
 
