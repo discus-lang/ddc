@@ -24,24 +24,26 @@ import Llvm.GhcReplace.PprBase
 --
 
 -- | A global mutable variable. Maybe defined or external
-type LMGlobal   = (LlvmVar, Maybe LlvmStatic)
+type LMGlobal = (LlvmVar, Maybe LlvmStatic)
 -- | A String in LLVM
-type LMString   = FastString
+type LMString = FastString
 
+-- | A type alias
+type LlvmAlias = (LMString, LlvmType)
 
--- | Llvm Types.
+-- | Llvm Types
 data LlvmType
-  = LMInt Int                 -- ^ An integer with a given width in bits.
-  | LMFloat                   -- ^ 32 bit floating point
-  | LMDouble                  -- ^ 64 bit floating point
-  | LMFloat80                 -- ^ 80 bit (x86 only) floating point
-  | LMFloat128                -- ^ 128 bit floating point
-  | LMPointer LlvmType        -- ^ A pointer to a 'LlvmType'
-  | LMArray Int LlvmType      -- ^ An array of 'LlvmType'
-  | LMLabel                   -- ^ A 'LlvmVar' can represent a label (address)
-  | LMVoid                    -- ^ Void type
-  | LMStruct [LlvmType]       -- ^ Structure type
-  | LMAlias LMString LlvmType -- ^ A type alias
+  = LMInt Int            -- ^ An integer with a given width in bits.
+  | LMFloat              -- ^ 32 bit floating point
+  | LMDouble             -- ^ 64 bit floating point
+  | LMFloat80            -- ^ 80 bit (x86 only) floating point
+  | LMFloat128           -- ^ 128 bit floating point
+  | LMPointer LlvmType   -- ^ A pointer to a 'LlvmType'
+  | LMArray Int LlvmType -- ^ An array of 'LlvmType'
+  | LMLabel              -- ^ A 'LlvmVar' can represent a label (address)
+  | LMVoid               -- ^ Void type
+  | LMStruct [LlvmType]  -- ^ Structure type
+  | LMAlias LlvmAlias    -- ^ A type alias
 
   -- | Function type, used to create pointers to functions
   | LMFunction LlvmFunctionDecl
@@ -57,7 +59,7 @@ instance Show LlvmType where
   show (LMArray nr tp ) = "[" ++ show nr ++ " x " ++ show tp ++ "]"
   show (LMLabel       ) = "label"
   show (LMVoid        ) = "void"
-  show (LMStruct tys  ) = "{" ++ (commaCat tys) ++ "}"
+  show (LMStruct tys  ) = "<{" ++ (commaCat tys) ++ "}>"
 
   show (LMFunction (LlvmFunctionDecl _ _ _ r varg p _))
     = let args = ((drop 1).concat) $ -- use drop since it can handle empty lists
@@ -68,7 +70,7 @@ instance Show LlvmType where
                         _otherwise                -> ""
       in show r ++ " (" ++ args ++ varg' ++ ")"
 
-  show (LMAlias s _   ) = "%" ++ unpackFS s
+  show (LMAlias (s,_)) = "%" ++ unpackFS s
 
 -- | An LLVM section defenition. If Nothing then let LLVM decide the section
 type LMSection = Maybe LMString
@@ -86,13 +88,10 @@ data LlvmVar
   | LMNLocalVar LMString LlvmType
   -- | A constant variable
   | LMLitVar LlvmLit
-  -- | Define a named struct.
-  | LMStructDef LMString [LlvmType]
   deriving (Eq)
 
 instance Show LlvmVar where
   show (LMLitVar x) = show x
-  show (LMStructDef n e) = "%struct." ++ n ++ " = type { " ++ commaCat e ++ " }"
   show (x         ) = show (getVarType x) ++ " " ++ getName x
 
 
@@ -149,9 +148,9 @@ instance Show LlvmStatic where
 
   show (LMStaticStruc d t)
       = let struc = case d of
-              [] -> "{}"
-              ts -> "{" ++ show (head ts) ++
-                      concat (map (\x -> "," ++ show x) (tail ts)) ++ "}"
+              [] -> "<{}>"
+              ts -> "<{" ++ show (head ts) ++
+                      concat (map (\x -> "," ++ show x) (tail ts)) ++ "}>"
         in show t ++ " " ++ struc
 
   show (LMStaticPointer v) = show v
@@ -323,7 +322,7 @@ llvmWidthInBits LMLabel         = 0
 llvmWidthInBits LMVoid          = 0
 llvmWidthInBits (LMStruct tys)  = sum $ map llvmWidthInBits tys
 llvmWidthInBits (LMFunction  _) = 0
-llvmWidthInBits (LMAlias _ t)   = llvmWidthInBits t
+llvmWidthInBits (LMAlias (_,t)) = llvmWidthInBits t
 
 
 -- -----------------------------------------------------------------------------

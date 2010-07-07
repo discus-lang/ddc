@@ -12,8 +12,8 @@ module Llvm.PpLlvm (
     ppLlvmComment,
     ppLlvmGlobals,
     ppLlvmGlobal,
-    ppLlvmType,
-    ppLlvmTypes,
+    ppLlvmAlias,
+    ppLlvmAliases,
     ppLlvmFunctionDecls,
     ppLlvmFunctionDecl,
     ppLlvmFunctions,
@@ -40,8 +40,10 @@ import Llvm.GhcReplace.Unique
 
 -- | Print out a whole LLVM module.
 ppLlvmModule :: LlvmModule -> Doc
-ppLlvmModule (LlvmModule comments globals decls funcs)
+ppLlvmModule (LlvmModule comments aliases globals decls funcs)
   = ppLlvmComments comments
+    $+$ empty
+    $+$ ppLlvmAliases aliases
     $+$ empty
     $+$ ppLlvmGlobals globals
     $+$ empty
@@ -81,28 +83,16 @@ ppLlvmGlobal (var@(LMGlobalVar _ _ link x a c), dat) =
 
     in ppAssignment var $ texts link <+> const' <+> rhs <> sect <> align
 
-ppLlvmGlobal (st@LMStructDef{}, Nothing) = show st
-
-ppLlvmGlobal (st@LMStructDef{}, Just _) =
-    error $ "Struct definition with an initializer: " ++ show st
-
 ppLlvmGlobal oth = error $ "Non Global var ppr as global! " ++ show oth
 
 
 -- | Print out a list of LLVM type aliases.
-ppLlvmTypes :: [LlvmType] -> Doc
-ppLlvmTypes tys = vcat $ map ppLlvmType tys
+ppLlvmAliases :: [LlvmAlias] -> Doc
+ppLlvmAliases tys = vcat $ map ppLlvmAlias tys
 
 -- | Print out an LLVM type alias.
-ppLlvmType :: LlvmType -> Doc
-
-ppLlvmType al@(LMAlias _ t)
-  = texts al <+> equals <+> text "type" <+> texts t
-
-ppLlvmType (LMFunction t)
-  = ppLlvmFunctionDecl t
-
-ppLlvmType _ = empty
+ppLlvmAlias :: LlvmAlias -> Doc
+ppLlvmAlias (name, ty) = text "%" <> ftext name <+> equals <+> text "type" <+> texts ty
 
 
 -- | Print out a list of function definitions.
