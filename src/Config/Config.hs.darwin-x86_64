@@ -9,6 +9,13 @@ import DDC.Main.Arg
 extSharedObject
 	= "dylib"
 
+
+-- | Pointer size in bits and bytes.
+pointerBytes, pointerBits :: Int
+pointerBytes = 8
+pointerBits = pointerBytes * 8
+
+
 -- | The system command to compile a Sea source file.
 makeSeaCompileCmd
 	:: [Arg]		-- ^ ddc command line args
@@ -26,8 +33,8 @@ makeSeaCompileCmd
 	=  "gcc"
 	++ " -Werror"
 	++ " -std=c99"
-	++ " -m64"
-	++ " -D BITS=64"
+	++ " -m" ++ show pointerBits
+	++ " -D BITS=" ++ show pointerBits
 
 	++ " -c " ++ pathSourceBase ++ ".ddc.c"
 	++ " -o " ++ pathSourceBase ++ ".o"
@@ -67,7 +74,7 @@ makeLinkCmd
 
 	= "gcc"
 	++ " -std=c99"
-	++ " -m64"
+	++ " -m" ++ show pointerBits
 	++ " -o " ++ outFile
 
 	++ (if elem Profile args 

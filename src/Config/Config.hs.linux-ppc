@@ -9,6 +9,13 @@ import DDC.Main.Arg
 extSharedObject
 	= "so"
 
+
+-- | Pointer size in bits and bytes.
+pointerBytes, pointerBits :: Int
+pointerBytes = 4
+pointerBits = pointerBytes * 8
+
+
 -- | The system command to compile a Sea source file.
 makeSeaCompileCmd
 	:: [Arg]		-- ^ ddc command line args
@@ -26,7 +33,7 @@ makeSeaCompileCmd
 	=  "gcc"
 	++ " -Werror"
 	++ " -std=c99"
-	++ " -D BITS=32"
+	++ " -D BITS=" ++ show pointerBits
 
 	++ " -c " ++ pathSourceBase ++ ".ddc.c"
 	++ " -o " ++ pathSourceBase ++ ".o"
