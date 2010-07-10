@@ -28,14 +28,25 @@ initTree moduleName cTree
    in	super ++ cTree
 
 makeInitCaf v
- = 	[ SHackery ("     _ddcCAF_" ++  name ++ " = " ++ "_ddcSlotPtr++;")
-	, SHackery ("     _CAF(" ++ name ++ ") = 0;")
-	, SHackery ("     _CAF(" ++ name ++ ") = " ++ name ++ "();\n") ] 
+ = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name)) TObj slotPtr
+	, SAssign slotPtr TObj (XPrim FAdd [slotPtr, XInt 1])
+	, SAssign (XVarCAF v TObj) TObj (XInt 0)
+	, SAssign (XVarCAF v TObj) TObj (XCall v []) ] 
 	where	name	= seaVar False v
-		 
+		slotPtr =  xVarWithSeaName "_ddcSlotPtr"
+
 makeInitVar (ModuleId vs)
 	= varWithName ("ddcInitModule_" ++ (catInt "_" vs))
 
+
+xVarWithSeaName name
+ =	let v = Var
+		{ varName 	= name
+		, varModuleId	= ModuleIdNil
+		, varNameSpace	= NameNothing	
+		, varId		= VarIdNil
+		, varInfo	= [ISeaName name] }
+	in XVar v TObj
 
 -- | Make code that initialises each module and calls the main function.
 mainTree
