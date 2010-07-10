@@ -2,7 +2,12 @@
 -- GHC compiler. This is needed to allow the use of David Terei's LLVM output
 -- code that is part of GHC.
 
-module Llvm.GhcReplace.Unique where
+module Llvm.GhcReplace.Unique
+	( Unique
+	, newUnique
+	, fakeUnique
+    , pprUnique )
+	where
 
 import Control.Concurrent.MVar
 import System.IO.Unsafe (unsafePerformIO)
@@ -10,7 +15,10 @@ import Llvm.GhcReplace.Outputable
 
 -- | An abstract unique object.  Objects of type 'Unique' may be
 -- compared for equality and ordering and hashed into 'Int'.
-newtype Unique = Unique Integer deriving (Eq,Ord)
+data Unique
+	= UniqueInt Integer
+	| UniqueStr String
+	deriving (Eq,Ord)
 
 uniqSource :: MVar Integer
 uniqSource = unsafePerformIO (newMVar 0)
@@ -24,10 +32,16 @@ newUnique = do
    val <- takeMVar uniqSource
    let next = val+1
    putMVar uniqSource next
-   return (Unique next)
+   return (UniqueInt next)
+
+-- | Create a fake 'Unique' object. The DDC Sea backend already generated
+-- unique labels. This allows the LLVM backend to use the Sea labels.
+fakeUnique :: String -> Unique
+fakeUnique s = UniqueStr s
 
 instance Show Unique where
-    show (Unique u) = "u" ++ show u
+    show (UniqueInt i) = "u" ++ show i
+    show (UniqueStr s) = s
 
 pprUnique :: Unique -> SDoc
 pprUnique u _ = show u
