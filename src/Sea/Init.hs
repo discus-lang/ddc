@@ -23,8 +23,8 @@ initTree
 initTree moduleName cTree
  = let 	initCafSS	= catMap makeInitCaf [ v | PCafSlot v t <- cTree, not (typeIsUnboxed t) ]
 	initV		= makeInitVar moduleName
-	super		= [ PProto initV [] TObj
-			  , PSuper initV [] TObj initCafSS ]
+	super		= [ PProto initV [] TVoid
+			  , PSuper initV [] TVoid initCafSS ]
    in	super ++ cTree
 
 makeInitCaf v
