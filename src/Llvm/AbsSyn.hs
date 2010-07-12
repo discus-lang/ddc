@@ -176,11 +176,9 @@ data LlvmExpression
     Navigate in an structure, selecting elements
       * inbound: Is the pointer inbounds? (computed pointer doesn't overflow)
       * ptr:     Location of the structure
-      * indexes: A list of indexes to select the correct value. For example
-                 the first element of the third element of the structure ptr
-                 is selected with [3,1] (zero indexed)
+      * indexes: A list of indexes to select the correct value.
   -}
-  | GetElemPtr Bool LlvmVar [LlvmElemIndex]
+  | GetElemPtr Bool LlvmVar [LlvmVar]
 
   {- |
      Cast the variable from to the to type. This is an abstraction of three
@@ -214,14 +212,3 @@ data LlvmExpression
 
   deriving (Show, Eq)
 
--- | Two ways to define indices for GetElemPtr.
-data LlvmElemIndex
-  -- | Index is a integer literal.
-  = LlvmIndexInt Int
-  -- | Index is a (register) variable.
-  | LlvmIndexVar LlvmVar
-  deriving (Eq)
-
-instance Show LlvmElemIndex where
-  show (LlvmIndexInt i) = show llvmWord ++ " " ++ show i
-  show (LlvmIndexVar v) = show v

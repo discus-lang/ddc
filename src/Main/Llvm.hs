@@ -237,7 +237,7 @@ runtimeEnter :: Int -> [LlvmStatement]
 runtimeEnter count
  =	[ Comment ["_ENTER (" ++ show count ++ ")"]
 	, Assignment enter0 (Load ddcSlotPtr)
-	, Assignment enter1 (GetElemPtr True enter0 [LlvmIndexInt count])
+	, Assignment enter1 (GetElemPtr True enter0 [LMLitVar (llvmWordLit count)])
 	, Store enter1 ddcSlotPtr
 
 	, Assignment enter2 (Load ddcSlotMax)
@@ -266,7 +266,7 @@ runtimeLeave count
  =	[ Comment ["---------------------------------------------------------------"]
 	, Comment ["_LEAVE (" ++ show count ++ ")"]
 	, Assignment leave0 (Load ddcSlotPtr)
-	, Assignment leave1 (GetElemPtr True leave0 [LlvmIndexInt (-count)])
+	, Assignment leave1 (GetElemPtr True leave0 [LMLitVar (llvmWordLit (-count))])
 	, Store leave1 ddcSlotPtr
 
 	, Assignment leave2 (Load ddcSlotBase)
@@ -300,7 +300,7 @@ slotInit _ count
 	init0 = LMNLocalVar "init.0" ppObj
 	build n
 	 =	let target = LMNLocalVar ("init.target." ++ show n) ppObj
-		in	[ Assignment target (GetElemPtr False init0 [LlvmIndexInt (-n)])
+		in	[ Assignment target (GetElemPtr False init0 [LMLitVar (llvmWordLit (-n))])
 			, Store nullObj target ]
 
 slotInit initstart n
@@ -312,7 +312,7 @@ slotInit initstart n
 	, Assignment index (Phi llvmWord [((LMLitVar (llvmWordLit 0)), (LMLocalVar initstart LMLabel)), (indexNext, (LMLocalVar initloop LMLabel))])
 	, Assignment tmp (LlvmOp LM_MO_Add index (LMLitVar (llvmWordLit (-n))))
 
-	, Assignment target (GetElemPtr False init0 [LlvmIndexVar tmp])
+	, Assignment target (GetElemPtr False init0 [tmp])
 	, Store nullObj target
 
 	, Assignment indexNext (LlvmOp LM_MO_Add index (LMLitVar (llvmWordLit 1)))
