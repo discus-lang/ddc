@@ -46,6 +46,7 @@ data VarInfo
 	| IBoundBy	Var			-- ^ The binding occurance of this var.
 	| IValueVar	Var			-- ^ Type varible, then this gives the value variable.
 	| ISeaName	String			-- ^ Variable name to use when outputting Sea code.
+        | ISeaGlobal	Bool			-- ^ Is the variable global in the output Sea code.
 	deriving (Show)
 
 

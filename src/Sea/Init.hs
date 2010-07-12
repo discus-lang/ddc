@@ -45,7 +45,7 @@ xVarWithSeaName name
 		, varModuleId	= ModuleIdNil
 		, varNameSpace	= NameNothing	
 		, varId		= VarIdNil
-		, varInfo	= [ISeaName name] }
+		, varInfo	= [ISeaName name, ISeaGlobal True] }
 	in XVar v (TPtr TObj)
 
 -- | Make code that initialises each module and calls the main function.

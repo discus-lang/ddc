@@ -389,6 +389,10 @@ seaVar local v
 	++ (if local then "_" ++ (pprStrPlain $ varId v) ++ "_" else "_")
 	++ "_sym" ++ (Var.deSymString $ varName v)	
 
+	-- If the variable is explicitly set as global use the given name.
+	| True : _	<- [global | ISeaGlobal global <- varInfo v]
+	= varName v
+
 	-- local vars are specific to a single Sea function.
 	-- 	we need to prepend "_v" to avoid conflicts with C keywords
 	--	and builtin functions from the RTS.
