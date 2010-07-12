@@ -36,6 +36,11 @@ stage = "Main.Llvm"
 
 debug = False
 
+trace s v
+ =	if debug
+	  then Debug.trace s v
+	  else v
+
 
 compileViaLlvm
 	:: (?verbose :: Bool, ?pathSourceBase :: FilePath)
@@ -144,8 +149,8 @@ seaToLlvmDecls (PSuper v p t ss)
  	return $ [ LlvmFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map toParams p) Nothing)
 		(map (seaVar True . fst) p)	-- funcArgs
-		[]			-- funcAttrs
-		Nothing			-- funcSect
+		[]				-- funcAttrs
+		Nothing				-- funcSect
 		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return Nothing ]) ]	-- funcBody
 		]
 
@@ -156,7 +161,8 @@ toParams (v, t) = (toLlvmType t, [])
 
 seaToLlvmGlobal :: Top (Maybe a) -> [LMGlobal]
 seaToLlvmGlobal (PCafSlot v t)
- =	let	tt = LMPointer (toLlvmType t)
+ | t == TObj	-- TODO: This should be 'TPtr (TPtr TObj)'. Fix it upstream.
+ =	let	tt = toLlvmType (TPtr (TPtr TObj))
 		var = LMGlobalVar
  			("_ddcCAF_" ++ seaVar False v)	-- Variable name
 			tt				-- LlvmType
@@ -166,6 +172,8 @@ seaToLlvmGlobal (PCafSlot v t)
 			False				-- LMConst
 	in [(var, Just (LMStaticLit (LMNullLit tt)))]
 
+ | otherwise
+ = panic stage $ "seaToLlvmGlobal on type : " ++ show t
 
 moduleGlobals :: [LMGlobal]
 moduleGlobals
@@ -198,17 +206,15 @@ seaToLlvm (SHackery s)
  =	-- Left over inline C code.
 	panic stage $ "SHakery '" ++ s ++ "' not supported in LLVM backend."
 
-{-
+
+
 seaToLlvm (SAssign (XVar v1 t1) t (XVar v2 t2))
- | t == TPtr TObj -- t2 && t1 == t
- = do	putStrLn "\n"
-	putStrLn $ show t1 ++ " - " ++ show t ++ " - " ++ show t2
-	putStrLn $ show v1
-	putStrLn $ show v2
-	putStrLn "\n"
-	let 	ldst = LMLocalVar (seaVar True v1) (toLlvmType t1)
-	return	$ [Assignment ldst (Load (toLlvmVar v2 t2)) ]
--}
+ | t1 == TPtr (TPtr TObj) && t2 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
+	&& isGlobalVar v1 && isGlobalVar v2
+ = do	tmp	<- newUniqueLocal (toLlvmType t1)
+	return	$ [ Assignment tmp (loadAddress (toLlvmVar v2 t2))
+		  , Store tmp (pVarLift (toLlvmVar v1 t1)) ]
+
 
 seaToLlvm (SAssign x1 t x2)
  = do	when debug
@@ -222,21 +228,6 @@ seaToLlvm stmt
 
 
 
-toLlvmVar :: Var -> Type -> LlvmVar
-toLlvmVar v t
- = case isGlobalVar v of
-	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
-        False -> LMNLocalVar (seaVar True v) (toLlvmType t)
-
-
-isGlobalVar :: Var -> Bool
-isGlobalVar v 
- -- If the variable is explicitly set as global use the given name.
- | bool : _	<- [global | ISeaGlobal global <- varInfo v]
- = Debug.trace (seaVar bool v ++ " " ++ show bool) bool
-
- | otherwise
- = False
 
 
 --------------------------------------------------------------------------------
@@ -348,8 +339,36 @@ toLlvmType TObj		= structObj
 toLlvmType TVoid	= LMVoid
 toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
 
+
+toLlvmVar :: Var -> Type -> LlvmVar
+toLlvmVar v t
+ = case isGlobalVar v of
+	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
+        False -> LMNLocalVar (seaVar True v) (toLlvmType t)
+
+
 llvmWordLit :: Integral a => a -> LlvmLit
 llvmWordLit n = LMIntLit (toInteger n) llvmWord
+
+
+newUniqueLocal :: LlvmType -> IO LlvmVar
+newUniqueLocal t
+ = do	u <- newUnique
+	return $ LMLocalVar u t
+
+
+isGlobalVar :: Var -> Bool
+isGlobalVar v 
+ -- If the variable is explicitly set as global use the given name.
+ | bool : _	<- [global | ISeaGlobal global <- varInfo v]
+ = bool
+
+ | otherwise
+ = False
+
+
+loadAddress :: LlvmVar -> LlvmExpression
+loadAddress v = Load (pVarLift v)
 
 --------------------------------------------------------------------------------
 -- Data types and variables.
