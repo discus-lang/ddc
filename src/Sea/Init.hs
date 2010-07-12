@@ -28,7 +28,7 @@ initTree moduleName cTree
    in	super ++ cTree
 
 makeInitCaf v
- = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name)) TObj slotPtr
+ = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name)) (TPtr TObj) slotPtr
 	, SAssign slotPtr TObj (XPrim FAdd [slotPtr, XInt 1])
 	, SAssign (XVarCAF v TObj) TObj (XInt 0)
 	, SAssign (XVarCAF v TObj) TObj (XCall v []) ] 
@@ -46,7 +46,7 @@ xVarWithSeaName name
 		, varNameSpace	= NameNothing	
 		, varId		= VarIdNil
 		, varInfo	= [ISeaName name] }
-	in XVar v TObj
+	in XVar v (TPtr TObj)
 
 -- | Make code that initialises each module and calls the main function.
 mainTree
