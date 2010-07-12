@@ -265,9 +265,9 @@ ppAlloca tp amount =
   in text "alloca" <+> texts tp <> comma <+> texts amount'
 
 
-ppGetElementPtr :: Bool -> LlvmVar -> [Int] -> Doc
+ppGetElementPtr :: Bool -> LlvmVar -> [LlvmElemIndex] -> Doc
 ppGetElementPtr inb ptr idx =
-  let indexes = hcat $ map ((comma <+> texts i32 <+>) . texts) idx
+  let indexes = hcat $ map ((comma <+>) . texts) idx
       inbound = if inb then text "inbounds" else empty
   in text "getelementptr" <+> inbound <+> texts ptr <> indexes
 

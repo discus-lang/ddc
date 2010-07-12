@@ -6,7 +6,7 @@ module Llvm.GhcReplace.Unique
 	( Unique
 	, newUnique
 	, fakeUnique
-    , pprUnique )
+	, pprUnique )
 	where
 
 import Control.Concurrent.MVar
