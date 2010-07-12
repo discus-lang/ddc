@@ -40,7 +40,7 @@ fakeUnique :: String -> Unique
 fakeUnique s = UniqueStr s
 
 instance Show Unique where
-    show (UniqueInt i) = "u" ++ show i
+    show (UniqueInt i) = "u." ++ show i
     show (UniqueStr s) = s
 
 pprUnique :: Unique -> SDoc
