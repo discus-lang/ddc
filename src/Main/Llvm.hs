@@ -30,7 +30,12 @@ import Util
 import qualified Data.Map		as Map
 import qualified Config.Config		as Config
 
+import qualified Debug.Trace		as Debug
+
 stage = "Main.Llvm"
+
+debug = False
+
 
 compileViaLlvm
 	:: (?verbose :: Bool, ?pathSourceBase :: FilePath)
@@ -127,15 +132,15 @@ seaToLlvmDecls (PCafInit v t ss)
 
 
 seaToLlvmDecls (PSuper v p t ss)
- = do	{-
- 	when True -- ("_ddcInitModule_" == take 15 (seaVar False v))
-	 $ do	putStrLn "--------------------------------------------------------"
-		putStrLn $ seaVar False v
-		putStrLn ""
-		mapM_ (\s -> putStrLn $ show s) ss
-		putStrLn "--------------------------------------------------------"
+ = do	when debug
+	  $ putStrLn "--------------------------------------------------------"
+	{-
+	putStrLn $ seaVar False v
+	putStrLn ""
+	mapM_ (\s -> putStrLn $ show s) ss
+	putStrLn "--------------------------------------------------------"
 	-}
-	let blocks = catMap seaToLlvm ss
+	blocks <- catMapM seaToLlvm ss
  	return $ [ LlvmFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map toParams p) Nothing)
 		(map (seaVar True . fst) p)	-- funcArgs
@@ -169,11 +174,69 @@ moduleGlobals
 	, ( ddcSlotBase, Nothing ) ]
 
 
-seaToLlvm :: Stmt a -> [LlvmStatement]
-seaToLlvm (SEnter n) = runtimeEnter n
-seaToLlvm (SLeave n) = runtimeLeave n
+seaToLlvm :: Stmt a -> IO [LlvmStatement]
 
-seaToLlvm _ = []
+seaToLlvm (SBlank)	= return $ [Comment [""]]
+seaToLlvm (SEnter n)	= return $ runtimeEnter n
+seaToLlvm (SLeave n)	= return $ runtimeLeave n
+seaToLlvm (SComment s)	= return $ [Comment [s]]
+
+seaToLlvm (SGoto var)
+ =	return $ [Branch (LMNLocalVar (seaVar False var) LMLabel)]
+
+seaToLlvm (SAuto v t)
+ =	-- LLVM is SSA so auto variables do not need to be declared.
+	return [Comment ["SAuto " ++ seaVar True v ++ " " ++ show t]]
+
+seaToLlvm (SLabel l)
+ =	-- LLVM does not allow implicit fall through to a label, so
+	-- explicitly branch to the label immediately following.
+	let label = fakeUnique (seaVar False l)
+	in return $ [Branch (LMLocalVar label LMLabel), MkLabel label]
+
+seaToLlvm (SHackery s)
+ =	-- Left over inline C code.
+	panic stage $ "SHakery '" ++ s ++ "' not supported in LLVM backend."
+
+{-
+seaToLlvm (SAssign (XVar v1 t1) t (XVar v2 t2))
+ | t == TPtr TObj -- t2 && t1 == t
+ = do	putStrLn "\n"
+	putStrLn $ show t1 ++ " - " ++ show t ++ " - " ++ show t2
+	putStrLn $ show v1
+	putStrLn $ show v2
+	putStrLn "\n"
+	let 	ldst = LMLocalVar (seaVar True v1) (toLlvmType t1)
+	return	$ [Assignment ldst (Load (toLlvmVar v2 t2)) ]
+-}
+
+seaToLlvm (SAssign x1 t x2)
+ = do	when debug
+	  $ putStrLn $ "SAssign " ++ (take 150 $ show x1)
+	return []
+
+seaToLlvm stmt
+ = do	when debug
+	  $ putStrLn $ take 150 $ show stmt
+	return []
+
+
+
+toLlvmVar :: Var -> Type -> LlvmVar
+toLlvmVar v t
+ = case isGlobalVar v of
+	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
+        False -> LMNLocalVar (seaVar True v) (toLlvmType t)
+
+
+isGlobalVar :: Var -> Bool
+isGlobalVar v 
+ -- If the variable is explicitly set as global use the given name.
+ | bool : _	<- [global | ISeaGlobal global <- varInfo v]
+ = Debug.trace (seaVar bool v ++ " " ++ show bool) bool
+
+ | otherwise
+ = False
 
 
 --------------------------------------------------------------------------------
@@ -199,10 +262,10 @@ runtimeEnter count
 	++ slotInit egood count
 	++ [ Comment ["---------------------------------------------------------------"] ]
     where
-	enter0 = LMLocalVar (fakeUnique "enter.0") ppObj
-	enter1 = LMLocalVar (fakeUnique "enter.1") ppObj
-	enter2 = LMLocalVar (fakeUnique "enter.2") ppObj
-	enter3 = LMLocalVar (fakeUnique "enter.3") i1
+	enter0 = LMNLocalVar "enter.0" ppObj
+	enter1 = LMNLocalVar "enter.1" ppObj
+	enter2 = LMNLocalVar "enter.2" ppObj
+	enter3 = LMNLocalVar "enter.3" i1
 	epanic = fakeUnique "enter.panic"
 	egood = fakeUnique "enter.good"
 
@@ -226,12 +289,12 @@ runtimeLeave count
 	, Comment ["---------------------------------------------------------------"]
 	]
     where
-	leave0 = LMLocalVar (fakeUnique "leave.0") ppObj
-	leave1 = LMLocalVar (fakeUnique "leave.1") ppObj
-	leave2 = LMLocalVar (fakeUnique "leave.2") ppObj
-	leave3 = LMLocalVar (fakeUnique "leave.3") i1
-	lpanic = fakeUnique "leave.panic"
-	lgood = fakeUnique "leave.ok"
+	leave0	= LMNLocalVar "leave.0" ppObj
+	leave1	= LMNLocalVar "leave.1" ppObj
+	leave2	= LMNLocalVar "leave.2" ppObj
+	leave3	= LMNLocalVar "leave.3" i1
+	lpanic	= fakeUnique "leave.panic"
+	lgood	= fakeUnique "leave.ok"
 
 
 slotInit :: Unique -> Int -> [LlvmStatement]
@@ -243,9 +306,9 @@ slotInit _ count
  | count < 8
  =	Assignment init0 (Load ddcSlotPtr) : concatMap build [1 .. count]
     where
-	init0 = LMLocalVar (fakeUnique "init.0") ppObj
+	init0 = LMNLocalVar "init.0" ppObj
 	build n
-	 =	let target = LMLocalVar (fakeUnique ("init.target." ++ show n)) ppObj
+	 =	let target = LMNLocalVar ("init.target." ++ show n) ppObj
 		in	[ Assignment target (GetElemPtr False init0 [LlvmIndexInt (-n)])
 			, Store nullObj target ]
 
@@ -255,35 +318,38 @@ slotInit initstart n
 	, Branch (LMLocalVar initloop LMLabel)
 
 	, MkLabel initloop
-	, Assignment index (Phi llvmWord [((LMLitVar (LMIntLit 0 llvmWord)), (LMLocalVar initstart LMLabel)), (indexNext, (LMLocalVar initloop LMLabel))])
-	, Assignment tmp (LlvmOp LM_MO_Add index (LMLitVar (LMIntLit (toInteger (-n)) llvmWord)))
+	, Assignment index (Phi llvmWord [((LMLitVar (llvmWordLit 0)), (LMLocalVar initstart LMLabel)), (indexNext, (LMLocalVar initloop LMLabel))])
+	, Assignment tmp (LlvmOp LM_MO_Add index (LMLitVar (llvmWordLit (-n))))
 
 	, Assignment target (GetElemPtr False init0 [LlvmIndexVar tmp])
 	, Store nullObj target
 
-	, Assignment indexNext (LlvmOp LM_MO_Add index (LMLitVar (LMIntLit 1 llvmWord)))
-	, Assignment initdone (Compare LM_CMP_Eq indexNext (LMLitVar (LMIntLit (toInteger n) llvmWord)))
+	, Assignment indexNext (LlvmOp LM_MO_Add index (LMLitVar (llvmWordLit 1)))
+	, Assignment initdone (Compare LM_CMP_Eq indexNext (LMLitVar (llvmWordLit n)))
 	, BranchIf initdone (LMLocalVar initend LMLabel) (LMLocalVar initloop LMLabel)
 	, MkLabel initend
 	]
     where
-	init0 = LMLocalVar (fakeUnique "init.0") ppObj
-	initloop = fakeUnique "init.loop"
-	initend = fakeUnique "init.end"
-	index = LMLocalVar (fakeUnique "init.index") llvmWord
-	indexNext = LMLocalVar (fakeUnique "init.index.next") llvmWord
-	initdone = LMLocalVar (fakeUnique "init.done") i1
-	tmp = LMLocalVar (fakeUnique "init.tmp") llvmWord
-	target = LMLocalVar (fakeUnique "init.target") ppObj
+	initloop	= fakeUnique "init.loop"
+	initend		= fakeUnique "init.end"
+	init0		= LMNLocalVar "init.0" ppObj
+	index		= LMNLocalVar "init.index" llvmWord
+	indexNext	= LMNLocalVar "init.index.next" llvmWord
+	initdone	= LMNLocalVar "init.done" i1
+	tmp		= LMNLocalVar "init.tmp" llvmWord
+	target		= LMNLocalVar "init.target" ppObj
 
 --------------------------------------------------------------------------------
 -- Helpers.
 
 toLlvmType :: Type -> LlvmType
-toLlvmType TObj = LMPointer structObj
-toLlvmType TVoid = LMVoid
-toLlvmType t = panic stage $ "toLlvmType " ++ show t ++ "\n"
+toLlvmType (TPtr t)	= LMPointer (toLlvmType t)
+toLlvmType TObj		= structObj
+toLlvmType TVoid	= LMVoid
+toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
 
+llvmWordLit :: Integral a => a -> LlvmLit
+llvmWordLit n = LMIntLit (toInteger n) llvmWord
 
 --------------------------------------------------------------------------------
 -- Data types and variables.
