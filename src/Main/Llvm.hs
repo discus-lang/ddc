@@ -32,6 +32,8 @@ import Util
 import qualified Data.Map		as Map
 import qualified Config.Config		as Config
 
+import Control.Monad			(foldM)
+
 import qualified Debug.Trace		as Debug
 
 stage = "Main.Llvm"
@@ -126,19 +128,19 @@ outLlvm moduleName eTree pathThis
 	let fwddecls	= [panicOutOfSlots, panicSlotUnderflow]
 
 	let globals	= moduleGlobals
-			++ (catMap seaToLlvmGlobal $ eraseAnnotsTree seaCafSlots)
+			++ (catMap llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
 
-	decls		<- catMapM seaToLlvmDecls $ eraseAnnotsTree code
+	decls		<- catMapM llvmOfSeaDecls $ eraseAnnotsTree code
 
 	return $ LlvmModule comments aliases globals fwddecls decls
 
 
-seaToLlvmDecls :: Top (Maybe a) -> IO [LlvmFunction]
-seaToLlvmDecls (PCafInit v t ss)
- = panic stage "Implement  'seaToLlvmDecls (PCafInit v t ss)'"
+llvmOfSeaDecls :: Top (Maybe a) -> IO [LlvmFunction]
+llvmOfSeaDecls (PCafInit v t ss)
+ = panic stage "Implement 'llvmOfSeaDecls (PCafInit v t ss)'"
 
 
-seaToLlvmDecls (PSuper v p t ss)
+llvmOfSeaDecls (PSuper v p t ss)
  = do	when debug
 	  $ putStrLn "--------------------------------------------------------"
 	{-
@@ -147,22 +149,29 @@ seaToLlvmDecls (PSuper v p t ss)
 	mapM_ (\s -> putStrLn $ show s) ss
 	putStrLn "--------------------------------------------------------"
 	-}
-	blocks <- catMapM seaToLlvm ss
+	blocks <- catMapM llvmOfStmt ss
  	return $ [ LlvmFunction
-		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map toParams p) Nothing)
+		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
 		(map (seaVar True . fst) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
-		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return Nothing ]) ]	-- funcBody
+		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return (hackReturnVar t) ]) ]	-- funcBody
 		]
 
+hackReturnVar :: Type -> Maybe LlvmVar
+hackReturnVar t
+ = case t of
+	TVoid -> Nothing
+	TObj -> Just nullObj
+	TPtr TObj -> Just nullObj
+	_ -> panic stage $ "hackReturnVar " ++ show t
 
-toParams :: (Var, Type) -> LlvmParameter
-toParams (v, t) = (toLlvmType t, [])
+llvmOfParams :: (Var, Type) -> LlvmParameter
+llvmOfParams (v, t) = (toLlvmType t, [])
 
 
-seaToLlvmGlobal :: Top (Maybe a) -> [LMGlobal]
-seaToLlvmGlobal (PCafSlot v t)
+llvmOfSeaGlobal :: Top (Maybe a) -> [LMGlobal]
+llvmOfSeaGlobal (PCafSlot v t)
  | t == TObj	-- TODO: This should be 'TPtr (TPtr TObj)'. Fix it upstream.
  =	let	tt = toLlvmType (TPtr (TPtr TObj))
 		var = LMGlobalVar
@@ -175,7 +184,7 @@ seaToLlvmGlobal (PCafSlot v t)
 	in [(var, Just (LMStaticLit (LMNullLit tt)))]
 
  | otherwise
- = panic stage $ "seaToLlvmGlobal on type : " ++ show t
+ = panic stage $ "llvmOfSeaGlobal on type : " ++ show t
 
 moduleGlobals :: [LMGlobal]
 moduleGlobals
@@ -184,33 +193,40 @@ moduleGlobals
 	, ( ddcSlotBase, Nothing ) ]
 
 
-seaToLlvm :: Stmt a -> IO [LlvmStatement]
+llvmOfStmt :: Stmt a -> IO [LlvmStatement]
+llvmOfStmt stmt
+ = case stmt of
+	SBlank		-> return $ [Comment [""]]
+	SEnter n	-> return $ runtimeEnter n
+	SLeave n	-> return $ runtimeLeave n
+	SComment s	-> return $ [Comment [s]]
+	SGoto loc	-> return $ [Branch (LMNLocalVar (seaVar False loc) LMLabel)]
+	SAssign v1 t v2 -> llvmOfAssign v1 t v2
 
-seaToLlvm (SBlank)	= return $ [Comment [""]]
-seaToLlvm (SEnter n)	= return $ runtimeEnter n
-seaToLlvm (SLeave n)	= return $ runtimeLeave n
-seaToLlvm (SComment s)	= return $ [Comment [s]]
+	SAuto v t
+	  ->	-- LLVM is SSA so auto variables do not need to be declared.
+		return [Comment ["SAuto " ++ seaVar True v ++ " " ++ show t]]
 
-seaToLlvm (SGoto var)
- =	return $ [Branch (LMNLocalVar (seaVar False var) LMLabel)]
+	SLabel l
+	  ->	-- LLVM does not allow implicit fall through to a label, so
+		-- explicitly branch to the label immediately following.
+		let label = fakeUnique (seaVar False l)
+		in return $ [Branch (LMLocalVar label LMLabel), MkLabel label]
 
-seaToLlvm (SAuto v t)
- =	-- LLVM is SSA so auto variables do not need to be declared.
-	return [Comment ["SAuto " ++ seaVar True v ++ " " ++ show t]]
+	SHackery s
+	  ->	-- Left over inline C code.
+		panic stage $ "SHackery '" ++ s ++ "' not supported in LLVM backend."
 
-seaToLlvm (SLabel l)
- =	-- LLVM does not allow implicit fall through to a label, so
-	-- explicitly branch to the label immediately following.
-	let label = fakeUnique (seaVar False l)
-	in return $ [Branch (LMLocalVar label LMLabel), MkLabel label]
-
-seaToLlvm (SHackery s)
- =	-- Left over inline C code.
-	panic stage $ "SHakery '" ++ s ++ "' not supported in LLVM backend."
+	_
+	  -> do	when debug
+		  $ putStrLn $ take 150 $ show stmt
+		return []
 
 
+--------------------------------------------------------------------------------
 
-seaToLlvm (SAssign (XVar v1 t1) t (XVar v2 t2))
+llvmOfAssign :: Exp a -> Type -> Exp a -> IO [LlvmStatement]
+llvmOfAssign (XVar v1 t1) t (XVar v2 t2)
  | t1 == TPtr (TPtr TObj) && t2 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
 	&& isGlobalVar v1 && isGlobalVar v2
  = do	tmp	<- newUniqueLocal (toLlvmType t1)
@@ -218,25 +234,61 @@ seaToLlvm (SAssign (XVar v1 t1) t (XVar v2 t2))
 		  , Store tmp (pVarLift (toLlvmVar v1 t1)) ]
 
 
-{-=
-seaToLlvm (SAssign (XVar v1 t1) t x@XPrim{})
+
+llvmOfAssign (XVar v1 t1) t x@(XPrim op args)
  | t1 == TPtr (TPtr TObj)
- = do	putStrLn $ "\nSAssign (" ++ seaVar False v1 ++ " " ++ show t1 ++ ") " ++ show x ++ ")\n"
-	reg	<- newUniqueLocal (toLlvmType t1)
-	putStrLn $ show reg
-	xprim	<- xprimToLlvm reg t x
-	return	$ [ Store reg (pVarLift (toLlvmVar v1 t1)) ]
-=-}
+ = do	-- putStrLn $ "\nSAssign (" ++ seaVar False v1 ++ " " ++ show t1 ++ ") " ++ show x ++ ")\n"
 
-seaToLlvm stmt
- = do	when debug
-	  $ putStrLn $ take 150 $ show stmt
-	return []
-
-{-=
-xprimToLlvm reg t (XPrim op args)
- = panic stage "xprimToLlvm"
-=-}
+	(dstreg, oplist) <- llvmOfXPrim (toLlvmType t) op args
+	return	$ reverse oplist ++ [ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
 
 
+llvmOfAssign _ _ _
+ = return []
 
+--------------------------------------------------------------------------------
+
+primFoldFunc
+	:: LlvmType
+	-> (LlvmVar -> LlvmVar -> LlvmExpression)
+	-> (LlvmVar, [LlvmStatement])
+	-> Exp a
+	-> IO (LlvmVar, [LlvmStatement])
+
+primFoldFunc t build (left, ss) exp
+ = do	dst <- newUniqueLocal t
+	return $ (dst, Assignment dst (build left (llvmVarOfExp exp)) : ss)
+
+
+llvmOfXPrim :: LlvmType -> Prim -> [Exp a] -> IO (LlvmVar, [LlvmStatement])
+llvmOfXPrim t op args
+ = case args of
+	[]			-> panic stage "llvmOfXPrim : empty list"
+	[x]			-> panic stage "llvmOfXPrim : singleton list"
+
+	[XVar v t, XInt i]	-> llvmPtrOp v t op i
+
+	x : xs
+	  -> do		reg <- newUniqueLocal t
+			foldM (primFoldFunc t (llvmOpOfPrim op)) (reg, [Assignment reg (Load (llvmVarOfExp x))]) xs
+
+llvmPtrOp :: Var -> Type -> Prim -> Int -> IO (LlvmVar, [LlvmStatement])
+llvmPtrOp v t op i
+ = do	src	<- newUniqueLocal (toLlvmType t)
+	dst	<- newUniqueLocal (toLlvmType t)
+	return	$ (dst, [ Assignment dst (GetElemPtr False src [llvmWordLitVar i])
+			, Assignment src (Load (pVarLift (toLlvmVar v t))) ])
+
+llvmVarOfExp :: Exp a -> LlvmVar
+llvmVarOfExp x
+ = case x of
+	XVar v t	-> toLlvmVar v t
+	XInt i		-> llvmWordLitVar i
+	_ -> panic stage $ "llvmVarOfExp " ++ show x
+
+llvmOpOfPrim :: Prim -> (LlvmVar -> LlvmVar -> LlvmExpression)
+llvmOpOfPrim p
+ = case p of
+	FAdd -> LlvmOp LM_MO_Add
+	FSub -> LlvmOp LM_MO_Sub
+	_ -> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
