@@ -21,6 +21,8 @@ import qualified DDC.Config.Version	as Version
 import Llvm
 import Llvm.Invoke
 import Llvm.GhcReplace.Unique
+import Llvm.Runtime
+import Llvm.Util
 
 import Sea.Exp
 import Sea.Util				(eraseAnnotsTree)
@@ -121,7 +123,7 @@ outLlvm moduleName eTree pathThis
 
 	let code = seaCafInits ++ seaSupers
 
-	let fwddecls	= [_panicOutOfSlots, _panicSlotUnderflow]
+	let fwddecls	= [panicOutOfSlots, panicSlotUnderflow]
 
 	let globals	= moduleGlobals
 			++ (catMap seaToLlvmGlobal $ eraseAnnotsTree seaCafSlots)
@@ -216,196 +218,25 @@ seaToLlvm (SAssign (XVar v1 t1) t (XVar v2 t2))
 		  , Store tmp (pVarLift (toLlvmVar v1 t1)) ]
 
 
-seaToLlvm (SAssign x1 t x2)
- = do	when debug
-	  $ putStrLn $ "SAssign " ++ (take 150 $ show x1)
-	return []
+{-=
+seaToLlvm (SAssign (XVar v1 t1) t x@XPrim{})
+ | t1 == TPtr (TPtr TObj)
+ = do	putStrLn $ "\nSAssign (" ++ seaVar False v1 ++ " " ++ show t1 ++ ") " ++ show x ++ ")\n"
+	reg	<- newUniqueLocal (toLlvmType t1)
+	putStrLn $ show reg
+	xprim	<- xprimToLlvm reg t x
+	return	$ [ Store reg (pVarLift (toLlvmVar v1 t1)) ]
+=-}
 
 seaToLlvm stmt
  = do	when debug
 	  $ putStrLn $ take 150 $ show stmt
 	return []
 
+{-=
+xprimToLlvm reg t (XPrim op args)
+ = panic stage "xprimToLlvm"
+=-}
 
 
-
-
---------------------------------------------------------------------------------
--- Runtime hacks.
-
-runtimeEnter :: Int -> [LlvmStatement]
-runtimeEnter count
- =	[ Comment ["_ENTER (" ++ show count ++ ")"]
-	, Assignment enter0 (Load ddcSlotPtr)
-	, Assignment enter1 (GetElemPtr True enter0 [LMLitVar (llvmWordLit count)])
-	, Store enter1 ddcSlotPtr
-
-	, Assignment enter2 (Load ddcSlotMax)
-	, Assignment enter3 (Compare LM_CMP_Ult enter1 enter2)
-	, BranchIf enter3 (LMLocalVar egood LMLabel) (LMLocalVar epanic LMLabel)
-	, MkLabel epanic
-	, Expr (Call StdCall (LMGlobalVar "_panicOutOfSlots" (LMFunction _panicOutOfSlots) External Nothing Nothing True) [] [NoReturn])
-	, Branch (LMLocalVar egood LMLabel)
-	, MkLabel egood
-	, Comment ["----- Slot initiialization -----"]
-	]
-
-	++ slotInit egood count
-	++ [ Comment ["---------------------------------------------------------------"] ]
-    where
-	enter0 = LMNLocalVar "enter.0" ppObj
-	enter1 = LMNLocalVar "enter.1" ppObj
-	enter2 = LMNLocalVar "enter.2" ppObj
-	enter3 = LMNLocalVar "enter.3" i1
-	epanic = fakeUnique "enter.panic"
-	egood = fakeUnique "enter.good"
-
-
-runtimeLeave :: Int -> [LlvmStatement]
-runtimeLeave count
- =	[ Comment ["---------------------------------------------------------------"]
-	, Comment ["_LEAVE (" ++ show count ++ ")"]
-	, Assignment leave0 (Load ddcSlotPtr)
-	, Assignment leave1 (GetElemPtr True leave0 [LMLitVar (llvmWordLit (-count))])
-	, Store leave1 ddcSlotPtr
-
-	, Assignment leave2 (Load ddcSlotBase)
-	, Assignment leave3 (Compare LM_CMP_Ult leave1 leave2)
-	, BranchIf leave3 (LMLocalVar lpanic LMLabel) (LMLocalVar lgood LMLabel)
-	, MkLabel lpanic
-	, Expr (Call StdCall (LMGlobalVar "_panicSlotUnderflow" (LMFunction _panicSlotUnderflow) External Nothing Nothing True) [] [NoReturn])
-	, Branch (LMLocalVar lgood LMLabel)
-	, MkLabel lgood
-
-	, Comment ["---------------------------------------------------------------"]
-	]
-    where
-	leave0	= LMNLocalVar "leave.0" ppObj
-	leave1	= LMNLocalVar "leave.1" ppObj
-	leave2	= LMNLocalVar "leave.2" ppObj
-	leave3	= LMNLocalVar "leave.3" i1
-	lpanic	= fakeUnique "leave.panic"
-	lgood	= fakeUnique "leave.ok"
-
-
-slotInit :: Unique -> Int -> [LlvmStatement]
-slotInit _ count
- | count < 0
- = panic stage $ "Asked for " ++ show count ++ " GC slots."
-
-slotInit _ count
- | count < 8
- =	Assignment init0 (Load ddcSlotPtr) : concatMap build [1 .. count]
-    where
-	init0 = LMNLocalVar "init.0" ppObj
-	build n
-	 =	let target = LMNLocalVar ("init.target." ++ show n) ppObj
-		in	[ Assignment target (GetElemPtr False init0 [LMLitVar (llvmWordLit (-n))])
-			, Store nullObj target ]
-
-slotInit initstart n
- | otherwise
- =	[ Assignment init0 (Load ddcSlotPtr)
-	, Branch (LMLocalVar initloop LMLabel)
-
-	, MkLabel initloop
-	, Assignment index (Phi llvmWord [((LMLitVar (llvmWordLit 0)), (LMLocalVar initstart LMLabel)), (indexNext, (LMLocalVar initloop LMLabel))])
-	, Assignment tmp (LlvmOp LM_MO_Add index (LMLitVar (llvmWordLit (-n))))
-
-	, Assignment target (GetElemPtr False init0 [tmp])
-	, Store nullObj target
-
-	, Assignment indexNext (LlvmOp LM_MO_Add index (LMLitVar (llvmWordLit 1)))
-	, Assignment initdone (Compare LM_CMP_Eq indexNext (LMLitVar (llvmWordLit n)))
-	, BranchIf initdone (LMLocalVar initend LMLabel) (LMLocalVar initloop LMLabel)
-	, MkLabel initend
-	]
-    where
-	initloop	= fakeUnique "init.loop"
-	initend		= fakeUnique "init.end"
-	init0		= LMNLocalVar "init.0" ppObj
-	index		= LMNLocalVar "init.index" llvmWord
-	indexNext	= LMNLocalVar "init.index.next" llvmWord
-	initdone	= LMNLocalVar "init.done" i1
-	tmp		= LMNLocalVar "init.tmp" llvmWord
-	target		= LMNLocalVar "init.target" ppObj
-
---------------------------------------------------------------------------------
--- Helpers.
-
-toLlvmType :: Type -> LlvmType
-toLlvmType (TPtr t)	= LMPointer (toLlvmType t)
-toLlvmType TObj		= structObj
-toLlvmType TVoid	= LMVoid
-toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
-
-
-toLlvmVar :: Var -> Type -> LlvmVar
-toLlvmVar v t
- = case isGlobalVar v of
-	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
-        False -> LMNLocalVar (seaVar True v) (toLlvmType t)
-
-
-llvmWordLit :: Integral a => a -> LlvmLit
-llvmWordLit n = LMIntLit (toInteger n) llvmWord
-
-
-newUniqueLocal :: LlvmType -> IO LlvmVar
-newUniqueLocal t
- = do	u <- newUnique
-	return $ LMLocalVar u t
-
-
-isGlobalVar :: Var -> Bool
-isGlobalVar v 
- -- If the variable is explicitly set as global use the given name.
- | bool : _	<- [global | ISeaGlobal global <- varInfo v]
- = bool
-
- | otherwise
- = False
-
-
-loadAddress :: LlvmVar -> LlvmExpression
-loadAddress v = Load (pVarLift v)
-
---------------------------------------------------------------------------------
--- Data types and variables.
-
-_panicOutOfSlots :: LlvmFunctionDecl
-_panicOutOfSlots = LlvmFunctionDecl "_panicOutOfSlots" External CC_Ccc LMVoid FixedArgs [] ptrAlign
-
-_panicSlotUnderflow :: LlvmFunctionDecl
-_panicSlotUnderflow = LlvmFunctionDecl "_panicSlotUnderflow" External CC_Ccc LMVoid FixedArgs [] ptrAlign
-
-
-ptrAlign :: Maybe Int
-ptrAlign = Just Config.pointerBytes
-
-
-ddcSlotPtr :: LlvmVar
-ddcSlotPtr = pVarLift (LMGlobalVar "_ddcSlotPtr" ppObj External Nothing ptrAlign False)
-
-ddcSlotMax :: LlvmVar
-ddcSlotMax = pVarLift (LMGlobalVar "_ddcSlotMax" ppObj External Nothing ptrAlign False)
-
-ddcSlotBase :: LlvmVar
-ddcSlotBase = pVarLift (LMGlobalVar "_ddcSlotBase" ppObj External Nothing ptrAlign False)
-
-
-ddcObj :: LlvmType
-ddcObj = LMStruct [ i32 ]
-
-structObj :: LlvmType
-structObj = LMAlias ("struct.Obj", ddcObj)
-
-pObj :: LlvmType
-pObj = pLift structObj
-
-ppObj :: LlvmType
-ppObj = pLift pObj
-
-nullObj :: LlvmVar
-nullObj = LMLitVar (LMNullLit pObj)
 
