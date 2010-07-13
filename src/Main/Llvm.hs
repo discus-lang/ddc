@@ -30,9 +30,6 @@ import Sea.Pretty
 
 import Util
 import qualified Data.Map		as Map
-import qualified Config.Config		as Config
-
-import Control.Monad			(foldM)
 
 import qualified Debug.Trace		as Debug
 
