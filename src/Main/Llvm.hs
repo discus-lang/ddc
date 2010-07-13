@@ -213,10 +213,6 @@ llvmOfStmt stmt
 		let label = fakeUnique (seaVar False l)
 		in return $ [Branch (LMLocalVar label LMLabel), MkLabel label]
 
-	SHackery s
-	  ->	-- Left over inline C code.
-		panic stage $ "SHackery '" ++ s ++ "' not supported in LLVM backend."
-
 	_
 	  -> do	when debug
 		  $ putStrLn $ take 150 $ show stmt

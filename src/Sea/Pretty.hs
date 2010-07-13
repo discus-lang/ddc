@@ -102,10 +102,6 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 	SBlank 			-> ppr " "
 	SComment s		-> "// " % s
 
-	-- append a "/* hackery */" comment here so that we know 
-	--	this line is hackery and not a real statement. 
-	SHackery str		-> "/**/ " % str
-
 	-- stacks
 	SAuto	v t		-> (padL 12 $ pprStrPlain t) % " " % sVL v % ";"
 	SEnter countS		-> "_ENTER (" % countS % ");"

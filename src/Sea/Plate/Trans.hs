@@ -152,9 +152,6 @@ instance Monad m => TransM m a1 a2 Stmt where
 
  	SComment str
 	 ->	transS table	$ SComment str
-	 
-	SHackery str
-	 -> 	transS table	$ SHackery str
 
 	-- stack
 	SAuto	v t

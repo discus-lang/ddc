@@ -89,9 +89,6 @@ data Stmt a
 	= SBlank				-- a blank line, makes output code easier to read
 	| SComment	String			-- a comment, 	 mostly used for debugging.
 
-	| SHackery	String			-- Some low level hackery inlined straight into the output file.
-						-- 	this should only really be used for experimental purposes.
-
 	-- stack
 	| SAuto		Var Type		-- Define an automatic var.		Type var;
 	| SEnter	Int 			-- Function entry code,	countS
