@@ -488,7 +488,7 @@ toSeaGL	 objV (label, var, t)
 	| C.LIndex i	<- label
 	= E.SAssign 
 		(E.XVar var (toSeaT t)) 
-		E.TObj 
+		(toSeaT t)
 		(E.XArg (E.XVar objV (toSeaT t)) E.TObjData i)
 
 
@@ -516,15 +516,15 @@ toSeaT tt
 		 = toSeaT_data tx
 	
 		 | Just (t1, t2, _, _)	<- T.takeTFun tt
-		 = E.TObj
-	
+		 = E.TPtr E.TObj
+
 	    in result
 
 	T.TCon{}
 		| Just tx		<- T.takeTData tt
 		-> toSeaT_data tx
 	
-	T.TVar{}		-> E.TObj
+	T.TVar{}		-> E.TPtr E.TObj
 
 	_ 	-> panic stage
 		$ "toSeaT: No match for " ++ show tt ++ "\n"
@@ -554,7 +554,7 @@ toSeaT_data tx
 	= E.TCon v (map toSeaT $ filter hasValueKind ts)
 
 	| otherwise
-	= E.TObj
+	= E.TPtr E.TObj
 
 
 -- | Check if this type has value kind

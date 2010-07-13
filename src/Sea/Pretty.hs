@@ -331,7 +331,7 @@ instance Pretty Type PMode where
 	TFun t1 t2	-> t1 <> "->" <> t2
 	TPtr x		-> x % "*"
 	TCon var []	-> ppr $ getSeaName var
-	TObj		-> ppr "Obj*"
+	TObj		-> ppr "Obj"
 	_ 		-> panic stage $ "pprStr[Type]: no match for " % show xx
 
 getSeaName :: Var -> String

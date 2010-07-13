@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports #-}
+{-# OPTIONS -fwarn-unused-imports -fwarn-incomplete-patterns #-}
 
 -- | Wrappers for compiler stages dealing with LLVM code.
 module Main.Llvm
@@ -155,12 +155,17 @@ llvmOfSeaDecls (PSuper v p t ss)
 		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return (hackReturnVar t) ]) ]	-- funcBody
 		]
 
+llvmOfSeaDecls x
+ = panic stage $ "Implement 'llvmOfSeaDecls (" ++ show x ++ ")'"
+
+
 hackReturnVar :: Type -> Maybe LlvmVar
 hackReturnVar t
  = case t of
 	TVoid -> Nothing
 	TObj -> Just nullObj
-	TPtr TObj -> Just nullObj
+	TPtr TObj -> Just (pVarLift nullObj)
+
 	_ -> panic stage $ "hackReturnVar " ++ show t
 
 llvmOfParams :: (Var, Type) -> LlvmParameter
@@ -182,6 +187,9 @@ llvmOfSeaGlobal (PCafSlot v t)
 
  | otherwise
  = panic stage $ "llvmOfSeaGlobal on type : " ++ show t
+
+llvmOfSeaGlobal x
+ = panic stage $ "llvmOfSeaGlobal on : " ++ show x
 
 moduleGlobals :: [LMGlobal]
 moduleGlobals

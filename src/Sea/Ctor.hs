@@ -42,7 +42,7 @@ expandCtor (CtorDef vCtor tCtor arity tag fields)
 	objV		<- newVarN NameValue
 
 	-- allocate the object
-	let allocS 	= SAssign (XVar objV TObj) TObj 
+	let allocS 	= SAssign (XVar objV (TPtr TObj)) (TPtr TObj) 
 			$ XAllocData vCtor 
 			$ arity
 
@@ -54,10 +54,10 @@ expandCtor (CtorDef vCtor tCtor arity tag fields)
 	let argVs	= catMaybes mArgVs
 
 	-- return result
-	let retS	= SReturn $ (XVar objV TObj) 
+	let retS	= SReturn $ (XVar objV (TPtr TObj)) 
 
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
-	let super	= [PSuper vCtor argVs TObj stmts]
+	let super	= [PSuper vCtor argVs (TPtr TObj) stmts]
 	
 	return 		$ super
  	
@@ -72,10 +72,10 @@ expandField
 					--	(will be Nothing if the field is secondary)
 expandField objV ixArg
  = do	argV	<- newVarN NameValue
-	return	( [SAssign 	(XArg (XVar objV TObj) TObjData ixArg)
-				TObj 
-				(XVar argV TObj)]
-		, Just (argV, TObj) )
+	return	( [SAssign 	(XArg (XVar objV (TPtr TObj)) TObjData ixArg)
+				(TPtr TObj) 
+				(XVar argV (TPtr TObj))]
+		, Just (argV, TPtr TObj) )
 
 --	-- Primary fields get their values from constructor arguments.
 --	| dPrimary field

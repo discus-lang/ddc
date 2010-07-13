@@ -29,7 +29,7 @@ initTree moduleName cTree
 
 makeInitCaf v
  = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name) ppObj) ppObj slotPtr
-	, SAssign slotPtr TObj (XPrim FAdd [slotPtr, XInt 1])
+	, SAssign slotPtr (TPtr TObj) (XPrim FAdd [slotPtr, XInt 1])
 	, SAssign (XVarCAF v pObj) pObj (XInt 0)
 	, SAssign (XVarCAF v pObj) pObj (XCall v []) ] 
 	where	name	= seaVar False v

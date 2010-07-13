@@ -225,7 +225,7 @@ data Type
 	-- | An unboxed data object.
 	| TCon Var [Type]
 
-	-- | A pointer to some anonymous boxed object.
+	-- | Some anonymous boxed object. Usually accessed as a pointer.
 	| TObj
 	deriving (Show, Eq)
 

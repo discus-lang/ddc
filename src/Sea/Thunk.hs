@@ -178,7 +178,7 @@ expandCurry
 	x@(XCurry f superA args)
  = do
 	let allocX	= XAllocThunk f superA (length args)
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TObj) TObjThunk i) TObj a)
+	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v (TPtr TObj)) TObjThunk i) (TPtr TObj) a)
 		  	$ zip args [0..]
 		
   	return	( assignSS
@@ -196,7 +196,7 @@ expandSusp
  = do
  	let allocX	= XAllocSusp f (length args)
 	
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v TObj) TObjSusp i) TObj a)
+	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v (TPtr TObj)) TObjSusp i) (TPtr TObj) a)
 			$ zip args [0..]
 			
 	return	( assignSS
@@ -214,9 +214,9 @@ expandCallApp
 	let (callAs, appAs)
 			= splitAt superA args
 
- 	let callSS	= [ SAssign (XVar tmp TObj) TObj (XCall  f   callAs) ]
+ 	let callSS	= [ SAssign (XVar tmp (TPtr TObj)) (TPtr TObj) (XCall  f   callAs) ]
 
-	(appSS, lastX)	<- expandApply (XApply (XVar tmp TObj) appAs)
+	(appSS, lastX)	<- expandApply (XApply (XVar tmp (TPtr TObj)) appAs)
 
 	return	( callSS ++ appSS 
 		, lastX)
@@ -267,7 +267,7 @@ expandApplyN
  		
 		let ssAcc'
 			=  ssAcc
-			++ [SAssign (XVar v TObj) TObj (XApply (XVar thunkV TObj) argsHere)]
+			++ [SAssign (XVar v (TPtr TObj)) (TPtr TObj) (XApply (XVar thunkV (TPtr TObj)) argsHere)]
 		
 		expandApplyN maxApp v argsMore ssAcc'
 
