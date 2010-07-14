@@ -76,8 +76,10 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	-- Sea hackery.
 	PInclude s		-> "#include <" % s % ">\n"
 	PIncludeAbs s		-> "#include \"" % s % "\"\n"
+	PHackery []		-> ppr "\n"
 	PHackery s		-> ppr s
-	PComment s		-> "// " % s
+	PComment []		-> ppr "//\n"
+	PComment s		-> "// " % s % "\n"
 	PBlank			-> ppr "\n"
 	PHashDef s1 s2		-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
 
