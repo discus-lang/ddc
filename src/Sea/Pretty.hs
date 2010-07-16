@@ -61,11 +61,11 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 | typeIsUnboxed t
 	 -> ppr "\n"
 
-	PCafProto v _
-	 -> "extern Obj** " 	%>> "_ddcCAF_" % sV v % ";\n\n"
+	PCafProto v t
+	 -> "extern " % t % " " %>> "_ddcCAF_" % sV v % ";\n\n"
 
-	PCafSlot  v _
-	 -> "Obj** " 		%>> "_ddcCAF_" % sV v % " = 0;\n"
+	PCafSlot  v t
+	 -> t % " " %>> "_ddcCAF_" % sV v % " = 0;\n"
 
 	PCafInit v _ ss	
 	 -> "void " %>> "_ddcInitCAF_" % sV v %>> "()\n"

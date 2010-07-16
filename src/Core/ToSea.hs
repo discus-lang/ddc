@@ -113,16 +113,22 @@ toSeaP	xx
 		retV		<- newVarN NameValue
 		let ssRet	= assignLastSS (E.XVar retV resultType, resultType) ss'
 				++ [E.SReturn (E.XVar retV resultType)]
-		
-	   	return	$ case argNTs of
-			    	 [] ->	Seq.fromList
-					[ E.PCafProto	v resultType
-					, E.PCafSlot 	v resultType
+
+		case (resultType, argNTs) of
+		  (E.TPtr E.TObj, [])
+			->	return	$ Seq.fromList
+					[ E.PCafProto	v (E.TPtr (E.TPtr E.TObj))
+					, E.PCafSlot 	v (E.TPtr (E.TPtr E.TObj))
 					, E.PSuper	v [] 	resultType  ssRet]
 
-				 _ ->	Seq.fromList
-				 	[E.PSuper 	v argNTs resultType ssRet]
-	    
+		  (_, [])
+			->	return	$ Seq.fromList
+					[ E.PSuper	v [] 	resultType  ssRet]
+
+		  _	->	return	$ Seq.fromList
+					[E.PSuper 	v argNTs resultType ssRet]
+
+
 	C.PData v ctors
 	 -> do	
 		-- Convert data type declaration
