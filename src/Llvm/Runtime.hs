@@ -37,7 +37,7 @@ runtimeEnter count
 	, Expr (Call StdCall (LMGlobalVar "_panicOutOfSlots" (LMFunction panicOutOfSlots) External Nothing Nothing True) [] [NoReturn])
 	, Branch (LMLocalVar egood LMLabel)
 	, MkLabel egood
-	, Comment ["----- Slot initiialization -----"]
+	, Comment ["----- Slot initialization -----"]
 	]
 
 	++ slotInit egood count
