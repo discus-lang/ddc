@@ -133,6 +133,9 @@ instance Monad m => TransM m a1 a2 Top where
 	 
 	PHackery s
 	 ->	transP table	$ PHackery s
+
+	PMain mn ml
+	 ->	transP table	$ PMain mn ml
 	 
 	PComment s
 	 ->	transP table	$ PComment s

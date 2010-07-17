@@ -57,28 +57,7 @@ mainTree
 	
 mainTree imports mainModule
  = let	ModuleId [mainModuleName]	= mainModule
-	sLine	
-	 = unlines $
-		[ "int main (int argc, char** argv)"
-		, "{"
-		, "        _ddcRuntimeInit (argc, argv);" 
-		, "" ]
+   in	[ PMain mainModuleName
+		$ map (\m -> "_" ++ (varName $ makeInitVar m)) imports ]
 
-		-- call all the init functions for imported modules.
-	 ++ 	map (\m -> "\t" ++ "_" ++ (varName $ makeInitVar m) ++ "();") imports
-
-		-- call the init function for the main module.
-	 ++	[ "        _ddcInitModule_" ++ mainModuleName ++ "();" ]
-		
-		-- catch exceptions from the main function so we can display nice 
-		--	error messages.
-	 ++ 	[ ""
-		, "        Control_Exception_topHandle(_allocThunk(" ++ mainModuleName ++ "_main, 1, 0));"
-		, ""
-		, "        _ddcRuntimeCleanup();"
-		, "}"
-		, ""
-		]
-
-   in	[PHackery sLine]
 

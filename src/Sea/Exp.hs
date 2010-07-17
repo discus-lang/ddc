@@ -63,6 +63,7 @@ data Top a
 	| PIncludeAbs	String			-- #include "..."
 
 	| PHackery	String			-- string is inlined straight into the output file
+	| PMain		String [String]		-- C main() function with moduleName and imported modules
 
 	| PComment	String
 	| PBlank

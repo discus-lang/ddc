@@ -83,6 +83,21 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PBlank			-> ppr "\n"
 	PHashDef s1 s2		-> "#define " %  padL 8 s1 %>> " " % s2 % "\n"
 
+	PMain mn ml
+	 ->	"int main (int argc, char** argv)\n"
+	  %	"{\n"
+	  %	"\t_ddcRuntimeInit(argc, argv);\n\n"
+	  %	"\n"
+	  %!%	(map (\mname -> "\t" ++ mname ++ "();") ml)
+	  %	"\n\n"
+	  %	"\t_ddcInitModule_" % mn % "();\n"
+	  %	"\n"
+	  %	"\tControl_Exception_topHandle(_allocThunk(" % mn % "_main, 1, 0));\n"
+	  %	"\n"
+	  %	"\t_ddcRuntimeCleanup();\n"
+	  %	"\n"
+	  %	"\treturn 0;\n"
+	  %	"}\n"
 
 -- CtorDef --------------------------------------------------------------------------------------------
 instance Pretty CtorDef PMode where

@@ -339,7 +339,7 @@ makeSeaHeader eTree pathThis pathImports extraIncludes
 	let hdr
 		= makeComments pathThis
 		++	[ PHackery ("#ifndef _inc" ++ defTag ++ "\n")
-			, PHackery ("#define _inc" ++ defTag ++ "\n\n") 
+			, PHashDef ("_inc" ++ defTag) "\n\n"
 			, PInclude "runtime/Runtime.h"
 			, PInclude "runtime/Prim.h" ]
 
