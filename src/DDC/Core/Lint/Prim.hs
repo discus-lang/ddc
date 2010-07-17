@@ -16,6 +16,8 @@ import qualified DDC.Var.VarId	as Var
 import qualified DDC.Var.PrimId	as Var
 import {-# SOURCE #-} DDC.Core.Lint.Exp
 import qualified Data.Sequence	as Seq
+import qualified Data.Map	as Map
+import Control.Monad
 
 stage	= "DDC.Core.Lint.Prim"
 
@@ -37,7 +39,64 @@ checkPrim n pp xs env
 		, eff Seq.|> TApp tRead r
 		, clo)
 
+	(MForce, [x])
+	 -> checkExp' (n+1) x env
+
+	(MOp op, _)
+	 -> checkPrimOpApp (n+1) op xs env 
+
 	_ -> panic stage $ "checkPrim: not finished for " % (pp, xs)
+
+
+-- | Reconstruct the type and effect of an operator application.
+--	Primops don't have real type sigs, so we have to do this manually.
+--	It'd probably be bett
+checkPrimOpApp 
+	:: Int
+	-> PrimOp -> [Exp] -> Env
+	-> (Type, Seq Effect, Map Var Closure)
+
+checkPrimOpApp n op xs env
+ = let	(ts :: [Type], effs :: [Seq Effect], clos :: [Map Var Closure])
+ 		= unzip3 
+		$  map (\x -> checkExp' n x env) xs
+
+	eff	= join $ Seq.fromList effs
+	clo	= Map.unions clos
+
+	result
+		-- arithmetic ops
+		| op == OpNeg
+		, [t1]		<- ts
+		, isUnboxedNumericType t1
+		= (t1, eff, clo)
+
+		| elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
+		, [t1, t2]	<- ts
+		, isUnboxedNumericType t1
+		, t1 == t2
+		= (t1, eff, clo)
+
+		-- comparison operators
+		| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
+		, [t1, t2]	<- ts
+		, isUnboxedNumericType t1
+		, t1 == t2
+		= (makeTData (primTBool Unboxed) kValue [], eff, clo)
+
+		-- boolean operators
+		| elem op [OpAnd, OpOr]
+		, [t1, t2]		<- ts
+		, Just (v, _, [])	<- takeTData t1
+		, v == (primTBool Unboxed)
+		, t1 == t2
+		= (makeTData (primTBool Unboxed) kValue [], eff, clo)
+
+		| otherwise
+		= panic stage
+		$ "reconOpApp: no match for " % op % " " % xs % "\n"
+
+   in result
 
 
 -- | Convert this boxed type to the unboxed version.
@@ -74,6 +133,30 @@ unboxedVersionOfBoxedType r1 tt
 
 	| otherwise
 	= Nothing
+
+
+-- | Check whether a type is an unboxed numeric type
+isUnboxedNumericType :: Type -> Bool
+isUnboxedNumericType tt
+ 	| Just (v, _, []) <- takeTData tt
+	, isUnboxedNumericType_varId (varId v)
+	= True
+
+	-- treat pointers as numeric types
+	| Just (v, _, _) <- takeTData tt
+	, v == primTPtrU
+	= True
+	
+	| otherwise
+	= False
+
+
+isUnboxedNumericType_varId vid
+ = case vid of
+ 	Var.VarIdPrim (Var.TWord _)		-> True
+	Var.VarIdPrim (Var.TInt _)		-> True
+	Var.VarIdPrim (Var.TFloat _)		-> True
+	_					-> False
 
 
 -- | Split the VarBind for a literal into its components,
