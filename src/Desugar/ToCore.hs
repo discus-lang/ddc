@@ -550,6 +550,9 @@ toCoreVarInst v vT
 				$ map (\k -> let Just t = T.inventWitnessOfKind k in t)
 				$ ksContextC'
 
+		let Just xResult = 
+			C.buildApp (Left (C.XVar v tScheme) : map Right (tsInstC_packed ++ tsContextC'))
+
 		trace ("varInst: "
 			% vT 				% "\n"
 			% "    tScheme         =\n" %> tScheme 		% "\n\n"
@@ -558,11 +561,9 @@ toCoreVarInst v vT
 			% "    tsInstCE        = " % tsInstCE		% "\n"
 			% "    tsInstC_packed  = " % tsInstC_packed	% "\n"
 			% "    tsSub           = " % tsSub 		% "\n"
-			% "    tsContestC'     = " % tsContextC' 	% "\n")
+			% "    tsContestC'     = " % tsContextC' 	% "\n"
+			% "    xResult         = " % xResult		% "\n")
 			$ return ()
-
-		let Just xResult = 
-			C.buildApp (Left (C.XVar v tScheme) : map Right (tsInstC_packed ++ tsContextC'))
 
 		return	$ xResult
 
@@ -570,8 +571,11 @@ toCoreVarInst v vT
 	 -- 	pass the args on the type scheme back to ourselves.
 	 T.InstanceLetRec vUse vBind (Just tSchemeT)
 	  -> do
-		let tSchemeC			= toCoreT tSchemeT
-		let (tsReplay, ksContext)	= C.slurpForallContextT tSchemeC
+		let tSchemeC	= (T.flattenT_constrainForm . T.toConstrainFormT)
+				$ toCoreT tSchemeT
+				
+		let (tsReplay, ksContext)
+				= C.slurpForallContextT tSchemeC
 
 		let tsContext	= map (\k -> let Just t = T.inventWitnessOfKind k in t)
 				$ ksContext
