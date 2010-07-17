@@ -22,6 +22,7 @@ import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.Pack
+import DDC.Type.Trim
 import DDC.Var
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
@@ -232,7 +233,9 @@ elaborateCloT' env tt
 		
 		-- elaborate the right hand arg, 
 		--	carrying the new parameter name down into it.
-		let argClo		= makeTFree varVal t1
+		let argClo		= trimClosureC_constrainForm
+					$ makeTFree varVal t1
+
 		(t2', fs, cloT2)	<- elaborateCloT' (env ++ [argClo]) t2
 
 		-- make a new closure var to name the closure of this function
