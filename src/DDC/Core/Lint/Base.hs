@@ -21,7 +21,7 @@ import Data.Map			(Map)
 
 stage		= "DDC.Core.Lint.Base"
 
-debugExp	= True
+debugExp	= False
 debugType	= False
 debugKind	= False
 indenting	= (2 :: Int)

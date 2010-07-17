@@ -12,6 +12,8 @@ import DDC.Core.Lint.Base
 import DDC.Core.Lint.Env
 import DDC.Core.Lint.Prim
 import DDC.Core.Lint.Type
+import DDC.Base.Literal
+import DDC.Base.DataFormat
 import DDC.Type
 import DDC.Var
 import Data.Maybe
@@ -94,7 +96,19 @@ checkExp_trace m xx env
 			
 	       in ( t, Seq.singleton tPure, clo')
 
+
 	-- Literal values
+	-- HACK: Handle applications of string literals to their regions directly
+	--       so we don't have to come up with its actual type scheme. Doing this
+	--       would require a fresh region variable...
+	XAPP (XLit (LiteralFmt LString{} Unboxed)) (TVar k r)
+	 | k == kRegion
+	 , Just tc	<- tcString Unboxed
+	 -> ( TApp (TCon tc) (TVar kRegion r)
+	    , Seq.empty
+	    , Map.empty)
+
+
 	XLit litFmt
 	 -> let	Just tcLit	= tyConOfLiteralFmt litFmt
 	    in	( TCon tcLit
@@ -208,8 +222,8 @@ checkExp_trace m xx env
 		
 		_ -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "           type: " % t1
-			, " does not match: " % t2
+			, "   cannot apply function of type: " % t1
+			, "             to argument of type: " % t2
 			, " in application: " % xx]
 
 	-- Do expression

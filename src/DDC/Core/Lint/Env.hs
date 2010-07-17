@@ -55,6 +55,7 @@ withType v t env fun
 withBound :: Var -> Type -> Env -> (Env -> a) -> a
 withBound = error "no withBound"
 
+
 -- | Run a lint computation with an extra kind in the environment.
 --   NOTE: We allow a type var to be rebound with the same kind, which makes
 --         desugaring of projection puns easier.

@@ -513,14 +513,15 @@ toCoreVarInst v vT
 	 -- use of a lambda bound variable.
 	 -- 	only rank1 polymorphism => lambda bound vars have monotypes
 	 T.InstanceLambda vUse vBind _
-	  -> do	{-trace 	( "varInst: TInstanceLambda\n"
+	  -> do	let xResult	= C.XVar v tShape	
+		trace 	( "varInst: TInstanceLambda\n"
 	  		% "    vUse    = " % vUse	% "\n"
 			% "    tScheme = " % tScheme	% "\n"
-			% "    tShape  = " % tShape	% "\n")
-			$ return ();
-		 -}
-	  	return $ C.XVar v tShape
-
+			% "    tShape  = " % tShape	% "\n"
+			% "    xResult = " % xResult	% "\n")
+			$ return ()
+		
+	  	return $ xResult
 	 -- non-recursive use of a let bound variable 
 	 -- 	pass in the type args corresponding to the instantiated foralls.
 	 T.InstanceLet vUse vBind tsInst _
