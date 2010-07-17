@@ -167,6 +167,6 @@ compileSingle setup graph mod
  	setup'		= setup { setupArgsBuild
 					=  scrapeArgsInline scrape
 					++ setupArgsBuild setup }
-   in	compileFile setup' graph mod False
+   in	compileFile setup' graph mod (shouldBlessMain [mod] mod)
 	
 

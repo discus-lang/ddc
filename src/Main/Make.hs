@@ -1,6 +1,7 @@
 
 module Main.Make 
-	(ddcMake)	
+	( ddcMake
+	, shouldBlessMain )	
 where
 import Main.Setup
 import Main.Compile
