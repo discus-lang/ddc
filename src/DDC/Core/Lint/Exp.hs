@@ -14,6 +14,7 @@ import DDC.Core.Lint.Prim
 import DDC.Core.Lint.Type
 import DDC.Base.Literal
 import DDC.Base.DataFormat
+import DDC.Util.FreeVars
 import DDC.Type
 import DDC.Var
 import Data.Maybe
@@ -22,6 +23,7 @@ import Data.Sequence		(Seq)
 import qualified Shared.VarUtil	as Var
 import qualified Data.Sequence	as Seq
 import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 import qualified Data.Foldable	as Foldable
 
 stage	= "DDC.Core.Lint.Exp"
@@ -171,30 +173,61 @@ checkExp_trace m xx env
 	 `seq` checkTypeI n cloAnn env 
 	 `seq` let !(t2, eff2, clo2)	= withType v1 t1 env (checkExp' n x2)
 
-		   -- The effect returned from checkExp' will tend to contain a lot
-		   -- of bottoms and repeated terms it. These get discarded by makeTSum.
-		   !eff2'	= crushT $ makeTSum kEffect $ Foldable.toList eff2
-		   !effAnn'	= crushT $ effAnn
-		   !effEquiv	= equivTT effAnn' eff2'
-		
 		   -- The closure annotation on the abstraction is the closure of the body
 		   -- minus the variable that is bound at this point.
 		   !clo2_cut	= Map.delete v1 clo2
 		   !cloAnn'	= slurpClosureToMap cloAnn
 
+		   -- The visible region variables.
+		   -- These are vars that are present in the parameter or return type, 
+		   -- or in one of the types in the closure.
+		   vsVisible	= Set.filter (\v -> varNameSpace v == NameRegion)
+				$ Set.unions
+					[ freeVars t1
+					, freeVars t2
+					, freeVars $ Map.elems clo2_cut ]
 
+		   -- If a read or write effect acts on a region variable that 
+		   -- isn't visible to the calling context then we can mask it.
+		   maskable eff
+			| [tc, TVar k (UVar v)]	<- takeTApps eff
+			, elem tc [tRead, tWrite]
+			, isRegionKind k
+			, not $ Set.member v vsVisible
+			= True
+			
+			| otherwise
+			= False
+
+		   -- Converting to a sum and back to discard bottom effects.
+		   -- This makes the panic messages nicer.
+		   !eff2'	= flattenTSum
+				$ makeTSum kEffect 
+				$ Foldable.toList eff2
+
+		   -- Mask effects on non-visible region.
+		   !eff2_masked	= makeTSum kEffect
+				$ filter (not . maskable)
+				$ map crushT eff2'
+		
+		   !effAnn'	= crushT $ effAnn
+		   !effEquiv	= equivTT effAnn' eff2_masked
+		
 	       in  if not $ isEquiv effEquiv	
 			then panic stage $ vcat
 				[ ppr "Effect mismatch in lambda abstraction."
-				, "Effect of body:\n" 			%> eff2',   blank
-				, "does not match effect annotation:\n"	%> effAnn', blank
-				, "in expression:\n"			%> xx,      blank]
+				, "Effect of body:\n" 			%> eff2',       blank
+				, "with closure:\n"			%> clo2_cut,    blank
+				, "visible vars:\n"			%> vsVisible,   blank
+				, "masked effect:\n"			%> eff2_masked, blank
+				, "does not match effect annotation:\n"	%> effAnn',     blank
+				, "in expression:\n"			%> xx,          blank]
 
 	           else if cloAnn' /= clo2_cut	
 			then panic stage $ vcat
 				[ ppr "Closure mismatch in lambda abstraction."
-				, "Closure of abstraction:\n"	 	%> clo2_cut, blank
-				, "does not match annotation:\n" 	%> cloAnn',  blank
+				, "Closure of abstraction:\n"	 	%> clo2_cut,  blank
+				, "does not match annotation:\n" 	%> cloAnn',   blank
 				, "in expression:\n"			%> xx,	      blank]
 
 		   else ( makeTFun t1 t2 effAnn cloAnn

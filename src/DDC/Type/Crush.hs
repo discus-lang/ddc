@@ -36,6 +36,30 @@ crushT tt
 		  -> tPure
 		
 		_ -> TApp t1 t2'
+
+	 -- Deep Read
+	 | TyConEffectDeepRead	<- tc
+	 , t2'			<- crushT t2
+	 -> case takeTData t2' of
+		Just (_, _, ts)
+		 -> let (tRs, tDs) = unzip $ map slurpTVarsRD ts
+		    in  makeTSum kEffect
+				(  [TApp tRead t	| t <- concat tRs]
+				++ [TApp tDeepRead t	| t <- concat tDs] )
+
+		Nothing	-> TApp t1 t2'
+
+	 -- Deep Write
+	 | TyConEffectDeepWrite	<- tc
+	 , t2'			<- crushT t2
+	 -> case takeTData t2' of
+		Just (_, _, ts)
+		 -> let (tRs, tDs) = unzip $ map slurpTVarsRD ts
+		    in  makeTSum kEffect
+				(  [TApp tWrite t	| t <- concat tRs]
+				++ [TApp tDeepWrite t	| t <- concat tDs] )
+
+		Nothing	-> TApp t1 t2'
 	
 	TApp t1 t2
 	 -> TApp (crushT t1) (crushT t2)
@@ -68,6 +92,15 @@ crushK kk
 	 -> makeKSum 
 		$  map (KApp kMutable)     tsRegion
 		++ map (KApp kDeepMutable) tsData
+
+	-- Deep Const
+	KApp kc t2
+	 | kc == kDeepConst
+	 , Just _		<- takeTData t2
+	 , (tsRegion, tsData)	<- slurpTVarsRD t2
+	 -> makeKSum 
+		$  map (KApp kConst)     tsRegion
+		++ map (KApp kDeepConst) tsData
 	
 	KApp k1 t2
 	 -> KApp (crushK k1) (crushT t2)
