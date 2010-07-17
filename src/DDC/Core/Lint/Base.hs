@@ -62,5 +62,12 @@ slurpClosureToMap clo
 	| Just (v, t)	<- takeTFree clo
 	= Map.singleton v t
 	
+	| TSum k ts	<- clo
+	, isClosureKind k
+	= Map.unions $ map slurpClosureToMap ts
+	
 	| otherwise
 	= panic stage $ "slurpClosureToMap: no match for " % clo
+	
+	
+	
