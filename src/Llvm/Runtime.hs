@@ -101,13 +101,13 @@ slotInit initstart n
 	, Branch (LMLocalVar initloop LMLabel)
 
 	, MkLabel initloop
-	, Assignment index (Phi llvmWord [((llvmWordLitVar 0), (LMLocalVar initstart LMLabel)), (indexNext, (LMLocalVar initloop LMLabel))])
+	, Assignment index (Phi llvmWord [((llvmWordLitVar (0 :: Int)), (LMLocalVar initstart LMLabel)), (indexNext, (LMLocalVar initloop LMLabel))])
 	, Assignment tmp (LlvmOp LM_MO_Add index (llvmWordLitVar (-n)))
 
 	, Assignment target (GetElemPtr False init0 [tmp])
 	, Store nullObj target
 
-	, Assignment indexNext (LlvmOp LM_MO_Add index (llvmWordLitVar 1))
+	, Assignment indexNext (LlvmOp LM_MO_Add index (llvmWordLitVar (1 :: Int)))
 	, Assignment initdone (Compare LM_CMP_Eq indexNext (llvmWordLitVar n))
 	, BranchIf initdone (LMLocalVar initend LMLabel) (LMLocalVar initloop LMLabel)
 	, MkLabel initend
