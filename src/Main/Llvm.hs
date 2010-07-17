@@ -175,7 +175,7 @@ llvmOfParams (v, t) = (toLlvmType t, [])
 
 llvmOfSeaGlobal :: Top (Maybe a) -> [LMGlobal]
 llvmOfSeaGlobal (PCafSlot v t)
- | t == TPtr (TPtr TObj) -- || t == TPtr TObj
+ | t == TPtr (TPtr TObj) 
  =	let	tt = toLlvmType t
 		var = LMGlobalVar
  			("_ddcCAF_" ++ seaVar False v)	-- Variable name
