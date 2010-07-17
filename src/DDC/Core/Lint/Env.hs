@@ -56,10 +56,17 @@ withBound :: Var -> Type -> Env -> (Env -> a) -> a
 withBound = error "no withBound"
 
 -- | Run a lint computation with an extra kind in the environment.
+--   NOTE: We allow a type var to be rebound with the same kind, which makes
+--         desugaring of projection puns easier.
+--   TODO: we should probably redo the desugaring so this isn't needed.
+--
 withKind :: Var -> Kind -> Env -> (Env -> a) -> a
 withKind v k env fun
  = let	addVK Nothing	= Just k
-	addVK Just{}	= panic stage $ "withVarKind: kind for " % v % " already present"
+	addVK (Just k')
+	 | k == k'	= Just k
+	 | otherwise	= panic stage $ "withVarKind: " % v % " rebound with a different kind"
+
    in	fun $ env { envKinds = Map.alter addVK v (envKinds env) }
 
 

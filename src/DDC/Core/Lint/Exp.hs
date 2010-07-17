@@ -107,8 +107,8 @@ checkExp_trace m xx env
 	 `seq` checkExp' n x env
 	
 	XLAM (BVar v) k x
-	 -> checkKindI n k env
-	 `seq` withKind v k env (checkExp' n x)
+	  ->    checkKindI n k env
+	  `seq` withKind v k env (checkExp' n x)
 
 	-- Type application
 	-- TODO: BAD! don't use substitute here. 
