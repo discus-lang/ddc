@@ -9,9 +9,6 @@ import Util
 import System.Cmd
 import System.Exit
 import DDC.Main.Error
-import DDC.Main.Arg		(Arg)
-import qualified DDC.Main.Arg	as Arg
-import qualified Config.Config	as Config
 
 -----
 stage	= "Llvm.Invoke"
@@ -77,3 +74,4 @@ invokeLlvmAssembler
 	  -> panic stage
 	  	$ "invokeLlvmAssembler: compilation of ASM file failed.\n"
 		% "    path = " % pathSourceBase % ".s" % "\n"
+

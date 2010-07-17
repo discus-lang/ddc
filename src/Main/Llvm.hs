@@ -37,7 +37,7 @@ stage = "Main.Llvm"
 
 debug = False
 
-trace s v
+_trace s v
  =	if debug
 	  then Debug.trace s v
 	  else v
@@ -97,10 +97,10 @@ outLlvm
 outLlvm moduleName eTree pathThis
  = do
 	-- Break up the sea into parts.
-	let 	([ 	seaProtos, 		seaSupers
-		 , 	seaCafProtos,		seaCafSlots,		seaCafInits
-		 ,	seaData
-		 , 	seaHashDefs ], junk)
+	let 	([ 	_seaProtos, 		seaSupers
+		 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
+		 ,	_seaData
+		 , 	_seaHashDefs ], junk)
 
 		 = partitionFs
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
@@ -152,21 +152,22 @@ llvmOfSeaDecls (PSuper v p t ss)
 		(map (seaVar True . fst) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
-		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return (hackReturnVar t) ]) ]	-- funcBody
+		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return (hackReturnVar v t) ]) ]	-- funcBody
 		]
 
 llvmOfSeaDecls x
  = panic stage $ "Implement 'llvmOfSeaDecls (" ++ show x ++ ")'"
 
 
-hackReturnVar :: Type -> Maybe LlvmVar
-hackReturnVar t
+hackReturnVar :: Var -> Type -> Maybe LlvmVar
+hackReturnVar v t
  = case t of
 	TVoid -> Nothing
-	TObj -> Just nullObj
-	TPtr TObj -> Just (pVarLift nullObj)
+	TPtr TObj -> Nothing -- Just nullObj
+	TPtr (TPtr TObj) -> Nothing -- Just nullObj
 
-	_ -> panic stage $ "hackReturnVar " ++ show t
+	_ -> panic stage $ "hackReturnVar " ++ varName v ++ " " ++ show t
+
 
 llvmOfParams :: (Var, Type) -> LlvmParameter
 llvmOfParams (v, t) = (toLlvmType t, [])
@@ -174,8 +175,8 @@ llvmOfParams (v, t) = (toLlvmType t, [])
 
 llvmOfSeaGlobal :: Top (Maybe a) -> [LMGlobal]
 llvmOfSeaGlobal (PCafSlot v t)
- | t == TObj	-- TODO: This should be 'TPtr (TPtr TObj)'. Fix it upstream.
- =	let	tt = toLlvmType (TPtr (TPtr TObj))
+ | t == TPtr (TPtr TObj) -- || t == TPtr TObj
+ =	let	tt = toLlvmType t
 		var = LMGlobalVar
  			("_ddcCAF_" ++ seaVar False v)	-- Variable name
 			tt				-- LlvmType
@@ -186,7 +187,7 @@ llvmOfSeaGlobal (PCafSlot v t)
 	in [(var, Just (LMStaticLit (LMNullLit tt)))]
 
  | otherwise
- = panic stage $ "llvmOfSeaGlobal on type : " ++ show t
+ = panic stage $ "llvmOfSeaGlobal on : \n\tVar  : " ++ seaVar False v ++ "\n\tType : " ++ show t
 
 llvmOfSeaGlobal x
  = panic stage $ "llvmOfSeaGlobal on : " ++ show x
