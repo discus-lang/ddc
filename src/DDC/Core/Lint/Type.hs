@@ -169,19 +169,25 @@ checkKind_trace m kk env
  	KNil	-> panic stage $ "checkKind: found a KNil"
 
 	KCon kiCon super
-	 -> 	checkKiCon kiCon
-	 `seq`	checkSuper super
-	 `seq`	super
-	
+	 | checkKiCon  kiCon
+	 ->    checkSuperI n super env
+	 `seq` super
+
+	 | otherwise
+	 -> panic stage $ vcat
+		[ ppr "Malformed kind constructor"
+		, "With kiCon:    " % kiCon
+		, "and superkind: " % super ]
+		
 	KFun k1 k2
 	 ->	checkKindI n k1 env
 	 `seq`	checkKindI n k2 env
 	 
 	KApp k1 t1
-	 | SFun k11 w	<- checkKindI n k1 env 
-	 , checkTypeI n t1 env == k11
-	 -> checkSuper w `seq` w
-
+	 |  SFun k11 w	<- checkKindI n k1 env 
+	 ,  checkTypeI n t1 env == k11
+	 -> checkSuperI n w env `seq` w
+	
  	 | otherwise
  	 -> panic stage $ vcat
 		[ ppr "Error in type/kind application"
@@ -196,32 +202,34 @@ checkKind_trace m kk env
 	
 	
 -- | Check that a kind is an atomic kind.
-checkAtomicKind :: Kind -> ()
+{-
+checkAtomicKind :: Kind -> Bool
 checkAtomicKind kk
  = case kk of
-	KCon KiConValue   SBox	-> ()
-	KCon KiConRegion  SBox	-> ()
-	KCon KiConEffect  SBox	-> ()
-	KCon KiConClosure SBox	-> ()
-	_ -> panic stage $ "Kind " % kk % " is not atomic."	
-
+	KCon KiConValue   SBox	-> True
+	KCon KiConRegion  SBox	-> True
+	KCon KiConEffect  SBox	-> True
+	KCon KiConClosure SBox	-> True
+	_ -> freakout stage ("Kind " % kk % " is not atomic.") False
+-}
 
 -- | Check a kind constructor, 
-checkKiCon :: KiCon -> ()
+checkKiCon :: KiCon -> Bool
 checkKiCon kc
- = kc `seq` ()
+ = kc `seq` True
 
 
 -- Super ------------------------------------------------------------------------------------------
 -- | Check a superkind.
-checkSuper :: Super -> ()
-checkSuper ss
+checkSuperI :: Int -> Super -> Env -> ()
+checkSuperI n ss env
  = case ss of
-	SProp	-> ()
-	SBox	-> ()
+	SProp		-> ()
+	SBox		-> ()
 	SFun k super
-	 -> 	checkSuper super
-	 `seq`	checkAtomicKind  k
+	 ->    checkKindI  (n+1) k env
+	 `seq` checkSuperI (n+1) super env
+	
 
 
 

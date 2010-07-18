@@ -87,14 +87,33 @@ checkExp_trace m xx env
 	 `seq` let !clo	= trimClosureC_constrainForm
 				$ makeTFree v 
 				$ toConstrainFormT t
+			
+		   isFreeDanger c
+			| Just (_, t')	<- takeTFree c
+			, isJust $ takeTDanger t'
+			= True
+			
+			| otherwise
+			= False
+
+		   clo_dump
+		 	= packType
+			$ makeTSum kClosure 
+			$ filter (not . isFreeDanger) 
+			$ flattenTSum clo		  
 
 		   -- TODO: we're ignoring closure terms due to constructors
 		   --       of arity zero, like True :: Bool %r1.
 		   --       Is is good enough to say this is ok because the region is always constant?
-		   clo' | isTBot clo			  = Map.empty
-			| Var.isCtorName v		  = Map.empty
-			| Just (v', t')	<- takeTFree clo  = Map.singleton v' t'
-			| otherwise			  = Map.singleton v clo		  
+		   clo' | isTBot clo_dump	= Map.empty
+			| Var.isCtorName v	= Map.empty
+			
+			-- If the trimmer closure just has a single part then add that.
+			| Just (v', t')		<- takeTFree clo_dump
+			= Map.singleton v' t'
+
+			-- Otherwise the closure will be a sum. 
+			| otherwise		= Map.singleton v  clo_dump
 			
 	       in ( t, Seq.singleton tPure, clo')
 

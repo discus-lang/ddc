@@ -255,7 +255,7 @@ instance Pretty Super PMode where
   = case k of
 	SProp		-> ppr "+"
 	SBox		-> ppr"[]"
-	SFun k1 s2	-> k1 % " -> " % s2
+	SFun k1 s2	-> prettyKindLeft k1 % " -> " % s2
 
 
 -- Kind --------------------------------------------------------------------------------------------
@@ -267,12 +267,17 @@ instance Pretty Kind PMode where
   = case kk of
 	KNil		-> ppr "?"
 	KCon k _	-> ppr k
-	KFun k1 k2	-> k1 % " -> " % k2
+	KFun k1 k2	-> prettyKindLeft k1 % " -> " % k2
 	KApp k1 t1	-> k1 % " " % prettyTypeParens t1
 
 	KSum [k]	-> ppr k
 	KSum ks		-> "+" % (braces $ punc ", " ks)
 
+prettyKindLeft kk
+ = case kk of 
+	KFun{}		-> parens $ ppr kk
+	KApp{}		-> parens $ ppr kk
+	_		-> ppr kk
 	
 -- InstanceInfo ------------------------------------------------------------------------------------
 instance  (Pretty param PMode)
