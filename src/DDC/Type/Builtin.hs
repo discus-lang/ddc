@@ -106,7 +106,7 @@ tMkDirect	= TCon $ TyConWitness TyConWitnessMkDirect
 
 tMkPurify	= TCon $ TyConWitness TyConWitnessMkPurify	
 		$ KFun kRegion 
-			(KFun 	(KApp kConst (TVar kRegion $ UIndex 1))
+			(KFun 	(KApp kConst (TVar kRegion $ UIndex 0))
 				(KApp kPure  (TApp tRead (TVar kRegion $ UIndex 1))))
 
 tMkPure		= TCon $ TyConWitness TyConWitnessMkPure

@@ -83,7 +83,14 @@ crushK kk
 
 	KFun k1 k2
 	 -> KFun (crushK k1) (crushK k2)
-	
+
+	-- Head Lazy
+	KApp kc t2
+	 | kc == kHeadLazy 
+	 , Just (_, _, TVar kR r : _)	<- takeTData t2
+	 , kR == kRegion
+	 -> KApp kLazy (TVar kR r)
+
 	-- Deep Mutable
 	KApp kc t2
 	 | kc == kDeepMutable

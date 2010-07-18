@@ -240,8 +240,8 @@ applyKT' depth kk tX
  = case kk of
  	KNil			-> kk
 	KCon{}			-> kk
-	KFun k1 k2		-> KFun k1 (applyKT' (depth + 1) k2 tX)
-	KApp k t		-> KApp (applyKT' depth k tX) (applyKT_type depth tX t)
+	KFun k1 k2		-> KFun (applyKT' depth k1 tX) (applyKT' (depth + 1) k2 tX)
+	KApp k t		-> KApp (applyKT' depth k  tX) (applyKT_type depth tX t)
 	KSum ks			-> KSum $ map (flip (applyKT' depth) tX) ks
 		
 
