@@ -8,7 +8,8 @@ module DDC.Core.Lint.Base
 	, lintList
 	, checkList
 	, subSingleton
-	, slurpClosureToMap)
+	, slurpClosureToMap
+	, slurpMapToClosure)
 where 
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -76,5 +77,15 @@ slurpClosureToMap clo
 	| otherwise
 	= panic stage $ "slurpClosureToMap: no match for " % clo
 	
+-- TODO: It'd be better to keep a 
+--	map of in-scope vars -> closures
+--      as well a a set of out of closures for top-level / out of scope things.
+--
+slurpMapToClosure :: Map Var Type -> Closure
+slurpMapToClosure mm
+	= packType 
+	$ makeTSum kClosure
+	$ map (uncurry makeTFree)
+	$ Map.toList mm
 	
 	

@@ -199,6 +199,11 @@ checkExp_trace m xx env
 		   !clo2_cut	= Map.delete v1 clo2
 		   !cloAnn'	= slurpClosureToMap cloAnn
 
+	 	   -- TODO: having to do the conversion here is really slow.
+		   !cloEquiv	= equivTT
+					(slurpMapToClosure cloAnn')
+					(slurpMapToClosure clo2_cut)
+
 		   -- The visible region variables.
 		   -- These are vars that are present in the parameter or return type, 
 		   -- or in one of the types in the closure.
@@ -244,7 +249,7 @@ checkExp_trace m xx env
 				, "does not match effect annotation:\n"	%> effAnn',     blank
 				, "in expression:\n"			%> xx,          blank]
 
-	           else if cloAnn' /= clo2_cut	
+	           else if not $ isEquiv cloEquiv	
 			then panic stage $ vcat
 				[ ppr "Closure mismatch in lambda abstraction."
 				, "Closure of abstraction:\n"	 	%> clo2_cut,  blank
