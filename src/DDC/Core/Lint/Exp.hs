@@ -265,9 +265,10 @@ checkExp_trace m xx env
 	XApp x1 x2
 	 | (t1, eff1, clo1)	<- checkExp' n x1 env
 	 , (t2, eff2, clo2)	<- checkExp' n x2 env
+	 , t2'			<- crushT $ trimClosureT_constrainForm t2
 	 -> case takeTFun t1 of
 		Just (t11, t12, eff3, _)
-		 | isEquiv $ equivTT t11 t2
+		 | isEquiv $ equivTT t11 t2'
 		 -> ( t12
 		    , eff1 Seq.>< eff2 Seq.>< Seq.singleton eff3
 		    , Map.union clo1 clo2)
@@ -275,7 +276,7 @@ checkExp_trace m xx env
 		_ -> panic stage $ vcat
 			[ ppr "Type error in application."
 			, "   cannot apply function of type: " % t1
-			, "             to argument of type: " % t2
+			, "             to argument of type: " % t2'
 			, " in application: " % xx]
 
 	-- Do expression

@@ -69,18 +69,32 @@ trimClosureT' quant rsData tt
 		else trimClosureT' quant rsData tt'
 
 trimClosureT_trace quant rsData tt		
- = case tt of
+ = let down	= trimClosureT' quant rsData
+   in  case tt of
+	TVar{}		-> tt
+	TCon{}		-> tt
+
+	TSum k _
+	 | isClosureKind k	-> trimClosureC_constrainForm tt
+	 | otherwise		-> tt
+
+	TApp t1 t2
+	 | Just _	<- takeTFree tt
+	 -> trimClosureC' quant rsData tt
+
+	 | otherwise	-> TApp (down t1) (down t2)
+
+	TForall b k t
+	 -> TForall b k (down t)
+	
 	TConstrain tBody (Constraints crsEq crsMore crsOther)
 	 -> let	crsEq'		= Map.mapWithKey (trimClosureT_tt quant rsData) crsEq
 		crsMore'	= Map.mapWithKey (trimClosureT_tt quant rsData) crsMore
 		crs'		= Constraints crsEq' crsMore' crsOther
 	    in	addConstraints crs' tBody
 
-	TApp{}
-	 | Just _	<- takeTFree tt
-	 -> trimClosureC' quant rsData tt
-
-	_	-> tt
+	_ -> panic stage
+		$ "trimClosureT: no match for " % ppr tt
 
 
 -- Closure ----------------------------------------------------------------------------------------

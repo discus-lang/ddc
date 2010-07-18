@@ -56,6 +56,15 @@ equivTT	t1 t2
 	, v1 == v2
 	= IsEquiv
 
+	-- Ignore tag variables when checking whether closure constructors are equivalent.
+	| TCon (TyConClosure tcc1 _)	<- t1
+	, TCon (TyConClosure tcc2 _)	<- t2
+	= case (tcc1, tcc2) of
+		(TyConClosureFreeType   _, TyConClosureFreeType _)	-> IsEquiv
+		(TyConClosureFreeRegion _, TyConClosureFreeRegion _)	-> IsEquiv
+		(TyConClosureFree _,	   TyConClosureFree _)		-> IsEquiv
+		_							-> NotEquivTypes t1 t2
+
 	| TCon tc1	<- t1
 	, TCon tc2	<- t2
 	, tc1 == tc2
@@ -98,7 +107,7 @@ equivKK k1 k2
 	| KNil		<- k1
 	, KNil		<- k2
 	= IsEquiv
-	
+		
 	| KCon kc1 _ 	<- k1
 	, KCon kc2 _ 	<- k2
 	, kc1 == kc2

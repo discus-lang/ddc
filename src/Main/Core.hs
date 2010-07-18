@@ -225,11 +225,11 @@ coreSimplify unique cgHeader cgModule
 
 	-- when dumping our state, refloat let bindings so we can see 
 	--	where the simplifier gave up.
-{-	when (elem DumpCoreSimplify ?args)
-	 $ do	let (_, cFloat)	= Float.floatBindsTreeUse cSimplify
-	 	dumpCT DumpCoreSimplify "core-simplify"  cSimplify
-		dumpCT DumpCoreSimplify "core-simplify--refloat" cFloat
+	when (elem DumpCoreSimplify ?args)
+	 $ do	dumpCT DumpCoreSimplify "core-simplify" $ treeOfGlob cgModule'
 
+{-		dumpCT DumpCoreSimplify "core-simplify--refloat" cFloat
+		let (_, cFloat)	= Float.floatBindsTreeUse cSimplify
 		(case takeLast statss of
 		   Just stats	-> dumpS DumpCoreSimplify "core-simplify--missedUnboxing" 
 		   			(pprStrPlain $ "\n" %!% map ppr (reverse $ Float.statsMissedUnboxing 
