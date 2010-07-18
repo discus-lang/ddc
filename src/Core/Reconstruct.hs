@@ -38,7 +38,13 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Core.Glob
-import DDC.Type
+import DDC.Type.Exp
+import DDC.Type.Flatten
+import DDC.Type.Kind
+import DDC.Type.Compounds
+import DDC.Type.Builtin
+import DDC.Type.Trim
+import DDC.Type.JoinSum
 import DDC.Var.VarId		as Var
 import DDC.Var
 import DDC.Util.Doc

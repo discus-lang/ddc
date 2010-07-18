@@ -21,6 +21,7 @@ module DDC.Type
 	, module DDC.Type.Pack
 	, module DDC.Type.Trim
 	, module DDC.Type.Equiv
+	, module DDC.Type.Subsumes
 	, module DDC.Type.Crush)
 where
 import DDC.Type.Exp
@@ -44,6 +45,7 @@ import DDC.Type.Elaborate
 import DDC.Type.Pack
 import DDC.Type.Trim
 import DDC.Type.Equiv
+import DDC.Type.Subsumes
 import DDC.Type.Crush
 
 

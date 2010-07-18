@@ -4,7 +4,6 @@ module DDC.Core.Lint.Exp
 	, checkExp')	-- used by DDC.Core.Lint.Prim
 where
 import Core.Util.Substitute
--- import Core.Util.Slurp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Exp
@@ -267,16 +266,29 @@ checkExp_trace m xx env
 	 , (t2, eff2, clo2)	<- checkExp' n x2 env
 	 , t2'			<- crushT $ trimClosureT_constrainForm t2
 	 -> case takeTFun t1 of
-		Just (t11, t12, eff3, _)
-		 | isEquiv $ equivTT t11 t2'
-		 -> ( t12
-		    , eff1 Seq.>< eff2 Seq.>< Seq.singleton eff3
-		    , Map.union clo1 clo2)
+	     Just (t11, t12, eff3, _)
+	      -> case subsumesTT t2' t11 of
+		  Subsumes 
+		   -> ( t12
+		      , eff1 Seq.>< eff2 Seq.>< Seq.singleton eff3
+		      , Map.union clo1 clo2)
 		
-		_ -> panic stage $ vcat
+		  NoSubsumes s1 s2
+		   -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "   cannot apply function of type: " % t1
+			, "  cannot apply function of type: " % t1
+			, "            to argument of type: " % t2'
+			, ppr "   because"
+			, "                           type: " % s2
+			, "               does not subsume: " % s1 
+			, blank
+			, "in application:\n" % xx]
+		
+	     _ -> panic stage $ vcat
+			[ ppr "Type error in application."
+			, "  cannot apply non-function type: " % t1
 			, "             to argument of type: " % t2'
+			, blank
 			, " in application: " % xx]
 
 	-- Do expression

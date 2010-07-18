@@ -8,7 +8,11 @@ module Core.Util.Subsumes
 where
 import Util
 import DDC.Main.Pretty
-import DDC.Type
+import DDC.Type.Exp
+import DDC.Type.Compounds
+import DDC.Type.Kind
+import DDC.Type.Builtin
+import DDC.Type.Trim
 import DDC.Var
 import qualified Debug.Trace
 

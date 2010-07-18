@@ -6,7 +6,13 @@ import Core.Util
 import Core.Reconstruct.Environment
 import DDC.Main.Pretty
 import DDC.Main.Error
-import DDC.Type
+import DDC.Type.Exp
+import DDC.Type.Trim
+import DDC.Type.Compounds
+import DDC.Type.Kind
+import DDC.Type.Flatten
+import DDC.Type.Builtin
+import DDC.Type.Predicates
 import Util
 
 stage	= "Core.Reconstruct.Apply"
