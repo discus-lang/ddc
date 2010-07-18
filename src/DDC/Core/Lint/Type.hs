@@ -83,21 +83,36 @@ checkType_trace m tt env
 		k1@(KFun k11 k12)
 		 | k11 == k2	-> uncheckedApplyKT k1 t2
 		
-		k1 -> panic stage
-		 $ vcat [ ppr "Kind error in type application."
+		k1 -> panic stage $ vcat
+			[ ppr "Kind error in type application."
 			, "Cannot apply type:\n" 	%> t2
 			, "of kind:\n"			%> k2
 			, "to type:\n" 			%> t1
 			, "of kind:\n" 			%> k1]
 		
 	-- TODO: nub is horrible.
+	-- For region effect and closure sums, all the elements should have that kind.
 	TSum k ts
+	 | isRegionKind k || isEffectKind k || isClosureKind k
 	 -> 	checkKindI n k  env
 	 `seq`	case nub $ (k : map (\t -> checkTypeI n t env) ts) of
 		 [k']	-> k'
-		 _	-> panic stage
-			$  "Kind error in type sum."
-			%  "   type:           " % tt
+		 ks	-> panic stage $ vcat
+			[ ppr "Kind error in type sum."
+			, "   type:           " % tt
+			, "   kinds in sum:   " % ks ]
+
+	 -- For witness sums, the kind of the sum says what kinds the witnesses should have.
+	 | otherwise
+	 -> let	ks	= map (\t -> checkTypeI n t env) ts
+		k'	= makeKSum ks
+	    in  if k == k'
+		 then checkKindI n k env `seq` k
+		 else  panic stage $ vcat
+			[ ppr "Kind error in type sum."
+			, "    type:           " % tt
+			, "    kind of sum:    " % k
+			, "    kind of elems:  " % k']
 	
 	-- Type constructors.
 	TCon tc
