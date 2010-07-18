@@ -35,7 +35,7 @@ import qualified Debug.Trace		as Debug
 
 stage = "Main.Llvm"
 
-debug = False
+debug = True
 
 _trace s v
  =	if debug
@@ -122,7 +122,7 @@ outLlvm moduleName eTree pathThis
 
 	let code = seaCafInits ++ seaSupers
 
-	let fwddecls	= [panicOutOfSlots, panicSlotUnderflow]
+	let fwddecls	= [panicOutOfSlots]
 
 	let globals	= moduleGlobals
 			++ (catMap llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
@@ -152,21 +152,11 @@ llvmOfSeaDecls (PSuper v p t ss)
 		(map (seaVar True . fst) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
-		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return (hackReturnVar v t) ]) ]	-- funcBody
+		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return Nothing ]) ]	-- funcBody
 		]
 
 llvmOfSeaDecls x
  = panic stage $ "Implement 'llvmOfSeaDecls (" ++ show x ++ ")'"
-
-
-hackReturnVar :: Var -> Type -> Maybe LlvmVar
-hackReturnVar v t
- = case t of
-	TVoid -> Nothing
-	TPtr TObj -> Nothing -- Just nullObj
-	TPtr (TPtr TObj) -> Nothing -- Just nullObj
-
-	_ -> panic stage $ "hackReturnVar " ++ varName v ++ " " ++ show t
 
 
 llvmOfParams :: (Var, Type) -> LlvmParameter
@@ -204,7 +194,7 @@ llvmOfStmt stmt
  = case stmt of
 	SBlank		-> return $ [Comment [""]]
 	SEnter n	-> return $ runtimeEnter n
-	SLeave n	-> return $ runtimeLeave n
+	SLeave n	-> return runtimeLeave
 	SComment s	-> return $ [Comment [s]]
 	SGoto loc	-> return $ [Branch (LMNLocalVar (seaVar False loc) LMLabel)]
 	SAssign v1 t v2 -> llvmOfAssign v1 t v2
@@ -238,15 +228,28 @@ llvmOfAssign (XVar v1 t1) t (XVar v2 t2)
 
 
 llvmOfAssign (XVar v1 t1) t x@(XPrim op args)
- | t1 == TPtr (TPtr TObj)
- = do	-- putStrLn $ "\nSAssign (" ++ seaVar False v1 ++ " " ++ show t1 ++ ") " ++ show x ++ ")\n"
-
-	(dstreg, oplist) <- llvmOfXPrim (toLlvmType t) op args
+ | t1 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
+ = do	(dstreg, oplist) <- llvmOfXPrim (toLlvmType t) op args
 	return	$ reverse oplist ++ [ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
 
+{-
+-- The following doesn't work yet
+llvmOfAssign (XSlot v1 t1 i) t (XVar v2 t2)
+ | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
+ = do	putStrLn $ "Assign (XSlot " ++ seaVar True v1 ++ " " ++ show i ++ ") " ++ seaVar True v2
+	src	<- newUniqueLocal (toLlvmType t1)
+	dst	<- newUniqueLocal (toLlvmType t1)
+	return	$ [ Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar (-1 - i)])
+		  , Store (toLlvmVar v2 t2) dst ]
+-}
 
-llvmOfAssign _ _ _
- = return []
+llvmOfAssign a b c
+ = do	when debug
+	 $ do	putStrLn $ "--------------------------\nUnhandled Assign"
+			++ "\n    " ++ show a
+			++ "\n    " ++ show b
+			++ "\n    " ++ show c ++ "\n"
+	return []
 
 --------------------------------------------------------------------------------
 
@@ -294,3 +297,4 @@ llvmOpOfPrim p
 	FAdd -> LlvmOp LM_MO_Add
 	FSub -> LlvmOp LM_MO_Sub
 	_ -> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
+
