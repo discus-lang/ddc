@@ -199,6 +199,8 @@ llvmOfStmt stmt
 	SGoto loc	-> return $ [Branch (LMNLocalVar (seaVar False loc) LMLabel)]
 	SAssign v1 t v2 -> llvmOfAssign v1 t v2
 
+	SReturn v	-> llvmOfReturn v
+
 	SAuto v t
 	  ->	-- LLVM is SSA so auto variables do not need to be declared.
 		return [Comment ["SAuto " ++ seaVar True v ++ " " ++ show t]]
@@ -221,9 +223,9 @@ llvmOfAssign :: Exp a -> Type -> Exp a -> IO [LlvmStatement]
 llvmOfAssign (XVar v1 t1) t (XVar v2 t2)
  | t1 == TPtr (TPtr TObj) && t2 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
 	&& isGlobalVar v1 && isGlobalVar v2
- = do	tmp	<- newUniqueLocal (toLlvmType t1)
-	return	$ [ Assignment tmp (loadAddress (toLlvmVar v2 t2))
-		  , Store tmp (pVarLift (toLlvmVar v1 t1)) ]
+ = do	src	<- newUniqueLocal (toLlvmType t1)
+	return	$ [ Assignment src (loadAddress (toLlvmVar v2 t2))
+		  , Store src (pVarLift (toLlvmVar v1 t1)) ]
 
 
 llvmOfAssign (XVar v1 t1) t x@(XPrim op args)
@@ -236,8 +238,36 @@ llvmOfAssign (XSlot v1 t1 i) t (XVar v2 t2)
  | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
  = do	src	<- newUniqueLocal (toLlvmType t1)
 	dst	<- newUniqueLocal (toLlvmType t1)
-	return	$ [ Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
+	return	$ [ Comment ["XSlot " ++ show i ++ " <- " ++ seaVar True v1]
+		  , Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
 		  , Store (toLlvmVar v2 t2) (pVarLift dst) ]
+
+
+llvmOfAssign (XVar v1 t1) t (XSlot v2 t2 i)
+ | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
+ = do	addr	<- newUniqueLocal (pLift (toLlvmType t1))
+	let dst	= toLlvmVar v1 t1
+	return	$ [ Comment ["XVar " ++ seaVar True v1 ++ " <- XSlot " ++ show i]
+		  , Assignment addr (GetElemPtr True localSlotBase [llvmWordLitVar i])
+		  , Assignment dst (Load addr) ]
+
+
+---- Working on this!
+llvmOfAssign a@((XSlot v1 t1 i)) t c@(XBox t2 exp)
+ | t1 == TPtr TObj && t == TPtr TObj
+ = do	when debug
+	 $ do	putStrLn $ "--------------------------\nXSlot "  ++ show i ++ " <- XBox "
+			++ "\n    " ++ show a
+			++ "\n    " ++ show t
+			++ "\n    " ++ show c ++ "\n"
+
+
+	dst	<- newUniqueLocal (toLlvmType t1)
+	return	$ [ Comment ["XSlot " ++ show i ++ " <- XBox"]
+		  , Comment ["Need to box the value"]
+		  -- , Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
+		  -- , Store src (pVarLift dst)
+			]
 
 
 llvmOfAssign a b c
@@ -247,6 +277,19 @@ llvmOfAssign a b c
 			++ "\n    " ++ show b
 			++ "\n    " ++ show c ++ "\n"
 	return []
+
+
+--------------------------------------------------------------------------------
+
+llvmOfReturn :: Exp a -> IO [LlvmStatement]
+llvmOfReturn (XVar v t)
+ | t == TPtr TObj
+ =	return [ Return (Just (toLlvmVar v t)) ]
+
+
+llvmOfReturn x
+ = do	return	$ [ Comment ["Return (" ++ (takeWhile (/= ' ') (show x)) ++ ")"]
+		  , Return Nothing ]
 
 --------------------------------------------------------------------------------
 
