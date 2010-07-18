@@ -226,22 +226,19 @@ llvmOfAssign (XVar v1 t1) t (XVar v2 t2)
 		  , Store tmp (pVarLift (toLlvmVar v1 t1)) ]
 
 
-
 llvmOfAssign (XVar v1 t1) t x@(XPrim op args)
  | t1 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
  = do	(dstreg, oplist) <- llvmOfXPrim (toLlvmType t) op args
 	return	$ reverse oplist ++ [ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
 
-{-
--- The following doesn't work yet
+
 llvmOfAssign (XSlot v1 t1 i) t (XVar v2 t2)
  | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
- = do	putStrLn $ "Assign (XSlot " ++ seaVar True v1 ++ " " ++ show i ++ ") " ++ seaVar True v2
-	src	<- newUniqueLocal (toLlvmType t1)
+ = do	src	<- newUniqueLocal (toLlvmType t1)
 	dst	<- newUniqueLocal (toLlvmType t1)
-	return	$ [ Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar (-1 - i)])
-		  , Store (toLlvmVar v2 t2) dst ]
--}
+	return	$ [ Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
+		  , Store (toLlvmVar v2 t2) (pVarLift dst) ]
+
 
 llvmOfAssign a b c
  = do	when debug
