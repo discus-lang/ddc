@@ -11,7 +11,8 @@
 #include "Lint.h"
 
 // Get a pointer from the GC stack, indexed relative to the current frame.
-#define _S(index)	*(_ddcSlotS - index)
+#define _S(index)	_localSlotBase [index]
+
 
 // Take the pointer of the CAF with this name.
 #define _CAF(name)	*_ddcCAF_##name
@@ -21,30 +22,28 @@
 //	before they are initialised.
 #if _DDC_PROFILE_SLOT
 #  define _ENTER(countS) \
+		Obj** _localSlotBase = _ddcSlotPtr;\
 		_ddcSlotPtr	+= countS; \
 		if (_ddcSlotPtr >= _ddcSlotMax)\
 			_panicOutOfSlots();\
-		Obj**	_ddcSlotS	= _ddcSlotPtr - 1;\
 		for (UInt _i = 0; _i < countS; _i++)\
-			*(_ddcSlotS - _i)	= 0; \
+			_localSlotBase [_i]	= 0; \
 		if (_ddcSlotPtr > _ddcProfile ->slot.highWater) \
 			_ddcProfile ->slot.highWater = _ddcSlotPtr;
 #else
 #  define _ENTER(countS) \
-		_ddcSlotPtr	+= countS;\
+		Obj** _localSlotBase = _ddcSlotPtr;\
+		_ddcSlotPtr	+= countS; \
 		if (_ddcSlotPtr >= _ddcSlotMax)\
 			_panicOutOfSlots();\
-		Obj**	_ddcSlotS	= _ddcSlotPtr - 1;\
 		for (UInt _i = 0; _i < countS; _i++)\
-			*(_ddcSlotS - _i)	= 0; 
+			_localSlotBase [_i]	= 0;
 #endif
 
 
 // Pop some slots from the GC stack.
 #define _LEAVE(countS) \
-		_ddcSlotPtr	-= countS; \
-		if (_ddcSlotPtr < _ddcSlotBase) \
-			_panicSlotUnderflow(); 
+		_ddcSlotPtr	= _localSlotBase;
 
 
 #endif
