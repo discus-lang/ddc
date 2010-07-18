@@ -18,6 +18,7 @@ import DDC.Core.Lint.Env
 import qualified Debug.Trace
 import qualified Data.Map	as Map
 import Data.Map			(Map)
+import Data.List
 
 stage		= "DDC.Core.Lint.Base"
 
@@ -55,6 +56,7 @@ subSingleton v t v'
 	| otherwise	= Nothing
 
 
+-- TODO: repacking this again and again costs O(n^2) time in size of closure.
 slurpClosureToMap :: Closure -> Map Var Type
 slurpClosureToMap clo
  	| isTBot clo	= Map.empty
@@ -64,7 +66,12 @@ slurpClosureToMap clo
 	
 	| TSum k ts	<- clo
 	, isClosureKind k
-	= Map.unions $ map slurpClosureToMap ts
+	= foldl' (\m1 m2 
+		   -> Map.unionWithKey
+			(\v c1 c2 -> packType $ makeTSum k [makeTFree v c1, makeTFree v c2])
+			m1 m2)
+		Map.empty
+		$ map slurpClosureToMap ts
 	
 	| otherwise
 	= panic stage $ "slurpClosureToMap: no match for " % clo

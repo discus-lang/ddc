@@ -87,18 +87,18 @@ checkExp_trace m xx env
 				$ makeTFree v 
 				$ toConstrainFormT t
 			
-		   isFreeDanger c
-			| Just (_, t')	<- takeTFree c
-			, isJust $ takeTDanger t'
-			= True
+		   crushDanger c
+			| Just (v', t')	<- takeTFree c
+			, Just (_,  t2)	<- takeTDanger t'
+			= makeTFree v' t2
 			
 			| otherwise
-			= False
+			= c
 
 		   clo_dump
 		 	= packType
 			$ makeTSum kClosure 
-			$ filter (not . isFreeDanger) 
+			$ map crushDanger 
 			$ flattenTSum clo		  
 
 		   -- TODO: we're ignoring closure terms due to constructors
@@ -114,7 +114,10 @@ checkExp_trace m xx env
 			-- Otherwise the closure will be a sum. 
 			| otherwise		= Map.singleton v  clo_dump
 			
-	       in ( t, Seq.singleton tPure, clo')
+	       in {- trace (vcat
+			 [ "XVar " % v % " " % t
+			 , "trimmed: " % clo ])
+			 $ -} (t, Seq.singleton tPure, clo')
 
 
 	-- Literal values
