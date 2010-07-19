@@ -16,7 +16,7 @@ import Llvm.GhcReplace.Outputable
 -- | An abstract unique object.  Objects of type 'Unique' may be
 -- compared for equality and ordering and hashed into 'Int'.
 data Unique
-	= UniqueInt Integer
+	= UniqueNameInt String Integer
 	| UniqueStr String
 	deriving (Eq,Ord)
 
@@ -27,12 +27,12 @@ uniqSource = unsafePerformIO (newMVar 0)
 -- not compare equal to any other value of type 'Unique' returned by
 -- previous calls to 'newUnique'.  There is no limit on the number of
 -- times 'newUnique' may be called.
-newUnique :: IO Unique
-newUnique = do
+newUnique :: String -> IO Unique
+newUnique name = do
    val <- takeMVar uniqSource
    let next = val+1
    putMVar uniqSource next
-   return (UniqueInt next)
+   return (UniqueNameInt name next)
 
 -- | Create a fake 'Unique' object. The DDC Sea backend already generated
 -- unique labels. This allows the LLVM backend to use the Sea labels.
@@ -40,7 +40,7 @@ fakeUnique :: String -> Unique
 fakeUnique s = UniqueStr s
 
 instance Show Unique where
-    show (UniqueInt i) = "u." ++ show i
+    show (UniqueNameInt s i) = s ++ "." ++ show i
     show (UniqueStr s) = s
 
 pprUnique :: Unique -> SDoc

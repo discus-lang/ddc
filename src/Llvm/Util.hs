@@ -4,11 +4,17 @@
 module Llvm.Util
 	( toLlvmType
 	, toLlvmVar
+
 	, llvmWordLitVar
-	, newUniqueLocal
+	, llvmIntLitVar
+
+	, newUniqueReg
+	, newUniqueLabel
+
 	, loadAddress
 	, isGlobalVar
 
+	, pChar
 	, ddcObj
 	, structObj
 	, pObj
@@ -17,6 +23,8 @@ module Llvm.Util
 	, ptrAlign )
 where
 
+import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Var
 
@@ -48,16 +56,30 @@ toLlvmVar v t
 	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
 
 
--- | An Integral to an LLVM literal variable with the same size as the
--- target pointer type.
+-- | Convert an Integral to an LLVM literal variable with the same size
+-- as the target pointer type.
 llvmWordLitVar :: Integral a => a -> LlvmVar
 llvmWordLitVar n = LMLitVar (LMIntLit (toInteger n) llvmWord)
 
--- | Generate a new unique local variable.
-newUniqueLocal :: LlvmType -> IO LlvmVar
-newUniqueLocal t
- = do	u <- newUnique
+-- | Convert a DDC LiteralFmt to an LLVM literal variable.
+llvmIntLitVar :: LiteralFmt -> LlvmVar
+llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 32)) = LMLitVar (LMIntLit (toInteger i) i32)
+llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 64)) = LMLitVar (LMIntLit (toInteger i) i64)
+
+
+-- | Generate a new unique register variable.
+newUniqueReg :: LlvmType -> IO LlvmVar
+newUniqueReg t
+ = do	u <- newUnique "r"
 	return $ LMLocalVar u t
+
+
+-- | Generate a new unique register variable.
+newUniqueLabel :: String -> IO LlvmVar
+newUniqueLabel label
+ = do	u <- newUnique label
+	return $ LMLocalVar u LMLabel
+
 
 -- | Lift an LlvmVar into an expression to 'load from address of the variable'.
 loadAddress :: LlvmVar -> LlvmExpression
@@ -77,17 +99,24 @@ isGlobalVar v
 --------------------------------------------------------------------------------
 -- Types and variables.
 
+pChar :: LlvmType
+pChar = LMPointer i8
+
+
 ddcObj :: LlvmType
 ddcObj = LMStruct [ i32 ]
 
+
 structObj :: LlvmType
 structObj = LMAlias ("struct.Obj", ddcObj)
+
 
 pObj :: LlvmType
 pObj = pLift structObj
 
 ppObj :: LlvmType
 ppObj = pLift pObj
+
 
 nullObj :: LlvmVar
 nullObj = LMLitVar (LMNullLit pObj)

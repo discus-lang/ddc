@@ -122,7 +122,7 @@ outLlvm moduleName eTree pathThis
 
 	let code = seaCafInits ++ seaSupers
 
-	let fwddecls	= [panicOutOfSlots]
+	let fwddecls	= [panicOutOfSlots, allocCollect]
 
 	let globals	= moduleGlobals
 			++ (catMap llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
@@ -140,12 +140,6 @@ llvmOfSeaDecls (PCafInit v t ss)
 llvmOfSeaDecls (PSuper v p t ss)
  = do	when debug
 	  $ putStrLn "--------------------------------------------------------"
-	{-
-	putStrLn $ seaVar False v
-	putStrLn ""
-	mapM_ (\s -> putStrLn $ show s) ss
-	putStrLn "--------------------------------------------------------"
-	-}
 	blocks <- catMapM llvmOfStmt ss
  	return $ [ LlvmFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
@@ -184,9 +178,11 @@ llvmOfSeaGlobal x
 
 moduleGlobals :: [LMGlobal]
 moduleGlobals
- = 	[ ( ddcSlotPtr, Nothing )
-	, ( ddcSlotMax, Nothing )
-	, ( ddcSlotBase, Nothing ) ]
+ = 	[ ( ddcSlotPtr	, Nothing )
+	, ( ddcSlotMax	, Nothing )
+	, ( ddcSlotBase	, Nothing )
+	, ( ddcHeapPtr	, Nothing )
+	, ( ddcHeapMax	, Nothing ) ]
 
 
 llvmOfStmt :: Stmt a -> IO [LlvmStatement]
@@ -223,7 +219,7 @@ llvmOfAssign :: Exp a -> Type -> Exp a -> IO [LlvmStatement]
 llvmOfAssign (XVar v1 t1) t (XVar v2 t2)
  | t1 == TPtr (TPtr TObj) && t2 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
 	&& isGlobalVar v1 && isGlobalVar v2
- = do	src	<- newUniqueLocal (toLlvmType t1)
+ = do	src	<- newUniqueReg (toLlvmType t1)
 	return	$ [ Assignment src (loadAddress (toLlvmVar v2 t2))
 		  , Store src (pVarLift (toLlvmVar v1 t1)) ]
 
@@ -236,8 +232,8 @@ llvmOfAssign (XVar v1 t1) t x@(XPrim op args)
 
 llvmOfAssign (XSlot v1 t1 i) t (XVar v2 t2)
  | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
- = do	src	<- newUniqueLocal (toLlvmType t1)
-	dst	<- newUniqueLocal (toLlvmType t1)
+ = do	src	<- newUniqueReg (toLlvmType t1)
+	dst	<- newUniqueReg (toLlvmType t1)
 	return	$ [ Comment ["XSlot " ++ show i ++ " <- " ++ seaVar True v1]
 		  , Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
 		  , Store (toLlvmVar v2 t2) (pVarLift dst) ]
@@ -245,7 +241,7 @@ llvmOfAssign (XSlot v1 t1 i) t (XVar v2 t2)
 
 llvmOfAssign (XVar v1 t1) t (XSlot v2 t2 i)
  | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
- = do	addr	<- newUniqueLocal (pLift (toLlvmType t1))
+ = do	addr	<- newUniqueReg (pLift (toLlvmType t1))
 	let dst	= toLlvmVar v1 t1
 	return	$ [ Comment ["XVar " ++ seaVar True v1 ++ " <- XSlot " ++ show i]
 		  , Assignment addr (GetElemPtr True localSlotBase [llvmWordLitVar i])
@@ -262,9 +258,11 @@ llvmOfAssign a@((XSlot v1 t1 i)) t c@(XBox t2 exp)
 			++ "\n    " ++ show c ++ "\n"
 
 
-	dst	<- newUniqueLocal (toLlvmType t1)
-	return	$ [ Comment ["XSlot " ++ show i ++ " <- XBox"]
-		  , Comment ["Need to box the value"]
+	dst	<- newUniqueReg (toLlvmType t1)
+	return	$ [ Comment	[ ""
+				, "XSlot " ++ show i ++ " <- XBox"
+				, "Need to box the value"
+				, "" ]
 		  -- , Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
 		  -- , Store src (pVarLift dst)
 			]
@@ -278,6 +276,11 @@ llvmOfAssign a b c
 			++ "\n    " ++ show c ++ "\n"
 	return []
 
+
+varOfXLit :: Exp a -> LlvmVar
+varOfXLit (XLit x) = llvmIntLitVar x
+
+varOfXLit x = panic stage $ "varOfXLit " ++ show x
 
 --------------------------------------------------------------------------------
 
@@ -301,7 +304,7 @@ primFoldFunc
 	-> IO (LlvmVar, [LlvmStatement])
 
 primFoldFunc t build (left, ss) exp
- = do	dst <- newUniqueLocal t
+ = do	dst <- newUniqueReg t
 	return $ (dst, Assignment dst (build left (llvmVarOfExp exp)) : ss)
 
 
@@ -314,13 +317,13 @@ llvmOfXPrim t op args
 	[XVar v t, XInt i]	-> llvmPtrOp v t op i
 
 	x : xs
-	  -> do		reg <- newUniqueLocal t
+	  -> do		reg <- newUniqueReg t
 			foldM (primFoldFunc t (llvmOpOfPrim op)) (reg, [Assignment reg (Load (llvmVarOfExp x))]) xs
 
 llvmPtrOp :: Var -> Type -> Prim -> Int -> IO (LlvmVar, [LlvmStatement])
 llvmPtrOp v t op i
- = do	src	<- newUniqueLocal (toLlvmType t)
-	dst	<- newUniqueLocal (toLlvmType t)
+ = do	src	<- newUniqueReg (toLlvmType t)
+	dst	<- newUniqueReg (toLlvmType t)
 	return	$ (dst, [ Assignment dst (GetElemPtr False src [llvmWordLitVar i])
 			, Assignment src (Load (pVarLift (toLlvmVar v t))) ])
 
