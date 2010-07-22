@@ -10,6 +10,8 @@ import Main.Setup
 import Main.Sea
 import Main.Util
 
+import DDC.Base.DataFormat
+import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
@@ -164,7 +166,7 @@ llvmOfSeaGlobal (PCafSlot v t)
 		var = LMGlobalVar
  			("_ddcCAF_" ++ seaVar False v)	-- Variable name
 			tt				-- LlvmType
-			Internal			-- LlvmLinkageType
+			ExternallyVisible		-- LlvmLinkageType
 			Nothing				-- LMSection
 			ptrAlign			-- LMAlign
 			False				-- LMConst
@@ -189,8 +191,8 @@ llvmOfStmt :: Stmt a -> IO [LlvmStatement]
 llvmOfStmt stmt
  = case stmt of
 	SBlank		-> return $ [Comment [""]]
-	SEnter n	-> return $ runtimeEnter n
-	SLeave n	-> return runtimeLeave
+	SEnter n	-> runtimeEnter n
+	SLeave n	-> return $ runtimeLeave n
 	SComment s	-> return $ [Comment [s]]
 	SGoto loc	-> return $ [Branch (LMNLocalVar (seaVar False loc) LMLabel)]
 	SAssign v1 t v2 -> llvmOfAssign v1 t v2
@@ -204,8 +206,7 @@ llvmOfStmt stmt
 	SLabel l
 	  ->	-- LLVM does not allow implicit fall through to a label, so
 		-- explicitly branch to the label immediately following.
-		let label = fakeUnique (seaVar False l)
-		in return $ [Branch (LMLocalVar label LMLabel), MkLabel label]
+		return $ branchLabel (seaVar False l)
 
 	_
 	  -> do	when debug
@@ -257,15 +258,11 @@ llvmOfAssign a@((XSlot v1 t1 i)) t c@(XBox t2 exp)
 			++ "\n    " ++ show t
 			++ "\n    " ++ show c ++ "\n"
 
-
-	dst	<- newUniqueReg (toLlvmType t1)
-	return	$ [ Comment	[ ""
-				, "XSlot " ++ show i ++ " <- XBox"
-				, "Need to box the value"
-				, "" ]
-		  -- , Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
-		  -- , Store src (pVarLift dst)
-			]
+	(boxed, boxCode)	<- boxExp exp
+	storeCode		<- storeToSlot i boxed
+	return	$ [ Comment [ "" , "XSlot " ++ show i ++ " <- XBox" ] ]
+		  ++ boxCode
+		  ++ storeCode
 
 
 llvmOfAssign a b c
@@ -281,6 +278,86 @@ varOfXLit :: Exp a -> LlvmVar
 varOfXLit (XLit x) = llvmIntLitVar x
 
 varOfXLit x = panic stage $ "varOfXLit " ++ show x
+
+
+
+boxExp :: Exp a -> IO (LlvmVar, [LlvmStatement])
+boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
+ = do	r0	<- newUniqueNamedReg "r0" pChar
+	r1	<- newUniqueNamedReg "r1" pChar
+	r2	<- newUniqueNamedReg "r2" pChar
+	r3	<- newUniqueNamedReg "r3" i1
+	r4	<- newUniqueNamedReg "r4" pChar
+	r5	<- newUniqueNamedReg "r5" (pLift i32)
+	r6	<- newUniqueNamedReg "r6" pChar
+	r7	<- newUniqueNamedReg "r7" pChar
+	r8	<- newUniqueNamedReg "r8" (pLift i32)
+	pre	<- newUniqueNamedReg "pre" pChar
+	result	<- newUniqueNamedReg "boxed" pObj
+
+	entry	<- newUniqueLabel "entry"
+	bb	<- newUniqueLabel "bb"
+	bb1	<- newUniqueLabel "bb1"
+
+	let allocSize = i32LitVar (8::Int)
+	return	$ (result,
+		[ Comment ["boxInt32 start"]
+		, Branch entry
+		, MkLabel (uniqueOfLlvmVar entry)
+		, Assignment r0 (Load ddcHeapPtr)
+		, Assignment r1 (GetElemPtr True r0 [allocSize])
+		, Assignment r2 (Load ddcHeapMax)
+		, Assignment r3 (Compare LM_CMP_Ugt r1 r2)
+		, BranchIf r3 bb bb1
+
+		, MkLabel (uniqueOfLlvmVar bb)
+		, Expr (Call StdCall (LMGlobalVar "_allocCollect" (LMFunction allocCollect) External Nothing Nothing True) [allocSize] [])
+		, Assignment pre (Load ddcHeapPtr)
+		, Branch bb1
+
+		, MkLabel (uniqueOfLlvmVar bb1)
+		, Assignment r4 (Phi pChar [(pre, bb), (r0 , entry)])
+
+		, Assignment r5 (Cast LM_Bitcast r4 (pLift i32))
+		, Assignment r6 (GetElemPtr True r4 [allocSize])
+		, Store r6 ddcHeapPtr
+
+
+		, Store (i32LitVar 19) r5
+		, Assignment r7 (GetElemPtr True r4 [llvmWordLitVar 4])
+		, Assignment r8 (Cast LM_Bitcast r7 (pLift i32))
+		, Store (i32LitVar value) r8
+		, Assignment result (Cast LM_Bitcast r4 pObj)
+		, Comment ["boxInt32 end"]
+		])
+
+
+boxExp x
+ = do	result	<- newUniqueNamedReg "boxed" ppObj
+	return	$ (result, [ Comment ["boxExp " ++ takeWhile (/= ' ') (show x)] ])
+
+--------------------------------------------------------------------------------
+
+storeToSlot :: Int -> LlvmVar -> IO [LlvmStatement]
+storeToSlot 0 var
+ = return [ Store var localSlotBase ]
+
+storeToSlot n var
+ | n > 0
+ = do	dst	<- newUniqueNamedReg ("slot" ++ show n) pObj
+	return	$ []
+--	return	$ [ Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar n])
+--		  , Store var dst ]
+
+
+storeToSlot n _ = panic stage $ "storeToSlot in slot " ++ show n
+
+--------------------------------------------------------------------------------
+
+branchLabel :: String -> [LlvmStatement]
+branchLabel name
+ =	let label = fakeUnique name
+	in [Branch (LMLocalVar label LMLabel), MkLabel label]
 
 --------------------------------------------------------------------------------
 
@@ -340,4 +417,38 @@ llvmOpOfPrim p
 	FAdd -> LlvmOp LM_MO_Add
 	FSub -> LlvmOp LM_MO_Sub
 	_ -> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
+
+
+-- | Convert a Sea type to an LlvmType.
+toLlvmType :: Type -> LlvmType
+toLlvmType (TPtr t)	= LMPointer (toLlvmType t)
+toLlvmType TObj		= structObj
+toLlvmType TVoid	= LMVoid
+toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
+
+
+-- | Convert a Sea Var (wit a Type) to a typed LlvmVar.
+toLlvmVar :: Var -> Type -> LlvmVar
+toLlvmVar v t
+ = case isGlobalVar v of
+	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
+	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
+
+
+-- | Does the given Sea variable have global scope? TODO: Move this to the Sea stuff.
+isGlobalVar :: Var -> Bool
+isGlobalVar v 
+ -- If the variable is explicitly set as global use the given name.
+ | bool : _	<- [global | ISeaGlobal global <- varInfo v]
+ = bool
+
+ | otherwise
+ = False
+
+
+llvmIntLitVar :: LiteralFmt -> LlvmVar
+llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 32)) = i32LitVar i
+llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 64)) = i64LitVar i
+
+llvmIntLitVar _ = panic stage $ "llvmIntLitVar : unhandled case."
 
