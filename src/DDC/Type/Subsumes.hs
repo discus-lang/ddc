@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Type.Subsumes
 	( Subsumes(..)
 	, isSubsumes
@@ -67,7 +67,7 @@ subsumesTT t1 t2
 	= Subsumes
 
 	| TSum k1 _		<- t1
-	, TSum k2 _		<- t2
+	, TSum _  _		<- t2
 	, isRegionKind k1 || isEffectKind k1 || isClosureKind k1
 	, isEquiv (equivTT t1 t2)
 	= Subsumes
