@@ -35,13 +35,15 @@ import DDC.Var
 import Data.List
 import Data.Maybe
 import Control.Monad
-import Core.Util		(maybeSlurpTypeX)
-import Data.Map			(Map)
-import Data.Sequence		(Seq)
-import qualified Data.Sequence	as Seq
-import qualified Data.Map	as Map
-import qualified Data.Set	as Set
-import qualified Data.Foldable	as Foldable
+import DDC.Type.ClosureStore		(ClosureStore)
+import Core.Util			(maybeSlurpTypeX)
+import Data.Map				(Map)
+import Data.Sequence			(Seq)
+import qualified DDC.Type.ClosureStore	as Clo
+import qualified Data.Sequence		as Seq
+import qualified Data.Map		as Map
+import qualified Data.Set		as Set
+import qualified Data.Foldable		as Foldable
 import qualified Debug.Trace
 
 stage		= "DDC.Core.Lint"
@@ -51,11 +53,11 @@ stage		= "DDC.Core.Lint"
 -- Glob -------------------------------------------------------------------------------------------
 checkGlobs :: Glob -> Glob -> ()
 checkGlobs cgHeader cgCore 	
---	= ()
-	= checkList (checkBind (envInit cgHeader cgCore))
+	= ()
+{-	= checkList (checkBind (envInit cgHeader cgCore))
 	$ Map.elems
 	$ globBind cgCore
-
+-}
 
 -- Top --------------------------------------------------------------------------------------------
 checkBind :: Env -> Top -> ()

@@ -7,21 +7,21 @@ module DDC.Core.Lint.Base
 	, trace
 	, lintList
 	, checkList
-	, subSingleton
-	, slurpClosureToMap
-	, slurpMapToClosure)
+	, subSingleton)
+--	, slurpClosureToMap
+--	, slurpMapToClosure)
 where 
-import DDC.Main.Error
+--import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
-import DDC.Var
+-- import DDC.Var
 import DDC.Core.Lint.Env
 import qualified Debug.Trace
-import qualified Data.Map	as Map
-import Data.Map			(Map)
-import Data.List
+--import qualified Data.Map	as Map
+--import Data.Map			(Map)
+--import Data.List
 
-stage		= "DDC.Core.Lint.Base"
+--stage		= "DDC.Core.Lint.Base"
 
 debugExp	= False
 debugType	= False
@@ -56,7 +56,7 @@ subSingleton v t v'
 	| v == v'	= Just t
 	| otherwise	= Nothing
 
-
+{-
 -- TODO: repacking this again and again costs O(n^2) time in size of closure.
 slurpClosureToMap :: Closure -> Map Var Type
 slurpClosureToMap clo
@@ -87,5 +87,5 @@ slurpMapToClosure mm
 	$ makeTSum kClosure
 	$ map (uncurry makeTFree)
 	$ Map.toList mm
-	
+-}
 	

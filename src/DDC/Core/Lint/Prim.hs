@@ -10,19 +10,22 @@ import DDC.Core.Lint.Env
 import DDC.Type
 import DDC.Var
 import DDC.Base.DataFormat
-import Data.Sequence		(Seq)
-import Data.Map			(Map)
-import qualified DDC.Var.VarId	as Var
-import qualified DDC.Var.PrimId	as Var
+import DDC.Type.ClosureStore		(ClosureStore)
+import Data.Sequence			(Seq)
+import qualified DDC.Type.ClosureStore	as Clo
+import qualified DDC.Var.VarId		as Var
+import qualified DDC.Var.PrimId		as Var
 import {-# SOURCE #-} DDC.Core.Lint.Exp
-import qualified Data.Sequence	as Seq
-import qualified Data.Map	as Map
+import qualified Data.Sequence		as Seq
 import Control.Monad
 
 stage	= "DDC.Core.Lint.Prim"
 
 -- | Check an application of a primitive operator.
-checkPrim :: Int -> Prim -> [Exp] -> Env -> (Type, Seq Effect, Map Var Closure)
+checkPrim 
+	:: Int -> Prim -> [Exp] -> Env 
+	-> (Type, Seq Effect, ClosureStore)
+
 checkPrim n pp xs env
  = case (pp, xs) of
 	(MBox,   [XPrimType r, x])
@@ -54,15 +57,15 @@ checkPrim n pp xs env
 checkPrimOpApp 
 	:: Int
 	-> PrimOp -> [Exp] -> Env
-	-> (Type, Seq Effect, Map Var Closure)
+	-> (Type, Seq Effect, ClosureStore)
 
 checkPrimOpApp n op xs env
- = let	(ts :: [Type], effs :: [Seq Effect], clos :: [Map Var Closure])
+ = let	(ts :: [Type], effs :: [Seq Effect], clos :: [ClosureStore])
  		= unzip3 
 		$  map (\x -> checkExp' n x env) xs
 
 	eff	= join $ Seq.fromList effs
-	clo	= Map.unions clos
+	clo	= Clo.unions clos
 
 	result
 		-- arithmetic ops

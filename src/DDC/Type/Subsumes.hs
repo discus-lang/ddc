@@ -29,6 +29,8 @@ joinSubsumes e1 e2
 
 
 -- Type Subsumption -------------------------------------------------------------------------------
+
+-- | t1 <: t2
 subsumesTT :: Type -> Type -> Subsumes
 subsumesTT t1 t2
 	| TNil		<- t1

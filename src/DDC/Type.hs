@@ -48,4 +48,3 @@ import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Type.Crush
 
-
