@@ -365,7 +365,8 @@ pClosure
 			let varN	= vNameDefaultN NameValue var
 			-- VAR :  CLO
 			do	clo	<- pClosure
-				return $ makeTFree varN clo
+				let Just clo'	= makeTFree varN clo
+				return $ clo'
 
 		  	-- VAR :  TYPE
 		   	 <|> do	typ	<- pType

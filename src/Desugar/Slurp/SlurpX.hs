@@ -48,7 +48,7 @@ slurpX	exp@(XLambda sp vBound xBody)
 
 	tsCloFree	<- mapM (\v -> do
 					vT	<- lbindVtoT v
-					return	$ makeTFree v vT)
+					return	$ makeTFreeBot v vT)
 			$ Set.toList freeVs
 
 	-- Get closure terms from unresolved projection functions
@@ -354,7 +354,7 @@ slurpX 	exp@(XProj sp xBody proj)
 	return	( tX
 		, eX
 		, tEmpty
-		, XProjTagged (Just (tX, eX)) vInst (makeTFree label cProj) xBody' proj'
+		, XProjTagged (Just (tX, eX)) vInst (makeTFreeBot label cProj) xBody' proj'
 		, qsBody ++ qs )
 
 
@@ -388,13 +388,13 @@ slurpX	exp@(XProjT sp tDict proj)
 	let qs	 = 
 		[ CProject (TSV $ SVProj sp projT) projT vInst tDictVar tX 
 		, CEq	   (TSV $ SVProj sp projT) tDictVar tDict
-		, CEq      (TSV $ SVProj sp projT) cProj (makeTFree label tX)
+		, CEq      (TSV $ SVProj sp projT) cProj (makeTFreeBot label tX)
 		]
 
 	return	( tX
 		, eX
 		, tEmpty
-		, XProjTaggedT (Just (tX, eX)) vInst (makeTFree label cProj) proj'
+		, XProjTaggedT (Just (tX, eX)) vInst (makeTFreeBot label cProj) proj'
 		, qs )
 
 slurpX x

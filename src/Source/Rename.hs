@@ -763,7 +763,8 @@ instance Rename Type where
 	 -> do	v'	<- lbindV_bound v
 	 	withLocalScope
 		 $  do	t'	<- rename t
-		 	return	$ makeTFree v' t'
+			let Just clo = makeTFree v' t'
+		 	return clo
 
 
 	TApp t1 t2

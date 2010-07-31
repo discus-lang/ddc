@@ -167,17 +167,19 @@ packTypeCrsSub' config crsEq subbed tt
 	 --	doesn't matter. The variables are just for doccumentaiton anyway.
 	 | Just (v1, t1)	<- takeTFree tt
 	 , Just (_,  t2)	<- takeTFree t1
-	 -> packTypeCrsSub config crsEq subbed (makeTFree v1 t2)
+	 , Just clo		<- makeTFree v1 t2
+	 -> packTypeCrsSub config crsEq subbed clo
 
 	 | Just (v1, t1)	<- takeTFree tt
 	 , TConstrain t crs	<- t1
-	 -> TConstrain (makeTFree v1 t) crs
+	 , Just clo		<- makeTFree v1 t
+	 -> TConstrain clo crs
 	
 	 | Just (v1, t1)	<- takeTFree tt
 	 , TSum k ts		<- t1
 	 , k == kClosure
 	 -> TSum k $ map (packTypeCrsSub config crsEq subbed)
-	 	   $ map (makeTFree v1) ts
+	 	   $ map (makeTFreeBot v1) ts
 	
 	TApp t1 t2
 	 -> let	t1'	= packTypeCrsSub config crsEq subbed t1

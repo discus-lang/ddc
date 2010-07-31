@@ -13,6 +13,7 @@ import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.Builtin
+import DDC.Type.Trim
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
@@ -48,32 +49,28 @@ empty 	= ClosureStore
 -- | Insert a `Closure` into a `ClosureStore`
 insert :: Closure -> ClosureStore -> ClosureStore
 insert clo cs
- = case clo of
+ = case trimClosureC_constrainForm clo of
 	TVar k (UVar v)	
 	 -> cs { csVar  = Set.insert v (csVar cs) }
 
 	TApp{}
 	 | Just (v1, TVar k (UVar v2)) <- takeTFree clo
-	 , isRegionKind k
-	 -> cs { csFreeRs = Map.unionWith 
-				Set.union
-				(csFreeRs cs)
-				(Map.singleton v1 (Set.singleton v2)) }
+	 -> let	mclo	= Map.singleton v1 (Set.singleton v2)
+		result
+		 | isRegionKind	k
+	 	 = cs { csFreeRs = Map.unionWith Set.union (csFreeRs cs) mclo }
 
-	 | Just (v1, TVar k (UVar v2)) <- takeTFree clo
-	 , isValueKind k
-	 -> cs { csFreeTs = Map.unionWith 
-				Set.union
-				(csFreeTs cs)
-				(Map.singleton v1 (Set.singleton v2)) }
+		 | isValueKind k
+		 = cs { csFreeTs = Map.unionWith Set.union (csFreeTs cs) mclo }
+		
+		 | isClosureKind k
+		 = cs { csFreeCs = Map.unionWith Set.union (csFreeCs cs) mclo }
 
-	 | Just (v1, TVar k (UVar v2)) <- takeTFree clo
-	 , isClosureKind k
-	 -> cs { csFreeCs = Map.unionWith 
-				Set.union
-				(csFreeCs cs)
-				(Map.singleton v1 (Set.singleton v2)) }
-	
+		 | otherwise
+		 = panic stage $ "insert: no match for " % clo
+
+	  in	result
+			
 	TSum k clos
 	 | isClosureKind k
 	 -> foldr insert cs clos
@@ -113,15 +110,15 @@ toClosure cs
 		| v <- Set.toList (csVar cs) ]
 
 	++ concat 
-		[ map (\vr  -> makeTFree v (TVar kRegion (UVar vr))) $ Set.toList vrs
+		[ map (\vr  -> makeTFreeBot v (TVar kRegion (UVar vr))) $ Set.toList vrs
 			| (v, vrs)	<- Map.toList (csFreeRs cs) ]
 
 	++ concat 
-		[ map (\vr  -> makeTFree v (TVar kValue (UVar vr))) $ Set.toList vrs
+		[ map (\vr  -> makeTFreeBot v (TVar kValue (UVar vr))) $ Set.toList vrs
 			| (v, vrs)	<- Map.toList (csFreeTs cs) ]
 
 	++ concat 
-		[ map (\vr  -> makeTFree v (TVar kClosure (UVar vr))) $ Set.toList vrs
+		[ map (\vr  -> makeTFreeBot v (TVar kClosure (UVar vr))) $ Set.toList vrs
 			| (v, vrs)	<- Map.toList (csFreeCs cs) ]
 
 

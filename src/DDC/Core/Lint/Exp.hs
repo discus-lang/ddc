@@ -87,13 +87,13 @@ checkExp_trace m xx env
 	 | otherwise
 	 -> checkTypeI n t env 
 	 `seq` let !clo	= trimClosureC_constrainForm
-				$ makeTFree v 
+				$ makeTFreeBot v 
 				$ toConstrainFormT t
 			
 		   crushDanger c
 			| Just (v', t')	<- takeTFree c
 			, Just (_,  t2)	<- takeTDanger t'
-			= makeTFree v' t2
+			= makeTFreeBot v' t2
 			
 			| otherwise
 			= c

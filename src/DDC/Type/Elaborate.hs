@@ -233,7 +233,7 @@ elaborateCloT' env tt
 		
 		-- elaborate the right hand arg, 
 		--	carrying the new parameter name down into it.
-		let argClo		= trimClosureC_constrainForm
+		let Just argClo		= liftM trimClosureC_constrainForm
 					$ makeTFree varVal t1
 
 		(t2', fs, cloT2)	<- elaborateCloT' (env ++ [argClo]) t2

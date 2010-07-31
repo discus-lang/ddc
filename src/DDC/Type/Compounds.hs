@@ -41,6 +41,7 @@ module DDC.Type.Compounds
 	
 	  -- * Closures
  	, makeTFree
+	, makeTFreeBot
 	, takeTFree
 	, makeTDanger
 	, takeTDanger
@@ -311,7 +312,7 @@ takeTFree tt
 --        before kind inference, and we won't know the real kinds of all 
 --        the type variabes yet.
 --
-makeTFree :: Var -> Type -> Closure
+makeTFree :: Var -> Type -> Maybe Closure
 makeTFree v tt
  = case tt of
 	TVar k _ 	-> makeTFreeWithKind k v tt
@@ -325,16 +326,24 @@ makeTFree v tt
 	TFetters{}	-> makeTFreeWithKind kValue v tt
 	TConstrain{}	-> makeTFreeWithKind kValue v tt
 	TCon{}		-> makeTFreeWithKind kValue v tt
-	_		-> panic stage ("makeTFree: not sure what you mean " % show tt)
+	_		-> Nothing
 	
-makeTFreeWithKind :: Kind -> Var -> Type -> Closure
-makeTFreeWithKind k v tt
-	| isClosureKind k	= TApp (tFree       v) tt
-	| isValueKind   k	= TApp (tFreeType   v) tt
-	| isRegionKind  k	= TApp (tFreeRegion v) tt
-	| otherwise		
-	= freakout stage ("makeTFree: not a region, value or closure type " % ppr (show tt))
-	$ TApp (tFreeType v) tt
+	
+makeTFreeWithKind :: Kind -> Var -> Type -> Maybe Closure
+makeTFreeWithKind k v t
+	| isClosureKind k	= Just $ TApp (tFree       v) t
+	| isValueKind   k	= Just $ TApp (tFreeType   v) t
+	| isRegionKind  k	= Just $ TApp (tFreeRegion v) t
+	| otherwise		= Nothing
+
+
+-- | Make a TFree if the type has an appropriate kind, otherwise make a Bot
+makeTFreeBot :: Var -> Type -> Closure
+makeTFreeBot v t
+	| isClosure t		= TApp (tFree       v) t
+	| isValueType t		= TApp (tFreeType   v) t
+	| isRegion  t 		= TApp (tFreeRegion v) t
+	| otherwise		= tBot kClosure
 
 
 -- | Make an application of the $Danger closure constructor.

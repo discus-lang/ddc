@@ -30,7 +30,7 @@ packT1 tt
 	TForall v1 k1 tBody
 	 -> let tBody'	= packT1 tBody
 	    in	case takeTFree tBody' of
-	 	 Just (v2, t2)	-> makeTFree v2 (TForall v1 k1 t2)
+	 	 Just (v2, t2)	-> makeTFreeBot v2 (TForall v1 k1 t2)
 		 _		-> TForall v1 k1 tBody'
 		
 	TFetters t1 fs
@@ -134,14 +134,14 @@ packT1 tt
 	 , t2'			<- packT1 t2
 	 -> let	result
 		 | Just (v2, t2X)	<- takeTFree t2'
-		 = makeTFree v1 t2X
+		 = makeTFreeBot v1 t2X
 		
 		 | TSum k ts		<- t2'
 		 , k == kClosure
-		 = TSum kClosure (map (makeTFree v1) ts)
+		 = TSum kClosure (map (makeTFreeBot v1) ts)
 		
 		 | otherwise	
-		 = makeTFree v1 t2'
+		 = makeTFreeBot v1 t2'
 		
 	   in result
 

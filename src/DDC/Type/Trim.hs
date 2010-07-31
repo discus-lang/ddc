@@ -157,8 +157,8 @@ trimClosureC_trace quant rsData cc
 	 , isRegion t11
 	 , isRegion t12
 	 -> makeTSum kClosure 
-		[ makeTFree tag t11
-		, makeTFree tag t12 ]
+		[ makeTFreeBot tag t11
+		, makeTFreeBot tag t12 ]
 	
 	 -- Free tag (TDanger t11 (TDanger t121 t122)) 
 	 --	=> ${tag : t11 $> t121;  tag : t11 $: t122;  tag : t121 $> t122}
@@ -166,24 +166,29 @@ trimClosureC_trace quant rsData cc
 	 , Just (t11, t12)	<- takeTDanger t1
 	 , Just (t121, t122)	<- takeTDanger t12
 	 -> makeTSum kClosure
-	 	[ makeTFree tag (makeTDanger t11  t121)
-		, makeTFree tag (makeTDanger t11  t122)
-		, makeTFree tag (makeTDanger t121 t122) ]
+	 	[ makeTFreeBot tag (makeTDanger t11  t121)
+		, makeTFreeBot tag (makeTDanger t11  t122)
+		, makeTFreeBot tag (makeTDanger t121 t122) ]
 
 	 | Just (tag, t1)	<- takeTFree cc
 	 , Just (t11, t12)	<- takeTDanger t1
 	 -> if isClosure t12
-		then makeTFree tag 
+		then makeTFreeBot tag 
 			  $ makeTDangerIfRegion tag t11 (down t12)
+
 		else makeTSum kClosure
-			  $ map (makeTFree tag)
+			  $ map (makeTFreeBot tag)
 			  $ map (makeTDangerIfRegion tag t11)
 			  $ trimClosureC_t tag quant rsData t12
 
+	 | Just (_, t)		<- takeTFree cc
+	 , isEffect t		
+	 -> tEmpty
+	
 	 | Just (tag, t)	<- takeTFree cc
 	 -> if isClosure t
-		then makeTFree tag $ down t
-		else makeTFree tag $ makeTSum kClosure 
+		then makeTFreeBot tag $ down t
+		else makeTFreeBot tag $ makeTSum kClosure 
 				   $ trimClosureC_t tag quant rsData t
 
 	 | Just _		<- takeTDanger cc
@@ -302,5 +307,5 @@ makeFreeDanger tag rsData t
 	$ Set.toList rsData
 
 makeTDangerIfRegion tag r t
-	| isRegion t	= makeTFree tag t
+	| isRegion t	= makeTFreeBot tag t
 	| otherwise	= makeTDanger r t

@@ -199,7 +199,7 @@ addType t1 t2
 	= do	let (t21', crsEq', crsMore', crsOther')	
 			= splitTConstrain t21
 			
-		let t2'	= makeTFree v t21'
+		let Just t2'	= makeTFree v t21'
 			
 		addCrsEq 	crsEq'
 		addCrsMore 	(Map.union (Map.singleton t1 t2') crsMore')
@@ -338,8 +338,9 @@ getTypeOfNode kind node
 	 -> 	return $ TError kind TypeError
 		
 	NFree v t
-	 -> do	t'	<- sinkCidsInType t
-		return $ makeTFree v t'
+	 -> do	t'   	     <- sinkCidsInType t
+		let Just clo = makeTFree v t'
+		return clo
 		
 
 -- | If this class contains a simple type like TCon or tBot, then return that, 

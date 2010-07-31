@@ -129,8 +129,8 @@ toCoreT' table tt
 	 , k211			<- kindOfType t211
 	 , k212			<- kindOfType t212
 	 -> makeTSum kClosure
-	 	[ if hasKindTRC t211 then makeTFree v (down t211) else tBot kClosure
-		, if hasKindTRC t212 then makeTFree v (down t212) else tBot kClosure]
+	 	[ if hasKindTRC t211 then makeTFreeBot v (down t211) else tBot kClosure
+		, if hasKindTRC t212 then makeTFreeBot v (down t212) else tBot kClosure]
 	
 	 | otherwise
 	 -> TApp (down t1) (down t2)

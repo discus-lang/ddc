@@ -63,7 +63,7 @@ checkSchemeDanger errs c
 		let clo	= toFetterFormT
 			$ trimClosureC_constrainForm
 			$ toConstrainFormT
-			$ makeTFree (varWithName "foo") t
+			$ makeTFreeBot (varWithName "foo") t
 		
 		let ds	= catMaybes
 			$ map (\d -> case d of

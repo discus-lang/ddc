@@ -465,7 +465,7 @@ reconX (XVar v TNil)
 	return	( XVar v tDrop
 		, tDrop
 		, tPure
-		, makeTFree v t)
+		, makeTFreeBot v t)
 
 -- var has a type annotation, so use that as its type
 reconX (XVar v t)
@@ -482,7 +482,7 @@ reconX (XVar v t)
 		, toFetterFormT
 			$ trimClosureC_constrainForm
 			$ toConstrainFormT 
-			$ makeTFree v t)
+			$ makeTFreeBot v t)
 
 
 -- prim
