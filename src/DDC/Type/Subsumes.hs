@@ -8,6 +8,7 @@ where
 import DDC.Type.Exp
 import DDC.Type.Equiv
 import DDC.Type.Kind
+import DDC.Type.Compounds
 
 -- Subsumes ---------------------------------------------------------------------------------------
 data Subsumes
@@ -37,11 +38,22 @@ subsumesTT t1 t2
 	, TNil		<- t2
 	= Subsumes
 
-	| TVar v1 _	<- t1
-	, TVar v2 _	<- t2
-	, v1 == v2
+	-- These might contain more-than constraints that we'll need to check
+	-- the subsumption, but they'll also be directly attached to the variables.
+	| TConstrain t1' _ <- t1
+	= subsumesTT t1' t2
+	
+	| TConstrain t2' _ <- t2
+	= subsumesTT t1 t2'
+
+	| TVar _ b1	<- t1
+	, TVar _ b2	<- t2
+	, takeVarOfBound b1 == takeVarOfBound b2
 	= Subsumes
 
+	| TVar _ (UMore _ t2')	<- t2
+	= subsumesTT t1 t2'
+	
 	| TApp t11 t12	<- t1
 	, TApp t21 t22	<- t2
 	= joinSubsumes (subsumesTT t11 t21) (subsumesTT t12 t22)
@@ -76,7 +88,7 @@ subsumesTT t1 t2
 		
 	| TSum k2 ts2		<- t2
 	, isRegionKind k2 || isEffectKind k2 || isClosureKind k2
-	, and $ map (\t2i -> isSubsumes $ subsumesTT t1  t2i) ts2
+	, or $ map (\t2i -> isSubsumes $ subsumesTT t1  t2i) ts2
 	= Subsumes
 
 	| TSum k1 ts1		<- t1

@@ -50,33 +50,49 @@ empty 	= ClosureStore
 insert :: Closure -> ClosureStore -> ClosureStore
 insert clo cs
  = case trimClosureC_constrainForm clo of
+
+	-- We might need the constraints at some point.
+	TConstrain c _ 
+	 -> insert c cs
+
 	TVar k (UVar v)	
+	 -> cs { csVar  = Set.insert v (csVar cs) }
+
+	TVar k (UMore v _)	 
 	 -> cs { csVar  = Set.insert v (csVar cs) }
 
 	TApp{}
 	 | Just (v1, TVar k (UVar v2)) <- takeTFree clo
-	 -> let	mclo	= Map.singleton v1 (Set.singleton v2)
-		result
-		 | isRegionKind	k
-	 	 = cs { csFreeRs = Map.unionWith Set.union (csFreeRs cs) mclo }
-
-		 | isValueKind k
-		 = cs { csFreeTs = Map.unionWith Set.union (csFreeTs cs) mclo }
-		
-		 | isClosureKind k
-		 = cs { csFreeCs = Map.unionWith Set.union (csFreeCs cs) mclo }
-
-		 | otherwise
-		 = panic stage $ "insert: no match for " % clo
-
-	  in	result
+	 -> insertVar v1 k v2 cs
+	
+	 | Just (v1, TVar k (UMore v2 _)) <- takeTFree clo
+	 -> insertVar v1 k v2 cs
+	
+	 | otherwise
+	 -> panic stage $ vcat
+			[ "insert: no match for " % clo
+			, ppr $ show clo ]
 			
 	TSum k clos
 	 | isClosureKind k
 	 -> foldr insert cs clos
 	
-	_ 	-> panic stage
-		$  "insert: no match for " % clo
+	_ 	-> panic stage $ vcat
+			[ "insert: no match for " % clo
+			, ppr $ show clo]
+		
+insertVar v1 k v2 cs
+ = let	mclo	= Map.singleton v1 (Set.singleton v2)
+	result
+	 | isRegionKind	k
+	 = cs { csFreeRs = Map.unionWith Set.union (csFreeRs cs) mclo }
+
+	 | isValueKind k
+	 = cs { csFreeTs = Map.unionWith Set.union (csFreeTs cs) mclo }
+		
+	 | isClosureKind k
+	 = cs { csFreeCs = Map.unionWith Set.union (csFreeCs cs) mclo }
+  in	result
 
 	
 -- | Union two ClosureStores

@@ -145,7 +145,11 @@ checkExp_trace m xx env
 	
 	XLAM (BVar v) k x
 	  ->    checkKindI n k env
-	  `seq` withKind v k env (checkExp' n x)
+	  `seq` withKindBound v k Nothing env (checkExp' n x)
+	
+	XLAM (BMore v tMore) k x
+	  ->	checkKindI n k env
+	  `seq` withKindBound v k (Just tMore) env (checkExp' n x)
 
 	-- Type application
 	-- TODO: BAD! don't use substitute here. 
@@ -207,8 +211,8 @@ checkExp_trace m xx env
 		   --       with or without a bound, while the reconstructed closure is always
 		   --       a set of TFrees.
 		   !cloSubs	= subsumesTT
-					cloAnn
 					(Clo.toClosure clo2_cut)
+					cloAnn
 
 		   -- The visible region variables.
 		   -- These are vars that are present in the parameter or return type, 
@@ -278,7 +282,9 @@ checkExp_trace m xx env
 	XApp x1 x2
 	 | (t1, eff1, clo1)	<- checkExp' n x1 env
 	 , (t2, eff2, clo2)	<- checkExp' n x2 env
-	 , t2'			<- crushT $ trimClosureT_constrainForm t2
+	 , t2'			<- crushT 
+				$ trimClosureT_constrainForm 
+				$ toConstrainFormT t2
 	 -> case takeTFun t1 of
 	     Just (t11, t12, eff3, _)
 	      -> case subsumesTT t2' t11 of

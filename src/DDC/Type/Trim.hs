@@ -44,7 +44,7 @@ import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug
 
-stage		= "Type.Util.Trim"
+stage		= "DDC.Type.Trim"
 debug		= False
 trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
@@ -94,7 +94,7 @@ trimClosureT_trace quant rsData tt
 	    in	addConstraints crs' tBody
 
 	_ -> panic stage
-		$ "trimClosureT: no match for " % ppr tt
+		$ "trimClosureT: no match for " % show tt
 
 
 -- Closure ----------------------------------------------------------------------------------------

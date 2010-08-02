@@ -56,13 +56,12 @@ checkType_trace m tt env
 		
 		BVar v	
 		 -> 	checkKindI n k1 env
-		 `seq`	withKind v k1 env	$!
+		 `seq`	withKindBound v k1 Nothing env   $!
 			checkTypeI n t2
 			
 		BMore v t1
 		 -> 	checkKindI n k1 env
-		 `seq`	withKind  v k1 env 	$! \env'  ->
-		   	withBound v t1 env' 	$!
+		 `seq`	withKindBound v k1 (Just t1) env $!
 		   	checkTypeI n t2
 	
 	-- TODO: Add fetters to environment.
@@ -121,12 +120,15 @@ checkType_trace m tt env
 		 `seq` k
 		
 	-- Type variables.
-	TVar _ (UMore{})	-> panic stage $ ppr "checkType: TVar UMore not finished"
-	TVar _ (UClass{})	-> panic stage $ ppr "checkType: TVar UClass not finished"
+	TVar k (UMore v _)
+	 -> checkType_trace m (TVar k $ UVar v) env
+
+	TVar _ (UClass{})
+	 -> panic stage $ ppr "checkType: TVar UClass not finished"
 	
 	TVar k (UVar v)
 	 ->    checkKindI n k env
-	 `seq` case Map.lookup v (envKinds env) of
+	 `seq` case Map.lookup v (envKindBounds env) of
 		Nothing	
 		 | envClosed env
 		 -> panic stage	
@@ -134,7 +136,8 @@ checkType_trace m tt env
 			
 		 | otherwise		-> k
 
-		Just k'	 | k == k'	-> k
+		Just (k', _)	
+		 | k == k'	-> k
 
 		 | otherwise	
 		 -> panic stage

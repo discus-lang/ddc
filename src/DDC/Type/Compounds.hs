@@ -12,6 +12,7 @@ module DDC.Type.Compounds
 
 	  -- * Binds
 	, takeVarOfBind
+	, takeVarOfBound
 
 	  -- * Varish things
 	, takeTClass
@@ -147,6 +148,15 @@ takeVarOfBind bb
 	BNil		-> Nothing
  	BVar v		-> Just v
 	BMore v _	-> Just v
+
+
+-- | Get the `Var` from a `Bound`, if any.
+takeVarOfBound :: Bound -> Maybe Var
+takeVarOfBound bb
+ = case bb of
+	UVar v		-> Just v
+ 	UMore v _	-> Just v
+	_		-> Nothing
 
 
 -- Varish things ----------------------------------------------------------------------------------

@@ -3,8 +3,7 @@ module DDC.Core.Lint.Env
 	( Env(..)
 	, envInit
 	, withType
-	, withBound
-	, withKind)
+	, withKindBound)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -32,8 +31,9 @@ data Env
 	  --  Types of value variables that are in scope at the current point.
 	, envTypes		:: Map Var Type
 
-	  -- | Kinds of type variables that are in scope at the current point.
-	, envKinds		:: Map Var Kind }
+	  -- | Kinds of type variables that are in scope at the current point,
+	  ---  with optional :> constraint.
+	, envKindBounds		:: Map Var (Kind, Maybe Type)}
 
 envInit	cgHeader cgModule
 	= Env
@@ -41,7 +41,7 @@ envInit	cgHeader cgModule
 	, envHeaderGlob		= cgHeader
 	, envModuleGlob		= cgModule
 	, envTypes		= Map.empty
-	, envKinds		= Map.empty }
+	, envKindBounds		= Map.empty }
 
 
 -- | Run a lint computation with an extra type in the environment.
@@ -52,22 +52,20 @@ withType v t env fun
    in	fun $ env { envTypes = Map.alter addVT v (envTypes env) }
 
 
-withBound :: Var -> Type -> Env -> (Env -> a) -> a
-withBound = error "no withBound"
-
-
 -- | Run a lint computation with an extra kind in the environment.
 --   NOTE: We allow a type var to be rebound with the same kind, which makes
 --         desugaring of projection puns easier.
 --   TODO: we should probably redo the desugaring so this isn't needed.
---
-withKind :: Var -> Kind -> Env -> (Env -> a) -> a
-withKind v k env fun
- = let	addVK Nothing	= Just k
-	addVK (Just k')
-	 | k == k'	= Just k
+--   TODO: we could also check we're not rebinding a type with a different :> constraint.
+-- 
+withKindBound :: Var -> Kind -> Maybe Type -> Env -> (Env -> a) -> a
+withKindBound v k mt env fun
+ = let	
+	addVK Nothing	= Just (k, mt)
+	addVK (Just (k', _))
+	 | k == k'	= Just (k, mt)
 	 | otherwise	= panic stage $ "withVarKind: " % v % " rebound with a different kind"
 
-   in	fun $ env { envKinds = Map.alter addVK v (envKinds env) }
+   in	fun $ env { envKindBounds = Map.alter addVK v (envKindBounds env) }
 
 
