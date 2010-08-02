@@ -242,9 +242,12 @@ checkExp_trace m xx env
 				$ Foldable.toList eff2
 
 		   -- Mask effects on non-visible region.
-		   !eff2_masked	= makeTSum kEffect
-				$ filter (not . maskable)
-				$ map crushT eff2'
+		   -- TODO: Gah @ needing to make a sum and flatten it again.
+		   ---      We want an EffectStore similarly to the ClosureStore.
+		   !eff2_crushed = flattenTSum $ makeTSum kEffect $ map crushT eff2'
+		   !eff2_masked	 = makeTSum kEffect
+				 $ filter (not . maskable)
+				 $ eff2_crushed
 		
 		   !effAnn'	= crushT $ effAnn
 		   !effSubs	= subsumesTT
@@ -255,8 +258,9 @@ checkExp_trace m xx env
 			then panic stage $ vcat
 				[ ppr "Effect mismatch in lambda abstraction."
 				, "Effect of body:\n" 			%> eff2'
-				, "with closure sup:\n"			%> clo2_cut
+				, "with closure:\n"			%> clo2_cut
 				, "visible vars:\n"			%> vsVisible
+				, "crushed effect:\n"			%> eff2_crushed
 				, "masked effect:\n"			%> eff2_masked
 				, "does not match effect annotation:\n"	%> effAnn'
 				, "in expression:\n"			%> xx]
