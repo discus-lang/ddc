@@ -247,17 +247,19 @@ checkExp_trace m xx env
 				$ map crushT eff2'
 		
 		   !effAnn'	= crushT $ effAnn
-		   !effEquiv	= equivTT effAnn' eff2_masked
+		   !effSubs	= subsumesTT
+					eff2_masked
+					effAnn'
 		
-	       in  if not $ isEquiv effEquiv	
+	       in  if not $ isSubsumes effSubs
 			then panic stage $ vcat
 				[ ppr "Effect mismatch in lambda abstraction."
-				, "Effect of body:\n" 			%> eff2',       blank
-				, "with closure:\n"			%> clo2_cut,    blank
-				, "visible vars:\n"			%> vsVisible,   blank
-				, "masked effect:\n"			%> eff2_masked, blank
-				, "does not match effect annotation:\n"	%> effAnn',     blank
-				, "in expression:\n"			%> xx,          blank]
+				, "Effect of body:\n" 			%> eff2'
+				, "with closure sup:\n"			%> clo2_cut
+				, "visible vars:\n"			%> vsVisible
+				, "masked effect:\n"			%> eff2_masked
+				, "does not match effect annotation:\n"	%> effAnn'
+				, "in expression:\n"			%> xx]
 
 	           else if not $ isSubsumes cloSubs
 			then panic stage $ vcat
