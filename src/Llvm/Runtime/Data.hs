@@ -2,7 +2,6 @@
 module Llvm.Runtime.Data where
 
 import Llvm
-import Llvm.GhcReplace.Unique
 import Llvm.Util
 
 

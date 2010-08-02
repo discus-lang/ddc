@@ -25,8 +25,8 @@ boxInt32 int32 objptr
 		allocCode
 		++ [ Comment ["boxIn32 (" ++ show int32 ++ ")" ]
 		   , Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
-		   , Store (i32LitVar 19) iptr0
-		   , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
+		   , Store (i32LitVar (19 :: Int)) iptr0
+		   , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar (1 :: Int)])
 		   , Store int32 iptr1
 		   ]
 
@@ -37,7 +37,7 @@ unboxInt32 objptr int32
 
 	return $ [ Comment ["unboxIn32 (" ++ show objptr ++ ")" ]
 		 , Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
-		 , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
+		 , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar (1 :: Int)])
 		 , Assignment int32 (Load iptr1)
 		 ]
 

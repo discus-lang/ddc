@@ -274,10 +274,10 @@ llvmOfAssign a b c
 	return []
 
 
-varOfXLit :: Exp a -> LlvmVar
-varOfXLit (XLit x) = llvmIntLitVar x
+-- varOfXLit :: Exp a -> LlvmVar
+-- varOfXLit (XLit x) = llvmIntLitVar x
 
-varOfXLit x = panic stage $ "varOfXLit " ++ show x
+-- varOfXLit x = panic stage $ "varOfXLit " ++ show x
 
 
 
@@ -323,8 +323,8 @@ boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
 		, Store r6 ddcHeapPtr
 
 
-		, Store (i32LitVar 19) r5
-		, Assignment r7 (GetElemPtr True r4 [llvmWordLitVar 4])
+		, Store (i32LitVar (19 :: Int)) r5
+		, Assignment r7 (GetElemPtr True r4 [llvmWordLitVar (4 :: Int)])
 		, Assignment r8 (Cast LM_Bitcast r7 (pLift i32))
 		, Store (i32LitVar value) r8
 		, Assignment result (Cast LM_Bitcast r4 pObj)
@@ -445,10 +445,10 @@ isGlobalVar v
  | otherwise
  = False
 
-
+{-
 llvmIntLitVar :: LiteralFmt -> LlvmVar
 llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 32)) = i32LitVar i
 llvmIntLitVar (LiteralFmt (LInt i) (UnboxedBits 64)) = i64LitVar i
 
 llvmIntLitVar _ = panic stage $ "llvmIntLitVar : unhandled case."
-
+-}

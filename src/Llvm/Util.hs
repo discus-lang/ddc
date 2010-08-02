@@ -30,7 +30,7 @@ import Llvm.GhcReplace.Unique
 import qualified Config.Config		as Config
 
 
-stage = "Llvm.Util"
+-- stage = "Llvm.Util"
 
 
 -- | Convert an Integral to an LLVM literal variable with the same size

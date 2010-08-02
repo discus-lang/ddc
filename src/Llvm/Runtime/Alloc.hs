@@ -6,7 +6,6 @@ import DDC.Main.Error
 
 import Llvm
 import Llvm.Runtime.Data
-import Llvm.Runtime.Slot
 import Llvm.Util
 
 stage = "Llvm.Runtime.Alloc"
