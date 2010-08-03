@@ -388,11 +388,13 @@ compileFile_parse
 	--	Lambda lifting doesn't currently preserve the typing, so we can't
 	--	check it again after this point. This panics if there is any lint.
 	outVerb $ ppr $ "  * Core: Lint (final)\n"
-	SC.coreLint
-		"core-lint-final" 
-		cgHeader 
-		cgModule_simplified
-				
+	cgModule_lintFinal  
+			<- return cgModule_simplified
+{-			<- SC.coreLint
+				"core-lint-final" 
+				cgHeader 
+				cgModule_simplified
+-}				
 	-- Perform lambda lifting ---------------------------------------------
 	-- TODO: Fix this so it doesn't break the type information.
 	outVerb $ ppr $ "  * Core: LambdaLift\n"
@@ -400,7 +402,7 @@ compileFile_parse
 	 , vsNewLambdaLifted) 
 			<- SC.coreLambdaLift
 				cgHeader
-				cgModule_simplified
+				cgModule_lintFinal
 
 	-- Convert field labels to field indicies -----------------------------
 	outVerb $ ppr $ "  * Core: LabelIndex\n"

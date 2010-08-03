@@ -8,4 +8,4 @@ import DDC.Type.ClosureStore	(ClosureStore)
 import Data.Sequence
 
 	
-checkExp' :: Int -> Exp -> Env -> (Type, Seq Effect, ClosureStore)
+checkExp' :: Int -> Exp -> Env -> (Exp, Type, Seq Effect, ClosureStore)

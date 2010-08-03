@@ -249,12 +249,13 @@ coreLint
 	=> String		-- ^ stage name
 	-> Glob 		-- ^ core tree
 	-> Glob 		-- ^ header tree
-	-> IO ()
+	-> IO Glob
 	
 coreLint stage cgHeader cgModule
- =	checkGlobs cgHeader cgModule 
-		`seq` return ()
+ = do	let cgModule'	
+		= checkGlobs cgHeader cgModule 
 		
+	return cgModule'
 
 -- | Lift nested functions to top level.
 coreLambdaLift

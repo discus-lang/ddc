@@ -24,26 +24,32 @@ stage	= "DDC.Core.Lint.Prim"
 -- | Check an application of a primitive operator.
 checkPrim 
 	:: Int -> Prim -> [Exp] -> Env 
-	-> (Type, Seq Effect, ClosureStore)
+	-> ([Exp], Type, Seq Effect, ClosureStore)
 
 checkPrim n pp xs env
  = case (pp, xs) of
 	(MBox,   [XPrimType r, x])
-	 -> let (t, eff, clo)	= checkExp' (n+1) x env
-		Just t'		= boxedVersionOfUnboxedType r t
-	    in	( t'
+	 -> let (x', t, eff, clo)	= checkExp' (n+1) x env
+		Just t'			= boxedVersionOfUnboxedType r t
+	    in	( [XPrimType r, x']
+		, t'
 		, eff
 		, clo)
 		
 	(MUnbox, [XPrimType r, x])
-	 -> let	(t, eff, clo)	= checkExp' (n+1) x env
-		Just t'		= unboxedVersionOfBoxedType r t
-	    in	( t'
+	 -> let	(x', t, eff, clo)	= checkExp' (n+1) x env
+		Just t'			= unboxedVersionOfBoxedType r t
+	    in	( [XPrimType r, x']
+		, t'
 		, eff Seq.|> TApp tRead r
 		, clo)
 
 	(MForce, [x])
-	 -> checkExp' (n+1) x env
+	 -> let (x', t, eff, clo)	= checkExp' (n+1) x env
+	    in	( [x']
+		, t
+		, eff
+		, clo)
 
 	(MOp op, _)
 	 -> checkPrimOpApp (n+1) op xs env 
@@ -57,12 +63,12 @@ checkPrim n pp xs env
 checkPrimOpApp 
 	:: Int
 	-> PrimOp -> [Exp] -> Env
-	-> (Type, Seq Effect, ClosureStore)
+	-> ([Exp], Type, Seq Effect, ClosureStore)
 
 checkPrimOpApp n op xs env
- = let	(ts :: [Type], effs :: [Seq Effect], clos :: [ClosureStore])
- 		= unzip3 
-		$  map (\x -> checkExp' n x env) xs
+ = let	(xs' :: [Exp], ts :: [Type], effs :: [Seq Effect], clos :: [ClosureStore])
+ 		= unzip4
+		$ map (\x -> checkExp' n x env) xs
 
 	eff	= join $ Seq.fromList effs
 	clo	= Clo.unions clos
@@ -72,20 +78,20 @@ checkPrimOpApp n op xs env
 		| op == OpNeg
 		, [t1]		<- ts
 		, isUnboxedNumericType t1
-		= (t1, eff, clo)
+		= (xs', t1, eff, clo)
 
 		| elem op [OpAdd, OpSub, OpMul, OpDiv, OpMod]
 		, [t1, t2]	<- ts
 		, isUnboxedNumericType t1
 		, t1 == t2
-		= (t1, eff, clo)
+		= (xs', t1, eff, clo)
 
 		-- comparison operators
 		| elem op [OpEq, OpNeq, OpGt, OpGe, OpLt, OpLe]
 		, [t1, t2]	<- ts
 		, isUnboxedNumericType t1
 		, t1 == t2
-		= (makeTData (primTBool Unboxed) kValue [], eff, clo)
+		= (xs', makeTData (primTBool Unboxed) kValue [], eff, clo)
 
 		-- boolean operators
 		| elem op [OpAnd, OpOr]
@@ -93,7 +99,7 @@ checkPrimOpApp n op xs env
 		, Just (v, _, [])	<- takeTData t1
 		, v == (primTBool Unboxed)
 		, t1 == t2
-		= (makeTData (primTBool Unboxed) kValue [], eff, clo)
+		= (xs', makeTData (primTBool Unboxed) kValue [], eff, clo)
 
 		| otherwise
 		= panic stage
@@ -101,6 +107,15 @@ checkPrimOpApp n op xs env
 
    in result
 
+unzip4 :: [(a, b, c, d)] -> ([a], [b], [c], [d])
+unzip4 = unzip4' [] [] [] []
+
+unzip4' ia ja ka la []
+	= (reverse ia, reverse ja, reverse ka, reverse la)
+
+unzip4' ia ja ka la ((i, j, k, l) : rest)
+	= unzip4' (i : ia) (j : ja) (k : ka) (l : la) rest
+	
 
 -- | Convert this boxed type to the unboxed version.
 boxedVersionOfUnboxedType :: Region -> Type -> Maybe Type

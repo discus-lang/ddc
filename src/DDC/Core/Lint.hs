@@ -48,26 +48,23 @@ import qualified Debug.Trace
 
 stage		= "DDC.Core.Lint"
 
--- Set these to trace the checking of that sort to the console.
-
 -- Glob -------------------------------------------------------------------------------------------
-checkGlobs :: Glob -> Glob -> ()
+checkGlobs :: Glob -> Glob -> Glob
 checkGlobs cgHeader cgCore 	
-	= ()
-{-	= checkList (checkBind (envInit cgHeader cgCore))
-	$ Map.elems
-	$ globBind cgCore
--}
+	= mapBindsOfGlob (checkBind (envInit cgHeader cgCore)) cgCore
+	
 
 -- Top --------------------------------------------------------------------------------------------
-checkBind :: Env -> Top -> ()
+checkBind :: Env -> Top -> Top
 checkBind env pp
  = case pp of
+	-- TODO: Check slurped type against reconstructed type.
 	PBind v x
-	 -> let Just t	= maybeSlurpTypeX x
-	    in	checkTypeI 0 t env 
-	  	`seq` withType v t env (checkExp x)
-		`seq` ()
+	 -> let Just tSlurped		= maybeSlurpTypeX x
+	    	(tSlurped', k)		= checkTypeI 0 tSlurped env 
+		(x', t', eff, clo)	= withType v t' env (checkExp x)
+	    in	k `seq` t' `seq` eff `seq` clo `seq`
+		PBind v x'
 
 	_ -> panic stage $ "checkBind: no match"
 
