@@ -156,14 +156,15 @@ checkExp_trace m xx env
 	--       better to propagate a list of constraints back up the tree.
 	XAPP x t2
 	 | (t1, eff, clo)	<- checkExp' n x env
-	 , k2			<- crushK $ checkTypeI n t2 env
+	 , (_, k2)		<- checkTypeI n t2 env
+	 , k2'			<- crushK k2
 	 -> case t1 of
 		TForall BNil k11 t12
-		 | isEquiv $ equivKK (crushK k11) k2	
+		 | isEquiv $ equivKK (crushK k11) k2'
 		 -> (t12, eff, clo)
 		
 		TForall (BVar v) k11 t12
-		 | isEquiv $ equivKK (crushK k11) k2	
+		 | isEquiv $ equivKK (crushK k11) k2'	
 		 -> ( substituteT (subSingleton v t2) t12
 		    , fmap (substituteT (subSingleton v t2)) eff
 		    , Clo.fromClosure
@@ -172,7 +173,7 @@ checkExp_trace m xx env
 		
 		-- TODO: check more-than constraint
 		TForall (BMore v _) k11 t12
-		 | isEquiv $ equivKK (crushK k11) k2
+		 | isEquiv $ equivKK (crushK k11) k2'
 		 -> ( substituteT (subSingleton v t2) t12
 		    , fmap (substituteT (subSingleton v t2)) eff
 		    , Clo.fromClosure
@@ -181,10 +182,10 @@ checkExp_trace m xx env
 		
 		_ -> panic stage $ vcat
 			[ ppr "Type mismatch in (value/type) application."
-			, "Cannot apply type:\n" %> t2,	blank
-			, "of kind:\n"		 %> k2, blank
-			, "to expression:\n" 	 %> x,	blank
-			, "with type:\n"	 %> t1,	blank]
+			, "Cannot apply type:\n" %> t2,  blank
+			, "of kind:\n"		 %> k2', blank
+			, "to expression:\n" 	 %> x,	 blank
+			, "with type:\n"	 %> t1,	 blank]
 			
 
 	-- Value abstraction

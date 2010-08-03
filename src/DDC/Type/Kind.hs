@@ -201,7 +201,7 @@ kindOfType tt
 --   This performs a de Bruijn beta reduction, substituting types for indices.
 applyKT :: Kind -> Type -> Kind
 applyKT k1 t2
-	= applyKT_check False k1 t2
+	= applyKT_check True k1 t2
 
 
 -- | Like `applyKT` but don't check that the argument has the right kind, which is a bit faster.

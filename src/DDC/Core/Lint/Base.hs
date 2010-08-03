@@ -21,14 +21,14 @@ indenting	= (2 :: Int)
 trace ss x	= Debug.Trace.trace (pprStrPlain ss) x
 
 -- | Check for lint in some list of things.
-lintList ::  (a -> Env -> b) -> [a] -> Env -> ()
+lintList ::  (a -> Env -> a) -> [a] -> Env -> [a]
 lintList lintFun xx env
  = case xx of
-	[]		-> ()
+	[]		-> []
 	(x:xs)		
-		->    lintFun  x env
-		`seq` lintList lintFun xs env
-		`seq` ()
+	 | x'	<- lintFun  x env
+	 , xs'	<- lintList lintFun xs env
+	 -> x `seq` xs `seq` x' : xs'
 
 checkList :: (a -> ()) -> [a] -> ()
 checkList f xx

@@ -19,7 +19,8 @@ GHC_LANGUAGE	:= \
 	-XUndecidableInstances \
 	-XTypeSynonymInstances \
 	-XNamedFieldPuns \
-	-XExistentialQuantification
+	-XExistentialQuantification \
+	-XBangPatterns
 
 DDC_PACKAGES	:= \
 	-package unix \
