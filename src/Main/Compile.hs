@@ -312,7 +312,7 @@ compileFile_parse
 	-- Core stages
 	------------------------------------------------------------------------	
 
-	-- Convert to normal form ---------------------------------------------
+	-- Convert to normalised form -----------------------------------------
 	outVerb $ ppr $ "  * Core: NormalDo\n"
 	cgModule_normal	<- SC.coreNormaliseDo 
 				"core-normaldo"
@@ -350,6 +350,14 @@ compileFile_parse
 				cgHeader 
 				cgModule_snip
 
+	-- Reconstruct and check types (with the linter) ----------------------
+{-	outVerb $ ppr $ "  * Core: Lint Reconstruct\n"
+	cgModule_lintRecon	
+			<- SC.coreLint 
+				"core-lint-reconstruct" 
+				cgHeader
+				cgModule_thread
+-}
 	-- Reconstruct and check types ----------------------------------------
 	outVerb $ ppr $ "  * Core: Reconstruct\n"
 	cgModule_recon	<- SC.coreReconstruct 
@@ -360,16 +368,18 @@ compileFile_parse
 	-- After reconstruction the program has enough embedded info to pass
 	-- the type checker, so do that. This panics if there is any lint.
 	outVerb $ ppr $ "  * Core: Lint (initial)\n"
-	SC.coreLint 
-		"core-lint"
-		cgHeader
-		cgModule_recon
+	cgModule_lintInit 
+--			<- return cgModule_recon
+			<- SC.coreLint 
+				"core-lint"
+				cgHeader
+				cgModule_recon
 	
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
 	cgModule_dict	<- SC.coreDictionary 
 				cgHeader
-				cgModule_recon
+				cgModule_lintInit
 
 	-- Identify prim ops --------------------------------------------------
 	outVerb $ ppr $ "  * Core: Prim\n"
