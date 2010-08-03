@@ -45,10 +45,10 @@ checkExp'
 	:: Int 			-- ^ Indent level for tracing.
 	-> Exp			-- ^ Expression to check.
 	-> Env			-- ^ Type environment and configuration.
-	-> ( Exp		-- ^ Checked expression.
-	   , Type		-- ^ Type of expression.
-	   , Seq Effect		-- ^ Effect of expression.
-	   , ClosureStore)	-- ^ Closure of expression.
+	-> ( Exp		--  Checked expression.
+	   , Type		--  Type of expression.
+	   , Seq Effect		--  Effect of expression.
+	   , ClosureStore)	--  Closure of expression.
 
 checkExp' n xx env
  = if debugExp
