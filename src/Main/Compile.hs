@@ -369,12 +369,12 @@ compileFile_parse
 	-- the type checker, so do that. This panics if there is any lint.
 	outVerb $ ppr $ "  * Core: Lint (initial)\n"
 	cgModule_lintInit 
---			<- return cgModule_recon
-			<- SC.coreLint 
+			<- return cgModule_recon
+{-			<- SC.coreLint 
 				"core-lint"
 				cgHeader
 				cgModule_recon
-	
+-}	
 	-- Rewrite projections to use instances from dictionaries -------------
 	outVerb $ ppr $ "  * Core: Dict\n"
 	cgModule_dict	<- SC.coreDictionary 

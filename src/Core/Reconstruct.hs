@@ -49,7 +49,7 @@ import DDC.Var.VarId		as Var
 import DDC.Var
 import DDC.Util.Doc
 import Data.Traversable		(mapM)
--- import Type.Error		(Error(..))
+import Type.Error		(Error(..))
 import Type.Docable		()
 import Prelude			hiding (mapM)
 import Util			hiding (mapM)
@@ -174,8 +174,8 @@ reconP (PBind v x)
 		% "  xE'':\n" %> xE''	% "\n"
 		% "  xC:\n"  %> xC	% "\n\n") $ return ()
 
---        unless (xE'' == tPure)
---		$ dieWithUserError [ErrorEffectfulCAF (v, xT) xE'']
+        unless (xE'' == tPure)
+		$ dieWithUserError [ErrorEffectfulCAF (v, xT) xE'']
 
 	return	(PBind v x')
 
