@@ -54,6 +54,20 @@ subsumesTT t1 t2
 	| TVar _ (UMore _ t2')	<- t2
 	= subsumesTT t1 t2'
 	
+	
+	-- TODO: Nasty special case for closures.
+	--       Needed for test/15-Typing/InfiniteTypes/Loop1/Loop1.ds
+	--       We'll have to think about this some more.
+	-- (x : $c1) <: $c1
+	| Just (_, TVar k1 b1)	<- takeTFree t1
+	, TVar k2 b2		<- t2
+	, v1			<- takeVarOfBound b1
+	, v2			<- takeVarOfBound b2
+	, isClosureKind k1
+	, isClosureKind k2
+	, v1 == v2
+	= Subsumes
+	
 	| TApp t11 t12	<- t1
 	, TApp t21 t22	<- t2
 	= joinSubsumes (subsumesTT t11 t21) (subsumesTT t12 t22)
