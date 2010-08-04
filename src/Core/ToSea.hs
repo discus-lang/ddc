@@ -16,9 +16,9 @@ import Util				hiding (mapM)
 import Prelude				hiding (mapM)
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
-import qualified Core.Util		as C
 import qualified DDC.Core.Lint.Prim	as C
-import qualified Core.Reconstruct	as C
+import qualified DDC.Core.Lint.Exp	as C
+import qualified Core.Util		as C
 import qualified Core.OpType		as C
 import qualified Sea.Exp  		as E
 import qualified Sea.Pretty		as E
@@ -254,7 +254,7 @@ toSeaX		xx
 -}
 	-- boxing
 	C.XPrim C.MBox [_, x]
-	 -> do	let t	= C.reconX_type (stage ++ "toSeaX") x
+	 -> do	let t	= C.checkedTypeOfExp (stage ++ "toSeaX") x
 		x'	<- toSeaX x
 
 		return	$ E.XBox (toSeaT t) x'
@@ -262,7 +262,7 @@ toSeaX		xx
 	-- the unboxing function is named after the result type
 	C.XPrim C.MUnbox [C.XPrimType r, x]
 	 -> do	let Just tResult= C.unboxedVersionOfBoxedType r 
-	 			$ C.reconX_type (stage ++ "toSeaX") x
+	 			$ C.checkedTypeOfExp (stage ++ "toSeaX") x
 
 		x'	<- toSeaX x
 
@@ -354,7 +354,7 @@ toSeaS xx
 	C.SBind (Just v) x@(C.XMatch aa)
 	 -> do	aa'		<- mapM (toSeaA Nothing) aa
 
-		let xT		= C.reconX_type (stage ++ ".toSeaS") x
+		let xT		= C.checkedTypeOfExp (stage ++ ".toSeaS") x
 		let t		= toSeaT xT
 		let aaL		= map (assignLastA (E.XVar v t, t)) aa'
 		
@@ -369,7 +369,7 @@ toSeaS xx
 	-- expressions
 	C.SBind (Just v) x
 	 -> do	x'		<- toSeaX $ C.slurpExpX x
-		let t		= C.reconX_type (stage ++ ".toSeaS") x
+		let t		= C.checkedTypeOfExp (stage ++ ".toSeaS") x
 	    	return		[E.SAssign (E.XVar v (toSeaT t)) (toSeaT t) x']
 
 	C.SBind Nothing x
@@ -415,7 +415,7 @@ toSeaG	mObjV ssFront gg
 
 	C.GExp w x
 	 -> do	-- work out the type of the RHS
-	 	let t		= C.reconX_type (stage ++ ".toSeaG") x
+	 	let t		= C.checkedTypeOfExp (stage ++ ".toSeaG") x
 		let t'		= toSeaT t
 	
 	  	-- convert the RHS expression into a sequence of stmts
@@ -423,7 +423,6 @@ toSeaG	mObjV ssFront gg
 				$  mapM toSeaS
 				$  slurpStmtsX x
 		
-
 		-- if the guard expression is in a direct region then we don't need to check
 		--	for suspensions during the match
 		rhsIsDirect	<- isDirectType t

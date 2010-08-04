@@ -38,6 +38,7 @@ subsumesTT t1 t2
 	, TNil		<- t2
 	= Subsumes
 
+	-- Constrain -------------------
 	-- These might contain more-than constraints that we'll need to check
 	-- the subsumption, but they'll also be directly attached to the variables.
 	| TConstrain t1' _ <- t1
@@ -45,6 +46,14 @@ subsumesTT t1 t2
 	
 	| TConstrain t2' _ <- t2
 	= subsumesTT t1 t2'
+
+	-- Forall ---------------------
+	| TForall b1 k1 t11	<- t1
+	, TForall b2 k2 t21	<- t2
+	, b1 == b2
+	, isEquiv (equivKK k1  k2)
+	, isEquiv (equivTT t11 t21)
+	= Subsumes
 
 	-- Sums -----------------------
 	-- NOTE: These have to come before the cases for Vars.

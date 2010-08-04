@@ -96,6 +96,13 @@ equivTT	t1 t2
 	, TApp t21 t22	<- t2
 	= joinEquiv (equivTT t11 t21) (equivTT t12 t22)
 
+	| TForall b1 k1 t11	<- t1
+	, TForall b2 k2 t21	<- t2
+	, b1 == b2
+	, isEquiv $ equivKK k1 k2
+	, isEquiv $ equivTT t11 t21
+	= IsEquiv
+
 	| otherwise
 	= NotEquivTypes t1 t2
 

@@ -1,11 +1,13 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Core.Lint.Exp
-	( checkExp
+	( checkedTypeOfExp 
+	, checkExp
 	, checkExp')	-- used by DDC.Core.Lint.Prim
 where
 import Core.Util.Substitute
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.Glob
 import DDC.Core.Exp
 import DDC.Core.Lint.Base
 import DDC.Core.Lint.Env
@@ -26,6 +28,14 @@ import qualified Data.Set		as Set
 import qualified Data.Foldable		as Foldable
 
 stage	= "DDC.Core.Lint.Exp"
+
+-- Wrappers ---------------------------------------------------------------------------------------
+checkedTypeOfExp :: String -> Exp -> Type
+checkedTypeOfExp _callerName xx
+ = case checkExp xx (envInit globEmpty globEmpty) of
+	(_, t, _, _)	-> t
+	
+
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Check an expression, returning its type.
@@ -339,18 +349,18 @@ checkExp_trace m xx env
 		  NoSubsumes s1 s2
 		   -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "  cannot apply function of type: " % t1
-			, "            to argument of type: " % t2'
-			, ppr "   because"
-			, "                           type: " % s2
-			, "               does not subsume: " % s1 
+			, "  cannot apply function of type: " % t1,	blank
+			, "            to argument of type: " % t2',	blank
+			, ppr "   because",				blank
+			, "                           type: " % s2,	blank
+			, "               does not subsume: " % s1,	blank
 			, blank
 			, "in application:\n" % xx]
 		
 	     _ -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "  cannot apply non-function type: " % t1
-			, "             to argument of type: " % t2'
+			, "  cannot apply non-function type: " % t1,	blank
+			, "             to argument of type: " % t2',	blank
 			, blank
 			, " in application: " % xx]
 

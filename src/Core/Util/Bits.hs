@@ -20,6 +20,7 @@ module Core.Util.Bits
 	, unflattenAppsE
 	, splitApps
 	, splitAppsUsingPrimType
+	, buildAppUsingPrimType
 
 	-- lambda		
 	, chopLambdas
@@ -29,7 +30,6 @@ import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import Util
-
 
 -- Predicates --------------------------------------------------------------------------------------
 isXApp x
@@ -91,10 +91,9 @@ buildApp' xx
 	, Just leftX		<- buildApp' xs
 	= Just $ XAPP leftX t
 	
-	| Left (XVar v t) : xs	<- xx
-	, varNameSpace v == NameValue
+	| Left x : xs	<- xx
 	, Just leftX		<- buildApp' xs
-	= Just $ XApp leftX (XVar v t)
+	= Just $ XApp leftX x
 
 	| otherwise
 	= Nothing
@@ -159,6 +158,15 @@ splitAppsUsingPrimType xx
 		
 	_ -> [xx]
 	
+buildAppUsingPrimType :: [Exp] -> Maybe Exp
+buildAppUsingPrimType xx
+ = let	convert x
+	 = case x of
+		XPrimType t 	-> Right t
+		_		-> Left  x
+		
+	xx'	= map convert xx
+   in	buildApp xx'
 	
 -- Lambda ------------------------------------------------------------------------------------------
 -- | Chop the outer set of lambdas off a lambda expression and return the var-scheme pairs.

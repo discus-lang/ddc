@@ -5,6 +5,7 @@ module DDC.Core.Lint.Prim
 	, boxedVersionOfUnboxedType)
 where
 import Shared.VarPrim
+import Core.Util.Bits
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
@@ -56,7 +57,13 @@ checkPrim n pp xs env
 	(MOp op, _)
 	 -> checkPrimOpApp (n+1) op xs env 
 
-	_ -> panic stage $ "checkPrim: not finished for " % (pp, xs)
+	-- TODO: This was never a good idea. Just use regular application.
+	(MCall _, _)
+	 | Just x'		<- buildAppUsingPrimType xs
+	 , (_, t, eff, clo)	<- checkExp' (n+1) x' env
+	 -> (xs, t, eff, clo)
+
+	_ -> panic stage $ "checkPrim: no match for " % (pp, xs)
 
 
 -- | Reconstruct the type and effect of an operator application.
