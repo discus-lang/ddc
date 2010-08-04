@@ -12,10 +12,10 @@ import Util
 import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Core.Glob
+import DDC.Core.Lint.Exp
 import DDC.Type
 import DDC.Var
 import qualified Debug.Trace
-import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
@@ -190,7 +190,7 @@ primX1 tt xx
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
 	, Just (operator, actions)		<- Map.lookup (varName v) unboxableFuns
-	, tResult				<- Recon.reconX_type (stage ++ ".primX") xx
+	, tResult				<- checkedTypeOfExp (stage ++ ".primX") xx
 	, Just (vResult, _, tsResult)		<- takeTData tResult
 	, length psArgs == length actions
 	= trace ( "primX:\n"
@@ -217,7 +217,7 @@ doActions tt (Ignore:as) (x:xs)
 	
 doActions tt (Unbox:as) (x:xs)
 
- = let	tX	= Recon.reconX_type (stage ++ "doActions") x
+ = let	tX	= checkedTypeOfExp (stage ++ "doActions") x
 
  	Just (_, _, [tR@(TVar _ (UVar vR))])
 		= takeTData tX

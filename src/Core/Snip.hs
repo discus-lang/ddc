@@ -12,10 +12,10 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Core.Glob
+import DDC.Core.Lint.Exp
 import DDC.Type
 import DDC.Var
 import Shared.VarGen			(VarGenM, newVarN)
-import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Debug.Trace	
 
@@ -223,7 +223,7 @@ snipIt :: Table -> Exp -> SnipM ([Stmt], Exp)
 snipIt table xx
 	| tablePreserveTypes table
 	= do	b	<- newVarN NameValue
-		let tX	= Recon.reconX_type (stage ++ ".snipIt") xx
+		let tX	= checkedTypeOfExp (stage ++ ".snipIt") xx
 	 	return	( [SBind (Just b) xx] 
 			, XVar b tX )
 
