@@ -1,6 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Core.Lint.Prim
-	(checkPrim)
+	( checkPrim
+	, unboxedVersionOfBoxedType
+	, boxedVersionOfUnboxedType)
 where
 import Shared.VarPrim
 import DDC.Main.Pretty

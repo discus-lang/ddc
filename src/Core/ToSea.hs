@@ -17,6 +17,7 @@ import Prelude				hiding (mapM)
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
 import qualified Core.Util		as C
+import qualified DDC.Core.Lint.Prim	as C
 import qualified Core.Reconstruct	as C
 import qualified Core.OpType		as C
 import qualified Sea.Exp  		as E
@@ -260,7 +261,7 @@ toSeaX		xx
 
 	-- the unboxing function is named after the result type
 	C.XPrim C.MUnbox [C.XPrimType r, x]
-	 -> do	let tResult	= C.reconUnboxType r 
+	 -> do	let Just tResult= C.unboxedVersionOfBoxedType r 
 	 			$ C.reconX_type (stage ++ "toSeaX") x
 
 		x'	<- toSeaX x

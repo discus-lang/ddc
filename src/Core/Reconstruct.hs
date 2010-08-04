@@ -23,9 +23,7 @@
 module Core.Reconstruct
 	( reconTree, reconTreeWithEnv
 	, reconP', reconP_type
-	, reconX', reconX_type
-	, reconBoxType
-	, reconUnboxType)
+	, reconX', reconX_type)
 where
 import Core.Util
 import Core.Plate.FreeVars
