@@ -31,8 +31,8 @@ stage	= "DDC.Core.Lint.Exp"
 
 -- Wrappers ---------------------------------------------------------------------------------------
 checkedTypeOfExp :: String -> Exp -> Type
-checkedTypeOfExp _callerName xx
- = case checkExp xx (envInit globEmpty globEmpty) of
+checkedTypeOfExp callerName xx
+ = case checkExp xx (envInit callerName globEmpty globEmpty) of
 	(_, t, _, _)	-> t
 	
 
@@ -168,7 +168,7 @@ checkExp_trace m xx env
 	 , (x', t, eff, clo)	<- checkExp' n x env
 	 -> w `seq` 
 		( XLAM BNil k' x'
-		, t
+		, TForall BNil k t
 		, eff
 		, clo )
 	
@@ -178,7 +178,7 @@ checkExp_trace m xx env
 				$! checkExp' n x
 	 -> w `seq`
 		( XLAM (BVar v) k' x'
-		, t
+		, TForall (BVar v) k t
 		, eff
 		, clo)
 	
@@ -190,7 +190,7 @@ checkExp_trace m xx env
 				$! checkExp' n x
 	 -> w `seq`
 		( XLAM (BMore v t3') k' x'
-		, t
+		, TForall (BMore v t3') k t
 		, eff
 		, clo)
 		
@@ -229,6 +229,7 @@ checkExp_trace m xx env
 		
 		_ -> panic stage $ vcat
 			[ ppr "Type mismatch in (value/type) application."
+			, "During:\n"		 %> envCaller env, blank
 			, "Cannot apply type:\n" %> t2,  blank
 			, "of kind:\n"		 %> k2', blank
 			, "to expression:\n" 	 %> xx,	 blank

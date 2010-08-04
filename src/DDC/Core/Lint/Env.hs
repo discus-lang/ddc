@@ -24,8 +24,12 @@ stage	= "DDC.Core.Lint.Env"
 data Env
 
 	= Env
-	{ -- | Whether the thing we're checking is supposed to be closed.
-	  envClosed		:: Bool
+	{ -- | The name of the thing that invoked this lint pass.
+	  --   Printed in panic messages.
+	  envCaller		:: String
+	
+	  -- | Whether the thing we're checking is supposed to be closed.
+	, envClosed		:: Bool
 
 	  -- | The header glob, for getting top-level types and kinds.
 	, envHeaderGlob		:: Glob
@@ -41,9 +45,10 @@ data Env
 	, envKindBounds		:: Map Var (Kind, Maybe Type) }
 	
 
-envInit	cgHeader cgModule
+envInit	caller cgHeader cgModule
 	= Env
-	{ envClosed		= False
+	{ envCaller		= caller
+	, envClosed		= False
 	, envHeaderGlob		= cgHeader
 	, envModuleGlob		= cgModule
 	, envTypes		= Map.empty

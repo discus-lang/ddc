@@ -50,9 +50,9 @@ import qualified Debug.Trace
 stage		= "DDC.Core.Lint"
 
 -- Glob -------------------------------------------------------------------------------------------
-checkGlobs :: Glob -> Glob -> Glob
-checkGlobs cgHeader cgCore 	
-	= mapBindsOfGlob (checkBind (envInit cgHeader cgCore)) cgCore
+checkGlobs :: String -> Glob -> Glob -> Glob
+checkGlobs caller cgHeader cgCore 	
+	= mapBindsOfGlob (checkBind (envInit caller cgHeader cgCore)) cgCore
 	
 
 -- Top --------------------------------------------------------------------------------------------
