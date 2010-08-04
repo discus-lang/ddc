@@ -4,7 +4,7 @@ module Core.Lift.BindTypes
 where
 import Core.Lift.Base
 import Core.Plate.Trans
-import Core.Reconstruct
+import DDC.Core.Lint.Exp
 import DDC.Core.Exp
 
 
@@ -37,7 +37,7 @@ bindTypesS :: Stmt -> LiftM Stmt
 bindTypesS s
  = case s of
 	SBind (Just v) x
-	 -> do	let t	= reconX_type "Core.Lift.BindTypes" x
+	 -> do	let t	= checkedTypeOfExp "Core.Lift.BindTypes" x
 	 	bindType v t
 	 	return s
 
