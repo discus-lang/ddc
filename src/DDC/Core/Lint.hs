@@ -32,6 +32,7 @@ import DDC.Core.Glob
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
+import Type.Error
 import Data.List
 import Data.Maybe
 import Control.Monad
@@ -63,8 +64,26 @@ checkBind env pp
 	 -> let Just tSlurped		= maybeSlurpTypeX x
 	    	(tSlurped', k)		= checkTypeI 0 tSlurped env 
 		(x', t', eff, clo)	= withType v t' env (checkExp x)
+		
+		-- We can mask effects on top level regions that are constant.
+		maskable e
+	 	 | TApp t1 (TVar kR (UVar vr))	<- e
+		 , t1 == tRead
+		 , isRegionKind kR
+		 = isJust $ witnessConstFromEnv vr env
+		
+		 | otherwise
+		 = False
+		
+		eff_masked	= makeTSum kEffect
+				$ filter (not . maskable)
+				$ flattenTSum 
+				$ crushT eff
+		
 	    in	k `seq` t' `seq` eff `seq` clo `seq`
-		PBind v x'
+		if eff_masked == tPure 
+			then PBind v x'
+			else dieWithUserError [ErrorEffectfulCAF (v, t') eff_masked]
 
 	_ -> panic stage $ "checkBind: no match"
 

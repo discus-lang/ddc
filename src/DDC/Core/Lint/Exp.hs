@@ -303,7 +303,7 @@ checkExp_trace m xx env
 		 = panic stage $ vcat
 			[ ppr "Closure mismatch in lambda abstraction."
 			, "Closure of abstraction:\n"	 	%> clo2_cut,	blank
-			, "is not less than annotation:\n" 	%> cloAnn,	blank
+			, "is not less than annotation:\n" 	%> show cloAnn,	blank
 			, "in expression:\n"			%> xx,		blank]
 
 		 | otherwise
@@ -374,10 +374,28 @@ checkExp_trace m xx env
 	-- TODO: check r not free in type.
 	-- TODO: mask effects on r.
 	XLocal v bs x
-	 | (x', t1, eff, clo)	<- checkExp' n x env
-	 -> 	( XLocal v bs x'
-		, t1
-		, eff
+	 | (x', t, eff, clo)	<- checkExp' n x env
+	 -> let	
+		maskable e
+		 | TApp t1 (TVar kR (UVar vr))	<- e
+		 , t1 == tRead || t1 == tWrite
+		 , isRegionKind kR
+		 , vr == v
+		 = True
+		
+		 | otherwise
+		 = False
+		
+		eff_masked	
+			= filter (not . maskable)
+			$ flattenTSum 
+			$ crushT
+			$ makeTSum kEffect 
+			$ Foldable.toList eff
+	
+	    in	( XLocal v bs x'
+		, t
+		, Seq.fromList eff_masked
 		, clo)
 
 	-- Primitive operator.
@@ -392,7 +410,7 @@ checkExp_trace m xx env
 	XTau tAnnot x
 	 | (tAnnot', kAnnot)	<- checkTypeI n tAnnot env
 	 , (x', tExp, eff, clo)	<- checkExp' n x env
-	 , tExp'		<- trimClosureT_constrainForm $ toConstrainFormT tExp
+	 , tExp'		<- trimClosureT_constrainForm $ crushT $ toConstrainFormT tExp
 	 -> kAnnot `seq`
 	    if isEquiv $ equivTT tAnnot' tExp'
 		then	( XTau tAnnot' x'

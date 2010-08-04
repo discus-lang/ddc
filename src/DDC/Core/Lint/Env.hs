@@ -4,13 +4,17 @@ module DDC.Core.Lint.Env
 	, envInit
 	, withType
 	, withKindBound
-	, typeFromEnv)
+	, typeFromEnv
+	, witnessConstFromEnv)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Core.Exp
 import DDC.Core.Glob
 import DDC.Type
 import DDC.Var
+import Data.List
+import Control.Monad
 import Data.Map			(Map)
 import qualified Data.Map	as Map
 
@@ -23,18 +27,19 @@ data Env
 	{ -- | Whether the thing we're checking is supposed to be closed.
 	  envClosed		:: Bool
 
-	  --  The header glob, for getting top-level types and kinds.
+	  -- | The header glob, for getting top-level types and kinds.
 	, envHeaderGlob		:: Glob
 
-	  --  The core glob, for getting top-level types and kinds.
+	  -- | The core glob, for getting top-level types and kinds.
 	, envModuleGlob		:: Glob
 
-	  --  Types of value variables that are in scope at the current point.
+	  -- | Types of value variables that are in scope at the current point.
 	, envTypes		:: Map Var Type
 
 	  -- | Kinds of type variables that are in scope at the current point,
 	  ---  with optional :> constraint.
-	, envKindBounds		:: Map Var (Kind, Maybe Type)}
+	, envKindBounds		:: Map Var (Kind, Maybe Type) }
+	
 
 envInit	cgHeader cgModule
 	= Env
@@ -74,7 +79,7 @@ withKindBound v k mt env fun
 typeFromEnv :: Var -> Env -> Maybe Type
 typeFromEnv v env
 	| varNameSpace v /= NameValue
-	= panic stage $ "lookupType: wrong namespace for " % v
+	= panic stage $ "typeFromEnv: wrong namespace for " % v
 	
 	| Just t <- Map.lookup v $ envTypes env		= Just t
 	| Just t <- typeFromGlob v $ envModuleGlob env	= Just t
@@ -82,5 +87,33 @@ typeFromEnv v env
 	| otherwise					= Nothing
 	
 	
+-- | Lookup the var of the witness that guarantees the constancy of a region, if any.
+witnessConstFromEnv :: Var -> Env -> Maybe Var
+witnessConstFromEnv vr env
+	| varNameSpace vr /= NameRegion
+	= panic stage $ "witnessConstFromEnv: var " % vr % " should be a region var"
+
+	| Just (PRegion _ vts)	<- Map.lookup vr $ globRegion (envHeaderGlob env)
+	= liftM fst $ find (\(_, t) -> isConst vr t) vts
+
+	| Just (PRegion _ vts)	<- Map.lookup vr $ globRegion (envModuleGlob env)
+	= liftM fst $ find (\(_, t) -> isConst vr t) vts
 	
+	| otherwise
+	= Nothing
+
+	where isConst r t
+		| TApp t1 t2		<- t
+		, TVar _ (UVar v)	<- t2
+		, t1 == tMkConst
+		, v  == r
+		= True
+		
+		| otherwise
+		= False
+		
+		
+		
+
+
 
