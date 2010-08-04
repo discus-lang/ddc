@@ -9,7 +9,6 @@ where
 import Core.Plate.Trans
 import Core.Plate.FreeVars
 import Core.Util
-import Core.Reconstruct
 import Shared.VarPrim
 import Shared.VarGen
 import Util
@@ -17,6 +16,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Core.Glob
+import DDC.Core.Lint.Exp
 import DDC.Type
 import DDC.Var
 import Prelude				hiding	(mapM)
@@ -308,7 +308,7 @@ bindXDo shared xx@(XDo ss)
 						, not (canBindX x) ]
 	
 	-- Regions visible in the type of the expression can't be bound here
-	let vsVisible		= freeVars $ reconX_type "Core.Bind.bindXDo" xx
+	let vsVisible		= freeVars $ checkedTypeOfExp "Core.Bind.bindXDo" xx
 		
 	-- the regions to bind on this XDo
 	let vsBindHere	= 
