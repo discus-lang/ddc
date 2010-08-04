@@ -145,14 +145,15 @@ checkType_trace m tt env
 		, k')
 			
 	-- Type variables.
-	TVar k (UMore v _)
-	 -> checkType_trace m (TVar k $ UVar v) env
+	TVar k (UMore v TNil)
+	 -> panic stage $ ppr "checkType: no bound on UMore"
 
 	TVar _ UClass{}
 	 -> panic stage $ ppr "checkType: Found a UClass. These shouldn't show up in the core IR."
 	
-	TVar k (UVar v)
+	TVar k b
 	 | (k', w)	<- checkKindI n k env
+	 , Just v	<- takeVarOfBound b
 	 -> w `seq`
 	    case Map.lookup v (envKindBounds env) of
 		Nothing	
@@ -161,11 +162,11 @@ checkType_trace m tt env
 			$ "Type variable " % v % " is out of scope.\n"
 			
 		 | otherwise		
-		 -> (TVar k' (UVar v), k')
+		 -> (TVar k' b, k')
 
 		Just (k'', _)	
 		 | isEquiv $ equivKK k' k''	
-		 -> (TVar k' (UVar v), k')
+		 -> (TVar k' b, k')
 
 		 | otherwise	
 		 -> panic stage

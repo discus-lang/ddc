@@ -77,6 +77,17 @@ checkExp_trace m xx env
 	
 	
 	-- Variables
+	-- If the type isn't attached directly to the var then try to look
+	-- it up from the type environment.
+	XVar v TNil
+	 | Just t	<- typeFromEnv v env
+	 -> checkExp_trace m (XVar v t) env
+	
+	 | otherwise
+	 -> panic stage
+		$ "checkExp: var " % v 
+		% " is not annotated with its type, and it's not in the environment"
+
 	XVar v t1
 	 | varNameSpace v /= NameValue
 	 -> panic stage 
@@ -429,7 +440,6 @@ checkStmts' n env (SBind b x : []) ssAcc effAcc cloAcc
 	, effAcc Seq.>< eff 
 	, Clo.union clo cloAcc)
 	
--- Types for all bindings must already be in environment.
 checkStmts' n env (SBind Nothing x : ss) ssAcc effAcc cloAcc 
  = let	(x', t, eff, clo)	= checkExp' n x env
    in 	t `seq`
@@ -438,11 +448,11 @@ checkStmts' n env (SBind Nothing x : ss) ssAcc effAcc cloAcc
 		(effAcc Seq.>< eff)
 		(Clo.union clo cloAcc)
 
--- TODO: check type against one already in environment.
 checkStmts' n env (SBind (Just v) x : ss) ssAcc effAcc cloAcc
  = let	(x', t, eff, clo)	= checkExp' n x env
    in	t `seq`
-	checkStmts' n env ss 
+	withType v t env $ \env' -> 
+	 checkStmts' n env' ss 
 		(SBind (Just v) x' : ssAcc)
 		(effAcc Seq.>< eff)
 		(Clo.union clo cloAcc)

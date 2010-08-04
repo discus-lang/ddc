@@ -3,7 +3,8 @@ module DDC.Core.Lint.Env
 	( Env(..)
 	, envInit
 	, withType
-	, withKindBound)
+	, withKindBound
+	, typeFromEnv)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -68,4 +69,18 @@ withKindBound v k mt env fun
 
    in	fun $ env { envKindBounds = Map.alter addVK v (envKindBounds env) }
 
+
+-- | Lookup the type of some value variable from the environment.
+typeFromEnv :: Var -> Env -> Maybe Type
+typeFromEnv v env
+	| varNameSpace v /= NameValue
+	= panic stage $ "lookupType: wrong namespace for " % v
+	
+	| Just t <- Map.lookup v $ envTypes env		= Just t
+	| Just t <- typeFromGlob v $ envModuleGlob env	= Just t
+	| Just t <- typeFromGlob v $ envHeaderGlob env	= Just t
+	| otherwise					= Nothing
+	
+	
+	
 
