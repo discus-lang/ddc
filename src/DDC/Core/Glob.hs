@@ -30,7 +30,7 @@ import Prelude			hiding (foldr, mapM)
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Sequence	as Seq
-import {-# SOURCE #-} Core.Reconstruct
+import {-# SOURCE #-} DDC.Core.Lint.Exp
 
 
 stage	= "Core.Glob"
@@ -217,7 +217,7 @@ typeFromGlob v glob
 	-- If we can slurp out the type directly from its annots then use that, 
 	--	otherwise we'll have to reconstruct it manually.
 	| Just pp@PBind{}	<- Map.lookup v (globBind glob)
-	= Just $ fromMaybe (reconX_type "Core.Glob.typeFromGlob" (topBindExp pp))
+	= Just $ fromMaybe (checkedTypeOfExp "Core.Glob.typeFromGlob" (topBindExp pp))
 			   (maybeSlurpTypeX (topBindExp pp))
 		
 	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
