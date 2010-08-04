@@ -92,16 +92,16 @@ pprTypeQuant vsQuant tt
 	 -> let str
 	 	 | eff == tPure
 		 , clo == tEmpty
-		 = prettyTypeLeft t1' % " -> " % prettyTypeRight t2'
+		 = prettyFunArg t1' % " -> " % prettyFunResult t2'
 				
 		 | clo == tEmpty
-		 = prettyTypeLeft t1' % " -(" % eff % ")> " % prettyTypeRight t2'
+		 = prettyFunArg t1' % " -(" % eff % ")> " % prettyFunResult t2'
 				
 		 | eff == tPure
-		 = prettyTypeLeft t1' % " -(" % clo % ")> " % prettyTypeRight t2'
+		 = prettyFunArg t1' % " -(" % clo % ")> " % prettyFunResult t2'
 				
 		 | otherwise
-		 = prettyTypeLeft t1' % " -(" % prettyTypeParens eff % " " % prettyTypeParens clo % ")> " % prettyTypeRight t2'
+		 = prettyFunArg t1' % " -(" % prettyTypeParens eff % " " % prettyTypeParens clo % ")> " % prettyFunResult t2'
 	    in str
 
 	 | otherwise
@@ -137,20 +137,23 @@ pprTypeQuant vsQuant tt
 	TError k _	-> "@TError" % k % "..."
 
 
--- | Pretty print a type that appears on the right of a function arrow.
-prettyTypeRight tt
- = case tt of
- 	TFetters{}	-> "(" % tt % ")"
-	_		-> ppr tt
-
-
 -- | Pretty print a type that appears on the left of a function arrow.
-prettyTypeLeft t
+prettyFunArg t
 	| Just{}	<- takeTFun t
-	=  "(" % t % ")"
+	= parens (ppr t)
+
+	| TForall{}	<- t
+	= parens (ppr t)
 
 	| otherwise
 	= ppr t
+
+
+-- | Pretty print a type that appears on the right of a function arrow.
+prettyFunResult tt
+ = case tt of
+ 	TFetters{}	-> "(" % tt % ")"
+	_		-> ppr tt
 
 
 -- | Pretty print a variable with its kind.
