@@ -336,8 +336,9 @@ checkExp_trace m xx env
 	XApp x1 x2
 	 | (x1', t1, eff1, clo1) <- checkExp' n x1 env
 	 , (x2', t2, eff2, clo2) <- checkExp' n x2 env
-	 , t2'			 <- crushT $ trimClosureT_constrainForm $  toConstrainFormT t2
-	 -> case takeTFun t1 of
+	 , t1'			 <- crushT $ trimClosureT_constrainForm $ toConstrainFormT t1
+	 , t2'			 <- crushT $ trimClosureT_constrainForm $ toConstrainFormT t2
+	 -> case takeTFun t1' of
 	     Just (t11, t12, eff3, _)
 	      -> case subsumesTT t2' t11 of
 		  Subsumes 
@@ -349,7 +350,7 @@ checkExp_trace m xx env
 		  NoSubsumes s1 s2
 		   -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "  cannot apply function of type: " % t1,	blank
+			, "  cannot apply function of type: " % t1',	blank
 			, "            to argument of type: " % t2',	blank
 			, ppr "   because",				blank
 			, "                           type: " % s2,	blank
@@ -359,7 +360,7 @@ checkExp_trace m xx env
 		
 	     _ -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "  cannot apply non-function type: " % t1,	blank
+			, "  cannot apply non-function type: " % t1',	blank
 			, "             to argument of type: " % t2',	blank
 			, blank
 			, " in application: " % xx]
