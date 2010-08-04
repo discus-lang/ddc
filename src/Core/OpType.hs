@@ -11,7 +11,7 @@ import DDC.Type
 import DDC.Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
-import {-# SOURCE #-} Core.Reconstruct
+import {-# SOURCE #-} DDC.Core.Lint.Exp
 
 stage = "Core.OpType"
 
@@ -85,7 +85,7 @@ superOpType'	xx
 	-- there's no XTau enclosing the body, so we'll have to reconstruct
 	--	the type for it manually.
 	_		-> [superOpTypePart 
-			$  reconX_type (stage ++ "superOpType") xx]
+			$  checkedTypeOfExp (stage ++ "superOpType") xx]
 			
 superOpTypePart	tt
  = case tt of
