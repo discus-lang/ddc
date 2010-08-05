@@ -11,6 +11,8 @@ import Util
 import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Core.Glob
+import DDC.Core.Lint.Exp
+import DDC.Core.Lint.Env
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
@@ -18,8 +20,9 @@ import qualified Data.Set	as Set
 import qualified Debug.Trace	as Debug
 
 stage		= "Core.Lift.LiftLambdas"
-debug		= False
+debug		= True
 trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
+
 
 -- | Lift out all lambda bindings from this super.
 --   	return the new super, as well as the lifted bindings as new supers.
@@ -28,7 +31,12 @@ trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 --	After calling liftLambdasP we still need to go back and rewrite XVars
 --	to calls to the new supers (passing in any free variables).
 --
-liftLambdasP ::	Top	-> LiftM (Top, [Top])
+liftLambdasP 
+	:: Top	
+	-> LiftM 
+		( Top		-- new super
+		, [Top])	-- lifted bindings
+
 liftLambdasP	p@(PBind superName x)
  = do
 	-- Chop out the inner most lambda abstractions from this binding
@@ -44,8 +52,9 @@ liftLambdasP	p@(PBind superName x)
 
 
 lambdaLiftX superName vtMore x
-	
-	-- decend the first set of lambdas in top level bindings
+	-- Decend into the first set of lambdas, until we get to the body of the function.
+	-- We also collect up more-than constrains when we see them, as we'll need them
+	-- when we add type-parameters to the lifted functions.
 	| XLAM b k x1		<- x
 	= do	x1'	<- lambdaLiftX superName (slurpBMore vtMore b) x1
 		return	$ XLAM b k x1'	
@@ -54,15 +63,15 @@ lambdaLiftX superName vtMore x
 	= do	e'	<- lambdaLiftX superName vtMore e
 		return	$ XLam v t e' eff clo
 	
-	-- walk over the expression and chop out the inner most functions
+	-- walk over the body and chop out any inner functions.
 	| otherwise
 	= do	let table	
 			= transTableId 
-			{ transS 	= chopInnerS superName vtMore
-			, decendT	= False }
+				{ transS 	= chopInnerS superName vtMore
+				, decendT	= False }
 
 		transZM table x
-		
+
 
 -- If this binding is a BMore than add the constraint to the map
 slurpBMore :: Map Var Type -> Bind -> Map Var Type
@@ -71,14 +80,15 @@ slurpBMore vtMore b
  	BMore v t	-> Map.insert v t (vtMore)
 	_		-> vtMore
 
--- | Chop the inner most function from this statement
+
+-- | If this statement is a function then convert it into a new supercombinator,
+--   add it to the lift state, and replace the RHS by a reference to this new super.
+--
 chopInnerS 
-	:: Var		-- the name of the top-level binding that this statement is a part of
-			-- used to give chopped functions nicer names
-
-	-> Map Var Type	-- a table of :> constraints on type variables.
-			--	we need this when we re-quantify free type vars on lifted supers.
-
+	:: Var		-- ^ This name of the top-level binding that this statement is a part of.
+			--      This is to give lifted functions nicer names.
+	-> Map Var Type	-- ^ A table of :> constraints on type variables.
+			--      We need this when we re-quantify free type vars on lifted supers.
 	-> Stmt	
 	-> LiftM Stmt
 
@@ -91,7 +101,7 @@ chopInnerS topName vtMore s
 	 
 	_ -> 	return	s
 
--- | Chop out this function
+-- | Chop out this function.
 chopInnerS2 topName vtMore (SBind Nothing x)
  = do	v	<- newVar NameValue
 	chopInnerS2 topName vtMore (SBind (Just v) x)
@@ -104,32 +114,34 @@ chopInnerS2 topName vtMore (SBind (Just v) x)
 
 	-- turn this binding into a super-combinator by binding its free variables as new parameters.
 	let pSuper	= PBind vSuper x
-	(pSuper_lifted, freeVKs, freeVTs)	
+	(pSuper_lifted@(PBind _ x_lifted), freeVKs, freeVTs)	
 			<- bindFreeVarsP vtMore pSuper
 
 	-- add the new super to the lift state
 	addChopped v vSuper pSuper_lifted
 
-	-- Work out the type of the new super.
-	let tSuper	= reconP_type (stage ++ ".chopInnerS2") pSuper_lifted
+	-- work out the type of the new super.
+	let tSuper	= checkedTypeOfExp (stage ++ ".chopInnerS2") x_lifted
 
 	trace 	( "chopInnerS2: new super\n"
 		% " pSuper_lifted:\n" 	%> pSuper_lifted	% "\n\n"
 		% " superType:\n" 	%> tSuper		% "\n\n")
 		$ return ()
 		
-	-- build the call to the new super
-	let typeArgs	= map (Right . makeSuperArgK) freeVKs
-	let valueArgs	= [Left (XVar v t) | (v, t) <- freeVTs]
-
+	-- build the call to the new super.
+	-- We only have to apply type args, and args binding the free variables.
+	let typeArgs	= map (Right . makeSuperArgK)      freeVKs
+	let valueArgs	= map (\(v, t) -> Left (XVar v t)) freeVTs
 	let Just xCall	= buildApp (Left (XVar vSuper tSuper) : typeArgs ++ valueArgs)
 
+	-- return the new binding
 	return	$ SBind (Just v) xCall
 
 	
 -- | When we pass args that were free in a lambda abs back to the super, 
---	just pass new witness instead of their args.. we'll thread the actual
---	witness though later on
+--   just pass new witness instead of their args. The core type checker can thread
+--   the real ones through later on.
+--
 makeSuperArgK :: (Bind, Kind) -> Type
 makeSuperArgK (b, k)
 	| KApp{}	<- k
@@ -143,7 +155,7 @@ makeSuperArgK (b, k)
 	= TVar k $ UMore v t
 
 
-
+-- BindFree ---------------------------------------------------------------------------------------
 -- | Turn this PBind into a combinator by binding its free variables as new parameters.
 --   Returns the freshly bound vars and there type/kinds to help construct calls to it
 bindFreeVarsP 
@@ -154,7 +166,6 @@ bindFreeVarsP
 		, [(Bind, Kind)]	--  type vars that were bound
 		, [(Var,  Type)])	-- value vars that were bound
 		
-
 bindFreeVarsP
 	vtMore
 	(PBind vTop x)
@@ -178,7 +189,7 @@ bindFreeVarsP
 	--	The effect should always be TBot because we only ever lift (value) lambda abstractions.
 	--	The closure returned from reconX will be flat, ie a TSum of all the free vars
 	let (xRecon, tRecon, _, cRecon) 
-			= reconX' (stage ++ ".bindFreeVarsP") x
+			= checkExp x (envEmpty (stage ++ ".bindFreeVarsP"))
 
 	-- Bind free value vars with new value lambdas.
 	-- TODO: better to get the type directly from the XVar

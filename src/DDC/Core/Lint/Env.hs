@@ -2,6 +2,7 @@
 module DDC.Core.Lint.Env
 	( Env(..)
 	, envInit
+	, envEmpty
 	, withType
 	, withKindBound
 	, typeFromEnv
@@ -54,6 +55,8 @@ envInit	caller cgHeader cgModule
 	, envTypes		= Map.empty
 	, envKindBounds		= Map.empty }
 
+envEmpty caller
+	= envInit caller globEmpty globEmpty
 
 -- | Run a lint computation with an extra type in the environment.
 withType :: Var -> Type -> Env -> (Env -> a) -> a
