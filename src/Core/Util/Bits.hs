@@ -9,7 +9,10 @@ module Core.Util.Bits
 	, isXLAMBDA
 	, isXTau
 	, isCafP 
-
+	, isFunctionX
+	, hasEmbeddedLambdasX
+	, hasLambdasX
+	
 	-- projections	
 	, takeVarOfStmt
 	
@@ -57,6 +60,61 @@ isCafX xx
 	XTau t x	-> isCafX x
 	XLocal v vs x	-> isCafX x
 	_		-> True
+
+
+-- | Test whether an expression is syntactically a (value) function.
+--   It might be wrapped by type lambdas, type applications, or annotations 
+isFunctionX :: Exp	-> Bool
+isFunctionX xx
+ = case xx of
+	XLAM	v t x	-> isFunctionX x
+	XAPP	x t	-> isFunctionX x
+	XTau	t x	-> isFunctionX x
+	XLam{}		-> True
+	_		-> False
+
+
+--  | Test whether an expression contains any _embedded_ lambda abstractions,
+--    not including the outermost ones.
+--
+--	eg \x -> \y -> f x 3		-- no embedded lambdas
+--	eg \x -> \y -> f (\z -> z) 3	-- embeded lambda in first arg
+--
+hasEmbeddedLambdasX ::	Exp -> Bool
+hasEmbeddedLambdasX xx
+ = case xx of
+ 	XLAM	v t x		-> hasEmbeddedLambdasX x
+	XAPP 	x t		-> hasEmbeddedLambdasX x
+	XTau	t x		-> hasEmbeddedLambdasX x
+	XLocal	v vs x		-> hasEmbeddedLambdasX x
+	XLam	v t x eff clo	-> hasEmbeddedLambdasX x	
+	_			-> hasLambdasX xx
+
+
+-- | Checks whether an expression contains any (value) lambda abstractions.
+hasLambdasX ::	Exp 	-> Bool
+hasLambdasX	x
+ = case x of
+	XLAM	v t x		-> hasLambdasX x
+	XAPP x t		-> hasLambdasX x
+	XTau	t x		-> hasLambdasX x
+
+	XLam{}			-> True
+	XApp x1 x2		-> hasLambdasX x1 || hasLambdasX x2
+	XDo ss			-> or $ map hasLambdasS ss
+	XMatch aa		-> or $ map hasLambdasA aa
+	
+	XLocal v vs x		-> hasLambdasX x
+
+	_			-> False
+
+ where	hasLambdasS	s
+ 	 = case s of
+		SBind v x	-> hasLambdasX x
+	
+	hasLambdasA	a
+ 	 = case a of
+ 		AAlt 	gs x	-> hasLambdasX x
 
 
 -- Projections -------------------------------------------------------------------------------------
