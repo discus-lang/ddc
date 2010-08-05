@@ -77,21 +77,30 @@ instance FreeVars Type where
 		
 	 	\\ (unions $ map freeVars $ Map.keys crsEq)
 	
-	
-	TSum _ ts	-> freeVars ts
+	TSum k ts	-> union (freeVars k)  (freeVars ts)
 	TApp t1 t2	-> union (freeVars t1) (freeVars t2)
 	TCon tycon	-> freeVars tycon
- 	TVar _ (UVar v)	-> singleton v
 
-	TVar _ (UMore v t)
+ 	TVar k (UVar v)	-> union (freeVars k)  (singleton v)
+
+	TVar k (UMore v t)
 	 -> unions
-	 	[ Set.singleton v
+	 	[ freeVars k
+		, Set.singleton v
 		, freeVars t]
 	
-	TVar{}		-> empty
+	TVar k UIndex{}	-> freeVars k
+	TVar k UClass{}	-> freeVars k
 
 	TError{}	-> empty
 	
+-- Bind -------------------------------------------------------------------------------------------
+instance FreeVars Bind where
+ freeVars bb
+  = case bb of
+	BNil		-> Set.empty
+	BVar _		-> Set.empty
+	BMore _ t	-> freeVars t
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance FreeVars Fetter where
@@ -100,9 +109,9 @@ instance FreeVars Fetter where
 	FConstraint v ts	
 	 -> union (singleton v) (freeVars ts)
 
-	FWhere (TVar _ (UVar v)) t2
-	 -> freeVars t2
-	 	\\ singleton v
+	FWhere (TVar k (UVar v)) t2
+	 -> union (freeVars k)
+	 	  (freeVars t2 \\ singleton v)
 
 	FWhere t1 t2
 	 -> union (freeVars t1) (freeVars t2)

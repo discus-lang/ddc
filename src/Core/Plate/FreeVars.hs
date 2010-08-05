@@ -31,8 +31,7 @@ instance FreeVars Exp where
 
 	XLAM b k e
 	 -> let Just v	= takeVarOfBind b
-	    in  unions 
-	 		[ freeVars k
+	    in  unions 	[ freeVars k
 			, freeVars e ]
 			\\ Set.singleton v
 
