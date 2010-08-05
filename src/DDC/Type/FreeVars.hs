@@ -93,6 +93,7 @@ instance FreeVars Type where
 	TVar k UClass{}	-> freeVars k
 
 	TError{}	-> empty
+
 	
 -- Bind -------------------------------------------------------------------------------------------
 instance FreeVars Bind where
@@ -101,6 +102,7 @@ instance FreeVars Bind where
 	BNil		-> Set.empty
 	BVar _		-> Set.empty
 	BMore _ t	-> freeVars t
+
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance FreeVars Fetter where
