@@ -302,6 +302,7 @@ checkExp_trace m xx env
 		 | not $ isSubsumes effSubs 
 		 = panic stage $ vcat
 			[ ppr "Effect mismatch in lambda abstraction."
+			, "During:\n"				%> envCaller env, blank
 			, "Effect of body:\n" 			%> eff2',	blank
 			, "with closure:\n"			%> clo2_cut,	blank
 			, "visible vars:\n"			%> vsVisible,	blank
@@ -313,6 +314,7 @@ checkExp_trace m xx env
 		 | not $ isSubsumes cloSubs
 		 = panic stage $ vcat
 			[ ppr "Closure mismatch in lambda abstraction."
+			, "During:\n"		 %> envCaller env, blank
 			, "Closure of abstraction:\n"	 	%> clo2_cut,	blank
 			, "is not less than annotation:\n" 	%> show cloAnn,	blank
 			, "in expression:\n"			%> xx,		blank]
@@ -351,18 +353,20 @@ checkExp_trace m xx env
 		  NoSubsumes s1 s2
 		   -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "  cannot apply function of type: " % t1',	blank
-			, "            to argument of type: " % t2',	blank
+			, "During:\n"		 		%> envCaller env, blank
+			, "  cannot apply function of type: " 	% t1',	blank
+			, "            to argument of type: " 	% t2',	blank
 			, ppr "   because",				blank
-			, "                           type: " % s2,	blank
-			, "               does not subsume: " % s1,	blank
+			, "                           type: " 	% s2,	blank
+			, "               does not subsume: " 	% s1,	blank
 			, blank
 			, "in application:\n" % xx]
 		
 	     _ -> panic stage $ vcat
 			[ ppr "Type error in application."
-			, "  cannot apply non-function type: " % t1',	blank
-			, "             to argument of type: " % t2',	blank
+			, "During:\n"		 		%> envCaller env, blank
+			, "  cannot apply non-function type: " 	% t1',	blank
+			, "             to argument of type: "	% t2',	blank
 			, blank
 			, " in application: " % xx]
 
@@ -432,6 +436,7 @@ checkExp_trace m xx env
 			
 		else panic stage $ vcat
 			[ ppr "Type error in type annotation.",			blank
+			, "During:\n"		 		%> envCaller env, blank
 			, "  Reconstructed type:\n"		%> tExp',	blank
 			, "  does not match annotation:\n"	%> tAnnot,	blank
 			, "  on expression:\n"			%> xx]
