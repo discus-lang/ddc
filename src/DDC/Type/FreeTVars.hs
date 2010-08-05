@@ -1,6 +1,10 @@
 
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
--- | Collect TClasses that appear in bound positions in some thing.
+
+-- | Collect FreeVars in some thing.
+--   We get the TVars containing `UVar` and `UMore` nodes that have free Vars
+--   and _all_ of the TVars with containing `UIndex` and `UClass` nodes.
+--
 module DDC.Type.FreeTVars
 	( freeTClasses
 	, freeTClassVars
@@ -20,7 +24,7 @@ freeTClasses xx
 	= Set.filter isTClass $ freeTVars xx
 
 
--- | Collect TClasses and TVars that appear in bound positions in this thing.
+-- | Collect TClasses and free TVars that appear in bound positions in this thing.
 freeTClassVars :: FreeTVars a => a -> Set Type
 freeTClassVars xx
 	= Set.filter (\x -> isTClass x || isSomeTVar x)
@@ -36,30 +40,73 @@ freeCids xx
 
 
 class FreeTVars a where
-	-- | Collect classids that appear in bound positions in this thing.
+	-- | Collect free TVars in this thing.
 	freeTVars :: a -> Set Type
+
+instance FreeTVars a => FreeTVars [a] where
+ freeTVars ts	= Set.unions $ map freeTVars ts
+
+instance FreeTVars Kind where
+ freeTVars _	= Set.empty
 
 instance FreeTVars Type where
  freeTVars tt
   = case tt of
-	TNil			-> Set.empty
-	TVar{}			-> Set.singleton tt
-	TCon{}			-> Set.empty
-	TSum _ ts		-> Set.unions $ map freeTVars ts
-	TApp t1 t2		-> Set.union  (freeTVars t1) (freeTVars t2)
-	TForall _ _ t		-> freeTVars t
-	TFetters t fs		-> Set.unions (freeTVars t : map freeTVars fs)
-	TConstrain t crs	-> Set.union  (freeTVars t)  (freeTVars crs)
-	TError{}		-> Set.empty
+	TNil		-> Set.empty
+	TVar{}		-> Set.singleton tt
+	TCon{}		-> Set.empty
+
+	TSum k ts		
+	 -> Set.unions 
+		(freeTVars k : map freeTVars ts)
+
+	TApp t1 t2		
+	 -> Set.union  (freeTVars t1) (freeTVars t2)
+
+	TForall BNil k t
+	 -> Set.union 
+		(freeTVars k)
+		(freeTVars t)
+	
+	TForall (BVar v) k t
+	 -> (Set.unions 
+	 	[ freeTVars k
+		, freeTVars t]) 	
+			Set.\\ Set.singleton (TVar k (UVar v))
+		
+	TForall (BMore v t1) k t2
+	 -> (Set.unions 
+	 	[ freeTVars t1
+		, freeTVars k
+		, freeTVars t2])
+			Set.\\ Set.singleton (TVar k (UMore v t1))
+
+	TFetters t fs
+	 -> Set.union (freeTVars t) (freeTVars fs) 
+	 	Set.\\ (Set.fromList [ t1 | FWhere t1 _ <- fs])
+
+	TConstrain t crs
+	 -> Set.union  (freeTVars t)  (freeTVars crs)
+
+	TError{}
+	 -> Set.empty
 
 
 instance FreeTVars Fetter where
  freeTVars ff
   = case ff of
-	FConstraint _ ts	-> Set.unions $ map freeTVars ts
-	FWhere _ t2		-> freeTVars t2
-	FMore  _ t2		-> freeTVars t2
-	FProj  _ _ t1 t2	-> Set.union (freeTVars t1) (freeTVars t2)
+	FConstraint _ ts	
+	 -> Set.unions 
+	  $ map freeTVars ts
+
+	FWhere _ t2
+	 -> freeTVars t2
+
+	FMore  _ t2
+	 -> freeTVars t2
+
+	FProj  _ _ t1 t2
+	 -> Set.union (freeTVars t1) (freeTVars t2)
 
 
 instance FreeTVars Constraints where
