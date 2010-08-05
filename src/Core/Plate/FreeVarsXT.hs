@@ -3,7 +3,10 @@
 -- | Collect the free value/type variables from an expression,
 --   along with their type/kinds.
 module Core.Plate.FreeVarsXT
-	(freeVarsXT)
+	( freeVarsXT
+	, takeExpOfFree,  isFreeX
+	, takeTypeOfFree, isFreeT
+	, takeVarOfFree)
 where
 
 import DDC.Core.Exp
@@ -20,7 +23,30 @@ data FreeXT
 	= FreeX	Exp	-- ^ Contains an XVar, which also contains the var's type.
 	| FreeT Type	-- ^ Contains a  TVar, which also contains the var's kind and optional more-than bound.
 	deriving Show
-	
+
+takeExpOfFree ff
+ = case ff of
+	FreeX x	-> Just x
+	_	-> Nothing
+
+takeTypeOfFree ff
+ = case ff of
+	FreeT t	-> Just t
+	_	-> Nothing
+
+isFreeX ff	= isJust $ takeExpOfFree ff
+isFreeT ff	= isJust $ takeTypeOfFree ff
+
+
+-- | Take the real variable stashed in this `Free`, if any.	
+takeVarOfFree :: FreeXT -> Maybe Var
+takeVarOfFree free
+ = case free of
+	FreeX (XVar v _) 	-> Just v
+	FreeT (TVar k u)	-> takeVarOfBound u
+	_			-> Nothing
+
+
 class FreeVarsXT a where
  freeVarsXT :: a -> Map Var FreeXT
 
