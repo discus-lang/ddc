@@ -3,7 +3,6 @@ module Core.Lift
 	(lambdaLiftGlob)
 where
 import Core.Lift.Base
-import Core.Lift.BindTypes
 import Core.Lift.LiftLambdas
 import DDC.Core.Glob
 import DDC.Var
@@ -52,7 +51,7 @@ lambdaLiftTreeM
 	-- Bind all the types in the tree
 	--	This adds types for all bound variables to the 
 	--	stateTypes member of LiftS
-	bindTypesTree binds
+--	bindTypesTree binds
 
 	-- lift out lambdas from binds, leaving supers.
 	(bindsL, pssNew)
