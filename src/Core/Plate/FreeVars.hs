@@ -13,6 +13,7 @@ import DDC.Util.FreeVars
 import Data.Set			((\\), unions, fromList, empty, singleton)
 import Util			hiding ((\\))
 import qualified Data.Set 	as Set
+import qualified Shared.VarUtil	as Var
 
  
 -- Exp ---------------------------------------------------------------------------------------------
@@ -21,7 +22,9 @@ instance FreeVars Exp where
   = case xx of
 	XNil		-> empty
 	
- 	XVar	v t	
+ 	XVar	v t
+ 	 | Var.isCtorName v -> empty
+	 | otherwise
 	 -> unions
 	 	[ singleton v
 		, freeVars t ]
