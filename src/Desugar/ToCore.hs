@@ -27,7 +27,6 @@ import qualified DDC.Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Desugar.Exp 		as D
 import qualified Desugar.Plate.Trans	as D
-import qualified Desugar.Bits		as D
 import qualified Desugar.Slurp.Util	as D
 import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug
@@ -370,12 +369,10 @@ toCoreX xx
 	D.XIfThenElse _ e1 e2 e3
 	 -> do
 		v	<- newVarN NameValue
-		let aX	=  D.getAnnotX e1
-		Just tX	<- lookupAnnotT aX
 
 		e1'	<- toCoreX e1
-		e2'	<- toCoreA (Just (v, tX)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primTrue  [])] e2)
-		e3'	<- toCoreA (Just (v, tX)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primFalse [])] e3)
+		e2'	<- toCoreA (Just (v, T.TNil)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primTrue  [])] e2)
+		e3'	<- toCoreA (Just (v, T.TNil)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primFalse [])] e3)
 		
 		return	$ C.XDo	[ C.SBind (Just v) e1'
 				, C.SBind Nothing (C.XMatch [ e2', e3' ]) ]
