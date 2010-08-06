@@ -1,4 +1,9 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
+-- TODO: Check for out of scope vars.
+--	 Check for fabricated witnesses.
+--	 Use Effect Store.
+
 module DDC.Core.Lint.Exp
 	( checkedTypeOfExp 
 	, checkExp
@@ -28,6 +33,8 @@ import qualified Data.Set		as Set
 import qualified Data.Foldable		as Foldable
 
 stage	= "DDC.Core.Lint.Exp"
+
+
 
 -- Wrappers ---------------------------------------------------------------------------------------
 checkedTypeOfExp :: String -> Exp -> Type

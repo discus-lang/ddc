@@ -120,29 +120,12 @@ chopInnerS2 topName (SBind (Just v) x)
 		
 	-- build the call to the new super.
 	-- We only have to apply type args, and args binding the free variables.
-	let typeArgs	= map (Right . makeSuperArgK) freeVKs
-	let valueArgs	= map Left                    freeVTs
+	let typeArgs	= map Right freeVKs
+	let valueArgs	= map Left  freeVTs
 	let Just xCall	= buildApp (Left (XVar vSuper tSuper) : typeArgs ++ valueArgs)
 
 	-- return the new binding
 	return	$ SBind (Just v) xCall
-
-	
--- | When we pass args that were free in a lambda abs back to the super, 
---   just pass new witness instead of their args. The core type checker can thread
---   the real ones through later on.
---
-makeSuperArgK :: Type -> Type
-makeSuperArgK (TVar k b)
-	| KApp{}	<- k
-	, Just t	<- inventWitnessOfKind k
-	= t
-	
-	| UVar v	<- b
-	= TVar k $ UVar v
-	
-	| UMore v t	<- b
-	= TVar k $ UMore v t
 
 
 -- BindFree ---------------------------------------------------------------------------------------
