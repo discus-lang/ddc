@@ -146,7 +146,6 @@ bindFreeVarsP (PBind vTop xx)
 
 	let isLocalFree free
 		| Just v	<- takeVarOfFree free
---		, elem (varNameSpace v) [NameValue, NameType]
 		, not $ varIsBoundAtTopLevelInGlob cgModule v
 		, not $ varIsBoundAtTopLevelInGlob cgHeader v
 		= True
