@@ -6,16 +6,19 @@ import Core.Util
 import Core.Plate.Trans
 import Core.Plate.FreeVarsXT
 import Core.Lift.Base
-import Core.Reconstruct
 import Util
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Core.Glob
+import DDC.Core.Lint.Env
+import DDC.Core.Lint.Exp
 import DDC.Type
 import DDC.Var
-import qualified Data.Map	as Map
-import qualified Debug.Trace	as Debug
+import DDC.Type.ClosureStore		(ClosureStore)
+import qualified DDC.Type.ClosureStore	as Clo
+import qualified Data.Map		as Map
+import qualified Debug.Trace		as Debug
 
 stage		= "Core.Lift.LiftLambdas"
 debug		= False
@@ -108,7 +111,7 @@ chopInnerS2 topName (SBind (Just v) x)
 	addChopped v vSuper pSuper_lifted
 
 	-- work out the type of the new super.
-	let tSuper	= reconX_type (stage ++ ".chopInnerS2") x_lifted
+	let tSuper	= checkedTypeOfExp (stage ++ ".chopInnerS2") x_lifted
 
 	trace 	( "chopInnerS2: new super\n"
 		% " pSuper_lifted:\n" 	%> pSuper_lifted	% "\n\n"
@@ -178,11 +181,11 @@ bindFreeVarsP (PBind vTop xx)
 	--	The effect should always be TBot because we only ever lift (value) lambda abstractions.
 	--	The closure returned from reconX will be flat, ie a TSum of all the free vars
 	let (xRecon, tRecon, _, cRecon) 
-			= reconX' (stage ++ ".bindFreeVarsP") xx
+			= checkExp xx (envEmpty (stage ++ ".bindFreeVarsP"))
 
 	-- Bind free value vars with new value lambdas.
 	let Just freeXVars	= sequence $ map takeExpOfFree freesVal
-	let (xBindVal, _) 	= foldr addLambda (xRecon, cRecon) freeXVars
+	let (xBindVal, _) 	= foldr addLambda (xRecon, Clo.fromClosure cRecon) freeXVars
 
 	-- Bind free type vars with new type lambdas
 	let Just freeTVars 	= sequence $ map takeTypeOfFree freesType
@@ -196,6 +199,8 @@ bindFreeVarsP (PBind vTop xx)
 	 		% "* bindFreeVarsP\n"
 			% "    vTop      = "	% vTop		% "\n"
 			% "    x:\n"		%> xx		% "\n\n"
+			% "    freeXVars:\n"    %> freeXVars	% "\n\n"
+			% "    freeTVars:\n"	%> freeTVars	% "\n\n"
 	 		% "    tRecon:\n"	%> tRecon	% "\n\n"
 			% "    cRecon:\n"	%> cRecon	% "\n\n"
 			% "    xBindVal:\n"	%> xBindVal	% "\n\n")
@@ -207,16 +212,13 @@ bindFreeVarsP (PBind vTop xx)
 
 -- | Add a value lambda to the outside of this expression.
 --	the effect  is set to TBot
-addLambda :: Exp -> (Exp, Closure) -> (Exp, Closure)
-addLambda (XVar v t) (x, clo)
+addLambda :: Exp -> (Exp, ClosureStore) -> (Exp, ClosureStore)
+addLambda (XVar v t) (x, clos)
  = let	-- filter out the closure term corresponding to the var that is bound by this lambda.
-	clo'	= makeTSum kClosure
-		$ filter (\c -> case takeTFree c of
-					Just (v', _)	-> v /= v
-					_		-> True)
-		$ flattenTSum clo 
+	clos'	= Clo.mask v clos
 
-   in	(XLam v t x tPure clo', clo')
+   in	( XLam v t x tPure (Clo.toClosure clos')
+ 	, clos')
 
 
 -- | Add some type lambdas to an expression.	
