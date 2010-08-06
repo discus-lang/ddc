@@ -248,7 +248,8 @@ varIsBoundAtTopLevelInGlob glob v
 	NameEffect
 	 ->	Map.member v $ globEffect	glob
 	
-	NameClosure -> False
+	NameClosure	-> False
+	NameClass	-> False	
 			
 	_ -> panic stage 
 	   $ "varIsBoundAtTopLevelInGlob: not implemented for " % show (varNameSpace v)
