@@ -9,7 +9,6 @@ module Main.Core
 	, coreSnip
 	, coreBind
 	, coreThread
-	, coreReconstruct
 	, coreDictionary
 	, corePrim
 	, coreSimplify
@@ -31,7 +30,6 @@ import DDC.Var
 import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)
 import Core.Dictionary			(dictGlob)
-import Core.Reconstruct			(reconTree)
 import Core.Bind			(bindGlob)
 import Core.Thread			(threadGlob)
 import Core.Prim			(primGlob)
@@ -152,25 +150,7 @@ coreDictionary cgHeader cgModule
 		$ treeOfGlob cgModule'
 
 	return	cgModule'
-
-
--- | Reconstruct and check type information.
-coreReconstruct
-	:: (?args	:: [Arg])
-	=> (?pathSourceBase :: FilePath)
-	=> String		-- ^ Stage name.
-	-> Glob			-- ^ Header glob.
-	-> Glob			-- ^ Module glob.
-	-> IO Glob
 	
-coreReconstruct name cgHeader cgModule
- = do	let cgModule'	= {-# SCC "Core.Reconstruct" #-} 
- 			   reconTree "coreReconstruct" cgHeader cgModule
- 	dumpCT DumpCoreRecon name 
-		$ treeOfGlob cgModule'
-
-	return	cgModule'
-
 	
 -- | Thread through witness variables.
 coreThread
@@ -254,8 +234,12 @@ coreLint
 coreLint stage cgHeader cgModule
  = do	let cgModule'	
 		= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule 
-		
+
+	dumpCT DumpCoreLint stage 		
+		$ treeOfGlob cgModule'		
+
 	return cgModule'
+
 
 -- | Lift nested functions to top level.
 coreLambdaLift

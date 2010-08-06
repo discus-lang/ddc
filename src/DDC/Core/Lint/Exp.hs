@@ -65,7 +65,7 @@ checkExp' n xx env
     then let result@(xx', t, eff, clo)	
 		= trace (setColumn (n*indenting) % vcat
 			[ ppr (replicate 70 '-') <> "Exp" <> n
-			, ppr xx' ])
+			, ppr xx ])
 		$ checkExp_trace n xx env
 
 	 in trace 
@@ -73,7 +73,7 @@ checkExp' n xx env
 		[ "type:   " 	% t
 		, "effect: "	% eff
 		, "closure:\n"	%> ppr clo
-		, ppr xx
+		, ppr xx'
 		, "--" <> "Exp" <> n <> ppr (replicate 70 '-')])
 		result
 
@@ -611,5 +611,6 @@ effectOfMatchAgainst tt
 	Just (_, _, [])
 	  -> tPure
 	
-	_ -> tPure
+	_ 	-> panic stage
+		$  "effectOfMatchAgainst: " % tt
 

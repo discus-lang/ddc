@@ -107,7 +107,7 @@ data Arg
 	| DumpCoreSnip
 	| DumpCoreClean
 	| DumpCoreThread
-	| DumpCoreRecon
+	| DumpCoreLint
 	| DumpCoreDict
 	| DumpCoreBind
 	| DumpCorePrim
@@ -183,7 +183,7 @@ expandArgs (x:xs)
 	   , DumpCoreSnip
 	   , DumpCoreClean
 	   , DumpCoreThread
-	   , DumpCoreRecon
+	   , DumpCoreLint
 	   , DumpCoreDict
 	   , DumpCoreBind
 	   , DumpCorePrim

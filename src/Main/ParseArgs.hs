@@ -286,7 +286,7 @@ options	=
 	, OFlag		DumpCoreBind		["-dump-core-bind"]		"Bind regions locally within functions."
 	, OFlag		DumpCoreSnip		["-dump-core-snip"]		"Create fresh bindings for function applications."
 	, OFlag		DumpCoreThread		["-dump-core-thread"]		"Thread witnesses through bindings."
-	, OFlag		DumpCoreRecon		["-dump-core-recon"]		"Reconstruct type information."
+	, OFlag		DumpCoreLint		["-dump-core-lint"]		"Check type information."
 	, OFlag		DumpCoreDict		["-dump-core-dict"]		"Resolve type-class overloading of functions."
 	, OFlag		DumpCorePrim		["-dump-core-prim"]		"Identify primitive operations."
 	, OFlag		DumpCoreSimplify	["-dump-core-simplify"]		"Core simplification. (when enabled)"

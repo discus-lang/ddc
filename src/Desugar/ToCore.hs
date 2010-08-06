@@ -298,22 +298,16 @@ toCoreX xx
 
 	-- case match on a var
 	D.XMatch _ (Just x@(D.XVar aObj varX)) alts
-	 -> do
-		Just tVar	<- lookupAnnotT aObj
-		alts'		<- mapM (toCoreA (Just (varX, tVar))) alts
+	 -> do	alts'		<- mapM (toCoreA (Just (varX, T.TNil))) alts
 		
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 
 	-- case match on an exp
 	D.XMatch _ (Just x) alts
-	 -> do
-		let aX		=  D.getAnnotX x
-		Just tX		<- lookupAnnotT aX
-
-		x'	<- toCoreX x
+	 -> do	x'	<- toCoreX x
 		varX	<- newVarN NameValue
 		
-		alts'	<- mapM (toCoreA (Just (varX, tX))) alts
+		alts'	<- mapM (toCoreA (Just (varX, T.TNil))) alts
 		
 		return	$ C.XDo	[ C.SBind (Just varX) x'
 				, C.SBind Nothing (C.XMatch alts') ]
