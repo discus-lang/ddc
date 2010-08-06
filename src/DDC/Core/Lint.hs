@@ -59,11 +59,8 @@ checkGlobs caller cgHeader cgCore
 checkBind :: Env -> Top -> Top
 checkBind env pp
  = case pp of
-	-- TODO: Check slurped type against reconstructed type.
 	PBind v x
-	 -> let Just tSlurped		= maybeSlurpTypeX x
-	    	(tSlurped', k)		= checkTypeI 0 tSlurped env 
-		(x', t', eff, clo)	= withType v t' env (checkExp x)
+	 -> let	(x', t', eff, clo)	= withType v t' env (checkExp x)
 		
 		-- We can mask effects on top level regions that are constant.
 		maskable e
@@ -80,7 +77,7 @@ checkBind env pp
 				$ flattenTSum 
 				$ crushT eff
 		
-	    in	k `seq` t' `seq` eff `seq` clo `seq`
+	    in	t' `seq` eff `seq` clo `seq`
 		if eff_masked == tPure 
 			then PBind v x'
 			else dieWithUserError [ErrorEffectfulCAF (v, t') eff_masked]

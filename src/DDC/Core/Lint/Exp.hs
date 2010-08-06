@@ -259,7 +259,7 @@ checkExp_trace m xx env
 		-- NOTE: In higher order cases the annotation can be a closure variable, 
 		--       with or without a bound, while the reconstructed closure is always
 		--       a set of TFrees.
-		!cloSubs	= subsumesTT (Clo.toClosure clo2_cut) cloAnn
+		!cloSubs	= subsumesTT (Clo.toClosure clo2_cut) cloAnn'
 
 		-- The visible region variables.
 		-- These are vars that are present in the parameter or return type, 
@@ -319,9 +319,13 @@ checkExp_trace m xx env
 			, "is not less than annotation:\n" 	%> show cloAnn,	blank
 			, "in expression:\n"			%> xx,		blank]
 
+		 -- We've just shown that the reconstructed effect and closures are subsumed by
+		 -- those on the annots. The annots are sometimes larger than needed due to
+		 -- bi-directional unification in the type inferencer. Better to replace them
+		 -- with the reconstructed ones.
 		 | otherwise
-		 = 	( XLam v1  t1' x2' effAnn' cloAnn'
-			, makeTFun t1' t2  effAnn' cloAnn'
+		 = 	( XLam v1  t1' x2' eff2_masked (Clo.toClosure clo2_cut)
+			, makeTFun t1' t2  eff2_masked (Clo.toClosure clo2_cut)
 		        , Seq.singleton tPure
 		        , clo2_cut)
 	  in result

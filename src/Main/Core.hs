@@ -253,7 +253,7 @@ coreLint
 	
 coreLint stage cgHeader cgModule
  = do	let cgModule'	
-		= checkGlobs "Compile.coreLint" cgHeader cgModule 
+		= checkGlobs ("Compile.coreLint." ++ stage) cgHeader cgModule 
 		
 	return cgModule'
 

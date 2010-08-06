@@ -376,7 +376,15 @@ compileFile_parse
 			<- if elem Arg.OptSimplify ?args
 				then SC.coreSimplify "CI" cgHeader cgModule_prim
 				else return cgModule_prim
-	
+					
+	-- Perform lambda lifting ---------------------------------------------
+	outVerb $ ppr $ "  * Core: LambdaLift\n"
+	(  cgModule_lambdaLifted
+	 , vsNewLambdaLifted) 
+			<- SC.coreLambdaLift
+				cgHeader
+				cgModule_simplified
+
 	-- Check the program one last time ------------------------------------
 	--	Lambda lifting doesn't currently preserve the typing, so we can't
 	--	check it again after this point. This panics if there is any lint.
@@ -385,23 +393,15 @@ compileFile_parse
 			<- SC.coreLint
 				"core-lint-final" 
 				cgHeader 
-				cgModule_simplified
-				
-	-- Perform lambda lifting ---------------------------------------------
-	-- TODO: Fix this so it doesn't break the type information.
-	outVerb $ ppr $ "  * Core: LambdaLift\n"
-	(  cgModule_lambdaLifted
-	 , vsNewLambdaLifted) 
-			<- SC.coreLambdaLift
-				cgHeader
-				cgModule_lintFinal
+				cgModule_lambdaLifted
+
 
 	-- Convert field labels to field indicies -----------------------------
 	outVerb $ ppr $ "  * Core: LabelIndex\n"
 	cgModule_labelIndex
 			<- SC.coreLabelIndex
 				cgHeader
-				cgModule_lambdaLifted
+				cgModule_lintFinal
 									
 	-- Resolve partial applications ---------------------------------------
 	outVerb $ ppr $ "  * Core: Curry\n"
