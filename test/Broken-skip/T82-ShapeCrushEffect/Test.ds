@@ -19,5 +19,7 @@ instance Copy2 (IntFun %r Int32 !e $c) where
 x :: Int %r1 :- Mutable %r1
 x	= 1
 
-f2	= FFun ((+) x)
-f2'	= copy2 f2
+main ()
+ = do	f2	= FFun ((+) x)
+	f2'	= copy2 f2
+	()

@@ -21,7 +21,7 @@ import qualified DDC.Var.VarId		as Var
 import qualified DDC.Var.PrimId		as Var
 import {-# SOURCE #-} DDC.Core.Check.Exp
 
-stage	= "DDC.Core.Lint.Prim"
+stage	= "DDC.Core.Check.Prim"
 
 -- | Check an application of a primitive operator.
 checkPrim 
@@ -62,7 +62,9 @@ checkPrim n pp xs env
 	 , (_, t, eff, clo)	<- checkExp' (n+1) x' env
 	 -> (xs, t, eff, clo)
 
-	_ -> panic stage $ "checkPrim: no match for " % (pp, xs)
+	_ -> panic stage $ vcat
+		[ "checkPrim: no match for " % (pp, xs)
+		, "During: " % envCaller env ]
 
 
 -- | Reconstruct the type and effect of an operator application.
