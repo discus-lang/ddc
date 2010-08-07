@@ -6,11 +6,14 @@ module DDC.Type.Exp.KiCon
 where
 import DDC.Var
 
-
 -- | Kind constructors.
 data KiCon
 	-- Atomic kinds.
-	= KiConValue			-- ^ The kind of data (value) types.
+	= KiConBox			-- ^ The super-kind of non-witness types.
+					--   Kinds lile * and ! are sub-kinds of this one.
+					--   Used for the kind of   $Danger :: [] -> $
+
+	| KiConValue			-- ^ The kind of data (value) types.
 	| KiConRegion			-- ^ The kind of region types.
 	| KiConEffect			-- ^ The kind of effect types.
 	| KiConClosure			-- ^ The kind of closure types.

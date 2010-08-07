@@ -8,7 +8,7 @@
 succ :: Int -> Int;
 succ x = x + 1;
 
-{-
+
 printSucc :: Int -> Int
 printSucc x
  = do	putStr $ show x
@@ -17,12 +17,12 @@ printSucc x
 sameType :: a -> a -> a
 sameType x y 
  = if True then x else y
--}
+
 
 -- danio is a second order function
 danio g	= g 5;
 
-{-
+
 danioSucc g = succ (g 5);
 
 danioChoose g
@@ -38,12 +38,12 @@ danioChooseSucc g
 		else (\x -> succ x)
 	
 	succ (g 5)
--}	
+	
 
 -- tetra is a third order function
 tetra f = succ (f succ);
 
-{-
+
 -- tetraP is a third order function with an additional effect
 tetraP f 
  = do {	n	= tetra f;
@@ -58,7 +58,7 @@ appDanio f = f danio;
 discus f 
  = do	p' 	= if True then tetra else f
 	5
--}	
+	
 
 -- tetra is a fifth order function
 perch b p h 
@@ -67,15 +67,14 @@ perch b p h
  	p'	= if b then tetra else p;
 	p' danio;
 
-	()
 	-- 'h' is fourth order because we apply it to p'.
---        h p';	
+        h p';	
  };	
 
-{-
+
 main ()
  = 	print $ show (perch True tetraP appDanio);
--}
+
 
 main ()
 	= print "foo"

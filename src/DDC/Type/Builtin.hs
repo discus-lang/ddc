@@ -12,6 +12,7 @@ import Control.Monad
 
 -- Kind Constructors ------------------------------------------------------------------------------
 -- Atomic kind constructors.
+kBox		= KCon KiConBox		SBox
 kValue		= KCon KiConValue	SBox
 kRegion		= KCon KiConRegion	SBox
 kEffect		= KCon KiConEffect	SBox
@@ -79,7 +80,7 @@ tFreeRegion v	= TCon $ TyConClosure (TyConClosureFreeRegion v)
 		$ KFun kRegion kClosure
 		
 tDanger 	= TCon $ TyConClosure TyConClosureDanger
-		$ KFun kRegion (KFun kValue kClosure)
+		$ KFun kRegion (KFun kBox kClosure)
 
 
 -- Witness type constructors 

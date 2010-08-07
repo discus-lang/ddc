@@ -217,23 +217,20 @@ applyKT_check check k1 t2
 	 | not check
 	 -> applyKT' 0 k12 t2
 
-	 | otherwise
-	 -> let k2	= kindOfType t2
-	    in  if k2 == k11 
-		then   applyKT' 0 k12 t2
-		else panic stage $ vcat
-		 [ ppr "Kind error in (kind/type) application."
-		 , "Type:\n"			%> prettyType t2
-		 , "of kind:\n"			%> prettyKind k2
-		 , "does not match:\n"		%> prettyKind k11
-		 , "in application:\n"		%> prettyKind (KApp k1 t2)]
-	        
-
+	 | k2	<- kindOfType t2
+	 , k2 == k11 
+	 -> applyKT' 0 k12 t2
+	  
+	 -- TODO: We're not checking that k2 is really a kBox kind.
+	 | _k2	<- kindOfType t2
+	 , k11 == kBox
+	 -> applyKT' 0 k12 t2
+	      
 	_ -> panic stage 
 	   $ vcat 
 		[ ppr "Kind error in (kind/type) application."
-		, "kind:"			% prettyKind k1
-		, ppr "is not a kind function."
+		, " cannot apply type: "	% prettyType t2 
+		, ppr "       to kind: "	% prettyKind k1
 		, ppr "in application:\n"	%> prettyKind (KApp k1 t2)]
 
 applyKT' depth kk tX

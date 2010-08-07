@@ -400,6 +400,7 @@ instance Pretty KiCon PMode where
  ppr con
   = case con of
 	KiConVar v			-> ppr v
+	KiConBox			-> ppr "[]"
 	KiConValue			-> ppr "*"
 	KiConRegion			-> ppr "%"
 	KiConEffect			-> ppr "!"

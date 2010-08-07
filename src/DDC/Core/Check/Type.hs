@@ -13,8 +13,7 @@ import DDC.Type
 import Data.List
 import qualified Data.Map	as Map
 
-stage	= "DDC.Core.Lint.Type"	
-
+stage	= "DDC.Core.Check.Type"	
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Check a type expression, returning its kind.
@@ -102,9 +101,17 @@ checkType_trace m tt env
 		 -> ( TApp t1' t2'
 		    , applyKT k1 t2' )	
 		
+		 -- Handle use of kBox super-kind.
+		 | k11 == kBox 
+		 , (_, w2)	<- checkKindI n k2 env
+		 , w2 == SBox
+		 ->  ( TApp t1' t2'
+		     , applyKT k1 t2' )
+		
 		(t1', k1) 
 		 -> panic stage $ vcat
 			[ ppr "Kind error in type application."
+			, "During: "			%> envCaller env
 			, "Cannot apply type:\n" 	%> t2'
 			, "of kind:\n"			%> k2
 			, "to type:\n" 			%> t1'

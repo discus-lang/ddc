@@ -35,8 +35,7 @@ import qualified Shared.VarUtil		as Var
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
-stage	= "DDC.Core.Lint.Exp"
-
+stage	= "DDC.Core.Check.Exp"
 
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Reconstruct and check the type of an expression.
