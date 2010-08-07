@@ -25,7 +25,7 @@ import qualified Data.Set		as Set
 
 stage = "DDC.Type.ClosureStore"
 
--- | An efficient data structure for managing sets of closure types.
+-- | An efficient data structure for managing closures in normalised form.
 data ClosureStore
 	= ClosureStore
 	{ csFreeRs	:: Map Var (Set Var)
@@ -51,7 +51,7 @@ insert :: Closure -> ClosureStore -> ClosureStore
 insert clo cs
  = case trimClosureC_constrainForm clo of
 
-	-- We might need the constraints at some point.
+	-- Vars with more-than bounds should also be annotated directly.
 	TConstrain c _ 
 	 -> insert c cs
 
@@ -104,9 +104,11 @@ union cs1 cs2
 	, csFreeCs	= Map.unionWith Set.union (csFreeCs cs1) (csFreeCs cs2)
 	, csVar		= Set.union (csVar cs1) (csVar cs2) }
 
+
 -- | Union several closures
 unions :: [ClosureStore] -> ClosureStore
 unions	= foldr union empty
+
 
 -- | Mask all the parts of a closure due to a specific value variable.
 mask :: Var -> ClosureStore -> ClosureStore
@@ -119,6 +121,7 @@ mask vv cs
 
 
 -- | Convert a `ClosureStore` to a regular `Closure`.
+--   TODO: do something about the concats.
 toClosure :: ClosureStore -> Closure
 toClosure cs
  	= makeTSum kClosure

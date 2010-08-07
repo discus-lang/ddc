@@ -29,6 +29,7 @@ import DDC.Type
 import DDC.Var
 import Data.Maybe
 import DDC.Type.ClosureStore		(ClosureStore)
+import DDC.Type.EffectStore		()
 import Data.Sequence			(Seq)
 import qualified DDC.Type.ClosureStore	as Clo
 import qualified Shared.VarUtil		as Var
