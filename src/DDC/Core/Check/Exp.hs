@@ -4,7 +4,6 @@
 -- 
 --   TODO: Check for out of scope vars.
 --	   Check for fabricated witnesses.
---	   Use Effect Store.
 --
 module DDC.Core.Check.Exp
 	( checkedTypeOfExp 
@@ -265,7 +264,6 @@ checkExp_trace m xx env
 			
 
 	-- Value abstraction
-	-- TODO: Shift the masking code to a different module.
 	-- TODO: check annots have correct kind
 	XLam v1 t1 x2 effAnn cloAnn
 	 | varNameSpace v1 /= NameValue

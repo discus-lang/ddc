@@ -25,10 +25,9 @@ stage = "DDC.Type.EffectStore"
 
 -- | An efficient data structure for managing effects in normalised form.
 data EffectStore
-	= EffectStore
-
-	  -- | Reads on region variables. 
-	{ esReads	:: Set Var
+	= EffectStore 
+	{  -- | Reads on region variables.
+	  esReads	:: Set Var
 		
 	  -- | Deep reads on type variables.
 	, esDeepReads	:: Set Var
