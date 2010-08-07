@@ -16,8 +16,8 @@ import Util				hiding (mapM)
 import Prelude				hiding (mapM)
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
-import qualified DDC.Core.Lint.Prim	as C
-import qualified DDC.Core.Lint.Exp	as C
+import qualified DDC.Core.Check.Prim	as C
+import qualified DDC.Core.Check.Exp	as C
 import qualified Core.Util		as C
 import qualified Core.OpType		as C
 import qualified Sea.Exp  		as E

@@ -10,20 +10,23 @@
 --	   Check syntactic soundness of witnesses.
 --	   Check for type vars that are out of scope
 --
-module DDC.Core.Lint
+module DDC.Core.Check
 	( checkGlobs
 	, checkExp, checkExp'
+	, checkOpenExp
 	, checkTypeI
 	, checkKindI
+	, checkedTypeOfExp 
+	, checkedTypeOfOpenExp
 	, Env	(..))
 where
 import Core.Util.Substitute
 import Shared.VarPrim
-import DDC.Core.Lint.Prim
-import DDC.Core.Lint.Env
-import DDC.Core.Lint.Base
-import DDC.Core.Lint.Exp
-import DDC.Core.Lint.Type
+import DDC.Core.Check.Prim
+import DDC.Core.Check.Env
+import DDC.Core.Check.Base
+import DDC.Core.Check.Exp
+import DDC.Core.Check.Type
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Base.Literal

@@ -16,7 +16,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Core.Glob
-import DDC.Core.Lint.Exp
+import DDC.Core.Check
 import DDC.Type
 import DDC.Var
 import Prelude				hiding	(mapM)

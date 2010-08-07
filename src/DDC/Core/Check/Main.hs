@@ -1,5 +1,5 @@
 
-module DDC.Core.Lint.Main
+module DDC.Core.Check.Main
 	()
 where
 	

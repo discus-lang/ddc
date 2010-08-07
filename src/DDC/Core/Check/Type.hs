@@ -1,13 +1,13 @@
 
 -- TODO: finish proper scope checking.
-module DDC.Core.Lint.Type
+module DDC.Core.Check.Type
 	( checkTypeI
 	, checkKindI)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
-import DDC.Core.Lint.Base
-import DDC.Core.Lint.Env
+import DDC.Core.Check.Base
+import DDC.Core.Check.Env
 -- import DDC.Core.Glob
 import DDC.Type
 import Data.List

@@ -25,7 +25,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Main.Arg
 import DDC.Core.Glob
-import DDC.Core.Lint			(checkGlobs)
+import DDC.Core.Check			(checkGlobs)
 import DDC.Var
 import Core.Block			(blockGlob)
 import Core.Crush			(crushGlob)

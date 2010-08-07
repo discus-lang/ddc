@@ -6,7 +6,7 @@
 --	   Check for fabricated witnesses.
 --	   Use Effect Store.
 --
-module DDC.Core.Lint.Exp
+module DDC.Core.Check.Exp
 	( checkedTypeOfExp 
 	, checkedTypeOfOpenExp
 	, checkOpenExp
@@ -18,10 +18,10 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Glob
 import DDC.Core.Exp
-import DDC.Core.Lint.Base
-import DDC.Core.Lint.Env
-import DDC.Core.Lint.Prim
-import DDC.Core.Lint.Type
+import DDC.Core.Check.Base
+import DDC.Core.Check.Env
+import DDC.Core.Check.Prim
+import DDC.Core.Check.Type
 import DDC.Base.Literal
 import DDC.Base.DataFormat
 import DDC.Util.FreeVars

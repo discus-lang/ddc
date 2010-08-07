@@ -12,7 +12,7 @@ import Util
 import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Core.Glob
-import DDC.Core.Lint.Exp
+import DDC.Core.Check.Exp
 import DDC.Type
 import DDC.Var
 import qualified Debug.Trace

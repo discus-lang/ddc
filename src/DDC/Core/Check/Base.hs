@@ -1,5 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-module DDC.Core.Lint.Base
+module DDC.Core.Check.Base
 	( debugExp
 	, debugType
 	, debugKind
@@ -11,7 +11,7 @@ module DDC.Core.Lint.Base
 where 
 import DDC.Main.Pretty
 import DDC.Type
-import DDC.Core.Lint.Env
+import DDC.Core.Check.Env
 import qualified Debug.Trace
 
 debugExp	= False

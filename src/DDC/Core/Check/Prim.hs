@@ -1,5 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-module DDC.Core.Lint.Prim
+module DDC.Core.Check.Prim
 	( checkPrim
 	, unboxedVersionOfBoxedType
 	, boxedVersionOfUnboxedType)
@@ -9,7 +9,7 @@ import Core.Util.Bits
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
-import DDC.Core.Lint.Env
+import DDC.Core.Check.Env
 import DDC.Type
 import DDC.Var
 import DDC.Base.DataFormat
@@ -18,7 +18,7 @@ import Data.Sequence			(Seq)
 import qualified DDC.Type.ClosureStore	as Clo
 import qualified DDC.Var.VarId		as Var
 import qualified DDC.Var.PrimId		as Var
-import {-# SOURCE #-} DDC.Core.Lint.Exp
+import {-# SOURCE #-} DDC.Core.Check.Exp
 import qualified Data.Sequence		as Seq
 import Control.Monad
 

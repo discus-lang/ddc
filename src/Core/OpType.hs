@@ -11,7 +11,7 @@ import DDC.Type
 import DDC.Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
-import {-# SOURCE #-} DDC.Core.Lint.Exp
+import {-# SOURCE #-} DDC.Core.Check.Exp
 
 stage = "Core.OpType"
 

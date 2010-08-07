@@ -1,4 +1,4 @@
-module DDC.Core.Lint.Exp
+module DDC.Core.Check.Exp
 	( checkedTypeOfExp
 	, checkedTypeOfOpenExp
 	, checkExp')
@@ -7,7 +7,7 @@ import DDC.Core.Exp
 import DDC.Type
 import DDC.Type.ClosureStore	(ClosureStore)
 import Data.Sequence
-import {-# SOURCE #-} DDC.Core.Lint.Env
+import {-# SOURCE #-} DDC.Core.Check.Env
 
 checkedTypeOfExp 	:: String -> Exp -> Type	
 checkedTypeOfOpenExp	:: String -> Exp -> Type

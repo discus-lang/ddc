@@ -30,7 +30,7 @@ import Prelude			hiding (foldr, mapM)
 import qualified Data.Map	as Map
 import qualified Util.Data.Map	as Map
 import qualified Data.Sequence	as Seq
-import {-# SOURCE #-} DDC.Core.Lint.Exp
+import {-# SOURCE #-} DDC.Core.Check.Exp
 
 
 stage	= "Core.Glob"
