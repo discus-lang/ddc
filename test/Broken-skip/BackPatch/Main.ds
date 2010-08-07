@@ -14,4 +14,4 @@ fac
 	r.x
 
 
-main = putStr $ show $ fac 5
+main () = putStr $ show $ fac 5

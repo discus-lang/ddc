@@ -26,7 +26,7 @@ export
 	
 	-- Special Folds 
 	concat; concatL; concatMap; concatMapL;
-	sum; sumR; 
+	sum; sumDestructive; 
 	product;
 	and; or; 
 	any; all;
@@ -341,8 +341,8 @@ any f xs	= or $ map f xs
 
 
 -- | Sum up the elements of this int list
-sum ::	[Int] -> Int;
-sum xx
+sumDestructive :: [Int] -> Int
+sumDestructive xx
  = do 	count	= 0; 
 	maps_ xx 
 	 (\x ->	count := count + x)
@@ -350,11 +350,10 @@ sum xx
 
 
 -- | Sum up the elements of this int list, recursively
-sumR :: [Int] -> Int;
-sumR xx
- = case xx of
- 	[]	-> 0
-	x : xs	-> x + sumR xs
+sum :: [Int] -> Int
+sum xx = sum' 0 xx
+ where	sum' n []	= n
+	sum' n (_:xs)	= sum' (n+1) xs
 
 
 -- | Multiply all the elements of this int list together
