@@ -14,9 +14,9 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Core.Glob
+import DDC.Core.Check
 import DDC.Type
 import DDC.Var
-import qualified Core.Reconstruct	as Recon
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Debug.Trace		as Debug
@@ -422,7 +422,7 @@ floatBindsS level share table_ ss@(SBind (Just vBind) xBind_)
 	-- some other expression
 	| otherwise
 	= let	-- work out the effects of the expression
-		effBind		= t4_3 $ Recon.reconX' (stage ++ ".floatBindsS") xBind
+		effBind		= checkedTypeOfOpenExp (stage ++ ".floatBindsS") xBind
 
 		-- reduce the effect using information about what things are const / pure
 		effReduced	= reduceEffect 
