@@ -2,7 +2,12 @@
 module DDC.Type.EffectStore
 	( EffectStore
 	, empty
-	, insert)
+	, union
+	, unions
+	, insert
+	, toEffect
+	, fromEffect
+	, maskReadWritesNotOn)
 where
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -35,10 +40,10 @@ data EffectStore
 	, esDeepWrites	:: Set Var
 		
 	  -- | Plain effect vars.
-	, esVar		:: Set Var
+	, esVars	:: Set Var
 	
 	  -- | Other effects not covered by above.
-	, esOther	:: [Effect] }
+	, esOthers	:: [Effect] }
 	deriving (Show)
 
 
@@ -53,8 +58,8 @@ empty 	= EffectStore
 	, esDeepReads	= Set.empty
 	, esWrites	= Set.empty
 	, esDeepWrites	= Set.empty
-	, esVar		= Set.empty
-	, esOther	= [] }
+	, esVars	= Set.empty
+	, esOthers	= [] }
 	
 	
 -- | Insert an `Effect` into an `EffectStore`.
@@ -67,13 +72,13 @@ insert eff es
 	 -> insert e es
 	
 	TVar k (UVar v)
-	 -> es { esVar	= Set.insert v (esVar es) }
+	 -> es { esVars	= Set.insert v (esVars es) }
 	
 	TVar k (UMore v _ )
-	 -> es { esVar	= Set.insert v (esVar es) }
+	 -> es { esVars	= Set.insert v (esVars es) }
 
 	eff'@TCon{} 
-	 -> es { esOther = eff' : esOther es }
+	 -> es { esOthers = eff' : esOthers es }
 		
 	eff'@TApp{}
 	 | [t1, TVar k b]	<- takeTApps eff'
@@ -96,7 +101,7 @@ insert eff es
 		 = es { esDeepWrites	= Set.insert v (esDeepWrites es) }
 		
 		 | otherwise
-		 = es { esOther		= eff' : esOther es }
+		 = es { esOthers	= eff' : esOthers es }
 	    in	result
 	
 	TSum k effs
@@ -107,11 +112,48 @@ insert eff es
 			[ "insert: no match for " % eff
 			, ppr $ show eff]
 
-	
-	
-	
-	
-	
-	
+
+-- | Union two `EffectStore`s
+union :: EffectStore -> EffectStore -> EffectStore
+union es1 es2
+	= EffectStore
+	{ esReads		= Set.union (esReads es1)	(esReads es2)
+	, esDeepReads		= Set.union (esDeepReads es1)	(esDeepWrites es2)
+	, esWrites		= Set.union (esWrites es1)	(esWrites es2)
+	, esDeepWrites		= Set.union (esDeepWrites es1)	(esDeepWrites es2)
+	, esVars		= Set.union (esVars es1)	(esVars es2)
+	, esOthers		= esOthers es1 ++ esOthers es2
+	}
+
+
+-- | Union several `EffectStores`.
+unions :: [EffectStore] -> EffectStore
+unions	= foldr union empty
+
+
+-- | Convert an `EffectStore` to a regular `Effect`.
+toEffect :: EffectStore -> Effect
+toEffect es
+	= makeTSum kEffect
+	$  [ makeTApp tRead      [TVar kRegion (UVar v)] | v <- Set.toList $ esReads      es ]
+	++ [ makeTApp tDeepRead  [TVar kValue  (UVar v)] | v <- Set.toList $ esDeepReads  es ]
+	++ [ makeTApp tWrite     [TVar kRegion (UVar v)] | v <- Set.toList $ esWrites     es ]
+	++ [ makeTApp tDeepWrite [TVar kValue  (UVar v)] | v <- Set.toList $ esDeepWrites es ]
+	++ [ TVar kEffect (UVar v)			 | v <- Set.toList $ esVars       es ]
+	++ esOthers es
 	
 
+-- | Convert an `Effect` into a `EffectStore`
+fromEffect :: Effect -> EffectStore
+fromEffect eff
+	= insert eff empty
+
+
+-- | Mask Read and Write effects on regions that are not on the region variables in this set.
+maskReadWritesNotOn :: Set Var -> EffectStore -> EffectStore
+maskReadWritesNotOn vsVisible es
+	= es
+	{ esReads	= Set.intersection (esReads  es) vsVisible
+	, esWrites	= Set.intersection (esWrites es) vsVisible }
+	
+	

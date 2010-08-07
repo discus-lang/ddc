@@ -95,7 +95,7 @@ insertVar v1 k v2 cs
   in	result
 
 	
--- | Union two ClosureStores
+-- | Union two `ClosureStores`.
 union :: ClosureStore -> ClosureStore -> ClosureStore
 union cs1 cs2
 	= ClosureStore
@@ -105,7 +105,7 @@ union cs1 cs2
 	, csVar		= Set.union (csVar cs1) (csVar cs2) }
 
 
--- | Union several closures
+-- | Union several `ClosureStores`.
 unions :: [ClosureStore] -> ClosureStore
 unions	= foldr union empty
 
@@ -121,7 +121,7 @@ mask vv cs
 
 
 -- | Convert a `ClosureStore` to a regular `Closure`.
---   TODO: do something about the concats.
+--   TODO: do something about the concats.c
 toClosure :: ClosureStore -> Closure
 toClosure cs
  	= makeTSum kClosure
