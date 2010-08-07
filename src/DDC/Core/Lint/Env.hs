@@ -5,6 +5,7 @@ module DDC.Core.Lint.Env
 	, envEmpty
 	, withType
 	, withKindBound
+	, withKindBounds
 	, typeFromEnv
 	, witnessConstFromEnv)
 where
@@ -30,6 +31,7 @@ data Env
 	  envCaller		:: String
 	
 	  -- | Whether the thing we're checking is supposed to be closed.
+	  --   Bound variable occurrences must be present in the environment when we get to them.
 	, envClosed		:: Bool
 
 	  -- | The header glob, for getting top-level types and kinds.
@@ -49,7 +51,7 @@ data Env
 envInit	caller cgHeader cgModule
 	= Env
 	{ envCaller		= caller
-	, envClosed		= False
+	, envClosed		= True
 	, envHeaderGlob		= cgHeader
 	, envModuleGlob		= cgModule
 	, envTypes		= Map.empty
@@ -69,18 +71,27 @@ withType v t env fun
 -- | Run a lint computation with an extra kind in the environment.
 --   NOTE: We allow a type var to be rebound with the same kind, which makes
 --         desugaring of projection puns easier.
---   TODO: we should probably redo the desugaring so this isn't needed.
 --   TODO: we could also check we're not rebinding a type with a different :> constraint.
 -- 
 withKindBound :: Var -> Kind -> Maybe Type -> Env -> (Env -> a) -> a
 withKindBound v k mt env fun
+ 	= withKindBounds [(v, k, mt)] env fun
+
+withKindBounds :: [(Var, Kind, Maybe Type)] -> Env -> (Env -> a) -> a
+withKindBounds vkmts env fun
  = let	
-	addVK Nothing	= Just (k, mt)
-	addVK (Just (k', _))
+	addVK _ k mt Nothing	= Just (k, mt)
+	addVK v k mt (Just (k', _))
 	 | k == k'	= Just (k, mt)
 	 | otherwise	= panic stage $ "withVarKind: " % v % " rebound with a different kind"
 
-   in	fun $ env { envKindBounds = Map.alter addVK v (envKindBounds env) }
+	update (v, k, mt)
+		= Map.alter (addVK v k mt) v
+
+	kindBounds'	= foldr update (envKindBounds env) vkmts
+
+	env'		= env { envKindBounds = kindBounds' }
+   in	fun $ env'
 
 
 -- | Lookup the type of some value variable from the environment.
@@ -88,11 +99,19 @@ typeFromEnv :: Var -> Env -> Maybe Type
 typeFromEnv v env
 	| varNameSpace v /= NameValue
 	= panic stage $ "typeFromEnv: wrong namespace for " % v
-	
-	| Just t <- Map.lookup v $ envTypes env		= Just t
+
+	-- Variable was locally bound.
+	| Just t <- Map.lookup v   $ envTypes env	= Just t
+
+	-- Variable was bound at top level.
 	| Just t <- typeFromGlob v $ envModuleGlob env	= Just t
+
+	-- Variable was bouna at top level in an imported module.
 	| Just t <- typeFromGlob v $ envHeaderGlob env	= Just t
-	| otherwise					= Nothing
+
+	-- No dice.
+	| otherwise 
+	= Nothing
 	
 	
 -- | Lookup the var of the witness that guarantees the constancy of a region, if any.

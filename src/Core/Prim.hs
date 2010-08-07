@@ -190,7 +190,7 @@ primX1 tt xx
  	| Just parts				<- flattenAppsEff xx
 	, (XVar v t : psArgs)			<- parts
 	, Just (operator, actions)		<- Map.lookup (varName v) unboxableFuns
-	, tResult				<- checkedTypeOfExp (stage ++ ".primX") xx
+	, tResult				<- checkedTypeOfOpenExp (stage ++ ".primX") xx
 	, Just (vResult, _, tsResult)		<- takeTData tResult
 	, length psArgs == length actions
 	= trace ( "primX:\n"
@@ -217,7 +217,7 @@ doActions tt (Ignore:as) (x:xs)
 	
 doActions tt (Unbox:as) (x:xs)
 
- = let	tX	= checkedTypeOfExp (stage ++ "doActions") x
+ = let	tX	= checkedTypeOfOpenExp (stage ++ ".doActions") x
 
  	Just (_, _, [tR@(TVar _ (UVar vR))])
 		= takeTData tX

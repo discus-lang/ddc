@@ -223,7 +223,7 @@ snipIt :: Table -> Exp -> SnipM ([Stmt], Exp)
 snipIt table xx
 	| tablePreserveTypes table
 	= do	b	<- newVarN NameValue
-		let tX	= checkedTypeOfExp (stage ++ ".snipIt") xx
+		let tX	= checkedTypeOfOpenExp (stage ++ ".snipIt") xx
 	 	return	( [SBind (Just b) xx] 
 			, XVar b tX )
 

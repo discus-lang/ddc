@@ -308,7 +308,7 @@ bindXDo shared xx@(XDo ss)
 						, not (canBindX x) ]
 	
 	-- Regions visible in the type of the expression can't be bound here
-	let vsVisible		= freeVars $ checkedTypeOfExp "Core.Bind.bindXDo" xx
+	let vsVisible		= freeVars $ checkedTypeOfOpenExp "Core.Bind.bindXDo" xx
 		
 	-- the regions to bind on this XDo
 	let vsBindHere	= 

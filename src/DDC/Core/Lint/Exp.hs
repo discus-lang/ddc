@@ -6,6 +6,8 @@
 
 module DDC.Core.Lint.Exp
 	( checkedTypeOfExp 
+	, checkedTypeOfOpenExp
+	, checkOpenExp
 	, checkExp
 	, checkExp')	-- used by DDC.Core.Lint.Prim
 where
@@ -29,28 +31,42 @@ import Data.Sequence			(Seq)
 import qualified DDC.Type.ClosureStore	as Clo
 import qualified Shared.VarUtil		as Var
 import qualified Data.Sequence		as Seq
+import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Data.Foldable		as Foldable
 
 stage	= "DDC.Core.Lint.Exp"
 
-
-
 -- Wrappers ---------------------------------------------------------------------------------------
+-- | Reconstruct and check the type of an expression.
+--	The expression must be closed. No free variables.
 checkedTypeOfExp :: String -> Exp -> Type
 checkedTypeOfExp callerName xx
- = case checkExp xx (envInit callerName globEmpty globEmpty) of
-	(_, t, _, _)	-> t
-	
+ = let 	env		= envInit callerName globEmpty globEmpty
+  	(_, t, _, _)	= checkExp xx env 
+   in	t
+
+-- | Reconstruct and check the type of an expression.
+--	Variables can be "free" provided they are annotated with their types.
+checkedTypeOfOpenExp :: String -> Exp -> Type
+checkedTypeOfOpenExp callerName xx
+ = let	env		= (envInit callerName globEmpty globEmpty)
+				{ envClosed	= False }
+	(_, t, _, _)	= checkExp xx env
+   in	t
+
+
+-- | Reconstruct and check the type of an expression.
+--	Variables can be "free" provided they are annotated with their types.
+checkOpenExp :: Exp -> Env -> (Exp, Type, Effect, Closure)
+checkOpenExp xx env
+ = let	env'		= env { envClosed = False }
+   in	checkExp xx env'
 
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Check an expression, returning its type.
---   TODO: Also make this optionally annotate vars with their types.
-checkExp 
-	:: Exp -> Env 
-	-> (Exp, Type, Effect, Closure)
-
+checkExp :: Exp -> Env -> (Exp, Type, Effect, Closure)
 checkExp xx env
  = let	!(xx', t, effs, clos)	= checkExp' 0 xx env
    in	( xx'
@@ -101,14 +117,22 @@ checkExp_trace m xx env
 	 -> checkExp_trace m (XVar v t) env
 	
 	 | otherwise
-	 -> panic stage
-		$ "checkExp: var " % v 
-		% " is not annotated with its type, and it's not in the environment"
+	 -> panic stage $ vcat
+		[ "checkExp: Can't find type for variable" % v
+		, ppr "    There is no annotation, and the variable is not in the environment."
+		, "During: "	% envCaller env]
 
 	XVar v t1
+{-	 | envClosed env
+	 , Nothing	<- typeFromEnv v env
+	 -> panic stage $ vcat
+		[ "checkExp: Variable " % v 
+			% " is out of scope when checking closed expression."
+		, "During: "	% envCaller env]
+-}	
 	 | varNameSpace v /= NameValue
 	 -> panic stage 
-		$ "checkExp: invalid namespace for variable " 
+		$ "checkExp: invalid namespace for variable." 
 		% v <> (show $ varNameSpace v)
 	
 	 -- TODO: Merge the trimming junk with the ClosureStore insert operator.
@@ -399,15 +423,32 @@ checkExp_trace m xx env
 
 	-- Local region binding.
 	-- TODO: check r not free in type.
-	-- TODO: mask effects on r.
-	XLocal v bs x
-	 | (x', t, eff, clo)	<- checkExp' n x env
+	XLocal vRegion vtsWit xBody
 	 -> let	
+		-- When checking the witnesse expressions, the region variable is in scope.
+		checkWitness t
+			= withKindBound vRegion kRegion Nothing env
+			$ checkTypeI n t
+
+		-- Check all the witness expressions.
+		vtksWit	= map (\(v, t)      -> (v, checkWitness t)) vtsWit
+		vtsWit'	= map (\(v, (t, _)) -> (v, t))		   vtksWit
+		vksWit	= map (\(v, (_, k)) -> (v, k, Nothing))    vtksWit
+		
+		vksAll	= (vRegion, kRegion, Nothing) : vksWit
+		
+		-- Check the body.
+		-- Kinds for the region and witnesses are added to the environment.
+		(xBody', tBody, eff, clo)
+			= withKindBounds vksAll env
+			$ checkExp' n xBody
+		
+		-- Mask effects on the bound region.
 		maskable e
 		 | TApp t1 (TVar kR (UVar vr))	<- e
 		 , t1 == tRead || t1 == tWrite
 		 , isRegionKind kR
-		 , vr == v
+		 , vr == vRegion
 		 = True
 		
 		 | otherwise
@@ -420,8 +461,8 @@ checkExp_trace m xx env
 			$ makeTSum kEffect 
 			$ Foldable.toList eff
 	
-	    in	( XLocal v bs x'
-		, t
+	    in	( XLocal vRegion vtsWit' xBody'
+		, tBody
 		, Seq.fromList eff_masked
 		, clo)
 
@@ -583,14 +624,20 @@ checkGuards n (GExp (WLit sp lf) x : gsRest) xBody env
 	, eff'
 	, clo')
 
+
 -- TODO: check against type of the pattern.
 checkGuards n (GExp (WCon sp vCon lvts) x : gsRest) xBody env
  = let	(x', tExp, effExp, cloExp)	
 		= checkExp' (n+1) x env
 
+	vts	= Map.fromList 
+		$ [(v, t) | (_, v, t) <- lvts]
+	
+	env'	= env { envTypes = Map.union (envTypes env) vts }
+
 	-- TODO: add vars bound by pattern to environment.
 	(gsRest', xBody', tRest, effRest, cloRest)
-		= checkGuards n gsRest xBody env
+		= checkGuards n gsRest xBody env'
 
 	effMatch = effectOfMatchAgainst tExp
 	eff'	= effExp Seq.>< Seq.singleton effMatch Seq.>< effRest

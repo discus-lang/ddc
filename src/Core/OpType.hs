@@ -85,7 +85,7 @@ superOpType'	xx
 	-- there's no XTau enclosing the body, so we'll have to reconstruct
 	--	the type for it manually.
 	_		-> [superOpTypePart 
-			$  checkedTypeOfExp (stage ++ "superOpType") xx]
+			$  checkedTypeOfOpenExp (stage ++ ".superOpType") xx]
 			
 superOpTypePart	tt
  = case tt of

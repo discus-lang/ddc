@@ -52,7 +52,8 @@ stage		= "DDC.Core.Lint"
 -- Glob -------------------------------------------------------------------------------------------
 checkGlobs :: String -> Glob -> Glob -> Glob
 checkGlobs caller cgHeader cgCore 	
-	= mapBindsOfGlob (checkBind (envInit caller cgHeader cgCore)) cgCore
+ = let	env	= envInit caller cgHeader cgCore
+   in	mapBindsOfGlob (checkBind env) cgCore
 	
 
 -- Top --------------------------------------------------------------------------------------------

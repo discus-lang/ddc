@@ -163,7 +163,7 @@ bindFreeVarsP (PBind vTop xx)
 	--	The effect should always be TBot because we only ever lift (value) lambda abstractions.
 	--	The closure returned from reconX will be flat, ie a TSum of all the free vars
 	let (xRecon, tRecon, _, cRecon) 
-			= checkExp xx (envEmpty (stage ++ ".bindFreeVarsP"))
+			= checkOpenExp xx (envEmpty (stage ++ ".bindFreeVarsP"))
 
 	-- Bind free value vars with new value lambdas.
 	let Just freeXVars	= sequence $ map takeExpOfFree freesVal

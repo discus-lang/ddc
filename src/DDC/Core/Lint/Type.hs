@@ -6,6 +6,7 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Lint.Base
 import DDC.Core.Lint.Env
+-- import DDC.Core.Glob
 import DDC.Type
 import Data.List
 import qualified Data.Map	as Map
@@ -157,13 +158,20 @@ checkType_trace m tt env
 	 -> w `seq`
 	    case Map.lookup v (envKindBounds env) of
 		Nothing	
-		 | envClosed env
-		 -> panic stage	
-			$ "Type variable " % v % " is out of scope.\n"
-			
-		 | otherwise		
-		 -> (TVar k' b, k')
+--		  | not $ envClosed env
+		  -> (TVar k' b, k')
 
+{-		  -- Region variables may be bound at top level.
+		  | isRegionKind k
+		  ,    varIsBoundAtTopLevelInGlob (envHeaderGlob env) v
+		    || varIsBoundAtTopLevelInGlob (envModuleGlob env) v
+		  -> (TVar k b, k)
+
+		  | otherwise
+		  -> panic stage $  vcat
+			[ "Type variable " % v % " is out of scope."
+			, "During: "	% envCaller env]
+-}
 		Just (k'', _)	
 		 | isEquiv $ equivKK k' k''	
 		 -> (TVar k' b, k')

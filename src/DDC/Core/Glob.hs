@@ -219,9 +219,16 @@ typeFromGlob v glob
 	| Just pp@PBind{}	<- Map.lookup v (globBind glob)
 	= Just $ fromMaybe (checkedTypeOfExp "Core.Glob.typeFromGlob" (topBindExp pp))
 			   (maybeSlurpTypeX (topBindExp pp))
-		
+	
+	-- Var is a data constructor.	
 	| Just ctor@CtorDef{}	<- Map.lookup v (globDataCtors glob)
 	= Just $ ctorDefType ctor
+
+	-- Var is a class method.
+	| Just vClass			<- Map.lookup v $ globClassMethods glob
+	, Just pClass@PClassDict{}	<- Map.lookup vClass $ globClassDict glob
+	, Just t			<- lookup v $ topClassDictTypes pClass
+	= Just t
 
 	| otherwise
 	= Nothing
