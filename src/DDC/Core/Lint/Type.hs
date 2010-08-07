@@ -1,3 +1,5 @@
+
+-- TODO: finish proper scope checking.
 module DDC.Core.Lint.Type
 	( checkTypeI
 	, checkKindI)

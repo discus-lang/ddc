@@ -1,9 +1,11 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
--- TODO: Check for out of scope vars.
---	 Check for fabricated witnesses.
---	 Use Effect Store.
-
+-- | Checking and reconstructing the type, effect and closure of an expression.
+-- 
+--   TODO: Check for out of scope vars.
+--	   Check for fabricated witnesses.
+--	   Use Effect Store.
+--
 module DDC.Core.Lint.Exp
 	( checkedTypeOfExp 
 	, checkedTypeOfOpenExp
@@ -37,6 +39,7 @@ import qualified Data.Foldable		as Foldable
 
 stage	= "DDC.Core.Lint.Exp"
 
+
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Reconstruct and check the type of an expression.
 --	The expression must be closed. No free variables.
@@ -45,6 +48,7 @@ checkedTypeOfExp callerName xx
  = let 	env		= envInit callerName globEmpty globEmpty
   	(_, t, _, _)	= checkExp xx env 
    in	t
+
 
 -- | Reconstruct and check the type of an expression.
 --	Variables can be "free" provided they are annotated with their types.
@@ -78,10 +82,10 @@ checkExp'
 	:: Int 			-- ^ Indent level for tracing.
 	-> Exp			-- ^ Expression to check.
 	-> Env			-- ^ Type environment and configuration.
-	-> ( Exp		--  Checked expression.
-	   , Type		--  Type of expression.
-	   , Seq Effect		--  Effect of expression.
-	   , ClosureStore)	--  Closure of expression.
+	-> ( Exp		--   Checked expression.
+	   , Type		--   Type of expression.
+	   , Seq Effect		--   Effect of expression.
+	   , ClosureStore)	--   Closure of expression.
 
 checkExp' n xx env
  = if debugExp
@@ -108,7 +112,6 @@ checkExp_trace m xx env
 	XNil	
 	 -> panic stage "checkExp: XNil"
 	
-	
 	-- Variables
 	-- If the type isn't attached directly to the var then try to look
 	-- it up from the type environment.
@@ -122,6 +125,7 @@ checkExp_trace m xx env
 		, ppr "    There is no annotation, and the variable is not in the environment."
 		, "During: "	% envCaller env]
 
+	-- TODO: Check type annotation matches the one from the environment.
 	XVar v t1
 {-	 | envClosed env
 	 , Nothing	<- typeFromEnv v env
@@ -135,14 +139,11 @@ checkExp_trace m xx env
 		$ "checkExp: invalid namespace for variable." 
 		% v <> (show $ varNameSpace v)
 	
-	 -- TODO: Merge the trimming junk with the ClosureStore insert operator.
 	 | otherwise
 	 , (t1', k)	<- checkTypeI n t1 env 
 	 -> k `seq`
-	    let	!clo	= trimClosureC_constrainForm
-			$ makeTFreeBot v 
-			$ toConstrainFormT t1
-			
+	    let	-- Running the trimmer also produces tDanger terms,
+		-- but we don't need those in the core language, only in source.
 		crushDanger c
 			| Just (v', t')	<- takeTFree c
 			, Just (_,  t2)	<- takeTDanger t'
@@ -150,33 +151,31 @@ checkExp_trace m xx env
 			
 			| otherwise
 			= c
-
-		clo_dump
-			= packType
-			$ makeTSum kClosure 
+		
+		-- Crush out all the tDanger terms.
+		clo	= makeTSum kClosure 
 			$ map crushDanger 
-			$ flattenTSum clo		  
+			$ flattenTSum
+			$ trimClosureC_constrainForm
+			$ makeTFreeBot v
+			$ toConstrainFormT t1		  
 
-		-- TODO: we're ignoring closure terms due to constructors
-		--       of arity zero, like True :: Bool %r1.
-		--       Is is good enough to say this is ok because the region is always constant?
-		clo' 	| isTBot clo_dump	= Clo.empty
-			| Var.isCtorName v	= Clo.empty
-			
-			-- If the trimmer closure just has a single part then add that.
-			| otherwise
-			= Clo.fromClosure clo_dump
+		-- TODO: We're ignoring closure terms due to constructors of arity zero,
+		--	 like True :: Bool %r1. Prob want to handle this in a more generic way,
+		--	 like masking closure terms involving constant regions.
+		clos 	| Var.isCtorName v	= Clo.empty
+			| otherwise		= Clo.fromClosure clo
 			
 	   in	( XVar v t1'
 		, t1'
 		, Seq.singleton tPure
-		, clo')
+		, clos)
 
 
-	-- Literal values
-	-- HACK: Handle applications of string literals to their regions directly
+	-- Literal values.
+	-- HACK: We handle applications of string literals to their regions directly
 	--       so we don't have to come up with its actual type scheme. Doing this
-	--       would require a fresh region variable...
+	--       would require a unique region variable...
 	XAPP (XLit (LiteralFmt LString{} Unboxed)) (TVar k r)
 	 | k == kRegion
 	 , Just tc	<- tcString Unboxed
@@ -193,7 +192,7 @@ checkExp_trace m xx env
 		, Clo.empty)
 
 
-	-- Type abstraction
+	-- Type abstraction.
 	XLAM BNil k x
 	 | (k', w)		<- checkKindI n k env 
 	 , (x', t, eff, clo)	<- checkExp' n x env
@@ -226,9 +225,7 @@ checkExp_trace m xx env
 		, clo)
 		
 		
-	-- Type application
-	-- TODO: BAD! don't use substitute here. 
-	--       better to propagate a list of constraints back up the tree.
+	-- Type application.
 	XAPP x1 t2
 	 | (x1', t1, eff, clo)	<- checkExp'  n x1 env
 	 , (t2', k2)		<- checkTypeI n t2 env
@@ -249,7 +246,7 @@ checkExp_trace m xx env
 		    	, fmap sub eff
 		    	, Clo.fromClosure $ sub $ Clo.toClosure clo)
 		
-		-- TODO: check against more-than constraint
+		-- TODO: check against the more-than constraint
 		TForall (BMore v _) k11 t12
 		 | isEquiv $ equivKK (crushK k11) k2'
 		 , sub	<- substituteT (subSingleton v t2')
@@ -284,27 +281,26 @@ checkExp_trace m xx env
  	 -> k1 `seq` kEffAnn `seq` kCloAnn `seq`
 	    let	-- The closure annotation on the abstraction is the closure of the body
 		-- minus the variable that is bound at this point.
-		!clo2_cut	= Clo.mask v1 clo2
+		!clo2_masked	= Clo.mask v1 clo2
 
-	 	-- TODO: having to do the conversion here is really slow.
 		-- NOTE: In higher order cases the annotation can be a closure variable, 
 		--       with or without a bound, while the reconstructed closure is always
 		--       a set of TFrees.
-		!cloSubs	= subsumesTT (Clo.toClosure clo2_cut) cloAnn'
+		!cloSubs	= subsumesTT (Clo.toClosure clo2_masked) cloAnn'
 
-		-- The visible region variables.
+		-- Get the set of visible region variables.
 		-- These are vars that are present in the parameter or return type, 
-		-- or in one of the types in the closure.
+		-- or in one of the types of the closure.
 		vsVisible	
 			= Set.filter (\v -> varNameSpace v == NameRegion)
 			$ Set.unions
 				[ freeVars t1
 				, freeVars t2
-				, freeVars $ Clo.toClosure clo2_cut ]
+				, freeVars $ Clo.toClosure clo2_masked ]
 
 		-- If a read or write effect acts on a region variable that 
-		-- isn't visible to the calling context then we can mask it.
-		maskable eff
+		-- isn't visible then we can mask it.
+		effectIsMaskable eff
 			| [tc, TVar k (UVar v)]	<- takeTApps eff
 			, elem tc [tRead, tWrite]
 			, isRegionKind k
@@ -323,7 +319,7 @@ checkExp_trace m xx env
 		---      We want an EffectStore similarly to the ClosureStore.
 		!eff2_crushed	= flattenTSum $ makeTSum kEffect $ map crushT eff2'
 		!eff2_masked	= makeTSum kEffect
-				$ filter (not . maskable)
+				$ filter (not . effectIsMaskable)
 				$ eff2_crushed
 		
 		!effAnn_crushed	= crushT $ effAnn'
@@ -335,7 +331,7 @@ checkExp_trace m xx env
 			[ ppr "Effect mismatch in lambda abstraction."
 			, "During:\n"				%> envCaller env, blank
 			, "Effect of body:\n" 			%> eff2',	blank
-			, "with closure:\n"			%> clo2_cut,	blank
+			, "with closure:\n"			%> clo2_masked,	blank
 			, "visible vars:\n"			%> vsVisible,	blank
 			, "crushed effect:\n"			%> eff2_crushed,blank
 			, "masked effect:\n"			%> eff2_masked,	blank
@@ -345,8 +341,8 @@ checkExp_trace m xx env
 		 | not $ isSubsumes cloSubs
 		 = panic stage $ vcat
 			[ ppr "Closure mismatch in lambda abstraction."
-			, "During:\n"		 %> envCaller env, blank
-			, "Closure of abstraction:\n"	 	%> clo2_cut,	blank
+			, "During:\n"		 		%> envCaller env, blank
+			, "Closure of abstraction:\n"	 	%> clo2_masked,	blank
 			, "is not less than annotation:\n" 	%> show cloAnn,	blank
 			, "in expression:\n"			%> xx,		blank]
 
@@ -355,22 +351,14 @@ checkExp_trace m xx env
 		 -- bi-directional unification in the type inferencer. Better to replace them
 		 -- with the reconstructed ones.
 		 | otherwise
-		 = 	( XLam v1  t1' x2' eff2_masked (Clo.toClosure clo2_cut)
-			, makeTFun t1' t2  eff2_masked (Clo.toClosure clo2_cut)
+		 = 	( XLam v1  t1' x2' eff2_masked (Clo.toClosure clo2_masked)
+			, makeTFun t1' t2  eff2_masked (Clo.toClosure clo2_masked)
 		        , Seq.singleton tPure
-		        , clo2_cut)
+		        , clo2_masked)
 	  in result
-
-
-	-- TODO: Carry a sequence of effects, and a map of closures back up the tree.
-	--	 When we hit a lambda we can then flatten the effects.
-	--	 For closures, we can delete the bound variable from the map then pass
-	--	 it back up. Only put trimmed closures in the map.
 
 	-- Value application
 	-- TODO: why is it ok to discard the third closure?
-	-- TODO: BAD! don't keep summing the same effect and closures, this calls nub.
-	--       better to return a sequence on effects and only flatten them when we have to.
 	XApp x1 x2
 	 | (x1', t1, eff1, clo1) <- checkExp' n x1 env
 	 , (x2', t2, eff2, clo2) <- checkExp' n x2 env
@@ -405,7 +393,7 @@ checkExp_trace m xx env
 			, blank
 			, " in application: " % xx]
 
-	-- Do expression
+	-- Do expression.
 	XDo ss
 	 | (ss', tLast, eff, clo)	<- checkStmts n ss env
 	 -> 	( XDo ss'
@@ -413,7 +401,7 @@ checkExp_trace m xx env
 		, eff
 		, clo)
 
-	-- Match expression
+	-- Match expression.
 	XMatch aa
 	 | (aa', tResult, eff, clo)	<- checkAlts n aa env
 	 ->	( XMatch aa'
@@ -425,7 +413,7 @@ checkExp_trace m xx env
 	-- TODO: check r not free in type.
 	XLocal vRegion vtsWit xBody
 	 -> let	
-		-- When checking the witnesse expressions, the region variable is in scope.
+		-- The region variable is in-scope in the witnesses expressions.
 		checkWitness t
 			= withKindBound vRegion kRegion Nothing env
 			$ checkTypeI n t
@@ -504,7 +492,7 @@ checkStmts
 	:: Int -> [Stmt] -> Env 
 	-> ([Stmt], Type, Seq Effect, ClosureStore)
 
--- TODO: need to recursively add types to environment.
+-- TODO: this doesn't handle recursive statements.
 checkStmts n ss env
  = let	(ss', t, eff, clo)	
 		= checkStmts' n env ss [] Seq.empty Clo.empty
@@ -589,14 +577,20 @@ checkGuards n [] xBody env
 	, clo)
 	
 checkGuards n (GExp (WVar v) x : gsRest) xBody env
- = let	(x', tExp, effExp, cloExp)	
+ = let	
+	-- Check the right of the guard.
+	(x', tExp, effExp, cloExp)	
 		= checkExp' (n+1) x env
 
+	-- Check the rest of the guards and body.
 	(gsRest', xBody', tRest, effRest, cloRest)
 		= withType v tExp env
 		$ checkGuards n gsRest xBody
 	
+	-- The effect of the guards and body.
 	eff'	= effExp Seq.>< effRest
+	
+	-- Delete the closure terms due the var bound here.
 	clo'	= Clo.mask v $ Clo.union cloExp cloRest
 		
    in	( GExp (WVar v) x' : gsRest'
@@ -605,17 +599,24 @@ checkGuards n (GExp (WVar v) x : gsRest) xBody env
 	, eff'
 	, clo')
 
+
 -- TODO: Check the the expression has the type of the literal.
 checkGuards n (GExp (WLit sp lf) x : gsRest) xBody env
- = let	(x', tExp, effExp, cloExp)
+ = let	
+	-- Check the right of the guard.
+	(x', tExp, effExp, cloExp)
 		= checkExp' (n+1) x env
 
+	-- Check the rest of the guards and body.
 	(gsRest', xBody', tRest, effRest, cloRest)
 		= checkGuards n gsRest xBody env
 
+	-- The effect of the whole group of guards includes the effect
+	-- of inspecting the case object to see if it matches.
 	effMatch = effectOfMatchAgainst tExp
-		
 	eff'	= effExp Seq.>< Seq.singleton effMatch Seq.>< effRest
+
+	-- The closure of the guards and body.
 	clo'	= Clo.union cloExp cloRest
 	
    in	( GExp (WLit sp lf) x' : gsRest'
@@ -627,22 +628,25 @@ checkGuards n (GExp (WLit sp lf) x : gsRest) xBody env
 
 -- TODO: check against type of the pattern.
 checkGuards n (GExp (WCon sp vCon lvts) x : gsRest) xBody env
- = let	(x', tExp, effExp, cloExp)	
+ = let	
+	-- Check the right of the guard.
+	(x', tExp, effExp, cloExp)	
 		= checkExp' (n+1) x env
 
-	vts	= Map.fromList 
-		$ [(v, t) | (_, v, t) <- lvts]
-	
+	-- Add vars bound by the pattern to the environment.
+	vts	= Map.fromList $ [(v, t) | (_, v, t) <- lvts]
 	env'	= env { envTypes = Map.union (envTypes env) vts }
 
-	-- TODO: add vars bound by pattern to environment.
+	-- Check the rest of the guards and body.
 	(gsRest', xBody', tRest, effRest, cloRest)
 		= checkGuards n gsRest xBody env'
 
+	-- The effect of the whole group of guards includes the effect
+	-- of inspecting the case object to see if it matches.
 	effMatch = effectOfMatchAgainst tExp
-	eff'	= effExp Seq.>< Seq.singleton effMatch Seq.>< effRest
+	eff'	 = effExp Seq.>< Seq.singleton effMatch Seq.>< effRest
 
-	-- Delete closure terms due to vars bound by the pattern.
+	-- Delete the closure terms due to vars bound by the pattern.
 	vsBound	= [v | (_, v, _) <- lvts]
 	clo	= Clo.union cloExp cloRest
 	clo'	= foldr Clo.mask clo vsBound
