@@ -1,13 +1,14 @@
 
 module DDC.Type.EffectStore
 	( EffectStore
-	, empty
+	, pure
 	, union
 	, unions
 	, insert
 	, toEffect
 	, fromEffect
-	, maskReadWritesNotOn)
+	, maskReadWritesNotOn
+	, maskReadWritesOn)
 where
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -47,13 +48,13 @@ data EffectStore
 	deriving (Show)
 
 
--- instance Pretty EffectStore PMode where
---	ppr	= ppr . toEffect
+instance Pretty EffectStore PMode where
+	ppr 	= ppr . toEffect
 
 
 -- | An empty effect store
-empty :: EffectStore
-empty 	= EffectStore
+pure :: EffectStore
+pure 	= EffectStore
 	{ esReads	= Set.empty
 	, esDeepReads	= Set.empty
 	, esWrites	= Set.empty
@@ -128,7 +129,7 @@ union es1 es2
 
 -- | Union several `EffectStores`.
 unions :: [EffectStore] -> EffectStore
-unions	= foldr union empty
+unions	= foldr union pure
 
 
 -- | Convert an `EffectStore` to a regular `Effect`.
@@ -146,7 +147,7 @@ toEffect es
 -- | Convert an `Effect` into a `EffectStore`
 fromEffect :: Effect -> EffectStore
 fromEffect eff
-	= insert eff empty
+	= insert eff pure
 
 
 -- | Mask Read and Write effects on regions that are not on the region variables in this set.
@@ -156,4 +157,12 @@ maskReadWritesNotOn vsVisible es
 	{ esReads	= Set.intersection (esReads  es) vsVisible
 	, esWrites	= Set.intersection (esWrites es) vsVisible }
 	
+
+-- | Mask Read and Write effects on this region variable.
+maskReadWritesOn :: Var -> EffectStore -> EffectStore
+maskReadWritesOn v es
+	| varNameSpace v == NameRegion
+	= es
+	{ esReads	= Set.delete v (esReads  es)
+	, esWrites	= Set.delete v (esWrites es) }
 	

@@ -13,21 +13,20 @@ import DDC.Core.Check.Env
 import DDC.Type
 import DDC.Var
 import DDC.Base.DataFormat
+import DDC.Type.EffectStore		(EffectStore)
 import DDC.Type.ClosureStore		(ClosureStore)
-import Data.Sequence			(Seq)
+import qualified DDC.Type.EffectStore	as Eff
 import qualified DDC.Type.ClosureStore	as Clo
 import qualified DDC.Var.VarId		as Var
 import qualified DDC.Var.PrimId		as Var
 import {-# SOURCE #-} DDC.Core.Check.Exp
-import qualified Data.Sequence		as Seq
-import Control.Monad
 
 stage	= "DDC.Core.Lint.Prim"
 
 -- | Check an application of a primitive operator.
 checkPrim 
 	:: Int -> Prim -> [Exp] -> Env 
-	-> ([Exp], Type, Seq Effect, ClosureStore)
+	-> ([Exp], Type, EffectStore, ClosureStore)
 
 checkPrim n pp xs env
  = case (pp, xs) of
@@ -44,7 +43,7 @@ checkPrim n pp xs env
 		Just t'			= unboxedVersionOfBoxedType r t
 	    in	( [XPrimType r, x']
 		, t'
-		, eff Seq.|> TApp tRead r
+		, Eff.union eff (Eff.fromEffect $ TApp tRead r)
 		, clo)
 
 	(MForce, [x])
@@ -72,14 +71,14 @@ checkPrim n pp xs env
 checkPrimOpApp 
 	:: Int
 	-> PrimOp -> [Exp] -> Env
-	-> ([Exp], Type, Seq Effect, ClosureStore)
+	-> ([Exp], Type, EffectStore, ClosureStore)
 
 checkPrimOpApp n op xs env
- = let	(xs' :: [Exp], ts :: [Type], effs :: [Seq Effect], clos :: [ClosureStore])
+ = let	(xs' :: [Exp], ts :: [Type], effs :: [EffectStore], clos :: [ClosureStore])
  		= unzip4
 		$ map (\x -> checkExp' n x env) xs
 
-	eff	= join $ Seq.fromList effs
+	eff	= Eff.unions effs
 	clo	= Clo.unions clos
 
 	result

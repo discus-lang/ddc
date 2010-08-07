@@ -5,10 +5,10 @@ module DDC.Core.Check.Exp
 where
 import DDC.Core.Exp
 import DDC.Type
+import DDC.Type.EffectStore	(EffectStore)
 import DDC.Type.ClosureStore	(ClosureStore)
-import Data.Sequence
 import {-# SOURCE #-} DDC.Core.Check.Env
 
 checkedTypeOfExp 	:: String -> Exp -> Type	
 checkedTypeOfOpenExp	:: String -> Exp -> Type
-checkExp' 	 	:: Int -> Exp -> Env -> (Exp, Type, Seq Effect, ClosureStore)
+checkExp' 	 	:: Int -> Exp -> Env -> (Exp, Type, EffectStore, ClosureStore)

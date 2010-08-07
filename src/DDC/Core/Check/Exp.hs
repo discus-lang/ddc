@@ -28,15 +28,13 @@ import DDC.Util.FreeVars
 import DDC.Type
 import DDC.Var
 import Data.Maybe
+import DDC.Type.EffectStore		(EffectStore)
 import DDC.Type.ClosureStore		(ClosureStore)
-import DDC.Type.EffectStore		()
-import Data.Sequence			(Seq)
+import qualified DDC.Type.EffectStore	as Eff
 import qualified DDC.Type.ClosureStore	as Clo
 import qualified Shared.VarUtil		as Var
-import qualified Data.Sequence		as Seq
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
-import qualified Data.Foldable		as Foldable
 
 stage	= "DDC.Core.Lint.Exp"
 
@@ -76,7 +74,7 @@ checkExp xx env
  = let	!(xx', t, effs, clos)	= checkExp' 0 xx env
    in	( xx'
 	, t
-	, makeTSum kEffect $ Foldable.toList effs
+	, Eff.toEffect  effs
 	, Clo.toClosure clos )
 	
 checkExp' 
@@ -85,7 +83,7 @@ checkExp'
 	-> Env			-- ^ Type environment and configuration.
 	-> ( Exp		--   Checked expression.
 	   , Type		--   Type of expression.
-	   , Seq Effect		--   Effect of expression.
+	   , EffectStore	--   Effect of expression.
 	   , ClosureStore)	--   Closure of expression.
 
 checkExp' n xx env
@@ -169,7 +167,7 @@ checkExp_trace m xx env
 			
 	   in	( XVar v t1'
 		, t1'
-		, Seq.singleton tPure
+		, Eff.pure
 		, clos)
 
 
@@ -182,14 +180,14 @@ checkExp_trace m xx env
 	 , Just tc	<- tcString Unboxed
 	 ->	( xx
 		, TApp (TCon tc) (TVar kRegion r)
-		, Seq.empty
+		, Eff.pure
 		, Clo.empty)
 
 	XLit litFmt
 	 | Just tcLit	<- tyConOfLiteralFmt litFmt
 	 -> 	( xx
 		, TCon tcLit
-		, Seq.singleton tPure
+		, Eff.pure
 		, Clo.empty)
 
 
@@ -227,6 +225,7 @@ checkExp_trace m xx env
 		
 		
 	-- Type application.
+	-- TODO: Handle subsitutions on effect\/closure stores more cleverly.
 	XAPP x1 t2
 	 | (x1', t1, eff, clo)	<- checkExp'  n x1 env
 	 , (t2', k2)		<- checkTypeI n t2 env
@@ -244,7 +243,7 @@ checkExp_trace m xx env
 		 , sub 	<- substituteT (subSingleton v t2')
 		 -> 	( XAPP x1' t2'
 		    	, sub t12
-		    	, fmap sub eff
+		    	, Eff.fromEffect  $ sub $ Eff.toEffect  eff
 		    	, Clo.fromClosure $ sub $ Clo.toClosure clo)
 		
 		-- TODO: check against the more-than constraint
@@ -253,7 +252,7 @@ checkExp_trace m xx env
 		 , sub	<- substituteT (subSingleton v t2')
 		 -> 	( XAPP x1' t2'
 			, sub t12
-		    	, fmap sub eff
+		    	, Eff.fromEffect  $ sub $ Eff.toEffect  eff
 		    	, Clo.fromClosure $ sub $ Clo.toClosure clo)
 		
 		_ -> panic stage $ vcat
@@ -280,13 +279,11 @@ checkExp_trace m xx env
 	 , (effAnn', kEffAnn)		<- checkTypeI n effAnn env
 	 , (cloAnn', kCloAnn)		<- checkTypeI n cloAnn env
  	 -> k1 `seq` kEffAnn `seq` kCloAnn `seq`
-	    let	-- The closure annotation on the abstraction is the closure of the body
-		-- minus the variable that is bound at this point.
+	    let	
+		-- Mask closure terms due to the bound variable.
 		!clo2_masked	= Clo.mask v1 clo2
 
-		-- NOTE: In higher order cases the annotation can be a closure variable, 
-		--       with or without a bound, while the reconstructed closure is always
-		--       a set of TFrees.
+		-- Check the reconsructed closure is subsumed by the annotation.
 		!cloSubs	= subsumesTT (Clo.toClosure clo2_masked) cloAnn'
 
 		-- Get the set of visible region variables.
@@ -299,42 +296,21 @@ checkExp_trace m xx env
 				, freeVars t2
 				, freeVars $ Clo.toClosure clo2_masked ]
 
-		-- If a read or write effect acts on a region variable that 
-		-- isn't visible then we can mask it.
-		effectIsMaskable eff
-			| [tc, TVar k (UVar v)]	<- takeTApps eff
-			, elem tc [tRead, tWrite]
-			, isRegionKind k
-			, not $ Set.member v vsVisible
-			= True
-			
-			| otherwise
-			= False
+		-- Mask effects on regions that are not visible to callers.
+		!eff2_masked	= Eff.maskReadWritesNotOn vsVisible eff2
 
-		-- Converting to a sum and back to discard bottom effects.
-		-- This makes the panic messages nicer.
-		!eff2'	= flattenTSum $ makeTSum kEffect $ Foldable.toList eff2
-
-		-- Mask effects on non-visible region.
-		-- TODO: Gah @ needing to make a sum and flatten it again.
-		---      We want an EffectStore similarly to the ClosureStore.
-		!eff2_crushed	= flattenTSum $ makeTSum kEffect $ map crushT eff2'
-		!eff2_masked	= makeTSum kEffect
-				$ filter (not . effectIsMaskable)
-				$ eff2_crushed
-		
+		-- Check the reconstructed effect is subsumed by the annotation.
 		!effAnn_crushed	= crushT $ effAnn'
-		!effSubs	= subsumesTT eff2_masked effAnn_crushed
+		!effSubs	= subsumesTT (Eff.toEffect eff2_masked) effAnn_crushed
 		
 		result
 		 | not $ isSubsumes effSubs 
 		 = panic stage $ vcat
 			[ ppr "Effect mismatch in lambda abstraction."
 			, "During:\n"				%> envCaller env, blank
-			, "Effect of body:\n" 			%> eff2',	blank
+			, "Effect of body:\n" 			%> eff2,	blank
 			, "with closure:\n"			%> clo2_masked,	blank
 			, "visible vars:\n"			%> vsVisible,	blank
-			, "crushed effect:\n"			%> eff2_crushed,blank
 			, "masked effect:\n"			%> eff2_masked,	blank
 			, "does not match effect annotation:\n"	%> effAnn_crushed, blank
 			, "in expression:\n"			%> xx,		blank]
@@ -352,9 +328,9 @@ checkExp_trace m xx env
 		 -- bi-directional unification in the type inferencer. Better to replace them
 		 -- with the reconstructed ones.
 		 | otherwise
-		 = 	( XLam v1  t1' x2' eff2_masked (Clo.toClosure clo2_masked)
-			, makeTFun t1' t2  eff2_masked (Clo.toClosure clo2_masked)
-		        , Seq.singleton tPure
+		 = 	( XLam v1  t1' x2' (Eff.toEffect eff2_masked) (Clo.toClosure clo2_masked)
+			, makeTFun t1' t2  (Eff.toEffect eff2_masked) (Clo.toClosure clo2_masked)
+		        , Eff.pure
 		        , clo2_masked)
 	  in result
 
@@ -371,8 +347,8 @@ checkExp_trace m xx env
 		  Subsumes 
 		   -> ( XApp x1' x2'
 		      , t12
-		      , eff1 Seq.>< eff2 Seq.>< Seq.singleton eff3
-		      , Clo.union clo1 clo2)
+		      , Eff.unions [eff1, eff2, Eff.fromEffect eff3]
+		      , Clo.union  clo1 clo2)
 		
 		  NoSubsumes s1 s2
 		   -> panic stage $ vcat
@@ -432,27 +408,12 @@ checkExp_trace m xx env
 			= withKindBounds vksAll env
 			$ checkExp' n xBody
 		
-		-- Mask effects on the bound region.
-		maskable e
-		 | TApp t1 (TVar kR (UVar vr))	<- e
-		 , t1 == tRead || t1 == tWrite
-		 , isRegionKind kR
-		 , vr == vRegion
-		 = True
-		
-		 | otherwise
-		 = False
-		
-		eff_masked	
-			= filter (not . maskable)
-			$ flattenTSum 
-			$ crushT
-			$ makeTSum kEffect 
-			$ Foldable.toList eff
+		-- Mask effects on the bound region variable.
+		eff_masked	= Eff.maskReadWritesOn vRegion eff
 	
 	    in	( XLocal vRegion vtsWit' xBody'
 		, tBody
-		, Seq.fromList eff_masked
+		, eff_masked
 		, clo)
 
 	-- Primitive operator.
@@ -491,12 +452,12 @@ checkExp_trace m xx env
 -- | Check a list of (possibly recursive) statements.
 checkStmts 
 	:: Int -> [Stmt] -> Env 
-	-> ([Stmt], Type, Seq Effect, ClosureStore)
+	-> ([Stmt], Type, EffectStore, ClosureStore)
 
 -- TODO: this doesn't handle recursive statements.
 checkStmts n ss env
  = let	(ss', t, eff, clo)	
-		= checkStmts' n env ss [] Seq.empty Clo.empty
+		= checkStmts' n env ss [] Eff.pure Clo.empty
 
 	-- Delete closure terms due to variables bound by the statements.
 	vsBound	= [v | SBind (Just v) _ <- ss' ]
@@ -513,7 +474,7 @@ checkStmts' n env (SBind b x : []) ssAcc effAcc cloAcc
  = let	(x', t, eff, clo)	= checkExp' (n+1) x env
    in	( reverse (SBind b x' : ssAcc)
 	, t
-	, effAcc Seq.>< eff 
+	, Eff.union eff effAcc
 	, Clo.union clo cloAcc)
 	
 checkStmts' n env (SBind Nothing x : ss) ssAcc effAcc cloAcc 
@@ -521,7 +482,7 @@ checkStmts' n env (SBind Nothing x : ss) ssAcc effAcc cloAcc
    in 	t `seq`
 	checkStmts' n env ss 
 		(SBind Nothing x' : ssAcc)
-		(effAcc Seq.>< eff)
+		(Eff.union eff effAcc)
 		(Clo.union clo cloAcc)
 
 checkStmts' n env (SBind (Just v) x : ss) ssAcc effAcc cloAcc
@@ -530,7 +491,7 @@ checkStmts' n env (SBind (Just v) x : ss) ssAcc effAcc cloAcc
 	withType v t env $ \env' -> 
 	 checkStmts' n env' ss 
 		(SBind (Just v) x' : ssAcc)
-		(effAcc Seq.>< eff)
+		(Eff.union eff effAcc)
 		(Clo.union clo cloAcc)
 
 
@@ -538,10 +499,10 @@ checkStmts' n env (SBind (Just v) x : ss) ssAcc effAcc cloAcc
 -- | Check a list of match alternatives.
 checkAlts 
 	:: Int -> [Alt] -> Env
-	-> ([Alt], Type, Seq Effect, ClosureStore)
+	-> ([Alt], Type, EffectStore, ClosureStore)
 
 checkAlts n as env
-	= checkAlts' n env as [] [] Seq.empty Clo.empty
+	= checkAlts' n env as [] [] Eff.pure Clo.empty
 
 checkAlts' _ _ [] types altAcc effAcc cloAcc
  = 	( reverse altAcc
@@ -558,7 +519,7 @@ checkAlts' n env (AAlt gs x : as) types altAcc effAcc cloAcc
    in	checkAlts' n env as 
 		(tBody : types)
 		(AAlt gs' x' : altAcc)
-		(effGuards Seq.>< effAcc)
+		(Eff.union effGuards effAcc)
 		(Clo.union cloGuards cloAcc)
 
 
@@ -567,7 +528,7 @@ checkAlts' n env (AAlt gs x : as) types altAcc effAcc cloAcc
 --   The variables bound by the pattern are in scope in successive guards.
 checkGuards
 	:: Int -> [Guard] -> Exp -> Env
-	-> ([Guard], Exp, Type, Seq Effect, ClosureStore)
+	-> ([Guard], Exp, Type, EffectStore, ClosureStore)
 
 checkGuards n [] xBody env
  = let	(xBody', t, eff, clo)	= checkExp' (n+1) xBody env
@@ -589,7 +550,7 @@ checkGuards n (GExp (WVar v) x : gsRest) xBody env
 		$ checkGuards n gsRest xBody
 	
 	-- The effect of the guards and body.
-	eff'	= effExp Seq.>< effRest
+	eff'	= Eff.union effExp effRest
 	
 	-- Delete the closure terms due the var bound here.
 	clo'	= Clo.mask v $ Clo.union cloExp cloRest
@@ -614,8 +575,8 @@ checkGuards n (GExp (WLit sp lf) x : gsRest) xBody env
 
 	-- The effect of the whole group of guards includes the effect
 	-- of inspecting the case object to see if it matches.
-	effMatch = effectOfMatchAgainst tExp
-	eff'	= effExp Seq.>< Seq.singleton effMatch Seq.>< effRest
+	effMatch = Eff.fromEffect $ effectOfMatchAgainst tExp
+	eff'	 = Eff.unions [effExp, effMatch, effRest]
 
 	-- The closure of the guards and body.
 	clo'	= Clo.union cloExp cloRest
@@ -644,8 +605,8 @@ checkGuards n (GExp (WCon sp vCon lvts) x : gsRest) xBody env
 
 	-- The effect of the whole group of guards includes the effect
 	-- of inspecting the case object to see if it matches.
-	effMatch = effectOfMatchAgainst tExp
-	eff'	 = effExp Seq.>< Seq.singleton effMatch Seq.>< effRest
+	effMatch = Eff.fromEffect $ effectOfMatchAgainst tExp
+	eff'	 = Eff.unions [effExp, effMatch, effRest]
 
 	-- Delete the closure terms due to vars bound by the pattern.
 	vsBound	= [v | (_, v, _) <- lvts]
