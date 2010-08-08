@@ -1,15 +1,13 @@
 
 module Core.Util.Strip 
 	( buildScheme
-	, stripContextT 
 	, slurpForallContextT )
 where
 import DDC.Type
 
-
 buildScheme ::	[(Bind, Kind)] -> [Fetter] -> [Kind] -> Type -> Type
 buildScheme	forallVTs bindVTs classes shape
- = let	tC	= foldl (\s k	   -> TForall BNil k s)  shape	
+ = let	tC	= foldl (\s k -> TForall BNil k s)  shape	
 		$ reverse classes
 
 	tL	= case bindVTs of
@@ -46,13 +44,3 @@ slurpForallContextT tt
 
 	_		
 	 -> ([], [], tt)
-
-
--- | strip context off the front of this type
-stripContextT :: Type -> Type
-stripContextT tt
- = case tt of
- 	TForall BNil k t	-> stripContextT t
-	TFetters t fs		-> TFetters (stripContextT t) fs
-	_			-> tt
-

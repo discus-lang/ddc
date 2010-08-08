@@ -297,8 +297,7 @@ toCoreX xx
 	 | kV	== T.kValue
 	 -> do	
 	 	Just t		<- lookupType vT
-	 	let t_flat	= C.stripContextT 
-				$ T.toFetterFormT
+	 	let t_flat	= T.stripToBodyT 
 				$ T.flattenT_constrainForm
 				$ T.toConstrainFormT t
 		
@@ -498,7 +497,7 @@ toCoreVarInst v vT
 		-- If the function being instantiated needs some context then there'll be a 
 		--	separate witness for it... therefore we can safely erase contexts on
 		--	type arguements for the instantiation.
-		let tsInstCE	= map C.stripContextT tsInstC
+		let tsInstCE	= map T.stripToBodyT tsInstC
 			
 		let tsInstC_packed	= map (T.crushT . T.packType) tsInstCE
 			
@@ -669,12 +668,12 @@ toCoreW ww
 
 toCoreA_LV (D.LIndex nn i, v)
  = do	Just t		<- lookupType v
- 	let t_flat	=  (C.stripContextT . T.toFetterFormT . T.flattenT_constrainForm . T.toConstrainFormT) t
+ 	let t_flat	= (T.flattenT_constrainForm . T.stripToBodyT . T.toConstrainFormT) t
 	return	(C.LIndex i, v, t_flat)
 
 toCoreA_LV (D.LVar nn vField, v)
  = do	Just t		<- lookupType v
- 	let t_flat	= (C.stripContextT . T.toFetterFormT . T.flattenT_constrainForm . T.toConstrainFormT) t
+ 	let t_flat	= (T.flattenT_constrainForm . T.stripToBodyT . T.toConstrainFormT) t
  	return	(C.LVar vField, v, t_flat)
 
 
