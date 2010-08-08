@@ -1,7 +1,7 @@
 
 -- | Rename variables in a core tree.
 module Core.Util.Rename 
-	(renameBindersTree
+	( renameBindersTree
 	, renameBindersX
 	, RenameS(..))
 where
