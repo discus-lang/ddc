@@ -2,7 +2,6 @@ module Type.Util
 	( module Type.Util.Bits
 	, module Type.Util.Instantiate
 	, module Type.Util.Normalise
-	, module Type.Util.Mask
 	, makeOpTypeT
 	, makeTVar 
 	, makeTWhere
@@ -12,7 +11,6 @@ where
 import Type.Util.Bits
 import Type.Util.Instantiate
 import Type.Util.Normalise
-import Type.Util.Mask
 import Shared.VarPrim
 import Util
 import DDC.Main.Error

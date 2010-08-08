@@ -1,6 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
--- TODO: finish proper scope checking.
+-- | Checking types, kind, and super-kinds.
+--   TODO: Finish scope checking. Bugs in Core.Bind are blocking this.
 module DDC.Core.Check.Type
 	( checkTypeI
 	, checkKindI)
@@ -17,7 +18,7 @@ import qualified Data.Map	as Map
 stage	= "DDC.Core.Check.Type"	
 
 -- Type -------------------------------------------------------------------------------------------
--- | Check a type expression, returning its kind.
+-- | Check a type expression.
 --	This does a complete check of the entire structure, so is not fast.
 --	If you just want to quickly get the kind of a type then use kindOfType instead.
 --
@@ -216,7 +217,7 @@ lintCRS crs _	= crs
 
 
 -- Kind -------------------------------------------------------------------------------------------
--- | Check a kind, returning its superkind.
+-- | Check a kind. Takes an indent level for tracing.
 checkKindI :: Int -> Kind -> Env -> (Kind, Super)
 checkKindI n kk env
  = if debugKind

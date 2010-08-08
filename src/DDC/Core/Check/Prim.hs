@@ -1,4 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
+-- | Checking applications of primitive functions.
 module DDC.Core.Check.Prim
 	( checkPrim
 	, unboxedVersionOfBoxedType

@@ -37,7 +37,7 @@ import qualified Data.Set		as Set
 stage	= "DDC.Core.Check.Exp"
 
 -- Wrappers ---------------------------------------------------------------------------------------
--- | Reconstruct and check the type of an expression.
+-- | Check an expression, returning it's type.
 --	The expression must be closed. No free variables.
 checkedTypeOfExp :: String -> Exp -> Type
 checkedTypeOfExp callerName xx
@@ -46,8 +46,8 @@ checkedTypeOfExp callerName xx
    in	t
 
 
--- | Reconstruct and check the type of an expression.
---	Variables can be "free" provided they are annotated with their types.
+-- | Check an expression, returning it's type.
+--	Variables can be free provided they are annotated with their types.
 checkedTypeOfOpenExp :: String -> Exp -> Type
 checkedTypeOfOpenExp callerName xx
  = let	env		= (envInit callerName globEmpty globEmpty)
@@ -56,8 +56,8 @@ checkedTypeOfOpenExp callerName xx
    in	t
 
 
--- | Reconstruct and check the type of an expression.
---	Variables can be "free" provided they are annotated with their types.
+-- | Check an expression.
+--	Variables can be free provided they are annotated with their types.
 checkOpenExp :: Exp -> Env -> (Exp, Type, Effect, Closure)
 checkOpenExp xx env
  = let	env'		= env { envClosed = False }
@@ -65,7 +65,7 @@ checkOpenExp xx env
 
 
 -- Exp --------------------------------------------------------------------------------------------
--- | Check an expression, returning its type.
+-- | Check an expression.
 checkExp :: Exp -> Env -> (Exp, Type, Effect, Closure)
 checkExp xx env
  = let	!(xx', t, effs, clos)	= checkExp' 0 xx env
@@ -74,15 +74,8 @@ checkExp xx env
 	, Eff.toEffect  effs
 	, Clo.toClosure clos )
 	
-checkExp' 
-	:: Int 			-- ^ Indent level for tracing.
-	-> Exp			-- ^ Expression to check.
-	-> Env			-- ^ Type environment and configuration.
-	-> ( Exp		--   Checked expression.
-	   , Type		--   Type of expression.
-	   , EffectStore	--   Effect of expression.
-	   , ClosureStore)	--   Closure of expression.
-
+-- | Check an expression. Also takes an indent level for tracing.
+checkExp' :: Int -> Exp -> Env -> (Exp, Type, EffectStore, ClosureStore)
 checkExp' n xx env
  = if debugExp
     then let result@(xx', t, eff, clo)	

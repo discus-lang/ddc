@@ -1,14 +1,11 @@
--- {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-{-# OPTIONS -fno-warn-unused-binds -fno-warn-unused-imports #-}
+{-# OPTIONS -fno-warn-unused-binds -fno-warn-unused-imports -fwarn-name-shadowing #-}
 
 -- | Check for type errors or other problems in a core program, and `panic`
---   if we find and. Also do a deepseq along the way. This module should
---   perform any possible internal consitency check we can think of on the 
---   core program.
+--   if we find any.
 --
---   TODO: Do full type checking.
---	   Check syntactic soundness of witnesses.
---	   Check for type vars that are out of scope
+--   TODO: Check syntactic soundness of witnesses.
+--         Optionally check for fabricated witnesses.
+--	   Check for type vars that are out of scope.
 --
 module DDC.Core.Check
 	( checkGlobs
@@ -53,6 +50,7 @@ import qualified Debug.Trace
 stage		= "DDC.Core.Lint"
 
 -- Glob -------------------------------------------------------------------------------------------
+-- | Given the name of the caller for panic messages, check some header and core globs.
 checkGlobs :: String -> Glob -> Glob -> Glob
 checkGlobs caller cgHeader cgCore 	
  = let	env	= envInit caller cgHeader cgCore
@@ -60,6 +58,7 @@ checkGlobs caller cgHeader cgCore
 	
 
 -- Top --------------------------------------------------------------------------------------------
+-- | Check a top level binding.
 checkBind :: Env -> Top -> Top
 checkBind env pp
  = case pp of
@@ -88,21 +87,3 @@ checkBind env pp
 
 	_ -> panic stage $ "checkBind: no match"
 
-
-{-
--- Var --------------------------------------------------------------------------------------------
--- | Lint a bound value variable.
-
-lintBoundVar :: Var -> Env -> ()
-lintBoundVar v env
- = case Map.lookup v (envTypes env) of
- 	Nothing  -> panic stage $ "Variable " % v % " is not in scope.\n"
-	Just _	 -> ()
-
--- | Lint a bound type variable.
-lintBoundVarT :: Var -> Env -> ()
-lintBoundVarT v env
- = case Map.lookup v (envKinds env) of
- 	Nothing  -> panic stage $ "Variable " % v % " is not in scope.\n"
-	Just _	 -> ()
--}

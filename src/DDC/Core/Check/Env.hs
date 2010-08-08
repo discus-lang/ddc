@@ -1,4 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
+-- | Type environment and configuration for the core type checker.
 module DDC.Core.Check.Env
 	( Env(..)
 	, envInit
