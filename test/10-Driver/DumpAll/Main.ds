@@ -1,10 +1,8 @@
 -- Check all the dumping options work
 --	This is a cut down version of 00-Sanity/01-Staged.
 --
-
 main ()
- = do 
- 	checkArithmetic ()
+ = do  	checkArithmetic ()
 	checkCurrying ()
 	checkLists ()
 	checkUpdate ()
@@ -18,9 +16,6 @@ add x y		= x + y
 addFive x	= x + 5
 
 
------------------------
--- Arithmetic
---
 checkArithmetic ()
  = do 	print  "-- Arithmetic.\n"
 	checkI 5  	(2 + 3)
@@ -28,9 +23,6 @@ checkArithmetic ()
 	print "\n"
 
 
------------------------
--- Currying
---
 checkCurrying ()
  = do 	print "-- Currying.\n"
 	checkI 23 	(addFive 18)
@@ -40,21 +32,16 @@ checkCurrying ()
 	checkI 5	$ (add 2) 3
 	print "\n"
  
------------------------
--- Lists
---
+
 checkLists ()
  = do 	print "-- Lists.\n"
 
 	checkI 5  	$ head    [5, 4, 3, 2, 1]
-	checkI 105	$ sumR	  $ map (add 5) [1..10]
+	checkI 105	$ sum	  $ map (add 5) [1..10]
 	checkI 55	$ foldl   (+) 0 	[1..10]
 	print "\n"
 
 
------------------------
--- Update
---
 checkUpdate ()
  = do 	print	"-- Update.\n"
 	
@@ -73,13 +60,10 @@ checkUpdate ()
 	print	"\n"
 
 
------------------------
--- Lambda Lifting
--- 
 checkLambdaLifting ()
  = do 	print "-- Lambda Lifting.\n"
  	checkI 66	
-		$ sumR 	
+		$ sum 	
 		$ map (\x -> x + 1) 
 		$ [0..10]
 
@@ -100,10 +84,6 @@ checkLambdaLifting ()
 	print "\n"
 
 
------------------------
--- Show
---
-
 checkShow ()
  = do 	print	"-- Show.\n"
 	print	$ foldl (%) ""
@@ -111,12 +91,9 @@ checkShow ()
 
 	print	"\n"
 
------------------------
--- checkI
---	Check an integer result against an expected value.
---	Don't do anything too fancy here, we want this function
---	to survive stupid bugs in the compiler if at all possible.
---
+-- Check an integer result against an expected value.
+-- Don't do anything too fancy here, we want this function
+-- to survive stupid bugs in the compiler if at all possible.
 checkI :: Int -> Int -> ()
 checkI a b
  = match
@@ -131,7 +108,4 @@ checkI a b
 		print " got:"
 		print $ show b
 		print ("\n")
-	
-
-
 
