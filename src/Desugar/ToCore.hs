@@ -241,49 +241,26 @@ toCoreS	D.SSig{}
 -- | Expressions
 toCoreX	:: D.Exp Annot -> CoreM C.Exp
 toCoreX xx
-{- = trace ("toCoreX: " % xx % "\n") $ -}
  =  case xx of
 
 	D.XLambdaTEC 
 		_ v x (T.TVar kV (T.UVar vTV)) eff clo
 	 | kV == T.kValue
 	 -> do	
-		-- Only keep effect and closure bindings which are not quantified so they don't
-		--	conflict with constraints on /\ bound vars.
-		--
 		-- Strip contexts off argument types, if we need the associated witnesses then these
 		--	will be passed into the outer function.
-		--
 		Just tArg1	<- lookupType vTV
-		let (argQuant, argFetters, _, argShape)
-				= C.stripSchemeT tArg1
-
-		portVars	<- gets coreQuantVars
-		let fsWhere	= [ T.FWhere t1 t2	
-					| T.FWhere t1@(T.TVar _ (T.UVar v)) t2	<- argFetters
-					, not $ Map.member v portVars]
-
-		let fsMore	= [ f	| f@(T.FMore v t) <- argFetters ]
-		
-		let tArg	
-			= T.packType
-			$ C.buildScheme
-				argQuant
-				(fsWhere ++ fsMore)
-				[]
-				argShape
+		let  tArg	= T.stripToBodyT tArg1
 
 		-- If the effect/closures were vars then look them up from the graph
 		effAnnot	<- loadEffAnnot $ toCoreT eff
 		cloAnnot	<- loadCloAnnot $ toCoreT clo
-				
 		x'		<- toCoreX x
 		
 		return		
-		 $ C.XLam 	v tArg
-				x'
-				(T.packType $ effAnnot)
-				(T.packType $ cloAnnot)
+		 $ C.XLam v tArg x'
+			(T.packType $ effAnnot)
+			(T.packType $ cloAnnot)
 
 
 	D.XApp	_ x1 x2
