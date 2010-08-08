@@ -237,7 +237,6 @@ checkExp_trace m xx env
 		
 		TForall (BVar v) k11 t12
 		 | isEquiv $ equivKK (crushK k11) k2'
---		 , sub 	<- substituteT (subSingleton v t2')
 		 , sub	<- subVT_everywhere (Map.singleton v t2')
 		 -> 	( XAPP x1' t2'
 		    	, sub t12
@@ -247,7 +246,6 @@ checkExp_trace m xx env
 		-- TODO: check against the more-than constraint
 		TForall (BMore v _) k11 t12
 		 | isEquiv $ equivKK (crushK k11) k2'
---		 , sub	<- substituteT (subSingleton v t2')
 		 , sub	<- subVT_everywhere (Map.singleton v t2')
 		 -> 	( XAPP x1' t2'
 			, sub t12
