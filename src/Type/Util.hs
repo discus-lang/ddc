@@ -1,14 +1,11 @@
 module Type.Util
-	( module Type.Util.Bits
-	, module Type.Util.Instantiate
+	( module Type.Util.Instantiate
 	, module Type.Util.Normalise
 	, makeOpTypeT
 	, makeTVar 
 	, makeTWhere
 	, slurpTVarsRD)
-	
 where
-import Type.Util.Bits
 import Type.Util.Instantiate
 import Type.Util.Normalise
 import Shared.VarPrim

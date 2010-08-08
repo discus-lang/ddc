@@ -7,7 +7,6 @@ import Core.Dictionary.InfoOverloaded
 import Core.Dictionary.Env
 import Core.Util.Bits
 import Core.Plate.Trans
-import Type.Util.Bits
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty

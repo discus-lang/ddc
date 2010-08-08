@@ -16,13 +16,14 @@ module DDC.Type
 	, module DDC.Type.CutLoops
 	, module DDC.Type.Unify
 	, module DDC.Type.JoinSum
-	, module DDC.Type.StripFetters
+	, module DDC.Type.Strip
 	, module DDC.Type.Elaborate
 	, module DDC.Type.Pack
 	, module DDC.Type.Trim
 	, module DDC.Type.Equiv
 	, module DDC.Type.Subsumes
-	, module DDC.Type.Crush)
+	, module DDC.Type.Crush
+	, module DDC.Type.Bits)
 where
 import DDC.Type.Exp
 import DDC.Type.Pretty
@@ -40,11 +41,12 @@ import DDC.Type.Finalise
 import DDC.Type.CutLoops
 import DDC.Type.Unify
 import DDC.Type.JoinSum
-import DDC.Type.StripFetters
+import DDC.Type.Strip
 import DDC.Type.Elaborate
 import DDC.Type.Pack
 import DDC.Type.Trim
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Type.Crush
+import DDC.Type.Bits
 

@@ -2,8 +2,11 @@
 -- | Construction and destruction of common compound things.
 --	Also known as 'smart' constructors and destructors.
 module DDC.Type.Compounds
-	( -- * Kinds
-	  makeKFuns
+	(-- * Superkinds
+	  makeSuperFun
+		
+	 -- * Kinds
+	, makeKFuns
 	, takeKApps
 	, makeKApps
 	, makeKSum
@@ -46,6 +49,7 @@ module DDC.Type.Compounds
 	, takeTFree
 	, makeTDanger
 	, takeTDanger
+	, dropTFreesIn
 	
 	  -- * Fetters
 	, makeTFetters
@@ -71,6 +75,8 @@ module DDC.Type.Compounds
 	, makeTForall_front
 	, makeTForall_back
 	, takeTForall
+	, addContextUnderForalls
+	, addContextsUnderForalls
 	)
 where
 import DDC.Main.Error
@@ -81,8 +87,16 @@ import DDC.Var
 import Data.List
 import Util
 import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 stage	= "DDC.Type.Compounds"
+
+-- Superkinds -------------------------------------------------------------------------------------
+-- | Create a superkind function.
+makeSuperFun :: [Kind] -> Super -> Super
+makeSuperFun [] 	s	= s
+makeSuperFun (k:ks) 	s	= SFun k (makeSuperFun ks s)
+
 
 -- Kinds ------------------------------------------------------------------------------------------
 -- | Make a kind function.
@@ -372,6 +386,16 @@ takeTDanger tt
 	_   -> Nothing
 
 
+-- | Drop TFree terms concerning value variables in this set
+dropTFreesIn :: Set Var -> Closure -> Closure
+dropTFreesIn vs clo
+ 	= makeTSum kClosure
+	$ filter (\c -> case takeTFree c of
+			 Just (v, _)	-> not $ Set.member v vs
+			 Nothing	-> True)
+	$ flattenTSum clo
+
+
 -- Fetters -----------------------------------------------------------------------------------------	
 -- | Wrap a type with some fetters
 makeTFetters :: Type -> [Fetter] -> Type
@@ -614,3 +638,18 @@ takeTForall tt
 	_ -> ([], tt)
 
 
+-- | Add a new type class context to a type,
+--	pushing it under any enclosing foralls.
+addContextUnderForalls :: Kind -> Type -> Type
+addContextUnderForalls k tt
+ = case tt of
+ 	TForall b@BVar{}  k' t	-> TForall b k' (addContextUnderForalls k t)
+ 	TForall b@BMore{} k' t	-> TForall b k' (addContextUnderForalls k t)
+	_			-> TForall BNil k tt
+
+-- | Add some new type class contexts to a type,
+--	pushing them under any enclosing foralls.
+addContextsUnderForalls :: [Kind] -> Type -> Type
+addContextsUnderForalls []	   t	= t
+addContextsUnderForalls (k:ks) t	
+	= TForall BNil k (addContextsUnderForalls ks t)

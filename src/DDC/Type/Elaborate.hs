@@ -14,7 +14,6 @@ module DDC.Type.Elaborate
 	, elaborateEffT_constrainForm
 	, elaborateCloT_constrainForm )
 where
-import Type.Util.Bits
 import Util
 import DDC.Main.Error
 import DDC.Type.Exp

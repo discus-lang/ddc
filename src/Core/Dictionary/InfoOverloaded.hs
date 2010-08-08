@@ -4,7 +4,6 @@ module Core.Dictionary.InfoOverloaded
 	, lookupOverloadedVar )
 where
 import Core.Dictionary.Env
-import Type.Util.Bits
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Exp
@@ -78,7 +77,7 @@ lookupOverloadedVar env vOverloaded
 		--	We add that stuff here.
 		--	eg: for "show" need to add the "forall a. Show a =>" part to its type.
 		--	TODO: It'd be better to do this during desugaring instead.
-		super	 = unflattenSuper (map snd $ topClassDictParams pClassDict) SProp
+		super	 = makeSuperFun (map snd $ topClassDictParams pClassDict) SProp
 		kContext = makeKApps 
 				(KCon (KiConVar vClass) super)
 				[TVar k $ UVar v | (v, k) <- topClassDictParams pClassDict ]
@@ -86,7 +85,7 @@ lookupOverloadedVar env vOverloaded
 		tOverloaded_withContext
 			= makeTForall_front 
 				(topClassDictParams pClassDict)
-				(addContext kContext tOverloaded)
+				(addContextUnderForalls kContext tOverloaded)
 
 		-- Get the sequence of instance declarations for the type class.
 		pssInstances

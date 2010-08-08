@@ -21,7 +21,6 @@ import Desugar.Project			(ProjTable)
 import qualified DDC.Solve.InstanceInfo	as T
 import qualified DDC.Type		as T
 import qualified Shared.Exp		as S
-import qualified Type.Util		as T
 import qualified DDC.Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Desugar.Exp 		as D

@@ -89,7 +89,7 @@ toCoreT' table tt
 		table'	= Map.union table vtsMore
 		t'	= toCoreT' table' t
 
-	    in	makeTWhere (addContexts (map toCoreF fsRest1) t') vtsLet
+	    in	makeTWhere (addContextsUnderForalls (map toCoreF fsRest1) t') vtsLet
 	
 	TConstrain t crs
 	 -> toCoreT' table $ toFetterFormT tt
@@ -202,7 +202,7 @@ makeKindOfTypeClass vClass ksArgs
 	-- If its some user defined class then base the superkind on the
 	--	kinds of the class arguments.
 	| otherwise
-	= let super	= unflattenSuper ksArgs SProp
+	= let super	= makeSuperFun ksArgs SProp
 	  in  KCon (KiConVar vClass) super
 
 

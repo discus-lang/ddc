@@ -1,9 +1,10 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Stripping fetters from types.
-module DDC.Type.StripFetters
+module DDC.Type.Strip
 	( stripFWheresT_all
-	, stripFWheresT_mono )
+	, stripFWheresT_mono
+	, stripToBodyT)
 where
 import DDC.Main.Error
 import DDC.Type.Exp
@@ -73,3 +74,12 @@ stripFWheresT justMono	tt
 	TCon _	-> tt
 
  	TVar{}	-> tt
+
+
+-- | Strip TForalls and TFetters from a type to get the body.
+stripToBodyT :: Type -> Type
+stripToBodyT tt
+ = case tt of
+ 	TForall  _ _ t		-> stripToBodyT t
+	TFetters t _		-> stripToBodyT t
+	_			-> tt
