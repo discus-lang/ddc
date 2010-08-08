@@ -462,8 +462,8 @@ toCoreVarInst v vT
 	Just tScheme	<- lookupType v
 	mapInst		<- gets coreMapInst
 
-	let (btsForall, _, ksContextC, tShape)
-		= C.stripSchemeT tScheme
+	let (btsForall, ksContextC, tShape)
+		= C.slurpForallContextT tScheme
 	
 	-- TODO: break this out into a separate fn
 	-- tag var with its type
@@ -540,11 +540,19 @@ toCoreVarInst v vT
 		let tSchemeC	= (T.flattenT_constrainForm . T.toConstrainFormT)
 				$ toCoreT tSchemeT
 				
-		let (tsReplay, ksContext)
+		let (bksReplay, ksContext, _)
 				= C.slurpForallContextT tSchemeC
+
+		let tsReplay
+			= map (\b -> case b of
+					(T.BVar v, k)	 -> T.TVar k (T.UVar v)
+					(T.BMore v t, k) -> T.TVar k (T.UMore v t))
+			$ bksReplay
 
 		let tsContext	= map (\k -> let Just t = T.inventWitnessOfKind k in t)
 				$ ksContext
+
+
 
 		let Just xResult =
 			C.buildApp (Left (C.XVar v tSchemeC) : map Right (tsReplay ++ tsContext))

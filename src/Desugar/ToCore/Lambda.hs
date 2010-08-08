@@ -4,7 +4,6 @@ module Desugar.ToCore.Lambda
 	, loadEffAnnot 
 	, loadCloAnnot)
 where
-import Core.Util
 import Desugar.ToCore.Base
 import DDC.Core.Exp
 import DDC.Type
@@ -55,7 +54,7 @@ loadEffAnnot ee
 	 -> do	Just tE		<- lookupType vE
 		return	$ toFetterFormT
 			$ flattenT_constrainForm 
-			$ toConstrainFormT $ stripContextT tE
+			$ toConstrainFormT $ stripToBodyT tE
 
  	TSum kE []
 	 | kE == kEffect
@@ -74,7 +73,7 @@ loadCloAnnot cc
 	 -> do	Just tC		<- lookupType vC
 	 	return 	$ trimClosureC_constrainForm
 			$ flattenT_constrainForm 
-			$ stripContextT tC
+			$ stripToBodyT tC
 			 
 	TSum kC []
 	 | kC == kClosure 	
