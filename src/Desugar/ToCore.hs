@@ -22,7 +22,6 @@ import qualified DDC.Solve.InstanceInfo	as T
 import qualified DDC.Type		as T
 import qualified Shared.Exp		as S
 import qualified Type.Util		as T
-import qualified Core.Util.Pack		as C
 import qualified DDC.Core.Exp 		as C
 import qualified Core.Util		as C
 import qualified Desugar.Exp 		as D
@@ -268,7 +267,7 @@ toCoreX xx
 		let fsMore	= [ f	| f@(T.FMore v t) <- argFetters ]
 		
 		let tArg	
-			= C.packT
+			= T.packType
 			$ C.buildScheme
 				argQuant
 				(fsWhere ++ fsMore)
@@ -284,8 +283,8 @@ toCoreX xx
 		return		
 		 $ C.XLam 	v tArg
 				x'
-				(C.packT $ effAnnot)
-				(C.packT $ cloAnnot)
+				(T.packType $ effAnnot)
+				(T.packType $ cloAnnot)
 
 
 	D.XApp	_ x1 x2
@@ -525,7 +524,7 @@ toCoreVarInst v vT
 		--	type arguements for the instantiation.
 		let tsInstCE	= map C.stripContextT tsInstC
 			
-		let tsInstC_packed	= map C.packT tsInstCE
+		let tsInstC_packed	= map (T.crushT . T.packType) tsInstCE
 			
 		-- Work out what types belong to each quantified var in the type
 		--	being instantiated.			
@@ -537,8 +536,8 @@ toCoreVarInst v vT
 		-- If this function needs a witnesses we'll just make them up.
 		--	Real witnesses will be threaded through in a later stage.
 		let ksContextC'	= map (C.substituteT (flip Map.lookup tsSub)) ksContextC
-		let tsContextC' = map C.packT
-				$ map (\k -> let Just t = T.inventWitnessOfKind k in t)
+		let tsContextC' = map (T.packType)
+				$ map (\k -> let Just t = T.inventWitnessOfKind (T.crushK k) in t)
 				$ ksContextC'
 
 		let Just xResult = 

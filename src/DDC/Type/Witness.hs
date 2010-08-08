@@ -15,6 +15,10 @@ stage = "DDC.Type.Witness"
 --	real witnesses yet.
 inventWitnessOfKind :: Kind -> Maybe Type
 inventWitnessOfKind k
+	| KSum ks			<- k
+	, Just ts			<- sequence $ map inventWitnessOfKind ks
+	= Just (TSum k ts)
+
 	| Just (KCon kiCon s, ts)	<- takeKApps k
 	, Just tcWitness		<- takeTyConWitnessOfKiCon kiCon
 	= let 	-- Get the kinds of the type arguments.
