@@ -462,7 +462,7 @@ toCoreVarInst v vT
 	mapInst		<- gets coreMapInst
 
 	let (btsForall, ksContextC, tShape)
-		= C.slurpForallContextT tScheme
+		= T.stripForallContextT tScheme
 	
 	-- TODO: break this out into a separate fn
 	-- tag var with its type
@@ -540,7 +540,7 @@ toCoreVarInst v vT
 				$ toCoreT tSchemeT
 				
 		let (bksReplay, ksContext, _)
-				= C.slurpForallContextT tSchemeC
+				= T.stripForallContextT tSchemeC
 
 		let tsReplay
 			= map (\b -> case b of

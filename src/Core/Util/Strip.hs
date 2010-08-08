@@ -1,7 +1,6 @@
 
 module Core.Util.Strip 
-	( buildScheme
-	, slurpForallContextT )
+	(buildScheme)
 where
 import DDC.Type
 
@@ -20,27 +19,3 @@ buildScheme	forallVTs bindVTs classes shape
    in	tF
 
 
--- | slurp of forall bound vars and contexts from the front of this type
-slurpForallContextT :: Type -> ([(Bind, Kind)], [Kind], Type)
-slurpForallContextT tt
- = case tt of
-	TForall BNil k1 t2	
-	 -> let ( bks, ks, tBody) = slurpForallContextT t2
-	    in	( bks
-	        , k1 : ks
-		, tBody)
-
- 	TForall b k t2	
-	 -> let	(bks, ks, tBody) = slurpForallContextT t2
-	    in	( (b, k) : bks
-	    	, ks
-		, tBody)
-		
-	TConstrain t1 _
-	 -> slurpForallContextT t1
-
-	TFetters t1 fs
-	 -> slurpForallContextT t1
-
-	_		
-	 -> ([], [], tt)

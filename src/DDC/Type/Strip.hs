@@ -4,6 +4,7 @@
 module DDC.Type.Strip
 	( stripFWheresT_all
 	, stripFWheresT_mono
+	, stripForallContextT
 	, stripToBodyT)
 where
 import DDC.Main.Error
@@ -74,6 +75,32 @@ stripFWheresT justMono	tt
 	TCon _	-> tt
 
  	TVar{}	-> tt
+
+
+-- | Strip foralls and contexts from the front of this type.
+stripForallContextT :: Type -> ([(Bind, Kind)], [Kind], Type)
+stripForallContextT tt
+ = case tt of
+	TForall BNil k1 t2	
+	 -> let ( bks, ks, tBody) = stripForallContextT t2
+	    in	( bks
+	        , k1 : ks
+		, tBody)
+
+ 	TForall b k t2	
+	 -> let	(bks, ks, tBody) = stripForallContextT t2
+	    in	( (b, k) : bks
+	    	, ks
+		, tBody)
+		
+	TConstrain t1 _
+	 -> stripForallContextT t1
+
+	TFetters t1 _
+	 -> stripForallContextT t1
+
+	_		
+	 -> ([], [], tt)
 
 
 -- | Strip TForalls and TFetters from a type to get the body.
