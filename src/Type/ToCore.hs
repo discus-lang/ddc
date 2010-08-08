@@ -8,7 +8,6 @@ module Type.ToCore
 	, toCoreF)
 where
 import Util
-import Type.Util
 import Shared.VarPrim
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -30,79 +29,67 @@ toCoreB bb
 
 
 -- Type -------------------------------------------------------------------------------------------
-
 -- | Convert this type to core representation.
-toCoreT:: Type -> Type
+toCoreT :: Type -> Type
 toCoreT tt	
-	= toCoreT' Map.empty tt
+ = let	tt_prep	= flattenT_constrainForm $ toConstrainFormT tt
+	tt_core	= toCoreT' tt_prep
+   in	trace (vcat	[ "toCoreT: tt      = " % tt
+			, "         tt_prep = " % tt_prep
+			, "         tt_core = " % tt_core])
+		tt_core
 
-
-toCoreT' :: Map Var Type -> Type -> Type
-toCoreT' table tt
- = let down x	= toCoreT' table x
+toCoreT' :: Type -> Type
+toCoreT' tt
+ = let down x	= toCoreT' x
    in case tt of
 	
 	-- Add :> constraints on type variables directly to the quantifer.
 	TForall b k tQuant
 	 -> let result
-	 		| (bks, TFetters tBody fs)	<- takeTForall tt
-			= let	
-				(fsMore, fsRest) = partition isFMore fs
-				vtsMore		 = Map.fromList
-							[(v, t)	| FMore (TVar _ (UVar v)) t <- fsMore]
+	 		| (bks, TConstrain tBody crs)	<- takeTForall tt
+			= let	makeBK (b, k)
+				 = let	(v, t)	= case b of
+							BVar  v		-> (v, TVar k $ UVar v)
+							BMore v _	-> (v, TVar k $ UVar v)
 
-				makeBK b
-				 = let	Just v	= takeVarOfBind b
-				 	b'	= case Map.lookup v vtsMore of
-							Nothing	-> BVar v
-							Just t	-> BMore v (toCoreT t)
+				 	b'	= case Map.lookup t (crsMore crs) of
+							Nothing		-> BVar  v
+							Just tMore	-> BMore v (toCoreT tMore)
+							
 					k	= toCoreK $ fromJust $ lookup b bks
 				   in	(b', k)
 				   
-				bks'		= map (makeBK . fst) bks
-				
-				table'	= Map.union table vtsMore
+				bks'	= map makeBK bks
+				crs'	= crs { crsMore = Map.empty }
 
 	   		in	foldl	(\t (b, k) -> TForall b k t)
-			   		(toCoreT' table' $ TFetters tBody fsRest)
+			   		(toCoreT' $ TConstrain tBody crs')
 					(reverse bks')
 
 			| (bks, tBody)		<- takeTForall tt
 			= foldl (\t (b, k) -> TForall (toCoreB b) (toCoreK k) t)
-				(toCoreT' table tBody)
+				(toCoreT' tBody)
 				(reverse bks)
 
 	    in	result
 	   
-	TFetters t fs
-	 -> let	
-	 	-- separate out all the FLet bindings, we'll add these as a TWhere to the core type
-	 	([fsLet, fsMore], fsRest1)
-	 		= partitionFs [isFWhere, isFMore] fs
-				
-		vtsLet	= [ (v, toCoreT t) 	
-					| FWhere (TVar k (UVar v)) t	<- fsLet]
-
-		vtsMore	= Map.fromList
-			$ [ (v, t)	| FMore  (TVar _ (UVar v)) t	<- fsMore]
-
-		table'	= Map.union table vtsMore
-		t'	= toCoreT' table' t
-
-	    in	makeTWhere (addContextsUnderForalls (map toCoreF fsRest1) t') vtsLet
-	
 	TConstrain t crs
-	 -> toCoreT' table $ toFetterFormT tt
+	 -> addContextsUnderForalls
+		(map toCoreF $ crsOther crs)
+		$ toCoreT' t
 	
-	TSum k ts		-> TSum (toCoreK k) (map down ts)
+	TFetters{}
+	 -> toCoreT' $ toConstrainFormT tt
+	
+	TSum k ts		
+	 -> TSum (toCoreK k) (map down ts)
 
-	-- attach :> constraints directly to variables
-	TVar k (UVar v)		
-	 -> case Map.lookup v table of
-	 	Nothing		-> TVar (toCoreK k) $ UVar v
-		Just tMore	-> TVar (toCoreK k) $ UMore v (toCoreT' (Map.delete v table) tMore)
+	TVar k (UVar v)
+	 -> tt
 
-	TCon tyCon	-> TCon (toCoreTyCon tyCon)
+	TCon tyCon
+	 -> TCon (toCoreTyCon tyCon)
 
 	-- data
 	TApp t1 t2
@@ -172,7 +159,7 @@ toCoreF :: Fetter -> Kind
 toCoreF	f
  = case f of
 	FConstraint v tsArg		
-	 -> let	tsArg'		= map toCoreT tsArg
+	 -> let	tsArg'		= map toCoreT' tsArg
 		ksArg		= map kindOfType tsArg
 		kClass		= makeKindOfTypeClass v ksArg
 		kWitness	= makeKApps kClass tsArg'
