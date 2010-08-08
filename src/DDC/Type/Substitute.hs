@@ -4,6 +4,7 @@ module DDC.Type.Substitute
 	( subTT_noLoops
 	, subTTK_noLoops
 	, subTT_everywhere
+	, subVT_everywhere
 	, subVV_everywhere
 	, subCidCid_everywhere)
 where
@@ -207,6 +208,28 @@ subTT_everywhere sub tt
  	= transformT (\t -> case t of
 			TVar{}
 			 -> case Map.lookup t sub of
+				Just t'	-> t'
+				Nothing	-> t
+									
+			_	-> t)
+	$ tt
+
+
+-- | Do a shallow substition of type for variables everywhere in some thing.
+subVT_everywhere
+	:: TransM (State ()) a
+	=> Map Var Type
+	-> a -> a
+
+subVT_everywhere sub tt
+ 	= transformT (\t -> case t of
+			TVar _ (UVar v)
+			 -> case Map.lookup v sub of
+				Just t'	-> t'
+				Nothing	-> t
+
+			TVar _ (UMore v _)
+			 -> case Map.lookup v sub of
 				Just t'	-> t'
 				Nothing	-> t
 									

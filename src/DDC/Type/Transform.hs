@@ -150,6 +150,14 @@ instance Monad m => TransM m Kind where
  	 ->  liftM2 KFun (transZM table k1) (transZM table k2)
 	 >>= transK table 
 
+	KApp k1 t2
+	 ->  liftM2 KApp (transZM table k1) (transZM table t2)
+	 >>= transK table
+	
+	KSum ks
+	 -> do	ks'	<- mapM (transZM table) ks
+ 		transK table $ KSum ks'
+
 	_ -> transK table kk
 	
 
