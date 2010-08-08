@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- TODO: finish proper scope checking.
 module DDC.Core.Check.Type
@@ -79,6 +80,9 @@ checkType_trace m tt env
 			( TForall (BMore v t3') k1' t2'
 			, k2)
 	
+		_ -> panic stage $ "no match for " % tt
+	
+	
 	-- TODO: Add fetters to environment.
 	TFetters t1 fs
 	 | (t1', k1)	<- checkTypeI n t1 env
@@ -96,7 +100,7 @@ checkType_trace m tt env
 	TApp t1 t2
 	 | (t2', k2)	<- checkTypeI n t2 env
 	 -> case checkTypeI n t1 env of
-		(t1', k1@(KFun k11 k12))
+		(t1', k1@(KFun k11 _))
 		 | k11 == k2	
 		 -> ( TApp t1' t2'
 		    , applyKT k1 t2' )	
@@ -155,7 +159,7 @@ checkType_trace m tt env
 		, k')
 			
 	-- Type variables.
-	TVar k (UMore v TNil)
+	TVar _ (UMore _ TNil)
 	 -> panic stage $ ppr "checkType: no bound on UMore"
 
 	TVar _ UClass{}
@@ -199,8 +203,7 @@ checkType_trace m tt env
 		( TVar k' (UIndex i)
 		, k')
 	
-	TError{}
-	 -> panic stage $ ppr "checkType: no match for TError"
+	_  -> panic stage $ ppr $ "checkType: no match for " % tt
 
 
 -- | Lint a Fetter (unfinished)
