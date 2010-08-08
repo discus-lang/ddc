@@ -352,8 +352,9 @@ sumDestructive xx
 -- | Sum up the elements of this int list, recursively
 sum :: [Int] -> Int
 sum xx = sum' 0 xx
- where	sum' n []	= n
-	sum' n (_:xs)	= sum' (n+1) xs
+ where	sum' :: Int -> [Int] -> Int
+	sum' n []	= n
+	sum' n (x:xs)	= sum' (n+x) xs
 
 
 -- | Multiply all the elements of this int list together

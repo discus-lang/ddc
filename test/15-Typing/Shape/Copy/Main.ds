@@ -4,7 +4,7 @@
 --	otherwise we'll get a purity error when we try and update it.
 main ()
  = do	list	= [1, 2, 3]
- 	total	= sumR @ list
+ 	total	= sum @ list
 	
 	list2	= copy list
 	(head list2) := 5
