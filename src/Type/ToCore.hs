@@ -30,18 +30,22 @@ toCoreB bb
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Convert this type to core representation.
+--   * We make sure type are flattened.
+--   * Attach more-than constraints directly to variables.
+--   * Convert type-class constraints to contexts.
+--   * Crush $Danger closures.
 toCoreT :: Type -> Type
 toCoreT tt	
  = let	tt_prep	= flattenT_constrainForm $ toConstrainFormT tt
-	tt_core	= toCoreT' tt_prep
+	tt_core	= toCoreT' Map.empty tt_prep
    in	trace (vcat	[ "toCoreT: tt      = " % tt
 			, "         tt_prep = " % tt_prep
 			, "         tt_core = " % tt_core])
 		tt_core
 
-toCoreT' :: Type -> Type
-toCoreT' tt
- = let down x	= toCoreT' x
+toCoreT' :: Map Type Type -> Type -> Type
+toCoreT' ttsMore tt
+ = let down x	= toCoreT' ttsMore  x
    in case tt of
 	
 	-- Add :> constraints on type variables directly to the quantifer.
@@ -60,33 +64,38 @@ toCoreT' tt
 					k	= toCoreK $ fromJust $ lookup b bks
 				   in	(b', k)
 				   
-				bks'	= map makeBK bks
-				crs'	= crs { crsMore = Map.empty }
+				bks'		= map makeBK bks
+				crs'		= crs { crsMore = Map.empty }
+				ttsMore'	= Map.union ttsMore (crsMore crs)
 
 	   		in	foldl	(\t (b, k) -> TForall b k t)
-			   		(toCoreT' $ TConstrain tBody crs')
+			   		(toCoreT' ttsMore' $ TConstrain tBody crs')
 					(reverse bks')
 
 			| (bks, tBody)		<- takeTForall tt
 			= foldl (\t (b, k) -> TForall (toCoreB b) (toCoreK k) t)
-				(toCoreT' tBody)
+				(toCoreT' ttsMore tBody)
 				(reverse bks)
 
 	    in	result
 	   
 	TConstrain t crs
-	 -> addContextsUnderForalls
-		(map toCoreF $ crsOther crs)
-		$ toCoreT' t
+	 -> let	ttsMore'	= Map.union ttsMore (crsMore crs)
+		t'		= toCoreT' ttsMore' t
+		ksContext	= map toCoreF $ crsOther crs
+	    in	addContextsUnderForalls ksContext t'
 	
 	TFetters{}
-	 -> toCoreT' $ toConstrainFormT tt
+	 -> down $ toConstrainFormT tt
 	
 	TSum k ts		
 	 -> TSum (toCoreK k) (map down ts)
 
+	-- If we have a more-than bound for this var, then attach it.
 	TVar k (UVar v)
-	 -> tt
+	 -> case Map.lookup tt ttsMore of
+		Nothing		-> tt
+		Just tMore	-> trace ("attached to " % v) $ TVar k (UMore v (down tMore))
 
 	TCon tyCon
 	 -> TCon (toCoreTyCon tyCon)
@@ -159,7 +168,7 @@ toCoreF :: Fetter -> Kind
 toCoreF	f
  = case f of
 	FConstraint v tsArg		
-	 -> let	tsArg'		= map toCoreT' tsArg
+	 -> let	tsArg'		= map toCoreT tsArg
 		ksArg		= map kindOfType tsArg
 		kClass		= makeKindOfTypeClass v ksArg
 		kWitness	= makeKApps kClass tsArg'
