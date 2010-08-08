@@ -1,8 +1,9 @@
 
 module Core.Util.Pack
 	( packT 
-	, packK)
+	, packK) 
 where
+
 import Core.Plate.FreeVars
 import Util
 import Util.Graph.Deps

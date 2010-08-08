@@ -11,7 +11,6 @@ module Core.Util.Slurp
 	, dropXTau)
 where
 import Core.Pretty		()
-import Core.Util.Pack
 import Type.Util
 import DDC.Main.Error
 import DDC.Core.Exp
@@ -20,8 +19,6 @@ import DDC.Var
 import qualified Data.Map	as Map
 import Util
 
-
------
 stage	= "Core.Util.Slurp"
 
 -- | Slurp out the types defined by this top level thing
@@ -148,6 +145,6 @@ dropXTau xx env tt
 	
 	-- we've hit a value, drop the annot
 	| otherwise
-	= XTau (packT $ makeTWhere tt (Map.toList env)) xx
+	= XTau (packType $ makeTWhere tt (Map.toList env)) xx
 
 

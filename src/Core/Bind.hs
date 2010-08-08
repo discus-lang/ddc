@@ -8,7 +8,6 @@ module Core.Bind
 where
 import Core.Plate.Trans
 import Core.Plate.FreeVars
-import Core.Util
 import Shared.VarPrim
 import Shared.VarGen
 import Util
@@ -146,7 +145,7 @@ bindX 	shared xx
 
 		-- mask out effects which are known to be local to the body of this expression
 		let effMasked	= 
-			packT
+			packType
 			$ transformT
 				(\tt -> case tt of
 					  TApp t1 (TVar kRegion (UVar r))
