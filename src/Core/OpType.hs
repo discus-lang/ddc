@@ -15,7 +15,6 @@ import {-# SOURCE #-} DDC.Core.Check.Exp
 
 stage = "Core.OpType"
 
-
 -- | Slurp the name and arity from this top level thing.
 slurpSuperAritiesP :: Top -> Map Var Int
 slurpSuperAritiesP pp
@@ -91,9 +90,10 @@ superOpTypePart	tt
  = case tt of
 	TNil			-> TNil
 
-	-- skip over type information
+	-- skip over constraints
 	TForall v k t		-> superOpTypePart t
 	TFetters t fs		-> superOpTypePart t
+	TConstrain t crs	-> superOpTypePart t
 
 	-- an unboxed var of airity zero, eg Int32#
 	TCon (TyConData name kind)
