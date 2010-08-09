@@ -273,21 +273,7 @@ freshenCrsEq mid tt
 		
 	TFetters{}
 	 -> freshenCrsEq mid $ toConstrainFormT tt
-{-	
-	TFetters t fs
-	 -> do	let takeSub	ff
-		     = case ff of
-			FWhere (TVar k (UVar v)) _
-			 -> do	vFresh	<- freshenV mid v
-				return	$  Just (TVar k $ UVar v, TVar k $ UVar vFresh)
-				
-			_ -> return Nothing
-			
-		vsSub	<- liftM (Map.fromList . catMaybes)
-			$ mapM takeSub fs
-			
-		return	$ subTT_everywhere vsSub tt
--}		
+
 	_ -> return tt
 
 
