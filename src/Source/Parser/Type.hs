@@ -10,6 +10,7 @@ import Control.Monad
 import Data.Maybe
 import DDC.Type
 import DDC.Var
+import qualified Data.Map					as Map
 import qualified Source.Token					as K
 import qualified Shared.VarPrim					as Var
 import qualified Text.ParserCombinators.Parsec.Combinator	as Parsec
@@ -111,9 +112,12 @@ pType_bodyFetters
                 	(do	pTok K.HasConstraint
 				Parsec.sepBy1 pFetter (pTok K.Comma))
 
+	-- NOTE: We put all the fetters in the crsOther field for now. They don't 
+	--       have real uniqids, so they won't fit in a Data.Map yet.
 	case concat $ maybeToList mContext ++ maybeToList mFetters of
 		[]	-> return body
-		fs	-> return $ TFetters body fs
+		fs	-> return $ TConstrain body 
+				  $ Constraints Map.empty Map.empty fs	
 
 pType_someContext :: Parser [Fetter]
 pType_someContext

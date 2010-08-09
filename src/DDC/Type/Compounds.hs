@@ -56,6 +56,8 @@ module DDC.Type.Compounds
 	, takeTFetters
 	, addFetters
 	, takeBindingVarF
+	, constraintsOfFetters
+	, addFetterToConstraints
 	
 	  -- * Constraints
 	, makeTConstrain
@@ -434,6 +436,31 @@ takeBindingVarF ff
  	FWhere (TVar _ (UVar  v))   _	-> Just v
  	FWhere (TVar _ (UMore v _)) _	-> Just v
 	_				-> Nothing
+
+
+-- | Convert a list of fetters to a constraints
+constraintsOfFetters :: [Fetter] -> Constraints
+constraintsOfFetters fs
+	= foldr addFetterToConstraints 
+		(Constraints Map.empty Map.empty [])
+		fs
+
+
+-- | Add a fetter to a some constraints.
+addFetterToConstraints :: Fetter -> Constraints -> Constraints
+addFetterToConstraints ff crs
+ = case ff of
+	FWhere t1 t2
+	 -> crs { crsEq	  = Map.insert t1 t2 (crsEq crs) }
+	
+	FMore t1 t2
+	 -> crs { crsMore = Map.insert t1 t2 (crsMore crs) }
+	
+	FConstraint{}
+	 -> crs { crsOther = ff : crsOther crs }
+	
+	FProj{} 
+	 -> crs { crsOther = ff : crsOther crs }
 
 
 -- Constraints ------------------------------------------------------------------------------------

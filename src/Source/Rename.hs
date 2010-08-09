@@ -27,9 +27,9 @@ import DDC.Util.FreeVars
 import DDC.Main.Pretty		()
 import qualified Shared.VarUtil	as Var
 import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
 stage		= "Source.Rename"
-
 
 -- Tree --------------------------------------------------------------------------------------------
 -- | Rename the variables in some source trees.
@@ -735,18 +735,24 @@ instance Rename Type where
 		let tt'		= TForall b' k t'
 		return tt'
 
-	TFetters t fs
-	 -> do
-	 	let bindingVars	=  catMaybes $ map takeBindingVarF fs
+	-- When we get the constraints from the parser, all the fetters
+	-- are in the crsOther list. The crsEq and crsOther maps should be empty
+	-- because vars don't have uniqids yet.
+	TConstrain t crs
+	 | Map.null $ crsEq crs
+	 , Map.null $ crsMore crs
+	 -> do	let bindingVars	= catMaybes $ map takeBindingVarF
+				$ crsOther crs
 
 		withLocalScope
 		  $ do	
 		  	-- bind the vars on the LHS of let binds
 		  	mapM_ bindZ bindingVars
 
-			fs'	<- rename fs
+			fs'	<- rename $ crsOther crs
 			t'	<- rename t
-			return	$ TFetters t' fs'
+			return	$ TConstrain t'
+				$ constraintsOfFetters fs'	
 			 	
 	TVar k (UVar v)
 	 -> do 	let Just space = spaceOfKind k

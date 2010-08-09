@@ -542,7 +542,9 @@ instance Lint Type where
 		fs'	<- lint fs
 		return	$ TFetters t' fs'
 
-	TConstrain ts cs -> death tt "TConstrain - shouldn't exist in source program"
+	TConstrain t crs
+	 -> do	t'	<- lint t
+	 	return	$ TConstrain t' crs
 	
 	TApp t1 t2
 	 -> do	t1'	<- lint t1

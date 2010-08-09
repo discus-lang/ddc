@@ -710,6 +710,10 @@ instance Rewrite Type Type where
 	 -> do	t'	<- rewrite t
 	 	return	$ TFetters t' fs
 
+	TConstrain t crs
+	 -> do	t'	<- rewrite t
+		return	$ TConstrain t' crs
+
 	TApp t1 t2
 	 -> do	t1'	<- rewrite t1
 	 	t2'	<- rewrite t2

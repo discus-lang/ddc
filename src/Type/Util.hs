@@ -33,6 +33,7 @@ makeOpTypeT tt
  $ case tt of
  	TForall v k t		-> makeOpTypeT t
 	TFetters t fs		-> makeOpTypeT t
+	TConstrain t crs	-> makeOpTypeT t
 
 	TCon{}
 	 | Just (v, k, ts)	<- takeTData tt
