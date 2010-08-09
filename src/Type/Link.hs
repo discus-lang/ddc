@@ -10,6 +10,7 @@ import DDC.Main.Error
 import DDC.Type
 import DDC.Var
 import Util
+import qualified Data.Map	as Map
 
 stage	= "Type.Link"
 
@@ -32,12 +33,12 @@ linkType bound src tt
 	 	return	$ TForall b k t'
 		
 	TFetters t fs
-	 -> do	t'	<- linkType bound src t
-	 	fs'	<- mapM (linkFetter bound src) fs
-		return	$ TFetters t' fs'
+	 -> linkType bound src $ toConstrainFormT tt
 
-	TConstrain{}
-	 -> linkType bound src $ toFetterFormT tt
+	TConstrain t crs
+	 -> do	t'	<- linkType bound src t
+		crs'	<- linkConstraints bound src crs
+		return	$  TConstrain t' crs'
 
 	TSum k es
 	 -> do	es'	<- mapM (linkType bound src) es
@@ -87,15 +88,30 @@ linkFetter bound src ff
 	 -> do	ts'	<- mapM (linkType bound src) ts
 	 	return	$ FConstraint v ts'
 		
-	FWhere t1 t2
-	 -> do	t1'	<- linkType bound src t1
-	 	t2'	<- linkType bound src t2
-	 	return	$ FWhere t1' t2'
-			 
 	FProj pj v tDict tBind
 	 -> do	tDict'	<- linkType bound src tDict
 		tBind'	<- linkType bound src tBind
 		return	$ FProj pj v tDict' tBind'
+
+
+-- | Link the free vars in these constraints into the graph.
+linkConstraints 
+	:: [Var]
+	-> TypeSource
+	-> Constraints
+	-> SquidM Constraints
+	
+linkConstraints bound src crs
+ = do	let linkTT (t1, t2)
+	     = do t1'	<- linkType bound src t1
+		  t2'	<- linkType bound src t1
+		  return (t1, t2')
+		
+	crsEq'		<- liftM Map.fromList $ mapM linkTT $ Map.toList $ crsEq   crs
+	crsMore'	<- liftM Map.fromList $ mapM linkTT $ Map.toList $ crsMore crs
+	crsOther'	<- mapM (linkFetter bound src) $ crsOther crs
+	
+	return	$ Constraints crsEq' crsMore' crsOther'
 
 
 
