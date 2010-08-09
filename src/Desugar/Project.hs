@@ -259,7 +259,21 @@ freshenCrsEq mid tt
 	TForall b k t	
 	 -> do	t'	<- freshenCrsEq mid t
 		return	$ TForall b k t'
-	
+
+	TConstrain t crs
+	 -> do	let takeSub (TVar k (UVar v))
+			= do	vFresh	<- freshenV mid v
+				return	(TVar k $ UVar v, TVar k $ UVar vFresh)
+
+		vsSub	<- liftM Map.fromList
+			$  mapM takeSub 
+			$  Map.keys $ crsEq crs
+			
+		return	$ subTT_everywhere vsSub tt
+		
+	TFetters{}
+	 -> freshenCrsEq mid $ toConstrainFormT tt
+{-	
 	TFetters t fs
 	 -> do	let takeSub	ff
 		     = case ff of
@@ -273,7 +287,7 @@ freshenCrsEq mid tt
 			$ mapM takeSub fs
 			
 		return	$ subTT_everywhere vsSub tt
-		
+-}		
 	_ -> return tt
 
 
