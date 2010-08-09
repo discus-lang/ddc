@@ -119,9 +119,11 @@ slurpBoundVarsW ww
 dropXTau :: Exp -> Map Var Type -> Type -> Exp
 dropXTau xx env tt
 	-- load up bindings into the environment
+	| TConstrain t crs	<- tt
+	= panic stage $ "dropXTau: Reconstructed types should have TConstrain nodes"
+
 	| TFetters t fs		<- tt
-	= dropXTau xx (Map.union (Map.fromList [(v, t)
-	 		| FWhere (TVar _ (UVar v)) t <- fs]) env) t
+	= panic stage $ "dropXTau: Reconstructed types should have TFetters nodes"
 
 	-- decend into XLAMs
 	| XLAM v t x		<- xx

@@ -71,7 +71,12 @@ checkPrim n pp xs env
 
 -- | Reconstruct the type and effect of an operator application.
 --	Primops don't have real type sigs, so we have to do this manually.
---	It'd probably be bett
+--
+--   TODO: It'd be better to attach their real type schemes to the Prim nodes in the AST.
+--	   Do this during translation from desugared language to core.
+--         We rewrite type and witness-kind constructors at the same time, so we
+--         might as well rewrite prim functions as well.
+--	
 checkPrimOpApp 
 	:: Int
 	-> PrimOp -> [Exp] -> Env
