@@ -1,10 +1,7 @@
 -- | Desugar projection and type class dictionaries.
-
 --	* For each data type, add a default projection dict if none exists.
 --	* Add default projections.
 --	* Snip user provided projection functions to top level.
---
-
 module Desugar.Project
 	( projectTree 
 	, ProjTable
@@ -60,18 +57,20 @@ addError err
 type	ProjectM	= State ProjectS
 type	Annot		= SourcePos
 
+
 -- Project ----------------------------------------------------------------------------------------
 projectTree 
-	:: String		-- unique string
-	-> ModuleId		-- the name of the current module
-	-> Tree Annot 		-- header tree
-	-> Tree Annot 		-- source tree
+	:: String		-- ^ unique string
+	-> ModuleId		-- ^ the name of the current module
+	-> Tree Annot 		-- ^ header tree
+	-> Tree Annot 		-- ^ source tree
 	-> (Tree Annot, [Error])
 
 projectTree unique moduleName headerTree tree
  = let	(tree', state')
 		= runState (projectTreeM moduleName headerTree tree) 
 		$ stateInit unique
+
    in	(tree', stateErrors state')
 		
 	
@@ -105,7 +104,6 @@ projectTreeM moduleName headerTree tree
 
 -- | Snip out functions and sigs from projection dictionaries to top level.
 --	Also snip class instances while we're here.
-
 snipProjDictTree 
 	:: ModuleId 			-- the name of the current module
 	-> Map Var (Top SourcePos)	-- class dictionary definitions
@@ -129,7 +127,6 @@ snipProjDictP moduleName classDicts (PProjDict sp t ss)
 	dictVsNew 	<- mapM (newProjFunVar sp moduleName vCon) dictVs
 	let varMap	= Map.fromList $ zip dictVs dictVsNew
 	
-	-- 
 	let (mpp, mss')	= unzip $ map (snipProjDictS varMap) ss
 	
 	return	$ PProjDict sp t (catMaybes mss')
@@ -187,9 +184,9 @@ snipProjDictP _ _ pp
 --		
 snipInstBind
 	:: ModuleId
-	-> Top SourcePos		-- the class dict def of this instance
-	-> Top SourcePos		-- the class dict instance
-	-> Stmt SourcePos		-- the binding in this instance to snip
+	-> Top SourcePos		-- ^ the class dict def of this instance
+	-> Top SourcePos		-- ^ the class dict instance
+	-> Stmt SourcePos		-- ^ the binding in this instance to snip
 	-> ProjectM ( Stmt SourcePos
 		    , [Top SourcePos])
 
@@ -220,7 +217,7 @@ snipInstBind moduleName
 	  -> snipInstBind' moduleName pDict pInst sBind vTop tInst
 
 
--- Make the type signature for the instance function
+-- | Make the type signature for the instance function
 --	we also need to quantify over any free variables in the class
 --	arguments
 --
@@ -279,6 +276,7 @@ freshenCrsEq mid tt
 		
 	_ -> return tt
 
+
 freshenV :: ModuleId -> Var -> ProjectM Var		
 freshenV mod v
  = do	vNew		<- newVarN (varNameSpace v)
@@ -292,10 +290,10 @@ freshenV mod v
 
 -- snip expressions out of data field intialisers in this ctor def
 snipCtorDef 
-	:: ModuleId		-- the current module
-	-> a			-- annot to use on new code
-	-> Var 			-- var of data type
-	-> CtorDef a		-- ctor def to transform
+	:: ModuleId		-- ^ the current module
+	-> a			-- ^ annot to use on new code
+	-> Var 			-- ^ var of data type
+	-> CtorDef a		-- ^ ctor def to transform
 	-> ProjectM
 		( CtorDef a	-- new ctor def
 		, [Top a])	-- new top level bindings
@@ -311,10 +309,10 @@ snipCtorDef moduleName sp vData (CtorDef nn vCtor dataFields)
  
 -- snip expresisons out of data field initialisers
 snipDataField 
-	:: ModuleId		-- the current module
-	-> a			-- annot to use on new code
-	-> Var			-- var of data type
-	-> Var			-- var of contructor
+	:: ModuleId		-- ^ the current module
+	-> a			-- ^ annot to use on new code
+	-> Var			-- ^ var of data type
+	-> Var			-- ^ var of contructor
 	-> DataField (Exp a) Type 
 	-> ProjectM 
 		( DataField (Exp a) Type	-- snipped data field
@@ -322,7 +320,7 @@ snipDataField
 
 snipDataField moduleName sp vData vCtor field
 	-- no initialiser
-	| Nothing	<- dInit field
+	| Nothing		<- dInit field
 	= return 
 		( field
 		, [])
@@ -358,12 +356,8 @@ snipDataField moduleName sp vData vCtor field
 -- | Create a name for a top level projection function.
 --	Add the type and projection names to the var to make the CoreIR readable.
 newProjFunVar :: SourcePos -> ModuleId -> Var -> Var -> ProjectM Var
-newProjFunVar 
-	src
-	moduleName@(ModuleId ms)
-	vCon vField
- = do
- 	var	<- newVarN NameValue
+newProjFunVar src moduleName@(ModuleId ms) vCon vField
+ = do 	var	<- newVarN NameValue
 	return	
 	 $ var 	{ varName 
 	 		= Var.deSymString
@@ -378,14 +372,8 @@ newProjFunVar
 -- | Create a name for a top level type class instance function
 --	Add the type class and function names to the var to make the CoreIR readable.
 newInstFunVar :: SourcePos -> ModuleId -> Var -> [Type] -> Var -> ProjectM Var
-newInstFunVar 
-	src
-	moduleName@(ModuleId ms)
-	vClass 
-	tsArgs
-	vInst
- = do
- 	var	<- newVarN NameValue
+newInstFunVar src moduleName@(ModuleId ms) vClass tsArgs vInst
+ = do 	var	<- newVarN NameValue
 	return	
 	 $ var 	{ varName 
 	 		= Var.deSymString
@@ -396,6 +384,7 @@ newInstFunVar
 
 		, varInfo 	= [ISourcePos src ]
 		, varModuleId 	= moduleName }
+
 
 -- | Make a printable name from a type
 --	TODO: do this more intelligently, in a way guaranteed not to clash with other types
@@ -438,41 +427,33 @@ snipProjDictS varMap xx
 	= ( Nothing
 	  , Just xx)
 
------
--- addProjDictDataTree
---	Make sure there is a projection dictionary for each data type.
---	If one doesn't exist, then make a new one. 
---	This dictionary will be filled with the default projections by 
---	addProjDictFunTree.
---
+
+-- | Make sure there is a projection dictionary for each data type.
+--   If one doesn't exist, then make a new one. 
+--   This dictionary will be filled with the default projections by 
+--   addProjDictFunTree.
 addProjDictDataTree
- ::	Tree Annot
- -> 	ProjectM (Tree Annot)
+	:: Tree Annot
+	-> ProjectM (Tree Annot)
  
 addProjDictDataTree tree
  = do
-	-- Slurp out all the data defs
---	let dataDefs	= [p		| p@(PData _ v vs ctors)	<- tree]
-
  	-- Slurp out all the available projection dictionaries.
-	let projMap	= Map.fromList
-			$ catMaybes
-			$ map
-				(\p -> case p of
-					PProjDict _ t ss
-					 | Just (v, _, ts)	<- takeTData t
-					 -> Just (v, p)
+	let projMap	
+		= Map.fromList
+		$ catMaybes
+		$ map	(\p -> case p of
+				PProjDict _ t ss
+				 | Just (v, _, ts)	<- takeTData t
+				 -> Just (v, p)
 					
-					_ -> Nothing)
-				tree
+				_ -> Nothing)
+			tree
 		
 	-- If there is no projection dictionary for a given data type
 	--	then make a new empty one. Add new dictionary straight after the data def
 	--	to make life easier for the type inference constraint reordering.
-	-- 
-	let tree'	= catMap (addProjDataP projMap) tree
-
-	return	$ tree'
+	return	$ catMap (addProjDataP projMap) tree
 	
 
 addProjDataP projMap p
@@ -492,8 +473,9 @@ varToTBot v
 --	Abstract data types with no constructors don't have fields,
 --	so don't need default field projections.
 addProjDictFunsTree 
- :: 	Map Var (Top Annot) -> Tree Annot
- -> 	ProjectM (Tree Annot)
+	:: Map Var (Top Annot)
+	-> Tree Annot
+	-> ProjectM (Tree Annot)
 
 addProjDictFunsTree dataMap tree
  	= mapM (addProjDictFunsP dataMap) tree
@@ -501,6 +483,7 @@ addProjDictFunsTree dataMap tree
 addProjDictFunsP 
 	dataMap 
 	p@(PProjDict sp projType ss)
+	
  | Just (v, k, ts)			<- takeTData projType
  , Just (PData _ vData vsData ctors)	<- Map.lookup v dataMap
  = do	
@@ -513,8 +496,7 @@ addProjDictFunsP
 			$ map bindingVarsOfStmt ss
 	
 	-- Gather the list of all fields in the data def.
-	let dataFieldVs
-			= nub
+	let dataFieldVs	= nub
 			$ [ fieldV 	| CtorDef _ v fields	<- ctors
 					, Just fieldV		<- map dLabel fields ]			
 
@@ -536,14 +518,14 @@ addProjDictFunsP dataMap p
 
 
 makeProjFun 
- :: 	SourcePos 
- -> 	Type
- -> 	[CtorDef Annot] -> Var 
- ->	ProjectM [Stmt Annot]
+	:: SourcePos 
+	-> Type
+	-> [CtorDef Annot]
+	-> Var 
+	-> ProjectM [Stmt Annot]
 
 makeProjFun sp tData ctors fieldV
-  = do 	
-	objV	<- newVarN NameValue
+  = do 	objV	<- newVarN NameValue
 	
 	alts	<- liftM catMaybes
   		$  mapM (makeProjFunAlt sp objV fieldV) ctors
@@ -559,10 +541,10 @@ makeProjFun sp tData ctors fieldV
 		, SBind sp (Just fieldV) 
  			(XLambda sp objV 
 				(XMatch sp (Just (XVar sp objV)) alts)) ]
-				
+
+		
 makeProjFunAlt sp objV fieldV (CtorDef _ vCon fields)
- = do
-	let (mFieldIx :: Maybe Int)
+ = do	let (mFieldIx :: Maybe Int)
 		= lookup (Just fieldV)
 		$ zip (map dLabel fields) [0..]
 
@@ -577,40 +559,39 @@ makeProjFunAlt sp objV fieldV (CtorDef _ vCon fields)
 
 		Nothing	-> Nothing
 
------
--- makeProjR
-
 makeProjR_fun
- ::	SourcePos
- ->	Type
- ->	[CtorDef Annot] -> Var
- ->	ProjectM [Stmt Annot]
+	:: SourcePos
+	-> Type
+	-> [CtorDef Annot] -> Var
+	-> ProjectM [Stmt Annot]
  
 makeProjR_fun sp tData ctors fieldV
- = do	
-	funV_		<- newVarN NameValue
-	let funV	= funV_ { varName 	= "ref_" ++ varName fieldV 
-				, varModuleId 	= varModuleId fieldV }
+ = do	funV_	<- newVarN NameValue
+	let funV = funV_ 
+		{ varName 	= "ref_" ++ varName fieldV 
+		, varModuleId 	= varModuleId fieldV }
 		
-	objV		<- newVarN NameValue
+	objV	<- newVarN NameValue
 
-	alts		<- liftM catMaybes
- 			$ mapM (makeProjR_alt sp objV fieldV) ctors
+	alts	<- liftM catMaybes
+ 		$ mapM (makeProjR_alt sp objV fieldV) ctors
 
 	-- Find the field type for this projection.
-	let (resultT:_)	= [dType field 	| CtorDef _ _ fields	<- ctors
-					, field			<- fields
-					, dLabel field == Just fieldV ]
+	let (resultT:_)	
+		= [dType field 	| CtorDef _ _ fields	<- ctors
+				, field			<- fields
+				, dLabel field == Just fieldV ]
 
-	let rData	= case tData of
-				TApp{}
-				 | Just (vData, _, (TVar kR rData : _))	<- takeTData tData
-				 , kR == kRegion 
-				 -> rData
+	let rData	
+		= case tData of
+			TApp{}
+			 | Just (vData, _, (TVar kR rData : _))	<- takeTData tData
+			 , kR == kRegion 
+			 -> rData
 
-				_ 	-> panic stage
-					$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
-					% "  tData = " % show tData			% "\n"
+			_ 	-> panic stage
+				$ "makeProjR_fun: can't take top region from " 	% tData	% "\n"
+				% "  tData = " % show tData			% "\n"
 
 	return	$ 	[ SSig  sp [funV]
 				(makeTFun tData (makeTData 
@@ -624,10 +605,10 @@ makeProjR_fun sp tData ctors fieldV
 			, SBind sp (Just funV) 
 				(XLambda sp objV
 					(XMatch sp (Just (XVar sp objV)) alts))]
+
 				
 makeProjR_alt sp objV fieldV (CtorDef _ vCon fields)
- = do
-	let (mFieldIx :: Maybe Int)
+ = do	let (mFieldIx :: Maybe Int)
 		= lookup (Just fieldV)
 		$ zip (map dLabel fields) [0..]
 			
@@ -643,16 +624,12 @@ makeProjR_alt sp objV fieldV (CtorDef _ vCon fields)
 		Nothing	-> Nothing
  
  
------
--- slurpProjTable
---	Slurp out all the projections in a tree into a projection table
---	for easy lookup
+-- | Slurp out all the projections in a tree into a projection table
+--   for easy lookup
 --	
---	BUGS:	If there are multiple tables for a particular type then 
---		later ones replace earlier ones. We should really merge
---		the tables together here.
---
---
+--   BUGS: If there are multiple tables for a particular type then 
+--	   later ones replace earlier ones. We should really merge
+--	   the tables together here.
 type	ProjTable	
 	= Map Var [(Type, Map Var Var)]
 
@@ -683,10 +660,8 @@ slurpProjTable tree
  in 	projTable
 
 
-----------------------------------------------------------------------------------------------------
--- Check for projection names that collide with field names of the Data
--- definition they are projecting over. Log any that are found as errors.
---
+-- | Check for projection names that collide with field names of the Data
+--   definition they are projecting over. Log any that are found as errors.
 checkForRedefDataField :: Map Var (Top Annot) -> Top Annot -> ProjectM ()
 checkForRedefDataField dataMap (PProjDict _ tt ss)
  | Just (pvar, _, _)	<- takeTData tt
