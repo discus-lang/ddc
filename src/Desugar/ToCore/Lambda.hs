@@ -33,11 +33,14 @@ fillLambdas' tsWhere tScheme x
 	= do	x'	<- fillLambdas' tsWhere tRest x
 		return	$ XLAM b k x'
 
-	| TFetters tRest fs		<- tScheme
-	= do	let tsWhere'	= Map.union tsWhere (Map.fromList [(v, t) | FWhere v t <- fs])
+	| TConstrain tRest crs		<- tScheme
+	= do	let tsWhere'	= Map.union tsWhere (crsEq crs)
 		x'	<- fillLambdas' tsWhere' tRest x
-		return	$ x'
+		return	x'
 
+	| TFetters tRest fs		<- tScheme
+	= fillLambdas' tsWhere (toConstrainFormT tScheme) x
+	
 	| otherwise
 	= return x
 
