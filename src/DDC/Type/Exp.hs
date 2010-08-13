@@ -98,6 +98,8 @@ data Type
 	| TForall	Bind 	Kind	Type
 
 	-- | Constrained types.
+	--   Used in the solver only. When converting to core we add type class contexts
+	--   as kinds using TForall, and more-than contraints as bounded quantification.
 	| TConstrain	Type	Constraints
 			
 	-- | Used in the solver only.
@@ -142,6 +144,7 @@ data Bound
 
 
 -- | Constraints used in the `TConstrain` constructor of `Type`.
+--   The crsOther list should only contain FConstraint and FProj fetters.
 data Constraints
 	= Constraints 
 	{ crsEq		:: Map Type Type
