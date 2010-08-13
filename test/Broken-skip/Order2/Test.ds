@@ -1,0 +1,12 @@
+
+
+-- succ is a first order function
+succ :: Int -> Int
+succ x = x + 1
+
+-- a second order function.
+appFive g	= g 5
+
+chooseFive g
+ = do	f = if True then g else succ
+	f 5
