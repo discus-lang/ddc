@@ -5,17 +5,17 @@ succ x 	= x + 1;
 increment x	
  = do {	x := x + 1; x; };
 
--- f and g are forced to be functions
-{-
+
+-- the types of f and g are unified with an explicit function type.
 selectFun1 x f g 
  = case x of {
  	True	-> f;
 	False	-> g;
 	False	-> (\x -> x);
  };
--}
 
--- f and g are forced to be functions, the effect of which includes !Console
+
+-- like above, but the effect of the function now includes !Console
 selectFun2 x f g 
  = case x of {
  	True	-> f;
@@ -32,6 +32,6 @@ selectFun2 x f g
 
 main ()
  = do {
- --	print (showInt (selectFun1 True succ increment 5));
+	print $ show (selectFun1 True succ increment 5);
 	print $ show (selectFun2 True succ increment 5);
  };
