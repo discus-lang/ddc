@@ -60,7 +60,7 @@ checkSchemeDanger errs c
 	= do	trace 	$ "*   checkSchemeDanger\n"
 			% "    t = " % t % "\n"
 
-		let clo	= trimClosureC_constrainForm
+		let clo	= trimClosureC
 			$ makeTFreeBot (varWithName "foo") t
 		
 		let ds	= catMaybes

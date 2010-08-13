@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module DDC.Type.Flatten
-	(flattenT_constrainForm)
+	(flattenT)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -14,8 +14,8 @@ stage	= "DDC.Type.Flatten"
 -- | Flatten a type by inlining all the equality constraints in it.
 --   We keep track of the constraints substituted on the way down the tree, 
 --   and panic if any are found to be recursive.
-flattenT_constrainForm :: Type -> Type
-flattenT_constrainForm tt
+flattenT :: Type -> Type
+flattenT tt
  = flattenT' Map.empty Set.empty tt
 
 flattenT' sub block tt

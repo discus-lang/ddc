@@ -36,7 +36,7 @@ toCoreB bb
 --   * Crush $Danger closures.
 toCoreT :: Type -> Type
 toCoreT tt	
- = let	tt_prep	= flattenT_constrainForm tt
+ = let	tt_prep	= flattenT tt
 	tt_core	= toCoreT' Map.empty tt_prep
    in	trace (vcat	[ "toCoreT: tt      = " % tt
 			, "         tt_prep = " % tt_prep

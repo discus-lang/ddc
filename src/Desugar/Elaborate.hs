@@ -66,7 +66,7 @@ elaborateT_fun tt
 				$ sequence
 				$ map (takeVarOfBind . fst) bks
 	
-	(tt_rs, newRs)		<- elaborateRsT_constrainForm newVarN tt'
+	(tt_rs, newRs)		<- elaborateRsT newVarN tt'
 			
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
@@ -82,12 +82,12 @@ elaborateT_fun tt
 
 	-- add read and write effects
 	let ?newVarN	= newVarN
-	tt_eff		<- elaborateEffT_constrainForm 
+	tt_eff		<- elaborateEffT 
 				(Set.toList rsRead) (Set.toList rsWrite) 
 				tt_quant
 
 	-- add closures
-	tt_clo		<- elaborateCloT_constrainForm tt_eff
+	tt_clo		<- elaborateCloT tt_eff
 			
 	
 	-- make a new Mutable fetter for each region that is written to

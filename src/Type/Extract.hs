@@ -160,8 +160,8 @@ extractType_more final varT cid tPack
 	-- Trim closures
 	trace	$ ppr " -- trimming closures\n"	
 	let tTrim	
-		| isClosure tStrong	= trimClosureC_constrainForm tStrong
-		| otherwise		= trimClosureT_constrainForm tStrong
+		| isClosure tStrong	= trimClosureC tStrong
+		| otherwise		= trimClosureT tStrong
 
 	trace	$ "    tTrim:\n" 	%> prettyTypeSplit tTrim % "\n\n"
 
@@ -184,7 +184,7 @@ extractType_final True varT cid tCutPack
  
 	-- close off never-quantified effect and closure vars
  	quantVars	<- getsRef stateQuantifiedVars
- 	let tFinal	= finaliseT_constrainForm quantVars True tPlug
+ 	let tFinal	= finaliseT quantVars True tPlug
 	
 	trace	$ "    tFinal:\n" 	%> prettyTypeSplit tFinal	% "\n\n"
 	extractType_reduce varT cid tFinal

@@ -271,7 +271,7 @@ simplifyCrsMore' crsFree crsAcc (c@(t1, t2):cs)
 
 	    -- We haven't seen this closure term before.
 	    Nothing 
-	     -> let t2'	= trimClosureT_constrainForm t2
+	     -> let t2'	= trimClosureT t2
 		    c'	= (t1, t2')
 
 		-- The closure might have been trimmed to bottom, 

@@ -24,7 +24,7 @@
 --   for @!e1@ is applied.
 -- 
 module DDC.Type.Quantify
-	(quantifyVarsT_constrainForm)
+	(quantifyVarsT)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -37,8 +37,8 @@ import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
 -- | Add forall quantifiers to the front of a type.
-quantifyVarsT_constrainForm :: [(Var, Kind)] -> Type -> Type
-quantifyVarsT_constrainForm vks tt@(TConstrain _ crs)
+quantifyVarsT :: [(Var, Kind)] -> Type -> Type
+quantifyVarsT vks tt@(TConstrain _ crs)
  = let
 	-- fn to get the vars we want to quantify from a list of types.
 	vsQuants ts	= filter (not . Var.isCtorName)
@@ -62,5 +62,5 @@ quantifyVarsT_constrainForm vks tt@(TConstrain _ crs)
    in 	makeTForall_back vksSequence tt
 
 
-quantifyVarsT_constrainForm vks tt
+quantifyVarsT vks tt
 	= makeTForall_back vks tt

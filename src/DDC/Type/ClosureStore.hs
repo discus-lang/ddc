@@ -49,7 +49,7 @@ empty 	= ClosureStore
 -- | Insert a `Closure` into a `ClosureStore`
 insert :: Closure -> ClosureStore -> ClosureStore
 insert clo cs
- = case trimClosureC_constrainForm clo of
+ = case trimClosureC clo of
 
 	-- Vars with more-than bounds should also be annotated directly.
 	TConstrain c _ 

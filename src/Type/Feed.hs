@@ -136,8 +136,7 @@ feedType src tt
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
 		 Just tDef
-		  -> do	let tDef_trim	= trimClosureT_constrainForm 
-					$ flattenT_constrainForm tDef
+		  -> do	let tDef_trim	= trimClosureT $ flattenT tDef
 
 		  	tDef'		<- linkType [] src tDef_trim
 

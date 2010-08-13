@@ -47,7 +47,7 @@ generaliseType' varT tCore envCids
 		% "\n"
 
 	-- flatten out the scheme so its easier for staticRs.. to deal with
-	let tFlat	= flattenT_constrainForm tCore
+	let tFlat	= flattenT tCore
 
 	trace	$ "    tFlat\n"
 		%> prettyTypeSplit tFlat	% "\n\n"
@@ -107,7 +107,7 @@ generaliseType' varT tCore envCids
 	-- 	Do this before adding foralls so we don't end up with quantified regions that
 	--	aren't present in the type scheme.
 	--
-	let rsVisible	= visibleRsT $ flattenT_constrainForm tReduce
+	let rsVisible	= visibleRsT $ flattenT tReduce
 
 	let tMskLocal	= maskLocalT rsVisible tReduce
 
@@ -162,7 +162,7 @@ generaliseType' varT tCore envCids
 			$ vsFree
 
 	trace	$ "    vksFree   = " % vksFree	% "\n\n"
-	let tScheme	= quantifyVarsT_constrainForm vksFree tConstify
+	let tScheme	= quantifyVarsT vksFree tConstify
 
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
@@ -216,7 +216,7 @@ cleanType tsSave tt
 				_	-> Nothing)
 		$ Set.toList tsSave
 		
-   in	finaliseT_constrainForm vsKeep False tt
+   in	finaliseT vsKeep False tt
  
 
 -- | After reducing the context of a type to be generalised, if certain constraints

@@ -9,10 +9,10 @@
 --	it automatically.
 
 module DDC.Type.Elaborate
-	( elaborateRsT_constrainForm
-	, elaborateRsT_quant_constrainForm
-	, elaborateEffT_constrainForm
-	, elaborateCloT_constrainForm )
+	( elaborateRsT
+	, elaborateRsT_quant
+	, elaborateEffT
+	, elaborateCloT )
 where
 import Util
 import DDC.Main.Error
@@ -27,11 +27,6 @@ import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 
 stage	= "Type.Util.Elaborate"
-
-elaborateRsT_constrainForm 	 = elaborateRsT
-elaborateRsT_quant_constrainForm = elaborateRsT_quant
-elaborateEffT_constrainForm	 = elaborateEffT
-elaborateCloT_constrainForm	 = elaborateCloT
 
 -- Elaborate Regions ------------------------------------------------------------------------------
 -- | Look at uses of data type constructors, and if they don't have enough
@@ -232,7 +227,7 @@ elaborateCloT' env tt
 		
 		-- elaborate the right hand arg, 
 		--	carrying the new parameter name down into it.
-		let Just argClo		= liftM trimClosureC_constrainForm
+		let Just argClo		= liftM trimClosureC
 					$ makeTFree varVal t1
 
 		(t2', fs, cloT2)	<- elaborateCloT' (env ++ [argClo]) t2

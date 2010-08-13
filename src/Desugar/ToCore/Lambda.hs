@@ -52,8 +52,7 @@ loadEffAnnot ee
 	TVar kE (UVar vE)
 	 | kE == kEffect
 	 -> do	Just tE		<- lookupType vE
-		return	$ flattenT_constrainForm 
-			$ stripToBodyT tE
+		return	$ flattenT $ stripToBodyT tE
 
  	TSum kE []
 	 | kE == kEffect
@@ -70,9 +69,7 @@ loadCloAnnot cc
 	TVar kC (UVar vC)
 	 | kC == kClosure
 	 -> do	Just tC		<- lookupType vC
-	 	return 	$ trimClosureC_constrainForm
-			$ flattenT_constrainForm 
-			$ stripToBodyT tC
+	 	return 	$ trimClosureC $ flattenT $ stripToBodyT tC
 			 
 	TSum kC []
 	 | kC == kClosure 	

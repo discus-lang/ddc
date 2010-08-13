@@ -195,7 +195,7 @@ elabRegionsX xx
 	_ ->	return xx
 
 elabRegionsT t
- = do	(t_elab, _)	<- elaborateRsT_constrainForm newVarN t
+ = do	(t_elab, _)	<- elaborateRsT newVarN t
    	return t_elab
 
 

@@ -79,7 +79,7 @@ makeCtorType newVarN vData vs name fs
 
 	-- Constructors don't inspect their arguments.
 	let ?newVarN	=  newVarN
- 	tCtor		<- elaborateCloT_constrainForm
+ 	tCtor		<- elaborateCloT
 			$  makeTFunsPureEmpty (tsPrimary_elab ++ [objType])
 
 	let vks		= map (\v -> (v, let Just k = defaultKindOfVar v in k)) 

@@ -23,8 +23,8 @@
 --   The variable @%r1@ was quantified in the original, so must also be quantified in the result.
 --
 module DDC.Type.Trim
-	( trimClosureT_constrainForm
-	, trimClosureC_constrainForm)
+	( trimClosureT
+	, trimClosureC)
 where
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -51,8 +51,8 @@ trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Trim the closure portion of this type.
-trimClosureT_constrainForm :: Type -> Type
-trimClosureT_constrainForm tt
+trimClosureT :: Type -> Type
+trimClosureT tt
 	= trimClosureT' Set.empty Set.empty tt
 
 trimClosureT' quant rsData tt
@@ -75,7 +75,7 @@ trimClosureT_trace quant rsData tt
 	TCon{}		-> tt
 
 	TSum k _
-	 | isClosureKind k	-> trimClosureC_constrainForm tt
+	 | isClosureKind k	-> trimClosureC tt
 	 | otherwise		-> tt
 
 	TApp t1 t2
@@ -99,8 +99,8 @@ trimClosureT_trace quant rsData tt
 
 -- Closure ----------------------------------------------------------------------------------------
 -- | Trim a closure down to its interesting parts.
-trimClosureC_constrainForm :: Closure -> Closure
-trimClosureC_constrainForm cc
+trimClosureC :: Closure -> Closure
+trimClosureC cc
 	= trimClosureC' Set.empty Set.empty cc
 
 trimClosureC' quant rsData cc

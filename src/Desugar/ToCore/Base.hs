@@ -115,7 +115,7 @@ lookupType' vT
 	 Just tType
 	  -> do	
 		let cType	= T.toCoreT tType
-		let cType_flat	= flattenT_constrainForm cType
+		let cType_flat	= flattenT cType
 		return	$ trace (vcat	
 				[ ppr "lookupType"
 				, ppr "    source type:\n" 	%> tType
