@@ -14,7 +14,7 @@ stage = "Llvm.Runtime.Alloc"
 -- | Generate LLVM code that can be inlined to allocate the given number of
 -- bytes and return a pointer of the specified type.
 -- The generated code will always allocate heap objects aligned to 8 byte
--- boundaries and panics if asked to allocate zero or less bytes. 
+-- boundaries and panics if asked to allocate zero or less bytes.
 allocate :: Int -> LlvmVar -> IO [LlvmStatement]
 allocate bytes ptr
  = do	r0	<- newUniqueNamedReg "r0" pChar

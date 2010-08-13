@@ -9,6 +9,7 @@ import DDC.Main.Error
 
 import Llvm
 import Llvm.Runtime.Alloc
+import Llvm.Runtime.Tags
 import Llvm.Util
 
 
@@ -19,13 +20,13 @@ boxInt32 :: LlvmVar -> LlvmVar -> IO [LlvmStatement]
 boxInt32 int32 objptr
  = do	iptr0		<- newUniqueNamedReg "iptr0" (pLift i32)
 	iptr1		<- newUniqueNamedReg "iptr1" (pLift i32)
-	
+
 	allocCode	<- allocate 8 objptr
-	return $ 
+	return $
 		allocCode
-		++ [ Comment ["boxIn32 (" ++ show int32 ++ ")" ]
+		++ [ Comment [ "boxInt32 (" ++ show int32 ++ ")" ]
 		   , Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
-		   , Store (i32LitVar (19 :: Int)) iptr0
+		   , Store (tagDataRS 1) iptr0
 		   , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar (1 :: Int)])
 		   , Store int32 iptr1
 		   ]
@@ -35,7 +36,7 @@ unboxInt32 objptr int32
  = do	iptr0		<- newUniqueNamedReg "iptr0" (pLift i32)
 	iptr1		<- newUniqueNamedReg "iptr1" (pLift i32)
 
-	return $ [ Comment ["unboxIn32 (" ++ show objptr ++ ")" ]
+	return $ [ Comment [ "unboxInt32 (" ++ show objptr ++ ")" ]
 		 , Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
 		 , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar (1 :: Int)])
 		 , Assignment int32 (Load iptr1)

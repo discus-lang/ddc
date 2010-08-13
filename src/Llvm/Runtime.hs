@@ -7,6 +7,7 @@ module Llvm.Runtime
 
 	, panicOutOfSlots
 	, allocCollect
+	, force
 
 	, ddcSlotPtr
 	, ddcSlotMax
@@ -56,7 +57,7 @@ runtimeEnter count
 	let epanic	= fakeUnique "enter.panic"
 	let egood	= fakeUnique "enter.good"
 	slotInitCode	<- slotInit egood count
-	return	$ 
+	return	$
 		[ Comment ["_ENTER (" ++ show count ++ ")"]
 		, Assignment localSlotBase (Load ddcSlotPtr)
 		, Assignment enter1 (GetElemPtr True localSlotBase [llvmWordLitVar count])
@@ -114,7 +115,7 @@ slotInit initstart n
 	let indexNext	= LMNLocalVar "init.index.next" llvmWord
 	let initdone	= LMNLocalVar "init.done" i1
 	let target		= LMNLocalVar "init.target" ppObj
-	return $ 
+	return $
 		[ Branch (LMLocalVar initloop LMLabel)
 
 		, MkLabel initloop

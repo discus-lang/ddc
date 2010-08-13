@@ -32,3 +32,7 @@ ddcHeapMax = pVarLift (LMGlobalVar "_ddcHeapMax" pChar External Nothing ptrAlign
 localSlotBase :: LlvmVar
 localSlotBase = LMNLocalVar "local.slotPtr" ppObj
 
+
+force :: LlvmFunctionDecl
+force = LlvmFunctionDecl "_force" External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
+

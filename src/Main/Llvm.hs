@@ -124,7 +124,7 @@ outLlvm moduleName eTree pathThis
 
 	let code = seaCafInits ++ seaSupers
 
-	let fwddecls	= [panicOutOfSlots, allocCollect]
+	let fwddecls	= [panicOutOfSlots, allocCollect, force]
 
 	let globals	= moduleGlobals
 			++ (catMap llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
@@ -161,7 +161,7 @@ llvmOfParams (v, t) = (toLlvmType t, [])
 
 llvmOfSeaGlobal :: Top (Maybe a) -> [LMGlobal]
 llvmOfSeaGlobal (PCafSlot v t)
- | t == TPtr (TPtr TObj) 
+ | t == TPtr (TPtr TObj)
  =	let	tt = toLlvmType t
 		var = LMGlobalVar
  			("_ddcCAF_" ++ seaVar False v)	-- Variable name
@@ -252,14 +252,9 @@ llvmOfAssign (XVar v1 t1) t (XSlot v2 t2 i)
 ---- Working on this!
 llvmOfAssign a@((XSlot v1 t1 i)) t c@(XBox t2 exp)
  | t1 == TPtr TObj && t == TPtr TObj
- = do	when debug
-	 $ do	putStrLn $ "--------------------------\nXSlot "  ++ show i ++ " <- XBox "
-			++ "\n    " ++ show a
-			++ "\n    " ++ show t
-			++ "\n    " ++ show c ++ "\n"
-
-	(boxed, boxCode)	<- boxExp exp
-	storeCode		<- storeToSlot i boxed
+ = do	boxed		<- newUniqueNamedReg "boxed" pObj
+	boxCode		<- boxExp exp boxed
+	storeCode	<- writeSlot boxed i
 	return	$ [ Comment [ "" , "XSlot " ++ show i ++ " <- XBox" ] ]
 		  ++ boxCode
 		  ++ storeCode
@@ -280,61 +275,23 @@ llvmOfAssign a b c
 -- varOfXLit x = panic stage $ "varOfXLit " ++ show x
 
 
+boxExp :: Exp a -> LlvmVar -> IO [LlvmStatement]
+boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32))) dest
+ = do	let int = i32LitVar value
+	boxInt32 int dest
 
-boxExp :: Exp a -> IO (LlvmVar, [LlvmStatement])
-boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
- = do	r0	<- newUniqueNamedReg "r0" pChar
-	r1	<- newUniqueNamedReg "r1" pChar
-	r2	<- newUniqueNamedReg "r2" pChar
-	r3	<- newUniqueNamedReg "r3" i1
-	r4	<- newUniqueNamedReg "r4" pChar
-	r5	<- newUniqueNamedReg "r5" (pLift i32)
-	r6	<- newUniqueNamedReg "r6" pChar
-	r7	<- newUniqueNamedReg "r7" pChar
-	r8	<- newUniqueNamedReg "r8" (pLift i32)
-	pre	<- newUniqueNamedReg "pre" pChar
-	result	<- newUniqueNamedReg "boxed" pObj
+boxExp (XPrim op args) dest
+ = do	when debug
+	 $ do	putStrLn $ "--------------------------\nboxExp"
+			++ "\n    " ++ show op
+			++ "\n    " ++ show args ++ "\n"
+	(calc, primCode)	<- llvmOfXPrim (getVarType dest) op args
+	boxCode			<- boxInt32 calc dest
+	return $ primCode ++ boxCode
 
-	entry	<- newUniqueLabel "entry"
-	bb	<- newUniqueLabel "bb"
-	bb1	<- newUniqueLabel "bb1"
+boxExp x _
+ = do	return	$ [ Comment ["**** Unhandled : boxExp " ++ take 30 (show x)] ]
 
-	let allocSize = i32LitVar (8::Int)
-	return	$ (result,
-		[ Comment ["boxInt32 start"]
-		, Branch entry
-		, MkLabel (uniqueOfLlvmVar entry)
-		, Assignment r0 (Load ddcHeapPtr)
-		, Assignment r1 (GetElemPtr True r0 [allocSize])
-		, Assignment r2 (Load ddcHeapMax)
-		, Assignment r3 (Compare LM_CMP_Ugt r1 r2)
-		, BranchIf r3 bb bb1
-
-		, MkLabel (uniqueOfLlvmVar bb)
-		, Expr (Call StdCall (LMGlobalVar "_allocCollect" (LMFunction allocCollect) External Nothing Nothing True) [allocSize] [])
-		, Assignment pre (Load ddcHeapPtr)
-		, Branch bb1
-
-		, MkLabel (uniqueOfLlvmVar bb1)
-		, Assignment r4 (Phi pChar [(pre, bb), (r0 , entry)])
-
-		, Assignment r5 (Cast LM_Bitcast r4 (pLift i32))
-		, Assignment r6 (GetElemPtr True r4 [allocSize])
-		, Store r6 ddcHeapPtr
-
-
-		, Store (i32LitVar (19 :: Int)) r5
-		, Assignment r7 (GetElemPtr True r4 [llvmWordLitVar (4 :: Int)])
-		, Assignment r8 (Cast LM_Bitcast r7 (pLift i32))
-		, Store (i32LitVar value) r8
-		, Assignment result (Cast LM_Bitcast r4 pObj)
-		, Comment ["boxInt32 end"]
-		])
-
-
-boxExp x
- = do	result	<- newUniqueNamedReg "boxed" ppObj
-	return	$ (result, [ Comment ["boxExp " ++ takeWhile (/= ' ') (show x)] ])
 
 --------------------------------------------------------------------------------
 
@@ -381,42 +338,92 @@ primFoldFunc
 	-> IO (LlvmVar, [LlvmStatement])
 
 primFoldFunc t build (left, ss) exp
- = do	dst <- newUniqueReg t
-	return $ (dst, Assignment dst (build left (llvmVarOfExp exp)) : ss)
+ = do	(dst, code)	<- llvmVarOfExp exp
+	return $ (dst, ss ++ code)
 
 
 llvmOfXPrim :: LlvmType -> Prim -> [Exp a] -> IO (LlvmVar, [LlvmStatement])
 llvmOfXPrim t op args
  = case args of
-	[]			-> panic stage "llvmOfXPrim : empty list"
-	[x]			-> panic stage "llvmOfXPrim : singleton list"
-
-	[XVar v t, XInt i]	-> llvmPtrOp v t op i
+	[]	-> panic stage "llvmOfXPrim : empty list"
+	[x]	-> panic stage "llvmOfXPrim : singleton list"
 
 	x : xs
-	  -> do		reg <- newUniqueReg t
-			foldM (primFoldFunc t (llvmOpOfPrim op)) (reg, [Assignment reg (Load (llvmVarOfExp x))]) xs
+	 -> do	(dst, code)	<- llvmVarOfExp x
+		foldM (primFoldFunc t (llvmOpOfPrim op)) (dst, code) xs
 
-llvmPtrOp :: Var -> Type -> Prim -> Int -> IO (LlvmVar, [LlvmStatement])
-llvmPtrOp v t op i
- = do	src	<- newUniqueReg (toLlvmType t)
-	dst	<- newUniqueReg (toLlvmType t)
-	return	$ (dst, [ Assignment dst (GetElemPtr False src [llvmWordLitVar i])
-			, Assignment src (Load (pVarLift (toLlvmVar v t))) ])
 
-llvmVarOfExp :: Exp a -> LlvmVar
+
+
+llvmVarOfExp :: Exp a -> IO (LlvmVar, [LlvmStatement])
+llvmVarOfExp (XVar v t)
+ = do	reg	<- newUniqueReg $ toLlvmType t
+	return	$ (reg, [ Assignment reg (Load (toLlvmVar v t)) ])
+
+llvmVarOfExp (XInt i)
+ = do	reg	<- newUniqueReg i32
+	return	$ (reg, [ Assignment reg (Load (llvmWordLitVar i)) ])
+
+llvmVarOfExp (XUnbox _ (XVar v t))
+ = do	int32	<- newUniqueReg i32
+	code	<- unboxInt32 (toLlvmVar v t) int32
+	return	$ (int32, code)
+
+llvmVarOfExp (XUnbox _ (XSlot v t i))
+ = do	objptr	<- newUniqueReg i32
+ 	int32	<- newUniqueReg i32
+	code	<- unboxInt32 objptr int32
+	return	$ (int32, Assignment objptr (GetElemPtr True localSlotBase [llvmWordLitVar i]) : code)
+
+llvmVarOfExp (XUnbox t (XForce (XSlot v vt i)))
+ = do	let fun	= LMGlobalVar "force" (LMFunction force) External Nothing Nothing True
+	orig	<- newUniqueNamedReg "orig" (toLlvmType vt)
+	readS0	<- readSlot 0 orig
+
+	forced	<- newUniqueNamedReg "forced" (toLlvmType t)
+	iptr	<- newUniqueNamedReg "iptr" (pLift i32)
+ 	int32	<- newUniqueReg i32
+	code	<- unboxInt32 iptr int32
+	return	$ (int32,
+			[ Comment ["unbox (force (slot " ++ show i ++ "))"]
+			]
+			++ readS0 ++
+			[ Assignment forced (Call StdCall fun [orig] [])
+			, Assignment iptr (GetElemPtr True forced [llvmWordLitVar 1])
+			]
+			++ code
+			)
+
+
+
+
+{-
+			: Assignment orig (GetElemPtr True localSlotBase [llvmWordLitVar i])
+			: Comment [ "Need to force this variable!" ]
+			-- Call LlvmCallType LlvmVar [LlvmVar] [LlvmFuncAttr]
+			: Assignment forced (Call StdCall fun [orig] [])
+			: code )
+-}
+
+
+
+
+
+
 llvmVarOfExp x
- = case x of
-	XVar v t	-> toLlvmVar v t
-	XInt i		-> llvmWordLitVar i
-	_ -> panic stage $ "llvmVarOfExp " ++ show x
+ = panic stage $ "llvmVarOfExp -=> " ++ show x
+
+
+
+
+
 
 llvmOpOfPrim :: Prim -> (LlvmVar -> LlvmVar -> LlvmExpression)
 llvmOpOfPrim p
  = case p of
-	FAdd -> LlvmOp LM_MO_Add
-	FSub -> LlvmOp LM_MO_Sub
-	_ -> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
+	FAdd	-> LlvmOp LM_MO_Add
+	FSub	-> LlvmOp LM_MO_Sub
+	_	-> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
 
 
 -- | Convert a Sea type to an LlvmType.
@@ -424,6 +431,11 @@ toLlvmType :: Type -> LlvmType
 toLlvmType (TPtr t)	= LMPointer (toLlvmType t)
 toLlvmType TObj		= structObj
 toLlvmType TVoid	= LMVoid
+
+toLlvmType (TCon v _)
+ | varName v == "Int32#"
+ = i32
+
 toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
 
 
@@ -437,7 +449,7 @@ toLlvmVar v t
 
 -- | Does the given Sea variable have global scope? TODO: Move this to the Sea stuff.
 isGlobalVar :: Var -> Bool
-isGlobalVar v 
+isGlobalVar v
  -- If the variable is explicitly set as global use the given name.
  | bool : _	<- [global | ISeaGlobal global <- varInfo v]
  = bool
