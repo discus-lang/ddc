@@ -57,8 +57,6 @@ pprTypeQuant vsQuant tt
 			% ". " 
 			% pprTypeQuant vsQuant' tBody
 
-	TFetters t fs	-> down t % " :- " % ", " %!% fs
-	
 	TConstrain t (Constraints { crsEq, crsMore, crsOther })
 	 -> let down' x = case x of
 				TForall{}	-> parens $ ppr x
@@ -152,7 +150,6 @@ prettyFunArg t
 -- | Pretty print a type that appears on the right of a function arrow.
 prettyFunResult tt
  = case tt of
- 	TFetters{}	-> "(" % tt % ")"
 	_		-> ppr tt
 
 
@@ -205,7 +202,6 @@ prettyTypeSplit_crs xx
  = let down x = case x of
 			TForall{}	-> parens $ ppr x
 			TConstrain{}	-> parens $ ppr x
-			TFetters{}	-> parens $ ppr x
 			_		-> ppr x
    in case xx of
 	TConstrain t crs
@@ -216,11 +212,6 @@ prettyTypeSplit_crs xx
 		++ [t1 %> " :> " % t2	| (t1, t2) <- Map.toList $ crsMore crs]
 		++ [ppr f 		| f        <- crsOther crs]))
 		
- 	TFetters t fs
-	 -> down t 	% "\n" 
-	 % ":- " 
-	 % punc (ppr "\n,  ") fs
-
 	_ -> ppr xx
 
 

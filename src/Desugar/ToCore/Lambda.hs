@@ -37,9 +37,6 @@ fillLambdas' tsWhere tScheme x
 	= do	let tsWhere'	= Map.union tsWhere (crsEq crs)
 		x'	<- fillLambdas' tsWhere' tRest x
 		return	x'
-
-	| TFetters tRest fs		<- tScheme
-	= fillLambdas' tsWhere (toConstrainFormT tScheme) x
 	
 	| otherwise
 	= return x
@@ -55,13 +52,12 @@ loadEffAnnot ee
 	TVar kE (UVar vE)
 	 | kE == kEffect
 	 -> do	Just tE		<- lookupType vE
-		return	$ toFetterFormT
-			$ flattenT_constrainForm 
-			$ toConstrainFormT $ stripToBodyT tE
+		return	$ flattenT_constrainForm 
+			$ stripToBodyT tE
 
  	TSum kE []
 	 | kE == kEffect
-	 -> 	return	$ tPure
+	 -> 	return tPure
 
 
 -- Load a closure annotation to attach to an XLam

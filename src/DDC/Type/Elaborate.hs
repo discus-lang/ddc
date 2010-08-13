@@ -314,7 +314,8 @@ elaborateEffT vsRsConst vsRsMutable tt
 	let tFinal	= addEffectsToFsT effs hookVar tHooked
 
 	-- pack the type to drop out any left-over  !e1 = !Bot  constraints.
-  	let tPacked_fast	= toFetterFormT $ packType $ toConstrainFormT tFinal
+  	let tPacked_fast	= packType tFinal
+
 	return $ tPacked_fast
 		
 

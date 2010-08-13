@@ -147,7 +147,7 @@ checkExp_trace m xx env
 			$ flattenTSum
 			$ trimClosureC_constrainForm
 			$ makeTFreeBot v
-			$ toConstrainFormT t1		  
+			$ t1		  
 
 		-- TODO: We're ignoring closure terms due to constructors of arity zero,
 		--	 like True :: Bool %r1. Prob want to handle this in a more generic way,
@@ -328,8 +328,8 @@ checkExp_trace m xx env
 	XApp x1 x2
 	 | (x1', t1, eff1, clo1) <- checkExp' n x1 env
 	 , (x2', t2, eff2, clo2) <- checkExp' n x2 env
-	 , t1'			 <- crushT $ trimClosureT_constrainForm $ toConstrainFormT t1
-	 , t2'			 <- crushT $ trimClosureT_constrainForm $ toConstrainFormT t2
+	 , t1'			 <- crushT $ trimClosureT_constrainForm t1
+	 , t2'			 <- crushT $ trimClosureT_constrainForm t2
 	 -> case takeTFun t1' of
 	     Just (t11, t12, eff3, _)
 	      -> case subsumesTT t2' t11 of
@@ -417,7 +417,7 @@ checkExp_trace m xx env
 	XTau tAnnot x
 	 | (tAnnot', kAnnot)	<- checkTypeI n tAnnot env
 	 , (x', tExp, eff, clo)	<- checkExp' n x env
-	 , tExp'		<- trimClosureT_constrainForm $ crushT $ toConstrainFormT tExp
+	 , tExp'		<- trimClosureT_constrainForm $ crushT tExp
 	 -> kAnnot `seq`
 	    if isEquiv $ equivTT tAnnot' tExp'
 		then	( XTau tAnnot' x'

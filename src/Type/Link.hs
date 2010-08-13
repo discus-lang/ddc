@@ -31,9 +31,6 @@ linkType bound src tt
 	 -> do	let Just v	= takeVarOfBind b
 		t'	<- linkType (v : bound) src t
 	 	return	$ TForall b k t'
-		
-	TFetters t fs
-	 -> linkType bound src $ toConstrainFormT tt
 
 	TConstrain t crs
 	 -> do	t'	<- linkType bound src t

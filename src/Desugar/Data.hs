@@ -120,12 +120,9 @@ elaborateCtor newVar (CtorDef sp var fields)
 
 elaborateField newVar field@(DataField { dType = t })
  = do	
- 	(t_elab', vks)	
-		<- elaborateRsT_constrainForm newVar 
-		$ toConstrainFormT t
+ 	(t_elab, vks)	
+		<- elaborateRsT_constrainForm newVar t
 	
-	let t_elab	= toFetterFormT t_elab'
-
  	return	( field { dType = t_elab }
 		, vks )
 	

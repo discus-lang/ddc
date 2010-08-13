@@ -21,9 +21,7 @@ import qualified Debug.Trace
 
 stage		= "Core.Dictionary"
 debug		= False
-trace ss x	= if debug 
-			then Debug.Trace.trace (pprStrPlain ss) x
-			else x
+trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- | The RHS of every instance function must be the var of a top level function.
 dictGlob 
@@ -110,7 +108,7 @@ rewriteAppX env xx
 		-- Get the parameter list of parameter types that matching instances should have.
 		Just (tsInstanceArgs :: [Type])
 			= sequence
-			$ map (liftM (flattenT_constrainForm . toConstrainFormT))
+			$ map (liftM flattenT_constrainForm)
 			$ map (\v -> Map.lookup v vtsInstantiations)
 			$ map fst
 			$ infoOverloadedClassParams infoOverloaded
@@ -164,16 +162,19 @@ rewriteAppX_withInstance env xxUse
  where
 	-- Instantiate the type of the overloaded var with its type arguments.
 	--	This gives us the type that the overloaded var is being used at.
-	tFlatScheme	= flattenT_constrainForm $ toConstrainFormT 
-			$ infoOverloadedType infoOverloaded
+	tFlatScheme	= flattenT_constrainForm $ infoOverloadedType infoOverloaded
 	tUseBody	= either panicInstantiate 
 				id 
 				(instantiateT tFlatScheme (tsUseTypeArgsPoly ++ tsUseTypeArgsWitness))
 
 	-- Get the type of the instance.
 	Just vInst	= lookup vUse (topClassInstMembers p)
-	Just tInstScheme = liftM (flattenT_constrainForm . toConstrainFormT) 
-			$ takeFirstJust $ map (typeFromGlob vInst) $ envGlobs env
+	Just tInstScheme 
+			= liftM flattenT_constrainForm
+			$ takeFirstJust
+			$ map (typeFromGlob vInst)
+			$ envGlobs env
+
 	tInstBody	= stripToBodyT $ tInstScheme
 			
 	-- Unify the body of the overloaded use with the body of the overloaded definition.

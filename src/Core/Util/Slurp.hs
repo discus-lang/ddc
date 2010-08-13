@@ -122,9 +122,6 @@ dropXTau xx env tt
 	| TConstrain t crs	<- tt
 	= panic stage $ "dropXTau: Reconstructed types should have TConstrain nodes"
 
-	| TFetters t fs		<- tt
-	= panic stage $ "dropXTau: Reconstructed types should have TFetters nodes"
-
 	-- decend into XLAMs
 	| XLAM v t x		<- xx
 	, TForall BNil k1 t2	<- tt

@@ -105,14 +105,7 @@ packTypeCrsSub' config crsEq subbed tt
 	-- decend into foralls
 	TForall v k t
 	 -> TForall v k $ packTypeCrsSub config crsEq subbed t
-	
-	-- the old packed handes TFetters.
-	--	we're factoring it out.
-	TFetters{}
-	 -> panic stage 
-  	  $  "packType: doesn't handle TFetters"
-	  %  " tt = " % tt % "\n"
-	
+
 	TConstrain (TForall b k t) crs
 	 -> TForall b k (addConstraints crs t)
 	

@@ -98,9 +98,6 @@ data Type
 	| TForall	Bind 	Kind	Type
 
 	-- | Constrained types.
-	--   TODO: We are currently moving the representation from `TFetters` to `TConstrain`.
-	--   `TConstrain` uses finite maps, not unsorted lists, so is much more efficient.
-	| TFetters	Type	[Fetter]
 	| TConstrain	Type	Constraints
 			
 	-- | Used in the solver only.

@@ -184,9 +184,7 @@ extractType_final True varT cid tCutPack
  
 	-- close off never-quantified effect and closure vars
  	quantVars	<- getsRef stateQuantifiedVars
- 	let tFinal	= toFetterFormT 
-			$ finaliseT_constrainForm quantVars True
-			$ toConstrainFormT tPlug
+ 	let tFinal	= finaliseT_constrainForm quantVars True tPlug
 	
 	trace	$ "    tFinal:\n" 	%> prettyTypeSplit tFinal	% "\n\n"
 	extractType_reduce varT cid tFinal

@@ -114,7 +114,7 @@ traceType cid'
 				(TVar k $ UClass cid) 
 				(Constraints crsEq crsMore' $ nub $ toList crsOther)
 						
-	return	$ toConstrainFormT tt
+	return tt
 
 
 -- | Recursively add type constraints starting from this classid to the trace state.
@@ -148,7 +148,7 @@ traceFromCid' cid
 		, classKind 	= kind }
 	  -> do	
 		t'		<- getTypeOfNode kind node
-		let t		= toConstrainFormT t'
+		let t		= t'
 
 		-- Split up the info from this type and add it to the state
 		addType (TVar kind $ UClass cid) t

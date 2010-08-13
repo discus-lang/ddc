@@ -81,10 +81,6 @@ instance FreeTVars Type where
 		, freeTVars t2])
 			Set.\\ Set.singleton (TVar k (UMore v t1))
 
-	TFetters t fs
-	 -> Set.union (freeTVars t) (freeTVars fs) 
-	 	Set.\\ (Set.fromList [ t1 | FWhere t1 _ <- fs])
-
 	TConstrain t crs
 	 -> Set.union  (freeTVars t)  (freeTVars crs)
 

@@ -25,12 +25,12 @@ reduceContextT
 	
 reduceContextT classInst tt
  = case tt of
- 	TFetters tShape fs
-	 -> let tt'	= toConstrainFormT tt
-		fs'	= catMap (reduceContextF (flattenT_constrainForm tt') classInst) fs
+ 	TConstrain tShape crs
+	 -> let	fs'	= catMap (reduceContextF (flattenT_constrainForm tt) classInst) 
+			$ fettersOfConstraints crs
 	    in  case fs' of
 	    		[]	-> tShape
-			_	-> TFetters tShape fs'
+			_	-> TConstrain tShape $ constraintsOfFetters fs'
 			
 	_ 		-> tt
 	

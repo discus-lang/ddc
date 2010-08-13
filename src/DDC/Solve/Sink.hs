@@ -171,11 +171,6 @@ sinkCidsInTypeIO classes tt'
 			t'	<- goT t
 			return	$ TForall b' k' t'
 			
-		TFetters t fs
-		 -> do	t'	<- goT t
-			fs'	<- mapM goF fs
-			return	$ TFetters t' fs'
-			
 		TConstrain t crs
 		 -> do	t'	<- goT t
 			crs'	<- goCRS crs

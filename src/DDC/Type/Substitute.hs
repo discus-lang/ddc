@@ -60,11 +60,6 @@ subTT_cutM' sub cut tt
  = let 	down	= subTT_cutM' sub cut
 	downK	= subTTK_cutM sub cut
    in case tt of
-	TFetters t fs
-	 -> do	t'	<- down t
-		fs'	<- mapM (subTT_fetter_cutM' sub cut) fs
-	 	return	$ TFetters t' fs'
-
 	TConstrain t (Constraints crsEq crsMore crsOther)
 	 -> do	t'		<- down t
 		crsEq'		<- mapM  (subTT_cutM' sub cut) crsEq

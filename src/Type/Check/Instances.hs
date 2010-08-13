@@ -85,7 +85,7 @@ checkFetter cls errs f@(FConstraint vClass tsArg)
 
 takeShapeT tt
  = case tt of
- 	TFetters t fs	-> t
+ 	TConstrain t _	-> t
 	_		-> tt
 
 

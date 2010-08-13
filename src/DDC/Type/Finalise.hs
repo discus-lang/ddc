@@ -33,7 +33,6 @@ finaliseT' bound def tt
  = let down	= finaliseT' bound def
    in  case tt of
 	TNil		-> panic stage $ "finaliseT: no match for TNil"
-	TFetters{}	-> panic stage $ "finaliseT: no match for TFetters"
 
   	TForall b k t	
 	 -> let	Just v	= takeVarOfBind b

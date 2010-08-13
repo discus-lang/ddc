@@ -66,10 +66,7 @@ crushT tt
 	
 	TForall b k t
 	 -> TForall b k (crushT t)
-	
-	TFetters t fs
-	 -> TFetters (crushT t) fs
-	
+		
 	TConstrain t crs
 	 -> TConstrain (crushT t) crs
 	

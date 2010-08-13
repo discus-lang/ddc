@@ -706,10 +706,6 @@ instance Rewrite Type Type where
 	 -> do	t'	<- rewrite t
 	 	return	$ TForall b k t'
 		
-	TFetters t fs
-	 -> do	t'	<- rewrite t
-	 	return	$ TFetters t' fs
-
 	TConstrain t crs
 	 -> do	t'	<- rewrite t
 		return	$ TConstrain t' crs

@@ -18,6 +18,7 @@ import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Var
 import qualified Debug.Trace
+import qualified Data.Map	as Map
 
 stage	= "Type.Util"
 debug	= False
@@ -32,7 +33,6 @@ makeOpTypeT tt
  = trace ("makeOpTypeT " % show tt)
  $ case tt of
  	TForall v k t		-> makeOpTypeT t
-	TFetters t fs		-> makeOpTypeT t
 	TConstrain t crs	-> makeOpTypeT t
 
 	TCon{}
@@ -60,7 +60,7 @@ makeOpTypeT2 tt
  = trace ("makeOpTypeT2 " % show tt)
  $ case tt of
  	TForall v k t		-> makeOpTypeT2 t
-	TFetters t fs		-> makeOpTypeT2 t
+	TConstrain t crs	-> makeOpTypeT2 t
 	TVar{}			-> Just $ makeTData primTObj kValue []
 
 	TCon{}
@@ -105,10 +105,13 @@ makeTVar v
 makeTWhere ::	Type	-> [(Var, Type)] -> Type
 makeTWhere	t []	= t
 makeTWhere	t vts	
-	= TFetters t 
-	$ [ FWhere (TVar k $ UVar v) t'
-		| (v, t')	<- vts
-		, let Just k	= defaultKindOfVar v ]
+	= makeTConstrain t 
+	$ Constraints
+		(Map.fromList [ (TVar k $ UVar v, t')
+				| (v, t')	<- vts
+				, let Just k	= defaultKindOfVar v ])
+		Map.empty
+		[]
 
 
 -- Slurping ----------------------------------------------------------------------------------------
@@ -131,7 +134,7 @@ slurpTVarsRD_split rs ds (t:ts)
 	_				-> slurpTVarsRD_split rs ds ts
 	
 slurpTVarsRD' tt
-	| TFetters t f	<- tt
+	| TConstrain t crs	<- tt
 	= slurpTVarsRD' t
 
 	| TApp{}	<- tt

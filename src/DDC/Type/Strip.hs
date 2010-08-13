@@ -7,14 +7,11 @@ module DDC.Type.Strip
 	, stripForallContextT
 	, stripToBodyT)
 where
-import DDC.Main.Error
 import DDC.Type.Exp
 import DDC.Type.Predicates
 import DDC.Type.Compounds
 import DDC.Type.Pretty		()
 import qualified Data.Map	as Map
-
-stage	= "DDC.Type.StripFetters"
 
 -- | Strip all fetters from this type, returning just the body.
 stripFWheresT_all  :: Type -> Type
@@ -36,7 +33,6 @@ stripFWheresT
 stripFWheresT justMono	tt
  = case tt of
 	TNil		-> tt
-	TFetters{}	-> panic stage $ "stripFWheresT: no match for TFetters"
 
 	TError{} -> tt
 
@@ -96,9 +92,6 @@ stripForallContextT tt
 	TConstrain t1 _
 	 -> stripForallContextT t1
 
-	TFetters t1 _
-	 -> stripForallContextT t1
-
 	_		
 	 -> ([], [], tt)
 
@@ -108,5 +101,5 @@ stripToBodyT :: Type -> Type
 stripToBodyT tt
  = case tt of
  	TForall  _ _ t		-> stripToBodyT t
-	TFetters t _		-> stripToBodyT t
+	TConstrain t _		-> stripToBodyT t
 	_			-> tt

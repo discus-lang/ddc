@@ -195,10 +195,8 @@ elabRegionsX xx
 	_ ->	return xx
 
 elabRegionsT t
- = do	(t_elab, _)	<- elaborateRsT_constrainForm newVarN 
-			$  toConstrainFormT t
-
-   	return $ toFetterFormT t_elab
+ = do	(t_elab, _)	<- elaborateRsT_constrainForm newVarN t
+   	return t_elab
 
 
 -- Slurp -------------------------------------------------------------------------------------------

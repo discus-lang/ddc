@@ -45,7 +45,6 @@ instance DeepSeq Type where
   = case xx of
 	TNil				-> y
 	TForall		b k t		-> deepSeq b  $! deepSeq k $! deepSeq t y
-	TFetters	t fs		-> deepSeq t  $! deepSeq fs y
 	TApp		t1 t2		-> deepSeq t1 $! deepSeq t2 y
 	TSum		k ts		-> deepSeq k  $! deepSeq ts y
 	TCon		c		-> deepSeq c y

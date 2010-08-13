@@ -14,7 +14,6 @@ takeValueArityOfType tt
  = case tt of
 	TNil		-> Nothing
 	TForall	b k t	-> takeValueArityOfType t
-	TFetters t fs	-> takeValueArityOfType t
 	TConstrain t cs	-> takeValueArityOfType t
 
 	TApp{}		
@@ -29,4 +28,3 @@ takeValueArityOfType tt
 	TCon{}		-> Just 0
 	TVar{}		-> Just 0
 	TError{}	-> Nothing
-		

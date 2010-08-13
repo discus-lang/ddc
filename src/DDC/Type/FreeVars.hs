@@ -7,7 +7,7 @@ where
 import DDC.Type.Exp
 import DDC.Var
 import DDC.Util.FreeVars
-import Data.Set			((\\), empty, union, unions, fromList, singleton)
+import Data.Set			((\\), empty, union, unions, singleton)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
@@ -62,10 +62,6 @@ instance FreeVars Type where
 	 	[ freeVars t1
 		, freeVars k
 		, freeVars t2])	\\ singleton v
-	 
-	TFetters t fs
-	 -> union (freeVars fs) (freeVars t)
-	 	\\ (fromList [ v | FWhere (TVar _ (UVar v)) _ <- fs])
 			
 	TConstrain t (Constraints { crsEq, crsMore, crsOther })
 	 -> unions

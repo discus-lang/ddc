@@ -36,7 +36,7 @@ toCoreB bb
 --   * Crush $Danger closures.
 toCoreT :: Type -> Type
 toCoreT tt	
- = let	tt_prep	= flattenT_constrainForm $ toConstrainFormT tt
+ = let	tt_prep	= flattenT_constrainForm tt
 	tt_core	= toCoreT' Map.empty tt_prep
    in	trace (vcat	[ "toCoreT: tt      = " % tt
 			, "         tt_prep = " % tt_prep
@@ -84,9 +84,6 @@ toCoreT' ttsMore tt
 		t'		= toCoreT' ttsMore' t
 		ksContext	= map toCoreF $ crsOther crs
 	    in	addContextsUnderForalls ksContext t'
-	
-	TFetters{}
-	 -> down $ toConstrainFormT tt
 	
 	TSum k ts		
 	 -> TSum (toCoreK k) (map down ts)

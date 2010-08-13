@@ -22,8 +22,7 @@ import qualified Data.Sequence	as Seq
 stage	= "Type.Feed"
 
 debug	= False
-trace ss
- = when debug $ traceM ss
+trace ss = when debug $ traceM ss
 
 -- feedConstraint ----------------------------------------------------------------------------------
 -- | Add a constraint to the type graph.
@@ -86,14 +85,11 @@ feedType
 
 feedType src tt
  = case tt of
-	TFetters t fs
-	 -> feedType src $ toConstrainFormT tt
-	
 	-- We need to rename the vars on the LHS of FWhere bindings to make sure
 	-- they don't conflict with vars arleady in the graph.
 	TConstrain t crs
 	 -> do 	let fs		= fettersOfConstraints crs
-		
+
 		-- Rename the vars on the LHS of FLet bindings to make sure
 	 	--	they don't conflict with any vars already in the graph.
 		ttSub		<- liftM (Map.fromList . catMaybes)
@@ -140,9 +136,8 @@ feedType src tt
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
 		 Just tDef
-		  -> do	let tDef_trim	= toFetterFormT 
-					$ trimClosureT_constrainForm 
-					$ flattenT_constrainForm $ toConstrainFormT tDef
+		  -> do	let tDef_trim	= trimClosureT_constrainForm 
+					$ flattenT_constrainForm tDef
 
 		  	tDef'		<- linkType [] src tDef_trim
 
@@ -174,8 +169,7 @@ feedType src tt
 		return cid
 
 	TApp t1 t2
-	 -> do	
-		let k	= kindOfType tt
+	 -> do	let k	= kindOfType tt
 	 	cidT	<- allocClass src k
 	 	cid1	<- feedType src t1
 		cid2	<- feedType src t2

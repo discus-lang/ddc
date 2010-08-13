@@ -79,15 +79,14 @@ makeCtorType newVarN vData vs name fs
 
 	-- Constructors don't inspect their arguments.
 	let ?newVarN	=  newVarN
- 	tCtor		<- liftM toFetterFormT
-			$  elaborateCloT_constrainForm
+ 	tCtor		<- elaborateCloT_constrainForm
 			$  makeTFunsPureEmpty (tsPrimary_elab ++ [objType])
 
 	let vks		= map (\v -> (v, let Just k = defaultKindOfVar v in k)) 
 			$ Var.sortForallVars 
 			$ Set.toList (Set.union vsFree (Set.fromList vs))
 
-	let tQuant	= makeTForall_back vks (addFetters fsField tCtor)
+	let tQuant	= makeTForall_back vks (addConstraintsOther fsField tCtor)
 
 	return 	$ {- trace (pprStrPlain
 			$ "makeCtorType\n"

@@ -92,7 +92,6 @@ superOpTypePart	tt
 
 	-- skip over constraints
 	TForall v k t		-> superOpTypePart t
-	TFetters t fs		-> superOpTypePart t
 	TConstrain t crs	-> superOpTypePart t
 
 	-- an unboxed var of airity zero, eg Int32#

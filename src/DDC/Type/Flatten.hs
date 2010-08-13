@@ -22,7 +22,6 @@ flattenT' sub block tt
  = let down	= flattenT' sub block
    in  case tt of
    	TNil		-> TNil
-	TFetters{}	-> panic stage "flattenT: no match for TFetters"
 
 	TSum k ts	-> makeTSum  k (map down ts)
 	TApp t1 t2	-> TApp (down t1) (down t2)

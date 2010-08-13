@@ -120,9 +120,7 @@ solveCs	(c:cs)
 		-- 	as we're only using information in the sig for guiding 
 		-- 	projection resolution.
 		let t2_strip
-			= toFetterFormT
-			$ stripFWheresT_all 
-			$ toConstrainFormT t2_inst
+			= stripFWheresT_all t2_inst
 
 		trace	$ "    t2_strip:\n" %> prettyTypeSplit t2_strip % "\n\n"
 

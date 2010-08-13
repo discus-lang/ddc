@@ -183,7 +183,6 @@ followT table tt
    = case tt of
 	TNil		-> return tt
 	TForall b k t	-> liftM3 TForall (transZM table b) (transZM table k) (transZM table t)
-	TFetters t fs	-> liftM2 TFetters (transZM table t) (transZM table fs)
 
 	TConstrain t Constraints { crsEq, crsMore, crsOther }
 	 -> do	t'		<- transZM table t

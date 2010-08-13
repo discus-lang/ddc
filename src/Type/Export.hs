@@ -105,9 +105,7 @@ exportType t
  	quantVars	<- liftM (Set.fromList . Map.keys)
 			$  getsRef stateQuantifiedVarsKM
 
-	let tFinal	= toConstrainFormT 
-			$ finaliseT_constrainForm quantVars True
-			$ toConstrainFormT tPlug
+	let tFinal	= finaliseT_constrainForm quantVars True tPlug
 
 	trace	$ "*   Export.exportType: final\n"
 		% "    tPlug:\n" 	%> prettyTypeSplit tPlug	% "\n"
@@ -120,7 +118,7 @@ exportType t
 		| otherwise		= tFinal
 				
 	trace	$ "    tTrim:\n"	%> prettyTypeSplit tTrim	% "\n\n"
-	return $ toFetterFormT tTrim		
+	return $ tTrim		
  
 
 
@@ -168,9 +166,7 @@ exportInstInfo (v, ii)
 		
 		-- need to finalise again because quantified vars have been chopped off
  		quantVars	<- getsRef stateQuantifiedVars
-		let ts_final	= map toFetterFormT
-				$ map (finaliseT_constrainForm quantVars True) 
-				$ map toConstrainFormT ts_hacked
+		let ts_final	= map (finaliseT_constrainForm quantVars True) ts_hacked
 	 	t'		<- exportType t
 
 		trace 	$ "*   Export.exportInstInfo " % v % "\n"

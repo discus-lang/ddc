@@ -32,9 +32,10 @@ dangerT rsMutable fsClosure tt
 	 -> dangerT rsMutable fsClosure t
 
 	-- fetters
-	TFetters t1 fs
+	TConstrain t1 crs
 	 ->     -- remember any regions flagged as mutable
-	    let	rsMoreMutable	= Set.fromList
+	    let	fs		= fettersOfConstraints crs
+		rsMoreMutable	= Set.fromList
 	 			$ [r	| FConstraint v [r]	<- fs
 					, varId v 	== (VarIdPrim Var.FMutable) ]
 
@@ -50,11 +51,7 @@ dangerT rsMutable fsClosure tt
 		t1Danger	= dangerT rsMutable' fsClosure' t1
 
 	    in	t1Danger
-	    
-	TConstrain{}
-	 -> dangerT rsMutable fsClosure
-	  $ toFetterFormT tt
-	    
+	    	    
 	TApp{}
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
 	 -> let cloDanger	

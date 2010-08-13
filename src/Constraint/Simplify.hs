@@ -157,7 +157,13 @@ subFollowVT' sub block tt
 	downF	= subFollowVT_f sub block
    in case tt of
  	TForall  b k t		-> TForall b k (down t)
-	TFetters t fs		-> TFetters (down t) (map downF fs)
+
+	TConstrain t crs	
+	 -> makeTConstrain (down t )
+		(Constraints	(Map.map down $ crsEq crs)
+			  	(Map.map down $ crsMore crs)
+				(map downF $ crsOther crs))
+
 	TSum 	k ts		-> TSum	k (map down ts)
 	TApp t1 t2		-> TApp	(down t1) (down t2)
 	TCon{}			-> tt

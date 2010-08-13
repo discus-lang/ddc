@@ -47,7 +47,7 @@ elaborateT tt
 	 | Just _	<- takeTFun tt
 	 -> elaborateT_fun tt
 
-	TFetters t1 fs 	
+	TConstrain t1 fs 	
 	 | Just _	<- takeTFun t1
 	 -> elaborateT_fun tt
 
@@ -66,8 +66,7 @@ elaborateT_fun tt
 				$ sequence
 				$ map (takeVarOfBind . fst) bks
 	
-	(tt_rs, newRs)		<- elaborateRsT_constrainForm newVarN 
-				$  toConstrainFormT tt'
+	(tt_rs, newRs)		<- elaborateRsT_constrainForm newVarN tt'
 			
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
@@ -88,8 +87,7 @@ elaborateT_fun tt
 				tt_quant
 
 	-- add closures
-	tt_clo		<- elaborateCloT_constrainForm  
-			$  toConstrainFormT tt_eff
+	tt_clo		<- elaborateCloT_constrainForm tt_eff
 			
 	
 	-- make a new Mutable fetter for each region that is written to

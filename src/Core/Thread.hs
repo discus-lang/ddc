@@ -156,7 +156,7 @@ rewriteWitness' tt
 	, isJust (takeTFun t1)
 	= return tt
 
-	| Just (TyConWitnessMkHeadLazy, _, [TFetters t1 _]) <- mClass
+	| Just (TyConWitnessMkHeadLazy, _, [TConstrain t1 _]) <- mClass
 	, isJust (takeTFun t1)
 	= return tt
 	

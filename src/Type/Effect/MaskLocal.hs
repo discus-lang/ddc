@@ -22,8 +22,16 @@ stage	= "Type.Effect.MaskLocal"
 maskLocalT :: Set Type -> Type -> Type
 maskLocalT tsVis tt
  = case tt of
-	TForall  b k t1		-> TForall b k (maskLocalT tsVis t1)
-	TFetters t1 fs		-> addFetters (catMaybes $ map (maskF tsVis) fs) t1
+	TForall  b k t1	
+	 -> TForall b k (maskLocalT tsVis t1)
+
+	TConstrain t1 crs
+	 -> TConstrain t1 
+	  $ constraintsOfFetters
+	  $ catMaybes 
+	  $ map (maskF tsVis)
+	  $ fettersOfConstraints crs
+
 	_ 			-> tt
 
 

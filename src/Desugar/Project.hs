@@ -271,9 +271,6 @@ freshenCrsEq mid tt
 			
 		return	$ subTT_everywhere vsSub tt
 		
-	TFetters{}
-	 -> freshenCrsEq mid $ toConstrainFormT tt
-
 	_ -> return tt
 
 

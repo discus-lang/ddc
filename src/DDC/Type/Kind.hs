@@ -74,7 +74,6 @@ isValueType tt
 	TCon tc			-> isValueKind (tyConKind tc)
 	TSum{}			-> False
 	TForall _ _ t1		-> isValueType t1
-	TFetters   t1 _		-> isValueType t1
 	TConstrain t1 _		-> isValueType t1
 	TError k _		-> isValueKind k
 	_			-> False
@@ -97,7 +96,6 @@ isClosure tt
 	TApp{}			-> isClosureKind (kindOfType tt)
  	TSum	 k _		-> isClosureKind k
 	TVar	 k _		-> isClosureKind k
-	TFetters t1 _		-> isClosure t1
 	TConstrain t1 _		-> isClosure t1
 	TForall _ _ t1		-> isClosure t1
 	_			-> False
@@ -111,7 +109,6 @@ isEffect tt
 	TApp{}			-> isEffectKind (kindOfType tt)
 	TSum k _		-> isEffectKind k
 	TVar k _		-> isEffectKind k
-	TFetters t1 _		-> isEffect t1
 	TConstrain t1 _		-> isEffect t1
 	TForall _ _ t1		-> isEffect t1
 	_			-> False
@@ -190,7 +187,6 @@ kindOfType tt
 	TSum  k _		-> k
 	TApp t1 t2		-> uncheckedApplyKT (kindOfType t1) t2	
 	TForall  _ _ t2		-> kindOfType t2
-	TFetters   t1 _		-> kindOfType t1
 	TConstrain t1 _		-> kindOfType t1
 	TError k _		-> k
 	
@@ -248,7 +244,6 @@ applyKT_type depth tX tt
    in  case tt of
    	TNil			-> tt
 	TForall b k t		-> TForall b k (down t)
-	TFetters t fs		-> TFetters    (down t) fs
 	TConstrain t crs	-> TConstrain  (down t) crs
 	TApp t1 t2		-> TApp (down t1) (down t2)
 	TSum k ts		-> TSum k (map down ts)

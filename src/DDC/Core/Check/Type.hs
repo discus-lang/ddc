@@ -82,15 +82,7 @@ checkType_trace m tt env
 			, k2)
 	
 		_ -> panic stage $ "no match for " % tt
-	
-	
-	-- TODO: Add fetters to environment.
-	TFetters t1 fs
-	 | (t1', k1)	<- checkTypeI n t1 env
-	 , fs'		<- lintList lintF fs env
-	 -> 	( TFetters t1' fs'
-		, k1)
-	
+		
 	-- TODO: Add constraints to environment.
 	TConstrain t1 crs
 	 | crs'	<- lintCRS crs env
@@ -206,10 +198,6 @@ checkType_trace m tt env
 	
 	_  -> panic stage $ ppr $ "checkType: no match for " % tt
 
-
--- | Lint a Fetter (unfinished)
-lintF :: Fetter -> Env -> Fetter
-lintF f _	= f
 
 -- | Lint some constraints (unfinished)
 lintCRS :: Constraints -> Env -> Constraints

@@ -298,9 +298,8 @@ toCoreX xx
 	 -> do	
 	 	Just t		<- lookupType vT
 	 	let t_flat	= T.stripToBodyT 
-				$ T.flattenT_constrainForm
-				$ T.toConstrainFormT t
-		
+				$ T.flattenT_constrainForm t
+	
 		return		$ toCoreXLit t_flat xx
 
  
@@ -492,7 +491,7 @@ toCoreVarInst v vT
 	 T.InstanceLet vUse vBind tsInst _
 	  -> do	
 		-- Convert the type arguments to core.
-		let tsInstC	= map (T.flattenT_constrainForm . T.toConstrainFormT . toCoreT) tsInst
+		let tsInstC	= map (T.flattenT_constrainForm . toCoreT) tsInst
 			
 		-- If the function being instantiated needs some context then there'll be a 
 		--	separate witness for it... therefore we can safely erase contexts on
@@ -536,8 +535,7 @@ toCoreVarInst v vT
 	 -- 	pass the args on the type scheme back to ourselves.
 	 T.InstanceLetRec vUse vBind (Just tSchemeT)
 	  -> do
-		let tSchemeC	= (T.flattenT_constrainForm . T.toConstrainFormT)
-				$ toCoreT tSchemeT
+		let tSchemeC	= T.flattenT_constrainForm $ toCoreT tSchemeT
 				
 		let (bksReplay, ksContext, _)
 				= T.stripForallContextT tSchemeC
@@ -668,12 +666,12 @@ toCoreW ww
 
 toCoreA_LV (D.LIndex nn i, v)
  = do	Just t		<- lookupType v
- 	let t_flat	= (T.flattenT_constrainForm . T.stripToBodyT . T.toConstrainFormT) t
+ 	let t_flat	= (T.flattenT_constrainForm . T.stripToBodyT) t
 	return	(C.LIndex i, v, t_flat)
 
 toCoreA_LV (D.LVar nn vField, v)
  = do	Just t		<- lookupType v
- 	let t_flat	= (T.flattenT_constrainForm . T.stripToBodyT . T.toConstrainFormT) t
+ 	let t_flat	= (T.flattenT_constrainForm . T.stripToBodyT) t
  	return	(C.LVar vField, v, t_flat)
 
 

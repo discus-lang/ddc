@@ -172,9 +172,7 @@ addSchemeToGraph src vGen tScheme
 	--	then this information is shared with the graph, and shouldn't be duplicated
 	--	locally.
 	let tScheme_stripped
-		= toFetterFormT
-		$ stripFWheresT_mono 
-		$ toConstrainFormT tScheme
+		= stripFWheresT_mono tScheme
 
 	case tScheme_stripped of 
 

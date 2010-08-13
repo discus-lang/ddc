@@ -95,7 +95,6 @@ slurpParamClassVarsT_constrainForm :: Type -> [Type]
 slurpParamClassVarsT_constrainForm tt
  = case tt of
 	TForall b k t		-> slurpParamClassVarsT_constrainForm t
-	TFetters t fs		-> panic stage $ "slurpParamClassVarsT: TFetters"
 	TConstrain t crs 	-> slurpParamClassVarsT_constrainForm t
 
 	TApp t1 t2

@@ -513,7 +513,6 @@ toSeaT :: T.Type -> E.Type
 toSeaT tt
  = case tt of
 	T.TForall _ _ t		-> toSeaT t
-	T.TFetters t _		-> toSeaT t
 	T.TConstrain t _	-> toSeaT t
 
 	T.TApp{}

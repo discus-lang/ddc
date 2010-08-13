@@ -239,9 +239,6 @@ followTs table tt	= mapM (followT table) tt
 followT table t
  | decendT table	= transZM table t
  | otherwise		= return t
-
-followF table f		= transZM table f
- 
  
 followK table k
  | decendK table	= transZM table k
@@ -430,12 +427,6 @@ instance Monad m => TransM m Type where
 		crsMore'	<- liftM Map.fromList $ transZM table $ Map.toList crsMore
 		crsOther'	<- transZM table crsOther
 		return	$ TConstrain t' (Constraints crsEq' crsMore' crsOther')
-
-	TFetters t1 fs
-	 -> do	t1'		<- followT table t1
-		fs'		<- mapM (followF table) fs
-		
-		transT table	$ TFetters t1' fs'
 	
 	TSum k ts
 	 -> do	ts'		<- followTs table ts

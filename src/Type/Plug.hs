@@ -73,7 +73,6 @@ staticRsDataT tt
 	
 	 | otherwise		-> Set.empty
 
-	TFetters t fs		-> staticRsDataT t
 	TConstrain t crs	-> staticRsDataT t
 	
 	TForall b k t		-> staticRsDataT t	
@@ -91,7 +90,6 @@ staticRsDataT tt
 staticRsClosureT :: Type -> Set Type
 staticRsClosureT tt
  = case tt of
-	TFetters t fs		-> staticRsClosureT t
 	TConstrain t crs	-> staticRsClosureT t
 
 	TApp{} 

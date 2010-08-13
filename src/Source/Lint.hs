@@ -535,13 +535,6 @@ instance Lint Type where
 		t'	<- lint t
 		return	$ TForall b k' t'
 		
-	TFetters t fs
-	 | isNil fs	-> death tt "TFetters - list is empty"
-	 | otherwise	
-	 -> do	t'	<- lint t
-		fs'	<- lint fs
-		return	$ TFetters t' fs'
-
 	TConstrain t crs
 	 -> do	t'	<- lint t
 	 	return	$ TConstrain t' crs

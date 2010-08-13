@@ -47,8 +47,7 @@ generaliseType' varT tCore envCids
 		% "\n"
 
 	-- flatten out the scheme so its easier for staticRs.. to deal with
-	let tFlat	= toFetterFormT
-			$ flattenT_constrainForm $ toConstrainFormT tCore
+	let tFlat	= flattenT_constrainForm tCore
 
 	trace	$ "    tFlat\n"
 		%> prettyTypeSplit tFlat	% "\n\n"
@@ -90,8 +89,7 @@ generaliseType' varT tCore envCids
 		%> prettyTypeSplit tPlug 	% "\n\n"
 
 	-- Clean empty effect and closure classes that aren't ports.
-	let tsParam	=  slurpParamClassVarsT_constrainForm
-	 		$  toConstrainFormT tPlug
+	let tsParam	=  slurpParamClassVarsT_constrainForm tPlug
 	classInst	<- getsRef stateClassInst
 	let tClean	= cleanType (Set.fromList tsParam) tPlug
 
@@ -109,8 +107,7 @@ generaliseType' varT tCore envCids
 	-- 	Do this before adding foralls so we don't end up with quantified regions that
 	--	aren't present in the type scheme.
 	--
-	let rsVisible	= visibleRsT 
-			$ flattenT_constrainForm $ toConstrainFormT tReduce
+	let rsVisible	= visibleRsT $ flattenT_constrainForm tReduce
 
 	let tMskLocal	= maskLocalT rsVisible tReduce
 
@@ -123,7 +120,12 @@ generaliseType' varT tCore envCids
 	--	then make them constant.
 	vsBoundTop	<- getsRef stateVsBoundTopLevel
 	let isTopLevel	= Set.member varT vsBoundTop
-	let fsMskLocal	= takeTFetters tMskLocal
+
+	let fsMskLocal	
+		= case tMskLocal of
+			TConstrain _ crs	-> fettersOfConstraints crs
+			_			-> []
+
 	let rsMskLocal	= Set.toList $ freeTClasses tMskLocal
 	
 	trace	$ "    isTopLevel   = " % isTopLevel		% "\n\n"
@@ -143,7 +145,7 @@ generaliseType' varT tCore envCids
 		| otherwise
 		= []
 		
-	let tConstify	= addFetters fsMore tMskLocal
+	let tConstify	= addConstraints (constraintsOfFetters fsMore) tMskLocal
 
 	trace	$ "    tConstify    = " % tConstify 		% "\n\n"
 
@@ -160,9 +162,7 @@ generaliseType' varT tCore envCids
 			$ vsFree
 
 	trace	$ "    vksFree   = " % vksFree	% "\n\n"
-	let tScheme	= toFetterFormT
-			$ quantifyVarsT_constrainForm vksFree 
-			$ toConstrainFormT tConstify
+	let tScheme	= quantifyVarsT_constrainForm vksFree tConstify
 
 	-- Remember which vars are quantified
 	--	we can use this information later to clean out non-port effect and closure vars
@@ -187,9 +187,9 @@ generaliseType' varT tCore envCids
 
 slurpFetters tt
 	= case tt of
-		TForall b k t'	-> slurpFetters t'
-		TFetters _ fs	-> fs
-		_		-> []
+		TForall b k t'	 -> slurpFetters t'
+		TConstrain _ crs -> fettersOfConstraints crs
+		_		 -> []
 
 
 -- | Empty effect and closure eq-classes which do not appear in the environment or 
@@ -216,9 +216,7 @@ cleanType tsSave tt
 				_	-> Nothing)
 		$ Set.toList tsSave
 		
-   in	toFetterFormT
-		$ finaliseT_constrainForm vsKeep False 
-		$ toConstrainFormT tt
+   in	finaliseT_constrainForm vsKeep False tt
  
 
 -- | After reducing the context of a type to be generalised, if certain constraints
@@ -231,8 +229,9 @@ cleanType tsSave tt
 checkContext :: Type -> SquidM ()
 checkContext tt
  = case tt of
- 	TFetters t fs	-> mapM_ checkContextF fs
-	_		-> return ()
+ 	TConstrain t crs
+  	  -> mapM_ checkContextF $ fettersOfConstraints crs
+	_ -> return ()
  
 checkContextF ff
  = case ff of
