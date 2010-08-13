@@ -57,6 +57,7 @@ module DDC.Type.Compounds
 	, addFetters
 	, takeBindingVarF
 	, constraintsOfFetters
+	, fettersOfConstraints
 	, addFetterToConstraints
 	
 	  -- * Constraints
@@ -444,6 +445,14 @@ constraintsOfFetters fs
 	= foldr addFetterToConstraints 
 		(Constraints Map.empty Map.empty [])
 		fs
+
+-- | Convert a set of constraints to a list of fetters
+fettersOfConstraints :: Constraints -> [Fetter]
+fettersOfConstraints crs
+ 	=  [FWhere t1 t2	| (t1, t2) <- Map.toList $ crsEq   crs]
+	++ [FMore  t1 t2	| (t1, t2) <- Map.toList $ crsMore crs]
+	++ crsOther crs
+	
 
 
 -- | Add a fetter to a some constraints.

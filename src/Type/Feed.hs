@@ -87,8 +87,14 @@ feedType
 feedType src tt
  = case tt of
 	TFetters t fs
-	 -> do	
-	 	-- Rename the vars on the LHS of FLet bindings to make sure
+	 -> feedType src $ toConstrainFormT tt
+	
+	-- We need to rename the vars on the LHS of FWhere bindings to make sure
+	-- they don't conflict with vars arleady in the graph.
+	TConstrain t crs
+	 -> do 	let fs		= fettersOfConstraints crs
+		
+		-- Rename the vars on the LHS of FLet bindings to make sure
 	 	--	they don't conflict with any vars already in the graph.
 		ttSub		<- liftM (Map.fromList . catMaybes)
 				$  mapM (\f -> case f of
@@ -106,10 +112,6 @@ feedType src tt
 		mapM_ (feedFetter src) fs2
 	 	t3		<- feedType src t2
 		return	t3
-
-	TConstrain{}
-	 -> feedType src
-	 $  toFetterFormT tt
 
 	TSum k ts
 	 | []	<- ts
