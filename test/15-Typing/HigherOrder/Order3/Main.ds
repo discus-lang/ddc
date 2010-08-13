@@ -1,37 +1,22 @@
 
 -- Test out handling of a third order function.
---	At third order we can start to get ':>' constraints on effects.
+--	At third order we can start to get more-than constraints on effects.
 
-succ :: Int -> Int;
-succ x = x + 1;
+-- old faithful
+succ :: Int -> Int
+succ x 		= x + 1
 
-danio g	= g 5;
+-- foo is a third order function.
+foo f 		= succ (f succ)
+appFive g	= g 5
 
--- perch is a third order function
-perch f 	= succ (f succ);
-
-appDanio f 	= f danio;
-
-{-
-power h		
- = perch (\g 
-	-> do {
-		case 0 of {
-			1	-> g;
-			2	-> h;
-			3	-> \x -> do { print "hello"; 5 };
-		} 5;
-		
-	
-	});
--}						
-
+-- bar is a fourth order function with who's type has no more-than constraints.
+bar f 		= f appFive
 
 main ()
- = do {
-	println $ show (perch danio);
-	println $ show (appDanio perch);
- };
+ = do	println $ show (foo appFive)
+	println $ show (bar foo)
+
 
 
 
