@@ -23,25 +23,28 @@ stage	= "DDC.Type.Pretty"
 
 -- Bind -------------------------------------------------------------------------------------------
 instance Pretty Bind PMode where
- ppr xx
-  = case xx of
+  ppr = pprBind Set.empty
+
+pprBind :: Set Var -> Bind -> Str
+pprBind vsLocal bb
+  = case bb of
 	BNil		-> ppr "_"
-  	BVar v		-> ppr v
-	BMore v t	-> "(" % v % " :> " % t % ")"
+  	BVar v		-> pprVar vsLocal v
+	BMore v t	-> "(" % pprVar vsLocal v % " :> " % pprType vsLocal t % ")"
 
 -- Type --------------------------------------------------------------------------------------------
-prettyType :: Type -> Str
-prettyType = ppr
-
 instance Pretty Type PMode where
- ppr tt = pprTypeQuant Set.empty tt
+  ppr = pprType Set.empty
+
+prettyType :: Type -> Str
+prettyType = pprType Set.empty
 
 -- | When pretty printing type we don't want to show module identifiers on locally quantified vars. 
 --   We keep a set of which vars are quantified as we decend into the type.
 --   TODO: the handling of quant vars not done yet.
-pprTypeQuant :: Set Var -> Type -> Str
-pprTypeQuant vsQuant tt
- = let down = pprTypeQuant vsQuant 
+pprType :: Set Var -> Type -> Str
+pprType vsLocal tt
+ = let down = pprType vsLocal 
    in  case tt of
  	TNil		-> ppr "@TNil"
 
@@ -51,118 +54,126 @@ pprTypeQuant vsQuant tt
 	TForall b _ _	
 	 -> let	(bks, tBody) 	= takeTForall tt
 		Just v		= takeVarOfBind b
-		vsQuant'	= Set.insert v vsQuant
+		vsLocal'	= Set.insert v vsLocal
 	    in	"forall " 
 			% punc " " (map (uncurry pprBindKind) bks) 
 			% ". " 
-			% pprTypeQuant vsQuant' tBody
+			% pprType vsLocal' tBody
 
 	TConstrain t (Constraints { crsEq, crsMore, crsOther })
 	 -> let down' x = case x of
-				TForall{}	-> parens $ ppr x
-				_		-> ppr x
+				TForall{}	-> parens $ down x
+				_		-> down x
 
 	    in down' t % " :- " 
 		% ", " %!% [down t1 % " =  " % down t2 | (t1, t2) <- Map.toList crsEq ]
 		% ", " %!% [down t1 % " :> " % down t2 | (t1, t2) <- Map.toList crsMore ]
-		% ", " %!% crsOther
+		% ", " %!% (map (pprFetter vsLocal) crsOther)
 		
-	TSum k  es	-> k  % "{" % "; " %!% map down es % "}"
+	TSum k  es	
+	 -> k  % "{" % "; " %!% map down es % "}"
 
 	-- type elaboration in source types
 	TApp (TCon (TyConElaborate elab _)) t
-	 -> prettyTypeParens t % "{" % elab % "}"
+	 -> pprTypeParens vsLocal t % "{" % elab % "}"
 
 	TApp (TCon (TyConClosure (TyConClosureFree v) _)) t
-	 -> v % " : " % t
+	 -> v % " : " % pprType vsLocal t
 
 	TApp (TCon (TyConClosure (TyConClosureFreeType v) _)) t
-	 -> v % " : " % t
+	 -> v % " : " % pprType vsLocal t
 
 	TApp (TCon (TyConClosure (TyConClosureFreeRegion v) _)) t
-	 -> v % " : " % t
+	 -> v % " : " % pprType vsLocal t
 
 	TApp (TApp (TCon (TyConClosure TyConClosureDanger _)) v) t
-	 -> v % " $> " % t
+	 -> v % " $> " % pprType vsLocal t
 
 	TApp t1 t2
  	 | Just (t1', t2', eff, clo)	<- takeTFun tt
 	 -> let str
 	 	 | eff == tPure
 		 , clo == tEmpty
-		 = prettyFunArg t1' % " -> " % prettyFunResult t2'
+		 = pprFunArg vsLocal t1' 
+		 	% " -> "
+			% pprFunResult vsLocal t2'
 				
 		 | clo == tEmpty
-		 = prettyFunArg t1' % " -(" % eff % ")> " % prettyFunResult t2'
+		 = pprFunArg vsLocal t1' 
+			% " -(" % pprType vsLocal eff % ")> " 
+			% pprFunResult vsLocal t2'
 				
 		 | eff == tPure
-		 = prettyFunArg t1' % " -(" % clo % ")> " % prettyFunResult t2'
+		 = pprFunArg vsLocal t1'
+			% " -(" % pprType vsLocal clo % ")> "
+			% pprFunResult vsLocal t2'
 				
 		 | otherwise
-		 = prettyFunArg t1' % " -(" % prettyTypeParens eff % " " % prettyTypeParens clo % ")> " % prettyFunResult t2'
+		 = pprFunArg vsLocal t1'
+			% " -(" % pprTypeParens vsLocal eff 
+				% " " 
+				% pprTypeParens vsLocal clo % ")> "
+			% pprFunResult vsLocal t2'
 	    in str
 
 	 | otherwise
 	 -> let	pprAppLeft x 
-	 	  | isTApp x 	= ppr x
-		  | otherwise	= prettyTypeParens x
+	 	  | isTApp x 	 = pprType vsLocal x
+		  | otherwise	 = pprTypeParens vsLocal x
 
 		pprAppRight x
-		  | isSomeTVar x 
-		  = ppr x
-
-		  | otherwise		
-		  = prettyTypeParens x
+		  | isSomeTVar x = pprType vsLocal x
+		  | otherwise	 = pprTypeParens vsLocal x
 
 	    in  pprAppLeft t1 % " " % pprAppRight t2
 
-	TCon tycon	-> ppr tycon
+	TCon tycon	
+	 -> pprTyCon vsLocal tycon
 
-	TVar k (UVar v)	   -> pprVarKind v k 
+	TVar k (UVar v)	   -> pprVarKind vsLocal v k 
 	TVar k (UClass c)  -> resultKind k % c
 	TVar k (UIndex ix) -> resultKind k % ix
 
 	TVar k (UMore v t)
 	 -> ifMode (elem PrettyCoreMore)
 	 	(if k == kValue 
-			then	parens $ "*" % v % " :> " % t 
-			else	parens $ v % " :> " % t)
+			then	parens $ "*" % v % " :> " % pprType vsLocal t 
+			else	parens $       v % " :> " % pprType vsLocal t)
 			
 		(if k == kValue
 			then	"*" % v
-			else	ppr v)
+			else	      ppr v)
 
 	TError k _	-> "@TError" % k % "..."
 
 
 -- | Pretty print a type that appears on the left of a function arrow.
-prettyFunArg t
+pprFunArg vsLocal t
 	| Just{}	<- takeTFun t
-	= parens (ppr t)
+	= parens (pprType vsLocal t)
 
 	| TForall{}	<- t
-	= parens (ppr t)
+	= parens (pprType vsLocal t)
 
 	| otherwise
-	= ppr t
+	= pprType vsLocal t
 
 
 -- | Pretty print a type that appears on the right of a function arrow.
-prettyFunResult tt
- = case tt of
-	_		-> ppr tt
+pprFunResult vsLocal tt
+ 	= pprType vsLocal tt
 
 
 -- | Pretty print a variable with its kind.
-pprVarKind :: Var -> Kind -> PrettyM PMode
-pprVarKind v k
+pprVarKind :: Set Var -> Var -> Kind -> PrettyM PMode
+pprVarKind vsLocal v k
  = ifMode 
  	(elem PrettyTypeKinds)
 	(if kindOfSpace (varNameSpace v) == Just k
-		then ppr v
-		else "(" % ppr v % " :: " % k % ")")
+		then pprVar vsLocal v
+		else "(" % pprVar vsLocal v % " :: " % k % ")")
 
-	(ppr v)
+	(pprVar vsLocal v)
 
 
 -- | Pretty print a binder with its kind.
@@ -170,50 +181,87 @@ pprBindKind :: Bind -> Kind -> PrettyM PMode
 pprBindKind bb k
  = case bb of
 	BNil		-> "_ :: " % k
- 	BVar v		-> pprVarKind (varWithoutModuleId v) k
-	BMore v t	-> pprVarKind (varWithoutModuleId v) k % " :> " % t
+ 	BVar v		-> pprVarKind Set.empty (varWithoutModuleId v) k
+	BMore v t	-> pprVarKind Set.empty (varWithoutModuleId v) k % " :> " % t
 	
 
 -- | Pretty print a type, wrapping it in parens if it's not some atomic thing like a `TVar` or `TSum`.
-prettyTypeParens :: Type -> Str
-prettyTypeParens t
+pprTypeParens :: Set Var -> Type -> Str
+pprTypeParens vsLocal t
  = case t of
-	TVar{}	 	-> ppr t
-	TSum{}		-> ppr t
-	TCon{}		-> ppr t
-	_		-> "(" % t % ")"
+	TVar{}	 	-> pprType vsLocal t
+	TSum{}		-> pprType vsLocal t
+	TCon{}		-> pprType vsLocal t
+	_		-> "(" % pprType vsLocal t % ")"
+
+
+prettyTypeParens = pprTypeParens Set.empty
+
 
 -- | Pretty print a type with the fetters on their own lines.
 prettyTypeSplit :: Type	-> PrettyM PMode
-prettyTypeSplit	   tt
+prettyTypeSplit	tt
  = case tt of
-	TForall BNil _ _	-> prettyTypeSplit_crs tt
-
  	TForall{}
 	 -> let (bks, tBody)	= takeTForall tt
+		vsLocal		= Set.fromList
+				$ catMaybes 
+				$ map (takeVarOfBind . fst) bks
 	    in	"forall " 
 			% punc " " (map (uncurry pprBindKind) bks) % "\n"
-	    		% ".  " % prettyTypeSplit_crs tBody
+	    		% ".  " 
+			% prettyTypeSplit_crs vsLocal tBody
 	 
-	t -> prettyTypeSplit_crs t
+	t	-> prettyTypeSplit_crs Set.empty t
 
-prettyTypeSplit_crs :: Type -> Str
-prettyTypeSplit_crs xx
- = let down x = case x of
-			TForall{}	-> parens $ ppr x
-			TConstrain{}	-> parens $ ppr x
-			_		-> ppr x
-   in case xx of
-	TConstrain t crs
-	 -> down t % "\n"
-	 % ":- "
-	 % (punc (ppr "\n,  ") $ 
-		(  [t1 %> " =  " % t2	| (t1, t2) <- Map.toList $ crsEq crs]
-		++ [t1 %> " :> " % t2	| (t1, t2) <- Map.toList $ crsMore crs]
-		++ [ppr f 		| f        <- crsOther crs]))
+
+prettyTypeSplit_crs :: Set Var -> Type -> Str
+prettyTypeSplit_crs vsLocal xx
+ = case xx of
+	TConstrain tBody crs
+	 -> let	vsBound	= Set.union
+				(Set.fromList $ mapMaybe takeVar $ Map.keys $ crsEq crs)
+				(Set.fromList $ mapMaybe takeVar $ Map.keys $ crsMore crs)
 		
-	_ -> ppr xx
+		takeVar  t
+			= case t of
+				TVar _ u -> takeVarOfBound u
+				_	 -> Nothing
+		
+		vsLocal' = Set.union vsLocal vsBound
+		
+		down x = case x of
+				TForall{}	-> parens $ pprType vsLocal' x
+				TConstrain{}	-> parens $ pprType vsLocal' x
+				_		-> pprType vsLocal' x
+	
+	    in	down tBody % "\n"
+	 	 % ":- "
+	 	 % (punc (ppr "\n,  ") $ 
+			(  [pprType vsLocal' t1 %> " =  " % pprType vsLocal' t2	
+				| (t1, t2) <- Map.toList $ crsEq crs]
+				
+			++ [pprType vsLocal' t1 %> " :> " % pprType vsLocal' t2
+				| (t1, t2) <- Map.toList $ crsMore crs]
 
+			++ [pprFetter vsLocal' f 
+				| f        <- crsOther crs]))
+		
+	_ -> pprType vsLocal xx
+
+
+-- | Pretty print a var, but suppress the module if it's in the given set.
+pprVar :: Set Var -> Var -> Str
+pprVar vsLocal v
+	| varModuleId v == ModuleId ["Base"]
+	= ppr $ varWithoutModuleId v
+
+ 	| Set.member v vsLocal
+	= ppr $ varWithoutModuleId v
+
+	| otherwise
+	= ppr v
+	
 
 -- TProj -------------------------------------------------------------------------------------------
 instance Pretty TProj PMode where
@@ -233,14 +281,29 @@ instance Pretty ClassId PMode where
 
 -- Fetter ------------------------------------------------------------------------------------------
 instance Pretty Fetter PMode where
- ppr f
-  = case f of
-  	FConstraint	c ts	-> c  % " " % " " %!% map prettyTypeParens ts
-	FWhere		t1 t2	-> padL 10 t1 % " = "	% t2
-	FMore		t1 t2	-> padL 10 t1 % " :> " % t2
+  ppr = pprFetter Set.empty
+
+pprFetter vsLocal ff
+  = case ff of
+  	FConstraint c ts
+ 	 -> pprVar vsLocal c  % " " % " " %!% map (pprTypeParens vsLocal) ts
+
+	FWhere t1 t2
+	 -> padL 10 (pprType vsLocal t1) 
+		% " = "
+		% (pprType vsLocal t2)
+
+	FMore t1 t2
+	 -> padL 10 (pprType vsLocal t1)
+		% " :> "
+		% (pprType vsLocal t2)
 
 	FProj     pj v1 tDict tBind
-	 -> "Proj "	% pj	% " " % v1 % " " % tDict % " " % tBind
+	 -> "Proj "
+		% pj
+		% " " % v1
+		% " " % pprType vsLocal tDict 
+		% " " % pprType vsLocal tBind
 
 
 -- Super -------------------------------------------------------------------------------------------
@@ -262,7 +325,7 @@ instance Pretty Kind PMode where
 	KNil		-> ppr "?"
 	KCon k _	-> ppr k
 	KFun k1 k2	-> prettyKindLeft k1 % " -> " % k2
-	KApp k1 t1	-> k1 % " " % prettyTypeParens t1
+	KApp k1 t1	-> k1 % " " % pprTypeParens Set.empty t1
 
 	KSum [k]	-> ppr k
 	KSum ks		-> "+" % (braces $ punc ", " ks)
@@ -297,7 +360,9 @@ instance  (Pretty param PMode)
 
 -- TyCon ------------------------------------------------------------------------------------------
 instance Pretty TyCon PMode where
- ppr p
+ ppr = pprTyCon Set.empty
+
+pprTyCon vsLocal p
   = case p of
   	TyConFun{}		
 	 -> ppr "(->)"
@@ -307,7 +372,7 @@ instance Pretty TyCon PMode where
  		(parens $ tyConName 
 			% " :: " 
 			% tyConDataKind)
-		(ppr tyConName)
+		(pprVar vsLocal tyConName)
 	
 	TyConEffect { tyConEffect, tyConEffectKind }
 	  -> ifMode (elem PrettyTypeKinds)
@@ -342,7 +407,7 @@ instance Pretty TyCon PMode where
 instance Pretty TyConEffect PMode where
  ppr cc
   = case cc of
-	TyConEffectTop var		-> ppr var
+	TyConEffectTop var		-> pprVar Set.empty  var
 	TyConEffectRead			-> ppr "!Read"
 	TyConEffectHeadRead		-> ppr "!ReadH"
 	TyConEffectDeepRead		-> ppr "!ReadT"
