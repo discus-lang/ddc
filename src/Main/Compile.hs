@@ -274,7 +274,8 @@ compileFile_parse
 	-- Solve type constraints ---------------------------------------------
 	outVerb $ ppr "  * Type: Solve\n"
 
-	(  typeTable
+	( mapVarToCanonVar
+	 , typeTable
 	 , typeInst
 	 , typeQuantVars
 	 , vsFree
@@ -298,6 +299,7 @@ compileFile_parse
 	 , cHeader )	<- SD.desugarToCore
 		 		sTagged
 				hTagged
+				mapVarToCanonVar
 				mapValueToTypeVars
 				typeTable
 				typeInst

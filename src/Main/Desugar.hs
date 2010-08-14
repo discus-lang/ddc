@@ -239,7 +239,8 @@ desugarSolveConstraints
 	-> Map Var Var		-- sigma table
 	-> Bool			-- whether to require the 'main' function to have () -> () type
 	
-	-> IO 	( Map Var T.Type			-- inferred types
+	-> IO 	( Map Var Var				-- canonical names for requested vars
+		, Map Var T.Type			-- inferred types
 		, Map Var (T.InstanceInfo T.Type)	-- how each var was instantiated
 		, Map Var (T.Kind, Maybe T.Type)	-- the vars that were quantified during type inference
 							--	(with optional :> bound)
@@ -309,7 +310,7 @@ desugarSolveConstraints2
 	(junk, state2)	<- {-# SCC "solveSquid/export" #-} runStateT 
 				(T.squidExport vsTypesPlease) state
 
-	let (typeTable, typeInst, quantVars, vsRegionClasses)
+	let (vsCanon, typeTable, typeInst, quantVars, vsRegionClasses)
 			= junk
 
 	-- flush the trace output to make sure it's written to the file.
@@ -369,7 +370,8 @@ desugarSolveConstraints2
 	 $ exitWithUserError ?args $ T.stateErrors state2
 
 	-----
-	return 	( typeTable
+	return 	( vsCanon
+		, typeTable
 		, typeInst
 		, quantVars
 		, vsFree
@@ -385,6 +387,7 @@ desugarToCore
 	 ,  ?pathSourceBase :: FilePath)
 	=> D.Tree (Maybe (T.Type, T.Effect))	-- sourceTree
 	-> D.Tree (Maybe (T.Type, T.Effect))	-- headerTree
+	-> Map Var Var				-- vars to canonical names
 	-> Map Var Var				-- sigmaTable
 	-> Map Var T.Type			-- typeTable
 	-> Map Var (T.InstanceInfo T.Type)	-- typeInst
@@ -397,6 +400,7 @@ desugarToCore
 desugarToCore	
 	sourceTree
 	headerTree
+	mapVarToCanonVar
 	sigmaTable
 	typeTable
 	typeInst
@@ -408,6 +412,7 @@ desugarToCore
 	-----
 	let toCoreTree'	
 		= D.toCoreTree
+			mapVarToCanonVar
 			sigmaTable
 			typeTable
 			typeInst

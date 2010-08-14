@@ -35,7 +35,8 @@ trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 -- Tree --------------------------------------------------------------------------------------------
 toCoreTree
-	:: Map Var Var				-- ^ value -> type vars
+	:: Map Var Var				-- ^ lookup canonical name for vars that annot deguared tree
+	-> Map Var Var				-- ^ value -> type vars
 	-> Map Var T.Type			-- ^ inferred type schemes
 	-> Map Var (T.InstanceInfo T.Type)	-- ^ instantiation info
 	-> Map Var (T.Kind, Maybe T.Type)	-- ^ the vars that were quantified during type inference
@@ -45,6 +46,7 @@ toCoreTree
 	-> C.Tree
 
 toCoreTree	
+	mapVarToCanonVar
 	sigmaTable
 	typeTable
 	typeInst
@@ -253,11 +255,21 @@ toCoreX xx
 		let  tArg	= T.stripToBodyT tArg1
 
 		-- If the effect/closures were vars then look them up from the graph
-		effAnnot	<- loadEffAnnot $ toCoreT eff
-		cloAnnot	<- loadCloAnnot $ toCoreT clo
+		effAnnot	<- loadEffAnnot eff
+		cloAnnot	<- loadCloAnnot clo
 		x'		<- toCoreX x
 		
-		return		
+		-- carry down set of quant type vars
+		-- sink annot var. If it's in the quant set we have to add a more-than constraint.
+		-- otherwise just add the effects.
+		
+		return	
+		 $ trace (vcat 
+			[ ppr "toCoreX: XLam"
+			, "eff      = " % eff
+			, "effAnnot = " % effAnnot
+			, "clo      = " % clo	
+			, "cloAnnot = " % cloAnnot ])
 		 $ C.XLam v tArg x'
 			(T.packType $ effAnnot)
 			(T.packType $ cloAnnot)

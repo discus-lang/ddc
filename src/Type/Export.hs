@@ -1,6 +1,7 @@
 
 -- | Export information from the final state of the type constraint solver.
---
+--   TODO: We probably want to define a new type containing all the information
+--         nessesary from the solver solution. 
 module Type.Export
 	(squidExport)
 where
@@ -24,11 +25,13 @@ debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Export"
 
+
 -- | Export some stuff from the constraint solver state.
 squidExport 
 	:: Set Var				-- ^ vars of the bindings we want types for.
 	-> SquidM 
-		( Map Var Type			-- type schemes.
+		( Map Var Var			-- canonical names for requested vars
+		, Map Var Type			-- type schemes.
 		, Map Var (InstanceInfo Type)	-- how each instantiation was done.
 		, Map Var (Kind, Maybe Type)	-- which vars were quantified (with optional :> bound)
 		, Map Var [Var])		-- the constraints acting on each region.
@@ -38,6 +41,9 @@ squidExport
  = do	trace	$ "== Export ====================================\n"
  		% "    vsTypesPlease   = " % vsTypesPlease	% "\n"
   
+	-- Export a map giving the canonical names for the requested vars.
+	vsCanon		<- exportCanonical vsTypesPlease
+
  	-- Export types for the requested vars.
 	types		<- exportTypes vsTypesPlease
 
@@ -50,43 +56,41 @@ squidExport
 	-- Build a map of the constraints acting on each region
 	vsRegionClasses	<- exportRegionConstraints 
 
-	return 	( types
+	return 	( vsCanon
+		, types
 		, inst 
 		, quantVars
 		, vsRegionClasses)
 
 
--- Export types from the graph for all these vars.
-exportTypes 
-	:: Set Var 	-- export types for these vars
-	-> SquidM (Map Var Type)
+-- | Export a map giving the canonical forms for each variable.
+exportCanonical :: Set Var -> SquidM (Map Var Var)
+exportCanonical vsTypesPlease
+ = do	let vs		= Set.toList vsTypesPlease
+	vsCanon		<- mapM sinkVar vs
+	return		$ Map.fromList $ zip vs vsCanon
 
+
+-- | Export types from the graph for all these vars.
+exportTypes :: Set Var -> SquidM (Map Var Type)
 exportTypes vsTypesPlease 
- = do	
- 	-- these are the type that were asked for by the slurper.
- 	let vsPlease	=  Set.toList vsTypesPlease
-
-	-- export types for all the vars asked for
-	vts 	<- mapM (\v -> do 
+ = do	vts 	<- mapM (\v -> do 
 			mT <- exportVarType v
 			return	(v, mT))
-		$ vsPlease
+		$ Set.toList vsTypesPlease
 
 	return	$ Map.fromList vts
 
 
 -- | Export the type for this variable.
 --	If no type is in the graph for this var then return Nothing.
---
 exportVarType :: Var -> SquidM Type
 exportVarType v
  = do 	trace	$ "*   Export.exportVarType: " % v	% "\n"
  
  	mT	<- extractType True v
 	tEx	<- case mT of
-			Nothing	-> 
-				panic stage $ "exporVarType: export of " % v % "failed\n"
-
+			Nothing	-> panic stage $ "exporVarType: export of " % v % "failed\n"
 			Just t	
 			 -> do	t'	<- exportType t
 			 	return t'
@@ -94,10 +98,6 @@ exportVarType v
 
 
 -- | Process this type to make it an exportable format.
---	plug classids.
---	trim closures.
---	bottom-out non-port effect/closure variables.
---
 exportType :: Type -> SquidM Type
 exportType t
  = do	tPlug		<- plugClassIds Set.empty t
