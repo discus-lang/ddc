@@ -2,7 +2,7 @@ ddc: ERROR
 ./test/15-Typing/Unification/FunLess/Test.ds:6:15
     Type mismatch during unification.
           cannot match: *125 !113
-                  with: Base.Int32
+                  with: Int32
 
               the use of: (+)
                  of type: *125 !113
@@ -10,6 +10,6 @@ ddc: ERROR
 
         conflicts with, 
           literal value 3i32
-                 of type: Base.Int32
+                 of type: Int32
                       at: ./test/15-Typing/Unification/FunLess/Test.ds:6:17
 

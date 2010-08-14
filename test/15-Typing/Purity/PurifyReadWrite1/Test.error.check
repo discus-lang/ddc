@@ -1,12 +1,12 @@
 ddc: ERROR
 ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:8
     Conflicting region constraints.
-              constraint: Base.Const %106
+              constraint: Const %106
          from the use of: x
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:8
 
      conflicts with,
-              constraint: Base.MutableT *175
+              constraint: MutableT *175
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite1/Test.ds:10:16
 

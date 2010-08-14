@@ -2,7 +2,7 @@ ddc: ERROR
 ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:4:18
     Type mismatch during unification.
           cannot match: *52 *40
-                  with: Base.Unit
+                  with: Unit
 
               the use of: (:)
                  of type: *52 *40
@@ -10,6 +10,6 @@ ddc: ERROR
 
         conflicts with, 
           type signature for 'Test.example'
-          which requires: Base.Unit
+          which requires: Unit
                       at: ./test/15-Typing/Projection/T77-ProjTypeErrorPanic/Test.ds:3:8
 

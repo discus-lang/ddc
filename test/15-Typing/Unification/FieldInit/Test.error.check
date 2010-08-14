@@ -1,15 +1,15 @@
 ddc: ERROR
 ./test/15-Typing/Unification/FieldInit/Test.ds:5:0
     Type mismatch during unification.
-          cannot match: Base.Int32
-                  with: Base.String
+          cannot match: Int32
+                  with: String
 
           type signature for 'Test.init_Fish_Perch_speed'
-          which requires: Base.Int32
+          which requires: Int32
                       at: ./test/15-Typing/Unification/FieldInit/Test.ds:5:0
 
         conflicts with, 
           literal value "fast"
-                 of type: Base.String
+                 of type: String
                       at: ./test/15-Typing/Unification/FieldInit/Test.ds:8:42
 

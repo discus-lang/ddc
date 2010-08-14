@@ -1,7 +1,7 @@
 ddc: ERROR
 ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
     Conflicting region constraints.
-               constraint: Base.Const %75
+               constraint: Const %75
         which purifies
               the use of: (*)
                  of type: (226 227)
@@ -11,7 +11,7 @@ ddc: ERROR
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
 
      conflicts with,
-              constraint: Base.MutableT *286
+              constraint: MutableT *286
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:7:21
 

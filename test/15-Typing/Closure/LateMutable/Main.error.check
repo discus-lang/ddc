@@ -9,7 +9,7 @@ ddc: ERROR
               .  Main.Box %176 (Data.List.List %183 tTS3)
 
         but a new
-              constraint: Base.Mutable %176
+              constraint: Mutable %176
          from the use of: (#=)
                       at: ./test/15-Typing/Closure/LateMutable/Main.ds:27:16
 

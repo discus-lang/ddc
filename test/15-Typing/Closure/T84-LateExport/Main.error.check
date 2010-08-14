@@ -6,10 +6,10 @@ ddc: ERROR
         we were using this type scheme:
             ref
               :: forall tTS4
-              .  Base.Ref %118 (tTS4 -> tTS4)
+              .  Ref %118 (tTS4 -> tTS4)
 
         but a new
-              constraint: Base.Mutable %118
+              constraint: Mutable %118
          from the use of: f
                       at: ./test/15-Typing/Closure/T84-LateExport/Main.ds:8:16
 

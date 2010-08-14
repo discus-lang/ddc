@@ -1,7 +1,7 @@
 ddc: ERROR
 ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
     Conflicting region constraints.
-               constraint: Base.ConstT *8
+               constraint: ConstT *8
         which purifies
               the use of: (+)
                  of type: !ReadT *8
@@ -11,7 +11,7 @@ ddc: ERROR
                       at: ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:3:23
 
      conflicts with,
-              constraint: Base.MutableT *8
+              constraint: MutableT *8
          from the use of: (:=)
                       at: ./test/15-Typing/Purity/PurifyReadWrite3/Test.ds:4:18
 
