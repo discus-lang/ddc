@@ -1,7 +1,10 @@
 
 module Llvm.Runtime.Data where
 
+import Util
+
 import Llvm
+import LlvmM
 import Llvm.Util
 
 
@@ -36,3 +39,10 @@ localSlotBase = LMNLocalVar "local.slotPtr" ppObj
 force :: LlvmFunctionDecl
 force = LlvmFunctionDecl "_force" External CC_Ccc pObj FixedArgs [(pObj, [])] ptrAlign
 
+
+forceObj :: LlvmVar -> LlvmM LlvmVar
+forceObj orig
+ = do	let fun	= LMGlobalVar "_force" (LMFunction force) External Nothing Nothing True
+	forced	<- lift $ newUniqueNamedReg "forced" pObj
+	addBlock [ Assignment forced (Call StdCall fun [orig] []) ]
+	return forced

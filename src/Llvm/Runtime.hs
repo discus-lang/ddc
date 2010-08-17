@@ -8,6 +8,7 @@ module Llvm.Runtime
 	, panicOutOfSlots
 	, allocCollect
 	, force
+	, forceObj
 
 	, ddcSlotPtr
 	, ddcSlotMax
@@ -18,6 +19,7 @@ module Llvm.Runtime
 
 	, writeSlot
 	, readSlot
+	, readSlotVar
 	, localSlotBase
 
 	, allocate
@@ -31,6 +33,7 @@ where
 import DDC.Main.Error
 
 import Llvm
+import LlvmM
 import Llvm.GhcReplace.Unique
 import Llvm.Runtime.Alloc
 import Llvm.Runtime.Boxing
@@ -43,10 +46,9 @@ stage = "Llvm.Runtime"
 
 -- | Generate LLVM code that reserves the required number of GC slots
 -- at the start of a function.
-runtimeEnter :: Int -> IO [LlvmStatement]
+runtimeEnter :: Int -> LlvmM ()
 runtimeEnter 0
- = do	return	$
-		[ Comment ["_ENTER (0)"]
+ = addBlock $	[ Comment ["_ENTER (0)"]
 		, Comment ["---------------------------------------------------------------"]
 		]
 
@@ -56,8 +58,7 @@ runtimeEnter count
 	let enter3	= LMNLocalVar "enter.3" i1
 	let epanic	= fakeUnique "enter.panic"
 	let egood	= fakeUnique "enter.good"
-	slotInitCode	<- slotInit egood count
-	return	$
+	addBlock $
 		[ Comment ["_ENTER (" ++ show count ++ ")"]
 		, Assignment localSlotBase (Load ddcSlotPtr)
 		, Assignment enter1 (GetElemPtr True localSlotBase [llvmWordLitVar count])
@@ -72,28 +73,30 @@ runtimeEnter count
 		, MkLabel egood
 		, Comment ["----- Slot initialization -----"]
 		]
-		++ slotInitCode
-		++ [ Comment ["---------------------------------------------------------------"] ]
+	slotInit egood count
+	addBlock [ Comment ["---------------------------------------------------------------"] ]
 
 
 -- | Generate LLVM code that releases the required number of GC slots
 -- at the start of a function.
-runtimeLeave :: Int -> [LlvmStatement]
+runtimeLeave :: Int -> LlvmM ()
 runtimeLeave 0
- =	[ Comment ["---------------------------------------------------------------"]
-	, Comment ["_LEAVE"]
+ = addBlock
+	[ Comment ["---------------------------------------------------------------"]
+	, Comment ["_LEAVE (0)"]
 	, Comment ["---------------------------------------------------------------"]
 	]
 
-runtimeLeave _
- =	[ Comment ["---------------------------------------------------------------"]
-	, Comment ["_LEAVE"]
+runtimeLeave count
+ = addBlock
+	[ Comment ["---------------------------------------------------------------"]
+	, Comment ["_LEAVE (" ++ show count ++ ")"]
 	, Store localSlotBase ddcSlotPtr
 	, Comment ["---------------------------------------------------------------"]
 	]
 
 
-slotInit :: Unique -> Int -> IO [LlvmStatement]
+slotInit :: Unique -> Int -> LlvmM ()
 slotInit _ count
  | count < 0
  = panic stage $ "Asked for " ++ show count ++ " GC slots."
@@ -104,7 +107,7 @@ slotInit _ count
 	 =	let target = LMNLocalVar ("init.target." ++ show n) ppObj
 		in	[ Assignment target (GetElemPtr False localSlotBase [llvmWordLitVar n])
 			, Store nullObj target ]
-   in	return $ concatMap build [0 .. (count - 1)]
+   in	addBlock $ concatMap build [0 .. (count - 1)]
 
 
 slotInit initstart n
@@ -115,7 +118,7 @@ slotInit initstart n
 	let indexNext	= LMNLocalVar "init.index.next" llvmWord
 	let initdone	= LMNLocalVar "init.done" i1
 	let target		= LMNLocalVar "init.target" ppObj
-	return $
+	addBlock $
 		[ Branch (LMLocalVar initloop LMLabel)
 
 		, MkLabel initloop

@@ -5,9 +5,12 @@ module Llvm.Runtime.Boxing
 	, boxFloat64 )
 where
 
+import Util
+
 import DDC.Main.Error
 
 import Llvm
+import LlvmM
 import Llvm.Runtime.Alloc
 import Llvm.Runtime.Tags
 import Llvm.Util
@@ -16,42 +19,48 @@ import Llvm.Util
 stage = "Llvm.Runtime.Boxing"
 
 
-boxInt32 :: LlvmVar -> LlvmVar -> IO [LlvmStatement]
-boxInt32 int32 objptr
- = do	iptr0		<- newUniqueNamedReg "iptr0" (pLift i32)
-	iptr1		<- newUniqueNamedReg "iptr1" (pLift i32)
-
-	allocCode	<- allocate 8 objptr
-	return $
-		allocCode
-		++ [ Comment [ "boxInt32 (" ++ show int32 ++ ")" ]
-		   , Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
-		   , Store (tagDataRS 1) iptr0
-		   , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar (1 :: Int)])
-		   , Store int32 iptr1
-		   ]
-
-unboxInt32 :: LlvmVar -> LlvmVar -> IO [LlvmStatement]
-unboxInt32 objptr int32
- = do	iptr0		<- newUniqueNamedReg "iptr0" (pLift i32)
-	iptr1		<- newUniqueNamedReg "iptr1" (pLift i32)
-
-	return $ [ Comment [ "unboxInt32 (" ++ show objptr ++ ")" ]
-		 , Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
-		 , Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar (1 :: Int)])
-		 , Assignment int32 (Load iptr1)
-		 ]
+boxInt32 :: LlvmVar -> LlvmM LlvmVar
+boxInt32 int32
+ = do	iptr0	<- lift $ newUniqueNamedReg "iptr0" (pLift i32)
+	iptr1	<- lift $ newUniqueNamedReg "iptr1" (pLift i32)
+	objptr	<- allocate 8 "boxed"
+	addBlock
+		[ Comment [ "boxInt32 (" ++ show int32 ++ ")" ]
+		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
+		, Store (tagDataRS 1) iptr0
+		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
+		, Store int32 iptr1
+		]
+	return	objptr
 
 
-boxInt64 :: LlvmVar -> IO (LlvmVar, [LlvmStatement])
+unboxInt32 :: LlvmVar -> LlvmM LlvmVar
+unboxInt32 objptr
+ | getVarType objptr == pObj
+ = do	int32	<- lift $ newUniqueReg i32
+	iptr0	<- lift $ newUniqueNamedReg "iptr0" (pLift i32)
+	iptr1	<- lift $ newUniqueNamedReg "iptr1" (pLift i32)
+	addBlockResult	int32
+		[ Comment [ show int32 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
+		, Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
+		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
+		, Assignment int32 (Load iptr1)
+		]
+	return	int32
+
+ | otherwise
+ =	panic stage $ "unboxInt32 (" ++ show objptr ++ ")"
+
+
+boxInt64 :: LlvmVar -> LlvmM ()
 boxInt64 i
  = panic stage "unimplemented"
 
-boxFloat32 :: LlvmVar -> IO (LlvmVar, [LlvmStatement])
+boxFloat32 :: LlvmVar -> LlvmM ()
 boxFloat32 f
  = panic stage "unimplemented"
 
-boxFloat64 :: LlvmVar -> IO (LlvmVar, [LlvmStatement])
+boxFloat64 :: LlvmVar -> LlvmM ()
 boxFloat64 f
  = panic stage "unimplemented"
 

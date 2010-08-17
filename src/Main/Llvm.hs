@@ -21,6 +21,7 @@ import qualified DDC.Main.Arg		as Arg
 import qualified DDC.Config.Version	as Version
 
 import Llvm
+import LlvmM
 import Llvm.Invoke
 import Llvm.GhcReplace.Unique
 import Llvm.Runtime
@@ -134,25 +135,27 @@ outLlvm moduleName eTree pathThis
 	return $ LlvmModule comments aliases globals fwddecls decls
 
 
+
+
 llvmOfSeaDecls :: Top (Maybe a) -> IO [LlvmFunction]
 llvmOfSeaDecls (PCafInit v t ss)
  = panic stage "Implement 'llvmOfSeaDecls (PCafInit v t ss)'"
 
 
 llvmOfSeaDecls (PSuper v p t ss)
- = do	when debug
-	  $ putStrLn "--------------------------------------------------------"
-	blocks <- catMapM llvmOfStmt ss
- 	return $ [ LlvmFunction
+ = do	blocks	<- evalStateT (llvmOfFunc ss) (Nothing, [[]])
+	return $ [
+		LlvmFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
 		(map (seaVar True . fst) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
-		[ LlvmBlock (fakeUnique "entry") (blocks ++ [ Return Nothing ]) ]	-- funcBody
+		[ LlvmBlock (fakeUnique "entry") blocks ]
 		]
 
 llvmOfSeaDecls x
  = panic stage $ "Implement 'llvmOfSeaDecls (" ++ show x ++ ")'"
+
 
 
 llvmOfParams :: (Var, Type) -> LlvmParameter
@@ -187,233 +190,168 @@ moduleGlobals
 	, ( ddcHeapMax	, Nothing ) ]
 
 
-llvmOfStmt :: Stmt a -> IO [LlvmStatement]
+llvmOfFunc :: [Stmt a] -> LlvmM [LlvmStatement]
+llvmOfFunc []
+ = return [Return Nothing]
+
+llvmOfFunc ss
+ = do	mapM llvmOfStmt ss
+	(Nothing, blks) <- get
+	-- At end of function reverse the list of blocks and then
+	-- concatenate the blocks to produce a list of statements.
+	return $ concat $ reverse blks
+
+
+llvmOfStmt :: Stmt a -> LlvmM ()
 llvmOfStmt stmt
  = case stmt of
-	SBlank		-> return $ [Comment [""]]
+	SBlank		-> addComment "Blank"
 	SEnter n	-> runtimeEnter n
-	SLeave n	-> return $ runtimeLeave n
-	SComment s	-> return $ [Comment [s]]
-	SGoto loc	-> return $ [Branch (LMNLocalVar (seaVar False loc) LMLabel)]
+	SLeave n	-> runtimeLeave n
+	SComment s	-> addComment s
+	SGoto loc	-> addBlock [Branch (LMNLocalVar (seaVar False loc) LMLabel)]
 	SAssign v1 t v2 -> llvmOfAssign v1 t v2
-
 	SReturn v	-> llvmOfReturn v
+	SLabel l	-> branchLabel (seaVar False l)
 
-	SAuto v t
-	  ->	-- LLVM is SSA so auto variables do not need to be declared.
-		return [Comment ["SAuto " ++ seaVar True v ++ " " ++ show t]]
-
-	SLabel l
-	  ->	-- LLVM does not allow implicit fall through to a label, so
-		-- explicitly branch to the label immediately following.
-		return $ branchLabel (seaVar False l)
+	-- LLVM is SSA so auto variables do not need to be declared.
+	SAuto v t	-> addComment $ "SAuto " ++ seaVar True v ++ " " ++ show t
 
 	_
-	  -> do	when debug
-		  $ putStrLn $ take 150 $ show stmt
-		return []
-
+	  -> panic stage $ "llvmOfStmt " ++ (take 150 $ show stmt)
 
 --------------------------------------------------------------------------------
 
-llvmOfAssign :: Exp a -> Type -> Exp a -> IO [LlvmStatement]
+llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
 llvmOfAssign (XVar v1 t1) t (XVar v2 t2)
  | t1 == TPtr (TPtr TObj) && t2 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
 	&& isGlobalVar v1 && isGlobalVar v2
- = do	src	<- newUniqueReg (toLlvmType t1)
-	return	$ [ Assignment src (loadAddress (toLlvmVar v2 t2))
-		  , Store src (pVarLift (toLlvmVar v1 t1)) ]
-
+ = do	src	<- lift $ newUniqueReg (toLlvmType t1)
+	addBlock $
+		[ Assignment src (loadAddress (toLlvmVar v2 t2))
+		, Store src (pVarLift (toLlvmVar v1 t1)) ]
 
 llvmOfAssign (XVar v1 t1) t x@(XPrim op args)
  | t1 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
- = do	(dstreg, oplist) <- llvmOfXPrim (toLlvmType t) op args
-	return	$ reverse oplist ++ [ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
-
+ = do	dstreg		<- llvmOfXPrim (toLlvmType t) op args
+	addBlock	[ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
 
 llvmOfAssign (XSlot v1 t1 i) t (XVar v2 t2)
  | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
- = do	src	<- newUniqueReg (toLlvmType t1)
-	dst	<- newUniqueReg (toLlvmType t1)
-	return	$ [ Comment ["XSlot " ++ show i ++ " <- " ++ seaVar True v1]
-		  , Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar i])
-		  , Store (toLlvmVar v2 t2) (pVarLift dst) ]
-
+ =	writeSlot (toLlvmVar v2 t2) i
 
 llvmOfAssign (XVar v1 t1) t (XSlot v2 t2 i)
  | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
- = do	addr	<- newUniqueReg (pLift (toLlvmType t1))
-	let dst	= toLlvmVar v1 t1
-	return	$ [ Comment ["XVar " ++ seaVar True v1 ++ " <- XSlot " ++ show i]
-		  , Assignment addr (GetElemPtr True localSlotBase [llvmWordLitVar i])
-		  , Assignment dst (Load addr) ]
+ = do	let dst		= toLlvmVar v1 t1
+	readSlotVar i dst
 
-
----- Working on this!
 llvmOfAssign a@((XSlot v1 t1 i)) t c@(XBox t2 exp)
  | t1 == TPtr TObj && t == TPtr TObj
- = do	boxed		<- newUniqueNamedReg "boxed" pObj
-	boxCode		<- boxExp exp boxed
-	storeCode	<- writeSlot boxed i
-	return	$ [ Comment [ "" , "XSlot " ++ show i ++ " <- XBox" ] ]
-		  ++ boxCode
-		  ++ storeCode
+ = do	boxed		<- boxExp exp
+	writeSlot	boxed i
+
+llvmOfAssign (XVar v1 t1) (TCon vt _) x@(XPrim op args)
+ | varName vt == "Int32#"
+ = do	lift $ putStrLn $ "llvmOfAssign Int32#"
+	dstreg		<- llvmOfXPrim i32 op args
+	addBlock	[ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
 
 
 llvmOfAssign a b c
- = do	when debug
-	 $ do	putStrLn $ "--------------------------\nUnhandled Assign"
-			++ "\n    " ++ show a
-			++ "\n    " ++ show b
-			++ "\n    " ++ show c ++ "\n"
-	return []
+ = panic stage $ "Unhandled : llvmOfAssign \n"
+	++ take 150 (show a) ++ "\n"
+	++ take 150 (show b) ++ "\n"
+	++ take 150 (show c) ++ "\n"
 
 
--- varOfXLit :: Exp a -> LlvmVar
--- varOfXLit (XLit x) = llvmIntLitVar x
 
--- varOfXLit x = panic stage $ "varOfXLit " ++ show x
+boxExp :: Exp a -> LlvmM LlvmVar
+boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
+ =	boxInt32 $ i32LitVar value
 
+boxExp (XPrim op args)
+ = do	calc	<- llvmOfXPrim pObj op args
+	boxInt32 calc
 
-boxExp :: Exp a -> LlvmVar -> IO [LlvmStatement]
-boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32))) dest
- = do	let int = i32LitVar value
-	boxInt32 int dest
-
-boxExp (XPrim op args) dest
- = do	when debug
-	 $ do	putStrLn $ "--------------------------\nboxExp"
-			++ "\n    " ++ show op
-			++ "\n    " ++ show args ++ "\n"
-	(calc, primCode)	<- llvmOfXPrim (getVarType dest) op args
-	boxCode			<- boxInt32 calc dest
-	return $ primCode ++ boxCode
-
-boxExp x _
- = do	return	$ [ Comment ["**** Unhandled : boxExp " ++ take 30 (show x)] ]
+boxExp x
+ = panic stage $ "Unhandled : boxExp " ++ take 30 (show x)
 
 
 --------------------------------------------------------------------------------
 
-storeToSlot :: Int -> LlvmVar -> IO [LlvmStatement]
-storeToSlot 0 var
- = return [ Store var localSlotBase ]
-
-storeToSlot n var
- | n > 0
- = do	dst	<- newUniqueNamedReg ("slot" ++ show n) pObj
-	return	$ []
---	return	$ [ Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar n])
---		  , Store var dst ]
-
-
-storeToSlot n _ = panic stage $ "storeToSlot in slot " ++ show n
-
---------------------------------------------------------------------------------
-
-branchLabel :: String -> [LlvmStatement]
+-- LLVM does not allow implicit fall through to a label, so explicitly branch
+-- to the label immediately following.
+branchLabel :: String -> LlvmM ()
 branchLabel name
- =	let label = fakeUnique name
-	in [Branch (LMLocalVar label LMLabel), MkLabel label]
+ = do	let label = fakeUnique name
+	addBlock [Branch (LMLocalVar label LMLabel), MkLabel label]
 
 --------------------------------------------------------------------------------
 
-llvmOfReturn :: Exp a -> IO [LlvmStatement]
+llvmOfReturn :: Exp a -> LlvmM ()
 llvmOfReturn (XVar v t)
- | t == TPtr TObj
- =	return [ Return (Just (toLlvmVar v t)) ]
-
+ =	addBlock [ Return (Just (toLlvmVar v t)) ]
 
 llvmOfReturn x
- = do	return	$ [ Comment ["Return (" ++ (takeWhile (/= ' ') (show x)) ++ ")"]
-		  , Return Nothing ]
+ = 	panic stage $ "llvmOfReturn " ++ (takeWhile (/= ' ') (show x))
 
 --------------------------------------------------------------------------------
 
-primFoldFunc
+primMapFunc
 	:: LlvmType
 	-> (LlvmVar -> LlvmVar -> LlvmExpression)
-	-> (LlvmVar, [LlvmStatement])
+	-> LlvmVar
 	-> Exp a
-	-> IO (LlvmVar, [LlvmStatement])
+	-> LlvmM LlvmVar
 
-primFoldFunc t build (left, ss) exp
- = do	(dst, code)	<- llvmVarOfExp exp
-	return $ (dst, ss ++ code)
+primMapFunc t build sofar exp
+ = do	val		<- llvmVarOfExp exp
+	dst		<- lift $ newUniqueNamedReg "prim.fold" (getVarType val)
+	addBlock	[ Assignment dst (build sofar val) ]
+	return		dst
 
 
-llvmOfXPrim :: LlvmType -> Prim -> [Exp a] -> IO (LlvmVar, [LlvmStatement])
+llvmOfXPrim :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
 llvmOfXPrim t op args
  = case args of
 	[]	-> panic stage "llvmOfXPrim : empty list"
 	[x]	-> panic stage "llvmOfXPrim : singleton list"
 
 	x : xs
-	 -> do	(dst, code)	<- llvmVarOfExp x
-		foldM (primFoldFunc t (llvmOpOfPrim op)) (dst, code) xs
+	 -> do	dst	<- llvmVarOfExp x
+		foldM (primMapFunc t (llvmOpOfPrim op)) dst xs
 
 
 
-
-llvmVarOfExp :: Exp a -> IO (LlvmVar, [LlvmStatement])
+llvmVarOfExp :: Exp a -> LlvmM LlvmVar
 llvmVarOfExp (XVar v t)
- = do	reg	<- newUniqueReg $ toLlvmType t
-	return	$ (reg, [ Assignment reg (Load (toLlvmVar v t)) ])
+ = do	reg	<- lift $ newUniqueReg $ toLlvmType t
+	addBlock [ Comment ["llvmVarOfExp (XVar v t)"], Assignment reg (Load (toLlvmVar v t)) ]
+	return	reg
 
 llvmVarOfExp (XInt i)
- = do	reg	<- newUniqueReg i32
-	return	$ (reg, [ Assignment reg (Load (llvmWordLitVar i)) ])
+ = do	reg	<- lift $ newUniqueReg i32
+	addBlock [ Comment ["llvmVarOfExp (XInt i)"], Assignment reg (Load (llvmWordLitVar i)) ]
+	return	reg
+
 
 llvmVarOfExp (XUnbox _ (XVar v t))
- = do	int32	<- newUniqueReg i32
-	code	<- unboxInt32 (toLlvmVar v t) int32
-	return	$ (int32, code)
+ = do	addComment "llvmVarOfExp (XUnbox _ (XVar v t))"
+	unboxInt32 (toLlvmVar v t)
 
 llvmVarOfExp (XUnbox _ (XSlot v t i))
- = do	objptr	<- newUniqueReg i32
- 	int32	<- newUniqueReg i32
-	code	<- unboxInt32 objptr int32
-	return	$ (int32, Assignment objptr (GetElemPtr True localSlotBase [llvmWordLitVar i]) : code)
+ = do	addComment "llvmVarOfExp (XUnbox _ (XSlot v t i))"
+	objptr	<- readSlot i
+	unboxInt32 objptr
 
 llvmVarOfExp (XUnbox t (XForce (XSlot v vt i)))
- = do	let fun	= LMGlobalVar "force" (LMFunction force) External Nothing Nothing True
-	orig	<- newUniqueNamedReg "orig" (toLlvmType vt)
-	readS0	<- readSlot 0 orig
-
-	forced	<- newUniqueNamedReg "forced" (toLlvmType t)
-	iptr	<- newUniqueNamedReg "iptr" (pLift i32)
- 	int32	<- newUniqueReg i32
-	code	<- unboxInt32 iptr int32
-	return	$ (int32,
-			[ Comment ["unbox (force (slot " ++ show i ++ "))"]
-			]
-			++ readS0 ++
-			[ Assignment forced (Call StdCall fun [orig] [])
-			, Assignment iptr (GetElemPtr True forced [llvmWordLitVar 1])
-			]
-			++ code
-			)
-
-
-
-
-{-
-			: Assignment orig (GetElemPtr True localSlotBase [llvmWordLitVar i])
-			: Comment [ "Need to force this variable!" ]
-			-- Call LlvmCallType LlvmVar [LlvmVar] [LlvmFuncAttr]
-			: Assignment forced (Call StdCall fun [orig] [])
-			: code )
--}
-
-
-
-
+ = do	orig	<- readSlot i
+	forced	<- forceObj orig
+	unboxInt32 forced
 
 
 llvmVarOfExp x
- = panic stage $ "llvmVarOfExp -=> " ++ show x
-
-
+ = panic stage $ "llvmVarOfExp " ++ show x
 
 
 
