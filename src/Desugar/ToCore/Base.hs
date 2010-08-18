@@ -40,9 +40,6 @@ data CoreS
 	  -- | how each variable was instantiated
 	, coreMapInst		:: Map Var (InstanceInfo Type)
 
-	  -- | the vars that were quantified during type inference (with optional :> bound)
-	, coreQuantVars		:: Map Var (Kind, Maybe Type)
-
 	  -- | table of type based projections.
 	, coreProjTable		:: ProjTable
 
@@ -61,7 +58,6 @@ initCoreS
 	{ coreSigmaTable	= Map.empty
 	, coreMapTypes		= Map.empty
 	, coreMapInst		= Map.empty
-	, coreQuantVars		= Map.empty
 	, coreProjTable		= Map.empty
 	, coreProjResolve	= Map.empty
 	, coreGenValue		= VarId "xC" 0 }

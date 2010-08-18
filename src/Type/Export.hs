@@ -1,9 +1,8 @@
 
 -- | Export information from the final state of the type constraint solver.
---   TODO: We probably want to define a new type containing all the information
---         nessesary from the solver solution. 
 module Type.Export
-	(squidExport)
+	( Solution(..)
+	, squidExport)
 where
 import Type.Error
 import Type.Base
@@ -26,51 +25,60 @@ trace s	= when debug $ traceM s
 stage	= "Type.Export"
 
 
--- | Export some stuff from the constraint solver state.
-squidExport 
-	:: Set Var				-- ^ vars of the bindings we want types for.
-	-> SquidM 
-		( Map Var Var			-- canonical names for requested vars
-		, Map Var Type			-- type schemes.
-		, Map Var (InstanceInfo Type)	-- how each instantiation was done.
-		, Map Var (Kind, Maybe Type)	-- which vars were quantified (with optional :> bound)
-		, Map Var [Var])		-- the constraints acting on each region.
+-- | Solution of type inferencer.
+data Solution
+	= Solution
+	{ -- ^ Canonical names for given variables.
+	  solutionCanon			:: Map Var Var
 
+	  -- ^ Types for given variables.
+	, solutionTypes			:: Map Var Type
+	
+	  -- ^ How the type of each occurrence of a let-bound variable was instantiated.
+	, solutionInstanceInfo		:: Map Var (InstanceInfo Type)
+
+	  -- ^ The constraints on each region variable.
+	, solutionRegionClasses		:: Map Var [Var] 
+	
+	  -- ^ How projections were resolved
+	, solutionProjResolution	:: Map Var Var }
+
+
+-- | Export useful information from the constraint solver state.
+--   The constraint generator produces a list of "interesting" type variables, 
+--   which correspond to the types we'll need when converting from the 
+--   Desugared to Core lanugage.
+--
 squidExport 
-	vsTypesPlease
+	:: Set Var		-- ^ Type variables that we're interested in.
+	-> SquidM Solution
+	 
+squidExport vsTypesPlease
  = do	trace	$ "== Export ====================================\n"
  		% "    vsTypesPlease   = " % vsTypesPlease	% "\n"
   
-	-- Export a map giving the canonical names for the requested vars.
-	vsCanon		<- exportCanonical vsTypesPlease
+	mapCanon	<- exportCanonical vsTypesPlease
+	mapTypes	<- exportTypes vsTypesPlease
+	mapInst		<- exportInst
+	mapRegionCls	<- exportRegionConstraints 
+	mapProjResolve	<- getsRef stateProjectResolve
 
- 	-- Export types for the requested vars.
-	types		<- exportTypes vsTypesPlease
-
-	-- Export the instantiation table.
-	inst		<- exportInst
-
-	-- The port table was already plugged by Scheme.generaliseType
-	quantVars	<- getsRef stateQuantifiedVarsKM
-
-	-- Build a map of the constraints acting on each region
-	vsRegionClasses	<- exportRegionConstraints 
-
-	return 	( vsCanon
-		, types
-		, inst 
-		, quantVars
-		, vsRegionClasses)
+	return 	$ Solution
+	 	{ solutionCanon			= mapCanon
+		, solutionTypes			= mapTypes
+		, solutionInstanceInfo		= mapInst
+		, solutionRegionClasses		= mapRegionCls
+		, solutionProjResolution	= mapProjResolve }
 
 
--- | Export a map giving the canonical forms for each variable.
+-- | Export a map giving the canonical names for each variable.
 exportCanonical :: Set Var -> SquidM (Map Var Var)
 exportCanonical vsTypesPlease
  = do	let vs		= Set.toList vsTypesPlease
 	vsCanon		<- mapM sinkVar vs
 	return		$ Map.fromList $ zip vs vsCanon
-
-
+	
+	
 -- | Export types from the graph for all these vars.
 exportTypes :: Set Var -> SquidM (Map Var Type)
 exportTypes vsTypesPlease 
@@ -120,7 +128,6 @@ exportType t
 	trace	$ "    tTrim:\n"	%> prettyTypeSplit tTrim	% "\n\n"
 	return $ tTrim		
  
-
 
 exportMaybeType :: Maybe Type -> SquidM (Maybe Type)
 exportMaybeType mt
@@ -182,8 +189,6 @@ exportInstInfo (v, ii)
 	 -> do  tDef	<- exportVarType vDef
 	 	return	$ (v, InstanceLetRec vUse vDef (Just tDef))
 	 
-
---------------------------------------------------------------------------------
 
 -- | Build a map of the constraints acting on each region
 exportRegionConstraints 

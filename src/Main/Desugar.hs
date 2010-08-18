@@ -16,7 +16,6 @@ import DDC.Var
 import Data.IORef
 import System.IO			(hFlush)
 import Util				hiding (null, elem)
-import qualified DDC.Solve.InstanceInfo	as T
 import qualified DDC.Type		as T
 import qualified Data.Foldable		as Foldable
 import qualified Constraint.Simplify	as N
@@ -135,11 +134,11 @@ desugarProject
 	-> IO	( D.Tree SourcePos
 		, D.ProjTable )
 
-desugarProject unique moduleName headerTree sourceTree
+desugarProject unique modName headerTree sourceTree
  = do
 	-- Snip down projection dictionaries and add default projections.
  	let (sourceTree', errors)
-		= D.projectTree unique moduleName headerTree sourceTree 
+		= D.projectTree unique modName headerTree sourceTree 
 	
 	dumpST DumpDesugarProject "desugar-project"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) sourceTree')
@@ -238,16 +237,8 @@ desugarSolveConstraints
 	-> Set Var		-- type vars of value vars bound at top level
 	-> Map Var Var		-- sigma table
 	-> Bool			-- whether to require the 'main' function to have () -> () type
-	
-	-> IO 	( Map Var Var				-- canonical names for requested vars
-		, Map Var T.Type			-- inferred types
-		, Map Var (T.InstanceInfo T.Type)	-- how each var was instantiated
-		, Map Var (T.Kind, Maybe T.Type)	-- the vars that were quantified during type inference
-							--	(with optional :> bound)
-		, Set Var				-- the TREC vars which are free in the returned types
-		, Map Var [Var]				-- map of constraints on each region
-		, Map Var Var)				-- how projections were resolved
-	
+	-> IO T.Solution
+
 desugarSolveConstraints
 	constraints
 	vsTypesPlease
@@ -307,126 +298,89 @@ desugarSolveConstraints2
 	 $ putStr "  * Type: Exporting\n"
 
 	-- extract out the stuff we'll need for conversion to core.
-	(junk, state2)	<- {-# SCC "solveSquid/export" #-} runStateT 
-				(T.squidExport vsTypesPlease) state
-
-	let (vsCanon, typeTable, typeInst, quantVars, vsRegionClasses)
-			= junk
+	(solution, state2)	
+		<- {-# SCC "solveSquid/export" #-} runStateT 
+			(T.squidExport vsTypesPlease) state
 
 	-- flush the trace output to make sure it's written to the file.
 	(case hTrace of
 	 Just handle	-> hFlush handle
 	 Nothing	-> return ())
 
-	-- report some state
+	-- report the size of the graph.
 	when (elem Verbose ?args)
 	 $ do	graph	<- readIORef (T.stateGraph state)
 		putStr 	$ pprStrPlain
 	 		$ "    - graph size: " 
 	 		% T.graphClassIdGen graph % "\n"
 
-	when (elem Verbose ?args)
-	 $ putStr "  * Type: Dumping final state\n"
-
-	-- dump final solver state
-	dumpS	DumpTypeSolve  "type-solve--types"
+	-- dump details of the solution.
+	dumpS	DumpTypeSolve  "type-solution--types"
 		$ catInt "\n\n"
 		$ map pprStrPlain
 		$ map (\(v, t) -> v % " ::\n" %> T.prettyTypeSplit t)
-		$ Map.toList typeTable
+		$ Map.toList 
+		$ T.solutionTypes solution
 
-	dumpS 	DumpTypeSolve   "type-solve--inst" 
+	dumpS 	DumpTypeSolve   "type-solution--instanceInfo" 
 		$ catInt "\n\n"
 		$ map pprStrPlain
 		$ map (\(v, inst) -> v % "\n" % inst % "\n")
-		$ Map.toList typeInst
+		$ Map.toList 
+		$ T.solutionInstanceInfo solution
 
-	dumpS	DumpTypeSolve	"type-solve--quantVars"
+	dumpS	DumpTypeSolve	"type-solution--regionClasses"
 		$ catInt "\n"
 		$ map pprStrPlain
-		$ Map.toList quantVars
-
-	dumpS	DumpTypeSolve	"type-solve--regionClasses"
+		$ Map.toList
+		$ T.solutionRegionClasses solution
+		
+	dumpS	DumpTypeSolve	"type-soltion--projResolution"
 		$ catInt "\n"
 		$ map pprStrPlain
-		$ Map.toList vsRegionClasses
-
-	varSub	<- readIORef (T.stateVarSub state2)
-	dumpS	DumpTypeSolve	"type-solve--varSub"
-		$ catInt "\n"
-		$ map pprStrPlain
-		$ Map.toList varSub
-
-	projRes <- readIORef (T.stateProjectResolve state2)
-	dumpS	DumpTypeSolve	"type-solve--projResolve"
-		$ catInt "\n"
-		$ map pprStrPlain
-		$ Map.toList projRes
-
-	let vsFree	= Set.empty
+		$ Map.toList
+		$ T.solutionProjResolution solution
 
 	-- the export process can find more errors
 	when (not $ null $ T.stateErrors state2)
 	 $ exitWithUserError ?args $ T.stateErrors state2
 
-	-----
-	return 	( vsCanon
-		, typeTable
-		, typeInst
-		, quantVars
-		, vsFree
-		, vsRegionClasses
-		, projRes)
-
+	return 	solution
 
 
 -- ToCore ------------------------------------------------------------------------------------------
-
 desugarToCore 
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
-	=> D.Tree (Maybe (T.Type, T.Effect))	-- sourceTree
-	-> D.Tree (Maybe (T.Type, T.Effect))	-- headerTree
-	-> Map Var Var				-- vars to canonical names
-	-> Map Var Var				-- sigmaTable
-	-> Map Var T.Type			-- typeTable
-	-> Map Var (T.InstanceInfo T.Type)	-- typeInst
-	-> Map Var (T.Kind, Maybe T.Type)	-- typeQuantVars
-	-> D.ProjTable				-- projection dictinary
-	-> Map Var Var				-- how to resolve projections
+	=> D.Tree (Maybe (T.Type, T.Effect))	-- ^ Source tree
+	-> D.Tree (Maybe (T.Type, T.Effect))	-- ^ Header tree.
+	-> Map Var Var				-- ^ value -> type vars.
+	-> D.ProjTable				-- ^ projection dictionaries.
+	-> T.Solution				-- ^ solution from constraint solver.
 	-> IO	( C.Tree
 		, C.Tree )
 
-desugarToCore	
+desugarToCore 
 	sourceTree
 	headerTree
-	mapVarToCanonVar
-	sigmaTable
-	typeTable
-	typeInst
-	quantVars
+	mapValueToTypeVars
 	projTable
-	projResolve
+	solution
+
  = {-# SCC "toCore" #-} 
-   do
-	-----
-	let toCoreTree'	
-		= D.toCoreTree
-			mapVarToCanonVar
-			sigmaTable
-			typeTable
-			typeInst
-			quantVars
+   do 	let toCoreTree'
+		= D.toCoreTree 
+			mapValueToTypeVars
 			projTable
-			projResolve
-			
- 	let cSource	= toCoreTree' sourceTree
+			solution
+	
+	let cSource	= toCoreTree' sourceTree
 	let cHeader	= toCoreTree' headerTree
 
-	-----
 	dumpCT DumpCore "core-source" cSource
 	dumpCT DumpCore "core-header" cHeader
 
-
 	return	( cSource
 		, cHeader )
+
+

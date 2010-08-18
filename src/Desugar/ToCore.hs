@@ -16,6 +16,7 @@ import DDC.Main.Error
 import DDC.Var
 import Shared.VarUtil			(isDummy, varPos)
 import Type.ToCore			(toCoreT, toCoreK)
+import Type.Export			(Solution(..))
 import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified DDC.Solve.InstanceInfo	as T
@@ -35,42 +36,26 @@ trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
 -- Tree --------------------------------------------------------------------------------------------
 toCoreTree
-	:: Map Var Var				-- ^ lookup canonical name for vars that annot deguared tree
-	-> Map Var Var				-- ^ value -> type vars
-	-> Map Var T.Type			-- ^ inferred type schemes
-	-> Map Var (T.InstanceInfo T.Type)	-- ^ instantiation info
-	-> Map Var (T.Kind, Maybe T.Type)	-- ^ the vars that were quantified during type inference
-	-> ProjTable
-	-> Map Var Var				-- ^ how to resolve projections
+ 	:: Map Var Var		-- ^ Map value to type vars
+	-> ProjTable		-- ^ projection table
+	-> Solution		-- ^ solution from type constraint solver
 	-> D.Tree Annot
 	-> C.Tree
 
-toCoreTree	
-	mapVarToCanonVar
-	sigmaTable
-	typeTable
-	typeInst
-	quantVars
+toCoreTree 
+	mapValueToTypeVars
 	projTable
-	projResolve
+	solution 
 	sTree
-
- = 	cTree			
- where
-	initCoreS'
+ = let	initCoreS'
 		= initCoreS
-		{ coreSigmaTable	= sigmaTable
-		, coreMapTypes		= typeTable
-		, coreMapInst		= typeInst
-		, coreQuantVars		= quantVars
+		{ coreSigmaTable	= mapValueToTypeVars
+		, coreMapTypes		= solutionTypes solution
+		, coreMapInst		= solutionInstanceInfo solution
 		, coreProjTable		= projTable  
-		, coreProjResolve	= projResolve }
+		, coreProjResolve	= solutionProjResolution solution}
 		
-	mTree	= evalState 
-			(toCoreTreeM sTree) 
-			initCoreS'
-
-	cTree	= mTree
+   in	evalState (toCoreTreeM sTree) initCoreS'
 
 toCoreTreeM tree
 	= liftM concat

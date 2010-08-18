@@ -30,6 +30,7 @@ import qualified Source.Pragma		as Pragma
 
 -- desugar
 import qualified Desugar.Plate.Trans	as D
+import qualified Type.Export		as T
 
 -- core
 import qualified DDC.Core.Glob		as C
@@ -274,14 +275,7 @@ compileFile_parse
 	-- Solve type constraints ---------------------------------------------
 	outVerb $ ppr "  * Type: Solve\n"
 
-	( mapVarToCanonVar
-	 , typeTable
-	 , typeInst
-	 , typeQuantVars
-	 , vsFree
-	 , vsRegionClasses 
-	 , vsProjectResolve)
-			<- SD.desugarSolveConstraints
+	solution	<- SD.desugarSolveConstraints
 				sConstrs
 				vsTypesPlease
 				vsBoundTopLevelTREC
@@ -299,14 +293,10 @@ compileFile_parse
 	 , cHeader )	<- SD.desugarToCore
 		 		sTagged
 				hTagged
-				mapVarToCanonVar
 				mapValueToTypeVars
-				typeTable
-				typeInst
-				typeQuantVars
 				projTable
-				vsProjectResolve
-
+				solution 
+				
 	let cgHeader	= C.globOfTree cHeader
 	let cgModule	= C.globOfTree cSource
 
@@ -328,13 +318,13 @@ compileFile_parse
 	let rsGlobal	= Set.filter (\v -> varNameSpace v == NameRegion)
 			$ Set.unions
 			$ map freeVars
-			$ [t	| (v, t)	<- Map.toList typeTable
+			$ [t	| (v, t)	<- Map.toList $ T.solutionTypes solution
 				, Set.member v vsBoundTopLevelTREC]
 		
 	cgModule_bind	<- SC.coreBind 
 				sModule 
 				"CB"
-				vsRegionClasses
+				(T.solutionRegionClasses solution)
 				rsGlobal
 				cgModule_normal
 
@@ -425,7 +415,7 @@ compileFile_parse
 				dProg_project
 				(C.treeOfGlob cgModule_final)
 				mapValueToTypeVars
-				typeTable
+				(T.solutionTypes solution)
 				vsNoExport
 
 	writeFile (?pathSourceBase ++ ".di") diInterface	
@@ -440,7 +430,7 @@ compileFile_parse
 				thisScrape
 				vsNoExport
 				mapValueToTypeVars
-				typeTable
+				(T.solutionTypes solution)
 				sProg_linted
 				dProg_project
 				cgModule_final
