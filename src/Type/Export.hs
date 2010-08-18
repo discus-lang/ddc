@@ -28,19 +28,19 @@ stage	= "Type.Export"
 -- | Solution of type inferencer.
 data Solution
 	= Solution
-	{ -- ^ Canonical names for given variables.
+	{ -- | Canonical names for given variables.
 	  solutionCanon			:: Map Var Var
 
-	  -- ^ Types for given variables.
+	  -- | Types for given variables.
 	, solutionTypes			:: Map Var Type
 	
-	  -- ^ How the type of each occurrence of a let-bound variable was instantiated.
+	  -- | How the type of each occurrence of a let-bound variable was instantiated.
 	, solutionInstanceInfo		:: Map Var (InstanceInfo Type)
 
-	  -- ^ The constraints on each region variable.
+	  -- | The constraints on each region variable.
 	, solutionRegionClasses		:: Map Var [Var] 
 	
-	  -- ^ How projections were resolved
+	  -- | How projections were resolved
 	, solutionProjResolution	:: Map Var Var }
 
 
