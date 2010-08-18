@@ -1,7 +1,7 @@
 
 -- | Adds code to initialise each module, as well as the main program.
 --	Initialising a module evaluates the values of each CAF.
---	This is done strictly atm, but we could suspend the evaluation of 
+--	This is done strictly atm, but we could suspend the evaluation of
 --	CAFs if we knew they were pure.
 module Sea.Init
 	( initTree
@@ -15,7 +15,7 @@ import DDC.Var
 
 
 -- | Add code that initialises this module
-initTree 
+initTree
 	:: ModuleId		-- ^ name of this module
 	-> Tree () 		-- ^ code for the module
 	-> Tree ()
@@ -29,12 +29,13 @@ initTree moduleName cTree
 
 makeInitCaf v
  = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name) ppObj) ppObj slotPtr
-	, SAssign slotPtr ppObj (XPrim FAdd [slotPtr, XInt 1])
-	, SAssign (XVarCAF v ppObj) ppObj (XInt 0)
-	, SAssign (XVarCAF v ppObj) ppObj (XCall v []) ] 
+	, SAssign slotPtr pObj (XPrim FAdd [slotPtr, XInt 1])
+	, SAssign (XVarCAF v pObj) pObj (XInt 0)
+	, SAssign (XVarCAF v pObj) pObj (XCall v []) ]
 	where	name	= seaVar False v
 		slotPtr =  xVarWithSeaName "_ddcSlotPtr" ppObj
-                ppObj	= TPtr (TPtr TObj)
+                pObj	= TPtr TObj
+                ppObj	= TPtr pObj
 
 makeInitVar (ModuleId vs)
 	= varWithName ("ddcInitModule_" ++ (catInt "_" vs))
@@ -44,7 +45,7 @@ xVarWithSeaName name typ
  =	let v = Var
 		{ varName 	= name
 		, varModuleId	= ModuleIdNil
-		, varNameSpace	= NameNothing	
+		, varNameSpace	= NameNothing
 		, varId		= VarIdNil
 		, varInfo	= [ISeaName name, ISeaGlobal True] }
 	in XVar v typ
@@ -54,7 +55,7 @@ mainTree
 	:: [ModuleId]		-- ^ list of modules in this program
 	-> ModuleId		-- ^ The module holding the Disciple main function
 	-> Tree ()
-	
+
 mainTree imports mainModule
  = let	ModuleId [mainModuleName]	= mainModule
    in	[ PMain mainModuleName
