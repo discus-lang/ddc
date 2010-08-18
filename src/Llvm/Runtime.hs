@@ -24,6 +24,7 @@ module Llvm.Runtime
 
 	, allocate
 
+	, boxAny	, unboxAny
 	, boxInt32	, unboxInt32
 	, boxInt64
 	, boxFloat32

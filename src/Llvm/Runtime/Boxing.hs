@@ -1,5 +1,6 @@
 module Llvm.Runtime.Boxing
-	( boxInt32	, unboxInt32
+	( boxAny	, unboxAny
+	, boxInt32	, unboxInt32
 	, boxInt64
 	, boxFloat32
 	, boxFloat64 )
@@ -17,6 +18,20 @@ import Llvm.Util
 
 
 stage = "Llvm.Runtime.Boxing"
+
+
+boxAny :: LlvmVar -> LlvmM LlvmVar
+boxAny any
+ = case getVarType any of
+	LMInt 32	-> boxInt32 any
+	_		-> panic stage $ "boxAny " ++ show (getVarType any)
+
+
+unboxAny :: LlvmType -> LlvmVar -> LlvmM LlvmVar
+unboxAny anyType any
+ = case anyType of
+	LMInt 32	-> unboxInt32 any
+	_		-> panic stage $ "unboxAny " ++ show anyType
 
 
 boxInt32 :: LlvmVar -> LlvmM LlvmVar
