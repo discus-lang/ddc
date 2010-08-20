@@ -126,7 +126,7 @@ toCoreP p
 	 	let ts'		= map toCoreT ts
 		let sigs'	= zip vs ts'
 
-		let vks'	= map (\(T.TVar k (T.UVar _)) -> (v, k))
+		let vks'	= map (\(T.TVar k (T.UVar v')) -> (v', k))
 				$ map toCoreT cts
 
 		return		$ [C.PClassDict v vks' sigs']
