@@ -1,3 +1,5 @@
+{-# OPTIONS -fno-warn-type-defaults #-}
+
 module Llvm.Runtime.Tags
 	( tagThunk
 	, tagData
@@ -39,8 +41,9 @@ tagDataRS :: Int -> LlvmVar
 tagDataRS dataSize = i32LitVar ((shiftL dataSize 4) .|. objModeDataRS)
 
 
-objModeForward, objModeFixed, objModeDataRS :: Int
-objModeForward	= 0x00
-objModeFixed	= 0x01
+-- objModeForward, objModeFixed
+objModeDataRS :: Int
+--objModeForward	= 0x00
+--objModeFixed	= 0x01
 objModeDataRS	= 0x03
 

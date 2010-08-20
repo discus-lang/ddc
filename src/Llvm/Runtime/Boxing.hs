@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-type-defaults #-}
 module Llvm.Runtime.Boxing
 	( boxAny	, unboxAny
 	, boxInt32	, unboxInt32
