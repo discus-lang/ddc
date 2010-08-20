@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module Desugar.ToCore
 	( toCoreTree
@@ -77,7 +78,7 @@ toCoreP p
 		
 		return	$ [C.PExtern v tv' to']
 
-	D.PExternData _ s v k
+	D.PExternData _ _ v k
 	 -> do	return	$ [C.PExternData v k]
 
 	D.PData _ vData vsParam ctors
@@ -91,10 +92,10 @@ toCoreP p
 		return	[C.PData vData mCtors]
 
 	D.PBind nn (Just v) x
-	 -> do	Just (C.SBind (Just v) x') 
+	 -> do	Just (C.SBind (Just v') x') 
 			<- toCoreS (D.SBind nn (Just v) x)
 
-		return	[C.PBind v x']
+		return	[C.PBind v' x']
 
 	D.PTypeSig{}	-> return []
 	D.PImport{}	-> return []
@@ -125,7 +126,7 @@ toCoreP p
 	 	let ts'		= map toCoreT ts
 		let sigs'	= zip vs ts'
 
-		let vks'	= map (\(T.TVar k (T.UVar v)) -> (v, k))
+		let vks'	= map (\(T.TVar k (T.UVar _)) -> (v, k))
 				$ map toCoreT cts
 
 		return		$ [C.PClassDict v vks' sigs']
@@ -200,8 +201,7 @@ toCoreS	:: D.Stmt Annot
 	-> CoreM (Maybe C.Stmt)
 		
 toCoreS (D.SBind _ Nothing x)
- = do	
- 	x'		<- toCoreX x
+ = do	x'		<- toCoreX x
 	returnJ	$ C.SBind Nothing x'
 
 
@@ -221,8 +221,11 @@ toCoreS (D.SBind _ (Just v) x)
 
 
 toCoreS	D.SSig{}
- 	= return Nothing
+ = return Nothing
 
+toCoreS ss
+ = panic stage 	$ "no match for " % show ss
+		% " should have been eliminated by original source desugaring."
 
 -- Exp ---------------------------------------------------------------------------------------------
 -- | Expressions
@@ -268,7 +271,7 @@ toCoreX xx
 
 
 	-- case match on a var
-	D.XMatch _ (Just x@(D.XVar aObj varX)) alts
+	D.XMatch _ (Just (D.XVar _ varX)) alts
 	 -> do	alts'		<- mapM (toCoreA (Just (varX, T.TNil))) alts
 		
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
@@ -290,7 +293,7 @@ toCoreX xx
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 		
 	-- primitive constants
-	D.XLit (Just (T.TVar kV (T.UVar vT), _)) litfmt
+	D.XLit (Just (T.TVar kV (T.UVar vT), _)) _
 	 | kV	== T.kValue
 	 -> do	
 	 	Just t		<- lookupType vT
@@ -349,9 +352,9 @@ toCoreX xx
 	
 	-- projections
 	D.XProjTagged 
-		(Just 	( T.TVar kV vT
-			, T.TVar kE vE))
-		vTagInst vTagClo x2 j
+		(Just 	( T.TVar kV _
+			, T.TVar kE _))
+		vTagInst _ x2 _
 	 | kV == T.kValue
 	 , kE == T.kEffect
 	 -> do
@@ -373,9 +376,9 @@ toCoreX xx
 		return	$ C.XApp x1' x2'
 
 	D.XProjTaggedT
-		(Just 	( T.TVar kV vT
-			, T.TVar kE vE))
-		vTagInst tTagClo j
+		(Just 	( T.TVar kV _
+			, T.TVar kE _))
+		vTagInst _ _
 	 | kV == T.kValue
 	 , kE == T.kEffect
 	 -> do
@@ -398,7 +401,7 @@ toCoreX xx
 	_ 
 	 -> panic stage
 		$ "toCoreX: cannot convert expression to core.\n" 
-		% "    exp = " %> (D.transformN (\a -> (Nothing :: Maybe ())) xx) % "\n"
+		% "    exp = " %> (D.transformN (\_ -> (Nothing :: Maybe ())) xx) % "\n"
 
 
 
@@ -411,7 +414,7 @@ toCoreXLit :: T.Type -> D.Exp Annot -> C.Exp
 toCoreXLit tt xLit
  	= toCoreXLit' (T.stripToBodyT tt) xLit
 
-toCoreXLit' tt xLit@(D.XLit n litfmt@(LiteralFmt lit fmt))
+toCoreXLit' tt xLit@(D.XLit _ litfmt@(LiteralFmt lit fmt))
 
 	-- raw unboxed strings need their region applied
 	| LString _	<- lit
@@ -437,7 +440,7 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(LiteralFmt lit fmt))
 
 	-- the other unboxed literals have kind *, 
 	--	so we can just pass them to the the boxing primitive directly.
-	| Just (v, k, [tR]) <- T.takeTData tt
+	| Just (_, _, [tR]) <- T.takeTData tt
 	= let	Just fmtUnboxed		= dataFormatUnboxedOfBoxed fmt
 	  in	C.XPrim C.MBox 
 			[ C.XPrimType tR
@@ -448,7 +451,11 @@ toCoreXLit' tt xLit@(D.XLit n litfmt@(LiteralFmt lit fmt))
 		$ "toCoreLitX: no match\n"
 		% "   tLit   = " % show tt	% "\n"
 		% "   xLit   = " % show xLit	% "\n"
-	
+
+toCoreXLit' _ _
+	= panic stage
+	$ "toCoreXLit: not an XLit"
+
 
 -- VarInst -----------------------------------------------------------------------------------------
 toCoreVarInst :: Var -> Var -> CoreM C.Exp
@@ -473,7 +480,7 @@ toCoreVarInst v vT
 
 	 -- use of a lambda bound variable.
 	 -- 	only rank1 polymorphism => lambda bound vars have monotypes
-	 T.InstanceLambda vUse vBind _
+	 T.InstanceLambda vUse _ _
 	  -> do	let xResult	= C.XVar v tShape	
 		trace 	( "varInst: TInstanceLambda\n"
 	  		% "    vUse    = " % vUse	% "\n"
@@ -485,7 +492,7 @@ toCoreVarInst v vT
 	  	return $ xResult
 	 -- non-recursive use of a let bound variable 
 	 -- 	pass in the type args corresponding to the instantiated foralls.
-	 T.InstanceLet vUse vBind tsInst _
+	 T.InstanceLet _ _ tsInst _
 	  -> do	
 		-- Convert the type arguments to core.
 		let tsInstC	= map (T.flattenT . toCoreT) tsInst
@@ -530,7 +537,7 @@ toCoreVarInst v vT
 
 	 -- recursive use of a let-bound variable
 	 -- 	pass the args on the type scheme back to ourselves.
-	 T.InstanceLetRec vUse vBind (Just tSchemeT)
+	 T.InstanceLetRec _ _ (Just tSchemeT)
 	  -> do
 		let tSchemeC	= T.flattenT $ toCoreT tSchemeT
 				
@@ -539,20 +546,21 @@ toCoreVarInst v vT
 
 		let tsReplay
 			= map (\b -> case b of
-					(T.BVar v, k)	 -> T.TVar k (T.UVar v)
-					(T.BMore v t, k) -> T.TVar k (T.UMore v t))
+					(T.BNil,        _) -> panic stage "got T.BNil"
+					(T.BVar  v',   k) -> T.TVar k (T.UVar  v')
+					(T.BMore v' t, k) -> T.TVar k (T.UMore v' t))
 			$ bksReplay
 
 		let tsContext	= map (\k -> let Just t = T.inventWitnessOfKind k in t)
 				$ ksContext
 
-
-
 		let Just xResult =
 			C.buildApp (Left (C.XVar v tSchemeC) : map Right (tsReplay ++ tsContext))
 
 		return $ xResult
-			 
+
+	 T.InstanceLetRec _ _ Nothing
+		-> panic stage "toCoreVarInst: InstanceLetRec has no scheme"
 
 -- Alt ---------------------------------------------------------------------------------------------
 -- | Case Alternatives
@@ -594,6 +602,11 @@ toCoreG mObj gg
 		 Just r		-> return $ C.GExp w' (C.XPrim C.MUnbox [C.XPrimType r, C.XPrim C.MForce [x']])
 		 Nothing	-> return $ C.GExp w' x'
 
+ 	| otherwise
+	= panic stage 
+		$ "no match for " % show gg
+		% " should have been eliminated by original source desugaring."
+
 
 -- Patterns ----------------------------------------------------------------------------------------
 -- | Patterns
@@ -617,7 +630,7 @@ toCoreW ww
 	--	so we need to rewrite the literal in the pattern as well as the guard expression.
 	| D.WLit (Just	( T.TVar kV (T.UVar vT)
 			, _))
-		litFmt@(LiteralFmt lit fmt) <- ww
+			(LiteralFmt lit fmt) <- ww
 	, kV == T.kValue
 
 	, dataFormatIsBoxed fmt
@@ -640,7 +653,7 @@ toCoreW ww
 	| D.WLit
 		(Just 	( T.TVar kV (T.UVar vT)
 			, _ )) 
-		litFmt@(LiteralFmt lit fmt)	<- ww
+		litFmt@(LiteralFmt _ fmt)	<- ww
 	, kV == T.kValue
 	, dataFormatIsUnboxed fmt
 	= do	return	( C.WLit (varPos vT) litFmt
@@ -648,7 +661,7 @@ toCoreW ww
 
 
 	-- match against a variable
-	| D.WVar (Just 	(T.TVar kV vT
+	| D.WVar (Just 	(T.TVar kV _
 			, _))
 		var		<- ww
 	, kV == T.kValue
@@ -661,12 +674,12 @@ toCoreW ww
 		$ "tCoreW: no match for " % show ww % "\n"
 	 
 
-toCoreA_LV (D.LIndex nn i, v)
+toCoreA_LV (D.LIndex _ i, v)
  = do	Just t		<- lookupType v
  	let t_flat	= (T.flattenT . T.stripToBodyT) t
 	return	(C.LIndex i, v, t_flat)
 
-toCoreA_LV (D.LVar nn vField, v)
+toCoreA_LV (D.LVar _ vField, v)
  = do	Just t		<- lookupType v
  	let t_flat	= (T.flattenT . T.stripToBodyT) t
  	return	(C.LVar vField, v, t_flat)
