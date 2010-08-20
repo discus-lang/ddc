@@ -37,7 +37,7 @@ addBlockResult result code
 addComment :: LMString -> LlvmM ()
 addComment text
  = do	(reg, code)	<- get
-	put (reg, [Comment [text]] : code)
+	put (reg, [Comment (lines text)] : code)
 
 
 currentReg :: LlvmM LlvmVar
