@@ -48,10 +48,10 @@ GHC_WARNINGS	:= \
 	-fwarn-unused-imports
 
 # 	-fwarn-missing-methods			# we don't usually define coarbitrary in the Arbitrary class
-#	-fwarn-unused-matches			# we should probably enable this one
-#	-fwarn-name-shadowing 			# this generates lots of warnings about shadowing
-						# a binding called 'exp'. Is this real, or broken?
+#	-fwarn-name-shadowing 			# too many good names are stolen by the prelude
+						#   eg first, last, min, max etc.. 
 
+#	-fwarn-unused-matches			# we should probably enable this one
 #	-fwarn-incomplete-patterns 		# incomplete pattern warnings are buggy in GHC
 #	-fwarn-incomplete-record-updates 	# this isn't smart enough to be useful
 #	-fwarn-orphans  			# not sure if this is a problem

@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module Util.Data.Map
 	( module Data.Map
 	, populationCount

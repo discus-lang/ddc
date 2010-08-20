@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module Util.Data.List.Select
 	( test_UtilDataListSelect
 	, lookupF
@@ -16,7 +16,7 @@ test_UtilDataListSelect
 
 -- | General lookup function, using this equality test
 lookupF :: (a -> a -> Bool) ->	a -> [(a, b)] 	-> Maybe b
-lookupF	f a []		= Nothing
+lookupF	_ _ []		= Nothing
 lookupF	f a  ((k,d):xs)
 	| f a k		= Just d
 	| otherwise	= lookupF f a xs
@@ -34,7 +34,7 @@ eachAndOthers :: [a] 	-> [(a, [a])]
 eachAndOthers	 xx		
 	= eachAndOthers' xx []
 
-eachAndOthers'	 []	prev	= []
+eachAndOthers'	 []	_	= []
 eachAndOthers'	 (x:xs) prev 	
 	= (x, prev ++ xs) : eachAndOthers' xs (prev ++ [x])
 
@@ -65,8 +65,8 @@ gather	xx
 --
 interslurp ::	[a] 		-> [a]
 interslurp   	[]		= []
-interslurp	(a:[])		= []
-interslurp	(a:b:[])	= []
-interslurp	(a:b:xs)  	= b : interslurp xs
+interslurp	(_:[])		= []
+interslurp	(_:_:[])	= []
+interslurp	(_:b:xs)  	= b : interslurp xs
 
 	

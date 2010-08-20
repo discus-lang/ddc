@@ -1,5 +1,3 @@
-{-# OPTIONS -fno-warn-unused-binds -fno-warn-unused-imports -fwarn-name-shadowing #-}
-
 -- | Check for type errors or other problems in a core program, and `panic`
 --   if we find any.
 --
@@ -17,35 +15,15 @@ module DDC.Core.Check
 	, checkedTypeOfOpenExp
 	, Env	(..))
 where
-import Core.Util.Substitute
-import Shared.VarPrim
-import DDC.Core.Check.Prim
 import DDC.Core.Check.Env
-import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Type
 import DDC.Main.Error
-import DDC.Main.Pretty
-import DDC.Base.Literal
-import DDC.Base.DataFormat
 import DDC.Core.Glob
 import DDC.Core.Exp
 import DDC.Type
-import DDC.Var
 import Type.Error
-import Data.List
 import Data.Maybe
-import Control.Monad
-import DDC.Type.ClosureStore		(ClosureStore)
-import Core.Util			(maybeSlurpTypeX)
-import Data.Map				(Map)
-import Data.Sequence			(Seq)
-import qualified DDC.Type.ClosureStore	as Clo
-import qualified Data.Sequence		as Seq
-import qualified Data.Map		as Map
-import qualified Data.Set		as Set
-import qualified Data.Foldable		as Foldable
-import qualified Debug.Trace
 
 stage		= "DDC.Core.Lint"
 

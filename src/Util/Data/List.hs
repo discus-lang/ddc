@@ -1,4 +1,3 @@
-
 module Util.Data.List
 	( module Data.List
 	, module Util.Data.List.Drop

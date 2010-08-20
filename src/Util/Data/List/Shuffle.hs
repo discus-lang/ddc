@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Sorting and Shuffling
 module Util.Data.List.Shuffle
 	( test_UtilDataListShuffle
@@ -35,6 +35,9 @@ rotate n xx
 		$ drop (length xx + (n `mod` len)) 
 		$ cycle xx
 
+	| otherwise
+	= error "Util.Data.List.Shuffle.rotate: no match"
+
 -- @ We can rotate the list back, also for (abs n) > length of list
 test_rotate_inv
 	= testBool2 "rotate_inv"
@@ -47,9 +50,9 @@ test_rotate_inv
 
 partitionFs :: 	[(a -> Bool)] -> [a] -> ([[a]], [a])
 partitionFs 	fs xx 
- = let	(bins, floor)	= mapAccumL (partitionFs1 fs) (replicate (length fs) []) xx
+ = let	(bins, rest)	= mapAccumL (partitionFs1 fs) (replicate (length fs) []) xx
    in	( map reverse bins
-        , catMaybes floor)
+        , catMaybes rest)
 	
 -- | Place an element on the head of the bin which matches the corresponding predicate
 --	If no bins match the element goes on the floor.
@@ -89,7 +92,7 @@ partitionFs1'  (f:fs)  binPrev (bin:binRest)  x
 -- | Do a partitionFs then concat the results together into a single list.
 partitionFsSort :: [(a -> Bool)] -> [a] -> [a]
 partitionFsSort fs xx
- = let	(bins, floor)	= partitionFs fs xx
-   in	(concat bins ++ floor)
+ = let	(bins, rest)	= partitionFs fs xx
+   in	(concat bins ++ rest)
 
 

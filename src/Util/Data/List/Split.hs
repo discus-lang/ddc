@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 module Util.Data.List.Split
 	( test_UtilDataListSplit
 	, splitWhenLeft, chopWhenLeft
@@ -24,7 +24,7 @@ test_UtilDataListSplit
 splitWhenLeft ::	(a -> Bool) -> [a]	-> ([a], [a])
 splitWhenLeft	p	xx	= splitWhenLeft' p xx []
 
-splitWhenLeft'	p []	 acc	= (acc, [])
+splitWhenLeft'	_ []	 acc	= (acc, [])
 splitWhenLeft'	p (x:xs) acc
 	| p x			= (acc, x : xs)
 	| otherwise		= splitWhenLeft' p xs (acc ++ [x])
@@ -56,7 +56,7 @@ test_chopOnLeft_inv
 splitWhenRight ::	(a -> Bool) -> [a]	-> ([a], [a])
 splitWhenRight	p	xx		= splitWhenRight' p xx []
 
-splitWhenRight'	p	[]	acc	= (acc, [])
+splitWhenRight'	_	[]	acc	= (acc, [])
 splitWhenRight'	p	(x:xs)	acc
 	| p x				= (acc ++ [x], xs)
 	| otherwise			= splitWhenRight' p xs (acc ++ [x])
@@ -101,7 +101,9 @@ makeSplits splitFunc xx
 	= front : makeSplits splitFunc back
 	
 	where 	(front, back) 		= splitFunc xx
-		appendFront z (x:xs)	= (z : x) :xs
+		appendFront z (x:xs)	= (z : x) : xs
+		appendFront _ []	= error "makeSplits: empty list"
+		
 
 
 -- | Make a breaks function from this split function
