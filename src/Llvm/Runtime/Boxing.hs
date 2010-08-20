@@ -64,6 +64,17 @@ unboxInt32 objptr
 		]
 	return	int32
 
+unboxInt32 objptr
+ | getVarType objptr == ppObj
+ = do	optr0	<- lift $ newUniqueNamedReg "optr0" ppObj
+	optr1	<- lift $ newUniqueNamedReg "optr1" pObj
+	addBlock
+		[ Comment [ show optr1 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
+		, Assignment optr0 (Load (pVarLift objptr))
+		, Assignment optr1 (Load optr0)
+		]
+	unboxInt32 optr1
+
  | otherwise
  =	panic stage $ "unboxInt32 (" ++ show objptr ++ ")"
 

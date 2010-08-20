@@ -388,7 +388,6 @@ llvmVarOfExp (XInt i)
 	addBlock [ Comment ["llvmVarOfExp (XInt i)"], Assignment reg (Load (llvmWordLitVar i)) ]
 	return	reg
 
-
 llvmVarOfExp (XUnbox ty@TCon{} (XVar v t))
  =	unboxAny (toLlvmType ty) (toLlvmVar v t)
 
@@ -400,6 +399,9 @@ llvmVarOfExp (XUnbox ty@TCon{} (XForce (XSlot _ _ i)))
  = do	orig	<- readSlot i
 	forced	<- forceObj orig
 	unboxAny (toLlvmType ty) forced
+
+llvmVarOfExp (XUnbox ty@TCon{} (XVarCAF v t))
+ =	unboxAny (toLlvmType ty) (toLlvmCafVar v t)
 
 
 llvmVarOfExp x
