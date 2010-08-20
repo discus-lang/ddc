@@ -1,4 +1,4 @@
-{-# OPTIONS -fwarn-unused-imports -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-unused-imports -fwarn-incomplete-patterns -fno-warn-type-defaults #-}
 
 -- | Wrappers for compiler stages dealing with LLVM code.
 module Main.Llvm
@@ -199,8 +199,10 @@ llvmOfFunc ss
 	(Nothing, blks) <- get
 	-- At end of function reverse the list of blocks and then
 	-- concatenate the blocks to produce a list of statements.
-	return $ concat $ reverse blks
-
+	return $ concat $ reverse $
+		case last ss of
+		  SReturn _	-> blks
+		  _		-> [Return Nothing] : blks
 
 llvmOfStmt :: Stmt a -> LlvmM ()
 llvmOfStmt stmt
@@ -223,39 +225,64 @@ llvmOfStmt stmt
 --------------------------------------------------------------------------------
 
 llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
-llvmOfAssign (XVar v1 t1) t (XVar v2 t2)
- | t1 == TPtr (TPtr TObj) && t2 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
-	&& isGlobalVar v1 && isGlobalVar v2
+llvmOfAssign (XVar v1 t1) t@(TPtr (TPtr TObj)) (XVar v2 t2)
+ | t1 == t && t2 == t && isGlobalVar v1 && isGlobalVar v2
  = do	src	<- lift $ newUniqueReg (toLlvmType t1)
 	addBlock $
 		[ Assignment src (loadAddress (toLlvmVar v2 t2))
 		, Store src (pVarLift (toLlvmVar v1 t1)) ]
 
-llvmOfAssign (XVar v1 t1) t x@(XPrim op args)
- | t1 == TPtr (TPtr TObj) && t == TPtr (TPtr TObj)
- = do	dstreg		<- llvmOfXPrim (toLlvmType t) op args
+llvmOfAssign (XVar v1 t1) t@(TPtr (TPtr TObj)) (XVar v2 t2@(TPtr (TPtr TObj)))
+ | t1 == t
+ = do	reg		<- lift $ newUniqueReg (toLlvmType t1)
+	addBlock	[ Assignment reg (Load (toLlvmVar v2 t2))
+			, Store reg (toLlvmVar v1 t1) ]
+
+llvmOfAssign (XVar v1 t1@(TPtr (TPtr TObj))) t@(TPtr TObj) x@(XPrim op args)
+ = do	dstreg		<- llvmOfPtrManip (toLlvmType t1) op args
 	addBlock	[ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
 
-llvmOfAssign (XSlot v1 t1 i) t (XVar v2 t2)
- | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
+llvmOfAssign (XSlot v1 t1 i) t@(TPtr TObj) (XVar v2 t2)
+ | t1 == t && t2 == t
  =	writeSlot (toLlvmVar v2 t2) i
 
-llvmOfAssign (XVar v1 t1) t (XSlot v2 t2 i)
- | t1 == TPtr TObj && t2 == TPtr TObj && t == TPtr TObj
+llvmOfAssign (XVar v1 t1) t@(TPtr TObj) (XSlot v2 t2 i)
+ | t1 == t && t2 == t
  = do	let dst		= toLlvmVar v1 t1
 	readSlotVar i dst
 
-llvmOfAssign a@((XSlot v1 t1 i)) t c@(XBox t2 exp)
- | t1 == TPtr TObj && t == TPtr TObj
+llvmOfAssign a@((XSlot v1 t1 i)) t@(TPtr TObj) c@(XBox t2 exp)
+ | t1 == t
  = do	boxed		<- boxExp exp
 	writeSlot	boxed i
 
-llvmOfAssign (XVar v1 t1) (TCon vt _) x@(XPrim op args)
- | varName vt == "Int32#"
- = do	lift $ putStrLn $ "llvmOfAssign Int32#"
-	dstreg		<- llvmOfXPrim i32 op args
-	addBlock	[ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
+llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
+ | varName vt1 == "Int32#" && varName vt == "Int32#"
+ = do	dstreg		<- llvmOfXPrim i32 op args
+	addBlock	[ Comment ["Dummy add 0."]
+			, Assignment (toLlvmVar v1 t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
 
+llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) exp
+ | varName vt1 == "Int32#" && varName vt == "Int32#"
+ = do	dstreg		<- llvmVarOfExp exp
+	addBlock	[ Comment ["Dummy add 0."]
+			, Assignment (toLlvmVar v1 t1) (LlvmOp LM_MO_Add dstreg (i32LitVar 0)) ]
+
+
+llvmOfAssign (XVarCAF v1 t1) t@TPtr{} (XInt 0)
+ = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = NULL"
+	dst		<- lift $ newUniqueReg ppObj
+	addBlock	[ Assignment dst (Load (pVarLift (pVarLift (toLlvmCafVar v1 t1))))
+			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
+
+llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
+ = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = " ++ seaVar False v2 ++ " ()"
+	dst1		<- lift $ newUniqueReg pObj
+	dst2		<- lift $ newUniqueReg pObj
+	addBlock	[ Assignment dst1 (Load (pVarLift (pVarLift (toLlvmCafVar v1 t1))))
+			, Assignment dst2 (Call TailCall (toLlvmFunc v2 t args) [] [])
+			, Store dst2 (pVarLift dst1)
+			]
 
 llvmOfAssign a b c
  = panic stage $ "Unhandled : llvmOfAssign \n"
@@ -271,7 +298,10 @@ boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
 
 boxExp (XPrim op args)
  = do	calc	<- llvmOfXPrim pObj op args
-	boxInt32 calc
+	boxAny	calc
+
+boxExp (XVar v1 t1@TCon{})
+ =	boxAny $ toLlvmVar v1 t1
 
 boxExp x
  = panic stage $ "Unhandled : boxExp " ++ take 30 (show x)
@@ -311,6 +341,26 @@ primMapFunc t build sofar exp
 	return		dst
 
 
+
+
+llvmOfPtrManip :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
+llvmOfPtrManip t FAdd args
+ = case args of
+	[l@(XVar v t), XInt i]
+	 ->	do	addComment "llvmOfPtrManip"
+			src		<- lift $ newUniqueReg $ toLlvmType t
+			dst		<- lift $ newUniqueReg $ toLlvmType t
+			addBlock	[ Assignment src (Load (pVarLift (toLlvmVar v t)))
+					, Assignment dst (GetElemPtr True src [llvmWordLitVar i]) ]
+			return dst
+
+	_ ->	do	lift $ mapM_ (\a -> putStrLn ("\n    " ++ show a)) args
+			panic stage $ "Unhandled : llvmOfPtrManip"
+
+llvmOfPtrManip _ op _
+ = panic stage $ "Unhandled : llvmOfPtrManip " ++ show op
+
+
 llvmOfXPrim :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
 llvmOfXPrim t op args
  = case args of
@@ -324,8 +374,12 @@ llvmOfXPrim t op args
 
 
 llvmVarOfExp :: Exp a -> LlvmM LlvmVar
+llvmVarOfExp (XVar v t@TCon{})
+ = do	addComment "llvmVarOfExp (XVar v Int32#)"
+	return	$ toLlvmVar v t
+
 llvmVarOfExp (XVar v t)
- = do	reg	<- lift $ newUniqueReg $ toLlvmType t
+ = do	reg	<- lift $ newUniqueReg pObj
 	addBlock [ Comment ["llvmVarOfExp (XVar v t)"], Assignment reg (Load (toLlvmVar v t)) ]
 	return	reg
 
@@ -335,19 +389,17 @@ llvmVarOfExp (XInt i)
 	return	reg
 
 
-llvmVarOfExp (XUnbox _ (XVar v t))
- = do	addComment "llvmVarOfExp (XUnbox _ (XVar v t))"
-	unboxInt32 (toLlvmVar v t)
+llvmVarOfExp (XUnbox ty@TCon{} (XVar v t))
+ =	unboxAny (toLlvmType ty) (toLlvmVar v t)
 
-llvmVarOfExp (XUnbox _ (XSlot v t i))
- = do	addComment "llvmVarOfExp (XUnbox _ (XSlot v t i))"
-	objptr	<- readSlot i
-	unboxInt32 objptr
+llvmVarOfExp (XUnbox ty@TCon{} (XSlot v _ i))
+ = do	objptr	<- readSlot i
+	unboxAny (toLlvmType ty) objptr
 
-llvmVarOfExp (XUnbox t (XForce (XSlot v vt i)))
+llvmVarOfExp (XUnbox ty@TCon{} (XForce (XSlot _ _ i)))
  = do	orig	<- readSlot i
 	forced	<- forceObj orig
-	unboxInt32 forced
+	unboxAny (toLlvmType ty) forced
 
 
 llvmVarOfExp x
@@ -371,8 +423,10 @@ toLlvmType TObj		= structObj
 toLlvmType TVoid	= LMVoid
 
 toLlvmType (TCon v _)
- | varName v == "Int32#"
- = i32
+ = case varName v of
+	"Int32#"	-> i32
+	"Int64#"	-> i64
+	name		-> panic stage $ "toLlvmType unboxed " ++ name ++ "\n"
 
 toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
 
@@ -383,6 +437,33 @@ toLlvmVar v t
  = case isGlobalVar v of
 	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
 	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
+
+
+toLlvmCafVar :: Var -> Type -> LlvmVar
+toLlvmCafVar v t
+ = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
+
+toLlvmFunc :: Var -> Type -> [Exp a] -> LlvmVar
+toLlvmFunc v t args
+ =	let	name = seaVar False v
+		decl = LlvmFunctionDecl {
+			-- | Unique identifier of the function
+			decName = name,
+			-- | LinkageType of the function
+			funcLinkage = Internal,
+			-- | The calling convention of the function
+			funcCc = CC_Ccc,
+			-- | Type of the returned value
+			decReturnType = toLlvmType t,
+			-- | Indicates if this function uses varargs
+			decVarargs = FixedArgs,
+			-- | Parameter types and attributes
+			decParams = [],     -- [LlvmParameter],
+			-- | Function align value, must be power of 2
+			funcAlign = ptrAlign
+			}
+		func = LMFunction decl
+	in	LMGlobalVar name func Internal Nothing ptrAlign False
 
 
 -- | Does the given Sea variable have global scope? TODO: Move this to the Sea stuff.
