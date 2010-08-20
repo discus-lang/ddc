@@ -1,6 +1,7 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Desugared Source IR.
-module Desugar.Exp
+module DDC.Desugar.Exp
 	( Tree
 	, Top		(..)
 	, CtorDef	(..)
@@ -22,6 +23,7 @@ import Shared.Exp	(DataField)
 -- | A desugared program tree is a list of top level declarations.
 type Tree a	
 	= [Top a]
+
 
 -- | Top level declarations.
 data Top a
@@ -121,8 +123,8 @@ data CtorDef a
 data Exp a
 	= XNil
 
-	-- The following constructors are accepted by the constraint slurper --
-
+	-- The following constructors are accepted by the constraint slurper 
+	
 	-- | Void expression.
 	| XVoid	 	
 		{ expAnnot		:: a }
@@ -142,7 +144,8 @@ data Exp a
 		, expProjExp		:: Exp a
 		, expProjProj		:: Proj a }
 
-	-- | Projections with the type for the projection namespace specified.
+	-- | Direct use of a projection function, specifying the 
+	--   type of the namespace to use.
 	| XProjT
 		{ expAnnot		:: a
 		, expProjType		:: Type 
@@ -179,8 +182,8 @@ data Exp a
 		, expIfElse		:: Exp a }
 
 
-	-- The following constructors are produced by the constraint slurper --
-	--	but are not accepted by it.
+	-- The following constructors are produced by the constraint slurper
+	-- but are not accepted by it.
 
 	-- | Lambda expression tagged with variabes that give the
 	--	type of the argument, and the effect and closure of the body.

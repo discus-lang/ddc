@@ -3,7 +3,7 @@
 module Desugar.Plate.FreeVars
 	(freeVars)
 where
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Desugar.Util
 import DDC.Var
 import DDC.Util.FreeVars

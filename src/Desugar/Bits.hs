@@ -5,7 +5,7 @@ module Desugar.Bits
 	, getAnnotW
 	, addLambdas )
 where
-import Desugar.Exp
+import DDC.Desugar.Exp
 import DDC.Main.Error
 import DDC.Var
 

@@ -12,18 +12,18 @@ import DDC.Main.Pretty
 import Control.Monad
 import Data.Maybe
 import Data.Foldable
-import Data.Set			(Set)
-import Data.Map			(Map)
-import Data.Sequence		(Seq)
-import Prelude			hiding (foldl)
-import qualified Source.Exp	as S
-import qualified Desugar.Exp	as D
-import qualified DDC.Core.Exp	as C
-import qualified DDC.Core.Glob	as C
-import qualified Data.Set	as Set
-import qualified Data.Map	as Map
-import qualified Data.Sequence	as Seq
-import qualified Util.Data.Map	as Map
+import Data.Set				(Set)
+import Data.Map				(Map)
+import Data.Sequence			(Seq)
+import Prelude				hiding (foldl)
+import qualified Source.Exp		as S
+import qualified DDC.Desugar.Exp	as D
+import qualified DDC.Core.Exp		as C
+import qualified DDC.Core.Glob		as C
+import qualified Data.Set		as Set
+import qualified Data.Map		as Map
+import qualified Data.Sequence		as Seq
+import qualified Util.Data.Map		as Map
 
 stage	= "Module.Interface.Export"
 

@@ -9,7 +9,7 @@ module Desugar.Plate.Trans
 	, transformXM
 	, transZ)
 where
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Shared.Exp
 import Util
 import DDC.Type

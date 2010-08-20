@@ -25,7 +25,7 @@ import Source.Pretty			()
 import qualified Source.Exp		as S
 import qualified Source.Error		as S
 import qualified Desugar.Util		as D
-import qualified Desugar.Exp		as D
+import qualified DDC.Desugar.Exp	as D
 import qualified Desugar.Bits		as D
 
 import {-# SOURCE #-} Source.Desugar.ListComp

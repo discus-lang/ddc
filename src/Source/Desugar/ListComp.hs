@@ -13,7 +13,7 @@ import DDC.Main.Pretty
 import DDC.Var
 import qualified DDC.Var.PrimId		as Var
 import qualified Source.Exp		as S
-import qualified Desugar.Exp		as D
+import qualified DDC.Desugar.Exp	as D
 
 stage = "Source.Desugar.ListComp"
 

@@ -24,7 +24,7 @@ import qualified DDC.Type		as T
 import qualified Shared.Exp		as S
 import qualified DDC.Core.Exp 		as C
 import qualified Core.Util		as C
-import qualified Desugar.Exp 		as D
+import qualified DDC.Desugar.Exp 	as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Desugar.Slurp.Util	as D
 import qualified Data.Map		as Map

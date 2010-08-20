@@ -10,7 +10,7 @@ where
 import Util
 import Shared.Exp
 import Type.Error
-import Desugar.Exp
+import DDC.Desugar.Exp
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
 import DDC.Type

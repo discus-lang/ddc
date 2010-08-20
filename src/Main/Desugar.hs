@@ -33,7 +33,7 @@ import qualified Desugar.Project	as D
 import qualified Desugar.Kind		as D
 import qualified Desugar.Elaborate	as D
 import qualified Desugar.Plate.Trans	as D
-import qualified Desugar.Exp		as D
+import qualified DDC.Desugar.Exp	as D
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 

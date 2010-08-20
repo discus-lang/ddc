@@ -6,7 +6,7 @@ import Source.Desugar.Base
 import DDC.Var
 import Desugar.Util			as D
 import Desugar.Bits			as D
-import Desugar.Exp			as D
+import DDC.Desugar.Exp			as D
 import qualified Source.Error		as S
 import qualified Data.Map		as Map
 

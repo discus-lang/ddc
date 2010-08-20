@@ -19,7 +19,7 @@ import qualified Source.Util		as S
 import qualified DDC.Type		as T
 import qualified DDC.Type.Transform	as T
 import qualified Type.Util		as T
-import qualified Desugar.Exp		as D
+import qualified DDC.Desugar.Exp	as D
 import qualified Desugar.Plate.Trans	as D
 import qualified DDC.Core.Exp		as C
 import qualified Core.OpType		as C

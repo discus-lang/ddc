@@ -4,7 +4,7 @@
 module Desugar.Pretty
 	(stripAnnot)
 where
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Desugar.Plate.Trans
 import DDC.Main.Error
 import DDC.Main.Pretty		

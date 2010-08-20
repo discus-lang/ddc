@@ -8,7 +8,7 @@ module Desugar.Slurp.Base
 	, module Constraint.Exp
 	, module Constraint.Bits
 	, module Desugar.Util
-	, module Desugar.Exp
+	, module DDC.Desugar.Exp
 	, module Desugar.Plate.Trans
 	, module Desugar.Plate.FreeVars
 	, module Desugar.Slurp.State
@@ -20,7 +20,7 @@ import Type.Error
 import Constraint.Exp
 import Constraint.Bits
 import Desugar.Util
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Desugar.Plate.Trans
 import Desugar.Plate.FreeVars
 import Desugar.Slurp.State

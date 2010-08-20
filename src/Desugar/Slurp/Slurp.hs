@@ -9,7 +9,7 @@ import Shared.Exp
 import Type.Location
 import Constraint.Exp
 import Constraint.Bits
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS

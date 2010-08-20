@@ -22,7 +22,7 @@ import Util
 import Shared.VarPrim
 import Shared.Exp
 import Type.Error
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Desugar.Slurp.State
 import DDC.Main.Error
 import DDC.Main.Pretty

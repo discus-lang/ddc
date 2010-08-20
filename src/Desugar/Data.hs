@@ -5,7 +5,7 @@ module Desugar.Data
 	, elaborateTypeSynonym )
 where
 import Desugar.Pretty
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Shared.Exp
 import Shared.VarPrim
 import DDC.Base.SourcePos

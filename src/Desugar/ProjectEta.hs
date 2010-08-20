@@ -2,7 +2,7 @@
 module Desugar.ProjectEta 
 	(projectEtaExpandTree) 
 where
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Desugar.Bits
 import Shared.VarGen
 import Control.Monad

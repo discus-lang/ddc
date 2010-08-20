@@ -9,7 +9,7 @@ module Desugar.Project
 where
 import Source.Error
 import Desugar.Util
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Shared.Exp
 import Shared.VarPrim
 import Util

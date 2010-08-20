@@ -28,7 +28,7 @@ import Source.Desugar			(rewriteTree)
 import Source.Lint			(lintTree)
 import qualified Data.Map		as Map
 import qualified Desugar.Plate.Trans	as D
-import qualified Desugar.Exp		as D
+import qualified DDC.Desugar.Exp	as D
 import qualified Source.Token		as Token
 import qualified Source.Rename		as S
 import qualified Source.Rename.State	as S

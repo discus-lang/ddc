@@ -8,7 +8,7 @@ module Desugar.Util
 	, bindingVarOfStmt
 	, collectClosureProjTags)
 where
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Desugar.Plate.Trans
 import Util
 import DDC.Type

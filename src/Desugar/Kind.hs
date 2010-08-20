@@ -6,7 +6,7 @@ module Desugar.Kind
 where
 import Desugar.Plate.Trans
 import Desugar.Data
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Source.Error
 import Shared.VarPrim
 import Util

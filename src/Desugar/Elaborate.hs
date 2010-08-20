@@ -2,7 +2,7 @@
 module Desugar.Elaborate 
 	(elaborateTree)
 where
-import Desugar.Exp
+import DDC.Desugar.Exp
 import Control.Monad.State.Strict
 import Util
 import DDC.Base.SourcePos
