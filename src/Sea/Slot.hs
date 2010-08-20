@@ -123,7 +123,11 @@ slotifyX x m cgHeader cgSource
 	| XVar v _	<- x
 	, Just exp	<- Map.lookup v m
 	= exp
-	
+
+	| XVar v t@(TPtr TObj)	<- x
+	, isCafVar cgHeader cgSource v
+	= XVarCAF v (TPtr t)
+
 	-- BUGS: unboxed top level data is not a CAF
 	| XVar v t	<- x
 	, isCafVar cgHeader cgSource v
