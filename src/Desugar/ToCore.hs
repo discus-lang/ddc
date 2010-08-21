@@ -35,6 +35,7 @@ stage		= "Desugar.ToCore"
 debug		= False
 trace ss x	= if debug then Debug.trace (pprStrPlain ss) x else x
 
+
 -- Tree --------------------------------------------------------------------------------------------
 toCoreTree
  	:: Map Var Var		-- ^ Map value to type vars
@@ -48,6 +49,7 @@ toCoreTree
 	projTable
 	solution 
 	sTree
+
  = let	initCoreS'
 		= initCoreS
 		{ coreSigmaTable	= mapValueToTypeVars
@@ -55,13 +57,15 @@ toCoreTree
 		, coreMapInst		= solutionInstanceInfo solution
 		, coreProjTable		= projTable  
 		, coreProjResolve	= solutionProjResolution solution}
-		
+	
+	toCoreTreeM tree
+		= liftM concat
+		$ mapM toCoreP tree
+
    in	evalState (toCoreTreeM sTree) initCoreS'
 
-toCoreTreeM tree
-	= liftM concat
-	$ mapM toCoreP tree
-	
+
+
 -- Top ---------------------------------------------------------------------------------------------
 -- | Convert a top level thing to core.
 toCoreP	:: D.Top Annot	
@@ -70,26 +74,23 @@ toCoreP	:: D.Top Annot
 toCoreP p
  = case p of
 	D.PExtern _ v tv (Just to)
-	 -> do
-		-- External types may contain monomorphic variables who's names have changed during 
-		--	constraint solving. 
-		let tv'	= toCoreT tv
-		let to'	= toCoreT to
-		
-		return	$ [C.PExtern v tv' to']
+	 -> do	let tv'	= toCoreT tv
+		let to'	= toCoreT to	
+		return	[C.PExtern v tv' to']
 
 	D.PExternData _ _ v k
-	 -> do	return	$ [C.PExternData v k]
+	 -> 	return	[C.PExternData v k]
 
 	D.PData _ vData vsParam ctors
-	 -> do	ctors'		<- zipWithM 
-					(toCoreCtorDef vData vsParam) 
-					ctors
-					[0 .. length ctors]
+	 -> do	ctors'	<- zipWithM 
+				(toCoreCtorDef vData vsParam) 
+				ctors
+				[0 .. length ctors]
 					
-		let vsCtors	= map C.ctorDefName ctors'
-		let mCtors	= Map.fromList $ zip vsCtors ctors'
-		return	[C.PData vData mCtors]
+		let mmCtors	= Map.fromList 
+				$ [(C.ctorDefName def, def) | def <- ctors']
+
+		return	[C.PData vData mmCtors]
 
 	D.PBind nn (Just v) x
 	 -> do	Just (C.SBind (Just v') x') 
@@ -97,46 +98,44 @@ toCoreP p
 
 		return	[C.PBind v' x']
 
-	D.PTypeSig{}	-> return []
-	D.PImport{}	-> return []
-
-
-	-- classes
+	-- TODO: This isn't being used.
 	D.PRegion _ v 
-	 -> 	return	[ C.PRegion v [] ]
+	 -> 	return	[C.PRegion v []]
 
 	D.PKindSig _ v k
+
+	 -- Abstract type constrctors have no data constructors.
 	 | T.resultKind k == T.kValue
-	 ->	return	[ C.PData   v Map.empty ]
+	 ->	return	[C.PData   v Map.empty]
 	
+	 -- An abstract effect constructor.
 	 | T.resultKind k == T.kEffect
-	 ->	return	[ C.PEffect v (toCoreK k) ]
+	 ->	return	[C.PEffect v (toCoreK k)]
 	
-	 -- we could probably add the following, but we don't have test programs yet.
+	 -- We could probably add the following, but we don't have test 
+	--  programs for them yet.
 	 | otherwise
 	 -> panic stage $ unlines
-		[ "toCoreP: Type constructors that to not have a result kind"
+		[ "toCoreP: Type constructors that do not have a result kind"
 		, "of either * or ! are not supported in the core langauge yet" ]
 
 	D.PSuperSig _ v s
-	 -> 	return	[ C.PClass v s]
+	 -> 	return	[C.PClass v s]
 
-	D.PClassDecl _ v cts sigs
-	 -> do	let (vs, ts)	= unzip sigs
-	 	let ts'		= map toCoreT ts
-		let sigs'	= zip vs ts'
+	D.PClassDecl _ vClass cts sigs
+	 -> do	let sigs'	= [(v, toCoreT t) | (v, t) <- sigs]
 
 		let vks'	= map (\(T.TVar k (T.UVar v')) -> (v', k))
 				$ map toCoreT cts
 
-		return		$ [C.PClassDict v vks' sigs']
+		return	[C.PClassDict vClass vks' sigs']
 
 	-- type class instance
 	D.PClassInst _ vClass cts ss
 	 -> do
 		-- rewrite all the bindings in this instance
-		-- The right hand side of the bindings must be a var.
-		--	This should be enforced by Desugar.Project.
+		-- The right of each binding must be a var, which should
+		--	be enforced by Desugar.Project.
 		let rewriteInstS s
 			| D.SBind _ (Just v1) (D.XVarInst _ v2)	<- s
 			= return (v1, v2)
@@ -147,18 +146,20 @@ toCoreP p
 			| otherwise
 			= panic stage
 				$  "toCoreP: RHS of projection dict must be a var\n"
-				%  "    stmt:\n" %> s	% "\n"
+				%  "    stmt was:\n" %> s % "\n"
 	
 		ss'	<- mapM rewriteInstS ss
 
 		-- rewrite the context types
 		let cts'	= map toCoreT cts
 
-		return	$ [C.PClassInst vClass cts' ss']
+		return	[C.PClassInst vClass cts' ss']
 
 
-	-- projections
+	-- These don't mean anything in the core language.
 	D.PProjDict{}	-> return []
+	D.PImport{}	-> return []
+	D.PTypeSig{}	-> return []
 
 	_ -> panic stage
 		$ "toCoreP: no match for " % show p % "\n"
@@ -167,10 +168,10 @@ toCoreP p
 -- CtorDef -----------------------------------------------------------------------------------------
 -- | Convert a desugared data constructor definition to core form.
 toCoreCtorDef	
-	:: Var			-- ^ var of data type
-	-> [Var]		-- ^ var of type params
-	-> D.CtorDef Annot
-	-> Int			-- ^ ctor tag
+	:: Var			-- ^ var of data type constructor the data constructor belongs to
+	-> [Var]		-- ^ vars of params to data type constructor
+	-> D.CtorDef Annot	-- ^ data constructor definition to convert
+	-> Int			-- ^ data constructor tag
 	-> CoreM C.CtorDef
 		
 toCoreCtorDef vData vsParam (D.CtorDef _ vCtor dataFields) tag
@@ -185,18 +186,18 @@ toCoreCtorDef vData vsParam (D.CtorDef _ vCtor dataFields) tag
 
 -- | For fields with a label, 
 --	construct a map from the label var to the index of that field in the constructor.
---
 takeFieldIndicies 
 	:: [S.DataField (D.Exp Annot) T.Type] 	-- ^ fields of a data constructor
 	-> Map Var Int
 
 takeFieldIndicies dfs
- 	= Map.fromList [ (v, i) | (Just v, i) <- zip (map S.dLabel dfs) [0..] ]
+ 	= Map.fromList
+ 	$ [ (v, i) | (Just v, i) <- zip (map S.dLabel dfs) [0..] ]
 	
 
 
 -- Stmt --------------------------------------------------------------------------------------------
--- | Statements
+-- | Convert a desugared statement to the core language.
 toCoreS	:: D.Stmt Annot	
 	-> CoreM (Maybe C.Stmt)
 		
@@ -204,28 +205,31 @@ toCoreS (D.SBind _ Nothing x)
  = do	x'		<- toCoreX x
 	returnJ	$ C.SBind Nothing x'
 
-
 toCoreS (D.SBind _ (Just v) x) 
- = do	
-	-- lookup the generalised type of this binding.
+ = do	-- lookup the generalised type of this binding.
 	Just tScheme	<- lookupType v
 
- 	-- convert the RHS to core.
+ 	-- convert the right to core.
 	xCore	<- toCoreX x
 
-	-- Add type lambdas and contexts
+	-- add type abstractions.
 	xLam	<- fillLambdas v tScheme xCore
 
-	returnJ $ C.SBind (Just v) 
-		$ C.dropXTau xLam Map.empty tScheme
+	-- add a type annotation to the innermost body of the set of abstractions
+	-- this makes it easy to determine the type of the whole binding later.
+	let xLam_annot = C.dropXTau xLam Map.empty tScheme
 
+	returnJ $ C.SBind (Just v) xLam_annot
 
+-- we don't need separate type sigs in the core language.
 toCoreS	D.SSig{}
  = return Nothing
 
 toCoreS ss
- = panic stage 	$ "no match for " % show ss
-		% " should have been eliminated by original source desugaring."
+ 	= panic stage 	
+	$ "no match for " % show ss
+	% " should have been eliminated by original source desugaring."
+
 
 -- Exp ---------------------------------------------------------------------------------------------
 -- | Expressions
