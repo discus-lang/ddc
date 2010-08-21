@@ -25,7 +25,8 @@ import qualified Type.Export		as T
 import qualified Type.Dump		as T
 import qualified Type.Solve		as T
 import qualified Type.State		as T
-import qualified Desugar.ToCore		as D
+import qualified DDC.Desugar.Exp	as D
+import qualified DDC.Desugar.ToCore	as D
 import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D
 import qualified Desugar.ProjectEta	as D
@@ -33,7 +34,6 @@ import qualified Desugar.Project	as D
 import qualified Desugar.Kind		as D
 import qualified Desugar.Elaborate	as D
 import qualified Desugar.Plate.Trans	as D
-import qualified DDC.Desugar.Exp	as D
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 

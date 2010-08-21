@@ -1,15 +1,18 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module Desugar.ToCore.Lambda
+module DDC.Desugar.ToCore.Lambda
 	( fillLambdas
 	, loadEffAnnot 
 	, loadCloAnnot)
 where
-import Desugar.ToCore.Base
+import DDC.Main.Error
+import DDC.Desugar.ToCore.Base
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
 
+stage	= "DDC.Desugar.ToCore.Lambda"
 
 -- | Add type lambdas and contexts to this expression, based on the provided type scheme.
 --	Used on RHS of let-bindings.
@@ -19,7 +22,7 @@ fillLambdas
 	-> Exp		-- rhs expression
 	-> CoreM Exp
 	
-fillLambdas v tScheme x
+fillLambdas _ tScheme x
  =	fillLambdas' Map.empty tScheme x
 	
 fillLambdas' tsWhere tScheme x
@@ -58,6 +61,9 @@ loadEffAnnot ee
 	 | kE == kEffect
 	 -> 	return tPure
 
+	_ 	-> panic stage
+		$  "loadEffAnnot: no match"
+
 
 -- Load a closure annotation to attach to an XLam
 loadCloAnnot 
@@ -74,5 +80,8 @@ loadCloAnnot cc
 	TSum kC []
 	 | kC == kClosure 	
 	 -> 	return	$ tEmpty
+
+	_ 	-> panic stage
+		$  "loadEffAnnot: no match"
 
 

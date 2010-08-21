@@ -449,19 +449,19 @@ toLlvmFunc :: Var -> Type -> [Exp a] -> LlvmVar
 toLlvmFunc v t args
  =	let	name = seaVar False v
 		decl = LlvmFunctionDecl {
-			-- | Unique identifier of the function
+			--  Unique identifier of the function
 			decName = name,
-			-- | LinkageType of the function
+			--  LinkageType of the function
 			funcLinkage = Internal,
-			-- | The calling convention of the function
+			--  The calling convention of the function
 			funcCc = CC_Ccc,
-			-- | Type of the returned value
+			--  Type of the returned value
 			decReturnType = toLlvmType t,
-			-- | Indicates if this function uses varargs
+			--  Indicates if this function uses varargs
 			decVarargs = FixedArgs,
-			-- | Parameter types and attributes
+			--  Parameter types and attributes
 			decParams = [],     -- [LlvmParameter],
-			-- | Function align value, must be power of 2
+			--  Function align value, must be power of 2
 			funcAlign = ptrAlign
 			}
 		func = LMFunction decl

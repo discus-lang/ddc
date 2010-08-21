@@ -1,11 +1,8 @@
 
 module Desugar.Slurp.SlurpS
-(
-	slurpS
-)
+	(slurpS)
 
 where
-
 import Desugar.Slurp.Base
 
 slurpS	:: Stmt Annot1	

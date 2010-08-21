@@ -1,20 +1,19 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-
-module Desugar.ToCore
+module DDC.Desugar.ToCore
 	( toCoreTree
 	, toCoreP
 	, toCoreX )
 where
 import Util
-import Shared.VarPrim
-import Desugar.ToCore.Base
-import Desugar.ToCore.Lambda
+import DDC.Desugar.ToCore.Base
+import DDC.Desugar.ToCore.Lambda
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+import Shared.VarPrim
 import Shared.VarUtil			(isDummy, varPos)
 import Type.ToCore			(toCoreT, toCoreK)
 import Type.Export			(Solution(..))
@@ -22,12 +21,12 @@ import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified DDC.Solve.InstanceInfo	as T
 import qualified DDC.Type		as T
-import qualified Shared.Exp		as S
 import qualified DDC.Core.Exp 		as C
-import qualified Core.Util		as C
 import qualified DDC.Desugar.Exp 	as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Desugar.Slurp.Util	as D
+import qualified Core.Util		as C
+import qualified Shared.Exp		as S
 import qualified Data.Map		as Map
 import qualified Debug.Trace		as Debug
 

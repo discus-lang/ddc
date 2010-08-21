@@ -1,9 +1,10 @@
--- | State Monad for the Desugared to Core IR transform.
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module Desugar.ToCore.Base
+-- | State Monad for the Desugared to Core IR transform.
+module DDC.Desugar.ToCore.Base
 	( Annot
-	, CoreS(..)
 	, CoreM
+	, CoreS(..)
 	, initCoreS
 	, newVarN
 	, lookupType
@@ -21,12 +22,15 @@ import qualified Data.Map		as Map
 import qualified Type.ToCore		as T
 import qualified Debug.Trace
 
-stage		= "Desugar.ToCore.Base"
+stage		= "DDC.Desugar.ToCore.Base"
 debug		= False
 trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
------
+-- | Each node in the desugared tree is annotated with its value type and effect variable.
 type	Annot	= Maybe (Type, Effect)
+
+-- | State monad used when converting to core.
+type CoreM = State CoreS
 
 -- | The state for the Desugared to Core IR transform.
 data CoreS 
@@ -49,10 +53,8 @@ data CoreS
 
 	  -- | variable generator for value vars.
 	, coreGenValue		:: VarId }
-	
-type CoreM 
-	= State CoreS
-	
+
+
 initCoreS 
 	= CoreS 
 	{ coreSigmaTable	= Map.empty
@@ -66,8 +68,7 @@ initCoreS
 -- | Create a fresh new variable in this namespace.
 newVarN	:: NameSpace -> CoreM Var
 newVarN	space
- = do
- 	gen		<- gets coreGenValue
+ = do 	gen		<- gets coreGenValue
 	let gen'	= incVarId gen
 	modify (\s -> s { coreGenValue = gen' })
 	
@@ -75,11 +76,17 @@ newVarN	space
 		{ varId	 = gen
 		, varNameSpace	 = space }
 
+
 -- | Get the type corresponding to the type of this annotation
 lookupAnnotT :: Annot -> CoreM (Maybe Type)
 lookupAnnotT (Just (TVar kV (UVar vT), _))
 	| kV	== kValue
 	= lookupType vT
+
+lookupAnnotT tt
+	= panic stage
+	$ "lookupAnnotT: no match for " % tt
+
 
 -- | Get the type of this variable.
 lookupType :: Var -> CoreM (Maybe Type)
@@ -119,4 +126,3 @@ lookupType' vT
 				, ppr "    flat core type:\n" 	%> cType_flat
 				, blank])
 			$ Just cType_flat
-
