@@ -18,6 +18,7 @@ import qualified DDC.Desugar.Exp 	as D
 import qualified Desugar.Slurp.Util	as D
 import qualified Shared.Exp		as S
 import qualified Data.Map		as Map
+import qualified Data.Set		as Set
 
 stage		= "DDC.Desugar.ToCore"
 
@@ -77,8 +78,14 @@ toCoreP p
 		return	[C.PData vData mmCtors]
 
 	D.PBind nn (Just v) x
-	 -> do	Just (C.SBind (Just v') x') 
-			<- toCoreS (D.SBind nn (Just v) x)
+	 -> do	
+		-- We only use this set of variables for controlling what effect and
+		-- closure annots to annotate the tree with, so it doesn't need to 
+		-- also contain the top-level region variables.
+		let vsBound	= Set.empty
+
+		Just (C.SBind (Just v') x') 
+			<- toCoreS vsBound (D.SBind nn (Just v) x)
 
 		return	[C.PBind v' x']
 

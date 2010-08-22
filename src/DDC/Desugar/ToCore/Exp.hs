@@ -1,5 +1,22 @@
 
 -- | Conversion of desugared expressions to core.
+--   During the conversion, we need to keep track of what effect and closure variables
+--   are in scope so we can create the effect and closure annotations correctly.
+--  
+--   For example, with the following expression:
+--  	 /\(e1 :> E1 + E2). \(x : T1) of e1 -> ...
+--
+--   The variable "e1" is the name we get back from the constraint solver, which names
+--   the equivalence class for that effect. Because this variable is bound by a /\ we
+--   cannot simply annotate the inner lambda expression with the (strengthened) effect
+--   (E1 + E2), we have to include the whole constraint, including the variable e1.
+--
+--   On the other hand, if we had an expression like:
+--      \(y : T2) of e2 ...
+--
+--   Provided e2 is not bound in an enclosing scope, we can just replace the variable
+--   but the effect of the equivalence class in the type graph.
+--
 module DDC.Desugar.ToCore.Exp
 	( toCoreS
 	, toCoreX
@@ -30,6 +47,7 @@ import qualified DDC.Core.Exp			as C
 import qualified Core.Util			as C
 import qualified Desugar.Plate.Trans		as D
 import qualified Data.Map			as Map
+import qualified Data.Set			as Set
 import qualified Debug.Trace
 
 stage		= "DDC.Desugar.ToCore.Exp"
@@ -38,19 +56,30 @@ trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
 
 -- Stmt --------------------------------------------------------------------------------------------
 -- | Convert a desugared statement to the core language.
-toCoreS	:: D.Stmt Annot	
+toCoreS	:: Set Var		-- ^ Set of type variables bound in the environment.
+	-> D.Stmt Annot		-- ^ The statement to convert.
 	-> CoreM (Maybe C.Stmt)
 		
-toCoreS (D.SBind _ Nothing x)
- = do	x'		<- toCoreX x
+toCoreS vsBound (D.SBind _ Nothing x)
+ = do	x'		<- toCoreX vsBound x
 	return $ Just $ C.SBind Nothing x'
 
-toCoreS (D.SBind _ (Just v) x) 
+toCoreS vsBound (D.SBind _ (Just v) x) 
  = do	-- lookup the generalised type of this binding.
 	Just tScheme	<- lookupType v
 
+	-- Calling fillLambdas below may add type abstractions around the
+	-- expression. We need to know what the bound variables are when
+	-- converting the expression to core. The bound vars are exactly
+	-- the forall-bound vars in the type scheme for the binding.
+	let (bksForall, _, _) 	= T.stripForallContextT tScheme
+	let vsBoundHere		= Set.fromList $ catMaybes 
+				$ map (T.takeVarOfBind . fst) bksForall
+	
+	let vsBound'		= Set.union vsBound vsBoundHere
+	
  	-- convert the right to core.
-	xCore	<- toCoreX x
+	xCore	<- toCoreX vsBound' x
 
 	-- add type abstractions.
 	xLam	<- fillLambdas v tScheme xCore
@@ -62,10 +91,10 @@ toCoreS (D.SBind _ (Just v) x)
 	return $ Just $ C.SBind (Just v) xLam_annot
 
 -- we don't need separate type sigs in the core language.
-toCoreS	D.SSig{}
+toCoreS	_ D.SSig{}
  = return Nothing
 
-toCoreS ss
+toCoreS _ ss
  	= panic stage 	
 	$ "no match for " % show ss
 	% " should have been eliminated by original source desugaring."
@@ -73,12 +102,18 @@ toCoreS ss
 
 -- Exp ---------------------------------------------------------------------------------------------
 -- | Expressions
-toCoreX	:: D.Exp Annot -> CoreM C.Exp
-toCoreX xx
- =  case xx of
+toCoreX	:: Set Var		-- ^ Set of type variables bound in the environment.
+	-> D.Exp Annot 		-- ^ The expression to convert.
+	-> CoreM C.Exp
+
+toCoreX vsBound xx
+ = case xx of
 
 	D.XLambdaTEC 
-		_ v x (T.TVar kV (T.UVar vTV)) eff clo
+		_ v x 
+		(T.TVar kV (T.UVar vTV)) 
+		eff clo
+
 	 | kV == T.kValue
 	 -> do	
 		-- Strip contexts off argument types, if we need the associated witnesses then these
@@ -89,7 +124,7 @@ toCoreX xx
 		-- If the effect/closures were vars then look them up from the graph
 		effAnnot	<- loadEffAnnot eff
 		cloAnnot	<- loadCloAnnot clo
-		x'		<- toCoreX x
+		x'		<- toCoreX vsBound x
 		
 		-- carry down set of quant type vars
 		-- sink annot var. If it's in the quant set we have to add a more-than constraint.
@@ -109,30 +144,30 @@ toCoreX xx
 
 	D.XApp	_ x1 x2
 	 -> do
-	 	x1'	<- toCoreX x1
-		x2'	<- toCoreX x2
+	 	x1'	<- toCoreX vsBound x1
+		x2'	<- toCoreX vsBound x2
 		return	$ C.XApp x1' x2'
 
 
 	-- case match on a var
 	D.XMatch _ (Just (D.XVar _ varX)) alts
-	 -> do	alts'		<- mapM (toCoreA (Just (varX, T.TNil))) alts
+	 -> do	alts'		<- mapM (toCoreA vsBound (Just (varX, T.TNil))) alts
 		
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 
 	-- case match on an exp
 	D.XMatch _ (Just x) alts
-	 -> do	x'	<- toCoreX x
+	 -> do	x'	<- toCoreX vsBound x
 		varX	<- newVarN NameValue
 		
-		alts'	<- mapM (toCoreA (Just (varX, T.TNil))) alts
+		alts'	<- mapM (toCoreA vsBound (Just (varX, T.TNil))) alts
 		
 		return	$ C.XDo	[ C.SBind (Just varX) x'
 				, C.SBind Nothing (C.XMatch alts') ]
 			
 	-- regular  match
 	D.XMatch _ Nothing alts
-	 -> do	alts'	<- mapM (toCoreA Nothing) alts
+	 -> do	alts'	<- mapM (toCoreA vsBound Nothing) alts
 		
 		return	$ C.XDo	[ C.SBind Nothing (C.XMatch alts') ]
 		
@@ -141,10 +176,9 @@ toCoreX xx
 	 | kV	== T.kValue
 	 -> do	
 	 	Just t		<- lookupType vT
-	 	let t_flat	= T.stripToBodyT 
-				$ T.flattenT t
-	
-		return		$ toCoreXLit t_flat xx
+	 	let t_flat	= T.stripToBodyT $ T.flattenT t
+
+		return	$ toCoreXLit t_flat xx
 
  
 	-- We need the last statement in a do block to be a non-binding because of an
@@ -172,7 +206,7 @@ toCoreX xx
 	--
 	D.XDo 	_ stmts
 	 -> do	stmts'	<- liftM catMaybes
-	 		$  mapM toCoreS stmts
+	 		$  mapM (toCoreS vsBound) stmts
 	
 		case takeLast stmts' of
 		 Just stmt@(C.SBind (Just _) _)
@@ -187,9 +221,15 @@ toCoreX xx
 	 -> do
 		v	<- newVarN NameValue
 
-		e1'	<- toCoreX e1
-		e2'	<- toCoreA (Just (v, T.TNil)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primTrue  [])] e2)
-		e3'	<- toCoreA (Just (v, T.TNil)) (D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primFalse [])] e3)
+		e1'	<- toCoreX vsBound e1
+
+		e2'	<- toCoreA vsBound
+				(Just (v, T.TNil)) 
+				(D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primTrue  [])] e2)
+
+		e3'	<- toCoreA vsBound
+				(Just (v, T.TNil)) 
+				(D.AAlt Nothing [D.GCase Nothing (D.WConLabel Nothing primFalse [])] e3)
 		
 		return	$ C.XDo	[ C.SBind (Just v) e1'
 				, C.SBind Nothing (C.XMatch [ e2', e3' ]) ]
@@ -201,8 +241,7 @@ toCoreX xx
 		vTagInst _ x2 _
 	 | kV == T.kValue
 	 , kE == T.kEffect
-	 -> do
-		x2'		<- toCoreX x2
+	 -> do	x2'		<- toCoreX vsBound x2
 		
 		-- lookup the var for the projection function to use
 		projResolve	<- gets coreProjResolve
@@ -233,8 +272,6 @@ toCoreX xx
 		x1'	<- toCoreVarInst vProj vTagInst
 		return	$ x1' 
 
-
-
 	-- variables
 	D.XVarInst 
 		(Just (T.TVar kV (T.UVar vT), _))
@@ -249,27 +286,29 @@ toCoreX xx
 
 
 -- Alt ---------------------------------------------------------------------------------------------
--- | Case Alternatives
-toCoreA	:: Maybe (Var, T.Type)
-	-> D.Alt Annot -> CoreM C.Alt
+-- | Convert a case alternative to core form.
+toCoreA	:: Set Var			-- ^ Set of type variables bound in the environment.
+	-> Maybe (Var, T.Type)		-- ^ Name and type of the discriminant.
+	-> D.Alt Annot			-- ^ The alternative to convert.
+	-> CoreM C.Alt
 		
-toCoreA mObj alt
+toCoreA vsBound mObj alt
  = case alt of
 	D.AAlt _ gs x
-	 -> do	
-	 	gs'	<- mapM (toCoreG mObj) gs
-		x'	<- toCoreX x
+	 -> do	gs'	<- mapM (toCoreG vsBound mObj) gs
+		x'	<- toCoreX vsBound x
 		
 		return	$ C.AAlt gs' x'
 	
 	
 -- Guards ------------------------------------------------------------------------------------------
--- | Guards
-toCoreG :: Maybe (Var, T.Type)
-	-> D.Guard Annot
+-- | Convert a guard to core form.
+toCoreG :: Set Var			-- ^ Set of type variables bound in the environment
+	-> Maybe (Var, T.Type)		-- ^ Name and type of the discriminant.
+	-> D.Guard Annot		-- ^ The guard to convert.
 	-> CoreM C.Guard
 
-toCoreG mObj gg
+toCoreG vsBound mObj gg
 	| D.GCase _ w		<- gg
 	, Just (objV, objT)	<- mObj
 	= do	(w', mustUnbox)	<- toCoreW w
@@ -281,7 +320,7 @@ toCoreG mObj gg
 		
 	| D.GExp _ w x		<- gg
 	= do	(w', mustUnbox)	<- toCoreW w
-	 	x'		<- toCoreX x
+	 	x'		<- toCoreX vsBound x
 		
 		-- All literal matching in core is unboxed, so we must unbox the match object if need be.
 		case mustUnbox of
