@@ -25,6 +25,7 @@ import LlvmM
 import Llvm.Invoke
 import Llvm.GhcReplace.Unique
 import Llvm.Runtime
+import Llvm.Runtime.Apply
 import Llvm.Util
 
 import Sea.Exp
@@ -125,7 +126,7 @@ outLlvm moduleName eTree pathThis
 
 	let code = seaCafInits ++ seaSupers
 
-	let fwddecls	= [panicOutOfSlots, allocCollect, force]
+	let fwddecls	= [panicOutOfSlots, allocCollect, force, apply1FD, apply2FD, apply3FD, apply4FD]
 
 	let globals	= moduleGlobals
 			++ (catMap llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
@@ -242,19 +243,25 @@ llvmOfAssign (XVar v1 t1@(TPtr (TPtr TObj))) t@(TPtr TObj) x@(XPrim op args)
  = do	dstreg		<- llvmOfPtrManip (toLlvmType t1) op args
 	addBlock	[ Store dstreg (pVarLift (toLlvmVar v1 t1)) ]
 
-llvmOfAssign (XSlot v1 t1 i) t@(TPtr TObj) (XVar v2 t2)
- | t1 == t && t2 == t
- =	writeSlot (toLlvmVar v2 t2) i
-
 llvmOfAssign (XVar v1 t1) t@(TPtr TObj) (XSlot v2 t2 i)
  | t1 == t && t2 == t
  = do	let dst		= toLlvmVar v1 t1
 	readSlotVar i dst
 
-llvmOfAssign a@((XSlot v1 t1 i)) t@(TPtr TObj) c@(XBox t2 exp)
+llvmOfAssign (XSlot v1 t1 i) t@(TPtr TObj) (XVar v2 t2)
+ | t1 == t && t2 == t
+ =	writeSlot (toLlvmVar v2 t2) i
+
+llvmOfAssign ((XSlot v1 t1 i)) t@(TPtr TObj) (XBox t2 exp)
  | t1 == t
  = do	boxed		<- boxExp exp
 	writeSlot	boxed i
+
+llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XApply (XSlot v2 t2 i2) args)
+ | t1 == t && t2 == t
+ = do	fptr		<- readSlot i2
+	result		<- llvmFunApply fptr t2 args
+	writeSlot	result i1
 
 llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
  | varName vt1 == "Int32#" && varName vt == "Int32#"
@@ -280,7 +287,7 @@ llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
 	dst1		<- lift $ newUniqueReg pObj
 	dst2		<- lift $ newUniqueReg pObj
 	addBlock	[ Assignment dst1 (Load (pVarLift (pVarLift (toLlvmCafVar v1 t1))))
-			, Assignment dst2 (Call TailCall (toLlvmFunc v2 t args) [] [])
+			, Assignment dst2 (Call TailCall (toLlvmGlobalFunc v2 t args) [] [])
 			, Store dst2 (pVarLift dst1)
 			]
 
@@ -289,6 +296,26 @@ llvmOfAssign a b c
 	++ take 150 (show a) ++ "\n"
 	++ take 150 (show b) ++ "\n"
 	++ take 150 (show c) ++ "\n"
+
+
+llvmFunApply :: LlvmVar -> Type -> [Exp a] -> LlvmM LlvmVar
+llvmFunApply fptr typ args
+ = do	params	<- mapM llvmFunParam args
+	addComment $ "llvmFunApply : " -- ++ show params
+	applyN fptr params
+
+
+
+llvmFunParam :: Exp a -> LlvmM LlvmVar
+llvmFunParam (XVar v t@(TPtr TObj))
+ =	return $ toLlvmVar v t
+
+llvmFunParam (XSlot v (TPtr TObj) i)
+ = 	readSlot i
+
+llvmFunParam p
+ = panic stage $ "llvmFunParam " ++ show p
+
 
 
 
@@ -401,7 +428,7 @@ llvmVarOfExp (XUnbox ty@TCon{} (XForce (XSlot _ _ i)))
 	unboxAny (toLlvmType ty) forced
 
 llvmVarOfExp (XUnbox ty@TCon{} (XVarCAF v t))
- =	unboxAny (toLlvmType ty) (toLlvmCafVar v t)
+ =	unboxAny (toLlvmType ty) (pVarLift (toLlvmCafVar v t))
 
 
 llvmVarOfExp x
@@ -415,6 +442,7 @@ llvmOpOfPrim p
  = case p of
 	FAdd	-> LlvmOp LM_MO_Add
 	FSub	-> LlvmOp LM_MO_Sub
+	FMul	-> LlvmOp LM_MO_Mul
 	_	-> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
 
 
@@ -437,16 +465,19 @@ toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
 toLlvmVar :: Var -> Type -> LlvmVar
 toLlvmVar v t
  = case isGlobalVar v of
-	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing Nothing False
+	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
 	False -> LMNLocalVar (seaVar True v) (toLlvmType t)
 
+alignOfType :: Type -> Maybe Int
+alignOfType (TPtr _) = ptrAlign
+alignOfType _ = Nothing
 
 toLlvmCafVar :: Var -> Type -> LlvmVar
 toLlvmCafVar v t
  = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
 
-toLlvmFunc :: Var -> Type -> [Exp a] -> LlvmVar
-toLlvmFunc v t args
+toLlvmGlobalFunc :: Var -> Type -> [Exp a] -> LlvmVar
+toLlvmGlobalFunc v t args
  =	let	name = seaVar False v
 		decl = LlvmFunctionDecl {
 			--  Unique identifier of the function

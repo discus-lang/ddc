@@ -14,6 +14,8 @@ module Llvm.Util
 	, uniqueOfLlvmVar
 	, nameOfLlvmVar
 
+	, funcOfDecl
+
 	, pChar
 	, ppChar
 	, ddcObj
@@ -76,6 +78,12 @@ nameOfLlvmVar (LMNLocalVar n _) = n
 loadAddress :: LlvmVar -> LlvmExpression
 loadAddress v = Load (pVarLift v)
 
+
+-- Convert a LlvmFUnctionDecl into an LlvmVar containing a function that can
+-- actually be called.
+funcOfDecl :: LlvmFunctionDecl -> LlvmVar
+funcOfDecl decl@(LlvmFunctionDecl name _ _ _ _ _ _ )
+ = LMGlobalVar name (LMFunction decl) External Nothing Nothing True
 
 --------------------------------------------------------------------------------
 -- Types and variables.

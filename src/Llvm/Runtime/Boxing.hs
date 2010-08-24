@@ -56,7 +56,7 @@ unboxInt32 objptr
  = do	int32	<- lift $ newUniqueReg i32
 	iptr0	<- lift $ newUniqueNamedReg "iptr0" (pLift i32)
 	iptr1	<- lift $ newUniqueNamedReg "iptr1" (pLift i32)
-	addBlockResult	int32
+	addBlock
 		[ Comment [ show int32 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
 		, Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
 		, Assignment iptr1 (GetElemPtr True iptr0 [llvmWordLitVar 1])
@@ -65,12 +65,12 @@ unboxInt32 objptr
 	return	int32
 
 unboxInt32 objptr
- | getVarType objptr == ppObj
+ | getVarType objptr == LMPointer ppObj
  = do	optr0	<- lift $ newUniqueNamedReg "optr0" ppObj
 	optr1	<- lift $ newUniqueNamedReg "optr1" pObj
 	addBlock
 		[ Comment [ show optr1 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
-		, Assignment optr0 (Load (pVarLift objptr))
+		, Assignment optr0 (Load objptr)
 		, Assignment optr1 (Load optr0)
 		]
 	unboxInt32 optr1

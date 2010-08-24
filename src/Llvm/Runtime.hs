@@ -24,6 +24,8 @@ module Llvm.Runtime
 
 	, allocate
 
+	, applyN
+
 	, boxAny	, unboxAny
 	, boxInt32	, unboxInt32
 	, boxInt64
@@ -37,6 +39,7 @@ import Llvm
 import LlvmM
 import Llvm.GhcReplace.Unique
 import Llvm.Runtime.Alloc
+import Llvm.Runtime.Apply
 import Llvm.Runtime.Boxing
 import Llvm.Runtime.Data
 import Llvm.Runtime.Slot
