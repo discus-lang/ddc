@@ -13,6 +13,7 @@ import Type.Class
 import Type.Link
 import Type.Dump		()
 import Util
+import DDC.Solve.Sink
 import DDC.Main.Error
 import DDC.Type
 import qualified Data.Map	as Map

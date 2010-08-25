@@ -24,6 +24,7 @@ import Type.Error
 import Type.State
 import Type.Class
 import Util
+import DDC.Solve.Naming
 import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Type
@@ -102,7 +103,7 @@ checkDanger (Class
 	 	 Nothing	-> return Nothing
 	 	 Just (fMutable, srcMutable)
 	  	  -> do
-			varScheme	<- makeClassName cidScheme
+			varScheme	<- getCanonicalNameOfClass cidScheme
 			Just tNode	<- takeShallowTypeOfCidAsSquid cidScheme
 			return	$ Just
 				$ ErrorLateConstraint

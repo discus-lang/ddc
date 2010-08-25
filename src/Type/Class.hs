@@ -6,31 +6,22 @@ module Type.Class
 	, expandGraph
 	, allocClass
 	, delClass
-	, makeClassFromVar
 	, addToClass
 	, lookupClass
 	, updateClass
 	, modifyClass
 	, mergeClasses
 
-	, lookupVarToClassId
-	, makeClassName
+	, makeClassFromVar
 	, clearActive
 	, activateClass
+	, linkVar
 	, sinkVar
 	, kindOfCid
 	, foldClasses
 	, lookupSourceOfNode
 	, deleteSingleFetter
-	, takeTClassOfClass
-
-	-- * Sinking
-	, sinkClassId
-	, sinkCidsInNode
-	, sinkCidsInType
-	, sinkCidsInFetter
-	, sinkCidsInNodeFst
-	, sinkCidsInFetterFst)
+	, takeTClassOfClass)
 where
 import Type.Location
 import Type.State
@@ -45,8 +36,9 @@ import Data.Array.IO
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 import qualified Data.Sequence	as Seq
+import {-# SOURCE #-} DDC.Solve.Naming
 
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Squid.Class"
 
@@ -59,13 +51,11 @@ classChildren c
 
 	Class	    { classTypeSources = tsSrc }
 	 -> Set.toList $ Set.unions $ map (cidsOfNode . fst) tsSrc
-		
-		
 
 
 -- | Increase the size of the type graph.
 expandGraph 
-	:: Int 			-- Graph must have this many free nodes after expansion.
+	:: Int 			-- ^ Graph must have this many free nodes after expansion.
 	-> SquidM ()
 
 expandGraph minFree
@@ -88,7 +78,6 @@ expandGraph minFree
 
 		return ()
  	
-
 
 -- | Allocate a new class in the type graph.
 allocClass 	
@@ -128,7 +117,7 @@ delClass cid
 	
 	
 -- | If there is already a class for this variable then return that
---		otherwise make a new one containing this var.
+--   otherwise make a new one containing this var.
 makeClassFromVar
 	:: TypeSource		-- ^ Source of the constraint containing the variable.
 	-> Kind			-- ^ Kind of this variable.
@@ -141,51 +130,11 @@ makeClassFromVar src kind var
    	 Just cid	-> return cid
 	 Nothing 
 	  -> do	cid	<- allocClass src kind
-		addNameToClass cid src var kind
-	     	return	cid
+		addAliasToClass cid src var kind
+	     	return cid
 
 
--- | Return a variable to identify this class.
---	If the class already contains variables then choose the one with the smallest display name
---	otherwise make a new variable and use that.
---	
-makeClassName :: ClassId -> SquidM Var
-makeClassName cid_
- = do
- 	cid		<- sinkClassId cid_
-	Just c		<- lookupClass cid
-
-	let kind	= case c of { Class { classKind = kind } -> kind }
-	let vars	= [ v | (NVar v, _) <- classTypeSources c ]	
-			
-	case vars of
-	 [] 
-	  -> case spaceOfKind $ resultKind kind of
-		Nothing	
-		 -> panic stage $ "no space for kind " % kind % "\n"
-
-		Just nameSpace
-		 -> do	v	<- newVarN nameSpace
-			let tSource	= TSI $ SIClassName
-			addNameToClass cid tSource v kind
-			return	v
 		
-	 (_:_)
-	  -> do
-	  	let v	= head $ sortBy classNameOrd vars
-		return v
-			
-classNameOrd v1 v2
-
-	| length (varName v1) < length (varName v2)
-	= Prelude.LT
-	
-	| length (varName v1) > length (varName v2)
-	= Prelude.GT
-	
-	| otherwise
-	= Prelude.EQ
-
 
 -- | Add a new type constraint to a class
 --	Doing this makes the class active.
@@ -228,39 +177,6 @@ linkVar cid tt
 		
 
 	_ -> return ()
-
-
--- | This is like addToClass, except that if we just give a class a new name
---	then we don't need to change its type
-addNameToClass 
-	:: ClassId
-	-> TypeSource
-	-> Var
-	-> Kind
-	-> SquidM ()
-
-addNameToClass cid_ src v kind
- = do	let node	= NVar v
- 	graph	<- getsRef stateGraph
- 	cid	<- sinkClassId cid_
- 	cls	<- liftIO (readArray (graphClass graph) cid)
-	cls'	<- addNameToClass2 cid src node kind cls
-	liftIO (writeArray (graphClass graph) cid cls')
-	linkVar cid node
-	return ()
-
-addNameToClass2 cid src node kind cls
- = case cls of
- 	ClassUnallocated
-	 -> addNameToClass3 cid src node (classEmpty cid kind src)
-
-	Class{}		
-	 -> addNameToClass3 cid src node cls
-	
-addNameToClass3 cid src node cls
- = do 	activateClass cid
- 	return	$ cls
-		{ classTypeSources = (node, src) : classTypeSources cls }
 
 
 -- | Lookup a class from the graph.
@@ -323,19 +239,7 @@ addClassForwards cidL_ cids_
 	
 	return ()
 	
-	
--- | Lookup the variable name of this class.
-lookupVarToClassId :: 	Var -> SquidM (Maybe ClassId)
-lookupVarToClassId v
- = do	graph		<- getsRef stateGraph
- 	let vMap	= graphVarToClassId graph
-
-	case Map.lookup v vMap of
-	 Nothing	-> return Nothing
-	 Just cid	
-	  -> do	cid'	<- sinkClassId cid
-	  	return	$ Just cid'
-	 
+		 
 	
 -- Merge ------------------------------------------------------------------------------------------	 
 -- | Merge two classes by concatenating their queue and node list
@@ -490,73 +394,6 @@ takeTClassOfClass cls
 	_	-> Nothing
 
 	
--- Sinking ----------------------------------------------------------------------------------------
-
--- | Convert a var to canonical form
-sinkVar :: Var -> SquidM Var
-sinkVar	var
- = do	mCid	<- lookupVarToClassId var
-	case mCid of
-	 Nothing	-> return var
-	 Just cid	-> makeClassName cid
-		
-
--- | Convert this cid to canconical form.
-{-# INLINE sinkClassId #-}
-sinkClassId ::	ClassId -> SquidM ClassId
-sinkClassId  cid	
- = do	graph		<- getsRef stateGraph
- 	let classes	=  graphClass graph
-	sinkClassId' classes cid
-	
-sinkClassId' classes cid
- = do	mClass	<- liftIO (readArray classes cid)
- 	case mClass of
-		ClassForward _ cid'	-> sinkClassId' classes cid'
-		ClassUnallocated{}	-> panic stage $ "sinkClassId': class is unallocated"
-		ClassFetter{}		-> return cid
-		ClassFetterDeleted{}	-> return cid
-		Class{}			-> return cid
-
-
--- | Convert the cids in this node type to canonical form.
-sinkCidsInNode :: Node -> SquidM Node
-sinkCidsInNode nn
- = do	graph		<- getsRef stateGraph
-	let classes	= graphClass graph
-	liftIO $ sinkCidsInNodeIO classes nn
-
-
--- | Convert the cids in this type to canonical form.
-sinkCidsInType :: Type -> SquidM Type
-sinkCidsInType tt
- = do	graph		<- getsRef stateGraph
-	let classes	= graphClass graph
-	liftIO $ sinkCidsInTypeIO classes tt
-
-
--- | Convert the cids in this type to canonical form.
-sinkCidsInFetter :: Fetter -> SquidM Fetter
-sinkCidsInFetter ff
- = do	graph		<- getsRef stateGraph
-	let classes	= graphClass graph
-	liftIO $ sinkCidsInFetterIO classes ff
-
-
--- | Convert the cids in the first element of this tuple to canonical form.
---	Good for the classTypeSources field of a class.
-sinkCidsInNodeFst :: (Node, a) -> SquidM (Node, a)	
-sinkCidsInNodeFst (nn, x)
- = do	nn'	<- sinkCidsInNode nn
-	return	$ (nn', x)
-
-
--- | Convert the cids in the first element of this tuple to canonical form.
---	Good for the classFetterSource field of a class.
-sinkCidsInFetterFst :: (Fetter, a) -> SquidM (Fetter, a)
-sinkCidsInFetterFst (ff, x)
- = do	ff'	<- sinkCidsInFetter ff
-	return	$ (ff', x)
 
 
 

@@ -9,9 +9,10 @@ where
 import Type.State
 import Type.Class
 import Util
-import DDC.Main.Error
+import DDC.Solve.Naming
 import DDC.Type
 import DDC.Type.Transform
+import DDC.Main.Error
 import qualified Data.Set	as Set
 
 stage	= "Type.Plug"
@@ -39,7 +40,7 @@ plugT env t
 	 -> 	return t
 
 	 | otherwise
-	 -> do	var	<- makeClassName cid
+	 -> do	var	<- getCanonicalNameOfClass cid
 		Just c	<- lookupClass cid
 	 	return	$ TVar (classKind c) $ UVar var
 		

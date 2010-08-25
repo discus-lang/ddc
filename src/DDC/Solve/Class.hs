@@ -49,12 +49,15 @@ data Class
 		-- | A unique id for this class
 		  classId		:: ClassId
 
-		-- | The canonical variable for the class. This is taken from one of the 
-		--   vars in the class, or generated fresh if none exists.
-		, className		:: Maybe Var
-
 		-- | The kind of the class.
 		, classKind		:: Kind	
+
+		-- | The canonical name of this class.
+		--   This is taken from one of the aliases, or created fresh if none exists.
+		, className		:: Maybe Var
+
+		-- | Other names for the class.
+		, classAliases		:: [(Var, TypeSource)]
 		
 		-- | Why this class was allocated. This can be used as an overall source for
 		--   kind error messages if the classTypeSources list is empty.
@@ -71,8 +74,7 @@ data Class
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
 		-- 
-		--   TODO: don't add variables to this list
-		--
+		--   INVARIANT: The node type is not an NVar or NBot.
 		, classTypeSources	:: [(Node, TypeSource)]	 
 
 		-- | Single parameter type class constraints on this equivalence class.
@@ -94,6 +96,7 @@ classEmpty cid kind src
 	= Class
 	{ classId		= cid
 	, className		= Nothing
+	, classAliases		= []
 	, classKind		= kind
 	, classSource		= src
 	, classUnified		= Nothing

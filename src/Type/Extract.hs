@@ -8,10 +8,10 @@ import Type.Plug
 import Type.Context
 import Type.Strengthen
 import Type.Error
-import Type.Class
 import Type.State	
 import Type.Plate.Collect
 import Util
+import DDC.Solve.Naming
 import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Type
@@ -31,7 +31,7 @@ extractTypeCid
 	-> SquidM (Maybe Type)
 
 extractTypeCid final cid
- = do	v	<- makeClassName cid
+ = do	v	<- getCanonicalNameOfClass cid
  	extractType final v
 
 

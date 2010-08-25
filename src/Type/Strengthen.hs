@@ -23,9 +23,9 @@ module Type.Strengthen
 	( strengthenT
 	, slurpParamClassVarsT_constrainForm)
 where
-import Type.Class
 import Type.State
 import Util
+import DDC.Solve.Naming
 import DDC.Main.Error
 import DDC.Type
 import qualified Data.Map	as Map
@@ -65,7 +65,7 @@ strengthenFs tsParam fsEq fMore
  = case fMore of
  	(t1@(TVar k (UClass cid)), t2)
 	 -> do	quantVars	<- getsRef stateQuantifiedVars
-	 	v		<- makeClassName cid
+	 	v		<- getCanonicalNameOfClass cid
 
 		let result
 			-- can't convert vars that have been quantified.

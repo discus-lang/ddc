@@ -15,7 +15,7 @@ import Util
 import DDC.Main.Error
 import qualified Data.Set	as Set
 
-debug	= False
+debug	= True
 stage	= "Type.Crush.Unify"
 trace s	= when debug $ traceM s
 
@@ -62,7 +62,7 @@ crushUnifyInClass_unify cid cls@Class{}
 		= filter (\(n, src) -> not (isNVar n || isNBot n))
 		$ classTypeSources cls
 
-	trace	$ "    queue       = " % show queue % "\n"
+	trace	$ "    queue       = " % ppr queue % "\n"
 
 	-- If there is nothing left in the queue, or there's only one element
 	--	then we're done. Otherwise call the real unifier.

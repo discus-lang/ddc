@@ -6,6 +6,7 @@ where
 import Type.Location
 import Type.State
 import Type.Class
+import DDC.Solve.Naming
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var

@@ -12,6 +12,7 @@ import Type.Extract
 import Type.Plug
 import Shared.VarPrim
 import Util
+import DDC.Solve.Naming
 import DDC.Solve.InstanceInfo
 import DDC.Main.Error
 import DDC.Type
@@ -213,7 +214,7 @@ slurpRsConstraints1 c
 	 	let vars	= Map.keys fsSrcs
 		
 		-- get the name of this class
-		name	<- makeClassName (classId c)
+		name	<- getCanonicalNameOfClass (classId c)
 
 		-- check for errors on region constraints
 		mErr		<- checkRegionError c
