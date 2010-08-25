@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 module DDC.Solve.Graph
 	( Graph(..)
 	, initialGraphSize

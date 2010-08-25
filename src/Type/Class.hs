@@ -130,7 +130,7 @@ makeClassFromVar src kind var
    	 Just cid	-> return cid
 	 Nothing 
 	  -> do	cid	<- allocClass src kind
-		addAliasToClass cid src var kind
+		addAliasForClass cid src var kind
 	     	return cid
 
 
@@ -304,12 +304,6 @@ mergeClasses_kindMismatch cids@(cid1:_) clss k1 k2
 			
 	return cid1
 			
-{-
-let ((node1, src1)
-	panic stage
-	$ "mergeClasses_kindMismatch\n"
-	% "    cs\n"	% vcat cs
--}	
 
 -- | Clear the set of active classes.
 clearActive ::	SquidM (Set ClassId)
@@ -394,6 +388,3 @@ takeTClassOfClass cls
 	_	-> Nothing
 
 	
-
-
-

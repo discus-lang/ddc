@@ -57,7 +57,7 @@ data Class
 		, className		:: Maybe Var
 
 		-- | Other names for the class.
-		, classAliases		:: [(Var, TypeSource)]
+		, classAliases		:: Map Var TypeSource
 		
 		-- | Why this class was allocated. This can be used as an overall source for
 		--   kind error messages if the classTypeSources list is empty.
@@ -96,7 +96,7 @@ classEmpty cid kind src
 	= Class
 	{ classId		= cid
 	, className		= Nothing
-	, classAliases		= []
+	, classAliases		= Map.empty
 	, classKind		= kind
 	, classSource		= src
 	, classUnified		= Nothing
