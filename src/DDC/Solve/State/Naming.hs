@@ -160,7 +160,7 @@ addAliasForClass cid src var kind
  = do	modifyClass cid
  	 $ \cls -> case cls of
 		ClassUnallocated{}
-		 -> (classEmpty cid kind src) 
+		 -> (emptyClass kind src cid) 
 			{ className	= Just var
 			, classAliases 	= Map.singleton var src }
 			

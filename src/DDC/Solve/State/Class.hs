@@ -7,7 +7,7 @@
 --   
 module DDC.Solve.State.Class
 	( Class(..)
-	, classEmpty
+	, emptyClass
 	, takeTClassOfClass)
 where
 import Type.Location
@@ -92,8 +92,8 @@ data Class
 
 
 -- | Make an initial, empty class.
-classEmpty :: ClassId -> Kind -> TypeSource -> Class
-classEmpty cid kind src
+emptyClass :: Kind -> TypeSource -> ClassId -> Class
+emptyClass kind src cid
 	= Class
 	{ classId		= cid
 	, className		= Nothing

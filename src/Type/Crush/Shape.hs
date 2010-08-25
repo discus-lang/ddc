@@ -196,9 +196,9 @@ freshenCid src cid
  = do	Just Class { classKind = k }	
  		<- lookupClass cid
  
- 	cid'	<- allocClass src k
+ 	cid'	<- allocClass k src
 	updateClass cid'
-		(classEmpty cid' k src)
+		(emptyClass k src cid')
 		{ classUnified = Just nBot }
 
 	return	cid'

@@ -112,12 +112,12 @@ feedType src tt
 
 	TSum k ts
 	 | []	<- ts
-	 -> do	cidT		<- allocClass src k
+	 -> do	cidT		<- allocClass k src
 		addNode cidT src k $ NBot
 		return cidT
 
 	 | otherwise
-	 -> do 	cidT		<- allocClass src k
+	 -> do 	cidT		<- allocClass k src
 		cids		<- mapM (feedType src) ts
 		addNode cidT src k 
 			$ NSum (Set.fromList cids)
@@ -132,7 +132,7 @@ feedType src tt
 	TApp{}
 	 | Just (v1, t@(TVar kV (UVar v2)))	<- takeTFree tt
 	 , kV == kValue
-	 -> do	cid		<- allocClass src kClosure
+	 -> do	cid		<- allocClass kClosure src
 		defs		<- getsRef stateDefs
 		case Map.lookup v2 defs of
 		 -- type that we're refering to is in the defs table
@@ -160,7 +160,7 @@ feedType src tt
 	-- A non-var closure. We can get these from signatures and instantiated schemes
 	TApp{}
 	 | Just (v1, t)	<- takeTFree tt
-	 -> do	cid	<- allocClass src kClosure
+	 -> do	cid	<- allocClass kClosure src
 		t'	<- linkType [] src t
 
 		addNode	cid src kClosure	
@@ -170,7 +170,7 @@ feedType src tt
 
 	TApp t1 t2
 	 -> do	let k	= kindOfType tt
-	 	cidT	<- allocClass src k
+	 	cidT	<- allocClass k src
 	 	cid1	<- feedType src t1
 		cid2	<- feedType src t2
 
@@ -180,8 +180,8 @@ feedType src tt
 		return cidT
 
 	TCon tc
-	 -> do	let k		= tyConKind tc
-		cidT		<- allocClass src k
+	 -> do	let k	= tyConKind tc
+		cidT	<- allocClass k src
 
 	 	addNode cidT src k 
 			$ NCon tc
@@ -295,7 +295,7 @@ addFetter src f@(FConstraint vFetter [t])
 addFetter src f@(FConstraint v ts)
  = do 	
  	-- create a new class to hold this node
-	cidF		<- allocClass src KNil
+	cidF		<- allocClass KNil src
 	 	
 	-- add the type args to the graph
 	cids		<- mapM (feedType src) ts
@@ -326,7 +326,7 @@ addFetter src f@(FConstraint v ts)
 addFetter src f@(FProj j v1 tDict tBind)
  = do
  	-- a new class to hold this node
- 	cidF	<- allocClass src KNil
+ 	cidF	<- allocClass KNil src
 	
 	-- add the type args to the graph
  	[cidDict', cidBind'] <- mapM (feedType src) [tDict, tBind]

@@ -20,7 +20,6 @@ module DDC.Solve.State.Base
 	, pathLeave 
 	
 	  -- * Equivalence Classes
-	, expandGraph
 	, allocClass
 	, makeClassFromVar
 	, delClass
@@ -158,51 +157,11 @@ pathLeave bind
 
 
 -- Class Allocation -------------------------------------------------------------------------------
--- | Increase the size of the type graph.
-expandGraph 
-	:: Int 			-- ^ Graph must have this many free nodes after expansion.
-	-> SquidM ()
-
-expandGraph minFree
- = do	graph			<- getsRef stateGraph
- 	ClassId curMax		<- liftM snd $ liftIO $ getBounds (graphClass graph)
-	let curIx		= graphClassIdGen graph
-	
-	if curIx + minFree <= curMax
-	 then return ()
-	 else do 
-	 	let newMax	= curMax * 2
-
-		elems		<- liftIO (getElems (graphClass graph))
-		newClass	<- liftIO 
-					(newListArray (ClassId 0, ClassId newMax)
-					(elems ++ replicate curMax ClassUnallocated))
-
-		stateGraph `modifyRef` \graph' -> 
-			graph' { graphClass = newClass }
-
-		return ()
- 	
-
--- | Allocate a new class in the type graph.
-allocClass 	
-	:: TypeSource
-	-> Kind			-- The kind of the class.
-	-> SquidM ClassId
-
-allocClass src kind
- = do	expandGraph	1
-
-	graph		<- getsRef stateGraph
-	let classIdGen	=  graphClassIdGen graph
- 	let cid		= ClassId classIdGen
-
-	liftIO 	$ writeArray (graphClass graph) cid
-		$ classEmpty cid kind src
-
-	stateGraph `modifyRef` \graph2 -> 
-	 	graph2 { graphClassIdGen	= classIdGen + 1}
-
+allocClass :: Kind -> TypeSource -> SquidM ClassId
+allocClass kind src
+ = do	graph		<- getsRef stateGraph
+	(cid, graph')	<- liftIO $ addClassToGraph (emptyClass kind src) graph
+	writesRef stateGraph graph'
 	return cid
 
 
@@ -219,7 +178,7 @@ makeClassFromVar src kind var
    	case mCid of
    	 Just cid	-> return cid
 	 Nothing 
-	  -> do	cid	<- allocClass src kind
+	  -> do	cid	<- allocClass kind src 
 		addAliasForClass cid src var kind
 	     	return cid
 
@@ -260,7 +219,7 @@ addToClass2 cid' src kind node graph
 	 = do	cls	<- liftIO (readArray (graphClass graph) cid)
 		case cls of
 		 ClassForward _ cid'' 	-> go cid''
-		 ClassUnallocated	-> update' cid (classEmpty cid kind src)
+		 ClassUnallocated	-> update' cid (emptyClass kind src cid)
 		 Class{}		-> update' cid cls
 		 	
 	update' cid cls@Class{}
