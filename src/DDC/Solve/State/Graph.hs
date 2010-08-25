@@ -1,13 +1,13 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module DDC.Solve.Graph
+module DDC.Solve.State.Graph
 	( Graph(..)
 	, initialGraphSize
 	, makeEmptyGraph)
 where
 import Data.Array.IO
 import DDC.Type
-import DDC.Solve.Class
+import DDC.Solve.State.Class
 import DDC.Var
 import Data.Set			(Set)
 import Data.Map			(Map)

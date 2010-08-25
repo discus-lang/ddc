@@ -8,13 +8,10 @@ module Type.Feed
 where
 import Constraint.Exp
 import Type.Location
-import Type.State
-import Type.Class
 import Type.Link
 import Type.Dump		()
 import Util
-import DDC.Solve.Sink
-import DDC.Solve.Merge
+import DDC.Solve.State
 import DDC.Main.Error
 import DDC.Type
 import qualified Data.Map	as Map

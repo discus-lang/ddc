@@ -12,7 +12,6 @@ import Type.Solve.Generalise
 import Type.Solve.Finalise
 import Type.Check.SchemeDanger
 import Type.Extract
-import Type.State
 import Type.Feed
 import Type.Location
 import Type.Util
@@ -21,8 +20,7 @@ import Constraint.Exp
 import Util
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
-import DDC.Solve.InstanceInfo
-import DDC.Solve.Naming
+import DDC.Solve.State
 import DDC.Type
 import DDC.Var
 import qualified Util.Data.Map	as Map

@@ -13,13 +13,12 @@ module Type.Crush.Proj
 where
 import Type.Location
 import Type.Error
-import Type.Class
-import Type.State
 import Type.Dump		()
 import Constraint.Exp
 import Util
 import DDC.Solve.Trace
 import DDC.Solve.Walk
+import DDC.Solve.State
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map

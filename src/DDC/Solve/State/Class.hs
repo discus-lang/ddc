@@ -5,12 +5,13 @@
 --   `ClassFetter`. We're storing fetters as classes because it gives them their own unique
 --   classids and makes them easy to refer to.
 --   
-module DDC.Solve.Class
+module DDC.Solve.State.Class
 	( Class(..)
-	, classEmpty)
+	, classEmpty
+	, takeTClassOfClass)
 where
 import Type.Location
-import DDC.Solve.Node
+import DDC.Solve.State.Node
 import DDC.Type
 import DDC.Var
 import Data.Sequence		(Seq)
@@ -103,6 +104,12 @@ classEmpty cid kind src
 	, classTypeSources	= []
 	, classFetters		= Map.empty
 	, classFettersMulti	= Set.empty }
+	
 
-
+-- | Turn a Class into a TClass with the same kind and cid
+takeTClassOfClass :: Class -> Maybe Type
+takeTClassOfClass cls
+ = case cls of
+	Class{}	-> Just $ TVar (classKind cls) $ UClass (classId cls)
+	_	-> Nothing
 

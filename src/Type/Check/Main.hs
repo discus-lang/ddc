@@ -3,12 +3,12 @@ module Type.Check.Main
 	(checkMain)
 where
 import Type.Extract
-import Type.State
 import Type.Error
 import Shared.VarPrim
 import Util
 import DDC.Var
 import DDC.Type
+import DDC.Solve.State
 import qualified Data.Map	as Map
 
 

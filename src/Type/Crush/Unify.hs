@@ -6,11 +6,9 @@ module Type.Crush.Unify
 	, isShallowConflict
 	, addErrorConflict )
 where
-import Type.State
-import Type.Class
 import Type.Error
 import DDC.Solve.Trace
-import DDC.Solve.Merge
+import DDC.Solve.State
 import DDC.Type
 import Util
 import DDC.Main.Error

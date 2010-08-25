@@ -7,7 +7,7 @@ import Type.Check.Main
 import Type.Check.Instances
 import Type.Check.SchemeDanger
 import Type.Location
-import Type.State
+import DDC.Solve.State
 import Constraint.Exp
 
 import Util

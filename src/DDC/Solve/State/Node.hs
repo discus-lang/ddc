@@ -8,7 +8,7 @@
 --           with the possibility of children being either cids or more types. It's a lot
 --           less buggy to keep the graph in this simpler form.
 --
-module DDC.Solve.Node
+module DDC.Solve.State.Node
 	( Node		(..)
 
 	-- * Simple checks.

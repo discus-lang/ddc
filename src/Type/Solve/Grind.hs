@@ -2,8 +2,6 @@
 module Type.Solve.Grind
 	(solveGrind)
 where
-import Type.Class
-import Type.State
 import Type.Crush.Unify
 import Type.Crush.Fetter
 import Type.Crush.Effects
@@ -12,6 +10,7 @@ import Type.Crush.Proj
 import Constraint.Exp
 import Util
 import DDC.Main.Error
+import DDC.Solve.State
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Var

@@ -5,12 +5,11 @@ where
 import Type.Context
 import Type.Error
 import Type.Extract
-import Type.Class
-import Type.State
 import Shared.VarPrim
 import Util
 import DDC.Var
 import DDC.Type.Exp
+import DDC.Solve.State
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
 

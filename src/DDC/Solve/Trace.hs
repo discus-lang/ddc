@@ -46,8 +46,12 @@ module DDC.Solve.Trace
 	, takeShallowTypeOfCidAsSquid
 	, getTypeOfNodeAsSquid)
 where
-import DDC.Solve.Node
-import DDC.Solve.SinkIO
+import DDC.Solve.State.Base
+import DDC.Solve.State.Graph
+import DDC.Solve.State.Node
+import DDC.Solve.State.Class
+import DDC.Solve.State.Squid
+import DDC.Solve.State.SinkIO
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
@@ -55,14 +59,12 @@ import Data.Array.IO
 import Data.Foldable
 import Data.List
 import Type.Dump		()
-import Type.Base		(Class(..))
 import Data.Sequence		(Seq)
 import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Sequence	as Seq
-import qualified Type.State	as S
 import Control.Monad.State	hiding (mapM_)
 import Prelude			hiding (mapM_)
 
@@ -70,15 +72,15 @@ stage		= "DDC.Solve.Trace"
 
 -- Squid Monad Versions --------------------------------------------------------------------------
 -- | Extract a type node from the graph by tracing down from this cid (in the Squid monad)
-traceTypeAsSquid :: ClassId -> S.SquidM Type
+traceTypeAsSquid :: ClassId -> SquidM Type
 traceTypeAsSquid cid
 	= runTraceAsSquid (traceType cid)
 
-takeShallowTypeOfCidAsSquid :: ClassId -> S.SquidM (Maybe Type)
+takeShallowTypeOfCidAsSquid :: ClassId -> SquidM (Maybe Type)
 takeShallowTypeOfCidAsSquid cid
 	= runTraceAsSquid (takeShallowTypeOfCid cid)
 
-getTypeOfNodeAsSquid :: Kind -> Node -> S.SquidM Type
+getTypeOfNodeAsSquid :: Kind -> Node -> SquidM Type
 getTypeOfNodeAsSquid kind node
 	= runTraceAsSquid (getTypeOfNode kind node)
 
@@ -448,10 +450,10 @@ addCrsOther crs
 	
 	
 -- | Run a trace computation as a squid computation.
-runTraceAsSquid :: TraceM a -> S.SquidM a
+runTraceAsSquid :: TraceM a -> SquidM a
 runTraceAsSquid comp
- = do	graph		<- S.getsRef S.stateGraph
-	let classes	=  S.graphClass graph
+ = do	graph		<- getsRef stateGraph
+	let classes	=  graphClass graph
 
 	let state	= TraceS
 			{ stateClasses		= classes

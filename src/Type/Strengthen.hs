@@ -23,9 +23,8 @@ module Type.Strengthen
 	( strengthenT
 	, slurpParamClassVarsT_constrainForm)
 where
-import Type.State
 import Util
-import DDC.Solve.Naming
+import DDC.Solve.State
 import DDC.Main.Error
 import DDC.Type
 import qualified Data.Map	as Map

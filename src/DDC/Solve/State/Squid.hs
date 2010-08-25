@@ -1,46 +1,31 @@
--- | Type inferencer state.
-module Type.State
+
+-- | Squidly solver.
+--   In honour of the Colossal Squid that was filmed on the day I started this.
+--
+module DDC.Solve.State.Squid
 	( SquidM
-	, SquidS (..)
-	, squidSInit
-	, getsRef
-	, writesRef
-	, modifyRef
-	, module Type.Base
-	, traceM, traceI, traceIE, traceIL
-	, instVar
-	, newVarN
-	, lookupSigmaVar
-	, addErrors 
-	, gotErrors
-	, pathEnter
-	, pathLeave
-	, graphInstantiatesAdd )
+	, SquidS(..)
+	, squidSInit)
 where
+import qualified Shared.Unique	as U
 import Constraint.Exp
 import Type.Error
-import Type.Base
-import Util
-import System.IO
-import DDC.Solve.InstanceInfo
-import DDC.Type.Exp
+import DDC.Main.Arg
+import DDC.Solve.State.Graph
+import DDC.Solve.State.InstanceInfo
+import DDC.Type
 import DDC.Var
-import DDC.Main.Pretty
-import DDC.Main.Error
-import Constraint.Pretty	()
-import DDC.Main.Arg		(Arg)
-import qualified DDC.Main.Arg	as Arg
-import qualified Shared.Unique	as U
-import qualified Data.Map	as Map
-import qualified Util.Data.Map	as Map
-import qualified Data.Set	as Set
 import Data.IORef
+import Control.Monad.Trans
+import Control.Monad.State.Strict
+import System.IO
+import Data.Set			(Set)
+import Data.Map			(Map)
+import qualified Data.Set	as Set
+import qualified Data.Map	as Map
 
------
-stage	= "Type.State"
-
------
-type SquidM	= StateT SquidS IO
+type SquidM	
+	= StateT SquidS IO
 
 data SquidS 
 	= SquidS
@@ -198,161 +183,4 @@ squidSInit
 		, stateProject		= refProject
 		, stateProjectResolve	= refProjResolve
 		, stateClassInst	= refClassInst }
-
-getsRef :: (SquidS -> IORef a) -> SquidM a
-{-# INLINE getsRef #-}
-getsRef getRef
- = do	ref	<- gets getRef
-	liftIO	$ readIORef ref
-
-writesRef :: (SquidS -> IORef a) -> a -> SquidM ()
-{-# INLINE writesRef #-}
-writesRef getRef x
- = do	ref	<- gets getRef
-	liftIO	$ writeIORef ref x
-
-modifyRef :: (SquidS -> IORef a) -> (a -> a) -> SquidM ()
-{-# INLINE modifyRef #-}
-modifyRef getRef fn
- = do	ref	<- gets getRef
-	liftIO	$ modifyIORef ref fn
-
-
--- | Add some stuff to the inferencer trace.
-traceM :: PrettyM PMode -> SquidM ()
-traceM p
- = do	mHandle	<- gets stateTrace
-	i	<- getsRef stateTraceIndent
-	args	<- gets stateArgs
- 	case mHandle of
-	 Nothing	-> return ()
-	 Just handle
-	  -> do 
-	  	liftIO (hPutStr handle $ indentSpace i 
-				$ pprStr (catMaybes $ map Arg.takePrettyModeOfArg $ Set.toList args) p)
-	  	liftIO (hFlush  handle)
-
-	
--- | Do some solver thing, while indenting anything it adds to the trace.
-traceI :: SquidM a -> SquidM a
-traceI fun
- = do	traceIE
- 	x	<- fun
-	traceIL
-	return x
-
-traceIE :: SquidM ()
-traceIE	= stateTraceIndent `modifyRef` \i -> i + 4
- 
-traceIL :: SquidM ()
-traceIL	= stateTraceIndent `modifyRef` \i -> i - 4
-
- 
--- | Instantiate a variable.
-instVar :: Var -> SquidM (Maybe Var)
-instVar var
- = do	let space	= varNameSpace var
-
-	-- lookup the generator for this namespace
-	varGen		<- getsRef stateVarGen
-	let mVarId	= Map.lookup space varGen
-	instVar' var space mVarId
-
-instVar' var space mVarId
-  	| Nothing	<- mVarId
-	= freakout stage
-	  	("instVar: can't instantiate var in space " % show space
-	  	% " var = " % show var)
-		$ return Nothing
-		
-	| Just vid	<- mVarId
-	= do
-		-- increment the generator and write it back into the table.
-		let vid'	= incVarId vid
-
-		stateVarGen `modifyRef`
-			\varGen -> Map.insert space vid' varGen
-
-		-- the new variable remembers what it's an instance of..
-		let name	= pprStrPlain vid
-		let var'	= (varWithName name)
-			 	{ varNameSpace	= varNameSpace var
-			 	, varId		= vid }
-
-		return $ Just var'
-	
-
--- | Make a new variable in this namespace
-newVarN :: NameSpace ->	SquidM Var
-newVarN	space	
- = do
- 	Just vid	<- liftM (Map.lookup space)
-			$  getsRef stateVarGen
-	
-	let vid'	= incVarId vid
-
-	stateVarGen `modifyRef` \varGen -> 
-		Map.insert space vid' varGen
-	
-	let name	= pprStrPlain vid
-	let var'	= (varWithName name)
-			{ varNameSpace	= space 
-			, varId		= vid }
-			
-	return var'
-
-
--- | Lookup the type variable corresponding to this value variable.
-lookupSigmaVar :: Var -> SquidM (Maybe Var)
-lookupSigmaVar	v
- 	= liftM (Map.lookup v)
-	$ getsRef stateSigmaTable
-	
-	
--- | Add some errors to the monad.
---	These'll be regular user-level type errors from the compiled program.
-addErrors ::	[Error]	-> SquidM ()
-addErrors	errs
-	= modify (\s -> s { stateErrors = stateErrors s ++ errs })
-
-
--- | See if there are any errors in the state
-gotErrors :: SquidM Bool
-gotErrors
- = do	errs	<- gets stateErrors
- 	return	$ not $ isNil errs
-
-
--- | Push a new var on the path queue.
---	This records the fact that we've entered a branch.
-pathEnter :: CBind -> SquidM ()
-pathEnter BNothing	= return ()
-pathEnter v	
-	= statePath `modifyRef` \path -> v : path 
-
-
--- | Pop a var off the path queue
---	This records the fact that we've left the branch.
-pathLeave :: CBind -> SquidM ()
-pathLeave BNothing	= return ()
-pathLeave bind
-  = statePath `modifyRef` \path ->
-	case path of
-	  	-- pop matching binders off the path
-		b1 : bs
-		 | bind == b1	-> bs
-	
-		-- nothing matched.. :(
-		_ -> panic stage $ "pathLeave: can't leave " % bind % "\n"
-
-		
--- | Add to the who instantiates who list
-graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
-graphInstantiatesAdd    vBranch vInst
- = stateInstantiates `modifyRef` \instantiates -> 
-	Map.adjustWithDefault 
-		(Set.insert vInst) 
-		Set.empty
-		vBranch
-		instantiates
 

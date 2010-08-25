@@ -1,23 +1,91 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Functions dealing with the names of equivalence classes in the graph.
-module DDC.Solve.Naming
-	( lookupVarToClassId
+module DDC.Solve.State.Naming
+	( instVar
+	, newVarN
+	, lookupSigmaVar
+	, lookupVarToClassId
 	, getCanonicalNameOfClass
 	, addAliasForClass )
 where
-import DDC.Solve.Sink
+import DDC.Solve.State.Class
+import DDC.Solve.State.Graph
+import DDC.Solve.State.Base
+import DDC.Solve.State.Squid
+import DDC.Solve.State.Sink
 import DDC.Type
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
 import Type.Location
-import Type.State
-import Type.Class
 import Data.List
+import Control.Monad
 import qualified Data.Map	as Map
 
 stage	= "DDC.Solve.Naming"
+
+-- | Instantiate a variable.
+instVar :: Var -> SquidM (Maybe Var)
+instVar var
+ = do	let space	= varNameSpace var
+
+	-- lookup the generator for this namespace
+	varGen		<- getsRef stateVarGen
+	let mVarId	= Map.lookup space varGen
+	instVar' var space mVarId
+
+instVar' var space mVarId
+ = case mVarId of
+	Nothing
+	 -> freakout stage
+	  	("instVar: can't instantiate var in space " % show space
+	  	% " var = " % show var)
+		$ return Nothing
+		
+	Just vid
+	 -> do
+		-- increment the generator and write it back into the table.
+		let vid'	= incVarId vid
+
+		stateVarGen `modifyRef`
+			\varGen -> Map.insert space vid' varGen
+
+		-- the new variable remembers what it's an instance of..
+		let name	= pprStrPlain vid
+		let var'	= (varWithName name)
+			 	{ varNameSpace	= varNameSpace var
+			 	, varId		= vid }
+
+		return $ Just var'
+
+	
+
+-- | Make a new variable in this namespace
+newVarN :: NameSpace ->	SquidM Var
+newVarN	space	
+ = do 	Just vid	<- liftM (Map.lookup space)
+			$  getsRef stateVarGen
+	
+	let vid'	= incVarId vid
+
+	stateVarGen `modifyRef` \varGen -> 
+		Map.insert space vid' varGen
+	
+	let name	= pprStrPlain vid
+	let var'	= (varWithName name)
+			{ varNameSpace	= space 
+			, varId		= vid }
+			
+	return var'
+
+
+-- | Lookup the type variable corresponding to this value variable.
+lookupSigmaVar :: Var -> SquidM (Maybe Var)
+lookupSigmaVar	v
+ 	= liftM (Map.lookup v)
+	$ getsRef stateSigmaTable
+
 
 -- | Lookup the class with this name.
 --   Classes can have many different names, so this is a many-to-one map.

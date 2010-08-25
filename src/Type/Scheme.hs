@@ -7,12 +7,12 @@ where
 import Type.Check.Danger
 import Type.Effect.MaskLocal
 import Type.Error
-import Type.State
 import Type.Plug		
 import Type.Strengthen
 import Type.Context
 import Shared.VarPrim
 import Util
+import DDC.Solve.State
 import DDC.Type
 import DDC.Var.NameSpace
 import DDC.Var

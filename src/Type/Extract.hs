@@ -8,10 +8,9 @@ import Type.Plug
 import Type.Context
 import Type.Strengthen
 import Type.Error
-import Type.State	
 import Type.Plate.Collect
 import Util
-import DDC.Solve.Naming
+import DDC.Solve.State
 import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Type

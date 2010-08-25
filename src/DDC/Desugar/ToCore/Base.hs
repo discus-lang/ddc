@@ -13,7 +13,7 @@ where
 import Util
 import DDC.Main.Error
 import DDC.Main.Pretty
-import DDC.Solve.InstanceInfo
+import DDC.Solve.State.InstanceInfo
 import DDC.Type
 import DDC.Var
 import Desugar.Project			(ProjTable)

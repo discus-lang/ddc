@@ -6,7 +6,7 @@ module Type.Crush.Effects
 where
 import DDC.Type
 import Control.Monad
-import Type.State
+import DDC.Solve.State
 import DDC.Main.Pretty
 
 {-

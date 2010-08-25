@@ -3,11 +3,10 @@ module Type.Solve.Generalise
 	(solveGeneralise)
 where
 import Type.Solve.BindGroup
-import Type.State
-import Type.Class
 import Type.Scheme
 import Type.Extract
 import Type.Location
+import DDC.Solve.State
 import Constraint.Exp
 import Constraint.Bits
 import Util

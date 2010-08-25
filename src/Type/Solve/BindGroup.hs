@@ -2,7 +2,7 @@
 module Type.Solve.BindGroup
 	(bindGroup)
 where
-import Type.State
+import DDC.Solve.State
 import Constraint.Exp
 import Util
 import Util.Graph.Deps
@@ -10,7 +10,6 @@ import DDC.Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
------
 debug	= True
 trace s	= when debug $ traceM s
 

@@ -6,7 +6,7 @@ module Type.Crush.Fetter
 	(crushFettersInClass)
 where
 import DDC.Type
-import Type.State
+import DDC.Solve.State
 {-
 import Type.State
 import Type.Class

@@ -6,13 +6,11 @@ module Type.Plug
 	, staticRsDataT
 	, staticRsClosureT)	
 where
-import Type.State
-import Type.Class
-import Util
-import DDC.Solve.Naming
+import DDC.Solve.State
 import DDC.Type
 import DDC.Type.Transform
 import DDC.Main.Error
+import Util
 import qualified Data.Set	as Set
 
 stage	= "Type.Plug"

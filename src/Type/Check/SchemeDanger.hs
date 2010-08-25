@@ -21,10 +21,8 @@ where
 import Shared.VarPrim
 import Type.Location
 import Type.Error
-import Type.State
-import Type.Class
 import Util
-import DDC.Solve.Naming
+import DDC.Solve.State
 import DDC.Solve.Trace
 import DDC.Main.Error
 import DDC.Type

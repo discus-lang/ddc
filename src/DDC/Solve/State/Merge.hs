@@ -1,15 +1,17 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module DDC.Solve.Merge
+module DDC.Solve.State.Merge
 	(mergeClasses)
 where
-import Type.Error
-import Type.State
-import Type.Class
+import DDC.Solve.State.Base
+import DDC.Solve.State.Class
+import DDC.Solve.State.Sink
+import DDC.Solve.State.Squid
+import DDC.Solve.State.Graph
 import DDC.Type
-import DDC.Solve.Sink
 import DDC.Main.Pretty
 import DDC.Main.Error
+import Type.Error
 import Data.List
 import Data.Array.IO
 import Control.Monad

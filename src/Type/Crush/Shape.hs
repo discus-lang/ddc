@@ -5,11 +5,10 @@ module Type.Crush.Shape
 where
 import Type.Feed
 import Type.Location
-import Type.State
-import Type.Class
 import Type.Crush.Unify
 import Shared.VarPrim
 import DDC.Type
+import DDC.Solve.State
 import Util
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set

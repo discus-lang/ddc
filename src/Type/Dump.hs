@@ -5,10 +5,10 @@ module Type.Dump
 	, dumpInst
 	, dumpSub)
 where
-import Type.State
+import DDC.Main.Pretty
+import DDC.Solve.State
 import Util
 import Data.Array.IO	
-import DDC.Main.Pretty
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 

@@ -5,15 +5,11 @@ module Type.Export
 	, squidExport)
 where
 import Type.Error
-import Type.Base
-import Type.Class
-import Type.State
 import Type.Extract
 import Type.Plug
 import Shared.VarPrim
 import Util
-import DDC.Solve.Naming
-import DDC.Solve.InstanceInfo
+import DDC.Solve.State
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var

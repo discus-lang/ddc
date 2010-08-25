@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module DDC.Solve.Sink
+module DDC.Solve.State.Sink
 	( sinkVar
 	, sinkClassId
 	, sinkCidsInNode
@@ -9,14 +9,18 @@ module DDC.Solve.Sink
 	, sinkCidsInNodeFst
 	, sinkCidsInFetterFst)
 where
-import Type.State
-import DDC.Solve.SinkIO
+import DDC.Solve.State.Base
+import DDC.Solve.State.Squid
+import DDC.Solve.State.Class
+import DDC.Solve.State.Graph
+import DDC.Solve.State.Node
+import DDC.Solve.State.SinkIO
 import DDC.Var
 import DDC.Type
 import DDC.Main.Error
 import Data.Array.IO
 import Control.Monad.Trans
-import {-# SOURCE #-} DDC.Solve.Naming
+import {-# SOURCE #-} DDC.Solve.State.Naming
 
 stage	= "DDC.Solve.Sink"
 
@@ -28,24 +32,6 @@ sinkVar	var
 	 Nothing	-> return var
 	 Just cid	-> getCanonicalNameOfClass cid
 		
-
--- | Convert this cid to canconical form.
-{-# INLINE sinkClassId #-}
-sinkClassId ::	ClassId -> SquidM ClassId
-sinkClassId  cid	
- = do	graph		<- getsRef stateGraph
- 	let classes	=  graphClass graph
-	sinkClassId' classes cid
-	
-sinkClassId' classes cid
- = do	mClass	<- liftIO (readArray classes cid)
- 	case mClass of
-		ClassForward _ cid'	-> sinkClassId' classes cid'
-		ClassUnallocated{}	-> panic stage $ "sinkClassId': class is unallocated"
-		ClassFetter{}		-> return cid
-		ClassFetterDeleted{}	-> return cid
-		Class{}			-> return cid
-
 
 -- | Convert the cids in this node type to canonical form.
 sinkCidsInNode :: Node -> SquidM Node
@@ -85,3 +71,20 @@ sinkCidsInFetterFst :: (Fetter, a) -> SquidM (Fetter, a)
 sinkCidsInFetterFst (ff, x)
  = do	ff'	<- sinkCidsInFetter ff
 	return	$ (ff', x)
+
+-- | Convert this cid to canconical form.
+{-# INLINE sinkClassId #-}
+sinkClassId ::	ClassId -> SquidM ClassId
+sinkClassId  cid	
+ = do	graph		<- getsRef stateGraph
+ 	let classes	=  graphClass graph
+	sinkClassId' classes cid
+	
+sinkClassId' classes cid
+ = do	mClass	<- liftIO (readArray classes cid)
+ 	case mClass of
+		ClassForward _ cid'	-> sinkClassId' classes cid'
+		ClassUnallocated{}	-> panic stage $ "sinkClassId': class is unallocated"
+		ClassFetter{}		-> return cid
+		ClassFetterDeleted{}	-> return cid
+		Class{}			-> return cid

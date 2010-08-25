@@ -6,7 +6,7 @@ module DDC.Type.Pretty
 	, prettyType
 	, prettyKind)
 where
-import DDC.Solve.InstanceInfo
+import DDC.Solve.State.InstanceInfo
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type.Exp
