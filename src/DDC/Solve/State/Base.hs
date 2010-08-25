@@ -178,8 +178,8 @@ expandGraph minFree
 					(newListArray (ClassId 0, ClassId newMax)
 					(elems ++ replicate curMax ClassUnallocated))
 
-		stateGraph `modifyRef` \graph -> 
-			graph { graphClass = newClass }
+		stateGraph `modifyRef` \graph' -> 
+			graph' { graphClass = newClass }
 
 		return ()
  	
@@ -260,10 +260,10 @@ addToClass2 cid' src kind node graph
 	 = do	cls	<- liftIO (readArray (graphClass graph) cid)
 		case cls of
 		 ClassForward _ cid'' 	-> go cid''
-		 ClassUnallocated	-> update cid (classEmpty cid kind src)
-		 Class{}		-> update cid cls
+		 ClassUnallocated	-> update' cid (classEmpty cid kind src)
+		 Class{}		-> update' cid cls
 		 	
-	update cid cls@Class{}
+	update' cid cls@Class{}
 	 = do	liftIO 	$ writeArray (graphClass graph) cid 
 			$ cls 	{ classUnified		= Nothing
 				, classTypeSources	= (node, src) : classTypeSources cls }
@@ -274,8 +274,8 @@ addToClass2 cid' src kind node graph
 	linkVar cid tt
  	 = case tt of
  		NVar v
-	 	 -> do	stateGraph `modifyRef` \graph -> 
-				graph { graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
+	 	 -> do	stateGraph `modifyRef` \graph' -> 
+				graph' { graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
 
 		_ -> return ()
 
@@ -339,8 +339,8 @@ clearActive
 		$  Set.toList
 		$  graphActive graph
 	
-	stateGraph `modifyRef` \graph ->
-		graph { graphActive = Set.empty }
+	stateGraph `modifyRef` \graph' ->
+		graph' { graphActive = Set.empty }
 
 	return	active'
 
