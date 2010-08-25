@@ -290,13 +290,16 @@ takeShallowTypeOfClass cls
 		, classTypeSources	= tsSrc
 		, classUnified		= mUnified }
 
+	 -- There are never any constructors for region classes.
+	 | isRegionKind kind
+	 -> return $ Just (tBot kRegion)
+
 	 -- For effects and closures we form the result type by summing the constraints.
 	 | isEffectKind kind || isClosureKind kind
 	 -> do	ts	<- mapM (getTypeOfNode kind) $ map fst tsSrc
 		case makeTSum kind ts of
 		 TVar{}	-> return $ Just $ tBot kind
 		 tSum	-> return $ Just tSum
-		
 		
 	 -- For other types, we rely on the unifier to have worked out a type for us.
 	 | Just nUnified	<- mUnified
@@ -305,7 +308,9 @@ takeShallowTypeOfClass cls
 		
 	 -- Otherwise we're out of luck
 	 | otherwise
-	 ->	return Nothing
+	 -> freakout stage
+	 	("takeShallowTypeOfClass: no type available\n" % cls)
+		(return Nothing)
 	
 	_ -> return Nothing
 		

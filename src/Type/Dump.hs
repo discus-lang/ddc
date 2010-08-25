@@ -77,10 +77,20 @@ instance Pretty Class PMode where
 	 ->  	-- class id / name / kind 
 	    	classId c
 		% " :: " % classKind c % "\n"
+
 		-- unified type
 		%> (case classUnified c of
 			Nothing	-> ppr "-- not unified --\n"
-			Just t	-> ppr t % "\n\n")
+			Just t	-> ppr t % "\n")
+		% "\n"
+
+		-- aliases
+		%> "-- aliases\n"
+		% (punc "\n"
+			$ map (\(v, loc) -> "        " %> (padL 20 v % loc)) 
+				$ Map.toList $ classAliases c)
+		% "\n\n"
+
 
 		-- class fetters
 		% (case Map.toList $ classFetters c of

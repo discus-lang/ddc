@@ -161,10 +161,15 @@ addAliasForClass cid src var kind
  	 $ \cls -> case cls of
 		ClassUnallocated{}
 		 -> (classEmpty cid kind src) 
-			{ classAliases = Map.singleton var src }
+			{ className	= Just var
+			, classAliases 	= Map.singleton var src }
 			
-		Class{}
-		 -> cls	{ classAliases = Map.insert var src (classAliases cls) }
+		Class { className = Nothing }
+		 -> cls	{ className	= Just var
+			, classAliases 	= Map.insert var src (classAliases cls) } 
+
+		Class { className = Just _ }
+		 -> cls	{ classAliases 	= Map.insert var src (classAliases cls) } 
 
 		_ -> panic stage 
 			$ "addAliasForClass: can't modify class " % cid

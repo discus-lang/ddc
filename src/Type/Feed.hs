@@ -20,14 +20,14 @@ import qualified Data.Sequence	as Seq
 
 stage	= "Type.Feed"
 
-debug	= False
+debug	= True
 trace ss = when debug $ traceM ss
 
 -- feedConstraint ----------------------------------------------------------------------------------
 -- | Add a constraint to the type graph.
 feedConstraint :: CTree -> SquidM ()
 feedConstraint cc
- = trace ("feedConstraint: " % cc % "\n") >>
+ = trace ("feedConstraint\n" %> cc % "\n\n") >>
    case cc of
 	-- Equality constraints. The LHS must be a variable.
  	CEq src (TVar k (UVar v1)) t2
@@ -89,11 +89,12 @@ feedType src tt
 	TConstrain t crs
 	 -> do 	let fs		= fettersOfConstraints crs
 
+
 		-- Rename the vars on the LHS of FLet bindings to make sure
 	 	--	they don't conflict with any vars already in the graph.
 		ttSub		<- liftM (Map.fromList . catMaybes)
 				$  mapM (\f -> case f of
-					FWhere t1@(TVar k v1) t2
+					FWhere t1@(TVar k v1@UVar{}) t2
 					 -> do	let Just nameSpace	= spaceOfKind k
 						v1'	<- newVarN nameSpace
 					 	return	$ Just (t1, TVar k (UVar v1'))
@@ -103,9 +104,10 @@ feedType src tt
 
 		let fs2		= subTT_everywhere ttSub fs
 		let t2		= subTT_everywhere ttSub t
-				
+
 		mapM_ (feedFetter src) fs2
 	 	t3		<- feedType src t2
+
 		return	t3
 
 	TSum k ts
