@@ -10,6 +10,7 @@ import Type.State
 import Type.Class
 import Type.Error
 import DDC.Solve.Trace
+import DDC.Solve.Merge
 import DDC.Type
 import Util
 import DDC.Main.Error

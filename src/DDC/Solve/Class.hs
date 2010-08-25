@@ -34,9 +34,9 @@ data Class
 
 	-- | Some auxilliary constraint between classes.
 	| ClassFetter
-		{ classId		:: ClassId
-		, classFetter		:: Fetter 
-		, classSource		:: TypeSource }
+		{ classId		:: !ClassId
+		, classFetter		:: !Fetter 
+		, classSource		:: !TypeSource }
 
 	-- | A deleted fetters.
 	--   	This holds the deleted class for debugging.
@@ -47,27 +47,27 @@ data Class
 	--   the primitive constraints that are contributing to the overall type of the class.
 	| Class	{
 		-- | A unique id for this class
-		  classId		:: ClassId
+		  classId		:: !ClassId
 
 		-- | The kind of the class.
-		, classKind		:: Kind	
+		, classKind		:: !Kind	
 
 		-- | The canonical name of this class.
 		--   This is taken from one of the aliases, or created fresh if none exists.
-		, className		:: Maybe Var
+		, className		:: !(Maybe Var)
 
 		-- | Other names for the class.
-		, classAliases		:: Map Var TypeSource
+		, classAliases		:: !(Map Var TypeSource)
 		
 		-- | Why this class was allocated. This can be used as an overall source for
 		--   kind error messages if the classTypeSources list is empty.
-		, classSource		:: TypeSource			
+		, classSource		:: !TypeSource			
 
 		-- | For types of non-injective kind, that is everything besides effect and closures,
 		--   gives the result of unifying the nodes in the classTypeSources list. 
 	 	--   If any constraints were recently added to the class then this will be Nothing, 
 		--   signaling that we need to run the unifier on it.
-		, classUnified		:: Maybe Node
+		, classUnified		:: !(Maybe Node)
 
 		-- Type constraints contributing to this class ------------------------------------
 		-- | Constraints that have been added to this class, including source information.
@@ -75,18 +75,18 @@ data Class
 		--	/why/ this particular node has the type it does.
 		-- 
 		--   INVARIANT: The node type is not an NVar or NBot.
-		, classTypeSources	:: [(Node, TypeSource)]	 
+		, classTypeSources	:: ![(Node, TypeSource)]	 
 
 		-- | Single parameter type class constraints on this equivalence class.
 		--	Maps var on constraint (like Eq) to the source of the constraint.
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
-		, classFetters		:: Map Var (Seq TypeSource)
+		, classFetters		:: !(Map Var (Seq TypeSource))
 
 		-- | Multi-parameter type class constraints acting on this equivalence class.
 		--	MPTC's are stored in their own ClassFetter nodes, and this list points to all
 		--	the MPTC's which are constraining this class.
-		, classFettersMulti	:: Set ClassId }
+		, classFettersMulti	:: !(Set ClassId) }
 		deriving (Show)
 
 

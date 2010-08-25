@@ -10,8 +10,6 @@ module Type.Class
 	, lookupClass
 	, updateClass
 	, modifyClass
-	, mergeClasses
-
 	, makeClassFromVar
 	, clearActive
 	, activateClass
@@ -25,7 +23,6 @@ module Type.Class
 where
 import Type.Location
 import Type.State
-import Type.Error
 import Type.Dump		()
 import Util
 import DDC.Main.Error
@@ -35,12 +32,10 @@ import DDC.Var
 import Data.Array.IO
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
-import qualified Data.Sequence	as Seq
 import {-# SOURCE #-} DDC.Solve.Naming
 
-debug	= True
-trace s	= when debug $ traceM s
 stage	= "Type.Squid.Class"
+
 
 -- | Return the cids of all the children of this class.
 classChildren :: Class -> [ClassId]
@@ -218,92 +213,7 @@ modifyClass cid_ f
 	liftIO (writeArray (graphClass graph) cid (f c))
 	return ()
 	
-	
--- | Add a forwards to this class.
-addClassForwards 
-	:: ClassId 		-- class to point to.
-	-> [ClassId] 		-- classes to point from.
-	-> SquidM ()
-
-addClassForwards cidL_ cids_
- = do	
-	-- sink the cids.
- 	cidL		<- sinkClassId cidL_
-	cids		<- mapM (\cid -> sinkClassId cid) cids_
-
-	-- add a substitution for each elem of cids.
-	graph		<- getsRef stateGraph
-
-	mapM_		(\x -> liftIO (writeArray (graphClass graph) x (ClassForward x cidL))) 
-			cids
-	
-	return ()
-	
-		 
-	
--- Merge ------------------------------------------------------------------------------------------	 
--- | Merge two classes by concatenating their queue and node list
---	The one with the lowesed classId gets all the constraints and the others 
---	are updated to be ClassFowards which point to it.
-mergeClasses
-	:: [ClassId] 
-	-> SquidM ClassId
-
--- if there's just a single cids then there's nothing to do
-mergeClasses [cid_]
- = do	cid'		<- sinkClassId cid_
-   	return	cid'
-	
-mergeClasses cids_
- = do	
-	-- Sink the cids and lookup their classes.
- 	cids	<- liftM nub $ mapM sinkClassId cids_
-	Just cs	<- liftM sequence  $ mapM lookupClass cids
-			
-	-- Make sure all the classes have the same kind	
-	let ks	= map (\c@Class { classKind } -> classKind) cs
-	
-	case nub ks of
-	 [k]		-> mergeClasses2 cids cs 
-	 (k1:k2:_)	-> mergeClasses_kindMismatch cids cs k1 k2
-	
-	
-mergeClasses2 cids cs
- = do	-- The class with the lowest cid gets all the items.
-	let Just cidL	= takeMinimum cids
-	Just cL		<- lookupClass cidL
-	
-	trace 	$ "-- mergeClasses\n"
-		% "    cidL = " % cidL % "\n"
-		% "    cids = " % cids % "\n"
-
-	let cL'	= cL 	
-		{ classUnified		= Nothing
-		, classTypeSources	= concatMap classTypeSources cs
-		, classFetters		= Map.unionsWith (Seq.><) $ map classFetters cs
-		, classFettersMulti	= Set.unions $ map classFettersMulti cs  }
-
-	updateClass cidL cL'
-	activateClass cidL
-
-	-- Add forwards from old classes to new class.
-	let cidsH	= cids \\ [cidL]
-	addClassForwards cidL cidsH
-	
-  	return	$ cidL
-
-mergeClasses_kindMismatch cids@(cid1:_) clss k1 k2
- = do	let Just cls1	= find (\c -> classKind c == k1) clss
-	let Just cls2	= find (\c -> classKind c == k2) clss
-		
-	addErrors [ErrorUnifyKindMismatch
-			{ eKind1	= k1
-			, eTypeSource1	= classSource cls1
-			, eKind2	= k2
-			, eTypeSource2	= classSource cls2 }]
-			
-	return cid1
-			
+				
 
 -- | Clear the set of active classes.
 clearActive ::	SquidM (Set ClassId)
