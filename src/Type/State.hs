@@ -159,7 +159,7 @@ squidSInit
 	refVarGen	<- liftIO $ newIORef varGen
 	refVarSub	<- liftIO $ newIORef Map.empty
 
-	graph		<- graphInit
+	graph		<- makeEmptyGraph
    	refGraph	<- liftIO $ newIORef graph
    
 	refDefs		<- liftIO $ newIORef Map.empty

@@ -102,7 +102,7 @@ allocClass src kind
  	let cid		= ClassId classIdGen
 
 	liftIO 	$ writeArray (graphClass graph) cid
-		$ classInit cid kind src
+		$ classEmpty cid kind src
 
 	stateGraph `modifyRef` \graph2 -> 
 	 	graph2 { graphClassIdGen	= classIdGen + 1}
@@ -204,7 +204,7 @@ addToClass2 cid' src kind node graph
 	 = do	cls	<- liftIO (readArray (graphClass graph) cid)
 		case cls of
 		 ClassForward _ cid'' 	-> go cid''
-		 ClassUnallocated	-> update cid (classInit cid kind src)
+		 ClassUnallocated	-> update cid (classEmpty cid kind src)
 		 Class{}		-> update cid cls
 		 	
 	update cid cls@Class{}
@@ -250,7 +250,7 @@ addNameToClass cid_ src v kind
 addNameToClass2 cid src node kind cls
  = case cls of
  	ClassUnallocated
-	 -> addNameToClass3 cid src node (classInit cid kind src)
+	 -> addNameToClass3 cid src node (classEmpty cid kind src)
 
 	Class{}		
 	 -> addNameToClass3 cid src node cls

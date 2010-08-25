@@ -199,7 +199,7 @@ freshenCid src cid
  
  	cid'	<- allocClass src k
 	updateClass cid'
-		(classInit cid' k src)
+		(classEmpty cid' k src)
 		{ classType = Just nBot }
 
 	return	cid'
