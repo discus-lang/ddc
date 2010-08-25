@@ -9,7 +9,7 @@ module DDC.Solve.State.Sink
 	, sinkCidsInFetterFst)
 where
 import DDC.Solve.State.Squid
-import DDC.Solve.State.Node
+import DDC.Solve.Graph
 import DDC.Type
 import DDC.Var
 

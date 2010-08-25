@@ -5,13 +5,13 @@
 --   `ClassFetter`. We're storing fetters as classes because it gives them their own unique
 --   classids and makes them easy to refer to.
 --   
-module DDC.Solve.State.Class
+module DDC.Solve.Graph.Class
 	( Class(..)
 	, emptyClass
 	, takeTClassOfClass)
 where
 import Type.Location
-import DDC.Solve.State.Node
+import DDC.Solve.Graph.Node
 import DDC.Type
 import DDC.Var
 import Data.Sequence		(Seq)

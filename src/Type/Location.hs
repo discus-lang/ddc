@@ -14,7 +14,7 @@ module Type.Location
 	, dispFetterSource)
 where
 import Shared.VarPrim
-import DDC.Solve.State.Node
+import DDC.Solve.Graph.Node
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.SourcePos

@@ -9,11 +9,10 @@ module DDC.Solve.State.Naming
 	, getCanonicalNameOfClass
 	, addAliasForClass )
 where
-import DDC.Solve.State.Class
-import DDC.Solve.State.Graph
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
 import DDC.Solve.State.Sink
+import DDC.Solve.State.Graph
 import DDC.Type
 import DDC.Var
 import DDC.Main.Error

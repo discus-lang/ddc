@@ -47,11 +47,9 @@ module DDC.Solve.Trace
 	, getTypeOfNodeAsSquid)
 where
 import DDC.Solve.State.Base
-import DDC.Solve.State.Graph
-import DDC.Solve.State.Node
-import DDC.Solve.State.Class
 import DDC.Solve.State.Squid
 import DDC.Solve.State.SinkIO
+import DDC.Solve.Graph
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type

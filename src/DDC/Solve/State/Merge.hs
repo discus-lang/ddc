@@ -4,7 +4,6 @@ module DDC.Solve.State.Merge
 	(mergeClasses)
 where
 import DDC.Solve.State.Base
-import DDC.Solve.State.Class
 import DDC.Solve.State.Sink
 import DDC.Solve.State.Squid
 import DDC.Solve.State.Graph

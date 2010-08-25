@@ -11,7 +11,7 @@ import qualified Shared.Unique	as U
 import Constraint.Exp
 import Type.Error
 import DDC.Main.Arg
-import DDC.Solve.State.Graph
+import DDC.Solve.Graph
 import DDC.Solve.State.InstanceInfo
 import DDC.Type
 import DDC.Var

@@ -15,8 +15,7 @@ module DDC.Solve.State.SinkIO
 	, sinkCidsInTypeIO 
 	, sinkCidsInFetterIO)
 where
-import DDC.Solve.State.Class
-import DDC.Solve.State.Node
+import DDC.Solve.Graph
 import DDC.Main.Error
 import DDC.Type
 import Data.Array.IO

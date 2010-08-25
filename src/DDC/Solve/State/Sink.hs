@@ -11,10 +11,8 @@ module DDC.Solve.State.Sink
 where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
-import DDC.Solve.State.Class
-import DDC.Solve.State.Graph
-import DDC.Solve.State.Node
 import DDC.Solve.State.SinkIO
+import DDC.Solve.Graph
 import DDC.Var
 import DDC.Type
 import DDC.Main.Error

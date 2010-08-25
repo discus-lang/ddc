@@ -136,7 +136,7 @@ crushShape2 cidShape fShape srcShape tTemplate csMerge
 
 addShapeFetter :: TypeSource -> [ClassId] -> SquidM ()
 addShapeFetter src cids@(cid1 : _)
- = do	kind	<- kindOfCid cid1
+ = do	kind	<- kindOfClass cid1
 
 	-- shape fetters don't constrain regions.
 	if kind == kRegion
