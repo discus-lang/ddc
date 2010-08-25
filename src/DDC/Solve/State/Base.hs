@@ -19,19 +19,19 @@ module DDC.Solve.State.Base
 	, pathEnter
 	, pathLeave 
 	
-	  -- * Equivalence Classes
-	, allocClass
-	, makeClassFromVar
-	, delClass
-	, addToClass
+	  -- * Type graph wrappers
 	, lookupClass
+	, allocClass
 	, updateClass
 	, modifyClass
+	, delFetterClass
+	, activateClass
+	, clearActive
+
+	, makeClassFromVar
+	, addToClass
 	, foldClasses
 	
-	  -- * Activity Queue
-	, clearActive
-	, activateClass
 	
 	  -- * Bits and pieces
 	, lookupSourceOfNode
@@ -156,7 +156,16 @@ pathLeave bind
 		_ -> panic stage $ "pathLeave: can't leave " % bind % "\n"
 
 
--- Class Allocation -------------------------------------------------------------------------------
+-- Type Graph -------------------------------------------------------------------------------------
+
+-- | Lookup a class from the graph.
+lookupClass :: ClassId -> SquidM (Maybe Class)
+lookupClass cid
+ = do	graph	<- getsRef stateGraph
+ 	liftIO $ lookupClassFromGraph cid graph
+
+
+-- | Allocate a new class into the type graph.
 allocClass :: Kind -> TypeSource -> SquidM ClassId
 allocClass kind src
  = do	graph		<- getsRef stateGraph
@@ -164,6 +173,44 @@ allocClass kind src
 	writesRef stateGraph graph'
 	return cid
 
+
+-- | Modify a class in the graph using a given function.
+modifyClass :: ClassId -> (Class -> Class) -> SquidM ()
+modifyClass cid f
+ = do	graph	<- getsRef stateGraph
+	liftIO $ modifyClassInGraph cid graph f
+
+
+-- | Update a class in the graph.
+updateClass :: ClassId -> Class -> SquidM ()
+updateClass cid cls
+ = do	graph	<- getsRef stateGraph
+	liftIO $ modifyClassInGraph cid graph (\_ -> cls)
+	
+
+-- | Delete a fetter class from the type graph.
+--   Note: This class *cannot* be re-used because it may have been deleted due to a MPTC
+--	   being crushed out. Other nodes will still refer to this one, and Type.Trace 
+--	   treats the ClassFetterDeleted as generating no constraints.
+delFetterClass :: ClassId -> SquidM ()
+delFetterClass cid
+ = do	graph	<- getsRef stateGraph
+	liftIO $ delFetterFromGraph cid graph
+
+
+-- | Activate a class, and any MPTC's acting on it.
+activateClass :: ClassId -> SquidM ()
+activateClass cid
+ = do	graph	<- getsRef stateGraph
+	liftIO 	$ activateClassOfGraph cid graph
+
+
+-- | Clear the set of active classes.
+clearActive ::	SquidM (Set ClassId)
+clearActive
+ = do	graph	<- getsRef stateGraph
+	liftIO	$ clearActiveClassesOfGraph graph
+	
 
 -- | If there is already a class for this variable then return that
 --   otherwise make a new one containing this var.
@@ -182,21 +229,6 @@ makeClassFromVar src kind var
 		addAliasForClass cid src var kind
 	     	return cid
 
-
--- | Delete a class by setting it to Nil.
---   Note: This class *cannot* be re-used because it may have been deleted due to a MPTC
---	   being crushed out. Other nodes will still refer to this one, and Type.Trace 
---	   treats the ClassFetterDeleted as generating no constraints.
-delClass :: ClassId -> SquidM ()
-delClass cid
- = do	Just cls	<- lookupClass cid
-	case cls of
-	 ClassFetter{}	
-	  -> do	updateClass cid (ClassFetterDeleted cls)
-		return ()
-		
-	 _ ->	panic stage $ "delClass: class " % cid % " to be deleted is not a ClassFetter{}"
-	
 
 
 
@@ -239,44 +271,6 @@ addToClass2 cid' src kind node graph
 		_ -> return ()
 
 
--- | Lookup a class from the graph.
-lookupClass 
-	:: ClassId 
-	-> SquidM (Maybe Class)
-
-lookupClass cid_ 
- = do	cid	<- sinkClassId cid_
-	graph	<- getsRef stateGraph
-	c	<- liftIO (readArray (graphClass graph) cid)
-	return $ Just c
-
-
-
--- | Update a class in the graph.
-updateClass	
-	:: ClassId 		-- ^ id of class to update.
-	-> Class  		-- ^ new class.
-	-> SquidM ()
-
-updateClass cid_ c
- = do	cid		<- sinkClassId cid_
- 	graph		<- getsRef stateGraph
-	liftIO (writeArray (graphClass graph) cid c)
-	return ()
-
-
--- | Modify a class in the graph using this modification function
-modifyClass
-	:: ClassId
-	-> (Class -> Class)
-	-> SquidM ()
-	
-modifyClass cid_ f
- = do	cid	<- sinkClassId cid_
- 	graph	<- getsRef stateGraph
-	c	<- liftIO (readArray (graphClass graph) cid)
-	liftIO (writeArray (graphClass graph) cid (f c))
-	return ()
 	
 
 -- Fold a function through all the classes in the type graph.
@@ -287,37 +281,8 @@ foldClasses fun x
 	foldM fun x classes  
 
 				
--- Activity Queue ---------------------------------------------------------------------------------
--- | Clear the set of active classes.
-clearActive ::	SquidM (Set ClassId)
-clearActive
- = do	graph	<- getsRef stateGraph 
-	
-	active'	<- liftM Set.fromList
-		$  mapM sinkClassId 
-		$  Set.toList
-		$  graphActive graph
-	
-	stateGraph `modifyRef` \graph' ->
-		graph' { graphActive = Set.empty }
-
-	return	active'
 
 
--- | Activate a class, tagging it for inspection by the unifier \/ crusher.
---	Also activate any MPTCs acting on it.
-activateClass :: ClassId -> SquidM ()
-activateClass cid
- = do	-- traceM $ "activating class " % cid % "\n"
-
-	stateGraph `modifyRef` \graph -> 
-		graph { graphActive = Set.insert cid (graphActive graph) }
-		
-	Just c		<- lookupClass cid
-	(case c of
-		Class { classFettersMulti = cidsMulti}
-		 	-> mapM_ activateClass $ Set.toList cidsMulti
-		_	-> return ())
 
 
 -- Bits and Pieces -------------------------------------------------------------------------------

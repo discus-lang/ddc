@@ -30,7 +30,7 @@ crushUnifyInClass cid
 	case cls of
 	 ClassForward _ cid'
 	  -> crushUnifyInClass cid'
-	
+		
 	 Class	{ classKind = kind }
 
 		-- effects and closures don't need to be unified

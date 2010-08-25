@@ -18,7 +18,7 @@ import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-debug	= False
+debug	= True
 stage	= "Type.Solve.Grind"
 trace s = when debug $ traceM s
 

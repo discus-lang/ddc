@@ -179,7 +179,7 @@ crushProj_withDict
 				%> vInst % " := " % vImpl % "\n\n"
 
 			-- We can ignore this class from now on.
-			delClass cid
+			delFetterClass cid
 			
 			return $ Just qs					
 	result
