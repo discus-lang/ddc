@@ -2,25 +2,27 @@
 
 -- | Crush\/simplify compound effects into their parts.
 module Type.Crush.Effects
-	(crushEffectInClass)
+	(crushEffectsInClass)
 where
-import Type.Location
-import Type.Class
-import Type.State
-import Type.Feed
-import DDC.Main.Pretty
-import DDC.Main.Error
-import DDC.Solve.Walk
 import DDC.Type
 import Control.Monad
+import Type.State
+import DDC.Main.Pretty
+
+{-
+import Type.Location
+import Type.Class
+import Type.Feed
+import DDC.Main.Error
+import DDC.Solve.Walk
 import Data.Maybe
 import qualified Data.Set	as Set
-
+-}
 debug	= False
 trace s	= when debug $ traceM s
-stage	= "Type.Crush.Effects"
+-- stage	= "Type.Crush.Effects"
 
--- Try and crush the effect in this node into a simpler form.
+-- Try and crush the effects in this clas into a simpler form.
 --
 -- @
 --              TApp
@@ -30,16 +32,19 @@ stage	= "Type.Crush.Effects"
 --                  TCon Int   TVar r1
 -- @
 --
-crushEffectInClass 
+crushEffectsInClass 
 	:: ClassId		-- ^ cid of the class containing the top level application.
 	-> SquidM Bool		-- ^ Whether we crushed something from this class.
 
-crushEffectInClass cid
+crushEffectsInClass cid
  = do	trace		$ "--  crushEffectInClass " % cid % "\n"
+	return False
+	
+{-
 	Just cls	<- lookupClass cid
 	crushEffectWithClass cid cls
 	
-crushEffectWithClass cid cls
+crushEffectsWithClass cid cls
  = case cls of
 
 	-- This isn't an effect class.
@@ -271,4 +276,4 @@ crushUpdate cid cids' src'
 			{ classType		= Just node
 			, classTypeSources	= [(node, src')] }
 		return True
-					
+-}					

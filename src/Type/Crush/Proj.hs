@@ -59,7 +59,7 @@ crushProjInClass cid
 	case clsObj of
 	 -- The unifier needs to unify the nodes in this class before we know
 	 --	what the object type will be.
-	 Class { classType = Nothing }
+	 Class { classUnified = Nothing }
 	  -> do	trace 	$ ppr "  * Object class not unified yet, deferring.\n"
 			% clsObj % "\n\n"
 
@@ -68,8 +68,8 @@ crushProjInClass cid
 	 	return Nothing
 
 	 -- Ok, we've got an object type, carry on.
-	 Class { classType = Just nObj }
-	  -> do	Just tObj	<- lookupTypeOfCidAsSquid (classId clsObj)
+	 Class { classUnified = Just nObj }
+	  -> do	Just tObj	<- takeShallowTypeOfCidAsSquid (classId clsObj)
 		trace	$ "    object type (tObj)               = " % tObj	% "\n"
 
 		-- Grab the map of projection dictionaries from the state

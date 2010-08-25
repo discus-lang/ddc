@@ -42,8 +42,8 @@
 module DDC.Solve.Trace 
 	( traceType
 	, traceTypeAsSquid
-	, lookupTypeOfCid
-	, lookupTypeOfCidAsSquid
+	, takeShallowTypeOfCid
+	, takeShallowTypeOfCidAsSquid
 	, getTypeOfNodeAsSquid)
 where
 import DDC.Solve.Node
@@ -65,12 +65,8 @@ import qualified Data.Sequence	as Seq
 import qualified Type.State	as S
 import Control.Monad.State	hiding (mapM_)
 import Prelude			hiding (mapM_)
-import qualified Debug.Trace	
 
 stage		= "DDC.Solve.Trace"
-debug		= False
-trace ss x	= if debug then Debug.Trace.trace (pprStrPlain ss) x else x
-
 
 -- Squid Monad Versions --------------------------------------------------------------------------
 -- | Extract a type node from the graph by tracing down from this cid (in the Squid monad)
@@ -78,9 +74,9 @@ traceTypeAsSquid :: ClassId -> S.SquidM Type
 traceTypeAsSquid cid
 	= runTraceAsSquid (traceType cid)
 
-lookupTypeOfCidAsSquid :: ClassId -> S.SquidM (Maybe Type)
-lookupTypeOfCidAsSquid cid
-	= runTraceAsSquid (lookupTypeOfCid cid)
+takeShallowTypeOfCidAsSquid :: ClassId -> S.SquidM (Maybe Type)
+takeShallowTypeOfCidAsSquid cid
+	= runTraceAsSquid (takeShallowTypeOfCid cid)
 
 getTypeOfNodeAsSquid :: Kind -> Node -> S.SquidM Type
 getTypeOfNodeAsSquid kind node
@@ -108,7 +104,7 @@ traceType cid'
 	let crsMore'	= simplifyCrsMore crsMore
 	
 	-- The final type
-	Just t		<- lookupTypeOfCid cid
+	Just t		<- takeShallowTypeOfCid cid
 	let k		= kindOfType t
 	let tt		= makeTConstrain 
 				(TVar k $ UClass cid) 
@@ -144,16 +140,14 @@ traceFromCid' cid
 	  -> 	traceFromCid cid'
 
 	 -- A regular class.
-	 Class	{ classType 	= Just node
-		, classKind 	= kind }
+	 Class	{ classKind	= kind }
 	  -> do	
-		t'		<- getTypeOfNode kind node
-		let t		= t'
+		Just t	<- takeShallowTypeOfClass cls
 
 		-- Split up the info from this type and add it to the state
 		addType (TVar kind $ UClass cid) t
 		
-		-- Add the SPTCs directly in thie class.
+		-- Add the SPTCs directly in the class.
 		let crsOther	= [FConstraint v [TVar kind $ UClass cid] 
 					| v <- Map.keys $ classFetters cls]
 		
@@ -161,16 +155,7 @@ traceFromCid' cid
 
 		-- Decend into other classes reachable from this one.
 		let cids	= Set.union (freeCids t) (classFettersMulti cls)
-
-		trace (vcat [ "t = " % t, "cids = " % cids]) $ return ()
-
 		mapM_ traceFromCid $ Set.toList cids
-
-	 -- At tracing time all queues should be unified, so the classType field should never be Nothing.
-	 Class	{ classType	= Nothing }
-	  -> panic stage 
-		$ "traceFromCid': the queue " % cid % " hasn't been unified.\n"
-		% cls
 
 	 -- A deleted class.
 	 ClassFetterDeleted _
@@ -289,21 +274,38 @@ simplifyCrsMore' crsFree crsAcc (c@(t1, t2):cs)
 --	If the type hasn't been unified yet, or if this isn't a regular equivalance
 --	class then `Nothing`. The children of the nodes returned may be simple types
 --	like TCon tBot, but not other types. 
-lookupTypeOfCid
-	:: ClassId 		-- ^ Id of of the class of interest.
-	-> TraceM (Maybe Type)	-- ^ Type of the node.
-
-lookupTypeOfCid cid
+takeShallowTypeOfCid :: ClassId -> TraceM (Maybe Type)
+takeShallowTypeOfCid cid
  = do	cls	<- getClass cid
-	case cls of
-	 Class 	{ classType 	= Just node 
-		, classKind	= kind }
-	  	-> liftM Just $ getTypeOfNode kind node 
-	
-	 _ 	-> return Nothing
-	
+	takeShallowTypeOfClass cls
 
--- | Get the `Type` corresponding to a `Node.
+
+-- | Get the type of a `Class`.
+takeShallowTypeOfClass :: Class -> TraceM (Maybe Type)
+takeShallowTypeOfClass cls
+ = case cls of
+	Class	{ classKind		= kind
+		, classTypeSources	= tsSrc
+		, classUnified		= mUnified }
+
+	 -- For effects and closures we form the result type by summing the constraints.
+	 | isEffectKind kind || isClosureKind kind
+	 -> do	ts	<- mapM (getTypeOfNode kind) $ map fst tsSrc
+		return	$ Just $ TSum kind ts
+		
+	 -- For other types, we rely on the unifier to have worked out a type for us.
+	 | Just nUnified	<- mUnified
+	 -> do	tUnified	<- getTypeOfNode kind nUnified
+		return	$ Just $ tUnified
+		
+	 -- Otherwise we're out of luck
+	 | otherwise
+	 ->	return Nothing
+	
+	_ -> return Nothing
+		
+
+-- | Get the `Type` corresponding to a `Node`.
 getTypeOfNode 
 	:: Kind 		-- ^ The kind of the node.
 	-> Node 		-- ^ The node to convert.
@@ -365,7 +367,7 @@ loadSimpleType cid
 	let kind	= classKind cls
 
 	if (kind /= kEffect && kind /= kClosure)
-	 then case classType cls of
+	 then case classUnified cls of
 		Just (NCon tc)	-> return $ TCon tc
 		_		-> return $ TVar kind $ UClass cid'
 

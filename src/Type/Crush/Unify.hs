@@ -24,7 +24,7 @@ trace s	= when debug $ traceM s
 --   If there are any errors then these are added to the SquidM monad.
 crushUnifyInClass 
 	:: ClassId	
-	-> SquidM Bool	-- whether this class was unified
+	-> SquidM Bool	-- whether the class was modified.
 
 crushUnifyInClass cid
  = do	Just cls	<- lookupClass cid
@@ -32,9 +32,14 @@ crushUnifyInClass cid
 	 ClassForward _ cid'
 	  -> crushUnifyInClass cid'
 	
-	 Class{}
+	 Class	{ classKind = kind }
+
+		-- effects and closures don't need to be unified
+		| isEffectKind kind || isClosureKind kind
+		-> return False
+
 		-- class is already unified
-		| Just t	<- classType cls
+		| Just t	<- classUnified cls
 		-> return False
 	
 		-- do some unification
@@ -47,8 +52,7 @@ crushUnifyInClass cid
 -- | sort through the ctors in the queue, and update the class.
 crushUnifyInClass_unify cid cls@Class{}
  = do	trace	$ "--  unifyClass " % cid % "\n"
-		% "    type         = " % classType cls	% "\n"
-		% "    name         = " % className cls	% "\n"
+		% "    name         = " % className   cls	% "\n"
 		% "    nodes        = " % classTypeSources cls % "\n\n"
 
 	-- Disregard vars and bottoms as they don't contribute real type constraints.
@@ -71,7 +75,7 @@ crushUnifyInClass_unify cid cls@Class{}
 
 	-- Update the class with the new type
   	updateClass cid cls 
-		{ classType 	= Just node_final }
+		{ classUnified 	= Just node_final }
 
 	-- Wake up any MPTCs acting on this class
 	mapM activateClass 
@@ -103,7 +107,7 @@ crushUnifyInClass_merge cid cls@Class{} queue@((n1, _):_)
 		cid2' <- mergeClasses cid2s
 		return	$ NApp cid1' cid2'
 
-	-- For effects and closures, if all of the nodes to be unified are already sums
+{-	-- For effects and closures, if all of the nodes to be unified are already sums
 	-- then we can just make a new one containing all the cids. Otherwise, we have to
 	-- split out the non-sums into their own classes.
 	| classKind cls == kEffect || classKind cls == kClosure
@@ -111,19 +115,19 @@ crushUnifyInClass_merge cid cls@Class{} queue@((n1, _):_)
 		let Just cidsSums =  liftM Set.unions   $ sequence $ map (takeNSum . fst) $ ncSums
 		cidsOthers	  <- liftM Set.fromList $ mapM (pushIntoNewClass (classKind cls)) ncOthers
 		return	$ makeNSum $ Set.union cidsSums cidsOthers
-	
+-}	
 
 	-- if none of the previous rules matched then we've got a type error in the graph.
 	| otherwise
  	= do	addErrorConflict cid cls
 		return NError
 
-
+{-
 pushIntoNewClass kind (node, src)
  = do	cid	<- allocClass src kind 
 	addToClass cid src kind node
 	return cid
-	
+-}	
 
 
 -- | This function is called by unifyClassCheck when it finds a problem
@@ -154,7 +158,7 @@ addErrorConflict  cid cls
 	--	an error to the state.
 	 _ -> panic stage
 		 $ "errorConflict: Couldn't identify the error in class " % cid % "\n"
-		 % "   type: \n"  %> classType cls 			% "\n\n"
+		 % "   unified: \n"  %> classUnified cls 			% "\n\n"
 		 % "   nodes:\n"  %> ("\n" %!% classTypeSources cls) 	% "\n\n"
 
 
@@ -173,7 +177,7 @@ addErrorConflict' cid cls ((node1, src1), (node2, src2))
 
 	-- mark the class in the graph that contains the error.
 	updateClass cid
-		cls { classType	= Just $ NError }
+		cls { classUnified	= Just $ NError }
 
 	return ()
 

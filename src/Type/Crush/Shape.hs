@@ -49,17 +49,17 @@ crushShape cidShape
 
 	-- See if any of the nodes contain information that needs
 	--	to be propagated to the others.
-	let mData	= map (\c -> case classType c of
+	let mData	= map (\c -> case classUnified c of
 					Just t@NApp{}	-> Just t
 					Just t@NCon{}	-> Just t
 					_		-> Nothing)
 			$ csMerge
 	
-	trace	$ "    classTypes   = " % map classType  csMerge % "\n"
+	trace	$ "    unified      = " % map classUnified  csMerge % "\n"
 	
 	-- If we have to propagate the constraint we'll use the first constructor as a template.
 	let mTemplate	= takeFirstJust mData
-	trace	$ "    mData       = "	% mData		% "\n"
+	trace	$ "    mData        = "	% mData		% "\n"
 		% "    mTemplate    = "	% mTemplate	% "\n"
 		% "\n"
 
@@ -158,7 +158,7 @@ pushTemplate tTemplate srcShape cMerge
 
 	-- if this class does not have a constructor then we 
 	--	can push the template into it.
-	| Class { classType = Just node }	<- cMerge
+	| Class { classUnified = Just node }	<- cMerge
 	, isNBot node
 	= do	
 		tPush	<- freshenNode srcShape tTemplate
@@ -173,7 +173,7 @@ pushTemplate tTemplate srcShape cMerge
 	--	This prevents the caller, crushShape2 recursively adding more errornous
 	--	Shape constraints to the graph.
 	--	
-	| Class { classType = Just t}		<- cMerge
+	| Class { classUnified = Just t }	<- cMerge
 	= if isShallowConflict t tTemplate
 	   then	
 	    do	let cError	= cMerge { classTypeSources = (tTemplate, srcShape) : classTypeSources cMerge }
@@ -200,7 +200,7 @@ freshenCid src cid
  	cid'	<- allocClass src k
 	updateClass cid'
 		(classEmpty cid' k src)
-		{ classType = Just nBot }
+		{ classUnified = Just nBot }
 
 	return	cid'
  

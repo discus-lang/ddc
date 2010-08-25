@@ -54,7 +54,7 @@ checkSchemeDanger :: [Error] -> Class -> SquidM [Error]
 checkSchemeDanger errs c
 	| Class { classKind	= kValue 
 		, classId	= cid
-		, classType	= Just node }	<- c
+		, classUnified	= Just node }	<- c
 	, NScheme t 				<- node
 
 	= do	trace 	$ "*   checkSchemeDanger\n"
@@ -91,7 +91,7 @@ checkSchemeDanger errs c
 checkDanger :: Class -> (Type, Type) -> SquidM (Maybe Error)
 checkDanger (Class 
 		{ classId 	= cidScheme
-		, classType 	= Just node })
+		, classUnified 	= Just node })
 		( tRegion@(TVar kR (UClass cidR))
 		, t2)
 
@@ -103,7 +103,7 @@ checkDanger (Class
 	 	 Just (fMutable, srcMutable)
 	  	  -> do
 			varScheme	<- makeClassName cidScheme
-			Just tNode	<- lookupTypeOfCidAsSquid cidScheme
+			Just tNode	<- takeShallowTypeOfCidAsSquid cidScheme
 			return	$ Just
 				$ ErrorLateConstraint
 					{ eScheme 		= (varScheme, tNode)
@@ -118,7 +118,7 @@ checkDanger (Class
 	= 	return Nothing
 	
 	
-checkDanger (Class { classType = t }) (t1, t2)
+checkDanger (Class { classUnified = t }) (t1, t2)
  = panic stage
 	$ "checkDanger: no match\n"
 	% "    c  = " % t	% "\n"

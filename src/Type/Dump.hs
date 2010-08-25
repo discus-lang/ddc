@@ -77,9 +77,9 @@ instance Pretty Class PMode where
 	 ->  	-- class id / name / kind 
 	    	classId c
 		% " :: " % classKind c % "\n"
-		-- class type
-		%> (case classType c of
-			Nothing	-> ppr "-- no type --\n"
+		-- unified type
+		%> (case classUnified c of
+			Nothing	-> ppr "-- not unified --\n"
 			Just t	-> ppr t % "\n\n")
 
 		-- class fetters

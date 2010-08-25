@@ -30,10 +30,10 @@ takeHeadDownLeftSpine
 takeHeadDownLeftSpine cid1
  = do	Just cls1	<- lookupClass cid1
 
-	case classType cls1 of
+	case classUnified cls1 of
 	 Just (NApp cid11 cid12)	
 	   -> do Just cls11	<- lookupClass cid11
-		 case classType cls11 of
+		 case classUnified cls11 of
 			Just NCon{}	
 			 -> do	Just cls12	<- lookupClass cid12
 				return $ Just cls12
@@ -63,7 +63,7 @@ takeAppsDownLeftSpine
 	
 takeAppsDownLeftSpine cid
  = do	Just cls <- lookupClass cid
-	case classType cls of
+	case classUnified cls of
 	 Just (NApp cid11 cid12)
 	  -> do	mtsLeft	<- takeAppsDownLeftSpine cid11
 		case mtsLeft of
@@ -94,7 +94,7 @@ takeAppsDownLeftSpine cid
 getClassDownLeftSpine :: ClassId -> SquidM Class
 getClassDownLeftSpine cid
  = do	Just cls	<- lookupClass cid
-	case classType cls of
+	case classUnified cls of
 	 Just (NApp cid1 _)	
 		-> getClassDownLeftSpine cid1
 

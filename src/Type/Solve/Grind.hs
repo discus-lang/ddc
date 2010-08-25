@@ -133,21 +133,21 @@ grindClass2 cid c@(ClassForward _ cid')
 	 	
 -- type nodes
 grindClass2 cid c@(Class	
-			{ classType 	= mType
+			{ classUnified 	= mType
 			, classKind	= k 
 			, classFetters	= fsSrcs})
  = do	
 	-- if a class contains an effect it might need to be crushed
 	progressCrushE	
 		<- case k of
-			kE | kE == kEffect	-> crushEffectInClass cid
+			kE | kE == kEffect	-> crushEffectsInClass cid
 			_			-> return False
 
 	-- try and crush other fetters in this class
 	progressCrush
 		<- if Map.null fsSrcs
 			then return False
-			else crushFetterInClass cid
+			else crushFettersInClass cid
 			
 	return	( progressCrushE || progressCrush
 		, [])
@@ -180,8 +180,7 @@ grindClass2 cid c@(ClassFetter { classFetter = f })
 			_			-> return False
 		
 	-- crush other fetters
-	progressCrush
-		<- crushFetterInClass cid
+	progressCrush <- crushFettersInClass cid
 		
 	return	( progressProj || progressShape || progressCrush
 		, fromMaybe [] qsMore )

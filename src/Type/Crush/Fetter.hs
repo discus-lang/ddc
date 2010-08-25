@@ -3,8 +3,11 @@
 -- | Crushing of built-in single parameter type class (SPTC) constraints
 --	like Pure, HeadLazy, DeepConst, DeepMutable.
 module Type.Crush.Fetter
-	(crushFetterInClass)
+	(crushFettersInClass)
 where
+import DDC.Type
+import Type.State
+{-
 import Type.State
 import Type.Class
 import Type.Location
@@ -24,17 +27,20 @@ import qualified Data.Sequence	as Seq
 stage	= "Type.Crush.Fetter"
 debug	= True
 trace s	= when debug $ traceM s
-
+-}
 -- | Try and crush any single parameter fetters acting on this
 --	class into smaller components.
-crushFetterInClass
+crushFettersInClass
 	:: ClassId 	-- ^ cid of class containing the fetters to crush.
 	-> SquidM Bool	-- ^ Whether we crushed something from this class.
 
-crushFetterInClass cid
- = do	Just cls <- lookupClass cid
+crushFettersInClass cid
+ = do	return False
+	
+{-	Just cls <- lookupClass cid
  	crushFetterWithClass cid cls
-
+-}
+{-
 crushFetterWithClass cid cls
  = case cls of
 	ClassUnallocated 
@@ -260,4 +266,4 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tsArgs srcEff
 		, eEffectSource		= srcEff
 		, eFetter		= fetter
 		, eFetterSource		= srcFetter }
-
+-}

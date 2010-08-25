@@ -57,8 +57,10 @@ classChildren c
  	ClassFetter { classFetter = f }	
 	 -> Set.toList $ freeCids f
 
-	Class	    { classType   = mt } 
-	 -> fromMaybe [] $ liftM (Set.toList . cidsOfNode) mt
+	Class	    { classTypeSources = tsSrc }
+	 -> Set.toList $ Set.unions $ map (cidsOfNode . fst) tsSrc
+		
+		
 
 
 -- | Increase the size of the type graph.
@@ -209,7 +211,7 @@ addToClass2 cid' src kind node graph
 		 	
 	update cid cls@Class{}
 	 = do	liftIO 	$ writeArray (graphClass graph) cid 
-			$ cls 	{ classType		= Nothing
+			$ cls 	{ classUnified		= Nothing
 				, classTypeSources	= (node, src) : classTypeSources cls }
 			
 		activateClass cid
@@ -372,7 +374,7 @@ mergeClasses2 cids cs
 		% "    cids = " % cids % "\n"
 
 	let cL'	= cL 	
-		{ classType		= Nothing
+		{ classUnified		= Nothing
 		, classTypeSources	= concatMap classTypeSources cs
 		, classFetters		= Map.unionsWith (Seq.><) $ map classFetters cs
 		, classFettersMulti	= Set.unions $ map classFettersMulti cs  }

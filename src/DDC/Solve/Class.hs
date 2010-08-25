@@ -60,16 +60,19 @@ data Class
 		--   kind error messages if the classTypeSources list is empty.
 		, classSource		:: TypeSource			
 
-		-- Type constraints contributing to this class ------------------------------------
-		-- | The type of this class (if available).
-		--	If any constraints were recently added to this class then this will be Nothing, 
-		--	and the unifier will have to work out what type to used based on the
-		--	classTypeSources field.
-		, classType		:: Maybe Node
+		-- | For types of non-injective kind, that is everything besides effect and closures,
+		--   gives the result of unifying the nodes in the classTypeSources list. 
+	 	--   If any constraints were recently added to the class then this will be Nothing, 
+		--   signaling that we need to run the unifier on it.
+		, classUnified		:: Maybe Node
 
+		-- Type constraints contributing to this class ------------------------------------
 		-- | Constraints that have been added to this class, including source information.
 		--	If a type error is encountered, then this information can be used to reconstruct
 		--	/why/ this particular node has the type it does.
+		-- 
+		--   TODO: don't add variables to this list
+		--
 		, classTypeSources	:: [(Node, TypeSource)]	 
 
 		-- | Single parameter type class constraints on this equivalence class.
@@ -90,12 +93,13 @@ classEmpty :: ClassId -> Kind -> TypeSource -> Class
 classEmpty cid kind src
 	= Class
 	{ classId		= cid
+	, className		= Nothing
 	, classKind		= kind
 	, classSource		= src
-	, className		= Nothing
-	, classType		= Nothing
+	, classUnified		= Nothing
 	, classTypeSources	= []
 	, classFetters		= Map.empty
 	, classFettersMulti	= Set.empty }
+
 
 
