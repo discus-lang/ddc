@@ -13,7 +13,7 @@ import DDC.Solve.Walk
 import Type.Location
 import Type.Feed
 import Control.Monad
--- import Data.Maybe
+import Data.Maybe
 -- import qualified Data.Set	as Set
 
 debug	= True
@@ -128,14 +128,14 @@ crushEffectsWithClass cid cls
 			[ "-- Crush.effect " 	% cid 
 			, "   nodes   = " 	% map fst (classTypeSources cls) ]
 	
+		-- Try to crush each effect in turn.
 		results	<- mapM (crushEffectNodeSrcOfClass cid cls) 
 			$ classTypeSources cls
 			
-		let nodeResults
-			= zip (classTypeSources cls) results
-			
-		let nodeReplacements
-			= concatMap takeNewNodeSrc nodeResults
+		-- Compare the result of crushing each node with the original, 
+		-- to determine what we need to replace them by.
+		let nodeResults		= zip (classTypeSources cls) results
+		let nodeReplacements	= concatMap takeNewNodeSrc nodeResults
 			
 		trace	$ vcat
 			[ ppr "   results:" 
@@ -154,7 +154,8 @@ crushEffectsWithClass cid cls
 		when classHasChanged
 		 $ updateClass cid cls { classTypeSources = nodeReplacements }
 		
-		-- We might have better luck next time.
+		-- Even if nothing has changed, we might be able to crush
+		-- something next time.
 		when ((not classHasChanged) && (or $ map isActiveResult results))
 		 $ activateClass cid		
 		
@@ -258,10 +259,6 @@ crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
 	= return CrushMaybeLater
 
 
-	| otherwise
-	= return CrushNever
-
-{-
 	-- DeepRead ---------------------------------------
 	| nCon		== nDeepRead
 	, NApp{}	<- nArg
@@ -270,11 +267,17 @@ crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
 				Nothing		-> return Nothing
 				Just cids	-> liftM sequence $ mapM lookupClass cids
 	
-		let readIt cls
-			| classKind cls == kRegion	= Just $ TApp tRead	tClass
-			| classKind cls == kValue	= Just $ TApp tDeepRead	tClass
-			| otherwise			= Nothing
-			where Just tClass = takeTClassOfClass cls
+		let readIt src cls
+			| classKind cls == kRegion	
+			= do	cidRead	<- feedType src tRead
+				return	$ Just (NApp cidRead (classId cls), src)
+				
+			| classKind cls == kValue	
+			= do	cidDeepRead <- feedType src tDeepRead
+				return	$ Just (NApp cidDeepRead (classId cls), src)
+
+			| otherwise
+			= 	return Nothing
 		
 		-- If the effect uses an abstract constructor like (ReadT (t a)) then we can't
 		-- crush it yet. We can't build (ReadT t) because t has the wrong kind. We also
@@ -282,18 +285,21 @@ crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
 		-- then we'll loose the effect on %r1.
 		case mClsApps of
 		 Just (clsCon : clsArgs)
-		  | Just NCon{}	<- classType clsCon
-		  -> do	let effs'	= mapMaybe readIt clsArgs
-			let src		= TSI $ SICrushedES cid nApp srcApp
-			cidsEff' <- mapM (feedType src) effs'			
-			crushUpdate cid cidsEff' src
+		  | Just NCon{}	<- classUnified clsCon
+		  -> do	let src	  = TSI $ SICrushedES cid nApp srcApp
+			nodeSrcs' <- liftM catMaybes $ mapM (readIt src) clsArgs
+			return	  $ CrushSimplified nodeSrcs'
 			
-		 _ ->	crushMaybeLater cid
+		 _ ->	return	CrushMaybeLater
 	
 	| nCon		== nDeepRead
-	= crushMaybeLater cid
+	= return CrushMaybeLater
 
 
+	| otherwise
+	= return CrushNever
+
+{-
 	-- DeepWrite --------------------------------------
 	| nCon		== nDeepWrite
 	, NApp{}	<- nArg
