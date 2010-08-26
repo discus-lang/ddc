@@ -1,6 +1,5 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
--- | Crush\/simplify compound effects into their parts.
 module DDC.Solve.Crush.Effects
 	(crushEffectsInClass)
 where

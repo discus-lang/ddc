@@ -1,7 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-incomplete-patterns #-}
 
--- | Unify multiple node constraints in an equivalence class.
 module DDC.Solve.Crush.Unify
 	( crushUnifyInClass
 	, addErrorConflict 

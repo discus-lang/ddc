@@ -1,9 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-incomplete-patterns #-}
 
--- | Crush any shape constraints in this class.
 module DDC.Solve.Crush.Shape
-	(crushShape)
+	(crushShapeInClass)
 where
 import Type.Feed
 import Type.Location
@@ -24,8 +23,8 @@ trace s	= when debug $ traceM s
 --
 --   Returns `True` if we've made progress with this constraint.
 --
-crushShape :: ClassId -> SquidM Bool
-crushShape cidShape
+crushShapeInClass :: ClassId -> SquidM Bool
+crushShapeInClass cidShape
  = do 	
 	-- Grab the Shape fetter from the class and extract the list of cids to be merged.
 	Just ClassFetter

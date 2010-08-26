@@ -175,7 +175,7 @@ grindClass2 cid c@(ClassFetter { classFetter = f })
 		<- case f of
 			FConstraint v _
 			 | VarIdPrim pid	<- varId v
-			 , isFShape pid		-> crushShape cid
+			 , isFShape pid		-> crushShapeInClass cid
 			_			-> return False
 		
 	-- crush other fetters
