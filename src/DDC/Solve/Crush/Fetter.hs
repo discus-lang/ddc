@@ -262,4 +262,11 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tArg srcNode
 	| classUnified clsCon == Just nHeadRead
 	= Right Nothing 
 	
+	-- This effect can't be purified.
+	| Just (NCon tc)	<- classUnified clsCon
+	= Left $ ErrorCannotPurify
+		{ eEffect		= makeTApp (TCon tc) [tArg]
+		, eEffectSource		= srcNode
+		, eFetter		= fetter
+		, eFetterSource		= srcFetter }
 
