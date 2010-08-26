@@ -3,9 +3,9 @@ module Type.Solve.Grind
 	(solveGrind)
 where
 import DDC.Solve.Crush.Unify
+import DDC.Solve.Crush.Shape
 import Type.Crush.Fetter
 import Type.Crush.Effects
-import Type.Crush.Shape
 import Type.Crush.Proj
 import Constraint.Exp
 import Util
@@ -55,12 +55,12 @@ solveGrind
 			
 solveGrindStep 
  = do	trace	$ "\n"
- 		% "--  solveGrindStep\n"
+ 		% "-- Solve.grind step\n"
 
 	 -- get the set of active classes
  	active	<- liftM Set.toList $ clearActive
 	
-	trace	$ "    active classes:\n"
+	trace	$ "   active classes:\n"
 		%> active	%  "\n"
 
 	-- make sure all classes are unified
@@ -83,10 +83,10 @@ solveGrindStep
 	let classesWithProgress	   = [cid | (cid, True)  <- activeUnify ++ activeProgress]
 	let classesWithoutProgress = [cid | (cid, False) <- activeUnify ++ activeProgress]
 	
-	trace	$ "    classes that made progress:\n" 
+	trace	$ "   classes that made progress:\n" 
 		%> classesWithProgress % "\n"
 
-	 	% "    classes without progress:\n" 
+	 	% "   classes without progress:\n" 
 		%> classesWithoutProgress % "\n"
 
 

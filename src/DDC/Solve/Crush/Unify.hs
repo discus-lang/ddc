@@ -58,6 +58,10 @@ crushUnifyInClass cid
 	  -> do	trace $ ppr "   -- is fetter class\n\n"
 		return False
 
+	 ClassFetterDeleted{}
+	  -> do	trace $ ppr "   -- WARNING: not unifying deleted fetter\n\n"
+		return False
+
 
 -- Sort through the ctors in the queue, and update the class.
 crushUnifyInClass_unify cid cls@Class{}

@@ -130,6 +130,12 @@ activateClassOfGraph cid graph
 	 ClassForward _ cid'	
 	  -> activateClassOfGraph cid' graph
 
+	 -- TODO: something is trying to activate unallocated classes. 
+	 --       Is this happening when we alloc a fresh one?
+	 --       Hunt it down and stop it from doing this.
+	 ClassUnallocated{}
+	  -> return ()
+	
 	 Class{}
 	  -> do	modifyIORef (graphActive graph)
 	  		$ Set.insert cid
@@ -138,8 +144,16 @@ activateClassOfGraph cid graph
 			$ Set.toList 
 			$ classFettersMulti cls
 	
-	 _ -> return ()	
-
+	 ClassFetter{}
+	  -> 	modifyIORef (graphActive graph)
+			$ Set.insert cid
+	
+	 -- If we activate a node that was constrained by some previously 
+	 -- deleted fetter this also tries to activate the deleted version.
+	 -- This is ok, we just ignore the attempted activation.
+	 ClassFetterDeleted{}
+	  -> return ()
+	
 
 -- | Get the set of active classes from the graph, emptying the contained set.
 clearActiveClassesOfGraph :: Graph -> IO (Set ClassId)

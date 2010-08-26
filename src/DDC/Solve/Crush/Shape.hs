@@ -1,14 +1,16 @@
--- | Handles crushing of shape constraints.
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONS -fno-warn-incomplete-patterns #-}
 
-module Type.Crush.Shape
+-- | Crush any shape constraints in this class.
+module DDC.Solve.Crush.Shape
 	(crushShape)
 where
 import Type.Feed
 import Type.Location
-import DDC.Solve.Crush.Unify
 import Shared.VarPrim
-import DDC.Type
+import DDC.Solve.Crush.Unify
 import DDC.Solve.State
+import DDC.Type
 import Util
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
@@ -20,66 +22,74 @@ trace s	= when debug $ traceM s
 --   If any of the nodes in the constraint contains a type constructor then add a similar constructor
 --   to the other nodes and remove the constraint from the graph.
 --
---   returns whether we managed to crush this fetter.
+--   Returns `True` if we've made progress with this constraint.
 --
 crushShape :: ClassId -> SquidM Bool
 crushShape cidShape
  = do 	
 	-- Grab the Shape fetter from the class and extract the list of cids to be merged.
-	Just shapeC@ClassFetter
-		{ classFetter	= fShape@(FConstraint v shapeTs)
+	Just ClassFetter
+		{ classFetter	= fShape@(FConstraint _ shapeTs)
 		, classSource	= srcShape }	
 			<- lookupClass cidShape
 
 	-- All the cids constrained by the Shape constraint.
-	let mergeCids	= map (\(TVar k (UClass cid)) -> cid) shapeTs
+	let mergeCids	= map (\(TVar _ (UClass cid)) -> cid) shapeTs
 
-	trace	$ "*   Crush.crushShape " 	% cidShape 	% "\n"
-		% "    fetter      = "	 	% fShape	% "\n"
-		% "    mergeCids   = "		% mergeCids 	% "\n"
+	trace	$ vcat
+		[ "-- Crush.shape " 		% cidShape
+		, "   fetter      = "	 	% fShape
+		, "   mergeCids   = "		% mergeCids
+		, blank ]
 
- 	-- Make sure that all the classes to be merged are unified.
-	--	We're expecting a maximum of one constructor per class queue.
+ 	-- Ensure that all the classes to be merged are unified.
+	-- TODO: To avoid this check we might want to call the crusher after the unifier.
  	mapM crushUnifyInClass mergeCids
  
-	-- Lookup all the nodes.
- 	csMerge		<- liftM (map (\(Just c) -> c)) 
+	-- Lookup all the classes that are being constrained by the Shape.
+ 	clsMerge	<- liftM (map (\(Just cls) -> cls)) 
  			$  mapM lookupClass mergeCids
 
 	-- See if any of the nodes contain information that needs
 	--	to be propagated to the others.
-	let mData	= map (\c -> case classUnified c of
+	let templates	= map (\c -> case classUnified c of
 					Just t@NApp{}	-> Just t
 					Just t@NCon{}	-> Just t
 					_		-> Nothing)
-			$ csMerge
+			$ clsMerge
 	
-	trace	$ "    unified      = " % map classUnified  csMerge % "\n"
+	trace	$ vcat
+		[ "-- Crush.shape " 	% cidShape % " (unify done)"
+		, "   unified      = " 	% map classUnified  clsMerge ]
 	
 	-- If we have to propagate the constraint we'll use the first constructor as a template.
-	let mTemplate	= takeFirstJust mData
-	trace	$ "    mData        = "	% mData		% "\n"
-		% "    mTemplate    = "	% mTemplate	% "\n"
-		% "\n"
+	let mTemplate	= takeFirstJust templates
+	trace	$ "   templates    = "	% templates	% "\n"
+		% "   mTemplate    = "	% mTemplate	% "\n"
 
 	let result
 		-- If the constrained equivalence class is of effect or closure kind
-		--	then we can just delete the constraint
+		-- then we can just delete the constraint. 
+		-- BUGS: This is wrong. We're supposed to check if it's manifest.
 		| TVar k (UClass _) : _	<- shapeTs
 		, k == kClosure || k == kEffect
-		= do	delMultiFetter cidShape
+		= do	trace $ ppr "    -- is eff/clo so deleting constraing (BUGS)\n\n"
+			delMultiFetter cidShape
 			return True
 
-		-- none of the nodes contain data constructors, so there's no template to work from
+		-- None of the nodes contain data constructors, so there's no template to work from.
+		-- However, something might be unified in later, so activiate ourselves
+		-- so the grinder calls us again on the next pass.
 		| Nothing	<- mTemplate
-		= return False
+		= do	trace $ ppr "   -- no template, reactivating\n\n"
+			activateClass cidShape
+			return False
 		
 		-- we've got a template
 		--	we can now merge the sub-classes and remove the shape constraint.
 		| Just tTemplate	<- mTemplate
-		= do	crushShape2 cidShape fShape srcShape tTemplate csMerge
+		= do	crushShape2 cidShape fShape srcShape tTemplate clsMerge
 			delMultiFetter cidShape
-			
 			return True
 	
 	result		
