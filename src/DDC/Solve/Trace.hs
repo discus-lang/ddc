@@ -294,9 +294,7 @@ takeShallowTypeOfClass cls
 	 -- For effects and closures we form the result type by summing the constraints.
 	 | isEffectKind kind || isClosureKind kind
 	 -> do	ts	<- mapM (getTypeOfNode kind) $ map fst tsSrc
-		case makeTSum kind ts of
-		 TVar{}	-> return $ Just $ tBot kind
-		 tSum	-> return $ Just tSum
+		return	$ Just $ makeTSum kind ts
 		
 	 -- For other types, we rely on the unifier to have worked out a type for us.
 	 | Just nUnified	<- mUnified

@@ -51,13 +51,14 @@ foreign import "primException_handleUncaught"
 foreign import "exit"
  exitU :: Int32# -> a
  
+
 error  ss 	= throw Exception ss
 errorL ss	= primThrow_silent @ (Exception ss)
+
 
 exit code	
  = do	exitU (unboxInt32 code)
  	()
-	
 
 		
 -- | This is the top level exception handler which wraps the main function.

@@ -3,26 +3,11 @@
 import Base
 import Data.Int
 
-
-
-{-
 -- succ is a first order function
 succ x = x + 1
 
 -- a second order function.
 appFive g	= g 5
-
-chooseFive g
- = do	f = if True then g else succ
-	f 5
-
-
--}
-
-
-foreign import succ 
-	:: forall %r1 %r2. Int %r1 -(!e1)> Int %r2
-	:- !e1 = !Read %r1
 
 chooseFive g
  = do	f = if True then g else succ
