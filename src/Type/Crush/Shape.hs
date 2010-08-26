@@ -5,7 +5,7 @@ module Type.Crush.Shape
 where
 import Type.Feed
 import Type.Location
-import Type.Crush.Unify
+import DDC.Solve.Crush.Unify
 import Shared.VarPrim
 import DDC.Type
 import DDC.Solve.State
@@ -13,7 +13,7 @@ import Util
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 
 -- | Try and crush the Shape constraint in this class.
@@ -161,7 +161,7 @@ pushTemplate tTemplate srcShape cMerge
 	, isNBot node
 	= do	
 		tPush	<- freshenNode srcShape tTemplate
-		trace 	$ "  - merge class\n"
+		trace 	$ "  -- merge class\n"
 			% "    tPush = " % tPush	% "\n"		
 
 		addNodeToClass (classId cMerge) (classKind cMerge) srcShape tPush

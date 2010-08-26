@@ -27,10 +27,10 @@ trace s	= when debug $ traceM s
 -- | Merge several classes by combining their constraints.
 --
 --	This just combines the information, but doesn't perform actual unification, 
---	which is handled by the DDC.Solve.Crush.Unify.
+--	which is handled by the "DDC.Solve.Crush.Unify".
 --
 --	The class with the lowest cid gets all the constraints and the others are updated
---	to be `ClassFoward`s which point to it.
+--	to be `ClassFoward` which point to it.
 mergeClasses
 	:: [ClassId] 
 	-> SquidM ClassId

@@ -2,7 +2,7 @@
 module Type.Solve.Grind
 	(solveGrind)
 where
-import Type.Crush.Unify
+import DDC.Solve.Crush.Unify
 import Type.Crush.Fetter
 import Type.Crush.Effects
 import Type.Crush.Shape
