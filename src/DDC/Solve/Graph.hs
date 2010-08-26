@@ -18,7 +18,8 @@ module DDC.Solve.Graph
 	, addClassToGraph
 	, delFetterFromGraph
 	, modifyClassInGraph
-	, addNodeToClassInGraph)
+	, addNodeToClassInGraph
+	, addAliasForClassInGraph)
 where
 import Type.Location
 import DDC.Solve.Graph.Class
@@ -211,12 +212,12 @@ delFetterFromGraph cid graph
 --	otherwise we allocate a new class.
 addNodeToClassInGraph 
 	:: ClassId		-- ^ cid of class to update.
-	-> TypeSource		-- ^ Source of the new constraint.
 	-> Kind			-- ^ Kind of the constraint.
+	-> TypeSource		-- ^ Source of the new constraint.
 	-> Node			-- ^ The new node constraint.
 	-> Graph -> IO Graph
 
-addNodeToClassInGraph cid src kind node graph
+addNodeToClassInGraph cid kind src node graph
  = follow cid
  where
 	follow cid' 
@@ -241,3 +242,30 @@ addNodeToClassInGraph cid src kind node graph
 	update _ _	= death
 	death 		= panic stage $ "addNodeToClassInGraph: wrong kind of class"
 
+
+-- | Add an alias for a class.
+--   An alias is a name that identifies the class. There can be many aliases 
+--   for a given class, but only one ''canonical'' name.
+addAliasForClassInGraph :: ClassId -> Kind -> TypeSource -> Var	-> Graph -> IO Graph
+addAliasForClassInGraph cid kind src var graph
+ = do	modifyClassInGraph cid graph
+ 	 $ \cls -> case cls of
+		ClassUnallocated{}
+		 -> (emptyClass kind src cid) 
+			{ className	= Just var
+			, classAliases 	= Map.singleton var src }
+			
+		Class { className = Nothing }
+		 -> cls	{ className	= Just var
+			, classAliases 	= Map.insert var src (classAliases cls) } 
+
+		Class { className = Just _ }
+		 -> cls	{ classAliases 	= Map.insert var src (classAliases cls) } 
+
+		_ -> panic stage 
+			$ "addAliasForClass: can't modify class " % cid
+	
+	return 	$ graph
+		{ graphVarToClassId = Map.insert var cid (graphVarToClassId graph) }
+
+	

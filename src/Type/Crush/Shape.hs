@@ -164,7 +164,7 @@ pushTemplate tTemplate srcShape cMerge
 		trace 	$ "  - merge class\n"
 			% "    tPush = " % tPush	% "\n"		
 
-		addNodeToClass (classId cMerge) srcShape (classKind cMerge) tPush
+		addNodeToClass (classId cMerge) (classKind cMerge) srcShape tPush
 		return $ Just tPush		
 
 	-- If adding the template will result in a type error then add the error to

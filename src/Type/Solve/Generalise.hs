@@ -162,7 +162,7 @@ addSchemeToGraph :: TypeSource -> Var -> Type -> SquidM ()
 addSchemeToGraph src vGen tScheme
  = do
 	-- call makeClass to get the classId of this var
-	cidGen		<- ensureClassWithVar src kValue vGen 
+	cidGen		<- ensureClassWithVar kValue src vGen 
 
 	-- grab the class from the graph
 	Just cls	<- lookupClass cidGen

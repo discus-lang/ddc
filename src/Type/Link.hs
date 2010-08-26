@@ -54,7 +54,7 @@ linkType bound src tt
 	 -> do	mCid	<- lookupVarToClassId v
 	 	case mCid of
 		 Nothing 
-		  -> do	cid	<- ensureClassWithVar src k v
+		  -> do	cid	<- ensureClassWithVar k src v
 			return	$ TVar k $ UClass cid
 			
 		 Just cid

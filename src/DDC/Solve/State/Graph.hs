@@ -14,7 +14,8 @@ module DDC.Solve.State.Graph
 	, activateClass
 	, clearActive
 	, foldClasses
-	, addNodeToClass)
+	, addNodeToClass
+	, addAliasForClass)
 where
 import Type.Location
 import DDC.Solve.State.Base
@@ -55,14 +56,14 @@ allocClass kind src
 
 -- | If there is already a class for this variable then return that
 --   otherwise make a new one containing this var.
-ensureClassWithVar :: TypeSource -> Kind -> Var	-> SquidM ClassId
-ensureClassWithVar src kind var
+ensureClassWithVar :: Kind -> TypeSource -> Var	-> SquidM ClassId
+ensureClassWithVar kind src var
  = do	mCid		<- lookupVarToClassId var
    	case mCid of
    	 Just cid	-> return cid
 	 Nothing 
 	  -> do	cid	<- allocClass kind src 
-		addAliasForClass cid src var kind
+		addAliasForClass cid kind src var
 	     	return cid
 
 
@@ -121,9 +122,20 @@ foldClasses fun x
 
 
 -- | Add a new node constraint to a class in the graph, and activate it.
-addNodeToClass :: ClassId -> TypeSource -> Kind -> Node -> SquidM ()
-addNodeToClass cid src kind node
+addNodeToClass :: ClassId -> Kind -> TypeSource -> Node -> SquidM ()
+addNodeToClass cid kind src node
  = do	graph	<- getsRef stateGraph
-	graph'	<- liftIO $ addNodeToClassInGraph cid src kind node graph
+	graph'	<- liftIO $ addNodeToClassInGraph cid kind src node graph
 	writesRef stateGraph graph'
+
+
+-- | Add an alias for a class.
+--   An alias is a name that identifies the class. There can be many aliases 
+--   for a given class, but only one ''canonical'' name.
+addAliasForClass :: ClassId -> Kind -> TypeSource -> Var -> SquidM ()
+addAliasForClass cid kind src var
+ = do	graph	<- getsRef stateGraph
+	graph'	<- liftIO $ addAliasForClassInGraph cid kind src var graph
+	writesRef stateGraph graph'
+
 

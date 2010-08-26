@@ -6,8 +6,7 @@ module DDC.Solve.State.Naming
 	, newVarN
 	, lookupSigmaVar
 	, lookupVarToClassId
-	, getCanonicalNameOfClass
-	, addAliasForClass )
+	, getCanonicalNameOfClass)
 where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
@@ -124,7 +123,7 @@ getCanonicalNameOfClass !cid
 	  , Just nameSpace	<- spaceOfKind $ resultKind kind
 	  -> do	var		<- newVarN nameSpace
 		let tSource	= TSI $ SIClassName
-		addAliasForClass cid tSource var kind
+		addAliasForClass cid kind tSource var
 		return var
 	
 	  | Map.null aliases
@@ -145,34 +144,4 @@ getCanonicalNameOfClass !cid
 		$ "getCanonicalNameOfClass: class " % cid % "has no name."
 
 
--- | Add an alias for a class.
---   An alias is a name that identifies the class. There can be many aliases 
---   for a given class, but only one ''canonical'' name.
-addAliasForClass 
-	:: ClassId		-- ^ cid of the class we're adding to.
-	-> TypeSource		-- ^ Source of the name.
-	-> Var			-- ^ The new name to add.
-	-> Kind			-- ^ Kind of the name.
-	-> SquidM ()
-
-addAliasForClass cid src var kind
- = do	modifyClass cid
- 	 $ \cls -> case cls of
-		ClassUnallocated{}
-		 -> (emptyClass kind src cid) 
-			{ className	= Just var
-			, classAliases 	= Map.singleton var src }
-			
-		Class { className = Nothing }
-		 -> cls	{ className	= Just var
-			, classAliases 	= Map.insert var src (classAliases cls) } 
-
-		Class { className = Just _ }
-		 -> cls	{ classAliases 	= Map.insert var src (classAliases cls) } 
-
-		_ -> panic stage 
-			$ "addAliasForClass: can't modify class " % cid
-			
-	stateGraph `modifyRef` \graph -> 
-		graph { graphVarToClassId = Map.insert var cid (graphVarToClassId graph) }
 
