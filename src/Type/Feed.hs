@@ -272,14 +272,10 @@ addFetter src f@(FConstraint vFetter [t])
 	
 	case Map.lookup vFetter (classFetters cls) of
 
-	 -- We already had a fetter of this sort on the class, but we add 
-	 -- the source info anyway to help with error reporting.
+	 -- We already had a fetter of this sort on the class.
 	 Just srcs	
-	  -> do	modifyClass cid $ \c -> c {
-			classFetters = Map.insertWith (Seq.><) vFetter 
-					(Seq.singleton src) (classFetters c) }
-		return False
-		
+	  -> 	return False
+
 	 -- This is a new fetter. 
 	 Nothing
 	  -> do	modifyClass cid $ \c -> c {

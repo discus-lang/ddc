@@ -14,7 +14,7 @@ import Type.Feed
 import Control.Monad
 import Data.Maybe
 
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effects"
 
