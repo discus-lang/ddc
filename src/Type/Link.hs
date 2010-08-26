@@ -51,7 +51,7 @@ linkType bound src tt
  	TVar k (UVar v)
 	 | elem v bound	-> return tt
 	 | otherwise
-	 -> do	mCid	<- lookupVarToClassId v
+	 -> do	mCid	<- lookupCidOfVar v
 	 	case mCid of
 		 Nothing 
 		  -> do	cid	<- ensureClassWithVar k src v

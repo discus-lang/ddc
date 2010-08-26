@@ -262,7 +262,7 @@ solveCs	(c:cs)
 
 			-- The scheme has already been generalised so we can extract it straight from the graph			
 			| Set.member vInst genDone
-			= do	Just cid	<- lookupVarToClassId vInst
+			= do	Just cid	<- lookupCidOfVar vInst
 
 				-- we need to make sure that no new mutability constraints have
 				--	crept in and made any more vars in this type dangerous since

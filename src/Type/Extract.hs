@@ -56,7 +56,7 @@ extractType final varT
 extractType_findClass final varT
  = do	
 	-- try and find the equivalence class that corresponds to this var.
- 	mCid	<- lookupVarToClassId varT
+ 	mCid	<- lookupCidOfVar varT
 	case mCid of
 	 Just cid	
 	  -> extractType_fromClass final varT cid

@@ -4,6 +4,7 @@
 module DDC.Solve.State.Graph
 	( module DDC.Solve.Graph
 	, lookupClass
+	, lookupCidOfVar
 	, kindOfClass
 	, allocClass
 	, ensureClassWithVar
@@ -28,7 +29,6 @@ import Control.Monad.Trans
 import Control.Monad
 import Data.Set			(Set)
 import qualified Data.Map	as Map
-import {-# SOURCE #-} DDC.Solve.State.Naming
 
 
 -- | Lookup a class from the graph.
@@ -36,6 +36,17 @@ lookupClass :: ClassId -> SquidM (Maybe Class)
 lookupClass cid
  = do	graph	<- getsRef stateGraph
  	liftIO $ lookupClassFromGraph cid graph
+
+
+-- | Lookup the cid corresponding to this type variable.
+lookupCidOfVar :: Var -> SquidM (Maybe ClassId)
+lookupCidOfVar v
+ = do	graph	<- getsRef stateGraph
+	case Map.lookup v (graphVarToClassId graph) of
+	 Nothing	-> return Nothing
+	 Just cid	
+	  -> do	cid'	<- liftIO $ sinkClassIdOfGraph cid graph
+	  	return	$ Just cid'
 
 
 -- | Get the kind of a class in the graph.
@@ -58,7 +69,7 @@ allocClass kind src
 --   otherwise make a new one containing this var.
 ensureClassWithVar :: Kind -> TypeSource -> Var	-> SquidM ClassId
 ensureClassWithVar kind src var
- = do	mCid		<- lookupVarToClassId var
+ = do	mCid		<- lookupCidOfVar var
    	case mCid of
    	 Just cid	-> return cid
 	 Nothing 

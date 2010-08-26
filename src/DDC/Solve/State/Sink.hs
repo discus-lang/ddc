@@ -12,7 +12,7 @@ where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
 import DDC.Solve.State.SinkIO
-import DDC.Solve.Graph
+import DDC.Solve.State.Graph
 import DDC.Var
 import DDC.Type
 import DDC.Main.Error
@@ -25,7 +25,7 @@ stage	= "DDC.Solve.Sink"
 -- | Convert a var to canonical form
 sinkVar :: Var -> SquidM Var
 sinkVar	var
- = do	mCid	<- lookupVarToClassId var
+ = do	mCid	<- lookupCidOfVar var
 	case mCid of
 	 Nothing	-> return var
 	 Just cid	-> getCanonicalNameOfClass cid

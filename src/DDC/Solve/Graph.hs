@@ -210,13 +210,7 @@ delFetterFromGraph cid graph
 -- | Add a new type constraint to a class, and activate it.
 --	If there is already a class with this cid then we add the node to it,
 --	otherwise we allocate a new class.
-addNodeToClassInGraph 
-	:: ClassId		-- ^ cid of class to update.
-	-> Kind			-- ^ Kind of the constraint.
-	-> TypeSource		-- ^ Source of the new constraint.
-	-> Node			-- ^ The new node constraint.
-	-> Graph -> IO Graph
-
+addNodeToClassInGraph :: ClassId -> Kind -> TypeSource -> Node -> Graph -> IO Graph
 addNodeToClassInGraph cid kind src node graph
  = follow cid
  where

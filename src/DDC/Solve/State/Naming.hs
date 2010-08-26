@@ -5,12 +5,10 @@ module DDC.Solve.State.Naming
 	( instVar
 	, newVarN
 	, lookupSigmaVar
-	, lookupVarToClassId
 	, getCanonicalNameOfClass)
 where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
-import DDC.Solve.State.Sink
 import DDC.Solve.State.Graph
 import DDC.Type
 import DDC.Var
@@ -83,20 +81,6 @@ lookupSigmaVar :: Var -> SquidM (Maybe Var)
 lookupSigmaVar	v
  	= liftM (Map.lookup v)
 	$ getsRef stateSigmaTable
-
-
--- | Lookup the class with this name.
---   Classes can have many different names, so this is a many-to-one map.
-lookupVarToClassId :: Var -> SquidM (Maybe ClassId)
-lookupVarToClassId v
- = do	graph		<- getsRef stateGraph
- 	let vMap	= graphVarToClassId graph
-
-	case Map.lookup v vMap of
-	 Nothing	-> return Nothing
-	 Just cid	
-	  -> do	cid'	<- sinkClassId cid
-	  	return	$ Just cid'
 
 
 -- | Get the canonical name for a class.
