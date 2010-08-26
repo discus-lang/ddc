@@ -24,14 +24,11 @@ module DDC.Solve.State.Base
 	, pathLeave 
 	
 	  -- * Bits and pieces
-	, lookupSourceOfNode
 	, graphInstantiatesAdd)
 where
 import Constraint.Exp
 import Constraint.Pretty	()
-import Type.Location
 import Type.Error
-import DDC.Solve.Graph
 import DDC.Solve.State.Squid
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -44,7 +41,6 @@ import qualified DDC.Main.Arg	as Arg
 import qualified Data.Set	as Set
 import qualified Util.Data.Map	as Map
 import Util
-import {-# SOURCE #-} DDC.Solve.State.Sink
 
 stage	= "DDC.Solve.State.Base"
 
@@ -166,22 +162,7 @@ pathLeave bind
 
 
 -- Bits and Pieces -------------------------------------------------------------------------------
--- | Get the source of some effect, given the class that contains it.
---	The cids in the provided effect must be in canonical form, 
---	but the cids in the class don't need to be.
---	If there are multiple sources in the class then just take the first one.
-lookupSourceOfNode
-	:: Node
-	-> Class 
-	-> SquidM (Maybe TypeSource)
 
-lookupSourceOfNode nEff cls
- = do	tsSrcs	<- mapM sinkCidsInNodeFst $ classTypeSources cls
-	return 	$ listToMaybe
-		$ [nodeSrc	| (nodeEff,  nodeSrc)	<- tsSrcs
-				, nodeEff == nEff]
-
-			
 -- | Add to the who instantiates who list
 graphInstantiatesAdd :: CBind -> CBind -> SquidM ()
 graphInstantiatesAdd    vBranch vInst
