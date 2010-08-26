@@ -220,13 +220,21 @@ getPurifier cid cls fetter srcFetter (nodeEff, srcNode)
 		
 		let ePurifier	=  getPurifier' cid fetter srcFetter clsCon clsArg tArg srcNode
 		
-		trace	$ vcat
+{-		trace	$ vcat
 			[ "  * getPurifier " 		% cid
 			, "    clsCon.classUnified  = "	% classUnified clsCon
 			, "    clsArg.classUnified = "	% classUnified clsArg
 			, "    purifier             = "	% ePurifier ]
-		
+-}		
 		return ePurifier
+
+	-- This effect can't be purified.
+	| NCon tc	<- nodeEff
+	= do	return 	$ Left $ ErrorCannotPurify
+			{ eEffect		= TCon tc
+			, eEffectSource		= srcNode
+			, eFetter		= fetter
+			, eFetterSource		= srcFetter }
 		
 	| otherwise
 	= return $ Right Nothing
@@ -254,11 +262,4 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tArg srcNode
 	| classUnified clsCon == Just nHeadRead
 	= Right Nothing 
 	
-	-- This effect can't be purified.
-	| Just nCon@(NCon tc)	<- classUnified clsCon
-	= Left 	$ ErrorCannotPurify
-		{ eEffect		= makeTApp (TCon tc) [tArg]
-		, eEffectSource		= srcNode
-		, eFetter		= fetter
-		, eFetterSource		= srcFetter }
 
