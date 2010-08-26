@@ -4,8 +4,8 @@ module Type.Solve.Grind
 where
 import DDC.Solve.Crush.Unify
 import DDC.Solve.Crush.Shape
+import DDC.Solve.Crush.Effects
 import Type.Crush.Fetter
-import Type.Crush.Effects
 import Type.Crush.Proj
 import Constraint.Exp
 import Util

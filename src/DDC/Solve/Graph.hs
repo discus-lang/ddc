@@ -238,9 +238,11 @@ addNodeToClassInGraph cid kind src node graph
  	 	 Class{}		-> update cid' cls
 	 	 _			-> death
 			 	
-	update cid' cls@Class{}
-	 = do	writeArray (graphClass graph) cid'
-			$ cls 	{ classUnified		= Nothing
+	update cid' cls
+	 = case cls of
+	    Class{} -> do
+	 	writeArray (graphClass graph) cid'
+			$ cls 	{ classUnified		= makeUnified cls
 				, classTypeSources	= (node, src) : classTypeSources cls }
 			
 		activateClassOfGraph cid' graph
@@ -248,9 +250,22 @@ addNodeToClassInGraph cid kind src node graph
 		(case node of
 			NVar v	-> return $ graph { graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
 			_	-> return $ graph)
+			
+	    _ -> death
 
-	update _ _	= death
-	death 		= panic stage $ "addNodeToClassInGraph: wrong kind of class"
+	-- if there is nothing already in this class we can set the classUnified.
+	makeUnified cls
+	 = case cls of
+	    Class{}
+		 | isRegionKind kind 		-> Nothing
+		 | isEffectKind kind 		-> Nothing
+		 | isClosureKind kind		-> Nothing
+		 | null $ classTypeSources cls	-> Just node
+		 | otherwise	 		-> Nothing
+		
+	    _ -> death
+	
+	death 	= panic stage $ "addNodeToClassInGraph: wrong kind of class"
 
 
 -- | Add an alias for a class.

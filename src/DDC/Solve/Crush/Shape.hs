@@ -15,7 +15,7 @@ import Util
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 
 -- | Try and crush the Shape constraint in this class.

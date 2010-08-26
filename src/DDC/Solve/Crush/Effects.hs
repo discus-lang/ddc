@@ -1,27 +1,90 @@
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
 -- | Crush\/simplify compound effects into their parts.
-module Type.Crush.Effects
+module DDC.Solve.Crush.Effects
 	(crushEffectsInClass)
 where
 import DDC.Type
-import Control.Monad
+import DDC.Solve.Graph
 import DDC.Solve.State
 import DDC.Main.Pretty
-
-{-
-import Type.Location
-import Type.Class
-import Type.Feed
 import DDC.Main.Error
 import DDC.Solve.Walk
-import Data.Maybe
-import qualified Data.Set	as Set
--}
-debug	= False
-trace s	= when debug $ traceM s
--- stage	= "Type.Crush.Effects"
+import Type.Location
+import Type.Feed
+import Control.Monad
+-- import Data.Maybe
+-- import qualified Data.Set	as Set
 
+debug	= True
+trace s	= when debug $ traceM s
+stage	= "Type.Crush.Effects"
+
+-- CrushResult ------------------------------------------------------------------------------------
+-- | The result of crushing a single node effect in a class.
+data CrushResult
+	-- | This effect can never be crushed because it's already atomic 
+	--   (like Read %r1)
+	= CrushNever
+	
+	-- | We might be able to crush this effect later if 
+	--   a more specific type is unified into its argument. 
+	--   (like ReadT a)
+	| CrushMaybeLater
+
+	-- | We've completely crushed out this effect, and can replace it by bottom.
+	--   (like ReadH ())
+	| CrushBottom
+	
+	-- | We've simplified this effect into some smaller ones.
+	| CrushSimplified [(Node, TypeSource)]
+	deriving Show
+
+instance Pretty CrushResult PMode where
+ ppr result
+  = case result of
+	CrushNever		-> ppr "CrushNever"
+	CrushMaybeLater		-> ppr "CrushMaybeLater"
+	CrushBottom		-> ppr "CrushBottom"
+	CrushSimplified	bits	-> ppr $ "CrushSimplified " % bits
+
+
+-- | Given a sourced node and the result of crushing it, 
+--   return what we should replace that node by in the graph class.
+takeNewNodeSrc 
+	:: ((Node, TypeSource), CrushResult)
+	-> [(Node, TypeSource)]
+
+takeNewNodeSrc (orig@(nOrig, srcOrig), crush)
+ = case crush of
+	CrushNever		-> [orig]
+	CrushMaybeLater		-> [orig]
+	CrushBottom		-> []
+	CrushSimplified bits	-> bits
+
+
+-- | Check if a CrushResult will change the corresponding node in the class.
+isChangeResult :: CrushResult -> Bool
+isChangeResult crush
+ = case crush of
+	CrushNever		-> False
+	CrushMaybeLater		-> False
+	CrushBottom		-> True
+	CrushSimplified{}	-> True
+	
+
+-- | Check if a CrushResult says we should activate the class and try crushing later.
+isActiveResult :: CrushResult -> Bool
+isActiveResult crush
+ = case crush of
+	CrushNever		-> False
+	CrushMaybeLater		-> True
+	CrushBottom		-> False
+	CrushSimplified{}	-> True
+
+	
+
+-- Crushing ---------------------------------------------------------------------------------------
 -- Try and crush the effects in this clas into a simpler form.
 --
 -- @
@@ -34,15 +97,11 @@ trace s	= when debug $ traceM s
 --
 crushEffectsInClass 
 	:: ClassId		-- ^ cid of the class containing the top level application.
-	-> SquidM Bool		-- ^ Whether we crushed something from this class.
+	-> SquidM Bool		-- ^ Whether we made progress by crushing something in this class.
 
 crushEffectsInClass cid
- = do	trace		$ "--  crushEffectInClass " % cid % "\n"
-	return False
-	
-{-
-	Just cls	<- lookupClass cid
-	crushEffectWithClass cid cls
+ = do	Just cls	<- lookupClass cid
+	crushEffectsWithClass cid cls
 	
 crushEffectsWithClass cid cls
  = case cls of
@@ -60,60 +119,107 @@ crushEffectsWithClass cid cls
 	
 	-- Follow indirections.
 	ClassForward _ cid'
-	 -> crushEffectInClass cid'
+	 -> crushEffectsInClass cid'
 		
-	-- Class hasn't been unified yet.
-	Class	{ classType = Nothing }
-	 -> crushMaybeLater cid
-	
 	-- A class containing an application.
-	Class	{ classKind = kind
-		, classType = Just nApp'@NApp{} }
+	Class	{ classKind = kind }
+	 | isEffectKind kind
+	 -> do	trace	$ vcat 
+			[ "-- Crush.effect " 	% cid 
+			, "   nodes   = " 	% map fst (classTypeSources cls) ]
+	
+		results	<- mapM (crushEffectNodeSrcOfClass cid cls) 
+			$ classTypeSources cls
+			
+		let nodeResults
+			= zip (classTypeSources cls) results
+			
+		let nodeReplacements
+			= concatMap takeNewNodeSrc nodeResults
+			
+		trace	$ vcat
+			[ ppr "   results:" 
+		 	, vcat 	$ map (\((n, s), crush) -> "      " % padL 20 n % s % "\n" 
+							%  "      " % crush) 
+				$ nodeResults 
+
+			, ppr "   replacements:"
+			, vcat 	$ map (\(n, s) 		-> "      " % padL 20 n % s) 
+				$ nodeReplacements ]
 		
-	 -> do	nApp@(NApp cidCon cidArg) <- sinkCidsInNode nApp'
+		-- Update the class with the replacement nodes if needed.
+		let classHasChanged 
+			= or $ map isChangeResult results
+
+		when classHasChanged
+		 $ updateClass cid cls { classTypeSources = nodeReplacements }
+		
+		-- We might have better luck next time.
+		when ((not classHasChanged) && (or $ map isActiveResult results))
+		 $ activateClass cid		
+		
+		return classHasChanged
+		
+	 -- some non-effect class.
+	 | otherwise
+	 -> return False
+
+	
+	
+
+-- | Try to crush a node in an effect class.
+crushEffectNodeSrcOfClass 
+	:: ClassId 
+	-> Class 
+	-> (Node, TypeSource)
+	-> SquidM CrushResult
+
+crushEffectNodeSrcOfClass cid cls (node, src)
+
+	-- All the nodes we can crush are applications.
+	| NApp{} <- node
+	= do	nApp@(NApp cidCon cidArg) <- sinkCidsInNode node
 		Just clsCon	<- lookupClass cidCon
 		Just clsArg	<- lookupClass cidArg
 		
+		-- We have to wait until both parts of the application
+		-- have been unified so we have something to work with.
 		trace	$ vcat
-			[ "    node             = "	% nApp 
-			, "    clsCon.classType = "	% classType clsCon
-			, "    clsArg.classType = "	% classType clsArg ]
+			[ "    node                = "	% nApp 
+			, "    clsCon.classUnified = "	% classUnified clsCon
+			, "    clsArg.classUnified = "	% classUnified clsArg ]
 
 		let result
 			-- We've got enough information to try and crush the effect.
-			| Just NCon{}	<- classType clsCon
-			, Just _	<- classType clsArg
-			= crushEffectApp cid cls clsCon clsArg
+			| Just NCon{}	<- classUnified clsCon
+			, Just _	<- classUnified clsArg
+			= crushEffectApp cid cls (nApp, src) clsCon clsArg
 			
 			-- Either the constructor or arg hasn't been unified yet.
 			| otherwise
-			= crushMaybeLater cid
+			= return CrushMaybeLater
 			
 		result
-		
-	-- Some other class
-	Class	{ classType = Just _ }
-	 -> crushNever cid
 	
+	-- Constructors and sums can't be crushed.
+	| _	<- node
+	= return CrushNever
+
 
 -- | Try and crush an effect application.
---   The classTypes in all the provided classes have been unified, so are Justs.
 crushEffectApp
-	:: ClassId		-- ^ cid of the class containing the outer application.
-	-> Class		-- ^ Class containing the application.
-	-> Class		-- ^ Class containing the constructor.
-	-> Class		-- ^ Class containign the argument.
-	-> SquidM Bool		-- ^ Whether we made any progress.
+	:: ClassId		-- ^ The cid of the class being crushed.
+	-> Class		-- ^ Class containing the effect being crushed.
+	-> (Node, TypeSource)	-- ^ The particular node constraint being crushed now.
+	-> Class		-- ^ Class containing the constructor of the effect application.
+	-> Class		-- ^ Class containing the argument of the effect application.
+	-> SquidM CrushResult
 
-crushEffectApp cid 
-	cls	@Class { classType = Just nApp' }
-	clsCon	@Class { classType = Just nCon  }
-	clsArg	@Class { classType = Just nArg' }
+crushEffectApp cid cls (nApp, srcApp) 
+	clsCon	@Class { classUnified = Just nCon  }
+	clsArg	@Class { classUnified = Just nArg' }
  = do	
-	nApp	<- sinkCidsInNode nApp'
 	nArg	<- sinkCidsInNode nArg'
-
-	Just srcApp	<- lookupSourceOfNode nApp cls
 
 	trace	$ vcat
 	 	[ ppr "  * crushEffectApp..."
@@ -121,9 +227,9 @@ crushEffectApp cid
 		, "    nCon             = " % nCon
 		, "    nArg             = " % nArg ]
 		
-	crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
+	crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
 
-crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
+crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
 
 	-- Effects on single constructors.
 	--	When we do a case match on a unit value we get an effect HeadRead (),
@@ -131,9 +237,8 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	--	Likewise for other deep effects.
 	| elem nCon [nHeadRead, nDeepRead, nDeepWrite]
 	, NCon{}	<- nArg
-	= do	Just srcApp	<- lookupSourceOfNode nApp cls
-		crushBottom cid
-	
+	= return CrushBottom
+		
 	-- HeadRead ---------------------------------------
 	| nCon		== nHeadRead
 	, NApp{}	<- nArg
@@ -142,18 +247,21 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 		mHead	<- takeHeadDownLeftSpine (classId clsArg)
 		case mHead of
 		 Just clsHead
-		  -> do	cidEff'	<- feedType (TSI $ SICrushedES cid nApp srcApp) 
-				$  makeTApp tRead [TVar (classKind clsHead) $ UClass (classId clsHead)]
+		  -> do	let src	= TSI $ SICrushedES cid nApp srcApp
+			cidRead	<- feedType src tRead
+			return	$ CrushSimplified [(NApp cidRead (classId clsHead), src)]
 
-			crushUpdate cid 
-				[cidEff']
-				(TSI $ SICrushedES cid nApp srcApp)
-
-		 Nothing	-> crushMaybeLater cid
+		 Nothing 
+		  -> 	return	CrushMaybeLater
 
 	| nCon		== nHeadRead
-	= crushMaybeLater cid
+	= return CrushMaybeLater
 
+
+	| otherwise
+	= return CrushNever
+
+{-
 	-- DeepRead ---------------------------------------
 	| nCon		== nDeepRead
 	, NApp{}	<- nArg
@@ -184,7 +292,8 @@ crushEffectApp' cid cls clsCon clsArg nApp srcApp nCon nArg
 	
 	| nCon		== nDeepRead
 	= crushMaybeLater cid
-			
+
+
 	-- DeepWrite --------------------------------------
 	| nCon		== nDeepWrite
 	, NApp{}	<- nArg
@@ -276,4 +385,4 @@ crushUpdate cid cids' src'
 			{ classType		= Just node
 			, classTypeSources	= [(node, src')] }
 		return True
--}					
+-}
