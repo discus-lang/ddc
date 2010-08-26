@@ -67,7 +67,7 @@ crushShape cidShape
 		--	then we can just delete the constraint
 		| TVar k (UClass _) : _	<- shapeTs
 		, k == kClosure || k == kEffect
-		= do	delFetterClass cidShape
+		= do	delMultiFetter cidShape
 			return True
 
 		-- none of the nodes contain data constructors, so there's no template to work from
@@ -78,7 +78,7 @@ crushShape cidShape
 		--	we can now merge the sub-classes and remove the shape constraint.
 		| Just tTemplate	<- mTemplate
 		= do	crushShape2 cidShape fShape srcShape tTemplate csMerge
-			delFetterClass cidShape
+			delMultiFetter cidShape
 			
 			return True
 	
@@ -164,7 +164,7 @@ pushTemplate tTemplate srcShape cMerge
 		trace 	$ "  - merge class\n"
 			% "    tPush = " % tPush	% "\n"		
 
-		addToClass (classId cMerge) srcShape (classKind cMerge) tPush
+		addNodeToClass (classId cMerge) srcShape (classKind cMerge) tPush
 		return $ Just tPush		
 
 	-- If adding the template will result in a type error then add the error to

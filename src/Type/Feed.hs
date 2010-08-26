@@ -33,7 +33,7 @@ feedConstraint cc
  	CEq src (TVar k (UVar v1)) t2
 	 -> do
 		-- create a new class for the LHS, with just that var in it.
-	 	cid1	<- makeClassFromVar src k v1
+	 	cid1	<- ensureClassWithVar src k v1
 
 		-- feed the RHS into the graph.
 		cid2	<- feedType src t2
@@ -143,7 +143,7 @@ feedType src tt
 
 			-- we use addToClass here because we don't need to register effects and 
 			--	classes for crushing in this type
-			addToClass cid src kClosure 
+			addNodeToClass cid src kClosure 
 				$ NFree v1 tDef'
 
 			return cid
@@ -189,7 +189,7 @@ feedType src tt
 		return cidT
 
  	TVar k (UVar v)
-	 -> do 	cidT		<- makeClassFromVar src k v 
+	 -> do 	cidT		<- ensureClassWithVar src k v 
 		return cidT
 
 
@@ -211,7 +211,7 @@ addNode :: ClassId
 	-> SquidM ()
 	
 addNode cid src kind node
- = do	addToClass cid src kind node
+ = do	addNodeToClass cid src kind node
 	activateClass cid
 
 

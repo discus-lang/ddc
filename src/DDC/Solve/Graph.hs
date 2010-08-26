@@ -1,6 +1,9 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
--- | The type graph.
+-- | The type graph and its primitive operations.
+--
+--   Most of the time the type inference will use the wrapped versions of these functions
+--   that are located in "DDC.Solve.State.Graph".
 module DDC.Solve.Graph
 	( module DDC.Solve.Graph.Node
 	, module DDC.Solve.Graph.Class
@@ -14,8 +17,10 @@ module DDC.Solve.Graph
 	, sinkClassIdOfGraph
 	, addClassToGraph
 	, delFetterFromGraph
-	, modifyClassInGraph)
+	, modifyClassInGraph
+	, addNodeToClassInGraph)
 where
+import Type.Location
 import DDC.Solve.Graph.Class
 import DDC.Solve.Graph.Node
 import DDC.Main.Error
@@ -156,7 +161,7 @@ sinkClassIdOfGraph cid graph
 	 _			-> return cid
 
 
--- | Allocate add new class to the type graph.
+-- | Allocate add new class to the type graph, and activate it.
 addClassToGraph :: (ClassId -> Class) -> Graph -> IO (ClassId, Graph)
 addClassToGraph mkCls graph
  = do	graph'		<- expandGraph 1 graph
@@ -174,7 +179,7 @@ addClassToGraph mkCls graph
 		, graph' { graphClassIdGen = classIdGen + 1 })
 
 
--- | Modify a class in the graph.
+-- | Modify a class in the graph, and activate it.
 modifyClassInGraph :: ClassId -> Graph -> (Class -> Class) -> IO ()
 modifyClassInGraph cid graph f
  = do	cls	<- readArray (graphClass graph) cid
@@ -198,4 +203,40 @@ delFetterFromGraph cid graph
 	 _		-> panic stage 
 				$ "delFetterFromGraph: class " % cid
 				% " to be deleted is not a ClassFetter{}"
+
+
+-- | Add a new type constraint to a class, and activate it.
+--	If there is already a class with this cid then we add the node to it,
+--	otherwise we allocate a new class.
+addNodeToClassInGraph 
+	:: ClassId		-- ^ cid of class to update.
+	-> TypeSource		-- ^ Source of the new constraint.
+	-> Kind			-- ^ Kind of the constraint.
+	-> Node			-- ^ The new node constraint.
+	-> Graph -> IO Graph
+
+addNodeToClassInGraph cid src kind node graph
+ = follow cid
+ where
+	follow cid' 
+	 = do	cls	<- readArray (graphClass graph) cid'
+		case cls of
+	 	 ClassForward _ cid''	-> follow cid''
+	 	 ClassUnallocated	-> update cid' (emptyClass kind src cid')
+ 	 	 Class{}		-> update cid' cls
+	 	 _			-> death
+			 	
+	update cid' cls@Class{}
+	 = do	writeArray (graphClass graph) cid'
+			$ cls 	{ classUnified		= Nothing
+				, classTypeSources	= (node, src) : classTypeSources cls }
+			
+		activateClassOfGraph cid' graph
+
+		(case node of
+			NVar v	-> return $ graph { graphVarToClassId = Map.insert v cid (graphVarToClassId graph) }
+			_	-> return $ graph)
+
+	update _ _	= death
+	death 		= panic stage $ "addNodeToClassInGraph: wrong kind of class"
 
