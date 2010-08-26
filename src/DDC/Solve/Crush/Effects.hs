@@ -14,7 +14,6 @@ import Type.Location
 import Type.Feed
 import Control.Monad
 import Data.Maybe
--- import qualified Data.Set	as Set
 
 debug	= True
 trace s	= when debug $ traceM s
@@ -165,8 +164,6 @@ crushEffectsWithClass cid cls
 	 | otherwise
 	 -> return False
 
-	
-	
 
 -- | Try to crush a node in an effect class.
 crushEffectNodeSrcOfClass 
@@ -223,8 +220,7 @@ crushEffectApp cid cls (nApp, srcApp)
 	nArg	<- sinkCidsInNode nArg'
 
 	trace	$ vcat
-	 	[ ppr "  * crushEffectApp..."
-		, "    nApp             = " % nApp
+	 	[ "    nApp             = " % nApp
 		, "    nCon             = " % nCon
 		, "    nArg             = " % nArg ]
 		
@@ -296,10 +292,6 @@ crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
 	= return CrushMaybeLater
 
 
-	| otherwise
-	= return CrushNever
-
-{-
 	-- DeepWrite --------------------------------------
 	| nCon		== nDeepWrite
 	, NApp{}	<- nArg
@@ -308,87 +300,32 @@ crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
 				Nothing		-> return Nothing
 				Just cids	-> liftM sequence $ mapM lookupClass cids
 	
-		let writeIt cls
-			| classKind cls == kRegion	= Just $ TApp tWrite	 tClass
-			| classKind cls	== kValue	= Just $ TApp tDeepWrite tClass
-			| otherwise			= Nothing
-			where Just tClass = takeTClassOfClass cls
+		let writeIt src cls
+			| classKind cls == kRegion	
+			= do	cidWrite <- feedType src tWrite
+				return	$ Just (NApp cidWrite (classId cls), src)
+				
+			| classKind cls	== kValue
+			= do	cidDeepWrite <- feedType src tDeepWrite
+				return	$ Just (NApp cidDeepWrite (classId cls), src)
+				
+			| otherwise
+			= 	return Nothing
 
 		case mClsApps of
 		 Just (clsCon : clsArgs)
-		  | Just NCon{} <- classType clsCon
-		  -> do	let effs'	= mapMaybe writeIt clsArgs
-			let src		= TSI $ SICrushedES cid nApp srcApp
-			cidsEff' <- mapM (feedType src) effs'			
-			crushUpdate cid cidsEff' src
+		  | Just NCon{} <- classUnified clsCon
+		  -> do	let src	  = TSI $ SICrushedES cid nApp srcApp
+			nodeSrcs' <- liftM catMaybes $ mapM (writeIt src) clsArgs
+			return	  $ CrushSimplified nodeSrcs'
 			
-		 _ ->	crushMaybeLater cid
+		 _ ->	return	CrushMaybeLater
 			
 	| nCon		== nDeepWrite
-	= crushMaybeLater cid
+	= return CrushMaybeLater
+
 
 	-- Other effects can never be crushed.			
 	| otherwise
-	= crushNever cid
+	= return CrushNever
 
-
--- | Class is not yet crushable, nor will it ever be.
---   Maybe the class contains some already atomic effect, like Read or Write.
-crushNever :: ClassId -> SquidM Bool
-crushNever cid
- = do	trace	$ ppr "  * never crushable\n\n"
-	return False
-
-
--- | The effect in this class was completely crushed out.
---   Maybe it was a (HeadRead ()), which has no effect.
---   We can set this class to bottom, but still need to retain it in the graph
---   because other classes may be holding references to it. 
---   We don't use crushUpdate here because that function also requires a TypeSource.
-crushBottom :: ClassId -> SquidM Bool
-crushBottom cid
- = do	trace	$ ppr "  * delete\n\n"
-	modifyClass cid $ \c -> c
-		{ classType		= Just NBot
-		, classTypeSources	= [] }
-
-	return False
-
-
--- | We haven't made any progress this time around, but the same class might
---   be crushable when some other class changes. Maybe some other class needs
---   to be unified to give us an outer type constructor.
---
---   TODO: Could use activation queues here to speed the grinder up.
---
-crushMaybeLater :: ClassId -> SquidM Bool
-crushMaybeLater cid
- = do	trace	$ ppr "  * maybe later\n\n"
-	activateClass cid
-	return False
-	
-
--- | Class is crushable, and here are cids holding the new effects, 
----  along with a TypeSource recording what was crushed.
-crushUpdate :: ClassId -> [ClassId] -> TypeSource -> SquidM Bool
-crushUpdate cid cids' src'
- = do	trace	$ "  * update\n"
-		% "    crushed effects:\n" %> cids' <> src' % "\n\n"
-
-	case cids' of
-	 [] ->	panic stage "crushEffectUpdate: List is empty. Should have called crushBottom."
-
-	 -- If there's only one new cid then we can just fwd the original class to it.
-	 [cid']	
-	  -> do	modifyClass cid $ \c -> ClassForward cid cid'
-		return True
-
-         -- Crushing the orignal effect gave us a number of pieces,
-	 -- so we join them together into an effect sum.
-	 _ -> do
-		let node	= NSum $ Set.fromList cids'
-		modifyClass cid $ \c -> c
-			{ classType		= Just node
-			, classTypeSources	= [(node, src')] }
-		return True
--}
