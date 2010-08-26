@@ -15,10 +15,13 @@ module DDC.Solve.State.Base
 	, addErrors
 	, gotErrors
 
+	  -- * Naming
+	, newVarN
+	, lookupSigmaVar
+	
 	  -- * Path Management
 	, pathEnter
 	, pathLeave 
-	
 	
 	  -- * Bits and pieces
 	, lookupSourceOfNode
@@ -32,6 +35,7 @@ import DDC.Solve.Graph
 import DDC.Solve.State.Squid
 import DDC.Main.Error
 import DDC.Main.Pretty
+import DDC.Var
 import Control.Monad.State.Strict
 import System.IO
 import Data.IORef
@@ -110,6 +114,33 @@ gotErrors
  	return	$ not $ isNil errs
 
 
+-- Naming ----------------------------------------------------------------------------------------
+-- | Make a new variable in this namespace
+newVarN :: NameSpace ->	SquidM Var
+newVarN	space	
+ = do 	Just vid	<- liftM (Map.lookup space)
+			$  getsRef stateVarGen
+	
+	let vid'	= incVarId vid
+
+	stateVarGen `modifyRef` \varGen -> 
+		Map.insert space vid' varGen
+	
+	let name	= pprStrPlain vid
+	let var'	= (varWithName name)
+			{ varNameSpace	= space 
+			, varId		= vid }
+			
+	return var'
+
+
+-- | Lookup the type variable corresponding to this value variable.
+lookupSigmaVar :: Var -> SquidM (Maybe Var)
+lookupSigmaVar	v
+ 	= liftM (Map.lookup v)
+	$ getsRef stateSigmaTable
+
+
 -- Path Management --------------------------------------------------------------------------------
 -- | Push a new var on the path queue.
 --	This records the fact that we've entered a branch.
@@ -132,10 +163,6 @@ pathLeave bind
 	
 		-- nothing matched.. :(
 		_ -> panic stage $ "pathLeave: can't leave " % bind % "\n"
-
-
--- Type Graph -------------------------------------------------------------------------------------
-
 
 
 -- Bits and Pieces -------------------------------------------------------------------------------
@@ -164,6 +191,4 @@ graphInstantiatesAdd    vBranch vInst
 		Set.empty
 		vBranch
 		instantiates
-
-
 

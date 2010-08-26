@@ -13,12 +13,12 @@ import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
 import DDC.Solve.State.SinkIO
 import DDC.Solve.State.Graph
+import DDC.Solve.State.Naming
 import DDC.Var
 import DDC.Type
 import DDC.Main.Error
 import Data.Array.IO
 import Control.Monad.Trans
-import {-# SOURCE #-} DDC.Solve.State.Naming
 
 stage	= "DDC.Solve.Sink"
 

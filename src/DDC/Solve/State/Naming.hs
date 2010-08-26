@@ -3,8 +3,6 @@
 -- | Functions dealing with the names of equivalence classes in the graph.
 module DDC.Solve.State.Naming
 	( instVar
-	, newVarN
-	, lookupSigmaVar
 	, getCanonicalNameOfClass)
 where
 import DDC.Solve.State.Base
@@ -16,10 +14,10 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import Type.Location
 import Data.List
-import Control.Monad
 import qualified Data.Map	as Map
 
-stage	= "DDC.Solve.Naming"
+stage	= "DDC.Solve.State.Naming"
+
 
 -- | Instantiate a variable.
 instVar :: Var -> SquidM (Maybe Var)
@@ -54,33 +52,6 @@ instVar' var space mVarId
 			 	, varId		= vid }
 
 		return $ Just var'
-
-	
-
--- | Make a new variable in this namespace
-newVarN :: NameSpace ->	SquidM Var
-newVarN	space	
- = do 	Just vid	<- liftM (Map.lookup space)
-			$  getsRef stateVarGen
-	
-	let vid'	= incVarId vid
-
-	stateVarGen `modifyRef` \varGen -> 
-		Map.insert space vid' varGen
-	
-	let name	= pprStrPlain vid
-	let var'	= (varWithName name)
-			{ varNameSpace	= space 
-			, varId		= vid }
-			
-	return var'
-
-
--- | Lookup the type variable corresponding to this value variable.
-lookupSigmaVar :: Var -> SquidM (Maybe Var)
-lookupSigmaVar	v
- 	= liftM (Map.lookup v)
-	$ getsRef stateSigmaTable
 
 
 -- | Get the canonical name for a class.
