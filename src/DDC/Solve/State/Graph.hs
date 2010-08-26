@@ -127,7 +127,3 @@ addNodeToClass cid src kind node
 	graph'	<- liftIO $ addNodeToClassInGraph cid src kind node graph
 	writesRef stateGraph graph'
 
-
-
-				
-

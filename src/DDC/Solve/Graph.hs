@@ -45,7 +45,7 @@ data Graph
 	  graphClass		:: !(IOArray ClassId Class)
 
 	  -- | Generator for new ClassIds.
- 	, graphClassIdGen	:: !Int					
+ 	, graphClassIdGen	:: !(IORef Int)
 
 	  -- | Map of type variables to the cids of the classes that contain them.
 	, graphVarToClassId	:: !(Map Var ClassId)
@@ -74,11 +74,12 @@ makeEmptyGraph
 			(ClassId 0, ClassId initialGraphSize) 
 			ClassUnallocated
 
-	activeRef <- newIORef Set.empty
+	activeRef	<- newIORef Set.empty
+	cidGenRef	<- newIORef 0
 
  	return	Graph
 		{ graphClass		= array
-		, graphClassIdGen	= 0
+		, graphClassIdGen	= cidGenRef
 		, graphVarToClassId	= Map.empty 
 		, graphActive		= activeRef }
 
@@ -87,12 +88,11 @@ makeEmptyGraph
 --   certain number of free nodes.
 expandGraph :: Int -> Graph -> IO Graph
 expandGraph minFree graph
- = do	
-	-- Get the current size
+ = do	-- Get the current size.
 	ClassId curMax		<- liftM snd $ getBounds (graphClass graph)
 
 	-- Get the first free class.
-	let curIx		= graphClassIdGen graph
+	curIx			<- readIORef $ graphClassIdGen graph
 	
 	-- Check if there's enough room, 
 	--	if not then make a new one twice the size and 
@@ -165,18 +165,19 @@ sinkClassIdOfGraph cid graph
 addClassToGraph :: (ClassId -> Class) -> Graph -> IO (ClassId, Graph)
 addClassToGraph mkCls graph
  = do	graph'		<- expandGraph 1 graph
-
-	let classIdGen	= graphClassIdGen graph'
+	classIdGen	<- readIORef $ graphClassIdGen graph'
  	let cid		= ClassId classIdGen
 
 	-- write the new glass into the graph.
 	writeArray  (graphClass graph') cid (mkCls cid)
 
+	-- update the cid generator
+	writeIORef  (graphClassIdGen graph') (classIdGen + 1)
+	
 	-- activate the class.
 	activateClassOfGraph cid graph
 	
-	return 	( cid
-		, graph' { graphClassIdGen = classIdGen + 1 })
+	return (cid, graph')
 
 
 -- | Modify a class in the graph, and activate it.

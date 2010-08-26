@@ -310,9 +310,10 @@ desugarSolveConstraints2
 	-- report the size of the graph.
 	when (elem Verbose ?args)
 	 $ do	graph	<- readIORef (T.stateGraph state)
+		size	<- readIORef (T.graphClassIdGen graph)
 		putStr 	$ pprStrPlain
 	 		$ "    - graph size: " 
-	 		% T.graphClassIdGen graph % "\n"
+	 		% size % "\n"
 
 	-- dump details of the solution.
 	dumpS	DumpTypeSolve  "type-solution--types"

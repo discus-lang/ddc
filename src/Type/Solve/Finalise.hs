@@ -9,6 +9,7 @@ import Type.Check.SchemeDanger
 import Type.Location
 import DDC.Solve.State
 import Constraint.Exp
+import Data.IORef
 
 import Util
 import qualified Data.Set	as Set
@@ -71,7 +72,8 @@ solveFinalise solveCs blessMain
 
 	-- Report how large the graph was
 	graph		<- getsRef stateGraph
-	trace	$ "=== Final graph size: " % graphClassIdGen graph % "\n"
+	size		<- liftIO $ readIORef (graphClassIdGen graph)
+	trace	$ "=== Final graph size: " % size % "\n"
 
 	-- Report whether there were any errors
 	errors	<- gets stateErrors
