@@ -48,7 +48,6 @@ module DDC.Solve.Trace
 where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
-import DDC.Solve.State.SinkIO
 import DDC.Solve.Graph
 import DDC.Main.Error
 import DDC.Main.Pretty

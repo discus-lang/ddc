@@ -1,5 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
+-- | Functions to sink classids, by themselves or within types and kinds.
+--   These are wrappers around the functions in "DDC.Solve.Graph.Sink" for use in the `SquidM` monad.
 module DDC.Solve.State.Sink
 	( sinkVar
 	, sinkClassId
@@ -11,7 +13,6 @@ module DDC.Solve.State.Sink
 where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
-import DDC.Solve.State.SinkIO
 import DDC.Solve.State.Graph
 import DDC.Solve.State.Naming
 import DDC.Var

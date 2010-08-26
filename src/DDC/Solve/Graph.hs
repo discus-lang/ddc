@@ -7,6 +7,7 @@
 module DDC.Solve.Graph
 	( module DDC.Solve.Graph.Node
 	, module DDC.Solve.Graph.Class
+	, module DDC.Solve.Graph.Sink
 	, Graph(..)
 	, initialGraphSize
 	, makeEmptyGraph
@@ -24,6 +25,7 @@ where
 import Type.Location
 import DDC.Solve.Graph.Class
 import DDC.Solve.Graph.Node
+import DDC.Solve.Graph.Sink
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type

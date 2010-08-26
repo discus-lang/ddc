@@ -8,14 +8,15 @@
 --	This is a fairly common operation during type inference, so we don't want
 --	to rely on the boilerplate library (too slow).
 --
-module DDC.Solve.State.SinkIO
+module DDC.Solve.Graph.Sink
 	( sinkCidIO
 	, sinkCidsInNodeIO
 	, sinkCidsInKindIO
 	, sinkCidsInTypeIO 
 	, sinkCidsInFetterIO)
 where
-import DDC.Solve.Graph
+import DDC.Solve.Graph.Class
+import DDC.Solve.Graph.Node
 import DDC.Main.Error
 import DDC.Type
 import Data.Array.IO
