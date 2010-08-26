@@ -6,8 +6,10 @@
 #include "../Object.h"
 #include "../State.h"
 
+#include "../Collect.ci"
+#include "../Alloc.ci"
 
-// ----- Macros	
+// ----- Macros
 //
 // 	 macros + token pasting == polymorphism.
 //
@@ -20,8 +22,8 @@
 		_PROFILE_BOXING ( b##Type.count ++); \
 		_PROFILE_BOXING ( b##Type.bytes += sizeof(DataRS) + TypeSize); \
 		return (Obj*)data; \
-	} 
-	
+	}
+
 #define MAKE_GETFUN(Type) \
 	static inline \
 	Type _unbox##Type (Obj* obj) \
@@ -35,7 +37,7 @@
 // -- Box up a naked value.
 #define _box(Type,data) \
 	_box##Type(data)
-	
+
 // -- Force and unbox a value.
 #define _unbox(Type,data) \
 	_unbox##Type(data)
@@ -67,18 +69,18 @@ Obj*	_boxInt32 (Int32 v)
 {
 	if (_ddcHeapPtr + 8 > _ddcHeapMax)
 		_allocCollect (8);
-		
+
 	Word32*	x	= (Word32*)_ddcHeapPtr;
 	_ddcHeapPtr 	+= 8;
-		
+
 	x[0]		= 0x00000013;			// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
 	x[1]		= v;
 
 	_PROFILE_ALLOC  ( dataRawSmall.count++ );
 	_PROFILE_ALLOC  ( dataRawSmall.bytes += 8 );
-	_PROFILE_BOXING ( bInt32.count ++); 
-	_PROFILE_BOXING ( bInt32.bytes += 8); 
-	
+	_PROFILE_BOXING ( bInt32.count ++);
+	_PROFILE_BOXING ( bInt32.bytes += 8);
+
 	return (Obj*)x;
 }
 
@@ -86,20 +88,20 @@ Obj*	_boxInt32 (Int32 v)
 // Float32
 static inline
 Obj*	_boxFloat32 (Float32 v)
-{	
+{
 	if (_ddcHeapPtr + 8 > _ddcHeapMax)
 		_allocCollect (8);
-		
+
 	Word32* x	= (Word32*)_ddcHeapPtr;
 	_ddcHeapPtr	+= 8;
-	
+
 	x[0]			= 0x00000013;		// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
 	*(Float32*)(x + 1)	= v;
 
 	_PROFILE_ALLOC  ( dataRawSmall.count++ );
 	_PROFILE_ALLOC  ( dataRawSmall.bytes += 8 );
-	_PROFILE_BOXING ( bFloat32.count ++); 
-	_PROFILE_BOXING ( bFloat32.bytes += 8); 
+	_PROFILE_BOXING ( bFloat32.count ++);
+	_PROFILE_BOXING ( bFloat32.bytes += 8);
 
 	return (Obj*)x;
 }
@@ -111,26 +113,26 @@ Obj*	_boxEnum (Word32 tag)
 {
 	if (_ddcHeapPtr + 8 > _ddcHeapMax)
 		_allocCollect (8);
-		
+
 	Word32* x	= (Word32*)_ddcHeapPtr;
 	_ddcHeapPtr	+= 8;
-	
+
 	x[0]		= (tag << 8) | 0x021;		// (tag << 8) | _ObjFixedData
 	x[1]		= 0;
-	
+
 	return (Obj*)x;
 }
 
 
 static inline
 Obj* 	primProjField  (Obj* obj, Int32 ix)
-{	
+{
 	Data* data	= (Data*)obj;
 	return	data ->a[ix];
 }
 
 
-static inline 
+static inline
 Obj*	primProjFieldR (Obj* obj, Int32 ix)
 {
 	Data* data	= (Data*)obj;
