@@ -116,7 +116,7 @@ strdump (FILE *f, Word8 *ptr, int len)
 
 // Dump out a single object / or all objects reachable from this one.
 static void
-innerDumpObj 
+innerDumpObj
 	( FILE *f		// file to dump o
 	, int level		// indent level
 	, Obj* obj		// root object
@@ -137,7 +137,7 @@ innerDumpObj
 		fprintf (f, "%*c  , arity = %d\n",	  indent, ' ', ((Thunk*)obj)->arity);
 		fprintf (f, "%*c  , args  = %d\n",	  indent, ' ', ((Thunk*)obj)->args);
 
-		for (int k = 0 ; k < ((Thunk*)obj)->args ;  k++) {
+		for (UInt k = 0 ; k < ((Thunk*)obj)->args ;  k++) {
 			if (recurse)
 				innerDumpObj (f, level + 1, ((Thunk*)obj)->a [k], recurse);
 			else
@@ -152,7 +152,7 @@ innerDumpObj
 		fprintf (f, "%*c  , tag     = 0x%06x\n",   indent, ' ', tag);
 		fprintf (f, "%*c  , arity   = %d\n",       indent, ' ', ((Data*)obj)->arity);
 
-		for (int k = 0 ; k < ((Data*)obj)->arity ;  k++) {
+		for (UInt k = 0 ; k < ((Data*)obj)->arity ;  k++) {
 			if (recurse)
 				innerDumpObj (f, level + 1, ((Data*)obj)->a [k], recurse) ;
 			else
@@ -168,12 +168,12 @@ innerDumpObj
 		fprintf (f, "%*c  , size    = %d\n",        indent, ' ', ((DataR*)obj)->size);
 		fprintf (f, "%*c  , payload = ",            indent, ' ');
 
-		hexdump (f, 	((DataR*)obj)->payload, 
+		hexdump (f, 	((DataR*)obj)->payload,
 				((DataR*)obj)->size - offsetof (DataR, payload));
 
 		fprintf (f, "%*c                  -> ", indent, ' ') ;
 
-		strdump (f, 	((DataR*)obj)->payload, 
+		strdump (f, 	((DataR*)obj)->payload,
 				((DataR*)obj)->size - offsetof (DataR, payload));
 
 		fprintf (f, "%*c  }\n", indent, ' ') ;
@@ -186,7 +186,7 @@ innerDumpObj
 		fprintf (f, "%*c  , ptrCount = %d\n",       indent, ' ', ((DataM*)obj)->ptrCount);
 		fprintf (f, "%*c  , payload  = ",           indent, ' ');
 
-		hexdump (f,	((DataM*)obj)->payload, 
+		hexdump (f,	((DataM*)obj)->payload,
 			    	((DataM*)obj)->size - offsetof (DataM, payload));
 
 		fprintf (f, "%*c                  -> ",     indent, ' ');
@@ -205,7 +205,7 @@ innerDumpObj
 
 		fprintf (f, "%*c    arity = %d\n", indent, ' ', ((SuspIndir*)obj)->arity);
 
-		for (int k = 0; k < ((SuspIndir*)obj)->arity;  k++)
+		for (UInt k = 0; k < ((SuspIndir*)obj)->arity;  k++)
 			innerDumpObj (f, level + 1, ((SuspIndir*)obj)->a [k], recurse);
 
 		fprintf (f, "%*c  }\n", indent, ' ') ;

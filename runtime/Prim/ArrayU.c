@@ -20,7 +20,7 @@ Obj*	Base_ExceptionArrayBounds (Obj* size, Obj* index);
 
 
 // -- new
-Obj*	primArrayU_Int_new 
+Obj*	primArrayU_Int_new
 		(Obj* anchored_, Obj* elemCount_)
 {
 	_ENTER(2);
@@ -33,15 +33,15 @@ Obj*	primArrayU_Int_new
 
 	// alloc the object
 	UInt	payloadSize
-			= sizeof (struct ArrayU_Int_Payload)	
-			+ sizeof (Int32) * elemCount;	
-	
+			= sizeof (struct ArrayU_Int_Payload)
+			+ sizeof (Int32) * elemCount;
+
 	DataR*	data;
 	if (anchored)
 		data	= (DataR*)_allocDataR_anchored	(0, payloadSize);
 	else	data	= (DataR*)_allocDataR		(0, payloadSize);
 
-	struct ArrayU_Int_Payload*  payload	
+	struct ArrayU_Int_Payload*  payload
 			= (struct ArrayU_Int_Payload*)data ->payload;
 
 	// zap out the elements
@@ -56,7 +56,7 @@ Obj*	primArrayU_Int_new
 
 
 // -- get
-Obj*	primArrayU_Int_get 
+Obj*	primArrayU_Int_get
 		( Obj*	array_
 		, Obj*	ix_)
 {
@@ -70,14 +70,14 @@ Obj*	primArrayU_Int_get
 
 	struct ArrayU_Int_Payload* payload
 		= (struct ArrayU_Int_Payload*)array ->payload;
-			
+
 	// -- array bounds check
 	if (ix >= payload ->elemCount)
-		primException_throw 
-			(Base_ExceptionArrayBounds 
+		primException_throw
+			(Base_ExceptionArrayBounds
 				( _boxInt32 (payload ->elemCount)
 				, _boxInt32 (ix)));
-	
+
 	// boxing
 	_LEAVE(2);
 	return _boxInt32 (payload ->elem[ix]);
@@ -98,7 +98,7 @@ Int32*	primArrayU_Int_getBufPtr
 
 
 // -- set
-Obj*	primArrayU_Int_set 
+Obj*	primArrayU_Int_set
 		( Obj*	array_
 		, Obj*	ix_
 		, Obj*	x_)
@@ -115,14 +115,14 @@ Obj*	primArrayU_Int_set
 
 	struct ArrayU_Int_Payload* payload
 		= (struct ArrayU_Int_Payload*)array ->payload;
-		
+
 	// -- array bounds check
 	if (ix >= payload ->elemCount)
 		primException_throw
 			(Base_ExceptionArrayBounds
 				( _boxInt32 (payload ->elemCount)
 				, _boxInt32 (ix)));
-			
+
 	payload ->elem[ix]	= x;
 
 	_LEAVE(3);
@@ -131,7 +131,7 @@ Obj*	primArrayU_Int_set
 
 
 // -- dump
-Obj*	primArrayU_Int_dump 
+Obj*	primArrayU_Int_dump
 		(Obj* array_)
 {
 	DataR*	array		= (DataR*)_force (array_);
@@ -139,7 +139,7 @@ Obj*	primArrayU_Int_dump
 	Int32*	elems		= (Int32*)(array ->payload + sizeof (Int32));
 
 	UInt32	elemCount	= payload [0];
-	
+
 	UInt i;
 	printf ("--- arrayU, size = %d\n", elemCount);
 	for (i = 0; i < elemCount; i++) {
@@ -170,11 +170,12 @@ Obj*	primArrayU_Int_fill
 	Int32 x	= _unbox(Int32, x_);
 	DataR*	array		= (DataR*) _force (_S(0));
 	Int32*	payload		= (Int32*)(array ->payload);
-	
-	memset (payload + 1, 0, sizeof(Int32) * payload[0]);
-	
+
+	for (int k = 0 ; k < payload[0] ; k++)
+		payload[k+1] = x;
+
 	_LEAVE(1);
-	return _primUnit;	
+	return _primUnit;
 }
 
 
