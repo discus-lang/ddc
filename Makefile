@@ -2,8 +2,8 @@
 #   (Build targets)
 #       all             -- build the compiler and libs (default)
 #
-#       total           -- build the compiler, libs, docs and run all the tests in all ways (slow) 
-#       cleantotal      -- same as above, but do a full clean first (slowest) 
+#       total           -- build the compiler, libs, docs and run all the tests in all ways (slow)
+#       cleantotal      -- same as above, but do a full clean first (slowest)
 #
 #       deps            -- build dependencies (should be automatic with the 'all' target)
 #       bin/ddc         -- build the compiler binary
@@ -46,17 +46,17 @@ allWithConfig :
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
 .PHONY  : total
-total	: 
+total	:
 	@$(MAKE) allWithConfig
 	@$(MAKE) docs
-	@$(MAKE) totallogwar 
+	@$(MAKE) totallogwar
 
 
 # -- Same as 'total', but do a full clean first
 .PHONY  : cleantotal
-cleantotal : 
+cleantotal :
 	@$(MAKE) clean
-	@$(MAKE) total	
+	@$(MAKE) total
 
 
 # -- What to do during the nightly builds
@@ -76,7 +76,7 @@ nightly :
 	@echo
 	@echo "------------------------------------------------------------------------------------"
 	@$(MAKE) cleantotal
-		
+
 
 # -- Find Source Files ----------------------------------------------------------------------------
 # -- files needing to be processed via alex
@@ -103,7 +103,7 @@ src/Config/Config.hs : src/Config/Config.hs.$(Target)
 .PHONY	: deps
 deps	: make/Makefile.deps
 
-make/Makefile.deps : src/Config/Config.hs $(src_hs_existing) 
+make/Makefile.deps : src/Config/Config.hs $(src_hs_existing)
 	@echo "* Building dependencies"
 	@$(GHC) -isrc -M $^ -dep-makefile -optdepmake/Makefile.deps $(GHC_INCDIRS)
 	@rm -f make/Makefile.deps.bak
@@ -115,10 +115,10 @@ make/Makefile.deps : src/Config/Config.hs $(src_hs_existing)
 # -- build the boiler plate generator
 bin/plate : tools/plate/Main.hs src/Config/Config.hs
 	@echo "* Building boilerplate generator ---------------------------------------------------"
-	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^ 
+	$(GHC) $(GHC_FLAGS) -isrc -itools/plate -o bin/plate --make $^
 
 # -- generate boilerplate
-src/Source/Plate/Trans.hs : bin/plate src/Source/Plate/Trans.hs-stub src/Source/Exp.hs 
+src/Source/Plate/Trans.hs : bin/plate src/Source/Plate/Trans.hs-stub src/Source/Exp.hs
 	@echo
 	@echo "* Generating boilerplate for $@"
 	bin/plate src/Source/Exp.hs src/Source/Plate/Trans.hs-stub src/Source/Plate/Trans.hs
@@ -140,7 +140,7 @@ bin/ddc	: make/Makefile.deps $(src_obj)
 .PHONY	: external
 external : external/TinyPTC-X11-0.7.3/xshm.o
 
-external/TinyPTC-X11-0.7.3/xshm.o : 
+external/TinyPTC-X11-0.7.3/xshm.o :
 	@echo "* Building external libraries ------------------------------------------------------"
 	cd external/TinyPTC-X11-0.7.3; $(MAKE) CFLAGS="$(GCC_FLAGS)"
 	@echo
@@ -177,7 +177,7 @@ library/Prelude.di library/Graphics.di : bin/ddc
 	@echo "* Building base libraries ----------------------------------------------------------"
 	bin/ddc -O -build library/Prelude.ds
 	@touch library/Prelude.di
-	
+
 	@echo
 	bin/ddc -O -build library/Graphics.ds
 	@touch library/Graphics.di
@@ -210,7 +210,7 @@ docs	:
 
 # -- HLint -----------------------------------------------------------------------------------------
 .PHONY	: hlint
-hlint	: 
+hlint	:
 	@echo "* Running HLint"
 	hlint 	\
 		-i "Use camelCase" 	\
@@ -226,7 +226,7 @@ hlint	:
 
 # Run the testsuite interactively
 .PHONY 	: war
-war : bin/ddc bin/war library/Prelude.di
+war : bin/ddc runtime/libddc-runtime.a runtime/libddc-runtime.$(SHARED_SUFFIX) bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
 	bin/war test -j $(THREADS)
 	@echo
@@ -242,21 +242,21 @@ totalwar : bin/ddc bin/war library/Prelude.di
 .PHONY : logwar
 logwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
-	bin/war test -j $(THREADS) -batch -logFailed "war.failed" 
+	bin/war test -j $(THREADS) -batch -logFailed "war.failed"
 	@echo
 
 # Run tests in all ways interactively, logging failures to war.failed
 .PHONY  : totallogwar
 totallogwar : bin/ddc bin/war library/Prelude.di
 	@echo "* Running tests --------------------------------------------------------------------"
-	bin/war test -j $(THREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O 
+	bin/war test -j $(THREADS) -batch -logFailed "war.failed" +compway normal +compway opt -O
 	@echo
 
 # Alias for war
 .PHONY	: test
 test	: war
 
-		
+
 # -- Cleaning --------------------------------------------------------------------------------------
 # -- clean objects in the runtime system
 .PHONY : cleanRuntime
@@ -331,12 +331,12 @@ clean  : cleanWar cleanRuntime cleanLibrary
 		-o	-name "*.ti" \
 		-o	-name "Makefile.deps" \
 		-follow | xargs -n 1 rm -f
-		
+
 	@rm -f doc/haddock/*
 	@rm -f src/Config/Config.hs
 	@rm -f make/Makefile.deps.inc
 	@rm -f 	bin/* \
-		make/Makefile.deps.bak 
+		make/Makefile.deps.bak
 
 
 # -- Tarball ---------------------------------------------------------------------------------------
@@ -364,7 +364,7 @@ include make/plate.mk
 
 
 # We include Makefile.deps.inc here instead of Makefile.deps directly.
-#	Stupid GNU make treats missing files as dependencies, and if they are 
+#	Stupid GNU make treats missing files as dependencies, and if they are
 #	missing it tries to build them. This causes dependencies to be build
 #	even when we do a "make clean"
 #
