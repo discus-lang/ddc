@@ -14,7 +14,7 @@ ddc: ERROR
           cannot match: $ -> *
                   with: % -> *
 
-./test/15-Typing/Unification/Shape2/Main.ds:5:25
+./test/15-Typing/Unification/Shape2/Main.ds:5:20
     Kind mismatch during unification.
           cannot match: $
                   with: %

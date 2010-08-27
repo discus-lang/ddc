@@ -13,3 +13,8 @@ ddc: ERROR
                  of type: Int32
                       at: ./test/15-Typing/Unification/FunLess/Test.ds:6:17
 
+./test/15-Typing/Unification/FunLess/Test.ds:6:10
+    Kind mismatch during unification.
+          cannot match: $
+                  with: %
+
