@@ -159,6 +159,15 @@ typedef struct {
 	Tag	tagFlags;
  } Obj;
 
+// A version of Obj for holding 32 bit values like Int32, Float32 and enums.
+typedef struct {
+	Tag	tagFlags;
+	union {
+		Float32 f;
+		Int32 i;
+		UInt32 e;
+	} u32;
+ } Obj32;
 
 // Partial Applications ---------------------------------------------------------------------------
 // A Thunk that represents a partial application.

@@ -67,21 +67,21 @@ MAKE_BOXFUN (Float64,	sizeof(Float64));
 static inline
 Obj*	_boxInt32 (Int32 v)
 {
-	if (_ddcHeapPtr + 8 > _ddcHeapMax)
-		_allocCollect (8);
+	if (_ddcHeapPtr + sizeof (Obj32) > _ddcHeapMax)
+		_allocCollect (sizeof (Obj32));
 
-	Word32*	x	= (Word32*)_ddcHeapPtr;
-	_ddcHeapPtr 	+= 8;
+	Obj32*	obj	= (Obj32*)_ddcHeapPtr;
+	_ddcHeapPtr 	+= sizeof (Obj32);
 
-	x[0]		= 0x00000013;			// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
-	x[1]		= v;
+	obj->tagFlags	= 0x00000013;			// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
+	obj->u32.i	= v;
 
 	_PROFILE_ALLOC  ( dataRawSmall.count++ );
-	_PROFILE_ALLOC  ( dataRawSmall.bytes += 8 );
+	_PROFILE_ALLOC  ( dataRawSmall.bytes += sizeof (Obj32) );
 	_PROFILE_BOXING ( bInt32.count ++);
-	_PROFILE_BOXING ( bInt32.bytes += 8);
+	_PROFILE_BOXING ( bInt32.bytes += sizeof (Obj32));
 
-	return (Obj*)x;
+	return (Obj*)obj;
 }
 
 
@@ -89,21 +89,21 @@ Obj*	_boxInt32 (Int32 v)
 static inline
 Obj*	_boxFloat32 (Float32 v)
 {
-	if (_ddcHeapPtr + 8 > _ddcHeapMax)
-		_allocCollect (8);
+	if (_ddcHeapPtr + sizeof (Obj32) > _ddcHeapMax)
+		_allocCollect (sizeof (Obj32));
 
-	Word32* x	= (Word32*)_ddcHeapPtr;
-	_ddcHeapPtr	+= 8;
+	Obj32*	obj	= (Obj32*)_ddcHeapPtr;
+	_ddcHeapPtr	+= sizeof (Obj32);
 
-	x[0]			= 0x00000013;		// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
-	*(Float32*)(x + 1)	= v;
+	obj->tagFlags	= 0x00000013;		// (tag << 8) | _ObjModeDataRS | (dataSize << 4);
+	obj->u32.f	= v;
 
 	_PROFILE_ALLOC  ( dataRawSmall.count++ );
-	_PROFILE_ALLOC  ( dataRawSmall.bytes += 8 );
+	_PROFILE_ALLOC  ( dataRawSmall.bytes += sizeof (Obj32));
 	_PROFILE_BOXING ( bFloat32.count ++);
-	_PROFILE_BOXING ( bFloat32.bytes += 8);
+	_PROFILE_BOXING ( bFloat32.bytes += sizeof (Obj32));
 
-	return (Obj*)x;
+	return (Obj*)obj;
 }
 
 
@@ -111,16 +111,16 @@ Obj*	_boxFloat32 (Float32 v)
 static inline
 Obj*	_boxEnum (Word32 tag)
 {
-	if (_ddcHeapPtr + 8 > _ddcHeapMax)
-		_allocCollect (8);
+	if (_ddcHeapPtr + sizeof (Obj32) > _ddcHeapMax)
+		_allocCollect (sizeof (Obj32));
 
-	Word32* x	= (Word32*)_ddcHeapPtr;
-	_ddcHeapPtr	+= 8;
+	Obj32*	obj	= (Obj32*)_ddcHeapPtr;
+	_ddcHeapPtr	+= sizeof (Obj32);
 
-	x[0]		= (tag << 8) | 0x021;		// (tag << 8) | _ObjFixedData
-	x[1]		= 0;
+	obj->tagFlags	= (tag << 8) | 0x021;		// (tag << 8) | _ObjFixedData
+	obj->u32.e	= 0;
 
-	return (Obj*)x;
+	return (Obj*)obj;
 }
 
 
