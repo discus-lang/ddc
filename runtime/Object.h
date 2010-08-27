@@ -147,6 +147,11 @@ enum _ObjFlag
 
 #define _MaskObjAnchored	(~_ObjFlagAnchored)
 
+#if __SIZEOF_POINTER__ == 8
+#define	PADDING(x)		Int32	x
+#else
+#define	PADDING(x)
+#endif
 
 // Objects ----------------------------------------------------------------------------------------
 // 	All the objects in the heap are subtypes of this one.
@@ -157,6 +162,7 @@ enum _ObjFlag
 //
 typedef struct {
 	Tag	tagFlags;
+	PADDING	(pad);
  } Obj;
 
 // A version of Obj for holding 32 bit values like Int32, Float32 and enums.
@@ -165,7 +171,6 @@ typedef struct {
 	union {
 		Float32 f;
 		Int32 i;
-		UInt32 e;
 	} u32;
  } Obj32;
 
@@ -173,6 +178,7 @@ typedef struct {
 // A Thunk that represents a partial application.
 typedef struct {
 	Tag	tagFlags;
+	PADDING	(pad);
 	FunPtr	func;		// Pointer to the supercombinator of the function.
 	UInt	arity;		// The arity of the supercombinator.
 	UInt	args;		// Number of arg pointers stored in this thunk.
@@ -187,9 +193,9 @@ typedef struct {
 //
 typedef struct {
 	Tag	tagFlags;
+	UInt	arity;		// Arity of the supercombinator
 	Obj*	obj;		// When the tag is _tagSusp this field points to the thunk to be evaluated.
 				// When the tag is _tagIndir it points to the result object.
-	UInt	arity;		// Arity of the supercombinator
 	Obj*	a[];		// Pointers to the arguments.
  } SuspIndir;
 
@@ -229,6 +235,7 @@ typedef struct {
 //
 typedef struct {
 	Tag	tagFlags;
+	PADDING	(pad);
 	UInt	size;		// Size of the whole object, in bytes.
 	UInt	ptrCount;	// The number of pointers at the start of the payload
 	Word8	payload[];	// Contains ptrCount pointers, then some uninterpreted data.

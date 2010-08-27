@@ -54,6 +54,17 @@ static inline UInt _unboxEnum(Obj* obj)
 	return		_getObjTag(data);
 }
 
+static inline Int32 _unboxInt32(Obj* obj)
+{
+	Obj32* o32	= (Obj32*) _force(obj);
+	return		o32->u32.i;
+}
+
+static inline Float32 _unboxFloat32(Obj* obj)
+{
+	Obj32* o32	= (Obj32*) _force(obj);
+	return		o32->u32.f;
+}
 
 // -----
 // -- Boxing Functions
@@ -118,7 +129,7 @@ Obj*	_boxEnum (Word32 tag)
 	_ddcHeapPtr	+= sizeof (Obj32);
 
 	obj->tagFlags	= (tag << 8) | 0x021;		// (tag << 8) | _ObjFixedData
-	obj->u32.e	= 0;
+	obj->u32.i	= 0;
 
 	return (Obj*)obj;
 }
@@ -141,9 +152,7 @@ Obj*	primProjFieldR (Obj* obj, Int32 ix)
 
 
 MAKE_GETFUN (Char32);
-MAKE_GETFUN (Int32);
 MAKE_GETFUN (Int64);
-MAKE_GETFUN (Float32);
 MAKE_GETFUN (Float64);
 
 
