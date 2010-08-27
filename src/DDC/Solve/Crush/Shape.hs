@@ -42,7 +42,9 @@ crushShapeInClass cidShape
 		, blank ]
 
  	-- Ensure that all the classes to be merged are unified.
-	-- TODO: To avoid this check we might want to call the crusher after the unifier.
+	-- We need this because resolving shape constraints can add more nodes
+	-- to an equivalence class. So if the grinder is just calling crushShapeInClass
+	-- on a set of cids the unifier won't get to run otherwise.
  	mapM crushUnifyInClass mergeCids
  
 	-- Lookup all the classes that are being constrained by the Shape.
@@ -67,12 +69,14 @@ crushShapeInClass cidShape
 		% "   mTemplate    = "	% mTemplate	% "\n"
 
 	let result
-		-- If the constrained equivalence class is of effect or closure kind
-		-- then we can just delete the constraint. 
-		-- BUGS: This is wrong. We're supposed to check if it's manifest.
-		| TVar k (UClass _) : _	<- shapeTs
-		, k == kClosure || k == kEffect
-		= do	trace $ ppr "    -- is eff/clo so deleting constraing (BUGS)\n\n"
+		-- TODO: For region classes, check if they're material or not before merging.
+
+		-- Effects and closures are always immaterial, so we just merge the classes.
+		| clsMerge1 : _	<- clsMerge
+		, kind		<- classKind clsMerge1
+		, kind == kClosure || kind == kEffect
+		= do	trace $ ppr "    -- eff/clo are immaterial so merging classes\n\n"
+			mergeClasses 	$ map classId clsMerge
 			delMultiFetter cidShape
 			return True
 
