@@ -21,9 +21,9 @@ where
 import Util
 import Shared.VarPrim
 import Shared.Exp
-import Type.Error
-import DDC.Desugar.Exp
 import Desugar.Slurp.State
+import DDC.Solve.Error
+import DDC.Desugar.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type

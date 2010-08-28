@@ -10,7 +10,7 @@ module DDC.Solve.Graph.Class
 	, emptyClass
 	, takeTClassOfClass)
 where
-import Type.Location
+import DDC.Solve.Location
 import DDC.Solve.Graph.Node
 import DDC.Type
 import DDC.Var

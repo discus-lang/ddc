@@ -5,12 +5,12 @@ where
 import Type.Solve.BindGroup
 import Type.Scheme
 import Type.Extract
-import Type.Location
-import DDC.Solve.State
 import Constraint.Exp
 import Constraint.Bits
 import Util
 import Util.Graph.Deps
+import DDC.Solve.Location
+import DDC.Solve.State
 import DDC.Type
 import DDC.Var
 import qualified Data.Set	as Set

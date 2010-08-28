@@ -10,7 +10,7 @@ import DDC.Solve.State.Graph
 import DDC.Type
 import DDC.Main.Pretty
 import DDC.Main.Error
-import Type.Error
+import DDC.Solve.Error
 import Data.List
 import Data.Array.IO
 import Control.Monad

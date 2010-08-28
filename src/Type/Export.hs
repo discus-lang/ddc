@@ -4,11 +4,11 @@ module Type.Export
 	( Solution(..)
 	, squidExport)
 where
-import Type.Error
 import Type.Extract
 import Type.Plug
 import Shared.VarPrim
 import Util
+import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Main.Error
 import DDC.Type

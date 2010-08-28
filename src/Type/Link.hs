@@ -3,7 +3,7 @@ module Type.Link
 	( linkType
 	, linkFetter )
 where
-import Type.Location
+import DDC.Solve.Location
 import DDC.Solve.State
 import DDC.Main.Error
 import DDC.Type

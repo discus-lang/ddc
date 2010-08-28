@@ -6,7 +6,7 @@ import Util
 import Shared.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
-import Type.Location
+import DDC.Solve.Location
 import DDC.Var
 import qualified Data.Map	as Map
 import qualified Shared.VarUtil	as Var

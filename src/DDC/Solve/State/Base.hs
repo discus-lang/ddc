@@ -28,7 +28,7 @@ module DDC.Solve.State.Base
 where
 import Constraint.Exp
 import Constraint.Pretty	()
-import Type.Error
+import DDC.Solve.Error
 import DDC.Solve.State.Squid
 import DDC.Main.Error
 import DDC.Main.Pretty

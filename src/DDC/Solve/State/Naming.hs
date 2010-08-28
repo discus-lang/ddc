@@ -8,11 +8,11 @@ where
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
 import DDC.Solve.State.Graph
+import DDC.Solve.Location
 import DDC.Type
 import DDC.Var
 import DDC.Main.Error
 import DDC.Main.Pretty
-import Type.Location
 import Data.List
 import qualified Data.Map	as Map
 

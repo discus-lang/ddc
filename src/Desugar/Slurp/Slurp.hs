@@ -6,13 +6,12 @@ module Desugar.Slurp.Slurp
 where
 import Util
 import Shared.Exp
-import Type.Location
 import Constraint.Exp
 import Constraint.Bits
-import DDC.Desugar.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS
+import DDC.Solve.Location
 import DDC.Base.SourcePos
 import DDC.Var
 import DDC.Type			()

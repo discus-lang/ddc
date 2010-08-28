@@ -6,7 +6,7 @@ import Type.Solve.Generalise
 import Type.Check.Main
 import Type.Check.Instances
 import Type.Check.SchemeDanger
-import Type.Location
+import DDC.Solve.Location
 import DDC.Solve.State
 import Constraint.Exp
 import Data.IORef

@@ -9,7 +9,7 @@ module	Desugar.Slurp.State
 where
 import Util
 import Shared.Exp
-import Type.Error
+import DDC.Solve.Error
 import DDC.Desugar.Exp
 import DDC.Main.Pretty
 import DDC.Base.SourcePos

@@ -18,7 +18,7 @@ module DDC.Solve.State.Graph
 	, addNodeToClass
 	, addAliasForClass)
 where
-import Type.Location
+import DDC.Solve.Location
 import DDC.Solve.State.Base
 import DDC.Solve.State.Squid
 import DDC.Solve.Graph

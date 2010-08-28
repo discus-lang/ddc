@@ -22,7 +22,7 @@ import DDC.Main.Error
 import DDC.Core.Glob
 import DDC.Core.Exp
 import DDC.Type
-import Type.Error
+import DDC.Solve.Error
 import Data.Maybe
 
 stage		= "DDC.Core.Lint"

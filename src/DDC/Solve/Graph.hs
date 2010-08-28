@@ -22,7 +22,7 @@ module DDC.Solve.Graph
 	, addNodeToClassInGraph
 	, addAliasForClassInGraph)
 where
-import Type.Location
+import DDC.Solve.Location
 import DDC.Solve.Graph.Class
 import DDC.Solve.Graph.Node
 import DDC.Solve.Graph.Sink

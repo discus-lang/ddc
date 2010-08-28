@@ -16,8 +16,7 @@ import DDC.Solve.State.Naming
 import DDC.Solve.State.Sink
 import DDC.Solve.State.Merge
 import DDC.Solve.State.Graph
-	
-import Type.Location
+import DDC.Solve.Location
 import Data.Maybe
 
 

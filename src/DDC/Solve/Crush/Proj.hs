@@ -3,10 +3,10 @@
 module DDC.Solve.Crush.Proj
 	(crushProjInClass)
 where
-import Type.Location
-import Type.Error
-import Type.Dump		()
 import Constraint.Exp
+import Type.Dump		()
+import DDC.Solve.Location
+import DDC.Solve.Error
 import DDC.Solve.Trace
 import DDC.Solve.Walk
 import DDC.Solve.State

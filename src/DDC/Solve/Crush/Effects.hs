@@ -10,7 +10,7 @@ import DDC.Solve.State
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk
-import Type.Location
+import DDC.Solve.Location
 import Type.Feed
 import Control.Monad
 import Data.Maybe

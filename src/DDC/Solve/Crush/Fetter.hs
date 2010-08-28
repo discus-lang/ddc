@@ -4,10 +4,10 @@
 module DDC.Solve.Crush.Fetter
 	(crushFettersInClass)
 where
-import DDC.Solve.State
-import Type.Location
 import Type.Feed
-import Type.Error
+import DDC.Solve.State
+import DDC.Solve.Location
+import DDC.Solve.Error
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Solve.Walk

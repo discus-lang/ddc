@@ -5,7 +5,7 @@ module Desugar.Slurp.SlurpS
 where
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
-import Type.Location
+import DDC.Solve.Location
 
 -- | Slurp the type constraints for this statement.
 slurpS 	:: Stmt Annot1

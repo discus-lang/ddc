@@ -7,9 +7,9 @@ where
 import Type.Plug
 import Type.Context
 import Type.Strengthen
-import Type.Error
 import Type.Plate.Collect
 import Util
+import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Solve.Trace
 import DDC.Main.Error

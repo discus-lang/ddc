@@ -5,8 +5,8 @@ module DDC.Solve.Crush.Shape
 	(crushShapeInClass)
 where
 import Type.Feed
-import Type.Location
 import Shared.VarPrim
+import DDC.Solve.Location
 import DDC.Solve.Crush.Unify
 import DDC.Solve.State
 import DDC.Type

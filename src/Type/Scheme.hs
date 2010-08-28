@@ -6,12 +6,12 @@ module Type.Scheme
 where
 import Type.Check.Danger
 import Type.Effect.MaskLocal
-import Type.Error
 import Type.Plug		
 import Type.Strengthen
 import Type.Context
 import Shared.VarPrim
 import Util
+import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Type
 import DDC.Var.NameSpace

@@ -19,9 +19,9 @@ module Type.Check.SchemeDanger
 	, checkSchemeDanger)
 where
 import Shared.VarPrim
-import Type.Location
-import Type.Error
 import Util
+import DDC.Solve.Location
+import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Solve.Trace
 import DDC.Main.Error

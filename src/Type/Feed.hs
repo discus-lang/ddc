@@ -7,10 +7,10 @@ module Type.Feed
 	, addFetter)
 where
 import Constraint.Exp
-import Type.Location
 import Type.Link
 import Type.Dump		()
 import Util
+import DDC.Solve.Location
 import DDC.Solve.State
 import DDC.Main.Error
 import DDC.Type

@@ -1,4 +1,6 @@
-module Type.Location
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
+module DDC.Solve.Location
 	( TypeSource 	(..)
 	, SourceValue	(..)
 	, SourceEffect	(..)
@@ -22,8 +24,7 @@ import DDC.Base.Literal
 import DDC.Type
 import DDC.Var
 
------
-stage	= "Type.Location"
+stage	= "DDC.Solve.Location"
 
 -- TypeSource --------------------------------------------------------------------------------------
 -- Records where type constraints come from
@@ -240,10 +241,10 @@ dispTypeSource tt ts
 	| TSU su	<- ts
 	= dispSourceUnify tt su
 
-	| TSI (SICrushedFS c f ts') <- ts
+	| TSI (SICrushedFS _ _ ts') <- ts
 	= dispTypeSource tt ts'
 
-	| TSI (SICrushedES c eff effSrc) <- ts
+	| TSI (SICrushedES _ eff effSrc) <- ts
 	= dispTypeSource eff effSrc
 
 	-- hrm.. this shouldn't happen
@@ -251,18 +252,6 @@ dispTypeSource tt ts
 	= panic stage
 		("dispTypeSource: no match for " % ts % "\n")
 
-{-
--- A fn make showing error messages easier
---	whereas 'at' / 'with' refers to just a small part of it.
-atKind :: Type -> String
-atKind tt
-	| Just k	<- kindOfType tt
-	= let result
-		| resultKind k == kValue	= "         at type: "
-		| resultKind k == kEffect	= "     with effect: "
-		| otherwise	= panic stage $ "atKind " % k
-	  in result
--}
 	
 -- | Show the source of a type error due to this reason
 dispSourceValue :: Pretty tt PMode => tt -> SourceValue -> PrettyM PMode
@@ -329,7 +318,7 @@ dispSourceValue tt sv
 		-> "  type signature for '" % var % "' in type-class definiton\n"
 		%  "              at: " % sp	% "\n"
 		
-	SVSigExtern sp var
+	SVSigExtern _ var
 		-> "  type of import '" % var % "'\n"
 		
 	SVCtorDef sp vData vCtor
@@ -411,7 +400,7 @@ dispSourceUnify tt sv
 		%  "         at type: " % tt	% "\n"
 		%  "              at: " % sp	% "\n"
 
-	SUBind sp
+	SUBind _
 		-> ppr "binding"	
 
 
@@ -445,7 +434,7 @@ dispFetterSource f ts
 	= "      the use of: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 	
-	| FConstraint v _	<- f
+	| FConstraint _ _	<- f
 	, TSV (SVInst sp var)	<- ts
 	= "      constraint: " % f	% "\n"
 	% " from the use of: " % var	% "\n"
@@ -461,11 +450,11 @@ dispFetterSource f ts
 	% " in type sig for: " % var	% "\n"
 	% "              at: " % sp	% "\n"
 
-	| FConstraint v _	<- f
-	, TSI (SICrushedFS cid f' src)	<- ts
+	| FConstraint _ _	<- f
+	, TSI (SICrushedFS _ f' src)	<- ts
 	= dispFetterSource f' src
 
-	| FConstraint v _				<- f
+	| FConstraint _ _				<- f
 	, TSI (SIPurifier _ eff effSrc fPure fPureSrc)	<- ts
 	= "       constraint: " % f				% "\n"
 	% "which purifies\n"

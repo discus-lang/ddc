@@ -9,7 +9,7 @@ module DDC.Solve.State.Squid
 where
 import qualified Shared.Unique	as U
 import Constraint.Exp
-import Type.Error
+import DDC.Solve.Error
 import DDC.Main.Arg
 import DDC.Solve.Graph
 import DDC.Solve.State.InstanceInfo

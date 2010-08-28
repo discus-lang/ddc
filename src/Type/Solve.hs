@@ -13,11 +13,11 @@ import Type.Solve.Finalise
 import Type.Check.SchemeDanger
 import Type.Extract
 import Type.Feed
-import Type.Location
 import Type.Util
 import Constraint.Bits
 import Constraint.Exp
 import Util
+import DDC.Solve.Location
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import DDC.Solve.State

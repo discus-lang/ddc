@@ -6,8 +6,8 @@ module DDC.Solve.Crush.Unify
 	, addErrorConflict 
 	, isShallowConflict)
 where
-import Type.Error
 import DDC.Main.Error
+import DDC.Solve.Error
 import DDC.Solve.Trace
 import DDC.Solve.State
 import DDC.Type
