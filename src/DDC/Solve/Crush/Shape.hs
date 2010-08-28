@@ -91,73 +91,61 @@ crushShapeInClass cidShape
 		-- we've got a template
 		--	we can now merge the sub-classes and remove the shape constraint.
 		| Just tTemplate	<- mTemplate
-		= do	crushShape2 cidShape fShape srcShape tTemplate clsMerge
+		= do	crushShapeWithTemplate cidShape fShape srcShape tTemplate clsMerge
 			delMultiFetter cidShape
 			return True
 	
 	result		
 
 
-crushShape2 
-	:: ClassId		-- the classId of the fetter being crushed
-	-> Fetter		-- the shape fetter being crushed
-	-> TypeSource		-- the source of the shape fetter
-	-> Node			-- the template type"
-	-> [Class]		-- the classes being merged
+-- | Given come classes constrained by a Shape, and a template node giving the required
+--   shape, constrain each of the classes so they match the template.
+crushShapeWithTemplate
+	:: ClassId		-- ^ cid of the Shape fetter being crushed.
+	-> Fetter		-- ^ the Shape fetter being crushed.
+	-> TypeSource		-- ^ source of the shape fetter.
+	-> Node			-- ^ the template node.
+	-> [Class]		-- ^ the classes being constrained by the Shape fetter.
 	-> SquidM ()
 
-crushShape2 cidShape fShape srcShape tTemplate csMerge
+crushShapeWithTemplate cidShape fShape srcShape tTemplate csMerge
  = do
- 	trace  	( "*   Crush.crushShape2\n"
-	 	% "    cidShape  = " % cidShape		% "\n"
-		% "    fShape    = " % fShape		% "\n"
-		% "    srcShape  = " % srcShape		% "\n"
-		% "    tTemplate = " % tTemplate	% "\n")
+ 	trace  	( "-- Crush.shape (got template)\n"
+	 	% "   cidShape  = " % cidShape		% "\n"
+		% "   fShape    = " % fShape		% "\n"
+		% "   srcShape  = " % srcShape		% "\n"
+		% "   tTemplate = " % tTemplate	% "\n")
 
+	-- the source to use for the new constraints.
 	let srcCrushed	= TSI $ SICrushedFS cidShape fShape srcShape
 
-	-- push the template into classes which don't already have a ctor
+	-- look at each of the classes being constrained, and if they don't already
+	-- have a constructor that maches the template, then push one in.
 	mtsPushed	<- mapM (pushTemplate tTemplate srcCrushed) csMerge
 	
-	let result
-		| Just tsPushed		<- sequence mtsPushed
-		= do	
-			let takeRec tt 
-				| NApp t1 t2		<- tt
-				= [t1, t2]
-				
-				| otherwise
-				= []
+	case sequence mtsPushed of
+	 -- get the cids that should be recursively constrained.	
+	 Just tsPushed
+	  -> do	let takeRec tt
+		     = case tt of
+			NApp t1 t2	-> [t1, t2]
+			_		-> []
 					
-			let tssMerged	= map takeRec tsPushed
-			let tssMergeRec	= transpose tssMerged
+		let tssMerged	= map takeRec tsPushed
+		let tssMergeRec	= transpose tssMerged
 		
-			trace	( "    tssMergeRec = " % tssMergeRec		% "\n")
+		trace	$ "    tssMergeRec = " % tssMergeRec		% "\n"
 
-			-- add shape constraints to constraint the args as well
-			mapM_ (addShapeFetter srcCrushed) tssMergeRec
+		-- add shape constraints to constraint the args as well
+		mapM_ (addShapeFetter srcCrushed) tssMergeRec
 
-		  	return ()
+
+	 -- If adding the template to the class would result in a type error
+	 -- then stop now, as we don't want to change the graph anymore if it
+	 -- already has errors. We'll get an invalid instance error for
+	 -- the un-crushed shape constraint anyway.
+	 _ 	-> return ()
 		
-		-- If adding the template to another class would result in a type error
-		--	then stop now. We don't want to change the graph anymore if it
-		--	already has errors.
-		| otherwise
-		= return ()
-
-	result
-
-addShapeFetter :: TypeSource -> [ClassId] -> SquidM ()
-addShapeFetter src cids@(cid1 : _)
- = do	kind	<- kindOfClass cid1
-
-	-- shape fetters don't constrain regions.
-	if kind == kRegion
-	 then	return ()
-	 else do
-		let ts	= zipWith (\k c -> TVar k (UClass c)) (repeat kind) cids
-		addFetter src (FConstraint (primFShape (length ts)) ts)
-		return ()
 
 -- | Add a template type to a class.
 pushTemplate 
@@ -195,7 +183,7 @@ pushTemplate tTemplate srcShape cMerge
 	   else return (Just t)
 
 
--- | replace all the free vars in this type with new ones
+-- | Replace all the free cids in this node with fresh ones.
 freshenNode :: TypeSource -> Node -> SquidM Node
 freshenNode src node
  = do	let cidsFree	= Set.toList $ cidsOfNode node
@@ -204,6 +192,7 @@ freshenNode src node
 	return	$ subNodeCidCid sub node
 
 
+-- | Allocate a new class with the same kind as this one.
 freshenCid :: TypeSource -> ClassId -> SquidM ClassId
 freshenCid src cid
  = do	Just Class { classKind = k }	
@@ -215,4 +204,22 @@ freshenCid src cid
 		{ classUnified = Just nBot }
 
 	return	cid'
+
  
+-- | Add a shape fetter to constrain all these classes.
+--   TODO: We're treating all regions as strongly material, until we
+--         can work out the real materiality. 
+addShapeFetter :: TypeSource -> [ClassId] -> SquidM ()
+addShapeFetter src cids@(cid1 : _)
+ = do	kind	<- kindOfClass cid1
+
+	-- shape fetters don't constrain regions.
+	if kind == kRegion
+	 then	return ()
+	 else do
+		let ts	= zipWith 
+				(\k c -> TVar k (UClass c)) 
+				(repeat kind) cids
+
+		addFetter src (FConstraint (primFShape (length ts)) ts)
+		return ()

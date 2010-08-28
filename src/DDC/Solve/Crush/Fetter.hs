@@ -217,16 +217,7 @@ getPurifier cid cls fetter srcFetter (nodeEff, srcNode)
 	= do	Just clsCon	<- lookupClass cidCon
 		Just clsArg	<- lookupClass cidArg
 		let  tArg	= TVar (classKind clsArg) $ UClass (classId clsArg)
-		
-		let ePurifier	=  getPurifier' cid fetter srcFetter clsCon clsArg tArg srcNode
-		
-{-		trace	$ vcat
-			[ "  * getPurifier " 		% cid
-			, "    clsCon.classUnified  = "	% classUnified clsCon
-			, "    clsArg.classUnified = "	% classUnified clsArg
-			, "    purifier             = "	% ePurifier ]
--}		
-		return ePurifier
+		getPurifier' cid fetter srcFetter clsCon clsArg tArg srcNode
 
 	-- This effect can't be purified.
 	| NCon tc	<- nodeEff
