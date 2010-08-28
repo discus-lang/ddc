@@ -81,7 +81,7 @@ slurpTopNames p
 	PData sp v vs ctors 		
 	 -> ( v { varNameSpace = NameType }) 
 	 :  [ c { varNameSpace = NameValue} 
-	 	| (c, fs) <- ctors ]
+	 	| CtorDef c fs <- ctors ]
 	
 	PRegion sp v	
 	 -> [v { varNameSpace = NameRegion }]

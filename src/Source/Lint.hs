@@ -183,7 +183,10 @@ instance Lint (Export SourcePos) where
 instance Lint (Foreign SourcePos) where
  lint f = return f
 
-instance Lint (DataField (Exp SourcePos) Type) where
+instance Lint (CtorDef SourcePos) where
+ lint f = return f
+
+instance Lint (DataField SourcePos) where
  lint f = return f
 
 -- Stmt --------------------------------------------------------------------------------------------

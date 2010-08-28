@@ -310,7 +310,7 @@ pTopData2 tok con
 		return	$ PData (spTP tok) con vars ctors
 
 
-pTopDataCtor :: Parser (Var, [DataField (Exp SP) Type])
+pTopDataCtor :: Parser (CtorDef SP)
 pTopDataCtor
  = 	-- CON ...
 	do	con	<- pOfSpace NameType pCon
@@ -318,54 +318,36 @@ pTopDataCtor
 
  <?>    "pTopDataCtor"
 
-pTopDataCtorRest :: Var -> Parser (Var, [DataField (Exp SP) Type])
+pTopDataCtorRest :: Var -> Parser (CtorDef SP)
 pTopDataCtorRest con
  =	-- CON { FIELD ; .. }
  	do	fs	<- pCParen $ Parsec.sepEndBy1 pDataField pSemis
-		return	(con, fs)
+		return	$ CtorDef con fs
 
   <|>	-- CON TYPES ..
 	do	types	<- Parsec.many pType_body1
 		let mkPrimary typ
 			= DataField
-			{ dPrimary	= True
-			, dLabel	= Nothing
-			, dType		= typ
-			, dInit		= Nothing }
-		return	(con, map mkPrimary types)
+			{ dataFieldLabel	= Nothing
+			, dataFieldType		= typ }
+		return	$ CtorDef con $ map mkPrimary types
 
 
-pDataField :: Parser (DataField (Exp SP) Type)
+pDataField :: Parser (DataField SP)
 pDataField
- =  	-- .VAR :: TYPE = EXP
- 	do	pTok K.Dot
-		var	<- pOfSpace NameField pVar
-		pTok K.HasType
-		t	<- pType_body
-		pTok K.Equals
-		exp	<- pExp
-		return	DataField
-			{ dPrimary	= False
-			, dLabel	= Just var
-			, dType		= t
-			, dInit		= Just exp }
-
-  <|>	-- VAR :: TYPE
+ =
+  	-- VAR :: TYPE
 	do	var	<- pVarSpaceHasType NameField
 		t	<- pType_body
 
 		return	DataField
-			{ dPrimary	= True
-			, dLabel	= Just var
-			, dType		= t
-			, dInit		= Nothing }
+			{ dataFieldLabel = Just var
+			, dataFieldType	 = t }
 
   <|>	do	t	<- pType_body
   		return	DataField
-			{ dPrimary	= True
-			, dLabel	= Nothing
-			, dType		= t
-			, dInit		= Nothing }
+			{ dataFieldLabel = Nothing
+			, dataFieldType  = t }
 
   <?>   "pDataField"
 

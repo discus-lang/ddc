@@ -3,13 +3,11 @@ module Desugar.Slurp.SlurpA
 	(slurpA)
 where
 import Util
-import Shared.Exp
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
 import DDC.Solve.Location
 import DDC.Var
 import qualified Data.Map	as Map
-import qualified Shared.VarUtil	as Var
 
 stage	= "Desugar.Slurp.SlurpA"
 
@@ -219,7 +217,8 @@ slurpLV	:: Var				-- Constructor name.
 		, [CTree] )
 	
 slurpLV vCon tData subInst (LIndex sp ix, v)
- = do	
+ = 	error "SlurpA.slurpLV: broken"	
+{-
 	-- create a new type var for this arg.
  	(TVar _ (UVar vT))	<- lbindVtoT v
 
@@ -260,12 +259,11 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 		return	( (LVar Nothing v, v)
 			, Nothing
 			, [] )
-
-
+-}
 
 slurpLV vCon tData subInst (LVar sp vField, v)
- = do
- 	-- Create a new type var for this arg.
+ = error "SlurpA.slurpLV: broken"
+{- do 	-- Create a new type var for this arg.
  	Just (TVar _ (UVar vT))	<- bindVtoT v
  
  	-- Lookup the fields for this constructor.
@@ -290,4 +288,4 @@ slurpLV vCon tData subInst (LVar sp vField, v)
  	return 	( (LVar Nothing vField, v)
  		, Just (v, vT)
 		, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField] )
-
+-}

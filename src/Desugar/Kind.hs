@@ -14,6 +14,7 @@ import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
+import DDC.Type.Data
 import DDC.Var
 import Data.Sequence			as Seq
 import qualified DDC.Type.Transform	as T
@@ -106,7 +107,7 @@ elabDataP :: Top SourcePos -> SolveM (Top SourcePos)
 elabDataP pp
  = case pp of
  	PData{}	
-	 -> do	pp'@(PData sp v vs ctors)	
+	 -> do	pp'@(PData sp (DataDef v vs ctors))
 			<- elaborateData newVarN getKind pp
 
 		return	pp'
@@ -218,7 +219,7 @@ slurpConstraint pp
 	PClassDecl sp v ts vts
 	 -> map (\(TVar k (UVar v)) -> Constraint (KSClass sp) v (defaultKind v k)) ts
 
- 	PData sp v vs ctors	
+ 	PData sp (DataDef v vs ctors)
 	 -> let	k	= makeDataKind vs
 	        k'	= forcePrimaryRegion v k
 	    in	[Constraint (KSData sp) v k']

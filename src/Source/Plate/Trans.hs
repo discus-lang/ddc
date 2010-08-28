@@ -87,17 +87,15 @@ instance(  Monad  m
 		return		(a', b')
 
 -----
-instance Monad m 
+{-instance Monad m 
 	=> TransM m n1 n2 (DataField (Exp n1) Type) (DataField (Exp n2) Type) where
 
  transZM table ff
   = case ff of
   	DataField{}
-	 -> do	dLabel'		<- transZM table $ dLabel ff
-		dInit'		<- transZM table $ dInit ff
-		return		$ ff 	{ dLabel	= dLabel'
-					, dInit		= dInit' }
-
+	 -> do	dLabel'		<- transZM table $ dataFieldLabel ff
+		return		$ ff 	{ dataFieldLabel	= dLabel' }
+-}
 instance Monad m => TransM m n1 n2 Var Var
  where	transZM table xx = (transVar table) xx
 
@@ -153,6 +151,16 @@ data TransTable m n1 n2
 	, transTop		:: Trans m n1 n2 Top
 	, transTop_enter	:: Trans1 m n1 Top
 	, transTop_leave	:: Trans1 m n2 Top 
+
+	-- ctordef
+	, transCtorDef		:: Trans m n1 n2 CtorDef
+	, transCtorDef_enter	:: Trans1 m n1 CtorDef
+	, transCtorDef_leave	:: Trans1 m n2 CtorDef
+
+	-- datafield
+	, transDataField	:: Trans m n1 n2 DataField
+	, transDataField_enter	:: Trans1 m n1 DataField
+	, transDataField_leave	:: Trans1 m n2 DataField
 
 	-- export
 	, transExport		:: Trans m n1 n2 Export
@@ -232,6 +240,14 @@ transTableId transN'
 	, transTop		= followZM
 	, transTop_enter	= \x -> return x
 	, transTop_leave	= \x -> return x 
+
+	, transCtorDef		= followZM
+	, transCtorDef_enter	= \x -> return x
+	, transCtorDef_leave	= \x -> return x
+
+	, transDataField	= followZM
+	, transDataField_enter	= \x -> return x
+	, transDataField_leave	= \x -> return x
 
 	, transExport		= followZM
 	, transExport_enter	= \x -> return x
@@ -362,6 +378,34 @@ instance (Monad m) => TransM m n1 n2 (Top n1) (Top n2) where
                 PStmt x0
                   -> do x0' <- transZM table x0
                         return (PStmt x0')
+ 
+instance (Monad m) => TransM m n1 n2 (CtorDef n1) (CtorDef n2)
+         where
+        transZM table xx
+          = transMe (transCtorDef table) (transCtorDef_enter table)
+              (transCtorDef_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                CtorDef x0 x1
+                  -> do x0' <- transZM table x0
+                        x1' <- transZM table x1
+                        return (CtorDef x0' x1')
+ 
+instance (Monad m) => TransM m n1 n2 (DataField n1) (DataField n2)
+         where
+        transZM table xx
+          = transMe (transDataField table) (transDataField_enter table)
+              (transDataField_leave table)
+              table
+              xx
+        followZM table xx
+          = case xx of
+                DataField x0 x1
+                  -> do x0' <- transZM table x0
+                        x1' <- transZM table x1
+                        return (DataField x0' x1')
  
 instance (Monad m) => TransM m n1 n2 (Export n1) (Export n2) where
         transZM table xx

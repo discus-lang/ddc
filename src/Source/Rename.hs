@@ -23,10 +23,7 @@ import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Var
 import DDC.Type
-import DDC.Util.FreeVars
 import DDC.Main.Pretty		()
-import qualified Shared.VarUtil	as Var
-import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
 stage		= "Source.Rename"
@@ -269,9 +266,12 @@ renameInstInh    (v, ts)
 renameCtor 
 	:: Var			-- type constructor name
 	-> [Var]		-- type constructor parameters
-	-> (Var, [DataField (Exp SourcePos) Type])	
-	-> RenameM (Var, [DataField (Exp SourcePos) Type])
+	-> CtorDef SourcePos	
+	-> RenameM (CtorDef SourcePos)
 
+renameCtor = error "renameCtor: broken"
+
+{-
 renameCtor vData vsData (v, fields)
  = do	v'	<- linkV v
 	fields'	<- mapM (renameDataField vData vsData) fields
@@ -307,7 +307,7 @@ renameDataField vData vsData df
 		{ dLabel	= mLabel'
 		, dType		= tField'
 		, dInit		= mExp' }
-		
+-}	
 	
 -- Expressions -----------------------------------------------------------------
 instance Rename (Exp SourcePos) where 

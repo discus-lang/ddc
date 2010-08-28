@@ -1,11 +1,20 @@
 
+-- | Data type and constructor definitions.
 module DDC.Type.Data.Base
 	( DataDef(..)
-	, CtorDef(..))
+	, CtorDef(..)
+	, lookupTypeOfFieldFromDataDef
+	, lookupTypeOfFieldFromCtorDef
+	, fieldsOfDataDef)
 where
 import DDC.Type.Exp
+import DDC.Type.Compounds
 import DDC.Var
+import Data.Maybe
+import Data.Set			(Set)
 import Data.Map			(Map)
+import qualified Data.Map	as Map
+import qualified Data.Set	as Set
 
 
 -- | A data type definition
@@ -45,5 +54,52 @@ data CtorDef
 	deriving (Show, Eq)
 
 
--- | Get the type of some named field from a data constructor.
-lookupTypeOfFieldInCtor :: Var -> CtorDef -> Maybe Type
+-- | Get the type of a named field from a data type definition.
+--	If multiple constructors define this field then we just take the
+--	type of the first one. It's up to the constructor of the `DataDef` 
+--	to ensure that all fields in a def have the same type.
+lookupTypeOfFieldFromDataDef :: Var -> DataDef -> Maybe Type
+lookupTypeOfFieldFromDataDef v def
+	= listToMaybe
+	$ catMaybes
+	$ map (lookupTypeOfFieldFromCtorDef v) 
+	$ Map.elems 
+	$ dataDefCtors def
+
+
+-- | Get the type of a named field from a data constructor definition.
+lookupTypeOfFieldFromCtorDef :: Var -> CtorDef -> Maybe Type
+lookupTypeOfFieldFromCtorDef v def
+ = case Map.lookup v $ ctorDefFields def of
+	Just ix	-> getParamOfType ix $ ctorDefType def
+	Nothing	-> Nothing
+
+ where
+	--- | Get a numbered parameter from a type, 
+	--	automatically decending into foralls.
+	getParamOfType :: Int -> Type -> Maybe Type
+	getParamOfType 0 tt	
+		= Just tt
+
+	getParamOfType i tt
+		| Just (t1, t2, _, _)	<- takeTFun tt
+		= getParamOfType (i-1) t2
+			
+		| TForall _ _ t		<- tt
+		= getParamOfType i t
+			
+		| otherwise
+		= Nothing
+
+
+-- | Get a set of all fields defined in a data type declaration.
+fieldsOfDataDef :: DataDef -> Set Var
+fieldsOfDataDef dataDef
+	= Set.unions
+	$ map (Set.fromList . Map.keys . ctorDefFields)
+	$ Map.elems $ dataDefCtors dataDef
+
+
+
+
+

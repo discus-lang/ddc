@@ -1,4 +1,4 @@
-
+{-# OPTIONS -fno-warn-monomorphism-restriction #-}
 -- | Elaborate data definitions.
 module Desugar.Data 
 	( elaborateData
@@ -6,13 +6,13 @@ module Desugar.Data
 where
 import Desugar.Pretty
 import DDC.Desugar.Exp
-import Shared.Exp
 import Shared.VarPrim
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
+import DDC.Type.Data
 import DDC.Var
 import Util
 import qualified Debug.Trace
@@ -29,7 +29,7 @@ elaborateData
 	-> Top SourcePos -> m (Top SourcePos)
 
 elaborateData newVarN getKind 
-	p@(PData sp vData vsData ctors)
+	p@(PData sp (DataDef vData vsData ctors))
  = do
 	trace 	( "elaborateData\n"
 		% "    in:\n" %> stripAnnot p	% "\n")
@@ -51,13 +51,13 @@ elaborateData newVarN getKind
 	rPrimary	<- takePrimary
 
 	-- use the primary region for all region annots
-	let newVarNR n 
+{-	let newVarNR n 
 		| n == NameRegion
 		= return rPrimary
 		
 		| otherwise
 		= newVarN n
-
+-}
 	let thing
 		-- TUnit doesn't have a region
 		| vData == primTUnit 
@@ -70,11 +70,11 @@ elaborateData newVarN getKind
 
 		-- boxed ones do
 		| otherwise
-		= do	(ctors', vksNew)	
+		= do{-	(ctors', vksNew)	
 					<- liftM unzip $ mapM (elaborateCtor newVarNR) ctors
 			let vsData'	= nub $ rPrimary : vsData ++ (map fst $ concat vksNew)
-
-			return $ PData sp vData vsData' ctors'
+		-}	freakout stage ("elaboration of data decls is wrong")
+			 $ return $ PData sp (DataDef vData vsData ctors)
 
 	p'	<- thing
 
@@ -102,12 +102,12 @@ elaborateTypeSynonym newVarN getKind
 	panic stage "Sorry don't handle PTypeSynonym yet!\n"
 
 
-
+{-
 elaborateCtor 
 	:: Monad m
 	=> (NameSpace -> m Var)		-- a fn to generate a new region var
-	-> (CtorDef SourcePos)
-	-> m 	( CtorDef SourcePos
+	-> CtorDef
+	-> m 	( CtorDef
 		, [(Var, Kind)] )
 
 elaborateCtor newVar (CtorDef sp var fields)
@@ -125,4 +125,4 @@ elaborateField newVar field@(DataField { dType = t })
 	
  	return	( field { dType = t_elab }
 		, vks )
-	
+-}	

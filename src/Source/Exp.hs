@@ -5,10 +5,10 @@ module Source.Exp
 	, Top 		(..)
 	, Export	(..)
 	, Foreign 	(..)
-	, DataField 	(..)
 	, InfixMode 	(..)
 	, FixDef
-	, CtorDef
+	, CtorDef	(..)
+	, DataField	(..)
 	, Exp 		(..)
 	, Stmt 		(..)
 	, Proj		(..)
@@ -21,12 +21,10 @@ where
 import DDC.Base.Literal
 import DDC.Type
 import DDC.Var
-import Shared.Exp
 
 -- | A `Tree` is a list of top level declarations.
 type Tree a	
 	= [Top a]
-
 
 -- | Top level declarations.
 data Top a
@@ -123,9 +121,22 @@ data Top a
 	deriving (Show, Eq)
 
 
--- TODO: make these into their own data types.
-type FixDef a	= (Var, (Int, InfixMode a))
-type CtorDef a	= (Var, [DataField (Exp a) Type])
+-- TODO: make this into its own data type.
+type FixDef a	
+	= (Var, (Int, InfixMode a))
+
+data CtorDef a
+	= CtorDef
+	{ ctorDefName		:: Var
+	, ctorDefFields		:: [DataField a] }
+	deriving (Show, Eq)
+
+
+data DataField a
+	= DataField
+	{ dataFieldLabel	:: Maybe Var
+	, dataFieldType		:: Type }
+	deriving (Show, Eq)
 
 
 -- | Export declarations.

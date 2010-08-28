@@ -16,8 +16,6 @@ import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Desugar.Exp 	as D
-import qualified Desugar.Slurp.Util	as D
-import qualified Shared.Exp		as S
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
@@ -67,19 +65,8 @@ toCoreP p
 	D.PExternData _ _ v k
 	 -> 	return	[C.PExternData v k]
 
-	D.PData _ vData vsParam ctors
-	 -> do	ctors'	<- zipWithM 
-				(toCoreCtorDef vData vsParam) 
-				ctors
-				[0 .. length ctors]
-					
-		let mmCtors	= Map.fromList 
-				$ [(T.ctorDefName def, def) | def <- ctors']
-
-		return	[C.PData (T.DataDef 
-					{ T.dataDefName		= vData
-					, T.dataDefParams	= vsParam
-					, T.dataDefCtors	= mmCtors })]
+	D.PData _ dataDef
+	 ->	return	[C.PData dataDef]
 
 	D.PBind nn (Just v) x
 	 -> do	
@@ -159,33 +146,4 @@ toCoreP p
 	_ -> panic stage
 		$ "toCoreP: no match for " % show p % "\n"
 	
-
--- CtorDef -----------------------------------------------------------------------------------------
--- | Convert a desugared data constructor definition to core form.
-toCoreCtorDef	
-	:: Var			-- ^ var of data type constructor the data constructor belongs to
-	-> [Var]		-- ^ vars of params to data type constructor
-	-> D.CtorDef Annot	-- ^ data constructor definition to convert
-	-> Int			-- ^ data constructor tag
-	-> CoreM T.CtorDef
-		
-toCoreCtorDef vData vsParam (D.CtorDef _ vCtor dataFields) tag
- = do 	tCtor	<- liftM toCoreT
-		$  D.makeCtorType newVarN vData vsParam vCtor dataFields
-
-	let fieldIndicies
-		= takeFieldIndicies dataFields
-
-	return	$ T.CtorDef vCtor tCtor (length dataFields) tag fieldIndicies
-
-
--- | For fields with a label, 
---	construct a map from the label var to the index of that field in the constructor.
-takeFieldIndicies 
-	:: [S.DataField (D.Exp Annot) T.Type] 	-- ^ fields of a data constructor
-	-> Map Var Int
-
-takeFieldIndicies dfs
- 	= Map.fromList
- 	$ [ (v, i) | (Just v, i) <- zip (map S.dLabel dfs) [0..] ]
 	

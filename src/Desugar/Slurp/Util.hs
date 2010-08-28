@@ -1,7 +1,7 @@
 
 module Desugar.Slurp.Util
-	( makeCtorType
-	, traceM
+	( -- makeCtorType
+	  traceM
 	, newVarN
 	, newVarV, newVarVS
 	, newTVarD, newTVarDS
@@ -19,19 +19,15 @@ module Desugar.Slurp.Util
 	, wantTypeVs )
 where
 import Util
-import Shared.VarPrim
-import Shared.Exp
 import Desugar.Slurp.State
 import DDC.Solve.Error
 import DDC.Desugar.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Type
-import DDC.Type.Transform
+import DDC.Type.Data
 import DDC.Var
-import DDC.Util.FreeVars
-import Shared.VarUtil		(prettyPos)
-import qualified Shared.VarUtil	as Var
+-- import Shared.VarUtil		(prettyPos)
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -40,6 +36,7 @@ stage	= "Desugar.Slurp.Util"
 -- makeCtorType ------------------------------------------------------------------------------------
 --	Make a constructor type out of the corresponding line from a data definition.
 --
+{-
 makeCtorType 
 	:: Monad m
 	=> (NameSpace -> m Var)		-- newVarN
@@ -126,7 +123,7 @@ checkTypeVar vs v
 		[ prettyPos v % "\n"
 		% "    Variable " % v % " is not present in the data type\n" ]
 	
-
+-}
 
 
 -----------------------
@@ -239,9 +236,9 @@ lbindVtoT	varV
 --	This function gets called when any top level TData nodes are encountered.
 --
 addDataDef ::	(Top Annot2)	-> CSlurpM ()
-addDataDef	ddef@(PData _ v vs ctors)
+addDataDef	ddef@(PData _ def)
  	= modify (\s -> s 
-		{ stateDataDefs = Map.insert v ddef (stateDataDefs s) })
+		{ stateDataDefs = Map.insert (dataDefName def) def (stateDataDefs s) })
 
 addDef ::	Var -> Type -> CSlurpM ()
 addDef		v	t

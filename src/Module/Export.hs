@@ -17,6 +17,7 @@ import qualified Source.Plate.Trans	as S
 import qualified Source.Slurp		as S
 import qualified Source.Util		as S
 import qualified DDC.Type		as T
+import qualified DDC.Type.Data		as T
 import qualified DDC.Type.Transform	as T
 import qualified Type.Util		as T
 import qualified DDC.Desugar.Exp	as D
@@ -140,10 +141,10 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 
 
 	++ (concat [pprStrPlain (D.PData sp 
-					(eraseModule vData) 
-					(map eraseModule vsData)
-					(map eraseModule_ctor ctors))
-			| D.PData sp vData vsData ctors
+					(T.DataDef 	(eraseModule vData) 
+							(map eraseModule vsData)
+							(Map.map eraseModule_ctor ctors)))
+			| D.PData sp (T.DataDef vData vsData ctors)
 			<- psDesugared])
 
 	++ "\n"
@@ -200,11 +201,10 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 -- | Erase a the module name from this var 
 eraseModule :: Var -> Var
 eraseModule v
-	= v { varModuleId = ModuleIdNil }
+	= v	{ varModuleId = ModuleIdNil }
 
-
-eraseModule_ctor (D.CtorDef sp v fs)
-	= D.CtorDef sp (eraseModule v) fs
+eraseModule_ctor def@T.CtorDef{}
+	= def	{ T.ctorDefName	= eraseModule (T.ctorDefName def) }
 
 
  

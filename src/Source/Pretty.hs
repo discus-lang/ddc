@@ -59,7 +59,7 @@ instance Pretty (Top a) PMode where
 
 	PData _ typeName vars ctors
 	 -> "data " % punc " " (typeName : vars) % "\n"
-		%> ("= "  % punc "\n\n| "(map prettyCtor ctors) % ";")
+		%> ("= "  % punc "\n\n| "(map ppr ctors) % ";")
 		%  "\n\n"
 
 	PRegion _ v	 -> "region " % v % ";\n"
@@ -114,14 +114,31 @@ pprPClass_vk (v, k)
 	| otherwise
 	= parens $ v <> "::" <> k
 
-prettyCtor ::	(Var, [DataField (Exp a) Type])	-> PrettyM PMode
-prettyCtor	xx
- = case xx of
- 	(v, [])		-> ppr v
-	(v, fs)		
-	 -> v % " {\n"
-		%> ("\n" %!% (map pprStrPlain fs)) % "\n"
-		% "}"
+
+-- CtorDef ----------------------------------------------------------------------------------------
+instance Pretty (CtorDef a) PMode where
+ ppr CtorDef
+	{ ctorDefName	= name
+	, ctorDefFields	= fields }
+  = case fields of
+ 	[] -> ppr name
+	fs -> name 	% " {\n"
+			%> ("\n" %!% (map pprStrPlain fs)) % "\n"
+			% "}"
+
+-- DataField --------------------------------------------------------------------------------------
+instance Pretty (DataField a) PMode where
+ ppr DataField
+	{ dataFieldLabel	= Nothing
+	, dataFieldType		= t }
+	= t % ";"
+
+ ppr DataField
+	{ dataFieldLabel	= mLabel
+	, dataFieldType		= t }
+	= fromMaybe (ppr " ") (liftM ppr mLabel)
+	%> (" :: " % t)
+
 
 -- Export ------------------------------------------------------------------------------------------
 instance Pretty (Export a) PMode where

@@ -14,7 +14,6 @@ import Source.Desugar.Base
 import Source.Desugar.Patterns
 import Source.Desugar.MergeBindings
 import Shared.VarPrim
-import Shared.Exp
 import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
@@ -95,9 +94,10 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	-- data definitions
 	S.PData sp v vs ctors
-	 -> do	-- desugar field initialisation code
-	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
-	 	returnJ	$ D.PData sp v vs ctors'
+--	 -> do	-- desugar field initialisation code
+--	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
+--	 	returnJ	$ D.PData sp v vs ctors'
+	 -> 	panic stage $ "desugar " % pp
 	
 	S.PRegion sp v
 	 ->	returnJ	$ D.PRegion sp v
@@ -156,6 +156,7 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	_  ->	return	Nothing
 	
 -----
+{-
 rewriteCtorDef sp (v, fs)
  = do	fs'	<- mapM rewriteField fs
  	return	$ D.CtorDef sp v fs'
@@ -163,7 +164,7 @@ rewriteCtorDef sp (v, fs)
 rewriteField field
  = do	mX'	<- liftMaybe rewrite $ dInit field
  	return	$ field { dInit = mX' }
-
+-}
 
 -- Exp ---------------------------------------------------------------------------------------------
 instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where

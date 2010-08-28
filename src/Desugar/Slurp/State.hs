@@ -8,13 +8,14 @@ module	Desugar.Slurp.State
 	, initCSlurpS )
 where
 import Util
-import Shared.Exp
 import DDC.Solve.Error
-import DDC.Desugar.Exp
+--import DDC.Desugar.Exp
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
 import DDC.Type
+import DDC.Type.Data
 import DDC.Var
+-- import Source.Exp	(DataField(..))
 import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map
 import qualified Shared.Unique	as Unique
@@ -60,14 +61,14 @@ data	CSlurpS =
 	-- Variable generator.
 	, stateGen		:: Map NameSpace VarId
 
-	, stateDataDefs		:: Map Var (Top Annot2)
+	, stateDataDefs		:: Map Var DataDef
 
 	-- Types for constructors
 	--	These are used to work out the types for corresponding patterns.
 	, stateCtorType		:: Map Var Type					
 
 	-- The fields in each constructor.
-	, stateCtorFields	:: Map Var [DataField (Exp Annot2) Type]	
+--	, stateCtorFields	:: Map Var [DataField (Exp Annot2) Type]	
 
 	-- The set of TEC vars we need to infer TECs for so that we can 
 	--	convert the desugared code to core.
@@ -97,7 +98,7 @@ initCSlurpS
 		
 	, stateDataDefs		= Map.empty
 	, stateCtorType		= Map.empty
-	, stateCtorFields	= Map.empty
+--	, stateCtorFields	= Map.empty
 
 	, stateTypesRequest	= Set.empty
 

@@ -5,17 +5,18 @@ module Desugar.Slurp.Slurp
 	(slurpTreeM)
 where
 import Util
-import Shared.Exp
+-- import Shared.Exp
 import Constraint.Exp
 import Constraint.Bits
 import Desugar.Slurp.Base
-import Desugar.Slurp.SlurpX
+-- import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS
 import DDC.Solve.Location
-import DDC.Base.SourcePos
+-- import DDC.Base.SourcePos
 import DDC.Var
 import DDC.Type			()
-import qualified Shared.VarUtil	as Var
+import DDC.Type.Data
+-- import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -164,17 +165,20 @@ slurpP	(PTypeSig sp vs tSig)
 slurpP x@(PTypeSynonym sp v t)
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
 
-slurpP	(PData sp v vs ctors)
- = do
- 	(ctors', constrss)
+slurpP	(PData sp def@(DataDef v vs ctors))
+ = do 	(ctors', constrss)
 			<- liftM unzip
-			$  mapM (slurpCtorDef v vs) ctors
+			$  mapM (slurpCtorDef v vs) 
+			$  Map.elems ctors
 
-	let top'	= PData Nothing v vs ctors'
-	addDataDef top'
+--	let top'	= PData Nothing v vs ctors'
+--	addDataDef top'
 
-	return	( top'
-		, concat constrss )
+	
+--	return	( top'
+--		, concat constrss )
+
+	return	$ error "Desugar.Slurp.Slurp.slurpP: not finished"
 			
 slurpP	(PProjDict sp t ss)
  = do
@@ -217,12 +221,14 @@ slurpP (PBind sp mV x)
 slurpCtorDef
 	:: Var 					-- Datatype name.
 	-> [Var] 				-- Datatype args.
-	-> CtorDef Annot1			-- Constructor def.
+	-> CtorDef 				-- Constructor def.
 
-	-> CSlurpM 	( CtorDef Annot2	-- Annotated constructor def.
+	-> CSlurpM 	( CtorDef 		-- Annotated constructor def.
 			, [CTree] )		-- Schemes and constraints.
 
-slurpCtorDef	vData  vs (CtorDef sp cName fieldDefs)
+slurpCtorDef vData  vs CtorDef{}
+ = error "Desugar.Slurp.Slurp: slurpCtorDef"
+{-
  = do
 	Just (TVar _ (UVar cNameT))
 			<- bindVtoT cName
@@ -335,4 +341,4 @@ freshenType tt
 
 	let tt'		= subTT_noLoops sub tt
 	return	tt'
-						
+-}					

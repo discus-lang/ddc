@@ -4,16 +4,19 @@
 module Desugar.Pretty
 	(stripAnnot)
 where
-import DDC.Desugar.Exp
 import Desugar.Plate.Trans
+import DDC.Type.Data.Base
+import DDC.Desugar.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty		
 import DDC.Type
 import DDC.Var
+import qualified Data.Map	as Map
 
 stage = "Desugar.Pretty"
 
-stripAnnot xx	= transformN (\n -> Nothing :: Maybe ()) xx
+stripAnnot xx	
+ = transformN (\n -> Nothing :: Maybe ()) xx
 
 annot nn x
  = case nn of
@@ -76,14 +79,15 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 	 	("region " % v) % ";\n"
 	 
-	PData nn v vs []
+	PData nn (DataDef v vs ctors)
+	 | Map.null ctors
 	 -> annot nn 
 	 	("data " % " " %!% (v : vs)) % ";\n\n"
 
-	PData nn v vs ctors
+	PData nn (DataDef v vs ctors)
 	 -> annot nn
 	 	("data " % " " %!% (v : vs) % "\n"
-		%> ("= "  % "\n\n| " %!% ctors % ";")
+		%> ("= "  % "\n\n| " %!% (Map.elems ctors) % ";")
 		% "\n\n")
 		
 	-- data classes
@@ -128,15 +132,18 @@ pprPClassDict_varKind tt
 	_		-> panic stage "pprPClassDict_varKind: no match\n"
 
 -- CtorDef ---------------------------------------------------------------------
-instance Pretty a PMode => Pretty (CtorDef (Maybe a)) PMode where
+{-
+instance Pretty a PMode => Pretty CtorDef PMode where
  ppr xx
   = case xx of
-  	CtorDef nn v []	-> ppr v
+  	CtorDef { ctorDefName	= v
+		, ctorDefFields = [] }	
+	 -> ppr $ ctorDefName v
 	
-	CtorDef nn v fs
-	 -> annot nn
-	 	(v % " {\n" %> ("\n" %!% fs) % "\n" % "}")
-
+	CtorDef { ctorDefName	= v 
+		, ctorDefFields = fs }
+	 -> v % " {\n" %> ("\n" %!% fs) % "\n" % "}"
+-}
 
 -- Exp -------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
