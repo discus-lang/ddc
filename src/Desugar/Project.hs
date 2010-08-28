@@ -19,6 +19,7 @@ import DDC.Base.Literal
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
+import DDC.Type.Data
 import DDC.Var
 import DDC.Util.FreeVars
 import qualified Data.Set		as Set
@@ -66,25 +67,27 @@ projectTree
 	-> Tree Annot 		-- ^ source tree
 	-> (Tree Annot, [Error])
 
-projectTree unique moduleName headerTree tree
+projectTree unique modName headerTree tree
  = let	(tree', state')
-		= runState (projectTreeM moduleName headerTree tree) 
+		= runState (projectTreeM modName headerTree tree) 
 		$ stateInit unique
 
    in	(tree', stateErrors state')
 		
 	
 projectTreeM :: ModuleId -> Tree Annot -> Tree Annot -> ProjectM (Tree Annot)
-projectTreeM moduleName headerTree tree
+projectTreeM modName headerTree tree
  = do
 	-- Slurp out all the data defs
 	let dataMap	= Map.fromList
-			$ [(v, p) 	| p@(PData _ v vs ctors) 
-					<- tree ++ headerTree]
+			$ [(dataDefName def, def) 	
+				| p@(PData _ def) 
+				<- tree ++ headerTree]
 
 	let classDicts	= Map.fromList
-			$ [(v, p)	| p@(PClassDecl _ v ts vts)
-					<- tree ++ headerTree]
+			$ [(v, p)	
+				| p@(PClassDecl _ v ts vts)
+				<- tree ++ headerTree]
 
 	mapM (checkForRedefDataField dataMap) [p | p@(PProjDict{}) <- tree]
 	_ <- foldM checkForRedefClassInst Map.empty [p | p@(PClassInst{}) <- tree]
@@ -97,7 +100,7 @@ projectTreeM moduleName headerTree tree
 	treeProjFuns	<- addProjDictFunsTree dataMap treeProjNewDict
 	
 	-- Snip user functions out of projection dictionaries.
- 	treeProjDict	<- snipProjDictTree moduleName classDicts treeProjFuns
+ 	treeProjDict	<- snipProjDictTree modName classDicts treeProjFuns
 
 	return treeProjDict
 
@@ -110,12 +113,12 @@ snipProjDictTree
 	-> Tree SourcePos
 	-> ProjectM (Tree SourcePos)
 
-snipProjDictTree moduleName classDicts tree
+snipProjDictTree modName classDicts tree
  	= liftM concat
- 	$ mapM (snipProjDictP moduleName classDicts) tree
+ 	$ mapM (snipProjDictP modName classDicts) tree
 	
 -- Snip RHS of bindings in projection dictionaries.
-snipProjDictP moduleName classDicts (PProjDict sp t ss)
+snipProjDictP modName classDicts (PProjDict sp t ss)
  = do
 	let (Just (vCon, _, _))	= takeTData t
 
@@ -124,7 +127,7 @@ snipProjDictP moduleName classDicts (PProjDict sp t ss)
 			$ Set.unions
 			$ map bindingVarsOfStmt ss
 			
-	dictVsNew 	<- mapM (newProjFunVar sp moduleName vCon) dictVs
+	dictVsNew 	<- mapM (newProjFunVar sp modName vCon) dictVs
 	let varMap	= Map.fromList $ zip dictVs dictVsNew
 	
 	let (mpp, mss')	= unzip $ map (snipProjDictS varMap) ss
@@ -134,13 +137,13 @@ snipProjDictP moduleName classDicts (PProjDict sp t ss)
 
 
 -- Snip RHS of bindings in type class instances.
-snipProjDictP moduleName classDicts 
+snipProjDictP modName classDicts 
 	pInst@(PClassInst sp vClass ts ssInst)
 
 	-- lookup the class definition for this instance
 	| Just pClass	<- Map.lookup vClass classDicts
 	= do	(ss', pss)	<- liftM unzip
-				$  mapM (snipInstBind moduleName pClass pInst) ssInst
+				$  mapM (snipInstBind modName pClass pInst) ssInst
 
 		return	$ PClassInst sp vClass ts ss'
 			: concat pss
@@ -151,10 +154,10 @@ snipProjDictP moduleName classDicts
 
 
 -- Snip field initializers
-snipProjDictP moduleName classDicts (PData nn vData vsArg ctorDefs)
+snipProjDictP modName classDicts (PData nn vData vsArg ctorDefs)
  = do	(ctorDefs', psNew)	
  		<- liftM unzip
-		$ mapM (snipCtorDef moduleName nn vData) ctorDefs
+		$ mapM (snipCtorDef modName nn vData) ctorDefs
 		
 	return	$ PData nn vData vsArg ctorDefs'
 		: concat psNew
@@ -191,19 +194,19 @@ snipInstBind
 		    , [Top SourcePos])
 
 -- if the RHS is already a var we can leave it as it is.
-snipInstBind moduleName
+snipInstBind modName
 	pClass pInst 
 	bind@(SBind spBind (Just vInst) (XVar{}))
  = 	return (bind, [])
 
 -- otherwise lift it out to top level
-snipInstBind moduleName 
+snipInstBind modName 
 	pDict@(PClassDecl _  vClass  tsClass vtsClass)
 	pInst@(PClassInst _  _       tsInst  _)
 	sBind@(SBind sp (Just vInst) _)
  = do
 	-- create a new top-level variable to use for this binding
- 	vTop	<- newInstFunVar sp moduleName vClass tsInst vInst
+ 	vTop	<- newInstFunVar sp modName vClass tsInst vInst
 	
 	-- lookup the type for this instance function and substitute
 	--	in the types for this instance
@@ -214,7 +217,7 @@ snipInstBind moduleName
 	
 	 -- instance function is not defined in the type class declaration
 	 Just tInst	
-	  -> snipInstBind' moduleName pDict pInst sBind vTop tInst
+	  -> snipInstBind' modName pDict pInst sBind vTop tInst
 
 
 -- | Make the type signature for the instance function
@@ -291,15 +294,15 @@ snipCtorDef
 	:: ModuleId		-- ^ the current module
 	-> a			-- ^ annot to use on new code
 	-> Var 			-- ^ var of data type
-	-> CtorDef a		-- ^ ctor def to transform
+	-> CtorDef		-- ^ ctor def to transform
 	-> ProjectM
-		( CtorDef a	-- new ctor def
+		( CtorDef	-- new ctor def
 		, [Top a])	-- new top level bindings
 
-snipCtorDef moduleName sp vData (CtorDef nn vCtor dataFields)
+snipCtorDef modName sp vData (CtorDef nn vCtor dataFields)
  = do	(dataFields', psNew)	
  		<- liftM unzip 
-		$ mapM (snipDataField moduleName sp vData vCtor) dataFields
+		$ mapM (snipDataField modName sp vData vCtor) dataFields
 		
 	return	( CtorDef nn vCtor dataFields'
 		, concat psNew)
@@ -316,7 +319,7 @@ snipDataField
 		( DataField (Exp a) Type	-- snipped data field
 		, [Top a])			-- new top level bindings
 
-snipDataField moduleName sp vData vCtor field
+snipDataField modName sp vData vCtor field
 	-- no initialiser
 	| Nothing		<- dInit field
 	= return 
@@ -339,7 +342,7 @@ snipDataField moduleName sp vData vCtor field
 				++ varName vData  ++ "_" 
 				++ varName vCtor  ++ "_" 
 				++ varName vField
-			, varModuleId	= moduleName }
+			, varModuleId	= modName }
 
 		varL	<- newVarN NameValue
 		varR	<- newVarN NameRegion
@@ -354,7 +357,7 @@ snipDataField moduleName sp vData vCtor field
 -- | Create a name for a top level projection function.
 --	Add the type and projection names to the var to make the CoreIR readable.
 newProjFunVar :: SourcePos -> ModuleId -> Var -> Var -> ProjectM Var
-newProjFunVar src moduleName@(ModuleId ms) vCon vField
+newProjFunVar src modName@(ModuleId ms) vCon vField
  = do 	var	<- newVarN NameValue
 	return	
 	 $ var 	{ varName 
@@ -364,13 +367,13 @@ newProjFunVar src moduleName@(ModuleId ms) vCon vField
 			++ varName vField 
 			
 		, varInfo 	= [ISourcePos src ]
-		, varModuleId	= moduleName }
+		, varModuleId	= modName }
 
 
 -- | Create a name for a top level type class instance function
 --	Add the type class and function names to the var to make the CoreIR readable.
 newInstFunVar :: SourcePos -> ModuleId -> Var -> [Type] -> Var -> ProjectM Var
-newInstFunVar src moduleName@(ModuleId ms) vClass tsArgs vInst
+newInstFunVar src modName@(ModuleId ms) vClass tsArgs vInst
  = do 	var	<- newVarN NameValue
 	return	
 	 $ var 	{ varName 
@@ -381,7 +384,7 @@ newInstFunVar src moduleName@(ModuleId ms) vClass tsArgs vInst
 			++ varName vInst
 
 		, varInfo 	= [ISourcePos src ]
-		, varModuleId 	= moduleName }
+		, varModuleId 	= modName }
 
 
 -- | Make a printable name from a type
@@ -518,7 +521,7 @@ addProjDictFunsP dataMap p
 makeProjFun 
 	:: SourcePos 
 	-> Type
-	-> [CtorDef Annot]
+	-> [CtorDef]
 	-> Var 
 	-> ProjectM [Stmt Annot]
 
@@ -560,7 +563,8 @@ makeProjFunAlt sp objV fieldV (CtorDef _ vCon fields)
 makeProjR_fun
 	:: SourcePos
 	-> Type
-	-> [CtorDef Annot] -> Var
+	-> [CtorDef]
+	-> Var
 	-> ProjectM [Stmt Annot]
  
 makeProjR_fun sp tData ctors fieldV
@@ -605,10 +609,11 @@ makeProjR_fun sp tData ctors fieldV
 					(XMatch sp (Just (XVar sp objV)) alts))]
 
 				
-makeProjR_alt sp objV fieldV (CtorDef _ vCon fields)
- = do	let (mFieldIx :: Maybe Int)
-		= lookup (Just fieldV)
-		$ zip (map dLabel fields) [0..]
+makeProjR_alt sp objV fieldV ctor
+ = do	let vCon	= ctorDefName ctor
+	
+	let (mFieldIx :: Maybe Int)
+		= Map.lookup fieldV $ ctorDefFields ctor
 			
 	return
 	 $ case mFieldIx of
@@ -683,20 +688,24 @@ checkForRedefClassInst map _  = return map
 
 
 checkSBindFunc :: Top Annot -> Var -> Map String Var -> Stmt Annot -> ProjectM ()
-checkSBindFunc (PData _ dvar _ _) pvar dfmap (SBind _ (Just v) _)
+checkSBindFunc (PData _ def) pvar dfmap (SBind _ (Just v) _)
  = case Map.lookup (varName v) dfmap of
 	Nothing		-> return ()
-	Just redef	-> addError $ ErrorProjectRedefDataField redef pvar dvar
+	Just redef	
+		-> addError 
+		$ ErrorProjectRedefDataField redef pvar 
+		$ dataDefName def
 
 checkSBindFunc _ _ _ _ = return ()
 
 
 fieldNames :: Top Annot -> Map String Var
-fieldNames (PData _ _ _ ctors)
- = Map.fromList $ map (\ d -> (varName d, d))
-		$ catMaybes
-		$ map dLabel
-		$ concat
- 		$ map (\(CtorDef _ _ dfields) -> dfields) ctors
+fieldNames (PData _ def)
+ = let	ctors	= Map.elems $ dataDefCtors def
+	fields	= concatMap (Map.keys . ctorDefFields) ctors
+	
+   in	Map.fromList
+		$ map (\d -> (varName d, d))
+		$ fields
 
 

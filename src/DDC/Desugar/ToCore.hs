@@ -76,7 +76,10 @@ toCoreP p
 		let mmCtors	= Map.fromList 
 				$ [(T.ctorDefName def, def) | def <- ctors']
 
-		return	[C.PData (T.DataDef vData mmCtors)]
+		return	[C.PData (T.DataDef 
+					{ T.dataDefName		= vData
+					, T.dataDefParams	= vsParam
+					, T.dataDefCtors	= mmCtors })]
 
 	D.PBind nn (Just v) x
 	 -> do	
@@ -98,7 +101,7 @@ toCoreP p
 
 	 -- Abstract type constrctors have no data constructors.
 	 | T.resultKind k == T.kValue
-	 ->	return	[C.PData   (T.DataDef v Map.empty)]
+	 ->	return	[C.PData   (T.DataDef v [] Map.empty)]
 	
 	 -- An abstract effect constructor.
 	 | T.resultKind k == T.kEffect

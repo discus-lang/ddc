@@ -11,10 +11,12 @@ module Desugar.Plate.Trans
 where
 import DDC.Desugar.Exp
 import DDC.Type.Exp
+import DDC.Type.Data
 import DDC.Var
-import Shared.Exp
-import Util
-
+import Data.Traversable
+import Prelude				hiding (mapM)
+import Control.Monad.State.Strict	hiding (mapM, forM)
+import Util (liftMaybe, mapZippedM)
 
 -----
 class Monad m => TransM m a1 a2 exp where
@@ -142,11 +144,10 @@ instance Monad m => TransM m a1 a2 Top where
 	 	v'		<- transV table v
 		transP table	$ PTypeSynonym nn' v' t
 
-	PData nn v vs ctors
+	PData nn def
 	 -> do	nn'		<- transN	table nn
-	 	(v':vs')	<- mapM (transV table) (v:vs)
-		ctors'		<- mapM (transZM table) ctors
-		transP table	$ PData nn' v' vs' ctors'
+		def'		<- transDataDef table def
+		transP table	$ PData nn' def'
 
 	PSuperSig nn v k
 	 -> do	nn'		<- transN 	table nn
@@ -187,38 +188,40 @@ instance Monad m => TransM m a1 a2 Top where
 		transP table	$ PBind nn' mV' x'
 
 
--- CtorDef ----------------------------------------------------------------------------------------
-instance Monad m => TransM m a1 a2 CtorDef where
- transZM table xx
-  = case xx of
-  	CtorDef nn v fields
-	 -> do	nn'		<- transN 	table nn
-	 	v'		<- transV	table v
-		fields'		<- mapM (transDataField table) fields
-		return		$ CtorDef nn' v' fields'
-		
-
--- DataField --------------------------------------------------------------------------------------
-transDataField 
-	:: (Monad m, TransM m a1 a2 Exp)
+-- Data Def ---------------------------------------------------------------------------------------
+transDataDef
+	:: Monad m
 	=> TransTable m a1 a2
-	-> DataField    (Exp a1) Type
-	-> m (DataField (Exp a2) Type)
+	-> DataDef -> m DataDef
 
-transDataField table xx
- = do	dInit'	<- case dInit xx of
- 			Nothing	-> return Nothing
-			Just x	-> do
-				x'	<- transZM table x
-				return	$ Just x'
- 
-	t'	<- transT table (dType xx)
- 
- 	return	$ DataField
-		{ dPrimary	= dPrimary xx
-		, dLabel	= dLabel   xx
-		, dType		= t'
-		, dInit		= dInit' }
+transDataDef table
+	def@(DataDef	{ dataDefName	= name
+			, dataDefParams	= vsParams
+			, dataDefCtors	= ctors })
+
+ = do	name'		<- transV table name
+	vsParams'	<- mapM (transV table)       vsParams
+	ctors'		<- forM ctors (transCtorDef table)
+	return		$ def 	{ dataDefName	= name'
+				, dataDefParams	= vsParams'
+				, dataDefCtors	= ctors' }
+
+
+-- CtorDef ----------------------------------------------------------------------------------------
+transCtorDef 
+	:: Monad m 
+	=> TransTable m a1 a2
+	-> CtorDef -> m CtorDef 
+
+transCtorDef table 
+	def@(CtorDef	{ ctorDefName	= name
+		 	, ctorDefType	= t })
+
+ = do	name'	<- transV table name
+	t'	<- transT table t
+	return	$ def 	{ ctorDefName 	= name'
+			, ctorDefType	= t' }
+		
 
 
 -- Exp --------------------------------------------------------------------------------------------

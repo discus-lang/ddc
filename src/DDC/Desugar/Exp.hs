@@ -4,7 +4,6 @@
 module DDC.Desugar.Exp
 	( Tree
 	, Top		(..)
-	, CtorDef	(..)
 	, Exp		(..)
 	, Proj		(..)
 	, Stmt		(..)
@@ -15,9 +14,9 @@ module DDC.Desugar.Exp
 where
 import DDC.Base.Literal
 import DDC.Type.Exp
+import DDC.Type.Data.Base
 import DDC.Var.ModuleId
 import DDC.Var
-import Shared.Exp	(DataField)
 
 
 -- | A desugared program tree is a list of top level declarations.
@@ -78,9 +77,7 @@ data Top a
 	-- | Algebraic data type.
 	| PData
 		{ topAnnot		:: a
-		, topDataName		:: Var
-		, topDataParams		:: [Var]
-		, topDataCtors		:: [CtorDef a] }
+		, topDataDef		:: DataDef }
 
 	-- | Data type class declaration.
 	| PClassDecl	
@@ -107,15 +104,6 @@ data Top a
 		{ topAnnot		:: a
 		, topBindVar		:: Maybe Var
 		, topBindExp		:: Exp a }
-	deriving (Show, Eq)
-
-
--- | A data constructor definiton
-data CtorDef a
-	= CtorDef 
-		{ ctorDefAnnot		:: a
-		, ctorDefName		:: Var
-		, ctorDefFields		:: [DataField (Exp a) Type] }
 	deriving (Show, Eq)
 
 

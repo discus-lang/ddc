@@ -14,6 +14,9 @@ data DataDef
 	{ -- | Name of the type constructor.
 	  dataDefName	:: Var
 
+	  -- | Parameter variables to the data type.
+	, dataDefParams	:: [Var]
+
 	  -- | Map of data constructor name to definition.
 	, dataDefCtors	:: Map Var CtorDef }
 	deriving (Show, Eq)
@@ -41,3 +44,6 @@ data CtorDef
 	}
 	deriving (Show, Eq)
 
+
+-- | Get the type of some named field from a data constructor.
+lookupTypeOfFieldInCtor :: Var -> CtorDef -> Maybe Type
