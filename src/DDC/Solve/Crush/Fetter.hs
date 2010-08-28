@@ -1,4 +1,5 @@
-{-# OPTIONS -fno-warn-incomplete-record-updates #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONS -fno-warn-incomplete-patterns -fno-warn-incomplete-record-updates #-}
 
 module DDC.Solve.Crush.Fetter
 	(crushFettersInClass)
@@ -38,7 +39,7 @@ crushFetterWithClass cid cls
 	 -> panic stage $ "crushFetterWithClass: ClassUnallocated"
 	
 	-- Follow indirections.
-	ClassForward cid cid'
+	ClassForward _ cid'
 	 -> crushFettersInClass cid'
 
 	-- MPTC style fetters Shape and Proj are handled by their own modules.
@@ -47,10 +48,8 @@ crushFetterWithClass cid cls
 
 	-- Try to crush SPTCs in a class.
 	Class	{ classKind		= kind
-		, classTypeSources	= tsSrc'
 		, classFetters		= fetterSrcs }
 	 -> do	
-		tsSrc	<- mapM sinkCidsInNodeFst   tsSrc'
 		let fsSrc	
 			= [(FConstraint v [TVar kind $ UClass cid], src)
 				| (v, srcs)		<- Map.toList fetterSrcs
@@ -60,8 +59,7 @@ crushFetterWithClass cid cls
 			% "    fetters:\n" 		%> fetterSrcs	% "\n"
 
 		-- Try to crush each fetter into smaller pieces.
-		progress	<- liftM or
-				$  mapM (crushFetterSingle cid cls) fsSrc
+		mapM_ (crushFetterSingle cid cls) fsSrc
 		
 		return False
 
@@ -74,7 +72,7 @@ crushFetterSingle
 	-> SquidM Bool				-- ^ Whether we made progress.
 	
 crushFetterSingle cid cls
-	fsrc@(fetter@(FConstraint vFetter _), srcFetter)
+	(fetter@(FConstraint vFetter _), srcFetter)
 
 	-- HeadLazy ---------------------------------------
 	| vFetter == primLazyH
@@ -107,7 +105,7 @@ crushFetterSingle cid cls
 			| otherwise	= Nothing
 	
 		case mApps of
-		 Just (cidCon : cidArgs)
+		 Just (_ : cidArgs)
 		  -> do	ksArgs		<- mapM kindOfClass cidArgs
 			let cidksArgs	= zip cidArgs ksArgs
 			let fs		= mapMaybe constIt cidksArgs
@@ -115,8 +113,7 @@ crushFetterSingle cid cls
 			zipWithM addFetter (repeat src) fs
 			return False
 			
-		 Nothing	
-		  -> return False
+		 _ -> return False
 		
 	
 	-- DeepMutable ------------------------------------
@@ -130,7 +127,7 @@ crushFetterSingle cid cls
 			| otherwise	= Nothing
 	
 		case mApps of
-		 Just (cidCon : cidArgs)
+		 Just (_ : cidArgs)
 		  -> do	ksArgs		<- mapM kindOfClass cidArgs
 			let cidksArgs	= zip cidArgs ksArgs
 			let fs		= mapMaybe mutableIt cidksArgs
@@ -138,15 +135,14 @@ crushFetterSingle cid cls
 			zipWithM addFetter (repeat src) fs
 			return False
 			
-		 Nothing	
-		  -> return False
+		 _ -> return False
 
 
 	-- Pure -------------------------------------------
 	-- Apply the same constraint to all the cids in a sum.
 	| vFetter == primPure
 	= do	progress	
-			<- mapM (purifyNodeOfClass cid cls fetter srcFetter)
+			<- mapM (purifyNodeOfClass cid fetter srcFetter)
 			$  classTypeSources cls
 			
 		return	$ or progress
@@ -161,13 +157,12 @@ crushFetterSingle cid cls
 --   NOTE: We leave purified effects in the class.
 purifyNodeOfClass 
 	:: ClassId		-- ^ Cid containing the class being purified.
-	-> Class		-- ^ That class.
 	-> Fetter		-- ^ The Pure fetter during doing the purification.
 	-> TypeSource		-- ^ Source of the Pure Fetter.
 	-> (Node, TypeSource)	-- ^ The effect that's being purified
 	-> SquidM Bool		-- ^ Whether we changed the graph at all.
 
-purifyNodeOfClass cid cls fPure srcPure (node, srcNode)
+purifyNodeOfClass cid fPure srcPure (node, srcNode)
 	| NSum cids	<- node
 	= do	
 		let cidsList	= Set.toList cids
@@ -182,7 +177,7 @@ purifyNodeOfClass cid cls fPure srcPure (node, srcNode)
 	| isNApp node || isNCon node
 	= do	
 		-- Get the fetter that purifies this node, if any.
-		ePurifier 	<- getPurifier cid cls fPure srcPure (node, srcNode)
+		ePurifier 	<- getPurifier cid fPure srcPure (node, srcNode)
 		case ePurifier of
 		 Left err 
 		  -> do	addErrors [err]
@@ -203,7 +198,6 @@ purifyNodeOfClass cid cls fPure srcPure (node, srcNode)
 --   in the given class is pure.
 getPurifier
 	:: ClassId		-- ^ Cid of the class containing the effect we want to purify.
-	-> Class		-- ^ That class.
 	-> Fetter		-- ^ The Pure fetter.
 	-> TypeSource		-- ^ Source of that fetter.
 	-> (Node, TypeSource)	-- ^ The node type from the class.
@@ -212,12 +206,12 @@ getPurifier
 				-- ^ If the effect can't be purified left the error saying so.
 				--   Otherwise, right the purifying fetter, if any is needed.
 
-getPurifier cid cls fetter srcFetter (nodeEff, srcNode)
+getPurifier cid fetter srcFetter (nodeEff, srcNode)
 	| NApp cidCon cidArg	<- nodeEff
 	= do	Just clsCon	<- lookupClass cidCon
 		Just clsArg	<- lookupClass cidArg
 		let  tArg	= TVar (classKind clsArg) $ UClass (classId clsArg)
-		return	$ getPurifier' cid fetter srcFetter clsCon clsArg tArg srcNode
+		return	$ getPurifier' cid fetter srcFetter clsCon tArg srcNode
 
 	-- This effect can't be purified.
 	| NCon tc	<- nodeEff
@@ -231,7 +225,7 @@ getPurifier cid cls fetter srcFetter (nodeEff, srcNode)
 	= return $ Right Nothing
 		
 
-getPurifier' cid fetter srcFetter clsCon clsArgs tArg srcNode
+getPurifier' cid fetter srcFetter clsCon tArg srcNode
 	-- Read is purified by Const
 	| classUnified clsCon == Just nRead
 	= Right $ Just 	
@@ -261,3 +255,5 @@ getPurifier' cid fetter srcFetter clsCon clsArgs tArg srcNode
 		, eFetter		= fetter
 		, eFetterSource		= srcFetter }
 
+	| otherwise
+	= panic stage $ "getPurifier: no match"

@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-incomplete-record-updates #-}
 
 module DDC.Solve.Crush.Effects
@@ -53,7 +54,7 @@ takeNewNodeSrc
 	:: ((Node, TypeSource), CrushResult)
 	-> [(Node, TypeSource)]
 
-takeNewNodeSrc (orig@(nOrig, srcOrig), crush)
+takeNewNodeSrc (orig, crush)
  = case crush of
 	CrushNever		-> [orig]
 	CrushMaybeLater		-> [orig]
@@ -127,7 +128,7 @@ crushEffectsWithClass cid cls
 			, "   nodes   = " 	% map fst (classTypeSources cls) ]
 	
 		-- Try to crush each effect in turn.
-		results	<- mapM (crushEffectNodeSrcOfClass cid cls) 
+		results	<- mapM (crushEffectNodeSrcOfClass cid) 
 			$ classTypeSources cls
 			
 		-- Compare the result of crushing each node with the original, 
@@ -167,11 +168,10 @@ crushEffectsWithClass cid cls
 -- | Try to crush a node in an effect class.
 crushEffectNodeSrcOfClass 
 	:: ClassId 
-	-> Class 
 	-> (Node, TypeSource)
 	-> SquidM CrushResult
 
-crushEffectNodeSrcOfClass cid cls (node, src)
+crushEffectNodeSrcOfClass cid (node, src)
 
 	-- All the nodes we can crush are applications.
 	| NApp{} <- node
@@ -190,7 +190,7 @@ crushEffectNodeSrcOfClass cid cls (node, src)
 			-- We've got enough information to try and crush the effect.
 			| Just NCon{}	<- classUnified clsCon
 			, Just _	<- classUnified clsArg
-			= crushEffectApp cid cls (nApp, src) clsCon clsArg
+			= crushEffectApp cid (nApp, src) clsCon clsArg
 			
 			-- Either the constructor or arg hasn't been unified yet.
 			| otherwise
@@ -206,14 +206,13 @@ crushEffectNodeSrcOfClass cid cls (node, src)
 -- | Try and crush an effect application.
 crushEffectApp
 	:: ClassId		-- ^ The cid of the class being crushed.
-	-> Class		-- ^ Class containing the effect being crushed.
 	-> (Node, TypeSource)	-- ^ The particular node constraint being crushed now.
 	-> Class		-- ^ Class containing the constructor of the effect application.
 	-> Class		-- ^ Class containing the argument of the effect application.
 	-> SquidM CrushResult
 
-crushEffectApp cid cls (nApp, srcApp) 
-	clsCon	@Class { classUnified = Just nCon  }
+crushEffectApp cid (nApp, srcApp) 
+	         Class { classUnified = Just nCon  }
 	clsArg	@Class { classUnified = Just nArg' }
  = do	
 	nArg	<- sinkCidsInNode nArg'
@@ -223,9 +222,13 @@ crushEffectApp cid cls (nApp, srcApp)
 		, "    nCon             = " % nCon
 		, "    nArg             = " % nArg ]
 		
-	crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
+	crushEffectApp' cid  (nApp, srcApp) clsArg nCon nArg
 
-crushEffectApp' cid cls (nApp, srcApp) clsCon clsArg nCon nArg
+crushEffectApp _ _ _ _
+	= panic stage $ "crushEffectApp: no match"
+	
+
+crushEffectApp' cid (nApp, srcApp) clsArg nCon nArg
 
 	-- Effects on single constructors.
 	--	When we do a case match on a unit value we get an effect HeadRead (),

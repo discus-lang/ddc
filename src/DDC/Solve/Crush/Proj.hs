@@ -1,4 +1,5 @@
-
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+{-# OPTIONS -fno-warn-incomplete-patterns #-}
 module DDC.Solve.Crush.Proj
 	(crushProjInClass)
 where
@@ -64,21 +65,21 @@ crushProjInClass cid
 	 	return Nothing
 
 	 -- Ok, we've got an object type, carry on.
-	 Class { classUnified = Just nObj }
+	 Class { classUnified = Just _ }
 	  -> do	Just tObj	<- takeShallowTypeOfCidAsSquid (classId clsObj)
 		trace	$ "    object type (tObj)               = " % tObj	% "\n"
 
 		-- Grab the map of projection dictionaries from the state
 		projectDicts	<- getsRef stateProject
 
-		crushProj_withObj cid src fProj clsObj tObj projectDicts
+		crushProj_withObj cid src fProj tObj projectDicts
 
 
 -- Crushing a projection fetter,
 --	now that we know what the object type being projected is.
 crushProj_withObj cid src 
 	fProj@(FProj proj _ _ _) 
-	cObj tObj
+	tObj
 	projectDicts
 
 	-- This isn't a type constructor, hopefully something will be unified
@@ -105,7 +106,7 @@ crushProj_withObj cid src
 	| Just (vCon, _, _)	<- takeTData tObj
 	, Just vsDict		<- Map.lookup vCon projectDicts
 	= do	trace $ ppr "    -- We've got a projection dictionary.\n"
-		crushProj_withDict cid src fProj cObj tObj (snd vsDict)
+		crushProj_withDict cid src fProj tObj (snd vsDict)
 
 	-- Functions don't have projections yet, there's no source syntax to define it.
 	--	We might add them later, but for now this is a type error.
@@ -124,15 +125,14 @@ crushProj_withDict
 	:: ClassId			-- ^ cid of the class containing the projection fetter.
 	-> TypeSource			-- ^ source of the projection fetter.
 	-> Fetter			-- ^ the projection fetter.
-	-> Class			-- ^ class of the object type.
 	-> Type				-- ^ type of the object being projected.
 	-> Map Var Var			-- ^ projection dictionary mapping field labels to instance vars.
 	-> SquidM (Maybe [CTree])	-- ^ new constraints that should be added back to the graph.
 
 crushProj_withDict
 	cid src
-	fProj@(FProj proj vInst tObj tBind)
-	cObj tObjCon vsDict
+	fProj@(FProj proj vInst _ tBind)
+	tObjCon vsDict
  = do
 	-- Extract the name of the projection we're looking for
  	let projName	= case proj of 
