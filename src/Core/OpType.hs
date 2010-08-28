@@ -29,10 +29,10 @@ slurpSuperAritiesP pp
 		arity		= (length $ flattenTFuns tOperational) - 1
 	    in  Map.singleton v arity
 
-	PData{}
+	PData def
 	 -> Map.unions 
 	 $  map slurpSuperArityCtorDef 
-	 $  Map.elems $ topDataCtors pp
+	 $  Map.elems $ dataDefCtors def
 			
 	_ -> Map.empty
 

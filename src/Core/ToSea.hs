@@ -131,7 +131,9 @@ toSeaP	xx
 					[E.PSuper 	v argNTs resultType ssRet]
 
 
-	C.PData v ctors
+	C.PData (T.DataDef
+			{ T.dataDefName		= v
+			, T.dataDefCtors	= ctors })
 	 -> do	
 		-- Convert data type declaration
 		let ctors'	= Map.map toSeaCtorDef ctors

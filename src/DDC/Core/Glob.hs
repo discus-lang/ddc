@@ -93,7 +93,7 @@ globOfTree ps
 	globTops	= foldr insertTopInGlob globEmpty ps
 	
 	-- Build the map of data constructors.
- 	ctors		= Map.unions $ [ topDataCtors p | p@PData{} <- ps ]
+ 	ctors		= Map.unions $ [ dataDefCtors def | PData def <- ps ]
 	globTops_ctors	= globTops { globDataCtors = ctors }
 
 	-- Build the map of overloaded vars to the names of the classes 
@@ -136,9 +136,9 @@ insertTopInGlob pp glob
 	 -> glob { globExtern 		
 			= Map.insert (topExternName pp) 	pp (globExtern glob) }
 
-	PData{}	
+	PData def
 	 -> glob { globData 		
-			= Map.insert (topDataName pp) 		pp (globData glob) }
+			= Map.insert (dataDefName def) 		pp (globData glob) }
 
 	PClassDict{}	
 	 -> glob { globClassDict	

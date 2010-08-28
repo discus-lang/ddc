@@ -55,7 +55,9 @@ instance Pretty Top PMode where
 	PExternData v k
 	 -> "extern data " % v % " :: " % k % ";\n"
 
-	PData v ctors
+	PData (DataDef 
+		{ dataDefName	= v
+		, dataDefCtors	= ctors })
 	 | Map.null ctors
 	 -> "data " % " " % ppr v % ";\n" 
 

@@ -292,10 +292,10 @@ instance Monad m => TransM m Top where
 		k'		<- followK table k
 		transP table 	$ PExternData v' k'
 		
-	PData v ctors
+	PData (DataDef v ctors)
 	 -> do	v'		<- transZM table v
 		ctors'		<- transZM table ctors
-	 	transP table 	$ PData v' ctors'
+	 	transP table 	$ PData (DataDef v' ctors')
 	 	 
 	PRegion{}
 	 ->	transP table p

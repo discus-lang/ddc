@@ -17,7 +17,6 @@ import DDC.Base.Literal
 import DDC.Type.Exp
 import DDC.Type.Data
 import DDC.Var
-import Data.Map		(Map)
 
 
 -- Tree -------------------------------------------------------------------------------------------
@@ -59,9 +58,7 @@ data Top
 		, topExternOpType	:: Type	}
 	
 	-- | A data type and its constructors.
-	| PData
-		{ topDataName		:: Var
-		, topDataCtors		:: Map Var CtorDef }
+	| PData	{ topDataDef		:: DataDef }
 
 	-- | A (value) type class dictionary.
 	| PClassDict

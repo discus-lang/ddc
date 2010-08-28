@@ -86,7 +86,7 @@ slurpExpX xx
 slurpCtorDefs :: Tree -> Map Var CtorDef
 slurpCtorDefs tree
  	= Map.unions
-	$ [ topDataCtors p | p@PData{}	<- tree ]
+	$ [ dataDefCtors def | p@(PData def)	<- tree ]
 
 -- | Slurp out a list of vars bound by this top level thing
 slurpBoundVarsP :: Top -> [Var]
@@ -95,7 +95,9 @@ slurpBoundVarsP pp
  	PBind   v x		-> [v]
 	PExtern v t1 t2		-> [v]
 	PExternData v k		-> [v]
-	PData{}			-> topDataName pp : Map.keys (topDataCtors pp)
+	PData{}
+	 -> (dataDefName $ topDataDef pp) 
+		: Map.keys (dataDefCtors $ topDataDef pp)
 
 	PClassDict v ts vts	-> map fst vts
 	PClassInst{}		-> []

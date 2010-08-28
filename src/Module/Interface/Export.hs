@@ -19,7 +19,7 @@ import Prelude				hiding (foldl)
 import qualified Source.Exp		as S
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Core.Exp		as C
-import qualified DDC.Type.Data		as C
+import qualified DDC.Type.Data		as T
 import qualified DDC.Core.Glob		as C
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
@@ -108,20 +108,21 @@ makeInterface
 getIntDataOfCoreTop :: C.Top -> IntData
 getIntDataOfCoreTop pp@C.PData{}
 	= IntData
-	{ intDataName		= C.topDataName pp
+	{ intDataName		= T.dataDefName  $ C.topDataDef pp
 	, intDataSourcePos	= undefined
-	, intDataCtors		= Map.map getIntDataCtorOfCoreCtorDef $ C.topDataCtors pp }
+	, intDataCtors		= Map.map getIntDataCtorOfCoreCtorDef 
+				$ T.dataDefCtors $ C.topDataDef pp }
 
 
 -- | Convert a core `CtorDef` to an `IntDataCtor`.
-getIntDataCtorOfCoreCtorDef :: C.CtorDef -> IntDataCtor
+getIntDataCtorOfCoreCtorDef :: T.CtorDef -> IntDataCtor
 getIntDataCtorOfCoreCtorDef def
 	= IntDataCtor
-	{ intDataCtorName	= C.ctorDefName def
+	{ intDataCtorName	= T.ctorDefName def
 	, intDataCtorSourcePos	= undefined
-	, intDataCtorType	= C.ctorDefType def
-	, intDataCtorTag	= C.ctorDefTag  def
-	, intDataCtorFields	= C.ctorDefFields def }
+	, intDataCtorType	= T.ctorDefType def
+	, intDataCtorTag	= T.ctorDefTag  def
+	, intDataCtorFields	= T.ctorDefFields def }
 	
 	
 -- | Convert a core `PRegion` to an `IntRegion`.
