@@ -14,7 +14,7 @@ module DDC.Desugar.Exp
 	, Label		(..))
 where
 import DDC.Base.Literal
-import DDC.Type
+import DDC.Type.Exp
 import DDC.Var.ModuleId
 import DDC.Var
 import Shared.Exp	(DataField)

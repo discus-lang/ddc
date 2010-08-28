@@ -19,6 +19,7 @@ import Prelude				hiding (foldl)
 import qualified Source.Exp		as S
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Core.Exp		as C
+import qualified DDC.Type.Data		as C
 import qualified DDC.Core.Glob		as C
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map

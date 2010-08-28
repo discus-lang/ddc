@@ -8,6 +8,7 @@ import Util
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Type
+import DDC.Type.Data
 import DDC.Var
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map

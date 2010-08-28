@@ -13,6 +13,7 @@ import Type.Export			(Solution(..))
 import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified DDC.Type		as T
+import qualified DDC.Type.Data		as T
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Desugar.Exp 	as D
 import qualified Desugar.Slurp.Util	as D
@@ -73,7 +74,7 @@ toCoreP p
 				[0 .. length ctors]
 					
 		let mmCtors	= Map.fromList 
-				$ [(C.ctorDefName def, def) | def <- ctors']
+				$ [(T.ctorDefName def, def) | def <- ctors']
 
 		return	[C.PData vData mmCtors]
 
@@ -163,7 +164,7 @@ toCoreCtorDef
 	-> [Var]		-- ^ vars of params to data type constructor
 	-> D.CtorDef Annot	-- ^ data constructor definition to convert
 	-> Int			-- ^ data constructor tag
-	-> CoreM C.CtorDef
+	-> CoreM T.CtorDef
 		
 toCoreCtorDef vData vsParam (D.CtorDef _ vCtor dataFields) tag
  = do 	tCtor	<- liftM toCoreT
@@ -172,7 +173,7 @@ toCoreCtorDef vData vsParam (D.CtorDef _ vCtor dataFields) tag
 	let fieldIndicies
 		= takeFieldIndicies dataFields
 
-	return	$ C.CtorDef vCtor tCtor (length dataFields) tag fieldIndicies
+	return	$ T.CtorDef vCtor tCtor (length dataFields) tag fieldIndicies
 
 
 -- | For fields with a label, 

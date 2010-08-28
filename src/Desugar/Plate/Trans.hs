@@ -10,10 +10,10 @@ module Desugar.Plate.Trans
 	, transZ)
 where
 import DDC.Desugar.Exp
+import DDC.Type.Exp
+import DDC.Var
 import Shared.Exp
 import Util
-import DDC.Type
-import DDC.Var
 
 
 -----

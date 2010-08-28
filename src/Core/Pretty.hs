@@ -3,14 +3,15 @@
 module Core.Pretty
 	(pprStr)
 where
-import Core.Util.Bits
-import Util
-import Data.Function
 import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Type
+import DDC.Type.Data
 import DDC.Var
 import qualified Data.Map	as Map
+import Data.Function
+import Core.Util.Bits
+import Util
 
 
 -- Debugging --------------------------

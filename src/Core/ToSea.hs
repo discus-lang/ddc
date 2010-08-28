@@ -16,6 +16,7 @@ import Util				hiding (mapM)
 import Prelude				hiding (mapM)
 import qualified DDC.Core.Exp 		as C
 import qualified DDC.Type		as T
+import qualified DDC.Type.Data		as T
 import qualified DDC.Core.Check.Prim	as C
 import qualified DDC.Core.Check.Exp	as C
 import qualified Core.Util		as C
@@ -139,13 +140,13 @@ toSeaP	xx
 		-- Make #defines for data constructor tags, and
 		--	sort them so they come out in the same order in the Sea
 		--	file as in the original source file.
-		let makeTagDef ctor@C.CtorDef{} 
+		let makeTagDef ctor@T.CtorDef{} 
 				= E.PHashDef 
-			 		("_tag"         ++ E.seaVar False (C.ctorDefName ctor))
-					("(_tagBase + " ++ show (C.ctorDefTag ctor) ++ ")")
+			 		("_tag"         ++ E.seaVar False (T.ctorDefName ctor))
+					("(_tagBase + " ++ show (T.ctorDefTag ctor) ++ ")")
 
 		let tagDefs	= map makeTagDef 
-				$ sortBy (compare `on` C.ctorDefTag)
+				$ sortBy (compare `on` T.ctorDefTag)
 				$ Map.elems ctors
 								 
 	 	return		$ Seq.fromList 
@@ -179,11 +180,8 @@ splitSuper accArgs xx
 
 
 -- CtorDef ----------------------------------------------------------------------------------------
-toSeaCtorDef
-	:: C.CtorDef
-	-> E.CtorDef 
-	
-toSeaCtorDef (C.CtorDef vCtor tCtor arity tag fields)
+toSeaCtorDef :: T.CtorDef -> E.CtorDef 	
+toSeaCtorDef (T.CtorDef vCtor tCtor arity tag fields)
  = let	tCtor'	= toSeaT tCtor
    in	E.CtorDef vCtor tCtor' arity tag fields
 

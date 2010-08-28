@@ -4,7 +4,6 @@ module DDC.Core.Exp
 	( module DDC.Core.Exp.Prim
 	, Tree
 	, Top 		(..)	-- top level things
-	, CtorDef	(..)	-- constructor definitions
 	, Exp 		(..)	-- expressions
 	, Stmt	 	(..)	-- statements
 	, Alt 		(..)	-- case/match alternatives
@@ -16,6 +15,7 @@ import DDC.Core.Exp.Prim
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Type.Exp
+import DDC.Type.Data
 import DDC.Var
 import Data.Map		(Map)
 
@@ -81,19 +81,6 @@ data Top
 		, topBindExp		:: Exp }	
 	deriving (Show, Eq)
 
-
--- | Meta-data about a constructor.
---	We need to remember the indices of each field so we can convert
---	pattern matches using labels to Sea form. 
-data CtorDef
-	= CtorDef 
-	{ ctorDefName	:: Var 		-- ^ Name of constructor.
-	, ctorDefType	:: Type		-- ^ Type of constructor.
-	, ctorDefArity	:: Int		-- ^ Arity of constructor.
-	, ctorDefTag	:: Int		-- ^ Tag of constructor.
-	, ctorDefFields	:: Map Var Int  -- ^ Map of field names to indices in the constructor.
-	}
-	deriving (Show, Eq)
 
 
 -- Exp ---------------------------------------------------------------------------------------------

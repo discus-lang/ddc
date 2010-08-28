@@ -15,6 +15,7 @@ import Type.Util
 import DDC.Main.Error
 import DDC.Core.Exp
 import DDC.Type
+import DDC.Type.Data
 import DDC.Var
 import qualified Data.Map	as Map
 import Util
