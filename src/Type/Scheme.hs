@@ -176,9 +176,6 @@ generaliseType' varT tCore envCids
 	let (vkbsFree	:: [(Var, (Kind, Maybe Type))])
 		= map (\(v, k) -> (v, (k, Map.lookup v vtsMore))) vksFree
 
---	!!! IS QuantVars being used.
---	!!! don't return constraints with meta vars for LHS.
-
 	stateQuantifiedVarsKM 	`modifyRef` Map.union (Map.fromList vkbsFree)
 	stateQuantifiedVars	`modifyRef` Set.union (Set.fromList vsFree) 
 
