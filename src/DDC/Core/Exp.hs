@@ -15,7 +15,7 @@ import DDC.Core.Exp.Prim
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Type.Exp
-import DDC.Type.Data
+import DDC.Type.Data.Base
 import DDC.Var
 
 

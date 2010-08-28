@@ -6,7 +6,7 @@ where
 import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Type
-import DDC.Type.Data
+import DDC.Type.Data.Base
 import DDC.Var
 import qualified Data.Map	as Map
 import Data.Function
@@ -108,7 +108,9 @@ instance Pretty CtorDef PMode where
 		%> 	( ":: " % prettyTypeSplit t % "\n"
 			% "with { ARITY  = " % arity	% "\n"
  			% "     , TAG    = " % tag      % "\n"
-			% "     , FIELDS = " % fs 	% "}")
+			% "     , FIELDS = " % fs 	% "\n"
+--			% "     , ctorParams = " % quantParamsOfCtorType t % "\n"
+			% "}")
 		
 	 
 -- Exp ----------------------------------------------------------------------------------------------

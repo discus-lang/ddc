@@ -20,7 +20,7 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Type
-import DDC.Type.Data
+import DDC.Type.Data.Base
 import DDC.Var
 import Data.Map			(Map)
 import Data.Sequence		(Seq, (><))

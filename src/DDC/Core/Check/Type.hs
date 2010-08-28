@@ -3,19 +3,35 @@
 -- | Checking types, kind, and super-kinds.
 --   TODO: Finish scope checking. Bugs in Core.Bind are blocking this.
 module DDC.Core.Check.Type
-	( checkTypeI
+	( instantiateT
+	, checkTypeI
 	, checkKindI)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Check.Base
 import DDC.Core.Check.Env
--- import DDC.Core.Glob
 import DDC.Type
 import Data.List
 import qualified Data.Map	as Map
 
 stage	= "DDC.Core.Check.Type"	
+
+-- Wrappers ---------------------------------------------------------------------------------------
+
+-- | Instantiate a type by applying these arguments to it.
+--   If there are any type errors along the way then `panic`.
+instantiateT 
+	:: String	-- ^ Name of the caller, for panic messages.
+	-> Type 	-- ^ T
+	-> [Type] 
+	-> (Type, Kind)
+
+instantiateT caller t tsArgs
+	= checkTypeI 0
+		(makeTApp t tsArgs)
+		((envEmpty caller) { envClosed = False })
+
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Check a type expression.
@@ -23,9 +39,9 @@ stage	= "DDC.Core.Check.Type"
 --	If you just want to quickly get the kind of a type then use kindOfType instead.
 --
 checkTypeI
-	:: Int		-- Indent level, for debugging. 
-	-> Type 	-- Type to check.
-	-> Env 		-- Type and Kind Environment.
+	:: Int		-- ^ Indent level, for debugging. 
+	-> Type 	-- ^ Type to check.
+	-> Env 		-- ^ Type and Kind Environment.
 	-> (Type, Kind)
 
 checkTypeI n tt env

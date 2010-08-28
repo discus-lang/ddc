@@ -31,7 +31,7 @@ module DDC.Type.Compounds
 	, takeTFun
 	, flattenTFuns
 	
-	  -- * Data.
+	  -- * Data
 	, makeTData
 	, takeTData
 	
