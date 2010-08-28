@@ -126,10 +126,10 @@ slurpP top@(PClassDecl sp vClass tsParam sigs)
 	     	= do 	vT		<- lbindVtoT vSig
 
 			-- add a forall for each of the parameters of the type class
-	     		let vksParam	= map (\(TVar k (UVar v)) -> (v, k)) tsParam
+	     		let bksParam	= map (\(TVar k (UVar v)) -> (BVar v, k)) tsParam
 
 			-- add the enclosing class constraint
-			let tSig'	= makeTForall_front vksParam
+			let tSig'	= makeTForall_front bksParam
 					$ pushConstraintsOther [FConstraint vClass tsParam] tSig
 
 			return $ CDef 	(TSV $ SVSigClass sp vClass) vT tSig'

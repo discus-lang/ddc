@@ -56,11 +56,13 @@ quantifyVarsT vks tt@(TConstrain _ crs)
 	
 	-- look the var kinds back up
 	vksSequence	= map (\v -> let Just k = lookup v vks
-				     in (v, k))
+				     in (BVar v, k))
 			$ vsSequence
 		
    in 	makeTForall_back vksSequence tt
 
 
 quantifyVarsT vks tt
-	= makeTForall_back vks tt
+	= makeTForall_back 
+		[(BVar v, k) | (v, k) <- vks]
+		tt

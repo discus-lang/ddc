@@ -20,6 +20,7 @@ data DataDef
 	, dataDefCtors	:: Map Var CtorDef }
 	deriving (Show, Eq)
 
+
 -- | A data constructor definition.
 --	We need to remember the indices of each field so we can convert
 --	pattern matches using labels to Sea form. 
@@ -42,13 +43,27 @@ data CtorDef
 	}
 	deriving (Show, Eq)
 
-
--- | Get a list of all the parameters of a data constructor's type, 
---   retaining the outer quantifiers. 
+{-
+-- | Get a list of all the parameters of a data constructor's type, retaining the outer quantifiers. 
+--   This doesn't support constrained types. If there are any constraints then `panic`.
 quantParamsOfCtorType :: Type -> [Type]
 quantParamsOfCtorType t
 	= quantParamsOfCtorType' [] t
 	
-quantParamsOfCtorType acc tt
-	| 
+quantParamsOfCtorType' bksQuant acc tt
+
+	-- Remember quantified vars when we see them.
+	| TForall b k t			<- tt
+	= quantParamsOfCtorType'
+		(bksQuant ++ [(b, k)])
+		acc
+		t
+
+	-- We've got a function constructor, so add its param to the accumulator.
+	-- Also wrap it with the current set of quantified vars.
+	| Just (t1, t2, eff, clo)	<- takeTFun tt
+	= quantParamsOfCtorType'
+		bksQuant
+		(makeTForall_front 
+-}	
 

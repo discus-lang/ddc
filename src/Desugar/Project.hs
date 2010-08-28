@@ -228,7 +228,7 @@ snipInstBind moduleName
 -- the type signature for for (+) is 
 --	(+) :: forall %r1 . ...
 --
-snipInstBind' moduleName 
+snipInstBind' modName 
 	pDict@(PClassDecl _  vClass  tsClass vtsClass)
 	pInst@(PClassInst sp vClass' tsInst  ssInst)
 	sBind@(SBind spBind (Just vInst) xx)
@@ -240,13 +240,14 @@ snipInstBind' moduleName
 				tInst
 
 	let vsFree	= Set.filter (\v -> not $ Var.isCtorName v) $ freeVars tsInst
-	let vks_quant	= map (\v -> (v, let Just k = kindOfSpace $ varNameSpace v in k)) $ Set.toList vsFree
-	let tInst_quant	= makeTForall_back vks_quant tInst_sub
+	let bks_quant	= map (\v -> (BVar v, let Just k = kindOfSpace $ varNameSpace v in k)) 
+			$ Set.toList vsFree
+	let tInst_quant	= makeTForall_back bks_quant tInst_sub
 	
 	-- As we're duplicating information from the original signature
 	--	we need to rewrite the binders on FWhere fetters.
 	--	It'd probably be nicer to use exists. quantifiers for this instead...
-	tInst_fresh	<- freshenCrsEq moduleName tInst_quant
+	tInst_fresh	<- freshenCrsEq modName tInst_quant
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
 		,  [ PTypeSig spBind [vTop] tInst_fresh

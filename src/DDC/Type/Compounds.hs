@@ -527,25 +527,25 @@ pushConstraintsOther crs tt
 
 -- Quantification ---------------------------------------------------------------------------------
 -- | Add some forall bindings to the front of this type.
-makeTForall_front :: [(Var, Kind)] -> Type -> Type
+makeTForall_front :: [(Bind, Kind)] -> Type -> Type
 makeTForall_front vks tt
  = makeTForall_front' (reverse vks) tt
  
-makeTForall_front' vks tt
- = case vks of
+makeTForall_front' bks tt
+ = case bks of
 	[]		-> tt
-	(v, k) : rest	-> makeTForall_front' rest (TForall (BVar v) k tt)
+	(b, k) : rest	-> makeTForall_front' rest (TForall b k tt)
 
 
 -- | Add some forall bindings to this type, placing them after others already there.
-makeTForall_back :: [(Var, Kind)] -> Type -> Type
+makeTForall_back :: [(Bind, Kind)] -> Type -> Type
 makeTForall_back [] tt			= tt
-makeTForall_back vks@((v, k) : vksRest) tt
+makeTForall_back bks@((b, k) : bksRest) tt
  = case tt of
-	TForall b k' t
-	  -> TForall b k' (makeTForall_back vks t)
+	TForall b' k' t
+	  -> TForall b' k' (makeTForall_back bks t)
 	
-	_ -> TForall (BVar v) k (makeTForall_back vksRest tt)
+	_ -> TForall b k (makeTForall_back bksRest tt)
 
 
 -- | Slurp outer forall bindings that bind vars from this type,

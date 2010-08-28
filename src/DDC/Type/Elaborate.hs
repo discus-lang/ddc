@@ -40,7 +40,8 @@ elaborateRsT_quant
 	
 elaborateRsT_quant newVar tt
  = do	(t_elab, vks)	<- elaborateRsT newVar tt
-	let t_quant	= makeTForall_back vks t_elab
+	let bks		= [(BVar v, k) | (v, k) <- vks]
+	let t_quant	= makeTForall_back bks t_elab
 
 	return t_quant
 

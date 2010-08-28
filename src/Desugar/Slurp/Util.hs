@@ -82,11 +82,11 @@ makeCtorType newVarN vData vs name fs
  	tCtor		<- elaborateCloT
 			$  makeTFunsPureEmpty (tsPrimary_elab ++ [objType])
 
-	let vks		= map (\v -> (v, let Just k = defaultKindOfVar v in k)) 
+	let bks		= map (\v -> (BVar v, let Just k = defaultKindOfVar v in k)) 
 			$ Var.sortForallVars 
 			$ Set.toList (Set.union vsFree (Set.fromList vs))
 
-	let tQuant	= makeTForall_back vks (addConstraintsOther fsField tCtor)
+	let tQuant	= makeTForall_back bks (addConstraintsOther fsField tCtor)
 
 	return 	$ {- trace (pprStrPlain
 			$ "makeCtorType\n"

@@ -70,15 +70,15 @@ elaborateT_fun tt
 			
 	-- TODO: freeVars doesn't pass the kinds of these vars up to us,
 	--	 so just choose a kind from the namespace now.
-	let extraQuantVKs	
-		= [(v, k)
+	let extraQuantBKs	
+		= [(BVar v, k)
 			| v	<- Set.toList free
 			, not $ Set.member v quantVs
 			, let Just k	= kindOfSpace $ varNameSpace v]
-		++ newRs
+		++ [(BVar v, k) | (v, k) <- newRs]
 		
 	-- quantify free vars in the scheme		
-	let tt_quant	= makeTForall_back extraQuantVKs tt_rs
+	let tt_quant	= makeTForall_back extraQuantBKs tt_rs
 
 	-- add read and write effects
 	let ?newVarN	= newVarN

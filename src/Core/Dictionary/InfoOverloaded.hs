@@ -84,7 +84,7 @@ lookupOverloadedVar env vOverloaded
 			 		
 		tOverloaded_withContext
 			= makeTForall_front 
-				(topClassDictParams pClassDict)
+				[(BVar v, k) | (v, k) <- topClassDictParams pClassDict]
 				(addContextUnderForalls kContext tOverloaded)
 
 		-- Get the sequence of instance declarations for the type class.

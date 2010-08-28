@@ -75,7 +75,9 @@ pType
 		vks	<- Parsec.many1 pVar_withKind
 		pTok K.Dot
 		body	<- pType_bodyFetters
-		return	$ makeTForall_back vks body
+		return	$ makeTForall_back 
+				[(BVar v, k) | (v, k) <- vks ]
+				body
 
  <|>	pType_bodyFetters
  <?>    "pType"
