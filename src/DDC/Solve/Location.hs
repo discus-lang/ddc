@@ -1,5 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
+-- | Tracking the source locations corresponding to type constraints and errors.
 module DDC.Solve.Location
 	( TypeSource 	(..)
 	, SourceValue	(..)
@@ -26,10 +27,8 @@ import DDC.Var
 
 stage	= "DDC.Solve.Location"
 
--- TypeSource --------------------------------------------------------------------------------------
--- Records where type constraints come from
+-- | Records where type constraints come from
 --	These are used for producing nice error messages when a type error is found during inference
-
 data TypeSource
 	-- A dummy typesource for hacking around
 	--	this shouldn't be present in deployed code.

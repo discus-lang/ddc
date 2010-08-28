@@ -43,4 +43,12 @@ data CtorDef
 	deriving (Show, Eq)
 
 
+-- | Get a list of all the parameters of a data constructor's type, 
+--   retaining the outer quantifiers. 
+quantParamsOfCtorType :: Type -> [Type]
+quantParamsOfCtorType t
+	= quantParamsOfCtorType' [] t
+	
+quantParamsOfCtorType acc tt
+	| 
 
