@@ -9,15 +9,15 @@
 
 // Extract the tag of an object
 static inline UInt
-	_TAG	(Obj* obj)	
+	_TAG	(Obj* obj)
 {
-	return obj ->tagFlags >> 8; 
+	return obj ->tagFlags >> 8;
 }
 
 // Extract an constructor argument froma data object.
 #define _DARG(data,i)	(((Data*)data) ->a[i])
 
-// Extract a functino argument from a thunk.
+// Extract a function argument from a thunk.
 #define _TARG(thunk,i)	(((Thunk*)thunk) ->a[i])
 
 // Extract a function argument from a suspension.
@@ -41,7 +41,7 @@ static inline UInt
 
 // These case alternatives are added to all statements that switch
 //	on the tag of a data object. If the data object is a suspension
-//	then it is forced or followed, then control continues from the 
+//	then it is forced or followed, then control continues from the
 //	provided label.
 #define _CASESUSP(var, label) \
 	case _tagSusp: \
@@ -49,9 +49,9 @@ static inline UInt
 	  goto label; \
 	case _tagIndir: \
 	  var = _FOLLOW(var); \
-	  goto label; 
+	  goto label;
 
-// Handle a non-exhaustive case match.	  
+// Handle a non-exhaustive case match.
 #define _CASEDEATH(file,line,col) \
 	default: _deathCase (file, line, col);
 
