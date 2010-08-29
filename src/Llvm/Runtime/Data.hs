@@ -1,3 +1,5 @@
+{-# OPTIONS -fno-warn-type-defaults #-}
+
 
 module Llvm.Runtime.Data where
 
@@ -46,3 +48,16 @@ forceObj orig
 	forced	<- lift $ newUniqueNamedReg "forced" pObj
 	addBlock [ Assignment forced (Call StdCall fun [orig] []) ]
 	return forced
+
+objectTag :: LlvmVar -> LlvmM LlvmVar
+objectTag obj
+ = do	r0	<- lift $ newUniqueReg $ pLift i32
+	r1	<- lift $ newUniqueReg $ i32
+	val	<- lift $ newUniqueNamedReg "tag.val" i32
+	addBlock
+		[ Assignment r0 (GetElemPtr False obj [llvmWordLitVar 0, i32LitVar 0])
+		, Assignment r1 (Load r0)
+		, Assignment val (LlvmOp LM_MO_AShr r1 (i32LitVar 0))
+		]
+	return	val
+

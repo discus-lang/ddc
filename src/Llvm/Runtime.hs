@@ -9,6 +9,7 @@ module Llvm.Runtime
 	, allocCollect
 	, force
 	, forceObj
+	, objectTag
 
 	, ddcSlotPtr
 	, ddcSlotMax
