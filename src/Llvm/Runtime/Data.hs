@@ -49,8 +49,9 @@ forceObj orig
 	addBlock [ Assignment forced (Call StdCall fun [orig] []) ]
 	return forced
 
-objectTag :: LlvmVar -> LlvmM LlvmVar
-objectTag obj
+
+getObjTag :: LlvmVar -> LlvmM LlvmVar
+getObjTag obj
  = do	r0	<- lift $ newUniqueReg $ pLift i32
 	r1	<- lift $ newUniqueReg $ i32
 	val	<- lift $ newUniqueNamedReg "tag.val" i32
