@@ -20,11 +20,14 @@ import Source.Error
 import Source.Exp
 import Util
 import DDC.Base.SourcePos
+import DDC.Util.FreeVars
 import DDC.Main.Error
 import DDC.Var
 import DDC.Type
 import DDC.Main.Pretty		()
 import qualified Data.Map	as Map
+import qualified Data.Set	as Set
+import qualified Shared.VarUtil	as Var
 
 stage		= "Source.Rename"
 
@@ -269,29 +272,25 @@ renameCtor
 	-> CtorDef SourcePos	
 	-> RenameM (CtorDef SourcePos)
 
-renameCtor = error "renameCtor: broken"
-
-{-
-renameCtor vData vsData (v, fields)
- = do	v'	<- linkV v
+renameCtor vData vsData (CtorDef vCtor fields)
+ = do	vCtor'	<- linkV vCtor
 	fields'	<- mapM (renameDataField vData vsData) fields
-	return	(v', fields')
+	return	(CtorDef vCtor' fields')
 
-
-renameDataField vData vsData df
+renameDataField vData vsData field
   = do	
   	-- field vars aren't supposed to have module qualifiers...
   	let fixupV v	
   		= v { varNameSpace 	= NameField
 		    , varModuleId 	= ModuleIdNil }
 
-   	mLabel'	<- case dLabel df of
+   	mLabel'	<- case dataFieldLabel field of
 			Nothing		-> return Nothing
 			Just label
 			 -> do 	label'	<- lbindN_binding NameField label
 				return	$ Just $ fixupV label'
 
-	tField'	<- rename $ dType df
+	tField'	<- rename $ dataFieldType field
 
 	-- check that all vars in the field type are params to the type constructor.
 	let vsFree	= Set.filter (not . Var.isCtorName) $ freeVars tField'
@@ -301,13 +300,10 @@ renameDataField vData vsData df
 	 	$ mapM_ (\v -> addError $ ErrorUndefinedVar v) 
 		$ Set.toList vsBad
 
-	mExp'	<- rename $ dInit df
+	return 	$ DataField
+		{ dataFieldLabel	= mLabel'
+		, dataFieldType		= tField' }
 
-	return 	df
-		{ dLabel	= mLabel'
-		, dType		= tField'
-		, dInit		= mExp' }
--}	
 	
 -- Expressions -----------------------------------------------------------------
 instance Rename (Exp SourcePos) where 
