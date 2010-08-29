@@ -37,12 +37,12 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 
 	PData v ctors
 	 | Map.null ctors
-	 -> "data " % " " % ppr v % ";\n" 
+	 -> "data " % " " % ppr v % ";\n"
 
 	 | otherwise
 	 -> let ctorsList = sortBy (compare `on` ctorDefTag) $ Map.elems ctors
 	    in  "data" <> v <> "where\n"
-	 	% "{\n" 
+	 	% "{\n"
 	 	%> ("\n\n" %!% ctorsList % "\n")
 		% "}\n"
 
@@ -67,12 +67,12 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PCafSlot  v t
 	 -> t % " " %>> "_ddcCAF_" % sV v % " = 0;\n"
 
-	PCafInit v _ ss	
+	PCafInit v _ ss
 	 -> "void " %>> "_ddcInitCAF_" % sV v %>> "()\n"
 	 % "{\n"
 	 	%> ("\n" %!% ss % "\n")
 	 % "}\n\n\n"
-	
+
 	-- Sea hackery.
 	PInclude s		-> "#include <" % s % ">\n"
 	PIncludeAbs s		-> "#include \"" % s % "\"\n"
@@ -150,7 +150,7 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 		%> punc "\n" ssThen
 		% "\n}\n"
 
-	SCaseFail 
+	SCaseFail
 	 -> ppr "_CASEFAIL;"
 
 -- Alt ---------------------------------------------------------------------------------------------
@@ -200,7 +200,7 @@ instance Pretty a PMode => Pretty (Guard (Maybe a)) PMode where
 	 -> "guard {\n"
 	 %> ("\n" %!% ss % "\n") % "}\n"
 	 %  "compareDirect " % x1 % " with " % x2 % ";\n";
-	 
+
 
 -- Exp ---------------------------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
@@ -232,12 +232,12 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XApply x args
 	 -> let i	= length args
 	    in  "_apply"	% i % " (" % x % ", " % ", " %!% args % ")"
-	    
-	
+
+
 	XCurry v superAirity args
 	 -> let i	= length args
 	    in "_curry"		% i % " (" % ", " %!% (sV v : ppr superAirity : map ppr args) % ")"
-	
+
 	XSuspend v args
 	 -> let i	= length args
 	    in "_suspend"	% i % " (" % ", " %!% (sV v : map ppr args) % ")"
@@ -276,10 +276,10 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		FStrCmp		-> "strcmp (" % x1 % ", " % x2 % ")"
 
 		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
-	
+
 	-- projection
 	XTag x
-	 -> "_TAG(" % x % ")"
+	 -> "_getObjTag(" % x % ")"
 
 	XArg x t i
 	 -> case t of
@@ -290,7 +290,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XField x v l		-> "_FIELD("  % x % ", " % "_S" % sV v % ", " % l % ")"
 	XFieldR x v l		-> "_FIELDR(" % x % ", " % "_S" % sV v % ", " % l % ")"
 
-	-- constants	 
+	-- constants
 	XCon v			-> "_tag" % sV v
 	XInt i			-> ppr i
 	XUnit 			-> ppr "_primUnit"
@@ -304,31 +304,31 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XBox t x
 	 | t == TCon (Var.primTBool Unboxed) []
 	 -> "_boxEnum(" % x % ")"
-	 
+
 	 | t == TCon (Var.primTString Unboxed) []
 	 -> "Data_String_boxString(" % x % ")"
-	 
+
 	 | otherwise
 	 -> "_box(" % t % ", " % x % ")"
-	  
+
 	XUnbox t x
 	 |  t == TCon (Var.primTBool Unboxed) []
 	 -> "_unboxEnum(" % x % ")"
-	 
+
 	 | otherwise
 	 -> "_unboxDirect(" % t % ", " % x % ")"
-	  
-	XForce x 
+
+	XForce x
 	 -> "_force(" % x % ")"
-	
+
 	-- allocation
-	XAlloc i		
+	XAlloc i
 	 -> "_alloc (" % i % ")"
-	
+
 	XAllocThunk f superA argCount
 	 -> "_allocThunk (" % sV f % ", " % superA % ", " % argCount % ")"
 
-	XAllocData  ctor arity	
+	XAllocData  ctor arity
 	 -> "_allocData (" % "_tag" % sV ctor % ", " % arity % ")"
 
 	XAllocDataAnchored ctor arity
@@ -361,10 +361,10 @@ getSeaName var
 	= name
 
  	| otherwise
-	= panic stage 
+	= panic stage
 		$  "getSeaName: no sea name for TCon " % var % "\n"
 		%  "  info = " % show (varInfo var) % "\n"
-	
+
 
 pprLiteralFmt litfmt@(LiteralFmt lit fmt)
  = case (lit, fmt) of
@@ -390,17 +390,17 @@ seaVar local v
 	-- If the variable has an explicit sea name embedded in it, then use that
 	| name : _	<- [name | ISeaName name <- varInfo v]
 	= name
-	
+
 	-- Binding occurance has an explicit Sea name, so use that.
 	--	Used for calling foreign functions.
 	| name : _	<- [name |  ISeaName name
 				 <- concat $ [varInfo bound | IBoundBy bound <- varInfo v]]
 	= name
-	
+
 	| Var.varHasSymbols v
 	= seaModule (varModuleId v)
 	++ (if local then "_" ++ (pprStrPlain $ varId v) ++ "_" else "_")
-	++ "_sym" ++ (Var.deSymString $ varName v)	
+	++ "_sym" ++ (Var.deSymString $ varName v)
 
 	-- If the variable is explicitly set as global use the given name.
 	| True : _	<- [global | ISeaGlobal global <- varInfo v]
@@ -411,11 +411,11 @@ seaVar local v
 	--	and builtin functions from the RTS.
 	| local
 	= "_v" ++ varName v
-	
+
 	-- vars defined at top level need their module name prepended.
 	| otherwise
 	= seaModule (varModuleId v) ++ "_" ++ varName v
-	
+
 
 seaModule :: ModuleId -> String
 seaModule m

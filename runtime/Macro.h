@@ -7,13 +7,6 @@
 #include "Types.h"
 #include "Force.h"
 
-// Extract the tag of an object
-static inline UInt
-	_TAG	(Obj* obj)
-{
-	return obj ->tagFlags >> 8;
-}
-
 // Extract an constructor argument froma data object.
 #define _DARG(data,i)	(((Data*)data) ->a[i])
 
