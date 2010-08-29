@@ -27,7 +27,7 @@ Obj*	primUpdateCtor	(Obj* ctor_, Int32 i, Obj* obj)
 {
 	Data* ctor	= (Data*)ctor_;
 	ctor->a[i]	= obj;
-	
+
 	return _primUnit;
 }
 
@@ -35,12 +35,12 @@ Obj*	primUpdateCtor	(Obj* ctor_, Int32 i, Obj* obj)
 // ------ Ref
 Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 {
-	_DEBUG (assert (_TAG(ref_) == _tagBase));
-	
+	_DEBUG (assert (_getObjTag(ref_) == _tagBase));
+
 	_ENTER(2);
 	_S(0)	= ref_;
 	_S(1)	= x_;
-	
+
 	// unboxing.
 	DataM* refDataM;
 	Data* refData;
@@ -78,14 +78,14 @@ Obj*	primRefUpdate	(Obj* ref_, Obj* x_)
 Int32	primConnect	(String hostName, Int32 port)
 {
 	// resolve host name
-	struct hostent* hostInfo	
+	struct hostent* hostInfo
 			= gethostbyname ((const char *)hostName);
 	assert (hostInfo != 0);
 
 	// create socket
 	int sock	= socket (AF_INET, SOCK_STREAM, 0);
 	assert (sock > 0);
-	
+
 	// connect to server
 	struct sockaddr_in hostAddr;
 
@@ -93,17 +93,17 @@ Int32	primConnect	(String hostName, Int32 port)
 	memcpy 	((char *) &hostAddr.sin_addr.s_addr
 		, hostInfo ->h_addr_list[0]
 		, hostInfo ->h_length);
-	
+
 	hostAddr.sin_port	= htons (port);
 
 	int flag	= 1;
 	setsockopt (sock, SOL_SOCKET, TCP_NODELAY, &flag, sizeof(int));
-	
+
 	assert (connect ( sock
 			, (struct sockaddr *) &hostAddr
 			, sizeof (hostAddr) )
 			>= 0);
-			
+
 	return sock;
 }
 

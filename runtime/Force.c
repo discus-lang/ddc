@@ -25,12 +25,12 @@ Obj*	_force (Obj* obj)
 	//	until we get a real object.
 	again:
 	switch (_getObjTag (_S(0))) {
-	 case _tagSusp:	
-	 	_S(0) = _forceStep (_S(0)); 
+	 case _tagSusp:
+	 	_S(0) = _forceStep (_S(0));
 		goto again;
 
 	 case _tagIndir:
-		_S(0) = ((SuspIndir*)_S(0)) ->obj; 
+		_S(0) = ((SuspIndir*)_S(0)) ->obj;
 		goto again;
 	}
 
@@ -46,7 +46,7 @@ Obj*	_force (Obj* obj)
 //
 Obj*	_forceStep (Obj* susp_)
 {
-	_DEBUG	 (assert (_TAG(susp_) == _tagSusp));
+	_DEBUG	 (assert (_getObjTag(susp_) == _tagSusp));
 	_ENTER(1);
 	_S(0)	= susp_;
 
@@ -64,7 +64,7 @@ Obj*	_forceStep (Obj* susp_)
 			obj	= _apply1 (susp->obj, susp->a[0]);
 	 	 	break;
 
-		case 2: _PROFILE_APPLY (force[2]++); 
+		case 2: _PROFILE_APPLY (force[2]++);
 			obj	= _apply2 (susp->obj, susp->a[0], susp->a[1]);
 	 		break;
 
@@ -85,7 +85,7 @@ Obj*	_forceStep (Obj* susp_)
 	SuspIndir* susp2	= (SuspIndir*)_S(0);
 	susp2 ->tagFlags	= (_tagIndir << 8) | _ObjFixedSuspIndir;
 	susp2 ->obj		= obj;
-	
+
 
 #if _DDC_DEBUG
 	// Zap any remaining args for debugging purposes

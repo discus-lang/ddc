@@ -8,7 +8,7 @@
 
 
 // ----- Control
-Obj*	primControl_while 
+Obj*	primControl_while
 		( Obj*	test_
 		, Obj*	body_)
 {
@@ -21,7 +21,7 @@ Obj*	primControl_while
 	// we pushed the context, so do the loop.
 	if (ret == CONTEXT_RET_PUSH)
 	{
-		while (_TAG (_force (_apply1 (_S(0), _primUnit ))) == _tagTrue)
+		while (_getObjTag (_force (_apply1 (_S(0), _primUnit ))) == _tagTrue)
 		{
 			_apply1 (_S(1), _primUnit);
 		}
@@ -36,7 +36,7 @@ Obj*	primControl_while
 	{
 		_LEAVE(2);
 		_contextPop( );
-		return _primUnit;	
+		return _primUnit;
 	}
 
 	// this message isn't for us
@@ -45,13 +45,13 @@ Obj*	primControl_while
 		_contextPop();
 		_contextAgain(ret);
 		return _primUnit;
-	}		
+	}
 
 
 }
 
 
-Obj*	primControl_break 
+Obj*	primControl_break
 		( Obj*	UNUSED (unit))
 {
 	_contextBreak();
@@ -59,7 +59,7 @@ Obj*	primControl_break
 }
 
 
-Obj*	primControl_when 
+Obj*	primControl_when
 		( Obj*	test_
 		, Obj*	body_)
 {
@@ -67,17 +67,17 @@ Obj*	primControl_when
 	_S(0)	= test_;
 	_S(1)	= body_;
 
-	if    (_TAG (_force (_apply1 (_S(0), _primUnit ))) == _tagTrue)
+	if    (_getObjTag (_force (_apply1 (_S(0), _primUnit ))) == _tagTrue)
 	{
 		_apply1 (_S(1), _primUnit);
 	}
-	
+
 	_LEAVE(2);
 	return _primUnit;
 }
 
 
-Obj*	primControl_unless 
+Obj*	primControl_unless
 		( Obj*	test_
 		, Obj*	body_)
 {
@@ -85,11 +85,11 @@ Obj*	primControl_unless
 	_S(0)	= test_;
 	_S(1)	= body_;
 
-	if    (_TAG (_force (_apply1 (_S(0), _primUnit ))) == _tagFalse)
+	if    (_getObjTag (_force (_apply1 (_S(0), _primUnit ))) == _tagFalse)
 	{
 		_apply1 (_S(1), _primUnit);
 	}
-	
+
 	_LEAVE(2);
 	return _primUnit;
 }

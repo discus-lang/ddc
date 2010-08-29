@@ -72,8 +72,8 @@ Obj*	primFloat64_truncate (Obj* x_)
 
 Obj*	primFloat64_update (Obj* dest_, Obj* src_)
 {
-	_DEBUG	(assert ( _TAG(dest_) == _tagBase));
-	_DEBUG	(assert ( _TAG(src_)  == _tagBase));
+	_DEBUG	(assert ( _getObjTag(dest_) == _tagBase));
+	_DEBUG	(assert ( _getObjTag(src_)  == _tagBase));
 
 	// -----
 	_ENTER(2);
