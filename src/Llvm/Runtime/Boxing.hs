@@ -9,8 +9,6 @@ module Llvm.Runtime.Boxing
 	, boxFloat64 )
 where
 
-import Util
-
 import DDC.Main.Error
 
 import Llvm
@@ -41,8 +39,8 @@ unboxAny anyType any
 
 boxInt32 :: LlvmVar -> LlvmM LlvmVar
 boxInt32 int32
- = do	iptr0	<- lift $ newUniqueNamedReg "iptr0" (pLift i32)
-	iptr1	<- lift $ newUniqueNamedReg "iptr1" (pLift i32)
+ = do	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
+	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
 	objptr	<- allocate 8 "boxed"
 	addBlock
 		[ Comment [ "boxInt32 (" ++ show int32 ++ ")" ]
@@ -57,9 +55,9 @@ boxInt32 int32
 unboxInt32 :: LlvmVar -> LlvmM LlvmVar
 unboxInt32 objptr
  | getVarType objptr == pObj
- = do	int32	<- lift $ newUniqueReg i32
-	iptr0	<- lift $ newUniqueNamedReg "iptr0" (pLift i32)
-	iptr1	<- lift $ newUniqueNamedReg "iptr1" (pLift i32)
+ = do	int32	<- newUniqueReg i32
+	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
+	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
 	addBlock
 		[ Comment [ show int32 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
 		, Assignment iptr0 (GetElemPtr True objptr [llvmWordLitVar 0, i32LitVar 0])
@@ -70,8 +68,8 @@ unboxInt32 objptr
 
 unboxInt32 objptr
  | getVarType objptr == LMPointer ppObj
- = do	optr0	<- lift $ newUniqueNamedReg "optr0" ppObj
-	optr1	<- lift $ newUniqueNamedReg "optr1" pObj
+ = do	optr0	<- newUniqueNamedReg "optr0" ppObj
+	optr1	<- newUniqueNamedReg "optr1" pObj
 	addBlock
 		[ Comment [ show optr1 ++ " = unboxInt32 (" ++ show objptr ++ ")" ]
 		, Assignment optr0 (Load objptr)
@@ -86,11 +84,11 @@ unboxInt32 objptr
 
 boxEnum :: LlvmVar -> LlvmM LlvmVar
 boxEnum v@(LMLocalVar u (LMInt 1))
- = do	int32	<- lift $ newUniqueNamedReg "int32" i32
-	shifted	<- lift $ newUniqueNamedReg "shifted" i32
-	tag	<- lift $ newUniqueNamedReg "tag" i32
-	iptr0	<- lift $ newUniqueNamedReg "iptr0" (pLift i32)
-	iptr1	<- lift $ newUniqueNamedReg "iptr1" (pLift i32)
+ = do	int32	<- newUniqueNamedReg "int32" i32
+	shifted	<- newUniqueNamedReg "shifted" i32
+	tag	<- newUniqueNamedReg "tag" i32
+	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
+	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
 	objptr	<- allocate 8 "boxed"
 	addBlock
 		[ Comment [ "boxEnum (" ++ show v ++ ")" ]

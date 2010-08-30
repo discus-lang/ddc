@@ -3,8 +3,6 @@
 
 module Llvm.Runtime.Data where
 
-import Util
-
 import Llvm
 import LlvmM
 import Llvm.Util
@@ -45,7 +43,7 @@ force = LlvmFunctionDecl "_force" External CC_Ccc pObj FixedArgs [(pObj, [])] pt
 forceObj :: LlvmVar -> LlvmM LlvmVar
 forceObj orig
  = do	let fun	= LMGlobalVar "_force" (LMFunction force) External Nothing Nothing True
-	forced	<- lift $ newUniqueNamedReg "forced" pObj
+	forced	<- newUniqueNamedReg "forced" pObj
 	addBlock [ Assignment forced (Call StdCall fun [orig] []) ]
 	return forced
 
@@ -53,9 +51,9 @@ forceObj orig
 followObj :: LlvmVar -> LlvmM LlvmVar
 followObj orig
  = do	addComment $ "followObj " ++ show orig
-	r0 	<- lift $ newUniqueReg pObj
-	r1	<- lift $ newUniqueReg ppObj
-	r2	<- lift $ newUniqueReg pObj
+	r0 	<- newUniqueReg pObj
+	r1	<- newUniqueReg ppObj
+	r2	<- newUniqueReg pObj
 	addBlock
 		[ Assignment r0 (GetElemPtr False orig [llvmWordLitVar 2])
 		, Assignment r1 (Cast LM_Bitcast r0 ppObj)
@@ -65,9 +63,9 @@ followObj orig
 
 getObjTag :: LlvmVar -> LlvmM LlvmVar
 getObjTag obj
- = do	r0	<- lift $ newUniqueReg $ pLift i32
-	r1	<- lift $ newUniqueReg $ i32
-	val	<- lift $ newUniqueNamedReg "tag.val" i32
+ = do	r0	<- newUniqueReg $ pLift i32
+	r1	<- newUniqueReg $ i32
+	val	<- newUniqueNamedReg "tag.val" i32
 	addBlock
 		[ Assignment r0 (GetElemPtr False obj [llvmWordLitVar 0, i32LitVar 0])
 		, Assignment r1 (Load r0)

@@ -6,6 +6,10 @@ module LlvmM
 	, addComment
 	, currentReg
 
+	, newUniqueReg
+	, newUniqueNamedReg
+	, newUniqueLabel
+
 	, initLlvmState
 
 	, startFunction
@@ -15,6 +19,7 @@ where
 import Util
 
 import Llvm
+import Llvm.GhcReplace.Unique
 
 
 -- LlvmState contains the register for the current 'of interest' data and
@@ -73,3 +78,26 @@ endFunction
 				$ case last x of
 				    Return _	-> blks
 				    _		-> [Return Nothing] : blks
+
+--------------------------------------------------------------------------------
+
+-- | Generate a new unique register variable with the specified LlvmType.
+newUniqueReg :: LlvmType -> LlvmM LlvmVar
+newUniqueReg t
+ = do	u <- lift $ newUnique "r"
+	return $ LMLocalVar u t
+
+
+-- | Generate a new unique named register variable with the specified LlvmType.
+newUniqueNamedReg :: String -> LlvmType -> LlvmM LlvmVar
+newUniqueNamedReg name t
+ = do	u <- lift $ newUnique name
+	return $ LMLocalVar u t
+
+
+-- | Generate a new unique register variable.
+newUniqueLabel :: String -> LlvmM LlvmVar
+newUniqueLabel label
+ = do	u <- lift $ newUnique label
+	return $ LMLocalVar u LMLabel
+

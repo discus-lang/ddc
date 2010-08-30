@@ -6,10 +6,6 @@ module Llvm.Util
 	, i32LitVar
 	, i64LitVar
 
-	, newUniqueReg
-	, newUniqueNamedReg
-	, newUniqueLabel
-
 	, loadAddress
 	, uniqueOfLlvmVar
 	, nameOfLlvmVar
@@ -46,25 +42,8 @@ i32LitVar n = LMLitVar (LMIntLit (toInteger n) i32)
 i64LitVar :: Integral a => a -> LlvmVar
 i64LitVar n = LMLitVar (LMIntLit (toInteger n) i64)
 
--- | Generate a new unique register variable with the specified LlvmType.
-newUniqueReg :: LlvmType -> IO LlvmVar
-newUniqueReg t
- = do	u <- newUnique "r"
-	return $ LMLocalVar u t
 
 
--- | Generate a new unique named register variable with the specified LlvmType.
-newUniqueNamedReg :: String -> LlvmType -> IO LlvmVar
-newUniqueNamedReg name t
- = do	u <- newUnique name
-	return $ LMLocalVar u t
-
-
--- | Generate a new unique register variable.
-newUniqueLabel :: String -> IO LlvmVar
-newUniqueLabel label
- = do	u <- newUnique label
-	return $ LMLocalVar u LMLabel
 
 uniqueOfLlvmVar :: LlvmVar -> Unique
 uniqueOfLlvmVar (LMLocalVar u LMLabel) = u

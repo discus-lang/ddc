@@ -3,8 +3,6 @@ module Llvm.Runtime.Alloc
 	{- , allocThunk -} )
 where
 
-import Util
-
 import DDC.Main.Error
 
 import Llvm
@@ -21,21 +19,21 @@ stage = "Llvm.Runtime.Alloc"
 -- boundaries and panics if asked to allocate zero or less bytes.
 allocate :: Int -> String -> LlvmM LlvmVar
 allocate bytes name
- = do	ptr	<- lift $ newUniqueNamedReg name pObj
-	r0	<- lift $ newUniqueNamedReg "r0" pChar
-	r1	<- lift $ newUniqueNamedReg "r1" pChar
-	r2	<- lift $ newUniqueNamedReg "r2" pChar
-	r3	<- lift $ newUniqueNamedReg "r3" i1
-	r4	<- lift $ newUniqueNamedReg "r4" pChar
-	r5	<- lift $ newUniqueNamedReg "r5" (pLift i32)
-	r6	<- lift $ newUniqueNamedReg "r6" pChar
-	r7	<- lift $ newUniqueNamedReg "r7" pChar
-	r8	<- lift $ newUniqueNamedReg "r8" (pLift i32)
-	pre	<- lift $ newUniqueNamedReg "pre" pChar
+ = do	ptr	<- newUniqueNamedReg name pObj
+	r0	<- newUniqueNamedReg "r0" pChar
+	r1	<- newUniqueNamedReg "r1" pChar
+	r2	<- newUniqueNamedReg "r2" pChar
+	r3	<- newUniqueNamedReg "r3" i1
+	r4	<- newUniqueNamedReg "r4" pChar
+	r5	<- newUniqueNamedReg "r5" (pLift i32)
+	r6	<- newUniqueNamedReg "r6" pChar
+	r7	<- newUniqueNamedReg "r7" pChar
+	r8	<- newUniqueNamedReg "r8" (pLift i32)
+	pre	<- newUniqueNamedReg "pre" pChar
 
-	entry	<- lift $ newUniqueLabel "allocate"
-	bb	<- lift $ newUniqueLabel "bb"
-	bb1	<- lift $ newUniqueLabel "bb1"
+	entry	<- newUniqueLabel "allocate"
+	bb	<- newUniqueLabel "bb"
+	bb1	<- newUniqueLabel "bb1"
 
 	let count = i32LitVar $ roundUpBytes bytes
 

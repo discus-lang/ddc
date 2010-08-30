@@ -23,8 +23,8 @@ import qualified DDC.Config.Version	as Version
 
 import Llvm
 import LlvmM
-import Llvm.Invoke
 import Llvm.GhcReplace.Unique
+import Llvm.Invoke
 import Llvm.Runtime
 import Llvm.Runtime.Apply
 import Llvm.Runtime.Data
@@ -224,42 +224,32 @@ llvmOfStmt stmt
 
 llvmSwitch :: Exp a -> [Alt a] -> LlvmM ()
 llvmSwitch (XTag (XSlot v (TPtr TObj) i)) alt
- = do	addComment	$ "---------------------------------------\n"
-			++ "llvmSwitch : " ++ seaVar False v
+ = do	addComment	$ "llvmSwitch : " ++ seaVar False v
 	reg		<- readSlot i
 	tag		<- getObjTag reg
-	addComment	$ "llvmSwitch : " ++ show tag
-			++ "\n-----------------------------------------"
+	addComment	"-------------------------"
 
-
-	switchEnd	<- lift $ newUnique "switch.end"
-	switchDef	<- lift $ newUnique "switch.default"
-
-	let switchEndL	= (LMLocalVar switchEnd LMLabel)
-	let switchDefL	= (LMLocalVar switchDef LMLabel)
-
-	lift $ mapM_ (putStrLn . show) alt
+	switchEnd	<- newUniqueLabel "switch.end"
+	switchDef	<- newUniqueLabel "switch.default"
 
 	let (def, rest)
 			= partition (\ s -> s =@= ADefault{} || s =@= ACaseDeath{}) alt
 
-	alts		<- lift $ mapM (genAltVars switchEndL) rest
-
-	addBlock	[ Switch tag switchDefL (map fst alts) ]
-
+	alts		<- mapM (genAltVars switchEnd) rest
+	addBlock	[ Switch tag switchDef (map fst alts) ]
 	mapM_		genAltBlock alts
 
 	if null def
-	  then	addBlock [ Branch switchEndL ]
+	  then	addBlock [ Branch switchEnd ]
 	  else	mapM_ (genAltDefault switchDef) def
 
-	addBlock	[ MkLabel switchEnd ]
+	addBlock	[ MkLabel (uniqueOfLlvmVar switchEnd) ]
 
 llvmSwitch e _
  = 	panic stage $ "llvmSwitch : " ++ show e
 
 
-genAltVars :: LlvmVar -> Alt a -> IO ((LlvmVar, LlvmVar), Alt a)
+genAltVars :: LlvmVar -> Alt a -> LlvmM ((LlvmVar, LlvmVar), Alt a)
 genAltVars switchEnd alt@(ASwitch (XCon v) [])
  | varName v == "True"
  =	return ((i32LitVar 1, switchEnd), alt)
@@ -303,14 +293,14 @@ genAltBlock ((_, lab), ASwitch (XCon _) [])
 genAltBlock ((_, lab), x)
  = do	panic stage $ "getAltBlock : " ++ show x
 
-genAltDefault :: Unique -> Alt a -> LlvmM ()
+genAltDefault :: LlvmVar -> Alt a -> LlvmM ()
 genAltDefault label (ADefault ss)
- = do	addBlock [ MkLabel label ]
+ = do	addBlock [ MkLabel (uniqueOfLlvmVar label) ]
 	mapM_ llvmOfStmt ss
 
 genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
  = do	addBlock
-		[ MkLabel label
+		[ MkLabel (uniqueOfLlvmVar label)
 		, Expr (Call StdCall (funcOfDecl deathCase) [i32LitVar 0, i32LitVar l, i32LitVar c] [])
 		, Unreachable
 		]
@@ -325,14 +315,14 @@ genAltDefault _ def
 llvmOfAssign :: Exp a -> Type -> Exp a -> LlvmM ()
 llvmOfAssign (XVar v1 t1) t@(TPtr (TPtr TObj)) (XVar v2 t2)
  | t1 == t && t2 == t && isGlobalVar v1 && isGlobalVar v2
- = do	src	<- lift $ newUniqueReg (toLlvmType t1)
+ = do	src	<- newUniqueReg (toLlvmType t1)
 	addBlock $
 		[ Assignment src (loadAddress (toLlvmVar v2 t2))
 		, Store src (pVarLift (toLlvmVar v1 t1)) ]
 
 llvmOfAssign (XVar v1 t1) t@(TPtr (TPtr TObj)) (XVar v2 t2@(TPtr (TPtr TObj)))
  | t1 == t
- = do	reg		<- lift $ newUniqueReg (toLlvmType t1)
+ = do	reg		<- newUniqueReg (toLlvmType t1)
 	addBlock	[ Assignment reg (Load (toLlvmVar v2 t2))
 			, Store reg (toLlvmVar v1 t1) ]
 
@@ -363,7 +353,7 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XApply (XSlot v2 t2 i2) args)
 
 llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
  | t1 == t
- = do	result		<- lift $ newUniqueNamedReg "result" pObj
+ = do	result		<- newUniqueNamedReg "result" pObj
 	addBlock	[ Assignment result (Call TailCall (toLlvmGlobalFunc v2 t args) [] []) ]
 	writeSlot	result i1
 
@@ -397,14 +387,14 @@ llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) exp
 
 llvmOfAssign (XVarCAF v1 t1) t@TPtr{} (XInt 0)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = NULL"
-	dst		<- lift $ newUniqueReg ppObj
+	dst		<- newUniqueReg ppObj
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
 
 llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = " ++ seaVar False v2 ++ " ()"
-	dst1		<- lift $ newUniqueReg pObj
-	dst2		<- lift $ newUniqueReg pObj
+	dst1		<- newUniqueReg pObj
+	dst2		<- newUniqueReg pObj
 	addBlock	[ Assignment dst1 (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
 			, Assignment dst2 (Call TailCall (toLlvmGlobalFunc v2 t args) [] [])
 			, Store dst2 (pVarLift dst1)
@@ -486,7 +476,7 @@ primMapFunc
 
 primMapFunc t build sofar exp
  = do	val		<- llvmVarOfExp exp
-	dst		<- lift $ newUniqueNamedReg "prim.fold" t
+	dst		<- newUniqueNamedReg "prim.fold" t
 	addBlock	[ Assignment dst (build sofar val) ]
 	return		dst
 
@@ -498,8 +488,8 @@ llvmOfPtrManip t FAdd args
  = case args of
 	[l@(XVar v t), XInt i]
 	 ->	do	addComment "llvmOfPtrManip"
-			src		<- lift $ newUniqueReg $ toLlvmType t
-			dst		<- lift $ newUniqueReg $ toLlvmType t
+			src		<- newUniqueReg $ toLlvmType t
+			dst		<- newUniqueReg $ toLlvmType t
 			addBlock	[ Assignment src (loadAddress (toLlvmVar v t))
 					, Assignment dst (GetElemPtr True src [llvmWordLitVar i]) ]
 			return dst
@@ -529,12 +519,12 @@ llvmVarOfExp (XVar v t@TCon{})
 	return	$ toLlvmVar v t
 
 llvmVarOfExp (XVar v t)
- = do	reg	<- lift $ newUniqueReg pObj
+ = do	reg	<- newUniqueReg pObj
 	addBlock [ Comment ["llvmVarOfExp (XVar v t)"], Assignment reg (Load (toLlvmVar v t)) ]
 	return	reg
 
 llvmVarOfExp (XInt i)
- = do	reg	<- lift $ newUniqueReg i32
+ = do	reg	<- newUniqueReg i32
 	addBlock [ Comment ["llvmVarOfExp (XInt i)"], Assignment reg (Load (llvmWordLitVar i)) ]
 	return	reg
 

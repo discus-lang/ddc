@@ -5,8 +5,6 @@ module Llvm.Runtime.Slot
 	, writeSlot )
 where
 
-import Util
-
 import DDC.Main.Error
 
 import Llvm
@@ -26,7 +24,7 @@ writeSlot var 0
 
 writeSlot var n
  | n > 0
- = do	dst	<- lift $ newUniqueNamedReg ("slot" ++ show n) pObj
+ = do	dst	<- newUniqueNamedReg ("slot" ++ show n) pObj
 	addBlock
 		[ Comment [ "slot [" ++ show n ++ "] = " ++ show var ]
 		, Assignment dst (GetElemPtr True localSlotBase [llvmWordLitVar n])
@@ -40,15 +38,15 @@ writeSlot _ n = panic stage $ "writeSlot with slot == " ++ show n
 -- variable.
 readSlot :: Int -> LlvmM LlvmVar
 readSlot 0
- = do	dstreg		<- lift $ newUniqueNamedReg "slot.0" pObj
+ = do	dstreg		<- newUniqueNamedReg "slot.0" pObj
 	addBlock	[ Comment [ show dstreg ++ " = readSlot 0" ]
 			, Assignment dstreg (Load localSlotBase) ]
 	return		dstreg
 
 readSlot n
  | n > 0
- = do	dstreg		<- lift $ newUniqueNamedReg ("slot." ++ show n) pObj
-	r0		<- lift $ newUniqueReg pObj
+ = do	dstreg		<- newUniqueNamedReg ("slot." ++ show n) pObj
+	r0		<- newUniqueReg pObj
 	addBlock	[ Comment [ show dstreg ++ " = readSlot " ++ show n ]
 			, Assignment r0 (GetElemPtr True localSlotBase [llvmWordLitVar n])
 			, Assignment dstreg (loadAddress r0) ]
@@ -65,7 +63,7 @@ readSlotVar 0 dstreg
 
 readSlotVar n dstreg
  | n > 0
- = do	r0		<- lift $ newUniqueReg pObj
+ = do	r0		<- newUniqueReg pObj
 	addBlockResult	dstreg
 		[ Comment [ show dstreg ++ " = readSlotVar " ++ show n ]
 		, Assignment r0 (GetElemPtr True localSlotBase [llvmWordLitVar n])
