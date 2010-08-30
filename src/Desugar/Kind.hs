@@ -15,6 +15,7 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
 import DDC.Type.Data
+import DDC.Type.Data.Elaborate
 import DDC.Var
 import Data.Sequence			as Seq
 import qualified DDC.Type.Transform	as T
@@ -106,14 +107,12 @@ inferKindsM
 elabDataP :: Top SourcePos -> SolveM (Top SourcePos)
 elabDataP pp
  = case pp of
- 	PData{}	
-	 -> do	pp'@(PData sp (DataDef v vs ctors))
-			<- elaborateData newVarN getKind pp
-
-		return	pp'
+ 	PData sp dataDef
+	 -> do	dataDef'	<- elaborateDataDef newVarN getKind dataDef
+		return		$ PData sp dataDef'
 		
 	PTypeSynonym{}	
-	 -> do	pp'	<- elaborateTypeSynonym newVarN getKind pp
+	 -> do	pp'		<- elaborateTypeSynonym newVarN getKind pp
 		return	pp'
 
 	_	-> return pp

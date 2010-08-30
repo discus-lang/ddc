@@ -7,6 +7,7 @@ import DDC.Main.Pretty
 import DDC.Core.Exp
 import DDC.Type
 import DDC.Type.Data.Base
+import DDC.Type.Data.Pretty	()
 import DDC.Var
 import qualified Data.Map	as Map
 import Data.Function
@@ -97,20 +98,6 @@ instance Pretty Top PMode where
 
 pprPClassDict_varKind (v, k)
 	= parens $ v <> "::" <> k
-
-
--- CtorDef --------------------------------------------------------------------------------------------
-instance Pretty CtorDef PMode where
- ppr xx
-  = case xx of
-  	CtorDef v t arity tag fs
- 	 -> v 	% "\n"
-		%> 	( ":: " % prettyTypeSplit t % "\n"
-			% "with { ARITY  = " % arity	% "\n"
- 			% "     , TAG    = " % tag      % "\n"
-			% "     , FIELDS = " % fs 	% "\n"
---			% "     , ctorParams = " % quantParamsOfCtorType t % "\n"
-			% "}")
 		
 	 
 -- Exp ----------------------------------------------------------------------------------------------

@@ -6,6 +6,7 @@ module Desugar.Pretty
 where
 import Desugar.Plate.Trans
 import DDC.Type.Data.Base
+import DDC.Type.Data.Pretty	()
 import DDC.Desugar.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty		
@@ -131,19 +132,6 @@ pprPClassDict_varKind tt
 	TVar k (UVar v)	-> parens $ v <> "::" <> k
 	_		-> panic stage "pprPClassDict_varKind: no match\n"
 
--- CtorDef ---------------------------------------------------------------------
-{-
-instance Pretty a PMode => Pretty CtorDef PMode where
- ppr xx
-  = case xx of
-  	CtorDef { ctorDefName	= v
-		, ctorDefFields = [] }	
-	 -> ppr $ ctorDefName v
-	
-	CtorDef { ctorDefName	= v 
-		, ctorDefFields = fs }
-	 -> v % " {\n" %> ("\n" %!% fs) % "\n" % "}"
--}
 
 -- Exp -------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where

@@ -1,20 +1,15 @@
 {-# OPTIONS -fno-warn-monomorphism-restriction #-}
 -- | Elaborate data definitions.
 module Desugar.Data 
-	( elaborateData
-	, elaborateTypeSynonym )
+	( elaborateTypeSynonym )
 where
 import Desugar.Pretty
 import DDC.Desugar.Exp
-import Shared.VarPrim
 import DDC.Base.SourcePos
-import DDC.Base.DataFormat
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
-import DDC.Type.Data
 import DDC.Var
-import Util
 import qualified Debug.Trace
 
 stage		= "Desugar.Data"
