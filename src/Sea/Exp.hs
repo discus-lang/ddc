@@ -1,6 +1,6 @@
 
 -- | Abstract C expressions.
---	TODO: 	This is a mess. 
+--	TODO: 	This is a mess.
 --		Most of these types have too many constructors that do basically
 --		the same thing. We should try and reduce the size of these types.
 module Sea.Exp
@@ -72,10 +72,10 @@ data Top a
 
 -- Meta-data about a constructor.
 --	Note that we need to remember the indicies of each field so we can convert
---	pattern matches using labels to Sea form. 
+--	pattern matches using labels to Sea form.
 --
 data CtorDef
-	= CtorDef 
+	= CtorDef
 	{ ctorDefName 	:: Var 			-- ^ name of constructor
 	, ctorDefType	:: Type			-- ^ type of constructor
 	, ctorDefArity	:: Int			-- ^ arity of constructor (number of params)
@@ -110,8 +110,8 @@ data Stmt a
 	| SIf		(Exp a) [Stmt a]
 
 	| SSwitch	(Exp a) [Alt a]		-- Switch on an expression.
-	| SCaseFail		
-	deriving (Show, Eq)	
+	| SCaseFail
+	deriving (Show, Eq)
 
 
 -- | A case or switch alternative.
@@ -121,6 +121,9 @@ data Alt a
 
 	| ACaseSusp	(Exp a) Var		-- _CASESUSP (exp, label);
 						--	// if exp is a susp, force and jump to label
+
+	| ACaseIndir	(Exp a) Var		-- _CASEINDIR (exp, label);
+						--	// if exp is an indirection, follow it and jump to label
 
 	| ACaseDeath 	SourcePos		-- _CASEDEATH (file, line, column);
 
@@ -137,9 +140,9 @@ data Guard a
 			(Exp a)			-- check if this value (the case object)
 			(Exp a)			-- matches this one (always a var)
 	deriving (Show, Eq)
-	
 
--- | Expressions 
+
+-- | Expressions
 --	TODO: There are way to many constructors in this type.
 --	It'd be better to merge groups of similar ones, most of the application forms
 --	could be merged, while using an auxillary data type to record what sort of application it is.
@@ -153,7 +156,7 @@ data Exp a
 	-- A slot on the GC stack.
 	--	All pointers to objects in the heap must be on the slot stack
 	--	when we do something that might cause a garbage collection.
-	| XSlot		
+	| XSlot
 		Var 				-- the name of the var it's currently holding
 		Type				-- the type of the var
 		Int				-- the index of the slot
@@ -169,17 +172,17 @@ data Exp a
 	| XCallApp	Var Int [Exp a]
 	| XApply	(Exp a) [Exp a]
 	| XCurry	Var Int [Exp a]		-- super name, super airity, args
-	
+
 	| XSuspend	Var  [Exp a]		-- thunk name, args
 	| XPrim		Prim [Exp a]
 
 	-- projection
 	| XArg		(Exp a) ObjType Int	-- of some object
 	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
-	
+
 	| XField	(Exp a) Var Var		-- exp, type of exp, field name
 	| XFieldR	(Exp a) Var Var		-- exp, type of exp, field name
-	
+
 	-- constants
 	| XCon		Var			-- a data constructor
 	| XInt		Int			-- an integer
@@ -192,7 +195,7 @@ data Exp a
 	| XLabel	Var			-- a label, for jumping to
 	| XTagThunk
 	| XNull
-	
+
 	-- boxing
 	| XBox		Type (Exp a)		-- type, exp
 	| XUnbox	Type (Exp a)		-- type, exp
@@ -205,12 +208,12 @@ data Exp a
 
 	| XAllocData		Var Int		-- alloc data:  ctor name, airity
 	| XAllocDataAnchored	Var Int
-	
+
 	deriving (Show, Eq)
 
 
--- | Sea types. 
---	By the time we've reached the Sea language we only care about operational information. 
+-- | Sea types.
+--	By the time we've reached the Sea language we only care about operational information.
 --	We need to distinguish between boxed and unboxed values, but not much else.
 data Type
 	-- | The void type.
@@ -222,7 +225,7 @@ data Type
 
 	-- | An unboxed pointer to something else.
 	| TPtr Type
-	
+
 	-- | An unboxed data object.
 	| TCon Var [Type]
 
@@ -250,25 +253,25 @@ data	Prim
 	| FMul
 	| FDiv
 	| FMod
-	
+
 	| FEq
 	| FNEq
 
 	| FGt
 	| FLt
-	
+
 	| FGe
 	| FLe
-	
+
 	| FAnd
 	| FOr
-	
+
 	| FProjField
 	| FProjFieldR
-	
+
 	| FArrayPeek Type
 	| FArrayPoke Type
-	
+
 	| FStrCmp
 	deriving (Show, Eq)
 

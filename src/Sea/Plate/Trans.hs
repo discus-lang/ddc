@@ -23,17 +23,17 @@ import Control.Monad.State.Strict
 
 -----
 class Monad m => TransM m a1 a2 exp where
- transZM 
+ transZM
  	:: TransTable m a1 a2
 	-> exp a1 -> m (exp a2)
- 
+
 -----
-transZ 
+transZ
 	:: TransM (State ()) a1 a2 exp
 	=> TransTable (State ()) a1 a2
 	-> exp a1 -> exp a2
-	
-transZ	table x 
+
+transZ	table x
 	= evalState (transZM table x) ()
 
 
@@ -51,7 +51,7 @@ data TransTable m a1 a2
 	, transA	:: Alt	a2	-> m (Alt a2)
 	, transP	:: Top	a2	-> m (Top a2) }
 
-transTableId 
+transTableId
 	:: (a1 -> State s a2)
 	-> TransTable (State s) a1 a2
 
@@ -74,12 +74,12 @@ transformX	f z	= transZ  (transTableId return) { transX  = \x -> return $ f x } 
 
 
 -----
-transformSM 
+transformSM
 	:: (TransM (State s) a2 a2 exp)
 	=> (Stmt a2 -> State s (Stmt a2))
 	-> exp a2
 	-> State s (exp a2)
-	
+
 transformSM	f z	= transZM (transTableId return) { transS  = f } z
 
 -----
@@ -94,55 +94,55 @@ transformSS	f z	= transZ  (transTableId return) { transSS = \x -> return $ f x }
 instance Monad m => TransM m a1 a2 Top where
  transZM table p
   = case p of
-	PNil 
+	PNil
 	 ->	transP table PNil
-	
+
 	PData v ctors
 	 -> 	transP table	$ PData v ctors
-	 
+
 	-- supers
 	PProto v ts t
 	 ->	transP table	$ PProto v ts t
-	 
+
  	PSuper v args t ss
 	 -> do	ss2		<- mapM (transZM table) ss
 		ss3		<- transSS table ss2
 		transP table	$ PSuper v args t ss3
-		
+
 	-- cafs
 	PCafProto v	t
 	 ->	transP table	$ PCafProto v t
-	 
+
 	PCafSlot v t
 	 ->	transP table	$ PCafSlot v t
-	 
+
 	PCafInit v t ss
 	 -> do	ss2		<- mapM (transZM table) ss
 	 	ss3		<- transSS table ss2
 		transP table	$ PCafInit v t ss3
-			 	 
+
 	-- hackery
 	PHashDef s1 s2
 	 ->	transP table	$ PHashDef s1 s2
-	 
+
 	PInclude s
 	 ->	transP table	$ PInclude s
-	 
+
 	PIncludeAbs s
 	 ->	transP table	$ PIncludeAbs s
-	 
+
 	PHackery s
 	 ->	transP table	$ PHackery s
 
 	PMain mn ml
 	 ->	transP table	$ PMain mn ml
-	 
+
 	PComment s
 	 ->	transP table	$ PComment s
-	 
+
 	PBlank
 	 ->	transP table	$ PBlank
-	 
+
 
 
 -- Stmt ---------------------------------------------------------------------------------------------
@@ -163,12 +163,12 @@ instance Monad m => TransM m a1 a2 Stmt where
 
 	SEnter 	countS
 	 -> 	transS table 	$ SEnter countS
-	 
+
 	SLeave	countS
 	 ->	transS table 	$ SLeave countS
 
 
-	-- assignment	 
+	-- assignment
 	SAssign x1 t x2
 	 -> do 	x1'		<- transZM table x1
 	 	x2'		<- transZM table x2
@@ -182,15 +182,15 @@ instance Monad m => TransM m a1 a2 Stmt where
 	SReturn x
 	 -> do	x'		<- transZM table x
 	 	transS table	$ SReturn x'
-		
+
 	SLabel v
 	 -> do	v'		<- transV table v
 	 	transS table	$ SLabel v'
-		
+
 	SGoto v
 	 -> do	v'		<- transV table v
 	 	transS table	$ SGoto v'
-		
+
 	SSwitch x aa
 	 -> do	x'		<- transZM table x
 	 	aa'		<- mapM (transZM table) aa
@@ -199,24 +199,24 @@ instance Monad m => TransM m a1 a2 Stmt where
 	SMatch aa
 	 -> do	aa'		<- mapM (transZM table) aa
 	 	transS table	$ SMatch aa'
-				
+
 	SIf x ssThen
 	 -> do	x'		<- transZM table x
 
 		ssThen2		<- mapM (transZM table) ssThen
 		ssThen3		<- transSS table ssThen2
-		
+
 		transS table	$ SIf x' ssThen3
 
 	SCaseFail
 	 ->	transS table	$ SCaseFail
 
-		
+
 -- Exp ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Exp where
  transZM table x
   = case x of
- 	XNil		
+ 	XNil
 	 -> 	transX table 	$ XNil
 
 	XVar v t
@@ -234,7 +234,7 @@ instance Monad m => TransM m a1 a2 Exp where
 	XSlotCAF v t
 	 -> do	v'		<- transV table v
 	 	transX table	$ XSlotCAF v' t
-		
+
 	-- application
 	XTailCall v xs
 	 -> do	v'		<- transV table v
@@ -245,22 +245,22 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do 	v'		<- transV table v
 	 	xs'		<- mapM (transZM table) xs
 		transX table	$ XCall v' xs'
-		
+
 	XCallApp v i xs
 	 -> do	v'		<- transV table v
 	 	xs'		<- mapM (transZM table) xs
 		transX table	$ XCallApp v' i xs'
-		
+
 	XApply x xs
 	 -> do	x'		<- transZM table x
 	 	xs'		<- mapM (transZM table) xs
 		transX table	$ XApply x' xs'
-		
+
 	XCurry v i xs
 	 -> do	v'		<- transV table v
 	 	xs'		<- mapM (transZM table) xs
 		transX table	$ XCurry v' i xs'
-		
+
 	XSuspend v xs
 	 -> do	v'		<- transV table v
 	 	xs'		<- mapM (transZM table) xs
@@ -269,38 +269,38 @@ instance Monad m => TransM m a1 a2 Exp where
 	XPrim v xs
 	 -> do	xs'		<- mapM (transZM table) xs
 	 	transX table	$ XPrim v xs'
-		
+
 	-- projection
 	XArg x t i
 	 -> do	x'		<- transZM table x
 		transX table	$ XArg x' t i
-		
+
 	XTag x
 	 -> do	x'		<- transZM table x
 	 	transX table	$ XTag x'
-		
+
 	XField x v f
 	 -> do 	x'		<- transZM table x
 		transX table	$ XField x' v f
-		
+
 	XFieldR x v f
 	 -> do	x'		<- transZM table x
 	 	transX table	$ XFieldR x' v f
-		
+
 	-- constants
 	XCon v
 	 -> do	v'		<- transV table v
 	 	transX table	$ XCon v'
-		
+
 	XInt i
 	 -> 	transX table 	$ XInt i
-	
+
 	XUnit
 	 ->	transX table 	$ XUnit
-	 
+
 	XLit l
 	 -> 	transX table 	$ XLit l
-	 
+
 	XSuper v
 	 -> do	v'		<- transV table v
 	 	transX table	$ XSuper v'
@@ -311,12 +311,12 @@ instance Monad m => TransM m a1 a2 Exp where
 	XAtom v
 	 -> do	v'		<- transV table v
 	 	transX table 	$ XAtom v'
-	
+
 	-- control
 	XLabel v
 	 ->	transX table 	$ XLabel v
 
-	 
+
 	XNull
 	 -> 	transX table 	$ XNull
 
@@ -324,7 +324,7 @@ instance Monad m => TransM m a1 a2 Exp where
 	XBox 	t x
 	 -> do	x'		<- transZM table x
 		transX table	$ XBox t x'
-		
+
 	XUnbox 	t x
 	 -> do	x'		<- transZM table x
 		transX table	$ XUnbox t x'
@@ -332,28 +332,28 @@ instance Monad m => TransM m a1 a2 Exp where
 	XForce 	x
 	 -> do	x'		<- transZM table x
 	 	transX table	$ XForce x'
-		
-		
+
+
 	-- allocation
 	XAlloc i
 	 ->	transX table 	$ XAlloc i
-	 
+
 	XAllocThunk v airity args
 	 -> do	v'		<- transV table v
 	 	transX table	$ XAllocThunk v' airity args
-		
+
 	XAllocData v airity
 	 -> do	v'		<- transV table v
 	 	transX table	$ XAllocData v' airity
-		
+
 	XAllocSusp v airity
 	 -> do	v'		<- transV table v
 	 	transX table	$ XAllocSusp v' airity
 
 	XAllocDataAnchored v i
 	 -> do	v'		<- transV table v
-	 	transX table	$ XAllocDataAnchored v i 
-	 	
+	 	transX table	$ XAllocDataAnchored v i
+
 
 -- Alt ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Alt where
@@ -374,19 +374,23 @@ instance Monad m => TransM m a1 a2 Alt where
 		ss3		<- transSS table ss2
 
 		transA table	$ ASwitch x' ss3
-		
+
 	ACaseSusp x l
 	 -> do	x'		<- transZM table x
 		transA table	$ ACaseSusp x' l
 
+	ACaseIndir x l
+	 -> do	x'		<- transZM table x
+		transA table	$ ACaseIndir x' l
+
 	ACaseDeath sp
 	 ->	transA table 	$ ACaseDeath sp
-	 
+
 	ADefault ss
 	 -> do	ss2		<- mapM (transZM table) ss
 	 	ss3		<- transSS table ss2
 	 	transA table	$ ADefault ss3
-	
+
 
 -- Guard ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Guard where
@@ -399,6 +403,6 @@ instance Monad m => TransM m a1 a2 Guard where
 	 	x1'		<- transZM table x1
 		x2'		<- transZM table x2
 		return		$ GCase sp b ss3 x1' x2'
-		
-	 
-		
+
+
+

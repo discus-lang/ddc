@@ -39,7 +39,9 @@
 #define _CASESUSP(var, label) \
 	case _tagSusp: \
 	  var = _FORCE(var); \
-	  goto label; \
+	  goto label;
+
+#define _CASEINDIR(var, label) \
 	case _tagIndir: \
 	  var = _FOLLOW(var); \
 	  goto label;

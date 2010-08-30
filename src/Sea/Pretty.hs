@@ -175,6 +175,7 @@ instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
 	  % "  }\n"
 
 	ACaseSusp x l				-> "  _CASESUSP (" % x % ", " % "_" % l % ");\n"
+	ACaseIndir x l				-> "  _CASEINDIR (" % x % ", " % "_" % l % ");\n"
 	ACaseDeath (SourcePos (f, l, c))	-> ppr "  _CASEDEATH (\"" % f % "\", " % l % ", " % c % ");\n"
 
 	ADefault [SGoto v]
