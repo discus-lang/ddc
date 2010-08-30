@@ -51,11 +51,10 @@ readSlot n
 	r0		<- lift $ newUniqueReg pObj
 	addBlock	[ Comment [ show dstreg ++ " = readSlot " ++ show n ]
 			, Assignment r0 (GetElemPtr True localSlotBase [llvmWordLitVar n])
-			, Assignment dstreg (Load (pVarLift r0)) ]
+			, Assignment dstreg (loadAddress r0) ]
 	return		dstreg
 
 readSlot n = panic stage $ "readSlot with slot == " ++ show n
-
 
 
 readSlotVar :: Int -> LlvmVar -> LlvmM ()
@@ -70,7 +69,7 @@ readSlotVar n dstreg
 	addBlockResult	dstreg
 		[ Comment [ show dstreg ++ " = readSlotVar " ++ show n ]
 		, Assignment r0 (GetElemPtr True localSlotBase [llvmWordLitVar n])
-		, Assignment dstreg (Load (pVarLift r0)) ]
+		, Assignment dstreg (loadAddress r0) ]
 
 readSlotVar n _ = panic stage $ "readSlotVar with slot == " ++ show n
 

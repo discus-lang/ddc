@@ -1,5 +1,6 @@
 module Llvm.Runtime.Alloc
-	( allocate )
+	( allocate
+	{- , allocThunk -} )
 where
 
 import Util
@@ -62,6 +63,17 @@ allocate bytes name
 		, Assignment ptr (Cast LM_Bitcast r4 (getVarType ptr))
 		]
 	return	ptr
+
+
+-- static inline Obj*	_allocThunk	(FunPtr	func,	UInt airity,	UInt args);
+
+{-
+allocThunk :: a -> Int -> Int -> LlvmM LlvmVar
+allocThunk funPtr airity args
+ =
+-}
+
+
 
 -- | Round up to a multiple of 8.
 roundUpBytes :: Int -> Int

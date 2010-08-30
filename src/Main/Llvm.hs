@@ -12,6 +12,7 @@ import Main.Util
 
 import DDC.Base.DataFormat
 import DDC.Base.Literal
+import DDC.Base.SourcePos
 import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Var
@@ -27,6 +28,7 @@ import Llvm.GhcReplace.Unique
 import Llvm.Runtime
 import Llvm.Runtime.Apply
 import Llvm.Runtime.Data
+import Llvm.Runtime.Error
 import Llvm.Runtime.Tags
 import Llvm.Util
 
@@ -133,28 +135,26 @@ outLlvm moduleName eTree pathThis
 	let globals	= moduleGlobals
 			++ (catMap llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
 
-	decls		<- catMapM llvmOfSeaDecls $ eraseAnnotsTree code
+	decls		<- mapM llvmOfSeaDecls $ eraseAnnotsTree code
 
 	return $ LlvmModule comments aliases globals fwddecls decls
 
 
 
 
-llvmOfSeaDecls :: Top (Maybe a) -> IO [LlvmFunction]
-llvmOfSeaDecls (PCafInit v t ss)
- = panic stage "Implement 'llvmOfSeaDecls (PCafInit v t ss)'"
-
-
+llvmOfSeaDecls :: Top (Maybe a) -> IO LlvmFunction
 llvmOfSeaDecls (PSuper v p t ss)
- = do	blocks	<- evalStateT (llvmOfFunc ss) (Nothing, [[]])
-	return $ [
+ = do	blocks	<- evalStateT (llvmOfFunc ss) initLlvmState
+	return	$
 		LlvmFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
 		(map (seaVar True . fst) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
 		[ LlvmBlock (fakeUnique "entry") blocks ]
-		]
+
+llvmOfSeaDecls (PCafInit v t ss)
+ = panic stage "Implement 'llvmOfSeaDecls (PCafInit v t ss)'"
 
 llvmOfSeaDecls x
  = panic stage $ "Implement 'llvmOfSeaDecls (" ++ show x ++ ")'"
@@ -195,17 +195,11 @@ moduleGlobals
 
 llvmOfFunc :: [Stmt a] -> LlvmM [LlvmStatement]
 llvmOfFunc []
- = return [Return Nothing]
+ =	endFunction
 
 llvmOfFunc ss
- = do	mapM llvmOfStmt ss
-	(Nothing, blks) <- get
-	-- At end of function reverse the list of blocks and then
-	-- concatenate the blocks to produce a list of statements.
-	return $ concat $ reverse $
-		case last ss of
-		  SReturn _	-> blks
-		  _		-> [Return Nothing] : blks
+ = do	mapM_	llvmOfStmt ss
+	endFunction
 
 llvmOfStmt :: Stmt a -> LlvmM ()
 llvmOfStmt stmt
@@ -245,7 +239,6 @@ llvmSwitch (XTag (XSlot v (TPtr TObj) i)) alt
 	let switchDefL	= (LMLocalVar switchDef LMLabel)
 
 	lift $ mapM_ (putStrLn . show) alt
-
 
 	let (def, rest)
 			= partition (\ s -> s =@= ADefault{} || s =@= ACaseDeath{}) alt
@@ -315,6 +308,15 @@ genAltDefault label (ADefault ss)
  = do	addBlock [ MkLabel label ]
 	mapM_ llvmOfStmt ss
 
+genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
+ = do	addBlock
+		[ MkLabel label
+		, Expr (Call StdCall (funcOfDecl deathCase) [i32LitVar 0, i32LitVar l, i32LitVar c] [])
+		, Unreachable
+		]
+
+	panic stage $ "getAltDefault : " ++ show s
+
 genAltDefault _ def
  =	panic stage $ "getAltDefault : " ++ show def
 
@@ -365,6 +367,21 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
 	addBlock	[ Assignment result (Call TailCall (toLlvmGlobalFunc v2 t args) [] []) ]
 	writeSlot	result i1
 
+
+{-
+llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) (XAllocThunk var airity args)
+ = do	addComment	$ "slot [" ++ show i1 ++ "] = allocThunk ("
+			++ seaVar False var ++ "," ++ show airity
+			++ "," ++ show args ++ ")"
+	result		<- allocThunk (seaVar False var) airity args
+	writeSlot	result i1
+-}
+
+
+
+
+
+
 llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
  | varName vt1 == "Int32#" && varName vt == "Int32#"
  = do	dstreg		<- llvmOfXPrim i32 op args
@@ -381,14 +398,14 @@ llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) exp
 llvmOfAssign (XVarCAF v1 t1) t@TPtr{} (XInt 0)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = NULL"
 	dst		<- lift $ newUniqueReg ppObj
-	addBlock	[ Assignment dst (Load (pVarLift (pVarLift (toLlvmCafVar v1 t1))))
+	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
 
 llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = " ++ seaVar False v2 ++ " ()"
 	dst1		<- lift $ newUniqueReg pObj
 	dst2		<- lift $ newUniqueReg pObj
-	addBlock	[ Assignment dst1 (Load (pVarLift (pVarLift (toLlvmCafVar v1 t1))))
+	addBlock	[ Assignment dst1 (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
 			, Assignment dst2 (Call TailCall (toLlvmGlobalFunc v2 t args) [] [])
 			, Store dst2 (pVarLift dst1)
 			]
@@ -483,7 +500,7 @@ llvmOfPtrManip t FAdd args
 	 ->	do	addComment "llvmOfPtrManip"
 			src		<- lift $ newUniqueReg $ toLlvmType t
 			dst		<- lift $ newUniqueReg $ toLlvmType t
-			addBlock	[ Assignment src (Load (pVarLift (toLlvmVar v t)))
+			addBlock	[ Assignment src (loadAddress (toLlvmVar v t))
 					, Assignment dst (GetElemPtr True src [llvmWordLitVar i]) ]
 			return dst
 

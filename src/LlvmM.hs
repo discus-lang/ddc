@@ -4,7 +4,12 @@ module LlvmM
 	, addBlock
 	, addBlockResult
 	, addComment
-	, currentReg )
+	, currentReg
+
+	, initLlvmState
+
+	, startFunction
+	, endFunction )
 where
 
 import Util
@@ -17,32 +22,54 @@ import Llvm
 -- the head of the list and when all statements for a function are available,
 -- the list of blocks is reversed and concatenated to produce a list of
 -- statements.
-type LlvmState = (Maybe LlvmVar, [[LlvmStatement]])
+data LlvmState
+	= LS
+	{ freg :: Maybe LlvmVar
+	, fblocks :: [[LlvmStatement]] }
 
 type LlvmM = StateT LlvmState IO
 
 
+initLlvmState :: LlvmState
+initLlvmState = LS { freg = Nothing, fblocks = [] }
+
 addBlock :: [LlvmStatement] -> LlvmM ()
 addBlock code
  = do	state	<- get
-	put (Nothing, code : (snd state))
+	modify $ \s -> s { freg = Nothing, fblocks = code : (fblocks state) }
 
 
 addBlockResult :: LlvmVar -> [LlvmStatement] -> LlvmM ()
 addBlockResult result code
  = do	state	<- get
-	put (Just result, code : (snd state))
+	modify $ \s -> s { freg = Just result, fblocks = code : (fblocks state) }
 
 
 addComment :: LMString -> LlvmM ()
 addComment text
- = do	(reg, code)	<- get
-	put (reg, [Comment (lines text)] : code)
+ = do	state	<- get
+	modify $ \s -> s { freg = freg state, fblocks = [Comment (lines text)] : (fblocks state) }
 
 
 currentReg :: LlvmM LlvmVar
 currentReg
- = do	(Just reg, _)	<- get
-	return reg
+ = do	state	<- get
+	return $ fromJust $ freg state
 
+startFunction :: LlvmM ()
+startFunction
+ =	modify $ \s -> s { freg = Nothing, fblocks = [] }
 
+endFunction :: LlvmM [LlvmStatement]
+endFunction
+ = do	-- At end of function reverse the list of blocks and then
+	-- concatenate the blocks to produce a list of statements.
+	state		<- get
+	let blks	= fblocks state
+	case blks of
+	  []	->	return	[Return Nothing]
+	  x:xs	->	return	$ concat
+				$ reverse
+				$ case last x of
+				    Return _	-> blks
+				    _		-> [Return Nothing] : blks
