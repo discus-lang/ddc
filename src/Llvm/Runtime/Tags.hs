@@ -1,12 +1,16 @@
 {-# OPTIONS -fno-warn-type-defaults #-}
 
 module Llvm.Runtime.Tags
-	( tagThunk
+	( tagBase
+	, tagThunk
 	, tagData
 	, tagDataR
 	, tagDataM
 	, tagSuspIndir
-	, tagDataRS )
+	, tagDataRS
+	, tagIndir
+	, tagSusp
+ )
 where
 
 import Data.Bits
@@ -21,6 +25,9 @@ import Llvm.Util
 
 
 -- Tag values from runtime/Object.h.
+
+tagBase :: LlvmVar
+tagBase = i32LitVar 0
 
 tagThunk :: LlvmVar
 tagThunk = i32LitVar 0x11
@@ -39,6 +46,12 @@ tagSuspIndir = i32LitVar 0x51
 
 tagDataRS :: Int -> LlvmVar
 tagDataRS dataSize = i32LitVar ((shiftL dataSize 4) .|. objModeDataRS)
+
+tagIndir :: LlvmVar
+tagIndir = i32LitVar 0x0fffffd
+
+tagSusp :: LlvmVar
+tagSusp = i32LitVar 0x0fffffe
 
 
 -- objModeForward, objModeFixed

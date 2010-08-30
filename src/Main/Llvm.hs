@@ -26,6 +26,8 @@ import Llvm.Invoke
 import Llvm.GhcReplace.Unique
 import Llvm.Runtime
 import Llvm.Runtime.Apply
+import Llvm.Runtime.Data
+import Llvm.Runtime.Tags
 import Llvm.Util
 
 import Sea.Exp
@@ -126,7 +128,7 @@ outLlvm moduleName eTree pathThis
 
 	let code = seaCafInits ++ seaSupers
 
-	let fwddecls	= [panicOutOfSlots, allocCollect, force, apply1FD, apply2FD, apply3FD, apply4FD]
+	let fwddecls	= [panicOutOfSlots, allocCollect, force, apply1FD, apply2FD, apply3FD, apply4FD, baseFalse, baseTrue]
 
 	let globals	= moduleGlobals
 			++ (catMap llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
@@ -215,6 +217,7 @@ llvmOfStmt stmt
 	SGoto loc	-> addBlock [Branch (LMNLocalVar (seaVar False loc) LMLabel)]
 	SAssign v1 t v2 -> llvmOfAssign v1 t v2
 	SReturn v	-> llvmOfReturn v
+	SSwitch e a	-> llvmSwitch e a
 	SLabel l	-> branchLabel (seaVar False l)
 
 	-- LLVM is SSA so auto variables do not need to be declared.
@@ -222,6 +225,98 @@ llvmOfStmt stmt
 
 	_
 	  -> panic stage $ "llvmOfStmt " ++ (take 150 $ show stmt)
+
+--------------------------------------------------------------------------------
+
+llvmSwitch :: Exp a -> [Alt a] -> LlvmM ()
+llvmSwitch (XTag (XSlot v (TPtr TObj) i)) alt
+ = do	addComment	$ "---------------------------------------\n"
+			++ "llvmSwitch : " ++ seaVar False v
+	reg		<- readSlot i
+	tag		<- getObjTag reg
+	addComment	$ "llvmSwitch : " ++ show tag
+			++ "\n-----------------------------------------"
+
+
+	switchEnd	<- lift $ newUnique "switch.end"
+	switchDef	<- lift $ newUnique "switch.default"
+
+	let switchEndL	= (LMLocalVar switchEnd LMLabel)
+	let switchDefL	= (LMLocalVar switchDef LMLabel)
+
+	lift $ mapM_ (putStrLn . show) alt
+
+
+	let (def, rest)
+			= partition (\ s -> s =@= ADefault{} || s =@= ACaseDeath{}) alt
+
+	alts		<- lift $ mapM (genAltVars switchEndL) rest
+
+	addBlock	[ Switch tag switchDefL (map fst alts) ]
+
+	mapM_		genAltBlock alts
+
+	if null def
+	  then	addBlock [ Branch switchEndL ]
+	  else	mapM_ (genAltDefault switchDef) def
+
+	addBlock	[ MkLabel switchEnd ]
+
+llvmSwitch e _
+ = 	panic stage $ "llvmSwitch : " ++ show e
+
+
+genAltVars :: LlvmVar -> Alt a -> IO ((LlvmVar, LlvmVar), Alt a)
+genAltVars switchEnd alt@(ASwitch (XCon v) [])
+ | varName v == "True"
+ =	return ((i32LitVar 1, switchEnd), alt)
+
+ | varName v == "Unit"
+ =	return ((i32LitVar 0, switchEnd), alt)
+
+genAltVars _ alt@(ACaseSusp (XSlot v t i) label)
+ = do	lab	<- newUniqueLabel "susp"
+	return	((tagSusp, lab), alt)
+
+genAltVars _ alt@(ACaseIndir (XSlot v t i) label)
+ = do	lab	<- newUniqueLabel "indir"
+	return	((tagIndir, lab), alt)
+
+genAltVars _ (ADefault _)
+ = panic stage "getAltVars : found ADefault."
+
+genAltVars _ x
+ = panic stage $ "getAltVars : found " ++ show x
+
+
+genAltBlock :: ((LlvmVar, LlvmVar), Alt a) -> LlvmM ()
+genAltBlock ((_, lab), ACaseSusp (XSlot v t i) label)
+ = do	addBlock	[ MkLabel (uniqueOfLlvmVar lab) ]
+	obj		<- readSlot i
+	forced		<- forceObj obj
+	writeSlot	forced i
+	addBlock	[ Branch lab ]
+
+genAltBlock ((_, lab), ACaseIndir (XSlot v t i) label)
+ = do	addBlock [ MkLabel (uniqueOfLlvmVar lab) ]
+	obj		<- readSlot i
+	followed	<- followObj obj
+	writeSlot	followed i
+	addBlock	[ Branch lab ]
+
+genAltBlock ((_, lab), ASwitch (XCon _) [])
+ =	addBlock [ Branch lab ]
+
+genAltBlock ((_, lab), x)
+ = do	panic stage $ "getAltBlock : " ++ show x
+
+genAltDefault :: Unique -> Alt a -> LlvmM ()
+genAltDefault label (ADefault ss)
+ = do	addBlock [ MkLabel label ]
+	mapM_ llvmOfStmt ss
+
+genAltDefault _ def
+ =	panic stage $ "getAltDefault : " ++ show def
 
 --------------------------------------------------------------------------------
 
@@ -254,13 +349,20 @@ llvmOfAssign (XSlot v1 t1 i) t@(TPtr TObj) (XVar v2 t2)
 
 llvmOfAssign ((XSlot v1 t1 i)) t@(TPtr TObj) (XBox t2 exp)
  | t1 == t
- = do	boxed		<- boxExp exp
+ = do	boxed		<- boxExp t2 exp
 	writeSlot	boxed i
 
 llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XApply (XSlot v2 t2 i2) args)
  | t1 == t && t2 == t
  = do	fptr		<- readSlot i2
 	result		<- llvmFunApply fptr t2 args
+	writeSlot	result i1
+
+
+llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
+ | t1 == t
+ = do	result		<- lift $ newUniqueNamedReg "result" pObj
+	addBlock	[ Assignment result (Call TailCall (toLlvmGlobalFunc v2 t args) [] []) ]
 	writeSlot	result i1
 
 llvmOfAssign (XVar v1 t1@(TCon vt1 _)) (TCon vt _) x@(XPrim op args)
@@ -319,19 +421,23 @@ llvmFunParam p
 
 
 
-boxExp :: Exp a -> LlvmM LlvmVar
-boxExp (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
- =	boxInt32 $ i32LitVar value
+boxExp :: Type -> Exp a -> LlvmM LlvmVar
+boxExp t (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
+ = do	addComment $ "boxing1 " ++ show t
+	boxInt32 $ i32LitVar value
 
-boxExp (XPrim op args)
- = do	calc	<- llvmOfXPrim pObj op args
+boxExp t (XPrim op args)
+ = do	addComment $ "boxing2 " ++ show t
+	calc	<- llvmOfXPrim (toLlvmType t) op args
+	addComment $ "Erik : " ++ show calc
 	boxAny	calc
 
-boxExp (XVar v1 t1@TCon{})
- =	boxAny $ toLlvmVar v1 t1
+boxExp t (XVar v1 t1@TCon{})
+ = do	addComment $ "boxing3 " ++ show t
+	boxAny $ toLlvmVar v1 t1
 
-boxExp x
- = panic stage $ "Unhandled : boxExp " ++ take 30 (show x)
+boxExp t x
+ = panic stage $ "Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ take 30 (show x)
 
 
 --------------------------------------------------------------------------------
@@ -363,7 +469,7 @@ primMapFunc
 
 primMapFunc t build sofar exp
  = do	val		<- llvmVarOfExp exp
-	dst		<- lift $ newUniqueNamedReg "prim.fold" (getVarType val)
+	dst		<- lift $ newUniqueNamedReg "prim.fold" t
 	addBlock	[ Assignment dst (build sofar val) ]
 	return		dst
 
@@ -443,6 +549,8 @@ llvmOpOfPrim p
 	FAdd	-> LlvmOp LM_MO_Add
 	FSub	-> LlvmOp LM_MO_Sub
 	FMul	-> LlvmOp LM_MO_Mul
+
+	FEq	-> Compare LM_CMP_Eq
 	_	-> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
 
 
@@ -454,6 +562,7 @@ toLlvmType TVoid	= LMVoid
 
 toLlvmType (TCon v _)
  = case varName v of
+	"Bool#"		-> i1
 	"Int32#"	-> i32
 	"Int64#"	-> i64
 	name		-> panic stage $ "toLlvmType unboxed " ++ name ++ "\n"

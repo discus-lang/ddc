@@ -50,6 +50,19 @@ forceObj orig
 	return forced
 
 
+followObj :: LlvmVar -> LlvmM LlvmVar
+followObj orig
+ = do	addComment $ "followObj " ++ show orig
+	r0 	<- lift $ newUniqueReg pObj
+	r1	<- lift $ newUniqueReg ppObj
+	r2	<- lift $ newUniqueReg pObj
+	addBlock
+		[ Assignment r0 (GetElemPtr False orig [llvmWordLitVar 2])
+		, Assignment r1 (Cast LM_Bitcast r0 ppObj)
+		, Assignment r2 (Load r1) ]
+	return	r2
+
+
 getObjTag :: LlvmVar -> LlvmM LlvmVar
 getObjTag obj
  = do	r0	<- lift $ newUniqueReg $ pLift i32
@@ -58,7 +71,17 @@ getObjTag obj
 	addBlock
 		[ Assignment r0 (GetElemPtr False obj [llvmWordLitVar 0, i32LitVar 0])
 		, Assignment r1 (Load r0)
-		, Assignment val (LlvmOp LM_MO_AShr r1 (i32LitVar 0))
+		, Assignment val (LlvmOp LM_MO_AShr r1 (i32LitVar 8))
 		]
 	return	val
+
+
+
+
+baseFalse :: LlvmFunctionDecl
+baseFalse = LlvmFunctionDecl "Base_False" External CC_Ccc pObj FixedArgs [] ptrAlign
+
+baseTrue :: LlvmFunctionDecl
+baseTrue = LlvmFunctionDecl "Base_True" External CC_Ccc pObj FixedArgs [] ptrAlign
+
 
