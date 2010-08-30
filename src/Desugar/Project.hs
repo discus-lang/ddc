@@ -435,7 +435,7 @@ makeProjFun sp tData dataDef fieldV
 
 		
 makeProjFunAlt sp vObj vField ctorDef
- = do	let mFieldIx	= lookupTypeOfFieldFromCtorDef vField ctorDef
+ = do	let mFieldIx	= lookupTypeOfNamedFieldFromCtorDef vField ctorDef
 	vBind		<- newVarN NameValue
 			
 	case mFieldIx of

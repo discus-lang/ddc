@@ -5,18 +5,14 @@ module Desugar.Slurp.Slurp
 	(slurpTreeM)
 where
 import Util
--- import Shared.Exp
 import Constraint.Exp
 import Constraint.Bits
 import Desugar.Slurp.Base
--- import Desugar.Slurp.SlurpX
 import Desugar.Slurp.SlurpS
 import DDC.Solve.Location
--- import DDC.Base.SourcePos
 import DDC.Var
 import DDC.Type			()
 import DDC.Type.Data
--- import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
 
@@ -165,24 +161,25 @@ slurpP	(PTypeSig sp vs tSig)
 slurpP x@(PTypeSynonym sp v t)
  = 	panic stage $ "Oops, we don't handle PTypeSynonym yet!"
 
-slurpP	(PData sp def@(DataDef v vs ctors))
- = do 	(ctors', constrss)
-			<- liftM unzip
-			$  mapM (slurpCtorDef v vs) 
-			$  Map.elems ctors
+slurpP p@(PData sp dataDef)
+ = do	modify 	$ \s -> s 
+		{ stateDataDefs	= Map.insert 
+					(dataDefName dataDef)
+					dataDef
+					(stateDataDefs s)
 
---	let top'	= PData Nothing v vs ctors'
---	addDataDef top'
+		, stateCtorData	= Map.union 
+					(stateCtorData s)
+					(Map.fromList $ zip
+						(Map.keys  $ dataDefCtors dataDef)
+						(repeat    $ dataDefName dataDef)) }
+			 
+	return 	( PData Nothing dataDef
+		, [])
 
-	
---	return	( top'
---		, concat constrss )
-
-	return	$ error "Desugar.Slurp.Slurp.slurpP: not finished"
 			
 slurpP	(PProjDict sp t ss)
- = do
- 	let projVars	= [ (vField, vImpl)
+ = do 	let projVars	= [ (vField, vImpl)
 				| SBind _ (Just vField) (XVar _ vImpl) <-  ss]
 
 	-- All the RHS of the statements are vars, so we don't get any useful constraints back
@@ -194,9 +191,7 @@ slurpP	(PProjDict sp t ss)
 		, [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
 	
 slurpP (PBind sp mV x)
-
- = do
-	(vT, eff, clo, stmt', qs)
+ = do	(vT, eff, clo, stmt', qs)
 			<- slurpS (SBind sp mV x)
 
 	-- If the stmt binds a var then we want the type for it from the solver.
@@ -213,132 +208,5 @@ slurpP (PBind sp mV x)
 	
 	return	( PBind Nothing mV' x'
 		, qs )
-				
-		
--- CtorDef ----------------------------------------------------------------------------------------
--- | Make type schemes for constructors.
---   Slurp out constraints for data field initialisation code.	
-slurpCtorDef
-	:: Var 					-- Datatype name.
-	-> [Var] 				-- Datatype args.
-	-> CtorDef 				-- Constructor def.
 
-	-> CSlurpM 	( CtorDef 		-- Annotated constructor def.
-			, [CTree] )		-- Schemes and constraints.
-
-slurpCtorDef vData  vs CtorDef{}
- = error "Desugar.Slurp.Slurp: slurpCtorDef"
-{-
- = do
-	Just (TVar _ (UVar cNameT))
-			<- bindVtoT cName
-
-	-- Slurp the initialization code from the data fields.
-	(fieldDefs', initConstrss)
-			<- liftM unzip
-			$  mapM (slurpDataField sp vData cName) fieldDefs
-	
-	-- Build a constructor type from the data definition.
- 	ctorType	<- makeCtorType newVarN vData vs cNameT fieldDefs'
-	
-	-- Add the definition to the ctor table.
-	--	The slurper for pattern matching code will need these definitions later on.
-	addDef cNameT ctorType
-
-
-	-- Record what data type this constructor belongs to.
-	let kData	= makeDataKind vs
-	let tsData	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vs
-	modify (\s -> s {
-		stateCtorType	= Map.insert cName 
-					(makeTData vData kData tsData)
-				$ stateCtorType s })
-
-	-- Record the fields for this constructor.
-	modify (\s -> s { 
-		stateCtorFields	= Map.insert cName fieldDefs'
-				$ stateCtorFields s })
-
-	let constr = 
-		   [ CDef (TSV $ SVCtorDef sp vData cName) (TVar kData $ UVar cNameT) ctorType ]
-		++ case concat initConstrss of
-			[]	-> []
-			_	-> [CBranch 
-					{ branchBind = BNothing
-					, branchSub = concat initConstrss }]
-	
-	return	( CtorDef Nothing cName fieldDefs'
-		, constr )
- 	
-
--- DataField --------------------------------------------------------------------------------------	
-slurpDataField 
-	:: SourcePos
-	-> Var 					-- Datatype name.
-	-> Var					-- Constructor name
-	-> DataField (Exp Annot1) Type	 	-- DataField def.
-	-> CSlurpM 
-		( DataField (Exp Annot2) Type	-- Annotated DataField def.
-		, [CTree])			-- Constraints for field initialisation code.
-	
-slurpDataField sp vData vCtor field
- | Just initX 	<- dInit field
- , Just label	<- dLabel field
- = do
-	tInit		<- newTVarD
-
-	-- vars for the initialisation function
-	tInitFun	<- newTVarD
-	rInit		<- newTVarR
-	
-	(tX, eX, cX, initX', qsX)	
-		<- slurpX initX
-
-	tField_fresh	<- freshenType $ dType field
-	
-	let qs	=
-		[ CEq (TSV $ SVCtorField sp vData vCtor label) 
-			tX (makeTFun tInitFun tField_fresh tPure tEmpty) ]
-
-	let field'	= 
-		DataField 
-			{ dPrimary	= dPrimary field
-			, dLabel	= dLabel field
-			, dType		= dType field
-			, dInit		= Just initX' }
-	
-	return	( field'
-		, qs ++ qsX
-		)
- 	
- | otherwise
- = do
-  	let field'	= 
-		DataField
-			{ dPrimary	= dPrimary field
-			, dLabel	= dLabel   field
-			, dType		= dType	   field
-			, dInit		= Nothing }
-			
-	return	( field'
-		, [])
-
-
--- | Replace non-ctor variables in this type by fresh ones.
-freshenType 
-	:: Type
-	-> CSlurpM Type
-	
-freshenType tt
- = do	let vsFree	= freeVars tt
- 	let vsFree'	= filter (\v -> (not $ Var.isCtorName v)) $ Set.toList vsFree
-	let tsFree'	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsFree'
-	
-	vsFresh		<- mapM newVarZ vsFree'
-	let tsFresh	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsFresh
-	
-	let sub		= Map.fromList $ zip tsFree' tsFresh
-
-	let tt'		= subTT_noLoops sub tt
-	return	tt'
--}					
+					

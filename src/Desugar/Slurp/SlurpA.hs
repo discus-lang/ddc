@@ -5,9 +5,10 @@ where
 import Util
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
+import DDC.Core.Check.Type
+import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var
-import qualified Data.Map	as Map
 
 stage	= "Desugar.Slurp.SlurpA"
 
@@ -108,7 +109,6 @@ slurpG	(GExp sp w x)
 		[ CEq	(TSU $ SUGuards sp)	tX	$ tW 
 		, CEq	(TSE $ SEGuardObj sp)	eGuard	$ makeTSum kEffect (eX : effMatch) ]
 
-	-----	
 	return	( cbindsW		
 		, Nothing
 		, eGuard
@@ -128,36 +128,29 @@ slurpW	:: Pat Annot1
 slurpW	(WConLabel sp vCon lvs)
  = do	
 	-- Lookup what data type this constructor belongs to.
-	ctorType	<- gets stateCtorType
-
-	let tData	
-	 	= case Map.lookup vCon ctorType of
-			Nothing -> panic stage 
-				$ "slurpW: can't find type data type definition for data constructor '" 
-				% vCon % "'"
-
-			Just x	-> x
+	mDataDef	<- lookupDataDefOfCtorNamed vCon
+	let dataDef	= fromMaybe (panic stage 
+					$ "slurpW: can't find type data type definition for data constructor '"
+					% vCon % "'")
+			$ mDataDef
 	
-	let Just (_, _, tsData)
-		= takeTData tData
-
-	-- Instantiate each of the poly-vars in the data type.
-	let vsData	= map (\(TVar k (UVar v)) -> v) tsData
-
-	vsInst		<- mapM newVarZ vsData
-	let tsInst	=  map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsInst
-
-
-	-- Apply the substitution to the data type.
-	let subInst	= Map.fromList 
-			$ zip tsData tsInst
-
-	let tPat	= subTT_noLoops subInst tData
-
+	let vsParam	= dataDefParams dataDef
+	
+	-- Instantiate each of the vars in the data type.
+	vsInst		<- mapM newVarZ vsParam
+	let ksInst	=  map (\(Just k) -> k) $ map (kindOfSpace . varNameSpace) vsInst
+	let tsInst	=  zipWith TVar ksInst $ map UVar vsInst
+	
+	-- This is the type the pattern must be.
+	let tPat	= makeTData 
+				(dataDefName dataDef)
+				(makeDataKind vsParam)
+				tsInst
+				
 	-- Slurp constraints for each of the bound fields.
 	(lvs', cBinds, cTrees)
 			<- liftM unzip3
-			$  mapM (slurpLV vCon tData subInst) lvs
+			$  mapM (slurpLV vCon tsInst) lvs
 			
  	return	( catMaybes cBinds
 		, tPat
@@ -207,51 +200,34 @@ slurpW w
 
 
 -- Labels ------------------------------------------------------------------------------------------
-slurpLV	:: Var				-- Constructor name.
-	-> Type				-- Return type of constructor.
-	-> Map Type Type		-- Instantiation of data type vars.
-	-> (Label Annot1, Var)
+slurpLV	:: Var				-- ^ Data constructor name.
+	-> [Type]			-- ^ Parameter types of data type constructor
+	-> (Label Annot1, Var)		-- ^ Field label and var to bind that field to.
 	-> CSlurpM 
-		( (Label Annot2, Var)
-		, Maybe (Var, Var)
+		( (Label Annot2, Var)	-- field label and orginal binding var
+		, Maybe (Var, Var)	-- original binding variable, and type var for that field.
 		, [CTree] )
-	
-slurpLV vCon tData subInst (LIndex sp ix, v)
- = 	error "SlurpA.slurpLV: broken"	
-{-
+
+-- A field label using a numeric index.	
+slurpLV vCtor tsParams (LIndex sp ix, vBind)
+ = do
 	-- create a new type var for this arg.
- 	(TVar _ (UVar vT))	<- lbindVtoT v
-
-	-- Lookup the fields for this constructor.
-	ctorFields	<- gets stateCtorFields
-	let Just fields	= Map.lookup vCon ctorFields
-	
-	-- Get the field that this label is referring to.
-	let mField	= lookup ix $ zip [0..] 
-			$ [ f	| f <- fields
-				, dPrimary f ]
-
+ 	(TVar _ (UVar vT))	<- lbindVtoT vBind
 	wantTypeV vT	
 
-
-	case mField of
-	 -- Ctor has required field, ok.
-	 Just field
-	  -> do	let tField	= subTT_noLoops subInst
-				$ dType field
-
-		return	( (LIndex Nothing ix, v)
-			, Just (v, vT)
-			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField] )
-
+	-- Get the ctor definition.
+	Just dataDef	<- lookupDataDefOfCtorNamed vCtor
+	Just ctorDef	<- lookupCtorDefOfCtorNamed vCtor
+	
+	case lookupTypeOfNumberedFieldFromCtorDef ix ctorDef of
          -- Uh oh, there's no field with this index.
 	 --	Add the error to the monad and return some dummy info so
 	 --	that the slurper can proceed and maybe find more errors.
 	 Nothing
-	  -> do addError
+	  -> do	addError
 	   	  (ErrorCtorAirity 
-			{ eCtorVar		= vCon
-			, eCtorAirity		= length fields
+			{ eCtorVar		= vCtor
+			, eCtorAirity		= ctorDefArity ctorDef
 			, ePatternAirity	= ix + 1})
 
 		let v	= varWithName "<error>"
@@ -259,33 +235,42 @@ slurpLV vCon tData subInst (LIndex sp ix, v)
 		return	( (LVar Nothing v, v)
 			, Nothing
 			, [] )
--}
 
-slurpLV vCon tData subInst (LVar sp vField, v)
- = error "SlurpA.slurpLV: broken"
-{- do 	-- Create a new type var for this arg.
- 	Just (TVar _ (UVar vT))	<- bindVtoT v
+	 -- Got the type of the field.
+	 -- The field type comes with the same outer forall quantifiers that 
+	 -- were on the scheme for the whole constructor type.
+	 Just tField
+	  -> let tField_inst	= fst 
+				$ instantiateT (stage ++ ".slurpLV") 
+					tField tsParams
+				
+	     in	 return ( (LIndex Nothing ix, vBind)
+			, Just (vBind, vT)
+			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )
+
+
+slurpLV vCtor tsParams (LVar sp vField, vBind)
+ = do 	-- Create a new type var for this arg.
+ 	Just (TVar _ (UVar vT))	<- bindVtoT vBind
+	wantTypeV vT
  
- 	-- Lookup the fields for this constructor.
- 	ctorFields	<- gets stateCtorFields
-	let Just fields	= Map.lookup vCon ctorFields
+	-- Get the ctor definition.
+	Just dataDef	<- lookupDataDefOfCtorNamed vCtor
+	Just ctorDef	<- lookupCtorDefOfCtorNamed vCtor
+
+	-- Lookup the fields for this constructor.
+	case lookupTypeOfNamedFieldFromCtorDef vField ctorDef of
+
+	 -- If the field refered to doesn't exist this should have
+	 -- been detected by the renamer.
+	 Nothing
+	  -> panic stage $ "slurpLV: no field named " % vField
 	
-	-- Get the type for this field.
-	let tFieldCands	= [ dType f	| f	<- fields
-					, liftM varName (dLabel f) == Just (varName vField) ]
+	 Just tField
+ 	  -> let tField_inst	= fst 
+				$ instantiateT (stage ++ ".slurpLV") 
+					tField tsParams
 
-	let tField_	= case tFieldCands of
-				[f]	-> f
-				[]	-> panic stage	$ "slurpLV: no field named " % vField % "\n"
-							% "    " % Var.prettyPos vField % "\n"
-							% "    vCon      = " % vCon	% "\n"
-							% "    tData     = " % tData	% "\n"
-							% "    fields are " % (map dLabel fields) % "\n"
-					
-	let tField	= subTT_noLoops subInst 
-			$ tField_
-
- 	return 	( (LVar Nothing vField, v)
- 		, Just (v, vT)
-		, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField] )
--}
+	     in	return 	( (LVar Nothing vField, vBind)
+ 			, Just (vBind, vT)
+			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )

@@ -5,25 +5,23 @@ module	Desugar.Slurp.State
 	, BindMode (..)
 	, CSlurpM
 	, CSlurpS  (..)
-	, initCSlurpS )
+	, initCSlurpS 
+	, lookupDataDefOfCtorNamed
+	, lookupCtorDefOfCtorNamed)
 where
 import Util
 import DDC.Solve.Error
---import DDC.Desugar.Exp
 import DDC.Main.Pretty
 import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Type.Data
 import DDC.Var
--- import Source.Exp	(DataField(..))
 import qualified Data.Set 	as Set
 import qualified Data.Map 	as Map
 import qualified Shared.Unique	as Unique
 
-
 type	Annot1	= SourcePos
 type	Annot2	= Maybe (Type, Effect)
-
 
 -- | Expresses how a particular variable has been bound
 --	At the moment we only differentiate between BindLet vs the rest during type inference.
@@ -46,45 +44,44 @@ data	BindMode
 	| BindSnoc			-- var bound by a pattern / deconstructor
 	deriving (Show, Eq)
 
-instance Pretty BindMode PMode
- where
- 	ppr xx	= ppr $ show xx
+instance Pretty BindMode PMode where 
+ ppr xx	= ppr $ show xx
 
 
 -- | State monad / state used by the constraint slurper.
 type	CSlurpM	= State CSlurpS
-data	CSlurpS =
-	CSlurpS 
+
+data	CSlurpS 
+	= CSlurpS 
      	{ stateTrace		:: [String]
 	, stateErrors		:: [Error]
 
-	-- Variable generator.
+	-- | Variable generator.
 	, stateGen		:: Map NameSpace VarId
 
+	-- | Data type definitions.
 	, stateDataDefs		:: Map Var DataDef
 
-	-- Types for constructors
-	--	These are used to work out the types for corresponding patterns.
-	, stateCtorType		:: Map Var Type					
+	-- | Map of constructor type names to data type names.
+	, stateCtorData		:: Map Var Var
 
-	-- The fields in each constructor.
---	, stateCtorFields	:: Map Var [DataField (Exp Annot2) Type]	
-
-	-- The set of TEC vars we need to infer TECs for so that we can 
+	-- | The set of TEC vars we need to infer TECs for so that we can 
 	--	convert the desugared code to core.
 	, stateTypesRequest	:: Set Var
 
+	-- | Types defined via by a foreign import.
 	, stateSlurpDefs	:: Map Var Type
 
-	  -- maps value vars to type vars, v -> sigma_v
+	-- | Maps value vars to type vars, v -> sigma_v
 	, stateVarType		:: Map Var Var }
 	
 	
-
+-- | The initial constraint slurper state.
 initCSlurpS 	:: CSlurpS
 initCSlurpS 
 	= CSlurpS
 	{ stateTrace		= []
+
 	, stateErrors		= []
 	, stateGen		
 	   = 	Map.fromList
@@ -97,13 +94,31 @@ initCSlurpS
 		, (NameClass,	VarId ("w" ++ Unique.typeConstraint) 0) ]
 		
 	, stateDataDefs		= Map.empty
-	, stateCtorType		= Map.empty
---	, stateCtorFields	= Map.empty
-
+	, stateCtorData		= Map.empty
 	, stateTypesRequest	= Set.empty
-
 	, stateSlurpDefs 	= Map.empty
-
 	, stateVarType		= Map.empty }
-				
+		
+
+-- | Lookup the data type definition containing a given data constructor
+lookupDataDefOfCtorNamed :: Var -> CSlurpM (Maybe DataDef)
+lookupDataDefOfCtorNamed vCtor
+ = do	ctorData	<- gets stateCtorData
+	dataDefs	<- gets stateDataDefs
+	
+	return	
+	 $ do 	vData	<- Map.lookup vCtor ctorData
+		Map.lookup vData dataDefs
+		
+
+-- | Lookup the data constructor definition for the constructor with this name.
+lookupCtorDefOfCtorNamed :: Var -> CSlurpM (Maybe CtorDef)
+lookupCtorDefOfCtorNamed vCtor
+ = do	ctorData	<- gets stateCtorData
+	dataDefs	<- gets stateDataDefs
+	
+	return
+	 $ do	vData	<- Map.lookup vCtor ctorData
+		dataDef	<- Map.lookup vData dataDefs
+		Map.lookup vCtor $ dataDefCtors dataDef
 

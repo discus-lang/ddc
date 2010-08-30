@@ -3,7 +3,6 @@ module Desugar.Slurp.Base
 	( module DDC.Main.Error
 	, module DDC.Type
 	, module Shared.VarPrim
-	, module Type.Util
 	, module DDC.Solve.Error
 	, module Constraint.Exp
 	, module Constraint.Bits
@@ -15,7 +14,6 @@ module Desugar.Slurp.Base
 	, module Desugar.Slurp.Util)
 where
 import Shared.VarPrim
-import Type.Util
 import Constraint.Exp
 import Constraint.Bits
 import Desugar.Util

@@ -4,9 +4,11 @@ module DDC.Type.Data.Base
 	( DataDef(..)
 	, CtorDef(..)
 	, lookupTypeOfFieldFromDataDef
-	, lookupTypeOfFieldFromCtorDef
+	, lookupTypeOfNamedFieldFromCtorDef
+	, lookupTypeOfNumberedFieldFromCtorDef
 	, fieldsOfDataDef)
 where
+import DDC.Type.Strip
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Var
@@ -62,34 +64,34 @@ lookupTypeOfFieldFromDataDef :: Var -> DataDef -> Maybe Type
 lookupTypeOfFieldFromDataDef v def
 	= listToMaybe
 	$ catMaybes
-	$ map (lookupTypeOfFieldFromCtorDef v) 
+	$ map (lookupTypeOfNamedFieldFromCtorDef v) 
 	$ Map.elems 
 	$ dataDefCtors def
 
 
 -- | Get the type of a named field from a data constructor definition.
-lookupTypeOfFieldFromCtorDef :: Var -> CtorDef -> Maybe Type
-lookupTypeOfFieldFromCtorDef v def
- = case Map.lookup v $ ctorDefFields def of
-	Just ix	-> getParamOfType ix $ ctorDefType def
-	Nothing	-> Nothing
+--   The argument type is wrapped in the same forall quantifiers as the type
+--   of the whole constructor.
+lookupTypeOfNamedFieldFromCtorDef :: Var -> CtorDef -> Maybe Type
+lookupTypeOfNamedFieldFromCtorDef vCtor ctorDef
+ = case Map.lookup vCtor $ ctorDefFields ctorDef of
+	Just ix	-> lookupTypeOfNumberedFieldFromCtorDef ix ctorDef
+	_	-> Nothing
 
- where
-	--- | Get a numbered parameter from a type, 
-	--	automatically decending into foralls.
-	getParamOfType :: Int -> Type -> Maybe Type
-	getParamOfType 0 tt	
-		= Just tt
 
-	getParamOfType i tt
-		| Just (t1, t2, _, _)	<- takeTFun tt
-		= getParamOfType (i-1) t2
-			
-		| TForall _ _ t		<- tt
-		= getParamOfType i t
-			
-		| otherwise
-		= Nothing
+-- | Get the type of a numbered field from a data constructor definition.
+--   The argument type is wrapped in the same forall quantifiers as the type
+--   of the whole constructor.
+lookupTypeOfNumberedFieldFromCtorDef :: Int -> CtorDef -> Maybe Type
+lookupTypeOfNumberedFieldFromCtorDef ix ctorDef
+ = let	(bksForall, [], tBody)	
+		= stripForallContextT $ ctorDefType ctorDef
+		
+	tsBits	= flattenTFuns tBody
+
+   in if length tsBits <= ix
+	 then Nothing
+	 else Just $ makeTForall_front bksForall (tsBits !! ix)
 
 
 -- | Get a set of all fields defined in a data type declaration.
