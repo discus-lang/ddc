@@ -87,7 +87,7 @@ elaborateT_fun tt
 				tt_quant
 
 	-- add closures
-	tt_clo		<- elaborateCloT tt_eff
+	tt_clo		<- elaborateCloT newVarN tt_eff
 			
 	
 	-- make a new Mutable fetter for each region that is written to

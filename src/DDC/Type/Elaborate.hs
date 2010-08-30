@@ -182,19 +182,19 @@ hasKind k tt
 --	    ,  $c2 = { x1 : t1; x2 : t2 }
 
 elaborateCloT 
-	:: (Monad m
-	 ,  ?newVarN :: NameSpace -> m Var)	-- fn to use to create new vars
-	=> Type					-- ^ the type to elaborate
+	:: Monad m
+	=> (NameSpace -> m Var) 		-- ^ function to use to allocate fresh vars.
+	-> Type					-- ^ the type to elaborate
 	-> m Type				-- elaborated type
 
-elaborateCloT tt
- = do	(tt', fs, _)	<- elaborateCloT' [] tt
+elaborateCloT newVarN tt
+ = do	(tt', fs, _)	<- elaborateCloT' newVarN [] tt
   	return	$ pushConstraintsEq (Map.fromList fs) tt'
 	
-elaborateCloT' env tt
+elaborateCloT' newVarN env tt
  = case tt of
 	TForall b k x
-	 -> do	(x', fs, _)	<- elaborateCloT' env x
+	 -> do	(x', fs, _)	<- elaborateCloT' newVarN env x
 		return	( TForall b k x'
 			, fs
 			, tEmpty)
@@ -202,7 +202,7 @@ elaborateCloT' env tt
 	-- if we see an existing set of constraints
 	--	then drop the new ones in the same place.
 	TConstrain x crs
-	 -> do	(x', fs', mClo)	<- elaborateCloT' env x
+	 -> do	(x', fs', mClo)	<- elaborateCloT' newVarN env x
 		let crs'	= Constraints 
 					(Map.union (crsEq crs) (Map.fromList fs')) 
 					(crsMore crs) (crsOther crs)
@@ -224,17 +224,17 @@ elaborateCloT' env tt
 	TApp{}
 	 | Just (t1, t2, eff, _)	<- takeTFun tt
 	 -> do	-- create a new value variable as a name for the function parameter
-		varVal			<- ?newVarN NameValue
+		varVal			<- newVarN NameValue
 		
 		-- elaborate the right hand arg, 
 		--	carrying the new parameter name down into it.
 		let Just argClo		= liftM trimClosureC
 					$ makeTFree varVal t1
 
-		(t2', fs, cloT2)	<- elaborateCloT' (env ++ [argClo]) t2
+		(t2', fs, cloT2)	<- elaborateCloT' newVarN (env ++ [argClo]) t2
 
 		-- make a new closure var to name the closure of this function
-		varC			<- ?newVarN NameClosure
+		varC			<- newVarN NameClosure
 		let cloVarC		= TVar kClosure (UVar varC)
 
 		let newClo	= 

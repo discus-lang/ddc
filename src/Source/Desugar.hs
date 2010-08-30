@@ -18,14 +18,17 @@ import DDC.Base.SourcePos
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
+import DDC.Type.Data.CtorType
 import DDC.Type
 import DDC.Var
 import Source.Pretty			()
 import qualified Source.Exp		as S
 import qualified Source.Error		as S
 import qualified Desugar.Util		as D
-import qualified DDC.Desugar.Exp	as D
 import qualified Desugar.Bits		as D
+import qualified DDC.Desugar.Exp	as D
+import qualified DDC.Type.Data.Base	as T
+import qualified Data.Map		as Map
 
 import {-# SOURCE #-} Source.Desugar.ListComp
 
@@ -94,10 +97,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 
 	-- data definitions
 	S.PData sp v vs ctors
---	 -> do	-- desugar field initialisation code
---	 	ctors'	<- mapM (rewriteCtorDef sp) ctors
---	 	returnJ	$ D.PData sp v vs ctors'
-	 -> 	panic stage $ "desugar " % pp
+	 -> do	dataDef	<- makeDataDef v vs ctors
+	 	returnJ	$ D.PData sp dataDef
 	
 	S.PRegion sp v
 	 ->	returnJ	$ D.PRegion sp v
@@ -154,17 +155,52 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 	returnJ			$ D.PBind sp mV x
 		
 	_  ->	return	Nothing
-	
------
-{-
-rewriteCtorDef sp (v, fs)
- = do	fs'	<- mapM rewriteField fs
- 	return	$ D.CtorDef sp v fs'
-	
-rewriteField field
- = do	mX'	<- liftMaybe rewrite $ dInit field
- 	return	$ field { dInit = mX' }
--}
+
+
+-- | Make a data type definition.
+makeDataDef 
+	:: Var				-- ^ Name of data type constructor.
+	-> [Var]			-- ^ Params to data type constructor.
+	-> [S.CtorDef SourcePos]	-- ^ Constructors in type
+	-> RewriteM T.DataDef
+
+makeDataDef vData vsParam ctors
+ = do	ctors'	<- zipWithM (makeCtorDef vData vsParam) 
+			[0..]
+			ctors
+
+	return	$ T.DataDef
+		{ T.dataDefName		= vData
+		, T.dataDefParams	= vsParam
+		, T.dataDefCtors	= Map.fromList 
+					[ (T.ctorDefName ctor, ctor) 
+						| ctor	<- ctors'] }
+
+-- | Make a data constructor definition.
+makeCtorDef 
+	:: Var				-- ^ Name of data type constructor.
+	-> [Var]			-- ^ Params to data type constructor.
+	-> Int				-- ^ Tag of constructor (order in data type definition).
+	-> S.CtorDef SourcePos
+	-> RewriteM T.CtorDef
+
+makeCtorDef vData vsParams tag (S.CtorDef vCtor fields)
+ = do	let fieldIxs	= Map.fromList
+			$ zip 	(mapMaybe S.dataFieldLabel fields)
+				([0..] :: [Int])
+
+	tCtor		<- makeCtorType 
+				newVarN 
+				vData vsParams
+				vCtor (map S.dataFieldType fields)	
+
+	return	$ T.CtorDef
+		{ T.ctorDefName		= vCtor
+		, T.ctorDefType		= tCtor
+		, T.ctorDefArity	= length fields
+		, T.ctorDefTag		= tag
+		, T.ctorDefFields	= fieldIxs }
+		
 
 -- Exp ---------------------------------------------------------------------------------------------
 instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where

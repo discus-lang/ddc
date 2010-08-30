@@ -222,12 +222,13 @@ applyKT_check check k1 t2
 	 , k11 == kBox
 	 -> applyKT' 0 k12 t2
 	      
-	_ -> panic stage 
-	   $ vcat 
+	_ -> freakout stage 
+	    (vcat 
 		[ ppr "Kind error in (kind/type) application."
 		, " cannot apply type: "	% prettyType t2 
 		, ppr "       to kind: "	% prettyKind k1
-		, ppr "in application:\n"	%> prettyKind (KApp k1 t2)]
+		, ppr "in application:\n"	%> prettyKind (KApp k1 t2)])
+	   $ KNil
 
 applyKT' depth kk tX
  = case kk of

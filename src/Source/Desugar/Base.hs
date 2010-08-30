@@ -16,8 +16,6 @@ import DDC.Main.Pretty
 import DDC.Var
 import Util
 		
-				
------
 type Annot	= SourcePos
 type RewriteM	= State RewriteS
 
