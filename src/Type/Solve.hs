@@ -112,7 +112,7 @@ solveCs	(c:cs)
 		-- The signature itself is a type scheme, but we want to
 		--	add a fresh version to the graph so that it unifies
 		--	with the other information in the graph.
-		t2_inst	<- instantiateT instVar t2
+		t2_inst	<- liftM fst $ instantiateTypeWithFreshVars instVar t2
 
 		-- Strip fetters off the sig before adding it to the graph
 		-- 	as we're only using information in the sig for guiding 
@@ -287,7 +287,8 @@ solveCs	(c:cs)
 		 Just tScheme
 		  -> do		
 		 	-- Instantiate the scheme
-			(tInst, tInstVs)<- instantiateT_table instVar tScheme
+			(tInst, tInstVs)
+				<- instantiateTypeWithFreshVars instVar tScheme
 
 			-- Add information about how the scheme was instantiated
 			stateInst `modifyRef`

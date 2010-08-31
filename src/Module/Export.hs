@@ -3,6 +3,7 @@ module Module.Export
 	(makeInterface)
 where
 import Util
+import DDC.Type.Data.Pretty
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -140,12 +141,17 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 			, T.resultKind k == T.kValue ])
 
 
-	++ (concat [pprStrPlain (D.PData sp 
-					(T.DataDef 	(eraseModule vData) 
-							(map eraseModule vsData)
-							(Map.map eraseModule_ctor ctors)))
-			| D.PData sp (T.DataDef vData vsData ctors)
-			<- psDesugared])
+	++ (pprStrPlain
+		$ vcat
+		$ [ (pprDataDefAsSource
+			$ T.DataDef 
+				(eraseModule vData) 
+				(map eraseModule vsData)
+				(Map.map eraseModule_ctor ctors))
+		    % ";\n"
+
+		  | D.PData sp (T.DataDef vData vsData ctors)
+		  <- psDesugared])
 
 	++ "\n"
 

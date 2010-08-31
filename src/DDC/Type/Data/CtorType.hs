@@ -67,9 +67,10 @@ makeCtorType newVarN vData vsParam vCtor tsParam
 
 	-- Add forall quantifiers to the front of the body type to make the final scheme.
 	let bks		= map (\v -> (BVar v, let Just k = defaultKindOfVar v in k)) 
-			$ Var.sortForallVars 
+			$ vsParam
+{-			$ Var.sortForallVars 
 			$ Set.toList (Set.union vsFree (Set.fromList vsParam))
-
+-}
 	let tCtor_quant	= makeTForall_back bks (addConstraintsOther fsField tCtor)
 
 	return 	{-$ Debug.Trace.trace

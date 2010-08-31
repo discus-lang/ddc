@@ -122,17 +122,6 @@ snipProjDictP modName classDicts
 	= do	addError $ ErrorUndefinedVar vClass
 		return $ [pInst]
 
-{-
--- Snip field initializers
-snipProjDictP modName classDicts (PData nn vData vsArg ctorDefs)
- = do	(ctorDefs', psNew)	
- 		<- liftM unzip
-		$ mapM (snipCtorDef modName nn vData) ctorDefs
-		
-	return	$ PData nn vData vsArg ctorDefs'
-		: concat psNew
--}
-
 snipProjDictP _ _ pp
  =	return [pp]
 
@@ -228,73 +217,6 @@ snipInstBind' modName
 		   , PBind    spBind (Just vTop)  xx])
 
 
--- snip expressions out of data field intialisers in this ctor def
-{-
-snipCtorDef 
-	:: ModuleId		-- ^ the current module
-	-> a			-- ^ annot to use on new code
-	-> Var 			-- ^ var of data type
-	-> CtorDef		-- ^ ctor def to transform
-	-> ProjectM
-		( CtorDef	-- new ctor def
-		, [Top a])	-- new top level bindings
-
-snipCtorDef modName sp vData (CtorDef nn vCtor dataFiel)
- = do	(dataFields', psNew)	
- 		<- liftM unzip 
-		$ mapM (snipDataField modName sp vData vCtor) 
-		$ dataFields
-		
-	return	( CtorDef nn vCtor dataFields'
-		, concat psNew)
- 
- 
--- snip expresisons out of data field initialisers
-snipDataField 
-	:: ModuleId		-- ^ the current module
-	-> a			-- ^ annot to use on new code
-	-> Var			-- ^ var of data type
-	-> Var			-- ^ var of contructor
-	-> DataField (Exp a) Type 
-	-> ProjectM 
-		( DataField (Exp a) Type	-- snipped data field
-		, [Top a])			-- new top level bindings
-
-snipDataField modName sp vData vCtor field
-	-- no initialiser
-	| Nothing		<- dInit field
-	= return 
-		( field
-		, [])
-
-	-- leave vars there
- 	| Just (XVar sp v)	<- dInit field
-	, not $ Var.isCtorName v
-	= return 
-		( field
-		, [])
-	
-	-- snip other expressions
-	| Just xInit	<- dInit  field
-	, Just vField	<- dLabel field
-	= do	var_	<- newVarN NameValue
-		let var	= var_
-			{ varName = "init_" 
-				++ varName vData  ++ "_" 
-				++ varName vCtor  ++ "_" 
-				++ varName vField
-			, varModuleId	= modName }
-
-		varL	<- newVarN NameValue
-		varR	<- newVarN NameRegion
-				
-		return	( field { dInit = Just $ XVar sp var }
-			, [ PTypeSig  sp [var] (makeTFun (makeTData primTUnit kValue []) 
-						(dType field) 
-						tPure tEmpty)
-			  , PBind sp (Just var) (XLambda sp varL xInit)])
-
--}
 -- | Snip the RHS of this statement down to a var
 snipProjDictS 
 	:: Map Var Var 
@@ -316,7 +238,6 @@ snipProjDictS varMap xx
 	| otherwise
 	= ( Nothing
 	  , Just xx)
-
 
 -- | Make sure there is a projection dictionary for each data type.
 --   If one doesn't exist, then make a new one. 
@@ -424,7 +345,8 @@ makeProjFun sp tData dataDef fieldV
 
 	-- Find the field type for this projection.
 	let Just resultT
-		= lookupTypeOfFieldFromDataDef fieldV dataDef
+		= liftM stripToBodyT 
+		$ lookupTypeOfFieldFromDataDef fieldV dataDef
 
     	return	[ SSig  sp [fieldV]
 			(makeTFun tData resultT tPure tEmpty) 
@@ -435,8 +357,11 @@ makeProjFun sp tData dataDef fieldV
 
 		
 makeProjFunAlt sp vObj vField ctorDef
- = do	let mFieldIx	= lookupTypeOfNamedFieldFromCtorDef vField ctorDef
-	vBind		<- newVarN NameValue
+ = do	let mFieldIx	
+		= liftM stripToBodyT
+		$ lookupTypeOfNamedFieldFromCtorDef vField ctorDef
+
+	vBind	<- newVarN NameValue
 			
 	case mFieldIx of
 	 Just ix	
@@ -469,7 +394,8 @@ makeProjR_fun sp tData dataDef vField
 
 	-- Find the field type for this projection.
 	let Just resultT
-		= lookupTypeOfFieldFromDataDef vField dataDef 
+		= liftM stripToBodyT
+		$ lookupTypeOfFieldFromDataDef vField dataDef 
 
 	let rData	
 		= case tData of

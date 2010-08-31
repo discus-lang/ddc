@@ -2,13 +2,13 @@
 module Desugar.Slurp.SlurpA 
 	(slurpA)
 where
-import Util
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
-import DDC.Core.Check.Type
+import Type.Util.Instantiate
 import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var
+import Util
 
 stage	= "Desugar.Slurp.SlurpA"
 
@@ -240,10 +240,7 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 	 -- The field type comes with the same outer forall quantifiers that 
 	 -- were on the scheme for the whole constructor type.
 	 Just tField
-	  -> let tField_inst	= fst 
-				$ instantiateT (stage ++ ".slurpLV") 
-					tField tsParams
-				
+	  -> let tField_inst	= instantiateType tField tsParams
 	     in	 return ( (LIndex Nothing ix, vBind)
 			, Just (vBind, vT)
 			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )
@@ -267,10 +264,7 @@ slurpLV vCtor tsParams (LVar sp vField, vBind)
 	  -> panic stage $ "slurpLV: no field named " % vField
 	
 	 Just tField
- 	  -> let tField_inst	= fst 
-				$ instantiateT (stage ++ ".slurpLV") 
-					tField tsParams
-
+ 	  -> let tField_inst	= instantiateType tField tsParams
 	     in	return 	( (LVar Nothing vField, vBind)
  			, Just (vBind, vT)
 			, [CEq (TSV $ SVMatchCtorArg sp) (TVar kValue $ UVar vT) tField_inst] )

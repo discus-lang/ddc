@@ -6,12 +6,16 @@ module DDC.Type.Data.Base
 	, lookupTypeOfFieldFromDataDef
 	, lookupTypeOfNamedFieldFromCtorDef
 	, lookupTypeOfNumberedFieldFromCtorDef
-	, fieldsOfDataDef)
+	, lookupLabelOfFieldIndex
+	, fieldsOfDataDef
+	, fieldTypeLabels)
 where
 import DDC.Type.Strip
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Var
+import Control.Monad
+import Data.List
 import Data.Maybe
 import Data.Set			(Set)
 import Data.Map			(Map)
@@ -94,6 +98,15 @@ lookupTypeOfNumberedFieldFromCtorDef ix ctorDef
 	 else Just $ makeTForall_front bksForall (tsBits !! ix)
 
 
+-- | Lookup the field label corresponding to the index of the field.
+lookupLabelOfFieldIndex :: Int -> CtorDef -> Maybe Var
+lookupLabelOfFieldIndex ix ctorDef
+	= liftM fst
+	$ find (\(_, ix') -> ix == ix')
+	$ Map.toList
+	$ ctorDefFields ctorDef
+
+
 -- | Get a set of all fields defined in a data type declaration.
 fieldsOfDataDef :: DataDef -> Set Var
 fieldsOfDataDef dataDef
@@ -102,6 +115,13 @@ fieldsOfDataDef dataDef
 	$ Map.elems $ dataDefCtors dataDef
 
 
-
-
+-- | Get the list of all field types with optional names in the
+--   order they appear in the constructor.
+--   The field types are wrapped in the same forall quantifiers as the type
+--   of the whole constructor.
+fieldTypeLabels :: CtorDef -> [(Maybe Var, Type)]
+fieldTypeLabels ctorDef
+ =	[ ( lookupLabelOfFieldIndex ix ctorDef
+	  , let Just t = lookupTypeOfNumberedFieldFromCtorDef ix ctorDef in t)
+	| ix <- [0 .. (ctorDefArity ctorDef - 1)] ]
 

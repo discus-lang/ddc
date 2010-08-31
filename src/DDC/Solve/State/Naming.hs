@@ -20,7 +20,7 @@ stage	= "DDC.Solve.State.Naming"
 
 
 -- | Instantiate a variable.
-instVar :: Var -> SquidM (Maybe Var)
+instVar :: Var -> SquidM Var
 instVar var
  = do	let space	= varNameSpace var
 
@@ -32,10 +32,9 @@ instVar var
 instVar' var space mVarId
  = case mVarId of
 	Nothing
-	 -> freakout stage
+	 -> panic stage
 	  	("instVar: can't instantiate var in space " % show space
 	  	% " var = " % show var)
-		$ return Nothing
 		
 	Just vid
 	 -> do
@@ -51,7 +50,7 @@ instVar' var space mVarId
 			 	{ varNameSpace	= varNameSpace var
 			 	, varId		= vid }
 
-		return $ Just var'
+		return var'
 
 
 -- | Get the canonical name for a class.

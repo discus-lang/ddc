@@ -85,7 +85,8 @@ elaborateDataDef newVarN getKind
 				
 			let dataDef_final
 				= dataDef
-				{ dataDefCtors	= Map.fromList 
+				{ dataDefParams	= vsParam_elab
+				, dataDefCtors	= Map.fromList 
 						$ [(ctorDefName def, def) | def <- ctorDefs_final] }
 
 			trace 	( "elaborateData\n"

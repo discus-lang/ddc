@@ -3,7 +3,7 @@ module DDC.Type.Data.Material
 	( quantParamsOfCtorType
 	, materialVarsOfType1)
 where
-import DDC.Core.Check.Type
+import Type.Util.Instantiate
 import DDC.Type.Data.Base
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -14,7 +14,6 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
-stage	= "DDC.Type.Data.Material"
 	
 -- | Get a list of all the parameters of a data constructor's type, retaining the outer quantifiers. 
 --   This doesn't support constrained types. If there are any constraints then `panic`.
@@ -84,5 +83,5 @@ materialVarsOfType1 dataDefs crs tt
 					$ dataDefCtors dataDef
 					
 		    in	( Set.singleton v1
-		    	, map 	(\t -> fst $ instantiateT (stage ++ "materialVarOfType1") t tsArgs) 
+		    	, map 	(flip instantiateType tsArgs) 
 				ctorParams )

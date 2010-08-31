@@ -1,58 +1,50 @@
 -- Type instantiation.
 --
 module Type.Util.Instantiate
-	( instantiateT
-	, instantiateT_table )
+	( instantiateType
+	, instantiateTypeWithFreshVars)
 where
-import Util
-import DDC.Var
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform
+import DDC.Type.Substitute
 import DDC.Type.Pretty		()
+import DDC.Var
 import qualified Data.Map	as Map
 
+-- | Instantiate a type with these arguments.
+instantiateType :: Type -> [Type] -> Type
+instantiateType tScheme tsArgs
+ = let	(bks, tBody)	= takeTForall tScheme
+	
+	Just vsQuant 	= sequence $ map (takeVarOfBind . fst) bks
+	table		= Map.fromList $ zip vsQuant tsArgs
+	
+   in	subVT_everywhere table tBody
 
--- | Instantiate a type scheme using the provided gn to create
---   the new variables.
---   TODO: Make this a a pure function, and require the caller to supply enough
---	   fresh varaibles to perform the instantiation.
---         Instantiation should be just type-type application.	
-instantiateT 
-	:: Monad m
-	=> (Var -> m (Maybe Var))
-	-> Type -> m Type
-
-instantiateT instF t
- = do
- 	(t', _)	<- instantiateT_table instF t
-	return t'
 
 
 -- | Instantiate a type scheme, using the provided function to create
 --	the new variables, and also return the new instance vars created.
-instantiateT_table
+instantiateTypeWithFreshVars
 	:: Monad m
-	=> (Var -> m (Maybe Var))	-- ^ fn to instantiate a variable.
-	-> Type 			-- ^ type to instantiate
-	-> m ( Type			-- instantiated type
-	     , [Var])			-- list of instance variables, one for 
-	     				--	each of the foralls at the front of the scheme
-
-instantiateT_table instF tt
- = case tt of
-	TForall BNil _ _
-	 ->	return (tt, [])
+	=> (Var -> m Var)	-- ^ Function to instantiate each variable.
+	-> Type 		-- ^ Type scheme to instantiate.
+	-> m ( Type		--   Instantiated type.
+	     , [Var])		--   List of instance varaibles, one for each outer
+				--   forall quantifier in the original scheme.
 	
+instantiateTypeWithFreshVars instVar tt
+ = case tt of
  	TForall b k tBody
 	 -> do	-- split of the quantifier so we can instantiate all the vars at once
 	 	let (bks, tBody) = takeTForall tt
 	 
 		-- build a table mapping each of the forall bound variables
 		--	to a new instance variable.
-	 	let  Just vs	= sequence $ map (takeVarOfBind . fst) bks
-	 	Just vsI	<- liftM sequence $ mapM instF vs
-		let table	= Map.fromList $ zip vs vsI
+	 	let Just vsQuant = sequence $ map (takeVarOfBind . fst) bks
+	 	vsInst		<- mapM instVar vsQuant
+		let table	= Map.fromList $ zip vsQuant vsInst
 				
 		-- substitute instance variables into the body of the type.
 		let tBody'	= transformV 
@@ -61,7 +53,7 @@ instantiateT_table instF tt
 						Just v'	-> v')
 					tBody
 				
-		return 		(tBody', vsI)
+		return 		(tBody', vsInst)
 	
 	_ ->	return (tt, [])
-	
+

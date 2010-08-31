@@ -3,8 +3,7 @@
 -- | Checking types, kind, and super-kinds.
 --   TODO: Finish scope checking. Bugs in Core.Bind are blocking this.
 module DDC.Core.Check.Type
-	( instantiateT
-	, checkTypeI
+	( checkTypeI
 	, checkKindI)
 where
 import DDC.Main.Error
@@ -16,22 +15,6 @@ import Data.List
 import qualified Data.Map	as Map
 
 stage	= "DDC.Core.Check.Type"	
-
--- Wrappers ---------------------------------------------------------------------------------------
-
--- | Instantiate a type by applying these arguments to it.
---   If there are any type errors along the way then `panic`.
-instantiateT 
-	:: String	-- ^ Name of the caller, for panic messages.
-	-> Type 	-- ^ T
-	-> [Type] 
-	-> (Type, Kind)
-
-instantiateT caller t tsArgs
-	= checkTypeI 0
-		(makeTApp t tsArgs)
-		((envEmpty caller) { envClosed = False })
-
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Check a type expression.
