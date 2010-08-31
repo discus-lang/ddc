@@ -180,68 +180,84 @@ tyConKind tyCon
 --   If you want that then use the "DDC.Core.Lint" modules.
 kindOfType :: Type -> Kind
 kindOfType tt
+	= kindOfTypeWithType tt tt
+
+kindOfTypeWithType :: Type -> Type -> Kind
+kindOfTypeWithType tTop tt
  = case tt of
 	TNil{}			-> panic stage $ "kindOfType: no kind for TNil"
 	TVar k _		-> k
 	TCon tyCon		-> (tyConKind tyCon)
 	TSum  k _		-> k
-	TApp t1 t2		-> uncheckedApplyKT (kindOfType t1) t2	
-	TForall  _ _ t2		-> kindOfType t2
-	TConstrain t1 _		-> kindOfType t1
+	TApp t1 t2		-> applyKT_check False (Just tTop) (kindOfTypeWithType tTop t1) t2	
+	TForall  _ _ t2		-> kindOfTypeWithType tTop t2
+	TConstrain t1 _		-> kindOfTypeWithType tTop t1
 	TError k _		-> k
 	
-
 
 -- Kind/Type application --------------------------------------------------------------------------
 -- | Apply a type to a kind, yielding a new kind.
 --   This performs a de Bruijn beta reduction, substituting types for indices.
 applyKT :: Kind -> Type -> Kind
 applyKT k1 t2
-	= applyKT_check True k1 t2
+	= applyKT_check True Nothing k1 t2
 
 
 -- | Like `applyKT` but don't check that the argument has the right kind, which is a bit faster.
 uncheckedApplyKT :: Kind -> Type -> Kind
 uncheckedApplyKT k1 t2
-	= applyKT_check False k1 t2
+	= applyKT_check False Nothing k1 t2
 	
 		
-applyKT_check :: Bool -> Kind -> Type -> Kind
-applyKT_check check k1 t2
+applyKT_check 
+	:: Bool		-- ^ Whether to do kind checking during application.
+	-> Maybe Type	-- ^ Top level type that we are checking. Used for panic messages.
+	-> Kind		-- ^ Function kind.
+	-> Type		-- ^ Parameter type.
+	-> Kind
+
+applyKT_check check tTop k1 t2
  = case k1 of
 	KFun k11 k12
 	 | not check
-	 -> applyKT' 0 k12 t2
+	 -> applyKT' tTop 0 k12 t2
 
 	 | k2	<- kindOfType t2
 	 , k2 == k11 
-	 -> applyKT' 0 k12 t2
+	 -> applyKT' tTop 0 k12 t2
 	  
 	 -- TODO: We're not checking that k2 is really a kBox kind.
 	 | _k2	<- kindOfType t2
 	 , k11 == kBox
-	 -> applyKT' 0 k12 t2
+	 -> applyKT' tTop 0 k12 t2
 	      
 	_ -> freakout stage 
 	    (vcat 
 		[ ppr "Kind error in (kind/type) application."
 		, " cannot apply type: "	% prettyType t2 
 		, ppr "       to kind: "	% prettyKind k1
-		, ppr "in application:\n"	%> prettyKind (KApp k1 t2)])
+		, ppr "in application:\n"	%> prettyKind (KApp k1 t2)
+		, ppr " when checking:\n"	%> (maybe (ppr "-- unknown --") prettyType tTop) ])
 	   $ KNil
 
-applyKT' depth kk tX
+applyKT' tTop depth kk tX
  = case kk of
  	KNil			-> kk
 	KCon{}			-> kk
-	KFun k1 k2		-> KFun (applyKT' depth k1 tX) (applyKT' (depth + 1) k2 tX)
-	KApp k t		-> KApp (applyKT' depth k  tX) (applyKT_type depth tX t)
-	KSum ks			-> KSum $ map (flip (applyKT' depth) tX) ks
+	KFun k1 k2		-> KFun (applyKT' tTop depth k1 tX) (applyKT' tTop (depth + 1) k2 tX)
+	KApp k t		-> KApp (applyKT' tTop depth k  tX) (applyKT_type tTop depth tX t)
+	KSum ks			-> KSum $ map (flip (applyKT' tTop depth) tX) ks
 		
 
-applyKT_type :: Int -> Type -> Type -> Type
-applyKT_type depth tX tt
- = let down	= applyKT_type depth tX
+applyKT_type 
+	:: Maybe Type	-- ^ Top level type that we're checking. Unsed for panic messages.
+	-> Int		-- ^ Depth for debruijn substitution
+	-> Type		-- ^ Type of the parameter we're substituting.
+	-> Type		-- ^ Type of the body we're substituting into.
+	-> Type
+
+applyKT_type tTop depth tX tt
+ = let down	= applyKT_type tTop depth tX
    in  case tt of
    	TNil			-> tt
 	TForall b k t		-> TForall b k (down t)
