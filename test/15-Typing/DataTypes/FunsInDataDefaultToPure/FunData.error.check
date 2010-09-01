@@ -8,5 +8,5 @@ ddc: ERROR
 
      conflicts with,
               the use of: FunInt
-                      at: ./test/15-Typing/DataTypes/FunsInDataDefaultToPure/FunData.ds:17:10
+                      at: ./test/15-Typing/DataTypes/FunsInDataDefaultToPure/FunData.ds:14:10
 
