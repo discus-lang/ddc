@@ -54,7 +54,8 @@ init link console
 	 -> do	rover 	:: Rover %r %i %s	
 	 		:- Mutable %r, Const %i, Mutable %s
 			
-	 	rover	= Rover (msg.sensorMin)
+	 	rover	= defaultRover
+				(msg.sensorMin)
 				(msg.sensorMax)
 				(msg.speedMax)
 				(msg.turnSpeedMax)
@@ -63,7 +64,7 @@ init link console
 		control	:: Control %r %i
 			:- Mutable %r, Const %i
 		
-		control	= Control
+		control	= defaultControl ()
 			
 		coma link rover control console
 

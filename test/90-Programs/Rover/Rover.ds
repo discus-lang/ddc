@@ -40,10 +40,15 @@ data Hazard
 
 	-- an anti-hazard?
 	| HazHome {
-		.pos	:: Vec2 Float	= id (Vec2 0.0 0.0);
-		.radius	:: Float	= 5.0;
+		pos	:: Vec2 Float;
+		radius	:: Float;
 	}
 
+defaultHazHome :: Hazard
+defaultHazHome
+ = 	HazHome (id (Vec2 0.0 0.0))
+		5.0
+		
 
 -- | Result of a scan
 data Scan
@@ -79,30 +84,53 @@ data Rover %r %i %s
 		speedMax	:: Float %i;
 		turnSpeedMax	:: Float %i;
 		turnSpeedHardMax:: Float %i;
-		.homePos	:: Vec2 %i (Float %i)	= id (Vec2 0.0 0.0);
+		homePos		:: Vec2 %i (Float %i);
 		
 		-- current state, updated by telemetry.
-		.timeStamp	:: Int %s		= 0;
-		.pos		:: Vec2 %s (Float %s)	= id (Vec2 0.0 0.0);
-		.drive		:: StateDrive %i	= id SDRoll;
-		.turn		:: StateTurn %i		= id STStraight;
-		.dir		:: Float %s		= 0.0;
-		.speed		:: Float %s		= 0.0;
+		timeStamp	:: Int %s;
+		pos		:: Vec2 %s (Float %s);
+		drive		:: StateDrive %i;
+		turn		:: StateTurn %i;
+		dir		:: Float %s;
+		speed		:: Float %s;
 
 		-- derived parameters
-		.vFacing	:: Vec2 %s (Float %s)	= id (Vec2 0.0 0.0);
-		.rotVel		:: Float %s		= 0.0;
-		.rotAcc		:: Float %s		= 0.0;
+		vFacing	:: Vec2 %s (Float %s);
+		rotVel		:: Float %s;
+		rotAcc		:: Float %s;
 
 		-- the static terrain that we're aware of
-		.terrain	:: List %i (Hazard %i)	= id [];
+		terrain		:: List %i (Hazard %i);
 
 		-- the martians we can see right now
-		.martians	:: List %i (Hazard %i)	= id [];
+		martians	:: List %i (Hazard %i);
 
 		-- the turn budget, to avoid oscillating between plans
-		.turnBudget	:: Float %s		= 90.0;
+		turnBudget	:: Float %s;
 
 		-- the current set of scans
-		. scans		:: List %i (Scan %i)	= id [];
+		scans		:: List %i (Scan %i);
 	}
+
+defaultRover sensorMin sensorMax speedMax turnSpeedMax turnSpeedHardMax
+	= Rover	sensorMin
+		sensorMax
+		speedMax
+		turnSpeedMax
+		turnSpeedHardMax
+		(id (Vec2 0.0 0.0))	-- homePos
+		0			-- timeStamp
+		(id (Vec2 0.0 0.0))	-- pos
+		(id SDRoll)		-- drive
+		(id STStraight)		-- turn
+		0.0			-- dir
+		0.0			-- speed
+		(id (Vec2 0.0 0.0))	-- vFacing
+		0.0			-- rotVel
+		0.0			-- rotAcc
+		(id [])			-- terrain
+		(id [])			-- martians
+		(90.0)			-- turnBudget
+		(id [])			-- scans
+		
+		

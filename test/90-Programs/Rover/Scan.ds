@@ -24,7 +24,7 @@ scan rover dir
 	-- badness due to the angle not being right
 	badAngle	= 1.0 - cos (degToRad angleAway)
 
-	hazards		=  rover.terrain ++ [HazHome]
+	hazards		=  rover.terrain ++ [defaultHazHome]
 
  	-- only worry about the closest ptoblem along a certain line
 	probs	= findProblems rover rover.pos dir 

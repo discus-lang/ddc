@@ -10,9 +10,12 @@ debug_control	= False
 --
 data Control %r %i
 	= Control {
-		.speed	:: ControlSpeed %i	= id CSpeedStop;
-		.dir	:: Float %r		= 0.0;
+		speed	:: ControlSpeed %i;
+		dir	:: Float %r;
 	}
+
+defaultControl ()
+	= Control (id CSpeedStop) 0.0
 
 data ControlSpeed
 	= CSpeedStop		-- panic braking
