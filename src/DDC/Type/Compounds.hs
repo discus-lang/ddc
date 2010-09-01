@@ -99,7 +99,7 @@ makeSuperFun (k:ks) 	s	= SFun k (makeSuperFun ks s)
 -- Kinds ------------------------------------------------------------------------------------------
 -- | Make a kind function.
 makeKFuns :: [Kind] -> Kind -> Kind
-makeKFuns [] kk	= kk
+makeKFuns [] kk		= kk
 makeKFuns (k:ks) kk	= KFun k (makeKFuns ks kk)
 
 

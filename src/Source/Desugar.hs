@@ -19,6 +19,7 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Type.Data.CtorType
+import DDC.Type.Fixup
 import DDC.Type
 import DDC.Var
 import Source.Pretty			()
@@ -192,7 +193,7 @@ makeCtorDef vData vsParams tag (S.CtorDef vCtor fields)
 	tCtor		<- makeCtorType 
 				newVarN 
 				vData vsParams
-				vCtor (map S.dataFieldType fields)	
+				vCtor (map (fixupKindsInType . S.dataFieldType) fields)	
 
 	return	$ T.CtorDef
 		{ T.ctorDefName		= vCtor
