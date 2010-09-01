@@ -4,6 +4,7 @@
 --
 module DDC.Solve.State.Squid
 	( SquidM
+	, SquidEnv(..)
 	, SquidS(..)
 	, squidSInit)
 where
@@ -13,12 +14,14 @@ import DDC.Solve.Error
 import DDC.Main.Arg
 import DDC.Solve.Graph
 import DDC.Solve.State.InstanceInfo
+import DDC.Type.Data
 import DDC.Type
 import DDC.Var
 import Data.IORef
 import Control.Monad.Trans
 import Control.Monad.State.Strict
 import System.IO
+import Data.Maybe
 import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set
@@ -26,6 +29,18 @@ import qualified Data.Map	as Map
 
 type SquidM	
 	= StateT SquidS IO
+
+-- | Type environment for the solver.
+--   These are imported types and types of constructors, and are guaranteed not
+--   to contain meta type variables.
+data SquidEnv
+	= SquidEnv { 
+	-- | Map of type constructor name to the data type declaration for that constructor
+	  squidEnvDataDefs	:: Map Var DataDef
+
+	-- | Map of data constructor name to the type constructor for it.
+	, squidEnvCtorDefs	:: Map Var CtorDef }
+
 
 data SquidS 
 	= SquidS
@@ -43,6 +58,9 @@ data SquidS
 
 	-- | The args from the command line
 	, stateArgs		:: Set Arg	
+
+	-- | The solver environment
+	, stateEnv		:: SquidEnv
 
         -- Mutable stuff ----------------------------------
 	-- | Current indent level for the trace
@@ -69,7 +87,7 @@ data SquidS
 	--	the type graph with this information, nor have to extract them back from the graph
 	--	when it's time to export types to the Desugar->Core transform.
 	, stateDefs		:: IORef (Map Var Type)
-
+	
 	-- | The current path we've taken though the branches.
 	--	This tells us what branch we're currently in, and by tracing
 	--	through the path we can work out how a particular variable was bound.
@@ -125,9 +143,15 @@ data SquidS
 
 
 -- | build an initial solver state
-squidSInit :: IO SquidS
-squidSInit
- = do	let Just tT	= lookup NameType 	U.typeSolve
+squidSInit 
+	:: Map Var Var 		-- sigma table
+	-> Map Var DataDef
+	-> IO SquidS
+	
+squidSInit sigmaTable dataDefs
+ = do	
+	-- Variable generator stuff
+	let Just tT	= lookup NameType 	U.typeSolve
 	let Just rT	= lookup NameRegion 	U.typeSolve
 	let Just eT	= lookup NameEffect	U.typeSolve
 	let Just cT 	= lookup NameClosure	U.typeSolve
@@ -144,9 +168,23 @@ squidSInit
 	refVarGen	<- liftIO $ newIORef varGen
 	refVarSub	<- liftIO $ newIORef Map.empty
 
+	-- Solver environment
+	let ctorDataMap	= Map.fromList
+			$ [(ctorNameT, ctorDef)
+				| dataDef	<- Map.elems dataDefs
+				, ctorDef	<- Map.elems $ dataDefCtors dataDef
+				, ctorNameT	<- maybeToList $ Map.lookup (ctorDefName ctorDef) sigmaTable ]
+			
+	let squidEnv
+		= SquidEnv
+		{ squidEnvDataDefs	= dataDefs
+		, squidEnvCtorDefs	= ctorDataMap }
+			
+	-- The type graph
 	graph		<- makeEmptyGraph
    	refGraph	<- liftIO $ newIORef graph
    
+	-- Solver state
 	refDefs		<- liftIO $ newIORef Map.empty
 	refPath		<- liftIO $ newIORef []
 	refContains	<- liftIO $ newIORef Map.empty
@@ -165,6 +203,7 @@ squidSInit
 		, stateErrors		= []
 		, stateStop		= False 
 		, stateArgs		= Set.empty
+		, stateEnv		= squidEnv
 		, stateTraceIndent	= refTraceIndent
 		, stateSigmaTable	= refSigmaTable
 		, stateVsBoundTopLevel	= refVsBoundTop

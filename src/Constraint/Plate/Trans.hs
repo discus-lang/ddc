@@ -77,12 +77,6 @@ instance Monad m => TransM m CTree where
 	 -> do	t'	<- down t
 	 	return	$ CGen ts t'
 		
-	CDataFields ss v1 vs vts
-	 -> do	let (vs, ts)	= unzip vts
-	 	ts'		<- down ts
-		let vts'	= zip vs ts'
-		return	$ CDataFields ss v1 vs vts'
-
 	CDictProject ts t mv
 	 -> do	t'	<- down t
 	 	return	$ CDictProject ts t' mv

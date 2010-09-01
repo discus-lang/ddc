@@ -70,16 +70,6 @@ data	CTree
 	--	its type.
 	| CGen		TypeSource Type
 
-
-	-- dictionaries ---------------
-	-- | Carries data field definitions.
-	--	One of these is generated for each data def in the source.
-	| CDataFields	
-		TypeSource 		--  source position
-		Var 			--  var of data constructor
-		[Var] 			--  parameter vars of constructor.
-		[(Var, Type)]		--  (field name, field type)
-
 	-- | Carries a projection dictionary.
 	| CDictProject	
 		TypeSource 		--  source position

@@ -40,15 +40,6 @@ instance Pretty CTree PMode where
 	CProject src tp vInst tDict tBind
 	 -> "@CProject " % tp % " " % vInst % " " % tDict % " " % tBind % ";\n"
 
-	CDataFields src v ts []	
-	 -> "@CDataFields " % v % " " % ts % " {};"
-	 
-	CDataFields src v ts fs
-	 -> "@CDataFields " % v % " " % ts % "\n"
-		% "{\n"
-		%> ("\n " %!% map (\(v, f) -> v %>> " :: " % f) fs % "\n") 
-		% "};\n\n"
-
 	CDictProject src t vs
 	 -> "@CDictProject    " % t % "\n"
 	 	% "{\n"

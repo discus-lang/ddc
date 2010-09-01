@@ -61,7 +61,7 @@ slurpTreeM tree
 	-- Sort the constraints into an order acceptable by the solver.
 	let qsFinal_rest
 		= partitionFsSort
-			[ (=@=) CDataFields{}, (=@=) CProject{}, (=@=) CClassInst{}
+			[ (=@=) CProject{}, (=@=) CClassInst{}
 			, (=@=) CDef{}
 			, (=@=) CSig{} ]
 			qsRest

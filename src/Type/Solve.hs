@@ -21,6 +21,7 @@ import DDC.Solve.Location
 import DDC.Main.Error
 import DDC.Main.Arg		(Arg)
 import DDC.Solve.State
+import DDC.Type.Data
 import DDC.Type
 import DDC.Var
 import qualified Util.Data.Map	as Map
@@ -36,6 +37,7 @@ stage	= "Type.Solve"
 -- | Solve some type constraints.
 squidSolve 	
 	:: [Arg]		-- ^ compiler args.
+	-> Map Var DataDef	-- ^ Data type definitions in environment.
 	-> [CTree] 		-- ^ the type constraints to solve.
 	-> Map Var Var		-- ^ table of value vars to type vars.
 	-> Set Var		-- ^ type vars of value vars which are bound at top level.
@@ -43,10 +45,10 @@ squidSolve
 	-> Bool			-- ^ whether to require "main" have type () -> ().
 	-> IO SquidS		-- ^ the final solver state.
 
-squidSolve args ctree sigmaTable vsBoundTopLevel mTrace blessMain
+squidSolve args dataDefs ctree sigmaTable vsBoundTopLevel mTrace blessMain
  = do
 	-- initialise the solver state
-	stateInit	<- squidSInit
+	stateInit	<- squidSInit sigmaTable dataDefs
 
 	writeIORef (stateSigmaTable stateInit) sigmaTable
 	writeIORef (stateVsBoundTopLevel stateInit) vsBoundTopLevel
@@ -254,11 +256,16 @@ solveCs	(c:cs)
 
 		defs		<- getsRef stateDefs
 		genDone		<- getsRef stateGenDone
+		env		<- gets stateEnv
 
 		let getScheme
 			-- The scheme is in our table of external definitions
 			| Just tt	<- Map.lookup vInst defs
 			= return (Just tt)
+
+			-- The variable refers to a data constructor in our table of data defs
+			| Just ctorDef	<- Map.lookup vInst $ squidEnvCtorDefs env
+			= return (Just $ ctorDefType ctorDef)
 
 			-- The scheme has already been generalised so we can extract it straight from the graph			
 			| Set.member vInst genDone
@@ -358,14 +365,17 @@ solveCInst
 
 solveCInst 	cs c@(CInst src vUse vInst)
  = do
-	path	<- getsRef statePath
-	trace	$ "\n"
-		% "### CInst " % vUse % " <- " % vInst					% "\n"
---		% "    path          = " % path 					% "\n"
-
-	-- Look at our current path to see what branch we want to instantiate was defined.
+	path		<- getsRef statePath
 	sGenDone	<- getsRef stateGenDone
 	sDefs		<- getsRef stateDefs
+	env		<- gets stateEnv
+	trace	$ vcat
+		[ "### CInst " % vUse % " <- " % vInst
+--		, "    path          = " % path
+		, "    ctorDefs      = " % (Map.keys $ squidEnvCtorDefs env)
+		, "    got           = " % Map.member vInst (squidEnvCtorDefs env) ]
+
+	-- Look at our current path to see what branch we want to instantiate was defined.
 	let bindInst 
 		-- hmm, we're outside all branches
 		| isNil path
@@ -373,6 +383,10 @@ solveCInst 	cs c@(CInst src vUse vInst)
 
 		-- var was imported from another module
 		| Map.member vInst sDefs
+		= BLet [vInst]
+
+		-- var refers to a data constructor
+		| Map.member vInst $ squidEnvCtorDefs env
 		= BLet [vInst]
 
 		-- var has already been generalised
@@ -387,7 +401,7 @@ solveCInst 	cs c@(CInst src vUse vInst)
 			BLet _		-> BLet    [vInst]					
 			BLetGroup _	-> BLet    [vInst]
 
---	trace	$ "    bindInst      = " % bindInst					% "\n\n"
+	trace	$ "    bindInst      = " % bindInst					% "\n\n"
 	
 	-- Record the current branch depends on the one being instantiated
 	-- 	Only record instances of Let bound vars, cause these are the ones we care
@@ -403,19 +417,20 @@ solveCInst 	cs c@(CInst src vUse vInst)
 	sGenDone	<- getsRef stateGenDone
 	sDefs		<- getsRef stateDefs
 
-	solveCInst_simple cs c bindInst path sGenDone sDefs
+	solveCInst_simple cs c bindInst path sGenDone sDefs env
 	
 
 -- These are the easy cases...
 solveCInst_simple 
 	cs 
 	c@(CInst src vUse vInst)
-	bindInst path sGenDone sDefs
+	bindInst path sGenDone sDefs env
 
 	-- IF   the var has already been generalised/defined 
 	-- THEN then we can extract it straight from the graph.
 	|   Set.member vInst sGenDone
 	 || Map.member vInst sDefs
+	 || Map.member vInst (squidEnvCtorDefs env)
 	= do	
 		trace	$ ppr "*   solveCInst_simple: Scheme is in graph.\n"
 		return	$ CGrind : (CInstLet src vUse vInst) : cs
@@ -462,7 +477,6 @@ solveCInst_find
 	
 	-- If the binding to be instantiated is part of a recursive group and we're not ready
 	--	to generalise all the members yet, then we must be inside one of them.
-	--	
 	| Just vsGroup	<- mBindGroup
 	, not $ and $ map (\v -> Set.member v genSusp) $ Set.toList vsGroup
 	= do 	

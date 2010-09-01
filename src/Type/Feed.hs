@@ -20,7 +20,7 @@ import qualified Data.Sequence	as Seq
 
 stage	= "Type.Feed"
 
-debug	= True
+debug	= False
 trace ss = when debug $ traceM ss
 
 -- feedConstraint ----------------------------------------------------------------------------------

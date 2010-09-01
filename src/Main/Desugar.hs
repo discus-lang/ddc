@@ -16,6 +16,7 @@ import DDC.Var
 import Data.IORef
 import System.IO			(hFlush)
 import Util				hiding (null, elem)
+import qualified DDC.Type.Data		as T
 import qualified DDC.Type		as T
 import qualified Data.Foldable		as Foldable
 import qualified Constraint.Simplify	as N
@@ -164,6 +165,7 @@ desugarSlurpConstraints
 	-> (D.Tree SourcePos)				-- header tree
 	-> IO	( (D.Tree (Maybe (T.Type, T.Effect)))	-- source tree with type and effect annotations
 		, [N.CTree]				-- type constraints
+		, Map Var T.DataDef			-- data type definitions
 		, Map Var Var 				-- sigma table (map of value -> type vars)
 		, Set Var				-- all the value vars used in the program that we'll want types for
 		, Set Var)				-- type vars for all top level bindings in the source module
@@ -185,6 +187,10 @@ desugarSlurpConstraints
 	let ((source', sctrs, vsBoundTopLevel), state3)
 			= runState (D.slurpTreeM sTree)
 			$ state2
+
+	let dataDefs	= Map.union
+				(Map.fromList [(T.dataDefName def, def) | D.PData _ def <- sTree])
+				(Map.fromList [(T.dataDefName def, def) | D.PData _ def <- hTree])
 
 	-- handle errors arrising from constraint slurping
 	when (not $ null $ D.stateErrors state3)
@@ -222,6 +228,7 @@ desugarSlurpConstraints
 	--
 	return	( source'
 		, constraints
+		, dataDefs
 		, sigmaTable 
 		, vsTypesPlease
 		, vsBoundTopLevel)
@@ -232,14 +239,16 @@ desugarSlurpConstraints
 desugarSolveConstraints
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
-	=> [N.CTree]		-- type constraints
-	-> Set Var		-- the TEC vars to infer TECs for	
-	-> Set Var		-- type vars of value vars bound at top level
-	-> Map Var Var		-- sigma table
-	-> Bool			-- whether to require the 'main' function to have () -> () type
+	=> Map Var T.DataDef	-- ^ Type constructor name to data type definitions in environment.
+	-> [N.CTree]		-- ^ type constraints
+	-> Set Var		-- ^ the TEC vars to infer TECs for	
+	-> Set Var		-- ^ type vars of value vars bound at top level
+	-> Map Var Var		-- ^ sigma table
+	-> Bool			-- ^ whether to require the 'main' function to have () -> () type
 	-> IO T.Solution
 
 desugarSolveConstraints
+	dataDefs
 	constraints
 	vsTypesPlease
 	vsBoundTopLevel
@@ -254,7 +263,8 @@ desugarSolveConstraints
 	hTrace	<- dumpOpen DumpTypeSolve "type-solve--trace"
 		
  	state	<- {-# SCC "solveSquid/solve" #-} T.squidSolve 
-			?args		constraints
+			?args		dataDefs
+			constraints
 			sigmaTable	vsBoundTopLevel	
 			hTrace		blessMain
 

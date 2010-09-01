@@ -259,6 +259,7 @@ compileFile_parse
 
 	(  sTagged
 	 , sConstrs
+	 , dataDefs
 	 , mapValueToTypeVars
 	 , vsTypesPlease
 	 , vsBoundTopLevelTREC)
@@ -276,6 +277,7 @@ compileFile_parse
 	outVerb $ ppr "  * Type: Solve\n"
 
 	solution	<- SD.desugarSolveConstraints
+				dataDefs
 				sConstrs
 				vsTypesPlease
 				vsBoundTopLevelTREC

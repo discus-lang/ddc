@@ -13,6 +13,7 @@ import DDC.Solve.Error
 import DDC.Solve.State
 import DDC.Solve.Trace
 import DDC.Main.Error
+import DDC.Type.Data
 import DDC.Type
 import DDC.Var
 import qualified Data.Map	as Map
@@ -41,17 +42,22 @@ extractType
 	-> SquidM (Maybe Type)
 
 extractType final varT
- = do	defs		<- getsRef stateDefs
-	case Map.lookup varT defs of
-	 -- If this var is in the defs table then it was imported from an external
-	 --	interface (or is a generated constructor function), so we can just return it directly.
-	 Just tt
-	  -> do	-- trace 	$ "    def: " %> prettyTS tt % "\n"
-		return $ Just tt
-	
-	 Nothing
-	  -> do	trace	$ "--  Scheme.extractType " % varT % " ----------\n"
-	     	{-# SCC "extractType_notDef" #-} extractType_findClass final varT
+ = do	defs	<- getsRef stateDefs
+	env	<- gets stateEnv
+
+	let result
+	 	-- If this var is in the defs table then it was imported from an external
+	 	--	interface (or is a generated constructor function), so we can just return it directly.
+		| Just tt	<- Map.lookup varT defs
+		= return $ Just tt
+		
+		| Just ctorDef	<- Map.lookup varT (squidEnvCtorDefs env)
+		= return $ Just $ ctorDefType ctorDef
+		
+		| otherwise
+		= extractType_findClass final varT
+
+	result
 
 extractType_findClass final varT
  = do	
