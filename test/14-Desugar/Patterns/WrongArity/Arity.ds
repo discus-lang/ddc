@@ -9,10 +9,10 @@ fun1 x
 
 
 -----
-data Thingo %r1 a b !e1
+data Thingo %r1 a b !e1 $c1
 	= ThingC1 a b
 	| ThingC2 (Int %r1) b (Int %r1)
-	| ThingC3 (a -(!e1)> b)
+	| ThingC3 (a -(!e1 $c1)> b)
 	
 fun2 x
  = case x of 

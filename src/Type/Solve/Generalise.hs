@@ -181,6 +181,6 @@ addSchemeToGraph src vGen tScheme
 
 	 -- Update the class
 	 -- TODO: Don't do this. Add the scheme somewhere else.
-	 _	-> updateClass cidGen	
+	 _	-> updateClass False cidGen	
 			cls { classUnified = Just $ NScheme tScheme_stripped }
 

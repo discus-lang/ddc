@@ -198,16 +198,16 @@ addClassToGraph mkCls graph
 
 
 -- | Modify a class in the graph, and activate it.
-modifyClassInGraph :: ClassId -> Graph -> (Class -> Class) -> IO ()
-modifyClassInGraph cid graph f
+modifyClassInGraph :: Bool -> ClassId -> Graph -> (Class -> Class) -> IO ()
+modifyClassInGraph activate cid graph f
  = do	cls	<- readArray (graphClass graph) cid
 	case cls of
 	 ClassForward _ cid'
-	  -> 	modifyClassInGraph cid' graph f
+	  -> 	modifyClassInGraph activate cid' graph f
 
 	 _ -> do
 		writeArray (graphClass graph) cid (f cls)
-		activateClassOfGraph cid graph
+		when activate $ activateClassOfGraph cid graph
 		
 
 -- | Delete a fetter class in the graph.
@@ -273,7 +273,7 @@ addNodeToClassInGraph cid kind src node graph
 --   for a given class, but only one ''canonical'' name.
 addAliasForClassInGraph :: ClassId -> Kind -> TypeSource -> Var	-> Graph -> IO Graph
 addAliasForClassInGraph cid kind src var graph
- = do	modifyClassInGraph cid graph
+ = do	modifyClassInGraph False cid graph
  	 $ \cls -> case cls of
 		ClassUnallocated{}
 		 -> (emptyClass kind src cid) 

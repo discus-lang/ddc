@@ -76,11 +76,9 @@ mergeClasses2 cids cs
 		, classFetters		= Map.unionsWith (Seq.><) $ map classFetters cs
 		, classFettersMulti	= Set.unions $ map classFettersMulti cs  }
 
-	updateClass cidL cL'
-
-	-- Mark the class as active so it gets visited by the unifier
+	-- Update and mark the class as active so it gets visited by the unifier
 	-- and other crushers.
-	activateClass cidL
+	updateClass True cidL cL'
 
 	-- Add forwards from old classes to new class.
 	let cidsH	= cids \\ [cidL]

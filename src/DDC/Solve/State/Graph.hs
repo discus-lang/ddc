@@ -82,14 +82,14 @@ ensureClassWithVar kind src var
 modifyClass :: ClassId -> (Class -> Class) -> SquidM ()
 modifyClass cid f
  = do	graph	<- getsRef stateGraph
-	liftIO $ modifyClassInGraph cid graph f
+	liftIO $ modifyClassInGraph True cid graph f
 
 
 -- | Update a class in the graph, and activate it.
-updateClass :: ClassId -> Class -> SquidM ()
-updateClass cid cls
+updateClass :: Bool -> ClassId -> Class -> SquidM ()
+updateClass activate cid cls
  = do	graph	<- getsRef stateGraph
-	liftIO $ modifyClassInGraph cid graph (\_ -> cls)
+	liftIO $ modifyClassInGraph activate cid graph (\_ -> cls)
 
 
 -- | Delete a SPTC Fetter from a class.

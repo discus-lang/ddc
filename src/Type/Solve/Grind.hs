@@ -11,14 +11,13 @@ import Constraint.Exp
 import Util
 import DDC.Main.Error
 import DDC.Solve.State
+import DDC.Type.Kind
 import DDC.Type.Exp
-import DDC.Type.Builtin
 import DDC.Var
 import qualified DDC.Var.PrimId	as Var
 import qualified Data.Set	as Set
-import qualified Data.Map	as Map
 
-debug	= False
+debug	= True
 stage	= "Type.Solve.Grind"
 trace s = when debug $ traceM s
 
@@ -74,7 +73,7 @@ solveGrindStep
 	-- grind those classes
 	(progressCrush, qssMore)
 		<- liftM unzip
-		$  mapM grindClass active
+		$  mapM crushClass active
  	
 	-- split classes into the ones that made progress and the ones that
 	--	didn't. This is just for the trace stmt below.
@@ -116,70 +115,50 @@ solveGrindStep
 	next
 
 
-grindClass :: ClassId -> SquidM (Bool, [CTree])
-grindClass cid
- = do	Just c	<- lookupClass cid
-	grindClass2 cid c
-
-grindClass2 cid c@ClassUnallocated{}
-	= panic stage
-	$ "grind2: ClassUnallocated{} " % cid
-
-grindClass2 cid c@(ClassForward _ cid')
-	= panic stage
-	$ "grind2: the cids to grind should already be canonicalised."
+-- | Try to crush a class in the graph
+crushClass :: ClassId -> SquidM (Bool, [CTree])
+crushClass cid
+ = lookupClass cid >>= \(Just cls)
+ -> case cls of
+	ClassUnallocated{}	
+	 -> panic stage $ "crushClass: ClassUnallocated{} " % cid
 	
-	 	
--- type nodes
-grindClass2 cid c@(Class	
-			{ classUnified 	= mType
-			, classKind	= k 
-			, classFetters	= fsSrcs})
- = do	
-	-- if a class contains an effect it might need to be crushed
-	progressCrushE	
-		<- case k of
-			kE | kE == kEffect	-> crushEffectsInClass cid
-			_			-> return False
+	ClassForward _ cid'
+	 -> panic stage $ "crushClass: the cids to grind should already be canonicalised."
 
-	-- try and crush other fetters in this class
-	progressCrush
-		<- if Map.null fsSrcs
-			then return False
-			else crushFettersInClass cid
-			
-	return	( progressCrushE || progressCrush
-		, [])
+	-- unifiable classes
+	(Class
+		{ classUnified 	= mType
+		, classKind	= k 
+		, classFetters	= fsSrcs})
+	 | isEffectKind k
+	 -> do	progress_effect	<- crushEffectsInClass cid
+		progress_fetter	<- crushFettersInClass cid
+		return	(progress_effect || progress_fetter, [])
+		
+	 | isClosureKind k
+	 -> 	return (False, [])
 	
--- fetter nodes
-grindClass2 cid c@ClassFetterDeleted{}
-	= return (False, [])
+	 | isRegionKind k
+	 ->	return (False, [])
+	
+	 | otherwise
+	 -> do	progress_unify	<- crushUnifyInClass cid
+		progress_fetter	<- crushFettersInClass cid
+		return	(progress_unify || progress_fetter, [])
 
-grindClass2 cid c@(ClassFetter { classFetter = f })
- = do
-	-- crush projection fetters
-	qsMore	<- case f of
-			FProj{}	-> crushProjInClass cid
-			_	-> return Nothing
-			
-	let progressProj
-		= isJust qsMore
-		
-	-- crush shape fetters
-	let isFShape b
-		= case b of
-			Var.FShape _	-> True
-			_		-> False
+	-- fetter classes
+	ClassFetterDeleted{}
+	 -> return (False, [])
 
-	progressShape
-		<- case f of
-			FConstraint v _
-			 | VarIdPrim pid	<- varId v
-			 , isFShape pid		-> crushShapeInClass cid
-			_			-> return False
+	ClassFetter { classFetter = f }
+	 | FProj{}	<- f
+	 -> do	mQsMore 	<- crushProjInClass cid
+		return	(isJust mQsMore, join $ maybeToList mQsMore)
 		
-	-- crush other fetters
-	progressCrush <- crushFettersInClass cid
+	 | FConstraint v _	<- f
+	 , VarIdPrim pid	<- varId v
+	 , Var.FShape _		<- pid
+	 -> do	progress_shape	<- crushShapeInClass cid
+		return	(progress_shape, [])
 		
-	return	( progressProj || progressShape || progressCrush
-		, fromMaybe [] qsMore )

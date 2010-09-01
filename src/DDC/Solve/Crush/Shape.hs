@@ -199,7 +199,7 @@ freshenCid src cid
  		<- lookupClass cid
  
  	cid'	<- allocClass k src
-	updateClass cid'
+	updateClass False cid'
 		(emptyClass k src cid')
 		{ classUnified = Just nBot }
 

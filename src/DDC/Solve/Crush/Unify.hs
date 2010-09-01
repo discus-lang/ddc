@@ -40,8 +40,12 @@ crushUnifyInClass cid
 		
 		-- Rffects and closures don't need to be unified because they're injective.
 		-- We combine the constraints by l.u.b instead of by unification.
-		| isEffectKind kind || isClosureKind kind
-		-> do	trace $ ppr "   -- is region\n\n"
+		| isEffectKind kind
+		-> do	trace $ ppr "   -- is effect\n\n"
+			return False
+
+		| isClosureKind kind
+		-> do	trace $ ppr "   -- is closure\n\n"
 			return False
 
 		-- The class is already unified.
@@ -82,7 +86,7 @@ crushUnifyInClass_unify cid cls@Class{}
   	trace	$ "    node_final  = " % node_final	% "\n\n"
 
 	-- Update the class with the new type
-  	updateClass cid cls 
+  	updateClass False cid cls 
 		{ classUnified 	= Just node_final }
 
 	-- Wake up any MPTCs acting on this class
@@ -165,7 +169,7 @@ addErrorConflict' cid cls ((node1, src1), (node2, src2))
 			, eTypeSource2	= src2 }]
 
 	-- mark the class in the graph that contains the error.
-	updateClass cid
+	updateClass False cid
 		cls { classUnified	= Just $ NError }
 
 

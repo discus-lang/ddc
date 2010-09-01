@@ -151,7 +151,7 @@ crushEffectsWithClass cid cls
 			= or $ map isChangeResult results
 
 		when classHasChanged
-		 $ updateClass cid cls { classTypeSources = nodeReplacements }
+		 $ updateClass False cid cls { classTypeSources = nodeReplacements }
 		
 		-- Even if nothing has changed, we might be able to crush
 		-- something next time.
