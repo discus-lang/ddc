@@ -15,7 +15,7 @@ import Type.Feed
 import Control.Monad
 import Data.Maybe
 
-debug	= True
+debug	= False
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effects"
 
@@ -150,8 +150,10 @@ crushEffectsWithClass cid cls
 		let classHasChanged 
 			= or $ map isChangeResult results
 
+		-- If we're changing the class we must reactivate it as we might be adding
+		-- another compound effect like ReadT that needs further crushing.
 		when classHasChanged
-		 $ updateClass False cid cls { classTypeSources = nodeReplacements }
+		 $ updateClass True cid cls { classTypeSources = nodeReplacements }
 		
 		-- Even if nothing has changed, we might be able to crush
 		-- something next time.
