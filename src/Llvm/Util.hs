@@ -10,7 +10,7 @@ module Llvm.Util
 	, uniqueOfLlvmVar
 	, nameOfLlvmVar
 
-	, funcOfDecl
+	, funcVarOfDecl
 
 	, pChar
 	, ppChar
@@ -58,10 +58,10 @@ loadAddress :: LlvmVar -> LlvmExpression
 loadAddress v = Load (pVarLift v)
 
 
--- Convert a LlvmFUnctionDecl into an LlvmVar containing a function that can
+-- Convert a LlvmFunctionDecl into an LlvmVar containing a function that can
 -- actually be called.
-funcOfDecl :: LlvmFunctionDecl -> LlvmVar
-funcOfDecl decl@(LlvmFunctionDecl name _ _ _ _ _ _ )
+funcVarOfDecl :: LlvmFunctionDecl -> LlvmVar
+funcVarOfDecl decl@(LlvmFunctionDecl name _ _ _ _ _ _ )
  = LMGlobalVar name (LMFunction decl) External Nothing Nothing True
 
 --------------------------------------------------------------------------------

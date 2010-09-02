@@ -26,10 +26,6 @@ import LlvmM
 import Llvm.GhcReplace.Unique
 import Llvm.Invoke
 import Llvm.Runtime
-import Llvm.Runtime.Apply
-import Llvm.Runtime.Data
-import Llvm.Runtime.Error
-import Llvm.Runtime.Tags
 import Llvm.Util
 
 import Sea.Exp
@@ -82,7 +78,8 @@ compileViaLlvm
 			includeFilesHere
 
 	outVerb $ ppr $ "  * Generating LLVM IR code\n"
-	llvmSource	<- outLlvm modName eTree pathSource
+
+	llvmSource	<- evalStateT (outLlvm modName eTree pathSource) initLlvmState
 
 	writeFile (?pathSourceBase ++ ".ddc.ll")
 			$ ppLlvmModule llvmSource
@@ -99,7 +96,7 @@ outLlvm
 	=> ModuleId
 	-> (Tree ())		-- sea source
 	-> FilePath		-- path of the source file
-	-> IO LlvmModule
+	-> LlvmM LlvmModule
 
 outLlvm moduleName eTree pathThis
  = do
@@ -107,7 +104,7 @@ outLlvm moduleName eTree pathThis
 	let 	([ 	_seaProtos, 		seaSupers
 		 , 	_seaCafProtos,		seaCafSlots,		seaCafInits
 		 ,	_seaData
-		 , 	_seaHashDefs ], junk)
+		 , 	_seaHashDefs ],		junk)
 
 		 = partitionFs
 			[ (=@=) PProto{}, 	(=@=) PSuper{}
@@ -129,20 +126,15 @@ outLlvm moduleName eTree pathThis
 
 	let code	= eraseAnnotsTree $ seaCafInits ++ seaSupers
 
-	let fwddecls	= [panicOutOfSlots, allocCollect, force, apply1FD, apply2FD, apply3FD, apply4FD, baseFalse, baseTrue]
+	let fwddecls	= [panicOutOfSlots, allocCollect, force, apply1FD, baseFalse, baseTrue]
 
 	let globals	= moduleGlobals
 			++ (map llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
 
-	decls		<- evalStateT (topSeaDecls code) initLlvmState
+	decls		<- mapM llvmOfSeaDecls code
 
 	return $ LlvmModule comments aliases globals fwddecls decls
 
-
-
-topSeaDecls :: [Top (Maybe a)] -> LlvmM [LlvmFunction]
-topSeaDecls ss
- = 	mapM llvmOfSeaDecls ss
 
 
 llvmOfSeaDecls :: Top (Maybe a) -> LlvmM LlvmFunction
@@ -303,7 +295,7 @@ genAltDefault label (ADefault ss)
 genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
  = do	addBlock
 		[ MkLabel (uniqueOfLlvmVar label)
-		, Expr (Call StdCall (funcOfDecl deathCase) [i32LitVar 0, i32LitVar l, i32LitVar c] [])
+		, Expr (Call StdCall (funcVarOfDecl deathCase) [i32LitVar 0, i32LitVar l, i32LitVar c] [])
 		, Unreachable
 		]
 

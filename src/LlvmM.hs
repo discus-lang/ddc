@@ -21,6 +21,8 @@ import Util
 import Llvm
 import Llvm.GhcReplace.Unique
 
+import qualified Data.Map		as Map
+
 
 -- LlvmState contains the register for the current 'of interest' data and
 -- a list of blocks of statements. The blocks of statements are pushed onto
@@ -29,14 +31,15 @@ import Llvm.GhcReplace.Unique
 -- statements.
 data LlvmState
 	= LS
-	{ freg :: Maybe LlvmVar
-	, fblocks :: [[LlvmStatement]] }
+	{ freg		:: Maybe LlvmVar
+	, fblocks	:: [[LlvmStatement]]
+	, globals	:: Map String LMGlobal }
 
 type LlvmM = StateT LlvmState IO
 
 
 initLlvmState :: LlvmState
-initLlvmState = LS { freg = Nothing, fblocks = [] }
+initLlvmState = LS { globals = Map.empty, freg = Nothing, fblocks = [] }
 
 addBlock :: [LlvmStatement] -> LlvmM ()
 addBlock code
@@ -79,6 +82,16 @@ endFunction
 				    Return _	-> blks
 				    _		-> [Return Nothing] : blks
 
+--------------------------------------------------------------------------------
+{-
+addGlobal :: LlvmFunctionDecl -> LlvmM ()
+addGlobal fd
+ = do	state		<- get
+	let map		= globals state
+	case Map.lookup name of
+	  Nothing	-> return ()
+	  Just curr	-> return ()
+-}
 --------------------------------------------------------------------------------
 
 -- | Generate a new unique register variable with the specified LlvmType.

@@ -5,33 +5,14 @@ module Llvm.Runtime
 	( runtimeEnter
 	, runtimeLeave
 
-	, panicOutOfSlots
-	, allocCollect
-	, force
-	, forceObj
-	, getObjTag
-
-	, ddcSlotPtr
-	, ddcSlotMax
-	, ddcSlotBase
-
-	, ddcHeapPtr
-	, ddcHeapMax
-
-	, writeSlot
-	, readSlot
-	, readSlotVar
-	, localSlotBase
-
-	, allocate
-
-	, applyN
-
-	, boxAny	, unboxAny
-	, boxInt32	, unboxInt32
-	, boxInt64
-	, boxFloat32
-	, boxFloat64 )
+	, module Llvm.GhcReplace.Unique
+	, module Llvm.Runtime.Alloc
+	, module Llvm.Runtime.Apply
+	, module Llvm.Runtime.Boxing
+	, module Llvm.Runtime.Data
+	, module Llvm.Runtime.Error
+	, module Llvm.Runtime.Slot
+	, module Llvm.Runtime.Tags )
 where
 
 import DDC.Main.Error
@@ -43,7 +24,10 @@ import Llvm.Runtime.Alloc
 import Llvm.Runtime.Apply
 import Llvm.Runtime.Boxing
 import Llvm.Runtime.Data
+import Llvm.Runtime.Error
 import Llvm.Runtime.Slot
+import Llvm.Runtime.Tags
+
 import Llvm.Util
 
 stage :: String

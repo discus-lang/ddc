@@ -36,25 +36,25 @@ apply4FD = LlvmFunctionDecl "_apply4" External CC_Ccc pObj FixedArgs [(pObj, [])
 apply1 :: LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply1 thunk obj1
  = do	result	<- newUniqueNamedReg "result" pObj
-	addBlock [ Assignment result (Call StdCall (funcOfDecl apply1FD) [thunk, obj1] []) ]
+	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply1FD) [thunk, obj1] []) ]
 	return result
 
 apply2 :: LlvmVar -> LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply2 thunk obj1 obj2
  = do	result	<- newUniqueNamedReg "result" pObj
-	addBlock [ Assignment result (Call StdCall (funcOfDecl apply2FD) [thunk, obj1, obj2] []) ]
+	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply2FD) [thunk, obj1, obj2] []) ]
 	return result
 
 apply3 :: LlvmVar -> LlvmVar -> LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply3 thunk obj1 obj2 obj3
  = do	result	<- newUniqueNamedReg "result" pObj
-	addBlock [ Assignment result (Call StdCall (funcOfDecl apply3FD) [thunk, obj1, obj2, obj3] []) ]
+	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply3FD) [thunk, obj1, obj2, obj3] []) ]
 	return result
 
 apply4 :: LlvmVar -> LlvmVar -> LlvmVar -> LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply4 thunk obj1 obj2 obj3 obj4
  = do	result	<- newUniqueNamedReg "result" pObj
-	addBlock [ Assignment result (Call StdCall (funcOfDecl apply4FD) [thunk, obj1, obj2, obj3, obj4] []) ]
+	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply4FD) [thunk, obj1, obj2, obj3, obj4] []) ]
 	return result
 
 
