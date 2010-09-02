@@ -1,10 +1,10 @@
 ddc: ERROR
 ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:18
     Conflicting region constraints.
-               constraint: Const %75
+               constraint: ConstT *202
         which purifies
               the use of: (*)
-                 of type: (226 227)
+                 of type: !ReadT *202
                       at: ./test/15-Typing/Purity/PurifyReadWrite2/Test.ds:5:25
         due to
               the use of: mapL

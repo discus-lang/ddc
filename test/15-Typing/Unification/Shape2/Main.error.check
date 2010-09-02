@@ -1,14 +1,4 @@
 ddc: ERROR
-./test/15-Typing/Unification/Shape2/Main.ds:5:10
-    Kind mismatch during unification.
-          cannot match: % -> *
-                  with: $ -> *
-
-./test/15-Typing/Unification/Shape2/Main.ds:5:10
-    Kind mismatch during unification.
-          cannot match: %
-                  with: $
-
 ./test/15-Typing/Unification/Shape2/Main.ds:5:25
     Kind mismatch during unification.
           cannot match: $ -> *
@@ -18,4 +8,14 @@ ddc: ERROR
     Kind mismatch during unification.
           cannot match: $
                   with: %
+
+./test/15-Typing/Unification/Shape2/Main.ds:5:10
+    Kind mismatch during unification.
+          cannot match: % -> *
+                  with: $ -> *
+
+./test/15-Typing/Unification/Shape2/Main.ds:5:10
+    Kind mismatch during unification.
+          cannot match: %
+                  with: $
 
