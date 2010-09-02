@@ -9,6 +9,7 @@ import DDC.Type.Data.CtorType
 import DDC.Type
 import DDC.Var
 import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Base.DataFormat
 import Util.Data.List
 import Control.Monad
@@ -16,6 +17,7 @@ import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
 import qualified Debug.Trace
 
+stage		= "DDC.Type.Data.Elaborate"
 debug		= False
 trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 
@@ -124,7 +126,7 @@ elaborateCtorDefParams newVarN ctorDef
 	-- TODO: we're currently not handling type class context on data constructors.
 	let (_, [], tBody)
 	 	= stripForallContextT $ ctorDefType ctorDef 
-	
+		
 	-- Take the parameter types from the given constructor type.
 	-- We can ignore the return type as makeCtorType will add it back.
 	let tsBits		= flattenTFuns tBody
@@ -133,7 +135,11 @@ elaborateCtorDefParams newVarN ctorDef
 	-- Elaborate each of the parameter types individually.
 	(tsParams_elab, vkssNew)
 			<- liftM unzip
-			$  mapM (elaborateRsT newVarN) tsParams
+			$  mapM (\t -> do 	
+					(tR, vksNewR)	<- elaborateRsT newVarN t
+					(tE, vksNewE)	<- annotEffClo  newVarN tR
+					return (tE, vksNewR ++ vksNewE))
+				tsParams
 		
 	let ctorDefElab
 		= CtorDefElab
@@ -164,3 +170,59 @@ elaborateCtorDefResult newVarN vData vsParam ctorDef
 	return	$ (ctorDefElabOrig ctorDef)
 			{ ctorDefType	= tCtor_elab }
 
+
+-- | Ensure that all function constructors are annotated with
+--   effect and closure variables.
+annotEffClo 
+	:: Monad m
+	=> (NameSpace -> m Var)
+	-> Type
+	-> m (Type, [(Var, Kind)])
+
+annotEffClo newVarN tt
+ = case tt of
+	TVar{}	-> return (tt, [])
+	TCon{}	-> return (tt, [])
+	TSum{}	-> return (tt, [])
+	
+	TApp tX tY
+	 | Just (t1, t2, eff, clo)	<- takeTFun tt
+	 -> do	(t1',  vs1) <- annotEffClo newVarN t1
+		(t2',  vs2) <- annotEffClo newVarN t2
+		(eff', vs3) <- makeAnnot   newVarN eff
+		(clo', vs4) <- makeAnnot   newVarN clo
+		return	( makeTFun t1' t2' eff' clo'
+			, vs1 ++ vs2 ++ vs3 ++ vs4)
+	
+	 | otherwise
+	 -> do	(t1', vs1)  <- annotEffClo newVarN tX
+		(t2', vs2)  <- annotEffClo newVarN tY
+		return	( TApp t1' t2'
+			, vs1 ++ vs2)
+			
+	_	-> panic stage 
+		$ "annotEffClo: no match"
+	
+	
+-- | If this is a bottom effect or closure then replace it with
+--   a fresh variable, and return that variable and it's kind.	
+makeAnnot
+	:: Monad m
+	=> (NameSpace -> m Var)
+	-> Type
+	-> m (Type, [(Var, Kind)])
+	
+makeAnnot newVarN tt
+ = case tt of
+	TSum k []
+	 | isEffectKind k
+	 -> do	vEff	<- newVarN NameEffect
+		return	( TVar k (UVar vEff)
+			, [(vEff, kEffect)])
+
+	 | isClosureKind k
+	 -> do	vClo	<- newVarN NameClosure
+		return	( TVar k (UVar vClo)
+			, [(vClo, kClosure)])
+		
+	_ 	-> return (tt, [])

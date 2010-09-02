@@ -276,18 +276,18 @@ elaborateCloT' newVarN env tt
 -- Elaborate Effects ------------------------------------------------------------------------------
 -- | Elaborate effects in this type.
 elaborateEffT 
-	:: (Monad m
-	 ,  ?newVarN :: NameSpace -> m Var)
-	=> [Var]		-- ^ constant region variables to make effects for
+	:: Monad m
+	=> (NameSpace -> m Var)	-- ^ function to allocate fresh variables
+	-> [Var]		-- ^ constant region variables to make effects for
 	-> [Var]		-- ^ mutable  region variables to make effects for
 	-> Type			-- ^ the type to elaborate
 	-> m Type		--   the elaborated type
 	
-elaborateEffT vsRsConst vsRsMutable tt
+elaborateEffT newVarN vsRsConst vsRsMutable tt
  = do	
  	-- make a fresh hook var
 	--	The new effect fetter constrains this var.
- 	freshHookVar	<- ?newVarN NameEffect
+ 	freshHookVar	<- newVarN NameEffect
 
 	-- see if there is already a var on the rightmost function arrow,
 	--	if there isn't one then add the freshHookVar.

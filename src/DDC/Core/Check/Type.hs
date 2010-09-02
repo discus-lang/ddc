@@ -183,9 +183,9 @@ checkType_trace m tt env
 
 		 | otherwise	
 		 -> panic stage
-		 	$ "Kind error on type variable."
-			% "    kind on annot: " % k % "\n"
-			% "    does not match environment: " % k % "\n"
+		 	$ "Kind error on type variable.\n"
+			% "    kind on annot: " % k' % "\n"
+			% "    does not match environment: " % k'' % "\n"
 		 
 
 	-- TODO: check index is in scope.

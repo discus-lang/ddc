@@ -3,7 +3,6 @@
 module DDC.Type.Data.CtorType
 	(makeCtorType)
 where
-import DDC.Type.Transform
 import DDC.Type.Elaborate
 import DDC.Type.Kind
 import DDC.Type.Builtin
@@ -35,11 +34,11 @@ makeCtorType newVarN vData vsParam vCtor tsParam
  = do
 	-- Ensure there we have variables in all the effect and closure positions of 
 	-- fields with functional types.
-	tsParam_varified <- mapM (transformTM (replaceBotByVar newVarN)) tsParam
+--	tsParam_varified <- mapM (transformTM (replaceBotByVar newVarN)) tsParam
 
 	-- Gather up all the vars from the field type.
 	let vsFree	= Set.filter (not . Var.isCtorName)
-			$ freeVars tsParam_varified
+			$ freeVars tsParam
 
 	-- Check for vars in the field type aren't params of the data type.
 	--	If they are effects or closures we can force them to be Bot with Pure / Empty fetters.
@@ -63,7 +62,7 @@ makeCtorType newVarN vData vsParam vCtor tsParam
 	-- so we don't need to add any effects. We still need to add closure
 	-- information though incase they are partially applied.
  	tCtor		<- elaborateCloT newVarN
-			$  makeTFunsPureEmpty (tsParam_varified ++ [objType])
+			$  makeTFunsPureEmpty (tsParam ++ [objType])
 
 	-- Add forall quantifiers to the front of the body type to make the final scheme.
 	let bks		= map (\v -> (BVar v, let Just k = defaultKindOfVar v in k)) 
@@ -73,7 +72,7 @@ makeCtorType newVarN vData vsParam vCtor tsParam
 
 	return 	tCtor_quant
 
-
+{-
 -- | If this type is a bottom then replace it by a fresh variable.
 replaceBotByVar
 	:: Monad m 
@@ -88,7 +87,7 @@ replaceBotByVar  newVarN tt
 	 	return	$ TVar k $ UVar v
 
 	_ ->	return tt
-
+-}
 
 -- | Check that a type varible is present in the list of parameters to a data type.
 --	If it's not, then for effect and closure variables we can just constrain

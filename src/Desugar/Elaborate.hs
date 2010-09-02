@@ -81,8 +81,8 @@ elaborateT_fun tt
 	let tt_quant	= makeTForall_back extraQuantBKs tt_rs
 
 	-- add read and write effects
-	let ?newVarN	= newVarN
 	tt_eff		<- elaborateEffT 
+				newVarN
 				(Set.toList rsRead) (Set.toList rsWrite) 
 				tt_quant
 
