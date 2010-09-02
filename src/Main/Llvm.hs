@@ -124,31 +124,24 @@ outLlvm moduleName eTree pathThis
 
 	let aliases	= [ ("struct.Obj", ddcObj) ]
 
-	let code	= eraseAnnotsTree $ seaCafInits ++ seaSupers
-
-	let fwddecls	= [panicOutOfSlots, allocCollect, force, apply1FD, baseFalse, baseTrue]
-
 	let globals	= moduleGlobals
 			++ (map llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
 
-	decls		<- mapM llvmOfSeaDecls code
+	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
 
-	return $ LlvmModule comments aliases globals fwddecls decls
+	renderModule	comments aliases globals
 
 
-
-llvmOfSeaDecls :: Top (Maybe a) -> LlvmM LlvmFunction
+llvmOfSeaDecls :: Top (Maybe a) -> LlvmM ()
 llvmOfSeaDecls (PSuper v p t ss)
  = do	startFunction
 	llvmOfFunc ss
-	blocks	<- endFunction
-	return	$
-		LlvmFunction
+	endFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
 		(map (seaVar True . fst) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
-		[ LlvmBlock (fakeUnique "entry") blocks ]
+
 
 llvmOfSeaDecls (PCafInit v t ss)
  = panic stage "Implement 'llvmOfSeaDecls (PCafInit v t ss)'"
@@ -347,8 +340,10 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XApply (XSlot v2 t2 i2) args)
 
 llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
  | t1 == t
- = do	result		<- newUniqueNamedReg "result" pObj
-	addBlock	[ Assignment result (Call TailCall (toLlvmGlobalFunc v2 t args) [] []) ]
+ = do	let func	= toLlvmFuncDecl External v2 t args
+	addGlobalFuncDecl func
+	result		<- newUniqueNamedReg "result" pObj
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
 	writeSlot	result i1
 
 
@@ -390,7 +385,7 @@ llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
 	dst1		<- newUniqueReg pObj
 	dst2		<- newUniqueReg pObj
 	addBlock	[ Assignment dst1 (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
-			, Assignment dst2 (Call TailCall (toLlvmGlobalFunc v2 t args) [] [])
+			, Assignment dst2 (Call TailCall (funcVarOfDecl (toLlvmFuncDecl Internal v2 t args)) [] [])
 			, Store dst2 (pVarLift dst1)
 			]
 
@@ -404,7 +399,7 @@ llvmOfAssign a b c
 llvmFunApply :: LlvmVar -> Type -> [Exp a] -> LlvmM LlvmVar
 llvmFunApply fptr typ args
  = do	params	<- mapM llvmFunParam args
-	addComment $ "llvmFunApply : " -- ++ show params
+	addComment $ "llvmFunApply : " ++ show fptr
 	applyN fptr params
 
 
@@ -586,27 +581,24 @@ toLlvmCafVar :: Var -> Type -> LlvmVar
 toLlvmCafVar v t
  = LMGlobalVar ("_ddcCAF_" ++ seaVar False v) (toLlvmType t) External Nothing Nothing False
 
-toLlvmGlobalFunc :: Var -> Type -> [Exp a] -> LlvmVar
-toLlvmGlobalFunc v t args
- =	let	name = seaVar False v
-		decl = LlvmFunctionDecl {
-			--  Unique identifier of the function
-			decName = name,
-			--  LinkageType of the function
-			funcLinkage = Internal,
-			--  The calling convention of the function
-			funcCc = CC_Ccc,
-			--  Type of the returned value
-			decReturnType = toLlvmType t,
-			--  Indicates if this function uses varargs
-			decVarargs = FixedArgs,
-			--  Parameter types and attributes
-			decParams = [],     -- [LlvmParameter],
-			--  Function align value, must be power of 2
-			funcAlign = ptrAlign
-			}
-		func = LMFunction decl
-	in	LMGlobalVar name func Internal Nothing ptrAlign False
+toLlvmFuncDecl :: LlvmLinkageType -> Var -> Type -> [Exp a] -> LlvmFunctionDecl
+toLlvmFuncDecl linkage v t args
+ = LlvmFunctionDecl {
+	--  Unique identifier of the function
+	decName = seaVar False v,
+	--  LinkageType of the function
+	funcLinkage = linkage,
+	--  The calling convention of the function
+	funcCc = CC_Ccc,
+	--  Type of the returned value
+	decReturnType = toLlvmType t,
+	--  Indicates if this function uses varargs
+	decVarargs = FixedArgs,
+	--  Parameter types and attributes
+	decParams = [],     -- [LlvmParameter],
+	--  Function align value, must be power of 2
+	funcAlign = ptrAlign
+	}
 
 
 -- | Does the given Sea variable have global scope? TODO: Move this to the Sea stuff.

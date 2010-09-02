@@ -11,6 +11,7 @@ module Llvm.Util
 	, nameOfLlvmVar
 
 	, funcVarOfDecl
+	, nameOfFunDecl
 
 	, pChar
 	, ppChar
@@ -63,6 +64,10 @@ loadAddress v = Load (pVarLift v)
 funcVarOfDecl :: LlvmFunctionDecl -> LlvmVar
 funcVarOfDecl decl@(LlvmFunctionDecl name _ _ _ _ _ _ )
  = LMGlobalVar name (LMFunction decl) External Nothing Nothing True
+
+nameOfFunDecl :: LlvmFunctionDecl -> String
+nameOfFunDecl (LlvmFunctionDecl name _ _ _ _ _ _ )
+ = name
 
 --------------------------------------------------------------------------------
 -- Types and variables.

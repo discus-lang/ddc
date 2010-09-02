@@ -47,6 +47,7 @@ runtimeEnter count
 	let enter3	= LMNLocalVar "enter.3" i1
 	let epanic	= fakeUnique "enter.panic"
 	let egood	= fakeUnique "enter.good"
+	addGlobalFuncDecl panicOutOfSlots
 	addBlock $
 		[ Comment ["_ENTER (" ++ show count ++ ")"]
 		, Assignment localSlotBase (Load ddcSlotPtr)

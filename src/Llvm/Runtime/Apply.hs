@@ -1,11 +1,6 @@
 {-# OPTIONS -Wall -Werror -fwarn-unused-imports #-}
 module Llvm.Runtime.Apply
-	( applyN
-
-	, apply1FD
-	, apply2FD
-	, apply3FD
-	, apply4FD )
+	( applyN )
 where
 
 
@@ -35,25 +30,29 @@ apply4FD = LlvmFunctionDecl "_apply4" External CC_Ccc pObj FixedArgs [(pObj, [])
 
 apply1 :: LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply1 thunk obj1
- = do	result	<- newUniqueNamedReg "result" pObj
+ = do	addGlobalFuncDecl apply1FD
+	result	<- newUniqueNamedReg "result" pObj
 	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply1FD) [thunk, obj1] []) ]
 	return result
 
 apply2 :: LlvmVar -> LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply2 thunk obj1 obj2
- = do	result	<- newUniqueNamedReg "result" pObj
+ = do	addGlobalFuncDecl apply2FD
+	result	<- newUniqueNamedReg "result" pObj
 	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply2FD) [thunk, obj1, obj2] []) ]
 	return result
 
 apply3 :: LlvmVar -> LlvmVar -> LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply3 thunk obj1 obj2 obj3
- = do	result	<- newUniqueNamedReg "result" pObj
+ = do	addGlobalFuncDecl apply3FD
+	result	<- newUniqueNamedReg "result" pObj
 	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply3FD) [thunk, obj1, obj2, obj3] []) ]
 	return result
 
 apply4 :: LlvmVar -> LlvmVar -> LlvmVar -> LlvmVar -> LlvmVar -> LlvmM LlvmVar
 apply4 thunk obj1 obj2 obj3 obj4
- = do	result	<- newUniqueNamedReg "result" pObj
+ = do	addGlobalFuncDecl apply4FD
+	result	<- newUniqueNamedReg "result" pObj
 	addBlock [ Assignment result (Call StdCall (funcVarOfDecl apply4FD) [thunk, obj1, obj2, obj3, obj4] []) ]
 	return result
 

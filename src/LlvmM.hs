@@ -6,6 +6,8 @@ module LlvmM
 	, addComment
 	, currentReg
 
+	, addGlobalFuncDecl
+
 	, newUniqueReg
 	, newUniqueNamedReg
 	, newUniqueLabel
@@ -13,15 +15,23 @@ module LlvmM
 	, initLlvmState
 
 	, startFunction
-	, endFunction )
+	, endFunction
+
+	, renderModule )
 where
+
+import DDC.Main.Error
 
 import Util
 
 import Llvm
 import Llvm.GhcReplace.Unique
+import Llvm.Util
 
 import qualified Data.Map		as Map
+
+
+stage = "LlvmM"
 
 
 -- LlvmState contains the register for the current 'of interest' data and
@@ -33,30 +43,42 @@ data LlvmState
 	= LS
 	{ freg		:: Maybe LlvmVar
 	, fblocks	:: [[LlvmStatement]]
-	, globals	:: Map String LMGlobal }
+
+	, funcDecls	:: Map String LlvmFunctionDecl
+	, functions	:: [LlvmFunction] }
 
 type LlvmM = StateT LlvmState IO
 
 
 initLlvmState :: LlvmState
-initLlvmState = LS { globals = Map.empty, freg = Nothing, fblocks = [] }
+initLlvmState
+ = LS	{ freg = Nothing
+	, fblocks = []
+	, funcDecls = Map.empty
+	, functions = [] }
 
 addBlock :: [LlvmStatement] -> LlvmM ()
 addBlock code
  = do	state	<- get
-	modify $ \s -> s { freg = Nothing, fblocks = code : (fblocks state) }
+	modify $ \s -> s
+		{ freg = Nothing
+		, fblocks = code : (fblocks state) }
 
 
 addBlockResult :: LlvmVar -> [LlvmStatement] -> LlvmM ()
 addBlockResult result code
  = do	state	<- get
-	modify $ \s -> s { freg = Just result, fblocks = code : (fblocks state) }
+	modify $ \s -> s
+		{ freg = Just result
+		, fblocks = code : (fblocks state) }
 
 
 addComment :: LMString -> LlvmM ()
 addComment text
  = do	state	<- get
-	modify $ \s -> s { freg = freg state, fblocks = [Comment (lines text)] : (fblocks state) }
+	modify $ \s -> s
+		{ freg = freg state
+		, fblocks = [Comment (lines text)] : (fblocks state) }
 
 
 currentReg :: LlvmM LlvmVar
@@ -68,30 +90,50 @@ startFunction :: LlvmM ()
 startFunction
  =	modify $ \s -> s { freg = Nothing, fblocks = [] }
 
-endFunction :: LlvmM [LlvmStatement]
-endFunction
+endFunction :: LlvmFunctionDecl -> [LMString] -> [LlvmFuncAttr] -> LMSection -> LlvmM ()
+endFunction funcDecl funcArgs funcAttrs funcSect
  = do	-- At end of function reverse the list of blocks and then
 	-- concatenate the blocks to produce a list of statements.
 	state		<- get
-	let blks	= fblocks state
-	case blks of
-	  []	->	return	[Return Nothing]
-	  x:xs	->	return	$ concat
-				$ reverse
-				$ case last x of
-				    Return _	-> blks
-				    _		-> [Return Nothing] : blks
+	let fblks	= fblocks state
+	let blks	=
+			if null fblks
+			  then [Return Nothing]
+			  else concat $ reverse $
+				case last (head fblks) of
+				  Return _	-> fblks
+				  _		-> [Return Nothing] : fblks
+
+	let func	= LlvmFunction funcDecl funcArgs funcAttrs funcSect
+				[ LlvmBlock (fakeUnique "entry") blks ]
+
+	modify $ \s -> s { functions = func : (functions s) }
 
 --------------------------------------------------------------------------------
-{-
-addGlobal :: LlvmFunctionDecl -> LlvmM ()
-addGlobal fd
+
+addGlobalFuncDecl :: LlvmFunctionDecl -> LlvmM ()
+addGlobalFuncDecl fd
  = do	state		<- get
-	let map		= globals state
-	case Map.lookup name of
-	  Nothing	-> return ()
-	  Just curr	-> return ()
--}
+	let map		= funcDecls state
+	let name	= nameOfFunDecl fd
+	case Map.lookup name map of
+	  Nothing	-> modify $ \s -> s { funcDecls = Map.insert name fd map }
+	  Just curr	-> if curr == fd
+				then return ()
+				else panic stage
+					$ "The following two should match :"
+					++ "\n    " ++ show curr
+					++ "\n    " ++ show fd
+
+--------------------------------------------------------------------------------
+
+renderModule :: [LMString] -> [LlvmAlias] -> [LMGlobal] -> LlvmM LlvmModule
+renderModule comments aliases globals
+ = do	state		<- get
+	let fdecls	= map snd $ Map.toList $ funcDecls state
+	return	$ LlvmModule comments aliases globals fdecls
+			$ reverse $ functions state
+
 --------------------------------------------------------------------------------
 
 -- | Generate a new unique register variable with the specified LlvmType.

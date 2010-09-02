@@ -42,7 +42,8 @@ force = LlvmFunctionDecl "_force" External CC_Ccc pObj FixedArgs [(pObj, [])] pt
 
 forceObj :: LlvmVar -> LlvmM LlvmVar
 forceObj orig
- = do	let fun	= LMGlobalVar "_force" (LMFunction force) External Nothing Nothing True
+ = do	addGlobalFuncDecl force
+	let fun	= LMGlobalVar "_force" (LMFunction force) External Nothing Nothing True
 	forced	<- newUniqueNamedReg "forced" pObj
 	addBlock [ Assignment forced (Call StdCall fun [orig] []) ]
 	return forced
@@ -72,14 +73,4 @@ getObjTag obj
 		, Assignment val (LlvmOp LM_MO_AShr r1 (i32LitVar 8))
 		]
 	return	val
-
-
-
-
-baseFalse :: LlvmFunctionDecl
-baseFalse = LlvmFunctionDecl "Base_False" External CC_Ccc pObj FixedArgs [] ptrAlign
-
-baseTrue :: LlvmFunctionDecl
-baseTrue = LlvmFunctionDecl "Base_True" External CC_Ccc pObj FixedArgs [] ptrAlign
-
 

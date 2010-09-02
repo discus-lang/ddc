@@ -19,7 +19,8 @@ stage = "Llvm.Runtime.Alloc"
 -- boundaries and panics if asked to allocate zero or less bytes.
 allocate :: Int -> String -> LlvmM LlvmVar
 allocate bytes name
- = do	ptr	<- newUniqueNamedReg name pObj
+ = do	addGlobalFuncDecl allocCollect
+	ptr	<- newUniqueNamedReg name pObj
 	r0	<- newUniqueNamedReg "r0" pChar
 	r1	<- newUniqueNamedReg "r1" pChar
 	r2	<- newUniqueNamedReg "r2" pChar
