@@ -14,7 +14,7 @@ data Thingo %r1 a b !e1 $c1
 	
 fun2 x
  = case x of 
- 	ThingC1 a 	-> 5		-- not enough args
+	ThingC1 a 	-> 5		-- not enough args
 	ThingC2 i b z s	-> b		-- too many args
 	ThingC3 f	-> f x
 

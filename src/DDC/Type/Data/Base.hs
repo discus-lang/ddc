@@ -93,11 +93,11 @@ lookupTypeOfNumberedFieldFromCtorDef ix ctorDef
 		
 	tsBits	= flattenTFuns tBody
 
-	-- minus two here because the last element corresponds to the
+	-- minus one here because the last element corresponds to the
 	-- return type of the function, which isn't a parameter.
-   in if ix < (length tsBits - 2)
-	 then Nothing
-	 else Just $ makeTForall_front bksForall (tsBits !! ix)
+   in if ix < length tsBits - 1
+	 then Just $ makeTForall_front bksForall (tsBits !! ix)
+	 else Nothing
 
 
 -- | Lookup the field label corresponding to the index of the field.
