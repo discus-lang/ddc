@@ -21,10 +21,10 @@ data Error
 		{ eMessage	:: String }
 
 	-- | Constructor arity mismatch.
-	| ErrorCtorAirity
+	| ErrorCtorArity
 		{ eCtorVar		:: Var
-		, eCtorAirity		:: Int
-		, ePatternAirity 	:: Int }
+		, eCtorArity		:: Int
+		, ePatternArity 	:: Int }
 
 	-- | Constructor mismatch.
 	| ErrorUnifyCtorMismatch
@@ -112,15 +112,15 @@ instance Pretty Error PMode where
 		
 	= "    Badness: " % s % "\n"
 
- -- Constructor Airity.
- ppr err@(ErrorCtorAirity{})
+ -- Constructor Arity.
+ ppr err@(ErrorCtorArity{})
  	= Var.prettyPos (eCtorVar err) % "\n"
 	% "    Wrong number of arguments for constructor match.\n"
 	% "         constructor: " % eCtorVar err 				% "\n"
 	% "          defined at: " % Var.prettyPosBound (eCtorVar err)		% "\n"
-	% "                 has: " % eCtorAirity err 
+	% "                 has: " % eCtorArity err 
 				   % " arguments, but has been used here with " 
-				   % ePatternAirity err % ".\n"
+				   % ePatternArity err % ".\n"
 
 
  -- Constructor mismatch.

@@ -7,8 +7,6 @@ fun1 x
  	Cons a b c 	-> c
 	Nil  x		-> x
 
-
------
 data Thingo %r1 a b !e1 $c1
 	= ThingC1 a b
 	| ThingC2 (Int %r1) b (Int %r1)

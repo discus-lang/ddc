@@ -225,10 +225,10 @@ slurpLV vCtor tsParams (LIndex sp ix, vBind)
 	 --	that the slurper can proceed and maybe find more errors.
 	 Nothing
 	  -> do	addError
-	   	  (ErrorCtorAirity 
-			{ eCtorVar		= vCtor
-			, eCtorAirity		= ctorDefArity ctorDef
-			, ePatternAirity	= ix + 1})
+	   	  (ErrorCtorArity 
+			{ eCtorVar	= vCtor
+			, eCtorArity	= ctorDefArity ctorDef
+			, ePatternArity	= ix + 1})
 
 		let v	= varWithName "<error>"
 
