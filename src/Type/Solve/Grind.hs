@@ -58,10 +58,17 @@ solveGrindStep
 
 	 -- get the set of active classes
  	active	<- liftM Set.toList $ clearActive
-	
+
 	trace	$ "   active classes:\n"
 		%> active	%  "\n"
 
+	solveGrindStepWithActive active
+	
+
+solveGrindStepWithActive active
+ | null active	= return []
+ | otherwise
+ = do
 	-- make sure all classes are unified
 	progressUnify
 		<- mapM crushUnifyInClass active
@@ -74,24 +81,24 @@ solveGrindStep
 	(progressCrush, qssMore)
 		<- liftM unzip
 		$  mapM crushClass active
+
+	-- The new constraints
+	let qsMore	= concat qssMore
  	
 	-- split classes into the ones that made progress and the ones that
 	--	didn't. This is just for the trace stmt below.
 	let activeUnify		   = zip active progressUnify
 	let activeProgress	   = zip active progressCrush
-	let classesWithProgress	   = [cid | (cid, True)  <- activeUnify ++ activeProgress]
-	let classesWithoutProgress = [cid | (cid, False) <- activeUnify ++ activeProgress]
+	let classesWithProgress	   = Set.fromList [cid | (cid, True)  <- activeUnify ++ activeProgress]
+	let classesWithoutProgress = Set.fromList active `Set.difference` classesWithProgress
 	
 	trace	$ "   classes that made progress:\n" 
 		%> classesWithProgress % "\n"
 
-	 	% "   classes without progress:\n" 
+		% "   classes without progress\n" 
 		%> classesWithoutProgress % "\n"
 
-
-	let qsMore	= concat qssMore
 	errs		<- gets stateErrors
-		
 	trace	$ ppr "\n"
 	let next
 		-- if we've hit any errors then bail out now
@@ -131,34 +138,42 @@ crushClass cid
 		{ classUnified 	= mType
 		, classKind	= k 
 		, classFetters	= fsSrcs})
+
 	 | isEffectKind k
 	 -> do	progress_effect	<- crushEffectsInClass cid
 		progress_fetter	<- crushFettersInClass cid
-		return	(progress_effect || progress_fetter, [])
+		return	( progress_effect || progress_fetter
+			, [])
 		
 	 | isClosureKind k
-	 -> 	return (False, [])
+	 -> 	return	( False
+			, [])
 	
 	 | isRegionKind k
-	 ->	return (False, [])
+	 ->	return 	( False
+			, [])
 	
 	 | otherwise
 	 -> do	progress_unify	<- crushUnifyInClass cid
 		progress_fetter	<- crushFettersInClass cid
-		return	(progress_unify || progress_fetter, [])
+		return	( progress_unify || progress_fetter
+			, [])
 
 	-- fetter classes
 	ClassFetterDeleted{}
-	 -> return (False, [])
+	 -> 	return 	( False
+			, [])
 
 	ClassFetter { classFetter = f }
 	 | FProj{}	<- f
 	 -> do	mQsMore 	<- crushProjInClass cid
-		return	(isJust mQsMore, join $ maybeToList mQsMore)
+		return	( isJust mQsMore
+			, join $ maybeToList mQsMore)
 		
 	 | FConstraint v _	<- f
 	 , VarIdPrim pid	<- varId v
 	 , Var.FShape _		<- pid
 	 -> do	progress_shape	<- crushShapeInClass cid
-		return	(progress_shape, [])
+		return	( progress_shape
+			, [])
 		

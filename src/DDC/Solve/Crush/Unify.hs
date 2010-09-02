@@ -33,21 +33,12 @@ crushUnifyInClass cid
 	case cls of
 	 Class	{ classKind = kind }
 
-		-- Regions don't need to be unified because they have no constructors.
-		| isRegionKind kind
-		-> do	trace $ ppr "   -- is region\n\n"
+		-- TODO: make sure the grinder shouldn't be calling us on these kind of classes,
+		--       and panic if it does.
+		| isRegionKind kind || isEffectKind kind || isClosureKind kind
+		-> do	trace $ ppr "   -- boring class\n\n"
 			return False
 		
-		-- Rffects and closures don't need to be unified because they're injective.
-		-- We combine the constraints by l.u.b instead of by unification.
-		| isEffectKind kind
-		-> do	trace $ ppr "   -- is effect\n\n"
-			return False
-
-		| isClosureKind kind
-		-> do	trace $ ppr "   -- is closure\n\n"
-			return False
-
 		-- The class is already unified.
 		| Just _	<- classUnified cls
 		-> do	trace $ ppr "   -- already unified\n\n"

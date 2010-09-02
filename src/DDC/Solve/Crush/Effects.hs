@@ -15,7 +15,7 @@ import Type.Feed
 import Control.Monad
 import Data.Maybe
 
-debug	= False
+debug	= True
 trace s	= when debug $ traceM s
 stage	= "Type.Crush.Effects"
 
@@ -188,13 +188,20 @@ crushEffectNodeSrcOfClass cid (node, src)
 
 		let result
 			-- We've got enough information to try and crush the effect.
-			| Just NCon{}	<- classUnified clsCon
-			, Just _	<- classUnified clsArg
+			| Just NCon{}		<- classUnified clsCon
+			, Just _		<- classUnified clsArg
 			= crushEffectApp cid (nApp, src) clsCon clsArg
 			
-			-- Either the constructor or arg hasn't been unified yet.
-			| otherwise
+			-- The constructor arg hasn't been unfied yet, but the effect
+			-- might still be crushable later.
+			| Just nCon@NCon{}	<- classUnified clsCon
+			, elem nCon [nHeadRead, nDeepRead, nDeepWrite]
 			= return CrushMaybeLater
+			
+			-- This effect will never be crushable.
+			| otherwise
+			= return CrushNever
+			
 			
 		result
 	
@@ -203,7 +210,7 @@ crushEffectNodeSrcOfClass cid (node, src)
 	= return CrushNever
 
 
--- | Try and crush an effect application.
+-- | Try to crush an effect application.
 crushEffectApp
 	:: ClassId		-- ^ The cid of the class being crushed.
 	-> (Node, TypeSource)	-- ^ The particular node constraint being crushed now.

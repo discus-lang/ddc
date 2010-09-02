@@ -111,7 +111,7 @@ crushFetterSingle cid cls
 			let fs		= mapMaybe constIt cidksArgs
 			let src		= TSI $ SICrushedFS cid fetter srcFetter
 			zipWithM addFetter (repeat src) fs
-			return False
+			return True
 			
 		 _ -> return False
 		
@@ -133,7 +133,7 @@ crushFetterSingle cid cls
 			let fs		= mapMaybe mutableIt cidksArgs
 			let src		= TSI $ SICrushedFS cid fetter srcFetter
 			zipWithM addFetter (repeat src) fs
-			return False
+			return True
 			
 		 _ -> return False
 
