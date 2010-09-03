@@ -5,7 +5,6 @@ module Type.Scheme
 	, checkContext )
 where
 import Type.Check.Danger
-import Type.Effect.MaskLocal
 import Type.Plug		
 import Type.Strengthen
 import Shared.VarPrim

@@ -23,6 +23,7 @@ module DDC.Type
 	, module DDC.Type.Operators.Flatten
 	, module DDC.Type.Operators.Instantiate
 	, module DDC.Type.Operators.JoinSum
+	, module DDC.Type.Operators.MaskLocal
 	, module DDC.Type.Operators.Pack
 	, module DDC.Type.Operators.Quantify
 	, module DDC.Type.Operators.Strip
@@ -53,6 +54,7 @@ import DDC.Type.Operators.Fixup
 import DDC.Type.Operators.Flatten
 import DDC.Type.Operators.Instantiate
 import DDC.Type.Operators.JoinSum
+import DDC.Type.Operators.MaskLocal
 import DDC.Type.Operators.Pack
 import DDC.Type.Operators.Quantify
 import DDC.Type.Operators.Strip

@@ -19,9 +19,9 @@ stage	= "DDC.Type.Collect.Visible"
 visibleRsT :: Type -> Set Type
 visibleRsT tt
  = case tt of
-	TForall b k t	-> visibleRsT t
-	TConstrain t crs-> visibleRsT t
-	TSum k ts	-> Set.unions $ map visibleRsT ts
+	TForall _ _ t	-> visibleRsT t
+	TConstrain t _  -> visibleRsT t
+	TSum _ ts	-> Set.unions $ map visibleRsT ts
 
 	TVar k _
 	 | k == kRegion	-> Set.singleton tt
@@ -29,7 +29,7 @@ visibleRsT tt
 	TVar{}		-> Set.empty
 	TCon{}		-> Set.empty
 
-	TApp (TCon (TyConEffect{})) t2
+	TApp (TCon (TyConEffect{})) _
 	 -> Set.empty
 
 	-- data

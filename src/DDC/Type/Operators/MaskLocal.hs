@@ -1,5 +1,5 @@
 
-module Type.Effect.MaskLocal
+module DDC.Type.Operators.MaskLocal
 	( maskLocalT )
 where
 import Util
