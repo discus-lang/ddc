@@ -124,12 +124,13 @@ outLlvm moduleName eTree pathThis
 
 	let aliases	= [ ("struct.Obj", ddcObj) ]
 
-	let globals	= moduleGlobals
-			++ (map llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
+	mapM_		addGlobalVar
+				$ moduleGlobals
+				++ (map llvmOfSeaGlobal $ eraseAnnotsTree seaCafSlots)
 
 	mapM_		llvmOfSeaDecls $ eraseAnnotsTree $ seaCafInits ++ seaSupers
 
-	renderModule	comments aliases globals
+	renderModule	comments aliases
 
 
 llvmOfSeaDecls :: Top (Maybe a) -> LlvmM ()

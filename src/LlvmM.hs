@@ -6,6 +6,7 @@ module LlvmM
 	, addComment
 	, currentReg
 
+	, addGlobalVar
 	, addGlobalFuncDecl
 
 	, newUniqueReg
@@ -45,6 +46,8 @@ data LlvmState
 	{ tmpReg	:: Maybe LlvmVar
 	, tmpBlocks	:: [[LlvmStatement]]
 
+	-- | Global variables for the module.
+	, globVars	:: [LMGlobal]
 	-- | Forward declarations of external functions.
 	, funcDecls	:: Map String LlvmFunctionDecl
 
@@ -58,8 +61,11 @@ initLlvmState :: LlvmState
 initLlvmState
  = LS	{ tmpReg	= Nothing
 	, tmpBlocks	= []
+
+	, globVars	= []
 	, funcDecls	= Map.empty
 	, functions	= [] }
+
 
 addBlock :: [LlvmStatement] -> LlvmM ()
 addBlock code
@@ -85,14 +91,22 @@ addComment text
 		, tmpBlocks = [Comment (lines text)] : (tmpBlocks state) }
 
 
+addGlobalVar :: LMGlobal -> LlvmM ()
+addGlobalVar gvar
+ = do	state	<- get
+	modify $ \s -> s { globVars = gvar : (globVars state) }
+
+
 currentReg :: LlvmM LlvmVar
 currentReg
  = do	state	<- get
 	return $ fromJust $ tmpReg state
 
+
 startFunction :: LlvmM ()
 startFunction
  =	modify $ \s -> s { tmpReg = Nothing, tmpBlocks = [] }
+
 
 endFunction :: LlvmFunctionDecl -> [LMString] -> [LlvmFuncAttr] -> LMSection -> LlvmM ()
 endFunction funcDecl funcArgs funcAttrs funcSect
@@ -131,12 +145,13 @@ addGlobalFuncDecl fd
 
 --------------------------------------------------------------------------------
 
-renderModule :: [LMString] -> [LlvmAlias] -> [LMGlobal] -> LlvmM LlvmModule
-renderModule comments aliases globals
+renderModule :: [LMString] -> [LlvmAlias] -> LlvmM LlvmModule
+renderModule comments aliases
  = do	state		<- get
 	let fdecls	= map snd $ Map.toList $ funcDecls state
+	let globals	= globVars state
 	return	$ LlvmModule comments aliases globals fdecls
-			$ reverse $ functions state
+				$ reverse $ functions state
 
 --------------------------------------------------------------------------------
 
