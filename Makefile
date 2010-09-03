@@ -322,6 +322,7 @@ clean  : cleanWar cleanRuntime cleanLibrary
 	@echo "* Cleaning leftovers"
 	@find . \
 			-name "*.o" \
+		-o      -name "*.o-boot" \
 		-o	-name "*.so" \
 		-o  -name "*.dylib" \
 		-o	-name "*.hi" \
