@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | `freeVars` instance for types.
-module DDC.Type.FreeVars
+module DDC.Type.Collect.FreeVars
 	()
 where
 import DDC.Type.Exp

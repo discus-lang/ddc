@@ -4,7 +4,7 @@
 --   We get the TVars containing `UVar` and `UMore` nodes that have free Vars
 --   and _all_ of the TVars with containing `UIndex` and `UClass` nodes.
 --
-module DDC.Type.FreeTVars
+module DDC.Type.Collect.FreeTVars
 	( freeTClasses
 	, freeTClassVars
 	, freeCids

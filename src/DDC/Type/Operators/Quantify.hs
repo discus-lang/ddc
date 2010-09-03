@@ -29,7 +29,7 @@ module DDC.Type.Operators.Quantify
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
-import DDC.Type.FreeVars	()
+import DDC.Type.Collect.FreeVars ()
 import DDC.Var
 import DDC.Util.FreeVars
 import Util.Graph.Deps

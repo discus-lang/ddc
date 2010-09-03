@@ -12,11 +12,11 @@ import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.Builtin
 import DDC.Type.Pretty	()
-import DDC.Type.Operators.Flatten
 import DDC.Type.Unify
+import DDC.Type.Operators.Flatten
+import DDC.Type.Collect.Visible
 import DDC.Var
 import Shared.VarPrim
-import Type.Effect.MaskLocal	(visibleRsT)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 import qualified Data.Foldable	as Foldable

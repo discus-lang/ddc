@@ -14,8 +14,8 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Transform
 import DDC.Type.Kind
-import DDC.Type.FreeTVars
 import DDC.Var
+import DDC.Type.Collect.FreeTVars
 import DDC.Type.Pretty		()
 import Data.Traversable		(mapM)
 import Util			hiding (mapM)

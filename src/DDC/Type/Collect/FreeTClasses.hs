@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Collect TClasses that appear in bound positions in some thing.
-module DDC.Type.FreeTClasses
+module DDC.Type.Collect.FreeTClasses
 	(freeTClasses)
 where
 import DDC.Type.Exp

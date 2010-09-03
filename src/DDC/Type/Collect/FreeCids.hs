@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Collect classids that appear in bound positions in some thing.
-module DDC.Type.FreeCids
+module DDC.Type.Collect.FreeCids
 	(freeCids)
 where
 import DDC.Type.Exp

@@ -44,8 +44,8 @@ import DDC.Main.Pretty
 import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
-import DDC.Type.FreeTVars
 import DDC.Type.Pretty		()
+import DDC.Type.Collect.FreeTVars
 import Data.List
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set

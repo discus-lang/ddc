@@ -33,10 +33,10 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
-import DDC.Type.Operators.Pack
 import DDC.Var
 import DDC.Util.FreeVars
-import DDC.Type.FreeVars		()
+import DDC.Type.Operators.Pack
+import DDC.Type.Collect.FreeVars	()
 import DDC.Type.Pretty			()
 import Data.Maybe
 import Data.Set				(Set)

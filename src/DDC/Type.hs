@@ -11,8 +11,9 @@ module DDC.Type
 	, module DDC.Type.Unify
 	, module DDC.Type.Equiv
 	, module DDC.Type.Subsumes
-	, module DDC.Type.FreeVars
-	, module DDC.Type.FreeTVars
+	, module DDC.Type.Collect.FreeVars
+	, module DDC.Type.Collect.FreeTVars
+	, module DDC.Type.Collect.Visible
 	, module DDC.Type.Operators.Context
 	, module DDC.Type.Operators.Crush
 	, module DDC.Type.Operators.CutLoops
@@ -40,8 +41,9 @@ import DDC.Type.Witness
 import DDC.Type.Unify
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
-import DDC.Type.FreeVars()
-import DDC.Type.FreeTVars
+import DDC.Type.Collect.FreeVars()
+import DDC.Type.Collect.FreeTVars
+import DDC.Type.Collect.Visible
 import DDC.Type.Operators.Context
 import DDC.Type.Operators.Crush
 import DDC.Type.Operators.CutLoops

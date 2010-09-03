@@ -11,8 +11,8 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
-import DDC.Type.FreeTVars
 import DDC.Type.Pretty		()
+import DDC.Type.Collect.FreeTVars
 import Data.List
 import Data.Map			(Map)
 import Data.Set			(Set)
