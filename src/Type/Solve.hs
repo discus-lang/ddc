@@ -13,7 +13,6 @@ import Type.Solve.Finalise
 import Type.Check.SchemeDanger
 import Type.Extract
 import Type.Feed
-import Type.Util
 import Constraint.Bits
 import Constraint.Exp
 import Util

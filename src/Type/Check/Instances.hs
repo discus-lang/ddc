@@ -2,12 +2,11 @@
 module Type.Check.Instances 
 	(checkInstances)
 where
-import Type.Context
 import Type.Extract
 import Shared.VarPrim
 import Util
 import DDC.Var
-import DDC.Type.Exp
+import DDC.Type
 import DDC.Solve.State
 import DDC.Solve.Error
 import qualified Data.Map	as Map

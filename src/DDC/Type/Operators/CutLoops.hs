@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 -- | Cuts loops though the effect and closure portions of types.
 --
 --   For recursive functions, the type we trace from the graph will contain

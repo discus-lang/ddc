@@ -7,7 +7,6 @@
 --	annotations to a type by hand is boring and error prone. However, for most 
 --	functions this information is fairly unsurprising, so we can fill in most of
 --	it automatically.
-
 module DDC.Type.Operators.Elaborate
 	( elaborateRsT
 	, elaborateRsT_quant

@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 -- | Add forall quantifiers for the free variables in a type. 
 --   We use more-than bounded quantification if there are corresponding
 --   constraints present in the type.
@@ -35,6 +36,7 @@ import Util.Graph.Deps
 import qualified Shared.VarUtil	as Var
 import qualified Data.Map	as Map
 import qualified Data.Set	as Set
+
 
 -- | Add forall quantifiers to the front of a type.
 quantifyVarsT :: [(Var, Kind)] -> Type -> Type

@@ -1,15 +1,21 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Functions for reducing the context of a type.
-
-module Type.Context
+module DDC.Type.Operators.Context
 	( reduceContextT 
 	, matchInstance )
 where
-import Type.Util
-import Shared.VarPrim
 import Util
-import DDC.Type
+import Type.Util
+import DDC.Type.Exp
+import DDC.Type.Compounds
+import DDC.Type.Kind
+import DDC.Type.Builtin
+import DDC.Type.Pretty	()
+import DDC.Type.Operators.Flatten
+import DDC.Type.Unify
 import DDC.Var
+import Shared.VarPrim
 import Type.Effect.MaskLocal	(visibleRsT)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
@@ -29,8 +35,8 @@ reduceContextT classInst tt
 	 -> let	fs'	= catMap (reduceContextF (flattenT tt) classInst) 
 			$ fettersOfConstraints crs
 	    in  case fs' of
-	    		[]	-> tShape
-			_	-> TConstrain tShape $ constraintsOfFetters fs'
+	    	 []	-> tShape
+		 _	-> TConstrain tShape $ constraintsOfFetters fs'
 			
 	_ 		-> tt
 	
@@ -49,7 +55,7 @@ reduceContextF tShape classInstances ff
 	--	These regions are local to the function and a local region binding will be introduced
 	--	which will create the required witnesses.
 	--	
-	| FConstraint v [tR@(TVar kR (UVar r))]	<- ff
+	| FConstraint v [tR@(TVar kR (UVar _))]	<- ff
 	, kR	== kRegion
 	, elem v [primConst, primMutable, primMutable, primDirect]
 	, not $ Set.member tR $ visibleRsT tShape
@@ -59,9 +65,9 @@ reduceContextF tShape classInstances ff
 	--	These can be converted to a direct function call in the CoreIR, so we don't need to
 	--	pass dictionaries at runtime.
 	--
- 	| FConstraint v ts	<- ff
+ 	| FConstraint v _	<- ff
 	, Just instances	<- Map.lookup v classInstances
-	, Just inst'		<- find (matchInstance ff) instances
+	, Just _		<- find (matchInstance ff) instances
 	= []
 
 	-- Purity constraints on bottom effects can be removed.
@@ -115,12 +121,12 @@ crushFetterSingleNonPurify_directly vFetter tt
 	= Just [FConstraint primLazy [tR]]
 	
 	| vFetter		== primLazyH
-	, TApp t1 t2		<- tt
+	, TApp t1 _		<- tt
 	= crushFetterSingleNonPurify_directly vFetter t1
 	
 	-- lazy head where the ctor has no region (ie LazyH Unit)
 	| vFetter		== primLazyH
-	, Just (v, k, [])	<- takeTData tt
+	, Just (_, _, [])	<- takeTData tt
 	= Just []
 	
 	-- deep mutability
@@ -170,12 +176,9 @@ matchInstance cType cInst
 	-- any extra constraint from the unification must have 
 	--	a var or wildcard for the RHS
 	, and 	$ map (\(ta, tb) -> case tb of
-				TVar  k v
-				 | kindOfType ta == k
-			 	 -> True
-
-				_	-> False)
-
+				TVar k _
+				 | kindOfType ta == k	-> True
+				_			-> False)
 		$ Foldable.toList $ join $ constrs
 	= True
 

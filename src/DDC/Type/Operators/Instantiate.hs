@@ -1,6 +1,6 @@
--- Type instantiation.
---
-module Type.Util.Instantiate
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
+module DDC.Type.Operators.Instantiate
 	( instantiateType
 	, instantiateTypeWithFreshVars)
 where
@@ -11,6 +11,7 @@ import DDC.Type.Operators.Substitute
 import DDC.Type.Pretty		()
 import DDC.Var
 import qualified Data.Map	as Map
+
 
 -- | Instantiate a type with these arguments.
 instantiateType :: Type -> [Type] -> Type
@@ -36,7 +37,7 @@ instantiateTypeWithFreshVars
 	
 instantiateTypeWithFreshVars instVar tt
  = case tt of
- 	TForall b k tBody
+ 	TForall{}
 	 -> do	-- split of the quantifier so we can instantiate all the vars at once
 	 	let (bks, tBody) = takeTForall tt
 	 

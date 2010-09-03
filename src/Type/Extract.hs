@@ -5,7 +5,6 @@ module Type.Extract
 	, extractTypeCid)
 where
 import Type.Plug
-import Type.Context
 import Type.Strengthen
 import Type.Plate.Collect
 import Util

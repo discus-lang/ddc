@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Type.Operators.Fixup
 	(fixupKindsInType)
@@ -16,7 +17,9 @@ stage = "DDC.Type.Fixup"
 --   to give each occurrence of a data constructor a kind that will pass the kind checker.
 --
 --   This always works for arguments of data constructors, but types that use general
---   kind synonyms. This is really just a hack-around before we have proper kind inference.
+--   kind synonyms. 
+--
+--   This is just a hack until we have real kind inference.
 --
 fixupKindsInType :: Type -> Type
 fixupKindsInType tt
@@ -25,7 +28,7 @@ fixupKindsInType tt
 	TCon{}	-> tt
 	
 	TApp{}
-	 | Just (vCon, kCon, tsArgs)	<- takeTData tt
+	 | Just (vCon, _, tsArgs)	<- takeTData tt
 	 , tsArgs'	<- map fixupKindsInType tsArgs
 	 , ksArgs	<- map dodgyKindOfType tsArgs'
 	 , kCon'	<- makeKFuns ksArgs kValue
@@ -45,8 +48,10 @@ fixupKindsInType tt
 	_ -> panic stage $ "fixupKindsInType: no match"
 	
 	 
--- | Get the kind of some thing in a dodgy way, 
---   not using kindOfType.
+-- | Estimate the kind of some type just based on it's structure, and not using kindOfType.
+--
+--   This is just a hack until we have real kind inference.
+--
 dodgyKindOfType :: Type -> Kind
 dodgyKindOfType tt
  = case tt of
@@ -61,8 +66,8 @@ dodgyKindOfType tt
 	 | isJust $ takeTFun  tt
 	 -> kValue
 	
-	TForall _ _ t	 -> dodgyKindOfType t
-	TConstrain t crs -> dodgyKindOfType t
+	TForall _ _ t  -> dodgyKindOfType t
+	TConstrain t _ -> dodgyKindOfType t
 	
 	_ -> panic stage $ "dodgyKindOfType: no match"
 	

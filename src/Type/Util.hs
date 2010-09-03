@@ -1,12 +1,10 @@
 module Type.Util
-	( module Type.Util.Instantiate
-	, module Type.Util.Normalise
+	( module Type.Util.Normalise
 	, makeOpTypeT
 	, makeTVar 
 	, makeTWhere
 	, slurpTVarsRD)
 where
-import Type.Util.Instantiate
 import Type.Util.Normalise
 import Shared.VarPrim
 import Util
@@ -16,6 +14,7 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
+import DDC.Type.Pretty()
 import DDC.Var
 import qualified Debug.Trace
 import qualified Data.Map	as Map

@@ -8,7 +8,6 @@ import Type.Check.Danger
 import Type.Effect.MaskLocal
 import Type.Plug		
 import Type.Strengthen
-import Type.Context
 import Shared.VarPrim
 import Util
 import DDC.Solve.Error

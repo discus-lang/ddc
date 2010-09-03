@@ -4,7 +4,6 @@ module Desugar.Slurp.SlurpA
 where
 import Desugar.Slurp.Base
 import Desugar.Slurp.SlurpX
-import Type.Util.Instantiate
 import DDC.Type.Data.Base
 import DDC.Solve.Location
 import DDC.Var

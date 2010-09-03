@@ -3,11 +3,11 @@ module DDC.Type.Data.Material
 	( quantParamsOfCtorType
 	, materialVarsOfType1)
 where
-import Type.Util.Instantiate
 import DDC.Type.Data.Base
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Kind
+import DDC.Type.Operators.Instantiate
 import DDC.Var
 import Data.Set			(Set)
 import Data.Map			(Map)

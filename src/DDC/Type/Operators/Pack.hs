@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 -- | Pack a type into standard form.
 module DDC.Type.Operators.Pack
 	( packType

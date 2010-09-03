@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 -- | Type substitution.
 module DDC.Type.Operators.Substitute
 	( subTT_noLoops

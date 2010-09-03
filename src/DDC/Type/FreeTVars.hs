@@ -1,4 +1,3 @@
-
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Collect FreeVars in some thing.

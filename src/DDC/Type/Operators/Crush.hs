@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 -- | Crush compound effects and fetters into their components.
 module DDC.Type.Operators.Crush
 	( crushT

@@ -1,4 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
+
 -- | Trimming of closures.
 --
 --   Inferred closure terms tend to contain a lot of information that isn't useful to the inferencer,

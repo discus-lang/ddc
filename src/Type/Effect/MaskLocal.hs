@@ -6,7 +6,12 @@ where
 import Util
 import Shared.VarPrim
 import DDC.Main.Error
-import DDC.Type
+import DDC.Type.Exp
+import DDC.Type.Predicates
+import DDC.Type.Compounds
+import DDC.Type.Kind
+import DDC.Type.Builtin
+import DDC.Type.Pretty	()
 import qualified Data.Set	as Set
 
 stage	= "Type.Effect.MaskLocal"
