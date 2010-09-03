@@ -138,6 +138,7 @@ llvmOfSeaDecls (PSuper v p t ss)
 	llvmOfFunc ss
 	endFunction
 		(LlvmFunctionDecl (seaVar False v) External CC_Ccc (toLlvmType t) FixedArgs (map llvmOfParams p) Nothing)
+		-- (toLlvmFuncDecl linkage v t [])
 		(map (seaVar True . fst) p)	-- funcArgs
 		[]				-- funcAttrs
 		Nothing				-- funcSect
@@ -342,8 +343,9 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
  | t1 == t
  = do	let func	= toLlvmFuncDecl External v2 t args
 	addGlobalFuncDecl func
+	params		<- mapM llvmFunParam args
 	result		<- newUniqueNamedReg "result" pObj
-	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) [] []) ]
+	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	writeSlot	result i1
 
 
@@ -384,8 +386,9 @@ llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = " ++ seaVar False v2 ++ " ()"
 	dst1		<- newUniqueReg pObj
 	dst2		<- newUniqueReg pObj
+	params		<- mapM llvmFunParam args
 	addBlock	[ Assignment dst1 (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
-			, Assignment dst2 (Call TailCall (funcVarOfDecl (toLlvmFuncDecl Internal v2 t args)) [] [])
+			, Assignment dst2 (Call TailCall (funcVarOfDecl (toLlvmFuncDecl Internal v2 t args)) params [])
 			, Store dst2 (pVarLift dst1)
 			]
 
@@ -595,10 +598,18 @@ toLlvmFuncDecl linkage v t args
 	--  Indicates if this function uses varargs
 	decVarargs = FixedArgs,
 	--  Parameter types and attributes
-	decParams = [],     -- [LlvmParameter],
+	decParams = map toDeclParam args,
 	--  Function align value, must be power of 2
 	funcAlign = ptrAlign
 	}
+
+
+toDeclParam :: Exp a -> LlvmParameter
+toDeclParam (XSlot v t i)
+ = (toLlvmType t, [])
+
+toDeclParam x
+ = panic stage $ "toDeclParam " ++ show x
 
 
 -- | Does the given Sea variable have global scope? TODO: Move this to the Sea stuff.
