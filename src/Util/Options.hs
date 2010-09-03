@@ -3,7 +3,7 @@
 module Util.Options
 	( parseOptions)
 where
-import Util.Misc
+import Util	((=@=))
 import Util.Data.Either
 import Util.Data.List
 import Util.Options.Token

@@ -6,10 +6,11 @@ module Util
 	, module Util.Control.Monad
 	, module Util.Tunnel
 	, module Util.Pretty
-	, module Util.Misc
 	, test_Util
 	, Map
-	, Set)
+	, Set
+	, (=@=)
+	, orf)
 where
 
 import Control.Monad.State.Strict
@@ -20,10 +21,21 @@ import Util.Data.WorkGraph
 import Util.Control.Monad
 import Util.Tunnel
 import Util.Pretty
-import Util.Misc
 
 import Data.Map		(Map)
 import Data.Set		(Set)
+import GHC.Base
+
+
+-- | Compare tags of constructors in these two values
+(=@=) :: a -> a -> Bool
+(=@=) a b = getTag a ==# getTag b
+
+orf :: 	a -> [a -> Bool] -> Bool
+orf	x fs
+ = 	foldl (\a f -> a || f x) False fs
+	
+
 
 test_Util
 	=  test_UtilDataList
