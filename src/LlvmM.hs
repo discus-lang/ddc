@@ -34,17 +34,21 @@ import qualified Data.Map		as Map
 stage = "LlvmM"
 
 
--- LlvmState contains the register for the current 'of interest' data and
--- a list of blocks of statements. The blocks of statements are pushed onto
--- the head of the list and when all statements for a function are available,
--- the list of blocks is reversed and concatenated to produce a list of
--- statements.
 data LlvmState
 	= LS
-	{ freg		:: Maybe LlvmVar
-	, fblocks	:: [[LlvmStatement]]
+	-- Two temporary variables to hold the current 'of interest' register
+	-- and a list of blocks of statements. The blocks of statements are
+	-- pushed onto the head of the list and when all statements for a
+	-- function are available, the list of blocks is reversed and
+	-- concatenated to produce a list of statements, which can then be
+	-- pushed onto the functions list below.
+	{ tmpReg	:: Maybe LlvmVar
+	, tmpBlocks	:: [[LlvmStatement]]
 
+	-- | Forward declarations of external functions.
 	, funcDecls	:: Map String LlvmFunctionDecl
+
+	-- | Functions defined in this module.
 	, functions	:: [LlvmFunction] }
 
 type LlvmM = StateT LlvmState IO
@@ -52,50 +56,50 @@ type LlvmM = StateT LlvmState IO
 
 initLlvmState :: LlvmState
 initLlvmState
- = LS	{ freg = Nothing
-	, fblocks = []
-	, funcDecls = Map.empty
-	, functions = [] }
+ = LS	{ tmpReg	= Nothing
+	, tmpBlocks	= []
+	, funcDecls	= Map.empty
+	, functions	= [] }
 
 addBlock :: [LlvmStatement] -> LlvmM ()
 addBlock code
  = do	state	<- get
 	modify $ \s -> s
-		{ freg = Nothing
-		, fblocks = code : (fblocks state) }
+		{ tmpReg = Nothing
+		, tmpBlocks = code : (tmpBlocks state) }
 
 
 addBlockResult :: LlvmVar -> [LlvmStatement] -> LlvmM ()
 addBlockResult result code
  = do	state	<- get
 	modify $ \s -> s
-		{ freg = Just result
-		, fblocks = code : (fblocks state) }
+		{ tmpReg = Just result
+		, tmpBlocks = code : (tmpBlocks state) }
 
 
 addComment :: LMString -> LlvmM ()
 addComment text
  = do	state	<- get
 	modify $ \s -> s
-		{ freg = freg state
-		, fblocks = [Comment (lines text)] : (fblocks state) }
+		{ tmpReg = tmpReg state
+		, tmpBlocks = [Comment (lines text)] : (tmpBlocks state) }
 
 
 currentReg :: LlvmM LlvmVar
 currentReg
  = do	state	<- get
-	return $ fromJust $ freg state
+	return $ fromJust $ tmpReg state
 
 startFunction :: LlvmM ()
 startFunction
- =	modify $ \s -> s { freg = Nothing, fblocks = [] }
+ =	modify $ \s -> s { tmpReg = Nothing, tmpBlocks = [] }
 
 endFunction :: LlvmFunctionDecl -> [LMString] -> [LlvmFuncAttr] -> LMSection -> LlvmM ()
 endFunction funcDecl funcArgs funcAttrs funcSect
  = do	-- At end of function reverse the list of blocks and then
 	-- concatenate the blocks to produce a list of statements.
 	state		<- get
-	let fblks	= fblocks state
+	let fblks	= tmpBlocks state
 	let blks	=
 			if null fblks
 			  then [Return Nothing]
