@@ -14,14 +14,14 @@
 typedef uint32_t		Tag;
 
 // Function pointers
-typedef void*			FunPtr;
+typedef void			(*FunPtr) (void);
 
 // Booleans
 typedef bool			Bool;
 
 // Unsigned words
 //	We use these instead of UInt when the value shouldn't nessesaraly
-//	interpreted as a number. ie, bulk data that C programmers would 
+//	interpreted as a number. ie, bulk data that C programmers would
 //	normaly use void* for.
 //
 typedef void*	 		Word;
@@ -46,7 +46,7 @@ typedef double			Float64;
 //	We intend to use Char32 for unicode characters,
 //	but they're not implemented yet.
 typedef char			Char8;
-typedef uint32_t		Char32;		
+typedef uint32_t		Char32;
 
 // Strings
 //	Null terminated C-strings.

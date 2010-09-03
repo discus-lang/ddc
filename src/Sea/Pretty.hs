@@ -92,7 +92,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	  %	"\n\n"
 	  %	"\t_ddcInitModule_" % mn % "();\n"
 	  %	"\n"
-	  %	"\tControl_Exception_topHandle(_allocThunk(" % mn % "_main, 1, 0));\n"
+	  %	"\tControl_Exception_topHandle(_allocThunk((FunPtr) " % mn % "_main, 1, 0));\n"
 	  %	"\n"
 	  %	"\t_ddcRuntimeCleanup();\n"
 	  %	"\n"
@@ -327,7 +327,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> "_alloc (" % i % ")"
 
 	XAllocThunk f superA argCount
-	 -> "_allocThunk (" % sV f % ", " % superA % ", " % argCount % ")"
+	 -> "_allocThunk ((FunPtr) " % sV f % ", " % superA % ", " % argCount % ")"
 
 	XAllocData  ctor arity
 	 -> "_allocData (" % "_tag" % sV ctor % ", " % arity % ")"
