@@ -13,22 +13,38 @@ import DDC.Var
 import qualified Data.Map	as Map
 
 
--- | Instantiate a type with these arguments.
+-- | Instantiate a type with a list of type arguments.
+--   
+--   If there are more args than foralls at the front of the type then `Nothing`.
+--   We don't also check that the kinds match up along the way.
 --
---   TODO: Check argument kinds match.
-instantiateT :: Type -> [Type] -> Type
-instantiateT tScheme tsArgs
- = let	(bks, tBody)	= takeTForall tScheme
+instantiateT :: Type -> [Type] -> Maybe Type
+instantiateT tt ts
+	= instantiateT' Map.empty tt ts
 	
-	Just vsQuant 	= sequence $ map (takeVarOfBind . fst) bks
-	table		= Map.fromList $ zip vsQuant tsArgs
+instantiateT' sub t1 []	
+	= Just (subTT_noLoops sub t1)
+
+instantiateT' sub t1 (t2 : ts)
+	| TForall (BVar v) k11 t12	<- t1
+	, t11 <- TVar k11 $ UVar v
+	= if t11 /= t2
+		then instantiateT' (Map.insert (TVar k11 $ UVar v) t2 sub) t12 ts
+		else instantiateT' sub t12 ts
 	
-   in	subVT_everywhere table tBody
+	| TForall BNil _ t12		<- t1
+	= instantiateT' sub t12 ts
+	
+	| otherwise
+	= Nothing	
 
 
 
 -- | Instantiate a type scheme, using the provided function to create
 --	the new variables, and also return the new instance vars created.
+--
+--   TODO: this don't handle contexts at the front of types.
+--
 instantiateWithFreshVarsT
 	:: Monad m
 	=> (Var -> m Var)	-- ^ Function to instantiate each variable.

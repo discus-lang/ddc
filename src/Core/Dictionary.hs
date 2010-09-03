@@ -12,7 +12,7 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Glob
 import DDC.Core.Exp
-import DDC.Type				hiding (instantiateT)
+import DDC.Type
 import DDC.Var
 import qualified Data.Sequence		as Seq
 import qualified Data.Map		as Map
@@ -163,9 +163,7 @@ rewriteAppX_withInstance env xxUse
 	-- Instantiate the type of the overloaded var with its type arguments.
 	--	This gives us the type that the overloaded var is being used at.
 	tFlatScheme	= flattenT $ infoOverloadedType infoOverloaded
-	tUseBody	= either panicInstantiate 
-				id 
-				(instantiateT tFlatScheme (tsUseTypeArgsPoly ++ tsUseTypeArgsWitness))
+	Just tUseBody	= instantiateT tFlatScheme (tsUseTypeArgsPoly ++ tsUseTypeArgsWitness)
 
 	-- Get the type of the instance.
 	Just vInst	= lookup vUse (topClassInstMembers p)
@@ -195,7 +193,7 @@ rewriteAppX_withInstance env xxUse
 	-- Instantate the scheme with the type args we have so far, 
 	--	and look at the resulting type to determine what witnesses we have to pass.
 	--	We can just use fabricate witnesses for now. Core.Thread will add the real ones later.
-	Right tInstPoly			= instantiateT tInstScheme tsInstTypeArgsPoly
+	Just tInstPoly			= instantiateT tInstScheme tsInstTypeArgsPoly
 	(ksContext, _)			= slurpContextT  tInstPoly
 	Just tsInstTypeArgsWitness 	= sequence $ map inventWitnessOfKind ksContext
 
@@ -204,23 +202,6 @@ rewriteAppX_withInstance env xxUse
 			:  [Right t	| t <- tsInstTypeArgsPoly]
 			++ [Right t	| t <- tsInstTypeArgsWitness]
 			++ xsValueArgs
-
-
-	-- If there are type errors or missing fns in the core code then plenty
-	-- of things can go wrong with the above. Keep the panic messages here to avoid
-	-- cluttering the main code.
-	panicInstantiate (t1, t2)
- 	 = panic stage $ vcat 	
-	 	[ ppr "rewriteAppX_withInstance: instantiation failed"
-		, "    type:                 " % tFlatScheme
-		, "    tsUseTypeArgsPoly:    " % tsUseTypeArgsPoly
-		, "    tsUseTypeArgsWitness: " % tsUseTypeArgsWitness
-		, blank
-		, ppr "  Cannot instantiate t1 with t2"
- 		, "    t1:         " % t1
- 		, "    t2:         " % t2
-		, "    kind of t2: " % kindOfType t2
-		, blank]
 
 	panicUnify 
 	 = panic stage $ vcat
@@ -252,7 +233,6 @@ rewriteAppX_withInstance env xxUse
 		, "tsInstTypeArgsWitness = " % tsInstTypeArgsWitness
 		, blank
 		, "xxInst                = " % xxInst]) x
-
 
 
 -- | Check if a type class instance matches some name and args.
@@ -289,42 +269,16 @@ subMatches (t1, t2)
 	
 	| otherwise
 	= False
-	
 
--- | Instantiate a type with a list of type arguments.
---   BUGS: we should do the kind check, but some of the type info
---	   in our core programs is wrong, so we're ignoring it for now.
-instantiateT :: Type -> [Type] -> Either (Type, Type) Type
-instantiateT tt ts
-	= instantiateT' Map.empty tt ts
-	
-instantiateT' sub t1 []	
-	= Right (subTT_noLoops sub t1)
-
-instantiateT' sub t1 (t2 : ts)
-	| TForall (BVar v) k11 t12	<- t1
-	, k2				<- kindOfType t2
---	, subTTK_noLoops sub k11 == k2								-- BUGS!!!! 
-	, t11 <- TVar k11 $ UVar v
-	= if t11 /= t2
-		then instantiateT' (Map.insert (TVar k11 $ UVar v) t2 sub) t12 ts
-		else instantiateT' sub t12 ts
-	
-	| TForall BNil k11 t12		<- t1
-	, k2				<- kindOfType t2
---	, subTTK_noLoops sub k11 == k2								-- BUGS!!!
-	= instantiateT' sub t12 ts
-	
-	| otherwise
-	= Left (subTT_noLoops sub t1, t2)
-		
-	
 	
 -- | Slurp the list of quantified variables, and requires witnesses
 --	from the front of a type scheme.
 slurpQuantVarsT :: Type  -> ([(Var, Kind)], Type)
 slurpQuantVarsT tt
 	= slurpQuantVarsT' tt []
+	
+
+
 		
 slurpQuantVarsT' tt vsQuant
  = case tt of
