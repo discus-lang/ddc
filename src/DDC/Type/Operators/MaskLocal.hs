@@ -74,5 +74,3 @@ maskE'	tsVis eff
 	= Just eff
 
 
-
-

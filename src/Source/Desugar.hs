@@ -192,7 +192,7 @@ makeCtorDef vData vsParams tag (S.CtorDef vCtor fields)
 	tCtor		<- makeCtorType 
 				newVarN 
 				vData vsParams
-				vCtor (map (fixupKindsInType . S.dataFieldType) fields)	
+				vCtor (map (fixupKindsT . S.dataFieldType) fields)	
 
 	return	$ T.CtorDef
 		{ T.ctorDefName		= vCtor

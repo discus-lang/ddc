@@ -48,6 +48,7 @@ joinSumTs (t:ts)	= foldM joinTT t ts
 
 joinTT :: Type -> Type -> Maybe Type
 
+
 -- Flip the args around to put the easy-to-unify argument first.
 --	this means that the code for joinTT_work can get by with less cases.
 joinTT t1 t2

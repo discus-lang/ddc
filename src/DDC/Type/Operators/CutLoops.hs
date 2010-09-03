@@ -37,7 +37,7 @@
 --        We should be smarter about computing the reachability graph.
 --
 module DDC.Type.Operators.CutLoops
-	(cutLoopsT_constrainForm)
+	(cutLoopsT)
 where
 import DDC.Main.Error
 import DDC.Main.Pretty
@@ -55,14 +55,14 @@ stage	= "DDC.Type.CutLoops"
 
 -- | Cut loops through the effect and closure portions of this type.
 --	The type should have an outer `TConstrain`, else this function is the identity.
-cutLoopsT_constrainForm :: Type -> Type
-cutLoopsT_constrainForm (TConstrain tt crs)
+cutLoopsT :: Type -> Type
+cutLoopsT (TConstrain tt crs)
  = let	-- decend into the constraints from every cid in the body of the type
 	cidsRoot	= Set.toList $ freeTClasses tt
 	crs'		= foldl' (cutLoops1 Set.empty) crs cidsRoot
    in	TConstrain tt crs'
 
-cutLoopsT_constrainForm tt
+cutLoopsT tt
  	= tt
 
 -- | Cut loops in the constraint with this cid
@@ -134,7 +134,6 @@ cutT cidsCut tt
 	 -> tt
 
 	TVar{}			-> tt
-
 	TError{}		-> tt
  	
 	_ -> panic stage

@@ -17,7 +17,7 @@ import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Var
 
--- Directly on the Type ---------------------------------------------------------------------------
+-- Simple Predicates ------------------------------------------------------------------------------
 isTBot :: Type -> Bool
 isTBot tt
  = case tt of
@@ -50,7 +50,6 @@ isFMore ff
 	_ 		-> False
 
 
--- Compound things --------------------------------------------------------------------------------
 isSomeTVar :: Type -> Bool
 isSomeTVar tt
  = case tt of
@@ -65,6 +64,7 @@ isTClass tt
 	_		-> False
 
 
+---------------------------------------------------------------------------------------------------
 -- | Check if a type represents some unboxed value
 isUnboxedT :: Type -> Bool
 isUnboxedT t

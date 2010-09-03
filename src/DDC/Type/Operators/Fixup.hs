@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Type.Operators.Fixup
-	(fixupKindsInType)
+	(fixupKindsT)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -19,33 +19,33 @@ stage = "DDC.Type.Fixup"
 --   This always works for arguments of data constructors, but types that use general
 --   kind synonyms. 
 --
---   This is just a hack until we have real kind inference.
+--   TODO: This is just a hack until we have real kind inference.
 --
-fixupKindsInType :: Type -> Type
-fixupKindsInType tt
+fixupKindsT :: Type -> Type
+fixupKindsT tt
  = case tt of
 	TVar{}	-> tt
 	TCon{}	-> tt
 	
 	TApp{}
 	 | Just (vCon, _, tsArgs)	<- takeTData tt
-	 , tsArgs'	<- map fixupKindsInType tsArgs
+	 , tsArgs'	<- map fixupKindsT tsArgs
 	 , ksArgs	<- map dodgyKindOfType tsArgs'
 	 , kCon'	<- makeKFuns ksArgs kValue
 	 -> makeTData vCon kCon' tsArgs'
 	
 	 | Just (t1, t2, eff, clo)	<- takeTFun tt
-	 , t1'		<- fixupKindsInType t1
-	 , t2'		<- fixupKindsInType t2
+	 , t1'		<- fixupKindsT t1
+	 , t2'		<- fixupKindsT t2
 	 -> makeTFun t1' t2' eff clo
 
 	TForall b k t
-	 -> TForall b k    $ fixupKindsInType t
+	 -> TForall b k    $ fixupKindsT t
 
 	TConstrain t crs
-	 -> TConstrain (fixupKindsInType t) crs
+	 -> TConstrain (fixupKindsT t) crs
 	
-	_ -> panic stage $ "fixupKindsInType: no match"
+	_ -> panic stage $ "fixupKindsT: no match"
 	
 	 
 -- | Estimate the kind of some type just based on it's structure, and not using kindOfType.

@@ -147,6 +147,6 @@ dropXTau xx env tt
 	
 	-- we've hit a value, drop the annot
 	| otherwise
-	= XTau (packType $ makeTWhere tt (Map.toList env)) xx
+	= XTau (packT $ makeTWhere tt (Map.toList env)) xx
 
 

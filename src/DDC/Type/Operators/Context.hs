@@ -185,8 +185,3 @@ matchInstance cType cInst
 	| otherwise
 	= False
 
-
-
-
-
-

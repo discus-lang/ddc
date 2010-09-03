@@ -7,6 +7,7 @@ import Shared.VarPrim
 import Util
 import DDC.Var
 import DDC.Type
+import DDC.Type.Operators.Context
 import DDC.Solve.State
 import DDC.Solve.Error
 import qualified Data.Map	as Map

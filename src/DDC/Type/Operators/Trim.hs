@@ -59,7 +59,7 @@ trimClosureT tt
 trimClosureT' quant rsData tt
   = trace ("trimClosureT " % tt % "\n")
   $ let	tt_trimmed	= trimClosureT_trace quant rsData tt
-	tt_packFast	= packType tt_trimmed
+	tt_packFast	= packT tt_trimmed
 			
 	tt'		= trace ( "tt_trimmed  = " % tt_trimmed 	% "\n"
 				% "tt_packFast = " % tt_packFast	% "\n\n")
@@ -106,7 +106,7 @@ trimClosureC cc
 
 trimClosureC' quant rsData cc
  = let 	cc_trimmed	= trimClosureC_trace quant rsData cc
-	cc_packed	= packType $ cc_trimmed
+	cc_packed	= packT $ cc_trimmed
 		
 	cc'		= trace 
  				( "trimClosureC\n"	
@@ -297,7 +297,6 @@ trimClosureT_tt quant rsData c1 c2
 	
 	| otherwise
 	= c2
-
 
 
 makeFreeDanger tag rsData t

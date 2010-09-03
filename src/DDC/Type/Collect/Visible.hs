@@ -12,10 +12,13 @@ import qualified Data.Set	as Set
 
 stage	= "DDC.Type.Collect.Visible"
 
--- | Collect the list of visible regions from the type sig. 
+-- | Collect the list of visible regions from a type. 
 --   We can't just call freeVarsT, because we don't want to get
 --   region vars present in the effect portion of the type.
 --
+--   TODO: We really want just the material vars, replace this function
+--         when material/immaterial var checking works.
+-- 
 visibleRsT :: Type -> Set Type
 visibleRsT tt
  = case tt of
@@ -42,5 +45,3 @@ visibleRsT tt
 	_
 	 -> panic stage
 	 	$ "visibleRsT: no match for " % tt
-
-

@@ -171,7 +171,7 @@ addSchemeToGraph src vGen tScheme
 	--	then this information is shared with the graph, and shouldn't be duplicated
 	--	locally.
 	let tScheme_stripped
-		= stripFWheresT_mono tScheme
+		= stripMonoFWheresT tScheme
 
 	case tScheme_stripped of 
 

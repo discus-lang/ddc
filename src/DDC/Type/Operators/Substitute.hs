@@ -116,7 +116,8 @@ subTT_enter sub cut tt
 	-- nothing can be substituted
 	| otherwise
 	= return tt
-	
+
+
 subTT_fetter_cutM' sub cut ff
  = case ff of
  	FConstraint v ts

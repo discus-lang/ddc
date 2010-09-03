@@ -2,8 +2,8 @@
 
 -- | Stripping fetters from types.
 module DDC.Type.Operators.Strip
-	( stripFWheresT_all
-	, stripFWheresT_mono
+	( stripFWheresT
+	, stripMonoFWheresT
 	, stripForallContextT
 	, stripToBodyT)
 where
@@ -14,35 +14,35 @@ import DDC.Type.Pretty		()
 import qualified Data.Map	as Map
 
 -- | Strip all fetters from this type, returning just the body.
-stripFWheresT_all  :: Type -> Type
-stripFWheresT_all  = stripFWheresT False
+stripFWheresT  :: Type -> Type
+stripFWheresT  = stripFWheresT' False
 
 
 -- | Strip the monomorphic FWhere fetters (the ones with cids as the RHS) 
 --	leaving the others still attached.
-stripFWheresT_mono :: Type -> Type
-stripFWheresT_mono = stripFWheresT True
+stripMonoFWheresT :: Type -> Type
+stripMonoFWheresT = stripFWheresT' True
 
 
 -- | Worker function for above
-stripFWheresT 
+stripFWheresT' 
 	:: Bool 		-- ^ whether to only stip monomorphic FWhere fetters
 	-> Type			-- ^ the type to strip
 	-> Type
 
-stripFWheresT justMono	tt
+stripFWheresT' justMono	tt
  = case tt of
 	TNil		-> tt
 
 	TError{} -> tt
 
 	TForall b k t
-	 -> TForall b k $ stripFWheresT justMono t
+	 -> TForall b k $ stripFWheresT' justMono t
 
 	TConstrain t crs
 	 -- Just take the monomorphic FWheres
 	 | justMono
-	 -> let	t'	= stripFWheresT justMono t
+	 -> let	t'	= stripFWheresT' justMono t
 		crs'	= Constraints
 				(Map.filterWithKey (\t1 _ -> not $ isTClass t1) $ crsEq crs)
 				(crsMore  crs)
@@ -52,7 +52,7 @@ stripFWheresT justMono	tt
 	
          -- Take all of thw FWheres
          | otherwise
-	 -> let	t'	= stripFWheresT justMono t
+	 -> let	t'	= stripFWheresT' justMono t
 	    	crs'	= Constraints
 				Map.empty
 				(crsMore crs)
@@ -61,11 +61,11 @@ stripFWheresT justMono	tt
 	    in	makeTConstrain t' crs'
 	
 	TSum k ts
-	 -> TSum k $ map (stripFWheresT justMono) ts
+	 -> TSum k $ map (stripFWheresT' justMono) ts
 
 	TApp t1 t2
-	 -> let	t1'	= stripFWheresT justMono t1
-	 	t2'	= stripFWheresT justMono t2
+	 -> let	t1'	= stripFWheresT' justMono t1
+	 	t2'	= stripFWheresT' justMono t2
 	    in	TApp t1' t2'
 
 	TCon _	-> tt

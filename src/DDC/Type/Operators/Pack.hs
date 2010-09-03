@@ -2,8 +2,8 @@
 
 -- | Pack a type into standard form.
 module DDC.Type.Operators.Pack
-	( packType
-	, packType_markLoops )
+	( packT
+	, packAndMarkLoopsT )
 where
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -57,12 +57,12 @@ data ConfigLoopResolution
 
 -- | This gets called often by the constraint solver, so needs to be reasonably efficient.
 --
--- TODO: This is does a naive substitution.
---	 It'd be better to use destructive update to implement the substitution, 
+-- TODO: This does a naive substitution.
+--	 It might be better to use destructive update to implement the substitution, 
 --	 then eat up all the IORefs in a second pass.
 --
-packType :: Type -> Type
-packType tt	
+packT :: Type -> Type
+packT tt	
  = let	config	= Config
 		{ configSubForEffClo	= False
 		, configCrush		= False
@@ -74,8 +74,8 @@ packType tt
 -- | Pack a type into standard form. 
 --	If we find a loop through the value portion of the type graph then
 --	leave a `TError` explaining the problem.
-packType_markLoops :: Type -> Type
-packType_markLoops tt
+packAndMarkLoopsT :: Type -> Type
+packAndMarkLoopsT tt
  = let	config	= Config
 		{ configSubForEffClo	= False
 		, configCrush		= False

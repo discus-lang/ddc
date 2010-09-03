@@ -67,6 +67,6 @@ unifyTT t1 t2
 	= Just $ Seq.singleton (t1, t2)
 
 	| otherwise	
-	= Nothing		
+	= Nothing
 
 

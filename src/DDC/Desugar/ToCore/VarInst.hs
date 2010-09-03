@@ -63,7 +63,7 @@ toCoreVarInst v vT
 		--	type arguements for the instantiation.
 		let tsInstCE	= map T.stripToBodyT tsInstC
 			
-		let tsInstC_packed	= map (T.crushT . T.packType) tsInstCE
+		let tsInstC_packed	= map (T.crushT . T.packT) tsInstCE
 			
 		-- Work out what types belong to each quantified var in the type
 		--	being instantiated.			
@@ -75,7 +75,7 @@ toCoreVarInst v vT
 		-- If this function needs a witnesses we'll just make them up.
 		--	Real witnesses will be threaded through in a later stage.
 		let ksContextC'	= map (C.substituteT (flip Map.lookup tsSub)) ksContextC
-		let tsContextC' = map (T.packType)
+		let tsContextC' = map (T.packT)
 				$ map (\k -> let Just t = T.inventWitnessOfKind (T.crushK k) in t)
 				$ ksContextC'
 

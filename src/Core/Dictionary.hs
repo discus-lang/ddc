@@ -12,7 +12,7 @@ import DDC.Main.Error
 import DDC.Main.Pretty
 import DDC.Core.Glob
 import DDC.Core.Exp
-import DDC.Type
+import DDC.Type				hiding (instantiateT)
 import DDC.Var
 import qualified Data.Sequence		as Seq
 import qualified Data.Map		as Map
@@ -317,8 +317,6 @@ instantiateT' sub t1 (t2 : ts)
 	
 	| otherwise
 	= Left (subTT_noLoops sub t1, t2)
-	
-
 		
 	
 	

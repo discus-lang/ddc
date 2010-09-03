@@ -138,8 +138,8 @@ toCoreX vsBound xx
 			, "clo      = " % clo	
 			, "cloAnnot = " % cloAnnot ])
 		 $ C.XLam v tArg x'
-			(T.packType $ effAnnot)
-			(T.packType $ cloAnnot)
+			(T.packT $ effAnnot)
+			(T.packT $ cloAnnot)
 
 
 	D.XApp	_ x1 x2

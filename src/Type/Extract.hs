@@ -110,7 +110,7 @@ extractType_pack final varT cid tTrace
 	--	If we hit any loops through the value type portion of the
 	--	graph then mark then with TError constructors.
 	trace	$ ppr " -- packing into standard form\n"	
-	let tPack	= packType_markLoops tTrace
+	let tPack	= packAndMarkLoopsT tTrace
 
 	-- Look for TErrors in the packed type
 	let tsLoops	= [ (t1, t2) 
@@ -171,10 +171,10 @@ extractType_more final varT cid tPack
 
 	-- Cut loops through :> fetters in this type
 	trace	$ ppr " -- cutting loops\n"
-	let tCut	= cutLoopsT_constrainForm tTrim
+	let tCut	= cutLoopsT tTrim
 	trace	$ "    tCut:\n" 	%> prettyTypeSplit tCut % "\n\n"
 	
-	let tCutPack	= packType tCut
+	let tCutPack	= packT tCut
 	trace	$ "    tCutPack:\n"	%> prettyTypeSplit tCutPack % "\n\n"
 
 	extractType_final final varT cid tCutPack

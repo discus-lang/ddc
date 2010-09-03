@@ -145,7 +145,7 @@ bindX 	shared xx
 
 		-- mask out effects which are known to be local to the body of this expression
 		let effMasked	= 
-			packType
+			packT
 			$ transformT
 				(\tt -> case tt of
 					  TApp t1 (TVar kRegion (UVar r))

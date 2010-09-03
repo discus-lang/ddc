@@ -83,5 +83,5 @@ materialVarsOfType1 dataDefs crs tt
 					$ dataDefCtors dataDef
 					
 		    in	( Set.singleton v1
-		    	, map 	(flip instantiateType tsArgs) 
+		    	, map 	(flip instantiateT tsArgs) 
 				ctorParams )

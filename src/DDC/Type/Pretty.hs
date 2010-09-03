@@ -32,6 +32,7 @@ pprBind vsLocal bb
   	BVar v		-> pprVar vsLocal v
 	BMore v t	-> "(" % pprVar vsLocal v % " :> " % pprType vsLocal t % ")"
 
+
 -- Type --------------------------------------------------------------------------------------------
 instance Pretty Type PMode where
   ppr = pprType Set.empty

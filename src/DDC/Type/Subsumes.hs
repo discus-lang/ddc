@@ -30,8 +30,7 @@ joinSubsumes e1 e2
 
 
 -- Type Subsumption -------------------------------------------------------------------------------
-
--- | t1 <: t2
+-- | Check that the first type is subsumed by the second. @t1 <: t2@
 subsumesTT :: Type -> Type -> Subsumes
 subsumesTT t1 t2
 	| TNil		<- t1
@@ -134,12 +133,4 @@ subsumesTT t1 t2
 	-- No dice --------------------
 	| otherwise
 	= NoSubsumes t1 t2
-
-
-
-
-
-
-
-
 

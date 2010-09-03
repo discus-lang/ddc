@@ -1,8 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Type.Operators.Instantiate
-	( instantiateType
-	, instantiateTypeWithFreshVars)
+	( instantiateT
+	, instantiateWithFreshVarsT)
 where
 import DDC.Type.Exp
 import DDC.Type.Compounds
@@ -14,8 +14,10 @@ import qualified Data.Map	as Map
 
 
 -- | Instantiate a type with these arguments.
-instantiateType :: Type -> [Type] -> Type
-instantiateType tScheme tsArgs
+--
+--   TODO: Check argument kinds match.
+instantiateT :: Type -> [Type] -> Type
+instantiateT tScheme tsArgs
  = let	(bks, tBody)	= takeTForall tScheme
 	
 	Just vsQuant 	= sequence $ map (takeVarOfBind . fst) bks
@@ -27,7 +29,7 @@ instantiateType tScheme tsArgs
 
 -- | Instantiate a type scheme, using the provided function to create
 --	the new variables, and also return the new instance vars created.
-instantiateTypeWithFreshVars
+instantiateWithFreshVarsT
 	:: Monad m
 	=> (Var -> m Var)	-- ^ Function to instantiate each variable.
 	-> Type 		-- ^ Type scheme to instantiate.
@@ -35,7 +37,7 @@ instantiateTypeWithFreshVars
 	     , [Var])		--   List of instance varaibles, one for each outer
 				--   forall quantifier in the original scheme.
 	
-instantiateTypeWithFreshVars instVar tt
+instantiateWithFreshVarsT instVar tt
  = case tt of
  	TForall{}
 	 -> do	-- split of the quantifier so we can instantiate all the vars at once

@@ -113,13 +113,13 @@ solveCs	(c:cs)
 		-- The signature itself is a type scheme, but we want to
 		--	add a fresh version to the graph so that it unifies
 		--	with the other information in the graph.
-		t2_inst	<- liftM fst $ instantiateTypeWithFreshVars instVar t2
+		t2_inst	<- liftM fst $ instantiateWithFreshVarsT instVar t2
 
 		-- Strip fetters off the sig before adding it to the graph
 		-- 	as we're only using information in the sig for guiding 
 		-- 	projection resolution.
 		let t2_strip
-			= stripFWheresT_all t2_inst
+			= stripFWheresT t2_inst
 
 		trace	$ "    t2_strip:\n" %> prettyTypeSplit t2_strip % "\n\n"
 
@@ -294,7 +294,7 @@ solveCs	(c:cs)
 		  -> do		
 		 	-- Instantiate the scheme
 			(tInst, tInstVs)
-				<- instantiateTypeWithFreshVars instVar tScheme
+				<- instantiateWithFreshVarsT instVar tScheme
 
 			-- Add information about how the scheme was instantiated
 			stateInst `modifyRef`

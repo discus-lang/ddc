@@ -9,7 +9,7 @@
 --	it automatically.
 module DDC.Type.Operators.Elaborate
 	( elaborateRsT
-	, elaborateRsT_quant
+	, elaborateAndQuantifyRsT
 	, elaborateEffT
 	, elaborateCloT )
 where
@@ -29,21 +29,28 @@ stage	= "Type.Util.Elaborate"
 
 -- Elaborate Regions ------------------------------------------------------------------------------
 -- | Look at uses of data type constructors, and if they don't have enough
---	region args applied then add some more so the resulting type
---	has kind *.
-elaborateRsT_quant
+--	region args applied then add some more so the resulting type has kind *.
+elaborateAndQuantifyRsT
 	:: Monad m
 	=> (NameSpace -> m Var)	-- ^ A compuation to generate a fresh region var
 	-> Type 		-- ^ the type to elaborate
 	-> m Type		--   elaborated type.
 	
-elaborateRsT_quant newVar tt
+elaborateAndQuantifyRsT newVar tt
  = do	(t_elab, vks)	<- elaborateRsT newVar tt
 	let bks		= [(BVar v, k) | (v, k) <- vks]
 	let t_quant	= makeTForall_back bks t_elab
-
 	return t_quant
 
+
+-- | Look at uses of data type constructors, and if they don't have enough
+--	region args applied then add some more so the resulting type has kind *.
+elaborateRsT 
+	:: Monad m 
+	=> (NameSpace -> m Var)
+	-> Type
+	-> m (Type, [(Var, Kind)])
+	
 elaborateRsT newVar tt
  = do	let ?newVar	= newVar
 	elaborateRsT' tt
@@ -170,16 +177,18 @@ hasKind k tt
 
 
 -- Elaborate Closures -----------------------------------------------------------------------------
-
--- Add closure annotations on function constructors, assuming 
--- that the body of the function references all it's arguments.
+-- | Add closure annotations on function constructors, assuming 
+--   that the body of the function references all it's arguments.
 --
--- eg	   (a -> b -> c -> d)
+--   For example:
 --
+--   @
+--         (a -> b -> c -> d)
 --	=> (t1 -> t2 -($c1)> t3 -($c2)> t4)
 --	    :- $c1 = { x1 : x1 }
 --	    ,  $c2 = { x1 : t1; x2 : t2 }
-
+--   @
+--
 elaborateCloT 
 	:: Monad m
 	=> (NameSpace -> m Var) 		-- ^ function to use to allocate fresh vars.
@@ -309,7 +318,7 @@ elaborateEffT newVarN vsRsConst vsRsMutable tt
 	let tFinal	= addEffectsToFsT effs hookVar tHooked
 
 	-- pack the type to drop out any left-over  !e1 = !Bot  constraints.
-  	let tPacked_fast	= packType tFinal
+  	let tPacked_fast	= packT tFinal
 
 	return $ tPacked_fast
 		
