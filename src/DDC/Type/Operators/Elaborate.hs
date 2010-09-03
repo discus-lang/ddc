@@ -8,7 +8,7 @@
 --	functions this information is fairly unsurprising, so we can fill in most of
 --	it automatically.
 
-module DDC.Type.Elaborate
+module DDC.Type.Operators.Elaborate
 	( elaborateRsT
 	, elaborateRsT_quant
 	, elaborateEffT
@@ -20,8 +20,8 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
-import DDC.Type.Pack
-import DDC.Type.Trim
+import DDC.Type.Operators.Pack
+import DDC.Type.Operators.Trim
 import DDC.Var
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map

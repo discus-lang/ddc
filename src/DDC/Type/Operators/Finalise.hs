@@ -1,5 +1,5 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
-module DDC.Type.Finalise
+module DDC.Type.Operators.Finalise
 	(finaliseT)
 where
 import Shared.VarPrim

@@ -1,5 +1,5 @@
 
-module DDC.Type.Fixup
+module DDC.Type.Operators.Fixup
 	(fixupKindsInType)
 where
 import DDC.Type.Exp

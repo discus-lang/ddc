@@ -10,9 +10,9 @@ module DDC.Type.Data.Base
 	, fieldsOfDataDef
 	, fieldTypeLabels)
 where
-import DDC.Type.Strip
 import DDC.Type.Exp
 import DDC.Type.Compounds
+import DDC.Type.Operators.Strip
 import DDC.Var
 import Control.Monad
 import Data.List

@@ -7,7 +7,7 @@ where
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform
-import DDC.Type.Substitute
+import DDC.Type.Operators.Substitute
 import DDC.Type.Pretty		()
 import DDC.Var
 import qualified Data.Map	as Map

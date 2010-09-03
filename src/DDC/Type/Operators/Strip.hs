@@ -1,7 +1,7 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Stripping fetters from types.
-module DDC.Type.Strip
+module DDC.Type.Operators.Strip
 	( stripFWheresT_all
 	, stripFWheresT_mono
 	, stripForallContextT

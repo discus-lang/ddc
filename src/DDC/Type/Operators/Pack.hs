@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Pack a type into standard form.
-module DDC.Type.Pack
+module DDC.Type.Operators.Pack
 	( packType
 	, packType_markLoops )
 where

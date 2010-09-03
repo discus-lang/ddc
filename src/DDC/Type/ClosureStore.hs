@@ -13,7 +13,7 @@ import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.Builtin
-import DDC.Type.Trim
+import DDC.Type.Operators.Trim
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var

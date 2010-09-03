@@ -3,9 +3,9 @@ module DDC.Type.Data.Pretty
 	( pprDataDefAsSource
 	, pprCtorDefAsSource)
 where
-import DDC.Type.Strip
 import DDC.Type.Pretty
 import DDC.Type.Data.Base
+import DDC.Type.Operators.Strip
 import DDC.Main.Pretty
 import qualified Data.Map	as Map
 	

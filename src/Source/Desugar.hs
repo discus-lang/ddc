@@ -19,7 +19,6 @@ import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Main.Error
 import DDC.Type.Data.CtorType
-import DDC.Type.Fixup
 import DDC.Type
 import DDC.Var
 import Source.Pretty			()

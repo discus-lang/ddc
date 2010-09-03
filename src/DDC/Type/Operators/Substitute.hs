@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Type substitution.
-module DDC.Type.Substitute
+module DDC.Type.Operators.Substitute
 	( subTT_noLoops
 	, subTTK_noLoops
 	, subTT_everywhere

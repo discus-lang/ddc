@@ -23,7 +23,7 @@
 --   Note that @!e2@ and @!e3@ need to have been substituted when the argument
 --   for @!e1@ is applied.
 -- 
-module DDC.Type.Quantify
+module DDC.Type.Operators.Quantify
 	(quantifyVarsT)
 where
 import DDC.Type.Exp

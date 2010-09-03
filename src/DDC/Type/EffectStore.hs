@@ -16,7 +16,7 @@ import DDC.Type.Compounds
 import DDC.Type.Builtin
 import DDC.Type.Kind
 import DDC.Type.Exp
-import DDC.Type.Crush
+import DDC.Type.Operators.Crush
 import DDC.Var
 import Data.Set			(Set)
 import qualified Data.Set	as Set

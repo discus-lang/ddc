@@ -25,7 +25,7 @@
 --   This would mean we'd have to extend the !e1 constraint in the 
 --   environment, but it's not needed at the moment.
 --
-module DDC.Type.JoinSum
+module DDC.Type.Operators.JoinSum
 	(joinSumTs)
 where
 import DDC.Main.Error

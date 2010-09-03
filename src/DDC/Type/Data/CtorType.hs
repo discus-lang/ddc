@@ -3,11 +3,11 @@
 module DDC.Type.Data.CtorType
 	(makeCtorType)
 where
-import DDC.Type.Elaborate
 import DDC.Type.Kind
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Exp
+import DDC.Type.Operators.Elaborate
 import DDC.Var
 import DDC.Main.Pretty
 import DDC.Main.Error

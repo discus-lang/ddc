@@ -35,7 +35,7 @@
 --  TODO: This is at least O(n^2) work. 
 --        We should be smarter about computing the reachability graph.
 --
-module DDC.Type.CutLoops
+module DDC.Type.Operators.CutLoops
 	(cutLoopsT_constrainForm)
 where
 import DDC.Main.Error

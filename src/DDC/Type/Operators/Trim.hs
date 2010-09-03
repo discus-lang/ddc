@@ -22,7 +22,7 @@
 --
 --   The variable @%r1@ was quantified in the original, so must also be quantified in the result.
 --
-module DDC.Type.Trim
+module DDC.Type.Operators.Trim
 	( trimClosureT
 	, trimClosureC)
 where
@@ -32,7 +32,7 @@ import DDC.Type.Exp
 import DDC.Type.Builtin
 import DDC.Type.Compounds
 import DDC.Type.Kind
-import DDC.Type.Pack
+import DDC.Type.Operators.Pack
 import DDC.Var
 import DDC.Util.FreeVars
 import DDC.Type.FreeVars		()
