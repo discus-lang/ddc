@@ -53,6 +53,7 @@ elaborateT tt
 
 	_	-> return tt
 
+
 elaborateT_fun :: Type -> ElabM Type
 elaborateT_fun tt
  = do	let (tt', (rsRead, rsWrite))	

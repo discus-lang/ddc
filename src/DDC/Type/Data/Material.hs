@@ -1,8 +1,6 @@
 
 module DDC.Type.Data.Material
-	( quantParamsOfCtorType
-	, materialVarsOfType
-	, materialVarsOfType1)
+	(annotMaterialInDataDefs)
 where
 import DDC.Type.Data.Base
 import DDC.Type.Exp
@@ -16,34 +14,33 @@ import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
 
--- | Fill in 
-{-
-annotMaterialDataDefs
+-- | Annotate some data type definitions with their sets of material vars.
+annotMaterialInDataDefs
 	:: Map Var DataDef	-- ^ Data defs in the environment. 
 				--   We don't need to annotate these.
 	-> Map Var DataDef	-- ^ Data defs that we need to annotate.
 	-> Map Var DataDef	-- ^ Annotated data defs.
 
-annotMaterialDataDefs ddefsEnv ddefs
- = let	
-
-
-
+annotMaterialInDataDefs ddefsEnv ddefs
+ 	= Map.map (annotMaterialDataDef (Map.union ddefsEnv ddefs)) ddefs
+		
+		
+-- | Annotate a data type definition with its set of material vars.
 annotMaterialDataDef
 	:: Map Var DataDef	-- ^ Data defs in the environment (including the one to annotate)
 	-> DataDef		-- ^ Data def to annotate.
 	-> DataDef		-- ^ Annotated data def
 
 annotMaterialDataDef ddefsEnv ddef
- = let	tData	 = makeTData 
+ = let	tData	   = makeTData 
 			(dataDefName ddef)
 			(dataDefKind ddef)
 			[TVar k (UVar v) | (v, k) <- dataDefParams ddef]
 
 	vsMaterial = materialVarsOfType ddefsEnv tData
 	
-   in	
--}
+   in	ddef { dataDefMaterialVars	= Just vsMaterial }
+
 	
 
 -- | Determine which variables are material in this type.
@@ -115,6 +112,7 @@ materialVarsOfType1 dataDefs (crs, tt)
 
 		    in	( vsMaterial
 		    	, zip (repeat crs) tsParamsInst)
+
 
 -- | Get a list of all the parameters of a data constructor's type, retaining the outer quantifiers. 
 --   This doesn't support constrained types. If there are any constraints then `panic`.
