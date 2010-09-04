@@ -282,19 +282,23 @@ genAltBlock ((_, lab), ASwitch (XCon _) [])
 genAltBlock ((_, lab), x)
  = do	panic stage $ "getAltBlock : " ++ show x
 
+
 genAltDefault :: LlvmVar -> Alt a -> LlvmM ()
 genAltDefault label (ADefault ss)
  = do	addBlock [ MkLabel (uniqueOfLlvmVar label) ]
 	mapM_ llvmOfStmt ss
 
 genAltDefault label (ACaseDeath s@(SourcePos (n,l,c)))
- = do	addBlock
+ = do	addComment "deathCase goes here"
+	gname	<- newUniqueName "str"
+	let name = LMGlobalVar gname (typeOfString n) Internal Nothing ptrAlign True
+
+	addGlobalVar ( name, Just (LMStaticStr n (typeOfString n)) )
+	addBlock
 		[ MkLabel (uniqueOfLlvmVar label)
-		, Expr (Call StdCall (funcVarOfDecl deathCase) [i32LitVar 0, i32LitVar l, i32LitVar c] [])
+		, Expr (Call StdCall (funcVarOfDecl deathCase) [name, i32LitVar l, i32LitVar c] [])
 		, Unreachable
 		]
-
-	panic stage $ "getAltDefault : " ++ show s
 
 genAltDefault _ def
  =	panic stage $ "getAltDefault : " ++ show def
@@ -426,18 +430,27 @@ boxExp t (XLit lit@(LiteralFmt (LInt value) (UnboxedBits 32)))
  = do	addComment $ "boxing1 " ++ show t
 	boxInt32 $ i32LitVar value
 
-boxExp t (XPrim op args)
+
+boxExp t lit@(XLit (LiteralFmt (LString s) Unboxed))
  = do	addComment $ "boxing2 " ++ show t
+	gname	<- newUniqueName "str"
+	let svar	= LMGlobalVar gname (typeOfString s) Internal Nothing ptrAlign True
+	addGlobalVar	( svar, Just (LMStaticStr s (typeOfString s)) )
+	boxAny		svar
+
+
+boxExp t (XPrim op args)
+ = do	addComment $ "boxing3 " ++ show t
 	calc	<- llvmOfXPrim (toLlvmType t) op args
 	addComment $ "Erik : " ++ show calc
 	boxAny	calc
 
 boxExp t (XVar v1 t1@TCon{})
- = do	addComment $ "boxing3 " ++ show t
+ = do	addComment $ "boxing4 " ++ show t
 	boxAny $ toLlvmVar v1 t1
 
 boxExp t x
- = panic stage $ "Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ take 30 (show x)
+ = panic stage $ "Unhandled : boxExp\n    " ++ show t ++ "\n    " ++ (show x)
 
 
 --------------------------------------------------------------------------------
@@ -569,6 +582,9 @@ toLlvmType (TCon v _)
 
 toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
 
+
+typeOfString :: String -> LlvmType
+typeOfString s = LMArray (length s + 1) i8
 
 -- | Convert a Sea Var (wit a Type) to a typed LlvmVar.
 toLlvmVar :: Var -> Type -> LlvmVar

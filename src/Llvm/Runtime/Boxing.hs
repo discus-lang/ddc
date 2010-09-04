@@ -24,9 +24,10 @@ stage = "Llvm.Runtime.Boxing"
 boxAny :: LlvmVar -> LlvmM LlvmVar
 boxAny any
  = case getVarType any of
-	LMInt 1		-> boxEnum any
-	LMInt 32	-> boxInt32 any
-	_		-> panic stage $ "boxAny " ++ show (getVarType any)
+	LMInt 1			-> boxEnum any
+	LMInt 32		-> boxInt32 any
+	LMArray _ (LMInt 8)	-> boxString any
+	_			-> panic stage $ "boxAny " ++ show (getVarType any)
 
 
 unboxAny :: LlvmType -> LlvmVar -> LlvmM LlvmVar
@@ -83,7 +84,7 @@ unboxInt32 objptr
 --------------------------------------------------------------------------------
 
 boxEnum :: LlvmVar -> LlvmM LlvmVar
-boxEnum v@(LMLocalVar u (LMInt 1))
+boxEnum v@(LMLocalVar u _)
  = do	int32	<- newUniqueNamedReg "int32" i32
 	shifted	<- newUniqueNamedReg "shifted" i32
 	tag	<- newUniqueNamedReg "tag" i32
@@ -103,7 +104,24 @@ boxEnum v@(LMLocalVar u (LMInt 1))
 	return	objptr
 
 boxEnum any
- = panic stage $ "boxEnumX " ++ show any
+ = panic stage $ "boxEnum " ++ show any
+
+--------------------------------------------------------------------------------
+
+dataStringBoxString :: LlvmFunctionDecl
+dataStringBoxString = LlvmFunctionDecl "Data_String_boxString" External CC_Ccc pObj FixedArgs [(LMPointer i8, [])] ptrAlign
+
+boxString :: LlvmVar -> LlvmM LlvmVar
+boxString str@(LMGlobalVar name (LMArray _ (LMInt 8)) _ Nothing _ True)
+ = do	addGlobalFuncDecl dataStringBoxString
+	pstr		<- newUniqueNamedReg "pstr" (pLift i8)
+	result		<- newUniqueNamedReg "result" pObj
+	addBlock	[ Assignment pstr (GetElemPtr True (pVarLift str) [llvmWordLitVar 0, llvmWordLitVar 0])
+			, Assignment result (Call StdCall (funcVarOfDecl dataStringBoxString) [pstr] []) ]
+	return		result
+
+boxString s
+ =	panic stage $ "boxString " ++ show s
 
 --------------------------------------------------------------------------------
 
