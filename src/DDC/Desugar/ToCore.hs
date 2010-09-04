@@ -88,7 +88,7 @@ toCoreP p
 
 	 -- Abstract type constrctors have no data constructors.
 	 | T.resultKind k == T.kValue
-	 ->	return	[C.PData   (T.DataDef v [] Map.empty)]
+	 ->	return	[C.PData   (T.DataDef v [] Map.empty Nothing Nothing)]
 	
 	 -- An abstract effect constructor.
 	 | T.resultKind k == T.kEffect

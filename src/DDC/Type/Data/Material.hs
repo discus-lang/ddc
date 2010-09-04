@@ -35,7 +35,14 @@ annotMaterialDataDef
 	-> DataDef		-- ^ Annotated data def
 
 annotMaterialDataDef ddefsEnv ddef
- = let	vsMaterial	= 
+ = let	tData	 = makeTData 
+			(dataDefName ddef)
+			(dataDefKind ddef)
+			[TVar k (UVar v) | (v, k) <- dataDefParams ddef]
+
+	vsMaterial = materialVarsOfType ddefsEnv tData
+	
+   in	
 -}
 	
 

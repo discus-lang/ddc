@@ -147,10 +147,12 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 			$ T.DataDef 
 				(eraseModule vData) 
 				([(eraseModule v, k) | (v, k) <- vksData])
-				(Map.map eraseModule_ctor ctors))
+				(Map.map eraseModule_ctor ctors)
+				vsMaterial
+				vsImmaterial)
 		    % ";\n"
 
-		  | D.PData sp (T.DataDef vData vksData ctors)
+		  | D.PData sp (T.DataDef vData vksData ctors vsMaterial vsImmaterial)
 		  <- psDesugared])
 
 	++ "\n"

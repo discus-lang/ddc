@@ -269,7 +269,11 @@ addProjDictDataTree tree
 
 addProjDataP projMap p
  = case p of
-	PData sp (DataDef v vks ctors)
+	PData sp 
+	 (DataDef 
+		{ dataDefName 	= v 
+		, dataDefParams	= vks
+		, dataDefCtors	= ctors })
  	 -> case Map.lookup v projMap of
 		Nothing	-> [p, PProjDict sp 
 					(makeTData v (makeKFuns (map snd vks) kValue) 

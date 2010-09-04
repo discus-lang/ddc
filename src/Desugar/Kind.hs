@@ -218,7 +218,7 @@ slurpConstraint pp
 	PClassDecl sp v ts vts
 	 -> map (\(TVar k (UVar v)) -> Constraint (KSClass sp) v (defaultKind v k)) ts
 
- 	PData sp (DataDef v vks ctors)
+ 	PData sp (DataDef v vks ctors _ _)
 	 -> let	k	= makeKFuns (map snd vks) kValue
 	        k'	= forcePrimaryRegion v k
 	    in	[Constraint (KSData sp) v k']

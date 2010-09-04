@@ -174,7 +174,9 @@ makeDataDef vData vsParam ctors
 		, T.dataDefParams	= [(v, let Just k = defaultKindOfVar v in k) | v <- vsParam]
 		, T.dataDefCtors	= Map.fromList 
 					[ (T.ctorDefName ctor, ctor) 
-						| ctor	<- ctors'] }
+						| ctor	<- ctors'] 
+		, T.dataDefMaterialVars	  = Nothing
+		, T.dataDefImmaterialVars = Nothing }
 
 -- | Make a data constructor definition.
 makeCtorDef 

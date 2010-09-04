@@ -2,6 +2,7 @@
 -- | Data type and constructor definitions.
 module DDC.Type.Data.Base
 	( DataDef(..)
+	, dataDefKind
 	, CtorDef(..)
 	, lookupTypeOfFieldFromDataDef
 	, lookupTypeOfNamedFieldFromCtorDef
@@ -10,6 +11,7 @@ module DDC.Type.Data.Base
 	, fieldsOfDataDef
 	, fieldTypeLabels)
 where
+import DDC.Type.Builtin
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Operators.Strip
@@ -27,14 +29,30 @@ import qualified Data.Set	as Set
 data DataDef
 	= DataDef
 	{ -- | Name of the type constructor.
-	  dataDefName	:: Var
+	  dataDefName		:: Var
 
 	  -- | Parameter variables to the data type.
-	, dataDefParams	:: [(Var, Kind)]
+	, dataDefParams		:: [(Var, Kind)]
 
 	  -- | Map of data constructor name to definition.
-	, dataDefCtors	:: Map Var CtorDef }
+	, dataDefCtors		:: Map Var CtorDef 
+	
+	  -- | Cache of the material type vars of the data type.
+	  --   These correspond to object that may appear in the store.
+	, dataDefMaterialVars   :: Maybe (Set Var)
+
+	  -- | Cache of immaterial type vars in the data type.
+	  --   These are ''phantom'' variables, and an object of this type
+	  --   will never appear in the store. Like the @a@ and @b@ in  @a -> b@.
+	, dataDefImmaterialVars :: Maybe (Set Var)
+	}
 	deriving (Show, Eq)
+
+
+-- | Get the kind of a data type constructor from its definition.
+dataDefKind :: DataDef -> Kind
+dataDefKind ddef
+	= makeKFuns (map snd $ dataDefParams ddef) kValue
 
 
 -- | A data constructor definition.
