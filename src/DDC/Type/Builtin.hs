@@ -2,10 +2,10 @@
 -- | Short names for built-in types and kinds.
 module DDC.Type.Builtin 
 	( 
-	-- * Atomic kind constructors.
+	-- * Atomic kind constructors
 	  kBox, kValue, kRegion, kEffect, kClosure
 	
-	-- * Witness kind constructors.
+	-- * Witness kind constructors
 	, kConst,   kDeepConst
 	, kMutable, kDeepMutable
 	, kLazy,    kHeadLazy
@@ -13,25 +13,24 @@ module DDC.Type.Builtin
 	, kPure
 	, kEmpty
 	
-	, tBot
+	-- * Bottom effect and closure
+	, tBot, tPure, tEmpty
 
-	-- * Effect constructors.
-	, tPure
+	-- * Effect constructors
 	, tRead,  tDeepRead, tHeadRead
 	, tWrite, tDeepWrite
 	
-	-- * Closure constructors.
-	, tEmpty
+	-- * Closure constructors
 	, tFree, tFreeType, tFreeRegion, tDanger
 	
-	-- * Witness type constructors.
+	-- * Witness type constructors
 	, tMkConst,   tMkDeepConst
 	, tMkMutable, tMkDeepMutable
 	, tMkLazy,    tMkHeadLazy
 	, tMkDirect
 	, tMkPurify,  tMkPure
 	
-	-- * Elaboration constructors.
+	-- * Elaboration constructors
 	, tElaborateRead
 	, tElaborateWrite
 	, tElaborateModify
@@ -45,7 +44,7 @@ module DDC.Type.Builtin
 	, tcTyDataBits
 	, tcString
 
-	-- * Getting types of literals.
+	-- * Getting types of literals
 	, tyConOfLiteralFmt
 	, typeOfLiteral
 	, tyconOfLiteral )
