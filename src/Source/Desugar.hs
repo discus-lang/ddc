@@ -171,7 +171,7 @@ makeDataDef vData vsParam ctors
 
 	return	$ T.DataDef
 		{ T.dataDefName		= vData
-		, T.dataDefParams	= vsParam
+		, T.dataDefParams	= [(v, let Just k = defaultKindOfVar v in k) | v <- vsParam]
 		, T.dataDefCtors	= Map.fromList 
 					[ (T.ctorDefName ctor, ctor) 
 						| ctor	<- ctors'] }

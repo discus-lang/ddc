@@ -80,14 +80,14 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 	 	("region " % v) % ";\n"
 	 
-	PData nn (DataDef v vs ctors)
+	PData nn (DataDef v vks ctors)
 	 | Map.null ctors
 	 -> annot nn 
-	 	("data " % " " %!% (v : vs)) % ";\n\n"
+	 	("data " % " " %!% (v : (map fst vks))) % ";\n\n"
 
-	PData nn (DataDef v vs ctors)
+	PData nn (DataDef v vks ctors)
 	 -> annot nn
-	 	("data " % " " %!% (v : vs) % "\n"
+	 	("data " % " " %!% (v : (map fst vks)) % "\n"
 		%> ("= "  % "\n\n| " %!% (Map.elems ctors) % ";")
 		% "\n\n")
 		

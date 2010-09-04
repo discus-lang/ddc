@@ -1,6 +1,7 @@
 
 module DDC.Type.Data.Material
 	( quantParamsOfCtorType
+	, materialVarsOfType
 	, materialVarsOfType1)
 where
 import DDC.Type.Data.Base
@@ -14,7 +15,100 @@ import Data.Map			(Map)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
+
+-- | Fill in 
+{-
+annotMaterialDataDefs
+	:: Map Var DataDef	-- ^ Data defs in the environment. 
+				--   We don't need to annotate these.
+	-> Map Var DataDef	-- ^ Data defs that we need to annotate.
+	-> Map Var DataDef	-- ^ Annotated data defs.
+
+annotMaterialDataDefs ddefsEnv ddefs
+ = let	
+
+
+
+annotMaterialDataDef
+	:: Map Var DataDef	-- ^ Data defs in the environment (including the one to annotate)
+	-> DataDef		-- ^ Data def to annotate.
+	-> DataDef		-- ^ Annotated data def
+
+annotMaterialDataDef ddefsEnv ddef
+ = let	vsMaterial	= 
+-}
 	
+
+-- | Determine which variables are material in this type.
+--   This doesn't support quantified types. If there are any quantifers then `panic`.
+materialVarsOfType 
+	:: Map Var DataDef	-- ^ Map of data type constructor var to its definition.
+	-> Type
+	-> Set Var
+
+materialVarsOfType dataDefs tt
+ = go Set.empty [(emptyConstraints, tt)]
+
+ where	go vsMaterial ds
+	 = let	(vssMaterial', dss')	
+			=  unzip
+			$  map (materialVarsOfType1 dataDefs) ds
+
+		vsMaterial'	= Set.unions vssMaterial'
+		ds'		= concat dss'
+		
+	  in	if   (vsMaterial' == vsMaterial') 
+		  && (ds          == ds')
+			then vsMaterial
+			else go vsMaterial' ds'
+		
+
+materialVarsOfType1
+	:: Map Var DataDef	-- ^ Map of data type constructor var to its definition.
+	-> (Constraints, Type)
+	-> (Set Var, [(Constraints, Type)])
+
+materialVarsOfType1 dataDefs (crs, tt)
+
+	-- Plain region and value vars are always material.
+	| TVar k b	<- tt
+	, isRegionKind k || isValueKind k	
+	, Just v	<- takeVarOfBound b
+	= (Set.singleton v, [])
+
+	-- Effect and closure vars are always immaterial
+	| TVar k _	<- tt
+	, isEffectKind k || isClosureKind k	
+	= (Set.empty, [])
+	
+	-- 
+	| Just (vCon, k, tsArgs) <- takeTData tt
+	= case tsArgs of
+		[]	-> (Set.empty, [])
+
+		(TVar k1 (UVar v1) : tsRest)
+		 -> let	
+			-- If we've got a primary region variable then record is as material.
+			vsMaterial	
+			 | isRegionKind k	= Set.singleton v1
+			 | otherwise		= Set.empty 
+		
+			-- look up the data definition for this type.
+			Just dataDef	= Map.lookup vCon dataDefs 
+		
+			-- get the parameter of all the data constructors for this type.
+			ctorParams	= concatMap quantParamsOfCtorType 
+					$ map ctorDefType
+					$ Map.elems 
+					$ dataDefCtors dataDef
+
+			tsParamsInst	= map	(\(Just t) -> t) 
+					$ map	(flip instantiateT tsArgs)
+						ctorParams
+
+		    in	( vsMaterial
+		    	, zip (repeat crs) tsParamsInst)
+
 -- | Get a list of all the parameters of a data constructor's type, retaining the outer quantifiers. 
 --   This doesn't support constrained types. If there are any constraints then `panic`.
 quantParamsOfCtorType :: Type -> [Type]
@@ -40,49 +134,3 @@ quantParamsOfCtorType' bksQuant acc tt
 
 	| otherwise
 	= reverse acc
-	
-	
-
--- | Determine which variables are material in this type.
---   This doesn't support quantified types. If there are any quantifers then `panic`.
--- materialVarsOfType :: Type -> Set Var
--- materialVarsOfType tt
-
-
-materialVarsOfType1
-	:: Map Var DataDef
-	-> Constraints 
-	-> Type
-	-> (Set Var, [Type])
-
-materialVarsOfType1 dataDefs crs tt
-
-	-- Plain region and value vars are always material.
-	| TVar k b	<- tt
-	, isRegionKind k || isValueKind k	
-	, Just v	<- takeVarOfBound b
-	= (Set.singleton v, [])
-
-	-- Effect and closure vars are always immaterial
-	| TVar k _	<- tt
-	, isEffectKind k || isClosureKind k	
-	= (Set.empty, [])
-	
-	-- 
-	| Just (vCon, k, tsArgs) <- takeTData tt
-	= case tsArgs of
-		[]	-> (Set.empty, [])
-
-		(TVar k1 (UVar v1) : tsRest)
-		 -> let	Just dataDef	= Map.lookup vCon dataDefs 
-		
-			-- get the parameter of all the data constructors for this type.
-			ctorParams	= concatMap quantParamsOfCtorType 
-					$ map ctorDefType
-					$ Map.elems 
-					$ dataDefCtors dataDef
-					
-		    in	( Set.singleton v1
-		    	, map (\(Just t) -> t) $ 
-			  map	(flip instantiateT tsArgs) 
-				ctorParams )

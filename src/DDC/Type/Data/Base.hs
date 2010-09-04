@@ -30,7 +30,7 @@ data DataDef
 	  dataDefName	:: Var
 
 	  -- | Parameter variables to the data type.
-	, dataDefParams	:: [Var]
+	, dataDefParams	:: [(Var, Kind)]
 
 	  -- | Map of data constructor name to definition.
 	, dataDefCtors	:: Map Var CtorDef }

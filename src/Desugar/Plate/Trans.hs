@@ -196,14 +196,20 @@ transDataDef
 
 transDataDef table
 	def@(DataDef	{ dataDefName	= name
-			, dataDefParams	= vsParams
+			, dataDefParams	= vksParams
 			, dataDefCtors	= ctors })
 
  = do	name'		<- transV table name
-	vsParams'	<- mapM (transV table)       vsParams
+
+	let (vsParams, ksParams)
+		= unzip $ dataDefParams def
+
+	vsParams'	<- mapM (transV table) vsParams
+	let vksParams'	= zip vsParams' ksParams
+		
 	ctors'		<- forM ctors (transCtorDef table)
 	return		$ def 	{ dataDefName	= name'
-				, dataDefParams	= vsParams'
+				, dataDefParams	= vksParams'
 				, dataDefCtors	= ctors' }
 
 

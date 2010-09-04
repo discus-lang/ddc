@@ -35,15 +35,15 @@ elaborateDataDef
 	-> m DataDef
 
 elaborateDataDef newVarN getKind 
-	dataDef@(DataDef vData vsParam ctorDefs)
+	dataDef@(DataDef vData vksParam ctorDefs)
  = do
 
 	-- Decide what var to use as the primary region.
 	--	If the first parameter to the type constructor is a region variable
 	--	then use that, otherwise make a fresh one.
-	rPrimary	<- case takeHead vsParam of
-				Just v
-				  | varNameSpace v == NameRegion
+	rPrimary	<- case takeHead vksParam of
+				Just (v, k)
+				  | isRegionKind k
 				  -> return v
 				
 				_ -> newVarN NameRegion
@@ -78,16 +78,16 @@ elaborateDataDef newVarN getKind
 				$  mapM (elaborateCtorDefParams newVarNR) 
 				$  Map.elems ctorDefs
 
-			let vsParam_elab
-				= nub $ rPrimary : vsParam ++ (map fst $ concat vkssNew)
+			let vksParam_elab
+				= nub $ (rPrimary, kRegion) : vksParam ++ (concat vkssNew)
 					
 			ctorDefs_final
-				<- mapM (elaborateCtorDefResult newVarNR vData vsParam_elab)
+				<- mapM (elaborateCtorDefResult newVarNR vData vksParam_elab)
 					ctorDefsElabs
 				
 			let dataDef_final
 				= dataDef
-				{ dataDefParams	= vsParam_elab
+				{ dataDefParams	= vksParam_elab
 				, dataDefCtors	= Map.fromList 
 						$ [(ctorDefName def, def) | def <- ctorDefs_final] }
 
@@ -156,14 +156,14 @@ elaborateCtorDefResult
 	:: Monad m
 	=> (NameSpace -> m Var)
 	-> Var				-- ^ Var of of the data type constructor
-	-> [Var]			-- ^ Params to the data type constructor.
+	-> [(Var, Kind)]			-- ^ Params to the data type constructor.
 	-> CtorDefElab			-- ^ Partially elaborated constructor def			
 	-> m CtorDef
 	
-elaborateCtorDefResult newVarN vData vsParam ctorDef
+elaborateCtorDefResult newVarN vData vksParam ctorDef
  = do	tCtor_elab	<- makeCtorType 
 				newVarN 
-				vData vsParam
+				vData (map fst vksParam)
 				(ctorDefName $ ctorDefElabOrig ctorDef)
 				(ctorDefElabParamTypes ctorDef)
 

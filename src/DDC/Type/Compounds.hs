@@ -58,6 +58,7 @@ module DDC.Type.Compounds
 	, addFetterToConstraints
 	
 	  -- * Constraints
+	, emptyConstraints
 	, makeTConstrain
 	, addConstraints
 	, addConstraintsEq
@@ -437,6 +438,14 @@ addFetterToConstraints ff crs
 
 
 -- Constraints ------------------------------------------------------------------------------------
+-- | An empty set of constraints.
+emptyConstraints :: Constraints
+emptyConstraints
+	= Constraints
+	{ crsEq		= Map.empty
+	, crsMore	= Map.empty
+	, crsOther	= [] }
+
 -- | If the given constraints are non empty then add a TConstrain to the type, 
 --   otherwise return the original type.
 makeTConstrain :: Type -> Constraints -> Type

@@ -269,9 +269,12 @@ addProjDictDataTree tree
 
 addProjDataP projMap p
  = case p of
-	PData sp (DataDef v vs ctors)
+	PData sp (DataDef v vks ctors)
  	 -> case Map.lookup v projMap of
-		Nothing	-> [p, PProjDict sp (makeTData v  (makeDataKind vs) (map varToTBot vs)) []]
+		Nothing	-> [p, PProjDict sp 
+					(makeTData v (makeKFuns (map snd vks) kValue) 
+								(map varToTBot $ map fst vks))
+								[]]
 		Just _	-> [p]
 		
 	_		-> [p]
@@ -299,9 +302,9 @@ addProjDictFunsP
  , Just dataDef		<- Map.lookup v dataMap
  = do	
 	let vData	= dataDefName dataDef
-	let vsData	= dataDefParams dataDef
-	let tsData	= map (\v -> TVar (let Just k = kindOfSpace $ varNameSpace v in k) $ UVar v) vsData
-	let tData	= makeTData vData (makeDataKind vsData) tsData
+	let vksData	= dataDefParams dataDef
+	let tsData	= map (\(v, k) -> TVar k $ UVar v) vksData
+	let tData	= makeTData vData (makeKFuns (map snd vksData) kValue) tsData
 	
 	-- See what projections have already been defined.
 	let dictVs	= Set.unions

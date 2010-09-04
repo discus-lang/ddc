@@ -133,17 +133,17 @@ slurpW	(WConLabel sp vCon lvs)
 					% vCon % "'")
 			$ mDataDef
 	
-	let vsParam	= dataDefParams dataDef
+	let vksParam	= dataDefParams dataDef
 	
 	-- Instantiate each of the vars in the data type.
-	vsInst		<- mapM newVarZ vsParam
+	vsInst		<- mapM newVarZ $ map fst vksParam
 	let ksInst	=  map (\(Just k) -> k) $ map (kindOfSpace . varNameSpace) vsInst
 	let tsInst	=  zipWith TVar ksInst $ map UVar vsInst
 	
 	-- This is the type the pattern must be.
 	let tPat	= makeTData 
 				(dataDefName dataDef)
-				(makeDataKind vsParam)
+				(makeKFuns (map snd vksParam) kValue)
 				tsInst
 				
 	-- Slurp constraints for each of the bound fields.

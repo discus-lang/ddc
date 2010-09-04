@@ -11,12 +11,12 @@ import qualified Data.Map	as Map
 	
 
 instance Pretty DataDef PMode where
- ppr (DataDef v vs ctors)
+ ppr (DataDef v vks ctors)
 	| Map.null ctors
-	= "data " % " " %!% (v : vs) % ";\n\n"
+	= "data " % " " %!% (v : (map fst vks)) % ";\n\n"
 
 	| otherwise
-	= "data " % " " %!% (v : vs) % "\n"
+	= "data " % " " %!% (v : (map fst vks)) % "\n"
 	%> ("= "  % "\n\n| " %!% (Map.elems ctors))
 
 
@@ -32,12 +32,12 @@ instance Pretty CtorDef PMode where
 
 -- | Pretty print a data type definition in source syntax.
 pprDataDefAsSource :: DataDef -> Str
-pprDataDefAsSource (DataDef vData vsData ctors)
+pprDataDefAsSource (DataDef vData vksParam ctors)
 	| Map.null ctors
-	= "data " % vData % " " % (punc (ppr " ") (map ppr vsData)) 
+	= "data " % vData % " " % (punc (ppr " ") (map ppr $ map fst vksParam)) 
 
 	| otherwise
-	= "data " % vData % " " % (punc (ppr " ") (map ppr vsData)) 
+	= "data " % vData % " " % (punc (ppr " ") (map ppr $ map fst vksParam)) 
 	%> ("\n= "
 		% (punc (ppr "\n| ") 
 			$ map pprCtorDefAsSource 
