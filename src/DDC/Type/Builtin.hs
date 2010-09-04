@@ -1,6 +1,54 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 -- | Short names for built-in types and kinds.
 module DDC.Type.Builtin 
+	( 
+	-- * Atomic kind constructors.
+	  kBox, kValue, kRegion, kEffect, kClosure
+	
+	-- * Witness kind constructors.
+	, kConst,   kDeepConst
+	, kMutable, kDeepMutable
+	, kLazy,    kHeadLazy
+	, kDirect
+	, kPure
+	, kEmpty
+	
+	, tBot
+
+	-- * Effect constructors.
+	, tPure
+	, tRead,  tDeepRead, tHeadRead
+	, tWrite, tDeepWrite
+	
+	-- * Closure constructors.
+	, tEmpty
+	, tFree, tFreeType, tFreeRegion, tDanger
+	
+	-- * Witness type constructors.
+	, tMkConst,   tMkDeepConst
+	, tMkMutable, tMkDeepMutable
+	, tMkLazy,    tMkHeadLazy
+	, tMkDirect
+	, tMkPurify,  tMkPure
+	
+	-- * Elaboration constructors.
+	, tElaborateRead
+	, tElaborateWrite
+	, tElaborateModify
+	
+	-- * Plain constructors for primitive types
+	, tcBool
+	, tcWord
+	, tcInt
+	, tcFloat
+	, tcChar
+	, tcTyDataBits
+	, tcString
+
+	-- * Getting types of literals.
+	, tyConOfLiteralFmt
+	, typeOfLiteral
+	, tyconOfLiteral )
 where
 import Shared.VarPrim
 import DDC.Base.Literal
