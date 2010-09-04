@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Construction and elaboration of data type definitons.
 module DDC.Type.Data.CtorType
@@ -17,6 +18,7 @@ import qualified Data.Set	as Set
 import qualified Shared.VarPrim	as Var
 import qualified Shared.VarUtil	as Var
 
+stage	= "DDC.Type.Data.CtorType"
 
 -- | Make the type of a data constructor, from a list of its paramter types.
 --   This also fills in the closure information and any required constraints
@@ -30,7 +32,7 @@ makeCtorType
 	-> [Type]			-- ^ Parameters to data constructor.
 	-> m Type
 
-makeCtorType newVarN vData vsParam vCtor tsParam
+makeCtorType newVarN vData vsParam _ tsParam
  = do
 	-- Ensure there we have variables in all the effect and closure positions of 
 	-- fields with functional types.
@@ -55,7 +57,8 @@ makeCtorType newVarN vData vsParam vCtor tsParam
 					NameEffect	-> TVar kEffect  $ UVar v
 					NameRegion	-> TVar kRegion  $ UVar v
 					NameClosure	-> TVar kClosure $ UVar v
-					NameType	-> TVar kValue   $ UVar v)
+					NameType	-> TVar kValue   $ UVar v
+					_		-> panic stage $ "makeCtorType: no match")
 			$ vsParam
 
 	-- As constructors don't inspect their arguments, they are all pure, 

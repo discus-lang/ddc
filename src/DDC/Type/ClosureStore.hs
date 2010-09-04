@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Type.ClosureStore 
 	( ClosureStore
@@ -55,10 +56,10 @@ insert clo cs
 	TConstrain c _ 
 	 -> insert c cs
 
-	TVar k (UVar v)	
+	TVar _ (UVar v)	
 	 -> cs { csVar  = Set.insert v (csVar cs) }
 
-	TVar k (UMore v _)	 
+	TVar _ (UMore v _)	 
 	 -> cs { csVar  = Set.insert v (csVar cs) }
 
 	TApp{}
@@ -92,6 +93,10 @@ insertVar v1 k v2 cs
 		
 	 | isClosureKind k
 	 = cs { csFreeCs = Map.unionWith Set.union (csFreeCs cs) mclo }
+
+	 | otherwise
+	 = panic stage $ "insertVar: no match"
+
   in	result
 
 	

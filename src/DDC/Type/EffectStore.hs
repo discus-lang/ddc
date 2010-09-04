@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Type.EffectStore
 	( EffectStore
@@ -71,10 +72,10 @@ insert eff es
 	TConstrain e _
 	 -> insert e es
 	
-	TVar k (UVar v)
+	TVar _ (UVar v)
 	 -> es { esVars	= Set.insert v (esVars es) }
 	
-	TVar k (UMore v _ )
+	TVar _ (UMore v _ )
 	 -> es { esVars	= Set.insert v (esVars es) }
 
 	eff'@TCon{} 
@@ -164,4 +165,5 @@ maskReadWritesOn v es
 	= es
 	{ esReads	= Set.delete v (esReads  es)
 	, esWrites	= Set.delete v (esWrites es) }
-	
+
+	| otherwise	= es

@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Type.Data.Material
 	(annotMaterialInDataDefs)
@@ -8,11 +9,13 @@ import DDC.Type.Compounds
 import DDC.Type.Kind
 import DDC.Type.Operators.Instantiate
 import DDC.Var
+import DDC.Main.Error
 import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
 
+stage	= "DDC.Type.Data.Material"
 
 -- | Annotate some data type definitions with their sets of material vars.
 annotMaterialInDataDefs
@@ -90,7 +93,7 @@ materialVarsOfType1 dataDefs (crs, tt)
 	= case tsArgs of
 		[]	-> (Set.empty, [])
 
-		(TVar k1 (UVar v1) : tsRest)
+		(TVar _ (UVar v1) : _)
 		 -> let	
 			-- If we've got a primary region variable then record is as material.
 			vsMaterial	
@@ -112,6 +115,11 @@ materialVarsOfType1 dataDefs (crs, tt)
 
 		    in	( vsMaterial
 		    	, zip (repeat crs) tsParamsInst)
+	
+		_	-> panic stage $ "materialVarsOfType: no primary region var"
+	
+	| otherwise
+	= (Set.empty, [])
 
 
 -- | Get a list of all the parameters of a data constructor's type, retaining the outer quantifiers. 

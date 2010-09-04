@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 {-# OPTIONS -fno-warn-monomorphism-restriction #-}
 
 module DDC.Type.Data.Elaborate
@@ -30,11 +31,10 @@ trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 elaborateDataDef
 	:: Monad m
 	=> (NameSpace 	-> m Var)		-- ^ Function to allocate a fresh variable.
-	-> (Var		-> m Kind)		-- ^ Function to get the kind of a type variable.
 	-> DataDef
 	-> m DataDef
 
-elaborateDataDef newVarN getKind 
+elaborateDataDef newVarN 
 	dataDef@(DataDef vData vksParam ctorDefs _ _)
  = do
 

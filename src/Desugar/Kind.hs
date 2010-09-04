@@ -108,7 +108,7 @@ elabDataP :: Top SourcePos -> SolveM (Top SourcePos)
 elabDataP pp
  = case pp of
  	PData sp dataDef
-	 -> do	dataDef'	<- elaborateDataDef newVarN getKind dataDef
+	 -> do	dataDef'	<- elaborateDataDef newVarN dataDef
 		return		$ PData sp dataDef'
 		
 	PTypeSynonym{}	
