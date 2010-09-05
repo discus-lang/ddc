@@ -8,30 +8,25 @@ module Desugar.Kind
 	, KindSource(..))
 where
 import Desugar.Plate.Trans
-import Desugar.Data
 import DDC.Desugar.Exp
 import Source.Error
-import Shared.VarPrim
 import Util
 import DDC.Base.SourcePos
-import DDC.Main.Error
 import DDC.Type
 import DDC.Type.Data
 import DDC.Type.Data.Elaborate
+import DDC.Desugar.Elaborate.Regions
 import DDC.Desugar.Elaborate.Constraint
+import DDC.Desugar.Elaborate.Slurp
+import DDC.Desugar.Elaborate.State
 import DDC.Var
 import Data.Sequence			as Seq
 import qualified DDC.Type.Transform	as T
 import qualified Data.Map		as Map
-import qualified Data.Foldable		as Foldable
-
-stage	= "Desugar.Kind"
 
 
-----------------------------------------------------------------------------------------------------
 -- | Infer the kinds for variables in this tree,
 --	and fill in missing kind information on the variables.
-
 inferKindsTree 
 	:: String			-- unique
 	-> Tree SourcePos		-- header tree
@@ -79,28 +74,24 @@ inferKindsM
 		, constraints)
 
 
-elabDataP :: Top SourcePos -> SolveM (Top SourcePos)
+elabDataP :: Top SourcePos -> ElabM (Top SourcePos)
 elabDataP pp
  = case pp of
 	PData sp dataDef@(DataDef { dataDefSeaName = Nothing })
 	 -> do	dataDef'	<- elaborateDataDef newVarN dataDef
 		return		$ PData sp dataDef'
 		
-	PTypeSynonym{}	
-	 -> do	pp'		<- elaborateTypeSynonym newVarN getKind pp
-		return	pp'
-
-	_	-> return pp
+	_ -> return pp
 
 
 -- Tag each data constructor with its kind from this table
-tagKindsTree :: Tree SourcePos -> SolveM (Tree SourcePos)
+tagKindsTree :: Tree SourcePos -> ElabM (Tree SourcePos)
 tagKindsTree pp
 	= mapM (transZM (transTableId return)
 		{ transT	= T.transformTM tagKindsT })
 		pp
 		
-tagKindsT :: Type -> SolveM Type
+tagKindsT :: Type -> ElabM Type
 tagKindsT tt
  	| TVar k (UVar v)	<- tt
 	= do	kindMap	<- gets stateKinds 
@@ -117,193 +108,6 @@ tagKindsT tt
 	| otherwise
 	= return tt
 
--- | Elaborate regions in 
-elabRegionsTree :: Tree SourcePos -> SolveM (Tree SourcePos)
-elabRegionsTree pp
-	= mapM (transZM (transTableId return)
-		{ transP	= elabRegionsP
-		, transS_leave	= elabRegionsS 
-		, transX_leave	= elabRegionsX })
-		pp
-
-elabRegionsP pp
- = case pp of
-	PExtern sp v t ot
-	 -> do	t'	<- elabRegionsT t
-		return	$ PExtern sp v t' ot
-		
-	PClassDecl sp v ts vts
-	 -> do	ts'	<- mapM elabRegionsT ts
-		let (vs, mts)	= unzip vts
-		mts'	<- mapM elabRegionsT mts
-		return	$ PClassDecl sp v ts' (Util.zip vs mts')
-		
-	PClassInst sp v ts ss
-	 -> do	ts'	<- mapM elabRegionsT ts
-		return	$ PClassInst sp v ts' ss
-	
-	PProjDict sp t ss
-	 -> do	t'	<- elabRegionsT t
-		return	$ PProjDict sp t' ss
-	
-	PTypeSig sp v t
-	 -> do	t'	<- elabRegionsT t
-		return	$ PTypeSig sp v t'
-			
-	_ ->	return pp
-
-elabRegionsS ss
- = case ss of
-	SSig sp v t
-	 -> do	t'	<- elabRegionsT t
-		return	$ SSig sp v t'
-
-	_		-> return ss
-
-
-elabRegionsX xx
- = case xx of
-	XProjT sp t j
-	 -> do	t'	<- elabRegionsT t
-		return	$ XProjT sp t' j
-	
-	_ ->	return xx
-
-elabRegionsT t
- = do	(t_elab, _)	<- elaborateRsT newVarN t
-   	return t_elab
-
-
--- Slurp -------------------------------------------------------------------------------------------
-
--- | Slurp kind constraints from the desugared module
-slurpConstraints :: Tree SourcePos -> Seq Constraint
-slurpConstraints ps
-	= Seq.fromList $ catMap slurpConstraint ps
-	
-slurpConstraint pp
- = case pp of
- 	PKindSig sp v k	
- 	 | resultKind k == kEffect
-	 -> [Constraint (KSEffect sp) v k]
-	
-	 | otherwise
-	 -> [Constraint (KSSig sp) v k]
-
-	PClassDecl sp v ts vts
-	 -> map (\(TVar k (UVar v)) -> Constraint (KSClass sp) v (defaultKind v k)) ts
-
- 	PData sp def@(DataDef{})
-	 -> let	k	= dataDefKind def
-	        k'	= forcePrimaryRegion (dataDefName def) k
-	    in	[Constraint (KSData sp) (dataDefName def) k']
-
-	_	-> []
-
-
-defaultKind v k
- 	| k == KNil	
-	= let Just k' = kindOfSpace $ varNameSpace v
-	  in  k'
-
-	| otherwise	= k 
-
-
--- Make sure the kinds of data type constructors have their primary regions.
-forcePrimaryRegion :: Var -> Kind -> Kind
-forcePrimaryRegion vData k
-
-	-- unit doesn't need one
- 	| vData == primTUnit
-	= k
-
-	-- these abstract types don't need one
-	| elem vData [primTObj, primTData, primTThunk]
-	= k
-
-	-- unboxed data types don't need one
-	| varIsUnboxedTyConData vData
-	= k
-
-	-- don't elaborate types with higher kinds
-	| KFun kR _	<- k
-	, kR	== kRegion
-	= k
-	
-	| otherwise
-	= KFun kRegion k
-
-
--- State -------------------------------------------------------------------------------------------
-
-data SolveS
-	= StateS 
-	{ stateVarGen	:: VarId
-	, stateKinds	:: Map Var Kind  }
-
-stateInit unique
-	= StateS
-	{ stateVarGen	= VarId unique 0
-	, stateKinds	= Map.empty }
-	
-type SolveM = State SolveS
-
-
--- | Create a fresh variable
-newVarN :: NameSpace -> SolveM Var
-newVarN space
- = do	vid@(VarId p i)	<- gets stateVarGen
- 
-	let name	= "r" ++ p ++ show i
-	let var		= (varWithName name) 
-			{ varId 	= vid
-			, varNameSpace 	= space }
-	
-	modify $ \s -> s { stateVarGen = VarId p (i + 1) }
-	
-	return $ var
-
--- | Get the kind of a variable
-getKind :: Var -> SolveM Kind
-getKind v
- = do	kindMap	<- gets stateKinds
- 	case Map.lookup v kindMap of
-	 Just k		-> return k
-	 Nothing	-> panic stage
-	 		$ "getKind: no kind for " % v % "\n"
-
--- | Solve these kind constraints
-solveConstraints :: Seq Constraint -> SolveM ()
-solveConstraints constraints
- = do	Foldable.mapM_ addConstraint constraints
-	return ()
- 	
-
--- | Add a contraint to the state
-addConstraint :: Constraint -> SolveM ()
-addConstraint (Constraint src v k)
- = do	state	<- get
-
- 	case Map.lookup v (stateKinds state) of
-	 Nothing	
-	  -> do	let state'	= state { stateKinds = Map.insert v k (stateKinds state) }
-	  	put state'
-		return	()
-		
-	 Just k'
-	  -> addConstraint_unify v k k'
-	 
-addConstraint_unify v k k'
-	| k == k'
-	= return ()
-	
-	| otherwise
-	= panic stage
-	$ "addConstraint_unify: can't unify kinds for" <> v <> parens k <> parens k'
 
 
 
-
-
-
-	

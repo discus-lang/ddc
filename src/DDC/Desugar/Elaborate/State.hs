@@ -2,24 +2,40 @@
 -- | State for the elaborator.
 module DDC.Desugar.Elaborate.State
 	( ElabM
-	, ElabS
+	, ElabS(..)
 	, stateInit
-	, newVarN)
+	, newVarN
+	, getKind
+	, solveConstraints
+	, addConstraint)
 where
 import Control.Monad.State.Strict
+import DDC.Desugar.Elaborate.Constraint
+import DDC.Main.Pretty
+import DDC.Main.Error
 import DDC.Var
+import DDC.Type
+import Data.Map			(Map)
+import Data.Sequence		(Seq)
+import qualified Data.Map	as Map
+import qualified Data.Foldable	as Foldable
 
+
+stage	= "DDC.Desugar.Elaborate.State"
 
 type ElabM = State ElabS
 data ElabS
 	= ElabS 
-	{ stateVarGen	:: VarId }
+	{ stateVarGen	:: VarId 
+	, stateKinds	:: Map Var Kind }
+	
 
 -- | Initial state for the elaboratot.
 stateInit :: String -> ElabS
 stateInit unique
 	= ElabS
-	{ stateVarGen	= VarId unique 0 }
+	{ stateVarGen	= VarId unique 0
+	, stateKinds	= Map.empty }
 	
 
 -- | Create a fresh variable in a given `NameSpace`.
@@ -35,3 +51,45 @@ newVarN space
 	modify $ \s -> s { stateVarGen = VarId p (i + 1) }
 	
 	return var
+
+
+-- | Get the kind of a variable
+getKind :: Var -> ElabM Kind
+getKind v
+ = do	kindMap	<- gets stateKinds
+ 	case Map.lookup v kindMap of
+	 Just k		-> return k
+	 Nothing	-> panic stage
+	 		$ "getKind: no kind for " % v % "\n"
+
+
+-- | Solve these kind constraints and add the resulting kinds to the state.
+--   TODO: This isn't finished.
+solveConstraints :: Seq Constraint -> ElabM ()
+solveConstraints constraints
+ = do	Foldable.mapM_ addConstraint constraints
+	return ()
+ 	
+
+-- | Add a contraint to the state
+addConstraint :: Constraint -> ElabM ()
+addConstraint (Constraint src v k)
+ = do	state	<- get
+
+ 	case Map.lookup v (stateKinds state) of
+	 Nothing	
+	  -> do	let state'	= state { stateKinds = Map.insert v k (stateKinds state) }
+	  	put state'
+		return	()
+		
+	 Just k'
+	  -> addConstraint_unify v k k'
+	 
+addConstraint_unify v k k'
+	| k == k'
+	= return ()
+	
+	| otherwise
+	= panic stage
+	$ "addConstraint_unify: can't unify kinds for" <> v <> parens k <> parens k'
+
