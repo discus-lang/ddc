@@ -74,7 +74,7 @@ solveConstraints constraints
 
 -- | Add a contraint to the state
 addConstraint :: Constraint -> ElabM ()
-addConstraint (Constraint src v k)
+addConstraint (Constraint _ v k)
  = do	state	<- get
 
  	case Map.lookup v (stateKinds state) of
