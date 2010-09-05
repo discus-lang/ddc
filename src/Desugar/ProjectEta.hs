@@ -3,7 +3,7 @@ module Desugar.ProjectEta
 	(projectEtaExpandTree) 
 where
 import DDC.Desugar.Exp
-import Desugar.Bits
+import DDC.Desugar.Bits
 import Shared.VarGen
 import Control.Monad
 import DDC.Base.SourcePos
@@ -76,7 +76,7 @@ etaExpand
 
 etaExpand args xx
  = do	vars		<- replicateM args (newVarN NameValue)
-	let n		= getAnnotX xx
+	let Just n	= takeAnnotX xx
 	
 	let xxApp	= foldl (\x v -> XApp n x (XVar n v)) 	xx 	vars
 	let xxLam	= foldl (\x v -> XLambda n v x)		xxApp	(reverse vars)

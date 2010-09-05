@@ -5,7 +5,7 @@ where
 import Source.Desugar.Base
 import DDC.Var
 import Desugar.Util			as D
-import Desugar.Bits			as D
+import DDC.Desugar.Bits			as D
 import DDC.Desugar.Exp			as D
 import qualified Source.Error		as S
 import qualified Data.Map		as Map
@@ -100,8 +100,8 @@ mergeMatchX (XMatch n1 Nothing as1) x2
 --	this is an obvious overlapped patterns problem, but Haskell
 --	doesn't treat it as an error, so we won't either.
 mergeMatchX x1 x2
- = let	n	= D.getAnnotX x1
-   in  XMatch n Nothing
+ = let	Just n	= D.takeAnnotX x1
+   in	XMatch n Nothing
 		[ AAlt n [] x1
 		, AAlt n [] x2]
 
