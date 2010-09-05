@@ -1,5 +1,6 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
+-- | Generic transforms on the Desugared IR.
 module DDC.Desugar.Transform
 	( TransM(..)
 	, TransTable(..)
@@ -16,7 +17,8 @@ import DDC.Var
 import Data.Traversable
 import Prelude				hiding (mapM)
 import Control.Monad.State.Strict	hiding (mapM, forM)
-import Util (liftMaybe, mapZippedM)
+import Util.Control.Monad
+import Util.Data.List
 
 -- | Monadic transforms of desugared expressions.
 --   They can also change the type of the annotation along the way.
@@ -129,13 +131,6 @@ transformXM f xx
 	= transZM ((transTableId return) { transX_leave = \x -> f x }) xx
 
 
-mliftM :: Monad m => (a -> m a) -> Maybe a -> m (Maybe a)
-mliftM f m
- = case m of
-	Just x	-> f x >>= \x' -> return (Just x')
-	Nothing	-> return Nothing
-
-
 -- Top --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Top where
  transZM table pp
@@ -146,7 +141,7 @@ instance Monad m => TransM m a1 a2 Top where
 	
 	PExtern nn v tv mto
 	 -> liftM4 PExtern 	(transN table nn) (transV table v) 
-				(transT table tv) (mliftM (transT table) mto)
+				(transT table tv) (mLiftM (transT table) mto)
 	 >>= transP table
 		
 	PRegion nn v
@@ -166,43 +161,31 @@ instance Monad m => TransM m a1 a2 Top where
 	 >>= transP table
 	
 	PSuperSig nn v k
-	 ->  liftM3 PSuperSig	(transN table nn) (return v) (return k)
+	 ->  liftM3 PSuperSig	(transN table nn) (transV table v) (return k)
 	 >>= transP table
 
 	PClassDecl nn v ts sigs
-	 -> do	nn'		<- transN	table nn
+	 ->  liftM4 PClassDecl	(transN table nn) (transV table v) (mapM (transT table) ts)
+				(mapM (t22LiftM $ transT table) sigs)
+	 >>= transP table
 
-		let (vsSig, tsSig)	= unzip sigs
-		tsSig'			<- mapM (transT table) tsSig
-		let sigs'		= zip vsSig tsSig'
-		
-		ts'		<- mapM (transT table) ts
-		transP table	$ PClassDecl nn' v ts' sigs'
-	 	
 	PClassInst nn v ts ss
-	 -> do	nn'		<- transN	table nn
-		ss'		<- mapM (transZM table) ss
-		ts'		<- mapM (transT table) ts
-		transP table	$ PClassInst nn' v ts' ss'
-
+	 ->  liftM4 PClassInst 	(transN table nn) (transV table v)
+				(mapM (transT table) ts) (mapM (transZM table) ss)
+	 >>= transP table
+	
 	PProjDict nn t ss
-	 -> do	nn'		<- transN 	table nn
-	 	ss'		<- mapM (transZM table) ss
-		t'		<- transT table t
-		transP table	$ PProjDict nn' t' ss'	
+	 ->  liftM3 PProjDict	(transN table nn) (transT table t) (mapM (transZM table) ss)
+	 >>= transP table
 
 	PTypeSig nn vs t
-	 -> do	nn'		<- transN	table nn
-	 	vs'		<- mapM (transV	table) vs
-		t'		<- transT	table t
-		transP table	$ PTypeSig nn' vs' t'
+	 ->  liftM3 PTypeSig	(transN table nn) (mapM (transV table) vs) (transT table t)
+	 >>= transP table
 		 
 	PBind nn mV x
-	 -> do	nn'		<- transN  	table nn
-	 	mV'		<- liftMaybe 	(transV table) mV
-		x'		<- transZM 	table x
-		transP table	$ PBind nn' mV' x'
-
+	 ->  liftM3 PBind	(transN table nn) (mLiftM (transV table) mV) (transZM table x)
+	 >>= transP table
+	
 
 -- Data Def ---------------------------------------------------------------------------------------
 transDataDef
@@ -218,7 +201,7 @@ transDataDef table
  = do	name'		<- transV table name
 
 	let (vsParams, ksParams)
-		= unzip $ dataDefParams def
+			= unzip vksParams
 
 	vsParams'	<- mapM (transV table) vsParams
 	let vksParams'	= zip vsParams' ksParams
@@ -257,109 +240,69 @@ transX_default table x
 	xL	<- transX_leave  table xF
 	return	xL
 
+followX	:: Monad m => TransTable m a1 a2 -> Exp a1  -> m (Exp a2)
 followX table xx
   = case xx of
   	XNil
-	 ->	return	$ XNil
+	 -> return XNil
 	 
-	XVoid nn
-	 -> do	nn'	<- transN  table nn
-	 	return	$ XVoid nn' 
-		
-	XLit nn l
-	 -> do	nn'	<- transN  table nn
-	 	return	$ XLit nn' l
-		
-	XVar nn v
-	 -> do	nn'	<- transN  table nn
-	 	v'	<- transV  table v
-		return	$ XVar nn' v'
+	XVoid    nn	
+	 -> liftM  XVoid	(transN table nn)
 
-	XProj nn x j
-	 -> do	nn'	<- transN  table nn
-	 	x'	<- transZM table x
-		j'	<- transZM table j
-		return	$ XProj nn' x' j'
+	XLit     nn l	
+	 -> liftM2 XLit 	(transN table nn) (return l)	
 
-	XProjT nn t j
-	 -> do	nn'	<- transN  table nn
-		j'	<- transZM table j
-		t'	<- transT  table t
-		return	$ XProjT nn' t' j'
-		
-	XLambda nn v x
-	 -> do	nn'	<- transN  table nn
-	 	v'	<- transV  table v
-		x'	<- transZM table x
-		return	$ XLambda nn' v' x'
-		
-	XApp nn x1 x2
-	 -> do	nn'	<- transN  table nn
-	 	x1'	<- transZM table x1
-		x2'	<- transZM table x2
-		return	$ XApp nn' x1' x2'
-	
+	XVar     nn v
+	 -> liftM2 XVar		(transN table nn) (transV table v)
+
+	XProj    nn x j	
+	 -> liftM3 XProj	(transN table nn) (transZM table x) (transZM table j)
+
+	XProjT   nn t j	
+	 -> liftM3 XProjT	(transN table nn) (transT table t)  (transZM table j)	
+
+	XLambda  nn v x	
+	 -> liftM3 XLambda	(transN table nn) (transV table v) (transZM table x)	
+
+	XApp nn x1 x2	
+	 -> liftM3 XApp		(transN table nn) (transZM table x1) (transZM table x2)
+
 	XMatch nn x1 aa
-	 -> do	nn'	<- transN  table nn
-	 	x1'	<- liftMaybe (transZM table) x1
-		aa'	<- mapM  (transZM table) aa
-		return	$ XMatch nn' x1' aa'
-		
-	XDo nn ss
-	 -> do	nn'	<- transN  table nn
-	 	ss'	<- mapM (transZM table) ss
-		ss2	<- transSS table ss'
-		return	$ XDo nn' ss2
+	 -> liftM3 XMatch	(transN table nn) (mLiftM (transZM table) x1) 
+			  	(mapM (transZM table) aa)
+	XDo nn ss	
+	 -> liftM2 XDo		(transN table nn) (mapM (transZM table) ss >>= transSS table)
 		
 	XIfThenElse nn x1 x2 x3
-	 -> do	nn'	<- transN  table nn
-	 	x1'	<- transZM table x1
-		x2'	<- transZM table x2
-		x3'	<- transZM table x3
-		return	$ XIfThenElse nn' x1' x2' x3'
-
-
+	 -> liftM4 XIfThenElse	(transN table nn)  (transZM table x1)
+				(transZM table x2) (transZM table x3)
+	
 	XLambdaTEC nn v x1 t eff clo
-	 -> do	nn'	<- transN table nn
-		v'	<- transV table v
-	 	x1'	<- transZM table x1
-		return	$ XLambdaTEC nn' v' x1' t eff clo
-
+	 -> liftM6 XLambdaTEC	(transN table nn)  (transV table v)   (transZM table x1)
+				(transT table t)   (transT table eff) (transT table clo)
+	
 	XProjTagged nn vI tC x j
-	 -> do	nn'	<- transN table nn
-	 	vI'	<- transV table vI
-		tC'	<- transT table tC
-		x'	<- transZM table x
-		j'	<- transZM table j
-		return	$ XProjTagged nn' vI' tC' x' j'
+	 -> liftM5 XProjTagged	(transN table nn)  (transV table vI) (transT table tC)
+				(transZM table x)  (transZM table j)
 
 	XProjTaggedT nn vI tC j
-	 -> do	nn'	<- transN table nn
-	 	vI'	<- transV table vI
-		tC'	<- transT table tC
-		j'	<- transZM table j
-		return	$ XProjTaggedT nn' vI' tC' j'
+	 -> liftM4 XProjTaggedT	(transN table nn) (transV table vI) (transT table tC)
+				(transZM table j)
 
 	XVarInst nn v
-	 -> do	nn'	<- transN table nn
-	 	v'	<- transV table v
-		return	$ XVarInst nn' v'
+	 -> liftM2 XVarInst	(transN table nn) (transV table v)
 		
 
 -- Proj ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Proj where
  transZM table xx
   = case xx of
-  	JField nn v
-	 -> do	nn'		<- transN  table nn
-	 	v'		<- transV  table v
-		transJ table	$ JField nn' v'
-		
-	JFieldR nn v
-	 -> do	nn'		<- transN  table nn
-	 	v'		<- transV  table v
-		transJ table	$ JFieldR nn' v'
-		
+  	JField  nn v	
+	 -> liftM2 JField  	(transN table nn) (transV table v) >>= transJ table		
+
+	JFieldR nn v	
+	 -> liftM2 JFieldR 	(transN table nn) (transV table v) >>= transJ table
+
 
 -- Stmt -------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Stmt where
@@ -373,29 +316,17 @@ transS_default table ss
 	
 followS table xx
   = case xx of
-	SSig nn vs t
-	 -> do	nn'	<- transN  table nn
-	 	vs'	<- mapM (transV  table) vs
-		t'	<- transT table t
-		return	$ SSig nn' vs' t'
+	SSig nn vs t	
+	 -> liftM3 SSig		(transN table nn) (mapM (transV table) vs) (transT table t)
 
   	SBind nn mV x
-	 -> do	nn'	<- transN  	table nn
-	 	mV'	<- liftMaybe 	(transV table) mV
-		x'	<- transZM 	table x
-		return	$ SBind nn' mV' x'
-
-	SBindPat nn pat x
-	 -> do	nn'	<- transN table nn
-	 	pat'	<- transZM table pat
-		x'	<- transZM table x
-		return	$ SBindPat nn' pat' x'
+	 -> liftM3 SBind	(transN table nn) (mLiftM (transV table) mV) (transZM table x)
+	
+	SBindPat nn pat x	
+	 -> liftM3 SBindPat	(transN table nn) (transZM table pat) (transZM table x)
 		
 	SBindMonadic nn w x
-	 -> do	nn'	<- transN table nn
-	 	w'	<- transZM table w
-		x'	<- transZM table x
-		return	$ SBindMonadic nn' w' x'
+	 -> liftM3 SBindMonadic	(transN table nn) (transZM table w) (transZM table x)
 				
 
 -- Alt --------------------------------------------------------------------------------------------
@@ -410,78 +341,51 @@ transA_default table aa
 followA table xx
   = case xx of
 	AAlt nn gs x
-	 -> do	nn'		<- transN table nn
-	 	gs'		<- mapM (transZM table) gs
-		x'		<- transZM table x
-		return		$ AAlt nn' gs' x'
-
+	 -> liftM3 AAlt 	(transN table nn) (mapM (transZM table) gs) (transZM table x)
+	
 
 -- Guard ------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Guard where
  transZM table xx
   = case xx of
   	GCase nn w
-	 -> do	nn'		<- transN table nn
-	 	w'		<- transZM table w
-		return		$ GCase nn' w'
+	 -> liftM2 GCase	(transN table nn) (transZM table w)
 		
 	GExp nn w x
-	 -> do	nn'		<- transN table nn
-	 	w'		<- transZM table w
-		x'		<- transZM table x
-		return		$ GExp nn' w' x'
-		
-		
+	 -> liftM3 GExp		(transN table nn) (transZM table w) (transZM table x)
+			
+	
 -- Pat --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Pat where
  transZM table ww
   = case ww of
   	WConLabel nn v lvs
-	 -> do	nn'		<- transN table nn
-	 	v'		<- transV table v
-
-		let (ls, vs)	= unzip lvs
-		ls'		<- mapM (transZM table) ls
-		vs'		<- mapM (transV table) vs
-		let lvs'	= zip ls' vs'
-		
-		transW table	$ WConLabel nn' v' lvs'
+ 	 ->  liftM3 WConLabel	(transN table nn) (transV table v)
+				(mapM (ttLiftM (transZM table) (transV table)) lvs)
+	 >>= transW table
 		
 	WLit nn c
-	 -> do	nn'		<- transN table nn
-	 	transW table	$ WLit nn' c
-
+	 ->  liftM2 WLit	(transN table nn) (return c)
+	 >>= transW table
 
 	WVar nn v
-	 -> do 	nn'		<- transN table nn
-	 	v'		<- transV table v
-	 	transW table	$ WVar nn' v'
-		
+	 -> liftM2 WVar		(transN table nn) (transV table v)
+	 >>= transW table
+	
 	WAt nn v p
-	 -> do	nn'		<- transN table nn
-	 	v'		<- transV table v
-		p'		<- transZM table p
-		transW table	$ WAt nn' v' p'
+	 -> liftM3 WAt		(transN table nn) (transV table v) (transZM table p)
+	 >>= transW table
 		
 	WConLabelP nn v lps
-	 -> do	nn'		<- transN table nn
-	 	v'		<- transV table v
-		
-		lps'		<- mapZippedM (transZM table) (transZM table) lps
-		transW table	$ WConLabelP nn' v' lps'		 
-	 
+	 -> liftM3 WConLabelP	(transN table nn) (transV table v) 
+				(mapZippedM (transZM table) (transZM table) lps)
+	 >>= transW table
+
 
 -- Label ------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Label where
  transZM table ll
   = case ll of
-  	LIndex nn i
-	 -> do	nn'		<- transN table nn
-	 	return		$ LIndex nn' i
-		
-	LVar nn v
-	 -> do	nn'		<- transN table nn
-	 	v'		<- transV table v
-		return		$ LVar nn' v'		
-
+  	LIndex nn i	-> liftM2 LIndex (transN table nn) (return i)
+	LVar   nn v	-> liftM2 LVar   (transN table nn) (transV table v)
 
