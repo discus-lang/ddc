@@ -92,8 +92,8 @@ slurpArity tree
 slurpArityP :: Map Var Int -> Top Annot -> Map Var Int
 slurpArityP table pp
  = case pp of
- 	PBind _ (Just v) x	-> Map.insert v (arityX x) table
-	_			-> table
+ 	PBind _ v x	-> Map.insert v (arityX x) table
+	_		-> table
 
 
 -- Work out the arity of this expression

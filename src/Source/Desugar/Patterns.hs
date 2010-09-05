@@ -37,8 +37,8 @@ rewritePatternsTreeM tree
 			
 	return	$ psRest ++ psMerged
 
-topBindToStmt (PBind n mV x)	= SBind n mV x
-stmtToTopBind (SBind n mV x)	= PBind n mV x
+topBindToStmt (PBind n v x)		= SBind n (Just v) x
+stmtToTopBind (SBind n (Just v) x)	= PBind n v x
 
 rewritePatX :: D.Exp Annot -> RewriteM (D.Exp Annot)
 rewritePatX xx

@@ -95,7 +95,7 @@ data Top a
 	-- | Binding
 	| PBind 
 		{ topAnnot		:: a
-		, topBindVar		:: Maybe Var
+		, topBindVar		:: Var
 		, topBindExp		:: Exp a }
 	deriving (Show, Eq)
 

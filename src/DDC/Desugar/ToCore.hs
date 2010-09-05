@@ -65,7 +65,7 @@ toCoreP p
 	D.PData _ dataDef
 	 ->	return	[C.PData dataDef]
 
-	D.PBind nn (Just v) x
+	D.PBind nn v x
 	 -> do	
 		-- We only use this set of variables for controlling what effect and
 		-- closure annots to annotate the tree with, so it doesn't need to 

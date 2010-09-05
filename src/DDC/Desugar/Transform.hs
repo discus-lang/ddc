@@ -182,8 +182,8 @@ instance Monad m => TransM m a1 a2 Top where
 	 ->  liftM3 PTypeSig	(transN table nn) (mapM (transV table) vs) (transT table t)
 	 >>= transP table
 		 
-	PBind nn mV x
-	 ->  liftM3 PBind	(transN table nn) (mLiftM (transV table) mV) (transZM table x)
+	PBind nn v x
+	 ->  liftM3 PBind	(transN table nn) (transV table v) (transZM table x)
 	 >>= transP table
 	
 

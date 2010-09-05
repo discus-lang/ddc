@@ -189,8 +189,8 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	 	returnJ	$ D.PTypeSig sp vs t
 
   	S.PStmt s
-	 -> do	(D.SBind sp mV x)	<- rewrite s
-	 	returnJ			$ D.PBind sp mV x
+	 -> do	(D.SBind sp (Just v) x)	<- rewrite s
+	 	returnJ			$ D.PBind sp v x
 		
 	_  ->	return	Nothing
 

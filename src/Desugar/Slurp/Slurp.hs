@@ -186,9 +186,9 @@ slurpP	(PProjDict sp t ss)
 	return	( PProjDict Nothing t ss'
 		, [CDictProject (TSM $ SMProjDict sp) t (Map.fromList projVars)] )
 	
-slurpP (PBind sp mV x)
+slurpP (PBind sp v x)
  = do	(vT, eff, clo, stmt', qs)
-			<- slurpS (SBind sp mV x)
+			<- slurpS (SBind sp (Just v) x)
 
 	-- If the stmt binds a var then we want the type for it from the solver.
 	(case bindingVarOfStmt stmt' of
@@ -199,10 +199,10 @@ slurpP (PBind sp mV x)
 		
 		Nothing	-> return ())
 			
-	let (SBind _ mV' x')
+	let (SBind _ (Just v') x')
 			= stmt'
 	
-	return	( PBind Nothing mV' x'
+	return	( PBind Nothing v' x'
 		, qs )
 
 					

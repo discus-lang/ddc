@@ -1,5 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
--- | Utils concerning Globs.
+
+-- | A Glob provides an efficient way to organise top level declarations.
 module DDC.Core.Glob
 	( Glob(..)
 	, globEmpty
@@ -36,7 +37,7 @@ import {-# SOURCE #-} DDC.Core.Check.Exp
 
 stage	= "Core.Glob"
 
--- | A Glob provides a fast way to locate particular top level declarations.
+-- | A Glob provides an efficient way to organise top level declarations.
 --   Note: Don't add extra fields to this type that can't be reconstructed
 -- 	   directly from a Tree. We want to be able to convert between
 --	   Glob and Tree without losing information.	      

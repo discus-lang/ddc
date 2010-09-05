@@ -214,7 +214,7 @@ snipInstBind' modName
 	
 	return	(  SBind spBind (Just vInst) (XVar spBind vTop)
 		,  [ PTypeSig spBind [vTop] tInst_fresh
-		   , PBind    spBind (Just vTop)  xx])
+		   , PBind    spBind  vTop  xx])
 
 
 -- | Snip the RHS of this statement down to a var
@@ -227,7 +227,7 @@ snipProjDictS
 snipProjDictS varMap xx
 	| SBind nn (Just v) x	<- xx
 	, Just v'		<- Map.lookup v varMap
-	= ( Just $ PBind nn (Just v') x
+	= ( Just $ PBind nn v' x
 	  , Just $ SBind nn (Just v)  (XVar nn v'))
 	  	
 	| SSig  nn vs t		<- xx

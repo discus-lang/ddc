@@ -105,13 +105,9 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 	 	(v %> ("\n:: " % prettyTypeSplit t))	% ";\n\n"
 
-	PBind nn (Just v) x
+	PBind nn v x
 	 -> annot nn 
 	 	(v % "\n =      " %> x) % ";\n\n"
-
-	PBind nn Nothing x
-	 -> annot nn
-	 	(ppr x) % ";\n\n"
 
 
 pprPClassDict_varKind tt

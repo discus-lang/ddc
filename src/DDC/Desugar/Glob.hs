@@ -1,17 +1,17 @@
 
+-- | A Glob an efficient way to organise top level declarations.
 module DDC.Desugar.Glob
-	(Glob(..))
+	( Glob(..)
+	, globEmpty
+	, insertTopInGlob)
 where
 import DDC.Desugar.Exp
+import DDC.Type.Data
 import DDC.Var
-import Data.Sequence		(Seq)
-import Data.Set			(Set)
 import Data.Map			(Map)
---import qualified 
---import qualified Data.Set	as Set
---import qualified Data.Map	as Map
+import qualified Data.Map	as Map
 
--- | A Glob provides a fast way to locate particular top level declarations.
+-- | A Glob provides an efficient way to organise top level declarations.
 --   Note: Don't add extra fields to this type that can't be reconstructed
 -- 	   directly from a Tree. We want to be able to convert between
 --	   Glob and Tree without losing information.	      
@@ -19,10 +19,10 @@ data Glob a
 	= Glob
 	{ 
 	-- | Ids of modules imported by this one,	
-	   globImports		:: Set ModuleId
+	   globImports		:: Map ModuleId a
 
 	-- | Type sigs of imported things.
-	, globExtern		:: Map Var (Top a)
+	, globExterns		:: Map Var (Top a)
 	
 	-- | Super signatures \/ abstract type class constructors.
 	, globSuperSigs		:: Map Var (Top a)
@@ -31,31 +31,92 @@ data Glob a
 	, globKindSigs		:: Map Var (Top a)
 	
 	-- | Type signatures.
-	, globTypeSig		:: Map Var (Top a)
+	, globTypeSigs		:: Map Var (Top a)
 	
 	-- | Type synonyms
-	, globTypeSynonym	:: Map Var (Top a)
+	, globTypeSynonyms	:: Map Var (Top a)
 	
 	-- | Top level region declarations
-	, globRegion		:: Map Var (Top a)
+	, globRegions		:: Map Var (Top a)
 	
 	-- | Algebraic data type declarations
-	, globData		:: Map Var (Top a)
+	, globDataDecls		:: Map Var (Top a)
 	
 	-- | Data type class declarations.
-	, globClassDecl		:: Map Var (Top a)
+	, globClassDecls	:: Map Var (Top a)
 	
 	-- | Map of class name -> instances for that class
-	, globClassInst		:: Map Var (Seq (Top a)) 
-		
+	--   TODO: store these more efficiently
+	, globClassInsts	:: [Top a]
+	
 	-- | Projection dictionaries
-	--   TODO: what's a better way to store these? by the outer type constructor?
-	, globProjDict		:: [Top a]
+	--   TODO: store these more efficiently
+	, globProjDicts		:: [Top a]
 	
 	-- | Top level bindings
-	, globBind		:: Map Var (Top a)
+	, globBinds		:: Map Var (Top a)
 	} 
 	deriving Show
 	
+
+-- | An empty glob
+globEmpty :: Glob a
+globEmpty 
+	= Glob
+	{ globImports		= Map.empty
+	, globExterns		= Map.empty
+	, globSuperSigs		= Map.empty
+	, globKindSigs		= Map.empty
+	, globTypeSigs		= Map.empty
+	, globTypeSynonyms	= Map.empty
+	, globRegions		= Map.empty
+	, globDataDecls		= Map.empty
+	, globClassDecls	= Map.empty
+	, globClassInsts	= []
+	, globProjDicts		= []
+	, globBinds		= Map.empty }
 	
 	
+-- | Insert a top level thing into a glob.
+--	If the top is already there the old one is updated.
+insertTopInGlob :: Top a -> Glob a -> Glob a
+insertTopInGlob pp glob
+ = case pp of
+	PImport nn mids	
+	 -> glob { globImports    = Map.union (Map.fromList [(m, nn) | m <- mids]) (globImports glob) }
+
+	PExtern{}
+	 -> glob { globExterns	  = Map.insert (topExternVar pp)  pp (globExterns glob) }
+
+	PSuperSig{}
+	 -> glob { globSuperSigs  = Map.insert (topSuperSigVar pp) pp (globSuperSigs glob) }
+			
+	PKindSig{}
+	 -> glob { globKindSigs	  = Map.insert (topKindSigVar pp)  pp (globKindSigs glob) }
+			
+	PTypeSig nn vs t
+	 -> glob { globTypeSigs	  = Map.union (Map.fromList [(v, PTypeSig nn [v] t) 
+								| v <- topTypeSigVars pp])
+					    (globTypeSigs glob) }
+	PTypeSynonym{}
+	 -> glob { globTypeSynonyms
+			= Map.insert (topTypeSynonymVar pp) pp (globTypeSynonyms glob)	}
+				
+	PRegion{}
+	 -> glob { globRegions    = Map.insert (topRegionVar pp) pp (globRegions glob) } 
+				
+	PData{}
+	 -> glob { globDataDecls  = Map.insert (dataDefName $ topDataDef pp) pp (globDataDecls glob) }
+			
+	PClassDecl{}
+	 -> glob { globClassDecls = Map.insert (topClassDeclName pp) pp (globClassDecls glob) }
+			
+	PClassInst{}
+	 -> glob { globClassInsts = pp : globClassInsts glob }
+			
+	PProjDict{}
+	 -> glob { globProjDicts  = pp : globProjDicts glob }
+	
+	PBind{}
+	 -> glob { globBinds      = Map.insert (topBindVar pp) pp (globBinds glob) }
+
