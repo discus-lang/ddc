@@ -4,7 +4,6 @@ module Source.Desugar.MergeBindings
 where
 import Source.Desugar.Base
 import DDC.Var
-import Desugar.Util			as D
 import DDC.Desugar.Bits			as D
 import DDC.Desugar.Exp			as D
 import qualified Source.Error		as S

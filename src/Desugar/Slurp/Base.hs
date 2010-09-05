@@ -6,7 +6,7 @@ module Desugar.Slurp.Base
 	, module DDC.Solve.Error
 	, module Constraint.Exp
 	, module Constraint.Bits
-	, module Desugar.Util
+	, module DDC.Desugar.Bits
 	, module DDC.Desugar.Exp
 	, module Desugar.Plate.Trans
 	, module Desugar.Plate.FreeVars
@@ -16,11 +16,11 @@ where
 import Shared.VarPrim
 import Constraint.Exp
 import Constraint.Bits
-import Desugar.Util
 import Desugar.Plate.Trans
 import Desugar.Plate.FreeVars
 import Desugar.Slurp.State
 import Desugar.Slurp.Util
+import DDC.Desugar.Bits
 import DDC.Solve.Error
 import DDC.Desugar.Exp
 import DDC.Main.Error

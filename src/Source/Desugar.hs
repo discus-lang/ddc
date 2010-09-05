@@ -24,7 +24,6 @@ import DDC.Var
 import Source.Pretty			()
 import qualified Source.Exp		as S
 import qualified Source.Error		as S
-import qualified Desugar.Util		as D
 import qualified DDC.Desugar.Bits	as D
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Type.Data.Base	as T
@@ -361,7 +360,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 		j'	<- rewrite j
 		xs'	<- rewrite xs
 			
-		return	$ D.XLambda sp var (D.unflattenApps sp (D.XProj sp (D.XVar sp var) j' : xs'))
+		return	$ D.XLambda sp var (D.unflattenApps sp (D.XProj sp (D.XVar sp var) j') xs')
 
 	-- match sugar.
 	S.XMatch sp aa
@@ -486,7 +485,7 @@ instance Rewrite (S.Exp SourcePos) (D.Exp Annot) where
 	-- data expression/pattern sugar.
 	S.XTuple sp xx
 	 -> do	xx'	<- rewrite xx
-	 	return	$ D.unflattenApps sp ((D.XVar sp $ primTuple (length xx)) : xx')
+	 	return	$ D.unflattenApps sp (D.XVar sp $ primTuple (length xx)) xx'
 
 	_	-> panic stage
 		$ "rewrite[Exp]: can't rewrite " % xx % "\n\n"

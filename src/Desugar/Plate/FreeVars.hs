@@ -4,7 +4,7 @@ module Desugar.Plate.FreeVars
 	(freeVars)
 where
 import DDC.Desugar.Exp
-import Desugar.Util
+import DDC.Desugar.Bits
 import DDC.Var
 import DDC.Util.FreeVars
 import Data.Set			((\\), unions, empty, singleton)

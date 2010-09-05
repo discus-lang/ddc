@@ -8,10 +8,10 @@ module Desugar.Project
 	, slurpProjTable )
 where
 import Source.Error
-import Desugar.Util
-import DDC.Desugar.Exp
 import Shared.VarPrim
 import Util
+import DDC.Desugar.Exp
+import DDC.Desugar.Bits
 import DDC.Desugar.Projections.Base
 import DDC.Desugar.Projections.Naming
 import DDC.Base.SourcePos
