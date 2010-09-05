@@ -87,20 +87,19 @@ elaborateTreeM psHeader psModule
 	-- TODO: this probably needs to be merged with kind inference when it's ready
 	psHeader_data	<- mapM elabDataP psHeader_tagged
 	psModule_data	<- mapM elabDataP psModule_tagged
-
+	
 	-- Now that we know what the kinds of all the type constructors are,
 	-- add missing reigon variables to type signatures.
 	psHeader_rs	<- elabRegionsTree psHeader_data
 	psModule_rs	<- elabRegionsTree psModule_data
 
-	-- | Elaborate effects and closures
+	-- Elaborate effects and closures
 	psHeader_effclo	<- mapM elaborateEffCloP psHeader_rs
 	psModule_effclo	<- mapM elaborateEffCloP psModule_rs
 	
 	return	( psHeader_effclo
 		, psModule_effclo
 		, constraints)
-	
 
 -- Data -------------------------------------------------------------------------------------------
 -- | Elaborate data type definitions in this tree
