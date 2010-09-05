@@ -21,6 +21,7 @@
 module DDC.Desugar.Elaborate 
 	(elaborateTree)
 where
+import DDC.Desugar.Elaborate.State
 import DDC.Desugar.Exp
 import DDC.Base.SourcePos
 import DDC.Main.Pretty
@@ -162,28 +163,3 @@ collectRsRW1 tt
 freeVarsR tt
 	= Set.filter (\r -> varNameSpace r == NameRegion) 
 	$ freeVars tt
-
--- State -------------------------------------------------------------------------------------------
-data ElabS
-	= ElabS 
-	{ stateVarGen	:: VarId }
-
-stateInit unique
-	= ElabS
-	{ stateVarGen	= VarId unique 0 }
-	
-type ElabM = State ElabS
-
--- | Create a fresh variable
-newVarN :: NameSpace -> ElabM Var
-newVarN space
- = do	vid@(VarId p i)	<- gets stateVarGen
- 
-	let name	= charPrefixOfSpace space : p ++ show i
-	let var		= (varWithName name) 
-			{ varId 	= vid
-			, varNameSpace 	= space }
-	
-	modify $ \s -> s { stateVarGen = VarId p (i + 1) }
-	
-	return var
