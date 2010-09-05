@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | State for the elaborator.
 module DDC.Desugar.Elaborate.State

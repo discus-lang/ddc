@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Desugar.Elaborate.EffClo
 	(elaborateEffCloInFunSigT)
@@ -18,7 +19,7 @@ import Util
 debug		= False
 trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 
--- | Elaborate some type signature.
+-- | Fill in effect and closure information in a type signature.
 --   NOTE: As we're only filling in missing effect and closure information we
 --         only have to worry about function types.
 elaborateEffCloInFunSigT :: Type -> ElabM Type

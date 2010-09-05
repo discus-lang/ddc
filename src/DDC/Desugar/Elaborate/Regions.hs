@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 module DDC.Desugar.Elaborate.Regions
 	(elabRegionsTree)
@@ -10,6 +11,8 @@ import DDC.Type
 
 
 -- | Add missing region variables to type signatures in this tree.
+--   This just walks down the tree and calls the elaborator from
+--   "DDC.Type.Operators.Elaborate" at the appropriate places.
 elabRegionsTree :: Tree SourcePos -> ElabM (Tree SourcePos)
 elabRegionsTree pp
 	= mapM (transZM (transTableId return)

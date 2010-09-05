@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Slurp constraints for kind inference from a desugared source tree.
 module DDC.Desugar.Elaborate.Slurp

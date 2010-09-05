@@ -1,6 +1,5 @@
 module Main.Desugar
-	( desugarInferKinds
-	, desugarElaborate
+	( desugarElaborate
 	, desugarProjectEta
 	, desugarProject
 	, desugarSlurpConstraints
@@ -33,57 +32,13 @@ import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D
 import qualified Desugar.ProjectEta	as D
 import qualified Desugar.Project	as D
-import qualified Desugar.Kind		as D
 import qualified Desugar.Plate.Trans	as D
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 
 
--- InferKinds --------------------------------------------------------------------------------------
-desugarInferKinds
-	:: (?args :: [Arg]			-- command line args
-	 ,  ?pathSourceBase :: FilePath)	-- base path to source file
-	=> String				-- unqiue name
-	-> D.Tree SourcePos			-- header tree
-	-> D.Tree SourcePos			-- source tree
-
-	-> IO	( D.Tree SourcePos		-- new header tree
-		, D.Tree SourcePos		-- new source tree
-		, Map Var T.Kind)		-- kind of every type constructor
-	
-desugarInferKinds 
-	unique
-	treeHeader treeSource
-	
- = do	
- 	-- Infer kinds for this module
-	let (treeHeader', treeSource', constraints, kindMap, errors)	
-		= D.inferKindsTree
-			unique
-	 		treeHeader
-			treeSource
-
-	dumpST DumpDesugarKinds "desugar-kinds--constraints"
-		(map ppr $ Foldable.toList constraints)
-
-	dumpST DumpDesugarKinds "desugar-kinds--kindMap"
-		(map (\(v, k) -> padL 20 v % " :: " % k % "\n") 
-			$ Map.toList kindMap)
-
-	dumpST DumpDesugarKinds "desugar-kinds--header" 
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeHeader')
-
-	dumpST DumpDesugarKinds "desugar-kinds--source" 
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeSource')
-
-	when (not $ null errors)
-	 $ exitWithUserError ?args errors
-					
-	return	( treeHeader'
-		, treeSource'
-		, kindMap)
-
 -- Elaborate ---------------------------------------------------------------------------------------
+-- | Elaborate type information.
 desugarElaborate
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
@@ -91,22 +46,35 @@ desugarElaborate
 	-> D.Tree SourcePos			-- ^ header tree
 	-> D.Tree SourcePos			-- ^ source tree
 	-> IO	( D.Tree SourcePos
-		, D.Tree SourcePos )
+		, D.Tree SourcePos 
+		, Map Var T.Kind)
 
 desugarElaborate unique treeHeader treeSource
  = do	
-	let treeHeader'	= D.elaborateTree (unique ++ "H") treeHeader
-	let treeSource' = D.elaborateTree (unique ++ "S") treeSource
-
+	let (treeHeader', treeSource', constraints, kindMap, errors)
+		= D.elaborateTree unique treeHeader treeSource
+		
 	dumpST DumpDesugarElaborate "desugar-elaborate--header"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeHeader')
 	
 	dumpST DumpDesugarElaborate "desugar-elaborate--source"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeSource')
+
+	dumpST DumpDesugarElaborate "desugar-elaborate--constraints"
+		(map ppr $ Foldable.toList constraints)
+
+	dumpST DumpDesugarElaborate "desugar-elaborate--kinds"
+		(map (\(v, k) -> padL 20 v % " :: " % k % "\n") 
+			$ Map.toList kindMap)
+
+	when (not $ null errors)
+	 $ exitWithUserError ?args errors
 		
 	return	( treeHeader'
-		, treeSource')
-	
+		, treeSource'
+		, kindMap)
+		
+		
 -- ProjectEta --------------------------------------------------------------------------------------
 desugarProjectEta
 	:: (?args :: [Arg]

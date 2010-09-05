@@ -220,24 +220,17 @@ compileFile_parse
 				sHeader_linted
 				sProg_linted
 
-	------------------------------------------------------------------------
-	-- Desugar/Type inference stages
-	------------------------------------------------------------------------
-
-	-- Do kind inference --------------------------------------------------
-	outVerb $ ppr $ "  * Desugar: InferKinds\n"
-	(hKinds, sKinds, kindTable)
-			<- SD.desugarInferKinds 
-				"DK" 
-				hDesugared 
-				sDesugared
-
-	-- Elaborate effects and closures of types in foreign imports ---------
+	-----------------------------------------------------------------------
+	-- Desugar/Type inference stage
+	-----------------------------------------------------------------------
+	
+	-- Elaborate type information in data defs and signatures -------------
 	outVerb $ ppr $ "  * Desugar: Elaborate\n"
-	(hElab, sElab)	<- SD.desugarElaborate 
+	(hElab, sElab, kindTable)	
+			<- SD.desugarElaborate 
 				"DE" 
-				hKinds 
-				sKinds
+				hDesugared
+				sDesugared
 
 	-- Eta expand simple v1 = v2 projections ------------------------------
 	outVerb $ ppr $ "  * Desugar: ProjectEta\n"
