@@ -121,7 +121,7 @@ transTableId transN'
 transformN f t
 	= transZ (transTableId (\x -> return $ f x)) t
 
--- | Aply a transform to all the patterns in an expression.
+-- | Apply a transform to all the patterns in an expression.
 transformW f xx 
 	= transZ ((transTableId return) { transW = \w -> return $ f w }) xx
 

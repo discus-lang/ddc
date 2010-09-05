@@ -42,11 +42,20 @@ stage	= "Core.Glob"
 --	   Glob and Tree without losing information.	      
 data Glob
 	= Glob
-	{ globClass		:: Map Var Top
+	{ 
+	-- | Abstract type class constraints.
+	  globClass		:: Map Var Top
+
+	-- | Top level effects.
 	, globEffect		:: Map Var Top
+
+	-- | Top level regions.
 	, globRegion		:: Map Var Top
+
+	-- | Type sigs of foreign imported things.
 	, globExtern		:: Map Var Top
 
+	-- | Data type declarations.
 	, globData		:: Map Var Top
 	
 	-- | Map of data constructor name definition,
@@ -63,6 +72,7 @@ data Glob
 	-- | Map of class name -> instances for that class.
 	, globClassInst		:: Map Var (Seq Top)
 
+	-- | Top level bindings.
 	, globBind		:: Map Var Top
 	}
 	deriving Show
