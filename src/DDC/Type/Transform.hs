@@ -87,16 +87,20 @@ transTableId
 
 -- Common Transforms  ----------------------------------------------------------------------------
 -- | Apply a transform to all type expressions in a type.
-transformT   f t	= transZ  transTableId { transT_leave 	= \x -> return $ f x } t
+transformT   f t	
+	= transZ  transTableId { transT_leave 	= \x -> return $ f x } t
 
 -- | Apply a monadic transform to all type expressions in a type.
-transformTM  f t	= transZM transTableId { transT_leave	= f } t
+transformTM  f t
+	= transZM transTableId { transT_leave	= f } t
 
 -- | Apply a transform to all variables in a type.
-transformV   f t	= transZ  transTableId { transV 	= \x -> return $ f x } t
+transformV   f t
+	= transZ  transTableId { transV 	= \x -> return $ f x } t
 
 -- | Apply a transform to all classids in a type.
-transformCid f t	= transZ  transTableId { transCid	= \x -> return $ f x } t
+transformCid f t
+	= transZ  transTableId { transCid	= \x -> return $ f x } t
 
 
 -- Basic Types ------------------------------------------------------------------------------------

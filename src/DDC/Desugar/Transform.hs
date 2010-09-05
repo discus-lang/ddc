@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns #-}
 
-module Desugar.Plate.Trans
+module DDC.Desugar.Transform
 	( TransM(..)
 	, TransTable(..)
 	, transTableId
@@ -18,14 +18,15 @@ import Prelude				hiding (mapM)
 import Control.Monad.State.Strict	hiding (mapM, forM)
 import Util (liftMaybe, mapZippedM)
 
------
+-- | Monadic transforms of desugared expressions.
+--   They can also change the type of the annotation along the way.
 class Monad m => TransM m a1 a2 exp where
  transZM
  	:: TransTable m a1 a2
  	-> exp a1 -> m (exp a2)
 	
 	
------
+-- | Apply a transform in the identity monad.
 transZ 	:: TransM (State ()) a1 a2 exp
 	=> TransTable (State ()) a1 a2
 	-> exp a1 -> exp a2
@@ -34,36 +35,51 @@ transZ	table x
 	= evalState (transZM table x) ()
 
 
------
+-- | Table containing fns to apply at each node in the AST.
 data TransTable m a1 a2
 	= TransTable
-	{ transV	:: Var 		-> m Var
+	{ -- | Transform to apply to variables
+	  transV	:: Var 		-> m Var
+
+	  -- | Transform to apply to annotations
 	, transN	:: a1		-> m a2
 
+	  -- | Transform to apply to top level things
 	, transP	:: Top  a2	-> m (Top  a2)
+
+	  -- | Transform to apply to projections
 	, transJ	:: Proj	a2	-> m (Proj a2)
+
+	  -- | Transform to apply to patterns
 	, transW	:: Pat  a2	-> m (Pat  a2) 
+
+	  -- | Transform to apply to types
 	, transT	:: Type		-> m Type
 
-	-- stmt
+	  -- | Transform to apply to statements.
+	  --   The default behavior is to apply the 'follow' transfrom to each 
+	  --   of the children then apply the 'leave' in a bottom-up manner.
 	, transS	:: TransTable m a1 a2 -> Stmt a1 -> m (Stmt a2)
 	, transS_follow	:: TransTable m a1 a2 -> Stmt a1 -> m (Stmt a2)
 	, transS_leave	:: Stmt a2	-> m (Stmt a2)
 	, transSS	:: [Stmt a2]	-> m [Stmt a2] 
 
-	-- exp
+	  -- | Transform to apply to expressions.
+	  --   The default behavior is to apply the 'enter' transform to the whole node, 
+	  --   then the 'follow' transform to each of the children, 
+	  --   then the 'leave' transform in a bottom-up manner.
 	, transX	:: TransTable m a1 a2 -> Exp a1	 -> m (Exp a2)
 	, transX_follow	:: TransTable m a1 a2 -> Exp a1  -> m (Exp a2)
 	, transX_enter	:: Exp a1	-> m (Exp a1)
 	, transX_leave	:: Exp a2	-> m (Exp a2)
 	
-	-- alt
+	  -- | Transform to apply to alternatives.
 	, transA	:: TransTable m a1 a2 -> Alt a1	-> m (Alt  a2) 
 	, transA_follow	:: TransTable m a1 a2 -> Alt a1	-> m (Alt  a2) 
 	}
 
 	
--- | Identity transform, does nothing.
+-- | Identity transform that just returns the original expression.
 transTableId 
 	:: (a1 -> (State s) a2) 
 	-> TransTable (State s) a1 a2
@@ -80,7 +96,7 @@ transTableId transN'
 
 	-- stmt
 	, transS	= transS_default
-	, transS_follow	= \table x	-> followS table x
+	, transS_follow	= \table x 	-> followS table x
 	, transS_leave	= \x -> return x
 
 	, transSS	= \x -> return x 
@@ -98,14 +114,22 @@ transTableId transN'
 	}
 	
 
------------------------
-transformN f t		= transZ (transTableId (\x -> return $ f x)) t
-transformW f xx  	= transZ ((transTableId return) { transW = \w -> return $ f w }) xx
+-- Common Transforms ------------------------------------------------------------------------------
+-- | Apply a transform to the annotations only.
+transformN f t
+	= transZ (transTableId (\x -> return $ f x)) t
 
-transformXM f xx	= transZM ((transTableId return) { transX_leave = \x -> f x }) xx
+-- | Aply a transform to all the patterns in an expression.
+transformW f xx 
+	= transZ ((transTableId return) { transW = \w -> return $ f w }) xx
+
+-- | Apply a monadic transform to all the expressions in a thing, 
+--   in a bottom-up manner.
+transformXM f xx
+	= transZM ((transTableId return) { transX_leave = \x -> f x }) xx
 
 
------------------------
+-- Top --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Top where
  transZM table pp
   = case pp of

@@ -22,12 +22,11 @@ module DDC.Desugar.Bits
 		
 	  -- * Collection
 	, collectClosureProjTags)
-
 where
+import DDC.Desugar.Transform
 import DDC.Desugar.Exp
 import DDC.Type
 import DDC.Var
-import Desugar.Plate.Trans
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import Data.Set				(Set)

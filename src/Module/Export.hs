@@ -17,12 +17,12 @@ import qualified Source.Exp		as S
 import qualified Source.Plate.Trans	as S
 import qualified Source.Slurp		as S
 import qualified Source.Util		as S
+import qualified Type.Util		as T
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T
 import qualified DDC.Type.Transform	as T
-import qualified Type.Util		as T
 import qualified DDC.Desugar.Exp	as D
-import qualified Desugar.Plate.Trans	as D
+import qualified DDC.Desugar.Transform	as D
 import qualified DDC.Core.Exp		as C
 import qualified Core.OpType		as C
 

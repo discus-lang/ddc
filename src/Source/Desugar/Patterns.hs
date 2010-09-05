@@ -16,7 +16,7 @@ import DDC.Base.Literal
 import DDC.Var
 import DDC.Desugar.Exp			as D
 import DDC.Desugar.Bits			as D
-import Desugar.Plate.Trans		as D
+import DDC.Desugar.Transform		as D
 
 
 -- rewritePatTree ----------------------------------------------------------------------------------

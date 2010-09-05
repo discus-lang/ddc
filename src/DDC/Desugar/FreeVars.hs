@@ -1,6 +1,7 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
-module Desugar.Plate.FreeVars
+-- | @FreeVars@ instances for the desugared IR.
+module DDC.Desugar.FreeVars
 	(freeVars)
 where
 import DDC.Desugar.Exp
@@ -16,24 +17,17 @@ import qualified Data.Set 	as Set
 instance FreeVars (Exp a) where
  freeVars xx
   = case xx of
-	XNil				-> empty
+	XNil		-> empty
+	XVoid{}		-> empty
+	XLit{}		-> empty
+	XVar 	_ v	-> singleton v
+	XProj   _ x _	-> freeVars x
+	XProjT  _ t _	-> freeVars t
+	XLambda _ v x	-> freeVars x \\ singleton v
+	XApp _ x1 x2	-> unions [freeVars x1, freeVars x2]
 
-	XVoid{}				-> empty
-
-	XLit{}				-> empty
-
-	XVar 	n v			-> singleton v
-
-	XProj   _ x j			-> freeVars x
-
-	XProjT  _ t j			-> freeVars t
-
-	XLambda _ v x			-> freeVars x \\ singleton v
-
-	XApp _ x1 x2			-> unions [freeVars x1, freeVars x2]
-
-	XMatch _ Nothing as		-> unions (map freeVars as)
-	XMatch _ (Just x) as		-> unions (freeVars x : map freeVars as)
+	XMatch _ Nothing as	-> unions (map freeVars as)
+	XMatch _ (Just x) as	-> unions (freeVars x : map freeVars as)
 
 	XDo _ ss		
  	 -> let	freePerStmt	= Set.unions (map freeVars ss)
@@ -43,19 +37,19 @@ instance FreeVars (Exp a) where
 	XIfThenElse _ x1 x2 x3	
  	 -> unions [freeVars x1, freeVars x2, freeVars x3]
 
-	XLambdaTEC	_ v x t e c	-> freeVars x \\ singleton v
+	XLambdaTEC	_ v x _ _ _	-> freeVars x \\ singleton v
+	XProjTagged 	_ _ _ x _	-> freeVars x
+	XProjTaggedT	_ _ _ _		-> empty
 
-	XProjTagged 	_ vI vC x j		-> freeVars x
-	XProjTaggedT	_ vI vC j		-> empty
-
-	XVarInst a v			-> singleton v
+	XVarInst _ v			-> singleton v
 
 
 -- Alt --------------------------------------------------------------------------------------------
 instance FreeVars (Alt a) where
  freeVars aa 
   = case aa of
-	AAlt n gs x	-> freeVarsOfAlt (freeVars x) (reverse gs)
+	AAlt _ gs x	-> freeVarsOfAlt (freeVars x) (reverse gs)
+
 
 freeVarsOfAlt :: Set Var -> [Guard a] -> Set Var
 freeVarsOfAlt free []	= free
@@ -69,6 +63,7 @@ freeVarsOfAlt free (GExp _ w x : gs)
 			, freeVars x ])
 		gs
 
+
 -- Stmt -------------------------------------------------------------------------------------------
 instance FreeVars (Stmt a) where
  freeVars ss
@@ -78,6 +73,6 @@ instance FreeVars (Stmt a) where
 
 	SBindMonadic _ w x	-> freeVars x \\ bindingVarsOfPat w
 	SBindPat     _ w x	-> freeVars x \\ bindingVarsOfPat w
-	SSig	     _ v t	-> freeVars t
+	SSig	     _ _ t	-> freeVars t
 
 

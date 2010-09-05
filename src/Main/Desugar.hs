@@ -32,7 +32,7 @@ import qualified Desugar.Slurp.State	as D
 import qualified Desugar.Slurp.Slurp	as D
 import qualified Desugar.ProjectEta	as D
 import qualified Desugar.Project	as D
-import qualified Desugar.Plate.Trans	as D
+import qualified DDC.Desugar.Transform	as D
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 

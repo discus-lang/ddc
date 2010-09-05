@@ -3,8 +3,8 @@
 module DDC.Desugar.Elaborate.Regions
 	(elabRegionsTree)
 where
-import Desugar.Plate.Trans
 import DDC.Desugar.Elaborate.State
+import DDC.Desugar.Transform
 import DDC.Desugar.Exp
 import DDC.Base.SourcePos
 import DDC.Type

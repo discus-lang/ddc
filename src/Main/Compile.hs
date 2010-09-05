@@ -29,7 +29,7 @@ import qualified Source.Exp		as S
 import qualified Source.Pragma		as Pragma
 
 -- desugar
-import qualified Desugar.Plate.Trans	as D
+import qualified DDC.Desugar.Transform	as D
 import qualified Type.Export		as T
 
 -- core

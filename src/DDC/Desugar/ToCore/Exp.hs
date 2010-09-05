@@ -42,10 +42,10 @@ import Data.Maybe
 import Util
 import Shared.VarUtil				(isDummy, varPos)
 import qualified DDC.Type			as T
+import qualified DDC.Desugar.Transform		as D
 import qualified DDC.Desugar.Exp		as D
 import qualified DDC.Core.Exp			as C
 import qualified Core.Util			as C
-import qualified Desugar.Plate.Trans		as D
 import qualified Data.Map			as Map
 import qualified Data.Set			as Set
 import qualified Debug.Trace

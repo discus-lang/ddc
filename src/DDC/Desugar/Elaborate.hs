@@ -25,7 +25,7 @@ module DDC.Desugar.Elaborate
 	(elaborateTree)
 where
 import Source.Error
-import Desugar.Plate.Trans
+import DDC.Desugar.Transform
 import DDC.Desugar.Elaborate.EffClo
 import DDC.Desugar.Elaborate.Constraint
 import DDC.Desugar.Elaborate.Regions
