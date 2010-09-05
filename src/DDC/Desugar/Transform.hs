@@ -129,48 +129,45 @@ transformXM f xx
 	= transZM ((transTableId return) { transX_leave = \x -> f x }) xx
 
 
+mliftM :: Monad m => (a -> m a) -> Maybe a -> m (Maybe a)
+mliftM f m
+ = case m of
+	Just x	-> f x >>= \x' -> return (Just x')
+	Nothing	-> return Nothing
+
+
 -- Top --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Top where
  transZM table pp
   = case pp of
 	PImport nn ms
-	 -> do 	nn'		<- transN	table nn
-	 	transP table	$ PImport nn' ms
-
+	 -> liftM2 PImport (transN table nn) (return ms)
+	 >>= transP table
+	
 	PExtern nn v tv mto
-	 -> do	nn'		<- transN  table nn
-	 	v'		<- transV  table v
-		tv'		<- transT  table tv
-
-		mto'		<- case mto of
-					Just to	-> do	to'	<- transT  table to
-							return	$ Just to'
-					_	-> return $ Nothing
-							
-		transP table	$ PExtern nn' v' tv' mto'
+	 -> liftM4 PExtern 	(transN table nn) (transV table v) 
+				(transT table tv) (mliftM (transT table) mto)
+	 >>= transP table
 		
 	PRegion nn v
-	 -> do	nn'		<- transN	table nn
-	 	transP table	$ PRegion nn' v
-
+	 ->  liftM2 PRegion	(transN table nn) (transV table v)	
+	 >>= transP table
+	
 	PKindSig nn v k
-	 -> do	nn'		<- transN 	table nn
-	 	v'		<- transV table v
-		transP table	$ PKindSig nn' v' k
-
+	 ->  liftM3 PKindSig	(transN table nn) (transV table v) (return k)
+	 >>= transP table
+	
 	PTypeSynonym nn v t
-	 -> do	nn'		<- transN 	table nn
-	 	v'		<- transV table v
-		transP table	$ PTypeSynonym nn' v' t
-
+	 ->  liftM3 PTypeSynonym (transN table nn) (transV table v) (transT table t)
+	 >>= transP table
+	
 	PData nn def
-	 -> do	nn'		<- transN	table nn
-		def'		<- transDataDef table def
-		transP table	$ PData nn' def'
-
+	 ->  liftM2 PData	(transN table nn) (transDataDef table def)
+	 >>= transP table
+	
 	PSuperSig nn v k
-	 -> do	nn'		<- transN 	table nn
-	 	transP table	$ PSuperSig nn' v k
+	 ->  liftM3 PSuperSig	(transN table nn) (return v) (return k)
+	 >>= transP table
 
 	PClassDecl nn v ts sigs
 	 -> do	nn'		<- transN	table nn
