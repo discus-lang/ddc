@@ -14,11 +14,11 @@ import Source.Error
 import Shared.VarPrim
 import Util
 import DDC.Base.SourcePos
-import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Type
 import DDC.Type.Data
 import DDC.Type.Data.Elaborate
+import DDC.Desugar.Elaborate.Constraint
 import DDC.Var
 import Data.Sequence			as Seq
 import qualified DDC.Type.Transform	as T
@@ -26,34 +26,6 @@ import qualified Data.Map		as Map
 import qualified Data.Foldable		as Foldable
 
 stage	= "Desugar.Kind"
-
--- Types -------------------------------------------------------------------------------------------
--- | A Kind constraint
-data Constraint 
-	= Constraint KindSource Var Kind
-	deriving (Show)
-	
-instance Pretty Constraint PMode where
- ppr (Constraint ks v k)	
- 	= padL 20 v <> "::" <> padL 40 k <> parens ks % ";\n"
-	
--- | Carries information about where a kind constraint came from.
-data KindSource
-	-- | Kind from the head of a data type definition
-	= KSData SourcePos	
-
-	-- | Kind from an effect definition
-	| KSEffect SourcePos
-
-	-- | Kind from a class definition
-	| KSClass  SourcePos
-
-	-- | Kind from a kind signature
-	| KSSig  SourcePos
-	deriving (Show)
-
-instance Pretty KindSource PMode where
- ppr ks	= ppr $ show ks	
 
 
 ----------------------------------------------------------------------------------------------------
