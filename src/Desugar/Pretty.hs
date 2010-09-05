@@ -5,14 +5,12 @@ module Desugar.Pretty
 	(stripAnnot)
 where
 import Desugar.Plate.Trans
-import DDC.Type.Data.Base
 import DDC.Type.Data.Pretty	()
 import DDC.Desugar.Exp
 import DDC.Main.Error
 import DDC.Main.Pretty		
 import DDC.Type
 import DDC.Var
-import qualified Data.Map	as Map
 
 stage = "Desugar.Pretty"
 
@@ -49,11 +47,6 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 	("extern " % v	
 			%> ("\n" % ":: " % prettyTypeSplit tv	% ";\n"))
 		% "\n"
-
-	PExternData nn s v k
-	 -> annot nn
-		("extern " % v
-			%> ("\n" % "::" % k % ";\n"))
 		
 	-- super sigs
 	PSuperSig nn v k
@@ -79,18 +72,10 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	PRegion nn v
 	 -> annot nn
 	 	("region " % v) % ";\n"
-	 
-	PData nn (DataDef v vks ctors _ _)
-	 | Map.null ctors
-	 -> annot nn 
-	 	("data " % " " %!% (v : (map fst vks))) % ";\n\n"
 
-	PData nn (DataDef v vks ctors _ _)
-	 -> annot nn
-	 	("data " % " " %!% (v : (map fst vks)) % "\n"
-		%> ("= "  % "\n\n| " %!% (Map.elems ctors) % ";")
-		% "\n\n")
-		
+	PData nn ddef
+	 -> annot nn (ppr ddef)
+
 	-- data classes
 	PClassDecl nn v ts sigs
 	 -> annot nn

@@ -35,7 +35,7 @@ elaborateDataDef
 	-> m DataDef
 
 elaborateDataDef newVarN 
-	dataDef@(DataDef vData vksParam ctorDefs _ _)
+	dataDef@(DataDef vData _ vksParam ctorDefs _ _)
  = do
 
 	-- Decide what var to use as the primary region.

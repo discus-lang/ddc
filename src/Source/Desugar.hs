@@ -86,10 +86,49 @@ instance Rewrite (S.Top SourcePos) (Maybe (D.Top Annot)) where
 	-- imported unboxed types
 	S.PForeign sp (S.OImportUnboxedData name var k)
 	 -> do	let var'	= var { varInfo = varInfo var ++ [ISeaName name]}
-		returnJ	$ D.PExternData sp name var' k
+		let Just ksParams	
+			= case k of
+				KCon{}	-> Just []
+				KFun{}	-> Just $ flattenKFun k
+						
+		vksParams	<- mapM (\k -> do let Just space = spaceOfKind k
+						  v              <- newVarN space
+						  return (v, k))
+					ksParams	
+
+		returnJ	$ D.PData sp
+			$ T.DataDef
+				{ T.dataDefName			= var'
+				, T.dataDefSeaName		= Just name
+				, T.dataDefParams		= vksParams
+				, T.dataDefCtors		= Map.empty
+				, T.dataDefMaterialVars		= Nothing
+				, T.dataDefImmaterialVars	= Nothing }
 
 	-- types
 	S.PKindSig sp v k
+	 | isValueKind (resultKind k)
+	 -> do
+		let Just ksParams	
+			= case k of
+				KCon{}	-> Just []
+				KFun{}	-> Just $ flattenKFun k
+						
+		vksParams	<- mapM (\k -> do let Just space = spaceOfKind k
+						  v              <- newVarN space
+						  return (v, k))
+					ksParams	
+		
+	 	returnJ $ D.PData sp
+			$ T.DataDef
+				{ T.dataDefName			= v
+				, T.dataDefSeaName		= Nothing
+				, T.dataDefParams		= vksParams
+				, T.dataDefCtors		= Map.empty
+				, T.dataDefMaterialVars		= Nothing
+				, T.dataDefImmaterialVars	= Nothing }
+			
+	 | otherwise
 	 -> returnJ $ D.PKindSig sp v k
 
 	S.PTypeSynonym sp v t
@@ -171,6 +210,7 @@ makeDataDef vData vsParam ctors
 
 	return	$ T.DataDef
 		{ T.dataDefName		= vData
+		, T.dataDefSeaName	= Nothing
 		, T.dataDefParams	= [(v, let Just k = defaultKindOfVar v in k) | v <- vsParam]
 		, T.dataDefCtors	= Map.fromList 
 					[ (T.ctorDefName ctor, ctor) 

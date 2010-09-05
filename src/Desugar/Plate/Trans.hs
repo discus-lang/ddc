@@ -124,11 +124,6 @@ instance Monad m => TransM m a1 a2 Top where
 					_	-> return $ Nothing
 							
 		transP table	$ PExtern nn' v' tv' mto'
-
-	PExternData nn s v k
-	 -> do	nn'		<- transN table nn
-		v'		<- transV table v
-		transP table	$ PExternData nn' s v' k
 		
 	PRegion nn v
 	 -> do	nn'		<- transN	table nn

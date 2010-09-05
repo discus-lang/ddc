@@ -94,7 +94,6 @@ slurpBoundVarsP pp
  = case pp of
  	PBind   v x		-> [v]
 	PExtern v t1 t2		-> [v]
-	PExternData v k		-> [v]
 	PData{}
 	 -> (dataDefName $ topDataDef pp) 
 		: Map.keys (dataDefCtors $ topDataDef pp)

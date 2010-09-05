@@ -62,9 +62,6 @@ toCoreP p
 		let to'	= toCoreT to	
 		return	[C.PExtern v tv' to']
 
-	D.PExternData _ _ v k
-	 -> 	return	[C.PExternData v k]
-
 	D.PData _ dataDef
 	 ->	return	[C.PData dataDef]
 
@@ -88,7 +85,7 @@ toCoreP p
 
 	 -- Abstract type constrctors have no data constructors.
 	 | T.resultKind k == T.kValue
-	 ->	return	[C.PData   (T.DataDef v [] Map.empty Nothing Nothing)]
+	 ->	return	[C.PData   (T.DataDef v Nothing [] Map.empty Nothing Nothing)]
 	
 	 -- An abstract effect constructor.
 	 | T.resultKind k == T.kEffect

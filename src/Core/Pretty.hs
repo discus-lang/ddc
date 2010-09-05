@@ -53,8 +53,10 @@ instance Pretty Top PMode where
 	 	%> (tv % "\n"
 		%  ":$ " % to % ";\n")
 
-	PExternData v k
-	 -> "extern data " % v % " :: " % k % ";\n"
+	PData def@(DataDef
+		{ dataDefName		= v
+		, dataDefSeaName	= Just _ })
+	 -> "extern data " % v % " :: " % dataDefKind def % ";\n"
 
 	PData (DataDef 
 		{ dataDefName	= v

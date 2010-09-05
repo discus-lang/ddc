@@ -7,6 +7,7 @@ module DDC.Type.Compounds
 		
 	 -- * Kinds
 	, makeKFuns
+	, flattenKFun
 	, takeKApps
 	, makeKApps
 	, makeKSum
@@ -103,6 +104,12 @@ makeKFuns :: [Kind] -> Kind -> Kind
 makeKFuns [] kk		= kk
 makeKFuns (k:ks) kk	= KFun k (makeKFuns ks kk)
 
+
+-- | Flatten a kind function into its paramters and return kind.
+flattenKFun :: Kind -> [Kind]
+flattenKFun (KFun k1 k2)	= k1 : flattenKFun k2
+flattenKFun _			= []
+ 
 
 -- | Make a dependent kind application from a list of types.
 makeKApps :: Kind -> [Type] -> Kind

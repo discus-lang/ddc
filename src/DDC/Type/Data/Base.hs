@@ -32,6 +32,10 @@ data DataDef
 	{ -- | Name of the type constructor.
 	  dataDefName		:: Var
 
+	  -- | Optional Sea name for the type constructor, 
+	  --   used when importing an external data type.
+	, dataDefSeaName	:: Maybe String
+	
 	  -- | Parameter variables to the data type.
 	, dataDefParams		:: [(Var, Kind)]
 

@@ -25,7 +25,7 @@ import DDC.Var
 import qualified Data.Set		as Set
 import qualified Data.Map		as Map
 
-stage	= "Type.Util.Elaborate"
+stage	= "DDC.Type.Operators.Elaborate"
 
 -- Elaborate Regions ------------------------------------------------------------------------------
 -- | Look at uses of data type constructors, and if they don't have enough
@@ -461,7 +461,8 @@ slurpConRegionsCon tt
 	TVar k (UVar v)
 		| k == kRegion	-> [v]
 
-	TVar _ _		-> []	
-	_			-> panic stage $ "slurpConRegionsCon: no match for " % tt
+	TVar{}	-> []	
+	TCon{}	-> []
+	_	-> panic stage $ "slurpConRegionsCon: no match for " % tt
 
 

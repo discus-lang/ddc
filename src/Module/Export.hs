@@ -146,13 +146,14 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 		$ [ (pprDataDefAsSource
 			$ T.DataDef 
 				(eraseModule vData) 
+				vSea
 				([(eraseModule v, k) | (v, k) <- vksData])
 				(Map.map eraseModule_ctor ctors)
 				vsMaterial
 				vsImmaterial)
 		    % ";\n"
 
-		  | D.PData sp (T.DataDef vData vksData ctors vsMaterial vsImmaterial)
+		  | D.PData sp (T.DataDef vData vSea vksData ctors vsMaterial vsImmaterial)
 		  <- psDesugared])
 
 	++ "\n"
@@ -186,10 +187,6 @@ exportAll moduleName getType topNames ps psDesugared_ psCore export
 	++ "-- Foreign imports\n"
 	++ (concat [pprStrPlain p 
 			| p@(S.PForeign _ S.OImport{})			<- ps])
-
-	++ (concat [pprStrPlain p 
-			| p@(S.PForeign _ S.OImportUnboxedData {})	<- ps])
-
 	++ "\n"
 
 	-- only export types for bindings that were in scope in the source, and

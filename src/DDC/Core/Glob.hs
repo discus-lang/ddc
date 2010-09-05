@@ -45,7 +45,6 @@ data Glob
 	{ globClass		:: Map Var Top
 	, globEffect		:: Map Var Top
 	, globRegion		:: Map Var Top
-	, globExternData	:: Map Var Top
 	, globExtern		:: Map Var Top
 
 	, globData		:: Map Var Top
@@ -76,7 +75,6 @@ globEmpty
 	{ globClass		= Map.empty
 	, globEffect		= Map.empty
 	, globRegion		= Map.empty
-	, globExternData	= Map.empty
 	, globExtern		= Map.empty
 	, globData		= Map.empty
 	, globDataCtors		= Map.empty
@@ -127,11 +125,7 @@ insertTopInGlob pp glob
 	PRegion{}	
 	 -> glob { globRegion 		
 			= Map.insert (topRegionName pp)		pp (globRegion glob) }
-	
-	PExternData{}
-	 -> glob { globExternData 	
-			= Map.insert (topExternDataName pp)	pp (globExternData glob) }
-	
+		
 	PExtern{}	
 	 -> glob { globExtern 		
 			= Map.insert (topExternName pp) 	pp (globExtern glob) }
@@ -164,7 +158,6 @@ treeOfGlob glob
 		[ globClass  		glob 
 		, globEffect		glob
 		, globRegion		glob
-		, globExternData	glob
 		, globExtern		glob
 		, globData		glob
 		, globClassDict		glob
@@ -179,7 +172,6 @@ seqOfGlob glob
 	=   seqOfMap (globClass		glob)
 	><  seqOfMap (globEffect	glob)
 	><  seqOfMap (globRegion	glob)
-	><  seqOfMap (globExternData	glob)
 	><  seqOfMap (globExtern	glob)
 	><  seqOfMap (globData		glob)
 	><  seqOfMap (globClassDict	glob)
@@ -247,14 +239,13 @@ varIsBoundAtTopLevelInGlob glob v
 		, Map.member v $ globClassMethods glob ]
 	
 	NameType
-	 -> or	[ Map.member v $ globExternData glob
-		, Map.member v $ globData	glob ]
+	 -> 	Map.member v $ globData	glob
 		
 	NameRegion
-	 ->	Map.member v $ globRegion	glob 
+	 ->	Map.member v $ globRegion glob 
 	
 	NameEffect
-	 ->	Map.member v $ globEffect	glob
+	 ->	Map.member v $ globEffect glob
 	
 	NameClosure	-> False
 	NameClass	-> False	

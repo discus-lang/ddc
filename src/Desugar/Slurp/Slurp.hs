@@ -91,10 +91,6 @@ slurpP	(PExtern sp v tv to)
 	return	( PExtern Nothing v tv to
 		, qs)
 
-slurpP 	(p@(PExternData sp seaName v k))
- = 	return	( PExternData Nothing seaName v k
-		, [])
-
 slurpP	(PRegion sp v)
  =	return 	( PRegion Nothing v
 		, [])

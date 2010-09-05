@@ -38,13 +38,6 @@ data Top a
 		, topExternType		:: Type
 		, topExternSeaType	:: Maybe Type }
 
-	-- | Import an external data type.
-	| PExternData	
-		{ topAnnot		:: a
-		, topExternDataSeaName	:: String
-		, topExternDataVar	:: Var
-		, topExternDataKind	:: Kind }
-
 	-- | A super signature \/ abstract class constructor.
 	| PSuperSig
 		{ topAnnot		:: a

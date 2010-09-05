@@ -46,11 +46,6 @@ data Top
 		{ topRegionName 	:: Var 
 		, topRegionWitnesses 	:: [(Var, Type)] }
 
-	-- | An unboxed data type imported from somewhere else.
-	| PExternData
-		{ topExternDataName	:: Var
-		, topExternDataKind	:: Kind }
-
 	-- | A (value) binding imported from somewhere else.
 	| PExtern
 		{ topExternName		:: Var

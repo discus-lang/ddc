@@ -107,7 +107,7 @@ inferKindsM
 elabDataP :: Top SourcePos -> SolveM (Top SourcePos)
 elabDataP pp
  = case pp of
- 	PData sp dataDef
+	PData sp dataDef@(DataDef { dataDefSeaName = Nothing })
 	 -> do	dataDef'	<- elaborateDataDef newVarN dataDef
 		return		$ PData sp dataDef'
 		
@@ -218,13 +218,10 @@ slurpConstraint pp
 	PClassDecl sp v ts vts
 	 -> map (\(TVar k (UVar v)) -> Constraint (KSClass sp) v (defaultKind v k)) ts
 
- 	PData sp (DataDef v vks ctors _ _)
-	 -> let	k	= makeKFuns (map snd vks) kValue
-	        k'	= forcePrimaryRegion v k
-	    in	[Constraint (KSData sp) v k']
-
-	PExternData sp name v k
-	 -> [Constraint (KSData sp) v k]
+ 	PData sp def@(DataDef{})
+	 -> let	k	= dataDefKind def
+	        k'	= forcePrimaryRegion (dataDefName def) k
+	    in	[Constraint (KSData sp) (dataDefName def) k']
 
 	_	-> []
 

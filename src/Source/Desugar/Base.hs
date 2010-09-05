@@ -48,17 +48,6 @@ newVarNI space info
 	return	var { varInfo = info }
 
 
--- | Get the kind for this var from the kind table.
-{-
-getKind :: Var -> RewriteM Kind
-getKind	v
- = do	kindMap		<- gets stateKind
-	let k		= case Map.lookup v kindMap of
-				Nothing	-> panic stage $ "getKind: no kind for '" % v % "'.\n"
-				Just k'	-> k'
-	return k
--}
-
 -- | Add an error to the rewrite state.
 addError :: Error -> RewriteM ()
 addError err
