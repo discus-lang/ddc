@@ -3,7 +3,8 @@
 module DDC.Desugar.Glob
 	( Glob(..)
 	, globEmpty
-	, insertTopInGlob)
+	, insertTopInGlob
+	, treeOfGlob)
 where
 import DDC.Desugar.Exp
 import DDC.Type.Data
@@ -104,7 +105,7 @@ insertTopInGlob pp glob
 				
 	PRegion{}
 	 -> glob { globRegions    = Map.insert (topRegionVar pp) pp (globRegions glob) } 
-				
+
 	PData{}
 	 -> glob { globDataDecls  = Map.insert (dataDefName $ topDataDef pp) pp (globDataDecls glob) }
 			
@@ -120,3 +121,25 @@ insertTopInGlob pp glob
 	PBind{}
 	 -> glob { globBinds      = Map.insert (topBindVar pp) pp (globBinds glob) }
 
+
+-- | Convert a `Glob` back to a `Tree`
+--   TODO: We can delete this once all the desugar stages use globs.
+--         We don't need the Tree back when converting to core.
+treeOfGlob :: Glob a -> Tree a
+treeOfGlob glob
+	= [PImport n [mid]
+		| (mid, n) <- Map.toList (globImports glob) ]
+
+	++ (Map.elems
+		$ Map.unions
+		[ globExterns		glob
+		, globSuperSigs		glob
+		, globKindSigs		glob
+		, globTypeSigs		glob
+		, globTypeSynonyms	glob
+		, globRegions		glob
+		, globDataDecls		glob
+		, globClassDecls	glob 
+		, globBinds		glob])
+	++ globClassInsts glob
+	++ globProjDicts  glob
