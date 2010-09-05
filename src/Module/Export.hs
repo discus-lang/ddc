@@ -8,9 +8,9 @@ import DDC.Base.SourcePos
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Var
+import DDC.Desugar.Pretty		()
 import DDC.Type				(Type)
 import Source.Pretty			()
-import Desugar.Pretty			()
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set
 import qualified Source.Exp		as S

@@ -1,7 +1,7 @@
-{-# OPTIONS -fwarn-incomplete-patterns #-}
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Pretty printing for desugared source.
-module Desugar.Pretty
+module DDC.Desugar.Pretty
 	(stripAnnot)
 where
 import Desugar.Plate.Trans
@@ -15,7 +15,7 @@ import DDC.Var
 stage = "Desugar.Pretty"
 
 stripAnnot xx	
- = transformN (\n -> Nothing :: Maybe ()) xx
+ = transformN (\_ -> Nothing :: Maybe ()) xx
 
 annot nn x
  = case nn of
@@ -24,6 +24,7 @@ annot nn x
 
 pprVar_unqual var
  = ppr $ var { varModuleId = ModuleIdNil }
+
 
 -- Top -------------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
@@ -112,6 +113,7 @@ instance Pretty a PMode => Pretty (Top (Maybe a)) PMode where
 	 -> annot nn
 	 	(ppr x) % ";\n\n"
 
+
 pprPClassDict_varKind tt
  = case tt of
 	TVar k (UVar v)	-> parens $ v <> "::" <> k
@@ -122,22 +124,25 @@ pprPClassDict_varKind tt
 instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
  ppr xx	
   = case xx of
-  	XNil				-> ppr "@XNil"
-	XVoid		nn		-> annot nn (ppr "@XVoid")
-	XLit		nn l		-> annot nn (ppr l)
-	XVar		nn v		-> annot nn (ppr v)
-	XVarInst 	nn v		-> annot nn ("@XVarInst " % v)
-	XProj 		nn x j		-> annot nn ("@XProj "  % prettyXB x % " " % j)
-	XProjT		nn t j		-> annot nn ("@XProjT " % prettyTypeParens t % " " % j)
-	XLambda    	nn v x 		-> annot nn ("\\" % v  % " ->\n" % x)
-	XLambdaTEC 	nn v x t eff clo -> annot nn ("\\" % v  % " (" % eff % " " % clo % ") :: " % t % " ->\n" % x)
+  	XNil			-> ppr "@XNil"
+	XVoid	nn		-> annot nn (ppr "@XVoid")
+	XLit	nn l		-> annot nn (ppr l)
+	XVar	nn v		-> annot nn (ppr v)
+	XVarInst nn v		-> annot nn ("@XVarInst " % v)
+	XProj 	nn x j		-> annot nn ("@XProj "  % prettyExpParens x % " " % j)
+	XProjT	nn t j		-> annot nn ("@XProjT " % prettyTypeParens t % " " % j)
 
+	XLambda    	nn v x 		
+	 -> annot nn ("\\" % v  % " ->\n" % x)
+
+	XLambdaTEC 	nn v x t eff clo 
+	 -> annot nn ("\\" % v  % " (" % eff % " " % clo % ") :: " % t % " ->\n" % x)
 
 	XApp	Nothing x1 x2	
-	 -> x1 % " " % prettyXB x2
+	 -> x1 % " " % prettyExpParens x2
 
 	XApp	nn x1 x2	
-	 -> annot nn (x1 %> ("\n" % prettyXB x2))
+	 -> annot nn (x1 %> ("\n" % prettyExpParens x2))
 
 	XMatch  nn Nothing aa	
 	 -> annot nn 
@@ -162,14 +167,16 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> annot nn 
 	 	("if " % x1 % "\n" %> (" then " % x2) % "\n" %> (" else " % x3))
 
-	XProjTagged 	nn vI tC x j	-> annot nn ("@XProjTagged " % vI % " " % tC % " " % prettyXB x % " " % j)
+	XProjTagged 	nn vI tC x j	
+	 -> annot nn ("@XProjTagged " % vI % " " % tC % " " % prettyExpParens x % " " % j)
 
-	XProjTaggedT 	nn vI tC j	-> annot nn ("@XProjTaggedT " % vI % " " % tC % j)
+	XProjTaggedT 	nn vI tC j
+	 -> annot nn ("@XProjTaggedT " % vI % " " % tC % j)
 
 
-	 
-
-prettyXB xx
+-- | Pretty print an expression, wrapping it parens if it's not atomic.
+prettyExpParens :: Pretty (Exp a) PMode => Exp a -> Str 
+prettyExpParens xx
  = case xx of
 	XLambda{}	-> "\n" %> ("(" % xx % ")")
 	XVar{}		-> ppr xx
@@ -180,8 +187,8 @@ prettyXB xx
 instance Pretty a PMode => Pretty (Proj (Maybe a)) PMode where
  ppr xx
   = case xx of
-  	JField  nn v		-> annot nn ("." % v)
-	JFieldR nn v		-> annot nn ("#" % v)
+  	JField  nn v	-> annot nn ("." % v)
+	JFieldR nn v	-> annot nn ("#" % v)
 	
 
 -- Stmt ------------------------------------------------------------------------
@@ -218,8 +225,11 @@ instance Pretty a PMode => Pretty (Stmt (Maybe a)) PMode where
 instance Pretty a PMode => Pretty (Alt (Maybe a)) PMode where
  ppr xx
   = case xx of
-	AAlt	 nn [] x	-> annot nn ("\\= " % x) 				% ";"
-	AAlt	 nn gs x	-> annot nn ("|"  % "\n," %!% gs % "\n= " % x) 		% ";"
+	AAlt	 nn [] x	
+	 -> annot nn ("\\= " % x) % ";"
+
+	AAlt	 nn gs x	
+	 -> annot nn ("|"  % "\n," %!% gs % "\n= " % x) % ";"
 
 
 -- Guard -----------------------------------------------------------------------
@@ -240,21 +250,16 @@ instance Pretty a PMode => Pretty (Pat (Maybe a)) PMode where
 				", " %!% (map (\(l, v') -> l % " = " % v') lvs) % 
 			"}")
 
-	WLit	nn l
-		-> annot nn (ppr l)
-
-
-	WVar nn v
-		-> annot nn (ppr v)
-
-	WAt nn v w
-		-> annot nn (v % "@(" % w % ")")
+	WLit nn l 	-> annot nn (ppr l)
+	WVar nn v 	-> annot nn (ppr v)
+	WAt nn v w	-> annot nn (v % "@(" % w % ")")
 
 	WConLabelP nn v lvs	
 		-> annot nn (
 			v % " (--pat--){" % 
 				", " %!% (map (\(l, v') -> l % " = " % v') lvs) % 
 			"}")
+
 
 -- Label -----------------------------------------------------------------------
 instance Pretty a PMode => Pretty (Label (Maybe a)) PMode where

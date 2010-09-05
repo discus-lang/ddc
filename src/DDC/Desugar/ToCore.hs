@@ -4,13 +4,13 @@ module DDC.Desugar.ToCore
 	, toCoreP)
 where
 import Util
+import DDC.Desugar.Pretty		()
 import DDC.Desugar.ToCore.Base
 import DDC.Desugar.ToCore.Exp
 import DDC.Main.Error
 import DDC.Var
 import Type.ToCore			(toCoreT, toCoreK)
 import Type.Export			(Solution(..))
-import Desugar.Pretty			()
 import Desugar.Project			(ProjTable)
 import qualified DDC.Type		as T
 import qualified DDC.Type.Data		as T

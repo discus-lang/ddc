@@ -13,13 +13,13 @@ import Source.Exp
 import Source.Error
 import Main.Dump
 import Util
+import DDC.Desugar.Pretty		()
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Main.Arg
 import DDC.Main.Error
 import DDC.Type
 import DDC.Var
-import Desugar.Pretty			()
 import Source.Lexer			(scanModuleWithOffside, scan)
 import Source.Parser.Module		(parseModule)
 import Source.Slurp			(slurpFixTable, slurpKinds)

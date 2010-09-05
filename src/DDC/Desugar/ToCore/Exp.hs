@@ -24,6 +24,7 @@ module DDC.Desugar.ToCore.Exp
 	, toCoreG
 	, toCoreW )
 where
+import DDC.Desugar.Pretty			()
 import DDC.Desugar.ToCore.Base
 import DDC.Desugar.ToCore.Lambda
 import DDC.Desugar.ToCore.Literal
@@ -39,7 +40,6 @@ import Control.Monad
 import Control.Monad.State
 import Data.Maybe
 import Util
-import Desugar.Pretty				()
 import Shared.VarUtil				(isDummy, varPos)
 import qualified DDC.Type			as T
 import qualified DDC.Desugar.Exp		as D
