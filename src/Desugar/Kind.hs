@@ -1,4 +1,7 @@
 
+-- | Kind inference.
+--   TODO: This isn't finished.
+--
 module Desugar.Kind
 	( inferKindsTree
 	, Constraint(..)
