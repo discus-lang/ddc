@@ -6,6 +6,7 @@ module DDC.Desugar.Elaborate.Slurp
 where
 import Shared.VarPrim
 import DDC.Desugar.Elaborate.Constraint
+import DDC.Desugar.Glob
 import DDC.Desugar.Exp
 import DDC.Type
 import DDC.Type.Data
@@ -15,9 +16,11 @@ import Data.Sequence	as Seq
 
 
 -- | Slurp kind constraints from the desugared module
-slurpConstraints :: Tree SourcePos -> Seq Constraint
-slurpConstraints ps
-	= Seq.fromList $ concatMap slurpConstraint ps
+slurpConstraints :: Glob SourcePos -> Seq Constraint
+slurpConstraints dg
+	= Seq.fromList 
+	$ concatMap slurpConstraint 
+	$ treeOfGlob dg
 	
 slurpConstraint pp
  = case pp of

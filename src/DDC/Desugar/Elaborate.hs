@@ -38,12 +38,14 @@ import DDC.Type.Data
 import DDC.Type
 import DDC.Var
 import DDC.Base.SourcePos
-import Control.Monad.State.Strict
 import Data.Sequence			(Seq)
 import Data.Map				(Map)
 import qualified DDC.Type.Transform	as T
 import qualified Data.Sequence		as Seq
 import qualified Data.Map		as Map
+import Data.Traversable			(mapM)
+import Prelude				hiding (mapM)
+import Control.Monad.State.Strict	hiding (mapM)
 
 
 -- | Elaborate types in this tree.
@@ -72,44 +74,38 @@ elaborateTree unique dgHeader dgModule
 		
 elaborateTreeM dgHeader dgModule
  = do	
-	let psHeader	= treeOfGlob dgHeader
-	let psModule	= treeOfGlob dgModule
-
 	-- Slurp out kind constraints from the program
- 	let constraints	=      slurpConstraints psHeader
-			Seq.>< slurpConstraints psModule
+ 	let constraints	=      slurpConstraints dgHeader
+			Seq.>< slurpConstraints dgModule
 
 	-- Solve kind constraints
 	solveConstraints constraints
 
 	-- Update the kinds of all the type consructors
 	-- TODO: huh? shouldn't this come after the next step?
-	psHeader_tagged	<- tagKindsTree psHeader
-	psModule_tagged	<- tagKindsTree psModule
+	dgHeader_tagged	<- tagKindsInGlob dgHeader
+	dgModule_tagged	<- tagKindsInGlob dgModule
 
 	-- Elaborate data type definitions
 	-- TODO: this probably needs to be merged with kind inference when it's ready
-	psHeader_data	<- mapM elabDataP psHeader_tagged
-	psModule_data	<- mapM elabDataP psModule_tagged
+	dgHeader_data	<- transformPM elabDataP dgHeader_tagged
+	dgModule_data	<- transformPM elabDataP dgModule_tagged
 	
 	-- Now that we know what the kinds of all the type constructors are,
 	-- add missing reigon variables to type signatures.
-	psHeader_rs	<- elabRegionsTree psHeader_data
-	psModule_rs	<- elabRegionsTree psModule_data
+	dgHeader_rs	<- elabRegionsInGlob dgHeader_data
+	dgModule_rs	<- elabRegionsInGlob dgModule_data
 
 	-- Elaborate effects and closures
-	psHeader_effclo	<- mapM elaborateEffCloP psHeader_rs
-	psModule_effclo	<- mapM elaborateEffCloP psModule_rs
-	
-	let dgHeader_effclo	= globOfTree psHeader_effclo
-	let dgModule_effclo	= globOfTree psModule_effclo
+	dgHeader_effclo	<- elaborateEffCloInGlob dgHeader_rs
+	dgModule_effclo	<- elaborateEffCloInGlob dgModule_rs
 	
 	return	( dgHeader_effclo
 		, dgModule_effclo
 		, constraints)
 
 -- Data -------------------------------------------------------------------------------------------
--- | Elaborate data type definitions in this tree
+-- | Elaborate data type definitions
 elabDataP :: Top SourcePos -> ElabM (Top SourcePos)
 elabDataP pp
  = case pp of
@@ -122,10 +118,10 @@ elabDataP pp
 
 -- Tag Kinds --------------------------------------------------------------------------------------
 -- Tag each data constructor with its kind from this table
-tagKindsTree :: Tree SourcePos -> ElabM (Tree SourcePos)
-tagKindsTree pp
-	= mapM (transZM (transTableId return)
-		{ transT	= T.transformTM tagKindsT })
+tagKindsInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
+tagKindsInGlob pp
+	= transZM (transTableId return)
+		{ transT	= T.transformTM tagKindsT }
 		pp
 		
 tagKindsT :: Type -> ElabM Type
@@ -148,6 +144,13 @@ tagKindsT tt
 
 -- EffClo -----------------------------------------------------------------------------------------
 -- | Elaborate effects and closures in a top level signature.
+elaborateEffCloInGlob :: Glob SourcePos -> ElabM (Glob SourcePos)
+elaborateEffCloInGlob glob
+ = do	externs'	<- mapM elaborateEffCloP (globExterns glob)
+	typesigs'	<- mapM elaborateEffCloP (globTypeSigs glob)
+	return	$ glob 	{ globExterns	= externs' 
+			, globTypeSigs	= typesigs' }
+
 elaborateEffCloP :: Top SourcePos -> ElabM (Top SourcePos)
 elaborateEffCloP pp
   = case pp of

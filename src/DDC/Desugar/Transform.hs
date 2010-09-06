@@ -1,6 +1,6 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
--- | Generic transforms on the Desugared IR.
+-- | Transform boilerplate on the Desugared IR.
 module DDC.Desugar.Transform
 	( TransM(..)
 	, TransTable(..)
@@ -8,24 +8,28 @@ module DDC.Desugar.Transform
 	, transformN
 	, transformW
 	, transformXM
+	, transformPM
 	, transZ)
 where
+import DDC.Desugar.Glob
 import DDC.Desugar.Exp
 import DDC.Type.Exp
 import DDC.Type.Data
 import DDC.Var
-import Data.Traversable
+import Data.Traversable			(mapM, forM)
 import Prelude				hiding (mapM)
 import Control.Monad.State.Strict	hiding (mapM, forM)
+import qualified Data.Map		as Map
 import Util.Control.Monad
 import Util.Data.List
 
 -- | Monadic transforms of desugared expressions.
 --   They can also change the type of the annotation along the way.
-class Monad m => TransM m a1 a2 exp where
+class Monad m => TransM m a1 a2 (exp :: * -> *) where
  transZM
  	:: TransTable m a1 a2
- 	-> exp a1 -> m (exp a2)
+ 	-> exp a1 
+	-> m (exp a2)
 	
 	
 -- | Apply a transform in the identity monad.
@@ -130,6 +134,44 @@ transformW f xx
 transformXM f xx
 	= transZM ((transTableId return) { transX_leave = \x -> f x }) xx
 
+-- | Apply a monadic transform to all the top level things in a thing.
+transformPM f xx
+	= transZM ((transTableId return) { transP = f }) xx
+
+-- Glob -------------------------------------------------------------------------------------------
+instance Monad m => TransM m a1 a2 Glob where
+ transZM table glob
+  = do	imports'	<- liftM Map.fromList
+			$  mapM (ttLiftM return (transN table)) 
+			$  Map.toList 
+			$  globImports glob
+
+	externs'	<- mapM (transZM table) $ globExterns 	   glob
+	superSigs'	<- mapM (transZM table) $ globSuperSigs    glob
+	kindSigs'	<- mapM (transZM table) $ globKindSigs 	   glob
+	typeSigs'	<- mapM (transZM table) $ globTypeSigs 	   glob
+	typeSyns'	<- mapM (transZM table) $ globTypeSynonyms glob
+	regions'	<- mapM (transZM table) $ globRegions      glob
+	dataDecls'	<- mapM (transZM table) $ globDataDecls    glob
+	classDecls'	<- mapM (transZM table) $ globClassDecls   glob
+	classInsts'	<- mapM (transZM table) $ globClassInsts   glob
+	projDicts'	<- mapM (transZM table) $ globProjDicts    glob
+	binds'		<- mapM (transZM table) $ globBinds	   glob
+
+	return	$ Glob
+		{ globImports		= imports' 
+		, globExterns		= externs'
+		, globSuperSigs		= superSigs'
+		, globKindSigs		= kindSigs'
+		, globTypeSigs		= typeSigs'
+		, globTypeSynonyms	= typeSyns'
+		, globRegions		= regions'
+		, globDataDecls		= dataDecls'
+		, globClassDecls	= classDecls'
+		, globClassInsts	= classInsts'
+		, globProjDicts		= projDicts'
+		, globBinds		= binds' }
+
 
 -- Top --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Top where
@@ -227,7 +269,6 @@ transCtorDef table
 	return	$ def 	{ ctorDefName 	= name'
 			, ctorDefType	= t' }
 		
-
 
 -- Exp --------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Exp where
