@@ -8,6 +8,7 @@ where
 import Core.Pretty		()
 import DDC.Type.Data.Base
 import DDC.Type.Data.CtorType
+import DDC.Type.Data.Material
 import DDC.Type
 import DDC.Var
 import DDC.Main.Pretty
@@ -35,11 +36,17 @@ elaborateDataDefs
 	-> m 	( Map Var DataDef	--   elaborated header defs
 		, Map Var DataDef)	--   elaborated module defs
 
+-- NOTE: Once we write elaborated data defs to module interfaces
+--       we won't have to re-elaborate all the defs in the header.
 elaborateDataDefs newVarN ddefsHeader ddefsModule
- = do	ddefsHeader'	<- mapM (elaborateDataDef newVarN) ddefsHeader
-	ddefsModule'	<- mapM (elaborateDataDef newVarN) ddefsModule
-	return	( ddefsHeader'
-		, ddefsModule')
+ = do	ddefsHeader_elab <- mapM (elaborateDataDef newVarN) ddefsHeader
+	ddefsModule_elab <- mapM (elaborateDataDef newVarN) ddefsModule
+	
+	let ddefsHeader_mat = annotMaterialInDataDefs ddefsHeader_elab ddefsHeader_elab
+	let ddefsModule_mat = annotMaterialInDataDefs ddefsHeader_elab ddefsModule_elab
+	
+	return	( ddefsHeader_mat
+		, ddefsModule_mat)
 		
 
 -- | Elaborate a data type declaration.
