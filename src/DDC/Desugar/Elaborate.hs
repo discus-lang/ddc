@@ -31,8 +31,8 @@ import DDC.Desugar.Elaborate.Constraint
 import DDC.Desugar.Elaborate.Regions
 import DDC.Desugar.Elaborate.Slurp
 import DDC.Desugar.Elaborate.State
-import DDC.Desugar.Exp
 import DDC.Desugar.Glob
+import DDC.Desugar.Exp
 import DDC.Type.Data.Elaborate
 import DDC.Type.Data
 import DDC.Type
@@ -88,9 +88,25 @@ elaborateTreeM dgHeader dgModule
 
 	-- Elaborate data type definitions
 	-- TODO: this probably needs to be merged with kind inference when it's ready
-	dgHeader_data	<- transformPM elabDataP dgHeader_tagged
-	dgModule_data	<- transformPM elabDataP dgModule_tagged
-	
+	-- TODO: the unpacking and repacking here is really horrible.
+	let anHeader	= [ an | PData an _ <- Map.elems $ globDataDecls dgHeader_tagged]
+	let anModule	= [ an | PData an _ <- Map.elems $ globDataDecls dgModule_tagged]
+
+	let defsHeader	= fmap topDataDef $ globDataDecls dgHeader_tagged
+	let defsModule	= fmap topDataDef $ globDataDecls dgModule_tagged
+
+	(defsHeader', defsModule') 
+		<- elaborateDataDefs newVarN defsHeader defsModule
+				
+	let makeAnDefs glob anns defs
+		= glob { globDataDecls = Map.fromList 
+			[ (dataDefName def, PData an def) 
+				| (an, def) <- zip anns (Map.elems defs) ] }
+
+	let dgHeader_data = makeAnDefs dgHeader_tagged anHeader defsHeader'
+	let dgModule_data = makeAnDefs dgModule_tagged anModule defsModule'
+
+
 	-- Now that we know what the kinds of all the type constructors are,
 	-- add missing reigon variables to type signatures.
 	dgHeader_rs	<- elabRegionsInGlob dgHeader_data
@@ -103,17 +119,6 @@ elaborateTreeM dgHeader dgModule
 	return	( dgHeader_effclo
 		, dgModule_effclo
 		, constraints)
-
--- Data -------------------------------------------------------------------------------------------
--- | Elaborate data type definitions
-elabDataP :: Top SourcePos -> ElabM (Top SourcePos)
-elabDataP pp
- = case pp of
-	PData sp dataDef@(DataDef { dataDefSeaName = Nothing })
-	 -> do	dataDef'	<- elaborateDataDef newVarN dataDef
-		return		$ PData sp dataDef'
-		
-	_ -> return pp
 
 
 -- Tag Kinds --------------------------------------------------------------------------------------

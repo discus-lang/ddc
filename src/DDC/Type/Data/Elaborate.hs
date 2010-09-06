@@ -2,7 +2,8 @@
 {-# OPTIONS -fno-warn-monomorphism-restriction #-}
 
 module DDC.Type.Data.Elaborate
-	(elaborateDataDef)
+	( elaborateDataDefs
+	, elaborateDataDef)
 where
 import Core.Pretty		()
 import DDC.Type.Data.Base
@@ -13,14 +14,33 @@ import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat
 import Util.Data.List
-import Control.Monad
+import Data.Traversable		(mapM)
+import Data.Map			(Map)
 import qualified Shared.VarPrim	as Var
 import qualified Data.Map	as Map
 import qualified Debug.Trace
+import Prelude			hiding (mapM)
+import Control.Monad		hiding (mapM)
 
 stage		= "DDC.Type.Data.Elaborate"
 debug		= False
 trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
+
+-- | Elaborate all these data type declarations
+elaborateDataDefs
+	:: Monad m
+	=> (NameSpace -> m Var)		-- ^ Fn to allocate fresh variables.
+	-> Map Var DataDef		-- ^ Data defs in header
+	-> Map Var DataDef		-- ^ Data defs in module being compiled
+	-> m 	( Map Var DataDef	--   elaborated header defs
+		, Map Var DataDef)	--   elaborated module defs
+
+elaborateDataDefs newVarN ddefsHeader ddefsModule
+ = do	ddefsHeader'	<- mapM (elaborateDataDef newVarN) ddefsHeader
+	ddefsModule'	<- mapM (elaborateDataDef newVarN) ddefsModule
+	return	( ddefsHeader'
+		, ddefsModule')
+		
 
 -- | Elaborate a data type declaration.
 --   This uses the kind of each type constructor to fill in missing region variables.
@@ -30,9 +50,13 @@ trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 --
 elaborateDataDef
 	:: Monad m
-	=> (NameSpace 	-> m Var)		-- ^ Function to allocate a fresh variable.
+	=> (NameSpace -> m Var)		-- ^ Fn to allocate fresh variables
 	-> DataDef
 	-> m DataDef
+
+elaborateDataDef _
+	dataDef@(DataDef { dataDefSeaName = Just _ })
+ =	return dataDef
 
 elaborateDataDef newVarN 
 	dataDef@(DataDef vData _ vksParam ctorDefs _ _)
