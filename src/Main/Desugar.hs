@@ -25,6 +25,7 @@ import qualified Type.Export		as T
 import qualified Type.Dump		as T
 import qualified Type.Solve		as T
 import qualified DDC.Solve.State	as T
+import qualified DDC.Desugar.Glob	as D
 import qualified DDC.Desugar.Exp	as D
 import qualified DDC.Desugar.ToCore	as D
 import qualified DDC.Desugar.Elaborate	as D
@@ -43,22 +44,25 @@ desugarElaborate
 	:: (?args :: [Arg]
 	 ,  ?pathSourceBase :: FilePath)
 	=> String				-- ^ unique
-	-> D.Tree SourcePos			-- ^ header tree
-	-> D.Tree SourcePos			-- ^ source tree
-	-> IO	( D.Tree SourcePos
-		, D.Tree SourcePos 
+	-> D.Glob SourcePos			-- ^ header tree
+	-> D.Glob SourcePos			-- ^ source tree
+	-> IO	( D.Glob SourcePos
+		, D.Glob SourcePos
 		, Map Var T.Kind)
 
-desugarElaborate unique treeHeader treeSource
+desugarElaborate unique dgHeader dgModule
  = do	
-	let (treeHeader', treeSource', constraints, kindMap, errors)
-		= D.elaborateTree unique treeHeader treeSource
+	let (dgHeader', dgModule', constraints, kindMap, errors)
+		= D.elaborateTree unique dgHeader dgModule
+		
+	let treeHeader'	= D.treeOfGlob dgHeader'
+	let treeModule'	= D.treeOfGlob dgModule'	
 		
 	dumpST DumpDesugarElaborate "desugar-elaborate--header"
 		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeHeader')
 	
 	dumpST DumpDesugarElaborate "desugar-elaborate--source"
-		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeSource')
+		(map (D.transformN $ \a -> (Nothing :: Maybe ())) treeModule')
 
 	dumpST DumpDesugarElaborate "desugar-elaborate--constraints"
 		(map ppr $ Foldable.toList constraints)
@@ -70,8 +74,8 @@ desugarElaborate unique treeHeader treeSource
 	when (not $ null errors)
 	 $ exitWithUserError ?args errors
 		
-	return	( treeHeader'
-		, treeSource'
+	return	( dgHeader'
+		, dgModule'
 		, kindMap)
 		
 		

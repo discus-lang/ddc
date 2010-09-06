@@ -32,6 +32,7 @@ import DDC.Desugar.Elaborate.Regions
 import DDC.Desugar.Elaborate.Slurp
 import DDC.Desugar.Elaborate.State
 import DDC.Desugar.Exp
+import DDC.Desugar.Glob
 import DDC.Type.Data.Elaborate
 import DDC.Type.Data
 import DDC.Type
@@ -48,29 +49,32 @@ import qualified Data.Map		as Map
 -- | Elaborate types in this tree.
 elaborateTree 
 	:: String		-- ^ Unique
-	-> Tree SourcePos	-- ^ Header tree
-	-> Tree SourcePos	-- ^ Module tree
-	-> ( Tree SourcePos 	-- new header tree
-	   , Tree SourcePos	-- new module tree
+	-> Glob SourcePos	-- ^ Header tree
+	-> Glob SourcePos	-- ^ Module tree
+	-> ( Glob SourcePos 	-- new header tree
+	   , Glob SourcePos	-- new module tree
 	   , Seq Constraint	-- the kind constaints
 	   , Map Var Kind	-- the kind of every type constructor
 	   , [Error])		-- errors found during elaboration
 
-elaborateTree unique psHeader psModule
+elaborateTree unique dgHeader dgModule
  = let
-	((psHeader', psModule', constraints), state')
+	((dgHeader', dgModule', constraints), state')
 		= runState
-			(elaborateTreeM psHeader psModule)
+			(elaborateTreeM dgHeader dgModule)
 			(stateInit unique)
 	
-   in	( psHeader'
-	, psModule'
+   in	( dgHeader'
+	, dgModule'
 	, constraints
 	, stateKinds state'
 	, [] )
 		
-elaborateTreeM psHeader psModule
+elaborateTreeM dgHeader dgModule
  = do	
+	let psHeader	= treeOfGlob dgHeader
+	let psModule	= treeOfGlob dgModule
+
 	-- Slurp out kind constraints from the program
  	let constraints	=      slurpConstraints psHeader
 			Seq.>< slurpConstraints psModule
@@ -97,8 +101,11 @@ elaborateTreeM psHeader psModule
 	psHeader_effclo	<- mapM elaborateEffCloP psHeader_rs
 	psModule_effclo	<- mapM elaborateEffCloP psModule_rs
 	
-	return	( psHeader_effclo
-		, psModule_effclo
+	let dgHeader_effclo	= globOfTree psHeader_effclo
+	let dgModule_effclo	= globOfTree psModule_effclo
+	
+	return	( dgHeader_effclo
+		, dgModule_effclo
 		, constraints)
 
 -- Data -------------------------------------------------------------------------------------------

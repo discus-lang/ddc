@@ -30,6 +30,7 @@ import qualified Source.Pragma		as Pragma
 
 -- desugar
 import qualified DDC.Desugar.Transform	as D
+import qualified DDC.Desugar.Glob	as D
 import qualified Type.Export		as T
 
 -- core
@@ -224,13 +225,19 @@ compileFile_parse
 	-- Desugar/Type inference stage
 	-----------------------------------------------------------------------
 	
+	let dgHeader_desugared	= D.globOfTree hDesugared
+	let dgModule_desugared	= D.globOfTree sDesugared
+	
 	-- Elaborate type information in data defs and signatures -------------
 	outVerb $ ppr $ "  * Desugar: Elaborate\n"
-	(hElab, sElab, kindTable)	
+	(dgHeader_elab, dgModule_elab, kindTable)	
 			<- SD.desugarElaborate 
 				"DE" 
-				hDesugared
-				sDesugared
+				dgHeader_desugared
+				dgModule_desugared
+
+	let hElab	= D.treeOfGlob dgHeader_elab
+	let sElab	= D.treeOfGlob dgModule_elab
 
 	-- Eta expand simple v1 = v2 projections ------------------------------
 	outVerb $ ppr $ "  * Desugar: ProjectEta\n"
