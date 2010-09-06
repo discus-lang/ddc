@@ -8,19 +8,10 @@
 -- All low level operations should have this effect.
 --	But we can't mask it yet so its been left out.
 --	Make sure your stmts have enough data dependencies, else badness.
-module	DDC.Store
+module	DDC.Runtime.Store
 import	Base
 
 -- DataR -------------------------------------------------------------------------------------------
-
--- | Allocate an object in the heap to contain raw, unboxed data.
-foreign import "_allocDataR"
- allocDataR
- 	:: forall a
-	.  Word#		-- tag of object
-	-> Word#		-- payload size, in bytes. MUST be a multiple of 4
-	-> a
-
 -- | Get the size of this entire DataR object.
 foreign import "primStore_peekDataR_size"
  peekDataR_size	
@@ -45,7 +36,7 @@ foreign import "_PEEK"
 foreign import "primStore_pokeInt32"
  pokeInt32 	:: Ptr# Int32# -> Int32# -> Void#
 
- 
+
 -- Casting -----------------------------------------------------------------------------------------
 -- These should go somewhere else
 --
@@ -63,3 +54,29 @@ foreign import "(Int32 *)"
  castToPtrInt32
  	:: forall a
 	.  Ptr# a -> Ptr# Int32#
+
+
+-- TODO: redo these as peek/poke functions.
+foreign import "primInt32U_read"
+ primInt32U_read
+ 	:: forall a 
+	.  a -> Int32# -> Int32#		-- obj, offset (in bytes), result.
+	:$ Data -> Int32# -> Int32#
+	
+foreign import "primInt32U_write"
+ primInt32U_write
+ 	:: forall a
+	.  a -> Int32# -> Int32# -> Void#	-- obj, offset (in bytes), data.
+	:$ Data -> Int32# -> Int32# -> Void#
+
+foreign import "primFloat32U_read"
+ primFloat32U_read
+ 	:: forall a
+	.  a -> Int32# -> Float32#		-- obj, offset (in bytes), result.
+	:$ Data -> Int32# -> Float32#
+	
+foreign import "primFloat32U_write"
+ primFloat32U_write
+ 	:: forall a
+	.  a -> Int32# -> Float32# -> Void#	-- obj, offset (in bytes), data.
+	:$ Data -> Int32# -> Float32# -> Void#

@@ -42,7 +42,8 @@ import	Data.Tuple
 import	Data.Word32U
 		
 import	DDC.Runtime
-import	DDC.Store
+import	DDC.Runtime.Alloc
+import	DDC.Runtime.Store
 		
 import	Math.Constants
 import	Math.Matrix33

@@ -9,6 +9,7 @@ import 	Data.Int
  	Data.StringU
  	Data.Char
  	Class.Copy
+	DDC.Runtime.Alloc
  	Base
 
 

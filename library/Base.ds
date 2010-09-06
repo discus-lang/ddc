@@ -1,181 +1,164 @@
 {-# OPTIONS -no-implicit-prelude #-}
 -- Key, wired in things
---	The compiler requires that all this stuff is in this module.
---	Don't change it or move it somewhere else unless you know what you're doing.
+--  The compiler requires that all this stuff is in this module.
+--  Don't change it or move it somewhere else unless you know what you're doing.
 --
 module Base
 
--- Abstract operational types ---------------------------------------------------------------------
-data	Obj
-data	Data
-data	Thunk
+-- Abstract operational types -------------------------------------------------
+-- TODO: Not sure if this is a good idea anymore. 
+--       Might want to ditch them.
+data Obj
+data Data
+data Thunk
 
 
--- Unboxed Data types -----------------------------------------------------------------------------
---	Single elements of unboxed type are passed by value, so they
---	don't need region annotations.
+-- Unboxed Data types ---------------------------------------------------------
+--  Single elements of unboxed type are passed by value, so they
+--  don't need region annotations.
 --
---	Functions which update data via a ptr like (Ptr# Word8#) will
---	have top level !Store effects which will ensure synchronisation 
---	when writing low level code.
+--  Functions which update data via a ptr like (Ptr# Word8#) will
+--  have top level !Store effects which ensure synchronisation when
+--  writing low level code.
 
--- The empty type
-data	Void#
-data	Ptr# a
+-- The empty type.
+data Void#
 
--- | An unboxed boolean value, usually represented as a Word# at runtime.
-foreign import data "Bool"   Bool#
+-- A pointer to some thing.
+data Ptr# a
 
--- unboxed, unsigned words
-foreign import data "Word64" Word64#
-foreign import data "Word32" Word32#
-foreign import data "Word16" Word16#
-foreign import data "Word8"  Word8#
+foreign import data "Bool"    Bool#
 
--- unboxed, signed integers
-foreign import data "Int64" Int64#
-foreign import data "Int32" Int32#
-foreign import data "Int16" Int16#
-foreign import data "Int8"  Int8#
+foreign import data "Word64"  Word64#
+foreign import data "Word32"  Word32#
+foreign import data "Word16"  Word16#
+foreign import data "Word8"   Word8#
 
--- unboxed, floating point numbers
+foreign import data "Int64"   Int64#
+foreign import data "Int32"   Int32#
+foreign import data "Int16"   Int16#
+foreign import data "Int8"    Int8#
+
 foreign import data "Float64" Float64#
 foreign import data "Float32" Float32#
 
--- unboxed, unicode point.
+-- an unboxed unicode point.
 foreign import data "Char32"  Char32#
 
 
--- Boxed Data Types -------------------------------------------------------------------------------
-data	Unit	
-	= Unit
+-- Boxed Data Types -----------------------------------------------------------
+data Unit = Unit
 
--- | The runtime system requires that False is first in this list
---	of constructors, so it has a tag of 0. Don't swap them around.
-data Bool %r1
+-- | The runtime system requires that False is the first constructor,
+--   so it has a tag of 0. Don't swap them around.
+data Bool
 	= False
 	| True
 
--- unsigned words
-data 	Word64		:: % -> *
-data	Word32		:: % -> *
-data	Word16		:: % -> *
-data 	Word8		:: % -> *
+data Word64	:: % -> *
+data Word32	:: % -> *
+data Word16	:: % -> *
+data Word8	:: % -> *
 
--- signed integers
-data	Int64		:: % -> *
-data	Int32		:: % -> *
-data	Int16		:: % -> *
-data	Int8		:: % -> *
+data Int64	:: % -> *
+data Int32	:: % -> *
+data Int16	:: % -> *
+data Int8	:: % -> *
 
--- floating point numbers
-data	Float64		:: % -> *
-data	Float32		:: % -> *
+data Float64	:: % -> *
+data Float32	:: % -> *
 
--- boxed characters
-data	Char32		:: % -> *
+data Char32	:: % -> *
 
--- boxed strings
--- are defined in Data.String
-data 	Ref %r1 a
+data Ref a
 	= Ref { x :: a }
 
 
--- Region Classes ---------------------------------------------------------------------------------
-class	Const		:: % -> +
-class	Mutable		:: % -> +
-class	Lazy		:: % -> +
-class	Direct		:: % -> +
+-- Region Classes -------------------------------------------------------------
+class Const	:: % -> +
+class Mutable	:: % -> +
+class Lazy	:: % -> +
+class Direct	:: % -> +
 
 
--- Effect Classes ---------------------------------------------------------------------------------
-class	Pure		:: ! -> +
+-- Effect Classes -------------------------------------------------------------
+class Pure	:: ! -> +
 
 
--- Value Type Classes -----------------------------------------------------------------------------
-class	ConstT		:: * -> +
-class	MutableT	:: * -> +
-class	DirectT		:: * -> +
-
-class	LazyT		:: * -> +
-class	LazyH		:: * -> +
-
-class	Shape2		:: * -> * -> +
-class	Shape3		:: * -> * -> * -> +
-class	Shape4		:: * -> * -> * -> * -> +
-class	Shape5		:: * -> * -> * -> * -> * -> +
-class	Shape6		:: * -> * -> * -> * -> * -> * -> +
+-- Value Type Classes ---------------------------------------------------------
+class ConstT	:: * -> +
+class MutableT	:: * -> +
+class DirectT	:: * -> +
+class LazyT	:: * -> +
+class LazyH	:: * -> +
+class Shape2	:: * -> * -> +
+class Shape3	:: * -> * -> * -> +
+class Shape4	:: * -> * -> * -> * -> +
+class Shape5	:: * -> * -> * -> * -> * -> +
+class Shape6	:: * -> * -> * -> * -> * -> * -> +
 
 
--- Effects ----------------------------------------------------------------------------------------
-effect	!Sync		:: !		-- Total synchronisation.
-
-effect	!Read		:: % -> !	-- Read of some region.
-effect	!ReadT		:: * -> !	-- Deep read of an object.
-effect	!ReadH		:: * -> !	-- Read of top level constructor of an object.
-
-effect	!Write		:: % -> !	-- Write to some region.
-effect	!WriteT		:: * -> !	-- Write to whole object.
+-- Effects --------------------------------------------------------------------
+effect !Sync	:: !		-- Total synchronisation.
+effect !Read	:: % -> !	-- Read of some region.
+effect !ReadT	:: * -> !	-- Deep read of an object.
+effect !ReadH	:: * -> !	-- Read of top level constructor of an object.
+effect !Write	:: % -> !	-- Write to some region.
+effect !WriteT	:: * -> !	-- Write to whole object.
 
 
--- Strings ----------------------------------------------------------------------------------------
--- unboxed strings are pointers to null-terminated blocks of utf8 characters. 
---	These blocks can be updated, so we give the string a region.
+-- Strings --------------------------------------------------------------------
+--  Unboxed strings are pointers to null-terminated blocks of utf8.
+--  The blocks can be destructively updated, so we give the string a region.
 foreign import data "String"  String# :: % -> *
 
--- | A FlatString contains a flat C string.
---   Layout:
---	0 maxLength :: Int32		-- max number of chars this string will hold.
---	4 length    :: Int32		-- number of chars currently used.
---	8 string    :: Word8.. 		-- string chars
-
-data 	FlatString %r
+-- | A FlatString contains null-terminated string along with length information
+--   Layout: 0 maxLength :: Int32   -- max number of chars this string will hold.
+--           4 length    :: Int32   -- number of chars currently used.
+--           8 string    :: Word8.. -- string chars
+data FlatString	
 	= FlatString
 
--- | A string type which supports fast append (paste)
-data	String %r1 
-	= SChunk (FlatString %r1)
-	| SAppend (String %r1) (String %r1)
+-- | Our string type supports fast append.
+data String
+	= SChunk  FlatString
+	| SAppend String String
 
 
--- Exceptions -------------------------------------------------------------------------------------
--- The Exception type carries information about what caused a particular exception.
---	All modules need to be able to create an exception, but we leave the
---	code for the top-level exeption handler in Control.Exception
+-- Exceptions -----------------------------------------------------------------
+--  The Exception type carries information about what caused a particular
+--  exception. All modules need this type decl, but we leave the code for the
+--  top-level exeption handler in Control.Exception
 --
 data Exception
-
-	-- | some user defined string.
+	-- | Some user defined string.
 	= Exception String 
 
-	-- | generated by the break keyword, to break out of an enclosing block.
+	-- | Generated by the break keyword, to break out of an enclosing block.
 	| ExceptionBreak
 
-	-- | a generic IO exception. 
+	-- | A generic IO exception. 
 	| ExceptionIO String	
 
-	-- | thrown when pattern matching fails.
+	-- | Thrown when pattern matching fails.
 	| ExceptionCaseNoMatch
-		String 		-- the qualified name of the function we were evaluating
-				--	(or supercombinator?? ticket #119)
-		Int 		-- line number
-		Int		-- column number
+		String 	-- the qualified name of the function we were evaluating
+			--	(or supercombinator?? ticket #119)
+		Int 	-- line number
+		Int	-- column number
 
-	-- | thrown when an array is accessed out of bounds:
-	--   runtime/Prim/Array.c requires this constructor to have this specific type.
+	-- | Thrown when an array is accessed out of bounds.
+	--   runtime/Prim/Array.c requires this constructor to have this
+	--   specific type.
 	| ExceptionArrayBounds
-		Int		-- the actual size of the array
-		Int		-- the requested index
+		Int	-- the actual size of the array
+		Int	-- the requested index
 
 
--- Projection Functions ---------------------------------------------------------------------------
--- These functions are used by the desugarer to make default data projections.
---
--- As they stand they are certainly not typesafe, and they must be passed a
--- forced object (ie, not a suspension).
---
--- The desugarer adds the required type sig and forcing constructs to ensure
--- that the resulting projection functions are sound.
+-- Projections ----------------------------------------------------------------
+--  These functions are used by the desugarer to make default data projections.
+--  They are certainly not typesafe, and must be passed a forced object
+--  (ie, not a suspension).
 --
 foreign import "primProjField"
  primProjField	
@@ -190,43 +173,5 @@ foreign import "primProjFieldR"
 	.  a -> Int32# -(!e1)> b
 	:- !e1 = !ReadH a
 	:$ Data -> Int32# -> Obj
-	
 
--- BUGS: dodgy conversion of Int32# to Word32# here
-foreign import "_allocDataM"
- primAlloc_dataM
- 	:: forall a 
-	.  Int32# -> Int32# -> Int32# -> a	-- tag, ptrCount, dataSize (in bytes).
-	:$ Word32# -> Word32# -> Word32# -> Data
-
-
-foreign import "_allocDataR"
- primAlloc_dataR
- 	:: forall a
-	.  Int32# -> Int32# -> a		-- tag, dataSize (in bytes).
-	:$ Word32# -> Word32# -> Data
-
-foreign import "primInt32U_read"
- primInt32U_read
- 	:: forall a 
-	.  a -> Int32# -> Int32#		-- obj, offset (in bytes), result.
-	:$ Data -> Int32# -> Int32#
-	
-foreign import "primInt32U_write"
- primInt32U_write
- 	:: forall a
-	.  a -> Int32# -> Int32# -> Void#	-- obj, offset (in bytes), data.
-	:$ Data -> Int32# -> Int32# -> Void#
-
-foreign import "primFloat32U_read"
- primFloat32U_read
- 	:: forall a
-	.  a -> Int32# -> Float32#		-- obj, offset (in bytes), result.
-	:$ Data -> Int32# -> Float32#
-	
-foreign import "primFloat32U_write"
- primFloat32U_write
- 	:: forall a
-	.  a -> Int32# -> Float32# -> Void#	-- obj, offset (in bytes), data.
-	:$ Data -> Int32# -> Float32# -> Void#
 

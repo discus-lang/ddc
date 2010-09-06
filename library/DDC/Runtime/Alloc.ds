@@ -1,0 +1,24 @@
+{-# OPTIONS -no-implicit-prelude #-}
+
+-- | Hooks onto our primitive object allocators.
+module DDC.Runtime.Alloc
+import Base
+
+-- BUGS: dodgy conversion of Int32# to Word32# here
+foreign import "_allocDataM"
+ primAlloc_dataM
+ 	:: forall a 
+	.  Int32# 	-- tag
+	-> Int32# 	-- number of pointers in object
+	-> Int32# 	-- data size (in bytes)
+	-> a
+	:$ Word32# -> Word32# -> Word32# -> Data
+
+
+foreign import "_allocDataR"
+ primAlloc_dataR
+ 	:: forall a
+	.  Int32# 	-- tag
+	-> Int32# 	-- data size (in bytes)
+	-> a
+	:$ Word32# -> Word32# -> Data

@@ -3,7 +3,7 @@
 module	Data.StringU
 
 import	Base
-	DDC.Store
+	DDC.Runtime.Store
 	Class.Promote
 	Class.Num
 
