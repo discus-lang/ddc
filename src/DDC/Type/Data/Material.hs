@@ -1,5 +1,8 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
+-- | Determine the material vars in a set of data type definitions.
+--   BUGS: This will loop when given nested data types. 
+--         We need to detect and explicitly reject them.
 module DDC.Type.Data.Material
 	(annotMaterialInDataDefs)
 where
@@ -7,15 +10,21 @@ import DDC.Type.Data.Base
 import DDC.Type.Exp
 import DDC.Type.Compounds
 import DDC.Type.Kind
+import DDC.Type.Pretty		()
 import DDC.Type.Operators.Instantiate
 import DDC.Var
 import DDC.Main.Error
+import DDC.Main.Pretty
+import Data.List
 import Data.Set			(Set)
 import Data.Map			(Map)
 import qualified Data.Set	as Set
 import qualified Data.Map	as Map
+import qualified Debug.Trace
 
-stage	= "DDC.Type.Data.Material"
+stage		= "DDC.Type.Data.Material"
+debug		= False
+trace ss xx	= if debug then Debug.Trace.trace (pprStrPlain ss) xx else xx
 
 -- | Annotate some data type definitions with their sets of material vars.
 annotMaterialInDataDefs
@@ -42,9 +51,9 @@ annotMaterialDataDef ddefsEnv ddef
 
 	vsMaterial = materialVarsOfType ddefsEnv tData
 	
-   in	ddef { dataDefMaterialVars	= Just vsMaterial }
+   in	ddef { dataDefMaterialVars	
+		= Just vsMaterial }
 
-	
 
 -- | Determine which variables are material in this type.
 --   This doesn't support quantified types. If there are any quantifers then `panic`.
@@ -54,18 +63,21 @@ materialVarsOfType
 	-> Set Var
 
 materialVarsOfType dataDefs tt
- = go Set.empty [(emptyConstraints, tt)]
+ = trace ("\nmaterialVarsOfType: " % tt)
+ $ go Set.empty [(emptyConstraints, tt)]
 
  where	go vsMaterial ds
-	 = let	(vssMaterial', dss')	
+	 = trace ("step " % (vsMaterial, map snd ds)) $ 
+	   let	(vssMaterial', dss')	
 			=  unzip
 			$  map (materialVarsOfType1 dataDefs) ds
 
-		vsMaterial'	= Set.unions vssMaterial'
-		ds'		= concat dss'
-		
-	  in	if   (vsMaterial' == vsMaterial') 
-		  && (ds          == ds')
+		vsMaterial'	= Set.unions (vsMaterial : vssMaterial')
+		ds'		= nub $ concat dss'
+
+		-- If no new vars or elems were addeed in this round then we're done.
+	  in	if   (vsMaterial  == vsMaterial') 
+		  && (length ds   == length ds')
 			then vsMaterial
 			else go vsMaterial' ds'
 		
@@ -89,15 +101,15 @@ materialVarsOfType1 dataDefs (crs, tt)
 	= (Set.empty, [])
 	
 	-- 
-	| Just (vCon, k, tsArgs) <- takeTData tt
+	| Just (vCon, _, tsArgs) <- takeTData tt
 	= case tsArgs of
 		[]	-> (Set.empty, [])
 
-		(TVar _ (UVar v1) : _)
+		(TVar k1 (UVar v1) : _)
 		 -> let	
 			-- If we've got a primary region variable then record is as material.
 			vsMaterial	
-			 | isRegionKind k	= Set.singleton v1
+			 | isRegionKind k1	= Set.singleton v1
 			 | otherwise		= Set.empty 
 		
 			-- look up the data definition for this type.
@@ -122,16 +134,18 @@ materialVarsOfType1 dataDefs (crs, tt)
 	= (Set.empty, [])
 
 
--- | Get a list of all the parameters of a data constructor's type, retaining the outer quantifiers. 
---   This doesn't support constrained types. If there are any constraints then `panic`.
+-- | Get a list of all the parameters of a data constructor's type, 
+--	retaining the outer quantifiers. 
 quantParamsOfCtorType :: Type -> [Type]
 quantParamsOfCtorType t
 	= quantParamsOfCtorType' [] [] t
 	
 quantParamsOfCtorType' bksQuant acc tt
+	| TConstrain t _	<- tt
+	= quantParamsOfCtorType' bksQuant acc t
 
 	-- Remember quantified vars when we see them.
-	| TForall b k t			<- tt
+	| TForall b k t		<- tt
 	= quantParamsOfCtorType'
 		(bksQuant ++ [(b, k)])
 		acc

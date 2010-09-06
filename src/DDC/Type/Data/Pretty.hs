@@ -24,6 +24,8 @@ instance Pretty DataDef PMode where
 	%> vcat
 		[ "KIND       = " % dataDefKind def
 		, "SEANAME    = " % dataDefSeaName def
+		, "MATERIAL   = " % dataDefMaterialVars def
+		, "IMMATERIAL = " % dataDefImmaterialVars def
 		, blank]
 
 	| otherwise
