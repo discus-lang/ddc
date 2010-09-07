@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Add code to initialise each module, and call the main function.
 --   Initialising a module evaluates the values of the top-level CAFs.
@@ -12,10 +13,12 @@ module DDC.Sea.Init
 where
 import Sea.Pretty
 import Sea.Util
+import DDC.Main.Error
 import DDC.Sea.Exp
 import DDC.Var
 import Util
 
+stage	= "DDC.Sea.Init"
 
 -- | Add code that initialises this module
 initTree
@@ -43,8 +46,10 @@ makeInitCaf (v, t)
                 pObj	= TPtr TObj
                 ppObj	= TPtr pObj
 
-makeInitVar (ModuleId vs)
-	= varWithName ("ddcInitModule_" ++ (catInt "_" vs))
+makeInitVar mid
+ = case mid of
+	ModuleId vs	-> varWithName ("ddcInitModule_" ++ (catInt "_" vs))
+	_		-> panic stage $ "makeInitVar: no match"
 
 xVarWithSeaName name typ
  =	let v = Var
