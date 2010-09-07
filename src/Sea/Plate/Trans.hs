@@ -248,14 +248,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	x'		<- transZM table x
 	 	transX table	$ XTag x'
 
-	XField x v f
-	 -> do 	x'		<- transZM table x
-		transX table	$ XField x' v f
-
-	XFieldR x v f
-	 -> do	x'		<- transZM table x
-	 	transX table	$ XFieldR x' v f
-
 	-- constants
 	XCon v
 	 -> do	v'		<- transV table v

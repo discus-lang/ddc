@@ -187,17 +187,12 @@ data Exp a
 	-- control
 	| XLabel	Var			-- a label, for jumping to
 
-	-- primitive operators
-	| XPrim		Prim [Exp a]
-
 	-- projection
-	-- TODO: merge these with the primitive type above.
 	| XArg		(Exp a) ObjType Int	-- of some object
 	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
 
-	-- TODO: aren't these already duplicated?
-	| XField	(Exp a) Var Var		-- exp, type of exp, field name
-	| XFieldR	(Exp a) Var Var		-- exp, type of exp, field name
+	-- primitive operators
+	| XPrim		Prim [Exp a]
 	deriving (Show, Eq)
 
 

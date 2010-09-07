@@ -230,9 +230,6 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		TObjThunk	-> "_TARG(" % x % ", " % i % ")"
 		TObjSusp 	-> "_SARG(" % x % ", " % i % ")"
 
-	XField x v l		-> "_FIELD("  % x % ", " % "_S" % sV v % ", " % l % ")"
-	XFieldR x v l		-> "_FIELDR(" % x % ", " % "_S" % sV v % ", " % l % ")"
-
 	-- constants
 	XCon v			-> "_tag" % sV v
 	XInt i			-> ppr i
@@ -299,7 +296,7 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	-- Primitive projections.
 	XPrim (MProj f) [(XVar ctorV _), (XVar fieldV _), x]
 	 -> case f of
-	 	PProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
+	 	PProjField	-> "_FIELD("  % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 	 	PProjFieldRef	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 
 	-- Primitive functions in the RTS.
