@@ -235,7 +235,6 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XInt i			-> ppr i
 	XUnit 			-> ppr "_primUnit"
 	XLit lit		-> pprLiteralFmt lit
-	XTagThunk		-> ppr "_tagThunk"
 	XSuper v		-> "(void*)" % sV v
 	XNull			-> ppr "_null"
 

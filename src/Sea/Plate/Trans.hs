@@ -266,9 +266,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	v'		<- transV table v
 	 	transX table	$ XSuper v'
 
-	XTagThunk
-	 ->	transX table 	$ XTagThunk
-
 	-- control
 	XLabel v
 	 ->	transX table 	$ XLabel v

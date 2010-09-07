@@ -153,7 +153,7 @@ data Exp a
 	= XNil
 
 	-- Assignable names.
-	-- TODO: merge these into the same constructor.
+	-- TODO: Break these out into an LValue type.
 	| XVar		Var Type
 	| XVarCAF	Var Type
 
@@ -171,14 +171,13 @@ data Exp a
 
 
 	-- Literals
-	-- TODO: break these out into their own type.
+	-- TODO: break these out into an RValue type.
 	| XNull					-- The null pointer.
 	| XInt		Int			-- An integer.
 	| XUnit					-- A unit value.
 	| XLit		LiteralFmt		-- a literal
 	| XSuper	Var			-- name of a supercombinator
 	| XCon		Var			-- a data constructor
-	| XTagThunk
 
 	-- control
 	| XLabel	Var			-- a label, for jumping to
