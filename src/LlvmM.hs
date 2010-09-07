@@ -6,6 +6,8 @@ module LlvmM
 	, addComment
 	, currentReg
 
+	, addAlias
+
 	, addGlobalVar
 	, addGlobalFuncDecl
 
@@ -47,6 +49,9 @@ data LlvmState
 	{ tmpReg	:: Maybe LlvmVar
 	, tmpBlocks	:: [[LlvmStatement]]
 
+	-- | Aliases used in the module.
+	, aliases	:: Map String LlvmType
+
 	-- | Global variables for the module.
 	, globVars	:: [LMGlobal]
 	-- | Forward declarations of external functions.
@@ -63,6 +68,7 @@ initLlvmState
  = LS	{ tmpReg	= Nothing
 	, tmpBlocks	= []
 
+	, aliases	= Map.empty
 	, globVars	= []
 	, funcDecls	= Map.empty
 	, functions	= [] }
@@ -130,6 +136,20 @@ endFunction funcDecl funcArgs funcAttrs funcSect
 
 --------------------------------------------------------------------------------
 
+addAlias :: LlvmAlias -> LlvmM ()
+addAlias (name, typ)
+ = do	state		<- get
+	let map		= aliases state
+	case Map.lookup name map of
+	  Nothing	-> modify $ \s -> s { aliases = Map.insert name typ map }
+	  Just curr	-> if curr == typ
+				then return ()
+				else panic stage
+					$ "The following two should match :"
+					++ "\n    " ++ show curr
+					++ "\n    " ++ show typ
+
+
 addGlobalFuncDecl :: LlvmFunctionDecl -> LlvmM ()
 addGlobalFuncDecl fd
  = do	state		<- get
@@ -146,12 +166,13 @@ addGlobalFuncDecl fd
 
 --------------------------------------------------------------------------------
 
-renderModule :: [LMString] -> [LlvmAlias] -> LlvmM LlvmModule
-renderModule comments aliases
+renderModule :: [LMString] ->  LlvmM LlvmModule
+renderModule comments
  = do	state		<- get
-	let fdecls	= map snd $ Map.toList $ funcDecls state
 	let globals	= globVars state
-	return	$ LlvmModule comments aliases globals fdecls
+	let taliases	= Map.toList $ aliases state
+	let fdecls	= map snd $ Map.toList $ funcDecls state
+	return	$ LlvmModule comments taliases globals fdecls
 				$ reverse $ functions state
 
 --------------------------------------------------------------------------------
