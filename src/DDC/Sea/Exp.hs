@@ -1,3 +1,4 @@
+{-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Abstract C expressions.
 --	TODO: 	This is a mess.
@@ -16,6 +17,8 @@ module DDC.Sea.Exp
 	, Prim		(..)
 	, Var)
 where
+import DDC.Sea.Exp.Prim
+import DDC.Sea.Exp.Type
 import DDC.Base.SourcePos
 import DDC.Base.Literal
 import DDC.Var
@@ -213,67 +216,4 @@ data Exp a
 
 	deriving (Show, Eq)
 
-
--- | Sea types.
---	By the time we've reached the Sea language we only care about operational information.
---	We need to distinguish between boxed and unboxed values, but not much else.
-data Type
-	-- | The void type.
-	= TVoid
-
-	-- | The function type.
-	--	These are always first order, so the first parameter will not be another TFun.
-	| TFun Type Type
-
-	-- | An unboxed pointer to something else.
-	| TPtr Type
-
-	-- | An unboxed data object.
-	| TCon Var [Type]
-
-	-- | Some anonymous boxed object. Usually accessed as a pointer.
-	| TObj
-	deriving (Show, Eq)
-
-
--- | When we access fields in an object we need to know exactly what type
---	we are dealing with.
-data ObjType
-	= TObjData
-	| TObjThunk
-	| TObjSusp
-	deriving (Show, Eq)
-
-
--- | Primitive operators implemented directly in the C language or runtime system.
---	We keep these separate from the Core Op type because the two languages
---	might implement different operators.
-data	Prim
-	= FNeg
-	| FAdd
-	| FSub
-	| FMul
-	| FDiv
-	| FMod
-
-	| FEq
-	| FNEq
-
-	| FGt
-	| FLt
-
-	| FGe
-	| FLe
-
-	| FAnd
-	| FOr
-
-	| FProjField
-	| FProjFieldR
-
-	| FArrayPeek Type
-	| FArrayPoke Type
-
-	| FStrCmp
-	deriving (Show, Eq)
 
