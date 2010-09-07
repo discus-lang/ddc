@@ -1,5 +1,6 @@
 {-# OPTIONS -no-implicit-prelude #-}
 
+-- | Arrays of boxed values.
 module 	Data.Array 
 
 export	index
@@ -17,76 +18,63 @@ project Array a
 	mapToList;
 	updateWith }
 
-
--- An array of boxed values
+-- An array of boxed values.
 data Array %r1 a;
 
 -- Primitives -------------------------------------------------------------------------------------
--- Create a new array and point all the cells to this initial object.
+-- These are implemented by the runtime system.
+
+-- | Create a new array and point all the cells to this initial object.
 foreign import "primArray_new"
- new  	:: forall a %r1 %r2
- 	.  Int %r1 -> a -(!e1 $c1)> Array %r2 a
-	:- !e1 = !{ !Read %r1 }
-	,  $c1 = size : Int %r1
-	,  Mutable %r2
+ new  	:: Int{read} -> a -> Array a
 
-
--- Return the number of elements in an array
+-- | Return the number of elements in an array
 foreign import "primArray_size"
- size	:: forall a %r1 %r2
-	.  Array %r1 a -(!e1)> Int %r2
-	:- !e1 = !{ !Read %r1 }
+ size	:: Array a {read} -> Int
 
- 
--- Return the element at this index
---	the array.(i) syntax is desugared into this.
+-- | Return the element at this index.
+--	The array.(i) syntax is desugared into this.
 foreign import "primArray_index"
- index	:: forall a %r1 %r2 
-	.  Array %r1 a -> Int %r2 -(!e1)> a
-	:- !e1 = !{ !Read %r1; !Read %r2 }
-
+ index	:: Array a {read} -> Int{read} -> a
  	
--- Return a reference to this index. 
---	If this reference is updated then that cell in the array is pointed to the new object.
---	the array#(i) syntax is desugared into this
+-- | Return a reference to this index. 
+--     The reference refers to the location in the array, 
+--     so updating the reference also updates the array.
+---    The array#(i) syntax is desugared into this.
 foreign import "primArray_indexR"
- indexR	:: forall a %r1 %r2 
-	.  Array %r1 a -> Int %r2 -(!e1 $c1)> Ref %r1 a
-	:- !e1 = !{ !Read %r1; !Read %r2 }
-	,  $c1 = a : Array %r1 a
+ indexR	:: Array %r1 a {read} -> Int %r2 {read} -> Ref %r1 a
 
 
--- Instances --------------------------------------------------------------------------------------
+-- Instances ------------------------------------------------------------------
 instance Functor Array where
  map_ f array
-  = map2_ f array 0 array.size
+  = go f array 0 array.size
   where 
-	map2_ f array ix max
+	go f array ix max
 	 | ix >= max	= ()
 	 \= do	f array.(ix)
-		map2_ f array (ix + 1) max
+		go f array (ix + 1) max
 
 
 instance Foldable Array where
  foldl f acc array 
-  = foldl' f acc array 0 (array .size)
+  = go f acc array 0 array.size
   where	
-	foldl' f acc array ix max
-	 | ix >= max
-	 = acc
-	
-	 \= foldl' f (f acc array.(ix)) array (ix + 1) max
+	go f acc array ix max
+	 | ix >= max	= acc
+	 \= go f (f acc array.(ix)) array (ix + 1) max
 
 
--- Conversion -------------------------------------------------------------------------------------
+-- Conversion -----------------------------------------------------------------
 -- | Create an array from a list.
 fromList :: [a] -> Array a
-fromList xx = go 0 xx
+fromList xx 
+ = go 0 xx
  where	len	= length xx
 	arr 	= new len 0
 
 	go ix []
-	 | ix == len	
+	 | ix == len
 	 = arr
 	
 	go ix (x:xs)  
