@@ -10,7 +10,8 @@ module Llvm.Runtime.Tags
 	, tagDataRS
 	, tagIndir
 	, tagSusp
- )
+	, tagFixedThunk
+	)
 where
 
 import Data.Bits
@@ -53,6 +54,8 @@ tagIndir = i32LitVar 0x0fffffd
 tagSusp :: LlvmVar
 tagSusp = i32LitVar 0x0fffffe
 
+tagFixedThunk :: LlvmVar
+tagFixedThunk = i32LitVar  ((0x0ffffff * 256) + 0x11)
 
 -- objModeForward, objModeFixed
 objModeDataRS :: Int

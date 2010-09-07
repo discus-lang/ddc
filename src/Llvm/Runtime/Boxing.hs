@@ -42,7 +42,7 @@ boxInt32 :: LlvmVar -> LlvmM LlvmVar
 boxInt32 int32
  = do	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
 	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
-	objptr	<- allocate 8 "boxed"
+	objptr	<- allocate 8 "boxed" pObj
 	addBlock
 		[ Comment [ "boxInt32 (" ++ show int32 ++ ")" ]
 		, Assignment iptr0 (Cast LM_Bitcast objptr (pLift i32))
@@ -90,7 +90,7 @@ boxEnum v@(LMLocalVar u _)
 	tag	<- newUniqueNamedReg "tag" i32
 	iptr0	<- newUniqueNamedReg "iptr0" (pLift i32)
 	iptr1	<- newUniqueNamedReg "iptr1" (pLift i32)
-	objptr	<- allocate 8 "boxed"
+	objptr	<- allocate 8 "boxed" pObj
 	addBlock
 		[ Comment [ "boxEnum (" ++ show v ++ ")" ]
 		, Assignment int32 (Cast LM_Zext v i32)
@@ -109,7 +109,7 @@ boxEnum any
 --------------------------------------------------------------------------------
 
 dataStringBoxString :: LlvmFunctionDecl
-dataStringBoxString = LlvmFunctionDecl "Data_String_boxString" External CC_Ccc pObj FixedArgs [(LMPointer i8, [])] ptrAlign
+dataStringBoxString = LlvmFunctionDecl "Data_String_boxString" External CC_Ccc pObj FixedArgs [(pChar, [])] ptrAlign
 
 boxString :: LlvmVar -> LlvmM LlvmVar
 boxString str@(LMGlobalVar name (LMArray _ (LMInt 8)) _ Nothing _ True)

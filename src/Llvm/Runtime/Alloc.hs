@@ -1,6 +1,6 @@
 module Llvm.Runtime.Alloc
 	( allocate
-	{- , allocThunk -} )
+	, allocThunk )
 where
 
 import DDC.Main.Error
@@ -8,6 +8,7 @@ import DDC.Main.Error
 import Llvm
 import LlvmM
 import Llvm.Runtime.Data
+import Llvm.Runtime.Tags
 import Llvm.Util
 
 stage = "Llvm.Runtime.Alloc"
@@ -17,10 +18,10 @@ stage = "Llvm.Runtime.Alloc"
 -- bytes and return a pointer of the specified type.
 -- The generated code will always allocate heap objects aligned to 8 byte
 -- boundaries and panics if asked to allocate zero or less bytes.
-allocate :: Int -> String -> LlvmM LlvmVar
-allocate bytes name
+allocate :: Int -> String -> LlvmType -> LlvmM LlvmVar
+allocate bytes name typ
  = do	addGlobalFuncDecl allocCollect
-	ptr	<- newUniqueNamedReg name pObj
+	ptr	<- newUniqueNamedReg name typ
 	r0	<- newUniqueNamedReg "r0" pChar
 	r1	<- newUniqueNamedReg "r1" pChar
 	r2	<- newUniqueNamedReg "r2" pChar
@@ -59,18 +60,56 @@ allocate bytes name
 		, Assignment r5 (Cast LM_Bitcast r4 (pLift i32))
 		, Assignment r6 (GetElemPtr True r4 [count])
 		, Store r6 ddcHeapPtr
-		, Assignment ptr (Cast LM_Bitcast r4 (getVarType ptr))
 		]
-	return	ptr
+	if typ == pChar
+	  then		return r2
+	  else do	addBlock [ Assignment ptr (Cast LM_Bitcast r4 typ) ]
+			return	ptr
 
 
 -- static inline Obj*	_allocThunk	(FunPtr	func,	UInt airity,	UInt args);
 
-{-
-allocThunk :: a -> Int -> Int -> LlvmM LlvmVar
-allocThunk funPtr airity args
- =
--}
+allocThunk :: LlvmVar -> Int -> Int -> LlvmM LlvmVar
+allocThunk funvar arity args
+ = do	addAlias	("struct.Thunk", ddcThunk)
+	addComment $	"allocThunk " ++ show funvar
+	pThunk		<- allocate (sizeOfLlvmType structThunk + arity * sizeOfLlvmType pObj) "pthunk" pChar
+	addComment "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+
+	addComment $	"\noffsetOfIndex structThunk 0 : " ++ show (offsetOfIndex structThunk 0) ++
+			"\noffsetOfIndex structThunk 1 : " ++ show (offsetOfIndex structThunk 1) ++
+			"\noffsetOfIndex structThunk 2 : " ++ show (offsetOfIndex structThunk 2) ++
+			"\noffsetOfIndex structThunk 3 : " ++ show (offsetOfIndex structThunk 3) ++
+			"\n"
+
+	ptag		<- newUniqueNamedReg "ptag" pInt32
+	addBlock	[ Assignment ptag (Cast LM_Bitcast pThunk pInt32)
+			, Store tagFixedThunk ptag ]
+	addComment	"-----------------------"
+	pDest		<- newUniqueNamedReg "pDest" pChar
+	pFunc		<- newUniqueNamedReg "pFunc" (pLift pFunction)
+	addBlock	[ Assignment pDest (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 1)])
+			, Assignment pFunc (Cast LM_Bitcast pDest (pLift pFunction))
+			, Store funvar pFunc ]
+	addComment	"-----------------------"
+	pArity		<- newUniqueNamedReg "pArity" pChar
+	par		<- newUniqueReg pInt32
+	addBlock	[ Assignment pArity (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 2)])
+			, Assignment par (Cast LM_Bitcast pArity (pInt32))
+			, Store (i32LitVar arity) par ]
+
+	addComment	"-----------------------"
+	pArgs		<- newUniqueNamedReg "pArgs" pChar
+	parg		<- newUniqueReg pInt32
+	addBlock	[ Assignment pArgs (GetElemPtr True pThunk [i32LitVar (offsetOfIndex structThunk 2)])
+			, Assignment parg (Cast LM_Bitcast pArgs (pInt32))
+			, Store (i32LitVar args) parg ]
+
+	addComment "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"
+	ret		<- newUniqueReg pObj
+	addBlock	[ Assignment ret (Cast LM_Bitcast pThunk pObj) ]
+	return		ret
+
 
 
 

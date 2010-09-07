@@ -134,6 +134,7 @@ outLlvm moduleName eTree pathThis
 	renderModule	comments
 
 
+
 llvmOfSeaDecls :: Top (Maybe a) -> LlvmM ()
 llvmOfSeaDecls (PSuper v p t ss)
  = do	startFunction
@@ -355,18 +356,16 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
 	result		<- newUniqueNamedReg "result" pObj
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	writeSlot	result i1
--}
 
-{-
 llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) (XAllocThunk var airity args)
  = do	addComment	$ "slot [" ++ show i1 ++ "] = allocThunk ("
 			++ seaVar False var ++ "," ++ show airity
 			++ "," ++ show args ++ ")"
-	result		<- allocThunk (seaVar False var) airity args
+
+	lift $ putStrLn $ show var
+	result		<- allocThunk (pFunctionVar var) airity args
 	writeSlot	result i1
 -}
-
-
 
 
 
@@ -405,7 +404,7 @@ llvmOfAssign a b c
  = panic stage $ "Unhandled : llvmOfAssign \n"
 	++ take 150 (show a) ++ "\n"
 	++ take 150 (show b) ++ "\n"
-	++ take 150 (show c) ++ "\n"
+	++ {- take 150 -} (show c) ++ "\n"
 
 
 llvmFunApply :: LlvmVar -> Type -> [Exp a] -> LlvmM LlvmVar
@@ -425,6 +424,17 @@ llvmFunParam (XSlot v (TPtr TObj) i)
 
 llvmFunParam p
  = panic stage $ "llvmFunParam " ++ show p
+
+
+
+pFunctionVar :: Var -> LlvmVar
+pFunctionVar v
+ = case isGlobalVar v of
+	True -> LMGlobalVar (seaVar False v) pFunction External Nothing ptrAlign False
+	False -> LMNLocalVar (seaVar True v) pFunction
+
+
+
 
 
 
@@ -586,7 +596,11 @@ toLlvmType (TCon v _)
 	"Int64#"	-> i64
 	name		-> panic stage $ "toLlvmType unboxed " ++ name ++ "\n"
 
-toLlvmType t		= panic stage $ "toLlvmType " ++ show t ++ "\n"
+toLlvmType (TFun r TVoid)
+ = pFunction
+
+toLlvmType t
+ = panic stage $ "toLlvmType " ++ show t ++ "\n"
 
 
 typeOfString :: String -> LlvmType
@@ -594,6 +608,12 @@ typeOfString s = LMArray (length s + 1) i8
 
 -- | Convert a Sea Var (wit a Type) to a typed LlvmVar.
 toLlvmVar :: Var -> Type -> LlvmVar
+toLlvmVar v t@(TFun r TVoid)
+ = LMNLocalVar (seaVar True v) (toLlvmType t)
+
+toLlvmVar v t@(TFun _ _ )
+ = panic stage $ "toLlvmVar type : " ++ show t
+
 toLlvmVar v t
  = case isGlobalVar v of
 	True -> LMGlobalVar (seaVar False v) (toLlvmType t) External Nothing (alignOfType t) False
@@ -641,6 +661,10 @@ isGlobalVar v
  -- If the variable is explicitly set as global use the given name.
  | bool : _	<- [global | ISeaGlobal global <- varInfo v]
  = bool
+
+ | file : _	<- [sfile | ISourcePos (SourcePos (sfile, _, _))
+		<-  concat [varInfo bound | IBoundBy bound <- varInfo v]]
+ = isSuffixOf ".di" file
 
  | otherwise
  = False
