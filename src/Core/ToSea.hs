@@ -21,7 +21,7 @@ import qualified DDC.Core.Check.Prim	as C
 import qualified DDC.Core.Check.Exp	as C
 import qualified Core.Util		as C
 import qualified Core.OpType		as C
-import qualified Sea.Exp  		as E
+import qualified DDC.Sea.Exp  		as E
 import qualified Sea.Pretty		as E
 import qualified Shared.VarPrim		as Var
 import qualified DDC.Var.PrimId		as Var

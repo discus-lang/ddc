@@ -15,7 +15,7 @@ import DDC.Base.SourcePos
 import DDC.Type
 import DDC.Var
 import qualified Source.Exp	as S
-import qualified Sea.Exp	as E
+import qualified DDC.Sea.Exp	as E
 import Data.Map			(Map)
 import Data.Set			(Set)
 import Data.Sequence		(Seq)

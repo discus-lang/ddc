@@ -28,7 +28,7 @@ import Llvm.Invoke
 import Llvm.Runtime
 import Llvm.Util
 
-import Sea.Exp
+import DDC.Sea.Exp
 import Sea.Util				(eraseAnnotsTree)
 import Sea.Pretty
 

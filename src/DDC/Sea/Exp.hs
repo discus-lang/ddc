@@ -3,7 +3,7 @@
 --	TODO: 	This is a mess.
 --		Most of these types have too many constructors that do basically
 --		the same thing. We should try and reduce the size of these types.
-module Sea.Exp
+module DDC.Sea.Exp
 	( Tree
 	, Top		(..)
 	, CtorDef	(..)
@@ -26,6 +26,7 @@ import Util
 type Tree a
 	= [Top a]
 
+
 -- | Top level definitions.
 data Top a
 	-- | A missing thing \/ hole (used for debugging).
@@ -33,22 +34,22 @@ data Top a
 
 	-- | Data type definition.
 	| PData
-		Var				-- 	Type constructor.
-		(Map Var CtorDef)
+		Var				--  Type constructor name.
+		(Map Var CtorDef)		--  Data constructors.
 
-	-- supers ---------------------
 	-- | A C prototype.
 	| PProto
-		Var 				--	variable name
-		[Type] 				--	argument types
-		Type				--	result type
+		Var 				--  Function name.
+		[Type] 				--  Argument types
+		Type				--  Result Type.
 
 	-- | Code for a supercombinator
 	| PSuper
-		Var				--	variable name
-		[(Var, Type)] 			--	parameter names and types
-		Type 				--	result type
-		[Stmt a]			--	statements
+		Var				-- variable name
+		[(Var, Type)] 			-- parameter names and types
+		Type 				-- result type
+		[Stmt a]			-- statements
+
 
 	-- cafs -----------------------
 	| PCafProto	Var Type		-- ^ The prototype for a CAF slot index.
@@ -70,9 +71,9 @@ data Top a
 	deriving (Show, Eq)
 
 
--- Meta-data about a constructor.
---	Note that we need to remember the indicies of each field so we can convert
---	pattern matches using labels to Sea form.
+-- | Meta-data about a constructor.
+--   Note that we need to remember the indicies of each field so we can convert
+---  pattern matches using labels to Sea form.
 --
 data CtorDef
 	= CtorDef
@@ -87,27 +88,27 @@ data CtorDef
 -- | An Abstract C statement.
 data Stmt a
 	-- misc
-	= SBlank				-- a blank line, makes output code easier to read
-	| SComment	String			-- a comment, 	 mostly used for debugging.
+	= SBlank				-- ^ a blank line, makes output code easier to read
+	| SComment	String			-- ^ a comment, mostly used for debugging.
 
 	-- stack
-	| SAuto		Var Type		-- Define an automatic var.		Type var;
-	| SEnter	Int 			-- Function entry code,	countS
-	| SLeave	Int			-- Function exit code,	countS
+	| SAuto		Var Type		-- Define an automatic var.
+	| SEnter	Int 			-- Expands to function entry code, pushing slots onto the stack.
+	| SLeave	Int			-- Expands to function exit code,  popping slots from the stack.
 
 	-- assignment
-	| SAssign	(Exp a) Type (Exp a)	-- An assigment, 			x1 = x2.
+	| SAssign	(Exp a) Type (Exp a)	-- An assigment.
 	| SStmt		(Exp a)			-- Exp must be a XCall or an XApply
 
 	-- control flow
-	| SLabel	Var			-- Label for goto.			var:
-	| SGoto		Var			-- Goto some label.			goto var;
+	| SLabel	Var			-- Label for goto
+	| SGoto		Var			-- Goto some label
 
-	| SReturn	(Exp a)			-- Return from super.			return exp;
+	| SReturn	(Exp a)			-- Return from super
 
-	| SMatch	[Alt a]
+	| SMatch	[Alt a]			-- Pattern matching
 
-	| SIf		(Exp a) [Stmt a]
+	| SIf		(Exp a) [Stmt a]	-- If-then-else expression.
 
 	| SSwitch	(Exp a) [Alt a]		-- Switch on an expression.
 	| SCaseFail
@@ -130,6 +131,7 @@ data Alt a
 	| ADefault	[Stmt a]
 	deriving (Show, Eq)
 
+
 -- | A case guard.
 data Guard a
 	-- Run some stmts then check if two objects have the same tag
@@ -149,11 +151,11 @@ data Guard a
 data Exp a
 	= XNil
 
-	-- Var-ish things
+	-- | Var-ish things
 	| XVar		Var Type
 	| XVarCAF	Var Type
 
-	-- A slot on the GC stack.
+	-- | A slot on the GC stack.
 	--	All pointers to objects in the heap must be on the slot stack
 	--	when we do something that might cause a garbage collection.
 	| XSlot

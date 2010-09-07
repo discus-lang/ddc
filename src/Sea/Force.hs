@@ -4,9 +4,9 @@
 module Sea.Force
 	(forceTree)
 where
-import Sea.Exp
 import Sea.Plate.Trans
 import Util
+import DDC.Sea.Exp
 import DDC.Var
 import Shared.VarUtil		(VarGenM, newVarN, varPos)
 import qualified Shared.Unique	as Unique

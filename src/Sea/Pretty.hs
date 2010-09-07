@@ -4,10 +4,10 @@
 module Sea.Pretty
 	(seaVar)
 where
-import Sea.Exp
 import Sea.Util
 import Util
 import Data.Function
+import DDC.Sea.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
 import DDC.Base.DataFormat

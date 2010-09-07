@@ -33,7 +33,7 @@ import qualified DDC.Config.Version	as Version
 -- sea
 import qualified Sea.Util		as E
 
-import Sea.Exp
+import DDC.Sea.Exp
 import Sea.Util
 import Sea.Invoke
 

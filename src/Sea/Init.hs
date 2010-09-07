@@ -7,10 +7,10 @@ module Sea.Init
 	( initTree
 	, mainTree )
 where
-import Sea.Exp
 import Sea.Pretty
 import Sea.Util
 import Util
+import DDC.Sea.Exp
 import DDC.Var
 
 

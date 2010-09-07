@@ -3,7 +3,7 @@
 module Sea.Proto
 	(addSuperProtosTree)
 where
-import Sea.Exp
+import DDC.Sea.Exp
 
 
 -- | Add prototypes for each supercombinator in this tree.

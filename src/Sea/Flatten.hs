@@ -3,10 +3,10 @@
 module Sea.Flatten
 	(flattenTree)
 where
-import Sea.Exp
 import Sea.Plate.Trans
 import Shared.VarGen
 import Util
+import DDC.Sea.Exp
 import DDC.Base.DataFormat
 import DDC.Base.Literal
 import DDC.Var

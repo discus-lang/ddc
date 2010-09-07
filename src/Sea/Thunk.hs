@@ -9,10 +9,10 @@
 module Sea.Thunk
 	(thunkTree)
 where
-import Sea.Exp
 import Sea.Pretty
 import Sea.Plate.Trans
 import Util
+import DDC.Sea.Exp
 import DDC.Main.Pretty
 import DDC.Var
 import qualified Shared.Unique	as Unique

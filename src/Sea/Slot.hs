@@ -7,9 +7,9 @@ module Sea.Slot
 where
 import Util
 import Shared.VarUtil
-import Sea.Exp
 import Sea.Util
 import Sea.Plate.Trans
+import DDC.Sea.Exp
 import DDC.Var
 import qualified DDC.Core.Glob	as C
 import qualified Shared.Unique	as Unique

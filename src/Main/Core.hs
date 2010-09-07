@@ -42,7 +42,7 @@ import Data.Foldable			(foldr)
 import Util				hiding (foldr)
 import Prelude				hiding (foldr)
 import qualified Core.Snip		as Snip
-import qualified Sea.Exp		as E
+import qualified DDC.Sea.Exp		as E
 import qualified Sea.Util		as E
 import qualified Data.Map		as Map
 import qualified Data.Set		as Set

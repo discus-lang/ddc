@@ -17,7 +17,7 @@ module Sea.Plate.Trans
 	, transformSSM
 	, transformSS )
 where
-import Sea.Exp
+import DDC.Sea.Exp
 import Control.Monad.State.Strict
 
 

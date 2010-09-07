@@ -5,7 +5,7 @@ module Sea.Util
 	, eraseAnnots
 	, typeIsUnboxed )
 where
-import Sea.Exp
+import DDC.Sea.Exp
 import Sea.Plate.Trans
 
 -- | Erase all annotations in this list of things

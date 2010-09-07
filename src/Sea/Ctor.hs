@@ -3,8 +3,8 @@
 module Sea.Ctor
 	(expandCtorTree)
 where
-import Sea.Exp
 import Util
+import DDC.Sea.Exp
 import DDC.Var
 import Shared.VarUtil		(VarGenM, newVarN)
 import qualified Shared.Unique	as Unique
