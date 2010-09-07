@@ -18,7 +18,7 @@ import qualified Data.Map	as Map
 
 
 -- | Rewrite code in this tree to use the GC slot stack.
-slotTree 
+slotTree
 	:: Tree () 		-- ^ source tree.
 	-> Tree () 		-- ^ prototypes of imported functions.
 	-> C.Glob		-- ^ header glob, used to get arities of supers.
@@ -26,24 +26,24 @@ slotTree
 	-> Tree ()
 
 slotTree tree eHeader cgHeader cgSource
- 	= evalState (mapM (slotP cgHeader cgSource) tree) 	
+ 	= evalState (mapM (slotP cgHeader cgSource) tree)
  	$ VarId Unique.seaSlot 0
 
 -- | Rewrite code in this top level thing to use the GC slot stack.
 slotP 	:: C.Glob		-- ^ header glob
 	-> C.Glob		-- ^ source glob
-	-> Top () 
+	-> Top ()
 	-> VarGenM (Top ())
 
 slotP cgHeader cgSource p
  = case p of
  	PSuper v args retT ss
-	 -> do	(ssAuto, ssArg, ssR, slotCount)	
+	 -> do	(ssAuto, ssArg, ssR, slotCount)
 	 		<- slotSS cgHeader cgSource args ss
 
 		let Just (SReturn x) = takeLast ssR
 		retVar		<- newVarN NameValue
-		
+
 		let retBoxed		= not $ typeIsUnboxed retT
 		let hasSlots		= slotCount > 0
 
@@ -66,36 +66,36 @@ slotSS 	:: C.Glob		-- ^ header glob
 	-> C.Glob		-- ^ source glob
 	-> [(Var, Type)] 	-- ^ vars and types of the super parameters
 	-> [Stmt ()] 		-- ^ statements that form the body of the super
-	-> VarGenM 
+	-> VarGenM
 		( [Stmt ()]	-- code that copies the super parameters into their slots.
 		, [Stmt ()]	-- code that initialises automatic variables for each local unboxed variable.
 		, [Stmt ()]	-- body of the super, rewritten to use slots.
 		, Int)		-- the number of GC slots used by this super.
-		
+
 slotSS cgHeader cgSource args ss
- = do	
+ = do
  	-- Place the managed args into GC slots.
 	let (ssArg_, state0)
-		= runState 
+		= runState
 			(mapM slotAssignArg args)
 			slotInit
-	
+
 	let ssArg	= catMaybes ssArg_
-			
+
 	-- Create a new GC slots for vars on the LHS of an assignment.
 	let (ss2, state1)
-		= runState 
-			(mapM (transformSM slotAssignS) ss) 
+		= runState
+			(mapM (transformSM slotAssignS) ss)
 			state0
 
 	-- Rewrite vars in expressions to their slots.
-	let ss3	= map (transformX 
+	let ss3	= map (transformX
 			(\x -> slotifyX x (stateMap state1) cgHeader cgSource))
 			ss2
 
 	-- Make automatic variables for unboxed values.
 	--	In compiled tail recursive functions there may be assignments
-	--	to arguments in the parameter list. These will appear in the stateAuto 
+	--	to arguments in the parameter list. These will appear in the stateAuto
 	--	list, but there's no need to actually make a new auto for them.
 	let ssAuto	= [ SAuto v t	| (v, t)	<- reverse
 							$ stateAuto state1
@@ -103,36 +103,32 @@ slotSS cgHeader cgSource args ss
 
 	-- Count how many slots we've used
 	let slotCount	= Map.size (stateMap state1)
-					
+
 	return	(ssAuto, ssArg, ss3, slotCount)
 
 slotAssignArg	(v, t)
  	| typeIsUnboxed t
 	= return Nothing
-	
+
 	| otherwise
 	= do
 	 	slot	<- newSlot
 		let exp	= XSlot v t slot
 		addSlotMap v exp
-		
+
 		return	$ Just
 			$ SAssign exp t (XVar v t)
-		
+
 slotifyX x m cgHeader cgSource
 	| XVar v _	<- x
 	, Just exp	<- Map.lookup v m
 	= exp
 
-	| XVar v t@(TPtr TObj)	<- x
-	, isCafVar cgHeader cgSource v
-	= XVarCAF v (TPtr t)
-
 	-- BUGS: unboxed top level data is not a CAF
 	| XVar v t	<- x
 	, isCafVar cgHeader cgSource v
 	= XVarCAF v t
-	
+
 	| otherwise
 	= x
 
@@ -146,10 +142,10 @@ isCafVar :: C.Glob -> C.Glob -> Var -> Bool
 isCafVar cgHeader cgSource v
 	| Just 0	<- C.bindingArityFromGlob v cgHeader
 	= not $ isJust $ Var.takeSeaNameOfBindingVar v
-		
+
 	| Just 0	<- C.bindingArityFromGlob v cgSource
 	= not $ isJust $ Var.takeSeaNameOfBindingVar v
-	
+
 	| otherwise
 	= False
 
@@ -169,27 +165,27 @@ data SlotS
 slotInit
 	= SlotS
 	{ stateMap	= Map.empty
-	, stateSlot	= 0 
+	, stateSlot	= 0
 	, stateAuto	= [] }
-	
+
 type SlotM = State SlotS
 
 
 --- | Create a fresh slot number
 newSlot :: SlotM Int
-newSlot	
+newSlot
  = do 	slot	<- gets stateSlot
 	modify (\s -> s { stateSlot = slot + 1 })
 	return slot
-	
+
 
 -- | Add an entry to the slot map
-addSlotMap 
-	:: Var 
-	-> Exp () 
+addSlotMap
+	:: Var
+	-> Exp ()
 	-> SlotM ()
 addSlotMap    var    x
- =	modify (\s -> s { 
+ =	modify (\s -> s {
  		stateMap = Map.insert var x (stateMap s) })
 
 
@@ -199,15 +195,15 @@ slotAssignS	ss
  = case ss of
  	SAssign (XVar v t) (TPtr TObj) x
 	 -> do 	slotMap	<- gets stateMap
-	 
+
 	 	case Map.lookup v slotMap of
-		 Nothing 
+		 Nothing
 		  -> do	slot	<- newSlot
 			let exp	= XSlot v t slot
 			addSlotMap v exp
 
 			return	$ SAssign exp (TPtr TObj) x
-		
+
 		 Just exp
 		  ->	return	$ SAssign exp (TPtr TObj) x
 
