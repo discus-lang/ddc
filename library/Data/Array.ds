@@ -143,4 +143,3 @@ ifor_ array f	= go 0
 	 | ix >= len	= ()
 	 \= do	f ix array.(ix)
 		go (ix + 1)
-

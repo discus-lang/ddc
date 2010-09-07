@@ -194,7 +194,7 @@ run 	a b c d
 
 run	frame mWindow body0 body1	
  = do	-- update all the positions
-	body1 .mapWithIndex_ 	(\ix x -> x.update body0 ix)
+	body1.ifor_ 	(\ix x -> x.update body0 ix)
 	map_ (\x -> x.clampPos) body1
 
 	-- clear the buffer and draw the new forces
@@ -225,18 +225,12 @@ initBodies ()
 		, newBody (Vec2 280.0 450.0) (Vec2  1.0         1.0)
 		, newBody (Vec2 020.0 200.0) (Vec2  0.0         0.0) ]
 
-
 	-- make a new array of bodies.
-	body0	= new&{Array a} (length bodies) (errorL @ "elem not initialised")
-	zipWith_ (\b i -> body0 #(i) #= b)
-		bodies [0 .. body0.size - 1]
-
+	body0	= fromList&{Array a} bodies
 
 	-- an array to hold the body positions for the next frame.
-	body1	= new&{Array a} (length bodies) (errorL @ "elem not initialised")
-
-	map_	(\i -> body1 #(i) #= newBody (Vec2 0.0 0.0) (Vec2 0.0 0.0))
-		[0.. body1.size - 1]
+	body1	= generate&{Array a} (length bodies) 
+		$ \_ -> newBody (Vec2 0.0 0.0) (Vec2 0.0 0.0)
 		
 	(body0, body1)
 

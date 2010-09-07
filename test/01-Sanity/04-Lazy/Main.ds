@@ -8,7 +8,7 @@ ints n		= n : ints@ (n + 1);
 main ()
  = do {	
  	-- choose
-	print 	$ (show	$ choose True 5 (errorL "argh!"))
+	print 	$ (show	$ choose True 5 (error "argh!"))
 		% "\n";
 
 
