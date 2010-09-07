@@ -269,10 +269,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	XTagThunk
 	 ->	transX table 	$ XTagThunk
 
-	XAtom v
-	 -> do	v'		<- transV table v
-	 	transX table 	$ XAtom v'
-
 	-- control
 	XLabel v
 	 ->	transX table 	$ XLabel v

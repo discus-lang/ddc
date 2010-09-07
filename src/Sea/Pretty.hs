@@ -238,7 +238,6 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XTagThunk		-> ppr "_tagThunk"
 	XSuper v		-> "(void*)" % sV v
 	XNull			-> ppr "_null"
-	XAtom v			-> "_atom" % sV v
 
 	-- Primitives ---------------------------------------------------------
 	-- Primitive arithmetic operators.

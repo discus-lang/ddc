@@ -147,13 +147,12 @@ data Guard a
 
 
 -- | Expressions
---   TODO: There are still far too many constructors in this type.
---	   We want to split most of these into different sorts of primop.
+--   TODO: There are still too many constructors in this type.
+--	   We probably want to make an LValue/RValue split.
 data Exp a
 	= XNil
 
-	-- Names ----------------------
-	-- Names of things that can be assigned to, lvalues.
+	-- Assignable names.
 	-- TODO: merge these into the same constructor.
 	| XVar		Var Type
 	| XVarCAF	Var Type
@@ -170,18 +169,15 @@ data Exp a
 	--	This references a global variable refering to a CAF object.
 	| XSlotCAF	Var Type
 
-	-- Names of things that can be used, but not assigned to.
-	-- TODO: merge these into the same constructor.
-	| XSuper	Var			-- name of a supercombinator
-	| XAtom		Var
-	| XCon		Var			-- a data constructor
 
-	-- constants
-	-- TODO: break these out into a literal type.
-	| XInt		Int			-- an integer
-	| XUnit					-- the unit data type
+	-- Literals
+	-- TODO: break these out into their own type.
+	| XNull					-- The null pointer.
+	| XInt		Int			-- An integer.
+	| XUnit					-- A unit value.
 	| XLit		LiteralFmt		-- a literal
-	| XNull
+	| XSuper	Var			-- name of a supercombinator
+	| XCon		Var			-- a data constructor
 	| XTagThunk
 
 	-- control
@@ -191,11 +187,9 @@ data Exp a
 	| XArg		(Exp a) ObjType Int	-- of some object
 	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
 
-	-- primitive operators
+	-- invoke some primitive operator.
 	| XPrim		Prim [Exp a]
 	deriving (Show, Eq)
-
-
 
 
 
