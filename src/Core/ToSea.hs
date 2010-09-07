@@ -258,7 +258,7 @@ toSeaX		xx
 	-- forcing
 	C.XPrim (C.MForce) [x]
 	 -> do	x'	<- toSeaX x
-	 	return	$ E.XForce x'
+	 	return	$ E.XPrim (E.MFun E.PFunForce) [x']
 
 
 	-- non string constants

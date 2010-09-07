@@ -270,12 +270,17 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 	PProjFieldRef	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 
 	-- Primitive functions in the RTS.
+	XPrim (MFun f) [x1]
+	 -> case f of
+		PFunForce	-> "_force (" % x1 %")"
+		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
+
 	XPrim (MFun f) [x1, x2]
 	 -> case f of
 		PFunArrayPeek t	-> "_arrayPeek (" % t % ", " % x1 % ", " % x2 % ")"
 		PFunArrayPoke t	-> "_arrayPoke (" % t % ", " % x1 % ", " % x2 % ")"
 		PFunStrCmp	-> "strcmp (" % x1 % ", " % x2 % ")"
-
+		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
 
 	-- projection
 	XTag x
@@ -317,9 +322,6 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 
 	 | otherwise
 	 -> "_unboxDirect(" % t % ", " % x % ")"
-
-	XForce x
-	 -> "_force(" % x % ")"
 
 	-- allocation
 	XAlloc i

@@ -298,11 +298,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	x'		<- transZM table x
 		transX table	$ XUnbox t x'
 
-	XForce 	x
-	 -> do	x'		<- transZM table x
-	 	transX table	$ XForce x'
-
-
 	-- allocation
 	XAlloc i
 	 ->	transX table 	$ XAlloc i

@@ -87,7 +87,8 @@ data PrimProj
 -- | Calls to primitive functions.
 --   TODO: We probably want to ditch this and rewrite to call the functions directly.
 data PrimFun
-	= PFunArrayPeek Type
+	= PFunForce
+	| PFunArrayPeek Type
 	| PFunArrayPoke Type
 	| PFunStrCmp
 	deriving (Show, Eq)

@@ -544,11 +544,12 @@ llvmVarOfExp (XUnbox ty@TCon{} (XSlot v _ i))
  = do	objptr	<- readSlot i
 	unboxAny (toLlvmType ty) objptr
 
+{-
 llvmVarOfExp (XUnbox ty@TCon{} (XForce (XSlot _ _ i)))
  = do	orig	<- readSlot i
 	forced	<- forceObj orig
 	unboxAny (toLlvmType ty) forced
-
+-}
 llvmVarOfExp (XUnbox ty@TCon{} (XVarCAF v t))
  =	unboxAny (toLlvmType ty) (pVarLift (toLlvmCafVar v t))
 

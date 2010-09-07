@@ -198,7 +198,6 @@ data Exp a
 	-- TODO: merge this into XPrim
 	| XBox		Type (Exp a)		-- type, exp
 	| XUnbox	Type (Exp a)		-- type, exp
-	| XForce	(Exp a)
 
 	-- allocation
 	-- TODO: merge this into XPrim
