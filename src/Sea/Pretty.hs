@@ -287,6 +287,15 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		PAppCurry superArity
 		 -> "_curry"	% length args % " (" % ", " %!% (sV v : ppr superArity : map ppr args) % ")"
 
+	-- Primitive allocation functions.
+	XPrim (MAlloc prim) []
+	 -> case prim of
+		PAllocThunk f superArity argCount
+	 	 -> "_allocThunk ((FunPtr) " % sV f % ", " % superArity % ", " % argCount % ")"
+	
+		PAllocData ctor ctorArity
+		 -> "_allocData (" % "_tag" % sV ctor % ", " % ctorArity % ")"
+
 	-- Primitive projections.
 	XPrim (MProj f) [(XVar ctorV _), (XVar fieldV _), x]
 	 -> case f of
@@ -306,31 +315,17 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 		PFunStrCmp	-> "strcmp (" % x1 % ", " % x2 % ")"
 		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
 
-	-- boxing
+	-- Primitive boxing functions.
 	XPrim (MBox t) [x]
-	 | t == TCon (Var.primTBool Unboxed) []
-	 -> "_boxEnum(" % x % ")"
-
-	 | t == TCon (Var.primTString Unboxed) []
-	 -> "Data_String_boxString(" % x % ")"
-
-	 | otherwise
-	 -> "_box(" % t % ", " % x % ")"
+	 | t == TCon (Var.primTBool   Unboxed) [] -> "_boxEnum(" % x % ")"
+	 | t == TCon (Var.primTString Unboxed) [] -> "Data_String_boxString(" % x % ")"
+	 | otherwise				  -> "_box(" % t % ", " % x % ")"
 
 	XPrim (MUnbox t) [x]
-	 |  t == TCon (Var.primTBool Unboxed) []
-	 -> "_unboxEnum(" % x % ")"
+	 | t == TCon (Var.primTBool  Unboxed) [] -> "_unboxEnum(" % x % ")"
+	 | otherwise				  -> "_unboxDirect(" % t % ", " % x % ")"
 
-	 | otherwise
-	 -> "_unboxDirect(" % t % ", " % x % ")"
-
-	-- allocation
-	XAllocThunk f superA argCount
-	 -> "_allocThunk ((FunPtr) " % sV f % ", " % superA % ", " % argCount % ")"
-
-	XAllocData  ctor arity
-	 -> "_allocData (" % "_tag" % sV ctor % ", " % arity % ")"
-	_ -> panic stage $ "pprStr[Exp]: no match for " % show xx
+	_ -> panic stage ("ppr[Exp]: no match for " % show xx)
 
 
 -- Type --------------------------------------------------------------------------------------------

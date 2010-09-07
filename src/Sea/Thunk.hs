@@ -161,7 +161,7 @@ expandCurry
 	-> ExM ([Stmt ()], Exp ())
 
 expandCurry v x@(XPrim (MApp (PAppCurry superArity)) (XVar f _  : args))
- = do	let allocX	= XAllocThunk f superArity (length args)
+ = do	let allocX	= XPrim (MAlloc $ PAllocThunk f superArity (length args)) []
 	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v (TPtr TObj)) TObjThunk i) (TPtr TObj) a)
 		  	$ zip args [0..]
 		

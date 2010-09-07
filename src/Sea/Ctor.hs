@@ -10,9 +10,8 @@ import Shared.VarUtil		(VarGenM, newVarN)
 import qualified Shared.Unique	as Unique
 import qualified Data.Map	as Map
 
-
------
 type	ExM	= VarGenM 
+
 
 -- | Expand the definitions of data constructors in this tree.
 expandCtorTree :: Tree () -> Tree ()
@@ -20,6 +19,7 @@ expandCtorTree tree
 	= evalState (liftM concat $ mapM expandDataP tree) 
 	$ VarId Unique.seaCtor 0
 	
+
 -- | Expand data constructors in a top level thing.
 expandDataP :: Top ()	-> ExM [Top ()]
 expandDataP p
@@ -31,29 +31,28 @@ expandDataP p
 
 	_		-> return [p]
 	
+
 -- | Expand the definition of a constructor.
 expandCtor 
 	:: CtorDef
 	-> ExM [Top ()]
 	
 expandCtor (CtorDef vCtor tCtor arity tag fields)
- = do
-	-- var of the constructed object.
+ = do	-- var of the constructed object.
 	objV		<- newVarN NameValue
 
 	-- allocate the object
 	let allocS 	= SAssign (XVar objV (TPtr TObj)) (TPtr TObj) 
-			$ XAllocData vCtor 
-			$ arity
+			$ XPrim (MAlloc (PAllocData vCtor arity)) []
 
-	-- field init
+	-- Initialise all the fields.
 	(stmtss, mArgVs)
 		<- liftM unzip $ mapM (expandField objV) [0 .. arity - 1]
 
 	let fieldSs	= concat stmtss
 	let argVs	= catMaybes mArgVs
 
-	-- return result
+	-- Return the result.
 	let retS	= SReturn $ (XVar objV (TPtr TObj)) 
 
 	let stmts	= [allocS] ++ fieldSs ++ [retS]
@@ -77,21 +76,3 @@ expandField objV ixArg
 				(XVar argV (TPtr TObj))]
 		, Just (argV, TPtr TObj) )
 
---	-- Primary fields get their values from constructor arguments.
---	| dPrimary field
-
-{-
-	-- Secondary fields get their values by calling the init function
-	| not $ dPrimary field
-	, Just vInit		<- dInit field
-	= 	return	( [SAssign 	(XArg (XVar objV (dType field)) TData ix) 
-					(dType field)
-					(XCall vInit [XUnit]) ]
-	 		, Nothing )
-
-	-- A secondary field without an initializer
-	| not $ dPrimary field
-	, Nothing	<- dInit field
-	, Just name	<- dLabel field
-	= panic stage $ "expandField: no initialization expression for non-primary field '" % name % "'"
--}

@@ -289,14 +289,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	XNull
 	 -> 	transX table 	$ XNull
 
-	-- allocation
-	XAllocThunk v airity args
-	 -> do	v'		<- transV table v
-	 	transX table	$ XAllocThunk v' airity args
-
-	XAllocData v airity
-	 -> do	v'		<- transV table v
-	 	transX table	$ XAllocData v' airity
 
 -- Alt ---------------------------------------------------------------------------------------------
 instance Monad m => TransM m a1 a2 Alt where

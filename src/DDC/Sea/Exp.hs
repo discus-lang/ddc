@@ -166,7 +166,7 @@ data Exp a
 		Type				-- the type of the var
 		Int				-- the index of the slot
 
-	-- a reference to a CAF object ptr.
+	-- | A reference to a CAF object ptr.
 	--	This references a global variable refering to a CAF object.
 	| XSlotCAF	Var Type
 
@@ -176,33 +176,28 @@ data Exp a
 	| XAtom		Var
 	| XCon		Var			-- a data constructor
 
-
-	-------------------------------
-	-- projection
-	| XArg		(Exp a) ObjType Int	-- of some object
-	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
-
-	| XField	(Exp a) Var Var		-- exp, type of exp, field name
-	| XFieldR	(Exp a) Var Var		-- exp, type of exp, field name
-
 	-- constants
+	-- TODO: break these out into a literal type.
 	| XInt		Int			-- an integer
 	| XUnit					-- the unit data type
 	| XLit		LiteralFmt		-- a literal
+	| XNull
+	| XTagThunk
 
 	-- control
 	| XLabel	Var			-- a label, for jumping to
-	| XTagThunk
-	| XNull
 
 	-- primitive operators
 	| XPrim		Prim [Exp a]
 
-	-- allocation
-	-- TODO: merge this into XPrim
-	| XAllocThunk		Var Int Int	-- alloc thunk:	function name, airity, args in this thunk.
-	| XAllocData		Var Int		-- alloc data:  ctor name, airity
+	-- projection
+	-- TODO: merge these with the primitive type above.
+	| XArg		(Exp a) ObjType Int	-- of some object
+	| XTag		(Exp a)			-- tag of data object	((Data)x) ->tag
 
+	-- TODO: aren't these already duplicated?
+	| XField	(Exp a) Var Var		-- exp, type of exp, field name
+	| XFieldR	(Exp a) Var Var		-- exp, type of exp, field name
 	deriving (Show, Eq)
 
 

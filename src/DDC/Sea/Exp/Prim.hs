@@ -4,10 +4,12 @@ module DDC.Sea.Exp.Prim
 	( Prim		(..)
 	, PrimOp	(..)
 	, PrimApp	(..)
+	, PrimAlloc	(..)
 	, PrimProj	(..)
 	, PrimFun	(..))
 where
 import DDC.Sea.Exp.Type
+import DDC.Var
 
 -- | Primitive operators implemented directly in the C language or runtime system.
 data	Prim
@@ -24,7 +26,7 @@ data	Prim
 	| MFun	PrimFun
 	
 	-- | Allocation of objects
---	| MAlloc PrimAlloc
+	| MAlloc PrimAlloc
 	
 	-- | Box some unboxed value, given the type of the unboxed version.
 	| MBox	Type
@@ -62,7 +64,6 @@ data PrimOp
 
 -- | Primitive operators concerned with function application.
 data PrimApp
-
 	-- | Tail-call a super.
 	= PAppTailCall 
 
@@ -80,21 +81,17 @@ data PrimApp
 	deriving (Show, Eq)
 
 
-{-
 -- | Allocation of objects.
 data PrimAlloc
-	-- | Allocate an object of this many bytes in size. 
-	--   This just allocates the space. The caller is responsible for initialising it.
-	= PAllocBytes Int
-	
 	-- | Allocate a fresh thunk object, 
 	--   and fill in the super pointer, super arity, and number of args in the thunk.
-	| PAllocThunk Var Int Int
+	= PAllocThunk Var Int Int
 	
-	-- | Allocate a fresh suspension, and fill in the arity.
-	| PAllocSusp
--}	
-			
+	-- | Allocate a fresh data object, 
+	--   and fill in the constructor tag and arity.
+	| PAllocData Var Int
+	deriving (Show, Eq)
+
 
 -- | Primitive projections.
 --   These may be implemented by a function call depending on the backend.
@@ -115,5 +112,5 @@ data PrimFun
 	| PFunArrayPoke Type
 	| PFunStrCmp
 	deriving (Show, Eq)
-	
-	
+
+
