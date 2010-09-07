@@ -243,40 +243,41 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	 -> let i	= length args
 	    in "_suspend"	% i % " (" % ", " %!% (sV v : map ppr args) % ")"
 
-	XPrim f [(XVar ctorV _), (XVar fieldV _), x]
+	XPrim (MProj f) [(XVar ctorV _), (XVar fieldV _), x]
 	 -> case f of
-	 	FProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
-	 	FProjFieldR	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
-		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
+	 	PProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
+	 	PProjFieldRef	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
 
-	XPrim f [x1]
-	 |  f == FNeg
+	XPrim (MOp f) [x1]
+	 |  f == OpNeg
 	 -> "-(" % x1 % ")"
 
-	XPrim f [x1, x2]
+	XPrim (MOp f) [x1, x2]
 	 -> case f of
-	 	FAdd		-> "(" % x1 % " + "	% x2 % ")"
-		FSub		-> "(" % x1 % " - "	% x2 % ")"
-		FMul		-> "(" % x1 % " * "	% x2 % ")"
-		FDiv		-> "(" % x1 % " / "	% x2 % ")"
-		FMod		-> "(" % x1 % " % "	% x2 % ")"
-	 	FEq		-> "(" % x1 % " == "	% x2 % ")"
-		FNEq		-> "(" % x1 % " != "	% x2 % ")"
+	 	OpAdd		-> "(" % x1 % " + "	% x2 % ")"
+		OpSub		-> "(" % x1 % " - "	% x2 % ")"
+		OpMul		-> "(" % x1 % " * "	% x2 % ")"
+		OpDiv		-> "(" % x1 % " / "	% x2 % ")"
+		OpMod		-> "(" % x1 % " % "	% x2 % ")"
+	 	OpEq		-> "(" % x1 % " == "	% x2 % ")"
+		OpNeq		-> "(" % x1 % " != "	% x2 % ")"
 
-	 	FGt		-> "(" % x1 % " > "	% x2 % ")"
-	 	FLt		-> "(" % x1 % " < "	% x2 % ")"
-	 	FGe		-> "(" % x1 % " >= "	% x2 % ")"
-	 	FLe		-> "(" % x1 % " <= "	% x2 % ")"
+	 	OpGt		-> "(" % x1 % " > "	% x2 % ")"
+	 	OpLt		-> "(" % x1 % " < "	% x2 % ")"
+	 	OpGe		-> "(" % x1 % " >= "	% x2 % ")"
+	 	OpLe		-> "(" % x1 % " <= "	% x2 % ")"
 
-		FAnd		-> "(" % x1 % " && "	% x2 % ")"
-		FOr		-> "(" % x1 % " || "	% x2 % ")"
-
-		FArrayPeek t	-> "_arrayPeek (" % t % ", " % x1 % ", " % x2 % ")"
-		FArrayPoke t	-> "_arrayPoke (" % t % ", " % x1 % ", " % x2 % ")"
-
-		FStrCmp		-> "strcmp (" % x1 % ", " % x2 % ")"
-
+		OpAnd		-> "(" % x1 % " && "	% x2 % ")"
+		OpOr		-> "(" % x1 % " || "	% x2 % ")"
 		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
+
+
+	XPrim (MFun f) [x1, x2]
+	 -> case f of
+		PFunArrayPeek t	-> "_arrayPeek (" % t % ", " % x1 % ", " % x2 % ")"
+		PFunArrayPoke t	-> "_arrayPoke (" % t % ", " % x1 % ", " % x2 % ")"
+		PFunStrCmp	-> "strcmp (" % x1 % ", " % x2 % ")"
+
 
 	-- projection
 	XTag x

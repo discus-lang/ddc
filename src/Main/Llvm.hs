@@ -490,7 +490,7 @@ primMapFunc t build sofar exp
 
 
 llvmOfPtrManip :: LlvmType -> Prim -> [Exp a] -> LlvmM LlvmVar
-llvmOfPtrManip t FAdd args
+llvmOfPtrManip t (MOp OpAdd) args
  = case args of
 	[l@(XVar v t), XInt i]
 	 ->	do	addComment "llvmOfPtrManip"
@@ -559,12 +559,12 @@ llvmVarOfExp x
 llvmOpOfPrim :: Prim -> (LlvmVar -> LlvmVar -> LlvmExpression)
 llvmOpOfPrim p
  = case p of
-	FAdd	-> LlvmOp LM_MO_Add
-	FSub	-> LlvmOp LM_MO_Sub
-	FMul	-> LlvmOp LM_MO_Mul
+	MOp OpAdd	-> LlvmOp LM_MO_Add
+	MOp OpSub	-> LlvmOp LM_MO_Sub
+	MOp OpMul	-> LlvmOp LM_MO_Mul
 
-	FEq	-> Compare LM_CMP_Eq
-	_	-> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
+	MOp OpEq	-> Compare LM_CMP_Eq
+	_		-> panic stage $ "llvmOpOfPrim : Unhandled op : " ++ show p
 
 
 -- | Convert a Sea type to an LlvmType.

@@ -241,7 +241,7 @@ toSeaX		xx
 	C.XPrim (C.MOp op) xs
 	 -> do	let args		= stripValues xs
 		args'	<- mapM toSeaX args
-		return	$ E.XPrim (toSeaOp op) args'
+		return	$ E.XPrim (E.MOp $ toSeaPrimOp op) args'
 
 	-- suspend
 {-	C.XPrim (C.MSuspend fn)	args 
@@ -629,26 +629,31 @@ assignLastA xT aa
 
 
 
--- | Convert a Core operator to a Sea primitive
-toSeaOp :: C.PrimOp -> E.Prim
-toSeaOp op
+-- | Convert a core operator to a sea operator.
+--   TODO: This is just a 1:1 conversion, maybe we should use the same type,
+--         or represent all primops in the core language as just function calls.
+toSeaPrimOp :: C.PrimOp -> E.PrimOp
+toSeaPrimOp op
  = case op of
 	-- arithmetic
-	C.OpNeg -> E.FNeg
- 	C.OpAdd	-> E.FAdd
-	C.OpSub	-> E.FSub
-	C.OpMul	-> E.FMul
-	C.OpDiv	-> E.FDiv
-	C.OpMod	-> E.FMod
+	C.OpNeg -> E.OpNeg
+ 	C.OpAdd	-> E.OpAdd
+	C.OpSub	-> E.OpSub
+	C.OpMul	-> E.OpMul
+	C.OpDiv	-> E.OpDiv
+	C.OpMod	-> E.OpMod
 
 	-- comparison
-	C.OpEq	-> E.FEq
-	C.OpNeq	-> E.FNEq
-	C.OpGt	-> E.FGt
-	C.OpGe	-> E.FGe
-	C.OpLt	-> E.FLt
-	C.OpLe	-> E.FLe
+	C.OpEq	-> E.OpEq
+	C.OpNeq	-> E.OpNeq
+	C.OpGt	-> E.OpGt
+	C.OpGe	-> E.OpGe
+	C.OpLt	-> E.OpLt
+	C.OpLe	-> E.OpLe
 	
 	-- boolean
-	C.OpAnd	-> E.FAnd
-	C.OpOr	-> E.FOr
+	C.OpAnd	-> E.OpAnd
+	C.OpOr	-> E.OpOr
+
+
+

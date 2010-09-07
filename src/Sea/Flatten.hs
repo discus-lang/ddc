@@ -114,12 +114,12 @@ flattenG
 		let stmts
 			| LiteralFmt (LString _) Unboxed <- litFmt
 			= ss
-			++ [ SIf (XPrim FNEq [XPrim FStrCmp [x1, x2], XInt 0])
+			++ [ SIf (XPrim (MOp OpNeq) [XPrim (MFun PFunStrCmp) [x1, x2], XInt 0])
 				 ssNext]
 
 			| otherwise
 			= ss
-			++ [ SIf (XPrim FNEq [x1, x2])
+			++ [ SIf (XPrim (MOp OpNeq) [x1, x2])
 			 	 ssNext]
 
 		return stmts

@@ -5,16 +5,15 @@
 --		Most of these types have too many constructors that do basically
 --		the same thing. We should try and reduce the size of these types.
 module DDC.Sea.Exp
-	( Tree
+	( module DDC.Sea.Exp.Prim
+	, module DDC.Sea.Exp.Type
+	, Tree
 	, Top		(..)
 	, CtorDef	(..)
 	, Stmt		(..)
 	, Alt		(..)
 	, Guard		(..)
 	, Exp		(..)
-	, Type		(..)
-	, ObjType	(..)
-	, Prim		(..)
 	, Var)
 where
 import DDC.Sea.Exp.Prim
