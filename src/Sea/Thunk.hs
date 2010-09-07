@@ -50,44 +50,41 @@ expandP	xx
 	 
 	_ -> return xx
 	
-	
+
 -- | Expand calls in the body of some super
 expandSS ss
  	= liftM concat
 	$ mapM expandS ss
 	
 expandS	s
-	-- tail call 
-	-- BRUTAL HACK:
-	-- For functions which never return, such as.
+	-- tail calls.
+	--   BRUTAL HACK:
+	--   For functions which never return, such as.
 	--	loop f = do { f (); y = loop f; };
 	--		
-	-- the variable 'y' never gets assigned a real value. 
+	--   the variable 'y' never gets assigned a real value. 
 	--
-	-- However, the function exit code needs a value to (never) return,
-	--	so we'll give it XNull.
-	--	
-	| SAssign (XVar v _) t x@XTailCall{}	<- s
+	--   However, code to return from a function needs a value to
+	--   (never) return so we'll give it an XNull.
+	--
+	| SAssign (XVar v _) t x@(XPrim (MApp PAppTailCall{}) _) <- s
 	= do	callSS	<- expandTailCall x
 
 		return	$ [ SAssign (XVar v t) t XNull ]
 			++ callSS
 
 	-- tail calls
-	| SStmt x@XTailCall{}			<- s
+	| SStmt x@(XPrim (MApp PAppTailCall{}) _) <- s
 	= do	callSS	<- expandTailCall x
 		return	callSS
 	
-
 	-- curry
-	| SAssign (XVar v _) t x@XCurry{}	<- s
-	= do
-		(assSS, x')	<- expandCurry v x
-
+	| SAssign (XVar v _) t x@(XPrim (MApp PAppCurry{}) _) <- s
+	= do	(assSS, x')	<- expandCurry v x
 		return	$  [ SAssign (XVar v t) t x' ]
 			++ assSS
 
-	| SStmt x@XCurry{}			<- s
+	| SStmt x@(XPrim (MApp PAppCurry{}) _) <- s
 	=	-- We have a curried function as a statement. Since the curried
 		-- function isn't assigned to a variable it can't be used.
 		-- Therefore, we can just drop it.
@@ -95,25 +92,22 @@ expandS	s
 
 
 	-- apply / callApp
-	| SAssign v t x		<- s
-	,    (x =@= XCallApp{})
-	  || (x =@= XApply{})
+	| SAssign v t x@(XPrim (MApp prim) _)	<- s
+	,    (prim =@= PAppCallApp{})
+	  || (prim =@= PAppApply{})
 	= do
 		(callSS, x')	<- expandAppX x
 		return	$  callSS
 			++ [ SAssign v t x' ]
 			   
-
 	-- applications
-	| SStmt x		<- s
-	,    (x =@= XCallApp{})
-	  || (x =@= XApply{})
+	| SStmt x@(XPrim (MApp prim) _) <- s
+	,    (prim =@= PAppCallApp{})
+	  || (prim =@= PAppApply{})
 	= do
 		(callSS, x')	<- expandAppX x
-
 		return	$  callSS 
 			++ [ SStmt x' ]
-
 
 	-- suspend
 	| SAssign (XVar v _) t x@(XSuspend{})	<- s
@@ -127,14 +121,14 @@ expandS	s
 
 expandAppX x
  = case x of
- 	XCallApp{}	-> expandCallApp x
-	XApply{}	-> expandApply x
+ 	XPrim (MApp PAppCallApp{}) _	-> expandCallApp x
+	XPrim (MApp PAppApply{}) _	-> expandApply x
 
 
 -- | Expand out XTailCall primitives
 --	Intra-function tail calls are implemented by jumping back to the start of the function.
 expandTailCall
-		-- possible call targets
+	-- possible call targets
 	:: (?tailCallTargets 
 		:: [ (Var			-- function name
 		     , (Var			-- label to jump to
@@ -144,8 +138,7 @@ expandTailCall
 	=> Exp ()				-- the tail call primitive
 	-> ExM [Stmt ()]			-- statements to do the call
 	
-expandTailCall
-	x@(XTailCall v args)
+expandTailCall x@(XPrim (MApp PAppTailCall) (XVar v _ : args))
  = do
 	-- See how we're supposed to call this function.
 	let Just (label, params)	
@@ -167,68 +160,61 @@ expandTailCall
 		++ [SGoto label]
 		++ [SBlank]
 	
------
+
+-- | Expand code to build a thunk.
 expandCurry 
-	:: Var 
-	-> Exp ()
+	:: Var		-- ^ var to bind the thunk to.
+	-> Exp () 	-- ^ thunk expresion.
 	-> ExM ([Stmt ()], Exp ())
 
-expandCurry 
-	v 
-	x@(XCurry f superA args)
- = do
-	let allocX	= XAllocThunk f superA (length args)
+expandCurry v x@(XPrim (MApp (PAppCurry superArity)) (XVar f _  : args))
+ = do	let allocX	= XAllocThunk f superArity (length args)
 	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v (TPtr TObj)) TObjThunk i) (TPtr TObj) a)
 		  	$ zip args [0..]
 		
-  	return	( assignSS
-		, allocX)
+  	return	(assignSS, allocX)
 
------
+
+-- | Expand code to build a suspension.
 expandSusp 
-	:: Var 
-	-> Exp ()
+	:: Var 		-- ^ var to bind the suspension to.
+	-> Exp () 	-- ^ suspension expression
 	-> ExM ([Stmt ()], Exp ())
 
-expandSusp 
-	v 
-	x@(XSuspend f args)
- = do
- 	let allocX	= XAllocSusp f (length args)
-	
+expandSusp v x@(XSuspend f args)
+ = do 	let allocX	= XAllocSusp f (length args)
 	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v (TPtr TObj)) TObjSusp i) (TPtr TObj) a)
 			$ zip args [0..]
 			
-	return	( assignSS
-		, allocX)
+	return	(assignSS, allocX)
 
------
+
+-- | Expand code to do a super call then an application.
 expandCallApp 
 	:: Exp ()
 	-> ExM ([Stmt ()], Exp ())
 
-expandCallApp  
-	x@(XCallApp f superA args)
- = do
- 	tmp	<- newVar Nothing
-	let (callAs, appAs)
+expandCallApp x@(XPrim (MApp (PAppCallApp superA)) (xFun@(XVar f _) : args))
+ = do 	tmp	<- newVar Nothing
+	let (callArgs, appArgs) 
 			= splitAt superA args
 
- 	let callSS	= [ SAssign (XVar tmp (TPtr TObj)) (TPtr TObj) (XCall  f   callAs) ]
+ 	let callSS	= [ SAssign 	(XVar tmp (TPtr TObj)) 
+					(TPtr TObj) 
+					(XPrim (MApp PAppCall) (xFun : callArgs)) ]
 
-	(appSS, lastX)	<- expandApply (XApply (XVar tmp (TPtr TObj)) appAs)
+	(appSS, lastX)	<- expandApply (XPrim (MApp PAppApply) (XVar tmp (TPtr TObj) : appArgs))
 
 	return	( callSS ++ appSS 
 		, lastX)
 	
 
------
+-- | Expand code to do a general application.
 expandApply 
 	:: Exp ()
 	-> ExM ([Stmt ()], Exp ())
 
-expandApply
-	x@(XApply (XVar v _) xx)
+expandApply x@(XPrim (MApp PAppApply) (XVar v _ : xx))
  = do
 	(vApp, ss)	<- expandApplyN 4 v xx []
 
@@ -267,7 +253,9 @@ expandApplyN
  		
 		let ssAcc'
 			=  ssAcc
-			++ [SAssign (XVar v (TPtr TObj)) (TPtr TObj) (XApply (XVar thunkV (TPtr TObj)) argsHere)]
+			++ [SAssign 	(XVar v (TPtr TObj)) 
+					(TPtr TObj) 
+					(XPrim (MApp PAppApply) (XVar thunkV (TPtr TObj) : argsHere))]
 		
 		expandApplyN maxApp v argsMore ssAcc'
 

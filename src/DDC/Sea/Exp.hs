@@ -1,9 +1,9 @@
 {-# OPTIONS -fwarn-incomplete-patterns -fwarn-unused-matches -fwarn-name-shadowing #-}
 
 -- | Abstract C expressions.
---	TODO: 	This is a mess.
---		Most of these types have too many constructors that do basically
---		the same thing. We should try and reduce the size of these types.
+--   TODO: This is a mess.
+--	   Most of these types have too many constructors that do basically
+--	   the same thing. We should try and reduce the size of these types.
 module DDC.Sea.Exp
 	( module DDC.Sea.Exp.Prim
 	, module DDC.Sea.Exp.Type
@@ -147,13 +147,13 @@ data Guard a
 
 
 -- | Expressions
---	TODO: There are way to many constructors in this type.
---	It'd be better to merge groups of similar ones, most of the application forms
---	could be merged, while using an auxillary data type to record what sort of application it is.
+--   TODO: There are still far too many constructors in this type.
+--	   We want to split most of these into different sorts of primop.
 data Exp a
 	= XNil
 
 	-- | Var-ish things
+	--   TODO: merge all of XVar, XVarCAF, XSlot and XSlotCAF into the same constructor.
 	| XVar		Var Type
 	| XVarCAF	Var Type
 
@@ -169,16 +169,6 @@ data Exp a
 	--	This references a global variable refering to a CAF object.
 	| XSlotCAF	Var Type
 
-
-	-- application
-	| XTailCall	Var [Exp a]
-	| XCall		Var [Exp a]
-	| XCallApp	Var Int [Exp a]
-	| XApply	(Exp a) [Exp a]
-	| XCurry	Var Int [Exp a]		-- super name, super airity, args
-
-	| XSuspend	Var  [Exp a]		-- thunk name, args
-	| XPrim		Prim [Exp a]
 
 	-- projection
 	| XArg		(Exp a) ObjType Int	-- of some object
@@ -200,12 +190,21 @@ data Exp a
 	| XTagThunk
 	| XNull
 
-	-- boxing
+
+	-- primitive operators
+	| XPrim		Prim [Exp a]
+
+	-- suspend. TODO: merge this into XPrim.
+	| XSuspend	Var  [Exp a]		-- thunk name, args
+
+	-- boxing. 
+	-- TODO: merge this into XPrim
 	| XBox		Type (Exp a)		-- type, exp
 	| XUnbox	Type (Exp a)		-- type, exp
 	| XForce	(Exp a)
 
 	-- allocation
+	-- TODO: merge this into XPrim
 	| XAlloc		Int		-- heap allocation: size
 	| XAllocThunk		Var Int Int	-- alloc thunk:	function name, airity, args in this thunk.
 	| XAllocSusp		Var Int
@@ -214,5 +213,8 @@ data Exp a
 	| XAllocDataAnchored	Var Int
 
 	deriving (Show, Eq)
+
+
+
 
 

@@ -1,17 +1,20 @@
 
--- | Adds code to initialise each module, as well as the main program.
---	Initialising a module evaluates the values of each CAF.
---	This is done strictly atm, but we could suspend the evaluation of
---	CAFs if we knew they were pure.
-module Sea.Init
+-- | Add code to initialise each module, and call the main function.
+--   Initialising a module evaluates the values of the top-level CAFs.
+--
+--   TODO: As we know that CAFs are pure, we could suspended their evaluation
+--         so there is no pause at startup time. This is especially important
+--         if evaluation of one of the CAFs does not terminate.
+--       
+module DDC.Sea.Init
 	( initTree
 	, mainTree )
 where
 import Sea.Pretty
 import Sea.Util
-import Util
 import DDC.Sea.Exp
 import DDC.Var
+import Util
 
 
 -- | Add code that initialises this module
@@ -20,26 +23,28 @@ initTree
 	-> Tree () 		-- ^ code for the module
 	-> Tree ()
 
-initTree moduleName cTree
- = let 	initCafSS	= catMap makeInitCaf [ v | PCafSlot v t <- cTree, not (typeIsUnboxed t) ]
-	initV		= makeInitVar moduleName
+initTree modName cTree
+ = let 	initCafSS	= catMap makeInitCaf [ (v, t) | PCafSlot v t <- cTree, not (typeIsUnboxed t) ]
+	initV		= makeInitVar modName
 	super		= [ PProto initV [] TVoid
 			  , PSuper initV [] TVoid initCafSS ]
    in	super ++ cTree
 
-makeInitCaf v
+
+-- | Make code that initialises a CAF.
+makeInitCaf :: (Var, Type) -> [Stmt ()]
+makeInitCaf (v, t)
  = 	[ SAssign (xVarWithSeaName ("_ddcCAF_" ++  name) ppObj) ppObj slotPtr
 	, SAssign slotPtr pObj (XPrim (MOp OpAdd) [slotPtr, XInt 1])
 	, SAssign (XVarCAF v pObj) pObj (XInt 0)
-	, SAssign (XVarCAF v pObj) pObj (XCall v []) ]
+	, SAssign (XVarCAF v pObj) pObj (XPrim (MApp $ PAppCall) [XVar v t]) ]
 	where	name	= seaVar False v
-		slotPtr =  xVarWithSeaName "_ddcSlotPtr" ppObj
+		slotPtr = xVarWithSeaName "_ddcSlotPtr" ppObj
                 pObj	= TPtr TObj
                 ppObj	= TPtr pObj
 
 makeInitVar (ModuleId vs)
 	= varWithName ("ddcInitModule_" ++ (catInt "_" vs))
-
 
 xVarWithSeaName name typ
  =	let v = Var
@@ -49,6 +54,7 @@ xVarWithSeaName name typ
 		, varId		= VarIdNil
 		, varInfo	= [ISeaName name, ISeaGlobal True] }
 	in XVar v typ
+
 
 -- | Make code that initialises each module and calls the main function.
 mainTree

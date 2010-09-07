@@ -44,7 +44,7 @@ import Sea.Thunk			(thunkTree)
 import Sea.Force			(forceTree)
 import Sea.Slot				(slotTree)
 import Sea.Flatten			(flattenTree)
-import Sea.Init				(initTree, mainTree)
+import DDC.Sea.Init			(initTree, mainTree)
 
 import Util
 

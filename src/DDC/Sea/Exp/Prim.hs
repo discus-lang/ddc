@@ -3,6 +3,7 @@
 module DDC.Sea.Exp.Prim
 	( Prim		(..)
 	, PrimOp	(..)
+	, PrimApp	(..)
 	, PrimProj	(..)
 	, PrimFun	(..))
 where
@@ -18,6 +19,9 @@ data	Prim
 	
 	-- | Primitive field projections.
 	| MProj	PrimProj
+
+	-- | Primitive operators concerned with function application.
+	| MApp  PrimApp
 
 	-- | Call some other primitive function in the runtime system.
 	| MFun	PrimFun
@@ -48,6 +52,26 @@ data PrimOp
 	| OpOr
 	deriving (Show, Eq)
 	
+
+-- | Primitive operators concerned with function application.
+data PrimApp
+
+	-- | Tail-call a super.
+	= PAppTailCall 
+
+	-- | Call a super directly.
+	| PAppCall
+
+	-- | Call a super to yield a thunk then apply it to some more args.
+	| PAppCallApp Int	-- super arity. TODO: determine this from the type of the super.
+
+	-- | Perform a general function application.
+	| PAppApply
+	
+	-- | Build a thunk containing a pointer to some super.
+	| PAppCurry Int		-- super arity. TODO: determine this from the type of the super.
+	deriving (Show, Eq)
+
 
 -- | Primitive projections.
 --   These may be implemented by a function call depending on the backend.

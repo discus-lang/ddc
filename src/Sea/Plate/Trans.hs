@@ -235,32 +235,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	v'		<- transV table v
 	 	transX table	$ XSlotCAF v' t
 
-	-- application
-	XTailCall v xs
-	 -> do	v'		<- transV table v
-	 	xs'		<- mapM (transZM table) xs
-		transX table	$ XTailCall v' xs'
-
-	XCall v xs
-	 -> do 	v'		<- transV table v
-	 	xs'		<- mapM (transZM table) xs
-		transX table	$ XCall v' xs'
-
-	XCallApp v i xs
-	 -> do	v'		<- transV table v
-	 	xs'		<- mapM (transZM table) xs
-		transX table	$ XCallApp v' i xs'
-
-	XApply x xs
-	 -> do	x'		<- transZM table x
-	 	xs'		<- mapM (transZM table) xs
-		transX table	$ XApply x' xs'
-
-	XCurry v i xs
-	 -> do	v'		<- transV table v
-	 	xs'		<- mapM (transZM table) xs
-		transX table	$ XCurry v' i xs'
-
 	XSuspend v xs
 	 -> do	v'		<- transV table v
 	 	xs'		<- mapM (transZM table) xs

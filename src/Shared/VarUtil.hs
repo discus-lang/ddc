@@ -103,13 +103,14 @@ varHasSymbols var
 -- | Get any sea name on the binding occurrence of this var.
 takeSeaNameOfBindingVar :: Var -> Maybe String
 takeSeaNameOfBindingVar var
- = let	vBinding : _	= [ v    | IBoundBy v 		<- varInfo var ]
-	seaNames	= [ name | ISeaName name	<- varInfo vBinding ]
-   in	case seaNames of
-		n : _	-> Just n
-		_	-> Nothing
-		
-
+	| vBinding : _	<- [ v    | IBoundBy v 		<- varInfo var ]
+	, seaNames	<- [ name | ISeaName name	<- varInfo vBinding ]
+	, n : _		<- seaNames
+	= Just n
+	
+	| otherwise
+	= Nothing
+	
 -- | Check if this char is a symbol
 --	everything except alpha, numeric, and '_' is a symbol.
 isSymbol :: Char -> Bool

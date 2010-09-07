@@ -209,49 +209,36 @@ toSeaX		xx
 	 -> do 	slurpWitnessKind k
 	 	toSeaX x
 
+	-- arithmetic operators
+	C.XPrim (C.MOp op) xs
+	 -> do	args	<- mapM toSeaX $ stripValues xs
+		return	$ E.XPrim (E.MOp $ toSeaPrimOp op) args
+
 	-- function calls
 	C.XPrim (C.MCall C.PrimCallTail) xs
-	 -> do	let (C.XVar v _) : args	= stripValues xs
-		args'	<- mapM toSeaX args
-		return	$ E.XTailCall v args'
+	 -> do	args	<- mapM toSeaX $ stripValues xs
+		return	$ E.XPrim (E.MApp E.PAppTailCall) args
 
 	C.XPrim (C.MCall C.PrimCallSuper) xs
-	 -> do	let (C.XVar v _) : args	= stripValues xs
-		args'	<- mapM toSeaX args
-	    	return	$ E.XCall v args'
+	 -> do	args	<- mapM toSeaX $ stripValues xs
+	    	return	$ E.XPrim (E.MApp E.PAppCall) args
 
 	C.XPrim (C.MCall (C.PrimCallSuperApply superA)) xs
-	 -> do	let (C.XVar v _) : args	= stripValues xs
-		args'	<- mapM toSeaX args
-		return	$ E.XCallApp v superA args'
+	 -> do	args	<- mapM toSeaX $ stripValues xs
+		return	$ E.XPrim (E.MApp $ E.PAppCallApp superA) args
 
 	C.XPrim (C.MCall C.PrimCallApply) xs
-	 -> do	let (C.XVar v t) : args	= stripValues xs
-		args'	<- mapM toSeaX args
-	    	return	$ E.XApply (E.XVar v (toSeaT t)) args'
+	 -> do	args	<- mapM toSeaX $ stripValues xs
+	    	return	$ E.XPrim (E.MApp $ E.PAppApply) args
 	   
 	C.XPrim (C.MCall (C.PrimCallCurry superA)) xs
-	 -> do	let (C.XVar v _) : args	= stripValues xs
-		if any isUnboxed args
+	 -> do	let xsValues@(C.XVar v _ : xsValues') = stripValues xs
+		if  any isUnboxed xsValues'
                  then panic stage $ "Partial application of function to unboxed args at " % prettyPos v
                  else
-		  do	args'	<- mapM toSeaX args
-			return	$ E.XCurry v superA args'
+		  do	args	<- mapM toSeaX xsValues
+			return	$ E.XPrim (E.MApp $ E.PAppCurry superA) args
 
-	C.XPrim (C.MOp op) xs
-	 -> do	let args		= stripValues xs
-		args'	<- mapM toSeaX args
-		return	$ E.XPrim (E.MOp $ toSeaPrimOp op) args'
-
-	-- suspend
-{-	C.XPrim (C.MSuspend fn)	args 
-	 -> do	let args'	= map (\ (v, t) -> E.XVar v $ toSeaT t)
-		 		$ filter (\ (v, t) -> varNameSpace v == NameValue) 
-				$ map (\(C.XVar v t) -> (v, t))
-		 		$ args
-
-		return	$ E.XSuspend fn args'
--}
 	-- boxing
 	C.XPrim C.MBox [_, x]
 	 -> do	let t	= C.checkedTypeOfOpenExp (stage ++ "toSeaX") x

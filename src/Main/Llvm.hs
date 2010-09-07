@@ -1,4 +1,5 @@
-{-# OPTIONS -fwarn-unused-imports -fwarn-incomplete-patterns -fno-warn-type-defaults #-}
+-- {-# OPTIONS -fwarn-unused-imports -fwarn-incomplete-patterns -fno-warn-type-defaults #-}
+{-# OPTIONS -fno-warn-unused-binds -fno-warn-type-defaults #-}
 
 -- | Wrappers for compiler stages dealing with LLVM code.
 module Main.Llvm
@@ -337,6 +338,7 @@ llvmOfAssign ((XSlot v1 t1 i)) t@(TPtr TObj) (XBox t2 exp)
  = do	boxed		<- boxExp t2 exp
 	writeSlot	boxed i
 
+{-
 llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XApply (XSlot v2 t2 i2) args)
  | t1 == t && t2 == t
  = do	fptr		<- readSlot i2
@@ -352,7 +354,7 @@ llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) x@(XCall v2 args)
 	result		<- newUniqueNamedReg "result" pObj
 	addBlock	[ Assignment result (Call TailCall (funcVarOfDecl func) params []) ]
 	writeSlot	result i1
-
+-}
 
 {-
 llvmOfAssign ((XSlot v1 t1 i1)) t@(TPtr TObj) (XAllocThunk var airity args)
@@ -387,6 +389,7 @@ llvmOfAssign (XVarCAF v1 t1) t@TPtr{} (XInt 0)
 	addBlock	[ Assignment dst (loadAddress (pVarLift (toLlvmCafVar v1 t1)))
 			, Store (LMLitVar (LMNullLit (toLlvmType t))) dst ]
 
+{-
 llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
  = do	addComment	$ "_ddcCAF_" ++ seaVar False v1 ++ " = " ++ seaVar False v2 ++ " ()"
 	dst1		<- newUniqueReg pObj
@@ -396,7 +399,7 @@ llvmOfAssign (XVarCAF v1 t1) t@TPtr{} x@(XCall v2 args)
 			, Assignment dst2 (Call TailCall (funcVarOfDecl (toLlvmFuncDecl Internal v2 t args)) params [])
 			, Store dst2 (pVarLift dst1)
 			]
-
+-}
 llvmOfAssign a b c
  = panic stage $ "Unhandled : llvmOfAssign \n"
 	++ take 150 (show a) ++ "\n"

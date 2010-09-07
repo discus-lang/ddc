@@ -7,6 +7,7 @@ where
 import Sea.Util
 import Util
 import Data.Function
+import DDC.Sea.Compounds
 import DDC.Sea.Exp
 import DDC.Main.Pretty
 import DDC.Main.Error
@@ -219,59 +220,60 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XSlot    v _ i		-> "_S(" % i % ")"
 	XSlotCAF v _		-> "_CAF(" % sV v % ")"
 
-	-- application
-	XTailCall v args
-	 -> "@XTailCall " % sV v % " (" % ", " %!% args % ")"
-
-	XCall v args
-	 -> sV v % " (" % ", " %!% args % ")"
-
-	XCallApp v superAirity args
-	 -> let i 	= length args
-	    in  "_callApp"	% i % " (" % ", " %!% (sV v : ppr superAirity : map ppr args) % ")"
-
-	XApply x args
-	 -> let i	= length args
-	    in  "_apply"	% i % " (" % x % ", " % ", " %!% args % ")"
-
-
-	XCurry v superAirity args
-	 -> let i	= length args
-	    in "_curry"		% i % " (" % ", " %!% (sV v : ppr superAirity : map ppr args) % ")"
-
 	XSuspend v args
 	 -> let i	= length args
 	    in "_suspend"	% i % " (" % ", " %!% (sV v : map ppr args) % ")"
 
-	XPrim (MProj f) [(XVar ctorV _), (XVar fieldV _), x]
-	 -> case f of
-	 	PProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
-	 	PProjFieldRef	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
-
+	-- Primitive arithmetic operators.
 	XPrim (MOp f) [x1]
 	 |  f == OpNeg
 	 -> "-(" % x1 % ")"
 
 	XPrim (MOp f) [x1, x2]
 	 -> case f of
-	 	OpAdd		-> "(" % x1 % " + "	% x2 % ")"
-		OpSub		-> "(" % x1 % " - "	% x2 % ")"
-		OpMul		-> "(" % x1 % " * "	% x2 % ")"
-		OpDiv		-> "(" % x1 % " / "	% x2 % ")"
-		OpMod		-> "(" % x1 % " % "	% x2 % ")"
-	 	OpEq		-> "(" % x1 % " == "	% x2 % ")"
-		OpNeq		-> "(" % x1 % " != "	% x2 % ")"
+	 	OpAdd	-> "(" % x1 % " + "	% x2 % ")"
+		OpSub	-> "(" % x1 % " - "	% x2 % ")"
+		OpMul	-> "(" % x1 % " * "	% x2 % ")"
+		OpDiv	-> "(" % x1 % " / "	% x2 % ")"
+		OpMod	-> "(" % x1 % " % "	% x2 % ")"
+	 	OpEq	-> "(" % x1 % " == "	% x2 % ")"
+		OpNeq	-> "(" % x1 % " != "	% x2 % ")"
 
-	 	OpGt		-> "(" % x1 % " > "	% x2 % ")"
-	 	OpLt		-> "(" % x1 % " < "	% x2 % ")"
-	 	OpGe		-> "(" % x1 % " >= "	% x2 % ")"
-	 	OpLe		-> "(" % x1 % " <= "	% x2 % ")"
+	 	OpGt	-> "(" % x1 % " > "	% x2 % ")"
+	 	OpLt	-> "(" % x1 % " < "	% x2 % ")"
+	 	OpGe	-> "(" % x1 % " >= "	% x2 % ")"
+	 	OpLe	-> "(" % x1 % " <= "	% x2 % ")"
 
-		OpAnd		-> "(" % x1 % " && "	% x2 % ")"
-		OpOr		-> "(" % x1 % " || "	% x2 % ")"
-		_		-> panic stage ("ppr[Exp]: no match for " % show xx)
+		OpAnd	-> "(" % x1 % " && "	% x2 % ")"
+		OpOr	-> "(" % x1 % " || "	% x2 % ")"
+		_	-> panic stage ("ppr[Exp]: no match for " % show xx)
 
+	-- Primitive function application operators.
+	XPrim (MApp f) (x : args)
+	 | Just v	<- takeXVar x
+	 -> case f of
+		PAppTailCall	
+		 -> "@XTailCall " % sV v % " (" % ", " %!% args % ")"
 
+		PAppCall
+		 -> sV v % " (" % ", " %!% args % ")"
+
+		PAppCallApp superArity
+		 -> "_callApp"	% length args % " (" % ", " %!% (sV v : ppr superArity : map ppr args) % ")"
+
+		PAppApply
+		 -> "_apply"	% length args % " (" % x % ", " % ", " %!% args % ")"
+
+		PAppCurry superArity
+		 -> "_curry"	% length args % " (" % ", " %!% (sV v : ppr superArity : map ppr args) % ")"
+
+	-- Primitive projections.
+	XPrim (MProj f) [(XVar ctorV _), (XVar fieldV _), x]
+	 -> case f of
+	 	PProjField	->  "_FIELD(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
+	 	PProjFieldRef	-> "_FIELDR(" % x % ", " % "_S" % sV ctorV % ", " % fieldV % ")"
+
+	-- Primitive functions in the RTS.
 	XPrim (MFun f) [x1, x2]
 	 -> case f of
 		PFunArrayPeek t	-> "_arrayPeek (" % t % ", " % x1 % ", " % x2 % ")"
