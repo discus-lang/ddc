@@ -235,11 +235,6 @@ instance Monad m => TransM m a1 a2 Exp where
 	 -> do	v'		<- transV table v
 	 	transX table	$ XSlotCAF v' t
 
-	XSuspend v xs
-	 -> do	v'		<- transV table v
-	 	xs'		<- mapM (transZM table) xs
-		transX table	$ XSuspend v' xs'
-
 	XPrim v xs
 	 -> do	xs'		<- mapM (transZM table) xs
 	 	transX table	$ XPrim v xs'

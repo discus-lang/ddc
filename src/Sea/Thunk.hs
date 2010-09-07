@@ -109,13 +109,6 @@ expandS	s
 		return	$  callSS 
 			++ [ SStmt x' ]
 
-	-- suspend
-	| SAssign (XVar v _) t x@(XSuspend{})	<- s
-	= do
-		(assSS, x')	<- expandSusp v x
-		let s'		= SAssign (XVar v t) t x'
-		return		$ s' : assSS
-		
 	| otherwise
 	= do	return [s]
 
@@ -173,20 +166,6 @@ expandCurry v x@(XPrim (MApp (PAppCurry superArity)) (XVar f _  : args))
 		  	$ zip args [0..]
 		
   	return	(assignSS, allocX)
-
-
--- | Expand code to build a suspension.
-expandSusp 
-	:: Var 		-- ^ var to bind the suspension to.
-	-> Exp () 	-- ^ suspension expression
-	-> ExM ([Stmt ()], Exp ())
-
-expandSusp v x@(XSuspend f args)
- = do 	let allocX	= XAllocSusp f (length args)
-	let assignSS	= map (\(a, i) -> SAssign (XArg (XVar v (TPtr TObj)) TObjSusp i) (TPtr TObj) a)
-			$ zip args [0..]
-			
-	return	(assignSS, allocX)
 
 
 -- | Expand code to do a super call then an application.

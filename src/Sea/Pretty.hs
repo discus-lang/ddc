@@ -220,10 +220,6 @@ instance Pretty a PMode => Pretty (Exp (Maybe a)) PMode where
 	XSlot    v _ i		-> "_S(" % i % ")"
 	XSlotCAF v _		-> "_CAF(" % sV v % ")"
 
-	XSuspend v args
-	 -> let i	= length args
-	    in "_suspend"	% i % " (" % ", " %!% (sV v : map ppr args) % ")"
-
 	-- Primitive arithmetic operators.
 	XPrim (MOp f) [x1]
 	 |  f == OpNeg

@@ -194,9 +194,6 @@ data Exp a
 	-- primitive operators
 	| XPrim		Prim [Exp a]
 
-	-- suspend. TODO: merge this into XPrim.
-	| XSuspend	Var  [Exp a]		-- thunk name, args
-
 	-- boxing. 
 	-- TODO: merge this into XPrim
 	| XBox		Type (Exp a)		-- type, exp
