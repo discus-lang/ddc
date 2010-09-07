@@ -12,11 +12,12 @@ import	Base
 	Data.List
 
 project Array a 
- with {	new; size; index; index;
+ with {	new;  newm; 
+	size; index;
+	generate;
 	fromList; toList; 
-	mapWithIndex_;
-	mapToList;
-	updateWith }
+	forList;  forUpdate; ifor_ }
+
 
 -- An array of boxed values.
 data Array %r1 a;
@@ -28,14 +29,24 @@ data Array %r1 a;
 foreign import "primArray_new"
  new  	:: Int{read} -> a -> Array a
 
--- | Return the number of elements in an array
+
+-- | Same as `new` but constrain the array to be mutable.
+foreign import "primArray_new"
+ newm	:: forall %r1 %r2. Int %r1 -> a -(!e1)> Array %r2 a
+	:- !e1 = !Read %r1
+	,  Mutable %r2
+
+
+-- | Return the number of elements in an array.
 foreign import "primArray_size"
  size	:: Array a {read} -> Int
+
 
 -- | Return the element at this index.
 --	The array.(i) syntax is desugared into this.
 foreign import "primArray_index"
  index	:: Array a {read} -> Int{read} -> a
+
  	
 -- | Return a reference to this index. 
 --     The reference refers to the location in the array, 
@@ -47,23 +58,33 @@ foreign import "primArray_indexR"
 
 -- Instances ------------------------------------------------------------------
 instance Functor Array where
- map_ f array
-  = go f array 0 array.size
-  where 
-	go f array ix max
-	 | ix >= max	= ()
-	 \= do	f array.(ix)
-		go f array (ix + 1) max
+ map_ f arr	= go 0
+  where len	= arr.size
+	go ix
+	 | ix >= len	= ()
+	 \= do	f arr.(ix)
+		go (ix + 1)
 
 
 instance Foldable Array where
- foldl f acc array 
-  = go f acc array 0 array.size
-  where	
-	go f acc array ix max
-	 | ix >= max	= acc
-	 \= go f (f acc array.(ix)) array (ix + 1) max
+ foldl f acc arr 
+  = go acc 0
+  where	len	= arr.size
+	go ix acc
+	 | ix >= len	= acc
+	 \= go (ix + 1) (f acc arr.(ix))
 
+
+-- Constructors ---------------------------------------------------------------
+-- | Generate an array given its size and a function to compute each element.
+generate :: Int -> (Int -> a) -> Array a
+generate len get = go 0 
+ where	arr	= newm len (error "undefined")
+	go ix
+	 | ix >= len	= arr
+	 \= do	arr#(ix) #= get ix
+		go (ix + 1)
+	
 
 -- Conversion -----------------------------------------------------------------
 -- | Create an array from a list.
@@ -71,11 +92,10 @@ fromList :: [a] -> Array a
 fromList xx 
  = go 0 xx
  where	len	= length xx
-	arr 	= new len 0
+	arr 	= newm len (error "undefined")
 
 	go ix []
-	 | ix == len
-	 = arr
+	 | ix == len	= arr
 	
 	go ix (x:xs)  
 	 = do	arr#(ix)  #= x
@@ -83,53 +103,44 @@ fromList xx
 
 
 -- | Convert an array to a list.
--- TODO: this uses O(n) stack space.
+--   TODO: this uses O(n) stack space.
 toList :: Array a -> [a]
 toList arr = go 0
  where	go ix 
- 	 | ix == arr.size	= []
- 	 | otherwise		= arr.(ix) : go (ix + 1)
+ 	 | ix == arr.size = []
+ 	 \= arr.(ix) : go (ix + 1)
 
 
--- Mapping ----------------------------------------------------------------------------------------		
--- Map a  function across all the elements of an array
---	with the array index, ignoring the result
-mapWithIndex_ :: Array a -> (Int -> a -> b) -> ()
-mapWithIndex_ array f
- = go 0
+-- Traversals -----------------------------------------------------------------
+-- | Map a function across all the elements of an array, 
+--   producing a list.
+forList :: Array a -> (a -> b) -> [b]
+forList arr f	= go 0 
+ where	len	= arr.size
+	go ix
+	 | ix >= len	= []
+	 \= f arr.(ix) : go (ix + 1)
+
+
+-- | Update all the elements of an array with this function
+--	the array cells are pointed to the new objects
+forUpdate :: Array a -> (a -> a) -> ()
+forUpdate arr f	= go 0
+ where	len	= arr.size
+	go ix
+	 | ix >= len	= ()
+	 \= do	x'	= f arr.(ix)
+		arr#(ix) #= x'
+		go (ix + 1)
+
+
+-- | Map a function across all the elements of an array
+--   with the array index, ignoring the result.
+ifor_ :: Array a -> (Int -> a -> b) -> ()
+ifor_ array f	= go 0
  where	len	= array.size
-	
 	go ix 
 	 | ix >= len	= ()
 	 \= do	f ix array.(ix)
 		go (ix + 1)
-
-
--- Map a function across all the elements of an array, 
---	returning a list
-mapToList :: Array a -> (a -> b) -> [b]
-mapToList  array f
- = mapToList' f array 0 (array .size)
-
-mapToList' f array i max
-	| i >= max	
-	=  []
-	
-	\= f (array .(i)) : mapToList' f array (i + 1) max
-	
-
--- Updating ---------------------------------------------------------------------------------------
--- update all the elements of an array with this function
---	the array cells are pointed to the new objects
-updateWith :: (a -> a) -> Array a -> ()
-updateWith fun array
- = do	max	= size array
- 	updateWith' fun array 0 max
-	
-updateWith' fun array ix max
-	| ix >= max	= ()
-	\= do	x'	= fun array.(ix)
-		array #(ix) #= x'
-
-		updateWith' fun array (ix + 1) max
 

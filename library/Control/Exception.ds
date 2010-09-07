@@ -7,9 +7,11 @@ import	Base
 	System.Console
 	Control.Imperative
 
--- Functions which might throw a user exception have the Throw effect.
---	Non-exhaustive pattern match, and array bounds exceptions are not included
---	in this. These effects should always be fatal.
+-- Functions whic explicitly throw an exception have the Throw effect.
+--  Non-exhaustive pattern match, and array bounds exceptions are not included
+--  also throw exceptions, but don't have the effect.
+--  TODO: I think we want to follow GHC and use imprecise excepions,
+--        which don't use a throw effect.
 effect !Throw	:: !
 
 
@@ -52,9 +54,12 @@ foreign import "exit"
  exitU :: Int32# -> a
  
 
-error  ss 	= throw Exception ss
-errorL ss	= primThrow_silent @ (Exception ss)
+error :: String -> a
+error ss = primThrow_silent @ (Exception ss)
 
+-- TODO: This doesn't work due to inferencer bug.
+-- undefined :: a
+-- undefined = primThrow_silent @ (Exception "undefined")
 
 exit code	
  = do	exitU (unboxInt32 code)
